@@ -263,7 +263,7 @@ end;
 
 procedure TPlugin.Initialize;
 begin
-  // TODO: checken dass die korrekte sprache benutzt wird!!!
+  // TODO: checken dass die korrekte sprache benutzt wird
   FInitialize(PChar(Language.CurrentLanguage.ID), @Read, @Write);
 end;
 

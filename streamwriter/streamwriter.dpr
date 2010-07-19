@@ -20,7 +20,7 @@
 program streamwriter;
 
 uses
-  FastMM4,
+  {$IFDEF DEBUG}FastMM4,{$ENDIF}
   Windows,
   Forms,
   Main in 'Main.pas' {frmStreamWriterMain},
