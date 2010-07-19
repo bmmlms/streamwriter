@@ -2,7 +2,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Left = 549
   Top = 450
   Caption = 'streamWriter'
-  ClientHeight = 425
+  ClientHeight = 445
   ClientWidth = 689
   Color = clBtnFace
   Constraints.MinHeight = 200
@@ -26,15 +26,16 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 0
     Top = 25
     Width = 689
-    Height = 381
+    Height = 401
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitHeight = 381
     object Splitter1: TSplitter
       Left = 472
       Top = 33
       Width = 4
-      Height = 348
+      Height = 368
       Align = alRight
       Beveled = True
       ResizeStyle = rsUpdate
@@ -97,16 +98,18 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Left = 476
       Top = 33
       Width = 213
-      Height = 348
+      Height = 368
       ActivePage = tabDebug
       Align = alRight
       TabOrder = 2
       OnChange = pagSidebarChange
+      ExplicitHeight = 348
       object tabBrowser: TTabSheet
         Caption = 'Browser'
+        ExplicitHeight = 320
         DesignSize = (
           205
-          320)
+          340)
         object lblSearchStream: TLabel
           Left = 4
           Top = 8
@@ -128,16 +131,21 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         Caption = 'Info'
         ImageIndex = 1
         OnResize = tabInfoResize
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
       end
       object tabDebug: TTabSheet
         Caption = 'Log'
         ImageIndex = 2
+        ExplicitHeight = 320
       end
     end
   end
   object addStatus: TStatusBar
     Left = 0
-    Top = 406
+    Top = 426
     Width = 689
     Height = 19
     Panels = <
@@ -150,6 +158,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       item
         Width = 100
       end>
+    ExplicitTop = 406
   end
   object ToolBar1: TToolBar
     Left = 0
@@ -302,10 +311,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
           AutoCheck = True
         end
       end
-      object mnuLog2: TMenuItem
-        Action = actLog
-        Enabled = False
-      end
     end
     object View1: TMenuItem
       Caption = '&View'
@@ -332,7 +337,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 160
     Bitmap = {
-      494C0101020009001C0210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000900200210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000D0000005C000000000000000000000000000000000000
@@ -475,7 +480,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 40
     Top = 140
     Bitmap = {
-      494C01010D00D802E40210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01010D00D802E80210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1014,7 +1019,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 108
     Bitmap = {
-      494C010101000400440210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000400480210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000060000001D000000220000001D00000006000000000000
@@ -1175,11 +1180,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       ImageIndex = 2
       OnExecute = actRemoveExecute
     end
-    object actLog: TAction
-      Caption = '&Log...'
-      Hint = 'Log...'
-      ImageIndex = 3
-    end
     object actSeperateDirs: TAction
       AutoCheck = True
       Caption = '&Save titles to seperate folder'
@@ -1300,9 +1300,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         AutoCheck = True
       end
     end
-    object mnuDebug1: TMenuItem
-      Action = actLog
-    end
   end
   object tmrSpeed: TTimer
     Enabled = False
@@ -1400,7 +1397,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 612
     Top = 340
     Bitmap = {
-      494C0101010008002C0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000800300010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

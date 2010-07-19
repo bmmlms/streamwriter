@@ -60,9 +60,6 @@ type
     mnuStartStreaming1: TMenuItem;
     mnuStopStreaming1: TMenuItem;
     Entfernen1: TMenuItem;
-    actLog: TAction;
-    mnuLog2: TMenuItem;
-    mnuDebug1: TMenuItem;
     tmrSpeed: TTimer;
     DropStations: TDropURLTarget;
     DropList: TDropURLTarget;
@@ -1132,7 +1129,6 @@ begin
   mnuStartStreaming1.Default := False;
   mnuStopStreaming1.Default := False;
   actRemove.Enabled := B;
-  actLog.Enabled := B;
   mnuPopupStreamSettings.Enabled := B;
   cmdStreamSettings.Enabled := B;
 
