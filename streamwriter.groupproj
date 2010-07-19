@@ -1,0 +1,60 @@
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{42CDEE3E-9390-418C-85E7-A7D5A602B4A3}</ProjectGuid>
+		</PropertyGroup>
+		<ItemGroup>
+			<Projects Include="streamwriter\streamwriter.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="plugins\settags\settags.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="plugins\normalize\normalize.dproj">
+				<Dependencies/>
+			</Projects>
+		</ItemGroup>
+		<ProjectExtensions>
+			<Borland.Personality>Default.Personality.12</Borland.Personality>
+			<Borland.ProjectType/>
+			<BorlandProject>
+				<Default.Personality/>
+			</BorlandProject>
+		</ProjectExtensions>
+		<Target Name="streamwriter">
+			<MSBuild Projects="streamwriter\streamwriter.dproj"/>
+		</Target>
+		<Target Name="streamwriter:Clean">
+			<MSBuild Targets="Clean" Projects="streamwriter\streamwriter.dproj"/>
+		</Target>
+		<Target Name="streamwriter:Make">
+			<MSBuild Targets="Make" Projects="streamwriter\streamwriter.dproj"/>
+		</Target>
+		<Target Name="settags">
+			<MSBuild Projects="plugins\settags\settags.dproj"/>
+		</Target>
+		<Target Name="settags:Clean">
+			<MSBuild Targets="Clean" Projects="plugins\settags\settags.dproj"/>
+		</Target>
+		<Target Name="settags:Make">
+			<MSBuild Targets="Make" Projects="plugins\settags\settags.dproj"/>
+		</Target>
+		<Target Name="normalize">
+			<MSBuild Projects="plugins\normalize\normalize.dproj"/>
+		</Target>
+		<Target Name="normalize:Clean">
+			<MSBuild Targets="Clean" Projects="plugins\normalize\normalize.dproj"/>
+		</Target>
+		<Target Name="normalize:Make">
+			<MSBuild Targets="Make" Projects="plugins\normalize\normalize.dproj"/>
+		</Target>
+		<Target Name="Build">
+			<CallTarget Targets="streamwriter;settags;normalize"/>
+		</Target>
+		<Target Name="Clean">
+			<CallTarget Targets="streamwriter:Clean;settags:Clean;normalize:Clean"/>
+		</Target>
+		<Target Name="Make">
+			<CallTarget Targets="streamwriter:Make;settags:Make;normalize:Make"/>
+		</Target>
+		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+	</Project>

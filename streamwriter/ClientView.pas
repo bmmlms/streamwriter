@@ -1,0 +1,456 @@
+{
+    ------------------------------------------------------------------------
+    streamWriter
+    Copyright (c) 2010 Alexander Nottelmann
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; either version 3
+    of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
+    ------------------------------------------------------------------------
+}
+unit ClientView;
+
+interface
+
+uses
+  Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
+  StdCtrls, Menus, ImgList, Math, ICEClient, VirtualTrees, LanguageObjects,
+  Graphics, DragDrop, DragDropFile, Functions, AppData;
+
+type
+  TAccessCanvas = class(TCanvas);
+
+  TMClientView = class;
+
+  TClientArray = array of TICEClient;
+
+  TClientNodeData = record
+    Client: TICEClient;
+    Speed: Integer;
+    Received: UInt64;
+  end;
+  PClientNodeData = ^TClientNodeData;
+
+  TEntryTypes = (etStream, etRelay, etFile);
+
+  TPlaylistEntry = record
+    Name: string;
+    URL: string;
+  end;
+  TPlaylistEntryArray = array of TPlaylistEntry;
+
+  TNodeDataArray = array of PClientNodeData;
+
+  TMClientView = class(TVirtualStringTree)
+  private
+    FDragSource: TDropFileSource;
+
+    FColName: TVirtualTreeColumn;
+    FColTitle: TVirtualTreeColumn;
+    FColRcvd: TVirtualTreeColumn;
+    FColSongs: TVirtualTreeColumn;
+    FColSpeed: TVirtualTreeColumn;
+    FColStatus: TVirtualTreeColumn;
+
+    procedure FitColumns;
+  protected
+    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
+      TextType: TVSTTextType; var Text: UnicodeString); override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
+      var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
+    procedure DoFreeNode(Node: PVirtualNode); override;
+    procedure DoDragging(P: TPoint); override;
+    function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
+  public
+    constructor Create(AOwner: TComponent); reintroduce;
+    destructor Destroy; override;
+
+    class function MakeSize(Size: UInt64): string;
+
+    function AddClient(Client: TICEClient): PVirtualNode;
+    function RefreshClient(Client: TICEClient): Boolean;
+    function GetClientNodeData(Client: TICEClient): PClientNodeData;
+    procedure RemoveClient(Client: TICEClient);
+
+    function GetNodes(SelectedOnly: Boolean): TNodeArray;
+    function NodesToData(Nodes: TNodeArray): TNodeDataArray;
+    function NodesToClients(Nodes: TNodeArray): TClientArray;
+    function GetEntries(T: TEntryTypes): TPlaylistEntryArray;
+  end;
+
+implementation
+
+{ TMStreamView }
+
+class function TMClientView.MakeSize(Size: UInt64): string;
+begin
+  if Size < 1048576 then
+    Result := Format('%f KB', [Size / (1024)])
+  else if Size < 1073741824 then
+    Result := Format('%f MB', [Size / (1024 * 1024)])
+  else
+    Result := Format('%f GB', [Size / (1024 * 1024 * 1024)])
+end;
+
+function TMClientView.AddClient(Client: TICEClient): PVirtualNode;
+var
+  Node: PVirtualNode;
+  NodeData: PClientNodeData;
+begin
+  Node := AddChild(nil);
+  NodeData := GetNodeData(Node);
+  NodeData.Client := Client;
+  NodeData.Speed := 0;
+  NodeData.Received := 0;
+  Result := Node;
+end;
+
+constructor TMClientView.Create(AOwner: TComponent);
+begin
+  inherited;
+  NodeDataSize := SizeOf(TClientNodeData);
+  IncrementalSearch := isVisibleOnly;
+  Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
+  TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
+  TreeOptions.AutoOptions := [toAutoScrollOnExpand];
+  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
+  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
+  DragMode := dmAutomatic;
+  ShowHint := True;
+  HintMode := hmTooltip;
+
+  FDragSource := TDropFileSource.Create(Self);
+
+  FColName := Header.Columns.Add;
+  FColName.Text := _('Name');
+  FColTitle := Header.Columns.Add;
+  FColTitle.Text := _('Title');
+  FColRcvd := Header.Columns.Add;
+  FColRcvd.Text := _('Received');
+  FColSongs := Header.Columns.Add;
+  FColSongs.Text := _('Songs');
+  FColSpeed := Header.Columns.Add;
+  FColSpeed.Text := _('Speed');
+  FColStatus := Header.Columns.Add;
+  FColStatus.Text := _('State');
+  FitColumns;
+end;
+
+destructor TMClientView.Destroy;
+begin
+  FDragSource.Free;
+  inherited;
+end;
+
+procedure TMClientView.DoFreeNode(Node: PVirtualNode);
+begin
+  inherited;
+end;
+
+function TMClientView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
+  Column: TColumnIndex; var Ghosted: Boolean;
+  var Index: Integer): TCustomImageList;
+var
+  NodeData: PClientNodeData;
+begin
+  inherited;
+  Result := inherited;
+  if ((Kind = ikNormal) or (Kind = ikSelected)) and (Column = 0) then
+  begin
+    NodeData := GetNodeData(Node);
+    Index := 0;
+    case NodeData.Client.State of
+      csStopped:
+        Index := 1;
+      csIOError:
+        Index := 1;
+    end;
+  end;
+end;
+
+function TMClientView.DoGetNodeTooltip(Node: PVirtualNode;
+  Column: TColumnIndex;
+  var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString;
+var
+  Text: UnicodeString;
+begin
+  Text := '';
+  DoGetText(Node, Column, ttNormal, Text);
+  Result := Text;
+end;
+
+procedure TMClientView.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
+  TextType: TVSTTextType; var Text: UnicodeString);
+var
+  NodeData: PClientNodeData;
+begin
+  inherited;
+  NodeData := PClientNodeData(GetNodeData(Node));
+  case Column of
+    0:
+      if NodeData.Client.StreamName = '' then
+        if NodeData.Client.StartURL = '' then
+          Text := _('Unknown')
+        else
+          Text := NodeData.Client.StartURL
+      else
+        Text := NodeData.Client.StreamName;
+    1:
+      if NodeData.Client.Title = '' then
+        Text := _('Unknown')
+      else
+        Text := NodeData.Client.Title;
+    2:
+      Text := MakeSize(NodeData.Received);
+    3:
+      Text := IntToStr(NodeData.Client.SongsSaved);
+    4:
+      Text := MakeSize(NodeData.Speed) + '/s';
+    5:
+      case NodeData.Client.State of
+        csConnecting:
+          Text := _('Connecting...');
+        csRecording:
+          Text := _('Recording');
+        csRetrying:
+          Text := _('Retrying...');
+        csStopped:
+          Text := _('Stopped');
+        csStopping:
+          Text := _('Stopping...');
+        csIOError:
+          Text := _('Error opening file');
+      end;
+  end;
+end;
+
+procedure TMClientView.FitColumns;
+  function GetTextWidth(Text: string): Integer;
+  var
+    Canvas: TAccessCanvas;
+  begin
+    Canvas := TAccessCanvas.Create;
+    try
+      Canvas.Handle := GetDC(GetDesktopWindow);
+      SelectObject(Canvas.Handle, Header.Font.Handle);
+      Result := Canvas.TextWidth(Text) + 20;
+      ReleaseDC(GetDesktopWindow, Canvas.Handle);
+    finally
+      Canvas.Free;
+    end;
+  end;
+begin
+  FColName.Width := 120;
+  FColStatus.Width := 100;
+  FColRcvd.Width := GetTextWidth(FColRcvd.Text);
+  FColSpeed.Width := Max(GetTextWidth('11,11KB/s'), GetTextWidth(FColSpeed.Text));
+  FColSongs.Width := GetTextWidth(FColSongs.Text);
+  Header.AutoSizeIndex := 1;
+  Header.Options := Header.Options + [hoAutoResize];
+end;
+
+function TMClientView.GetClientNodeData(
+  Client: TICEClient): PClientNodeData;
+var
+  Nodes: TNodeArray;
+  Node: PVirtualNode;
+  NodeData: PClientNodeData;
+begin
+  Result := nil;
+  Nodes := GetNodes(False);
+  for Node in Nodes do
+  begin
+    NodeData := GetNodeData(Node);
+    if NodeData.Client = Client then
+    begin
+      Result := NodeData;
+      Exit;
+    end;
+  end;
+end;
+
+function TMClientView.GetNodes(SelectedOnly: Boolean): TNodeArray;
+var
+  i: Integer;
+  Node: PVirtualNode;
+  Nodes: TNodeArray;
+begin
+  SetLength(Result, 0);
+  if not SelectedOnly then begin
+    Node := GetFirst;
+    while Node <> nil do begin
+      SetLength(Result, Length(Result) + 1);
+      Result[Length(Result) - 1] := Node;
+      Node := GetNext(Node);
+    end;
+  end else begin
+    SetLength(Result, 0);
+    Nodes := GetSortedSelection(True);
+    for i := 0 to Length(Nodes) - 1 do begin
+      SetLength(Result, Length(Result) + 1);
+      Result[Length(Result) - 1] := Nodes[i];
+    end;
+  end;
+end;
+
+function TMClientView.RefreshClient(Client: TICEClient): Boolean;
+var
+  i: Integer;
+  Nodes: TNodeArray;
+  NodeData: PClientNodeData;
+begin
+  Result := False;
+  Nodes := GetNodes(False);
+  for i := 0 to Length(Nodes) - 1 do
+  begin
+    NodeData := GetNodeData(Nodes[i]);
+    if NodeData.Client = Client then
+    begin
+      Result := True;
+      InvalidateNode(Nodes[i]);
+      Break;
+    end;
+  end;
+end;
+
+procedure TMClientView.RemoveClient(Client: TICEClient);
+var
+  i: Integer;
+  Nodes: TNodeArray;
+  NodeData: PClientNodeData;
+begin
+  Nodes := GetNodes(False);
+  for i := Length(Nodes) - 1 downto 0 do
+  begin
+    NodeData := GetNodeData(Nodes[i]);
+    if NodeData.Client = Client then
+    begin
+      DeleteNode(Nodes[i]);
+      Break;
+    end;
+  end;
+end;
+
+function TMClientView.NodesToData(Nodes: TNodeArray): TNodeDataArray;
+var
+  i: Integer;
+  Data: PClientNodeData;
+begin
+  SetLength(Result, Length(Nodes));
+  for i := 0 to Length(Nodes) - 1 do
+  begin
+    Data := GetNodeData(Nodes[i]);
+    Result[i] := Data;
+  end;
+end;
+
+function TMClientView.NodesToClients(Nodes: TNodeArray): TClientArray;
+var
+  i: Integer;
+  Data: PClientNodeData;
+begin
+  SetLength(Result, Length(Nodes));
+  for i := 0 to Length(Nodes) - 1 do
+  begin
+    Data := GetNodeData(Nodes[i]);
+    Result[i] := Data.Client;
+  end;
+end;
+
+procedure TMClientView.DoDragging(P: TPoint);
+var
+  i: Integer;
+  UseRelay, UseFile: Boolean;
+  Entries: TPlaylistEntryArray;
+  Client: TICEClient;
+  Clients: TClientArray;
+begin
+  if FDragSource.DragInProgress then
+    Exit;
+
+  UseRelay := AppGlobals.Relay;
+  UseFile := True;
+
+  Clients := NodesToClients(GetNodes(True));
+  FDragSource.Files.Clear;
+  for Client in Clients do
+  begin
+    if AppGlobals.Relay then
+      if not Client.Active then
+        UseRelay := False;
+    if not Client.Active then
+      UseFile := False;
+  end;
+
+  case AppGlobals.DefaultAction of
+    caStartStop:
+      if UseRelay then
+        Entries := GetEntries(etRelay)
+      else
+        Entries := GetEntries(etStream);
+    caStream:
+      Entries := GetEntries(etStream);
+    caRelay:
+      Entries := GetEntries(etRelay);
+    caFile:
+      Entries := GetEntries(etFile);
+  end;
+
+  for i := 0 to Length(Entries) - 1 do
+    FDragSource.Files.Add(Entries[i].URL);
+
+  if FDragSource.Files.Count = 0 then
+    Exit;
+
+  DoStateChange([], [tsOLEDragPending, tsClearPending]);
+  FDragSource.Execute(True);
+end;
+
+function TMClientView.GetEntries(T: TEntryTypes): TPlaylistEntryArray;
+var
+  Add: Boolean;
+  Name, URL: string;
+  Clients: TClientArray;
+  Client: TICEClient;
+begin
+  SetLength(Result, 0);
+  Clients := NodesToClients(GetNodes(True));
+  for Client in Clients do
+  begin
+    Add := True;
+    if Client.StreamName = '' then
+      Name := Client.StartURL
+    else
+      Name := Client.StreamName;
+
+    if (T = etRelay) and (not Client.Active) then
+      Add := False;
+    if (T = etFile) and (Client.Filename = '') then
+      Add := False;
+
+    if Add then
+    begin
+      case T of
+        etStream: URL := Client.StartURL;
+        etRelay: URL := Client.RelayURL;
+        etFile: URL := Client.Filename;
+      end;
+
+      SetLength(Result, Length(Result) + 1);
+      Result[High(Result)].URL := URL;
+      Result[High(Result)].Name := Name;
+    end;
+  end;
+end;
+
+end.
+
