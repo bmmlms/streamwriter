@@ -31,6 +31,14 @@ type
   private
     FClient: TICEClient;
     FDebug: TDebugView;
+    FPanelBottom: TPanel;
+    FBtnCopy: TButton;
+    FBtnClear: TButton;
+
+    FOnClear: TNotifyEvent;
+
+    procedure BtnCopyClick(Sender: TObject);
+    procedure BtnClearClick(Sender: TObject);
   protected
   public
     constructor Create(AOwner: TComponent); reintroduce;
@@ -39,23 +47,60 @@ type
     procedure ShowDebug(Client: TICEClient);
 
     property Client: TICEClient read FClient;
+    property OnClear: TNotifyEvent read FOnClear write FOnClear;
   end;
 
 implementation
 
 { TStreamDebugView }
 
+procedure TMStreamDebugView.BtnClearClick(Sender: TObject);
+begin
+  FDebug.Clear;
+  if Assigned(FOnClear) then
+    FOnClear(Self);
+end;
+
+procedure TMStreamDebugView.BtnCopyClick(Sender: TObject);
+begin
+  FDebug.Copy;
+end;
+
 constructor TMStreamDebugView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
   Align := alClient;
-  BorderStyle := bsNone;
+  BevelOuter := bvNone;
+
+  Caption := _('Please select a stream.');
 
   FDebug := TDebugView.Create(Self);
   FDebug.Parent := Self;
   FDebug.Align := alClient;
-  FDebug.Show;
+  FDebug.Visible := False;
+
+  FPanelBottom := TPanel.Create(Self);
+  FPanelBottom.Parent := Self;
+  FPanelBottom.Align := alBottom;
+  FPanelBottom.BevelOuter := bvNone;
+  FPanelBottom.Visible := False;
+  FPanelBottom.Height := 40;
+  FPanelBottom.Padding.Top := 4;
+
+  FBtnCopy := TButton.Create(Self);
+  FBtnCopy.Caption := _('Copy');
+  FBtnCopy.Align := alRight;
+  FBtnCopy.Parent := FPanelBottom;
+  FBtnCopy.Visible := True;
+  FBtnCopy.OnClick := BtnCopyClick;
+
+  FBtnClear := TButton.Create(Self);
+  FBtnClear.Caption := _('Clear');
+  FBtnClear.Align := alRight;
+  FBtnClear.Parent := FPanelBottom;
+  FBtnClear.Visible := True;
+  FBtnClear.OnClick := BtnClearClick;
 end;
 
 destructor TMStreamDebugView.Destroy;
@@ -70,16 +115,24 @@ var
   Entry: TDebugEntry;
 begin
   if Client <> FClient then
+  begin
     FDebug.Clear;
+  end;
   FClient := Client;
   if Client <> nil then
   begin
     if Client.Killed then
       Exit;
+    FDebug.Visible := True;
+    FPanelBottom.Visible := True;
     for i := FDebug.RootNodeCount to Client.DebugLog.Count - 1 do
     begin
       FDebug.AddData(Client.DebugLog[i].Time, Client.DebugLog[i].Text, Client.DebugLog[i].Data);
     end;
+  end else
+  begin
+    FDebug.Visible := False;
+    FPanelBottom.Visible := False;
   end;
 end;
 

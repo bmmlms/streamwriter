@@ -26,6 +26,7 @@ uses
   Generics.Collections, Functions, SocketThread;
 
 type
+  // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
   TICEClientStates = (csConnecting, csRecording, csStopping, csStopped, csRetrying, csIOError);
 
   TICEClient = class;
@@ -48,6 +49,7 @@ type
     procedure Notify(const Item: TDebugEntry; Action: TCollectionNotification); override;
   end;
 
+  TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
 
   TICEClient = class
@@ -82,6 +84,7 @@ type
     FOnTitleChanged: TStringEvent;
     FOnDisconnected: TNotifyEvent;
     FOnAddRecent: TNotifyEvent;
+    FOnICYReceived: TIntegerEvent;
 
     procedure Initialize;
     procedure Start;
@@ -144,6 +147,7 @@ type
     property OnSongSaved: TStringEvent read FOnSongSaved write FOnSongSaved;
     property OnTitleChanged: TStringEvent read FOnTitleChanged write FOnTitleChanged;
     property OnDisconnected: TNotifyEvent read FOnDisconnected write FOnDisconnected;
+    property OnICYReceived: TIntegerEvent read FOnICYReceived write FOnICYReceived;
   end;
 
 implementation
@@ -384,8 +388,14 @@ begin
         end;
       end else
       begin
-        Exception.Create('Response was HTTP, but without playlist or redirect');
+        raise Exception.Create('Response was HTTP, but without playlist or redirect');
       end;
+    end else
+    begin
+      // Am Ende noch die Bytes die nicht mitgeteilt wurden durchreichen
+      FReceived := FReceived + FICEThread.Speed;
+      if Assigned(FOnICYReceived) then
+        FOnICYReceived(Self, FICEThread.Speed);
     end;
   except
     on E: Exception do
@@ -413,6 +423,9 @@ begin
   begin
     FReceived := FReceived + FICEThread.Speed;
     FSpeed := FICEThread.Speed;
+
+    if Assigned(FOnICYReceived) then
+      FOnICYReceived(Self, FICEThread.Speed);
   end;
 end;
 

@@ -231,6 +231,7 @@ procedure TfrmSettings.SetText;
 begin
   inherited;
   lstPlugins.Groups[0].Header := _('Post-Processing');
+  AppGlobals.PluginManager.ReInitPlugins;
 end;
 
 function TfrmSettings.CanFinish: Boolean;

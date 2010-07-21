@@ -42,6 +42,7 @@ type
   TClientList = TList<TICEClient>;
 
   TSongSavedEvent = procedure(Sender: TObject; Filename: string) of object;
+  TICYReceivedEvent = procedure(Sender: TObject; Received: Integer) of object;
 
   TClientManager = class
   private
@@ -54,8 +55,9 @@ type
     FOnClientAddRecent: TNotifyEvent;
     FOnClientAdded: TNotifyEvent;
     FOnClientRemoved: TNotifyEvent;
-    FOnSongSaved: TSongSavedEvent;
-    FOnTitleChanged: TSongSavedEvent;
+    FOnClientSongSaved: TSongSavedEvent;
+    FOnClientTitleChanged: TSongSavedEvent;
+    FOnClientICYReceived: TICYReceivedEvent;
 
     function FGetItem(Index: Integer): TICEClient;
     function FGetCount: Integer;
@@ -66,6 +68,7 @@ type
     procedure ClientSongSaved(Sender: TObject; Filename: string);
     procedure ClientTitleChanged(Sender: TObject; Title: string);
     procedure ClientDisconnected(Sender: TObject);
+    procedure ClientICYReceived(Sender: TObject; Bytes: Integer);
 
     procedure RelayGetStream(Sender: TObject);
     procedure RelayEnded(Sender: TObject);
@@ -97,8 +100,9 @@ type
     property OnClientAddRecent: TNotifyEvent read FOnClientAddRecent write FOnClientAddRecent;
     property OnClientAdded: TNotifyEvent read FOnClientAdded write FOnClientAdded;
     property OnClientRemoved: TNotifyEvent read FOnClientRemoved write FOnClientRemoved;
-    property OnSongSaved: TSongSavedEvent read FOnSongSaved write FOnSongSaved;
-    property OnTitleChanged: TSongSavedEvent read FOnTitleChanged write FOnTitleChanged;
+    property OnClientSongSaved: TSongSavedEvent read FOnClientSongSaved write FOnClientSongSaved;
+    property OnClientTitleChanged: TSongSavedEvent read FOnClientTitleChanged write FOnClientTitleChanged;
+    property OnClientICYReceived: TICYReceivedEvent read FOnClientICYReceived write FOnClientICYReceived;
   end;
 
 implementation
@@ -155,6 +159,7 @@ begin
   Client.OnSongSaved := ClientSongSaved;
   Client.OnTitleChanged := ClientTitleChanged;
   Client.OnDisconnected := ClientDisconnected;
+  Client.OnICYReceived := ClientICYReceived;
   if Assigned(FOnClientAdded) then
     FOnClientAdded(Client);
 end;
@@ -262,15 +267,15 @@ begin
   Inc(FSongsSaved);
   //if Assigned(FOnClientRefresh) then
   //  FOnClientRefresh(Sender);
-  if Assigned(FOnSongSaved) then
-    FOnSongSaved(Sender, Filename);
+  if Assigned(FOnClientSongSaved) then
+    FOnClientSongSaved(Sender, Filename);
 end;
 
 procedure TClientManager.ClientTitleChanged(Sender: TObject;
   Title: string);
 begin
-  if Assigned(FOnTitleChanged) then
-    FOnTitleChanged(Sender, Title);
+  if Assigned(FOnClientTitleChanged) then
+    FOnClientTitleChanged(Sender, Title);
 end;
 
 procedure TClientManager.ClientDisconnected(Sender: TObject);
@@ -287,6 +292,13 @@ begin
     FClients.Remove(Client);
     Client.Free;
   end;
+end;
+
+procedure TClientManager.ClientICYReceived(Sender: TObject;
+  Bytes: Integer);
+begin
+  if Assigned(FOnClientICYReceived) then
+    FOnClientICYReceived(Sender, Bytes);
 end;
 
 procedure TClientManager.RelayGetStream(Sender: TObject);

@@ -60,6 +60,7 @@ type
     destructor Destroy; override;
 
     procedure ProcessFile(Filename: string);
+    procedure ReInitPlugins;
 
     property Plugins: TList<TPlugin> read FPlugins;
   end;
@@ -122,6 +123,14 @@ begin
       FProcessingList.Add(TProcessingEntry.Create(Filename));
       Break;
     end;
+end;
+
+procedure TPluginManager.ReInitPlugins;
+var
+  i: Integer;
+begin
+  for i := 0 to FPlugins.Count - 1 do
+    FPlugins[i].Initialize;
 end;
 
 constructor TPluginManager.Create(Path: string);
@@ -263,7 +272,6 @@ end;
 
 procedure TPlugin.Initialize;
 begin
-  // TODO: checken dass die korrekte sprache benutzt wird
   FInitialize(PChar(Language.CurrentLanguage.ID), @Read, @Write);
 end;
 

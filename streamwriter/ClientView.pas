@@ -35,8 +35,6 @@ type
 
   TClientNodeData = record
     Client: TICEClient;
-    Speed: Integer;
-    Received: UInt64;
   end;
   PClientNodeData = ^TClientNodeData;
 
@@ -54,6 +52,9 @@ type
   private
     FDragSource: TDropFileSource;
 
+    FSortColumn: Integer;
+    FSortDirection: TSortDirection;
+
     FColName: TVirtualTreeColumn;
     FColTitle: TVirtualTreeColumn;
     FColRcvd: TVirtualTreeColumn;
@@ -70,6 +71,8 @@ type
     procedure DoFreeNode(Node: PVirtualNode); override;
     procedure DoDragging(P: TPoint); override;
     function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
+    procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
+    function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -80,6 +83,7 @@ type
     function RefreshClient(Client: TICEClient): Boolean;
     function GetClientNodeData(Client: TICEClient): PClientNodeData;
     procedure RemoveClient(Client: TICEClient);
+    procedure SortItems;
 
     function GetNodes(SelectedOnly: Boolean): TNodeArray;
     function NodesToData(Nodes: TNodeArray): TNodeDataArray;
@@ -109,8 +113,6 @@ begin
   Node := AddChild(nil);
   NodeData := GetNodeData(Node);
   NodeData.Client := Client;
-  NodeData.Speed := 0;
-  NodeData.Received := 0;
   Result := Node;
 end;
 
@@ -129,6 +131,9 @@ begin
   HintMode := hmTooltip;
 
   FDragSource := TDropFileSource.Create(Self);
+
+  FSortColumn := 0;
+  FSortDirection := sdAscending;
 
   FColName := Header.Columns.Add;
   FColName.Text := _('Name');
@@ -210,11 +215,11 @@ begin
       else
         Text := NodeData.Client.Title;
     2:
-      Text := MakeSize(NodeData.Received);
+      Text := MakeSize(NodeData.Client.Received);
     3:
       Text := IntToStr(NodeData.Client.SongsSaved);
     4:
-      Text := MakeSize(NodeData.Speed) + '/s';
+      Text := MakeSize(NodeData.Client.Speed) + '/s';
     5:
       case NodeData.Client.State of
         csConnecting:
@@ -230,6 +235,29 @@ begin
         csIOError:
           Text := _('Error opening file');
       end;
+  end;
+end;
+
+procedure TMClientView.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
+begin
+  inherited;
+  if HitInfo.Button = mbLeft then
+  begin
+    if FSortColumn <> HitInfo.Column then
+    begin
+      FSortColumn := HitInfo.Column;
+      if (HitInfo.Column <> 0) and (HitInfo.Column <> 1) then
+        FSortDirection := sdDescending
+      else
+        FSortDirection := sdAscending;
+    end else
+    begin
+      if FSortDirection = sdAscending then
+        FSortDirection := sdDescending
+      else
+        FSortDirection := sdAscending;
+    end;
+    Sort(nil, HitInfo.Column, FSortDirection);
   end;
 end;
 
@@ -340,6 +368,11 @@ begin
   end;
 end;
 
+procedure TMClientView.SortItems;
+begin
+  Sort(nil, FSortColumn, FSortDirection);
+end;
+
 function TMClientView.NodesToData(Nodes: TNodeArray): TNodeDataArray;
 var
   i: Integer;
@@ -363,6 +396,43 @@ begin
   begin
     Data := GetNodeData(Nodes[i]);
     Result[i] := Data.Client;
+  end;
+end;
+
+function TMClientView.DoCompare(Node1, Node2: PVirtualNode;
+  Column: TColumnIndex): Integer;
+  function CmpInt(a, b: Integer): Integer;
+  begin
+    if a > b then
+      Result := 1
+    else if a < b then
+      Result := -1
+    else
+      Result := 0;
+  end;
+  function CmpIntR(a, b: Integer): Integer;
+  begin
+    if a < b then
+      Result := 1
+    else if a > b then
+      Result := -1
+    else
+      Result := 0;
+  end;
+var
+  Data1, Data2: PClientNodeData;
+begin
+  Result := 0;
+  Data1 := GetNodeData(Node1);
+  Data2 := GetNodeData(Node2);
+
+  case Column of
+    0: Result := CompareText(Data1.Client.StreamName, Data2.Client.StreamName);
+    1: Result := CompareText(Data1.Client.Title, Data2.Client.Title);
+    2: Result := CmpInt(Data1.Client.Received, Data2.Client.Received);
+    3: Result := CmpInt(Data1.Client.SongsSaved, Data2.Client.SongsSaved);
+    4: Result := CmpInt(Data1.Client.Speed, Data2.Client.Speed);
+    5: Result := CmpIntR(Integer(Data1.Client.State), Integer(Data2.Client.State));
   end;
 end;
 

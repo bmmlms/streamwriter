@@ -386,9 +386,8 @@ procedure TStreamDataList.CleanUp;
 var
   i: Integer;
 begin
-  // TODO: Testen. Hier dürfen keine Exceptions drin passieren!
   for i := FStreams.Count - 1 downto 0 do
-    if (FStreams[i].FLastTouched < Now - 30) and (not FStreams[i].IsInList) and (FStreams[i].RecentIndex = -1) then
+    if (FStreams[i].FLastTouched < Now - 1) and (not FStreams[i].IsInList) and (FStreams[i].RecentIndex = -1) then
     begin
       FStreams[i].Free;
       FStreams.Delete(i);
@@ -526,13 +525,13 @@ begin
   if AppGlobals.DataFile = '' then
     Exit;
 
+  CleanUp;
+
   if (FStreams.Count = 0) and not (FileExists(AppGlobals.DataFile)) then
   begin
     Result := True;
     Exit;
   end;
-
-  CleanUp;
 
   if not FLoadError then
   begin

@@ -274,7 +274,6 @@ begin
   ParseURL(URL, Host, Port, Data);
   FTypedStream := TICEStream(FRecvStream);
   FRelayThreads := TRelayInfoList.Create;
-  FReceived := 0;
   FSongsSaved := 0;
   FTitle := '';
   FTypedStream.OnTitleChanged := StreamTitleChanged;

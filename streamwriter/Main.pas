@@ -142,8 +142,6 @@ type
     procedure actStartExecute(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure actRemoveExecute(Sender: TObject);
-    procedure lstClientsChange(Sender: TBaseVirtualTree;
-      Node: PVirtualNode);
     procedure tmrSpeedTimer(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure lstStationsKeyPress(Sender: TObject; var Key: Char);
@@ -208,12 +206,15 @@ type
     function StartStreaming(Name, URL: string): Boolean;
     procedure ShowInfo;
 
+    procedure lstClientsChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure lstClientsDblClick(Sender: TObject);
     procedure lstClientsKeyPress(Sender: TObject; var Key: Char);
 
     procedure StreamsStreamAdded(Sender: TObject; Stream: TStreamEntry);
     procedure StreamsStreamRemoved(Sender: TObject; Stream: TStreamEntry);
     procedure StreamsStreamChanged(Sender: TObject; Stream: TStreamEntry);
+
+    procedure DebugClear(Sender: TObject);
 
     procedure ClientManagerDebug(Sender: TObject);
     procedure ClientManagerRefresh(Sender: TObject);
@@ -222,6 +223,7 @@ type
     procedure ClientManagerClientRemoved(Sender: TObject);
     procedure ClientManagerSongSaved(Sender: TObject; Filename: string);
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
+    procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
 
     procedure HomeCommunicationStreamsReceived(Sender: TObject; Streams: TStreamInfoArray;
       Count: Integer);
@@ -252,6 +254,20 @@ begin
   cmdStreamSettings.Down := True;
   cmdStreamSettings.DropDownMenu.Popup(Point.X, Point.Y);
   cmdStreamSettings.Down := False;
+end;
+
+procedure TfrmStreamWriterMain.DebugClear(Sender: TObject);
+var
+  Clients: TNodeDataArray;
+  i: Integer;
+begin
+  Clients := lstClients.NodesToData(lstClients.GetNodes(False));
+  for i := 0 to Length(Clients) - 1 do
+    if Clients[i].Client = pnlDebug.Client then
+    begin
+      Clients[i].Client.DebugLog.Clear;
+      Break;
+    end;
 end;
 
 procedure TfrmStreamWriterMain.DropListDrop(Sender: TObject; ShiftState: TShiftState;
@@ -537,8 +553,9 @@ begin
   FClients.OnClientAddRecent := ClientManagerAddRecent;
   FClients.OnClientAdded := ClientManagerClientAdded;
   FClients.OnClientRemoved := ClientManagerClientRemoved;
-  FClients.OnSongSaved := ClientManagerSongSaved;
-  FClients.OnTitleChanged := ClientManagerTitleChanged;
+  FClients.OnClientSongSaved := ClientManagerSongSaved;
+  FClients.OnClientTitleChanged := ClientManagerTitleChanged;
+  FClients.OnClientICYReceived := ClientManagerICYReceived;
 
   if AppGlobals.Relay then
     FClients.RelayServer.Start;
@@ -586,6 +603,7 @@ begin
 
   pnlDebug := TMStreamDebugView.Create(Self);
   pnlDebug.Parent := tabDebug;
+  pnlDebug.OnClear := DebugClear;
   pnlDebug.Show;
 
   DropStations.Register(lstStations);
@@ -640,6 +658,7 @@ begin
     Recent.Free;
   end;
 
+  lstClients.SortItems;
   lstStations.Sort;
 
   {$IFDEF DEBUG}Caption := Caption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
@@ -865,6 +884,7 @@ begin
   S := TfrmSettings.Create(Self, BrowseDir);
   S.ShowModal;
   Language.Translate(Self);
+  AppGlobals.PluginManager.ReInitPlugins;
   if S.RelayChanged then
   begin
     if AppGlobals.Relay then
@@ -1008,7 +1028,7 @@ end;
 
 procedure TfrmStreamWriterMain.tabInfoResize(Sender: TObject);
 begin
-  ShowInfo;
+  // ShowInfo;
 end;
 
 procedure TfrmStreamWriterMain.StreamsStreamChanged(Sender: TObject;
@@ -1212,21 +1232,17 @@ procedure TfrmStreamWriterMain.UpdateStatus;
 var
   Clients: TNodeDataArray;
   Client: PClientNodeData;
-  Speed, Received: UInt64;
+  Speed: UInt64;
 begin
   Speed := 0;
-  Received := 0;
   Clients := lstClients.NodesToData(lstClients.GetNodes(False));
   for Client in Clients do
   begin
     Speed := Speed + Client.Client.Speed;
-    Received := Received + Client.Client.Received;
-    Client.Speed := Client.Client.Speed;
-    Client.Received := Client.Client.Received;
     lstClients.RefreshClient(Client.Client);
   end;
   addStatus.Panels[0].Text := TMClientView.MakeSize(Speed) + '/s';
-  addStatus.Panels[1].Text := Format(_('%s received'), [TMClientView.MakeSize(Received)]);
+  addStatus.Panels[1].Text := Format(_('%s received'), [TMClientView.MakeSize(FReceived)]);
   addStatus.Panels[2].Text := Format(_('%d songs saved'), [FClients.SongsSaved]);
 end;
 
@@ -1249,7 +1265,8 @@ begin
     Clients := lstClients.NodesToData(lstClients.GetNodes(True));
     if Length(Clients) = 1 then
       pnlDebug.ShowDebug(Clients[0].Client);
-  end;
+  end else
+    pnlDebug.ShowDebug(nil);
 end;
 
 procedure TfrmStreamWriterMain.lstClientsDblClick(Sender: TObject);
@@ -1352,6 +1369,12 @@ begin
   end;
 end;
 
+procedure TfrmStreamWriterMain.ClientManagerICYReceived(Sender: TObject;
+  Received: Integer);
+begin
+  FReceived := FReceived + Received;
+end;
+
 procedure TfrmStreamWriterMain.ClientManagerRefresh(Sender: TObject);
 begin
   lstClients.RefreshClient(Sender as TICEClient);
@@ -1384,6 +1407,11 @@ begin
     Entry.IsInList := False;
 
   lstClients.RemoveClient(Client);
+
+  if pnlDebug.Client = Client then
+    pnlDebug.ShowDebug(nil);
+
+  ShowInfo;
 end;
 
 procedure TfrmStreamWriterMain.ClientManagerSongSaved(Sender: TObject;

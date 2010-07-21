@@ -34,11 +34,15 @@ type
 
   TSavedTracksTree = class(TVirtualStringTree)
   private
+    FSortColumn: Integer;
+    FSortDirection: TSortDirection;
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
       var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
+    procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
+    function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -54,6 +58,8 @@ type
 
     procedure ShowTracks(Tracks: TList<TTrackInfo>);
   protected
+    procedure Resize; override;
+
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -85,6 +91,9 @@ begin
   ShowHint := True;
   HintMode := hmTooltip;
 
+  FSortColumn := 0;
+  FSortDirection := sdDescending;
+
   Header.AutoSizeIndex := 1;
   Header.Options := [hoAutoResize, hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
   TreeOptions.PaintOptions := [toShowButtons, toShowDropmark, toShowRoot, toThemeAware, toUseBlendedImages];
@@ -95,6 +104,30 @@ destructor TSavedTracksTree.Destroy;
 begin
 
   inherited;
+end;
+
+function TSavedTracksTree.DoCompare(Node1, Node2: PVirtualNode;
+  Column: TColumnIndex): Integer;
+  function CmpTime(a, b: TDateTime): Integer;
+  begin
+    if a > b then
+      Result := 1
+    else if a < b then
+      Result := -1
+    else
+      Result := 0;
+  end;
+var
+  Data1, Data2: PSavedHistoryNodeData;
+begin
+  Result := 0;
+  Data1 := GetNodeData(Node1);
+  Data2 := GetNodeData(Node2);
+
+  case Column of
+    0: Result := CmpTime(Data1.TrackInfo.Time, Data2.TrackInfo.Time);
+    1: Result := CompareText(Data1.TrackInfo.Filename, Data2.TrackInfo.Filename);
+  end;
 end;
 
 function TSavedTracksTree.DoGetImageIndex(Node: PVirtualNode;
@@ -128,6 +161,29 @@ begin
   end;
 end;
 
+procedure TSavedTracksTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
+begin
+  inherited;
+  if HitInfo.Button = mbLeft then
+  begin
+    if FSortColumn <> HitInfo.Column then
+    begin
+      FSortColumn := HitInfo.Column;
+      if (HitInfo.Column <> 0) and (HitInfo.Column <> 1) then
+        FSortDirection := sdDescending
+      else
+        FSortDirection := sdAscending;
+    end else
+    begin
+      if FSortDirection = sdAscending then
+        FSortDirection := sdDescending
+      else
+        FSortDirection := sdAscending;
+    end;
+    Sort(nil, HitInfo.Column, FSortDirection);
+  end;
+end;
+
 { TStreamInfoView }
 
 constructor TMStreamInfoView.Create(AOwner: TComponent);
@@ -136,13 +192,14 @@ begin
 
   FResized := False;
 
-  BorderStyle := bsNone;
+  BevelOuter := bvNone;
 
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := Self;
   FTopPanel.Align := alTop;
-  FTopPanel.Height := 100;
-  FTopPanel.BorderStyle := bsNone;
+  FTopPanel.Height := 80;
+  FTopPanel.BevelOuter := bvNone;
+  FTopPanel.Visible := False;
 
   FName := TLabel.Create(Self);
   FName.Parent := FTopPanel;
@@ -150,21 +207,21 @@ begin
   FName.Font.Name := 'Tahoma';
   FName.Font.Size := 10;
   FName.Font.Style := [fsBold];
-  FName.Show;
+  FName.Visible := True;
 
   FInfo := TMemo.Create(Self);
   FInfo.Parent := FTopPanel;
   FInfo.Align := alClient;
   FInfo.BorderStyle := bsNone;
-  FInfo.Color := clBtnFace;
+  FInfo.Color := clWindow;
   FInfo.ScrollBars := ssVertical;
-  FInfo.Show;
+  FInfo.ReadOnly := True;
+  FInfo.Visible := True;
 
   FSavedTracks := TSavedTracksTree.Create(Self);
   FSavedTracks.Parent := Self;
   FSavedTracks.Align := alClient;;
-  //FSavedTracks.Anchors := [akLeft, akTop, akRight, akBottom];
-  FSavedTracks.Show;
+  FSavedTracks.Visible := False;
 
   Align := alClient;
 end;
@@ -172,6 +229,12 @@ end;
 destructor TMStreamInfoView.Destroy;
 begin
   inherited;
+end;
+
+procedure TMStreamInfoView.Resize;
+begin
+  inherited;
+
 end;
 
 procedure TMStreamInfoView.ShowInfo(Entries: TStreamList);
@@ -186,6 +249,10 @@ var
 begin
   if Entries <> nil then
   begin
+    FTopPanel.Visible := True;
+    FSavedTracks.Visible := True;
+    Caption := '';
+
     TrackList := TList<TTrackInfo>.Create;
     try
       Genres := '';
@@ -232,7 +299,9 @@ begin
     end;
   end else
   begin
-    //  TODO:
+    FTopPanel.Visible := False;
+    FSavedTracks.Visible := False;
+    Caption := _('Please select at least one stream.');
   end;
 end;
 
@@ -246,7 +315,7 @@ begin
   try
     FSavedTracks.Clear;
     for i := Tracks.Count - 1 downto 0 do
-    begin // TODO: Wenn die Liste voll ist, gescrollt war, und dann so ge-refresh-ed wird - ist das fail für den User?
+    begin
       Node := FSavedTracks.AddChild(nil);
       NodeData := FSavedTracks.GetNodeData(Node);
       NodeData.TrackInfo := Tracks[i];
@@ -254,6 +323,7 @@ begin
   finally
     FSavedTracks.EndUpdate;
   end;
+  FSavedTracks.Sort(nil, FSavedTracks.FSortColumn, FSavedTracks.FSortDirection);
 end;
 
 end.

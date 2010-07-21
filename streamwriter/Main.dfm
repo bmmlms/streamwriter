@@ -2,7 +2,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Left = 549
   Top = 450
   Caption = 'streamWriter'
-  ClientHeight = 445
+  ClientHeight = 465
   ClientWidth = 689
   Color = clBtnFace
   Constraints.MinHeight = 200
@@ -26,16 +26,15 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 0
     Top = 25
     Width = 689
-    Height = 401
+    Height = 421
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitHeight = 381
     object Splitter1: TSplitter
       Left = 472
       Top = 33
       Width = 4
-      Height = 368
+      Height = 388
       Align = alRight
       Beveled = True
       ResizeStyle = rsUpdate
@@ -98,18 +97,16 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Left = 476
       Top = 33
       Width = 213
-      Height = 368
+      Height = 388
       ActivePage = tabDebug
       Align = alRight
       TabOrder = 2
       OnChange = pagSidebarChange
-      ExplicitHeight = 348
       object tabBrowser: TTabSheet
         Caption = 'Browser'
-        ExplicitHeight = 320
         DesignSize = (
           205
-          340)
+          360)
         object lblSearchStream: TLabel
           Left = 4
           Top = 8
@@ -139,13 +136,12 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       object tabDebug: TTabSheet
         Caption = 'Log'
         ImageIndex = 2
-        ExplicitHeight = 320
       end
     end
   end
   object addStatus: TStatusBar
     Left = 0
-    Top = 426
+    Top = 446
     Width = 689
     Height = 19
     Panels = <
@@ -158,7 +154,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       item
         Width = 100
       end>
-    ExplicitTop = 406
   end
   object ToolBar1: TToolBar
     Left = 0
@@ -337,7 +332,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 160
     Bitmap = {
-      494C010102000900200210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000900280210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000D0000005C000000000000000000000000000000000000
@@ -480,7 +475,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 40
     Top = 140
     Bitmap = {
-      494C01010D00D802E80210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01010D00D802F00210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1019,7 +1014,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 108
     Bitmap = {
-      494C010101000400480210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000400500210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000060000001D000000220000001D00000006000000000000
@@ -1397,7 +1392,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 612
     Top = 340
     Bitmap = {
-      494C010101000800300010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000800380010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
