@@ -24,6 +24,7 @@ uses
   Messages,
   SysUtils,
   TlHelp32,
+  Mp3FileUtils,
   LanguageObjects in '..\..\..\common\LanguageObjects.pas',
   Functions in '..\..\..\common\Functions.pas';
 
@@ -63,26 +64,51 @@ begin
   Result := Length(s);
 end;
 
-function Act(FileData: PMapBytes): Integer; stdcall;
+function Act(Filename, Station, Title: PChar): Integer; stdcall;
 var
-  i, Offset: Integer;
-  Count, Len: Word;
-
-  Files: array of string;
+  p: Integer;
+  Dir, Artist, Title2: string;
+  ID3V1: TID3v1Tag;
+  ID3V2: TID3v2Tag;
 begin
   Result := Integer(prError);
 
-  Move(FileData^[0], Count, SizeOf(Count));
-  SetLength(Files, Count);
-  Offset := SizeOf(Count);
-  for i := 0 to Count - 1 do
-  begin
-    Move(FileData^[Offset], Len, SizeOf(Len));
-    Offset := Offset + SizeOf(Len);
-    SetLength(Files[i], (Len div SizeOf(Char)) + SizeOf(Char));
-    FillChar(Files[i][1], Length(Files[i]) * SizeOf(Char), #0);
-    Move(FileData^[Offset], Files[i][1], Len);
-    Offset := Offset + Len;
+  ID3V1 := TID3v1Tag.Create;
+  ID3V2 := TID3v2Tag.Create;
+  try
+    try
+      Artist := '';
+      Title2 := '';
+
+      p := Pos(' - ', Title);
+      if p > 0 then
+      begin
+        Artist := Copy(Title, 1, p - 1);
+        Title2 := Copy(Title, p + 3, Length(Title));
+      end;
+
+      if (Trim(Artist) <> '') and (Trim(Title2) <> '') then
+      begin
+        ID3V1.Artist := Artist;
+        ID3V1.Title := Title2;
+        ID3V2.Artist := Artist;
+        ID3V2.Title := Title2;
+      end else
+      begin
+        ID3V1.Title := Title;
+        ID3V2.Title := Title;
+      end;
+      ID3V1.Comment := 'Recorded by streamWriter from ' + Station;
+      ID3V2.Comment := 'Recorded by streamWriter from ' + Station;
+      ID3V1.WriteToFile(Filename);
+      ID3V2.WriteToFile(Filename);
+    except
+      //WriteDebug('Error setting ID3-tags');
+      // TODO: !!!
+    end;
+  finally
+    ID3V1.Free;
+    ID3V2.Free;
   end;
 end;
 

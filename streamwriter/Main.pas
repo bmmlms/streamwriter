@@ -29,7 +29,7 @@ uses
   DragDropInternet, DragDropText, DragDropFile, Update, UpdateClient,
   LanguageObjects, AppDataBase, Functions, ClientManager, ShellAPI, DropSource,
   About, MsgDlg, Exceptions, HomeCommunication, StreamBrowserView, Clipbrd,
-  StationCombo, GUIFunctions, StreamInfoView, StreamDebugView;
+  StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins;
 
 type
   TfrmStreamWriterMain = class(TForm)
@@ -1420,6 +1420,7 @@ var
   Entry: TStreamEntry;
   Client: TICEClient;
   ClientNode: PClientNodeData;
+  Data: TPluginProcessInformation;
 begin
   Client := Sender as TICEClient;
 
@@ -1432,7 +1433,11 @@ begin
 
   ShowInfo;
 
-  AppGlobals.PluginManager.ProcessFile(Filename);
+  Data.Filename := Filename;
+  Data.Station := Client.StreamName;
+  Data.Title := Client.Title;
+
+  AppGlobals.PluginManager.ProcessFile(Data);
 end;
 
 procedure TfrmStreamWriterMain.ClientManagerTitleChanged(Sender: TObject;

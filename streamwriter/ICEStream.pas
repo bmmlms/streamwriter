@@ -23,7 +23,7 @@ interface
 
 uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
-  AppData, Mp3FileUtils, LanguageObjects;
+  AppData, LanguageObjects;
 
 type
   TDebugEvent = procedure(Text, Data: string) of object;
@@ -242,8 +242,6 @@ var
   p: Integer;
   RangeBegin, RangeEnd: Int64;
   Dir, Filename, Artist, Title2: string;
-  ID3V1: TID3v1Tag;
-  ID3V2: TID3v2Tag;
 begin
   RangeBegin := FAudioStream.GetFrame(FSaveFrom, False);
   RangeEnd := FAudioStream.GetFrame(0, True);
@@ -267,41 +265,6 @@ begin
     try
       ForceDirectories(Dir);
       FAudioStream.SaveToFile(Filename, RangeBegin, RangeEnd - RangeBegin);
-
-      ID3V1 := TID3v1Tag.Create;
-      ID3V2 := TID3v2Tag.Create;
-      try
-        try
-          Artist := '';
-          Title2 := '';
-
-          p := Pos(' - ', Title);
-          if p > 0 then
-          begin
-            Artist := Copy(Title, 1, p - 1);
-            Title2 := Copy(Title, p + 3, Length(Title));
-          end;
-
-          if (Trim(Artist) <> '') and (Trim(Title2) <> '') then
-          begin
-            ID3V1.Artist := Artist;
-            ID3V1.Title := Title2;
-            ID3V2.Artist := Artist;
-            ID3V2.Title := Title2;
-          end else
-          begin
-            ID3V1.Title := Title;
-            ID3V2.Title := Title;
-          end;
-          ID3V1.WriteToFile(Filename);
-          ID3V2.WriteToFile(Filename);
-        except
-          WriteDebug('Error setting ID3-tags');
-        end;
-      finally
-        ID3V1.Free;
-        ID3V2.Free;
-      end;
 
       FSavedFilename := Filename;
       Inc(FSongsSaved);

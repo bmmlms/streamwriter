@@ -26,23 +26,30 @@ uses
 
 type
   TPlugin = class;
+  TProcessThread = class;
   TFilenameArray = array of string;
+
+  TPluginProcessInformation = record
+    Filename, Station, Title: string;
+  end;
 
   //TPluginResults = (prOk, prError);
   TReadWrite = procedure(Name, Value: PChar);
 
   TInitialize = procedure(L: PChar; RF, WF: TReadWrite); stdcall;
-  TAct = function(FileData: Pointer): Integer; stdcall;
+  TAct = function(Filename, Station, Title: PChar): Integer; stdcall;
   TGetString = function(Data: PChar; Len: Integer): Integer; stdcall;
   TGetBoolean = function: Boolean; stdcall;
   TConfigure = function(Handle: Cardinal; ShowMessages: Boolean): Boolean; stdcall;
 
   TProcessingEntry = class
   private
-    FFilename: string;
+    FActiveThread: TProcessThread;
+    FData: TPluginProcessInformation;
     FPluginsProcessed: TList<TPlugin>;
   public
-    constructor Create(Filename: string);
+    constructor Create(ActiveThread: TProcessThread;
+      Data: TPluginProcessInformation; FirstPlugin: TPlugin);
     destructor Destroy; override;
   end;
 
@@ -55,11 +62,13 @@ type
     FPlugins: TList<TPlugin>;
     FProcessingList: TProcessingList;
     FActivePlugin: TPlugin;
+
+    procedure ThreadTerminate(Sender: TObject);
   public
     constructor Create(Path: string);
     destructor Destroy; override;
 
-    procedure ProcessFile(Filename: string);
+    procedure ProcessFile(Data: TPluginProcessInformation);
     procedure ReInitPlugins;
 
     property Plugins: TList<TPlugin> read FPlugins;
@@ -67,13 +76,12 @@ type
 
   TProcessThread = class(TThread)
   private
-    FFilename: string;
+    FData: TPluginProcessInformation;
     FPlugin: TPlugin;
   protected
     procedure Execute; override;
   public
-    constructor Create(CreateSuspended: Boolean; Filename: string;
-      Plugin: TPlugin);
+    constructor Create(Data: TPluginProcessInformation; Plugin: TPlugin);
     destructor Destroy; override;
   end;
 
@@ -96,7 +104,7 @@ type
     destructor Destroy; override;
 
     procedure Initialize;
-    procedure ProcessFile(Filename: string);
+    function ProcessFile(Data: TPluginProcessInformation): TProcessThread;
     function Configure(Handle: Cardinal; ShowMessages: Boolean): Boolean;
 
     property Filename: string read FFilename;
@@ -112,15 +120,18 @@ uses
 
 { TPluginManager }
 
-procedure TPluginManager.ProcessFile(Filename: string);
+procedure TPluginManager.ProcessFile(Data: TPluginProcessInformation);
 var
   i: Integer;
+  Thread: TProcessThread;
 begin
   for i := 0 to FPlugins.Count - 1 do
     if FPlugins[i].Active then
     begin
-      FPlugins[i].ProcessFile(Filename);
-      FProcessingList.Add(TProcessingEntry.Create(Filename));
+      Thread := FPlugins[i].ProcessFile(Data);
+      Thread.OnTerminate := ThreadTerminate;
+      FProcessingList.Add(TProcessingEntry.Create(Thread, Data, FPlugins[i]));
+      Thread.Resume;
       Break;
     end;
 end;
@@ -131,6 +142,37 @@ var
 begin
   for i := 0 to FPlugins.Count - 1 do
     FPlugins[i].Initialize;
+end;
+
+procedure TPluginManager.ThreadTerminate(Sender: TObject);
+var
+  i, n: Integer;
+  Thread: TProcessThread;
+begin
+  for i := 0 to FProcessingList.Count - 1 do
+  begin
+    if FProcessingList[i].FActiveThread = Sender then
+    begin
+
+      for n := 0 to FPlugins.Count - 1 do
+      begin
+        if not FPlugins[n].Active then
+          Continue;
+
+        if not FProcessingList[i].FPluginsProcessed.Contains(FPlugins[n]) then
+        begin
+          Thread := FPlugins[n].ProcessFile(FProcessingList[i].FData);
+          FProcessingList[i].FActiveThread := Thread;
+          Thread.OnTerminate := ThreadTerminate;
+          Thread.Resume;
+          Exit;
+        end;
+      end;
+
+      FProcessingList.Delete(i);
+      Exit;
+    end;
+  end;
 end;
 
 constructor TPluginManager.Create(Path: string);
@@ -180,21 +222,19 @@ end;
 
 { TPlugin }
 
-procedure TPlugin.ProcessFile(Filename: string);
+function TPlugin.ProcessFile(Data: TPluginProcessInformation): TProcessThread;
 type
   TMapBytes = array[0..MAXINT - 1] of Byte;
   PMapBytes = ^TMapBytes;
 var
   Thread: TProcessThread;
 begin
+  Result := nil;
   if (@FAct = nil) or (Length(FFilename) = 0) then
     Exit;
 
-  Thread := TProcessThread.Create(True, FFilename, Self);
-
-  Thread.Resume;  // TODO: Der Pluginmanager muss es selbst starten, weil er muss die threads
-                  // verwalten. wenn was fertig ist, die queue weiterverarbeiten und so..
-                  // und threads freigeben!
+  Thread := TProcessThread.Create(Data, Self);
+  Result := Thread;
 end;
 
 function TPlugin.Configure(Handle: Cardinal; ShowMessages: Boolean): Boolean;
@@ -231,6 +271,9 @@ begin
   FFilename := Filename;
 
   FAuthor := '';
+  FActive := False; // TODO: Active wird nirgens gesetzt ansonsten. settings anyone?
+  if Pos('settags', Filename) > 0 then
+    FActive := True;
 
   GetMem(Data, 255);
   try
@@ -277,10 +320,13 @@ end;
 
 { TProcessingEntry }
 
-constructor TProcessingEntry.Create(Filename: string);
+constructor TProcessingEntry.Create(ActiveThread: TProcessThread;
+  Data: TPluginProcessInformation; FirstPlugin: TPlugin);
 begin
-  FFilename := Filename;
+  FActiveThread := ActiveThread;
+  FData := Data;
   FPluginsProcessed := TList<TPlugin>.Create;
+  FPluginsProcessed.Add(FirstPlugin);
 end;
 
 destructor TProcessingEntry.Destroy;
@@ -291,11 +337,11 @@ end;
 
 { TProcessThread }
 
-constructor TProcessThread.Create(CreateSuspended: Boolean;
-  Filename: string; Plugin: TPlugin);
+constructor TProcessThread.Create(Data: TPluginProcessInformation; Plugin: TPlugin);
 begin
   inherited Create(False);
-  FFilename := Filename;
+  FreeOnTerminate := True;
+  FData := Data;
   FPlugin := Plugin;
 end;
 
@@ -318,25 +364,7 @@ var
 begin
   inherited;
 
-  Len := SizeOf(T);
-  Len := Len + (Length(FFilename[i]) * SizeOf(Char)) + SizeOf(T);
-
-  GetMem(Mem, Len);
-  try
-    Offset := 0;
-    T := 1;
-    Move(T, Mem^[Offset], SizeOf(T));
-    Offset := Offset + SizeOf(T);
-    T := Length(FFilename[i]) * SizeOf(Char);
-    Move(T, Mem^[Offset], SizeOf(T));
-    Offset := Offset + SizeOf(T);
-    Move(FFilename[1], Mem^[Offset], T);
-    Offset := Offset + T;
-    //Result := TPluginResults(FAct(Mem));
-  finally
-    FreeMem(Mem, Len);
-  end;
-
+  FPlugin.FAct(PChar(FData.Filename), PChar(FData.Station), PChar(FData.Title));
 end;
 
 end.
