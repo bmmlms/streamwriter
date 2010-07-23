@@ -95,7 +95,6 @@ begin
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
 
-  //FStorage.Read('MetaOnly', FMetaOnly, True);
   FStorage.Read('SeperateDirs', FSeperateDirs, True);
   FStorage.Read('SkipShort', FSkipShort, True);
   FStorage.Read('TrayClose', FTrayClose, False);
@@ -103,15 +102,12 @@ begin
   FStorage.Read('SidebarWidth', FSidebarWidth, 200);
   FStorage.Read('Relay', FRelay, False);
   FStorage.Read('SubmitStreams', FSubmitStreams, True);
-  //FStorage.Read('MaxBufSize', FMaxBufSize, 100);
   FStorage.Read('ShortSize', FShortSize, 1000);
   FStorage.Read('SongBuffer', FSongBuffer, 100);
   FStorage.Read('MaxRetries', FMaxRetries, 20);
   FStorage.Read('RetryDelay', FRetryDelay, 5);
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
   FStorage.Read('DefaultAction', i, Integer(caStartStop));
-
-  // Eiun test.
 
   if (i > Ord(High(TClientActions))) or (i < Ord(Low(TClientActions))) then
     FDefaultAction := caStartStop
@@ -144,6 +140,8 @@ begin
 end;
 
 procedure TAppData.Save;
+var
+  i: Integer;
 begin
   inherited;
 
@@ -161,6 +159,9 @@ begin
   FStorage.Write('RetryDelay', FRetryDelay);
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
+
+  for i := 0 to FPluginManager.Plugins.Count - 1 do
+    FStorage.Write('Active_' + ExtractFileName(FPluginManager.Plugins[i].Filename), FPluginManager.Plugins[i].Active, 'Plugins');
 end;
 
 initialization

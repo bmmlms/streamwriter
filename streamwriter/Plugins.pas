@@ -211,7 +211,7 @@ destructor TPluginManager.Destroy;
 var
   i: Integer;
 begin
-  // TODO: Gefährlich. Und CallBacks aus DLL abschalten. Prüfen ob was aktiv beim Beenden, etc!
+  // TODO: Gefährlich. Und Threads töten! Und DLL-Callbacks "nil"en. Prüfen ob was aktiv beim Beenden, etc!
   FProcessingList.Free;
 
   for i := 0 to FPlugins.Count - 1 do
@@ -271,9 +271,7 @@ begin
   FFilename := Filename;
 
   FAuthor := '';
-  FActive := False; // TODO: Active wird nirgens gesetzt ansonsten. settings anyone?
-  if Pos('settags', Filename) > 0 then
-    FActive := True;
+  AppGlobals.Storage.Read('Active_' + LowerCase(ExtractFileName(Filename)), FActive, True, 'Plugins');
 
   GetMem(Data, 255);
   try

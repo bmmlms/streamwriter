@@ -24,7 +24,8 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
-  ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase;
+  ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
+  Plugins;
 
 type
   TfrmSettings = class(TfrmSettingsBase)
@@ -147,6 +148,8 @@ begin
 end;
 
 procedure TfrmSettings.Finish;
+var
+  i: Integer;
 begin
   if AppGlobals.Relay <> chkRelay.Checked then
     FRelayChanged := True;
@@ -166,16 +169,8 @@ begin
   AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
   AppGlobals.Unlock;
 
-{
-  for i := 0 to AppGlobals.PluginManager.Plugins.Count - 1 do
-  begin
-    Item := lstPlugins.Items.Add;
-    Item.GroupID := 0;
-    Item.Caption := AppGlobals.PluginManager.Plugins[i].Name;
-    Item.Data := AppGlobals.PluginManager.Plugins[i];
-    Item.Checked := AppGlobals.PluginManager.Plugins[i].Active;
-  end;
-}
+  for i := 0 to lstPlugins.Items.Count - 1 do
+    TPlugin(lstPlugins.Items[i].Data).Active := lstPlugins.Items[i].Checked;
 
   inherited;
 end;
