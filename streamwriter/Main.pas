@@ -548,7 +548,7 @@ var
 begin
   Language.Translate(Self);
 
-  msgbox(handle, 'THE GAME', 'THE GAME', 0);
+  msgbox(handle, 'THE GAME2', 'THE GAME2', 0);
 
   FClients := TClientManager.Create;
   FClients.OnClientDebug := ClientManagerDebug;
