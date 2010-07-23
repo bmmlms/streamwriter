@@ -166,6 +166,17 @@ begin
   AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
   AppGlobals.Unlock;
 
+{
+  for i := 0 to AppGlobals.PluginManager.Plugins.Count - 1 do
+  begin
+    Item := lstPlugins.Items.Add;
+    Item.GroupID := 0;
+    Item.Caption := AppGlobals.PluginManager.Plugins[i].Name;
+    Item.Data := AppGlobals.PluginManager.Plugins[i];
+    Item.Checked := AppGlobals.PluginManager.Plugins[i].Active;
+  end;
+}
+
   inherited;
 end;
 

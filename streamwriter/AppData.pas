@@ -110,6 +110,9 @@ begin
   FStorage.Read('RetryDelay', FRetryDelay, 5);
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
   FStorage.Read('DefaultAction', i, Integer(caStartStop));
+
+  // Eiun test.
+
   if (i > Ord(High(TClientActions))) or (i < Ord(Low(TClientActions))) then
     FDefaultAction := caStartStop
   else
