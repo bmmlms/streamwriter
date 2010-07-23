@@ -51,6 +51,7 @@ type
 
   TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
+  TString2Event = procedure(Sender: TObject; Data, Data2: string) of object;
 
   TICEClient = class
   private
@@ -80,7 +81,7 @@ type
 
     FOnDebug: TNotifyEvent;
     FOnRefresh: TNotifyEvent;
-    FOnSongSaved: TStringEvent;
+    FOnSongSaved: TString2Event;
     FOnTitleChanged: TStringEvent;
     FOnDisconnected: TNotifyEvent;
     FOnAddRecent: TNotifyEvent;
@@ -144,7 +145,7 @@ type
     property OnDebug: TNotifyEvent read FOnDebug write FOnDebug;
     property OnRefresh: TNotifyEvent read FOnRefresh write FOnRefresh;
     property OnAddRecent: TNotifyEvent read FOnAddRecent write FOnAddRecent;
-    property OnSongSaved: TStringEvent read FOnSongSaved write FOnSongSaved;
+    property OnSongSaved: TString2Event read FOnSongSaved write FOnSongSaved;
     property OnTitleChanged: TStringEvent read FOnTitleChanged write FOnTitleChanged;
     property OnDisconnected: TNotifyEvent read FOnDisconnected write FOnDisconnected;
     property OnICYReceived: TIntegerEvent read FOnICYReceived write FOnICYReceived;
@@ -412,7 +413,7 @@ procedure TICEClient.ThreadSongSaved(Sender: TObject);
 begin
   FSongsSaved := FICEThread.RecvStream.SongsSaved;
   if Assigned(FOnSongSaved) then
-    FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename);
+    FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedTitle);
   if Assigned(FOnRefresh) then
     FOnRefresh(Self);
 end;

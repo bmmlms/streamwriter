@@ -108,6 +108,7 @@ type
       SeperateDirs, SkipShort: Boolean; SongsSaved: Cardinal): TStreamEntry; overload;
     function Add(Entry: TStreamEntry): TStreamEntry; overload;
     function Get(Name, URL: string; URLs: TStringList): TStreamEntry;
+    procedure RemoveTrack(Track: TTrackInfo);
 
     property LoadError: Boolean read FLoadError write FLoadError;
     property OnStreamAdded: TStreamChangedEvent read FOnStreamAdded write FOnStreamAdded;
@@ -505,6 +506,21 @@ begin
   finally
     S.Free;
   end;
+end;
+
+procedure TStreamDataList.RemoveTrack(Track: TTrackInfo);
+var
+  i: Integer;
+  n: Integer;
+begin
+  for i := 0 to FStreams.Count - 1 do
+    for n := FStreams[i].Tracks.Count - 1 downto 0 do
+      if FStreams[i].Tracks[n] = Track then
+      begin
+        FStreams[i].Tracks[n].Free;
+        FStreams[i].Tracks.Delete(n);
+        Exit;
+      end;
 end;
 
 procedure TStreamDataList.ResetInList;

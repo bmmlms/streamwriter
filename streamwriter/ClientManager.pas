@@ -41,7 +41,8 @@ type
 
   TClientList = TList<TICEClient>;
 
-  TSongSavedEvent = procedure(Sender: TObject; Filename: string) of object;
+  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string) of object;
+  TTitleChangedEvent = procedure(Sender: TObject; Title: string) of object;
   TICYReceivedEvent = procedure(Sender: TObject; Received: Integer) of object;
 
   TClientManager = class
@@ -56,7 +57,7 @@ type
     FOnClientAdded: TNotifyEvent;
     FOnClientRemoved: TNotifyEvent;
     FOnClientSongSaved: TSongSavedEvent;
-    FOnClientTitleChanged: TSongSavedEvent;
+    FOnClientTitleChanged: TTitleChangedEvent;
     FOnClientICYReceived: TICYReceivedEvent;
 
     function FGetItem(Index: Integer): TICEClient;
@@ -65,7 +66,7 @@ type
     procedure ClientDebug(Sender: TObject);
     procedure ClientRefresh(Sender: TObject);
     procedure ClientAddRecent(Sender: TObject);
-    procedure ClientSongSaved(Sender: TObject; Filename: string);
+    procedure ClientSongSaved(Sender: TObject; Filename, Title: string);
     procedure ClientTitleChanged(Sender: TObject; Title: string);
     procedure ClientDisconnected(Sender: TObject);
     procedure ClientICYReceived(Sender: TObject; Bytes: Integer);
@@ -101,7 +102,7 @@ type
     property OnClientAdded: TNotifyEvent read FOnClientAdded write FOnClientAdded;
     property OnClientRemoved: TNotifyEvent read FOnClientRemoved write FOnClientRemoved;
     property OnClientSongSaved: TSongSavedEvent read FOnClientSongSaved write FOnClientSongSaved;
-    property OnClientTitleChanged: TSongSavedEvent read FOnClientTitleChanged write FOnClientTitleChanged;
+    property OnClientTitleChanged: TTitleChangedEvent read FOnClientTitleChanged write FOnClientTitleChanged;
     property OnClientICYReceived: TICYReceivedEvent read FOnClientICYReceived write FOnClientICYReceived;
   end;
 
@@ -262,13 +263,13 @@ begin
   end;
 end;
 
-procedure TClientManager.ClientSongSaved(Sender: TObject; Filename: string);
+procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title: string);
 begin
   Inc(FSongsSaved);
   //if Assigned(FOnClientRefresh) then
   //  FOnClientRefresh(Sender);
   if Assigned(FOnClientSongSaved) then
-    FOnClientSongSaved(Sender, Filename);
+    FOnClientSongSaved(Sender, Filename, Title);
 end;
 
 procedure TClientManager.ClientTitleChanged(Sender: TObject;

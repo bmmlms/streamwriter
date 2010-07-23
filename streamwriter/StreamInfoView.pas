@@ -24,7 +24,8 @@ interface
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
   RecentManager, VirtualTrees, LanguageObjects, GUIFunctions,
-  Generics.Collections, Graphics, Forms;
+  Generics.Collections, Graphics, Forms, Menus, Messages, DragDrop,
+  DragDropFile;
 
 type
   TSavedHistoryNodeData = record
@@ -32,10 +33,32 @@ type
   end;
   PSavedHistoryNodeData = ^TSavedHistoryNodeData;
 
+  TTrackActions = (taPlay, taRemove, taDelete);
+
+  TTrackInfoArray = array of TTrackInfo;
+
+  TTrackActionEvent = procedure(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray) of object;
+
   TSavedTracksTree = class(TVirtualStringTree)
   private
+    FDragSource: TDropFileSource;
+
     FSortColumn: Integer;
     FSortDirection: TSortDirection;
+
+    FPopupMenu: TPopupMenu;
+    FItemPlay: TMenuItem;
+    FItemRemove: TMenuItem;
+    FItemDelete: TMenuItem;
+
+    FOnAction: TTrackActionEvent;
+
+    function GetNodes(SelectedOnly: Boolean): TNodeArray;
+    function GetSelected: TTrackInfoArray;
+    procedure DeleteTracks(Tracks: TTrackInfoArray);
+
+    procedure PopupMenuPopup(Sender: TObject);
+    procedure PopupMenuClick(Sender: TObject);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -43,9 +66,14 @@ type
       var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
     procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
+    procedure KeyPress(var Key: Char); override;
+    procedure HandleMouseDblClick(var Message: TWMMouse; const HitInfo: THitInfo); override;
+    procedure DoDragging(P: TPoint); override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
+
+    property OnAction: TTrackActionEvent read FOnAction write FOnAction;
   end;
 
   TMStreamInfoView = class(TPanel)
@@ -56,7 +84,7 @@ type
     FInfo: TMemo;
     FSavedTracks: TSavedTracksTree;
 
-    procedure ShowTracks(Tracks: TList<TTrackInfo>);
+    function ShowTracks(Tracks: TList<TTrackInfo>): TTrackInfoArray;
   protected
     procedure Resize; override;
 
@@ -76,10 +104,13 @@ implementation
 constructor TSavedTracksTree.Create(AOwner: TComponent);
 var
   C1, C2: TVirtualTreeColumn;
+  ItemTmp: TMenuItem;
 begin
   inherited Create(AOwner);
 
   NodeDataSize := SizeOf(TSavedHistoryNodeData);
+
+  FDragSource := TDropFileSource.Create(Self);
 
   C1 := Header.Columns.Add;
   C1.Text := _('Time');
@@ -88,8 +119,34 @@ begin
   C1.Width := 80;
   Indent := 2;
 
+  DragMode := dmAutomatic;
   ShowHint := True;
   HintMode := hmTooltip;
+
+  FPopupMenu := TPopupMenu.Create(Self);
+  FPopupMenu.OnPopup := PopupMenuPopup;
+
+  FItemPlay := FPopupMenu.CreateMenuItem;
+  FItemPlay.Caption := _('&Play');
+  FItemPlay.OnClick := PopupMenuClick;
+  FPopupMenu.Items.Add(FItemPlay);
+
+  ItemTmp := FPopupMenu.CreateMenuItem;
+  ItemTmp.Caption := '-';
+  FPopupMenu.Items.Add(ItemTmp);
+
+  FItemRemove := FPopupMenu.CreateMenuItem;
+  FItemRemove.Caption := _('&Remove');
+  FItemRemove.OnClick := PopupMenuClick;
+  FPopupMenu.Items.Add(FItemRemove);
+
+  FItemDelete := FPopupMenu.CreateMenuItem;
+  FItemDelete.Caption := _('&Delete');
+  FItemDelete.OnClick := PopupMenuClick;
+  FPopupMenu.Items.Add(FItemDelete);
+
+
+  PopupMenu := FPopupMenu;
 
   FSortColumn := 0;
   FSortDirection := sdDescending;
@@ -97,7 +154,28 @@ begin
   Header.AutoSizeIndex := 1;
   Header.Options := [hoAutoResize, hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
   TreeOptions.PaintOptions := [toShowButtons, toShowDropmark, toShowRoot, toThemeAware, toUseBlendedImages];
-  TreeOptions.SelectionOptions := [toFullRowSelect, toRightClickSelect];
+  TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
+  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
+end;
+
+procedure TSavedTracksTree.DeleteTracks(Tracks: TTrackInfoArray);
+var
+  i, n: Integer;
+  NodeData: PSavedHistoryNodeData;
+  Nodes: TNodeArray;
+begin
+  Nodes := GetNodes(False);
+  for n := 0 to Length(Tracks) - 1 do
+  begin
+    for i := 0 to Length(Nodes) - 1 do
+    begin
+      NodeData := GetNodeData(Nodes[i]);
+      if Tracks[n] = NodeData.TrackInfo then
+      begin
+        DeleteNode(Nodes[i]);
+      end;
+    end;
+  end;
 end;
 
 destructor TSavedTracksTree.Destroy;
@@ -128,6 +206,26 @@ begin
     0: Result := CmpTime(Data1.TrackInfo.Time, Data2.TrackInfo.Time);
     1: Result := CompareText(Data1.TrackInfo.Filename, Data2.TrackInfo.Filename);
   end;
+end;
+
+procedure TSavedTracksTree.DoDragging(P: TPoint);
+var
+  i: Integer;
+  Tracks: TTrackInfoArray;
+begin
+  if FDragSource.DragInProgress then
+    Exit;
+
+  FDragSource.Files.Clear;
+  Tracks := GetSelected;
+  for i := 0 to Length(Tracks) - 1 do
+    FDragSource.Files.Add(Tracks[i].Filename);
+
+  if FDragSource.Files.Count = 0 then
+    Exit;
+
+  DoStateChange([], [tsOLEDragPending, tsClearPending]);
+  FDragSource.Execute(True);
 end;
 
 function TSavedTracksTree.DoGetImageIndex(Node: PVirtualNode;
@@ -182,6 +280,116 @@ begin
     end;
     Sort(nil, HitInfo.Column, FSortDirection);
   end;
+end;
+
+function TSavedTracksTree.GetNodes(SelectedOnly: Boolean): TNodeArray;
+var
+  i: Integer;
+  Node: PVirtualNode;
+  Nodes: TNodeArray;
+begin
+  SetLength(Result, 0);
+  if not SelectedOnly then begin
+    Node := GetFirst;
+    while Node <> nil do begin
+      SetLength(Result, Length(Result) + 1);
+      Result[Length(Result) - 1] := Node;
+      Node := GetNext(Node);
+    end;
+  end else begin
+    SetLength(Result, 0);
+    Nodes := GetSortedSelection(True);
+    for i := 0 to Length(Nodes) - 1 do begin
+      SetLength(Result, Length(Result) + 1);
+      Result[Length(Result) - 1] := Nodes[i];
+    end;
+  end;
+end;
+
+function TSavedTracksTree.GetSelected: TTrackInfoArray;
+var
+  i: Integer;
+  Nodes: TNodeArray;
+  NodeData: PSavedHistoryNodeData;
+begin
+  SetLength(Result, 0);
+  Nodes := GetNodes(True);
+  for i := 0 to Length(Nodes) - 1 do
+  begin
+    NodeData := GetNodeData(Nodes[i]);
+    SetLength(Result, Length(Result) + 1);
+    Result[High(Result)] := NodeData.TrackInfo;
+  end;
+end;
+
+procedure TSavedTracksTree.HandleMouseDblClick(var Message: TWMMouse;
+  const HitInfo: THitInfo);
+var
+  Tracks: TTrackInfoArray;
+begin
+  inherited;
+  if HitInfo.HitNode <> nil then
+  begin
+    Tracks := GetSelected;
+    if (Length(Tracks) > 0) and Assigned(FOnAction) then
+      FOnAction(Self, taPlay, Tracks);
+  end;
+end;
+
+procedure TSavedTracksTree.KeyPress(var Key: Char);
+var
+  Tracks: TTrackInfoArray;
+begin
+  inherited;
+  if Key = #13 then
+  begin
+    Tracks := GetSelected;
+    if (Length(Tracks) > 0) and Assigned(FOnAction) then
+      FOnAction(Self, taPlay, Tracks);
+    // TODO: Testen.  auch alles mit mehreren ausgewählten testen.
+    Key := #0;
+  end;
+end;
+
+procedure TSavedTracksTree.PopupMenuClick(Sender: TObject);
+var
+  Action: TTrackActions;
+  Tracks: TTrackInfoArray;
+begin
+  Tracks := GetSelected;
+
+  if Length(Tracks) = 0 then
+    Exit;
+
+  if Sender = FItemPlay then
+    Action := taPlay
+  else if Sender = FItemRemove then
+  begin
+    Action := taRemove;
+    DeleteTracks(Tracks);
+  end
+  else if Sender = FItemDelete then
+  begin
+    Action := taDelete;
+    DeleteTracks(Tracks);
+  end
+  else
+    raise Exception.Create('Fail');
+
+  if Length(Tracks) > 0 then
+    if Assigned(FOnAction) then
+      FOnAction(Self, Action, Tracks);
+end;
+
+procedure TSavedTracksTree.PopupMenuPopup(Sender: TObject);
+var
+  Action: TTrackActions;
+  Tracks: TTrackInfoArray;
+begin
+  Tracks := GetSelected;
+  FItemPlay.Enabled := Length(Tracks) > 0;
+  FItemRemove.Enabled := Length(Tracks) > 0;
+  FItemDelete.Enabled := Length(Tracks) > 0;
 end;
 
 { TStreamInfoView }
@@ -239,13 +447,14 @@ end;
 
 procedure TMStreamInfoView.ShowInfo(Entries: TStreamList);
 var
-  i: Integer;
+  i, n: Integer;
   Title, Info, Genres, BitRates: string;
   SongsSaved: Cardinal;
   Entry: TStreamEntry;
   Node: PVirtualNode;
   NodeData: PSavedHistoryNodeData;
   TrackList: TList<TTrackInfo>;
+  Del: TTrackInfoArray;
 begin
   if Entries <> nil then
   begin
@@ -293,7 +502,15 @@ begin
       if Info <> FInfo.Text then
         FInfo.Text := Info;
 
-      ShowTracks(TrackList);
+      Del := ShowTracks(TrackList);
+      for i := 0 to Length(Del) - 1 do
+      begin
+        for n := 0 to Entries.Count - 1 do
+        begin
+          Entries[n].Tracks.Remove(Del[i]);
+        end;
+        Del[i].Free;
+      end;
     finally
       TrackList.Free;
     end;
@@ -305,20 +522,28 @@ begin
   end;
 end;
 
-procedure TMStreamInfoView.ShowTracks(Tracks: TList<TTrackInfo>);
+function TMStreamInfoView.ShowTracks(Tracks: TList<TTrackInfo>): TTrackInfoArray;
 var
   i: Integer;
   Node: PVirtualNode;
   NodeData: PSavedHistoryNodeData;
 begin
+  SetLength(Result, 0);
   FSavedTracks.BeginUpdate;
   try
     FSavedTracks.Clear;
     for i := Tracks.Count - 1 downto 0 do
     begin
-      Node := FSavedTracks.AddChild(nil);
-      NodeData := FSavedTracks.GetNodeData(Node);
-      NodeData.TrackInfo := Tracks[i];
+      if FileExists(Tracks[i].Filename) then
+      begin
+        Node := FSavedTracks.AddChild(nil);
+        NodeData := FSavedTracks.GetNodeData(Node);
+        NodeData.TrackInfo := Tracks[i];
+      end else
+      begin
+        SetLength(Result, Length(Result) + 1);
+        Result[High(Result)] := Tracks[i];
+      end;
     end;
   finally
     FSavedTracks.EndUpdate;

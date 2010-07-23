@@ -54,6 +54,7 @@ type
     FTitle: string;
     FSaveTitle: string;
     FSavedFilename: string;
+    FSavedTitle: string;
     FSongsSaved: Integer;
     FFilename: string;
 
@@ -89,6 +90,7 @@ type
     property Genre: string read FGenre;
     property Title: string read FTitle;
     property SavedFilename: string read FSavedFilename;
+    property SavedTitle: string read FSavedTitle;
     property SongsSaved: Integer read FSongsSaved;
     property Filename: string read FFilename;
 
@@ -124,6 +126,7 @@ begin
   FForwardLimit := -1;
   FSaveTitle := '';
   FSavedFilename := '';
+  FSavedTitle := '';
   FAudioType := atNone;
 end;
 
@@ -267,6 +270,7 @@ begin
       FAudioStream.SaveToFile(Filename, RangeBegin, RangeEnd - RangeBegin);
 
       FSavedFilename := Filename;
+      FSavedTitle := Title;
       Inc(FSongsSaved);
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self);

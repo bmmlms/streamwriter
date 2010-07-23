@@ -85,6 +85,8 @@ type
     procedure FitColumns;
     function AddStream(Node: PVirtualNode; Name, Genre, URL: string;
       BitRate: Integer; HasData: Boolean): PVirtualNode;
+    procedure GetLoadDataNodes(var FirstVisibleNoData, LastVisibleNoData: PVirtualNode);
+    function GetSelected: TStreamDataArray;
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -106,9 +108,6 @@ type
     procedure TimerOnTimer(Sender: TObject);
     procedure PopupMenuPopup(Sender: TObject);
     procedure PopupMenuClick(Sender: TObject);
-
-    procedure GetLoadDataNodes(var FirstVisibleNoData, LastVisibleNoData: PVirtualNode);
-    function GetSelected: TStreamDataArray;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -195,7 +194,6 @@ begin
   FItemSave.Caption := _('&Save as playlist...');
   FItemSave.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemSave);
-
 
 
   FTimerScroll := TTimer.Create(Self);
@@ -374,7 +372,11 @@ end;
 procedure TMStreamBrowserView.KeyPress(var Key: Char);
 begin
   inherited;
-  FItemStart.Click;
+  if Key = #13 then
+  begin
+    FItemStart.Click;
+    Key := #0;
+  end;
 end;
 
 procedure TMStreamBrowserView.DoTextDrawing(var PaintInfo: TVTPaintInfo;
@@ -533,6 +535,7 @@ begin
   if FDragSource.DragInProgress then
     Exit;
 
+  FDragSource.Files.Clear;
   Entries := GetSelected;
   for i := 0 to Length(Entries) - 1 do
     FDragSource.Files.Add(Entries[i].URL);

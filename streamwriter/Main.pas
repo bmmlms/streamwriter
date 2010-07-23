@@ -221,7 +221,7 @@ type
     procedure ClientManagerAddRecent(Sender: TObject);
     procedure ClientManagerClientAdded(Sender: TObject);
     procedure ClientManagerClientRemoved(Sender: TObject);
-    procedure ClientManagerSongSaved(Sender: TObject; Filename: string);
+    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title: string);
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
 
@@ -229,6 +229,7 @@ type
       Count: Integer);
     procedure StreamBrowserNeedData(Sender: TObject; Offset, Count: Integer);
     procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
+    procedure StreamInfoAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
   public
 
   end;
@@ -547,6 +548,8 @@ var
 begin
   Language.Translate(Self);
 
+  msgbox(handle, 'THE GAME', 'THE GAME', 0);
+
   FClients := TClientManager.Create;
   FClients.OnClientDebug := ClientManagerDebug;
   FClients.OnClientRefresh := ClientManagerRefresh;
@@ -597,6 +600,7 @@ begin
   lstStreamBrowser.Show;
 
   pnlStreamInfo := TMStreamInfoView.Create(Self);
+  pnlStreamInfo.Tree.OnAction := StreamInfoAction;
   pnlStreamInfo.Tree.Images := imgSavedTracks;
   pnlStreamInfo.Parent := tabInfo;
   pnlStreamInfo.Show;
@@ -1014,6 +1018,41 @@ begin
   FHomeCommunication.GetStreams(Count, Offset, lstStreamBrowser.CurrentSearch, False);
 end;
 
+procedure TfrmStreamWriterMain.StreamInfoAction(Sender: TObject;
+  Action: TTrackActions; Tracks: TTrackInfoArray);
+var
+  Entries: TPlaylistEntryArray;
+  i: Integer;
+begin
+  case Action of
+    taPlay:
+      begin
+        // Tracks in Playlist konvertieren
+        SetLength(Entries, Length(Tracks));
+        for i := 0 to Length(Tracks) - 1 do
+        begin
+          Entries[i].Name := Tracks[i].Filename;
+          Entries[i].URL := Tracks[i].Filename;
+        end;
+
+        SavePlaylist(Entries, True);
+      end;
+    taRemove:
+      begin
+        for i := 0 to Length(Tracks) - 1 do
+          FStreams.RemoveTrack(Tracks[i]);
+      end;
+    taDelete:
+      begin
+        for i := 0 to Length(Tracks) - 1 do
+        begin
+          DeleteFile(Tracks[i].Filename);
+          FStreams.RemoveTrack(Tracks[i]);
+        end;
+      end;
+  end;
+end;
+
 procedure TfrmStreamWriterMain.StreamsStreamAdded(Sender: TObject;
   Stream: TStreamEntry);
 begin
@@ -1150,6 +1189,7 @@ begin
   mnuStopStreaming1.Default := False;
   actRemove.Enabled := B;
   mnuPopupStreamSettings.Enabled := B;
+  mnuStreamSettings.Enabled := B;
   cmdStreamSettings.Enabled := B;
 
   mnuTuneIn1.Enabled := B;
@@ -1393,6 +1433,8 @@ begin
   Entry.IsInList := True;
 
   lstClients.AddClient(Client);
+
+  lstClients.SortItems;
 end;
 
 procedure TfrmStreamWriterMain.ClientManagerClientRemoved(Sender: TObject);
@@ -1415,7 +1457,7 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.ClientManagerSongSaved(Sender: TObject;
-  Filename: string);
+  Filename, Title: string);
 var
   Entry: TStreamEntry;
   Client: TICEClient;
@@ -1435,7 +1477,7 @@ begin
 
   Data.Filename := Filename;
   Data.Station := Client.StreamName;
-  Data.Title := Client.Title;
+  Data.Title := Title;
 
   AppGlobals.PluginManager.ProcessFile(Data);
 end;
