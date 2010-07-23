@@ -15,7 +15,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Menu = mnuMain
   OldCreateOrder = False
   OnActivate = FormActivate
-  OnClose = FormClose
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnDestroy = FormDestroy

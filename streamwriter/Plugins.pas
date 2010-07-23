@@ -59,9 +59,12 @@ type
 
   TPluginManager = class
   private
+    FKilled: Boolean;
     FPlugins: TList<TPlugin>;
     FProcessingList: TProcessingList;
     FActivePlugin: TPlugin;
+
+    function FGetActive: Boolean;
 
     procedure ThreadTerminate(Sender: TObject);
   public
@@ -71,6 +74,9 @@ type
     procedure ProcessFile(Data: TPluginProcessInformation);
     procedure ReInitPlugins;
 
+    procedure Terminate;
+
+    property Active: Boolean read FGetActive;
     property Plugins: TList<TPlugin> read FPlugins;
   end;
 
@@ -125,6 +131,9 @@ var
   i: Integer;
   Thread: TProcessThread;
 begin
+  if FKilled then
+    Exit;
+
   for i := 0 to FPlugins.Count - 1 do
     if FPlugins[i].Active then
     begin
@@ -159,7 +168,7 @@ begin
         if not FPlugins[n].Active then
           Continue;
 
-        if not FProcessingList[i].FPluginsProcessed.Contains(FPlugins[n]) then
+        if (not FKilled) and (not FProcessingList[i].FPluginsProcessed.Contains(FPlugins[n])) then
         begin
           Thread := FPlugins[n].ProcessFile(FProcessingList[i].FData);
           FProcessingList[i].FActiveThread := Thread;
@@ -182,6 +191,8 @@ var
   Files: TStringList;
   i: Integer;
 begin
+  FKilled := False;
+
   FProcessingList := TProcessingList.Create;
 
   FActivePlugin := nil;
@@ -214,7 +225,7 @@ begin
   for i := 0 to FProcessingList.Count - 1 do
   begin
     // TODO: Threads töten/warten, DLL-Callbacks abschalten.
-    FProcessingList[i].Free;              //x
+    FProcessingList[i].Free;
   end;
   FProcessingList.Free;
 
@@ -222,6 +233,16 @@ begin
     FPlugins[i].Free;
   FPlugins.Free;
   inherited;
+end;
+
+function TPluginManager.FGetActive: Boolean;
+begin
+  Result := FProcessingList.Count > 0;
+end;
+
+procedure TPluginManager.Terminate;
+begin
+  FKilled := True;
 end;
 
 { TPlugin }

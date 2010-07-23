@@ -143,7 +143,6 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure actRemoveExecute(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure lstStationsKeyPress(Sender: TObject; var Key: Char);
     procedure DropStationsDrop(Sender: TObject; ShiftState: TShiftState;
       APoint: TPoint; var Effect: Integer);
@@ -335,11 +334,12 @@ begin
 
   FClients.Terminate;
   FHomeCommunication.Terminate;
+  AppGlobals.PluginManager.Terminate;
 
   StartTime := GetTickCount;
-  while (FClients.Count > 0) or (FHomeCommunication.Count > 0) do
+  while (FClients.Count > 0) or (FHomeCommunication.Count > 0) or (AppGlobals.PluginManager.Active) do
   begin
-    if StartTime < GetTickCount - 5000 then
+    if StartTime < GetTickCount - 10000 then
       Halt;
     Sleep(100);
     Application.ProcessMessages;
@@ -515,11 +515,6 @@ begin
     MsgBox(Handle, _('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
     ShowSettings(True);
   end;
-end;
-
-procedure TfrmStreamWriterMain.FormClose(Sender: TObject; var Action: TCloseAction);
-begin
-  //ExitApp;
 end;
 
 procedure TfrmStreamWriterMain.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
