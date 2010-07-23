@@ -346,7 +346,6 @@ begin
     Tracks := GetSelected;
     if (Length(Tracks) > 0) and Assigned(FOnAction) then
       FOnAction(Self, taPlay, Tracks);
-    // TODO: Testen.  auch alles mit mehreren ausgewählten testen.
     Key := #0;
   end;
 end;

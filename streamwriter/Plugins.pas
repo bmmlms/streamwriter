@@ -211,7 +211,11 @@ destructor TPluginManager.Destroy;
 var
   i: Integer;
 begin
-  // TODO: Gefährlich. Und Threads töten! Und DLL-Callbacks "nil"en. Prüfen ob was aktiv beim Beenden, etc!
+  for i := 0 to FProcessingList.Count - 1 do
+  begin
+    // TODO: Threads töten/warten, DLL-Callbacks abschalten.
+    FProcessingList[i].Free;
+  end;
   FProcessingList.Free;
 
   for i := 0 to FPlugins.Count - 1 do
