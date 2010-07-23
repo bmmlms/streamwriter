@@ -214,7 +214,7 @@ begin
   for i := 0 to FProcessingList.Count - 1 do
   begin
     // TODO: Threads töten/warten, DLL-Callbacks abschalten.
-    FProcessingList[i].Free;
+    FProcessingList[i].Free;              //x
   end;
   FProcessingList.Free;
 
