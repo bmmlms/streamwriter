@@ -23,7 +23,7 @@ interface
 
 uses
   SysUtils, Windows, StrUtils, Classes, ICEThread, ICEStream, AppData,
-  Generics.Collections, Functions, SocketThread;
+  Generics.Collections, Functions, SocketThread, Plugins;
 
 type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
@@ -57,6 +57,7 @@ type
   private
     FDebugLog: TDebugLog;
     FICEThread: TICEThread;
+    FProcessingList: TProcessingList;
 
     FURLsIndex: Integer;
     FURLs: TURLList;
@@ -103,6 +104,8 @@ type
     procedure ThreadNeedSettings(Sender: TObject);
     procedure ThreadEnded(Sender: TObject);
     procedure ThreadTerminated(Sender: TObject);
+
+    procedure PluginThreadTerminate(Sender: TObject);
   public
     constructor Create(StartURL: string); overload;
     constructor Create(Name, StartURL: string); overload;
@@ -180,7 +183,6 @@ begin
   if URLs <> nil then
     for s in URLs do
       FURLs.Add(s);
-  //FMetaOnly := MetaOnly;
   FSeperateDirs := SeperateDirs;
   FSkipShort := SkipShort;
 end;
@@ -188,6 +190,8 @@ end;
 procedure TICEClient.Initialize;
 begin
   FDebugLog := TDebugLog.Create;
+  FProcessingList := TProcessingList.Create;
+
   FKilled := False;
   FState := csStopped;
   FTitle := '';
@@ -288,6 +292,7 @@ destructor TICEClient.Destroy;
 begin
   FURLs.Free;
   FDebugLog.Free;
+  FProcessingList.Free;
   inherited;
 end;
 
@@ -410,7 +415,24 @@ begin
 end;
 
 procedure TICEClient.ThreadSongSaved(Sender: TObject);
+var
+  Data: TPluginProcessInformation;
+  Entry: TProcessingEntry;
 begin
+  // Pluginbearbeitung starten
+  Data.Filename := FICEThread.RecvStream.SavedFilename;
+  Data.Station := StreamName;
+  Data.Title := FICEThread.RecvStream.SavedTitle;
+  Entry := AppGlobals.PluginManager.ProcessFile(Data);
+  if Entry <> nil then
+  begin
+  WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]));
+
+    Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
+    Entry.ActiveThread.Resume;
+    FProcessingList.Add(Entry);
+  end;
+
   FSongsSaved := FICEThread.RecvStream.SongsSaved;
   if Assigned(FOnSongSaved) then
     FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedTitle);
@@ -591,10 +613,43 @@ begin
   FURLsIndex := 0;
 end;
 
+procedure TICEClient.PluginThreadTerminate(Sender: TObject);
+var
+  i, n: Integer;
+  Thread: TProcessThread;
+  Processed: Boolean;
+  Entry: TProcessingEntry;
+begin
+  for i := 0 to FProcessingList.Count - 1 do
+  begin
+    if FProcessingList[i].ActiveThread = Sender then
+    begin
+      Entry := FProcessingList[i];
+
+      WriteDebug(Format('Plugin "%s" finished.', [Entry.ActiveThread.Plugin.Name]));
+
+      Processed := AppGlobals.PluginManager.ProcessFile(Entry);
+      if Processed then
+      begin
+        WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]));
+
+        Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
+        Entry.ActiveThread.Resume;
+      end else
+      begin
+        WriteDebug('All plugins done');
+
+        Entry.Free;
+        FProcessingList.Delete(i);
+      end;
+      Break;
+    end;
+  end;
+end;
+
 procedure TICEClient.SetSettings(SeperateDirs,
   SkipShort: Boolean);
 begin
-  //FMetaOnly := MetaOnly;
   FSeperateDirs := SeperateDirs;
   FSkipShort := SkipShort;
 end;

@@ -48,6 +48,7 @@ type
     FBitRate: Cardinal;
     FGenre: string;
     FSeperateDirs, FSkipShort: Boolean;
+    FSubmitted: Boolean;
 
     FIsInList: Boolean;
     FRecentIndex: Integer;
@@ -74,6 +75,7 @@ type
     property Genre: string read FGenre write FGenre;
     property SeperateDirs: Boolean read FSeperateDirs write FSeperateDirs;
     property SkipShort: Boolean read FSkipShort write FSkipShort;
+    property Submitted: Boolean read FSubmitted write FSubmitted;
 
     property IsInList: Boolean read FIsInList write FSetIsInList;
     property RecentIndex: Integer read FRecentIndex write FSetRecentIndex;
@@ -171,6 +173,7 @@ begin
   Result.SeperateDirs := SeperateDirs;
   Result.SkipShort := SkipShort;
   Result.SongsSaved := SongsSaved;
+  Result.Submitted := Submitted;
   Result.URLs.Assign(URLs);
 end;
 
@@ -184,6 +187,7 @@ begin
   FTracks := TList<TTrackInfo>.Create;
   FSongsSaved := 0;
   FBitRate := 0;
+  FSubmitted := False;
 end;
 
 destructor TStreamEntry.Destroy;
@@ -223,6 +227,7 @@ begin
   Stream.Read(Result.FGenre);
   Stream.Read(Result.FSeperateDirs);
   Stream.Read(Result.FSkipShort);
+  Stream.Read(Result.FSubmitted);
 
   Stream.Read(Result.FIsInList);
   Stream.Read(Result.FRecentIndex);
@@ -254,6 +259,7 @@ begin
   Stream.Write(FGenre);
   Stream.Write(FSeperateDirs);
   Stream.Write(FSkipShort);
+  Stream.Write(FSubmitted);
 
   Stream.Write(FIsInList);
   Stream.Write(FRecentIndex);
@@ -388,7 +394,7 @@ var
   i: Integer;
 begin
   for i := FStreams.Count - 1 downto 0 do
-    if (FStreams[i].FLastTouched < Now - 1) and (not FStreams[i].IsInList) and (FStreams[i].RecentIndex = -1) then
+    if (FStreams[i].FLastTouched < Now - 30) and (not FStreams[i].IsInList) and (FStreams[i].RecentIndex = -1) then
     begin
       FStreams[i].Free;
       FStreams.Delete(i);

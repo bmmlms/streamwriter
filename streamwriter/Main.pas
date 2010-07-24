@@ -334,10 +334,10 @@ begin
 
   FClients.Terminate;
   FHomeCommunication.Terminate;
-  AppGlobals.PluginManager.Terminate;
+  //AppGlobals.PluginManager.Terminate;
 
   StartTime := GetTickCount;
-  while (FClients.Count > 0) or (FHomeCommunication.Count > 0) or (AppGlobals.PluginManager.Active) do
+  while (FClients.Count > 0) or (FHomeCommunication.Count > 0) do
   begin
     if StartTime < GetTickCount - 10000 then
       Halt;
@@ -1375,17 +1375,15 @@ var
 begin
   Client := Sender as TICEClient;
 
-  Entry := FStreams.Get(Client.StreamName, Client.StartURL, Client.URLs);
-  if Entry = nil then
-    FHomeCommunication.SubmitStream(Client.StartURL);
-
-  if FStreams <> nil then
+  Entry := FStreams.Add(Client.StreamName, Client.StartURL, Client.URLs,
+    Client.BitRate, Client.Genre, Client.SeperateDirs, Client.SkipShort, 0);
+  Entry.Name := Client.StreamName;
+  Entry.RecentIndex := 0;
+  Entry.LastTouched := Now;
+  if not Entry.Submitted then
   begin
-    Entry := FStreams.Add(Client.StreamName, Client.StartURL, Client.URLs,
-      Client.BitRate, Client.Genre, Client.SeperateDirs, Client.SkipShort, 0);
-    Entry.Name := Client.StreamName;
-    Entry.RecentIndex := 0;
-    Entry.LastTouched := Now;
+    FHomeCommunication.SubmitStream(Entry.StartURL);
+    Entry.Submitted := True;
   end;
 
   ShowInfo;
@@ -1467,12 +1465,6 @@ begin
   end;
 
   ShowInfo;
-
-  Data.Filename := Filename;
-  Data.Station := Client.StreamName;
-  Data.Title := Title;
-
-  AppGlobals.PluginManager.ProcessFile(Data);
 end;
 
 procedure TfrmStreamWriterMain.ClientManagerTitleChanged(Sender: TObject;

@@ -189,6 +189,10 @@ var
   Root, Header, Data: TXMLNode;
   XML: AnsiString;
 begin
+  // Nur submitten, wenn er nicht von uns selber kommt
+  if Pos('mistake.ws', LowerCase(Stream)) > 0 then
+    Exit;
+
   URL := FURL + 'submitstream/';
   Thread := TSubmitThread.Create(URL);
   InitThread(Thread);

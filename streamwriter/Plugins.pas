@@ -51,6 +51,10 @@ type
     constructor Create(ActiveThread: TProcessThread;
       Data: TPluginProcessInformation; FirstPlugin: TPlugin);
     destructor Destroy; override;
+
+    property ActiveThread: TProcessThread read FActiveThread;
+    property Data: TPluginProcessInformation read FData;
+    property PluginsProcessed: TList<TPlugin> read FPluginsProcessed;
   end;
 
   TProcessingList = class(TList<TProcessingEntry>)
@@ -59,24 +63,24 @@ type
 
   TPluginManager = class
   private
-    FKilled: Boolean;
+    //FKilled: Boolean;
     FPlugins: TList<TPlugin>;
-    FProcessingList: TProcessingList;
     FActivePlugin: TPlugin;
 
-    function FGetActive: Boolean;
+    //function FGetActive: Boolean;
 
-    procedure ThreadTerminate(Sender: TObject);
+    //procedure ThreadTerminate(Sender: TObject);
   public
     constructor Create(Path: string);
     destructor Destroy; override;
 
-    procedure ProcessFile(Data: TPluginProcessInformation);
+    function ProcessFile(Data: TPluginProcessInformation): TProcessingEntry; overload;
+    function ProcessFile(Entry: TProcessingEntry): Boolean; overload;
     procedure ReInitPlugins;
 
-    procedure Terminate;
+    //procedure Terminate;
 
-    property Active: Boolean read FGetActive;
+    //property Active: Boolean read FGetActive;
     property Plugins: TList<TPlugin> read FPlugins;
   end;
 
@@ -89,6 +93,8 @@ type
   public
     constructor Create(Data: TPluginProcessInformation; Plugin: TPlugin);
     destructor Destroy; override;
+
+    property Plugin: TPlugin read FPlugin;
   end;
 
   TPlugin = class
@@ -126,24 +132,42 @@ uses
 
 { TPluginManager }
 
-procedure TPluginManager.ProcessFile(Data: TPluginProcessInformation);
+function TPluginManager.ProcessFile(Data: TPluginProcessInformation): TProcessingEntry;
 var
   i: Integer;
   Thread: TProcessThread;
 begin
-  if FKilled then
-    Exit;
+  Result := TProcessingEntry.Create(nil, Data, nil);
+  if not ProcessFile(Result) then
+  begin
+    Result.Free;
+    Result := nil;
+  end;
+end;
 
+function TPluginManager.ProcessFile(Entry: TProcessingEntry): Boolean;
+var
+  i: Integer;
+  Thread: TProcessThread;
+begin
+  Result := False;
+
+  // Das soeben beendete Plugin der Liste hinzufügen
+  Entry.PluginsProcessed.Add(Entry.ActiveThread.Plugin);
+
+  // Nächstes Plugin suchen
   for i := 0 to FPlugins.Count - 1 do
     if FPlugins[i].Active then
     begin
-      Thread := FPlugins[i].ProcessFile(Data);
-      Thread.OnTerminate := ThreadTerminate;
-      FProcessingList.Add(TProcessingEntry.Create(Thread, Data, FPlugins[i]));
-      Thread.Resume;
-      Break;
+      if not Entry.FPluginsProcessed.Contains(FPlugins[i]) then
+      begin
+        Result := True;
+        Entry.FActiveThread := FPlugins[i].ProcessFile(Entry.FData);
+        Break;
+      end;
     end;
 end;
+
 
 procedure TPluginManager.ReInitPlugins;
 var
@@ -153,6 +177,7 @@ begin
     FPlugins[i].Initialize;
 end;
 
+{
 procedure TPluginManager.ThreadTerminate(Sender: TObject);
 var
   i, n: Integer;
@@ -183,6 +208,7 @@ begin
     end;
   end;
 end;
+}
 
 constructor TPluginManager.Create(Path: string);
 var
@@ -191,9 +217,7 @@ var
   Files: TStringList;
   i: Integer;
 begin
-  FKilled := False;
-
-  FProcessingList := TProcessingList.Create;
+  //FProcessingList := TProcessingList.Create;
 
   FActivePlugin := nil;
   FPlugins := TList<TPlugin>.Create;
@@ -222,12 +246,14 @@ destructor TPluginManager.Destroy;
 var
   i: Integer;
 begin
+  {
   for i := 0 to FProcessingList.Count - 1 do
   begin
     // TODO: Threads töten/warten, DLL-Callbacks abschalten.
     FProcessingList[i].Free;
   end;
   FProcessingList.Free;
+  }
 
   for i := 0 to FPlugins.Count - 1 do
     FPlugins[i].Free;
@@ -235,15 +261,19 @@ begin
   inherited;
 end;
 
+{
 function TPluginManager.FGetActive: Boolean;
 begin
   Result := FProcessingList.Count > 0;
 end;
+}
 
+{
 procedure TPluginManager.Terminate;
 begin
   FKilled := True;
 end;
+}
 
 { TPlugin }
 
@@ -349,7 +379,8 @@ begin
   FActiveThread := ActiveThread;
   FData := Data;
   FPluginsProcessed := TList<TPlugin>.Create;
-  FPluginsProcessed.Add(FirstPlugin);
+  if FirstPlugin <> nil then
+    FPluginsProcessed.Add(FirstPlugin);
 end;
 
 destructor TProcessingEntry.Destroy;
