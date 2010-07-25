@@ -103,7 +103,7 @@ begin
   FStorage.Read('Relay', FRelay, False);
   FStorage.Read('SubmitStreams', FSubmitStreams, True);
   FStorage.Read('ShortSize', FShortSize, 1000);
-  FStorage.Read('SongBuffer', FSongBuffer, 100);
+  FStorage.Read('SongBuffer', FSongBuffer, 0);
   FStorage.Read('MaxRetries', FMaxRetries, 20);
   FStorage.Read('RetryDelay', FRetryDelay, 5);
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);

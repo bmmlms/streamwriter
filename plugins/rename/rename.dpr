@@ -17,7 +17,7 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
-library settags;
+library rename;
 
 uses
   Windows,
@@ -38,7 +38,7 @@ type
 
 const
   AUTHOR = 'Graf Zwal';
-  DEFAULT_ENABLED = True;
+  DEFAULT_ENABLED = False;
 
 var
   Lang: string;
@@ -58,7 +58,7 @@ function GetName(Data: PChar; Len: Integer): Integer; stdcall;
 var
   s: string;
 begin
-  s := _('Set ID3 tags');
+  s := _('Prefix filename with tracknumber');
   Result := -1;
   if Len < Length(s) * SizeOf(Char) then
     Exit;
@@ -70,7 +70,7 @@ function GetHelp(Data: PChar; Len: Integer): Integer; stdcall;
 var
   s: string;
 begin
-  s := _('This plugin writes ID3-Tags to saved songs.');
+  s := _('This plugin appends the tracknumber to filenames of saved songs, for example "Artist - Track.mp3" becomes "0012 - Artist - Track.mp3".');
   Result := -1;
   if Len < Length(s) * SizeOf(Char) then
     Exit;
@@ -85,53 +85,19 @@ end;
 
 function Act(Data: TPluginActData): Integer; stdcall;
 var
-  p: Integer;
-  Dir, Artist, Title2: string;
-  ID3V1: TID3v1Tag;
-  ID3V2: TID3v2Tag;
+  Filepath, Filename, Prefix: string;
 begin
   Result := Integer(arFail);
 
-  ID3V1 := TID3v1Tag.Create;
-  ID3V2 := TID3v2Tag.Create;
-  try
-    try
-      Artist := '';
-      Title2 := '';
+  Filepath := ExtractFilePath(Data.Filename);
+  Filepath := IncludeTrailingBackslash(Filepath);
+  Filename := ExtractFileName(Data.Filename);
+  Prefix := Format('%.*d', [4, Data.TrackNumber]) ;
 
-      p := Pos(' - ', Data.Title);
-      if p > 0 then
-      begin
-        Artist := Copy(Data.Title, 1, p - 1);
-        Title2 := Copy(Data.Title, p + 3, Length(Data.Title));
-      end;
-
-      if (Trim(Artist) <> '') and (Trim(Title2) <> '') then
-      begin
-        ID3V1.Artist := Artist;
-        ID3V1.Title := Title2;
-        ID3V2.Artist := Artist;
-        ID3V2.Title := Title2;
-      end else
-      begin
-        ID3V1.Title := Data.Title;
-        ID3V2.Title := Data.Title;
-      end;
-      ID3V1.Track := IntToStr(Data.TrackNumber);
-      ID3V2.Track := IntToStr(Data.TrackNumber);
-      ID3V1.Album := Data.Station;
-      ID3V2.Album := Data.Station;
-      ID3V1.Comment := 'Recorded by streamWriter from ' + Data.Station;
-      ID3V2.Comment := 'Recorded by streamWriter from ' + Data.Station;
-      ID3V1.WriteToFile(Data.Filename);
-      ID3V2.WriteToFile(Data.Filename);
-
-      Result := Integer(arWin);
-    except
-    end;
-  finally
-    ID3V1.Free;
-    ID3V2.Free;
+  if RenameFile(Data.Filename, Filepath + Prefix + ' - ' + Filename) then
+  begin
+    StrPCopy(Data.Filename, Filepath + Prefix + ' - ' + Filename);
+    Result := Integer(arWin);
   end;
 end;
 

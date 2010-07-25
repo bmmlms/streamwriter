@@ -45,7 +45,6 @@ type
     FSaveDir: string;
     FShortSize: Integer;
     FSongBuffer: Integer;
-    FMaxBufSize: Integer;
 
     FMetaCounter: Integer;
     FNextMetaOffset: Integer;
@@ -96,7 +95,6 @@ type
 
     property AudioType: TAudioTypes read FAudioType;
 
-    //property MetaOnly: Boolean read FMetaOnly write FMetaOnly;
     property SeperateDirs: Boolean read FSeperateDirs write FSeperateDirs;
     property SkipShort: Boolean read FSkipShort write FSkipShort;
 
@@ -230,7 +228,6 @@ begin
   AppGlobals.Lock;
   FSaveDir := AppGlobals.Dir;
   FShortSize := AppGlobals.ShortSize;
-  //FMaxBufSize := AppGlobals.MaxBufSize;
   FSongBuffer := AppGlobals.SongBuffer;
   AppGlobals.Unlock;
 end;
@@ -242,9 +239,8 @@ end;
 
 procedure TICEStream.SaveData(Title: string);
 var
-  p: Integer;
   RangeBegin, RangeEnd: Int64;
-  Dir, Filename, Artist, Title2: string;
+  Dir, Filename: string;
 begin
   RangeBegin := FAudioStream.GetFrame(FSaveFrom, False);
   RangeEnd := FAudioStream.GetFrame(0, True);
@@ -299,13 +295,15 @@ var
   Buf: Byte;
 begin
 
+  {
   if FAudioStream.Size > 1048576 * FMaxBufSize then
   begin
-    //WriteDebug('Saving because buffer is full');
-    //SaveData(FTitle);
-    //FAudioStream.Clear;
-    //FForwardLimit := -1;
+    WriteDebug('Saving because buffer is full');
+    SaveData(FTitle);
+    FAudioStream.Clear;
+    FForwardLimit := -1;
   end;
+  }
 
   Seek(0, soFromBeginning);
   if FMetaInt = -1 then
@@ -323,7 +321,6 @@ begin
       FSaveFrom := FAudioStream.Size - (FSongBuffer * 2) * 1024;
       if FSaveFrom < 0 then
         FSaveFrom := 0;
-      //FAudioStream.RemoveRange(0, FAudioStream.Size - (FSongBuffer * 2) * 1024);
 
       WriteDebug('New starting offset: ' + IntToStr(FSaveFrom) + ' bytes, buffersize is ' + IntToStr(FAudioStream.Size));
       FForwardLimit := -1;
@@ -365,7 +362,6 @@ begin
             FSaveFrom := FAudioStream.Size - (FSongBuffer * 2) * 1024;
             if FSaveFrom < 0 then
               FSaveFrom := 0;
-            //FAudioStream.RemoveRange(0, FAudioStream.Size - (FSongBuffer * 2) * 1024);
 
             WriteDebug('New starting offset: ' + IntToStr(FSaveFrom) + ' bytes, buffersize is ' + IntToStr(FAudioStream.Size));
             FForwardLimit := -1;
@@ -381,7 +377,6 @@ begin
               FSaveFrom := FAudioStream.Size - FSongBuffer * 1024;
               if FSaveFrom < 0 then
                 FSaveFrom := 0;
-              //FAudioStream.RemoveRange(0, FAudioStream.Size - FSongBuffer * 1024);
 
               WriteDebug('New starting offset: ' + IntToStr(FSaveFrom) + ' bytes, buffersize is ' + IntToStr(FAudioStream.Size));
             end else
@@ -401,7 +396,6 @@ begin
             FSaveFrom := FAudioStream.Size - FSongBuffer * 1024;
             if FSaveFrom < 0 then
               FSaveFrom := 0;
-            //FAudioStream.RemoveRange(0, FAudioStream.Size - FSongBuffer * 1024);
 
             WriteDebug('Start of first full song "' + Title + '" detected');
             WriteDebug('New starting offset: ' + IntToStr(FSaveFrom) + ' bytes, buffersize is ' + IntToStr(FAudioStream.Size));
@@ -425,8 +419,6 @@ begin
   inherited;
   if not HeaderRemoved then
     Exit;
-  //if TransferEncoding <> teNone then
-  //  raise Exception.Create('No transfer-encoding support at this time.');
   if HeaderType = 'icy'  then
   begin
     if (HeaderRemoved) and (Size > 100000) then

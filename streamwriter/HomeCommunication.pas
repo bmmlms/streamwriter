@@ -294,9 +294,8 @@ begin
       SetLength(Streams, 0);
       XMLDocument := TXMLLib.Create;
       try
-        XMLDocument.LoadFromString(string(RecvDataStream.ToString));
+        XMLDocument.LoadFromString(RecvDataStream.ToString);
 
-        //Header := XMLDocument.Root.Nodes.GetNode('header');
         Data := XMLDocument.Root.Nodes.GetNode('data');
 
         Count := Data.Nodes.GetNode('count').Value.AsInteger;

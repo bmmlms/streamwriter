@@ -115,6 +115,9 @@ begin
   end;
 end;
 
+{$WARN COMPARING_SIGNED_UNSIGNED OFF}
+{$WARN COMPARISON_FALSE OFF}
+{$WARN COMPARISON_TRUE OFF}
 function Decode(const data:AnsiString):AnsiString;
 var
   r, len, i, j, l : Longint;
@@ -167,5 +170,8 @@ begin
     inc(j);
   end;
 end;
+{$WARN COMPARING_SIGNED_UNSIGNED ON}
+{$WARN COMPARISON_FALSE ON}
+{$WARN COMPARISON_TRUE ON}
 
 end.

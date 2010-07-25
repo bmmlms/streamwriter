@@ -45,6 +45,7 @@
 			<DelphiCompile Include="settags.dpr">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
+			<DCCReference Include="..\..\streamwriter\PluginsShared.pas"/>
 			<DCCReference Include="..\..\..\common\LanguageObjects.pas"/>
 			<DCCReference Include="..\..\..\common\Functions.pas"/>
 			<BuildConfiguration Include="Basis">

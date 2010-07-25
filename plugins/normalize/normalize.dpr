@@ -23,7 +23,10 @@ uses
   Windows,
   Messages,
   SysUtils,
+  Classes,
   TlHelp32,
+  Mp3FileUtils,
+  PluginsShared in '..\..\streamwriter\PluginsShared.pas',
   LanguageObjects in '..\..\..\common\LanguageObjects.pas',
   Functions in '..\..\..\common\Functions.pas';
 
@@ -31,21 +34,24 @@ type
   TMapBytes = array[0..MAXINT - 1] of Byte;
   PMapBytes = ^TMapBytes;
 
-  TPlayResults = (prOk, prError);
+  TActResults = (arWin, arFail);
   TReadWrite = function(Name, Value: PChar): Integer;
 
 const
   AUTHOR = 'Graf Zwal';
+  DEFAULT_ENABLED = True;
 
 var
   Lang: string;
   Read: TReadWrite;
   Write: TReadWrite;
 
+{$R res\res.res}
+
 function GetAuthor(Data: PChar; Len: Integer): Integer; stdcall;
 begin
   Result := -1;
-  if Len < Length(AUTHOR) then
+  if Len < Length(AUTHOR) * SizeOf(Char) then
     Exit;
   Move(AUTHOR[1], Data[0], Len);
   Result := Length(AUTHOR);
@@ -55,34 +61,68 @@ function GetName(Data: PChar; Len: Integer): Integer; stdcall;
 var
   s: string;
 begin
-  s := _('Normalize songs');
+  s := _('Normalize');
   Result := -1;
-  if Len < Length(s) then
+  if Len < Length(s) * SizeOf(Char) then
     Exit;
   Move(s[1], Data[0], Len);
   Result := Length(s);
 end;
 
-function Act(FileData: PMapBytes): Integer; stdcall;
+function GetHelp(Data: PChar; Len: Integer): Integer; stdcall;
 var
-  i, Offset: Integer;
-  Count, Len: Word;
-
-  Files: array of string;
+  s: string;
 begin
-  Result := Integer(prError);
+  s := _('This plugin normalizes saved songs by using MP3Gain.');
+  Result := -1;
+  if Len < Length(s) * SizeOf(Char) then
+    Exit;
+  Move(s[1], Data[0], Len);
+  Result := Length(s);
+end;
 
-  Move(FileData^[0], Count, SizeOf(Count));
-  SetLength(Files, Count);
-  Offset := SizeOf(Count);
-  for i := 0 to Count - 1 do
-  begin
-    Move(FileData^[Offset], Len, SizeOf(Len));
-    Offset := Offset + SizeOf(Len);
-    SetLength(Files[i], (Len div SizeOf(Char)) + SizeOf(Char));
-    FillChar(Files[i][1], Length(Files[i]) * SizeOf(Char), #0);
-    Move(FileData^[Offset], Files[i][1], Len);
-    Offset := Offset + Len;
+function GetDefaultEnabled: Boolean; stdcall;
+begin
+  Result := DEFAULT_ENABLED;
+end;
+
+function Act(Data: TPluginActData): Integer; stdcall;
+var
+  R: TResourceStream;
+  Handle: Cardinal;
+  ExitCode: DWord;
+begin
+  Result := Integer(arFail);
+
+  if GetTempDir = '' then
+    Exit;
+
+  try
+    try
+      if not FileExists(GetTempDir + 'mp3gain.exe') then
+      begin
+        R := TResourceStream.Create(HInstance, 'MP3GAIN', RT_RCDATA);
+        try
+          R.SaveToFile(GetTempDir + 'mp3gain.exe');
+        finally
+          R.Free;
+        end;
+      end;
+
+      RunProcess('"' + GetTempDir + 'mp3gain.exe' + '" "' + Data.Filename + '"', Handle, True);
+      if Handle > -1 then
+      begin
+        WaitForSingleObject(Handle, Infinite);
+        GetExitCodeProcess(Handle, ExitCode);
+        if ExitCode = 0 then
+          Result := Integer(arWin);
+      end;
+    finally
+
+    end;
+  except
+    on E: Exception do
+      MsgBox(0, E.Message, '', 0);
   end;
 end;
 
@@ -103,6 +143,8 @@ exports
   Initialize,
   GetAuthor,
   GetName,
+  GetHelp,
+  GetDefaultEnabled,
   Configure,
   Act;
 

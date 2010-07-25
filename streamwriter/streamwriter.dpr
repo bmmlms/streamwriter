@@ -20,7 +20,7 @@
 program streamwriter;
 
 uses
-  {$IFDEF DEBUG}FastMM4,{$ENDIF}
+  FastMM4,
   Windows,
   Forms,
   Main in 'Main.pas' {frmStreamWriterMain},
@@ -62,11 +62,12 @@ uses
   AudioStream in 'AudioStream.pas',
   Plugins in 'Plugins.pas',
   HomeCommunication in 'HomeCommunication.pas',
-  Base64 in 'Base64.pas',
   StreamBrowserView in 'StreamBrowserView.pas',
   StationCombo in 'StationCombo.pas',
   StreamInfoView in 'StreamInfoView.pas',
-  StreamDebugView in 'StreamDebugView.pas';
+  StreamDebugView in 'StreamDebugView.pas',
+  PluginsShared in 'PluginsShared.pas',
+  Base64 in 'Base64.pas';
 
 {$R *.res}
 {$R res\language.res}

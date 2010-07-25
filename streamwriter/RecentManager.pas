@@ -340,8 +340,6 @@ end;
 { TStreamDataList }
 
 function TStreamDataList.Add(Entry: TStreamEntry): TStreamEntry;
-var
-  i: Integer;
 begin
   Result := Get(Entry.Name, Entry.StartURL, Entry.URLs);
 
@@ -394,7 +392,7 @@ var
   i: Integer;
 begin
   for i := FStreams.Count - 1 downto 0 do
-    if (FStreams[i].FLastTouched < Now - 30) and (not FStreams[i].IsInList) and (FStreams[i].RecentIndex = -1) then
+    if (FStreams[i].FLastTouched < Now - 60) and (not FStreams[i].IsInList) and (FStreams[i].RecentIndex = -1) then
     begin
       FStreams[i].Free;
       FStreams.Delete(i);
@@ -466,14 +464,9 @@ end;
 
 procedure TStreamDataList.Load;
 var
-  n, Count: Integer;
-  Tmp: AnsiString;
-  URL: string;
   Entry: TStreamEntry;
   S: TExtendedStream;
   Version: Integer;
-  Item: TComboExItem;
-  F: Boolean;
 begin
   if AppGlobals.DataFile = '' then
     Exit;

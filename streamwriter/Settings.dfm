@@ -4,8 +4,8 @@ object frmSettings: TfrmSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Settings'
-  ClientHeight = 610
-  ClientWidth = 907
+  ClientHeight = 565
+  ClientWidth = 905
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -338,12 +338,23 @@ object frmSettings: TfrmSettings
     DesignSize = (
       294
       273)
+    object lblHelp: TLabel
+      Left = 4
+      Top = 184
+      Width = 285
+      Height = 53
+      Anchors = [akLeft, akRight, akBottom]
+      AutoSize = False
+      Caption = '-'
+      WordWrap = True
+    end
     object lstPlugins: TListView
       Left = 4
       Top = 1
       Width = 289
-      Height = 240
+      Height = 176
       Align = alCustom
+      Anchors = [akLeft, akTop, akRight, akBottom]
       Checkboxes = True
       Columns = <
         item
@@ -360,14 +371,16 @@ object frmSettings: TfrmSettings
           ExtendedImage = -1
         end>
       GroupView = True
+      ReadOnly = True
       ShowColumnHeaders = False
       TabOrder = 0
       ViewStyle = vsReport
+      OnSelectItem = lstPluginsSelectItem
     end
     object cmdConfigure: TBitBtn
-      Left = 193
+      Left = 209
       Top = 248
-      Width = 101
+      Width = 84
       Height = 25
       Anchors = [akRight, akBottom]
       Caption = '&Configure...'

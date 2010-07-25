@@ -84,6 +84,7 @@ type
     FInfo: TMemo;
     FSavedTracks: TSavedTracksTree;
 
+    procedure ShowInfo(Entries: TStreamList);
     function ShowTracks(Tracks: TList<TTrackInfo>): TTrackInfoArray;
   protected
     procedure Resize; override;
@@ -92,9 +93,18 @@ type
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
 
+    property Tree: TSavedTracksTree read FSavedTracks;
+  end;
+
+  TMStreamInfoContainer = class(TPanel)
+  private
+    FInfoView: TMStreamInfoView;
+  public
+    constructor Create(AOwner: TComponent); reintroduce;
+
     procedure ShowInfo(Entries: TStreamList);
 
-    property Tree: TSavedTracksTree read FSavedTracks;
+    property InfoView: TMStreamInfoView read FInfoView;
   end;
 
 implementation
@@ -382,7 +392,6 @@ end;
 
 procedure TSavedTracksTree.PopupMenuPopup(Sender: TObject);
 var
-  Action: TTrackActions;
   Tracks: TTrackInfoArray;
 begin
   Tracks := GetSelected;
@@ -406,7 +415,7 @@ begin
   FTopPanel.Align := alTop;
   FTopPanel.Height := 80;
   FTopPanel.BevelOuter := bvNone;
-  FTopPanel.Visible := False;
+  FTopPanel.Visible := True;
 
   FName := TLabel.Create(Self);
   FName.Parent := FTopPanel;
@@ -428,7 +437,7 @@ begin
   FSavedTracks := TSavedTracksTree.Create(Self);
   FSavedTracks.Parent := Self;
   FSavedTracks.Align := alClient;;
-  FSavedTracks.Visible := False;
+  FSavedTracks.Visible := True;
 
   Align := alClient;
 end;
@@ -450,74 +459,60 @@ var
   Title, Info, Genres, BitRates: string;
   SongsSaved: Cardinal;
   Entry: TStreamEntry;
-  Node: PVirtualNode;
-  NodeData: PSavedHistoryNodeData;
   TrackList: TList<TTrackInfo>;
   Del: TTrackInfoArray;
 begin
-  if Entries <> nil then
-  begin
-    FTopPanel.Visible := True;
-    FSavedTracks.Visible := True;
-    Caption := '';
-
-    TrackList := TList<TTrackInfo>.Create;
-    try
-      Genres := '';
-      BitRates := '';
-      SongsSaved := 0;
-      for Entry in Entries do
+  TrackList := TList<TTrackInfo>.Create;
+  try
+    Genres := '';
+    BitRates := '';
+    SongsSaved := 0;
+    for Entry in Entries do
+    begin
+      Title := Title + Entry.Name;
+      if Entry.Genre <> '' then
       begin
-        Title := Title + Entry.Name;
-        if Entry.Genre <> '' then
-        begin
-          if Genres <> '' then
-            Genres := Genres + ' / ';
-          Genres := Genres + Entry.Genre;
-        end;
-        if Entry.BitRate > 0 then
-        begin
-          if BitRates <> '' then
-            BitRates := BitRates + ' / ';
-          BitRates := BitRates + IntToStr(Entry.BitRate);
-        end;
-        SongsSaved := SongsSaved + Entry.SongsSaved;
-
-        FSavedTracks.Clear;
-        for i := 0 to Entry.Tracks.Count - 1 do
-          TrackList.Add(Entry.Tracks[i]);
+        if Genres <> '' then
+          Genres := Genres + ' / ';
+        Genres := Genres + Entry.Genre;
       end;
-
-      Title := TruncateText(Title, FName.Width, FName.Canvas);
-      if Title <> FName.Caption then
-        FName.Caption := Title;
-
-      Info := '';
-      if Genres <> '' then
-        Info := Info + Genres + #13#10;
-      if BitRates <> '' then
-        Info := Info + Bitrates + 'kbps' + #13#10;
-      Info := Info + IntToStr(SongsSaved) + _(' songs saved');
-      if Info <> FInfo.Text then
-        FInfo.Text := Info;
-
-      Del := ShowTracks(TrackList);
-      for i := 0 to Length(Del) - 1 do
+      if Entry.BitRate > 0 then
       begin
-        for n := 0 to Entries.Count - 1 do
-        begin
-          Entries[n].Tracks.Remove(Del[i]);
-        end;
-        Del[i].Free;
+        if BitRates <> '' then
+          BitRates := BitRates + ' / ';
+        BitRates := BitRates + IntToStr(Entry.BitRate);
       end;
-    finally
-      TrackList.Free;
+      SongsSaved := SongsSaved + Entry.SongsSaved;
+
+      FSavedTracks.Clear;
+      for i := 0 to Entry.Tracks.Count - 1 do
+        TrackList.Add(Entry.Tracks[i]);
     end;
-  end else
-  begin
-    FTopPanel.Visible := False;
-    FSavedTracks.Visible := False;
-    Caption := _('Please select at least one stream.');
+
+    Title := TruncateText(Title, FName.Width, FName.Canvas);
+    if Title <> FName.Caption then
+      FName.Caption := Title;
+
+    Info := '';
+    if Genres <> '' then
+      Info := Info + Genres + #13#10;
+    if BitRates <> '' then
+      Info := Info + Bitrates + 'kbps' + #13#10;
+    Info := Info + IntToStr(SongsSaved) + _(' songs saved');
+    if Info <> FInfo.Text then
+      FInfo.Text := Info;
+
+    Del := ShowTracks(TrackList);
+    for i := 0 to Length(Del) - 1 do
+    begin
+      for n := 0 to Entries.Count - 1 do
+      begin
+        Entries[n].Tracks.Remove(Del[i]);
+      end;
+      Del[i].Free;
+    end;
+  finally
+    TrackList.Free;
   end;
 end;
 
@@ -548,6 +543,28 @@ begin
     FSavedTracks.EndUpdate;
   end;
   FSavedTracks.Sort(nil, FSavedTracks.FSortColumn, FSavedTracks.FSortDirection);
+end;
+
+{ TMStreamInfoContainer }
+
+constructor TMStreamInfoContainer.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  Caption := _('Please select at least one stream.');
+  BevelOuter := bvNone;
+  Align := alClient;
+
+  FInfoView := TMStreamInfoView.Create(Self);
+  FInfoView.Parent := Self;
+  FInfoView.Visible := False;
+end;
+
+procedure TMStreamInfoContainer.ShowInfo(Entries: TStreamList);
+begin
+  if Entries <> nil then
+    FInfoView.ShowInfo(Entries);
+  FInfoView.Visible := Entries <> nil;
 end;
 
 end.

@@ -12,6 +12,9 @@
 			<Projects Include="plugins\normalize\normalize.dproj">
 				<Dependencies/>
 			</Projects>
+			<Projects Include="plugins\rename\rename.dproj">
+				<Dependencies/>
+			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -47,14 +50,23 @@
 		<Target Name="normalize:Make">
 			<MSBuild Targets="Make" Projects="plugins\normalize\normalize.dproj"/>
 		</Target>
+		<Target Name="rename">
+			<MSBuild Projects="plugins\rename\rename.dproj"/>
+		</Target>
+		<Target Name="rename:Clean">
+			<MSBuild Targets="Clean" Projects="plugins\rename\rename.dproj"/>
+		</Target>
+		<Target Name="rename:Make">
+			<MSBuild Targets="Make" Projects="plugins\rename\rename.dproj"/>
+		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="streamwriter;settags;normalize"/>
+			<CallTarget Targets="streamwriter;settags;normalize;rename"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="streamwriter:Clean;settags:Clean;normalize:Clean"/>
+			<CallTarget Targets="streamwriter:Clean;settags:Clean;normalize:Clean;rename:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="streamwriter:Make;settags:Make;normalize:Make"/>
+			<CallTarget Targets="streamwriter:Make;settags:Make;normalize:Make;rename:Make"/>
 		</Target>
 		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 	</Project>

@@ -65,12 +65,12 @@ type
     DropList: TDropURLTarget;
     ToolBar2: TToolBar;
     cmdStartStreaming: TToolButton;
-    mnuPopupStreamSettings: TMenuItem;
+    mnuStreamSettings1: TMenuItem;
     IneigenenOrdnerspeichern1: TMenuItem;
     asd: TMenuItem;
     actSeperateDirs: TAction;
     actSkipShort: TAction;
-    mnuStreamSettings: TMenuItem;
+    mnuStreamSettings2: TMenuItem;
     KurzeLiederberspringen1: TMenuItem;
     IneigenenOrdnerspeichern2: TMenuItem;
     TrayIcon1: TTrayIcon;
@@ -136,6 +136,9 @@ type
     lblSearchStream: TLabel;
     tabDebug: TTabSheet;
     imgSavedTracks: TImageList;
+    mnuReset1: TMenuItem;
+    mnuReset11: TMenuItem;
+    actResetData: TAction;
     procedure cmdStartStreamingClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure actStopExecute(Sender: TObject);
@@ -172,6 +175,7 @@ type
     procedure actSavePlaylistFileExecute(Sender: TObject);
     procedure tabInfoResize(Sender: TObject);
     procedure pagSidebarChange(Sender: TObject);
+    procedure actResetDataExecute(Sender: TObject);
   private
     FStreams: TStreamDataList;
     FReceived: UInt64;
@@ -184,8 +188,8 @@ type
     lstClients: TMClientView;
     lstStreamBrowser: TMStreamBrowserView;
     lstStations: TMStationCombo;
-    pnlStreamInfo: TMStreamInfoView;
-    pnlDebug: TMStreamDebugView;
+    pnlStreamInfo: TMStreamInfoContainer;
+    pnlDebug: TMStreamDebugContainer;
 
     procedure OneInstanceMessage(var Msg: TMessage); message WM_USER + 123;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
@@ -263,7 +267,7 @@ var
 begin
   Clients := lstClients.NodesToData(lstClients.GetNodes(False));
   for i := 0 to Length(Clients) - 1 do
-    if Clients[i].Client = pnlDebug.Client then
+    if Clients[i].Client = pnlDebug.DebugView.Client then
     begin
       Clients[i].Client.DebugLog.Clear;
       Break;
@@ -290,9 +294,7 @@ procedure TfrmStreamWriterMain.ExitApp;
 var
   Res: Integer;
   Clients: TNodeDataArray;
-  Client: PClientNodeData;
   StartTime: Cardinal;
-  Entry: TStreamEntry;
   Saved: Boolean;
 begin
   Clients := lstClients.NodesToData(lstClients.GetNodes(False));
@@ -309,6 +311,8 @@ begin
   TrayIcon1.Visible := False;
 
   Hide;
+
+  AppGlobals.Save;
 
   Saved := False;
   while not Saved do
@@ -334,18 +338,16 @@ begin
 
   FClients.Terminate;
   FHomeCommunication.Terminate;
-  //AppGlobals.PluginManager.Terminate;
 
   StartTime := GetTickCount;
-  while (FClients.Count > 0) or (FHomeCommunication.Count > 0) do
+  while (FClients.Count > 0) or (FHomeCommunication.Count > 0) or (FClients.Active) do
   begin
+    // 10 Sekunden warten, für sauberes beenden
     if StartTime < GetTickCount - 10000 then
       Halt;
     Sleep(100);
     Application.ProcessMessages;
   end;
-
-  AppGlobals.Save;
 
   if FUpdateOnExit then
     FUpdater.RunUpdate;
@@ -508,6 +510,34 @@ begin
   end;
 end;
 
+procedure TfrmStreamWriterMain.actResetDataExecute(Sender: TObject);
+var
+  Res: Integer;
+  Clients: TNodeDataArray;
+  Client: PClientNodeData;
+  R: TStreamEntry;
+  i: Integer;
+begin
+  Res := MsgBox(Handle, _('This will reset the saved song counter and information about saved songs.'#13#10'Do you want to continue?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
+  if Res = IDYES then
+  begin
+    Clients := lstClients.NodesToData(lstClients.GetNodes(True));
+    for Client in Clients do
+    begin
+      R := FStreams.Get(Client.Client.StreamName, Client.Client.StreamURL, Client.Client.URLs);
+      R.SongsSaved := 0;
+      for i := 0 to R.Tracks.Count - 1 do
+        R.Tracks[i].Free;
+      R.Tracks.Clear;
+
+      Client.Client.SongsSaved := 0;
+
+      lstClients.RefreshClient(Client.Client);
+    end;
+  end;
+  ShowInfo;
+end;
+
 procedure TfrmStreamWriterMain.FormActivate(Sender: TObject);
 begin
   if not DirectoryExists(AppGlobals.Dir) then
@@ -592,15 +622,15 @@ begin
   lstStreamBrowser.Images := imgStations;
   lstStreamBrowser.Show;
 
-  pnlStreamInfo := TMStreamInfoView.Create(Self);
-  pnlStreamInfo.Tree.OnAction := StreamInfoAction;
-  pnlStreamInfo.Tree.Images := imgSavedTracks;
+  pnlStreamInfo := TMStreamInfoContainer.Create(Self);
+  pnlStreamInfo.InfoView.Tree.OnAction := StreamInfoAction;
+  pnlStreamInfo.InfoView.Tree.Images := imgSavedTracks;
   pnlStreamInfo.Parent := tabInfo;
   pnlStreamInfo.Show;
 
-  pnlDebug := TMStreamDebugView.Create(Self);
+  pnlDebug := TMStreamDebugContainer.Create(Self);
   pnlDebug.Parent := tabDebug;
-  pnlDebug.OnClear := DebugClear;
+  pnlDebug.DebugView.OnClear := DebugClear;
   pnlDebug.Show;
 
   DropStations.Register(lstStations);
@@ -948,7 +978,7 @@ begin
       // Ist der Client schon bekannt?
       if Entry <> nil then
       begin
-        Client := FClients.AddClient(Entry.Name, Entry.StartURL, Entry.URLs, Entry.SeperateDirs, Entry.SkipShort);
+        Client := FClients.AddClient(Entry.Name, Entry.StartURL, Entry.URLs, Entry.SeperateDirs, Entry.SkipShort, Entry.SongsSaved);
         Client.Connect;
       end else
       begin
@@ -1068,14 +1098,12 @@ procedure TfrmStreamWriterMain.StreamsStreamChanged(Sender: TObject;
 var
   Item: TComboExItem;
   Client: TICEClient;
-  Entry: TStreamEntry;
-  i: Integer;
 begin
   if Stream.IsInList then
   begin
     Client := FClients.GetClient(Stream.Name, Stream.StartURL, Stream.URLs);
     if Client = nil then
-      FClients.AddClient(Stream.Name, Stream.StartURL, Stream.URLs, Stream.SeperateDirs, Stream.SkipShort);
+      FClients.AddClient(Stream.Name, Stream.StartURL, Stream.URLs, Stream.SeperateDirs, Stream.SkipShort, Stream.SongsSaved);
   end;
   Item := lstStations.Get(Stream.Name, Stream.StartURL, Stream.URLs);
   if (Item = nil) and (Stream.RecentIndex > -1) then
@@ -1181,8 +1209,8 @@ begin
   mnuStartStreaming1.Default := False;
   mnuStopStreaming1.Default := False;
   actRemove.Enabled := B;
-  mnuPopupStreamSettings.Enabled := B;
-  mnuStreamSettings.Enabled := B;
+  mnuStreamSettings1.Enabled := B;
+  mnuStreamSettings2.Enabled := B;
   cmdStreamSettings.Enabled := B;
 
   mnuTuneIn1.Enabled := B;
@@ -1190,6 +1218,7 @@ begin
   mnuSavePlaylist1.Enabled := B;
   mnuSavePlaylist2.Enabled := B;
 
+  actResetData.Enabled := B;
   actTuneInRelay.Enabled := False;
   actTuneInFile.Enabled := False;
 
@@ -1371,7 +1400,6 @@ procedure TfrmStreamWriterMain.ClientManagerAddRecent(Sender: TObject);
 var
   Client: TICEClient;
   Entry: TStreamEntry;
-  ClientNode: PClientNodeData;
 begin
   Client := Sender as TICEClient;
 
@@ -1390,11 +1418,8 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.ClientManagerDebug(Sender: TObject);
-var
-  Client: PClientNodeData;
-  Entry: TDebugEntry;
 begin
-  if pnlDebug.Client = Sender then
+  if pnlDebug.DebugView.Client = Sender then
   begin
     pnlDebug.ShowDebug(TICEClient(Sender));
   end;
@@ -1441,7 +1466,7 @@ begin
 
   lstClients.RemoveClient(Client);
 
-  if pnlDebug.Client = Client then
+  if pnlDebug.DebugView.Client = Client then
     pnlDebug.ShowDebug(nil);
 
   ShowInfo;
@@ -1452,8 +1477,6 @@ procedure TfrmStreamWriterMain.ClientManagerSongSaved(Sender: TObject;
 var
   Entry: TStreamEntry;
   Client: TICEClient;
-  ClientNode: PClientNodeData;
-  Data: TPluginProcessInformation;
 begin
   Client := Sender as TICEClient;
 

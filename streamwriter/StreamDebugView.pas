@@ -39,15 +39,26 @@ type
 
     procedure BtnCopyClick(Sender: TObject);
     procedure BtnClearClick(Sender: TObject);
+
+    procedure ShowDebug(Client: TICEClient);
   protected
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
 
-    procedure ShowDebug(Client: TICEClient);
-
     property Client: TICEClient read FClient;
     property OnClear: TNotifyEvent read FOnClear write FOnClear;
+  end;
+
+  TMStreamDebugContainer = class(TPanel)
+  private
+    FDebugView: TMStreamDebugView;
+  public
+    constructor Create(AOwner: TComponent); reintroduce;
+
+    procedure ShowDebug(Client: TICEClient);
+
+    property DebugView: TMStreamDebugView read FDebugView;
   end;
 
 implementation
@@ -73,18 +84,16 @@ begin
   Align := alClient;
   BevelOuter := bvNone;
 
-  Caption := _('Please select a stream.');
-
   FDebug := TDebugView.Create(Self);
   FDebug.Parent := Self;
   FDebug.Align := alClient;
-  FDebug.Visible := False;
+  FDebug.Visible := True;
 
   FPanelBottom := TPanel.Create(Self);
   FPanelBottom.Parent := Self;
   FPanelBottom.Align := alBottom;
   FPanelBottom.BevelOuter := bvNone;
-  FPanelBottom.Visible := False;
+  FPanelBottom.Visible := True;
   FPanelBottom.Height := 40;
   FPanelBottom.Padding.Top := 4;
 
@@ -111,29 +120,39 @@ end;
 
 procedure TMStreamDebugView.ShowDebug(Client: TICEClient);
 var
-  i: Integer;
-  Entry: TDebugEntry;
+  i, C: Integer;
 begin
-  if Client <> FClient then
-  begin
-    FDebug.Clear;
-  end;
+  FDebug.BeginUpdate;
   FClient := Client;
   if Client <> nil then
   begin
-    if Client.Killed then
-      Exit;
-    FDebug.Visible := True;
-    FPanelBottom.Visible := True;
-    for i := FDebug.RootNodeCount to Client.DebugLog.Count - 1 do
-    begin
+    C := FDebug.RootNodeCount;
+    for i := C to Client.DebugLog.Count - 1 do
       FDebug.AddData(Client.DebugLog[i].Time, Client.DebugLog[i].Text, Client.DebugLog[i].Data);
-    end;
   end else
-  begin
-    FDebug.Visible := False;
-    FPanelBottom.Visible := False;
-  end;
+    FDebug.RootNodeCount := 0;
+  FDebug.EndUpdate;
+end;
+
+{ TMStreamDebugContainer }
+
+constructor TMStreamDebugContainer.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  Caption := _('Please select a stream.');
+  BevelOuter := bvNone;
+  Align := alClient;
+
+  FDebugView := TMStreamDebugView.Create(Self);
+  FDebugView.Parent := Self;
+  FDebugView.Visible := False;
+end;
+
+procedure TMStreamDebugContainer.ShowDebug(Client: TICEClient);
+begin
+  FDebugView.ShowDebug(Client);
+  FDebugView.Visible := (Client <> nil) and (not Client.Killed);
 end;
 
 end.

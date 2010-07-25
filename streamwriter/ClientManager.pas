@@ -63,6 +63,8 @@ type
     function FGetItem(Index: Integer): TICEClient;
     function FGetCount: Integer;
 
+    function FGetActive: Boolean;
+
     procedure ClientDebug(Sender: TObject);
     procedure ClientRefresh(Sender: TObject);
     procedure ClientAddRecent(Sender: TObject);
@@ -82,7 +84,7 @@ type
     function AddClient(URL: string): TICEClient; overload;
     function AddClient(Name, StartURL: string): TICEClient; overload;
     function AddClient(Name, StartURL: string; URLs: TStringList;
-      SeperateDirs, SkipShort: Boolean): TICEClient; overload;
+      SeperateDirs, SkipShort: Boolean; SongsSaved: Cardinal): TICEClient; overload;
     procedure RemoveClient(Client: TICEClient);
     procedure Terminate;
 
@@ -93,6 +95,7 @@ type
 
     function GetClient(Name, URL: string; URLs: TStringList): TICEClient;
 
+    property Active: Boolean read FGetActive;
     property RelayServer: TRelayServer read FRelayServer;
     property SongsSaved: Integer read FSongsSaved;
 
@@ -129,11 +132,11 @@ begin
 end;
 
 function TClientManager.AddClient(Name, StartURL: string; URLs: TStringList;
-  SeperateDirs, SkipShort: Boolean): TICEClient;
+  SeperateDirs, SkipShort: Boolean; SongsSaved: Cardinal): TICEClient;
 var
   C: TICEClient;
 begin
-  C := TICEClient.Create(Name, StartURL, URLs, SeperateDirs, SkipShort);
+  C := TICEClient.Create(Name, StartURL, URLs, SeperateDirs, SkipShort, SongsSaved);
   SetupClient(C);
   Result := C;
 end;
@@ -189,6 +192,19 @@ destructor TClientManager.Destroy;
 begin
   FClients.Free;
   inherited;
+end;
+
+function TClientManager.FGetActive: Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 0 to FClients.Count - 1 do
+    if FClients[i].Active then
+    begin
+      Result := True;
+      Exit;
+    end;
 end;
 
 function TClientManager.FGetCount: Integer;
@@ -279,6 +295,8 @@ begin
     FOnClientTitleChanged(Sender, Title);
 end;
 
+// Das hier wird nich nur aufgerufen, wenn der ICE-Thread stirbt, sondern auch,
+// wenn alle Plugins abgearbeitet wurden und es keinen ICE-Thread gibt.
 procedure TClientManager.ClientDisconnected(Sender: TObject);
 var
   Client: TICEClient;
@@ -286,7 +304,7 @@ begin
   if Assigned(FOnClientRefresh) then
     FOnClientRefresh(Sender);
   Client := Sender as TICEClient;
-  if Client.Killed then
+  if Client.Killed and (Client.ProcessingList.Count = 0) then
   begin
     if Assigned(FOnClientRemoved) then
       FOnClientRemoved(Sender);

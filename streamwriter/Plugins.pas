@@ -22,30 +22,33 @@ unit Plugins;
 interface
 
 uses
-  Windows, SysUtils, Classes, Generics.Collections, Functions, LanguageObjects;
+  Windows, SysUtils, Classes, Generics.Collections, Functions,
+  LanguageObjects, PluginsShared;
 
 type
   TPlugin = class;
   TProcessThread = class;
   TFilenameArray = array of string;
 
-  TPluginProcessInformation = record
-    Filename, Station, Title: string;
-  end;
-
-  //TPluginResults = (prOk, prError);
+  TActResults = (arWin, arFail);
   TReadWrite = procedure(Name, Value: PChar);
 
   TInitialize = procedure(L: PChar; RF, WF: TReadWrite); stdcall;
-  TAct = function(Filename, Station, Title: PChar): Integer; stdcall;
+  TAct = function(Data: TPluginActData): Integer; stdcall;
   TGetString = function(Data: PChar; Len: Integer): Integer; stdcall;
   TGetBoolean = function: Boolean; stdcall;
   TConfigure = function(Handle: Cardinal; ShowMessages: Boolean): Boolean; stdcall;
 
+  TPluginProcessInformation = record
+    Filename, Station, Title: string;
+    TrackNumber: Cardinal;
+  end;
+  PPluginProcessInformation = ^TPluginProcessInformation;
+
   TProcessingEntry = class
   private
     FActiveThread: TProcessThread;
-    FData: TPluginProcessInformation;
+    FData: PPluginProcessInformation;
     FPluginsProcessed: TList<TPlugin>;
   public
     constructor Create(ActiveThread: TProcessThread;
@@ -53,7 +56,7 @@ type
     destructor Destroy; override;
 
     property ActiveThread: TProcessThread read FActiveThread;
-    property Data: TPluginProcessInformation read FData;
+    property Data: PPluginProcessInformation read FData;
     property PluginsProcessed: TList<TPlugin> read FPluginsProcessed;
   end;
 
@@ -63,13 +66,8 @@ type
 
   TPluginManager = class
   private
-    //FKilled: Boolean;
     FPlugins: TList<TPlugin>;
     FActivePlugin: TPlugin;
-
-    //function FGetActive: Boolean;
-
-    //procedure ThreadTerminate(Sender: TObject);
   public
     constructor Create(Path: string);
     destructor Destroy; override;
@@ -78,29 +76,30 @@ type
     function ProcessFile(Entry: TProcessingEntry): Boolean; overload;
     procedure ReInitPlugins;
 
-    //procedure Terminate;
-
-    //property Active: Boolean read FGetActive;
     property Plugins: TList<TPlugin> read FPlugins;
   end;
 
   TProcessThread = class(TThread)
   private
-    FData: TPluginProcessInformation;
+    FData: PPluginProcessInformation;
+    FActData: TPluginActData;
     FPlugin: TPlugin;
+    FResult: TActResults;
   protected
     procedure Execute; override;
   public
-    constructor Create(Data: TPluginProcessInformation; Plugin: TPlugin);
+    constructor Create(Data: PPluginProcessInformation; Plugin: TPlugin);
     destructor Destroy; override;
 
     property Plugin: TPlugin read FPlugin;
+    property Result: TActResults read FResult;
   end;
 
   TPlugin = class
   private
     FFilename: string;
     FAuthor: string;
+    FDefaultEnabled: Boolean;
     FDLLHandle: Integer;
     FActive: Boolean;
 
@@ -109,19 +108,24 @@ type
     FConfigure: TConfigure;
     FReadAuthor: TGetString;
     FReadName: TGetString;
+    FReadHelp: TGetString;
+    FReadDefaultEnabled: TGetBoolean;
 
     function FGetName: string;
+    function FGetHelp: string;
   public
     constructor Create(Handle: THandle; Filename: string);
     destructor Destroy; override;
 
     procedure Initialize;
-    function ProcessFile(Data: TPluginProcessInformation): TProcessThread;
+    function ProcessFile(Data: PPluginProcessInformation): TProcessThread;
     function Configure(Handle: Cardinal; ShowMessages: Boolean): Boolean;
 
     property Filename: string read FFilename;
     property Author: string read FAuthor;
     property Name: string read FGetName;
+    property Help: string read FGetHelp;
+    property DefaultEnabled: Boolean read FDefaultEnabled;
     property Active: Boolean read FActive write FActive;
   end;
 
@@ -133,9 +137,6 @@ uses
 { TPluginManager }
 
 function TPluginManager.ProcessFile(Data: TPluginProcessInformation): TProcessingEntry;
-var
-  i: Integer;
-  Thread: TProcessThread;
 begin
   Result := TProcessingEntry.Create(nil, Data, nil);
   if not ProcessFile(Result) then
@@ -148,12 +149,12 @@ end;
 function TPluginManager.ProcessFile(Entry: TProcessingEntry): Boolean;
 var
   i: Integer;
-  Thread: TProcessThread;
 begin
   Result := False;
 
   // Das soeben beendete Plugin der Liste hinzufügen
-  Entry.PluginsProcessed.Add(Entry.ActiveThread.Plugin);
+  if Entry.ActiveThread <> nil then
+    Entry.PluginsProcessed.Add(Entry.ActiveThread.Plugin);
 
   // Nächstes Plugin suchen
   for i := 0 to FPlugins.Count - 1 do
@@ -161,8 +162,8 @@ begin
     begin
       if not Entry.FPluginsProcessed.Contains(FPlugins[i]) then
       begin
-        Result := True;
         Entry.FActiveThread := FPlugins[i].ProcessFile(Entry.FData);
+        Result := Entry.FActiveThread <> nil;
         Break;
       end;
     end;
@@ -177,39 +178,6 @@ begin
     FPlugins[i].Initialize;
 end;
 
-{
-procedure TPluginManager.ThreadTerminate(Sender: TObject);
-var
-  i, n: Integer;
-  Thread: TProcessThread;
-begin
-  for i := 0 to FProcessingList.Count - 1 do
-  begin
-    if FProcessingList[i].FActiveThread = Sender then
-    begin
-
-      for n := 0 to FPlugins.Count - 1 do
-      begin
-        if not FPlugins[n].Active then
-          Continue;
-
-        if (not FKilled) and (not FProcessingList[i].FPluginsProcessed.Contains(FPlugins[n])) then
-        begin
-          Thread := FPlugins[n].ProcessFile(FProcessingList[i].FData);
-          FProcessingList[i].FActiveThread := Thread;
-          Thread.OnTerminate := ThreadTerminate;
-          Thread.Resume;
-          Exit;
-        end;
-      end;
-
-      FProcessingList.Delete(i);
-      Exit;
-    end;
-  end;
-end;
-}
-
 constructor TPluginManager.Create(Path: string);
 var
   P: TPlugin;
@@ -217,8 +185,6 @@ var
   Files: TStringList;
   i: Integer;
 begin
-  //FProcessingList := TProcessingList.Create;
-
   FActivePlugin := nil;
   FPlugins := TList<TPlugin>.Create;
 
@@ -246,38 +212,15 @@ destructor TPluginManager.Destroy;
 var
   i: Integer;
 begin
-  {
-  for i := 0 to FProcessingList.Count - 1 do
-  begin
-    // TODO: Threads töten/warten, DLL-Callbacks abschalten.
-    FProcessingList[i].Free;
-  end;
-  FProcessingList.Free;
-  }
-
   for i := 0 to FPlugins.Count - 1 do
     FPlugins[i].Free;
   FPlugins.Free;
   inherited;
 end;
 
-{
-function TPluginManager.FGetActive: Boolean;
-begin
-  Result := FProcessingList.Count > 0;
-end;
-}
-
-{
-procedure TPluginManager.Terminate;
-begin
-  FKilled := True;
-end;
-}
-
 { TPlugin }
 
-function TPlugin.ProcessFile(Data: TPluginProcessInformation): TProcessThread;
+function TPlugin.ProcessFile(Data: PPluginProcessInformation): TProcessThread;
 type
   TMapBytes = array[0..MAXINT - 1] of Byte;
   PMapBytes = ^TMapBytes;
@@ -323,10 +266,12 @@ begin
   @FConfigure := GetProcAddress(FDLLHandle, 'Configure');
   @FReadAuthor := GetProcAddress(FDLLHandle, 'GetAuthor');
   @FReadName := GetProcAddress(FDLLHandle, 'GetName');
+  @FReadHelp := GetProcAddress(FDLLHandle, 'GetHelp');
+  @FReadDefaultEnabled := GetProcAddress(FDLLHandle, 'GetDefaultEnabled');
   FFilename := Filename;
 
   FAuthor := '';
-  AppGlobals.Storage.Read('Active_' + LowerCase(ExtractFileName(Filename)), FActive, True, 'Plugins');
+  FDefaultEnabled := False;
 
   GetMem(Data, 255);
   try
@@ -334,13 +279,16 @@ begin
     if @FReadAuthor <> nil then
       if FReadAuthor(Data, 255) > -1 then
         FAuthor := Data;
-    ZeroMemory(Data, 255);
   finally
     FreeMem(Data);
   end;
 
+  FDefaultEnabled := FReadDefaultEnabled;
+
+  AppGlobals.Storage.Read('Active_' + LowerCase(ExtractFileName(Filename)), FActive, FDefaultEnabled, 'Plugins');
+
   if FAuthor = '' then
-    raise Exception.Create('Kein Author angegeben.');
+    raise Exception.Create('Kein Author/Name angegeben.');
 end;
 
 destructor TPlugin.Destroy;
@@ -349,18 +297,35 @@ begin
   inherited;
 end;
 
+function TPlugin.FGetHelp: string;
+var
+  Data: PChar;
+begin
+  Result := '';
+  if @FReadHelp = nil then
+    Exit;
+  GetMem(Data, 2048);
+  try
+    ZeroMemory(Data, 2048);
+    if FReadHelp(Data, 2048) > -1 then
+      Result := Data;
+  finally
+    FreeMem(Data);
+  end;
+end;
+
 function TPlugin.FGetName: string;
 var
   Data: PChar;
 begin
   Result := '';
+  if @FReadName = nil then
+    Exit;
   GetMem(Data, 255);
   try
     ZeroMemory(Data, 255);
-    if @FReadName <> nil then
-      if FReadName(Data, 255) > -1 then
-        Result := Data;
-    ZeroMemory(Data, 255);
+    if FReadName(Data, 255) > -1 then
+      Result := Data;
   finally
     FreeMem(Data);
   end;
@@ -376,8 +341,17 @@ end;
 constructor TProcessingEntry.Create(ActiveThread: TProcessThread;
   Data: TPluginProcessInformation; FirstPlugin: TPlugin);
 begin
+  inherited Create;
+
   FActiveThread := ActiveThread;
-  FData := Data;
+
+  New(FData);
+
+  FData.Filename := Data.Filename;
+  FData.Station := Data.Station;
+  FData.Title := Data.Title;
+  FData.TrackNumber := Data.TrackNumber;
+
   FPluginsProcessed := TList<TPlugin>.Create;
   if FirstPlugin <> nil then
     FPluginsProcessed.Add(FirstPlugin);
@@ -385,18 +359,21 @@ end;
 
 destructor TProcessingEntry.Destroy;
 begin
-  inherited;
   FPluginsProcessed.Free;
+  Dispose(FData);
+
+  inherited;
 end;
 
 { TProcessThread }
 
-constructor TProcessThread.Create(Data: TPluginProcessInformation; Plugin: TPlugin);
+constructor TProcessThread.Create(Data: PPluginProcessInformation; Plugin: TPlugin);
 begin
   inherited Create(False);
   FreeOnTerminate := True;
   FData := Data;
   FPlugin := Plugin;
+  FResult := arFail;
 end;
 
 destructor TProcessThread.Destroy;
@@ -406,19 +383,32 @@ begin
 end;
 
 procedure TProcessThread.Execute;
-type
-  TMapBytes = array[0..MAXINT - 1] of Byte;
-  PMapBytes = ^TMapBytes;
-var
-  i: Integer;
-  Mem: PMapBytes;
-  Offset: Integer;
-  Len: Integer;
-  T: Word;
 begin
   inherited;
+  GetMem(FActData.Filename, 512);
+  GetMem(FActData.Station, 512);
+  GetMem(FActData.Title, 512);
 
-  FPlugin.FAct(PChar(FData.Filename), PChar(FData.Station), PChar(FData.Title));
+  StrPCopy(FActData.Filename, FData.Filename);
+  StrPCopy(FActData.Station, FData.Station);
+  StrPCopy(FActData.Title, FData.Title);
+  FActData.TrackNumber := FData.TrackNumber;
+
+  FResult := TActResults(FPlugin.FAct(FActData));
+
+  if FResult = arWin then
+  begin
+    // Wenn ein Plugin Daten geändert hat, diese übernehmen, so dass das nächste
+    // Plugin in der Liste mit passenden Daten arbeiten kann
+    FData.Filename := FActData.Filename;
+    FData.Station := FActData.Station;
+    FData.Title := FActData.Title;
+    FData.TrackNumber := FActData.TrackNumber;
+  end;
+
+  FreeMem(FActData.Filename);
+  FreeMem(FActData.Station);
+  FreeMem(FActData.Title);
 end;
 
 end.

@@ -2,7 +2,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Left = 549
   Top = 450
   Caption = 'streamWriter'
-  ClientHeight = 505
+  ClientHeight = 525
   ClientWidth = 689
   Color = clBtnFace
   Constraints.MinHeight = 200
@@ -25,15 +25,16 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 0
     Top = 25
     Width = 689
-    Height = 461
+    Height = 481
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitHeight = 461
     object Splitter1: TSplitter
       Left = 472
       Top = 33
       Width = 4
-      Height = 428
+      Height = 448
       Align = alRight
       Beveled = True
       ResizeStyle = rsUpdate
@@ -96,20 +97,18 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Left = 476
       Top = 33
       Width = 213
-      Height = 428
+      Height = 448
       ActivePage = tabDebug
       Align = alRight
       TabOrder = 2
       OnChange = pagSidebarChange
+      ExplicitHeight = 428
       object tabBrowser: TTabSheet
         Caption = 'Browser'
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 360
+        ExplicitHeight = 400
         DesignSize = (
           205
-          400)
+          420)
         object lblSearchStream: TLabel
           Left = 4
           Top = 8
@@ -139,12 +138,13 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       object tabDebug: TTabSheet
         Caption = 'Log'
         ImageIndex = 2
+        ExplicitHeight = 400
       end
     end
   end
   object addStatus: TStatusBar
     Left = 0
-    Top = 486
+    Top = 506
     Width = 689
     Height = 19
     Panels = <
@@ -157,6 +157,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       item
         Width = 100
       end>
+    ExplicitTop = 486
   end
   object ToolBar1: TToolBar
     Left = 0
@@ -298,7 +299,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
           Action = actSavePlaylistFile
         end
       end
-      object mnuStreamSettings: TMenuItem
+      object mnuStreamSettings2: TMenuItem
         Caption = 'S&ettings'
         object IneigenenOrdnerspeichern2: TMenuItem
           Action = actSeperateDirs
@@ -308,6 +309,9 @@ object frmStreamWriterMain: TfrmStreamWriterMain
           Action = actSkipShort
           AutoCheck = True
         end
+      end
+      object mnuReset11: TMenuItem
+        Action = actResetData
       end
     end
     object View1: TMenuItem
@@ -335,7 +339,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 160
     Bitmap = {
-      494C010102000900340210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C0101020009003C0210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000D0000005C000000000000000000000000000000000000
@@ -478,7 +482,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 40
     Top = 140
     Bitmap = {
-      494C01010D00D802FC0210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01010D00D802040310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1017,7 +1021,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 108
     Bitmap = {
-      494C0101010004005C0210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000400640210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000060000001D000000220000001D00000006000000000000
@@ -1241,6 +1245,11 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Caption = 'Recorded &file'
       OnExecute = actSavePlaylistFileExecute
     end
+    object actResetData: TAction
+      Caption = 'Reset &data'
+      Hint = 'Reset data'
+      OnExecute = actResetDataExecute
+    end
   end
   object mnuStreamPopup: TPopupMenu
     Images = imgImages
@@ -1287,7 +1296,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         Action = actSavePlaylistFile
       end
     end
-    object mnuPopupStreamSettings: TMenuItem
+    object mnuStreamSettings1: TMenuItem
       Caption = 'S&ettings'
       object IneigenenOrdnerspeichern1: TMenuItem
         Action = actSeperateDirs
@@ -1297,6 +1306,9 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         Action = actSkipShort
         AutoCheck = True
       end
+    end
+    object mnuReset1: TMenuItem
+      Action = actResetData
     end
   end
   object tmrSpeed: TTimer
@@ -1395,7 +1407,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 612
     Top = 340
     Bitmap = {
-      494C010101000800440010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C0101010008004C0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

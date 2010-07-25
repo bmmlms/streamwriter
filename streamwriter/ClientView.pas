@@ -461,19 +461,24 @@ begin
       UseFile := False;
   end;
 
+  SetLength(Entries, 0);
+
   case AppGlobals.DefaultAction of
     caStartStop:
       if UseRelay then
-        Entries := GetEntries(etRelay)
-      else
-        Entries := GetEntries(etStream);
+        Entries := GetEntries(etRelay);
     caStream:
       Entries := GetEntries(etStream);
     caRelay:
-      Entries := GetEntries(etRelay);
+      if UseRelay then
+        Entries := GetEntries(etRelay);
     caFile:
-      Entries := GetEntries(etFile);
+      if UseFile then
+        Entries := GetEntries(etFile);
   end;
+
+  if Length(Entries) = 0 then
+    Entries := GetEntries(etStream);
 
   for i := 0 to Length(Entries) - 1 do
     FDragSource.Files.Add(Entries[i].URL);

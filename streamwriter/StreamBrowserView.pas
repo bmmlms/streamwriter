@@ -106,7 +106,6 @@ type
 
     procedure TimerScrollOnTimer(Sender: TObject);
     procedure TimerOnTimer(Sender: TObject);
-    procedure PopupMenuPopup(Sender: TObject);
     procedure PopupMenuClick(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); reintroduce;
@@ -154,8 +153,7 @@ begin
   FScrollDirection := sdDown;
   FLastScrollY := 0;
 
-  //Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
-  TreeOptions.SelectionOptions := [toDisableDrawSelection, {toMultiSelect,} toRightClickSelect, toFullRowSelect];
+  TreeOptions.SelectionOptions := [toDisableDrawSelection, toRightClickSelect, toFullRowSelect];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
   DragMode := dmAutomatic;
@@ -173,7 +171,6 @@ begin
 
 
   FPopupMenu := TPopupMenu.Create(Self);
-  FPopupMenu.OnPopup := PopupMenuPopup;
 
   FItemStart := FPopupMenu.CreateMenuItem;
   FItemStart.Caption := _('&Start recording');
@@ -248,7 +245,7 @@ begin
   case Column of
     0:
       if NodeData.HasData then
-        Text := {inttostr(node.Index) + ' - ' + inttostr(nodedata.ID) + ' - ' + } NodeData.Name
+        Text := NodeData.Name
       else
         Text := _('Loading info') + FDots;
   end;
@@ -474,12 +471,6 @@ begin
   if Length(Streams) > 0 then
     if Assigned(FOnAction) then
       FOnAction(Self, Action, Streams);
-end;
-
-procedure TMStreamBrowserView.PopupMenuPopup(Sender: TObject);
-begin
-  //FItemCopy.Enabled := SelectedCount = 1;
-  //FItemSave.Enabled := SelectedCount = 1;
 end;
 
 procedure TMStreamBrowserView.TimerOnTimer(Sender: TObject);

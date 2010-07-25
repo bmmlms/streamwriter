@@ -169,7 +169,7 @@ begin
 
     Response := 'ICY 200 OK'#13#10 +
                 'icy-name: ' + AnsiString(FStationName) + #13#10 +
-                'content-type: ' + AnsiString(FContentType) + #13#10 + //audio/mpeg'#13#10;
+                'content-type: ' + AnsiString(FContentType) + #13#10 +
                 #13#10;
     FSendStream.Add(Response);
   end else

@@ -58,6 +58,7 @@ type
     Label9: TLabel;
     Label11: TLabel;
     Label6: TLabel;
+    lblHelp: TLabel;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure cmdBrowseClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
@@ -66,6 +67,8 @@ type
     procedure Label9Click(Sender: TObject);
     procedure Label11Click(Sender: TObject);
     procedure Label6Click(Sender: TObject);
+    procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
+      Selected: Boolean);
   private
     FBrowseDir: Boolean;
     FRelayChanged: Boolean;
@@ -113,13 +116,11 @@ begin
 
   AppGlobals.Lock;
   txtDir.Text := AppGlobals.Dir;
-  //chkMetaOnly.Checked := AppGlobals.MetaOnly;
   chkSeperateDirs.Checked := AppGlobals.SeperateDirs;
   chkSkipShort.Checked := AppGlobals.SkipShort;
   chkTrayClose.Checked := AppGlobals.TrayClose;
   chkRelay.Checked := AppGlobals.Relay;
   chkSubmitStreams.Checked := AppGlobals.SubmitStreams;
-  //txtMaxBufSize.Text := IntToStr(AppGlobals.MaxBufSize);
   txtShortSongSize.Text := IntToStr(AppGlobals.ShortSize);
   txtSongBuffer.Text := IntToStr(AppGlobals.SongBuffer);
   txtMaxRetries.Text := IntToStr(AppGlobals.MaxRetries);
@@ -134,6 +135,7 @@ begin
 
   AppGlobals.Unlock;
 
+  lblHelp.Caption := '';
   for i := 0 to AppGlobals.PluginManager.Plugins.Count - 1 do
   begin
     Item := lstPlugins.Items.Add;
@@ -142,6 +144,8 @@ begin
     Item.Data := AppGlobals.PluginManager.Plugins[i];
     Item.Checked := AppGlobals.PluginManager.Plugins[i].Active;
   end;
+  if lstPlugins.Items.Count > 0 then
+    lstPlugins.Items[0].Selected := True;
 
   if not DirectoryExists(txtDir.Text) then
     txtDir.Text := '';
@@ -222,6 +226,16 @@ procedure TfrmSettings.Label9Click(Sender: TObject);
 begin
   inherited;
   MsgBox(Handle, _('When a title is saved the entered amount of bytes of the stream will be added to the beginning and the end of the song so the song will be complete if the server announces the title change too early/late.'), _('Info'), MB_ICONINFORMATION);
+end;
+
+procedure TfrmSettings.lstPluginsSelectItem(Sender: TObject;
+  Item: TListItem; Selected: Boolean);
+begin
+  inherited;
+
+  cmdConfigure.Enabled := False;
+  if Selected then
+    lblHelp.Caption := TPlugin(Item.Data).Help;
 end;
 
 procedure TfrmSettings.RegisterPages;

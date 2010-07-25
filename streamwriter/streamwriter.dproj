@@ -112,11 +112,12 @@
 			<DCCReference Include="AudioStream.pas"/>
 			<DCCReference Include="Plugins.pas"/>
 			<DCCReference Include="HomeCommunication.pas"/>
-			<DCCReference Include="Base64.pas"/>
 			<DCCReference Include="StreamBrowserView.pas"/>
 			<DCCReference Include="StationCombo.pas"/>
 			<DCCReference Include="StreamInfoView.pas"/>
 			<DCCReference Include="StreamDebugView.pas"/>
+			<DCCReference Include="PluginsShared.pas"/>
+			<DCCReference Include="Base64.pas"/>
 			<BuildConfiguration Include="Basis">
 				<Key>Base</Key>
 			</BuildConfiguration>

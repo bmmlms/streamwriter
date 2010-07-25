@@ -28,7 +28,6 @@ end;
 procedure TMStationCombo.Sort;
 var
   s: string;
-  Index: Integer;
   Item: TComboExItem;
 begin
   ItemsEx.BeginUpdate;
@@ -37,7 +36,6 @@ begin
       s := TStreamEntry(ItemsEx.Items[ItemIndex].Data).Name
     else
       s := Text;
-    Index := ItemIndex;
 
     ItemsEx.SortType := ListActns.stData;
     ItemsEx.Sort;
