@@ -72,6 +72,7 @@ type
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
 
     property DataFile: string read FGetDataFile;
+
     // Diese beiden können irgendwann raus
     property RecentFile: string read FGetRecentFile;
     property ListFile: string read FGetListFile;
