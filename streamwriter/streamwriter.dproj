@@ -108,7 +108,6 @@
 			<DCCReference Include="..\..\common\forms\SettingsBase.pas">
 				<Form>frmSettingsBase</Form>
 			</DCCReference>
-			<DCCReference Include="..\..\common\forms\DebugView.pas"/>
 			<DCCReference Include="AudioStream.pas"/>
 			<DCCReference Include="Plugins.pas"/>
 			<DCCReference Include="HomeCommunication.pas"/>

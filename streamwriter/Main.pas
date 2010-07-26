@@ -239,8 +239,6 @@ type
 
 implementation
 
-uses DebugView;
-
 {$R *.dfm}
 
 procedure TfrmStreamWriterMain.cmdStartStreamingClick(Sender: TObject);

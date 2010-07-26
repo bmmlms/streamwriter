@@ -24,9 +24,27 @@ interface
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
   RecentManager, VirtualTrees, LanguageObjects, GUIFunctions,
-  Generics.Collections, Graphics, Forms, DebugView, ICEClient;
+  Generics.Collections, Graphics, Forms, ICEClient;
 
 type
+  TDebugView = class(TVirtualStringTree)
+  private
+    FClient: TICEClient;
+    procedure FSetClient(Value: TICEClient);
+  protected
+    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
+      TextType: TVSTTextType; var Text: UnicodeString); override;
+    procedure DoFreeNode(Node: PVirtualNode); override;
+    procedure Resize; override;
+    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
+      var NodeHeight: Integer); override;
+    procedure DoInitChildren(Node: PVirtualNode; var ChildCount: Cardinal); override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    procedure Copy;
+    property Client: TICEClient read FClient write FSetClient;
+  end;
+
   TMStreamDebugView = class(TPanel)
   private
     FClient: TICEClient;
@@ -119,19 +137,9 @@ begin
 end;
 
 procedure TMStreamDebugView.ShowDebug(Client: TICEClient);
-var
-  i, C: Integer;
 begin
-  FDebug.BeginUpdate;
   FClient := Client;
-  if Client <> nil then
-  begin
-    C := FDebug.RootNodeCount;
-    for i := C to Client.DebugLog.Count - 1 do
-      FDebug.AddData(Client.DebugLog[i].Time, Client.DebugLog[i].Text, Client.DebugLog[i].Data);
-  end else
-    FDebug.RootNodeCount := 0;
-  FDebug.EndUpdate;
+  FDebug.Client := Client;
 end;
 
 { TMStreamDebugContainer }
@@ -153,6 +161,87 @@ procedure TMStreamDebugContainer.ShowDebug(Client: TICEClient);
 begin
   FDebugView.ShowDebug(Client);
   FDebugView.Visible := (Client <> nil) and (not Client.Killed);
+end;
+
+{ TDebugView }
+
+procedure TDebugView.Copy;
+begin
+
+end;
+
+constructor TDebugView.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+
+  NodeDataSize := SizeOf(Integer);
+  TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toVariableNodeHeight];
+
+  Header.Columns.Add;
+  Header.AutoSizeIndex := 0;
+end;
+
+procedure TDebugView.DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
+  var NodeHeight: Integer);
+begin
+  inherited;
+  NodeHeight := ComputeNodeHeight(Canvas, Node, 0);
+end;
+
+procedure TDebugView.FSetClient(Value: TICEClient);
+begin
+  FClient := Value;
+  if FClient <> nil then
+  begin
+    RootNodeCount := FClient.DebugLog.Count;
+  end else
+  begin
+    RootNodeCount := 0;
+  end;
+end;
+
+procedure TDebugView.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
+  TextType: TVSTTextType; var Text: UnicodeString);
+begin
+  inherited;
+  if FClient <> nil then
+  begin
+    MultiLine[Node] := True;
+    if GetNodeLevel(Node) = 0 then
+    begin
+      Text := TimeToStr(FClient.DebugLog[Node.Index].Time) + ' - ' + FClient.DebugLog[Node.Index].Text;
+
+      if (FClient.DebugLog[Node.Index].Data <> '') and not HasChildren[Node] then
+        HasChildren[Node] := True;
+    end else
+    begin
+      Text := FClient.DebugLog[Node.Parent.Index].Data;
+    end;
+  end;
+end;
+
+procedure TDebugView.DoInitChildren(Node: PVirtualNode;
+  var ChildCount: Cardinal);
+begin
+  inherited;
+  if FClient <> nil then
+  begin
+    if FClient.DebugLog[Node.Index].Data <> '' then
+      ChildCount := 1
+    else
+      ChildCount := 0;
+  end;
+end;
+
+procedure TDebugView.DoFreeNode(Node: PVirtualNode);
+begin
+  inherited;
+end;
+
+procedure TDebugView.Resize;
+begin
+  inherited;
+  Header.Columns[0].Width := Width - 30;
 end;
 
 end.

@@ -58,7 +58,6 @@ uses
   AppStartup in '..\..\common\AppStartup.pas',
   ProfileSettings in '..\..\common\forms\ProfileSettings.pas' {frmProfileSettings},
   SettingsBase in '..\..\common\forms\SettingsBase.pas' {frmSettingsBase},
-  DebugView in '..\..\common\forms\DebugView.pas',
   AudioStream in 'AudioStream.pas',
   Plugins in 'Plugins.pas',
   HomeCommunication in 'HomeCommunication.pas',
