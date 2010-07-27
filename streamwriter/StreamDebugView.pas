@@ -112,7 +112,7 @@ begin
   FPanelBottom.Align := alBottom;
   FPanelBottom.BevelOuter := bvNone;
   FPanelBottom.Visible := True;
-  FPanelBottom.Height := 40;
+  FPanelBottom.Height := 30;
   FPanelBottom.Padding.Top := 4;
 
   FBtnCopy := TButton.Create(Self);
