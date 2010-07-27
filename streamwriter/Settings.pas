@@ -96,7 +96,7 @@ begin
   FBrowseDir := BrowseDir;
 
   ClientWidth := 390;
-  ClientHeight := 360;
+  ClientHeight := 370;
 
   Language.Translate(Self, SetText);
 
@@ -225,7 +225,8 @@ end;
 procedure TfrmSettings.Label9Click(Sender: TObject);
 begin
   inherited;
-  MsgBox(Handle, _('When a title is saved the entered amount of bytes of the stream will be added to the beginning and the end of the song so the song will be complete if the server announces the title change too early/late.'), _('Info'), MB_ICONINFORMATION);
+  MsgBox(Handle, _('When a title is saved the entered amount of bytes of the stream will be added to it''s beginning and end, so the song will be complete even if the server announces the title change too early/late. ' +
+                   'For example, when song A and B are recorded, song A will have the beginning of song B at it''s end and song B will have the end of song A at it''s beginning.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TfrmSettings.lstPluginsSelectItem(Sender: TObject;

@@ -45,6 +45,7 @@ type
     chkRelay: TCheckBox;
     chkSubmitStreams: TCheckBox;
     Label1: TLabel;
+    Label2: TLabel;
     procedure cmdBrowseClick(Sender: TObject);
   private
     function BrowseDialog(Handle: HWnd; Title: String; Flag: Integer): String;

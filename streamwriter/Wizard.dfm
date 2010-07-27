@@ -131,6 +131,17 @@ object frmWizard: TfrmWizard
       Caption = 'Please select a folder where saved songs will be saved.'
       WordWrap = True
     end
+    object Label2: TLabel
+      Left = 8
+      Top = 128
+      Width = 381
+      Height = 57
+      AutoSize = False
+      Caption = 
+        'You can configure all application'#39's options using the correspond' +
+        'ing menu entry when the main window is shown.'
+      WordWrap = True
+    end
     object txtDir: TLabeledEdit
       Left = 8
       Top = 56
