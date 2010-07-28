@@ -176,6 +176,9 @@ begin
 
   NodeDataSize := SizeOf(Integer);
   TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toVariableNodeHeight];
+  TreeOptions.PaintOptions := TreeOptions.PaintOptions - [toShowTreeLines];
+
+  Indent := 12;
 
   Header.Columns.Add;
   Header.AutoSizeIndex := 0;

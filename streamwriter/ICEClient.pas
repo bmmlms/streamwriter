@@ -87,6 +87,7 @@ type
     FOnDisconnected: TNotifyEvent;
     FOnAddRecent: TNotifyEvent;
     FOnICYReceived: TIntegerEvent;
+    FOnURLsReceived: TNotifyEvent;
 
     procedure Initialize;
     procedure Start;
@@ -152,6 +153,7 @@ type
     property OnTitleChanged: TStringEvent read FOnTitleChanged write FOnTitleChanged;
     property OnDisconnected: TNotifyEvent read FOnDisconnected write FOnDisconnected;
     property OnICYReceived: TIntegerEvent read FOnICYReceived write FOnICYReceived;
+    property OnURLsReceived: TNotifyEvent read FOnURLsReceived write FOnURLsReceived;
   end;
 
 implementation
@@ -389,6 +391,11 @@ begin
         if ParsePlaylist then
         begin
           WriteDebug('Playlist parsed', FURLs.Text);
+
+          // ClientManager prüft, ob es in einem anderen Client schon eine der URLs gibt.
+          // Wenn ja, tötet der ClientManager den neu hinzugefügten Client.
+          if Assigned(FOnURLsReceived) then
+            FOnURLsReceived(Self);
         end else
         begin
           raise Exception.Create('Playlist could not be parsed:'#13#10 + string(FICEThread.RecvStream.ToString(0, FICEThread.RecvStream.Size)));
@@ -484,7 +491,7 @@ begin
       Processed := AppGlobals.PluginManager.ProcessFile(Entry);
       if Processed then
       begin
-        // WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name])); TODO: Das hier crashed! WARUM?!?!?
+        WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]));
 
         Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
         Entry.ActiveThread.Resume;

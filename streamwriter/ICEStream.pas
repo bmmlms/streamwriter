@@ -184,7 +184,11 @@ begin
         raise Exception.Create('Unknown content-type');
 
       Filename := GetFilename(Dir, '', FStreamName, False);
-      ForceDirectories(Dir);
+      try
+        ForceDirectories(Dir);
+      except
+        raise Exception.Create('Folder for saved tracks could not be created.');
+      end;
 
       try
         WriteDebug('Saving stream to "' + Filename + '"');
@@ -262,7 +266,11 @@ begin
     end;
 
     try
-      ForceDirectories(Dir);
+      try
+        ForceDirectories(Dir);
+      except
+        raise Exception.Create('Folder for saved tracks could not be created.');
+      end;
       FAudioStream.SaveToFile(Filename, RangeBegin, RangeEnd - RangeBegin);
 
       FSavedFilename := Filename;

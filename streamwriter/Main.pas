@@ -1071,6 +1071,8 @@ begin
           FStreams.RemoveTrack(Tracks[i]);
         end;
       end;
+    taProperties:
+      PropertiesDialog(Tracks[0].Filename) // testen obs lackt.
   end;
 end;
 

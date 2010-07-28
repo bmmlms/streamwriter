@@ -33,7 +33,7 @@ type
   end;
   PSavedHistoryNodeData = ^TSavedHistoryNodeData;
 
-  TTrackActions = (taPlay, taRemove, taDelete);
+  TTrackActions = (taPlay, taRemove, taDelete, taProperties);
 
   TTrackInfoArray = array of TTrackInfo;
 
@@ -50,6 +50,7 @@ type
     FItemPlay: TMenuItem;
     FItemRemove: TMenuItem;
     FItemDelete: TMenuItem;
+    FItemProperties: TMenuItem;
 
     FOnAction: TTrackActionEvent;
 
@@ -154,6 +155,15 @@ begin
   FItemDelete.Caption := _('&Delete');
   FItemDelete.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemDelete);
+
+  ItemTmp := FPopupMenu.CreateMenuItem;
+  ItemTmp.Caption := '-';
+  FPopupMenu.Items.Add(ItemTmp);
+
+  FItemProperties := FPopupMenu.CreateMenuItem;
+  FItemProperties.Caption := _('Pr&operties');
+  FItemProperties.OnClick := PopupMenuClick;
+  FPopupMenu.Items.Add(FItemProperties);
 
 
   PopupMenu := FPopupMenu;
@@ -381,7 +391,8 @@ begin
   begin
     Action := taDelete;
     DeleteTracks(Tracks);
-  end
+  end else if Sender = FItemProperties then
+    Action := taProperties
   else
     raise Exception.Create('Fail');
 
@@ -398,6 +409,7 @@ begin
   FItemPlay.Enabled := Length(Tracks) > 0;
   FItemRemove.Enabled := Length(Tracks) > 0;
   FItemDelete.Enabled := Length(Tracks) > 0;
+  FItemProperties.Enabled := Length(Tracks) = 1;
 end;
 
 { TStreamInfoView }

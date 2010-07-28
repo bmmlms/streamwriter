@@ -24,7 +24,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ComCtrls, ExtCtrls, Buttons, StdCtrls, ShellAPI, ShlObj, AppData,
-  ImgList, LanguageObjects, Functions, WizardBase;
+  ImgList, LanguageObjects, Functions, WizardBase, GUIFunctions;
 
 type
   TStepIceServer = class(TStep)
@@ -47,8 +47,6 @@ type
     Label1: TLabel;
     Label2: TLabel;
     procedure cmdBrowseClick(Sender: TObject);
-  private
-    function BrowseDialog(Handle: HWnd; Title: String; Flag: Integer): String;
   protected
     procedure RegisterSteps; override;
     procedure Finish; override;
@@ -62,31 +60,6 @@ implementation
 
 {$R *.dfm}
 
-function TfrmWizard.BrowseDialog(Handle: HWnd; Title: String; Flag: Integer): String;
-var
-  lpItemID : PItemIDList;
-  BrowseInfo : TBrowseInfo;
-  DisplayName : array[0..MAX_PATH] of char;
-  TempPath : array[0..MAX_PATH] of char;
-begin
-  Result := '';
-  FillChar(BrowseInfo, sizeof(TBrowseInfo), #0);
-  with BrowseInfo do
-  begin
-    hwndOwner := Handle;
-    pszDisplayName := @DisplayName;
-    lpszTitle := PChar(Title);
-    ulFlags := Flag;
-  end;
-  lpItemID := SHBrowseForFolder(BrowseInfo);
-  if lpItemId <> nil then
-  begin
-    SHGetPathFromIDList(lpItemID, TempPath);
-    Result := TempPath;
-    GlobalFreePtr(lpItemID);
-  end;
-end;
-
 procedure TfrmWizard.Finish;
 begin
   AppGlobals.Dir := txtDir.Text;
@@ -96,6 +69,8 @@ begin
 end;
 
 procedure TfrmWizard.InitStep(Step: TStep);
+var
+  s: string;
 begin
   inherited;
 
@@ -106,8 +81,17 @@ begin
   end;
   if Step.Panel = pnlDir then
   begin
-    if DirectoryExists(AppGlobals.Dir) then
-      txtDir.Text := IncludeTrailingBackslash(AppGlobals.Dir);
+    if (AppGlobals.Dir <> '') and (not DirectoryExists(AppGlobals.Dir)) then
+      txtDir.Text := IncludeTrailingBackslash(AppGlobals.Dir)
+    else
+    begin
+      s := GetShellFolder(CSIDL_MYMUSIC);
+      if (Trim(s) <> '') then
+      begin
+        s := IncludeTrailingPathDelimiter(s) + 'streamWriter\';
+        txtDir.Text := s;
+      end;
+    end;
   end;
 end;
 
@@ -120,6 +104,11 @@ begin
 
   if Step.Panel = pnlDir then
   begin
+    try
+      ForceDirectories(txtDir.Text);
+    except
+    end;
+
     if DirectoryExists(txtDir.Text) then
     begin
       AppGlobals.Dir := txtDir.Text;

@@ -72,6 +72,7 @@ type
     procedure ClientTitleChanged(Sender: TObject; Title: string);
     procedure ClientDisconnected(Sender: TObject);
     procedure ClientICYReceived(Sender: TObject; Bytes: Integer);
+    procedure ClientURLsReceived(Sender: TObject);
 
     procedure RelayGetStream(Sender: TObject);
     procedure RelayEnded(Sender: TObject);
@@ -164,6 +165,7 @@ begin
   Client.OnTitleChanged := ClientTitleChanged;
   Client.OnDisconnected := ClientDisconnected;
   Client.OnICYReceived := ClientICYReceived;
+  Client.OnURLsReceived := ClientURLsReceived;
   if Assigned(FOnClientAdded) then
     FOnClientAdded(Client);
 end;
@@ -293,6 +295,22 @@ procedure TClientManager.ClientTitleChanged(Sender: TObject;
 begin
   if Assigned(FOnClientTitleChanged) then
     FOnClientTitleChanged(Sender, Title);
+end;
+
+procedure TClientManager.ClientURLsReceived(Sender: TObject);
+var
+  i, n: Integer;
+  Client: TICEClient;
+begin
+  Client := Sender as TICEClient;
+  for i := 0 to FClients.Count - 1 do
+    if FClients[i] <> Client then
+      for n := 0 to Client.URLs.Count - 1 do
+        if FClients[i].URLs.IndexOf(Client.URLs[n]) > -1 then
+        begin
+          Client.Kill;
+          Break;
+        end;
 end;
 
 // Das hier wird nich nur aufgerufen, wenn der ICE-Thread stirbt, sondern auch,

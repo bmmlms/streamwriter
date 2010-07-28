@@ -73,14 +73,14 @@ object frmWizard: TfrmWizard
     end
   end
   object pnlDir: TPanel
-    Left = 4
+    Left = 12
     Top = 288
-    Width = 393
+    Width = 389
     Height = 233
     BevelOuter = bvNone
     TabOrder = 1
     DesignSize = (
-      393
+      389
       233)
     object cmdBrowse: TSpeedButton
       Left = 252
@@ -124,18 +124,20 @@ object frmWizard: TfrmWizard
     object lblDir: TLabel
       Left = 8
       Top = 4
-      Width = 381
+      Width = 377
       Height = 41
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
       Caption = 'Please select a folder where saved songs will be saved.'
       WordWrap = True
+      ExplicitWidth = 381
     end
     object Label2: TLabel
       Left = 8
       Top = 128
       Width = 381
       Height = 57
+      Anchors = [akLeft, akTop, akRight]
       AutoSize = False
       Caption = 
         'You can configure all application'#39's options using the correspond' +

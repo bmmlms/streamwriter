@@ -86,7 +86,7 @@ end;
 function Act(Data: TPluginActData): Integer; stdcall;
 var
   p: Integer;
-  Dir, Artist, Title2: string;
+  Artist, Title2: string;
   ID3V1: TID3v1Tag;
   ID3V2: TID3v2Tag;
 begin
