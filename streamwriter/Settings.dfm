@@ -372,6 +372,7 @@ object frmSettings: TfrmSettings
         end>
       GroupView = True
       ReadOnly = True
+      RowSelect = True
       ShowColumnHeaders = False
       TabOrder = 0
       ViewStyle = vsReport
