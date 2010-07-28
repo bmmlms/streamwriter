@@ -73,6 +73,7 @@ type
     destructor Destroy; override;
 
     procedure SetSettings(SeperateDirs, SkipShort: Boolean);
+
     procedure LockRelay;
     procedure UnlockRelay;
 
@@ -107,6 +108,14 @@ begin
 end;
 
 procedure TICEThread.StreamChunkReceived(Buf: Pointer; Len: Integer);
+var
+  RemoveTo: Int64;
+  S: Boolean;
+  P: Integer;
+  Thread: PRelayInfo;
+  FS: TFileStream;
+const
+  CutSize = 2000000;
 begin
   if FRelayBuffer = nil then
     Exit;
@@ -114,8 +123,31 @@ begin
   try
     FRelayBuffer.Seek(0, soFromEnd);
     FRelayBuffer.WriteBuffer(Buf^, Len);
-    if FRelayBuffer.Size > 1000000 then
-      FRelayBuffer.RemoveRange(0, FRelayBuffer.Size - 100000);
+
+    if FRelayBuffer.Size > CutSize then
+    begin
+      // Wenn der Puffer voll, bis zum ersten Frame ab der Mitte abschneiden
+      RemoveTo := FRelayBuffer.GetFrame(CutSize div 2, False);
+      FRelayBuffer.RemoveRange(0, RemoveTo); // TODO: oder removeto - 1? test it.
+    end;
+
+    for Thread in FRelayThreads do
+    begin
+      // Wenn schon was gesendet wurde, die neuen Daten schicken
+      if Thread.FirstSent then
+      begin
+        Thread.Thread.SendLock.Enter;
+        try
+          Thread.Thread.SendStream.Seek(0, soFromEnd);
+          Thread.Thread.SendStream.Write(Buf^, Len);
+        finally
+          Thread.Thread.SendLock.Leave;
+        end;
+      end;
+    end;
+
+    // TODO: Direkt hier die einzelnen "abhörenden" clients bedienen.
+    // wenn was daten nicht schnellgenug abholt und der senden puffer zu voll wird, sollte ich eine kleine exception werfen :)
   finally
     FRelayLock.Leave;
   end;
@@ -197,40 +229,40 @@ end;
 
 procedure TICEThread.DoReceivedData(Buf: Pointer; Len: Integer);
 var
-  S: Boolean;
-  P: Integer;
+  P: Int64;
   Thread: PRelayInfo;
 begin
   inherited;
-  if FRelayBuffer = nil then
-    Exit;
-  FRelayLock.Enter;
-  try
-    S := False;
-    for Thread in FRelayThreads do
-    begin
-      P := 0;
-      S := True;
-      if not Thread.FirstSent then
+
+  if FRelayBuffer <> nil then
+  begin
+    FRelayLock.Enter;
+
+    try
+
+      for Thread in FRelayThreads do
       begin
-        P := FRelayBuffer.GetFrame(0, False);
-        if P = -1 then
-          P := 0;
+        if not Thread.FirstSent then
+        begin
+          Thread.Thread.SendLock.Enter;
+          try
+            P := FRelayBuffer.GetFrame(0, False);
+            if P = -1 then
+              P := 0;
+            FRelayBuffer.Seek(P, soFromBeginning);
+            Thread.Thread.SendStream.Seek(0, soFromEnd);
+            Thread.Thread.SendStream.CopyFrom(FRelayBuffer, FRelayBuffer.Size - P);
+            Thread.FirstSent := True;
+          finally
+            Thread.Thread.SendLock.Leave;
+          end;
+        end;
       end;
-      FRelayBuffer.Seek(P, soFromBeginning);
-      Thread.FirstSent := True;
-      Thread.Thread.SendLock.Enter;
-      try
-        Thread.Thread.SendStream.Seek(0, soFromEnd);
-        Thread.Thread.SendStream.CopyFrom(FRelayBuffer, FRelayBuffer.Size - P);
-      finally
-        Thread.Thread.SendLock.Leave;
-      end;
+
+    finally
+      FRelayLock.Leave;
     end;
-    if S then
-      FRelayBuffer.Clear;
-  finally
-    FRelayLock.Leave;
+
   end;
 end;
 
