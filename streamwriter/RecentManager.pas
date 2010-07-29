@@ -55,6 +55,7 @@ type
     FLastTouched: TDateTime;
     FTracks: TList<TTrackInfo>;
     FSongsSaved: Cardinal;
+    FBytesReceived: UInt64;
 
     procedure FSetName(Value: string);
     procedure FSetIsInList(Value: Boolean);
@@ -82,6 +83,7 @@ type
     property LastTouched: TDateTime read FLastTouched write FLastTouched;
     property Tracks: TList<TTrackInfo> read FTracks write FTracks;
     property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
+    property BytesReceived: UInt64 read FBytesReceived write FBytesReceived;
   end;
 
   TStreamList = class(TList<TStreamEntry>)
@@ -109,7 +111,8 @@ type
     function Add(Name: string; URL: string; URLs: TStringList; BitRate: Cardinal; Genre: string;
       SeperateDirs, SkipShort: Boolean; SongsSaved: Cardinal): TStreamEntry; overload;
     function Add(Entry: TStreamEntry): TStreamEntry; overload;
-    function Get(Name, URL: string; URLs: TStringList): TStreamEntry;
+    function Get(Client: TICEClient): TStreamEntry; overload;
+    function Get(Name, URL: string; URLs: TStringList): TStreamEntry; overload;
     procedure RemoveTrack(Track: TTrackInfo);
 
     property LoadError: Boolean read FLoadError write FLoadError;
@@ -242,6 +245,7 @@ begin
     Result.FTracks.Add(TrackInfo);
   end;
   Stream.Read(Result.FSongsSaved);
+  Stream.Read(Result.FBytesReceived);
 end;
 
 procedure TStreamEntry.Save(Stream: TExtendedStream);
@@ -272,6 +276,7 @@ begin
     Stream.Write(FTracks[i].FFilename);
   end;
   Stream.Write(FSongsSaved);
+  Stream.Write(FBytesReceived);
 end;
 
 procedure TStreamEntry.FSetIsInList(Value: Boolean);
@@ -460,6 +465,11 @@ begin
           end;
     end;
   end;
+end;
+
+function TStreamDataList.Get(Client: TICEClient): TStreamEntry;
+begin
+  Result := Get(Client.StreamName, Client.StartURL, Client.URLs);
 end;
 
 procedure TStreamDataList.Load;

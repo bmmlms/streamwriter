@@ -25,7 +25,7 @@ uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
   RecentManager, VirtualTrees, LanguageObjects, GUIFunctions,
   Generics.Collections, Graphics, Forms, Menus, Messages, DragDrop,
-  DragDropFile;
+  DragDropFile, Functions;
 
 type
   TSavedHistoryNodeData = record
@@ -425,7 +425,7 @@ begin
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := Self;
   FTopPanel.Align := alTop;
-  FTopPanel.Height := 80;
+  FTopPanel.Height := 100;
   FTopPanel.BevelOuter := bvNone;
   FTopPanel.Visible := True;
 
@@ -470,6 +470,7 @@ var
   i, n: Integer;
   Title, Info, Genres, BitRates: string;
   SongsSaved: Cardinal;
+  Received: UInt64;
   Entry: TStreamEntry;
   TrackList: TList<TTrackInfo>;
   Del: TTrackInfoArray;
@@ -479,6 +480,7 @@ begin
     Genres := '';
     BitRates := '';
     SongsSaved := 0;
+    Received := 0;
     for Entry in Entries do
     begin
       Title := Title + Entry.Name;
@@ -495,6 +497,7 @@ begin
         BitRates := BitRates + IntToStr(Entry.BitRate);
       end;
       SongsSaved := SongsSaved + Entry.SongsSaved;
+      Received := Received + Entry.BytesReceived;
 
       FSavedTracks.Clear;
       for i := 0 to Entry.Tracks.Count - 1 do
@@ -510,7 +513,8 @@ begin
       Info := Info + Genres + #13#10;
     if BitRates <> '' then
       Info := Info + Bitrates + 'kbps' + #13#10;
-    Info := Info + IntToStr(SongsSaved) + _(' songs saved');
+    Info := Info + IntToStr(SongsSaved) + _(' songs saved') + #13#10;
+    Info := Info + MakeSize(Received) + _(' received');
     if Info <> FInfo.Text then
       FInfo.Text := Info;
 
@@ -580,3 +584,4 @@ begin
 end;
 
 end.
+

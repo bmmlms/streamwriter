@@ -182,6 +182,7 @@ type
     FUpdater: TUpdateClient;
     FShutdown: Boolean;
     FUpdateOnExit: Boolean;
+    FRefreshInfo: Boolean;
 
     FClients: TClientManager;
     FHomeCommunication: THomeCommunication;
@@ -310,7 +311,7 @@ begin
 
   Hide;
 
-  AppGlobals.Save;
+  AppGlobals.Save(Handle);
 
   Saved := False;
   while not Saved do
@@ -407,7 +408,7 @@ begin
   Clients := lstClients.NodesToClients(lstClients.GetNodes(True));
   for Client in Clients do
   begin
-    Entry := FStreams.Get(Client.StreamName, Client.StartURL, Client.URLs);
+    Entry := FStreams.Get(Client);
     if Entry <> nil then
       Entry.LastTouched := Now;
     Client.Connect;
@@ -458,7 +459,7 @@ begin
     else if Sender = actSkipShort then
       Client.SetSettings(Client.SeperateDirs, actSkipShort.Checked);
 
-    R := FStreams.Get(Client.StreamName, Client.StreamURL, Client.URLs);
+    R := FStreams.Get(Client);
     if R <> nil then
     begin
       R.SeperateDirs := Client.SeperateDirs;
@@ -516,19 +517,21 @@ var
   R: TStreamEntry;
   i: Integer;
 begin
-  Res := MsgBox(Handle, _('This will reset the saved song counter and information about saved songs.'#13#10'Do you want to continue?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
+  Res := MsgBox(Handle, _('This will reset the saved song and bytes received counters and information about saved songs.'#13#10'Do you want to continue?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
   if Res = IDYES then
   begin
     Clients := lstClients.NodesToData(lstClients.GetNodes(True));
     for Client in Clients do
     begin
-      R := FStreams.Get(Client.Client.StreamName, Client.Client.StreamURL, Client.Client.URLs);
+      R := FStreams.Get(Client.Client);
       R.SongsSaved := 0;
+      R.BytesReceived := 0;
       for i := 0 to R.Tracks.Count - 1 do
         R.Tracks[i].Free;
       R.Tracks.Clear;
 
       Client.Client.SongsSaved := 0;
+      Client.Client.Received := 0;
 
       lstClients.RefreshClient(Client.Client);
     end;
@@ -587,6 +590,7 @@ begin
   FReceived := 0;
   FShutdown := False;
   FUpdateOnExit := False;
+  FRefreshInfo := False;
 
   lstStations := TMStationCombo.Create(Self);
   lstStations.Parent := pnlTop;
@@ -885,8 +889,7 @@ begin
   try
     for Client in Clients do
     begin
-      Entry := FStreams.Get(Client.Client.StreamName, Client.Client.StartURL,
-        Client.Client.URLs);
+      Entry := FStreams.Get(Client.Client);
       if Entry <> nil then
       begin
         Entries.Add(Entry)
@@ -939,7 +942,6 @@ begin
   end else if S.Updated then
   begin
     AppGlobals.InstallUpdateOnStart := True;
-    AppGlobals.Save;
     mnuCheckUpdate.Enabled := False;
     S.Free;
   end;
@@ -1129,6 +1131,12 @@ var
 begin
   UpdateStatus;
 
+  if FRefreshInfo then
+  begin
+    ShowInfo;
+    FRefreshInfo := False;
+  end;
+
   Active := False;
   for i := 0 to FClients.Count - 1 do
     if FClients[i].Active then
@@ -1271,7 +1279,6 @@ end;
 procedure TfrmStreamWriterMain.UpdaterNoUpdateFound(Sender: TObject);
 begin
   AppGlobals.LastUpdateChecked := Trunc(Now);
-  AppGlobals.Save;
 end;
 
 procedure TfrmStreamWriterMain.UpdaterUpdateFound(Sender: TObject);
@@ -1279,7 +1286,6 @@ var
   Res: Integer;
 begin
   AppGlobals.LastUpdateChecked := Trunc(Now);
-  AppGlobals.Save;
   Res := MsgBox(Handle, _('A new version was found.'#13#10'Do you want to download the update now?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
   if Res = IDYES then
   begin
@@ -1427,8 +1433,21 @@ end;
 
 procedure TfrmStreamWriterMain.ClientManagerICYReceived(Sender: TObject;
   Received: Integer);
+var
+  Entry: TStreamEntry;
+  Client: TICEClient;
 begin
+  Client := Sender as TICEClient;
+
   FReceived := FReceived + Received;
+
+  Entry := FStreams.Get(Client);
+  if Entry <> nil then
+  begin
+    Entry.BytesReceived := Entry.BytesReceived + Received;
+  end;
+
+  FRefreshInfo := True;
 end;
 
 procedure TfrmStreamWriterMain.ClientManagerRefresh(Sender: TObject);
@@ -1447,6 +1466,7 @@ begin
     Client.BitRate, Client.Genre, Client.SeperateDirs, Client.SkipShort, 0);
   Entry.LastTouched := Now;
   Entry.IsInList := True;
+  Client.Received := Entry.BytesReceived;
 
   lstClients.AddClient(Client);
 
@@ -1460,7 +1480,7 @@ var
 begin
   Client := Sender as TICEClient;
 
-  Entry := FStreams.Get(Client.StreamName, Client.StartURL, Client.URLs);
+  Entry := FStreams.Get(Client);
   if Entry <> nil then
     Entry.IsInList := False;
 
@@ -1480,7 +1500,7 @@ var
 begin
   Client := Sender as TICEClient;
 
-  Entry := FStreams.Get(Client.StreamName, Client.StartURL, Client.URLs);
+  Entry := FStreams.Get(Client);
   if Entry <> nil then
   begin
     Entry.Tracks.Add(TTrackInfo.Create(Now, Filename));

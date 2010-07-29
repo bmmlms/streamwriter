@@ -211,7 +211,10 @@ begin
         Text := NodeData.Client.StreamName;
     1:
       if NodeData.Client.Title = '' then
-        Text := _('Unknown')
+        if NodeData.Client.State = csRecording then
+          Text := _('Unknown')
+        else
+          Text := _('')
       else
         Text := NodeData.Client.Title;
     2:

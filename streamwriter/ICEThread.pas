@@ -110,12 +110,9 @@ end;
 procedure TICEThread.StreamChunkReceived(Buf: Pointer; Len: Integer);
 var
   RemoveTo: Int64;
-  S: Boolean;
-  P: Integer;
   Thread: PRelayInfo;
-  FS: TFileStream;
 const
-  CutSize = 2000000;
+  CutSize = 5000000;
 begin
   if FRelayBuffer = nil then
     Exit;
@@ -128,7 +125,7 @@ begin
     begin
       // Wenn der Puffer voll, bis zum ersten Frame ab der Mitte abschneiden
       RemoveTo := FRelayBuffer.GetFrame(CutSize div 2, False);
-      FRelayBuffer.RemoveRange(0, RemoveTo); // TODO: oder removeto - 1? test it.
+      FRelayBuffer.RemoveRange(0, RemoveTo - 1);
     end;
 
     for Thread in FRelayThreads do
@@ -145,9 +142,6 @@ begin
         end;
       end;
     end;
-
-    // TODO: Direkt hier die einzelnen "abhörenden" clients bedienen.
-    // wenn was daten nicht schnellgenug abholt und der senden puffer zu voll wird, sollte ich eine kleine exception werfen :)
   finally
     FRelayLock.Leave;
   end;

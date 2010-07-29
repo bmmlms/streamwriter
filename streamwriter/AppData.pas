@@ -51,10 +51,13 @@ type
     function FGetDataFile: string;
     function FGetRecentFile: string;
     function FGetListFile: string;
+  protected
+    procedure DoSave; override;
   public
     constructor Create(AppName: String);
     destructor Destroy; override;
-    procedure Save; override;
+
+    procedure Load; override;
 
     property Dir: String read FDir write FDir;
     property SeperateDirs: Boolean read FSeperateDirs write FSeperateDirs;
@@ -87,33 +90,8 @@ var
 implementation
 
 constructor TAppData.Create(AppName: string);
-var
-  i: Integer;
 begin
   inherited Create(AppName, True, 800, 450);
-
-  FStorage.Read('Dir', FDir, '');
-  if FDir <> '' then
-    FDir := IncludeTrailingBackslash(FDir);
-
-  FStorage.Read('SeperateDirs', FSeperateDirs, True);
-  FStorage.Read('SkipShort', FSkipShort, True);
-  FStorage.Read('TrayClose', FTrayClose, False);
-  FStorage.Read('ShowSidebar', FShowSidebar, True);
-  FStorage.Read('SidebarWidth', FSidebarWidth, 200);
-  FStorage.Read('Relay', FRelay, False);
-  FStorage.Read('SubmitStreams', FSubmitStreams, True);
-  FStorage.Read('ShortSize', FShortSize, 1000);
-  FStorage.Read('SongBuffer', FSongBuffer, 0);
-  FStorage.Read('MaxRetries', FMaxRetries, 20);
-  FStorage.Read('RetryDelay', FRetryDelay, 5);
-  FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
-  FStorage.Read('DefaultAction', i, Integer(caStartStop));
-
-  if (i > Ord(High(TClientActions))) or (i < Ord(Low(TClientActions))) then
-    FDefaultAction := caStartStop
-  else
-    FDefaultAction := TClientActions(i);
 
   FLanguageIcons := TLanguageIcons.Create;
 end;
@@ -140,7 +118,37 @@ begin
   Result := FStorage.GetFilePath('recent.dat');
 end;
 
-procedure TAppData.Save;
+procedure TAppData.Load;
+var
+  i: Integer;
+begin
+  inherited;
+
+  FStorage.Read('Dir', FDir, '');
+  if FDir <> '' then
+    FDir := IncludeTrailingBackslash(FDir);
+
+  FStorage.Read('SeperateDirs', FSeperateDirs, True);
+  FStorage.Read('SkipShort', FSkipShort, True);
+  FStorage.Read('TrayClose', FTrayClose, False);
+  FStorage.Read('ShowSidebar', FShowSidebar, True);
+  FStorage.Read('SidebarWidth', FSidebarWidth, 200);
+  FStorage.Read('Relay', FRelay, False);
+  FStorage.Read('SubmitStreams', FSubmitStreams, True);
+  FStorage.Read('ShortSize', FShortSize, 1000);
+  FStorage.Read('SongBuffer', FSongBuffer, 0);
+  FStorage.Read('MaxRetries', FMaxRetries, 20);
+  FStorage.Read('RetryDelay', FRetryDelay, 5);
+  FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
+  FStorage.Read('DefaultAction', i, Integer(caStartStop));
+
+  if (i > Ord(High(TClientActions))) or (i < Ord(Low(TClientActions))) then
+    FDefaultAction := caStartStop
+  else
+    FDefaultAction := TClientActions(i);
+end;
+
+procedure TAppData.DoSave;
 var
   i: Integer;
 begin
@@ -178,7 +186,7 @@ begin
   except
     on E: Exception do
     begin
-      MessageBox(0, PChar(_('Error:') + ' ' + E.Message), PChar(_('Error')), MB_ICONERROR);
+      MessageBox(0, PChar(_('The application could not be started.'#13#10'Message:') + ' ' + E.Message), PChar(_('Error')), MB_ICONERROR);
       Halt;
     end;
   end;

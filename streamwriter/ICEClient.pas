@@ -134,7 +134,7 @@ type
     property BitRate: Cardinal read FBitRate;
     property Genre: string read FGenre;
     property Title: string read FTitle;
-    property Received: UInt64 read FReceived;
+    property Received: UInt64 read FReceived write FReceived;
     property SongsSaved: Integer read FSongsSaved write FSongsSaved;
     property Speed: Integer read FSpeed;
     property URLs: TURLList read FURLs;
@@ -566,6 +566,7 @@ begin
     Exit;
 
   FICEThread := nil;
+  FTitle := '';
   FSpeed := 0;
   AppGlobals.Lock;
   MaxRetries := AppGlobals.MaxRetries;
