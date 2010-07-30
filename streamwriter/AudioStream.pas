@@ -29,35 +29,35 @@ type
   private
   protected
   public
-    function GetFrame(From: Int64; GetEnd: Boolean): Integer; virtual; abstract;
+    function GetFrame(From: Int64; GetEnd: Boolean): Int64; virtual; abstract;
     procedure SaveToFile(const Filename: string; From, Length: Int64);
   end;
 
   TMPEGStreamFile = class(TAudioStreamFile)
   public
-    function GetFrame(From: Int64; GetEnd: Boolean): Integer; override;
+    function GetFrame(From: Int64; GetEnd: Boolean): Int64; override;
   end;
 
   TAACStreamFile = class(TAudioStreamFile)
   public
-    function GetFrame(From: Int64; GetEnd: Boolean): Integer; override;
+    function GetFrame(From: Int64; GetEnd: Boolean): Int64; override;
   end;
 
   TAudioStreamMemory = class(TExtendedStream)
   private
   protected
   public
-    function GetFrame(From: Int64; GetEnd: Boolean): Integer; virtual; abstract;
+    function GetFrame(From: Int64; GetEnd: Boolean): Int64; virtual; abstract;
   end;
 
   TMPEGStreamMemory = class(TAudioStreamMemory)
   public
-    function GetFrame(From: Int64; GetEnd: Boolean): Integer; override;
+    function GetFrame(From: Int64; GetEnd: Boolean): Int64; override;
   end;
 
   TAACStreamMemory = class(TAudioStreamMemory)
   public
-    function GetFrame(From: Int64; GetEnd: Boolean): Integer; override;
+    function GetFrame(From: Int64; GetEnd: Boolean): Int64; override;
   end;
 
 implementation
@@ -82,9 +82,9 @@ end;
 
 { TMPEGStream }
 
-function TMPEGStreamFile.GetFrame(From: Int64; GetEnd: Boolean): Integer;
+function TMPEGStreamFile.GetFrame(From: Int64; GetEnd: Boolean): Int64;
 var
-  i, OldPos, Offset: Integer;
+  i, OldPos: Int64;
   Frame: FrameData;
   Len: Integer;
   Buf: array[0..3] of byte;
@@ -94,9 +94,8 @@ begin
 
   if GetEnd then
   begin
-    Offset := Size;
-
-    for i := Offset - 4 downto 0 do
+    i := Size - 4;
+    while i >= 0 do
     begin
       Position := i;
       Read(Buf, 4);
@@ -112,12 +111,12 @@ begin
           Break;
         end;
       end;
+      Dec(i);
     end;
   end else
   begin
-    Offset := From;
-
-    for i := Offset to Size - 4 do
+    i := From;
+    while i <= Size - 4 do
     begin
       Position := i;
       Read(Buf, 4);
@@ -128,6 +127,7 @@ begin
         Result := i;
         Break;
       end;
+      Inc(i);
     end;
   end;
   Position := OldPos;
@@ -135,7 +135,7 @@ end;
 
 { TAACStream }
 
-function TAACStreamFile.GetFrame(From: Int64; GetEnd: Boolean): Integer;
+function TAACStreamFile.GetFrame(From: Int64; GetEnd: Boolean): Int64;
 begin
   if GetEnd then
     Result := Size - 1
@@ -145,9 +145,9 @@ end;
 
 { TMPEGStreamMemory }
 
-function TMPEGStreamMemory.GetFrame(From: Int64; GetEnd: Boolean): Integer;
+function TMPEGStreamMemory.GetFrame(From: Int64; GetEnd: Boolean): Int64;
 var
-  i, OldPos, Offset: Integer;
+  i, OldPos: Int64;
   Frame: FrameData;
   Len: Integer;
   Buf: array[0..3] of byte;
@@ -157,9 +157,8 @@ begin
 
   if GetEnd then
   begin
-    Offset := Size;
-
-    for i := Offset - 4 downto 0 do
+    i := Size - 4;
+    while i >= 0 do
     begin
       Position := i;
       Read(Buf, 4);
@@ -175,12 +174,12 @@ begin
           Break;
         end;
       end;
+      Dec(i);
     end;
   end else
   begin
-    Offset := From;
-
-    for i := Offset to Size - 4 do
+    i := From;
+    while i <= Size - 4 do
     begin
       Position := i;
       Read(Buf, 4);
@@ -191,6 +190,7 @@ begin
         Result := i;
         Break;
       end;
+      Inc(i);
     end;
   end;
   Position := OldPos;
@@ -198,7 +198,7 @@ end;
 
 { TAACStreamMemory }
 
-function TAACStreamMemory.GetFrame(From: Int64; GetEnd: Boolean): Integer;
+function TAACStreamMemory.GetFrame(From: Int64; GetEnd: Boolean): Int64;
 begin
   if GetEnd then
     Result := Size - 1

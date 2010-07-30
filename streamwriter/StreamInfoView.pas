@@ -46,6 +46,8 @@ type
     FSortColumn: Integer;
     FSortDirection: TSortDirection;
 
+    FDisplayedTracks: TList;
+
     FPopupMenu: TPopupMenu;
     FItemPlay: TMenuItem;
     FItemRemove: TMenuItem;
@@ -70,23 +72,27 @@ type
     procedure KeyPress(var Key: Char); override;
     procedure HandleMouseDblClick(var Message: TWMMouse; const HitInfo: THitInfo); override;
     procedure DoDragging(P: TPoint); override;
+    procedure DoFreeNode(Node: PVirtualNode); override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
+
+    function ShowTracks(Tracks: TList<TTrackInfo>; EntriesChanged: Boolean): TTrackInfoArray;
 
     property OnAction: TTrackActionEvent read FOnAction write FOnAction;
   end;
 
   TMStreamInfoView = class(TPanel)
   private
+    FEntries: TStreamList;
     FResized: Boolean;
     FTopPanel: TPanel;
+    FSplitter: TSplitter;
     FName: TLabel;
     FInfo: TMemo;
     FSavedTracks: TSavedTracksTree;
 
     procedure ShowInfo(Entries: TStreamList);
-    function ShowTracks(Tracks: TList<TTrackInfo>): TTrackInfoArray;
   protected
     procedure Resize; override;
 
@@ -122,6 +128,7 @@ begin
   NodeDataSize := SizeOf(TSavedHistoryNodeData);
 
   FDragSource := TDropFileSource.Create(Self);
+  FDisplayedTracks := TList.Create;
 
   C1 := Header.Columns.Add;
   C1.Text := _('Time');
@@ -200,6 +207,7 @@ end;
 
 destructor TSavedTracksTree.Destroy;
 begin
+  FDisplayedTracks.Free;
 
   inherited;
 end;
@@ -246,6 +254,12 @@ begin
 
   DoStateChange([], [tsOLEDragPending, tsClearPending]);
   FDragSource.Execute(True);
+end;
+
+procedure TSavedTracksTree.DoFreeNode(Node: PVirtualNode);
+begin
+  inherited;
+
 end;
 
 function TSavedTracksTree.DoGetImageIndex(Node: PVirtualNode;
@@ -412,12 +426,60 @@ begin
   FItemProperties.Enabled := Length(Tracks) = 1;
 end;
 
+function TSavedTracksTree.ShowTracks(Tracks: TList<TTrackInfo>; EntriesChanged: Boolean): TTrackInfoArray;
+var
+  i: Integer;
+  ReSort: Boolean;
+  Node: PVirtualNode;
+  NodeData: PSavedHistoryNodeData;
+begin
+  ReSort := False;
+  SetLength(Result, 0);
+  BeginUpdate;
+  try
+    if EntriesChanged then
+    begin
+      Clear;
+      FDisplayedTracks.Clear;
+    end;
+
+    Node := GetFirst;
+    while Node <> nil do
+    begin
+      NodeData := GetNodeData(Node);
+      FDisplayedTracks.Add(NodeData.TrackInfo);
+      Node := GetNext(Node);
+    end;
+
+    for i := Tracks.Count - 1 downto 0 do
+    begin
+      if FDisplayedTracks.IndexOf(Tracks[i]) = -1 then
+        if FileExists(Tracks[i].Filename) then
+        begin
+          ReSort := True;
+          Node := AddChild(nil);
+          NodeData := GetNodeData(Node);
+          NodeData.TrackInfo := Tracks[i];
+        end else
+        begin
+          SetLength(Result, Length(Result) + 1);
+          Result[High(Result)] := Tracks[i];
+        end;
+    end;
+  finally
+    EndUpdate;
+  end;
+  if ReSort then
+    Sort(nil, FSortColumn, FSortDirection);
+end;
+
 { TStreamInfoView }
 
 constructor TMStreamInfoView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
+  FEntries := TStreamList.Create;
   FResized := False;
 
   BevelOuter := bvNone;
@@ -425,7 +487,7 @@ begin
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := Self;
   FTopPanel.Align := alTop;
-  FTopPanel.Height := 100;
+  FTopPanel.Height := 110;
   FTopPanel.BevelOuter := bvNone;
   FTopPanel.Visible := True;
 
@@ -446,6 +508,13 @@ begin
   FInfo.ReadOnly := True;
   FInfo.Visible := True;
 
+  FSplitter := TSplitter.Create(Self);
+  FSplitter.Parent := Self;
+  FSplitter.Align := alTop;
+  FSplitter.ResizeStyle := rsUpdate;
+  FSplitter.Visible := True;
+  FSplitter.Top := FTopPanel.Top + FTopPanel.Height;
+
   FSavedTracks := TSavedTracksTree.Create(Self);
   FSavedTracks.Parent := Self;
   FSavedTracks.Align := alClient;;
@@ -456,6 +525,7 @@ end;
 
 destructor TMStreamInfoView.Destroy;
 begin
+  FEntries.Free;
   inherited;
 end;
 
@@ -468,97 +538,91 @@ end;
 procedure TMStreamInfoView.ShowInfo(Entries: TStreamList);
 var
   i, n: Integer;
-  Title, Info, Genres, BitRates: string;
   SongsSaved: Cardinal;
   Received: UInt64;
+  EntriesChanged: Boolean;
+  Title, Info, Genres, BitRates: string;
   Entry: TStreamEntry;
   TrackList: TList<TTrackInfo>;
   Del: TTrackInfoArray;
 begin
-  TrackList := TList<TTrackInfo>.Create;
-  try
-    Genres := '';
-    BitRates := '';
-    SongsSaved := 0;
-    Received := 0;
+  if Entries = nil then
+  begin
+    FEntries.Clear;
+
+  end else
+  begin
+    EntriesChanged := False;
     for Entry in Entries do
-    begin
-      Title := Title + Entry.Name;
-      if Entry.Genre <> '' then
+      if not FEntries.Contains(Entry) then
       begin
-        if Genres <> '' then
-          Genres := Genres + ' / ';
-        Genres := Genres + Entry.Genre;
+        EntriesChanged := True;
+        Break;
       end;
-      if Entry.BitRate > 0 then
+    for Entry in FEntries do
+      if not Entries.Contains(Entry) then
       begin
-        if BitRates <> '' then
-          BitRates := BitRates + ' / ';
-        BitRates := BitRates + IntToStr(Entry.BitRate);
+        EntriesChanged := True;
+        Break;
       end;
-      SongsSaved := SongsSaved + Entry.SongsSaved;
-      Received := Received + Entry.BytesReceived;
 
-      FSavedTracks.Clear;
-      for i := 0 to Entry.Tracks.Count - 1 do
-        TrackList.Add(Entry.Tracks[i]);
+    TrackList := TList<TTrackInfo>.Create;
+    try
+      Genres := '';
+      BitRates := '';
+      SongsSaved := 0;
+      Received := 0;
+      for Entry in Entries do
+      begin
+        FEntries.Add(Entry);
+
+        Title := Title + Entry.Name;
+        if Entry.Genre <> '' then
+        begin
+          if Genres <> '' then
+            Genres := Genres + ' / ';
+          Genres := Genres + Entry.Genre;
+        end;
+        if Entry.BitRate > 0 then
+        begin
+          if BitRates <> '' then
+            BitRates := BitRates + ' / ';
+          BitRates := BitRates + IntToStr(Entry.BitRate);
+        end;
+        SongsSaved := SongsSaved + Entry.SongsSaved;
+        Received := Received + Entry.BytesReceived;
+
+        for i := 0 to Entry.Tracks.Count - 1 do
+          TrackList.Add(Entry.Tracks[i]);
+      end;
+
+      Title := TruncateText(Title, FName.Width, FName.Canvas.Font);
+      if Title <> FName.Caption then
+        FName.Caption := Title;
+
+      Info := '';
+      if Genres <> '' then
+        Info := Info + Genres + #13#10;
+      if BitRates <> '' then
+        Info := Info + Bitrates + 'kbps' + #13#10;
+      Info := Info + IntToStr(SongsSaved) + _(' songs saved') + #13#10;
+      Info := Info + MakeSize(Received) + _(' received');
+      if Info <> FInfo.Text then
+        FInfo.Text := Info;
+
+      Del := FSavedTracks.ShowTracks(TrackList, EntriesChanged);
+      for i := 0 to Length(Del) - 1 do
+      begin
+        for n := 0 to Entries.Count - 1 do
+        begin
+          Entries[n].Tracks.Remove(Del[i]);
+        end;
+        Del[i].Free;
+      end;
+    finally
+      TrackList.Free;
     end;
-
-    Title := TruncateText(Title, FName.Width, FName.Canvas);
-    if Title <> FName.Caption then
-      FName.Caption := Title;
-
-    Info := '';
-    if Genres <> '' then
-      Info := Info + Genres + #13#10;
-    if BitRates <> '' then
-      Info := Info + Bitrates + 'kbps' + #13#10;
-    Info := Info + IntToStr(SongsSaved) + _(' songs saved') + #13#10;
-    Info := Info + MakeSize(Received) + _(' received');
-    if Info <> FInfo.Text then
-      FInfo.Text := Info;
-
-    Del := ShowTracks(TrackList);
-    for i := 0 to Length(Del) - 1 do
-    begin
-      for n := 0 to Entries.Count - 1 do
-      begin
-        Entries[n].Tracks.Remove(Del[i]);
-      end;
-      Del[i].Free;
-    end;
-  finally
-    TrackList.Free;
   end;
-end;
-
-function TMStreamInfoView.ShowTracks(Tracks: TList<TTrackInfo>): TTrackInfoArray;
-var
-  i: Integer;
-  Node: PVirtualNode;
-  NodeData: PSavedHistoryNodeData;
-begin
-  SetLength(Result, 0);
-  FSavedTracks.BeginUpdate;
-  try
-    FSavedTracks.Clear;
-    for i := Tracks.Count - 1 downto 0 do
-    begin
-      if FileExists(Tracks[i].Filename) then
-      begin
-        Node := FSavedTracks.AddChild(nil);
-        NodeData := FSavedTracks.GetNodeData(Node);
-        NodeData.TrackInfo := Tracks[i];
-      end else
-      begin
-        SetLength(Result, Length(Result) + 1);
-        Result[High(Result)] := Tracks[i];
-      end;
-    end;
-  finally
-    FSavedTracks.EndUpdate;
-  end;
-  FSavedTracks.Sort(nil, FSavedTracks.FSortColumn, FSavedTracks.FSortDirection);
 end;
 
 { TMStreamInfoContainer }
@@ -578,8 +642,7 @@ end;
 
 procedure TMStreamInfoContainer.ShowInfo(Entries: TStreamList);
 begin
-  if Entries <> nil then
-    FInfoView.ShowInfo(Entries);
+  FInfoView.ShowInfo(Entries);
   FInfoView.Visible := Entries <> nil;
 end;
 

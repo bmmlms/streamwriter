@@ -1,7 +1,7 @@
 [Files]
 Source: ..\bin\streamwriter.exe; DestDir: {app}; Flags: ignoreversion
 Source: ..\bin\plugins\settags.dll; DestDir: {app}\plugins; Flags: ignoreversion
-Source: ..\bin\plugins\normalize.dll; DestDir: {app}\plugins; Flags: ignoreversion
+;Source: ..\bin\plugins\normalize.dll; DestDir: {app}\plugins; Flags: ignoreversion
 Source: ..\bin\plugins\rename.dll; DestDir: {app}\plugins; Flags: ignoreversion
 
 [Icons]
@@ -90,7 +90,7 @@ begin
   if CurStep = ssPostInstall then
   begin
     s := GetCmdTail;
-    if Pos('/update', AnsiLowerCase(s)) > 0 then
+    if (Pos('/update', AnsiLowerCase(s)) > 0) and (Pos('/run', AnsiLowerCase(s)) > 0) then
     begin
       Exec(ExpandConstant('{app}') + '\streamwriter.exe', '', ExpandConstant('{app}'), 1, ewNoWait, r);
     end;
@@ -104,6 +104,7 @@ begin
     //RegDeleteKeyIncludingSubkeys(HKCU, 'Software\mistake.ws\streamWriter');
   end;
 end;
+
 
 
 

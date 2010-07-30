@@ -183,6 +183,8 @@ type
     FShutdown: Boolean;
     FUpdateOnExit: Boolean;
     FRefreshInfo: Boolean;
+    FWasShown: Boolean;
+    FWasMaximized: Boolean;
 
     FClients: TClientManager;
     FHomeCommunication: THomeCommunication;
@@ -195,6 +197,7 @@ type
     procedure OneInstanceMessage(var Msg: TMessage); message WM_USER + 123;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
     procedure EndSession(var Msg: TMessage); message WM_ENDSESSION;
+    procedure SysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
 
     function CanExitApp: Boolean;
     procedure ExitApp;
@@ -203,7 +206,7 @@ type
     procedure SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean);
     procedure UpdateButtons;
     procedure UpdateStatus;
-    procedure ToggleWindow(AlwaysShow: Boolean);
+    procedure ToggleWindow(AlwaysShow: Boolean = False);
     procedure UpdaterUpdateFound(Sender: TObject);
     procedure UpdaterNoUpdateFound(Sender: TObject);
     function HandleLoadError(E: Exception): Integer;
@@ -213,6 +216,7 @@ type
     procedure lstClientsChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure lstClientsDblClick(Sender: TObject);
     procedure lstClientsKeyPress(Sender: TObject; var Key: Char);
+    procedure lstClientsKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 
     procedure StreamsStreamAdded(Sender: TObject; Stream: TStreamEntry);
     procedure StreamsStreamRemoved(Sender: TObject; Stream: TStreamEntry);
@@ -234,6 +238,8 @@ type
     procedure StreamBrowserNeedData(Sender: TObject; Offset, Count: Integer);
     procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
     procedure StreamInfoAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
+  protected
+
   public
 
   end;
@@ -311,7 +317,12 @@ begin
 
   Hide;
 
-  AppGlobals.Save(Handle);
+  if not FShutdown then
+    AppGlobals.Save(Handle)
+  else
+    try
+      AppGlobals.Save;
+    except end;
 
   Saved := False;
   while not Saved do
@@ -327,8 +338,12 @@ begin
         DeleteFile(AppGlobals.RecentFile);
       end;
     except
-      Res := MsgBox(Handle, Format(_('An error occured while saving the data file. Please make sure you can write to "%s" and that the file is not in use by another application. Click "Yes" to try again, "No" to exit without saving data.'), [AppGlobals.DataFile]), _('Info'), MB_ICONEXCLAMATION or MB_YESNO or MB_DEFBUTTON1);
-      if Res = IDNO then
+      if not FShutdown then
+      begin
+        Res := MsgBox(Handle, Format(_('An error occured while saving the data file. Please make sure you can write to "%s" and that the file is not in use by another application. Click "Yes" to try again, "No" to exit without saving data.'), [AppGlobals.DataFile]), _('Info'), MB_ICONEXCLAMATION or MB_YESNO or MB_DEFBUTTON1);
+        if Res = IDNO then
+          Break;
+      end else
         Break;
     end;
   end;
@@ -341,15 +356,15 @@ begin
   StartTime := GetTickCount;
   while (FClients.Count > 0) or (FHomeCommunication.Count > 0) or (FClients.Active) do
   begin
-    // 10 Sekunden warten, für sauberes beenden
-    if StartTime < GetTickCount - 10000 then
+    // 5 Sekunden warten, für sauberes beenden
+    if StartTime < GetTickCount - 5000 then
       Halt;
     Sleep(100);
     Application.ProcessMessages;
   end;
 
   if FUpdateOnExit then
-    FUpdater.RunUpdate;
+    FUpdater.RunUpdate(Handle);
 
   Application.Terminate;
 end;
@@ -550,18 +565,21 @@ end;
 
 procedure TfrmStreamWriterMain.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
-  if AppGlobals.TrayClose and not FShutdown then
+  if AppGlobals.TrayClose then
   begin
-    CanClose := False;
-    TrayIcon1.Visible := True;
-    CloseWindow(Handle);
-    Hide;
+    if (Visible) or (IsIconic(Handle)) then
+    begin
+      CanClose := False;
+      TrayIcon1.Visible := True;
+
+      FWasMaximized := WindowState = wsMaximized;
+      Hide;
+    end;
   end else
   begin
-    CanClose := False;
+    CanClose := True;
     if CanExitApp then
       ExitApp;
-      //CanClose := True;
   end;
 end;
 
@@ -587,6 +605,7 @@ begin
   if AppGlobals.Relay then
     FClients.RelayServer.Start;
 
+  FWasShown := False;
   FReceived := 0;
   FShutdown := False;
   FUpdateOnExit := False;
@@ -611,6 +630,7 @@ begin
   lstClients.OnChange := lstClientsChange;
   lstClients.OnDblClick := lstClientsDblClick;
   lstClients.OnKeyPress := lstClientsKeyPress;
+  lstClients.OnKeyDown := lstClientsKeyDown;
   lstClients.Show;
 
   lstStreamBrowser := TMStreamBrowserView.Create(tabBrowser);
@@ -714,10 +734,15 @@ end;
 
 procedure TfrmStreamWriterMain.FormShow(Sender: TObject);
 begin
+  if FWasShown then
+    Exit;
+  FWasShown := True;
+
   AppGlobals.WindowHandle := Handle;
 
   if AppGlobals.MainMaximized then
     WindowState := wsMaximized;
+  FWasMaximized := WindowState = wsMaximized;
 
   Width := AppGlobals.MainWidth;
   Height := AppGlobals.MainHeight;
@@ -811,14 +836,17 @@ end;
 procedure TfrmStreamWriterMain.QueryEndSession(var Msg: TMessage);
 begin
   inherited;
-  if Msg.LParam = Integer(ENDSESSION_CLOSEAPP) then
-    Msg.Result := 1;
+  Msg.Result := 1;
 end;
 
 procedure TfrmStreamWriterMain.EndSession(var Msg: TMessage);
 begin
-  if Msg.WParam <> 0 then
+  if WordBool(Msg.WParam) then
+  begin
+    Msg.Result := 0;
     FShutdown := True;
+    ExitApp;
+  end;
 end;
 
 procedure TfrmStreamWriterMain.SavePlaylist(Entries: TPlaylistEntryArray;
@@ -1090,6 +1118,13 @@ begin
 
 end;
 
+procedure TfrmStreamWriterMain.SysCommand(var Msg: TWMSysCommand);
+begin
+  if Msg.CmdType = SC_MINIMIZE then
+    FWasMaximized := WindowState = wsMaximized;
+  DefaultHandler(Msg);
+end;
+
 procedure TfrmStreamWriterMain.tabInfoResize(Sender: TObject);
 begin
   // ShowInfo;
@@ -1162,6 +1197,10 @@ begin
     if not Visible then
       Show;
     OpenIcon(Handle);
+
+    if FWasMaximized then
+      WindowState := wsMaximized;
+
     SetForegroundWindow(Handle);
   end else
   begin
@@ -1173,6 +1212,7 @@ begin
     begin
       if not AlwaysShow then
       begin
+        FWasMaximized := WindowState = wsMaximized;
         CloseWindow(Handle);
         Hide;
       end else
@@ -1314,10 +1354,23 @@ begin
   addStatus.Panels[2].Text := Format(_('%d songs saved'), [FClients.SongsSaved]);
 end;
 
+procedure TfrmStreamWriterMain.lstClientsKeyDown(Sender: TObject;
+  var Key: Word; Shift: TShiftState);
+begin
+  if Key = VK_DELETE then
+  begin
+    actRemove.Execute;
+  end;
+end;
+
 procedure TfrmStreamWriterMain.lstClientsKeyPress(Sender: TObject;
   var Key: Char);
 begin
-  lstClientsDblClick(lstClients);
+  if (Key = #13) or (Key = #32) then
+  begin
+    lstClientsDblClick(lstClients);
+    Key := #0;
+  end;
 end;
 
 procedure TfrmStreamWriterMain.lstClientsChange(Sender: TBaseVirtualTree;
