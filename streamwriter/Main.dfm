@@ -2,7 +2,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Left = 549
   Top = 450
   Caption = 'streamWriter'
-  ClientHeight = 364
+  ClientHeight = 384
   ClientWidth = 689
   Color = clBtnFace
   Constraints.MinHeight = 200
@@ -25,15 +25,16 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 0
     Top = 25
     Width = 689
-    Height = 320
+    Height = 340
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitHeight = 320
     object Splitter1: TSplitter
       Left = 472
       Top = 33
       Width = 4
-      Height = 287
+      Height = 307
       Align = alRight
       Beveled = True
       ResizeStyle = rsUpdate
@@ -96,16 +97,18 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Left = 476
       Top = 33
       Width = 213
-      Height = 287
+      Height = 307
       ActivePage = tabBrowser
       Align = alRight
       TabOrder = 2
       OnChange = pagSidebarChange
+      ExplicitHeight = 287
       object tabBrowser: TTabSheet
         Caption = 'Browser'
+        ExplicitHeight = 259
         DesignSize = (
           205
-          259)
+          279)
         object lblSearchStream: TLabel
           Left = 4
           Top = 8
@@ -127,16 +130,24 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         Caption = 'Info'
         ImageIndex = 1
         OnResize = tabInfoResize
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
       end
       object tabDebug: TTabSheet
         Caption = 'Log'
         ImageIndex = 2
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
       end
     end
   end
   object addStatus: TStatusBar
     Left = 0
-    Top = 345
+    Top = 365
     Width = 689
     Height = 19
     Panels = <
@@ -149,6 +160,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       item
         Width = 100
       end>
+    ExplicitTop = 345
   end
   object ToolBar1: TToolBar
     Left = 0
@@ -292,10 +304,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       end
       object mnuStreamSettings2: TMenuItem
         Caption = 'S&ettings'
-        object IneigenenOrdnerspeichern2: TMenuItem
-          Action = actSeperateDirs
-          AutoCheck = True
-        end
         object KurzeLiederberspringen1: TMenuItem
           Action = actSkipShort
           AutoCheck = True
@@ -330,7 +338,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 160
     Bitmap = {
-      494C010102000900500210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000900540210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000D0000005C000000000000000000000000000000000000
@@ -473,7 +481,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 40
     Top = 140
     Bitmap = {
-      494C01010E00D8022C0310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01010E00D802300310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1012,7 +1020,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 108
     Bitmap = {
-      494C010101000400780210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C0101010004007C0210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000060000001D000000220000001D00000006000000000000
@@ -1173,11 +1181,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       ImageIndex = 2
       OnExecute = actRemoveExecute
     end
-    object actSeperateDirs: TAction
-      AutoCheck = True
-      Caption = '&Save titles to seperate folder'
-      OnExecute = actStreamSettingsExecute
-    end
     object actSkipShort: TAction
       AutoCheck = True
       Caption = 'S&kip short songs'
@@ -1290,10 +1293,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object mnuStreamSettings1: TMenuItem
       Caption = 'S&ettings'
-      object IneigenenOrdnerspeichern1: TMenuItem
-        Action = actSeperateDirs
-        AutoCheck = True
-      end
       object asd: TMenuItem
         Action = actSkipShort
         AutoCheck = True
@@ -1387,8 +1386,9 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 68
     Top = 212
     object Savetitlestoseperatefolder1: TMenuItem
-      Action = actSeperateDirs
       AutoCheck = True
+      Caption = '&Save titles to seperate folder'
+      OnClick = actStreamSettingsExecute
     end
     object Skipshortsongs1: TMenuItem
       Action = actSkipShort
@@ -1399,7 +1399,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 608
     Top = 236
     Bitmap = {
-      494C010101000800600010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000800640010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

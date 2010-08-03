@@ -31,7 +31,7 @@ type
   TAppData = class(TAppDataBase)
   private
     FDir: string;
-    FSeperateDirs: Boolean;
+    FFilePattern: string;
     FSkipShort: Boolean;
     FTrayClose: Boolean;
     FShowSidebar: Boolean;
@@ -59,8 +59,8 @@ type
 
     procedure Load; override;
 
-    property Dir: String read FDir write FDir;
-    property SeperateDirs: Boolean read FSeperateDirs write FSeperateDirs;
+    property Dir: string read FDir write FDir;
+    property FilePattern: string read FFilePattern write FFilePattern;
     property SkipShort: Boolean read FSkipShort write FSkipShort;
     property TrayClose: Boolean read FTrayClose write FTrayClose;
     property ShowSidebar: Boolean read FShowSidebar write FShowSidebar;
@@ -127,8 +127,8 @@ begin
   FStorage.Read('Dir', FDir, '');
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
+  FStorage.Read('FilePattern', FFilePattern, '%s\%a - %t');
 
-  FStorage.Read('SeperateDirs', FSeperateDirs, True);
   FStorage.Read('SkipShort', FSkipShort, True);
   FStorage.Read('TrayClose', FTrayClose, False);
   FStorage.Read('ShowSidebar', FShowSidebar, True);
@@ -155,7 +155,7 @@ begin
   inherited;
 
   FStorage.Write('Dir', FDir);
-  FStorage.Write('SeperateDirs', FSeperateDirs);
+  FStorage.Write('FilePattern', FFilePattern);
   FStorage.Write('SkipShort', FSkipShort);
   FStorage.Write('TrayClose', FTrayClose);
   FStorage.Write('ShowSidebar', FShowSidebar);

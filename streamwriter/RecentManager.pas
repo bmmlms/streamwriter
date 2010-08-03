@@ -47,7 +47,7 @@ type
     FURLs: TStringList;
     FBitRate: Cardinal;
     FGenre: string;
-    FSeperateDirs, FSkipShort: Boolean;
+    FSkipShort: Boolean;
     FSubmitted: Boolean;
 
     FIsInList: Boolean;
@@ -74,7 +74,6 @@ type
     property URLs: TStringList read FURLs;
     property BitRate: Cardinal read FBitRate write FBitRate;
     property Genre: string read FGenre write FGenre;
-    property SeperateDirs: Boolean read FSeperateDirs write FSeperateDirs;
     property SkipShort: Boolean read FSkipShort write FSkipShort;
     property Submitted: Boolean read FSubmitted write FSubmitted;
 
@@ -109,7 +108,7 @@ type
     procedure ResetInList;
 
     function Add(Name: string; URL: string; URLs: TStringList; BitRate: Cardinal; Genre: string;
-      SeperateDirs, SkipShort: Boolean; SongsSaved: Cardinal): TStreamEntry; overload;
+      SkipShort: Boolean; SongsSaved: Cardinal): TStreamEntry; overload;
     function Add(Entry: TStreamEntry): TStreamEntry; overload;
     function Get(Client: TICEClient): TStreamEntry; overload;
     function Get(Name, URL: string; URLs: TStringList): TStreamEntry; overload;
@@ -129,7 +128,6 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-
     procedure Load;
     property LoadError: Boolean read FLoadError write FLoadError;
     property List: TStreamList read FList;
@@ -173,7 +171,6 @@ begin
   Result.StartURL := StartURL;
   Result.BitRate := BitRate;
   Result.Genre := Genre;
-  Result.SeperateDirs := SeperateDirs;
   Result.SkipShort := SkipShort;
   Result.SongsSaved := SongsSaved;
   Result.Submitted := Submitted;
@@ -228,7 +225,6 @@ begin
   end;
   Stream.Read(Result.FBitRate);
   Stream.Read(Result.FGenre);
-  Stream.Read(Result.FSeperateDirs);
   Stream.Read(Result.FSkipShort);
   Stream.Read(Result.FSubmitted);
 
@@ -261,7 +257,6 @@ begin
   end;
   Stream.Write(FBitRate);
   Stream.Write(FGenre);
-  Stream.Write(FSeperateDirs);
   Stream.Write(FSkipShort);
   Stream.Write(FSubmitted);
 
@@ -362,7 +357,7 @@ begin
 end;
 
 function TStreamDataList.Add(Name, URL: string;
-  URLs: TStringList; BitRate: Cardinal; Genre: string; SeperateDirs, SkipShort: Boolean; SongsSaved: Cardinal): TStreamEntry;
+  URLs: TStringList; BitRate: Cardinal; Genre: string; SkipShort: Boolean; SongsSaved: Cardinal): TStreamEntry;
 var
   Entry: TStreamEntry;
 begin
@@ -381,7 +376,6 @@ begin
   Entry.Name := Name;
   Entry.StartURL := URL;
   Entry.URLs.Assign(URLs);
-  Entry.SeperateDirs := SeperateDirs;
   Entry.SkipShort := SkipShort;
   Entry.BitRate := BitRate;
   Entry.Genre := Genre;
@@ -638,7 +632,6 @@ begin
         end;
         S.Read(F);
         S.Read(F);
-        Rec.SeperateDirs := F;
         S.Read(F);
         Rec.SkipShort := F;
         S.Read(Count);
@@ -735,13 +728,11 @@ begin
         begin
           S.Read(F);
           S.Read(F);
-          Rec.SeperateDirs := F;
           S.Read(F);
           Rec.SkipShort := F;
         end else
         begin
           // Die Felder wurden vor Version 2 noch nicht gespeichert, also Default-Werte benutzen
-          Rec.SeperateDirs := True;
           Rec.SkipShort := True;
         end;
         S.Read(Count);

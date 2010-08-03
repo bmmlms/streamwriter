@@ -72,7 +72,7 @@ type
     constructor Create(URL: string); reintroduce;
     destructor Destroy; override;
 
-    procedure SetSettings(SeperateDirs, SkipShort: Boolean);
+    procedure SetSettings(SkipShort: Boolean);
 
     procedure LockRelay;
     procedure UnlockRelay;
@@ -95,10 +95,8 @@ implementation
 
 { TICEThread }
 
-procedure TICEThread.SetSettings(SeperateDirs,
-  SkipShort: Boolean);
+procedure TICEThread.SetSettings(SkipShort: Boolean);
 begin
-  FTypedStream.SeperateDirs := SeperateDirs;
   FTypedStream.SkipShort := SkipShort;
 end;
 

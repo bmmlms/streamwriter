@@ -25,7 +25,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
-  Plugins;
+  Plugins, StrUtils;
 
 type
   TfrmSettings = class(TfrmSettingsBase)
@@ -33,15 +33,9 @@ type
     pnlMain: TPanel;
     txtShortSongSize: TLabeledEdit;
     txtSongBuffer: TLabeledEdit;
-    txtDir: TLabeledEdit;
-    cmdBrowse: TSpeedButton;
     chkTrayClose: TCheckBox;
-    Label2: TLabel;
     Label4: TLabel;
     Label5: TLabel;
-    chkSkipShort: TCheckBox;
-    chkSeperateDirs: TCheckBox;
-    chkRelay: TCheckBox;
     pnlAdvanced: TPanel;
     txtMaxRetries: TLabeledEdit;
     txtRetryDelay: TLabeledEdit;
@@ -52,13 +46,22 @@ type
     lstPlugins: TListView;
     cmdConfigure: TBitBtn;
     chkSubmitStreams: TCheckBox;
-    Label3: TLabel;
-    lstDefaultAction: TComboBox;
     Label8: TLabel;
     Label9: TLabel;
-    Label11: TLabel;
     Label6: TLabel;
     lblHelp: TLabel;
+    txtDir: TLabeledEdit;
+    cmdBrowse: TSpeedButton;
+    chkRelay: TCheckBox;
+    Label11: TLabel;
+    GroupBox2: TGroupBox;
+    txtFilePattern: TLabeledEdit;
+    txtPreview: TLabeledEdit;
+    lblFilePattern: TLabel;
+    lstDefaultAction: TComboBox;
+    Label3: TLabel;
+    GroupBox1: TGroupBox;
+    chkSkipShort: TCheckBox;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure cmdBrowseClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
@@ -69,6 +72,7 @@ type
     procedure Label6Click(Sender: TObject);
     procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
       Selected: Boolean);
+    procedure txtFilePatternChange(Sender: TObject);
   private
     FBrowseDir: Boolean;
     FRelayChanged: Boolean;
@@ -116,7 +120,7 @@ begin
 
   AppGlobals.Lock;
   txtDir.Text := AppGlobals.Dir;
-  chkSeperateDirs.Checked := AppGlobals.SeperateDirs;
+  txtFilePattern.Text := AppGlobals.FilePattern;
   chkSkipShort.Checked := AppGlobals.SkipShort;
   chkTrayClose.Checked := AppGlobals.TrayClose;
   chkRelay.Checked := AppGlobals.Relay;
@@ -132,6 +136,9 @@ begin
   lstDefaultAction.Items.Add(_('Listen to relay'));
   lstDefaultAction.Items.Add(_('Listen to recorded file'));
   lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
+
+  lblFilePattern.Caption := _('%s = streamname, %a = artist, %t = title, %n = tracknumber'#13#10 +
+                              'You can also use a backslash to seperate directories.');
 
   AppGlobals.Unlock;
 
@@ -160,7 +167,7 @@ begin
 
   AppGlobals.Lock;
   AppGlobals.Dir := txtDir.Text;
-  AppGlobals.SeperateDirs := chkSeperateDirs.Checked;
+  AppGlobals.FilePattern := txtFilePattern.Text;
   AppGlobals.SkipShort := chkSkipShort.Checked;
   AppGlobals.TrayClose := chkTrayClose.Checked;
   AppGlobals.Relay := chkRelay.Checked;
@@ -255,6 +262,25 @@ begin
   AppGlobals.PluginManager.ReInitPlugins;
 end;
 
+procedure TfrmSettings.txtFilePatternChange(Sender: TObject);
+var
+  Arr: TPatternReplaceArray;
+begin
+  inherited;
+
+  SetLength(Arr, 4);
+  Arr[0].C := 'a';
+  Arr[0].Replace := _('Artist');
+  Arr[1].C := 't';
+  Arr[1].Replace := _('Title');
+  Arr[2].C := 's';
+  Arr[2].Replace := _('Streamname');
+  Arr[3].C := 'n';
+  Arr[3].Replace := IntToStr(1);
+
+  txtPreview.Text := PatternReplace(txtFilePattern.Text, Arr);
+end;
+
 function TfrmSettings.CanFinish: Boolean;
 begin
   Result := False;
@@ -265,21 +291,23 @@ begin
   if not DirectoryExists(txtDir.Text) then
   begin
     MsgBox(Handle, _('The selected folder for saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
-    SetPage(pnlMain);
+    SetPage(pnlMain); // TODO: isses noch main?
     Exit;
   end;
+
+   // TODO: filepattern checken.
 
   if Trim(txtShortSongSize.Text) = '' then
   begin
     MsgBox(Handle, _('Please enter the maximum size for songs that should be consireded as ads.'), _('Info'), MB_ICONINFORMATION);
-    SetPage(pnlStreams);
+    SetPage(pnlStreams); // TODO: isses noch streams?
     Exit;
   end;
 
   if Trim(txtSongBuffer.Text) = '' then
   begin
     MsgBox(Handle, _('Please enter the size of the buffer that should be added to every beginning/end of saved titles.'), _('Info'), MB_ICONINFORMATION);
-    SetPage(pnlStreams);
+    SetPage(pnlStreams); // TODO: isses noch streams?
     Exit;
   end;
 

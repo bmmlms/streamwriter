@@ -23,7 +23,7 @@ interface
 
 uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
-  AppData, LanguageObjects;
+  AppData, LanguageObjects, Functions;
 
 type
   TDebugEvent = procedure(Text, Data: string) of object;
@@ -39,10 +39,10 @@ type
     FBitRate: Cardinal;
     FGenre: string;
 
-    FSeperateDirs: Boolean;
     FSkipShort: Boolean;
 
     FSaveDir: string;
+    FFilePattern: string;
     FShortSize: Integer;
     FSongBuffer: Integer;
 
@@ -68,9 +68,10 @@ type
 
     procedure DataReceived(CopySize: Integer);
     function ExtractTitle(Title: string): string;
-    procedure SaveData(Title: string);
+    procedure SaveData;
     procedure ProcessData;
-    function GetFilename(var Dir: string; Station, Title: string; SeperateDirs: Boolean): string;
+    function GetFilename(var Dir: string; Name: string): string;
+    function GetFilenameTitle(var Dir: string): string;
     function GetValidFilename(Name: string): string;
     function SaveSizeOkay(Size: Integer): Boolean;
     procedure GetSettings;
@@ -95,7 +96,6 @@ type
 
     property AudioType: TAudioTypes read FAudioType;
 
-    property SeperateDirs: Boolean read FSeperateDirs write FSeperateDirs;
     property SkipShort: Boolean read FSkipShort write FSkipShort;
 
     property OnTitleChanged: TNotifyEvent read FOnTitleChanged write FOnTitleChanged;
@@ -183,11 +183,11 @@ begin
       end else
         raise Exception.Create('Unknown content-type');
 
-      Filename := GetFilename(Dir, '', FStreamName, False);
+      Filename := GetFilename(Dir, FStreamName);
       try
         ForceDirectories(Dir);
       except
-        raise Exception.Create('Folder for saved tracks could not be created.');
+        raise Exception.Create('Folder for saved tracks could not be created.');  // TODO: Evtl nen FOnIOError(Self) machen?
       end;
 
       try
@@ -231,6 +231,7 @@ begin
     FOnNeedSettings(Self);
   AppGlobals.Lock;
   FSaveDir := AppGlobals.Dir;
+  FFilePattern := AppGlobals.FilePattern;
   FShortSize := AppGlobals.ShortSize;
   FSongBuffer := AppGlobals.SongBuffer;
   AppGlobals.Unlock;
@@ -241,7 +242,7 @@ begin
   Result := Trim(Title);
 end;
 
-procedure TICEStream.SaveData(Title: string);
+procedure TICEStream.SaveData;
 var
   RangeBegin, RangeEnd: Int64;
   Dir, Filename: string;
@@ -249,19 +250,19 @@ begin
   RangeBegin := FAudioStream.GetFrame(FSaveFrom, False);
   RangeEnd := FAudioStream.GetFrame(0, True);
   Dir := FSaveDir;
-
+                        // TODO: Wenn GetFileNameTitle sich den titel selbst holt wird der parameter hier überflüssig oder?
   if (RangeEnd <= -1) or (RangeBegin <= -1) then
-    raise Exception.Create('Error in Audio data');
+    raise Exception.Create('Error in audio data');
 
   if not (SkipShort and not (SaveSizeOkay(RangeEnd - RangeBegin))) then
   begin
-    if Length(Title) > 0 then
+    if Length(FSaveTitle) > 0 then
     begin
-      Filename := GetFilename(Dir, FStreamName, Title, SeperateDirs);
-      WriteDebug('Saving title "' + Title + '"');
+      Filename := GetFilenameTitle(Dir);
+      WriteDebug('Saving title "' + FSaveTitle + '"');
     end else
     begin
-      Filename := GetFilename(Dir, FStreamName, '', SeperateDirs);
+      Filename := GetFilenameTitle(Dir);
       WriteDebug('Saving unnamed Titel');
     end;
 
@@ -274,19 +275,19 @@ begin
       FAudioStream.SaveToFile(Filename, RangeBegin, RangeEnd - RangeBegin);
 
       FSavedFilename := Filename;
-      FSavedTitle := Title;
+      FSavedTitle := FSaveTitle;
       Inc(FSongsSaved);
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self);
     except
       on E: Exception do
       begin
-        WriteDebug('Error wrhile saving to "' + Filename + '": ' + E.Message);
+        WriteDebug('Error while saving to "' + Filename + '": ' + E.Message);
       end;
     end;
   end else
   begin
-    WriteDebug('Skipping title "' + Title + '" because it''s too small (' + IntToStr(RangeEnd - RangeBegin) + ' bytes)');
+    WriteDebug('Skipping title "' + FSaveTitle + '" because it''s too small (' + IntToStr(RangeEnd - RangeBegin) + ' bytes)');
   end;
 end;
 
@@ -324,7 +325,7 @@ begin
     if (FForwardLimit > -1) and (FForwardLimit + FMetaInt <= FAudioStream.Size) then
     begin
       WriteDebug('Saving "' + FSaveTitle + '" because saveoffset reached');
-      SaveData(FSaveTitle);
+      SaveData;
 
       FSaveFrom := FAudioStream.Size - (FSongBuffer * 2) * 1024;
       if FSaveFrom < 0 then
@@ -365,7 +366,7 @@ begin
           if FForwardLimit > -1 then
           begin
             WriteDebug('New title detected but saveoffset was set');
-            SaveData(FSaveTitle);
+            SaveData;
 
             FSaveFrom := FAudioStream.Size - (FSongBuffer * 2) * 1024;
             if FSaveFrom < 0 then
@@ -442,26 +443,22 @@ begin
     raise Exception.Create('Unknown header-type');
 end;
 
-function TICEStream.GetFilename(var Dir: string; Station, Title: string; SeperateDirs: Boolean): string;
+function TICEStream.GetFilename(var Dir: string; Name: string): string;
 var
   Dir2, Filename, Ext: string;
   Append: Integer;
 begin
-  if SeperateDirs and (Length(Station) > 0) then
+  inherited;
+
+  if Dir <> '' then
+    Dir := IncludeTrailingBackslash(Dir);
+
+  if Trim(Name) = '' then
   begin
-    Dir2 := GetValidFilename(Station);
-    if Length(Dir2) > 0 then
-    begin
-      Dir := Dir + Dir2 + '\';
-    end;
+    Name := _('[Unnamed title]');
   end;
 
-  if Title = '' then
-  begin
-    Title := _('[Unnamed title]');
-  end;
-
-  Filename := GetValidFilename(Title);
+  Filename := GetValidFilename(Name);
 
   case FAudioType of
     atMPEG:
@@ -481,6 +478,61 @@ begin
   end else
     Filename := Filename + Ext;
   Result := Dir + Filename;
+end;
+
+function TICEStream.GetFilenameTitle(var Dir: string): string;
+var                              // TODO: was wenn eine variable leer ist und replaced wird? und dann noch ein pfad ist???
+                                 //       mehrere \ hintereinander auf eins reduzieren, wenn string damit anfängt fail, wenn
+                                 //       string damit aufhört fail. darf er damit aufhören?
+  p: Integer;
+  Artist, Title, StreamName, SaveTitle: string;
+
+  Replaced: string;
+  Arr: TPatternReplaceArray;
+
+  Append: Integer;
+begin
+  inherited;
+
+  Dir := '';
+
+  Artist := '';
+  Title := '';
+  StreamName := StringReplace(Trim(Self.StreamName), '\', '_', [rfReplaceAll]);
+  SaveTitle := StringReplace(Trim(FSaveTitle), '\', '_', [rfReplaceAll]);
+
+  p := Pos(' - ', SaveTitle);
+  if p > 0 then
+  begin
+    Artist := Trim(Copy(SaveTitle, 1, p - 1));
+    Title := Trim(Copy(SaveTitle, p + 3, Length(SaveTitle)));
+  end;
+
+  if (Artist = '') or (Title = '') then
+  begin
+    Artist := _('Unknown artist');
+    Title := SaveTitle;
+  end;
+
+  if StreamName = '' then
+    StreamName := _('Unknown stream'); // TODO: Evtl URL dann.
+
+  SetLength(Arr, 4);
+  Arr[0].C := 'a';
+  Arr[0].Replace := Artist;
+  Arr[1].C := 't';
+  Arr[1].Replace := Title;
+  Arr[2].C := 's';
+  Arr[2].Replace := StreamName;
+  Arr[3].C := 'n';
+  Arr[3].Replace := '1'; // TODO: !!!
+
+  Replaced := PatternReplace(FFilePattern, Arr);
+
+  // TODO: Ganz genau in settings gucken, ob der pfad so passt. das kann so leicht failen...
+  Dir := IncludeTrailingBackslash(ExtractFilePath(FSaveDir + Replaced));
+
+  Result := GetFilename(Dir, ExtractFileName(Replaced));
 end;
 
 function TICEStream.GetValidFilename(Name: string): string;

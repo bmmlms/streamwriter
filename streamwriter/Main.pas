@@ -66,13 +66,10 @@ type
     ToolBar2: TToolBar;
     cmdStartStreaming: TToolButton;
     mnuStreamSettings1: TMenuItem;
-    IneigenenOrdnerspeichern1: TMenuItem;
     asd: TMenuItem;
-    actSeperateDirs: TAction;
     actSkipShort: TAction;
     mnuStreamSettings2: TMenuItem;
     KurzeLiederberspringen1: TMenuItem;
-    IneigenenOrdnerspeichern2: TMenuItem;
     TrayIcon1: TTrayIcon;
     mnuTray: TPopupMenu;
     mnuShow: TMenuItem;
@@ -469,15 +466,12 @@ begin
   Clients := lstClients.NodesToClients(lstClients.GetNodes(True));
   for Client in Clients do
   begin
-    if Sender = actSeperateDirs then
-      Client.SetSettings(actSeperateDirs.Checked, Client.SkipShort)
-    else if Sender = actSkipShort then
-      Client.SetSettings(Client.SeperateDirs, actSkipShort.Checked);
+    if Sender = actSkipShort then
+      Client.SetSettings(actSkipShort.Checked);
 
     R := FStreams.Get(Client);
     if R <> nil then
     begin
-      R.SeperateDirs := Client.SeperateDirs;
       R.SkipShort := Client.SkipShort;
     end;
   end;
@@ -1006,7 +1000,7 @@ begin
       // Ist der Client schon bekannt?
       if Entry <> nil then
       begin
-        Client := FClients.AddClient(Entry.Name, Entry.StartURL, Entry.URLs, Entry.SeperateDirs, Entry.SkipShort, Entry.SongsSaved);
+        Client := FClients.AddClient(Entry.Name, Entry.StartURL, Entry.URLs, Entry.SkipShort, Entry.SongsSaved);
         Client.Connect;
       end else
       begin
@@ -1140,7 +1134,7 @@ begin
   begin
     Client := FClients.GetClient(Stream.Name, Stream.StartURL, Stream.URLs);
     if Client = nil then
-      FClients.AddClient(Stream.Name, Stream.StartURL, Stream.URLs, Stream.SeperateDirs, Stream.SkipShort, Stream.SongsSaved);
+      FClients.AddClient(Stream.Name, Stream.StartURL, Stream.URLs, Stream.SkipShort, Stream.SongsSaved);
   end;
   Item := lstStations.Get(Stream.Name, Stream.StartURL, Stream.URLs);
   if (Item = nil) and (Stream.RecentIndex > -1) then
@@ -1246,7 +1240,7 @@ end;
 
 procedure TfrmStreamWriterMain.UpdateButtons;
 var
-  B, B3, B4: Boolean;
+  B, B4: Boolean;
   Clients: TClientArray;
   Client, Client2: TICEClient;
 begin
@@ -1282,22 +1276,17 @@ begin
   if lstClients.SelectedCount > 1 then
   begin
     Client2 := lstClients.NodesToClients(lstClients.GetNodes(True))[0];
-    B3 := True;
     B4 := True;
     for Client in lstClients.NodesToClients(lstClients.GetNodes(True)) do
     begin
-      if not Client.SeperateDirs = Client2.SeperateDirs then
-        B3 := False;
       if not Client.SkipShort = Client2.SkipShort then
         B4 := False;
     end;
     Client := lstClients.NodesToClients(lstClients.GetNodes(True))[0];
-    actSeperateDirs.Checked := Client.SeperateDirs and B3;
     actSkipShort.Checked := Client.SkipShort and B4;
   end else if lstClients.SelectedCount = 1 then
   begin
     Client := lstClients.NodesToClients(lstClients.GetNodes(True))[0];
-    actSeperateDirs.Checked := Client.SeperateDirs;
     actSkipShort.Checked := Client.SkipShort;
 
     case AppGlobals.DefaultAction of
@@ -1463,7 +1452,7 @@ begin
   Client := Sender as TICEClient;
 
   Entry := FStreams.Add(Client.StreamName, Client.StartURL, Client.URLs,
-    Client.BitRate, Client.Genre, Client.SeperateDirs, Client.SkipShort, 0);
+    Client.BitRate, Client.Genre, Client.SkipShort, 0);
   Entry.Name := Client.StreamName;
   Entry.RecentIndex := 0;
   Entry.LastTouched := Now;
@@ -1516,7 +1505,7 @@ begin
   Client := Sender as TICEClient;
 
   Entry := FStreams.Add(Client.StreamName, Client.StartURL, Client.URLs,
-    Client.BitRate, Client.Genre, Client.SeperateDirs, Client.SkipShort, 0);
+    Client.BitRate, Client.Genre, Client.SkipShort, 0);
   Entry.LastTouched := Now;
   Entry.IsInList := True;
   Client.Received := Entry.BytesReceived;

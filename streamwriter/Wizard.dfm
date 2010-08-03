@@ -128,7 +128,7 @@ object frmWizard: TfrmWizard
       Height = 41
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
-      Caption = 'Please select a folder where saved songs will be saved.'
+      Caption = 'Please select a folder where songs will be saved.'
       WordWrap = True
       ExplicitWidth = 381
     end

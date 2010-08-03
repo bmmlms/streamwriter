@@ -75,7 +75,6 @@ type
     FContentType: string;
     FFilename: string;
 
-    FSeperateDirs: Boolean;
     FSkipShort: Boolean;
     FKilled: Boolean;
     FRetries: Integer;
@@ -110,7 +109,7 @@ type
   public
     constructor Create(StartURL: string); overload;
     constructor Create(Name, StartURL: string); overload;
-    constructor Create(Name, StartURL: string; URLs: TStringList; SeperateDirs, SkipShort: Boolean; SongsSaved: Cardinal); overload;
+    constructor Create(Name, StartURL: string; URLs: TStringList; SkipShort: Boolean; SongsSaved: Cardinal); overload;
     destructor Destroy; override;
 
     procedure WriteDebug(Text, Data: string); overload;
@@ -122,7 +121,7 @@ type
     procedure Connect;
     procedure Disconnect;
     procedure Kill;
-    procedure SetSettings(SeperateDirs, SkipShort: Boolean);
+    procedure SetSettings(SkipShort: Boolean);
 
     property DebugLog: TDebugLog read FDebugLog;
     property Active: Boolean read FGetActive;
@@ -142,7 +141,6 @@ type
     property Filename: string read FFilename;
     property RelayURL: string read FGetRelayURL;
 
-    property SeperateDirs: Boolean read FSeperateDirs;
     property SkipShort: Boolean read FSkipShort;
     property ProcessingList: TProcessingList read FProcessingList;
 
@@ -177,7 +175,7 @@ begin
 end;
 
 constructor TICEClient.Create(Name, StartURL: string; URLs: TStringList;
-  SeperateDirs, SkipShort: Boolean; SongsSaved: Cardinal);
+  SkipShort: Boolean; SongsSaved: Cardinal);
 var
   s: string;
 begin
@@ -185,7 +183,6 @@ begin
   if URLs <> nil then
     for s in URLs do
       FURLs.Add(s);
-  FSeperateDirs := SeperateDirs;
   FSkipShort := SkipShort;
   FSongsSaved := SongsSaved;
 end;
@@ -211,7 +208,6 @@ begin
   FRetries := 0;
 
   AppGlobals.Lock;
-  FSeperateDirs := AppGlobals.SeperateDirs;
   FSkipShort := AppGlobals.SkipShort;
   AppGlobals.Unlock;
 end;
@@ -419,7 +415,7 @@ end;
 
 procedure TICEClient.ThreadNeedSettings(Sender: TObject);
 begin
-  FICEThread.SetSettings(SeperateDirs, SkipShort);
+  FICEThread.SetSettings(SkipShort);
 end;
 
 procedure TICEClient.ThreadSongSaved(Sender: TObject);
@@ -686,10 +682,8 @@ begin
   FURLsIndex := 0;
 end;
 
-procedure TICEClient.SetSettings(SeperateDirs,
-  SkipShort: Boolean);
+procedure TICEClient.SetSettings(SkipShort: Boolean);
 begin
-  FSeperateDirs := SeperateDirs;
   FSkipShort := SkipShort;
 end;
 

@@ -236,7 +236,7 @@ begin
         csStopping:
           Text := _('Stopping...');
         csIOError:
-          Text := _('Error opening file');
+          Text := _('Error creating file');
       end;
   end;
 end;

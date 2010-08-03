@@ -85,7 +85,7 @@ type
     function AddClient(URL: string): TICEClient; overload;
     function AddClient(Name, StartURL: string): TICEClient; overload;
     function AddClient(Name, StartURL: string; URLs: TStringList;
-      SeperateDirs, SkipShort: Boolean; SongsSaved: Cardinal): TICEClient; overload;
+      SkipShort: Boolean; SongsSaved: Cardinal): TICEClient; overload;
     procedure RemoveClient(Client: TICEClient);
     procedure Terminate;
 
@@ -133,11 +133,11 @@ begin
 end;
 
 function TClientManager.AddClient(Name, StartURL: string; URLs: TStringList;
-  SeperateDirs, SkipShort: Boolean; SongsSaved: Cardinal): TICEClient;
+  SkipShort: Boolean; SongsSaved: Cardinal): TICEClient;
 var
   C: TICEClient;
 begin
-  C := TICEClient.Create(Name, StartURL, URLs, SeperateDirs, SkipShort, SongsSaved);
+  C := TICEClient.Create(Name, StartURL, URLs, SkipShort, SongsSaved);
   SetupClient(C);
   Result := C;
 end;
