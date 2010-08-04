@@ -20,7 +20,7 @@
 program streamwriter;
 
 uses
-  FastMM4,
+  MM in '..\..\common\MM.pas',
   Windows,
   Forms,
   Main in 'Main.pas' {frmStreamWriterMain},
