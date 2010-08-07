@@ -60,7 +60,6 @@ type
     lblFilePattern: TLabel;
     lstDefaultAction: TComboBox;
     Label3: TLabel;
-    GroupBox1: TGroupBox;
     chkSkipShort: TCheckBox;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure cmdBrowseClick(Sender: TObject);
@@ -73,9 +72,11 @@ type
     procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
       Selected: Boolean);
     procedure txtFilePatternChange(Sender: TObject);
+    procedure chkSkipShortClick(Sender: TObject);
   private
     FBrowseDir: Boolean;
     FRelayChanged: Boolean;
+    function ValidatePattern: string;
   protected
     procedure RegisterPages; override;
     procedure Finish; override;
@@ -99,8 +100,8 @@ begin
 
   FBrowseDir := BrowseDir;
 
-  ClientWidth := 390;
-  ClientHeight := 370;
+  ClientWidth := 420;
+  ClientHeight := 410;
 
   Language.Translate(Self, SetText);
 
@@ -122,6 +123,7 @@ begin
   txtDir.Text := AppGlobals.Dir;
   txtFilePattern.Text := AppGlobals.FilePattern;
   chkSkipShort.Checked := AppGlobals.SkipShort;
+  txtShortSongSize.Enabled := chkSkipShort.Checked;
   chkTrayClose.Checked := AppGlobals.TrayClose;
   chkRelay.Checked := AppGlobals.Relay;
   chkSubmitStreams.Checked := AppGlobals.SubmitStreams;
@@ -136,9 +138,6 @@ begin
   lstDefaultAction.Items.Add(_('Listen to relay'));
   lstDefaultAction.Items.Add(_('Listen to recorded file'));
   lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
-
-  lblFilePattern.Caption := _('%s = streamname, %a = artist, %t = title, %n = tracknumber'#13#10 +
-                              'You can also use a backslash to seperate directories.');
 
   AppGlobals.Unlock;
 
@@ -246,6 +245,64 @@ begin
     lblHelp.Caption := TPlugin(Item.Data).Help;
 end;
 
+function TfrmSettings.ValidatePattern: string;
+var
+  Arr: TPatternReplaceArray;
+  i: Integer;
+begin
+  inherited;
+
+  SetLength(Arr, 4);
+  Arr[0].C := 'a';
+  Arr[0].Replace := _('Artist');
+  Arr[1].C := 't';
+  Arr[1].Replace := _('Title');
+  Arr[2].C := 's';
+  Arr[2].Replace := _('Streamname');
+  Arr[3].C := 'n';
+  Arr[3].Replace := IntToStr(78);
+
+  Result := PatternReplace(txtFilePattern.Text, Arr);
+
+  // Aneinandergereihte \ entfernen
+  i := 1;
+  if Length(Result) > 0 then
+    while True do
+    begin
+      if Result[i] = '\' then
+      begin
+        if Length(Result) > i then
+        begin
+          if Result[i + 1] = '\' then
+          begin
+            Result := Copy(Result, 1, i) + Copy(Result, i + 2, Length(Result) - i);
+            Continue;
+          end;
+        end else
+          Break;
+      end;
+      Inc(i);
+    end;
+
+  // Ungültige Zeichen entfernen
+  Result := StringReplace(Result, '/', '', [rfReplaceAll]);
+  Result := StringReplace(Result, ':', '', [rfReplaceAll]);
+  Result := StringReplace(Result, '*', '', [rfReplaceAll]);
+  Result := StringReplace(Result, '"', '', [rfReplaceAll]);
+  Result := StringReplace(Result, '?', '', [rfReplaceAll]);
+  Result := StringReplace(Result, '<', '', [rfReplaceAll]);
+  Result := StringReplace(Result, '>', '', [rfReplaceAll]);
+  Result := StringReplace(Result, '|', '', [rfReplaceAll]);
+
+  // Sicherstellen, dass am Anfang/Ende kein \ steht
+  if Length(Result) > 0 then
+    if Result[1] = '\' then
+      Result := Copy(Result, 2, Length(Result) - 1);
+  if Length(Result) > 0 then
+    if Result[Length(Result)] = '\' then
+      Result := Copy(Result, 1, Length(Result) - 1);
+end;
+
 procedure TfrmSettings.RegisterPages;
 begin
   FPageList.Add(TPage.Create('&Settings', pnlMain, 'PROPERTIES'));
@@ -259,26 +316,15 @@ procedure TfrmSettings.SetText;
 begin
   inherited;
   lstPlugins.Groups[0].Header := _('Post-Processing');
+  lblFilePattern.Caption := _('%s = streamname, %a = artist, %t = title, %n = tracknumber'#13#10 +
+                              'Backslashes can be used to seperate directories.');
   AppGlobals.PluginManager.ReInitPlugins;
 end;
 
 procedure TfrmSettings.txtFilePatternChange(Sender: TObject);
-var
-  Arr: TPatternReplaceArray;
 begin
   inherited;
-
-  SetLength(Arr, 4);
-  Arr[0].C := 'a';
-  Arr[0].Replace := _('Artist');
-  Arr[1].C := 't';
-  Arr[1].Replace := _('Title');
-  Arr[2].C := 's';
-  Arr[2].Replace := _('Streamname');
-  Arr[3].C := 'n';
-  Arr[3].Replace := IntToStr(1);
-
-  txtPreview.Text := PatternReplace(txtFilePattern.Text, Arr);
+  txtPreview.Text := ValidatePattern;
 end;
 
 function TfrmSettings.CanFinish: Boolean;
@@ -288,30 +334,73 @@ begin
   if not inherited then
     Exit;
 
-  if not DirectoryExists(txtDir.Text) then
+  if Trim(txtMinDiskSpace.Text) = '' then
   begin
-    MsgBox(Handle, _('The selected folder for saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
-    SetPage(pnlMain); // TODO: isses noch main?
+    MsgBox(Handle, _('Please enter the minumum free space that must be available for recording.'), _('Info'), MB_ICONINFORMATION);
+    SetPage(FPageList.Find(TPanel(txtMinDiskSpace.Parent)));
+    txtMinDiskSpace.SetFocus;
     Exit;
   end;
 
-   // TODO: filepattern checken.
+  if Trim(ValidatePattern) = '' then
+  begin
+    MsgBox(Handle, _('Please enter a valid pattern for filenames, i.e. a preview text must be visible.'), _('Info'), MB_ICONINFORMATION);
+    SetPage(FPageList.Find(TPanel(txtFilePattern.Parent.Parent)));
+    txtFilePattern.SetFocus;
+    Exit;
+  end;
+
+  if not DirectoryExists(txtDir.Text) then
+  begin
+    MsgBox(Handle, _('The selected folder for saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
+    SetPage(FPageList.Find(TPanel(txtDir.Parent)));
+    cmdBrowse.Click;
+    Exit;
+  end;
 
   if Trim(txtShortSongSize.Text) = '' then
   begin
-    MsgBox(Handle, _('Please enter the maximum size for songs that should be consireded as ads.'), _('Info'), MB_ICONINFORMATION);
-    SetPage(pnlStreams); // TODO: isses noch streams?
-    Exit;
+    if chkSkipShort.Checked then
+    begin
+      MsgBox(Handle, _('Please enter the maximum size for songs that should be considered as ads.'), _('Info'), MB_ICONINFORMATION);
+      SetPage(FPageList.Find(TPanel(txtShortSongSize.Parent)));
+      txtShortSongSize.SetFocus;
+      Exit;
+    end else
+      txtShortSongSize.Text := IntToStr(AppGlobals.ShortSize);
   end;
 
   if Trim(txtSongBuffer.Text) = '' then
   begin
     MsgBox(Handle, _('Please enter the size of the buffer that should be added to every beginning/end of saved titles.'), _('Info'), MB_ICONINFORMATION);
-    SetPage(pnlStreams); // TODO: isses noch streams?
+    SetPage(FPageList.Find(TPanel(txtSongBuffer.Parent)));
+    txtSongBuffer.SetFocus;
+    Exit;
+  end;
+
+  if Trim(txtMaxRetries.Text) = '' then
+  begin
+    MsgBox(Handle, _('Please enter the number of maximum connect retries.'), _('Info'), MB_ICONINFORMATION);
+    SetPage(FPageList.Find(TPanel(txtMaxRetries.Parent)));
+    txtMaxRetries.SetFocus;
+    Exit;
+  end;
+
+  if Trim(txtRetryDelay.Text) = '' then
+  begin
+    MsgBox(Handle, _('Please enter the delay between connect retries.'), _('Info'), MB_ICONINFORMATION);
+    SetPage(FPageList.Find(TPanel(txtRetryDelay.Parent)));
+    txtRetryDelay.SetFocus;
     Exit;
   end;
 
   Result := True;
+end;
+
+procedure TfrmSettings.chkSkipShortClick(Sender: TObject);
+begin
+  inherited;
+  txtShortSongSize.Enabled := chkSkipShort.Checked;
 end;
 
 procedure TfrmSettings.cmdBrowseClick(Sender: TObject);

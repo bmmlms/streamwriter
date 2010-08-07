@@ -2,7 +2,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Left = 549
   Top = 450
   Caption = 'streamWriter'
-  ClientHeight = 384
+  ClientHeight = 350
   ClientWidth = 689
   Color = clBtnFace
   Constraints.MinHeight = 200
@@ -25,16 +25,15 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 0
     Top = 25
     Width = 689
-    Height = 340
+    Height = 306
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitHeight = 320
     object Splitter1: TSplitter
       Left = 472
       Top = 33
       Width = 4
-      Height = 307
+      Height = 273
       Align = alRight
       Beveled = True
       ResizeStyle = rsUpdate
@@ -97,18 +96,16 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Left = 476
       Top = 33
       Width = 213
-      Height = 307
+      Height = 273
       ActivePage = tabBrowser
       Align = alRight
       TabOrder = 2
       OnChange = pagSidebarChange
-      ExplicitHeight = 287
       object tabBrowser: TTabSheet
         Caption = 'Browser'
-        ExplicitHeight = 259
         DesignSize = (
           205
-          279)
+          245)
         object lblSearchStream: TLabel
           Left = 4
           Top = 8
@@ -147,7 +144,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   end
   object addStatus: TStatusBar
     Left = 0
-    Top = 365
+    Top = 331
     Width = 689
     Height = 19
     Panels = <
@@ -155,12 +152,11 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         Width = 100
       end
       item
-        Width = 150
+        Width = 220
       end
       item
         Width = 100
       end>
-    ExplicitTop = 345
   end
   object ToolBar1: TToolBar
     Left = 0
@@ -173,31 +169,18 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     ShowHint = True
     TabOrder = 2
     Transparent = False
-    object cmdSettings: TToolButton
-      Left = 2
-      Top = 0
-      Action = actSettings
-    end
-    object ToolButton2: TToolButton
-      Left = 25
-      Top = 0
-      Width = 8
-      Caption = 'ToolButton2'
-      ImageIndex = 4
-      Style = tbsSeparator
-    end
     object cmdStart: TToolButton
-      Left = 33
+      Left = 2
       Top = 0
       Action = actStart
     end
     object cmdStop: TToolButton
-      Left = 56
+      Left = 25
       Top = 0
       Action = actStop
     end
     object ToolButton3: TToolButton
-      Left = 79
+      Left = 48
       Top = 0
       Width = 8
       Caption = 'ToolButton3'
@@ -205,12 +188,12 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsSeparator
     end
     object cmdRemove: TToolButton
-      Left = 87
+      Left = 56
       Top = 0
       Action = actRemove
     end
     object ToolButton1: TToolButton
-      Left = 110
+      Left = 79
       Top = 0
       Width = 8
       Caption = 'ToolButton1'
@@ -218,7 +201,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsSeparator
     end
     object cmdStreamSettings: TToolButton
-      Left = 118
+      Left = 87
       Top = 0
       Caption = 'cmdStreamSettings'
       DropdownMenu = mnuStreamSettingsToolbar
@@ -226,8 +209,13 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsDropDown
       OnClick = cmdStreamSettingsClick
     end
+    object ToolButton6: TToolButton
+      Left = 125
+      Top = 0
+      Action = actResetData
+    end
     object ToolButton4: TToolButton
-      Left = 156
+      Left = 148
       Top = 0
       Width = 8
       Caption = 'ToolButton4'
@@ -235,9 +223,27 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsSeparator
     end
     object cmdShowStreamBrowser: TToolButton
-      Left = 164
+      Left = 156
       Top = 0
       Action = actShowStreamBrowser
+    end
+    object ToolButton5: TToolButton
+      Left = 179
+      Top = 0
+      Width = 8
+      Caption = 'ToolButton5'
+      ImageIndex = 13
+      Style = tbsSeparator
+    end
+    object cmdSettings: TToolButton
+      Left = 187
+      Top = 0
+      Action = actSettings
+    end
+    object ToolButton7: TToolButton
+      Left = 210
+      Top = 0
+      Action = actAbout
     end
   end
   object addXP: TXPManifest
@@ -338,7 +344,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 160
     Bitmap = {
-      494C010102000900540210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000900700210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000D0000005C000000000000000000000000000000000000
@@ -481,7 +487,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 40
     Top = 140
     Bitmap = {
-      494C01010E00D802300310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01010E00D8024C0310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1020,7 +1026,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 108
     Bitmap = {
-      494C0101010004007C0210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000400980210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000060000001D000000220000001D00000006000000000000
@@ -1305,7 +1311,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   object tmrSpeed: TTimer
     Enabled = False
     OnTimer = tmrSpeedTimer
-    Left = 304
+    Left = 296
     Top = 136
   end
   object DropStations: TDropURLTarget
@@ -1363,7 +1369,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       0000FE0F0000FC1F0000FC3F0000FCFF0000F9FF0000FFFF0000FFFF0000}
     PopupMenu = mnuTray
     OnClick = addTrayClick
-    Left = 244
+    Left = 232
     Top = 168
   end
   object mnuTray: TPopupMenu
@@ -1399,7 +1405,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 608
     Top = 236
     Bitmap = {
-      494C010101000800640010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000800800010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

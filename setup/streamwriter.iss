@@ -14,9 +14,11 @@ Name: English; MessagesFile: "compiler:Default.isl"
 [CustomMessages]
 Deutsch.Launch=streamWriter starten
 Deutsch.Running=streamWriter läuft gerade und muss geschlossen werden, damit Setup fortgesetzt werden kann.\nDrücken Sie "Ja" zum wiederholen, "Nein" zum Beenden des Setups.
+Deutsch.PleaseRestart=Das Update wurde abgeschlossen. Bitte starte streamWriter neu.
 
 English.Launch=Launch streamWriter
 English.Running=streamWriter is currently running and needs to be closed to continue setup.\nChoose "Yes" to retry, "No" to cancel setup.
+English.PleaseRestart=The update was installed successfully. Please restart streamWriter.
 
 [Setup]
 OutputBaseFilename=streamwriter_setup
@@ -90,9 +92,12 @@ begin
   if CurStep = ssPostInstall then
   begin
     s := GetCmdTail;
-    if (Pos('/update', AnsiLowerCase(s)) > 0) and (Pos('/run', AnsiLowerCase(s)) > 0) then
+    if Pos('/update', AnsiLowerCase(s)) > 0 then
     begin
-      Exec(ExpandConstant('{app}') + '\streamwriter.exe', '', ExpandConstant('{app}'), 1, ewNoWait, r);
+      if Pos('/run', AnsiLowerCase(s)) > 0 then
+        Exec(ExpandConstant('{app}') + '\streamwriter.exe', '', ExpandConstant('{app}'), 1, ewNoWait, r)
+      else
+        MsgBox(TranslateNewline(ExpandConstant('{cm:PleaseRestart}')), mbInformation, MB_OK);
     end;
   end;
 end;
@@ -104,6 +109,7 @@ begin
     //RegDeleteKeyIncludingSubkeys(HKCU, 'Software\mistake.ws\streamWriter');
   end;
 end;
+
 
 
 

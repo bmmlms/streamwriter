@@ -34,6 +34,7 @@ type
   TICEStream = class(THTTPStream)
   private
     FMetaInt: Integer;
+    FSongsSaved: Cardinal;
     FStreamName: string;
     FStreamURL: string;
     FBitRate: Cardinal;
@@ -54,7 +55,6 @@ type
     FSaveTitle: string;
     FSavedFilename: string;
     FSavedTitle: string;
-    FSongsSaved: Integer;
     FFilename: string;
 
     FAudioStream: TAudioStreamFile;
@@ -91,7 +91,7 @@ type
     property Title: string read FTitle;
     property SavedFilename: string read FSavedFilename;
     property SavedTitle: string read FSavedTitle;
-    property SongsSaved: Integer read FSongsSaved;
+    property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
     property Filename: string read FFilename;
 
     property AudioType: TAudioTypes read FAudioType;
@@ -187,7 +187,9 @@ begin
       try
         ForceDirectories(Dir);
       except
-        raise Exception.Create('Folder for saved tracks could not be created.');  // TODO: Evtl nen FOnIOError(Self) machen?
+        if Assigned(FOnIOError) then
+          FOnIOError(Self);
+        raise Exception.Create('Folder for saved tracks could not be created.');
       end;
 
       try
@@ -244,44 +246,52 @@ end;
 
 procedure TICEStream.SaveData;
 var
+  Saved: Boolean;
   RangeBegin, RangeEnd: Int64;
   Dir, Filename: string;
 begin
+  Saved := False;
   RangeBegin := FAudioStream.GetFrame(FSaveFrom, False);
   RangeEnd := FAudioStream.GetFrame(0, True);
   Dir := FSaveDir;
-                        // TODO: Wenn GetFileNameTitle sich den titel selbst holt wird der parameter hier überflüssig oder?
+
   if (RangeEnd <= -1) or (RangeBegin <= -1) then
     raise Exception.Create('Error in audio data');
 
   if not (SkipShort and not (SaveSizeOkay(RangeEnd - RangeBegin))) then
   begin
-    if Length(FSaveTitle) > 0 then
-    begin
-      Filename := GetFilenameTitle(Dir);
-      WriteDebug('Saving title "' + FSaveTitle + '"');
-    end else
-    begin
-      Filename := GetFilenameTitle(Dir);
-      WriteDebug('Saving unnamed Titel');
-    end;
+    // Muss hier, damit das in GetFilenameTitle() fürs Dateinamensmuster da ist
+    Inc(FSongsSaved);
 
     try
+      if Length(FSaveTitle) > 0 then
+      begin
+        Filename := GetFilenameTitle(Dir);
+        WriteDebug('Saving title "' + FSaveTitle + '"');
+      end else
+      begin
+        Filename := GetFilenameTitle(Dir);
+        WriteDebug('Saving unnamed Titel');
+      end;
+
       try
         ForceDirectories(Dir);
       except
         raise Exception.Create('Folder for saved tracks could not be created.');
       end;
+
       FAudioStream.SaveToFile(Filename, RangeBegin, RangeEnd - RangeBegin);
+      Saved := True;
 
       FSavedFilename := Filename;
       FSavedTitle := FSaveTitle;
-      Inc(FSongsSaved);
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self);
     except
       on E: Exception do
       begin
+        if not Saved then
+          Dec(FSongsSaved);
         WriteDebug('Error while saving to "' + Filename + '": ' + E.Message);
       end;
     end;
@@ -445,7 +455,7 @@ end;
 
 function TICEStream.GetFilename(var Dir: string; Name: string): string;
 var
-  Dir2, Filename, Ext: string;
+  Filename, Ext: string;
   Append: Integer;
 begin
   inherited;
@@ -481,16 +491,12 @@ begin
 end;
 
 function TICEStream.GetFilenameTitle(var Dir: string): string;
-var                              // TODO: was wenn eine variable leer ist und replaced wird? und dann noch ein pfad ist???
-                                 //       mehrere \ hintereinander auf eins reduzieren, wenn string damit anfängt fail, wenn
-                                 //       string damit aufhört fail. darf er damit aufhören?
+var
   p: Integer;
   Artist, Title, StreamName, SaveTitle: string;
 
   Replaced: string;
   Arr: TPatternReplaceArray;
-
-  Append: Integer;
 begin
   inherited;
 
@@ -512,10 +518,12 @@ begin
   begin
     Artist := _('Unknown artist');
     Title := SaveTitle;
+    if Title = '' then
+      Title := _('Unknown title');
   end;
 
   if StreamName = '' then
-    StreamName := _('Unknown stream'); // TODO: Evtl URL dann.
+    StreamName := _('Unknown stream');
 
   SetLength(Arr, 4);
   Arr[0].C := 'a';
@@ -525,11 +533,9 @@ begin
   Arr[2].C := 's';
   Arr[2].Replace := StreamName;
   Arr[3].C := 'n';
-  Arr[3].Replace := '1'; // TODO: !!!
+  Arr[3].Replace := IntToStr(FSongsSaved);
 
   Replaced := PatternReplace(FFilePattern, Arr);
-
-  // TODO: Ganz genau in settings gucken, ob der pfad so passt. das kann so leicht failen...
   Dir := IncludeTrailingBackslash(ExtractFilePath(FSaveDir + Replaced));
 
   Result := GetFilename(Dir, ExtractFileName(Replaced));

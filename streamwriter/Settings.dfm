@@ -33,21 +33,21 @@ object frmSettings: TfrmSettings
       489)
     object Label4: TLabel
       Left = 56
-      Top = 260
+      Top = 248
       Width = 14
       Height = 13
       Caption = 'KB'
     end
     object Label5: TLabel
       Left = 56
-      Top = 304
+      Top = 292
       Width = 14
       Height = 13
       Caption = 'KB'
     end
     object Label8: TLabel
       Left = 267
-      Top = 260
+      Top = 248
       Width = 22
       Height = 13
       Cursor = crHandPoint
@@ -64,7 +64,7 @@ object frmSettings: TfrmSettings
     end
     object Label9: TLabel
       Left = 267
-      Top = 308
+      Top = 296
       Width = 22
       Height = 13
       Cursor = crHandPoint
@@ -81,7 +81,7 @@ object frmSettings: TfrmSettings
     end
     object cmdBrowse: TSpeedButton
       Left = 267
-      Top = 16
+      Top = 172
       Width = 21
       Height = 21
       Hint = 'Browse...'
@@ -121,7 +121,7 @@ object frmSettings: TfrmSettings
     end
     object txtShortSongSize: TLabeledEdit
       Left = 4
-      Top = 255
+      Top = 243
       Width = 49
       Height = 21
       EditLabel.Width = 132
@@ -133,7 +133,7 @@ object frmSettings: TfrmSettings
     end
     object txtSongBuffer: TLabeledEdit
       Left = 4
-      Top = 299
+      Top = 287
       Width = 49
       Height = 21
       EditLabel.Width = 154
@@ -145,7 +145,7 @@ object frmSettings: TfrmSettings
     end
     object txtDir: TLabeledEdit
       Left = 4
-      Top = 16
+      Top = 172
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -159,18 +159,23 @@ object frmSettings: TfrmSettings
     end
     object GroupBox2: TGroupBox
       Left = 4
-      Top = 44
+      Top = 4
       Width = 285
-      Height = 177
+      Height = 145
+      Anchors = [akLeft, akTop, akRight]
       Caption = ' Filenames '
       TabOrder = 3
+      DesignSize = (
+        285
+        145)
       object lblFilePattern: TLabel
         Left = 8
-        Top = 112
+        Top = 108
         Width = 269
-        Height = 49
+        Height = 33
+        Anchors = [akLeft, akTop, akRight]
         AutoSize = False
-        Caption = '%s = station, %a = artist, %t = title, %n = tracknumber'
+        Caption = '-'
         WordWrap = True
       end
       object txtFilePattern: TLabeledEdit
@@ -178,6 +183,7 @@ object frmSettings: TfrmSettings
         Top = 36
         Width = 269
         Height = 21
+        Anchors = [akLeft, akTop, akRight]
         EditLabel.Width = 151
         EditLabel.Height = 13
         EditLabel.Caption = 'Pattern for names of saved files:'
@@ -189,6 +195,7 @@ object frmSettings: TfrmSettings
         Top = 80
         Width = 269
         Height = 21
+        Anchors = [akLeft, akTop, akRight]
         Color = 15790320
         EditLabel.Width = 41
         EditLabel.Height = 13
@@ -197,26 +204,15 @@ object frmSettings: TfrmSettings
         TabOrder = 1
       end
     end
-    object GroupBox1: TGroupBox
+    object chkSkipShort: TCheckBox
       Left = 4
-      Top = 332
-      Width = 285
-      Height = 69
+      Top = 200
+      Width = 220
+      Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = ' Default settings for new streams '
+      Caption = 'Skip ads (short songs)'
       TabOrder = 4
-      DesignSize = (
-        285
-        69)
-      object chkSkipShort: TCheckBox
-        Left = 8
-        Top = 40
-        Width = 220
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        Caption = 'Skip ads (short songs)'
-        TabOrder = 0
-      end
+      OnClick = chkSkipShortClick
     end
   end
   object pnlMain: TPanel
@@ -244,7 +240,7 @@ object frmSettings: TfrmSettings
     end
     object chkTrayClose: TCheckBox
       Left = 4
-      Top = -1
+      Top = 0
       Width = 281
       Height = 22
       Anchors = [akLeft, akTop, akRight]

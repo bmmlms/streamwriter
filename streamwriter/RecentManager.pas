@@ -94,6 +94,7 @@ type
   private
     FStreams: TStreamList;
     FLoadError: Boolean;
+    FReceived: UInt64;
     FOnStreamChanged: TStreamChangedEvent;
     FOnStreamAdded: TStreamChangedEvent;
     FOnStreamRemoved: TStreamChangedEvent;
@@ -115,6 +116,7 @@ type
     procedure RemoveTrack(Track: TTrackInfo);
 
     property LoadError: Boolean read FLoadError write FLoadError;
+    property Received: UInt64 read FReceived write FReceived;
     property OnStreamAdded: TStreamChangedEvent read FOnStreamAdded write FOnStreamAdded;
     property OnStreamRemoved: TStreamChangedEvent read FOnStreamRemoved write FOnStreamRemoved;
     property OnStreamChanged: TStreamChangedEvent read FOnStreamChanged write FOnStreamChanged;
@@ -405,6 +407,7 @@ end;
 constructor TStreamDataList.Create;
 begin
   FLoadError := False;
+  FReceived := 0;
   FStreams := TStreamList.Create;
 end;
 
@@ -489,6 +492,8 @@ begin
       if Version > DATAVERSION then
         raise EVersionException.Create(AppGlobals.DataFile);
 
+      S.Read(FReceived);
+
       while S.Position < S.Size do
       begin
         Entry := TStreamEntry.Load(S);
@@ -497,11 +502,13 @@ begin
     except
       on E: EVersionException do
       begin
+        FReceived := 0;
         FLoadError := True;
         raise;
       end;
       on E: Exception do
       begin
+        FReceived := 0;
         FLoadError := True;
         raise Exception.Create(AppGlobals.DataFile);
       end;
@@ -557,6 +564,7 @@ begin
     S := TExtendedStream.Create;
     try
       S.Write(DATAVERSION);
+      S.Write(FReceived);
       for i := 0 to FStreams.Count - 1 do
       begin
         FStreams[i].Save(S);

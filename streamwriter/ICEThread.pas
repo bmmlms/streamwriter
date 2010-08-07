@@ -119,11 +119,15 @@ begin
     FRelayBuffer.Seek(0, soFromEnd);
     FRelayBuffer.WriteBuffer(Buf^, Len);
 
+    WriteDebug(Format('Relaybuffer size: %d bytes', [FRelayBuffer.Size]));
+
     if FRelayBuffer.Size > CutSize then
     begin
       // Wenn der Puffer voll, bis zum ersten Frame ab der Mitte abschneiden
       RemoveTo := FRelayBuffer.GetFrame(CutSize div 2, False);
       FRelayBuffer.RemoveRange(0, RemoveTo - 1);
+
+      WriteDebug(Format('Relaybuffer size after remove: %d bytes', [FRelayBuffer.Size]));
     end;
 
     for Thread in FRelayThreads do
@@ -135,6 +139,8 @@ begin
         try
           Thread.Thread.SendStream.Seek(0, soFromEnd);
           Thread.Thread.SendStream.Write(Buf^, Len);
+
+          WriteDebug(Format('Wrote %d bytes to relay', [Len]));
         finally
           Thread.Thread.SendLock.Leave;
         end;
@@ -229,9 +235,7 @@ begin
   if FRelayBuffer <> nil then
   begin
     FRelayLock.Enter;
-
     try
-
       for Thread in FRelayThreads do
       begin
         if not Thread.FirstSent then
@@ -250,11 +254,9 @@ begin
           end;
         end;
       end;
-
     finally
       FRelayLock.Leave;
     end;
-
   end;
 end;
 
@@ -295,11 +297,14 @@ begin
   AppGlobals.Unlock;
 
   FRelayLock := TCriticalSection.Create;
-  ParseURL(URL, Host, Port, Data);
-  FTypedStream := TICEStream(FRecvStream);
   FRelayThreads := TRelayInfoList.Create;
   FSongsSaved := 0;
   FTitle := '';
+
+  ParseURL(URL, Host, Port, Data);
+
+  FTypedStream := TICEStream(FRecvStream);
+  FTypedStream.SongsSaved := FSongsSaved;
   FTypedStream.OnTitleChanged := StreamTitleChanged;
   FTypedStream.OnSongSaved := StreamSongSaved;
   FTypedStream.OnNeedSettings := StreamNeedSettings;

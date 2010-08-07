@@ -77,8 +77,6 @@ type
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
 
-    class function MakeSize(Size: UInt64): string;
-
     function AddClient(Client: TICEClient): PVirtualNode;
     function RefreshClient(Client: TICEClient): Boolean;
     function GetClientNodeData(Client: TICEClient): PClientNodeData;
@@ -94,16 +92,6 @@ type
 implementation
 
 { TMStreamView }
-
-class function TMClientView.MakeSize(Size: UInt64): string;
-begin
-  if Size < 1048576 then
-    Result := Format('%f KB', [Size / (1024)])
-  else if Size < 1073741824 then
-    Result := Format('%f MB', [Size / (1024 * 1024)])
-  else
-    Result := Format('%f GB', [Size / (1024 * 1024 * 1024)])
-end;
 
 function TMClientView.AddClient(Client: TICEClient): PVirtualNode;
 var

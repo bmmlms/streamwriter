@@ -97,7 +97,6 @@ type
     Skipshortsongs1: TMenuItem;
     actAbout: TAction;
     actOpenPlaylist: TAction;
-    ToolButton2: TToolButton;
     cmdSettings: TToolButton;
     N8: TMenuItem;
     ToolButton1: TToolButton;
@@ -136,6 +135,9 @@ type
     mnuReset1: TMenuItem;
     mnuReset11: TMenuItem;
     actResetData: TAction;
+    ToolButton5: TToolButton;
+    ToolButton6: TToolButton;
+    ToolButton7: TToolButton;
     procedure cmdStartStreamingClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure actStopExecute(Sender: TObject);
@@ -175,9 +177,9 @@ type
     procedure actResetDataExecute(Sender: TObject);
   private
     FStreams: TStreamDataList;
-    FReceived: UInt64;
     FUpdater: TUpdateClient;
     FShutdown: Boolean;
+    FReceived: UInt64;
     FUpdateOnExit: Boolean;
     FRefreshInfo: Boolean;
     FWasShown: Boolean;
@@ -526,7 +528,9 @@ var
   R: TStreamEntry;
   i: Integer;
 begin
-  Res := MsgBox(Handle, _('This will reset the saved song and bytes received counters and information about saved songs.'#13#10'Do you want to continue?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
+  Res := MsgBox(Handle, _('This will reset the saved song and bytes received counters and information about saved songs.'#13#10 +
+                          'The tracknumber of new saved titles will be 1 if you specified the tracknumber in the filename pattern, this number will also be set in ID3 tags.'#13#10 +
+                          'Do you want to continue?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
   if Res = IDYES then
   begin
     Clients := lstClients.NodesToData(lstClients.GetNodes(True));
@@ -600,8 +604,8 @@ begin
     FClients.RelayServer.Start;
 
   FWasShown := False;
-  FReceived := 0;
   FShutdown := False;
+  FReceived := 0;
   FUpdateOnExit := False;
   FRefreshInfo := False;
 
@@ -663,11 +667,18 @@ begin
     FStreams.Load;
   except
       on E: Exception do
+      begin
+        try
+          FStreams.Free;
+        except end;
+        FStreams := TStreamDataList.Create;
+
         if HandleLoadError(E) = IDYES then
         begin
           DeleteFile(E.Message);
           FStreams.LoadError := False;
         end;
+      end;
   end;
 
   Recent := TRecent.Create;
@@ -1338,8 +1349,8 @@ begin
     Speed := Speed + Client.Client.Speed;
     lstClients.RefreshClient(Client.Client);
   end;
-  addStatus.Panels[0].Text := TMClientView.MakeSize(Speed) + '/s';
-  addStatus.Panels[1].Text := Format(_('%s received'), [TMClientView.MakeSize(FReceived)]);
+  addStatus.Panels[0].Text := MakeSize(Speed) + '/s';
+  addStatus.Panels[1].Text := Format(_('%s/%s received'), [MakeSize(FReceived), MakeSize(FStreams.Received)]);
   addStatus.Panels[2].Text := Format(_('%d songs saved'), [FClients.SongsSaved]);
 end;
 
@@ -1482,6 +1493,7 @@ begin
   Client := Sender as TICEClient;
 
   FReceived := FReceived + Received;
+  FStreams.Received := FStreams.Received + Received;
 
   Entry := FStreams.Get(Client);
   if Entry <> nil then
