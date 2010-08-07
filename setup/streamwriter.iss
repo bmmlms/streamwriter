@@ -2,7 +2,7 @@
 Source: ..\bin\streamwriter.exe; DestDir: {app}; Flags: ignoreversion
 Source: ..\bin\plugins\settags.dll; DestDir: {app}\plugins; Flags: ignoreversion
 ;Source: ..\bin\plugins\normalize.dll; DestDir: {app}\plugins; Flags: ignoreversion
-Source: ..\bin\plugins\rename.dll; DestDir: {app}\plugins; Flags: ignoreversion
+;Source: ..\bin\plugins\rename.dll; DestDir: {app}\plugins; Flags: ignoreversion
 
 [Icons]
 Name: {group}\streamWriter; Filename: {app}\streamwriter.exe; IconFilename: {app}\streamwriter.exe; IconIndex: 0
@@ -109,6 +109,7 @@ begin
     //RegDeleteKeyIncludingSubkeys(HKCU, 'Software\mistake.ws\streamWriter');
   end;
 end;
+
 
 
 

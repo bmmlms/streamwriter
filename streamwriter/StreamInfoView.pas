@@ -437,7 +437,7 @@ begin
   SetLength(Result, 0);
   BeginUpdate;
   try
-    if EntriesChanged then
+    if EntriesChanged or (Tracks.Count = 0) then
     begin
       Clear;
       FDisplayedTracks.Clear;

@@ -120,8 +120,8 @@ begin
   FRelayChanged := False;
 
   AppGlobals.Lock;
-  txtDir.Text := AppGlobals.Dir;
   txtFilePattern.Text := AppGlobals.FilePattern;
+  txtDir.Text := AppGlobals.Dir;
   chkSkipShort.Checked := AppGlobals.SkipShort;
   txtShortSongSize.Enabled := chkSkipShort.Checked;
   chkTrayClose.Checked := AppGlobals.TrayClose;
@@ -269,18 +269,14 @@ begin
   if Length(Result) > 0 then
     while True do
     begin
+      if i = Length(Result) - 1 then
+        Break;
       if Result[i] = '\' then
-      begin
-        if Length(Result) > i then
+        if Result[i + 1] = '\' then
         begin
-          if Result[i + 1] = '\' then
-          begin
-            Result := Copy(Result, 1, i) + Copy(Result, i + 2, Length(Result) - i);
-            Continue;
-          end;
-        end else
-          Break;
-      end;
+          Result := Copy(Result, 1, i) + Copy(Result, i + 2, Length(Result) - i);
+          Continue;
+        end;
       Inc(i);
     end;
 
