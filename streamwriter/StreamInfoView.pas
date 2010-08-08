@@ -494,7 +494,6 @@ begin
   FName := TLabel.Create(Self);
   FName.Parent := FTopPanel;
   FName.Align := alTop;
-  FName.Font.Name := 'Tahoma';
   FName.Font.Size := 10;
   FName.Font.Style := [fsBold];
   FName.Visible := True;

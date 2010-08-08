@@ -288,7 +288,7 @@ begin
   AppGlobals.Storage.Read('Active_' + LowerCase(ExtractFileName(Filename)), FActive, FDefaultEnabled, 'Plugins');
 
   if FAuthor = '' then
-    raise Exception.Create('Kein Author/Name angegeben.');
+    raise Exception.Create('-');
 end;
 
 destructor TPlugin.Destroy;

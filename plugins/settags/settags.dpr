@@ -29,6 +29,8 @@ uses
   LanguageObjects in '..\..\..\common\LanguageObjects.pas',
   Functions in '..\..\..\common\Functions.pas';
 
+{$R .\res\language.res}
+
 type
   TMapBytes = array[0..MAXINT - 1] of Byte;
   PMapBytes = ^TMapBytes;
@@ -70,7 +72,7 @@ function GetHelp(Data: PChar; Len: Integer): Integer; stdcall;
 var
   s: string;
 begin
-  s := _('This plugin writes ID3-Tags to saved songs.');
+  s := _('This plugin writes ID3-tags to saved songs.');
   Result := -1;
   if Len < Length(s) * SizeOf(Char) then
     Exit;

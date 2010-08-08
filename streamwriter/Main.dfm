@@ -2,7 +2,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Left = 549
   Top = 450
   Caption = 'streamWriter'
-  ClientHeight = 350
+  ClientHeight = 370
   ClientWidth = 689
   Color = clBtnFace
   Constraints.MinHeight = 200
@@ -25,7 +25,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 0
     Top = 25
     Width = 689
-    Height = 306
+    Height = 326
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
@@ -33,9 +33,11 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Left = 472
       Top = 33
       Width = 4
-      Height = 273
+      Height = 293
       Align = alRight
+      AutoSnap = False
       Beveled = True
+      MinSize = 220
       ResizeStyle = rsUpdate
       ExplicitLeft = 424
       ExplicitHeight = 328
@@ -96,16 +98,20 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Left = 476
       Top = 33
       Width = 213
-      Height = 273
+      Height = 293
       ActivePage = tabBrowser
       Align = alRight
       TabOrder = 2
       OnChange = pagSidebarChange
       object tabBrowser: TTabSheet
         Caption = 'Browser'
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         DesignSize = (
           205
-          245)
+          265)
         object lblSearchStream: TLabel
           Left = 4
           Top = 8
@@ -144,7 +150,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   end
   object addStatus: TStatusBar
     Left = 0
-    Top = 331
+    Top = 351
     Width = 689
     Height = 19
     Panels = <
@@ -183,7 +189,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Left = 48
       Top = 0
       Width = 8
-      Caption = 'ToolButton3'
+      Caption = '-'
       ImageIndex = 7
       Style = tbsSeparator
     end
@@ -196,14 +202,13 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Left = 79
       Top = 0
       Width = 8
-      Caption = 'ToolButton1'
+      Caption = '-'
       ImageIndex = 7
       Style = tbsSeparator
     end
     object cmdStreamSettings: TToolButton
       Left = 87
       Top = 0
-      Caption = 'cmdStreamSettings'
       DropdownMenu = mnuStreamSettingsToolbar
       ImageIndex = 9
       Style = tbsDropDown
@@ -218,7 +223,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Left = 148
       Top = 0
       Width = 8
-      Caption = 'ToolButton4'
+      Caption = '-'
       ImageIndex = 10
       Style = tbsSeparator
     end
@@ -231,7 +236,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Left = 179
       Top = 0
       Width = 8
-      Caption = 'ToolButton5'
+      Caption = '-'
       ImageIndex = 13
       Style = tbsSeparator
     end
@@ -284,7 +289,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         Caption = '-'
       end
       object mnuTuneIn2: TMenuItem
-        Caption = '&Listen to'
+        Caption = '&Listen'
         object mnuListenToStream2: TMenuItem
           Action = actTuneInStream
         end
@@ -296,7 +301,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         end
       end
       object mnuSavePlaylist2: TMenuItem
-        Caption = 'S&ave playlist of'
+        Caption = 'S&ave playlist'
         Hint = 'Save as playlist...'
         object actSavePlaylistStream1: TMenuItem
           Action = actSavePlaylistStream
@@ -344,7 +349,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 160
     Bitmap = {
-      494C010102000900700210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000900880210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000D0000005C000000000000000000000000000000000000
@@ -487,7 +492,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 40
     Top = 140
     Bitmap = {
-      494C01010E00D8024C0310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01010E00D802640310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1026,7 +1031,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 108
     Bitmap = {
-      494C010101000400980210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000400B00210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000060000001D000000220000001D00000006000000000000
@@ -1210,11 +1215,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       ImageIndex = 10
       OnExecute = actAboutExecute
     end
-    object actOpenPlaylist: TAction
-      Caption = '&Open playlist...'
-      Hint = 'Open playlist...'
-      ImageIndex = 4
-    end
     object actShowStreamBrowser: TAction
       Caption = '&Show sidebar'
       Hint = 'Show sidebar'
@@ -1273,7 +1273,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Caption = '-'
     end
     object mnuTuneIn1: TMenuItem
-      Caption = '&Listen to'
+      Caption = '&Listen'
       object mnuListenToStream1: TMenuItem
         Action = actTuneInStream
       end
@@ -1405,7 +1405,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 608
     Top = 236
     Bitmap = {
-      494C010101000800800010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000800980010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

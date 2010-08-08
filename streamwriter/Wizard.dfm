@@ -52,7 +52,7 @@ object frmWizard: TfrmWizard
         'When enabled every stream unknown to streamWriter will be submit' +
         'ted to the stream database. This helps populating the stream dat' +
         'abase so streamWriter'#39's browser will be kept up to date. No pers' +
-        'onal information will be sent.'
+        'onal information will be sent, only the stream'#39's url.'
       WordWrap = True
     end
     object chkRelay: TCheckBox
@@ -68,7 +68,7 @@ object frmWizard: TfrmWizard
       Top = 108
       Width = 257
       Height = 21
-      Caption = 'Submit streams to stream database'
+      Caption = 'Submit stream urls to stream database'
       TabOrder = 1
     end
   end
@@ -83,7 +83,7 @@ object frmWizard: TfrmWizard
       389
       233)
     object cmdBrowse: TSpeedButton
-      Left = 252
+      Left = 308
       Top = 56
       Width = 21
       Height = 21
@@ -147,7 +147,7 @@ object frmWizard: TfrmWizard
     object txtDir: TLabeledEdit
       Left = 8
       Top = 56
-      Width = 241
+      Width = 293
       Height = 21
       AutoSize = False
       Color = 15790320

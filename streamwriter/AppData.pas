@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Registry, SyncObjs, AppDataBase,
-  LanguageObjects, LanguageIcons, Plugins;
+  LanguageObjects, LanguageIcons, Plugins, Forms;
 
 type
   TClientActions = (caStartStop, caStream, caRelay, caFile);
@@ -90,8 +90,13 @@ var
 implementation
 
 constructor TAppData.Create(AppName: string);
+var
+  W: Integer;
 begin
-  inherited Create(AppName, True, 800, 450);
+  W := 900;
+  if Screen.Width < 900 then
+    W := Screen.Width - 20;
+  inherited Create(AppName, True, W, 450);
 
   FLanguageIcons := TLanguageIcons.Create;
 end;
@@ -132,7 +137,7 @@ begin
   FStorage.Read('SkipShort', FSkipShort, True);
   FStorage.Read('TrayClose', FTrayClose, False);
   FStorage.Read('ShowSidebar', FShowSidebar, True);
-  FStorage.Read('SidebarWidth', FSidebarWidth, 200);
+  FStorage.Read('SidebarWidth', FSidebarWidth, 220);
   FStorage.Read('Relay', FRelay, False);
   FStorage.Read('SubmitStreams', FSubmitStreams, True);
   FStorage.Read('ShortSize', FShortSize, 1000);

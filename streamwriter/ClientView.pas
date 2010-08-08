@@ -50,6 +50,7 @@ type
 
   TMClientView = class(TVirtualStringTree)
   private
+    FPopupMenu: TPopupMenu;
     FDragSource: TDropFileSource;
 
     FSortColumn: Integer;
@@ -73,8 +74,13 @@ type
     function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
     procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X: Integer;
+      Y: Integer); override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState;
+      X: Integer; Y: Integer); override;
+
   public
-    constructor Create(AOwner: TComponent); reintroduce;
+    constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu); reintroduce;
     destructor Destroy; override;
 
     function AddClient(Client: TICEClient): PVirtualNode;
@@ -104,9 +110,10 @@ begin
   Result := Node;
 end;
 
-constructor TMClientView.Create(AOwner: TComponent);
+constructor TMClientView.Create(AOwner: TComponent; PopupMenu: TPopupMenu);
 begin
-  inherited;
+  inherited Create(AOwner);
+
   NodeDataSize := SizeOf(TClientNodeData);
   IncrementalSearch := isVisibleOnly;
   Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
@@ -118,6 +125,7 @@ begin
   ShowHint := True;
   HintMode := hmTooltip;
 
+  FPopupMenu := PopupMenu;
   FDragSource := TDropFileSource.Create(Self);
 
   FSortColumn := 0;
@@ -319,6 +327,18 @@ begin
       Result[Length(Result) - 1] := Nodes[i];
     end;
   end;
+end;
+
+procedure TMClientView.MouseDown(Button: TMouseButton; Shift: TShiftState;
+  X, Y: Integer);
+begin
+  inherited;
+end;
+
+procedure TMClientView.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Integer);
+begin
+  inherited;
 end;
 
 function TMClientView.RefreshClient(Client: TICEClient): Boolean;

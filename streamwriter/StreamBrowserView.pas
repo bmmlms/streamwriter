@@ -174,6 +174,7 @@ begin
 
   FItemStart := FPopupMenu.CreateMenuItem;
   FItemStart.Caption := _('&Start recording');
+  FItemStart.Default := True;
   FItemStart.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemStart);
 

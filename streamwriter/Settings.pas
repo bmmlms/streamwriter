@@ -76,12 +76,14 @@ type
   private
     FBrowseDir: Boolean;
     FRelayChanged: Boolean;
+    FDefaultActionIdx: Integer;
     function ValidatePattern: string;
   protected
     procedure RegisterPages; override;
     procedure Finish; override;
     function CanFinish: Boolean; override;
-    procedure SetText; override;
+    procedure PreTranslate; override;
+    procedure PostTranslate; override;
   public
     constructor Create(AOwner: TComponent; BrowseDir: Boolean = False); reintroduce;
     property RelayChanged: Boolean read FRelayChanged;
@@ -103,7 +105,9 @@ begin
   ClientWidth := 420;
   ClientHeight := 410;
 
-  Language.Translate(Self, SetText);
+  lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
+
+  Language.Translate(Self, PreTranslate, PostTranslate);
 
   for i := 0 to Self.ControlCount - 1 do begin
     if Self.Controls[i] is TPanel then begin
@@ -132,12 +136,6 @@ begin
   txtMaxRetries.Text := IntToStr(AppGlobals.MaxRetries);
   txtRetryDelay.Text := IntToStr(AppGlobals.RetryDelay);
   txtMinDiskSpace.Text := IntToStr(AppGlobals.MinDiskSpace);
-
-  lstDefaultAction.Items.Add(_('Start/stop recording'));
-  lstDefaultAction.Items.Add(_('Listen to stream'));
-  lstDefaultAction.Items.Add(_('Listen to relay'));
-  lstDefaultAction.Items.Add(_('Listen to recorded file'));
-  lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
 
   AppGlobals.Unlock;
 
@@ -219,7 +217,7 @@ end;
 procedure TfrmSettings.Label6Click(Sender: TObject);
 begin
   inherited;
-  MsgBox(Handle, _('When enabled every stream unknown to streamWriter will be submitted to the stream database. This helps populating the stream database so streamWriter''s browser will be kept up to date. No personal information will be sent.'), _('Info'), MB_ICONINFORMATION);
+  MsgBox(Handle, _('When enabled every stream unknown to streamWriter will be submitted to the stream database. This helps populating the stream database so streamWriter''s browser will be kept up to date. No personal information will be sent, only the stream''s url.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TfrmSettings.Label8Click(Sender: TObject);
@@ -243,6 +241,27 @@ begin
   cmdConfigure.Enabled := False;
   if Selected then
     lblHelp.Caption := TPlugin(Item.Data).Help;
+end;
+
+procedure TfrmSettings.PreTranslate;
+begin
+  inherited;
+  FDefaultActionIdx := lstDefaultAction.ItemIndex;
+end;
+
+procedure TfrmSettings.PostTranslate;
+begin
+  inherited;
+  lstPlugins.Groups[0].Header := _('Post-Processing');
+  lblFilePattern.Caption := _('%s = streamname, %a = artist, %t = title, %n = tracknumber'#13#10 +
+                              'Backslashes can be used to seperate directories.');
+  if lstPlugins.Selected <> nil then
+  begin
+    AppGlobals.PluginManager.ReInitPlugins;
+    lstPluginsSelectItem(lstPlugins, lstPlugins.Selected, True);
+  end;
+  AppGlobals.PluginManager.ReInitPlugins;
+  lstDefaultAction.ItemIndex := FDefaultActionIdx;
 end;
 
 function TfrmSettings.ValidatePattern: string;
@@ -269,7 +288,7 @@ begin
   if Length(Result) > 0 then
     while True do
     begin
-      if i = Length(Result) - 1 then
+      if i = Length(Result) then
         Break;
       if Result[i] = '\' then
         if Result[i + 1] = '\' then
@@ -306,15 +325,6 @@ begin
   FPageList.Add(TPage.Create('&Plugins', pnlPlugins, 'PLUGINS'));
   FPageList.Add(TPage.Create('&Advanced', pnlAdvanced, 'MISC'));
   inherited;
-end;
-
-procedure TfrmSettings.SetText;
-begin
-  inherited;
-  lstPlugins.Groups[0].Header := _('Post-Processing');
-  lblFilePattern.Caption := _('%s = streamname, %a = artist, %t = title, %n = tracknumber'#13#10 +
-                              'Backslashes can be used to seperate directories.');
-  AppGlobals.PluginManager.ReInitPlugins;
 end;
 
 procedure TfrmSettings.txtFilePatternChange(Sender: TObject);

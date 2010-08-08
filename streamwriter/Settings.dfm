@@ -266,6 +266,11 @@ object frmSettings: TfrmSettings
       Height = 21
       Style = csDropDownList
       TabOrder = 2
+      Items.Strings = (
+        'Start/stop recording'
+        'Listen to stream'
+        'Listen to relay'
+        'Listen to recorded file')
     end
   end
   object pnlAdvanced: TPanel
@@ -347,7 +352,7 @@ object frmSettings: TfrmSettings
       Top = 116
       Width = 249
       Height = 21
-      Caption = 'Submit stream URLs to stream database'
+      Caption = 'Submit stream urls to stream database'
       TabOrder = 2
     end
     object chkRelay: TCheckBox

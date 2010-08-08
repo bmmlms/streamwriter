@@ -123,7 +123,7 @@ end;
 procedure TfrmWizard.RegisterSteps;
 begin
   inherited;
-  FStepList.Add(TStepIceServer.Create('Local ICE server', pnlICEServer));
+  FStepList.Add(TStepIceServer.Create('Settings', pnlICEServer));
   FStepList.Add(TStepDir.Create('Select folder', pnlDir));
 end;
 

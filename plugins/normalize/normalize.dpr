@@ -30,6 +30,9 @@ uses
   LanguageObjects in '..\..\..\common\LanguageObjects.pas',
   Functions in '..\..\..\common\Functions.pas';
 
+{$R .\res\language.res}
+{$R res\res.res}
+
 type
   TMapBytes = array[0..MAXINT - 1] of Byte;
   PMapBytes = ^TMapBytes;
@@ -45,8 +48,6 @@ var
   Lang: string;
   Read: TReadWrite;
   Write: TReadWrite;
-
-{$R res\res.res}
 
 function GetAuthor(Data: PChar; Len: Integer): Integer; stdcall;
 begin
@@ -109,8 +110,8 @@ begin
         end;
       end;
 
-      RunProcess('"' + GetTempDir + 'mp3gain.exe' + '" "' + Data.Filename + '"', Handle, True);
-      if Handle > -1 then
+      RunProcess(Format('"%smp3gain.exe" "%s"', [GetTempDir, Data.Filename]), Handle, True);
+      if Handle < High(Cardinal) then
       begin
         WaitForSingleObject(Handle, Infinite);
         GetExitCodeProcess(Handle, ExitCode);

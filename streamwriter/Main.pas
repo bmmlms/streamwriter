@@ -96,7 +96,6 @@ type
     Savetitlestoseperatefolder1: TMenuItem;
     Skipshortsongs1: TMenuItem;
     actAbout: TAction;
-    actOpenPlaylist: TAction;
     cmdSettings: TToolButton;
     N8: TMenuItem;
     ToolButton1: TToolButton;
@@ -483,8 +482,12 @@ procedure TfrmStreamWriterMain.actTuneInRelayExecute(Sender: TObject);
 var
   Entries: TPlaylistEntryArray;
 begin
-  Entries := lstClients.GetEntries(etRelay);
-  SavePlaylist(Entries, True);
+  UpdateButtons;
+  if actTuneInRelay.Enabled then
+  begin
+    Entries := lstClients.GetEntries(etRelay);
+    SavePlaylist(Entries, True);
+  end;
 end;
 
 procedure TfrmStreamWriterMain.actTuneInStreamExecute(Sender: TObject);
@@ -499,8 +502,12 @@ procedure TfrmStreamWriterMain.actTuneInFileExecute(Sender: TObject);
 var
   Entries: TPlaylistEntryArray;
 begin
-  Entries := lstClients.GetEntries(etFile);
-  SavePlaylist(Entries, True);
+  UpdateButtons;
+  if actTuneInFile.Enabled then
+  begin
+    Entries := lstClients.GetEntries(etFile);
+    SavePlaylist(Entries, True);
+  end;
 end;
 
 procedure TfrmStreamWriterMain.addTrayClick(Sender: TObject);
@@ -620,11 +627,11 @@ begin
   lstStations.OnKeyPress := lstStationsKeyPress;
   lstStations.OnChange := lstStationsChange;
 
-  lstClients := TMClientView.Create(Self);
+  lstClients := TMClientView.Create(Self, mnuStreamPopup);
   lstClients.Parent := pnlStreams;
+  lstClients.PopupMenu := mnuStreamPopup;
   lstClients.Align := alClient;
   lstClients.Images := imgClients;
-  lstClients.PopupMenu := mnuStreamPopup;
   lstClients.OnChange := lstClientsChange;
   lstClients.OnDblClick := lstClientsDblClick;
   lstClients.OnKeyPress := lstClientsKeyPress;

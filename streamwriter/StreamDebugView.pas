@@ -116,14 +116,14 @@ begin
   FPanelBottom.Padding.Top := 4;
 
   FBtnCopy := TButton.Create(Self);
-  FBtnCopy.Caption := _('Copy');
+  FBtnCopy.Caption := _('&Copy');
   FBtnCopy.Align := alRight;
   FBtnCopy.Parent := FPanelBottom;
   FBtnCopy.Visible := True;
   FBtnCopy.OnClick := BtnCopyClick;
 
   FBtnClear := TButton.Create(Self);
-  FBtnClear.Caption := _('Clear');
+  FBtnClear.Caption := _('C&lear');
   FBtnClear.Align := alRight;
   FBtnClear.Parent := FPanelBottom;
   FBtnClear.Visible := True;
