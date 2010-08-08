@@ -46,7 +46,7 @@ object frmSettings: TfrmSettings
       Caption = 'KB'
     end
     object Label8: TLabel
-      Left = 267
+      Left = 268
       Top = 248
       Width = 22
       Height = 13
@@ -63,8 +63,8 @@ object frmSettings: TfrmSettings
       OnClick = Label8Click
     end
     object Label9: TLabel
-      Left = 267
-      Top = 296
+      Left = 268
+      Top = 292
       Width = 22
       Height = 13
       Cursor = crHandPoint
@@ -80,7 +80,7 @@ object frmSettings: TfrmSettings
       OnClick = Label9Click
     end
     object cmdBrowse: TSpeedButton
-      Left = 267
+      Left = 268
       Top = 172
       Width = 21
       Height = 21
@@ -121,7 +121,7 @@ object frmSettings: TfrmSettings
     end
     object txtShortSongSize: TLabeledEdit
       Left = 4
-      Top = 243
+      Top = 244
       Width = 49
       Height = 21
       EditLabel.Width = 132
@@ -133,7 +133,7 @@ object frmSettings: TfrmSettings
     end
     object txtSongBuffer: TLabeledEdit
       Left = 4
-      Top = 287
+      Top = 288
       Width = 49
       Height = 21
       EditLabel.Width = 154
@@ -285,7 +285,7 @@ object frmSettings: TfrmSettings
       Caption = 'seconds'
     end
     object Label6: TLabel
-      Left = 267
+      Left = 268
       Top = 120
       Width = 22
       Height = 13
@@ -302,7 +302,7 @@ object frmSettings: TfrmSettings
       OnClick = Label6Click
     end
     object Label11: TLabel
-      Left = 267
+      Left = 268
       Top = 96
       Width = 22
       Height = 13
@@ -352,7 +352,7 @@ object frmSettings: TfrmSettings
     end
     object chkRelay: TCheckBox
       Left = 4
-      Top = 90
+      Top = 92
       Width = 249
       Height = 23
       Anchors = [akLeft, akTop, akRight]

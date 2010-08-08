@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
   RecentManager, VirtualTrees, LanguageObjects, GUIFunctions,
-  Generics.Collections, Graphics, Forms, ICEClient;
+  Generics.Collections, Graphics, Forms, ICEClient, Clipbrd;
 
 type
   TDebugView = class(TVirtualStringTree)
@@ -166,8 +166,28 @@ end;
 { TDebugView }
 
 procedure TDebugView.Copy;
+var
+  s: string;
+  Node: PVirtualNode;
 begin
-// TODO: !!
+  if RootNodeCount > 0 then
+  begin
+    s := '';
+
+    Node := GetFirst;
+    while Node <> nil do
+    begin
+      if GetNodeLevel(Node) = 1 then
+        s := s + '    ' + StringReplace(FClient.DebugLog[Node.Index].Text, #13#10, #13#10'    ', [rfReplaceAll])
+      else
+        s := s + DateToStr(FClient.DebugLog[Node.Index].Time) + ' - ' + FClient.DebugLog[Node.Index].Text;
+      s := s + #13#10;
+      Node := GetNext(Node);
+    end;
+
+    Clipboard.Clear;
+    Clipboard.SetTextBuf(PChar(s));
+  end;
 end;
 
 constructor TDebugView.Create(AOwner: TComponent);
