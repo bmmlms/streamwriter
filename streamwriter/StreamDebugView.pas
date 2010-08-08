@@ -167,7 +167,7 @@ end;
 
 procedure TDebugView.Copy;
 begin
-
+// TODO: !!
 end;
 
 constructor TDebugView.Create(AOwner: TComponent);

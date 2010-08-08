@@ -110,7 +110,7 @@ var
   RemoveTo: Int64;
   Thread: PRelayInfo;
 const
-  CutSize = 5000000;
+  CutSize = 1000000;
 begin
   if FRelayBuffer = nil then
     Exit;
@@ -119,7 +119,7 @@ begin
     FRelayBuffer.Seek(0, soFromEnd);
     FRelayBuffer.WriteBuffer(Buf^, Len);
 
-    WriteDebug(Format('Relaybuffer size: %d bytes', [FRelayBuffer.Size]));
+    //WriteDebug(Format('Relaybuffer size: %d bytes', [FRelayBuffer.Size]));
 
     if FRelayBuffer.Size > CutSize then
     begin
@@ -127,7 +127,7 @@ begin
       RemoveTo := FRelayBuffer.GetFrame(CutSize div 2, False);
       FRelayBuffer.RemoveRange(0, RemoveTo - 1);
 
-      WriteDebug(Format('Relaybuffer size after remove: %d bytes', [FRelayBuffer.Size]));
+      //WriteDebug(Format('Relaybuffer size after remove: %d bytes', [FRelayBuffer.Size]));
     end;
 
     for Thread in FRelayThreads do
@@ -140,7 +140,7 @@ begin
           Thread.Thread.SendStream.Seek(0, soFromEnd);
           Thread.Thread.SendStream.Write(Buf^, Len);
 
-          WriteDebug(Format('Wrote %d bytes to relay', [Len]));
+          //WriteDebug(Format('Wrote %d bytes to relay, new buffersize is %d', [Len, Thread.Thread.SendStream.Size]));
         finally
           Thread.Thread.SendLock.Leave;
         end;
@@ -324,10 +324,16 @@ begin
 end;
 
 destructor TICEThread.Destroy;
+var
+  i: Integer;
 begin
   if FRelayBuffer <> nil then
     FRelayBuffer.Free;
   FRelayLock.Free;
+  for i := 0 to FRelayThreads.Count - 1 do
+  begin
+    Dispose(FRelayThreads[i]);
+  end;
   FRelayThreads.Free;
   inherited;
 end;

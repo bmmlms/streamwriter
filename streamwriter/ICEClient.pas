@@ -249,8 +249,8 @@ begin
         if FICEThread.RelayThreads[i].Thread = Thread then
         begin
           WriteDebug('Removing relay-thread ' + IntToStr(Thread.Handle));
-          FICEThread.RelayThreads.Delete(i);
           Dispose(FICEThread.RelayThreads[i]);
+          FICEThread.RelayThreads.Delete(i);
           Break;
         end;
     finally
@@ -296,9 +296,16 @@ begin
 end;
 
 procedure TICEClient.Disconnect;
+var
+  i: Integer;
 begin
   if FICEThread = nil then
     Exit;
+
+  FICEThread.LockRelay;
+  for i := 0 to FICEThread.RelayThreads.Count - 1 do
+    FICEThread.RelayThreads[i].Thread.Terminate;
+  FICEThread.UnlockRelay;
 
   FRetries := 0;
   FICEThread.Terminate;
@@ -308,8 +315,18 @@ begin
 end;
 
 function TICEClient.FGetActive: Boolean;
+var
+  C: Integer;
 begin
-  Result := ((FState <> csStopped) and (FState <> csIOError)) or (FProcessingList.Count > 0);
+  C := 0;
+  if FICEThread <> nil then
+  begin
+    FICEThread.LockRelay;
+    C := FICEThread.RelayThreads.Count;
+    FICEThread.UnlockRelay;
+  end;
+
+  Result := ((FState <> csStopped) and (FState <> csIOError)) or (FProcessingList.Count > 0) or (C > 0);
 end;
 
 function TICEClient.FGetRelayURL: string;
