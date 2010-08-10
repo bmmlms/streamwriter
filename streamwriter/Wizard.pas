@@ -64,7 +64,7 @@ procedure TfrmWizard.Finish;
 begin
   AppGlobals.Dir := txtDir.Text;
   AppGlobals.Relay := chkRelay.Checked;
-  AppGlobals.SubmitStreams := chkRelay.Checked;
+  AppGlobals.SubmitStreams := chkSubmitStreams.Checked;
   inherited;
 end;
 

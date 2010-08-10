@@ -250,6 +250,8 @@ begin
 end;
 
 procedure TfrmSettings.PostTranslate;
+var
+  i: Integer;
 begin
   inherited;
   lstPlugins.Groups[0].Header := _('Post-Processing');
@@ -260,6 +262,10 @@ begin
     AppGlobals.PluginManager.ReInitPlugins;
     lstPluginsSelectItem(lstPlugins, lstPlugins.Selected, True);
   end;
+
+  for i := 0 to lstPlugins.Items.Count - 1 do
+    lstPlugins.Items[i].Caption := TPlugin(lstPlugins.Items[i].Data).Name;
+
   AppGlobals.PluginManager.ReInitPlugins;
   lstDefaultAction.ItemIndex := FDefaultActionIdx;
 end;

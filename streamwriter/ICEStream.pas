@@ -253,7 +253,6 @@ begin
   Saved := False;
   RangeBegin := FAudioStream.GetFrame(FSaveFrom, False);
   RangeEnd := FAudioStream.GetFrame(0, True);
-  Dir := FSaveDir;
 
   if (RangeEnd <= -1) or (RangeBegin <= -1) then
     raise Exception.Create('Error in audio data');
@@ -264,15 +263,12 @@ begin
     Inc(FSongsSaved);
 
     try
+      Filename := GetFilenameTitle(Dir);
+
       if Length(FSaveTitle) > 0 then
-      begin
-        Filename := GetFilenameTitle(Dir);
-        WriteDebug('Saving title "' + FSaveTitle + '"');
-      end else
-      begin
-        Filename := GetFilenameTitle(Dir);
-        WriteDebug('Saving unnamed Titel');
-      end;
+        WriteDebug('Saving title "' + FSaveTitle + '"')
+      else
+        WriteDebug('Saving unnamed title');
 
       try
         ForceDirectories(Dir);
@@ -313,17 +309,6 @@ var
   Title, MetaData: string;
   Buf: Byte;
 begin
-
-  {
-  if FAudioStream.Size > 1048576 * FMaxBufSize then
-  begin
-    WriteDebug('Saving because buffer is full');
-    SaveData(FTitle);
-    FAudioStream.Clear;
-    FForwardLimit := -1;
-  end;
-  }
-
   Seek(0, soFromBeginning);
   if FMetaInt = -1 then
   begin
@@ -504,8 +489,8 @@ begin
 
   Artist := '';
   Title := '';
-  StreamName := StringReplace(Trim(Self.StreamName), '\', '_', [rfReplaceAll]);
-  SaveTitle := StringReplace(Trim(FSaveTitle), '\', '_', [rfReplaceAll]);
+  StreamName := GetValidFileName(Trim(Self.StreamName));
+  SaveTitle := GetValidFileName(Trim(FSaveTitle));
 
   p := Pos(' - ', SaveTitle);
   if p > 0 then
