@@ -498,7 +498,7 @@ begin
     Exit;
 
   DoStateChange([], [tsOLEDragPending, tsClearPending]);
-  FDragSource.Execute(True);
+  FDragSource.Execute(False);
 end;
 
 function TMClientView.GetEntries(T: TEntryTypes): TPlaylistEntryArray;
