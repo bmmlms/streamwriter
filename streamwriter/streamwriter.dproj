@@ -162,7 +162,7 @@
 					</VersionInfo>
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName">mistake.ws</VersionInfoKeys>
-						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileDescription">streamWriter</VersionInfoKeys>
 						<VersionInfoKeys Name="FileVersion">1.1.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName">streamwriter</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalCopyright">mistake.ws</VersionInfoKeys>
