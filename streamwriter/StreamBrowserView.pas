@@ -155,7 +155,7 @@ begin
 
   TreeOptions.SelectionOptions := [toDisableDrawSelection, toRightClickSelect, toFullRowSelect];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
-  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
+  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop] + [toFullRowDrag];
   DragMode := dmAutomatic;
   ShowHint := True;
   HintMode := hmTooltip;
