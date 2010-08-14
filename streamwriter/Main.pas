@@ -150,7 +150,6 @@ type
     procedure DropListDrop(Sender: TObject; ShiftState: TShiftState;
       APoint: TPoint; var Effect: Integer);
     procedure actStreamSettingsExecute(Sender: TObject);
-    procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure addTrayClick(Sender: TObject);
     procedure mnuCheckUpdateClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -174,10 +173,10 @@ type
     procedure tabInfoResize(Sender: TObject);
     procedure pagSidebarChange(Sender: TObject);
     procedure actResetDataExecute(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
     FStreams: TStreamDataList;
     FUpdater: TUpdateClient;
-    FShutdown: Boolean;
     FReceived: UInt64;
     FUpdateOnExit: Boolean;
     FRefreshInfo: Boolean;
@@ -198,7 +197,7 @@ type
     procedure SysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
 
     function CanExitApp: Boolean;
-    procedure ExitApp;
+    procedure ExitApp(Shutdown: Boolean);
     procedure ShowSettings(BrowseDir: Boolean);
     procedure ShowUpdate(Version: string = ''; UpdateURL: string = '');
     procedure SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean);
@@ -293,7 +292,7 @@ begin
   lstStations.Text := string(DropStations.URL);
 end;
 
-procedure TfrmStreamWriterMain.ExitApp;
+procedure TfrmStreamWriterMain.ExitApp(Shutdown: Boolean);
 var
   Res: Integer;
   Clients: TNodeDataArray;
@@ -315,7 +314,7 @@ begin
 
   Hide;
 
-  if not FShutdown then
+  if not Shutdown then
     AppGlobals.Save(Handle)
   else
     try
@@ -336,7 +335,7 @@ begin
         DeleteFile(AppGlobals.RecentFile);
       end;
     except
-      if not FShutdown then
+      if not Shutdown then
       begin
         Res := MsgBox(Handle, Format(_('An error occured while saving the data file. Please make sure you can write to "%s" and that the file is not in use by another application. Click "Yes" to try again, "No" to exit without saving data.'), [AppGlobals.DataFile]), _('Info'), MB_ICONEXCLAMATION or MB_YESNO or MB_DEFBUTTON1);
         if Res = IDNO then
@@ -455,7 +454,7 @@ end;
 procedure TfrmStreamWriterMain.actExitExecute(Sender: TObject);
 begin
   if CanExitApp then
-    ExitApp;
+    ExitApp(False);
 end;
 
 procedure TfrmStreamWriterMain.actStreamSettingsExecute(Sender: TObject);
@@ -568,13 +567,14 @@ begin
   end;
 end;
 
-procedure TfrmStreamWriterMain.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+procedure TfrmStreamWriterMain.FormClose(Sender: TObject;
+  var Action: TCloseAction);
 begin
+  Action := caNone;
   if AppGlobals.TrayClose then
   begin
     if (Visible) or (IsIconic(Handle)) then
     begin
-      CanClose := False;
       TrayIcon1.Visible := True;
 
       FWasMaximized := WindowState = wsMaximized;
@@ -582,9 +582,8 @@ begin
     end;
   end else
   begin
-    CanClose := True;
     if CanExitApp then
-      ExitApp;
+      ExitApp(False);
   end;
 end;
 
@@ -611,7 +610,6 @@ begin
     FClients.RelayServer.Start;
 
   FWasShown := False;
-  FShutdown := False;
   FReceived := 0;
   FUpdateOnExit := False;
   FRefreshInfo := False;
@@ -855,9 +853,8 @@ procedure TfrmStreamWriterMain.EndSession(var Msg: TMessage);
 begin
   if WordBool(Msg.WParam) then
   begin
-    Msg.Result := 0;
-    FShutdown := True;
-    ExitApp;
+    Msg.Result := 1;
+    ExitApp(True);
   end;
 end;
 
@@ -977,7 +974,7 @@ begin
     if CanExitApp then
     begin
       FUpdateOnExit := True;
-      ExitApp;
+      ExitApp(False);
     end;
   end else if S.Updated then
   begin
