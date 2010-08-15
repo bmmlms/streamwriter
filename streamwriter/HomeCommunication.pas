@@ -105,6 +105,7 @@ begin
     Thread.ProxyHost := AppGlobals.ProxyHost;
     Thread.ProxyPort := AppGlobals.ProxyPort;
   end;
+  Thread.UserAgent := AppGlobals.AppName + ' v' + AppGlobals.AppVersion.AsString;
   FClients.Add(Thread);
 end;
 
