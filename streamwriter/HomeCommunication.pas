@@ -63,6 +63,7 @@ type
     FURL: string;
 
     FOnStreamsReceived: TStreamsReceivedEvent;
+    FOnStreamsReceivedError: TNotifyEvent;
 
     function FGetCount: Integer;
     procedure InitThread(Thread: THTTPThread);
@@ -77,6 +78,7 @@ type
 
     property Count: Integer read FGetCount;
     property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
+    property OnStreamsReceivedError: TNotifyEvent read FOnStreamsReceivedError write FOnStreamsReceivedError;
   end;
 
 implementation
@@ -169,7 +171,7 @@ begin
 
     Data.Nodes.SimpleAdd('count', IntToStr(Count));
     Data.Nodes.SimpleAdd('offset', IntToStr(Offset));
-    Data.Nodes.SimpleAdd('search', Encode(Search));
+    Data.Nodes.SimpleAdd('search', EncodeU(Search));
 
     XMLDocument.SaveToString(XML);
   finally
@@ -209,7 +211,7 @@ begin
 
     Data := TXMLNode.Create(Root);
     Data.Name := 'data';
-    Data.Value.AsString := Encode(Stream);
+    Data.Value.AsString := EncodeU(Stream);
 
     XMLDocument.SaveToString(XML);
   finally
@@ -251,6 +253,10 @@ begin
     if GetStreamsThread.RecvDataStream.ToString = '' then
     begin
       GetStreams(GetStreamsThread.Count, GetStreamsThread.Offset, GetStreamsThread.Search, True);
+    end else if GetStreamsThread.RecvDataStream.ToString = 'ERROR' then
+    begin
+      if Assigned(FOnStreamsReceivedError) then
+        FOnStreamsReceivedError(Self);
     end else
     begin
       if Assigned(FOnStreamsReceived) then
@@ -287,6 +293,9 @@ begin
   if Length(RecvDataStream.ToString) = 0 then
   begin
     raise Exception.Create('No data received');
+  end else if RecvDataStream.ToString = 'ERROR' then
+  begin
+    raise Exception.Create('Server-side error');
   end else
   begin
     try

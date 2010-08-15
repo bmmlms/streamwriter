@@ -74,6 +74,7 @@ type
     FTimer: TTimer;
     FDots: string;
     FIsLoading: Boolean;
+    FError: Boolean;
     FCurrentSearch: string;
     FLoadOffset: Integer;
 
@@ -114,6 +115,7 @@ type
 
     function GetNodes(SelectedOnly: Boolean): TNodeArray;
     procedure AddStreams(Streams: TStreamInfoArray; Count: Integer);
+    procedure ReceiveError;
     procedure ClearStreams;
 
     property IsLoading: Boolean read FIsLoading write FSetIsLoading;
@@ -164,11 +166,12 @@ begin
 
   FUnloadedVisible := False;
   FLoadOffset := 0;
+  FIsLoading := False;
+  FError := False;
 
   FColName := Header.Columns.Add;
   FColName.Text := _('Name');
   FitColumns;
-
 
   FPopupMenu := TPopupMenu.Create(Self);
 
@@ -441,6 +444,17 @@ begin
 
     DrawText(Canvas.Handle, PChar(TmpText + FDots), Length(TmpText) + Length(FDots), R, 0);
   end;
+  if FError and (RootNodeCount = 0) then
+  begin
+    TmpText := _('Error loading streams');
+    GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
+
+    R := ClientRect;
+    R.Left := (R.Right div 2) - (Size.cx div 2) - 4;
+    R.Top := (R.Bottom div 2) - (Size.cy div 2);
+
+    DrawText(Canvas.Handle, PChar(TmpText), Length(TmpText), R, 0);
+  end;
 end;
 
 procedure TMStreamBrowserView.PaintImage(var PaintInfo: TVTPaintInfo;
@@ -591,11 +605,18 @@ end;
 
 procedure TMStreamBrowserView.FSetIsLoading(Value: Boolean);
 begin
+  FError := False;
   FIsLoading := Value;
   FDots := '';
   FTimer.Enabled := False;
   FTimer.Enabled := True;
   Invalidate;
+end;
+
+procedure TMStreamBrowserView.ReceiveError;
+begin
+  Clear;
+  FError := True;
 end;
 
 procedure TMStreamBrowserView.Resize;

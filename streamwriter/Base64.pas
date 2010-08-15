@@ -35,6 +35,10 @@ unit Base64;
 
 interface
 
+uses
+  SysUtils;
+
+function EncodeU(const data:UnicodeString):AnsiString;
 function Encode(const data:AnsiString):AnsiString;
 function Decode(const data:AnsiString):AnsiString;
 
@@ -61,6 +65,14 @@ const
     15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,
     -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
     41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1 );
+
+function EncodeU(const data:UnicodeString):AnsiString;
+var
+  u: RawByteString;
+begin
+  u := UTF8Encode(data);
+  Result := Encode(u);
+end;
 
 function Encode(const data:AnsiString):AnsiString;
 var

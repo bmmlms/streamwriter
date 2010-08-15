@@ -232,6 +232,7 @@ type
 
     procedure HomeCommunicationStreamsReceived(Sender: TObject; Streams: TStreamInfoArray;
       Count: Integer);
+    procedure HomeCommunicationStreamsReceivedError(Sender: TObject);
     procedure StreamBrowserNeedData(Sender: TObject; Offset, Count: Integer);
     procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
     procedure StreamInfoAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
@@ -778,6 +779,7 @@ begin
   lstStreamBrowser.Setup;
   FHomeCommunication := THomeCommunication.Create;
   FHomeCommunication.OnStreamsReceived := HomeCommunicationStreamsReceived;
+  FHomeCommunication.OnStreamsReceivedError := HomeCommunicationStreamsReceivedError;
   FHomeCommunication.GetStreams(lstStreamBrowser.DisplayCount, 0, '', True);
   lstStreamBrowser.IsLoading := True;
 end;
@@ -808,6 +810,12 @@ procedure TfrmStreamWriterMain.HomeCommunicationStreamsReceived(
   Sender: TObject; Streams: TStreamInfoArray; Count: Integer);
 begin
   lstStreamBrowser.AddStreams(Streams, Count);
+end;
+
+procedure TfrmStreamWriterMain.HomeCommunicationStreamsReceivedError(
+  Sender: TObject);
+begin
+  lstStreamBrowser.ReceiveError;
 end;
 
 procedure TfrmStreamWriterMain.mnuCheckUpdateClick(Sender: TObject);
