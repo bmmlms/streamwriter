@@ -87,9 +87,7 @@ constructor THomeCommunication.Create;
 begin
   {$IFDEF DEBUG}
   FURL := 'http://mistake.gaia/en/streamdb/';
-
-
-  FURL := 'http://mistake.ws/en/streamdb/';
+  //FURL := 'http://mistake.ws/en/streamdb/';
   {$ELSE}
   FURL := 'http://mistake.ws/en/streamdb/';
   {$ENDIF}
@@ -147,7 +145,7 @@ begin
       end;
   end;
         
-  URL := FURL + 'getstreams/?count=' + IntToStr(Count) + '&offset=' + IntToStr(Offset) + '&search=' + Encode(AnsiString(Search));
+  URL := FURL + 'getstreams/';
   Thread := TGetStreamsThread.Create(URL);
   InitThread(Thread);
   Thread.Count := Count;
@@ -163,7 +161,7 @@ begin
 
     Header := TXMLNode.Create(Root);
     Header.Name := 'header';
-    Header.Nodes.SimpleAdd('version', '1');
+    Header.Nodes.SimpleAdd('version', '2');
     Header.Nodes.SimpleAdd('type', 'getstreams');
 
     Data := TXMLNode.Create(Root);
@@ -171,7 +169,7 @@ begin
 
     Data.Nodes.SimpleAdd('count', IntToStr(Count));
     Data.Nodes.SimpleAdd('offset', IntToStr(Offset));
-    Data.Nodes.SimpleAdd('search', Search);
+    Data.Nodes.SimpleAdd('search', Encode(Search));
 
     XMLDocument.SaveToString(XML);
   finally
@@ -206,12 +204,12 @@ begin
 
     Header := TXMLNode.Create(Root);
     Header.Name := 'header';
-    Header.Nodes.SimpleAdd('version', '1');
+    Header.Nodes.SimpleAdd('version', '2');
     Header.Nodes.SimpleAdd('type', 'submitstream');
 
     Data := TXMLNode.Create(Root);
     Data.Name := 'data';
-    Data.Value.AsString := Stream;
+    Data.Value.AsString := Encode(Stream);
 
     XMLDocument.SaveToString(XML);
   finally
