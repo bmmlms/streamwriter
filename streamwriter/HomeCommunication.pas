@@ -31,13 +31,33 @@ type
     Genre: string;
     URL: string;
     BitRate: Integer;
+    Downloads: Integer;
   end;
   TStreamInfoArray = array of TStreamInfo;
   
-  THomeThread = class(THTTPThread);
+  THomeThread = class(THTTPThread)
+  private
+    FKilled: Boolean;
+    FSuccess: Boolean;
+  public
+    property Killed: Boolean read FKilled write FKilled;
+    property Success: Boolean read FSuccess write FSuccess;
+  end;
 
   TSubmitThread = class(THomeThread);
-  
+
+  TGetGenresThread = class(THomeThread)
+  protected
+    procedure DoDisconnected; override;
+    procedure DoException(E: Exception); override;
+    procedure DoEnded; override;
+  public
+    Genres: TStringList;
+
+    constructor Create(URL: string); override;
+    destructor Destroy; override;
+  end;
+
   TGetStreamsThread = class(THomeThread)
   protected
     procedure DoDisconnected; override;
@@ -48,37 +68,40 @@ type
     PacketCount: Integer;
     Offset: Integer;
     Search: string;
-    Killed: Boolean;
     Streams: TStreamInfoArray;
-    
+
     constructor Create(URL: string); override;
     destructor Destroy; override;
   end;
 
+  TGenresReceivedEvent = procedure(Sender: TObject; Genres: TStringList) of object;
   TStreamsReceivedEvent = procedure(Sender: TObject; Streams: TStreamInfoArray; Count: Integer) of object;
 
   THomeCommunication = class
   private
-    FClients: TList<THTTPThread>;
+    FClients: TList<THomeThread>;
     FURL: string;
 
+    FOnGenresReceived: TGenresReceivedEvent;
     FOnStreamsReceived: TStreamsReceivedEvent;
-    FOnStreamsReceivedError: TNotifyEvent;
+    FOnReceiveError: TNotifyEvent;
 
     function FGetCount: Integer;
-    procedure InitThread(Thread: THTTPThread);
+    procedure InitThread(Thread: THomeThread);
     procedure ThreadEnded(Sender: TObject);
   public
     constructor Create;
     destructor Destroy; override;
 
     procedure SubmitStream(Stream: string);
-    procedure GetStreams(Count, Offset: Integer; Search: string; ReplaceQuery: Boolean);
+    procedure GetGenres;
+    procedure GetStreams(Count, Offset: Integer; Search, Genre: string; Kbps: Integer; ReplaceQuery: Boolean);
     procedure Terminate;
 
     property Count: Integer read FGetCount;
+    property OnGenresReceived: TGenresReceivedEvent read FOnGenresReceived write FOnGenresReceived;
     property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
-    property OnStreamsReceivedError: TNotifyEvent read FOnStreamsReceivedError write FOnStreamsReceivedError;
+    property OnReceiveError: TNotifyEvent read FOnReceiveError write FOnReceiveError;
   end;
 
 implementation
@@ -93,11 +116,13 @@ begin
   {$ELSE}
   FURL := 'http://mistake.ws/en/streamdb/';
   {$ENDIF}
-  FClients := TList<THTTPThread>.Create;
+  FClients := TList<THomeThread>.Create;
 end;
 
-procedure THomeCommunication.InitThread(Thread: THTTPThread);
+procedure THomeCommunication.InitThread(Thread: THomeThread);
 begin
+  Thread.Killed := False;
+  Thread.Success := False;
   Thread.OnEnded := ThreadEnded;
   if AppGlobals.ProxyEnabled then
   begin
@@ -105,7 +130,7 @@ begin
     Thread.ProxyHost := AppGlobals.ProxyHost;
     Thread.ProxyPort := AppGlobals.ProxyPort;
   end;
-  Thread.UserAgent := AppGlobals.AppName + ' v' + AppGlobals.AppVersion.AsString;
+  Thread.UserAgent := AnsiString(AppGlobals.AppName) + ' v' + AppGlobals.AppVersion.AsString;
   FClients.Add(Thread);
 end;
 
@@ -120,7 +145,41 @@ begin
   Result := FClients.Count;
 end;
 
-procedure THomeCommunication.GetStreams(Count, Offset: Integer; Search: string; ReplaceQuery: Boolean);
+procedure THomeCommunication.GetGenres;
+var
+  i: Integer;
+  URL: string;
+  Thread: TGetGenresThread;
+  XMLDocument: TXMLLib;
+  Root, Header: TXMLNode;
+  XML: AnsiString;
+begin
+  URL := FURL + 'getgenres/';
+  Thread := TGetGenresThread.Create(URL);
+  InitThread(Thread);
+
+  XMLDocument := TXMLLib.Create;
+  try
+    Root := TXMLNode.Create();
+    Root.Name := 'request';
+    XMLDocument.Root := Root;
+
+    Header := TXMLNode.Create(Root);
+    Header.Name := 'header';
+    Header.Nodes.SimpleAdd('version', '1');
+    Header.Nodes.SimpleAdd('type', 'getgenres');
+
+    XMLDocument.SaveToString(XML);
+  finally
+    XMLDocument.Free;
+  end;
+
+  Thread.PostData := 'data=' + XML;
+  Thread.Resume;
+end;
+
+procedure THomeCommunication.GetStreams(Count, Offset: Integer; Search, Genre: string;
+  Kbps: Integer; ReplaceQuery: Boolean);
 var
   i: Integer;
   URL: string;
@@ -146,7 +205,7 @@ begin
         Break;
       end;
   end;
-        
+
   URL := FURL + 'getstreams/';
   Thread := TGetStreamsThread.Create(URL);
   InitThread(Thread);
@@ -163,7 +222,7 @@ begin
 
     Header := TXMLNode.Create(Root);
     Header.Name := 'header';
-    Header.Nodes.SimpleAdd('version', '2');
+    Header.Nodes.SimpleAdd('version', '3');
     Header.Nodes.SimpleAdd('type', 'getstreams');
 
     Data := TXMLNode.Create(Root);
@@ -172,6 +231,8 @@ begin
     Data.Nodes.SimpleAdd('count', IntToStr(Count));
     Data.Nodes.SimpleAdd('offset', IntToStr(Offset));
     Data.Nodes.SimpleAdd('search', EncodeU(Search));
+    Data.Nodes.SimpleAdd('genre', EncodeU(Genre));
+    Data.Nodes.SimpleAdd('kbps', IntToStr(Kbps));
 
     XMLDocument.SaveToString(XML);
   finally
@@ -236,31 +297,51 @@ end;
 
 procedure THomeCommunication.ThreadEnded(Sender: TObject);
 var
-  Thread: THTTPThread;
-  GetStreamsThread: TGetStreamsThread;
+  Thread: THomeThread;
 begin
-  Thread := THTTPThread(Sender);
+  Thread := THomeThread(Sender);
 
   FClients.Remove(Thread);
 
-  if Thread is TGetStreamsThread then
+  if Thread.Killed then
+    Exit;
+
+  if Thread.Success then
   begin
-    GetStreamsThread := TGetStreamsThread(Thread);
-    
-    if GetStreamsThread.Killed then
-      Exit;
-    
-    if GetStreamsThread.RecvDataStream.ToString = '' then
+    if Thread is TGetGenresThread then
+      if Assigned(FOnGenresReceived) then
+        FOnGenresReceived(Self, TGetGenresThread(Thread).Genres);
+
+    if Thread is TGetStreamsThread then
+      if Assigned(FOnStreamsReceived) then
+        FOnStreamsReceived(Self, TGetStreamsThread(Thread).Streams, TGetStreamsThread(Thread).Count);
+  end else
+  begin
+    if Thread.RecvDataStream.ToString = '' then
     begin
-      GetStreams(GetStreamsThread.Count, GetStreamsThread.Offset, GetStreamsThread.Search, True);
-    end else if GetStreamsThread.RecvDataStream.ToString = 'ERROR' then
+      // TODO: ? :)
+    end else if Thread.RecvDataStream.ToString = 'ERROR' then
     begin
-      if Assigned(FOnStreamsReceivedError) then
-        FOnStreamsReceivedError(Self);
+      // Es kann sein, dass am Anfang GetGenres und GetStreams aktiv ist.
+      // Deshalb alles tot machen, so dass die Fehlermeldung anstehen bleibt.
+      for Thread in FClients do
+      begin
+        if not (Thread is TSubmitThread) then
+        begin
+          Thread.Killed := True;
+          Thread.Terminate;
+        end;
+      end;
+
+      if Assigned(FOnReceiveError) then
+        FOnReceiveError(Self);
+    end else if Thread.RecvDataStream.ToString = 'OLDVER' then
+    begin
+      // TODO: !!
     end else
     begin
-      if Assigned(FOnStreamsReceived) then
-        FOnStreamsReceived(Self, GetStreamsThread.Streams, GetStreamsThread.Count);
+      // TODO: ??
+
     end;
   end;
 end;
@@ -289,7 +370,7 @@ begin
   
   if Killed then
     Exit;
-    
+
   if Length(RecvDataStream.ToString) = 0 then
   begin
     raise Exception.Create('No data received');
@@ -317,6 +398,7 @@ begin
           Streams[High(Streams)].Genre := Node.Attributes.AttributeByName['genre'].Value.AsString;
           Streams[High(Streams)].URL := Node.Value.AsString;
           Streams[High(Streams)].BitRate := Node.Attributes.AttributeByName['bitrate'].Value.AsInteger;
+          Streams[High(Streams)].Downloads := Node.Attributes.AttributeByName['downloads'].Value.AsInteger;
         end;
       finally
         XMLDocument.Free;
@@ -324,6 +406,7 @@ begin
     except
       raise Exception.Create('No data received');
     end;
+    FSuccess := True;
   end;
 end;
 
@@ -339,6 +422,71 @@ begin
   SetLength(Streams, 0);
   Sleep(100);
   inherited;
+end;
+
+{ TGetGenresThread }
+
+constructor TGetGenresThread.Create(URL: string);
+begin
+  inherited;
+  Genres := TStringList.Create;
+end;
+
+destructor TGetGenresThread.Destroy;
+begin
+  Genres.Free;
+  inherited;
+end;
+
+procedure TGetGenresThread.DoDisconnected;
+var
+  i: Integer;
+  XMLDocument: TXMLLib;
+  Data, Node: TXMLNode;
+begin
+  inherited;
+
+  if Length(RecvDataStream.ToString) = 0 then
+  begin
+    raise Exception.Create('No data received');
+  end else if RecvDataStream.ToString = 'ERROR' then
+  begin
+    raise Exception.Create('Server-side error');
+  end else
+  begin
+    try
+      XMLDocument := TXMLLib.Create;
+      try
+        XMLDocument.LoadFromString(RecvDataStream.ToString);
+
+        Data := XMLDocument.Root.Nodes.GetNode('data');
+
+        for i := 0 to Data.Nodes.GetNode('genres').Nodes.Count - 1 do
+        begin
+          Node := Data.Nodes.GetNode('genres').Nodes[i];
+          Genres.Add(Node.Value.AsString);
+        end;
+      finally
+        XMLDocument.Free;
+      end;
+    except
+      raise Exception.Create('No data received');
+    end;
+    FSuccess := True;
+  end;
+end;
+
+procedure TGetGenresThread.DoEnded;
+begin
+  inherited;
+  if RecvDataStream.ToString = '' then
+    Sleep(1000);
+end;
+
+procedure TGetGenresThread.DoException(E: Exception);
+begin
+  inherited;
+  Sleep(100);
 end;
 
 end.

@@ -28,11 +28,16 @@ uses
 type
   TClientActions = (caStartStop, caStream, caRelay, caFile);
 
+  TIntArray = array of Integer;
+
   TAppData = class(TAppDataBase)
   private
     FDir: string;
     FFilePattern: string;
     FSkipShort: Boolean;
+    FSearchSilence: Boolean;
+    FSilenceLevel: Cardinal;
+    FSilenceLength: Cardinal;
     FTrayClose: Boolean;
     FShowSidebar: Boolean;
     FSidebarWidth: Integer;
@@ -44,6 +49,7 @@ type
     FRetryDelay: Cardinal;
     FMinDiskSpace: Integer;
     FDefaultAction: TClientActions;
+    FHeaderWidth: TIntArray;
 
     FPluginManager: TPluginManager;
     FLanguageIcons: TLanguageIcons;
@@ -62,6 +68,9 @@ type
     property Dir: string read FDir write FDir;
     property FilePattern: string read FFilePattern write FFilePattern;
     property SkipShort: Boolean read FSkipShort write FSkipShort;
+    property SearchSilence: Boolean read FSearchSilence write FSearchSilence;
+    property SilenceLevel: Cardinal read FSilenceLevel write FSilenceLevel;
+    property SilenceLength: Cardinal read FSilenceLength write FSilenceLength;
     property TrayClose: Boolean read FTrayClose write FTrayClose;
     property ShowSidebar: Boolean read FShowSidebar write FShowSidebar;
     property SidebarWidth: Integer read FSidebarWidth write FSidebarWidth;
@@ -73,6 +82,7 @@ type
     property RetryDelay: Cardinal read FRetryDelay write FRetryDelay;
     property MinDiskSpace: Integer read FMinDiskSpace write FMinDiskSpace;
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
+    property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
 
     property DataFile: string read FGetDataFile;
 
@@ -96,6 +106,9 @@ begin
   W := 900;
   if Screen.Width < 900 then
     W := Screen.Width - 20;
+
+  SetLength(FHeaderWidth, 6);
+
   inherited Create(AppName, True, W, 450);
 
   FLanguageIcons := TLanguageIcons.Create;
@@ -133,8 +146,10 @@ begin
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
   FStorage.Read('FilePattern', FFilePattern, '%s\%a - %t');
-
   FStorage.Read('SkipShort', FSkipShort, True);
+  FStorage.Read('SearchSilence', FSearchSilence, True);
+  FStorage.Read('SilenceLevel', FSilenceLevel, 5);
+  FStorage.Read('SilenceLength', FSilenceLength, 10);
   FStorage.Read('TrayClose', FTrayClose, False);
   FStorage.Read('ShowSidebar', FShowSidebar, True);
   FStorage.Read('SidebarWidth', FSidebarWidth, 220);
@@ -146,6 +161,24 @@ begin
   FStorage.Read('RetryDelay', FRetryDelay, 5);
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
   FStorage.Read('DefaultAction', i, Integer(caStartStop));
+
+  FStorage.Read('HeaderWidth0', i, -1, 'Cols');
+  if i = -1 then
+  begin
+    // TODO: Passen die konstanten werte so?
+    for i := 0 to High(FHeaderWidth) do
+      FHeaderWidth[i] := 100;
+    FStorage.Read('HeaderWidth0', FHeaderWidth[0], 180, 'Cols');
+    FStorage.Read('HeaderWidth1', FHeaderWidth[1], 90, 'Cols');
+    FStorage.Read('HeaderWidth2', FHeaderWidth[2], 70, 'Cols');
+    FStorage.Read('HeaderWidth3', FHeaderWidth[3], 60, 'Cols');
+    FStorage.Read('HeaderWidth4', FHeaderWidth[4], 60, 'Cols');
+    FStorage.Read('HeaderWidth5', FHeaderWidth[5], 60, 'Cols');
+  end else
+  begin
+    for i := 0 to High(FHeaderWidth) do
+      FStorage.Read('HeaderWidth' + IntToStr(i), FHeaderWidth[i], 130, 'Cols');
+  end;
 
   if (i > Ord(High(TClientActions))) or (i < Ord(Low(TClientActions))) then
     FDefaultAction := caStartStop
@@ -162,6 +195,9 @@ begin
   FStorage.Write('Dir', FDir);
   FStorage.Write('FilePattern', FFilePattern);
   FStorage.Write('SkipShort', FSkipShort);
+  FStorage.Write('SearchSilence', FSearchSilence);
+  FStorage.Write('SilenceLevel', FSilenceLevel);
+  FStorage.Write('SilenceLength', FSilenceLength);
   FStorage.Write('TrayClose', FTrayClose);
   FStorage.Write('ShowSidebar', FShowSidebar);
   FStorage.Write('SidebarWidth', FSidebarWidth);
@@ -173,6 +209,9 @@ begin
   FStorage.Write('RetryDelay', FRetryDelay);
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
+
+  for i := 0 to High(FHeaderWidth) do
+    FStorage.Write('HeaderWidth' + IntToStr(i), HeaderWidth[i], 'Cols');
 
   for i := 0 to FPluginManager.Plugins.Count - 1 do
     FStorage.Write('Active_' + ExtractFileName(FPluginManager.Plugins[i].Filename), FPluginManager.Plugins[i].Active, 'Plugins');

@@ -26,7 +26,7 @@ uses
 
 type
   TICEServerStream = class(THTTPServerStream)
-  protected
+  public
     procedure Process; override;
   end;
 

@@ -4,8 +4,8 @@ object frmSettings: TfrmSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Settings'
-  ClientHeight = 565
-  ClientWidth = 905
+  ClientHeight = 561
+  ClientWidth = 901
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -26,62 +26,14 @@ object frmSettings: TfrmSettings
     Left = 304
     Top = 4
     Width = 293
-    Height = 489
+    Height = 329
     TabOrder = 0
     DesignSize = (
       293
-      489)
-    object Label4: TLabel
-      Left = 56
-      Top = 248
-      Width = 14
-      Height = 13
-      Caption = 'KB'
-    end
-    object Label5: TLabel
-      Left = 56
-      Top = 292
-      Width = 14
-      Height = 13
-      Caption = 'KB'
-    end
-    object Label8: TLabel
-      Left = 268
-      Top = 248
-      Width = 22
-      Height = 13
-      Cursor = crHandPoint
-      Alignment = taRightJustify
-      Anchors = [akTop, akRight]
-      Caption = 'Help'
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clBlue
-      Font.Height = -11
-      Font.Name = 'MS Sans Serif'
-      Font.Style = [fsUnderline]
-      ParentFont = False
-      OnClick = Label8Click
-    end
-    object Label9: TLabel
-      Left = 268
-      Top = 292
-      Width = 22
-      Height = 13
-      Cursor = crHandPoint
-      Alignment = taRightJustify
-      Anchors = [akTop, akRight]
-      Caption = 'Help'
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clBlue
-      Font.Height = -11
-      Font.Name = 'MS Sans Serif'
-      Font.Style = [fsUnderline]
-      ParentFont = False
-      OnClick = Label9Click
-    end
+      329)
     object cmdBrowse: TSpeedButton
       Left = 268
-      Top = 172
+      Top = 176
       Width = 21
       Height = 21
       Hint = 'Browse...'
@@ -119,33 +71,9 @@ object frmSettings: TfrmSettings
       ShowHint = True
       OnClick = cmdBrowseClick
     end
-    object txtShortSongSize: TLabeledEdit
-      Left = 4
-      Top = 244
-      Width = 49
-      Height = 21
-      EditLabel.Width = 132
-      EditLabel.Height = 13
-      EditLabel.Caption = 'Ads to skip are smaller than:'
-      MaxLength = 4
-      NumbersOnly = True
-      TabOrder = 0
-    end
-    object txtSongBuffer: TLabeledEdit
-      Left = 4
-      Top = 288
-      Width = 49
-      Height = 21
-      EditLabel.Width = 154
-      EditLabel.Height = 13
-      EditLabel.Caption = 'Buffer for start and end of songs:'
-      MaxLength = 3
-      NumbersOnly = True
-      TabOrder = 1
-    end
     object txtDir: TLabeledEdit
       Left = 4
-      Top = 172
+      Top = 176
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -155,7 +83,7 @@ object frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Caption = 'Folder for saved songs:'
       ReadOnly = True
-      TabOrder = 2
+      TabOrder = 0
     end
     object GroupBox2: TGroupBox
       Left = 4
@@ -164,7 +92,7 @@ object frmSettings: TfrmSettings
       Height = 145
       Anchors = [akLeft, akTop, akRight]
       Caption = ' Filenames '
-      TabOrder = 3
+      TabOrder = 1
       DesignSize = (
         285
         145)
@@ -204,16 +132,6 @@ object frmSettings: TfrmSettings
         TabOrder = 1
       end
     end
-    object chkSkipShort: TCheckBox
-      Left = 4
-      Top = 200
-      Width = 220
-      Height = 21
-      Anchors = [akLeft, akTop, akRight]
-      Caption = 'Skip ads (short songs)'
-      TabOrder = 4
-      OnClick = chkSkipShortClick
-    end
   end
   object pnlMain: TPanel
     Left = 4
@@ -233,7 +151,7 @@ object frmSettings: TfrmSettings
     end
     object Label3: TLabel
       Left = 4
-      Top = 84
+      Top = 80
       Width = 190
       Height = 13
       Caption = 'Default action on doubleclick on stream:'
@@ -261,7 +179,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultAction: TComboBox
       Left = 4
-      Top = 100
+      Top = 96
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -291,7 +209,7 @@ object frmSettings: TfrmSettings
     end
     object Label6: TLabel
       Left = 268
-      Top = 120
+      Top = 124
       Width = 22
       Height = 13
       Cursor = crHandPoint
@@ -349,7 +267,7 @@ object frmSettings: TfrmSettings
     end
     object chkSubmitStreams: TCheckBox
       Left = 4
-      Top = 116
+      Top = 120
       Width = 249
       Height = 21
       Caption = 'Submit stream urls to stream database'
@@ -425,6 +343,159 @@ object frmSettings: TfrmSettings
       Enabled = False
       ParentDoubleBuffered = False
       TabOrder = 1
+    end
+  end
+  object pnlCut: TPanel
+    Left = 304
+    Top = 340
+    Width = 293
+    Height = 217
+    TabOrder = 4
+    DesignSize = (
+      293
+      217)
+    object Label4: TLabel
+      Left = 56
+      Top = 48
+      Width = 14
+      Height = 13
+      Caption = 'KB'
+    end
+    object Label5: TLabel
+      Left = 56
+      Top = 92
+      Width = 14
+      Height = 13
+      Caption = 'KB'
+    end
+    object Label8: TLabel
+      Left = 268
+      Top = 48
+      Width = 22
+      Height = 13
+      Cursor = crHandPoint
+      Alignment = taRightJustify
+      Anchors = [akTop, akRight]
+      Caption = 'Help'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clBlue
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = [fsUnderline]
+      ParentFont = False
+      OnClick = Label8Click
+    end
+    object Label9: TLabel
+      Left = 268
+      Top = 92
+      Width = 22
+      Height = 13
+      Cursor = crHandPoint
+      Alignment = taRightJustify
+      Anchors = [akTop, akRight]
+      Caption = 'Help'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clBlue
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = [fsUnderline]
+      ParentFont = False
+      OnClick = Label9Click
+    end
+    object Label2: TLabel
+      Left = 268
+      Top = 124
+      Width = 22
+      Height = 13
+      Cursor = crHandPoint
+      Alignment = taRightJustify
+      Anchors = [akTop, akRight]
+      Caption = 'Help'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clBlue
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = [fsUnderline]
+      ParentFont = False
+      OnClick = Label9Click
+    end
+    object Label10: TLabel
+      Left = 40
+      Top = 144
+      Width = 186
+      Height = 13
+      Caption = 'Silence is defined by volume lower than'
+    end
+    object Label12: TLabel
+      Left = 40
+      Top = 192
+      Width = 12
+      Height = 13
+      Caption = 'for'
+    end
+    object Label13: TLabel
+      Left = 152
+      Top = 192
+      Width = 13
+      Height = 13
+      Caption = 'ms'
+    end
+    object txtSongBuffer: TLabeledEdit
+      Left = 4
+      Top = 88
+      Width = 49
+      Height = 21
+      EditLabel.Width = 154
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Buffer for start and end of songs:'
+      MaxLength = 3
+      NumbersOnly = True
+      TabOrder = 0
+    end
+    object txtShortSongSize: TLabeledEdit
+      Left = 4
+      Top = 44
+      Width = 49
+      Height = 21
+      EditLabel.Width = 132
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Ads to skip are smaller than:'
+      MaxLength = 4
+      NumbersOnly = True
+      TabOrder = 1
+    end
+    object chkSkipShort: TCheckBox
+      Left = 4
+      Top = 0
+      Width = 220
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Skip ads (short songs)'
+      TabOrder = 2
+      OnClick = chkSkipShortClick
+    end
+    object chkSearchSilence: TCheckBox
+      Left = 20
+      Top = 120
+      Width = 225
+      Height = 21
+      Caption = 'Search for silence within this buffer'
+      TabOrder = 3
+      OnClick = chkSearchSilenceClick
+    end
+    object txtSilenceLevel: TEdit
+      Left = 40
+      Top = 164
+      Width = 81
+      Height = 21
+      TabOrder = 4
+    end
+    object txtSilenceLength: TEdit
+      Left = 64
+      Top = 188
+      Width = 81
+      Height = 21
+      TabOrder = 5
     end
   end
 end

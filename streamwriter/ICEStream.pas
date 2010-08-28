@@ -23,7 +23,7 @@ interface
 
 uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
-  AppData, LanguageObjects, Functions;
+  AppData, LanguageObjects, Functions, DynBASS;
 
 type
   TDebugEvent = procedure(Text, Data: string) of object;
@@ -41,6 +41,9 @@ type
     FGenre: string;
 
     FSkipShort: Boolean;
+    FSearchSilence: Boolean;
+    FSilenceLevel: Cardinal;
+    FSilenceLength: Cardinal;
 
     FSaveDir: string;
     FFilePattern: string;
@@ -236,6 +239,9 @@ begin
   FFilePattern := AppGlobals.FilePattern;
   FShortSize := AppGlobals.ShortSize;
   FSongBuffer := AppGlobals.SongBuffer;
+  FSearchSilence := AppGlobals.SearchSilence;
+  FSilenceLevel := AppGlobals.SilenceLevel;
+  FSilenceLength := AppGlobals.SilenceLength;
   AppGlobals.Unlock;
 end;
 
@@ -247,12 +253,78 @@ end;
 procedure TICEStream.SaveData;
 var
   Saved: Boolean;
+  OldPos: Int64;
   RangeBegin, RangeEnd: Int64;
   Dir, Filename: string;
+  MemStream: TAudioStreamMemory;
+  P: TPosRect;
 begin
   Saved := False;
+
+  RangeBegin := -1;
+  RangeEnd := -1;
+
+  // TODO: hier passt gar nix. guck mal, wie der aufrufer dieser funktion danach den puffer behandelt....
+
   RangeBegin := FAudioStream.GetFrame(FSaveFrom, False);
-  RangeEnd := FAudioStream.GetFrame(0, True);
+  RangeEnd := FAudioStream.GetFrame(FAudioStream.Size, True);
+
+  WriteDebug(Format('FSaveFrom, Begin, End: %d / %d / %d', [FSaveFrom, RangeBegin, RangeEnd]));
+
+  // Eventuell nach Stille suchen
+  if FSearchSilence then
+  begin
+    // TODO: Jede "silence" muss eine mindestlänge haben.
+    // TODO: Nur, wenn nicht >20mb oder so.... weil ich extra in memory kopiere!
+    if FAudioStream is TMPEGStreamFile then
+    begin
+      if BassLoaded then
+      begin
+        WriteDebug('Searching for silence...');
+
+        MemStream := TMPEGStreamMemory.Create;
+        try
+          // Daten in MemoryStream kopieren
+          OldPos := FAudioStream.Position;
+          FAudioStream.Seek(RangeBegin, soFromBeginning);
+          MemStream.CopyFrom(FAudioStream, RangeEnd - RangeBegin);
+          FAudioStream.Seek(OldPos, soFromBeginning);
+
+          //P := MemStream.GetPossibleTitle(FSongBuffer);
+          P := MemStream.GetPossibleTitle(FSongBuffer); // TODO: Das ist FAiL. weil das ende könnte auch vor title change sein. also irgendwas substrahieren.
+
+          if (P.A > 0) or (P.B > 0) then
+          begin
+            RangeBegin := P.A + RangeBegin;
+            RangeEnd := P.B + RangeBegin;
+
+            WriteDebug(Format('Silence found, track is from %d to %d', [RangeBegin, RangeEnd]));
+
+            RangeBegin := FAudioStream.GetFrame(RangeBegin, False);
+            RangeEnd := FAudioStream.GetFrame(RangeEnd, True);
+
+            WriteDebug(Format('Found MPEG headers from %d to %d', [RangeBegin, RangeEnd]));
+          end;
+        finally
+          MemStream.Free;
+        end;
+      end else
+        WriteDebug('Cannot search for silence because bass library was not loaded.');
+    end;
+  end;
+
+  {
+  // Falls die Suche nach Stille nichts war, einfach die Frames ermitteln
+  if (RangeBegin = -1) or (RangeEnd = -1) then
+  begin
+    RangeBegin := FAudioStream.GetFrame(FSaveFrom, False);
+    RangeEnd := FAudioStream.GetFrame(Size, True);
+  end else
+  begin
+    RangeBegin := FAudioStream.GetFrame(RangeBegin, False);
+    RangeEnd := FAudioStream.GetFrame(RangeEnd, True);
+  end;
+  }
 
   if (RangeEnd <= -1) or (RangeBegin <= -1) then
     raise Exception.Create('Error in audio data');

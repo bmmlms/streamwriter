@@ -121,6 +121,7 @@ begin
   TreeOptions.AutoOptions := [toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
+  Header.Options := Header.Options - [hoDrag];
   DragMode := dmAutomatic;
   ShowHint := True;
   HintMode := hmTooltip;

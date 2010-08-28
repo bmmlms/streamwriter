@@ -24,7 +24,6 @@ uses
   Windows,
   Forms,
   Main in 'Main.pas' {frmStreamWriterMain},
-  ICEClient in 'ICEClient.pas',
   ClientView in 'ClientView.pas',
   RecentManager in 'RecentManager.pas',
   Settings in 'Settings.pas' {frmSettings},
@@ -43,8 +42,6 @@ uses
   ClientManager in 'ClientManager.pas',
   RelayServer in 'RelayServer.pas',
   HTTPServerStream in '..\..\common\sockets\HTTPServerStream.pas',
-  ICEStream in 'ICEStream.pas',
-  ICEThread in 'ICEThread.pas',
   LanguageObjects in '..\..\common\LanguageObjects.pas',
   GUIFunctions in '..\..\common\GUIFunctions.pas',
   Update in '..\..\common\forms\Update.pas' {frmUpdate},
@@ -58,7 +55,6 @@ uses
   AppStartup in '..\..\common\AppStartup.pas',
   ProfileSettings in '..\..\common\forms\ProfileSettings.pas' {frmProfileSettings},
   SettingsBase in '..\..\common\forms\SettingsBase.pas' {frmSettingsBase},
-  AudioStream in 'AudioStream.pas',
   Plugins in 'Plugins.pas',
   HomeCommunication in 'HomeCommunication.pas',
   StreamBrowserView in 'StreamBrowserView.pas',
@@ -66,7 +62,13 @@ uses
   StreamInfoView in 'StreamInfoView.pas',
   StreamDebugView in 'StreamDebugView.pas',
   PluginsShared in 'PluginsShared.pas',
-  Base64 in 'Base64.pas';
+  Base64 in 'Base64.pas',
+  DynBASS in 'audio\DynBASS.pas',
+  ICEClient in 'ICEClient.pas',
+  ICEServerStream in 'ICEServerStream.pas',
+  ICEThread in 'ICEThread.pas',
+  ICEStream in 'ICEStream.pas',
+  AudioStream in 'audio\AudioStream.pas';
 
 {$R *.res}
 {$R res\language.res}

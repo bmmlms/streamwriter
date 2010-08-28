@@ -28,6 +28,8 @@ uses
   HomeCommunication;
 
 type
+  TMStreamTree = class;
+
   TStreamData = record
     Name: string;
     URL: string;
@@ -39,6 +41,7 @@ type
     Genre: string;
     URL: string;
     BitRate: Integer;
+    Downloads: Integer;
     HasData: Boolean;
   end;
   PStreamNodeData = ^TStreamNodeData;
@@ -51,13 +54,89 @@ type
 
   TScrollDirection = (sdUp, sdDown);
 
-  TMStreamBrowserView = class(TVirtualStringTree)
+  TMLoadingPanel = class(TPanel)
+  private
+    FLabel: TLabel;
+    FBtnRetry: TButton;
+    FDots: string;
+    FTimer: TTimer;
+    procedure TimerOnTimer(Sender: TObject);
+  protected
+    procedure Resize; override;
+  public
+    constructor Create(AOwner: TComponent);
+  end;
+
+  TMStreamSearchPanel = class(TPanel)
+  private
+    FInitialized: Boolean;
+
+    FSearchLabel: TLabel;
+    FGenreLabel: TLabel;
+    FKbpsLabel: TLabel;
+    FSearchEdit: TEdit;
+    FGenreList: TComboBox;
+    FKbpsList: TComboBox;
+    FSearchButton: TSpeedButton;
+  public
+    constructor Create(AOwner: TComponent);
+    procedure Setup;
+  end;
+
+  TMStreamBrowserView = class(TPanel)
+  private
+    FSearch: TMStreamSearchPanel;
+    FStreamTree: TMStreamTree;
+    FCountLabel: TLabel;
+    FLoadingPanel: TMLoadingPanel;
+
+    FCurrentSearch: string;
+    FCurrentGenre: string;
+    FCurrentKbps: Integer;
+
+    FLoading: Boolean;
+
+    FHomeCommunication: THomeCommunication;
+
+    procedure ListsChange(Sender: TObject);
+    procedure SearchEditKeyPress(Sender: TObject; var Key: Char);
+    procedure SearchButtonClick(Sender: TObject);
+    procedure BtnRetryClick(Sender: TObject);
+
+    procedure FSetIsLoading(Value: Boolean);
+    procedure GetStreams; overload;
+    procedure GetStreams(Search, Genre: string; Kbps: Integer); overload;
+    procedure SwitchMode(Loading, Error: Boolean);
+  protected
+    procedure Resize; override;
+  public
+    constructor Create(AOwner: TComponent; HomeCommunication: THomeCommunication);
+    destructor Destroy; override;
+
+    procedure Setup;
+
+    procedure StreamBrowserNeedData(Sender: TObject; Offset, Count: Integer);
+    procedure HomeCommunicationStreamsReceived(Sender: TObject; Streams: TStreamInfoArray;
+      Count: Integer);
+    procedure HomeCommunicationGenresReceived(Sender: TObject; Genres: TStringList);
+    procedure HomeCommunicationReceiveError(Sender: TObject);
+
+    property CurrentSearch: string read FCurrentSearch write FCurrentSearch;
+    property CurrentGenre: string read FCurrentGenre write FCurrentGenre;
+    property CurrentKbps: Integer read FCurrentKbps write FCurrentKbps;
+
+    property StreamTree: TMStreamTree read FStreamTree;
+  end;
+
+  TMStreamTree = class(TVirtualStringTree)
   private
     FDragSource: TDropFileSource;
 
     FColName: TVirtualTreeColumn;
     FDisplayCount: Integer;
     FUnloadedVisible: Boolean;
+
+    FIsLoading: Boolean;
 
     FLastScrollTick: Cardinal;
     FScrollDirection: TScrollDirection;
@@ -73,9 +152,6 @@ type
 
     FTimer: TTimer;
     FDots: string;
-    FIsLoading: Boolean;
-    FError: Boolean;
-    FCurrentSearch: string;
     FLoadOffset: Integer;
 
     FOnNeedData: TNeedDataEvent;
@@ -85,7 +161,7 @@ type
 
     procedure FitColumns;
     function AddStream(Node: PVirtualNode; Name, Genre, URL: string;
-      BitRate: Integer; HasData: Boolean): PVirtualNode;
+      BitRate, Downloads: Integer; HasData: Boolean): PVirtualNode;
     procedure GetLoadDataNodes(var FirstVisibleNoData, LastVisibleNoData: PVirtualNode);
     function GetSelected: TStreamDataArray;
   protected
@@ -119,9 +195,9 @@ type
     procedure ClearStreams;
 
     property IsLoading: Boolean read FIsLoading write FSetIsLoading;
-    property CurrentSearch: string read FCurrentSearch write FCurrentSearch;
-    property LoadOffset: Integer read FLoadOffset write FLoadOffset;
+
     property DisplayCount: Integer read FDisplayCount;
+    property LoadOffset: Integer read FLoadOffset write FLoadOffset;
     property OnNeedData: TNeedDataEvent read FOnNeedData write FOnNeedData;
     property OnAction: TActionEvent read FOnAction write FOnAction;
   end;
@@ -130,8 +206,8 @@ implementation
 
 { TMStreamView }
 
-function TMStreamBrowserView.AddStream(Node: PVirtualNode; Name, Genre, URL: string;
-  BitRate: Integer; HasData: Boolean): PVirtualNode;
+function TMStreamTree.AddStream(Node: PVirtualNode; Name, Genre, URL: string;
+  BitRate, Downloads: Integer; HasData: Boolean): PVirtualNode;
 var
   NodeData: PStreamNodeData;
 begin
@@ -142,11 +218,12 @@ begin
   NodeData.Genre := Genre;
   NodeData.URL := URL;
   NodeData.BitRate := BitRate;
+  NodeData.Downloads := Downloads;
   NodeData.HasData := HasData;
   Result := Node;
 end;
 
-constructor TMStreamBrowserView.Create(AOwner: TComponent);
+constructor TMStreamTree.Create(AOwner: TComponent);
 begin
   inherited;
   NodeDataSize := SizeOf(TStreamNodeData);
@@ -165,9 +242,8 @@ begin
   FDragSource := TDropFileSource.Create(Self);
 
   FUnloadedVisible := False;
-  FLoadOffset := 0;
   FIsLoading := False;
-  FError := False;
+  FLoadOffset := 0;
 
   FColName := Header.Columns.Add;
   FColName.Text := _('Name');
@@ -209,15 +285,16 @@ begin
   FTimer.Enabled := True;
 end;
 
-destructor TMStreamBrowserView.Destroy;
+destructor TMStreamTree.Destroy;
 begin
   FPopupMenu.Free;
   FDragSource.Free;
   FTimer.Free;
+
   inherited;
 end;
 
-procedure TMStreamBrowserView.DoFreeNode(Node: PVirtualNode);
+procedure TMStreamTree.DoFreeNode(Node: PVirtualNode);
 var
   NodeData: PStreamNodeData;
 begin
@@ -228,7 +305,7 @@ begin
   inherited;
 end;
 
-function TMStreamBrowserView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
+function TMStreamTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
   Column: TColumnIndex; var Ghosted: Boolean;
   var Index: Integer): TCustomImageList;
 begin
@@ -239,7 +316,7 @@ begin
   end;
 end;
 
-procedure TMStreamBrowserView.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
+procedure TMStreamTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
   TextType: TVSTTextType; var Text: UnicodeString);
 var
   NodeData: PStreamNodeData;
@@ -255,7 +332,7 @@ begin
   end;
 end;
 
-procedure TMStreamBrowserView.DoScroll(DeltaX, DeltaY: Integer);
+procedure TMStreamTree.DoScroll(DeltaX, DeltaY: Integer);
 begin
   inherited;
 
@@ -268,13 +345,13 @@ begin
   Exit;
 end;
 
-procedure TMStreamBrowserView.FitColumns;
+procedure TMStreamTree.FitColumns;
 begin
   Header.AutoSizeIndex := 1;
   Header.Options := Header.Options + [hoAutoResize];
 end;
 
-procedure TMStreamBrowserView.GetLoadDataNodes(var FirstVisibleNoData, LastVisibleNoData: PVirtualNode);
+procedure TMStreamTree.GetLoadDataNodes(var FirstVisibleNoData, LastVisibleNoData: PVirtualNode);
 var
   Node: PVirtualNode;
   NodeData: PStreamNodeData;
@@ -312,7 +389,7 @@ begin
   end;
 end;
 
-function TMStreamBrowserView.GetNodes(SelectedOnly: Boolean): TNodeArray;
+function TMStreamTree.GetNodes(SelectedOnly: Boolean): TNodeArray;
 var
   i: Integer;
   Node: PVirtualNode;
@@ -336,7 +413,7 @@ begin
   end;
 end;
 
-function TMStreamBrowserView.GetSelected: TStreamDataArray;
+function TMStreamTree.GetSelected: TStreamDataArray;
 var
   i: Integer;
   Nodes: TNodeArray;
@@ -356,7 +433,7 @@ begin
   end;
 end;
 
-procedure TMStreamBrowserView.HandleMouseDblClick(var Message: TWMMouse;
+procedure TMStreamTree.HandleMouseDblClick(var Message: TWMMouse;
   const HitInfo: THitInfo);
 var
   Entries: TStreamDataArray;
@@ -370,7 +447,7 @@ begin
   end;
 end;
 
-procedure TMStreamBrowserView.KeyPress(var Key: Char);
+procedure TMStreamTree.KeyPress(var Key: Char);
 begin
   inherited;
   if Key = #13 then
@@ -380,7 +457,7 @@ begin
   end;
 end;
 
-procedure TMStreamBrowserView.DoTextDrawing(var PaintInfo: TVTPaintInfo;
+procedure TMStreamTree.DoTextDrawing(var PaintInfo: TVTPaintInfo;
   Text: UnicodeString; CellRect: TRect; DrawFormat: Cardinal);
 var
   Size, Size2: TSize;
@@ -406,6 +483,7 @@ begin
     begin
       if Text <> '' then
         Text := Text + ' / ';
+      //Text := Text + IntToStr(NodeData.Downloads) + ' ' + _('Downloads') + ' / ';
       Text := Text + NodeData.Genre;
     end;
 
@@ -426,7 +504,7 @@ begin
   end;
 end;
 
-procedure TMStreamBrowserView.Paint;
+procedure TMStreamTree.Paint;
 var
   Size: TSize;
   TmpText: string;
@@ -444,20 +522,9 @@ begin
 
     DrawText(Canvas.Handle, PChar(TmpText + FDots), Length(TmpText) + Length(FDots), R, 0);
   end;
-  if FError and (RootNodeCount = 0) then
-  begin
-    TmpText := _('Error loading streams');
-    GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
-
-    R := ClientRect;
-    R.Left := (R.Right div 2) - (Size.cx div 2) - 4;
-    R.Top := (R.Bottom div 2) - (Size.cy div 2);
-
-    DrawText(Canvas.Handle, PChar(TmpText), Length(TmpText), R, 0);
-  end;
 end;
 
-procedure TMStreamBrowserView.PaintImage(var PaintInfo: TVTPaintInfo;
+procedure TMStreamTree.PaintImage(var PaintInfo: TVTPaintInfo;
   ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
 begin
   PaintInfo.ImageInfo[ImageInfoIndex].XPos := 4;
@@ -465,7 +532,7 @@ begin
   inherited;
 end;
 
-procedure TMStreamBrowserView.PopupMenuClick(Sender: TObject);
+procedure TMStreamTree.PopupMenuClick(Sender: TObject);
 var
   Action: TOpenActions;
   Streams: TStreamDataArray;
@@ -488,7 +555,7 @@ begin
       FOnAction(Self, Action, Streams);
 end;
 
-procedure TMStreamBrowserView.TimerOnTimer(Sender: TObject);
+procedure TMStreamTree.TimerOnTimer(Sender: TObject);
 var
   i: Integer;
   Nodes: TNodeArray;
@@ -507,7 +574,7 @@ begin
     Invalidate;
 end;
 
-procedure TMStreamBrowserView.TimerScrollOnTimer(Sender: TObject);
+procedure TMStreamTree.TimerScrollOnTimer(Sender: TObject);
 var
   Offset, Count: Integer;
   FirstVisibleNoData, LastVisibleNoData: PVirtualNode;
@@ -533,7 +600,7 @@ begin
   end;
 end;
 
-procedure TMStreamBrowserView.DoDragging(P: TPoint);
+procedure TMStreamTree.DoDragging(P: TPoint);
 var
   i: Integer;
   Entries: TStreamDataArray;
@@ -553,7 +620,7 @@ begin
   FDragSource.Execute(True);
 end;
 
-procedure TMStreamBrowserView.AddStreams(Streams: TStreamInfoArray;
+procedure TMStreamTree.AddStreams(Streams: TStreamInfoArray;
   Count: Integer);
 var
   i, n: Integer;
@@ -568,9 +635,9 @@ begin
     BeginUpdate;
     try
       for i := 0 to Length(Streams) - 1 do
-        AddStream(nil, Streams[i].Name, Streams[i].Genre, Streams[i].URL, Streams[i].BitRate, True);
+        AddStream(nil, Streams[i].Name, Streams[i].Genre, Streams[i].URL, Streams[i].BitRate, Streams[i].Downloads, True);
       for i := RootNodeCount to Count - 1 do
-        AddStream(nil, '', '', '', 0, False);
+        AddStream(nil, '', '', '', 0, 0, False);
     finally
       EndUpdate;
     end;
@@ -585,7 +652,7 @@ begin
       begin
         if (i >= FLoadOffset) and (High(Streams) >= n) then
         begin
-          AddStream(Node, Streams[n].Name, Streams[n].Genre, Streams[n].URL, Streams[n].BitRate, True);
+          AddStream(Node, Streams[n].Name, Streams[n].Genre, Streams[n].URL, Streams[n].BitRate, Streams[n].Downloads, True);
           InvalidateNode(Node);
           Inc(n);
         end;
@@ -598,14 +665,14 @@ begin
   end;
 end;
 
-procedure TMStreamBrowserView.ClearStreams;
+procedure TMStreamTree.ClearStreams;
 begin
+  FLoadOffset := 0;
   Clear;
 end;
 
-procedure TMStreamBrowserView.FSetIsLoading(Value: Boolean);
+procedure TMStreamTree.FSetIsLoading(Value: Boolean);
 begin
-  FError := False;
   FIsLoading := Value;
   FDots := '';
   FTimer.Enabled := False;
@@ -613,30 +680,29 @@ begin
   Invalidate;
 end;
 
-procedure TMStreamBrowserView.ReceiveError;
+procedure TMStreamTree.ReceiveError;
 begin
   Clear;
-  FError := True;
 end;
 
-procedure TMStreamBrowserView.Resize;
+procedure TMStreamTree.Resize;
 begin
   inherited;
   Setup;
   FLastScrollTick := GetTickCount;
 end;
 
-procedure TMStreamBrowserView.Setup;
+procedure TMStreamTree.Setup;
 var
   Size: TSize;
 begin
   FColName.Width := ClientWidth;
   GetTextExtentPoint32W(Canvas.Handle, 'Wl0', 3, Size);
   DefaultNodeHeight := Size.cy * 2 + 6;
-  FDisplayCount := Round(ClientHeight / DefaultNodeHeight);
+  FDisplayCount := Ceil(ClientHeight / DefaultNodeHeight);
 end;
 
-procedure TMStreamBrowserView.MouseUp(Button: TMouseButton; Shift: TShiftState;
+procedure TMStreamTree.MouseUp(Button: TMouseButton; Shift: TShiftState;
   X, Y: Integer);
 var
   P: TPoint;
@@ -653,7 +719,7 @@ begin
   end;
 end;
 
-function TMStreamBrowserView.DoGetNodeTooltip(Node: PVirtualNode;
+function TMStreamTree.DoGetNodeTooltip(Node: PVirtualNode;
   Column: TColumnIndex;
   var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString;
 var
@@ -671,6 +737,362 @@ begin
       Text := Text + #13#10 + NodeData.Genre;
   end;
   Result := Text;
+end;
+
+{ TMStreamView }
+
+procedure TMStreamBrowserView.BtnRetryClick(Sender: TObject);
+begin
+  SwitchMode(True, False);
+  if FSearch.FGenreList.Items.Count = 0 then
+    FHomeCommunication.GetGenres;
+  FStreamTree.ClearStreams;
+  FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre, FCurrentKbps, True);
+end;
+
+constructor TMStreamBrowserView.Create(AOwner: TComponent; HomeCommunication: THomeCommunication);
+begin
+  inherited Create(AOwner);
+
+  BevelOuter := bvNone;
+
+  FCurrentKbps := 32;
+  FLoading := False;
+  FHomeCommunication := HomeCommunication;
+
+  FSearch := TMStreamSearchPanel.Create(Self);
+  FSearch.Align := alTop;
+  FSearch.Height := 100;
+  FSearch.Parent := Self;
+  FSearch.Visible := True;
+
+  FStreamTree := TMStreamTree.Create(Self);
+  FStreamTree.Align := alClient;
+  FStreamTree.Parent := Self;
+  FStreamTree.Visible := True;
+  FStreamTree.OnNeedData := StreamBrowserNeedData;
+
+  FCountLabel := TLabel.Create(Self);
+  FCountLabel.Align := alBottom;
+  FCountLabel.Parent := Self;
+  FCountLabel.Visible := True;
+
+  FLoadingPanel := TMLoadingPanel.Create(Self);
+  FLoadingPanel.Align := alClient;
+  FLoadingPanel.Parent := Self;
+  FLoadingPanel.Visible := False;
+
+  FLoadingPanel.FBtnRetry.OnClick := BtnRetryClick;
+
+  FHomeCommunication.OnGenresReceived := HomeCommunicationGenresReceived;
+  FHomeCommunication.OnStreamsReceived := HomeCommunicationStreamsReceived;
+  FHomeCommunication.OnReceiveError := HomeCommunicationReceiveError;
+  FHomeCommunication.GetGenres;
+end;
+
+destructor TMStreamBrowserView.Destroy;
+begin
+  inherited;
+end;
+
+procedure TMStreamBrowserView.FSetIsLoading(Value: Boolean);
+begin
+  FStreamTree.IsLoading := Value;
+
+end;
+
+procedure TMStreamBrowserView.GetStreams(Search, Genre: string; Kbps: Integer);
+begin
+  if (Search = CurrentSearch) and (Genre = CurrentGenre) and (Kbps = CurrentKbps) then
+    Exit;
+
+  FStreamTree.ClearStreams;
+  CurrentSearch := Search;
+  CurrentGenre := Genre;
+  CurrentKbps := Kbps;
+  FStreamTree.IsLoading := True;
+  FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, Search, Genre, Kbps, True);
+end;
+
+procedure TMStreamBrowserView.GetStreams;
+var
+  Search, Genre: string;
+  Kbps: Integer;
+begin
+  Search := Trim(FSearch.FSearchEdit.Text);
+
+  if FSearch.FGenreList.ItemIndex > 0 then
+    Genre := FSearch.FGenreList.Text
+  else
+    Genre := '';
+
+  case FSearch.FKbpsList.ItemIndex of
+    0: Kbps := 32;
+    1: Kbps := 64;
+    2: Kbps := 128;
+    3: Kbps := 192;
+  end;
+
+  GetStreams(Search, Genre, Kbps);
+end;
+
+procedure TMStreamBrowserView.HomeCommunicationGenresReceived(
+  Sender: TObject; Genres: TStringList);
+var
+  i: Integer;
+begin
+  FSearch.FGenreList.Clear;
+  FSearch.FGenreList.Items.Add(_('- No genre -'));
+  for i := 0 to Genres.Count - 1 do
+    FSearch.FGenreList.Items.Add(Genres[i]);
+  if FSearch.FGenreList.Items.Count > 0 then
+    FSearch.FGenreList.ItemIndex := 0;
+
+  if FStreamTree.RootNodeCount > 0 then
+    SwitchMode(False, False);
+end;
+
+procedure TMStreamBrowserView.HomeCommunicationReceiveError(Sender: TObject);
+begin
+  SwitchMode(False, True);
+end;
+
+procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject;
+  Streams: TStreamInfoArray; Count: Integer);
+begin
+  FStreamTree.AddStreams(Streams, Count);
+  if FSearch.FGenreList.Items.Count > 0 then
+    SwitchMode(False, False);
+  if Count = 1 then
+    FCountLabel.Caption := Format(_('%d stream found'), [Count])
+  else
+    FCountLabel.Caption := Format(_('%d streams found'), [Count]);
+end;
+
+procedure TMStreamBrowserView.ListsChange(Sender: TObject);
+begin
+  GetStreams;
+end;
+
+procedure TMStreamBrowserView.Resize;
+begin
+  inherited;
+end;
+
+procedure TMStreamBrowserView.SearchButtonClick(Sender: TObject);
+begin
+  GetStreams;
+end;
+
+procedure TMStreamBrowserView.SearchEditKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+  if Key = #13 then
+  begin
+    GetStreams;
+    Key := #0;
+  end;
+end;
+
+procedure TMStreamBrowserView.Setup;
+begin
+  SwitchMode(True, False);
+
+  FSearch.Setup;
+  FStreamTree.Setup;
+
+  FSearch.FSearchEdit.OnKeyPress := SearchEditKeyPress;
+  FSearch.FSearchButton.OnClick := SearchButtonClick;
+  FSearch.FGenreList.OnChange := ListsChange;
+  FSearch.FKbpsList.OnChange := ListsChange;
+
+  FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre, FCurrentKbps, True);
+end;
+
+procedure TMStreamBrowserView.StreamBrowserNeedData(Sender: TObject;
+  Offset, Count: Integer);
+begin
+  FHomeCommunication.GetStreams(Count, Offset, CurrentSearch, CurrentGenre, CurrentKbps, False);
+end;
+
+procedure TMStreamBrowserView.SwitchMode(Loading, Error: Boolean);
+begin
+  if Loading or Error then
+  begin
+    FSearch.Visible := False;
+    FStreamTree.Visible := False;
+    FCountLabel.Visible := False;
+    FLoadingPanel.Visible := True;
+  end else
+  begin
+    FSearch.Visible := True;
+    FStreamTree.Visible := True;
+    FCountLabel.Visible := True;
+    FLoadingPanel.Visible := False;
+  end;
+
+  if Loading then
+  begin
+    FLoadingPanel.FLabel.Caption := _('Loading streams');
+    FLoadingPanel.FDots := '';
+    FLoadingPanel.FTimer.Enabled := True;
+    FLoadingPanel.FBtnRetry.Visible := False;
+    FLoading := True;
+  end else if Error then
+  begin
+    FLoadingPanel.FLabel.Caption := _('Error loading streams.');
+    FLoadingPanel.FBtnRetry.Visible := True;
+  end;
+
+  if not Loading then
+  begin
+    FLoadingPanel.FTimer.Enabled := False;
+    FLoading := False;
+  end;
+
+  FLoadingPanel.Resize;
+end;
+
+{ TMStreamSearch }
+
+constructor TMStreamSearchPanel.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  BevelOuter := bvNone;
+end;
+
+procedure TMStreamSearchPanel.Setup;
+var
+  I: TIcon;
+  B: TBitmap;
+begin
+  FSearchEdit := TEdit.Create(Self);
+  FSearchEdit.Parent := Self;
+  FSearchEdit.Left := 50;
+  FSearchEdit.Top := 4;
+  FSearchEdit.Anchors := [akLeft, akRight, akTop];
+
+  FGenreList := TComboBox.Create(Self);
+  FGenreList.Parent := Self;
+  FGenreList.Style := csDropDownList;
+  FGenreList.Left := 50;
+  FGenreList.Top := 30;
+  FGenreList.Anchors := [akLeft, akRight, akTop];
+  FGenreList.DropDownCount := 16;
+
+  FKbpsList := TComboBox.Create(Self);
+  FKbpsList.Parent := Self;
+  FKbpsList.Style := csDropDownList;
+  FKbpsList.Left := 50;
+  FKbpsList.Top := 56;
+  FKbpsList.Anchors := [akLeft, akRight, akTop];
+
+
+  FSearchLabel := TLabel.Create(Self);
+  FSearchLabel.Parent := Self;
+  FSearchLabel.Left := 4;
+  FSearchLabel.Caption := _('Search:');
+  FSearchLabel.Top := FSearchEdit.Top + FSearchEdit.Height div 2 - FSearchLabel.Height div 2;
+
+  FGenreLabel := TLabel.Create(Self);
+  FGenreLabel.Parent := Self;
+  FGenreLabel.Left := 4;
+  FGenreLabel.Caption := _('Genre:');
+  FGenreLabel.Top := FGenreList.Top + FGenreList.Height div 2 - FGenreLabel.Height div 2;
+
+  FKbpsLabel := TLabel.Create(Self);
+  FKbpsLabel.Parent := Self;
+  FKbpsLabel.Left := 4;
+  FKbpsLabel.Caption := _('Kbps:');
+  FKbpsLabel.Top := FKbpsList.Top + FKbpsList.Height div 2 - FKbpsLabel.Height div 2;
+
+
+  FSearchButton := TSpeedButton.Create(Self);
+  FSearchButton.Parent := Self;
+  FSearchButton.Width := 24;
+  FSearchButton.Height := 24;
+  FSearchButton.Top := 3;
+  FSearchButton.Left := ClientWidth - 8 - FSearchButton.Width;
+  FSearchButton.Anchors := [akRight, akTop];
+  FSearchButton.Flat := True;
+  FSearchButton.Hint := _('Search');
+  FSearchButton.ShowHint := True;
+
+
+  I := TIcon.Create;
+  I.LoadFromResourceName(HInstance, 'SEARCH');
+  B := TBitmap.Create;
+  B.Width := 32;
+  B.Height := 32;
+  B.Canvas.Draw(0, 0, I);
+  B.Canvas.StretchDraw(Rect(0, 0, 16, 16), B);
+  B.Width := 16;
+  B.Height := 16;
+  FSearchButton.Glyph := B;
+  B.Free;
+  I.Free;
+
+
+  FSearchEdit.Width := ClientWidth - FSearchEdit.Left - 12 - FSearchButton.Width;
+  FGenreList.Width := ClientWidth - FGenreList.Left - 8;
+  FKbpsList.Width := ClientWidth - FKbpsList.Left - 8;
+
+
+  FKbpsList.Items.Add(_('- No kbps -'));
+  FKbpsList.Items.Add('>= 64');
+  FKbpsList.Items.Add('>= 128');
+  FKbpsList.Items.Add('>= 192');
+  FKbpsList.ItemIndex := 0;
+
+
+  ClientHeight := FKbpsList.Top + FKbpsList.Height + 8;
+end;
+
+{ TMLoadingPanel }
+
+constructor TMLoadingPanel.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+
+  BevelOuter := bvNone;
+
+  FLabel := TLabel.Create(Self);
+  FLabel.Parent := Self;
+  FLabel.Visible := True;
+  FLabel.Caption := _('Error loading streams');
+
+  FBtnRetry := TButton.Create(Self);
+  FBtnRetry.Parent := Self;
+  FBtnRetry.Visible := True;
+  FBtnRetry.Caption := _('Retry');
+
+  FDots := '';
+  FTimer := TTimer.Create(Self);
+  FTimer.OnTimer := TimerOnTimer;
+  FTimer.Interval := 1000;
+  FTimer.Enabled := False;
+end;
+
+procedure TMLoadingPanel.Resize;
+begin
+  inherited;
+
+  FLabel.Left := ClientWidth div 2 - FLabel.Width div 2;
+  FLabel.Top := ClientHeight div 2 - FLabel.Height;
+
+  FBtnRetry.Left := ClientWidth div 2 - FBtnRetry.Width div 2;
+  FBtnRetry.Top := FLabel.Top + FLabel.Height + 8;
+end;
+
+procedure TMLoadingPanel.TimerOnTimer(Sender: TObject);
+begin
+  FDots := FDots + '.';
+
+  if Length(FDots) = 4 then
+    FDots := '';
+
+  FLabel.Caption := _('Loading streams') + FDots;
 end;
 
 end.

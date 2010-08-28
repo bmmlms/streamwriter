@@ -29,7 +29,8 @@ uses
   DragDropInternet, DragDropText, DragDropFile, Update, UpdateClient,
   LanguageObjects, AppDataBase, Functions, ClientManager, ShellAPI, DropSource,
   About, MsgDlg, Exceptions, HomeCommunication, StreamBrowserView, Clipbrd,
-  StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins;
+  StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
+  Buttons;
 
 type
   TfrmStreamWriterMain = class(TForm)
@@ -84,7 +85,6 @@ type
     mnuSavePlaylist1: TMenuItem;
     mnuHelp: TMenuItem;
     mnuAbout: TMenuItem;
-    VirtualStringTree1: TVirtualStringTree;
     ToolBar1: TToolBar;
     cmdStart: TToolButton;
     cmdStop: TToolButton;
@@ -127,8 +127,6 @@ type
     pagSidebar: TPageControl;
     tabBrowser: TTabSheet;
     tabInfo: TTabSheet;
-    txtSearchStream: TEdit;
-    lblSearchStream: TLabel;
     tabDebug: TTabSheet;
     imgSavedTracks: TImageList;
     mnuReset1: TMenuItem;
@@ -162,7 +160,6 @@ type
     procedure actSettingsExecute(Sender: TObject);
     procedure actAboutExecute(Sender: TObject);
     procedure mnuStreamSettingsToolbarPopup(Sender: TObject);
-    procedure txtSearchStreamKeyPress(Sender: TObject; var Key: Char);
     procedure cmdStreamSettingsClick(Sender: TObject);
     procedure actShowStreamBrowserExecute(Sender: TObject);
     procedure actTuneInStreamExecute(Sender: TObject);
@@ -186,7 +183,7 @@ type
     FClients: TClientManager;
     FHomeCommunication: THomeCommunication;
     lstClients: TMClientView;
-    lstStreamBrowser: TMStreamBrowserView;
+    pnlStreamView: TMStreamBrowserView;
     lstStations: TMStationCombo;
     pnlStreamInfo: TMStreamInfoContainer;
     pnlDebug: TMStreamDebugContainer;
@@ -230,10 +227,6 @@ type
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
 
-    procedure HomeCommunicationStreamsReceived(Sender: TObject; Streams: TStreamInfoArray;
-      Count: Integer);
-    procedure HomeCommunicationStreamsReceivedError(Sender: TObject);
-    procedure StreamBrowserNeedData(Sender: TObject; Offset, Count: Integer);
     procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
     procedure StreamInfoAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
   protected
@@ -295,6 +288,7 @@ end;
 
 procedure TfrmStreamWriterMain.ExitApp(Shutdown: Boolean);
 var
+  i: Integer;
   Res: Integer;
   Clients: TNodeDataArray;
   StartTime: Cardinal;
@@ -310,6 +304,9 @@ begin
 
   AppGlobals.ShowSidebar := pagSideBar.Visible;
   AppGlobals.SidebarWidth := pagSideBar.Width;
+
+  for i := 0 to lstClients.Header.Columns.Count - 1 do
+    AppGlobals.HeaderWidth[i] := lstClients.Header.Columns[i].Width;
 
   TrayIcon1.Visible := False;
 
@@ -607,6 +604,8 @@ begin
   FClients.OnClientTitleChanged := ClientManagerTitleChanged;
   FClients.OnClientICYReceived := ClientManagerICYReceived;
 
+  FHomeCommunication := THomeCommunication.Create;
+
   if AppGlobals.Relay then
     FClients.RelayServer.Start;
 
@@ -637,16 +636,15 @@ begin
   lstClients.OnKeyDown := lstClientsKeyDown;
   lstClients.Show;
 
-  lstStreamBrowser := TMStreamBrowserView.Create(tabBrowser);
-  lstStreamBrowser.Parent := tabBrowser;
-  lstStreamBrowser.Left := 0;
-  lstStreamBrowser.Align := alBottom;
-  lstStreamBrowser.Height := tabBrowser.ClientHeight - txtSearchStream.Top - txtSearchStream.Height - 4;
-  lstStreamBrowser.Anchors := [akLeft, akTop, akRight, akBottom];
-  lstStreamBrowser.OnNeedData := StreamBrowserNeedData;
-  lstStreamBrowser.OnAction := StreamBrowserAction;
-  lstStreamBrowser.Images := imgStations;
-  lstStreamBrowser.Show;
+  pnlStreamView := TMStreamBrowserView.Create(tabBrowser, FHomeCommunication);
+  pnlStreamView.Parent := tabBrowser;
+  pnlStreamView.Left := 0;
+  pnlStreamView.Align := alClient;
+
+  pnlStreamView.StreamTree.OnAction := StreamBrowserAction;
+  pnlStreamView.StreamTree.Images := imgStations;
+
+  pnlStreamView.Show;
 
   pnlStreamInfo := TMStreamInfoContainer.Create(Self);
   pnlStreamInfo.InfoView.Tree.OnAction := StreamInfoAction;
@@ -733,6 +731,16 @@ begin
   FUpdater.OnUpdateFound := UpdaterUpdateFound;
   if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
     FUpdater.Start(uaVersion);
+
+  Width := AppGlobals.MainWidth;
+  Height := AppGlobals.MainHeight;
+  if (AppGlobals.MainLeft = -1) or (AppGlobals.MainTop = -1) then
+  begin
+    AppGlobals.MainLeft := Screen.Width div 2 - Width div 2;
+    AppGlobals.MainTop := Screen.Height div 2 - Height div 2;
+  end;
+  Left := AppGlobals.MainLeft;
+  Top := AppGlobals.MainTop;
 end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
@@ -744,6 +752,8 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.FormShow(Sender: TObject);
+var
+  i: Integer;
 begin
   if FWasShown then
     Exit;
@@ -754,16 +764,6 @@ begin
   if AppGlobals.MainMaximized then
     WindowState := wsMaximized;
   FWasMaximized := WindowState = wsMaximized;
-
-  Width := AppGlobals.MainWidth;
-  Height := AppGlobals.MainHeight;
-  if (AppGlobals.MainLeft = -1) or (AppGlobals.MainTop = -1) then
-  begin
-    AppGlobals.MainLeft := Screen.Width div 2 - Width div 2;
-    AppGlobals.MainTop := Screen.Height div 2 - Height div 2;
-  end;
-  Left := AppGlobals.MainLeft;
-  Top := AppGlobals.MainTop;
 
   pagSidebar.Visible := AppGlobals.ShowSidebar;
   Splitter1.Visible := AppGlobals.ShowSidebar;
@@ -776,12 +776,10 @@ begin
     lstClients.FocusedNode := lstclients.GetFirst;
   end;
 
-  lstStreamBrowser.Setup;
-  FHomeCommunication := THomeCommunication.Create;
-  FHomeCommunication.OnStreamsReceived := HomeCommunicationStreamsReceived;
-  FHomeCommunication.OnStreamsReceivedError := HomeCommunicationStreamsReceivedError;
-  FHomeCommunication.GetStreams(lstStreamBrowser.DisplayCount, 0, '', True);
-  lstStreamBrowser.IsLoading := True;
+  for i := 0 to lstClients.Header.Columns.Count - 1 do
+    lstClients.Header.Columns[i].Width := AppGlobals.HeaderWidth[i];
+
+  pnlStreamView.Setup;
 end;
 
 function TfrmStreamWriterMain.HandleLoadError(E: Exception): Integer;
@@ -789,33 +787,21 @@ begin
   if E is EVersionException then
     begin
       Result := MsgBox(0, Format(_('The file "%s" could not be loaded because it was saved with a newer version of streamWriter. ' +
-                                        'To use the current file, exit streamWriter and use a newer version of the application. ' +
-                                        'To delete the file and continue to use this version click "Yes".'#13#10 +
-                                        'WARNING: All data saved in the file will be lost!'#13#10 +
-                                        'The file will not be overwritten with new data until it was loaded or deleted.'),
-                                        [E.Message]),
-                                      _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
+                                   'To use the current file, exit streamWriter and use a newer version of the application. ' +
+                                   'To delete the file and continue to use this version click "Yes".'#13#10 +
+                                   'WARNING: All data saved in the file will be lost!'#13#10 +
+                                   'The file will not be overwritten with new data until it was loaded or deleted.'),
+                                 [E.Message]),
+                                 _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
     end else
     begin
       Result := MsgBox(0, Format(_('The file "%s" could not be loaded because it is corrupted. ' +
-                                        'You can delete it to avoid this error when streamWriter starts by clicking "Yes".'#13#10 +
-                                        'WARNING: All data saved in the file will be lost!'#13#10 +
-                                        'The file will not be overwritten with new data until it was loaded or deleted.'),
-                                        [E.Message]),
-                                      _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
+                                   'You can delete it to avoid this error when streamWriter starts by clicking "Yes".'#13#10 +
+                                   'WARNING: All data saved in the file will be lost!'#13#10 +
+                                   'The file will not be overwritten with new data until it was loaded or deleted.'),
+                                 [E.Message]),
+                                 _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
     end;
-end;
-
-procedure TfrmStreamWriterMain.HomeCommunicationStreamsReceived(
-  Sender: TObject; Streams: TStreamInfoArray; Count: Integer);
-begin
-  lstStreamBrowser.AddStreams(Streams, Count);
-end;
-
-procedure TfrmStreamWriterMain.HomeCommunicationStreamsReceivedError(
-  Sender: TObject);
-begin
-  lstStreamBrowser.ReceiveError;
 end;
 
 procedure TfrmStreamWriterMain.mnuCheckUpdateClick(Sender: TObject);
@@ -1080,12 +1066,6 @@ begin
   end;
 end;
 
-procedure TfrmStreamWriterMain.StreamBrowserNeedData(Sender: TObject;
-  Offset, Count: Integer);
-begin
-  FHomeCommunication.GetStreams(Count, Offset, lstStreamBrowser.CurrentSearch, False);
-end;
-
 procedure TfrmStreamWriterMain.StreamInfoAction(Sender: TObject;
   Action: TTrackActions; Tracks: TTrackInfoArray);
 var
@@ -1235,29 +1215,6 @@ begin
       end else
         SetForegroundWindow(Handle);
     end;
-  end;
-end;
-
-procedure TfrmStreamWriterMain.txtSearchStreamKeyPress(Sender: TObject;
-  var Key: Char);
-var
-  s: string;
-begin
-  if Key = #13 then
-  begin
-    s := Trim(txtSearchStream.Text);
-    if (s = '') or ((Length(s) > 2) and (OccurenceCount(' ', s) < 5)) then
-    begin
-      lstStreamBrowser.ClearStreams;
-      lstStreamBrowser.IsLoading := True;
-      lstStreamBrowser.CurrentSearch := Trim(txtSearchStream.Text);
-      lstStreamBrowser.LoadOffset := 0;
-      FHomeCommunication.GetStreams(lstStreamBrowser.DisplayCount, 0, lstStreamBrowser.CurrentSearch, True);
-    end else
-    begin
-      MsgBox(Handle, 'Your query must contain more than two letters and may not have more than five keywords.', 'Info', MB_ICONINFORMATION);
-    end;
-    Key := #0;
   end;
 end;
 

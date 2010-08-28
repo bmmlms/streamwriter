@@ -59,7 +59,6 @@
 			<DCCReference Include="Main.pas">
 				<Form>frmStreamWriterMain</Form>
 			</DCCReference>
-			<DCCReference Include="ICEClient.pas"/>
 			<DCCReference Include="ClientView.pas"/>
 			<DCCReference Include="RecentManager.pas"/>
 			<DCCReference Include="Settings.pas">
@@ -82,8 +81,6 @@
 			<DCCReference Include="ClientManager.pas"/>
 			<DCCReference Include="RelayServer.pas"/>
 			<DCCReference Include="..\..\common\sockets\HTTPServerStream.pas"/>
-			<DCCReference Include="ICEStream.pas"/>
-			<DCCReference Include="ICEThread.pas"/>
 			<DCCReference Include="..\..\common\LanguageObjects.pas"/>
 			<DCCReference Include="..\..\common\GUIFunctions.pas"/>
 			<DCCReference Include="..\..\common\forms\Update.pas">
@@ -111,7 +108,6 @@
 			<DCCReference Include="..\..\common\forms\SettingsBase.pas">
 				<Form>frmSettingsBase</Form>
 			</DCCReference>
-			<DCCReference Include="AudioStream.pas"/>
 			<DCCReference Include="Plugins.pas"/>
 			<DCCReference Include="HomeCommunication.pas"/>
 			<DCCReference Include="StreamBrowserView.pas"/>
@@ -120,6 +116,12 @@
 			<DCCReference Include="StreamDebugView.pas"/>
 			<DCCReference Include="PluginsShared.pas"/>
 			<DCCReference Include="Base64.pas"/>
+			<DCCReference Include="audio\DynBASS.pas"/>
+			<DCCReference Include="ICEClient.pas"/>
+			<DCCReference Include="ICEServerStream.pas"/>
+			<DCCReference Include="ICEThread.pas"/>
+			<DCCReference Include="ICEStream.pas"/>
+			<DCCReference Include="audio\AudioStream.pas"/>
 			<BuildConfiguration Include="Basis">
 				<Key>Base</Key>
 			</BuildConfiguration>

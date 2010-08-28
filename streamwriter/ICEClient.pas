@@ -352,12 +352,14 @@ begin
 
   if FURLs.Count > 0 then
   begin
-    if FURLsIndex = FURLs.Count then
+    if FURLsIndex >= FURLs.Count then
     begin
       FURLsIndex := -1;
       Result := GetURL;
       Exit;
     end;
+    if FURLsIndex = -1 then
+      FURLsIndex := 0;
     Result := FURLs[FURLsIndex];
     Inc(FURLsIndex);
   end else

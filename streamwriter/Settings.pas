@@ -25,17 +25,13 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
-  Plugins, StrUtils;
+  Plugins, StrUtils, DynBASS;
 
 type
   TfrmSettings = class(TfrmSettingsBase)
     pnlStreams: TPanel;
     pnlMain: TPanel;
-    txtShortSongSize: TLabeledEdit;
-    txtSongBuffer: TLabeledEdit;
     chkTrayClose: TCheckBox;
-    Label4: TLabel;
-    Label5: TLabel;
     pnlAdvanced: TPanel;
     txtMaxRetries: TLabeledEdit;
     txtRetryDelay: TLabeledEdit;
@@ -46,8 +42,6 @@ type
     lstPlugins: TListView;
     cmdConfigure: TBitBtn;
     chkSubmitStreams: TCheckBox;
-    Label8: TLabel;
-    Label9: TLabel;
     Label6: TLabel;
     lblHelp: TLabel;
     txtDir: TLabeledEdit;
@@ -60,7 +54,21 @@ type
     lblFilePattern: TLabel;
     lstDefaultAction: TComboBox;
     Label3: TLabel;
+    pnlCut: TPanel;
+    txtSongBuffer: TLabeledEdit;
+    txtShortSongSize: TLabeledEdit;
+    Label4: TLabel;
+    Label5: TLabel;
     chkSkipShort: TCheckBox;
+    Label8: TLabel;
+    Label9: TLabel;
+    chkSearchSilence: TCheckBox;
+    Label2: TLabel;
+    Label10: TLabel;
+    txtSilenceLevel: TEdit;
+    Label12: TLabel;
+    txtSilenceLength: TEdit;
+    Label13: TLabel;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure cmdBrowseClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
@@ -73,6 +81,7 @@ type
       Selected: Boolean);
     procedure txtFilePatternChange(Sender: TObject);
     procedure chkSkipShortClick(Sender: TObject);
+    procedure chkSearchSilenceClick(Sender: TObject);
   private
     FBrowseDir: Boolean;
     FRelayChanged: Boolean;
@@ -103,7 +112,7 @@ begin
   FBrowseDir := BrowseDir;
 
   ClientWidth := 420;
-  ClientHeight := 410;
+  ClientHeight := 395;
 
   lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
 
@@ -126,8 +135,14 @@ begin
   AppGlobals.Lock;
   txtFilePattern.Text := AppGlobals.FilePattern;
   txtDir.Text := AppGlobals.Dir;
+
   chkSkipShort.Checked := AppGlobals.SkipShort;
+  chkSearchSilence.Checked := AppGlobals.SearchSilence;
+
+  txtSilenceLevel.Enabled := chkSearchSilence.Checked;
+  txtSilenceLength.Enabled := chkSearchSilence.Checked;
   txtShortSongSize.Enabled := chkSkipShort.Checked;
+
   chkTrayClose.Checked := AppGlobals.TrayClose;
   chkRelay.Checked := AppGlobals.Relay;
   chkSubmitStreams.Checked := AppGlobals.SubmitStreams;
@@ -153,6 +168,17 @@ begin
 
   if not DirectoryExists(txtDir.Text) then
     txtDir.Text := '';
+
+  if not BassLoaded then
+  begin
+    chkSearchSilence.Enabled := False;
+    chkSearchSilence.Checked := False;
+    txtSilenceLevel.Enabled := False;
+    txtSilenceLength.Enabled := False;
+    Label10.Enabled := False;
+    Label12.Enabled := False;
+    Label13.Enabled := False;
+  end;
 end;
 
 procedure TfrmSettings.Finish;
@@ -175,6 +201,10 @@ begin
   AppGlobals.RetryDelay := StrToIntDef(txtRetryDelay.Text, 5);
   AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
   AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
+  if BassLoaded then
+    AppGlobals.SearchSilence := chkSearchSilence.Checked;
+  AppGlobals.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 3000000);
+  AppGlobals.SilenceLength := StrToIntDef(txtSilenceLength.Text, 200);
   AppGlobals.Unlock;
 
   for i := 0 to lstPlugins.Items.Count - 1 do
@@ -229,8 +259,7 @@ end;
 procedure TfrmSettings.Label9Click(Sender: TObject);
 begin
   inherited;
-  MsgBox(Handle, _('When a title is saved the entered amount of bytes of the stream will be added to it''s beginning and end, so the song will be complete even if the server announces the title change too early/late. ' +
-                   'For example, when song A and B are recorded, song A will have the beginning of song B at it''s end and song B will have the end of song A at it''s beginning.'), _('Info'), MB_ICONINFORMATION);
+  MsgBox(Handle, _('TODO: !!! und volume feld erklären!!! und sagen, dass die felder disabled sind, wenn bass.dll nicht geladen werden konnte!'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TfrmSettings.lstPluginsSelectItem(Sender: TObject;
@@ -328,6 +357,7 @@ procedure TfrmSettings.RegisterPages;
 begin
   FPageList.Add(TPage.Create('&Settings', pnlMain, 'PROPERTIES'));
   FPageList.Add(TPage.Create('S&treams', pnlStreams, 'START'));
+  FPageList.Add(TPage.Create('&Cut', pnlCut, 'CUT'));
   FPageList.Add(TPage.Create('&Plugins', pnlPlugins, 'PLUGINS'));
   FPageList.Add(TPage.Create('&Advanced', pnlAdvanced, 'MISC'));
   inherited;
@@ -390,6 +420,8 @@ begin
     Exit;
   end;
 
+  // TODO: Die neuen cutting-felder validieren.
+
   if Trim(txtMaxRetries.Text) = '' then
   begin
     MsgBox(Handle, _('Please enter the number of maximum connect retries.'), _('Info'), MB_ICONINFORMATION);
@@ -407,6 +439,13 @@ begin
   end;
 
   Result := True;
+end;
+
+procedure TfrmSettings.chkSearchSilenceClick(Sender: TObject);
+begin
+  inherited;
+  txtSilenceLevel.Enabled := chkSearchSilence.Checked;
+  txtSilenceLength.Enabled := chkSearchSilence.Checked;
 end;
 
 procedure TfrmSettings.chkSkipShortClick(Sender: TObject);

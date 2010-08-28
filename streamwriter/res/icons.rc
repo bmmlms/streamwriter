@@ -1,4 +1,6 @@
 A ICON ".\ico\logo.ico"
 MISC ICON ".\ico\misc.ico"
 START ICON ".\ico\start.ico"
+CUT ICON ".\ico\cut.ico"
 PLUGINS ICON ".\ico\plugin.ico"
+SEARCH ICON ".\ico\system-search.ico"
