@@ -446,6 +446,9 @@ begin
   inherited;
   txtSilenceLevel.Enabled := chkSearchSilence.Checked;
   txtSilenceLength.Enabled := chkSearchSilence.Checked;
+  Label10.Enabled := chkSearchSilence.Checked;
+  Label12.Enabled := chkSearchSilence.Checked;
+  Label13.Enabled := chkSearchSilence.Checked;
 end;
 
 procedure TfrmSettings.chkSkipShortClick(Sender: TObject);

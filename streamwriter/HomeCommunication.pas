@@ -112,7 +112,7 @@ constructor THomeCommunication.Create;
 begin
   {$IFDEF DEBUG}
   FURL := 'http://mistake.gaia/en/streamdb/';
-  //FURL := 'http://mistake.ws/en/streamdb/';
+  FURL := 'http://mistake.ws/en/streamdb/';
   {$ELSE}
   FURL := 'http://mistake.ws/en/streamdb/';
   {$ENDIF}
@@ -233,6 +233,7 @@ begin
     Data.Nodes.SimpleAdd('search', EncodeU(Search));
     Data.Nodes.SimpleAdd('genre', EncodeU(Genre));
     Data.Nodes.SimpleAdd('kbps', IntToStr(Kbps));
+    Data.Nodes.SimpleAdd('format', EncodeU('m3u'));
 
     XMLDocument.SaveToString(XML);
   finally
@@ -317,10 +318,10 @@ begin
         FOnStreamsReceived(Self, TGetStreamsThread(Thread).Streams, TGetStreamsThread(Thread).Count);
   end else
   begin
-    if Thread.RecvDataStream.ToString = '' then
+    if Thread.RecvDataStream.ToString = 'OLDVER' then
     begin
-      // TODO: ? :)
-    end else if Thread.RecvDataStream.ToString = 'ERROR' then
+      // TODO: !
+    end else
     begin
       // Es kann sein, dass am Anfang GetGenres und GetStreams aktiv ist.
       // Deshalb alles tot machen, so dass die Fehlermeldung anstehen bleibt.
@@ -335,13 +336,6 @@ begin
 
       if Assigned(FOnReceiveError) then
         FOnReceiveError(Self);
-    end else if Thread.RecvDataStream.ToString = 'OLDVER' then
-    begin
-      // TODO: !!
-    end else
-    begin
-      // TODO: ??
-
     end;
   end;
 end;
