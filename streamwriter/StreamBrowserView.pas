@@ -28,6 +28,8 @@ uses
   HomeCommunication;
 
 type
+  TModes = (moShow, moLoading, moError, moOldVersion);
+
   TMStreamTree = class;
 
   TStreamData = record
@@ -106,7 +108,7 @@ type
     procedure FSetIsLoading(Value: Boolean);
     procedure GetStreams; overload;
     procedure GetStreams(Search, Genre: string; Kbps: Integer); overload;
-    procedure SwitchMode(Loading, Error: Boolean);
+    procedure SwitchMode(Mode: TModes);
   protected
     procedure Resize; override;
   public
@@ -120,6 +122,7 @@ type
       Count: Integer);
     procedure HomeCommunicationGenresReceived(Sender: TObject; Genres: TStringList);
     procedure HomeCommunicationReceiveError(Sender: TObject);
+    procedure HomeCommunicationOldVersion(Sender: TObject);
 
     property CurrentSearch: string read FCurrentSearch write FCurrentSearch;
     property CurrentGenre: string read FCurrentGenre write FCurrentGenre;
@@ -743,7 +746,7 @@ end;
 
 procedure TMStreamBrowserView.BtnRetryClick(Sender: TObject);
 begin
-  SwitchMode(True, False);
+  SwitchMode(moLoading);
   if FSearch.FGenreList.Items.Count = 0 then
     FHomeCommunication.GetGenres;
   FStreamTree.ClearStreams;
@@ -787,6 +790,7 @@ begin
   FHomeCommunication.OnGenresReceived := HomeCommunicationGenresReceived;
   FHomeCommunication.OnStreamsReceived := HomeCommunicationStreamsReceived;
   FHomeCommunication.OnReceiveError := HomeCommunicationReceiveError;
+  FHomeCommunication.OnOldVersion := HomeCommunicationOldVersion;
   FHomeCommunication.GetGenres;
 end;
 
@@ -849,12 +853,17 @@ begin
     FSearch.FGenreList.ItemIndex := 0;
   FSearch.FGenreList.Sorted := True;
   if FStreamTree.RootNodeCount > 0 then
-    SwitchMode(False, False);
+    SwitchMode(moShow);
+end;
+
+procedure TMStreamBrowserView.HomeCommunicationOldVersion(Sender: TObject);
+begin
+  SwitchMode(moOldVersion);
 end;
 
 procedure TMStreamBrowserView.HomeCommunicationReceiveError(Sender: TObject);
 begin
-  SwitchMode(False, True);
+  SwitchMode(moError);
 end;
 
 procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject;
@@ -862,7 +871,7 @@ procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject;
 begin
   FStreamTree.AddStreams(Streams, Count);
   if FSearch.FGenreList.Items.Count > 0 then
-    SwitchMode(False, False);
+    SwitchMode(moShow);
   if Count = 1 then
     FCountLabel.Caption := Format(_('%d stream found'), [Count])
   else
@@ -896,7 +905,7 @@ end;
 
 procedure TMStreamBrowserView.Setup;
 begin
-  SwitchMode(True, False);
+  SwitchMode(moLoading);
 
   FSearch.Setup;
   FStreamTree.Setup;
@@ -915,9 +924,9 @@ begin
   FHomeCommunication.GetStreams(Count, Offset, CurrentSearch, CurrentGenre, CurrentKbps, False);
 end;
 
-procedure TMStreamBrowserView.SwitchMode(Loading, Error: Boolean);
+procedure TMStreamBrowserView.SwitchMode(Mode: TModes);
 begin
-  if Loading or Error then
+  if (Mode <> moShow) then
   begin
     FSearch.Visible := False;
     FStreamTree.Visible := False;
@@ -931,20 +940,24 @@ begin
     FLoadingPanel.Visible := False;
   end;
 
-  if Loading then
+  if Mode = moLoading then
   begin
     FLoadingPanel.FLabel.Caption := _('Loading streams');
     FLoadingPanel.FDots := '';
     FLoadingPanel.FTimer.Enabled := True;
     FLoadingPanel.FBtnRetry.Visible := False;
     FLoading := True;
-  end else if Error then
+  end else if Mode = moError then
   begin
     FLoadingPanel.FLabel.Caption := _('Error loading streams.');
     FLoadingPanel.FBtnRetry.Visible := True;
+  end else if Mode = moOldVersion then
+  begin
+    FLoadingPanel.FLabel.Caption := _('Error loading streams.'#13#10'Please update your version of streamWriter.');
+    FLoadingPanel.FBtnRetry.Visible := False;
   end;
 
-  if not Loading then
+  if Mode <> moLoading then
   begin
     FLoadingPanel.FTimer.Enabled := False;
     FLoading := False;
@@ -1060,7 +1073,7 @@ begin
   FLabel := TLabel.Create(Self);
   FLabel.Parent := Self;
   FLabel.Visible := True;
-  FLabel.Caption := _('Error loading streams');
+  FLabel.Alignment := taCenter;
 
   FBtnRetry := TButton.Create(Self);
   FBtnRetry.Parent := Self;

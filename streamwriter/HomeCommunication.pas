@@ -85,6 +85,7 @@ type
     FOnGenresReceived: TGenresReceivedEvent;
     FOnStreamsReceived: TStreamsReceivedEvent;
     FOnReceiveError: TNotifyEvent;
+    FOnOldVersion: TNotifyEvent;
 
     function FGetCount: Integer;
     procedure InitThread(Thread: THomeThread);
@@ -102,6 +103,7 @@ type
     property OnGenresReceived: TGenresReceivedEvent read FOnGenresReceived write FOnGenresReceived;
     property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
     property OnReceiveError: TNotifyEvent read FOnReceiveError write FOnReceiveError;
+    property OnOldVersion: TNotifyEvent read FOnOldVersion write FOnOldVersion;
   end;
 
 implementation
@@ -112,7 +114,7 @@ constructor THomeCommunication.Create;
 begin
   {$IFDEF DEBUG}
   FURL := 'http://mistake.gaia/en/streamdb/';
-  FURL := 'http://mistake.ws/en/streamdb/';
+  //FURL := 'http://mistake.ws/en/streamdb/';
   {$ELSE}
   FURL := 'http://mistake.ws/en/streamdb/';
   {$ENDIF}
@@ -320,7 +322,8 @@ begin
   begin
     if Thread.RecvDataStream.ToString = 'OLDVER' then
     begin
-      // TODO: !
+      if Assigned(FOnOldVersion) then
+        FOnOldVersion(Self);
     end else
     begin
       // Es kann sein, dass am Anfang GetGenres und GetStreams aktiv ist.
