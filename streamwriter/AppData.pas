@@ -104,7 +104,7 @@ var
   W: Integer;
 begin
   W := 900;
-  if Screen.Width < 900 then
+  if Screen.Width < W then
     W := Screen.Width - 20;
 
   SetLength(FHeaderWidth, 6);
@@ -165,15 +165,13 @@ begin
   FStorage.Read('HeaderWidth0', i, -1, 'Cols');
   if i = -1 then
   begin
-    // TODO: Passen die konstanten werte so?
     for i := 0 to High(FHeaderWidth) do
       FHeaderWidth[i] := 100;
-    FStorage.Read('HeaderWidth0', FHeaderWidth[0], 180, 'Cols');
-    FStorage.Read('HeaderWidth1', FHeaderWidth[1], 90, 'Cols');
+    FStorage.Read('HeaderWidth0', FHeaderWidth[0], 150, 'Cols');
     FStorage.Read('HeaderWidth2', FHeaderWidth[2], 70, 'Cols');
     FStorage.Read('HeaderWidth3', FHeaderWidth[3], 60, 'Cols');
-    FStorage.Read('HeaderWidth4', FHeaderWidth[4], 60, 'Cols');
-    FStorage.Read('HeaderWidth5', FHeaderWidth[5], 60, 'Cols');
+    FStorage.Read('HeaderWidth4', FHeaderWidth[4], 90, 'Cols');
+    FStorage.Read('HeaderWidth5', FHeaderWidth[5], 85, 'Cols');
   end else
   begin
     for i := 0 to High(FHeaderWidth) do
@@ -211,7 +209,8 @@ begin
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
 
   for i := 0 to High(FHeaderWidth) do
-    FStorage.Write('HeaderWidth' + IntToStr(i), HeaderWidth[i], 'Cols');
+    if i <> 1 then
+      FStorage.Write('HeaderWidth' + IntToStr(i), HeaderWidth[i], 'Cols');
 
   for i := 0 to FPluginManager.Plugins.Count - 1 do
     FStorage.Write('Active_' + ExtractFileName(FPluginManager.Plugins[i].Filename), FPluginManager.Plugins[i].Active, 'Plugins');

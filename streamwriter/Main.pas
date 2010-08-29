@@ -297,10 +297,13 @@ begin
   Clients := lstClients.NodesToData(lstClients.GetNodes(False));
 
   AppGlobals.MainMaximized := WindowState = wsMaximized;
-  AppGlobals.MainLeft := Left;
-  AppGlobals.MainTop := Top;
-  AppGlobals.MainWidth := Width;
-  AppGlobals.MainHeight := Height;
+  if not AppGlobals.MainMaximized then
+  begin
+    AppGlobals.MainLeft := Left;
+    AppGlobals.MainTop := Top;
+    AppGlobals.MainWidth := Width;
+    AppGlobals.MainHeight := Height;
+  end;
 
   AppGlobals.ShowSidebar := pagSideBar.Visible;
   AppGlobals.SidebarWidth := pagSideBar.Width;
