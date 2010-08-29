@@ -854,6 +854,32 @@ end;
 
 procedure TfrmStreamWriterMain.SavePlaylist(Entries: TPlaylistEntryArray;
   Open: Boolean);
+  procedure BuildPLS(Entries: TPlaylistEntryArray; List: TStringList);
+  var
+    i: Integer;
+  begin
+    List.Clear;
+    List.Add('[playlist]');
+    List.Add('numberofentries=' + IntToStr(Length(Entries)));
+    for i := 0 to Length(Entries) - 1 do
+    begin
+      List.Add('File' + IntToStr(i + 1) + '=' + Entries[i].URL);
+      List.Add('Title' + IntToStr(i + 1) + '=' + Entries[i].Name);
+      List.Add('Length' + IntToStr(i + 1) + '=-1');
+    end;
+  end;
+  procedure BuildM3U(Entries: TPlaylistEntryArray; List: TStringList);
+  var
+    i: Integer;
+  begin
+    List.Clear;
+    List.Add('#EXTM3U');
+    for i := 0 to Length(Entries) - 1 do
+    begin
+      List.Add('#EXTINF:-1,' + Entries[i].Name);
+      List.Add(Entries[i].URL);
+    end;
+  end;
 var
   i, Res: Integer;
   List: TStringList;
@@ -863,26 +889,28 @@ begin
     Exit;
   List := TStringList.Create;
   try
-    List.Add('[playlist]');
-    List.Add('numberofentries=' + IntToStr(Length(Entries)));
-    for i := 0 to Length(Entries) - 1 do
-    begin
-      List.Add('File' + IntToStr(i + 1) + '=' + Entries[i].URL);
-      List.Add('Title' + IntToStr(i + 1) + '=' + Entries[i].Name);
-      List.Add('Length' + IntToStr(i + 1) + '=-1');
-    end;
     if not Open then
     begin
       Dlg := TSaveDialog.Create(Self);
       try
         Dlg.FileName := '';
-        Dlg.Filter := '.PLS Playlist|*.pls';
+        Dlg.Filter := '.M3U Playlist|*.m3u|.PLS Playlist|*.pls';
         Dlg.Options := Dlg.Options + [ofOverwritePrompt, ofPathMustExist];
         if Dlg.Execute(Handle) then
         begin
           try
-            if not (Copy(LowerCase(Dlg.FileName), Length(Dlg.FileName) - 3, 4) = '.pls') then
-              Dlg.FileName := Dlg.FileName + '.pls';
+            if (LowerCase(ExtractFileExt(Dlg.FileName)) <> '.m3u') and
+               (LowerCase(ExtractFileExt(Dlg.FileName)) <> '.pls') then
+              if Dlg.FilterIndex = 1 then
+                Dlg.FileName := Dlg.FileName + '.m3u'
+              else
+                Dlg.FileName := Dlg.FileName + '.pls';
+
+            if LowerCase(ExtractFileExt(Dlg.FileName)) = '.m3u' then
+              BuildM3U(Entries, List)
+            else
+              BuildPLS(Entries, List);
+
             List.SaveToFile(Dlg.FileName);
           except
             MsgBox(Handle, Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [ExtractFilePath(Dlg.FileName)]), _('Error'), MB_ICONEXCLAMATION);
@@ -894,10 +922,17 @@ begin
     end else
     begin
       try
-        List.SaveToFile(AppGlobals.TempDir + 'playlist.pls');
-        Res := ShellExecute(Handle, 'open', PChar(AppGlobals.TempDir + 'playlist.pls'), nil, nil, 1);
+        BuildM3U(Entries, List);
+        List.SaveToFile(AppGlobals.TempDir + 'playlist.m3u');
+        Res := ShellExecute(Handle, 'open', PChar(AppGlobals.TempDir + 'playlist.m3u'), nil, nil, 1);
         if Res <= 32 then
-          ShellExecute(Handle, nil, 'rundll32.exe', PChar('shell32.dll,OpenAs_RunDLL ' + AppGlobals.TempDir + 'playlist.pls'), nil, 1);
+        begin
+          BuildPLS(Entries, List);
+          List.SaveToFile(AppGlobals.TempDir + 'playlist.pls');
+          Res := ShellExecute(Handle, 'open', PChar(AppGlobals.TempDir + 'playlist.pls'), nil, nil, 1);
+          if Res <= 32 then
+            ShellExecute(Handle, nil, 'rundll32.exe', PChar('shell32.dll,OpenAs_RunDLL ' + AppGlobals.TempDir + 'playlist.pls'), nil, 1);
+        end;
       except
         MsgBox(Handle, Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [AppGlobals.TempDir]), _('Error'), MB_ICONEXCLAMATION);
       end;

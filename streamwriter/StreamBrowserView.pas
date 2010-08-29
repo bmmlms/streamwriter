@@ -847,7 +847,7 @@ begin
     FSearch.FGenreList.Items.Add(Genres[i]);
   if FSearch.FGenreList.Items.Count > 0 then
     FSearch.FGenreList.ItemIndex := 0;
-
+  FSearch.FGenreList.Sorted := True;
   if FStreamTree.RootNodeCount > 0 then
     SwitchMode(False, False);
 end;
