@@ -74,11 +74,6 @@ type
     function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
     procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
-    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X: Integer;
-      Y: Integer); override;
-    procedure MouseDown(Button: TMouseButton; Shift: TShiftState;
-      X: Integer; Y: Integer); override;
-
   public
     constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu); reintroduce;
     destructor Destroy; override;
@@ -330,18 +325,6 @@ begin
   end;
 end;
 
-procedure TMClientView.MouseDown(Button: TMouseButton; Shift: TShiftState;
-  X, Y: Integer);
-begin
-  inherited;
-end;
-
-procedure TMClientView.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
-  Y: Integer);
-begin
-  inherited;
-end;
-
 function TMClientView.RefreshClient(Client: TICEClient): Boolean;
 var
   i: Integer;
@@ -498,7 +481,7 @@ begin
   if FDragSource.Files.Count = 0 then
     Exit;
 
-  DoStateChange([], [tsOLEDragPending, tsClearPending]);
+  DoStateChange([], [tsOLEDragPending, tsOLEDragging, tsClearPending]);
   FDragSource.Execute(True);
 end;
 

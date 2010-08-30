@@ -619,7 +619,7 @@ begin
   if FDragSource.Files.Count = 0 then
     Exit;
 
-  DoStateChange([], [tsOLEDragPending, tsClearPending]);
+  DoStateChange([], [tsOLEDragPending, tsOLEDragging, tsClearPending]);
   FDragSource.Execute(True);
 end;
 
