@@ -109,7 +109,7 @@ begin
 
   SetLength(FHeaderWidth, 6);
 
-  inherited Create(AppName, True, W, 450);
+  inherited Create(AppName, True, W, 500);
 
   FLanguageIcons := TLanguageIcons.Create;
 end;
@@ -152,7 +152,7 @@ begin
   FStorage.Read('SilenceLength', FSilenceLength, 10);
   FStorage.Read('TrayClose', FTrayClose, False);
   FStorage.Read('ShowSidebar', FShowSidebar, True);
-  FStorage.Read('SidebarWidth', FSidebarWidth, 220);
+  FStorage.Read('SidebarWidth', FSidebarWidth, 230);
   FStorage.Read('Relay', FRelay, False);
   FStorage.Read('SubmitStreams', FSubmitStreams, True);
   FStorage.Read('ShortSize', FShortSize, 1000);

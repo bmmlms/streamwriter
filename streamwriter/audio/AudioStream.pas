@@ -92,7 +92,6 @@ end;
 
 { TMPEGStreamFile }
 
-// TODO: Prüfen ob für GetFrame() bei searchbackwards immer ein FROM angegeben wird!!! wirds nämlich nicht!
 function TMPEGStreamFile.GetFrame(From: Int64; SearchBackwards: Boolean): Int64;
 var
   i, OldPos: Int64;
@@ -165,7 +164,7 @@ var
 begin
   OldPos := Position;
   Result := -1;
-                      // TODO: SearchBAckwards muss anders behandelt werden, wegen SilenceSearch.
+
   if SearchBackwards then
   begin
     i := From - 4;
@@ -298,11 +297,7 @@ end;
 
 function TAACStreamMemory.GetFrame(From: Int64; SearchBackwards: Boolean): Int64;
 begin
-  // TODO: ?! rückgabewerte passen???
-  if SearchBackwards then
-    Result := Size - 1
-  else
-    Result := From;
+  Result := From;
 end;
 
 function TAACStreamMemory.GetPossibleTitle(ByteCount: UInt64): TPosRect;

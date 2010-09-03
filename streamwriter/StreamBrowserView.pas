@@ -105,7 +105,6 @@ type
     procedure SearchButtonClick(Sender: TObject);
     procedure BtnRetryClick(Sender: TObject);
 
-    procedure FSetIsLoading(Value: Boolean);
     procedure GetStreams; overload;
     procedure GetStreams(Search, Genre: string; Kbps: Integer); overload;
     procedure SwitchMode(Mode: TModes);
@@ -116,6 +115,7 @@ type
     destructor Destroy; override;
 
     procedure Setup;
+    procedure Translate;
 
     procedure StreamBrowserNeedData(Sender: TObject; Offset, Count: Integer);
     procedure HomeCommunicationStreamsReceived(Sender: TObject; Streams: TStreamInfoArray;
@@ -551,7 +551,7 @@ begin
   else if Sender = FItemSave then
     Action := oaSave
   else
-    raise Exception.Create('Fail');
+    raise Exception.Create('');
 
   if Length(Streams) > 0 then
     if Assigned(FOnAction) then
@@ -799,12 +799,6 @@ begin
   inherited;
 end;
 
-procedure TMStreamBrowserView.FSetIsLoading(Value: Boolean);
-begin
-  FStreamTree.IsLoading := Value;
-
-end;
-
 procedure TMStreamBrowserView.GetStreams(Search, Genre: string; Kbps: Integer);
 begin
   if (Search = CurrentSearch) and (Genre = CurrentGenre) and (Kbps = CurrentKbps) then
@@ -964,6 +958,29 @@ begin
   end;
 
   FLoadingPanel.Resize;
+end;
+
+procedure TMStreamBrowserView.Translate;
+var
+  Idx: Integer;
+begin
+  if FSearch.FGenreList.Items.Count > 0 then
+  begin
+    Idx := FSearch.FGenreList.ItemIndex;
+    FSearch.FGenreList.Items[0] := _('- No genre -');
+    FSearch.FGenreList.ItemIndex := Idx;
+  end;
+  if FSearch.FKbpsList.Items.Count > 0 then
+  begin
+    Idx := FSearch.FKbpsList.ItemIndex;
+    FSearch.FKbpsList.Items[0] := _('- No kbps -');
+    FSearch.FKbpsList.ItemIndex := Idx;
+  end;
+
+  if FStreamTree.RootNodeCount = 1 then
+    FCountLabel.Caption := Format(_('%d stream found'), [FStreamTree.RootNodeCount])
+  else
+    FCountLabel.Caption := Format(_('%d streams found'), [FStreamTree.RootNodeCount]);
 end;
 
 { TMStreamSearch }

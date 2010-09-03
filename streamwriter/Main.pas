@@ -28,9 +28,9 @@ uses
   Settings, RecentManager, ActnList, AppData, DragDrop, DropTarget,
   DragDropInternet, DragDropText, DragDropFile, Update, UpdateClient,
   LanguageObjects, AppDataBase, Functions, ClientManager, ShellAPI, DropSource,
-  About, MsgDlg, Exceptions, HomeCommunication, StreamBrowserView, Clipbrd,
+  About, MsgDlg, HomeCommunication, StreamBrowserView, Clipbrd,
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
-  Buttons;
+  Buttons, DynBass;
 
 type
   TfrmStreamWriterMain = class(TForm)
@@ -135,6 +135,9 @@ type
     ToolButton5: TToolButton;
     ToolButton6: TToolButton;
     ToolButton7: TToolButton;
+    ToolButton2: TToolButton;
+    cmdStartPlay: TToolButton;
+    cmdStopPlay: TToolButton;
     procedure cmdStartStreamingClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure actStopExecute(Sender: TObject);
@@ -183,7 +186,7 @@ type
     FClients: TClientManager;
     FHomeCommunication: THomeCommunication;
     lstClients: TMClientView;
-    pnlStreamView: TMStreamBrowserView;
+    pnlStreamBrowser: TMStreamBrowserView;
     lstStations: TMStationCombo;
     pnlStreamInfo: TMStreamInfoContainer;
     pnlDebug: TMStreamDebugContainer;
@@ -206,6 +209,8 @@ type
     function HandleLoadError(E: Exception): Integer;
     function StartStreaming(Name, URL: string): Boolean;
     procedure ShowInfo;
+    procedure PreTranslate;
+    procedure PostTranslate;
 
     procedure lstClientsChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure lstClientsDblClick(Sender: TObject);
@@ -595,8 +600,6 @@ var
   Entry: TStreamEntry;
   i: Integer;
 begin
-  Language.Translate(Self);
-
   FClients := TClientManager.Create;
   FClients.OnClientDebug := ClientManagerDebug;
   FClients.OnClientRefresh := ClientManagerRefresh;
@@ -639,15 +642,15 @@ begin
   lstClients.OnKeyDown := lstClientsKeyDown;
   lstClients.Show;
 
-  pnlStreamView := TMStreamBrowserView.Create(tabBrowser, FHomeCommunication);
-  pnlStreamView.Parent := tabBrowser;
-  pnlStreamView.Left := 0;
-  pnlStreamView.Align := alClient;
+  pnlStreamBrowser := TMStreamBrowserView.Create(tabBrowser, FHomeCommunication);
+  pnlStreamBrowser.Parent := tabBrowser;
+  pnlStreamBrowser.Left := 0;
+  pnlStreamBrowser.Align := alClient;
 
-  pnlStreamView.StreamTree.OnAction := StreamBrowserAction;
-  pnlStreamView.StreamTree.Images := imgStations;
+  pnlStreamBrowser.StreamTree.OnAction := StreamBrowserAction;
+  pnlStreamBrowser.StreamTree.Images := imgStations;
 
-  pnlStreamView.Show;
+  pnlStreamBrowser.Show;
 
   pnlStreamInfo := TMStreamInfoContainer.Create(Self);
   pnlStreamInfo.InfoView.Tree.OnAction := StreamInfoAction;
@@ -744,6 +747,12 @@ begin
   end;
   Left := AppGlobals.MainLeft;
   Top := AppGlobals.MainTop;
+
+  cmdStartPlay.Visible := BassLoaded;
+  cmdStopPlay.Visible := BassLoaded;
+  ToolButton2.Visible := BassLoaded;
+
+  Language.Translate(Self);
 end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
@@ -782,7 +791,7 @@ begin
   for i := 0 to lstClients.Header.Columns.Count - 1 do
     lstClients.Header.Columns[i].Width := AppGlobals.HeaderWidth[i];
 
-  pnlStreamView.Setup;
+  pnlStreamBrowser.Setup;
 end;
 
 function TfrmStreamWriterMain.HandleLoadError(E: Exception): Integer;
@@ -827,6 +836,17 @@ begin
   // Damit Child-Controls passende Dimensionen in ShowInfo haben
   Application.ProcessMessages;
   ShowInfo;
+end;
+
+procedure TfrmStreamWriterMain.PreTranslate;
+begin
+
+end;
+
+procedure TfrmStreamWriterMain.PostTranslate;
+begin
+  pnlStreamBrowser.Translate;
+  pnlStreamInfo.Translate;
 end;
 
 procedure TfrmStreamWriterMain.mnuStreamPopupPopup(Sender: TObject);
@@ -884,7 +904,7 @@ procedure TfrmStreamWriterMain.SavePlaylist(Entries: TPlaylistEntryArray;
     end;
   end;
 var
-  i, Res: Integer;
+  Res: Integer;
   List: TStringList;
   Dlg: TSaveDialog;
 begin
@@ -980,7 +1000,7 @@ var
 begin
   S := TfrmSettings.Create(Self, BrowseDir);
   S.ShowModal;
-  Language.Translate(Self);
+  Language.Translate(Self, PreTranslate, PostTranslate);
   AppGlobals.PluginManager.ReInitPlugins;
   if S.RelayChanged then
   begin

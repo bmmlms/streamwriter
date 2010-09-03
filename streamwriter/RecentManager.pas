@@ -23,10 +23,12 @@ interface
 
 uses
   Windows, Classes, SysUtils, ExtendedStream, ClientManager, ICEClient,
-  Generics.Collections, ComCtrls, AppData, Functions, Exceptions;
+  Generics.Collections, ComCtrls, AppData, Functions;
 
 type
   TStreamDataList = class;
+
+  EVersionException = class(Exception);
 
   TTrackInfo = class
   private

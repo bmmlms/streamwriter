@@ -42,9 +42,14 @@ type
   public
     property Killed: Boolean read FKilled write FKilled;
     property Success: Boolean read FSuccess write FSuccess;
+
+    constructor Create(URL: string); override;
   end;
 
-  TSubmitThread = class(THomeThread);
+  TSubmitThread = class(THomeThread)
+  protected
+    procedure DoEnded; override;
+  end;
 
   TGetGenresThread = class(THomeThread)
   protected
@@ -123,8 +128,6 @@ end;
 
 procedure THomeCommunication.InitThread(Thread: THomeThread);
 begin
-  Thread.Killed := False;
-  Thread.Success := False;
   Thread.OnEnded := ThreadEnded;
   if AppGlobals.ProxyEnabled then
   begin
@@ -484,6 +487,24 @@ procedure TGetGenresThread.DoException(E: Exception);
 begin
   inherited;
   Sleep(100);
+end;
+
+{ TSubmitThread }
+
+procedure TSubmitThread.DoEnded;
+begin
+  // Wichtig, damit das StreamBrowserView nicht sagt "Fehler"
+  FSuccess := True;
+  inherited;
+end;
+
+{ THomeThread }
+
+constructor THomeThread.Create(URL: string);
+begin
+  inherited;
+  Killed := False;
+  Success := False;
 end;
 
 end.

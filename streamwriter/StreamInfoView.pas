@@ -110,6 +110,7 @@ type
     constructor Create(AOwner: TComponent); reintroduce;
 
     procedure ShowInfo(Entries: TStreamList);
+    procedure Translate;
 
     property InfoView: TMStreamInfoView read FInfoView;
   end;
@@ -408,7 +409,7 @@ begin
   end else if Sender = FItemProperties then
     Action := taProperties
   else
-    raise Exception.Create('Fail');
+    raise Exception.Create('');
 
   if Length(Tracks) > 0 then
     if Assigned(FOnAction) then
@@ -643,6 +644,11 @@ procedure TMStreamInfoContainer.ShowInfo(Entries: TStreamList);
 begin
   FInfoView.ShowInfo(Entries);
   FInfoView.Visible := Entries <> nil;
+end;
+
+procedure TMStreamInfoContainer.Translate;
+begin
+
 end;
 
 end.

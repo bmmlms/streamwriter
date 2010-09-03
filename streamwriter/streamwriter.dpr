@@ -49,7 +49,6 @@ uses
   LanguageIcons in '..\..\common\LanguageIcons.pas',
   About in '..\..\common\forms\About.pas' {frmAbout},
   MsgDlg in '..\..\common\forms\MsgDlg.pas' {frmMsgDlg},
-  Exceptions in '..\..\common\Exceptions.pas',
   SettingsStorage in '..\..\common\SettingsStorage.pas',
   WizardBase in '..\..\common\forms\WizardBase.pas' {frmSetupWizard},
   AppStartup in '..\..\common\AppStartup.pas',

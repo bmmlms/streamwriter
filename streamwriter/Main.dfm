@@ -159,8 +159,28 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Top = 0
       Action = actRemove
     end
-    object ToolButton1: TToolButton
+    object ToolButton2: TToolButton
       Left = 79
+      Top = 0
+      Width = 8
+      Caption = 'ToolButton2'
+      ImageIndex = 11
+      Style = tbsSeparator
+    end
+    object cmdStartPlay: TToolButton
+      Left = 87
+      Top = 0
+      Caption = 'cmdStartPlay'
+      ImageIndex = 11
+    end
+    object cmdStopPlay: TToolButton
+      Left = 110
+      Top = 0
+      Caption = 'cmdStopPlay'
+      ImageIndex = 11
+    end
+    object ToolButton1: TToolButton
+      Left = 133
       Top = 0
       Width = 8
       Caption = '-'
@@ -168,7 +188,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsSeparator
     end
     object cmdStreamSettings: TToolButton
-      Left = 87
+      Left = 141
       Top = 0
       DropdownMenu = mnuStreamSettingsToolbar
       ImageIndex = 9
@@ -176,12 +196,12 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       OnClick = cmdStreamSettingsClick
     end
     object ToolButton6: TToolButton
-      Left = 125
+      Left = 179
       Top = 0
       Action = actResetData
     end
     object ToolButton4: TToolButton
-      Left = 148
+      Left = 202
       Top = 0
       Width = 8
       Caption = '-'
@@ -189,12 +209,12 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsSeparator
     end
     object cmdShowStreamBrowser: TToolButton
-      Left = 156
+      Left = 210
       Top = 0
       Action = actShowStreamBrowser
     end
     object ToolButton5: TToolButton
-      Left = 179
+      Left = 233
       Top = 0
       Width = 8
       Caption = '-'
@@ -202,12 +222,12 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsSeparator
     end
     object cmdSettings: TToolButton
-      Left = 187
+      Left = 241
       Top = 0
       Action = actSettings
     end
     object ToolButton7: TToolButton
-      Left = 210
+      Left = 264
       Top = 0
       Action = actAbout
     end
@@ -218,7 +238,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   end
   object mnuMain: TMainMenu
     Images = imgImages
-    Left = 124
+    Left = 128
     Top = 112
     object mnuFile: TMenuItem
       Caption = '&File'
@@ -310,7 +330,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 160
     Bitmap = {
-      494C010102000900B00210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000900B80210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000D0000005C000000000000000000000000000000000000
@@ -453,7 +473,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 40
     Top = 140
     Bitmap = {
-      494C01010E00D802A00310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01010E00D802A80310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -992,7 +1012,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 108
     Bitmap = {
-      494C010101000400D80210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000400E00210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000060000001D000000220000001D00000006000000000000
@@ -1366,7 +1386,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 608
     Top = 236
     Bitmap = {
-      494C010101000800C00010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000800C80010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

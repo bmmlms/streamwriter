@@ -264,8 +264,6 @@ begin
   RangeBegin := -1;
   RangeEnd := -1;
 
-  // TODO: hier passt gar nix. guck mal, wie der aufrufer dieser funktion danach den puffer behandelt....
-
   RangeBegin := FAudioStream.GetFrame(FSaveFrom, False);
   RangeEnd := FAudioStream.GetFrame(FAudioStream.Size, True);
 
@@ -312,19 +310,6 @@ begin
         WriteDebug('Cannot search for silence because bass library was not loaded.');
     end;
   end;
-
-  {
-  // Falls die Suche nach Stille nichts war, einfach die Frames ermitteln
-  if (RangeBegin = -1) or (RangeEnd = -1) then
-  begin
-    RangeBegin := FAudioStream.GetFrame(FSaveFrom, False);
-    RangeEnd := FAudioStream.GetFrame(Size, True);
-  end else
-  begin
-    RangeBegin := FAudioStream.GetFrame(RangeBegin, False);
-    RangeEnd := FAudioStream.GetFrame(RangeEnd, True);
-  end;
-  }
 
   if (RangeEnd <= -1) or (RangeBegin <= -1) then
     raise Exception.Create('Error in audio data');
@@ -394,6 +379,7 @@ begin
       WriteDebug('Saving "' + FSaveTitle + '" because saveoffset reached');
       SaveData;
 
+      // TODO: FSaveFrom muss passend gemacht werden auf das, wo SaveData geschnitten hat => SaveData braucht anderen Rückgabetyp
       FSaveFrom := FAudioStream.Size - (FSongBuffer * 2) * 1024;
       if FSaveFrom < 0 then
         FSaveFrom := 0;
@@ -432,9 +418,10 @@ begin
         begin
           if FForwardLimit > -1 then
           begin
-            WriteDebug('New title detected but saveoffset was set');
+            WriteDebug('Saving because new title detected while set saveoffset');
             SaveData;
 
+            // TODO: FSaveFrom muss passend gemacht werden auf das, wo SaveData geschnitten hat => SaveData braucht anderen Rückgabetyp
             FSaveFrom := FAudioStream.Size - (FSongBuffer * 2) * 1024;
             if FSaveFrom < 0 then
               FSaveFrom := 0;

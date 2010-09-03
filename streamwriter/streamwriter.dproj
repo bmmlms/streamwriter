@@ -96,7 +96,6 @@
 			<DCCReference Include="..\..\common\forms\MsgDlg.pas">
 				<Form>frmMsgDlg</Form>
 			</DCCReference>
-			<DCCReference Include="..\..\common\Exceptions.pas"/>
 			<DCCReference Include="..\..\common\SettingsStorage.pas"/>
 			<DCCReference Include="..\..\common\forms\WizardBase.pas">
 				<Form>frmSetupWizard</Form>
@@ -154,7 +153,7 @@
 						<VersionInfo Name="MajorVer">1</VersionInfo>
 						<VersionInfo Name="MinorVer">1</VersionInfo>
 						<VersionInfo Name="Release">0</VersionInfo>
-						<VersionInfo Name="Build">5</VersionInfo>
+						<VersionInfo Name="Build">6</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
@@ -166,7 +165,7 @@
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName">mistake.ws</VersionInfoKeys>
 						<VersionInfoKeys Name="FileDescription">streamWriter</VersionInfoKeys>
-						<VersionInfoKeys Name="FileVersion">1.1.0.5</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">1.1.0.6</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName">streamwriter</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalCopyright">mistake.ws</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
