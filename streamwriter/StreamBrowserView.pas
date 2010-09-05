@@ -1060,6 +1060,7 @@ begin
   B.Width := 16;
   B.Height := 16;
   FSearchButton.Glyph := B;
+  FSearchButton.Glyph.PixelFormat := pf24bit;
   B.Free;
   I.Free;
 

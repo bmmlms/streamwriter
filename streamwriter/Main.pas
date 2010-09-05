@@ -101,7 +101,6 @@ type
     ToolButton1: TToolButton;
     ToolButton3: TToolButton;
     N9: TMenuItem;
-    Splitter1: TSplitter;
     View1: TMenuItem;
     mnuShowStreamBrowser: TMenuItem;
     ToolButton4: TToolButton;
@@ -124,10 +123,6 @@ type
     Stream1: TMenuItem;
     Relay1: TMenuItem;
     Stream2: TMenuItem;
-    pagSidebar: TPageControl;
-    tabBrowser: TTabSheet;
-    tabInfo: TTabSheet;
-    tabDebug: TTabSheet;
     imgSavedTracks: TImageList;
     mnuReset1: TMenuItem;
     mnuReset11: TMenuItem;
@@ -138,6 +133,11 @@ type
     ToolButton2: TToolButton;
     cmdStartPlay: TToolButton;
     cmdStopPlay: TToolButton;
+    pagSidebar: TPageControl;
+    tabBrowser: TTabSheet;
+    tabInfo: TTabSheet;
+    tabDebug: TTabSheet;
+    Splitter1: TSplitter;
     procedure cmdStartStreamingClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure actStopExecute(Sender: TObject);

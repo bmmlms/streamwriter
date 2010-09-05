@@ -39,7 +39,7 @@ AlwaysShowComponentsList=false
 WizardImageFile=compiler:wizmodernimage-is.bmp
 WizardSmallImageFile=compiler:wizmodernsmallimage-is.bmp
 Compression=lzma/ultra
-VersionInfoVersion=1.1.0.5
+VersionInfoVersion=1.1.0.6
 
 [Run]
 Filename: {app}\streamwriter.exe; WorkingDir: {app}; Flags: waituntilidle postinstall skipifsilent; Description: "{cm:Launch}"

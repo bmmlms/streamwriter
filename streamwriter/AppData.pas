@@ -138,7 +138,7 @@ end;
 
 procedure TAppData.Load;
 var
-  i: Integer;
+  i, DefaultActionTmp: Integer;
 begin
   inherited;
 
@@ -160,7 +160,7 @@ begin
   FStorage.Read('MaxRetries', FMaxRetries, 50);
   FStorage.Read('RetryDelay', FRetryDelay, 5);
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
-  FStorage.Read('DefaultAction', i, Integer(caStartStop));
+  FStorage.Read('DefaultAction', DefaultActionTmp, Integer(caStartStop));
 
   FStorage.Read('HeaderWidth0', i, -1, 'Cols');
   if i = -1 then
@@ -178,10 +178,11 @@ begin
       FStorage.Read('HeaderWidth' + IntToStr(i), FHeaderWidth[i], 130, 'Cols');
   end;
 
-  if (i > Ord(High(TClientActions))) or (i < Ord(Low(TClientActions))) then
+  if (DefaultActionTmp > Ord(High(TClientActions))) or
+     (DefaultActionTmp < Ord(Low(TClientActions))) then
     FDefaultAction := caStartStop
   else
-    FDefaultAction := TClientActions(i);
+    FDefaultAction := TClientActions(DefaultActionTmp);
 end;
 
 procedure TAppData.DoSave;

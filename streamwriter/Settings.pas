@@ -52,7 +52,6 @@ type
     txtFilePattern: TLabeledEdit;
     txtPreview: TLabeledEdit;
     lblFilePattern: TLabel;
-    lstDefaultAction: TComboBox;
     Label3: TLabel;
     pnlCut: TPanel;
     txtSongBuffer: TLabeledEdit;
@@ -69,6 +68,7 @@ type
     Label12: TLabel;
     txtSilenceLength: TEdit;
     Label13: TLabel;
+    lstDefaultAction: TComboBox;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure cmdBrowseClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
@@ -216,7 +216,10 @@ end;
 procedure TfrmSettings.FormActivate(Sender: TObject);
 begin
   if FBrowseDir then
+  begin
     cmdBrowse.Click;
+    FBrowseDir := False;
+  end;
 end;
 
 procedure TfrmSettings.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
@@ -444,11 +447,23 @@ end;
 procedure TfrmSettings.chkSearchSilenceClick(Sender: TObject);
 begin
   inherited;
+
   txtSilenceLevel.Enabled := chkSearchSilence.Checked;
   txtSilenceLength.Enabled := chkSearchSilence.Checked;
   Label10.Enabled := chkSearchSilence.Checked;
   Label12.Enabled := chkSearchSilence.Checked;
   Label13.Enabled := chkSearchSilence.Checked;
+
+  // TODO: Wieder rückgängig machen.
+  {$IFNDEF DEBUG}
+  chkSearchSilence.Visible := False;
+  Label2.Visible := False;
+  txtSilenceLevel.Visible := False;
+  txtSilenceLength.Visible := False;
+  Label10.Visible := False;
+  Label12.Visible := False;
+  Label13.Visible := False;
+  {$ENDIF}
 end;
 
 procedure TfrmSettings.chkSkipShortClick(Sender: TObject);

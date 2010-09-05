@@ -417,7 +417,6 @@ object frmSettings: TfrmSettings
       Font.Name = 'MS Sans Serif'
       Font.Style = [fsUnderline]
       ParentFont = False
-      Visible = False
       OnClick = Label9Click
     end
     object Label10: TLabel
@@ -426,7 +425,6 @@ object frmSettings: TfrmSettings
       Width = 186
       Height = 13
       Caption = 'Silence is defined by volume lower than'
-      Visible = False
     end
     object Label12: TLabel
       Left = 40
@@ -434,7 +432,6 @@ object frmSettings: TfrmSettings
       Width = 12
       Height = 13
       Caption = 'for'
-      Visible = False
     end
     object Label13: TLabel
       Left = 152
@@ -442,7 +439,6 @@ object frmSettings: TfrmSettings
       Width = 13
       Height = 13
       Caption = 'ms'
-      Visible = False
     end
     object txtSongBuffer: TLabeledEdit
       Left = 4
@@ -485,7 +481,6 @@ object frmSettings: TfrmSettings
       Height = 21
       Caption = 'Search for silence within this buffer'
       TabOrder = 3
-      Visible = False
       OnClick = chkSearchSilenceClick
     end
     object txtSilenceLevel: TEdit
@@ -494,7 +489,6 @@ object frmSettings: TfrmSettings
       Width = 81
       Height = 21
       TabOrder = 4
-      Visible = False
     end
     object txtSilenceLength: TEdit
       Left = 64
@@ -502,7 +496,6 @@ object frmSettings: TfrmSettings
       Width = 81
       Height = 21
       TabOrder = 5
-      Visible = False
     end
   end
 end
