@@ -98,8 +98,8 @@ type
     FLoadError: Boolean;
     FReceived: UInt64;
     FOnStreamChanged: TStreamChangedEvent;
-    FOnStreamAdded: TStreamChangedEvent;
-    FOnStreamRemoved: TStreamChangedEvent;
+    //FOnStreamAdded: TStreamChangedEvent;
+    //FOnStreamRemoved: TStreamChangedEvent;
 
     procedure CleanUp;
   public
@@ -119,8 +119,8 @@ type
 
     property LoadError: Boolean read FLoadError write FLoadError;
     property Received: UInt64 read FReceived write FReceived;
-    property OnStreamAdded: TStreamChangedEvent read FOnStreamAdded write FOnStreamAdded;
-    property OnStreamRemoved: TStreamChangedEvent read FOnStreamRemoved write FOnStreamRemoved;
+    //property OnStreamAdded: TStreamChangedEvent read FOnStreamAdded write FOnStreamAdded;
+    //property OnStreamRemoved: TStreamChangedEvent read FOnStreamRemoved write FOnStreamRemoved;
     property OnStreamChanged: TStreamChangedEvent read FOnStreamChanged write FOnStreamChanged;
   end;
 

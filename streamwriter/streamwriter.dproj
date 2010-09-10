@@ -59,7 +59,7 @@
 			<DCCReference Include="Main.pas">
 				<Form>frmStreamWriterMain</Form>
 			</DCCReference>
-			<DCCReference Include="ClientView.pas"/>
+			<DCCReference Include="controls\ClientView.pas"/>
 			<DCCReference Include="RecentManager.pas"/>
 			<DCCReference Include="Settings.pas">
 				<Form>frmSettings</Form>
@@ -109,10 +109,10 @@
 			</DCCReference>
 			<DCCReference Include="Plugins.pas"/>
 			<DCCReference Include="HomeCommunication.pas"/>
-			<DCCReference Include="StreamBrowserView.pas"/>
-			<DCCReference Include="StationCombo.pas"/>
-			<DCCReference Include="StreamInfoView.pas"/>
-			<DCCReference Include="StreamDebugView.pas"/>
+			<DCCReference Include="controls\StreamBrowserView.pas"/>
+			<DCCReference Include="controls\StationCombo.pas"/>
+			<DCCReference Include="controls\StreamInfoView.pas"/>
+			<DCCReference Include="controls\StreamDebugView.pas"/>
 			<DCCReference Include="PluginsShared.pas"/>
 			<DCCReference Include="Base64.pas"/>
 			<DCCReference Include="audio\DynBASS.pas"/>
@@ -121,6 +121,9 @@
 			<DCCReference Include="ICEThread.pas"/>
 			<DCCReference Include="ICEStream.pas"/>
 			<DCCReference Include="audio\AudioStream.pas"/>
+			<DCCReference Include="controls\ClientTab.pas"/>
+			<DCCReference Include="controls\CutTab.pas"/>
+			<DCCReference Include="..\..\common\MControls.pas"/>
 			<BuildConfiguration Include="Basis">
 				<Key>Base</Key>
 			</BuildConfiguration>

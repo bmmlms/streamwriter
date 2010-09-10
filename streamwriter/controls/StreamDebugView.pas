@@ -45,7 +45,7 @@ type
     property Client: TICEClient read FClient write FSetClient;
   end;
 
-  TMStreamDebugView = class(TPanel)
+  TMStreamDebugPanel = class(TPanel)
   private
     FClient: TICEClient;
     FDebug: TDebugView;
@@ -55,10 +55,10 @@ type
 
     FOnClear: TNotifyEvent;
 
+    procedure ShowDebug(Client: TICEClient);
+
     procedure BtnCopyClick(Sender: TObject);
     procedure BtnClearClick(Sender: TObject);
-
-    procedure ShowDebug(Client: TICEClient);
   protected
   public
     constructor Create(AOwner: TComponent); reintroduce;
@@ -68,34 +68,32 @@ type
     property OnClear: TNotifyEvent read FOnClear write FOnClear;
   end;
 
-  TMStreamDebugContainer = class(TPanel)
+  TMStreamDebugView = class(TPanel)
   private
-    FDebugView: TMStreamDebugView;
+    FDebugView: TMStreamDebugPanel;
   public
     constructor Create(AOwner: TComponent); reintroduce;
-
     procedure ShowDebug(Client: TICEClient);
-
-    property DebugView: TMStreamDebugView read FDebugView;
+    property DebugView: TMStreamDebugPanel read FDebugView;
   end;
 
 implementation
 
 { TStreamDebugView }
 
-procedure TMStreamDebugView.BtnClearClick(Sender: TObject);
+procedure TMStreamDebugPanel.BtnClearClick(Sender: TObject);
 begin
   FDebug.Clear;
   if Assigned(FOnClear) then
     FOnClear(Self);
 end;
 
-procedure TMStreamDebugView.BtnCopyClick(Sender: TObject);
+procedure TMStreamDebugPanel.BtnCopyClick(Sender: TObject);
 begin
   FDebug.Copy;
 end;
 
-constructor TMStreamDebugView.Create(AOwner: TComponent);
+constructor TMStreamDebugPanel.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
@@ -130,13 +128,13 @@ begin
   FBtnClear.OnClick := BtnClearClick;
 end;
 
-destructor TMStreamDebugView.Destroy;
+destructor TMStreamDebugPanel.Destroy;
 begin
 
   inherited;
 end;
 
-procedure TMStreamDebugView.ShowDebug(Client: TICEClient);
+procedure TMStreamDebugPanel.ShowDebug(Client: TICEClient);
 begin
   FClient := Client;
   FDebug.Client := Client;
@@ -144,7 +142,7 @@ end;
 
 { TMStreamDebugContainer }
 
-constructor TMStreamDebugContainer.Create(AOwner: TComponent);
+constructor TMStreamDebugView.Create(AOwner: TComponent);
 begin
   inherited;
 
@@ -152,12 +150,12 @@ begin
   BevelOuter := bvNone;
   Align := alClient;
 
-  FDebugView := TMStreamDebugView.Create(Self);
+  FDebugView := TMStreamDebugPanel.Create(Self);
   FDebugView.Parent := Self;
   FDebugView.Visible := False;
 end;
 
-procedure TMStreamDebugContainer.ShowDebug(Client: TICEClient);
+procedure TMStreamDebugView.ShowDebug(Client: TICEClient);
 begin
   FDebugView.ShowDebug(Client);
   FDebugView.Visible := (Client <> nil) and (not Client.Killed);

@@ -757,6 +757,7 @@ constructor TMStreamBrowserView.Create(AOwner: TComponent; HomeCommunication: TH
 begin
   inherited Create(AOwner);
 
+  Align := alClient;
   BevelOuter := bvNone;
 
   FCurrentKbps := 32;
@@ -786,12 +787,6 @@ begin
   FLoadingPanel.Visible := False;
 
   FLoadingPanel.FBtnRetry.OnClick := BtnRetryClick;
-
-  FHomeCommunication.OnGenresReceived := HomeCommunicationGenresReceived;
-  FHomeCommunication.OnStreamsReceived := HomeCommunicationStreamsReceived;
-  FHomeCommunication.OnReceiveError := HomeCommunicationReceiveError;
-  FHomeCommunication.OnOldVersion := HomeCommunicationOldVersion;
-  FHomeCommunication.GetGenres;
 end;
 
 destructor TMStreamBrowserView.Destroy;
@@ -909,6 +904,12 @@ begin
   FSearch.FGenreList.OnChange := ListsChange;
   FSearch.FKbpsList.OnChange := ListsChange;
 
+  FHomeCommunication.OnGenresReceived := HomeCommunicationGenresReceived;
+  FHomeCommunication.OnStreamsReceived := HomeCommunicationStreamsReceived;
+  FHomeCommunication.OnReceiveError := HomeCommunicationReceiveError;
+  FHomeCommunication.OnOldVersion := HomeCommunicationOldVersion;
+
+  FHomeCommunication.GetGenres;
   FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre, FCurrentKbps, True);
 end;
 

@@ -33,7 +33,7 @@ type
   end;
   PSavedHistoryNodeData = ^TSavedHistoryNodeData;
 
-  TTrackActions = (taPlay, taRemove, taDelete, taProperties);
+  TTrackActions = (taPlay, taCut, taRemove, taDelete, taProperties);
 
   TTrackInfoArray = array of TTrackInfo;
 
@@ -50,6 +50,7 @@ type
 
     FPopupMenu: TPopupMenu;
     FItemPlay: TMenuItem;
+    FItemCut: TMenuItem;
     FItemRemove: TMenuItem;
     FItemDelete: TMenuItem;
     FItemProperties: TMenuItem;
@@ -82,7 +83,7 @@ type
     property OnAction: TTrackActionEvent read FOnAction write FOnAction;
   end;
 
-  TMStreamInfoView = class(TPanel)
+  TMStreamInfoViewPanel = class(TPanel)
   private
     FEntries: TStreamList;
     FResized: Boolean;
@@ -103,16 +104,16 @@ type
     property Tree: TSavedTracksTree read FSavedTracks;
   end;
 
-  TMStreamInfoContainer = class(TPanel)
+  TMStreamInfoView = class(TPanel)
   private
-    FInfoView: TMStreamInfoView;
+    FInfoView: TMStreamInfoViewPanel;
   public
     constructor Create(AOwner: TComponent); reintroduce;
 
-    procedure ShowInfo(Entries: TStreamList);
     procedure Translate;
+    procedure ShowInfo(Entries: TStreamList);
 
-    property InfoView: TMStreamInfoView read FInfoView;
+    property InfoView: TMStreamInfoViewPanel read FInfoView;
   end;
 
 implementation
@@ -149,6 +150,11 @@ begin
   FItemPlay.Caption := _('&Play');
   FItemPlay.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemPlay);
+
+  FItemCut := FPopupMenu.CreateMenuItem;
+  FItemCut.Caption := _('&Cut');
+  FItemCut.OnClick := PopupMenuClick;
+  FPopupMenu.Items.Add(FItemCut);
 
   ItemTmp := FPopupMenu.CreateMenuItem;
   ItemTmp.Caption := '-';
@@ -397,6 +403,8 @@ begin
 
   if Sender = FItemPlay then
     Action := taPlay
+  else if Sender = FItemCut then
+    Action := taCut
   else if Sender = FItemRemove then
   begin
     Action := taRemove;
@@ -422,6 +430,7 @@ var
 begin
   Tracks := GetSelected;
   FItemPlay.Enabled := Length(Tracks) > 0;
+  FItemCut.Enabled := Length(Tracks) > 0;
   FItemRemove.Enabled := Length(Tracks) > 0;
   FItemDelete.Enabled := Length(Tracks) > 0;
   FItemProperties.Enabled := Length(Tracks) = 1;
@@ -476,7 +485,7 @@ end;
 
 { TStreamInfoView }
 
-constructor TMStreamInfoView.Create(AOwner: TComponent);
+constructor TMStreamInfoViewPanel.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
@@ -523,19 +532,19 @@ begin
   Align := alClient;
 end;
 
-destructor TMStreamInfoView.Destroy;
+destructor TMStreamInfoViewPanel.Destroy;
 begin
   FEntries.Free;
   inherited;
 end;
 
-procedure TMStreamInfoView.Resize;
+procedure TMStreamInfoViewPanel.Resize;
 begin
   inherited;
 
 end;
 
-procedure TMStreamInfoView.ShowInfo(Entries: TStreamList);
+procedure TMStreamInfoViewPanel.ShowInfo(Entries: TStreamList);
 var
   i, n: Integer;
   SongsSaved: Cardinal;
@@ -627,7 +636,7 @@ end;
 
 { TMStreamInfoContainer }
 
-constructor TMStreamInfoContainer.Create(AOwner: TComponent);
+constructor TMStreamInfoView.Create(AOwner: TComponent);
 begin
   inherited;
 
@@ -635,18 +644,18 @@ begin
   BevelOuter := bvNone;
   Align := alClient;
 
-  FInfoView := TMStreamInfoView.Create(Self);
+  FInfoView := TMStreamInfoViewPanel.Create(Self);
   FInfoView.Parent := Self;
   FInfoView.Visible := False;
 end;
 
-procedure TMStreamInfoContainer.ShowInfo(Entries: TStreamList);
+procedure TMStreamInfoView.ShowInfo(Entries: TStreamList);
 begin
   FInfoView.ShowInfo(Entries);
   FInfoView.Visible := Entries <> nil;
 end;
 
-procedure TMStreamInfoContainer.Translate;
+procedure TMStreamInfoView.Translate;
 begin
 
 end;

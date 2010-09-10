@@ -24,7 +24,7 @@ uses
   Windows,
   Forms,
   Main in 'Main.pas' {frmStreamWriterMain},
-  ClientView in 'ClientView.pas',
+  ClientView in 'controls\ClientView.pas',
   RecentManager in 'RecentManager.pas',
   Settings in 'Settings.pas' {frmSettings},
   AppData in 'AppData.pas',
@@ -56,10 +56,10 @@ uses
   SettingsBase in '..\..\common\forms\SettingsBase.pas' {frmSettingsBase},
   Plugins in 'Plugins.pas',
   HomeCommunication in 'HomeCommunication.pas',
-  StreamBrowserView in 'StreamBrowserView.pas',
-  StationCombo in 'StationCombo.pas',
-  StreamInfoView in 'StreamInfoView.pas',
-  StreamDebugView in 'StreamDebugView.pas',
+  StreamBrowserView in 'controls\StreamBrowserView.pas',
+  StationCombo in 'controls\StationCombo.pas',
+  StreamInfoView in 'controls\StreamInfoView.pas',
+  StreamDebugView in 'controls\StreamDebugView.pas',
   PluginsShared in 'PluginsShared.pas',
   Base64 in 'Base64.pas',
   DynBASS in 'audio\DynBASS.pas',
@@ -67,7 +67,10 @@ uses
   ICEServerStream in 'ICEServerStream.pas',
   ICEThread in 'ICEThread.pas',
   ICEStream in 'ICEStream.pas',
-  AudioStream in 'audio\AudioStream.pas';
+  AudioStream in 'audio\AudioStream.pas',
+  ClientTab in 'controls\ClientTab.pas',
+  CutTab in 'controls\CutTab.pas',
+  MControls in '..\..\common\MControls.pas';
 
 {$R *.res}
 {$R res\language.res}

@@ -2,7 +2,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Left = 549
   Top = 450
   Caption = 'streamWriter'
-  ClientHeight = 370
+  ClientHeight = 430
   ClientWidth = 689
   Color = clBtnFace
   Constraints.MinHeight = 200
@@ -21,71 +21,9 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
-  object Splitter1: TSplitter
-    Left = 472
-    Top = 25
-    Width = 4
-    Height = 326
-    Align = alRight
-    AutoSnap = False
-    Beveled = True
-    MinSize = 230
-    ResizeStyle = rsUpdate
-    ExplicitLeft = 424
-    ExplicitTop = 33
-    ExplicitHeight = 328
-  end
-  object pnlStreams: TPanel
-    Left = 0
-    Top = 25
-    Width = 472
-    Height = 326
-    Align = alClient
-    BevelOuter = bvNone
-    TabOrder = 1
-    ExplicitWidth = 689
-    object pnlTop: TPanel
-      Left = 0
-      Top = 0
-      Width = 472
-      Height = 33
-      Align = alTop
-      BevelEdges = []
-      BevelOuter = bvNone
-      TabOrder = 0
-      ExplicitWidth = 689
-      object lblTop: TLabel
-        Left = 4
-        Top = 9
-        Width = 98
-        Height = 13
-        Caption = 'Playlist/Stream-URL:'
-      end
-      object ToolBar2: TToolBar
-        Left = 445
-        Top = 4
-        Width = 32
-        Height = 25
-        Align = alCustom
-        Anchors = [akTop, akRight]
-        Images = imgImages
-        ParentShowHint = False
-        ShowHint = True
-        TabOrder = 0
-        ExplicitLeft = 662
-        object cmdStartStreaming: TToolButton
-          Left = 0
-          Top = 0
-          Hint = 'Add and start recording'
-          ImageIndex = 11
-          OnClick = cmdStartStreamingClick
-        end
-      end
-    end
-  end
   object addStatus: TStatusBar
     Left = 0
-    Top = 351
+    Top = 411
     Width = 689
     Height = 19
     Panels = <
@@ -108,8 +46,8 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Indent = 2
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 2
-    Transparent = False
+    TabOrder = 1
+    Transparent = True
     object cmdStart: TToolButton
       Left = 2
       Top = 0
@@ -164,18 +102,17 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object cmdStreamSettings: TToolButton
       Left = 141
       Top = 0
+      Hint = 'Settings'
       DropdownMenu = mnuStreamSettingsToolbar
       ImageIndex = 9
-      Style = tbsDropDown
-      OnClick = cmdStreamSettingsClick
     end
     object ToolButton6: TToolButton
-      Left = 179
+      Left = 164
       Top = 0
       Action = actResetData
     end
     object ToolButton4: TToolButton
-      Left = 202
+      Left = 187
       Top = 0
       Width = 8
       Caption = '-'
@@ -183,60 +120,9 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsSeparator
     end
     object cmdShowStreamBrowser: TToolButton
-      Left = 210
+      Left = 195
       Top = 0
-      Action = actShowStreamBrowser
-    end
-    object ToolButton5: TToolButton
-      Left = 233
-      Top = 0
-      Width = 8
-      Caption = '-'
-      ImageIndex = 13
-      Style = tbsSeparator
-    end
-    object cmdSettings: TToolButton
-      Left = 241
-      Top = 0
-      Action = actSettings
-    end
-    object ToolButton7: TToolButton
-      Left = 264
-      Top = 0
-      Action = actAbout
-    end
-  end
-  object pagSidebar: TPageControl
-    Left = 476
-    Top = 25
-    Width = 213
-    Height = 326
-    ActivePage = tabBrowser
-    Align = alRight
-    TabOrder = 3
-    OnChange = pagSidebarChange
-    ExplicitTop = 33
-    ExplicitHeight = 293
-    object tabBrowser: TTabSheet
-      Caption = 'Browser'
-      ExplicitHeight = 265
-    end
-    object tabInfo: TTabSheet
-      Caption = 'Info'
-      ImageIndex = 1
-      OnResize = tabInfoResize
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
-    end
-    object tabDebug: TTabSheet
-      Caption = 'Log'
-      ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
+      Action = actShowSideBar
     end
   end
   object addXP: TXPManifest
@@ -315,7 +201,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object View1: TMenuItem
       Caption = '&View'
       object mnuShowStreamBrowser: TMenuItem
-        Action = actShowStreamBrowser
+        Action = actShowSideBar
       end
     end
     object mnuUpdate: TMenuItem
@@ -337,7 +223,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 160
     Bitmap = {
-      494C010102000900BC0210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000900D00210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000D0000005C000000000000000000000000000000000000
@@ -480,7 +366,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 40
     Top = 140
     Bitmap = {
-      494C01010E00D802AC0310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01010E00D802C00310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1019,7 +905,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 108
     Bitmap = {
-      494C010101000400E40210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000400F80210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000060000001D000000220000001D00000006000000000000
@@ -1166,19 +1052,16 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Caption = '&Start recording'
       Hint = 'Start recording'
       ImageIndex = 0
-      OnExecute = actStartExecute
     end
     object actStop: TAction
       Caption = 'S&top'
       Hint = 'Stop'
       ImageIndex = 1
-      OnExecute = actStopExecute
     end
     object actRemove: TAction
       Caption = '&Remove'
       Hint = 'Remove'
       ImageIndex = 2
-      OnExecute = actRemoveExecute
     end
     object actSkipShort: TAction
       AutoCheck = True
@@ -1203,48 +1086,40 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       ImageIndex = 10
       OnExecute = actAboutExecute
     end
-    object actShowStreamBrowser: TAction
+    object actShowSideBar: TAction
       Caption = '&Show sidebar'
       Hint = 'Show sidebar'
       ImageIndex = 12
-      OnExecute = actShowStreamBrowserExecute
     end
     object actTuneInStream: TAction
       Caption = '&Stream'
-      OnExecute = actTuneInStreamExecute
     end
     object actTuneInRelay: TAction
       Caption = '&Relay'
-      OnExecute = actTuneInRelayExecute
     end
     object actTuneInFile: TAction
       Caption = 'Recorded &file'
-      OnExecute = actTuneInFileExecute
     end
     object actSavePlaylistStream: TAction
       Caption = '&Stream'
-      OnExecute = actSavePlaylistStreamExecute
     end
     object actSavePlaylistRelay: TAction
       Caption = '&Relay'
-      OnExecute = actSavePlaylistRelayExecute
     end
     object actSavePlaylistFile: TAction
       Caption = 'Recorded &file'
-      OnExecute = actSavePlaylistFileExecute
     end
     object actResetData: TAction
       Caption = 'Reset &data'
       Hint = 'Reset data'
       ImageIndex = 13
-      OnExecute = actResetDataExecute
     end
   end
   object mnuStreamPopup: TPopupMenu
     Images = imgImages
     OnPopup = mnuStreamPopupPopup
-    Left = 72
-    Top = 48
+    Left = 64
+    Top = 80
     object mnuStartStreaming1: TMenuItem
       Action = actStart
     end
@@ -1301,20 +1176,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     OnTimer = tmrSpeedTimer
     Left = 296
     Top = 136
-  end
-  object DropStations: TDropURLTarget
-    DragTypes = [dtCopy, dtLink]
-    GetDataOnEnter = True
-    OnDrop = DropStationsDrop
-    Left = 272
-    Top = 64
-  end
-  object DropList: TDropURLTarget
-    DragTypes = [dtCopy, dtLink]
-    GetDataOnEnter = True
-    OnDrop = DropListDrop
-    Left = 216
-    Top = 64
   end
   object TrayIcon1: TTrayIcon
     Hint = 'streamWriter'
@@ -1379,11 +1240,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     OnPopup = mnuStreamSettingsToolbarPopup
     Left = 68
     Top = 212
-    object Savetitlestoseperatefolder1: TMenuItem
-      AutoCheck = True
-      Caption = '&Save titles to seperate folder'
-      OnClick = actStreamSettingsExecute
-    end
     object Skipshortsongs1: TMenuItem
       Action = actSkipShort
       AutoCheck = True
@@ -1393,7 +1249,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 608
     Top = 236
     Bitmap = {
-      494C010101000800CC0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000800E00010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

@@ -30,14 +30,11 @@ uses
   LanguageObjects, AppDataBase, Functions, ClientManager, ShellAPI, DropSource,
   About, MsgDlg, HomeCommunication, StreamBrowserView, Clipbrd,
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
-  Buttons, DynBass;
+  Buttons, DynBass, ClientTab, CutTab, MControls;
 
 type
   TfrmStreamWriterMain = class(TForm)
     addStatus: TStatusBar;
-    pnlStreams: TPanel;
-    pnlTop: TPanel;
-    lblTop: TLabel;
     addXP: TXPManifest;
     mnuMain: TMainMenu;
     mnuFile: TMenuItem;
@@ -62,10 +59,6 @@ type
     mnuStopStreaming1: TMenuItem;
     Entfernen1: TMenuItem;
     tmrSpeed: TTimer;
-    DropStations: TDropURLTarget;
-    DropList: TDropURLTarget;
-    ToolBar2: TToolBar;
-    cmdStartStreaming: TToolButton;
     mnuStreamSettings1: TMenuItem;
     asd: TMenuItem;
     actSkipShort: TAction;
@@ -85,27 +78,16 @@ type
     mnuSavePlaylist1: TMenuItem;
     mnuHelp: TMenuItem;
     mnuAbout: TMenuItem;
-    ToolBar1: TToolBar;
-    cmdStart: TToolButton;
-    cmdStop: TToolButton;
-    cmdRemove: TToolButton;
     actExit: TAction;
     actSettings: TAction;
-    cmdStreamSettings: TToolButton;
     mnuStreamSettingsToolbar: TPopupMenu;
-    Savetitlestoseperatefolder1: TMenuItem;
     Skipshortsongs1: TMenuItem;
     actAbout: TAction;
-    cmdSettings: TToolButton;
     N8: TMenuItem;
-    ToolButton1: TToolButton;
-    ToolButton3: TToolButton;
     N9: TMenuItem;
     View1: TMenuItem;
     mnuShowStreamBrowser: TMenuItem;
-    ToolButton4: TToolButton;
-    cmdShowStreamBrowser: TToolButton;
-    actShowStreamBrowser: TAction;
+    actShowSideBar: TAction;
     actTuneInStream: TAction;
     actTuneInFile: TAction;
     mnuListenToStream2: TMenuItem;
@@ -127,69 +109,47 @@ type
     mnuReset1: TMenuItem;
     mnuReset11: TMenuItem;
     actResetData: TAction;
-    ToolButton5: TToolButton;
-    ToolButton6: TToolButton;
-    ToolButton7: TToolButton;
+    ToolBar1: TToolBar;
+    cmdStart: TToolButton;
+    cmdStop: TToolButton;
+    ToolButton3: TToolButton;
+    cmdRemove: TToolButton;
     ToolButton2: TToolButton;
     cmdStartPlay: TToolButton;
     cmdStopPlay: TToolButton;
-    pagSidebar: TPageControl;
-    tabBrowser: TTabSheet;
-    tabInfo: TTabSheet;
-    tabDebug: TTabSheet;
-    Splitter1: TSplitter;
-    procedure cmdStartStreamingClick(Sender: TObject);
+    ToolButton1: TToolButton;
+    ToolButton6: TToolButton;
+    ToolButton4: TToolButton;
+    cmdShowStreamBrowser: TToolButton;
+    cmdStreamSettings: TToolButton;
     procedure FormCreate(Sender: TObject);
-    procedure actStopExecute(Sender: TObject);
-    procedure actStartExecute(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure actRemoveExecute(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
-    procedure lstStationsKeyPress(Sender: TObject; var Key: Char);
-    procedure DropStationsDrop(Sender: TObject; ShiftState: TShiftState;
-      APoint: TPoint; var Effect: Integer);
-    procedure DropListDrop(Sender: TObject; ShiftState: TShiftState;
-      APoint: TPoint; var Effect: Integer);
     procedure actStreamSettingsExecute(Sender: TObject);
     procedure addTrayClick(Sender: TObject);
     procedure mnuCheckUpdateClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure mnuShowClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
-    procedure actTuneInRelayExecute(Sender: TObject);
     procedure mnuStreamPopupPopup(Sender: TObject);
-    procedure lstStationsChange(Sender: TObject);
     procedure actExitExecute(Sender: TObject);
     procedure actSettingsExecute(Sender: TObject);
     procedure actAboutExecute(Sender: TObject);
     procedure mnuStreamSettingsToolbarPopup(Sender: TObject);
-    procedure cmdStreamSettingsClick(Sender: TObject);
-    procedure actShowStreamBrowserExecute(Sender: TObject);
-    procedure actTuneInStreamExecute(Sender: TObject);
-    procedure actTuneInFileExecute(Sender: TObject);
-    procedure actSavePlaylistStreamExecute(Sender: TObject);
-    procedure actSavePlaylistRelayExecute(Sender: TObject);
-    procedure actSavePlaylistFileExecute(Sender: TObject);
     procedure tabInfoResize(Sender: TObject);
     procedure pagSidebarChange(Sender: TObject);
-    procedure actResetDataExecute(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
     FStreams: TStreamDataList;
     FUpdater: TUpdateClient;
-    FReceived: UInt64;
     FUpdateOnExit: Boolean;
-    FRefreshInfo: Boolean;
     FWasShown: Boolean;
     FWasMaximized: Boolean;
 
     FClients: TClientManager;
     FHomeCommunication: THomeCommunication;
-    lstClients: TMClientView;
-    pnlStreamBrowser: TMStreamBrowserView;
-    lstStations: TMStationCombo;
-    pnlStreamInfo: TMStreamInfoContainer;
-    pnlDebug: TMStreamDebugContainer;
+    pagMain: TMPageControl;
+    tabClients: TClientTab;
 
     procedure OneInstanceMessage(var Msg: TMessage); message WM_USER + 123;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
@@ -200,40 +160,18 @@ type
     procedure ExitApp(Shutdown: Boolean);
     procedure ShowSettings(BrowseDir: Boolean);
     procedure ShowUpdate(Version: string = ''; UpdateURL: string = '');
-    procedure SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean);
     procedure UpdateButtons;
     procedure UpdateStatus;
     procedure ToggleWindow(AlwaysShow: Boolean = False);
     procedure UpdaterUpdateFound(Sender: TObject);
     procedure UpdaterNoUpdateFound(Sender: TObject);
     function HandleLoadError(E: Exception): Integer;
-    function StartStreaming(Name, URL: string): Boolean;
-    procedure ShowInfo;
+
     procedure PreTranslate;
     procedure PostTranslate;
 
-    procedure lstClientsChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
-    procedure lstClientsDblClick(Sender: TObject);
-    procedure lstClientsKeyPress(Sender: TObject; var Key: Char);
-    procedure lstClientsKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-
-    procedure StreamsStreamAdded(Sender: TObject; Stream: TStreamEntry);
-    procedure StreamsStreamRemoved(Sender: TObject; Stream: TStreamEntry);
-    procedure StreamsStreamChanged(Sender: TObject; Stream: TStreamEntry);
-
-    procedure DebugClear(Sender: TObject);
-
-    procedure ClientManagerDebug(Sender: TObject);
-    procedure ClientManagerRefresh(Sender: TObject);
-    procedure ClientManagerAddRecent(Sender: TObject);
-    procedure ClientManagerClientAdded(Sender: TObject);
-    procedure ClientManagerClientRemoved(Sender: TObject);
-    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title: string);
-    procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
-    procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
-
-    procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
-    procedure StreamInfoAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
+    procedure tabClientsUpdateButtons(Sender: TObject);
+    procedure tabClientsCut(Filename: string);
   protected
 
   public
@@ -244,63 +182,13 @@ implementation
 
 {$R *.dfm}
 
-procedure TfrmStreamWriterMain.cmdStartStreamingClick(Sender: TObject);
-begin
-  StartStreaming(lstStations.Text, lstStations.Text);
-end;
-
-procedure TfrmStreamWriterMain.cmdStreamSettingsClick(Sender: TObject);
-var
-  Point: TPoint;
-begin
-  Point.X := cmdStreamSettings.Left;
-  Point.Y := cmdStreamSettings.Top + cmdStreamSettings.Height;
-  Point := ClientToScreen(Point);
-  cmdStreamSettings.Down := True;
-  cmdStreamSettings.DropDownMenu.Popup(Point.X, Point.Y);
-  cmdStreamSettings.Down := False;
-end;
-
-procedure TfrmStreamWriterMain.DebugClear(Sender: TObject);
-var
-  Clients: TNodeDataArray;
-  i: Integer;
-begin
-  Clients := lstClients.NodesToData(lstClients.GetNodes(False));
-  for i := 0 to Length(Clients) - 1 do
-    if Clients[i].Client = pnlDebug.DebugView.Client then
-    begin
-      Clients[i].Client.DebugLog.Clear;
-      Break;
-    end;
-end;
-
-procedure TfrmStreamWriterMain.DropListDrop(Sender: TObject; ShiftState: TShiftState;
-  APoint: TPoint; var Effect: Integer);
-var
-  DropURL: string;
-begin
-  DropURL := string(DropList.URL);
-  StartStreaming('', DropURL);
-end;
-
-procedure TfrmStreamWriterMain.DropStationsDrop(Sender: TObject;
-  ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
-begin
-  lstStations.ItemIndex := -1;
-  lstStations.Text := string(DropStations.URL);
-end;
-
 procedure TfrmStreamWriterMain.ExitApp(Shutdown: Boolean);
 var
   i: Integer;
   Res: Integer;
-  Clients: TNodeDataArray;
   StartTime: Cardinal;
   Saved: Boolean;
 begin
-  Clients := lstClients.NodesToData(lstClients.GetNodes(False));
-
   AppGlobals.MainMaximized := WindowState = wsMaximized;
   if not AppGlobals.MainMaximized then
   begin
@@ -310,11 +198,11 @@ begin
     AppGlobals.MainHeight := Height;
   end;
 
-  AppGlobals.ShowSidebar := pagSideBar.Visible;
-  AppGlobals.SidebarWidth := pagSideBar.Width;
+  AppGlobals.ShowSidebar := tabClients.SideBar.Visible;
+  AppGlobals.SidebarWidth := tabClients.SideBar.Width;
 
-  for i := 0 to lstClients.Header.Columns.Count - 1 do
-    AppGlobals.HeaderWidth[i] := lstClients.Header.Columns[i].Width;
+  for i := 0 to tabClients.ClientView.Header.Columns.Count - 1 do
+    AppGlobals.HeaderWidth[i] := tabClients.ClientView.Header.Columns[i].Width;
 
   TrayIcon1.Visible := False;
 
@@ -351,7 +239,7 @@ begin
     end;
   end;
 
-  lstClients.Clear;
+  tabClients.ClientView.Clear;
 
   FClients.Terminate;
   FHomeCommunication.Terminate;
@@ -372,77 +260,9 @@ begin
   Application.Terminate;
 end;
 
-procedure TfrmStreamWriterMain.actSavePlaylistFileExecute(Sender: TObject);
-var
-  Entries: TPlaylistEntryArray;
-begin
-  Entries := lstClients.GetEntries(etFile);
-  SavePlaylist(Entries, False);
-end;
-
-procedure TfrmStreamWriterMain.actSavePlaylistRelayExecute(
-  Sender: TObject);
-var
-  Entries: TPlaylistEntryArray;
-begin
-  Entries := lstClients.GetEntries(etRelay);
-  SavePlaylist(Entries, False);
-end;
-
-procedure TfrmStreamWriterMain.actSavePlaylistStreamExecute(
-  Sender: TObject);
-var
-  Entries: TPlaylistEntryArray;
-begin
-  Entries := lstClients.GetEntries(etStream);
-  SavePlaylist(Entries, False);
-end;
-
 procedure TfrmStreamWriterMain.actSettingsExecute(Sender: TObject);
 begin
   ShowSettings(False);
-end;
-
-procedure TfrmStreamWriterMain.actShowStreamBrowserExecute(
-  Sender: TObject);
-begin
-  pagSidebar.Visible := not pagSidebar.Visible;
-  Splitter1.Visible := not Splitter1.Visible;
-  actShowStreamBrowser.Checked := pagSidebar.Visible;
-end;
-
-procedure TfrmStreamWriterMain.actStartExecute(Sender: TObject);
-var
-  Clients: TClientArray;
-  Client: TICEClient;
-  Entry: TStreamEntry;
-begin
-  if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
-  begin
-    MsgBox(Handle, _('Available disk space is below the set limit, so recording will not start.'), _('Info'), MB_ICONINFORMATION);
-    Exit;
-  end;
-
-  Clients := lstClients.NodesToClients(lstClients.GetNodes(True));
-  for Client in Clients do
-  begin
-    Entry := FStreams.Get(Client);
-    if Entry <> nil then
-      Entry.LastTouched := Now;
-    Client.Connect;
-  end;
-end;
-
-procedure TfrmStreamWriterMain.actStopExecute(Sender: TObject);
-var
-  Clients: TClientArray;
-  Client: TICEClient;
-begin
-  Clients := lstClients.NodesToClients(lstClients.GetNodes(True));
-  for Client in Clients do
-  begin
-    Client.Disconnect;
-  end;
 end;
 
 procedure TfrmStreamWriterMain.actAboutExecute(Sender: TObject);
@@ -469,7 +289,7 @@ var
   Client: TICEClient;
   R: TStreamEntry;
 begin
-  Clients := lstClients.NodesToClients(lstClients.GetNodes(True));
+  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True));
   for Client in Clients do
   begin
     if Sender = actSkipShort then
@@ -483,85 +303,9 @@ begin
   end;
 end;
 
-procedure TfrmStreamWriterMain.actTuneInRelayExecute(Sender: TObject);
-var
-  Entries: TPlaylistEntryArray;
-begin
-  UpdateButtons;
-  if actTuneInRelay.Enabled then
-  begin
-    Entries := lstClients.GetEntries(etRelay);
-    SavePlaylist(Entries, True);
-  end;
-end;
-
-procedure TfrmStreamWriterMain.actTuneInStreamExecute(Sender: TObject);
-var
-  Entries: TPlaylistEntryArray;
-begin
-  Entries := lstClients.GetEntries(etStream);
-  SavePlaylist(Entries, True);
-end;
-
-procedure TfrmStreamWriterMain.actTuneInFileExecute(Sender: TObject);
-var
-  Entries: TPlaylistEntryArray;
-begin
-  UpdateButtons;
-  if actTuneInFile.Enabled then
-  begin
-    Entries := lstClients.GetEntries(etFile);
-    SavePlaylist(Entries, True);
-  end;
-end;
-
 procedure TfrmStreamWriterMain.addTrayClick(Sender: TObject);
 begin
   ToggleWindow(False);
-end;
-
-procedure TfrmStreamWriterMain.actRemoveExecute(Sender: TObject);
-var
-  Clients: TNodeDataArray;
-  Client: PClientNodeData;
-begin
-  Clients := lstClients.NodesToData(lstClients.GetNodes(True));
-  for Client in Clients do
-  begin
-    FClients.RemoveClient(Client.Client);
-  end;
-end;
-
-procedure TfrmStreamWriterMain.actResetDataExecute(Sender: TObject);
-var
-  Res: Integer;
-  Clients: TNodeDataArray;
-  Client: PClientNodeData;
-  R: TStreamEntry;
-  i: Integer;
-begin
-  Res := MsgBox(Handle, _('This will reset the saved song and bytes received counters and information about saved songs.'#13#10 +
-                          'The tracknumber of new saved titles will be 1 if you specified the tracknumber in the filename pattern, this number will also be set in ID3 tags.'#13#10 +
-                          'Do you want to continue?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
-  if Res = IDYES then
-  begin
-    Clients := lstClients.NodesToData(lstClients.GetNodes(True));
-    for Client in Clients do
-    begin
-      R := FStreams.Get(Client.Client);
-      R.SongsSaved := 0;
-      R.BytesReceived := 0;
-      for i := 0 to R.Tracks.Count - 1 do
-        R.Tracks[i].Free;
-      R.Tracks.Clear;
-
-      Client.Client.SongsSaved := 0;
-      Client.Client.Received := 0;
-
-      lstClients.RefreshClient(Client.Client);
-    end;
-  end;
-  ShowInfo;
 end;
 
 procedure TfrmStreamWriterMain.FormActivate(Sender: TObject);
@@ -601,77 +345,32 @@ var
   i: Integer;
 begin
   FClients := TClientManager.Create;
-  FClients.OnClientDebug := ClientManagerDebug;
-  FClients.OnClientRefresh := ClientManagerRefresh;
-  FClients.OnClientAddRecent := ClientManagerAddRecent;
-  FClients.OnClientAdded := ClientManagerClientAdded;
-  FClients.OnClientRemoved := ClientManagerClientRemoved;
-  FClients.OnClientSongSaved := ClientManagerSongSaved;
-  FClients.OnClientTitleChanged := ClientManagerTitleChanged;
-  FClients.OnClientICYReceived := ClientManagerICYReceived;
+
+  FStreams := TStreamDataList.Create;
 
   FHomeCommunication := THomeCommunication.Create;
+
+  pagMain := TMPageControl.Create(Self);
+  pagMain.Parent := Self;
+  pagMain.Visible := True;
+  pagMain.Align := alClient;
+
+  tabClients := TClientTab.Create(pagMain);
+  tabClients.PageControl := pagMain;
+  tabClients.Setup(Toolbar1, ActionList1, mnuStreamPopup, imgImages, imgClients,
+    FClients, FStreams, FHomeCommunication);
+  tabClients.OnUpdateButtons := tabClientsUpdateButtons;
+  tabClients.OnCut := tabClientsCut;
 
   if AppGlobals.Relay then
     FClients.RelayServer.Start;
 
   FWasShown := False;
-  FReceived := 0;
   FUpdateOnExit := False;
-  FRefreshInfo := False;
 
-  lstStations := TMStationCombo.Create(Self);
-  lstStations.Parent := pnlTop;
-  lstStations.DropDownCount := 15;
-  lstStations.Left := lblTop.Left + lblTop.Width + 8;
-  lstStations.Images := imgStations;
-  lstStations.Top := 4;
-  lstStations.Width := pnlTop.ClientWidth - lstStations.Left - cmdStartStreaming.Width - 8;
-  lstStations.Anchors := [akLeft, akTop, akRight];
-  lstStations.OnKeyPress := lstStationsKeyPress;
-  lstStations.OnChange := lstStationsChange;
-
-  lstClients := TMClientView.Create(Self, mnuStreamPopup);
-  lstClients.Parent := pnlStreams;
-  lstClients.PopupMenu := mnuStreamPopup;
-  lstClients.Align := alClient;
-  lstClients.Images := imgClients;
-  lstClients.OnChange := lstClientsChange;
-  lstClients.OnDblClick := lstClientsDblClick;
-  lstClients.OnKeyPress := lstClientsKeyPress;
-  lstClients.OnKeyDown := lstClientsKeyDown;
-  lstClients.Show;
-
-  pnlStreamBrowser := TMStreamBrowserView.Create(tabBrowser, FHomeCommunication);
-  pnlStreamBrowser.Parent := tabBrowser;
-  pnlStreamBrowser.Left := 0;
-  pnlStreamBrowser.Align := alClient;
-
-  pnlStreamBrowser.StreamTree.OnAction := StreamBrowserAction;
-  pnlStreamBrowser.StreamTree.Images := imgStations;
-
-  pnlStreamBrowser.Show;
-
-  pnlStreamInfo := TMStreamInfoContainer.Create(Self);
-  pnlStreamInfo.InfoView.Tree.OnAction := StreamInfoAction;
-  pnlStreamInfo.InfoView.Tree.Images := imgSavedTracks;
-  pnlStreamInfo.Parent := tabInfo;
-  pnlStreamInfo.Show;
-
-  pnlDebug := TMStreamDebugContainer.Create(Self);
-  pnlDebug.Parent := tabDebug;
-  pnlDebug.DebugView.OnClear := DebugClear;
-  pnlDebug.Show;
-
-  DropStations.Register(lstStations);
-  DropList.Register(lstClients);
-
-  pagSidebar.ActivePageIndex := 0;
-
-  FStreams := TStreamDataList.Create;
-  FStreams.OnStreamAdded := StreamsStreamAdded;
-  FStreams.OnStreamRemoved := StreamsStreamRemoved;
-  FStreams.OnStreamChanged := StreamsStreamChanged;
+  tabClients.SideBar.BrowserView.StreamTree.Images := imgStations;
+  tabClients.SideBar.InfoView.InfoView.Tree.Images := imgSavedTracks;
+  tabClients.AddressBar.Stations.Images := imgStations;
 
   try
     FStreams.Load;
@@ -722,8 +421,8 @@ begin
     Recent.Free;
   end;
 
-  lstClients.SortItems;
-  lstStations.Sort;
+  tabClients.ClientView.SortItems;
+  tabClients.AddressBar.Stations.Sort;
 
   {$IFDEF DEBUG}Caption := Caption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
 
@@ -748,9 +447,11 @@ begin
   Left := AppGlobals.MainLeft;
   Top := AppGlobals.MainTop;
 
-  cmdStartPlay.Visible := BassLoaded;
-  cmdStopPlay.Visible := BassLoaded;
-  ToolButton2.Visible := BassLoaded;
+                  {
+                  cmdStartPlay.Visible := BassLoaded;
+                  cmdStopPlay.Visible := BassLoaded;
+                  ToolButton2.Visible := BassLoaded;
+                  }
 
   Language.Translate(Self);
 end;
@@ -777,21 +478,8 @@ begin
     WindowState := wsMaximized;
   FWasMaximized := WindowState = wsMaximized;
 
-  pagSidebar.Visible := AppGlobals.ShowSidebar;
-  Splitter1.Visible := AppGlobals.ShowSidebar;
-  pagSidebar.Width := AppGlobals.SidebarWidth;
-  actShowStreamBrowser.Checked := pagSidebar.Visible;
-
-  if lstClients.RootNodeCount > 0 then
-  begin
-    lstClients.Selected[lstClients.GetFirst] := True;
-    lstClients.FocusedNode := lstclients.GetFirst;
-  end;
-
-  for i := 0 to lstClients.Header.Columns.Count - 1 do
-    lstClients.Header.Columns[i].Width := AppGlobals.HeaderWidth[i];
-
-  pnlStreamBrowser.Setup;
+  tabClients.Shown;
+  actShowSideBar.Checked := tabClients.SideBar.Visible;
 end;
 
 function TfrmStreamWriterMain.HandleLoadError(E: Exception): Integer;
@@ -835,7 +523,7 @@ procedure TfrmStreamWriterMain.pagSidebarChange(Sender: TObject);
 begin
   // Damit Child-Controls passende Dimensionen in ShowInfo haben
   Application.ProcessMessages;
-  ShowInfo;
+  //ShowInfo;
 end;
 
 procedure TfrmStreamWriterMain.PreTranslate;
@@ -845,8 +533,10 @@ end;
 
 procedure TfrmStreamWriterMain.PostTranslate;
 begin
+{
   pnlStreamBrowser.Translate;
   pnlStreamInfo.Translate;
+  }
 end;
 
 procedure TfrmStreamWriterMain.mnuStreamPopupPopup(Sender: TObject);
@@ -872,125 +562,6 @@ begin
   begin
     Msg.Result := 1;
     ExitApp(True);
-  end;
-end;
-
-procedure TfrmStreamWriterMain.SavePlaylist(Entries: TPlaylistEntryArray;
-  Open: Boolean);
-  procedure BuildPLS(Entries: TPlaylistEntryArray; List: TStringList);
-  var
-    i: Integer;
-  begin
-    List.Clear;
-    List.Add('[playlist]');
-    List.Add('numberofentries=' + IntToStr(Length(Entries)));
-    for i := 0 to Length(Entries) - 1 do
-    begin
-      List.Add('File' + IntToStr(i + 1) + '=' + Entries[i].URL);
-      List.Add('Title' + IntToStr(i + 1) + '=' + Entries[i].Name);
-      List.Add('Length' + IntToStr(i + 1) + '=-1');
-    end;
-  end;
-  procedure BuildM3U(Entries: TPlaylistEntryArray; List: TStringList);
-  var
-    i: Integer;
-  begin
-    List.Clear;
-    List.Add('#EXTM3U');
-    for i := 0 to Length(Entries) - 1 do
-    begin
-      List.Add('#EXTINF:-1,' + Entries[i].Name);
-      List.Add(Entries[i].URL);
-    end;
-  end;
-var
-  Res: Integer;
-  List: TStringList;
-  Dlg: TSaveDialog;
-begin
-  if Length(Entries) = 0 then
-    Exit;
-  List := TStringList.Create;
-  try
-    if not Open then
-    begin
-      Dlg := TSaveDialog.Create(Self);
-      try
-        Dlg.FileName := '';
-        Dlg.Filter := '.M3U Playlist|*.m3u|.PLS Playlist|*.pls';
-        Dlg.Options := Dlg.Options + [ofOverwritePrompt, ofPathMustExist];
-        if Dlg.Execute(Handle) then
-        begin
-          try
-            if (LowerCase(ExtractFileExt(Dlg.FileName)) <> '.m3u') and
-               (LowerCase(ExtractFileExt(Dlg.FileName)) <> '.pls') then
-              if Dlg.FilterIndex = 1 then
-                Dlg.FileName := Dlg.FileName + '.m3u'
-              else
-                Dlg.FileName := Dlg.FileName + '.pls';
-
-            if LowerCase(ExtractFileExt(Dlg.FileName)) = '.m3u' then
-              BuildM3U(Entries, List)
-            else
-              BuildPLS(Entries, List);
-
-            List.SaveToFile(Dlg.FileName);
-          except
-            MsgBox(Handle, Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [ExtractFilePath(Dlg.FileName)]), _('Error'), MB_ICONEXCLAMATION);
-          end;
-        end;
-      finally
-        Dlg.Free;
-      end;
-    end else
-    begin
-      try
-        BuildM3U(Entries, List);
-        List.SaveToFile(AppGlobals.TempDir + 'playlist.m3u');
-        Res := ShellExecute(Handle, 'open', PChar(AppGlobals.TempDir + 'playlist.m3u'), nil, nil, 1);
-        if Res <= 32 then
-        begin
-          BuildPLS(Entries, List);
-          List.SaveToFile(AppGlobals.TempDir + 'playlist.pls');
-          Res := ShellExecute(Handle, 'open', PChar(AppGlobals.TempDir + 'playlist.pls'), nil, nil, 1);
-          if Res <= 32 then
-            ShellExecute(Handle, nil, 'rundll32.exe', PChar('shell32.dll,OpenAs_RunDLL ' + AppGlobals.TempDir + 'playlist.pls'), nil, 1);
-        end;
-      except
-        MsgBox(Handle, Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [AppGlobals.TempDir]), _('Error'), MB_ICONEXCLAMATION);
-      end;
-    end;
-  finally
-    List.Free;
-  end;
-end;
-
-procedure TfrmStreamWriterMain.ShowInfo;
-var
-  Clients: TNodeDataArray;
-  Client: PClientNodeData;
-  Entry: TStreamEntry;
-  Entries: TStreamList;
-begin
-  Clients := lstClients.NodesToData(lstClients.GetNodes(True));
-
-  Entries := TStreamList.Create;
-  try
-    for Client in Clients do
-    begin
-      Entry := FStreams.Get(Client.Client);
-      if Entry <> nil then
-      begin
-        Entries.Add(Entry)
-      end;
-    end;
-
-    if Entries.Count > 0 then
-      pnlStreamInfo.ShowInfo(Entries)
-    else
-      pnlStreamInfo.ShowInfo(nil);
-  finally
-    Entries.Free;
   end;
 end;
 
@@ -1036,143 +607,6 @@ begin
   end;
 end;
 
-function TfrmStreamWriterMain.StartStreaming(Name, URL: string): Boolean;
-var
-  Entry: TStreamEntry;
-  Client: TICEClient;
-begin
-  Result := True;
-  if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
-  begin
-    Result := False;
-    MsgBox(Handle, _('Available disk space is below the set limit, so recording will not start.'), _('Info'), MB_ICONINFORMATION);
-    Exit;
-  end;
-
-  URL := Trim(URL);
-  if URL <> '' then
-  begin
-    Entry := FStreams.Get(Name, URL, nil);
-    if Entry <> nil then
-      Entry.LastTouched := Now;
-
-    // Ist der Client schon in der Liste?
-    Client := FClients.GetClient(Name, URL, nil);
-    if Client <> nil then
-    begin
-      Client.Connect;
-      Exit;
-    end else
-    begin
-      // Ist der Client schon bekannt?
-      if Entry <> nil then
-      begin
-        Client := FClients.AddClient(Entry.Name, Entry.StartURL, Entry.URLs, Entry.SkipShort, Entry.SongsSaved);
-        Client.Connect;
-      end else
-      begin
-        if ValidURL(URL) then
-        begin
-          Client := FClients.AddClient(Name, URL);
-          Client.Connect;
-        end else
-        begin
-          Result := False;
-          MsgBox(Handle, _('The stream could not be added to the list because the URL is invalid.'), _('Info'), MB_ICONINFORMATION);
-        end;
-      end;
-    end;
-  end;
-end;
-
-procedure TfrmStreamWriterMain.StreamBrowserAction(Sender: TObject;
-  Action: TOpenActions; Streams: TStreamDataArray);
-var
-  i: Integer;
-  s: string;
-  Entries: TPlaylistEntryArray;
-begin
-  if Action in [oaListen, oaSave] then
-  begin
-    SetLength(Entries, 0);
-    for i := 0 to Length(Streams) - 1 do
-    begin
-      SetLength(Entries, Length(Entries) + 1);
-      Entries[i].Name := Streams[i].Name;
-      Entries[i].URL := Streams[i].URL;
-    end;
-  end;
-
-  case Action of
-    oaStart:
-      for i := 0 to Length(Streams) - 1 do
-        if not StartStreaming(Streams[i].Name, Streams[i].URL) then
-          Break;
-    oaListen:
-      SavePlaylist(Entries, True);
-    oaCopy:
-      begin
-        s := '';
-        Clipboard.Clear;
-        for i := 0 to Length(Streams) - 1 do
-          s := s + Streams[i].URL + #13#10;
-        s := Trim(s);
-        Clipboard.SetTextBuf(PChar(s));
-      end;
-    oaSave:
-      SavePlaylist(Entries, False);
-  end;
-end;
-
-procedure TfrmStreamWriterMain.StreamInfoAction(Sender: TObject;
-  Action: TTrackActions; Tracks: TTrackInfoArray);
-var
-  Entries: TPlaylistEntryArray;
-  i: Integer;
-begin
-  case Action of
-    taPlay:
-      begin
-        // Tracks in Playlist konvertieren
-        SetLength(Entries, Length(Tracks));
-        for i := 0 to Length(Tracks) - 1 do
-        begin
-          Entries[i].Name := Tracks[i].Filename;
-          Entries[i].URL := Tracks[i].Filename;
-        end;
-
-        SavePlaylist(Entries, True);
-      end;
-    taRemove:
-      begin
-        for i := 0 to Length(Tracks) - 1 do
-          FStreams.RemoveTrack(Tracks[i]);
-      end;
-    taDelete:
-      begin
-        for i := 0 to Length(Tracks) - 1 do
-        begin
-          DeleteFile(Tracks[i].Filename);
-          FStreams.RemoveTrack(Tracks[i]);
-        end;
-      end;
-    taProperties:
-      PropertiesDialog(Tracks[0].Filename) // testen obs lackt.
-  end;
-end;
-
-procedure TfrmStreamWriterMain.StreamsStreamAdded(Sender: TObject;
-  Stream: TStreamEntry);
-begin
-
-end;
-
-procedure TfrmStreamWriterMain.StreamsStreamRemoved(Sender: TObject;
-  Stream: TStreamEntry);
-begin
-
-end;
-
 procedure TfrmStreamWriterMain.SysCommand(var Msg: TWMSysCommand);
 begin
   if Msg.CmdType = SC_MINIMIZE then
@@ -1180,38 +614,22 @@ begin
   DefaultHandler(Msg);
 end;
 
+procedure TfrmStreamWriterMain.tabClientsCut(Filename: string);
+var
+  tabCut: TCutTab;
+begin
+  tabCut := TCutTab.Create(pagMain);
+  tabCut.PageControl := pagMain;
+end;
+
+procedure TfrmStreamWriterMain.tabClientsUpdateButtons(Sender: TObject);
+begin
+  UpdateButtons;
+end;
+
 procedure TfrmStreamWriterMain.tabInfoResize(Sender: TObject);
 begin
   // ShowInfo;
-end;
-
-procedure TfrmStreamWriterMain.StreamsStreamChanged(Sender: TObject;
-  Stream: TStreamEntry);
-var
-  Item: TComboExItem;
-  Client: TICEClient;
-begin
-  if Stream.IsInList then
-  begin
-    Client := FClients.GetClient(Stream.Name, Stream.StartURL, Stream.URLs);
-    if Client = nil then
-      FClients.AddClient(Stream.Name, Stream.StartURL, Stream.URLs, Stream.SkipShort, Stream.SongsSaved);
-  end;
-  Item := lstStations.Get(Stream.Name, Stream.StartURL, Stream.URLs);
-  if (Item = nil) and (Stream.RecentIndex > -1) then
-  begin
-    Item := lstStations.ItemsEx.Add;
-    Item.ImageIndex := 0;
-    Item.Caption := Stream.Name;
-    Item.Data := Stream;
-    if lstStations.ItemIndex > -1 then
-      lstStations.ItemIndex := lstStations.ItemIndex + 1;
-  end else
-  begin
-    if (Item <> nil) and (Stream.RecentIndex = -1) then
-      lstStations.ItemsEx.Delete(Item.Index);
-  end;
-  lstStations.Sort;
 end;
 
 procedure TfrmStreamWriterMain.tmrSpeedTimer(Sender: TObject);
@@ -1221,11 +639,7 @@ var
 begin
   UpdateStatus;
 
-  if FRefreshInfo then
-  begin
-    ShowInfo;
-    FRefreshInfo := False;
-  end;
+  tabClients.TimerTick;
 
   Active := False;
   for i := 0 to FClients.Count - 1 do
@@ -1282,7 +696,7 @@ var
   Clients: TClientArray;
   Client, Client2: TICEClient;
 begin
-  Clients := lstClients.NodesToClients(lstClients.GetNodes(True));
+  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True));
   B := Length(Clients) > 0;
   actStart.Enabled := B;
   actStop.Enabled := B;
@@ -1311,20 +725,20 @@ begin
       actTuneInFile.Enabled := True;
   end;
 
-  if lstClients.SelectedCount > 1 then
+  if tabClients.ClientView.SelectedCount > 1 then
   begin
-    Client2 := lstClients.NodesToClients(lstClients.GetNodes(True))[0];
+    Client2 := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True))[0];
     B4 := True;
-    for Client in lstClients.NodesToClients(lstClients.GetNodes(True)) do
+    for Client in tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True)) do
     begin
       if not Client.SkipShort = Client2.SkipShort then
         B4 := False;
     end;
-    Client := lstClients.NodesToClients(lstClients.GetNodes(True))[0];
+    Client := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True))[0];
     actSkipShort.Checked := Client.SkipShort and B4;
-  end else if lstClients.SelectedCount = 1 then
+  end else if tabClients.ClientView.SelectedCount = 1 then
   begin
-    Client := lstClients.NodesToClients(lstClients.GetNodes(True))[0];
+    Client := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True))[0];
     actSkipShort.Checked := Client.SkipShort;
 
     case AppGlobals.DefaultAction of
@@ -1370,90 +784,15 @@ var
   Speed: UInt64;
 begin
   Speed := 0;
-  Clients := lstClients.NodesToData(lstClients.GetNodes(False));
+  Clients := tabClients.ClientView.NodesToData(tabClients.ClientView.GetNodes(False));
   for Client in Clients do
   begin
     Speed := Speed + Client.Client.Speed;
-    lstClients.RefreshClient(Client.Client);
+    tabClients.ClientView.RefreshClient(Client.Client);
   end;
   addStatus.Panels[0].Text := MakeSize(Speed) + '/s';
-  addStatus.Panels[1].Text := Format(_('%s/%s received'), [MakeSize(FReceived), MakeSize(FStreams.Received)]);
+  addStatus.Panels[1].Text := Format(_('%s/%s received'), [MakeSize(tabClients.Received), MakeSize(FStreams.Received)]);
   addStatus.Panels[2].Text := Format(_('%d songs saved'), [FClients.SongsSaved]);
-end;
-
-procedure TfrmStreamWriterMain.lstClientsKeyDown(Sender: TObject;
-  var Key: Word; Shift: TShiftState);
-begin
-  if Key = VK_DELETE then
-  begin
-    actRemove.Execute;
-  end;
-end;
-
-procedure TfrmStreamWriterMain.lstClientsKeyPress(Sender: TObject;
-  var Key: Char);
-begin
-  if (Key = #13) or (Key = #32) then
-  begin
-    lstClientsDblClick(lstClients);
-    Key := #0;
-  end;
-end;
-
-procedure TfrmStreamWriterMain.lstClientsChange(Sender: TBaseVirtualTree;
-  Node: PVirtualNode);
-var
-  Clients: TNodeDataArray;
-begin
-  UpdateButtons;
-  ShowInfo;
-
-  if lstClients.SelectedCount = 1 then
-  begin
-    Clients := lstClients.NodesToData(lstClients.GetNodes(True));
-    if Length(Clients) = 1 then
-      pnlDebug.ShowDebug(Clients[0].Client);
-  end else
-    pnlDebug.ShowDebug(nil);
-end;
-
-procedure TfrmStreamWriterMain.lstClientsDblClick(Sender: TObject);
-var
-  Clients: TNodeDataArray;
-begin
-  Clients := lstClients.NodesToData(lstClients.GetNodes(True));
-  if Length(Clients) = 1 then
-  begin
-    case AppGlobals.DefaultAction of
-      caStartStop:
-        if Clients[0].Client.Active then
-          Clients[0].Client.Disconnect
-        else
-          Clients[0].Client.Connect;
-      caStream:
-        actTuneInStream.Execute;
-      caRelay:
-        actTuneInRelay.Execute;
-      caFile:
-        actTuneInFile.Execute;
-    end;
-  end;
-end;
-
-procedure TfrmStreamWriterMain.lstStationsChange(Sender: TObject);
-begin
-  cmdStartStreaming.Enabled := (Length(Trim(lstStations.Text)) > 0) or (lstStations.ItemIndex > -1);
-end;
-
-procedure TfrmStreamWriterMain.lstStationsKeyPress(Sender: TObject; var Key: Char);
-begin
-  if Key = #13 then
-  begin
-    cmdStartStreaming.Click;
-  end else
-  begin
-    lstStations.ItemIndex := -1;
-  end;
 end;
 
 function TfrmStreamWriterMain.CanExitApp: Boolean;
@@ -1464,7 +803,8 @@ var
 begin
   Result := True;
   Rec := False;
-  Clients := lstClients.NodesToData(lstClients.GetNodes(False));
+
+  Clients := tabClients.ClientView.NodesToData(tabClients.ClientView.GetNodes(False));
 
   for Client in Clients do
     if Client.Client.Active then
@@ -1482,119 +822,5 @@ begin
   end;
 end;
 
-procedure TfrmStreamWriterMain.ClientManagerAddRecent(Sender: TObject);
-var
-  Client: TICEClient;
-  Entry: TStreamEntry;
-begin
-  Client := Sender as TICEClient;
-
-  Entry := FStreams.Add(Client.StreamName, Client.StartURL, Client.URLs,
-    Client.BitRate, Client.Genre, Client.SkipShort, 0);
-  Entry.Name := Client.StreamName;
-  Entry.RecentIndex := 0;
-  Entry.LastTouched := Now;
-  if not Entry.Submitted then
-  begin
-    FHomeCommunication.SubmitStream(Entry.StartURL);
-    Entry.Submitted := True;
-  end;
-
-  ShowInfo;
-end;
-
-procedure TfrmStreamWriterMain.ClientManagerDebug(Sender: TObject);
-begin
-  if pnlDebug.DebugView.Client = Sender then
-  begin
-    pnlDebug.ShowDebug(TICEClient(Sender));
-  end;
-end;
-
-procedure TfrmStreamWriterMain.ClientManagerICYReceived(Sender: TObject;
-  Received: Integer);
-var
-  Entry: TStreamEntry;
-  Client: TICEClient;
-begin
-  Client := Sender as TICEClient;
-
-  FReceived := FReceived + Received;
-  FStreams.Received := FStreams.Received + Received;
-
-  Entry := FStreams.Get(Client);
-  if Entry <> nil then
-  begin
-    Entry.BytesReceived := Entry.BytesReceived + Received;
-  end;
-
-  FRefreshInfo := True;
-end;
-
-procedure TfrmStreamWriterMain.ClientManagerRefresh(Sender: TObject);
-begin
-  lstClients.RefreshClient(Sender as TICEClient);
-end;
-
-procedure TfrmStreamWriterMain.ClientManagerClientAdded(Sender: TObject);
-var
-  Entry: TStreamEntry;
-  Client: TICEClient;
-begin
-  Client := Sender as TICEClient;
-
-  Entry := FStreams.Add(Client.StreamName, Client.StartURL, Client.URLs,
-    Client.BitRate, Client.Genre, Client.SkipShort, 0);
-  Entry.LastTouched := Now;
-  Entry.IsInList := True;
-  Client.Received := Entry.BytesReceived;
-
-  lstClients.AddClient(Client);
-
-  lstClients.SortItems;
-end;
-
-procedure TfrmStreamWriterMain.ClientManagerClientRemoved(Sender: TObject);
-var
-  Entry: TStreamEntry;
-  Client: TICEClient;
-begin
-  Client := Sender as TICEClient;
-
-  Entry := FStreams.Get(Client);
-  if Entry <> nil then
-    Entry.IsInList := False;
-
-  lstClients.RemoveClient(Client);
-
-  if pnlDebug.DebugView.Client = Client then
-    pnlDebug.ShowDebug(nil);
-
-  ShowInfo;
-end;
-
-procedure TfrmStreamWriterMain.ClientManagerSongSaved(Sender: TObject;
-  Filename, Title: string);
-var
-  Entry: TStreamEntry;
-  Client: TICEClient;
-begin
-  Client := Sender as TICEClient;
-
-  Entry := FStreams.Get(Client);
-  if Entry <> nil then
-  begin
-    Entry.Tracks.Add(TTrackInfo.Create(Now, Filename));
-    Entry.SongsSaved := Entry.SongsSaved + 1;
-  end;
-
-  ShowInfo;
-end;
-
-procedure TfrmStreamWriterMain.ClientManagerTitleChanged(Sender: TObject;
-  Title: string);
-begin
-
-end;
 
 end.
