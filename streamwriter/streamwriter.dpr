@@ -70,7 +70,11 @@ uses
   AudioStream in 'audio\AudioStream.pas',
   ClientTab in 'controls\ClientTab.pas',
   CutTab in 'controls\CutTab.pas',
-  MControls in '..\..\common\MControls.pas';
+  MControls in '..\..\common\MControls.pas',
+  Tabs in 'controls\Tabs.pas',
+  CutView in 'controls\CutView.pas',
+  SavedTab in 'controls\SavedTab.pas',
+  WaveData in 'audio\WaveData.pas';
 
 {$R *.res}
 {$R res\language.res}

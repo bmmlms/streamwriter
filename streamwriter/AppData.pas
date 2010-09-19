@@ -120,7 +120,7 @@ begin
   FPluginManager.Free;
   inherited;
 end;
-
+                                        // TODO: Das station combo box und der button dazu haben 0 funktion.
 function TAppData.FGetDataFile;
 begin
   Result := FStorage.GetFilePath('data.dat');

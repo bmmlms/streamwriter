@@ -23,12 +23,39 @@ interface
 
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
-  MControls, LanguageObjects;
+  MControls, LanguageObjects, Tabs, CutView, Functions;
 
 type
-  TCutTab = class(TMTabSheet)
+  TCutToolBar = class(TToolBar)
+  private
+    FSave: TToolButton;
+    FSaveAs: TToolButton;
+    FSep1: TToolButton;
+    FCut: TToolButton;
+    FUndo: TToolButton;
+    FSep2: TToolButton;
+    FPlay: TToolButton;
+    FStop: TToolButton;
+  public
+    constructor Create(AOwner: TComponent);
+    procedure Setup;
+  end;
+
+  TCutTab = class(TMainTabSheet)
+  private
+    FToolBar: TCutToolBar;
+    FCutView: TCutView;
+
+    procedure SaveClick(Sender: TObject);
+    procedure SaveAsClick(Sender: TObject);
+    procedure CutClick(Sender: TObject);
+    procedure UndoClick(Sender: TObject);
+    procedure PlayClick(Sender: TObject);
+    procedure StopClick(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
+
+    procedure Setup(Filename: string; ToolBarImages: TImageList);
   end;
 
 implementation
@@ -38,7 +65,115 @@ implementation
 constructor TCutTab.Create(AOwner: TComponent);
 begin
   inherited;
-  Caption := _('Cut');
+
+  ImageIndex := 17;
+end;
+
+procedure TCutTab.SaveClick(Sender: TObject);
+begin
+  FCutView.Save;
+end;
+
+procedure TCutTab.SaveAsClick(Sender: TObject);
+begin
+
+end;
+
+procedure TCutTab.CutClick(Sender: TObject);
+begin
+  FCutView.Cut;
+end;
+
+procedure TCutTab.Setup(Filename: string; ToolBarImages: TImageList);
+begin
+  MaxWidth := 120;
+  Caption := Format(_('Cut ''%s'''), [ExtractFileName(Filename)]);
+
+  FToolBar := TCutToolBar.Create(Self);
+  FToolBar.Parent := Self;
+  FToolBar.Images := ToolBarImages;
+  FToolBar.Setup;
+
+  FToolBar.FSave.OnClick := SaveClick;
+  FToolBar.FSaveAs.OnClick := SaveAsClick;
+  FToolBar.FCut.OnClick := CutClick;
+  FToolBar.FUndo.OnClick := UndoClick;
+  FToolBar.FPlay.OnClick := PlayClick;
+  FToolBar.FStop.OnClick := StopClick;
+
+  FCutView := TCutView.Create(Self);
+  FCutView.Parent := Self;
+  FCutView.Align := alClient;
+
+  FCutView.LoadFile(Filename);
+end;
+
+procedure TCutTab.UndoClick(Sender: TObject);
+begin
+  FCutView.Undo;
+end;
+
+procedure TCutTab.PlayClick(Sender: TObject);
+begin
+  FCutView.Play;
+end;
+
+procedure TCutTab.StopClick(Sender: TObject);
+begin
+  FCutView.Stop;
+end;
+
+{ TCutToolbar }
+
+constructor TCutToolBar.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  ShowHint := True;
+  Transparent := True;
+end;
+
+procedure TCutToolBar.Setup;
+begin
+  FStop := TToolButton.Create(Self);
+  FStop.Parent := Self;
+  FStop.Hint := _('Stop');
+  FStop.ImageIndex := 1;
+
+  FPlay := TToolButton.Create(Self);
+  FPlay.Parent := Self;
+  FPlay.Hint := _('Play');
+  FPlay.ImageIndex := 0;
+
+  FSep2 := TToolButton.Create(Self);
+  FSep2.Parent := Self;
+  FSep2.Style := tbsSeparator;
+  FSep2.Width := 8;
+
+  FUndo := TToolButton.Create(Self);
+  FUndo.Parent := Self;
+  FUndo.Hint := _('Undo');
+  FUndo.ImageIndex := 18;
+
+  FCut := TToolButton.Create(Self);
+  FCut.Parent := Self;
+  FCut.Hint := _('Cut');
+  FCut.ImageIndex := 17;
+
+  FSep1 := TToolButton.Create(Self);
+  FSep1.Parent := Self;
+  FSep1.Style := tbsSeparator;
+  FSep1.Width := 8;
+
+  FSaveAs := TToolButton.Create(Self);
+  FSaveAs.Parent := Self;
+  FSaveAs.Hint := _('Save as...');
+  FSaveAs.ImageIndex := 15;
+
+  FSave := TToolButton.Create(Self);
+  FSave.Parent := Self;
+  FSave.Hint := _('Save');
+  FSave.ImageIndex := 14;
 end;
 
 end.

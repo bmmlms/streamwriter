@@ -27,7 +27,7 @@ uses
   LanguageObjects, HomeCommunication, StationCombo, Menus, ActnList, ImgList,
   RecentManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
   GUIFunctions, AppData, DropTarget, DragDropInternet, DragDropText,
-  DragDropFile, Dialogs, ShellAPI;
+  DragDropFile, Dialogs, ShellAPI, Tabs;
 
 type
   TSidebar = class(TPageControl)
@@ -72,7 +72,7 @@ type
 
   TCutEvent = procedure(Filename: string) of object;
 
-  TClientTab = class(TMTabSheet)
+  TClientTab = class(TMainTabSheet)
   private
     FToolbar: TToolBar;
     FAddressBar: TClientAddressBar;
@@ -379,6 +379,8 @@ constructor TClientTab.Create(AOwner: TComponent);
 begin
   inherited;
 
+  ShowCloseButton := False;
+  ImageIndex := 16;
 end;
 
 procedure TClientTab.DebugClear(Sender: TObject);

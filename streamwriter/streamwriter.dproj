@@ -124,6 +124,10 @@
 			<DCCReference Include="controls\ClientTab.pas"/>
 			<DCCReference Include="controls\CutTab.pas"/>
 			<DCCReference Include="..\..\common\MControls.pas"/>
+			<DCCReference Include="controls\Tabs.pas"/>
+			<DCCReference Include="controls\CutView.pas"/>
+			<DCCReference Include="controls\SavedTab.pas"/>
+			<DCCReference Include="audio\WaveData.pas"/>
 			<BuildConfiguration Include="Basis">
 				<Key>Base</Key>
 			</BuildConfiguration>

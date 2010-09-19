@@ -30,7 +30,7 @@ uses
   LanguageObjects, AppDataBase, Functions, ClientManager, ShellAPI, DropSource,
   About, MsgDlg, HomeCommunication, StreamBrowserView, Clipbrd,
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
-  Buttons, DynBass, ClientTab, CutTab, MControls;
+  Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab;
 
 type
   TfrmStreamWriterMain = class(TForm)
@@ -109,7 +109,7 @@ type
     mnuReset1: TMenuItem;
     mnuReset11: TMenuItem;
     actResetData: TAction;
-    ToolBar1: TToolBar;
+    tbClients: TToolBar;
     cmdStart: TToolButton;
     cmdStop: TToolButton;
     ToolButton3: TToolButton;
@@ -122,6 +122,8 @@ type
     ToolButton4: TToolButton;
     cmdShowStreamBrowser: TToolButton;
     cmdStreamSettings: TToolButton;
+    actCutSave: TAction;
+    actCutSaveAs: TAction;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -148,8 +150,9 @@ type
 
     FClients: TClientManager;
     FHomeCommunication: THomeCommunication;
-    pagMain: TMPageControl;
+    pagMain: TMainPageControl;
     tabClients: TClientTab;
+    tabSaved: TSavedTab;
 
     procedure OneInstanceMessage(var Msg: TMessage); message WM_USER + 123;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
@@ -227,6 +230,10 @@ begin
         // Variablen in AppGlobals.
         DeleteFile(AppGlobals.ListFile);
         DeleteFile(AppGlobals.RecentFile);
+        DeleteFile(IncludeTrailingBackslash(ExtractFilePath(AppGlobals.ListFile)) +
+          StringReplace(ExtractFileName(AppGlobals.ListFile), 'streamwriter_', '', [rfReplaceAll]));
+        DeleteFile(IncludeTrailingBackslash(ExtractFilePath(AppGlobals.RecentFile)) +
+          StringReplace(ExtractFileName(AppGlobals.RecentFile), 'streamwriter_', '', [rfReplaceAll]));
       end;
     except
       if not Shutdown then
@@ -350,27 +357,31 @@ begin
 
   FHomeCommunication := THomeCommunication.Create;
 
-  pagMain := TMPageControl.Create(Self);
+  pagMain := TMainPageControl.Create(Self);
   pagMain.Parent := Self;
   pagMain.Visible := True;
   pagMain.Align := alClient;
+  pagMain.Images := imgImages;
 
   tabClients := TClientTab.Create(pagMain);
   tabClients.PageControl := pagMain;
-  tabClients.Setup(Toolbar1, ActionList1, mnuStreamPopup, imgImages, imgClients,
+  tabClients.Setup(tbClients, ActionList1, mnuStreamPopup, imgImages, imgClients,
     FClients, FStreams, FHomeCommunication);
+  tabClients.SideBar.BrowserView.StreamTree.Images := imgStations;
+  tabClients.SideBar.InfoView.InfoView.Tree.Images := imgSavedTracks;
+  tabClients.AddressBar.Stations.Images := imgStations;
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
   tabClients.OnCut := tabClientsCut;
+
+  tabSaved := TSavedTab.Create(pagMain);
+  tabSaved.PageControl := pagMain;
+  tabSaved.Setup;
 
   if AppGlobals.Relay then
     FClients.RelayServer.Start;
 
   FWasShown := False;
   FUpdateOnExit := False;
-
-  tabClients.SideBar.BrowserView.StreamTree.Images := imgStations;
-  tabClients.SideBar.InfoView.InfoView.Tree.Images := imgSavedTracks;
-  tabClients.AddressBar.Stations.Images := imgStations;
 
   try
     FStreams.Load;
@@ -620,6 +631,9 @@ var
 begin
   tabCut := TCutTab.Create(pagMain);
   tabCut.PageControl := pagMain;
+  pagMain.ActivePage := tabCut;
+
+  tabCut.Setup(Filename, imgImages);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsUpdateButtons(Sender: TObject);
