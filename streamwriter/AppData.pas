@@ -111,6 +111,11 @@ begin
 
   inherited Create(AppName, True, W, 500);
 
+  FProjectHomepageLink := 'http://streamwriter.org/';
+  FProjectLink := '';
+  FProjectHelpLink := 'http://streamwriter.org/inhalt/help/';
+  FProjectForumLink := 'http://streamwriter.org/forum/';
+
   FLanguageIcons := TLanguageIcons.Create;
 end;
 
@@ -148,16 +153,16 @@ begin
   FStorage.Read('FilePattern', FFilePattern, '%s\%a - %t');
   FStorage.Read('SkipShort', FSkipShort, True);
   FStorage.Read('SearchSilence', FSearchSilence, True);
-  FStorage.Read('SilenceLevel', FSilenceLevel, 5);
-  FStorage.Read('SilenceLength', FSilenceLength, 10);
+  FStorage.Read('SilenceLevel', FSilenceLevel, 500);
+  FStorage.Read('SilenceLength', FSilenceLength, 100);
   FStorage.Read('TrayClose', FTrayClose, False);
   FStorage.Read('ShowSidebar', FShowSidebar, True);
   FStorage.Read('SidebarWidth', FSidebarWidth, 230);
   FStorage.Read('Relay', FRelay, False);
   FStorage.Read('SubmitStreams', FSubmitStreams, True);
-  FStorage.Read('ShortSize', FShortSize, 1000);
+  FStorage.Read('ShortSize', FShortSize, 2000);
   FStorage.Read('SongBuffer', FSongBuffer, 0);
-  FStorage.Read('MaxRetries', FMaxRetries, 50);
+  FStorage.Read('MaxRetries', FMaxRetries, 100);
   FStorage.Read('RetryDelay', FRetryDelay, 5);
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
   FStorage.Read('DefaultAction', DefaultActionTmp, Integer(caStartStop));

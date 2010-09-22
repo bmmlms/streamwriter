@@ -85,7 +85,7 @@ begin
   Result := DEFAULT_ENABLED;
 end;
 
-function Act(Data: TPluginActData): Integer; stdcall;
+function Act(var Data: TPluginActData): Integer; stdcall;
 var
   p: Integer;
   Artist, Title2: string;
@@ -125,10 +125,11 @@ begin
       ID3V2.Album := Data.Station;
       ID3V1.Comment := 'Recorded by streamWriter from ' + Data.Station;
       ID3V2.Comment := 'Recorded by streamWriter from ' + Data.Station;
-      ID3V1.WriteToFile(Data.Filename);
-      ID3V2.WriteToFile(Data.Filename);
-
-      Result := Integer(arWin);
+      if (ID3V1.WriteToFile(Data.Filename) = MP3ERR_None) and (ID3V2.WriteToFile(Data.Filename) = MP3ERR_None) then
+      begin
+        Data.Filesize := GetFileSize(Data.Filename);
+        Result := Integer(arWin);
+      end;
     except
     end;
   finally

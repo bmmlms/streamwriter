@@ -47,7 +47,6 @@ uses
   Update in '..\..\common\forms\Update.pas' {frmUpdate},
   Changelog in '..\..\common\forms\Changelog.pas' {frmChangeLog},
   LanguageIcons in '..\..\common\LanguageIcons.pas',
-  About in '..\..\common\forms\About.pas' {frmAbout},
   MsgDlg in '..\..\common\forms\MsgDlg.pas' {frmMsgDlg},
   SettingsStorage in '..\..\common\SettingsStorage.pas',
   WizardBase in '..\..\common\forms\WizardBase.pas' {frmSetupWizard},
@@ -74,7 +73,8 @@ uses
   Tabs in 'controls\Tabs.pas',
   CutView in 'controls\CutView.pas',
   SavedTab in 'controls\SavedTab.pas',
-  WaveData in 'audio\WaveData.pas';
+  WaveData in 'audio\WaveData.pas',
+  About in '..\..\common\forms\About.pas' {frmAbout};
 
 {$R *.res}
 {$R res\language.res}

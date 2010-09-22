@@ -119,11 +119,14 @@ constructor THomeCommunication.Create;
 begin
   {$IFDEF DEBUG}
   FURL := 'http://streamwriter.gaia/en/streamdb/';
-  //FURL := 'http://mistake.ws/en/streamdb/';
   FURL := 'http://mistake.ws/en/streamdb/';
   {$ELSE}
   FURL := 'http://mistake.ws/en/streamdb/';
   {$ENDIF}
+
+  // TODO: !!!
+  //FURL := 'http://streamwriter.org/en/streamdb/';
+
   FClients := TList<THomeThread>.Create;
 end;
 

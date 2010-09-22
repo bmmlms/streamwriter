@@ -58,6 +58,7 @@ type
     FSaveTitle: string;
     FSavedFilename: string;
     FSavedTitle: string;
+    FSavedSize: UInt64;
     FFilename: string;
 
     FAudioStream: TAudioStreamFile;
@@ -94,6 +95,7 @@ type
     property Title: string read FTitle;
     property SavedFilename: string read FSavedFilename;
     property SavedTitle: string read FSavedTitle;
+    property SavedSize: UInt64 read FSavedSize;
     property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
     property Filename: string read FFilename;
 
@@ -338,6 +340,7 @@ begin
 
       FSavedFilename := Filename;
       FSavedTitle := FSaveTitle;
+      FSavedSize := RangeEnd - RangeBegin;
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self);
     except

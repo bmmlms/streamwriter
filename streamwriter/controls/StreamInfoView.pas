@@ -39,6 +39,25 @@ type
 
   TTrackActionEvent = procedure(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray) of object;
 
+  TSavedTracksPopup = class(TPopupMenu)
+  private
+    FItemPlay: TMenuItem;
+    FItemCut: TMenuItem;
+    FItemRemove: TMenuItem;
+    FItemDelete: TMenuItem;
+    FItemProperties: TMenuItem;
+  public
+    constructor Create(AOwner: TComponent);
+
+    procedure EnableItems(Enable: Boolean);
+
+    property ItemPlay: TMenuItem read FItemPlay;
+    property ItemCut: TMenuItem read FItemCut;
+    property ItemRemove: TMenuItem read FItemRemove;
+    property ItemDelete: TMenuItem read FItemDelete;
+    property ItemProperties: TMenuItem read FItemProperties;
+  end;
+
   TSavedTracksTree = class(TVirtualStringTree)
   private
     FDragSource: TDropFileSource;
@@ -48,12 +67,7 @@ type
 
     FDisplayedTracks: TList;
 
-    FPopupMenu: TPopupMenu;
-    FItemPlay: TMenuItem;
-    FItemCut: TMenuItem;
-    FItemRemove: TMenuItem;
-    FItemDelete: TMenuItem;
-    FItemProperties: TMenuItem;
+    FPopupMenu: TSavedTracksPopup;
 
     FOnAction: TTrackActionEvent;
 
@@ -93,10 +107,9 @@ type
     FInfo: TMemo;
     FSavedTracks: TSavedTracksTree;
 
-    procedure ShowInfo(Entries: TStreamList);
+    procedure ShowInfo(Entries: TStreamList; ChangedOverride: Boolean = False);
   protected
     procedure Resize; override;
-
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -107,23 +120,61 @@ type
   TMStreamInfoView = class(TPanel)
   private
     FInfoView: TMStreamInfoViewPanel;
+  protected
   public
     constructor Create(AOwner: TComponent); reintroduce;
 
     procedure Translate;
-    procedure ShowInfo(Entries: TStreamList);
+    procedure ShowInfo(ChangedOverride: Boolean = False); overload;
+    procedure ShowInfo(Entries: TStreamList); overload;
 
     property InfoView: TMStreamInfoViewPanel read FInfoView;
   end;
 
 implementation
 
+{ TSavedTracksPopup }
+
+constructor TSavedTracksPopup.Create(AOwner: TComponent);
+var
+  ItemTmp: TMenuItem;
+begin
+  inherited;
+
+  FItemPlay := CreateMenuItem;
+  FItemPlay.Caption := _('&Play');
+  Items.Add(FItemPlay);
+
+  FItemCut := CreateMenuItem;
+  FItemCut.Caption := _('&Cut');
+  Items.Add(FItemCut);
+
+  ItemTmp := CreateMenuItem;
+  ItemTmp.Caption := '-';
+  Items.Add(ItemTmp);
+
+  FItemRemove := CreateMenuItem;
+  FItemRemove.Caption := _('&Remove');
+  Items.Add(FItemRemove);
+
+  FItemDelete := CreateMenuItem;
+  FItemDelete.Caption := _('&Delete');
+  Items.Add(FItemDelete);
+
+  ItemTmp := CreateMenuItem;
+  ItemTmp.Caption := '-';
+  Items.Add(ItemTmp);
+
+  FItemProperties := CreateMenuItem;
+  FItemProperties.Caption := _('Pr&operties');
+  Items.Add(FItemProperties);
+end;
+
 { TStreamInfoTree }
 
 constructor TSavedTracksTree.Create(AOwner: TComponent);
 var
   C1, C2: TVirtualTreeColumn;
-  ItemTmp: TMenuItem;
 begin
   inherited Create(AOwner);
 
@@ -143,42 +194,13 @@ begin
   ShowHint := True;
   HintMode := hmTooltip;
 
-  FPopupMenu := TPopupMenu.Create(Self);
+  FPopupMenu := TSavedTracksPopup.Create(Self);
+  FPopupMenu.ItemPlay.OnClick := PopupMenuClick;
+  FPopupMenu.ItemCut.OnClick := PopupMenuClick;
+  FPopupMenu.ItemRemove.OnClick := PopupMenuClick;
+  FPopupMenu.ItemDelete.OnClick := PopupMenuClick;
+  FPopupMenu.ItemProperties.OnClick := PopupMenuClick;
   FPopupMenu.OnPopup := PopupMenuPopup;
-
-  FItemPlay := FPopupMenu.CreateMenuItem;
-  FItemPlay.Caption := _('&Play');
-  FItemPlay.OnClick := PopupMenuClick;
-  FPopupMenu.Items.Add(FItemPlay);
-
-  FItemCut := FPopupMenu.CreateMenuItem;
-  FItemCut.Caption := _('&Cut');
-  FItemCut.OnClick := PopupMenuClick;
-  FPopupMenu.Items.Add(FItemCut);
-
-  ItemTmp := FPopupMenu.CreateMenuItem;
-  ItemTmp.Caption := '-';
-  FPopupMenu.Items.Add(ItemTmp);
-
-  FItemRemove := FPopupMenu.CreateMenuItem;
-  FItemRemove.Caption := _('&Remove');
-  FItemRemove.OnClick := PopupMenuClick;
-  FPopupMenu.Items.Add(FItemRemove);
-
-  FItemDelete := FPopupMenu.CreateMenuItem;
-  FItemDelete.Caption := _('&Delete');
-  FItemDelete.OnClick := PopupMenuClick;
-  FPopupMenu.Items.Add(FItemDelete);
-
-  ItemTmp := FPopupMenu.CreateMenuItem;
-  ItemTmp.Caption := '-';
-  FPopupMenu.Items.Add(ItemTmp);
-
-  FItemProperties := FPopupMenu.CreateMenuItem;
-  FItemProperties.Caption := _('Pr&operties');
-  FItemProperties.OnClick := PopupMenuClick;
-  FPopupMenu.Items.Add(FItemProperties);
-
 
   PopupMenu := FPopupMenu;
 
@@ -391,6 +413,25 @@ begin
   end;
 end;
 
+procedure TSavedTracksTree.PopupMenuPopup(Sender: TObject);
+var
+  FoundMP3: Boolean;
+  i: Integer;
+  Tracks: TTrackInfoArray;
+begin
+  Tracks := GetSelected;
+  FPopupMenu.EnableItems(Length(Tracks) > 0);
+
+  FoundMP3 := False;
+  for i := 0 to Length(Tracks) - 1 do
+    if LowerCase(ExtractFileExt(Tracks[i].Filename)) = '.mp3' then
+    begin
+      FoundMP3 := True;
+      Break;
+    end;
+  FPopupMenu.ItemCut.Enabled := FoundMP3;
+end;
+
 procedure TSavedTracksTree.PopupMenuClick(Sender: TObject);
 var
   Action: TTrackActions;
@@ -401,20 +442,20 @@ begin
   if Length(Tracks) = 0 then
     Exit;
 
-  if Sender = FItemPlay then
+  if Sender = FPopupMenu.ItemPlay then
     Action := taPlay
-  else if Sender = FItemCut then
+  else if Sender = FPopupMenu.ItemCut then
     Action := taCut
-  else if Sender = FItemRemove then
+  else if Sender = FPopupMenu.ItemRemove then
   begin
     Action := taRemove;
     DeleteTracks(Tracks);
   end
-  else if Sender = FItemDelete then
+  else if Sender = FPopupMenu.ItemDelete then
   begin
     Action := taDelete;
     DeleteTracks(Tracks);
-  end else if Sender = FItemProperties then
+  end else if Sender = FPopupMenu.ItemProperties then
     Action := taProperties
   else
     raise Exception.Create('');
@@ -422,18 +463,6 @@ begin
   if Length(Tracks) > 0 then
     if Assigned(FOnAction) then
       FOnAction(Self, Action, Tracks);
-end;
-
-procedure TSavedTracksTree.PopupMenuPopup(Sender: TObject);
-var
-  Tracks: TTrackInfoArray;
-begin
-  Tracks := GetSelected;
-  FItemPlay.Enabled := Length(Tracks) > 0;
-  FItemCut.Enabled := Length(Tracks) > 0;
-  FItemRemove.Enabled := Length(Tracks) > 0;
-  FItemDelete.Enabled := Length(Tracks) > 0;
-  FItemProperties.Enabled := Length(Tracks) = 1;
 end;
 
 function TSavedTracksTree.ShowTracks(Tracks: TList<TTrackInfo>; EntriesChanged: Boolean): TTrackInfoArray;
@@ -541,10 +570,10 @@ end;
 procedure TMStreamInfoViewPanel.Resize;
 begin
   inherited;
-
+  ShowInfo(FEntries);
 end;
 
-procedure TMStreamInfoViewPanel.ShowInfo(Entries: TStreamList);
+procedure TMStreamInfoViewPanel.ShowInfo(Entries: TStreamList; ChangedOverride: Boolean = False);
 var
   i, n: Integer;
   SongsSaved: Cardinal;
@@ -554,6 +583,7 @@ var
   Entry: TStreamEntry;
   TrackList: TList<TTrackInfo>;
   Del: TTrackInfoArray;
+  EntriesNew: TStreamList;
 begin
   if Entries = nil then
   begin
@@ -576,6 +606,7 @@ begin
       end;
 
     TrackList := TList<TTrackInfo>.Create;
+    EntriesNew := TStreamList.Create;
     try
       Genres := '';
       BitRates := '';
@@ -583,7 +614,7 @@ begin
       Received := 0;
       for Entry in Entries do
       begin
-        FEntries.Add(Entry);
+        EntriesNew.Add(Entry);
 
         Title := Title + Entry.Name;
         if Entry.Genre <> '' then
@@ -605,7 +636,7 @@ begin
           TrackList.Add(Entry.Tracks[i]);
       end;
 
-      Title := TruncateText(Title, FName.Width, FName.Canvas.Font);
+      Title := TruncateText(Title, FName.Parent.Width, FName.Canvas.Font);
       if Title <> FName.Caption then
         FName.Caption := Title;
 
@@ -619,6 +650,9 @@ begin
       if Info <> FInfo.Text then
         FInfo.Text := Info;
 
+      if ChangedOverride then
+        EntriesChanged := True;
+
       Del := FSavedTracks.ShowTracks(TrackList, EntriesChanged);
       for i := 0 to Length(Del) - 1 do
       begin
@@ -628,6 +662,9 @@ begin
         end;
         Del[i].Free;
       end;
+
+      FEntries.Free;
+      FEntries := EntriesNew;
     finally
       TrackList.Free;
     end;
@@ -649,6 +686,11 @@ begin
   FInfoView.Visible := False;
 end;
 
+procedure TMStreamInfoView.ShowInfo(ChangedOverride: Boolean = False);
+begin
+  FInfoView.ShowInfo(FInfoView.FEntries, ChangedOverride);
+end;
+
 procedure TMStreamInfoView.ShowInfo(Entries: TStreamList);
 begin
   FInfoView.ShowInfo(Entries);
@@ -658,6 +700,15 @@ end;
 procedure TMStreamInfoView.Translate;
 begin
 
+end;
+
+procedure TSavedTracksPopup.EnableItems(Enable: Boolean);
+begin
+  FItemPlay.Enabled := Enable;
+  FItemCut.Enabled := Enable;
+  FItemRemove.Enabled := Enable;
+  FItemDelete.Enabled := Enable;
+  FItemProperties.Enabled := Enable;
 end;
 
 end.

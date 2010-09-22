@@ -90,9 +90,6 @@
 				<Form>frmChangeLog</Form>
 			</DCCReference>
 			<DCCReference Include="..\..\common\LanguageIcons.pas"/>
-			<DCCReference Include="..\..\common\forms\About.pas">
-				<Form>frmAbout</Form>
-			</DCCReference>
 			<DCCReference Include="..\..\common\forms\MsgDlg.pas">
 				<Form>frmMsgDlg</Form>
 			</DCCReference>
@@ -128,6 +125,9 @@
 			<DCCReference Include="controls\CutView.pas"/>
 			<DCCReference Include="controls\SavedTab.pas"/>
 			<DCCReference Include="audio\WaveData.pas"/>
+			<DCCReference Include="..\..\common\forms\About.pas">
+				<Form>frmAbout</Form>
+			</DCCReference>
 			<BuildConfiguration Include="Basis">
 				<Key>Base</Key>
 			</BuildConfiguration>

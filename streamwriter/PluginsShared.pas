@@ -25,6 +25,7 @@ type
   TPluginActData = record
     Filename, Station, Title: PChar;
     TrackNumber: Cardinal;
+    Filesize: UInt64;
   end;
 
 implementation

@@ -51,7 +51,8 @@ type
 
   TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
-  TString2Event = procedure(Sender: TObject; Data, Data2: string) of object;
+  //TString2Event = procedure(Sender: TObject; Data, Data2: string) of object;
+  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize: UInt64) of object;
 
   TICEClient = class
   private
@@ -81,7 +82,7 @@ type
 
     FOnDebug: TNotifyEvent;
     FOnRefresh: TNotifyEvent;
-    FOnSongSaved: TString2Event;
+    FOnSongSaved: TSongSavedEvent;
     FOnTitleChanged: TStringEvent;
     FOnDisconnected: TNotifyEvent;
     FOnAddRecent: TNotifyEvent;
@@ -147,7 +148,7 @@ type
     property OnDebug: TNotifyEvent read FOnDebug write FOnDebug;
     property OnRefresh: TNotifyEvent read FOnRefresh write FOnRefresh;
     property OnAddRecent: TNotifyEvent read FOnAddRecent write FOnAddRecent;
-    property OnSongSaved: TString2Event read FOnSongSaved write FOnSongSaved;
+    property OnSongSaved: TSongSavedEvent read FOnSongSaved write FOnSongSaved;
     property OnTitleChanged: TStringEvent read FOnTitleChanged write FOnTitleChanged;
     property OnDisconnected: TNotifyEvent read FOnDisconnected write FOnDisconnected;
     property OnICYReceived: TIntegerEvent read FOnICYReceived write FOnICYReceived;
@@ -449,6 +450,7 @@ begin
   Data.Station := StreamName;
   Data.Title := FICEThread.RecvStream.SavedTitle;
   Data.TrackNumber := SongsSaved;
+  Data.Filesize := FICEThread.RecvStream.SavedSize;
 
   if not FKilled then
   begin
@@ -468,7 +470,7 @@ begin
     // Wenn kein Plugin die Verarbeitung übernimmt, gilt die Datei
     // jetzt schon als gespeichert. Ansonsten macht das PluginThreadTerminate.
     if Assigned(FOnSongSaved) then
-      FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedTitle);
+      FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedTitle, FICEThread.RecvStream.SavedSize);
     if Assigned(FOnRefresh) then
       FOnRefresh(Self);
   end;
@@ -515,7 +517,7 @@ begin
         WriteDebug('All plugins done');
 
         if Assigned(FOnSongSaved) then
-          FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.Title);
+          FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.Title, Entry.Data.Filesize);
         if Assigned(FOnRefresh) then
           FOnRefresh(Self);
 

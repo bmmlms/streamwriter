@@ -110,7 +110,7 @@ type
     procedure SaveAs;
     procedure Play;
     procedure Stop;
-    procedure AutoCut;
+    procedure AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
   end;
 
   procedure LoopSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
@@ -310,12 +310,12 @@ begin
   FPB.Paint;
 end;
 
-procedure TCutView.AutoCut;
+procedure TCutView.AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
 begin
   if FWaveData = nil then
     Exit;
 
-  FWaveData.AutoCut;
+  FWaveData.AutoCut(MaxPeaks, MinDuration);
 
   FPB.BuildBuffer;
   FPB.Repaint;

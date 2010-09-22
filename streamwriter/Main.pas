@@ -138,7 +138,6 @@ type
     procedure actSettingsExecute(Sender: TObject);
     procedure actAboutExecute(Sender: TObject);
     procedure mnuStreamSettingsToolbarPopup(Sender: TObject);
-    procedure tabInfoResize(Sender: TObject);
     procedure pagSidebarChange(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
@@ -174,7 +173,11 @@ type
     procedure PostTranslate;
 
     procedure tabClientsUpdateButtons(Sender: TObject);
-    procedure tabClientsCut(Filename: string);
+    procedure tabClientsCut(Entry: TStreamEntry; Track: TTrackInfo);
+    procedure tabClientsTrackAdded(Entry: TStreamEntry; Track: TTrackInfo);
+    procedure tabClientsTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
+
+    procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
   protected
 
   public
@@ -372,10 +375,13 @@ begin
   tabClients.AddressBar.Stations.Images := imgStations;
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
   tabClients.OnCut := tabClientsCut;
+  tabClients.OnTrackAdded := tabClientsTrackAdded;
+  tabClients.OnTrackRemoved := tabClientsTrackRemoved;
 
   tabSaved := TSavedTab.Create(pagMain);
   tabSaved.PageControl := pagMain;
-  tabSaved.Setup;
+  tabSaved.OnCut := tabClientsCut;
+  tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
 
   if AppGlobals.Relay then
     FClients.RelayServer.Start;
@@ -432,6 +438,9 @@ begin
     Recent.Free;
   end;
 
+  // Ist hier unten, weil hier erst Tracks geladen wurden
+  tabSaved.Setup(FStreams, imgImages);
+
   tabClients.ClientView.SortItems;
   tabClients.AddressBar.Stations.Sort;
 
@@ -458,11 +467,10 @@ begin
   Left := AppGlobals.MainLeft;
   Top := AppGlobals.MainTop;
 
-                  {
-                  cmdStartPlay.Visible := BassLoaded;
-                  cmdStopPlay.Visible := BassLoaded;
-                  ToolButton2.Visible := BassLoaded;
-                  }
+  // REMARK: Für Player-Funktionalität
+  cmdStartPlay.Visible := False; //BassLoaded;
+  cmdStopPlay.Visible := False; //BassLoaded;
+  ToolButton2.Visible := False; //BassLoaded;
 
   Language.Translate(Self);
 end;
@@ -534,7 +542,6 @@ procedure TfrmStreamWriterMain.pagSidebarChange(Sender: TObject);
 begin
   // Damit Child-Controls passende Dimensionen in ShowInfo haben
   Application.ProcessMessages;
-  //ShowInfo;
 end;
 
 procedure TfrmStreamWriterMain.PreTranslate;
@@ -544,7 +551,8 @@ end;
 
 procedure TfrmStreamWriterMain.PostTranslate;
 begin
-{
+  {
+  // TODO:
   pnlStreamBrowser.Translate;
   pnlStreamInfo.Translate;
   }
@@ -625,15 +633,40 @@ begin
   DefaultHandler(Msg);
 end;
 
-procedure TfrmStreamWriterMain.tabClientsCut(Filename: string);
+procedure TfrmStreamWriterMain.tabClientsCut(Entry: TStreamEntry;
+  Track: TTrackInfo);
 var
   tabCut: TCutTab;
 begin
-  tabCut := TCutTab.Create(pagMain);
-  tabCut.PageControl := pagMain;
-  pagMain.ActivePage := tabCut;
+  if LowerCase(ExtractFileExt(Track.Filename)) <> '.mp3' then
+  begin
+    Exit;
+  end;
 
-  tabCut.Setup(Filename, imgImages);
+  tabCut := TCutTab(pagMain.FindCut(Track.Filename));
+  if tabCut = nil then
+  begin
+    tabCut := TCutTab.Create(pagMain);
+    tabCut.PageControl := pagMain;
+    pagMain.ActivePage := tabCut;
+
+    tabCut.Setup(Track.Filename, imgImages);
+  end else
+  begin
+    pagMain.ActivePageIndex := tabCut.PageIndex;
+  end;
+end;
+
+procedure TfrmStreamWriterMain.tabClientsTrackAdded(Entry: TStreamEntry;
+  Track: TTrackInfo);
+begin
+  tabSaved.Tree.AddTrack(Entry, Track);
+end;
+
+procedure TfrmStreamWriterMain.tabClientsTrackRemoved(Entry: TStreamEntry;
+  Track: TTrackInfo);
+begin
+  tabSaved.Tree.RemoveTrack(Track);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsUpdateButtons(Sender: TObject);
@@ -641,9 +674,9 @@ begin
   UpdateButtons;
 end;
 
-procedure TfrmStreamWriterMain.tabInfoResize(Sender: TObject);
+procedure TfrmStreamWriterMain.tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
 begin
-  // ShowInfo;
+  tabClients.SideBar.InfoView.ShowInfo(True);
 end;
 
 procedure TfrmStreamWriterMain.tmrSpeedTimer(Sender: TObject);

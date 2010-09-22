@@ -27,7 +27,7 @@ uses
   LanguageObjects, HomeCommunication, StationCombo, Menus, ActnList, ImgList,
   RecentManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
   GUIFunctions, AppData, DropTarget, DragDropInternet, DragDropText,
-  DragDropFile, Dialogs, ShellAPI, Tabs;
+  DragDropFile, ShellAPI, Tabs;
 
 type
   TSidebar = class(TPageControl)
@@ -70,8 +70,6 @@ type
     property Stations: TMStationCombo read FStations;
   end;
 
-  TCutEvent = procedure(Filename: string) of object;
-
   TClientTab = class(TMainTabSheet)
   private
     FToolbar: TToolBar;
@@ -95,9 +93,9 @@ type
     FActionTuneInStream: TAction;
 
     FOnUpdateButtons: TNotifyEvent;
-    FOnCut: TCutEvent;
-
-    procedure SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean);
+    FOnCut: TTrackEvent;
+    FOnTrackAdded: TTrackEvent;
+    FOnTrackRemoved: TTrackEvent;
 
     procedure ShowInfo;
 
@@ -118,7 +116,7 @@ type
     procedure ClientManagerAddRecent(Sender: TObject);
     procedure ClientManagerClientAdded(Sender: TObject);
     procedure ClientManagerClientRemoved(Sender: TObject);
-    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title: string);
+    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title: string; Filesize: UInt64);
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
 
@@ -151,8 +149,11 @@ type
     property ClientView: TMClientView read FClientView;
     property SideBar: TSideBar read FSideBar;
     property Received: UInt64 read FReceived;
+
     property OnUpdateButtons: TNotifyEvent read FOnUpdateButtons write FOnUpdateButtons;
-    property OnCut: TCutEvent read FOnCut write FOnCut;
+    property OnCut: TTrackEvent read FOnCut write FOnCut;
+    property OnTrackAdded: TTrackEvent read FOnTrackAdded write FOnTrackAdded;
+    property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
   end;
 
 implementation
@@ -412,96 +413,6 @@ begin
   StartStreaming('', DropURL);
 end;
 
-procedure TClientTab.SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean);
- procedure BuildPLS(Entries: TPlaylistEntryArray; List: TStringList);
-  var
-    i: Integer;
-  begin
-    List.Clear;
-    List.Add('[playlist]');
-    List.Add('numberofentries=' + IntToStr(Length(Entries)));
-    for i := 0 to Length(Entries) - 1 do
-    begin
-      List.Add('File' + IntToStr(i + 1) + '=' + Entries[i].URL);
-      List.Add('Title' + IntToStr(i + 1) + '=' + Entries[i].Name);
-      List.Add('Length' + IntToStr(i + 1) + '=-1');
-    end;
-  end;
-  procedure BuildM3U(Entries: TPlaylistEntryArray; List: TStringList);
-  var
-    i: Integer;
-  begin
-    List.Clear;
-    List.Add('#EXTM3U');
-    for i := 0 to Length(Entries) - 1 do
-    begin
-      List.Add('#EXTINF:-1,' + Entries[i].Name);
-      List.Add(Entries[i].URL);
-    end;
-  end;
-var
-  Res: Integer;
-  List: TStringList;
-  Dlg: TSaveDialog;
-begin
-  if Length(Entries) = 0 then
-    Exit;
-  List := TStringList.Create;
-  try
-    if not Open then
-    begin
-      Dlg := TSaveDialog.Create(Self);
-      try
-        Dlg.FileName := '';
-        Dlg.Filter := '.M3U Playlist|*.m3u|.PLS Playlist|*.pls';
-        Dlg.Options := Dlg.Options + [ofOverwritePrompt, ofPathMustExist];
-        if Dlg.Execute(Handle) then
-        begin
-          try
-            if (LowerCase(ExtractFileExt(Dlg.FileName)) <> '.m3u') and
-               (LowerCase(ExtractFileExt(Dlg.FileName)) <> '.pls') then
-              if Dlg.FilterIndex = 1 then
-                Dlg.FileName := Dlg.FileName + '.m3u'
-              else
-                Dlg.FileName := Dlg.FileName + '.pls';
-
-            if LowerCase(ExtractFileExt(Dlg.FileName)) = '.m3u' then
-              BuildM3U(Entries, List)
-            else
-              BuildPLS(Entries, List);
-
-            List.SaveToFile(Dlg.FileName);
-          except
-            MsgBox(Handle, Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [ExtractFilePath(Dlg.FileName)]), _('Error'), MB_ICONEXCLAMATION);
-          end;
-        end;
-      finally
-        Dlg.Free;
-      end;
-    end else
-    begin
-      try
-        BuildM3U(Entries, List);
-        List.SaveToFile(AppGlobals.TempDir + 'playlist.m3u');
-        Res := ShellExecute(Handle, 'open', PChar(AppGlobals.TempDir + 'playlist.m3u'), nil, nil, 1);
-        if Res <= 32 then
-        begin
-          BuildPLS(Entries, List);
-          List.SaveToFile(AppGlobals.TempDir + 'playlist.pls');
-          Res := ShellExecute(Handle, 'open', PChar(AppGlobals.TempDir + 'playlist.pls'), nil, nil, 1);
-          if Res <= 32 then
-            ShellExecute(Handle, nil, 'rundll32.exe', PChar('shell32.dll,OpenAs_RunDLL ' + AppGlobals.TempDir + 'playlist.pls'), nil, 1);
-        end;
-      except
-        MsgBox(Handle, Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [AppGlobals.TempDir]), _('Error'), MB_ICONEXCLAMATION);
-      end;
-    end;
-  finally
-    List.Free;
-  end;
-
-end;
-
 procedure TClientTab.Setup(Toolbar: TToolbar; Actions: TActionList;
   Popup: TPopupMenu; MenuImages,
   ClientImages: TImageList; Clients: TClientManager; Streams: TStreamDataList;
@@ -744,18 +655,23 @@ begin
 end;
 
 procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
-  Filename, Title: string);
+  Filename, Title: string; Filesize: UInt64);
 var
   Entry: TStreamEntry;
   Client: TICEClient;
+  Track: TTrackInfo;
 begin
   Client := Sender as TICEClient;
 
   Entry := FStreams.Get(Client);
   if Entry <> nil then
   begin
-    Entry.Tracks.Add(TTrackInfo.Create(Now, Filename));
+    Track := TTrackInfo.Create(Now, Filename);
+    Track.Filesize := Filesize;
+    Entry.Tracks.Add(Track);
     Entry.SongsSaved := Entry.SongsSaved + 1;
+    if Assigned(FOnTrackAdded) then
+      FOnTrackAdded(Entry, Track);
   end;
 
   ShowInfo;
@@ -817,7 +733,7 @@ begin
           Clients[0].Client.Disconnect
         else
           Clients[0].Client.Connect;
-      caStream:                   // TODO: zweig testen, ob er abspielt dann.
+      caStream:
         FActionTuneInStream.Execute;
       caRelay:
         FActionTuneInRelay.Execute;
@@ -969,12 +885,16 @@ begin
       begin
         if Assigned(FOnCut) then
           for i := 0 to Length(Tracks) - 1 do
-            FOnCut(Tracks[i].Filename);
+            FOnCut(nil, Tracks[i]);
       end;
     taRemove:
       begin
         for i := 0 to Length(Tracks) - 1 do
+        begin
           FStreams.RemoveTrack(Tracks[i]);
+          if Assigned(FOnTrackRemoved) then
+            FOnTrackRemoved(nil, Tracks[i]);
+        end;
       end;
     taDelete:
       begin
@@ -982,10 +902,12 @@ begin
         begin
           DeleteFile(Tracks[i].Filename);
           FStreams.RemoveTrack(Tracks[i]);
+          if Assigned(FOnTrackRemoved) then
+            FOnTrackRemoved(nil, Tracks[i]);
         end;
       end;
     taProperties:
-      PropertiesDialog(Tracks[0].Filename); // todo: testen obs lackt.
+      PropertiesDialog(Tracks[0].Filename);
   end;
 end;
 
@@ -1037,3 +959,4 @@ begin
 end;
 
 end.
+

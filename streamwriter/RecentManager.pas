@@ -34,10 +34,12 @@ type
   private
     FTime: TDateTime;
     FFilename: string;
+    FFilesize: UInt64;
   public
     constructor Create(Time: TDateTime; Filename: string);
     property Time: TDateTime read FTime;
     property Filename: string read FFilename;
+    property Filesize: UInt64 read FFilesize write FFilesize; // TODO: Nach cut aktualisieren!
   end;
 
   TStreamEntry = class(TObject)
@@ -68,7 +70,7 @@ type
     destructor Destroy; override;
 
     function Copy: TStreamEntry;
-    class function Load(Stream: TExtendedStream): TStreamEntry;
+    class function Load(Stream: TExtendedStream; Version: Integer): TStreamEntry;
     procedure Save(Stream: TExtendedStream);
 
     property Name: string read FName write FSetName;
@@ -101,6 +103,9 @@ type
     //FOnStreamAdded: TStreamChangedEvent;
     //FOnStreamRemoved: TStreamChangedEvent;
 
+    function FGetCount: Integer;
+    function FGetItem(Idx: Integer): TStreamEntry;
+
     procedure CleanUp;
   public
     constructor Create;
@@ -119,6 +124,8 @@ type
 
     property LoadError: Boolean read FLoadError write FLoadError;
     property Received: UInt64 read FReceived write FReceived;
+    property Count: Integer read FGetCount;
+    property Items[Idx: Integer]: TStreamEntry read FGetItem; default;
     //property OnStreamAdded: TStreamChangedEvent read FOnStreamAdded write FOnStreamAdded;
     //property OnStreamRemoved: TStreamChangedEvent read FOnStreamRemoved write FOnStreamRemoved;
     property OnStreamChanged: TStreamChangedEvent read FOnStreamChanged write FOnStreamChanged;
@@ -151,7 +158,7 @@ type
   end;
 
 const
-  DATAVERSION = 1;
+  DATAVERSION = 2;
   RECENTVERSION = 3;
   LISTVERSION = 2;
 
@@ -211,7 +218,7 @@ begin
   Changed;
 end;
 
-class function TStreamEntry.Load(Stream: TExtendedStream): TStreamEntry;
+class function TStreamEntry.Load(Stream: TExtendedStream; Version: Integer): TStreamEntry;
 var
   i: Integer;
   Count: Cardinal;
@@ -242,6 +249,8 @@ begin
     TrackInfo := TTrackInfo.Create(Now, '');
     Stream.Read(TrackInfo.FTime);
     Stream.Read(TrackInfo.FFilename);
+    if Version > 1 then
+      Stream.Read(TrackInfo.FFilesize);
     Result.FTracks.Add(TrackInfo);
   end;
   Stream.Read(Result.FSongsSaved);
@@ -273,6 +282,7 @@ begin
   begin
     Stream.Write(FTracks[i].FTime);
     Stream.Write(FTracks[i].FFilename);
+    Stream.Write(FTracks[i].FFilesize);
   end;
   Stream.Write(FSongsSaved);
   Stream.Write(FBytesReceived);
@@ -395,7 +405,8 @@ var
   i: Integer;
 begin
   for i := FStreams.Count - 1 downto 0 do
-    if (FStreams[i].FLastTouched < Now - 60) and (not FStreams[i].IsInList) and (FStreams[i].RecentIndex = -1) then
+    if (FStreams[i].FLastTouched < Now - 60) and (FStreams[i].FTracks.Count = 0) and
+       (not FStreams[i].IsInList) and (FStreams[i].RecentIndex = -1) then
     begin
       FStreams[i].Free;
       FStreams.Delete(i);
@@ -421,6 +432,16 @@ begin
     FStreams[i].Free;
   FStreams.Free;
   inherited;
+end;
+
+function TStreamDataList.FGetCount: Integer;
+begin
+  Result := FStreams.Count;
+end;
+
+function TStreamDataList.FGetItem(Idx: Integer): TStreamEntry;
+begin
+  Result := FStreams[Idx];
 end;
 
 function TStreamDataList.Get(Name, URL: string;
@@ -498,7 +519,7 @@ begin
 
       while S.Position < S.Size do
       begin
-        Entry := TStreamEntry.Load(S);
+        Entry := TStreamEntry.Load(S, Version);
         Add(Entry);
       end;
     except

@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
   StdCtrls, Menus, ImgList, Math, ICEClient, VirtualTrees, LanguageObjects,
-  Graphics, DragDrop, DragDropFile, Functions, AppData;
+  Graphics, DragDrop, DragDropFile, Functions, AppData, Tabs;
 
 type
   TAccessCanvas = class(TCanvas);
@@ -39,12 +39,6 @@ type
   PClientNodeData = ^TClientNodeData;
 
   TEntryTypes = (etStream, etRelay, etFile);
-
-  TPlaylistEntry = record
-    Name: string;
-    URL: string;
-  end;
-  TPlaylistEntryArray = array of TPlaylistEntry;
 
   TNodeDataArray = array of PClientNodeData;
 
@@ -116,7 +110,9 @@ begin
   TreeOptions.AutoOptions := [toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
+  Header.Options := Header.Options + [hoAutoResize];
   Header.Options := Header.Options - [hoDrag];
+  Header.AutoSizeIndex := 1;
   DragMode := dmAutomatic;
   ShowHint := True;
   HintMode := hmTooltip;
@@ -277,8 +273,6 @@ begin
   FColRcvd.Width := GetTextWidth(FColRcvd.Text);
   FColSpeed.Width := Max(GetTextWidth('11,11KB/s'), GetTextWidth(FColSpeed.Text));
   FColSongs.Width := GetTextWidth(FColSongs.Text);
-  Header.AutoSizeIndex := 1;
-  Header.Options := Header.Options + [hoAutoResize];
 end;
 
 function TMClientView.GetClientNodeData(

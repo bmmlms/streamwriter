@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
-  MControls, LanguageObjects, Tabs, CutView, Functions;
+  MControls, LanguageObjects, Tabs, CutView, Functions, AppData;
 
 type
   TCutToolBar = class(TToolBar)
@@ -31,6 +31,7 @@ type
     FSave: TToolButton;
     FSaveAs: TToolButton;
     FSep1: TToolButton;
+    FAutoCut: TToolButton;
     FCut: TToolButton;
     FUndo: TToolButton;
     FSep2: TToolButton;
@@ -45,9 +46,11 @@ type
   private
     FToolBar: TCutToolBar;
     FCutView: TCutView;
+    FFilename: string;
 
     procedure SaveClick(Sender: TObject);
     procedure SaveAsClick(Sender: TObject);
+    procedure AutoCutClick(Sender: TObject);
     procedure CutClick(Sender: TObject);
     procedure UndoClick(Sender: TObject);
     procedure PlayClick(Sender: TObject);
@@ -56,11 +59,18 @@ type
     constructor Create(AOwner: TComponent); override;
 
     procedure Setup(Filename: string; ToolBarImages: TImageList);
+
+    property Filename: string read FFilename;
   end;
 
 implementation
 
 { TCutTab }
+
+procedure TCutTab.AutoCutClick(Sender: TObject);
+begin
+  FCutView.AutoCut(AppGlobals.SilenceLevel, AppGlobals.SilenceLength);
+end;
 
 constructor TCutTab.Create(AOwner: TComponent);
 begin
@@ -88,6 +98,7 @@ procedure TCutTab.Setup(Filename: string; ToolBarImages: TImageList);
 begin
   MaxWidth := 120;
   Caption := Format(_('Cut ''%s'''), [ExtractFileName(Filename)]);
+  FFilename := Filename;
 
   FToolBar := TCutToolBar.Create(Self);
   FToolBar.Parent := Self;
@@ -96,6 +107,7 @@ begin
 
   FToolBar.FSave.OnClick := SaveClick;
   FToolBar.FSaveAs.OnClick := SaveAsClick;
+  FToolBar.FAutoCut.OnClick := AutoCutClick;
   FToolBar.FCut.OnClick := CutClick;
   FToolBar.FUndo.OnClick := UndoClick;
   FToolBar.FPlay.OnClick := PlayClick;
@@ -159,6 +171,11 @@ begin
   FCut.Parent := Self;
   FCut.Hint := _('Cut');
   FCut.ImageIndex := 17;
+
+  FAutoCut := TToolButton.Create(Self);
+  FAutoCut.Parent := Self;
+  FAutoCut.Hint := _('Show silence according to configured settings');
+  FAutoCut.ImageIndex := 19;
 
   FSep1 := TToolButton.Create(Self);
   FSep1.Parent := Self;

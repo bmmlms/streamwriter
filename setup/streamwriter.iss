@@ -1,5 +1,6 @@
 [Files]
 Source: ..\bin\streamwriter.exe; DestDir: {app}; Flags: ignoreversion
+Source: ..\bin\bass.dll; DestDir: {app}; Flags: ignoreversion
 Source: ..\bin\plugins\settags.dll; DestDir: {app}\plugins; Flags: ignoreversion
 ;Source: ..\bin\plugins\normalize.dll; DestDir: {app}\plugins; Flags: ignoreversion
 ;Source: ..\bin\plugins\rename.dll; DestDir: {app}\plugins; Flags: ignoreversion
@@ -109,6 +110,7 @@ begin
     //RegDeleteKeyIncludingSubkeys(HKCU, 'Software\mistake.ws\streamWriter');
   end;
 end;
+
 
 
 

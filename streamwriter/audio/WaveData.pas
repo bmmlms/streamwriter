@@ -1,3 +1,22 @@
+{
+    ------------------------------------------------------------------------
+    streamWriter
+    Copyright (c) 2010 Alexander Nottelmann
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; either version 3
+    of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
+    ------------------------------------------------------------------------
+}
 unit WaveData;
 
 interface
@@ -41,7 +60,7 @@ type
 
     procedure LoadFile(Filename: string);
     procedure Cut(F, T: Cardinal);
-    procedure AutoCut;
+    procedure AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
     function TimeBetween(F, T: Cardinal): Double;
     function IsInSilence(O: Cardinal): Boolean;
 
@@ -132,16 +151,19 @@ begin
   FCutStates.Add(TCutState.Create(F, T));
 end;
 
-procedure TWaveData.AutoCut;
+procedure TWaveData.AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
 var
   i: Integer;
-  Sum: Cardinal;
+  Avg: Cardinal;
+  MinDurationD: Double;
   SilenceStart, SilenceEnd: Cardinal;
   CS: TCutState;
 begin
   for i := 0 to FSilence.Count - 1 do
     FSilence[i].Free;
   FSilence.Clear;
+
+  MinDurationD := MinDuration / 1000;
 
   SilenceStart := 0;
   SilenceEnd := 0;
@@ -150,9 +172,9 @@ begin
     if (FWaveArray[i].L = 0) or (FWaveArray[i].R = 0) then
       Continue;
 
-    Sum := FWaveArray[i].L + FWaveArray[i].R;
+    Avg := (FWaveArray[i].L + FWaveArray[i].R) div 2;
 
-    if Sum < 1000 then
+    if Avg < MaxPeaks then
     begin
       if SilenceStart = 0 then
       begin
@@ -164,7 +186,7 @@ begin
       begin
         SilenceEnd := i;
 
-        if TimeBetween(SilenceStart, SilenceEnd) > 0.2 then
+        if TimeBetween(SilenceStart, SilenceEnd) >= MinDurationD then
         begin
           FSilence.Add(TCutState.Create(SilenceStart, SilenceEnd));
         end else

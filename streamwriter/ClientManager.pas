@@ -41,7 +41,7 @@ type
 
   TClientList = TList<TICEClient>;
 
-  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string) of object;
+  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize: UInt64) of object;
   TTitleChangedEvent = procedure(Sender: TObject; Title: string) of object;
   TICYReceivedEvent = procedure(Sender: TObject; Received: Integer) of object;
 
@@ -68,7 +68,7 @@ type
     procedure ClientDebug(Sender: TObject);
     procedure ClientRefresh(Sender: TObject);
     procedure ClientAddRecent(Sender: TObject);
-    procedure ClientSongSaved(Sender: TObject; Filename, Title: string);
+    procedure ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize: UInt64);
     procedure ClientTitleChanged(Sender: TObject; Title: string);
     procedure ClientDisconnected(Sender: TObject);
     procedure ClientICYReceived(Sender: TObject; Bytes: Integer);
@@ -281,13 +281,13 @@ begin
   end;
 end;
 
-procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title: string);
+procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize: UInt64);
 begin
   Inc(FSongsSaved);
   //if Assigned(FOnClientRefresh) then
   //  FOnClientRefresh(Sender);
   if Assigned(FOnClientSongSaved) then
-    FOnClientSongSaved(Sender, Filename, Title);
+    FOnClientSongSaved(Sender, Filename, Title, Filesize);
 end;
 
 procedure TClientManager.ClientTitleChanged(Sender: TObject;

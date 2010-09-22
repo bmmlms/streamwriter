@@ -69,6 +69,7 @@ type
     txtSilenceLength: TEdit;
     Label13: TLabel;
     lstDefaultAction: TComboBox;
+    Label14: TLabel;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure cmdBrowseClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
@@ -152,6 +153,9 @@ begin
   txtRetryDelay.Text := IntToStr(AppGlobals.RetryDelay);
   txtMinDiskSpace.Text := IntToStr(AppGlobals.MinDiskSpace);
 
+  txtSilenceLevel.Text := IntToStr(AppGlobals.SilenceLevel);
+  txtSilenceLength.Text := IntToStr(AppGlobals.SilenceLength);
+
   AppGlobals.Unlock;
 
   lblHelp.Caption := '';
@@ -203,8 +207,8 @@ begin
   AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
   if BassLoaded then
     AppGlobals.SearchSilence := chkSearchSilence.Checked;
-  AppGlobals.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 3000000);
-  AppGlobals.SilenceLength := StrToIntDef(txtSilenceLength.Text, 200);
+  AppGlobals.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 500);
+  AppGlobals.SilenceLength := StrToIntDef(txtSilenceLength.Text, 400);
   AppGlobals.Unlock;
 
   for i := 0 to lstPlugins.Items.Count - 1 do
@@ -423,7 +427,7 @@ begin
     Exit;
   end;
 
-  // TODO: Die neuen cutting-felder validieren.
+  // TODO: Die neuen cutting/silence-felder validieren.
 
   if Trim(txtMaxRetries.Text) = '' then
   begin

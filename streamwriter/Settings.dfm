@@ -4,7 +4,7 @@ object frmSettings: TfrmSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Settings'
-  ClientHeight = 561
+  ClientHeight = 764
   ClientWidth = 901
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -363,7 +363,7 @@ object frmSettings: TfrmSettings
     end
     object Label5: TLabel
       Left = 56
-      Top = 92
+      Top = 188
       Width = 14
       Height = 13
       Caption = 'KB'
@@ -387,7 +387,7 @@ object frmSettings: TfrmSettings
     end
     object Label9: TLabel
       Left = 268
-      Top = 92
+      Top = 168
       Width = 22
       Height = 13
       Cursor = crHandPoint
@@ -404,7 +404,7 @@ object frmSettings: TfrmSettings
     end
     object Label2: TLabel
       Left = 268
-      Top = 124
+      Top = 76
       Width = 22
       Height = 13
       Cursor = crHandPoint
@@ -420,34 +420,41 @@ object frmSettings: TfrmSettings
       OnClick = Label9Click
     end
     object Label10: TLabel
-      Left = 40
-      Top = 144
+      Left = 20
+      Top = 96
       Width = 186
       Height = 13
       Caption = 'Silence is defined by volume lower than'
     end
     object Label12: TLabel
-      Left = 40
-      Top = 192
-      Width = 12
+      Left = 20
+      Top = 140
+      Width = 30
       Height = 13
-      Caption = 'for'
+      Caption = 'lasting'
     end
     object Label13: TLabel
-      Left = 152
-      Top = 192
+      Left = 144
+      Top = 140
       Width = 13
       Height = 13
       Caption = 'ms'
     end
+    object Label14: TLabel
+      Left = 104
+      Top = 116
+      Width = 84
+      Height = 13
+      Caption = 'Min 0, max 32768'
+    end
     object txtSongBuffer: TLabeledEdit
       Left = 4
-      Top = 88
+      Top = 184
       Width = 49
       Height = 21
-      EditLabel.Width = 154
+      EditLabel.Width = 251
       EditLabel.Height = 13
-      EditLabel.Caption = 'Buffer for start and end of songs:'
+      EditLabel.Caption = 'If no silence was found, append a buffer to start/end:'
       MaxLength = 3
       NumbersOnly = True
       TabOrder = 0
@@ -475,24 +482,24 @@ object frmSettings: TfrmSettings
       OnClick = chkSkipShortClick
     end
     object chkSearchSilence: TCheckBox
-      Left = 20
-      Top = 120
+      Left = 4
+      Top = 72
       Width = 225
       Height = 21
-      Caption = 'Search for silence within this buffer'
+      Caption = 'Search for silence before saving tracks'
       TabOrder = 3
       OnClick = chkSearchSilenceClick
     end
     object txtSilenceLevel: TEdit
-      Left = 40
-      Top = 164
+      Left = 20
+      Top = 112
       Width = 81
       Height = 21
       TabOrder = 4
     end
     object txtSilenceLength: TEdit
-      Left = 64
-      Top = 188
+      Left = 60
+      Top = 136
       Width = 81
       Height = 21
       TabOrder = 5

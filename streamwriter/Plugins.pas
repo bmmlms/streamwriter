@@ -34,7 +34,7 @@ type
   TReadWrite = procedure(Name, Value: PChar);
 
   TInitialize = procedure(L: PChar; RF, WF: TReadWrite); stdcall;
-  TAct = function(Data: TPluginActData): Integer; stdcall;
+  TAct = function(var Data: TPluginActData): Integer; stdcall;
   TGetString = function(Data: PChar; Len: Integer): Integer; stdcall;
   TGetBoolean = function: Boolean; stdcall;
   TConfigure = function(Handle: Cardinal; ShowMessages: Boolean): Boolean; stdcall;
@@ -42,6 +42,7 @@ type
   TPluginProcessInformation = record
     Filename, Station, Title: string;
     TrackNumber: Cardinal;
+    Filesize: UInt64;
   end;
   PPluginProcessInformation = ^TPluginProcessInformation;
 
@@ -351,6 +352,7 @@ begin
   FData.Station := Data.Station;
   FData.Title := Data.Title;
   FData.TrackNumber := Data.TrackNumber;
+  FData.Filesize := Data.Filesize;
 
   FPluginsProcessed := TList<TPlugin>.Create;
   if FirstPlugin <> nil then
@@ -393,6 +395,7 @@ begin
   StrPCopy(FActData.Station, FData.Station);
   StrPCopy(FActData.Title, FData.Title);
   FActData.TrackNumber := FData.TrackNumber;
+  FActData.Filesize := FData.Filesize;
 
   FResult := TActResults(FPlugin.FAct(FActData));
 
@@ -404,6 +407,7 @@ begin
     FData.Station := FActData.Station;
     FData.Title := FActData.Title;
     FData.TrackNumber := FActData.TrackNumber;
+    FData.Filesize := FActData.Filesize;
   end;
 
   FreeMem(FActData.Filename);
