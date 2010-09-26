@@ -38,19 +38,19 @@ type
     FFilename: string;
     FWaveData: TWaveData;
 
-    FOnScan: TPeakEvent;
     FOnEndScan: TNotifyEvent;
+    FOnScanError: TNotifyEvent;
 
-    procedure SyncScan;
     procedure SyncEndScan;
+    procedure SyncScanError;
   protected
     procedure Execute; override;
   public
     constructor Create(Filename: string);
     destructor Destroy; override;
 
-    property OnScan: TPeakEvent read FOnScan write FOnScan;
     property OnEndScan: TNotifyEvent read FOnEndScan write FOnEndScan;
+    property OnScanError: TNotifyEvent read FOnScanError write FOnScanError;
   end;
 
   TCutPaintBox = class(TPaintBox)
@@ -85,14 +85,20 @@ type
     FScanThread: TScanThread;
     FPB: TCutPaintBox;
     FWaveData: TWaveData;
+    FError: Boolean;
+
+    FAudioStart, FAudioEnd: Cardinal;
 
     //FDecoder: Cardinal;
     FPlayer: Cardinal;
     FSync: Cardinal;
     FFilename: string;
 
+    FOnStateChanged: TNotifyEvent;
+
     procedure ThreadScan(P, AI, L, R: Integer);
     procedure ThreadEndScan(Sender: TObject);
+    procedure ThreadScanError(Sender: TObject);
     procedure ThreadTerminate(Sender: TObject);
 
     procedure MsgRefresh(var Msg: TMessage); message WM_USER + 123;
@@ -106,11 +112,20 @@ type
 
     procedure Cut;
     procedure Undo;
-    procedure Save;
+    function Save: Boolean;
     procedure SaveAs;
     procedure Play;
     procedure Stop;
     procedure AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
+
+    function CanCut: Boolean;
+    function CanUndo: Boolean;
+    function CanSave: Boolean;
+    function CanPlay: Boolean;
+    function CanStop: Boolean;
+    function CanAutoCut: Boolean;
+
+    property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
   end;
 
   procedure LoopSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
@@ -140,7 +155,13 @@ var
   Position: QWORD;
   Counter, c2: Cardinal;
 begin
-  FWaveData.LoadFile(FFilename);
+  try
+    FWaveData.Load(FFilename);
+  except
+    FWaveData.Free;
+    Synchronize(SyncScanError);
+    Exit;
+  end;
   Synchronize(SyncEndScan);
 end;
 
@@ -150,12 +171,10 @@ begin
     FOnEndScan(Self);
 end;
 
-procedure TScanThread.SyncScan;
+procedure TScanThread.SyncScanError;
 begin
-  {
-  if Assigned(FOnScan) then
-    FOnScan(FBytePos, FArrayPos, FScanL, FScanR);
-  }
+  if Assigned(FOnScanError) then
+    FOnScanError(Self);
 end;
 
 { TCutView }
@@ -195,42 +214,25 @@ begin
 end;
 
 procedure TCutView.LoadFile(Filename: string);
-var
-  x: TFileStream;
 begin
   if FScanThread <> nil then
     Exit;
 
   FFilename := Filename;
 
-  //x := TFileStream.Create(Filename, fmOpenRead);
-  //FSourceBytes := x.Size;
-  //x.Free;
-
-  //FDecoder := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE {or BASS_STREAM_PRESCAN} {$IFDEF UNICODE} or BASS_UNICODE{$ENDIF});
-  // TODO: Fehlerbehandlung? BASSFree() auf den Decoder?
-
-  {
-  FStartLine := 0;
-  FEndLine := 0;
-
-  FAudioStart := BASSStreamGetFilePosition(FDecoder, BASS_FILEPOS_START);
-  FAudioEnd := BASSStreamGetFilePosition(FDecoder, BASS_FILEPOS_END);
-  FBytes := BASSChannelGetLength(FDecoder, BASS_POS_BYTE);
-
-  FSecs := BASSChannelBytes2Seconds(FDecoder, FBytes);
-  }
-
   FScanThread := TScanThread.Create(Filename);
   FScanThread.FreeOnTerminate := True;
   FScanThread.OnTerminate := ThreadTerminate;
-  FScanThread.OnScan := ThreadScan;
   FScanThread.OnEndScan := ThreadEndScan;
+  FScanThread.OnScanError := ThreadScanError;
 
   FPB.BuildBuffer;
   FPB.Paint;
 
   FScanThread.Resume;
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
 procedure TCutView.MsgRefresh(var Msg: TMessage);
@@ -241,24 +243,21 @@ end;
 
 procedure TCutView.Cut;
 begin
-  if FWaveData = nil then
-    Exit;
-
-  if FPB.FEndLine - FPB.FStartLine <= 0 then
-    Exit;
-
-  if (FWaveData.CutStart = FPB.FStartLine) and (FWaveData.CutEnd = FPB.FEndLine) then
+  if not CanCut then
     Exit;
 
   FWaveData.Cut(FPB.FStartLine, FPB.FEndLine);
 
   FPB.BuildBuffer;
   FPB.Paint;
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
 procedure TCutView.Undo;
 begin
-  if (FWaveData = nil) or (FWaveData.CutStates.Count = 1) then
+  if not CanUndo then
     Exit;
 
   FWaveData.CutStates[FWaveData.CutStates.Count - 1].Free;
@@ -266,48 +265,81 @@ begin
 
   FPB.BuildBuffer;
   FPB.Paint;
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
-procedure TCutView.Save;
+function TCutView.Save: Boolean;
+var
+  Filename: string;
 begin
+  Result := False;
 
+  if not CanSave then
+    Exit;
+
+  //FFilename := 'z:\out' + inttostr(trunc(now * 10000)) + '.mp3'; // TODO: Auswerten und benutzen!
+
+  if FWaveData.Save(FFilename) then
+  begin
+    FreeAndNil(FWaveData);
+    LoadFile(FFilename);
+
+    Result := True;
+    if Assigned(FOnStateChanged) then
+      FOnStateChanged(Self);
+  end;
 end;
 
 procedure TCutView.SaveAs;
 begin
-
+  // REMARK: Wenns geklappt hat, FFilename ändern.
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
 procedure TCutView.Play;
 begin
-  if FWaveData = nil then
-    Exit;
-
-  if not (FPB.FStartLine < FPB.FEndLine) then
-    Exit;
-
-  if FWaveData.TimeBetween(FPB.FStartLine, FPB.FEndLine) < 1 then
+  if not CanPlay then
     Exit;
 
   FPB.FPlayingIndex := 0;
 
   if FPlayer = 0 then
-    // TODO: Fehlerbehandlung für die BASS funktionen gibt es faktisch nicht, nirgendwo. FAiL.
     FPlayer := BASSStreamCreateFile(False, PChar(FFilename), 0, 0, {$IFDEF UNICODE}BASS_UNICODE{$ENDIF});
+
+  if FPlayer = 0 then
+  begin
+    Exit;
+  end;
 
   BASSChannelSetPosition(FPlayer, FWaveData.WaveArray[FPB.FStartLine].Pos, BASS_POS_BYTE);
   BASSChannelPlay(FPlayer, False);
   if FSync > 0 then
     BASSChannelRemoveSync(FPlayer, FSync);
   FSync := BASSChannelSetSync(FPlayer, BASS_SYNC_POS or BASS_SYNC_MIXTIME, FWaveData.WaveArray[FPB.FEndLine].Pos, LoopSyncProc, Self);
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
 procedure TCutView.Stop;
 begin
+  if not CanStop then
+    Exit;
+
   if FPlayer > 0 then
+  begin
     BASSChannelStop(FPlayer);
+    BASSStreamFree(FPlayer);
+    FPlayer := 0;
+  end;
   FPB.BuildBuffer;
   FPB.Paint;
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
 procedure TCutView.AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
@@ -321,25 +353,68 @@ begin
   FPB.Repaint;
 end;
 
+function TCutView.CanCut: Boolean;
+begin
+  Result := (FWaveData <> nil) and (FPB.FEndLine - FPB.FStartLine > 0) and
+    (FWaveData.TimeBetween(FPB.FStartLine, FPB.FEndLine) >= 0.5) and
+    ((FWaveData.CutStart <> FPB.FStartLine) or (FWaveData.CutEnd <> FPB.FEndLine));
+end;
+
+function TCutView.CanUndo: Boolean;
+begin
+  Result := (FWaveData <> nil) and (FWaveData.CutStates.Count > 1);
+end;
+
+function TCutView.CanSave: Boolean;
+begin
+  Result := (FWaveData <> nil) and (FWaveData.CutStates.Count > 1);
+end;
+
+function TCutView.CanPlay: Boolean;
+begin
+  Result := (FWaveData <> nil) and (FPB.FStartLine < FPB.FEndLine) and (FWaveData.TimeBetween(FPB.FStartLine, FPB.FEndLine) >= 0.5);
+end;
+
+function TCutView.CanStop: Boolean;
+begin
+  Result := (FPlayer > 0) and (BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING);
+end;
+
+function TCutView.CanAutoCut: Boolean;
+begin
+  Result := FWaveData <> nil;
+end;
+
 procedure TCutView.ThreadEndScan(Sender: TObject);
 begin
-  // TODO: Evtl nix machen, wenn das array leer oder sehr sehr klein ist oder so.
-
   if FWaveData <> nil then
     FWaveData.Free;
   FWaveData := FScanThread.FWaveData;
 
-
   FPB.FStartLine := 0;
   FPB.FEndLine := High(FWaveData.WaveArray);
 
+  // Hier auch, damit BuildBuffer kein "Loading..." malt.
+  FScanThread := nil;
+
   FPB.BuildBuffer;
   FPB.Repaint;
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
 procedure TCutView.ThreadScan(P, AI, L, R: Integer);
 begin
 
+end;
+
+procedure TCutView.ThreadScanError(Sender: TObject);
+begin
+  FError := True;
+
+  FPB.BuildBuffer;
+  FPB.Repaint;
 end;
 
 procedure TCutView.ThreadTerminate(Sender: TObject);
@@ -421,6 +496,16 @@ begin
 
   if (ClientHeight < 2) or (ClientWidth < 2) then
     Exit;
+
+  if FCutView.FError then
+  begin
+    Txt := _('Error loading file');
+    TS := GetTextSize(Txt, Canvas.Font);
+    FBuf.Canvas.Font.Color := clWhite;
+    SetBkMode(FBuf.Canvas.Handle, TRANSPARENT);
+    FBuf.Canvas.TextOut(FBuf.Width div 2 - TS.cx div 2, FBuf.Height div 2 - TS.cy, Txt);
+    Exit;
+  end;
 
   if (FCutView.FWaveData = nil) or (FCutView.FScanThread <> nil) then
   begin
@@ -674,7 +759,6 @@ begin
 
   if IsStart then
   begin
-    // TODO: Dieses - 1 und unten Idx auf 1 setzen könnte bei leeren mp3s failen. crashed wenn man ganz doll reinzoomed/cuttet und beide linien nach maximal links schieben will.
     FStartLine := ArrayPos;
     if FStartLine >= FCutView.FWaveData.CutEnd then
       FStartLine := FCutView.FWaveData.CutEnd - 1;
@@ -689,11 +773,14 @@ begin
       FStartLine := FEndLine - 1;
   end;
 
+  if Assigned(FCutView.FOnStateChanged) then
+    FCutView.FOnStateChanged(FCutView);
+
   if FCutView.FPlayer > 0 then
   begin
     P := BASSChannelGetPosition(FCutView.FPlayer, BASS_POS_BYTE);
-    if (FCutView.FWaveData.WaveArray[FStartLine].Pos > P) or // + FCutView.FWaveData.FWaveArray[FStartLine].Pos > P) or
-       (FCutView.FWaveData.WaveArray[FEndLine].Pos < P) then // + FCutView.FWaveData.FWaveArray[FEndLine].Pos < P) then
+    if (FCutView.FWaveData.WaveArray[FStartLine].Pos > P) or
+       (FCutView.FWaveData.WaveArray[FEndLine].Pos < P) then
     begin
       BASSChannelStop(FCutView.FPlayer);
     end else

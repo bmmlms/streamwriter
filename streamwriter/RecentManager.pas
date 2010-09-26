@@ -35,11 +35,13 @@ type
     FTime: TDateTime;
     FFilename: string;
     FFilesize: UInt64;
+    FWasCut: Boolean;
   public
     constructor Create(Time: TDateTime; Filename: string);
     property Time: TDateTime read FTime;
     property Filename: string read FFilename;
-    property Filesize: UInt64 read FFilesize write FFilesize; // TODO: Nach cut aktualisieren!
+    property Filesize: UInt64 read FFilesize write FFilesize;
+    property WasCut: Boolean read FWasCut write FWasCut;
   end;
 
   TStreamEntry = class(TObject)
@@ -250,7 +252,10 @@ begin
     Stream.Read(TrackInfo.FTime);
     Stream.Read(TrackInfo.FFilename);
     if Version > 1 then
+    begin
       Stream.Read(TrackInfo.FFilesize);
+      Stream.Read(TrackInfo.FWasCut);
+    end;
     Result.FTracks.Add(TrackInfo);
   end;
   Stream.Read(Result.FSongsSaved);
@@ -283,6 +288,7 @@ begin
     Stream.Write(FTracks[i].FTime);
     Stream.Write(FTracks[i].FFilename);
     Stream.Write(FTracks[i].FFilesize);
+    Stream.Write(FTracks[i].FWasCut);
   end;
   Stream.Write(FSongsSaved);
   Stream.Write(FBytesReceived);
@@ -802,6 +808,7 @@ constructor TTrackInfo.Create(Time: TDateTime; Filename: string);
 begin
   FTime := Time;
   FFilename := Filename;
+  FWasCut := False;
 end;
 
 end.

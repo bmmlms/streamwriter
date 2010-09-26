@@ -36,7 +36,7 @@ type
   PMapBytes = ^TMapBytes;
 
   TActResults = (arWin, arFail);
-  TReadWrite = function(Name, Value: PChar): Integer;
+  TReadWrite = function(Keyname, Name, Value: PChar): Integer;
 
 const
   AUTHOR = 'Graf Zwal';
@@ -123,8 +123,8 @@ begin
       ID3V2.Track := IntToStr(Data.TrackNumber);
       ID3V1.Album := Data.Station;
       ID3V2.Album := Data.Station;
-      ID3V1.Comment := 'Recorded by streamWriter from ' + Data.Station;
-      ID3V2.Comment := 'Recorded by streamWriter from ' + Data.Station;
+      ID3V1.Comment := 'Recorded by streamWriter';
+      ID3V2.Comment := 'Recorded by streamWriter';
       if (ID3V1.WriteToFile(Data.Filename) = MP3ERR_None) and (ID3V2.WriteToFile(Data.Filename) = MP3ERR_None) then
       begin
         Data.Filesize := GetFileSize(Data.Filename);

@@ -111,10 +111,18 @@ begin
 
   inherited Create(AppName, True, W, 500);
 
+
+  {$IFDEF DEBUG}
+  FProjectUpdateLink := 'http://streamwriter.gaia/';
+  {$ELSE}
+  FProjectUpdateLink := 'http://streamwriter.org/';
+  {$ENDIF}
+
   FProjectHomepageLink := 'http://streamwriter.org/';
   FProjectLink := '';
   FProjectHelpLink := 'http://streamwriter.org/inhalt/help/';
   FProjectForumLink := 'http://streamwriter.org/forum/';
+
 
   FLanguageIcons := TLanguageIcons.Create;
 end;
@@ -125,7 +133,7 @@ begin
   FPluginManager.Free;
   inherited;
 end;
-                                        // TODO: Das station combo box und der button dazu haben 0 funktion.
+
 function TAppData.FGetDataFile;
 begin
   Result := FStorage.GetFilePath('data.dat');
@@ -153,14 +161,17 @@ begin
   FStorage.Read('FilePattern', FFilePattern, '%s\%a - %t');
   FStorage.Read('SkipShort', FSkipShort, True);
   FStorage.Read('SearchSilence', FSearchSilence, True);
-  FStorage.Read('SilenceLevel', FSilenceLevel, 500);
+  FStorage.Read('SilenceLevel', FSilenceLevel, 5); // TODO: Die Werte noch optimieren.
   FStorage.Read('SilenceLength', FSilenceLength, 100);
   FStorage.Read('TrayClose', FTrayClose, False);
-  FStorage.Read('ShowSidebar', FShowSidebar, True);
+
+  //FStorage.Read('ShowSidebar', FShowSidebar, True);
+  FShowSidebar := True;
+
   FStorage.Read('SidebarWidth', FSidebarWidth, 230);
   FStorage.Read('Relay', FRelay, False);
   FStorage.Read('SubmitStreams', FSubmitStreams, True);
-  FStorage.Read('ShortSize', FShortSize, 2000);
+  FStorage.Read('ShortSize', FShortSize, 1500);
   FStorage.Read('SongBuffer', FSongBuffer, 0);
   FStorage.Read('MaxRetries', FMaxRetries, 100);
   FStorage.Read('RetryDelay', FRetryDelay, 5);
@@ -203,7 +214,9 @@ begin
   FStorage.Write('SilenceLevel', FSilenceLevel);
   FStorage.Write('SilenceLength', FSilenceLength);
   FStorage.Write('TrayClose', FTrayClose);
-  FStorage.Write('ShowSidebar', FShowSidebar);
+
+  //FStorage.Write('ShowSidebar', FShowSidebar);
+
   FStorage.Write('SidebarWidth', FSidebarWidth);
   FStorage.Write('Relay', FRelay);
   FStorage.Write('SubmitStreams', FSubmitStreams);
@@ -235,7 +248,7 @@ begin
   except
     on E: Exception do
     begin
-      MessageBox(0, PChar(_('The application could not be started.'#13#10'Message:') + ' ' + E.Message), PChar(_('Error')), MB_ICONERROR);
+      MessageBox(0, PChar(Format('The application could not be started.'#13#10'Message: %s', [E.Message])), PChar(_('Error')), MB_ICONERROR);
       Halt;
     end;
   end;

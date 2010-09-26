@@ -241,19 +241,19 @@ begin
   Result := FConfigure(Handle, ShowMessages);
 end;
 
-function Read(Name, Value: PChar): Integer;
+function Read(Keyname, Name, Value: PChar): Integer;
 var
   V: string;
 begin
   ZeroMemory(Value, 255);
-  AppGlobals.Storage.Read(Name, V, '', 'Plugins\Winamp');
+  AppGlobals.Storage.Read(Name, V, '', 'Plugins\' + Keyname);
   CopyMemory(Value, @V[1], Length(V) * SizeOf(Char));
   Result := Length(V);
 end;
 
-function Write(Name, Value: PChar): Integer;
+function Write(Keyname, Name, Value: PChar): Integer;
 begin
-  AppGlobals.Storage.Write(Name, Value, 'Plugins\Winamp');
+  AppGlobals.Storage.Write(Name, Value, 'Plugins\' + Keyname);
   Result := 0;
 end;
 

@@ -199,16 +199,16 @@ begin
   AppGlobals.TrayClose := chkTrayClose.Checked;
   AppGlobals.Relay := chkRelay.Checked;
   AppGlobals.SubmitStreams := chkSubmitStreams.Checked;
-  AppGlobals.SongBuffer := StrToIntDef(txtSongBuffer.Text, 100);
-  AppGlobals.ShortSize := StrToIntDef(txtShortSongSize.Text, 1000);
-  AppGlobals.MaxRetries := StrToIntDef(txtMaxRetries.Text, 50);
+  AppGlobals.SongBuffer := StrToIntDef(txtSongBuffer.Text, 0);
+  AppGlobals.ShortSize := StrToIntDef(txtShortSongSize.Text, 1500);
+  AppGlobals.MaxRetries := StrToIntDef(txtMaxRetries.Text, 100);
   AppGlobals.RetryDelay := StrToIntDef(txtRetryDelay.Text, 5);
   AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
   AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
   if BassLoaded then
     AppGlobals.SearchSilence := chkSearchSilence.Checked;
-  AppGlobals.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 500);
-  AppGlobals.SilenceLength := StrToIntDef(txtSilenceLength.Text, 400);
+  AppGlobals.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
+  AppGlobals.SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
   AppGlobals.Unlock;
 
   for i := 0 to lstPlugins.Items.Count - 1 do
@@ -266,7 +266,10 @@ end;
 procedure TfrmSettings.Label9Click(Sender: TObject);
 begin
   inherited;
-  MsgBox(Handle, _('TODO: !!! und volume feld erklären!!! und sagen, dass die felder disabled sind, wenn bass.dll nicht geladen werden konnte!'), _('Info'), MB_ICONINFORMATION);
+  MsgBox(Handle, _('When enabled streamWriter will search for silence before saving files, ' +
+                   'this will only work for streams that have silence between played tracks and if bass.dll was loaded.'#13#10 +
+                   'You can test your settings for detecting silence in the manual cut view by ' +
+                   'right-clicking a saved track, selecting ''Cut'' and using the corresponding toolbar button in the opened tab.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TfrmSettings.lstPluginsSelectItem(Sender: TObject;
@@ -419,6 +422,22 @@ begin
       txtShortSongSize.Text := IntToStr(AppGlobals.ShortSize);
   end;
 
+  if (StrToIntDef(txtSilenceLevel.Text, -1) = -1) or (StrToIntDef(txtSilenceLevel.Text, -1) > 100) then
+  begin
+    MsgBox(Handle, _('Please enter the maximum volume level for silence detection as a value ranging from 0 to 100.'), _('Info'), MB_ICONINFORMATION);
+    SetPage(FPageList.Find(TPanel(txtSilenceLevel.Parent)));
+    txtSilenceLevel.SetFocus;
+    Exit;
+  end;
+
+  if Trim(txtSilenceLength.Text) = '' then
+  begin
+    MsgBox(Handle, _('Please enter the minimum length for silence.'), _('Info'), MB_ICONINFORMATION);
+    SetPage(FPageList.Find(TPanel(txtSilenceLength.Parent)));
+    txtSilenceLength.SetFocus;
+    Exit;
+  end;
+
   if Trim(txtSongBuffer.Text) = '' then
   begin
     MsgBox(Handle, _('Please enter the size of the buffer that should be added to every beginning/end of saved titles.'), _('Info'), MB_ICONINFORMATION);
@@ -426,8 +445,6 @@ begin
     txtSongBuffer.SetFocus;
     Exit;
   end;
-
-  // TODO: Die neuen cutting/silence-felder validieren.
 
   if Trim(txtMaxRetries.Text) = '' then
   begin
@@ -457,17 +474,6 @@ begin
   Label10.Enabled := chkSearchSilence.Checked;
   Label12.Enabled := chkSearchSilence.Checked;
   Label13.Enabled := chkSearchSilence.Checked;
-
-  // TODO: Wieder rückgängig machen.
-  {$IFNDEF DEBUG}
-  chkSearchSilence.Visible := False;
-  Label2.Visible := False;
-  txtSilenceLevel.Visible := False;
-  txtSilenceLength.Visible := False;
-  Label10.Visible := False;
-  Label12.Visible := False;
-  Label13.Visible := False;
-  {$ENDIF}
 end;
 
 procedure TfrmSettings.chkSkipShortClick(Sender: TObject);

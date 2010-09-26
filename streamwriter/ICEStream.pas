@@ -216,7 +216,7 @@ begin
       if Assigned(FOnTitleChanged) then
         FOnTitleChanged(Self);
     end else
-      raise Exception.Create('Invalid responsecode (' + IntToStr(ResponseCode) + ')');
+      raise Exception.Create(Format('Invalid responsecode (%d)', [ResponseCode]));
   end else if HeaderType = 'http' then
   begin
     // Wenn wir hier drin sind, müsste es eigentlich eine Playlist sein.
@@ -269,10 +269,10 @@ begin
   RangeBegin := FAudioStream.GetFrame(FSaveFrom, False);
   RangeEnd := FAudioStream.GetFrame(FAudioStream.Size, True);
 
-  WriteDebug(Format('FSaveFrom, Begin, End: %d / %d / %d', [FSaveFrom, RangeBegin, RangeEnd]));
+  WriteDebug(Format('FSaveFrom, begin, end: %d / %d / %d', [FSaveFrom, RangeBegin, RangeEnd]));
 
   // Eventuell nach Stille suchen
-  if FSearchSilence then
+  if FSearchSilence and False then // TODO: Das "False" hier ist böse.
   begin
     // TODO: Jede "silence" muss eine mindestlänge haben.
     // TODO: Nur, wenn nicht >20mb oder so.... weil ich extra in memory kopiere!
@@ -325,7 +325,7 @@ begin
       Filename := GetFilenameTitle(Dir);
 
       if Length(FSaveTitle) > 0 then
-        WriteDebug('Saving title "' + FSaveTitle + '"')
+        WriteDebug(Format('Saving title "%s"', [FSaveTitle]))
       else
         WriteDebug('Saving unnamed title');
 
@@ -348,12 +348,12 @@ begin
       begin
         if not Saved then
           Dec(FSongsSaved);
-        WriteDebug('Error while saving to "' + Filename + '": ' + E.Message);
+        WriteDebug(Format('Error while saving to "%s": %s', [Filename, E.Message]));
       end;
     end;
   end else
   begin
-    WriteDebug('Skipping title "' + FSaveTitle + '" because it''s too small (' + IntToStr(RangeEnd - RangeBegin) + ' bytes)');
+    WriteDebug(Format('Skipping title "%s" because it''s too small (%d bytes)', [FSaveTitle, RangeEnd - RangeBegin]));
   end;
 end;
 
@@ -379,7 +379,7 @@ begin
   begin
     if (FForwardLimit > -1) and (FForwardLimit + FMetaInt <= FAudioStream.Size) then
     begin
-      WriteDebug('Saving "' + FSaveTitle + '" because saveoffset reached');
+      WriteDebug(Format('Saving "%s" because saveoffset reached', [FSaveTitle]));
       SaveData;
 
       // TODO: FSaveFrom muss passend gemacht werden auf das, wo SaveData geschnitten hat => SaveData braucht anderen Rückgabetyp
@@ -387,7 +387,7 @@ begin
       if FSaveFrom < 0 then
         FSaveFrom := 0;
 
-      WriteDebug('New starting offset: ' + IntToStr(FSaveFrom) + ' bytes, buffersize is ' + IntToStr(FAudioStream.Size));
+      WriteDebug(Format('New starting offset: %d bytes, buffersize is %d', [FSaveFrom, FAudioStream.Size]));
       FForwardLimit := -1;
     end;
 
@@ -412,7 +412,7 @@ begin
 
         if Title <> FTitle then
         begin
-          WriteDebug('Title "' + Title + '" now playing');
+          WriteDebug(Format('Title "%s" now playing', [Title]));
           TitleChanged := True;
           Inc(FMetaCounter);
         end;
@@ -429,14 +429,14 @@ begin
             if FSaveFrom < 0 then
               FSaveFrom := 0;
 
-            WriteDebug('New starting offset: ' + IntToStr(FSaveFrom) + ' bytes, buffersize is ' + IntToStr(FAudioStream.Size));
+            WriteDebug(Format('New starting offset: %s bytes, buffersize is %d bytes, buffersize is %d', [FSaveFrom, FAudioStream.Size]));
             FForwardLimit := -1;
           end else
           begin
             if not SaveSizeOkay(FAudioStream.Size - FSaveFrom + FSongBuffer) then
             begin
               if FSaveTitle <> '' then
-                WriteDebug('New title detected but not enough data received to save "' + FSaveTitle + '"')
+                WriteDebug(Format('New title detected but not enough data received to save "%s"', [FSaveTitle]))
               else
                 WriteDebug('New title detected but not enough data received to save the previous title');
 
@@ -444,10 +444,10 @@ begin
               if FSaveFrom < 0 then
                 FSaveFrom := 0;
 
-              WriteDebug('New starting offset: ' + IntToStr(FSaveFrom) + ' bytes, buffersize is ' + IntToStr(FAudioStream.Size));
+              WriteDebug(Format('New starting offset: %d bytes, buffersize is %d', [FSaveFrom, FAudioStream.Size]));
             end else
             begin
-              WriteDebug('New title detected, will save "' + FTitle + '" at ' + IntToStr(FAudioStream.Size + FSongBuffer * 1024) + ' bytes');
+              WriteDebug(Format('New title detected, will save "%s" at %d bytes', [FTitle, FAudioStream.Size + FSongBuffer * 1024]));
               FForwardLimit := FAudioStream.Size + FSongBuffer * 1024;
               FSaveTitle := FTitle;
             end;
@@ -463,8 +463,8 @@ begin
             if FSaveFrom < 0 then
               FSaveFrom := 0;
 
-            WriteDebug('Start of first full song "' + Title + '" detected');
-            WriteDebug('New starting offset: ' + IntToStr(FSaveFrom) + ' bytes, buffersize is ' + IntToStr(FAudioStream.Size));
+            WriteDebug(Format('Start of first full song "%s" detected', [Title]));
+            WriteDebug(Format('New starting offset: %d bytes, buffersize is %d', [FSaveFrom, FAudioStream.Size]));
           end;
         end;
 
@@ -523,7 +523,7 @@ begin
     atAAC:
       Ext := '.aac';
     atNone:
-      raise Exception.Create('Fehler');
+      raise Exception.Create('Error');
   end;
 
   if FileExists(Dir + Filename + Ext) then

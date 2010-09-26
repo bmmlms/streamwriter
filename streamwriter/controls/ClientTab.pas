@@ -27,7 +27,7 @@ uses
   LanguageObjects, HomeCommunication, StationCombo, Menus, ActnList, ImgList,
   RecentManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
   GUIFunctions, AppData, DropTarget, DragDropInternet, DragDropText,
-  DragDropFile, ShellAPI, Tabs;
+  DragDropFile, ShellAPI, Tabs, Graphics;
 
 type
   TSidebar = class(TPageControl)
@@ -56,8 +56,11 @@ type
     FStart: TSpeedButton;
     FDropTarget: TDropURLTarget;
 
+    FOnStart: TNotifyEvent;
+
     procedure FStationsChange(Sender: TObject);
     procedure FStationsKeyPress(Sender: TObject; var Key: Char);
+    procedure FStartClick(Sender: TObject);
 
     procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
       APoint: TPoint; var Effect: Integer);
@@ -68,6 +71,7 @@ type
     procedure Setup;
 
     property Stations: TMStationCombo read FStations;
+    property OnStart: TNotifyEvent read FOnStart write FOnStart;
   end;
 
   TClientTab = class(TMainTabSheet)
@@ -128,7 +132,8 @@ type
     procedure StationsStreamChanged(Sender: TObject; Stream: TStreamEntry);
 
     procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
-    procedure StreamInfoAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
+
+    procedure AddressBarStart(Sender: TObject);
 
     procedure DebugClear(Sender: TObject);
 
@@ -181,20 +186,43 @@ begin
 end;
 
 procedure TClientAddressBar.Setup;
+var
+  I: TIcon;
+  B: TBitmap;
 begin
   FLabel := TLabel.Create(Self);
   FLabel.Parent := Self;
   FLabel.Left := 4;
-  FLabel.Top := 4;
+  FLabel.Top := 6;
   FLabel.Caption := _('Playlist/Stream-URL:');
 
   FStart := TSpeedButton.Create(Self);
   FStart.Parent := Self;
-  FStart.Width := 22;
-  FStart.Height := 22;
-  FStart.Top := 4;
+  FStart.Width := 24;
+  FStart.Height := 24;
+  FStart.Top := 6;
   FStart.Left := ClientWidth - 4 - FStart.Width;
   FStart.Anchors := [akRight];
+  FStart.Flat := True;
+  FStart.Hint := _('Add and start recording');
+  FStart.ShowHint := True;
+  FStart.OnClick := FStartClick;
+
+
+  I := TIcon.Create;
+  I.LoadFromResourceName(HInstance, 'ADD');
+  B := TBitmap.Create;
+  B.Width := 32;
+  B.Height := 32;
+  B.Canvas.Draw(0, 0, I);
+  B.Canvas.StretchDraw(Rect(0, 0, 16, 16), B);
+  B.Width := 16;
+  B.Height := 16;
+  FStart.Glyph := B;
+  FStart.Glyph.PixelFormat := pf24bit;
+  B.Free;
+  I.Free;
+
 
   FStations := TMStationCombo.Create(Self);
   FStations.Parent := Self;
@@ -229,6 +257,12 @@ begin
   begin
     FStations.ItemIndex := -1;
   end;
+end;
+
+procedure TClientAddressBar.FStartClick(Sender: TObject);
+begin
+  if Assigned(FOnStart) then
+    FOnStart(Self);
 end;
 
 { TClientTab }
@@ -287,7 +321,7 @@ var
   R: TStreamEntry;
   i: Integer;
 begin
-  Res := MsgBox(Handle, _('This will reset the saved song and bytes received counters and information about saved songs.'#13#10 +
+  Res := MsgBox(Handle, _('This will reset the saved song and bytes received counters.'#13#10 +
                           'The tracknumber of new saved titles will be 1 if you specified the tracknumber in the filename pattern, this number will also be set in ID3 tags.'#13#10 +
                           'Do you want to continue?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
   if Res = IDYES then
@@ -298,9 +332,11 @@ begin
       R := FStreams.Get(Client.Client);
       R.SongsSaved := 0;
       R.BytesReceived := 0;
+      {
       for i := 0 to R.Tracks.Count - 1 do
         R.Tracks[i].Free;
       R.Tracks.Clear;
+      }
 
       Client.Client.SongsSaved := 0;
       Client.Client.Received := 0;
@@ -384,6 +420,11 @@ begin
   ImageIndex := 16;
 end;
 
+procedure TClientTab.AddressBarStart(Sender: TObject);
+begin
+  StartStreaming(FAddressBar.FStations.Text, FAddressBar.FStations.Text);
+end;
+
 procedure TClientTab.DebugClear(Sender: TObject);
 var
   Clients: TNodeDataArray;
@@ -457,6 +498,7 @@ begin
   FAddressBar.Align := alTop;
   FAddressBar.Visible := True;
   FAddressBar.Setup;
+  FAddressBar.OnStart := AddressBarStart;
 
   FToolbar := Toolbar;
   FToolbar.Parent := Self;
@@ -499,6 +541,8 @@ begin
   FSplitter.Align := alRight;
   FSplitter.Visible := True;
   FSplitter.Width := 4;
+  FSplitter.MinSize := 220;
+  FSplitter.AutoSnap := False;
   FSplitter.ResizeStyle := rsUpdate;
 
   FSideBar := TSidebar.Create(Self);
@@ -509,7 +553,7 @@ begin
 
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
-  FSideBar.FInfoView.InfoView.Tree.OnAction := StreamInfoAction;
+  //FSideBar.FInfoView.InfoView.Tree.OnAction := StreamInfoAction;
 
   FSplitter.Left := FSideBar.Left - 5;
 
@@ -572,7 +616,13 @@ begin
 
   Entry := FStreams.Add(Client.StreamName, Client.StartURL, Client.URLs,
     Client.BitRate, Client.Genre, Client.SkipShort, 0);
-  Entry.Name := Client.StreamName;
+  if Entry.Name <> Client.StreamName then
+  begin
+    Entry.Name := Client.StreamName;
+    // Ist nötig, weil zuerst bei geaddeter Playlist (manuell ohne Browser)
+    // "http://" drin steht und Titel sich hier ändert
+    FClientView.SortItems;
+  end;
   Entry.RecentIndex := 0;
   Entry.LastTouched := Now;
   if not Entry.Submitted then
@@ -859,55 +909,6 @@ begin
       end;
     oaSave:
       SavePlaylist(Entries, False);
-  end;
-end;
-
-procedure TClientTab.StreamInfoAction(Sender: TObject; Action: TTrackActions;
-  Tracks: TTrackInfoArray);
-var
-  Entries: TPlaylistEntryArray;
-  i: Integer;
-begin
-  case Action of
-    taPlay:
-      begin
-        // Tracks in Playlist konvertieren
-        SetLength(Entries, Length(Tracks));
-        for i := 0 to Length(Tracks) - 1 do
-        begin
-          Entries[i].Name := Tracks[i].Filename;
-          Entries[i].URL := Tracks[i].Filename;
-        end;
-
-        SavePlaylist(Entries, True);
-      end;
-    taCut:
-      begin
-        if Assigned(FOnCut) then
-          for i := 0 to Length(Tracks) - 1 do
-            FOnCut(nil, Tracks[i]);
-      end;
-    taRemove:
-      begin
-        for i := 0 to Length(Tracks) - 1 do
-        begin
-          FStreams.RemoveTrack(Tracks[i]);
-          if Assigned(FOnTrackRemoved) then
-            FOnTrackRemoved(nil, Tracks[i]);
-        end;
-      end;
-    taDelete:
-      begin
-        for i := 0 to Length(Tracks) - 1 do
-        begin
-          DeleteFile(Tracks[i].Filename);
-          FStreams.RemoveTrack(Tracks[i]);
-          if Assigned(FOnTrackRemoved) then
-            FOnTrackRemoved(nil, Tracks[i]);
-        end;
-      end;
-    taProperties:
-      PropertiesDialog(Tracks[0].Filename);
   end;
 end;
 

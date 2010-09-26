@@ -34,7 +34,7 @@ type
   TAudioStreamFile = class(TFileStream)
   protected
   public
-    function GetFrame(From: Int64; GetEnd: Boolean): Int64; virtual; abstract;
+    function GetFrame(From: Int64; SearchBackwards: Boolean): Int64; virtual; abstract;
     procedure SaveToFile(const Filename: string; From, Length: Int64);
   end;
 
@@ -213,84 +213,13 @@ function TMPEGStreamMemory.FindSilence(From, Count: UInt64): TPosArray;
     Arr[High(Arr)].A := A;
     Arr[High(Arr)].B := B;
   end;
-var
-  Chan, Level: DWORD;
-  P, SBegin, SEnd: Int64;
-  S: TFileStream;
 begin
-  SBegin := 0;
-  SEnd := 0;
 
-  //SBegin := Size;
-
-  SetLength(Result, 0);
-
-  // TODO: Fehlerbehandlung?
-  Chan := BASSStreamCreateFile(True, Pointer(Integer(Memory) + From), 0, Count - From, BASS_STREAM_DECODE);
-  //Chan := BASSStreamCreateFile(True, Memory, 0, Count, BASS_STREAM_DECODE);
-
-	while (BASSChannelIsActive(Chan) > 0) do
-  begin
-    //P := BASS_ChannelGetPosition(Chan, BASS_POS_BYTE or BASS_POS_DECODE) + From;
-    P := BASSStreamGetFilePosition(Chan, BASS_FILEPOS_CURRENT) + From;
-
-    //sec := BASS_ChannelBytes2Seconds(Chan, P);
-
-    Level := BASSChannelGetLevel(Chan);  // TODO: guck mal in die doku zu getlevel :)
-
-    // 3000000 war fürn file okay
-    if Level < 3000000 then
-    begin
-      if SBegin = 0 then
-        SBegin := P
-      else
-      begin
-
-      end;
-    end else
-    begin
-      if (SBegin > 0) and (SEnd = 0) then
-      begin
-        SEnd := P
-      end;
-
-      if (SBegin > 0) and (SEnd > 0) then
-      begin
-        AddRes(SBegin, SEnd, Result);
-
-        SBegin := 0;
-        SEnd := 0;
-      end;
-
-      SBegin := 0;
-      SEnd := 0;
-    end;
-	end;
-
-  BASSStreamFree(Chan);
 end;
 
 function TMPEGStreamMemory.GetPossibleTitle(ByteCount: UInt64): TPosRect;
-var
-  i: Integer;
-  SilenceBegin, SilenceEnd: TPosArray;
 begin
-  Result.A := 0;
-  Result.B := 0;
 
-  SilenceBegin := FindSilence(0, ByteCount);
-  SilenceEnd := FindSilence(Size - ByteCount, ByteCount);
-
-  if Length(SilenceBegin) > 0 then
-    Result.A := SilenceBegin[High(SilenceBegin)].B;
-
-  //if Result.A > 0 then
-  //begin
-    if Length(SilenceEnd) > 0 then
-      Result.B := SilenceEnd[Low(SilenceEnd)].A
-    else
-      Result.B := Size;
-  //end;
 end;
 
 { TAACStreamMemory }

@@ -23,7 +23,7 @@ interface
 
 uses
   SysUtils, Windows, Classes, Functions, DynBASS, Math,
-  Generics.Collections;
+  Generics.Collections, AudioStream;
 
 type
   TWaveEntry = record
@@ -47,9 +47,12 @@ type
     FCutStates: TList<TCutState>;
     FSilence: TList<TCutState>;
 
+    FFilename: string;
+    FWavesize, FFilesize: Int64;
+    FAudioStart, FAudioEnd: Cardinal;
+
     procedure FSetWaveArray(Value: TWaveEntryArray);
 
-    //function FGetFileScanned: Boolean;
     function FGetCutStart: Cardinal;
     function FGetCutEnd: Cardinal;
     function FGetCutSize: Cardinal;
@@ -58,13 +61,13 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure LoadFile(Filename: string);
+    procedure Load(Filename: string);
+    function Save(Filename: string): Boolean;
     procedure Cut(F, T: Cardinal);
     procedure AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
     function TimeBetween(F, T: Cardinal): Double;
     function IsInSilence(O: Cardinal): Boolean;
 
-    //property FileScanned: Boolean read FGetFileScanned;
     property CutStart: Cardinal read FGetCutStart;
     property CutEnd: Cardinal read FGetCutEnd;
     property CutSize: Cardinal read FGetCutSize;
@@ -73,6 +76,11 @@ type
     property WaveArray: TWaveEntryArray read FWaveArray write FSetWaveArray;
     property CutStates: TList<TCutState> read FCutStates;
     property Silence: TList<TCutState> read FSilence;
+
+    property Wavesize: Int64 read FWavesize;
+    property Filesize: Int64 read FFilesize;
+    property AudioStart: Cardinal read FAudioStart;
+    property AudioEnd: Cardinal read FAudioEnd;
   end;
 
 implementation
@@ -98,20 +106,31 @@ begin
   inherited;
 end;
 
-procedure TWaveData.LoadFile(Filename: string);
+procedure TWaveData.Load(Filename: string);
 var
   i: Integer;
   Level: DWord;
   PeakL, PeakR: DWord;
   Position: QWORD;
   Counter, c2: Cardinal;
+  FS: TFileStream;
 begin
   Counter := 0;
 
   SetLength(FWaveArray, 500);
 
-  // TODO: Errorhandling...
+  FFilename := Filename;
+  FFilesize := GetFileSize(Filename);
+  if FFilesize =  -1 then
+  begin
+    raise Exception.Create('');
+  end;
+
   FDecoder := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE {or BASS_STREAM_PRESCAN} {$IFDEF UNICODE} or BASS_UNICODE{$ENDIF});
+  if FDecoder = 0 then
+  begin
+    raise Exception.Create('');
+  end;
 
   while BASSChannelIsActive(FDecoder) = BASS_ACTIVE_PLAYING do
   begin
@@ -135,15 +154,81 @@ begin
 
   SetLength(FWaveArray, Counter);
 
+  if Counter = 0 then
+  begin
+    raise Exception.Create('');
+  end;
+
   FWaveArray[High(FWaveArray)].Len := BASSChannelGetLength(FDecoder, BASS_POS_BYTE) - FWaveArray[High(FWaveArray)].Pos;
 
-  BASSStreamFree(FDecoder);
+  FWavesize := FWaveArray[High(FWaveArray)].Pos + FWaveArray[High(FWaveArray)].Len;
 
+  FAudioStart := BASSStreamGetFilePosition(FDecoder, BASS_FILEPOS_START);
+  FAudioEnd := BASSStreamGetFilePosition(FDecoder, BASS_FILEPOS_END);
+
+  BASSStreamFree(FDecoder);
 
   for i := 0 to FCutStates.Count - 1 do
     FCutStates[i].Free;
   FCutStates.Clear;
   FCutStates.Add(TCutState.Create(0, High(FWaveArray)));
+end;
+
+function TWaveData.Save(Filename: string): Boolean;
+var
+  S, E: Cardinal;
+  FS, StartTagBytes, EndTagBytes: Int64;
+  FIn: TMPEGStreamFile;
+  FOut: TMemoryStream;
+begin
+  Result := False;
+  if CutStates.Count <= 1 then
+    Exit;
+
+  try
+    S := WaveArray[CutStart].Pos;
+    E := WaveArray[CutEnd].Pos + WaveArray[CutEnd].Len;
+
+    FS := Filesize - AudioStart - (Filesize - AudioEnd);
+    StartTagBytes := FAudioStart;
+    EndTagBytes := Filesize - FAudioEnd;
+
+    S := Round(S * (FS / Wavesize));
+    E := Round(E * (FS / Wavesize));
+
+    S := S + AudioStart;
+    E := E + AudioStart;
+
+    FOut := TMemoryStream.Create;
+    try
+      FIn := TMPEGStreamFile.Create(FFilename, fmOpenRead or fmShareDenyWrite);
+      try
+        // Tags kopieren
+        FIn.Seek(0, soFromBeginning);
+        FOut.CopyFrom(FIn, StartTagBytes);
+
+        S := FIn.GetFrame(S, False);
+        E := FIn.GetFrame(E, True);
+
+        // Daten kopieren
+        FIn.Seek(S, soFromBeginning);
+        FOut.CopyFrom(FIn, E - S);
+
+        // Tags kopieren
+        FIn.Seek(FFilesize - EndTagBytes, soFromBeginning);
+        FOut.CopyFrom(FIn, EndTagBytes);
+
+        FIn.Free;
+        FOut.SaveToFile(Filename);
+        Result := True;
+      except
+        FIn.Free;
+      end;
+    finally
+      FOut.Free;
+    end;
+  except
+  end;
 end;
 
 procedure TWaveData.Cut(F, T: Cardinal);
@@ -163,6 +248,7 @@ begin
     FSilence[i].Free;
   FSilence.Clear;
 
+  MaxPeaks := Trunc((MaxPeaks / 100) * 2000);
   MinDurationD := MinDuration / 1000;
 
   SilenceStart := 0;
@@ -222,18 +308,11 @@ begin
     Result := FCutStates[FCutStates.Count - 1].CutStart;
 end;
 
-{
-function TWaveData.FGetFileScanned: Boolean;
-begin
-  Result := FCutStates.Count > 0;
-end;
-}
-
 function TWaveData.FGetSecs: Double;
 var
   i: Cardinal;
 begin
-  // TODO: Weil das nur die Start-Ende - Sekunden sind ist das nicht die echte Länge.
+  // REMARK: Weil das nur die Start-Ende - Sekunden sind ist das nicht die echte Länge.
   Result := FWaveArray[CutEnd].Sec - FWaveArray[CutStart].Sec;
 end;
 
@@ -261,7 +340,8 @@ end;
 
 function TWaveData.TimeBetween(F, T: Cardinal): Double;
 begin
-  Result := FWaveArray[T].Sec - FWaveArray[F].Sec; // TODO: falsch wegen letztem element etc..
+  // REMARK: Falsch wegen letztem element etc..
+  Result := FWaveArray[T].Sec - FWaveArray[F].Sec;
 end;
 
 { TCutState }

@@ -74,7 +74,8 @@ uses
   CutView in 'controls\CutView.pas',
   SavedTab in 'controls\SavedTab.pas',
   WaveData in 'audio\WaveData.pas',
-  About in '..\..\common\forms\About.pas' {frmAbout};
+  About in '..\..\common\forms\About.pas' {frmAbout},
+  CheckFilesThread in 'CheckFilesThread.pas';
 
 {$R *.res}
 {$R res\language.res}

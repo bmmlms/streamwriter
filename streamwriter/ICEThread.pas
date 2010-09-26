@@ -301,6 +301,8 @@ begin
   FSongsSaved := 0;
   FTitle := '';
 
+  FUserAgent := AnsiString(AppGlobals.AppName) + ' v' + AppGlobals.AppVersion.AsString;
+
   ParseURL(URL, Host, Port, Data);
 
   FTypedStream := TICEStream(FRecvStream);
@@ -317,6 +319,7 @@ begin
     SendData := 'GET ' + AnsiString(Data) + ' HTTP/1.1'#13#10;
   SendData := SendData + 'Host: ' + AnsiString(Host) + #13#10;
   SendData := SendData + 'Accept: */*'#13#10;
+  SendData := SendData + 'User-Agent: mhttplib/' + FUserAgent + #13#10;
   SendData := SendData + 'Icy-MetaData:1'#13#10;
   SendData := SendData + 'Connection: close'#13#10;
   SendData := SendData + #13#10;

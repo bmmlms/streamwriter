@@ -29,7 +29,7 @@ type
   TCutToolBar = class(TToolBar)
   private
     FSave: TToolButton;
-    FSaveAs: TToolButton;
+    //FSaveAs: TToolButton;
     FSep1: TToolButton;
     FAutoCut: TToolButton;
     FCut: TToolButton;
@@ -48,6 +48,10 @@ type
     FCutView: TCutView;
     FFilename: string;
 
+    FOnSaved: TNotifyEvent;
+
+    procedure UpdateButtons;
+
     procedure SaveClick(Sender: TObject);
     procedure SaveAsClick(Sender: TObject);
     procedure AutoCutClick(Sender: TObject);
@@ -55,22 +59,20 @@ type
     procedure UndoClick(Sender: TObject);
     procedure PlayClick(Sender: TObject);
     procedure StopClick(Sender: TObject);
+
+    procedure CutViewStateChanged(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
 
     procedure Setup(Filename: string; ToolBarImages: TImageList);
 
     property Filename: string read FFilename;
+    property OnSaved: TNotifyEvent read FOnSaved write FOnSaved;
   end;
 
 implementation
 
 { TCutTab }
-
-procedure TCutTab.AutoCutClick(Sender: TObject);
-begin
-  FCutView.AutoCut(AppGlobals.SilenceLevel, AppGlobals.SilenceLength);
-end;
 
 constructor TCutTab.Create(AOwner: TComponent);
 begin
@@ -79,9 +81,22 @@ begin
   ImageIndex := 17;
 end;
 
+procedure TCutTab.UpdateButtons;
+begin
+  FToolBar.FSave.Enabled := FCutView.CanSave;
+  FToolBar.FAutoCut.Enabled := FCutView.CanAutoCut;
+  FToolBar.FCut.Enabled := FCutView.CanCut;
+  FToolBar.FUndo.Enabled := FCutView.CanUndo;
+  FToolBar.FPlay.Enabled := FCutView.CanPlay;
+  FToolBar.FStop.Enabled := FCutView.CanStop;
+end;
+
 procedure TCutTab.SaveClick(Sender: TObject);
 begin
-  FCutView.Save;
+  FCutView.Stop;
+  if FCutView.Save then
+    if Assigned(FOnSaved) then
+      FOnSaved(Self);
 end;
 
 procedure TCutTab.SaveAsClick(Sender: TObject);
@@ -89,35 +104,14 @@ begin
 
 end;
 
+procedure TCutTab.AutoCutClick(Sender: TObject);
+begin
+  FCutView.AutoCut(AppGlobals.SilenceLevel, AppGlobals.SilenceLength);
+end;
+
 procedure TCutTab.CutClick(Sender: TObject);
 begin
   FCutView.Cut;
-end;
-
-procedure TCutTab.Setup(Filename: string; ToolBarImages: TImageList);
-begin
-  MaxWidth := 120;
-  Caption := Format(_('Cut ''%s'''), [ExtractFileName(Filename)]);
-  FFilename := Filename;
-
-  FToolBar := TCutToolBar.Create(Self);
-  FToolBar.Parent := Self;
-  FToolBar.Images := ToolBarImages;
-  FToolBar.Setup;
-
-  FToolBar.FSave.OnClick := SaveClick;
-  FToolBar.FSaveAs.OnClick := SaveAsClick;
-  FToolBar.FAutoCut.OnClick := AutoCutClick;
-  FToolBar.FCut.OnClick := CutClick;
-  FToolBar.FUndo.OnClick := UndoClick;
-  FToolBar.FPlay.OnClick := PlayClick;
-  FToolBar.FStop.OnClick := StopClick;
-
-  FCutView := TCutView.Create(Self);
-  FCutView.Parent := Self;
-  FCutView.Align := alClient;
-
-  FCutView.LoadFile(Filename);
 end;
 
 procedure TCutTab.UndoClick(Sender: TObject);
@@ -133,6 +127,40 @@ end;
 procedure TCutTab.StopClick(Sender: TObject);
 begin
   FCutView.Stop;
+end;
+
+procedure TCutTab.CutViewStateChanged(Sender: TObject);
+begin
+  UpdateButtons;
+end;
+
+procedure TCutTab.Setup(Filename: string; ToolBarImages: TImageList);
+begin
+  MaxWidth := 120;
+  //Caption := Format(_('Cut ''%s'''), [ExtractFileName(Filename)]);
+  Caption := ExtractFileName(Filename);
+  FFilename := Filename;
+
+  FToolBar := TCutToolBar.Create(Self);
+  FToolBar.Parent := Self;
+  FToolBar.Images := ToolBarImages;
+  FToolBar.Setup;
+
+  FToolBar.FSave.OnClick := SaveClick;
+  //FToolBar.FSaveAs.OnClick := SaveAsClick;
+  FToolBar.FAutoCut.OnClick := AutoCutClick;
+  FToolBar.FCut.OnClick := CutClick;
+  FToolBar.FUndo.OnClick := UndoClick;
+  FToolBar.FPlay.OnClick := PlayClick;
+  FToolBar.FStop.OnClick := StopClick;
+
+  FCutView := TCutView.Create(Self);
+  FCutView.Parent := Self;
+  FCutView.Align := alClient;
+  FCutView.OnStateChanged := CutViewStateChanged;
+
+  UpdateButtons;
+  FCutView.LoadFile(Filename);
 end;
 
 { TCutToolbar }
@@ -182,10 +210,12 @@ begin
   FSep1.Style := tbsSeparator;
   FSep1.Width := 8;
 
+  {
   FSaveAs := TToolButton.Create(Self);
   FSaveAs.Parent := Self;
   FSaveAs.Hint := _('Save as...');
   FSaveAs.ImageIndex := 15;
+  }
 
   FSave := TToolButton.Create(Self);
   FSave.Parent := Self;

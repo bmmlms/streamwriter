@@ -370,7 +370,7 @@ object frmSettings: TfrmSettings
     end
     object Label8: TLabel
       Left = 268
-      Top = 48
+      Top = 4
       Width = 22
       Height = 13
       Cursor = crHandPoint
@@ -443,18 +443,18 @@ object frmSettings: TfrmSettings
     object Label14: TLabel
       Left = 104
       Top = 116
-      Width = 84
+      Width = 33
       Height = 13
-      Caption = 'Min 0, max 32768'
+      Caption = '(0-100)'
     end
     object txtSongBuffer: TLabeledEdit
       Left = 4
       Top = 184
       Width = 49
       Height = 21
-      EditLabel.Width = 251
+      EditLabel.Width = 242
       EditLabel.Height = 13
-      EditLabel.Caption = 'If no silence was found, append a buffer to start/end:'
+      EditLabel.Caption = 'If no silence was found, append buffer to start/end:'
       MaxLength = 3
       NumbersOnly = True
       TabOrder = 0
@@ -495,6 +495,8 @@ object frmSettings: TfrmSettings
       Top = 112
       Width = 81
       Height = 21
+      MaxLength = 3
+      NumbersOnly = True
       TabOrder = 4
     end
     object txtSilenceLength: TEdit
@@ -502,6 +504,8 @@ object frmSettings: TfrmSettings
       Top = 136
       Width = 81
       Height = 21
+      MaxLength = 4
+      NumbersOnly = True
       TabOrder = 5
     end
   end

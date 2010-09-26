@@ -30,7 +30,8 @@ uses
   LanguageObjects, AppDataBase, Functions, ClientManager, ShellAPI, DropSource,
   About, MsgDlg, HomeCommunication, StreamBrowserView, Clipbrd,
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
-  Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab;
+  Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
+  CheckFilesThread;
 
 type
   TfrmStreamWriterMain = class(TForm)
@@ -105,7 +106,6 @@ type
     Stream1: TMenuItem;
     Relay1: TMenuItem;
     Stream2: TMenuItem;
-    imgSavedTracks: TImageList;
     mnuReset1: TMenuItem;
     mnuReset11: TMenuItem;
     actResetData: TAction;
@@ -144,9 +144,12 @@ type
     FStreams: TStreamDataList;
     FUpdater: TUpdateClient;
     FUpdateOnExit: Boolean;
+
+    FWasActivated: Boolean;
     FWasShown: Boolean;
     FWasMaximized: Boolean;
 
+    FCheckFiles: TCheckFilesThread;
     FClients: TClientManager;
     FHomeCommunication: THomeCommunication;
     pagMain: TMainPageControl;
@@ -168,16 +171,21 @@ type
     procedure UpdaterUpdateFound(Sender: TObject);
     procedure UpdaterNoUpdateFound(Sender: TObject);
     function HandleLoadError(E: Exception): Integer;
+    procedure CheckFilesTerminate(Sender: TObject);
 
     procedure PreTranslate;
     procedure PostTranslate;
 
     procedure tabClientsUpdateButtons(Sender: TObject);
     procedure tabClientsCut(Entry: TStreamEntry; Track: TTrackInfo);
+    procedure tabSavedRefresh(Sender: TObject);
+
     procedure tabClientsTrackAdded(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
 
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
+
+    procedure tabCutSaved(Sender: TObject);
   protected
 
   public
@@ -193,7 +201,7 @@ var
   i: Integer;
   Res: Integer;
   StartTime: Cardinal;
-  Saved: Boolean;
+  Saved, Hard: Boolean;
 begin
   AppGlobals.MainMaximized := WindowState = wsMaximized;
   if not AppGlobals.MainMaximized then
@@ -254,12 +262,21 @@ begin
   FClients.Terminate;
   FHomeCommunication.Terminate;
 
+  try
+    FCheckFiles.Terminate;
+  except
+  end;
+
+  Hard := False;
   StartTime := GetTickCount;
-  while (FClients.Count > 0) or (FHomeCommunication.Count > 0) or (FClients.Active) do
+  while (FClients.Count > 0) or (FHomeCommunication.Count > 0) or (FClients.Active) or (FCheckFiles <> nil) do
   begin
-    // 5 Sekunden warten, für sauberes beenden
-    if StartTime < GetTickCount - 5000 then
-      Halt;
+    // 15 Sekunden warten, für sauberes beenden
+    if StartTime < GetTickCount - 15000 then
+    begin
+      Hard := True;
+      Break;
+    end;
     Sleep(100);
     Application.ProcessMessages;
   end;
@@ -267,7 +284,10 @@ begin
   if FUpdateOnExit then
     FUpdater.RunUpdate(Handle);
 
-  Application.Terminate;
+  if Hard then
+    Halt
+  else
+    Application.Terminate;
 end;
 
 procedure TfrmStreamWriterMain.actSettingsExecute(Sender: TObject);
@@ -320,10 +340,20 @@ end;
 
 procedure TfrmStreamWriterMain.FormActivate(Sender: TObject);
 begin
+  if FWasActivated then
+    Exit;
+
+  FWasActivated := True;
+
   if not DirectoryExists(AppGlobals.Dir) then
   begin
     MsgBox(Handle, _('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
     ShowSettings(True);
+  end;
+
+  if not BassLoaded then
+  begin
+    MsgBox(Handle, _('Bass.dll could not be loaded. Without this library no cutting/searching for silence is available.'), _('Info'), MB_ICONINFORMATION);
   end;
 end;
 
@@ -371,7 +401,7 @@ begin
   tabClients.Setup(tbClients, ActionList1, mnuStreamPopup, imgImages, imgClients,
     FClients, FStreams, FHomeCommunication);
   tabClients.SideBar.BrowserView.StreamTree.Images := imgStations;
-  tabClients.SideBar.InfoView.InfoView.Tree.Images := imgSavedTracks;
+  //tabClients.SideBar.InfoView.InfoView.Tree.Images := imgSavedTracks;
   tabClients.AddressBar.Stations.Images := imgStations;
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
   tabClients.OnCut := tabClientsCut;
@@ -382,10 +412,12 @@ begin
   tabSaved.PageControl := pagMain;
   tabSaved.OnCut := tabClientsCut;
   tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
+  tabSaved.OnRefresh := tabSavedRefresh;
 
   if AppGlobals.Relay then
     FClients.RelayServer.Start;
 
+  FWasActivated := False;
   FWasShown := False;
   FUpdateOnExit := False;
 
@@ -485,11 +517,14 @@ end;
 
 procedure TfrmStreamWriterMain.FormShow(Sender: TObject);
 var
-  i: Integer;
+  i, n: Integer;
+  Files: TStringList;
 begin
   if FWasShown then
     Exit;
   FWasShown := True;
+
+  tabSavedRefresh(nil);
 
   AppGlobals.WindowHandle := Handle;
 
@@ -551,11 +586,8 @@ end;
 
 procedure TfrmStreamWriterMain.PostTranslate;
 begin
-  {
-  // TODO:
-  pnlStreamBrowser.Translate;
-  pnlStreamInfo.Translate;
-  }
+  tabClients.SideBar.BrowserView.Translate;
+  tabClients.SideBar.InfoView.Translate;
 end;
 
 procedure TfrmStreamWriterMain.mnuStreamPopupPopup(Sender: TObject);
@@ -648,6 +680,8 @@ begin
   begin
     tabCut := TCutTab.Create(pagMain);
     tabCut.PageControl := pagMain;
+    tabCut.OnSaved := tabCutSaved;
+
     pagMain.ActivePage := tabCut;
 
     tabCut.Setup(Track.Filename, imgImages);
@@ -657,16 +691,36 @@ begin
   end;
 end;
 
+procedure TfrmStreamWriterMain.tabSavedRefresh(Sender: TObject);
+var
+  i, n: Integer;
+  Files: TStringList;
+begin
+  Files := TStringList.Create;
+  try
+    for i := 0 to FStreams.Count - 1 do
+      for n := 0 to FStreams[i].Tracks.Count - 1 do
+      begin
+        Files.Add(FStreams[i].Tracks[n].Filename);
+      end;
+    FCheckFiles := TCheckFilesThread.Create(Files);
+    FCheckFiles.OnTerminate := CheckFilesTerminate;
+    FCheckFiles.Resume;
+  finally
+    Files.Free;
+  end;
+end;
+
 procedure TfrmStreamWriterMain.tabClientsTrackAdded(Entry: TStreamEntry;
   Track: TTrackInfo);
 begin
-  tabSaved.Tree.AddTrack(Entry, Track);
+  tabSaved.AddTrack(Entry, Track);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsTrackRemoved(Entry: TStreamEntry;
   Track: TTrackInfo);
 begin
-  tabSaved.Tree.RemoveTrack(Track);
+  tabSaved.RemoveTrack(Track);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsUpdateButtons(Sender: TObject);
@@ -676,7 +730,21 @@ end;
 
 procedure TfrmStreamWriterMain.tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
 begin
-  tabClients.SideBar.InfoView.ShowInfo(True);
+
+end;
+
+procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject);
+var
+  i, n: Integer;
+begin
+  for i := 0 to FStreams.Count - 1 do
+    for n := 0 to FStreams[i].Tracks.Count - 1 do
+      if LowerCase(FStreams[i].Tracks[n].Filename) = LowerCase(TCutTab(Sender).Filename) then
+      begin
+        FStreams[i].Tracks[n].Filesize := GetFileSize(FStreams[i].Tracks[n].Filename);
+        FStreams[i].Tracks[n].WasCut := True;
+        Exit;
+      end;
 end;
 
 procedure TfrmStreamWriterMain.tmrSpeedTimer(Sender: TObject);
@@ -869,5 +937,33 @@ begin
   end;
 end;
 
+procedure TfrmStreamWriterMain.CheckFilesTerminate(Sender: TObject);
+var
+  Kicked: Boolean;
+  i, n, j: Integer;
+  Track: TTrackInfo;
+begin
+  Kicked := False;
+  for i := 0 to FCheckFiles.RemoveFiles.Count - 1 do
+  begin
+    for n := 0 to FStreams.Count - 1 do
+      for j := FStreams[n].Tracks.Count - 1 downto 0 do
+      begin
+        if LowerCase(FStreams[n].Tracks[j].Filename) = LowerCase(FCheckFiles.RemoveFiles[i]) then
+        begin
+          Track := FStreams[n].Tracks[j];
+
+          FStreams[n].Tracks.Delete(j);
+          Kicked := True;
+
+          tabSaved.RemoveTrack(FCheckFiles.RemoveFiles[i]);
+
+          Track.Free;
+        end;
+      end;
+  end;
+
+  FCheckFiles := nil;
+end;
 
 end.
