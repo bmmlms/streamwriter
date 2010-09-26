@@ -118,6 +118,9 @@ begin
   FProjectUpdateLink := 'http://streamwriter.org/';
   {$ENDIF}
 
+  // TODO: !!!
+  FProjectUpdateLink := 'http://mistake.ws/';
+
   FProjectHomepageLink := 'http://streamwriter.org/';
   FProjectLink := '';
   FProjectHelpLink := 'http://streamwriter.org/inhalt/help/';
