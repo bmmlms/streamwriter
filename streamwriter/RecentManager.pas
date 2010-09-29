@@ -36,12 +36,14 @@ type
     FFilename: string;
     FFilesize: UInt64;
     FWasCut: Boolean;
+    FHash: Cardinal;
   public
     constructor Create(Time: TDateTime; Filename: string);
     property Time: TDateTime read FTime;
     property Filename: string read FFilename;
     property Filesize: UInt64 read FFilesize write FFilesize;
     property WasCut: Boolean read FWasCut write FWasCut;
+    property Hash: Cardinal read FHash;
   end;
 
   TStreamEntry = class(TObject)
@@ -251,6 +253,7 @@ begin
     TrackInfo := TTrackInfo.Create(Now, '');
     Stream.Read(TrackInfo.FTime);
     Stream.Read(TrackInfo.FFilename);
+    TrackInfo.FHash := HashString(LowerCase(ExtractFileName(TrackInfo.FFilename)));
     if Version > 1 then
     begin
       Stream.Read(TrackInfo.FFilesize);
@@ -809,6 +812,7 @@ begin
   FTime := Time;
   FFilename := Filename;
   FWasCut := False;
+  FHash := HashString(LowerCase(ExtractFileName(Filename)));
 end;
 
 end.

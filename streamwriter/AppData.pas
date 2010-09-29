@@ -164,7 +164,7 @@ begin
   FStorage.Read('FilePattern', FFilePattern, '%s\%a - %t');
   FStorage.Read('SkipShort', FSkipShort, True);
   FStorage.Read('SearchSilence', FSearchSilence, True);
-  FStorage.Read('SilenceLevel', FSilenceLevel, 5); // TODO: Die Werte noch optimieren.
+  FStorage.Read('SilenceLevel', FSilenceLevel, 20); // TODO: Die Werte noch optimieren.
   FStorage.Read('SilenceLength', FSilenceLength, 100);
   FStorage.Read('TrayClose', FTrayClose, False);
 

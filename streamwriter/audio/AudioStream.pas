@@ -26,7 +26,7 @@ uses
 
 type
   TPosRect = record
-    A, B: UInt64;
+    A, B: Int64;
   end;
 
   TPosArray = array of TPosRect;
@@ -36,6 +36,7 @@ type
   public
     function GetFrame(From: Int64; SearchBackwards: Boolean): Int64; virtual; abstract;
     procedure SaveToFile(const Filename: string; From, Length: Int64);
+    function SearchSilence(StartPos, EndPos, Len, MaxPeaks, MinDuration: Int64): TPosRect;
   end;
 
   TMPEGStreamFile = class(TAudioStreamFile)
@@ -53,7 +54,7 @@ type
   protected
   public
     function GetFrame(From: Int64; GetEnd: Boolean): Int64; virtual; abstract;
-    function GetPossibleTitle(ByteCount: UInt64): TPosRect; virtual; abstract;
+    //function GetPossibleTitle(ByteCount: UInt64): TPosRect; virtual; abstract;
   end;
 
   TMPEGStreamMemory = class(TAudioStreamMemory)
@@ -61,18 +62,21 @@ type
     function FindSilence(From, Count: UInt64): TPosArray;
   public
     function GetFrame(From: Int64; SearchBackwards: Boolean): Int64; override;
-    function GetPossibleTitle(ByteCount: UInt64): TPosRect; override;
+    //function GetPossibleTitle(ByteCount: UInt64): TPosRect; override;
   end;
 
   TAACStreamMemory = class(TAudioStreamMemory)
   public
     function GetFrame(From: Int64; SearchBackwards: Boolean): Int64; override;
-    function GetPossibleTitle(ByteCount: UInt64): TPosRect; override;
+    //function GetPossibleTitle(ByteCount: UInt64): TPosRect; override;
   end;
 
 implementation
 
-{ TAudioStream }
+uses
+  WaveData;
+
+{ TAudioStreamFile }
 
 procedure TAudioStreamFile.SaveToFile(const Filename: string; From, Length: Int64);
 var
@@ -88,6 +92,77 @@ begin
   finally
     Stream.Free;
   end;
+end;
+
+function TAudioStreamFile.SearchSilence(StartPos, EndPos, Len, MaxPeaks, MinDuration: Int64): TPosRect;
+var
+  TitleChanged: Boolean;
+  MetaLen, P: Integer;
+  Title, MetaData: string;
+  Buf: Byte;
+  WD, WD2: TWaveData;
+  M1, M2: TMPEGStreamMemory;
+  OldPos: Int64;
+  S, E: Int64;
+  FS: Int64;
+begin
+  OldPos := Position;
+
+  Result.A := -1;
+  Result.B := -1;
+
+  M1 := TMPEGStreamMemory.Create;
+  M2 := TMPEGStreamMemory.Create;
+  WD := TWaveData.Create;
+  WD2 := TWaveData.Create;
+  try
+    try
+      StartPos := StartPos - Len div 2;
+      EndPos := EndPos - Len div 2;
+
+      if StartPos < Len div 2 then
+        StartPos := Len div 2;
+      if EndPos > Size - Len div 2 then
+        EndPos := Size - Len div 2;
+
+      Seek(StartPos - Len div 2, soFromBeginning);
+      M1.CopyFrom(Self, Len);
+
+      Seek(EndPos - Len div 2, soFromBeginning);
+      M2.CopyFrom(Self, Len);
+
+      // Okay, dann wollen wir mal suchen
+      WD.Load(M1);
+      WD2.Load(M2);
+
+      WD.AutoCut(MaxPeaks, MinDuration);
+      WD2.AutoCut(MaxPeaks, MinDuration);
+
+      if WD.Silence.Count > 0 then
+      begin
+        S := WD.WaveArray[WD.Silence[0].CutEnd].Pos;
+        S := Round(S * (M1.Size / WD.Wavesize));
+        Result.A := S + StartPos - Len div 2;
+      end;
+
+      if WD2.Silence.Count > 0 then
+      begin
+        S := WD2.WaveArray[WD2.Silence[WD2.Silence.Count - 1].CutStart].Pos;
+        S := Round(S * (M2.Size / WD2.Wavesize));
+        Result.B := S + EndPos - Len div 2;
+      end;
+    except
+      on E: Exception do
+        raise Exception.Create('Error in SearchSilence(): ' + E.Message);
+    end;
+  finally
+    M1.Free;
+    M2.Free;
+    WD.Free;
+    WD2.Free;
+  end;
+
+  Seek(OldPos, soFromBeginning);
 end;
 
 { TMPEGStreamFile }
@@ -217,22 +292,11 @@ begin
 
 end;
 
-function TMPEGStreamMemory.GetPossibleTitle(ByteCount: UInt64): TPosRect;
-begin
-
-end;
-
 { TAACStreamMemory }
 
 function TAACStreamMemory.GetFrame(From: Int64; SearchBackwards: Boolean): Int64;
 begin
   Result := From;
-end;
-
-function TAACStreamMemory.GetPossibleTitle(ByteCount: UInt64): TPosRect;
-begin
-  Result.A := 0;
-  Result.B := 0;
 end;
 
 end.

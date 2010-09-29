@@ -51,6 +51,8 @@ type
     FWavesize, FFilesize: Int64;
     FAudioStart, FAudioEnd: Cardinal;
 
+    procedure AnalyzeData;
+
     procedure FSetWaveArray(Value: TWaveEntryArray);
 
     function FGetCutStart: Cardinal;
@@ -61,7 +63,8 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure Load(Filename: string);
+    procedure Load(Stream: TMemoryStream); overload;
+    procedure Load(Filename: string); overload;
     function Save(Filename: string): Boolean;
     procedure Cut(F, T: Cardinal);
     procedure AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
@@ -106,6 +109,24 @@ begin
   inherited;
 end;
 
+procedure TWaveData.Load(Stream: TMemoryStream);
+var
+  i: Integer;
+  Level: DWord;
+  PeakL, PeakR: DWord;
+  Position: QWORD;
+  Counter, c2: Cardinal;
+  FS: TFileStream;
+begin
+  FDecoder := BASSStreamCreateFile(True, Stream.Memory, 0, Stream.Size, BASS_STREAM_DECODE {or BASS_STREAM_PRESCAN} {$IFDEF UNICODE} or BASS_UNICODE{$ENDIF});
+  if FDecoder = 0 then
+  begin
+    raise Exception.Create('');
+  end;
+
+  AnalyzeData;
+end;
+
 procedure TWaveData.Load(Filename: string);
 var
   i: Integer;
@@ -115,10 +136,6 @@ var
   Counter, c2: Cardinal;
   FS: TFileStream;
 begin
-  Counter := 0;
-
-  SetLength(FWaveArray, 500);
-
   FFilename := Filename;
   FFilesize := GetFileSize(Filename);
   if FFilesize =  -1 then
@@ -131,6 +148,90 @@ begin
   begin
     raise Exception.Create('');
   end;
+
+  AnalyzeData;
+end;
+
+function TWaveData.Save(Filename: string): Boolean;
+var
+  S, E: Cardinal;
+  FS, StartTagBytes, EndTagBytes: Int64;
+  FIn: TMPEGStreamFile;
+  FOut: TMemoryStream;
+begin
+  Result := False;
+  if CutStates.Count <= 1 then
+    Exit;
+
+  try
+    S := WaveArray[CutStart].Pos;
+    E := WaveArray[CutEnd].Pos + WaveArray[CutEnd].Len;
+
+    FS := Filesize - AudioStart - (Filesize - AudioEnd);
+    StartTagBytes := FAudioStart;
+    EndTagBytes := Filesize - FAudioEnd;
+
+    S := Round(S * (FS / Wavesize));
+    E := Round(E * (FS / Wavesize));
+
+    S := S + AudioStart;
+    E := E + AudioStart;
+
+    FOut := TMemoryStream.Create;
+    try
+      FIn := TMPEGStreamFile.Create(FFilename, fmOpenRead or fmShareDenyWrite);
+      try
+        // Tags kopieren
+        if StartTagBytes > 0 then
+        begin
+          FIn.Seek(0, soFromBeginning);
+          FOut.CopyFrom(FIn, StartTagBytes);
+        end;
+
+        S := FIn.GetFrame(S, False);
+        E := FIn.GetFrame(E, True);
+
+        // Daten kopieren
+        FIn.Seek(S, soFromBeginning);
+        FOut.CopyFrom(FIn, E - S);
+
+        // Tags kopieren
+        if EndTagBytes > 0 then
+        begin
+          FIn.Seek(FFilesize - EndTagBytes, soFromBeginning);
+          FOut.CopyFrom(FIn, EndTagBytes);
+        end;
+
+        FIn.Free;
+        FOut.SaveToFile(Filename);
+        Result := True;
+      except
+        FIn.Free;
+      end;
+    finally
+      FOut.Free;
+    end;
+  except
+  end;
+end;
+
+procedure TWaveData.Cut(F, T: Cardinal);
+begin
+  FCutStates.Add(TCutState.Create(F, T));
+end;
+
+procedure TWaveData.AnalyzeData;
+var
+  i: Integer;
+  Level: DWord;
+  PeakL, PeakR: DWord;
+  Position: QWORD;
+  Counter, c2: Cardinal;
+  FS: TFileStream;
+begin
+  Counter := 0;
+
+  SetLength(FWaveArray, 500);
 
   while BASSChannelIsActive(FDecoder) = BASS_ACTIVE_PLAYING do
   begin
@@ -174,68 +275,6 @@ begin
   FCutStates.Add(TCutState.Create(0, High(FWaveArray)));
 end;
 
-function TWaveData.Save(Filename: string): Boolean;
-var
-  S, E: Cardinal;
-  FS, StartTagBytes, EndTagBytes: Int64;
-  FIn: TMPEGStreamFile;
-  FOut: TMemoryStream;
-begin
-  Result := False;
-  if CutStates.Count <= 1 then
-    Exit;
-
-  try
-    S := WaveArray[CutStart].Pos;
-    E := WaveArray[CutEnd].Pos + WaveArray[CutEnd].Len;
-
-    FS := Filesize - AudioStart - (Filesize - AudioEnd);
-    StartTagBytes := FAudioStart;
-    EndTagBytes := Filesize - FAudioEnd;
-
-    S := Round(S * (FS / Wavesize));
-    E := Round(E * (FS / Wavesize));
-
-    S := S + AudioStart;
-    E := E + AudioStart;
-
-    FOut := TMemoryStream.Create;
-    try
-      FIn := TMPEGStreamFile.Create(FFilename, fmOpenRead or fmShareDenyWrite);
-      try
-        // Tags kopieren
-        FIn.Seek(0, soFromBeginning);
-        FOut.CopyFrom(FIn, StartTagBytes);
-
-        S := FIn.GetFrame(S, False);
-        E := FIn.GetFrame(E, True);
-
-        // Daten kopieren
-        FIn.Seek(S, soFromBeginning);
-        FOut.CopyFrom(FIn, E - S);
-
-        // Tags kopieren
-        FIn.Seek(FFilesize - EndTagBytes, soFromBeginning);
-        FOut.CopyFrom(FIn, EndTagBytes);
-
-        FIn.Free;
-        FOut.SaveToFile(Filename);
-        Result := True;
-      except
-        FIn.Free;
-      end;
-    finally
-      FOut.Free;
-    end;
-  except
-  end;
-end;
-
-procedure TWaveData.Cut(F, T: Cardinal);
-begin
-  FCutStates.Add(TCutState.Create(F, T));
-end;
-
 procedure TWaveData.AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
 var
   i: Integer;
@@ -248,13 +287,14 @@ begin
     FSilence[i].Free;
   FSilence.Clear;
 
-  MaxPeaks := Trunc((MaxPeaks / 100) * 2000);
+  MaxPeaks := Trunc((MaxPeaks / 100) * 6000);
   MinDurationD := MinDuration / 1000;
 
   SilenceStart := 0;
   SilenceEnd := 0;
   for i := 0 to High(FWaveArray) do
   begin
+    // TODO: Sicher? wenn das immer die ersten sind, lieber einfach das erste array element überspringen...
     if (FWaveArray[i].L = 0) or (FWaveArray[i].R = 0) then
       Continue;
 
@@ -287,6 +327,9 @@ begin
       end;
     end;
   end;
+
+  if (SilenceStart > 0) and (SilenceEnd = 0) then
+    FSilence.Add(TCutState.Create(SilenceStart, High(FWaveArray)));
 end;
 
 function TWaveData.FGetCutEnd: Cardinal;

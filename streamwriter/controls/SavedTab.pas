@@ -36,7 +36,7 @@ type
   end;
   PSavedNodeData = ^TSavedNodeData;
 
-  TTrackActions = (taPlay, taCut, taRemove, taDelete, taShowFile, taProperties);
+  TTrackActions = (taPlay, taCut, taRemove, taRecycle, taDelete, taShowFile, taProperties);
 
   TTrackInfoArray = array of TTrackInfo;
 
@@ -47,6 +47,7 @@ type
     FItemPlay: TMenuItem;
     FItemCut: TMenuItem;
     FItemRemove: TMenuItem;
+    FItemRecycle: TMenuItem;
     FItemDelete: TMenuItem;
     FItemShowFile: TMenuItem;
     FItemProperties: TMenuItem;
@@ -58,6 +59,7 @@ type
     property ItemPlay: TMenuItem read FItemPlay;
     property ItemCut: TMenuItem read FItemCut;
     property ItemRemove: TMenuItem read FItemRemove;
+    property ItemRecycle: TMenuItem read FItemRecycle;
     property ItemDelete: TMenuItem read FItemDelete;
     property ItemShowFile: TMenuItem read FItemShowFile;
     property ItemProperties: TMenuItem read FItemProperties;
@@ -118,7 +120,6 @@ type
 
     function GetNodes(SelectedOnly: Boolean): TNodeArray;
     function GetSelected: TTrackInfoArray;
-    procedure DeleteTracks(Tracks: TTrackInfoArray);
 
     procedure PopupMenuPopup(Sender: TObject);
     procedure PopupMenuClick(Sender: TObject);
@@ -136,6 +137,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+
+    procedure DeleteTrack(Track: TTrackInfo);
 
     property OnAction: TTrackActionEvent read FOnAction write FOnAction;
   end;
@@ -169,6 +172,11 @@ begin
   FItemRemove.ImageIndex := 21;
   Items.Add(FItemRemove);
 
+  FItemRecycle := CreateMenuItem;
+  FItemRecycle.Caption := _('R&ecycle');
+  FItemRecycle.ImageIndex := 24;
+  Items.Add(FItemRecycle);
+
   FItemDelete := CreateMenuItem;
   FItemDelete.Caption := _('&Delete');
   FItemDelete.ImageIndex := 2;
@@ -193,7 +201,9 @@ begin
   FItemPlay.Enabled := Enable;
   FItemCut.Enabled := Enable;
   FItemRemove.Enabled := Enable;
+  FItemRecycle.Enabled := Enable;
   FItemDelete.Enabled := Enable;
+  ItemShowFile.Enabled := Enable;
   FItemProperties.Enabled := Enable;
 end;
 
@@ -254,6 +264,7 @@ procedure TSavedTab.SavedTreeAction(Sender: TObject; Action: TTrackActions;
   Tracks: TTrackInfoArray);
 var
   Entries: TPlaylistEntryArray;
+  SL: TStringList;
   i: Integer;
 begin
   case Action of
@@ -280,18 +291,43 @@ begin
         for i := 0 to Length(Tracks) - 1 do
         begin
           FStreams.RemoveTrack(Tracks[i]);
+          FSavedTree.DeleteTrack(Tracks[i]);
           if Assigned(FOnTrackRemoved) then
             FOnTrackRemoved(nil, Tracks[i]);
         end;
       end;
-    taDelete:
+    taRecycle:
       begin
         for i := 0 to Length(Tracks) - 1 do
         begin
-          DeleteFile(Tracks[i].Filename);
-          FStreams.RemoveTrack(Tracks[i]);
-          if Assigned(FOnTrackRemoved) then
-            FOnTrackRemoved(nil, Tracks[i]);
+          if Recycle(Tracks[i].Filename) then
+          begin
+            FSavedTree.DeleteTrack(Tracks[i]);
+            FStreams.RemoveTrack(Tracks[i]);
+            if Assigned(FOnTrackRemoved) then
+              FOnTrackRemoved(nil, Tracks[i]);
+          end else
+          begin
+            // TODO: ?
+          end;
+        end;
+      end;
+    taDelete:
+      begin
+        if MsgBox(0, _('Do you really want to delete all selected files?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
+          Exit;
+        for i := 0 to Length(Tracks) - 1 do
+        begin
+          if DeleteFile(Tracks[i].Filename) then
+          begin
+            FSavedTree.DeleteTrack(Tracks[i]);
+            FStreams.RemoveTrack(Tracks[i]);
+            if Assigned(FOnTrackRemoved) then
+              FOnTrackRemoved(nil, Tracks[i]);
+          end else
+          begin
+            // TODO: ?
+          end;
         end;
       end;
     taShowFile:
@@ -409,6 +445,7 @@ begin
   FPopupMenu.ItemPlay.OnClick := PopupMenuClick;
   FPopupMenu.ItemCut.OnClick := PopupMenuClick;
   FPopupMenu.ItemRemove.OnClick := PopupMenuClick;
+  FPopupMenu.ItemRecycle.OnClick := PopupMenuClick;
   FPopupMenu.ItemDelete.OnClick := PopupMenuClick;
   FPopupMenu.ItemShowFile.OnClick := PopupMenuClick;
   FPopupMenu.ItemProperties.OnClick := PopupMenuClick;
@@ -479,12 +516,23 @@ begin
   end;
 end;
 
-procedure TSavedTree.DeleteTracks(Tracks: TTrackInfoArray);
+procedure TSavedTree.DeleteTrack(Track: TTrackInfo);
 var
   i, n: Integer;
   NodeData: PSavedNodeData;
   Nodes: TNodeArray;
 begin
+  Nodes := GetNodes(False);
+  for i := 0 to Length(Nodes) - 1 do
+  begin
+    NodeData := GetNodeData(Nodes[i]);
+    if Track = NodeData.Track then
+    begin
+      DeleteNode(Nodes[i]);
+      Exit;
+    end;
+  end;
+  {
   Nodes := GetNodes(False);
   for n := 0 to Length(Tracks) - 1 do
   begin
@@ -497,6 +545,7 @@ begin
       end;
     end;
   end;
+  }
 end;
 
 procedure TSavedTree.PopupMenuPopup(Sender: TObject);
@@ -519,7 +568,7 @@ begin
   FPopupMenu.ItemCut.Enabled := FoundMP3;
 end;
 
-procedure TSavedTree.PopupMenuClick(Sender: TObject);
+procedure TSavedTree.PopupMenuClick(Sender: TObject);  // TODO: Das Popup hier braucht auch ne toolbar.
 var
   Action: TTrackActions;
   Tracks: TTrackInfoArray;
@@ -536,12 +585,12 @@ begin
   else if Sender = FPopupMenu.ItemRemove then
   begin
     Action := taRemove;
-    DeleteTracks(Tracks);
-  end
-  else if Sender = FPopupMenu.ItemDelete then
+  end else if Sender = FPopupMenu.ItemRecycle then
+  begin
+    Action := taRecycle;
+  end else if Sender = FPopupMenu.ItemDelete then
   begin
     Action := taDelete;
-    DeleteTracks(Tracks);
   end else if Sender = FPopupMenu.ItemShowFile then
     Action := taShowFile
   else if Sender = FPopupMenu.ItemProperties then
@@ -645,8 +694,8 @@ begin
   case Column of
     0: Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
     1: Result := CmpInt(Data1.Track.Filesize, Data2.Track.Filesize);
-    3: Result := CompareText(Data1.Stream.Name, Data2.Stream.Name);
-    2: Result := CmpTime(Data1.Track.Time, Data2.Track.Time);
+    2: Result := CompareText(Data1.Stream.Name, Data2.Stream.Name);
+    3: Result := CmpTime(Data1.Track.Time, Data2.Track.Time);
   end;
 end;
 

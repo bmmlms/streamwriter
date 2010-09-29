@@ -23,13 +23,27 @@ interface
 
 uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
-  AppData, LanguageObjects, Functions, DynBASS;
+  AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections;
 
 type
   TDebugEvent = procedure(Text, Data: string) of object;
   TChunkReceivedEvent = procedure(Buf: Pointer; Len: Integer) of object;
 
   TAudioTypes = (atMPEG, atAAC, atNone);
+
+  TStreamTrack = class
+  public
+    S, E: Int64;
+    Title: string;
+    constructor Create(S, E: Int64; Title: string);
+  end;
+
+  TStreamTracks = class(TList<TStreamTrack>)
+  public
+    destructor Destroy; override;
+
+    procedure FoundTitle(Offset: Int64; Title: string);
+  end;
 
   TICEStream = class(THTTPStream)
   private
@@ -52,14 +66,18 @@ type
 
     FMetaCounter: Integer;
     FNextMetaOffset: Integer;
-    FSaveFrom, FForwardLimit: Int64;
+
+    //FSaveFrom, FForwardLimit: Int64;
+    //FSongStart, FSongEnd: Int64;
 
     FTitle: string;
-    FSaveTitle: string;
+    //FSaveTitle: string;
     FSavedFilename: string;
     FSavedTitle: string;
     FSavedSize: UInt64;
     FFilename: string;
+
+    FStreamTracks: TStreamTracks;
 
     FAudioStream: TAudioStreamFile;
     FAudioType: TAudioTypes;
@@ -71,13 +89,12 @@ type
     FOnIOError: TNotifyEvent;
 
     procedure DataReceived(CopySize: Integer);
-    function ExtractTitle(Title: string): string;
-    procedure SaveData;
+    procedure SaveData(S, E: UInt64; Title: string);
+    procedure TrySave;
     procedure ProcessData;
     function GetFilename(var Dir: string; Name: string): string;
-    function GetFilenameTitle(var Dir: string): string;
+    function GetFilenameTitle(StreamTitle: string; var Dir: string): string;
     function GetValidFilename(Name: string): string;
-    function SaveSizeOkay(Size: Integer): Boolean;
     procedure GetSettings;
   protected
     procedure DoHeaderRemoved; override;
@@ -110,6 +127,9 @@ type
     property OnIOError: TNotifyEvent read FOnIOError write FOnIOError;
   end;
 
+const
+  SILENCE_SEARCH_BUFFER = 75000;
+
 implementation
 
 { TICEStream }
@@ -125,12 +145,20 @@ begin
   FBitRate := 0;
   FGenre := '';
   FTitle := '';
-  FSaveFrom := 0;
-  FForwardLimit := -1;
-  FSaveTitle := '';
+  //FSongStart := -1;
+  //FSongEnd := -1;
+  //FSaveTitle := '';
   FSavedFilename := '';
   FSavedTitle := '';
   FAudioType := atNone;
+  FStreamTracks := TStreamTracks.Create;
+end;
+
+destructor TICEStream.Destroy;
+begin
+  FAudioStream.Free;
+  FStreamTracks.Free;
+  inherited;
 end;
 
 procedure TICEStream.DataReceived(CopySize: Integer);
@@ -147,12 +175,6 @@ begin
     FOnChunkReceived(Buf, CopySize);
     FreeMem(Buf);
   end;
-end;
-
-destructor TICEStream.Destroy;
-begin
-  FAudioStream.Free;
-  inherited;
 end;
 
 procedure TICEStream.DoHeaderRemoved;
@@ -247,12 +269,7 @@ begin
   AppGlobals.Unlock;
 end;
 
-function TICEStream.ExtractTitle(Title: string): string;
-begin
-  Result := Trim(Title);
-end;
-
-procedure TICEStream.SaveData;
+procedure TICEStream.SaveData(S, E: UInt64; Title: string);
 var
   Saved: Boolean;
   OldPos: Int64;
@@ -266,100 +283,152 @@ begin
   RangeBegin := -1;
   RangeEnd := -1;
 
-  RangeBegin := FAudioStream.GetFrame(FSaveFrom, False);
-  RangeEnd := FAudioStream.GetFrame(FAudioStream.Size, True);
+  RangeBegin := FAudioStream.GetFrame(S, False);
+  RangeEnd := FAudioStream.GetFrame(E, True);
 
-  WriteDebug(Format('FSaveFrom, begin, end: %d / %d / %d', [FSaveFrom, RangeBegin, RangeEnd]));
-
-  // Eventuell nach Stille suchen
-  if FSearchSilence and False then // TODO: Das "False" hier ist böse.
-  begin
-    // TODO: Jede "silence" muss eine mindestlänge haben.
-    // TODO: Nur, wenn nicht >20mb oder so.... weil ich extra in memory kopiere!
-    if FAudioStream is TMPEGStreamFile then
-    begin
-      if BassLoaded then
-      begin
-        WriteDebug('Searching for silence...');
-
-        MemStream := TMPEGStreamMemory.Create;
-        try
-          // Daten in MemoryStream kopieren
-          OldPos := FAudioStream.Position;
-          FAudioStream.Seek(RangeBegin, soFromBeginning);
-          MemStream.CopyFrom(FAudioStream, RangeEnd - RangeBegin);
-          FAudioStream.Seek(OldPos, soFromBeginning);
-
-          //P := MemStream.GetPossibleTitle(FSongBuffer);
-          P := MemStream.GetPossibleTitle(FSongBuffer); // TODO: Das ist FAiL. weil das ende könnte auch vor title change sein. also irgendwas substrahieren.
-
-          if (P.A > 0) or (P.B > 0) then
-          begin
-            RangeBegin := P.A + RangeBegin;
-            RangeEnd := P.B + RangeBegin;
-
-            WriteDebug(Format('Silence found, track is from %d to %d', [RangeBegin, RangeEnd]));
-
-            RangeBegin := FAudioStream.GetFrame(RangeBegin, False);
-            RangeEnd := FAudioStream.GetFrame(RangeEnd, True);
-
-            WriteDebug(Format('Found MPEG headers from %d to %d', [RangeBegin, RangeEnd]));
-          end;
-        finally
-          MemStream.Free;
-        end;
-      end else
-        WriteDebug('Cannot search for silence because bass library was not loaded.');
-    end;
-  end;
+  WriteDebug(Format('Saving from %d to %d', [S, E]));
 
   if (RangeEnd <= -1) or (RangeBegin <= -1) then
     raise Exception.Create('Error in audio data');
 
-  if not (SkipShort and not (SaveSizeOkay(RangeEnd - RangeBegin))) then
+  if SkipShort and (RangeEnd - RangeBegin < FShortSize) then
   begin
-    // Muss hier, damit das in GetFilenameTitle() fürs Dateinamensmuster da ist
-    Inc(FSongsSaved);
+    // TODO: Klappt das hier? wirklich testen. glaub mir.
+    WriteDebug(Format('Skipping title "%s" because it''s too small (%d bytes)', [Title, RangeEnd - RangeBegin]));
+    Exit;
+  end;
+
+  Inc(FSongsSaved);
+  try
+    Filename := GetFilenameTitle(Title, Dir);
+
+    if Length(Title) > 0 then
+      WriteDebug(Format('Saving title "%s"', [Title]))
+    else
+      WriteDebug('Saving unnamed title');
 
     try
-      Filename := GetFilenameTitle(Dir);
-
-      if Length(FSaveTitle) > 0 then
-        WriteDebug(Format('Saving title "%s"', [FSaveTitle]))
-      else
-        WriteDebug('Saving unnamed title');
-
-      try
-        ForceDirectories(Dir);
-      except
-        raise Exception.Create('Folder for saved tracks could not be created.');
-      end;
-
-      FAudioStream.SaveToFile(Filename, RangeBegin, RangeEnd - RangeBegin);
-      Saved := True;
-
-      FSavedFilename := Filename;
-      FSavedTitle := FSaveTitle;
-      FSavedSize := RangeEnd - RangeBegin;
-      if Assigned(FOnSongSaved) then
-        FOnSongSaved(Self);
+      ForceDirectories(Dir);
     except
-      on E: Exception do
-      begin
-        if not Saved then
-          Dec(FSongsSaved);
-        WriteDebug(Format('Error while saving to "%s": %s', [Filename, E.Message]));
-      end;
+      raise Exception.Create('Folder for saved tracks could not be created.');
     end;
-  end else
-  begin
-    WriteDebug(Format('Skipping title "%s" because it''s too small (%d bytes)', [FSaveTitle, RangeEnd - RangeBegin]));
+
+    FAudioStream.SaveToFile(Filename, RangeBegin, RangeEnd - RangeBegin);
+    Saved := True;
+
+    FSavedFilename := Filename;
+    FSavedTitle := Title;
+    FSavedSize := RangeEnd - RangeBegin;
+    if Assigned(FOnSongSaved) then
+      FOnSongSaved(Self);
+  except
+    on E: Exception do
+    begin
+      if not Saved then
+        Dec(FSongsSaved);
+      WriteDebug(Format('Error while saving to "%s": %s', [Filename, E.Message]));
+    end;
   end;
 end;
 
-function TICEStream.SaveSizeOkay(Size: Integer): Boolean;
+procedure TICEStream.TrySave;
+var
+  TitleChanged: Boolean;
+  MetaLen, P: Integer;
+  Title, MetaData: string;
+  Buf: Byte;
+  WD, WD2: TWaveData;
+  M1, M2: TMPEGStreamMemory;
+  R: TPosRect;
+  i: Integer;
+  Track: TStreamTrack;
 begin
-  Result := Size > FShortSize * 1024 - (FSongBuffer * 1024) * 2;
+  for i := FStreamTracks.Count - 1 downto 0 do
+  begin
+    Track := FStreamTracks[i];
+
+    if (Track.S > -1) and (Track.E > -1) then
+    begin
+      if FSearchSilence then
+      begin
+        if FAudioStream.Size > Track.E + SILENCE_SEARCH_BUFFER then
+        begin
+          WriteDebug('Searching for silence...');
+
+          R := FAudioStream.SearchSilence(Track.S, Track.E, SILENCE_SEARCH_BUFFER, FSilenceLevel, FSilenceLength);
+
+          if (R.A > -1) or (R.B > -1) then
+          begin
+            if R.A = -1 then
+            begin
+              WriteDebug('No silence at SongStart could be found, using configured buffer');
+              R.A := Track.S - FSongBuffer * 1024;
+              if R.A < FAudioStream.Size then
+                R.A := 0;
+            end else
+              WriteDebug('Silence at SongStart found');
+
+            if R.B = -1 then
+            begin
+              WriteDebug('No silence at SongEnd could be found');
+              R.B := Track.E + FSongBuffer * 1024;
+              if R.B > FAudioStream.Size then
+              begin
+                WriteDebug('Stream is too small, waiting for more data...');
+                Exit;
+              end else
+              begin
+                WriteDebug('Using configured buffer...');
+              end;
+            end else
+              WriteDebug('Silence at SongEnd found');
+
+            WriteDebug(Format('Scanned song start/end: %d/%d', [R.A, R.B]));
+
+            SaveData(R.A, R.B, Track.Title);
+
+            Track.Free;
+            FStreamTracks.Delete(i);
+            WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]));
+          end else
+          begin
+            if (FAudioStream.Size >= Track.S + (Track.E - Track.S) + ((FSongBuffer * 2) * 1024)) and
+               (FAudioStream.Size > Track.E + FSongBuffer * 1024) then
+            begin
+              WriteDebug(Format('No silence found, saving using buffer...', []));
+
+              // TODO: Alle kombinationen testen. silence detection an/aus, buffer gesetzt 0 oder mehr,
+              // wird in beiden situationen unter allen umständen gespeichert, etc... alles testen eben!
+
+              SaveData(Track.S - FSongBuffer * 1024, Track.E + FSongBuffer * 1024, Track.Title);
+
+              Track.Free;
+              FStreamTracks.Delete(i);
+              WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]));
+            end else
+              WriteDebug('Waiting for full buffer because no silence found...');
+          end;
+        end else
+        begin
+          WriteDebug(Format('Waiting to save "%s" because stream is too small', [Track.Title]));
+        end;
+      end else
+      begin
+        if (FAudioStream.Size >= Track.S + (Track.E - Track.S) + ((FSongBuffer * 2) * 1024)) and
+           (FAudioStream.Size > Track.E + FSongBuffer * 1024) then
+        begin
+          WriteDebug('Saving using buffer...');
+
+          SaveData(Track.S - FSongBuffer * 1024, Track.E + FSongBuffer * 1024, Track.Title);
+
+          Track.Free;
+          FStreamTracks.Delete(i);
+          WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]));
+        end else
+          WriteDebug('Waiting for full buffer...');
+      end;
+    end;
+  end;
 end;
 
 procedure TICEStream.ProcessData;
@@ -368,6 +437,10 @@ var
   MetaLen, P: Integer;
   Title, MetaData: string;
   Buf: Byte;
+  WD, WD2: TWaveData;
+  M1, M2: TMPEGStreamMemory;
+  R: TPosRect;
+  i: Integer;
 begin
   Seek(0, soFromBeginning);
   if FMetaInt = -1 then
@@ -377,25 +450,14 @@ begin
     Clear;
   end else
   begin
-    if (FForwardLimit > -1) and (FForwardLimit + FMetaInt <= FAudioStream.Size) then
-    begin
-      WriteDebug(Format('Saving "%s" because saveoffset reached', [FSaveTitle]));
-      SaveData;
-
-      // TODO: FSaveFrom muss passend gemacht werden auf das, wo SaveData geschnitten hat => SaveData braucht anderen Rückgabetyp
-      FSaveFrom := FAudioStream.Size - (FSongBuffer * 2) * 1024;
-      if FSaveFrom < 0 then
-        FSaveFrom := 0;
-
-      WriteDebug(Format('New starting offset: %d bytes, buffersize is %d', [FSaveFrom, FAudioStream.Size]));
-      FForwardLimit := -1;
-    end;
-
     TitleChanged := False;
     while Position < Size - FMetaInt - 4081 do // 4081 wegen 255*16+1 (Max-MetaLen)
     begin
       FAudioStream.Seek(0, soFromEnd);
+
       DataReceived(FMetaInt);
+
+      TrySave;
 
       Read(Buf, 1);
       if Buf > 0 then
@@ -405,53 +467,19 @@ begin
         MetaData := Trim(string(ToString(Position, MetaLen)));
         Seek(MetaLen, soFromCurrent);
         P := PosEx(''';', MetaData, 14);
-        Title := ExtractTitle(Copy(MetaData, 14, P - 14));
-
-        //if (Length(Title) = 0) and MetaOnly then
-        //  raise Exception.Create('Empty title in metadata received');
+        Title := Trim(Copy(MetaData, 14, P - 14));
 
         if Title <> FTitle then
         begin
-          WriteDebug(Format('Title "%s" now playing', [Title]));
+          WriteDebug(Format('Track changed, title "%s" now playing', [Title]));
           TitleChanged := True;
           Inc(FMetaCounter);
         end;
 
         if (Title <> FTitle) and (FMetaCounter >= 3) then
         begin
-          if FForwardLimit > -1 then
-          begin
-            WriteDebug('Saving because new title detected while set saveoffset');
-            SaveData;
-
-            // TODO: FSaveFrom muss passend gemacht werden auf das, wo SaveData geschnitten hat => SaveData braucht anderen Rückgabetyp
-            FSaveFrom := FAudioStream.Size - (FSongBuffer * 2) * 1024;
-            if FSaveFrom < 0 then
-              FSaveFrom := 0;
-
-            WriteDebug(Format('New starting offset: %s bytes, buffersize is %d bytes, buffersize is %d', [FSaveFrom, FAudioStream.Size]));
-            FForwardLimit := -1;
-          end else
-          begin
-            if not SaveSizeOkay(FAudioStream.Size - FSaveFrom + FSongBuffer) then
-            begin
-              if FSaveTitle <> '' then
-                WriteDebug(Format('New title detected but not enough data received to save "%s"', [FSaveTitle]))
-              else
-                WriteDebug('New title detected but not enough data received to save the previous title');
-
-              FSaveFrom := FAudioStream.Size - FSongBuffer * 1024;
-              if FSaveFrom < 0 then
-                FSaveFrom := 0;
-
-              WriteDebug(Format('New starting offset: %d bytes, buffersize is %d', [FSaveFrom, FAudioStream.Size]));
-            end else
-            begin
-              WriteDebug(Format('New title detected, will save "%s" at %d bytes', [FTitle, FAudioStream.Size + FSongBuffer * 1024]));
-              FForwardLimit := FAudioStream.Size + FSongBuffer * 1024;
-              FSaveTitle := FTitle;
-            end;
-          end;
+          WriteDebug(Format('Adding title "%s" to list', [Title]));
+          FStreamTracks.FoundTitle(FAudioStream.Size, Title);
         end else if Title = FTitle then
         begin
 
@@ -459,12 +487,8 @@ begin
         begin
           if FMetaCounter = 2 then
           begin
-            FSaveFrom := FAudioStream.Size - FSongBuffer * 1024;
-            if FSaveFrom < 0 then
-              FSaveFrom := 0;
-
-            WriteDebug(Format('Start of first full song "%s" detected', [Title]));
-            WriteDebug(Format('New starting offset: %d bytes, buffersize is %d', [FSaveFrom, FAudioStream.Size]));
+            FStreamTracks.FoundTitle(FAudioStream.Size, Title);
+            WriteDebug(Format('Start of first full song "%s" detected, adding it to list', [Title]));
           end;
         end;
 
@@ -537,7 +561,7 @@ begin
   Result := Dir + Filename;
 end;
 
-function TICEStream.GetFilenameTitle(var Dir: string): string;
+function TICEStream.GetFilenameTitle(StreamTitle: string; var Dir: string): string;
 var
   p: Integer;
   Artist, Title, StreamName, SaveTitle: string;
@@ -552,7 +576,7 @@ begin
   Artist := '';
   Title := '';
   StreamName := GetValidFileName(Trim(Self.StreamName));
-  SaveTitle := GetValidFileName(Trim(FSaveTitle));
+  SaveTitle := GetValidFileName(Trim(StreamTitle));
 
   p := Pos(' - ', SaveTitle);
   if p > 0 then
@@ -600,6 +624,35 @@ begin
   Name := StringReplace(Name, '>', '_', [rfReplaceAll]);
   Name := StringReplace(Name, '|', '_', [rfReplaceAll]);
   Result := Name;
+end;
+
+{ TStreamTrack }
+
+constructor TStreamTrack.Create(S, E: Int64; Title: string);
+begin
+  Self.S := S;
+  Self.E := E;
+  Self.Title := Title;
+end;
+
+{ TStreamTracks }
+
+destructor TStreamTracks.Destroy;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+    TStreamTrack(Items[i]).Free;
+  inherited;
+end;
+
+procedure TStreamTracks.FoundTitle(Offset: Int64; Title: string);
+begin
+  if Count > 0 then
+  begin
+    Items[Count - 1].E := Offset;
+  end;
+  Add(TStreamTrack.Create(Offset, -1, Title));
 end;
 
 end.

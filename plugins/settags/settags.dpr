@@ -40,12 +40,18 @@ type
 
 const
   AUTHOR = 'Graf Zwal';
+  VERSION = 1;
   DEFAULT_ENABLED = True;
 
 var
   Lang: string;
   Read: TReadWrite;
   Write: TReadWrite;
+
+function GetVersion: Integer; stdcall;
+begin
+  Result := VERSION;
+end;
 
 function GetAuthor(Data: PChar; Len: Integer): Integer; stdcall;
 begin
@@ -153,6 +159,7 @@ end;
 
 exports
   Initialize,
+  GetVersion,
   GetAuthor,
   GetName,
   GetHelp,

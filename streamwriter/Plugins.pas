@@ -35,6 +35,7 @@ type
 
   TInitialize = procedure(L: PChar; RF, WF: TReadWrite); stdcall;
   TAct = function(var Data: TPluginActData): Integer; stdcall;
+  TGetInt = function: Integer; stdcall;
   TGetString = function(Data: PChar; Len: Integer): Integer; stdcall;
   TGetBoolean = function: Boolean; stdcall;
   TConfigure = function(Handle: Cardinal; ShowMessages: Boolean): Boolean; stdcall;
@@ -170,7 +171,6 @@ begin
     end;
 end;
 
-
 procedure TPluginManager.ReInitPlugins;
 var
   i: Integer;
@@ -181,10 +181,11 @@ end;
 
 constructor TPluginManager.Create(Path: string);
 var
-  P: TPlugin;
-  Handle: THandle;
-  Files: TStringList;
   i: Integer;
+  Handle: THandle;
+  GetVersion: TGetInt;
+  P: TPlugin;
+  Files: TStringList;
 begin
   FActivePlugin := nil;
   FPlugins := TList<TPlugin>.Create;
@@ -197,9 +198,15 @@ begin
       Handle := LoadLibrary(PChar(Path + Files[i]));
       if Handle <> 0 then
         try
-          P := TPlugin.Create(Handle, Path + Files[i]);
-          P.Initialize;
-          Plugins.Add(P);
+          @GetVersion := GetProcAddress(Handle, 'GetVersion');
+          if @GetVersion = nil then
+            Continue;
+          if GetVersion >= 1 then
+          begin
+            P := TPlugin.Create(Handle, Path + Files[i]);
+            P.Initialize;
+            Plugins.Add(P);
+          end;
         except
 
         end;

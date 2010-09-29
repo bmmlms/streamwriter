@@ -694,20 +694,22 @@ end;
 procedure TfrmStreamWriterMain.tabSavedRefresh(Sender: TObject);
 var
   i, n: Integer;
-  Files: TStringList;
+  Files: TList;
 begin
-  Files := TStringList.Create;
+  if FCheckFiles <> nil then
+    Exit;
+
+  Files := TList.Create;
   try
     for i := 0 to FStreams.Count - 1 do
       for n := 0 to FStreams[i].Tracks.Count - 1 do
-      begin
-        Files.Add(FStreams[i].Tracks[n].Filename);
-      end;
+        Files.Add(TFileEntry.Create(FStreams[i].Tracks[n].Filename, FStreams[i].Tracks[n].Filesize, eaNone));
     FCheckFiles := TCheckFilesThread.Create(Files);
     FCheckFiles.OnTerminate := CheckFilesTerminate;
     FCheckFiles.Resume;
   finally
-    Files.Free;
+    // Wird vom Thread erledigt. Unschön, aber...
+    // Files.Free;
   end;
 end;
 
@@ -939,28 +941,45 @@ end;
 
 procedure TfrmStreamWriterMain.CheckFilesTerminate(Sender: TObject);
 var
-  Kicked: Boolean;
   i, n, j: Integer;
+  Found: Boolean;
   Track: TTrackInfo;
+  E: TFileEntry;
 begin
-  Kicked := False;
-  for i := 0 to FCheckFiles.RemoveFiles.Count - 1 do
+  for i := 0 to FCheckFiles.Files.Count - 1 do
   begin
+    E := TFileEntry(FCheckFiles.Files[i]);
+
+    if E.Action = eaNone then
+      Continue;
+
     for n := 0 to FStreams.Count - 1 do
+    begin
+      Found := False;
       for j := FStreams[n].Tracks.Count - 1 downto 0 do
       begin
-        if LowerCase(FStreams[n].Tracks[j].Filename) = LowerCase(FCheckFiles.RemoveFiles[i]) then
+        if FStreams[n].Tracks[j].Hash = E.Hash then
         begin
           Track := FStreams[n].Tracks[j];
-
-          FStreams[n].Tracks.Delete(j);
-          Kicked := True;
-
-          tabSaved.RemoveTrack(FCheckFiles.RemoveFiles[i]);
-
-          Track.Free;
+          case E.Action of
+            eaNone: ;
+            eaSize:
+              Track.Filesize := E.Size;
+            eaRemove:
+              begin
+                FStreams[n].Tracks.Delete(j);
+                tabSaved.RemoveTrack(Track);
+                Track.Free;
+              end;
+          end;
+          Found := True;
         end;
+        if Found then
+          Break;
       end;
+      if Found then
+        Break;
+    end;
   end;
 
   FCheckFiles := nil;

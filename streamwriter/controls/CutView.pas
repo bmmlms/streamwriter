@@ -279,7 +279,7 @@ begin
   if not CanSave then
     Exit;
 
-  //FFilename := 'z:\out' + inttostr(trunc(now * 10000)) + '.mp3'; // TODO: Auswerten und benutzen!
+  // FFilename := 'z:\out' + inttostr(trunc(now * 10000)) + '.mp3'; // TODO: Auswerten und benutzen!
 
   if FWaveData.Save(FFilename) then
   begin
