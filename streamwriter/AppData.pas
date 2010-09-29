@@ -168,6 +168,11 @@ begin
   FStorage.Read('SilenceLength', FSilenceLength, 100);
   FStorage.Read('TrayClose', FTrayClose, False);
 
+  if (FSilenceLevel < 1) or (FSilenceLevel > 100) then
+    FSilenceLevel := 20;
+  if FSilenceLength < 20 then
+    FSilenceLength := 20;
+
   //FStorage.Read('ShowSidebar', FShowSidebar, True);
   FShowSidebar := True;
 

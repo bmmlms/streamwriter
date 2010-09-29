@@ -422,17 +422,17 @@ begin
       txtShortSongSize.Text := IntToStr(AppGlobals.ShortSize);
   end;
 
-  if (StrToIntDef(txtSilenceLevel.Text, -1) = -1) or (StrToIntDef(txtSilenceLevel.Text, -1) > 100) then
+  if (StrToIntDef(txtSilenceLevel.Text, -1) > 100) or (StrToIntDef(txtSilenceLevel.Text, -1) < 1) then
   begin
-    MsgBox(Handle, _('Please enter the maximum volume level for silence detection as a value ranging from 0 to 100.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('Please enter the maximum volume level for silence detection as a value ranging from 1 to 100.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtSilenceLevel.Parent)));
     txtSilenceLevel.SetFocus;
     Exit;
   end;
 
-  if Trim(txtSilenceLength.Text) = '' then
+  if StrToIntDef(txtSilenceLength.Text, -1) < 20 then
   begin
-    MsgBox(Handle, _('Please enter the minimum length for silence.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('Please enter the minimum length for silence (at least 20 ms).'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtSilenceLength.Parent)));
     txtSilenceLength.SetFocus;
     Exit;

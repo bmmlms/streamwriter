@@ -436,16 +436,16 @@ object frmSettings: TfrmSettings
     object Label13: TLabel
       Left = 144
       Top = 140
-      Width = 13
+      Width = 56
       Height = 13
-      Caption = 'ms'
+      Caption = 'ms (min. 20)'
     end
     object Label14: TLabel
       Left = 104
       Top = 116
       Width = 33
       Height = 13
-      Caption = '(0-100)'
+      Caption = '(1-100)'
     end
     object txtSongBuffer: TLabeledEdit
       Left = 4
