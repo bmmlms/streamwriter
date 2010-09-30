@@ -202,11 +202,12 @@ begin
           FOut.CopyFrom(FIn, EndTagBytes);
         end;
 
-        FIn.Free;
+        FreeAndNil(FIn);
+        // TODO: Er speichert nicht, FastMM meldet sich dann...
         FOut.SaveToFile(Filename);
         Result := True;
       except
-        FIn.Free;
+        FreeAndNil(FIn);
       end;
     finally
       FOut.Free;

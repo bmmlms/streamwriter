@@ -173,12 +173,12 @@ begin
   Items.Add(FItemRemove);
 
   FItemRecycle := CreateMenuItem;
-  FItemRecycle.Caption := _('R&ecycle');
+  FItemRecycle.Caption := _('R&ecycle files');
   FItemRecycle.ImageIndex := 24;
   Items.Add(FItemRecycle);
 
   FItemDelete := CreateMenuItem;
-  FItemDelete.Caption := _('&Delete');
+  FItemDelete.Caption := _('&Delete files');
   FItemDelete.ImageIndex := 2;
   Items.Add(FItemDelete);
 

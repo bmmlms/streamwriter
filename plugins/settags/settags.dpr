@@ -29,6 +29,8 @@ uses
   LanguageObjects in '..\..\..\common\LanguageObjects.pas',
   Functions in '..\..\..\common\Functions.pas';
 
+{$SetPEOptFlags $0140}
+
 {$R .\res\language.res}
 
 type

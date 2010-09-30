@@ -77,6 +77,8 @@ uses
   About in '..\..\common\forms\About.pas' {frmAbout},
   CheckFilesThread in 'CheckFilesThread.pas';
 
+{$SetPEOptFlags $0140}
+
 {$R *.res}
 {$R res\language.res}
 {$R res\icons.res}

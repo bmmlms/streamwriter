@@ -30,6 +30,10 @@ type
   private
     FSave: TToolButton;
     //FSaveAs: TToolButton;
+    FSep3: TToolButton;
+    FPosStart: TToolButton;
+    FPosEnd: TToolButton;
+    FPosPlay: TToolButton;
     FSep1: TToolButton;
     FAutoCut: TToolButton;
     FCut: TToolButton;
@@ -54,6 +58,7 @@ type
 
     procedure SaveClick(Sender: TObject);
     procedure SaveAsClick(Sender: TObject);
+    procedure PosClick(Sender: TObject);
     procedure AutoCutClick(Sender: TObject);
     procedure CutClick(Sender: TObject);
     procedure UndoClick(Sender: TObject);
@@ -84,11 +89,24 @@ end;
 procedure TCutTab.UpdateButtons;
 begin
   FToolBar.FSave.Enabled := FCutView.CanSave;
+  FToolBar.FPosStart.Enabled := FCutView.CanSetLine;
+  FToolBar.FPosEnd.Enabled := FCutView.CanSetLine;
+  FToolBar.FPosPlay.Enabled := FCutView.CanSetLine;
   FToolBar.FAutoCut.Enabled := FCutView.CanAutoCut;
   FToolBar.FCut.Enabled := FCutView.CanCut;
   FToolBar.FUndo.Enabled := FCutView.CanUndo;
   FToolBar.FPlay.Enabled := FCutView.CanPlay;
   FToolBar.FStop.Enabled := FCutView.CanStop;
+
+  if FCutView.CanSetLine then
+    case FCutView.LineMode of
+      lmStart:
+        FToolBar.FPosStart.Down := True;
+      lmEnd:
+        FToolBar.FPosEnd.Down := True;
+      lmPlay:
+        FToolBar.FPosPlay.Down := True;
+    end;
 end;
 
 procedure TCutTab.SaveClick(Sender: TObject);
@@ -102,6 +120,32 @@ end;
 procedure TCutTab.SaveAsClick(Sender: TObject);
 begin
 
+end;
+
+procedure TCutTab.PosClick(Sender: TObject);
+begin
+  if TToolButton(Sender).Down then
+    Exit;
+
+  FToolBar.FPosStart.Down := False;
+  FToolBar.FPosEnd.Down := False;
+  FToolBar.FPosPlay.Down := False;
+
+  if Sender = FToolBar.FPosStart then
+  begin
+    FCutView.LineMode := lmStart;
+    FToolBar.FPosStart.Down := True;
+  end;
+  if Sender = FToolBar.FPosEnd then
+  begin
+    FCutView.LineMode := lmEnd;
+    FToolBar.FPosEnd.Down := True;
+  end;
+  if Sender = FToolBar.FPosPlay then
+  begin
+    FCutView.LineMode := lmPlay;
+    FToolBar.FPosPlay.Down := True;
+  end;
 end;
 
 procedure TCutTab.AutoCutClick(Sender: TObject);
@@ -147,6 +191,9 @@ begin
   FToolBar.Setup;
 
   FToolBar.FSave.OnClick := SaveClick;
+  FToolBar.FPosStart.OnClick := PosClick;
+  FToolBar.FPosEnd.OnClick := PosClick;
+  FToolBar.FPosPlay.OnClick := PosClick;
   //FToolBar.FSaveAs.OnClick := SaveAsClick;
   FToolBar.FAutoCut.OnClick := AutoCutClick;
   FToolBar.FCut.OnClick := CutClick;
@@ -209,6 +256,28 @@ begin
   FSep1.Parent := Self;
   FSep1.Style := tbsSeparator;
   FSep1.Width := 8;
+
+
+  FPosPlay := TToolButton.Create(Self);
+  FPosPlay.Parent := Self;
+  FPosPlay.Hint := _('Set play position');
+  FPosPlay.ImageIndex := 27;
+
+  FPosEnd := TToolButton.Create(Self);
+  FPosEnd.Parent := Self;
+  FPosEnd.Hint := _('Set end position for cut');
+  FPosEnd.ImageIndex := 26;
+
+  FPosStart := TToolButton.Create(Self);
+  FPosStart.Parent := Self;
+  FPosStart.Hint := _('Set start position for cut');
+  FPosStart.ImageIndex := 25;
+
+
+  FSep3 := TToolButton.Create(Self);
+  FSep3.Parent := Self;
+  FSep3.Style := tbsSeparator;
+  FSep3.Width := 8;
 
   {
   FSaveAs := TToolButton.Create(Self);
