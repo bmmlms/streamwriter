@@ -353,7 +353,7 @@ begin
       begin
         if FAudioStream.Size > Track.E + SILENCE_SEARCH_BUFFER then
         begin
-          WriteDebug('Searching for silence...');
+          WriteDebug(Format('Searching for silence using search range of %d bytes...', [SILENCE_SEARCH_BUFFER]));
 
           R := FAudioStream.SearchSilence(Track.S, Track.E, SILENCE_SEARCH_BUFFER, FSilenceLevel, FSilenceLength);
 
@@ -395,7 +395,7 @@ begin
             if (FAudioStream.Size >= Track.S + (Track.E - Track.S) + ((FSongBuffer * 2) * 1024)) and
                (FAudioStream.Size > Track.E + FSongBuffer * 1024) then
             begin
-              WriteDebug(Format('No silence found, saving using buffer...', []));
+              WriteDebug(Format('No silence found, saving using buffer of %d bytes...', [FSongBuffer * 1024]));
 
               // TODO: Alle kombinationen testen. silence detection an/aus, buffer gesetzt 0 oder mehr,
               // wird in beiden situationen unter allen umständen gespeichert, etc... alles testen eben!
@@ -418,9 +418,9 @@ begin
            (FAudioStream.Size > Track.E + FSongBuffer * 1024) then
         begin
           if FSearchSilence and (not (FAudioStream is TMPEGStreamFile)) then
-            WriteDebug('Saving using buffer because stream is not mpeg...')
+            WriteDebug(Format('Saving using buffer of %d bytes because stream is not mpeg...', [FSongBuffer * 1024]))
           else
-            WriteDebug('Saving using buffer...');
+            WriteDebug(Format('Saving using buffer of %d bytes...', [FSongBuffer * 1024]));
 
           SaveData(Track.S - FSongBuffer * 1024, Track.E + FSongBuffer * 1024, Track.Title);
 
