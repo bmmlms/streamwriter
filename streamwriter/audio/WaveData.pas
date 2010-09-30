@@ -121,7 +121,7 @@ begin
   FDecoder := BASSStreamCreateFile(True, Stream.Memory, 0, Stream.Size, BASS_STREAM_DECODE {or BASS_STREAM_PRESCAN} {$IFDEF UNICODE} or BASS_UNICODE{$ENDIF});
   if FDecoder = 0 then
   begin
-    raise Exception.Create('');
+    raise Exception.Create('Error creating decoder');
   end;
 
   AnalyzeData;
@@ -140,13 +140,13 @@ begin
   FFilesize := GetFileSize(Filename);
   if FFilesize =  -1 then
   begin
-    raise Exception.Create('');
+    raise Exception.Create('Error getting filesize');
   end;
 
   FDecoder := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE {or BASS_STREAM_PRESCAN} {$IFDEF UNICODE} or BASS_UNICODE{$ENDIF});
   if FDecoder = 0 then
   begin
-    raise Exception.Create('');
+    raise Exception.Create('Error creating decoder');
   end;
 
   AnalyzeData;
@@ -257,7 +257,7 @@ begin
 
   if Counter = 0 then
   begin
-    raise Exception.Create('');
+    raise Exception.Create('WaveArray has zero length');
   end;
 
   FWaveArray[High(FWaveArray)].Len := BASSChannelGetLength(FDecoder, BASS_POS_BYTE) - FWaveArray[High(FWaveArray)].Pos;
