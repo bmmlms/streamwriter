@@ -364,7 +364,7 @@ begin
               WriteDebug('No silence at SongStart could be found, using configured buffer');
               R.A := Track.S - FSongBuffer * 1024;
               if R.A < FAudioStream.Size then
-                R.A := 0;
+                R.A := Track.S;
             end else
               WriteDebug('Silence at SongStart found');
 
