@@ -349,7 +349,7 @@ begin
 
     if (Track.S > -1) and (Track.E > -1) then
     begin
-      if FSearchSilence then
+      if FSearchSilence and (FAudioStream is TMPEGStreamFile) then
       begin
         if FAudioStream.Size > Track.E + SILENCE_SEARCH_BUFFER then
         begin
@@ -417,7 +417,10 @@ begin
         if (FAudioStream.Size >= Track.S + (Track.E - Track.S) + ((FSongBuffer * 2) * 1024)) and
            (FAudioStream.Size > Track.E + FSongBuffer * 1024) then
         begin
-          WriteDebug('Saving using buffer...');
+          if FSearchSilence and (not (FAudioStream is TMPEGStreamFile)) then
+            WriteDebug('Saving using buffer because stream is not mpeg...')
+          else
+            WriteDebug('Saving using buffer...');
 
           SaveData(Track.S - FSongBuffer * 1024, Track.E + FSongBuffer * 1024, Track.Title);
 
