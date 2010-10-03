@@ -26,6 +26,7 @@ type
     Filename, Station, Title: PChar;
     TrackNumber: Cardinal;
     Filesize: UInt64;
+    WasCut: Boolean;
   end;
 
 implementation

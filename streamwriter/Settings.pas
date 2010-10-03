@@ -31,7 +31,7 @@ type
   TfrmSettings = class(TfrmSettingsBase)
     pnlStreams: TPanel;
     pnlMain: TPanel;
-    chkTrayClose: TCheckBox;
+    chkTray: TCheckBox;
     pnlAdvanced: TPanel;
     txtMaxRetries: TLabeledEdit;
     txtRetryDelay: TLabeledEdit;
@@ -70,6 +70,9 @@ type
     Label13: TLabel;
     lstDefaultAction: TComboBox;
     Label14: TLabel;
+    chkDeleteStreams: TCheckBox;
+    optClose: TRadioButton;
+    optMinimize: TRadioButton;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure cmdBrowseClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
@@ -83,6 +86,7 @@ type
     procedure txtFilePatternChange(Sender: TObject);
     procedure chkSkipShortClick(Sender: TObject);
     procedure chkSearchSilenceClick(Sender: TObject);
+    procedure chkTrayClick(Sender: TObject);
   private
     FBrowseDir: Boolean;
     FRelayChanged: Boolean;
@@ -136,15 +140,22 @@ begin
   AppGlobals.Lock;
   txtFilePattern.Text := AppGlobals.FilePattern;
   txtDir.Text := AppGlobals.Dir;
+  chkDeleteStreams.Checked := AppGlobals.DeleteStreams;
 
   chkSkipShort.Checked := AppGlobals.SkipShort;
   chkSearchSilence.Checked := AppGlobals.SearchSilence;
 
-  txtSilenceLevel.Enabled := chkSearchSilence.Checked;
-  txtSilenceLength.Enabled := chkSearchSilence.Checked;
-  txtShortSongSize.Enabled := chkSkipShort.Checked;
+  chkSearchSilenceClick(nil);
+  //txtSilenceLevel.Enabled := chkSearchSilence.Checked;
+  //txtSilenceLength.Enabled := chkSearchSilence.Checked;
+  //txtShortSongSize.Enabled := chkSkipShort.Checked;
 
-  chkTrayClose.Checked := AppGlobals.TrayClose;
+  chkTray.Checked := AppGlobals.Tray;
+  optClose.Checked := not AppGlobals.TrayOnMinimize;
+  optMinimize.Checked := AppGlobals.TrayOnMinimize;
+
+  chkTrayClick(nil);
+
   chkRelay.Checked := AppGlobals.Relay;
   chkSubmitStreams.Checked := AppGlobals.SubmitStreams;
   txtShortSongSize.Text := IntToStr(AppGlobals.ShortSize);
@@ -193,10 +204,12 @@ begin
     FRelayChanged := True;
 
   AppGlobals.Lock;
-  AppGlobals.Dir := txtDir.Text;
   AppGlobals.FilePattern := txtFilePattern.Text;
+  AppGlobals.Dir := txtDir.Text;
+  AppGlobals.DeleteStreams := chkDeleteStreams.Checked;
   AppGlobals.SkipShort := chkSkipShort.Checked;
-  AppGlobals.TrayClose := chkTrayClose.Checked;
+  AppGlobals.Tray := chkTray.Checked;
+  AppGlobals.TrayOnMinimize := optMinimize.Checked;
   AppGlobals.Relay := chkRelay.Checked;
   AppGlobals.SubmitStreams := chkSubmitStreams.Checked;
   AppGlobals.SongBuffer := StrToIntDef(txtSongBuffer.Text, 0);
@@ -361,6 +374,7 @@ begin
   if Length(Result) > 0 then
     if Result[Length(Result)] = '\' then
       Result := Copy(Result, 1, Length(Result) - 1);
+  Result := Result + '.mp3';
 end;
 
 procedure TfrmSettings.RegisterPages;
@@ -480,6 +494,14 @@ procedure TfrmSettings.chkSkipShortClick(Sender: TObject);
 begin
   inherited;
   txtShortSongSize.Enabled := chkSkipShort.Checked;
+end;
+
+procedure TfrmSettings.chkTrayClick(Sender: TObject);
+begin
+  inherited;
+
+  optClose.Enabled := chkTray.Checked;
+  optMinimize.Enabled := chkTray.Checked;
 end;
 
 procedure TfrmSettings.cmdBrowseClick(Sender: TObject);

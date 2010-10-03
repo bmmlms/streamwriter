@@ -39,7 +39,6 @@ type
   TICEThread = class(THTTPThread)
   private
     FTitle: string;
-    FSongsSaved: Integer;
     FState: TICEThreadStates;
 
     FRelayThreads: TRelayInfoList;
@@ -49,6 +48,7 @@ type
     FOnNeedSettings: TNotifyEvent;
     FOnStateChanged: TNotifyEvent;
     FOnAddRecent: TNotifyEvent;
+    FOnTitleAllowed: TNotifyEvent;
 
     FTypedStream: TICEStream;
     FRelayLock: TCriticalSection;
@@ -59,6 +59,7 @@ type
     procedure StreamNeedSettings(Sender: TObject);
     procedure StreamChunkReceived(Buf: Pointer; Len: Integer);
     procedure StreamIOError(Sender: TObject);
+    procedure StreamTitleAllowed(Sender: TObject);
   protected
     procedure Execute; override;
 
@@ -79,7 +80,6 @@ type
 
     property RecvStream: TICEStream read FTypedStream;
     property Title: string read FTitle;
-    property SongsSaved: Integer read FSongsSaved;
     property State: TICEThreadStates read FState;
 
     property RelayThreads: TRelayInfoList read FRelayThreads;
@@ -89,6 +89,7 @@ type
     property OnNeedSettings: TNotifyEvent read FOnNeedSettings write FOnNeedSettings;
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
     property OnAddRecent: TNotifyEvent read FOnAddRecent write FOnAddRecent;
+    property OnTitleAllowed: TNotifyEvent read FOnTitleAllowed write FOnTitleAllowed;
   end;
 
 implementation
@@ -155,6 +156,11 @@ procedure TICEThread.StreamIOError(Sender: TObject);
 begin
   FState := tsIOError;
   Sync(FOnStateChanged);
+end;
+
+procedure TICEThread.StreamTitleAllowed(Sender: TObject);
+begin
+  Sync(FOnTitleAllowed);
 end;
 
 procedure TICEThread.StreamSongSaved(Sender: TObject);
@@ -298,7 +304,6 @@ begin
 
   FRelayLock := TCriticalSection.Create;
   FRelayThreads := TRelayInfoList.Create;
-  FSongsSaved := 0;
   FTitle := '';
 
   FUserAgent := AnsiString(AppGlobals.AppName) + ' v' + AppGlobals.AppVersion.AsString;
@@ -306,12 +311,12 @@ begin
   ParseURL(URL, Host, Port, Data);
 
   FTypedStream := TICEStream(FRecvStream);
-  FTypedStream.SongsSaved := FSongsSaved;
   FTypedStream.OnTitleChanged := StreamTitleChanged;
   FTypedStream.OnSongSaved := StreamSongSaved;
   FTypedStream.OnNeedSettings := StreamNeedSettings;
   FTypedStream.OnChunkReceived := StreamChunkReceived;
   FTypedStream.OnIOError := StreamIOError;
+  FTypedStream.OnTitleAllowed := StreamTitleAllowed;
 
   if ProxyEnabled then
     SendData := 'GET ' + AnsiString(URL) + ' HTTP/1.1'#13#10
@@ -342,3 +347,4 @@ begin
 end;
 
 end.
+

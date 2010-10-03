@@ -37,8 +37,6 @@ type
     FBrowserView: TMStreamBrowserView;
     FInfoView: TMStreamInfoView;
     FDebugView: TMStreamDebugView;
-
-    FHomeCommunication: THomeCommunication;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -120,9 +118,10 @@ type
     procedure ClientManagerAddRecent(Sender: TObject);
     procedure ClientManagerClientAdded(Sender: TObject);
     procedure ClientManagerClientRemoved(Sender: TObject);
-    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title: string; Filesize: UInt64);
+    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title: string; Filesize: UInt64; WasCut: Boolean);
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
+    procedure ClientManagerTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean);
 
     procedure FClientViewChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure FClientViewDblClick(Sender: TObject);
@@ -319,7 +318,6 @@ var
   Clients: TNodeDataArray;
   Client: PClientNodeData;
   R: TStreamEntry;
-  i: Integer;
 begin
   Res := MsgBox(Handle, _('This will reset the saved song and bytes received counters.'#13#10 +
                           'The tracknumber of new saved titles will be 1 if you specified the tracknumber in the filename pattern, this number will also be set in ID3 tags.'#13#10 +
@@ -485,6 +483,7 @@ begin
   FClients.OnClientSongSaved := ClientManagerSongSaved;
   FClients.OnClientTitleChanged := ClientManagerTitleChanged;
   FClients.OnClientICYReceived := ClientManagerICYReceived;
+  FClients.OnClientTitleAllowed := ClientManagerTitleAllowed;
 
   FStreams := Streams;
   FStreams.OnStreamChanged := StationsStreamChanged;
@@ -662,6 +661,23 @@ begin
   FRefreshInfo := True;
 end;
 
+procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject;
+  Title: string; var Allowed: Boolean);
+var
+  i, n: Integer;
+begin
+  Allowed := True;
+  for i := 0 to FStreams.Count - 1 do
+    for n := 0 to FStreams[i].Tracks.Count - 1 do
+    begin
+      if LowerCase(Title) = LowerCase(RemoveFileExt(ExtractFileName(FStreams[i].Tracks[n].Filename))) then
+      begin
+        Allowed := False;
+        Exit;
+      end;
+    end;
+end;
+
 procedure TClientTab.ClientManagerRefresh(Sender: TObject);
 begin
   FClientView.RefreshClient(Sender as TICEClient);
@@ -705,7 +721,7 @@ begin
 end;
 
 procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
-  Filename, Title: string; Filesize: UInt64);
+  Filename, Title: string; Filesize: UInt64; WasCut: Boolean);
 var
   Entry: TStreamEntry;
   Client: TICEClient;
@@ -718,6 +734,7 @@ begin
   begin
     Track := TTrackInfo.Create(Now, Filename);
     Track.Filesize := Filesize;
+    Track.WasCut := WasCut;
     Entry.Tracks.Add(Track);
     Entry.SongsSaved := Entry.SongsSaved + 1;
     if Assigned(FOnTrackAdded) then
@@ -926,7 +943,6 @@ end;
 constructor TSidebar.Create(AOwner: TComponent);
 begin
   inherited;
-
 
 end;
 

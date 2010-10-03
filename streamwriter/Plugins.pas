@@ -44,6 +44,7 @@ type
     Filename, Station, Title: string;
     TrackNumber: Cardinal;
     Filesize: UInt64;
+    WasCut: Boolean;
   end;
   PPluginProcessInformation = ^TPluginProcessInformation;
 
@@ -360,6 +361,7 @@ begin
   FData.Title := Data.Title;
   FData.TrackNumber := Data.TrackNumber;
   FData.Filesize := Data.Filesize;
+  FData.WasCut := Data.WasCut;
 
   FPluginsProcessed := TList<TPlugin>.Create;
   if FirstPlugin <> nil then
@@ -403,6 +405,7 @@ begin
   StrPCopy(FActData.Title, FData.Title);
   FActData.TrackNumber := FData.TrackNumber;
   FActData.Filesize := FData.Filesize;
+  FActData.WasCut := FData.WasCut;
 
   FResult := TActResults(FPlugin.FAct(FActData));
 

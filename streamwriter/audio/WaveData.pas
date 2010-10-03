@@ -110,13 +110,6 @@ begin
 end;
 
 procedure TWaveData.Load(Stream: TMemoryStream);
-var
-  i: Integer;
-  Level: DWord;
-  PeakL, PeakR: DWord;
-  Position: QWORD;
-  Counter, c2: Cardinal;
-  FS: TFileStream;
 begin
   FDecoder := BASSStreamCreateFile(True, Stream.Memory, 0, Stream.Size, BASS_STREAM_DECODE {or BASS_STREAM_PRESCAN} {$IFDEF UNICODE} or BASS_UNICODE{$ENDIF});
   if FDecoder = 0 then
@@ -128,13 +121,6 @@ begin
 end;
 
 procedure TWaveData.Load(Filename: string);
-var
-  i: Integer;
-  Level: DWord;
-  PeakL, PeakR: DWord;
-  Position: QWORD;
-  Counter, c2: Cardinal;
-  FS: TFileStream;
 begin
   FFilename := Filename;
   FFilesize := GetFileSize(Filename);
@@ -203,7 +189,6 @@ begin
         end;
 
         FreeAndNil(FIn);
-        // TODO: Er speichert nicht, FastMM meldet sich dann...
         FOut.SaveToFile(Filename);
         Result := True;
       except
@@ -225,10 +210,8 @@ procedure TWaveData.AnalyzeData;
 var
   i: Integer;
   Level: DWord;
-  PeakL, PeakR: DWord;
   Position: QWORD;
-  Counter, c2: Cardinal;
-  FS: TFileStream;
+  Counter: Cardinal;
 begin
   Counter := 0;
 
@@ -236,7 +219,7 @@ begin
 
   while BASSChannelIsActive(FDecoder) = BASS_ACTIVE_PLAYING do
   begin
-    if Counter >= Length(FWaveArray) then
+    if Counter >= Cardinal(Length(FWaveArray)) then
     begin
       SetLength(FWaveArray, Length(FWaveArray) + 500);
     end;
@@ -282,7 +265,6 @@ var
   Avg: Cardinal;
   MinDurationD: Double;
   SilenceStart, SilenceEnd: Cardinal;
-  CS: TCutState;
 begin
   for i := 0 to FSilence.Count - 1 do
     FSilence[i].Free;
@@ -295,9 +277,8 @@ begin
   SilenceEnd := 0;
   for i := 0 to High(FWaveArray) do
   begin
-    // TODO: Sicher? wenn das immer die ersten sind, lieber einfach das erste array element überspringen...
-    if (FWaveArray[i].L = 0) or (FWaveArray[i].R = 0) then
-      Continue;
+    //if (FWaveArray[i].L = 0) or (FWaveArray[i].R = 0) then
+    //  Continue;
 
     Avg := (FWaveArray[i].L + FWaveArray[i].R) div 2;
 
@@ -353,16 +334,12 @@ begin
 end;
 
 function TWaveData.FGetSecs: Double;
-var
-  i: Cardinal;
 begin
   // REMARK: Weil das nur die Start-Ende - Sekunden sind ist das nicht die echte Länge.
   Result := FWaveArray[CutEnd].Sec - FWaveArray[CutStart].Sec;
 end;
 
 procedure TWaveData.FSetWaveArray(Value: TWaveEntryArray);
-var
-  i: Integer;
 begin
   FWaveArray := Value;
 end;

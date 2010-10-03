@@ -32,7 +32,6 @@ type
   TPosArray = array of TPosRect;
 
   TAudioStreamFile = class(TFileStream)
-  protected
   public
     function GetFrame(From: Int64; SearchBackwards: Boolean): Int64; virtual; abstract;
     procedure SaveToFile(const Filename: string; From, Length: Int64);
@@ -50,25 +49,18 @@ type
   end;
 
   TAudioStreamMemory = class(TExtendedStream)
-  private
-  protected
   public
     function GetFrame(From: Int64; GetEnd: Boolean): Int64; virtual; abstract;
-    //function GetPossibleTitle(ByteCount: UInt64): TPosRect; virtual; abstract;
   end;
 
   TMPEGStreamMemory = class(TAudioStreamMemory)
-  private
-    function FindSilence(From, Count: UInt64): TPosArray;
   public
     function GetFrame(From: Int64; SearchBackwards: Boolean): Int64; override;
-    //function GetPossibleTitle(ByteCount: UInt64): TPosRect; override;
   end;
 
   TAACStreamMemory = class(TAudioStreamMemory)
   public
     function GetFrame(From: Int64; SearchBackwards: Boolean): Int64; override;
-    //function GetPossibleTitle(ByteCount: UInt64): TPosRect; override;
   end;
 
 implementation
@@ -96,15 +88,10 @@ end;
 
 function TAudioStreamFile.SearchSilence(StartPos, EndPos, Len, MaxPeaks, MinDuration: Int64): TPosRect;
 var
-  TitleChanged: Boolean;
-  MetaLen, P: Integer;
-  Title, MetaData: string;
-  Buf: Byte;
   WD, WD2: TWaveData;
   M1, M2: TMPEGStreamMemory;
   OldPos: Int64;
-  S, E: Int64;
-  FS: Int64;
+  S: Int64;
 begin
   OldPos := Position;
 
@@ -222,10 +209,7 @@ end;
 
 function TAACStreamFile.GetFrame(From: Int64; SearchBackwards: Boolean): Int64;
 begin
-  if SearchBackwards then
-    Result := Size - 1
-  else
-    Result := From;
+  Result := From
 end;
 
 { TMPEGStreamMemory }
@@ -279,17 +263,6 @@ begin
     end;
   end;
   Position := OldPos;
-end;
-
-function TMPEGStreamMemory.FindSilence(From, Count: UInt64): TPosArray;
-  procedure AddRes(A, B: UInt64; var Arr: TPosArray);
-  begin
-    SetLength(Arr, Length(Arr) + 1);
-    Arr[High(Arr)].A := A;
-    Arr[High(Arr)].B := B;
-  end;
-begin
-
 end;
 
 { TAACStreamMemory }

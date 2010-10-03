@@ -65,7 +65,7 @@ type
 
     procedure BuildBuffer;
     procedure SetLine(X: Integer);
-    function PixelsToArray(X: Integer): Integer;
+    function PixelsToArray(X: Integer): Cardinal;
     function GetPlayerPos: Cardinal;
 
     procedure TimerTimer(Sender: TObject);
@@ -90,21 +90,17 @@ type
     FError: Boolean;
     FLineMode: TLineMode;
 
-    FAudioStart, FAudioEnd: Cardinal;
-
-    //FDecoder: Cardinal;
     FPlayer: Cardinal;
     FSync, FSync2: Cardinal;
     FFilename: string;
 
     FOnStateChanged: TNotifyEvent;
 
-    procedure ThreadScan(P, AI, L, R: Integer);
     procedure ThreadEndScan(Sender: TObject);
     procedure ThreadScanError(Sender: TObject);
     procedure ThreadTerminate(Sender: TObject);
 
-    procedure MsgRefresh(var Msg: TMessage); message WM_USER + 123;
+    procedure MsgRefresh(var Msg: TMessage); message WM_USER + 1234;
   protected
 
   public
@@ -153,12 +149,6 @@ begin
 end;
 
 procedure TScanThread.Execute;
-var
-  i: Integer;
-  Level: DWord;
-  PeakL, PeakR: DWord;
-  Position: QWORD;
-  Counter, c2: Cardinal;
 begin
   try
     FWaveData.Load(FFilename);
@@ -194,14 +184,12 @@ begin
   FPB.Parent := Self;
   FPB.Align := alClient;
 
-  FLineMode := lmStart;
+  FLineMode := lmPlay;
 
   //FWaveData := TWaveData.Create;
 end;
 
 destructor TCutView.Destroy;
-var
-  i: Integer;
 begin
   if FScanThread <> nil then
   begin
@@ -317,22 +305,16 @@ begin
 end;
 
 function TCutView.Save: Boolean;
-var
-  Filename: string;
 begin
   Result := False;
 
   if not CanSave then
     Exit;
 
-  // TODO: Player stoppen?
-
   if FPlayer > 0 then
   begin
     BASSStreamFree(FPlayer);
   end;
-
-  // FFilename := 'z:\out' + inttostr(trunc(now * 10000)) + '.mp3'; // TODO: Auswerten und benutzen!
 
   try
     if FWaveData.Save(FFilename) then
@@ -343,10 +325,14 @@ begin
       Result := True;
     end else
     begin
-      // TODO: Fehlermeldung ausgeben. und ich wette, die play-position kommt durcheinander wenn man während play in geschnittenen daten saved.
+      MsgBox(Handle, _('The file could not be saved.'#13#10'Please make sure the file is not in use by another application.'), _('Info'), MB_ICONINFORMATION);
     end;
   finally
-    FPlayer := BASSStreamCreateFile(False, PChar(FFilename), 0, 0, {$IFDEF UNICODE}BASS_UNICODE{$ENDIF});
+    // Wenn Result = True wird FPlayer in LoadFile() neu erstellt
+    if not Result then
+    begin
+      FPlayer := BASSStreamCreateFile(False, PChar(FFilename), 0, 0, {$IFDEF UNICODE}BASS_UNICODE{$ENDIF});
+    end;
   end;
 
   if Assigned(FOnStateChanged) then
@@ -466,6 +452,7 @@ begin
 
   FPB.FStartLine := 0;
   FPB.FEndLine := High(FWaveData.WaveArray);
+  FPB.FPlayLine := 0;
 
   // Hier auch, damit BuildBuffer kein "Loading..." malt.
   FScanThread := nil;
@@ -475,11 +462,6 @@ begin
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
-end;
-
-procedure TCutView.ThreadScan(P, AI, L, R: Integer);
-begin
-
 end;
 
 procedure TCutView.ThreadScanError(Sender: TObject);
@@ -502,7 +484,7 @@ begin
   PV := TCutView(user);
   BASSChannelStop(PV.FPlayer);
 
-  PostMessage(PV.Handle, WM_USER + 123, 0, 0);
+  PostMessage(PV.Handle, WM_USER + 1234, 0, 0);
 end;
 
 { TCutPaintBox }
@@ -522,7 +504,7 @@ procedure TCutPaintBox.BuildBuffer;
   end;
   function BuildTime(T: Double): string;
   var
-    Hour, Min, Sec, MSec: Word;
+    Min, Sec, MSec: Word;
   begin
     Min := Trunc(T / 60);
     T := T - Trunc(T / 60) * 60;
@@ -533,7 +515,7 @@ procedure TCutPaintBox.BuildBuffer;
   end;
   procedure DrawLineText(ArrayIdx, X: Cardinal);
   var
-    L: Cardinal;
+    L: Integer;
     TS: TSize;
     SecText: string;
   begin
@@ -550,16 +532,13 @@ procedure TCutPaintBox.BuildBuffer;
 var
   i, v: Integer;
   v2: Double;
-  Last: Cardinal;
+  Last: Integer;
   LBuf, RBuf: Cardinal;
   Added: Cardinal;
   HT: Cardinal;
   TS: TSize;
-  PP: Integer;
-  L: Integer;
   Txt: string;
-  Bytes, ArrayFrom, ByteCount, ArrayTo, CutBytes: Cardinal;
-  PeakColor: TColor;
+  ArrayFrom, ArrayTo: Cardinal;
   L1, L2: Cardinal;
   CS, CE: Cardinal;
 begin
@@ -637,7 +616,7 @@ begin
 
   for i := ArrayFrom to ArrayTo do
   begin
-    v := trunc(((i - ArrayFrom) / (ArrayTo - ArrayFrom)) * v2);
+    v := Integer(Trunc(((i - Int64(ArrayFrom)) / (ArrayTo - ArrayFrom)) * v2));
 
     if v = Last then
     begin
@@ -774,9 +753,9 @@ begin
   BuildBuffer;
 end;
 
-function TCutPaintBox.PixelsToArray(X: Integer): Integer;
+function TCutPaintBox.PixelsToArray(X: Integer): Cardinal;
 begin
-  Result := FCutView.FWaveData.CutStart + Ceil((X / FBuf.Width) * (FCutView.FWaveData.CutSize));
+  Result := Integer(FCutView.FWaveData.CutStart) + Ceil((X / FBuf.Width) * Integer(FCutView.FWaveData.CutSize));
 
   if Result > FCutView.FWaveData.CutEnd then
     Result := FCutView.FWaveData.CutEnd;
@@ -810,7 +789,7 @@ end;
 
 procedure TCutPaintBox.SetLine(X: Integer);
 var
-  P, ArrayPos: Cardinal;
+  ArrayPos: Cardinal;
 begin
   ArrayPos := PixelsToArray(X);
 

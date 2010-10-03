@@ -4,14 +4,15 @@ object frmSettings: TfrmSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Settings'
-  ClientHeight = 764
-  ClientWidth = 901
+  ClientHeight = 585
+  ClientWidth = 906
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Font.Style = []
+  FormStyle = fsStayOnTop
   KeyPreview = True
   OldCreateOrder = False
   Position = poOwnerFormCenter
@@ -132,6 +133,14 @@ object frmSettings: TfrmSettings
         TabOrder = 1
       end
     end
+    object chkDeleteStreams: TCheckBox
+      Left = 4
+      Top = 208
+      Width = 245
+      Height = 21
+      Caption = 'Delete stream-files when recording stops'
+      TabOrder = 2
+    end
   end
   object pnlMain: TPanel
     Left = 4
@@ -144,30 +153,31 @@ object frmSettings: TfrmSettings
       273)
     object Label7: TLabel
       Left = 56
-      Top = 52
+      Top = 88
       Width = 15
       Height = 13
       Caption = 'GB'
     end
     object Label3: TLabel
       Left = 4
-      Top = 80
+      Top = 116
       Width = 190
       Height = 13
       Caption = 'Default action on doubleclick on stream:'
     end
-    object chkTrayClose: TCheckBox
+    object chkTray: TCheckBox
       Left = 4
       Top = 0
       Width = 281
       Height = 22
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Show in notification area and minimize on close'
+      Caption = 'Move to notification area...'
       TabOrder = 0
+      OnClick = chkTrayClick
     end
     object txtMinDiskSpace: TLabeledEdit
       Left = 4
-      Top = 48
+      Top = 84
       Width = 49
       Height = 21
       EditLabel.Width = 205
@@ -179,7 +189,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultAction: TComboBox
       Left = 4
-      Top = 96
+      Top = 132
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -189,6 +199,22 @@ object frmSettings: TfrmSettings
         'Listen to stream'
         'Listen to relay'
         'Listen to recorded file')
+    end
+    object optClose: TRadioButton
+      Left = 20
+      Top = 20
+      Width = 165
+      Height = 21
+      Caption = '...on close'
+      TabOrder = 3
+    end
+    object optMinimize: TRadioButton
+      Left = 20
+      Top = 40
+      Width = 165
+      Height = 21
+      Caption = '...on minimize'
+      TabOrder = 4
     end
   end
   object pnlAdvanced: TPanel
@@ -474,7 +500,7 @@ object frmSettings: TfrmSettings
     object chkSkipShort: TCheckBox
       Left = 4
       Top = 0
-      Width = 220
+      Width = 225
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Skip ads (short songs)'

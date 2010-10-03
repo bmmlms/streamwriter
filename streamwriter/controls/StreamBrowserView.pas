@@ -66,13 +66,11 @@ type
   protected
     procedure Resize; override;
   public
-    constructor Create(AOwner: TComponent);
+    constructor Create(AOwner: TComponent); override;
   end;
 
   TMStreamSearchPanel = class(TPanel)
   private
-    FInitialized: Boolean;
-
     FSearchLabel: TLabel;
     FGenreLabel: TLabel;
     FKbpsLabel: TLabel;
@@ -81,7 +79,7 @@ type
     FKbpsList: TComboBox;
     FSearchButton: TSpeedButton;
   public
-    constructor Create(AOwner: TComponent);
+    constructor Create(AOwner: TComponent); override;
     procedure Setup;
   end;
 
@@ -111,7 +109,7 @@ type
   protected
     procedure Resize; override;
   public
-    constructor Create(AOwner: TComponent; HomeCommunication: THomeCommunication);
+    constructor Create(AOwner: TComponent; HomeCommunication: THomeCommunication); reintroduce;
     destructor Destroy; override;
 
     procedure Setup;
@@ -598,6 +596,8 @@ begin
 
       if Assigned(FOnNeedData) then
         FOnNeedData(Self, Offset, Count);
+
+      FTimer.Enabled := True;
     end;
     FLastScrollTick := 0;
   end;
@@ -666,6 +666,8 @@ begin
       EndUpdate;
     end;
   end;
+
+  FTimer.Enabled := False;
 end;
 
 procedure TMStreamTree.ClearStreams;
@@ -824,6 +826,8 @@ begin
     1: Kbps := 64;
     2: Kbps := 128;
     3: Kbps := 192;
+    else
+      raise Exception.Create('');
   end;
 
   GetStreams(Search, Genre, Kbps);

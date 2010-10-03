@@ -52,7 +52,8 @@ type
   TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
   //TString2Event = procedure(Sender: TObject; Data, Data2: string) of object;
-  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize: UInt64) of object;
+  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize: UInt64; WasCut: Boolean) of object;
+  TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean) of object;
 
   TICEClient = class
   private
@@ -88,6 +89,7 @@ type
     FOnAddRecent: TNotifyEvent;
     FOnICYReceived: TIntegerEvent;
     FOnURLsReceived: TNotifyEvent;
+    FOnTitleAllowed: TTitleAllowedEvent;
 
     procedure Initialize;
     procedure Start;
@@ -103,6 +105,7 @@ type
     procedure ThreadSongSaved(Sender: TObject);
     procedure ThreadStateChanged(Sender: TObject);
     procedure ThreadNeedSettings(Sender: TObject);
+    procedure ThreadTitleAllowed(Sender: TObject);
     procedure ThreadEnded(Sender: TObject);
     procedure ThreadTerminated(Sender: TObject);
 
@@ -153,6 +156,7 @@ type
     property OnDisconnected: TNotifyEvent read FOnDisconnected write FOnDisconnected;
     property OnICYReceived: TIntegerEvent read FOnICYReceived write FOnICYReceived;
     property OnURLsReceived: TNotifyEvent read FOnURLsReceived write FOnURLsReceived;
+    property OnTitleAllowed: TTitleAllowedEvent read FOnTitleAllowed write FOnTitleAllowed;
   end;
 
 implementation
@@ -285,6 +289,7 @@ begin
   FICEThread.OnEnded := ThreadEnded;
   FICEThread.OnTerminate := ThreadTerminated;
   FICEThread.OnAddRecent := ThreadAddRecent;
+  FICEThread.OnTitleAllowed := ThreadTitleAllowed;
   FICEThread.Start;
 end;
 
@@ -436,6 +441,7 @@ end;
 procedure TICEClient.ThreadNeedSettings(Sender: TObject);
 begin
   FICEThread.SetSettings(SkipShort);
+  FICEThread.RecvStream.SongsSaved := FSongsSaved;
 end;
 
 procedure TICEClient.ThreadSongSaved(Sender: TObject);
@@ -451,6 +457,7 @@ begin
   Data.Title := FICEThread.RecvStream.SavedTitle;
   Data.TrackNumber := SongsSaved;
   Data.Filesize := FICEThread.RecvStream.SavedSize;
+  Data.WasCut := FICEThread.RecvStream.SavedWasCut;
 
   if not FKilled then
   begin
@@ -470,7 +477,8 @@ begin
     // Wenn kein Plugin die Verarbeitung übernimmt, gilt die Datei
     // jetzt schon als gespeichert. Ansonsten macht das PluginThreadTerminate.
     if Assigned(FOnSongSaved) then
-      FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedTitle, FICEThread.RecvStream.SavedSize);
+      FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedTitle,
+        FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedWasCut);
     if Assigned(FOnRefresh) then
       FOnRefresh(Self);
   end;
@@ -517,7 +525,7 @@ begin
         WriteDebug('All plugins done');
 
         if Assigned(FOnSongSaved) then
-          FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.Title, Entry.Data.Filesize);
+          FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.Title, Entry.Data.Filesize, Entry.Data.WasCut);
         if Assigned(FOnRefresh) then
           FOnRefresh(Self);
 
@@ -538,6 +546,18 @@ begin
 
     if Assigned(FOnICYReceived) then
       FOnICYReceived(Self, FICEThread.Speed);
+  end;
+end;
+
+procedure TICEClient.ThreadTitleAllowed(Sender: TObject);
+var
+  A: Boolean;
+begin
+  if Assigned(FOnTitleAllowed) then
+  begin
+    A := True;
+    FOnTitleAllowed(Self, FICEThread.RecvStream.SaveAllowedTitle, A);
+    FICEThread.RecvStream.SaveAllowed := A;
   end;
 end;
 
@@ -748,8 +768,8 @@ var
   i: Integer;
 begin
   inherited;
-  if (Action = cnAdded) and (Count > 100) then
-    for i := Count - 15 downto 0 do
+  if (Action = cnAdded) and (Count > 1000) then
+    for i := Count - 500 downto 0 do
       Delete(i);
 end;
 

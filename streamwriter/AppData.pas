@@ -32,13 +32,15 @@ type
 
   TAppData = class(TAppDataBase)
   private
-    FDir: string;
     FFilePattern: string;
+    FDir: string;
+    FDeleteStreams: Boolean;
     FSkipShort: Boolean;
     FSearchSilence: Boolean;
     FSilenceLevel: Cardinal;
     FSilenceLength: Cardinal;
-    FTrayClose: Boolean;
+    FTray: Boolean;
+    FTrayOnMinimize: Boolean;
     FShowSidebar: Boolean;
     FSidebarWidth: Integer;
     FRelay: Boolean;
@@ -65,13 +67,15 @@ type
 
     procedure Load; override;
 
-    property Dir: string read FDir write FDir;
     property FilePattern: string read FFilePattern write FFilePattern;
+    property Dir: string read FDir write FDir;
+    property DeleteStreams: Boolean read FDeleteStreams write FDeleteStreams;
     property SkipShort: Boolean read FSkipShort write FSkipShort;
     property SearchSilence: Boolean read FSearchSilence write FSearchSilence;
     property SilenceLevel: Cardinal read FSilenceLevel write FSilenceLevel;
     property SilenceLength: Cardinal read FSilenceLength write FSilenceLength;
-    property TrayClose: Boolean read FTrayClose write FTrayClose;
+    property Tray: Boolean read FTray write FTray;
+    property TrayOnMinimize: Boolean read FTrayOnMinimize write FTrayOnMinimize;
     property ShowSidebar: Boolean read FShowSidebar write FShowSidebar;
     property SidebarWidth: Integer read FSidebarWidth write FSidebarWidth;
     property Relay: Boolean read FRelay write FRelay;
@@ -118,8 +122,7 @@ begin
   FProjectUpdateLink := 'http://streamwriter.org/';
   {$ENDIF}
 
-  // TODO: !!!
-  FProjectUpdateLink := 'http://mistake.ws/';
+  FProjectUpdateLink := 'http://streamwriter.org/';
 
   FProjectHomepageLink := 'http://streamwriter.org/';
   FProjectLink := '';
@@ -158,15 +161,17 @@ var
 begin
   inherited;
 
+  FStorage.Read('FilePattern', FFilePattern, '%s\%a - %t');
   FStorage.Read('Dir', FDir, '');
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
-  FStorage.Read('FilePattern', FFilePattern, '%s\%a - %t');
+  FStorage.Read('DeleteStreams', FDeleteStreams, False);
   FStorage.Read('SkipShort', FSkipShort, True);
   FStorage.Read('SearchSilence', FSearchSilence, True);
   FStorage.Read('SilenceLevel', FSilenceLevel, 20); // TODO: Die Werte noch optimieren.
   FStorage.Read('SilenceLength', FSilenceLength, 100);
-  FStorage.Read('TrayClose', FTrayClose, False);
+  FStorage.Read('TrayClose', FTray, False);
+  FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);
 
   if (FSilenceLevel < 1) or (FSilenceLevel > 100) then
     FSilenceLevel := 20;
@@ -215,13 +220,15 @@ var
 begin
   inherited;
 
-  FStorage.Write('Dir', FDir);
   FStorage.Write('FilePattern', FFilePattern);
+  FStorage.Write('Dir', FDir);
+  FStorage.Write('DeleteStreams', FDeleteStreams);
   FStorage.Write('SkipShort', FSkipShort);
   FStorage.Write('SearchSilence', FSearchSilence);
   FStorage.Write('SilenceLevel', FSilenceLevel);
   FStorage.Write('SilenceLength', FSilenceLength);
-  FStorage.Write('TrayClose', FTrayClose);
+  FStorage.Write('TrayClose', FTray);
+  FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
 
   //FStorage.Write('ShowSidebar', FShowSidebar);
 

@@ -41,7 +41,7 @@ type
 
   TClientList = TList<TICEClient>;
 
-  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize: UInt64) of object;
+  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize: UInt64; WasCut: Boolean) of object;
   TTitleChangedEvent = procedure(Sender: TObject; Title: string) of object;
   TICYReceivedEvent = procedure(Sender: TObject; Received: Integer) of object;
 
@@ -59,6 +59,7 @@ type
     FOnClientSongSaved: TSongSavedEvent;
     FOnClientTitleChanged: TTitleChangedEvent;
     FOnClientICYReceived: TICYReceivedEvent;
+    FOnClientTitleAllowed: TTitleAllowedEvent;
 
     function FGetItem(Index: Integer): TICEClient;
     function FGetCount: Integer;
@@ -68,11 +69,12 @@ type
     procedure ClientDebug(Sender: TObject);
     procedure ClientRefresh(Sender: TObject);
     procedure ClientAddRecent(Sender: TObject);
-    procedure ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize: UInt64);
+    procedure ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize: UInt64; WasCut: Boolean);
     procedure ClientTitleChanged(Sender: TObject; Title: string);
     procedure ClientDisconnected(Sender: TObject);
     procedure ClientICYReceived(Sender: TObject; Bytes: Integer);
     procedure ClientURLsReceived(Sender: TObject);
+    procedure ClientTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean);
 
     procedure RelayGetStream(Sender: TObject);
     procedure RelayEnded(Sender: TObject);
@@ -108,6 +110,7 @@ type
     property OnClientSongSaved: TSongSavedEvent read FOnClientSongSaved write FOnClientSongSaved;
     property OnClientTitleChanged: TTitleChangedEvent read FOnClientTitleChanged write FOnClientTitleChanged;
     property OnClientICYReceived: TICYReceivedEvent read FOnClientICYReceived write FOnClientICYReceived;
+    property OnClientTitleAllowed: TTitleAllowedEvent read FOnClientTitleAllowed write FOnClientTitleAllowed;
   end;
 
 implementation
@@ -166,6 +169,7 @@ begin
   Client.OnDisconnected := ClientDisconnected;
   Client.OnICYReceived := ClientICYReceived;
   Client.OnURLsReceived := ClientURLsReceived;
+  Client.OnTitleAllowed := ClientTitleAllowed;
   if Assigned(FOnClientAdded) then
     FOnClientAdded(Client);
 end;
@@ -281,13 +285,13 @@ begin
   end;
 end;
 
-procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize: UInt64);
+procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize: UInt64; WasCut: Boolean);
 begin
   Inc(FSongsSaved);
   //if Assigned(FOnClientRefresh) then
   //  FOnClientRefresh(Sender);
   if Assigned(FOnClientSongSaved) then
-    FOnClientSongSaved(Sender, Filename, Title, Filesize);
+    FOnClientSongSaved(Sender, Filename, Title, Filesize, WasCut);
 end;
 
 procedure TClientManager.ClientTitleChanged(Sender: TObject;
@@ -313,12 +317,18 @@ begin
         end;
 end;
 
-// Das hier wird nich nur aufgerufen, wenn der ICE-Thread stirbt, sondern auch,
-// wenn alle Plugins abgearbeitet wurden und es keinen ICE-Thread gibt.
+procedure TClientManager.ClientTitleAllowed(Sender: TObject; Title: string;
+  var Allowed: Boolean);
+begin
+  FOnClientTitleAllowed(Sender, Title, Allowed);
+end;
+
 procedure TClientManager.ClientDisconnected(Sender: TObject);
 var
   Client: TICEClient;
 begin
+  // Die Funktion hier wird nich nur aufgerufen, wenn der ICE-Thread stirbt, sondern auch,
+  // wenn alle Plugins abgearbeitet wurden und es keinen ICE-Thread gibt.
   if Assigned(FOnClientRefresh) then
     FOnClientRefresh(Sender);
   Client := Sender as TICEClient;

@@ -39,6 +39,8 @@ type
   end;
 
   TStreamTracks = class(TList<TStreamTrack>)
+  private
+    FOnDebug: TDebugEvent;
   public
     destructor Destroy; override;
 
@@ -59,23 +61,24 @@ type
     FSilenceLevel: Cardinal;
     FSilenceLength: Cardinal;
 
-    FSaveDir: string;
     FFilePattern: string;
+    FSaveDir: string;
+    FDeleteStreams: Boolean;
     FShortSize: Integer;
     FSongBuffer: Integer;
 
     FMetaCounter: Integer;
     FNextMetaOffset: Integer;
 
-    //FSaveFrom, FForwardLimit: Int64;
-    //FSongStart, FSongEnd: Int64;
-
     FTitle: string;
-    //FSaveTitle: string;
     FSavedFilename: string;
     FSavedTitle: string;
     FSavedSize: UInt64;
     FFilename: string;
+    FSavedWasCut: Boolean;
+
+    FSaveAllowedTitle: string;
+    FSaveAllowed: Boolean;
 
     FStreamTracks: TStreamTracks;
 
@@ -87,6 +90,7 @@ type
     FOnNeedSettings: TNotifyEvent;
     FOnChunkReceived: TChunkReceivedEvent;
     FOnIOError: TNotifyEvent;
+    FOnTitleAllowed: TNotifyEvent;
 
     procedure DataReceived(CopySize: Integer);
     procedure SaveData(S, E: UInt64; Title: string);
@@ -96,6 +100,7 @@ type
     function GetFilenameTitle(StreamTitle: string; var Dir: string): string;
     function GetValidFilename(Name: string): string;
     procedure GetSettings;
+    procedure StreamTracksDebug(Text, Data: string);
   protected
     procedure DoHeaderRemoved; override;
   public
@@ -115,6 +120,10 @@ type
     property SavedSize: UInt64 read FSavedSize;
     property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
     property Filename: string read FFilename;
+    property SavedWasCut: Boolean read FSavedWasCut;
+
+    property SaveAllowedTitle: string read FSaveAllowedTitle;
+    property SaveAllowed: Boolean read FSaveAllowed write FSaveAllowed;
 
     property AudioType: TAudioTypes read FAudioType;
 
@@ -125,6 +134,7 @@ type
     property OnNeedSettings: TNotifyEvent read FOnNeedSettings write FOnNeedSettings;
     property OnChunkReceived: TChunkReceivedEvent read FOnChunkReceived write FOnChunkReceived;
     property OnIOError: TNotifyEvent read FOnIOError write FOnIOError;
+    property OnTitleAllowed: TNotifyEvent read FOnTitleAllowed write FOnTitleAllowed;
   end;
 
 const
@@ -145,19 +155,27 @@ begin
   FBitRate := 0;
   FGenre := '';
   FTitle := '';
-  //FSongStart := -1;
-  //FSongEnd := -1;
-  //FSaveTitle := '';
   FSavedFilename := '';
   FSavedTitle := '';
   FAudioType := atNone;
+  FDeleteStreams := False;
   FStreamTracks := TStreamTracks.Create;
+  FStreamTracks.FOnDebug := StreamTracksDebug;
 end;
 
 destructor TICEStream.Destroy;
+var
+  Filename: string;
 begin
-  FAudioStream.Free;
-  FStreamTracks.Free;
+  Filename := '';
+  if FAudioStream <> nil then
+    Filename := FAudioStream.FileName;
+  FreeAndNil(FAudioStream);
+  FreeAndNil(FStreamTracks);
+
+  if FDeleteStreams and (Filename <> '') then
+    DeleteFile(PChar(Filename));
+
   inherited;
 end;
 
@@ -259,8 +277,9 @@ begin
   if Assigned(FOnNeedSettings) then
     FOnNeedSettings(Self);
   AppGlobals.Lock;
-  FSaveDir := AppGlobals.Dir;
   FFilePattern := AppGlobals.FilePattern;
+  FSaveDir := AppGlobals.Dir;
+  FDeleteStreams := AppGlobals.DeleteStreams;
   FShortSize := AppGlobals.ShortSize;
   FSongBuffer := AppGlobals.SongBuffer;
   FSearchSilence := AppGlobals.SearchSilence;
@@ -272,16 +291,10 @@ end;
 procedure TICEStream.SaveData(S, E: UInt64; Title: string);
 var
   Saved: Boolean;
-  OldPos: Int64;
   RangeBegin, RangeEnd: Int64;
   Dir, Filename: string;
-  MemStream: TAudioStreamMemory;
-  P: TPosRect;
 begin
   Saved := False;
-
-  RangeBegin := -1;
-  RangeEnd := -1;
 
   RangeBegin := FAudioStream.GetFrame(S, False);
   RangeEnd := FAudioStream.GetFrame(E, True);
@@ -291,16 +304,28 @@ begin
   if (RangeEnd <= -1) or (RangeBegin <= -1) then
     raise Exception.Create('Error in audio data');
 
-  if SkipShort and (RangeEnd - RangeBegin < FShortSize) then
+  if SkipShort and (RangeEnd - RangeBegin < FShortSize * 1024) then
   begin
-    // TODO: Klappt das hier? wirklich testen. glaub mir.
-    WriteDebug(Format('Skipping title "%s" because it''s too small (%d bytes)', [Title, RangeEnd - RangeBegin]));
+    WriteDebug(Format('Skipping "%s" because it''s too small (%d bytes)', [Title, RangeEnd - RangeBegin]));
     Exit;
   end;
 
   Inc(FSongsSaved);
   try
     Filename := GetFilenameTitle(Title, Dir);
+
+    {
+    FSaveAllowedTitle := Title;
+    FSaveAllowed := True;
+    if Assigned(FOnTitleAllowed) then
+      FOnTitleAllowed(Self);
+    if not FSaveAllowed then
+    begin
+      WriteDebug(Format('Skipping "%s" because filename is not allowed', [Title]));
+      Dec(FSongsSaved);
+      Exit;
+    end;
+    }
 
     if Length(Title) > 0 then
       WriteDebug(Format('Saving title "%s"', [Title]))
@@ -331,18 +356,19 @@ begin
   end;
 end;
 
+procedure TICEStream.StreamTracksDebug(Text, Data: string);
+begin
+  WriteDebug(Text, Data);
+end;
+
 procedure TICEStream.TrySave;
 var
-  TitleChanged: Boolean;
-  MetaLen, P: Integer;
-  Title, MetaData: string;
-  Buf: Byte;
-  WD, WD2: TWaveData;
-  M1, M2: TMPEGStreamMemory;
   R: TPosRect;
   i: Integer;
   Track: TStreamTrack;
 begin
+  FSavedWasCut := False;
+
   for i := FStreamTracks.Count - 1 downto 0 do
   begin
     Track := FStreamTracks[i];
@@ -385,6 +411,7 @@ begin
 
             WriteDebug(Format('Scanned song start/end: %d/%d', [R.A, R.B]));
 
+            FSavedWasCut := True;
             SaveData(R.A, R.B, Track.Title);
 
             Track.Free;
@@ -440,10 +467,6 @@ var
   MetaLen, P: Integer;
   Title, MetaData: string;
   Buf: Byte;
-  WD, WD2: TWaveData;
-  M1, M2: TMPEGStreamMemory;
-  R: TPosRect;
-  i: Integer;
 begin
   Seek(0, soFromBeginning);
   if FMetaInt = -1 then
@@ -481,7 +504,6 @@ begin
 
         if (Title <> FTitle) and (FMetaCounter >= 3) then
         begin
-          WriteDebug(Format('Adding title "%s" to list', [Title]));
           FStreamTracks.FoundTitle(FAudioStream.Size, Title);
         end else if Title = FTitle then
         begin
@@ -490,8 +512,8 @@ begin
         begin
           if FMetaCounter = 2 then
           begin
+            WriteDebug(Format('Start of first full song "%s" detected', [Title]));
             FStreamTracks.FoundTitle(FAudioStream.Size, Title);
-            WriteDebug(Format('Start of first full song "%s" detected, adding it to list', [Title]));
           end;
         end;
 
@@ -654,8 +676,12 @@ begin
   if Count > 0 then
   begin
     Items[Count - 1].E := Offset;
+    //if Assigned(FOnDebug) then
+    //  FOnDebug(Format('Setting SongEnd of "%s" to %d', [Items[Count - 1].Title, Offset]), '');
   end;
   Add(TStreamTrack.Create(Offset, -1, Title));
+  //if Assigned(FOnDebug) then
+  //  FOnDebug(Format('Added "%s" with SongStart %d', [Items[Count - 1].Title, Offset]), '');
 end;
 
 end.

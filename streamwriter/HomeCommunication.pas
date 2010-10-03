@@ -119,9 +119,9 @@ constructor THomeCommunication.Create;
 begin
   {$IFDEF DEBUG}
   FURL := 'http://streamwriter.gaia/en/streamdb/';
-  FURL := 'http://mistake.ws/en/streamdb/';
+  FURL := 'http://streamwriter.org/en/streamdb/';
   {$ELSE}
-  FURL := 'http://mistake.ws/en/streamdb/';
+  FURL := 'http://streamwriter.org/en/streamdb/';
   {$ENDIF}
 
   FClients := TList<THomeThread>.Create;
@@ -153,7 +153,6 @@ end;
 
 procedure THomeCommunication.GetGenres;
 var
-  i: Integer;
   URL: string;
   Thread: TGetGenresThread;
   XMLDocument: TXMLLib;

@@ -42,7 +42,7 @@ type
     FPlay: TToolButton;
     FStop: TToolButton;
   public
-    constructor Create(AOwner: TComponent);
+    constructor Create(AOwner: TComponent); override;
     procedure Setup;
   end;
 
@@ -57,7 +57,6 @@ type
     procedure UpdateButtons;
 
     procedure SaveClick(Sender: TObject);
-    procedure SaveAsClick(Sender: TObject);
     procedure PosClick(Sender: TObject);
     procedure AutoCutClick(Sender: TObject);
     procedure CutClick(Sender: TObject);
@@ -98,28 +97,28 @@ begin
   FToolBar.FPlay.Enabled := FCutView.CanPlay;
   FToolBar.FStop.Enabled := FCutView.CanStop;
 
-  if FCutView.CanSetLine then
-    case FCutView.LineMode of
-      lmStart:
-        FToolBar.FPosStart.Down := True;
-      lmEnd:
-        FToolBar.FPosEnd.Down := True;
-      lmPlay:
-        FToolBar.FPosPlay.Down := True;
-    end;
+  // Das muss so, sonst klappt das .Down := True nicht, wenn sie
+  // vorher Disabled waren, vor dem Enable da oben...
+  FToolBar.FPosStart.Down := False;
+  FToolBar.FPosEnd.Down := False;
+  FToolBar.FPosPlay.Down := False;
+
+  case FCutView.LineMode of
+    lmStart:
+      FToolBar.FPosStart.Down := True;
+    lmEnd:
+      FToolBar.FPosEnd.Down := True;
+    lmPlay:
+      FToolBar.FPosPlay.Down := True;
+  end;
 end;
 
 procedure TCutTab.SaveClick(Sender: TObject);
 begin
-  FCutView.Stop;
+  // FCutView.Stop;
   if FCutView.Save then
     if Assigned(FOnSaved) then
       FOnSaved(Self);
-end;
-
-procedure TCutTab.SaveAsClick(Sender: TObject);
-begin
-
 end;
 
 procedure TCutTab.PosClick(Sender: TObject);
@@ -258,10 +257,6 @@ begin
   FSep1.Width := 8;
 
 
-  FPosPlay := TToolButton.Create(Self);
-  FPosPlay.Parent := Self;
-  FPosPlay.Hint := _('Set play position');
-  FPosPlay.ImageIndex := 27;
 
   FPosEnd := TToolButton.Create(Self);
   FPosEnd.Parent := Self;
@@ -272,6 +267,12 @@ begin
   FPosStart.Parent := Self;
   FPosStart.Hint := _('Set start position for cut');
   FPosStart.ImageIndex := 25;
+
+  FPosPlay := TToolButton.Create(Self);
+  FPosPlay.Parent := Self;
+  FPosPlay.Hint := _('Set play position');
+  FPosPlay.ImageIndex := 27;
+
 
 
   FSep3 := TToolButton.Create(Self);

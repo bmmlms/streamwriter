@@ -119,10 +119,8 @@ end;
 
 procedure TMStreamInfoViewPanel.ShowInfo(Entries: TStreamList; ChangedOverride: Boolean = False);
 var
-  i, n: Integer;
   SongsSaved: Cardinal;
   Received: UInt64;
-  EntriesChanged: Boolean;
   Title, Info, Genres, BitRates: string;
   Entry: TStreamEntry;
   EntriesNew: TStreamList;
@@ -133,20 +131,6 @@ begin
 
   end else
   begin
-    EntriesChanged := False;
-    for Entry in Entries do
-      if not FEntries.Contains(Entry) then
-      begin
-        EntriesChanged := True;
-        Break;
-      end;
-    for Entry in FEntries do
-      if not Entries.Contains(Entry) then
-      begin
-        EntriesChanged := True;
-        Break;
-      end;
-
     EntriesNew := TStreamList.Create;
 
     Genres := '';

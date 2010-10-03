@@ -124,6 +124,9 @@ type
     cmdStreamSettings: TToolButton;
     actCutSave: TAction;
     actCutSaveAs: TAction;
+    mnuHelp2: TMenuItem;
+    N1: TMenuItem;
+    actHelp: TAction;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -140,6 +143,9 @@ type
     procedure mnuStreamSettingsToolbarPopup(Sender: TObject);
     procedure pagSidebarChange(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure actHelpExecute(Sender: TObject);
   private
     FStreams: TStreamDataList;
     FUpdater: TUpdateClient;
@@ -156,7 +162,7 @@ type
     tabClients: TClientTab;
     tabSaved: TSavedTab;
 
-    procedure OneInstanceMessage(var Msg: TMessage); message WM_USER + 123;
+    procedure OneInstanceMessage(var Msg: TMessage); message WM_USER + 1234;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
     procedure EndSession(var Msg: TMessage); message WM_ENDSESSION;
     procedure SysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
@@ -222,6 +228,8 @@ begin
 
   Hide;
 
+  FUpdater.Kill;
+
   if not Shutdown then
     AppGlobals.Save(Handle)
   else
@@ -262,17 +270,15 @@ begin
   FClients.Terminate;
   FHomeCommunication.Terminate;
 
-  try
+  if FCheckFiles <> nil then
     FCheckFiles.Terminate;
-  except
-  end;
 
   Hard := False;
   StartTime := GetTickCount;
-  while (FClients.Count > 0) or (FHomeCommunication.Count > 0) or (FClients.Active) or (FCheckFiles <> nil) do
+  while (FClients.Count > 0) or (FHomeCommunication.Count > 0) or (FClients.Active) or (FCheckFiles <> nil) or (FUpdater.Active) do
   begin
-    // 15 Sekunden warten, für sauberes beenden
-    if StartTime < GetTickCount - 15000 then
+    // 5 Sekunden warten, für sauberes beenden
+    if StartTime < GetTickCount - 5000 then
     begin
       Hard := True;
       Break;
@@ -311,6 +317,11 @@ procedure TfrmStreamWriterMain.actExitExecute(Sender: TObject);
 begin
   if CanExitApp then
     ExitApp(False);
+end;
+
+procedure TfrmStreamWriterMain.actHelpExecute(Sender: TObject);
+begin
+  ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLink), '', '', 1);
 end;
 
 procedure TfrmStreamWriterMain.actStreamSettingsExecute(Sender: TObject);
@@ -361,12 +372,11 @@ procedure TfrmStreamWriterMain.FormClose(Sender: TObject;
   var Action: TCloseAction);
 begin
   Action := caNone;
-  if AppGlobals.TrayClose then
+  if (AppGlobals.Tray) and (not AppGlobals.TrayOnMinimize) then
   begin
     if (Visible) or (IsIconic(Handle)) then
     begin
       TrayIcon1.Visible := True;
-
       FWasMaximized := WindowState = wsMaximized;
       Hide;
     end;
@@ -401,7 +411,6 @@ begin
   tabClients.Setup(tbClients, ActionList1, mnuStreamPopup, imgImages, imgClients,
     FClients, FStreams, FHomeCommunication);
   tabClients.SideBar.BrowserView.StreamTree.Images := imgStations;
-  //tabClients.SideBar.InfoView.InfoView.Tree.Images := imgSavedTracks;
   tabClients.AddressBar.Stations.Images := imgStations;
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
   tabClients.OnCut := tabClientsCut;
@@ -481,7 +490,7 @@ begin
   UpdateButtons;
   UpdateStatus;
   tmrSpeed.Enabled := True;
-  TrayIcon1.Visible := AppGlobals.TrayClose;
+  TrayIcon1.Visible := AppGlobals.Tray;
 
   FUpdater := TUpdateClient.Create;
   FUpdater.OnNoUpdateFound := UpdaterNoUpdateFound;
@@ -515,10 +524,14 @@ begin
   FreeAndNil(FStreams);
 end;
 
+procedure TfrmStreamWriterMain.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_F1 then
+    actHelp.Execute;
+end;
+
 procedure TfrmStreamWriterMain.FormShow(Sender: TObject);
-var
-  i, n: Integer;
-  Files: TStringList;
 begin
   if FWasShown then
     Exit;
@@ -631,7 +644,7 @@ begin
     else
       FClients.RelayServer.Stop;
   end;
-  TrayIcon1.Visible := AppGlobals.TrayClose;
+  TrayIcon1.Visible := AppGlobals.Tray;
   S.Free;
 end;
 
@@ -661,7 +674,16 @@ end;
 procedure TfrmStreamWriterMain.SysCommand(var Msg: TWMSysCommand);
 begin
   if Msg.CmdType = SC_MINIMIZE then
+  begin
     FWasMaximized := WindowState = wsMaximized;
+
+    if (AppGlobals.Tray) and (AppGlobals.TrayOnMinimize) then
+    begin
+      TrayIcon1.Visible := True;
+      Hide;
+      Exit;
+    end;
+  end;
   DefaultHandler(Msg);
 end;
 
