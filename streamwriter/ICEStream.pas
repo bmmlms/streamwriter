@@ -426,6 +426,7 @@ begin
 
               // TODO: Alle kombinationen testen. silence detection an/aus, buffer gesetzt 0 oder mehr,
               // wird in beiden situationen unter allen umständen gespeichert, etc... alles testen eben!
+              // Stream evtl nicht als geschnitten markieren, wenn nur ein ende gefunden werden konnte?
 
               SaveData(Track.S - FSongBuffer * 1024, Track.E + FSongBuffer * 1024, Track.Title);
 

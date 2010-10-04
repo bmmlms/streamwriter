@@ -755,7 +755,13 @@ end;
 
 function TCutPaintBox.PixelsToArray(X: Integer): Cardinal;
 begin
-  Result := Integer(FCutView.FWaveData.CutStart) + Ceil((X / FBuf.Width) * Integer(FCutView.FWaveData.CutSize));
+  // Wichtig weil Integer und Cardinal.
+  if X < 0 then
+    X := 0;
+  if X > ClientWidth then
+    X := ClientWidth;
+
+  Result := FCutView.FWaveData.CutStart + Cardinal(Ceil((X / FBuf.Width) * FCutView.FWaveData.CutSize));
 
   if Result > FCutView.FWaveData.CutEnd then
     Result := FCutView.FWaveData.CutEnd;
