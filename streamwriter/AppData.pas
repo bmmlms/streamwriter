@@ -104,6 +104,10 @@ var
 implementation
 
 constructor TAppData.Create(AppName: string);
+const
+  URL = 'https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=alex%40mistake%2ews&lc=LANGCODE&' +
+        'item_name=streamwriter%2eorg%20%2f%20Alexander%20Nottelmann&no_note=0&currency_code=EUR&' +
+        'bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest';
 var
   W: Integer;
 begin
@@ -129,6 +133,10 @@ begin
   FProjectHelpLink := 'http://streamwriter.org/inhalt/documentation/help/';
   FProjectForumLink := 'http://streamwriter.org/forum/';
 
+  if LanguageObjects.Language.CurrentLanguage.ID = 'de' then
+    FProjectDonateLink := StringReplace(URL, 'LANGCODE', 'de', [])
+  else
+    FProjectDonateLink := StringReplace(URL, 'LANGCODE', 'en', []);
 
   FLanguageIcons := TLanguageIcons.Create;
 end;
