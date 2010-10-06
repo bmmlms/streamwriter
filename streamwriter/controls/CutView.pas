@@ -53,7 +53,7 @@ type
     property OnScanError: TNotifyEvent read FOnScanError write FOnScanError;
   end;
 
-  TCutPaintBox = class(TPaintBox)
+  TCutPaintBox = class(TGraphicControl)
   private
     FBuf: TBitmap;
     FCutView: TCutView;

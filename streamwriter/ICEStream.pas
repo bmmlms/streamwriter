@@ -338,14 +338,27 @@ begin
       raise Exception.Create('Folder for saved tracks could not be created.');
     end;
 
-    FAudioStream.SaveToFile(Filename, RangeBegin, RangeEnd - RangeBegin);
+    try
+      FAudioStream.SaveToFile(Filename, RangeBegin, RangeEnd - RangeBegin);
+    except
+      WriteDebug('Error in SaveToFile');
+      raise;
+    end;
     Saved := True;
 
-    FSavedFilename := Filename;
-    FSavedTitle := Title;
-    FSavedSize := RangeEnd - RangeBegin;
-    if Assigned(FOnSongSaved) then
-      FOnSongSaved(Self);
+    try
+      FSavedFilename := Filename;
+      FSavedTitle := Title;
+      FSavedSize := RangeEnd - RangeBegin;
+      if Assigned(FOnSongSaved) then
+        FOnSongSaved(Self);
+    except
+      on E: Exception do
+      begin
+        WriteDebug(Format('Error after successful save: %s', [E.Message]));
+        raise;
+      end;
+    end;
   except
     on E: Exception do
     begin
@@ -434,11 +447,13 @@ begin
               FStreamTracks.Delete(i);
               WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]));
             end else
-              WriteDebug('Waiting for full buffer because no silence found...');
+            begin
+              // WriteDebug('Waiting for full buffer because no silence found...');
+            end;
           end;
         end else
         begin
-          WriteDebug(Format('Waiting to save "%s" because stream is too small', [Track.Title]));
+          // WriteDebug(Format('Waiting to save "%s" because stream is too small', [Track.Title]));
         end;
       end else
       begin
@@ -456,7 +471,9 @@ begin
           FStreamTracks.Delete(i);
           WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]));
         end else
-          WriteDebug('Waiting for full buffer...');
+        begin
+          // WriteDebug('Waiting for full buffer...');
+        end;
       end;
     end;
   end;

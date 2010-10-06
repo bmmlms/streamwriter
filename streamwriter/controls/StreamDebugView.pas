@@ -197,6 +197,8 @@ begin
   TreeOptions.PaintOptions := TreeOptions.PaintOptions - [toShowTreeLines];
 
   Indent := 12;
+  ShowHint := True;
+  HintMode := hmTooltip;
 
   Header.Columns.Add;
   Header.AutoSizeIndex := 0;
@@ -228,6 +230,7 @@ begin
   if FClient <> nil then
   begin
     MultiLine[Node] := True;
+
     if GetNodeLevel(Node) = 0 then
     begin
       Text := TimeToStr(FClient.DebugLog[Node.Index].Time) + ' - ' + FClient.DebugLog[Node.Index].Text;

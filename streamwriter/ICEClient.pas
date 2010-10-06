@@ -451,36 +451,44 @@ var
 begin
   Inc(FSongsSaved);
 
-  // Pluginbearbeitung starten
-  Data.Filename := FICEThread.RecvStream.SavedFilename;
-  Data.Station := StreamName;
-  Data.Title := FICEThread.RecvStream.SavedTitle;
-  Data.TrackNumber := SongsSaved;
-  Data.Filesize := FICEThread.RecvStream.SavedSize;
-  Data.WasCut := FICEThread.RecvStream.SavedWasCut;
+  try
+    // Pluginbearbeitung starten
+    Data.Filename := FICEThread.RecvStream.SavedFilename;
+    Data.Station := StreamName;
+    Data.Title := FICEThread.RecvStream.SavedTitle;
+    Data.TrackNumber := SongsSaved;
+    Data.Filesize := FICEThread.RecvStream.SavedSize;
+    Data.WasCut := FICEThread.RecvStream.SavedWasCut;
 
-  if not FKilled then
-  begin
-    Entry := AppGlobals.PluginManager.ProcessFile(Data);
-    if Entry <> nil then
+    if not FKilled then
     begin
-      WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]));
+      Entry := AppGlobals.PluginManager.ProcessFile(Data);
+      if Entry <> nil then
+      begin
+        WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]));
 
-      Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
-      Entry.ActiveThread.Resume;
-      FProcessingList.Add(Entry);
+        Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
+        Entry.ActiveThread.Resume;
+        FProcessingList.Add(Entry);
+      end;
     end;
-  end;
 
-  if FProcessingList.Count = 0 then
-  begin
-    // Wenn kein Plugin die Verarbeitung übernimmt, gilt die Datei
-    // jetzt schon als gespeichert. Ansonsten macht das PluginThreadTerminate.
-    if Assigned(FOnSongSaved) then
-      FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedTitle,
-        FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedWasCut);
-    if Assigned(FOnRefresh) then
-      FOnRefresh(Self);
+    if FProcessingList.Count = 0 then
+    begin
+      // Wenn kein Plugin die Verarbeitung übernimmt, gilt die Datei
+      // jetzt schon als gespeichert. Ansonsten macht das PluginThreadTerminate.
+      if Assigned(FOnSongSaved) then
+        FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedTitle,
+          FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedWasCut);
+      if Assigned(FOnRefresh) then
+        FOnRefresh(Self);
+    end;
+  except
+    on E: Exception do
+    begin
+      WriteDebug(Format('Error in ThreadSongSaved: %s', [E.Message]));
+      raise;
+    end;
   end;
 end;
 

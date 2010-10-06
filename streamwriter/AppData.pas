@@ -66,6 +66,7 @@ type
     destructor Destroy; override;
 
     procedure Load; override;
+    procedure BuildThanksText; override;
 
     property FilePattern: string read FFilePattern write FFilePattern;
     property Dir: string read FDir write FDir;
@@ -138,6 +139,8 @@ begin
   else
     FProjectDonateLink := StringReplace(URL, 'LANGCODE', 'en', []);
 
+  BuildThanksText;
+
   FLanguageIcons := TLanguageIcons.Create;
 end;
 
@@ -161,6 +164,97 @@ end;
 function TAppData.FGetRecentFile: string;
 begin
   Result := FStorage.GetFilePath('recent.dat');
+end;
+
+procedure TAppData.BuildThanksText;
+  procedure ShuffleFisherYates(var A: TArray);
+  var
+    i, j: Integer;
+    Tmp: TArrayElement;
+  begin
+    for i := Low(A) to High(A) do
+    begin
+      j := i + Random(Length(A) - i + Low(A));
+      Tmp := A[j];
+      A[j] := A[i];
+      A[i] := Tmp;
+    end;
+  end;
+var
+  i: Integer;
+  FBoard: TArray;
+  FDonors: TArray;
+  Text: TStringList;
+begin
+  inherited;
+
+  Text := TStringList.Create;
+  try
+    Text.Add(_('&U&12Thanks go out to...'));
+    Text.Add('');
+    Text.Add('');
+    Text.Add(_('&U&10...software, graphics and other resources used'#13#10'&U&10to develop streamWriter and it''s website'));
+    Text.Add('');
+    Text.Add('Apache HTTP Server');
+    Text.Add('Bass');
+    Text.Add('Django');
+    Text.Add('Drag and Drop Component Suite');
+    Text.Add('Delphi-Praxis');
+    Text.Add('Embarcadero');
+    Text.Add('famfamfam');
+    Text.Add('FastMM');
+    Text.Add('freecsstemplates.org');
+    Text.Add('Fugue Icons');
+    Text.Add('Gimp');
+    Text.Add('Inno Setup');
+    Text.Add('jQuery');
+    Text.Add('MySQL');
+    Text.Add('Notepad++');
+    Text.Add('Mp3FileUtils');
+    Text.Add('Python');
+    Text.Add('Tango Desktop Project');
+    Text.Add('Virtual Treeview');
+    Text.Add('XMLLib');
+
+    Text.Add('');
+    Text.Add('');
+    Text.Add(_('&U&10...everybody who donated something'));
+    Text.Add('');
+    SetLength(FDonors, 1);
+    FDonors[0] := 'Thomas Franke';
+    ShuffleFisherYates(FDonors);
+    for i := 0 to Length(FDonors) - 1 do
+      Text.Add(FDonors[i]);
+
+    Text.Add('');
+    Text.Add('');
+    Text.Add(_('&U&10...everyone supporting streamWriter'#13#10'&U&10at http://streamwriter.org/forum/'));
+    Text.Add('');
+    SetLength(FBoard, 8);
+    FBoard[0] := 'bastik';
+    FBoard[1] := 'mondstern';
+    FBoard[2] := 'HostedDinner';
+    FBoard[3] := 'Max';
+    FBoard[4] := 'Nemesis';
+    FBoard[5] := 'MASH';
+    FBoard[6] := 'Jim';
+    FBoard[7] := 'Robin Hood';
+    ShuffleFisherYates(FBoard);
+    for i := 0 to Length(FBoard) - 1 do
+      Text.Add('''' + FBoard[i] + '''');
+
+    Text.Add('');
+    Text.Add('');
+    Text.Add(_('&U&10...people I forgot to mention here'));
+    Text.Add('');
+    Text.Add('');
+    Text.Add(_('&U&10...and all other sweet people I know!'));
+    Text.Add('');
+
+    FProjectThanksText := Text.Text;
+  finally
+    Text.Free;
+  end;
 end;
 
 procedure TAppData.Load;
