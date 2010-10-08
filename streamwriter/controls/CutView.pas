@@ -341,9 +341,7 @@ end;
 
 procedure TCutView.SaveAs;
 begin
-  // REMARK: Wenns geklappt hat, FFilename ändern.
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
+  raise Exception.Create('');
 end;
 
 procedure TCutView.Play;

@@ -270,7 +270,7 @@ begin
   FStorage.Read('DeleteStreams', FDeleteStreams, False);
   FStorage.Read('SkipShort', FSkipShort, True);
   FStorage.Read('SearchSilence', FSearchSilence, True);
-  FStorage.Read('SilenceLevel', FSilenceLevel, 5); // TODO: Die Werte noch optimieren.
+  FStorage.Read('SilenceLevel', FSilenceLevel, 5);
   FStorage.Read('SilenceLength', FSilenceLength, 150);
   FStorage.Read('TrayClose', FTray, False);
   FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);

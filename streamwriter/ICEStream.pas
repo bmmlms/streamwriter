@@ -398,6 +398,9 @@ begin
 
           if (R.A > -1) or (R.B > -1) then
           begin
+            if (R.A > -1) and (R.B > -1) then
+              FSavedWasCut := True;
+
             if R.A = -1 then
             begin
               WriteDebug('No silence at SongStart could be found, using configured buffer');
@@ -424,7 +427,6 @@ begin
 
             WriteDebug(Format('Scanned song start/end: %d/%d', [R.A, R.B]));
 
-            FSavedWasCut := True;
             SaveData(R.A, R.B, Track.Title);
 
             Track.Free;
@@ -436,10 +438,6 @@ begin
                (FAudioStream.Size > Track.E + FSongBuffer * 1024) then
             begin
               WriteDebug(Format('No silence found, saving using buffer of %d bytes...', [FSongBuffer * 1024]));
-
-              // TODO: Alle kombinationen testen. silence detection an/aus, buffer gesetzt 0 oder mehr,
-              // wird in beiden situationen unter allen umständen gespeichert, etc... alles testen eben!
-              // Stream evtl nicht als geschnitten markieren, wenn nur ein ende gefunden werden konnte?
 
               SaveData(Track.S - FSongBuffer * 1024, Track.E + FSongBuffer * 1024, Track.Title);
 
