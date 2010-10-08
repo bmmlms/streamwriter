@@ -433,19 +433,21 @@ begin
   try
     FStreams.Load;
   except
-      on E: Exception do
-      begin
-        try
-          FStreams.Free;
-        except end;
-        FStreams := TStreamDataList.Create;
+    on E: Exception do
+    begin
+      try
+        FStreams.Free;
+      except end;
+      FStreams := TStreamDataList.Create;
+      // Damit nichts überschrieben wird.
+      FStreams.LoadError := True;
 
-        if HandleLoadError(E) = IDYES then
-        begin
-          DeleteFile(E.Message);
-          FStreams.LoadError := False;
-        end;
+      if HandleLoadError(E) = IDYES then
+      begin
+        DeleteFile(E.Message);
+        FStreams.LoadError := False;
       end;
+    end;
   end;
 
   Recent := TRecent.Create;

@@ -428,6 +428,8 @@ end;
 
 constructor TStreamDataList.Create;
 begin
+  inherited;
+
   FLoadError := False;
   FReceived := 0;
   FStreams := TStreamList.Create;
