@@ -130,7 +130,7 @@ begin
   FProjectUpdateLink := 'http://streamwriter.org/';
 
   FProjectHomepageLink := 'http://streamwriter.org/';
-  FProjectLink := '';
+  FProjectLink := 'http://streamwriter.org/';
   FProjectHelpLink := 'http://streamwriter.org/inhalt/documentation/help/';
   FProjectForumLink := 'http://streamwriter.org/forum/';
 
