@@ -8,8 +8,8 @@ Source: ..\bin\plugins\settags.dll; DestDir: {app}\plugins; Flags: ignoreversion
 Name: {group}\streamWriter; Filename: {app}\streamwriter.exe; IconFilename: {app}\streamwriter.exe; IconIndex: 0
 
 [Languages]
-Name: Deutsch; MessagesFile: compiler:Languages\German.isl; LicenseFile: license-de.txt
-Name: English; MessagesFile: compiler:Default.isl; LicenseFile: license-en.txt
+Name: Deutsch; MessagesFile: compiler:Languages\German.isl
+Name: English; MessagesFile: compiler:Default.isl
 
 [CustomMessages]
 Deutsch.Launch=streamWriter starten
@@ -39,6 +39,7 @@ AlwaysShowComponentsList=false
 WizardImageFile=compiler:wizmodernimage-is.bmp
 WizardSmallImageFile=compiler:wizmodernsmallimage-is.bmp
 Compression=lzma/ultra
+LicenseFile=license.txt
 VersionInfoVersion=1.2.0.0
 
 [Run]
@@ -109,6 +110,7 @@ begin
     //RegDeleteKeyIncludingSubkeys(HKCU, 'Software\mistake.ws\streamWriter');
   end;
 end;
+
 
 
 
