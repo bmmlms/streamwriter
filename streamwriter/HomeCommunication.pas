@@ -257,9 +257,15 @@ var
   Root, Header, Data: TXMLNode;
   XML: AnsiString;
 begin
-  // Nur submitten, wenn er nicht von uns selber kommt
-  if Pos('mistake.ws', LowerCase(Stream)) > 0 then
+  if not AppGlobals.SubmitStreams then
     Exit;
+
+  // Nur submitten, wenn er nicht von uns selber kommt
+  if (Pos('mistake.ws', LowerCase(Stream)) > 0) or
+     (Pos('streamwriter.org', LowerCase(Stream)) > 0) then
+  begin
+    Exit;
+  end;
 
   URL := FURL + 'submitstream/';
   Thread := TSubmitThread.Create(URL);
