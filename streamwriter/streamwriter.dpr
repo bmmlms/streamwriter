@@ -75,7 +75,8 @@ uses
   SavedTab in 'controls\SavedTab.pas',
   WaveData in 'audio\WaveData.pas',
   About in '..\..\common\forms\About.pas' {frmAbout},
-  CheckFilesThread in 'CheckFilesThread.pas';
+  CheckFilesThread in 'CheckFilesThread.pas',
+  ListsTab in 'controls\ListsTab.pas';
 
 {$SetPEOptFlags $0140}
 

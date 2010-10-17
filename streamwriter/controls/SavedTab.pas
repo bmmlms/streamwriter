@@ -92,7 +92,7 @@ type
   private
     FToolbar: TSavedToolBar;
     FSavedTree: TSavedTree;
-    FStreams: TStreamDataList;
+    FStreams: TDataLists;
 
     FOnCut: TTrackEvent;
     FOnTrackRemoved: TTrackEvent;
@@ -104,7 +104,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
 
-    procedure Setup(Streams: TStreamDataList; Images: TImageList);
+    procedure Setup(Streams: TDataLists; Images: TImageList);
 
     procedure AddTrack(Entry: TStreamEntry; Track: TTrackInfo);
     procedure RemoveTrack(Track: TTrackInfo); overload;
@@ -334,13 +334,13 @@ var
   Node: PVirtualNode;
   NodeData: PSavedNodeData;
 begin
-  for i := 0 to FStreams.Count - 1 do
-    for n := 0 to FStreams[i].Tracks.Count - 1 do
+  for i := 0 to FStreams.StreamList.Count - 1 do
+    for n := 0 to FStreams.StreamList[i].Tracks.Count - 1 do
     begin
       Node := FSavedTree.AddChild(nil);
       NodeData := FSavedTree.GetNodeData(Node);
-      NodeData.Stream := FStreams[i];
-      NodeData.Track := FStreams[i].Tracks[n];
+      NodeData.Stream := FStreams.StreamList[i];
+      NodeData.Track := FStreams.StreamList[i].Tracks[n];
     end;
 
   FSavedTree.Sort(nil, FSavedTree.FSortColumn, FSavedTree.FSortDirection);
@@ -383,7 +383,7 @@ begin
       begin
         for i := 0 to Length(Tracks) - 1 do
         begin
-          FStreams.RemoveTrack(Tracks[i]);
+          FStreams.StreamList.RemoveTrack(Tracks[i]);
           FSavedTree.DeleteTrack(Tracks[i]);
           if Assigned(FOnTrackRemoved) then
             FOnTrackRemoved(nil, Tracks[i]);
@@ -396,7 +396,7 @@ begin
           if Recycle(Handle, Tracks[i].Filename) then
           begin
             FSavedTree.DeleteTrack(Tracks[i]);
-            FStreams.RemoveTrack(Tracks[i]);
+            FStreams.StreamList.RemoveTrack(Tracks[i]);
             if Assigned(FOnTrackRemoved) then
               FOnTrackRemoved(nil, Tracks[i]);
           end;
@@ -415,7 +415,7 @@ begin
           if DeleteFile(Tracks[i].Filename) then
           begin
             FSavedTree.DeleteTrack(Tracks[i]);
-            FStreams.RemoveTrack(Tracks[i]);
+            FStreams.StreamList.RemoveTrack(Tracks[i]);
             if Assigned(FOnTrackRemoved) then
               FOnTrackRemoved(nil, Tracks[i]);
           end else
@@ -456,7 +456,7 @@ begin
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemProperties);
 end;
 
-procedure TSavedTab.Setup(Streams: TStreamDataList; Images: TImageList);
+procedure TSavedTab.Setup(Streams: TDataLists; Images: TImageList);
 begin
   Caption := _('Saved songs');
 
@@ -468,6 +468,7 @@ begin
 
   FToolBar := TSavedToolBar.Create(Self);
   FToolBar.Parent := Self;
+  FToolBar.Height := 24;
   FToolBar.Images := Images;
   FToolBar.Setup;
 
@@ -518,7 +519,7 @@ begin
   //FToolbar.FRefresh.Enabled := FSavedTree.RootNodeCount > 0;
 end;
 
-procedure TSavedTab.RemoveTrack(Track: string);
+procedure TSavedTab.RemoveTrack(Track: string);   // TODO: Das hier wird nicht benutzt?
 var
   i: Integer;
   Nodes: TNodeArray;

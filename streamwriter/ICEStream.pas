@@ -314,18 +314,16 @@ begin
   try
     Filename := GetFilenameTitle(Title, Dir);
 
-    {
     FSaveAllowedTitle := Title;
     FSaveAllowed := True;
     if Assigned(FOnTitleAllowed) then
       FOnTitleAllowed(Self);
     if not FSaveAllowed then
     begin
-      WriteDebug(Format('Skipping "%s" because filename is not allowed', [Title]));
+      WriteDebug(Format('Skipping "%s" because filename is on ignore list', [Title]));
       Dec(FSongsSaved);
       Exit;
     end;
-    }
 
     if Length(Title) > 0 then
       WriteDebug(Format('Saving title "%s"', [Title]))

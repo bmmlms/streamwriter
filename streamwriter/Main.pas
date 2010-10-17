@@ -31,7 +31,7 @@ uses
   About, MsgDlg, HomeCommunication, StreamBrowserView, Clipbrd,
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
-  CheckFilesThread;
+  CheckFilesThread, ListsTab;
 
 type
   TfrmStreamWriterMain = class(TForm)
@@ -61,7 +61,7 @@ type
     Entfernen1: TMenuItem;
     tmrSpeed: TTimer;
     mnuStreamSettings1: TMenuItem;
-    asd: TMenuItem;
+    mnuSkipShort: TMenuItem;
     actSkipShort: TAction;
     mnuStreamSettings2: TMenuItem;
     KurzeLiederberspringen1: TMenuItem;
@@ -127,6 +127,10 @@ type
     mnuHelp2: TMenuItem;
     N1: TMenuItem;
     actHelp: TAction;
+    N5: TMenuItem;
+    mnuWishList: TMenuItem;
+    mnuIgnoreList: TMenuItem;
+    mnuNoLists: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -146,8 +150,12 @@ type
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure actHelpExecute(Sender: TObject);
+
+    procedure mnuNoListsClick(Sender: TObject);
+    procedure mnuWishListClick(Sender: TObject);
+    procedure mnuIgnoreListClick(Sender: TObject);
   private
-    FStreams: TStreamDataList;
+    FStreams: TDataLists;
     FUpdater: TUpdateClient;
     FUpdateOnExit: Boolean;
 
@@ -161,6 +169,7 @@ type
     pagMain: TMainPageControl;
     tabClients: TClientTab;
     tabSaved: TSavedTab;
+    tabLists: TListsTab;
 
     procedure OneInstanceMessage(var Msg: TMessage); message WM_USER + 1234;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
@@ -238,7 +247,7 @@ begin
     except end;
 
   Saved := False;
-  while not Saved do
+  while not Saved do  // TODO: Diese Schleife ist Scheiße. Falls nicht gesaved werden kann, beendet das Programm nicht!!!
   begin
     try
       if FStreams.Save then
@@ -336,7 +345,7 @@ begin
     if Sender = actSkipShort then
       Client.SetSettings(actSkipShort.Checked);
 
-    R := FStreams.Get(Client);
+    R := FStreams.StreamList.Get(Client);
     if R <> nil then
     begin
       R.SkipShort := Client.SkipShort;
@@ -396,7 +405,7 @@ var
 begin
   FClients := TClientManager.Create;
 
-  FStreams := TStreamDataList.Create;
+  FStreams := TDataLists.Create;
 
   FHomeCommunication := THomeCommunication.Create;
 
@@ -423,6 +432,10 @@ begin
   tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
   tabSaved.OnRefresh := tabSavedRefresh;
 
+  tabLists := TListsTab.Create(pagMain);
+  tabLists.PageControl := pagMain;
+  //tabLists.Setup(FStreams, imgImages);
+
   if AppGlobals.Relay then
     FClients.RelayServer.Start;
 
@@ -438,7 +451,7 @@ begin
       try
         FStreams.Free;
       except end;
-      FStreams := TStreamDataList.Create;
+      FStreams := TDataLists.Create;
       // Damit nichts überschrieben wird.
       FStreams.LoadError := True;
 
@@ -456,7 +469,7 @@ begin
       Recent.Load;
       for i := 0 to Recent.List.Count - 1 do
       begin
-        Entry := FStreams.Add(Recent.List[i].Copy);
+        Entry := FStreams.StreamList.Add(Recent.List[i].Copy);
         Entry.RecentIndex := i;
         Entry.IsInList := False;
       end;
@@ -472,7 +485,7 @@ begin
       List.Load;
       for i := 0 to List.List.Count - 1 do
       begin
-        Entry := FStreams.Add(List.List[i].Copy);
+        Entry := FStreams.StreamList.Add(List.List[i].Copy);
         Entry.IsInList := True;
       end;
     except
@@ -548,6 +561,7 @@ begin
   FWasMaximized := WindowState = wsMaximized;
 
   tabClients.Shown;
+  tabLists.Setup(FStreams, imgImages);
   actShowSideBar.Checked := tabClients.SideBar.Visible;
 end;
 
@@ -576,6 +590,51 @@ end;
 procedure TfrmStreamWriterMain.mnuCheckUpdateClick(Sender: TObject);
 begin
   ShowUpdate;
+end;
+
+procedure TfrmStreamWriterMain.mnuNoListsClick(Sender: TObject);
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+begin
+  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True));
+  for Client in Clients do
+  begin
+    Client.UseLists := ulNone;
+    mnuNoLists.Checked := True;
+    mnuWishList.Checked := False;
+    mnuIgnoreList.Checked := False;
+  end;
+end;
+
+procedure TfrmStreamWriterMain.mnuWishListClick(Sender: TObject);
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+begin
+  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True));
+  for Client in Clients do
+  begin
+    Client.UseLists := ulWish;
+    mnuNoLists.Checked := False;
+    mnuWishList.Checked := True;
+    mnuIgnoreList.Checked := False;
+  end;
+end;
+
+procedure TfrmStreamWriterMain.mnuIgnoreListClick(Sender: TObject);
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+begin
+  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True));
+  for Client in Clients do
+  begin
+    Client.UseLists := ulIgnore; // TODO: Falls ein Item im Menü gewählt wurden, checken/unchecken!!! gilt auch für andere items.
+    mnuNoLists.Checked := False;
+    mnuWishList.Checked := False;      // TODO: In hilfe beschreiben, wie sich die filterlisten auswirken.
+    mnuIgnoreList.Checked := True;
+  end;
 end;
 
 procedure TfrmStreamWriterMain.mnuShowClick(Sender: TObject);
@@ -725,9 +784,9 @@ begin
 
   Files := TList.Create;
   try
-    for i := 0 to FStreams.Count - 1 do
-      for n := 0 to FStreams[i].Tracks.Count - 1 do
-        Files.Add(TFileEntry.Create(FStreams[i].Tracks[n].Filename, FStreams[i].Tracks[n].Filesize, eaNone));
+    for i := 0 to FStreams.StreamList.Count - 1 do
+      for n := 0 to FStreams.StreamList[i].Tracks.Count - 1 do
+        Files.Add(TFileEntry.Create(FStreams.StreamList[i].Tracks[n].Filename, FStreams.StreamList[i].Tracks[n].Filesize, eaNone));
     FCheckFiles := TCheckFilesThread.Create(Files);
     FCheckFiles.OnTerminate := CheckFilesTerminate;
     FCheckFiles.Resume;
@@ -763,12 +822,12 @@ procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject);
 var
   i, n: Integer;
 begin
-  for i := 0 to FStreams.Count - 1 do
-    for n := 0 to FStreams[i].Tracks.Count - 1 do
-      if LowerCase(FStreams[i].Tracks[n].Filename) = LowerCase(TCutTab(Sender).Filename) then
+  for i := 0 to FStreams.StreamList.Count - 1 do
+    for n := 0 to FStreams.StreamList[i].Tracks.Count - 1 do
+      if LowerCase(FStreams.StreamList[i].Tracks[n].Filename) = LowerCase(TCutTab(Sender).Filename) then
       begin
-        FStreams[i].Tracks[n].Filesize := GetFileSize(FStreams[i].Tracks[n].Filename);
-        FStreams[i].Tracks[n].WasCut := True;
+        FStreams.StreamList[i].Tracks[n].Filesize := GetFileSize(FStreams.StreamList[i].Tracks[n].Filename);
+        FStreams.StreamList[i].Tracks[n].WasCut := True;
         Exit;
       end;
 end;
@@ -865,6 +924,8 @@ begin
     if Client.Filename <> '' then
       actTuneInFile.Enabled := True;
   end;
+
+  // TODO: Den Haken setzen für Wish/Ignore/None
 
   if tabClients.ClientView.SelectedCount > 1 then
   begin
@@ -977,21 +1038,21 @@ begin
     if E.Action = eaNone then
       Continue;
 
-    for n := 0 to FStreams.Count - 1 do
+    for n := 0 to FStreams.StreamList.Count - 1 do
     begin
       Found := False;
-      for j := FStreams[n].Tracks.Count - 1 downto 0 do
+      for j := FStreams.StreamList[n].Tracks.Count - 1 downto 0 do
       begin
-        if FStreams[n].Tracks[j].Hash = E.Hash then
+        if FStreams.StreamList[n].Tracks[j].Hash = E.Hash then
         begin
-          Track := FStreams[n].Tracks[j];
+          Track := FStreams.StreamList[n].Tracks[j];
           case E.Action of
             eaNone: ;
             eaSize:
               Track.Filesize := E.Size;
             eaRemove:
               begin
-                FStreams[n].Tracks.Delete(j);
+                FStreams.StreamList[n].Tracks.Delete(j);
                 tabSaved.RemoveTrack(Track);
                 Track.Free;
               end;

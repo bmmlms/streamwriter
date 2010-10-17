@@ -28,6 +28,7 @@ uses
 type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
   TICEClientStates = (csConnecting, csRecording, csStopping, csStopped, csRetrying, csIOError);
+  TUseLists = (ulNone, ulWish, ulIgnore);
 
   TICEClient = class;
 
@@ -76,6 +77,7 @@ type
     FSpeed: Integer;
     FContentType: string;
     FFilename: string;
+    FUseLists: TUseLists;
 
     FSkipShort: Boolean;
     FKilled: Boolean;
@@ -144,6 +146,7 @@ type
     property ContentType: string read FContentType;
     property Filename: string read FFilename;
     property RelayURL: string read FGetRelayURL;
+    property UseLists: TUseLists read FUseLists write FUseLists;
 
     property SkipShort: Boolean read FSkipShort;
     property ProcessingList: TProcessingList read FProcessingList;
@@ -211,6 +214,7 @@ begin
   FURLs := TURLList.Create;
   FURLsIndex := -1;
   FRetries := 0;
+  FUseLists := ulNone; // TODO: Aus Datei oder Default-Settings setzen!!!
 
   AppGlobals.Lock;
   FSkipShort := AppGlobals.SkipShort;

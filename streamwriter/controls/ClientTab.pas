@@ -81,7 +81,7 @@ type
     FSideBar: TSideBar;
 
     FClients: TClientManager;
-    FStreams: TStreamDataList;
+    FStreams: TDataLists;
     FHomeCommunication: THomeCommunication;
     FDropTarget: TDropURLTarget;
 
@@ -144,7 +144,7 @@ type
 
     procedure Setup(Toolbar: TToolbar; Actions: TActionList; Popup: TPopupMenu; MenuImages,
       ClientImages: TImageList; Clients: TClientManager;
-      Streams: TStreamDataList; HomeCommunication: THomeCommunication);
+      Streams: TDataLists; HomeCommunication: THomeCommunication);
     procedure Shown;
     function StartStreaming(Name, URL: string): Boolean;
     procedure TimerTick;
@@ -281,7 +281,7 @@ begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(True));
   for Client in Clients do
   begin
-    Entry := FStreams.Get(Client);
+    Entry := FStreams.StreamList.Get(Client);
     if Entry <> nil then
       Entry.LastTouched := Now;
     Client.Connect;
@@ -327,7 +327,7 @@ begin
     Clients := FClientView.NodesToData(FClientView.GetNodes(True));
     for Client in Clients do
     begin
-      R := FStreams.Get(Client.Client);
+      R := FStreams.StreamList.Get(Client.Client);
       R.SongsSaved := 0;
       R.BytesReceived := 0;
       {
@@ -454,7 +454,7 @@ end;
 
 procedure TClientTab.Setup(Toolbar: TToolbar; Actions: TActionList;
   Popup: TPopupMenu; MenuImages,
-  ClientImages: TImageList; Clients: TClientManager; Streams: TStreamDataList;
+  ClientImages: TImageList; Clients: TClientManager; Streams: TDataLists;
   HomeCommunication: THomeCommunication);
   function GetAction(Name: string): TAction;
   var
@@ -486,7 +486,7 @@ begin
   FClients.OnClientTitleAllowed := ClientManagerTitleAllowed;
 
   FStreams := Streams;
-  FStreams.OnStreamChanged := StationsStreamChanged;
+  FStreams.StreamList.OnStreamChanged := StationsStreamChanged;
 
   FHomeCommunication := HomeCommunication;
 
@@ -500,6 +500,7 @@ begin
   FAddressBar.OnStart := AddressBarStart;
 
   FToolbar := Toolbar;
+  FToolbar.Height := 24;
   FToolbar.Parent := Self;
 
   GetAction('actStart').OnExecute := ActionStartExecute;
@@ -574,7 +575,7 @@ begin
   try
     for Client in Clients do
     begin
-      Entry := FStreams.Get(Client.Client);
+      Entry := FStreams.StreamList.Get(Client.Client);
       if Entry <> nil then
       begin
         Entries.Add(Entry)
@@ -613,8 +614,8 @@ var
 begin
   Client := Sender as TICEClient;
 
-  Entry := FStreams.Add(Client.StreamName, Client.StartURL, Client.URLs,
-    Client.BitRate, Client.Genre, Client.SkipShort, 0);
+  Entry := FStreams.StreamList.Add(Client.StreamName, Client.StartURL, Client.URLs,
+    Client.BitRate, Client.Genre, Client.SkipShort, Client.UseLists, 0);
   if Entry.Name <> Client.StreamName then
   begin
     Entry.Name := Client.StreamName;
@@ -652,7 +653,7 @@ begin
   FReceived := FReceived + Received;
   FStreams.Received := FStreams.Received + Received;
 
-  Entry := FStreams.Get(Client);
+  Entry := FStreams.StreamList.Get(Client);
   if Entry <> nil then
   begin
     Entry.BytesReceived := Entry.BytesReceived + Received;
@@ -661,21 +662,72 @@ begin
   FRefreshInfo := True;
 end;
 
+// TODO: Ignore und Save-options müssen per-stream sein!
+
 procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject;
   Title: string; var Allowed: Boolean);
 var
   i, n: Integer;
+  Cmp: string;
 begin
-  Allowed := True;
-  for i := 0 to FStreams.Count - 1 do
-    for n := 0 to FStreams[i].Tracks.Count - 1 do
+  if Length(Title) < 1 then
+    Exit; // TODO: Testen. Dann sollte Allowed immer True sein!
+
+  {
+  for n := 1 to Length(Title) do
+    if (not (Title[n] in ['a'..'z'])) and (not (Title[n] in ['0'..'9'])) then
+      Title[n] := '*';
+  }
+
+//  ich hatte 'nelly' in der liste. aber was mit nelly wurde gesaved. fail!
+
+  // TODO: Optionen zum anschalten und abschalten, default setting in einstellungen, etcpp
+  if TICEClient(Sender).UseLists <> ulNone then
+  begin
+    if TICEClient(Sender).UseLists = ulWish then
     begin
-      if LowerCase(Title) = LowerCase(RemoveFileExt(ExtractFileName(FStreams[i].Tracks[n].Filename))) then
+      Allowed := False;
+      for i := 0 to FStreams.SaveList.Count - 1 do
       begin
-        Allowed := False;
-        Exit;
+        // TODO: Genauer prüfen! So ists voll Mappus. Alle sonderzeiche (nicht zahlen, nicht alphabet) durch '*' ersetzen. Oder anders?!
+        Cmp := LowerCase(FStreams.SaveList[i].StreamTitle);
+
+        if Length(Cmp) >= 1 then // TODO: Was, wenn < 1 ????
+        begin
+          for n := 1 to Length(Cmp) do
+            if (not (Cmp[n] in ['a'..'z'])) and (not (Cmp[n] in ['0'..'9'])) then
+              Cmp[n] := '*';
+        end;
+
+        if Like(LowerCase(Title), LowerCase(Cmp)) then
+        begin
+          Allowed := True;
+          Exit;
+        end;
+      end;
+    end else
+    begin
+      Allowed := True;
+      for i := 0 to FStreams.IgnoreList.Count - 1 do
+      begin
+        // TODO: Genauer prüfen! So ists voll Mappus.
+        Cmp := LowerCase(FStreams.IgnoreList[i].StreamTitle);
+
+        if Length(Cmp) >= 1 then // TODO: Was, wenn < 1 ????
+        begin
+          for n := 1 to Length(Cmp) do
+            if (not (Cmp[n] in ['a'..'z'])) and (not (Cmp[n] in ['0'..'9'])) then
+              Cmp[n] := '*';
+        end;
+
+        if Like(LowerCase(Title), LowerCase(Cmp)) then
+        begin
+          Allowed := False;
+          Exit;
+        end;
       end;
     end;
+  end;
 end;
 
 procedure TClientTab.ClientManagerRefresh(Sender: TObject);
@@ -690,8 +742,8 @@ var
 begin
   Client := Sender as TICEClient;
 
-  Entry := FStreams.Add(Client.StreamName, Client.StartURL, Client.URLs,
-    Client.BitRate, Client.Genre, Client.SkipShort, 0);
+  Entry := FStreams.StreamList.Add(Client.StreamName, Client.StartURL, Client.URLs,
+    Client.BitRate, Client.Genre, Client.SkipShort, Client.UseLists, 0);
   Entry.LastTouched := Now;
   Entry.IsInList := True;
   Client.Received := Entry.BytesReceived;
@@ -708,7 +760,7 @@ var
 begin
   Client := Sender as TICEClient;
 
-  Entry := FStreams.Get(Client);
+  Entry := FStreams.StreamList.Get(Client);
   if Entry <> nil then
     Entry.IsInList := False;
 
@@ -729,7 +781,7 @@ var
 begin
   Client := Sender as TICEClient;
 
-  Entry := FStreams.Get(Client);
+  Entry := FStreams.StreamList.Get(Client);
   if Entry <> nil then
   begin
     Track := TTrackInfo.Create(Now, Filename);
@@ -740,6 +792,10 @@ begin
     if Assigned(FOnTrackAdded) then
       FOnTrackAdded(Entry, Track);
   end;
+
+  // TODO: Evtl. in Ignore-Liste hinzufügen. muss halt gecheckt werden,
+  // ob das in settings an ist.
+  FStreams.IgnoreList.Add(TTitleInfo.Create(Title));
 
   ShowInfo;
 end;
@@ -827,7 +883,7 @@ begin
   URL := Trim(URL);
   if URL <> '' then
   begin
-    Entry := FStreams.Get(Name, URL, nil);
+    Entry := FStreams.StreamList.Get(Name, URL, nil);
     if Entry <> nil then
       Entry.LastTouched := Now;
 
