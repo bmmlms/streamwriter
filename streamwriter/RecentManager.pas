@@ -91,6 +91,7 @@ type
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamEntry;
     procedure Save(Stream: TExtendedStream);
 
+    property Parent: TStreamList read FParent write FParent;
     property Name: string read FName write FSetName;
     property StartURL: string read FStartURL write FStartURL;
     property URLs: TStringList read FURLs;
@@ -465,6 +466,7 @@ begin
         while S.Position < S.Size do
         begin
           Entry := TStreamEntry.Load(S, Version);
+          Entry.FParent := FStreamList;
           FStreamList.Add(Entry);
         end;
       end else
@@ -473,6 +475,7 @@ begin
         for i := 0 to EntryCount - 1 do
         begin
           Entry := TStreamEntry.Load(S, Version);
+          Entry.FParent := FStreamList;
           FStreamList.Add(Entry);
         end;
 
@@ -641,6 +644,7 @@ begin
             S.Read(URL);
           Rec.URLs.Add(URL);
         end;
+        Rec.FParent := List;
         List.Add(Rec);
       end;
     except
@@ -742,6 +746,7 @@ begin
             S.Read(URL);
           Rec.URLs.Add(URL);
         end;
+        Rec.FParent := FList;
         FList.Add(Rec);
       end;
     except
@@ -783,7 +788,6 @@ begin
   end;
 
   Result := Entry;
-  Result.FParent := Self;
   inherited Add(Result);
 
   if Assigned(FOnStreamChanged) then
@@ -820,6 +824,8 @@ begin
   Entry.Genre := Genre;
   Entry.SongsSaved := SongsSaved;
   Entry.UseFilter := UseFilter;
+
+  Entry.FParent := Self;
 
   Add(Entry);
 

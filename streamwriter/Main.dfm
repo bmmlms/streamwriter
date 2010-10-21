@@ -38,7 +38,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       item
         Width = 100
       end>
-    ExplicitTop = 511
   end
   object tbClients: TToolBar
     Left = 0
@@ -85,14 +84,12 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object cmdStartPlay: TToolButton
       Left = 87
       Top = 0
-      Caption = 'cmdStartPlay'
-      ImageIndex = 11
+      Action = actPlay
     end
     object cmdStopPlay: TToolButton
       Left = 110
       Top = 0
-      Caption = 'cmdStopPlay'
-      ImageIndex = 11
+      Action = actStopPlay
     end
     object ToolButton1: TToolButton
       Left = 133
@@ -247,7 +244,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 128
     Bitmap = {
-      494C010102000900580310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C0101020009005C0310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000D0000005C000000000000000000000000000000000000
@@ -390,7 +387,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 40
     Top = 140
     Bitmap = {
-      494C01012100D802EC0510001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01012100D802F00510001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000009000000001002000000000000090
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1589,7 +1586,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 76
     Bitmap = {
-      494C010101000400800310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000400840310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000060000001D000000220000001D00000006000000000000
@@ -1825,6 +1822,16 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object actUseIgnoreList: TAction
       Caption = 'Use &Ignorelist'
       OnExecute = actStreamSettingsExecute
+    end
+    object actPlay: TAction
+      Caption = '&Play'
+      Hint = 'Play'
+      ImageIndex = 0
+    end
+    object actStopPlay: TAction
+      Caption = '&Stop'
+      Hint = 'Stop'
+      ImageIndex = 1
     end
   end
   object mnuStreamPopup: TPopupMenu

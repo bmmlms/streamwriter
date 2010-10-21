@@ -138,6 +138,8 @@ type
     actUseNoList: TAction;
     actUseWishlist: TAction;
     actUseIgnoreList: TAction;
+    actPlay: TAction;
+    actStopPlay: TAction;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -414,7 +416,7 @@ var
   List: TListList;
   Entry: TStreamEntry;
   i: Integer;
-begin
+begin      // TODO: actStart/actStop haben selbe shortcuts wie actPlay und actStopPlay... ist das okay so?
   FClients := TClientManager.Create;
 
   FStreams := TDataLists.Create;
@@ -447,7 +449,6 @@ begin
 
   tabLists := TListsTab.Create(pagMain);
   tabLists.PageControl := pagMain;
-  //tabLists.Setup(FStreams, imgImages);
 
   if AppGlobals.Relay then
     FClients.RelayServer.Start;
@@ -483,6 +484,7 @@ begin
       for i := 0 to Recent.List.Count - 1 do
       begin
         Entry := FStreams.StreamList.Add(Recent.List[i].Copy);
+        Entry.Parent := FStreams.StreamList;
         Entry.RecentIndex := i;
         Entry.IsInList := False;
       end;
@@ -499,6 +501,7 @@ begin
       for i := 0 to List.List.Count - 1 do
       begin
         Entry := FStreams.StreamList.Add(List.List[i].Copy);
+        Entry.Parent := FStreams.StreamList;
         Entry.IsInList := True;
       end;
     except
@@ -536,10 +539,9 @@ begin
   Left := AppGlobals.MainLeft;
   Top := AppGlobals.MainTop;
 
-  // REMARK: Für Player-Funktionalität
-  cmdStartPlay.Visible := False; //BassLoaded;
-  cmdStopPlay.Visible := False; //BassLoaded;
-  ToolButton2.Visible := False; //BassLoaded;
+  cmdStartPlay.Visible := BassLoaded;
+  cmdStopPlay.Visible := BassLoaded;
+  ToolButton2.Visible := BassLoaded;
 
   Language.Translate(Self);
 end;
