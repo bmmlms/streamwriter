@@ -28,7 +28,6 @@ uses
 type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
   TICEClientStates = (csConnecting, csRecording, csStopping, csStopped, csRetrying, csIOError);
-  TUseLists = (ulNone, ulWish, ulIgnore);
 
   TICEClient = class;
 
@@ -77,7 +76,7 @@ type
     FSpeed: Integer;
     FContentType: string;
     FFilename: string;
-    FUseLists: TUseLists;
+    FUseFilter: TUseFilters;
 
     FSkipShort: Boolean;
     FKilled: Boolean;
@@ -115,7 +114,7 @@ type
   public
     constructor Create(StartURL: string); overload;
     constructor Create(Name, StartURL: string); overload;
-    constructor Create(Name, StartURL: string; URLs: TStringList; SkipShort: Boolean; SongsSaved: Cardinal); overload;
+    constructor Create(Name, StartURL: string; URLs: TStringList; SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal); overload;
     destructor Destroy; override;
 
     procedure WriteDebug(Text, Data: string); overload;
@@ -146,7 +145,7 @@ type
     property ContentType: string read FContentType;
     property Filename: string read FFilename;
     property RelayURL: string read FGetRelayURL;
-    property UseLists: TUseLists read FUseLists write FUseLists;
+    property UseFilter: TUseFilters read FUseFilter write FUseFilter;
 
     property SkipShort: Boolean read FSkipShort;
     property ProcessingList: TProcessingList read FProcessingList;
@@ -183,7 +182,7 @@ begin
 end;
 
 constructor TICEClient.Create(Name, StartURL: string; URLs: TStringList;
-  SkipShort: Boolean; SongsSaved: Cardinal);
+  SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal);
 var
   s: string;
 begin
@@ -192,6 +191,7 @@ begin
     for s in URLs do
       FURLs.Add(s);
   FSkipShort := SkipShort;
+  FUseFilter := UseFilter;
   FSongsSaved := SongsSaved;
 end;
 
@@ -214,10 +214,10 @@ begin
   FURLs := TURLList.Create;
   FURLsIndex := -1;
   FRetries := 0;
-  FUseLists := ulNone; // TODO: Aus Datei oder Default-Settings setzen!!!
 
   AppGlobals.Lock;
   FSkipShort := AppGlobals.SkipShort;
+  FUseFilter := AppGlobals.DefaultFilter;
   AppGlobals.Unlock;
 end;
 

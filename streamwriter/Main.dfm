@@ -2,11 +2,11 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Left = 549
   Top = 450
   Caption = 'streamWriter'
-  ClientHeight = 470
+  ClientHeight = 327
   ClientWidth = 689
   Color = clBtnFace
-  Constraints.MinHeight = 270
-  Constraints.MinWidth = 400
+  Constraints.MinHeight = 300
+  Constraints.MinWidth = 450
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -25,7 +25,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   TextHeight = 13
   object addStatus: TStatusBar
     Left = 0
-    Top = 451
+    Top = 308
     Width = 689
     Height = 19
     Panels = <
@@ -38,7 +38,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       item
         Width = 100
       end>
-    ExplicitTop = 411
+    ExplicitTop = 511
   end
   object tbClients: TToolBar
     Left = 0
@@ -198,6 +198,18 @@ object frmStreamWriterMain: TfrmStreamWriterMain
           Action = actSkipShort
           AutoCheck = True
         end
+        object N7: TMenuItem
+          Caption = '-'
+        end
+        object mnuNoList2: TMenuItem
+          Action = actUseNoList
+        end
+        object mnuWishList2: TMenuItem
+          Action = actUseWishlist
+        end
+        object mnuIgnoreList2: TMenuItem
+          Action = actUseIgnoreList
+        end
       end
       object mnuReset11: TMenuItem
         Action = actResetData
@@ -235,7 +247,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 128
     Bitmap = {
-      494C010102000900480310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000900580310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000D0000005C000000000000000000000000000000000000
@@ -378,7 +390,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 40
     Top = 140
     Bitmap = {
-      494C01012100D802DC0510001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01012100D802EC0510001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000009000000001002000000000000090
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1577,7 +1589,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 76
     Bitmap = {
-      494C010101000400700310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000400800310001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000060000001D000000220000001D00000006000000000000
@@ -1735,11 +1747,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Hint = 'Remove'
       ImageIndex = 2
     end
-    object actSkipShort: TAction
-      AutoCheck = True
-      Caption = 'S&kip short songs'
-      OnExecute = actStreamSettingsExecute
-    end
     object actExit: TAction
       Caption = '&Exit'
       Hint = 'Exit'
@@ -1781,6 +1788,11 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object actSavePlaylistFile: TAction
       Caption = 'Recorded &file'
     end
+    object actSkipShort: TAction
+      AutoCheck = True
+      Caption = 'S&kip short songs'
+      OnExecute = actStreamSettingsExecute
+    end
     object actResetData: TAction
       Caption = 'Reset &data'
       Hint = 'Reset data'
@@ -1801,6 +1813,18 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Hint = 'Help'
       ImageIndex = 29
       OnExecute = actHelpExecute
+    end
+    object actUseNoList: TAction
+      Caption = 'Use &no list'
+      OnExecute = actStreamSettingsExecute
+    end
+    object actUseWishlist: TAction
+      Caption = 'Use &Wishlist'
+      OnExecute = actStreamSettingsExecute
+    end
+    object actUseIgnoreList: TAction
+      Caption = 'Use &Ignorelist'
+      OnExecute = actStreamSettingsExecute
     end
   end
   object mnuStreamPopup: TPopupMenu
@@ -1857,17 +1881,14 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       object N5: TMenuItem
         Caption = '-'
       end
-      object mnuNoLists: TMenuItem
-        Caption = 'Use &no lists'
-        OnClick = mnuNoListsClick
+      object mnuNoList1: TMenuItem
+        Action = actUseNoList
       end
-      object mnuWishList: TMenuItem
-        Caption = 'Use &Wishlist'
-        OnClick = mnuWishListClick
+      object mnuWishList1: TMenuItem
+        Action = actUseWishlist
       end
-      object mnuIgnoreList: TMenuItem
-        Caption = 'Use &Ignorelist'
-        OnClick = mnuIgnoreListClick
+      object mnuIgnoreList1: TMenuItem
+        Action = actUseIgnoreList
       end
     end
     object mnuReset1: TMenuItem

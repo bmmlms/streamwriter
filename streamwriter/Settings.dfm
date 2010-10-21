@@ -72,6 +72,13 @@ object frmSettings: TfrmSettings
       ShowHint = True
       OnClick = cmdBrowseClick
     end
+    object Label15: TLabel
+      Left = 4
+      Top = 264
+      Width = 59
+      Height = 13
+      Caption = 'Default filter:'
+    end
     object txtDir: TLabeledEdit
       Left = 4
       Top = 176
@@ -140,6 +147,26 @@ object frmSettings: TfrmSettings
       Height = 21
       Caption = 'Delete stream-files when recording stops'
       TabOrder = 2
+    end
+    object chkAddSavedToIgnore: TCheckBox
+      Left = 4
+      Top = 232
+      Width = 245
+      Height = 21
+      Caption = 'Automatically add saved titles to ignore list'
+      TabOrder = 3
+    end
+    object lstDefaultFilter: TComboBox
+      Left = 4
+      Top = 280
+      Width = 213
+      Height = 21
+      Style = csDropDownList
+      TabOrder = 4
+      Items.Strings = (
+        'Use no filter'
+        'Use wish filter'
+        'Use ignore filter')
     end
   end
   object pnlMain: TPanel

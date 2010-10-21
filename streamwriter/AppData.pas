@@ -27,6 +27,7 @@ uses
 
 type
   TClientActions = (caStartStop, caStream, caRelay, caFile);
+  TUseFilters = (ufNone, ufWish, ufIgnore);
 
   TIntArray = array of Integer;
 
@@ -35,6 +36,7 @@ type
     FFilePattern: string;
     FDir: string;
     FDeleteStreams: Boolean;
+    FAddSavedToIgnore: Boolean;
     FSkipShort: Boolean;
     FSearchSilence: Boolean;
     FSilenceLevel: Cardinal;
@@ -51,6 +53,7 @@ type
     FRetryDelay: Cardinal;
     FMinDiskSpace: Integer;
     FDefaultAction: TClientActions;
+    FDefaultFilter: TUseFilters;
     FHeaderWidth: TIntArray;
 
     FPluginManager: TPluginManager;
@@ -71,6 +74,7 @@ type
     property FilePattern: string read FFilePattern write FFilePattern;
     property Dir: string read FDir write FDir;
     property DeleteStreams: Boolean read FDeleteStreams write FDeleteStreams;
+    property AddSavedToIgnore: Boolean read FAddSavedToIgnore write FAddSavedToIgnore;
     property SkipShort: Boolean read FSkipShort write FSkipShort;
     property SearchSilence: Boolean read FSearchSilence write FSearchSilence;
     property SilenceLevel: Cardinal read FSilenceLevel write FSilenceLevel;
@@ -87,6 +91,7 @@ type
     property RetryDelay: Cardinal read FRetryDelay write FRetryDelay;
     property MinDiskSpace: Integer read FMinDiskSpace write FMinDiskSpace;
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
+    property DefaultFilter: TUseFilters read FDefaultFilter write FDefaultFilter;
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
 
     property DataFile: string read FGetDataFile;
@@ -260,7 +265,7 @@ end;
 
 procedure TAppData.Load;
 var
-  i, DefaultActionTmp: Integer;
+  i, DefaultActionTmp, DefaultFilterTmp: Integer;
 begin
   inherited;
 
@@ -269,6 +274,7 @@ begin
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
   FStorage.Read('DeleteStreams', FDeleteStreams, False);
+  FStorage.Read('AddSavedToIgnore', FAddSavedToIgnore, False);
   FStorage.Read('SkipShort', FSkipShort, True);
   FStorage.Read('SearchSilence', FSearchSilence, True);
   FStorage.Read('SilenceLevel', FSilenceLevel, 5);
@@ -293,6 +299,7 @@ begin
   FStorage.Read('RetryDelay', FRetryDelay, 5);
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
   FStorage.Read('DefaultAction', DefaultActionTmp, Integer(caStartStop));
+  FStorage.Read('DefaultFilter', DefaultFilterTmp, Integer(ufNone));
 
   FStorage.Read('HeaderWidth0', i, -1, 'Cols');
   if i = -1 then
@@ -315,6 +322,12 @@ begin
     FDefaultAction := caStartStop
   else
     FDefaultAction := TClientActions(DefaultActionTmp);
+
+  if (DefaultFilterTmp > Ord(High(TUseFilters))) or
+     (DefaultFilterTmp < Ord(Low(TUseFilters))) then
+    DefaultFilter := ufNone
+  else
+    FDefaultFilter := TUseFilters(DefaultFilterTmp);
 end;
 
 procedure TAppData.DoSave;
@@ -326,6 +339,7 @@ begin
   FStorage.Write('FilePattern', FFilePattern);
   FStorage.Write('Dir', FDir);
   FStorage.Write('DeleteStreams', FDeleteStreams);
+  FStorage.Write('AddSavedToIgnore', FAddSavedToIgnore);
   FStorage.Write('SkipShort', FSkipShort);
   FStorage.Write('SearchSilence', FSearchSilence);
   FStorage.Write('SilenceLevel', FSilenceLevel);
@@ -344,6 +358,7 @@ begin
   FStorage.Write('RetryDelay', FRetryDelay);
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
+  FStorage.Write('DefaultFilter', Integer(FDefaultFilter));
 
   for i := 0 to High(FHeaderWidth) do
     if i <> 1 then

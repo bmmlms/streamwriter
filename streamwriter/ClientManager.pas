@@ -23,7 +23,7 @@ interface
 
 uses
   SysUtils, Windows, Classes, Generics.Collections, ICEClient, RelayServer,
-  Functions;
+  Functions, AppData;
 
 type
   TClientManager = class;
@@ -87,7 +87,7 @@ type
     function AddClient(URL: string): TICEClient; overload;
     function AddClient(Name, StartURL: string): TICEClient; overload;
     function AddClient(Name, StartURL: string; URLs: TStringList;
-      SkipShort: Boolean; SongsSaved: Cardinal): TICEClient; overload;
+      SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal): TICEClient; overload;
     procedure RemoveClient(Client: TICEClient);
     procedure Terminate;
 
@@ -136,11 +136,11 @@ begin
 end;
 
 function TClientManager.AddClient(Name, StartURL: string; URLs: TStringList;
-  SkipShort: Boolean; SongsSaved: Cardinal): TICEClient;
+  SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal): TICEClient;
 var
   C: TICEClient;
 begin
-  C := TICEClient.Create(Name, StartURL, URLs, SkipShort, SongsSaved);
+  C := TICEClient.Create(Name, StartURL, URLs, SkipShort, UseFilter, SongsSaved);
   SetupClient(C);
   Result := C;
 end;

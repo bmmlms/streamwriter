@@ -108,7 +108,6 @@ type
 
     procedure AddTrack(Entry: TStreamEntry; Track: TTrackInfo);
     procedure RemoveTrack(Track: TTrackInfo); overload;
-    procedure RemoveTrack(Track: string); overload;
 
     property Tree: TSavedTree read FSavedTree;
     property OnCut: TTrackEvent read FOnCut write FOnCut;
@@ -148,6 +147,8 @@ type
     procedure DoDragging(P: TPoint); override;
     function DoIncrementalSearch(Node: PVirtualNode;
       const Text: string): Integer; override;
+    procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; Text: UnicodeString); override;
+    procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
     procedure Change(Node: PVirtualNode); override;
   public
     constructor Create(AOwner: TComponent); override;
@@ -519,27 +520,6 @@ begin
   //FToolbar.FRefresh.Enabled := FSavedTree.RootNodeCount > 0;
 end;
 
-procedure TSavedTab.RemoveTrack(Track: string);   // TODO: Das hier wird nicht benutzt?
-var
-  i: Integer;
-  Nodes: TNodeArray;
-  NodeData: PSavedNodeData;
-begin
-  Nodes := FSavedTree.GetNodes(False);
-  for i := 0 to Length(Nodes) - 1 do
-  begin
-    NodeData := FSavedTree.GetNodeData(Nodes[i]);
-    if LowerCase(NodeData.Track.Filename) = LowerCase(Track) then
-    begin
-      FSavedTree.DeleteNode(Nodes[i]);
-      Break;
-    end;
-  end;
-
-  FSavedTree.Change(nil);
-  //FToolbar.FRefresh.Enabled := FSavedTree.RootNodeCount > 0;
-end;
-
 { TSavedTree }
 
 constructor TSavedTree.Create(AOwner: TComponent);
@@ -780,6 +760,31 @@ begin
   if NodeData = nil then
     Exit;
   Result := StrLIComp(PChar(s), PChar(ExtractFileName(NodeData.Track.Filename)), Min(Length(s), Length(ExtractFileName(NodeData.Track.Filename))));
+end;
+
+procedure TSavedTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex;
+  Text: UnicodeString);
+var
+  NodeData: PSavedNodeData;
+begin
+  inherited;
+
+  NodeData := GetNodeData(Node);
+  if RenameFile(IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + ExtractFileName(NodeData.Track.Filename),
+    IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + Text) then
+  begin
+    NodeData.Track.Filename := IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + Text;
+  end;
+end;
+
+procedure TSavedTree.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;
+  var Allowed: Boolean);
+begin
+  inherited;
+
+  Allowed := False;
+  if Column = 0 then
+    Allowed := True;
 end;
 
 procedure TSavedTree.Change(Node: PVirtualNode);

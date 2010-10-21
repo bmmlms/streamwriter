@@ -98,6 +98,7 @@ type
     FOnCut: TTrackEvent;
     FOnTrackAdded: TTrackEvent;
     FOnTrackRemoved: TTrackEvent;
+    FOnAddIgnoreList: TStringEvent;
 
     procedure ShowInfo;
 
@@ -158,6 +159,7 @@ type
     property OnCut: TTrackEvent read FOnCut write FOnCut;
     property OnTrackAdded: TTrackEvent read FOnTrackAdded write FOnTrackAdded;
     property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
+    property OnAddIgnoreList: TStringEvent read FOnAddIgnoreList write FOnAddIgnoreList;
   end;
 
 implementation
@@ -615,7 +617,7 @@ begin
   Client := Sender as TICEClient;
 
   Entry := FStreams.StreamList.Add(Client.StreamName, Client.StartURL, Client.URLs,
-    Client.BitRate, Client.Genre, Client.SkipShort, Client.UseLists, 0);
+    Client.BitRate, Client.Genre, Client.SkipShort, Client.UseFilter, 0);
   if Entry.Name <> Client.StreamName then
   begin
     Entry.Name := Client.StreamName;
@@ -662,8 +664,6 @@ begin
   FRefreshInfo := True;
 end;
 
-// TODO: Ignore und Save-options müssen per-stream sein!
-
 procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject;
   Title: string; var Allowed: Boolean);
 var
@@ -671,38 +671,28 @@ var
   Cmp: string;
 begin
   if Length(Title) < 1 then
-    Exit; // TODO: Testen. Dann sollte Allowed immer True sein!
+    Exit;
 
-  {
-  for n := 1 to Length(Title) do
-    if (not (Title[n] in ['a'..'z'])) and (not (Title[n] in ['0'..'9'])) then
-      Title[n] := '*';
-  }
-
-//  ich hatte 'nelly' in der liste. aber was mit nelly wurde gesaved. fail!
-
-  // TODO: Optionen zum anschalten und abschalten, default setting in einstellungen, etcpp
-  if TICEClient(Sender).UseLists <> ulNone then
+  if TICEClient(Sender).UseFilter <> ufNone then
   begin
-    if TICEClient(Sender).UseLists = ulWish then
+    if TICEClient(Sender).UseFilter = ufWish then
     begin
       Allowed := False;
       for i := 0 to FStreams.SaveList.Count - 1 do
       begin
-        // TODO: Genauer prüfen! So ists voll Mappus. Alle sonderzeiche (nicht zahlen, nicht alphabet) durch '*' ersetzen. Oder anders?!
         Cmp := LowerCase(FStreams.SaveList[i].StreamTitle);
 
-        if Length(Cmp) >= 1 then // TODO: Was, wenn < 1 ????
+        if Length(Cmp) >= 1 then
         begin
           for n := 1 to Length(Cmp) do
             if (not (Cmp[n] in ['a'..'z'])) and (not (Cmp[n] in ['0'..'9'])) then
               Cmp[n] := '*';
-        end;
-
-        if Like(LowerCase(Title), LowerCase(Cmp)) then
-        begin
-          Allowed := True;
-          Exit;
+          Cmp := '*' + Cmp + '*';
+          if Like(LowerCase(Title), Cmp) then
+          begin
+            Allowed := True;
+            Exit;
+          end;
         end;
       end;
     end else
@@ -710,20 +700,19 @@ begin
       Allowed := True;
       for i := 0 to FStreams.IgnoreList.Count - 1 do
       begin
-        // TODO: Genauer prüfen! So ists voll Mappus.
         Cmp := LowerCase(FStreams.IgnoreList[i].StreamTitle);
 
-        if Length(Cmp) >= 1 then // TODO: Was, wenn < 1 ????
+        if Length(Cmp) >= 1 then
         begin
           for n := 1 to Length(Cmp) do
             if (not (Cmp[n] in ['a'..'z'])) and (not (Cmp[n] in ['0'..'9'])) then
               Cmp[n] := '*';
-        end;
-
-        if Like(LowerCase(Title), LowerCase(Cmp)) then
-        begin
-          Allowed := False;
-          Exit;
+          Cmp := '*' + Cmp + '*';
+          if Like(LowerCase(Title), Cmp) then
+          begin
+            Allowed := False;
+            Exit;
+          end;
         end;
       end;
     end;
@@ -743,7 +732,7 @@ begin
   Client := Sender as TICEClient;
 
   Entry := FStreams.StreamList.Add(Client.StreamName, Client.StartURL, Client.URLs,
-    Client.BitRate, Client.Genre, Client.SkipShort, Client.UseLists, 0);
+    Client.BitRate, Client.Genre, Client.SkipShort, Client.UseFilter, 0);
   Entry.LastTouched := Now;
   Entry.IsInList := True;
   Client.Received := Entry.BytesReceived;
@@ -793,9 +782,9 @@ begin
       FOnTrackAdded(Entry, Track);
   end;
 
-  // TODO: Evtl. in Ignore-Liste hinzufügen. muss halt gecheckt werden,
-  // ob das in settings an ist.
-  FStreams.IgnoreList.Add(TTitleInfo.Create(Title));
+  if Assigned(FOnAddIgnoreList) then
+    if Trim(Title) <> '' then
+      FOnAddIgnoreList(Self, Title);
 
   ShowInfo;
 end;
@@ -898,7 +887,7 @@ begin
       // Ist der Client schon bekannt?
       if Entry <> nil then
       begin
-        Client := FClients.AddClient(Entry.Name, Entry.StartURL, Entry.URLs, Entry.SkipShort, Entry.SongsSaved);
+        Client := FClients.AddClient(Entry.Name, Entry.StartURL, Entry.URLs, Entry.SkipShort, Entry.UseFilter, Entry.SongsSaved);
         Client.Connect;
       end else
       begin
@@ -926,7 +915,7 @@ begin
   begin
     Client := FClients.GetClient(Stream.Name, Stream.StartURL, Stream.URLs);
     if Client = nil then
-      FClients.AddClient(Stream.Name, Stream.StartURL, Stream.URLs, Stream.SkipShort, Stream.SongsSaved);
+      FClients.AddClient(Stream.Name, Stream.StartURL, Stream.URLs, Stream.SkipShort, Stream.UseFilter, Stream.SongsSaved);
   end;
 
   Item := FAddressBar.FStations.Get(Stream.Name, Stream.StartURL, Stream.URLs);

@@ -320,7 +320,7 @@ begin
       FOnTitleAllowed(Self);
     if not FSaveAllowed then
     begin
-      WriteDebug(Format('Skipping "%s" because filename is on ignore list', [Title]));
+      WriteDebug(Format('Skipping "%s" because the filters wanted it this way', [Title]));
       Dec(FSongsSaved);
       Exit;
     end;

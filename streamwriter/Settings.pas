@@ -25,7 +25,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
-  Plugins, StrUtils, DynBASS;
+  Plugins, StrUtils, DynBASS, ICEClient;
 
 type
   TfrmSettings = class(TfrmSettingsBase)
@@ -73,6 +73,9 @@ type
     chkDeleteStreams: TCheckBox;
     optClose: TRadioButton;
     optMinimize: TRadioButton;
+    chkAddSavedToIgnore: TCheckBox;
+    Label15: TLabel;
+    lstDefaultFilter: TComboBox;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure cmdBrowseClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
@@ -91,6 +94,7 @@ type
     FBrowseDir: Boolean;
     FRelayChanged: Boolean;
     FDefaultActionIdx: Integer;
+    FDefaultFilterIdx: Integer;
     function ValidatePattern: string;
   protected
     procedure RegisterPages; override;
@@ -120,6 +124,7 @@ begin
   ClientHeight := 395;
 
   lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
+  lstDefaultFilter.ItemIndex := Integer(AppGlobals.DefaultFilter);
 
   Language.Translate(Self, PreTranslate, PostTranslate);
 
@@ -141,6 +146,7 @@ begin
   txtFilePattern.Text := AppGlobals.FilePattern;
   txtDir.Text := AppGlobals.Dir;
   chkDeleteStreams.Checked := AppGlobals.DeleteStreams;
+  chkAddSavedToIgnore.Checked := AppGlobals.AddSavedToIgnore;
 
   chkSkipShort.Checked := AppGlobals.SkipShort;
   chkSearchSilence.Checked := AppGlobals.SearchSilence;
@@ -207,6 +213,7 @@ begin
   AppGlobals.FilePattern := txtFilePattern.Text;
   AppGlobals.Dir := txtDir.Text;
   AppGlobals.DeleteStreams := chkDeleteStreams.Checked;
+  AppGlobals.AddSavedToIgnore := chkAddSavedToIgnore.Checked;
   AppGlobals.SkipShort := chkSkipShort.Checked;
   AppGlobals.Tray := chkTray.Checked;
   AppGlobals.TrayOnMinimize := optMinimize.Checked;
@@ -218,6 +225,7 @@ begin
   AppGlobals.RetryDelay := StrToIntDef(txtRetryDelay.Text, 5);
   AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
   AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
+  AppGlobals.DefaultFilter := TUseFilters(lstDefaultFilter.ItemIndex);
   if BassLoaded then
     AppGlobals.SearchSilence := chkSearchSilence.Checked;
   AppGlobals.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
@@ -299,6 +307,7 @@ procedure TfrmSettings.PreTranslate;
 begin
   inherited;
   FDefaultActionIdx := lstDefaultAction.ItemIndex;
+  FDefaultFilterIdx := lstDefaultFilter.ItemIndex;
 end;
 
 procedure TfrmSettings.PostTranslate;
@@ -320,6 +329,7 @@ begin
 
   AppGlobals.PluginManager.ReInitPlugins;
   lstDefaultAction.ItemIndex := FDefaultActionIdx;
+  lstDefaultFilter.ItemIndex := FDefaultFilterIdx;
 end;
 
 function TfrmSettings.ValidatePattern: string;

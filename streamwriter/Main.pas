@@ -128,9 +128,16 @@ type
     N1: TMenuItem;
     actHelp: TAction;
     N5: TMenuItem;
-    mnuWishList: TMenuItem;
-    mnuIgnoreList: TMenuItem;
-    mnuNoLists: TMenuItem;
+    mnuWishList1: TMenuItem;
+    mnuIgnoreList1: TMenuItem;
+    mnuNoList1: TMenuItem;
+    N7: TMenuItem;
+    mnuNoList2: TMenuItem;
+    mnuWishList2: TMenuItem;
+    mnuIgnoreList2: TMenuItem;
+    actUseNoList: TAction;
+    actUseWishlist: TAction;
+    actUseIgnoreList: TAction;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -150,10 +157,6 @@ type
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure actHelpExecute(Sender: TObject);
-
-    procedure mnuNoListsClick(Sender: TObject);
-    procedure mnuWishListClick(Sender: TObject);
-    procedure mnuIgnoreListClick(Sender: TObject);
   private
     FStreams: TDataLists;
     FUpdater: TUpdateClient;
@@ -197,6 +200,7 @@ type
 
     procedure tabClientsTrackAdded(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
+    procedure tabClientsAddIgnoreList(Sender: TObject; Data: string);
 
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
 
@@ -247,7 +251,7 @@ begin
     except end;
 
   Saved := False;
-  while not Saved do  // TODO: Diese Schleife ist Scheiﬂe. Falls nicht gesaved werden kann, beendet das Programm nicht!!!
+  while not Saved do
   begin
     try
       if FStreams.Save then
@@ -345,10 +349,18 @@ begin
     if Sender = actSkipShort then
       Client.SetSettings(actSkipShort.Checked);
 
+    if Sender = actUseNoList then
+      Client.UseFilter := ufNone;
+    if Sender = actUseWishlist then
+      Client.UseFilter := ufWish;
+    if Sender = actUseIgnoreList then
+      Client.UseFilter := ufIgnore;
+
     R := FStreams.StreamList.Get(Client);
     if R <> nil then
     begin
       R.SkipShort := Client.SkipShort;
+      R.UseFilter := Client.UseFilter;
     end;
   end;
 end;
@@ -425,6 +437,7 @@ begin
   tabClients.OnCut := tabClientsCut;
   tabClients.OnTrackAdded := tabClientsTrackAdded;
   tabClients.OnTrackRemoved := tabClientsTrackRemoved;
+  tabClients.OnAddIgnoreList := tabClientsAddIgnoreList;
 
   tabSaved := TSavedTab.Create(pagMain);
   tabSaved.PageControl := pagMain;
@@ -590,51 +603,6 @@ end;
 procedure TfrmStreamWriterMain.mnuCheckUpdateClick(Sender: TObject);
 begin
   ShowUpdate;
-end;
-
-procedure TfrmStreamWriterMain.mnuNoListsClick(Sender: TObject);
-var
-  Clients: TClientArray;
-  Client: TICEClient;
-begin
-  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True));
-  for Client in Clients do
-  begin
-    Client.UseLists := ulNone;
-    mnuNoLists.Checked := True;
-    mnuWishList.Checked := False;
-    mnuIgnoreList.Checked := False;
-  end;
-end;
-
-procedure TfrmStreamWriterMain.mnuWishListClick(Sender: TObject);
-var
-  Clients: TClientArray;
-  Client: TICEClient;
-begin
-  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True));
-  for Client in Clients do
-  begin
-    Client.UseLists := ulWish;
-    mnuNoLists.Checked := False;
-    mnuWishList.Checked := True;
-    mnuIgnoreList.Checked := False;
-  end;
-end;
-
-procedure TfrmStreamWriterMain.mnuIgnoreListClick(Sender: TObject);
-var
-  Clients: TClientArray;
-  Client: TICEClient;
-begin
-  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True));
-  for Client in Clients do
-  begin
-    Client.UseLists := ulIgnore; // TODO: Falls ein Item im Men¸ gew‰hlt wurden, checken/unchecken!!! gilt auch f¸r andere items.
-    mnuNoLists.Checked := False;
-    mnuWishList.Checked := False;      // TODO: In hilfe beschreiben, wie sich die filterlisten auswirken.
-    mnuIgnoreList.Checked := True;
-  end;
 end;
 
 procedure TfrmStreamWriterMain.mnuShowClick(Sender: TObject);
@@ -808,6 +776,19 @@ begin
   tabSaved.RemoveTrack(Track);
 end;
 
+procedure TfrmStreamWriterMain.tabClientsAddIgnoreList(Sender: TObject;
+  Data: string);
+var
+  Ignore: TTitleInfo;
+begin
+  if AppGlobals.AddSavedToIgnore then
+  begin
+    Ignore := TTitleInfo.Create(Data);
+    FStreams.IgnoreList.Add(Ignore);
+    tabLists.AddIgnore(Ignore);
+  end;
+end;
+
 procedure TfrmStreamWriterMain.tabClientsUpdateButtons(Sender: TObject);
 begin
   UpdateButtons;
@@ -892,7 +873,8 @@ end;
 
 procedure TfrmStreamWriterMain.UpdateButtons;
 var
-  B, B4: Boolean;
+  B, B4, B5: Boolean;
+  UseFilter: TUseFilters;
   Clients: TClientArray;
   Client, Client2: TICEClient;
 begin
@@ -916,6 +898,10 @@ begin
   actTuneInRelay.Enabled := False;
   actTuneInFile.Enabled := False;
 
+  actUseNoList.Checked := False;
+  actUseWishlist.Checked := False;
+  actUseIgnoreList.Checked := False;
+
   for Client in Clients do
   begin
     if Client.Active then
@@ -925,23 +911,45 @@ begin
       actTuneInFile.Enabled := True;
   end;
 
-  // TODO: Den Haken setzen f¸r Wish/Ignore/None
-
   if tabClients.ClientView.SelectedCount > 1 then
   begin
     Client2 := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True))[0];
+    UseFilter := Client2.UseFilter;
     B4 := True;
+    B5 := True;
     for Client in tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True)) do
     begin
-      if not Client.SkipShort = Client2.SkipShort then
+      if not (Client.SkipShort = Client2.SkipShort) then
         B4 := False;
+      if not (Client.UseFilter = Client2.UseFilter) then
+        B5 := False;
     end;
     Client := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True))[0];
     actSkipShort.Checked := Client.SkipShort and B4;
+    if B5 then
+    begin
+      case UseFilter of
+        ufNone:
+          actUseNoList.Checked := True;
+        ufWish:
+          actUseWishlist.Checked := True;
+        ufIgnore:
+          actUseIgnoreList.Checked := True;
+      end;
+    end;
   end else if tabClients.ClientView.SelectedCount = 1 then
   begin
     Client := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True))[0];
     actSkipShort.Checked := Client.SkipShort;
+
+    case Client.UseFilter of
+      ufNone:
+        actUseNoList.Checked := True;
+      ufWish:
+        actUseWishlist.Checked := True;
+      ufIgnore:
+        actUseIgnoreList.Checked := True;
+    end;
 
     case AppGlobals.DefaultAction of
       caStartStop:

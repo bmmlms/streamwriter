@@ -41,7 +41,7 @@ type
   public
     constructor Create(Time: TDateTime; Filename: string);
     property Time: TDateTime read FTime;
-    property Filename: string read FFilename;
+    property Filename: string read FFilename write FFilename;
     property Filesize: UInt64 read FFilesize write FFilesize;
     property WasCut: Boolean read FWasCut write FWasCut;
     property Hash: Cardinal read FHash;
@@ -52,7 +52,6 @@ type
     FStreamTitle: string;
   public
     constructor Create(StreamTitle: string); overload;
-    constructor Create; overload;
 
     class function Load(Stream: TExtendedStream; Version: Integer): TTitleInfo;
     procedure Save(Stream: TExtendedStream);
@@ -70,7 +69,7 @@ type
     FBitRate: Cardinal;
     FGenre: string;
     FSkipShort: Boolean;
-    FUseLists: TUseLists;
+    FUseFilter: TUseFilters;
     FSubmitted: Boolean;
 
     FIsInList: Boolean;
@@ -98,7 +97,7 @@ type
     property BitRate: Cardinal read FBitRate write FBitRate;
     property Genre: string read FGenre write FGenre;
     property SkipShort: Boolean read FSkipShort write FSkipShort;
-    property UseLists: TUseLists read FUseLists write FUseLists; // TODO: Wird das geladen und gespeichert? für jeden stream passend?
+    property UseFilter: TUseFilters read FUseFilter write FUseFilter;
     property Submitted: Boolean read FSubmitted write FSubmitted;
 
     property IsInList: Boolean read FIsInList write FSetIsInList;
@@ -116,7 +115,7 @@ type
     FOnStreamChanged: TStreamChangedEvent;
   public
     function Add(Name: string; URL: string; URLs: TStringList; BitRate: Cardinal; Genre: string;
-      SkipShort: Boolean; UseLists: TUseLists; SongsSaved: Cardinal): TStreamEntry; overload;
+      SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal): TStreamEntry; overload;
     function Add(Entry: TStreamEntry): TStreamEntry; overload;
     function Get(Client: TICEClient): TStreamEntry; overload;
     function Get(Name, URL: string; URLs: TStringList): TStreamEntry; overload;
@@ -143,7 +142,6 @@ type
 
     procedure Load;
     function Save: Boolean;
-    procedure ResetInList; // TODO: Wozu ist das gut!? Daseinsberechtigung verifizieren.
 
     property StreamList: TStreamList read FStreamList;
     property SaveList: TTitleList read FSaveList;
@@ -209,7 +207,7 @@ begin
   Result.SkipShort := SkipShort;
   Result.SongsSaved := SongsSaved;
   Result.Submitted := Submitted;
-  Result.UseLists := UseLists;
+  Result.UseFilter := UseFilter;
   Result.URLs.Assign(URLs);
 end;
 
@@ -224,7 +222,7 @@ begin
   FSongsSaved := 0;
   FBitRate := 0;
   FSubmitted := False;
-  FUseLists := ulNone;
+  FUseFilter := ufNone;
 end;
 
 destructor TStreamEntry.Destroy;
@@ -258,7 +256,7 @@ begin
   Stream.Read(Count);
   for i := 0 to Count - 1 do
   begin
-    Stream.Read(URL);
+    Stream.Read(URL);                   // TODO: testen ob alte versionen mit neuen datendateien und so klappen. halt frisch install und update testen!
     Result.FURLs.Add(URL);
   end;
   Stream.Read(Result.FBitRate);
@@ -266,8 +264,8 @@ begin
   Stream.Read(Result.FSkipShort);
   if Version >= 3 then
   begin
-    //Stream.Read(B);
-    //Result.FUseLists := TUseLists(B);
+    Stream.Read(B);
+    Result.FUseFilter := TUseFilters(B);
   end;
   Stream.Read(Result.FSubmitted);
 
@@ -307,7 +305,8 @@ begin
   Stream.Write(FBitRate);
   Stream.Write(FGenre);
   Stream.Write(FSkipShort);
-  //Stream.Write(Byte(FUseLists));
+
+  Stream.Write(Byte(FUseFilter));
   Stream.Write(FSubmitted);
 
   Stream.Write(FIsInList);
@@ -401,10 +400,6 @@ begin
     begin
       FStreamList[i].Free;
       FStreamList.Delete(i);
-    end else
-    begin
-      while FStreamList[i].FTracks.Count > 500 do
-        FStreamList[i].FTracks.Delete(0);
     end;
 end;
 
@@ -426,12 +421,15 @@ begin
   for i := 0 to FStreamList.Count - 1 do
     FStreamList[i].Free;
   FStreamList.Free;
+
   for i := 0 to FSaveList.Count - 1 do
     FSaveList[i].Free;
   FSaveList.Free;
+
   for i := 0 to FIgnoreList.Count - 1 do
     FIgnoreList[i].Free;
   FIgnoreList.Free;
+
   inherited;
 end;
 
@@ -513,14 +511,6 @@ begin
   finally
     S.Free;
   end;
-end;
-
-procedure TDataLists.ResetInList;
-var
-  i: Integer;
-begin
-  for i := 0 to FStreamList.Count - 1 do
-    FStreamList[i].FIsInList := False;
 end;
 
 function TDataLists.Save: Boolean;
@@ -806,7 +796,7 @@ begin
 end;
 
 function TStreamList.Add(Name, URL: string;
-  URLs: TStringList; BitRate: Cardinal; Genre: string; SkipShort: Boolean; UseLists: TUseLists; SongsSaved: Cardinal): TStreamEntry;
+  URLs: TStringList; BitRate: Cardinal; Genre: string; SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal): TStreamEntry;
 var
   Entry: TStreamEntry;
 begin
@@ -829,7 +819,7 @@ begin
   Entry.BitRate := BitRate;
   Entry.Genre := Genre;
   Entry.SongsSaved := SongsSaved;
-  Entry.UseLists := UseLists;
+  Entry.UseFilter := UseFilter;
 
   Add(Entry);
 
@@ -901,11 +891,6 @@ begin
   inherited Create;
 
   FStreamTitle := StreamTitle;
-end;
-
-constructor TTitleInfo.Create;
-begin
-  FStreamTitle := '';
 end;
 
 class function TTitleInfo.Load(Stream: TExtendedStream;
