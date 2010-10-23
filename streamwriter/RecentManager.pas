@@ -481,21 +481,21 @@ begin
 
         // TODO: Das hier nur Bei Version >= 3 oder so. testen!!! alle upgrade pfade was die files angeht testen!!!
         //       HIER werden titel geladen die in älteren versionen ja noch gar nicht vorhanden waren!!!!!
-        S.Read(EntryCount);
-        for i := 0 to EntryCount - 1 do
+        if Version >= 3 then
         begin
-          TitleInfo := TTitleInfo.Load(S, Version);
-          FSaveList.Add(TitleInfo);
+          S.Read(EntryCount);
+          for i := 0 to EntryCount - 1 do
+          begin
+            TitleInfo := TTitleInfo.Load(S, Version);
+            FSaveList.Add(TitleInfo);
+          end;
+          S.Read(EntryCount);
+          for i := 0 to EntryCount - 1 do
+          begin
+            TitleInfo := TTitleInfo.Load(S, Version);
+            FIgnoreList.Add(TitleInfo);
+          end;
         end;
-        S.Read(EntryCount);
-        for i := 0 to EntryCount - 1 do
-        begin
-          TitleInfo := TTitleInfo.Load(S, Version);
-          FIgnoreList.Add(TitleInfo);
-        end;
-
-
-
       end;
     except
       on E: EVersionException do
@@ -538,7 +538,7 @@ begin
   begin
     S := TExtendedStream.Create;
     try
-      S.Write(Integer(DATAVERSION));  // TODO: ACHTUNG: Das hier könnte frühjer als byte gespeichert worden sein, vor dem integer-cast. CHEKEN dass noch korrekt geladen wird, egal wie alt die version davon war!!!
+      S.Write(Integer(DATAVERSION));
 
       S.Write(FReceived);
 
