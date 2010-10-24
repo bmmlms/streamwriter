@@ -105,9 +105,11 @@ type
     procedure ActionStartExecute(Sender: TObject);
     procedure ActionStopExecute(Sender: TObject);
     procedure ActionRemoveExecute(Sender: TObject);
+    procedure ActionPlayExecute(Sender: TObject);
+    procedure ActionPlayStopExecute(Sender: TObject);
     procedure ActionResetDataExecute(Sender: TObject);
     procedure ActionShowSideBarExecute(Sender: TObject);
-    procedure ActionSavePlaylistStream(Sender: TObject);
+    procedure ActionSavePlaylistStream(Sender: TObject); // TODO: Fleiﬂarbeit - hier fehlt an den meisten das Execute am ende.
     procedure ActionSavePlaylistRelay(Sender: TObject);
     procedure ActionSavePlaylistFile(Sender: TObject);
     procedure ActionTuneInStream(Sender: TObject);
@@ -286,7 +288,7 @@ begin
     Entry := FStreams.StreamList.Get(Client);
     if Entry <> nil then
       Entry.LastTouched := Now;
-    Client.Connect;
+    Client.Connect(True);
   end;
 end;
 
@@ -312,6 +314,27 @@ begin
   begin
     FClients.RemoveClient(Client.Client);
   end;
+end;
+
+procedure TClientTab.ActionPlayExecute(Sender: TObject);
+var
+  Clients: TNodeDataArray;
+begin
+  // TODO: Alle anderen stoppen!
+  Clients := FClientView.NodesToData(FClientView.GetNodes(True));
+  if Length(Clients) <> 1 then
+    Exit;
+  Clients[0].Client.Play;
+end;
+
+procedure TClientTab.ActionPlayStopExecute(Sender: TObject);
+var
+  Clients: TNodeDataArray;
+begin
+  Clients := FClientView.NodesToData(FClientView.GetNodes(True));
+  if Length(Clients) <> 1 then
+    Exit;
+  Clients[0].Client.Stop;
 end;
 
 procedure TClientTab.ActionResetDataExecute(Sender: TObject);
@@ -518,6 +541,10 @@ begin
   GetAction('actSavePlaylistStream').OnExecute := ActionSavePlaylistStream;
   GetAction('actSavePlaylistRelay').OnExecute := ActionSavePlaylistRelay;
   GetAction('actSavePlaylistFile').OnExecute := ActionSavePlaylistFile;
+
+  GetAction('actPlay').OnExecute := ActionPlayExecute;
+  GetAction('actStopPlay').OnExecute := ActionPlayStopExecute;
+
   FActionTuneInRelay := GetAction('actTuneInRelay');
   FActionTuneInFile := GetAction('actTuneInFile');
   FActionTuneInStream := GetAction('actTuneInStream');
@@ -844,7 +871,7 @@ begin
         if Clients[0].Client.Active then
           Clients[0].Client.Disconnect
         else
-          Clients[0].Client.Connect;
+          Clients[0].Client.Connect(True);
       caStream:
         FActionTuneInStream.Execute;
       caRelay:
@@ -880,7 +907,7 @@ begin
     Client := FClients.GetClient(Name, URL, nil);
     if Client <> nil then
     begin
-      Client.Connect;
+      Client.Connect(True);
       Exit;
     end else
     begin
@@ -888,13 +915,13 @@ begin
       if Entry <> nil then
       begin
         Client := FClients.AddClient(Entry.Name, Entry.StartURL, Entry.URLs, Entry.SkipShort, Entry.UseFilter, Entry.SongsSaved);
-        Client.Connect;
+        Client.Connect(True);
       end else
       begin
         if ValidURL(URL) then
         begin
           Client := FClients.AddClient(Name, URL);
-          Client.Connect;
+          Client.Connect(True);
         end else
         begin
           Result := False;

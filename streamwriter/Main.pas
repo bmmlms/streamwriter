@@ -904,10 +904,13 @@ begin
   actUseWishlist.Checked := False;
   actUseIgnoreList.Checked := False;
 
+  actPlay.Enabled := False;
+  actStopPlay.Enabled := False;
+
   for Client in Clients do
   begin
     if Client.Active then
-      if AppGlobals.Relay then
+      if AppGlobals.Relay then             // TODO: Play und Stop ins Popup-Menü mit rein!
         actTuneInRelay.Enabled := True;
     if Client.Filename <> '' then
       actTuneInFile.Enabled := True;
@@ -943,6 +946,9 @@ begin
   begin
     Client := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True))[0];
     actSkipShort.Checked := Client.SkipShort;
+
+    actPlay.Enabled := True;
+    actStopPlay.Enabled := True;
 
     case Client.UseFilter of
       ufNone:

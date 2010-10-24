@@ -402,9 +402,6 @@ begin
               FOnTrackRemoved(nil, Tracks[i]);
           end;
         end;
-        // Ist über, weil das der Windows-Lösch-Dialog selbst behandelt
-        // if Error then
-        //   MsgBox(Handle, _('Some files could not be recycled.'#13#10'Please make sure they are not in use by another application.'), _('Info'), MB_ICONINFORMATION);
       end;
     taDelete:
       begin

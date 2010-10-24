@@ -93,7 +93,7 @@ type
     FOnTitleAllowed: TTitleAllowedEvent;
 
     procedure Initialize;
-    procedure Start;
+    procedure Start(Rec: Boolean);
     function FGetActive: Boolean;
     function ParsePlaylist: Boolean;
     function GetURL: string;
@@ -122,8 +122,10 @@ type
 
     procedure AddRelayThread(Thread: TSocketThread);
     procedure RemoveRelayThread(Thread: TSocketThread);
+    procedure Play;
+    procedure Stop;
 
-    procedure Connect;
+    procedure Connect(Rec: Boolean);
     procedure Disconnect;
     procedure Kill;
     procedure SetSettings(SkipShort: Boolean);
@@ -268,14 +270,34 @@ begin
   end;
 end;
 
-procedure TICEClient.Connect;
+procedure TICEClient.Play;
 begin
-  FRetries := 0;
-  Start;
+  Connect(False);
+
+  // TODO: Threadsicherheit und so?
+
+  // TODO: Tja das lackt so nicht, weil der thread nach playlist holen stirbt...
+  FICEThread.Play;
 end;
 
-procedure TICEClient.Start;
+procedure TICEClient.Stop;
 begin
+
+
+
+  // TODO: Threadsicherheit und so?
+  FICEThread.Stop;
+end;
+
+procedure TICEClient.Connect(Rec: Boolean);
+begin
+  FRetries := 0;
+  Start(Rec);
+end;
+
+procedure TICEClient.Start(Rec: Boolean);
+begin
+  // TODO: REC AUSWERTEN!!!
   if FICEThread <> nil then
     Exit;
 
@@ -610,9 +632,12 @@ end;
 procedure TICEClient.ThreadTerminated(Sender: TObject);
 var
   MaxRetries: Integer;
+  DiedThread: TICEThread;
 begin
   if FICEThread <> Sender then
     Exit;
+
+  DiedThread := TICEThread(Sender);
 
   FICEThread := nil;
   FTitle := '';
@@ -628,7 +653,11 @@ begin
       WriteDebug('Retried ' + IntToStr(MaxRetries) + ' times, stopping');
       FState := csStopped;
     end else
-      Start;
+    begin
+      Start(DiedThread.Recording);
+      if DiedThread.Playing then
+        FICEThread.Play;
+    end;
     if FRedirectedURL = '' then
       Inc(FRetries);
   end else if FState = csStopping then

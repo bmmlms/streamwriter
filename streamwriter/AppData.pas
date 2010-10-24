@@ -236,7 +236,7 @@ begin
     Text.Add('');
     Text.Add(_('&U&10...everyone supporting streamWriter'#13#10'&U&10at http://streamwriter.org/forum/'));
     Text.Add('');
-    SetLength(FBoard, 8);
+    SetLength(FBoard, 9);
     FBoard[0] := 'bastik';
     FBoard[1] := 'mondstern';
     FBoard[2] := 'HostedDinner';
@@ -245,6 +245,7 @@ begin
     FBoard[5] := 'MASH';
     FBoard[6] := 'Jim';
     FBoard[7] := 'Robin Hood';
+    FBoard[8] := 'Udo';
     ShuffleFisherYates(FBoard);
     for i := 0 to Length(FBoard) - 1 do
       Text.Add('''' + FBoard[i] + '''');

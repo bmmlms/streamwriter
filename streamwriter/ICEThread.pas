@@ -24,7 +24,7 @@ interface
 uses
   SysUtils, Windows, WinSock, Classes, HTTPThread, ExtendedStream, ICEStream,
   Functions, SocketThread, SyncObjs, AudioStream, Generics.Collections,
-  AppData;
+  AppData, PlayThread;
 
 type
   TICEThreadStates = (tsRecording, tsRetrying, tsIOError);
@@ -40,6 +40,9 @@ type
   private
     FTitle: string;
     FState: TICEThreadStates;
+    FPlayThread: TPlayThread;
+    FRecording: Boolean;
+    FPlaying: Boolean;
 
     FRelayThreads: TRelayInfoList;
 
@@ -75,6 +78,9 @@ type
 
     procedure SetSettings(SkipShort: Boolean);
 
+    procedure Play;
+    procedure Stop;
+
     procedure LockRelay;
     procedure UnlockRelay;
 
@@ -82,6 +88,8 @@ type
     property Title: string read FTitle;
     property State: TICEThreadStates read FState;
 
+    property Recording: Boolean read FRecording;
+    property Playing: Boolean read FPlaying;
     property RelayThreads: TRelayInfoList read FRelayThreads;
 
     property OnTitleChanged: TNotifyEvent read FOnTitleChanged write FOnTitleChanged;
@@ -101,6 +109,18 @@ begin
   FTypedStream.SkipShort := SkipShort;
 end;
 
+procedure TICEThread.Play;
+begin
+  FPlaying := True;
+  FPlayThread.Start;
+end;
+
+procedure TICEThread.Stop;
+begin
+  FPlaying := False;
+  FPlayThread.Stop;
+end;
+
 procedure TICEThread.StreamNeedSettings(Sender: TObject);
 begin
   Sync(FOnNeedSettings);
@@ -113,6 +133,8 @@ var
 const
   CutSize = 1000000;
 begin
+  FPlayThread.PushData(Buf, Len);
+
   if FRelayBuffer = nil then
     Exit;
   FRelayLock.Enter;
@@ -296,6 +318,10 @@ var
 begin
   inherited Create(URL, TICEStream.Create);
 
+  FPlayThread := TPlayThread.Create;
+  FRecording := False;
+  FPlaying := False;
+
   AppGlobals.Lock;
   ProxyEnabled := AppGlobals.ProxyEnabled;
   ProxyHost := AppGlobals.ProxyHost;
@@ -335,6 +361,7 @@ destructor TICEThread.Destroy;
 var
   i: Integer;
 begin
+  FPlayThread.Free; // TODO: Ist das so okay!?
   if FRelayBuffer <> nil then
     FRelayBuffer.Free;
   FRelayLock.Free;
