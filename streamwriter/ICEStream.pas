@@ -43,6 +43,7 @@ type
     FOnDebug: TDebugEvent;
   public
     destructor Destroy; override;
+    procedure Clear; reintroduce;
 
     procedure FoundTitle(Offset: Int64; Title: string);
   end;
@@ -68,7 +69,6 @@ type
     FSongBuffer: Integer;
 
     FMetaCounter: Integer;
-    FNextMetaOffset: Integer;
 
     FTitle: string;
     FSavedFilename: string;
@@ -79,6 +79,7 @@ type
 
     FSaveAllowedTitle: string;
     FSaveAllowed: Boolean;
+    FRecording: Boolean;
 
     FStreamTracks: TStreamTracks;
 
@@ -101,12 +102,16 @@ type
     function GetValidFilename(Name: string): string;
     procedure GetSettings;
     procedure StreamTracksDebug(Text, Data: string);
+    procedure FreeAudioStream;
   protected
     procedure DoHeaderRemoved; override;
   public
     constructor Create;
     destructor Destroy; override;
     procedure Process; override;
+
+    procedure StartRecording;
+    procedure StopRecording;
 
     property MetaCounter: Integer read FMetaCounter;
 
@@ -151,7 +156,6 @@ begin
   FMetaCounter := 0;
   FSongsSaved := 0;
   FFilename := '';
-  FNextMetaOffset := -1;
   FBitRate := 0;
   FGenre := '';
   FTitle := '';
@@ -164,17 +168,10 @@ begin
 end;
 
 destructor TICEStream.Destroy;
-var
-  Filename: string;
 begin
-  Filename := '';
-  if FAudioStream <> nil then
-    Filename := FAudioStream.FileName;
-  FreeAndNil(FAudioStream);
-  FreeAndNil(FStreamTracks);
+  FreeAudioStream;
 
-  if FDeleteStreams and (Filename <> '') then
-    DeleteFile(PChar(Filename));
+  FreeAndNil(FStreamTracks);
 
   inherited;
 end;
@@ -184,7 +181,11 @@ var
   Buf: Pointer;
 begin
   if FAudioStream <> nil then
-    FAudioStream.CopyFrom(FGetRecvDataStream, CopySize);
+  begin
+    FAudioStream.Seek(0, soFromEnd);
+    FAudioStream.CopyFrom(Self, CopySize);
+  end else
+    Seek(CopySize, soFromCurrent);
 
   if Assigned(FOnChunkReceived) then
   begin
@@ -207,7 +208,6 @@ begin
     begin
       try
         FMetaInt := StrToInt(GetHeaderData('icy-metaint'));
-        FNextMetaOffset := FMetaInt;
       except
         WriteDebug('Meta-interval could not be found');
       end;
@@ -228,30 +228,8 @@ begin
       end else
         raise Exception.Create('Unknown content-type');
 
-      Filename := GetFilename(Dir, FStreamName);
-      try
-        ForceDirectories(Dir);
-      except
-        if Assigned(FOnIOError) then
-          FOnIOError(Self);
-        raise Exception.Create('Folder for saved tracks could not be created.');
-      end;
-
-      try
-        WriteDebug('Saving stream to "' + Filename + '"');
-        case FAudioType of
-          atMPEG:
-            FAudioStream := TMPEGStreamFile.Create(Filename, fmCreate or fmShareDenyWrite);
-          atAAC:
-            FAudioStream := TAACStreamFile.Create(Filename, fmCreate or fmShareDenyWrite)
-        end;
-      except
-        if Assigned(FOnIOError) then
-          FOnIOError(Self);
-        raise Exception.Create('Could not open "' + Filename + '"');
-      end;
-
-      FFilename := Filename;
+      if FRecording then
+        StartRecording;
 
       if Assigned(FOnTitleChanged) then
         FOnTitleChanged(Self);
@@ -270,6 +248,20 @@ begin
     end;
   end else
     raise Exception.Create('Unknown header-type');
+end;
+
+procedure TICEStream.FreeAudioStream;
+var
+  Filename: string;
+begin
+  Filename := '';
+  if FAudioStream <> nil then
+  begin
+    Filename := FAudioStream.FileName;
+    FreeAndNil(FAudioStream);
+  end;
+  if FDeleteStreams and (Filename <> '') then
+    DeleteFile(PChar(Filename));
 end;
 
 procedure TICEStream.GetSettings;
@@ -342,6 +334,7 @@ begin
       WriteDebug('Error in SaveToFile');
       raise;
     end;
+
     Saved := True;
 
     try
@@ -365,6 +358,59 @@ begin
       WriteDebug(Format('Error while saving to "%s": %s', [Filename, E.Message]));
     end;
   end;
+end;
+
+procedure TICEStream.StartRecording;
+var
+  Dir, Filename: string;
+begin
+  //StopRecording;
+     // TODO: Threadsicherheit.. das hier wird nur von außen aufgerufen!! wie stop auch!
+  if (FAudioStream = nil) and (FAudioType <> atNone) then
+  begin
+    Dir := FSaveDir;
+    Filename := GetFilename(Dir, FStreamName);
+    try
+      ForceDirectories(Dir);
+    except
+      if Assigned(FOnIOError) then
+        FOnIOError(Self);
+      raise Exception.Create('Folder for saved tracks could not be created.');
+    end;
+
+    try
+      WriteDebug('Saving stream to "' + Filename + '"');
+      case FAudioType of
+        atMPEG:
+          FAudioStream := TMPEGStreamFile.Create(Filename, fmCreate or fmShareDenyWrite);
+        atAAC:
+          FAudioStream := TAACStreamFile.Create(Filename, fmCreate or fmShareDenyWrite)
+      end;
+    except
+      if Assigned(FOnIOError) then
+        FOnIOError(Self);
+      raise Exception.Create('Could not open "' + Filename + '"');
+    end;
+
+    if FMetaCounter > 0 then
+      FMetaCounter := 1; // TODO: Testen.
+    FStreamTracks.Clear;
+
+    // Damit Der ICEStream sich FFilename wieder setzt, so dass aussen das Menü-Item fürs Play an ist.
+    if Assigned(FOnTitleChanged) then
+      FOnTitleChanged(Self);
+
+    FFilename := Filename;
+  end;
+
+  FRecording := True;
+end;
+
+procedure TICEStream.StopRecording;
+begin
+  // TODO: lalalaaaa threadsicherheit...
+  FRecording := False;
+  FreeAudioStream;
 end;
 
 procedure TICEStream.StreamTracksDebug(Text, Data: string);
@@ -485,7 +531,6 @@ begin
   Seek(0, soFromBeginning);
   if FMetaInt = -1 then
   begin
-    FAudioStream.Seek(0, soFromEnd);
     DataReceived(Size);
     Clear;
   end else
@@ -493,11 +538,10 @@ begin
     TitleChanged := False;
     while Position < Size - FMetaInt - 4081 do // 4081 wegen 255*16+1 (Max-MetaLen)
     begin
-      FAudioStream.Seek(0, soFromEnd);
-
       DataReceived(FMetaInt);
 
-      TrySave;
+      if FAudioStream <> nil then
+        TrySave;
 
       Read(Buf, 1);
       if Buf > 0 then
@@ -509,7 +553,7 @@ begin
         P := PosEx(''';', MetaData, 14);
         Title := Trim(Copy(MetaData, 14, P - 14));
 
-        if Title <> FTitle then
+        if (FAudioStream <> nil) and (Title <> FTitle) then
         begin
           WriteDebug(Format('Track changed, title "%s" now playing', [Title]));
           TitleChanged := True;
@@ -518,7 +562,7 @@ begin
 
         if (Title <> FTitle) and (FMetaCounter >= 3) then
         begin
-          FStreamTracks.FoundTitle(FAudioStream.Size, Title);
+          //FStreamTracks.FoundTitle(FAudioStream.Size, Title);
         end else if Title = FTitle then
         begin
 
@@ -527,7 +571,7 @@ begin
           if FMetaCounter = 2 then
           begin
             WriteDebug(Format('Start of first full song "%s" detected', [Title]));
-            FStreamTracks.FoundTitle(FAudioStream.Size, Title);
+            //FStreamTracks.FoundTitle(FAudioStream.Size, Title);
           end;
         end;
 
@@ -676,12 +720,20 @@ end;
 
 { TStreamTracks }
 
-destructor TStreamTracks.Destroy;
+procedure TStreamTracks.Clear;
 var
   i: Integer;
 begin
   for i := 0 to Count - 1 do
-    TStreamTrack(Items[i]).Free;
+    Items[i].Free;
+  inherited;
+end;
+
+destructor TStreamTracks.Destroy;
+var
+  i: Integer;
+begin
+  Clear;
   inherited;
 end;
 

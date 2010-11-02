@@ -60,6 +60,7 @@ var
   BASSStreamFree: function(handle: HSTREAM): BOOL; stdcall;
   BASSStreamPutFileData: function(handle: HSTREAM; buffer: Pointer; length: DWORD): DWORD; stdcall;
   BASSErrorGetCode: function: LongInt; stdcall;
+  BASSSetConfig: function(option, value: DWORD): BOOL; stdcall;
 
 implementation
 
@@ -89,10 +90,12 @@ begin
     BASSStreamFree := GetProcAddress(DLLHandle, 'BASS_StreamFree');
     BASSStreamPutFileData := GetProcAddress(DLLHandle, 'BASS_StreamPutFileData');
     BASSErrorGetCode := GetProcAddress(DLLHandle, 'BASS_ErrorGetCode');
+    BASSSetConfig := GetProcAddress(DLLHandle, 'BASS_SetConfig');
 
     if BASSInit(-1, 44100, 0, 0, nil) then
-      BassLoaded := True
-    else
+    begin
+      BassLoaded := True;
+    end else
       FreeLibrary(DLLHandle);
   end;
 end;

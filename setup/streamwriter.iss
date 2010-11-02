@@ -96,7 +96,7 @@ begin
     if Pos('/update', AnsiLowerCase(s)) > 0 then
     begin
       if Pos('/run', AnsiLowerCase(s)) > 0 then
-        Exec(ExpandConstant('{app}') + '\streamwriter.exe', '', ExpandConstant('{app}'), 1, ewNoWait, r)
+        Exec(ExpandConstant('{app}') + '\streamwriter.exe', '/updated', ExpandConstant('{app}'), 1, ewNoWait, r)
       else
         MsgBox(TranslateNewline(ExpandConstant('{cm:PleaseRestart}')), mbInformation, MB_OK);
     end;
@@ -110,6 +110,7 @@ begin
     //RegDeleteKeyIncludingSubkeys(HKCU, 'Software\mistake.ws\streamWriter');
   end;
 end;
+
 
 
 

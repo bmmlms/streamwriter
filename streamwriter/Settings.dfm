@@ -223,6 +223,7 @@ object frmSettings: TfrmSettings
       TabOrder = 2
       Items.Strings = (
         'Start/stop recording'
+        'Listen to stream (integrated player)'
         'Listen to stream'
         'Listen to relay'
         'Listen to recorded file')

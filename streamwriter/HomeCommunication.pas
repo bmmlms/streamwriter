@@ -118,8 +118,7 @@ implementation
 constructor THomeCommunication.Create;
 begin
   {$IFDEF DEBUG}
-  FURL := 'http://streamwriter.org/en/streamdb/';
-  //FURL := 'http://streamwriter.gaia/en/streamdb/';
+  FURL := 'http://streamwriter.gaia/en/streamdb/';
   {$ELSE}
   FURL := 'http://streamwriter.org/en/streamdb/';
   {$ENDIF}

@@ -199,7 +199,7 @@ begin
         Text := NodeData.Client.StreamName;
     1:
       if NodeData.Client.Title = '' then
-        if NodeData.Client.State = csRecording then
+        if NodeData.Client.State = csConnected then
           Text := _('Unknown')
         else
           Text := _('')
@@ -215,8 +215,8 @@ begin
       case NodeData.Client.State of
         csConnecting:
           Text := _('Connecting...');
-        csRecording:
-          Text := _('Recording');
+        csConnected:
+          Text := _('Connected');
         csRetrying:
           Text := _('Retrying...');
         csStopped:

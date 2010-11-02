@@ -257,7 +257,7 @@ begin
   Stream.Read(Count);
   for i := 0 to Count - 1 do
   begin
-    Stream.Read(URL);                   // TODO: testen ob alte versionen mit neuen datendateien und so klappen. halt frisch install und update testen!
+    Stream.Read(URL);
     Result.FURLs.Add(URL);
   end;
   Stream.Read(Result.FBitRate);
@@ -479,8 +479,6 @@ begin
           FStreamList.Add(Entry);
         end;
 
-        // TODO: Das hier nur Bei Version >= 3 oder so. testen!!! alle upgrade pfade was die files angeht testen!!!
-        //       HIER werden titel geladen die in älteren versionen ja noch gar nicht vorhanden waren!!!!!
         if Version >= 3 then
         begin
           S.Read(EntryCount);

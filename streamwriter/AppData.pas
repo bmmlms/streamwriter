@@ -26,7 +26,7 @@ uses
   LanguageObjects, LanguageIcons, Plugins, Forms;
 
 type
-  TClientActions = (caStartStop, caStream, caRelay, caFile);
+  TClientActions = (caStartStop, caStreamIntegrated, caStream, caRelay, caFile);
   TUseFilters = (ufNone, ufWish, ufIgnore);
 
   TIntArray = array of Integer;
@@ -110,10 +110,12 @@ var
 implementation
 
 constructor TAppData.Create(AppName: string);
+{
 const
   URL = 'https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=alex%40mistake%2ews&lc=LANGCODE&' +
         'item_name=streamwriter%2eorg%20%2f%20Alexander%20Nottelmann&no_note=0&currency_code=EUR&' +
         'bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest';
+}
 var
   W: Integer;
 begin
@@ -125,24 +127,24 @@ begin
 
   inherited Create(AppName, True, W, 500);
 
-
   {$IFDEF DEBUG}
   FProjectUpdateLink := 'http://streamwriter.gaia/';
   {$ELSE}
   FProjectUpdateLink := 'http://streamwriter.org/';
   {$ENDIF}
 
-  FProjectUpdateLink := 'http://streamwriter.org/';
-
   FProjectHomepageLink := 'http://streamwriter.org/';
   FProjectLink := 'http://streamwriter.org/';
   FProjectHelpLink := 'http://streamwriter.org/inhalt/documentation/help/';
   FProjectForumLink := 'http://streamwriter.org/forum/';
 
+  {
   if LanguageObjects.Language.CurrentLanguage.ID = 'de' then
     FProjectDonateLink := StringReplace(URL, 'LANGCODE', 'de', [])
   else
     FProjectDonateLink := StringReplace(URL, 'LANGCODE', 'en', []);
+  }
+  FProjectDonateLink := 'http://streamwriter.org/inhalt/donate/';
 
   BuildThanksText;
 

@@ -131,6 +131,9 @@
 			<DCCReference Include="CheckFilesThread.pas"/>
 			<DCCReference Include="controls\ListsTab.pas"/>
 			<DCCReference Include="PlayThread.pas"/>
+			<DCCReference Include="..\..\common\forms\UpdatedInfo.pas">
+				<Form>frmUpdatedInfo</Form>
+			</DCCReference>
 			<BuildConfiguration Include="Basis">
 				<Key>Base</Key>
 			</BuildConfiguration>

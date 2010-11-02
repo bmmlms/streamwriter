@@ -109,12 +109,12 @@ type
     procedure ActionPlayStopExecute(Sender: TObject);
     procedure ActionResetDataExecute(Sender: TObject);
     procedure ActionShowSideBarExecute(Sender: TObject);
-    procedure ActionSavePlaylistStream(Sender: TObject); // TODO: Fleiﬂarbeit - hier fehlt an den meisten das Execute am ende.
-    procedure ActionSavePlaylistRelay(Sender: TObject);
-    procedure ActionSavePlaylistFile(Sender: TObject);
-    procedure ActionTuneInStream(Sender: TObject);
-    procedure ActionTuneInRelay(Sender: TObject);
-    procedure ActionTuneInFile(Sender: TObject);
+    procedure ActionSavePlaylistStreamExecute(Sender: TObject);
+    procedure ActionSavePlaylistRelayExecute(Sender: TObject);
+    procedure ActionSavePlaylistFileExecute(Sender: TObject);
+    procedure ActionTuneInStreamExecute(Sender: TObject);
+    procedure ActionTuneInRelayExecute(Sender: TObject);
+    procedure ActionTuneInFileExecute(Sender: TObject);
 
     procedure ClientManagerDebug(Sender: TObject);
     procedure ClientManagerRefresh(Sender: TObject);
@@ -288,7 +288,7 @@ begin
     Entry := FStreams.StreamList.Get(Client);
     if Entry <> nil then
       Entry.LastTouched := Now;
-    Client.Connect(True);
+    Client.StartRecording;
   end;
 end;
 
@@ -300,7 +300,7 @@ begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(True));
   for Client in Clients do
   begin
-    Client.Disconnect;
+    Client.StopRecording;
   end;
 end;
 
@@ -319,22 +319,32 @@ end;
 procedure TClientTab.ActionPlayExecute(Sender: TObject);
 var
   Clients: TNodeDataArray;
+  SelectedClient, Client: PClientNodeData;
 begin
-  // TODO: Alle anderen stoppen!
   Clients := FClientView.NodesToData(FClientView.GetNodes(True));
   if Length(Clients) <> 1 then
-    Exit;
-  Clients[0].Client.Play;
+    Exit
+  else
+    SelectedClient := Clients[0];
+
+  Clients := FClientView.NodesToData(FClientView.GetNodes(False));
+  for Client in Clients do
+    if Client <> SelectedClient then
+      Client.Client.StopPlay;
+
+  SelectedClient.Client.StartPlay;
 end;
 
 procedure TClientTab.ActionPlayStopExecute(Sender: TObject);
 var
-  Clients: TNodeDataArray;
+  Clients: TClientArray;
+  Client: TICEClient;
 begin
-  Clients := FClientView.NodesToData(FClientView.GetNodes(True));
-  if Length(Clients) <> 1 then
-    Exit;
-  Clients[0].Client.Stop;
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(False));
+  for Client in Clients do
+  begin
+    Client.StopPlay;
+  end;
 end;
 
 procedure TClientTab.ActionResetDataExecute(Sender: TObject);
@@ -377,7 +387,7 @@ begin
   FActionShowSideBar.Checked := FSideBar.Visible;
 end;
 
-procedure TClientTab.ActionSavePlaylistStream(Sender: TObject);
+procedure TClientTab.ActionSavePlaylistStreamExecute(Sender: TObject);
 var
   Entries: TPlaylistEntryArray;
 begin
@@ -385,7 +395,7 @@ begin
   SavePlaylist(Entries, False);
 end;
 
-procedure TClientTab.ActionSavePlaylistRelay(Sender: TObject);
+procedure TClientTab.ActionSavePlaylistRelayExecute(Sender: TObject);
 var
   Entries: TPlaylistEntryArray;
 begin
@@ -393,7 +403,7 @@ begin
   SavePlaylist(Entries, False);
 end;
 
-procedure TClientTab.ActionSavePlaylistFile(Sender: TObject);
+procedure TClientTab.ActionSavePlaylistFileExecute(Sender: TObject);
 var
   Entries: TPlaylistEntryArray;
 begin
@@ -401,7 +411,7 @@ begin
   SavePlaylist(Entries, False);
 end;
 
-procedure TClientTab.ActionTuneInStream(Sender: TObject);
+procedure TClientTab.ActionTuneInStreamExecute(Sender: TObject);
 var
   Entries: TPlaylistEntryArray;
 begin
@@ -409,7 +419,7 @@ begin
   SavePlaylist(Entries, True);
 end;
 
-procedure TClientTab.ActionTuneInRelay(Sender: TObject);
+procedure TClientTab.ActionTuneInRelayExecute(Sender: TObject);
 var
   Entries: TPlaylistEntryArray;
 begin
@@ -422,7 +432,7 @@ begin
   end;
 end;
 
-procedure TClientTab.ActionTuneInFile(Sender: TObject);
+procedure TClientTab.ActionTuneInFileExecute(Sender: TObject);
 var
   Entries: TPlaylistEntryArray;
 begin
@@ -535,12 +545,12 @@ begin
   GetAction('actResetData').OnExecute := ActionResetDataExecute;
   FActionShowSideBar := GetAction('actShowSideBar');
   FActionShowSideBar.OnExecute := ActionShowSideBarExecute;
-  GetAction('actTuneInStream').OnExecute := ActionTuneInStream;
-  GetAction('actTuneInRelay').OnExecute := ActionTuneInRelay;
-  GetAction('actTuneInFile').OnExecute := ActionTuneInFile;
-  GetAction('actSavePlaylistStream').OnExecute := ActionSavePlaylistStream;
-  GetAction('actSavePlaylistRelay').OnExecute := ActionSavePlaylistRelay;
-  GetAction('actSavePlaylistFile').OnExecute := ActionSavePlaylistFile;
+  GetAction('actTuneInStream').OnExecute := ActionTuneInStreamExecute;
+  GetAction('actTuneInRelay').OnExecute := ActionTuneInRelayExecute;
+  GetAction('actTuneInFile').OnExecute := ActionTuneInFileExecute;
+  GetAction('actSavePlaylistStream').OnExecute := ActionSavePlaylistStreamExecute;
+  GetAction('actSavePlaylistRelay').OnExecute := ActionSavePlaylistRelayExecute;
+  GetAction('actSavePlaylistFile').OnExecute := ActionSavePlaylistFileExecute;
 
   GetAction('actPlay').OnExecute := ActionPlayExecute;
   GetAction('actStopPlay').OnExecute := ActionPlayStopExecute;
@@ -868,10 +878,10 @@ begin
   begin
     case AppGlobals.DefaultAction of
       caStartStop:
-        if Clients[0].Client.Active then
-          Clients[0].Client.Disconnect
+        if Clients[0].Client.Recording then
+          Clients[0].Client.StopRecording
         else
-          Clients[0].Client.Connect(True);
+          Clients[0].Client.StartRecording;
       caStream:
         FActionTuneInStream.Execute;
       caRelay:
@@ -907,7 +917,7 @@ begin
     Client := FClients.GetClient(Name, URL, nil);
     if Client <> nil then
     begin
-      Client.Connect(True);
+      Client.StartRecording;
       Exit;
     end else
     begin
@@ -915,13 +925,13 @@ begin
       if Entry <> nil then
       begin
         Client := FClients.AddClient(Entry.Name, Entry.StartURL, Entry.URLs, Entry.SkipShort, Entry.UseFilter, Entry.SongsSaved);
-        Client.Connect(True);
+        Client.StartRecording;
       end else
       begin
         if ValidURL(URL) then
         begin
           Client := FClients.AddClient(Name, URL);
-          Client.Connect(True);
+          Client.StartRecording;
         end else
         begin
           Result := False;

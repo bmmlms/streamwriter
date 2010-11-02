@@ -27,7 +27,7 @@ uses
 
 type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
-  TICEClientStates = (csConnecting, csRecording, csStopping, csStopped, csRetrying, csIOError);
+  TICEClientStates = (csConnecting, csConnected, csStopping, csStopped, csRetrying, csIOError);
 
   TICEClient = class;
 
@@ -92,9 +92,14 @@ type
     FOnURLsReceived: TNotifyEvent;
     FOnTitleAllowed: TTitleAllowedEvent;
 
+    procedure Connect;
+    procedure Disconnect;
+
     procedure Initialize;
-    procedure Start(Rec: Boolean);
+    procedure Start;
     function FGetActive: Boolean;
+    function FGetRecording: Boolean;
+    function FGetPlaying: Boolean;
     function ParsePlaylist: Boolean;
     function GetURL: string;
     function FGetRelayURL: string;
@@ -122,16 +127,19 @@ type
 
     procedure AddRelayThread(Thread: TSocketThread);
     procedure RemoveRelayThread(Thread: TSocketThread);
-    procedure Play;
-    procedure Stop;
 
-    procedure Connect(Rec: Boolean);
-    procedure Disconnect;
+    procedure StartPlay;
+    procedure StopPlay;
+    procedure StartRecording;
+    procedure StopRecording;
+
     procedure Kill;
     procedure SetSettings(SkipShort: Boolean);
 
     property DebugLog: TDebugLog read FDebugLog;
     property Active: Boolean read FGetActive;
+    property Recording: Boolean read FGetRecording;
+    property Playing: Boolean read FGetPlaying;
     property Killed: Boolean read FKilled;
     property State: TICEClientStates read FState;
     property StartURL: string read FStartURL;
@@ -270,34 +278,57 @@ begin
   end;
 end;
 
-procedure TICEClient.Play;
+procedure TICEClient.StartPlay;
 begin
-  Connect(False);
+  Connect;
 
-  // TODO: Threadsicherheit und so?
-
-  // TODO: Tja das lackt so nicht, weil der thread nach playlist holen stirbt...
-  FICEThread.Play;
+  if FICEThread <> nil then
+    FICEThread.StartPlay;
 end;
 
-procedure TICEClient.Stop;
+procedure TICEClient.StopPlay;
 begin
+  if FICEThread <> nil then
+  begin
+    FICEThread.StopPlay;
 
-
-
-  // TODO: Threadsicherheit und so?
-  FICEThread.Stop;
+    if (not FICEThread.Recording) and (not FICEThread.Playing) then
+    begin
+      Disconnect;
+    end;
+  end;
 end;
 
-procedure TICEClient.Connect(Rec: Boolean);
+procedure TICEClient.StartRecording;
+begin
+  Connect;
+
+  if FICEThread <> nil then
+    FICEThread.StartRecording;
+end;
+
+procedure TICEClient.StopRecording;
+begin
+  FFilename := '';
+  if FICEThread <> nil then
+  begin
+    FICEThread.StopRecording;
+
+    if (not FICEThread.Recording) and (not FICEThread.Playing) then
+    begin
+      Disconnect;
+    end;
+  end;
+end;
+
+procedure TICEClient.Connect;
 begin
   FRetries := 0;
-  Start(Rec);
+  Start;
 end;
 
-procedure TICEClient.Start(Rec: Boolean);
+procedure TICEClient.Start;
 begin
-  // TODO: REC AUSWERTEN!!!
   if FICEThread <> nil then
     Exit;
 
@@ -334,11 +365,6 @@ begin
   if FICEThread = nil then
     Exit;
 
-  FICEThread.LockRelay;
-  for i := 0 to FICEThread.RelayThreads.Count - 1 do
-    FICEThread.RelayThreads[i].Thread.Terminate;
-  FICEThread.UnlockRelay;
-
   FRetries := 0;
   FICEThread.Terminate;
   FState := csStopping;
@@ -359,6 +385,24 @@ begin
   end;
 
   Result := ((FState <> csStopped) and (FState <> csIOError)) or (FProcessingList.Count > 0) or (C > 0);
+end;
+
+function TICEClient.FGetRecording: Boolean;
+begin
+  Result := False;
+  if FICEThread = nil then
+    Exit;
+
+  Result := ((FState <> csStopped) and (FState <> csIOError)) and FICEThread.Recording;
+end;
+
+function TICEClient.FGetPlaying: Boolean;
+begin
+  Result := False;
+  if FICEThread = nil then
+    Exit;
+
+  Result := ((FState <> csStopped) and (FState <> csIOError)) and FICEThread.Playing;
 end;
 
 function TICEClient.FGetRelayURL: string;
@@ -613,7 +657,7 @@ begin
         begin
           FFilename := FICEThread.RecvStream.Filename;
           FRetries := 0;
-          FState := csRecording;
+          FState := csConnected;
         end;
       tsRetrying:
         begin
@@ -642,6 +686,7 @@ begin
   FICEThread := nil;
   FTitle := '';
   FSpeed := 0;
+  FFilename := '';
   AppGlobals.Lock;
   MaxRetries := AppGlobals.MaxRetries;
   AppGlobals.Unlock;
@@ -654,9 +699,11 @@ begin
       FState := csStopped;
     end else
     begin
-      Start(DiedThread.Recording);
+      Start;
       if DiedThread.Playing then
-        FICEThread.Play;
+        FICEThread.StartPlay;
+      if DiedThread.Recording then
+        FICEThread.StartRecording;
     end;
     if FRedirectedURL = '' then
       Inc(FRetries);
@@ -685,7 +732,10 @@ end;
 function TICEClient.ParsePlaylist: Boolean;
 var
   Offset, Offset2: Integer;
+  Host, URLData: string;
+  Port: Integer;
   Data, Line: string;
+  PortDetected: Boolean;
 begin
   FURLs.Clear;
   Offset := 1;
@@ -709,7 +759,15 @@ begin
         begin
           Line := Trim(Copy(Line, Offset2 + 1, Length(Line) - Offset2));
           if (Line <> '') then
-            FURLs.Add(Line);
+          begin
+            if ParseURL(Line, Host, Port, URLData, PortDetected) then
+            begin
+              if not PortDetected then
+                FURLs.Add(Host + ':6666' + URLData)
+              else
+                FURLs.Add(Host + ':' + IntToStr(Port) + URLData);
+            end;
+          end;
         end;
       end;
 
@@ -730,7 +788,13 @@ begin
 
       if (Length(Line) >= 1) and (Line[1] <> '#') then
       begin
-        FURLs.Add(Line);
+        if ParseURL(Line, Host, Port, URLData, PortDetected) then
+        begin
+          if not PortDetected then
+            FURLs.Add(Host + ':6666' + URLData)
+          else
+            FURLs.Add(Host + ':' + IntToStr(Port) + URLData);
+        end;
       end;
 
       if Offset2 = 0 then
@@ -752,8 +816,13 @@ begin
 
         Offset := Offset2 + 1;
 
-        if (Length(Line) >= 1) then
-          FURLs.Add(Line);
+        if ParseURL(Line, Host, Port, URLData, PortDetected) then
+        begin
+          if not PortDetected then
+            FURLs.Add(Host + ':6666' + URLData)
+          else
+            FURLs.Add(Host + ':' + IntToStr(Port) + URLData);
+        end;
 
         if Offset2 = 0 then
           Break;
@@ -789,7 +858,8 @@ begin
   Result := -1;
   try
     S2 := s;
-    ParseURL(S2, Host, Port, Data);
+    if not ParseURL(S2, Host, Port, Data) then // REMARK: Der Check auf True ist hier neu.
+      Exit;
   except
     Exit;
   end;

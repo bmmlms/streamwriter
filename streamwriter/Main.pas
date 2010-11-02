@@ -140,6 +140,12 @@ type
     actUseIgnoreList: TAction;
     actPlay: TAction;
     actStopPlay: TAction;
+    mnuStartPlay2: TMenuItem;
+    mnuStopPlay2: TMenuItem;
+    N10: TMenuItem;
+    N11: TMenuItem;
+    mnuStartPlay1: TMenuItem;
+    mnuStopPlay1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -365,6 +371,8 @@ begin
       R.UseFilter := Client.UseFilter;
     end;
   end;
+
+  UpdateButtons; // Damit die Entries im Hauptmenü angepasst werden, falls von Popup was geändert wurde.
 end;
 
 procedure TfrmStreamWriterMain.addTrayClick(Sender: TObject);
@@ -387,7 +395,7 @@ begin
 
   if not BassLoaded then
   begin
-    MsgBox(Handle, _('Bass.dll could not be loaded. Without this library no cutting/searching for silence is available.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('Bass.dll could not be loaded. Without this library no playback/cutting/searching for silence is available.'), _('Info'), MB_ICONINFORMATION);
   end;
 end;
 
@@ -416,7 +424,7 @@ var
   List: TListList;
   Entry: TStreamEntry;
   i: Integer;
-begin      // TODO: actStart/actStop haben selbe shortcuts wie actPlay und actStopPlay... ist das okay so?
+begin
   FClients := TClientManager.Create;
 
   FStreams := TDataLists.Create;
@@ -565,6 +573,9 @@ procedure TfrmStreamWriterMain.FormShow(Sender: TObject);
 begin
   if FWasShown then
     Exit;
+
+  SetPriorityClass(GetCurrentProcess, HIGH_PRIORITY_CLASS);
+
   FWasShown := True;
 
   tabSavedRefresh(nil);
@@ -835,7 +846,7 @@ begin
   if Active and not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
   begin
     for i := 0 to FClients.Count - 1 do
-      FClients[i].Disconnect;
+      FClients[i].StopRecording;
     tmrSpeed.Enabled := False;
     MsgBox(Handle, _('Available disk space is below the set limit, so recording will be stopped.'), _('Info'), MB_ICONINFORMATION);
     tmrSpeed.Enabled := True;
@@ -905,12 +916,12 @@ begin
   actUseIgnoreList.Checked := False;
 
   actPlay.Enabled := False;
-  actStopPlay.Enabled := False;
+  actStopPlay.Enabled := True;
 
   for Client in Clients do
   begin
     if Client.Active then
-      if AppGlobals.Relay then             // TODO: Play und Stop ins Popup-Menü mit rein!
+      if AppGlobals.Relay then
         actTuneInRelay.Enabled := True;
     if Client.Filename <> '' then
       actTuneInFile.Enabled := True;
@@ -948,7 +959,7 @@ begin
     actSkipShort.Checked := Client.SkipShort;
 
     actPlay.Enabled := True;
-    actStopPlay.Enabled := True;
+    //actStopPlay.Enabled := True;
 
     case Client.UseFilter of
       ufNone:
@@ -961,10 +972,15 @@ begin
 
     case AppGlobals.DefaultAction of
       caStartStop:
-        if Client.Active then
+        if Client.Recording then
           mnuStopStreaming1.Default := True
         else
           mnuStartStreaming1.Default := True;
+      caStreamIntegrated:
+        if Client.Playing then
+          mnuStopPlay1.Default := True
+        else
+          mnuStartPlay1.Default := True;
       caStream:
         mnuListenToStream1.Default := True;
       caRelay:
