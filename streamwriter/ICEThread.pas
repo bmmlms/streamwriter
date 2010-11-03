@@ -188,14 +188,14 @@ begin
     FPlayBuffer.Seek(0, soFromEnd);
     FPlayBuffer.WriteBuffer(Buf^, Len);
 
-    //WriteDebug(Format('Relaybuffer size: %d bytes', [FRelayBuffer.Size]));
+    WriteDebug(Format('Playbuffer size: %d bytes', [FPlayBuffer.Size]));
 
     if FPlayBuffer.Size > MAX_BUFFER_SIZE then
     begin
       // Puffer "rotieren"
       RemoveTo := FPlayBuffer.GetFrame(16384, False);
       FPlayBuffer.RemoveRange(0, RemoveTo - 1);
-      //WriteDebug(Format('Relaybuffer size after remove: %d bytes', [FRelayBuffer.Size]));
+      WriteDebug(Format('Playbuffer size after remove: %d bytes', [FPlayBuffer.Size]));
     end;
 
     for Thread in FRelayThreads do
@@ -208,7 +208,7 @@ begin
           Thread.Thread.SendStream.Seek(0, soFromEnd);
           Thread.Thread.SendStream.Write(Buf^, Len);
 
-          //WriteDebug(Format('Wrote %d bytes to relay, new buffersize is %d', [Len, Thread.Thread.SendStream.Size]));
+          WriteDebug(Format('Wrote %d bytes to relaythread, new size is %d', [Len, Thread.Thread.SendStream.Size]));
         finally
           Thread.Thread.SendLock.Leave;
         end;
