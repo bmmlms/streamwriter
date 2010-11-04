@@ -50,7 +50,7 @@ type
 
   TAudioStreamMemory = class(TExtendedStream)
   public
-    function GetFrame(From: Int64; GetEnd: Boolean): Int64; virtual; abstract;
+    function GetFrame(From: Int64; SearchBackwards: Boolean): Int64; virtual; abstract;
   end;
 
   TMPEGStreamMemory = class(TAudioStreamMemory)

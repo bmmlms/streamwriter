@@ -48,7 +48,7 @@ type
   TClientManager = class
   private
     FClients: TClientList;
-    FRelayServer: TRelayServer;
+    //FRelayServer: TRelayServer;
     FSongsSaved: Integer;
 
     FOnClientDebug: TNotifyEvent;
@@ -76,8 +76,8 @@ type
     procedure ClientURLsReceived(Sender: TObject);
     procedure ClientTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean);
 
-    procedure RelayGetStream(Sender: TObject);
-    procedure RelayEnded(Sender: TObject);
+    //procedure RelayGetStream(Sender: TObject);
+    //procedure RelayEnded(Sender: TObject);
   public
     constructor Create;
     destructor Destroy; override;
@@ -99,7 +99,7 @@ type
     function GetClient(Name, URL: string; URLs: TStringList): TICEClient;
 
     property Active: Boolean read FGetActive;
-    property RelayServer: TRelayServer read FRelayServer;
+    //property RelayServer: TRelayServer read FRelayServer;
     property SongsSaved: Integer read FSongsSaved;
 
     property OnClientDebug: TNotifyEvent read FOnClientDebug write FOnClientDebug;
@@ -180,8 +180,8 @@ var
 begin
   for i := Count - 1 downto 0 do
     RemoveClient(FClients[i]);
-  if FRelayServer <> nil then
-    FreeAndNil(FRelayServer);
+  //if FRelayServer <> nil then
+  //  FreeAndNil(FRelayServer);
 end;
 
 constructor TClientManager.Create;
@@ -189,9 +189,11 @@ begin
   inherited;
   FSongsSaved := 0;
   FClients := TClientList.Create;
+  {
   FRelayServer := TRelayServer.Create;
   FRelayServer.OnGetStream := RelayGetStream;
   FRelayServer.OnEnded := RelayEnded;
+  }
 end;
 
 destructor TClientManager.Destroy;
@@ -348,6 +350,7 @@ begin
     FOnClientICYReceived(Sender, Bytes);
 end;
 
+{
 procedure TClientManager.RelayGetStream(Sender: TObject);
 var
   T: TRelayThread;
@@ -380,9 +383,9 @@ begin
   for i := 0 to FClients.Count - 1 do
   begin
     FClients[i].RemoveRelayThread(T);
-    FClients[i].WriteDebug('Relay disconnected');
   end;
 end;
+}
 
 { TClientEnum }
 

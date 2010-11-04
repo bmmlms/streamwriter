@@ -24,23 +24,23 @@ interface
 uses
   SysUtils, Windows, WinSock, Classes, HTTPThread, ExtendedStream, ICEStream,
   Functions, SocketThread, SyncObjs, AudioStream, Generics.Collections,
-  AppData, PlayThread;
+  AppData, ICEPlayer, RelayServer;
 
 type
   TICEThreadStates = (tsRecording, tsRetrying, tsIOError);
 
-  TRelayInfo = record
-    Thread: TSocketThread;
+  {TRelayInfo = record
+    Thread: TRelayThread;
     FirstSent: Boolean;
   end;
-  PRelayInfo = ^TRelayInfo;
-  TRelayInfoList = TList<PRelayInfo>;
+  PRelayInfo = ^TRelayInfo;}
+  TRelayInfoList = TList<TRelayThread>;
 
   TICEThread = class(THTTPThread)
   private
     FTitle: string;
     FState: TICEThreadStates;
-    FPlayThread: TPlayThread;
+    FPlayer: TICEPlayer;
     FRecording: Boolean;
     FPlaying: Boolean;
 
@@ -54,7 +54,7 @@ type
     FOnTitleAllowed: TNotifyEvent;
 
     FTypedStream: TICEStream;
-    FRelayLock, FPlayLock: TCriticalSection;
+    FPlayBufferLock: TCriticalSection;
     FPlayBuffer: TAudioStreamMemory;
 
     procedure StreamTitleChanged(Sender: TObject);
@@ -64,7 +64,7 @@ type
     procedure StreamIOError(Sender: TObject);
     procedure StreamTitleAllowed(Sender: TObject);
 
-    procedure PlayThreadTerminated(Sender: TObject);
+    procedure ThreadNeedStartData(Sender: TObject);
   protected
     procedure Execute; override;
 
@@ -79,6 +79,7 @@ type
     destructor Destroy; override;
 
     procedure SetSettings(SkipShort: Boolean);
+    procedure StartRelay(Thread: TRelayThread);
 
     procedure StartPlay;
     procedure StopPlay;
@@ -113,39 +114,44 @@ begin
   FTypedStream.SkipShort := SkipShort;
 end;
 
+procedure TICEThread.StartRelay(Thread: TRelayThread);
+begin
+  Thread.OnNeedStartData := ThreadNeedStartData;
+end;
+
 procedure TICEThread.StartPlay;
 var
   P: Integer;
 begin
-  FPlaying := True;
-  if FPlayThread = nil then
-  begin
-    FPlayThread := TPlayThread.Create;
-    FPlayThread.OnTerminate := PlayThreadTerminated;
+  FPlaying := True;         // TODO: Nicht aus hauptthread aus aufrufen. zumindest von da nicht die aufnahme so direkt wie jetzt starten.
+  if FPlayBuffer = nil then
+    Exit;
 
-    if FPlayBuffer <> nil then
-    begin
-      FRelayLock.Enter;
-      try
-        P := FPlayBuffer.GetFrame(0, False);
-        if P = -1 then
-          P := 0;
-        FPlayBuffer.Seek(P, soFromBeginning);
-        FPlayThread.PushData(Pointer(Integer(FPlayBuffer.Memory) + P), FPlayBuffer.Size - P);
-      finally
-        FRelayLock.Leave;
-      end;
+  if not FPlayer.Playing then
+  begin
+    FPlayer.Mem.Clear;
+
+    FPlayBufferLock.Enter;
+    try
+      P := FPlayBuffer.GetFrame(0, False);
+      if P = -1 then
+        P := 0;
+      FPlayBuffer.Seek(P, soFromBeginning);
+      FPlayer.PushData(Pointer(Integer(FPlayBuffer.Memory) + P), FPlayBuffer.Size - P);
+    finally
+      FPlayBufferLock.Leave;
     end;
 
-    FPlayThread.Resume;
+    FPlayer.Play;
   end;
 end;
 
 procedure TICEThread.StopPlay;
 begin
   FPlaying := False;
-  if FPlayThread <> nil then
-    FPlayThread.Terminate;
+  FPlayer.Stop;
+  // Sync(FOnStateChanged); TODO: Das muss, sobald StopPlay nicht mehr vom hauptthread aufgerufen wird :)
+  //                              ich hoffe, dass sich dann der status beim klick auf stop direkt aktualisiert in der liste.
 end;
 
 procedure TICEThread.StartRecording;
@@ -168,54 +174,48 @@ end;
 procedure TICEThread.StreamChunkReceived(Buf: Pointer; Len: Integer);
 var
   RemoveTo: Int64;
-  Thread: PRelayInfo;
+  Thread: TRelayThread;
 const
-  MAX_BUFFER_SIZE = 512000;
+  MAX_BUFFER_SIZE = 256000;
 begin
-  if FPlayThread <> nil then
-  begin
-    FPlayLock.Enter;
-    FPlayThread.PushData(Buf, Len);
-    FPlayLock.Leave;
-  end;
+  if FPlaying and (not FPlayer.Playing) then
+    FPlayer.Play;
 
-  //FPlayThread.Resume;
+  if FPlaying then
+    FPlayer.PushData(Buf, Len);
 
   if FPlayBuffer = nil then
     Exit;
-  FRelayLock.Enter;
+  FPlayBufferLock.Enter;
   try
     FPlayBuffer.Seek(0, soFromEnd);
     FPlayBuffer.WriteBuffer(Buf^, Len);
 
-    WriteDebug(Format('Playbuffer size: %d bytes', [FPlayBuffer.Size]));
+    //WriteDebug(Format('Playbuffer size: %d bytes', [FPlayBuffer.Size]));
 
     if FPlayBuffer.Size > MAX_BUFFER_SIZE then
     begin
       // Puffer "rotieren"
-      RemoveTo := FPlayBuffer.GetFrame(16384, False);
+      RemoveTo := FPlayBuffer.GetFrame(65536, False);
       FPlayBuffer.RemoveRange(0, RemoveTo - 1);
-      WriteDebug(Format('Playbuffer size after remove: %d bytes', [FPlayBuffer.Size]));
-    end;
-
-    for Thread in FRelayThreads do
-    begin
-      // Wenn schon was gesendet wurde, die neuen Daten schicken
-      if Thread.FirstSent then
-      begin
-        Thread.Thread.SendLock.Enter;
-        try
-          Thread.Thread.SendStream.Seek(0, soFromEnd);
-          Thread.Thread.SendStream.Write(Buf^, Len);
-
-          WriteDebug(Format('Wrote %d bytes to relaythread, new size is %d', [Len, Thread.Thread.SendStream.Size]));
-        finally
-          Thread.Thread.SendLock.Leave;
-        end;
-      end;
+      //WriteDebug(Format('Playbuffer size after remove: %d bytes', [FPlayBuffer.Size]));
     end;
   finally
-    FRelayLock.Leave;
+    FPlayBufferLock.Leave;
+  end;
+
+  for Thread in FRelayThreads do
+  begin
+    // Wenn schon was gesendet wurde, die neuen Daten schicken
+    Thread.SendLock.Enter;
+    try
+      Thread.SendStream.Seek(0, soFromEnd);
+      Thread.SendStream.Write(Buf^, Len);
+
+      //WriteDebug(Format('Wrote %d bytes to relaythread, new size is %d', [Len, Thread.Thread.SendStream.Size]));
+    finally
+      Thread.SendLock.Leave;
+    end;
   end;
 end;
 
@@ -230,15 +230,6 @@ begin
   Sync(FOnTitleAllowed);
 end;
 
-procedure TICEThread.PlayThreadTerminated(Sender: TObject);
-begin
-  FPlayLock.Enter;
-  FPlayThread := nil;
-  if FPlaying then
-    StartPlay;
-  FPlayLock.Leave;
-end;
-
 procedure TICEThread.StreamSongSaved(Sender: TObject);
 begin
   Sync(FOnSongSaved);
@@ -251,6 +242,33 @@ begin
   Sync(FOnStateChanged);
 end;
 
+procedure TICEThread.ThreadNeedStartData(Sender: TObject);
+var
+  P: Integer;
+  Thread: TRelayThread;
+begin
+  Thread := TRelayThread(Sender);
+  if FPlayBuffer <> nil then
+  begin
+    FPlayBufferLock.Enter;
+    try
+      Thread.SendLock.Enter;
+      try
+        P := FPlayBuffer.GetFrame(0, False);
+        if P = -1 then
+          P := 0;
+        FPlayBuffer.Seek(P, soFromBeginning);
+        Thread.SendStream.Seek(0, soFromEnd);
+        Thread.SendStream.CopyFrom(FPlayBuffer, FPlayBuffer.Size - P);
+      finally
+        Thread.SendLock.Leave;
+      end;
+    finally
+      FPlayBufferLock.Leave;
+    end;
+  end;
+end;
+
 procedure TICEThread.DoDisconnected;
 begin
   inherited;
@@ -259,13 +277,11 @@ end;
 
 procedure TICEThread.DoEnded;
 var
-  Thread: PRelayInfo;
+  Thread: TRelayThread;
 begin
   inherited;
-  FRelayLock.Enter;
   for Thread in FRelayThreads do
-    Thread.Thread.Terminate;
-  FRelayLock.Leave;
+    Thread.Terminate;
 end;
 
 procedure TICEThread.DoException(E: Exception);
@@ -308,38 +324,9 @@ begin
 end;
 
 procedure TICEThread.DoReceivedData(Buf: Pointer; Len: Integer);
-var
-  P: Int64;
-  Thread: PRelayInfo;
 begin
   inherited;
 
-  if FPlayBuffer <> nil then
-  begin
-    FRelayLock.Enter;
-    try
-      for Thread in FRelayThreads do
-      begin
-        if not Thread.FirstSent then
-        begin
-          Thread.Thread.SendLock.Enter;
-          try
-            P := FPlayBuffer.GetFrame(0, False);
-            if P = -1 then
-              P := 0;
-            FPlayBuffer.Seek(P, soFromBeginning);
-            Thread.Thread.SendStream.Seek(0, soFromEnd);
-            Thread.Thread.SendStream.CopyFrom(FPlayBuffer, FPlayBuffer.Size - P);
-            Thread.FirstSent := True;
-          finally
-            Thread.Thread.SendLock.Leave;
-          end;
-        end;
-      end;
-    finally
-      FRelayLock.Leave;
-    end;
-  end;
 end;
 
 procedure TICEThread.DoSpeedChange;
@@ -356,12 +343,12 @@ end;
 
 procedure TICEThread.LockRelay;
 begin
-  FRelayLock.Enter;
+  FPlayBufferLock.Enter;
 end;
 
 procedure TICEThread.UnlockRelay;
 begin
-  FRelayLock.Leave;
+  FPlayBufferLock.Leave;
 end;
 
 constructor TICEThread.Create(URL: string);
@@ -381,10 +368,10 @@ begin
   ProxyPort := AppGlobals.ProxyPort;
   AppGlobals.Unlock;
 
-  FRelayLock := TCriticalSection.Create;
-  FPlayLock := TCriticalSection.Create;
+  FPlayBufferLock := TCriticalSection.Create;
   FRelayThreads := TRelayInfoList.Create;
   FTitle := '';
+  FPlayer := TICEPlayer.Create;
 
   FUserAgent := AnsiString(AppGlobals.AppName) + ' v' + AppGlobals.AppVersion.AsString;
 
@@ -415,19 +402,10 @@ destructor TICEThread.Destroy;
 var
   i: Integer;
 begin
-  if FPlayThread <> nil then
-  begin
-    FPlayThread.OnTerminate := nil;
-    FPlayThread.Terminate;
-  end;
+  FPlayer.Free;
   if FPlayBuffer <> nil then
     FPlayBuffer.Free;
-  FRelayLock.Free;
-  FPlayLock.Free;
-  for i := 0 to FRelayThreads.Count - 1 do
-  begin
-    Dispose(FRelayThreads[i]);
-  end;
+  FPlayBufferLock.Free;
   FRelayThreads.Free;
   inherited;
 end;

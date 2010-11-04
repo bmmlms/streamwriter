@@ -162,7 +162,7 @@ begin
 
   chkTrayClick(nil);
 
-  chkRelay.Checked := AppGlobals.Relay;
+  //chkRelay.Checked := AppGlobals.Relay;
   chkSubmitStreams.Checked := AppGlobals.SubmitStreams;
   txtShortSongSize.Text := IntToStr(AppGlobals.ShortSize);
   txtSongBuffer.Text := IntToStr(AppGlobals.SongBuffer);
@@ -206,8 +206,8 @@ procedure TfrmSettings.Finish;
 var
   i: Integer;
 begin
-  if AppGlobals.Relay <> chkRelay.Checked then
-    FRelayChanged := True;
+  //if AppGlobals.Relay <> chkRelay.Checked then
+  //  FRelayChanged := True;
 
   AppGlobals.Lock;
   AppGlobals.FilePattern := txtFilePattern.Text;
@@ -217,7 +217,7 @@ begin
   AppGlobals.SkipShort := chkSkipShort.Checked;
   AppGlobals.Tray := chkTray.Checked;
   AppGlobals.TrayOnMinimize := optMinimize.Checked;
-  AppGlobals.Relay := chkRelay.Checked;
+  //AppGlobals.Relay := chkRelay.Checked;
   AppGlobals.SubmitStreams := chkSubmitStreams.Checked;
   AppGlobals.SongBuffer := StrToIntDef(txtSongBuffer.Text, 0);
   AppGlobals.ShortSize := StrToIntDef(txtShortSongSize.Text, 1500);

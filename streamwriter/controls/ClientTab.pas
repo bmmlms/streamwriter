@@ -26,8 +26,7 @@ uses
   MControls, ClientView, StreamBrowserView, StreamDebugView, StreamInfoView,
   LanguageObjects, HomeCommunication, StationCombo, Menus, ActnList, ImgList,
   RecentManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
-  GUIFunctions, AppData, DropTarget, DragDropInternet, DragDropText,
-  DragDropFile, ShellAPI, Tabs, Graphics;
+  GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs, Graphics;
 
 type
   TSidebar = class(TPageControl)
@@ -52,7 +51,7 @@ type
     FLabel: TLabel;
     FStations: TMStationCombo;
     FStart: TSpeedButton;
-    FDropTarget: TDropURLTarget;
+    FDropTarget: TDropComboTarget;
 
     FOnStart: TNotifyEvent;
 
@@ -83,14 +82,15 @@ type
     FClients: TClientManager;
     FStreams: TDataLists;
     FHomeCommunication: THomeCommunication;
-    FDropTarget: TDropURLTarget;
+    FDropTarget: TDropComboTarget;
 
     FReceived: UInt64;
     FRefreshInfo: Boolean;
 
     FActionRemove: TAction;
     FActionShowSideBar: TAction;
-    FActionTuneInRelay: TAction;
+    FActionPlay: TAction;
+    //FActionTuneInRelay: TAction;
     FActionTuneInFile: TAction;
     FActionTuneInStream: TAction;
 
@@ -149,7 +149,7 @@ type
       ClientImages: TImageList; Clients: TClientManager;
       Streams: TDataLists; HomeCommunication: THomeCommunication);
     procedure Shown;
-    function StartStreaming(Name, URL: string): Boolean;
+    function StartStreaming(Name, URL: string; StartPlay: Boolean): Boolean;
     procedure TimerTick;
 
     property AddressBar: TClientAddressBar read FAddressBar;
@@ -185,7 +185,12 @@ procedure TClientAddressBar.DropTargetDrop(Sender: TObject;
   ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
 begin
   FStations.ItemIndex := -1;
-  FStations.Text := string(FDropTarget.URL);
+  if FDropTarget.URL <> '' then
+    FStations.Text := string(FDropTarget.URL);
+  if FDropTarget.Text <> '' then
+    FStations.Text := string(FDropTarget.Text);
+  if FDropTarget.Files.Count > 0 then
+    FStations.Text := string(FDropTarget.Files[0]);
 end;
 
 procedure TClientAddressBar.Setup;
@@ -239,7 +244,8 @@ begin
   FStations.OnChange := FStationsChange;
   Height := FStations.Top + FStations.Height + FStations.Top;
 
-  FDropTarget := TDropURLTarget.Create(Self);
+  FDropTarget := TDropComboTarget.Create(Self);
+  FDropTarget.Formats := [mfText, mfURL, mfFile];
   FDropTarget.Register(FStations);
   FDropTarget.OnDrop := DropTargetDrop;
 
@@ -396,11 +402,11 @@ begin
 end;
 
 procedure TClientTab.ActionSavePlaylistRelayExecute(Sender: TObject);
-var
-  Entries: TPlaylistEntryArray;
+//var
+//  Entries: TPlaylistEntryArray;
 begin
-  Entries := FClientView.GetEntries(etRelay);
-  SavePlaylist(Entries, False);
+//  Entries := FClientView.GetEntries(etRelay);
+//  SavePlaylist(Entries, False);
 end;
 
 procedure TClientTab.ActionSavePlaylistFileExecute(Sender: TObject);
@@ -420,9 +426,10 @@ begin
 end;
 
 procedure TClientTab.ActionTuneInRelayExecute(Sender: TObject);
-var
-  Entries: TPlaylistEntryArray;
+//var
+//  Entries: TPlaylistEntryArray;
 begin
+{
   if Assigned(FOnUpdateButtons) then
     FOnUpdateButtons(Self);
   if FActionTuneInRelay.Enabled then
@@ -430,6 +437,7 @@ begin
     Entries := FClientView.GetEntries(etRelay);
     SavePlaylist(Entries, True);
   end;
+}
 end;
 
 procedure TClientTab.ActionTuneInFileExecute(Sender: TObject);
@@ -455,7 +463,7 @@ end;
 
 procedure TClientTab.AddressBarStart(Sender: TObject);
 begin
-  StartStreaming(FAddressBar.FStations.Text, FAddressBar.FStations.Text);
+  StartStreaming(FAddressBar.FStations.Text, FAddressBar.FStations.Text, False);
 end;
 
 procedure TClientTab.DebugClear(Sender: TObject);
@@ -484,7 +492,13 @@ var
   DropURL: string;
 begin
   DropURL := string(FDropTarget.URL);
-  StartStreaming('', DropURL);
+  if DropURL = '' then
+    DropURL := string(FDropTarget.Text);
+  if DropURL = '' then
+    if FDropTarget.Files.Count > 0 then
+      DropURL := FDropTarget.Files[0];
+  if DropURL <> '' then
+    StartStreaming('', DropURL, False);
 end;
 
 procedure TClientTab.Setup(Toolbar: TToolbar; Actions: TActionList;
@@ -555,7 +569,8 @@ begin
   GetAction('actPlay').OnExecute := ActionPlayExecute;
   GetAction('actStopPlay').OnExecute := ActionPlayStopExecute;
 
-  FActionTuneInRelay := GetAction('actTuneInRelay');
+  FActionPlay := GetAction('actPlay');
+  //FActionTuneInRelay := GetAction('actTuneInRelay');
   FActionTuneInFile := GetAction('actTuneInFile');
   FActionTuneInStream := GetAction('actTuneInStream');
 
@@ -565,13 +580,15 @@ begin
   FClientView.Visible := True;
   FClientView.PopupMenu := Popup;
   FClientView.Images := ClientImages;
+  FClientView.StateImages := ClientImages;
   FClientView.OnChange := FClientViewChange;
   FClientView.OnDblClick := FClientViewDblClick;
   FClientView.OnKeyPress := FClientViewKeyPress;
   FClientView.OnKeyDown := FClientViewKeyDown;
   FClientView.Show;
 
-  FDropTarget := TDropURLTarget.Create(Self);
+  FDropTarget := TDropComboTarget.Create(Self);
+  FDropTarget.Formats := [mfText, mfURL, mfFile];
   FDropTarget.Register(FClientView);
   FDropTarget.OnDrop := DropTargetDrop;
 
@@ -882,22 +899,41 @@ begin
           Clients[0].Client.StopRecording
         else
           Clients[0].Client.StartRecording;
+      caStreamIntegrated:
+        FActionPlay.Execute;
       caStream:
         FActionTuneInStream.Execute;
-      caRelay:
-        FActionTuneInRelay.Execute;
+      //caRelay: ;
+        //FActionTuneInRelay.Execute;
       caFile:
         FActionTuneInFile.Execute;
     end;
   end;
 end;
 
-function TClientTab.StartStreaming(Name, URL: string): Boolean;
+function TClientTab.StartStreaming(Name, URL: string; StartPlay: Boolean): Boolean;
 var
-  Entry: TStreamEntry;
+  Clients: TClientArray;
   Client: TICEClient;
+  Entry: TStreamEntry;
 begin
   Result := True;
+
+  // Wenn versucht wird, einen Relay zu einem Stream, der schon in der Liste ist,
+  // der Liste hinzuzufügen, quasi eine Aufnahme von einer Aufnahme startet
+  // (kann durch D&D passieren), dann raus hier.
+  //for Client in FClients do
+  //  if URL = Client.RelayURL then
+  //    Exit;
+
+  if StartPlay then
+  begin
+    Clients := FClientView.NodesToClients(FClientView.GetNodes(False));
+    for Client in Clients do
+    begin
+      Client.StopPlay;
+    end;
+  end;
 
   if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
   begin
@@ -917,7 +953,10 @@ begin
     Client := FClients.GetClient(Name, URL, nil);
     if Client <> nil then
     begin
-      Client.StartRecording;
+      if StartPlay then
+        Client.StartPlay
+      else
+        Client.StartRecording;
       Exit;
     end else
     begin
@@ -925,13 +964,19 @@ begin
       if Entry <> nil then
       begin
         Client := FClients.AddClient(Entry.Name, Entry.StartURL, Entry.URLs, Entry.SkipShort, Entry.UseFilter, Entry.SongsSaved);
-        Client.StartRecording;
+        if StartPlay then
+          Client.StartPlay
+        else
+          Client.StartRecording;
       end else
       begin
         if ValidURL(URL) then
         begin
           Client := FClients.AddClient(Name, URL);
-          Client.StartRecording;
+          if StartPlay then
+            Client.StartPlay
+          else
+            Client.StartRecording;
         end else
         begin
           Result := False;
@@ -979,7 +1024,7 @@ var
   s: string;
   Entries: TPlaylistEntryArray;
 begin
-  if Action in [oaListen, oaSave] then
+  if Action in [oaOpen, oaSave] then
   begin
     SetLength(Entries, 0);
     for i := 0 to Length(Streams) - 1 do
@@ -993,9 +1038,12 @@ begin
   case Action of
     oaStart:
       for i := 0 to Length(Streams) - 1 do
-        if not StartStreaming(Streams[i].Name, Streams[i].URL) then
+        if not StartStreaming(Streams[i].Name, Streams[i].URL, False) then
           Break;
-    oaListen:
+    oaPlay:
+      for i := 0 to Length(Streams) - 1 do
+        StartStreaming(Streams[i].Name, Streams[i].URL, True);
+    oaOpen:
       SavePlaylist(Entries, True);
     oaCopy:
       begin

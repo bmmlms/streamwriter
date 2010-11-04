@@ -63,7 +63,7 @@ implementation
 procedure TfrmWizard.Finish;
 begin
   AppGlobals.Dir := txtDir.Text;
-  AppGlobals.Relay := chkRelay.Checked;
+  //AppGlobals.Relay := chkRelay.Checked;
   AppGlobals.SubmitStreams := chkSubmitStreams.Checked;
   inherited;
 end;
@@ -76,7 +76,7 @@ begin
 
   if Step.Panel = pnlICEServer then
   begin
-    chkRelay.Checked := AppGlobals.Relay;
+    //chkRelay.Checked := AppGlobals.Relay;
     chkSubmitStreams.Checked := AppGlobals.SubmitStreams;
   end;
   if Step.Panel = pnlDir then

@@ -26,7 +26,7 @@ uses
   LanguageObjects, LanguageIcons, Plugins, Forms;
 
 type
-  TClientActions = (caStartStop, caStreamIntegrated, caStream, caRelay, caFile);
+  TClientActions = (caStartStop, caStreamIntegrated, caStream, {caRelay,} caFile);
   TUseFilters = (ufNone, ufWish, ufIgnore);
 
   TIntArray = array of Integer;
@@ -45,7 +45,7 @@ type
     FTrayOnMinimize: Boolean;
     FShowSidebar: Boolean;
     FSidebarWidth: Integer;
-    FRelay: Boolean;
+    //FRelay: Boolean;
     FSubmitStreams: Boolean;
     FShortSize: Integer;
     FSongBuffer: Integer;
@@ -83,7 +83,7 @@ type
     property TrayOnMinimize: Boolean read FTrayOnMinimize write FTrayOnMinimize;
     property ShowSidebar: Boolean read FShowSidebar write FShowSidebar;
     property SidebarWidth: Integer read FSidebarWidth write FSidebarWidth;
-    property Relay: Boolean read FRelay write FRelay;
+    //property Relay: Boolean read FRelay write FRelay;
     property SubmitStreams: Boolean read FSubmitStreams write FSubmitStreams;
     property ShortSize: Integer read FShortSize write FShortSize;
     property SongBuffer: Integer read FSongBuffer write FSongBuffer;
@@ -294,7 +294,7 @@ begin
   FShowSidebar := True;
 
   FStorage.Read('SidebarWidth', FSidebarWidth, 230);
-  FStorage.Read('Relay', FRelay, False);
+  //FStorage.Read('Relay', FRelay, False);
   FStorage.Read('SubmitStreams', FSubmitStreams, True);
   FStorage.Read('ShortSize', FShortSize, 1500);
   FStorage.Read('SongBuffer', FSongBuffer, 0);
@@ -353,7 +353,7 @@ begin
   //FStorage.Write('ShowSidebar', FShowSidebar);
 
   FStorage.Write('SidebarWidth', FSidebarWidth);
-  FStorage.Write('Relay', FRelay);
+  //FStorage.Write('Relay', FRelay);
   FStorage.Write('SubmitStreams', FSubmitStreams);
   FStorage.Write('ShortSize', FShortSize);
   FStorage.Write('SongBuffer', FSongBuffer);

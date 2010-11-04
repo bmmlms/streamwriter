@@ -48,7 +48,7 @@ type
   end;
   PStreamNodeData = ^TStreamNodeData;
 
-  TOpenActions = (oaStart, oaListen, oaCopy, oaSave);
+  TOpenActions = (oaStart, oaPlay, oaOpen, oaCopy, oaSave);
 
   TNeedDataEvent = procedure(Sender: TObject; Offset, Count: Integer) of object;
   TAddStreamEvent = procedure(Sender: TObject; URL, Name: string) of object;
@@ -148,6 +148,7 @@ type
     FPopupMenu: TPopupMenu;
     FItemStart: TMenuItem;
     FItemPlay: TMenuItem;
+    FItemOpen: TMenuItem;
     FItemCopy: TMenuItem;
     FItemSave: TMenuItem;
 
@@ -262,6 +263,11 @@ begin
   FItemPlay.Caption := _('&Play stream');
   FItemPlay.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemPlay);
+
+  FItemOpen := FPopupMenu.CreateMenuItem;
+  FItemOpen.Caption := _('&Play stream (external player)');
+  FItemOpen.OnClick := PopupMenuClick;
+  FPopupMenu.Items.Add(FItemOpen);
 
   FItemCopy := FPopupMenu.CreateMenuItem;
   FItemCopy.Caption := _('&Copy URL');
@@ -543,7 +549,9 @@ begin
   if Sender = FItemStart then
     Action := oaStart
   else if Sender = FItemPlay then
-    Action := oaListen
+    Action := oaPlay
+  else if Sender = FItemOpen then
+    Action := oaOpen
   else if Sender = FItemCopy then
     Action := oaCopy
   else if Sender = FItemSave then

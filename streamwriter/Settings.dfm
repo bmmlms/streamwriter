@@ -223,9 +223,8 @@ object frmSettings: TfrmSettings
       TabOrder = 2
       Items.Strings = (
         'Start/stop recording'
-        'Listen to stream (integrated player)'
         'Listen to stream'
-        'Listen to relay'
+        'Listen to stream (external player)'
         'Listen to recorded file')
     end
     object optClose: TRadioButton
@@ -263,7 +262,7 @@ object frmSettings: TfrmSettings
     end
     object Label6: TLabel
       Left = 268
-      Top = 124
+      Top = 100
       Width = 22
       Height = 13
       Cursor = crHandPoint
@@ -279,8 +278,8 @@ object frmSettings: TfrmSettings
       OnClick = Label6Click
     end
     object Label11: TLabel
-      Left = 268
-      Top = 96
+      Left = 264
+      Top = 232
       Width = 22
       Height = 13
       Cursor = crHandPoint
@@ -293,6 +292,7 @@ object frmSettings: TfrmSettings
       Font.Name = 'MS Sans Serif'
       Font.Style = [fsUnderline]
       ParentFont = False
+      Visible = False
       OnClick = Label11Click
     end
     object txtMaxRetries: TLabeledEdit
@@ -321,7 +321,7 @@ object frmSettings: TfrmSettings
     end
     object chkSubmitStreams: TCheckBox
       Left = 4
-      Top = 120
+      Top = 96
       Width = 249
       Height = 21
       Caption = 'Submit stream urls to stream database'
@@ -329,12 +329,13 @@ object frmSettings: TfrmSettings
     end
     object chkRelay: TCheckBox
       Left = 4
-      Top = 92
+      Top = 228
       Width = 249
       Height = 23
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Enable local ICE-Server to listen to streams'
       TabOrder = 3
+      Visible = False
     end
   end
   object pnlPlugins: TPanel

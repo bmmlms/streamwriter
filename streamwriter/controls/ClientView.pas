@@ -38,7 +38,7 @@ type
   end;
   PClientNodeData = ^TClientNodeData;
 
-  TEntryTypes = (etStream, etRelay, etFile);
+  TEntryTypes = (etStream, {etRelay,} etFile);
 
   TNodeDataArray = array of PClientNodeData;
 
@@ -157,15 +157,30 @@ var
 begin
   inherited;
   Result := inherited;
-  if ((Kind = ikNormal) or (Kind = ikSelected)) and (Column = 0) then
+  //if ((Kind = ikNormal) or (Kind = ikSelected)) then
   begin
     NodeData := GetNodeData(Node);
-    Index := 0;
-    case NodeData.Client.State of
-      csStopped:
-        Index := 1;
-      csIOError:
-        Index := 1;
+    case Column of
+      0:
+        begin
+          case Kind of
+            ikState:
+              begin
+                Index := 0;
+                case NodeData.Client.State of
+                  csStopped:
+                    Index := 1;
+                  csIOError:
+                    Index := 1;
+                end;
+              end;
+            ikNormal, ikSelected:
+              begin
+                if NodeData.Client.Playing and (NodeData.Client.State = csConnected) then
+                  Index := 2;
+              end;
+          end;
+        end;
     end;
   end;
 end;
@@ -428,7 +443,8 @@ end;
 procedure TMClientView.DoDragging(P: TPoint);
 var
   i: Integer;
-  UseRelay, UseFile: Boolean;
+  //UseRelay: Boolean;
+  UseFile: Boolean;
   Entries: TPlaylistEntryArray;
   Client: TICEClient;
   Clients: TClientArray;
@@ -436,16 +452,16 @@ begin
   if FDragSource.DragInProgress then
     Exit;
 
-  UseRelay := AppGlobals.Relay;
+  //UseRelay := AppGlobals.Relay;
   UseFile := True;
 
   Clients := NodesToClients(GetNodes(True));
   FDragSource.Files.Clear;
   for Client in Clients do
   begin
-    if AppGlobals.Relay then
-      if not Client.Active then
-        UseRelay := False;
+    //if AppGlobals.Relay then
+    //  if not Client.Active then
+    //    UseRelay := False;
     if not Client.Active then
       UseFile := False;
   end;
@@ -453,14 +469,14 @@ begin
   SetLength(Entries, 0);
 
   case AppGlobals.DefaultAction of
-    caStartStop:
-      if UseRelay then
-        Entries := GetEntries(etRelay);
+    //caStartStop:
+      //if UseRelay then
+      //  Entries := GetEntries(etRelay);
     caStream:
       Entries := GetEntries(etStream);
-    caRelay:
-      if UseRelay then
-        Entries := GetEntries(etRelay);
+    //caRelay:
+    //  if UseRelay then
+    //    Entries := GetEntries(etRelay);
     caFile:
       if UseFile then
         Entries := GetEntries(etFile);
@@ -496,8 +512,8 @@ begin
     else
       Name := Client.StreamName;
 
-    if (T = etRelay) and (not Client.Active) then
-      Add := False;
+    //if (T = etRelay) and (not Client.Active) then
+    //  Add := False;
     if (T = etFile) and (Client.Filename = '') then
       Add := False;
 
@@ -505,7 +521,7 @@ begin
     begin
       case T of
         etStream: URL := Client.StartURL;
-        etRelay: URL := Client.RelayURL;
+        //etRelay: URL := Client.RelayURL;
         etFile: URL := Client.Filename;
       end;
 

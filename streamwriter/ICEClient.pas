@@ -102,7 +102,7 @@ type
     function FGetPlaying: Boolean;
     function ParsePlaylist: Boolean;
     function GetURL: string;
-    function FGetRelayURL: string;
+    //function FGetRelayURL: string;
 
     procedure ThreadDebug(Sender: TObject);
     procedure ThreadAddRecent(Sender: TObject);
@@ -125,8 +125,8 @@ type
     procedure WriteDebug(Text, Data: string); overload;
     procedure WriteDebug(Text: string); overload;
 
-    procedure AddRelayThread(Thread: TSocketThread);
-    procedure RemoveRelayThread(Thread: TSocketThread);
+    //procedure AddRelayThread(Thread: TSocketThread);
+    //procedure RemoveRelayThread(Thread: TSocketThread);
 
     procedure StartPlay;
     procedure StopPlay;
@@ -154,7 +154,7 @@ type
     property URLs: TURLList read FURLs;
     property ContentType: string read FContentType;
     property Filename: string read FFilename;
-    property RelayURL: string read FGetRelayURL;
+    //property RelayURL: string read FGetRelayURL;
     property UseFilter: TUseFilters read FUseFilter write FUseFilter;
 
     property SkipShort: Boolean read FSkipShort;
@@ -237,19 +237,16 @@ begin
   Disconnect;
 end;
 
+{
 procedure TICEClient.AddRelayThread(Thread: TSocketThread);
-var
-  Info: PRelayInfo;
 begin
   if FICEThread <> nil then
   begin
     WriteDebug('Adding relay-thread ' + IntToStr(Thread.Handle));
-    New(Info);
-    Info.Thread := Thread;
-    Info.FirstSent := False;
     FICEThread.LockRelay;
     try
-      FICEThread.RelayThreads.Add(Info);
+      FICEThread.RelayThreads.Add(TRelayThread(Thread));
+      FICEThread.StartRelay(TRelayThread(Thread));
     finally
       FICEThread.UnlockRelay;
     end;
@@ -265,10 +262,10 @@ begin
     FICEThread.LockRelay;
     try
       for i := 0 to FICEThread.RelayThreads.Count - 1 do
-        if FICEThread.RelayThreads[i].Thread = Thread then
+        if FICEThread.RelayThreads[i] = Thread then
         begin
           WriteDebug('Removing relay-thread ' + IntToStr(Thread.Handle));
-          Dispose(FICEThread.RelayThreads[i]);
+          FICEThread.RelayThreads[i].Terminate;
           FICEThread.RelayThreads.Delete(i);
           Break;
         end;
@@ -277,6 +274,7 @@ begin
     end;
   end;
 end;
+}
 
 procedure TICEClient.StartPlay;
 begin
@@ -373,9 +371,19 @@ begin
 end;
 
 function TICEClient.FGetActive: Boolean;
-var
-  C: Integer;
+//var
+//  C: Integer;
 begin
+  // REMARK:
+  // Das Lock ist hier raus, weil das ganz schön mies sein kann. GUI ist in Timer-Funktion,
+  // die den Speed etc anzeigt. Thread ist z.B. in StreamChunkReceived und dort im Lock,
+  // kurz vor dem Synchronize(), was wegen OnDebug() passiert. Nun geht die GUI weiter,
+  // und will in den Lock rein (Timer ruft FGetActive auf). Thread hat Lock und wartet
+  // auf Gelegenheit, den Sync zu machen. Das nennt man dann Deadlock!
+  // Also, falls es mal wieder Hackt: Haupt-Thread darf nie irgendeinen Lock holen!
+  // Das Problem haben AddRelayThread() und RemoveRelayThread() auch noch.
+  // Die fliegen aber bald raus.
+  {
   C := 0;
   if FICEThread <> nil then
   begin
@@ -383,8 +391,9 @@ begin
     C := FICEThread.RelayThreads.Count;
     FICEThread.UnlockRelay;
   end;
+  }
 
-  Result := ((FState <> csStopped) and (FState <> csIOError)) or (FProcessingList.Count > 0) or (C > 0);
+  Result := ((FState <> csStopped) and (FState <> csIOError)) or (FProcessingList.Count > 0); { or (C > 0); }
 end;
 
 function TICEClient.FGetRecording: Boolean;
@@ -405,10 +414,12 @@ begin
   Result := ((FState <> csStopped) and (FState <> csIOError)) and FICEThread.Playing;
 end;
 
+{
 function TICEClient.FGetRelayURL: string;
 begin
   Result := 'http://127.0.0.1:6000/' + StripURL(FStreamName);
 end;
+}
 
 function TICEClient.GetURL: string;
 begin

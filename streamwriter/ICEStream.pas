@@ -553,7 +553,7 @@ begin
         P := PosEx(''';', MetaData, 14);
         Title := Trim(Copy(MetaData, 14, P - 14));
 
-        if (FAudioStream <> nil) and (Title <> FTitle) then
+        if Title <> FTitle then
         begin
           WriteDebug(Format('Track changed, title "%s" now playing', [Title]));
           TitleChanged := True;
@@ -562,7 +562,8 @@ begin
 
         if (Title <> FTitle) and (FMetaCounter >= 3) then
         begin
-          //FStreamTracks.FoundTitle(FAudioStream.Size, Title);
+          if FAudioStream <> nil then
+            FStreamTracks.FoundTitle(FAudioStream.Size, Title);
         end else if Title = FTitle then
         begin
 
@@ -571,7 +572,8 @@ begin
           if FMetaCounter = 2 then
           begin
             WriteDebug(Format('Start of first full song "%s" detected', [Title]));
-            //FStreamTracks.FoundTitle(FAudioStream.Size, Title);
+            if FAudioStream <> nil then
+              FStreamTracks.FoundTitle(FAudioStream.Size, Title);
           end;
         end;
 

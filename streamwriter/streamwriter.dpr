@@ -77,7 +77,7 @@ uses
   About in '..\..\common\forms\About.pas' {frmAbout},
   CheckFilesThread in 'CheckFilesThread.pas',
   ListsTab in 'controls\ListsTab.pas',
-  PlayThread in 'PlayThread.pas',
+  ICEPlayer in 'ICEPlayer.pas',
   UpdatedInfo in '..\..\common\forms\UpdatedInfo.pas' {frmUpdatedInfo};
 
 {$SetPEOptFlags $0140}

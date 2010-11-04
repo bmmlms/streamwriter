@@ -458,8 +458,8 @@ begin
   tabLists := TListsTab.Create(pagMain);
   tabLists.PageControl := pagMain;
 
-  if AppGlobals.Relay then
-    FClients.RelayServer.Start;
+  //if AppGlobals.Relay then
+  //  FClients.RelayServer.Start;
 
   FWasActivated := False;
   FWasShown := False;
@@ -679,6 +679,7 @@ begin
   S.ShowModal;
   Language.Translate(Self, PreTranslate, PostTranslate);
   AppGlobals.PluginManager.ReInitPlugins;
+  {
   if S.RelayChanged then
   begin
     if AppGlobals.Relay then
@@ -686,6 +687,7 @@ begin
     else
       FClients.RelayServer.Stop;
   end;
+  }
   TrayIcon1.Visible := AppGlobals.Tray;
   S.Free;
 end;
@@ -920,9 +922,9 @@ begin
 
   for Client in Clients do
   begin
-    if Client.Active then
-      if AppGlobals.Relay then
-        actTuneInRelay.Enabled := True;
+    //if Client.Active then
+    //  if AppGlobals.Relay then
+    //    actTuneInRelay.Enabled := True;
     if Client.Filename <> '' then
       actTuneInFile.Enabled := True;
   end;
@@ -983,8 +985,10 @@ begin
           mnuStartPlay1.Default := True;
       caStream:
         mnuListenToStream1.Default := True;
+      {
       caRelay:
         mnuListenToRelay1.Default := True;
+      }
       caFile:
         mnuListenToFile1.Default := True;
     end;

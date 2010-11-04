@@ -47,10 +47,12 @@ type
   private
     FTypedStream: THTTPServerStream;
     FResponded: Boolean;
+    FPushOkay: Boolean;
     FStationName: string;
     FContentType: string;
 
     FOnGetStream: TNotifyEvent;
+    FOnNeedStartData: TNotifyEvent;
   protected
     procedure DoReceivedData(Buf: Pointer; Len: Integer); override;
   public
@@ -59,7 +61,9 @@ type
     property StationName: string read FStationName write FStationName;
     property ContentType: string read FContentType write FContentType;
     property RecvStream: THTTPServerStream read FTypedStream;
+    property PushOkay: Boolean read FPushOkay;
     property OnGetStream: TNotifyEvent read FOnGetStream write FOnGetStream;
+    property OnNeedStartData: TNotifyEvent read FOnNeedStartData write FOnNeedStartData;
   end;
 
   TRelayServer = class
@@ -155,6 +159,7 @@ begin
   inherited Create(Handle, S);
   FTypedStream := S;
   FResponded := False;
+  FPushOkay := False;
 end;
 
 procedure TRelayThread.DoReceivedData(Buf: Pointer; Len: Integer);
@@ -172,6 +177,10 @@ begin
                 'content-type: ' + AnsiString(FContentType) + #13#10 +
                 #13#10;
     FSendStream.Add(Response);
+
+    if Assigned(FOnNeedStartData) then
+      FOnNeedStartData(Self);
+    FPushOkay := True;
   end else
     raise Exception.Create('Ungültige Anfrage an Server empfangen');
 end;
