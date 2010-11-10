@@ -12,6 +12,7 @@ const
   BASS_UNICODE = $80000000;
   BASS_POS_BYTE = 0;
   BASS_ACTIVE_PLAYING = 1;
+  BASS_ACTIVE_STALLED = 2;
   BASS_FILEPOS_CURRENT = 0;
   BASS_STREAM_PRESCAN = $20000;
   BASS_STREAM_BLOCK = $100000;
@@ -56,7 +57,8 @@ var
   BASSChannelStop: function(handle: DWORD): BOOL; stdcall;
   BASSChannelSetPosition: function(handle: DWORD; pos: QWORD; mode: DWORD): BOOL; stdcall;
   BASSChannelSetSync: function(handle: DWORD; type_: DWORD; param: QWORD; proc: SYNCPROC; user: Pointer): HSYNC; stdcall;
-  BASSChannelRemoveSync: function (handle: DWORD; sync: HSYNC): BOOL; stdcall;
+  BASSChannelRemoveSync: function(handle: DWORD; sync: HSYNC): BOOL; stdcall;
+  BASSChannelSetAttribute: function(handle, attrib: DWORD; value: Single): BOOL; stdcall;
   BASSStreamFree: function(handle: HSTREAM): BOOL; stdcall;
   BASSStreamPutFileData: function(handle: HSTREAM; buffer: Pointer; length: DWORD): DWORD; stdcall;
   BASSErrorGetCode: function: LongInt; stdcall;
@@ -87,6 +89,7 @@ begin
     BASSChannelSetPosition := GetProcAddress(DLLHandle, 'BASS_ChannelSetPosition');
     BASSChannelSetSync := GetProcAddress(DLLHandle, 'BASS_ChannelSetSync');
     BASSChannelRemoveSync := GetProcAddress(DLLHandle, 'BASS_ChannelRemoveSync');
+    BASSChannelSetAttribute := GetProcAddress(DLLHandle, 'BASS_ChannelSetAttribute');
     BASSStreamFree := GetProcAddress(DLLHandle, 'BASS_StreamFree');
     BASSStreamPutFileData := GetProcAddress(DLLHandle, 'BASS_StreamPutFileData');
     BASSErrorGetCode := GetProcAddress(DLLHandle, 'BASS_ErrorGetCode');

@@ -80,6 +80,7 @@ type
     FSaveAllowedTitle: string;
     FSaveAllowed: Boolean;
     FRecording: Boolean;
+    FRecordingStarted: Boolean;
 
     FStreamTracks: TStreamTracks;
 
@@ -103,6 +104,8 @@ type
     procedure GetSettings;
     procedure StreamTracksDebug(Text, Data: string);
     procedure FreeAudioStream;
+    function StartRecordingInternal: Boolean;
+    procedure StopRecordingInternal;
   protected
     procedure DoHeaderRemoved; override;
   public
@@ -161,6 +164,8 @@ begin
   FTitle := '';
   FSavedFilename := '';
   FSavedTitle := '';
+  FRecording := False;
+  FRecordingStarted := False;
   FAudioType := atNone;
   FDeleteStreams := False;
   FStreamTracks := TStreamTracks.Create;
@@ -198,7 +203,7 @@ end;
 
 procedure TICEStream.DoHeaderRemoved;
 var
-  Dir, Filename: string;
+  Dir: string;
 begin
   inherited;
   GetSettings;
@@ -361,11 +366,25 @@ begin
 end;
 
 procedure TICEStream.StartRecording;
+begin
+  //I := Integer(@FRecordingStarted);
+  //InterlockedExchange(I, Integer(True));
+  FRecordingStarted := True;
+end;
+
+procedure TICEStream.StopRecording;
+begin
+  //I := Integer(@FRecordingStarted);
+  //InterlockedExchange(I, Integer(False));
+  FRecordingStarted := False;
+end;
+
+function TICEStream.StartRecordingInternal: Boolean;
 var
   Dir, Filename: string;
 begin
-  //StopRecording;
-     // TODO: Threadsicherheit.. das hier wird nur von auﬂen aufgerufen!! wie stop auch!
+  Result := False;
+
   if (FAudioStream = nil) and (FAudioType <> atNone) then
   begin
     Dir := FSaveDir;
@@ -393,7 +412,7 @@ begin
     end;
 
     if FMetaCounter > 0 then
-      FMetaCounter := 1; // TODO: Testen.
+      FMetaCounter := 1;
     FStreamTracks.Clear;
 
     // Damit Der ICEStream sich FFilename wieder setzt, so dass aussen das Men¸-Item f¸rs Play an ist.
@@ -401,15 +420,13 @@ begin
       FOnTitleChanged(Self);
 
     FFilename := Filename;
-  end;
 
-  FRecording := True;
+    Result := True;
+  end;
 end;
 
-procedure TICEStream.StopRecording;
+procedure TICEStream.StopRecordingInternal;
 begin
-  // TODO: lalalaaaa threadsicherheit...
-  FRecording := False;
   FreeAudioStream;
 end;
 
@@ -596,9 +613,21 @@ begin
     Exit;
   if HeaderType = 'icy'  then
   begin
-    if (HeaderRemoved) and (Size > 100000) then
+    if (HeaderRemoved) and (Size > 32768) then
     begin
       GetSettings;
+
+      if FRecordingStarted and (not FRecording) then
+      begin
+        if StartRecordingInternal then
+          FRecording := True;
+      end;
+      if (not FRecordingStarted) and FRecording then
+      begin
+        StopRecordingInternal;
+        FRecording := False;
+      end;
+
       ProcessData;
     end;
   end else if HeaderType = 'http' then
@@ -732,8 +761,6 @@ begin
 end;
 
 destructor TStreamTracks.Destroy;
-var
-  i: Integer;
 begin
   Clear;
   inherited;

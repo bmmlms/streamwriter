@@ -132,6 +132,7 @@ type
     procedure StopPlay;
     procedure StartRecording;
     procedure StopRecording;
+    procedure SetVolume(Vol: Integer);
 
     procedure Kill;
     procedure SetSettings(SkipShort: Boolean);
@@ -357,8 +358,6 @@ begin
 end;
 
 procedure TICEClient.Disconnect;
-var
-  i: Integer;
 begin
   if FICEThread = nil then
     Exit;
@@ -847,6 +846,12 @@ end;
 procedure TICEClient.SetSettings(SkipShort: Boolean);
 begin
   FSkipShort := SkipShort;
+end;
+
+procedure TICEClient.SetVolume(Vol: Integer);
+begin
+  if FICEThread <> nil then
+    FICEThread.SetVolume(Vol);
 end;
 
 { TDebugEntry }

@@ -166,6 +166,11 @@ begin
           case Kind of
             ikState:
               begin
+                if NodeData.Client.Recording {and (NodeData.Client.State = csConnected)} then
+                  Index := 0
+                else
+                  Index := 1;
+                {
                 Index := 0;
                 case NodeData.Client.State of
                   csStopped:
@@ -173,10 +178,11 @@ begin
                   csIOError:
                     Index := 1;
                 end;
+                }
               end;
             ikNormal, ikSelected:
               begin
-                if NodeData.Client.Playing and (NodeData.Client.State = csConnected) then
+                if NodeData.Client.Playing {and (NodeData.Client.State = csConnected)} then
                   Index := 2;
               end;
           end;

@@ -25,7 +25,7 @@ uses
   Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
   StdCtrls, Menus, ImgList, Math, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls,
-  HomeCommunication;
+  HomeCommunication, DynBASS;
 
 type
   TModes = (moShow, moLoading, moError, moOldVersion);
@@ -185,6 +185,7 @@ type
 
     procedure TimerScrollOnTimer(Sender: TObject);
     procedure TimerOnTimer(Sender: TObject);
+    procedure PopupMenuPopup(Sender: TObject);
     procedure PopupMenuClick(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); reintroduce;
@@ -252,6 +253,7 @@ begin
   FitColumns;
 
   FPopupMenu := TPopupMenu.Create(Self);
+  FPopupMenu.OnPopup := PopupMenuPopup;
 
   FItemStart := FPopupMenu.CreateMenuItem;
   FItemStart.Caption := _('&Start recording');
@@ -562,6 +564,11 @@ begin
   if Length(Streams) > 0 then
     if Assigned(FOnAction) then
       FOnAction(Self, Action, Streams);
+end;
+
+procedure TMStreamTree.PopupMenuPopup(Sender: TObject);
+begin
+  FItemPlay.Enabled := BassLoaded;
 end;
 
 procedure TMStreamTree.TimerOnTimer(Sender: TObject);

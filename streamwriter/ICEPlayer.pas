@@ -3,7 +3,7 @@ unit ICEPlayer;
 interface
 
 uses
-  Windows, SysUtils, Classes, DynBASS, ExtendedStream, SyncObjs;
+  Windows, SysUtils, Classes, DynBASS, ExtendedStream, SyncObjs, AppData;
 
 type
   TICEPlayer = class
@@ -19,6 +19,7 @@ type
 
     procedure Play;
     procedure Stop;
+    procedure SetVolume(Vol: Integer);
 
     procedure PushData(Buf: Pointer; Len: Integer);
 
@@ -44,7 +45,7 @@ end;
 function BASSRead(buffer: Pointer; length: DWORD; user: Pointer): DWORD; stdcall;
 var
   Mem: TExtendedStream;
-  CopyLen: Integer;
+  CopyLen: Cardinal;
 begin
   SetThreadPriority(GetCurrentThread, THREAD_PRIORITY_TIME_CRITICAL);
 
@@ -70,7 +71,7 @@ end;
 
 function BASSSeek(offset: QWORD; user: Pointer): BOOL; stdcall;
 begin
-
+  Result := BOOL(0);
 end;
 
 { TPlayThread }
@@ -99,17 +100,19 @@ end;
 
 function TICEPlayer.FGetPlaying: Boolean;
 begin
-  Result := (BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING);
+  Result := (BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING) or (BASSChannelIsActive(FPlayer) = BASS_ACTIVE_STALLED);
 end;
 
 procedure TICEPlayer.Play;
 var
   Funcs: BASS_FILEPROCS;
+  State: Cardinal;
 begin
   if FMem.Size < PLAY_START_BUFFER then
     Exit;
 
-  if (FPlayer > 0) and (BASSChannelIsActive(FPlayer) <> BASS_ACTIVE_PLAYING) then
+  State := BASSChannelIsActive(FPlayer);
+  if (FPlayer > 0) and (State <> BASS_ACTIVE_PLAYING) and (State <> BASS_ACTIVE_STALLED) then
   begin
     Stop;
   end;
@@ -121,6 +124,7 @@ begin
     Funcs.seek := BASSSeek;
     Funcs.read := BASSRead;
     FPlayer := BASSStreamCreateFileUser(STREAMFILE_BUFFER, 0, Funcs, Self);
+    SetVolume(AppGlobals.PlayerVolume);
 
     BASSChannelPlay(FPlayer, False);
   end;
@@ -131,6 +135,12 @@ begin
   BASSChannelStop(FPlayer);
   BASSStreamFree(FPlayer);
   FPlayer := 0;
+end;
+
+procedure TICEPlayer.SetVolume(Vol: Integer);
+begin
+  if FPlayer > 0 then
+    BASSChannelSetAttribute(FPlayer, 2, Vol / 100);
 end;
 
 procedure TICEPlayer.PushData(Buf: Pointer; Len: Integer);

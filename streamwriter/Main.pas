@@ -547,10 +547,6 @@ begin
   Left := AppGlobals.MainLeft;
   Top := AppGlobals.MainTop;
 
-  cmdStartPlay.Visible := BassLoaded;
-  cmdStopPlay.Visible := BassLoaded;
-  ToolButton2.Visible := BassLoaded;
-
   Language.Translate(Self);
 end;
 
@@ -917,9 +913,7 @@ begin
   actUseWishlist.Checked := False;
   actUseIgnoreList.Checked := False;
 
-  actPlay.Enabled := False;
-  actStopPlay.Enabled := True;
-
+  B4 := BassLoaded;
   for Client in Clients do
   begin
     //if Client.Active then
@@ -927,7 +921,12 @@ begin
     //    actTuneInRelay.Enabled := True;
     if Client.Filename <> '' then
       actTuneInFile.Enabled := True;
+    if Client.Playing then
+      B4 := True;
   end;
+
+  actPlay.Enabled := False;
+  actStopPlay.Enabled := B4;
 
   if tabClients.ClientView.SelectedCount > 1 then
   begin
@@ -960,7 +959,7 @@ begin
     Client := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True))[0];
     actSkipShort.Checked := Client.SkipShort;
 
-    actPlay.Enabled := True;
+    actPlay.Enabled := BassLoaded;
     //actStopPlay.Enabled := True;
 
     case Client.UseFilter of

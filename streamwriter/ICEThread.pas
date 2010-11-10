@@ -42,7 +42,9 @@ type
     FState: TICEThreadStates;
     FPlayer: TICEPlayer;
     FRecording: Boolean;
+    FRecordingStarted: Boolean;
     FPlaying: Boolean;
+    FPlayingStarted: Boolean;
 
     FRelayThreads: TRelayInfoList;
 
@@ -57,6 +59,11 @@ type
     FPlayBufferLock: TCriticalSection;
     FPlayBuffer: TAudioStreamMemory;
 
+    procedure StartRecordingInternal;
+    procedure StopRecordingInternal;
+    procedure StartPlayInternal;
+    procedure StopPlayInternal;
+
     procedure StreamTitleChanged(Sender: TObject);
     procedure StreamSongSaved(Sender: TObject);
     procedure StreamNeedSettings(Sender: TObject);
@@ -68,6 +75,7 @@ type
   protected
     procedure Execute; override;
 
+    procedure DoStuff; override;
     procedure DoHeaderRemoved; override;
     procedure DoReceivedData(Buf: Pointer; Len: Integer); override;
     procedure DoDisconnected; override;
@@ -85,6 +93,7 @@ type
     procedure StopPlay;
     procedure StartRecording;
     procedure StopRecording;
+    procedure SetVolume(Vol: Integer);
 
     procedure LockRelay;
     procedure UnlockRelay;
@@ -93,8 +102,8 @@ type
     property Title: string read FTitle;
     property State: TICEThreadStates read FState;
 
-    property Recording: Boolean read FRecording;
-    property Playing: Boolean read FPlaying;
+    property Recording: Boolean read FRecordingStarted;
+    property Playing: Boolean read FPlayingStarted;
     property RelayThreads: TRelayInfoList read FRelayThreads;
 
     property OnTitleChanged: TNotifyEvent read FOnTitleChanged write FOnTitleChanged;
@@ -114,16 +123,26 @@ begin
   FTypedStream.SkipShort := SkipShort;
 end;
 
+procedure TICEThread.SetVolume(Vol: Integer);
+begin
+  FPlayer.SetVolume(Vol);
+end;
+
 procedure TICEThread.StartRelay(Thread: TRelayThread);
 begin
   Thread.OnNeedStartData := ThreadNeedStartData;
 end;
 
 procedure TICEThread.StartPlay;
+begin
+  FPlayingStarted := True;
+end;
+
+procedure TICEThread.StartPlayInternal;
 var
   P: Integer;
 begin
-  FPlaying := True;         // TODO: Nicht aus hauptthread aus aufrufen. zumindest von da nicht die aufnahme so direkt wie jetzt starten.
+  FPlaying := True;
   if FPlayBuffer = nil then
     Exit;
 
@@ -143,27 +162,52 @@ begin
     end;
 
     FPlayer.Play;
+
+    if Assigned(FOnStateChanged) then
+      FOnStateChanged(Self);
   end;
 end;
 
 procedure TICEThread.StopPlay;
 begin
+  FPlayingStarted := False;
+end;
+
+procedure TICEThread.StopPlayInternal;
+begin
   FPlaying := False;
   FPlayer.Stop;
-  // Sync(FOnStateChanged); TODO: Das muss, sobald StopPlay nicht mehr vom hauptthread aufgerufen wird :)
-  //                              ich hoffe, dass sich dann der status beim klick auf stop direkt aktualisiert in der liste.
+
+    if Assigned(FOnStateChanged) then
+      FOnStateChanged(Self);
 end;
 
 procedure TICEThread.StartRecording;
 begin
+  FRecordingStarted := True;
+end;
+
+procedure TICEThread.StartRecordingInternal;
+begin
   FRecording := True;
   FTypedStream.StartRecording;
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
 procedure TICEThread.StopRecording;
 begin
+  FRecordingStarted := False;
+end;
+
+procedure TICEThread.StopRecordingInternal;
+begin
   FRecording := False;
   FTypedStream.StopRecording;
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
 procedure TICEThread.StreamNeedSettings(Sender: TObject);
@@ -182,7 +226,10 @@ begin
     FPlayer.Play;
 
   if FPlaying then
+  begin
     FPlayer.PushData(Buf, Len);
+    //WriteDebug(Format('Playbuffer size: %d', [FPlayer.Mem.Size]));
+  end;
 
   if FPlayBuffer = nil then
     Exit;
@@ -307,6 +354,31 @@ begin
   end;
 end;
 
+procedure TICEThread.DoStuff;
+begin
+  inherited;
+
+  if FRecordingStarted and (not FRecording) then
+  begin
+    StartRecordingInternal;
+    FRecording := True;
+  end;
+  if (not FRecordingStarted) and FRecording then
+  begin
+    StopRecordingInternal;
+    FRecording := False;
+  end;
+
+  if FPlayingStarted and (not FPlaying) then
+  begin
+    StartPlayInternal;
+  end;
+  if (not FPlayingStarted) and FPlaying then
+  begin
+    StopPlayInternal;
+  end;
+end;
+
 procedure TICEThread.DoHeaderRemoved;
 begin
   inherited;
@@ -360,7 +432,9 @@ begin
   inherited Create(URL, TICEStream.Create);
 
   FRecording := False;
+  FRecordingStarted := False;
   FPlaying := False;
+  FPlayingStarted := False;
 
   AppGlobals.Lock;
   ProxyEnabled := AppGlobals.ProxyEnabled;
@@ -399,8 +473,6 @@ begin
 end;
 
 destructor TICEThread.Destroy;
-var
-  i: Integer;
 begin
   FPlayer.Free;
   if FPlayBuffer <> nil then

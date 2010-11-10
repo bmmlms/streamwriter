@@ -87,7 +87,7 @@ type
 
     FColTitle: TVirtualTreeColumn;
 
-    function GetNodes(SelectedOnly: Boolean): TNodeArray;
+    //function GetNodes(SelectedOnly: Boolean): TNodeArray;
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -192,6 +192,7 @@ begin
   inherited;
 end;
 
+{
 function TTitleTree.GetNodes(SelectedOnly: Boolean): TNodeArray;
 var
   i: Integer;
@@ -215,6 +216,7 @@ begin
     end;
   end;
 end;
+}
 
 procedure TTitleTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
   TextType: TVSTTextType; var Text: UnicodeString);
@@ -235,12 +237,8 @@ end;
 function TTitleTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
   Column: TColumnIndex; var Ghosted: Boolean;
   var Index: Integer): TCustomImageList;
-var
-  NodeData: PTitleNodeData;
 begin
   Result := inherited;
-
-  NodeData := GetNodeData(Node);
 
   if Column = 0 then
     if FType = 0 then
@@ -335,7 +333,7 @@ end;
 
 procedure TTitlePanel.RemoveClick(Sender: TObject);
 var
-  i, n: Integer;
+  i: Integer;
   Node: PVirtualNode;
   NodeData: PTitleNodeData;
   Remove: TNodeArray;

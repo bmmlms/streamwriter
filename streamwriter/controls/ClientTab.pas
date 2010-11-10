@@ -26,7 +26,8 @@ uses
   MControls, ClientView, StreamBrowserView, StreamDebugView, StreamInfoView,
   LanguageObjects, HomeCommunication, StationCombo, Menus, ActnList, ImgList,
   RecentManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
-  GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs, Graphics;
+  GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs,
+  Graphics;
 
 type
   TSidebar = class(TPageControl)
@@ -73,6 +74,8 @@ type
 
   TClientTab = class(TMainTabSheet)
   private
+    FToolbarPanel: TPanel;
+    FVolumeTrackbar: TTrackBar;
     FToolbar: TToolBar;
     FAddressBar: TClientAddressBar;
     FClientView: TMClientView;
@@ -90,6 +93,7 @@ type
     FActionRemove: TAction;
     FActionShowSideBar: TAction;
     FActionPlay: TAction;
+    FActionStopPlay: TAction;
     //FActionTuneInRelay: TAction;
     FActionTuneInFile: TAction;
     FActionTuneInStream: TAction;
@@ -99,6 +103,7 @@ type
     FOnTrackAdded: TTrackEvent;
     FOnTrackRemoved: TTrackEvent;
     FOnAddIgnoreList: TStringEvent;
+    FOnSetVolume: TIntegerEvent;
 
     procedure ShowInfo;
 
@@ -113,7 +118,7 @@ type
     procedure ActionSavePlaylistRelayExecute(Sender: TObject);
     procedure ActionSavePlaylistFileExecute(Sender: TObject);
     procedure ActionTuneInStreamExecute(Sender: TObject);
-    procedure ActionTuneInRelayExecute(Sender: TObject);
+    //procedure ActionTuneInRelayExecute(Sender: TObject);
     procedure ActionTuneInFileExecute(Sender: TObject);
 
     procedure ClientManagerDebug(Sender: TObject);
@@ -134,6 +139,8 @@ type
     procedure StationsStreamChanged(Sender: TObject; Stream: TStreamEntry);
 
     procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
+
+    procedure VolumeTrackbarChange(Sender: TObject);
 
     procedure AddressBarStart(Sender: TObject);
 
@@ -162,6 +169,7 @@ type
     property OnTrackAdded: TTrackEvent read FOnTrackAdded write FOnTrackAdded;
     property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
     property OnAddIgnoreList: TStringEvent read FOnAddIgnoreList write FOnAddIgnoreList;
+    property OnSetVolume: TIntegerEvent read FOnSetVolume write FOnSetVolume;
   end;
 
 implementation
@@ -171,7 +179,6 @@ implementation
 constructor TClientAddressBar.Create(AOwner: TComponent);
 begin
   inherited;
-
 
 end;
 
@@ -425,11 +432,11 @@ begin
   SavePlaylist(Entries, True);
 end;
 
-procedure TClientTab.ActionTuneInRelayExecute(Sender: TObject);
-//var
-//  Entries: TPlaylistEntryArray;
-begin
 {
+procedure TClientTab.ActionTuneInRelayExecute(Sender: TObject);
+var
+  Entries: TPlaylistEntryArray;
+begin
   if Assigned(FOnUpdateButtons) then
     FOnUpdateButtons(Self);
   if FActionTuneInRelay.Enabled then
@@ -437,8 +444,8 @@ begin
     Entries := FClientView.GetEntries(etRelay);
     SavePlaylist(Entries, True);
   end;
-}
 end;
+}
 
 procedure TClientTab.ActionTuneInFileExecute(Sender: TObject);
 var
@@ -548,31 +555,53 @@ begin
   FAddressBar.Setup;
   FAddressBar.OnStart := AddressBarStart;
 
+  FToolbarPanel := TPanel.Create(Self);
+  FToolbarPanel.Align := alTop;
+  FToolbarPanel.BevelOuter := bvNone;
+  FToolbarPanel.Parent := Self;
+  FToolbarPanel.ClientHeight := 24;
+
   FToolbar := Toolbar;
+  FToolbar.Align := alLeft;
+  FToolbar.Width := FToolbarPanel.ClientWidth - 130;
   FToolbar.Height := 24;
-  FToolbar.Parent := Self;
+  FToolbar.Parent := FToolbarPanel;
+
+  FVolumeTrackbar := TTrackBar.Create(Self);
+  FVolumeTrackbar.Max := 100;
+  FVolumeTrackbar.Min := 0;
+  FVolumeTrackbar.Position := AppGlobals.PlayerVolume;
+  FVolumeTrackbar.BorderWidth := 0;
+  FVolumeTrackbar.ThumbLength := 20;
+  FVolumeTrackbar.TickStyle := tsNone;
+  FVolumeTrackbar.Width := 120;
+  FVolumeTrackbar.Align := alRight;
+  FVolumeTrackbar.OnChange := VolumeTrackbarChange;
+  FVolumeTrackbar.Parent := FToolbarPanel;
+
+  //FActionTuneInRelay := GetAction('actTuneInRelay');
+  //FActionTuneInRelay.OnExecute := ActionTuneInRelayExecute;
+
+  FActionPlay := GetAction('actPlay');
+  FActionStopPlay := GetAction('actStopPlay');
+  FActionTuneInStream := GetAction('actTuneInStream');
+  FActionTuneInFile := GetAction('actTuneInFile');
+  FActionRemove := GetAction('actRemove');
+  FActionShowSideBar := GetAction('actShowSideBar');
+
+  FActionPlay.OnExecute := ActionPlayExecute;
+  FActionStopPlay.OnExecute := ActionPlayStopExecute;
+  FActionTuneInStream.OnExecute := ActionTuneInStreamExecute;
+  FActionTuneInFile.OnExecute := ActionTuneInFileExecute;
+  FActionRemove.OnExecute := ActionRemoveExecute;
+  FActionShowSideBar.OnExecute := ActionShowSideBarExecute;
 
   GetAction('actStart').OnExecute := ActionStartExecute;
   GetAction('actStop').OnExecute := ActionStopExecute;
-  FActionRemove := GetAction('actRemove');
-  FActionRemove.OnExecute := ActionRemoveExecute;
   GetAction('actResetData').OnExecute := ActionResetDataExecute;
-  FActionShowSideBar := GetAction('actShowSideBar');
-  FActionShowSideBar.OnExecute := ActionShowSideBarExecute;
-  GetAction('actTuneInStream').OnExecute := ActionTuneInStreamExecute;
-  GetAction('actTuneInRelay').OnExecute := ActionTuneInRelayExecute;
-  GetAction('actTuneInFile').OnExecute := ActionTuneInFileExecute;
   GetAction('actSavePlaylistStream').OnExecute := ActionSavePlaylistStreamExecute;
   GetAction('actSavePlaylistRelay').OnExecute := ActionSavePlaylistRelayExecute;
   GetAction('actSavePlaylistFile').OnExecute := ActionSavePlaylistFileExecute;
-
-  GetAction('actPlay').OnExecute := ActionPlayExecute;
-  GetAction('actStopPlay').OnExecute := ActionPlayStopExecute;
-
-  FActionPlay := GetAction('actPlay');
-  //FActionTuneInRelay := GetAction('actTuneInRelay');
-  FActionTuneInFile := GetAction('actTuneInFile');
-  FActionTuneInStream := GetAction('actTuneInStream');
 
   FClientView := TMClientView.Create(Self, Popup);
   FClientView.Parent := Self;
@@ -739,7 +768,7 @@ begin
         if Length(Cmp) >= 1 then
         begin
           for n := 1 to Length(Cmp) do
-            if (not (Cmp[n] in ['a'..'z'])) and (not (Cmp[n] in ['0'..'9'])) then
+            if (not CharInSet(Cmp[n], ['a'..'z'])) and (not CharInSet(Cmp[n], ['0'..'9'])) then
               Cmp[n] := '*';
           Cmp := '*' + Cmp + '*';
           if Like(LowerCase(Title), Cmp) then
@@ -759,7 +788,7 @@ begin
         if Length(Cmp) >= 1 then
         begin
           for n := 1 to Length(Cmp) do
-            if (not (Cmp[n] in ['a'..'z'])) and (not (Cmp[n] in ['0'..'9'])) then
+            if (not CharInSet(Cmp[n], ['a'..'z'])) and (not CharInSet(Cmp[n], ['0'..'9'])) then
               Cmp[n] := '*';
           Cmp := '*' + Cmp + '*';
           if Like(LowerCase(Title), Cmp) then
@@ -900,7 +929,10 @@ begin
         else
           Clients[0].Client.StartRecording;
       caStreamIntegrated:
-        FActionPlay.Execute;
+        if Clients[0].Client.Playing then
+          FActionStopPlay.Execute
+        else
+          FActionPlay.Execute;
       caStream:
         FActionTuneInStream.Execute;
       //caRelay: ;
@@ -1056,6 +1088,19 @@ begin
       end;
     oaSave:
       SavePlaylist(Entries, False);
+  end;
+end;
+
+procedure TClientTab.VolumeTrackbarChange(Sender: TObject);
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+begin
+  AppGlobals.PlayerVolume := FVolumeTrackbar.Position;
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(False));
+  for Client in Clients do
+  begin
+    Client.SetVolume(FVolumeTrackbar.Position);
   end;
 end;
 

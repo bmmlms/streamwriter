@@ -54,6 +54,8 @@ type
     FMinDiskSpace: Integer;
     FDefaultAction: TClientActions;
     FDefaultFilter: TUseFilters;
+    FPlayerVolume: Integer;
+
     FHeaderWidth: TIntArray;
 
     FPluginManager: TPluginManager;
@@ -92,6 +94,8 @@ type
     property MinDiskSpace: Integer read FMinDiskSpace write FMinDiskSpace;
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
     property DefaultFilter: TUseFilters read FDefaultFilter write FDefaultFilter;
+    property PlayerVolume: Integer read FPlayerVolume write FPlayerVolume;
+
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
 
     property DataFile: string read FGetDataFile;
@@ -303,6 +307,7 @@ begin
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
   FStorage.Read('DefaultAction', DefaultActionTmp, Integer(caStartStop));
   FStorage.Read('DefaultFilter', DefaultFilterTmp, Integer(ufNone));
+  FStorage.Read('PlayerVolume', FPlayerVolume, 100);
 
   FStorage.Read('HeaderWidth0', i, -1, 'Cols');
   if i = -1 then
@@ -362,6 +367,7 @@ begin
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
   FStorage.Write('DefaultFilter', Integer(FDefaultFilter));
+  FStorage.Write('PlayerVolume', FPlayerVolume);
 
   for i := 0 to High(FHeaderWidth) do
     if i <> 1 then
