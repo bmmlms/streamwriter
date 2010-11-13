@@ -143,7 +143,7 @@ object frmSettings: TfrmSettings
     object chkDeleteStreams: TCheckBox
       Left = 4
       Top = 208
-      Width = 245
+      Width = 281
       Height = 21
       Caption = 'Delete stream-files when recording stops'
       TabOrder = 2
@@ -151,7 +151,7 @@ object frmSettings: TfrmSettings
     object chkAddSavedToIgnore: TCheckBox
       Left = 4
       Top = 232
-      Width = 245
+      Width = 281
       Height = 21
       Caption = 'Automatically add saved titles to ignore list'
       TabOrder = 3
@@ -164,9 +164,9 @@ object frmSettings: TfrmSettings
       Style = csDropDownList
       TabOrder = 4
       Items.Strings = (
-        'Use no filter'
-        'Use wish filter'
-        'Use ignore filter')
+        'Save every song'
+        'Use wishlist'
+        'Use ignorelist')
     end
   end
   object pnlMain: TPanel

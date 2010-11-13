@@ -29,7 +29,7 @@ object frmWizard: TfrmWizard
       233)
     object Label6: TLabel
       Left = 24
-      Top = 28
+      Top = 128
       Width = 365
       Height = 77
       Anchors = [akLeft, akTop, akRight]
@@ -39,11 +39,12 @@ object frmWizard: TfrmWizard
         'ng the provided context-menu items or by dragging the stream int' +
         'o your player. This might cause warnings from the firewall, so i' +
         't is disabled by default.'
+      Visible = False
       WordWrap = True
     end
     object Label1: TLabel
       Left = 24
-      Top = 132
+      Top = 28
       Width = 365
       Height = 77
       Anchors = [akLeft, akTop, akRight]
@@ -57,15 +58,16 @@ object frmWizard: TfrmWizard
     end
     object chkRelay: TCheckBox
       Left = 8
-      Top = 4
+      Top = 104
       Width = 253
       Height = 21
       Caption = 'Enable local ICE-Server to listen to streams'
       TabOrder = 0
+      Visible = False
     end
     object chkSubmitStreams: TCheckBox
       Left = 8
-      Top = 108
+      Top = 4
       Width = 257
       Height = 21
       Caption = 'Submit stream urls to stream database'

@@ -478,6 +478,7 @@ var
   Clients: TNodeDataArray;
   i: Integer;
 begin
+  {$IFDEF DEBUG}
   Clients := FClientView.NodesToData(FClientView.GetNodes(False));
   for i := 0 to Length(Clients) - 1 do
     if Clients[i].Client = FSideBar.FDebugView.DebugView.Client then
@@ -485,6 +486,7 @@ begin
       Clients[i].Client.DebugLog.Clear;
       Break;
     end;
+  {$ENDIF}
 end;
 
 destructor TClientTab.Destroy;
@@ -609,7 +611,6 @@ begin
   FClientView.Visible := True;
   FClientView.PopupMenu := Popup;
   FClientView.Images := ClientImages;
-  FClientView.StateImages := ClientImages;
   FClientView.OnChange := FClientViewChange;
   FClientView.OnDblClick := FClientViewDblClick;
   FClientView.OnKeyPress := FClientViewKeyPress;
@@ -636,7 +637,9 @@ begin
   FSideBar.Visible := True;
   FSideBar.Init(HomeCommunication);
 
+  {$IFDEF DEBUG}
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
+  {$ENDIF}
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
   //FSideBar.FInfoView.InfoView.Tree.OnAction := StreamInfoAction;
 
@@ -721,10 +724,12 @@ end;
 
 procedure TClientTab.ClientManagerDebug(Sender: TObject);
 begin
+  {$IFDEF DEBUG}
   if FSideBar.FDebugView.DebugView.Client = Sender then
   begin
     FSideBar.FDebugView.ShowDebug(TICEClient(Sender));
   end;
+  {$ENDIF}
 end;
 
 procedure TClientTab.ClientManagerICYReceived(Sender: TObject;
@@ -838,8 +843,10 @@ begin
 
   FClientView.RemoveClient(Client);
 
+  {$IFDEF DEBUG}
   if FSidebar.FDebugView.DebugView.Client = Client then
     FSidebar.FDebugView.ShowDebug(nil);
+  {$ENDIF}
 
   ShowInfo;
 end;
@@ -906,6 +913,7 @@ begin
     OnUpdateButtons(Self);
   ShowInfo;
 
+  {$IFDEF DEBUG}
   if FClientView.SelectedCount = 1 then
   begin
     Clients := FClientView.NodesToData(FClientView.GetNodes(True));
@@ -913,6 +921,7 @@ begin
       FSideBar.FDebugView.ShowDebug(Clients[0].Client);
   end else
     FSideBar.FDebugView.ShowDebug(nil);
+  {$ENDIF}
 end;
 
 procedure TClientTab.FClientViewDblClick(Sender: TObject);
@@ -927,7 +936,12 @@ begin
         if Clients[0].Client.Recording then
           Clients[0].Client.StopRecording
         else
-          Clients[0].Client.StartRecording;
+        begin
+          if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
+            MsgBox(Handle, _('Available disk space is below the set limit, so recording will not start.'), _('Info'), MB_ICONINFORMATION)
+          else
+            Clients[0].Client.StartRecording;
+        end;
       caStreamIntegrated:
         if Clients[0].Client.Playing then
           FActionStopPlay.Execute
@@ -967,7 +981,7 @@ begin
     end;
   end;
 
-  if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
+  if (not StartPlay) and (not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace)) then
   begin
     Result := False;
     MsgBox(Handle, _('Available disk space is below the set limit, so recording will not start.'), _('Info'), MB_ICONINFORMATION);
@@ -1137,17 +1151,23 @@ begin
   FPage2.PageControl := Self;
   FPage2.Caption := _('Info');
 
+  {$IFDEF DEBUG}
   FPage3 := TTabSheet.Create(Self);
   FPage3.PageControl := Self;
   FPage3.Caption := _('Log');
+  {$ENDIF}
 
   FBrowserView := TMStreamBrowserView.Create(Self, HomeCommunication);
   FInfoView := TMStreamInfoView.Create(Self);
+  {$IFDEF DEBUG}
   FDebugView := TMStreamDebugView.Create(Self);
+  {$ENDIF}
 
   FBrowserView.Parent := FPage1;
   FInfoView.Parent := FPage2;
+  {$IFDEF DEBUG}
   FDebugView.Parent := FPage3;
+  {$ENDIF}
 end;
 
 end.

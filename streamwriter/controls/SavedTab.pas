@@ -180,7 +180,7 @@ begin
 
   FItemPlay := CreateMenuItem;
   FItemPlay.Caption := _('&Play');
-  FItemPlay.ImageIndex := 0;
+  FItemPlay.ImageIndex := 33;
   Items.Add(FItemPlay);
 
   FItemCut := CreateMenuItem;
@@ -301,7 +301,7 @@ begin
   FPlay := TToolButton.Create(Self);
   FPlay.Parent := Self;
   FPlay.Hint := _('Play');
-  FPlay.ImageIndex := 0;
+  FPlay.ImageIndex := 33;
 
   FSep1 := TToolButton.Create(Self);
   FSep1.Parent := Self;

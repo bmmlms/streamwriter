@@ -671,6 +671,7 @@ begin
         end;
       tsRetrying:
         begin
+          FTitle := '';
           FState := csRetrying;
         end;
       tsIOError:

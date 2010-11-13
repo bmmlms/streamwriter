@@ -140,8 +140,8 @@ procedure TListsTab.Setup(Streams: TDataLists; Images: TImageList);
 begin
   Caption := _('Filters');
 
-  FWishPanel.Setup(Streams.SaveList, Images, _('Wish list'));
-  FIgnorePanel.Setup(Streams.IgnoreList, Images, _('Ignore list'));
+  FWishPanel.Setup(Streams.SaveList, Images, _('Wishlist'));
+  FIgnorePanel.Setup(Streams.IgnoreList, Images, _('Ignorelist'));
 
   FWishPanel.FTree.FType := 0;
   FIgnorePanel.FTree.FType := 1;
@@ -328,7 +328,7 @@ begin
     FList.Add(Title);
     FAddEdit.Text := '';
   end else
-    MsgBox(Handle, _('Please enter a string to add to list.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('Please enter a pattern to add to list.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TTitlePanel.RemoveClick(Sender: TObject);

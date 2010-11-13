@@ -835,7 +835,7 @@ begin
 
   Active := False;
   for i := 0 to FClients.Count - 1 do
-    if FClients[i].Active then
+    if FClients[i].Recording then
     begin
       Active := True;
       Break;
@@ -1044,7 +1044,7 @@ begin
   Clients := tabClients.ClientView.NodesToData(tabClients.ClientView.GetNodes(False));
 
   for Client in Clients do
-    if Client.Client.Active then
+    if Client.Client.Recording then
     begin
       Rec := True;
       Break;
@@ -1052,7 +1052,7 @@ begin
 
   if Rec then
   begin
-    if TfrmMsgDlg.ShowMsg(Self, _('At least one connection is active at the moment. Exiting the application will abort streaming.'#13#10'Do you really want to quit?'), 2, 1) = mtCancel then
+    if TfrmMsgDlg.ShowMsg(Self, _('You are recording at least one stream at the moment. Exiting the application will abort streaming.'#13#10'Do you really want to quit?'), 2, 1) = mtCancel then
     begin
       Result := False;
     end;

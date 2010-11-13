@@ -164,26 +164,16 @@ begin
       0:
         begin
           case Kind of
-            ikState:
-              begin
-                if NodeData.Client.Recording {and (NodeData.Client.State = csConnected)} then
-                  Index := 0
-                else
-                  Index := 1;
-                {
-                Index := 0;
-                case NodeData.Client.State of
-                  csStopped:
-                    Index := 1;
-                  csIOError:
-                    Index := 1;
-                end;
-                }
-              end;
             ikNormal, ikSelected:
               begin
-                if NodeData.Client.Playing {and (NodeData.Client.State = csConnected)} then
-                  Index := 2;
+                if NodeData.Client.Playing and NodeData.Client.Recording then
+                  Index := 2
+                else if NodeData.Client.Recording then
+                  Index := 0
+                else if NodeData.Client.Playing then
+                  Index := 1
+                else
+                  Index := 3;
               end;
           end;
         end;
@@ -220,7 +210,7 @@ begin
         Text := NodeData.Client.StreamName;
     1:
       if NodeData.Client.Title = '' then
-        if NodeData.Client.State = csConnected then
+        if (NodeData.Client.State = csConnected) or (NodeData.Client.State = csConnecting) then
           Text := _('Unknown')
         else
           Text := _('')
@@ -239,7 +229,7 @@ begin
         csConnected:
           Text := _('Connected');
         csRetrying:
-          Text := _('Retrying...');
+          Text := _('Waiting...');
         csStopped:
           Text := _('Stopped');
         csStopping:
