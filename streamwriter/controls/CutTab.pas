@@ -229,7 +229,7 @@ begin
   FPlay := TToolButton.Create(Self);
   FPlay.Parent := Self;
   FPlay.Hint := _('Play');
-  FPlay.ImageIndex := 0;
+  FPlay.ImageIndex := 33;
 
   FSep2 := TToolButton.Create(Self);
   FSep2.Parent := Self;
