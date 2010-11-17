@@ -307,7 +307,7 @@ begin
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
   FStorage.Read('DefaultAction', DefaultActionTmp, Integer(caStartStop));
   FStorage.Read('DefaultFilter', DefaultFilterTmp, Integer(ufNone));
-  FStorage.Read('PlayerVolume', FPlayerVolume, 100);
+  FStorage.Read('PlayerVolume', FPlayerVolume, 50);
 
   FStorage.Read('HeaderWidth0', i, -1, 'Cols');
   if i = -1 then

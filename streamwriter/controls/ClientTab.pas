@@ -30,6 +30,14 @@ uses
   Graphics;
 
 type
+  TVolumePanel = class(TPanel)
+  private
+    FImage: TImage;
+    FTrackbar: TTrackBar;
+  public
+    procedure Setup;
+  end;
+
   TSidebar = class(TPageControl)
   private
     FPage1, FPage2, FPage3: TTabSheet;
@@ -75,7 +83,7 @@ type
   TClientTab = class(TMainTabSheet)
   private
     FToolbarPanel: TPanel;
-    FVolumeTrackbar: TTrackBar;
+    FVolume: TVolumePanel;
     FToolbar: TToolBar;
     FAddressBar: TClientAddressBar;
     FClientView: TMClientView;
@@ -569,17 +577,12 @@ begin
   FToolbar.Height := 24;
   FToolbar.Parent := FToolbarPanel;
 
-  FVolumeTrackbar := TTrackBar.Create(Self);
-  FVolumeTrackbar.Max := 100;
-  FVolumeTrackbar.Min := 0;
-  FVolumeTrackbar.Position := AppGlobals.PlayerVolume;
-  FVolumeTrackbar.BorderWidth := 0;
-  FVolumeTrackbar.ThumbLength := 20;
-  FVolumeTrackbar.TickStyle := tsNone;
-  FVolumeTrackbar.Width := 120;
-  FVolumeTrackbar.Align := alRight;
-  FVolumeTrackbar.OnChange := VolumeTrackbarChange;
-  FVolumeTrackbar.Parent := FToolbarPanel;
+  FVolume := TVolumePanel.Create(Self);
+  FVolume.Parent := FToolbarPanel;
+  FVolume.Width := 140;
+  FVolume.Align := alRight;
+  FVolume.Setup;
+  FVolume.FTrackbar.OnChange := VolumeTrackbarChange;
 
   //FActionTuneInRelay := GetAction('actTuneInRelay');
   //FActionTuneInRelay.OnExecute := ActionTuneInRelayExecute;
@@ -1110,11 +1113,11 @@ var
   Clients: TClientArray;
   Client: TICEClient;
 begin
-  AppGlobals.PlayerVolume := FVolumeTrackbar.Position;
+  AppGlobals.PlayerVolume := FVolume.FTrackbar.Position;
   Clients := FClientView.NodesToClients(FClientView.GetNodes(False));
   for Client in Clients do
   begin
-    Client.SetVolume(FVolumeTrackbar.Position);
+    Client.SetVolume(FVolume.FTrackbar.Position);
   end;
 end;
 
@@ -1168,6 +1171,47 @@ begin
   {$IFDEF DEBUG}
   FDebugView.Parent := FPage3;
   {$ENDIF}
+end;
+
+{ TVolumePanel }
+
+procedure TVolumePanel.Setup;
+var
+  I: TIcon;
+  B: TBitmap;
+begin
+  BevelOuter := bvNone;
+
+  FImage := TImage.Create(Self);
+  FImage.Align := alLeft;
+  FImage.Width := 25;
+  FImage.Parent := Self;
+
+  I := TIcon.Create;
+  B := TBitmap.Create;
+  try
+    I.LoadFromResourceName(HInstance, 'VOLUME');
+    B.Width := 32;
+    B.Height := 32;
+    B.Canvas.Draw(0, 0, I);
+    B.Canvas.StretchDraw(Rect(0, 0, 16, 16), B);
+    B.Width := 16;
+    B.Height := 16;
+    FImage.Canvas.Draw(FImage.Width div 2 - B.Width div 2, ClientHeight div 2 - B.Height div 2, B);
+  finally
+    I.Free;
+    B.Free;
+  end;
+
+  FTrackbar := TTrackBar.Create(Self);
+  FTrackbar.Max := 100;
+  FTrackbar.Min := 0;
+  FTrackbar.Position := AppGlobals.PlayerVolume;
+  FTrackbar.BorderWidth := 0;
+  FTrackbar.ThumbLength := 20;
+  FTrackbar.TickStyle := tsNone;
+  FTrackbar.Align := alClient;
+  FTrackbar.Parent := Self;
 end;
 
 end.
