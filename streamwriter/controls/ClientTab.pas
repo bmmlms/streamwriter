@@ -93,7 +93,6 @@ type
     FClients: TClientManager;
     FStreams: TDataLists;
     FHomeCommunication: THomeCommunication;
-    FDropTarget: TDropComboTarget;
 
     FReceived: UInt64;
     FRefreshInfo: Boolean;
@@ -143,6 +142,7 @@ type
     procedure FClientViewDblClick(Sender: TObject);
     procedure FClientViewKeyPress(Sender: TObject; var Key: Char);
     procedure FClientViewKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure FClientViewStartStreaming(Sender: TObject; URL: string);
 
     procedure StationsStreamChanged(Sender: TObject; Stream: TStreamEntry);
 
@@ -153,9 +153,6 @@ type
     procedure AddressBarStart(Sender: TObject);
 
     procedure DebugClear(Sender: TObject);
-
-    procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
-      APoint: TPoint; var Effect: Integer);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -503,21 +500,6 @@ begin
   inherited;
 end;
 
-procedure TClientTab.DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
-  APoint: TPoint; var Effect: Integer);
-var
-  DropURL: string;
-begin
-  DropURL := string(FDropTarget.URL);
-  if DropURL = '' then
-    DropURL := string(FDropTarget.Text);
-  if DropURL = '' then
-    if FDropTarget.Files.Count > 0 then
-      DropURL := FDropTarget.Files[0];
-  if DropURL <> '' then
-    StartStreaming('', DropURL, False);
-end;
-
 procedure TClientTab.Setup(Toolbar: TToolbar; Actions: TActionList;
   Popup: TPopupMenu; MenuImages,
   ClientImages: TImageList; Clients: TClientManager; Streams: TDataLists;
@@ -618,12 +600,8 @@ begin
   FClientView.OnDblClick := FClientViewDblClick;
   FClientView.OnKeyPress := FClientViewKeyPress;
   FClientView.OnKeyDown := FClientViewKeyDown;
+  FClientView.OnStartStreaming := FClientViewStartStreaming;
   FClientView.Show;
-
-  FDropTarget := TDropComboTarget.Create(Self);
-  FDropTarget.Formats := [mfText, mfURL, mfFile];
-  FDropTarget.Register(FClientView);
-  FDropTarget.OnDrop := DropTargetDrop;
 
   FSplitter := TSplitter.Create(Self);
   FSplitter.Parent := Self;
@@ -895,6 +873,12 @@ begin
   begin
     FActionRemove.Execute;
   end;
+end;
+
+procedure TClientTab.FClientViewStartStreaming(Sender: TObject;
+  URL: string);
+begin
+  StartStreaming('', URL, False);
 end;
 
 procedure TClientTab.FClientViewKeyPress(Sender: TObject;

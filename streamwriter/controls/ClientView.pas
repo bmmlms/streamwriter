@@ -24,7 +24,8 @@ interface
 uses
   Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
   StdCtrls, Menus, ImgList, Math, ICEClient, VirtualTrees, LanguageObjects,
-  Graphics, DragDrop, DragDropFile, Functions, AppData, Tabs;
+  Graphics, DragDrop, DragDropFile, Functions, AppData, Tabs, DropComboTarget,
+  DropSource;
 
 type
   TAccessCanvas = class(TCanvas);
@@ -46,6 +47,7 @@ type
   private
     FPopupMenu: TPopupMenu;
     FDragSource: TDropFileSource;
+    FDropTarget: TDropComboTarget;
 
     FSortColumn: Integer;
     FSortDirection: TSortDirection;
@@ -57,7 +59,12 @@ type
     FColSpeed: TVirtualTreeColumn;
     FColStatus: TVirtualTreeColumn;
 
+    FOnStartStreaming: TStringEvent;
+
     procedure FitColumns;
+
+    procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
+      APoint: TPoint; var Effect: Integer);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -82,6 +89,8 @@ type
     function NodesToData(Nodes: TNodeArray): TNodeDataArray;
     function NodesToClients(Nodes: TNodeArray): TClientArray;
     function GetEntries(T: TEntryTypes): TPlaylistEntryArray;
+
+    property OnStartStreaming: TStringEvent read FOnStartStreaming write FOnStartStreaming;
   end;
 
 implementation
@@ -119,6 +128,11 @@ begin
 
   FPopupMenu := PopupMenu;
   FDragSource := TDropFileSource.Create(Self);
+
+  FDropTarget := TDropComboTarget.Create(Self);
+  FDropTarget.Formats := [mfText, mfURL, mfFile];
+  FDropTarget.Register(Self);
+  FDropTarget.OnDrop := DropTargetDrop;
 
   FSortColumn := 0;
   FSortDirection := sdAscending;
@@ -284,6 +298,22 @@ begin
   FColRcvd.Width := GetTextWidth(FColRcvd.Text);
   FColSpeed.Width := Max(GetTextWidth('11,11KB/s'), GetTextWidth(FColSpeed.Text));
   FColSongs.Width := GetTextWidth(FColSongs.Text);
+end;
+
+procedure TMClientView.DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
+  APoint: TPoint; var Effect: Integer);
+var
+  DropURL: string;
+begin
+  DropURL := string(FDropTarget.URL);
+  if DropURL = '' then
+    DropURL := string(FDropTarget.Text);
+  if DropURL = '' then
+    if FDropTarget.Files.Count > 0 then
+      DropURL := FDropTarget.Files[0];
+
+  if (DropURL <> '') then
+    OnStartStreaming(Self, DropURL);
 end;
 
 function TMClientView.GetClientNodeData(
@@ -488,7 +518,9 @@ begin
     Exit;
 
   DoStateChange([], [tsOLEDragPending, tsOLEDragging, tsClearPending]);
-  FDragSource.Execute(True);
+  FDropTarget.Unregister;
+  FDragSource.Execute(False);
+  FDropTarget.Register(Self);
 end;
 
 function TMClientView.GetEntries(T: TEntryTypes): TPlaylistEntryArray;
