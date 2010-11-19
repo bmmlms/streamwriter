@@ -1163,13 +1163,24 @@ procedure TVolumePanel.Setup;
 var
   I: TIcon;
   B: TBitmap;
+  j: Integer;
+  j2: Integer;
+  ImgPnl: TPanel;
 begin
   BevelOuter := bvNone;
 
+  ImgPnl := TPanel.Create(Self);
+  ImgPnl.BevelOuter := bvNone;
+  ImgPnl.Align := alLeft;
+  ImgPnl.Width := 25;
+  ImgPnl.Parent := Self;
+
   FImage := TImage.Create(Self);
-  FImage.Align := alLeft;
-  FImage.Width := 25;
-  FImage.Parent := Self;
+  FImage.Top := ImgPnl.ClientHeight div 2 - 8;
+  FImage.Left := ImgPnl.ClientWidth div 2 - 8;
+  FImage.Height := 16;
+  FImage.Width := 16;
+  FImage.Parent := ImgPnl;
 
   I := TIcon.Create;
   B := TBitmap.Create;
@@ -1178,10 +1189,12 @@ begin
     B.Width := 32;
     B.Height := 32;
     B.Canvas.Draw(0, 0, I);
+    B.PixelFormat := pf24bit;
     B.Canvas.StretchDraw(Rect(0, 0, 16, 16), B);
     B.Width := 16;
     B.Height := 16;
-    FImage.Canvas.Draw(FImage.Width div 2 - B.Width div 2, ClientHeight div 2 - B.Height div 2, B);
+    FImage.Canvas.Draw(0, 0, B);
+    FImage.Transparent := True;
   finally
     I.Free;
     B.Free;
