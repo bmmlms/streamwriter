@@ -237,6 +237,7 @@ begin
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
       Text.Add(FDonors[i]);
+    Text.Add(_('and everyone who does not want to be mentioned'));
 
     Text.Add('');
     Text.Add('');
@@ -263,6 +264,27 @@ begin
     Text.Add('');
     Text.Add(_('&U&10...and all other sweet people I know!'));
     Text.Add('');
+
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('D1734FA178BF7D5AE50CB1AD54442494');
 
     FProjectThanksText := Text.Text;
   finally
