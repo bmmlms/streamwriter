@@ -76,6 +76,12 @@ type
     chkAddSavedToIgnore: TCheckBox;
     Label15: TLabel;
     lstDefaultFilter: TComboBox;
+    pnlExternalApps: TPanel;
+    txtApp: TLabeledEdit;
+    btnBrowseApp: TSpeedButton;
+    txtAppParams: TLabeledEdit;
+    lblAppParams: TLabel;
+    dlgOpen: TOpenDialog;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure cmdBrowseClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
@@ -90,6 +96,7 @@ type
     procedure chkSkipShortClick(Sender: TObject);
     procedure chkSearchSilenceClick(Sender: TObject);
     procedure chkTrayClick(Sender: TObject);
+    procedure btnBrowseAppClick(Sender: TObject);
   private
     FBrowseDir: Boolean;
     FRelayChanged: Boolean;
@@ -116,11 +123,13 @@ var
   i: Integer;
   Item: TListItem;
 begin
+  FUseTree := True;
+
   inherited Create(AOwner);
 
   FBrowseDir := BrowseDir;
 
-  ClientWidth := 420;
+  ClientWidth := 480;
   ClientHeight := 395;
 
   lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
@@ -172,6 +181,8 @@ begin
 
   txtSilenceLevel.Text := IntToStr(AppGlobals.SilenceLevel);
   txtSilenceLength.Text := IntToStr(AppGlobals.SilenceLength);
+  txtApp.Text := AppGlobals.ExternalApp;
+  txtAppParams.Text := AppGlobals.ExternalAppParams;
 
   AppGlobals.Unlock;
 
@@ -230,6 +241,8 @@ begin
     AppGlobals.SearchSilence := chkSearchSilence.Checked;
   AppGlobals.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
   AppGlobals.SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
+  AppGlobals.ExternalApp := txtApp.Text;
+  AppGlobals.ExternalAppParams := txtAppParams.Text;
   AppGlobals.Unlock;
 
   for i := 0 to lstPlugins.Items.Count - 1 do
@@ -318,6 +331,7 @@ begin
   lstPlugins.Groups[0].Header := _('Post-Processing');
   lblFilePattern.Caption := _('%s = streamname, %a = artist, %t = title, %n = tracknumber'#13#10 +
                               'Backslashes can be used to seperate directories.');
+  lblAppParams.Caption := _('%f = filename');
   if lstPlugins.Selected <> nil then
   begin
     AppGlobals.PluginManager.ReInitPlugins;
@@ -391,6 +405,7 @@ procedure TfrmSettings.RegisterPages;
 begin
   FPageList.Add(TPage.Create('&Settings', pnlMain, 'PROPERTIES'));
   FPageList.Add(TPage.Create('S&treams', pnlStreams, 'START'));
+  FPageList.Add(TPage.Create('&External applications', pnlExternalApps, 'START'));
   FPageList.Add(TPage.Create('&Cut', pnlCut, 'CUT'));
   FPageList.Add(TPage.Create('&Plugins', pnlPlugins, 'PLUGINS'));
   FPageList.Add(TPage.Create('&Advanced', pnlAdvanced, 'MISC'));
@@ -403,12 +418,22 @@ begin
   txtPreview.Text := ValidatePattern;
 end;
 
+procedure TfrmSettings.btnBrowseAppClick(Sender: TObject);
+begin
+  inherited;
+  if dlgOpen.Execute then
+  begin
+    if FileExists(dlgOpen.FileName) then
+      txtApp.Text := dlgOpen.FileName;
+  end;
+end;
+
 function TfrmSettings.CanFinish: Boolean;
 begin
   Result := False;
 
   if not inherited then
-    Exit;
+    Exit;                         // TODO: Die neuen felder von external apps validieren
 
   if Trim(txtMinDiskSpace.Text) = '' then
   begin

@@ -410,7 +410,7 @@ begin
         Error := False;
         for i := 0 to Length(Tracks) - 1 do
         begin
-          if DeleteFile(Tracks[i].Filename) then
+          if Windows.DeleteFile(PChar(Tracks[i].Filename)) or (GetLastError = ERROR_FILE_NOT_FOUND) then
           begin
             FSavedTree.DeleteTrack(Tracks[i]);
             FStreams.StreamList.RemoveTrack(Tracks[i]);

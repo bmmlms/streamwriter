@@ -55,6 +55,8 @@ type
     FDefaultAction: TClientActions;
     FDefaultFilter: TUseFilters;
     FPlayerVolume: Integer;
+    FExternalApp: string;
+    FExternalAppParams: string;
 
     FHeaderWidth: TIntArray;
 
@@ -95,6 +97,8 @@ type
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
     property DefaultFilter: TUseFilters read FDefaultFilter write FDefaultFilter;
     property PlayerVolume: Integer read FPlayerVolume write FPlayerVolume;
+    property ExternalApp: string read FExternalApp write FExternalApp;
+    property ExternalAppParams: string read FExternalAppParams write FExternalAppParams;
 
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
 
@@ -231,9 +235,10 @@ begin
     Text.Add('');
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 2);
+    SetLength(FDonors, 3);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
+    FDonors[2] := 'Reto Pitsch';
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
       Text.Add(FDonors[i]);
@@ -330,6 +335,8 @@ begin
   FStorage.Read('DefaultAction', DefaultActionTmp, Integer(caStartStop));
   FStorage.Read('DefaultFilter', DefaultFilterTmp, Integer(ufNone));
   FStorage.Read('PlayerVolume', FPlayerVolume, 50);
+  FStorage.Read('ExternalApp', FExternalApp, '');
+  FStorage.Read('ExternalAppParams', FExternalAppParams, '"%f"');
 
   FStorage.Read('HeaderWidth0', i, -1, 'Cols');
   if i = -1 then
@@ -390,6 +397,8 @@ begin
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
   FStorage.Write('DefaultFilter', Integer(FDefaultFilter));
   FStorage.Write('PlayerVolume', FPlayerVolume);
+  FStorage.Write('ExternalApp', FExternalApp);
+  FStorage.Write('ExternalAppParams', FExternalAppParams);
 
   for i := 0 to High(FHeaderWidth) do
     if i <> 1 then
