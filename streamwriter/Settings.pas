@@ -476,12 +476,12 @@ end;
 
 procedure TfrmSettings.RegisterPages;
 begin
-  FPageList.Add(TPage.Create('&Settings', pnlMain, 'PROPERTIES'));
-  FPageList.Add(TPage.Create('S&treams', pnlStreams, 'START'));
-  FPageList.Add(TPage.Create('&External applications', pnlExternalApps, 'EXTAPPS'));
-  FPageList.Add(TPage.Create('&Cut', pnlCut, 'CUT'));
-  FPageList.Add(TPage.Create('&Plugins', pnlPlugins, 'PLUGINS'));
-  FPageList.Add(TPage.Create('&Advanced', pnlAdvanced, 'MISC'));
+  FPageList.Add(TPage.Create(_('Settings'), pnlMain, 'PROPERTIES'));
+  FPageList.Add(TPage.Create(_('Streams'), pnlStreams, 'START'));
+  FPageList.Add(TPage.Create(_('External applications'), pnlExternalApps, 'EXTAPPS'));
+  FPageList.Add(TPage.Create(_('Cut'), pnlCut, 'CUT'));
+  FPageList.Add(TPage.Create(_('Plugins'), pnlPlugins, 'PLUGINS'));
+  FPageList.Add(TPage.Create(_('Advanced'), pnlAdvanced, 'MISC'));
   inherited;
 end;
 

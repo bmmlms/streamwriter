@@ -704,7 +704,7 @@ object frmSettings: TfrmSettings
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
-      Caption = '&Hinzuf'#252'gen...'
+      Caption = '&Add...'
       TabOrder = 3
       OnClick = btnAddUpClick
     end
@@ -714,7 +714,7 @@ object frmSettings: TfrmSettings
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
-      Caption = '&Entfernen'
+      Caption = '&Remove'
       Enabled = False
       TabOrder = 4
       OnClick = btnRemoveClick
