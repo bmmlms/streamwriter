@@ -580,6 +580,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Hint = 'Browse...'
       Anchors = [akRight, akBottom]
+      Enabled = False
       Flat = True
       Glyph.Data = {
         36030000424D3603000000000000360000002800000010000000100000000100
@@ -658,6 +659,7 @@ object frmSettings: TfrmSettings
       EditLabel.Width = 91
       EditLabel.Height = 13
       EditLabel.Caption = 'Path to application:'
+      Enabled = False
       ReadOnly = True
       TabOrder = 0
     end
@@ -670,6 +672,7 @@ object frmSettings: TfrmSettings
       EditLabel.Width = 56
       EditLabel.Height = 13
       EditLabel.Caption = 'Parameters:'
+      Enabled = False
       TabOrder = 1
       OnChange = txtAppParamsChange
     end
