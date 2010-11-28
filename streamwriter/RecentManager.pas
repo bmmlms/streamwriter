@@ -521,8 +521,11 @@ var
 begin
   Result := False;
 
-  if AppGlobals.DataFile = '' then
+  if (AppGlobals.SkipSave) or (AppGlobals.DataFile = '') then
+  begin
+    Result := True;
     Exit;
+  end;
 
   CleanUp;
 

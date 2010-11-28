@@ -574,12 +574,12 @@ object frmSettings: TfrmSettings
       294
       273)
     object btnBrowseApp: TSpeedButton
-      Left = 268
-      Top = 20
+      Left = 264
+      Top = 160
       Width = 21
       Height = 21
       Hint = 'Browse...'
-      Anchors = [akTop, akRight]
+      Anchors = [akRight, akBottom]
       Flat = True
       Glyph.Data = {
         36030000424D3603000000000000360000002800000010000000100000000100
@@ -615,20 +615,44 @@ object frmSettings: TfrmSettings
     end
     object lblAppParams: TLabel
       Left = 4
-      Top = 96
-      Width = 285
+      Top = 236
+      Width = 281
       Height = 33
-      Anchors = [akLeft, akTop, akRight]
+      Anchors = [akLeft, akRight, akBottom]
       AutoSize = False
       Caption = '-'
       WordWrap = True
     end
+    object Label16: TLabel
+      Left = 4
+      Top = 4
+      Width = 113
+      Height = 13
+      Caption = 'Configured applications:'
+    end
+    object Label17: TLabel
+      Left = 268
+      Top = 4
+      Width = 22
+      Height = 13
+      Cursor = crHandPoint
+      Alignment = taRightJustify
+      Anchors = [akTop, akRight]
+      Caption = 'Help'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clBlue
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = [fsUnderline]
+      ParentFont = False
+      OnClick = Label17Click
+    end
     object txtApp: TLabeledEdit
       Left = 4
-      Top = 20
-      Width = 257
+      Top = 160
+      Width = 253
       Height = 21
-      Anchors = [akLeft, akTop, akRight]
+      Anchors = [akLeft, akRight, akBottom]
       AutoSize = False
       Color = 15790320
       EditLabel.Width = 91
@@ -639,14 +663,58 @@ object frmSettings: TfrmSettings
     end
     object txtAppParams: TLabeledEdit
       Left = 4
-      Top = 64
-      Width = 285
+      Top = 204
+      Width = 281
       Height = 21
-      Anchors = [akLeft, akTop, akRight]
+      Anchors = [akLeft, akRight, akBottom]
       EditLabel.Width = 56
       EditLabel.Height = 13
       EditLabel.Caption = 'Parameters:'
       TabOrder = 1
+      OnChange = txtAppParamsChange
+    end
+    object lstExternalApps: TListView
+      Left = 4
+      Top = 20
+      Width = 285
+      Height = 89
+      Anchors = [akLeft, akTop, akRight, akBottom]
+      Columns = <
+        item
+          Caption = 'Filename'
+        end
+        item
+          Caption = 'Parameters'
+        end>
+      HideSelection = False
+      ReadOnly = True
+      RowSelect = True
+      TabOrder = 2
+      ViewStyle = vsReport
+      OnChange = lstExternalAppsChange
+      OnDeletion = lstExternalAppsDeletion
+      OnResize = lstExternalAppsResize
+    end
+    object btnAddUp: TButton
+      Left = 96
+      Top = 112
+      Width = 93
+      Height = 25
+      Anchors = [akRight, akBottom]
+      Caption = '&Hinzuf'#252'gen...'
+      TabOrder = 3
+      OnClick = btnAddUpClick
+    end
+    object btnRemove: TButton
+      Left = 196
+      Top = 112
+      Width = 93
+      Height = 25
+      Anchors = [akRight, akBottom]
+      Caption = '&Entfernen'
+      Enabled = False
+      TabOrder = 4
+      OnClick = btnRemoveClick
     end
   end
   object dlgOpen: TOpenDialog

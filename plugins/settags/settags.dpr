@@ -21,9 +21,7 @@ library settags;
 
 uses
   Windows,
-  Messages,
   SysUtils,
-  TlHelp32,
   Mp3FileUtils,
   PluginsShared in '..\..\streamwriter\PluginsShared.pas',
   LanguageObjects in '..\..\..\common\LanguageObjects.pas',

@@ -508,7 +508,7 @@ procedure TCutPaintBox.BuildBuffer;
     T := T - Trunc(T / 60) * 60;
     Sec := Trunc(T);
     T := T - Trunc(T);
-    MSec := Trunc(T * 1000);
+    MSec := (Trunc(T * 1000) div 10) * 10;
     Result := Format('%0.2d:%0.2d.%0.3d', [Min, Sec, MSec]) + ' ' + _('minutes');
   end;
   procedure DrawLineText(ArrayIdx, X: Cardinal);

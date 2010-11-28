@@ -84,11 +84,12 @@ type
 
   TProcessThread = class(TThread)
   private
+  protected
     FData: PPluginProcessInformation;
     FActData: TPluginActData;
     FPlugin: TPlugin;
     FResult: TActResults;
-  protected
+
     procedure Execute; override;
   public
     constructor Create(Data: PPluginProcessInformation; Plugin: TPlugin);
@@ -104,7 +105,6 @@ type
     FAuthor: string;
     FDefaultEnabled: Boolean;
     FDLLHandle: Integer;
-    FActive: Boolean;
 
     FInitialize: TInitialize;
     FAct: TAct;
@@ -113,23 +113,53 @@ type
     FReadName: TGetString;
     FReadHelp: TGetString;
     FReadDefaultEnabled: TGetBoolean;
+  protected
+    FIsInternal: Boolean;
+    FActive: Boolean;
 
-    function FGetName: string;
-    function FGetHelp: string;
+    function FGetName: string; virtual;
+    function FGetHelp: string; virtual;
   public
     constructor Create(Handle: THandle; Filename: string);
     destructor Destroy; override;
 
     procedure Initialize;
-    function ProcessFile(Data: PPluginProcessInformation): TProcessThread;
+    function ProcessFile(Data: PPluginProcessInformation): TProcessThread; virtual;
     function Configure(Handle: Cardinal; ShowMessages: Boolean): Boolean;
 
+    property IsInternal: Boolean read FIsInternal;
     property Filename: string read FFilename;
     property Author: string read FAuthor;
     property Name: string read FGetName;
     property Help: string read FGetHelp;
     property DefaultEnabled: Boolean read FDefaultEnabled;
     property Active: Boolean read FActive write FActive;
+  end;
+
+  TExternalProcessThread = class(TProcessThread)
+  private
+  protected
+    procedure Execute; override;
+  public
+    constructor Create(Data: PPluginProcessInformation; Plugin: TPlugin);
+    destructor Destroy; override;
+
+    property Plugin: TPlugin read FPlugin;
+    property Result: TActResults read FResult;
+  end;
+
+  TExternalPlugin = class(TPlugin)
+  private
+  protected
+    function FGetName: string; override;
+    function FGetHelp: string; override;
+  public
+    constructor Create;
+    function ProcessFile(Data: PPluginProcessInformation): TProcessThread; override;
+  end;
+
+  TExternalThread = class(TProcessThread)
+
   end;
 
 implementation
@@ -177,7 +207,8 @@ var
   i: Integer;
 begin
   for i := 0 to FPlugins.Count - 1 do
-    FPlugins[i].Initialize;
+    if not FPlugins[i].IsInternal then
+      FPlugins[i].Initialize;
 end;
 
 constructor TPluginManager.Create(Path: string);
@@ -215,6 +246,8 @@ begin
   finally
     Files.Free;
   end;
+
+  Plugins.Add(TExternalPlugin.Create);
 end;
 
 destructor TPluginManager.Destroy;
@@ -230,9 +263,6 @@ end;
 { TPlugin }
 
 function TPlugin.ProcessFile(Data: PPluginProcessInformation): TProcessThread;
-type
-  TMapBytes = array[0..MAXINT - 1] of Byte;
-  PMapBytes = ^TMapBytes;
 var
   Thread: TProcessThread;
 begin
@@ -270,6 +300,7 @@ var
   Data: PChar;
 begin
   FDLLHandle := Handle;
+  FIsInternal := False;
   @FInitialize := GetProcAddress(FDLLHandle, 'Initialize');
   @FAct := GetProcAddress(FDLLHandle, 'Act');
   @FConfigure := GetProcAddress(FDLLHandle, 'Configure');
@@ -380,7 +411,7 @@ end;
 
 constructor TProcessThread.Create(Data: PPluginProcessInformation; Plugin: TPlugin);
 begin
-  inherited Create(False);
+  inherited Create(True);
   FreeOnTerminate := True;
   FData := Data;
   FPlugin := Plugin;
@@ -412,7 +443,7 @@ begin
   if FResult = arWin then
   begin
     // Wenn ein Plugin Daten geändert hat, diese übernehmen, so dass das nächste
-    // Plugin in der Liste mit passenden Daten arbeiten kann
+    // Plugin in der Liste mit passenden Daten arbeiten kann.
     FData.Filename := FActData.Filename;
     FData.Station := FActData.Station;
     FData.Title := FActData.Title;
@@ -423,6 +454,90 @@ begin
   FreeMem(FActData.Filename);
   FreeMem(FActData.Station);
   FreeMem(FActData.Title);
+end;
+
+{ TExternalProcessThread }
+
+constructor TExternalProcessThread.Create(Data: PPluginProcessInformation; Plugin: TPlugin);
+begin
+  inherited Create(Data, Plugin);
+  FreeOnTerminate := True;
+  FData := Data;
+  FPlugin := Plugin;
+  FResult := arFail;
+end;
+
+destructor TExternalProcessThread.Destroy;
+begin
+
+  inherited;
+end;
+
+procedure TExternalProcessThread.Execute;
+var
+  i: Integer;
+  Handle: Cardinal;
+  Replaced: string;
+  Arr: TPatternReplaceArray;
+  Thread: TProcessThread;
+begin
+  //TODO: AppGlobals locken, oder temporäre liste erstellen!
+
+  for i := 0 to AppGlobals.ExternalApps.Count - 1 do
+  begin
+    // TODO: Evtl hiervor wg threadsicherheit/non-blocking-sinn die liste cachen und die gecachete benutzen.
+    if Trim(AppGlobals.ExternalApps[i].Executable) <> '' then
+    begin
+      if FileExists(AppGlobals.ExternalApps[i].Executable) then
+      begin
+        SetLength(Arr, 1);
+        Arr[0].C := 'f';
+        Arr[0].Replace := FData.Filename;
+        Replaced := PatternReplace(AppGlobals.ExternalApps[i].Params, Arr);
+        if RunProcess('"' + AppGlobals.ExternalApps[i].Executable + '" ' + Replaced, Handle, True) then
+        begin
+          if WaitForSingleObject(Handle, 60000) = WAIT_OBJECT_0 then
+            FResult := arWin;
+        end;
+      end;
+    end;
+  end;
+end;
+
+{ TExternalPlugin }
+
+constructor TExternalPlugin.Create;
+begin
+  FIsInternal := True;
+  FActive := True;
+end;
+
+function TExternalPlugin.FGetHelp: string;
+begin
+  Result := '';
+end;
+
+function TExternalPlugin.FGetName: string;
+begin
+  Result := 'External Apps';
+end;
+
+function TExternalPlugin.ProcessFile(
+  Data: PPluginProcessInformation): TProcessThread;
+var
+  i: Integer;
+  Handle: Cardinal;
+  Replaced: string;
+  Arr: TPatternReplaceArray;
+  Thread: TProcessThread;
+begin
+  Result := nil;
+  // TODO: AppGlobals locken? hier und an anderen stellen!
+  if AppGlobals.ExternalApps.Count = 0 then
+    Exit;
+
+  Thread := TExternalProcessThread.Create(Data, Self);
+  Result := Thread;
 end;
 
 end.

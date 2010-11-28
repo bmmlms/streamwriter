@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Messages, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls,
   Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, RecentManager,
-  ImgList, Functions, GUIFunctions, Menus, Math;
+  ImgList, Functions, GUIFunctions, Menus, Math, DragDrop, DropComboTarget;
 
 type
   TTitleTree = class;
@@ -87,7 +87,11 @@ type
 
     FColTitle: TVirtualTreeColumn;
 
+    FDropTarget: TDropComboTarget;
+
     //function GetNodes(SelectedOnly: Boolean): TNodeArray;
+    procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
+      APoint: TPoint; var Effect: Integer);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -101,6 +105,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+
+    procedure AddTitle(Title: TTitleInfo);
   end;
 
 implementation
@@ -148,16 +154,21 @@ begin
 end;
 
 procedure TListsTab.AddIgnore(Title: TTitleInfo);
+begin
+  FIgnorePanel.FTree.AddTitle(Title);
+end;
+
+{ TTitleTree }
+
+procedure TTitleTree.AddTitle(Title: TTitleInfo);
 var
   Node: PVirtualNode;
   NodeData: PTitleNodeData;
 begin
-  Node := FIgnorePanel.FTree.AddChild(nil);
-  NodeData := FIgnorePanel.FTree.GetNodeData(Node);
+  Node := AddChild(nil);
+  NodeData := GetNodeData(Node);
   NodeData.Title := Title;
 end;
-
-{ TTitleTree }
 
 constructor TTitleTree.Create(AOwner: TComponent);
 begin
@@ -184,12 +195,30 @@ begin
 
   FColTitle := Header.Columns.Add;
   FColTitle.Text := _('Title');
+
+  FDropTarget := TDropComboTarget.Create(Self);
+  FDropTarget.OnDrop := DropTargetDrop;
+  FDropTarget.Register(Self);
 end;
 
 destructor TTitleTree.Destroy;
 begin
 
   inherited;
+end;
+
+procedure TTitleTree.DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
+  APoint: TPoint; var Effect: Integer);
+var
+  i: Integer;
+  s: string;
+begin
+  for i := 0 to FDropTarget.Files.Count - 1 do
+  begin
+    s := Trim(ExtractFileName(RemoveFileExt(FDropTarget.Files[i])));
+    if s <> '' then
+      AddTitle(TTitleInfo.Create(s));
+  end;
 end;
 
 {

@@ -82,6 +82,11 @@ type
     txtAppParams: TLabeledEdit;
     lblAppParams: TLabel;
     dlgOpen: TOpenDialog;
+    lstExternalApps: TListView;
+    Label16: TLabel;
+    btnAddUp: TButton;
+    btnRemove: TButton;
+    Label17: TLabel;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure cmdBrowseClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
@@ -97,6 +102,14 @@ type
     procedure chkSearchSilenceClick(Sender: TObject);
     procedure chkTrayClick(Sender: TObject);
     procedure btnBrowseAppClick(Sender: TObject);
+    procedure btnAddUpClick(Sender: TObject);
+    procedure lstExternalAppsChange(Sender: TObject; Item: TListItem;
+      Change: TItemChange);
+    procedure txtAppParamsChange(Sender: TObject);
+    procedure btnRemoveClick(Sender: TObject);
+    procedure lstExternalAppsResize(Sender: TObject);
+    procedure lstExternalAppsDeletion(Sender: TObject; Item: TListItem);
+    procedure Label17Click(Sender: TObject);
   private
     FBrowseDir: Boolean;
     FRelayChanged: Boolean;
@@ -130,7 +143,7 @@ begin
   FBrowseDir := BrowseDir;
 
   ClientWidth := 480;
-  ClientHeight := 395;
+  ClientHeight := 410;
 
   lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
   lstDefaultFilter.ItemIndex := Integer(AppGlobals.DefaultFilter);
@@ -181,14 +194,28 @@ begin
 
   txtSilenceLevel.Text := IntToStr(AppGlobals.SilenceLevel);
   txtSilenceLength.Text := IntToStr(AppGlobals.SilenceLength);
-  txtApp.Text := AppGlobals.ExternalApp;
-  txtAppParams.Text := AppGlobals.ExternalAppParams;
+  //txtApp.Text := AppGlobals.ExternalApp;
+  //txtAppParams.Text := AppGlobals.ExternalAppParams;
+  lstExternalApps.OnChange := nil;
+  for i := 0 to AppGlobals.ExternalApps.Count - 1 do
+  begin
+    Item := lstExternalApps.Items.Add;
+    Item.Caption := ExtractFileName(AppGlobals.ExternalApps[i].Executable);
+    Item.SubItems.Add(AppGlobals.ExternalApps[i].Params);
+
+    Item.Data := TExternalApp.Create(AppGlobals.ExternalApps[i].Executable, AppGlobals.ExternalApps[i].Params);
+  end;
+  lstExternalApps.OnChange := lstExternalAppsChange;
+  if lstExternalApps.Items.Count > 0 then
+    lstExternalApps.Items[0].Selected := True;
 
   AppGlobals.Unlock;
 
   lblHelp.Caption := '';
   for i := 0 to AppGlobals.PluginManager.Plugins.Count - 1 do
   begin
+    if AppGlobals.PluginManager.Plugins[i].IsInternal then
+      Continue;
     Item := lstPlugins.Items.Add;
     Item.GroupID := 0;
     Item.Caption := AppGlobals.PluginManager.Plugins[i].Name;
@@ -241,8 +268,14 @@ begin
     AppGlobals.SearchSilence := chkSearchSilence.Checked;
   AppGlobals.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
   AppGlobals.SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
-  AppGlobals.ExternalApp := txtApp.Text;
-  AppGlobals.ExternalAppParams := txtAppParams.Text;
+  //AppGlobals.ExternalApp := txtApp.Text;
+  //AppGlobals.ExternalAppParams := txtAppParams.Text;
+  for i := 0 to AppGlobals.ExternalApps.Count - 1 do
+    AppGlobals.ExternalApps[i].Free;
+  AppGlobals.ExternalApps.Clear;
+  for i := 0 to lstExternalApps.Items.Count - 1 do
+    AppGlobals.ExternalApps.Add(TExternalApp.Create(TExternalApp(lstExternalApps.Items[i].Data).Executable,
+     TExternalApp(lstExternalApps.Items[i].Data).Params));
   AppGlobals.Unlock;
 
   for i := 0 to lstPlugins.Items.Count - 1 do
@@ -285,6 +318,12 @@ begin
                    'so it is disabled by default.'), _('Info'), MB_ICONINFORMATION);
 end;
 
+procedure TfrmSettings.Label17Click(Sender: TObject);
+begin
+  inherited;
+  MsgBox(Handle, _('TODO: !!! external apps beschreiben.'), _('Info'), MB_ICONINFORMATION);
+end;
+
 procedure TfrmSettings.Label6Click(Sender: TObject);
 begin
   inherited;
@@ -306,11 +345,45 @@ begin
                    'right-clicking a saved track, selecting ''Cut'' and using the corresponding toolbar button in the opened tab.'), _('Info'), MB_ICONINFORMATION);
 end;
 
+procedure TfrmSettings.lstExternalAppsChange(Sender: TObject;
+  Item: TListItem; Change: TItemChange);
+begin
+  if Item.Selected then
+  begin
+    txtApp.Text := TExternalApp(Item.Data).Executable;
+    txtAppParams.Text := TExternalApp(Item.Data).Params;
+    txtApp.Enabled := True;
+    txtAppParams.Enabled := True;
+    btnBrowseApp.Enabled := True;
+    btnRemove.Enabled := True;
+  end else
+  begin
+    txtApp.Text := '';
+    txtAppParams.Text := '';
+    txtApp.Enabled := False;
+    txtAppParams.Enabled := False;
+    btnBrowseApp.Enabled := False;
+    btnRemove.Enabled := False;
+  end;
+end;
+
+procedure TfrmSettings.lstExternalAppsDeletion(Sender: TObject;
+  Item: TListItem);
+begin
+  inherited;
+  TExternalApp(Item.Data).Free;
+end;
+
+procedure TfrmSettings.lstExternalAppsResize(Sender: TObject);
+begin
+  inherited;
+  lstExternalApps.Columns[0].Width := lstExternalApps.ClientWidth div 2 - 15;
+  lstExternalApps.Columns[1].Width := lstExternalApps.ClientWidth div 2 - 15;
+end;
+
 procedure TfrmSettings.lstPluginsSelectItem(Sender: TObject;
   Item: TListItem; Selected: Boolean);
 begin
-  inherited;
-
   cmdConfigure.Enabled := False;
   if Selected then
     lblHelp.Caption := TPlugin(Item.Data).Help;
@@ -331,7 +404,7 @@ begin
   lstPlugins.Groups[0].Header := _('Post-Processing');
   lblFilePattern.Caption := _('%s = streamname, %a = artist, %t = title, %n = tracknumber'#13#10 +
                               'Backslashes can be used to seperate directories.');
-  lblAppParams.Caption := _('%f = filename');
+  lblAppParams.Caption := _('%f = filename (should be quoted using ")');
   if lstPlugins.Selected <> nil then
   begin
     AppGlobals.PluginManager.ReInitPlugins;
@@ -405,11 +478,21 @@ procedure TfrmSettings.RegisterPages;
 begin
   FPageList.Add(TPage.Create('&Settings', pnlMain, 'PROPERTIES'));
   FPageList.Add(TPage.Create('S&treams', pnlStreams, 'START'));
-  FPageList.Add(TPage.Create('&External applications', pnlExternalApps, 'START'));
+  FPageList.Add(TPage.Create('&External applications', pnlExternalApps, 'EXTAPPS'));
   FPageList.Add(TPage.Create('&Cut', pnlCut, 'CUT'));
   FPageList.Add(TPage.Create('&Plugins', pnlPlugins, 'PLUGINS'));
   FPageList.Add(TPage.Create('&Advanced', pnlAdvanced, 'MISC'));
   inherited;
+end;
+
+procedure TfrmSettings.txtAppParamsChange(Sender: TObject);
+begin
+  inherited;
+  if txtAppParams.Focused then
+  begin
+    lstExternalApps.Selected.SubItems[0] := txtAppParams.Text;
+    TExternalApp(lstExternalApps.Selected.Data).Params := txtAppParams.Text;
+  end;
 end;
 
 procedure TfrmSettings.txtFilePatternChange(Sender: TObject);
@@ -418,14 +501,44 @@ begin
   txtPreview.Text := ValidatePattern;
 end;
 
+procedure TfrmSettings.btnAddUpClick(Sender: TObject);
+var
+  Item: TListItem;
+begin
+  inherited;
+  if dlgOpen.Execute then
+  begin
+    if FileExists(dlgOpen.FileName) then
+    begin
+      Item := lstExternalApps.Items.Add;
+      Item.Caption := ExtractFileName(dlgOpen.FileName);
+      Item.SubItems.Add('"%f"');
+
+      Item.Data := TExternalApp.Create(dlgOpen.FileName, '"%f"');
+
+      Item.Selected := True;
+    end;
+  end;
+end;
+
 procedure TfrmSettings.btnBrowseAppClick(Sender: TObject);
 begin
   inherited;
   if dlgOpen.Execute then
   begin
     if FileExists(dlgOpen.FileName) then
+    begin
       txtApp.Text := dlgOpen.FileName;
+      lstExternalApps.Selected.Caption := ExtractFileName(dlgOpen.FileName);
+      TExternalApp(lstExternalApps.Selected.Data).Executable := dlgOpen.FileName;
+    end;
   end;
+end;
+
+procedure TfrmSettings.btnRemoveClick(Sender: TObject);
+begin
+  if lstExternalApps.Selected <> nil then
+    lstExternalApps.Selected.Delete;
 end;
 
 function TfrmSettings.CanFinish: Boolean;

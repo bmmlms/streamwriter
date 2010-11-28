@@ -116,8 +116,6 @@ type
     procedure ThreadTerminated(Sender: TObject);
 
     procedure PluginThreadTerminate(Sender: TObject);
-
-    procedure RunExternalApp(Filename: string);
   public
     constructor Create(StartURL: string); overload;
     constructor Create(Name, StartURL: string); overload;
@@ -552,14 +550,14 @@ begin
         Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
         Entry.ActiveThread.Resume;
         FProcessingList.Add(Entry);
-      end;
+      end; // TODO: Ähm, wenn das erste Fehlschlägt (Entry = nil), bitte trotzdem die anderen ausführen!
     end;
 
     if FProcessingList.Count = 0 then
     begin
       // Wenn kein Plugin die Verarbeitung übernimmt, gilt die Datei
       // jetzt schon als gespeichert. Ansonsten macht das PluginThreadTerminate.
-      RunExternalApp(Entry.Data.Filename);
+      //RunExternalApp(Entry.Data.Filename);
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedTitle,
           FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedWasCut);
@@ -615,7 +613,6 @@ begin
       begin
         WriteDebug('All plugins done');
 
-        RunExternalApp(Entry.Data.Filename);
         if Assigned(FOnSongSaved) then
           FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.Title, Entry.Data.Filesize, Entry.Data.WasCut);
         if Assigned(FOnRefresh) then
@@ -625,24 +622,6 @@ begin
         FProcessingList.Delete(i);
       end;
       Break;
-    end;
-  end;
-end;
-
-procedure TICEClient.RunExternalApp(Filename: string);
-var
-  Arr: TPatternReplaceArray;
-  Replaced: string;
-begin
-  if (Trim(AppGlobals.ExternalApp) <> '') and (Pos('%f', LowerCase(AppGlobals.ExternalAppParams)) > 0) then
-  begin
-    if FileExists(AppGlobals.ExternalApp) then
-    begin
-      SetLength(Arr, 4);
-      Arr[0].C := 'f';
-      Arr[0].Replace := Filename;
-      Replaced := PatternReplace(AppGlobals.ExternalAppParams, Arr);
-      RunProcess('"' + AppGlobals.ExternalApp + '" ' + Replaced, True);
     end;
   end;
 end;
@@ -897,7 +876,7 @@ begin
   Result := -1;
   try
     S2 := s;
-    if not ParseURL(S2, Host, Port, Data) then // REMARK: Der Check auf True ist hier neu.
+    if not ParseURL(S2, Host, Port, Data) then
       Exit;
   except
     Exit;
