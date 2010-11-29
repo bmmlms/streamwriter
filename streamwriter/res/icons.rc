@@ -1,4 +1,4 @@
-A ICON ".\ico\logo.ico"
+A ICON ".\ico\appicon\combined.ico"
 MISC ICON ".\ico\misc.ico"
 START ICON ".\ico\record.ico"
 CUT ICON ".\ico\cut.ico"
