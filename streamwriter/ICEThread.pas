@@ -177,9 +177,10 @@ procedure TICEThread.StopPlayInternal;
 begin
   FPlaying := False;
   FPlayer.Stop;
+  DoStuff; // Das muss so, damit der Thread aufs Fadeout-Ende wartet!
 
-    if Assigned(FOnStateChanged) then
-      FOnStateChanged(Self);
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
 procedure TICEThread.StartRecording;
@@ -357,6 +358,9 @@ end;
 procedure TICEThread.DoStuff;
 begin
   inherited;
+
+  while FPlayer.FadingOut do
+    Sleep(20);
 
   if FRecordingStarted and (not FRecording) then
   begin

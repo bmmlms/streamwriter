@@ -550,14 +550,13 @@ begin
         Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
         Entry.ActiveThread.Resume;
         FProcessingList.Add(Entry);
-      end; // TODO: Ähm, wenn das erste Fehlschlägt (Entry = nil), bitte trotzdem die anderen ausführen!
+      end;
     end;
 
     if FProcessingList.Count = 0 then
     begin
       // Wenn kein Plugin die Verarbeitung übernimmt, gilt die Datei
       // jetzt schon als gespeichert. Ansonsten macht das PluginThreadTerminate.
-      //RunExternalApp(Entry.Data.Filename);
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedTitle,
           FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedWasCut);
@@ -585,12 +584,14 @@ begin
     begin
       Entry := FProcessingList[i];
 
-      if Entry.ActiveThread.Result = arWin then
-      begin
-        WriteDebug(Format('Plugin "%s" successfully finished.', [Entry.ActiveThread.Plugin.Name]));
-      end
-      else
-        WriteDebug(Format('Plugin "%s" failed.', [Entry.ActiveThread.Plugin.Name]));
+      case Entry.ActiveThread.Result of
+        arWin:
+          WriteDebug(Format('Plugin "%s" successfully finished.', [Entry.ActiveThread.Plugin.Name]));
+        arTimeout:
+          WriteDebug(Format('Plugin "%s" timed out.', [Entry.ActiveThread.Plugin.Name]));
+        arFail:
+          WriteDebug(Format('Plugin "%s" failed.', [Entry.ActiveThread.Plugin.Name]));
+      end;
 
       if FKilled then
       begin

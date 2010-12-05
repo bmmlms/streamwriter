@@ -10,7 +10,8 @@ type
   private
     FMem: TExtendedStream;
     FLock: TCriticalSection;
-    FPlayer: DWord;
+    FPlayer: DWORD;
+    FFadingOut: Boolean;
 
     function FGetPlaying: Boolean;
   public
@@ -25,12 +26,19 @@ type
 
     property Playing: Boolean read FGetPlaying;
     property Mem: TExtendedStream read FMem;
+    property FadingOut: Boolean read FFadingOut;
   end;
 
 const
   PLAY_START_BUFFER = 128000;
 
 implementation
+
+procedure EndSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
+begin
+  BASSStreamFree(channel);
+  TICEPlayer(user).FFadingOut := False;
+end;
 
 procedure BASSClose(user: Pointer); stdcall;
 begin
@@ -131,9 +139,22 @@ begin
 end;
 
 procedure TICEPlayer.Stop;
+var
+  State: Cardinal;
 begin
-  BASSChannelStop(FPlayer);
-  BASSStreamFree(FPlayer);
+  if FPlayer > 0 then
+  begin
+    State := BASSChannelIsActive(FPlayer);
+    if State = BASS_ACTIVE_PLAYING then
+    begin
+      FFadingOut := True;
+      BASSChannelSlideAttribute(FPlayer, 2, 0, 200);
+      BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, EndSyncProc, Self);
+    end else
+    begin
+      BASSStreamFree(FPlayer);
+    end;
+  end;
   FPlayer := 0;
 end;
 

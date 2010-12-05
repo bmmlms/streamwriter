@@ -710,7 +710,7 @@ begin
   if StreamName = '' then
     StreamName := _('Unknown stream');
 
-  SetLength(Arr, 4);
+  SetLength(Arr, 6);
   Arr[0].C := 'a';
   Arr[0].Replace := Artist;
   Arr[1].C := 't';
@@ -719,6 +719,10 @@ begin
   Arr[2].Replace := StreamName;
   Arr[3].C := 'n';
   Arr[3].Replace := IntToStr(FSongsSaved);
+  Arr[4].C := 'd';
+  Arr[4].Replace := FormatDateTime('dd.mm.yy', Now);
+  Arr[5].C := 'i';
+  Arr[5].Replace := FormatDateTime('hh.nn.ss', Now);
 
   Replaced := PatternReplace(FFilePattern, Arr);
   Dir := IncludeTrailingBackslash(ExtractFilePath(FSaveDir + Replaced));

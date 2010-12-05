@@ -25,7 +25,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
-  Plugins, StrUtils, DynBASS, ICEClient;
+  Plugins, StrUtils, DynBASS, ICEClient, Generics.Collections;
 
 type
   TfrmSettings = class(TfrmSettingsBase)
@@ -43,9 +43,8 @@ type
     cmdConfigure: TBitBtn;
     chkSubmitStreams: TCheckBox;
     Label6: TLabel;
-    lblHelp: TLabel;
     txtDir: TLabeledEdit;
-    cmdBrowse: TSpeedButton;
+    btnBrowse: TSpeedButton;
     chkRelay: TCheckBox;
     Label11: TLabel;
     GroupBox2: TGroupBox;
@@ -60,7 +59,6 @@ type
     Label5: TLabel;
     chkSkipShort: TCheckBox;
     Label8: TLabel;
-    Label9: TLabel;
     chkSearchSilence: TCheckBox;
     Label2: TLabel;
     Label10: TLabel;
@@ -76,24 +74,21 @@ type
     chkAddSavedToIgnore: TCheckBox;
     Label15: TLabel;
     lstDefaultFilter: TComboBox;
-    pnlExternalApps: TPanel;
-    txtApp: TLabeledEdit;
-    btnBrowseApp: TSpeedButton;
-    txtAppParams: TLabeledEdit;
-    lblAppParams: TLabel;
     dlgOpen: TOpenDialog;
-    lstExternalApps: TListView;
-    Label16: TLabel;
+    btnHelp: TSpeedButton;
     btnAddUp: TButton;
     btnRemove: TButton;
-    Label17: TLabel;
+    txtApp: TLabeledEdit;
+    txtAppParams: TLabeledEdit;
+    lblAppParams: TLabel;
+    btnBrowseApp: TSpeedButton;
+    btnMoveUp: TSpeedButton;
+    btnMoveDown: TSpeedButton;
+    ImageList1: TImageList;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
-    procedure cmdBrowseClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure Label8Click(Sender: TObject);
-    procedure Label9Click(Sender: TObject);
-    procedure Label11Click(Sender: TObject);
     procedure Label6Click(Sender: TObject);
     procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
       Selected: Boolean);
@@ -103,19 +98,22 @@ type
     procedure chkTrayClick(Sender: TObject);
     procedure btnBrowseAppClick(Sender: TObject);
     procedure btnAddUpClick(Sender: TObject);
-    procedure lstExternalAppsChange(Sender: TObject; Item: TListItem;
-      Change: TItemChange);
     procedure txtAppParamsChange(Sender: TObject);
     procedure btnRemoveClick(Sender: TObject);
-    procedure lstExternalAppsResize(Sender: TObject);
-    procedure lstExternalAppsDeletion(Sender: TObject; Item: TListItem);
-    procedure Label17Click(Sender: TObject);
+    procedure btnHelpClick(Sender: TObject);
+    procedure btnMoveClick(Sender: TObject);
+    procedure lstPluginsCompare(Sender: TObject; Item1, Item2: TListItem;
+      Data: Integer; var Compare: Integer);
+    procedure btnBrowseClick(Sender: TObject);
+    procedure Label2Click(Sender: TObject);
   private
     FBrowseDir: Boolean;
     FRelayChanged: Boolean;
     FDefaultActionIdx: Integer;
     FDefaultFilterIdx: Integer;
+    FTemporaryPlugins: TList<TExternalPlugin>;
     function ValidatePattern: string;
+    function GetNewID: Integer;
   protected
     procedure RegisterPages; override;
     procedure Finish; override;
@@ -124,6 +122,7 @@ type
     procedure PostTranslate; override;
   public
     constructor Create(AOwner: TComponent; BrowseDir: Boolean = False); reintroduce;
+    destructor Destroy; override;
     property RelayChanged: Boolean read FRelayChanged;
   end;
 
@@ -134,7 +133,11 @@ implementation
 constructor TfrmSettings.Create(AOwner: TComponent; BrowseDir: Boolean = False);
 var
   i: Integer;
+  Plugin: TPlugin;
+  ExtPlugin: TExternalPlugin;
   Item: TListItem;
+  Icon: TIcon;
+  B: TBitmap;
 begin
   FUseTree := True;
 
@@ -174,9 +177,6 @@ begin
   chkSearchSilence.Checked := AppGlobals.SearchSilence;
 
   chkSearchSilenceClick(nil);
-  //txtSilenceLevel.Enabled := chkSearchSilence.Checked;
-  //txtSilenceLength.Enabled := chkSearchSilence.Checked;
-  //txtShortSongSize.Enabled := chkSkipShort.Checked;
 
   chkTray.Checked := AppGlobals.Tray;
   optClose.Checked := not AppGlobals.TrayOnMinimize;
@@ -184,7 +184,6 @@ begin
 
   chkTrayClick(nil);
 
-  //chkRelay.Checked := AppGlobals.Relay;
   chkSubmitStreams.Checked := AppGlobals.SubmitStreams;
   txtShortSongSize.Text := IntToStr(AppGlobals.ShortSize);
   txtSongBuffer.Text := IntToStr(AppGlobals.SongBuffer);
@@ -194,39 +193,49 @@ begin
 
   txtSilenceLevel.Text := IntToStr(AppGlobals.SilenceLevel);
   txtSilenceLength.Text := IntToStr(AppGlobals.SilenceLength);
-  //txtApp.Text := AppGlobals.ExternalApp;
-  //txtAppParams.Text := AppGlobals.ExternalAppParams;
-  lstExternalApps.OnChange := nil;
-  for i := 0 to AppGlobals.ExternalApps.Count - 1 do
-  begin
-    Item := lstExternalApps.Items.Add;
-    Item.Caption := ExtractFileName(AppGlobals.ExternalApps[i].Executable);
-    Item.SubItems.Add(AppGlobals.ExternalApps[i].Params);
-
-    Item.Data := TExternalApp.Create(AppGlobals.ExternalApps[i].Executable, AppGlobals.ExternalApps[i].Params);
-  end;
-  lstExternalApps.OnChange := lstExternalAppsChange;
-  if lstExternalApps.Items.Count > 0 then
-    lstExternalApps.Items[0].Selected := True;
-
   AppGlobals.Unlock;
 
-  lblHelp.Caption := '';
+  FTemporaryPlugins := TList<TExternalPlugin>.Create;
   for i := 0 to AppGlobals.PluginManager.Plugins.Count - 1 do
   begin
-    if AppGlobals.PluginManager.Plugins[i].IsInternal then
-      Continue;
     Item := lstPlugins.Items.Add;
-    Item.GroupID := 0;
     Item.Caption := AppGlobals.PluginManager.Plugins[i].Name;
-    Item.Data := AppGlobals.PluginManager.Plugins[i];
     Item.Checked := AppGlobals.PluginManager.Plugins[i].Active;
+    if AppGlobals.PluginManager.Plugins[i] is TPlugin then
+    begin
+      Item.Data := AppGlobals.PluginManager.Plugins[i];
+      Item.ImageIndex := 0;
+    end else
+    begin
+      ExtPlugin := TExternalPlugin(AppGlobals.PluginManager.Plugins[i]);
+      ExtPlugin := TExternalPlugin.Create(ExtPlugin.Exe, ExtPlugin.Params,
+        ExtPlugin.Active, ExtPlugin.Identifier, ExtPlugin.Order);
+      FTemporaryPlugins.Add(ExtPlugin);
+      Item.Data := ExtPlugin;
+      Item.ImageIndex := 1;
+    end;
   end;
+  lstPlugins.CustomSort(nil, 0);
   if lstPlugins.Items.Count > 0 then
     lstPlugins.Items[0].Selected := True;
 
   if not DirectoryExists(txtDir.Text) then
     txtDir.Text := '';
+
+  B := TBitmap.Create;
+  try
+    GetBitmap('ARROWUP', 2, B);
+    btnMoveUp.Glyph := B;
+    GetBitmap('ARROWDOWN', 2, B);
+    btnMoveDown.Glyph := B;
+    GetBitmap('QUESTION', 2, B);
+    btnHelp.Glyph := B;
+    GetBitmap('BROWSE', 2, B);
+    btnBrowse.Glyph := B;
+    btnBrowseApp.Glyph := B;
+  finally
+    B.Free;
+  end;
 
   if not BassLoaded then
   begin
@@ -240,13 +249,21 @@ begin
   end;
 end;
 
-procedure TfrmSettings.Finish;
+destructor TfrmSettings.Destroy;
 var
   i: Integer;
 begin
-  //if AppGlobals.Relay <> chkRelay.Checked then
-  //  FRelayChanged := True;
+  for i := 0 to FTemporaryPlugins.Count - 1 do
+    FTemporaryPlugins[i].Free;
+  FTemporaryPlugins.Free;
+  inherited;
+end;
 
+procedure TfrmSettings.Finish;
+var
+  i, n: Integer;
+  EP: TExternalPlugin;
+begin
   AppGlobals.Lock;
   AppGlobals.FilePattern := txtFilePattern.Text;
   AppGlobals.Dir := txtDir.Text;
@@ -255,7 +272,6 @@ begin
   AppGlobals.SkipShort := chkSkipShort.Checked;
   AppGlobals.Tray := chkTray.Checked;
   AppGlobals.TrayOnMinimize := optMinimize.Checked;
-  //AppGlobals.Relay := chkRelay.Checked;
   AppGlobals.SubmitStreams := chkSubmitStreams.Checked;
   AppGlobals.SongBuffer := StrToIntDef(txtSongBuffer.Text, 0);
   AppGlobals.ShortSize := StrToIntDef(txtShortSongSize.Text, 1500);
@@ -268,14 +284,60 @@ begin
     AppGlobals.SearchSilence := chkSearchSilence.Checked;
   AppGlobals.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
   AppGlobals.SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
-  //AppGlobals.ExternalApp := txtApp.Text;
-  //AppGlobals.ExternalAppParams := txtAppParams.Text;
-  for i := 0 to AppGlobals.ExternalApps.Count - 1 do
-    AppGlobals.ExternalApps[i].Free;
-  AppGlobals.ExternalApps.Clear;
-  for i := 0 to lstExternalApps.Items.Count - 1 do
-    AppGlobals.ExternalApps.Add(TExternalApp.Create(TExternalApp(lstExternalApps.Items[i].Data).Executable,
-     TExternalApp(lstExternalApps.Items[i].Data).Params));
+
+  // TODO: Pluginmanager locken oder sowas? und an den stellen, wo sich plugins tiggern.
+  for i := 0 to FTemporaryPlugins.Count - 1 do
+  begin
+    EP := AppGlobals.PluginManager.GetID(FTemporaryPlugins[i].Identifier);
+    if EP = nil then
+    begin
+      EP := TExternalPlugin(FTemporaryPlugins[i]);
+      AppGlobals.PluginManager.Plugins.Add(TExternalPlugin.Create(EP.Exe, EP.Params, EP.Active, EP.Identifier, EP.Order));
+    end else
+    begin
+      EP.Exe := FTemporaryPlugins[i].Exe;
+      EP.Params := FTemporaryPlugins[i].Params;
+      EP.Active := FTemporaryPlugins[i].Active;
+      EP.Order := FTemporaryPlugins[i].Order;
+    end;
+  end;
+  for i := AppGlobals.PluginManager.Plugins.Count - 1 downto 0 do
+  begin
+    if AppGlobals.PluginManager.Plugins[i] is TExternalPlugin then
+    begin
+      EP := nil;
+      for n := 0 to FTemporaryPlugins.Count - 1 do
+        if FTemporaryPlugins[n].Identifier = TExternalPlugin(AppGlobals.PluginManager.Plugins[i]).Identifier then
+        begin
+          EP := TExternalPlugin(AppGlobals.PluginManager.Plugins[i]);
+          Break;
+        end;
+      if EP = nil then
+      begin
+        AppGlobals.PluginManager.Plugins[i].Free;
+        AppGlobals.PluginManager.Plugins.Delete(i);
+        Continue;
+      end;
+    end;
+  end;
+
+  for i := 0 to lstPlugins.Items.Count - 1 do
+  begin
+    if TPluginBase(lstPlugins.Items[i].Data) is TPlugin then
+    begin
+      TPlugin(lstPlugins.Items[i].Data).Order := i;
+      TPlugin(lstPlugins.Items[i].Data).Active := lstPlugins.Items[i].Checked;
+    end else if TPluginBase(lstPlugins.Items[i].Data) is TExternalPlugin then
+    begin
+      EP := AppGlobals.PluginManager.GetID(TExternalPlugin(lstPlugins.Items[i].Data).Identifier);
+      if EP <> nil then
+      begin
+        EP.Order := i;
+        EP.Active := lstPlugins.Items[i].Checked;
+      end;
+    end;
+  end;
+
   AppGlobals.Unlock;
 
   for i := 0 to lstPlugins.Items.Count - 1 do
@@ -288,7 +350,7 @@ procedure TfrmSettings.FormActivate(Sender: TObject);
 begin
   if FBrowseDir then
   begin
-    cmdBrowse.Click;
+    btnBrowse.Click;
     FBrowseDir := False;
   end;
 end;
@@ -310,18 +372,38 @@ begin
   lstPlugins.Columns[0].Width := lstPlugins.ClientWidth - 25;
 end;
 
-procedure TfrmSettings.Label11Click(Sender: TObject);
+function TfrmSettings.GetNewID: Integer;
+var
+  i: Integer;
 begin
-  inherited;
-  MsgBox(Handle, _('When enabled, you can listen to streams you are recording by using the provided context-menu ' +
-                   'items or by dragging the stream into your player. This might cause warnings from the firewall, ' +
-                   'so it is disabled by default.'), _('Info'), MB_ICONINFORMATION);
+  Result := 0;
+  for i := 0 to lstPlugins.Items.Count - 1 do
+  begin
+    if TPluginBase(lstPlugins.Items[i].Data) is TExternalPlugin then
+      if TExternalPlugin(lstPlugins.Items[i].Data).Identifier = Result then
+      begin
+        Inc(Result);
+        Continue;
+      end;
+  end;
+  for i := 0 to AppGlobals.PluginManager.Plugins.Count - 1 do
+  begin
+    if TPluginBase(AppGlobals.PluginManager.Plugins[i]) is TExternalPlugin then
+      if TExternalPlugin(AppGlobals.PluginManager.Plugins[i]).Identifier = Result then
+      begin
+        Inc(Result);
+        Continue;
+      end;
+  end;
 end;
 
-procedure TfrmSettings.Label17Click(Sender: TObject);
+procedure TfrmSettings.Label2Click(Sender: TObject);
 begin
   inherited;
-  MsgBox(Handle, _('TODO: !!! external apps beschreiben.'), _('Info'), MB_ICONINFORMATION);
+  MsgBox(Handle, _('When enabled streamWriter will search for silence before saving files, ' +
+                   'this will only work for streams that have silence between played tracks and if bass.dll was loaded.'#13#10 +
+                   'You can test your settings for detecting silence in the manual cut view by ' +
+                   'right-clicking a saved track, selecting ''Cut'' and using the corresponding toolbar button in the opened tab.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TfrmSettings.Label6Click(Sender: TObject);
@@ -336,22 +418,31 @@ begin
   MsgBox(Handle, _('When a title was recorded and it''s size is below the set limit, it will not be saved to disk.'), _('Info'), MB_ICONINFORMATION);
 end;
 
-procedure TfrmSettings.Label9Click(Sender: TObject);
+procedure TfrmSettings.lstPluginsCompare(Sender: TObject; Item1,
+  Item2: TListItem; Data: Integer; var Compare: Integer);
+var
+  P1, P2: TPluginBase;
 begin
   inherited;
-  MsgBox(Handle, _('When enabled streamWriter will search for silence before saving files, ' +
-                   'this will only work for streams that have silence between played tracks and if bass.dll was loaded.'#13#10 +
-                   'You can test your settings for detecting silence in the manual cut view by ' +
-                   'right-clicking a saved track, selecting ''Cut'' and using the corresponding toolbar button in the opened tab.'), _('Info'), MB_ICONINFORMATION);
+  P1 := TPluginBase(Item1.Data);
+  P2 := TPluginBase(Item2.Data);
+  Compare := CmpInt(P1.Order, P2.Order);
 end;
 
-procedure TfrmSettings.lstExternalAppsChange(Sender: TObject;
-  Item: TListItem; Change: TItemChange);
+procedure TfrmSettings.lstPluginsSelectItem(Sender: TObject;
+  Item: TListItem; Selected: Boolean);
 begin
-  if Item.Selected then
+  cmdConfigure.Enabled := False;
+  btnHelp.Enabled := (Item <> nil) and Selected and (TPluginBase(Item.Data) is TPlugin) and (TPlugin(Item.Data).Help <> '');
+  btnRemove.Enabled := (Item <> nil) and Selected and (TPluginBase(Item.Data) is TExternalPlugin);
+
+  btnMoveUp.Enabled := (Item <> nil) and Selected and (Item.Index > 0);
+  btnMoveDown.Enabled := (Item <> nil) and Selected and (Item.Index < lstPlugins.Items.Count - 1);
+
+  if Selected and (TPluginBase(Item.Data) is TExternalPlugin) then
   begin
-    txtApp.Text := TExternalApp(Item.Data).Executable;
-    txtAppParams.Text := TExternalApp(Item.Data).Params;
+    txtApp.Text := TExternalPlugin(Item.Data).Exe;
+    txtAppParams.Text := TExternalPlugin(Item.Data).Params;
     txtApp.Enabled := True;
     txtAppParams.Enabled := True;
     btnBrowseApp.Enabled := True;
@@ -367,28 +458,6 @@ begin
   end;
 end;
 
-procedure TfrmSettings.lstExternalAppsDeletion(Sender: TObject;
-  Item: TListItem);
-begin
-  inherited;
-  TExternalApp(Item.Data).Free;
-end;
-
-procedure TfrmSettings.lstExternalAppsResize(Sender: TObject);
-begin
-  inherited;
-  lstExternalApps.Columns[0].Width := lstExternalApps.ClientWidth div 2 - 15;
-  lstExternalApps.Columns[1].Width := lstExternalApps.ClientWidth div 2 - 15;
-end;
-
-procedure TfrmSettings.lstPluginsSelectItem(Sender: TObject;
-  Item: TListItem; Selected: Boolean);
-begin
-  cmdConfigure.Enabled := False;
-  if Selected then
-    lblHelp.Caption := TPlugin(Item.Data).Help;
-end;
-
 procedure TfrmSettings.PreTranslate;
 begin
   inherited;
@@ -401,8 +470,7 @@ var
   i: Integer;
 begin
   inherited;
-  lstPlugins.Groups[0].Header := _('Post-Processing');
-  lblFilePattern.Caption := _('%s = streamname, %a = artist, %t = title, %n = tracknumber'#13#10 +
+  lblFilePattern.Caption := _('%s = streamname, %a = artist, %t = title, %n = tracknumber,'#13#10'%d = date song was saved, %i = time song was saved'#13#10 +
                               'Backslashes can be used to seperate directories.');
   lblAppParams.Caption := _('%f = filename (should be quoted using ")');
   if lstPlugins.Selected <> nil then
@@ -426,7 +494,7 @@ var
 begin
   inherited;
 
-  SetLength(Arr, 4);
+  SetLength(Arr, 6);
   Arr[0].C := 'a';
   Arr[0].Replace := _('Artist');
   Arr[1].C := 't';
@@ -435,6 +503,10 @@ begin
   Arr[2].Replace := _('Streamname');
   Arr[3].C := 'n';
   Arr[3].Replace := IntToStr(78);
+  Arr[4].C := 'd';
+  Arr[4].Replace := FormatDateTime('dd.mm.yy', Now);
+  Arr[5].C := 'i';
+  Arr[5].Replace := FormatDateTime('hh.nn.ss', Now);
 
   Result := PatternReplace(txtFilePattern.Text, Arr);
 
@@ -455,14 +527,14 @@ begin
     end;
 
   // Ungültige Zeichen entfernen
-  Result := StringReplace(Result, '/', '', [rfReplaceAll]);
-  Result := StringReplace(Result, ':', '', [rfReplaceAll]);
-  Result := StringReplace(Result, '*', '', [rfReplaceAll]);
-  Result := StringReplace(Result, '"', '', [rfReplaceAll]);
-  Result := StringReplace(Result, '?', '', [rfReplaceAll]);
-  Result := StringReplace(Result, '<', '', [rfReplaceAll]);
-  Result := StringReplace(Result, '>', '', [rfReplaceAll]);
-  Result := StringReplace(Result, '|', '', [rfReplaceAll]);
+  Result := StringReplace(Result, '/', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, ':', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '*', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '"', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '?', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '<', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '>', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '|', '_', [rfReplaceAll]);
 
   // Sicherstellen, dass am Anfang/Ende kein \ steht
   if Length(Result) > 0 then
@@ -478,9 +550,8 @@ procedure TfrmSettings.RegisterPages;
 begin
   FPageList.Add(TPage.Create(_('Settings'), pnlMain, 'PROPERTIES'));
   FPageList.Add(TPage.Create(_('Streams'), pnlStreams, 'START'));
-  FPageList.Add(TPage.Create(_('External applications'), pnlExternalApps, 'EXTAPPS'));
   FPageList.Add(TPage.Create(_('Cut'), pnlCut, 'CUT'));
-  FPageList.Add(TPage.Create(_('Plugins'), pnlPlugins, 'PLUGINS'));
+  FPageList.Add(TPage.Create(_('Postprocessing'), pnlPlugins, 'LIGHTNING'));
   FPageList.Add(TPage.Create(_('Advanced'), pnlAdvanced, 'MISC'));
   inherited;
 end;
@@ -488,11 +559,8 @@ end;
 procedure TfrmSettings.txtAppParamsChange(Sender: TObject);
 begin
   inherited;
-  if txtAppParams.Focused then
-  begin
-    lstExternalApps.Selected.SubItems[0] := txtAppParams.Text;
-    TExternalApp(lstExternalApps.Selected.Data).Params := txtAppParams.Text;
-  end;
+  if (lstPlugins.Selected <> nil) and txtAppParams.Focused then
+    TExternalPlugin(lstPlugins.Selected.Data).Params := txtAppParams.Text;
 end;
 
 procedure TfrmSettings.txtFilePatternChange(Sender: TObject);
@@ -504,18 +572,20 @@ end;
 procedure TfrmSettings.btnAddUpClick(Sender: TObject);
 var
   Item: TListItem;
+  Plugin: TExternalPlugin;
 begin
   inherited;
   if dlgOpen.Execute then
   begin
     if FileExists(dlgOpen.FileName) then
     begin
-      Item := lstExternalApps.Items.Add;
+      Item := lstPlugins.Items.Add;
       Item.Caption := ExtractFileName(dlgOpen.FileName);
-      Item.SubItems.Add('"%f"');
-
-      Item.Data := TExternalApp.Create(dlgOpen.FileName, '"%f"');
-
+      Plugin := TExternalPlugin.Create(dlgOpen.FileName, '"%f"', True, GetNewID, 0);
+      FTemporaryPlugins.Add(Plugin);
+      Item.Checked := Plugin.Active;
+      Item.Data := Plugin;
+      Item.ImageIndex := 1;
       Item.Selected := True;
     end;
   end;
@@ -529,16 +599,63 @@ begin
     if FileExists(dlgOpen.FileName) then
     begin
       txtApp.Text := dlgOpen.FileName;
-      lstExternalApps.Selected.Caption := ExtractFileName(dlgOpen.FileName);
-      TExternalApp(lstExternalApps.Selected.Data).Executable := dlgOpen.FileName;
+      lstPlugins.Selected.Caption := ExtractFileName(dlgOpen.FileName);
+      TExternalPlugin(lstPlugins.Selected.Data).Exe := dlgOpen.FileName;
     end;
   end;
 end;
 
+procedure TfrmSettings.btnBrowseClick(Sender: TObject);
+var
+  Dir: String;
+begin
+  Dir := BrowseDialog(Handle, _('Select folder for saved songs'), BIF_RETURNONLYFSDIRS);
+
+  if Dir = '' then
+    Exit;
+
+  if DirectoryExists(Dir) then
+    txtDir.Text := IncludeTrailingBackslash(Dir)
+  else
+    MsgBox(Self.Handle, _('The selected folder does not exist. Please choose another one.'), _('Info'), MB_ICONINFORMATION);
+end;
+
+procedure TfrmSettings.btnHelpClick(Sender: TObject);
+begin
+  if lstPlugins.Selected <> nil then
+    MsgBox(Handle, TPlugin(lstPlugins.Selected.Data).Help, 'Hilfe', MB_ICONINFORMATION);
+end;
+
+procedure TfrmSettings.btnMoveClick(Sender: TObject);
+var
+  Item: TListItem;
+begin
+  if lstPlugins.Selected = nil then
+    Exit;
+
+  lstPlugins.Items.BeginUpdate;
+  if Sender = btnMoveUp then
+    Item := lstPlugins.Items.Insert(lstPlugins.Selected.Index - 1)
+  else if Sender = btnMoveDown then
+    Item := lstPlugins.Items.Insert(lstPlugins.Selected.Index + 2);
+  Item.Caption := lstPlugins.Selected.Caption;
+  Item.Checked := lstPlugins.Selected.Checked;;
+  Item.Data := lstPlugins.Selected.Data;
+  Item.ImageIndex := lstPlugins.Selected.ImageIndex;
+  lstPlugins.DeleteSelected;
+
+  Item.Selected := True;
+  lstPlugins.Items.EndUpdate;
+end;
+
 procedure TfrmSettings.btnRemoveClick(Sender: TObject);
 begin
-  if lstExternalApps.Selected <> nil then
-    lstExternalApps.Selected.Delete;
+  if lstPlugins.Selected <> nil then
+  begin
+    FTemporaryPlugins.Remove(TExternalPlugin(lstPlugins.Selected.Data));
+    TExternalPlugin(lstPlugins.Selected.Data).Free;
+    lstPlugins.Selected.Delete;
+  end;
 end;
 
 function TfrmSettings.CanFinish: Boolean;
@@ -546,7 +663,7 @@ begin
   Result := False;
 
   if not inherited then
-    Exit;                         // TODO: Die neuen felder von external apps validieren
+    Exit;
 
   if Trim(txtMinDiskSpace.Text) = '' then
   begin
@@ -568,7 +685,7 @@ begin
   begin
     MsgBox(Handle, _('The selected folder for saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtDir.Parent)));
-    cmdBrowse.Click;
+    btnBrowse.Click;
     Exit;
   end;
 
@@ -650,21 +767,6 @@ begin
 
   optClose.Enabled := chkTray.Checked;
   optMinimize.Enabled := chkTray.Checked;
-end;
-
-procedure TfrmSettings.cmdBrowseClick(Sender: TObject);
-var
-  Dir: String;
-begin
-  Dir := BrowseDialog(Handle, _('Select folder for saved songs'), BIF_RETURNONLYFSDIRS);
-
-  if Dir = '' then
-    Exit;
-
-  if DirectoryExists(Dir) then
-    txtDir.Text := IncludeTrailingBackslash(Dir)
-  else
-    MsgBox(Self.Handle, _('The selected folder does not exist. Please choose another one.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 end.

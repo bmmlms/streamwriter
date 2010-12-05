@@ -1,1 +1,1 @@
-brcc32.exe -foicons.res icons.rc
+rc.exe icons.rc

@@ -21,6 +21,7 @@ const
   BASS_SYNC_POS = 0;
   BASS_SYNC_END = 2;
   BASS_SYNC_MIXTIME = $40000000;
+  BASS_SYNC_SLIDE = 5;
 
 type
   QWORD = Int64;
@@ -59,6 +60,7 @@ var
   BASSChannelSetSync: function(handle: DWORD; type_: DWORD; param: QWORD; proc: SYNCPROC; user: Pointer): HSYNC; stdcall;
   BASSChannelRemoveSync: function(handle: DWORD; sync: HSYNC): BOOL; stdcall;
   BASSChannelSetAttribute: function(handle, attrib: DWORD; value: Single): BOOL; stdcall;
+  BASSChannelSlideAttribute: function(handle, attrib: DWORD; value: Single; time: DWORD): BOOL; stdcall;
   BASSStreamFree: function(handle: HSTREAM): BOOL; stdcall;
   BASSStreamPutFileData: function(handle: HSTREAM; buffer: Pointer; length: DWORD): DWORD; stdcall;
   BASSErrorGetCode: function: LongInt; stdcall;
@@ -90,6 +92,7 @@ begin
     BASSChannelSetSync := GetProcAddress(DLLHandle, 'BASS_ChannelSetSync');
     BASSChannelRemoveSync := GetProcAddress(DLLHandle, 'BASS_ChannelRemoveSync');
     BASSChannelSetAttribute := GetProcAddress(DLLHandle, 'BASS_ChannelSetAttribute');
+    BASSChannelSlideAttribute := GetProcAddress(DLLHandle, 'BASS_ChannelSlideAttribute');
     BASSStreamFree := GetProcAddress(DLLHandle, 'BASS_StreamFree');
     BASSStreamPutFileData := GetProcAddress(DLLHandle, 'BASS_StreamPutFileData');
     BASSErrorGetCode := GetProcAddress(DLLHandle, 'BASS_ErrorGetCode');

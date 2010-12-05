@@ -134,6 +134,7 @@
 			<DCCReference Include="..\..\common\forms\UpdatedInfo.pas">
 				<Form>frmUpdatedInfo</Form>
 			</DCCReference>
+			<DCCReference Include="controls\SharedControls.pas"/>
 			<BuildConfiguration Include="Basis">
 				<Key>Base</Key>
 			</BuildConfiguration>

@@ -26,20 +26,10 @@ uses
   LanguageObjects, LanguageIcons, Plugins, Forms;
 
 type
-  TClientActions = (caStartStop, caStreamIntegrated, caStream, {caRelay,} caFile);
+  TClientActions = (caStartStop, caStreamIntegrated, caStream, caFile);
   TUseFilters = (ufNone, ufWish, ufIgnore);
 
   TIntArray = array of Integer;
-
-  TExternalApp = class
-  private
-    FExecutable: string;
-    FParams: string;
-  public
-    constructor Create(Executable, Params: string);
-    property Executable: string read FExecutable write FExecutable;
-    property Params: string read FParams write FParams;
-  end;
 
   TAppData = class(TAppDataBase)
   private
@@ -55,7 +45,6 @@ type
     FTrayOnMinimize: Boolean;
     FShowSidebar: Boolean;
     FSidebarWidth: Integer;
-    //FRelay: Boolean;
     FSubmitStreams: Boolean;
     FShortSize: Integer;
     FSongBuffer: Integer;
@@ -64,13 +53,10 @@ type
     FMinDiskSpace: Integer;
     FDefaultAction: TClientActions;
     FDefaultFilter: TUseFilters;
-    FPlayerVolume: Integer;
-    //FExternalApp: string;
-    //FExternalAppParams: string;
+    FPlayerVolume, FCutVolume: Integer;
 
     FHeaderWidth: TIntArray;
 
-    FExternalApps: TList<TExternalApp>;
     FPluginManager: TPluginManager;
     FLanguageIcons: TLanguageIcons;
 
@@ -98,7 +84,6 @@ type
     property TrayOnMinimize: Boolean read FTrayOnMinimize write FTrayOnMinimize;
     property ShowSidebar: Boolean read FShowSidebar write FShowSidebar;
     property SidebarWidth: Integer read FSidebarWidth write FSidebarWidth;
-    //property Relay: Boolean read FRelay write FRelay;
     property SubmitStreams: Boolean read FSubmitStreams write FSubmitStreams;
     property ShortSize: Integer read FShortSize write FShortSize;
     property SongBuffer: Integer read FSongBuffer write FSongBuffer;
@@ -108,18 +93,12 @@ type
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
     property DefaultFilter: TUseFilters read FDefaultFilter write FDefaultFilter;
     property PlayerVolume: Integer read FPlayerVolume write FPlayerVolume;
-    //property ExternalApp: string read FExternalApp write FExternalApp;
-    //property ExternalAppParams: string read FExternalAppParams write FExternalAppParams;
+    property CutVolume: Integer read FCutVolume write FCutVolume;
 
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
 
     property DataFile: string read FGetDataFile;
 
-    // Diese beiden können irgendwann raus
-    property RecentFile: string read FGetRecentFile;
-    property ListFile: string read FGetListFile;
-
-    property ExternalApps: TList<TExternalApp> read FExternalApps;
     property PluginManager: TPluginManager read FPluginManager;
     property LanguageIcons: TLanguageIcons read FLanguageIcons;
   end;
@@ -130,12 +109,6 @@ var
 implementation
 
 constructor TAppData.Create(AppName: string);
-{
-const
-  URL = 'https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=alex%40mistake%2ews&lc=LANGCODE&' +
-        'item_name=streamwriter%2eorg%20%2f%20Alexander%20Nottelmann&no_note=0&currency_code=EUR&' +
-        'bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest';
-}
 var
   W: Integer;
 begin
@@ -144,7 +117,6 @@ begin
     W := Screen.Width - 20;
 
   SetLength(FHeaderWidth, 6);
-  FExternalApps := TList<TExternalApp>.Create;
 
   inherited Create(AppName, True, W, 500);
 
@@ -159,12 +131,6 @@ begin
   FProjectHelpLink := 'http://streamwriter.org/inhalt/documentation/help/';
   FProjectForumLink := 'http://streamwriter.org/forum/';
 
-  {
-  if LanguageObjects.Language.CurrentLanguage.ID = 'de' then
-    FProjectDonateLink := StringReplace(URL, 'LANGCODE', 'de', [])
-  else
-    FProjectDonateLink := StringReplace(URL, 'LANGCODE', 'en', []);
-  }
   FProjectDonateLink := 'http://streamwriter.org/inhalt/donate/';
 
   BuildThanksText;
@@ -176,9 +142,6 @@ destructor TAppData.Destroy;
 var
   i: Integer;
 begin
-  for i := 0 to FExternalApps.Count - 1 do
-    FExternalApps[i].Free;
-  FExternalApps.Free;
   FLanguageIcons.Free;
   FPluginManager.Free;
   inherited;
@@ -215,8 +178,7 @@ procedure TAppData.BuildThanksText;
   end;
 var
   i: Integer;
-  FBoard: TArray;
-  FDonors: TArray;
+  FDonors, FHelpers, FBoard: TArray;
   Text: TStringList;
 begin
   inherited;
@@ -230,14 +192,26 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 3);
+    SetLength(FDonors, 4);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
+    FDonors[3] := '''RogerPP''';
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
       Text.Add(FDonors[i]);
     Text.Add(_('and everyone who does not want to be mentioned'));
+
+    Text.Add('');
+    Text.Add('');
+
+    Text.Add(_('&U&10...people who contributed code, images or translations'));
+    Text.Add('');
+    SetLength(FHelpers, 1);
+    FHelpers[0] := '''HostedDinner''';
+    ShuffleFisherYates(FHelpers);
+    for i := 0 to Length(FHelpers) - 1 do
+      Text.Add(FHelpers[i]);
 
     Text.Add('');
     Text.Add('');
@@ -329,8 +303,11 @@ end;
 
 procedure TAppData.Load;
 var
-  i, DefaultActionTmp, DefaultFilterTmp: Integer;
+  Active: Boolean;
+  i, DefaultActionTmp, DefaultFilterTmp, Order: Integer;
   App, Params: string;
+  Apps: TStringList;
+  EP: TExternalPlugin;
 begin
   inherited;
 
@@ -352,11 +329,9 @@ begin
   if FSilenceLength < 20 then
     FSilenceLength := 20;
 
-  //FStorage.Read('ShowSidebar', FShowSidebar, True);
   FShowSidebar := True;
 
   FStorage.Read('SidebarWidth', FSidebarWidth, 230);
-  //FStorage.Read('Relay', FRelay, False);
   FStorage.Read('SubmitStreams', FSubmitStreams, True);
   FStorage.Read('ShortSize', FShortSize, 1500);
   FStorage.Read('SongBuffer', FSongBuffer, 0);
@@ -366,17 +341,7 @@ begin
   FStorage.Read('DefaultAction', DefaultActionTmp, Integer(caStartStop));
   FStorage.Read('DefaultFilter', DefaultFilterTmp, Integer(ufNone));
   FStorage.Read('PlayerVolume', FPlayerVolume, 50);
-  //FStorage.Read('ExternalApp', FExternalApp, '');
-  //FStorage.Read('ExternalAppParams', FExternalAppParams, '"%f"');
-
-  i := 0;
-  repeat
-    FStorage.Read('ExternalExe' + IntToStr(i), App, '', 'ExternalApps');
-    FStorage.Read('ExternalParams' + IntToStr(i), Params, '', 'ExternalApps');
-    if (App <> '') then
-      FExternalApps.Add(TExternalApp.Create(App, Params));
-    Inc(i);
-  until (App = '');
+  FStorage.Read('CutVolume', FCutVolume, 50);
 
   FStorage.Read('HeaderWidth0', i, -1, 'Cols');
   if i = -1 then
@@ -409,7 +374,7 @@ end;
 
 procedure TAppData.DoSave;
 var
-  i: Integer;
+  i, n: Integer;
 begin
   inherited;
 
@@ -424,10 +389,7 @@ begin
   FStorage.Write('TrayClose', FTray);
   FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
 
-  //FStorage.Write('ShowSidebar', FShowSidebar);
-
   FStorage.Write('SidebarWidth', FSidebarWidth);
-  //FStorage.Write('Relay', FRelay);
   FStorage.Write('SubmitStreams', FSubmitStreams);
   FStorage.Write('ShortSize', FShortSize);
   FStorage.Write('SongBuffer', FSongBuffer);
@@ -437,32 +399,27 @@ begin
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
   FStorage.Write('DefaultFilter', Integer(FDefaultFilter));
   FStorage.Write('PlayerVolume', FPlayerVolume);
-  //FStorage.Write('ExternalApp', FExternalApp);
-  //FStorage.Write('ExternalAppParams', FExternalAppParams);
-
-  FStorage.DeleteKey('ExternalApps');
-  for i := 0 to FExternalApps.Count - 1 do
-  begin
-    FStorage.Write('ExternalExe' + IntToStr(i), FExternalApps[i].Executable, 'ExternalApps');
-    FStorage.Write('ExternalParams' + IntToStr(i), FExternalApps[i].Params, 'ExternalApps');
-  end;
+  FStorage.Write('CutVolume', FCutVolume);
 
   for i := 0 to High(FHeaderWidth) do
     if i <> 1 then
       FStorage.Write('HeaderWidth' + IntToStr(i), HeaderWidth[i], 'Cols');
 
+  FStorage.DeleteKey('Plugins');
+  n := 0;
   for i := 0 to FPluginManager.Plugins.Count - 1 do
-    if not FPluginManager.Plugins[i].IsInternal then
-      FStorage.Write('Active_' + ExtractFileName(FPluginManager.Plugins[i].Filename), FPluginManager.Plugins[i].Active, 'Plugins');
-end;
-
-{ TExternalApp }
-
-constructor TExternalApp.Create(Executable, Params: string);
-begin
-  inherited Create;
-  FExecutable := Executable;
-  FParams := Params;
+    if not (FPluginManager.Plugins[i] is TExternalPlugin) then
+    begin
+      FStorage.Write('Active_' + ExtractFileName(TPlugin(FPluginManager.Plugins[i]).Filename), FPluginManager.Plugins[i].Active, 'Plugins');
+      FStorage.Write('Order_' + ExtractFileName(TPlugin(FPluginManager.Plugins[i]).Filename), FPluginManager.Plugins[i].Order, 'Plugins');
+    end else
+    begin
+      FStorage.Write('Active_' + IntToStr(n), TExternalPlugin(FPluginManager.Plugins[i]).Active, 'Plugins');
+      FStorage.Write('Exe_' + IntToStr(n), TExternalPlugin(FPluginManager.Plugins[i]).Exe, 'Plugins');
+      FStorage.Write('Params_' + IntToStr(n), TExternalPlugin(FPluginManager.Plugins[i]).Params, 'Plugins');
+      FStorage.Write('OrderExe_' + IntToStr(n), FPluginManager.Plugins[i].Order, 'Plugins');
+      Inc(n);
+    end;
 end;
 
 initialization

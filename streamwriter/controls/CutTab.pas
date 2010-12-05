@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
-  MControls, LanguageObjects, Tabs, CutView, Functions, AppData;
+  MControls, LanguageObjects, Tabs, CutView, Functions, AppData, SharedControls;
 
 type
   TCutToolBar = class(TToolBar)
@@ -48,7 +48,9 @@ type
 
   TCutTab = class(TMainTabSheet)
   private
+    FToolbarPanel: TPanel;
     FToolBar: TCutToolBar;
+    FVolume: TVolumePanel;
     FCutView: TCutView;
     FFilename: string;
 
@@ -65,6 +67,7 @@ type
     procedure StopClick(Sender: TObject);
 
     procedure CutViewStateChanged(Sender: TObject);
+    procedure VolumeTrackbarChange(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
 
@@ -113,9 +116,14 @@ begin
   end;
 end;
 
+procedure TCutTab.VolumeTrackbarChange(Sender: TObject);
+begin
+  AppGlobals.CutVolume := FVolume.Trackbar.Position;
+  FCutView.Volume := FVolume.TrackBar.Position;
+end;
+
 procedure TCutTab.SaveClick(Sender: TObject);
 begin
-  // FCutView.Stop;
   if FCutView.Save then
     if Assigned(FOnSaved) then
       FOnSaved(Self);
@@ -180,29 +188,45 @@ end;
 procedure TCutTab.Setup(Filename: string; ToolBarImages: TImageList);
 begin
   MaxWidth := 120;
-  //Caption := Format(_('Cut ''%s'''), [ExtractFileName(Filename)]);
   Caption := ExtractFileName(Filename);
   FFilename := Filename;
 
+  FToolbarPanel := TPanel.Create(Self);
+  FToolbarPanel.Align := alTop;
+  FToolbarPanel.BevelOuter := bvNone;
+  FToolbarPanel.Parent := Self;
+  FToolbarPanel.ClientHeight := 24;
+
   FToolBar := TCutToolBar.Create(Self);
-  FToolBar.Parent := Self;
+  FToolBar.Parent := FToolbarPanel;
   FToolBar.Images := ToolBarImages;
+  FToolBar.Align := alLeft;
+  FToolBar.Width := Self.ClientWidth - 130;
+  FToolBar.Height := 24;
   FToolBar.Setup;
 
   FToolBar.FSave.OnClick := SaveClick;
   FToolBar.FPosStart.OnClick := PosClick;
   FToolBar.FPosEnd.OnClick := PosClick;
   FToolBar.FPosPlay.OnClick := PosClick;
-  //FToolBar.FSaveAs.OnClick := SaveAsClick;
   FToolBar.FAutoCut.OnClick := AutoCutClick;
   FToolBar.FCut.OnClick := CutClick;
   FToolBar.FUndo.OnClick := UndoClick;
   FToolBar.FPlay.OnClick := PlayClick;
   FToolBar.FStop.OnClick := StopClick;
 
+  FVolume := TVolumePanel.Create(Self);
+  FVolume.Parent := FToolbarPanel;
+  FVolume.Width := 140;
+  FVolume.Align := alRight;
+  FVolume.Setup;
+  FVolume.TrackBar.Position := AppGlobals.CutVolume;
+  FVolume.TrackBar.OnChange := VolumeTrackbarChange;
+
   FCutView := TCutView.Create(Self);
   FCutView.Parent := Self;
   FCutView.Align := alClient;
+  FCutView.Volume := FVolume.TrackBar.Position;
   FCutView.OnStateChanged := CutViewStateChanged;
 
   UpdateButtons;

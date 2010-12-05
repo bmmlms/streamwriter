@@ -263,18 +263,7 @@ begin
   begin
     try
       if FStreams.Save then
-      begin
         Saved := True;
-
-        // Diese Zeilen sollten irgendwann raus, genau so wie die
-        // Variablen in AppGlobals.
-        DeleteFile(AppGlobals.ListFile);
-        DeleteFile(AppGlobals.RecentFile);
-        DeleteFile(IncludeTrailingBackslash(ExtractFilePath(AppGlobals.ListFile)) +
-          StringReplace(ExtractFileName(AppGlobals.ListFile), 'streamwriter_', '', [rfReplaceAll]));
-        DeleteFile(IncludeTrailingBackslash(ExtractFilePath(AppGlobals.RecentFile)) +
-          StringReplace(ExtractFileName(AppGlobals.RecentFile), 'streamwriter_', '', [rfReplaceAll]));
-      end;
     except
       if not Shutdown then
       begin
@@ -420,8 +409,6 @@ end;
 
 procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
 var
-  Recent: TRecent;
-  List: TListList;
   Entry: TStreamEntry;
   i: Integer;
 begin
@@ -483,39 +470,6 @@ begin
         FStreams.LoadError := False;
       end;
     end;
-  end;
-
-  Recent := TRecent.Create;
-  try
-    try
-      Recent.Load;
-      for i := 0 to Recent.List.Count - 1 do
-      begin
-        Entry := FStreams.StreamList.Add(Recent.List[i].Copy);
-        Entry.Parent := FStreams.StreamList;
-        Entry.RecentIndex := i;
-        Entry.IsInList := False;
-      end;
-    except
-    end;
-  finally
-    Recent.Free;
-  end;
-
-  List := TListList.Create;
-  try
-    try
-      List.Load;
-      for i := 0 to List.List.Count - 1 do
-      begin
-        Entry := FStreams.StreamList.Add(List.List[i].Copy);
-        Entry.Parent := FStreams.StreamList;
-        Entry.IsInList := True;
-      end;
-    except
-    end;
-  finally
-    Recent.Free;
   end;
 
   // Ist hier unten, weil hier erst Tracks geladen wurden

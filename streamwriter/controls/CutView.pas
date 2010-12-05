@@ -89,6 +89,7 @@ type
     FWaveData: TWaveData;
     FError: Boolean;
     FLineMode: TLineMode;
+    FVolume: Integer;
 
     FPlayer: Cardinal;
     FSync, FSync2: Cardinal;
@@ -101,6 +102,8 @@ type
     procedure ThreadTerminate(Sender: TObject);
 
     procedure MsgRefresh(var Msg: TMessage); message WM_USER + 1234;
+
+    procedure FSetVolume(Value: Integer);
   protected
 
   public
@@ -127,6 +130,7 @@ type
 
     property LineMode: TLineMode read FLineMode write FLineMode;
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
+    property Volume: Integer write FSetVolume;
   end;
 
   procedure LoopSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
@@ -206,6 +210,13 @@ begin
     BASSStreamFree(FPlayer);
 
   inherited;
+end;
+
+procedure TCutView.FSetVolume(Value: Integer);
+begin
+  FVolume := Value;
+  if FPlayer > 0 then
+    BASSChannelSetAttribute(FPlayer, 2, Value / 100);
 end;
 
 procedure TCutView.LoadFile(Filename: string);
@@ -360,6 +371,8 @@ begin
     FPB.FPlayLine := FWaveData.CutStart;
 
   BASSChannelSetPosition(FPlayer, FWaveData.WaveArray[FPB.FPlayLine].Pos, BASS_POS_BYTE);
+  if FPlayer > 0 then
+    BASSChannelSetAttribute(FPlayer, 2, FVolume / 100);
   BASSChannelPlay(FPlayer, False);
   if FSync > 0 then
   begin
@@ -680,7 +693,7 @@ begin
   }
 
   FBuf.Canvas.Font.Color := clWhite;
-  FBuf.Canvas.TextOut(4, 4, BuildTime(FCutView.FWaveData.Secs));
+  FBuf.Canvas.TextOut(4, 4, BuildTime(FCutView.FWaveData.Secs) + ' - ' + RemoveFileExt(ExtractFileName(FCutView.FFilename)));
 end;
 
 constructor TCutPaintBox.Create(AOwner: TComponent);

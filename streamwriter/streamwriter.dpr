@@ -78,7 +78,8 @@ uses
   CheckFilesThread in 'CheckFilesThread.pas',
   ListsTab in 'controls\ListsTab.pas',
   ICEPlayer in 'ICEPlayer.pas',
-  UpdatedInfo in '..\..\common\forms\UpdatedInfo.pas' {frmUpdatedInfo};
+  UpdatedInfo in '..\..\common\forms\UpdatedInfo.pas' {frmUpdatedInfo},
+  SharedControls in 'controls\SharedControls.pas';
 
 {$SetPEOptFlags $0140}
 
