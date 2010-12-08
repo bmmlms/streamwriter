@@ -748,9 +748,16 @@ var
 begin
   if AppGlobals.AddSavedToIgnore then
   begin
-    Ignore := TTitleInfo.Create(Data);
-    FStreams.IgnoreList.Add(Ignore);
-    tabLists.AddIgnore(Ignore);
+    Data := StringReplace(Data, '*', '', [rfReplaceAll]);
+    Data := StringReplace(Data, '?', '', [rfReplaceAll]);
+    Data := StringReplace(Data, ' ', '', [rfReplaceAll]);
+    Data := Trim(Data);
+    if Length(Data) > 8 then
+    begin
+      Ignore := TTitleInfo.Create(Data);
+      FStreams.IgnoreList.Add(Ignore);
+      tabLists.AddIgnore(Ignore);
+    end;
   end;
 end;
 

@@ -91,6 +91,7 @@ type
     FActData: TPluginActData;
     FPlugin: TPluginBase;
     FResult: TActResults;
+    FOutput: string;
   protected
   public
     constructor Create(Data: PPluginProcessInformation; Plugin: TPluginBase);
@@ -98,6 +99,7 @@ type
 
     property Plugin: TPluginBase read FPlugin;
     property Result: TActResults read FResult;
+    property Output: string read FOutput;
   end;
 
   TProcessThread = class(TProcessThreadBase)
@@ -461,6 +463,7 @@ begin
   FData := Data;
   FPlugin := Plugin;
   FResult := arFail;
+  FOutput := '';
 end;
 
 destructor TProcessThreadBase.Destroy;
@@ -525,7 +528,9 @@ end;
 procedure TExternalProcessThread.Execute;
 var
   Handle: Cardinal;
+  Res: Integer;
   CmdLine, Replaced: string;
+  Output: AnsiString;
   Arr: TPatternReplaceArray;
   Thread: TProcessThread;
 begin
@@ -541,11 +546,14 @@ begin
         CmdLine := '"' + FExe + '" ' + Replaced
       else
         CmdLine := FExe;
-      if RunProcess(CmdLine, Handle, True) then
-      begin
-        if WaitForSingleObject(Handle, 20000) = WAIT_OBJECT_0 then
-          FResult := arWin
-        else
+      Res := RunProcess(CmdLine, 20000, Output);
+      FOutput := Output;
+      case Res of
+        0:
+          FResult := arWin;
+        1:
+          FResult := arFail;
+        2:
           FResult := arTimeout;
       end;
     end;

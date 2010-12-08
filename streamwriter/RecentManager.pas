@@ -459,13 +459,15 @@ begin
           for i := 0 to EntryCount - 1 do
           begin
             TitleInfo := TTitleInfo.Load(S, Version);
-            FSaveList.Add(TitleInfo);
+            if TitleInfo <> nil then
+              FSaveList.Add(TitleInfo);
           end;
           S.Read(EntryCount);
           for i := 0 to EntryCount - 1 do
           begin
             TitleInfo := TTitleInfo.Load(S, Version);
-            FIgnoreList.Add(TitleInfo);
+            if TitleInfo <> nil then
+              FIgnoreList.Add(TitleInfo);
           end;
         end;
       end;
@@ -679,9 +681,22 @@ end;
 
 class function TTitleInfo.Load(Stream: TExtendedStream;
   Version: Integer): TTitleInfo;
+var
+  Data: string;
 begin
-  Result := TTitleInfo.Create;
-  Stream.Read(Result.FStreamTitle);
+  Result := nil;
+
+  // REMARK: Dieser Check kann irgendwann raus.. Ist Fix für fehlerhafte 1.3.0.0 Daten
+  Stream.Read(Data);
+  Data := StringReplace(Data, '*', '', [rfReplaceAll]);
+  Data := StringReplace(Data, '?', '', [rfReplaceAll]);
+  Data := StringReplace(Data, ' ', '', [rfReplaceAll]);
+  Data := Trim(Data);
+  if Length(Data) > 8 then
+  begin
+    Result := TTitleInfo.Create;
+    Result.FStreamTitle := Data;
+  end;
 end;
 
 procedure TTitleInfo.Save(Stream: TExtendedStream);

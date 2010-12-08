@@ -847,8 +847,7 @@ begin
   end;
 
   if Assigned(FOnAddIgnoreList) then
-    if Trim(Title) <> '' then
-      FOnAddIgnoreList(Self, Title);
+    FOnAddIgnoreList(Self, Title);
 
   ShowInfo;
 end;

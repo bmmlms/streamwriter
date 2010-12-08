@@ -324,11 +324,12 @@ object frmSettings: TfrmSettings
       294
       273)
     object btnHelp: TSpeedButton
-      Left = 264
+      Left = 265
       Top = 96
-      Width = 25
+      Width = 24
       Height = 25
       Anchors = [akRight, akBottom]
+      Layout = blGlyphRight
       OnClick = btnHelpClick
     end
     object lblAppParams: TLabel
@@ -356,19 +357,21 @@ object frmSettings: TfrmSettings
       OnClick = btnBrowseAppClick
     end
     object btnMoveUp: TSpeedButton
-      Left = 264
+      Left = 265
       Top = 0
-      Width = 25
+      Width = 24
       Height = 25
       Anchors = [akTop, akRight]
+      Layout = blGlyphRight
       OnClick = btnMoveClick
     end
     object btnMoveDown: TSpeedButton
-      Left = 264
+      Left = 265
       Top = 28
-      Width = 25
+      Width = 24
       Height = 25
       Anchors = [akTop, akRight]
+      Layout = blGlyphRight
       OnClick = btnMoveClick
     end
     object lstPlugins: TListView
@@ -611,7 +614,7 @@ object frmSettings: TfrmSettings
     Left = 672
     Top = 516
     Bitmap = {
-      494C010102000800200010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800240010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

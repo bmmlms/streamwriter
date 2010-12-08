@@ -46,6 +46,7 @@ begin
   try
     GetBitmap('VOLUME', 1, B);
     FImage.Canvas.Draw(0, 0, B);
+    FImage.Transparent := True;
   finally
     B.Free;
   end;

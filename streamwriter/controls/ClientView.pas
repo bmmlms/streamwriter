@@ -75,6 +75,8 @@ type
     function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
     procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
+    function DoIncrementalSearch(Node: PVirtualNode;
+      const Text: string): Integer; override;
   public
     constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu); reintroduce;
     destructor Destroy; override;
@@ -275,6 +277,21 @@ begin
     end;
     Sort(nil, HitInfo.Column, FSortDirection);
   end;
+end;
+
+function TMClientView.DoIncrementalSearch(Node: PVirtualNode;
+  const Text: string): Integer;
+var
+  s, NodeText: string;
+  NodeData: PClientNodeData;
+begin
+  Result := 0;
+  S := Text;
+  NodeData := GetNodeData(Node);
+  if NodeData = nil then
+    Exit;
+  DoGetText(Node, 0, ttNormal, NodeText);
+  Result := StrLIComp(PChar(s), PChar(NodeText), Min(Length(s), Length(NodeText)));
 end;
 
 procedure TMClientView.FitColumns;

@@ -586,9 +586,15 @@ begin
 
       case Entry.ActiveThread.Result of
         arWin:
-          WriteDebug(Format('Plugin "%s" successfully finished.', [Entry.ActiveThread.Plugin.Name]));
+          if Entry.ActiveThread.Output <> '' then
+            WriteDebug(Format('Plugin "%s" successfully finished.', [Entry.ActiveThread.Plugin.Name]), Entry.ActiveThread.Output)
+          else
+            WriteDebug(Format('Plugin "%s" successfully finished.', [Entry.ActiveThread.Plugin.Name]));
         arTimeout:
-          WriteDebug(Format('Plugin "%s" timed out.', [Entry.ActiveThread.Plugin.Name]));
+          if Entry.ActiveThread.Output <> '' then
+            WriteDebug(Format('Plugin "%s" timed out.', [Entry.ActiveThread.Plugin.Name]), Entry.ActiveThread.Output)
+          else
+            WriteDebug(Format('Plugin "%s" timed out.', [Entry.ActiveThread.Plugin.Name]));
         arFail:
           WriteDebug(Format('Plugin "%s" failed.', [Entry.ActiveThread.Plugin.Name]));
       end;
