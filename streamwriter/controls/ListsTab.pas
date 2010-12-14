@@ -258,7 +258,7 @@ begin
   begin
     NodeData := GetNodeData(Node);
     case Column of
-      0: Text := NodeData.Title.StreamTitle;
+      0: Text := NodeData.Title.Title;
     end;
   end;
 end;
@@ -307,7 +307,7 @@ begin
   NodeData := GetNodeData(Node);
   if NodeData = nil then
     Exit;
-  Result := StrLIComp(PChar(s), PChar(NodeData.Title.StreamTitle), Min(Length(s), Length(NodeData.Title.StreamTitle)));
+  Result := StrLIComp(PChar(s), PChar(NodeData.Title.Title), Min(Length(s), Length(NodeData.Title.Title)));
 end;
 
 function TTitleTree.DoCompare(Node1, Node2: PVirtualNode;
@@ -329,7 +329,7 @@ begin
   Data2 := GetNodeData(Node2);
 
   case Column of
-    0: Result := CompareText(Data1.Title.StreamTitle, Data2.Title.StreamTitle);
+    0: Result := CompareText(Data1.Title.Title, Data2.Title.Title);
   end;
 end;
 
@@ -343,12 +343,30 @@ end;
 
 procedure TTitlePanel.AddClick(Sender: TObject);
 var
+  i, NumChars: Integer;
+  Pattern: string;
   Node: PVirtualNode;
   NodeData: PTitleNodeData;
   Title: TTitleInfo;
+  Hash: Cardinal;
 begin
   if Trim(FAddEdit.Text) <> '' then
   begin
+    Pattern := BuildPattern(Trim(FAddEdit.Text), Hash, NumChars);
+
+    if NumChars <= 3 then
+    begin
+      MsgBox(Handle, _('The entry has to contain at least 4 chars.'), _('Info'), MB_ICONINFORMATION);
+      Exit;
+    end;
+
+    for i := 0 to FList.Count - 1 do
+      if FList[i].Hash = Hash then
+      begin
+        MsgBox(Handle, Format(_('The list already contains an entry matching the pattern "%s".'), [Pattern]), _('Info'), MB_ICONINFORMATION);
+        Exit;
+      end;
+
     Node := FTree.AddChild(nil);
     NodeData := FTree.GetNodeData(Node);
 
@@ -362,30 +380,25 @@ end;
 
 procedure TTitlePanel.RemoveClick(Sender: TObject);
 var
-  i: Integer;
-  Node: PVirtualNode;
+  Node, Node2: PVirtualNode;
   NodeData: PTitleNodeData;
-  Remove: TNodeArray;
 begin
-  SetLength(Remove, 0);
-  Node := FTree.GetFirst;
+  Node := FTree.GetLast;
+  FTree.BeginUpdate;
   while Node <> nil do
   begin
     if FTree.Selected[Node] then
     begin
-      SetLength(Remove, Length(Remove) + 1);
-      Remove[High(Remove)] := Node;
-    end;
-    Node := FTree.GetNext(Node);
+      NodeData := FTree.GetNodeData(Node);
+      FList.Remove(NodeData.Title);
+      NodeData.Title.Free;
+      Node2 := FTree.GetPrevious(Node);
+      FTree.DeleteNode(Node);
+      Node := Node2;
+    end else
+      Node := FTree.GetPrevious(Node);
   end;
-
-  for i := 0 to High(Remove) do
-  begin
-    NodeData := FTree.GetNodeData(Remove[i]);
-    FList.Remove(NodeData.Title);
-    NodeData.Title.Free;
-    FTree.DeleteNode(Remove[i]);
-  end;
+  FTree.EndUpdate;
 end;
 
 procedure TTitlePanel.BuildTree;

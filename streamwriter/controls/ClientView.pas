@@ -171,7 +171,6 @@ function TMClientView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
 var
   NodeData: PClientNodeData;
 begin
-  inherited;
   Result := inherited;
   //if ((Kind = ikNormal) or (Kind = ikSelected)) then
   begin

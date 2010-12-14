@@ -146,6 +146,7 @@ type
     N11: TMenuItem;
     mnuStartPlay1: TMenuItem;
     mnuStopPlay1: TMenuItem;
+    imgLog: TImageList;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -262,8 +263,8 @@ begin
   while not Saved do
   begin
     try
-      if FStreams.Save then
-        Saved := True;
+      FStreams.Save;
+      Break;
     except
       if not Shutdown then
       begin
@@ -408,9 +409,6 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
-var
-  Entry: TStreamEntry;
-  i: Integer;
 begin
   FClients := TClientManager.Create;
 
@@ -430,6 +428,7 @@ begin
     FClients, FStreams, FHomeCommunication);
   tabClients.SideBar.BrowserView.StreamTree.Images := imgStations;
   tabClients.AddressBar.Stations.Images := imgStations;
+  tabClients.SideBar.DebugView.DebugView.DebugView.Images := imgLog;
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
   tabClients.OnCut := tabClientsCut;
   tabClients.OnTrackAdded := tabClientsTrackAdded;
@@ -745,15 +744,19 @@ procedure TfrmStreamWriterMain.tabClientsAddIgnoreList(Sender: TObject;
   Data: string);
 var
   Ignore: TTitleInfo;
+  i, NumChars: Integer;
+  Pattern: string;
+  Hash: Cardinal;
 begin
   if AppGlobals.AddSavedToIgnore then
   begin
-    Data := StringReplace(Data, '*', '', [rfReplaceAll]);
-    Data := StringReplace(Data, '?', '', [rfReplaceAll]);
-    Data := StringReplace(Data, ' ', '', [rfReplaceAll]);
-    Data := Trim(Data);
-    if Length(Data) > 8 then
+    Pattern := BuildPattern(Data, Hash, NumChars);
+    if NumChars > 3 then
     begin
+      for i := 0 to FStreams.IgnoreList.Count - 1 do
+        if FStreams.IgnoreList[i].Hash = Hash then
+          Exit;
+
       Ignore := TTitleInfo.Create(Data);
       FStreams.IgnoreList.Add(Ignore);
       tabLists.AddIgnore(Ignore);

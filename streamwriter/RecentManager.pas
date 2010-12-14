@@ -49,14 +49,18 @@ type
 
   TTitleInfo = class
   private
-    FStreamTitle: string;
+    FTitle: string;
+    FPattern: string;
+    FHash: Cardinal;
   public
-    constructor Create(StreamTitle: string); overload;
+    constructor Create(Title: string); overload;
 
     class function Load(Stream: TExtendedStream; Version: Integer): TTitleInfo;
     procedure Save(Stream: TExtendedStream);
 
-    property StreamTitle: string read FStreamTitle;
+    property Title: string read FTitle;
+    property Pattern: string read FPattern;
+    property Hash: Cardinal read FHash;
   end;
 
   TStreamEntry = class(TObject)
@@ -142,7 +146,7 @@ type
     destructor Destroy; override;
 
     procedure Load;
-    function Save: Boolean;
+    procedure Save;
 
     property StreamList: TStreamList read FStreamList;
     property SaveList: TTitleList read FSaveList;
@@ -153,7 +157,7 @@ type
   end;
 
 const
-  DATAVERSION = 3;
+  DATAVERSION = 4;
 
   // Irgendwann raus damit, z.B. wenn Computerbild endlich mal den Download aktualisiert!
   RECENTVERSION = 3;
@@ -414,7 +418,7 @@ var
   TitleInfo: TTitleInfo;
   S: TExtendedStream;
   Version, EntryCount: Integer;
-  i: Integer;
+  i, n: Integer;
 begin
   if AppGlobals.DataFile = '' then
     Exit;
@@ -469,6 +473,39 @@ begin
             if TitleInfo <> nil then
               FIgnoreList.Add(TitleInfo);
           end;
+
+          // REMARK: Irgendwann raus. Fehler in Version 3... doppelte entfernen!
+          if Version = 3 then
+          begin
+            i := 0;
+            while True do
+            begin
+              for n := FSaveList.Count - 1 downto i + 1 do
+                if FSaveList[n].Hash = FSaveList[i].Hash then
+                begin
+                  FSaveList[n].Free;
+                  FSaveList.Delete(n);
+                end;
+              Inc(i);
+              if i > FSaveList.Count - 1 then
+                Break;
+            end;
+
+            i := 0;
+            while True do
+            begin
+              for n := FIgnoreList.Count - 1 downto i + 1 do
+                if FIgnoreList[n].Hash = FIgnoreList[i].Hash then
+                begin
+                  FIgnoreList[n].Free;
+                  FIgnoreList.Delete(n);
+                end;
+              Inc(i);
+              if i > FIgnoreList.Count - 1 then
+                Break;
+            end;
+          end;
+
         end;
       end;
     except
@@ -490,16 +527,13 @@ begin
   end;
 end;
 
-function TDataLists.Save: Boolean;
+procedure TDataLists.Save;
 var
   i: Integer;
   S: TExtendedStream;
 begin
-  Result := False;
-
   if (AppGlobals.SkipSave) or (AppGlobals.DataFile = '') then
   begin
-    Result := True;
     Exit;
   end;
 
@@ -507,7 +541,6 @@ begin
 
   if (FStreamList.Count = 0) and (FIgnoreList.Count = 0) and (FSaveList.Count = 0) and not (FileExists(AppGlobals.DataFile)) then
   begin
-    Result := True;
     Exit;
   end;
 
@@ -542,8 +575,6 @@ begin
       S.Free;
     end;
   end;
-
-  Result := True;
 end;
 
 { TTrackInfo }
@@ -672,36 +703,59 @@ end;
 
 { TTitleInfo }
 
-constructor TTitleInfo.Create(StreamTitle: string);
+constructor TTitleInfo.Create(Title: string);
+var
+  NumChars: Integer;
+  Hash: Cardinal;
+  Pattern: string;
 begin
   inherited Create;
 
-  FStreamTitle := StreamTitle;
+  FTitle := Title;
+
+  Pattern := BuildPattern(Title, Hash, NumChars);
+  FPattern := Pattern;
+  FHash := Hash;
 end;
 
 class function TTitleInfo.Load(Stream: TExtendedStream;
   Version: Integer): TTitleInfo;
 var
-  Data: string;
+  NumChars: Integer;
+  Hash: Cardinal;
+  Pattern: string;
+  Data, Data2: string;
 begin
   Result := nil;
 
   // REMARK: Dieser Check kann irgendwann raus.. Ist Fix für fehlerhafte 1.3.0.0 Daten
   Stream.Read(Data);
-  Data := StringReplace(Data, '*', '', [rfReplaceAll]);
-  Data := StringReplace(Data, '?', '', [rfReplaceAll]);
-  Data := StringReplace(Data, ' ', '', [rfReplaceAll]);
-  Data := Trim(Data);
-  if Length(Data) > 8 then
+  Data2 := StringReplace(Data, '*', '', [rfReplaceAll]);
+  Data2 := StringReplace(Data2, '?', '', [rfReplaceAll]);
+  Data2 := StringReplace(Data2, ' ', '', [rfReplaceAll]);
+  Data2 := Trim(Data2);
+  if Length(Data2) > 3 then
   begin
     Result := TTitleInfo.Create;
-    Result.FStreamTitle := Data;
+    Result.FTitle := Data;
+    if Version > 3 then
+    begin
+      Stream.Read(Result.FPattern);
+      Stream.Read(Result.FHash);
+    end else
+    begin
+      Pattern := BuildPattern(Result.FTitle, Hash, NumChars);
+      Result.FPattern := Pattern;
+      Result.FHash := Hash;
+    end;
   end;
 end;
 
 procedure TTitleInfo.Save(Stream: TExtendedStream);
 begin
-  Stream.Write(FStreamTitle);
+  Stream.Write(FTitle);
+  Stream.Write(FPattern);
+  Stream.Write(FHash);
 end;
 
 end.

@@ -45,6 +45,7 @@ type
 
     property BrowserView: TMStreamBrowserView read FBrowserView;
     property InfoView: TMStreamInfoView read FInfoView;
+    property DebugView: TMStreamDebugView read FDebugView;
   end;
 
   TClientAddressBar = class(TPanel)
@@ -128,7 +129,8 @@ type
     procedure ClientManagerSongSaved(Sender: TObject; Filename, Title: string; Filesize: UInt64; WasCut: Boolean);
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
-    procedure ClientManagerTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean);
+    procedure ClientManagerTitleAllowed(Sender: TObject; Title: string;
+      var Allowed: Boolean; var Match: string; var Filter: Integer);
 
     procedure FClientViewChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure FClientViewDblClick(Sender: TObject);
@@ -198,9 +200,6 @@ begin
 end;
 
 procedure TClientAddressBar.Setup;
-var
-  I: TIcon;
-  B: TBitmap;
 begin
   FLabel := TLabel.Create(Self);
   FLabel.Parent := Self;
@@ -218,23 +217,10 @@ begin
   FStart.Flat := True;
   FStart.Hint := _('Add and start recording');
   FStart.ShowHint := True;
+  FStart.NumGlyphs := 2;
   FStart.OnClick := FStartClick;
 
-
-  I := TIcon.Create;
-  I.LoadFromResourceName(HInstance, 'ADD');
-  B := TBitmap.Create;
-  B.Width := 32;
-  B.Height := 32;
-  B.Canvas.Draw(0, 0, I);
-  B.Canvas.StretchDraw(Rect(0, 0, 16, 16), B);
-  B.Width := 16;
-  B.Height := 16;
-  FStart.Glyph := B;
-  FStart.Glyph.PixelFormat := pf24bit;
-  B.Free;
-  I.Free;
-
+  GetBitmap('ADD', 2, FStart.Glyph);
 
   FStations := TMStationCombo.Create(Self);
   FStations.Parent := Self;
@@ -475,7 +461,6 @@ var
   Clients: TNodeDataArray;
   i: Integer;
 begin
-  {$IFDEF DEBUG}
   Clients := FClientView.NodesToData(FClientView.GetNodes(False));
   for i := 0 to Length(Clients) - 1 do
     if Clients[i].Client = FSideBar.FDebugView.DebugView.Client then
@@ -483,7 +468,6 @@ begin
       Clients[i].Client.DebugLog.Clear;
       Break;
     end;
-  {$ENDIF}
 end;
 
 destructor TClientTab.Destroy;
@@ -611,9 +595,7 @@ begin
   FSideBar.Visible := True;
   FSideBar.Init(HomeCommunication);
 
-  {$IFDEF DEBUG}
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
-  {$ENDIF}
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
   //FSideBar.FInfoView.InfoView.Tree.OnAction := StreamInfoAction;
 
@@ -698,12 +680,10 @@ end;
 
 procedure TClientTab.ClientManagerDebug(Sender: TObject);
 begin
-  {$IFDEF DEBUG}
   if FSideBar.FDebugView.DebugView.Client = Sender then
   begin
     FSideBar.FDebugView.ShowDebug(TICEClient(Sender));
   end;
-  {$ENDIF}
 end;
 
 procedure TClientTab.ClientManagerICYReceived(Sender: TObject;
@@ -726,57 +706,45 @@ begin
   FRefreshInfo := True;
 end;
 
-procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject;
-  Title: string; var Allowed: Boolean);
+procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string;
+  var Allowed: Boolean; var Match: string; var Filter: Integer);
 var
-  i, n: Integer;
-  Cmp: string;
+  i: Integer;
+  List: TTitleList;
 begin
+  Filter := 1000;
+  Match := '';
   if Length(Title) < 1 then
     Exit;
 
-  if TICEClient(Sender).UseFilter <> ufNone then
+  case TICEClient(Sender).UseFilter of
+    ufWish:
+      begin
+        Allowed := False;
+        Filter := 0;
+        List := FStreams.SaveList;
+      end;
+    ufIgnore:
+      begin
+        Allowed := True;
+        Filter := 1;
+        List := FStreams.IgnoreList;
+      end
+    else
+      begin
+        Allowed := True;
+        Exit;
+      end;
+  end;
+
+  Title := LowerCase(Title);
+  for i := 0 to List.Count - 1 do
   begin
-    if TICEClient(Sender).UseFilter = ufWish then
+    if Like(Title, List[i].Pattern) then
     begin
-      Allowed := False;
-      for i := 0 to FStreams.SaveList.Count - 1 do
-      begin
-        Cmp := LowerCase(FStreams.SaveList[i].StreamTitle);
-
-        if Length(Cmp) >= 1 then
-        begin
-          for n := 1 to Length(Cmp) do
-            if (not CharInSet(Cmp[n], ['a'..'z'])) and (not CharInSet(Cmp[n], ['0'..'9'])) then
-              Cmp[n] := '*';
-          Cmp := '*' + Cmp + '*';
-          if Like(LowerCase(Title), Cmp) then
-          begin
-            Allowed := True;
-            Exit;
-          end;
-        end;
-      end;
-    end else
-    begin
-      Allowed := True;
-      for i := 0 to FStreams.IgnoreList.Count - 1 do
-      begin
-        Cmp := LowerCase(FStreams.IgnoreList[i].StreamTitle);
-
-        if Length(Cmp) >= 1 then
-        begin
-          for n := 1 to Length(Cmp) do
-            if (not CharInSet(Cmp[n], ['a'..'z'])) and (not CharInSet(Cmp[n], ['0'..'9'])) then
-              Cmp[n] := '*';
-          Cmp := '*' + Cmp + '*';
-          if Like(LowerCase(Title), Cmp) then
-          begin
-            Allowed := False;
-            Exit;
-          end;
-        end;
-      end;
+      Allowed := not Allowed;
+      Match := List[i].Title;
+      Exit;
     end;
   end;
 end;
@@ -817,10 +785,8 @@ begin
 
   FClientView.RemoveClient(Client);
 
-  {$IFDEF DEBUG}
   if FSidebar.FDebugView.DebugView.Client = Client then
     FSidebar.FDebugView.ShowDebug(nil);
-  {$ENDIF}
 
   ShowInfo;
 end;
@@ -892,7 +858,6 @@ begin
     OnUpdateButtons(Self);
   ShowInfo;
 
-  {$IFDEF DEBUG}
   if FClientView.SelectedCount = 1 then
   begin
     Clients := FClientView.NodesToData(FClientView.GetNodes(True));
@@ -900,7 +865,6 @@ begin
       FSideBar.FDebugView.ShowDebug(Clients[0].Client);
   end else
     FSideBar.FDebugView.ShowDebug(nil);
-  {$ENDIF}
 end;
 
 procedure TClientTab.FClientViewDblClick(Sender: TObject);
@@ -1130,23 +1094,17 @@ begin
   FPage2.PageControl := Self;
   FPage2.Caption := _('Info');
 
-  {$IFDEF DEBUG}
   FPage3 := TTabSheet.Create(Self);
   FPage3.PageControl := Self;
   FPage3.Caption := _('Log');
-  {$ENDIF}
 
   FBrowserView := TMStreamBrowserView.Create(Self, HomeCommunication);
   FInfoView := TMStreamInfoView.Create(Self);
-  {$IFDEF DEBUG}
   FDebugView := TMStreamDebugView.Create(Self);
-  {$ENDIF}
 
   FBrowserView.Parent := FPage1;
   FInfoView.Parent := FPage2;
-  {$IFDEF DEBUG}
   FDebugView.Parent := FPage3;
-  {$ENDIF}
 end;
 
 end.

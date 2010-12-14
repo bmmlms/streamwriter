@@ -23,8 +23,6 @@ implementation
 procedure TVolumePanel.Setup;
 var
   B: TBitmap;
-  j: Integer;
-  j2: Integer;
   ImgPnl: TPanel;
 begin
   BevelOuter := bvNone;

@@ -74,7 +74,7 @@ type
     procedure ClientDisconnected(Sender: TObject);
     procedure ClientICYReceived(Sender: TObject; Bytes: Integer);
     procedure ClientURLsReceived(Sender: TObject);
-    procedure ClientTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean);
+    procedure ClientTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer);
 
     //procedure RelayGetStream(Sender: TObject);
     //procedure RelayEnded(Sender: TObject);
@@ -320,9 +320,9 @@ begin
 end;
 
 procedure TClientManager.ClientTitleAllowed(Sender: TObject; Title: string;
-  var Allowed: Boolean);
+  var Allowed: Boolean; var Match: string; var Filter: Integer);
 begin
-  FOnClientTitleAllowed(Sender, Title, Allowed);
+  FOnClientTitleAllowed(Sender, Title, Allowed, Match, Filter);
 end;
 
 procedure TClientManager.ClientDisconnected(Sender: TObject);

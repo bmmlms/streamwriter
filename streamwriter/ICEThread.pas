@@ -24,7 +24,7 @@ interface
 uses
   SysUtils, Windows, WinSock, Classes, HTTPThread, ExtendedStream, ICEStream,
   Functions, SocketThread, SyncObjs, AudioStream, Generics.Collections,
-  AppData, ICEPlayer, RelayServer;
+  AppData, ICEPlayer, RelayServer, LanguageObjects;
 
 type
   TICEThreadStates = (tsRecording, tsRetrying, tsIOError);
@@ -78,6 +78,8 @@ type
     procedure DoStuff; override;
     procedure DoHeaderRemoved; override;
     procedure DoReceivedData(Buf: Pointer; Len: Integer); override;
+    procedure DoConnecting; override;
+    procedure DoConnected; override;
     procedure DoDisconnected; override;
     procedure DoEnded; override;
     procedure DoSpeedChange; override;
@@ -317,9 +319,25 @@ begin
   end;
 end;
 
+procedure TICEThread.DoConnecting;
+begin
+  inherited;
+  WriteDebug(_('Connecting...'), 0, 0);
+end;
+
+procedure TICEThread.DoConnected;
+begin
+  WriteDebug(_('Connected'), 0, 0);
+  inherited;
+end;
+
 procedure TICEThread.DoDisconnected;
 begin
   inherited;
+
+  if FClosed then
+    if (FTypedStream.AudioType <> atNone) then
+      raise Exception.Create(_('Connection closed'));
   Sleep(100);
 end;
 
@@ -338,6 +356,9 @@ var
   Delay: Cardinal;
 begin
   inherited;
+
+  WriteDebug(Format(_('%s'), [E.Message]), '', 3, 0);
+
   AppGlobals.Lock;
   Delay := AppGlobals.RetryDelay * 1000;
   AppGlobals.Unlock;

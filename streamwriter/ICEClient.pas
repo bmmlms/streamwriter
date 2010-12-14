@@ -23,11 +23,14 @@ interface
 
 uses
   SysUtils, Windows, StrUtils, Classes, ICEThread, ICEStream, AppData,
-  Generics.Collections, Functions, SocketThread, Plugins;
+  Generics.Collections, Functions, SocketThread, Plugins, LanguageObjects;
 
 type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
   TICEClientStates = (csConnecting, csConnected, csStopping, csStopped, csRetrying, csIOError);
+
+  TDebugTypes = (dtSocket, dtMessage, dtSong, dtError);
+  TDebugLevels = (dlNormal, dlDebug);
 
   TICEClient = class;
 
@@ -35,8 +38,10 @@ type
   public
     Text: string;
     Data: string;
+    T: TDebugTypes;
+    Level: TDebugLevels;
     Time: TDateTime;
-    constructor Create(Text: string; Data: string);
+    constructor Create(Text, Data: string; T: TDebugTypes; Level: TDebugLevels);
   end;
 
   TURLList = class(TStringList)
@@ -53,7 +58,7 @@ type
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
   //TString2Event = procedure(Sender: TObject; Data, Data2: string) of object;
   TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize: UInt64; WasCut: Boolean) of object;
-  TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean) of object;
+  TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer) of object;
 
   TICEClient = class
   private
@@ -122,8 +127,8 @@ type
     constructor Create(Name, StartURL: string; URLs: TStringList; SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal); overload;
     destructor Destroy; override;
 
-    procedure WriteDebug(Text, Data: string); overload;
-    procedure WriteDebug(Text: string); overload;
+    procedure WriteDebug(Text, Data: string; T: TDebugTypes; Level: TDebugLevels); overload;
+    procedure WriteDebug(Text: string; T: TDebugTypes; Level: TDebugLevels); overload;
 
     //procedure AddRelayThread(Thread: TSocketThread);
     //procedure RemoveRelayThread(Thread: TSocketThread);
@@ -181,7 +186,7 @@ begin
   inherited Create;
   Initialize;
   FStartURL := Trim(StartURL);
-  WriteDebug('Client created using primary URL ' +  FStartURL, FURLs.Text);
+  WriteDebug(Format(_('Client created using primary URL %s'), [FStartURL]), Trim(FURLs.Text), dtMessage, dlDebug);
 end;
 
 constructor TICEClient.Create(Name, StartURL: string);
@@ -189,7 +194,7 @@ begin
   Initialize;
   FStartURL := Trim(StartURL);
   FStreamName := Trim(Name);
-  WriteDebug('Client created using primary URL ' +  FStartURL, FURLs.Text);
+  WriteDebug(Format(_('Client created using primary URL %s'), [FStartURL]), Trim(FURLs.Text), dtMessage, dlDebug);
 end;
 
 constructor TICEClient.Create(Name, StartURL: string; URLs: TStringList;
@@ -353,7 +358,7 @@ destructor TICEClient.Destroy;
 begin
   FURLs.Free;
   FDebugLog.Free;
-  FProcessingList.Free;
+  FreeAndNil(FProcessingList);
   inherited;
 end;
 
@@ -471,8 +476,14 @@ begin
 end;
 
 procedure TICEClient.ThreadDebug(Sender: TObject);
+var
+  T: TDebugTypes;
+  Level: TDebugLevels;
 begin
-  WriteDebug(FICEThread.DebugMsg, FICEThread.DebugData);
+  T := TDebugTypes(FICEThread.DebugType);
+  Level := TDebugLevels(FICEThread.DebugLevel);
+
+  WriteDebug(FICEThread.DebugMsg, FICEThread.DebugData, T, Level);
 end;
 
 procedure TICEClient.ThreadEnded(Sender: TObject);
@@ -491,7 +502,11 @@ begin
         // Playlist
         if ParsePlaylist then
         begin
-          WriteDebug('Playlist parsed', FURLs.Text);
+          {$IFDEF DEBUG}
+          WriteDebug(_('Playlist parsed'), FURLs.Text, dtMessage, dlNormal);
+          {$ELSE}
+          WriteDebug(_('Playlist parsed'), dtMessage, dlNormal);
+          {$ENDIF}
 
           // ClientManager prüft, ob es in einem anderen Client schon eine der URLs gibt.
           // Wenn ja, tötet der ClientManager den neu hinzugefügten Client.
@@ -499,11 +514,11 @@ begin
             FOnURLsReceived(Self);
         end else
         begin
-          raise Exception.Create('Playlist could not be parsed:'#13#10 + string(FICEThread.RecvStream.ToString(0, FICEThread.RecvStream.Size)));
+          raise Exception.Create(_('Playlist could not be parsed'));
         end;
       end else
       begin
-        raise Exception.Create('Response was HTTP, but without playlist or redirect');
+        raise Exception.Create(_('Response was HTTP, but without playlist or redirect'));
       end;
     end else
     begin
@@ -514,7 +529,7 @@ begin
     end;
   except
     on E: Exception do
-      FDebugLog.Add(TDebugEntry.Create('Exception: ' + E.Message, ''));
+      WriteDebug(Format(_('Error: %s'), [E.Message]), '', dtError, dlNormal);
   end;
 end;
 
@@ -545,7 +560,7 @@ begin
       Entry := AppGlobals.PluginManager.ProcessFile(Data);
       if Entry <> nil then
       begin
-        WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]));
+        WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]), dtMessage, dlDebug);
 
         Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
         Entry.ActiveThread.Resume;
@@ -566,8 +581,7 @@ begin
   except
     on E: Exception do
     begin
-      WriteDebug(Format('Error in ThreadSongSaved: %s', [E.Message]));
-      raise;
+      WriteDebug(Format(_('Could not postprocess song: %s'), [E.Message]), dtError, dlNormal);
     end;
   end;
 end;
@@ -586,17 +600,23 @@ begin
 
       case Entry.ActiveThread.Result of
         arWin:
+          WriteDebug(Format(_('Plugin "%s" successfully finished.'), [Entry.ActiveThread.Plugin.Name]), dtMessage, dlNormal);
+          {
           if Entry.ActiveThread.Output <> '' then
-            WriteDebug(Format('Plugin "%s" successfully finished.', [Entry.ActiveThread.Plugin.Name]), Entry.ActiveThread.Output)
+            WriteDebug(Format(_('Plugin "%s" successfully finished.'), [Entry.ActiveThread.Plugin.Name]), Entry.ActiveThread.Output, dlNormal)
           else
-            WriteDebug(Format('Plugin "%s" successfully finished.', [Entry.ActiveThread.Plugin.Name]));
+            WriteDebug(Format(_('Plugin "%s" successfully finished.'), [Entry.ActiveThread.Plugin.Name]), dlNormal);
+          }
         arTimeout:
+          WriteDebug(Format(_('Plugin "%s" timed out.'), [Entry.ActiveThread.Plugin.Name]), dtError, dlNormal);
+          {
           if Entry.ActiveThread.Output <> '' then
-            WriteDebug(Format('Plugin "%s" timed out.', [Entry.ActiveThread.Plugin.Name]), Entry.ActiveThread.Output)
+            WriteDebug(Format(_('Plugin "%s" timed out.'), [Entry.ActiveThread.Plugin.Name]), Entry.ActiveThread.Output, dlNormal)
           else
-            WriteDebug(Format('Plugin "%s" timed out.', [Entry.ActiveThread.Plugin.Name]));
+            WriteDebug(Format(_('Plugin "%s" timed out.'), [Entry.ActiveThread.Plugin.Name]), dlNormal);
+          }
         arFail:
-          WriteDebug(Format('Plugin "%s" failed.', [Entry.ActiveThread.Plugin.Name]));
+          WriteDebug(Format(_('Plugin "%s" failed.'), [Entry.ActiveThread.Plugin.Name]), dtError, dlNormal);
       end;
 
       if FKilled then
@@ -612,18 +632,25 @@ begin
       Processed := AppGlobals.PluginManager.ProcessFile(Entry);
       if Processed then
       begin
-        WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]));
+        WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]), dtMessage, dlDebug);
 
         Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
         Entry.ActiveThread.Resume;
       end else
       begin
-        WriteDebug('All plugins done');
+        WriteDebug('All plugins done', dtMessage, dlDebug);
 
-        if Assigned(FOnSongSaved) then
-          FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.Title, Entry.Data.Filesize, Entry.Data.WasCut);
-        if Assigned(FOnRefresh) then
-          FOnRefresh(Self);
+        // Eine externe App könnte das File gelöscht haben
+        if Entry.Data.Filesize <> High(UInt64) then // GetFileSize = Int64 => -1
+        begin
+          if Assigned(FOnSongSaved) then
+            FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.Title, Entry.Data.Filesize, Entry.Data.WasCut);
+          if Assigned(FOnRefresh) then
+            FOnRefresh(Self);
+        end else
+        begin
+          WriteDebug(_('An external application or plugin seems to have deleted the saved file.'), dtMessage, dlNormal);
+        end;
 
         Entry.Free;
         FProcessingList.Delete(i);
@@ -648,12 +675,16 @@ end;
 procedure TICEClient.ThreadTitleAllowed(Sender: TObject);
 var
   A: Boolean;
+  M: string;
+  F: Integer;
 begin
   if Assigned(FOnTitleAllowed) then
   begin
     A := True;
-    FOnTitleAllowed(Self, FICEThread.RecvStream.SaveAllowedTitle, A);
+    FOnTitleAllowed(Self, FICEThread.RecvStream.SaveAllowedTitle, A, M, F);
     FICEThread.RecvStream.SaveAllowed := A;
+    FICEThread.RecvStream.SaveAllowedMatch := M;
+    FICEThread.RecvStream.SaveAllowedFilter := F;
   end;
 end;
 
@@ -714,7 +745,7 @@ begin
   begin
     if (FRetries >= MaxRetries) and (MaxRetries > 0) then
     begin
-      WriteDebug('Retried ' + IntToStr(MaxRetries) + ' times, stopping');
+      WriteDebug(Format(_('Retried %d times, stopping'), [MaxRetries]), dtError, dlNormal);
       FState := csStopped;
     end else
     begin
@@ -727,7 +758,10 @@ begin
     if FRedirectedURL = '' then
       Inc(FRetries);
   end else if FState = csStopping then
+  begin
     FState := csStopped;
+    WriteDebug(_('Stopped'), dtMessage, dlNormal);
+  end;
 
   if Assigned(FOnRefresh) then
     FOnRefresh(Self);
@@ -736,16 +770,20 @@ begin
     FOnDisconnected(Self);
 end;
 
-procedure TICEClient.WriteDebug(Text, Data: string);
+procedure TICEClient.WriteDebug(Text, Data: string; T: TDebugTypes; Level: TDebugLevels);
 begin
-  FDebugLog.Add(TDebugEntry.Create(Text, Data));
+  {$IFNDEF DEBUG}
+  if Level <> dlNormal then
+    Exit;
+  {$ENDIF}
+  FDebugLog.Add(TDebugEntry.Create(Text, Data, T, Level));
   if Assigned(FOnDebug) then
     FOnDebug(Self);
 end;
 
-procedure TICEClient.WriteDebug(Text: string);
+procedure TICEClient.WriteDebug(Text: string; T: TDebugTypes; Level: TDebugLevels);
 begin
-  WriteDebug(Text, '');
+  WriteDebug(Text, '', T, Level);
 end;
 
 function TICEClient.ParsePlaylist: Boolean;
@@ -865,10 +903,12 @@ end;
 
 { TDebugEntry }
 
-constructor TDebugEntry.Create(Text, Data: string);
+constructor TDebugEntry.Create(Text, Data: string; T: TDebugTypes; Level: TDebugLevels);
 begin
   Self.Text := Text;
   Self.Data := Data;
+  Self.T := T;
+  Self.Level := Level;
   Self.Time := Now;
 end;
 

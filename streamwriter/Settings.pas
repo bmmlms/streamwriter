@@ -133,10 +133,8 @@ implementation
 constructor TfrmSettings.Create(AOwner: TComponent; BrowseDir: Boolean = False);
 var
   i: Integer;
-  Plugin: TPlugin;
   ExtPlugin: TExternalPlugin;
   Item: TListItem;
-  Icon: TIcon;
   B: TBitmap;
 begin
   FUseTree := True;
@@ -623,7 +621,7 @@ end;
 procedure TfrmSettings.btnHelpClick(Sender: TObject);
 begin
   if lstPlugins.Selected <> nil then
-    MsgBox(Handle, TPlugin(lstPlugins.Selected.Data).Help, 'Hilfe', MB_ICONINFORMATION);
+    MsgBox(Handle, TPlugin(lstPlugins.Selected.Data).Help, _('Help'), MB_ICONINFORMATION);
 end;
 
 procedure TfrmSettings.btnMoveClick(Sender: TObject);
@@ -636,7 +634,7 @@ begin
   lstPlugins.Items.BeginUpdate;
   if Sender = btnMoveUp then
     Item := lstPlugins.Items.Insert(lstPlugins.Selected.Index - 1)
-  else if Sender = btnMoveDown then
+  else
     Item := lstPlugins.Items.Insert(lstPlugins.Selected.Index + 2);
   Item.Caption := lstPlugins.Selected.Caption;
   Item.Checked := lstPlugins.Selected.Checked;;

@@ -148,7 +148,7 @@ begin
     if State = BASS_ACTIVE_PLAYING then
     begin
       FFadingOut := True;
-      BASSChannelSlideAttribute(FPlayer, 2, 0, 200);
+      BASSChannelSlideAttribute(FPlayer, 2, 0, 300);
       BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, EndSyncProc, Self);
     end else
     begin

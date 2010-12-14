@@ -239,9 +239,10 @@ begin
 
   SetLength(FWaveArray, Counter);
 
-  if Counter = 0 then
+  // Bei weniger als 2 = Crash später
+  if Counter < 10 then
   begin
-    raise Exception.Create('WaveArray has zero length');
+    raise Exception.Create('WaveArray is too short');
   end;
 
   FWaveArray[High(FWaveArray)].Len := BASSChannelGetLength(FDecoder, BASS_POS_BYTE) - FWaveArray[High(FWaveArray)].Pos;

@@ -34,6 +34,8 @@ type
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
+      var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
     procedure Resize; override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
@@ -66,6 +68,7 @@ type
 
     property Client: TICEClient read FClient;
     property OnClear: TNotifyEvent read FOnClear write FOnClear;
+    property DebugView: TDebugView read FDebug;
   end;
 
   TMStreamDebugView = class(TPanel)
@@ -178,7 +181,7 @@ begin
       if GetNodeLevel(Node) = 1 then
         s := s + '    ' + StringReplace(FClient.DebugLog[Node.Index].Text, #13#10, #13#10'    ', [rfReplaceAll])
       else
-        s := s + DateToStr(FClient.DebugLog[Node.Index].Time) + ' - ' + FClient.DebugLog[Node.Index].Text;
+        s := s + TimeToStr(FClient.DebugLog[Node.Index].Time) + ' - ' + FClient.DebugLog[Node.Index].Text;
       s := s + #13#10;
       Node := GetNext(Node);
     end;
@@ -194,14 +197,20 @@ begin
 
   NodeDataSize := SizeOf(Integer);
   TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toVariableNodeHeight];
-  TreeOptions.PaintOptions := TreeOptions.PaintOptions - [toShowTreeLines];
+  TreeOptions.PaintOptions := TreeOptions.PaintOptions - [toShowTreeLines] + [toHideFocusRect];
+  TreeOptions.SelectionOptions := TreeOptions.SelectionOptions + [toFullRowSelect];
+  ScrollBarOptions.ScrollBars := ssVertical;
 
-  Indent := 12;
+  Indent := 0;
   ShowHint := True;
   HintMode := hmTooltip;
 
   Header.Columns.Add;
-  Header.AutoSizeIndex := 0;
+  Header.Columns.Add;
+  Header.Columns[0].Margin := 0;
+  Header.Columns[1].Margin := 0;
+  Header.AutoSizeIndex := 1;
+  TextMargin := 0;
 end;
 
 procedure TDebugView.DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
@@ -223,23 +232,50 @@ begin
   end;
 end;
 
+function TDebugView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
+  Column: TColumnIndex; var Ghosted: Boolean;
+  var Index: Integer): TCustomImageList;
+begin
+  Result := inherited;
+  Index := -1;
+  if Column = 1 then
+    case FClient.DebugLog[Node.Index].T of
+      dtSocket:;
+      dtMessage:;
+      dtSong:
+        Index := 0;
+      dtError:
+        Index := 1;
+    end;
+end;
+
 procedure TDebugView.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
   TextType: TVSTTextType; var Text: UnicodeString);
 begin
   inherited;
   if FClient <> nil then
   begin
-    MultiLine[Node] := True;
-
-    if GetNodeLevel(Node) = 0 then
-    begin
-      Text := TimeToStr(FClient.DebugLog[Node.Index].Time) + ' - ' + FClient.DebugLog[Node.Index].Text;
-
-      if (FClient.DebugLog[Node.Index].Data <> '') and not HasChildren[Node] then
-        HasChildren[Node] := True;
-    end else
-    begin
-      Text := FClient.DebugLog[Node.Parent.Index].Data;
+    case Column of
+      0:
+        begin
+          Text := TimeToStr(FClient.DebugLog[Node.Index].Time);
+        end;
+      1:
+        begin
+          case GetNodeLevel(Node) of
+            0:
+              begin
+                Text := FClient.DebugLog[Node.Index].Text;
+                if (FClient.DebugLog[Node.Index].Data <> '') and not HasChildren[Node] then
+                  HasChildren[Node] := True;
+              end;
+            1:
+              begin
+                MultiLine[Node] := True;
+                Text := FClient.DebugLog[Node.Parent.Index].Data;
+              end;
+          end;
+        end;
     end;
   end;
 end;
@@ -265,7 +301,8 @@ end;
 procedure TDebugView.Resize;
 begin
   inherited;
-  Header.Columns[0].Width := Width - 30;
+  Header.Columns[0].Width := Canvas.TextWidth(TimeToStr(Now)) + 15;
+  Header.Columns[1].Width := ClientWidth - Header.Columns[0].Width;
 end;
 
 end.

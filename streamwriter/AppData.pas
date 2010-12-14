@@ -61,8 +61,6 @@ type
     FLanguageIcons: TLanguageIcons;
 
     function FGetDataFile: string;
-    function FGetRecentFile: string;
-    function FGetListFile: string;
   protected
     procedure DoSave; override;
   public
@@ -128,7 +126,7 @@ begin
 
   FProjectHomepageLink := 'http://streamwriter.org/';
   FProjectLink := 'http://streamwriter.org/';
-  FProjectHelpLink := 'http://streamwriter.org/inhalt/documentation/help/';
+  FProjectHelpLink := 'http://streamwriter.org/wiki/artikel/help/';
   FProjectForumLink := 'http://streamwriter.org/forum/';
 
   FProjectDonateLink := 'http://streamwriter.org/inhalt/donate/';
@@ -139,8 +137,6 @@ begin
 end;
 
 destructor TAppData.Destroy;
-var
-  i: Integer;
 begin
   FLanguageIcons.Free;
   FPluginManager.Free;
@@ -152,6 +148,7 @@ begin
   Result := FStorage.GetFilePath('data.dat');
 end;
 
+{
 function TAppData.FGetListFile: string;
 begin
   Result := FStorage.GetFilePath('list.dat');
@@ -161,6 +158,7 @@ function TAppData.FGetRecentFile: string;
 begin
   Result := FStorage.GetFilePath('recent.dat');
 end;
+}
 
 procedure TAppData.BuildThanksText;
   procedure ShuffleFisherYates(var A: TArray);
@@ -192,11 +190,12 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 4);
+    SetLength(FDonors, 5);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
     FDonors[3] := '''RogerPP''';
+    FDonors[4] := 'Gabor Kubik';
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
       Text.Add(FDonors[i]);
@@ -303,11 +302,7 @@ end;
 
 procedure TAppData.Load;
 var
-  Active: Boolean;
-  i, DefaultActionTmp, DefaultFilterTmp, Order: Integer;
-  App, Params: string;
-  Apps: TStringList;
-  EP: TExternalPlugin;
+  i, DefaultActionTmp, DefaultFilterTmp: Integer;
 begin
   inherited;
 

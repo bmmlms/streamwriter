@@ -79,6 +79,8 @@ type
 
     FSaveAllowedTitle: string;
     FSaveAllowed: Boolean;
+    FSaveAllowedMatch: string;
+    FSaveAllowedFilter: Integer;
     FRecording: Boolean;
     FRecordingStarted: Boolean;
 
@@ -132,6 +134,8 @@ type
 
     property SaveAllowedTitle: string read FSaveAllowedTitle;
     property SaveAllowed: Boolean read FSaveAllowed write FSaveAllowed;
+    property SaveAllowedMatch: string read FSaveAllowedMatch write FSaveAllowedMatch;
+    property SaveAllowedFilter: Integer read FSaveAllowedFilter write FSaveAllowedFilter;
 
     property AudioType: TAudioTypes read FAudioType;
 
@@ -214,7 +218,7 @@ begin
       try
         FMetaInt := StrToInt(GetHeaderData('icy-metaint'));
       except
-        WriteDebug('Meta-interval could not be found');
+        WriteDebug(_('Meta-interval could not be found'), 1, 1);
       end;
 
       FStreamName := GetHeaderData('icy-name');
@@ -231,7 +235,7 @@ begin
       begin
         FAudioType := atAAC;
       end else
-        raise Exception.Create('Unknown content-type');
+        raise Exception.Create(_('Unknown content-type'));
 
       if FRecording then
         StartRecording;
@@ -239,7 +243,7 @@ begin
       if Assigned(FOnTitleChanged) then
         FOnTitleChanged(Self);
     end else
-      raise Exception.Create(Format('Invalid responsecode (%d)', [ResponseCode]));
+      raise Exception.Create(Format(_('Invalid responsecode (%d)'), [ResponseCode]));
   end else if HeaderType = 'http' then
   begin
     // Wenn wir hier drin sind, müsste es eigentlich eine Playlist sein.
@@ -247,12 +251,12 @@ begin
     // bei einem ICY-Stream einen HTTP-Header liefern...
     if Pos(#10'icy-metaint:', LowerCase(FHeader)) > 0 then
     begin
-      WriteDebug('HTTP header detected but icy fields found - treating as icy header');
+      WriteDebug(_('HTTP header detected but icy fields found - treating as icy header'), 1, 1);
       FHeaderType := 'icy';
       DoHeaderRemoved;
     end;
   end else
-    raise Exception.Create('Unknown header-type');
+    raise Exception.Create(_('Unknown header-type'));
 end;
 
 procedure TICEStream.FreeAudioStream;
@@ -296,14 +300,14 @@ begin
   RangeBegin := FAudioStream.GetFrame(S, False);
   RangeEnd := FAudioStream.GetFrame(E, True);
 
-  WriteDebug(Format('Saving from %d to %d', [S, E]));
+  WriteDebug(Format(_('Saving from %d to %d'), [S, E]), 1, 1);
 
   if (RangeEnd <= -1) or (RangeBegin <= -1) then
-    raise Exception.Create('Error in audio data');
+    raise Exception.Create(_('Error in audio data'));
 
   if SkipShort and (RangeEnd - RangeBegin < FShortSize * 1024) then
   begin
-    WriteDebug(Format('Skipping "%s" because it''s too small (%d bytes)', [Title, RangeEnd - RangeBegin]));
+    WriteDebug(Format(_('Skipping "%s" because it''s too small (%d bytes)'), [Title, RangeEnd - RangeBegin]), 1, 0);
     Exit;
   end;
 
@@ -317,27 +321,29 @@ begin
       FOnTitleAllowed(Self);
     if not FSaveAllowed then
     begin
-      WriteDebug(Format('Skipping "%s" because the filters wanted it this way', [Title]));
+      if FSaveAllowedFilter = 0 then
+        WriteDebug(Format(_('Skipping "%s" - not on wishlist'), [Title]), 1, 0)
+      else
+        WriteDebug(Format(_('Skipping "%s" - on ignorelist ("%s")'), [Title, SaveAllowedMatch]), 1, 0);
       Dec(FSongsSaved);
       Exit;
     end;
 
     if Length(Title) > 0 then
-      WriteDebug(Format('Saving title "%s"', [Title]))
+      WriteDebug(Format('Saving title "%s"', [Title]), 1, 1)
     else
-      WriteDebug('Saving unnamed title');
+      WriteDebug('Saving unnamed title', 1, 1);
 
     try
       ForceDirectories(Dir);
     except
-      raise Exception.Create('Folder for saved tracks could not be created.');
+      raise Exception.Create(Format(_('Folder for saved tracks "%s" could not be created.'), [Dir]));
     end;
 
     try
       FAudioStream.SaveToFile(Filename, RangeBegin, RangeEnd - RangeBegin);
     except
-      WriteDebug('Error in SaveToFile');
-      raise;
+      raise Exception.Create(_('Could not save file'));
     end;
 
     Saved := True;
@@ -348,10 +354,11 @@ begin
       FSavedSize := RangeEnd - RangeBegin;
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self);
+      WriteDebug(Format(_('Saved song "%s"'), [ExtractFilename(Filename)]), '', 1, 0);
     except
       on E: Exception do
       begin
-        WriteDebug(Format('Error after successful save: %s', [E.Message]));
+        WriteDebug(Format('Error after successful save: %s', [E.Message]), 1, 0);
         raise;
       end;
     end;
@@ -360,7 +367,8 @@ begin
     begin
       if not Saved then
         Dec(FSongsSaved);
-      WriteDebug(Format('Error while saving to "%s": %s', [Filename, E.Message]));
+      //WriteDebug(Format('Error while saving to "%s": %s', [Filename, E.Message]));
+      WriteDebug(Format(_('Error while saving "%s": %s'), [ExtractFilename(Filename), E.Message]), 3, 0);
     end;
   end;
 end;
@@ -394,11 +402,11 @@ begin
     except
       if Assigned(FOnIOError) then
         FOnIOError(Self);
-      raise Exception.Create('Folder for saved tracks could not be created.');
+      raise Exception.Create(_('Folder for saved tracks could not be created.'));
     end;
 
     try
-      WriteDebug('Saving stream to "' + Filename + '"');
+      WriteDebug('Saving stream to "' + Filename + '"', 1, 1);
       case FAudioType of
         atMPEG:
           FAudioStream := TMPEGStreamFile.Create(Filename, fmCreate or fmShareDenyWrite);
@@ -408,7 +416,7 @@ begin
     except
       if Assigned(FOnIOError) then
         FOnIOError(Self);
-      raise Exception.Create('Could not open "' + Filename + '"');
+      raise Exception.Create(Format(_('Could not create "%s"'), [Filename]));
     end;
 
     if FMetaCounter > 0 then
@@ -432,7 +440,7 @@ end;
 
 procedure TICEStream.StreamTracksDebug(Text, Data: string);
 begin
-  WriteDebug(Text, Data);
+  WriteDebug(Text, Data, 1, 1);
 end;
 
 procedure TICEStream.TrySave;
@@ -453,7 +461,7 @@ begin
       begin
         if FAudioStream.Size > Track.E + SILENCE_SEARCH_BUFFER then
         begin
-          WriteDebug(Format('Searching for silence using search range of %d bytes...', [SILENCE_SEARCH_BUFFER]));
+          WriteDebug(Format('Searching for silence using search range of %d bytes...', [SILENCE_SEARCH_BUFFER]), 1, 1);
 
           R := FAudioStream.SearchSilence(Track.S, Track.E, SILENCE_SEARCH_BUFFER, FSilenceLevel, FSilenceLength);
 
@@ -464,47 +472,47 @@ begin
 
             if R.A = -1 then
             begin
-              WriteDebug('No silence at SongStart could be found, using configured buffer');
+              WriteDebug('No silence at SongStart could be found, using configured buffer', 1, 1);
               R.A := Track.S - FSongBuffer * 1024;
               if R.A < FAudioStream.Size then
                 R.A := Track.S;
             end else
-              WriteDebug('Silence at SongStart found');
+              WriteDebug('Silence at SongStart found', 1, 1);
 
             if R.B = -1 then
             begin
-              WriteDebug('No silence at SongEnd could be found');
+              WriteDebug('No silence at SongEnd could be found', 1, 1);
               R.B := Track.E + FSongBuffer * 1024;
               if R.B > FAudioStream.Size then
               begin
-                WriteDebug('Stream is too small, waiting for more data...');
+                WriteDebug('Stream is too small, waiting for more data...', 1, 1);
                 Exit;
               end else
               begin
-                WriteDebug('Using configured buffer...');
+                WriteDebug('Using configured buffer...', 1, 1);
               end;
             end else
-              WriteDebug('Silence at SongEnd found');
+              WriteDebug('Silence at SongEnd found', 1, 1);
 
-            WriteDebug(Format('Scanned song start/end: %d/%d', [R.A, R.B]));
+            WriteDebug(Format('Scanned song start/end: %d/%d', [R.A, R.B]), 1, 1);
 
             SaveData(R.A, R.B, Track.Title);
 
             Track.Free;
             FStreamTracks.Delete(i);
-            WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]));
+            WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]), 1, 1);
           end else
           begin
             if (FAudioStream.Size >= Track.S + (Track.E - Track.S) + ((FSongBuffer * 2) * 1024)) and
                (FAudioStream.Size > Track.E + FSongBuffer * 1024) then
             begin
-              WriteDebug(Format('No silence found, saving using buffer of %d bytes...', [FSongBuffer * 1024]));
+              WriteDebug(Format('No silence found, saving using buffer of %d bytes...', [FSongBuffer * 1024]), 1, 1);
 
               SaveData(Track.S - FSongBuffer * 1024, Track.E + FSongBuffer * 1024, Track.Title);
 
               Track.Free;
               FStreamTracks.Delete(i);
-              WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]));
+              WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]), 1, 1);
             end else
             begin
               // WriteDebug('Waiting for full buffer because no silence found...');
@@ -520,15 +528,15 @@ begin
            (FAudioStream.Size > Track.E + FSongBuffer * 1024) then
         begin
           if FSearchSilence and (not (FAudioStream is TMPEGStreamFile)) then
-            WriteDebug(Format('Saving using buffer of %d bytes because stream is not mpeg...', [FSongBuffer * 1024]))
+            WriteDebug(Format('Saving using buffer of %d bytes because stream is not mpeg...', [FSongBuffer * 1024]), 1, 1)
           else
-            WriteDebug(Format('Saving using buffer of %d bytes...', [FSongBuffer * 1024]));
+            WriteDebug(Format('Saving using buffer of %d bytes...', [FSongBuffer * 1024]), 1, 1);
 
           SaveData(Track.S - FSongBuffer * 1024, Track.E + FSongBuffer * 1024, Track.Title);
 
           Track.Free;
           FStreamTracks.Delete(i);
-          WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]));
+          WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]), 1, 1);
         end else
         begin
           // WriteDebug('Waiting for full buffer...');
@@ -572,7 +580,7 @@ begin
 
         if Title <> FTitle then
         begin
-          WriteDebug(Format('Track changed, title "%s" now playing', [Title]));
+          WriteDebug(Format(_('"%s" now playing'), [Title]), 2, 0);
           TitleChanged := True;
           Inc(FMetaCounter);
         end;
@@ -588,7 +596,7 @@ begin
         begin
           if FMetaCounter = 2 then
           begin
-            WriteDebug(Format('Start of first full song "%s" detected', [Title]));
+            WriteDebug(Format(_('Recording of first song starting'), []), 1, 0);
             if FAudioStream <> nil then
               FStreamTracks.FoundTitle(FAudioStream.Size, Title);
           end;
@@ -633,9 +641,9 @@ begin
   end else if HeaderType = 'http' then
   begin
     if Size > 512000 then
-      raise Exception.Create('Too many bytes in HTTP-response')
+      raise Exception.Create(_('Too many bytes in HTTP-response'))
   end else if HeaderRemoved then
-    raise Exception.Create('Unknown header-type');
+    raise Exception.Create(_('Unknown header-type'));
 end;
 
 function TICEStream.GetFilename(var Dir: string; Name: string): string;

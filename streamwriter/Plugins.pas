@@ -199,7 +199,7 @@ end;
 
 function TPluginManager.ProcessFile(Entry: TProcessingEntry): Boolean;
 var
-  i, Order: Integer;
+  i, Order, SmallestActive: Integer;
 begin
   Result := False;
   Order := 0;
@@ -208,17 +208,27 @@ begin
   if Entry.ActiveThread <> nil then
   begin
     Entry.PluginsProcessed.Add(Entry.ActiveThread.Plugin);
-    Order := Entry.ActiveThread.Plugin.Order + 1;
+    Order := Entry.ActiveThread.Plugin.Order;
   end;
 
-  // Nächstes Plugin suchen
+  SmallestActive := MaxInt;
   for i := 0 to FPlugins.Count - 1 do
-    if FPlugins[i].Active and (FPlugins[i].Order = Order) then
+    if FPlugins[i].Active and (FPlugins[i].FOrder < SmallestActive) and (FPlugins[i].FOrder >= Order) and
+       (not Entry.PluginsProcessed.Contains(FPlugins[i])) then
     begin
-      Entry.FActiveThread := FPlugins[i].ProcessFile(Entry.FData);
-      Result := Entry.FActiveThread <> nil;
-      Break;
+      SmallestActive := FPlugins[i].FOrder;
     end;
+
+  if SmallestActive <> MaxInt then
+  begin
+    for i := 0 to FPlugins.Count - 1 do
+      if FPlugins[i].FOrder = SmallestActive then
+      begin
+        Entry.FActiveThread := FPlugins[i].ProcessFile(Entry.FData);
+        Result := Entry.FActiveThread <> nil;
+        Break;
+      end;
+  end;
 end;
 
 procedure TPluginManager.ReInitPlugins;
@@ -250,7 +260,7 @@ var
   Handle: THandle;
   GetVersion: TGetInt;
   P: TPlugin;
-  Files, Apps: TStringList;
+  Files: TStringList;
   App, Params: string;
   EP: TExternalPlugin;
   Active: Boolean;
@@ -527,12 +537,10 @@ end;
 
 procedure TExternalProcessThread.Execute;
 var
-  Handle: Cardinal;
   Res: Integer;
   CmdLine, Replaced: string;
   Output: AnsiString;
   Arr: TPatternReplaceArray;
-  Thread: TProcessThread;
 begin
   if Trim(FExe) <> '' then
   begin
@@ -546,7 +554,8 @@ begin
         CmdLine := '"' + FExe + '" ' + Replaced
       else
         CmdLine := FExe;
-      Res := RunProcess(CmdLine, 20000, Output);
+      Res := RunProcess(CmdLine, 120000, Output);
+      FData.Filesize := GetFileSize(FData.Filename);
       FOutput := Output;
       case Res of
         0:
@@ -578,13 +587,8 @@ end;
 function TExternalPlugin.ProcessFile(
   Data: PPluginProcessInformation): TProcessThreadBase;
 var
-  i: Integer;
-  Handle: Cardinal;
-  Replaced: string;
-  Arr: TPatternReplaceArray;
   Thread: TProcessThread;
 begin
-  Result := nil;
   Thread := TExternalProcessThread.Create(FExe, FParams, Data, Self);
   Result := Thread;
 end;
