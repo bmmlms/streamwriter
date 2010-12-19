@@ -147,6 +147,13 @@ type
     mnuStartPlay1: TMenuItem;
     mnuStopPlay1: TMenuItem;
     imgLog: TImageList;
+    actNewCategory: TAction;
+    Addcategory1: TMenuItem;
+    N12: TMenuItem;
+    N13: TMenuItem;
+    Newcategory1: TMenuItem;
+    ToolButton5: TToolButton;
+    ToolButton7: TToolButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -263,6 +270,7 @@ begin
   while not Saved do
   begin
     try
+      tabClients.UpdateStreams(FStreams);
       FStreams.Save;
       Break;
     except
@@ -341,7 +349,7 @@ var
   Client: TICEClient;
   R: TStreamEntry;
 begin
-  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True));
+  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
   for Client in Clients do
   begin
     if Sender = actSkipShort then
@@ -471,10 +479,12 @@ begin
     end;
   end;
 
+  tabClients.BuildTree(FStreams);
+
   // Ist hier unten, weil hier erst Tracks geladen wurden
   tabSaved.Setup(FStreams, imgImages);
 
-  tabClients.ClientView.SortItems;
+  //tabClients.ClientView.SortItems;
   tabClients.AddressBar.Stations.Sort;
 
   {$IFDEF DEBUG}Caption := Caption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
@@ -852,8 +862,9 @@ var
   UseFilter: TUseFilters;
   Clients: TClientArray;
   Client, Client2: TICEClient;
+  Nodes: TNodeArray;
 begin
-  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True));
+  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
   B := Length(Clients) > 0;
   actStart.Enabled := B;
   actStop.Enabled := B;
@@ -892,20 +903,20 @@ begin
   actPlay.Enabled := False;
   actStopPlay.Enabled := B4;
 
-  if tabClients.ClientView.SelectedCount > 1 then
+  if Length(Clients) > 1 then
   begin
-    Client2 := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True))[0];
+    Client2 := Clients[0];
     UseFilter := Client2.UseFilter;
     B4 := True;
     B5 := True;
-    for Client in tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True)) do
+    for Client in tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True)) do
     begin
       if not (Client.SkipShort = Client2.SkipShort) then
         B4 := False;
       if not (Client.UseFilter = Client2.UseFilter) then
         B5 := False;
     end;
-    Client := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True))[0];
+    Client := Clients[0];
     actSkipShort.Checked := Client.SkipShort and B4;
     if B5 then
     begin
@@ -918,9 +929,9 @@ begin
           actUseIgnoreList.Checked := True;
       end;
     end;
-  end else if tabClients.ClientView.SelectedCount = 1 then
+  end else if Length(Clients) = 1 then
   begin
-    Client := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(True))[0];
+    Client := Clients[0];
     actSkipShort.Checked := Client.SkipShort;
 
     actPlay.Enabled := BassLoaded;
@@ -956,6 +967,12 @@ begin
         mnuListenToFile1.Default := True;
     end;
   end;
+
+  Nodes := tabClients.ClientView.GetNodes(ntCategory, True);
+  if Length(Nodes) > 0 then
+  begin
+    actRemove.Enabled := True;
+  end;
 end;
 
 procedure TfrmStreamWriterMain.UpdaterNoUpdateFound(Sender: TObject);
@@ -985,7 +1002,7 @@ var
   Speed: UInt64;
 begin
   Speed := 0;
-  Clients := tabClients.ClientView.NodesToData(tabClients.ClientView.GetNodes(False));
+  Clients := tabClients.ClientView.NodesToData(tabClients.ClientView.GetNodes(ntClient, False));
   for Client in Clients do
   begin
     Speed := Speed + Client.Client.Speed;
@@ -1005,7 +1022,7 @@ begin
   Result := True;
   Rec := False;
 
-  Clients := tabClients.ClientView.NodesToData(tabClients.ClientView.GetNodes(False));
+  Clients := tabClients.ClientView.NodesToData(tabClients.ClientView.GetNodes(ntClient, False));
 
   for Client in Clients do
     if Client.Client.Recording then

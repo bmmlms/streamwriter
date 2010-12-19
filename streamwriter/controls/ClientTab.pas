@@ -27,7 +27,7 @@ uses
   LanguageObjects, HomeCommunication, StationCombo, Menus, ActnList, ImgList,
   RecentManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
   GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs,
-  Graphics, SharedControls;
+  Graphics, SharedControls, Generics.Collections, Generics.Defaults;
 
 type
   TSidebar = class(TPageControl)
@@ -107,6 +107,7 @@ type
 
     procedure ShowInfo;
 
+    procedure ActionNewCategoryExecute(Sender: TObject);
     procedure ActionStartExecute(Sender: TObject);
     procedure ActionStopExecute(Sender: TObject);
     procedure ActionRemoveExecute(Sender: TObject);
@@ -136,7 +137,7 @@ type
     procedure FClientViewDblClick(Sender: TObject);
     procedure FClientViewKeyPress(Sender: TObject; var Key: Char);
     procedure FClientViewKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure FClientViewStartStreaming(Sender: TObject; URL: string);
+    procedure FClientViewStartStreaming(Sender: TObject; URL: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 
     procedure StationsStreamChanged(Sender: TObject; Stream: TStreamEntry);
 
@@ -155,8 +156,11 @@ type
       ClientImages: TImageList; Clients: TClientManager;
       Streams: TDataLists; HomeCommunication: THomeCommunication);
     procedure Shown;
-    function StartStreaming(Name, URL: string; StartPlay: Boolean): Boolean;
+    function StartStreaming(Name, URL: string; StartPlay: Boolean;
+      HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
     procedure TimerTick;
+    procedure UpdateStreams(Streams: TDataLists);
+    procedure BuildTree(Streams: TDataLists);
 
     property AddressBar: TClientAddressBar read FAddressBar;
     property ClientView: TMClientView read FClientView;
@@ -266,6 +270,11 @@ end;
 
 { TClientTab }
 
+procedure TClientTab.ActionNewCategoryExecute(Sender: TObject);
+begin
+  FClientView.AddCategory;
+end;
+
 procedure TClientTab.ActionStartExecute(Sender: TObject);
 var
   Clients: TClientArray;
@@ -278,7 +287,7 @@ begin
     Exit;
   end;
 
-  Clients := FClientView.NodesToClients(FClientView.GetNodes(True));
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
   for Client in Clients do
   begin
     Entry := FStreams.StreamList.Get(Client);
@@ -293,7 +302,7 @@ var
   Clients: TClientArray;
   Client: TICEClient;
 begin
-  Clients := FClientView.NodesToClients(FClientView.GetNodes(True));
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
   for Client in Clients do
   begin
     Client.StopRecording;
@@ -303,12 +312,37 @@ end;
 procedure TClientTab.ActionRemoveExecute(Sender: TObject);
 var
   Clients: TNodeDataArray;
-  Client: PClientNodeData;
+  Node, ChildNode: PVirtualNode;
+  Nodes, ChildNodes: TNodeArray;
+  NodeData, ChildNodeData: PClientNodeData;
 begin
-  Clients := FClientView.NodesToData(FClientView.GetNodes(True));
-  for Client in Clients do
+  Nodes := FClientView.GetNodes(ntAll, True);
+  for Node in Nodes do
   begin
-    FClients.RemoveClient(Client.Client);
+    NodeData := FClientView.GetNodeData(Node);
+    if NodeData.Category <> nil then
+    begin
+      ChildNodes := FClientView.GetNodes(ntAll, False);
+      for ChildNode in ChildNodes do
+      begin
+        if ChildNode.Parent = Node then
+        begin
+          ChildNodeData := FClientView.GetNodeData(ChildNode);
+          FClients.RemoveClient(ChildNodeData.Client);
+        end;
+      end;
+    end else
+      FClients.RemoveClient(NodeData.Client);
+  end;
+
+  // Wenn alle Clients weg sind können jetzt Kategorien gekickt werden.
+  Nodes := FClientView.GetNodes(ntCategory, True);
+  for Node in Nodes do
+  begin
+    NodeData := FClientView.GetNodeData(Node);
+    FStreams.CategoryList.Remove(NodeData.Category);
+    NodeData.Category.Free;
+    FClientView.DeleteNode(Node);
   end;
 end;
 
@@ -317,13 +351,13 @@ var
   Clients: TNodeDataArray;
   SelectedClient, Client: PClientNodeData;
 begin
-  Clients := FClientView.NodesToData(FClientView.GetNodes(True));
+  Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
   if Length(Clients) <> 1 then
     Exit
   else
     SelectedClient := Clients[0];
 
-  Clients := FClientView.NodesToData(FClientView.GetNodes(False));
+  Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, False));
   for Client in Clients do
     if Client <> SelectedClient then
       Client.Client.StopPlay;
@@ -336,7 +370,7 @@ var
   Clients: TClientArray;
   Client: TICEClient;
 begin
-  Clients := FClientView.NodesToClients(FClientView.GetNodes(False));
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
   for Client in Clients do
   begin
     Client.StopPlay;
@@ -355,7 +389,7 @@ begin
                           'Do you want to continue?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
   if Res = IDYES then
   begin
-    Clients := FClientView.NodesToData(FClientView.GetNodes(True));
+    Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
     for Client in Clients do
     begin
       R := FStreams.StreamList.Get(Client.Client);
@@ -453,7 +487,7 @@ end;
 
 procedure TClientTab.AddressBarStart(Sender: TObject);
 begin
-  StartStreaming(FAddressBar.FStations.Text, FAddressBar.FStations.Text, False);
+  StartStreaming(FAddressBar.FStations.Text, FAddressBar.FStations.Text, False, nil, amNoWhere);
 end;
 
 procedure TClientTab.DebugClear(Sender: TObject);
@@ -461,7 +495,7 @@ var
   Clients: TNodeDataArray;
   i: Integer;
 begin
-  Clients := FClientView.NodesToData(FClientView.GetNodes(False));
+  Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, False));
   for i := 0 to Length(Clients) - 1 do
     if Clients[i].Client = FSideBar.FDebugView.DebugView.Client then
     begin
@@ -510,7 +544,7 @@ begin
   FClients.OnClientTitleAllowed := ClientManagerTitleAllowed;
 
   FStreams := Streams;
-  FStreams.StreamList.OnStreamChanged := StationsStreamChanged;
+  FStreams.StreamList.OnStreamChanged := StationsStreamChanged; //genau sowas brauche ich auch für categories. OnCategoriesChanged. Die dann zuerst adden und dann passig die streams!!
 
   FHomeCommunication := HomeCommunication;
 
@@ -560,6 +594,7 @@ begin
   FActionRemove.OnExecute := ActionRemoveExecute;
   FActionShowSideBar.OnExecute := ActionShowSideBarExecute;
 
+  GetAction('actNewCategory').OnExecute := ActionNewCategoryExecute;
   GetAction('actStart').OnExecute := ActionStartExecute;
   GetAction('actStop').OnExecute := ActionStopExecute;
   GetAction('actResetData').OnExecute := ActionResetDataExecute;
@@ -613,7 +648,7 @@ var
   Entry: TStreamEntry;
   Entries: TStreamList;
 begin
-  Clients := FClientView.NodesToData(FClientView.GetNodes(True));
+  Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
 
   Entries := TStreamList.Create;
   try
@@ -665,7 +700,7 @@ begin
     Entry.Name := Client.StreamName;
     // Ist nötig, weil zuerst bei geaddeter Playlist (manuell ohne Browser)
     // "http://" drin steht und Titel sich hier ändert
-    FClientView.SortItems;
+    //FClientView.SortItems;
   end;
   Entry.RecentIndex := 0;
   Entry.LastTouched := Now;
@@ -764,12 +799,12 @@ begin
   Entry := FStreams.StreamList.Add(Client.StreamName, Client.StartURL, Client.URLs,
     Client.BitRate, Client.Genre, Client.SkipShort, Client.UseFilter, 0);
   Entry.LastTouched := Now;
-  Entry.IsInList := True;
+  //Entry.IsInList := True;
   Client.Received := Entry.BytesReceived;
 
   FClientView.AddClient(Client);
 
-  FClientView.SortItems;
+  //FClientView.SortItems;
 end;
 
 procedure TClientTab.ClientManagerClientRemoved(Sender: TObject);
@@ -780,8 +815,8 @@ begin
   Client := Sender as TICEClient;
 
   Entry := FStreams.StreamList.Get(Client);
-  if Entry <> nil then
-    Entry.IsInList := False;
+  //if Entry <> nil then
+  //  Entry.IsInList := False;
 
   FClientView.RemoveClient(Client);
 
@@ -834,9 +869,9 @@ begin
 end;
 
 procedure TClientTab.FClientViewStartStreaming(Sender: TObject;
-  URL: string);
+  URL: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 begin
-  StartStreaming('', URL, False);
+  StartStreaming('', URL, False, Node, Mode);
 end;
 
 procedure TClientTab.FClientViewKeyPress(Sender: TObject;
@@ -860,7 +895,7 @@ begin
 
   if FClientView.SelectedCount = 1 then
   begin
-    Clients := FClientView.NodesToData(FClientView.GetNodes(True));
+    Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
     if Length(Clients) = 1 then
       FSideBar.FDebugView.ShowDebug(Clients[0].Client);
   end else
@@ -871,7 +906,7 @@ procedure TClientTab.FClientViewDblClick(Sender: TObject);
 var
   Clients: TNodeDataArray;
 begin
-  Clients := FClientView.NodesToData(FClientView.GetNodes(True));
+  Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
   if Length(Clients) = 1 then
   begin
     case AppGlobals.DefaultAction of
@@ -900,11 +935,13 @@ begin
   end;
 end;
 
-function TClientTab.StartStreaming(Name, URL: string; StartPlay: Boolean): Boolean;
+function TClientTab.StartStreaming(Name, URL: string; StartPlay: Boolean;
+  HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
 var
   Clients: TClientArray;
   Client: TICEClient;
   Entry: TStreamEntry;
+  Node: PVirtualNode;
 begin
   Result := True;
 
@@ -917,7 +954,7 @@ begin
 
   if StartPlay then
   begin
-    Clients := FClientView.NodesToClients(FClientView.GetNodes(False));
+    Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
     for Client in Clients do
     begin
       Client.StopPlay;
@@ -953,6 +990,13 @@ begin
       if Entry <> nil then
       begin
         Client := FClients.AddClient(Entry.Name, Entry.StartURL, Entry.URLs, Entry.SkipShort, Entry.UseFilter, Entry.SongsSaved);
+
+        if HitNode <> nil then
+        begin
+          Node := FClientView.GetClientNode(Client);
+          FClientView.MoveTo(Node, HitNode, Mode, False);
+        end;
+
         if StartPlay then
           Client.StartPlay
         else
@@ -962,6 +1006,13 @@ begin
         if ValidURL(URL) then
         begin
           Client := FClients.AddClient(Name, URL);
+
+          if HitNode <> nil then
+          begin
+            Node := FClientView.GetClientNode(Client);
+            FClientView.MoveTo(Node, HitNode, Mode, False);
+          end;
+
           if StartPlay then
             Client.StartPlay
           else
@@ -982,12 +1033,18 @@ var
   Item: TComboExItem;
   Client: TICEClient;
 begin
+  {
   if Stream.IsInList then
   begin
     Client := FClients.GetClient(Stream.Name, Stream.StartURL, Stream.URLs);
     if Client = nil then
-      FClients.AddClient(Stream.Name, Stream.StartURL, Stream.URLs, Stream.SkipShort, Stream.UseFilter, Stream.SongsSaved);
+    begin
+      // Client nach laden von Daten hinzufügen.
+      //FClients.AddClient(Stream.Name, Stream.StartURL, Stream.URLs, Stream.SkipShort, Stream.UseFilter, Stream.SongsSaved);
+      Exit;
+    end;
   end;
+  }
 
   Item := FAddressBar.FStations.Get(Stream.Name, Stream.StartURL, Stream.URLs);
   if (Item = nil) and (Stream.RecentIndex > -1) then
@@ -1027,11 +1084,11 @@ begin
   case Action of
     oaStart:
       for i := 0 to Length(Streams) - 1 do
-        if not StartStreaming(Streams[i].Name, Streams[i].URL, False) then
+        if not StartStreaming(Streams[i].Name, Streams[i].URL, False, nil, amNoWhere) then
           Break;
     oaPlay:
       for i := 0 to Length(Streams) - 1 do
-        StartStreaming(Streams[i].Name, Streams[i].URL, True);
+        StartStreaming(Streams[i].Name, Streams[i].URL, True, nil, amNoWhere);
     oaOpen:
       SavePlaylist(Entries, True);
     oaCopy:
@@ -1054,7 +1111,7 @@ var
   Client: TICEClient;
 begin
   AppGlobals.PlayerVolume := FVolume.Trackbar.Position;
-  Clients := FClientView.NodesToClients(FClientView.GetNodes(False));
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
   for Client in Clients do
   begin
     Client.SetVolume(FVolume.Trackbar.Position);
@@ -1068,6 +1125,134 @@ begin
     ShowInfo;
     FRefreshInfo := False;
   end;
+end;
+
+procedure TClientTab.UpdateStreams(Streams: TDataLists);
+var
+  i: Integer;
+  CatNodes: TNodeArray;
+  Nodes: TNodeArray;
+  Clients: TClientArray;
+  Client: TICEClient;
+  Entry: TStreamEntry;
+  Node: PVirtualNode;
+  NodeData: PClientNodeData;
+  ItemIdx, ChildStreamIdx: Integer;
+begin
+  ItemIdx := 0;
+  ChildStreamIdx := 0;
+
+  for i := 0 to Streams.StreamList.Count - 1 do
+  begin
+    Streams.StreamList[i].IsInList := False;
+    Streams.StreamList[i].Index := 0;
+    Streams.StreamList[i].CategoryIndex := 0;
+  end;
+
+  // Evtl. gelöschte Kategorien freigeben
+  for i := Streams.CategoryList.Count - 1 downto 0 do
+  begin
+    Node := FClientView.GetCategoryNode(Streams.CategoryList[i].Index);
+    if Node = nil then
+    begin
+      Streams.CategoryList[i].Free;
+      Streams.CategoryList.Delete(i);
+    end;
+  end;
+
+  Nodes := FClientView.GetNodes(ntAll, False);
+  for i := 0 to Length(Nodes) - 1 do
+  begin
+    NodeData := FClientView.GetNodeData(Nodes[i]);
+
+    if NodeData.Client = nil then
+    begin
+      Inc(ItemIdx);
+      NodeData.Category.Index := ItemIdx;
+      NodeData.Category.Expanded := FClientView.Expanded[Nodes[i]];
+      // Wenn es eine neue Kategorie ist, hinzufügen
+      if not Streams.CategoryList.Contains(NodeData.Category) then
+        Streams.CategoryList.Add(NodeData.Category);
+      ChildStreamIdx := 0;
+    end else
+    begin
+      Entry := Streams.StreamList.Get(NodeData.Client);
+      if Entry <> nil then
+      begin
+        if FClientView.GetNodeLevel(Nodes[i]) = 0 then
+        begin
+          Inc(ItemIdx);
+          Entry.Index := ItemIdx;
+        end else
+        begin
+          Inc(ChildStreamIdx);
+          Entry.Index := ChildStreamIdx;
+
+          // Eltern Node holen und Category setzen
+          Node := Nodes[i].Parent;
+          NodeData := FClientView.GetNodeData(Node);
+          Entry.CategoryIndex := NodeData.Category.Index;
+        end;
+        Entry.IsInList := True;
+      end;
+    end;
+  end;
+
+  {
+  Streams.CategoryList.Sort(TComparer<TListCategory>.Construct(
+    function (const L, R: TListCategory): Integer
+    begin
+      Result := CmpInt(L.Index, R.Index);
+    end
+  ));
+  Streams.StreamList.Sort(TComparer<TStreamEntry>.Construct(
+    function (const L, R: TStreamEntry): Integer
+    begin
+      Result := CmpInt(L.Index, R.Index);
+    end
+  ));
+  }
+end;
+
+procedure TClientTab.BuildTree(Streams: TDataLists);
+var
+  i: Integer;
+  Client: TICEClient;
+  Node, ParentNode: PVirtualNode;
+begin
+  for i := 0 to Streams.CategoryList.Count - 1 do
+  begin
+    Node := FClientView.AddCategory(Streams.CategoryList[i]);
+  end;
+
+  for i := 0 to Streams.StreamList.Count - 1 do
+  begin
+    if not Streams.StreamList[i].IsInList then
+      Continue;
+
+    //Client := FClients.AddClient(Streams.StreamList[i].Name, Streams.StreamList[i].StartURL, Streams.StreamList[i].URLs,
+    //  Streams.StreamList[i].SkipShort, Streams.StreamList[i].UseFilter, Streams.StreamList[i].SongsSaved);
+    Client := FClients.AddClient(Streams.StreamList[i]);
+    Node := FClientView.GetClientNode(Client);
+    if Client <> nil then
+    begin
+      if Streams.StreamList[i].CategoryIndex > 0 then
+      begin
+        ParentNode := FClientView.GetCategoryNode(Streams.StreamList[i].CategoryIndex);
+        if ParentNode <> nil then
+          FClientView.MoveTo(Node, ParentNode, amAddChildLast, False);
+      end;
+    end;
+  end;
+
+  for i := 0 to Streams.CategoryList.Count - 1 do
+  begin
+    Node := FClientView.GetCategoryNode(Streams.CategoryList[i].Index);
+    if Streams.CategoryList[i].Expanded then
+      FClientView.Expanded[Node] := True;
+  end;
+
+  FClientView.SortItems;
 end;
 
 { TSidebar }

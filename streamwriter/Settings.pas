@@ -283,7 +283,6 @@ begin
   AppGlobals.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
   AppGlobals.SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
 
-  // TODO: Pluginmanager locken oder sowas? und an den stellen, wo sich plugins tiggern.
   for i := 0 to FTemporaryPlugins.Count - 1 do
   begin
     EP := AppGlobals.PluginManager.GetID(FTemporaryPlugins[i].Identifier);

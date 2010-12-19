@@ -204,10 +204,12 @@ begin
     Text.Add('');
     Text.Add('');
 
-    Text.Add(_('&U&10...people who contributed code, images or translations'));
+    Text.Add(_('&U&10...people who contributed code, documentation,'));
+    Text.Add(_('&U&10images or translations'));
     Text.Add('');
-    SetLength(FHelpers, 1);
+    SetLength(FHelpers, 2);
     FHelpers[0] := '''HostedDinner''';
+    FHelpers[1] := '''bastik''';
     ShuffleFisherYates(FHelpers);
     for i := 0 to Length(FHelpers) - 1 do
       Text.Add(FHelpers[i]);
@@ -215,6 +217,7 @@ begin
     Text.Add('');
     Text.Add('');
 
+    {
     Text.Add(_('&U&10...everyone supporting streamWriter'#13#10'&U&10at http://streamwriter.org/forum/'));
     Text.Add('');
     SetLength(FBoard, 12);
@@ -236,6 +239,7 @@ begin
 
     Text.Add('');
     Text.Add('');
+    }
 
     Text.Add(_('&U&10...software, graphics and other resources used'#13#10'&U&10to develop streamWriter and it''s website'));
     Text.Add('');

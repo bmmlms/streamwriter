@@ -82,6 +82,7 @@ type
     FContentType: string;
     FFilename: string;
     FUseFilter: TUseFilters;
+    FIndex: Integer;
 
     FSkipShort: Boolean;
     FKilled: Boolean;
@@ -125,6 +126,7 @@ type
     constructor Create(StartURL: string); overload;
     constructor Create(Name, StartURL: string); overload;
     constructor Create(Name, StartURL: string; URLs: TStringList; SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal); overload;
+    constructor Create(Name, StartURL: string; URLs: TStringList; SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal; Idx: Integer); overload;
     destructor Destroy; override;
 
     procedure WriteDebug(Text, Data: string; T: TDebugTypes; Level: TDebugLevels); overload;
@@ -162,6 +164,7 @@ type
     property Filename: string read FFilename;
     //property RelayURL: string read FGetRelayURL;
     property UseFilter: TUseFilters read FUseFilter write FUseFilter;
+    property Index: Integer read FIndex;
 
     property SkipShort: Boolean read FSkipShort;
     property ProcessingList: TProcessingList read FProcessingList;
@@ -209,6 +212,14 @@ begin
   FSkipShort := SkipShort;
   FUseFilter := UseFilter;
   FSongsSaved := SongsSaved;
+end;
+
+constructor TICEClient.Create(Name, StartURL: string; URLs: TStringList;
+  SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal;
+  Idx: Integer);
+begin
+  Create(Name, StartURL, URLs, SkipShort, UseFilter, SongsSaved);
+  FIndex := Idx;
 end;
 
 procedure TICEClient.Initialize;
@@ -787,12 +798,30 @@ begin
 end;
 
 function TICEClient.ParsePlaylist: Boolean;
+  procedure ParseLine(Line: string);
+  var
+    Host, URLData: string;
+    Port: Integer;
+    PortDetected: Boolean;
+  begin
+    if ParseURL(Line, Host, Port, URLData, PortDetected) then
+    begin
+      if not PortDetected then
+      begin
+        // Es gibt keienn Standard scheinbar - beide nehmen.
+        FURLs.Add(Host + ':80' + URLData);
+        FURLs.Add(Host + ':6666' + URLData);
+      end else
+      begin
+        FURLs.Add(Host + ':' + IntToStr(Port) + URLData);
+        //if Port <> 80 then
+        //  FURLs.Add(Host + ':80' + URLData);
+      end;
+    end;
+  end;
 var
   Offset, Offset2: Integer;
-  Host, URLData: string;
-  Port: Integer;
-  Data, Line: string;
-  PortDetected: Boolean;
+  Line, Data: string;
 begin
   FURLs.Clear;
   Offset := 1;
@@ -816,15 +845,7 @@ begin
         begin
           Line := Trim(Copy(Line, Offset2 + 1, Length(Line) - Offset2));
           if (Line <> '') then
-          begin
-            if ParseURL(Line, Host, Port, URLData, PortDetected) then
-            begin
-              if not PortDetected then
-                FURLs.Add(Host + ':6666' + URLData)
-              else
-                FURLs.Add(Host + ':' + IntToStr(Port) + URLData);
-            end;
-          end;
+            ParseLine(Line);
         end;
       end;
 
@@ -844,15 +865,7 @@ begin
       Offset := Offset2 + 1;
 
       if (Length(Line) >= 1) and (Line[1] <> '#') then
-      begin
-        if ParseURL(Line, Host, Port, URLData, PortDetected) then
-        begin
-          if not PortDetected then
-            FURLs.Add(Host + ':6666' + URLData)
-          else
-            FURLs.Add(Host + ':' + IntToStr(Port) + URLData);
-        end;
-      end;
+        ParseLine(Line);
 
       if Offset2 = 0 then
         Break;
@@ -873,13 +886,8 @@ begin
 
         Offset := Offset2 + 1;
 
-        if ParseURL(Line, Host, Port, URLData, PortDetected) then
-        begin
-          if not PortDetected then
-            FURLs.Add(Host + ':6666' + URLData)
-          else
-            FURLs.Add(Host + ':' + IntToStr(Port) + URLData);
-        end;
+        if (Length(Line) >= 1) and (Line[1] <> '#') then
+          ParseLine(Line);
 
         if Offset2 = 0 then
           Break;

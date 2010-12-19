@@ -322,7 +322,7 @@ end;
 procedure TICEThread.DoConnecting;
 begin
   inherited;
-  WriteDebug(_('Connecting...'), 0, 0);
+  WriteDebug(Format(_('Connecting to %s:%d...'), [Host, Port]), 0, 0);
 end;
 
 procedure TICEThread.DoConnected;

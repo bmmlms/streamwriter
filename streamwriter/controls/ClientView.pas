@@ -25,7 +25,7 @@ uses
   Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
   StdCtrls, Menus, ImgList, Math, ICEClient, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, Tabs, DropComboTarget,
-  DropSource;
+  DropSource, ShlObj, ComObj, ShellAPI, RecentManager;
 
 type
   TAccessCanvas = class(TCanvas);
@@ -34,8 +34,11 @@ type
 
   TClientArray = array of TICEClient;
 
+  TNodeTypes = (ntCategory, ntClient, ntAll);
+
   TClientNodeData = record
     Client: TICEClient;
+    Category: TListCategory;
   end;
   PClientNodeData = ^TClientNodeData;
 
@@ -43,14 +46,17 @@ type
 
   TNodeDataArray = array of PClientNodeData;
 
+  TStartStreamingEvent = procedure(Sender: TObject; URL: string; Node: PVirtualNode; Mode: TVTNodeAttachMode) of object;
+
   TMClientView = class(TVirtualStringTree)
   private
     FPopupMenu: TPopupMenu;
     FDragSource: TDropFileSource;
-    FDropTarget: TDropComboTarget;
+    FDragNodes: TNodeArray;
 
+    FInitialSorted: Boolean;
     FSortColumn: Integer;
-    FSortDirection: TSortDirection;
+    FSortDirection: VirtualTrees.TSortDirection;
 
     FColName: TVirtualTreeColumn;
     FColTitle: TVirtualTreeColumn;
@@ -59,7 +65,7 @@ type
     FColSpeed: TVirtualTreeColumn;
     FColStatus: TVirtualTreeColumn;
 
-    FOnStartStreaming: TStringEvent;
+    FOnStartStreaming: TStartStreamingEvent;
 
     procedure FitColumns;
 
@@ -77,6 +83,13 @@ type
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     function DoIncrementalSearch(Node: PVirtualNode;
       const Text: string): Integer; override;
+    procedure DoDragDrop(Source: TObject; DataObject: IDataObject; Formats: TFormatArray; Shift: TShiftState; Pt: TPoint;
+      var Effect: Integer; Mode: TDropMode); override;
+    function DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; Pt: TPoint; Mode: TDropMode;
+      var Effect: Integer): Boolean; override;
+    procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
+    function DoEndEdit: Boolean; override;
+    procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; Text: UnicodeString); override;
   public
     constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu); reintroduce;
     destructor Destroy; override;
@@ -84,20 +97,48 @@ type
     function AddClient(Client: TICEClient): PVirtualNode;
     function RefreshClient(Client: TICEClient): Boolean;
     function GetClientNodeData(Client: TICEClient): PClientNodeData;
+    function GetClientNode(Client: TICEClient): PVirtualNode;
+    function GetCategoryNode(Idx: Integer): PVirtualNode;
     procedure RemoveClient(Client: TICEClient);
     procedure SortItems;
+    function AddCategory(Category: TListCategory): PVirtualNode; overload;
+    procedure AddCategory; overload;
 
-    function GetNodes(SelectedOnly: Boolean): TNodeArray;
+    function GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
     function NodesToData(Nodes: TNodeArray): TNodeDataArray;
     function NodesToClients(Nodes: TNodeArray): TClientArray;
     function GetEntries(T: TEntryTypes): TPlaylistEntryArray;
 
-    property OnStartStreaming: TStringEvent read FOnStartStreaming write FOnStartStreaming;
+    property OnStartStreaming: TStartStreamingEvent read FOnStartStreaming write FOnStartStreaming;
   end;
 
 implementation
 
 { TMStreamView }
+
+function TMClientView.AddCategory(Category: TListCategory): PVirtualNode;
+var
+  Node: PVirtualNode;
+  NodeData: PClientNodeData;
+begin
+  Node := AddChild(nil);
+  NodeData := GetNodeData(Node);
+  NodeData.Client := nil;
+  NodeData.Category := Category;
+  Result := Node;
+end;
+
+procedure TMClientView.AddCategory;
+var
+  Node: PVirtualNode;
+  NodeData: PClientNodeData;
+begin
+  Node := AddChild(nil);
+  NodeData := GetNodeData(Node);
+  NodeData.Client := nil;
+  NodeData.Category := TListCategory.Create(_('New category'), 0);
+  EditNode(Node, 0);
+end;
 
 function TMClientView.AddClient(Client: TICEClient): PVirtualNode;
 var
@@ -107,6 +148,7 @@ begin
   Node := AddChild(nil);
   NodeData := GetNodeData(Node);
   NodeData.Client := Client;
+  NodeData.Category := nil;
   Result := Node;
 end;
 
@@ -119,8 +161,8 @@ begin
   Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
   TreeOptions.AutoOptions := [toAutoScrollOnExpand];
-  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
-  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
+  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowDropmark];
+  TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toAcceptOLEDrop, toEditable];
   Header.Options := Header.Options + [hoAutoResize];
   Header.Options := Header.Options - [hoDrag];
   Header.AutoSizeIndex := 1;
@@ -131,13 +173,8 @@ begin
   FPopupMenu := PopupMenu;
   FDragSource := TDropFileSource.Create(Self);
 
-  FDropTarget := TDropComboTarget.Create(Self);
-  FDropTarget.Formats := [mfText, mfURL, mfFile];
-  FDropTarget.Register(Self);
-  FDropTarget.OnDrop := DropTargetDrop;
-
   FSortColumn := 0;
-  FSortDirection := sdAscending;
+  FSortDirection := VirtualTrees.sdAscending;
 
   FColName := Header.Columns.Add;
   FColName.Text := _('Name');
@@ -172,28 +209,27 @@ var
   NodeData: PClientNodeData;
 begin
   Result := inherited;
-  //if ((Kind = ikNormal) or (Kind = ikSelected)) then
-  begin
-    NodeData := GetNodeData(Node);
+
+  if Kind = ikOverlay then
+    Exit;
+  
+  NodeData := GetNodeData(Node);
+  if NodeData.Client <> nil then    
     case Column of
       0:
         begin
-          case Kind of
-            ikNormal, ikSelected:
-              begin
-                if NodeData.Client.Playing and NodeData.Client.Recording then
-                  Index := 2
-                else if NodeData.Client.Recording then
-                  Index := 0
-                else if NodeData.Client.Playing then
-                  Index := 1
-                else
-                  Index := 3;
-              end;
-          end;
+          if NodeData.Client.Playing and NodeData.Client.Recording then
+            Index := 2
+          else if NodeData.Client.Recording then
+            Index := 0
+          else if NodeData.Client.Playing then
+            Index := 1
+          else
+            Index := 3;
         end;
-    end;
-  end;
+    end
+  else if Column = 0 then         
+    Index := 4;
 end;
 
 function TMClientView.DoGetNodeTooltip(Node: PVirtualNode;
@@ -213,49 +249,58 @@ var
   NodeData: PClientNodeData;
 begin
   inherited;
+  Text := '';
   NodeData := PClientNodeData(GetNodeData(Node));
-  case Column of
-    0:
-      if NodeData.Client.StreamName = '' then
-        if NodeData.Client.StartURL = '' then
-          Text := _('Unknown')
+  if NodeData.Client <> nil then
+  begin
+    case Column of
+      0:
+        if NodeData.Client.StreamName = '' then
+          if NodeData.Client.StartURL = '' then
+            Text := _('Unknown')
+          else
+            Text := NodeData.Client.StartURL
         else
-          Text := NodeData.Client.StartURL
-      else
-        Text := NodeData.Client.StreamName;
-    1:
-      if NodeData.Client.Title = '' then
-        if (NodeData.Client.State = csConnected) or (NodeData.Client.State = csConnecting) then
-          Text := _('Unknown')
+          Text := NodeData.Client.StreamName;
+      1:
+        if NodeData.Client.Title = '' then
+          if (NodeData.Client.State = csConnected) or (NodeData.Client.State = csConnecting) then
+            Text := _('Unknown')
+          else
+            Text := ''
         else
-          Text := _('')
-      else
-        Text := NodeData.Client.Title;
-    2:
-      Text := MakeSize(NodeData.Client.Received);
-    3:
-      Text := IntToStr(NodeData.Client.SongsSaved);
-    4:
-      Text := MakeSize(NodeData.Client.Speed) + '/s';
-    5:
-      case NodeData.Client.State of
-        csConnecting:
-          Text := _('Connecting...');
-        csConnected:
-          Text := _('Connected');
-        csRetrying:
-          Text := _('Waiting...');
-        csStopped:
-          Text := _('Stopped');
-        csStopping:
-          Text := _('Stopping...');
-        csIOError:
-          Text := _('Error creating file');
-      end;
-  end;
+          Text := NodeData.Client.Title;
+      2:
+        Text := MakeSize(NodeData.Client.Received);
+      3:
+        Text := IntToStr(NodeData.Client.SongsSaved);
+      4:
+        Text := MakeSize(NodeData.Client.Speed) + '/s';
+      5:
+        case NodeData.Client.State of
+          csConnecting:
+            Text := _('Connecting...');
+          csConnected:
+            Text := _('Connected');
+          csRetrying:
+            Text := _('Waiting...');
+          csStopped:
+            Text := _('Stopped');
+          csStopping:
+            Text := _('Stopping...');
+          csIOError:
+            Text := _('Error creating file');
+        end;
+    end
+  end else
+    if Column = 0 then    
+      Text := NodeData.Category.Name;
 end;
 
 procedure TMClientView.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
+var
+  i: Integer;
+  Nodes: TNodeArray;
 begin
   inherited;
   if HitInfo.Button = mbLeft then
@@ -275,6 +320,9 @@ begin
         FSortDirection := sdAscending;
     end;
     Sort(nil, HitInfo.Column, FSortDirection);
+    Nodes := GetNodes(ntCategory, False);
+    for i := 0 to Length(Nodes) - 1 do
+      Sort(Nodes[i], FSortColumn, FSortDirection);
   end;
 end;
 
@@ -291,6 +339,20 @@ begin
     Exit;
   DoGetText(Node, 0, ttNormal, NodeText);
   Result := StrLIComp(PChar(s), PChar(NodeText), Min(Length(s), Length(NodeText)));
+end;
+
+procedure TMClientView.DoNewText(Node: PVirtualNode; Column: TColumnIndex;
+  Text: UnicodeString);
+var
+  NodeData: PClientNodeData;
+begin
+  inherited;
+
+  if Trim(Text) <> '' then
+  begin
+    NodeData := GetNodeData(Node);
+    NodeData.Category.Name := Text;
+  end;
 end;
 
 procedure TMClientView.FitColumns;
@@ -316,11 +378,45 @@ begin
   FColSongs.Width := GetTextWidth(FColSongs.Text);
 end;
 
+function TMClientView.DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; Pt: TPoint; Mode: TDropMode;
+  var Effect: Integer): Boolean;
+var
+  i: Integer;
+  HitNode: PVirtualNode;
+  HitNodeData: PClientNodeData;
+begin
+  Result := True;
+  if Length(FDragNodes) > 0 then
+  begin
+    HitNode := GetNodeAt(Pt.X, Pt.Y);
+    Result := True;
+    
+    // Drop darf nur erlaubt sein, wenn Ziel-Node nicht in gedraggten
+    // Nodes vorkommt
+    for i := 0 to Length(FDragNodes) - 1 do
+      if HitNode = FDragNodes[i] then
+      begin
+        Result := False;
+        Break;
+      end;
+    //if HitNode <> nil then
+    //  HitNodeData := GetNodeData(HitNode);
+    //if (HitNode = FDragNode) or (HitNode = nil) {or ((HitNode <> nil) and (HitNodeData.Client <> nil))} then
+      //Result := False;
+  end;
+end;
+
+function TMClientView.DoEndEdit: Boolean;
+begin
+  inherited;
+end;
+
 procedure TMClientView.DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
   APoint: TPoint; var Effect: Integer);
 var
   DropURL: string;
 begin
+{
   DropURL := string(FDropTarget.URL);
   if DropURL = '' then
     DropURL := string(FDropTarget.Text);
@@ -330,17 +426,17 @@ begin
 
   if (DropURL <> '') then
     OnStartStreaming(Self, DropURL);
+  }
 end;
 
-function TMClientView.GetClientNodeData(
-  Client: TICEClient): PClientNodeData;
+function TMClientView.GetClientNodeData(Client: TICEClient): PClientNodeData;
 var
   Nodes: TNodeArray;
   Node: PVirtualNode;
   NodeData: PClientNodeData;
 begin
   Result := nil;
-  Nodes := GetNodes(False);
+  Nodes := GetNodes(ntClient, False);
   for Node in Nodes do
   begin
     NodeData := GetNodeData(Node);
@@ -352,16 +448,85 @@ begin
   end;
 end;
 
-function TMClientView.GetNodes(SelectedOnly: Boolean): TNodeArray;
+function TMClientView.GetClientNode(Client: TICEClient): PVirtualNode;
+var
+  Nodes: TNodeArray;
+  Node: PVirtualNode;
+  NodeData: PClientNodeData;
+begin
+  Result := nil;
+  Nodes := GetNodes(ntClient, False);
+  for Node in Nodes do
+  begin
+    NodeData := GetNodeData(Node);
+    if NodeData.Client = Client then
+    begin
+      Result := Node;
+      Exit;
+    end;
+  end;
+end;
+
+function TMClientView.GetCategoryNode(Idx: Integer): PVirtualNode;
+var
+  Nodes: TNodeArray;
+  Node: PVirtualNode;
+  NodeData: PClientNodeData;
+begin
+  Result := nil;
+  Nodes := GetNodes(ntCategory, False);
+  for Node in Nodes do
+  begin
+    NodeData := GetNodeData(Node);
+    if (NodeData.Category <> nil) and (NodeData.Category.Index = Idx) then
+    begin
+      Result := Node;
+      Exit;
+    end;
+  end;
+end;
+
+function TMClientView.GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
 var
   i: Integer;
   Node: PVirtualNode;
+  NodeData: PClientNodeData;
   Nodes: TNodeArray;
 begin
+  SetLength(Result, 0);
+  Node := GetFirst;
+  while Node <> nil do
+  begin
+    NodeData := GetNodeData(Node);
+
+    if SelectedOnly and (not Selected[Node]) then
+    begin
+      Node := GetNext(Node);
+      Continue;
+    end;
+
+    if ((NodeTypes = ntClient) and (NodeData.Client = nil)) or
+       ((NodeTypes = ntCategory) and (NodeData.Client <> nil)) then
+    begin
+      Node := GetNext(Node);
+      Continue;
+    end;
+    
+    SetLength(Result, Length(Result) + 1);
+    Result[Length(Result) - 1] := Node;
+    Node := GetNext(Node);
+  end;
+
+{
   SetLength(Result, 0);
   if not SelectedOnly then begin
     Node := GetFirst;
     while Node <> nil do begin
+      if GetNodeLevel(Node) = 0 then
+      begin
+        Node := GetNext(Node);
+        Continue;
+      end;
       SetLength(Result, Length(Result) + 1);
       Result[Length(Result) - 1] := Node;
       Node := GetNext(Node);
@@ -370,10 +535,13 @@ begin
     SetLength(Result, 0);
     Nodes := GetSortedSelection(True);
     for i := 0 to Length(Nodes) - 1 do begin
+      if GetNodeLevel(Node) = 0 then
+        Continue;
       SetLength(Result, Length(Result) + 1);
       Result[Length(Result) - 1] := Nodes[i];
     end;
   end;
+}
 end;
 
 function TMClientView.RefreshClient(Client: TICEClient): Boolean;
@@ -383,7 +551,7 @@ var
   NodeData: PClientNodeData;
 begin
   Result := False;
-  Nodes := GetNodes(False);
+  Nodes := GetNodes(ntClient, False);
   for i := 0 to Length(Nodes) - 1 do
   begin
     NodeData := GetNodeData(Nodes[i]);
@@ -402,7 +570,7 @@ var
   Nodes: TNodeArray;
   NodeData: PClientNodeData;
 begin
-  Nodes := GetNodes(False);
+  Nodes := GetNodes(ntClient, False);
   for i := Length(Nodes) - 1 downto 0 do
   begin
     NodeData := GetNodeData(Nodes[i]);
@@ -415,8 +583,15 @@ begin
 end;
 
 procedure TMClientView.SortItems;
+var
+  i: Integer;
+  Nodes: TNodeArray;
 begin
-  Sort(nil, FSortColumn, FSortDirection);
+  Sort(nil, -1, sdAscending);
+  Nodes := GetNodes(ntCategory, False);
+  for i := 0 to Length(Nodes) - 1 do
+    Sort(Nodes[i], -1, sdAscending);
+  FInitialSorted := True;
 end;
 
 function TMClientView.NodesToData(Nodes: TNodeArray): TNodeDataArray;
@@ -445,6 +620,16 @@ begin
   end;
 end;
 
+procedure TMClientView.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;
+  var Allowed: Boolean);
+var
+  NodeData: PClientNodeData;
+begin
+  inherited; 
+  NodeData := GetNodeData(Node);
+  Allowed := NodeData.Category <> nil;
+end;
+
 function TMClientView.DoCompare(Node1, Node2: PVirtualNode;
   Column: TColumnIndex): Integer;
   function CmpInt(a, b: Integer): Integer;
@@ -467,18 +652,235 @@ function TMClientView.DoCompare(Node1, Node2: PVirtualNode;
   end;
 var
   Data1, Data2: PClientNodeData;
+  I1, I2: Integer;
 begin
   Result := 0;
   Data1 := GetNodeData(Node1);
   Data2 := GetNodeData(Node2);
 
-  case Column of
-    0: Result := CompareText(Data1.Client.StreamName, Data2.Client.StreamName);
-    1: Result := CompareText(Data1.Client.Title, Data2.Client.Title);
-    2: Result := CmpInt(Data1.Client.Received, Data2.Client.Received);
-    3: Result := CmpInt(Data1.Client.SongsSaved, Data2.Client.SongsSaved);
-    4: Result := CmpInt(Data1.Client.Speed, Data2.Client.Speed);
-    5: Result := CmpIntR(Integer(Data1.Client.State), Integer(Data2.Client.State));
+  if (Column = -1) and (not FInitialSorted) then
+  begin
+    // Mit Column -1 heiﬂt nach Programmstart sortieren
+    if Data1.Client <> nil then
+      I1 := Data1.Client.Index
+    else
+      I1 := Data1.Category.Index;
+
+    if Data2.Client <> nil then
+      I2 := Data2.Client.Index
+    else
+      I2 := Data2.Category.Index;
+
+    Result := CmpInt(I1, I2);
+    Exit;
+  end;
+
+  if (Data1.Client <> nil) and (Data2.Client <> nil) then
+    case Column of
+      0: Result := CompareText(Data1.Client.StreamName, Data2.Client.StreamName);
+      1: Result := CompareText(Data1.Client.Title, Data2.Client.Title);
+      2: Result := CmpInt(Data1.Client.Received, Data2.Client.Received);
+      3: Result := CmpInt(Data1.Client.SongsSaved, Data2.Client.SongsSaved);
+      4: Result := CmpInt(Data1.Client.Speed, Data2.Client.Speed);
+      5: Result := CmpIntR(Integer(Data1.Client.State), Integer(Data2.Client.State));
+    end
+  else if (Data1.Category <> nil) and (Data2.Category <> nil) then
+    if Column = 0 then
+      Result := CompareText(Data1.Category.Name, Data2.Category.Name);
+end;
+
+function GetFileListFromObj(const DataObj: IDataObject;
+  const FileList: TStrings): Boolean;
+var
+  FormatEtc: TFormatEtc;
+  Medium: TStgMedium;
+  FileName: string;
+  i, DroppedFileCount, FileNameLength: Integer;
+begin
+  Result := False;
+  try
+    FormatEtc.cfFormat := CF_HDROP;
+    FormatEtc.ptd := nil;
+    FormatEtc.dwAspect := DVASPECT_CONTENT;
+    FormatEtc.lindex := -1;
+    FormatEtc.tymed := TYMED_HGLOBAL;
+    OleCheck(DataObj.GetData(FormatEtc, Medium));
+    try
+      try
+        DroppedFileCount := DragQueryFile(Medium.hGlobal, $FFFFFFFF, nil, 0);
+        for i := 0 to Pred(DroppedFileCount) do
+        begin
+          FileNameLength := DragQueryFile(Medium.hGlobal, i, nil, 0);
+          SetLength(FileName, FileNameLength);
+          DragQueryFile(Medium.hGlobal, i, PChar(FileName), FileNameLength + 1);
+          FileList.Add(FileName);
+        end;
+      finally
+        DragFinish(Medium.hGlobal);
+      end;
+    finally
+      ReleaseStgMedium(Medium);
+    end;
+    Result := FileList.Count > 0;
+  except end;
+end;
+
+function GetWideStringFromObj(const DataObject: IDataObject; var S: string): Boolean;
+var
+  FormatEtc: TFormatEtc;
+  Medium: TStgMedium;
+  OLEData,
+  Head, Tail: PWideChar;
+  Chars: Integer;
+begin
+  Result := False;
+  s := '';
+
+  FormatEtc.cfFormat := CF_UNICODETEXT;
+  FormatEtc.ptd := nil;
+  FormatEtc.dwAspect := DVASPECT_CONTENT;
+  FormatEtc.lindex := -1;
+  FormatEtc.tymed := TYMED_HGLOBAL;
+
+  if DataObject.QueryGetData(FormatEtc) = S_OK then
+  begin
+    if DataObject.GetData(FormatEtc, Medium) = S_OK then
+    begin
+      OLEData := GlobalLock(Medium.hGlobal);
+      if Assigned(OLEData) then
+      begin
+        Chars := 0;
+        Head := OLEData;
+        try
+          while Head^ <> #0 do
+          begin
+            Head := Pointer(Integer(Head) + SizeOf(WideChar));
+            Inc(Chars);
+          end;
+
+          SetString(S, OLEData, Chars);
+        finally
+          GlobalUnlock(Medium.hGlobal);
+        end;
+      end;
+      ReleaseStgMedium(Medium);
+    end;
+  end;
+  Result := S <> '';
+end;
+
+procedure TMClientView.DoDragDrop(Source: TObject; DataObject: IDataObject;
+  Formats: TFormatArray; Shift: TShiftState; Pt: TPoint;
+  var Effect: Integer; Mode: TDropMode);
+var
+  S: string;
+  Attachmode: TVTNodeAttachMode;
+  Nodes: TNodeArray;
+  i: Integer;
+  p: tpoint;
+  Files: TStringList;
+  NodeData, HitNodeData, DragNodeData: PClientNodeData;
+  DropURL: string;
+  TmpData: Pointer;
+  HI: THitInfo;
+  R: TRect;
+  RelevantWidth: Integer;
+begin
+  inherited;
+
+  Nodes := nil;
+  DropURL := '';
+  Attachmode := amInsertAfter;
+  Effect := DROPEFFECT_COPY;
+
+  GetHitTestInfoAt(Pt.X, Pt.Y, True, HI);
+  if Hi.HitNode <> nil then
+  begin
+    HitNodeData := GetNodeData(HI.HitNode);
+    R := GetDisplayRect(HI.HitNode, 0, False);
+
+    RelevantWidth := 6;
+
+    if Pt.Y > R.Bottom - RelevantWidth then
+      AttachMode := amInsertAfter
+    else if Pt.Y < R.Top + RelevantWidth then
+      AttachMode := amInsertBefore
+    else
+      AttachMode := amNoWhere;
+  end;
+  
+  if DataObject <> nil then
+  begin
+    if Length(FDragNodes) > 0 then
+    begin
+      if (HI.HitNode <> nil) then
+      begin
+        if (HitNodeData.Client = nil) and (((Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere)) then
+        begin
+          for i := 0 to Length(FDragNodes) - 1 do
+          begin
+            DragNodeData := GetNodeData(FDragNodes[i]);
+            if DragNodeData.Category = nil then
+              MoveTo(FDragNodes[i], HI.HitNode, amAddChildLast, False)
+            else
+              MoveTo(FDragNodes[i], HI.HitNode, amInsertAfter, False);
+          end;
+        end else
+        begin
+          if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
+            Attachmode := amAddChildLast;
+          if AttachMode = amNoWhere then
+            AttachMode := amInsertAfter;
+          for i := 0 to Length(FDragNodes) - 1 do
+          begin
+            DragNodeData := GetNodeData(FDragNodes[i]);
+            if (DragNodeData.Category <> nil) then
+              if GetNodeLevel(HI.HitNode) > 0 then
+              begin
+                HI.HitNode := HI.HitNode.Parent;
+                Attachmode := amInsertAfter;
+              end;
+            MoveTo(FDragNodes[i], HI.HitNode, Attachmode, False);
+          end;
+        end;
+        Exit;
+      end else
+        // Nodes ins "nichts" gedraggt
+        Exit;
+    end;
+
+    Files := TStringList.Create;
+    try
+      if GetFileListFromObj(DataObject, Files) and (Files.Count > 0) then
+        DropURL := Files[0];
+
+      if DropURL = '' then
+        for i := 0 to High(Formats) do
+        begin
+          case Formats[i] of
+            CF_UNICODETEXT:
+              begin
+                if GetWideStringFromObj(DataObject, DropURL) then
+                  Break;
+              end;
+          end;
+        end;
+
+      if (DropURL <> '') then
+        if (HitNodeData.Client = nil) and (((HI.HitNode <> nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere)) then
+          OnStartStreaming(Self, DropURL, HI.HitNode, amAddChildLast)
+        else
+        begin
+          if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
+            Attachmode := amAddChildLast;
+          if AttachMode = amNoWhere then
+            AttachMode := amInsertAfter;
+          OnStartStreaming(Self, DropURL, HI.HitNode, Attachmode);
+        end;
+    finally
+      Files.Free;
+    end;
+
   end;
 end;
 
@@ -490,53 +892,76 @@ var
   Entries: TPlaylistEntryArray;
   Client: TICEClient;
   Clients: TClientArray;
+  Node: PVirtualNode;
+  Nodes: TNodeArray;
 begin
   if FDragSource.DragInProgress then
     Exit;
 
+  if ((Length(GetNodes(ntCategory, True)) = 0) and (Length(GetNodes(ntClient, True)) = 0)) or
+     ((Length(GetNodes(ntCategory, True)) > 0) and (Length(GetNodes(ntClient, True)) > 0)) then
+  begin
+    // Raus, wenn nichts markiert ist oder von beiden etwas...
+    Exit;
+  end;
+
   //UseRelay := AppGlobals.Relay;
   UseFile := True;
 
-  Clients := NodesToClients(GetNodes(True));
+  SetLength(FDragNodes, 0);
   FDragSource.Files.Clear;
-  for Client in Clients do
+
+  Clients := NodesToClients(GetNodes(ntClient, True));
+  if Length(Clients) > 0 then
   begin
-    //if AppGlobals.Relay then
-    //  if not Client.Active then
-    //    UseRelay := False;
-    if not Client.Active then
-      UseFile := False;
-  end;
+    for Client in Clients do
+    begin
+      //if AppGlobals.Relay then
+      //  if not Client.Active then
+      //    UseRelay := False;
+      SetLength(FDragNodes, Length(FDragNodes) + 1);
+      FDragNodes[High(FDragNodes)] := GetClientNode(Client);
+      if not Client.Active then
+        UseFile := False;
+    end;
 
-  SetLength(Entries, 0);
+    SetLength(Entries, 0);
 
-  case AppGlobals.DefaultAction of
-    //caStartStop:
-      //if UseRelay then
-      //  Entries := GetEntries(etRelay);
-    caStream:
+    case AppGlobals.DefaultAction of
+      //caStartStop:
+        //if UseRelay then
+        //  Entries := GetEntries(etRelay);
+      caStream:
+        Entries := GetEntries(etStream);
+      //caRelay:
+      //  if UseRelay then
+      //    Entries := GetEntries(etRelay);
+      caFile:
+        if UseFile then
+          Entries := GetEntries(etFile);
+    end;
+
+    if Length(Entries) = 0 then
       Entries := GetEntries(etStream);
-    //caRelay:
-    //  if UseRelay then
-    //    Entries := GetEntries(etRelay);
-    caFile:
-      if UseFile then
-        Entries := GetEntries(etFile);
+
+    for i := 0 to Length(Entries) - 1 do
+      FDragSource.Files.Add(Entries[i].URL);
+
+    if FDragSource.Files.Count = 0 then
+      Exit;
+  end else
+  begin
+    Nodes := GetNodes(ntCategory, True);
+    for Node in Nodes do
+    begin
+      SetLength(FDragNodes, Length(FDragNodes) + 1);
+      FDragNodes[High(FDragNodes)] := Node;
+    end;
   end;
-
-  if Length(Entries) = 0 then
-    Entries := GetEntries(etStream);
-
-  for i := 0 to Length(Entries) - 1 do
-    FDragSource.Files.Add(Entries[i].URL);
-
-  if FDragSource.Files.Count = 0 then
-    Exit;
 
   DoStateChange([], [tsOLEDragPending, tsOLEDragging, tsClearPending]);
-  FDropTarget.Unregister;
   FDragSource.Execute(False);
-  FDropTarget.Register(Self);
+  SetLength(FDragNodes, 0);
 end;
 
 function TMClientView.GetEntries(T: TEntryTypes): TPlaylistEntryArray;
@@ -547,7 +972,7 @@ var
   Client: TICEClient;
 begin
   SetLength(Result, 0);
-  Clients := NodesToClients(GetNodes(True));
+  Clients := NodesToClients(GetNodes(ntClient, True));
   for Client in Clients do
   begin
     Add := True;

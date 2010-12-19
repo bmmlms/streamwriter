@@ -22,12 +22,13 @@ unit RecentManager;
 interface
 
 uses
-  Windows, Classes, SysUtils, ExtendedStream, ClientManager, ICEClient,
+  Windows, Classes, SysUtils, ExtendedStream, ICEClient,
   Generics.Collections, ComCtrls, AppData, Functions;
 
 type
   TStreamList = class;
   TDataLists = class;
+  TListCategory = class;
 
   EVersionException = class(Exception);
 
@@ -63,6 +64,22 @@ type
     property Hash: Cardinal read FHash;
   end;
 
+  TListCategoryList = TList<TListCategory>;
+
+  TListCategory = class
+  private
+    FName: string;
+    FIndex: Integer;
+    FExpanded: Boolean;
+  public
+    constructor Create(Name: string; Idx: Integer); overload;
+    class function Load(Stream: TExtendedStream; Version: Integer): TListCategory;
+    procedure Save(Stream: TExtendedStream);
+    property Name: string read FName write FName;
+    property Index: Integer read FIndex write FIndex;
+    property Expanded: Boolean read FExpanded write FExpanded;
+  end;
+
   TStreamEntry = class(TObject)
   private
     FParent: TStreamList;
@@ -75,6 +92,8 @@ type
     FSkipShort: Boolean;
     FUseFilter: TUseFilters;
     FSubmitted: Boolean;
+    FIndex: Integer;
+    FCategoryIndex: Integer;
 
     FIsInList: Boolean;
     FRecentIndex: Integer;
@@ -104,6 +123,8 @@ type
     property SkipShort: Boolean read FSkipShort write FSkipShort;
     property UseFilter: TUseFilters read FUseFilter write FUseFilter;
     property Submitted: Boolean read FSubmitted write FSubmitted;
+    property Index: Integer read FIndex write FIndex;
+    property CategoryIndex: Integer read FCategoryIndex write FCategoryIndex;
 
     property IsInList: Boolean read FIsInList write FSetIsInList;
     property RecentIndex: Integer read FRecentIndex write FSetRecentIndex;
@@ -134,6 +155,7 @@ type
 
   TDataLists = class
   private
+    FCategoryList: TListCategoryList;
     FStreamList: TStreamList;
     FSaveList: TTitleList;
     FIgnoreList: TTitleList;
@@ -148,6 +170,7 @@ type
     procedure Load;
     procedure Save;
 
+    property CategoryList: TListCategoryList read FCategoryList;
     property StreamList: TStreamList read FStreamList;
     property SaveList: TTitleList read FSaveList;
     property IgnoreList: TTitleList read FIgnoreList;
@@ -157,11 +180,7 @@ type
   end;
 
 const
-  DATAVERSION = 4;
-
-  // Irgendwann raus damit, z.B. wenn Computerbild endlich mal den Download aktualisiert!
-  RECENTVERSION = 3;
-  LISTVERSION = 2;
+  DATAVERSION = 5;
 
 implementation
 
@@ -249,6 +268,11 @@ begin
   Stream.Read(Result.FSubmitted);
 
   Stream.Read(Result.FIsInList);
+  if Version >= 5 then
+  begin
+    Stream.Read(Result.FIndex);
+    Stream.Read(Result.FCategoryIndex);
+  end;
   Stream.Read(Result.FRecentIndex);
   Stream.Read(Result.FLastTouched);
 
@@ -289,6 +313,8 @@ begin
   Stream.Write(FSubmitted);
 
   Stream.Write(FIsInList);
+  Stream.Write(FIndex);
+  Stream.Write(FCategoryIndex);
   Stream.Write(FRecentIndex);
   Stream.Write(FLastTouched);
 
@@ -388,6 +414,7 @@ begin
 
   FLoadError := False;
   FReceived := 0;
+  FCategoryList := TListCategoryList.Create;
   FStreamList := TStreamList.Create;
   FSaveList := TTitleList.Create;
   FIgnoreList := TTitleList.Create;
@@ -397,6 +424,10 @@ destructor TDataLists.Destroy;
 var
   i: Integer;
 begin
+  for i := 0 to FCategoryList.Count - 1 do
+    FCategoryList[i].Free;
+  FCategoryList.Free;
+
   for i := 0 to FStreamList.Count - 1 do
     FStreamList[i].Free;
   FStreamList.Free;
@@ -414,10 +445,11 @@ end;
 
 procedure TDataLists.Load;
 var
+  Cat: TListCategory;
   Entry: TStreamEntry;
   TitleInfo: TTitleInfo;
   S: TExtendedStream;
-  Version, EntryCount: Integer;
+  Version, CatCount, EntryCount: Integer;
   i, n: Integer;
 begin
   if AppGlobals.DataFile = '' then
@@ -449,6 +481,15 @@ begin
         end;
       end else
       begin
+        if Version >= 5 then
+        begin
+          S.Read(CatCount);
+          for i := 0 to CatCount - 1 do
+          begin
+            FCategoryList.Add(TListCategory.Load(S, Version));
+          end;
+        end;
+
         S.Read(EntryCount);
         for i := 0 to EntryCount - 1 do
         begin
@@ -551,6 +592,10 @@ begin
       S.Write(Integer(DATAVERSION));
 
       S.Write(FReceived);
+
+      S.Write(FCategoryList.Count);
+      for i := 0 to FCategoryList.Count - 1 do
+        FCategoryList[i].Save(S);
 
       S.Write(FStreamList.Count);
       for i := 0 to FStreamList.Count - 1 do
@@ -756,6 +801,31 @@ begin
   Stream.Write(FTitle);
   Stream.Write(FPattern);
   Stream.Write(FHash);
+end;
+
+{ TListCategory }
+
+constructor TListCategory.Create(Name: string; Idx: Integer);
+begin
+  inherited Create;
+  FName := Name;
+  FIndex := Idx;
+end;
+
+class function TListCategory.Load(Stream: TExtendedStream;
+  Version: Integer): TListCategory;
+begin
+  Result := TListCategory.Create;
+  Stream.Read(Result.FIndex);
+  Stream.Read(Result.FName);
+  Stream.Read(Result.FExpanded);
+end;
+
+procedure TListCategory.Save(Stream: TExtendedStream);
+begin
+  Stream.Write(FIndex);
+  Stream.Write(FName);
+  Stream.Write(FExpanded);
 end;
 
 end.
