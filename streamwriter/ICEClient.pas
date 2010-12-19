@@ -640,32 +640,36 @@ begin
         Exit;
       end;
 
-      Processed := AppGlobals.PluginManager.ProcessFile(Entry);
-      if Processed then
+      // Eine externe App könnte das File gelöscht haben
+      if Entry.Data.Filesize <> High(UInt64) then // GetFileSize = Int64 => -1
       begin
-        WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]), dtMessage, dlDebug);
-
-        Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
-        Entry.ActiveThread.Resume;
-      end else
-      begin
-        WriteDebug('All plugins done', dtMessage, dlDebug);
-
-        // Eine externe App könnte das File gelöscht haben
-        if Entry.Data.Filesize <> High(UInt64) then // GetFileSize = Int64 => -1
+        Processed := AppGlobals.PluginManager.ProcessFile(Entry);
+        if Processed then
         begin
+          WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]), dtMessage, dlDebug);
+
+          Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
+          Entry.ActiveThread.Resume;
+        end else
+        begin
+          WriteDebug('All plugins done', dtMessage, dlDebug);
+
           if Assigned(FOnSongSaved) then
             FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.Title, Entry.Data.Filesize, Entry.Data.WasCut);
           if Assigned(FOnRefresh) then
             FOnRefresh(Self);
-        end else
-        begin
-          WriteDebug(_('An external application or plugin has deleted the saved file.'), dtMessage, dlNormal);
+
+          Entry.Free;
+          FProcessingList.Delete(i);
         end;
+      end else
+      begin
+        WriteDebug(_('An external application or plugin has deleted the saved file.'), dtError, dlNormal);
 
         Entry.Free;
         FProcessingList.Delete(i);
       end;
+
       Break;
     end;
   end;

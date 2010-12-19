@@ -202,12 +202,17 @@ begin
   AppGlobals.Unlock;
 
   FTemporaryPlugins := TList<TExternalPlugin>.Create;
+
   for i := 0 to AppGlobals.PluginManager.Plugins.Count - 1 do
   begin
     Item := lstPlugins.Items.Add;
     Item.Caption := AppGlobals.PluginManager.Plugins[i].Name;
     Item.Checked := AppGlobals.PluginManager.Plugins[i].Active;
-    if AppGlobals.PluginManager.Plugins[i] is TPlugin then
+    if AppGlobals.PluginManager.Plugins[i] is TDLLPlugin then
+    begin
+      Item.Data := AppGlobals.PluginManager.Plugins[i];
+      Item.ImageIndex := 0;
+    end else if AppGlobals.PluginManager.Plugins[i] is TInternalPlugin then
     begin
       Item.Data := AppGlobals.PluginManager.Plugins[i];
       Item.ImageIndex := 0;
@@ -274,6 +279,8 @@ procedure TfrmSettings.Finish;
 var
   i, n: Integer;
   EP: TExternalPlugin;
+  IP: TInternalPlugin;
+  Item: TListItem;
 begin
   AppGlobals.Lock;
   AppGlobals.FilePattern := txtFilePattern.Text;
@@ -314,12 +321,23 @@ begin
       AppGlobals.PluginManager.Plugins.Add(TExternalPlugin.Create(EP.Exe, EP.Params, EP.Active, EP.Identifier, EP.Order));
     end else
     begin
-      EP.Exe := FTemporaryPlugins[i].Exe;
-      EP.Params := FTemporaryPlugins[i].Params;
-      EP.Active := FTemporaryPlugins[i].Active;
-      EP.Order := FTemporaryPlugins[i].Order;
+      Item := nil;
+      for n := 0 to lstPlugins.Items.Count - 1 do
+        if lstPlugins.Items[n].Data = FTemporaryPlugins[i] then
+        begin
+          Item := lstPlugins.Items[n];
+          Break;
+        end;
+      if Item <> nil then
+      begin
+        EP.Exe := FTemporaryPlugins[i].Exe;
+        EP.Params := FTemporaryPlugins[i].Params;
+        EP.Active := Item.Checked;
+        EP.Order := FTemporaryPlugins[i].Order;
+      end;
     end;
   end;
+
   for i := AppGlobals.PluginManager.Plugins.Count - 1 downto 0 do
   begin
     if AppGlobals.PluginManager.Plugins[i] is TExternalPlugin then
@@ -342,25 +360,30 @@ begin
 
   for i := 0 to lstPlugins.Items.Count - 1 do
   begin
-    if TPluginBase(lstPlugins.Items[i].Data) is TPlugin then
+    if TPluginBase(lstPlugins.Items[i].Data) is TDLLPlugin then
     begin
-      TPlugin(lstPlugins.Items[i].Data).Order := i;
-      TPlugin(lstPlugins.Items[i].Data).Active := lstPlugins.Items[i].Checked;
+      TDLLPlugin(lstPlugins.Items[i].Data).Order := i;
+      TDLLPlugin(lstPlugins.Items[i].Data).Active := lstPlugins.Items[i].Checked;
     end else if TPluginBase(lstPlugins.Items[i].Data) is TExternalPlugin then
     begin
       EP := AppGlobals.PluginManager.GetID(TExternalPlugin(lstPlugins.Items[i].Data).Identifier);
       if EP <> nil then
       begin
         EP.Order := i;
-        EP.Active := lstPlugins.Items[i].Checked;
+        //EP.Active := lstPlugins.Items[i].Checked;
       end;
+    end else if TPluginBase(lstPlugins.Items[i].Data) is TInternalPlugin then
+    begin
+      IP := TInternalPlugin(lstPlugins.Items[i].Data);
+      IP.Order := i;
+      IP.Active := lstPlugins.Items[i].Checked;
     end;
   end;
 
   AppGlobals.Unlock;
 
-  for i := 0 to lstPlugins.Items.Count - 1 do
-    TPlugin(lstPlugins.Items[i].Data).Active := lstPlugins.Items[i].Checked;
+  //for i := 0 to lstPlugins.Items.Count - 1 do
+  //  TPluginBase(lstPlugins.Items[i].Data).Active := lstPlugins.Items[i].Checked;
 
   inherited;
 end;
@@ -467,7 +490,8 @@ procedure TfrmSettings.lstPluginsSelectItem(Sender: TObject;
   Item: TListItem; Selected: Boolean);
 begin
   cmdConfigure.Enabled := False;
-  btnHelp.Enabled := (Item <> nil) and Selected and (TPluginBase(Item.Data) is TPlugin) and (TPlugin(Item.Data).Help <> '');
+  //btnHelp.Enabled := (Item <> nil) and Selected and (TPluginBase(Item.Data) is TDLLPlugin) and (TDLLPlugin(Item.Data).Help <> '');
+  btnHelp.Enabled := (Item <> nil) and Selected and (TPluginBase(Item.Data).Help <> '');
   btnRemove.Enabled := (Item <> nil) and Selected and (TPluginBase(Item.Data) is TExternalPlugin);
 
   btnMoveUp.Enabled := (Item <> nil) and Selected and (Item.Index > 0);
@@ -514,7 +538,7 @@ begin
   end;
 
   for i := 0 to lstPlugins.Items.Count - 1 do
-    lstPlugins.Items[i].Caption := TPlugin(lstPlugins.Items[i].Data).Name;
+    lstPlugins.Items[i].Caption := TPluginBase(lstPlugins.Items[i].Data).Name;
 
   BuildHotkeys;
 
@@ -666,7 +690,7 @@ end;
 procedure TfrmSettings.btnHelpClick(Sender: TObject);
 begin
   if lstPlugins.Selected <> nil then
-    MsgBox(Handle, TPlugin(lstPlugins.Selected.Data).Help, _('Help'), MB_ICONINFORMATION);
+    MsgBox(Handle, TDLLPlugin(lstPlugins.Selected.Data).Help, _('Help'), MB_ICONINFORMATION);
 end;
 
 procedure TfrmSettings.btnMoveClick(Sender: TObject);

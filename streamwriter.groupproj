@@ -6,9 +6,6 @@
 			<Projects Include="streamwriter\streamwriter.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="plugins\settags\settags.dproj">
-				<Dependencies/>
-			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -26,23 +23,14 @@
 		<Target Name="streamwriter:Make">
 			<MSBuild Targets="Make" Projects="streamwriter\streamwriter.dproj"/>
 		</Target>
-		<Target Name="settags">
-			<MSBuild Projects="plugins\settags\settags.dproj"/>
-		</Target>
-		<Target Name="settags:Clean">
-			<MSBuild Targets="Clean" Projects="plugins\settags\settags.dproj"/>
-		</Target>
-		<Target Name="settags:Make">
-			<MSBuild Targets="Make" Projects="plugins\settags\settags.dproj"/>
-		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="streamwriter;settags"/>
+			<CallTarget Targets="streamwriter"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="streamwriter:Clean;settags:Clean"/>
+			<CallTarget Targets="streamwriter:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="streamwriter:Make;settags:Make"/>
+			<CallTarget Targets="streamwriter:Make"/>
 		</Target>
 		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 	</Project>

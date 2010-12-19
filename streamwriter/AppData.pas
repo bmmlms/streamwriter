@@ -199,12 +199,13 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 5);
+    SetLength(FDonors, 6);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
     FDonors[3] := '''RogerPP''';
     FDonors[4] := 'Gabor Kubik';
+    FDonors[5] := '''Peter Parker''';
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
       Text.Add(FDonors[i]);
@@ -323,8 +324,8 @@ begin
   FStorage.Read('Dir', FDir, '');
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
-  FStorage.Read('DeleteStreams', FDeleteStreams, False);
-  FStorage.Read('AddSavedToIgnore', FAddSavedToIgnore, False);
+  FStorage.Read('DeleteStreams', FDeleteStreams, True);
+  FStorage.Read('AddSavedToIgnore', FAddSavedToIgnore, True);
   FStorage.Read('SkipShort', FSkipShort, True);
   FStorage.Read('SearchSilence', FSearchSilence, True);
   FStorage.Read('SilenceLevel', FSilenceLevel, 5);
@@ -426,17 +427,21 @@ begin
   FStorage.DeleteKey('Plugins');
   n := 0;
   for i := 0 to FPluginManager.Plugins.Count - 1 do
-    if not (FPluginManager.Plugins[i] is TExternalPlugin) then
-    begin
-      FStorage.Write('Active_' + ExtractFileName(TPlugin(FPluginManager.Plugins[i]).Filename), FPluginManager.Plugins[i].Active, 'Plugins');
-      FStorage.Write('Order_' + ExtractFileName(TPlugin(FPluginManager.Plugins[i]).Filename), FPluginManager.Plugins[i].Order, 'Plugins');
-    end else
+    if (FPluginManager.Plugins[i] is TExternalPlugin) then
     begin
       FStorage.Write('Active_' + IntToStr(n), TExternalPlugin(FPluginManager.Plugins[i]).Active, 'Plugins');
       FStorage.Write('Exe_' + IntToStr(n), TExternalPlugin(FPluginManager.Plugins[i]).Exe, 'Plugins');
       FStorage.Write('Params_' + IntToStr(n), TExternalPlugin(FPluginManager.Plugins[i]).Params, 'Plugins');
       FStorage.Write('OrderExe_' + IntToStr(n), FPluginManager.Plugins[i].Order, 'Plugins');
       Inc(n);
+    end else if (FPluginManager.Plugins[i] is TDLLPlugin) then
+    begin
+      FStorage.Write('Active_' + ExtractFileName(TDLLPlugin(FPluginManager.Plugins[i]).Filename), FPluginManager.Plugins[i].Active, 'Plugins');
+      FStorage.Write('Order_' + ExtractFileName(TDLLPlugin(FPluginManager.Plugins[i]).Filename), FPluginManager.Plugins[i].Order, 'Plugins');
+    end else if (FPluginManager.Plugins[i] is TInternalPlugin) then
+    begin
+      FStorage.Write('Active_' + FPluginManager.Plugins[i].ClassName, FPluginManager.Plugins[i].Active, 'Plugins');
+      FStorage.Write('Order_' + FPluginManager.Plugins[i].ClassName, FPluginManager.Plugins[i].Order, 'Plugins');
     end;
 end;
 

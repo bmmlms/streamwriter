@@ -1,7 +1,7 @@
 [Files]
 Source: ..\bin\streamwriter.exe; DestDir: {app}; Flags: ignoreversion
 Source: ..\bin\bass.dll; DestDir: {app}; Flags: ignoreversion
-Source: ..\bin\plugins\settags.dll; DestDir: {app}\plugins; Flags: ignoreversion
+;Source: ..\bin\plugins\settags.dll; DestDir: {app}\plugins; Flags: ignoreversion
 ;Source: ..\bin\plugins\normalize.dll; DestDir: {app}\plugins; Flags: ignoreversion
 
 [Icons]

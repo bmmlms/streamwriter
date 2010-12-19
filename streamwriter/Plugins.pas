@@ -23,10 +23,10 @@ interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, Functions,
-  LanguageObjects, PluginsShared;
+  LanguageObjects, PluginsShared, Mp3FileUtils;
 
 type
-  TPlugin = class;
+  TDLLPlugin = class;
   TPluginBase = class;
   TExternalPlugin = class;
   TProcessThreadBase = class;
@@ -72,7 +72,7 @@ type
   TPluginManager = class
   private
     FPlugins: TList<TPluginBase>;
-    FActivePlugin: TPlugin;
+    FActivePlugin: TPluginBase;
   public
     constructor Create(Path: string);
     destructor Destroy; override;
@@ -102,7 +102,7 @@ type
     property Output: string read FOutput;
   end;
 
-  TProcessThread = class(TProcessThreadBase)
+  TProcessThreadDLL = class(TProcessThreadBase)
   private
   protected
     procedure Execute; override;
@@ -113,21 +113,23 @@ type
   private
   protected
     FName: string;
+    FHelp: string;
     FActive: Boolean;
     FOrder: Integer;
   public
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; virtual; abstract;
+    procedure Initialize; virtual;
 
     property Name: string read FName;
+    property Help: string read FHelp;
     property Active: Boolean read FActive write FActive;
     property Order: Integer read FOrder write FOrder;
   end;
 
-  TPlugin = class(TPluginBase)
+  TDLLPlugin = class(TPluginBase)
   private
     FFilename: string;
     FAuthor: string;
-    FHelp: string;
     FDefaultEnabled: Boolean;
     FDLLHandle: Cardinal;
 
@@ -143,18 +145,21 @@ type
     constructor Create(Handle: THandle; Filename: string);
     destructor Destroy; override;
 
-    procedure Initialize;
+    procedure Initialize; override;
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
     function Configure(Handle: Cardinal; ShowMessages: Boolean): Boolean;
 
     property Handle: Cardinal read FDLLHandle;
     property Filename: string read FFilename;
     property Author: string read FAuthor;
-    property Help: string read FHelp;
     property DefaultEnabled: Boolean read FDefaultEnabled;
   end;
 
-  TExternalProcessThread = class(TProcessThread)
+  TInternalPlugin = class(TPluginBase)
+
+  end;
+
+  TExternalProcessThread = class(TProcessThreadBase)
   private
     FExe: string;
     FParams: string;
@@ -165,17 +170,31 @@ type
     destructor Destroy; override;
   end;
 
+  TSetTagsThread = class(TProcessThreadBase)
+  protected
+    procedure Execute; override;
+  end;
+
+  TSetTagsPlugin = class(TInternalPlugin)
+  public
+    constructor Create;
+    function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
+    procedure Initialize; override;
+  end;
+
   TExternalPlugin = class(TPluginBase)
   private
     FExe: string;
     FParams: string;
     FIdentifier: Integer;
+
+    procedure FSetExe(Value: string);
   protected
   public
     constructor Create(Exe, Params: string; Active: Boolean; Identifier, Order: Integer);
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
 
-    property Exe: string read FExe write FExe;
+    property Exe: string read FExe write FSetExe;
     property Params: string read FParams write FParams;
     property Identifier: Integer read FIdentifier write FIdentifier;
   end;
@@ -236,8 +255,7 @@ var
   i: Integer;
 begin
   for i := 0 to FPlugins.Count - 1 do
-    if not (FPlugins[i] is TExternalPlugin) then
-      TPlugin(FPlugins[i]).Initialize;
+    FPlugins[i].Initialize;
 end;
 
 function TPluginManager.GetID(ID: Integer): TExternalPlugin;
@@ -259,7 +277,7 @@ var
   i: Integer;
   Handle: THandle;
   GetVersion: TGetInt;
-  P: TPlugin;
+  P: TDLLPlugin;
   Files: TStringList;
   App, Params: string;
   EP: TExternalPlugin;
@@ -269,6 +287,7 @@ begin
   FActivePlugin := nil;
   FPlugins := TList<TPluginBase>.Create;
 
+  {
   Files := TStringList.Create;
   try
     FindFiles(Path + '*.dll', Files);
@@ -293,6 +312,9 @@ begin
   finally
     Files.Free;
   end;
+  }
+
+  Plugins.Add(TSetTagsPlugin.Create);
 
   i := 0;
   repeat
@@ -306,8 +328,8 @@ begin
       try
         Plugins.Add(EP);
       except
-        on E: Exception do
-          messagebox(0, pchar(e.Message), '', 0);
+        //on E: Exception do
+        //  messagebox(0, pchar(e.Message), '', 0);
       end;
     end;
     Inc(i);
@@ -324,21 +346,21 @@ begin
   inherited;
 end;
 
-{ TPlugin }
+{ TDLLPlugin }
 
-function TPlugin.ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase;
+function TDLLPlugin.ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase;
 var
-  Thread: TProcessThread;
+  Thread: TProcessThreadDLL;
 begin
   Result := nil;
   if (@FAct = nil) or (Length(FFilename) = 0) then
     Exit;
 
-  Thread := TProcessThread.Create(Data, Self);
+  Thread := TProcessThreadDLL.Create(Data, Self);
   Result := Thread;
 end;
 
-function TPlugin.Configure(Handle: Cardinal; ShowMessages: Boolean): Boolean;
+function TDLLPlugin.Configure(Handle: Cardinal; ShowMessages: Boolean): Boolean;
 begin
   Result := FConfigure(Handle, ShowMessages);
 end;
@@ -359,7 +381,7 @@ begin
   Result := 0;
 end;
 
-constructor TPlugin.Create(Handle: THandle; Filename: string);
+constructor TDLLPlugin.Create(Handle: THandle; Filename: string);
 var
   Data: PChar;
 begin
@@ -395,13 +417,13 @@ begin
     raise Exception.Create('-');
 end;
 
-destructor TPlugin.Destroy;
+destructor TDLLPlugin.Destroy;
 begin
 
   inherited;
 end;
 
-procedure TPlugin.Initialize;
+procedure TDLLPlugin.Initialize;
 var
   Data: PChar;
 begin
@@ -482,9 +504,9 @@ begin
   inherited;
 end;
 
-{ TProcessThread }
+{ TProcessThreadDLL }
 
-procedure TProcessThread.Execute;
+procedure TProcessThreadDLL.Execute;
 begin
   inherited;
   GetMem(FActData.Filename, 512);
@@ -498,7 +520,7 @@ begin
   FActData.Filesize := FData.Filesize;
   FActData.WasCut := FData.WasCut;
 
-  FResult := TActResults(TPlugin(FPlugin).FAct(FActData));
+  FResult := TActResults(TDLLPlugin(FPlugin).FAct(FActData));
 
   if FResult = arWin then
   begin
@@ -584,13 +606,109 @@ begin
   FName := ExtractFileName(FExe);
 end;
 
+procedure TExternalPlugin.FSetExe(Value: string);
+begin
+  FExe := Value;
+  FName := ExtractFileName(FExe);
+end;
+
 function TExternalPlugin.ProcessFile(
   Data: PPluginProcessInformation): TProcessThreadBase;
 var
-  Thread: TProcessThread;
+  Thread: TExternalProcessThread;
 begin
   Thread := TExternalProcessThread.Create(FExe, FParams, Data, Self);
   Result := Thread;
+end;
+
+{ TSetTagsThread }
+
+procedure TSetTagsThread.Execute;
+var
+  p: Integer;
+  Artist, Title2: string;
+  ID3V1: TID3v1Tag;
+  ID3V2: TID3v2Tag;
+begin
+  inherited;
+
+  FResult := arFail;
+
+  ID3V1 := TID3v1Tag.Create;
+  ID3V2 := TID3v2Tag.Create;
+  try
+    try
+      Artist := '';
+      Title2 := '';
+
+      p := Pos(' - ', FData.Title);
+      if p > 0 then
+      begin
+        Artist := Copy(FData.Title, 1, p - 1);
+        Title2 := Copy(FData.Title, p + 3, Length(FData.Title));
+      end;
+
+      if (Trim(Artist) <> '') and (Trim(Title2) <> '') then
+      begin
+        ID3V1.Artist := Artist;
+        ID3V1.Title := Title2;
+        ID3V2.Artist := Artist;
+        ID3V2.Title := Title2;
+      end else
+      begin
+        ID3V1.Title := FData.Title;
+        ID3V2.Title := FData.Title;
+      end;
+      ID3V1.Track := IntToStr(FData.TrackNumber);
+      ID3V2.Track := IntToStr(FData.TrackNumber);
+      ID3V1.Album := FData.Station;
+      ID3V2.Album := FData.Station;
+      ID3V1.Comment := 'Recorded by streamWriter';
+      ID3V2.Comment := 'Recorded by streamWriter';
+      if (ID3V1.WriteToFile(FData.Filename) = MP3ERR_None) and (ID3V2.WriteToFile(FData.Filename) = MP3ERR_None) then
+      begin
+        FData.Filesize := GetFileSize(FData.Filename);
+        FResult := arWin;
+      end;
+    except
+    end;
+  finally
+    ID3V1.Free;
+    ID3V2.Free;
+  end;
+end;
+
+{ TSetTagsPlugin }
+
+constructor TSetTagsPlugin.Create;
+begin
+  inherited;
+  FActive := True;
+  FOrder := 100;
+  try
+    AppGlobals.Storage.Read('Active_' + ClassName, FActive, True, 'Plugins');
+    AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 100, 'Plugins');
+  except end;
+end;
+
+procedure TSetTagsPlugin.Initialize;
+begin
+  inherited;
+  FName := _('Set ID3-tags');
+  FHelp := _('This adds ID3-tags to saved songs.');
+end;
+
+function TSetTagsPlugin.ProcessFile(
+  Data: PPluginProcessInformation): TProcessThreadBase;
+begin
+  Result := TSetTagsThread.Create(Data, Self);
+end;
+
+{ TPluginBase }
+
+procedure TPluginBase.Initialize;
+begin
+
 end;
 
 end.
