@@ -55,6 +55,11 @@ type
     FDefaultFilter: TUseFilters;
     FPlayerVolume, FCutVolume: Integer;
 
+    FShortcutPlay: Cardinal;
+    FShortcutStop: Cardinal;
+    FShortcutNext: Cardinal;
+    FShortcutPrev: Cardinal;
+
     FHeaderWidth: TIntArray;
 
     FPluginManager: TPluginManager;
@@ -92,6 +97,10 @@ type
     property DefaultFilter: TUseFilters read FDefaultFilter write FDefaultFilter;
     property PlayerVolume: Integer read FPlayerVolume write FPlayerVolume;
     property CutVolume: Integer read FCutVolume write FCutVolume;
+    property ShortcutPlay: Cardinal read FShortcutPlay write FShortcutPlay;
+    property ShortcutStop: Cardinal read FShortcutStop write FShortcutStop;
+    property ShortcutNext: Cardinal read FShortcutNext write FShortcutNext;
+    property ShortcutPrev: Cardinal read FShortcutPrev write FShortcutPrev;
 
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
 
@@ -342,6 +351,11 @@ begin
   FStorage.Read('PlayerVolume', FPlayerVolume, 50);
   FStorage.Read('CutVolume', FCutVolume, 50);
 
+  FStorage.Read('ShortcutPlay', FShortcutPlay, 0);
+  FStorage.Read('ShortcutStop', FShortcutStop, 0);
+  FStorage.Read('ShortcutNext', FShortcutNext, 0);
+  FStorage.Read('ShortcutPrev', FShortcutPrev, 0);
+
   FStorage.Read('HeaderWidth0', i, -1, 'Cols');
   if i = -1 then
   begin
@@ -399,6 +413,11 @@ begin
   FStorage.Write('DefaultFilter', Integer(FDefaultFilter));
   FStorage.Write('PlayerVolume', FPlayerVolume);
   FStorage.Write('CutVolume', FCutVolume);
+
+  FStorage.Write('ShortcutPlay', FShortcutPlay);
+  FStorage.Write('ShortcutStop', FShortcutStop);
+  FStorage.Write('ShortcutNext', FShortcutNext);
+  FStorage.Write('ShortcutPrev', FShortcutPrev);
 
   for i := 0 to High(FHeaderWidth) do
     if i <> 1 then

@@ -381,7 +381,8 @@ end;
 function TMClientView.DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; Pt: TPoint; Mode: TDropMode;
   var Effect: Integer): Boolean;
 var
-  i: Integer;
+  i, n: Integer;
+  Children: TNodeArray;
   HitNode: PVirtualNode;
   HitNodeData: PClientNodeData;
 begin
@@ -390,15 +391,25 @@ begin
   begin
     HitNode := GetNodeAt(Pt.X, Pt.Y);
     Result := True;
-    
+
     // Drop darf nur erlaubt sein, wenn Ziel-Node nicht in gedraggten
-    // Nodes vorkommt
+    // Nodes vorkommt und Ziel-Node kein Kind von Drag-Node ist
     for i := 0 to Length(FDragNodes) - 1 do
+    begin
       if HitNode = FDragNodes[i] then
       begin
         Result := False;
         Break;
       end;
+
+      Children := GetNodes(ntClient, False);
+      for n := 0 to Length(Children) - 1 do
+        if (Children[n] = HitNode) and (HitNode.Parent = FDragNodes[i]) then
+        begin
+          Result := False;
+          Exit;
+        end;
+    end;
     //if HitNode <> nil then
     //  HitNodeData := GetNodeData(HitNode);
     //if (HitNode = FDragNode) or (HitNode = nil) {or ((HitNode <> nil) and (HitNodeData.Client <> nil))} then

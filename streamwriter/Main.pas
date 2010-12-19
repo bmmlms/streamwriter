@@ -194,6 +194,7 @@ type
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
     procedure EndSession(var Msg: TMessage); message WM_ENDSESSION;
     procedure SysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
+    procedure Hotkey(var Msg: TWMHotKey); message WM_HOTKEY;
 
     function CanExitApp: Boolean;
     procedure ExitApp(Shutdown: Boolean);
@@ -206,6 +207,7 @@ type
     procedure UpdaterNoUpdateFound(Sender: TObject);
     function HandleLoadError(E: Exception): Integer;
     procedure CheckFilesTerminate(Sender: TObject);
+    procedure RegisterHotkeys(Reg: Boolean);
 
     procedure PreTranslate;
     procedure PostTranslate;
@@ -539,6 +541,8 @@ begin
 
   tabSavedRefresh(nil);
 
+  RegisterHotkeys(True);
+
   AppGlobals.WindowHandle := Handle;
 
   if AppGlobals.MainMaximized then
@@ -570,6 +574,113 @@ begin
                                  [E.Message]),
                                  _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
     end;
+end;
+
+procedure TfrmStreamWriterMain.Hotkey(var Msg: TWMHotKey);
+  procedure StopPlay;
+  var
+    i: Integer;
+    Clients: TClientArray;
+  begin
+    Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
+    for i := 0 to Length(Clients) - 1 do
+      Clients[i].StopPlay;
+  end;
+var
+  i: Integer;
+  NextIsPlaying: Boolean;
+  Nodes: TNodeArray;
+  NodeData: PClientNodeData;
+  Clients: TClientArray;
+  PlayingClient: TICEClient;
+  StartPlayClient: TICEClient;
+begin
+  NextIsPlaying := False;
+  PlayingClient := nil;
+  StartPlayClient := nil;
+
+  case Msg.HotKey of
+    0:
+      begin
+        StopPlay;
+        Nodes := tabClients.ClientView.GetNodes(ntClient, True);
+        if Length(Nodes) > 0 then
+        begin
+          NodeData := tabClients.ClientView.GetNodeData(Nodes[0]);
+          NodeData.Client.StartPlay;
+        end else
+        begin
+          Nodes := tabClients.ClientView.GetNodes(ntClient, False);
+          if Length(Nodes) > 0 then
+          begin
+            NodeData := tabClients.ClientView.GetNodeData(Nodes[0]);
+            NodeData.Client.StartPlay;
+          end;
+        end;
+      end;
+    1:
+      StopPlay;
+    2:
+      begin
+        Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
+        for i := 0 to Length(Clients) - 1 do
+          if Clients[i].Playing then
+            PlayingClient := Clients[i];
+        if PlayingClient <> nil then
+        begin
+          for i := 0 to Length(Clients) - 1 do
+          begin
+            if NextIsPlaying then
+            begin
+              StartPlayClient := Clients[i];
+              Break;
+            end;
+            if Clients[i].Playing then
+              NextIsPlaying := True;
+          end;
+
+          if StartPlayClient = nil then
+            if Length(Clients) > 0 then
+              StartPlayClient := Clients[0];
+
+          if StartPlayClient <> PlayingClient then
+          begin
+            StopPlay;
+            StartPlayClient.StartPlay;
+          end;
+        end;
+      end;
+    3:
+      begin
+        Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
+        for i := 0 to Length(Clients) - 1 do
+          if Clients[i].Playing then
+            PlayingClient := Clients[i];
+        if PlayingClient <> nil then
+        begin
+          for i := Length(Clients) - 1 downto 0 do
+          begin
+            if NextIsPlaying then
+            begin
+              StartPlayClient := Clients[i];
+              Break;
+            end;
+            if Clients[i].Playing then
+              NextIsPlaying := True;
+          end;
+
+          if StartPlayClient = nil then
+            if Length(Clients) > 0 then
+              StartPlayClient := Clients[High(Clients)];
+
+          if StartPlayClient <> PlayingClient then
+          begin
+            StopPlay;
+            StartPlayClient.StartPlay;
+          end;
+        end;
+      end;
+  end;
 end;
 
 procedure TfrmStreamWriterMain.mnuCheckUpdateClick(Sender: TObject);
@@ -621,6 +732,58 @@ begin
   Msg.Result := 1;
 end;
 
+procedure ShortCutToHotKey(HotKey: TShortCut; var Key : Word; var Modifiers: Uint);
+var
+  Shift: TShiftState;
+begin
+  ShortCutToKey(HotKey, Key, Shift);
+  Modifiers := 0;
+  if (ssShift in Shift) then
+  Modifiers := Modifiers or MOD_SHIFT;
+  if (ssAlt in Shift) then
+  Modifiers := Modifiers or MOD_ALT;
+  if (ssCtrl in Shift) then
+  Modifiers := Modifiers or MOD_CONTROL;
+end;
+
+procedure TfrmStreamWriterMain.RegisterHotkeys(Reg: Boolean);
+var
+  K: Word;
+  M: Cardinal;
+begin
+  UnregisterHotKey(Handle, 0);
+  UnregisterHotKey(Handle, 1);
+  UnregisterHotKey(Handle, 2);
+  UnregisterHotKey(Handle, 3);
+
+  if not Reg then
+    Exit;
+
+  if AppGlobals.ShortcutPlay > 0 then
+  begin
+    ShortCutToHotKey(AppGlobals.ShortcutPlay, K, M);
+    RegisterHotKey(Handle, 0, M, K);
+  end;
+
+  if AppGlobals.ShortcutStop > 0 then
+  begin
+    ShortCutToHotKey(AppGlobals.ShortcutStop, K, M);
+    RegisterHotKey(Handle, 1, M, K);
+  end;
+
+  if AppGlobals.ShortcutNext > 0 then
+  begin
+    ShortCutToHotKey(AppGlobals.ShortcutNext, K, M);
+    RegisterHotKey(Handle, 2, M, K);
+  end;
+
+  if AppGlobals.ShortcutPrev > 0 then
+  begin
+    ShortCutToHotKey(AppGlobals.ShortcutPrev, K, M);
+    RegisterHotKey(Handle, 3, M, K);
+  end;
+end;
+
 procedure TfrmStreamWriterMain.EndSession(var Msg: TMessage);
 begin
   if WordBool(Msg.WParam) then
@@ -634,6 +797,7 @@ procedure TfrmStreamWriterMain.ShowSettings(BrowseDir: Boolean);
 var
   S: TfrmSettings;
 begin
+  RegisterHotkeys(False);
   S := TfrmSettings.Create(Self, BrowseDir);
   S.ShowModal;
   Language.Translate(Self, PreTranslate, PostTranslate);
@@ -648,6 +812,7 @@ begin
   end;
   }
   TrayIcon1.Visible := AppGlobals.Tray;
+  RegisterHotkeys(True);
   S.Free;
 end;
 

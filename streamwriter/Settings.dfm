@@ -605,6 +605,52 @@ object frmSettings: TfrmSettings
       TabOrder = 5
     end
   end
+  object pnlHotkeys: TPanel
+    Left = 304
+    Top = 372
+    Width = 293
+    Height = 185
+    TabOrder = 5
+    DesignSize = (
+      293
+      185)
+    object Label9: TLabel
+      Left = 4
+      Top = 144
+      Width = 37
+      Height = 13
+      Anchors = [akLeft, akBottom]
+      Caption = 'Hotkey:'
+    end
+    object lstHotkeys: TListView
+      Left = 4
+      Top = 4
+      Width = 285
+      Height = 129
+      Anchors = [akLeft, akTop, akRight, akBottom]
+      Columns = <
+        item
+        end
+        item
+        end>
+      RowSelect = True
+      ShowColumnHeaders = False
+      TabOrder = 0
+      ViewStyle = vsReport
+      OnChange = lstHotkeysChange
+    end
+    object txtHotkey: THotKey
+      Left = 4
+      Top = 160
+      Width = 285
+      Height = 21
+      Anchors = [akLeft, akBottom]
+      Enabled = False
+      HotKey = 32833
+      TabOrder = 1
+      OnChange = txtHotkeyChange
+    end
+  end
   object dlgOpen: TOpenDialog
     Filter = 'Executable files (*.exe, *.bat)|*.exe;*.bat'
     Left = 548
@@ -614,7 +660,7 @@ object frmSettings: TfrmSettings
     Left = 672
     Top = 516
     Bitmap = {
-      494C0101020008002C0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800340010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

@@ -25,7 +25,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
-  Plugins, StrUtils, DynBASS, ICEClient, Generics.Collections;
+  Plugins, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus;
 
 type
   TfrmSettings = class(TfrmSettingsBase)
@@ -85,6 +85,10 @@ type
     btnMoveUp: TSpeedButton;
     btnMoveDown: TSpeedButton;
     ImageList1: TImageList;
+    pnlHotkeys: TPanel;
+    lstHotkeys: TListView;
+    txtHotkey: THotKey;
+    Label9: TLabel;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -106,6 +110,9 @@ type
       Data: Integer; var Compare: Integer);
     procedure btnBrowseClick(Sender: TObject);
     procedure Label2Click(Sender: TObject);
+    procedure txtHotkeyChange(Sender: TObject);
+    procedure lstHotkeysChange(Sender: TObject; Item: TListItem;
+      Change: TItemChange);
   private
     FBrowseDir: Boolean;
     FRelayChanged: Boolean;
@@ -114,6 +121,7 @@ type
     FTemporaryPlugins: TList<TExternalPlugin>;
     function ValidatePattern: string;
     function GetNewID: Integer;
+    procedure BuildHotkeys;
   protected
     procedure RegisterPages; override;
     procedure Finish; override;
@@ -235,6 +243,11 @@ begin
     B.Free;
   end;
 
+  BuildHotkeys;
+
+  i := integer(txtHotkey.HotKey);
+  //txtHotkey.HotKey .Text := IntToStr(SendMessage(HotKey1.Handle,HKM_GETHOTKEY,0,0));
+
   if not BassLoaded then
   begin
     chkSearchSilence.Enabled := False;
@@ -282,6 +295,15 @@ begin
     AppGlobals.SearchSilence := chkSearchSilence.Checked;
   AppGlobals.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
   AppGlobals.SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
+
+  if lstHotkeys.Items[0].SubItems[0] <> '' then
+    AppGlobals.ShortcutPlay := TextToShortCut(lstHotkeys.Items[0].SubItems[0]);
+  if lstHotkeys.Items[1].SubItems[0] <> '' then
+    AppGlobals.ShortcutStop := TextToShortCut(lstHotkeys.Items[1].SubItems[0]);
+  if lstHotkeys.Items[2].SubItems[0] <> '' then
+    AppGlobals.ShortcutNext := TextToShortCut(lstHotkeys.Items[2].SubItems[0]);
+  if lstHotkeys.Items[3].SubItems[0] <> '' then
+    AppGlobals.ShortcutPrev := TextToShortCut(lstHotkeys.Items[3].SubItems[0]);
 
   for i := 0 to FTemporaryPlugins.Count - 1 do
   begin
@@ -367,6 +389,9 @@ procedure TfrmSettings.FormResize(Sender: TObject);
 begin
   inherited;
   lstPlugins.Columns[0].Width := lstPlugins.ClientWidth - 25;
+
+  lstHotkeys.Columns[0].Width := lstHotkeys.ClientWidth - 130;
+  lstHotkeys.Columns[1].Width := lstHotkeys.ClientWidth - lstHotkeys.Columns[0].Width - 25;
 end;
 
 function TfrmSettings.GetNewID: Integer;
@@ -413,6 +438,18 @@ procedure TfrmSettings.Label8Click(Sender: TObject);
 begin
   inherited;
   MsgBox(Handle, _('When a title was recorded and it''s size is below the set limit, it will not be saved to disk.'), _('Info'), MB_ICONINFORMATION);
+end;
+
+procedure TfrmSettings.lstHotkeysChange(Sender: TObject; Item: TListItem;
+  Change: TItemChange);
+begin
+  inherited;
+  txtHotkey.Enabled := lstHotkeys.Selected <> nil;
+  if txtHotkey.Enabled then
+  begin
+    txtHotkey.HotKey := TextToShortCut(lstHotkeys.Selected.SubItems[0]);
+  end else
+    txtHotkey.HotKey := 0;
 end;
 
 procedure TfrmSettings.lstPluginsCompare(Sender: TObject; Item1,
@@ -478,6 +515,8 @@ begin
 
   for i := 0 to lstPlugins.Items.Count - 1 do
     lstPlugins.Items[i].Caption := TPlugin(lstPlugins.Items[i].Data).Name;
+
+  BuildHotkeys;
 
   AppGlobals.PluginManager.ReInitPlugins;
   lstDefaultAction.ItemIndex := FDefaultActionIdx;
@@ -549,6 +588,7 @@ begin
   FPageList.Add(TPage.Create(_('Streams'), pnlStreams, 'START'));
   FPageList.Add(TPage.Create(_('Cut'), pnlCut, 'CUT'));
   FPageList.Add(TPage.Create(_('Postprocessing'), pnlPlugins, 'LIGHTNING'));
+  FPageList.Add(TPage.Create(_('Hotkeys'), pnlHotkeys, 'KEYBOARD'));
   FPageList.Add(TPage.Create(_('Advanced'), pnlAdvanced, 'MISC'));
   inherited;
 end;
@@ -564,6 +604,12 @@ procedure TfrmSettings.txtFilePatternChange(Sender: TObject);
 begin
   inherited;
   txtPreview.Text := ValidatePattern;
+end;
+
+procedure TfrmSettings.txtHotkeyChange(Sender: TObject);
+begin
+  inherited;
+  lstHotkeys.Selected.SubItems[0] := ShortCutToText(txtHotkey.HotKey);
 end;
 
 procedure TfrmSettings.btnAddUpClick(Sender: TObject);
@@ -655,7 +701,36 @@ begin
   end;
 end;
 
+procedure TfrmSettings.BuildHotkeys;
+var
+  Item: TListItem;
+begin
+  if lstHotkeys.Items.Count > 0 then
+  begin
+    lstHotkeys.Items[0].Caption := _('Play');
+    lstHotkeys.Items[1].Caption := _('Stop');
+    lstHotkeys.Items[2].Caption := _('Next stream');
+    lstHotkeys.Items[3].Caption := _('Previous stream');
+  end else
+  begin
+    Item := lstHotkeys.Items.Add;
+    Item.Caption := _('Play');
+    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutPlay));
+    Item := lstHotkeys.Items.Add;
+    Item.Caption := _('Stop');
+    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutStop));
+    Item := lstHotkeys.Items.Add;
+    Item.Caption := _('Next stream');
+    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutNext));
+    Item := lstHotkeys.Items.Add;
+    Item.Caption := _('Previous stream');
+    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutPrev));
+  end;
+end;
+
 function TfrmSettings.CanFinish: Boolean;
+var
+  i, n: Integer;
 begin
   Result := False;
 
@@ -737,6 +812,19 @@ begin
     txtRetryDelay.SetFocus;
     Exit;
   end;
+
+  for i := 0 to lstHotkeys.Items.Count - 1 do
+    for n := 0 to lstHotkeys.Items.Count - 1 do
+    begin
+      if (lstHotkeys.Items[i] <> lstHotkeys.Items[n]) and
+         (lstHotkeys.Items[i].SubItems[0] <> '') and
+         (lstHotkeys.Items[i].SubItems[0] = lstHotkeys.Items[n].SubItems[0]) then
+      begin
+        MsgBox(Handle, _('A hotkey can be defined only once. Please edit the key mappings.'), _('Info'), MB_ICONINFORMATION);
+        SetPage(FPageList.Find(pnlHotkeys));
+        Exit;
+      end;
+    end;
 
   Result := True;
 end;

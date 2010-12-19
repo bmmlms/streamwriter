@@ -660,7 +660,7 @@ begin
             FOnRefresh(Self);
         end else
         begin
-          WriteDebug(_('An external application or plugin seems to have deleted the saved file.'), dtMessage, dlNormal);
+          WriteDebug(_('An external application or plugin has deleted the saved file.'), dtMessage, dlNormal);
         end;
 
         Entry.Free;
