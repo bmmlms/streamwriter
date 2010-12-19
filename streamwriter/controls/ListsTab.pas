@@ -24,7 +24,8 @@ interface
 uses
   Windows, SysUtils, Messages, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls,
   Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, RecentManager,
-  ImgList, Functions, GUIFunctions, Menus, Math, DragDrop, DropComboTarget;
+  ImgList, Functions, GUIFunctions, Menus, Math, DragDrop, DropComboTarget,
+  Dialogs;
 
 type
   TTitleTree = class;
@@ -38,6 +39,9 @@ type
   private
     FAdd: TToolButton;
     FRemove: TToolButton;
+    FSep: TToolButton;
+    FExport: TToolButton;
+    FImport: TToolButton;
   public
     constructor Create(AOwner: TComponent); override;
 
@@ -59,6 +63,8 @@ type
 
     procedure AddClick(Sender: TObject);
     procedure RemoveClick(Sender: TObject);
+    procedure ExportClick(Sender: TObject);
+    procedure ImportClick(Sender: TObject);
     procedure AddEditKeyPress(Sender: TObject; var Key: Char);
     procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
   public
@@ -374,6 +380,7 @@ begin
     NodeData.Title := Title;
     FList.Add(Title);
     FAddEdit.Text := '';
+    FToolbar.FExport.Enabled := FTree.RootNodeCount > 0;
   end else
     MsgBox(Handle, _('Please enter a pattern to add to list.'), _('Info'), MB_ICONINFORMATION);
 end;
@@ -399,6 +406,105 @@ begin
       Node := FTree.GetPrevious(Node);
   end;
   FTree.EndUpdate;
+end;
+
+procedure TTitlePanel.ExportClick(Sender: TObject);
+var
+  i: Integer;
+  Node: PVirtualNode;
+  NodeData: PTitleNodeData;
+  Dlg: TSaveDialog;
+  Lst: TStringList;
+begin
+  Dlg := TSaveDialog.Create(Self);
+  try
+    Dlg.Filter := _('Text files') + ' (*.txt)|*.txt';
+    Dlg.Options := Dlg.Options + [ofOverwritePrompt];
+    if Dlg.Execute(Handle) then
+    begin
+      Lst := TStringList.Create;
+      try
+        Node := FTree.GetFirst;
+        while Node <> nil do
+        begin
+          NodeData := FTree.GetNodeData(Node);
+          Lst.Add(NodeData.Title.Title);
+          Node := FTree.GetNext(Node);
+        end;
+        try
+          if LowerCase(ExtractFileExt(Dlg.FileName)) <> '.txt' then
+            Dlg.FileName := Dlg.FileName + '.txt';
+          Lst.SaveToFile(Dlg.FileName);
+        except
+          // TODO: !!! MSG EINBAUN
+        end;
+      finally
+        Lst.Free;
+      end;
+    end;
+  finally
+    Dlg.Free;
+  end;
+end;
+
+procedure TTitlePanel.ImportClick(Sender: TObject);
+var
+  i, n: Integer;
+  NumChars: Integer;
+  Hash: Cardinal;
+  FExists: Boolean;
+  Pattern: string;
+  Node: PVirtualNode;
+  NodeData: PTitleNodeData;
+  Dlg: TOpenDialog;
+  Lst: TStringList;
+  Title: TTitleInfo;
+begin
+  Dlg := TOpenDialog.Create(Self);
+  try
+    Dlg.Filter := _('Text files') + ' (*.txt)|*.txt';
+    if Dlg.Execute(Handle) then
+    begin
+      Lst := TStringList.Create;
+      try
+        try
+          Lst.LoadFromFile(Dlg.FileName);
+          for i := 0 to Lst.Count - 1 do
+          begin
+            Lst[i] := Trim(Lst[i]);
+            Pattern := BuildPattern(Lst[i], Hash, NumChars);
+            if NumChars <= 3 then
+              Continue;
+
+            FExists := False;
+            for n := 0 to FList.Count - 1 do
+              if FList[n].Hash = Hash then
+              begin
+                FExists := True;
+                Break;
+              end;
+
+            if FExists then
+              Continue;
+
+            Node := FTree.AddChild(nil);
+            NodeData := FTree.GetNodeData(Node);
+
+            Title := TTitleInfo.Create(Lst[i]);
+            NodeData.Title := Title;
+            FList.Add(Title);
+            FToolbar.FExport.Enabled := FTree.RootNodeCount > 0;
+          end;
+        except
+          // TODO: !!!
+        end;
+      finally
+        Lst.Free;
+      end;
+    end;
+  finally
+    Dlg.Free;
+  end;
 end;
 
 procedure TTitlePanel.BuildTree;
@@ -442,12 +548,14 @@ begin
   FToolbar.Parent := FToolbarPanel;
   FToolbar.Align := alNone;
   FToolbar.Left := FAddEdit.Left + FAddEdit.Width + 8;
-  FToolbar.Width := 100;
+  FToolbar.Width := ClientWidth - FToolbar.Left;
   FToolbar.Images := Images;
   FToolbar.Height := 24;
   FToolbar.Setup;
   FToolbar.FAdd.OnClick := AddClick;
   FToolbar.FRemove.OnClick := RemoveClick;
+  FToolbar.FExport.OnClick := ExportClick;
+  FToolbar.FImport.OnClick := ImportClick;
 
   // Ist nur für den Abstand zwischen Toolbar-Panel und Tree
   P := TPanel.Create(Self);
@@ -467,6 +575,7 @@ begin
   BuildTree;
 
   FToolbar.FRemove.Enabled := FTree.SelectedCount > 0;
+  FToolbar.FExport.Enabled := FTree.RootNodeCount > 0;
 
   BevelOuter := bvNone;
 end;
@@ -484,6 +593,7 @@ procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree;
   Node: PVirtualNode);
 begin
   FToolbar.FRemove.Enabled := FTree.SelectedCount > 0;
+  FToolbar.FExport.Enabled := FTree.RootNodeCount > 0;
 end;
 
 { TTitleToolbar }
@@ -503,6 +613,21 @@ end;
 
 procedure TTitleToolbar.Setup;
 begin
+  FImport := TToolButton.Create(Self);
+  FImport.Parent := Self;
+  FImport.Hint := _('Import...');
+  FImport.ImageIndex := 36;
+
+  FExport := TToolButton.Create(Self);
+  FExport.Parent := Self;
+  FExport.Hint := _('Export...');
+  FExport.ImageIndex := 35;
+
+  FSep := TToolButton.Create(Self);
+  FSep.Parent := Self;
+  FSep.Style := tbsSeparator;
+  FSep.Width := 8;
+
   FRemove := TToolButton.Create(Self);
   FRemove.Parent := Self;
   FRemove.Hint := _('Remove');
