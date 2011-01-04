@@ -271,8 +271,11 @@ end;
 { TClientTab }
 
 procedure TClientTab.ActionNewCategoryExecute(Sender: TObject);
+var
+  NodeData: PClientNodeData;
 begin
-  FClientView.AddCategory;
+  NodeData := FClientView.GetNodeData(FClientView.AddCategory);
+  FStreams.CategoryList.Add(NodeData.Category);
 end;
 
 procedure TClientTab.ActionStartExecute(Sender: TObject);
@@ -1197,6 +1200,9 @@ var
   Client: TICEClient;
   Node, ParentNode: PVirtualNode;
 begin
+  for i := 0 to Streams.CategoryList.Count - 1 do
+    FClientView.AddCategory(Streams.CategoryList[i]);
+
   for i := 0 to Streams.StreamList.Count - 1 do
   begin
     if not Streams.StreamList[i].IsInList then

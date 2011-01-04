@@ -298,13 +298,14 @@ begin
   begin
     Stream.Read(BTmp);
     Result.FSettings.SkipShort := BTmp;
-    Stream.Read(Result.FMigrationSubmitted);
 
-    if (Version >= 3) and (Version < 6) then
+    if (Version >= 3) then
     begin
       Stream.Read(B);
       Result.FSettings.Filter := TUseFilters(B);
     end;
+
+    Stream.Read(Result.FMigrationSubmitted);
   end;
 
   Stream.Read(Result.FIsInList);

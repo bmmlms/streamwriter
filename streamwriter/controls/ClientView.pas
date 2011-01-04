@@ -99,7 +99,7 @@ type
     procedure RemoveClient(Client: TICEClient);
     procedure SortItems;
     function AddCategory(Category: TListCategory): PVirtualNode; overload;
-    procedure AddCategory; overload;
+    function AddCategory: PVirtualNode; overload;
 
     function GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
     function NodesToData(Nodes: TNodeArray): TNodeDataArray;
@@ -125,7 +125,7 @@ begin
   Result := Node;
 end;
 
-procedure TMClientView.AddCategory;
+function TMClientView.AddCategory: PVirtualNode;
 var
   Node: PVirtualNode;
   NodeData: PClientNodeData;
@@ -135,6 +135,7 @@ begin
   NodeData.Client := nil;
   NodeData.Category := TListCategory.Create(_('New category'), 0);
   EditNode(Node, 0);
+  Result := Node;
 end;
 
 function TMClientView.AddClient(Client: TICEClient): PVirtualNode;
@@ -864,7 +865,7 @@ begin
         end;
 
       if (DropURL <> '') then
-        if (HitNodeData.Client = nil) and (((HI.HitNode <> nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere)) then
+        if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere) then
           OnStartStreaming(Self, DropURL, HI.HitNode, amAddChildLast)
         else
         begin

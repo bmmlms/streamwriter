@@ -625,8 +625,11 @@ begin
       Arr[0].Replace := FData.Filename;
       Replaced := PatternReplace(FParams, Arr);
       if Trim(Replaced) <> '' then
-        CmdLine := '"' + FExe + '" ' + Replaced
-      else
+      begin
+        // & ist für Batch nen Sonderzeichen. Also escapen.
+        Replaced := StringReplace(Replaced, '&', '^&', [rfReplaceAll]);
+        CmdLine := '"' + FExe + '" ' + Replaced;
+      end else
         CmdLine := FExe;
       Res := RunProcess(CmdLine, 120000, Output);
       FData.Filesize := GetFileSize(FData.Filename);

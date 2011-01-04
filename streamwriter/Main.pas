@@ -486,7 +486,7 @@ begin
   {$IFDEF DEBUG}Caption := Caption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
 
   if AppGlobals.BuildNumber > 0 then
-    Caption := Caption + ' build ' + IntToStr(AppGlobals.BuildNumber);
+    Caption := Caption + _(' build ') + IntToStr(AppGlobals.BuildNumber);
 
   UpdateButtons;
   UpdateStatus;
