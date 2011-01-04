@@ -119,6 +119,7 @@ end;
 
 procedure TMStreamInfoViewPanel.ShowInfo(Entries: TStreamList; ChangedOverride: Boolean = False);
 var
+  i: Integer;
   SongsSaved: Cardinal;
   Received: UInt64;
   Title, Info, Genres, BitRates: string;
@@ -128,7 +129,6 @@ begin
   if Entries = nil then
   begin
     FEntries.Clear;
-
   end else
   begin
     EntriesNew := TStreamList.Create;
@@ -158,7 +158,8 @@ begin
       Received := Received + Entry.BytesReceived;
     end;
 
-    Title := TruncateText(Title, FName.Parent.Width, FName.Canvas.Font);
+    // StringReplace, damit aus einem '&' kein Shortcut auf dem Label wird..
+    Title := StringReplace(TruncateText(Title, FName.Parent.Width, FName.Canvas.Font), '&', '&&', [rfReplaceAll]);
     if Title <> FName.Caption then
       FName.Caption := Title;
 
@@ -167,8 +168,18 @@ begin
       Info := Info + Genres + #13#10;
     if BitRates <> '' then
       Info := Info + Bitrates + 'kbps' + #13#10;
-    Info := Info + Format('%d songs saved', [SongsSaved]) + #13#10;
-    Info := Info + Format('%s received', [MakeSize(Received)]);
+    Info := Info + Format(_('%d songs saved'), [SongsSaved]) + #13#10;
+    Info := Info + Format(_('%s received'), [MakeSize(Received)]);
+    if Entries.Count = 1 then
+    begin
+      Info := Info + #13#10#13#10 + Format('URL: %s', [Entries[0].StartURL]) + #13#10;
+      if Entries[0].URLs.Count > 0 then
+      begin
+        Info := Info + 'URLs:' + #13#10;
+        for i := 0 to Entries[0].URLs.Count - 1 do
+          Info := Info + Entries[0].URLs[i] + #13#10;
+      end;
+    end;
     if Info <> FInfo.Text then
       FInfo.Text := Info;
 

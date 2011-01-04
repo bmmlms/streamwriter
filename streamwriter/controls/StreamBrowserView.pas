@@ -777,7 +777,7 @@ begin
   Align := alClient;
   BevelOuter := bvNone;
 
-  FCurrentKbps := 32;
+  FCurrentKbps := 0;
   FLoading := False;
   FHomeCommunication := HomeCommunication;
 
@@ -837,7 +837,7 @@ begin
     Genre := '';
 
   case FSearch.FKbpsList.ItemIndex of
-    0: Kbps := 32;
+    0: Kbps := 0;
     1: Kbps := 64;
     2: Kbps := 128;
     3: Kbps := 192;

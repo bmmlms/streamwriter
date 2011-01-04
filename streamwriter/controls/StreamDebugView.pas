@@ -179,7 +179,7 @@ begin
     while Node <> nil do
     begin
       if GetNodeLevel(Node) = 1 then
-        s := s + '    ' + StringReplace(FClient.DebugLog[Node.Index].Text, #13#10, #13#10'    ', [rfReplaceAll])
+        s := s + '    ' + StringReplace(FClient.DebugLog[Node.Parent.Index].Data, #13#10, #13#10'    ', [rfReplaceAll])
       else
         s := s + TimeToStr(FClient.DebugLog[Node.Index].Time) + ' - ' + FClient.DebugLog[Node.Index].Text;
       s := s + #13#10;

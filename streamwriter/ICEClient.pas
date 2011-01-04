@@ -23,7 +23,8 @@ interface
 
 uses
   SysUtils, Windows, StrUtils, Classes, ICEThread, ICEStream, AppData,
-  Generics.Collections, Functions, SocketThread, Plugins, LanguageObjects;
+  Generics.Collections, Functions, SocketThread, Plugins, LanguageObjects,
+  RecentManager;
 
 type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
@@ -62,29 +63,32 @@ type
 
   TICEClient = class
   private
+    FEntry: TStreamEntry;
+    //FSettings: TStreamSettings;
+
     FDebugLog: TDebugLog;
     FICEThread: TICEThread;
     FProcessingList: TProcessingList;
 
     FURLsIndex: Integer;
-    FURLs: TURLList;
+    //FURLs: TURLList;
     FState: TICEClientStates;
-    FStartURL: string;
+    //FStartURL: string;
     FRedirectedURL: string;
-    FStreamName: string;
-    FStreamURL: string;
-    FBitRate: Cardinal;
+    //FStreamName: string;
+    //FStreamURL: string;
+    //FBitRate: Cardinal;
     FGenre: string;
     FTitle: string;
-    FReceived: UInt64;
-    FSongsSaved: Integer;
+    //FReceived: UInt64;
+    //FSongsSaved: Integer;
     FSpeed: Integer;
     FContentType: string;
     FFilename: string;
-    FUseFilter: TUseFilters;
-    FIndex: Integer;
+    //FUseFilter: TUseFilters;
+    //FIndex: Integer;
 
-    FSkipShort: Boolean;
+    //FSkipShort: Boolean;
     FKilled: Boolean;
     FRetries: Integer;
 
@@ -125,8 +129,11 @@ type
   public
     constructor Create(StartURL: string); overload;
     constructor Create(Name, StartURL: string); overload;
+    {
     constructor Create(Name, StartURL: string; URLs: TStringList; SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal); overload;
     constructor Create(Name, StartURL: string; URLs: TStringList; SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal; Idx: Integer); overload;
+    }
+    constructor Create(Entry: TStreamEntry); overload;
     destructor Destroy; override;
 
     procedure WriteDebug(Text, Data: string; T: TDebugTypes; Level: TDebugLevels); overload;
@@ -142,7 +149,9 @@ type
     procedure SetVolume(Vol: Integer);
 
     procedure Kill;
-    procedure SetSettings(SkipShort: Boolean);
+    procedure SetSettings(Settings: TStreamSettings);
+
+    property Entry: TStreamEntry read FEntry;
 
     property DebugLog: TDebugLog read FDebugLog;
     property Active: Boolean read FGetActive;
@@ -150,23 +159,23 @@ type
     property Playing: Boolean read FGetPlaying;
     property Killed: Boolean read FKilled;
     property State: TICEClientStates read FState;
-    property StartURL: string read FStartURL;
-    property StreamName: string read FStreamName;
-    property StreamURL: string read FStreamURL;
-    property BitRate: Cardinal read FBitRate;
+    //property StartURL: string read FStartURL;
+    //property StreamName: string read FStreamName;
+    //property StreamURL: string read FStreamURL;
+    //property BitRate: Cardinal read FBitRate;
     property Genre: string read FGenre;
     property Title: string read FTitle;
-    property Received: UInt64 read FReceived write FReceived;
-    property SongsSaved: Integer read FSongsSaved write FSongsSaved;
+    //property Received: UInt64 read FReceived write FReceived;
+    //property SongsSaved: Integer read FSongsSaved write FSongsSaved;
     property Speed: Integer read FSpeed;
-    property URLs: TURLList read FURLs;
+    //property URLs: TURLList read FURLs;
     property ContentType: string read FContentType;
     property Filename: string read FFilename;
     //property RelayURL: string read FGetRelayURL;
-    property UseFilter: TUseFilters read FUseFilter write FUseFilter;
-    property Index: Integer read FIndex;
+    //property UseFilter: TUseFilters read FUseFilter write FUseFilter;
+    //property Index: Integer read FIndex;
 
-    property SkipShort: Boolean read FSkipShort;
+    //property SkipShort: Boolean read FSkipShort;
     property ProcessingList: TProcessingList read FProcessingList;
 
     property OnDebug: TNotifyEvent read FOnDebug write FOnDebug;
@@ -188,18 +197,19 @@ constructor TICEClient.Create(StartURL: string);
 begin
   inherited Create;
   Initialize;
-  FStartURL := Trim(StartURL);
-  WriteDebug(Format(_('Client created using primary URL %s'), [FStartURL]), Trim(FURLs.Text), dtMessage, dlDebug);
+  FEntry.StartURL := Trim(StartURL);
+  //WriteDebug(Format(_('Client created using primary URL %s'), [FStartURL]), Trim(FURLs.Text), dtMessage, dlDebug);
 end;
 
 constructor TICEClient.Create(Name, StartURL: string);
 begin
   Initialize;
-  FStartURL := Trim(StartURL);
-  FStreamName := Trim(Name);
-  WriteDebug(Format(_('Client created using primary URL %s'), [FStartURL]), Trim(FURLs.Text), dtMessage, dlDebug);
+  FEntry.StartURL := Trim(StartURL);
+  FEntry.Name := Trim(Name);
+  //WriteDebug(Format(_('Client created using primary URL %s'), [FStartURL]), Trim(FURLs.Text), dtMessage, dlDebug);
 end;
 
+{
 constructor TICEClient.Create(Name, StartURL: string; URLs: TStringList;
   SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal);
 var
@@ -221,31 +231,31 @@ begin
   Create(Name, StartURL, URLs, SkipShort, UseFilter, SongsSaved);
   FIndex := Idx;
 end;
+}
+
+constructor TICEClient.Create(Entry: TStreamEntry);
+begin
+  Initialize;
+  FEntry.Assign(Entry);
+end;
 
 procedure TICEClient.Initialize;
 begin
   FDebugLog := TDebugLog.Create;
   FProcessingList := TProcessingList.Create;
 
+  FEntry := TStreamEntry.Create;
+  FEntry.Settings.Assign(AppGlobals.StreamSettings);
+
   FKilled := False;
   FState := csStopped;
   FTitle := '';
-  FReceived := 0;
-  FSongsSaved := 0;
   FSpeed := 0;
   FContentType := '';
   FFilename := '';
-  FStartURL := '';
-  FBitRate := 0;
   FRedirectedURL := '';
-  FURLs := TURLList.Create;
   FURLsIndex := -1;
   FRetries := 0;
-
-  AppGlobals.Lock;
-  FSkipShort := AppGlobals.SkipShort;
-  FUseFilter := AppGlobals.DefaultFilter;
-  AppGlobals.Unlock;
 end;
 
 procedure TICEClient.Kill;
@@ -367,7 +377,8 @@ end;
 
 destructor TICEClient.Destroy;
 begin
-  FURLs.Free;
+  //FURLs.Free;
+  FEntry.Free;
   FDebugLog.Free;
   FreeAndNil(FProcessingList);
   inherited;
@@ -445,42 +456,45 @@ begin
     Exit;
   end;
 
-  if (FURLsIndex = -1) and (FStartURL <> '') then
+  if (FURLsIndex = -1) and (FEntry.StartURL <> '') then
   begin
-    Result := FStartURL;
+    Result := FEntry.StartURL;
     FURLsIndex := 0;
     Exit;
   end;
 
-  if FURLs.Count > 0 then
+  if FEntry.URLs.Count > 0 then
   begin
-    if FURLsIndex >= FURLs.Count then
+    if FURLsIndex >= FEntry.URLs.Count then
     begin
-      FURLsIndex := -1;
-      Result := GetURL;
-      Exit;
+      if (FEntry.StartURL <> '') and (Pos('streamwriter.org', LowerCase(FEntry.StartURL)) = 0) then
+      begin
+        Result := FEntry.StartURL;
+        FURLsIndex := 0;
+        Exit;
+      end else
+        FURLsIndex := 0;
     end;
     if FURLsIndex = -1 then
       FURLsIndex := 0;
-    Result := FURLs[FURLsIndex];
+    Result := FEntry.URLs[FURLsIndex];
     Inc(FURLsIndex);
   end else
-    Result := FStartURL;
+    Result := FEntry.StartURL;
 end;
 
 procedure TICEClient.ThreadAddRecent(Sender: TObject);
 begin
-  FStreamName := FICEThread.RecvStream.StreamName;
-  FStreamURL := FICEThread.RecvStream.StreamURL;
+  FEntry.Name := FICEThread.RecvStream.StreamName;
 
-  if FStreamName = '' then
-    FStreamName := FStartURL;
+  if FEntry.Name = '' then
+    FEntry.Name := FEntry.StartURL;
 
   FContentType := FICEThread.RecvStream.ContentType;
   if FICEThread.RecvStream.BitRate > 0 then
-    FBitRate := FICEThread.RecvStream.BitRate;
+    FEntry.Bitrate := FICEThread.RecvStream.BitRate;
   if FICEThread.RecvStream.Genre <> '' then
-    FGenre := FICEThread.RecvStream.Genre;
+    FEntry.Genre := FICEThread.RecvStream.Genre;
 
   if Assigned(FOnAddRecent) then
     FOnAddRecent(Self);
@@ -505,16 +519,18 @@ begin
     begin
       if FICEThread.RecvStream.RedirURL <> '' then
       begin
-        FURLs.Insert(0, FICEThread.RecvStream.RedirURL);
+        FEntry.URLs.Insert(0, FICEThread.RecvStream.RedirURL);
         FURLsIndex := 0;
-      end else
-      if FICEThread.RecvStream.RecvStream.Size > 0 then
+      end else if (FICEThread.RecvStream.RecvStream.Size > 0) and
+                  ((Pos('audio/x-mpegurl', FICEThread.RecvStream.ContentType) > 0) or // Pos, weil das auch sowas wie 'audio/x-mpegurl; hasiputz' sein kann
+                   (Pos('audio/x-scpls', FICEThread.RecvStream.ContentType) > 0) or
+                   (Pos('application/pls+xml', FICEThread.RecvStream.ContentType) > 0)) then
       begin
         // Playlist
         if ParsePlaylist then
         begin
           {$IFDEF DEBUG}
-          WriteDebug(_('Playlist parsed'), FURLs.Text, dtMessage, dlNormal);
+          WriteDebug(_('Playlist parsed'), FEntry.URLs.Text, dtMessage, dlNormal);
           {$ELSE}
           WriteDebug(_('Playlist parsed'), dtMessage, dlNormal);
           {$ENDIF}
@@ -525,16 +541,18 @@ begin
             FOnURLsReceived(Self);
         end else
         begin
+          Disconnect;
           raise Exception.Create(_('Playlist could not be parsed'));
         end;
       end else
       begin
+        Disconnect;
         raise Exception.Create(_('Response was HTTP, but without playlist or redirect'));
       end;
     end else
     begin
       // Am Ende noch die Bytes die nicht mitgeteilt wurden durchreichen
-      FReceived := FReceived + FICEThread.Speed;
+      FEntry.BytesReceived := FEntry.BytesReceived + FICEThread.Speed;
       if Assigned(FOnICYReceived) then
         FOnICYReceived(Self, FICEThread.Speed);
     end;
@@ -546,8 +564,7 @@ end;
 
 procedure TICEClient.ThreadNeedSettings(Sender: TObject);
 begin
-  FICEThread.SetSettings(SkipShort);
-  FICEThread.RecvStream.SongsSaved := FSongsSaved;
+  FICEThread.SetSettings(FEntry.Settings);
 end;
 
 procedure TICEClient.ThreadSongSaved(Sender: TObject);
@@ -555,14 +572,14 @@ var
   Data: TPluginProcessInformation;
   Entry: TProcessingEntry;
 begin
-  Inc(FSongsSaved);
+  FEntry.SongsSaved := FEntry.SongsSaved + 1;
 
   try
     // Pluginbearbeitung starten
     Data.Filename := FICEThread.RecvStream.SavedFilename;
-    Data.Station := StreamName;
+    Data.Station := FEntry.Name;
     Data.Title := FICEThread.RecvStream.SavedTitle;
-    Data.TrackNumber := SongsSaved;
+    Data.TrackNumber := FEntry.SongsSaved;
     Data.Filesize := FICEThread.RecvStream.SavedSize;
     Data.WasCut := FICEThread.RecvStream.SavedWasCut;
 
@@ -679,7 +696,7 @@ procedure TICEClient.ThreadSpeedChanged(Sender: TObject);
 begin
   if FICEThread.RecvStream.HeaderType = 'icy' then
   begin
-    FReceived := FReceived + FICEThread.Speed;
+    FEntry.BytesReceived := FEntry.BytesReceived + FICEThread.Speed;
     FSpeed := FICEThread.Speed;
 
     if Assigned(FOnICYReceived) then
@@ -753,7 +770,7 @@ begin
   FSpeed := 0;
   FFilename := '';
   AppGlobals.Lock;
-  MaxRetries := AppGlobals.MaxRetries;
+  MaxRetries := FEntry.Settings.MaxRetries;
   AppGlobals.Unlock;
 
   if (FState <> csStopping) and (FState <> csIOError) then
@@ -813,11 +830,11 @@ function TICEClient.ParsePlaylist: Boolean;
       if not PortDetected then
       begin
         // Es gibt keienn Standard scheinbar - beide nehmen.
-        FURLs.Add(Host + ':80' + URLData);
-        FURLs.Add(Host + ':6666' + URLData);
+        FEntry.URLs.Add(Host + ':80' + URLData);
+        FEntry.URLs.Add(Host + ':6666' + URLData);
       end else
       begin
-        FURLs.Add(Host + ':' + IntToStr(Port) + URLData);
+        FEntry.URLs.Add(Host + ':' + IntToStr(Port) + URLData);
         //if Port <> 80 then
         //  FURLs.Add(Host + ':80' + URLData);
       end;
@@ -827,7 +844,7 @@ var
   Offset, Offset2: Integer;
   Line, Data: string;
 begin
-  FURLs.Clear;
+  FEntry.URLs.Clear;
   Offset := 1;
   Data := string(FICEThread.RecvStream.RecvStream.ToString);
   if Copy(LowerCase(Data), 1, 10) = '[playlist]' then // .pls
@@ -898,13 +915,13 @@ begin
       end;
     end;
   end;
-  Result := FURLs.Count > 0;
+  Result := FEntry.URLs.Count > 0;
   FURLsIndex := 0;
 end;
 
-procedure TICEClient.SetSettings(SkipShort: Boolean);
+procedure TICEClient.SetSettings(Settings: TStreamSettings);
 begin
-  FSkipShort := SkipShort;
+  FEntry.Settings.Assign(Settings);
 end;
 
 procedure TICEClient.SetVolume(Vol: Integer);

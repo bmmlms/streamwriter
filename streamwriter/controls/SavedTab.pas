@@ -31,7 +31,7 @@ type
   TSavedTree = class;
 
   TSavedNodeData = record
-    Stream: TStreamEntry;
+    //Stream: TStreamEntry;
     Track: TTrackInfo;
   end;
   PSavedNodeData = ^TSavedNodeData;
@@ -331,18 +331,17 @@ end;
 
 procedure TSavedTab.BuildTree;
 var
-  i, n: Integer;
+  i: Integer;
   Node: PVirtualNode;
   NodeData: PSavedNodeData;
 begin
-  for i := 0 to FStreams.StreamList.Count - 1 do
-    for n := 0 to FStreams.StreamList[i].Tracks.Count - 1 do
-    begin
-      Node := FSavedTree.AddChild(nil);
-      NodeData := FSavedTree.GetNodeData(Node);
-      NodeData.Stream := FStreams.StreamList[i];
-      NodeData.Track := FStreams.StreamList[i].Tracks[n];
-    end;
+  for i := 0 to FStreams.TrackList.Count - 1 do
+  begin
+    Node := FSavedTree.AddChild(nil);
+    NodeData := FSavedTree.GetNodeData(Node);
+    //NodeData.Stream := FStreams.StreamList[i];
+    NodeData.Track := FStreams.TrackList[i];
+  end;
 
   FSavedTree.Sort(nil, FSavedTree.FSortColumn, FSavedTree.FSortDirection);
 
@@ -384,7 +383,7 @@ begin
       begin
         for i := 0 to Length(Tracks) - 1 do
         begin
-          FStreams.StreamList.RemoveTrack(Tracks[i]);
+          FStreams.TrackList.RemoveTrack(Tracks[i]);
           FSavedTree.DeleteTrack(Tracks[i]);
           if Assigned(FOnTrackRemoved) then
             FOnTrackRemoved(nil, Tracks[i]);
@@ -397,7 +396,7 @@ begin
           if Recycle(Handle, Tracks[i].Filename) then
           begin
             FSavedTree.DeleteTrack(Tracks[i]);
-            FStreams.StreamList.RemoveTrack(Tracks[i]);
+            FStreams.TrackList.RemoveTrack(Tracks[i]);
             if Assigned(FOnTrackRemoved) then
               FOnTrackRemoved(nil, Tracks[i]);
           end;
@@ -413,7 +412,7 @@ begin
           if Windows.DeleteFile(PChar(Tracks[i].Filename)) or (GetLastError = ERROR_FILE_NOT_FOUND) then
           begin
             FSavedTree.DeleteTrack(Tracks[i]);
-            FStreams.StreamList.RemoveTrack(Tracks[i]);
+            FStreams.TrackList.RemoveTrack(Tracks[i]);
             if Assigned(FOnTrackRemoved) then
               FOnTrackRemoved(nil, Tracks[i]);
           end else
@@ -489,7 +488,7 @@ var
 begin
   Node := FSavedTree.AddChild(nil);
   NodeData := FSavedTree.GetNodeData(Node);
-  NodeData.Stream := Entry;
+  //NodeData.Stream := Entry;
   NodeData.Track := Track;
 
   FSavedTree.Change(nil);
@@ -690,7 +689,8 @@ begin
       0: Text := ExtractFileName(NodeData.Track.Filename);
       1:
         Text := MakeSize(NodeData.Track.Filesize);
-      2: Text := NodeData.Stream.Name;
+      2:
+        Text := NodeData.Track.Streamname;
       3:
         begin
           if Trunc(NodeData.Track.Time) = Trunc(Now) then
@@ -837,7 +837,7 @@ begin
   case Column of
     0: Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
     1: Result := CmpInt(Data1.Track.Filesize, Data2.Track.Filesize);
-    2: Result := CompareText(Data1.Stream.Name, Data2.Stream.Name);
+    2: Result := CompareText(Data1.Track.Streamname, Data2.Track.Streamname);
     3: Result := CmpTime(Data1.Track.Time, Data2.Track.Time);
   end;
 end;

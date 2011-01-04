@@ -80,7 +80,8 @@ type
     function ProcessFile(Data: TPluginProcessInformation): TProcessingEntry; overload;
     function ProcessFile(Entry: TProcessingEntry): Boolean; overload;
     procedure ReInitPlugins;
-    function GetID(ID: Integer): TExternalPlugin;
+    //function GetID(ID: Integer): TExternalPlugin;
+    function Find(Plugin: TPluginBase): TPluginBase;
 
     property Plugins: TList<TPluginBase> read FPlugins;
   end;
@@ -116,14 +117,17 @@ type
     FHelp: string;
     FActive: Boolean;
     FOrder: Integer;
+    FOnlyIfCut: Boolean;
   public
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; virtual; abstract;
+    function Copy: TPluginBase; virtual; abstract;
     procedure Initialize; virtual;
 
     property Name: string read FName;
     property Help: string read FHelp;
     property Active: Boolean read FActive write FActive;
     property Order: Integer read FOrder write FOrder;
+    property OnlyIfCut: Boolean read FOnlyIfCut write FOnlyIfCut;
   end;
 
   TDLLPlugin = class(TPluginBase)
@@ -147,6 +151,7 @@ type
 
     procedure Initialize; override;
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
+    function Copy: TPluginBase; override;
     function Configure(Handle: Cardinal; ShowMessages: Boolean): Boolean;
 
     property Handle: Cardinal read FDLLHandle;
@@ -179,6 +184,7 @@ type
   public
     constructor Create;
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
+    function Copy: TPluginBase; override;
     procedure Initialize; override;
   end;
 
@@ -191,8 +197,9 @@ type
     procedure FSetExe(Value: string);
   protected
   public
-    constructor Create(Exe, Params: string; Active: Boolean; Identifier, Order: Integer);
+    constructor Create(Exe, Params: string; Active, OnlyIfCut: Boolean; Identifier, Order: Integer);
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
+    function Copy: TPluginBase; override;
 
     property Exe: string read FExe write FSetExe;
     property Params: string read FParams write FParams;
@@ -233,7 +240,8 @@ begin
   SmallestActive := MaxInt;
   for i := 0 to FPlugins.Count - 1 do
     if FPlugins[i].Active and (FPlugins[i].FOrder < SmallestActive) and (FPlugins[i].FOrder >= Order) and
-       (not Entry.PluginsProcessed.Contains(FPlugins[i])) then
+       (not Entry.PluginsProcessed.Contains(FPlugins[i])) and
+       ((FPlugins[i].OnlyIfCut and Entry.Data.WasCut) or (not FPlugins[i].OnlyIfCut)) then
     begin
       SmallestActive := FPlugins[i].FOrder;
     end;
@@ -258,6 +266,7 @@ begin
     FPlugins[i].Initialize;
 end;
 
+{
 function TPluginManager.GetID(ID: Integer): TExternalPlugin;
 var
   i: Integer;
@@ -271,17 +280,18 @@ begin
         Break;
       end;
 end;
+}
 
 constructor TPluginManager.Create(Path: string);
 var
   i: Integer;
-  Handle: THandle;
-  GetVersion: TGetInt;
-  P: TDLLPlugin;
-  Files: TStringList;
+  //Handle: THandle;
+  //GetVersion: TGetInt;
+  //P: TDLLPlugin;
+  //Files: TStringList;
   App, Params: string;
   EP: TExternalPlugin;
-  Active: Boolean;
+  Active, OnlyIfCut: Boolean;
   Order: Integer;
 begin
   FActivePlugin := nil;
@@ -322,9 +332,10 @@ begin
     AppGlobals.Storage.Read('Params_' + IntToStr(i), Params, '', 'Plugins');
     AppGlobals.Storage.Read('OrderExe_' + IntToStr(i), Order, 0, 'Plugins');
     AppGlobals.Storage.Read('Active_' + IntToStr(i), Active, True, 'Plugins');
+    AppGlobals.Storage.Read('OnlyIfCut_' + IntToStr(i), OnlyIfCut, False, 'Plugins');
     if App <> '' then
     begin
-      EP := TExternalPlugin.Create(App, Params, Active, i, Order);
+      EP := TExternalPlugin.Create(App, Params, Active, OnlyIfCut, i, Order);
       try
         Plugins.Add(EP);
       except
@@ -344,6 +355,40 @@ begin
     FPlugins[i].Free;
   FPlugins.Free;
   inherited;
+end;
+
+function TPluginManager.Find(Plugin: TPluginBase): TPluginBase;
+var
+  i: Integer;
+begin
+  Result := nil;
+
+  for i := 0 to FPlugins.Count - 1 do
+    if (Plugin is TDLLPlugin) and (FPlugins[i] is TDLLPlugin) then
+    begin
+      // REMARK: DLL-Plugins sind komplett raus zur Zeit.
+      {
+      if TDLLPlugin(Plugin).Filename = TDLLPlugin(FPlugins[i]).Filename then
+      begin
+        Result := Plugins[i];
+        Break;
+      end;
+      }
+    end else if (Plugin is TExternalPlugin) and (FPlugins[i] is TExternalPlugin) then
+    begin
+      if TExternalPlugin(Plugin).Identifier = TExternalPlugin(FPlugins[i]).Identifier then
+      begin
+        Result := FPlugins[i];
+        Break;
+      end;
+    end else if Plugin.ClassType.InheritsFrom(TInternalPlugin) and FPlugins[i].ClassType.InheritsFrom(TInternalPlugin) then
+    begin
+      if Plugin.ClassType = FPlugins[i].ClassType then
+      begin
+        Result := FPlugins[i];
+        Break;
+      end;
+    end;
 end;
 
 { TDLLPlugin }
@@ -381,6 +426,12 @@ begin
   Result := 0;
 end;
 
+function TDLLPlugin.Copy: TPluginBase;
+begin
+  // REMARK: Es gibt zur Zeit keine DLL-Plugins.
+  Result := nil;
+end;
+
 constructor TDLLPlugin.Create(Handle: THandle; Filename: string);
 var
   Data: PChar;
@@ -412,6 +463,7 @@ begin
 
   AppGlobals.Storage.Read('Active_' + LowerCase(ExtractFileName(Filename)), FActive, FDefaultEnabled, 'Plugins');
   AppGlobals.Storage.Read('Order_' + LowerCase(ExtractFileName(Filename)), FOrder, 0, 'Plugins');
+  AppGlobals.Storage.Read('OnlyIfCut_' + LowerCase(ExtractFileName(Filename)), FOnlyIfCut, False, 'Plugins');
 
   if FAuthor = '' then
     raise Exception.Create('-');
@@ -593,11 +645,17 @@ end;
 
 { TExternalPlugin }
 
-constructor TExternalPlugin.Create(Exe, Params: string; Active: Boolean; Identifier, Order: Integer);
+function TExternalPlugin.Copy: TPluginBase;
+begin
+  Result := TExternalPlugin.Create(FExe, FParams, FActive, FOnlyIfCut, FIdentifier, FOrder);
+end;
+
+constructor TExternalPlugin.Create(Exe, Params: string; Active, OnlyIfCut: Boolean; Identifier, Order: Integer);
 begin
   inherited Create;
 
   FActive := Active;
+  FOnlyIfCut := OnlyIfCut;
   FExe := Exe;
   FParams := Params;
   FIdentifier := Identifier;
@@ -680,14 +738,28 @@ end;
 
 { TSetTagsPlugin }
 
+function TSetTagsPlugin.Copy: TPluginBase;
+begin
+  Result := TSetTagsPlugin.Create;
+
+  Result.FActive := FActive;
+  Result.FOrder := FOrder;
+  Result.FOnlyIfCut := FOnlyIfCut;
+end;
+
 constructor TSetTagsPlugin.Create;
 begin
   inherited;
   FActive := True;
   FOrder := 100;
+
+  FName := _('Set ID3-tags');
+  FHelp := _('This adds ID3-tags to saved songs.');
+
   try
     AppGlobals.Storage.Read('Active_' + ClassName, FActive, True, 'Plugins');
     AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 100, 'Plugins');
+    AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
   except end;
 end;
 

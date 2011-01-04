@@ -64,7 +64,7 @@ type
     FStartLine, FEndLine, FPlayLine: Cardinal;
 
     procedure BuildBuffer;
-    procedure SetLine(X: Integer);
+    procedure SetLine(X: Integer; Button: TMouseButton);
     function PixelsToArray(X: Integer): Cardinal;
     function GetPlayerPos: Cardinal;
 
@@ -80,7 +80,7 @@ type
     destructor Destroy; override;
   end;
 
-  TLineMode = (lmStart, lmEnd, lmPlay);
+  TLineMode = (lmEdit, lmPlay);
 
   TCutView = class(TPanel)
   private
@@ -729,8 +729,7 @@ begin
   if FCutView.FWaveData = nil then
     Exit;
 
-  if Button = mbLeft then
-    SetLine(X);
+  SetLine(X, Button);
 end;
 
 procedure TCutPaintBox.MouseMove(Shift: TShiftState; X, Y: Integer);
@@ -741,7 +740,9 @@ begin
     Exit;
 
   if ssLeft in Shift then
-    SetLine(X);
+    SetLine(X, mbLeft)
+  else if ssRight in Shift then
+    SetLine(X, mbRight);
 end;
 
 procedure TCutPaintBox.Paint;
@@ -804,7 +805,7 @@ begin
   end;
 end;
 
-procedure TCutPaintBox.SetLine(X: Integer);
+procedure TCutPaintBox.SetLine(X: Integer; Button: TMouseButton);
 var
   ArrayPos: Cardinal;
 begin
@@ -816,15 +817,15 @@ begin
     ArrayPos := FCutView.FWaveData.CutEnd;
 
   case FCutView.FLineMode of
-    lmStart:
+    lmEdit:
+      if Button = mbLeft then
       begin
         FStartLine := ArrayPos;
         if FStartLine >= FCutView.FWaveData.CutEnd then
           FStartLine := FCutView.FWaveData.CutEnd - 1;
         if FEndLine <= FStartLine then
           FEndLine := FStartLine + 1;
-      end;
-    lmEnd:
+      end else if Button = mbRight then
       begin
         FEndLine := ArrayPos;
         if FEndLine <= FCutView.FWaveData.CutStart then
@@ -832,13 +833,13 @@ begin
         if FStartLine >= FEndLine then
           FStartLine := FEndLine - 1;
       end;
-  end;
-
-  if FCutView.LineMode = lmPlay then
-  begin
-    if FCutView.FPlayer > 0 then
-      BASSChannelStop(FCutView.FPlayer);
-    FPlayLine := ArrayPos;
+    lmPlay:
+      if Button = mbLeft then
+      begin
+        if FCutView.FPlayer > 0 then
+          BASSChannelStop(FCutView.FPlayer);
+        FPlayLine := ArrayPos;
+      end;
   end;
 
   if Assigned(FCutView.FOnStateChanged) then

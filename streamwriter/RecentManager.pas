@@ -22,7 +22,7 @@ unit RecentManager;
 interface
 
 uses
-  Windows, Classes, SysUtils, ExtendedStream, ICEClient,
+  Windows, Classes, SysUtils, ExtendedStream,
   Generics.Collections, ComCtrls, AppData, Functions;
 
 type
@@ -36,16 +36,21 @@ type
   private
     FTime: TDateTime;
     FFilename: string;
+    FStreamname: string;
     FFilesize: UInt64;
     FWasCut: Boolean;
-    FHash: Cardinal;
   public
-    constructor Create(Time: TDateTime; Filename: string);
+    constructor Create; overload;
+    constructor Create(Time: TDateTime; Filename, Streamname: string); overload;
+
+    class function Load(Stream: TExtendedStream; Version: Integer): TTrackInfo;
+    procedure Save(Stream: TExtendedStream);
+
     property Time: TDateTime read FTime;
     property Filename: string read FFilename write FFilename;
+    property Streamname: string read FStreamname write FStreamname;
     property Filesize: UInt64 read FFilesize write FFilesize;
     property WasCut: Boolean read FWasCut write FWasCut;
-    property Hash: Cardinal read FHash;
   end;
 
   TTitleInfo = class
@@ -71,6 +76,7 @@ type
     FName: string;
     FIndex: Integer;
     FExpanded: Boolean;
+    FKilled: Boolean;
   public
     constructor Create(Name: string; Idx: Integer); overload;
     class function Load(Stream: TExtendedStream; Version: Integer): TListCategory;
@@ -78,91 +84,111 @@ type
     property Name: string read FName write FName;
     property Index: Integer read FIndex write FIndex;
     property Expanded: Boolean read FExpanded write FExpanded;
+    property Killed: Boolean read FKilled write FKilled;
+  end;
+
+  TTrackList = class(TList<TTrackInfo>)
+  public
+    procedure RemoveTrack(Track: TTrackInfo);
+  end;
+
+  TRecentEntry = class
+  private
+    FName: string;
+    FStartURL: string;
+    FIndex: Cardinal;
+  public
+    constructor Create(Name, StartURL: string; Index: Cardinal);
+
+    procedure Assign(From: TRecentEntry);
+    function Copy: TRecentEntry;
+    class function Load(Stream: TExtendedStream; Version: Integer): TRecentEntry;
+    procedure Save(Stream: TExtendedStream);
+
+    property Name: string read FName write FName;
+    property StartURL: string read FStartURL write FStartURL;
+    property Index: Cardinal read FIndex write FIndex;
   end;
 
   TStreamEntry = class(TObject)
   private
+    FSettings: TStreamSettings;
+
     FParent: TStreamList;
 
     FName: string;
     FStartURL: string;
     FURLs: TStringList;
-    FBitRate: Cardinal;
+    FBitrate: Cardinal;
     FGenre: string;
-    FSkipShort: Boolean;
-    FUseFilter: TUseFilters;
-    FSubmitted: Boolean;
     FIndex: Integer;
     FCategoryIndex: Integer;
 
+    // REMARK: IsInList kann raus. Ist für Updates von Versionen < 6 da. Das Feld ist über,
+    // weil in neueren Versionen alles IsInList ist.
     FIsInList: Boolean;
-    FRecentIndex: Integer;
-    FLastTouched: TDateTime;
-    FTracks: TList<TTrackInfo>;
     FSongsSaved: Cardinal;
     FBytesReceived: UInt64;
 
+    FMigrationSubmitted: Boolean;
+    FMigrationTrackList: TTrackList;
+    FMigrationRecentIndex: Integer;
+
     procedure FSetName(Value: string);
     procedure FSetIsInList(Value: Boolean);
-    procedure FSetRecentIndex(Value: Integer);
-    procedure Changed;
+
+    procedure FSetGenre(Value: string);
   public
-    constructor Create(Parent: TStreamList);
+    constructor Create;
     destructor Destroy; override;
 
+    procedure Assign(From: TStreamEntry);
     function Copy: TStreamEntry;
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamEntry;
     procedure Save(Stream: TExtendedStream);
+
+    property Settings: TStreamSettings read FSettings;
 
     property Parent: TStreamList read FParent write FParent;
     property Name: string read FName write FSetName;
     property StartURL: string read FStartURL write FStartURL;
     property URLs: TStringList read FURLs;
-    property BitRate: Cardinal read FBitRate write FBitRate;
-    property Genre: string read FGenre write FGenre;
-    property SkipShort: Boolean read FSkipShort write FSkipShort;
-    property UseFilter: TUseFilters read FUseFilter write FUseFilter;
-    property Submitted: Boolean read FSubmitted write FSubmitted;
+    property Bitrate: Cardinal read FBitrate write FBitrate;
+    property Genre: string read FGenre write FSetGenre;
     property Index: Integer read FIndex write FIndex;
     property CategoryIndex: Integer read FCategoryIndex write FCategoryIndex;
 
     property IsInList: Boolean read FIsInList write FSetIsInList;
-    property RecentIndex: Integer read FRecentIndex write FSetRecentIndex;
-    property LastTouched: TDateTime read FLastTouched write FLastTouched;
-    property Tracks: TList<TTrackInfo> read FTracks write FTracks;
     property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
     property BytesReceived: UInt64 read FBytesReceived write FBytesReceived;
   end;
 
-  TStreamChangedEvent = procedure(Sender: TObject; Stream: TStreamEntry) of object;
-
   TStreamList = class(TList<TStreamEntry>)
   private
-    FOnStreamChanged: TStreamChangedEvent;
   public
-    function Add(Name: string; URL: string; URLs: TStringList; BitRate: Cardinal; Genre: string;
-      SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal): TStreamEntry; overload;
+    //function Add(Name: string; URL: string; URLs: TStringList; BitRate: Cardinal; Genre: string;
+    //  SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal): TStreamEntry; overload;
     function Add(Entry: TStreamEntry): TStreamEntry; overload;
-    function Get(Client: TICEClient): TStreamEntry; overload;
     function Get(Name, URL: string; URLs: TStringList): TStreamEntry; overload;
-    procedure RemoveTrack(Track: TTrackInfo);
-
-    property OnStreamChanged: TStreamChangedEvent read FOnStreamChanged write FOnStreamChanged;
   end;
 
   TTitleList = class(TList<TTitleInfo>)
+  end;
+
+  TRecentList = class(TList<TRecentEntry>)
   end;
 
   TDataLists = class
   private
     FCategoryList: TListCategoryList;
     FStreamList: TStreamList;
+    FTrackList: TTrackList;
     FSaveList: TTitleList;
     FIgnoreList: TTitleList;
+    FSubmittedStreamList: TStringList;
+    FRecentList: TRecentList;
     FLoadError: Boolean;
     FReceived: UInt64;
-
-    procedure CleanUp;
   public
     constructor Create;
     destructor Destroy; override;
@@ -172,83 +198,90 @@ type
 
     property CategoryList: TListCategoryList read FCategoryList;
     property StreamList: TStreamList read FStreamList;
+    property TrackList: TTrackList read FTrackList;
     property SaveList: TTitleList read FSaveList;
     property IgnoreList: TTitleList read FIgnoreList;
+    property SubmittedStreamList: TStringList read FSubmittedStreamList;
+    property RecentList: TRecentList read FRecentList;
 
     property LoadError: Boolean read FLoadError write FLoadError;
     property Received: UInt64 read FReceived write FReceived;
   end;
 
 const
-  DATAVERSION = 5;
+  DATAVERSION = 6;
 
 implementation
 
 { TStreamEntry }
 
-procedure TStreamEntry.Changed;
+procedure TStreamEntry.Assign(From: TStreamEntry);
 begin
-  if FParent <> nil then
-    if Assigned(FParent.OnStreamChanged) then
-      FParent.OnStreamChanged(FParent, Self);
+  FName := From.FName;
+  FIsInList := From.FIsInList;
+  FStartURL := From.FStartURL;
+  FSongsSaved := From.FSongsSaved;
+  FBytesReceived := From.FBytesReceived;
+  FIndex := From.FIndex;
+  FCategoryIndex := From.CategoryIndex;
+  FBitRate := From.BitRate;
+  FGenre := From.Genre;
+  FURLs.Assign(From.FURLs);
+  FSettings.Assign(From.FSettings);
 end;
 
 function TStreamEntry.Copy: TStreamEntry;
 begin
-  Result := TStreamEntry.Create(nil);
-  Result.Name := Name;
-  Result.IsInList := IsInList;
-  Result.RecentIndex := RecentIndex;
-  Result.StartURL := StartURL;
-  Result.BitRate := BitRate;
-  Result.Genre := Genre;
-  Result.SkipShort := SkipShort;
-  Result.SongsSaved := SongsSaved;
-  Result.Submitted := Submitted;
-  Result.UseFilter := UseFilter;
-  Result.URLs.Assign(URLs);
+  Result := TStreamEntry.Create;
+  Result.Assign(Self);
 end;
 
-constructor TStreamEntry.Create(Parent: TStreamList);
+constructor TStreamEntry.Create;
 begin
+  FSettings := TStreamSettings.Create;
+
   FParent := Parent;
   FURLs := TStringList.Create;
-  FRecentIndex := -1;
   FIsInList := False;
-  FLastTouched := Now;
-  FTracks := TList<TTrackInfo>.Create;
   FSongsSaved := 0;
-  FBitRate := 0;
-  FSubmitted := False;
-  FUseFilter := ufNone;
+  FMigrationTrackList := TTrackList.Create;
 end;
 
 destructor TStreamEntry.Destroy;
-var
-  i: Integer;
 begin
   FURLs.Free;
-  for i := 0 to FTracks.Count - 1 do
-    FTracks[i].Free;
-  FTracks.Free;
+  FMigrationTrackList.Free;
+  FSettings.Free;
   inherited;
 end;
 
 procedure TStreamEntry.FSetName(Value: string);
 begin
   FName := Value;
-  Changed;
 end;
 
 class function TStreamEntry.Load(Stream: TExtendedStream; Version: Integer): TStreamEntry;
 var
+  BTmp: Boolean;
   B: Byte;
   i: Integer;
   Count: Cardinal;
   URL: string;
   TrackInfo: TTrackInfo;
+  DTTmp: TDateTime;
 begin
-  Result := TStreamEntry.Create(nil);
+  Result := TStreamEntry.Create;
+
+  if Version >= 6 then
+  begin
+    Result.FSettings.Free;
+    Result.FSettings := TStreamSettings.Load(Stream, Version)
+  end else
+  begin
+    // Defaults benutzen..
+    Result.FSettings.Assign(AppGlobals.StreamSettings);
+  end;
+
   Stream.Read(Result.FName);
   Stream.Read(Result.FStartURL);
   Stream.Read(Count);
@@ -257,15 +290,22 @@ begin
     Stream.Read(URL);
     Result.FURLs.Add(URL);
   end;
-  Stream.Read(Result.FBitRate);
+
+  Stream.Read(Result.FBitrate);
   Stream.Read(Result.FGenre);
-  Stream.Read(Result.FSkipShort);
-  if Version >= 3 then
+
+  if Version <= 5 then
   begin
-    Stream.Read(B);
-    Result.FUseFilter := TUseFilters(B);
+    Stream.Read(BTmp);
+    Result.FSettings.SkipShort := BTmp;
+    Stream.Read(Result.FMigrationSubmitted);
+
+    if (Version >= 3) and (Version < 6) then
+    begin
+      Stream.Read(B);
+      Result.FSettings.Filter := TUseFilters(B);
+    end;
   end;
-  Stream.Read(Result.FSubmitted);
 
   Stream.Read(Result.FIsInList);
   if Version >= 5 then
@@ -273,22 +313,29 @@ begin
     Stream.Read(Result.FIndex);
     Stream.Read(Result.FCategoryIndex);
   end;
-  Stream.Read(Result.FRecentIndex);
-  Stream.Read(Result.FLastTouched);
 
-  Stream.Read(Count);
-  for i := 0 to Count - 1 do
+  if Version < 6 then
+    Stream.Read(Result.FMigrationRecentIndex);
+
+  if Version <= 5 then
+    Stream.Read(DTTmp);
+
+  if Version <= 5 then
   begin
-    TrackInfo := TTrackInfo.Create(Now, '');
-    Stream.Read(TrackInfo.FTime);
-    Stream.Read(TrackInfo.FFilename);
-    TrackInfo.FHash := HashString(LowerCase(ExtractFileName(TrackInfo.FFilename)));
-    if Version > 1 then
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
     begin
-      Stream.Read(TrackInfo.FFilesize);
-      Stream.Read(TrackInfo.FWasCut);
+      TrackInfo := TTrackInfo.Create(Now, '', '');
+      Stream.Read(TrackInfo.FTime);
+      Stream.Read(TrackInfo.FFilename);
+      TrackInfo.Streamname := Result.FName;
+      if Version > 1 then
+      begin
+        Stream.Read(TrackInfo.FFilesize);
+        Stream.Read(TrackInfo.FWasCut);
+      end;
+      Result.FMigrationTrackList.Add(TrackInfo);
     end;
-    Result.FTracks.Add(TrackInfo);
   end;
   Stream.Read(Result.FSongsSaved);
   Stream.Read(Result.FBytesReceived);
@@ -298,6 +345,8 @@ procedure TStreamEntry.Save(Stream: TExtendedStream);
 var
   i: Integer;
 begin
+  FSettings.Save(Stream);
+
   Stream.Write(FName);
   Stream.Write(FStartURL);
   Stream.Write(FURLs.Count);
@@ -307,35 +356,26 @@ begin
   end;
   Stream.Write(FBitRate);
   Stream.Write(FGenre);
-  Stream.Write(FSkipShort);
-
-  Stream.Write(Byte(FUseFilter));
-  Stream.Write(FSubmitted);
 
   Stream.Write(FIsInList);
   Stream.Write(FIndex);
   Stream.Write(FCategoryIndex);
-  Stream.Write(FRecentIndex);
-  Stream.Write(FLastTouched);
 
-  Stream.Write(FTracks.Count);
-  for i := 0 to FTracks.Count - 1 do
-  begin
-    Stream.Write(FTracks[i].FTime);
-    Stream.Write(FTracks[i].FFilename);
-    Stream.Write(FTracks[i].FFilesize);
-    Stream.Write(FTracks[i].FWasCut);
-  end;
   Stream.Write(FSongsSaved);
   Stream.Write(FBytesReceived);
+end;
+
+procedure TStreamEntry.FSetGenre(Value: string);
+begin
+  FGenre := Value;
 end;
 
 procedure TStreamEntry.FSetIsInList(Value: Boolean);
 begin
   FIsInList := Value;
-  Changed;
 end;
 
+{
 procedure TStreamEntry.FSetRecentIndex(Value: Integer);
   function RemoveOld: Boolean;
   var
@@ -390,23 +430,10 @@ begin
     while RemoveOld do
       RemoveOld;
   end;
-  Changed;
 end;
+}
 
 { TStreamDataList }
-
-procedure TDataLists.CleanUp;
-var
-  i: Integer;
-begin
-  for i := FStreamList.Count - 1 downto 0 do
-    if (FStreamList[i].FLastTouched < Now - 60) and (FStreamList[i].FTracks.Count = 0) and
-       (not FStreamList[i].IsInList) and (FStreamList[i].RecentIndex = -1) then
-    begin
-      FStreamList[i].Free;
-      FStreamList.Delete(i);
-    end;
-end;
 
 constructor TDataLists.Create;
 begin
@@ -416,8 +443,11 @@ begin
   FReceived := 0;
   FCategoryList := TListCategoryList.Create;
   FStreamList := TStreamList.Create;
+  FTrackList := TTrackList.Create;
   FSaveList := TTitleList.Create;
   FIgnoreList := TTitleList.Create;
+  FSubmittedStreamList := TStringList.Create;
+  FRecentList := TRecentList.Create;
 end;
 
 destructor TDataLists.Destroy;
@@ -427,6 +457,10 @@ begin
   for i := 0 to FCategoryList.Count - 1 do
     FCategoryList[i].Free;
   FCategoryList.Free;
+
+  for i := 0 to FTrackList.Count - 1 do
+    FTrackList[i].Free;
+  FTrackList.Free;
 
   for i := 0 to FStreamList.Count - 1 do
     FStreamList[i].Free;
@@ -440,15 +474,22 @@ begin
     FIgnoreList[i].Free;
   FIgnoreList.Free;
 
+  FSubmittedStreamList.Free;
+
+  for i := 0 to FRecentList.Count - 1 do
+    FRecentList[i].Free;
+  FRecentList.Free;
+
   inherited;
 end;
 
 procedure TDataLists.Load;
 var
-  Cat: TListCategory;
   Entry: TStreamEntry;
   TitleInfo: TTitleInfo;
+  TrackInfo: TTrackInfo;
   S: TExtendedStream;
+  Str: string;
   Version, CatCount, EntryCount: Integer;
   i, n: Integer;
 begin
@@ -498,6 +539,16 @@ begin
           FStreamList.Add(Entry);
         end;
 
+        if Version >= 6 then
+        begin
+          S.Read(EntryCount);
+          for i := 0 to EntryCount - 1 do
+          begin
+            TrackInfo := TTrackInfo.Load(S, Version);
+            FTrackList.Add(TrackInfo);
+          end;
+        end;
+
         if Version >= 3 then
         begin
           S.Read(EntryCount);
@@ -513,6 +564,20 @@ begin
             TitleInfo := TTitleInfo.Load(S, Version);
             if TitleInfo <> nil then
               FIgnoreList.Add(TitleInfo);
+          end;
+
+          if Version >= 6 then
+          begin
+            S.Read(EntryCount);
+            for i := 0 to EntryCount - 1 do
+            begin
+              S.Read(Str);
+              FSubmittedStreamList.Add(Str);
+            end;
+
+            S.Read(EntryCount);
+            for i := 0 to EntryCount - 1 do
+              FRecentList.Add(TRecentEntry.Load(S, Version));
           end;
 
           // REMARK: Irgendwann raus. Fehler in Version 3... doppelte entfernen!
@@ -549,6 +614,32 @@ begin
 
         end;
       end;
+
+      if Version < 6 then
+      begin
+        for i := FStreamList.Count - 1 downto 0 do
+        begin
+          Entry := FStreamList[i];
+          // REMARK: Für das Update von 5 auf 6: Alle gespeicherten Tracks von
+          // den Entries in die TrackList übernehmen. Kann irgendwann weg.
+          // Natürlich auch das alte FSubmitted übernehmen.
+          for n := 0 to Entry.FMigrationTrackList.Count - 1 do
+          begin
+            FTrackList.Add(Entry.FMigrationTrackList[n]);
+          end;
+          Entry.FMigrationTrackList.Clear;
+          if Entry.FMigrationSubmitted then
+            FSubmittedStreamList.Add(Entry.StartURL);
+          if Entry.FMigrationRecentIndex > -1 then
+            FRecentList.Add(TRecentEntry.Create(Entry.Name, Entry.StartURL, Entry.FMigrationRecentIndex));
+
+          if not Entry.IsInList then
+          begin
+            FStreamList.Remove(Entry);
+            Entry.Free;
+          end;
+        end;
+      end;
     except
       on E: EVersionException do
       begin
@@ -578,9 +669,8 @@ begin
     Exit;
   end;
 
-  CleanUp;
-
-  if (FStreamList.Count = 0) and (FIgnoreList.Count = 0) and (FSaveList.Count = 0) and not (FileExists(AppGlobals.DataFile)) then
+  if (FStreamList.Count = 0) and (FRecentList.Count = 0) and (FIgnoreList.Count = 0) and
+     (FSaveList.Count = 0) and not (FileExists(AppGlobals.DataFile)) then
   begin
     Exit;
   end;
@@ -603,6 +693,10 @@ begin
         FStreamList[i].Save(S);
       end;
 
+      S.Write(FTrackList.Count);
+      for i := 0 to FTrackList.Count - 1 do
+        FTrackList[i].Save(S);
+
       S.Write(FSaveList.Count);
       for i := 0 to FSaveList.Count - 1 do
       begin
@@ -615,6 +709,14 @@ begin
         FIgnoreList[i].Save(S);
       end;
 
+      S.Write(FSubmittedStreamList.Count);
+      for i := 0 to FSubmittedStreamList.Count - 1 do
+        S.Write(FSubmittedStreamList[i]);
+
+      S.Write(FRecentList.Count);
+      for i := 0 to FRecentList.Count - 1 do
+        FRecentList[i].Save(S);
+
       S.SaveToFile(AppGlobals.DataFile);
     finally
       S.Free;
@@ -624,12 +726,40 @@ end;
 
 { TTrackInfo }
 
-constructor TTrackInfo.Create(Time: TDateTime; Filename: string);
+constructor TTrackInfo.Create;
 begin
+  inherited;
+
+end;
+constructor TTrackInfo.Create(Time: TDateTime; Filename, Streamname: string);
+begin
+  inherited Create;
+
   FTime := Time;
   FFilename := Filename;
+  FStreamname := Streamname;
   FWasCut := False;
-  FHash := HashString(LowerCase(ExtractFileName(Filename)));
+end;
+
+class function TTrackInfo.Load(Stream: TExtendedStream;
+  Version: Integer): TTrackInfo;
+begin
+  Result := TTrackInfo.Create;
+
+  Stream.Read(Result.FFilename);
+  Stream.Read(Result.FStreamname);
+  Stream.Read(Result.FFilesize);
+  Stream.Read(Result.FTime);
+  Stream.Read(Result.FWasCut);
+end;
+
+procedure TTrackInfo.Save(Stream: TExtendedStream);
+begin
+  Stream.Write(FFilename);
+  Stream.Write(FStreamname);
+  Stream.Write(FFilesize);
+  Stream.Write(FTime);
+  Stream.Write(FWasCut);
 end;
 
 { TStreamList }
@@ -645,16 +775,9 @@ begin
 
   Result := Entry;
   inherited Add(Result);
-
-  if Assigned(FOnStreamChanged) then
-    FOnStreamChanged(Self, Entry);
 end;
 
-function TStreamList.Get(Client: TICEClient): TStreamEntry;
-begin
-  Result := Get(Client.StreamName, Client.StartURL, Client.URLs);
-end;
-
+{
 function TStreamList.Add(Name, URL: string;
   URLs: TStringList; BitRate: Cardinal; Genre: string; SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal): TStreamEntry;
 var
@@ -671,15 +794,15 @@ begin
     Exit;
   end;
 
-  Entry := TStreamEntry.Create(Self);
+  Entry := TStreamEntry.Create;
   Entry.Name := Name;
   Entry.StartURL := URL;
   Entry.URLs.Assign(URLs);
-  Entry.SkipShort := SkipShort;
-  Entry.BitRate := BitRate;
-  Entry.Genre := Genre;
+  //Entry.SkipShort := SkipShort;
+  //Entry.BitRate := BitRate;
+  //Entry.Genre := Genre;
   Entry.SongsSaved := SongsSaved;
-  Entry.UseFilter := UseFilter;
+  //Entry.UseFilter := UseFilter;
 
   Entry.FParent := Self;
 
@@ -687,6 +810,7 @@ begin
 
   Result := Entry;
 end;
+}
 
 function TStreamList.Get(Name, URL: string;
   URLs: TStringList): TStreamEntry;
@@ -729,21 +853,6 @@ begin
           end;
     end;
   end;
-end;
-
-procedure TStreamList.RemoveTrack(Track: TTrackInfo);
-var
-  i: Integer;
-  n: Integer;
-begin
-  for i := 0 to Count - 1 do
-    for n := Items[i].Tracks.Count - 1 downto 0 do
-      if Items[i].Tracks[n] = Track then
-      begin
-        Items[i].Tracks[n].Free;
-        Items[i].Tracks.Delete(n);
-        Exit;
-      end;
 end;
 
 { TTitleInfo }
@@ -810,12 +919,14 @@ begin
   inherited Create;
   FName := Name;
   FIndex := Idx;
+  FKilled := False;
 end;
 
 class function TListCategory.Load(Stream: TExtendedStream;
   Version: Integer): TListCategory;
 begin
   Result := TListCategory.Create;
+  Result.FKilled := False;
   Stream.Read(Result.FIndex);
   Stream.Read(Result.FName);
   Stream.Read(Result.FExpanded);
@@ -826,6 +937,53 @@ begin
   Stream.Write(FIndex);
   Stream.Write(FName);
   Stream.Write(FExpanded);
+end;
+
+{ TTrackList }
+
+procedure TTrackList.RemoveTrack(Track: TTrackInfo);
+begin
+  Remove(Track);
+  Track.Free;
+end;
+
+{ TRecentEntry }
+
+procedure TRecentEntry.Assign(From: TRecentEntry);
+begin
+  FName := From.FName;
+  FStartURL := From.FStartURL;
+  FIndex := From.FIndex;
+end;
+
+function TRecentEntry.Copy: TRecentEntry;
+begin
+  Result := TRecentEntry.Create(FName, FStartURL, FIndex);
+end;
+
+constructor TRecentEntry.Create(Name, StartURL: string; Index: Cardinal);
+begin
+  inherited Create;
+
+  FName := Name;
+  FStartURL := StartURL;
+  FIndex := Index;
+end;
+
+class function TRecentEntry.Load(Stream: TExtendedStream;
+  Version: Integer): TRecentEntry;
+begin
+  Result := TRecentEntry.Create('', '', 0);
+  Stream.Read(Result.FName);
+  Stream.Read(Result.FStartURL);
+  Stream.Read(Result.FIndex);
+end;
+
+procedure TRecentEntry.Save(Stream: TExtendedStream);
+begin
+  Stream.Write(FName);
+  Stream.Write(FStartURL);
+  Stream.Write(FIndex);
 end;
 
 end.

@@ -86,8 +86,8 @@ type
 
     function AddClient(URL: string): TICEClient; overload;
     function AddClient(Name, StartURL: string): TICEClient; overload;
-    function AddClient(Name, StartURL: string; URLs: TStringList;
-      SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal): TICEClient; overload;
+    //function AddClient(Name, StartURL: string; URLs: TStringList;
+    //  SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal): TICEClient; overload;
     function AddClient(Entry: TStreamEntry): TICEClient; overload;
     procedure RemoveClient(Client: TICEClient);
     procedure Terminate;
@@ -136,6 +136,7 @@ begin
   Result := C;
 end;
 
+{
 function TClientManager.AddClient(Name, StartURL: string; URLs: TStringList;
   SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal): TICEClient;
 var
@@ -145,13 +146,13 @@ begin
   SetupClient(C);
   Result := C;
 end;
+}
 
 function TClientManager.AddClient(Entry: TStreamEntry): TICEClient;
 var
   C: TICEClient;
 begin
-  C := TICEClient.Create(Entry.Name, Entry.StartURL, Entry.URLs, Entry.SkipShort,
-    Entry.UseFilter, Entry.SongsSaved, Entry.Index);
+  C := TICEClient.Create(Entry);
   SetupClient(C);
   Result := C;
 end;
@@ -273,24 +274,24 @@ begin
   for Client in FClients do
   begin
     if Name <> '' then
-      if LowerCase(Client.StreamName) = LowerCase(Name) then
+      if LowerCase(Client.Entry.Name) = LowerCase(Name) then
       begin
         Result := Client;
         Exit;
       end;
 
     if URL <> '' then
-      if LowerCase(Client.StartURL) = LowerCase(URL) then
+      if LowerCase(Client.Entry.StartURL) = LowerCase(URL) then
       begin
         Result := Client;
         Exit;
       end;
 
     if URLs <> nil then
-      for i := 0 to Client.URLs.Count - 1 do
+      for i := 0 to Client.Entry.URLs.Count - 1 do
         for n := 0 to URLs.Count - 1 do
-          if (LowerCase(Client.URLs[i]) = LowerCase(URL)) or
-             (LowerCase(Client.URLs[i]) = LowerCase(URLs[n])) then
+          if (LowerCase(Client.Entry.URLs[i]) = LowerCase(URL)) or
+             (LowerCase(Client.Entry.URLs[i]) = LowerCase(URLs[n])) then
           begin
             Result := Client;
             Exit;
@@ -322,10 +323,18 @@ begin
   Client := Sender as TICEClient;
   for i := 0 to FClients.Count - 1 do
     if FClients[i] <> Client then
-      for n := 0 to Client.URLs.Count - 1 do
-        if FClients[i].URLs.IndexOf(Client.URLs[n]) > -1 then
+      for n := 0 to Client.Entry.URLs.Count - 1 do
+        if (FClients[i].Entry.StartURL = Client.Entry.StartURL) or
+           (FClients[i].Entry.URLs.IndexOf(Client.Entry.URLs[n]) > -1) then
         begin
-          Client.Kill;
+          if not FClients[i].Killed then
+          begin
+            if Client.Playing then
+              FClients[i].StartPlay;
+            if Client.Recording then
+              FClients[i].StartRecording;
+            Client.Kill;
+          end;
           Break;
         end;
 end;

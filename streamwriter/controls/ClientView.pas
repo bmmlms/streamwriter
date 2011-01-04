@@ -68,9 +68,6 @@ type
     FOnStartStreaming: TStartStreamingEvent;
 
     procedure FitColumns;
-
-    procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
-      APoint: TPoint; var Effect: Integer);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -255,13 +252,13 @@ begin
   begin
     case Column of
       0:
-        if NodeData.Client.StreamName = '' then
-          if NodeData.Client.StartURL = '' then
+        if NodeData.Client.Entry.Name = '' then
+          if NodeData.Client.Entry.StartURL = '' then
             Text := _('Unknown')
           else
-            Text := NodeData.Client.StartURL
+            Text := NodeData.Client.Entry.StartURL
         else
-          Text := NodeData.Client.StreamName;
+          Text := NodeData.Client.Entry.Name;
       1:
         if NodeData.Client.Title = '' then
           if (NodeData.Client.State = csConnected) or (NodeData.Client.State = csConnecting) then
@@ -271,9 +268,9 @@ begin
         else
           Text := NodeData.Client.Title;
       2:
-        Text := MakeSize(NodeData.Client.Received);
+        Text := MakeSize(NodeData.Client.Entry.BytesReceived);
       3:
-        Text := IntToStr(NodeData.Client.SongsSaved);
+        Text := IntToStr(NodeData.Client.Entry.SongsSaved);
       4:
         Text := MakeSize(NodeData.Client.Speed) + '/s';
       5:
@@ -384,7 +381,6 @@ var
   i, n: Integer;
   Children: TNodeArray;
   HitNode: PVirtualNode;
-  HitNodeData: PClientNodeData;
 begin
   Result := True;
   if Length(FDragNodes) > 0 then
@@ -419,25 +415,7 @@ end;
 
 function TMClientView.DoEndEdit: Boolean;
 begin
-  inherited;
-end;
-
-procedure TMClientView.DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
-  APoint: TPoint; var Effect: Integer);
-var
-  DropURL: string;
-begin
-{
-  DropURL := string(FDropTarget.URL);
-  if DropURL = '' then
-    DropURL := string(FDropTarget.Text);
-  if DropURL = '' then
-    if FDropTarget.Files.Count > 0 then
-      DropURL := FDropTarget.Files[0];
-
-  if (DropURL <> '') then
-    OnStartStreaming(Self, DropURL);
-  }
+  Result := inherited;
 end;
 
 function TMClientView.GetClientNodeData(Client: TICEClient): PClientNodeData;
@@ -499,10 +477,8 @@ end;
 
 function TMClientView.GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
 var
-  i: Integer;
   Node: PVirtualNode;
   NodeData: PClientNodeData;
-  Nodes: TNodeArray;
 begin
   SetLength(Result, 0);
   Node := GetFirst;
@@ -673,12 +649,12 @@ begin
   begin
     // Mit Column -1 heiﬂt nach Programmstart sortieren
     if Data1.Client <> nil then
-      I1 := Data1.Client.Index
+      I1 := Data1.Client.Entry.Index
     else
       I1 := Data1.Category.Index;
 
     if Data2.Client <> nil then
-      I2 := Data2.Client.Index
+      I2 := Data2.Client.Entry.Index
     else
       I2 := Data2.Category.Index;
 
@@ -688,10 +664,10 @@ begin
 
   if (Data1.Client <> nil) and (Data2.Client <> nil) then
     case Column of
-      0: Result := CompareText(Data1.Client.StreamName, Data2.Client.StreamName);
+      0: Result := CompareText(Data1.Client.Entry.Name, Data2.Client.Entry.Name);
       1: Result := CompareText(Data1.Client.Title, Data2.Client.Title);
-      2: Result := CmpInt(Data1.Client.Received, Data2.Client.Received);
-      3: Result := CmpInt(Data1.Client.SongsSaved, Data2.Client.SongsSaved);
+      2: Result := CmpInt(Data1.Client.Entry.BytesReceived, Data2.Client.Entry.BytesReceived);
+      3: Result := CmpInt(Data1.Client.Entry.SongsSaved, Data2.Client.Entry.SongsSaved);
       4: Result := CmpInt(Data1.Client.Speed, Data2.Client.Speed);
       5: Result := CmpIntR(Integer(Data1.Client.State), Integer(Data2.Client.State));
     end
@@ -741,11 +717,10 @@ var
   FormatEtc: TFormatEtc;
   Medium: TStgMedium;
   OLEData,
-  Head, Tail: PWideChar;
+  Head: PWideChar;
   Chars: Integer;
 begin
-  Result := False;
-  s := '';
+  S := '';
 
   FormatEtc.cfFormat := CF_UNICODETEXT;
   FormatEtc.ptd := nil;
@@ -783,16 +758,24 @@ end;
 procedure TMClientView.DoDragDrop(Source: TObject; DataObject: IDataObject;
   Formats: TFormatArray; Shift: TShiftState; Pt: TPoint;
   var Effect: Integer; Mode: TDropMode);
+  procedure UnkillCategory(Node: PVirtualNode);
+  var
+    NodeData: PClientNodeData;
+  begin
+    if Node <> nil then
+    begin
+      NodeData := GetNodeData(Node);
+      if NodeData.Category <> nil then
+        NodeData.Category.Killed := False;
+    end;
+  end;
 var
-  S: string;
   Attachmode: TVTNodeAttachMode;
   Nodes: TNodeArray;
   i: Integer;
-  p: tpoint;
   Files: TStringList;
-  NodeData, HitNodeData, DragNodeData: PClientNodeData;
+  HitNodeData, DragNodeData: PClientNodeData;
   DropURL: string;
-  TmpData: Pointer;
   HI: THitInfo;
   R: TRect;
   RelevantWidth: Integer;
@@ -803,6 +786,7 @@ begin
   DropURL := '';
   Attachmode := amInsertAfter;
   Effect := DROPEFFECT_COPY;
+  HitNodeData := nil;
 
   GetHitTestInfoAt(Pt.X, Pt.Y, True, HI);
   if Hi.HitNode <> nil then
@@ -819,12 +803,12 @@ begin
     else
       AttachMode := amNoWhere;
   end;
-  
+
   if DataObject <> nil then
   begin
     if Length(FDragNodes) > 0 then
     begin
-      if (HI.HitNode <> nil) then
+      if (HI.HitNode <> nil) and (HitNodeData <> nil) then
       begin
         if (HitNodeData.Client = nil) and (((Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere)) then
         begin
@@ -835,6 +819,7 @@ begin
               MoveTo(FDragNodes[i], HI.HitNode, amAddChildLast, False)
             else
               MoveTo(FDragNodes[i], HI.HitNode, amInsertAfter, False);
+            UnkillCategory(HI.HitNode);
           end;
         end else
         begin
@@ -852,6 +837,7 @@ begin
                 Attachmode := amInsertAfter;
               end;
             MoveTo(FDragNodes[i], HI.HitNode, Attachmode, False);
+            UnkillCategory(HI.HitNode);
           end;
         end;
         Exit;
@@ -888,6 +874,7 @@ begin
             AttachMode := amInsertAfter;
           OnStartStreaming(Self, DropURL, HI.HitNode, Attachmode);
         end;
+        UnkillCategory(HI.HitNode);
     finally
       Files.Free;
     end;
@@ -956,7 +943,7 @@ begin
       Entries := GetEntries(etStream);
 
     for i := 0 to Length(Entries) - 1 do
-      FDragSource.Files.Add(Entries[i].URL);
+      FDragSource.Files.Add(AnsiString(Entries[i].URL));
 
     if FDragSource.Files.Count = 0 then
       Exit;
@@ -987,10 +974,10 @@ begin
   for Client in Clients do
   begin
     Add := True;
-    if Client.StreamName = '' then
-      Name := Client.StartURL
+    if Client.Entry.Name = '' then
+      Name := Client.Entry.StartURL
     else
-      Name := Client.StreamName;
+      Name := Client.Entry.Name;
 
     //if (T = etRelay) and (not Client.Active) then
     //  Add := False;
@@ -1000,7 +987,7 @@ begin
     if Add then
     begin
       case T of
-        etStream: URL := Client.StartURL;
+        etStream: URL := Client.Entry.StartURL;
         //etRelay: URL := Client.RelayURL;
         etFile: URL := Client.Filename;
       end;

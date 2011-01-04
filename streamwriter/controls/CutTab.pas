@@ -31,8 +31,9 @@ type
     FSave: TToolButton;
     //FSaveAs: TToolButton;
     FSep3: TToolButton;
-    FPosStart: TToolButton;
-    FPosEnd: TToolButton;
+    //FPosStart: TToolButton;
+    //FPosEnd: TToolButton;
+    FPosEdit: TToolButton;
     FPosPlay: TToolButton;
     FSep1: TToolButton;
     FAutoCut: TToolButton;
@@ -91,8 +92,9 @@ end;
 procedure TCutTab.UpdateButtons;
 begin
   FToolBar.FSave.Enabled := FCutView.CanSave;
-  FToolBar.FPosStart.Enabled := FCutView.CanSetLine;
-  FToolBar.FPosEnd.Enabled := FCutView.CanSetLine;
+  FToolBar.FPosEdit.Enabled := FCutView.CanSetLine;
+  //FToolBar.FPosStart.Enabled := FCutView.CanSetLine;
+  //FToolBar.FPosEnd.Enabled := FCutView.CanSetLine;
   FToolBar.FPosPlay.Enabled := FCutView.CanSetLine;
   FToolBar.FAutoCut.Enabled := FCutView.CanAutoCut;
   FToolBar.FCut.Enabled := FCutView.CanCut;
@@ -102,15 +104,14 @@ begin
 
   // Das muss so, sonst klappt das .Down := True nicht, wenn sie
   // vorher Disabled waren, vor dem Enable da oben...
-  FToolBar.FPosStart.Down := False;
-  FToolBar.FPosEnd.Down := False;
+  //FToolBar.FPosStart.Down := False;
+  //FToolBar.FPosEnd.Down := False;
+  FToolBar.FPosEdit.Down := False;
   FToolBar.FPosPlay.Down := False;
 
   case FCutView.LineMode of
-    lmStart:
-      FToolBar.FPosStart.Down := True;
-    lmEnd:
-      FToolBar.FPosEnd.Down := True;
+    lmEdit:
+      FToolBar.FPosEdit.Down := True;
     lmPlay:
       FToolBar.FPosPlay.Down := True;
   end;
@@ -134,19 +135,13 @@ begin
   if TToolButton(Sender).Down then
     Exit;
 
-  FToolBar.FPosStart.Down := False;
-  FToolBar.FPosEnd.Down := False;
+  FToolBar.FPosEdit.Down := False;
   FToolBar.FPosPlay.Down := False;
 
-  if Sender = FToolBar.FPosStart then
+  if Sender = FToolBar.FPosEdit then
   begin
-    FCutView.LineMode := lmStart;
-    FToolBar.FPosStart.Down := True;
-  end;
-  if Sender = FToolBar.FPosEnd then
-  begin
-    FCutView.LineMode := lmEnd;
-    FToolBar.FPosEnd.Down := True;
+    FCutView.LineMode := lmEdit;
+    FToolBar.FPosEdit.Down := True;
   end;
   if Sender = FToolBar.FPosPlay then
   begin
@@ -157,7 +152,7 @@ end;
 
 procedure TCutTab.AutoCutClick(Sender: TObject);
 begin
-  FCutView.AutoCut(AppGlobals.SilenceLevel, AppGlobals.SilenceLength);
+  FCutView.AutoCut(AppGlobals.StreamSettings.SilenceLevel, AppGlobals.StreamSettings.SilenceLength);
 end;
 
 procedure TCutTab.CutClick(Sender: TObject);
@@ -206,8 +201,7 @@ begin
   FToolBar.Setup;
 
   FToolBar.FSave.OnClick := SaveClick;
-  FToolBar.FPosStart.OnClick := PosClick;
-  FToolBar.FPosEnd.OnClick := PosClick;
+  FToolBar.FPosEdit.OnClick := PosClick;
   FToolBar.FPosPlay.OnClick := PosClick;
   FToolBar.FAutoCut.OnClick := AutoCutClick;
   FToolBar.FCut.OnClick := CutClick;
@@ -282,15 +276,10 @@ begin
 
 
 
-  FPosEnd := TToolButton.Create(Self);
-  FPosEnd.Parent := Self;
-  FPosEnd.Hint := _('Set end position for cut');
-  FPosEnd.ImageIndex := 26;
-
-  FPosStart := TToolButton.Create(Self);
-  FPosStart.Parent := Self;
-  FPosStart.Hint := _('Set start position for cut');
-  FPosStart.ImageIndex := 25;
+  FPosEdit := TToolButton.Create(Self);
+  FPosEdit.Parent := Self;
+  FPosEdit.Hint := _('Set positions for cut (left mousebutton sets startposition, right button sets endposition)');
+  FPosEdit.ImageIndex := 37;
 
   FPosPlay := TToolButton.Create(Self);
   FPosPlay.Parent := Self;

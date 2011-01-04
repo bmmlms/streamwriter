@@ -61,7 +61,6 @@ type
     Entfernen1: TMenuItem;
     tmrSpeed: TTimer;
     mnuStreamSettings1: TMenuItem;
-    mnuSkipShort: TMenuItem;
     actSkipShort: TAction;
     mnuStreamSettings2: TMenuItem;
     KurzeLiederberspringen1: TMenuItem;
@@ -81,8 +80,6 @@ type
     mnuAbout: TMenuItem;
     actExit: TAction;
     actSettings: TAction;
-    mnuStreamSettingsToolbar: TPopupMenu;
-    Skipshortsongs1: TMenuItem;
     actAbout: TAction;
     N8: TMenuItem;
     N9: TMenuItem;
@@ -121,16 +118,11 @@ type
     ToolButton6: TToolButton;
     ToolButton4: TToolButton;
     cmdShowStreamBrowser: TToolButton;
-    cmdStreamSettings: TToolButton;
     actCutSave: TAction;
     actCutSaveAs: TAction;
     mnuHelp2: TMenuItem;
     N1: TMenuItem;
     actHelp: TAction;
-    N5: TMenuItem;
-    mnuWishList1: TMenuItem;
-    mnuIgnoreList1: TMenuItem;
-    mnuNoList1: TMenuItem;
     N7: TMenuItem;
     mnuNoList2: TMenuItem;
     mnuWishList2: TMenuItem;
@@ -154,6 +146,8 @@ type
     Newcategory1: TMenuItem;
     ToolButton5: TToolButton;
     ToolButton7: TToolButton;
+    actStreamSettings: TAction;
+    cmdStreamSettings: TToolButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -348,27 +342,26 @@ end;
 procedure TfrmStreamWriterMain.actStreamSettingsExecute(Sender: TObject);
 var
   Clients: TClientArray;
-  Client: TICEClient;
-  R: TStreamEntry;
+  S: TfrmSettings;
+  Settings: TStreamSettingsArray;
+  i: Integer;
 begin
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
-  for Client in Clients do
+  SetLength(Settings, Length(Clients));
+
+  for i := 0 to Length(Clients) - 1 do
+    Settings[i] := Clients[i].Entry.Settings;
+
+  if Length(Clients) > 0 then
   begin
-    if Sender = actSkipShort then
-      Client.SetSettings(actSkipShort.Checked);
+    S := TfrmSettings.Create(Self, Settings);
+    S.ShowModal;
 
-    if Sender = actUseNoList then
-      Client.UseFilter := ufNone;
-    if Sender = actUseWishlist then
-      Client.UseFilter := ufWish;
-    if Sender = actUseIgnoreList then
-      Client.UseFilter := ufIgnore;
-
-    R := FStreams.StreamList.Get(Client);
-    if R <> nil then
+    if S.SaveSettings then
     begin
-      R.SkipShort := Client.SkipShort;
-      R.UseFilter := Client.UseFilter;
+      Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
+      for i := 0 to Length(Clients) - 1 do
+        Clients[i].Entry.Settings.Assign(S.StreamSettings[i]);
     end;
   end;
 
@@ -481,6 +474,7 @@ begin
     end;
   end;
 
+  tabClients.AddressBar.Stations.BuildList(FStreams.RecentList);
   tabClients.BuildTree(FStreams);
 
   // Ist hier unten, weil hier erst Tracks geladen wurden
@@ -490,6 +484,9 @@ begin
   tabClients.AddressBar.Stations.Sort;
 
   {$IFDEF DEBUG}Caption := Caption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
+
+  if AppGlobals.BuildNumber > 0 then
+    Caption := Caption + ' build ' + IntToStr(AppGlobals.BuildNumber);
 
   UpdateButtons;
   UpdateStatus;
@@ -883,7 +880,7 @@ end;
 
 procedure TfrmStreamWriterMain.tabSavedRefresh(Sender: TObject);
 var
-  i, n: Integer;
+  i: Integer;
   Files: TList;
 begin
   if FCheckFiles <> nil then
@@ -891,9 +888,8 @@ begin
 
   Files := TList.Create;
   try
-    for i := 0 to FStreams.StreamList.Count - 1 do
-      for n := 0 to FStreams.StreamList[i].Tracks.Count - 1 do
-        Files.Add(TFileEntry.Create(FStreams.StreamList[i].Tracks[n].Filename, FStreams.StreamList[i].Tracks[n].Filesize, eaNone));
+    for i := 0 to FStreams.TrackList.Count - 1 do
+      Files.Add(TFileEntry.Create(FStreams.TrackList[i].Filename, FStreams.TrackList[i].Filesize, eaNone));
     FCheckFiles := TCheckFilesThread.Create(Files);
     FCheckFiles.OnTerminate := CheckFilesTerminate;
     FCheckFiles.Resume;
@@ -919,24 +915,10 @@ procedure TfrmStreamWriterMain.tabClientsAddIgnoreList(Sender: TObject;
   Data: string);
 var
   Ignore: TTitleInfo;
-  i, NumChars: Integer;
-  Pattern: string;
-  Hash: Cardinal;
 begin
-  if AppGlobals.AddSavedToIgnore then
-  begin
-    Pattern := BuildPattern(Data, Hash, NumChars);
-    if NumChars > 3 then
-    begin
-      for i := 0 to FStreams.IgnoreList.Count - 1 do
-        if FStreams.IgnoreList[i].Hash = Hash then
-          Exit;
-
-      Ignore := TTitleInfo.Create(Data);
-      FStreams.IgnoreList.Add(Ignore);
-      tabLists.AddIgnore(Ignore);
-    end;
-  end;
+  Ignore := TTitleInfo.Create(Data);
+  FStreams.IgnoreList.Add(Ignore);
+  tabLists.AddIgnore(Ignore);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsUpdateButtons(Sender: TObject);
@@ -951,16 +933,15 @@ end;
 
 procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject);
 var
-  i, n: Integer;
+  i: Integer;
 begin
-  for i := 0 to FStreams.StreamList.Count - 1 do
-    for n := 0 to FStreams.StreamList[i].Tracks.Count - 1 do
-      if LowerCase(FStreams.StreamList[i].Tracks[n].Filename) = LowerCase(TCutTab(Sender).Filename) then
-      begin
-        FStreams.StreamList[i].Tracks[n].Filesize := GetFileSize(FStreams.StreamList[i].Tracks[n].Filename);
-        FStreams.StreamList[i].Tracks[n].WasCut := True;
-        Exit;
-      end;
+  for i := 0 to FStreams.TrackList.Count - 1 do
+    if LowerCase(FStreams.TrackList[i].Filename) = LowerCase(TCutTab(Sender).Filename) then
+    begin
+      FStreams.TrackList[i].Filesize := GetFileSize(FStreams.TrackList[i].Filename);
+      FStreams.TrackList[i].WasCut := True;
+      Exit;
+    end;
 end;
 
 procedure TfrmStreamWriterMain.tmrSpeedTimer(Sender: TObject);
@@ -1023,10 +1004,9 @@ end;
 
 procedure TfrmStreamWriterMain.UpdateButtons;
 var
-  B, B4, B5: Boolean;
-  UseFilter: TUseFilters;
+  B, B4: Boolean;
   Clients: TClientArray;
-  Client, Client2: TICEClient;
+  Client: TICEClient;
   Nodes: TNodeArray;
 begin
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
@@ -1036,9 +1016,8 @@ begin
   mnuStartStreaming1.Default := False;
   mnuStopStreaming1.Default := False;
   actRemove.Enabled := B;
-  mnuStreamSettings1.Enabled := B;
-  mnuStreamSettings2.Enabled := B;
-  cmdStreamSettings.Enabled := B;
+
+  actStreamSettings.Enabled := Length(Clients) > 0;
 
   mnuTuneIn1.Enabled := B;
   mnuTuneIn2.Enabled := B;
@@ -1056,9 +1035,6 @@ begin
   B4 := BassLoaded;
   for Client in Clients do
   begin
-    //if Client.Active then
-    //  if AppGlobals.Relay then
-    //    actTuneInRelay.Enabled := True;
     if Client.Filename <> '' then
       actTuneInFile.Enabled := True;
     if Client.Playing then
@@ -1068,48 +1044,11 @@ begin
   actPlay.Enabled := False;
   actStopPlay.Enabled := B4;
 
-  if Length(Clients) > 1 then
-  begin
-    Client2 := Clients[0];
-    UseFilter := Client2.UseFilter;
-    B4 := True;
-    B5 := True;
-    for Client in tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True)) do
-    begin
-      if not (Client.SkipShort = Client2.SkipShort) then
-        B4 := False;
-      if not (Client.UseFilter = Client2.UseFilter) then
-        B5 := False;
-    end;
-    Client := Clients[0];
-    actSkipShort.Checked := Client.SkipShort and B4;
-    if B5 then
-    begin
-      case UseFilter of
-        ufNone:
-          actUseNoList.Checked := True;
-        ufWish:
-          actUseWishlist.Checked := True;
-        ufIgnore:
-          actUseIgnoreList.Checked := True;
-      end;
-    end;
-  end else if Length(Clients) = 1 then
+  if Length(Clients) = 1 then
   begin
     Client := Clients[0];
-    actSkipShort.Checked := Client.SkipShort;
 
     actPlay.Enabled := BassLoaded;
-    //actStopPlay.Enabled := True;
-
-    case Client.UseFilter of
-      ufNone:
-        actUseNoList.Checked := True;
-      ufWish:
-        actUseWishlist.Checked := True;
-      ufIgnore:
-        actUseIgnoreList.Checked := True;
-    end;
 
     case AppGlobals.DefaultAction of
       caStartStop:
@@ -1124,10 +1063,6 @@ begin
           mnuStartPlay1.Default := True;
       caStream:
         mnuListenToStream1.Default := True;
-      {
-      caRelay:
-        mnuListenToRelay1.Default := True;
-      }
       caFile:
         mnuListenToFile1.Default := True;
     end;
@@ -1207,8 +1142,7 @@ end;
 
 procedure TfrmStreamWriterMain.CheckFilesTerminate(Sender: TObject);
 var
-  i, n, j: Integer;
-  Found: Boolean;
+  i, n: Integer;
   Track: TTrackInfo;
   E: TFileEntry;
 begin
@@ -1219,33 +1153,23 @@ begin
     if E.Action = eaNone then
       Continue;
 
-    for n := 0 to FStreams.StreamList.Count - 1 do
-    begin
-      Found := False;
-      for j := FStreams.StreamList[n].Tracks.Count - 1 downto 0 do
+    for n := 0 to FStreams.TrackList.Count - 1 do
+      if FStreams.TrackList[n].Filename = E.Filename then
       begin
-        if FStreams.StreamList[n].Tracks[j].Hash = E.Hash then
-        begin
-          Track := FStreams.StreamList[n].Tracks[j];
-          case E.Action of
-            eaNone: ;
-            eaSize:
-              Track.Filesize := E.Size;
-            eaRemove:
-              begin
-                FStreams.StreamList[n].Tracks.Delete(j);
-                tabSaved.RemoveTrack(Track);
-                Track.Free;
-              end;
-          end;
-          Found := True;
+        Track := FStreams.TrackList[n];
+        case E.Action of
+          eaNone: ;
+          eaSize:
+            Track.Filesize := E.Size;
+          eaRemove:
+            begin
+              FStreams.TrackList.Delete(n);
+              tabSaved.RemoveTrack(Track);
+              Track.Free;
+            end;
         end;
-        if Found then
-          Break;
-      end;
-      if Found then
         Break;
-    end;
+      end;
   end;
 
   FCheckFiles := nil;

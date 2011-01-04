@@ -70,7 +70,7 @@ var
 begin
   inherited;
 
-  for i := 0 to FFiles.Count - 1 do
+  for i := FFiles.Count - 1 downto 0 do
   begin
     E := TFileEntry(FFiles[i]);
     if Terminated then

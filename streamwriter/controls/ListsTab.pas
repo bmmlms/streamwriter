@@ -410,7 +410,6 @@ end;
 
 procedure TTitlePanel.ExportClick(Sender: TObject);
 var
-  i: Integer;
   Node: PVirtualNode;
   NodeData: PTitleNodeData;
   Dlg: TSaveDialog;
@@ -436,7 +435,7 @@ begin
             Dlg.FileName := Dlg.FileName + '.txt';
           Lst.SaveToFile(Dlg.FileName);
         except
-          // TODO: !!! MSG EINBAUN
+          MsgBox(Handle, _('The file could not be saved.'), _('Error'), MB_ICONEXCLAMATION);
         end;
       finally
         Lst.Free;
@@ -496,7 +495,7 @@ begin
             FToolbar.FExport.Enabled := FTree.RootNodeCount > 0;
           end;
         except
-          // TODO: !!!
+          MsgBox(Handle, _('The file could not be loaded.'), _('Error'), MB_ICONEXCLAMATION);
         end;
       finally
         Lst.Free;

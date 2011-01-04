@@ -88,7 +88,7 @@ type
     constructor Create(URL: string); reintroduce;
     destructor Destroy; override;
 
-    procedure SetSettings(SkipShort: Boolean);
+    procedure SetSettings(Settings: TStreamSettings);
     procedure StartRelay(Thread: TRelayThread);
 
     procedure StartPlay;
@@ -120,9 +120,10 @@ implementation
 
 { TICEThread }
 
-procedure TICEThread.SetSettings(SkipShort: Boolean);
+procedure TICEThread.SetSettings(Settings: TStreamSettings);
 begin
-  FTypedStream.SkipShort := SkipShort;
+  // Das hier wird nur gesynct aus dem Mainthread heraus aufgerufen.
+  FTypedStream.Settings.Assign(Settings);
 end;
 
 procedure TICEThread.SetVolume(Vol: Integer);
@@ -360,7 +361,7 @@ begin
   WriteDebug(Format(_('%s'), [E.Message]), '', 3, 0);
 
   AppGlobals.Lock;
-  Delay := AppGlobals.RetryDelay * 1000;
+  Delay := FTypedStream.Settings.RetryDelay * 1000;
   AppGlobals.Unlock;
   if FState <> tsIOError then
   begin
