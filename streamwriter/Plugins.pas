@@ -626,8 +626,11 @@ begin
       Replaced := PatternReplace(FParams, Arr);
       if Trim(Replaced) <> '' then
       begin
-        // & ist für Batch nen Sonderzeichen. Also escapen.
-        Replaced := StringReplace(Replaced, '&', '^&', [rfReplaceAll]);
+        if LowerCase(ExtractFileExt(FExe)) = '.bat' then
+        begin
+          // & ist für Batch nen Sonderzeichen. Also escapen.
+          Replaced := StringReplace(Replaced, '&', '^&', [rfReplaceAll]);
+        end;
         CmdLine := '"' + FExe + '" ' + Replaced;
       end else
         CmdLine := FExe;

@@ -25,7 +25,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, WinSock, ICEClient, StdCtrls, ExtCtrls, ImgList, Menus,
   XPMan, VirtualTrees, ComCtrls, ToolWin, ClientView, ICEThread,
-  Settings, RecentManager, ActnList, AppData, DragDrop, DropTarget,
+  Settings, DataManager, ActnList, AppData, DragDrop, DropTarget,
   DragDropInternet, DragDropText, DragDropFile, Update, UpdateClient,
   LanguageObjects, AppDataBase, Functions, ClientManager, ShellAPI, DropSource,
   About, MsgDlg, HomeCommunication, StreamBrowserView, Clipbrd,
@@ -485,8 +485,8 @@ begin
 
   {$IFDEF DEBUG}Caption := Caption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
 
-  if AppGlobals.BuildNumber > 0 then
-    Caption := Caption + _(' build ') + IntToStr(AppGlobals.BuildNumber);
+  //if AppGlobals.BuildNumber > 0 then
+  //  Caption := Caption + _(' build ') + IntToStr(AppGlobals.BuildNumber);
 
   UpdateButtons;
   UpdateStatus;

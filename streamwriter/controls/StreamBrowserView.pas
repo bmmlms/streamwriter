@@ -334,10 +334,12 @@ begin
   NodeData := PStreamNodeData(GetNodeData(Node));
   case Column of
     0:
-      if NodeData.HasData then
-        Text := NodeData.Name
-      else
-        Text := _('Loading info') + FDots;
+      begin
+        if NodeData.HasData then
+          Text := StringReplace(NodeData.Name, '&', '&&', [rfReplaceall]) // Wegen & und dem Shortcut..
+        else
+          Text := _('Loading info') + FDots;
+      end;
   end;
 end;
 
@@ -497,7 +499,9 @@ begin
     end;
 
     if Text = '' then
-      Text := _('No info available');
+      Text := _('No info available')
+    else
+      Text := StringReplace(Text, '&', '&&', [rfReplaceall]); // Wegen & und dem Shortcut..
     inherited;
   end else
   begin

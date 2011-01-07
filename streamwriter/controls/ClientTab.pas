@@ -25,7 +25,7 @@ uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
   MControls, ClientView, StreamBrowserView, StreamDebugView, StreamInfoView,
   LanguageObjects, HomeCommunication, StationCombo, Menus, ActnList, ImgList,
-  RecentManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
+  DataManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
   GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs,
   Graphics, SharedControls, Generics.Collections, Generics.Defaults;
 

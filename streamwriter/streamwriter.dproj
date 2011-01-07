@@ -60,7 +60,7 @@
 				<Form>frmStreamWriterMain</Form>
 			</DCCReference>
 			<DCCReference Include="controls\ClientView.pas"/>
-			<DCCReference Include="RecentManager.pas"/>
+			<DCCReference Include="DataManager.pas"/>
 			<DCCReference Include="Settings.pas">
 				<Form>frmSettings</Form>
 			</DCCReference>
@@ -68,7 +68,6 @@
 			<DCCReference Include="Wizard.pas">
 				<Form>frmWizard</Form>
 			</DCCReference>
-			<DCCReference Include="MPEG.pas"/>
 			<DCCReference Include="..\..\common\ExtendedStream.pas"/>
 			<DCCReference Include="..\..\common\Functions.pas"/>
 			<DCCReference Include="..\..\common\AppDataBase.pas"/>
@@ -78,8 +77,6 @@
 			<DCCReference Include="..\..\common\sockets\SocketThread.pas"/>
 			<DCCReference Include="..\..\common\sockets\SocketStream.pas"/>
 			<DCCReference Include="..\..\common\sockets\ServerSocketThread.pas"/>
-			<DCCReference Include="ClientManager.pas"/>
-			<DCCReference Include="RelayServer.pas"/>
 			<DCCReference Include="..\..\common\sockets\HTTPServerStream.pas"/>
 			<DCCReference Include="..\..\common\LanguageObjects.pas"/>
 			<DCCReference Include="..\..\common\GUIFunctions.pas"/>
@@ -113,10 +110,6 @@
 			<DCCReference Include="PluginsShared.pas"/>
 			<DCCReference Include="Base64.pas"/>
 			<DCCReference Include="audio\DynBASS.pas"/>
-			<DCCReference Include="ICEClient.pas"/>
-			<DCCReference Include="ICEServerStream.pas"/>
-			<DCCReference Include="ICEThread.pas"/>
-			<DCCReference Include="ICEStream.pas"/>
 			<DCCReference Include="audio\AudioStream.pas"/>
 			<DCCReference Include="controls\ClientTab.pas"/>
 			<DCCReference Include="controls\CutTab.pas"/>
@@ -130,11 +123,17 @@
 			</DCCReference>
 			<DCCReference Include="CheckFilesThread.pas"/>
 			<DCCReference Include="controls\ListsTab.pas"/>
-			<DCCReference Include="ICEPlayer.pas"/>
 			<DCCReference Include="..\..\common\forms\UpdatedInfo.pas">
 				<Form>frmUpdatedInfo</Form>
 			</DCCReference>
 			<DCCReference Include="controls\SharedControls.pas"/>
+			<DCCReference Include="streaming\ClientManager.pas"/>
+			<DCCReference Include="streaming\ICEClient.pas"/>
+			<DCCReference Include="streaming\ICEPlayer.pas"/>
+			<DCCReference Include="streaming\ICEServerStream.pas"/>
+			<DCCReference Include="streaming\ICEStream.pas"/>
+			<DCCReference Include="streaming\ICEThread.pas"/>
+			<DCCReference Include="audio\MPEG.pas"/>
 			<BuildConfiguration Include="Basis">
 				<Key>Base</Key>
 			</BuildConfiguration>

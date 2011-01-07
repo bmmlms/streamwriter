@@ -36,10 +36,10 @@ object frmSettings: TfrmSettings
     object lblDefaultFilter: TLabel
       Left = 4
       Top = 316
-      Width = 59
+      Width = 25
       Height = 13
       Anchors = [akLeft, akBottom]
-      Caption = 'Default filter:'
+      Caption = 'Filter:'
     end
     object GroupBox2: TGroupBox
       Left = 4
@@ -705,7 +705,7 @@ object frmSettings: TfrmSettings
     Left = 480
     Top = 176
     Bitmap = {
-      494C010102000800B40010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800C40010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

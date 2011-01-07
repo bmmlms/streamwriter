@@ -148,6 +148,7 @@ type
     function CanFinish: Boolean; override;
     procedure PreTranslate; override;
     procedure PostTranslate; override;
+    procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
     constructor Create(AOwner: TComponent; BrowseDir: Boolean = False); reintroduce; overload;
     constructor Create(AOwner: TComponent; StreamSettings: TStreamSettingsArray); overload;
@@ -396,15 +397,18 @@ begin
   FUseTree := True;
 
   if Length(FStreamSettings) = 0 then
-    Settings := AppGlobals.StreamSettings.Copy
-  else
+  begin
+    Settings := AppGlobals.StreamSettings.Copy;
+    TfrmMsgDlg.ShowMsg(Self, _('Settings from the categories "Streams", "Cut" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
+                               'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), 1, 4);
+  end else
     Settings := FStreamSettings[0].Copy;
 
   try
     inherited Create(AOwner, Length(FStreamSettings) = 0);
 
-    if Length(FStreamSettings) > 0 then
-      lblDefaultFilter.Caption := _('Filter:');
+    //if Length(FStreamSettings) > 0 then
+    //  lblDefaultFilter.Caption := _('Filter:');
 
     FBrowseDir := BrowseDir;
 
@@ -673,30 +677,30 @@ begin
     begin
       Plugin := AppGlobals.PluginManager.Find(FTemporaryPlugins[i]);
 
-      if Plugin <> nil then
-      begin
-        Item := nil;
-        for n := 0 to lstPlugins.Items.Count - 1 do
-          if lstPlugins.Items[n].Data = FTemporaryPlugins[i] then
-          begin
-            Item := lstPlugins.Items[n];
-            Break;
-          end;
-
-        Plugin.OnlyIfCut := FTemporaryPlugins[i].OnlyIfCut;
-        Plugin.Order := Item.Index;
-        Plugin.Active := Item.Checked;
-
-        if Plugin is TExternalPlugin then
-        begin
-          EP := TExternalPlugin(Plugin);
-          EP.Exe := TExternalPlugin(FTemporaryPlugins[i]).Exe;
-          EP.Params := TExternalPlugin(FTemporaryPlugins[i]).Params;
-        end;
-      end else
+      if Plugin = nil then
       begin
         // Ein neues Plugin kann nur TExternalPlugin sein.
-        AppGlobals.PluginManager.Plugins.Add(FTemporaryPlugins[i].Copy);
+        Plugin := FTemporaryPlugins[i].Copy;
+        AppGlobals.PluginManager.Plugins.Add(Plugin);
+      end;
+
+      Item := nil;
+      for n := 0 to lstPlugins.Items.Count - 1 do
+        if lstPlugins.Items[n].Data = FTemporaryPlugins[i] then
+        begin
+          Item := lstPlugins.Items[n];
+          Break;
+        end;
+
+      Plugin.OnlyIfCut := FTemporaryPlugins[i].OnlyIfCut;
+      Plugin.Order := Item.Index;
+      Plugin.Active := Item.Checked;
+
+      if Plugin is TExternalPlugin then
+      begin
+        EP := TExternalPlugin(Plugin);
+        EP.Exe := TExternalPlugin(FTemporaryPlugins[i]).Exe;
+        EP.Params := TExternalPlugin(FTemporaryPlugins[i]).Params;
       end;
     end;
 
@@ -780,6 +784,13 @@ begin
         Continue;
       end;
   end;
+end;
+
+procedure TfrmSettings.KeyDown(var Key: Word; Shift: TShiftState);
+begin
+  inherited;
+  if Key = VK_F1 then
+    ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLink), '', '', 1);
 end;
 
 procedure TfrmSettings.Label2Click(Sender: TObject);

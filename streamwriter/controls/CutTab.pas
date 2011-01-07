@@ -278,12 +278,12 @@ begin
 
   FPosEdit := TToolButton.Create(Self);
   FPosEdit.Parent := Self;
-  FPosEdit.Hint := _('Set positions for cut (left mousebutton sets startposition, right button sets endposition)');
+  FPosEdit.Hint := _('Set cutpositions (left mousebutton sets start, right button sets end)');
   FPosEdit.ImageIndex := 37;
 
   FPosPlay := TToolButton.Create(Self);
   FPosPlay.Parent := Self;
-  FPosPlay.Hint := _('Set play position');
+  FPosPlay.Hint := _('Set playposition');
   FPosPlay.ImageIndex := 27;
 
 

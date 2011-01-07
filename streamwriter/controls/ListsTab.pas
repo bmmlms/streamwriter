@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Messages, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls,
-  Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, RecentManager,
+  Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, DataManager,
   ImgList, Functions, GUIFunctions, Menus, Math, DragDrop, DropComboTarget,
   Dialogs;
 

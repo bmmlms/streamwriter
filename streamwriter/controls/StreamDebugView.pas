@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
-  RecentManager, VirtualTrees, LanguageObjects, GUIFunctions,
+  DataManager, VirtualTrees, LanguageObjects, GUIFunctions,
   Generics.Collections, Graphics, Forms, ICEClient, Clipbrd;
 
 type

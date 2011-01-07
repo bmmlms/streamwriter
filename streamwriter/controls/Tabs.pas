@@ -25,7 +25,7 @@ uses
   Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
   StdCtrls, Menus, VirtualTrees, DragDrop, DragDropFile, ShellApi,
   Themes, ImgList, AppData, GUIFunctions, LanguageObjects, MControls,
-  RecentManager, Dialogs, Functions;
+  DataManager, Dialogs, Functions;
 
 type
   TMainTabSheet = class;
