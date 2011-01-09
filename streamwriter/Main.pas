@@ -63,7 +63,6 @@ type
     mnuStreamSettings1: TMenuItem;
     actSkipShort: TAction;
     mnuStreamSettings2: TMenuItem;
-    KurzeLiederberspringen1: TMenuItem;
     TrayIcon1: TTrayIcon;
     mnuTray: TPopupMenu;
     mnuShow: TMenuItem;
@@ -123,10 +122,6 @@ type
     mnuHelp2: TMenuItem;
     N1: TMenuItem;
     actHelp: TAction;
-    N7: TMenuItem;
-    mnuNoList2: TMenuItem;
-    mnuWishList2: TMenuItem;
-    mnuIgnoreList2: TMenuItem;
     actUseNoList: TAction;
     actUseWishlist: TAction;
     actUseIgnoreList: TAction;
@@ -346,7 +341,7 @@ var
   Settings: TStreamSettingsArray;
   i: Integer;
 begin
-  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
+ Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
   SetLength(Settings, Length(Clients));
 
   for i := 0 to Length(Clients) - 1 do
