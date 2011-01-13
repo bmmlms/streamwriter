@@ -372,6 +372,11 @@ begin
   FICEThread.OnTerminate := ThreadTerminated;
   FICEThread.OnAddRecent := ThreadAddRecent;
   FICEThread.OnTitleAllowed := ThreadTitleAllowed;
+
+  // Das muss hier so früh sein, wegen z.B. RetryDelay - das hat der Stream nämlich nicht,
+  // wenn z.B. beim Verbinden was daneben geht.
+  ThreadNeedSettings(FICEThread);
+
   FICEThread.Start;
 end;
 
@@ -514,6 +519,7 @@ end;
 procedure TICEClient.ThreadEnded(Sender: TObject);
 begin
   inherited;
+
   try
     if FICEThread.RecvStream.HeaderType = 'http' then
     begin
@@ -541,12 +547,12 @@ begin
             FOnURLsReceived(Self);
         end else
         begin
-          Disconnect;
+          //Disconnect;
           raise Exception.Create(_('Playlist could not be parsed'));
         end;
       end else
       begin
-        Disconnect;
+        //Disconnect;
         raise Exception.Create(_('Response was HTTP, but without playlist or redirect'));
       end;
     end else
@@ -558,7 +564,20 @@ begin
     end;
   except
     on E: Exception do
+    begin
       WriteDebug(Format(_('Error: %s'), [E.Message]), '', dtError, dlNormal);
+
+      // REMARK: Das hier ist Mist.
+      // Sollte alles in den Thread, diese ganze Procedure in der dieser Kommentar steht.
+      // Mit diesem Schmiermerker 'SleepTime' sage ich dem Thread jetzt 'Warte, bitte.' - aber das ist
+      // irgendwie unschön so.
+      if (FRetries < FEntry.Settings.MaxRetries) and (FEntry.Settings.MaxRetries > 0) then
+        FICEThread.SleepTime := FICEThread.RecvStream.Settings.RetryDelay;
+
+      FState := csRetrying;
+      if Assigned(FOnRefresh) then
+        FOnRefresh(Self);
+    end;
   end;
 end;
 
@@ -737,7 +756,10 @@ begin
       tsRecording:
         begin
           FFilename := FICEThread.RecvStream.Filename;
-          FRetries := 0;
+
+          // Nicht auf 0 setzen. Das hier wird immer in StartRecordingInternal aufgerufen, was nichts zu sagen hat.
+          //FRetries := 0;
+
           FState := csConnected;
         end;
       tsRetrying:
@@ -769,9 +791,7 @@ begin
   FTitle := '';
   FSpeed := 0;
   FFilename := '';
-  AppGlobals.Lock;
   MaxRetries := FEntry.Settings.MaxRetries;
-  AppGlobals.Unlock;
 
   if (FState <> csStopping) and (FState <> csIOError) then
   begin

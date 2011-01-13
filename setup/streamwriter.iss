@@ -40,7 +40,7 @@ WizardImageFile=compiler:wizmodernimage-is.bmp
 WizardSmallImageFile=compiler:wizmodernsmallimage-is.bmp
 Compression=lzma/ultra
 LicenseFile=license.txt
-VersionInfoVersion=1.3.0.0
+VersionInfoVersion=1.4.0.0
 
 [Run]
 Filename: {app}\streamwriter.exe; WorkingDir: {app}; Flags: waituntilidle postinstall skipifsilent; Description: "{cm:Launch}"

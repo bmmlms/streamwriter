@@ -1017,6 +1017,9 @@ begin
   inherited;
   txtPreview.Text := ValidatePattern;
 
+  if Trim(RemoveFileExt(txtPreview.Text)) = '' then
+    txtPreview.Text := '';
+
   if FInitialized then
     RemoveGray(txtFilePattern);
 end;
@@ -1208,7 +1211,7 @@ begin
     Exit;
   end;
 
-  if Trim(ValidatePattern) = '' then
+  if Trim(RemoveFileExt(ValidatePattern)) = '' then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames, i.e. a preview text must be visible.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePattern.Parent.Parent)));
@@ -1278,6 +1281,10 @@ begin
     txtRetryDelay.SetFocus;
     Exit;
   end;
+
+  // Sonst wird kann es zu lange dauern, Clients zu entfernen, wenn der Thread gerade noch schläft.
+  if StrToIntDef(txtRetryDelay.Text, 5) > 10 then
+    txtRetryDelay.Text := '5';
 
   for i := 0 to lstHotkeys.Items.Count - 1 do
     for n := 0 to lstHotkeys.Items.Count - 1 do

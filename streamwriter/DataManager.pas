@@ -209,7 +209,7 @@ type
   end;
 
 const
-  DATAVERSION = 6;
+  DATAVERSION = 7;
 
 implementation
 
@@ -275,7 +275,12 @@ begin
   if Version >= 6 then
   begin
     Result.FSettings.Free;
-    Result.FSettings := TStreamSettings.Load(Stream, Version)
+    Result.FSettings := TStreamSettings.Load(Stream, Version);
+
+    // Das hier sollte eigentlich in TStreamSettings.Load. Der Compiler scheint kaputt zu sein und meint
+    // in .Load, dass es kein Result.FRetryDelay gibt... Ich versuche das mal, hier zu machen...
+    if Result.FSettings.RetryDelay > 10 then
+      Result.FSettings.RetryDelay := 10;
   end else
   begin
     // Defaults benutzen..

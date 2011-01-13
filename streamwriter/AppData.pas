@@ -149,7 +149,7 @@ begin
 
   inherited Create(AppName, True, W, 500);
 
-  FBuildNumber := 113;
+  FBuildNumber := 114;
   {$IFDEF DEBUG}
   FProjectUpdateLink := 'http://streamwriter.gaia/';
   {$ELSE}
@@ -379,7 +379,7 @@ begin
   FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);
 
   if (FStreamSettings.FSilenceLevel < 1) or (FStreamSettings.FSilenceLevel > 100) then
-    FStreamSettings.FSilenceLevel := 20;
+    FStreamSettings.FSilenceLevel := 5;
   if FStreamSettings.FSilenceLength < 20 then
     FStreamSettings.FSilenceLength := 20;
 
@@ -391,6 +391,12 @@ begin
   FStorage.Read('SongBuffer', FStreamSettings.FSongBuffer, 0);
   FStorage.Read('MaxRetries', FStreamSettings.FMaxRetries, 100);
   FStorage.Read('RetryDelay', FStreamSettings.FRetryDelay, 5);
+
+  // Wenn das zu viel wird, blockiert der Thread zu lange. Und dann kann man
+  // Clients nicht mehr so schnell aus der Liste entfernen...
+  if FStreamSettings.FRetryDelay > 10 then
+    FStreamSettings.RetryDelay := 10;
+
   FStorage.Read('SeparateTracks', FStreamSettings.FSeparateTracks, True);
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
   FStorage.Read('DefaultAction', DefaultActionTmp, Integer(caStartStop));
@@ -531,6 +537,14 @@ begin
   Stream.Read(Result.FShortSize);
   Stream.Read(Result.FSongBuffer);
   Stream.Read(Result.FMaxRetries);
+
+  //if Result.FMaxRetries > 10 then
+  //  Result.FMaxRetires := 10;
+
+  if Version >= 7 then
+    Stream.Read(Result.FRetryDelay)
+  else
+    Result.FRetryDelay := AppGlobals.StreamSettings.RetryDelay;
   Stream.Read(FilterTmp);
   Stream.Read(Result.FSeparateTracks);
   Stream.Read(Result.FSaveToMemory);
@@ -563,6 +577,7 @@ begin
   Stream.Write(FShortSize);
   Stream.Write(FSongBuffer);
   Stream.Write(FMaxRetries);
+  Stream.Write(FRetryDelay);
   Stream.Write(Integer(FFilter));
   Stream.Write(FSeparateTracks);
   Stream.Write(FSaveToMemory);

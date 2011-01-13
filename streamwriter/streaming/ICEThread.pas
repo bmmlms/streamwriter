@@ -45,6 +45,7 @@ type
     FRecordingStarted: Boolean;
     FPlaying: Boolean;
     FPlayingStarted: Boolean;
+    FSleepTime: Integer;
 
     FRelayThreads: TRelayInfoList;
 
@@ -106,6 +107,7 @@ type
 
     property Recording: Boolean read FRecordingStarted;
     property Playing: Boolean read FPlayingStarted;
+    property SleepTime: Integer read FSleepTime write FSleepTime;
     property RelayThreads: TRelayInfoList read FRelayThreads;
 
     property OnTitleChanged: TNotifyEvent read FOnTitleChanged write FOnTitleChanged;
@@ -349,6 +351,8 @@ begin
   inherited;
   for Thread in FRelayThreads do
     Thread.Terminate;
+
+  Sleep(FSleepTime * 1000);
 end;
 
 procedure TICEThread.DoException(E: Exception);
@@ -360,9 +364,7 @@ begin
 
   WriteDebug(Format(_('%s'), [E.Message]), '', 3, 0);
 
-  AppGlobals.Lock;
   Delay := FTypedStream.Settings.RetryDelay * 1000;
-  AppGlobals.Unlock;
   if FState <> tsIOError then
   begin
     FState := tsRetrying;
@@ -461,6 +463,7 @@ begin
   FRecordingStarted := False;
   FPlaying := False;
   FPlayingStarted := False;
+  FSleepTime := 0;
 
   AppGlobals.Lock;
   ProxyEnabled := AppGlobals.ProxyEnabled;
