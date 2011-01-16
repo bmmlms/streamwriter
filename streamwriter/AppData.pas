@@ -149,7 +149,7 @@ begin
 
   inherited Create(AppName, True, W, 500);
 
-  FBuildNumber := 114;
+  FBuildNumber := 117;
   {$IFDEF DEBUG}
   FProjectUpdateLink := 'http://streamwriter.gaia/';
   {$ELSE}

@@ -122,7 +122,7 @@ type
     procedure ThreadStateChanged(Sender: TObject);
     procedure ThreadNeedSettings(Sender: TObject);
     procedure ThreadTitleAllowed(Sender: TObject);
-    procedure ThreadEnded(Sender: TObject);
+    procedure ThreadBeforeEnded(Sender: TObject);
     procedure ThreadTerminated(Sender: TObject);
 
     procedure PluginThreadTerminate(Sender: TObject);
@@ -368,7 +368,7 @@ begin
   FICEThread.OnNeedSettings := ThreadNeedSettings;
   FICEThread.OnStateChanged := ThreadStateChanged;
   FICEThread.OnSpeedChanged := ThreadSpeedChanged;
-  FICEThread.OnEnded := ThreadEnded;
+  FICEThread.OnBeforeEnded := ThreadBeforeEnded;
   FICEThread.OnTerminate := ThreadTerminated;
   FICEThread.OnAddRecent := ThreadAddRecent;
   FICEThread.OnTitleAllowed := ThreadTitleAllowed;
@@ -516,7 +516,7 @@ begin
   WriteDebug(FICEThread.DebugMsg, FICEThread.DebugData, T, Level);
 end;
 
-procedure TICEClient.ThreadEnded(Sender: TObject);
+procedure TICEClient.ThreadBeforeEnded(Sender: TObject);
 begin
   inherited;
 
