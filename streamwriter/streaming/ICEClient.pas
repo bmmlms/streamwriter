@@ -472,7 +472,7 @@ begin
   begin
     if FURLsIndex >= FEntry.URLs.Count then
     begin
-      if (FEntry.StartURL <> '') and (Pos('streamwriter.org', LowerCase(FEntry.StartURL)) = 0) then
+      if (FEntry.StartURL <> '') and (Pos('streamwriter.', LowerCase(FEntry.StartURL)) = 0) then
       begin
         Result := FEntry.StartURL;
         FURLsIndex := 0;
