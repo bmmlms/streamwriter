@@ -491,9 +491,10 @@ end;
 procedure TICEClient.ThreadAddRecent(Sender: TObject);
 begin
   FEntry.Name := FICEThread.RecvStream.StreamName;
-
   if FEntry.Name = '' then
     FEntry.Name := FEntry.StartURL;
+
+  FEntry.StreamURL := FICEThread.RecvStream.StreamURL;
 
   FContentType := FICEThread.RecvStream.ContentType;
   if FICEThread.RecvStream.BitRate > 0 then

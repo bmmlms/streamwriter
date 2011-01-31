@@ -93,6 +93,7 @@ type
     chkSeparateTracks: TCheckBox;
     chkSaveStreamsToMemory: TCheckBox;
     chkOnlyIfCut: TCheckBox;
+    chkOnlySaveFull: TCheckBox;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -129,6 +130,7 @@ type
     procedure chkSeparateTracksClick(Sender: TObject);
     procedure chkSaveStreamsToMemoryClick(Sender: TObject);
     procedure chkOnlyIfCutClick(Sender: TObject);
+    procedure chkOnlySaveFullClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -362,6 +364,19 @@ constructor TfrmSettings.Create(AOwner: TComponent; BrowseDir: Boolean = False);
     if F then
       AddField(chkSaveStreamsToMemory);
 
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
+      if S.OnlySaveFull <> FStreamSettings[i].OnlySaveFull then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(chkOnlySaveFull);
+
     // Gegen die Warnung..
     if ShowDialog then
     begin
@@ -407,20 +422,18 @@ begin
   try
     inherited Create(AOwner, Length(FStreamSettings) = 0);
 
-    //if Length(FStreamSettings) > 0 then
-    //  lblDefaultFilter.Caption := _('Filter:');
-
     FBrowseDir := BrowseDir;
 
     SetFields;
 
     ClientWidth := 480;
-    ClientHeight := 410;
+    ClientHeight := 435;
 
     lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
     lstDefaultFilter.ItemIndex := Integer(Settings.Filter);
     chkSeparateTracks.Checked := Settings.SeparateTracks;
     chkSaveStreamsToMemory.Checked := Settings.SaveToMemory;
+    chkOnlySaveFull.Checked := Settings.OnlySaveFull;
 
     Language.Translate(Self, PreTranslate, PostTranslate);
 
@@ -535,6 +548,8 @@ begin
     begin
       chkDeleteStreams.Enabled := False;
       chkDeleteStreams.Checked := False;
+
+      chkOnlySaveFull.Enabled := False;
     end;
 
     EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
@@ -637,6 +652,9 @@ begin
 
       if FIgnoreFieldList.IndexOf(chkSaveStreamsToMemory) = -1 then
         FStreamSettings[i].SaveToMemory := chkSaveStreamsToMemory.Checked;
+
+      if FIgnoreFieldList.IndexOf(chkOnlySaveFull) = -1 then
+        FStreamSettings[i].OnlySaveFull := chkOnlySaveFull.Checked;
     end;
   end else
   begin
@@ -656,6 +674,7 @@ begin
     AppGlobals.StreamSettings.SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
     AppGlobals.StreamSettings.SeparateTracks := chkSeparateTracks.Checked and chkSeparateTracks.Enabled;
     AppGlobals.StreamSettings.SaveToMemory := chkSaveStreamsToMemory.Checked;
+    AppGlobals.StreamSettings.OnlySaveFull := chkOnlySaveFull.Checked;
 
     AppGlobals.Dir := txtDir.Text;
     AppGlobals.Tray := chkTray.Checked;
@@ -1325,6 +1344,19 @@ begin
     TPluginBase(lstPlugins.Selected.Data).OnlyIfCut := chkOnlyIfCut.Checked;
 end;
 
+procedure TfrmSettings.chkOnlySaveFullClick(Sender: TObject);
+begin
+  inherited;
+
+  if FInitialized then
+  begin
+    RemoveGray(chkOnlySaveFull);
+
+    if Length(FStreamSettings) > 0 then
+      TfrmMsgDlg.ShowMsg(Self, _('When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.'), 1, 5);
+  end;
+end;
+
 procedure TfrmSettings.chkSeparateTracksClick(Sender: TObject);
 begin
   inherited;
@@ -1335,6 +1367,9 @@ begin
 
     chkDeleteStreams.Enabled := chkSeparateTracks.Checked;
     chkDeleteStreams.Checked := (not chkSaveStreamsToMemory.Checked) and AppGlobals.StreamSettings.DeleteStreams;
+
+    chkOnlySaveFull.Enabled := chkSeparateTracks.Checked;
+
     pnlCut.Enabled := False;
     EnablePanel(pnlCut, chkSeparateTracks.Checked and chkSeparateTracks.Enabled);
     if (not chkSeparateTracks.Checked) or (chkSaveStreamsToMemory.Checked) then

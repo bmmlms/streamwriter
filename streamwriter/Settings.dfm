@@ -4,7 +4,7 @@ object frmSettings: TfrmSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Settings'
-  ClientHeight = 585
+  ClientHeight = 702
   ClientWidth = 906
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -27,19 +27,20 @@ object frmSettings: TfrmSettings
     Left = 304
     Top = 4
     Width = 293
-    Height = 357
+    Height = 369
     TabOrder = 0
     Visible = False
     DesignSize = (
       293
-      357)
+      369)
     object lblDefaultFilter: TLabel
       Left = 4
-      Top = 316
+      Top = 328
       Width = 25
       Height = 13
       Anchors = [akLeft, akBottom]
       Caption = 'Filter:'
+      ExplicitTop = 316
     end
     object GroupBox2: TGroupBox
       Left = 4
@@ -90,8 +91,8 @@ object frmSettings: TfrmSettings
     end
     object chkDeleteStreams: TCheckBox
       Left = 4
-      Top = 260
-      Width = 281
+      Top = 272
+      Width = 265
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
       Caption = 'Delete stream-files when recording stops'
@@ -100,17 +101,18 @@ object frmSettings: TfrmSettings
     end
     object chkAddSavedToIgnore: TCheckBox
       Left = 4
-      Top = 284
+      Top = 296
       Width = 281
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
       Caption = 'Automatically add saved titles to ignore list'
       TabOrder = 2
       OnClick = chkAddSavedToIgnoreClick
+      ExplicitTop = 312
     end
     object lstDefaultFilter: TComboBox
       Left = 4
-      Top = 332
+      Top = 344
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -121,10 +123,11 @@ object frmSettings: TfrmSettings
         'Save every song'
         'Use wishlist'
         'Use ignorelist')
+      ExplicitTop = 360
     end
     object chkSeparateTracks: TCheckBox
       Left = 4
-      Top = 236
+      Top = 224
       Width = 281
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -134,13 +137,23 @@ object frmSettings: TfrmSettings
     end
     object chkSaveStreamsToMemory: TCheckBox
       Left = 4
-      Top = 212
+      Top = 200
       Width = 281
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
       Caption = 'Save received data to memory instead of disk'
       TabOrder = 5
       OnClick = chkSaveStreamsToMemoryClick
+    end
+    object chkOnlySaveFull: TCheckBox
+      Left = 20
+      Top = 248
+      Width = 265
+      Height = 21
+      Anchors = [akLeft, akRight, akBottom]
+      Caption = 'Only save whole songs'
+      TabOrder = 6
+      OnClick = chkOnlySaveFullClick
     end
   end
   object pnlMain: TPanel
@@ -344,7 +357,7 @@ object frmSettings: TfrmSettings
   end
   object pnlPlugins: TPanel
     Left = 4
-    Top = 284
+    Top = 332
     Width = 294
     Height = 273
     TabOrder = 3
@@ -651,7 +664,7 @@ object frmSettings: TfrmSettings
   end
   object pnlHotkeys: TPanel
     Left = 304
-    Top = 372
+    Top = 420
     Width = 293
     Height = 185
     TabOrder = 5
@@ -689,7 +702,7 @@ object frmSettings: TfrmSettings
       Top = 160
       Width = 285
       Height = 21
-      Anchors = [akLeft, akBottom]
+      Anchors = [akLeft, akRight, akBottom]
       Enabled = False
       HotKey = 32833
       TabOrder = 1
@@ -702,10 +715,10 @@ object frmSettings: TfrmSettings
     Top = 272
   end
   object ImageList1: TImageList
-    Left = 480
-    Top = 176
+    Left = 536
+    Top = 112
     Bitmap = {
-      494C010102000800C80010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800D40010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

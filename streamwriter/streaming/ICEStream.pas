@@ -642,7 +642,7 @@ begin
       Read(Buf, 1);
       if Buf > 0 then
       begin
-        MetaLen := Buf * 16;
+        MetaLen := Buf * 16;  // todo: wenn in settings SeperateTracks aus ist, muss "nur ganze titel speichern" auch ausgegraut werden....
 
         MetaData := Trim(string(ToString(Position, MetaLen)));
         Seek(MetaLen, soFromCurrent);
@@ -666,7 +666,7 @@ begin
 
           end else
           begin
-            if FMetaCounter = 2 then
+            if (FMetaCounter = 2) or ((FMetaCounter = 1) and (not FSettings.OnlySaveFull)) then
             begin
               WriteDebug(Format(_('Recording of first song starting'), []), 1, 0);
               if (FAudioStream <> nil) and FSettings.SeparateTracks then

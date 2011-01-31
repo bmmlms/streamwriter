@@ -47,6 +47,7 @@ type
     FFilter: TUseFilters;
     FSeparateTracks: Boolean;
     FSaveToMemory: Boolean;
+    FOnlySaveFull: Boolean; // TODO: Dieses neue feld noch stark testen. in jeglicher hinsicht, auch ob es im stream funzt etc.!!!
   public
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamSettings;
     procedure Save(Stream: TExtendedStream);
@@ -67,6 +68,7 @@ type
     property Filter: TUseFilters read FFilter write FFilter;
     property SeparateTracks: Boolean read FSeparateTracks write FSeparateTracks;
     property SaveToMemory: Boolean read FSaveToMemory write FSaveToMemory;
+    property OnlySaveFull: Boolean read FOnlySaveFull write FOnlySaveFull;
   end;
 
   TStreamSettingsArray = array of TStreamSettings;
@@ -224,13 +226,14 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 6);
+    SetLength(FDonors, 7);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
     FDonors[3] := '''RogerPP''';
     FDonors[4] := 'Gabor Kubik';
     FDonors[5] := '''Peter Parker''';
+    FDonors[6] := 'Anita Wimmer';
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
       Text.Add(FDonors[i]);
@@ -375,22 +378,23 @@ begin
   FStorage.Read('SilenceLevel', FStreamSettings.FSilenceLevel, 5);
   FStorage.Read('SilenceLength', FStreamSettings.FSilenceLength, 150);
   FStorage.Read('SaveToMemory', FStreamSettings.FSaveToMemory, False);
-  FStorage.Read('TrayClose', FTray, False);
-  FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);
+  FStorage.Read('OnlySaveFull', FStreamSettings.FOnlySaveFull, True);
 
   if (FStreamSettings.FSilenceLevel < 1) or (FStreamSettings.FSilenceLevel > 100) then
     FStreamSettings.FSilenceLevel := 5;
   if FStreamSettings.FSilenceLength < 20 then
     FStreamSettings.FSilenceLength := 20;
 
-  FShowSidebar := True;
-
-  FStorage.Read('SidebarWidth', FSidebarWidth, 230);
-  FStorage.Read('SubmitStreams', FSubmitStreams, True);
   FStorage.Read('ShortSize', FStreamSettings.FShortSize, 1500);
   FStorage.Read('SongBuffer', FStreamSettings.FSongBuffer, 0);
   FStorage.Read('MaxRetries', FStreamSettings.FMaxRetries, 100);
   FStorage.Read('RetryDelay', FStreamSettings.FRetryDelay, 5);
+
+  FShowSidebar := True;
+  FStorage.Read('TrayClose', FTray, False);
+  FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);
+  FStorage.Read('SidebarWidth', FSidebarWidth, 230);
+  FStorage.Read('SubmitStreams', FSubmitStreams, True);
 
   // Wenn das zu viel wird, blockiert der Thread zu lange. Und dann kann man
   // Clients nicht mehr so schnell aus der Liste entfernen...
@@ -463,17 +467,19 @@ begin
   FStorage.Write('SilenceLevel', FStreamSettings.FSilenceLevel);
   FStorage.Write('SilenceLength', FStreamSettings.FSilenceLength);
   FStorage.Write('SaveToMemory', FStreamSettings.FSaveToMemory);
-  FStorage.Write('TrayClose', FTray);
-  FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
-
-  FStorage.Write('SidebarWidth', FSidebarWidth);
-  FStorage.Write('SubmitStreams', FSubmitStreams);
+  FStorage.Write('OnlySaveFull', FStreamSettings.FOnlySaveFull);
   FStorage.Write('ShortSize', FStreamSettings.FShortSize);
   FStorage.Write('SongBuffer', FStreamSettings.FSongBuffer);
   FStorage.Write('MaxRetries', FStreamSettings.FMaxRetries);
   FStorage.Write('RetryDelay', FStreamSettings.FRetryDelay);
   FStorage.Write('DefaultFilter', Integer(FStreamSettings.Filter));
   FStorage.Write('SeparateTracks', FStreamSettings.FSeparateTracks);
+
+  FStorage.Write('TrayClose', FTray);
+  FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
+  FStorage.Write('SidebarWidth', FSidebarWidth);
+  FStorage.Write('SubmitStreams', FSubmitStreams);
+
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
   FStorage.Write('PlayerVolume', FPlayerVolume);
@@ -555,6 +561,12 @@ begin
     Result.FDeleteStreams := False;
   end;
 
+  // TODO: updates testen, wegen neuem file-format...
+  if Version >= 8 then
+    Stream.Read(Result.FOnlySaveFull)
+  else
+    Result.FOnlySaveFull := True;
+
   if not Result.FSeparateTracks then
     Result.FDeleteStreams := False;
 
@@ -581,6 +593,7 @@ begin
   Stream.Write(Integer(FFilter));
   Stream.Write(FSeparateTracks);
   Stream.Write(FSaveToMemory);
+  Stream.Write(FOnlySaveFull);
 end;
 
 procedure TStreamSettings.Assign(From: TStreamSettings);
@@ -599,6 +612,7 @@ begin
   FFilter := From.FFilter;
   FSeparateTracks := From.FSeparateTracks;
   FSaveToMemory := From.SaveToMemory;
+  FOnlySaveFull := From.OnlySaveFull;
 end;
 
 initialization

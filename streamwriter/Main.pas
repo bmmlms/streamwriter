@@ -143,6 +143,9 @@ type
     ToolButton7: TToolButton;
     actStreamSettings: TAction;
     cmdStreamSettings: TToolButton;
+    actOpenWebsite: TAction;
+    mnuOpenWebsite1: TMenuItem;
+    Openwebsite1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -417,7 +420,7 @@ begin
   pagMain := TMainPageControl.Create(Self);
   pagMain.Parent := Self;
   pagMain.Visible := True;
-  pagMain.Align := alClient;
+  pagMain.Align := alClient;             // TODO: ist das 'o' für den Open Website shortcut noch frei?
   pagMain.Images := imgImages;
 
   tabClients := TClientTab.Create(pagMain);
@@ -1013,6 +1016,11 @@ begin
   actRemove.Enabled := B;
 
   actStreamSettings.Enabled := Length(Clients) > 0;
+
+  actOpenWebsite.Enabled := False;
+  if Length(Clients) = 1 then
+    if Trim(Clients[0].Entry.StreamURL) <> '' then
+      actOpenWebsite.Enabled := True;
 
   mnuTuneIn1.Enabled := B;
   mnuTuneIn2.Enabled := B;

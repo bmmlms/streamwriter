@@ -110,6 +110,7 @@ type
     procedure ActionNewCategoryExecute(Sender: TObject);
     procedure ActionStartExecute(Sender: TObject);
     procedure ActionStopExecute(Sender: TObject);
+    procedure ActionOpenWebsiteExecute(Sender: TObject);
     procedure ActionRemoveExecute(Sender: TObject);
     procedure ActionPlayExecute(Sender: TObject);
     procedure ActionPlayStopExecute(Sender: TObject);
@@ -386,6 +387,17 @@ begin
   end;
 end;
 
+procedure TClientTab.ActionOpenWebsiteExecute(Sender: TObject);
+var
+  Clients: TClientArray;
+begin
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
+  if Length(Clients) = 1 then
+  begin
+    ShellExecute(Handle, 'open', PChar(Clients[0].Entry.StreamURL), '', '', 1);
+  end;
+end;
+
 procedure TClientTab.ActionResetDataExecute(Sender: TObject);
 var
   Res: Integer;
@@ -603,6 +615,7 @@ begin
   GetAction('actNewCategory').OnExecute := ActionNewCategoryExecute;
   GetAction('actStart').OnExecute := ActionStartExecute;
   GetAction('actStop').OnExecute := ActionStopExecute;
+  GetAction('actOpenWebsite').OnExecute := ActionOpenWebsiteExecute;
   GetAction('actResetData').OnExecute := ActionResetDataExecute;
   GetAction('actSavePlaylistStream').OnExecute := ActionSavePlaylistStreamExecute;
   GetAction('actSavePlaylistRelay').OnExecute := ActionSavePlaylistRelayExecute;

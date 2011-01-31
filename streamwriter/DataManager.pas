@@ -117,6 +117,7 @@ type
     FParent: TStreamList;
 
     FName: string;
+    FStreamURL: string;
     FStartURL: string;
     FURLs: TStringList;
     FBitrate: Cardinal;
@@ -151,6 +152,7 @@ type
 
     property Parent: TStreamList read FParent write FParent;
     property Name: string read FName write FSetName;
+    property StreamURL: string read FStreamURL write FStreamURL;
     property StartURL: string read FStartURL write FStartURL;
     property URLs: TStringList read FURLs;
     property Bitrate: Cardinal read FBitrate write FBitrate;
@@ -209,7 +211,7 @@ type
   end;
 
 const
-  DATAVERSION = 7;
+  DATAVERSION = 8;
 
 implementation
 
@@ -218,6 +220,7 @@ implementation
 procedure TStreamEntry.Assign(From: TStreamEntry);
 begin
   FName := From.FName;
+  FStreamURL := From.FStreamURL;
   FIsInList := From.FIsInList;
   FStartURL := From.FStartURL;
   FSongsSaved := From.FSongsSaved;
@@ -288,6 +291,8 @@ begin
   end;
 
   Stream.Read(Result.FName);
+  if Version >= 8 then
+    Stream.Read(Result.FStreamURL);
   Stream.Read(Result.FStartURL);
   Stream.Read(Count);
   for i := 0 to Count - 1 do
@@ -354,6 +359,7 @@ begin
   FSettings.Save(Stream);
 
   Stream.Write(FName);
+  Stream.Write(FStreamURL);
   Stream.Write(FStartURL);
   Stream.Write(FURLs.Count);
   for i := 0 to FURLs.Count - 1 do
