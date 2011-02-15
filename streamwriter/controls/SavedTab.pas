@@ -786,7 +786,6 @@ end;
 
 procedure TSavedTree.Change(Node: PVirtualNode);
 var
-  FoundMP3: Boolean;
   i: Integer;
   Tracks: TTrackInfoArray;
 begin
@@ -796,16 +795,8 @@ begin
   FPopupMenu.EnableItems(Length(Tracks) > 0);
   FTab.FToolbar.EnableItems(Length(Tracks) > 0);
 
-  FoundMP3 := False;
-  if BassLoaded then
-    for i := 0 to Length(Tracks) - 1 do
-      if LowerCase(ExtractFileExt(Tracks[i].Filename)) = '.mp3' then
-      begin
-        FoundMP3 := True;
-        Break;
-      end;
-  FPopupMenu.ItemCut.Enabled := FoundMP3;
-  FTab.FToolbar.FCut.Enabled := FoundMP3;
+  FPopupMenu.ItemCut.Enabled := BassLoaded;
+  FTab.FToolbar.FCut.Enabled := BassLoaded;
 
   FPopupMenu.ItemRefresh.Enabled := RootNodeCount > 0;
   FTab.FToolbar.FRefresh.Enabled := RootNodeCount > 0;

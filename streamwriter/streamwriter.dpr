@@ -78,13 +78,15 @@ uses
   ICEServerStream in 'streaming\ICEServerStream.pas',
   ICEStream in 'streaming\ICEStream.pas',
   ICEThread in 'streaming\ICEThread.pas',
-  MPEG in 'audio\MPEG.pas';
+  MPEG in 'audio\MPEG.pas',
+  CommunityLogin in 'CommunityLogin.pas' {frmCommunityLogin};
 
 {$SetPEOptFlags $0140}
 
 {$R *.res}
 {$R res\language.res}
 {$R res\icons.res}
+{$R res\bass.res}
 {$R ..\..\common\res\language.res}
 {$R ..\..\common\res\lang_icons.res}
 {$R ..\..\common\res\icons.res}

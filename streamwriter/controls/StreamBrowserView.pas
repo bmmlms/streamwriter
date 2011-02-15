@@ -35,6 +35,7 @@ type
   TStreamData = record
     Name: string;
     URL: string;
+    Website: string;
   end;
   TStreamDataArray = array of TStreamData;
 
@@ -42,13 +43,15 @@ type
     Name: string;
     Genre: string;
     URL: string;
+    Website: string;
     BitRate: Integer;
+    StreamType: string;
     Downloads: Integer;
     HasData: Boolean;
   end;
   PStreamNodeData = ^TStreamNodeData;
 
-  TOpenActions = (oaStart, oaPlay, oaOpen, oaCopy, oaSave);
+  TOpenActions = (oaStart, oaPlay, oaOpen, oaOpenWebsite, oaCopy, oaSave);
 
   TNeedDataEvent = procedure(Sender: TObject; Offset, Count: Integer) of object;
   TAddStreamEvent = procedure(Sender: TObject; URL, Name: string) of object;
@@ -74,9 +77,11 @@ type
     FSearchLabel: TLabel;
     FGenreLabel: TLabel;
     FKbpsLabel: TLabel;
+    FTypeLabel: TLabel;
     FSearchEdit: TEdit;
     FGenreList: TComboBox;
     FKbpsList: TComboBox;
+    FTypeList: TComboBox;
     FSearchButton: TSpeedButton;
   public
     constructor Create(AOwner: TComponent); override;
@@ -93,6 +98,7 @@ type
     FCurrentSearch: string;
     FCurrentGenre: string;
     FCurrentKbps: Integer;
+    FCurrentStreamType: string;
 
     FLoading: Boolean;
 
@@ -104,7 +110,7 @@ type
     procedure BtnRetryClick(Sender: TObject);
 
     procedure GetStreams; overload;
-    procedure GetStreams(Search, Genre: string; Kbps: Integer); overload;
+    procedure GetStreams(Search, Genre: string; Kbps: Integer; StreamType: string); overload;
     procedure SwitchMode(Mode: TModes);
   protected
     procedure Resize; override;
@@ -125,6 +131,7 @@ type
     property CurrentSearch: string read FCurrentSearch write FCurrentSearch;
     property CurrentGenre: string read FCurrentGenre write FCurrentGenre;
     property CurrentKbps: Integer read FCurrentKbps write FCurrentKbps;
+    property CurrentStreamType: string read FCurrentStreamType write FCurrentStreamType;
 
     property StreamTree: TMStreamTree read FStreamTree;
   end;
@@ -149,6 +156,7 @@ type
     FItemStart: TMenuItem;
     FItemPlay: TMenuItem;
     FItemOpen: TMenuItem;
+    FItemOpenWebsite: TMenuItem;
     FItemCopy: TMenuItem;
     FItemSave: TMenuItem;
 
@@ -162,7 +170,7 @@ type
     procedure FSetIsLoading(Value: Boolean);
 
     procedure FitColumns;
-    function AddStream(Node: PVirtualNode; Name, Genre, URL: string;
+    function AddStream(Node: PVirtualNode; Name, Genre, URL, Website, StreamType: string;
       BitRate, Downloads: Integer; HasData: Boolean): PVirtualNode;
     procedure GetLoadDataNodes(var FirstVisibleNoData, LastVisibleNoData: PVirtualNode);
     function GetSelected: TStreamDataArray;
@@ -209,7 +217,7 @@ implementation
 
 { TMStreamView }
 
-function TMStreamTree.AddStream(Node: PVirtualNode; Name, Genre, URL: string;
+function TMStreamTree.AddStream(Node: PVirtualNode; Name, Genre, URL, Website, StreamType: string;
   BitRate, Downloads: Integer; HasData: Boolean): PVirtualNode;
 var
   NodeData: PStreamNodeData;
@@ -223,6 +231,8 @@ begin
   NodeData.BitRate := BitRate;
   NodeData.Downloads := Downloads;
   NodeData.HasData := HasData;
+  NodeData.Website := Website;
+  NodeData.StreamType := StreamType;
   Result := Node;
 end;
 
@@ -271,6 +281,11 @@ begin
   FItemOpen.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemOpen);
 
+  FItemOpenWebsite := FPopupMenu.CreateMenuItem;
+  FItemOpenWebsite.Caption := _('Open &website...');
+  FItemOpenWebsite.OnClick := PopupMenuClick;
+  FPopupMenu.Items.Add(FItemOpenWebsite);
+
   FItemCopy := FPopupMenu.CreateMenuItem;
   FItemCopy.Caption := _('&Copy URL');
   FItemCopy.OnClick := PopupMenuClick;
@@ -311,6 +326,8 @@ begin
   Finalize(NodeData.Name);
   Finalize(NodeData.Genre);
   Finalize(NodeData.URL);
+  Finalize(NodeData.Website);
+  Finalize(NodeData.StreamType);
   inherited;
 end;
 
@@ -440,6 +457,7 @@ begin
       SetLength(Result, Length(Result) + 1);
       Result[High(Result)].Name := NodeData.Name;
       Result[High(Result)].URL := NodeData.URL;
+      Result[High(Result)].Website := NodeData.Website;
     end;
   end;
 end;
@@ -488,8 +506,22 @@ begin
     CellRect.Top := CellRect.Top + 2 + Size.cy;
 
     Text := '';
+
+    if NodeData.StreamType <> '' then
+    begin
+      if NodeData.StreamType = 'mpeg' then
+        Text := 'MP3'
+      else if NodeData.StreamType = 'aacp' then
+        Text := 'AAC';
+    end;
+
     if NodeData.BitRate > 0 then
-      Text := IntToStr(NodeData.BitRate) + 'kbps';
+    begin
+      if Text <> '' then
+        Text := Text + ' / ';
+      Text := Text + IntToStr(NodeData.BitRate) + 'kbps';
+    end;
+
     if NodeData.Genre <> '' then
     begin
       if Text <> '' then
@@ -558,6 +590,8 @@ begin
     Action := oaPlay
   else if Sender = FItemOpen then
     Action := oaOpen
+  else if Sender = FItemOpenWebsite then
+    Action := oaOpenWebsite
   else if Sender = FItemCopy then
     Action := oaCopy
   else if Sender = FItemSave then
@@ -571,8 +605,13 @@ begin
 end;
 
 procedure TMStreamTree.PopupMenuPopup(Sender: TObject);
+var
+  Streams: TStreamDataArray;
 begin
+  Streams := GetSelected;
+
   FItemPlay.Enabled := BassLoaded;
+  FItemOpenWebsite.Enabled := (Length(Streams) > 0) and (Trim(Streams[0].Website) <> '');
 end;
 
 procedure TMStreamTree.TimerOnTimer(Sender: TObject);
@@ -657,9 +696,10 @@ begin
     BeginUpdate;
     try
       for i := 0 to Length(Streams) - 1 do
-        AddStream(nil, Streams[i].Name, Streams[i].Genre, Streams[i].URL, Streams[i].BitRate, Streams[i].Downloads, True);
+        AddStream(nil, Streams[i].Name, Streams[i].Genre, Streams[i].URL, Streams[i].Website,
+          Streams[i].StreamType, Streams[i].BitRate, Streams[i].Downloads, True);
       for i := RootNodeCount to Count - 1 do
-        AddStream(nil, '', '', '', 0, 0, False);
+        AddStream(nil, '', '', '', '', '', 0, 0, False);
     finally
       EndUpdate;
     end;
@@ -674,7 +714,8 @@ begin
       begin
         if (i >= FLoadOffset) and (High(Streams) >= n) then
         begin
-          AddStream(Node, Streams[n].Name, Streams[n].Genre, Streams[n].URL, Streams[n].BitRate, Streams[n].Downloads, True);
+          AddStream(Node, Streams[n].Name, Streams[n].Genre, Streams[n].URL, Streams[n].Website,
+            Streams[n].StreamType, Streams[n].BitRate, Streams[n].Downloads, True);
           InvalidateNode(Node);
           Inc(n);
         end;
@@ -771,7 +812,7 @@ begin
   if FSearch.FGenreList.Items.Count = 0 then
     FHomeCommunication.GetGenres;
   FStreamTree.ClearStreams;
-  FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre, FCurrentKbps, True);
+  FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre, FCurrentKbps, FCurrentStreamType, True);
 end;
 
 constructor TMStreamBrowserView.Create(AOwner: TComponent; HomeCommunication: THomeCommunication);
@@ -782,6 +823,7 @@ begin
   BevelOuter := bvNone;
 
   FCurrentKbps := 0;
+  FCurrentStreamType := '';
   FLoading := False;
   FHomeCommunication := HomeCommunication;
 
@@ -815,22 +857,23 @@ begin
   inherited;
 end;
 
-procedure TMStreamBrowserView.GetStreams(Search, Genre: string; Kbps: Integer);
+procedure TMStreamBrowserView.GetStreams(Search, Genre: string; Kbps: Integer; StreamType: string);
 begin
-  if (Search = CurrentSearch) and (Genre = CurrentGenre) and (Kbps = CurrentKbps) then
+  if (Search = CurrentSearch) and (Genre = CurrentGenre) and (Kbps = CurrentKbps) and (StreamType = CurrentStreamType) then
     Exit;
 
   FStreamTree.ClearStreams;
   CurrentSearch := Search;
   CurrentGenre := Genre;
   CurrentKbps := Kbps;
+  CurrentStreamType := StreamType;
   FStreamTree.IsLoading := True;
-  FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, Search, Genre, Kbps, True);
+  FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, Search, Genre, Kbps, StreamType, True);
 end;
 
 procedure TMStreamBrowserView.GetStreams;
 var
-  Search, Genre: string;
+  Search, Genre, StreamType: string;
   Kbps: Integer;
 begin
   Search := Trim(FSearch.FSearchEdit.Text);
@@ -849,7 +892,15 @@ begin
       raise Exception.Create('');
   end;
 
-  GetStreams(Search, Genre, Kbps);
+  case FSearch.FTypeList.ItemIndex of
+    0: StreamType := '';
+    1: StreamType := 'mpeg';
+    2: StreamType := 'aacp';
+    else
+      raise Exception.Create('');
+  end;
+
+  GetStreams(Search, Genre, Kbps, StreamType);
 end;
 
 procedure TMStreamBrowserView.HomeCommunicationGenresReceived(
@@ -926,6 +977,7 @@ begin
   FSearch.FSearchButton.OnClick := SearchButtonClick;
   FSearch.FGenreList.OnChange := ListsChange;
   FSearch.FKbpsList.OnChange := ListsChange;
+  FSearch.FTypeList.OnChange := ListsChange;
 
   FHomeCommunication.OnGenresReceived := HomeCommunicationGenresReceived;
   FHomeCommunication.OnStreamsReceived := HomeCommunicationStreamsReceived;
@@ -933,13 +985,13 @@ begin
   FHomeCommunication.OnOldVersion := HomeCommunicationOldVersion;
 
   FHomeCommunication.GetGenres;
-  FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre, FCurrentKbps, True);
+  FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre, FCurrentKbps, FCurrentStreamType, True);
 end;
 
 procedure TMStreamBrowserView.StreamBrowserNeedData(Sender: TObject;
   Offset, Count: Integer);
 begin
-  FHomeCommunication.GetStreams(Count, Offset, CurrentSearch, CurrentGenre, CurrentKbps, False);
+  FHomeCommunication.GetStreams(Count, Offset, CurrentSearch, CurrentGenre, CurrentKbps, CurrentStreamType, False);
 end;
 
 procedure TMStreamBrowserView.SwitchMode(Mode: TModes);
@@ -1000,6 +1052,12 @@ begin
     FSearch.FKbpsList.Items[0] := _('- No kbps -');
     FSearch.FKbpsList.ItemIndex := Idx;
   end;
+  if FSearch.FTypeList.Items.Count > 0 then
+  begin
+    Idx := FSearch.FTypeList.ItemIndex;
+    FSearch.FTypeList.Items[0] := _('- No type -');
+    FSearch.FTypeList.ItemIndex := Idx;
+  end;
 
   if FStreamTree.RootNodeCount = 1 then
     FCountLabel.Caption := Format(_('%d stream found'), [FStreamTree.RootNodeCount])
@@ -1042,6 +1100,12 @@ begin
   FKbpsList.Top := 56;
   FKbpsList.Anchors := [akLeft, akRight, akTop];
 
+  FTypeList := TComboBox.Create(Self);
+  FTypeList.Parent := Self;
+  FTypeList.Style := csDropDownList;
+  FTypeList.Left := 50;
+  FTypeList.Top := 82;
+  FTypeList.Anchors := [akLeft, akRight, akTop];
 
   FSearchLabel := TLabel.Create(Self);
   FSearchLabel.Parent := Self;
@@ -1061,6 +1125,11 @@ begin
   FKbpsLabel.Caption := _('Kbps:');
   FKbpsLabel.Top := FKbpsList.Top + FKbpsList.Height div 2 - FKbpsLabel.Height div 2;
 
+  FTypeLabel := TLabel.Create(Self);
+  FTypeLabel.Parent := Self;
+  FTypeLabel.Left := 4;
+  FTypeLabel.Caption := _('Type:');
+  FTypeLabel.Top := FTypeList.Top + FTypeList.Height div 2 - FTypeLabel.Height div 2;
 
   FSearchButton := TSpeedButton.Create(Self);
   FSearchButton.Parent := Self;
@@ -1092,7 +1161,7 @@ begin
   FSearchEdit.Width := ClientWidth - FSearchEdit.Left - 12 - FSearchButton.Width;
   FGenreList.Width := ClientWidth - FGenreList.Left - 8;
   FKbpsList.Width := ClientWidth - FKbpsList.Left - 8;
-
+  FTypeList.Width := ClientWidth - FTypeList.Left - 8;
 
   FKbpsList.Items.Add(_('- No kbps -'));
   FKbpsList.Items.Add('>= 64');
@@ -1100,8 +1169,12 @@ begin
   FKbpsList.Items.Add('>= 192');
   FKbpsList.ItemIndex := 0;
 
+  FTypeList.Items.Add(_('- No type -'));
+  FTypeList.Items.Add(_('MP3'));
+  FTypeList.Items.Add(_('AAC'));
+  FTypeList.ItemIndex := 0;
 
-  ClientHeight := FKbpsList.Top + FKbpsList.Height + 8;
+  ClientHeight := FTypeList.Top + FTypeList.Height + 6;
 end;
 
 { TMLoadingPanel }

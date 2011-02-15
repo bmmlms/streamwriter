@@ -1102,6 +1102,9 @@ begin
         StartStreaming(Streams[i].Name, Streams[i].URL, True, nil, amNoWhere);
     oaOpen:
       SavePlaylist(Entries, True);
+    oaOpenWebsite:
+      for i := 0 to Length(Streams) - 1 do
+        ShellExecute(Handle, 'open', PChar(Streams[i].Website), '', '', 1);
     oaCopy:
       begin
         s := '';

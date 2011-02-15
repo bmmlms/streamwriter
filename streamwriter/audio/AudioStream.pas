@@ -91,7 +91,7 @@ end;
 function TAudioStreamFile.SearchSilence(StartPos, EndPos, Len, MaxPeaks, MinDuration: Int64): TPosRect;
 var
   WD, WD2: TWaveData;
-  M1, M2: TMPEGStreamMemory;
+  M1, M2: TExtendedStream;
   OldPos: Int64;
   S: Int64;
 begin
@@ -100,8 +100,8 @@ begin
   Result.A := -1;
   Result.B := -1;
 
-  M1 := TMPEGStreamMemory.Create;
-  M2 := TMPEGStreamMemory.Create;
+  M1 := TExtendedStream.Create;
+  M2 := TExtendedStream.Create;
   WD := TWaveData.Create;
   WD2 := TWaveData.Create;
   try
@@ -123,7 +123,6 @@ begin
       // Okay, dann wollen wir mal suchen
       WD.Load(M1);
       WD2.Load(M2);
-
       WD.AutoCut(MaxPeaks, MinDuration);
       WD2.AutoCut(MaxPeaks, MinDuration);
 
@@ -298,7 +297,7 @@ function TAudioStreamMemory.SearchSilence(StartPos, EndPos, Len, MaxPeaks,
   MinDuration: Int64): TPosRect;
 var
   WD, WD2: TWaveData;
-  M1, M2: TMPEGStreamMemory;
+  M1, M2: TExtendedStream;
   OldPos: Int64;
   S: Int64;
 begin
@@ -307,8 +306,8 @@ begin
   Result.A := -1;
   Result.B := -1;
 
-  M1 := TMPEGStreamMemory.Create;
-  M2 := TMPEGStreamMemory.Create;
+  M1 := TExtendedStream.Create;
+  M2 := TExtendedStream.Create;
   WD := TWaveData.Create;
   WD2 := TWaveData.Create;
   try
@@ -330,7 +329,6 @@ begin
       // Okay, dann wollen wir mal suchen
       WD.Load(M1);
       WD2.Load(M2);
-
       WD.AutoCut(MaxPeaks, MinDuration);
       WD2.AutoCut(MaxPeaks, MinDuration);
 

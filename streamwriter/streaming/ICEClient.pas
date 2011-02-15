@@ -776,6 +776,13 @@ begin
     if Assigned(FOnRefresh) then
       FOnRefresh(Self);
   end;
+
+  // Das muss, damit bei Fehlern mit Daten, die BASS nicht parsen kann, beendet wird.
+  // Der ICEPlayer wirft bei PushData() eine Exception wenn das so ist.
+  if (not FICEThread.Recording) and (not FICEThread.Playing) then
+  begin
+    Disconnect;
+  end;
 end;
 
 procedure TICEClient.ThreadTerminated(Sender: TObject);

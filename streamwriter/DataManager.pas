@@ -211,7 +211,7 @@ type
   end;
 
 const
-  DATAVERSION = 8;
+  DATAVERSION = 9;
 
 implementation
 

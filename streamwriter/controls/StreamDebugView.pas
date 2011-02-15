@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
   DataManager, VirtualTrees, LanguageObjects, GUIFunctions,
-  Generics.Collections, Graphics, Forms, ICEClient, Clipbrd;
+  Generics.Collections, Graphics, Forms, ICEClient, Clipbrd, AppData;
 
 type
   TDebugView = class(TVirtualStringTree)
@@ -50,6 +50,7 @@ type
   TMStreamDebugPanel = class(TPanel)
   private
     FClient: TICEClient;
+    FChkAutoScroll: TCheckBox;
     FDebug: TDebugView;
     FPanelBottom: TPanel;
     FBtnCopy: TButton;
@@ -61,6 +62,7 @@ type
 
     procedure BtnCopyClick(Sender: TObject);
     procedure BtnClearClick(Sender: TObject);
+    procedure ChkAutoScrollClick(Sender: TObject);
   protected
   public
     constructor Create(AOwner: TComponent); reintroduce;
@@ -96,12 +98,25 @@ begin
   FDebug.Copy;
 end;
 
+procedure TMStreamDebugPanel.ChkAutoScrollClick(Sender: TObject);
+begin
+  AppGlobals.AutoScrollLog := FChkAutoScroll.Checked;
+end;
+
 constructor TMStreamDebugPanel.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
   Align := alClient;
   BevelOuter := bvNone;
+
+  FChkAutoScroll := TCheckBox.Create(Self);
+  FChkAutoScroll.Caption := _('&Autoscroll');
+  FChkAutoScroll.Parent := Self;
+  FChkAutoScroll.Align := alTop;
+  FChkAutoScroll.Visible := True;
+  FChkAutoScroll.Checked := AppGlobals.AutoScrollLog;
+  FChkAutoScroll.OnClick := ChkAutoScrollClick;
 
   FDebug := TDebugView.Create(Self);
   FDebug.Parent := Self;
@@ -230,6 +245,8 @@ begin
   begin
     RootNodeCount := 0;
   end;
+  if AppGlobals.AutoScrollLog and (GetLast <> nil) then
+    ScrollIntoView(GetLast, False, False);
 end;
 
 function TDebugView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;

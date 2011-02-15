@@ -40,14 +40,16 @@ type
     FSearchSilence: Boolean;
     FSilenceLevel: Cardinal;
     FSilenceLength: Cardinal;
-    FShortSize: Integer;
-    FSongBuffer: Integer;
+    FSilenceBufferSeconds: Cardinal;
+    FShortLengthSeconds: Integer;
+    FSongBufferSeconds: Integer;
     FMaxRetries: Integer;
     FRetryDelay: Cardinal;
     FFilter: TUseFilters;
     FSeparateTracks: Boolean;
     FSaveToMemory: Boolean;
-    FOnlySaveFull: Boolean; // TODO: Dieses neue feld noch stark testen. in jeglicher hinsicht, auch ob es im stream funzt etc.!!!
+    FOnlySaveFull: Boolean;
+    FOverwriteSmaller: Boolean;
   public
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamSettings;
     procedure Save(Stream: TExtendedStream);
@@ -61,14 +63,16 @@ type
     property SearchSilence: Boolean read FSearchSilence write FSearchSilence;
     property SilenceLevel: Cardinal read FSilenceLevel write FSilenceLevel;
     property SilenceLength: Cardinal read FSilenceLength write FSilenceLength;
-    property ShortSize: Integer read FShortSize write FShortSize;
-    property SongBuffer: Integer read FSongBuffer write FSongBuffer;
+    property SilenceBufferSeconds: Cardinal read FSilenceBufferSeconds write FSilenceBufferSeconds;
+    property ShortLengthSeconds: Integer read FShortLengthSeconds write FShortLengthSeconds;
+    property SongBufferSeconds: Integer read FSongBufferSeconds write FSongBufferSeconds;
     property MaxRetries: Integer read FMaxRetries write FMaxRetries;
     property RetryDelay: Cardinal read FRetryDelay write FRetryDelay;
     property Filter: TUseFilters read FFilter write FFilter;
     property SeparateTracks: Boolean read FSeparateTracks write FSeparateTracks;
     property SaveToMemory: Boolean read FSaveToMemory write FSaveToMemory;
     property OnlySaveFull: Boolean read FOnlySaveFull write FOnlySaveFull;
+    property OverwriteSmaller: Boolean read FOverwriteSmaller write FOverwriteSmaller;
   end;
 
   TStreamSettingsArray = array of TStreamSettings;
@@ -76,6 +80,7 @@ type
   TAppData = class(TAppDataBase)
   private
     FStreamSettings: TStreamSettings;
+    FUserLoggedIn: Boolean;
 
     FDir: string;
     FTray: Boolean;
@@ -86,6 +91,9 @@ type
     FMinDiskSpace: Integer;
     FDefaultAction: TClientActions;
     FPlayerVolume, FCutVolume: Integer;
+    FAutoScrollLog: Boolean;
+    FUserWasSetup: Boolean;
+    FUser, FPass: string;
 
     FShortcutPlay: Cardinal;
     FShortcutStop: Cardinal;
@@ -108,6 +116,7 @@ type
     procedure BuildThanksText; override;
 
     property StreamSettings: TStreamSettings read FStreamSettings;
+    property UserLoggedIn: Boolean read FUserLoggedIn write FUserLoggedIn;
 
     property Dir: string read FDir write FDir;
     property Tray: Boolean read FTray write FTray;
@@ -118,6 +127,10 @@ type
     property MinDiskSpace: Integer read FMinDiskSpace write FMinDiskSpace;
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
     property PlayerVolume: Integer read FPlayerVolume write FPlayerVolume;
+    property AutoScrollLog: Boolean read FAutoScrollLog write FAutoScrollLog;
+    property UserWasSetup: Boolean read FUserWasSetup write FUserWasSetup;
+    property User: string read FUser write FUser;
+    property Pass: string read FPass write FPass;
     property CutVolume: Integer read FCutVolume write FCutVolume;
     property ShortcutPlay: Cardinal read FShortcutPlay write FShortcutPlay;
     property ShortcutStop: Cardinal read FShortcutStop write FShortcutStop;
@@ -377,16 +390,18 @@ begin
   FStorage.Read('SearchSilence', FStreamSettings.FSearchSilence, True);
   FStorage.Read('SilenceLevel', FStreamSettings.FSilenceLevel, 5);
   FStorage.Read('SilenceLength', FStreamSettings.FSilenceLength, 150);
+  FStorage.Read('SilenceBufferSeconds', FStreamSettings.FSilenceBufferSeconds, 3);
   FStorage.Read('SaveToMemory', FStreamSettings.FSaveToMemory, False);
   FStorage.Read('OnlySaveFull', FStreamSettings.FOnlySaveFull, True);
+  FStorage.Read('OverwriteSmaller', FStreamSettings.FOverwriteSmaller, True);
 
   if (FStreamSettings.FSilenceLevel < 1) or (FStreamSettings.FSilenceLevel > 100) then
     FStreamSettings.FSilenceLevel := 5;
   if FStreamSettings.FSilenceLength < 20 then
     FStreamSettings.FSilenceLength := 20;
 
-  FStorage.Read('ShortSize', FStreamSettings.FShortSize, 1500);
-  FStorage.Read('SongBuffer', FStreamSettings.FSongBuffer, 0);
+  FStorage.Read('ShortLengthSeconds', FStreamSettings.FShortLengthSeconds, 45);
+  FStorage.Read('SongBufferSeconds', FStreamSettings.FSongBufferSeconds, 0);
   FStorage.Read('MaxRetries', FStreamSettings.FMaxRetries, 100);
   FStorage.Read('RetryDelay', FStreamSettings.FRetryDelay, 5);
 
@@ -407,6 +422,10 @@ begin
   FStorage.Read('DefaultFilter', DefaultFilterTmp, Integer(ufNone));
   FStorage.Read('PlayerVolume', FPlayerVolume, 50);
   FStorage.Read('CutVolume', FCutVolume, 50);
+  FStorage.Read('AutoScrollLog', FAutoScrollLog, True);
+  FStorage.Read('UserWasSetup', FUserWasSetup, False);
+  FStorage.Read('User', FUser, '');
+  FStorage.Read('Pass', FPass, '');
 
   FStorage.Read('ShortcutPlay', FShortcutPlay, 0);
   FStorage.Read('ShortcutStop', FShortcutStop, 0);
@@ -426,7 +445,8 @@ begin
   end else
   begin
     for i := 0 to High(FHeaderWidth) do
-      FStorage.Read('HeaderWidth' + IntToStr(i), FHeaderWidth[i], 130, 'Cols');
+      if i <> 1 then
+        FStorage.Read('HeaderWidth' + IntToStr(i), FHeaderWidth[i], 130, 'Cols');
   end;
 
   if (DefaultActionTmp > Ord(High(TClientActions))) or
@@ -466,14 +486,16 @@ begin
   FStorage.Write('SearchSilence', FStreamSettings.FSearchSilence);
   FStorage.Write('SilenceLevel', FStreamSettings.FSilenceLevel);
   FStorage.Write('SilenceLength', FStreamSettings.FSilenceLength);
+  FStorage.Write('SilenceBufferSeconds', FStreamSettings.FSilenceBufferSeconds);
   FStorage.Write('SaveToMemory', FStreamSettings.FSaveToMemory);
   FStorage.Write('OnlySaveFull', FStreamSettings.FOnlySaveFull);
-  FStorage.Write('ShortSize', FStreamSettings.FShortSize);
-  FStorage.Write('SongBuffer', FStreamSettings.FSongBuffer);
+  FStorage.Write('ShortLengthSeconds', FStreamSettings.FShortLengthSeconds);
+  FStorage.Write('SongBufferSeconds', FStreamSettings.FSongBufferSeconds);
   FStorage.Write('MaxRetries', FStreamSettings.FMaxRetries);
   FStorage.Write('RetryDelay', FStreamSettings.FRetryDelay);
   FStorage.Write('DefaultFilter', Integer(FStreamSettings.Filter));
   FStorage.Write('SeparateTracks', FStreamSettings.FSeparateTracks);
+  FStorage.Write('OverwriteSmaller', FStreamSettings.FOverwriteSmaller);
 
   FStorage.Write('TrayClose', FTray);
   FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
@@ -484,6 +506,10 @@ begin
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
   FStorage.Write('PlayerVolume', FPlayerVolume);
   FStorage.Write('CutVolume', FCutVolume);
+  FStorage.Write('AutoScrollLog', FAutoScrollLog);
+  FStorage.Write('UserWasSetup', FUserWasSetup);
+  FStorage.Write('User', FUser);
+  FStorage.Write('Pass', FPass); // TODO: Encode!
 
   FStorage.Write('ShortcutPlay', FShortcutPlay);
   FStorage.Write('ShortcutStop', FShortcutStop);
@@ -540,8 +566,28 @@ begin
   Stream.Read(Result.FSearchSilence);
   Stream.Read(Result.FSilenceLevel);
   Stream.Read(Result.FSilenceLength);
-  Stream.Read(Result.FShortSize);
-  Stream.Read(Result.FSongBuffer);
+
+  if Version >= 9 then
+    Stream.Read(Result.FSilenceBufferSeconds)
+  else
+    Result.FSilenceBufferSeconds := 3;
+
+  if Version >= 9 then
+    Stream.Read(Result.FShortLengthSeconds)
+  else
+  begin
+    Stream.Read(FilterTmp);
+    Result.FShortLengthSeconds := 45;
+  end;
+
+  if Version >= 9 then
+    Stream.Read(Result.FSongBufferSeconds)
+  else
+  begin
+    Stream.Read(FilterTmp);
+    Result.FSongBufferSeconds := 0;
+  end;
+
   Stream.Read(Result.FMaxRetries);
 
   //if Result.FMaxRetries > 10 then
@@ -561,11 +607,15 @@ begin
     Result.FDeleteStreams := False;
   end;
 
-  // TODO: updates testen, wegen neuem file-format...
   if Version >= 8 then
     Stream.Read(Result.FOnlySaveFull)
   else
     Result.FOnlySaveFull := True;
+
+  if Version >= 9 then
+    Stream.Read(Result.FOverwriteSmaller)
+  else
+    Result.FOverwriteSmaller := True;
 
   if not Result.FSeparateTracks then
     Result.FDeleteStreams := False;
@@ -586,14 +636,16 @@ begin
   Stream.Write(FSearchSilence);
   Stream.Write(FSilenceLevel);
   Stream.Write(FSilenceLength);
-  Stream.Write(FShortSize);
-  Stream.Write(FSongBuffer);
+  Stream.Write(FSilenceBufferSeconds);
+  Stream.Write(FShortLengthSeconds);
+  Stream.Write(FSongBufferSeconds);
   Stream.Write(FMaxRetries);
   Stream.Write(FRetryDelay);
   Stream.Write(Integer(FFilter));
   Stream.Write(FSeparateTracks);
   Stream.Write(FSaveToMemory);
   Stream.Write(FOnlySaveFull);
+  Stream.Write(FOverwriteSmaller);
 end;
 
 procedure TStreamSettings.Assign(From: TStreamSettings);
@@ -605,14 +657,16 @@ begin
   FSearchSilence := From.FSearchSilence;
   FSilenceLevel := From.FSilenceLevel;
   FSilenceLength := From.FSilenceLength;
-  FShortSize := From.FShortSize;
-  FSongBuffer := From.FSongBuffer;
+  FSilenceBufferSeconds := From.FSilenceBufferSeconds;
+  FShortLengthSeconds := From.FShortLengthSeconds;
+  FSongBufferSeconds := From.FSongBufferSeconds;
   FMaxRetries := From.FMaxRetries;
   FRetryDelay := From.FRetryDelay;
   FFilter := From.FFilter;
   FSeparateTracks := From.FSeparateTracks;
-  FSaveToMemory := From.SaveToMemory;
-  FOnlySaveFull := From.OnlySaveFull;
+  FSaveToMemory := From.FSaveToMemory;
+  FOnlySaveFull := From.FOnlySaveFull;
+  FOverwriteSmaller := From.FOverwriteSmaller;
 end;
 
 initialization

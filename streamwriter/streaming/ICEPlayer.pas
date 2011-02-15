@@ -12,6 +12,7 @@ type
     FLock: TCriticalSection;
     FPlayer: DWORD;
     FFadingOut: Boolean;
+    FPlayStartBuffer: Cardinal;
 
     function FGetPlaying: Boolean;
   public
@@ -28,9 +29,6 @@ type
     property Mem: TExtendedStream read FMem;
     property FadingOut: Boolean read FFadingOut;
   end;
-
-const
-  PLAY_START_BUFFER = 128000;
 
 implementation
 
@@ -91,6 +89,7 @@ begin
   FMem := TExtendedStream.Create;
   FLock := TCriticalSection.Create;
   FPlayer := 0;
+  FPlayStartBuffer := 0;
 end;
 
 destructor TICEPlayer.Destroy;
@@ -116,7 +115,7 @@ var
   Funcs: BASS_FILEPROCS;
   State: Cardinal;
 begin
-  if FMem.Size < PLAY_START_BUFFER then
+  if (FPlayStartBuffer = 0) or (FMem.Size < FPlayStartBuffer) then
     Exit;
 
   State := BASSChannelIsActive(FPlayer);
@@ -165,10 +164,34 @@ begin
 end;
 
 procedure TICEPlayer.PushData(Buf: Pointer; Len: Integer);
+var
+  Time: Double;
+  BufLen: Int64;
+  TempPlayer, BitRate: Cardinal;
 begin
   FLock.Enter;
   FMem.Seek(0, soFromEnd);
   FMem.Write(Buf^, Len);
+
+  if not Playing then
+  begin
+    TempPlayer := BASSStreamCreateFile(True, FMem.Memory, 0, FMem.Size, BASS_STREAM_DECODE);
+    if TempPlayer = 0 then
+      raise Exception.Create('');
+    try
+      BASSChannelSetPosition(TempPlayer, FMem.Size, BASS_POS_BYTE);
+      Time := BASSChannelBytes2Seconds(TempPlayer, BASSChannelGetLength(TempPlayer, BASS_POS_BYTE));
+      BufLen := BASSStreamGetFilePosition(TempPlayer, BASS_FILEPOS_END);
+      if BufLen = -1 then
+        raise Exception.Create('');
+      BitRate := Trunc(BufLen / (125 * Time) + 0.5);
+
+      FPlayStartBuffer := BitRate * 1000;
+    finally
+      BASSStreamFree(TempPlayer);
+    end;
+  end;
+
   FLock.Leave;
 end;
 

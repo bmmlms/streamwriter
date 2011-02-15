@@ -65,6 +65,8 @@ type
     procedure StartPlayInternal;
     procedure StopPlayInternal;
 
+    procedure DoStateChanged;
+
     procedure StreamTitleChanged(Sender: TObject);
     procedure StreamSongSaved(Sender: TObject);
     procedure StreamNeedSettings(Sender: TObject);
@@ -161,15 +163,21 @@ begin
       if P = -1 then
         P := 0;
       FPlayBuffer.Seek(P, soFromBeginning);
-      FPlayer.PushData(Pointer(Integer(FPlayBuffer.Memory) + P), FPlayBuffer.Size - P);
+      try
+        FPlayer.PushData(Pointer(Integer(FPlayBuffer.Memory) + P), FPlayBuffer.Size - P);
+      except
+        // Unbekannte Daten (kein MP3/AAC) - ende.
+        FPlayingStarted := False;
+        FPlaying := False;
+        WriteDebug(_('Stream cannot be played because data is not mpeg/aac'), 3, 0);
+      end;
     finally
       FPlayBufferLock.Leave;
     end;
 
     FPlayer.Play;
 
-    if Assigned(FOnStateChanged) then
-      FOnStateChanged(Self);
+    DoStateChanged;
   end;
 end;
 
@@ -184,8 +192,8 @@ begin
   FPlayer.Stop;
   DoStuff; // Das muss so, damit der Thread aufs Fadeout-Ende wartet!
 
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
+  // TODO: Ist das hier nicht super gefährlich? Wo wird das gesynced???
+  DoStateChanged;
 end;
 
 procedure TICEThread.StartRecording;
@@ -198,8 +206,7 @@ begin
   FRecording := True;
   FTypedStream.StartRecording;
 
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
+  DoStateChanged;
 end;
 
 procedure TICEThread.StopRecording;
@@ -212,8 +219,7 @@ begin
   FRecording := False;
   FTypedStream.StopRecording;
 
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
+  DoStateChanged;
 end;
 
 procedure TICEThread.StreamNeedSettings(Sender: TObject);
@@ -226,14 +232,24 @@ var
   RemoveTo: Int64;
   Thread: TRelayThread;
 const
-  MAX_BUFFER_SIZE = 256000;
+  MAX_BUFFER_SIZE = 1048576;
 begin
   if FPlaying and (not FPlayer.Playing) then
     FPlayer.Play;
 
   if FPlaying then
   begin
-    FPlayer.PushData(Buf, Len);
+    try
+      FPlayer.PushData(Buf, Len);
+    except
+      // Unbekannte Daten (kein MP3/AAC) - ende.
+      FPlayingStarted := False;
+      FPlaying := False;
+      WriteDebug(_('Stream cannot be played because data is not mpeg/aac'), 3, 0);
+
+      // TODO: Hier sollte man noch OnStateChanged aufrufen - aber bitte mit sync!!
+      DoStateChanged;
+    end;
     //WriteDebug(Format('Playbuffer size: %d', [FPlayer.Mem.Size]));
   end;
 
@@ -377,6 +393,12 @@ begin
         Exit;
     end;
   end;
+end;
+
+procedure TICEThread.DoStateChanged;
+begin
+  if Assigned(FOnStateChanged) then
+    Sync(FOnStateChanged);
 end;
 
 procedure TICEThread.DoStuff;

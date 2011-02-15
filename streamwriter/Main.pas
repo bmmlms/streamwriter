@@ -31,7 +31,7 @@ uses
   About, MsgDlg, HomeCommunication, StreamBrowserView, Clipbrd,
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
-  CheckFilesThread, ListsTab;
+  CheckFilesThread, ListsTab, CommunityLogin;
 
 type
   TfrmStreamWriterMain = class(TForm)
@@ -372,6 +372,8 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.FormActivate(Sender: TObject);
+var
+  F: TfrmCommunityLogin;
 begin
   if FWasActivated then
     Exit;
@@ -386,8 +388,20 @@ begin
 
   if not BassLoaded then
   begin
-    MsgBox(Handle, _('Bass.dll could not be loaded. Without this library no playback/cutting/searching for silence is available.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('The BASS library or it''s AAC plugin could not be extracted/loaded. Without this library no playback/cutting/searching for silence is available.'), _('Info'), MB_ICONINFORMATION);
   end;
+
+  {
+  if not AppGlobals.UserWasSetup then
+  begin
+    F := TfrmCommunityLogin.Create(Self);
+    try
+      F.ShowModal;
+    finally
+      F.Free;
+    end;
+  end;
+  }
 end;
 
 procedure TfrmStreamWriterMain.FormClose(Sender: TObject;
@@ -420,7 +434,7 @@ begin
   pagMain := TMainPageControl.Create(Self);
   pagMain.Parent := Self;
   pagMain.Visible := True;
-  pagMain.Align := alClient;             // TODO: ist das 'o' für den Open Website shortcut noch frei?
+  pagMain.Align := alClient;
   pagMain.Images := imgImages;
 
   tabClients := TClientTab.Create(pagMain);
@@ -855,7 +869,7 @@ procedure TfrmStreamWriterMain.tabClientsCut(Entry: TStreamEntry;
 var
   tabCut: TCutTab;
 begin
-  if LowerCase(ExtractFileExt(Track.Filename)) <> '.mp3' then
+  if (LowerCase(ExtractFileExt(Track.Filename)) <> '.mp3') and (LowerCase(ExtractFileExt(Track.Filename)) <> '.aac') then
   begin
     Exit;
   end;

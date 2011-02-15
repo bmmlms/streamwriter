@@ -53,7 +53,7 @@ type
     Label3: TLabel;
     pnlCut: TPanel;
     txtSongBuffer: TLabeledEdit;
-    txtShortSongSize: TLabeledEdit;
+    txtShortLengthSeconds: TLabeledEdit;
     Label4: TLabel;
     Label5: TLabel;
     chkSkipShort: TCheckBox;
@@ -94,6 +94,11 @@ type
     chkSaveStreamsToMemory: TCheckBox;
     chkOnlyIfCut: TCheckBox;
     chkOnlySaveFull: TCheckBox;
+    lblPanelCut: TLabel;
+    chkOverwriteSmaller: TCheckBox;
+    Label6: TLabel;
+    txtSilenceBufferSeconds: TEdit;
+    Label15: TLabel;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -118,7 +123,7 @@ type
     procedure txtHotkeyChange(Sender: TObject);
     procedure lstHotkeysChange(Sender: TObject; Item: TListItem;
       Change: TItemChange);
-    procedure txtShortSongSizeChange(Sender: TObject);
+    procedure txtShortLengthSecondsChange(Sender: TObject);
     procedure txtSilenceLevelChange(Sender: TObject);
     procedure txtSilenceLengthChange(Sender: TObject);
     procedure txtSongBufferChange(Sender: TObject);
@@ -131,6 +136,8 @@ type
     procedure chkSaveStreamsToMemoryClick(Sender: TObject);
     procedure chkOnlyIfCutClick(Sender: TObject);
     procedure chkOnlySaveFullClick(Sender: TObject);
+    procedure chkOverwriteSmallerClick(Sender: TObject);
+    procedure txtSilenceBufferSecondsChange(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -144,6 +151,7 @@ type
     function GetNewID: Integer;
     procedure BuildHotkeys;
     procedure RemoveGray(C: TControl);
+    procedure EnablePanel(Panel: TPanel; Enable: Boolean);
   protected
     procedure RegisterPages; override;
     procedure Finish; override;
@@ -224,6 +232,19 @@ constructor TfrmSettings.Create(AOwner: TComponent; BrowseDir: Boolean = False);
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
     begin
+      if S.OverwriteSmaller <> FStreamSettings[i].OverwriteSmaller then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(chkOverwriteSmaller);
+
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
       if S.SkipShort <> FStreamSettings[i].SkipShort then
       begin
         F := True;
@@ -276,7 +297,7 @@ constructor TfrmSettings.Create(AOwner: TComponent; BrowseDir: Boolean = False);
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
     begin
-      if S.ShortSize <> FStreamSettings[i].ShortSize then
+      if S.SilenceBufferSeconds <> FStreamSettings[i].SilenceBufferSeconds then
       begin
         F := True;
         ShowDialog := True;
@@ -284,12 +305,25 @@ constructor TfrmSettings.Create(AOwner: TComponent; BrowseDir: Boolean = False);
       end;
     end;
     if F then
-      AddField(txtShortSongSize);
+      AddField(txtSilenceBufferSeconds);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
     begin
-      if S.SongBuffer <> FStreamSettings[i].SongBuffer then
+      if S.ShortLengthSeconds <> FStreamSettings[i].ShortLengthSeconds then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(txtShortLengthSeconds);
+
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
+      if S.SongBufferSeconds <> FStreamSettings[i].SongBufferSeconds then
       begin
         F := True;
         ShowDialog := True;
@@ -427,7 +461,7 @@ begin
     SetFields;
 
     ClientWidth := 480;
-    ClientHeight := 435;
+    ClientHeight := 455;
 
     lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
     lstDefaultFilter.ItemIndex := Integer(Settings.Filter);
@@ -456,6 +490,7 @@ begin
     txtDir.Text := AppGlobals.Dir;
     chkDeleteStreams.Checked := Settings.DeleteStreams;
     chkAddSavedToIgnore.Checked := Settings.AddSavedToIgnore;
+    chkOverwriteSmaller.Checked := Settings.OverwriteSmaller;
 
     chkSkipShort.Checked := Settings.SkipShort;
     chkSearchSilence.Checked := Settings.SearchSilence;
@@ -469,14 +504,15 @@ begin
     chkTrayClick(nil);
 
     chkSubmitStreams.Checked := AppGlobals.SubmitStreams;
-    txtShortSongSize.Text := IntToStr(Settings.ShortSize);
-    txtSongBuffer.Text := IntToStr(Settings.SongBuffer);
+    txtShortLengthSeconds.Text := IntToStr(Settings.ShortLengthSeconds);
+    txtSongBuffer.Text := IntToStr(Settings.SongBufferSeconds);
     txtMaxRetries.Text := IntToStr(Settings.MaxRetries);
     txtRetryDelay.Text := IntToStr(Settings.RetryDelay);
     txtMinDiskSpace.Text := IntToStr(AppGlobals.MinDiskSpace);
 
     txtSilenceLevel.Text := IntToStr(Settings.SilenceLevel);
     txtSilenceLength.Text := IntToStr(Settings.SilenceLength);
+    txtSilenceBufferSeconds.Text := IntToStr(Settings.SilenceBufferSeconds);
     AppGlobals.Unlock;
 
     FTemporaryPlugins := TList<TPluginBase>.Create;
@@ -529,6 +565,7 @@ begin
       chkSearchSilence.Checked := False;
       txtSilenceLevel.Enabled := False;
       txtSilenceLength.Enabled := False;
+      txtSilenceBufferSeconds.Enabled := False;
       Label10.Enabled := False;
       Label12.Enabled := False;
       Label13.Enabled := False;
@@ -552,6 +589,7 @@ begin
       chkOnlySaveFull.Enabled := False;
     end;
 
+    lblPanelCut.Caption := _('Settings for cutting are only available'#13#10'if ''Save separated tracks'' is enabled.');
     EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
 
     FInitialized := True;
@@ -597,6 +635,19 @@ begin
   inherited;
 end;
 
+procedure TfrmSettings.EnablePanel(Panel: TPanel; Enable: Boolean);
+var
+  i: Integer;
+begin
+  for i := 0 to Panel.ControlCount - 1 do
+    Panel.Controls[i].Visible := Enable;
+
+  if Enable then
+    lblPanelCut.Visible := False
+  else
+    lblPanelCut.Visible := True;
+end;
+
 procedure TfrmSettings.Finish;
 var
   i, n: Integer;
@@ -617,16 +668,19 @@ begin
       if FIgnoreFieldList.IndexOf(chkAddSavedToIgnore) = -1 then
         FStreamSettings[i].AddSavedToIgnore := chkAddSavedToIgnore.Checked;
 
+      if FIgnoreFieldList.IndexOf(chkOverwriteSmaller) = -1 then
+        FStreamSettings[i].OverwriteSmaller := chkOverwriteSmaller.Checked;
+
       if FPageList.Find(pnlCut).Node.Enabled then
       begin
         if FIgnoreFieldList.IndexOf(chkSkipShort) = -1 then
           FStreamSettings[i].SkipShort := chkSkipShort.Checked;
 
         if FIgnoreFieldList.IndexOf(txtSongBuffer) = -1 then
-          FStreamSettings[i].SongBuffer := StrToIntDef(txtSongBuffer.Text, 0);
+          FStreamSettings[i].SongBufferSeconds := StrToIntDef(txtSongBuffer.Text, 0);
 
-        if FIgnoreFieldList.IndexOf(txtShortSongSize) = -1 then
-          FStreamSettings[i].ShortSize := StrToIntDef(txtShortSongSize.Text, 1500);
+        if FIgnoreFieldList.IndexOf(txtShortLengthSeconds) = -1 then
+          FStreamSettings[i].ShortLengthSeconds := StrToIntDef(txtShortLengthSeconds.Text, 45);
 
         if FIgnoreFieldList.IndexOf(chkSearchSilence) = -1 then
           FStreamSettings[i].SearchSilence := chkSearchSilence.Checked;
@@ -636,6 +690,9 @@ begin
 
         if FIgnoreFieldList.IndexOf(txtSilenceLength) = -1 then
           FStreamSettings[i].SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
+
+        if FIgnoreFieldList.IndexOf(txtSilenceBufferSeconds) = -1 then
+          FStreamSettings[i].SilenceBufferSeconds := StrToIntDef(txtSilenceBufferSeconds.Text, 3);
       end;
 
       if FIgnoreFieldList.IndexOf(txtMaxRetries) = -1 then
@@ -662,9 +719,10 @@ begin
     AppGlobals.StreamSettings.FilePattern := txtFilePattern.Text;
     AppGlobals.StreamSettings.DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
     AppGlobals.StreamSettings.AddSavedToIgnore := chkAddSavedToIgnore.Checked;
+    AppGlobals.StreamSettings.OverwriteSmaller := chkOverwriteSmaller.Checked;
     AppGlobals.StreamSettings.SkipShort := chkSkipShort.Checked;
-    AppGlobals.StreamSettings.SongBuffer := StrToIntDef(txtSongBuffer.Text, 0);
-    AppGlobals.StreamSettings.ShortSize := StrToIntDef(txtShortSongSize.Text, 1500);
+    AppGlobals.StreamSettings.SongBufferSeconds := StrToIntDef(txtSongBuffer.Text, 0);
+    AppGlobals.StreamSettings.ShortLengthSeconds := StrToIntDef(txtShortLengthSeconds.Text, 45);
     AppGlobals.StreamSettings.MaxRetries := StrToIntDef(txtMaxRetries.Text, 100);
     AppGlobals.StreamSettings.RetryDelay := StrToIntDef(txtRetryDelay.Text, 5);
     AppGlobals.StreamSettings.Filter := TUseFilters(lstDefaultFilter.ItemIndex);
@@ -672,6 +730,7 @@ begin
       AppGlobals.StreamSettings.SearchSilence := chkSearchSilence.Checked;
     AppGlobals.StreamSettings.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
     AppGlobals.StreamSettings.SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
+    AppGlobals.StreamSettings.SilenceBufferSeconds := StrToIntDef(txtSilenceBufferSeconds.Text, 3);
     AppGlobals.StreamSettings.SeparateTracks := chkSeparateTracks.Checked and chkSeparateTracks.Enabled;
     AppGlobals.StreamSettings.SaveToMemory := chkSaveStreamsToMemory.Checked;
     AppGlobals.StreamSettings.OnlySaveFull := chkOnlySaveFull.Checked;
@@ -778,6 +837,9 @@ begin
 
   lstHotkeys.Columns[0].Width := lstHotkeys.ClientWidth - 130;
   lstHotkeys.Columns[1].Width := lstHotkeys.ClientWidth - lstHotkeys.Columns[0].Width - 25;
+
+  lblPanelCut.Top := pnlCut.ClientHeight div 2 - lblPanelCut.Height div 2;
+  lblPanelCut.Left := pnlCut.ClientWidth div 2 - lblPanelCut.Width div 2;
 end;
 
 function TfrmSettings.GetNewID: Integer;
@@ -1065,12 +1127,20 @@ begin
     RemoveGray(txtRetryDelay);
 end;
 
-procedure TfrmSettings.txtShortSongSizeChange(Sender: TObject);
+procedure TfrmSettings.txtShortLengthSecondsChange(Sender: TObject);
 begin
   inherited;
 
   if FInitialized then
-    RemoveGray(txtShortSongSize);
+    RemoveGray(txtShortLengthSeconds);
+end;
+
+procedure TfrmSettings.txtSilenceBufferSecondsChange(Sender: TObject);
+begin
+  inherited;
+
+  if FInitialized then
+    RemoveGray(txtSilenceBufferSeconds);
 end;
 
 procedure TfrmSettings.txtSilenceLengthChange(Sender: TObject);
@@ -1248,16 +1318,16 @@ begin
 
   if FPageList.Find(pnlCut).Node.Enabled then
   begin
-    if Trim(txtShortSongSize.Text) = '' then
+    if Trim(txtShortLengthSeconds.Text) = '' then
     begin
       if chkSkipShort.Checked then
       begin
-        MsgBox(Handle, _('Please enter the maximum size for songs that should be considered as ads.'), _('Info'), MB_ICONINFORMATION);
-        SetPage(FPageList.Find(TPanel(txtShortSongSize.Parent)));
-        txtShortSongSize.SetFocus;
+        MsgBox(Handle, _('Please enter the maximum length for songs that should be considered as ads.'), _('Info'), MB_ICONINFORMATION);
+        SetPage(FPageList.Find(TPanel(txtShortLengthSeconds.Parent)));
+        txtShortLengthSeconds.SetFocus;
         Exit;
       end else
-        txtShortSongSize.Text := IntToStr(AppGlobals.StreamSettings.ShortSize);
+        txtShortLengthSeconds.Text := IntToStr(AppGlobals.StreamSettings.ShortLengthSeconds);
     end;
 
     if (StrToIntDef(txtSilenceLevel.Text, -1) > 100) or (StrToIntDef(txtSilenceLevel.Text, -1) < 1) then
@@ -1276,9 +1346,17 @@ begin
       Exit;
     end;
 
+    if (StrToIntDef(txtSilenceBufferSeconds.Text, -1) < 1) or (StrToIntDef(txtSilenceBufferSeconds.Text, -1) > 15) then
+    begin
+      MsgBox(Handle, _('Please enter the length in seconds to search for silence at beginning and end of song as a value ranging from 1 to 15.'), _('Info'), MB_ICONINFORMATION);
+      SetPage(FPageList.Find(TPanel(txtSilenceBufferSeconds.Parent)));
+      txtSilenceBufferSeconds.SetFocus;
+      Exit;
+    end;
+
     if Trim(txtSongBuffer.Text) = '' then
     begin
-      MsgBox(Handle, _('Please enter the size of the buffer that should be added to every beginning/end of saved titles.'), _('Info'), MB_ICONINFORMATION);
+      MsgBox(Handle, _('Please enter the length of the buffer that should be added to every beginning/end of saved titles.'), _('Info'), MB_ICONINFORMATION);
       SetPage(FPageList.Find(TPanel(txtSongBuffer.Parent)));
       txtSongBuffer.SetFocus;
       Exit;
@@ -1302,6 +1380,7 @@ begin
   end;
 
   // Sonst wird kann es zu lange dauern, Clients zu entfernen, wenn der Thread gerade noch schläft.
+  // Deshalb Limit auf 10..
   if StrToIntDef(txtRetryDelay.Text, 5) > 10 then
     txtRetryDelay.Text := '5';
 
@@ -1327,6 +1406,14 @@ begin
 
   if FInitialized then
     RemoveGray(chkAddSavedToIgnore);
+end;
+
+procedure TfrmSettings.chkOverwriteSmallerClick(Sender: TObject);
+begin
+  inherited;
+
+  if FInitialized then
+    RemoveGray(chkOverwriteSmaller);
 end;
 
 procedure TfrmSettings.chkDeleteStreamsClick(Sender: TObject);
@@ -1371,7 +1458,6 @@ begin
     chkOnlySaveFull.Enabled := chkSeparateTracks.Checked;
 
     pnlCut.Enabled := False;
-    EnablePanel(pnlCut, chkSeparateTracks.Checked and chkSeparateTracks.Enabled);
     if (not chkSeparateTracks.Checked) or (chkSaveStreamsToMemory.Checked) then
       chkDeleteStreams.Checked := False;
 
@@ -1379,6 +1465,9 @@ begin
       TfrmMsgDlg.ShowMsg(Self, _('When saving streams without saving separate tracks, keep in mind to change the pattern ' +
                                  'for names of saved files, because the variables for artist, title and tracknumber ' +
                                  '(%a, %t, %n) will only be filled with default values.'), 1, 2);
+
+    Application.ProcessMessages;
+    EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
   end;
 end;
 
@@ -1394,7 +1483,7 @@ begin
     chkSeparateTracks.Checked := True;
 
     // Weil das hier drüber die Seite abschaltet, schalten wir sie wieder an..
-    EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked);
+    EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
     chkDeleteStreams.Enabled := (not chkSeparateTracks.Checked) or (not chkSaveStreamsToMemory.Checked);
     chkDeleteStreams.Checked := chkDeleteStreams.Enabled and AppGlobals.StreamSettings.DeleteStreams;
 
@@ -1409,6 +1498,7 @@ begin
 
   txtSilenceLevel.Enabled := chkSearchSilence.Checked;
   txtSilenceLength.Enabled := chkSearchSilence.Checked;
+  txtSilenceBufferSeconds.Enabled := chkSearchSilence.Checked;
   Label10.Enabled := chkSearchSilence.Checked;
   Label12.Enabled := chkSearchSilence.Checked;
   Label13.Enabled := chkSearchSilence.Checked;
@@ -1420,7 +1510,7 @@ end;
 procedure TfrmSettings.chkSkipShortClick(Sender: TObject);
 begin
   inherited;
-  txtShortSongSize.Enabled := chkSkipShort.State <> cbUnchecked;
+  txtShortLengthSeconds.Enabled := chkSkipShort.State <> cbUnchecked;
 
   if FInitialized then
     RemoveGray(chkSkipShort);

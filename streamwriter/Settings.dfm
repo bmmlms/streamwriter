@@ -40,7 +40,6 @@ object frmSettings: TfrmSettings
       Height = 13
       Anchors = [akLeft, akBottom]
       Caption = 'Filter:'
-      ExplicitTop = 316
     end
     object GroupBox2: TGroupBox
       Left = 4
@@ -91,7 +90,7 @@ object frmSettings: TfrmSettings
     end
     object chkDeleteStreams: TCheckBox
       Left = 4
-      Top = 272
+      Top = 248
       Width = 265
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -101,14 +100,13 @@ object frmSettings: TfrmSettings
     end
     object chkAddSavedToIgnore: TCheckBox
       Left = 4
-      Top = 296
+      Top = 272
       Width = 281
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
       Caption = 'Automatically add saved titles to ignore list'
       TabOrder = 2
       OnClick = chkAddSavedToIgnoreClick
-      ExplicitTop = 312
     end
     object lstDefaultFilter: TComboBox
       Left = 4
@@ -123,11 +121,10 @@ object frmSettings: TfrmSettings
         'Save every song'
         'Use wishlist'
         'Use ignorelist')
-      ExplicitTop = 360
     end
     object chkSeparateTracks: TCheckBox
       Left = 4
-      Top = 224
+      Top = 200
       Width = 281
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -137,7 +134,7 @@ object frmSettings: TfrmSettings
     end
     object chkSaveStreamsToMemory: TCheckBox
       Left = 4
-      Top = 200
+      Top = 176
       Width = 281
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -147,13 +144,23 @@ object frmSettings: TfrmSettings
     end
     object chkOnlySaveFull: TCheckBox
       Left = 20
-      Top = 248
+      Top = 224
       Width = 265
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
       Caption = 'Only save whole songs'
       TabOrder = 6
       OnClick = chkOnlySaveFullClick
+    end
+    object chkOverwriteSmaller: TCheckBox
+      Left = 4
+      Top = 296
+      Width = 281
+      Height = 21
+      Anchors = [akLeft, akRight, akBottom]
+      Caption = 'Always overwrite existing files if newer file is larger'
+      TabOrder = 7
+      OnClick = chkOverwriteSmallerClick
     end
   end
   object pnlMain: TPanel
@@ -523,16 +530,16 @@ object frmSettings: TfrmSettings
     object Label4: TLabel
       Left = 56
       Top = 48
-      Width = 14
+      Width = 40
       Height = 13
-      Caption = 'KB'
+      Caption = 'seconds'
     end
     object Label5: TLabel
       Left = 56
-      Top = 188
-      Width = 14
+      Top = 220
+      Width = 40
       Height = 13
-      Caption = 'KB'
+      Caption = 'seconds'
     end
     object Label8: TLabel
       Left = 268
@@ -596,31 +603,52 @@ object frmSettings: TfrmSettings
       Height = 13
       Caption = '(1-100)'
     end
+    object lblPanelCut: TLabel
+      Left = 232
+      Top = 252
+      Width = 53
+      Height = 13
+      Caption = 'lblPanelCut'
+    end
+    object Label6: TLabel
+      Left = 20
+      Top = 164
+      Width = 59
+      Height = 13
+      Caption = 'in a range of'
+    end
+    object Label15: TLabel
+      Left = 160
+      Top = 164
+      Width = 40
+      Height = 13
+      Caption = 'seconds'
+    end
     object txtSongBuffer: TLabeledEdit
       Left = 4
-      Top = 184
+      Top = 216
       Width = 49
       Height = 21
       EditLabel.Width = 242
       EditLabel.Height = 13
       EditLabel.Caption = 'If no silence was found, append buffer to start/end:'
-      MaxLength = 3
+      MaxLength = 2
       NumbersOnly = True
       TabOrder = 0
       OnChange = txtSongBufferChange
     end
-    object txtShortSongSize: TLabeledEdit
+    object txtShortLengthSeconds: TLabeledEdit
       Left = 4
       Top = 44
       Width = 49
       Height = 21
-      EditLabel.Width = 132
+      EditLabel.Width = 129
       EditLabel.Height = 13
-      EditLabel.Caption = 'Ads to skip are smaller than:'
-      MaxLength = 4
+      EditLabel.Caption = 'Ads to skip are shorter than'
+      MaxLength = 3
       NumbersOnly = True
       TabOrder = 1
-      OnChange = txtShortSongSizeChange
+      OnChange = txtShortLengthSecondsChange
     end
     object chkSkipShort: TCheckBox
       Left = 4
@@ -660,6 +688,14 @@ object frmSettings: TfrmSettings
       NumbersOnly = True
       TabOrder = 5
       OnChange = txtSilenceLengthChange
+    end
+    object txtSilenceBufferSeconds: TEdit
+      Left = 88
+      Top = 160
+      Width = 69
+      Height = 21
+      TabOrder = 6
+      OnChange = txtSilenceBufferSecondsChange
     end
   end
   object pnlHotkeys: TPanel
@@ -718,7 +754,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800D40010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800F00010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

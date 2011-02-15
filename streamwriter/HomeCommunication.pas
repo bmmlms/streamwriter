@@ -30,7 +30,9 @@ type
     Name: string;
     Genre: string;
     URL: string;
+    Website: string;
     BitRate: Integer;
+    StreamType: string;
     Downloads: Integer;
   end;
   TStreamInfoArray = array of TStreamInfo;
@@ -49,6 +51,18 @@ type
   TSubmitThread = class(THomeThread)
   protected
     procedure DoEnded; override;
+  end;
+
+  TAuthUserThread = class(THomeThread)
+  protected
+    procedure DoDisconnected; override;
+    procedure DoException(E: Exception); override;
+    procedure DoEnded; override;
+  public
+    LoggedIn: Boolean;
+
+    constructor Create(URL: string); override;
+    destructor Destroy; override;
   end;
 
   TGetGenresThread = class(THomeThread)
@@ -79,6 +93,7 @@ type
     destructor Destroy; override;
   end;
 
+  TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
   TGenresReceivedEvent = procedure(Sender: TObject; Genres: TStringList) of object;
   TStreamsReceivedEvent = procedure(Sender: TObject; Streams: TStreamInfoArray; Count: Integer) of object;
 
@@ -87,6 +102,7 @@ type
     FClients: TList<THomeThread>;
     FURL: string;
 
+    FOnUserAuthenticated: TBooleanEvent;
     FOnGenresReceived: TGenresReceivedEvent;
     FOnStreamsReceived: TStreamsReceivedEvent;
     FOnReceiveError: TNotifyEvent;
@@ -99,12 +115,15 @@ type
     constructor Create;
     destructor Destroy; override;
 
+    procedure AuthUser(Username, Password: string);
     procedure SubmitStream(Stream: string);
     procedure GetGenres;
-    procedure GetStreams(Count, Offset: Integer; Search, Genre: string; Kbps: Integer; ReplaceQuery: Boolean);
+    procedure GetStreams(Count, Offset: Integer; Search, Genre: string; Kbps: Integer;
+      StreamType: string; ReplaceQuery: Boolean);
     procedure Terminate;
 
     property Count: Integer read FGetCount;
+    property OnUserAuthenticated: TBooleanEvent read FOnUserAuthenticated write FOnUserAuthenticated;
     property OnGenresReceived: TGenresReceivedEvent read FOnGenresReceived write FOnGenresReceived;
     property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
     property OnReceiveError: TNotifyEvent read FOnReceiveError write FOnReceiveError;
@@ -118,8 +137,8 @@ implementation
 constructor THomeCommunication.Create;
 begin
   {$IFDEF DEBUG}
-  //FURL := 'http://streamwriter.gaia/en/streamdb/';
   FURL := 'http://streamwriter.org/en/streamdb/';
+  FURL := 'http://streamwriter.gaia/en/streamdb/';
   {$ELSE}
   FURL := 'http://streamwriter.org/en/streamdb/';
   {$ENDIF}
@@ -149,6 +168,51 @@ end;
 function THomeCommunication.FGetCount: Integer;
 begin
   Result := FClients.Count;
+end;
+
+procedure THomeCommunication.AuthUser(Username, Password: string);
+var
+  URL: string;
+  Thread: TAuthUserThread;
+  XMLDocument: TXMLLib;
+  Root, Header, Data, Data2: TXMLNode;
+  XML: AnsiString;
+begin
+  URL := FURL + 'authuser/';
+  Thread := TAuthUserThread.Create(URL);
+  InitThread(Thread);
+
+  XMLDocument := TXMLLib.Create;
+  try
+    Root := TXMLNode.Create();
+    Root.Name := 'request';
+    XMLDocument.Root := Root;
+
+    Header := TXMLNode.Create(Root);
+    Header.Name := 'header';
+    Header.Nodes.SimpleAdd('version', '1');
+    Header.Nodes.SimpleAdd('type', 'authuser');
+
+    Data := TXMLNode.Create(Root);
+    Data.Name := 'data';
+
+    Data2 := TXMLNode.Create(Data);
+    Data2.Name := 'user';
+    Data2.Value.AsString := Username;
+
+    Data2 := TXMLNode.Create(Data);
+    Data2.Name := 'pass';
+    Data2.Value.AsString := Password;
+
+    XMLDocument.SaveToString(XML);
+
+    //messageboxa(0, pansichar(xml), '', 0);
+  finally
+    XMLDocument.Free;
+  end;
+
+  Thread.PostData := 'data=' + XML;
+  Thread.Resume;
 end;
 
 procedure THomeCommunication.GetGenres;
@@ -184,7 +248,7 @@ begin
 end;
 
 procedure THomeCommunication.GetStreams(Count, Offset: Integer; Search, Genre: string;
-  Kbps: Integer; ReplaceQuery: Boolean);
+  Kbps: Integer; StreamType: string; ReplaceQuery: Boolean);
 var
   i: Integer;
   URL: string;
@@ -238,6 +302,7 @@ begin
     Data.Nodes.SimpleAdd('search', EncodeU(Search));
     Data.Nodes.SimpleAdd('genre', EncodeU(Genre));
     Data.Nodes.SimpleAdd('kbps', IntToStr(Kbps));
+    Data.Nodes.SimpleAdd('type', StreamType);
     Data.Nodes.SimpleAdd('format', EncodeU('m3u'));
 
     XMLDocument.SaveToString(XML);
@@ -317,6 +382,10 @@ begin
 
   if Thread.Killed then
     Exit;
+
+  if Thread is TAuthUserThread then
+    if Assigned(FOnUserAuthenticated) then
+      FOnUserAuthenticated(Self, TAuthUserThread(Thread).LoggedIn);
 
   if Thread.Success then
   begin
@@ -403,14 +472,16 @@ begin
           Streams[High(Streams)].Name := Node.Attributes.AttributeByName['name'].Value.AsString;
           Streams[High(Streams)].Genre := Node.Attributes.AttributeByName['genre'].Value.AsString;
           Streams[High(Streams)].URL := Node.Value.AsString;
+          Streams[High(Streams)].Website := Node.Attributes.AttributeByName['website'].Value.AsString;
           Streams[High(Streams)].BitRate := Node.Attributes.AttributeByName['bitrate'].Value.AsInteger;
+          Streams[High(Streams)].StreamType := Node.Attributes.AttributeByName['type'].Value.AsString;
           Streams[High(Streams)].Downloads := Node.Attributes.AttributeByName['downloads'].Value.AsInteger;
         end;
       finally
         XMLDocument.Free;
       end;
     except
-      raise Exception.Create('No data received');
+      raise Exception.Create('Invalid data received');
     end;
     FSuccess := True;
   end;
@@ -476,7 +547,7 @@ begin
         XMLDocument.Free;
       end;
     except
-      raise Exception.Create('No data received');
+      raise Exception.Create('Invalid data received');
     end;
     FSuccess := True;
   end;
@@ -511,6 +582,68 @@ begin
   inherited;
   Killed := False;
   Success := False;
+end;
+
+{ TAuthUserThread }
+
+constructor TAuthUserThread.Create(URL: string);
+begin
+  inherited;
+
+  LoggedIn := False;
+end;
+
+destructor TAuthUserThread.Destroy;
+begin
+
+  inherited;
+end;
+
+procedure TAuthUserThread.DoDisconnected;
+var
+  i: Integer;
+  XMLDocument: TXMLLib;
+  Data, Node, Data2: TXMLNode;
+begin
+  inherited;
+
+  if Length(RecvDataStream.ToString) = 0 then
+  begin
+    raise Exception.Create('No data received');
+  end else if RecvDataStream.ToString = 'ERROR' then
+  begin
+    raise Exception.Create('Server-side error');
+  end else
+  begin
+    try
+      XMLDocument := TXMLLib.Create;
+      try
+        XMLDocument.LoadFromString(RecvDataStream.ToString);
+
+        Data := XMLDocument.Root.Nodes.GetNode('data');
+
+        if Data.GetNode('success').Value.AsString = 'true' then
+          LoggedIn := True;
+      finally
+        XMLDocument.Free;
+      end;
+    except
+      raise Exception.Create('Invalid data received');
+    end;
+    FSuccess := True;
+  end;
+end;
+
+procedure TAuthUserThread.DoEnded;
+begin
+  inherited;
+
+end;
+
+procedure TAuthUserThread.DoException(E: Exception);
+begin
+  inherited;
+
 end;
 
 end.
