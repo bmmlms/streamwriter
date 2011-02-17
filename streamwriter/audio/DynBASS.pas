@@ -3,7 +3,7 @@ unit DynBASS;
 interface
 
 uses
-  Windows, SysUtils, Classes, Functions;
+  Windows, SysUtils, Classes, Functions, GUIFunctions;
 
 const
   STREAMFILE_BUFFER = 1;
@@ -39,14 +39,23 @@ type
   end;
   SYNCPROC = procedure(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
 
-var
-  BassDLLPath: string;
-  BassAACDLLPath: string;
-  DLLHandle: Cardinal;
-  AACDLLHandle: Cardinal;
-  BassLoaded: Boolean;
-  BassAACLoaded: Boolean;
+  TBassLoader = class
+  private
+    procedure UninitializeBass;
+  public
+    BassDLLPath: string;
+    BassAACDLLPath: string;
+    DLLHandle: Cardinal;
+    AACDLLHandle: Cardinal;
+    BassLoaded: Boolean;
 
+    err: string;
+
+    destructor Destroy; override;
+    function InitializeBass: Boolean;
+  end;
+
+var
   BASSInit: function(device: LongInt; freq, flags: DWORD; win: HWND; clsid: PGUID): BOOL; stdcall;
   BASSStreamCreateFile: function(mem: BOOL; f: Pointer; offset, length: QWORD; flags: DWORD): HSTREAM; stdcall;
   BASSStreamCreateFileUser: function(system, flags: DWORD; var procs: BASS_FILEPROCS; user: Pointer): HSTREAM; stdcall;
@@ -71,49 +80,113 @@ var
   BASSPluginLoad: function(filename: PChar; flags: DWORD): DWORD; stdcall;
   BASSPluginFree: function(handle: DWORD): BOOL; stdcall;
 
-implementation
-
 var
-  Res: TResourceStream;
-  TmpBass, TmpBassAAC: string;
+  Bass: TBassLoader;
+
+implementation
 
 function GetTempFile(SubDir, Name: string): string;
 var
-  Append: Integer;
-  TmpDir, N, E: string;
+  Rnd, Append: Integer;
+  Dir, TmpDir, DataDir, AppDir, N, E: string;
+  Test: TMemoryStream;
 begin
   Result := '';
-  TmpDir := GetTempDir;
-  if TmpDir = '' then
+  Dir := '';
+
+  Rnd := Random(100000);
+
+  Test := TMemoryStream.Create;
+  try
+    try
+      TmpDir := GetTempDir;
+      if not DirectoryExists(TmpDir) then
+        ForceDirectories(TmpDir);
+      Test.SaveToFile(TmpDir + IntToStr(Rnd));
+      DeleteFile(TmpDir + IntToStr(Rnd));
+      Dir := TmpDir;
+    except
+      try
+        DataDir := GetUserDir;
+        if not DirectoryExists(DataDir) then
+          ForceDirectories(DataDir);
+        Test.SaveToFile(DataDir + IntToStr(Rnd));
+        DeleteFile(DataDir + IntToStr(Rnd));
+        Dir := DataDir;
+      except
+        try
+          AppDir := IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0)));
+          Test.SaveToFile(AppDir + IntToStr(Rnd));
+          DeleteFile(AppDir + IntToStr(Rnd));
+          Dir := AppDir;
+        except
+          // The game.
+          Exit;
+        end;
+      end;
+    end;
+  finally
+    Test.Free;
+  end;
+
+  if Dir = '' then
     Exit;
 
+  {
   E := ExtractFileExt(Name);
   N := Copy(Name, 1, Length(Name) - Length(E));
 
-  if FileExists(TmpDir + SubDir + '\' + N + E) and (not DeleteFile(TmpDir + SubDir + '\' + N + E)) then
+  if FileExists(Dir + SubDir + '\' + N + E) and (not DeleteFile(Dir + SubDir + '\' + N + E)) then
   begin
     Append := 1;
-    while (FileExists(TmpDir + SubDir + '\' + N + ' (' + IntToStr(Append) + ')' + E) and (not DeleteFile(TmpDir + SubDir + '\' + N + ' (' + IntToStr(Append) + ')' + E))) do
+    while (FileExists(Dir + SubDir + '\' + N + ' (' + IntToStr(Append) + ')' + E) and (not DeleteFile(Dir + SubDir + '\' + N + ' (' + IntToStr(Append) + ')' + E))) do
       Inc(Append);
     N := N + ' (' + IntToStr(Append) + ')' + E;
   end else
     N := N + E;
 
-  Result := TmpDir + SubDir + '\' + N;
+  Result := Dir + SubDir + '\' + N;
+  }
+
+  E := ExtractFileExt(Name);
+  N := Copy(Name, 1, Length(Name) - Length(E));
+
+  if FileExists(Dir + N + E) and (not DeleteFile(Dir + N + E)) then
+  begin
+    Append := 1;
+    while (FileExists(Dir + N + ' (' + IntToStr(Append) + ')' + E) and (not DeleteFile(Dir + N + ' (' + IntToStr(Append) + ')' + E))) do
+      Inc(Append);
+    N := N + ' (' + IntToStr(Append) + ')' + E;
+  end else
+    N := N + E;
+
+  Result := Dir + N;
 end;
 
-initialization
+{ TBassLoader }
 
+destructor TBassLoader.Destroy;
 begin
-  BassLoaded := False;
-  BassAACLoaded := False;
-  BassDLLPath := '';
-  BassAACDLLPath := '';
-  DLLHandle := 0;
+  UninitializeBass;
+  inherited;
+end;
 
+function TBassLoader.InitializeBass: Boolean;
+var
+  //IRes: Integer;
+  Res: TResourceStream;
+  TmpBass, TmpBassAAC: string;
+  T: Cardinal;
+begin
+  err := '';
+
+  Result := False;
   try
     TmpBass := GetTempFile('streamWriter', 'bass.dll');
     TmpBassAAC := GetTempFile('streamWriter', 'bass_aac.dll');
+
+    err := err + tmpbass + #13#10;
+    err := err + tmpbassaac + #13#10;
 
     if (TmpBass = '') or (TmpBassAAC = '') then
       Exit;
@@ -123,12 +196,16 @@ begin
     if not ForceDirectories(ExtractFilePath(TmpBassAAC)) then
       Exit;
 
+    err := err + '1' + #13#10;
+
     Res := TResourceStream.Create(0, 'BASS', PChar(24));
     try
       Res.SaveToFile(TmpBass);
     finally
       Res.Free;
     end;
+
+    err := err + '2' + #13#10;
 
     Res := TResourceStream.Create(0, 'BASS_AAC', PChar(24));
     try
@@ -140,12 +217,16 @@ begin
     Exit;
   end;
 
+  err := err + '3' + #13#10;
+
   BassDLLPath := TmpBass;
   BassAACDLLPath := TmpBassAAC;
 
   DLLHandle := LoadLibrary(PChar(BassDLLPath));
   if DLLHandle <> 0 then
   begin
+  err := err + 'loaded' + #13#10;
+
     BASSInit := GetProcAddress(DLLHandle, 'BASS_Init');
     BASSStreamCreateFile := GetProcAddress(DLLHandle, 'BASS_StreamCreateFile');
     BASSStreamCreateFileUser := GetProcAddress(DLLHandle, 'BASS_StreamCreateFileUser');
@@ -170,29 +251,50 @@ begin
     BASSPluginLoad := GetProcAddress(DLLHandle, 'BASS_PluginLoad');
     BASSPluginFree := GetProcAddress(DLLHandle, 'BASS_PluginFree');
 
-    if BASSInit(-1, 44100, 0, 0, nil) then
+    T := GetTickCount;
+    while True do
     begin
-      BassLoaded := True;
-    end else
+      // Manchmal klappt BASSInit nicht, mit nem ErrorCode von -1 ...
+      // in der Doku steht "some other mysterious error occured"...
+      // Deshalb diese komische Schleife hier.
+      if BASSInit(-1, 44100, 0, 0, nil) then
+      begin
+        BassLoaded := True;
+        Break;
+      end else
+      begin
+        if (T + 5000 < GetTickCount) then
+          Break;
+        Sleep(200);
+      end;
+    end;
+
+    if not BassLoaded then    
     begin
+
+      // TODO: Das err feld rausmachen.
+      err := err + 'FAIL 1: ' + inttostr(BASSErrorGetCode) + #13#10;
+
       FreeLibrary(DLLHandle);
       Exit;
     end;
 
     AACDLLHandle := BASSPluginLoad(PChar(BassAACDLLPath), BASS_UNICODE);
-    if AACDLLHandle <> 0 then
-      BassAACLoaded := True
-    else
+    if AACDLLHandle = 0 then
     begin
+  err := err + 'FAIL 2' + #13#10;
+
       BassLoaded := False;
-      BassAACLoaded := False;
       FreeLibrary(DLLHandle);
       DLLHandle := 0;
     end;
+
+    Result := BassLoaded;
   end;
 end;
 
-finalization
+procedure TBassLoader.UninitializeBass;
+begin
   try
     if AACDLLHandle <> 0 then
       BASSPluginFree(AACDLLHandle);
@@ -206,6 +308,7 @@ finalization
       DeleteFile(BassAACDLLPath);
   except
   end;
+end;
 
 end.
 

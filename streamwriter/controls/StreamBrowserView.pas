@@ -610,7 +610,7 @@ var
 begin
   Streams := GetSelected;
 
-  FItemPlay.Enabled := BassLoaded;
+  FItemPlay.Enabled := Bass.BassLoaded;
   FItemOpenWebsite.Enabled := (Length(Streams) > 0) and (Trim(Streams[0].Website) <> '');
 end;
 

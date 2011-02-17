@@ -559,7 +559,7 @@ begin
 
     BuildHotkeys;
 
-    if not BassLoaded then
+    if not Bass.BassLoaded then
     begin
       chkSearchSilence.Enabled := False;
       chkSearchSilence.Checked := False;
@@ -726,7 +726,7 @@ begin
     AppGlobals.StreamSettings.MaxRetries := StrToIntDef(txtMaxRetries.Text, 100);
     AppGlobals.StreamSettings.RetryDelay := StrToIntDef(txtRetryDelay.Text, 5);
     AppGlobals.StreamSettings.Filter := TUseFilters(lstDefaultFilter.ItemIndex);
-    if BassLoaded then
+    if Bass.BassLoaded then
       AppGlobals.StreamSettings.SearchSilence := chkSearchSilence.Checked;
     AppGlobals.StreamSettings.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
     AppGlobals.StreamSettings.SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
@@ -1456,6 +1456,7 @@ begin
     chkDeleteStreams.Checked := (not chkSaveStreamsToMemory.Checked) and AppGlobals.StreamSettings.DeleteStreams;
 
     chkOnlySaveFull.Enabled := chkSeparateTracks.Checked;
+    chkOnlySaveFull.Checked := (not chkSeparateTracks.Checked) and chkSeparateTracks.Checked;
 
     pnlCut.Enabled := False;
     if (not chkSeparateTracks.Checked) or (chkSaveStreamsToMemory.Checked) then

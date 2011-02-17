@@ -65,8 +65,6 @@ type
     procedure StartPlayInternal;
     procedure StopPlayInternal;
 
-    procedure DoStateChanged;
-
     procedure StreamTitleChanged(Sender: TObject);
     procedure StreamSongSaved(Sender: TObject);
     procedure StreamNeedSettings(Sender: TObject);
@@ -177,7 +175,7 @@ begin
 
     FPlayer.Play;
 
-    DoStateChanged;
+    Sync(FOnStateChanged);
   end;
 end;
 
@@ -192,8 +190,7 @@ begin
   FPlayer.Stop;
   DoStuff; // Das muss so, damit der Thread aufs Fadeout-Ende wartet!
 
-  // TODO: Ist das hier nicht super gefährlich? Wo wird das gesynced???
-  DoStateChanged;
+  Sync(FOnStateChanged);
 end;
 
 procedure TICEThread.StartRecording;
@@ -206,7 +203,7 @@ begin
   FRecording := True;
   FTypedStream.StartRecording;
 
-  DoStateChanged;
+  Sync(FOnStateChanged);
 end;
 
 procedure TICEThread.StopRecording;
@@ -219,7 +216,7 @@ begin
   FRecording := False;
   FTypedStream.StopRecording;
 
-  DoStateChanged;
+  Sync(FOnStateChanged);
 end;
 
 procedure TICEThread.StreamNeedSettings(Sender: TObject);
@@ -247,8 +244,7 @@ begin
       FPlaying := False;
       WriteDebug(_('Stream cannot be played because data is not mpeg/aac'), 3, 0);
 
-      // TODO: Hier sollte man noch OnStateChanged aufrufen - aber bitte mit sync!!
-      DoStateChanged;
+      Sync(FOnStateChanged);
     end;
     //WriteDebug(Format('Playbuffer size: %d', [FPlayer.Mem.Size]));
   end;
@@ -393,12 +389,6 @@ begin
         Exit;
     end;
   end;
-end;
-
-procedure TICEThread.DoStateChanged;
-begin
-  if Assigned(FOnStateChanged) then
-    Sync(FOnStateChanged);
 end;
 
 procedure TICEThread.DoStuff;

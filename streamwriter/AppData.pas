@@ -40,7 +40,7 @@ type
     FSearchSilence: Boolean;
     FSilenceLevel: Cardinal;
     FSilenceLength: Cardinal;
-    FSilenceBufferSeconds: Cardinal;
+    FSilenceBufferSeconds: Integer;
     FShortLengthSeconds: Integer;
     FSongBufferSeconds: Integer;
     FMaxRetries: Integer;
@@ -63,7 +63,7 @@ type
     property SearchSilence: Boolean read FSearchSilence write FSearchSilence;
     property SilenceLevel: Cardinal read FSilenceLevel write FSilenceLevel;
     property SilenceLength: Cardinal read FSilenceLength write FSilenceLength;
-    property SilenceBufferSeconds: Cardinal read FSilenceBufferSeconds write FSilenceBufferSeconds;
+    property SilenceBufferSeconds: Integer read FSilenceBufferSeconds write FSilenceBufferSeconds;
     property ShortLengthSeconds: Integer read FShortLengthSeconds write FShortLengthSeconds;
     property SongBufferSeconds: Integer read FSongBufferSeconds write FSongBufferSeconds;
     property MaxRetries: Integer read FMaxRetries write FMaxRetries;
@@ -164,7 +164,7 @@ begin
 
   inherited Create(AppName, True, W, 500);
 
-  FBuildNumber := 117;
+  FBuildNumber := 119;
   {$IFDEF DEBUG}
   FProjectUpdateLink := 'http://streamwriter.gaia/';
   {$ELSE}

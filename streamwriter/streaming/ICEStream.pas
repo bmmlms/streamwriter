@@ -70,7 +70,7 @@ type
     FSavedSize: UInt64;
     FFilename: string;
     FSavedWasCut: Boolean;
-    FBytesPerSec: Cardinal;
+    FBytesPerSec: Integer;
 
     FSaveAllowedTitle: string;
     FSaveAllowed: Boolean;
@@ -399,6 +399,8 @@ begin
         TAudioStreamMemory(FAudioStream).SaveToFile(Filename, RangeBegin, RangeEnd - RangeBegin);
 
         // TODO: Was macht die BufLen? Warum ist das ein Max() aus den beiden werten?
+        //       Die muss sich doch daraus ergeben, welches Verfahren zum Speichern genutzt wurde,
+        //       ob Stille gefunden wurde oder nicht quasi... und dann TESTEN!!!
         BufLen := Max(FBytesPerSec * FSettings.SilenceBufferSeconds, FBytesPerSec * FSettings.SongBufferSeconds);
         if FStreamTracks.Count > 1 then
         begin
@@ -676,10 +678,10 @@ begin
       end;
     end;
 
-    // Wenn der Stream im Speicher sitzt, größer als 200MB ist und FStreamTracks leer ist,
-    // dann wird der Stream hier geplättet.
+    // Wenn der Stream im Speicher sitzt und größer als 200MB ist, dann wird der Stream hier geplättet.
     if (FAudioStream.InheritsFrom(TAudioStreamMemory)) and (FAudioStream.Size > 204800000) then
     begin
+      WriteDebug(_('Clearing recording buffer because size exceeds 200MB'), 2, 0);
       FStreamTracks.Clear;
       TAudioStreamMemory(FAudioStream).Clear;
     end;
@@ -702,7 +704,7 @@ begin
       Read(Buf, 1);
       if Buf > 0 then
       begin
-        MetaLen := Buf * 16;  // todo: wenn in settings SeperateTracks aus ist, muss "nur ganze titel speichern" auch ausgegraut werden....
+        MetaLen := Buf * 16;
 
         MetaData := Trim(string(ToString(Position, MetaLen)));
         Seek(MetaLen, soFromCurrent);
@@ -726,14 +728,21 @@ begin
 
           end else
           begin
-            if ((FMetaCounter = 2) or ((FMetaCounter = 1) and (not FSettings.OnlySaveFull))) then // and (FStreamTracks.Count = 0) then
+            if (((FMetaCounter = 2) and FSettings.OnlySaveFull) or ((FMetaCounter = 1) and (not FSettings.OnlySaveFull))) then
             begin
               WriteDebug(Format(_('Recording of first song starting'), []), 1, 0);
               if (FAudioStream <> nil) and FSettings.SeparateTracks then
               begin
                 FMetaCounter := 2;
                 if FAudioStream.InheritsFrom(TAudioStreamMemory) then
-                  TAudioStreamMemory(FAudioStream).Clear;
+                begin
+                  // Stream sauber machen.
+                  if FSettings.SearchSilence then
+                    TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SilenceBufferSeconds))
+                  else
+                    TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SongBufferSeconds));
+                  //TAudioStreamMemory(FAudioStream).Clear;
+                end;
                 FStreamTracks.FoundTitle(FAudioStream.Size, Title);
               end;
             end;

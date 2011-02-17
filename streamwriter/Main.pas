@@ -386,7 +386,7 @@ begin
     ShowSettings(True);
   end;
 
-  if not BassLoaded then
+  if not Bass.BassLoaded then
   begin
     MsgBox(Handle, _('The BASS library or it''s AAC plugin could not be extracted/loaded. Without this library no playback/cutting/searching for silence is available.'), _('Info'), MB_ICONINFORMATION);
   end;
@@ -428,6 +428,9 @@ begin
   FClients := TClientManager.Create;
 
   FStreams := TDataLists.Create;
+
+  Bass := TBassLoader.Create;
+  Bass.InitializeBass;
 
   FHomeCommunication := THomeCommunication.Create;
 
@@ -530,6 +533,7 @@ begin
   FreeAndNil(FHomeCommunication);
   FreeAndNil(FUpdater);
   FreeAndNil(FStreams);
+  FreeAndNil(Bass);
 end;
 
 procedure TfrmStreamWriterMain.FormKeyDown(Sender: TObject; var Key: Word;
@@ -1049,7 +1053,7 @@ begin
   actUseWishlist.Checked := False;
   actUseIgnoreList.Checked := False;
 
-  B4 := BassLoaded;
+  B4 := Bass.BassLoaded;
   for Client in Clients do
   begin
     if Client.Filename <> '' then
@@ -1065,7 +1069,7 @@ begin
   begin
     Client := Clients[0];
 
-    actPlay.Enabled := BassLoaded;
+    actPlay.Enabled := Bass.BassLoaded;
 
     case AppGlobals.DefaultAction of
       caStartStop:
