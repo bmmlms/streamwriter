@@ -96,6 +96,7 @@ type
     FUser, FPass: string;
 
     FShortcutPlay: Cardinal;
+    FShortcutPause: Cardinal;
     FShortcutStop: Cardinal;
     FShortcutNext: Cardinal;
     FShortcutPrev: Cardinal;
@@ -133,6 +134,7 @@ type
     property Pass: string read FPass write FPass;
     property CutVolume: Integer read FCutVolume write FCutVolume;
     property ShortcutPlay: Cardinal read FShortcutPlay write FShortcutPlay;
+    property ShortcutPause: Cardinal read FShortcutPause write FShortcutPause;
     property ShortcutStop: Cardinal read FShortcutStop write FShortcutStop;
     property ShortcutNext: Cardinal read FShortcutNext write FShortcutNext;
     property ShortcutPrev: Cardinal read FShortcutPrev write FShortcutPrev;
@@ -430,6 +432,7 @@ begin
   FPass := CryptStr(FPass);
 
   FStorage.Read('ShortcutPlay', FShortcutPlay, 0);
+  FStorage.Read('ShortcutPause', FShortcutPause, 0);
   FStorage.Read('ShortcutStop', FShortcutStop, 0);
   FStorage.Read('ShortcutNext', FShortcutNext, 0);
   FStorage.Read('ShortcutPrev', FShortcutPrev, 0);
@@ -514,6 +517,7 @@ begin
   FStorage.Write('Pass', CryptStr(FPass));
 
   FStorage.Write('ShortcutPlay', FShortcutPlay);
+  FStorage.Write('ShortcutPause', FShortcutPause);
   FStorage.Write('ShortcutStop', FShortcutStop);
   FStorage.Write('ShortcutNext', FShortcutNext);
   FStorage.Write('ShortcutPrev', FShortcutPrev);

@@ -620,11 +620,13 @@ begin
   case Msg.HotKey of
     0:
       begin
-        StopPlay;
+        //StopPlay;
         Nodes := tabClients.ClientView.GetNodes(ntClient, True);
         if Length(Nodes) > 0 then
         begin
           NodeData := tabClients.ClientView.GetNodeData(Nodes[0]);
+          if not NodeData.Client.Playing then
+            StopPlay;
           NodeData.Client.StartPlay;
         end else
         begin
@@ -632,13 +634,19 @@ begin
           if Length(Nodes) > 0 then
           begin
             NodeData := tabClients.ClientView.GetNodeData(Nodes[0]);
+            if not NodeData.Client.Playing then
+              StopPlay;
             NodeData.Client.StartPlay;
           end;
         end;
+        //actPlay.Execute;
       end;
     1:
-      StopPlay;
+      actPause.Execute;
     2:
+      //StopPlay;
+      actStopPlay.Execute;
+    3:
       begin
         Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
         for i := 0 to Length(Clients) - 1 do
@@ -668,7 +676,7 @@ begin
           end;
         end;
       end;
-    3:
+    4:
       begin
         Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
         for i := 0 to Length(Clients) - 1 do
@@ -773,6 +781,7 @@ begin
   UnregisterHotKey(Handle, 1);
   UnregisterHotKey(Handle, 2);
   UnregisterHotKey(Handle, 3);
+  UnregisterHotKey(Handle, 4);
 
   if not Reg then
     Exit;
@@ -783,22 +792,28 @@ begin
     RegisterHotKey(Handle, 0, M, K);
   end;
 
+  if AppGlobals.ShortcutPause > 0 then
+  begin
+    ShortCutToHotKey(AppGlobals.ShortcutPause, K, M);
+    RegisterHotKey(Handle, 1, M, K);
+  end;
+
   if AppGlobals.ShortcutStop > 0 then
   begin
     ShortCutToHotKey(AppGlobals.ShortcutStop, K, M);
-    RegisterHotKey(Handle, 1, M, K);
+    RegisterHotKey(Handle, 2, M, K);
   end;
 
   if AppGlobals.ShortcutNext > 0 then
   begin
     ShortCutToHotKey(AppGlobals.ShortcutNext, K, M);
-    RegisterHotKey(Handle, 2, M, K);
+    RegisterHotKey(Handle, 3, M, K);
   end;
 
   if AppGlobals.ShortcutPrev > 0 then
   begin
     ShortCutToHotKey(AppGlobals.ShortcutPrev, K, M);
-    RegisterHotKey(Handle, 3, M, K);
+    RegisterHotKey(Handle, 4, M, K);
   end;
 end;
 

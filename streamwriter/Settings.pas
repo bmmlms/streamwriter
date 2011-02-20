@@ -745,11 +745,13 @@ begin
     if lstHotkeys.Items[0].SubItems[0] <> '' then
       AppGlobals.ShortcutPlay := TextToShortCut(lstHotkeys.Items[0].SubItems[0]);
     if lstHotkeys.Items[1].SubItems[0] <> '' then
-      AppGlobals.ShortcutStop := TextToShortCut(lstHotkeys.Items[1].SubItems[0]);
+      AppGlobals.ShortcutPause := TextToShortCut(lstHotkeys.Items[1].SubItems[0]);
     if lstHotkeys.Items[2].SubItems[0] <> '' then
-      AppGlobals.ShortcutNext := TextToShortCut(lstHotkeys.Items[2].SubItems[0]);
+      AppGlobals.ShortcutStop := TextToShortCut(lstHotkeys.Items[2].SubItems[0]);
     if lstHotkeys.Items[3].SubItems[0] <> '' then
-      AppGlobals.ShortcutPrev := TextToShortCut(lstHotkeys.Items[3].SubItems[0]);
+      AppGlobals.ShortcutNext := TextToShortCut(lstHotkeys.Items[3].SubItems[0]);
+    if lstHotkeys.Items[4].SubItems[0] <> '' then
+      AppGlobals.ShortcutPrev := TextToShortCut(lstHotkeys.Items[4].SubItems[0]);
 
     for i := 0 to FTemporaryPlugins.Count - 1 do
     begin
@@ -911,6 +913,7 @@ begin
   if txtHotkey.Enabled then
   begin
     txtHotkey.HotKey := TextToShortCut(lstHotkeys.Selected.SubItems[0]);
+    txtHotkey.SetFocus;
   end else
     txtHotkey.HotKey := 0;
 end;
@@ -1263,14 +1266,18 @@ begin
   if lstHotkeys.Items.Count > 0 then
   begin
     lstHotkeys.Items[0].Caption := _('Play');
-    lstHotkeys.Items[1].Caption := _('Stop');
-    lstHotkeys.Items[2].Caption := _('Next stream');
-    lstHotkeys.Items[3].Caption := _('Previous stream');
+    lstHotkeys.Items[1].Caption := _('Pause');
+    lstHotkeys.Items[2].Caption := _('Stop');
+    lstHotkeys.Items[3].Caption := _('Next stream');
+    lstHotkeys.Items[4].Caption := _('Previous stream');
   end else
   begin
     Item := lstHotkeys.Items.Add;
     Item.Caption := _('Play');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutPlay));
+    Item := lstHotkeys.Items.Add;
+    Item.Caption := _('Pause');
+    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutPause));
     Item := lstHotkeys.Items.Add;
     Item.Caption := _('Stop');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutStop));
