@@ -216,10 +216,14 @@ begin
     case Column of
       0:
         begin
-          if NodeData.Client.Playing and NodeData.Client.Recording then
+          if NodeData.Client.Playing and NodeData.Client.Paused and NodeData.Client.Recording then
+            Index := 5
+          else if NodeData.Client.Playing and NodeData.Client.Recording then
             Index := 2
           else if NodeData.Client.Recording then
             Index := 0
+          else if NodeData.Client.Playing and NodeData.Client.Paused then
+            Index := 4
           else if NodeData.Client.Playing then
             Index := 1
           else
@@ -227,7 +231,7 @@ begin
         end;
     end
   else if Column = 0 then         
-    Index := 4;
+    Index := 6;
 end;
 
 function TMClientView.DoGetNodeTooltip(Node: PVirtualNode;

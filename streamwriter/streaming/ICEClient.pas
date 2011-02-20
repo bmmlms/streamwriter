@@ -109,6 +109,7 @@ type
     procedure Start;
     function FGetActive: Boolean;
     function FGetRecording: Boolean;
+    function FGetPaused: Boolean;
     function FGetPlaying: Boolean;
     function ParsePlaylist: Boolean;
     function GetURL: string;
@@ -143,6 +144,7 @@ type
     //procedure RemoveRelayThread(Thread: TSocketThread);
 
     procedure StartPlay;
+    procedure PausePlay;
     procedure StopPlay;
     procedure StartRecording;
     procedure StopRecording;
@@ -157,6 +159,7 @@ type
     property Active: Boolean read FGetActive;
     property Recording: Boolean read FGetRecording;
     property Playing: Boolean read FGetPlaying;
+    property Paused: Boolean read FGetPaused;
     property Killed: Boolean read FKilled;
     property State: TICEClientStates read FState;
     //property StartURL: string read FStartURL;
@@ -311,13 +314,19 @@ begin
     FICEThread.StartPlay;
 end;
 
+procedure TICEClient.PausePlay;
+begin
+  if FICEThread <> nil then
+    FICEThread.PausePlay;
+end;
+
 procedure TICEClient.StopPlay;
 begin
   if FICEThread <> nil then
   begin
     FICEThread.StopPlay;
 
-    if (not FICEThread.Recording) and (not FICEThread.Playing) then
+    if (not FICEThread.Recording) and (not FICEThread.Playing) and (not FICEThread.Paused) then
     begin
       Disconnect;
     end;
@@ -434,6 +443,15 @@ begin
     Exit;
 
   Result := ((FState <> csStopped) and (FState <> csIOError)) and FICEThread.Recording;
+end;
+
+function TICEClient.FGetPaused: Boolean;
+begin
+  Result := False;
+  if FICEThread = nil then
+    Exit;
+
+  Result := ((FState <> csStopped) and (FState <> csIOError)) and FICEThread.Paused;
 end;
 
 function TICEClient.FGetPlaying: Boolean;

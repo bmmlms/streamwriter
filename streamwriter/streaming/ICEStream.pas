@@ -398,9 +398,9 @@ begin
       begin
         TAudioStreamMemory(FAudioStream).SaveToFile(Filename, RangeBegin, RangeEnd - RangeBegin);
 
-        // TODO: Was macht die BufLen? Warum ist das ein Max() aus den beiden werten?
-        //       Die muss sich doch daraus ergeben, welches Verfahren zum Speichern genutzt wurde,
-        //       ob Stille gefunden wurde oder nicht quasi... und dann TESTEN!!!
+        // Für das nächste Lied einen Puffer daüberlassen, Rest abschneiden. Puffer ist der größere
+        // der beiden Werte, weil wir nicht wissen, ob für das nächste Lied Stille gefunden wird,
+        // oder der normale Puffer genutzt wird.
         BufLen := Max(FBytesPerSec * FSettings.SilenceBufferSeconds, FBytesPerSec * FSettings.SongBufferSeconds);
         if FStreamTracks.Count > 1 then
         begin

@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
-  LanguageObjects, LanguageIcons, Plugins, ExtendedStream, Forms;
+  LanguageObjects, LanguageIcons, Plugins, ExtendedStream, Forms, Functions;
 
 type
   TClientActions = (caStartStop, caStreamIntegrated, caStream, caFile);
@@ -239,7 +239,7 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 7);
+    SetLength(FDonors, 8);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
@@ -247,6 +247,7 @@ begin
     FDonors[4] := 'Gabor Kubik';
     FDonors[5] := '''Peter Parker''';
     FDonors[6] := 'Anita Wimmer';
+    FDonors[7] := 'Valentin M.';
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
       Text.Add(FDonors[i]);
@@ -426,6 +427,7 @@ begin
   FStorage.Read('UserWasSetup', FUserWasSetup, False);
   FStorage.Read('User', FUser, '');
   FStorage.Read('Pass', FPass, '');
+  FPass := CryptStr(FPass);
 
   FStorage.Read('ShortcutPlay', FShortcutPlay, 0);
   FStorage.Read('ShortcutStop', FShortcutStop, 0);
@@ -509,7 +511,7 @@ begin
   FStorage.Write('AutoScrollLog', FAutoScrollLog);
   FStorage.Write('UserWasSetup', FUserWasSetup);
   FStorage.Write('User', FUser);
-  FStorage.Write('Pass', FPass); // TODO: Encode!
+  FStorage.Write('Pass', CryptStr(FPass));
 
   FStorage.Write('ShortcutPlay', FShortcutPlay);
   FStorage.Write('ShortcutStop', FShortcutStop);

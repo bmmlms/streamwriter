@@ -13,6 +13,7 @@ const
   BASS_POS_BYTE = 0;
   BASS_ACTIVE_PLAYING = 1;
   BASS_ACTIVE_STALLED = 2;
+  BASS_ACTIVE_PAUSED  = 3;
   BASS_FILEPOS_CURRENT = 0;
   BASS_STREAM_PRESCAN = $20000;
   BASS_STREAM_BLOCK = $100000;
@@ -67,6 +68,7 @@ var
   BASSChannelSeconds2Bytes: function(handle: DWORD; pos: Double): QWORD; stdcall;
   BASSChannelGetLevel: function(handle: DWORD): DWORD; stdcall;
   BASSChannelPlay: function(handle: DWORD; restart: BOOL): BOOL; stdcall;
+  BASSChannelPause: function(handle: DWORD): BOOL; stdcall;
   BASSChannelStop: function(handle: DWORD): BOOL; stdcall;
   BASSChannelSetPosition: function(handle: DWORD; pos: QWORD; mode: DWORD): BOOL; stdcall;
   BASSChannelSetSync: function(handle: DWORD; type_: DWORD; param: QWORD; proc: SYNCPROC; user: Pointer): HSYNC; stdcall;
@@ -238,6 +240,7 @@ begin
     BASSChannelSeconds2Bytes := GetProcAddress(DLLHandle, 'BASS_ChannelSeconds2Bytes');
     BASSChannelGetLevel := GetProcAddress(DLLHandle, 'BASS_ChannelGetLevel');
     BASSChannelPlay := GetProcAddress(DLLHandle, 'BASS_ChannelPlay');
+    BASSChannelPause := GetProcAddress(DLLHandle, 'BASS_ChannelPause');
     BASSChannelStop := GetProcAddress(DLLHandle, 'BASS_ChannelStop');
     BASSChannelSetPosition := GetProcAddress(DLLHandle, 'BASS_ChannelSetPosition');
     BASSChannelSetSync := GetProcAddress(DLLHandle, 'BASS_ChannelSetSync');

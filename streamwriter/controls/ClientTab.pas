@@ -93,6 +93,7 @@ type
     FActionRemove: TAction;
     FActionShowSideBar: TAction;
     FActionPlay: TAction;
+    FActionPause: TAction;
     FActionStopPlay: TAction;
     //FActionTuneInRelay: TAction;
     FActionTuneInFile: TAction;
@@ -113,6 +114,7 @@ type
     procedure ActionOpenWebsiteExecute(Sender: TObject);
     procedure ActionRemoveExecute(Sender: TObject);
     procedure ActionPlayExecute(Sender: TObject);
+    procedure ActionPauseExecute(Sender: TObject);
     procedure ActionPlayStopExecute(Sender: TObject);
     procedure ActionResetDataExecute(Sender: TObject);
     procedure ActionShowSideBarExecute(Sender: TObject);
@@ -375,6 +377,18 @@ begin
   SelectedClient.Client.StartPlay;
 end;
 
+procedure TClientTab.ActionPauseExecute(Sender: TObject);
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+begin
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
+  for Client in Clients do
+  begin
+    Client.PausePlay;
+  end;
+end;
+
 procedure TClientTab.ActionPlayStopExecute(Sender: TObject);
 var
   Clients: TClientArray;
@@ -599,6 +613,7 @@ begin
   //FActionTuneInRelay.OnExecute := ActionTuneInRelayExecute;
 
   FActionPlay := GetAction('actPlay');
+  FActionPause := GetAction('actPause');
   FActionStopPlay := GetAction('actStopPlay');
   FActionTuneInStream := GetAction('actTuneInStream');
   FActionTuneInFile := GetAction('actTuneInFile');
@@ -606,6 +621,7 @@ begin
   FActionShowSideBar := GetAction('actShowSideBar');
 
   FActionPlay.OnExecute := ActionPlayExecute;
+  FActionPause.OnExecute := ActionPauseExecute;
   FActionStopPlay.OnExecute := ActionPlayStopExecute;
   FActionTuneInStream.OnExecute := ActionTuneInStreamExecute;
   FActionTuneInFile.OnExecute := ActionTuneInFileExecute;
@@ -782,6 +798,9 @@ end;
 procedure TClientTab.ClientManagerRefresh(Sender: TObject);
 begin
   FClientView.RefreshClient(Sender as TICEClient);
+
+  if Assigned(FOnUpdateButtons) then
+    FOnUpdateButtons(Self);
 end;
 
 procedure TClientTab.ClientManagerClientAdded(Sender: TObject);

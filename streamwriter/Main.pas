@@ -146,6 +146,10 @@ type
     actOpenWebsite: TAction;
     mnuOpenWebsite1: TMenuItem;
     Openwebsite1: TMenuItem;
+    cmdPause: TToolButton;
+    actPause: TAction;
+    Pause1: TMenuItem;
+    Pause2: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -391,6 +395,7 @@ begin
     MsgBox(Handle, _('The BASS library or it''s AAC plugin could not be extracted/loaded. Without this library no playback/cutting/searching for silence is available.'), _('Info'), MB_ICONINFORMATION);
   end;
 
+  // TODO: Die icons sehen doof aus, im clientview..
   {
   if not AppGlobals.UserWasSetup then
   begin
@@ -1021,11 +1026,13 @@ end;
 procedure TfrmStreamWriterMain.UpdateButtons;
 var
   B, B4: Boolean;
-  Clients: TClientArray;
+  Clients, AllClients: TClientArray;
   Client: TICEClient;
   Nodes: TNodeArray;
 begin
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
+  AllClients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
+
   B := Length(Clients) > 0;
   actStart.Enabled := B;
   actStop.Enabled := B;
@@ -1053,17 +1060,22 @@ begin
   actUseWishlist.Checked := False;
   actUseIgnoreList.Checked := False;
 
-  B4 := Bass.BassLoaded;
   for Client in Clients do
   begin
     if Client.Filename <> '' then
       actTuneInFile.Enabled := True;
-    if Client.Playing then
+  end;
+
+  B4 := False; // Bass.BassLoaded;
+  for Client in AllClients do
+  begin
+    if Client.Playing and Bass.BassLoaded then
       B4 := True;
   end;
 
   actPlay.Enabled := False;
   actStopPlay.Enabled := B4;
+  actPause.Enabled := B4;
 
   if Length(Clients) = 1 then
   begin

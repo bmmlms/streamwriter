@@ -69,13 +69,18 @@ procedure TfrmCommunityLogin.FormClose(Sender: TObject;
 var
   Res: Integer;
 begin
-  Res := MsgBox(Handle, _('If you cancel logging in, you won''t be asked another time. You can always login from selecting the ''login'' entry in the main menu.'#13#10'Are you sure you want to cancel logging in?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
-  if Res = IDYES then
+  if AppGlobals.UserWasSetup then
+    Action := caHide
+  else
   begin
-    Action := caHide;
-    AppGlobals.UserWasSetup := True;
-  end else
-    Action := caNone;
+    Res := MsgBox(Handle, _('If you cancel logging in, you won''t be asked another time. You can always login from selecting the ''login'' entry in the main menu.'#13#10'Are you sure you want to cancel logging in?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
+    if Res = IDYES then
+    begin
+      Action := caHide;
+      AppGlobals.UserWasSetup := True;
+    end else
+      Action := caNone;
+  end;
 end;
 
 procedure TfrmCommunityLogin.FormCreate(Sender: TObject);
@@ -109,7 +114,11 @@ procedure TfrmCommunityLogin.HomeCommunicationUserAuthenticated(
 begin
   if Value then
   begin
-    ShowMessage('yes')
+    AppGlobals.User := txtUsername.Text;
+    AppGlobals.Pass := txtPassword.Text;
+    AppGlobals.UserWasSetup := True;
+    ShowMessage('yes');
+    Close;
   end else
   begin
     ShowConnecting(False);

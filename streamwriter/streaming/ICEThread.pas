@@ -45,6 +45,8 @@ type
     FRecordingStarted: Boolean;
     FPlaying: Boolean;
     FPlayingStarted: Boolean;
+    FPlayingPaused: Boolean;
+    FPaused: Boolean;
     FSleepTime: Integer;
 
     FRelayThreads: TRelayInfoList;
@@ -93,9 +95,11 @@ type
     procedure StartRelay(Thread: TRelayThread);
 
     procedure StartPlay;
+    procedure PausePlay;
     procedure StopPlay;
     procedure StartRecording;
     procedure StopRecording;
+    procedure Pause;
     procedure SetVolume(Vol: Integer);
 
     procedure LockRelay;
@@ -107,6 +111,7 @@ type
 
     property Recording: Boolean read FRecordingStarted;
     property Playing: Boolean read FPlayingStarted;
+    property Paused: Boolean read FPaused;
     property SleepTime: Integer read FSleepTime write FSleepTime;
     property RelayThreads: TRelayInfoList read FRelayThreads;
 
@@ -141,6 +146,8 @@ end;
 procedure TICEThread.StartPlay;
 begin
   FPlayingStarted := True;
+  if FPlayingPaused then
+    FPlayingPaused := False;
 end;
 
 procedure TICEThread.StartPlayInternal;
@@ -177,6 +184,11 @@ begin
 
     Sync(FOnStateChanged);
   end;
+end;
+
+procedure TICEThread.PausePlay;
+begin
+  FPlayingPaused := not FPlayingPaused;
 end;
 
 procedure TICEThread.StopPlay;
@@ -231,7 +243,7 @@ var
 const
   MAX_BUFFER_SIZE = 1048576;
 begin
-  if FPlaying and (not FPlayer.Playing) then
+  if (not FPaused) and (FPlaying and (not FPlayer.Playing)) then
     FPlayer.Play;
 
   if FPlaying then
@@ -239,7 +251,7 @@ begin
     try
       FPlayer.PushData(Buf, Len);
     except
-      // Unbekannte Daten (kein MP3/AAC) - ende.
+      // Unbekannte Daten (kein MP3/AAC) - Ende.
       FPlayingStarted := False;
       FPlaying := False;
       WriteDebug(_('Stream cannot be played because data is not mpeg/aac'), 3, 0);
@@ -403,6 +415,19 @@ begin
     StartRecordingInternal;
     FRecording := True;
   end;
+
+  if FPlayingPaused and (not FPaused) then
+  begin
+    FPlayer.Pause;      // TODO: Den pause-knopf..
+    FPaused := True;
+  end;
+
+  if (not FPlayingPaused) and FPaused then
+  begin
+    StartPlayInternal;
+    FPaused := False;
+  end;
+
   if (not FRecordingStarted) and FRecording then
   begin
     StopRecordingInternal;
@@ -456,6 +481,11 @@ end;
 procedure TICEThread.LockRelay;
 begin
   FPlayBufferLock.Enter;
+end;
+
+procedure TICEThread.Pause;
+begin
+  FPaused := not FPaused;
 end;
 
 procedure TICEThread.UnlockRelay;
