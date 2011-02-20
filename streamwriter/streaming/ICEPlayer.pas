@@ -11,7 +11,7 @@ type
     FMem: TExtendedStream;
     FLock: TCriticalSection;
     FPlayer: DWORD;
-    FFadingOut: Boolean;
+    FPausing, FStopping: Boolean;
     FPlayStartBuffer: Cardinal;
 
     function FGetPlaying: Boolean;
@@ -29,16 +29,24 @@ type
 
     property Playing: Boolean read FGetPlaying;
     property Paused: Boolean read FGetPaused;
+    property Pausing: Boolean read FPausing;
+    property Stopping: Boolean read FStopping;
     property Mem: TExtendedStream read FMem;
-    property FadingOut: Boolean read FFadingOut;
   end;
 
 implementation
 
 procedure EndSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
+var
+  P: TICEPlayer;
 begin
-  BASSStreamFree(channel);
-  TICEPlayer(user).FFadingOut := False;
+  P := TICEPlayer(user);
+  if P.FPausing then
+    BASSChannelPause(channel)
+  else if P.Stopping then       
+    BASSStreamFree(channel);
+  TICEPlayer(user).FPausing := False;
+  TICEPlayer(user).FStopping := False;
 end;
 
 procedure BASSClose(user: Pointer); stdcall;
@@ -110,24 +118,31 @@ end;
 
 function TICEPlayer.FGetPlaying: Boolean;
 begin
-  Result := (FPlayer > 0) and ((BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING) or (BASSChannelIsActive(FPlayer) = BASS_ACTIVE_STALLED));
+  Result := (FPlayer > 0) and (FStopping or (BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING) or (BASSChannelIsActive(FPlayer) = BASS_ACTIVE_STALLED));
 end;
 
 function TICEPlayer.FGetPaused: Boolean;
+var
+  State: Cardinal;
 begin
-  Result := (FPlayer > 0) and (BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PAUSED);
+  State := BASSChannelIsActive(FPlayer);
+  Result := (FPlayer > 0) and ((State = BASS_ACTIVE_PAUSED) or FPausing);
 end;
 
 procedure TICEPlayer.Play;
 var
   Funcs: BASS_FILEPROCS;
   State: Cardinal;
+  R: Integer;
 begin
-  if (FPlayStartBuffer = 0) or (FMem.Size < FPlayStartBuffer) then
-    Exit;        // TODO: FadeOut bei Pause. wenn verbindung während pausiert ist tot geht, darf in der neuen verbindung nicht geplayed werden!
+  State := BASSChannelIsActive(FPlayer);
+
+  if (FPlayStartBuffer = 0) or (not Paused and (FMem.Size < FPlayStartBuffer)) then
+    Exit;
+
+
 
   {
-  State := BASSChannelIsActive(FPlayer);
   if (FPlayer > 0) and (State <> BASS_ACTIVE_PLAYING) and (State <> BASS_ACTIVE_STALLED) and (State <> BASS_ACTIVE_PAUSED) then
   begin
     Stop;
@@ -146,13 +161,32 @@ begin
 
     SetVolume(AppGlobals.PlayerVolume);
 
+    //State := BASSChannelIsActive(FPlayer);
     BASSChannelPlay(FPlayer, False);
+    R := BASSErrorGetCode;
+
+    if R <> 0 then
+    begin
+      BASSStreamFree(FPlayer);
+      FPlayer := BASSStreamCreateFileUser(STREAMFILE_BUFFER, 0, Funcs, Self);
+    end;
   end;
 end;
 
 procedure TICEPlayer.Pause;
+var
+  State: Cardinal;
 begin
-  BASSChannelPause(FPlayer);
+  if FPlayer > 0 then
+  begin
+    State := BASSChannelIsActive(FPlayer);
+    if State = BASS_ACTIVE_PLAYING then
+    begin
+      FPausing := True;
+      BASSChannelSlideAttribute(FPlayer, 2, 0, 300);
+      BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, EndSyncProc, Self);
+    end;
+  end;
 end;
 
 procedure TICEPlayer.Stop;
@@ -164,7 +198,7 @@ begin
     State := BASSChannelIsActive(FPlayer);
     if State = BASS_ACTIVE_PLAYING then
     begin
-      FFadingOut := True;
+      FStopping := True;
       BASSChannelSlideAttribute(FPlayer, 2, 0, 300);
       BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, EndSyncProc, Self);
     end else

@@ -404,6 +404,7 @@ begin
     Exit;
 
   FRetries := 0;
+  FICEThread.StopPlay;
   FICEThread.Terminate;
   FState := csStopping;
   if Assigned(FOnRefresh) then
@@ -830,6 +831,8 @@ begin
       Start;
       if DiedThread.Playing then
         FICEThread.StartPlay;
+      if DiedThread.Paused then
+        FICEThread.PausePlay;
       if DiedThread.Recording then
         FICEThread.StartRecording;
     end;

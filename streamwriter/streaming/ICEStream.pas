@@ -730,6 +730,7 @@ begin
           begin
             if (((FMetaCounter = 2) and FSettings.OnlySaveFull) or ((FMetaCounter = 1) and (not FSettings.OnlySaveFull))) then
             begin
+              // TODO: Die Ausgabe ist falsch. Es kann sein, dass nur abgespielt werden soll
               WriteDebug(Format(_('Recording of first song starting'), []), 1, 0);
               if (FAudioStream <> nil) and FSettings.SeparateTracks then
               begin

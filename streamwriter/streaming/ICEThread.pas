@@ -158,7 +158,7 @@ begin
   if FPlayBuffer = nil then
     Exit;
 
-  if not FPlayer.Playing then
+  if (not FPlayer.Playing) and (not FPlayer.Paused) then
   begin
     FPlayer.Mem.Clear;
 
@@ -179,11 +179,12 @@ begin
     finally
       FPlayBufferLock.Leave;
     end;
+  end else
+  begin
 
-    FPlayer.Play;
-
-    Sync(FOnStateChanged);
   end;
+  FPlayer.Play;
+  Sync(FOnStateChanged);
 end;
 
 procedure TICEThread.PausePlay;
@@ -376,6 +377,11 @@ begin
   for Thread in FRelayThreads do
     Thread.Terminate;
 
+  // Noch schön ausfaden lassen
+  while FPlayer.Playing or FPlayer.Pausing or FPlayer.Stopping do
+    Sleep(100);
+
+  // TODO: Immer schlafen? Doch nur bei vorheriger Exception eigentlich..?
   Sleep(FSleepTime * 1000);
 end;
 
@@ -407,7 +413,7 @@ procedure TICEThread.DoStuff;
 begin
   inherited;
 
-  while FPlayer.FadingOut do
+  while FPlayer.Pausing or FPlayer.Stopping do
     Sleep(20);
 
   if FRecordingStarted and (not FRecording) then
