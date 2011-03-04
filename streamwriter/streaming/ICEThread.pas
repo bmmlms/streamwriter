@@ -23,18 +23,11 @@ interface
 
 uses
   SysUtils, Windows, WinSock, Classes, HTTPThread, ExtendedStream, ICEStream,
-  Functions, SocketThread, SyncObjs, AudioStream, Generics.Collections,
-  AppData, ICEPlayer, RelayServer, LanguageObjects;
+  Functions, Sockets, SyncObjs, AudioStream, Generics.Collections,
+  AppData, ICEPlayer, LanguageObjects;
 
 type
   TICEThreadStates = (tsRecording, tsRetrying, tsIOError);
-
-  {TRelayInfo = record
-    Thread: TRelayThread;
-    FirstSent: Boolean;
-  end;
-  PRelayInfo = ^TRelayInfo;}
-  TRelayInfoList = TList<TRelayThread>;
 
   TICEThread = class(THTTPThread)
   private
@@ -49,14 +42,12 @@ type
     FPaused: Boolean;
     FSleepTime: Integer;
 
-    FRelayThreads: TRelayInfoList;
-
-    FOnTitleChanged: TNotifyEvent;
-    FOnSongSaved: TNotifyEvent;
-    FOnNeedSettings: TNotifyEvent;
-    FOnStateChanged: TNotifyEvent;
-    FOnAddRecent: TNotifyEvent;
-    FOnTitleAllowed: TNotifyEvent;
+    FOnTitleChanged: TSocketEvent;
+    FOnSongSaved: TSocketEvent;
+    FOnNeedSettings: TSocketEvent;
+    FOnStateChanged: TSocketEvent;
+    FOnAddRecent: TSocketEvent;
+    FOnTitleAllowed: TSocketEvent;
 
     FTypedStream: TICEStream;
     FPlayBufferLock: TCriticalSection;
@@ -73,8 +64,6 @@ type
     procedure StreamChunkReceived(Buf: Pointer; Len: Integer);
     procedure StreamIOError(Sender: TObject);
     procedure StreamTitleAllowed(Sender: TObject);
-
-    procedure ThreadNeedStartData(Sender: TObject);
   protected
     procedure Execute; override;
 
@@ -91,8 +80,7 @@ type
     constructor Create(URL: string); reintroduce;
     destructor Destroy; override;
 
-    procedure SetSettings(Settings: TStreamSettings);
-    procedure StartRelay(Thread: TRelayThread);
+    procedure SetSettings(Settings: TStreamSettings; AutoRemove: Boolean; RecordTitle: string);
 
     procedure StartPlay;
     procedure PausePlay;
@@ -113,34 +101,29 @@ type
     property Playing: Boolean read FPlayingStarted;
     property Paused: Boolean read FPaused;
     property SleepTime: Integer read FSleepTime write FSleepTime;
-    property RelayThreads: TRelayInfoList read FRelayThreads;
 
-    property OnTitleChanged: TNotifyEvent read FOnTitleChanged write FOnTitleChanged;
-    property OnSongSaved: TNotifyEvent read FOnSongSaved write FOnSongSaved;
-    property OnNeedSettings: TNotifyEvent read FOnNeedSettings write FOnNeedSettings;
-    property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
-    property OnAddRecent: TNotifyEvent read FOnAddRecent write FOnAddRecent;
-    property OnTitleAllowed: TNotifyEvent read FOnTitleAllowed write FOnTitleAllowed;
+    property OnTitleChanged: TSocketEvent read FOnTitleChanged write FOnTitleChanged;
+    property OnSongSaved: TSocketEvent read FOnSongSaved write FOnSongSaved;
+    property OnNeedSettings: TSocketEvent read FOnNeedSettings write FOnNeedSettings;
+    property OnStateChanged: TSocketEvent read FOnStateChanged write FOnStateChanged;
+    property OnAddRecent: TSocketEvent read FOnAddRecent write FOnAddRecent;
+    property OnTitleAllowed: TSocketEvent read FOnTitleAllowed write FOnTitleAllowed;
   end;
 
 implementation
 
 { TICEThread }
 
-procedure TICEThread.SetSettings(Settings: TStreamSettings);
+procedure TICEThread.SetSettings(Settings: TStreamSettings; AutoRemove: Boolean; RecordTitle: string);
 begin
   // Das hier wird nur gesynct aus dem Mainthread heraus aufgerufen.
   FTypedStream.Settings.Assign(Settings);
+  FTypedStream.RecordTitle := RecordTitle;
 end;
 
 procedure TICEThread.SetVolume(Vol: Integer);
 begin
   FPlayer.SetVolume(Vol);
-end;
-
-procedure TICEThread.StartRelay(Thread: TRelayThread);
-begin
-  Thread.OnNeedStartData := ThreadNeedStartData;
 end;
 
 procedure TICEThread.StartPlay;
@@ -240,7 +223,6 @@ end;
 procedure TICEThread.StreamChunkReceived(Buf: Pointer; Len: Integer);
 var
   RemoveTo: Int64;
-  Thread: TRelayThread;
 const
   MAX_BUFFER_SIZE = 1048576;
 begin
@@ -281,20 +263,6 @@ begin
   finally
     FPlayBufferLock.Leave;
   end;
-
-  for Thread in FRelayThreads do
-  begin
-    // Wenn schon was gesendet wurde, die neuen Daten schicken
-    Thread.SendLock.Enter;
-    try
-      Thread.SendStream.Seek(0, soFromEnd);
-      Thread.SendStream.Write(Buf^, Len);
-
-      //WriteDebug(Format('Wrote %d bytes to relaythread, new size is %d', [Len, Thread.Thread.SendStream.Size]));
-    finally
-      Thread.SendLock.Leave;
-    end;
-  end;
 end;
 
 procedure TICEThread.StreamIOError(Sender: TObject);
@@ -320,33 +288,6 @@ begin
   Sync(FOnStateChanged);
 end;
 
-procedure TICEThread.ThreadNeedStartData(Sender: TObject);
-var
-  P: Integer;
-  Thread: TRelayThread;
-begin
-  Thread := TRelayThread(Sender);
-  if FPlayBuffer <> nil then
-  begin
-    FPlayBufferLock.Enter;
-    try
-      Thread.SendLock.Enter;
-      try
-        P := FPlayBuffer.GetFrame(0, False);
-        if P = -1 then
-          P := 0;
-        FPlayBuffer.Seek(P, soFromBeginning);
-        Thread.SendStream.Seek(0, soFromEnd);
-        Thread.SendStream.CopyFrom(FPlayBuffer, FPlayBuffer.Size - P);
-      finally
-        Thread.SendLock.Leave;
-      end;
-    finally
-      FPlayBufferLock.Leave;
-    end;
-  end;
-end;
-
 procedure TICEThread.DoConnecting;
 begin
   inherited;
@@ -370,18 +311,14 @@ begin
 end;
 
 procedure TICEThread.DoEnded;
-var
-  Thread: TRelayThread;
 begin
   inherited;
-  for Thread in FRelayThreads do
-    Thread.Terminate;
 
   // Noch schön ausfaden lassen
   while FPlayer.Playing or FPlayer.Pausing or FPlayer.Stopping do
     Sleep(100);
 
-  // TODO: Immer schlafen? Doch nur bei vorheriger Exception eigentlich..?
+  // Das hier ist die Schlaf-Zeit, die von aussen festgelegt wird. Nicht Retry-Delay!
   Sleep(FSleepTime * 1000);
 end;
 
@@ -424,7 +361,7 @@ begin
 
   if FPlayingPaused and (not FPaused) then
   begin
-    FPlayer.Pause;      // TODO: Den pause-knopf..
+    FPlayer.Pause;
     FPaused := True;
   end;
 
@@ -507,6 +444,7 @@ var
 begin
   inherited Create(URL, TICEStream.Create);
 
+  UseSynchronize := True;
   FRecording := False;
   FRecordingStarted := False;
   FPlaying := False;
@@ -520,7 +458,6 @@ begin
   AppGlobals.Unlock;
 
   FPlayBufferLock := TCriticalSection.Create;
-  FRelayThreads := TRelayInfoList.Create;
   FTitle := '';
   FPlayer := TICEPlayer.Create;
 
@@ -555,7 +492,6 @@ begin
   if FPlayBuffer <> nil then
     FPlayBuffer.Free;
   FPlayBufferLock.Free;
-  FRelayThreads.Free;
   inherited;
 end;
 

@@ -112,14 +112,6 @@ type
     procedure GetStreams; overload;
     procedure GetStreams(Search, Genre: string; Kbps: Integer; StreamType: string); overload;
     procedure SwitchMode(Mode: TModes);
-  protected
-    procedure Resize; override;
-  public
-    constructor Create(AOwner: TComponent; HomeCommunication: THomeCommunication); reintroduce;
-    destructor Destroy; override;
-
-    procedure Setup;
-    procedure Translate;
 
     procedure StreamBrowserNeedData(Sender: TObject; Offset, Count: Integer);
     procedure HomeCommunicationStreamsReceived(Sender: TObject; Streams: TStreamInfoArray;
@@ -127,6 +119,15 @@ type
     procedure HomeCommunicationGenresReceived(Sender: TObject; Genres: TStringList);
     procedure HomeCommunicationReceiveError(Sender: TObject);
     procedure HomeCommunicationOldVersion(Sender: TObject);
+  protected
+    procedure Resize; override;
+  public
+    constructor Create(AOwner: TComponent); reintroduce;
+    destructor Destroy; override;
+
+    procedure Setup;
+    procedure Translate;
+    procedure HomeCommStateChanged(Sender: TObject);
 
     property CurrentSearch: string read FCurrentSearch write FCurrentSearch;
     property CurrentGenre: string read FCurrentGenre write FCurrentGenre;
@@ -815,7 +816,7 @@ begin
   FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre, FCurrentKbps, FCurrentStreamType, True);
 end;
 
-constructor TMStreamBrowserView.Create(AOwner: TComponent; HomeCommunication: THomeCommunication);
+constructor TMStreamBrowserView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
@@ -825,7 +826,7 @@ begin
   FCurrentKbps := 0;
   FCurrentStreamType := '';
   FLoading := False;
-  FHomeCommunication := HomeCommunication;
+  FHomeCommunication := HomeComm;
 
   FSearch := TMStreamSearchPanel.Create(Self);
   FSearch.Align := alTop;
@@ -901,6 +902,15 @@ begin
   end;
 
   GetStreams(Search, Genre, Kbps, StreamType);
+end;
+
+procedure TMStreamBrowserView.HomeCommStateChanged(Sender: TObject);
+begin
+  if HomeComm.Connected and (FStreamTree.RootNodeCount = 0) then
+  begin
+    FHomeCommunication.GetGenres;
+    FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre, FCurrentKbps, FCurrentStreamType, True);
+  end;
 end;
 
 procedure TMStreamBrowserView.HomeCommunicationGenresReceived(
@@ -981,11 +991,8 @@ begin
 
   FHomeCommunication.OnGenresReceived := HomeCommunicationGenresReceived;
   FHomeCommunication.OnStreamsReceived := HomeCommunicationStreamsReceived;
-  FHomeCommunication.OnReceiveError := HomeCommunicationReceiveError;
-  FHomeCommunication.OnOldVersion := HomeCommunicationOldVersion;
-
-  FHomeCommunication.GetGenres;
-  FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre, FCurrentKbps, FCurrentStreamType, True);
+  //FHomeCommunication.OnReceiveError := HomeCommunicationReceiveError;
+  //FHomeCommunication.OnOldVersion := HomeCommunicationOldVersion;
 end;
 
 procedure TMStreamBrowserView.StreamBrowserNeedData(Sender: TObject;

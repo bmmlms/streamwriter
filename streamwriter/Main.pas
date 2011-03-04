@@ -25,13 +25,13 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, WinSock, ICEClient, StdCtrls, ExtCtrls, ImgList, Menus,
   XPMan, VirtualTrees, ComCtrls, ToolWin, ClientView, ICEThread,
-  Settings, DataManager, ActnList, AppData, DragDrop, DropTarget,
+  Settings, DataManager, ActnList, DragDrop, DropTarget,
   DragDropInternet, DragDropText, DragDropFile, Update, UpdateClient,
   LanguageObjects, AppDataBase, Functions, ClientManager, ShellAPI, DropSource,
   About, MsgDlg, HomeCommunication, StreamBrowserView, Clipbrd,
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
-  CheckFilesThread, ListsTab, CommunityLogin;
+  CheckFilesThread, ListsTab, CommCtrl;
 
 type
   TfrmStreamWriterMain = class(TForm)
@@ -68,7 +68,6 @@ type
     mnuShow: TMenuItem;
     N2: TMenuItem;
     Beenden1: TMenuItem;
-    actTuneInRelay: TAction;
     mnuTuneIn1: TMenuItem;
     N4: TMenuItem;
     mnuTuneIn2: TMenuItem;
@@ -88,13 +87,10 @@ type
     actTuneInStream: TAction;
     actTuneInFile: TAction;
     mnuListenToStream2: TMenuItem;
-    mnuListenToRelay2: TMenuItem;
     mnuListenToFile2: TMenuItem;
     mnuListenToStream1: TMenuItem;
-    mnuListenToRelay1: TMenuItem;
     mnuListenToFile1: TMenuItem;
     actSavePlaylistStream: TAction;
-    actSavePlaylistRelay: TAction;
     actSavePlaylistFile: TAction;
     actSavePlaylistStream1: TMenuItem;
     actSavePlaylistRelay1: TMenuItem;
@@ -169,6 +165,7 @@ type
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure actHelpExecute(Sender: TObject);
+    procedure addStatusResize(Sender: TObject);
   private
     FStreams: TDataLists;
     FUpdater: TUpdateClient;
@@ -180,7 +177,6 @@ type
 
     FCheckFiles: TCheckFilesThread;
     FClients: TClientManager;
-    FHomeCommunication: THomeCommunication;
     pagMain: TMainPageControl;
     tabClients: TClientTab;
     tabSaved: TSavedTab;
@@ -198,12 +194,16 @@ type
     procedure ShowUpdate(Version: string = ''; UpdateURL: string = '');
     procedure UpdateButtons;
     procedure UpdateStatus;
+    procedure SetConnected;
     procedure ToggleWindow(AlwaysShow: Boolean = False);
     procedure UpdaterUpdateFound(Sender: TObject);
     procedure UpdaterNoUpdateFound(Sender: TObject);
     function HandleLoadError(E: Exception): Integer;
     procedure CheckFilesTerminate(Sender: TObject);
     procedure RegisterHotkeys(Reg: Boolean);
+
+    procedure HomeCommStateChanged(Sender: TObject);
+    procedure HomeCommError(Sender: TObject; Msg: string);
 
     procedure PreTranslate;
     procedure PostTranslate;
@@ -226,6 +226,9 @@ type
   end;
 
 implementation
+
+uses
+  AppData;
 
 {$R *.dfm}
 
@@ -285,14 +288,15 @@ begin
   tabClients.ClientView.Clear;
 
   FClients.Terminate;
-  FHomeCommunication.Terminate;
+
+  HomeComm.Terminate;
 
   if FCheckFiles <> nil then
     FCheckFiles.Terminate;
 
   Hard := False;
   StartTime := GetTickCount;
-  while (FClients.Count > 0) or (FHomeCommunication.Count > 0) or (FClients.Active) or (FCheckFiles <> nil) or (FUpdater.Active) do
+  while (FClients.Count > 0) or (HomeComm.Connected) or (FClients.Active) or (FCheckFiles <> nil) or (FUpdater.Active) do
   begin
     // 5 Sekunden warten, für sauberes beenden
     if StartTime < GetTickCount - 5000 then
@@ -363,11 +367,17 @@ begin
     begin
       Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
       for i := 0 to Length(Clients) - 1 do
-        Clients[i].Entry.Settings.Assign(S.StreamSettings[i]);
+        if not Clients[i].AutoRemove then
+          Clients[i].Entry.Settings.Assign(S.StreamSettings[i]);
     end;
   end;
 
   UpdateButtons; // Damit die Entries im Hauptmenü angepasst werden, falls von Popup was geändert wurde.
+end;
+
+procedure TfrmStreamWriterMain.addStatusResize(Sender: TObject);
+begin
+  SetConnected;
 end;
 
 procedure TfrmStreamWriterMain.addTrayClick(Sender: TObject);
@@ -376,8 +386,8 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.FormActivate(Sender: TObject);
-var
-  F: TfrmCommunityLogin;
+//var
+//  F: TfrmCommunityLogin;
 begin
   if FWasActivated then
     Exit;
@@ -390,12 +400,6 @@ begin
     ShowSettings(True);
   end;
 
-  if not Bass.BassLoaded then
-  begin
-    MsgBox(Handle, _('The BASS library or it''s AAC plugin could not be extracted/loaded. Without this library no playback/cutting/searching for silence is available.'), _('Info'), MB_ICONINFORMATION);
-  end;
-
-  // TODO: Die icons sehen doof aus, im clientview..
   {
   if not AppGlobals.UserWasSetup then
   begin
@@ -430,14 +434,13 @@ end;
 
 procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
 begin
-  FClients := TClientManager.Create;
-
   FStreams := TDataLists.Create;
+  FClients := TClientManager.Create(FStreams);
 
-  Bass := TBassLoader.Create;
-  Bass.InitializeBass;
 
-  FHomeCommunication := THomeCommunication.Create;
+  HomeComm.OnStateChanged := HomeCommStateChanged;
+  HomeComm.OnError := HomeCommError;
+  HomeComm.Connect;
 
   pagMain := TMainPageControl.Create(Self);
   pagMain.Parent := Self;
@@ -448,7 +451,7 @@ begin
   tabClients := TClientTab.Create(pagMain);
   tabClients.PageControl := pagMain;
   tabClients.Setup(tbClients, ActionList1, mnuStreamPopup, imgImages, imgClients,
-    FClients, FStreams, FHomeCommunication);
+    FClients, FStreams);
   tabClients.SideBar.BrowserView.StreamTree.Images := imgStations;
   tabClients.AddressBar.Stations.Images := imgStations;
   tabClients.SideBar.DebugView.DebugView.DebugView.Images := imgLog;
@@ -535,10 +538,9 @@ end;
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
 begin
   FreeAndNil(FClients);
-  FreeAndNil(FHomeCommunication);
   FreeAndNil(FUpdater);
   FreeAndNil(FStreams);
-  FreeAndNil(Bass);
+  //FreeAndNil(Bass);
 end;
 
 procedure TfrmStreamWriterMain.FormKeyDown(Sender: TObject; var Key: Word;
@@ -592,6 +594,17 @@ begin
                                  [E.Message]),
                                  _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
     end;
+end;
+
+procedure TfrmStreamWriterMain.HomeCommError(Sender: TObject; Msg: string);
+begin
+  MsgBox(Handle, Format(_('An error occured while communicating with the server: '#13#10'%s'), [Msg]), _('Error'), MB_ICONERROR);
+end;
+
+procedure TfrmStreamWriterMain.HomeCommStateChanged(Sender: TObject);
+begin
+  UpdateStatus;
+  tabClients.SideBar.BrowserView.HomeCommStateChanged(Sender);
 end;
 
 procedure TfrmStreamWriterMain.Hotkey(var Msg: TWMHotKey);
@@ -826,6 +839,23 @@ begin
   end;
 end;
 
+procedure TfrmStreamWriterMain.SetConnected;
+var
+  Icon: THandle;
+begin
+  if HomeComm.Connected then
+  begin
+    addStatus.Panels[0].Text := 'Verbunden';
+    Icon := LoadImage(hInstance, 'CONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+  end else
+  begin
+    addStatus.Panels[0].Text := 'Verbinde...';
+    Icon := LoadImage(hInstance, 'DISCONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+  end;
+  SendMessage(addStatus.Handle, SB_SETICON, 0, Icon);
+  DestroyIcon(Icon);
+end;
+
 procedure TfrmStreamWriterMain.ShowSettings(BrowseDir: Boolean);
 var
   S: TfrmSettings;
@@ -1040,13 +1070,28 @@ end;
 
 procedure TfrmStreamWriterMain.UpdateButtons;
 var
-  B, B4: Boolean;
+  i: Integer;
+  B, B4, OnlyAutomatedSelected, OnlyAutomatedCatsSelected: Boolean;
   Clients, AllClients: TClientArray;
   Client: TICEClient;
-  Nodes: TNodeArray;
+  CatNodes: TNodeArray;
 begin
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
   AllClients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
+  CatNodes := tabClients.ClientView.GetNodes(ntCategory, True);
+
+  OnlyAutomatedSelected := True;
+  OnlyAutomatedCatsSelected := Length(Clients) = 0;
+  for Client in Clients do
+    if not Client.AutoRemove then
+      OnlyAutomatedSelected := False;
+  for i := 0 to Length(CatNodes) - 1 do
+    if not PClientNodeData(tabClients.ClientView.GetNodeData(CatNodes[i])).Category.IsAuto then
+    begin
+      OnlyAutomatedSelected := False;
+      if Length(Clients) = 0 then
+        OnlyAutomatedCatsSelected := False;
+    end;
 
   B := Length(Clients) > 0;
   actStart.Enabled := B;
@@ -1068,7 +1113,6 @@ begin
   mnuSavePlaylist2.Enabled := B;
 
   actResetData.Enabled := B;
-  actTuneInRelay.Enabled := False;
   actTuneInFile.Enabled := False;
 
   actUseNoList.Checked := False;
@@ -1116,10 +1160,21 @@ begin
     end;
   end;
 
-  Nodes := tabClients.ClientView.GetNodes(ntCategory, True);
-  if Length(Nodes) > 0 then
+  if Length(CatNodes) > 0 then
   begin
     actRemove.Enabled := True;
+  end;
+
+  if OnlyAutomatedSelected then
+  begin
+    actStart.Enabled := False;
+    actStop.Enabled := False;
+    actStreamSettings.Enabled := False;
+  end;
+
+  if OnlyAutomatedCatsSelected then
+  begin
+    actRemove.Enabled := False;
   end;
 end;
 
@@ -1156,9 +1211,12 @@ begin
     Speed := Speed + Client.Client.Speed;
     tabClients.ClientView.RefreshClient(Client.Client);
   end;
-  addStatus.Panels[0].Text := MakeSize(Speed) + '/s';
-  addStatus.Panels[1].Text := Format(_('%s/%s received'), [MakeSize(tabClients.Received), MakeSize(FStreams.Received)]);
-  addStatus.Panels[2].Text := Format(_('%d songs saved'), [FClients.SongsSaved]);
+
+  SetConnected;
+
+  addStatus.Panels[1].Text := MakeSize(Speed) + '/s';
+  addStatus.Panels[2].Text := Format(_('%s/%s received'), [MakeSize(tabClients.Received), MakeSize(FStreams.Received)]);
+  addStatus.Panels[3].Text := Format(_('%d songs saved'), [FClients.SongsSaved]);
 end;
 
 function TfrmStreamWriterMain.CanExitApp: Boolean;

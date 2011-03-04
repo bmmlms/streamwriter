@@ -33,12 +33,6 @@ uses
   Functions in '..\..\common\Functions.pas',
   AppDataBase in '..\..\common\AppDataBase.pas',
   UpdateClient in '..\..\common\UpdateClient.pas',
-  HTTPThread in '..\..\common\sockets\HTTPThread.pas',
-  HTTPStream in '..\..\common\sockets\HTTPStream.pas',
-  SocketThread in '..\..\common\sockets\SocketThread.pas',
-  SocketStream in '..\..\common\sockets\SocketStream.pas',
-  ServerSocketThread in '..\..\common\sockets\ServerSocketThread.pas',
-  HTTPServerStream in '..\..\common\sockets\HTTPServerStream.pas',
   LanguageObjects in '..\..\common\LanguageObjects.pas',
   GUIFunctions in '..\..\common\GUIFunctions.pas',
   Update in '..\..\common\forms\Update.pas' {frmUpdate},
@@ -51,7 +45,6 @@ uses
   ProfileSettings in '..\..\common\forms\ProfileSettings.pas' {frmProfileSettings},
   SettingsBase in '..\..\common\forms\SettingsBase.pas' {frmSettingsBase},
   Plugins in 'Plugins.pas',
-  HomeCommunication in 'HomeCommunication.pas',
   StreamBrowserView in 'controls\StreamBrowserView.pas',
   StationCombo in 'controls\StationCombo.pas',
   StreamInfoView in 'controls\StreamInfoView.pas',
@@ -75,11 +68,18 @@ uses
   ClientManager in 'streaming\ClientManager.pas',
   ICEClient in 'streaming\ICEClient.pas',
   ICEPlayer in 'streaming\ICEPlayer.pas',
-  ICEServerStream in 'streaming\ICEServerStream.pas',
   ICEStream in 'streaming\ICEStream.pas',
   ICEThread in 'streaming\ICEThread.pas',
   MPEG in 'audio\MPEG.pas',
-  CommunityLogin in 'CommunityLogin.pas' {frmCommunityLogin};
+  CommunityLogin in 'CommunityLogin.pas' {frmCommunityLogin},
+  Commands in '..\..\common\sockets\Commands.pas',
+  Communication in '..\..\common\sockets\Communication.pas',
+  Protocol in '..\..\common\sockets\Protocol.pas',
+  HTTPStream in '..\..\common\sockets\HTTPStream.pas',
+  HTTPThread in '..\..\common\sockets\HTTPThread.pas',
+  Sockets in '..\..\common\sockets\Sockets.pas',
+  Int32Protocol in '..\..\common\sockets\Int32Protocol.pas',
+  HomeCommunication in 'HomeCommunication.pas';
 
 {$SetPEOptFlags $0140}
 
@@ -97,10 +97,19 @@ begin
   Application.Title := AppGlobals.AppName;
   Application.Icon.Handle := LoadIcon(HInstance, 'A');
 
+  Bass := TBassLoader.Create;
+  if not Bass.InitializeBass then
+  begin
+    MsgBox(0, _('The BASS library or it''s AAC plugin could not be extracted/loaded. Without this library streamWriter can not record streams. Please look for help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
+    Bass.Free;
+    Exit;
+  end;
+
   if InitApp and AppGlobals.WasSetup then
   begin
     Application.CreateForm(TfrmStreamWriterMain, frmStreamWriterMain);
   end;
 
   Application.Run;
+  Bass.Free;
 end.

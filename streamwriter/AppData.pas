@@ -87,13 +87,14 @@ type
     FTrayOnMinimize: Boolean;
     FShowSidebar: Boolean;
     FSidebarWidth: Integer;
-    FSubmitStreams: Boolean;
+    FNetworkActive: Boolean;
     FMinDiskSpace: Integer;
     FDefaultAction: TClientActions;
     FPlayerVolume, FCutVolume: Integer;
     FAutoScrollLog: Boolean;
     FUserWasSetup: Boolean;
     FUser, FPass: string;
+    FUseNetwork: Boolean;
 
     FShortcutPlay: Cardinal;
     FShortcutPause: Cardinal;
@@ -124,7 +125,7 @@ type
     property TrayOnMinimize: Boolean read FTrayOnMinimize write FTrayOnMinimize;
     property ShowSidebar: Boolean read FShowSidebar write FShowSidebar;
     property SidebarWidth: Integer read FSidebarWidth write FSidebarWidth;
-    property SubmitStreams: Boolean read FSubmitStreams write FSubmitStreams;
+    property NetworkActive: Boolean read FNetworkActive write FNetworkActive;
     property MinDiskSpace: Integer read FMinDiskSpace write FMinDiskSpace;
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
     property PlayerVolume: Integer read FPlayerVolume write FPlayerVolume;
@@ -132,6 +133,7 @@ type
     property UserWasSetup: Boolean read FUserWasSetup write FUserWasSetup;
     property User: string read FUser write FUser;
     property Pass: string read FPass write FPass;
+    property UseNetwork: Boolean read FUseNetwork write FUseNetwork;
     property CutVolume: Integer read FCutVolume write FCutVolume;
     property ShortcutPlay: Cardinal read FShortcutPlay write FShortcutPlay;
     property ShortcutPause: Cardinal read FShortcutPause write FShortcutPause;
@@ -199,18 +201,6 @@ begin
   Result := FStorage.GetFilePath('data.dat');
 end;
 
-{
-function TAppData.FGetListFile: string;
-begin
-  Result := FStorage.GetFilePath('list.dat');
-end;
-
-function TAppData.FGetRecentFile: string;
-begin
-  Result := FStorage.GetFilePath('recent.dat');
-end;
-}
-
 procedure TAppData.BuildThanksText;
   procedure ShuffleFisherYates(var A: TArray);
   var
@@ -241,7 +231,7 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 8);
+    SetLength(FDonors, 10);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
@@ -250,6 +240,8 @@ begin
     FDonors[5] := '''Peter Parker''';
     FDonors[6] := 'Anita Wimmer';
     FDonors[7] := 'Valentin M.';
+    FDonors[8] := '''Rüdi''';
+    FDonors[9] := '''Hummer''';
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
       Text.Add(FDonors[i]);
@@ -272,33 +264,6 @@ begin
     Text.Add('');
 
     Text.Add(_('&U&10...everyone supporting streamWriter'#13#10'&U&10at http://streamwriter.org/forum/'));
-    {
-    Text.Add('');
-    SetLength(FBoard, 12);
-    FBoard[0] := 'bastik';
-    FBoard[1] := 'mondstern';
-    FBoard[2] := 'HostedDinner';
-    FBoard[3] := 'Max';
-    FBoard[4] := 'Nemesis';
-    FBoard[5] := 'MASH';
-    FBoard[6] := 'Jim';
-    FBoard[7] := 'Robin Hood';
-    FBoard[8] := 'Udo';
-    FBoard[9] := 'LexTiger';
-    FBoard[10] := 'ebop';
-    FBoard[11] := 'Fantatierchen';
-    ShuffleFisherYates(FBoard);
-    for i := 0 to Length(FBoard) - 1 do
-      Text.Add('''' + FBoard[i] + '''');
-    }
-
-    {
-    Text.Add('');
-    Text.Add('');
-
-    Text.Add(_('&U&10...everyone I forgot to mention here'));
-    }
-
     Text.Add('');
     Text.Add('');
 
@@ -316,7 +281,7 @@ begin
     Text.Add('Django');
     Text.Add('Drag and Drop Component Suite');
     Text.Add('Delphi-Praxis');
-    Text.Add('Embarcadero');
+    Text.Add('Embarcadero Delphi');
     Text.Add('famfamfam');
     Text.Add('FastMM');
     Text.Add('freecsstemplates.org');
@@ -387,7 +352,7 @@ begin
   FStorage.Read('Dir', FDir, '');
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
-  FStorage.Read('DeleteStreams', FStreamSettings.FDeleteStreams, True);
+  FStorage.Read('DeleteStreams', FStreamSettings.FDeleteStreams, False);
   FStorage.Read('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore, True);
   FStorage.Read('SkipShort', FStreamSettings.FSkipShort, True);
   FStorage.Read('SearchSilence', FStreamSettings.FSearchSilence, True);
@@ -412,7 +377,7 @@ begin
   FStorage.Read('TrayClose', FTray, False);
   FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);
   FStorage.Read('SidebarWidth', FSidebarWidth, 230);
-  FStorage.Read('SubmitStreams', FSubmitStreams, True);
+  FStorage.Read('NetworkActive', FNetworkActive, True);
 
   // Wenn das zu viel wird, blockiert der Thread zu lange. Und dann kann man
   // Clients nicht mehr so schnell aus der Liste entfernen...
@@ -430,6 +395,7 @@ begin
   FStorage.Read('User', FUser, '');
   FStorage.Read('Pass', FPass, '');
   FPass := CryptStr(FPass);
+  FStorage.Read('UseNetwork', FUseNetwork, True);
 
   FStorage.Read('ShortcutPlay', FShortcutPlay, 0);
   FStorage.Read('ShortcutPause', FShortcutPause, 0);
@@ -505,7 +471,7 @@ begin
   FStorage.Write('TrayClose', FTray);
   FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
   FStorage.Write('SidebarWidth', FSidebarWidth);
-  FStorage.Write('SubmitStreams', FSubmitStreams);
+  FStorage.Write('NetworkActive', FNetworkActive);
 
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
@@ -515,6 +481,7 @@ begin
   FStorage.Write('UserWasSetup', FUserWasSetup);
   FStorage.Write('User', FUser);
   FStorage.Write('Pass', CryptStr(FPass));
+  FStorage.Write('UseNetwork', FUseNetwork);
 
   FStorage.Write('ShortcutPlay', FShortcutPlay);
   FStorage.Write('ShortcutPause', FShortcutPause);
@@ -676,7 +643,6 @@ begin
 end;
 
 initialization
-begin
   try
     if Language = nil then
       raise Exception.Create('Language is not initialized');
@@ -692,7 +658,6 @@ begin
       Halt;
     end;
   end;
-end;
 
 finalization
   FreeAndNil(AppGlobals);

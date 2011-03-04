@@ -22,8 +22,8 @@ unit HomeCommunication;
 interface
 
 uses
-  Windows, SysUtils, Classes, Functions, HTTPThread, AppData, Base64,
-  StrUtils, Generics.Collections, XMLLib;
+  Windows, SysUtils, Classes, Functions, HTTPThread, Base64, XMLLib,
+  StrUtils, Generics.Collections, Sockets, WinSock, Int32Protocol;
 
 type
   TStreamInfo = record
@@ -36,252 +36,185 @@ type
     Downloads: Integer;
   end;
   TStreamInfoArray = array of TStreamInfo;
-  
-  THomeThread = class(THTTPThread)
+
+  THomeThread = class(TInt32SocketThread)
   private
-    FKilled: Boolean;
-    FSuccess: Boolean;
-  public
-    property Killed: Boolean read FKilled write FKilled;
-    property Success: Boolean read FSuccess write FSuccess;
+    FGenres: TStringList;
 
-    constructor Create(URL: string); override;
-  end;
+    FCount: Integer;
+    FPacketCount: Integer;
+    FStreams: TStreamInfoArray;
 
-  TSubmitThread = class(THomeThread)
+    FChangedStreamName: string;
+    FChangedTitle: string;
+    FChangedCurrentURL: string;
+
+    FErrorMsg: string;
+
+    FOnGenresReceived: TSocketEvent;
+    FOnStreamsReceived: TSocketEvent;
+    FOnTitleChanged: TSocketEvent;
+    FOnError: TSocketEvent;
+
+    function XMLGetLogin: AnsiString;
+    function XMLGet(T: string): TXMLLib;
   protected
-    procedure DoEnded; override;
-  end;
-
-  TAuthUserThread = class(THomeThread)
-  protected
-    procedure DoDisconnected; override;
-    procedure DoException(E: Exception); override;
+    procedure DoConnected; override;
+    procedure DoReceivedString(D: string); override;
+    procedure DoGenresReceived(Version: Integer; Header, Data: TXMLNode);
+    procedure DoStreamsReceived(Version: Integer; Header, Data: TXMLNode);
+    procedure DoTitleChanged(Version: Integer; Header, Data: TXMLNode);
+    procedure DoError(Version: Integer; Header, Data: TXMLNode);
     procedure DoEnded; override;
   public
-    LoggedIn: Boolean;
-
-    constructor Create(URL: string); override;
+    constructor Create;
     destructor Destroy; override;
-  end;
 
-  TGetGenresThread = class(THomeThread)
-  protected
-    procedure DoDisconnected; override;
-    procedure DoException(E: Exception); override;
-    procedure DoEnded; override;
-  public
-    Genres: TStringList;
+    procedure TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
+    property Genres: TStringList read FGenres write FGenres;
 
-    constructor Create(URL: string); override;
-    destructor Destroy; override;
-  end;
-
-  TGetStreamsThread = class(THomeThread)
-  protected
-    procedure DoDisconnected; override;
-    procedure DoException(E: Exception); override;
-    procedure DoEnded; override;
-  public
-    Count: Integer;
-    PacketCount: Integer;
-    Offset: Integer;
-    Search: string;
-    Streams: TStreamInfoArray;
-
-    constructor Create(URL: string); override;
-    destructor Destroy; override;
+    property OnGenresReceived: TSocketEvent read FOnGenresReceived write FOnGenresReceived;
+    property OnStreamsReceived: TSocketEvent read FOnStreamsReceived write FOnStreamsReceived;
+    property OnTitleChanged: TSocketEvent read FOnTitleChanged write FOnTitleChanged;
+    property OnError: TSocketEvent read FOnError write FOnError;
   end;
 
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
   TGenresReceivedEvent = procedure(Sender: TObject; Genres: TStringList) of object;
   TStreamsReceivedEvent = procedure(Sender: TObject; Streams: TStreamInfoArray; Count: Integer) of object;
+  TTitleChangedEvent = procedure(Sender: TObject; Name, Title, CurrentURL: string) of object;
+  TErrorEvent = procedure(Sender: TObject; Msg: string) of object;
 
   THomeCommunication = class
   private
-    FClients: TList<THomeThread>;
-    FURL: string;
+    FClient: THomeThread;
+    FConnected: Boolean;
 
     FOnUserAuthenticated: TBooleanEvent;
     FOnGenresReceived: TGenresReceivedEvent;
     FOnStreamsReceived: TStreamsReceivedEvent;
-    FOnReceiveError: TNotifyEvent;
+    FOnTitleChanged: TTitleChangedEvent;
+    //FOnReceiveError: TNotifyEvent;
+    FOnError: TErrorEvent;
     FOnOldVersion: TNotifyEvent;
+    FOnStateChanged: TNotifyEvent;
 
-    function FGetCount: Integer;
-    procedure InitThread(Thread: THomeThread);
-    procedure ThreadEnded(Sender: TObject);
+    procedure ClientConnected(Sender: TSocketThread);
+    procedure ClientEnded(Sender: TSocketThread);
+    procedure ClientGenresReceived(Sender: TSocketThread);
+    procedure ClientStreamsReceived(Sender: TSocketThread);
+    procedure ClientTitleChanged(Sender: TSocketThread);
+    procedure ClientError(Sender: TSocketThread);
   public
     constructor Create;
     destructor Destroy; override;
 
-    procedure AuthUser(Username, Password: string);
+    procedure Connect;
     procedure SubmitStream(Stream: string);
-    procedure GetGenres;
-    procedure GetStreams(Count, Offset: Integer; Search, Genre: string; Kbps: Integer;
-      StreamType: string; ReplaceQuery: Boolean);
+    function GetGenres: Boolean;
+    function GetStreams(Count, Offset: Integer; Search, Genre: string; Kbps: Integer;
+      StreamType: string; ReplaceQuery: Boolean): Boolean;
+
+    procedure TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
+
     procedure Terminate;
 
-    property Count: Integer read FGetCount;
+    property Connected: Boolean read FConnected;
     property OnUserAuthenticated: TBooleanEvent read FOnUserAuthenticated write FOnUserAuthenticated;
     property OnGenresReceived: TGenresReceivedEvent read FOnGenresReceived write FOnGenresReceived;
     property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
-    property OnReceiveError: TNotifyEvent read FOnReceiveError write FOnReceiveError;
+    property OnTitleChanged: TTitleChangedEvent read FOnTitleChanged write FOnTitleChanged;
+    //property OnReceiveError: TNotifyEvent read FOnReceiveError write FOnReceiveError;
+    property OnError: TErrorEvent read FOnError write FOnError;
     property OnOldVersion: TNotifyEvent read FOnOldVersion write FOnOldVersion;
+    property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
   end;
+
+var
+  HomeComm: THomeCommunication;
 
 implementation
 
+uses
+  AppData;
+
 { TStreamSubmit }
+
+procedure THomeCommunication.ClientGenresReceived(Sender: TSocketThread);
+begin
+  if Assigned(FOnGenresReceived) then
+    FOnGenresReceived(Self, THomeThread(Sender).Genres);
+end;
+
+procedure THomeCommunication.ClientStreamsReceived(Sender: TSocketThread);
+begin
+  if Assigned(FOnStreamsReceived) then
+    FOnStreamsReceived(Self, THomeThread(Sender).FStreams, THomeThread(Sender).FCount);
+end;
+
+procedure THomeCommunication.ClientTitleChanged(Sender: TSocketThread);
+begin
+  if Assigned(FOnTitleChanged) then
+    FOnTitleChanged(Self, THomeThread(Sender).FChangedStreamName, THomeThread(Sender).FChangedTitle,
+      THomeThread(Sender).FChangedCurrentURL);
+end;
+
+procedure THomeCommunication.Connect;
+begin
+  if FClient <> nil then
+    Exit;
+
+  FClient := THomeThread.Create;
+  FClient.OnConnected := ClientConnected;
+  FClient.OnGenresReceived := ClientGenresReceived;
+  FClient.OnStreamsReceived := ClientStreamsReceived;
+  FClient.OnTitleChanged := ClientTitleChanged;
+  FClient.OnError := ClientError;
+  FClient.OnEnded := ClientEnded;
+  FClient.Resume;
+end;
 
 constructor THomeCommunication.Create;
 begin
-  {$IFDEF DEBUG}
-  FURL := 'http://streamwriter.org/en/streamdb/';
-  //FURL := 'http://streamwriter.gaia/en/streamdb/';
-  {$ELSE}
-  FURL := 'http://streamwriter.org/en/streamdb/';
-  {$ENDIF}
 
-  FClients := TList<THomeThread>.Create;
-end;
-
-procedure THomeCommunication.InitThread(Thread: THomeThread);
-begin
-  Thread.OnEnded := ThreadEnded;
-  if AppGlobals.ProxyEnabled then
-  begin
-    Thread.ProxyEnabled := True;
-    Thread.ProxyHost := AppGlobals.ProxyHost;
-    Thread.ProxyPort := AppGlobals.ProxyPort;
-  end;
-  Thread.UserAgent := AnsiString(AppGlobals.AppName) + ' v' + AppGlobals.AppVersion.AsString;
-  FClients.Add(Thread);
 end;
 
 destructor THomeCommunication.Destroy;
 begin
-  FClients.Free;
+  Terminate;
   inherited;
 end;
 
-function THomeCommunication.FGetCount: Integer;
-begin
-  Result := FClients.Count;
-end;
-
-procedure THomeCommunication.AuthUser(Username, Password: string);
+function THomeCommunication.GetGenres: Boolean;
 var
-  URL: string;
-  Thread: TAuthUserThread;
   XMLDocument: TXMLLib;
-  Root, Header, Data, Data2: TXMLNode;
   XML: AnsiString;
 begin
-  URL := FURL + 'authuser/';
-  Thread := TAuthUserThread.Create(URL);
-  InitThread(Thread);
+  Result := False;
+  if not Connected then
+    Exit;
 
-  XMLDocument := TXMLLib.Create;
+  XMLDocument := FClient.XMLGet('getgenres');
   try
-    Root := TXMLNode.Create();
-    Root.Name := 'request';
-    XMLDocument.Root := Root;
-
-    Header := TXMLNode.Create(Root);
-    Header.Name := 'header';
-    Header.Nodes.SimpleAdd('version', '1');
-    Header.Nodes.SimpleAdd('type', 'authuser');
-
-    Data := TXMLNode.Create(Root);
-    Data.Name := 'data';
-
-    Data2 := TXMLNode.Create(Data);
-    Data2.Name := 'user';
-    Data2.Value.AsString := Username;
-
-    Data2 := TXMLNode.Create(Data);
-    Data2.Name := 'pass';
-    Data2.Value.AsString := Password;
-
     XMLDocument.SaveToString(XML);
 
-    //messageboxa(0, pansichar(xml), '', 0);
+    FClient.Write(XML);
+    Result := True;
   finally
     XMLDocument.Free;
   end;
-
-  Thread.PostData := 'data=' + XML;
-  Thread.Resume;
 end;
 
-procedure THomeCommunication.GetGenres;
+function THomeCommunication.GetStreams(Count, Offset: Integer; Search, Genre: string;
+  Kbps: Integer; StreamType: string; ReplaceQuery: Boolean): Boolean;
 var
-  URL: string;
-  Thread: TGetGenresThread;
-  XMLDocument: TXMLLib;
-  Root, Header: TXMLNode;
-  XML: AnsiString;
-begin
-  URL := FURL + 'getgenres/';
-  Thread := TGetGenresThread.Create(URL);
-  InitThread(Thread);
-
-  XMLDocument := TXMLLib.Create;
-  try
-    Root := TXMLNode.Create();
-    Root.Name := 'request';
-    XMLDocument.Root := Root;
-
-    Header := TXMLNode.Create(Root);
-    Header.Name := 'header';
-    Header.Nodes.SimpleAdd('version', '1');
-    Header.Nodes.SimpleAdd('type', 'getgenres');
-
-    XMLDocument.SaveToString(XML);
-  finally
-    XMLDocument.Free;
-  end;
-
-  Thread.PostData := 'data=' + XML;
-  Thread.Resume;
-end;
-
-procedure THomeCommunication.GetStreams(Count, Offset: Integer; Search, Genre: string;
-  Kbps: Integer; StreamType: string; ReplaceQuery: Boolean);
-var
-  i: Integer;
-  URL: string;
-  Thread: TGetStreamsThread;
   XMLDocument: TXMLLib;
   Root, Header, Data: TXMLNode;
   XML: AnsiString;
 begin
-  if not ReplaceQuery then
-  begin
-    // Beim Scrollen darf es immer nur einen Thread für neue Daten geben
-    for i := 0 to FClients.Count - 1 do
-      if FClients[i] is TGetStreamsThread then
-        Exit;
-  end else
-  begin
-    // Beim Suchen einfach den alten töten.
-    for i := 0 to FClients.Count - 1 do
-      if FClients[i] is TGetStreamsThread then
-      begin
-        TGetStreamsThread(FClients[i]).Killed := True;
-        FClients[i].Terminate;
-        Break;
-      end;
-  end;
-
-  URL := FURL + 'getstreams/';
-  Thread := TGetStreamsThread.Create(URL);
-  InitThread(Thread);
-  Thread.Count := Count;
-  Thread.Offset := Offset;
-  Thread.Search := Search;
-  Thread.Killed := False;
+  Result := False;
+  if not Connected then
+    Exit;
 
   XMLDocument := TXMLLib.Create;
   try
@@ -291,8 +224,8 @@ begin
 
     Header := TXMLNode.Create(Root);
     Header.Name := 'header';
-    Header.Nodes.SimpleAdd('version', '3');
-    Header.Nodes.SimpleAdd('type', 'getstreams');
+    Header.Attributes.SimpleAdd('version', '3');
+    Header.Attributes.SimpleAdd('type', 'getstreams');
 
     Data := TXMLNode.Create(Root);
     Data.Name := 'data';
@@ -306,343 +239,316 @@ begin
     Data.Nodes.SimpleAdd('format', EncodeU('m3u'));
 
     XMLDocument.SaveToString(XML);
+
+    FClient.Write(XML);
+    Result := True;
   finally
     XMLDocument.Free;
   end;
-
-  Thread.PostData := 'data=' + XML;
-  Thread.Resume;
 end;
 
 procedure THomeCommunication.SubmitStream(Stream: string);
 var
-  URL: string;
-  Thread: TSubmitThread;
   XMLDocument: TXMLLib;
-  Root, Header, Data: TXMLNode;
+  Data: TXMLNode;
   XML: AnsiString;
 begin
-  if not AppGlobals.SubmitStreams then
+  if not AppGlobals.NetworkActive then
     Exit;
 
-  // Nur submitten, wenn er nicht von uns selber kommt
-  if (Pos('mistake.ws', LowerCase(Stream)) > 0) or
-     (Pos('streamwriter.org', LowerCase(Stream)) > 0) then
-  begin
+  if not Connected then
     Exit;
-  end;
 
-  URL := FURL + 'submitstream/';
-  Thread := TSubmitThread.Create(URL);
-  InitThread(Thread);
-
-  XMLDocument := TXMLLib.Create;
+  XMLDocument := FClient.XMLGet('submitstream');
   try
-    Root := TXMLNode.Create;
-    Root.Name := 'request';
-    XMLDocument.Root := Root;
+    if Stream[Length(Stream)] = '/' then
+      Stream := Copy(Stream, 1, Length(Stream) - 1);
 
-    Header := TXMLNode.Create(Root);
-    Header.Name := 'header';
-    Header.Nodes.SimpleAdd('version', '2');
-    Header.Nodes.SimpleAdd('type', 'submitstream');
-
-    Data := TXMLNode.Create(Root);
-    Data.Name := 'data';
-    Data.Value.AsString := EncodeU(Stream);
+    Data := XMLDocument.Root.GetNode('data');
+    Data.Value.AsString := Stream;
 
     XMLDocument.SaveToString(XML);
+    FClient.Write(XML);
   finally
     XMLDocument.Free;
   end;
-
-  Thread.PostData := 'data=' + XML;
-  Thread.Resume;
 end;
 
 procedure THomeCommunication.Terminate;
-var
-  i: Integer;
 begin
-  for i := Count - 1 downto 0 do
-  begin
-    if FClients[i] is TGetStreamsThread then    
-      TGetStreamsThread(FClients[i]).Killed := True;
-    FClients[i].Terminate;
-  end;
+  if FClient <> nil then
+    FClient.Terminate;
 end;
 
-procedure THomeCommunication.ThreadEnded(Sender: TObject);
+procedure THomeCommunication.ClientConnected(Sender: TSocketThread);
+begin
+  FConnected := True;
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
+end;
+
+procedure THomeCommunication.ClientEnded(Sender: TSocketThread);
 var
   Thread: THomeThread;
 begin
+  FConnected := False;
+  FClient := nil;
   Thread := THomeThread(Sender);
 
-  FClients.Remove(Thread);
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 
-  if Thread.Killed then
+  if Thread.Terminated then
     Exit;
 
-  if Thread is TAuthUserThread then
-    if Assigned(FOnUserAuthenticated) then
-      FOnUserAuthenticated(Self, TAuthUserThread(Thread).LoggedIn);
+  Connect;
+end;
 
-  if Thread.Success then
-  begin
-    if Thread is TGetGenresThread then
-      if Assigned(FOnGenresReceived) then
-        FOnGenresReceived(Self, TGetGenresThread(Thread).Genres);
+procedure THomeCommunication.ClientError(Sender: TSocketThread);
+begin
+  if Assigned(FOnError) then
+    FOnError(Self, FClient.FErrorMsg);
+end;
 
-    if Thread is TGetStreamsThread then
-      if Assigned(FOnStreamsReceived) then
-        FOnStreamsReceived(Self, TGetStreamsThread(Thread).Streams, TGetStreamsThread(Thread).Count);
-  end else
-  begin
-    if Thread.RecvDataStream.ToString = 'OLDVER' then
+procedure THomeCommunication.TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
+begin
+  if Trim(Title) <> '' then
+    if FClient <> nil then
     begin
-      if Assigned(FOnOldVersion) then
-        FOnOldVersion(Self);
-    end else
-    begin
-      // Es kann sein, dass am Anfang GetGenres und GetStreams aktiv ist.
-      // Deshalb alles tot machen, so dass die Fehlermeldung anstehen bleibt.
-      for Thread in FClients do
-      begin
-        if not (Thread is TSubmitThread) then
-        begin
-          Thread.Killed := True;
-          Thread.Terminate;
-        end;
-      end;
-
-      if Assigned(FOnReceiveError) then
-        FOnReceiveError(Self);
+      FClient.TitleChanged(StreamName, Title, CurrentURL, URL, URLs);
     end;
-  end;
-end;
-
-{ TGetStreamsThread }
-
-constructor TGetStreamsThread.Create(URL: string);
-begin
-  inherited;
-  SetLength(Streams, 0);
-end;
-
-destructor TGetStreamsThread.Destroy;
-begin
-
-  inherited;
-end;
-
-procedure TGetStreamsThread.DoDisconnected;
-var
-  i: Integer;
-  XMLDocument: TXMLLib;
-  Data, Node: TXMLNode;
-begin
-  inherited;
-  
-  if Killed then
-    Exit;
-
-  if Length(RecvDataStream.ToString) = 0 then
-  begin
-    raise Exception.Create('No data received');
-  end else if RecvDataStream.ToString = 'ERROR' then
-  begin
-    raise Exception.Create('Server-side error');
-  end else
-  begin
-    try
-      SetLength(Streams, 0);
-      XMLDocument := TXMLLib.Create;
-      try
-        XMLDocument.LoadFromString(RecvDataStream.ToString);
-
-        Data := XMLDocument.Root.Nodes.GetNode('data');
-
-        Count := Data.Nodes.GetNode('count').Value.AsInteger;
-        PacketCount := Data.Nodes.GetNode('packetcount').Value.AsInteger;
-
-        for i := 0 to Data.Nodes.GetNode('streams').Nodes.Count - 1 do
-        begin
-          Node := Data.Nodes.GetNode('streams').Nodes[i];
-          SetLength(Streams, Length(Streams) + 1);
-          Streams[High(Streams)].Name := Node.Attributes.AttributeByName['name'].Value.AsString;
-          Streams[High(Streams)].Genre := Node.Attributes.AttributeByName['genre'].Value.AsString;
-          Streams[High(Streams)].URL := Node.Value.AsString;
-          Streams[High(Streams)].Website := Node.Attributes.AttributeByName['website'].Value.AsString;
-          Streams[High(Streams)].BitRate := Node.Attributes.AttributeByName['bitrate'].Value.AsInteger;
-          Streams[High(Streams)].StreamType := Node.Attributes.AttributeByName['type'].Value.AsString;
-          Streams[High(Streams)].Downloads := Node.Attributes.AttributeByName['downloads'].Value.AsInteger;
-        end;
-      finally
-        XMLDocument.Free;
-      end;
-    except
-      raise Exception.Create('Invalid data received');
-    end;
-    FSuccess := True;
-  end;
-end;
-
-procedure TGetStreamsThread.DoEnded;
-begin
-  inherited;
-  if RecvDataStream.ToString = '' then
-    Sleep(1000);
-end;
-
-procedure TGetStreamsThread.DoException(E: Exception);
-begin
-  SetLength(Streams, 0);
-  Sleep(100);
-  inherited;
-end;
-
-{ TGetGenresThread }
-
-constructor TGetGenresThread.Create(URL: string);
-begin
-  inherited;
-  Genres := TStringList.Create;
-end;
-
-destructor TGetGenresThread.Destroy;
-begin
-  Genres.Free;
-  inherited;
-end;
-
-procedure TGetGenresThread.DoDisconnected;
-var
-  i: Integer;
-  XMLDocument: TXMLLib;
-  Data, Node: TXMLNode;
-begin
-  inherited;
-
-  if Length(RecvDataStream.ToString) = 0 then
-  begin
-    raise Exception.Create('No data received');
-  end else if RecvDataStream.ToString = 'ERROR' then
-  begin
-    raise Exception.Create('Server-side error');
-  end else
-  begin
-    try
-      XMLDocument := TXMLLib.Create;
-      try
-        XMLDocument.LoadFromString(RecvDataStream.ToString);
-
-        Data := XMLDocument.Root.Nodes.GetNode('data');
-
-        for i := 0 to Data.Nodes.GetNode('genres').Nodes.Count - 1 do
-        begin
-          Node := Data.Nodes.GetNode('genres').Nodes[i];
-          Genres.Add(Node.Value.AsString);
-        end;
-      finally
-        XMLDocument.Free;
-      end;
-    except
-      raise Exception.Create('Invalid data received');
-    end;
-    FSuccess := True;
-  end;
-end;
-
-procedure TGetGenresThread.DoEnded;
-begin
-  inherited;
-  if RecvDataStream.ToString = '' then
-    Sleep(1000);
-end;
-
-procedure TGetGenresThread.DoException(E: Exception);
-begin
-  inherited;
-  Sleep(100);
-end;
-
-{ TSubmitThread }
-
-procedure TSubmitThread.DoEnded;
-begin
-  // Wichtig, damit das StreamBrowserView nicht sagt "Fehler"
-  FSuccess := True;
-  inherited;
 end;
 
 { THomeThread }
 
-constructor THomeThread.Create(URL: string);
+constructor THomeThread.Create;
 begin
-  inherited;
-  Killed := False;
-  Success := False;
+  {$IFDEF DEBUG}
+  inherited Create('gaia', 8007);
+  //inherited Create('streamwriter.org', 8007);
+  {$ELSE}
+  inherited Create('streamwriter.org', 8007);
+  {$ENDIF}
+
+  UseSynchronize := True;
+  FGenres := TStringList.Create;
 end;
 
-{ TAuthUserThread }
-
-constructor TAuthUserThread.Create(URL: string);
+destructor THomeThread.Destroy;
 begin
-  inherited;
-
-  LoggedIn := False;
-end;
-
-destructor TAuthUserThread.Destroy;
-begin
-
+  FGenres.Free;
   inherited;
 end;
 
-procedure TAuthUserThread.DoDisconnected;
+procedure THomeThread.DoConnected;
+begin
+  inherited;
+
+  Write(XMLGetLogin);
+end;
+
+procedure THomeThread.DoEnded;
+begin
+  inherited;
+
+  Sleep(1000);
+end;
+
+procedure THomeThread.DoError(Version: Integer; Header, Data: TXMLNode);
+begin
+  FErrorMsg := Data.Value.AsString;
+  if Assigned(FOnError) then
+    Sync(FOnError);
+end;
+
+procedure THomeThread.DoGenresReceived(Version: Integer; Header, Data: TXMLNode);
 var
+  i: Integer;
+begin
+  FGenres.Clear;
+  for i := 0 to Data.Nodes.GetNode('genres').Nodes.Count - 1 do
+  begin
+    Genres.Add(Data.Nodes.GetNode('genres').Nodes[i].Value.AsString);
+  end;
+
+  if Assigned(FOnGenresReceived) then
+    Sync(FOnGenresReceived);
+end;
+
+procedure THomeThread.DoReceivedString(D: string);
+var
+  Version: Integer;
   XMLDocument: TXMLLib;
-  Data: TXMLNode;
+  Header, Data: TXMLNode;
+  T: string;
 begin
   inherited;
-
-  if Length(RecvDataStream.ToString) = 0 then
-  begin
-    raise Exception.Create('No data received');
-  end else if RecvDataStream.ToString = 'ERROR' then
-  begin
-    raise Exception.Create('Server-side error');
-  end else
-  begin
     try
       XMLDocument := TXMLLib.Create;
       try
-        XMLDocument.LoadFromString(RecvDataStream.ToString);
+        XMLDocument.LoadFromString(D);
 
+        Header := XMLDocument.Root.Nodes.GetNode('header');
         Data := XMLDocument.Root.Nodes.GetNode('data');
 
-        if Data.GetNode('success').Value.AsString = 'true' then
-          LoggedIn := True;
+        Version := Header.Attributes.AttributeByName['version'].Value.AsInteger;
+        T := Header.Attributes.AttributeByName['type'].Value.AsString;
+
+        if Header.Attributes.AttributeByName['type'].Value.AsString = 'getgenres' then
+        begin
+          DoGenresReceived(Version, Header, Data);
+        end;
+
+        if Header.Attributes.AttributeByName['type'].Value.AsString = 'getstreams' then
+        begin
+          DoStreamsReceived(Version, Header, Data);
+        end;
+
+        if Header.Attributes.AttributeByName['type'].Value.AsString = 'fulltitlechange' then
+        begin
+          DoTitleChanged(Version, Header, Data);
+        end;
+
+        if Header.Attributes.AttributeByName['type'].Value.AsString = 'error' then
+        begin
+          DoError(Version, Header, Data);
+        end;
+
       finally
         XMLDocument.Free;
       end;
     except
       raise Exception.Create('Invalid data received');
     end;
-    FSuccess := True;
+end;
+
+procedure THomeThread.DoStreamsReceived(Version: Integer; Header, Data: TXMLNode);
+var
+  i: Integer;
+  Node: TXMLNode;
+begin
+  SetLength(FStreams, 0);
+
+  FCount := Data.Nodes.GetNode('count').Value.AsInteger;
+  FPacketCount := Data.Nodes.GetNode('packetcount').Value.AsInteger;
+
+  for i := 0 to Data.Nodes.GetNode('streams').Nodes.Count - 1 do
+  begin
+    Node := Data.Nodes.GetNode('streams').Nodes[i];
+    SetLength(FStreams, Length(FStreams) + 1);
+    FStreams[High(FStreams)].Name := Node.Attributes.AttributeByName['name'].Value.AsString;
+    FStreams[High(FStreams)].Genre := Node.Attributes.AttributeByName['genre'].Value.AsString;
+    FStreams[High(FStreams)].URL := Node.Value.AsString;
+    FStreams[High(FStreams)].Website := Node.Attributes.AttributeByName['website'].Value.AsString;
+    FStreams[High(FStreams)].BitRate := Node.Attributes.AttributeByName['bitrate'].Value.AsInteger;
+    FStreams[High(FStreams)].StreamType := Node.Attributes.AttributeByName['type'].Value.AsString;
+    FStreams[High(FStreams)].Downloads := Node.Attributes.AttributeByName['downloads'].Value.AsInteger;
+  end;
+
+  if Assigned(FOnStreamsReceived) then
+    Sync(FOnStreamsReceived);
+end;
+
+procedure THomeThread.DoTitleChanged(Version: Integer; Header, Data: TXMLNode);
+begin
+  if not AppGlobals.NetworkActive then
+    Exit;
+
+  FChangedStreamName := Data.Nodes.GetNode('streamname').Value.AsString;
+  FChangedTitle := Data.Nodes.GetNode('title').Value.AsString;
+  FChangedCurrentURL := Data.Nodes.GetNode('currenturl').Value.AsString;
+
+  if (FChangedStreamName <> '') and (FChangedTitle <> '') and (FChangedCurrentURL <> '') then
+    if Assigned(FOnTitleChanged) then
+      Sync(FOnTitleChanged);
+end;
+
+procedure THomeThread.TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
+var
+  i: Integer;
+  XML: TXMLLib;
+  N, N2, N3: TXMLNode;
+  S: AnsiString;
+  TmpURL: AnsiString;
+begin
+  XML := XMLGet('fulltitlechange');
+  try
+    N := XML.Root.Nodes.GetNode('data');
+
+    N2 := TXMLNode.Create(N);
+    N2.Name := 'streamname';
+    N2.Value.AsString := StreamName;
+    N2 := TXMLNode.Create(N);
+    N2.Name := 'title';
+    N2.Value.AsString := Title;
+    N2 := TXMLNode.Create(N);
+    N2.Name := 'currenturl';
+    N2.Value.AsString := CurrentURL;
+    N2 := TXMLNode.Create(N);
+    N2.Name := 'url';
+    N2.Value.AsString := URL;
+
+    if URLs <> nil then
+    begin
+      N3 := TXMLNode.Create(N);
+      N3.Name := 'urls';
+      for i := 0 to URLs.Count - 1 do
+      begin
+        N2 := TXMLNode.Create(N3);
+        N2.Name := 'url';
+        TmpURL := URLs[i];
+        if TmpURL[Length(TmpURL)] = '/' then
+          TmpURL := Copy(TmpURL, 1, Length(TmpURL) - 1);
+        N2.Value.AsString := TmpURL;
+      end;
+    end;
+
+    XML.SaveToString(S);
+    Write(S);
+  finally
+    XML.Free;
   end;
 end;
 
-procedure TAuthUserThread.DoEnded;
+function THomeThread.XMLGet(T: string): TXMLLib;
+var
+  Root, Header, Data: TXMLNode;
 begin
-  inherited;
+  Result := TXMLLib.Create;
 
+  Root := TXMLNode.Create();
+  Root.Name := 'request';
+  Result.Root := Root;
+
+  Header := TXMLNode.Create(Root);
+  Header.Name := 'header';
+  Header.Attributes.SimpleAdd('version', '1');
+  Header.Attributes.SimpleAdd('type', T);
+
+  Data := TXMLNode.Create(Root);
+  Data.Name := 'data';
 end;
 
-procedure TAuthUserThread.DoException(E: Exception);
+function THomeThread.XMLGetLogin: AnsiString;
+var
+  XML: TXMLLib;
+  D: TXMLNode;
 begin
-  inherited;
-
+  XML := XMLGet('login');
+  try
+    D := TXMLNode.Create(XML.Root.Nodes.GetNode('data'));
+    D.Name := 'asdf';
+    D.Value.AsString := 'lol';
+    XML.SaveToString(Result);
+  finally
+    XML.Free;
+  end;
 end;
+
+initialization
+  HomeComm := THomeCommunication.Create;
+
+finalization
+  HomeComm.Free;
 
 end.

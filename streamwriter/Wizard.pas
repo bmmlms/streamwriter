@@ -36,15 +36,10 @@ type
   end;
 
   TfrmWizard = class(TfrmWizardBase)
-    pnlICEServer: TPanel;
     pnlDir: TPanel;
     cmdBrowse: TSpeedButton;
     txtDir: TLabeledEdit;
     lblDir: TLabel;
-    Label6: TLabel;
-    chkRelay: TCheckBox;
-    chkSubmitStreams: TCheckBox;
-    Label1: TLabel;
     Label2: TLabel;
     procedure cmdBrowseClick(Sender: TObject);
   protected
@@ -63,8 +58,6 @@ implementation
 procedure TfrmWizard.Finish;
 begin
   AppGlobals.Dir := txtDir.Text;
-  //AppGlobals.Relay := chkRelay.Checked;
-  AppGlobals.SubmitStreams := chkSubmitStreams.Checked;
   inherited;
 end;
 
@@ -74,11 +67,6 @@ var
 begin
   inherited;
 
-  if Step.Panel = pnlICEServer then
-  begin
-    //chkRelay.Checked := AppGlobals.Relay;
-    chkSubmitStreams.Checked := AppGlobals.SubmitStreams;
-  end;
   if Step.Panel = pnlDir then
   begin
     if (AppGlobals.Dir <> '') and (not DirectoryExists(AppGlobals.Dir)) then
@@ -123,7 +111,6 @@ end;
 procedure TfrmWizard.RegisterSteps;
 begin
   inherited;
-  FStepList.Add(TStepIceServer.Create('Settings', pnlICEServer));
   FStepList.Add(TStepDir.Create('Select folder', pnlDir));
 end;
 

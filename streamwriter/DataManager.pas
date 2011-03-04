@@ -77,6 +77,7 @@ type
     FIndex: Integer;
     FExpanded: Boolean;
     FKilled: Boolean;
+    FIsAuto: Boolean;
   public
     constructor Create(Name: string; Idx: Integer); overload;
     class function Load(Stream: TExtendedStream; Version: Integer): TListCategory;
@@ -85,6 +86,7 @@ type
     property Index: Integer read FIndex write FIndex;
     property Expanded: Boolean read FExpanded write FExpanded;
     property Killed: Boolean read FKilled write FKilled;
+    property IsAuto: Boolean read FIsAuto write FIsAuto;
   end;
 
   TTrackList = class(TList<TTrackInfo>)
@@ -211,7 +213,7 @@ type
   end;
 
 const
-  DATAVERSION = 9;
+  DATAVERSION = 10;
 
 implementation
 
@@ -673,7 +675,7 @@ end;
 
 procedure TDataLists.Save;
 var
-  i: Integer;
+  i, CatCount: Integer;
   S: TExtendedStream;
 begin
   if (AppGlobals.SkipSave) or (AppGlobals.DataFile = '') then
@@ -695,9 +697,14 @@ begin
 
       S.Write(FReceived);
 
+      //CatCount := FCategoryList.Count;
+      //for i := 0 to CatCount - 1 do
+      //  if FCategoryList[i].IsAuto then
+      //    Dec(CatCount);
       S.Write(FCategoryList.Count);
       for i := 0 to FCategoryList.Count - 1 do
-        FCategoryList[i].Save(S);
+        //if not FCategoryList[i].IsAuto then
+          FCategoryList[i].Save(S);
 
       S.Write(FStreamList.Count);
       for i := 0 to FStreamList.Count - 1 do
@@ -942,6 +949,8 @@ begin
   Stream.Read(Result.FIndex);
   Stream.Read(Result.FName);
   Stream.Read(Result.FExpanded);
+  if Version >= 10 then
+    Stream.Read(Result.FIsAuto);
 end;
 
 procedure TListCategory.Save(Stream: TExtendedStream);
@@ -949,6 +958,7 @@ begin
   Stream.Write(FIndex);
   Stream.Write(FName);
   Stream.Write(FExpanded);
+  Stream.Write(FIsAuto);
 end;
 
 { TTrackList }

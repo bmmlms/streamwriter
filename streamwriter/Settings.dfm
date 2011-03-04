@@ -283,40 +283,6 @@ object frmSettings: TfrmSettings
       Height = 13
       Caption = 'seconds'
     end
-    object lblHelpSubmitStreams: TLabel
-      Left = 268
-      Top = 100
-      Width = 22
-      Height = 13
-      Cursor = crHandPoint
-      Alignment = taRightJustify
-      Anchors = [akTop, akRight]
-      Caption = 'Help'
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clBlue
-      Font.Height = -11
-      Font.Name = 'MS Sans Serif'
-      Font.Style = [fsUnderline]
-      ParentFont = False
-      OnClick = lblHelpSubmitStreamsClick
-    end
-    object Label11: TLabel
-      Left = 268
-      Top = 232
-      Width = 22
-      Height = 13
-      Cursor = crHandPoint
-      Alignment = taRightJustify
-      Anchors = [akTop, akRight]
-      Caption = 'Help'
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clBlue
-      Font.Height = -11
-      Font.Name = 'MS Sans Serif'
-      Font.Style = [fsUnderline]
-      ParentFont = False
-      Visible = False
-    end
     object txtMaxRetries: TLabeledEdit
       Left = 4
       Top = 16
@@ -343,12 +309,12 @@ object frmSettings: TfrmSettings
       TabOrder = 1
       OnChange = txtRetryDelayChange
     end
-    object chkSubmitStreams: TCheckBox
+    object chkNetworkActive: TCheckBox
       Left = 4
       Top = 96
-      Width = 249
+      Width = 281
       Height = 21
-      Caption = 'Submit stream urls to stream database'
+      Caption = 'Tune into stations when a wishlist'#39's song is playing'
       TabOrder = 2
     end
     object chkRelay: TCheckBox
@@ -541,40 +507,6 @@ object frmSettings: TfrmSettings
       Height = 13
       Caption = 'seconds'
     end
-    object Label8: TLabel
-      Left = 268
-      Top = 4
-      Width = 22
-      Height = 13
-      Cursor = crHandPoint
-      Alignment = taRightJustify
-      Anchors = [akTop, akRight]
-      Caption = 'Help'
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clBlue
-      Font.Height = -11
-      Font.Name = 'MS Sans Serif'
-      Font.Style = [fsUnderline]
-      ParentFont = False
-      OnClick = Label8Click
-    end
-    object Label2: TLabel
-      Left = 268
-      Top = 76
-      Width = 22
-      Height = 13
-      Cursor = crHandPoint
-      Alignment = taRightJustify
-      Anchors = [akTop, akRight]
-      Caption = 'Help'
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clBlue
-      Font.Height = -11
-      Font.Name = 'MS Sans Serif'
-      Font.Style = [fsUnderline]
-      ParentFont = False
-      OnClick = Label2Click
-    end
     object Label10: TLabel
       Left = 20
       Top = 96
@@ -756,7 +688,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800FC0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C0101020008000C0110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

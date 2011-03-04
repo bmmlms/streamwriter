@@ -3,7 +3,7 @@ unit DynBASS;
 interface
 
 uses
-  Windows, SysUtils, Classes, Functions, GUIFunctions;
+  Windows, SysUtils, Classes, Functions, GUIFunctions, AppData;
 
 const
   STREAMFILE_BUFFER = 1;
@@ -43,15 +43,14 @@ type
 
   TBassLoader = class
   private
-    procedure UninitializeBass;
-  public
     BassDLLPath: string;
     BassAACDLLPath: string;
     DLLHandle: Cardinal;
     AACDLLHandle: Cardinal;
-    BassLoaded: Boolean;
 
-    err: string;
+    procedure UninitializeBass;
+  public
+    BassLoaded: Boolean;
 
     destructor Destroy; override;
     function InitializeBass: Boolean;
@@ -88,16 +87,14 @@ var
 
 implementation
 
+{
 function GetTempFile(SubDir, Name: string): string;
 var
-  Rnd, Append: Integer;
-  Dir, TmpDir, DataDir, AppDir, N, E: string;
+  Dir, TmpDir, DataDir, AppDir: string;
   Test: TMemoryStream;
 begin
   Result := '';
   Dir := '';
-
-  Rnd := Random(100000);
 
   Test := TMemoryStream.Create;
   try
@@ -105,28 +102,11 @@ begin
       TmpDir := GetTempDir;
       if not DirectoryExists(TmpDir) then
         ForceDirectories(TmpDir);
-      Test.SaveToFile(TmpDir + IntToStr(Rnd));
+      Test.SaveToFile(TmpDir + 'justatestfile');
       DeleteFile(TmpDir + IntToStr(Rnd));
       Dir := TmpDir;
     except
-      try
-        DataDir := GetUserDir;
-        if not DirectoryExists(DataDir) then
-          ForceDirectories(DataDir);
-        Test.SaveToFile(DataDir + IntToStr(Rnd));
-        DeleteFile(DataDir + IntToStr(Rnd));
-        Dir := DataDir;
-      except
-        try
-          AppDir := IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0)));
-          Test.SaveToFile(AppDir + IntToStr(Rnd));
-          DeleteFile(AppDir + IntToStr(Rnd));
-          Dir := AppDir;
-        except
-          // The game.
-          Exit;
-        end;
-      end;
+      Exit;
     end;
   finally
     Test.Free;
@@ -135,36 +115,9 @@ begin
   if Dir = '' then
     Exit;
 
-  {
-  E := ExtractFileExt(Name);
-  N := Copy(Name, 1, Length(Name) - Length(E));
-
-  if FileExists(Dir + SubDir + '\' + N + E) and (not DeleteFile(Dir + SubDir + '\' + N + E)) then
-  begin
-    Append := 1;
-    while (FileExists(Dir + SubDir + '\' + N + ' (' + IntToStr(Append) + ')' + E) and (not DeleteFile(Dir + SubDir + '\' + N + ' (' + IntToStr(Append) + ')' + E))) do
-      Inc(Append);
-    N := N + ' (' + IntToStr(Append) + ')' + E;
-  end else
-    N := N + E;
-
-  Result := Dir + SubDir + '\' + N;
-  }
-
-  E := ExtractFileExt(Name);
-  N := Copy(Name, 1, Length(Name) - Length(E));
-
-  if FileExists(Dir + N + E) and (not DeleteFile(Dir + N + E)) then
-  begin
-    Append := 1;
-    while (FileExists(Dir + N + ' (' + IntToStr(Append) + ')' + E) and (not DeleteFile(Dir + N + ' (' + IntToStr(Append) + ')' + E))) do
-      Inc(Append);
-    N := N + ' (' + IntToStr(Append) + ')' + E;
-  end else
-    N := N + E;
-
-  Result := Dir + N;
+  Result := Dir + Name;
 end;
+}
 
 { TBassLoader }
 
@@ -176,60 +129,35 @@ end;
 
 function TBassLoader.InitializeBass: Boolean;
 var
-  //IRes: Integer;
   Res: TResourceStream;
-  TmpBass, TmpBassAAC: string;
   T: Cardinal;
 begin
-  err := '';
-
   Result := False;
+
+  BassDLLPath := AppGlobals.TempDir + 'bass.dll';
+  BassAACDLLPath := AppGlobals.TempDir + 'bass_aac.dll';
+
+  Res := TResourceStream.Create(0, 'BASS', PChar(24));
   try
-    TmpBass := GetTempFile('streamWriter', 'bass.dll');
-    TmpBassAAC := GetTempFile('streamWriter', 'bass_aac.dll');
-
-    err := err + tmpbass + #13#10;
-    err := err + tmpbassaac + #13#10;
-
-    if (TmpBass = '') or (TmpBassAAC = '') then
-      Exit;
-
-    if not ForceDirectories(ExtractFilePath(TmpBass)) then
-      Exit;
-    if not ForceDirectories(ExtractFilePath(TmpBassAAC)) then
-      Exit;
-
-    err := err + '1' + #13#10;
-
-    Res := TResourceStream.Create(0, 'BASS', PChar(24));
     try
-      Res.SaveToFile(TmpBass);
-    finally
-      Res.Free;
-    end;
-
-    err := err + '2' + #13#10;
-
-    Res := TResourceStream.Create(0, 'BASS_AAC', PChar(24));
-    try
-      Res.SaveToFile(TmpBassAAC);
-    finally
-      Res.Free;
-    end;
-  except
-    Exit;
+      Res.SaveToFile(BassDLLPath);
+    except end;
+  finally
+    Res.Free;
   end;
 
-  err := err + '3' + #13#10;
-
-  BassDLLPath := TmpBass;
-  BassAACDLLPath := TmpBassAAC;
+  Res := TResourceStream.Create(0, 'BASS_AAC', PChar(24));
+  try
+    try
+      Res.SaveToFile(BassAACDLLPath);
+    except end;
+  finally
+    Res.Free;
+  end;
 
   DLLHandle := LoadLibrary(PChar(BassDLLPath));
   if DLLHandle <> 0 then
   begin
-  err := err + 'loaded' + #13#10;
-
     BASSInit := GetProcAddress(DLLHandle, 'BASS_Init');
     BASSStreamCreateFile := GetProcAddress(DLLHandle, 'BASS_StreamCreateFile');
     BASSStreamCreateFileUser := GetProcAddress(DLLHandle, 'BASS_StreamCreateFileUser');
@@ -275,10 +203,6 @@ begin
 
     if not BassLoaded then    
     begin
-
-      // TODO: Das err feld rausmachen.
-      err := err + 'FAIL 1: ' + inttostr(BASSErrorGetCode) + #13#10;
-
       FreeLibrary(DLLHandle);
       Exit;
     end;
@@ -286,8 +210,6 @@ begin
     AACDLLHandle := BASSPluginLoad(PChar(BassAACDLLPath), BASS_UNICODE);
     if AACDLLHandle = 0 then
     begin
-  err := err + 'FAIL 2' + #13#10;
-
       BassLoaded := False;
       FreeLibrary(DLLHandle);
       DLLHandle := 0;

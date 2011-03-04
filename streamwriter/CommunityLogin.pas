@@ -26,7 +26,6 @@ type
     txtText: TMemo;
     lblSignup: TLabel;
     procedure FormCreate(Sender: TObject);
-    procedure lblSignupClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
@@ -55,13 +54,12 @@ procedure TfrmCommunityLogin.btnOKClick(Sender: TObject);
 begin
   if (Trim(txtUsername.Text) = '') or (Trim(txtPassword.Text) = '') then
   begin
-    // TODO: !!
     Exit;
   end;
 
   ShowConnecting(True);
 
-  FHomeCommunication.AuthUser(Trim(txtUsername.Text), Trim(txtPassword.Text));
+  //FHomeCommunication.AuthUser(Trim(txtUsername.Text), Trim(txtPassword.Text));
 end;
 
 procedure TfrmCommunityLogin.FormClose(Sender: TObject;
@@ -99,13 +97,12 @@ end;
 
 procedure TfrmCommunityLogin.FormDestroy(Sender: TObject);
 begin
-  // TODO: Code aus frmMain übernehmen für sauberen close.
   FHomeCommunication.Destroy;
 end;
 
 procedure TfrmCommunityLogin.FormShow(Sender: TObject);
 begin
-  txtUsername.SetFocus; // TODO: Funzt nicht.
+  txtUsername.SetFocus;
   ShowConnecting(False);
 end;
 
@@ -124,12 +121,6 @@ begin
     ShowConnecting(False);
     ShowMessage('oh noews');
   end;
-end;
-
-procedure TfrmCommunityLogin.lblSignupClick(Sender: TObject);
-begin
-  // TODO: !!
-  //ShellExecute(0, 'open', PChar(AppGlobals.ProjectHomepageLink), '', '', 1);
 end;
 
 procedure TfrmCommunityLogin.ShowConnecting(Show: Boolean);

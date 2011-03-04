@@ -132,10 +132,10 @@ end;
 procedure TICEPlayer.Play;
 var
   Funcs: BASS_FILEPROCS;
-  State: Cardinal;
+  //State: Cardinal;
   R: Integer;
 begin
-  State := BASSChannelIsActive(FPlayer);
+  //State := BASSChannelIsActive(FPlayer);
 
   if (FPlayStartBuffer = 0) or (not Paused and (FMem.Size < FPlayStartBuffer)) then
     Exit;

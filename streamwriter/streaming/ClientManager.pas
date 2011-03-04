@@ -22,8 +22,8 @@ unit ClientManager;
 interface
 
 uses
-  SysUtils, Windows, Classes, Generics.Collections, ICEClient, RelayServer,
-  Functions, AppData, DataManager;
+  SysUtils, Windows, Classes, Generics.Collections, ICEClient,
+  Functions, AppData, DataManager, HomeCommunication;
 
 type
   TClientManager = class;
@@ -48,8 +48,8 @@ type
   TClientManager = class
   private
     FClients: TClientList;
-    //FRelayServer: TRelayServer;
     FSongsSaved: Integer;
+    FLists: TDataLists;
 
     FOnClientDebug: TNotifyEvent;
     FOnClientRefresh: TNotifyEvent;
@@ -76,18 +76,15 @@ type
     procedure ClientURLsReceived(Sender: TObject);
     procedure ClientTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer);
 
-    //procedure RelayGetStream(Sender: TObject);
-    //procedure RelayEnded(Sender: TObject);
+    procedure HomeCommTitleChanged(Sender: TObject; StreamName, Title, CurrentURL: string);
   public
-    constructor Create;
+    constructor Create(Lists: TDataLists);
     destructor Destroy; override;
 
     function GetEnumerator: TClientEnum;
 
     function AddClient(URL: string): TICEClient; overload;
-    function AddClient(Name, StartURL: string): TICEClient; overload;
-    //function AddClient(Name, StartURL: string; URLs: TStringList;
-    //  SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal): TICEClient; overload;
+    function AddClient(Name, StartURL: string; IsAuto: Boolean = False): TICEClient; overload;
     function AddClient(Entry: TStreamEntry): TICEClient; overload;
     procedure RemoveClient(Client: TICEClient);
     procedure Terminate;
@@ -100,7 +97,6 @@ type
     function GetClient(Name, URL: string; URLs: TStringList): TICEClient;
 
     property Active: Boolean read FGetActive;
-    //property RelayServer: TRelayServer read FRelayServer;
     property SongsSaved: Integer read FSongsSaved;
 
     property OnClientDebug: TNotifyEvent read FOnClientDebug write FOnClientDebug;
@@ -127,26 +123,17 @@ begin
   Result := C;
 end;
 
-function TClientManager.AddClient(Name, StartURL: string): TICEClient;
+function TClientManager.AddClient(Name, StartURL: string; IsAuto: Boolean = False): TICEClient;
 var
   C: TICEClient;
 begin
   C := TICEClient.Create(Name, StartURL);
+  // Ist hier, damit das ClientView das direkt weiﬂ und passig in die Kategorie packt
+  if IsAuto then
+    C.AutoRemove := True;
   SetupClient(C);
   Result := C;
 end;
-
-{
-function TClientManager.AddClient(Name, StartURL: string; URLs: TStringList;
-  SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal): TICEClient;
-var
-  C: TICEClient;
-begin
-  C := TICEClient.Create(Name, StartURL, URLs, SkipShort, UseFilter, SongsSaved);
-  SetupClient(C);
-  Result := C;
-end;
-}
 
 function TClientManager.AddClient(Entry: TStreamEntry): TICEClient;
 var
@@ -192,20 +179,15 @@ var
 begin
   for i := Count - 1 downto 0 do
     RemoveClient(FClients[i]);
-  //if FRelayServer <> nil then
-  //  FreeAndNil(FRelayServer);
 end;
 
-constructor TClientManager.Create;
+constructor TClientManager.Create(Lists: TDataLists);
 begin
-  inherited;
+  inherited Create;
   FSongsSaved := 0;
   FClients := TClientList.Create;
-  {
-  FRelayServer := TRelayServer.Create;
-  FRelayServer.OnGetStream := RelayGetStream;
-  FRelayServer.OnEnded := RelayEnded;
-  }
+  FLists := Lists;
+  HomeComm.OnTitleChanged := HomeCommTitleChanged;
 end;
 
 destructor TClientManager.Destroy;
@@ -240,6 +222,33 @@ end;
 function TClientManager.GetEnumerator: TClientEnum;
 begin
   Result := TClientEnum.Create(Self);
+end;
+
+procedure TClientManager.HomeCommTitleChanged(Sender: TObject; StreamName, Title, CurrentURL: string);
+var
+  i: Integer;
+  Client: TICEClient;
+begin
+  for i := 0 to FLists.SaveList.Count - 1 do
+  begin
+    if Like(Title, FLists.SaveList[i].Pattern) then
+    begin
+      Client := GetClient('', CurrentURL, nil);
+      if not ((Client <> nil) and (Client.Recording) and (Client.Entry.Settings.SeparateTracks)) then
+      begin
+        Client := AddClient(StreamName, CurrentURL, True);
+        Client.Entry.Settings.Filter := ufWish;
+        Client.Entry.Settings.SaveToMemory := True;
+        Client.Entry.Settings.SeparateTracks := True;
+        Client.Entry.Settings.OnlySaveFull := False;
+        Client.Entry.Settings.MaxRetries := 5;
+        Client.Entry.Settings.RetryDelay := 0;
+        Client.RecordTitle := Title;
+        Client.StartRecording;
+      end;
+      Break;
+    end;
+  end;
 end;
 
 procedure TClientManager.ClientDebug(Sender: TObject);
@@ -302,8 +311,6 @@ end;
 procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize: UInt64; WasCut: Boolean);
 begin
   Inc(FSongsSaved);
-  //if Assigned(FOnClientRefresh) then
-  //  FOnClientRefresh(Sender);
   if Assigned(FOnClientSongSaved) then
     FOnClientSongSaved(Sender, Filename, Title, Filesize, WasCut);
 end;
@@ -354,6 +361,7 @@ begin
   if Assigned(FOnClientRefresh) then
     FOnClientRefresh(Sender);
   Client := Sender as TICEClient;
+
   if Client.Killed and (Client.ProcessingList.Count = 0) then
   begin
     if Assigned(FOnClientRemoved) then
@@ -369,43 +377,6 @@ begin
   if Assigned(FOnClientICYReceived) then
     FOnClientICYReceived(Sender, Bytes);
 end;
-
-{
-procedure TClientManager.RelayGetStream(Sender: TObject);
-var
-  T: TRelayThread;
-  URL: string;
-  i: Integer;
-begin
-  T := TRelayThread(Sender);
-  URL := T.RecvStream.RequestedURL;
-  if Length(URL) > 1 then
-    URL := Copy(URL, 2, Length(URL) - 1);
-  for i := 0 to FClients.Count - 1 do
-    if ((StripURL(string(FClients[i].StreamName)) = URL) or
-        (StripURL(string(FClients[i].StartURL)) = URL)) and
-        (FClients[i].Active) then
-    begin
-      FClients[i].AddRelayThread(T);
-      T.StationName := FClients[i].StreamName;
-      T.ContentType := FClients[i].ContentType;
-      Exit;
-    end;
-  T.Terminate;
-end;
-
-procedure TClientManager.RelayEnded(Sender: TObject);
-var
-  T: TRelayThread;
-  i: Integer;
-begin
-  T := TRelayThread(Sender);
-  for i := 0 to FClients.Count - 1 do
-  begin
-    FClients[i].RemoveRelayThread(T);
-  end;
-end;
-}
 
 { TClientEnum }
 

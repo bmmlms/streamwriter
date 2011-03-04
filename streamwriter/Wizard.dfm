@@ -17,70 +17,13 @@ object frmWizard: TfrmWizard
   Position = poScreenCenter
   PixelsPerInch = 96
   TextHeight = 13
-  object pnlICEServer: TPanel
-    Left = 32
-    Top = 12
-    Width = 393
-    Height = 233
-    BevelOuter = bvNone
-    TabOrder = 0
-    DesignSize = (
-      393
-      233)
-    object Label6: TLabel
-      Left = 24
-      Top = 128
-      Width = 365
-      Height = 77
-      Anchors = [akLeft, akTop, akRight]
-      AutoSize = False
-      Caption = 
-        'When enabled, you can listen to streams you are recording by usi' +
-        'ng the provided context-menu items or by dragging the stream int' +
-        'o your player. This might cause warnings from the firewall, so i' +
-        't is disabled by default.'
-      Visible = False
-      WordWrap = True
-    end
-    object Label1: TLabel
-      Left = 24
-      Top = 28
-      Width = 365
-      Height = 77
-      Anchors = [akLeft, akTop, akRight]
-      AutoSize = False
-      Caption = 
-        'When enabled every stream unknown to streamWriter will be submit' +
-        'ted to the stream database. This helps populating the stream dat' +
-        'abase so streamWriter'#39's browser will be kept up to date. No pers' +
-        'onal information will be sent, only the stream'#39's url.'
-      WordWrap = True
-    end
-    object chkRelay: TCheckBox
-      Left = 8
-      Top = 104
-      Width = 253
-      Height = 21
-      Caption = 'Enable local ICE-Server to listen to streams'
-      TabOrder = 0
-      Visible = False
-    end
-    object chkSubmitStreams: TCheckBox
-      Left = 8
-      Top = 4
-      Width = 257
-      Height = 21
-      Caption = 'Submit stream urls to stream database'
-      TabOrder = 1
-    end
-  end
   object pnlDir: TPanel
     Left = 12
     Top = 288
     Width = 389
     Height = 233
     BevelOuter = bvNone
-    TabOrder = 1
+    TabOrder = 0
     DesignSize = (
       389
       233)
@@ -137,7 +80,7 @@ object frmWizard: TfrmWizard
     object Label2: TLabel
       Left = 8
       Top = 128
-      Width = 381
+      Width = 369
       Height = 57
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False

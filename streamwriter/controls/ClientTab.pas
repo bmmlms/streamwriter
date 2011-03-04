@@ -41,7 +41,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    procedure Init(HomeCommunication: THomeCommunication);
+    procedure Init;
 
     property BrowserView: TMStreamBrowserView read FBrowserView;
     property InfoView: TMStreamInfoView read FInfoView;
@@ -119,7 +119,6 @@ type
     procedure ActionResetDataExecute(Sender: TObject);
     procedure ActionShowSideBarExecute(Sender: TObject);
     procedure ActionSavePlaylistStreamExecute(Sender: TObject);
-    procedure ActionSavePlaylistRelayExecute(Sender: TObject);
     procedure ActionSavePlaylistFileExecute(Sender: TObject);
     procedure ActionTuneInStreamExecute(Sender: TObject);
     //procedure ActionTuneInRelayExecute(Sender: TObject);
@@ -155,7 +154,7 @@ type
 
     procedure Setup(Toolbar: TToolbar; Actions: TActionList; Popup: TPopupMenu; MenuImages,
       ClientImages: TImageList; Clients: TClientManager;
-      Streams: TDataLists; HomeCommunication: THomeCommunication);
+      Streams: TDataLists);
     procedure Shown;
     function StartStreaming(Name, URL: string; StartPlay: Boolean;
       HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
@@ -295,12 +294,8 @@ begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
   for Client in Clients do
   begin
-    {
-    Entry := FStreams.StreamList.Get(Client);
-    if Entry <> nil then
-      Entry.LastTouched := Now;
-    }
-    Client.StartRecording;
+    if not Client.AutoRemove then
+      Client.StartRecording;
   end;
 end;
 
@@ -312,7 +307,8 @@ begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
   for Client in Clients do
   begin
-    Client.StopRecording;
+    if not Client.AutoRemove then
+      Client.StopRecording;
   end;
 end;
 
@@ -322,23 +318,33 @@ var
   Nodes, ChildNodes: TNodeArray;
   NodeData, ChildNodeData: PClientNodeData;
 begin
-  Nodes := FClientView.GetNodes(ntAll, True);
+  Nodes := FClientView.GetNodes(ntClient, True);
+  for Node in Nodes do
+  begin
+    NodeData := FClientView.GetNodeData(Node);
+    if NodeData.Client <> nil then
+      //if not NodeData.Client.AutoRemove then
+        FClients.RemoveClient(NodeData.Client);
+  end;
+
+  Nodes := FClientView.GetNodes(ntCategory, True);
   for Node in Nodes do
   begin
     NodeData := FClientView.GetNodeData(Node);
     if NodeData.Category <> nil then
-    begin
-      ChildNodes := FClientView.GetNodes(ntAll, False);
-      for ChildNode in ChildNodes do
+      if not NodeData.Category.IsAuto then
       begin
-        if ChildNode.Parent = Node then
+        ChildNodes := FClientView.GetNodes(ntAll, False);
+        for ChildNode in ChildNodes do
         begin
-          ChildNodeData := FClientView.GetNodeData(ChildNode);
-          FClients.RemoveClient(ChildNodeData.Client);
+          if ChildNode.Parent = Node then
+          begin
+            ChildNodeData := FClientView.GetNodeData(ChildNode);
+            //if not ChildNodeData.Client.AutoRemove then
+              FClients.RemoveClient(ChildNodeData.Client);
+          end;
         end;
       end;
-    end else
-      FClients.RemoveClient(NodeData.Client);
   end;
 
   // Wenn alle Clients weg sind können jetzt Kategorien gekickt werden.
@@ -346,6 +352,8 @@ begin
   for Node in Nodes do
   begin
     NodeData := FClientView.GetNodeData(Node);
+    if NodeData.Category.IsAuto then
+      Continue;
     if FClientView.ChildCount[Node] = 0 then
     begin
       FStreams.CategoryList.Remove(NodeData.Category);
@@ -426,6 +434,8 @@ begin
     Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
     for Client in Clients do
     begin
+      if Client.Client.AutoRemove then
+        Continue;
       Client.Client.Entry.SongsSaved := 0;
       Client.Client.Entry.BytesReceived := 0;
 
@@ -448,14 +458,6 @@ var
 begin
   Entries := FClientView.GetEntries(etStream);
   SavePlaylist(Entries, False);
-end;
-
-procedure TClientTab.ActionSavePlaylistRelayExecute(Sender: TObject);
-//var
-//  Entries: TPlaylistEntryArray;
-begin
-//  Entries := FClientView.GetEntries(etRelay);
-//  SavePlaylist(Entries, False);
 end;
 
 procedure TClientTab.ActionSavePlaylistFileExecute(Sender: TObject);
@@ -545,8 +547,7 @@ end;
 
 procedure TClientTab.Setup(Toolbar: TToolbar; Actions: TActionList;
   Popup: TPopupMenu; MenuImages,
-  ClientImages: TImageList; Clients: TClientManager; Streams: TDataLists;
-  HomeCommunication: THomeCommunication);
+  ClientImages: TImageList; Clients: TClientManager; Streams: TDataLists);
   function GetAction(Name: string): TAction;
   var
     i: Integer;
@@ -578,7 +579,7 @@ begin
 
   FStreams := Streams;
 
-  FHomeCommunication := HomeCommunication;
+  FHomeCommunication := HomeComm;
 
   Caption := _('Streams');
 
@@ -634,7 +635,6 @@ begin
   GetAction('actOpenWebsite').OnExecute := ActionOpenWebsiteExecute;
   GetAction('actResetData').OnExecute := ActionResetDataExecute;
   GetAction('actSavePlaylistStream').OnExecute := ActionSavePlaylistStreamExecute;
-  GetAction('actSavePlaylistRelay').OnExecute := ActionSavePlaylistRelayExecute;
   GetAction('actSavePlaylistFile').OnExecute := ActionSavePlaylistFileExecute;
 
   FClientView := TMClientView.Create(Self, Popup);
@@ -663,7 +663,7 @@ begin
   FSideBar.Parent := Self;
   FSideBar.Align := alRight;
   FSideBar.Visible := True;
-  FSideBar.Init(HomeCommunication);
+  FSideBar.Init;
 
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
@@ -747,6 +747,7 @@ begin
   Client := Sender as TICEClient;
 
   FReceived := FReceived + Received;
+  FStreams.Received := FStreams.Received + Received;
   Client.Entry.BytesReceived := Client.Entry.BytesReceived + Received;
 
   FRefreshInfo := True;
@@ -1008,13 +1009,6 @@ var
 begin
   Result := True;
 
-  // Wenn versucht wird, einen Relay zu einem Stream, der schon in der Liste ist,
-  // der Liste hinzuzufügen, quasi eine Aufnahme von einer Aufnahme startet
-  // (kann durch D&D passieren), dann raus hier.
-  //for Client in FClients do
-  //  if URL = Client.RelayURL then
-  //    Exit;
-
   if StartPlay then
   begin
     Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
@@ -1034,9 +1028,6 @@ begin
   URL := Trim(URL);
   if URL <> '' then
   begin
-    //if Entry <> nil then
-    //  Entry.LastTouched := Now;
-
     // Ist der Client schon in der Liste?
     Client := FClients.GetClient(Name, URL, nil);
     if Client <> nil then
@@ -1198,6 +1189,9 @@ begin
 
       if NodeData.Client <> nil then
       begin
+        if NodeData.Client.AutoRemove then
+          Continue;
+
         E := NodeData.Client.Entry.Copy;
         E.IsInList := True;
         E.Index := Nodes[i].Index;
@@ -1209,10 +1203,14 @@ begin
         FStreams.StreamList.Add(E);
       end else
       begin
+        //if NodeData.Category.IsAuto then
+        //  Continue;
         CatIdx := Nodes[i].Index + 1;
         C := TListCategory.Create(NodeData.Category.Name, CatIdx);
-        if FClientView.Expanded[Nodes[i]] then
-          C.Expanded := True;
+        //if FClientView.Expanded[Nodes[i]] then
+        //  C.Expanded := True;
+        C.Expanded := FClientView.Expanded[Nodes[i]];
+        C.IsAuto := NodeData.Category.IsAuto;
         Streams.CategoryList.Add(C);
       end;
     end;
@@ -1233,6 +1231,7 @@ procedure TClientTab.BuildTree(Streams: TDataLists);
 var
   i: Integer;
   Client: TICEClient;
+  Cat: TListCategory;
   Node, ParentNode: PVirtualNode;
 begin
   for i := 0 to Streams.CategoryList.Count - 1 do
@@ -1263,6 +1262,14 @@ begin
       FClientView.Expanded[Node] := True;
   end;
 
+  if FClientView.AutoNode = nil then
+  begin
+    Cat := TListCategory.Create(_('Automated streams'), High(Integer));
+    Cat.IsAuto := True;
+    FClientView.AddCategory(Cat);
+    Streams.CategoryList.Add(Cat);
+  end;
+
   FClientView.SortItems;
 end;
 
@@ -1280,7 +1287,7 @@ begin
   inherited;
 end;
 
-procedure TSidebar.Init(HomeCommunication: THomeCommunication);
+procedure TSidebar.Init;
 begin
   FPage1 := TTabSheet.Create(Self);
   FPage1.PageControl := Self;
@@ -1294,7 +1301,7 @@ begin
   FPage3.PageControl := Self;
   FPage3.Caption := _('Log');
 
-  FBrowserView := TMStreamBrowserView.Create(Self, HomeCommunication);
+  FBrowserView := TMStreamBrowserView.Create(Self);
   FInfoView := TMStreamInfoView.Create(Self);
   FDebugView := TMStreamDebugView.Create(Self);
 

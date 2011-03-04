@@ -213,7 +213,6 @@ object frmCommunityLogin: TfrmCommunityLogin
       Font.Name = 'MS Sans Serif'
       Font.Style = [fsUnderline]
       ParentFont = False
-      OnClick = lblSignupClick
       ExplicitLeft = 312
     end
     object txtPassword: TLabeledEdit

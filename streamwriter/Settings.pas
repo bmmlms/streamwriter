@@ -42,10 +42,8 @@ type
     pnlPlugins: TPanel;
     lstPlugins: TListView;
     cmdConfigure: TBitBtn;
-    chkSubmitStreams: TCheckBox;
-    lblHelpSubmitStreams: TLabel;
+    chkNetworkActive: TCheckBox;
     chkRelay: TCheckBox;
-    Label11: TLabel;
     GroupBox2: TGroupBox;
     txtFilePattern: TLabeledEdit;
     txtPreview: TLabeledEdit;
@@ -57,9 +55,7 @@ type
     Label4: TLabel;
     Label5: TLabel;
     chkSkipShort: TCheckBox;
-    Label8: TLabel;
     chkSearchSilence: TCheckBox;
-    Label2: TLabel;
     Label10: TLabel;
     txtSilenceLevel: TEdit;
     Label12: TLabel;
@@ -102,8 +98,6 @@ type
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
-    procedure Label8Click(Sender: TObject);
-    procedure lblHelpSubmitStreamsClick(Sender: TObject);
     procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
       Selected: Boolean);
     procedure txtFilePatternChange(Sender: TObject);
@@ -119,7 +113,6 @@ type
     procedure lstPluginsCompare(Sender: TObject; Item1, Item2: TListItem;
       Data: Integer; var Compare: Integer);
     procedure btnBrowseClick(Sender: TObject);
-    procedure Label2Click(Sender: TObject);
     procedure txtHotkeyChange(Sender: TObject);
     procedure lstHotkeysChange(Sender: TObject; Item: TListItem;
       Change: TItemChange);
@@ -503,7 +496,7 @@ begin
 
     chkTrayClick(nil);
 
-    chkSubmitStreams.Checked := AppGlobals.SubmitStreams;
+    chkNetworkActive.Checked := AppGlobals.NetworkActive;
     txtShortLengthSeconds.Text := IntToStr(Settings.ShortLengthSeconds);
     txtSongBuffer.Text := IntToStr(Settings.SongBufferSeconds);
     txtMaxRetries.Text := IntToStr(Settings.MaxRetries);
@@ -615,8 +608,7 @@ begin
 
   lblTop.Caption := _('Stream settings');
 
-  chkSubmitStreams.Visible := False;
-  lblHelpSubmitStreams.Visible := False;
+  chkNetworkActive.Visible := False;
 end;
 
 destructor TfrmSettings.Destroy;
@@ -738,7 +730,7 @@ begin
     AppGlobals.Dir := txtDir.Text;
     AppGlobals.Tray := chkTray.Checked;
     AppGlobals.TrayOnMinimize := optMinimize.Checked;
-    AppGlobals.SubmitStreams := chkSubmitStreams.Checked;
+    AppGlobals.NetworkActive := chkNetworkActive.Checked;
     AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
     AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
 
@@ -874,27 +866,6 @@ begin
   inherited;
   if Key = VK_F1 then
     ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLink), '', '', 1);
-end;
-
-procedure TfrmSettings.Label2Click(Sender: TObject);
-begin
-  inherited;
-  MsgBox(Handle, _('When enabled streamWriter will search for silence before saving files, ' +
-                   'this will only work for streams that have silence between played tracks and if bass.dll was loaded.'#13#10 +
-                   'You can test your settings for detecting silence in the manual cut view by ' +
-                   'right-clicking a saved track, selecting ''Cut'' and using the corresponding toolbar button in the opened tab.'), _('Info'), MB_ICONINFORMATION);
-end;
-
-procedure TfrmSettings.lblHelpSubmitStreamsClick(Sender: TObject);
-begin
-  inherited;
-  MsgBox(Handle, _('When enabled every stream unknown to streamWriter will be submitted to the stream database. This helps populating the stream database so streamWriter''s browser will be kept up to date. No personal information will be sent, only the stream''s url.'), _('Info'), MB_ICONINFORMATION);
-end;
-
-procedure TfrmSettings.Label8Click(Sender: TObject);
-begin
-  inherited;
-  MsgBox(Handle, _('When a title was recorded and it''s size is below the set limit, it will not be saved to disk.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TfrmSettings.lstDefaultFilterChange(Sender: TObject);

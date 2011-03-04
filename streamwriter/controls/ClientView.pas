@@ -53,6 +53,7 @@ type
     FPopupMenu: TPopupMenu;
     FDragSource: TDropFileSource;
     FDragNodes: TNodeArray;
+    FAutoNode: PVirtualNode;
 
     FInitialSorted: Boolean;
     FSortColumn: Integer;
@@ -106,6 +107,9 @@ type
     function NodesToClients(Nodes: TNodeArray): TClientArray;
     function GetEntries(T: TEntryTypes): TPlaylistEntryArray;
 
+    procedure MoveTo(Source, Target: PVirtualNode; Mode: TVTNodeAttachMode; ChildrenOnly: Boolean); reintroduce;
+
+    property AutoNode: PVirtualNode read FAutoNode write FAutoNode;
     property OnStartStreaming: TStartStreamingEvent read FOnStartStreaming write FOnStartStreaming;
   end;
 
@@ -118,10 +122,14 @@ var
   Node: PVirtualNode;
   NodeData: PClientNodeData;
 begin
-  Node := AddChild(nil);
+  Node := AddChild(nil);                      
   NodeData := GetNodeData(Node);
   NodeData.Client := nil;
   NodeData.Category := Category;
+  if Category.IsAuto then
+  begin
+    FAutoNode := Node;
+  end;
   Result := Node;
 end;
 
@@ -147,6 +155,12 @@ begin
   NodeData := GetNodeData(Node);
   NodeData.Client := Client;
   NodeData.Category := nil;
+
+  if Client.AutoRemove then
+  begin
+    MoveTo(Node, FAutoNode, amAddChildLast, False);
+  end;
+
   Result := Node;
 end;
 
@@ -159,6 +173,7 @@ begin
   Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
   TreeOptions.AutoOptions := [toAutoScrollOnExpand];
+  //TreeOptions.StringOptions := TreeOptions.StringOptions + [toShowStaticText];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowDropmark];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toAcceptOLEDrop, toEditable];
   Header.Options := Header.Options + [hoAutoResize];
@@ -536,6 +551,16 @@ begin
 }
 end;
 
+procedure TMClientView.MoveTo(Source, Target: PVirtualNode;
+  Mode: TVTNodeAttachMode; ChildrenOnly: Boolean);
+begin
+  inherited;
+
+  // Frische Nodes die wo rein kommen, Mama bitte immer ausklappen.
+  if not Expanded[Target] then
+    Expanded[Target] := True;
+end;
+
 function TMClientView.RefreshClient(Client: TICEClient): Boolean;
 var
   i: Integer;
@@ -619,7 +644,7 @@ var
 begin
   inherited; 
   NodeData := GetNodeData(Node);
-  Allowed := NodeData.Category <> nil;
+  Allowed := (NodeData.Category <> nil) and (not NodeData.Category.IsAuto);
 end;
 
 function TMClientView.DoCompare(Node1, Node2: PVirtualNode;
