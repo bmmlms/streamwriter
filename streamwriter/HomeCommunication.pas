@@ -49,11 +49,14 @@ type
     FChangedTitle: string;
     FChangedCurrentURL: string;
 
+    FServerInfoClientCount: Cardinal;
+
     FErrorMsg: string;
 
     FOnGenresReceived: TSocketEvent;
     FOnStreamsReceived: TSocketEvent;
     FOnTitleChanged: TSocketEvent;
+    FOnServerInfo: TSocketEvent;
     FOnError: TSocketEvent;
 
     function XMLGetLogin: AnsiString;
@@ -64,6 +67,7 @@ type
     procedure DoGenresReceived(Version: Integer; Header, Data: TXMLNode);
     procedure DoStreamsReceived(Version: Integer; Header, Data: TXMLNode);
     procedure DoTitleChanged(Version: Integer; Header, Data: TXMLNode);
+    procedure DoServerInfo(Version: Integer; Header, Data: TXMLNode);
     procedure DoError(Version: Integer; Header, Data: TXMLNode);
     procedure DoEnded; override;
   public
@@ -76,6 +80,7 @@ type
     property OnGenresReceived: TSocketEvent read FOnGenresReceived write FOnGenresReceived;
     property OnStreamsReceived: TSocketEvent read FOnStreamsReceived write FOnStreamsReceived;
     property OnTitleChanged: TSocketEvent read FOnTitleChanged write FOnTitleChanged;
+    property OnServerInfo: TSocketEvent read FOnServerInfo write FOnServerInfo;
     property OnError: TSocketEvent read FOnError write FOnError;
   end;
 
@@ -83,6 +88,7 @@ type
   TGenresReceivedEvent = procedure(Sender: TObject; Genres: TStringList) of object;
   TStreamsReceivedEvent = procedure(Sender: TObject; Streams: TStreamInfoArray; Count: Integer) of object;
   TTitleChangedEvent = procedure(Sender: TObject; Name, Title, CurrentURL: string) of object;
+  TServerInfoEvent = procedure(Sender: TObject; ClientCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; Msg: string) of object;
 
   THomeCommunication = class
@@ -95,6 +101,7 @@ type
     FOnStreamsReceived: TStreamsReceivedEvent;
     FOnTitleChanged: TTitleChangedEvent;
     //FOnReceiveError: TNotifyEvent;
+    FOnServerInfo: TServerInfoEvent;
     FOnError: TErrorEvent;
     FOnOldVersion: TNotifyEvent;
     FOnStateChanged: TNotifyEvent;
@@ -104,6 +111,7 @@ type
     procedure ClientGenresReceived(Sender: TSocketThread);
     procedure ClientStreamsReceived(Sender: TSocketThread);
     procedure ClientTitleChanged(Sender: TSocketThread);
+    procedure ClientServerInfo(Sender: TSocketThread);
     procedure ClientError(Sender: TSocketThread);
   public
     constructor Create;
@@ -125,8 +133,9 @@ type
     property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
     property OnTitleChanged: TTitleChangedEvent read FOnTitleChanged write FOnTitleChanged;
     //property OnReceiveError: TNotifyEvent read FOnReceiveError write FOnReceiveError;
+    property OnServerInfo: TServerInfoEvent read FOnServerInfo write FOnServerInfo;
     property OnError: TErrorEvent read FOnError write FOnError;
-    property OnOldVersion: TNotifyEvent read FOnOldVersion write FOnOldVersion;
+    //property OnOldVersion: TNotifyEvent read FOnOldVersion write FOnOldVersion;
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
   end;
 
@@ -144,6 +153,12 @@ procedure THomeCommunication.ClientGenresReceived(Sender: TSocketThread);
 begin
   if Assigned(FOnGenresReceived) then
     FOnGenresReceived(Self, THomeThread(Sender).Genres);
+end;
+
+procedure THomeCommunication.ClientServerInfo(Sender: TSocketThread);
+begin
+  if Assigned(FOnServerInfo) then
+    FOnServerInfo(Self, THomeThread(Sender).FServerInfoClientCount);
 end;
 
 procedure THomeCommunication.ClientStreamsReceived(Sender: TSocketThread);
@@ -169,6 +184,7 @@ begin
   FClient.OnGenresReceived := ClientGenresReceived;
   FClient.OnStreamsReceived := ClientStreamsReceived;
   FClient.OnTitleChanged := ClientTitleChanged;
+  FClient.OnServerInfo := ClientServerInfo;
   FClient.OnError := ClientError;
   FClient.OnEnded := ClientEnded;
   FClient.Resume;
@@ -253,9 +269,6 @@ var
   Data: TXMLNode;
   XML: AnsiString;
 begin
-  if not AppGlobals.NetworkActive then
-    Exit;
-
   if not Connected then
     Exit;
 
@@ -409,6 +422,11 @@ begin
           DoTitleChanged(Version, Header, Data);
         end;
 
+        if Header.Attributes.AttributeByName['type'].Value.AsString = 'serverinfo' then
+        begin
+          DoServerInfo(Version, Header, Data);
+        end;
+
         if Header.Attributes.AttributeByName['type'].Value.AsString = 'error' then
         begin
           DoError(Version, Header, Data);
@@ -420,6 +438,15 @@ begin
     except
       raise Exception.Create('Invalid data received');
     end;
+end;
+
+procedure THomeThread.DoServerInfo(Version: Integer; Header,
+  Data: TXMLNode);
+begin
+  FServerInfoClientCount := Data.Nodes.GetNode('clientcount').Value.AsLongWord;
+
+  if Assigned(FOnServerInfo) then
+    Sync(FOnServerInfo);
 end;
 
 procedure THomeThread.DoStreamsReceived(Version: Integer; Header, Data: TXMLNode);

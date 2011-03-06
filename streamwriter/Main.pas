@@ -170,6 +170,7 @@ type
     FStreams: TDataLists;
     FUpdater: TUpdateClient;
     FUpdateOnExit: Boolean;
+    FClientCount: Cardinal;
 
     FWasActivated: Boolean;
     FWasShown: Boolean;
@@ -203,6 +204,7 @@ type
     procedure RegisterHotkeys(Reg: Boolean);
 
     procedure HomeCommStateChanged(Sender: TObject);
+    procedure HomeCommServerInfo(Sender: TObject; ClientCount: Cardinal);
     procedure HomeCommError(Sender: TObject; Msg: string);
 
     procedure PreTranslate;
@@ -445,6 +447,7 @@ begin
   FClients := TClientManager.Create(FStreams);
 
   HomeComm.OnStateChanged := HomeCommStateChanged;
+  HomeComm.OnServerInfo := HomeCommServerInfo;
   HomeComm.OnError := HomeCommError;
   HomeComm.Connect;
 
@@ -598,6 +601,12 @@ end;
 procedure TfrmStreamWriterMain.HomeCommError(Sender: TObject; Msg: string);
 begin
   MsgBox(Handle, Format(_('An error occured while communicating with the server: '#13#10'%s'), [Msg]), _('Error'), MB_ICONERROR);
+end;
+
+procedure TfrmStreamWriterMain.HomeCommServerInfo(Sender: TObject;
+  ClientCount: Cardinal);
+begin
+  FClientCount := ClientCount;
 end;
 
 procedure TfrmStreamWriterMain.HomeCommStateChanged(Sender: TObject);
@@ -840,19 +849,25 @@ end;
 
 procedure TfrmStreamWriterMain.SetConnected;
 var
-  Icon: THandle;
+  Icon, Icon2: THandle;
 begin
   if HomeComm.Connected then
   begin
+    addStatus.Panels[1].Text := IntToStr(FClientCount);
     addStatus.Panels[0].Text := _('Connected');
-    Icon := LoadImage(hInstance, 'CONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    Icon := LoadImage(HInstance, 'CONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
   end else
   begin
+    addStatus.Panels[1].Text := '';
     addStatus.Panels[0].Text := _('Connecting...');
-    Icon := LoadImage(hInstance, 'DISCONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    Icon := LoadImage(HInstance, 'DISCONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
   end;
   SendMessage(addStatus.Handle, SB_SETICON, 0, Icon);
   DestroyIcon(Icon);
+
+  Icon2 := LoadImage(HInstance, 'USER', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+  SendMessage(addStatus.Handle, SB_SETICON, 1, Icon2);
+  DestroyIcon(Icon2);
 end;
 
 procedure TfrmStreamWriterMain.ShowSettings(BrowseDir: Boolean);
@@ -1204,9 +1219,9 @@ begin
 
   SetConnected;
 
-  addStatus.Panels[1].Text := MakeSize(Speed) + '/s';
-  addStatus.Panels[2].Text := Format(_('%s/%s received'), [MakeSize(tabClients.Received), MakeSize(FStreams.Received)]);
-  addStatus.Panels[3].Text := Format(_('%d songs saved'), [FClients.SongsSaved]);
+  addStatus.Panels[2].Text := MakeSize(Speed) + '/s';
+  addStatus.Panels[3].Text := Format(_('%s/%s received'), [MakeSize(tabClients.Received), MakeSize(FStreams.Received)]);
+  addStatus.Panels[4].Text := Format(_('%d songs saved'), [FClients.SongsSaved]);
 end;
 
 function TfrmStreamWriterMain.CanExitApp: Boolean;

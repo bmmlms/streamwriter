@@ -54,6 +54,7 @@ type
     FDragSource: TDropFileSource;
     FDragNodes: TNodeArray;
     FAutoNode: PVirtualNode;
+    FDragTreshold: Integer;
 
     FInitialSorted: Boolean;
     FSortColumn: Integer;
@@ -168,6 +169,8 @@ constructor TMClientView.Create(AOwner: TComponent; PopupMenu: TPopupMenu);
 begin
   inherited Create(AOwner);
 
+  FDragTreshold := 6;
+
   NodeDataSize := SizeOf(TClientNodeData);
   IncrementalSearch := isVisibleOnly;
   Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
@@ -245,8 +248,11 @@ begin
             Index := 3;
         end;
     end
-  else if Column = 0 then         
-    Index := 6;
+  else if Column = 0 then
+    if NodeData.Category.IsAuto then
+      Index := 7
+    else
+      Index := 6;
 end;
 
 function TMClientView.DoGetNodeTooltip(Node: PVirtualNode;
@@ -401,12 +407,29 @@ var
   i, n: Integer;
   Children: TNodeArray;
   HitNode: PVirtualNode;
+  NodeData: PClientNodeData;
+  R: TRect;
 begin
+  NodeData := nil;
   Result := True;
   if Length(FDragNodes) > 0 then
   begin
-    HitNode := GetNodeAt(Pt.X, Pt.Y);
     Result := True;
+
+    HitNode := GetNodeAt(Pt.X, Pt.Y);
+    if HitNode <> nil then
+      NodeData := GetNodeData(HitNode);
+
+    if (NodeData.Category <> nil) and (NodeData.Category.IsAuto) then
+    begin
+      R := GetDisplayRect(HitNode, 0, False);
+      if (not (Pt.Y > R.Bottom - FDragTreshold)) and (not (Pt.Y < R.Top + FDragTreshold)) then
+      begin
+        // Man darf in die automatische Kategorie nix reindraggen
+        Result := False;
+        Exit;
+      end;
+    end;
 
     // Drop darf nur erlaubt sein, wenn Ziel-Node nicht in gedraggten
     // Nodes vorkommt und Ziel-Node kein Kind von Drag-Node ist
@@ -808,7 +831,6 @@ var
   DropURL: string;
   HI: THitInfo;
   R: TRect;
-  RelevantWidth: Integer;
 begin
   inherited;
 
@@ -824,11 +846,9 @@ begin
     HitNodeData := GetNodeData(HI.HitNode);
     R := GetDisplayRect(HI.HitNode, 0, False);
 
-    RelevantWidth := 6;
-
-    if Pt.Y > R.Bottom - RelevantWidth then
+    if Pt.Y > R.Bottom - FDragTreshold then
       AttachMode := amInsertAfter
-    else if Pt.Y < R.Top + RelevantWidth then
+    else if Pt.Y < R.Top + FDragTreshold then
       AttachMode := amInsertBefore
     else
       AttachMode := amNoWhere;
@@ -922,6 +942,7 @@ var
   Clients: TClientArray;
   Node: PVirtualNode;
   Nodes: TNodeArray;
+  NodeData: PClientNodeData;
 begin
   if FDragSource.DragInProgress then
     Exit;
@@ -933,7 +954,6 @@ begin
     Exit;
   end;
 
-  //UseRelay := AppGlobals.Relay;
   UseFile := True;
 
   SetLength(FDragNodes, 0);
@@ -944,9 +964,8 @@ begin
   begin
     for Client in Clients do
     begin
-      //if AppGlobals.Relay then
-      //  if not Client.Active then
-      //    UseRelay := False;
+      if Client.AutoRemove then
+        Exit;
       SetLength(FDragNodes, Length(FDragNodes) + 1);
       FDragNodes[High(FDragNodes)] := GetClientNode(Client);
       if not Client.Active then
@@ -956,14 +975,8 @@ begin
     SetLength(Entries, 0);
 
     case AppGlobals.DefaultAction of
-      //caStartStop:
-        //if UseRelay then
-        //  Entries := GetEntries(etRelay);
       caStream:
         Entries := GetEntries(etStream);
-      //caRelay:
-      //  if UseRelay then
-      //    Entries := GetEntries(etRelay);
       caFile:
         if UseFile then
           Entries := GetEntries(etFile);
@@ -982,6 +995,7 @@ begin
     Nodes := GetNodes(ntCategory, True);
     for Node in Nodes do
     begin
+      NodeData := GetNodeData(Node);
       SetLength(FDragNodes, Length(FDragNodes) + 1);
       FDragNodes[High(FDragNodes)] := Node;
     end;
