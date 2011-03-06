@@ -81,6 +81,7 @@ type
     FRecordingStarted: Boolean;
     FFullTitleFound: Boolean;
     FRecordingTitleFound: Boolean;
+    FHaltClient: Boolean;
 
     FStreamTracks: TStreamTracks;
 
@@ -136,6 +137,7 @@ type
 
     property FullTitleFound: Boolean read FFullTitleFound write FFullTitleFound;
     property RecordingTitleFound: Boolean read FRecordingTitleFound write FRecordingTitleFound;
+    property HaltClient: Boolean read FHaltClient;
 
     property SaveAllowedTitle: string read FSaveAllowedTitle;
     property SaveAllowed: Boolean read FSaveAllowed write FSaveAllowed;
@@ -356,7 +358,7 @@ begin
   begin
     WriteDebug(Format(_('Skipping "%s" because it''s too small (%d bytes)'), [Title, RangeEnd - RangeBegin]), 1, 0);
     if Kill then
-      raise Exception.Create('TODO: !!!');
+      FHaltClient := True;
     Exit;
   end;
 
@@ -448,7 +450,7 @@ begin
     end;
 
     if Kill then
-      raise Exception.Create('TODO: !!!');
+      FHaltClient := True;
   except
     on E: Exception do
     begin
@@ -497,7 +499,7 @@ begin
     except
       if Assigned(FOnIOError) then
         FOnIOError(Self);
-      raise Exception.Create(_('Folder for saved tracks could not be created'));
+      raise Exception.Create(Format(_('Folder for saved tracks "%s" could not be created'), [Dir]));
     end;
 
     try
@@ -527,17 +529,22 @@ begin
       raise Exception.Create(Format(_('Could not create "%s"'), [Filename]));
     end;
 
-    if FMetaCounter > 0 then
+    // Falls schon abgespielt wird, und jetzt aufgenommen wir, eventuell da aufsetzen und nicht von vorne anfangen.
+    // Funzt leider nicht, weil FStreamTracks nur befüllt wird, wenn FAudioStream <> nil ist, und das ist nur
+    // der Fall, wenn die Aufnahme schon aktiv ist. Also nicht, während nur abgespielt wird...
+    {
+    if (((FMetaCounter = 1) and (not FSettings.OnlySaveFull))) and FSettings.SeparateTracks then
     begin
-      FMetaCounter := 1;
+      FRecordingTitleFound := True;
       if FStreamTracks.Count > 1 then
-        for i := FStreamTracks.Count - 2 downto 0 do // TODO: Die Schleife hier ist ungetestet. soll dafür sorgen, dann nen voll aufgenommen wird, während z.b. wiedergabe läuft, von selbigem.
+        for i := FStreamTracks.Count - 2 downto 0 do
         begin
           FStreamTracks[i].Free;
           FStreamTracks.Delete(i);
         end;
     end else
-      FStreamTracks.Clear;
+    }
+    FStreamTracks.Clear;
 
     FFilename := Filename;
 
@@ -573,8 +580,7 @@ begin
 
     if (Track.S > -1) and (Track.E > -1) then
     begin
-      if FSettings.SearchSilence then //and
-      //   (FAudioStream.ClassType.InheritsFrom(TMPEGStreamFile) or FAudioStream.ClassType.InheritsFrom(TMPEGStreamMemory)) then
+      if FSettings.SearchSilence then
       begin
         if FAudioStream.Size > Track.E + FBytesPerSec * FSettings.SilenceBufferSeconds then
         begin
@@ -617,7 +623,9 @@ begin
             WriteDebug(Format('Scanned song start/end: %d/%d', [R.A, R.B]), 1, 1);
 
             if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
-              SaveData(R.A, R.B, Track.Title);
+              SaveData(R.A, R.B, Track.Title)
+            else
+              WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
 
             Track.Free;
             FStreamTracks.Delete(i);
@@ -630,7 +638,9 @@ begin
               WriteDebug(Format('No silence found, saving using buffer of %d bytes...', [FSettings.SongBufferSeconds * FBytesPerSec]), 1, 1);
 
               if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
-                SaveData(Track.S - FSettings.SongBufferSeconds * FBytesPerSec, Track.E + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title);
+                SaveData(Track.S - FSettings.SongBufferSeconds * FBytesPerSec, Track.E + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title)
+              else
+                WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
 
               Track.Free;
               FStreamTracks.Delete(i);
@@ -649,13 +659,12 @@ begin
         if (FAudioStream.Size >= Track.S + (Track.E - Track.S) + ((FSettings.SongBufferSeconds * FBytesPerSec) * 2)) and
            (FAudioStream.Size > Track.E + FSettings.SongBufferSeconds * FBytesPerSec) then
         begin
-          //if FSettings.SearchSilence and (not FAudioStream.ClassType.InheritsFrom(TMPEGStreamFile)) then
-          //  WriteDebug(Format('Saving using buffer of %d bytes because stream is not mpeg...', [FSettings.SongBufferSeconds * FBytesPerSec]), 1, 1)
-          //else
           WriteDebug(Format('Saving using buffer of %d bytes...', [FSettings.SongBufferSeconds * FBytesPerSec]), 1, 1);
 
           if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
-            SaveData(Track.S - FSettings.SongBufferSeconds * FBytesPerSec, Track.E + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title);
+            SaveData(Track.S - FSettings.SongBufferSeconds * FBytesPerSec, Track.E + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title)
+          else
+            WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
 
           Track.Free;
           FStreamTracks.Delete(i);
@@ -675,6 +684,7 @@ var
   MetaLen, P: Integer;
   Title, MetaData: string;
   Buf: Byte;
+  Track: TStreamTrack;
 begin
   Seek(0, soFromBeginning);
 
@@ -719,13 +729,32 @@ begin
     begin
       DataReceived(FMetaInt);
 
-      if (RecordTitle <> '') and (FBytesPerSec > 0) and (FTitle <> FRecordTitle) and (FAudioStream.Size > FBytesPerSec * 30) then
-      begin
-        raise Exception.Create('TODO: !!!');
-      end;
-
       if FSettings.SeparateTracks then
         TrySave;
+
+      if (RecordTitle <> '') and (FBytesPerSec > 0) and (FTitle <> FRecordTitle) then
+      begin
+        if FStreamTracks.Count > 0 then
+        begin
+          Track := FStreamTracks[FStreamTracks.Count - 1];
+
+          if (FMetaCounter > 2) and (Track.E > -1) and (FAudioStream.Size > Track.E + Max(FBytesPerSec * (FSettings.SilenceBufferSeconds + 10) * 2, FBytesPerSec * (FSettings.SongBufferSeconds + 10) * 2)) then
+          begin
+            // Zuviel empfangen und Titel war nicht dabei
+            FHaltClient := True;
+          end;
+        end else
+        begin
+          // Keine Tracks in der Liste..
+          //FHaltClient := True;
+        end;
+
+        if (FAudioStream.Size > FBytesPerSec * 30) and (FMetaCounter = 1) then
+        begin
+          // Titel scheint nicht zu kommen..
+          FHaltClient := True;
+        end;
+      end;
 
       Read(Buf, 1);
       if Buf > 0 then

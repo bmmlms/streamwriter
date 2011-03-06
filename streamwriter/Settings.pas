@@ -43,7 +43,6 @@ type
     lstPlugins: TListView;
     cmdConfigure: TBitBtn;
     chkNetworkActive: TCheckBox;
-    chkRelay: TCheckBox;
     GroupBox2: TGroupBox;
     txtFilePattern: TLabeledEdit;
     txtPreview: TLabeledEdit;
@@ -453,7 +452,7 @@ begin
 
     SetFields;
 
-    ClientWidth := 480;
+    ClientWidth := 510;
     ClientHeight := 455;
 
     lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
@@ -834,6 +833,9 @@ begin
 
   lblPanelCut.Top := pnlCut.ClientHeight div 2 - lblPanelCut.Height div 2;
   lblPanelCut.Left := pnlCut.ClientWidth div 2 - lblPanelCut.Width div 2;
+
+  txtSilenceBufferSeconds.Left := Label6.Left + Label6.Width + 4;
+  Label15.Left := txtSilenceBufferSeconds.Left + txtSilenceBufferSeconds.Width + 4;
 end;
 
 function TfrmSettings.GetNewID: Integer;
@@ -961,6 +963,8 @@ begin
   AppGlobals.PluginManager.ReInitPlugins;
   lstDefaultAction.ItemIndex := FDefaultActionIdx;
   lstDefaultFilter.ItemIndex := FDefaultFilterIdx;
+
+  FormResize(Self);
 end;
 
 function TfrmSettings.ValidatePattern: string;
@@ -1334,7 +1338,7 @@ begin
 
     if Trim(txtSongBuffer.Text) = '' then
     begin
-      MsgBox(Handle, _('Please enter the length of the buffer that should be added to every beginning/end of saved titles.'), _('Info'), MB_ICONINFORMATION);
+      MsgBox(Handle, _('Please enter the length of the buffer that should be added to every beginning/end of saved titles if no silence could be found.'), _('Info'), MB_ICONINFORMATION);
       SetPage(FPageList.Find(TPanel(txtSongBuffer.Parent)));
       txtSongBuffer.SetFocus;
       Exit;

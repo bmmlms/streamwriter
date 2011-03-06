@@ -95,7 +95,6 @@ type
     FActionPlay: TAction;
     FActionPause: TAction;
     FActionStopPlay: TAction;
-    //FActionTuneInRelay: TAction;
     FActionTuneInFile: TAction;
     FActionTuneInStream: TAction;
 
@@ -121,7 +120,6 @@ type
     procedure ActionSavePlaylistStreamExecute(Sender: TObject);
     procedure ActionSavePlaylistFileExecute(Sender: TObject);
     procedure ActionTuneInStreamExecute(Sender: TObject);
-    //procedure ActionTuneInRelayExecute(Sender: TObject);
     procedure ActionTuneInFileExecute(Sender: TObject);
 
     procedure ClientManagerDebug(Sender: TObject);
@@ -323,8 +321,7 @@ begin
   begin
     NodeData := FClientView.GetNodeData(Node);
     if NodeData.Client <> nil then
-      //if not NodeData.Client.AutoRemove then
-        FClients.RemoveClient(NodeData.Client);
+      FClients.RemoveClient(NodeData.Client);
   end;
 
   Nodes := FClientView.GetNodes(ntCategory, True);
@@ -340,8 +337,7 @@ begin
           if ChildNode.Parent = Node then
           begin
             ChildNodeData := FClientView.GetNodeData(ChildNode);
-            //if not ChildNodeData.Client.AutoRemove then
-              FClients.RemoveClient(ChildNodeData.Client);
+            FClients.RemoveClient(ChildNodeData.Client);
           end;
         end;
       end;
@@ -476,21 +472,6 @@ begin
   SavePlaylist(Entries, True);
 end;
 
-{
-procedure TClientTab.ActionTuneInRelayExecute(Sender: TObject);
-var
-  Entries: TPlaylistEntryArray;
-begin
-  if Assigned(FOnUpdateButtons) then
-    FOnUpdateButtons(Self);
-  if FActionTuneInRelay.Enabled then
-  begin
-    Entries := FClientView.GetEntries(etRelay);
-    SavePlaylist(Entries, True);
-  end;
-end;
-}
-
 procedure TClientTab.ActionTuneInFileExecute(Sender: TObject);
 var
   Entries: TPlaylistEntryArray;
@@ -609,9 +590,6 @@ begin
   FVolume.Setup;
   FVolume.TrackBar.Position := AppGlobals.PlayerVolume;
   FVolume.TrackBar.OnChange := VolumeTrackbarChange;
-
-  //FActionTuneInRelay := GetAction('actTuneInRelay');
-  //FActionTuneInRelay.OnExecute := ActionTuneInRelayExecute;
 
   FActionPlay := GetAction('actPlay');
   FActionPause := GetAction('actPause');
@@ -962,6 +940,8 @@ begin
   Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
   if Length(Clients) = 1 then
   begin
+    if Clients[0].Client.AutoRemove then
+      Exit;
     case AppGlobals.DefaultAction of
       caStartStop:
         if Clients[0].Client.Recording then
@@ -980,8 +960,6 @@ begin
           FActionPlay.Execute;
       caStream:
         FActionTuneInStream.Execute;
-      //caRelay: ;
-        //FActionTuneInRelay.Execute;
       caFile:
         FActionTuneInFile.Execute;
     end;
@@ -1203,12 +1181,8 @@ begin
         FStreams.StreamList.Add(E);
       end else
       begin
-        //if NodeData.Category.IsAuto then
-        //  Continue;
         CatIdx := Nodes[i].Index + 1;
         C := TListCategory.Create(NodeData.Category.Name, CatIdx);
-        //if FClientView.Expanded[Nodes[i]] then
-        //  C.Expanded := True;
         C.Expanded := FClientView.Expanded[Nodes[i]];
         C.IsAuto := NodeData.Category.IsAuto;
         Streams.CategoryList.Add(C);
@@ -1264,7 +1238,7 @@ begin
 
   if FClientView.AutoNode = nil then
   begin
-    Cat := TListCategory.Create(_('Automated streams'), High(Integer));
+    Cat := TListCategory.Create(_('Managed streams'), High(Integer));
     Cat.IsAuto := True;
     FClientView.AddCategory(Cat);
     Streams.CategoryList.Add(Cat);

@@ -5,7 +5,7 @@ object frmSettings: TfrmSettings
   BorderStyle = bsSingle
   Caption = 'Settings'
   ClientHeight = 702
-  ClientWidth = 906
+  ClientWidth = 929
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -312,20 +312,11 @@ object frmSettings: TfrmSettings
     object chkNetworkActive: TCheckBox
       Left = 4
       Top = 96
-      Width = 281
+      Width = 285
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Tune into stations when a wishlist'#39's song is playing'
       TabOrder = 2
-    end
-    object chkRelay: TCheckBox
-      Left = 4
-      Top = 228
-      Width = 249
-      Height = 23
-      Anchors = [akLeft, akTop, akRight]
-      Caption = 'Enable local ICE-Server to listen to streams'
-      TabOrder = 3
-      Visible = False
     end
   end
   object pnlPlugins: TPanel
@@ -540,6 +531,7 @@ object frmSettings: TfrmSettings
       Top = 252
       Width = 53
       Height = 13
+      Alignment = taCenter
       Caption = 'lblPanelCut'
     end
     object Label6: TLabel
@@ -688,7 +680,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C0101020008000C0110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800100110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

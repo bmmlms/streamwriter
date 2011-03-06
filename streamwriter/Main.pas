@@ -93,10 +93,8 @@ type
     actSavePlaylistStream: TAction;
     actSavePlaylistFile: TAction;
     actSavePlaylistStream1: TMenuItem;
-    actSavePlaylistRelay1: TMenuItem;
     actSavePlaylistFile1: TMenuItem;
     Stream1: TMenuItem;
-    Relay1: TMenuItem;
     Stream2: TMenuItem;
     mnuReset1: TMenuItem;
     mnuReset11: TMenuItem;
@@ -166,6 +164,8 @@ type
       Shift: TShiftState);
     procedure actHelpExecute(Sender: TObject);
     procedure addStatusResize(Sender: TObject);
+    procedure addStatusDrawPanel(StatusBar: TStatusBar;
+      Panel: TStatusPanel; const Rect: TRect);
   private
     FStreams: TDataLists;
     FUpdater: TUpdateClient;
@@ -255,6 +255,7 @@ begin
     AppGlobals.HeaderWidth[i] := tabClients.ClientView.Header.Columns[i].Width;
 
   TrayIcon1.Visible := False;
+  tmrSpeed.Enabled := False;
 
   Hide;
 
@@ -375,6 +376,12 @@ begin
   UpdateButtons; // Damit die Entries im Hauptmenü angepasst werden, falls von Popup was geändert wurde.
 end;
 
+procedure TfrmStreamWriterMain.addStatusDrawPanel(StatusBar: TStatusBar;
+  Panel: TStatusPanel; const Rect: TRect);
+begin
+  SetConnected;
+end;
+
 procedure TfrmStreamWriterMain.addStatusResize(Sender: TObject);
 begin
   SetConnected;
@@ -437,7 +444,6 @@ begin
   FStreams := TDataLists.Create;
   FClients := TClientManager.Create(FStreams);
 
-
   HomeComm.OnStateChanged := HomeCommStateChanged;
   HomeComm.OnError := HomeCommError;
   HomeComm.Connect;
@@ -461,17 +467,15 @@ begin
   tabClients.OnTrackRemoved := tabClientsTrackRemoved;
   tabClients.OnAddIgnoreList := tabClientsAddIgnoreList;
 
+  tabLists := TListsTab.Create(pagMain);
+  tabLists.PageControl := pagMain;
+
   tabSaved := TSavedTab.Create(pagMain);
   tabSaved.PageControl := pagMain;
   tabSaved.OnCut := tabClientsCut;
   tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
   tabSaved.OnRefresh := tabSavedRefresh;
 
-  tabLists := TListsTab.Create(pagMain);
-  tabLists.PageControl := pagMain;
-
-  //if AppGlobals.Relay then
-  //  FClients.RelayServer.Start;
 
   FWasActivated := False;
   FWasShown := False;
@@ -503,13 +507,9 @@ begin
   // Ist hier unten, weil hier erst Tracks geladen wurden
   tabSaved.Setup(FStreams, imgImages);
 
-  //tabClients.ClientView.SortItems;
   tabClients.AddressBar.Stations.Sort;
 
   {$IFDEF DEBUG}Caption := Caption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
-
-  //if AppGlobals.BuildNumber > 0 then
-  //  Caption := Caption + _(' build ') + IntToStr(AppGlobals.BuildNumber);
 
   UpdateButtons;
   UpdateStatus;
@@ -540,7 +540,6 @@ begin
   FreeAndNil(FClients);
   FreeAndNil(FUpdater);
   FreeAndNil(FStreams);
-  //FreeAndNil(Bass);
 end;
 
 procedure TfrmStreamWriterMain.FormKeyDown(Sender: TObject; var Key: Word;
@@ -845,11 +844,11 @@ var
 begin
   if HomeComm.Connected then
   begin
-    addStatus.Panels[0].Text := 'Verbunden';
+    addStatus.Panels[0].Text := 'Connected';
     Icon := LoadImage(hInstance, 'CONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
   end else
   begin
-    addStatus.Panels[0].Text := 'Verbinde...';
+    addStatus.Panels[0].Text := 'Connecting...';
     Icon := LoadImage(hInstance, 'DISCONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
   end;
   SendMessage(addStatus.Handle, SB_SETICON, 0, Icon);
@@ -865,15 +864,6 @@ begin
   S.ShowModal;
   Language.Translate(Self, PreTranslate, PostTranslate);
   AppGlobals.PluginManager.ReInitPlugins;
-  {
-  if S.RelayChanged then
-  begin
-    if AppGlobals.Relay then
-      FClients.RelayServer.Start
-    else
-      FClients.RelayServer.Stop;
-  end;
-  }
   TrayIcon1.Visible := AppGlobals.Tray;
   RegisterHotkeys(True);
   S.Free;
@@ -1125,7 +1115,7 @@ begin
       actTuneInFile.Enabled := True;
   end;
 
-  B4 := False; // Bass.BassLoaded;
+  B4 := False;
   for Client in AllClients do
   begin
     if Client.Playing and Bass.BassLoaded then

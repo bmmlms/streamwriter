@@ -24,7 +24,7 @@ interface
 uses
   SysUtils, Windows, Classes, Controls, StdCtrls, ExtCtrls, Functions,
   Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
-  LanguageObjects, WaveData, Messages;
+  LanguageObjects, WaveData, Messages, ComCtrls;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -38,17 +38,22 @@ type
     FFilename: string;
     FWaveData: TWaveData;
 
+    FOnScanProgress: TNotifyEvent;
     FOnEndScan: TNotifyEvent;
     FOnScanError: TNotifyEvent;
 
+    procedure SyncScanProgress;
     procedure SyncEndScan;
     procedure SyncScanError;
+
+    procedure WaveDataScanProgress(Sender: TObject);
   protected
     procedure Execute; override;
   public
     constructor Create(Filename: string);
     destructor Destroy; override;
 
+    property OnScanProgress: TNotifyEvent read FOnScanProgress write FOnScanProgress;
     property OnEndScan: TNotifyEvent read FOnEndScan write FOnEndScan;
     property OnScanError: TNotifyEvent read FOnScanError write FOnScanError;
   end;
@@ -90,6 +95,7 @@ type
     FError: Boolean;
     FLineMode: TLineMode;
     FVolume: Integer;
+    FProgressBarLoad: TProgressBar;
 
     FPlayer: Cardinal;
     FSync, FSync2: Cardinal;
@@ -97,6 +103,7 @@ type
 
     FOnStateChanged: TNotifyEvent;
 
+    procedure ThreadScanProgress(Sender: TObject);
     procedure ThreadEndScan(Sender: TObject);
     procedure ThreadScanError(Sender: TObject);
     procedure ThreadTerminate(Sender: TObject);
@@ -105,7 +112,7 @@ type
 
     procedure FSetVolume(Value: Integer);
   protected
-
+    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -130,7 +137,7 @@ type
 
     property LineMode: TLineMode read FLineMode write FLineMode;
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
-    property Volume: Integer write FSetVolume;
+    property Volume: Integer read FVolume write FSetVolume;
   end;
 
   procedure LoopSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
@@ -144,6 +151,7 @@ begin
   inherited Create(True);
   FFilename := Filename;
   FWaveData := TWaveData.Create;
+  FWaveData.OnProgress := WaveDataScanProgress;
 end;
 
 destructor TScanThread.Destroy;
@@ -176,6 +184,17 @@ begin
     FOnScanError(Self);
 end;
 
+procedure TScanThread.SyncScanProgress;
+begin
+  if Assigned(FOnScanProgress) then
+    FOnScanProgress(Self);
+end;
+
+procedure TScanThread.WaveDataScanProgress(Sender: TObject);
+begin
+  Synchronize(SyncScanProgress);
+end;
+
 { TCutView }
 
 constructor TCutView.Create(AOwner: TComponent);
@@ -190,7 +209,8 @@ begin
 
   FLineMode := lmPlay;
 
-  //FWaveData := TWaveData.Create;
+  FProgressBarLoad := TProgressBar.Create(Self);
+  FProgressBarLoad.Parent := Self;
 end;
 
 destructor TCutView.Destroy;
@@ -207,7 +227,14 @@ begin
   FWaveData.Free;
 
   if FPlayer > 0 then
-    BASSStreamFree(FPlayer);
+  begin
+    // Das hier gibt gerne Exceptions. Aber nur, wenn ein CutView auf ist, und mann das Programm beendet.
+    // Schieß mich tot... das hier hilft, keine Ahnung woher der Fehler kommt.
+    try
+      BASSStreamFree(FPlayer);
+    except end;
+    FPlayer := 0;
+  end;
 
   inherited;
 end;
@@ -231,6 +258,7 @@ begin
   FScanThread.OnTerminate := ThreadTerminate;
   FScanThread.OnEndScan := ThreadEndScan;
   FScanThread.OnScanError := ThreadScanError;
+  FScanThread.OnScanProgress := ThreadScanProgress;
 
   FPB.BuildBuffer;
   FPB.Paint;
@@ -325,6 +353,7 @@ begin
   if FPlayer > 0 then
   begin
     BASSStreamFree(FPlayer);
+    FPlayer := 0;
   end;
 
   try
@@ -384,6 +413,16 @@ begin
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
+end;
+
+procedure TCutView.Resize;
+begin
+  inherited;
+
+  FProgressBarLoad.Width := Min(350, ClientWidth - 50);
+  FProgressBarLoad.Height := 24;
+  FProgressBarLoad.Left := ClientWidth div 2 - FProgressBarLoad.Width div 2;
+  FProgressBarLoad.Top := ClientHeight div 2 - FProgressBarLoad.Height div 2 + 20;
 end;
 
 procedure TCutView.Stop;
@@ -483,8 +522,14 @@ begin
   FPB.Repaint;
 end;
 
+procedure TCutView.ThreadScanProgress(Sender: TObject);
+begin
+  FProgressBarLoad.Position := FScanThread.FWaveData.Progress;
+end;
+
 procedure TCutView.ThreadTerminate(Sender: TObject);
 begin
+  FProgressBarLoad.Visible := False;
   FScanThread := nil;
 end;
 
@@ -718,6 +763,7 @@ end;
 destructor TCutPaintBox.Destroy;
 begin
   FBuf.Free;
+  FTimer.Enabled := False;
   inherited;
 end;
 
@@ -837,7 +883,10 @@ begin
       if Button = mbLeft then
       begin
         if FCutView.FPlayer > 0 then
-          BASSChannelStop(FCutView.FPlayer);
+        begin
+          //BASSChannelStop(FCutView.FPlayer);
+          BASSChannelSetPosition(FCutView.FPlayer, FCutView.FWaveData.WaveArray[ArrayPos].Pos, BASS_POS_BYTE);
+        end;
         FPlayLine := ArrayPos;
       end;
   end;
@@ -870,6 +919,9 @@ end;
 
 procedure TCutPaintBox.TimerTimer(Sender: TObject);
 begin
+  if csDestroying in ComponentState then
+    Exit;
+
   if (FCutView.FPlayer > 0) and (BASSChannelIsActive(FCutView.FPlayer) = BASS_ACTIVE_PLAYING) then
   begin
     FPlayingIndex := GetPlayerPos;

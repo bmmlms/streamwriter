@@ -50,6 +50,8 @@ type
     FSaveToMemory: Boolean;
     FOnlySaveFull: Boolean;
     FOverwriteSmaller: Boolean;
+
+    procedure FSetSaveToMemory(Value: Boolean);
   public
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamSettings;
     procedure Save(Stream: TExtendedStream);
@@ -70,7 +72,7 @@ type
     property RetryDelay: Cardinal read FRetryDelay write FRetryDelay;
     property Filter: TUseFilters read FFilter write FFilter;
     property SeparateTracks: Boolean read FSeparateTracks write FSeparateTracks;
-    property SaveToMemory: Boolean read FSaveToMemory write FSaveToMemory;
+    property SaveToMemory: Boolean read FSaveToMemory write FSetSaveToMemory;
     property OnlySaveFull: Boolean read FOnlySaveFull write FOnlySaveFull;
     property OverwriteSmaller: Boolean read FOverwriteSmaller write FOverwriteSmaller;
   end;
@@ -166,22 +168,20 @@ begin
 
   SetLength(FHeaderWidth, 6);
 
-  inherited Create(AppName, True, W, 500);
-
-  FBuildNumber := 119;
   {$IFDEF DEBUG}
   FProjectUpdateLink := 'http://streamwriter.gaia/';
   {$ELSE}
   FProjectUpdateLink := 'http://streamwriter.org/';
   {$ENDIF}
-
   FProjectHomepageLink := 'http://streamwriter.org/';
   FProjectLink := 'http://streamwriter.org/';
   FProjectHelpLink := 'http://streamwriter.org/wiki/artikel/help/';
   FProjectForumLink := 'http://streamwriter.org/forum/';
-
   FProjectDonateLink := 'http://streamwriter.org/inhalt/donate/';
 
+  inherited Create(AppName, True, W, 500);
+
+  FBuildNumber := 119;
   BuildThanksText;
 
   FLanguageIcons := TLanguageIcons.Create;
@@ -525,6 +525,12 @@ begin
   Result.Assign(Self);
 end;
 
+procedure TStreamSettings.FSetSaveToMemory(Value: Boolean);
+begin
+  FSaveToMemory := Value;
+  FSeparateTracks := True;
+end;
+
 class function TStreamSettings.Load(Stream: TExtendedStream;
   Version: Integer): TStreamSettings;
 var
@@ -654,7 +660,8 @@ initialization
   except
     on E: Exception do
     begin
-      MessageBox(0, PChar(Format('The application could not be started.'#13#10'Message: %s', [E.Message])), PChar(_('Error')), MB_ICONERROR);
+      //MessageBox(0, PChar(Format('The application could not be started.'#13#10'Message: %s', [E.Message])), PChar(_('Error')), MB_ICONERROR);
+      MessageBox(0, PChar(E.Message), PChar(_('Error')), MB_ICONERROR);
       Halt;
     end;
   end;

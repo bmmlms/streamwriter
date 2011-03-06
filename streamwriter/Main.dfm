@@ -28,11 +28,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Top = 333
     Width = 689
     Height = 19
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clBtnText
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Style = []
     Panels = <
       item
         Width = 100
@@ -46,7 +41,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       item
         Width = 100
       end>
-    UseSystemFont = False
+    OnDrawPanel = addStatusDrawPanel
     OnResize = addStatusResize
   end
   object tbClients: TToolBar
@@ -225,10 +220,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         object actSavePlaylistStream1: TMenuItem
           Action = actSavePlaylistStream
         end
-        object actSavePlaylistRelay1: TMenuItem
-          Caption = '&Relay'
-          Visible = False
-        end
         object actSavePlaylistFile1: TMenuItem
           Action = actSavePlaylistFile
         end
@@ -272,7 +263,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 128
     Bitmap = {
-      494C0101070009007C0510001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010107000900840510001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -547,7 +538,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 40
     Top = 140
     Bitmap = {
-      494C01012800D802E00810001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01012800D802E80810001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       000000000000360000002800000040000000B0000000010020000000000000B0
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -2010,7 +2001,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 372
     Top = 76
     Bitmap = {
-      494C010101000400E80410001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010101000400F00410001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -2329,10 +2320,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       object Stream1: TMenuItem
         Action = actSavePlaylistStream
       end
-      object Relay1: TMenuItem
-        Caption = '&Relay'
-        Visible = False
-      end
       object Stream2: TMenuItem
         Action = actSavePlaylistFile
       end
@@ -2413,7 +2400,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 432
     Top = 108
     Bitmap = {
-      494C010102000800080110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800100110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

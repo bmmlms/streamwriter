@@ -324,8 +324,8 @@ end;
 constructor THomeThread.Create;
 begin
   {$IFDEF DEBUG}
-  inherited Create('gaia', 8007);
-  //inherited Create('streamwriter.org', 8007);
+  //inherited Create('gaia', 8007);
+  inherited Create('streamwriter.org', 8007);
   {$ELSE}
   inherited Create('streamwriter.org', 8007);
   {$ENDIF}

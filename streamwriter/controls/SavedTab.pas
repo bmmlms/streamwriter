@@ -794,8 +794,8 @@ begin
   FPopupMenu.EnableItems(Length(Tracks) > 0);
   FTab.FToolbar.EnableItems(Length(Tracks) > 0);
 
-  FPopupMenu.ItemCut.Enabled := Bass.BassLoaded;
-  FTab.FToolbar.FCut.Enabled := Bass.BassLoaded;
+  FPopupMenu.ItemCut.Enabled := Bass.BassLoaded and (Length(Tracks) > 0);
+  FTab.FToolbar.FCut.Enabled := Bass.BassLoaded and (Length(Tracks) > 0);
 
   FPopupMenu.ItemRefresh.Enabled := RootNodeCount > 0;
   FTab.FToolbar.FRefresh.Enabled := RootNodeCount > 0;

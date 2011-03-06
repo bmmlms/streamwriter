@@ -350,6 +350,12 @@ procedure TICEThread.DoStuff;
 begin
   inherited;
 
+  if FTypedStream.HaltClient then
+  begin
+    FPlayer.Stop;
+    Terminate;
+  end;
+
   while FPlayer.Pausing or FPlayer.Stopping do
     Sleep(20);
 

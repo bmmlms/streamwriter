@@ -50,6 +50,9 @@ type
     FFilename: string;
     FWavesize, FFilesize: Int64;
     FAudioStart, FAudioEnd: Cardinal;
+    FProgress: Cardinal;
+
+    FOnProgress: TNotifyEvent;
 
     procedure AnalyzeData;
 
@@ -84,6 +87,9 @@ type
     property Filesize: Int64 read FFilesize;
     property AudioStart: Cardinal read FAudioStart;
     property AudioEnd: Cardinal read FAudioEnd;
+    property Progress: Cardinal read FProgress;
+
+    property OnProgress: TNotifyEvent read FOnProgress write FOnProgress;
   end;
 
 implementation
@@ -211,7 +217,7 @@ var
   i: Integer;
   Level: DWord;
   Position: QWORD;
-  Counter: Cardinal;
+  Counter, OldPercent: Cardinal;
 begin
   Counter := 0;
 
@@ -225,6 +231,17 @@ begin
     end;
 
     Position := BASSChannelGetPosition(FDecoder, BASS_POS_BYTE);
+
+    if FFilesize > 0 then
+    begin
+      OldPercent := FProgress;
+      FProgress := Trunc((Position / FFilesize) * 100);
+      if FProgress <> OldPercent then
+      begin
+        if Assigned(FOnProgress) then
+          FOnProgress(Self);
+      end;
+    end;
 
     Level := BASSChannelGetLevel(FDecoder);
     FWaveArray[Counter].L := LOWORD(Level);

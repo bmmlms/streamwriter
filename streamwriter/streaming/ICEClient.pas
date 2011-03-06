@@ -515,9 +515,11 @@ begin
       if Assigned(FOnRefresh) then
         FOnRefresh(Self);
 
-      if FAutoRemove then // TODO: !!!
+      if FAutoRemove then
       begin
         Kill;
+        if Assigned(FOnDisconnected) and (FICEThread = nil) then // TODO: ungetestet.
+          FOnDisconnected(Self);
       end;
     end;
   except
@@ -561,6 +563,7 @@ begin
           WriteDebug(Format(_('Plugin "%s" failed.'), [Entry.ActiveThread.Plugin.Name]), dtError, dlNormal);
       end;
 
+      {
       if FKilled then
       begin
         FProcessingList.Delete(i);
@@ -570,6 +573,7 @@ begin
             FOnDisconnected(Self);
         Exit;
       end;
+      }
 
       // Eine externe App könnte das File gelöscht haben
       if Entry.Data.Filesize <> High(UInt64) then // GetFileSize = Int64 => -1
@@ -590,13 +594,15 @@ begin
           if Assigned(FOnRefresh) then
             FOnRefresh(Self);
 
-      if FAutoRemove then // TODO: !!!
-      begin
-        Kill;
-      end;
-
           Entry.Free;
           FProcessingList.Delete(i);
+
+          if FAutoRemove then
+          begin
+            Kill;
+            if Assigned(FOnDisconnected) and (FICEThread = nil) then // todo: ungetestet.
+              FOnDisconnected(Self);
+          end;
         end;
       end else
       begin
@@ -699,11 +705,11 @@ begin
   FFilename := '';
   MaxRetries := FEntry.Settings.MaxRetries;
 
-  if AutoRemove and (FRetries >= 3) then // TODO: Es gibt sicher noch andere stellen, wo er ins Kill sollte...  z.b. wenn nach x sekunden der titel nicht erkannt werden konnte.
+  if (DiedThread.RecvStream.HaltClient) or (AutoRemove and ((FRetries >= 3) {or (DiedThread.RecvStream.MetaCounter > 0)})) then
   begin
-    // TODO: Funzt das? Wär ja schön einfach.. :).. er wird wohl anhalten, aber nicht aus liste verschwinden.
-    // TODO: laufen denn alle plugins drüber? das gefühl hätte ich vom code her erstmal nicht. weil das hier direkt nach songsaved() passiert u.A....
     Kill;
+    if Assigned(FOnDisconnected) and (FICEThread = nil) then
+      FOnDisconnected(Self);
     Exit;
   end;
 
