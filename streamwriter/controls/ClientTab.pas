@@ -1244,6 +1244,9 @@ begin
     Streams.CategoryList.Add(Cat);
   end;
 
+  Cat := PClientNodeData(FClientView.GetNodeData(FClientView.AutoNode)).Category;
+  Cat.Name := _('Managed streams');
+
   FClientView.SortItems;
 end;
 

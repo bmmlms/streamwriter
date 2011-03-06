@@ -683,8 +683,8 @@ begin
     Exit;
   end;
 
-  if (FStreamList.Count = 0) and (FRecentList.Count = 0) and (FIgnoreList.Count = 0) and
-     (FSaveList.Count = 0) and not (FileExists(AppGlobals.DataFile)) then
+  if (FCategoryList.Count = 1) and (FStreamList.Count = 0) and (FRecentList.Count = 0) and
+     (FIgnoreList.Count = 0) and (FSaveList.Count = 0) and not (FileExists(AppGlobals.DataFile)) then
   begin
     Exit;
   end;
