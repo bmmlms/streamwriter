@@ -844,11 +844,11 @@ var
 begin
   if HomeComm.Connected then
   begin
-    addStatus.Panels[0].Text := 'Connected';
+    addStatus.Panels[0].Text := _('Connected');
     Icon := LoadImage(hInstance, 'CONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
   end else
   begin
-    addStatus.Panels[0].Text := 'Connecting...';
+    addStatus.Panels[0].Text := _('Connecting...');
     Icon := LoadImage(hInstance, 'DISCONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
   end;
   SendMessage(addStatus.Handle, SB_SETICON, 0, Icon);
