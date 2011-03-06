@@ -607,6 +607,7 @@ procedure TfrmStreamWriterMain.HomeCommServerInfo(Sender: TObject;
   ClientCount: Cardinal);
 begin
   FClientCount := ClientCount;
+  SetConnected;
 end;
 
 procedure TfrmStreamWriterMain.HomeCommStateChanged(Sender: TObject);
@@ -853,7 +854,10 @@ var
 begin
   if HomeComm.Connected then
   begin
-    addStatus.Panels[1].Text := IntToStr(FClientCount);
+    if FClientCount > 0 then
+      addStatus.Panels[1].Text := IntToStr(FClientCount)
+    else
+      addStatus.Panels[1].Text := '';
     addStatus.Panels[0].Text := _('Connected');
     Icon := LoadImage(HInstance, 'CONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
   end else
