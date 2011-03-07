@@ -50,6 +50,7 @@ type
     FChangedCurrentURL: string;
 
     FServerInfoClientCount: Cardinal;
+    FServerInfoRecordingCount: Cardinal;
 
     FErrorMsg: string;
 
@@ -88,7 +89,7 @@ type
   TGenresReceivedEvent = procedure(Sender: TObject; Genres: TStringList) of object;
   TStreamsReceivedEvent = procedure(Sender: TObject; Streams: TStreamInfoArray; Count: Integer) of object;
   TTitleChangedEvent = procedure(Sender: TObject; Name, Title, CurrentURL: string) of object;
-  TServerInfoEvent = procedure(Sender: TObject; ClientCount: Cardinal) of object;
+  TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; Msg: string) of object;
 
   THomeCommunication = class
@@ -124,6 +125,7 @@ type
       StreamType: string; ReplaceQuery: Boolean): Boolean;
 
     procedure TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
+    procedure UpdateInfo(RecordingCount: Cardinal);
 
     procedure Terminate;
 
@@ -158,7 +160,7 @@ end;
 procedure THomeCommunication.ClientServerInfo(Sender: TSocketThread);
 begin
   if Assigned(FOnServerInfo) then
-    FOnServerInfo(Self, THomeThread(Sender).FServerInfoClientCount);
+    FOnServerInfo(Self, THomeThread(Sender).FServerInfoClientCount, THomeThread(Sender).FServerInfoRecordingCount);
 end;
 
 procedure THomeCommunication.ClientStreamsReceived(Sender: TSocketThread);
@@ -332,6 +334,29 @@ begin
     end;
 end;
 
+procedure THomeCommunication.UpdateInfo(RecordingCount: Cardinal);
+var
+  XMLDocument: TXMLLib;
+  Data, Data2: TXMLNode;
+  XML: AnsiString;
+begin
+  if not Connected then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('clientinfo');
+  try
+    Data := XMLDocument.Root.GetNode('data');
+    Data2 := TXMLNode.Create(Data);
+    Data2.Name := 'recordingcount';
+    Data2.Value.AsLongWord := RecordingCount;
+
+    XMLDocument.SaveToString(XML);
+    FClient.Write(XML);
+  finally
+    XMLDocument.Free;
+  end;
+end;
+
 { THomeThread }
 
 constructor THomeThread.Create;
@@ -444,6 +469,7 @@ procedure THomeThread.DoServerInfo(Version: Integer; Header,
   Data: TXMLNode);
 begin
   FServerInfoClientCount := Data.Nodes.GetNode('clientcount').Value.AsLongWord;
+  FServerInfoRecordingCount := Data.Nodes.GetNode('recordingcount').Value.AsLongWord;
 
   if Assigned(FOnServerInfo) then
     Sync(FOnServerInfo);

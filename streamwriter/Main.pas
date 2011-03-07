@@ -144,6 +144,7 @@ type
     actPause: TAction;
     Pause1: TMenuItem;
     Pause2: TMenuItem;
+    tmrRecordings: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -166,11 +167,15 @@ type
     procedure addStatusResize(Sender: TObject);
     procedure addStatusDrawPanel(StatusBar: TStatusBar;
       Panel: TStatusPanel; const Rect: TRect);
+    procedure tmrRecordingsTimer(Sender: TObject);
   private
     FStreams: TDataLists;
     FUpdater: TUpdateClient;
     FUpdateOnExit: Boolean;
+
     FClientCount: Cardinal;
+    FRecordingCount: Cardinal;
+    FLastLocalRecordingCount: Cardinal;
 
     FWasActivated: Boolean;
     FWasShown: Boolean;
@@ -204,7 +209,7 @@ type
     procedure RegisterHotkeys(Reg: Boolean);
 
     procedure HomeCommStateChanged(Sender: TObject);
-    procedure HomeCommServerInfo(Sender: TObject; ClientCount: Cardinal);
+    procedure HomeCommServerInfo(Sender: TObject; ClientCount, RecordingCount: Cardinal);
     procedure HomeCommError(Sender: TObject; Msg: string);
 
     procedure PreTranslate;
@@ -604,9 +609,10 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.HomeCommServerInfo(Sender: TObject;
-  ClientCount: Cardinal);
+  ClientCount, RecordingCount: Cardinal);
 begin
   FClientCount := ClientCount;
+  FRecordingCount := RecordingCount;
   SetConnected;
 end;
 
@@ -855,7 +861,7 @@ begin
   if HomeComm.Connected then
   begin
     if FClientCount > 0 then
-      addStatus.Panels[1].Text := IntToStr(FClientCount)
+      addStatus.Panels[1].Text := IntToStr(FClientCount) + '/' + IntToStr(FRecordingCount)
     else
       addStatus.Panels[1].Text := '';
     addStatus.Panels[0].Text := _('Connected');
@@ -1017,6 +1023,19 @@ begin
       FStreams.TrackList[i].WasCut := True;
       Exit;
     end;
+end;
+
+procedure TfrmStreamWriterMain.tmrRecordingsTimer(Sender: TObject);
+var
+  i: Integer;
+  C: Cardinal;
+begin
+  // TODO: Parametrierbar machen, ob das aktiv ist oder nicht. und timer interval wieder erhöhen.
+  C := 0;
+  for i := 0 to FClients.Count - 1 do
+    if FClients[i].Recording then
+      Inc(C);
+  HomeComm.UpdateInfo(C);
 end;
 
 procedure TfrmStreamWriterMain.tmrSpeedTimer(Sender: TObject);
