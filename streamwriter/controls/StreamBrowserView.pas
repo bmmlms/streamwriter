@@ -37,6 +37,7 @@ type
     Name: string;
     URL: string;
     Website: string;
+    Rating: Integer;
   end;
   TStreamDataArray = array of TStreamData;
 
@@ -535,6 +536,7 @@ begin
       Result[High(Result)].Name := NodeData.Name;
       Result[High(Result)].URL := NodeData.URL;
       Result[High(Result)].Website := NodeData.Website;
+      Result[High(Result)].Rating := NodeData.Rating;
     end;
   end;
 end;
@@ -682,7 +684,7 @@ begin
       // Wir schicken es trotz eventuellem nicht-angemeldet-sein. Weil dann bekommt die GUI
       // einen Fehler zugeschickt und zeigt das Login-Ding an.
       HomeComm.RateStream(Streams[0].ID, TMenuItem(Sender).Tag);
-      if HomeComm.Authenticated and (NodeData.Rating = 0) then
+      if HomeComm.Authenticated and (Streams[0].Rating = 0) then
       begin
         NodeData := GetNodeData(GetNodes(True)[0]);
         NodeData.Rating := TMenuItem(Sender).Tag;
