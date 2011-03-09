@@ -335,7 +335,7 @@ begin
     if FClients[i] <> Client then
       for n := 0 to Client.Entry.URLs.Count - 1 do
         if (FClients[i].Entry.StartURL = Client.Entry.StartURL) or
-           (FClients[i].Entry.URLs.IndexOf(Client.Entry.URLs[n]) > -1) then   // TODO: Dieses Pos kann probleme machen. dadurch können (wie eben) 2 streams, die verschieden sind, als einer gelten. phail.
+           (FClients[i].Entry.URLs.IndexOf(Client.Entry.URLs[n]) > -1) then
         begin
           if not FClients[i].Killed then
           begin

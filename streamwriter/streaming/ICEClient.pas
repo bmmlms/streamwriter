@@ -654,7 +654,8 @@ begin
     FOnRefresh(Self);
 
   if (FICEThread.RecvStream.FullTitleFound) and (not FAutoRemove) and (FRecordTitle = '') then
-    HomeComm.TitleChanged(Entry.Name, FTitle, FCurrentURL, Entry.StartURL, Entry.URLs);
+    if AppGlobals.SubmitStreamInfo then
+      HomeComm.TitleChanged(Entry.Name, FTitle, FCurrentURL, Entry.StartURL, Entry.URLs);
 end;
 
 procedure TICEClient.ThreadStateChanged(Sender: TSocketThread);

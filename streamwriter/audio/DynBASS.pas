@@ -137,7 +137,7 @@ begin
   BassDLLPath := AppGlobals.TempDir + 'bass.dll';
   BassAACDLLPath := AppGlobals.TempDir + 'bass_aac.dll';
 
-  Res := TResourceStream.Create(0, 'BASS', PChar(24));
+  Res := TResourceStream.Create(0, 'BASS', MakeIntResource(RT_RCDATA));
   try
     try
       Res.SaveToFile(BassDLLPath);
@@ -146,7 +146,7 @@ begin
     Res.Free;
   end;
 
-  Res := TResourceStream.Create(0, 'BASS_AAC', PChar(24));
+  Res := TResourceStream.Create(0, 'BASS_AAC', MakeIntResource(RT_RCDATA));
   try
     try
       Res.SaveToFile(BassAACDLLPath);

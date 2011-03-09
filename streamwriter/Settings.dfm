@@ -5,7 +5,7 @@ object frmSettings: TfrmSettings
   BorderStyle = bsSingle
   Caption = 'Settings'
   ClientHeight = 702
-  ClientWidth = 929
+  ClientWidth = 1229
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -273,9 +273,6 @@ object frmSettings: TfrmSettings
     Height = 273
     TabOrder = 2
     Visible = False
-    DesignSize = (
-      294
-      273)
     object Label1: TLabel
       Left = 56
       Top = 64
@@ -308,15 +305,6 @@ object frmSettings: TfrmSettings
       NumbersOnly = True
       TabOrder = 1
       OnChange = txtRetryDelayChange
-    end
-    object chkNetworkActive: TCheckBox
-      Left = 4
-      Top = 96
-      Width = 285
-      Height = 21
-      Anchors = [akLeft, akTop, akRight]
-      Caption = 'Tune into stations when a wishlist'#39's song is playing'
-      TabOrder = 2
     end
   end
   object pnlPlugins: TPanel
@@ -399,6 +387,7 @@ object frmSettings: TfrmSettings
       TabOrder = 0
       ViewStyle = vsReport
       OnCompare = lstPluginsCompare
+      OnResize = lstPluginsResize
       OnSelectItem = lstPluginsSelectItem
     end
     object cmdConfigure: TBitBtn
@@ -671,6 +660,58 @@ object frmSettings: TfrmSettings
       OnChange = txtHotkeyChange
     end
   end
+  object pnlCommunity: TPanel
+    Left = 904
+    Top = 4
+    Width = 294
+    Height = 273
+    TabOrder = 6
+    Visible = False
+    DesignSize = (
+      294
+      273)
+    object Label2: TLabel
+      Left = 20
+      Top = 48
+      Width = 52
+      Height = 13
+      Caption = 'blah blah...'
+    end
+    object Label8: TLabel
+      Left = 20
+      Top = 88
+      Width = 52
+      Height = 13
+      Caption = 'blah blah...'
+    end
+    object chkAutoTuneIn: TCheckBox
+      Left = 4
+      Top = 0
+      Width = 285
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Tune into stations when a wishlist'#39's song is playing'
+      TabOrder = 0
+    end
+    object chkSubmitStreamInfo: TCheckBox
+      Left = 4
+      Top = 24
+      Width = 285
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Submit information about streams to the server'
+      TabOrder = 1
+    end
+    object chkSubmitStats: TCheckBox
+      Left = 4
+      Top = 64
+      Width = 285
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Submit statistics to the server'
+      TabOrder = 2
+    end
+  end
   object dlgOpen: TOpenDialog
     Filter = 'Executable files (*.exe, *.bat)|*.exe;*.bat'
     Left = 548
@@ -680,7 +721,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800100110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800180110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -818,5 +859,10 @@ object frmSettings: TfrmSettings
       800F800100000000800F800100000000F87F800100000000F87F800100000000
       F87FFFFF00000000FFFFFFFF0000000000000000000000000000000000000000
       000000000000}
+  end
+  object PngImageList1: TPngImageList
+    PngImages = <>
+    Left = 644
+    Top = 580
   end
 end

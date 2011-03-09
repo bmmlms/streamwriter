@@ -1,4 +1,4 @@
-{
+﻿{
     ------------------------------------------------------------------------
     streamWriter
     Copyright (c) 2010 Alexander Nottelmann
@@ -89,7 +89,9 @@ type
     FTrayOnMinimize: Boolean;
     FShowSidebar: Boolean;
     FSidebarWidth: Integer;
-    FNetworkActive: Boolean;
+    FAutoTuneIn: Boolean;
+    FSubmitStreamInfo: Boolean;
+    FSubmitStats: Boolean;
     FMinDiskSpace: Integer;
     FDefaultAction: TClientActions;
     FPlayerVolume, FCutVolume: Integer;
@@ -127,7 +129,9 @@ type
     property TrayOnMinimize: Boolean read FTrayOnMinimize write FTrayOnMinimize;
     property ShowSidebar: Boolean read FShowSidebar write FShowSidebar;
     property SidebarWidth: Integer read FSidebarWidth write FSidebarWidth;
-    property NetworkActive: Boolean read FNetworkActive write FNetworkActive;
+    property AutoTuneIn: Boolean read FAutoTuneIn write FAutoTuneIn;
+    property SubmitStreamInfo: Boolean read FSubmitStreamInfo write FSubmitStreamInfo;
+    property SubmitStats: Boolean read FSubmitStats write FSubmitStats;
     property MinDiskSpace: Integer read FMinDiskSpace write FMinDiskSpace;
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
     property PlayerVolume: Integer read FPlayerVolume write FPlayerVolume;
@@ -181,7 +185,8 @@ begin
 
   inherited Create(AppName, True, W, 500);
 
-  FBuildNumber := 119;
+  FBuildNumber := 119;
+
   BuildThanksText;
 
   FLanguageIcons := TLanguageIcons.Create;
@@ -240,7 +245,7 @@ begin
     FDonors[5] := '''Peter Parker''';
     FDonors[6] := 'Anita Wimmer';
     FDonors[7] := 'Valentin M.';
-    FDonors[8] := '''R�di''';
+    FDonors[8] := '''Rüdi''';
     FDonors[9] := '''Hummer''';
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
@@ -377,7 +382,9 @@ begin
   FStorage.Read('TrayClose', FTray, False);
   FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);
   FStorage.Read('SidebarWidth', FSidebarWidth, 230);
-  FStorage.Read('NetworkActive', FNetworkActive, True);
+  FStorage.Read('AutoTuneIn', FAutoTuneIn, True);
+  FStorage.Read('SubmitStreamInfo', FSubmitStreamInfo, True);
+  FStorage.Read('SubmitStats', FSubmitStats, True);
 
   // Wenn das zu viel wird, blockiert der Thread zu lange. Und dann kann man
   // Clients nicht mehr so schnell aus der Liste entfernen...
@@ -471,7 +478,9 @@ begin
   FStorage.Write('TrayClose', FTray);
   FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
   FStorage.Write('SidebarWidth', FSidebarWidth);
-  FStorage.Write('NetworkActive', FNetworkActive);
+  FStorage.Write('AutoTuneIn', FAutoTuneIn);
+  FStorage.Write('SubmitStats', FSubmitStats);
+  FStorage.Write('SubmitStreamInfo', FSubmitStreamInfo);
 
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));

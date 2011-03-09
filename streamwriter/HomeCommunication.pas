@@ -27,6 +27,7 @@ uses
 
 type
   TStreamInfo = record
+    ID: Integer;
     Name: string;
     Genre: string;
     URL: string;
@@ -34,12 +35,17 @@ type
     BitRate: Integer;
     StreamType: string;
     Downloads: Integer;
+    Rating: Integer;
   end;
   TStreamInfoArray = array of TStreamInfo;
+
+  TCommErrors = (ceUnknown, ceAuthRequired, ceNotification);
 
   THomeThread = class(TInt32SocketThread)
   private
     FGenres: TStringList;
+
+    FAuthAuthenticated: Boolean;
 
     FCount: Integer;
     FPacketCount: Integer;
@@ -52,19 +58,23 @@ type
     FServerInfoClientCount: Cardinal;
     FServerInfoRecordingCount: Cardinal;
 
+    FErrorID: TCommErrors;
     FErrorMsg: string;
 
+    FOnLoggedOn: TSocketEvent;
+    FOnLoggedOff: TSocketEvent;
     FOnGenresReceived: TSocketEvent;
     FOnStreamsReceived: TSocketEvent;
     FOnTitleChanged: TSocketEvent;
     FOnServerInfo: TSocketEvent;
     FOnError: TSocketEvent;
 
-    function XMLGetLogin: AnsiString;
     function XMLGet(T: string): TXMLLib;
   protected
     procedure DoConnected; override;
     procedure DoReceivedString(D: string); override;
+    procedure DoLoggedOn(Version: Integer; Header, Data: TXMLNode);
+    procedure DoLoggedOff(Version: Integer; Header, Data: TXMLNode);
     procedure DoGenresReceived(Version: Integer; Header, Data: TXMLNode);
     procedure DoStreamsReceived(Version: Integer; Header, Data: TXMLNode);
     procedure DoTitleChanged(Version: Integer; Header, Data: TXMLNode);
@@ -78,6 +88,8 @@ type
     procedure TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
     property Genres: TStringList read FGenres write FGenres;
 
+    property OnLoggedOn: TSocketEvent read FOnLoggedOn write FOnLoggedOn;
+    property OnLoggedOff: TSocketEvent read FOnLoggedOff write FOnLoggedOff;
     property OnGenresReceived: TSocketEvent read FOnGenresReceived write FOnGenresReceived;
     property OnStreamsReceived: TSocketEvent read FOnStreamsReceived write FOnStreamsReceived;
     property OnTitleChanged: TSocketEvent read FOnTitleChanged write FOnTitleChanged;
@@ -90,14 +102,15 @@ type
   TStreamsReceivedEvent = procedure(Sender: TObject; Streams: TStreamInfoArray; Count: Integer) of object;
   TTitleChangedEvent = procedure(Sender: TObject; Name, Title, CurrentURL: string) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
-  TErrorEvent = procedure(Sender: TObject; Msg: string) of object;
+  TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
 
   THomeCommunication = class
   private
     FClient: THomeThread;
     FConnected: Boolean;
+    FAuthenticated: Boolean;
 
-    FOnUserAuthenticated: TBooleanEvent;
+    //FOnUserAuthenticated: TBooleanEvent;
     FOnGenresReceived: TGenresReceivedEvent;
     FOnStreamsReceived: TStreamsReceivedEvent;
     FOnTitleChanged: TTitleChangedEvent;
@@ -109,6 +122,8 @@ type
 
     procedure ClientConnected(Sender: TSocketThread);
     procedure ClientEnded(Sender: TSocketThread);
+    procedure ClientLoggedOn(Sender: TSocketThread);
+    procedure ClientLoggedOff(Sender: TSocketThread);
     procedure ClientGenresReceived(Sender: TSocketThread);
     procedure ClientStreamsReceived(Sender: TSocketThread);
     procedure ClientTitleChanged(Sender: TSocketThread);
@@ -124,20 +139,21 @@ type
     function GetStreams(Count, Offset: Integer; Search, Genre: string; Kbps: Integer;
       StreamType: string; ReplaceQuery: Boolean): Boolean;
 
+    procedure LogOn(User, Pass: string);
+    procedure Logoff;
     procedure TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
     procedure UpdateInfo(RecordingCount: Cardinal);
+    procedure RateStream(ID, Rating: Integer);
 
     procedure Terminate;
 
     property Connected: Boolean read FConnected;
-    property OnUserAuthenticated: TBooleanEvent read FOnUserAuthenticated write FOnUserAuthenticated;
+    property Authenticated: Boolean read FAuthenticated;
     property OnGenresReceived: TGenresReceivedEvent read FOnGenresReceived write FOnGenresReceived;
     property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
     property OnTitleChanged: TTitleChangedEvent read FOnTitleChanged write FOnTitleChanged;
-    //property OnReceiveError: TNotifyEvent read FOnReceiveError write FOnReceiveError;
     property OnServerInfo: TServerInfoEvent read FOnServerInfo write FOnServerInfo;
     property OnError: TErrorEvent read FOnError write FOnError;
-    //property OnOldVersion: TNotifyEvent read FOnOldVersion write FOnOldVersion;
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
   end;
 
@@ -176,6 +192,20 @@ begin
       THomeThread(Sender).FChangedCurrentURL);
 end;
 
+procedure THomeCommunication.ClientLoggedOn(Sender: TSocketThread);
+begin
+  FAuthenticated := THomeThread(Sender).FAuthAuthenticated;
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
+end;
+
+procedure THomeCommunication.ClientLoggedOff(Sender: TSocketThread);
+begin
+  FAuthenticated := THomeThread(Sender).FAuthAuthenticated;
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
+end;
+
 procedure THomeCommunication.Connect;
 begin
   if FClient <> nil then
@@ -183,6 +213,8 @@ begin
 
   FClient := THomeThread.Create;
   FClient.OnConnected := ClientConnected;
+  FClient.OnLoggedOn := ClientLoggedOn;
+  FClient.OnLoggedOff := ClientLoggedOff;
   FClient.OnGenresReceived := ClientGenresReceived;
   FClient.OnStreamsReceived := ClientStreamsReceived;
   FClient.OnTitleChanged := ClientTitleChanged;
@@ -265,6 +297,33 @@ begin
   end;
 end;
 
+procedure THomeCommunication.RateStream(ID, Rating: Integer);
+var
+  XMLDocument: TXMLLib;
+  Data, Node: TXMLNode;
+  XML: AnsiString;
+begin
+  if not Connected then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('ratestream');
+  try
+    Data := XMLDocument.Root.GetNode('data');
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'id';
+    Node.Value.AsInteger := ID;
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'rating';
+    Node.Value.AsInteger := Rating;
+
+    XMLDocument.SaveToString(XML);
+    FClient.Write(XML);
+  finally
+    XMLDocument.Free;
+  end;
+end;
+
 procedure THomeCommunication.SubmitStream(Stream: string);
 var
   XMLDocument: TXMLLib;
@@ -295,9 +354,41 @@ begin
     FClient.Terminate;
 end;
 
+procedure THomeCommunication.LogOn(User, Pass: string);
+var
+  XMLDocument: TXMLLib;
+  Data, Node: TXMLNode;
+  XML: AnsiString;
+begin
+  if not Connected then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('logon');
+  try
+    Data := XMLDocument.Root.GetNode('data');
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'user';
+    Node.Value.AsString := User;
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'pass';
+    Node.Value.AsString := Pass;
+
+    XMLDocument.SaveToString(XML);
+    FClient.Write(XML);
+  finally
+    XMLDocument.Free;
+  end;
+end;
+
 procedure THomeCommunication.ClientConnected(Sender: TSocketThread);
 begin
   FConnected := True;
+
+  if AppGlobals.UserWasSetup and (AppGlobals.User <> '') and (AppGlobals.Pass <> '') then
+    LogOn(AppGlobals.User, AppGlobals.Pass);
+
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
@@ -307,6 +398,7 @@ var
   Thread: THomeThread;
 begin
   FConnected := False;
+  FAuthenticated := False;
   FClient := nil;
   Thread := THomeThread(Sender);
 
@@ -322,7 +414,7 @@ end;
 procedure THomeCommunication.ClientError(Sender: TSocketThread);
 begin
   if Assigned(FOnError) then
-    FOnError(Self, FClient.FErrorMsg);
+    FOnError(Self, FClient.FErrorID, FClient.FErrorMsg);
 end;
 
 procedure THomeCommunication.TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
@@ -332,6 +424,24 @@ begin
     begin
       FClient.TitleChanged(StreamName, Title, CurrentURL, URL, URLs);
     end;
+end;
+
+procedure THomeCommunication.LogOff;
+var
+  XMLDocument: TXMLLib;
+  Data, Data2: TXMLNode;
+  XML: AnsiString;
+begin
+  if not Connected then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('logoff');
+  try
+    XMLDocument.SaveToString(XML);
+    FClient.Write(XML);
+  finally
+    XMLDocument.Free;
+  end;
 end;
 
 procedure THomeCommunication.UpdateInfo(RecordingCount: Cardinal);
@@ -362,8 +472,8 @@ end;
 constructor THomeThread.Create;
 begin
   {$IFDEF DEBUG}
-  //inherited Create('gaia', 8007);
-  inherited Create('streamwriter.org', 8007);
+  inherited Create('gaia', 8007);
+  //inherited Create('streamwriter.org', 8007);
   {$ELSE}
   inherited Create('streamwriter.org', 8007);
   {$ENDIF}
@@ -378,11 +488,17 @@ begin
   inherited;
 end;
 
+procedure THomeThread.DoLoggedOn(Version: Integer; Header, Data: TXMLNode);
+begin
+  FAuthAuthenticated := Data.Nodes.GetNode('success').Value.AsBoolean;
+  if Assigned(FOnLoggedOn) then
+    Sync(FOnLoggedOn);
+end;
+
 procedure THomeThread.DoConnected;
 begin
   inherited;
 
-  Write(XMLGetLogin);
 end;
 
 procedure THomeThread.DoEnded;
@@ -394,7 +510,8 @@ end;
 
 procedure THomeThread.DoError(Version: Integer; Header, Data: TXMLNode);
 begin
-  FErrorMsg := Data.Value.AsString;
+  FErrorID := TCommErrors(Data.Nodes.GetNode('id').Value.AsInteger);
+  FErrorMsg := Data.Nodes.GetNode('message').Value.AsString;
   if Assigned(FOnError) then
     Sync(FOnError);
 end;
@@ -431,6 +548,16 @@ begin
 
         Version := Header.Attributes.AttributeByName['version'].Value.AsInteger;
         T := Header.Attributes.AttributeByName['type'].Value.AsString;
+
+        if Header.Attributes.AttributeByName['type'].Value.AsString = 'logon' then
+        begin
+          DoLoggedOn(Version, Header, Data);
+        end;
+
+        if Header.Attributes.AttributeByName['type'].Value.AsString = 'logoff' then
+        begin
+          DoLoggedOff(Version, Header, Data);
+        end;
 
         if Header.Attributes.AttributeByName['type'].Value.AsString = 'getgenres' then
         begin
@@ -489,6 +616,7 @@ begin
   begin
     Node := Data.Nodes.GetNode('streams').Nodes[i];
     SetLength(FStreams, Length(FStreams) + 1);
+    FStreams[High(FStreams)].ID := Node.Attributes.AttributeByName['id'].Value.AsInteger;
     FStreams[High(FStreams)].Name := Node.Attributes.AttributeByName['name'].Value.AsString;
     FStreams[High(FStreams)].Genre := Node.Attributes.AttributeByName['genre'].Value.AsString;
     FStreams[High(FStreams)].URL := Node.Value.AsString;
@@ -496,6 +624,7 @@ begin
     FStreams[High(FStreams)].BitRate := Node.Attributes.AttributeByName['bitrate'].Value.AsInteger;
     FStreams[High(FStreams)].StreamType := Node.Attributes.AttributeByName['type'].Value.AsString;
     FStreams[High(FStreams)].Downloads := Node.Attributes.AttributeByName['downloads'].Value.AsInteger;
+    FStreams[High(FStreams)].Rating := Node.Attributes.AttributeByName['rating'].Value.AsInteger;
   end;
 
   if Assigned(FOnStreamsReceived) then
@@ -504,7 +633,7 @@ end;
 
 procedure THomeThread.DoTitleChanged(Version: Integer; Header, Data: TXMLNode);
 begin
-  if not AppGlobals.NetworkActive then
+  if not AppGlobals.AutoTuneIn then
     Exit;
 
   FChangedStreamName := Data.Nodes.GetNode('streamname').Value.AsString;
@@ -514,6 +643,14 @@ begin
   if (FChangedStreamName <> '') and (FChangedTitle <> '') and (FChangedCurrentURL <> '') then
     if Assigned(FOnTitleChanged) then
       Sync(FOnTitleChanged);
+end;
+
+procedure THomeThread.DoLoggedOff(Version: Integer; Header,
+  Data: TXMLNode);
+begin
+  FAuthAuthenticated := False;
+  if Assigned(FOnLoggedOff) then
+    Sync(FOnLoggedOff);
 end;
 
 procedure THomeThread.TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
@@ -580,22 +717,6 @@ begin
 
   Data := TXMLNode.Create(Root);
   Data.Name := 'data';
-end;
-
-function THomeThread.XMLGetLogin: AnsiString;
-var
-  XML: TXMLLib;
-  D: TXMLNode;
-begin
-  XML := XMLGet('login');
-  try
-    D := TXMLNode.Create(XML.Root.Nodes.GetNode('data'));
-    D.Name := 'asdf';
-    D.Value.AsString := 'lol';
-    XML.SaveToString(Result);
-  finally
-    XML.Free;
-  end;
 end;
 
 initialization

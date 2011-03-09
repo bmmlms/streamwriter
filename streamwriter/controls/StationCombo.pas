@@ -123,7 +123,7 @@ begin
 
   Result.Caption := Entry.Name;
   Result.Data := Entry.Copy;
-  Result.ImageIndex := 0;
+  Result.ImageIndex := 16;
 end;
 
 procedure TMStationCombo.BuildList(List: TRecentList);

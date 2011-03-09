@@ -26,7 +26,7 @@ uses
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
   Plugins, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus,
-  MsgDlg;
+  MsgDlg, PngImageList;
 
 type
   TfrmSettings = class(TfrmSettingsBase)
@@ -42,7 +42,6 @@ type
     pnlPlugins: TPanel;
     lstPlugins: TListView;
     cmdConfigure: TBitBtn;
-    chkNetworkActive: TCheckBox;
     GroupBox2: TGroupBox;
     txtFilePattern: TLabeledEdit;
     txtPreview: TLabeledEdit;
@@ -94,6 +93,13 @@ type
     Label6: TLabel;
     txtSilenceBufferSeconds: TEdit;
     Label15: TLabel;
+    PngImageList1: TPngImageList;
+    pnlCommunity: TPanel;
+    chkAutoTuneIn: TCheckBox;
+    chkSubmitStreamInfo: TCheckBox;
+    Label2: TLabel;
+    chkSubmitStats: TCheckBox;
+    Label8: TLabel;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -130,6 +136,7 @@ type
     procedure chkOnlySaveFullClick(Sender: TObject);
     procedure chkOverwriteSmallerClick(Sender: TObject);
     procedure txtSilenceBufferSecondsChange(Sender: TObject);
+    procedure lstPluginsResize(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -495,7 +502,10 @@ begin
 
     chkTrayClick(nil);
 
-    chkNetworkActive.Checked := AppGlobals.NetworkActive;
+    chkAutoTuneIn.Checked := AppGlobals.AutoTuneIn;
+    chkSubmitStreamInfo.Checked := AppGlobals.SubmitStreamInfo;
+    chkSubmitStats.Checked := AppGlobals.SubmitStats;
+
     txtShortLengthSeconds.Text := IntToStr(Settings.ShortLengthSeconds);
     txtSongBuffer.Text := IntToStr(Settings.SongBufferSeconds);
     txtMaxRetries.Text := IntToStr(Settings.MaxRetries);
@@ -606,8 +616,6 @@ begin
   Create(AOwner, False);
 
   lblTop.Caption := _('Stream settings');
-
-  chkNetworkActive.Visible := False;
 end;
 
 destructor TfrmSettings.Destroy;
@@ -729,7 +737,11 @@ begin
     AppGlobals.Dir := txtDir.Text;
     AppGlobals.Tray := chkTray.Checked;
     AppGlobals.TrayOnMinimize := optMinimize.Checked;
-    AppGlobals.NetworkActive := chkNetworkActive.Checked;
+
+    AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
+    AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
+    AppGlobals.SubmitStats := chkSubmitStats.Checked;
+
     AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
     AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
 
@@ -826,7 +838,6 @@ end;
 procedure TfrmSettings.FormResize(Sender: TObject);
 begin
   inherited;
-  lstPlugins.Columns[0].Width := lstPlugins.ClientWidth - 25;
 
   lstHotkeys.Columns[0].Width := lstHotkeys.ClientWidth - 130;
   lstHotkeys.Columns[1].Width := lstHotkeys.ClientWidth - lstHotkeys.Columns[0].Width - 25;
@@ -900,6 +911,13 @@ begin
   P1 := TPluginBase(Item1.Data);
   P2 := TPluginBase(Item2.Data);
   Compare := CmpInt(P1.Order, P2.Order);
+end;
+
+procedure TfrmSettings.lstPluginsResize(Sender: TObject);
+begin
+  inherited;
+
+  lstPlugins.Columns[0].Width := lstPlugins.ClientWidth - 25;
 end;
 
 procedure TfrmSettings.lstPluginsSelectItem(Sender: TObject;
@@ -1033,6 +1051,7 @@ begin
     FPageList.Add(TPage.Create(_('Settings'), pnlMain, 'PROPERTIES'));
     FPageList.Add(TPage.Create(_('Streams'), pnlStreams, 'START'));
     FPageList.Add(TPage.Create(_('Cut'), pnlCut, 'CUT'));
+    FPageList.Add(TPage.Create(_('Community'), pnlCommunity, 'GROUP_PNG'));
     FPageList.Add(TPage.Create(_('Postprocessing'), pnlPlugins, 'LIGHTNING'));
     FPageList.Add(TPage.Create(_('Hotkeys'), pnlHotkeys, 'KEYBOARD'));
     FPageList.Add(TPage.Create(_('Advanced'), pnlAdvanced, 'MISC'));

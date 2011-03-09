@@ -1,2 +1,2 @@
-BASS 24 ".\\bass\\bass.dll"
-BASS_AAC 24 ".\\bass\\bass_aac.dll"
+BASS RCDATA ".\\bass\\bass.dll"
+BASS_AAC RCDATA ".\\bass\\bass_aac.dll"

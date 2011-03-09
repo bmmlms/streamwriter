@@ -31,7 +31,7 @@ uses
   About, MsgDlg, HomeCommunication, StreamBrowserView, Clipbrd,
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
-  CheckFilesThread, ListsTab, CommCtrl;
+  CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin;
 
 type
   TfrmStreamWriterMain = class(TForm)
@@ -48,9 +48,9 @@ type
     mnuRemove2: TMenuItem;
     mnuUpdate: TMenuItem;
     mnuCheckUpdate: TMenuItem;
-    imgClients: TImageList;
-    imgImages: TImageList;
-    imgStations: TImageList;
+    imgClientsOLD: TImageList;
+    imgImagesOLD: TImageList;
+    imgStationsOLD: TImageList;
     ActionList1: TActionList;
     actStart: TAction;
     actStop: TAction;
@@ -127,7 +127,7 @@ type
     N11: TMenuItem;
     mnuStartPlay1: TMenuItem;
     mnuStopPlay1: TMenuItem;
-    imgLog: TImageList;
+    imgLogOLD: TImageList;
     actNewCategory: TAction;
     Addcategory1: TMenuItem;
     N12: TMenuItem;
@@ -145,6 +145,14 @@ type
     Pause1: TMenuItem;
     Pause2: TMenuItem;
     tmrRecordings: TTimer;
+    imgClients: TPngImageList;
+    imgImages: TPngImageList;
+    imgLog: TPngImageList;
+    Community1: TMenuItem;
+    actLogOn: TAction;
+    Login1: TMenuItem;
+    actLogOff: TAction;
+    Logoff1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -168,7 +176,17 @@ type
     procedure addStatusDrawPanel(StatusBar: TStatusBar;
       Panel: TStatusPanel; const Rect: TRect);
     procedure tmrRecordingsTimer(Sender: TObject);
+    procedure actLogOnExecute(Sender: TObject);
+    procedure Community1Click(Sender: TObject);
+    procedure actLogOffExecute(Sender: TObject);
   private
+    FCommunityLogin: TfrmCommunityLogin;
+
+    // Statusbar Icons
+    IconConnected, IconDisconnected: THandle;
+    IconLoggedIn, IconLoggedOff: THandle;
+    IconGroup: THandle;
+
     FStreams: TDataLists;
     FUpdater: TUpdateClient;
     FUpdateOnExit: Boolean;
@@ -207,10 +225,13 @@ type
     function HandleLoadError(E: Exception): Integer;
     procedure CheckFilesTerminate(Sender: TObject);
     procedure RegisterHotkeys(Reg: Boolean);
+    procedure ShowCommunityLogin;
+
+    procedure CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
 
     procedure HomeCommStateChanged(Sender: TObject);
     procedure HomeCommServerInfo(Sender: TObject; ClientCount, RecordingCount: Cardinal);
-    procedure HomeCommError(Sender: TObject; Msg: string);
+    procedure HomeCommError(Sender: TObject; ID: TCommErrors; Msg: string);
 
     procedure PreTranslate;
     procedure PostTranslate;
@@ -353,6 +374,16 @@ begin
   ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLink), '', '', 1);
 end;
 
+procedure TfrmStreamWriterMain.actLogOnExecute(Sender: TObject);
+begin
+  ShowCommunityLogin;
+end;
+
+procedure TfrmStreamWriterMain.actLogOffExecute(Sender: TObject);
+begin
+  HomeComm.Logoff;
+end;
+
 procedure TfrmStreamWriterMain.actStreamSettingsExecute(Sender: TObject);
 var
   Clients: TClientArray;
@@ -400,8 +431,6 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.FormActivate(Sender: TObject);
-//var
-//  F: TfrmCommunityLogin;
 begin
   if FWasActivated then
     Exit;
@@ -414,17 +443,10 @@ begin
     ShowSettings(True);
   end;
 
-  {
   if not AppGlobals.UserWasSetup then
   begin
-    F := TfrmCommunityLogin.Create(Self);
-    try
-      F.ShowModal;
-    finally
-      F.Free;
-    end;
+    ShowCommunityLogin;
   end;
-  }
 end;
 
 procedure TfrmStreamWriterMain.FormClose(Sender: TObject;
@@ -466,8 +488,9 @@ begin
   tabClients.PageControl := pagMain;
   tabClients.Setup(tbClients, ActionList1, mnuStreamPopup, imgImages, imgClients,
     FClients, FStreams);
-  tabClients.SideBar.BrowserView.StreamTree.Images := imgStations;
-  tabClients.AddressBar.Stations.Images := imgStations;
+  tabClients.SideBar.BrowserView.StreamTree.Images := imgImages;
+//  tabClients.SideBar.BrowserView.StreamTree.PopupMenu.Images := imgStations;
+  tabClients.AddressBar.Stations.Images := imgImages;
   tabClients.SideBar.DebugView.DebugView.DebugView.Images := imgLog;
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
   tabClients.OnCut := tabClientsCut;
@@ -484,6 +507,11 @@ begin
   tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
   tabSaved.OnRefresh := tabSavedRefresh;
 
+  IconConnected := LoadImage(HInstance, 'CONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+  IconDisconnected := LoadImage(HInstance, 'DISCONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+  IconLoggedIn := LoadImage(HInstance, 'USER_GO', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+  IconLoggedOff := LoadImage(HInstance, 'USER_DELETE', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+  IconGroup := LoadImage(HInstance, 'GROUP', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
 
   FWasActivated := False;
   FWasShown := False;
@@ -603,9 +631,21 @@ begin
     end;
 end;
 
-procedure TfrmStreamWriterMain.HomeCommError(Sender: TObject; Msg: string);
+procedure TfrmStreamWriterMain.HomeCommError(Sender: TObject; ID: TCommErrors; Msg: string);
 begin
-  MsgBox(Handle, Format(_('An error occured while communicating with the server: '#13#10'%s'), [Msg]), _('Error'), MB_ICONERROR);
+  case ID of
+    ceUnknown:
+      MsgBox(Handle, Format(_('An error occured while communicating with the server: '#13#10'%s'), [Msg]), _('Error'), MB_ICONERROR);
+    ceAuthRequired:
+      begin
+        if MsgBox(Handle, _('You need to be logged in to perform that action.'#13#10'Do you want to login now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+          ShowCommunityLogin;
+      end;
+    ceNotification:
+      begin
+        MsgBox(Handle, Format(_('A notification from the server was received:'#13#10'%s'), [Msg]), _('Info'), MB_ICONINFORMATION);
+      end;
+  end;
 end;
 
 procedure TfrmStreamWriterMain.HomeCommServerInfo(Sender: TObject;
@@ -620,6 +660,8 @@ procedure TfrmStreamWriterMain.HomeCommStateChanged(Sender: TObject);
 begin
   UpdateStatus;
   tabClients.SideBar.BrowserView.HomeCommStateChanged(Sender);
+  if FCommunityLogin <> nil then
+    FCommunityLogin.HomeCommStateChanged(Sender);
 end;
 
 procedure TfrmStreamWriterMain.Hotkey(var Msg: TWMHotKey);
@@ -855,29 +897,42 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.SetConnected;
-var
-  Icon, Icon2: THandle;
 begin
   if HomeComm.Connected then
   begin
     if FClientCount > 0 then
-      addStatus.Panels[1].Text := IntToStr(FClientCount) + '/' + IntToStr(FRecordingCount)
+      addStatus.Panels[2].Text := IntToStr(FClientCount) + '/' + IntToStr(FRecordingCount)
     else
-      addStatus.Panels[1].Text := '';
-    addStatus.Panels[0].Text := _('Connected');
-    Icon := LoadImage(HInstance, 'CONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+      addStatus.Panels[2].Text := '';
+    addStatus.Panels[1].Text := _('Connected');
+
+    SendMessage(addStatus.Handle, SB_SETICON, 0, IconConnected);
   end else
   begin
-    addStatus.Panels[1].Text := '';
-    addStatus.Panels[0].Text := _('Connecting...');
-    Icon := LoadImage(HInstance, 'DISCONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    addStatus.Panels[2].Text := '';
+    addStatus.Panels[1].Text := _('Connecting...');
+    SendMessage(addStatus.Handle, SB_SETICON, 0, IconDisconnected);
   end;
-  SendMessage(addStatus.Handle, SB_SETICON, 0, Icon);
-  DestroyIcon(Icon);
 
-  Icon2 := LoadImage(HInstance, 'USER', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-  SendMessage(addStatus.Handle, SB_SETICON, 1, Icon2);
-  DestroyIcon(Icon2);
+  if HomeComm.Authenticated then
+    SendMessage(addStatus.Handle, SB_SETICON, 1, IconLoggedIn)
+  else
+    SendMessage(addStatus.Handle, SB_SETICON, 1, IconLoggedOff);
+
+  SendMessage(addStatus.Handle, SB_SETICON, 2, IconGroup);
+end;
+
+procedure TfrmStreamWriterMain.ShowCommunityLogin;
+begin
+  if FCommunityLogin <> nil then
+  begin
+    FCommunityLogin.SetFocus;
+    Exit;
+  end;
+
+  FCommunityLogin := TfrmCommunityLogin.Create(Self);
+  FCommunityLogin.OnClose := CommunityLoginClose;
+  FCommunityLogin.Show;
 end;
 
 procedure TfrmStreamWriterMain.ShowSettings(BrowseDir: Boolean);
@@ -1030,12 +1085,12 @@ var
   i: Integer;
   C: Cardinal;
 begin
-  // TODO: Parametrierbar machen, ob das aktiv ist oder nicht. und timer interval wieder erhöhen.
   C := 0;
   for i := 0 to FClients.Count - 1 do
     if FClients[i].Recording then
       Inc(C);
-  HomeComm.UpdateInfo(C);
+  if AppGlobals.SubmitStats then
+    HomeComm.UpdateInfo(C);
 end;
 
 procedure TfrmStreamWriterMain.tmrSpeedTimer(Sender: TObject);
@@ -1242,9 +1297,9 @@ begin
 
   SetConnected;
 
-  addStatus.Panels[2].Text := MakeSize(Speed) + '/s';
-  addStatus.Panels[3].Text := Format(_('%s/%s received'), [MakeSize(tabClients.Received), MakeSize(FStreams.Received)]);
-  addStatus.Panels[4].Text := Format(_('%d songs saved'), [FClients.SongsSaved]);
+  addStatus.Panels[3].Text := MakeSize(Speed) + '/s';
+  addStatus.Panels[4].Text := Format(_('%s/%s received'), [MakeSize(tabClients.Received), MakeSize(FStreams.Received)]);
+  addStatus.Panels[5].Text := Format(_('%d songs saved'), [FClients.SongsSaved]);
 end;
 
 function TfrmStreamWriterMain.CanExitApp: Boolean;
@@ -1307,6 +1362,17 @@ begin
   end;
 
   FCheckFiles := nil;
+end;
+
+procedure TfrmStreamWriterMain.Community1Click(Sender: TObject);
+begin
+ actLogOn.Enabled := not HomeComm.Authenticated and HomeComm.Connected;
+ actLogOff.Enabled := HomeComm.Authenticated and HomeComm.Connected;
+end;
+
+procedure TfrmStreamWriterMain.CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
+begin
+  FCommunityLogin := nil;
 end;
 
 end.

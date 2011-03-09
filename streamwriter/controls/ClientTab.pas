@@ -645,6 +645,7 @@ begin
 
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
+  FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := MenuImages;
   //FSideBar.FInfoView.InfoView.Tree.OnAction := StreamInfoAction;
 
   FSplitter.Left := FSideBar.Left - 5;
