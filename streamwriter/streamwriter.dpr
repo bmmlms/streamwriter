@@ -19,6 +19,8 @@
 }
 program streamwriter;
 
+{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
+
 uses
   MM in '..\..\common\MM.pas',
   Windows,

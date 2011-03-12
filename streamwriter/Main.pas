@@ -48,9 +48,6 @@ type
     mnuRemove2: TMenuItem;
     mnuUpdate: TMenuItem;
     mnuCheckUpdate: TMenuItem;
-    imgClientsOLD: TImageList;
-    imgImagesOLD: TImageList;
-    imgStationsOLD: TImageList;
     ActionList1: TActionList;
     actStart: TAction;
     actStop: TAction;
@@ -127,7 +124,6 @@ type
     N11: TMenuItem;
     mnuStartPlay1: TMenuItem;
     mnuStopPlay1: TMenuItem;
-    imgLogOLD: TImageList;
     actNewCategory: TAction;
     Addcategory1: TMenuItem;
     N12: TMenuItem;
@@ -391,7 +387,7 @@ var
   Settings: TStreamSettingsArray;
   i: Integer;
 begin
- Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
+  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
   SetLength(Settings, Length(Clients));
 
   for i := 0 to Length(Clients) - 1 do
@@ -443,10 +439,12 @@ begin
     ShowSettings(True);
   end;
 
+  {
   if not AppGlobals.UserWasSetup then
   begin
     ShowCommunityLogin;
   end;
+  }
 end;
 
 procedure TfrmStreamWriterMain.FormClose(Sender: TObject;
@@ -1087,7 +1085,7 @@ var
 begin
   C := 0;
   for i := 0 to FClients.Count - 1 do
-    if FClients[i].Recording then
+    if FClients[i].Recording and not FClients[i].AutoRemove then
       Inc(C);
   if AppGlobals.SubmitStats then
     HomeComm.UpdateInfo(C);

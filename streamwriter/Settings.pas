@@ -642,6 +642,11 @@ begin
     Panel.Controls[i].Visible := Enable;
 
   if Enable then
+    Panel.Tag := 0
+  else
+    Panel.Tag := 1;
+
+  if Enable then
     lblPanelCut.Visible := False
   else
     lblPanelCut.Visible := True;
@@ -670,7 +675,7 @@ begin
       if FIgnoreFieldList.IndexOf(chkOverwriteSmaller) = -1 then
         FStreamSettings[i].OverwriteSmaller := chkOverwriteSmaller.Checked;
 
-      if FPageList.Find(pnlCut).Node.Enabled then
+      if pnlCut.Tag = 0 then
       begin
         if FIgnoreFieldList.IndexOf(chkSkipShort) = -1 then
           FStreamSettings[i].SkipShort := chkSkipShort.Checked;
@@ -719,17 +724,22 @@ begin
     AppGlobals.StreamSettings.DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
     AppGlobals.StreamSettings.AddSavedToIgnore := chkAddSavedToIgnore.Checked;
     AppGlobals.StreamSettings.OverwriteSmaller := chkOverwriteSmaller.Checked;
-    AppGlobals.StreamSettings.SkipShort := chkSkipShort.Checked;
-    AppGlobals.StreamSettings.SongBufferSeconds := StrToIntDef(txtSongBuffer.Text, 0);
-    AppGlobals.StreamSettings.ShortLengthSeconds := StrToIntDef(txtShortLengthSeconds.Text, 45);
+
+    if pnlCut.Tag = 0 then
+    begin
+      AppGlobals.StreamSettings.SkipShort := chkSkipShort.Checked;
+      AppGlobals.StreamSettings.SongBufferSeconds := StrToIntDef(txtSongBuffer.Text, 0);
+      AppGlobals.StreamSettings.ShortLengthSeconds := StrToIntDef(txtShortLengthSeconds.Text, 45);
+      AppGlobals.StreamSettings.SearchSilence := chkSearchSilence.Checked;
+      AppGlobals.StreamSettings.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
+      AppGlobals.StreamSettings.SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
+      AppGlobals.StreamSettings.SilenceBufferSeconds := StrToIntDef(txtSilenceBufferSeconds.Text, 3);
+    end;
+
     AppGlobals.StreamSettings.MaxRetries := StrToIntDef(txtMaxRetries.Text, 100);
     AppGlobals.StreamSettings.RetryDelay := StrToIntDef(txtRetryDelay.Text, 5);
     AppGlobals.StreamSettings.Filter := TUseFilters(lstDefaultFilter.ItemIndex);
-    if Bass.BassLoaded then
-      AppGlobals.StreamSettings.SearchSilence := chkSearchSilence.Checked;
-    AppGlobals.StreamSettings.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
-    AppGlobals.StreamSettings.SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
-    AppGlobals.StreamSettings.SilenceBufferSeconds := StrToIntDef(txtSilenceBufferSeconds.Text, 3);
+
     AppGlobals.StreamSettings.SeparateTracks := chkSeparateTracks.Checked and chkSeparateTracks.Enabled;
     AppGlobals.StreamSettings.SaveToMemory := chkSaveStreamsToMemory.Checked;
     AppGlobals.StreamSettings.OnlySaveFull := chkOnlySaveFull.Checked;
@@ -1317,7 +1327,7 @@ begin
     Exit;
   end;
 
-  if FPageList.Find(pnlCut).Node.Enabled then
+  if pnlCut.Tag = 0 then
   begin
     if Trim(txtShortLengthSeconds.Text) = '' then
     begin
@@ -1469,6 +1479,7 @@ begin
                                  '(%a, %t, %n) will only be filled with default values.'), 1, 2);
 
     Application.ProcessMessages;
+
     EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
   end;
 end;

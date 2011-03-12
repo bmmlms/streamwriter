@@ -54,6 +54,8 @@ type
 
     FOnProgress: TNotifyEvent;
 
+    FZoomStart, FZoomEnd: Cardinal;
+
     procedure AnalyzeData;
 
     procedure FSetWaveArray(Value: TWaveEntryArray);
@@ -61,7 +63,12 @@ type
     function FGetCutStart: Cardinal;
     function FGetCutEnd: Cardinal;
     function FGetCutSize: Cardinal;
+    function FGetZoomStart: Cardinal;
+    function FGetZoomEnd: Cardinal;
+    function FGetZoomSize: Cardinal;
     function FGetSecs: Double;
+    procedure FSetZoomStart(StartPos: Cardinal);
+    procedure FSetZoomEnd(EndPos: Cardinal);
   public
     constructor Create;
     destructor Destroy; override;
@@ -77,6 +84,9 @@ type
     property CutStart: Cardinal read FGetCutStart;
     property CutEnd: Cardinal read FGetCutEnd;
     property CutSize: Cardinal read FGetCutSize;
+    property ZoomStart: Cardinal read FGetZoomStart write FSetZoomStart;
+    property ZoomEnd: Cardinal read FGetZoomEnd write FSetZoomEnd;
+    property ZoomSize: Cardinal read FGetZoomSize;
     property Secs: Double read FGetSecs;
 
     property WaveArray: TWaveEntryArray read FWaveArray write FSetWaveArray;
@@ -275,6 +285,9 @@ begin
     FCutStates[i].Free;
   FCutStates.Clear;
   FCutStates.Add(TCutState.Create(0, High(FWaveArray)));
+
+  FZoomStart := 0;
+  FZoomEnd := High(FWaveArray);
 end;
 
 procedure TWaveData.AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
@@ -349,6 +362,33 @@ begin
   Result := 0;
   if FCutStates.Count > 0 then
     Result := FCutStates[FCutStates.Count - 1].CutStart;
+end;
+
+function TWaveData.FGetZoomStart: Cardinal;
+begin
+  Result := FZoomStart;
+end;
+
+function TWaveData.FGetZoomEnd: Cardinal;
+begin
+  Result := FZoomEnd;
+end;
+
+function TWaveData.FGetZoomSize: Cardinal;
+begin
+  Result := ZoomEnd - ZoomStart;
+end;
+
+procedure TWaveData.FSetZoomStart(StartPos: Cardinal);
+begin
+  if StartPos <> ZoomStart then
+    FZoomStart := StartPos;
+end;
+
+procedure TWaveData.FSetZoomEnd(EndPos: Cardinal);
+begin
+  if EndPos <> ZoomEnd then
+    FZoomEnd := EndPos;
 end;
 
 function TWaveData.FGetSecs: Double;

@@ -122,8 +122,8 @@ type
 
     FOnAction: TTrackActionEvent;
 
-    FSortColumn: Integer;
-    FSortDirection: TSortDirection;
+    //FSortColumn: Integer;
+    //FSortDirection: TSortDirection;
 
     FPopupMenu: TSavedTracksPopup;
 
@@ -343,7 +343,7 @@ begin
     NodeData.Track := FStreams.TrackList[i];
   end;
 
-  FSavedTree.Sort(nil, FSavedTree.FSortColumn, FSavedTree.FSortDirection);
+  FSavedTree.Sort(nil, FSavedTree.Header.SortColumn, FSavedTree.Header.SortDirection);
 
   FSavedTree.Change(nil);
 end;
@@ -552,9 +552,6 @@ begin
 
   PopupMenu := FPopupMenu;
 
-  FSortColumn := 0;
-  FSortDirection := sdAscending;
-
   FColFilename := Header.Columns.Add;
   FColFilename.Text := _('Filename');
   FColSize := Header.Columns.Add;
@@ -566,6 +563,9 @@ begin
   FColSaved := Header.Columns.Add;
   FColSaved.Text := _('Time');
   FColSaved.Width := 130;
+
+  Header.SortColumn := 3;
+  Header.SortDirection := sdAscending;
 end;
 
 destructor TSavedTree.Destroy;
@@ -730,18 +730,18 @@ begin
   inherited;
   if HitInfo.Button = mbLeft then
   begin
-    if FSortColumn <> HitInfo.Column then
+    if Header.SortColumn <> HitInfo.Column then
     begin
-      FSortColumn := HitInfo.Column;
-      FSortDirection := sdAscending;
+      Header.SortColumn := HitInfo.Column;
+      Header.SortDirection := sdAscending;
     end else
     begin
-      if FSortDirection = sdAscending then
-        FSortDirection := sdDescending
+      if Header.SortDirection = sdAscending then
+        Header.SortDirection := sdDescending
       else
-        FSortDirection := sdAscending;
+        Header.SortDirection := sdAscending;
     end;
-    Sort(nil, HitInfo.Column, FSortDirection);
+    Sort(nil, HitInfo.Column, Header.SortDirection);
   end;
 end;
 

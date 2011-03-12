@@ -78,6 +78,9 @@ type
 
   TMStreamSearchPanel = class(TPanel)
   private
+    FExpandLabel: TLabel;
+    FExpandButton: TSpeedButton;
+
     FSearchLabel: TLabel;
     FGenreLabel: TLabel;
     FKbpsLabel: TLabel;
@@ -87,6 +90,10 @@ type
     FKbpsList: TComboBox;
     FTypeList: TComboBox;
     FSearchButton: TSpeedButton;
+
+    procedure SetVisible(Value: Boolean);
+
+    procedure ExpandButtonClick(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
     procedure Setup;
@@ -103,6 +110,10 @@ type
     FCurrentGenre: string;
     FCurrentKbps: Integer;
     FCurrentStreamType: string;
+    FCurrentSortType: string;
+    FCurrentSortDir: string;
+    FSelectedSortType: string;
+    FSelectedSortDir: string;
 
     FLoading: Boolean;
 
@@ -112,12 +123,15 @@ type
     procedure SearchEditKeyPress(Sender: TObject; var Key: Char);
     procedure SearchButtonClick(Sender: TObject);
     procedure BtnRetryClick(Sender: TObject);
+    procedure SortItemClick(Sender: TObject);
 
     procedure GetStreams; overload;
-    procedure GetStreams(Search, Genre: string; Kbps: Integer; StreamType: string); overload;
+    procedure GetStreams(Search, Genre, SortType, SortDir: string; Kbps: Integer; StreamType: string); overload;
     procedure SwitchMode(Mode: TModes);
 
     procedure StreamBrowserNeedData(Sender: TObject; Offset, Count: Integer);
+    procedure StreamBrowserHeaderClick(Sender: TVTHeader; HitInfo: TVTHeaderHitInfo);
+
     procedure HomeCommunicationStreamsReceived(Sender: TObject; Streams: TStreamInfoArray;
       Count: Integer);
     procedure HomeCommunicationGenresReceived(Sender: TObject; Genres: TStringList);
@@ -139,6 +153,20 @@ type
     property CurrentStreamType: string read FCurrentStreamType write FCurrentStreamType;
 
     property StreamTree: TMStreamTree read FStreamTree;
+  end;
+
+  TMStreamTreeHeaderPopup = class(TPopupMenu)
+  private
+    FFileView: TMStreamTree;
+
+    FItemName: TMenuItem;
+    FItemKbps: TMenuItem;
+    FItemType: TMenuItem;
+    FItemRating: TMenuItem;
+  protected
+    procedure DoPopup(Sender: TObject); override;
+  public
+    constructor Create(AOwner: TComponent); override;
   end;
 
   TMStreamTree = class(TVirtualStringTree)
@@ -171,9 +199,11 @@ type
     FItemCopy: TMenuItem;
     FItemSave: TMenuItem;
 
+    FSortPopupMenu: TMStreamTreeHeaderPopup;
     FTimer: TTimer;
     FDots: string;
     FLoadOffset: Integer;
+    FButtonPos: TRect;
 
     FOnNeedData: TNeedDataEvent;
     FOnAction: TActionEvent;
@@ -202,6 +232,7 @@ type
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure KeyPress(var Key: Char); override;
     function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
+    procedure WndProc(var Message: TMessage); override;
 
     procedure TimerScrollOnTimer(Sender: TObject);
     procedure TimerOnTimer(Sender: TObject);
@@ -256,6 +287,7 @@ var
   i: Integer;
   Png: TPngImage;
   Res: TResourceStream;
+  MenuItem: TMenuItem;
 begin
   inherited Create(AOwner);
 
@@ -268,9 +300,13 @@ begin
   TreeOptions.SelectionOptions := [toDisableDrawSelection, toRightClickSelect, toFullRowSelect];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop] + [toFullRowDrag];
+  Header.Options := Header.Options + [hoShowSortGlyphs, hoVisible, hoOwnerDraw] - [hoDrag];
   DragMode := dmAutomatic;
   ShowHint := True;
   HintMode := hmTooltip;
+
+  ScrollBarOptions.ScrollBars := ssVertical;
+  ScrollBarOptions.AlwaysVisible := True;
 
   FDragSource := TDropFileSource.Create(Self);
 
@@ -279,24 +315,8 @@ begin
   FLoadOffset := 0;
 
   FColName := Header.Columns.Add;
-  FColName.Text := _('Name');
+  FColName.Text := _('Rating');
   FitColumns;
-
-  {
-  FPopupImages := TPngImageList.Create(Self);
-  for i := 1 to 5 do
-  begin
-    Png := TPngImage.Create;
-    try
-      Res := TResourceStream.Create(HInstance, 'STAR' + IntToStr(i), MakeIntResource(RT_RCDATA));
-      Png.LoadFromStream(Res);
-      FPopupImages.AddPng(Png);
-    finally
-      Png.Free;
-      Res.Free;
-    end;
-  end;
-  }
 
   FPopupMenu := TPopupMenu.Create(Self);
   FPopupMenu.OnPopup := PopupMenuPopup;
@@ -366,6 +386,11 @@ begin
   FTimer.OnTimer := TimerOnTimer;
   FTimer.Interval := 1000;
   FTimer.Enabled := True;
+
+  Header.SortColumn := 0;
+  Header.SortDirection := sdDescending;
+
+  FSortPopupMenu := TMStreamTreeHeaderPopup.Create(Self);
 end;
 
 function TMStreamTree.CreateItem(Caption: string; ImageIndex: Integer;
@@ -758,6 +783,50 @@ begin
   end;
 end;
 
+procedure TMStreamTree.WndProc(var Message: TMessage);
+var
+  DC: HDC;
+  R: TRect;
+  Flags: DWORD;
+  SBW: Integer;
+  C: TCanvas;
+  P: TPoint;
+begin
+  inherited;
+
+  case Message.Msg of
+    WM_NCPAINT:
+      begin
+        Flags := DCX_CACHE or DCX_CLIPSIBLINGS or DCX_WINDOW or DCX_VALIDATE;
+        DC := GetDCEx(Self.Header.Treeview.Handle, 0, Flags);
+        if DC <> 0 then
+        begin
+          C := TCanvas.Create;
+          try
+            SBW := GetSystemMetrics(SM_CXVSCROLL);
+            C.Handle := DC;
+            Windows.GetClientRect(Handle, R);
+            FButtonPos := Bounds(Width - SBW - 2, 2, SBW + 1, Height - R.Bottom - 5);
+            Images.Draw(C, FButtonPos.Left, FButtonPos.Top, 47, True);
+            //DrawButtonFace(C, FButtonPos, 1, bsAutoDetect, False, False, False);
+          finally
+            C.Free;
+          end;
+        end;
+      end;
+    WM_NCLBUTTONDOWN:
+      begin
+        P.X := TWMNCLButtonDown(Message).XCursor;
+        P.Y := TWMNCLButtonDown(Message).YCursor + Header.Height;
+
+        if PtInRect(FButtonPos, ScreenToClient(P)) then
+        begin
+          FSortPopupMenu.Popup(P.X, P.Y - Header.Height);
+        end;
+      end;
+  end;
+end;
+
 procedure TMStreamTree.DoDragging(P: TPoint);
 var
   i: Integer;
@@ -909,7 +978,8 @@ begin
   if FSearch.FGenreList.Items.Count = 0 then
     FHomeCommunication.GetGenres;
   FStreamTree.ClearStreams;
-  FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre, FCurrentKbps, FCurrentStreamType, True);
+  FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre,
+    FCurrentSortType, FCurrentSortDir, FCurrentKbps, FCurrentStreamType, True);
 end;
 
 constructor TMStreamBrowserView.Create(AOwner: TComponent);
@@ -918,6 +988,11 @@ begin
 
   Align := alClient;
   BevelOuter := bvNone;
+
+  FCurrentSortType := 'rating';
+  FCurrentSortDir := 'desc';
+  FSelectedSortType := 'rating';
+  FSelectedSortDir := 'desc';
 
   FCurrentKbps := 0;
   FCurrentStreamType := '';
@@ -930,16 +1005,23 @@ begin
   FSearch.Parent := Self;
   FSearch.Visible := True;
 
+  FCountLabel := TLabel.Create(Self);
+  FCountLabel.Align := alBottom;
+  FCountLabel.Parent := Self;
+  FCountLabel.Visible := True;
+
   FStreamTree := TMStreamTree.Create(Self);
   FStreamTree.Align := alClient;
   FStreamTree.Parent := Self;
   FStreamTree.Visible := True;
   FStreamTree.OnNeedData := StreamBrowserNeedData;
+  FStreamTree.OnHeaderClick := StreamBrowserHeaderClick;
+  FStreamTree.FSortPopupMenu.FItemName.OnClick := SortItemClick;
+  FStreamTree.FSortPopupMenu.FItemKbps.OnClick := SortItemClick;
+  FStreamTree.FSortPopupMenu.FItemType.OnClick := SortItemClick;
+  FStreamTree.FSortPopupMenu.FItemRating.OnClick := SortItemClick;
 
-  FCountLabel := TLabel.Create(Self);
-  FCountLabel.Align := alBottom;
-  FCountLabel.Parent := Self;
-  FCountLabel.Visible := True;
+  FStreamTree.FSortPopupMenu.FItemRating.Checked := True;
 
   FLoadingPanel := TMLoadingPanel.Create(Self);
   FLoadingPanel.Align := alClient;
@@ -954,9 +1036,10 @@ begin
   inherited;
 end;
 
-procedure TMStreamBrowserView.GetStreams(Search, Genre: string; Kbps: Integer; StreamType: string);
+procedure TMStreamBrowserView.GetStreams(Search, Genre, SortType, SortDir: string; Kbps: Integer; StreamType: string);
 begin
-  if (Search = CurrentSearch) and (Genre = CurrentGenre) and (Kbps = CurrentKbps) and (StreamType = CurrentStreamType) then
+  if (Search = CurrentSearch) and (Genre = CurrentGenre) and (SortType = CurrentStreamType) and
+     (SortDir = FCurrentSortDir) and (Kbps = CurrentKbps) and (StreamType = CurrentStreamType) then
     Exit;
 
   FStreamTree.ClearStreams;
@@ -964,8 +1047,10 @@ begin
   CurrentGenre := Genre;
   CurrentKbps := Kbps;
   CurrentStreamType := StreamType;
+  FCurrentSortType := FSelectedSortType;
+  FCurrentSortDir := FSelectedSortDir;
   FStreamTree.IsLoading := True;
-  FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, Search, Genre, Kbps, StreamType, True);
+  FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, Search, Genre, SortType, SortDir, Kbps, StreamType, True);
 end;
 
 procedure TMStreamBrowserView.GetStreams;
@@ -997,7 +1082,7 @@ begin
       raise Exception.Create('');
   end;
 
-  GetStreams(Search, Genre, Kbps, StreamType);
+  GetStreams(Search, Genre, FSelectedSortType, FSelectedSortDir, Kbps, StreamType);
 end;
 
 procedure TMStreamBrowserView.HomeCommStateChanged(Sender: TObject);
@@ -1005,7 +1090,8 @@ begin
   if HomeComm.Connected and (FStreamTree.RootNodeCount = 0) then
   begin
     FHomeCommunication.GetGenres;
-    FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre, FCurrentKbps, FCurrentStreamType, True);
+    FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre,
+      FCurrentSortType, FCurrentSortDir, FCurrentKbps, FCurrentStreamType, True);
   end;
 end;
 
@@ -1041,6 +1127,7 @@ begin
   FStreamTree.AddStreams(Streams, Count);
   if FSearch.FGenreList.Items.Count > 0 then
     SwitchMode(moShow);
+
   if Count = 1 then
     FCountLabel.Caption := Format(_('%d stream found'), [Count])
   else
@@ -1091,10 +1178,66 @@ begin
   //FHomeCommunication.OnOldVersion := HomeCommunicationOldVersion;
 end;
 
+procedure TMStreamBrowserView.SortItemClick(Sender: TObject);
+var
+  i: Integer;
+begin
+  for i := 0 to FStreamTree.FSortPopupMenu.Items.Count - 1 do
+    FStreamTree.FSortPopupMenu.Items[i].Checked := False;
+  TMenuItem(Sender).Checked := True;
+
+  FSelectedSortDir := 'asc';
+
+  if Sender = FStreamTree.FSortPopupMenu.FItemName then
+  begin
+    FSelectedSortType := 'name';
+    FStreamTree.Header.Columns[0].Text := _('Name');
+  end else if Sender = FStreamTree.FSortPopupMenu.FItemKbps then
+  begin
+    FSelectedSortType := 'bitrate';
+    FStreamTree.Header.Columns[0].Text := _('Kbps');
+    FSelectedSortDir := 'desc';
+  end else if Sender = FStreamTree.FSortPopupMenu.FItemType then
+  begin
+    FSelectedSortType := 'type';
+    FStreamTree.Header.Columns[0].Text := _('Type');
+  end else if Sender = FStreamTree.FSortPopupMenu.FItemRating then
+  begin
+    FSelectedSortType := 'rating';
+    FStreamTree.Header.Columns[0].Text := _('Rating');
+    FSelectedSortDir := 'desc';
+  end else
+    raise Exception.Create('FiAL');
+
+  if FSelectedSortDir = 'asc' then
+    FStreamTree.Header.SortDirection := sdAscending
+  else
+    FStreamTree.Header.SortDirection := sdDescending;
+
+  GetStreams;
+end;
+
+procedure TMStreamBrowserView.StreamBrowserHeaderClick(Sender: TVTHeader;
+  HitInfo: TVTHeaderHitInfo);
+begin
+  if FSelectedSortDir = 'asc' then
+  begin
+    FSelectedSortDir := 'desc';
+    FStreamTree.Header.SortDirection := sdDescending;
+  end else
+  begin
+    FSelectedSortDir := 'asc';
+    FStreamTree.Header.SortDirection := sdAscending;
+  end;
+
+  GetStreams;
+end;
+
 procedure TMStreamBrowserView.StreamBrowserNeedData(Sender: TObject;
   Offset, Count: Integer);
 begin
-  FHomeCommunication.GetStreams(Count, Offset, CurrentSearch, CurrentGenre, CurrentKbps, CurrentStreamType, False);
+  FHomeCommunication.GetStreams(Count, Offset, CurrentSearch, CurrentGenre, FCurrentSortType,
+    FCurrentSortDir, CurrentKbps, CurrentStreamType, False);
 end;
 
 procedure TMStreamBrowserView.SwitchMode(Mode: TModes);
@@ -1165,7 +1308,7 @@ begin
   if FStreamTree.RootNodeCount = 1 then
     FCountLabel.Caption := Format(_('%d stream found'), [FStreamTree.RootNodeCount])
   else
-    FCountLabel.Caption := Format(_('%d streams found'), [FStreamTree.RootNodeCount]);
+   FCountLabel.Caption := Format(_('%d streams found'), [FStreamTree.RootNodeCount]);
 end;
 
 { TMStreamSearch }
@@ -1177,38 +1320,36 @@ begin
   BevelOuter := bvNone;
 end;
 
+procedure TMStreamSearchPanel.ExpandButtonClick(Sender: TObject);
+begin
+  SetVisible(not FTypeList.Visible);
+end;
+
 procedure TMStreamSearchPanel.Setup;
 var
+  n: Integer;
   I: TIcon;
   B: TBitmap;
+  TopCnt: Integer;
 begin
+  TopCnt := 4;
+
   FSearchEdit := TEdit.Create(Self);
   FSearchEdit.Parent := Self;
   FSearchEdit.Left := 50;
-  FSearchEdit.Top := 4;
+  FSearchEdit.Top := TopCnt;
   FSearchEdit.Anchors := [akLeft, akRight, akTop];
 
-  FGenreList := TComboBox.Create(Self);
-  FGenreList.Parent := Self;
-  FGenreList.Style := csDropDownList;
-  FGenreList.Left := 50;
-  FGenreList.Top := 30;
-  FGenreList.Anchors := [akLeft, akRight, akTop];
-  FGenreList.DropDownCount := 16;
-
-  FKbpsList := TComboBox.Create(Self);
-  FKbpsList.Parent := Self;
-  FKbpsList.Style := csDropDownList;
-  FKbpsList.Left := 50;
-  FKbpsList.Top := 56;
-  FKbpsList.Anchors := [akLeft, akRight, akTop];
-
-  FTypeList := TComboBox.Create(Self);
-  FTypeList.Parent := Self;
-  FTypeList.Style := csDropDownList;
-  FTypeList.Left := 50;
-  FTypeList.Top := 82;
-  FTypeList.Anchors := [akLeft, akRight, akTop];
+  FSearchButton := TSpeedButton.Create(Self);
+  FSearchButton.Parent := Self;
+  FSearchButton.Width := 24;
+  FSearchButton.Height := 24;
+  FSearchButton.Top := TopCnt - 1;
+  FSearchButton.Left := ClientWidth - 8 - FSearchButton.Width;
+  FSearchButton.Anchors := [akRight, akTop];
+  FSearchButton.Flat := True;
+  FSearchButton.Hint := _('Search');
+  FSearchButton.ShowHint := True;
 
   FSearchLabel := TLabel.Create(Self);
   FSearchLabel.Parent := Self;
@@ -1216,34 +1357,67 @@ begin
   FSearchLabel.Caption := _('Search:');
   FSearchLabel.Top := FSearchEdit.Top + FSearchEdit.Height div 2 - FSearchLabel.Height div 2;
 
+  TopCnt := TopCnt + 26;
+
+  {
+  FExpandButton := TSpeedButton.Create(Self);
+  FExpandButton.Parent := Self;
+  FExpandButton.Top := TopCnt;
+  FExpandButton.Caption := 'E';
+  FExpandButton.OnClick := ExpandButtonClick;
+
+  FExpandLabel := TLabel.Create(Self);
+  FExpandLabel.Parent := Self;
+  FExpandLabel.Left := FExpandButton.Left + FExpandButton.Width + 20;
+  FExpandLabel.Caption := _('More options...');
+  FExpandLabel.Top := FExpandButton.Top + FExpandButton.Height div 2 - FExpandLabel.Height div 2;
+
+  TopCnt := TopCnt + 26;
+  }
+
+  FGenreList := TComboBox.Create(Self);
+  FGenreList.Parent := Self;
+  FGenreList.Style := csDropDownList;
+  FGenreList.Left := 50;
+  FGenreList.Top := TopCnt;
+  FGenreList.Anchors := [akLeft, akRight, akTop];
+  FGenreList.DropDownCount := 16;
+
+  TopCnt := TopCnt + 26;
+
+  FKbpsList := TComboBox.Create(Self);
+  FKbpsList.Parent := Self;
+  FKbpsList.Style := csDropDownList;
+  FKbpsList.Left := 50;
+  FKbpsList.Top := TopCnt;
+  FKbpsList.Anchors := [akLeft, akRight, akTop];
+
+  TopCnt := TopCnt + 26;
+
+  FTypeList := TComboBox.Create(Self);
+  FTypeList.Parent := Self;
+  FTypeList.Style := csDropDownList;
+  FTypeList.Left := 50;
+  FTypeList.Top := TopCnt;
+  FTypeList.Anchors := [akLeft, akRight, akTop];
+
   FGenreLabel := TLabel.Create(Self);
   FGenreLabel.Parent := Self;
   FGenreLabel.Left := 4;
-  FGenreLabel.Caption := _('Genre:');
+  FGenreLabel.Caption := _('Genre') + ':';
   FGenreLabel.Top := FGenreList.Top + FGenreList.Height div 2 - FGenreLabel.Height div 2;
 
   FKbpsLabel := TLabel.Create(Self);
   FKbpsLabel.Parent := Self;
   FKbpsLabel.Left := 4;
-  FKbpsLabel.Caption := _('Kbps:');
+  FKbpsLabel.Caption := _('Kbps:') + ':';
   FKbpsLabel.Top := FKbpsList.Top + FKbpsList.Height div 2 - FKbpsLabel.Height div 2;
 
   FTypeLabel := TLabel.Create(Self);
   FTypeLabel.Parent := Self;
   FTypeLabel.Left := 4;
-  FTypeLabel.Caption := _('Type:');
+  FTypeLabel.Caption := _('Type:') + ':';
   FTypeLabel.Top := FTypeList.Top + FTypeList.Height div 2 - FTypeLabel.Height div 2;
-
-  FSearchButton := TSpeedButton.Create(Self);
-  FSearchButton.Parent := Self;
-  FSearchButton.Width := 24;
-  FSearchButton.Height := 24;
-  FSearchButton.Top := 3;
-  FSearchButton.Left := ClientWidth - 8 - FSearchButton.Width;
-  FSearchButton.Anchors := [akRight, akTop];
-  FSearchButton.Flat := True;
-  FSearchButton.Hint := _('Search');
-  FSearchButton.ShowHint := True;
 
 
   I := TIcon.Create;
@@ -1277,7 +1451,26 @@ begin
   FTypeList.Items.Add(_('AAC'));
   FTypeList.ItemIndex := 0;
 
-  ClientHeight := FTypeList.Top + FTypeList.Height + 6;
+  ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4;
+
+  //SetVisible(False);
+end;
+
+procedure TMStreamSearchPanel.SetVisible(Value: Boolean);
+var
+  i: Integer;
+begin
+  for i := 0 to ControlCount - 1 do
+    if (Controls[i] <> FExpandLabel) and (Controls[i] <> FExpandButton) and
+       (Controls[i] <> FSearchLabel) and (Controls[i] <> FSearchButton) and
+       (Controls[i] <> FSearchEdit) then
+    begin
+      Controls[i].Visible := Value;
+    end;
+  if Value then
+    ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4
+  else
+    ClientHeight := FExpandButton.Top + FExpandButton.Height + FSearchEdit.Top + 4;
 end;
 
 { TMLoadingPanel }
@@ -1324,6 +1517,36 @@ begin
     FDots := '';
 
   FLabel.Caption := _('Loading streams') + FDots;
+end;
+
+{ TMStreamTreeHeaderPopup }
+
+constructor TMStreamTreeHeaderPopup.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  FItemName := CreateMenuItem;
+  FItemName.Caption := _('Name');
+  Items.Add(FItemName);
+
+  FItemKbps := CreateMenuItem;
+  FItemKbps.Caption := _('Kbps');
+  Items.Add(FItemKbps);
+
+  FItemType := CreateMenuItem;
+  FItemType.Caption := _('Type');
+  Items.Add(FItemType);
+
+  FItemRating := CreateMenuItem;
+  FItemRating.Caption := _('Rating');
+  FItemRating.Checked := True;
+  Items.Add(FItemRating);
+end;
+
+procedure TMStreamTreeHeaderPopup.DoPopup(Sender: TObject);
+begin
+  inherited;
+
 end;
 
 end.

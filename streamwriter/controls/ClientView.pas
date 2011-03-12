@@ -48,6 +48,21 @@ type
 
   TStartStreamingEvent = procedure(Sender: TObject; URL: string; Node: PVirtualNode; Mode: TVTNodeAttachMode) of object;
 
+  TMenuColEvent = procedure(Sender: TMClientView; Index: Integer; Checken: Boolean) of object;
+
+  TMFilesColPopupMenu = class(TPopupMenu)
+  private
+    FFileView: TMClientView;
+    FOnAction: TMenuColEvent;
+
+    procedure ColItemsClick(Sender: TObject);
+  protected
+    procedure DoPopup(Sender: TObject); override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    property OnAction: TMenuColEvent read FOnAction write FOnAction;
+  end;
+
   TMClientView = class(TVirtualStringTree)
   private
     FPopupMenu: TPopupMenu;
@@ -57,8 +72,8 @@ type
     FDragTreshold: Integer;
 
     FInitialSorted: Boolean;
-    FSortColumn: Integer;
-    FSortDirection: VirtualTrees.TSortDirection;
+    //FSortColumn: Integer;
+    //FSortDirection: VirtualTrees.TSortDirection;
 
     FColName: TVirtualTreeColumn;
     FColTitle: TVirtualTreeColumn;
@@ -70,6 +85,7 @@ type
     FOnStartStreaming: TStartStreamingEvent;
 
     procedure FitColumns;
+    procedure MenuColsAction(Sender: TMClientView; Index: Integer; Checked: Boolean);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -166,6 +182,8 @@ begin
 end;
 
 constructor TMClientView.Create(AOwner: TComponent; PopupMenu: TPopupMenu);
+var
+  i: Integer;
 begin
   inherited Create(AOwner);
 
@@ -176,7 +194,6 @@ begin
   Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
   TreeOptions.AutoOptions := [toAutoScrollOnExpand];
-  //TreeOptions.StringOptions := TreeOptions.StringOptions + [toShowStaticText];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowDropmark];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toAcceptOLEDrop, toEditable];
   Header.Options := Header.Options + [hoAutoResize];
@@ -188,9 +205,6 @@ begin
 
   FPopupMenu := PopupMenu;
   FDragSource := TDropFileSource.Create(Self);
-
-  FSortColumn := 0;
-  FSortDirection := VirtualTrees.sdAscending;
 
   FColName := Header.Columns.Add;
   FColName.Text := _('Name');
@@ -204,6 +218,16 @@ begin
   FColSpeed.Text := _('Speed');
   FColStatus := Header.Columns.Add;
   FColStatus.Text := _('State');
+
+  Header.PopupMenu := TMFilesColPopupMenu.Create(Self);
+  TMFilesColPopupMenu(Header.PopupMenu).OnAction := MenuColsAction;
+
+  for i := 1 to Header.Columns.Count - 1 do
+  begin
+    if not ((AppGlobals.ClientCols and (1 shl i)) <> 0) then
+      Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
+  end;
+
   FitColumns;
 end;
 
@@ -328,24 +352,24 @@ begin
   inherited;
   if HitInfo.Button = mbLeft then
   begin
-    if FSortColumn <> HitInfo.Column then
+    if Header.SortColumn <> HitInfo.Column then
     begin
-      FSortColumn := HitInfo.Column;
+      Header.SortColumn := HitInfo.Column;
       if (HitInfo.Column <> 0) and (HitInfo.Column <> 1) then
-        FSortDirection := sdDescending
+        Header.SortDirection := sdDescending
       else
-        FSortDirection := sdAscending;
+        Header.SortDirection := sdAscending;
     end else
     begin
-      if FSortDirection = sdAscending then
-        FSortDirection := sdDescending
+      if Header.SortDirection = sdAscending then
+        Header.SortDirection := sdDescending
       else
-        FSortDirection := sdAscending;
+        Header.SortDirection := sdAscending;
     end;
-    Sort(nil, HitInfo.Column, FSortDirection);
+    Sort(nil, HitInfo.Column, Header.SortDirection);
     Nodes := GetNodes(ntCategory, False);
     for i := 0 to Length(Nodes) - 1 do
-      Sort(Nodes[i], FSortColumn, FSortDirection);
+      Sort(Nodes[i], Header.SortColumn, Header.SortDirection);
   end;
 end;
 
@@ -572,6 +596,28 @@ begin
     end;
   end;
 }
+end;
+
+procedure TMClientView.MenuColsAction(Sender: TMClientView; Index: Integer;
+  Checked: Boolean);
+var
+  Show: Boolean;
+begin
+  Show := True;
+  if coVisible in Header.Columns[Index].Options then
+    Show := False;
+
+  if Show then
+  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible];
+  end else
+  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options - [coVisible];
+  end;
+
+  AppGlobals.ClientCols := AppGlobals.ClientCols xor (1 shl Index);
+
+  //FitColumns; // TODO: Ist das sinnig oder nicht? testen!
 end;
 
 procedure TMClientView.MoveTo(Source, Target: PVirtualNode;
@@ -1040,6 +1086,53 @@ begin
       Result[High(Result)].URL := URL;
       Result[High(Result)].Name := Name;
     end;
+  end;
+end;
+
+{ TMFilesColPopupMenu }
+
+procedure TMFilesColPopupMenu.ColItemsClick(Sender: TObject);
+var
+  Index: Integer;
+  Item: TMenuItem;
+begin
+  Item := TMenuItem(Sender);
+  Index := Items.IndexOf(Item) + 1;
+  if Assigned(FOnAction) then
+    FOnAction(nil, Index, True);
+end;
+
+constructor TMFilesColPopupMenu.Create(AOwner: TComponent);
+var
+  i: Integer;
+  Tree: TMClientView;
+  Item: TMenuItem;
+begin
+  inherited;
+
+  if AOwner is TMClientView then
+  begin
+    Tree := TMClientView(AOwner);
+    FFileView := Tree;
+    for i := 1 to Tree.Header.Columns.Count - 1 do
+    begin
+      Item := CreateMenuItem;
+      Item.Caption := Tree.Header.Columns[i].Text;
+      Item.OnClick := ColItemsClick;
+      Items.Add(Item);
+    end;
+  end;
+end;
+
+procedure TMFilesColPopupMenu.DoPopup(Sender: TObject);
+var
+  i: Integer;
+begin
+  inherited;
+
+  for i := 1 to FFileView.Header.Columns.Count - 1 do
+  begin
+    Items[i - 1].Checked := coVisible in FFileView.Header.Columns[i].Options;
   end;
 end;
 

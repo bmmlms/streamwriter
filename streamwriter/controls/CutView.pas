@@ -58,18 +58,31 @@ type
     property OnScanError: TNotifyEvent read FOnScanError write FOnScanError;
   end;
 
+  TMouseMode = (mmDown, mmMove, mmUp);
+
+  PMouseButton = ^TMouseButton;
+
   TCutPaintBox = class(TGraphicControl)
+  const
+    ScrollbarHeight = 8;
+    MinimumDisplayedSampleCount = 30;
   private
     FBuf: TBitmap;
     FCutView: TCutView;
     FTimer: TTimer;
     FPlayingIndex: Cardinal;
 
-    FPeakColor, FPeakEndColor, FStartColor, FEndColor, FPlayColor: TColor;
-    FStartLine, FEndLine, FPlayLine: Cardinal;
+    FPeakColor, FPeakEndColor, FStartColor, FEndColor, FPlayColor, FZoomOuterColor, FZoomInnerColor: TColor;
+    FStartLine, FEndLine, FPlayLine, FZoomStartLine, FZoomEndLine: Cardinal;
+    FDoZoom: Boolean;
+
+    FMouseOldX, FMouseOldY, FMouseMoveStartX: integer;
+    FScrollbarActive: boolean;
 
     procedure BuildBuffer;
-    procedure SetLine(X: Integer; Button: TMouseButton);
+    procedure SetLine(X: Integer; Button: TMouseButton; Mode: TMouseMode);
+    function HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton;
+      Mode: TMouseMode): Boolean;
     function PixelsToArray(X: Integer): Cardinal;
     function GetPlayerPos: Cardinal;
 
@@ -80,12 +93,14 @@ type
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X: Integer;
       Y: Integer); override;
     procedure MouseMove(Shift: TShiftState; X: Integer; Y: Integer); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X: Integer;
+      Y: Integer); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   end;
 
-  TLineMode = (lmEdit, lmPlay);
+  TLineMode = (lmEdit, lmPlay, lmZoom);
 
   TCutView = class(TPanel)
   private
@@ -134,6 +149,7 @@ type
     function CanStop: Boolean;
     function CanAutoCut: Boolean;
     function CanSetLine: Boolean;
+    function CanZoom: Boolean;
 
     property LineMode: TLineMode read FLineMode write FLineMode;
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
@@ -310,6 +326,10 @@ begin
     FSync2 := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, LoopSyncProc, Self);
   end;
 
+  FPB.FZoomStartLine := FPB.FStartLine;
+  FPB.FZoomEndLine := FPB.FEndLine;
+  FPB.FDoZoom := True;
+
   FPB.BuildBuffer;
   FPB.Paint;
 
@@ -335,6 +355,14 @@ begin
     FSync := BASSChannelSetSync(FPlayer, BASS_SYNC_POS, FWaveData.WaveArray[FWaveData.CutEnd].Pos, LoopSyncProc, Self);
     FSync2 := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, LoopSyncProc, Self);
   end;
+
+  FPB.FStartLine := FWaveData.CutStates[FWaveData.CutStates.Count - 1].CutStart;
+  FPB.FEndLine := FWaveData.CutStates[FWaveData.CutStates.Count - 1].CutEnd;
+  FPB.FPlayLine := FPB.FStartLine;
+
+  FPB.FZoomStartLine := FPB.FStartLine;
+  FPB.FZoomEndLine := FPB.FEndLine;
+  FPB.FDoZoom := True;
 
   FPB.BuildBuffer;
   FPB.Paint;
@@ -494,6 +522,11 @@ begin
   Result := FWaveData <> nil;
 end;
 
+function TCutView.CanZoom: Boolean;
+begin
+  Result := FWaveData <> nil;
+end;
+
 procedure TCutView.ThreadEndScan(Sender: TObject);
 begin
   if FWaveData <> nil then
@@ -550,13 +583,56 @@ procedure TCutPaintBox.BuildBuffer;
   var
     L: Cardinal;
   begin
-    L := Trunc(((ArrayIdx - FCutView.FWaveData.CutStart) / FCutView.FWaveData.CutSize) * FBuf.Width);
+    L := Trunc(((ArrayIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FBuf.Width);
 
     FBuf.Canvas.Pen.Color := Color;
     FBuf.Canvas.MoveTo(L, 0);
-    FBuf.Canvas.LineTo(L, FBuf.Height);
+    FBuf.Canvas.LineTo(L, FBuf.Height - ScrollbarHeight - 1);
 
     FBuf.Canvas.Brush.Color := clBlack;
+  end;
+  procedure DrawTransparentBox(StartIdx: Cardinal; EndIdx: Cardinal; LineColor: TColor; FillColor: TColor);
+  var rectStart, rectEnd: Cardinal;
+      originalMode: TPenMode;
+  begin
+    rectStart := Trunc(((StartIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FBuf.Width);
+    rectEnd := Trunc(((EndIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FBuf.Width);
+    with FBuf.Canvas do
+    begin
+      Pen.Color := LineColor;
+      originalMode := Pen.Mode;
+      Pen.Mode := TPenMode.pmNotXor;
+      Brush.Color := FillColor;
+      Rectangle(rectStart, 0, rectEnd, FBuf.Height - ScrollbarHeight - 1);
+      Pen.Mode := originalMode;
+    end;
+  end;
+  procedure DrawScrollBar(Color: TColor);
+  var StartX, StartY, EndX: Integer;
+      y: Cardinal;
+  begin
+    with FBuf.Canvas do
+    begin
+      //Draw Outline
+      Pen.Color := Color;
+      StartY := Height - 2 - ScrollbarHeight;
+      MoveTo(1, StartY);
+      LineTo(Width - 2, StartY);
+      LineTo(Width - 2, Height - 2);
+      LineTo(1, Height - 2);
+      LineTo(1, StartY);
+
+      //Draw Bar
+      StartX := Trunc((FCutView.FWaveData.ZoomStart * (FBuf.Width - 6)) / High(FCutView.FWaveData.WaveArray)) + 3;
+      EndX := Trunc((FCutView.FWaveData.ZoomEnd * (FBuf.Width - 6)) / High(FCutView.FWaveData.WaveArray)) + 3;
+      if StartX = EndX then
+        EndX := StartX + 1;
+      for y := 0 to ScrollbarHeight - 4 do
+      begin
+        MoveTo(StartX, StartY + y + 2);
+        LineTo(EndX, StartY + y + 2);
+      end;
+    end;
   end;
   function BuildTime(T: Double): string;
   var
@@ -575,8 +651,8 @@ procedure TCutPaintBox.BuildBuffer;
     TS: TSize;
     SecText: string;
   begin
-    L := Trunc(((ArrayIdx - FCutView.FWaveData.CutStart) / FCutView.FWaveData.CutSize) * FBuf.Width);
-    SecText := BuildTime(FCutView.FWaveData.WaveArray[ArrayIdx].Sec - FCutView.FWaveData.WaveArray[FCutView.FWaveData.CutStart].Sec);
+    L := Trunc(((ArrayIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FBuf.Width);
+    SecText := BuildTime(FCutView.FWaveData.WaveArray[ArrayIdx].Sec); // - FCutView.FWaveData.WaveArray[FCutView.FWaveData.ZoomStart].Sec);
     FBuf.Canvas.Font.Color := clWhite;
     SetBkMode(FBuf.Canvas.Handle, TRANSPARENT);
     TS := GetTextSize(SecText, Canvas.Font);
@@ -586,7 +662,7 @@ procedure TCutPaintBox.BuildBuffer;
       FBuf.Canvas.TextOut(L + 4, X, SecText);
   end;
 var
-  i, v: Integer;
+  i, v, vnext: Integer;
   v2: Double;
   Last: Integer;
   LBuf, RBuf: Cardinal;
@@ -630,7 +706,28 @@ begin
     Exit;
 
 
-  ht := FBuf.Height div 2;
+  ht := (FBuf.Height div 2) - ScrollbarHeight - 1;
+
+  LBuf := 0;
+  RBuf := 0;
+  Added := 0;
+  Last := 0;
+
+  if FDoZoom then
+  begin
+    if FZoomStartLine = High(Cardinal) then
+    begin
+      FCutView.FWaveData.ZoomStart := 0;
+      FCutView.FWaveData.ZoomEnd := High(FCutView.FWaveData.WaveArray);
+    end else
+    begin
+      FCutView.FWaveData.ZoomStart := FZoomStartLine;
+      FCutView.FWaveData.ZoomEnd := FZoomEndLine;
+      FZoomStartLine := High(Cardinal);
+      FZoomEndLine := High(Cardinal);
+    end;
+    FDoZoom := False;
+  end;
 
   for i := 0 to FCutView.FWaveData.Silence.Count - 1 do
   begin
@@ -647,32 +744,26 @@ begin
     if CE > FCutView.FWaveData.CutEnd then
       CE := FCutView.FWaveData.CutEnd;
 
-    L1 := Floor(((CS - FCutView.FWaveData.CutStart) / FCutView.FWaveData.CutSize) * FBuf.Width);
-    L2 := Ceil(((CE - FCutView.FWaveData.CutStart) / FCutView.FWaveData.CutSize) * FBuf.Width);
+    L1 := Floor(((CS - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FBuf.Width);
+    L2 := Ceil(((CE - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FBuf.Width);
 
     if L2 - L1 <= 2 then
       Inc(L2);
 
     FBuf.Canvas.Brush.Color := clGray;
     FBuf.Canvas.FillRect(Rect(L1, 0, L2, ht - 1));
-    FBuf.Canvas.FillRect(Rect(L1, ht + 1, L2, FBuf.Height));
+    FBuf.Canvas.FillRect(Rect(L1, ht + 1, L2, FBuf.Height - ScrollbarHeight - 3));
   end;
 
-
-
-  LBuf := 0;
-  RBuf := 0;
-  Added := 0;
-  Last := 0;
-
-  ArrayFrom := FCutView.FWaveData.CutStart;
-  ArrayTo := FCutView.FWaveData.CutEnd;
+  ArrayFrom := FCutView.FWaveData.ZoomStart;
+  ArrayTo := FCutView.FWaveData.ZoomEnd;
 
   v2 := (1 / 1) * FBuf.Width;
 
-  for i := ArrayFrom to ArrayTo do
+  for i := ArrayFrom - 1 to ArrayTo do
   begin
     v := Integer(Trunc(((i - Int64(ArrayFrom)) / (ArrayTo - ArrayFrom)) * v2));
+    vnext := Integer(Trunc(((i - Int64(ArrayFrom) + 1) / (ArrayTo - ArrayFrom)) * v2));
 
     if v = Last then
     begin
@@ -694,14 +785,20 @@ begin
     end;
 
     FBuf.Canvas.Pen.Color := FPeakColor;
-
-    FBuf.Canvas.MoveTo(v, ht - 1);
-    FBuf.Canvas.LineTo(v, ht - 1 - Trunc((LBuf / 33000) * ht));
-    FBuf.Canvas.Pixels[v, ht -1 - Trunc((LBuf / 33000) * ht)] := FPeakEndColor;
-
-    FBuf.Canvas.MoveTo(v, ht + 1);
-    FBuf.Canvas.LineTo(v, ht + 1 + Trunc((RBuf / 33000) * ht));
-    FBuf.Canvas.Pixels[v, ht + 1 + Trunc((RBuf / 33000) * ht)] := FPeakEndColor;
+    FBuf.Canvas.Brush.Color := FPeakColor;
+    if abs(vnext - v) <= 2 then
+    begin
+      FBuf.Canvas.MoveTo(v, ht - 1);
+      FBuf.Canvas.LineTo(v, ht - 1 - Trunc((LBuf / 33000) * ht));
+      FBuf.Canvas.Pixels[v, ht - 1 - Trunc((LBuf / 33000) * ht)] := FPeakEndColor;
+      FBuf.Canvas.MoveTo(v, ht + 1);
+      FBuf.Canvas.LineTo(v, ht + 1 + Trunc((RBuf / 33000) * ht));
+      FBuf.Canvas.Pixels[v, ht + 1 + Trunc((RBuf / 33000) * ht)] := FPeakEndColor;
+    end else
+    begin
+      FBuf.Canvas.FillRect(Rect(v, ht, vnext - 1, ht - Trunc((LBuf / 33000) * ht)));
+      FBuf.Canvas.FillRect(Rect(v, ht + 1, vnext - 1, ht + 1 + Trunc((LBuf / 33000) * ht)));
+    end;
 
     RBuf := 0;
     LBuf := 0;
@@ -710,14 +807,22 @@ begin
     Last := v;
   end;
 
+  FBuf.Canvas.Pen.Color := FZoomOuterColor;
+  FBuf.Canvas.MoveTo(0, ht);
+  FBuf.Canvas.LineTo(FBuf.Width, ht);
+
   DrawLine(FStartLine, FStartColor);
   DrawLine(FEndLine, FEndColor);
+
+  DrawTransparentBox(FZoomStartLine, FZoomEndLine, FZoomOuterColor, FZoomInnerColor);
 
   DrawLineText(FStartLine, 16);
   DrawLineText(FEndLine, 28);
 
   DrawLine(FPlayLine, FPlayColor);
   DrawLineText(FPlayLine, 40);
+
+  DrawScrollBar(FZoomOuterColor);
 
   {
   if BASSChannelIsActive(FCutView.FPlayer) = BASS_ACTIVE_PLAYING then
@@ -750,10 +855,15 @@ begin
   FStartColor := HTML2Color('ece52b');
   FEndColor := HTML2Color('218030');
   FPlayColor := HTML2Color('c33131');
+  FZoomOuterColor :=  HTML2Color('748cf7');
+  FZoomInnerColor := HTML2Color('4d5ea5');
 
   FCutView := TCutView(AOwner);
   if FBuf = nil then
     FBuf := TBitmap.Create;
+
+  FZoomStartLine := High(Cardinal);
+  FZoomEndLine := High(Cardinal);
 
   FTimer := TTimer.Create(Self);
   FTimer.Interval := 50;
@@ -775,20 +885,61 @@ begin
   if FCutView.FWaveData = nil then
     Exit;
 
-  SetLine(X, Button);
+  if Button = mbLeft then
+    FMouseMoveStartX := X;
+
+  if not HandleScrollBar(X, Y, @Button, mmDown) then
+    SetLine(X, Button, mmDown);
 end;
 
 procedure TCutPaintBox.MouseMove(Shift: TShiftState; X, Y: Integer);
+var Button: PMouseButton;
+    ButtonData: TMouseButton;
 begin
   inherited;
 
   if FCutView.FWaveData = nil then
     Exit;
 
-  if ssLeft in Shift then
-    SetLine(X, mbLeft)
-  else if ssRight in Shift then
-    SetLine(X, mbRight);
+  if (X <> FMouseOldX) or (Y <> FMouseOldY) then
+  begin
+    if ssLeft in Shift then
+    begin
+      ButtonData := mbLeft;
+      Button := @ButtonData;
+    end
+    else if ssRight in Shift then
+    begin
+      ButtonData := mbRight;
+      Button := @ButtonData;
+    end
+    else
+      Button := nil;
+    if not HandleScrollBar(X, Y, Button, mmMove) then
+    begin
+      if Button <> nil then
+        SetLine(X, Button^, mmMove);
+
+{      if ssLeft in Shift then
+        SetLine(X, mbLeft, mmMove)
+      else if ssRight in Shift then
+        SetLine(X, mbRight, mmMove);}
+    end;
+    FMouseOldX := X;
+    FMouseOldY := Y;
+  end;
+end;
+
+procedure TCutPaintBox.MouseUp(Button: TMouseButton; Shift: TShiftState;
+  X, Y: Integer);
+begin
+  inherited;
+
+  if FCutView.FWaveData = nil then
+    Exit;
+
+  if not HandleScrollBar(X, Y, @Button, mmUp) then
+    SetLine(X, Button, mmUp);
 end;
 
 procedure TCutPaintBox.Paint;
@@ -819,12 +970,12 @@ begin
   if X > ClientWidth then
     X := ClientWidth;
 
-  Result := FCutView.FWaveData.CutStart + Cardinal(Ceil((X / FBuf.Width) * FCutView.FWaveData.CutSize));
+  Result := FCutView.FWaveData.ZoomStart + Cardinal(Ceil((X / FBuf.Width) * FCutView.FWaveData.ZoomSize));
 
-  if Result > FCutView.FWaveData.CutEnd then
-    Result := FCutView.FWaveData.CutEnd;
-  if Result < FCutView.FWaveData.CutStart then
-    Result := FCutView.FWaveData.CutStart;
+  if Result > FCutView.FWaveData.ZoomEnd then
+    Result := FCutView.FWaveData.ZoomEnd;
+  if Result < FCutView.FWaveData.ZoomStart then
+    Result := FCutView.FWaveData.ZoomStart;
 end;
 
 function TCutPaintBox.GetPlayerPos: Cardinal;
@@ -851,36 +1002,37 @@ begin
   end;
 end;
 
-procedure TCutPaintBox.SetLine(X: Integer; Button: TMouseButton);
+procedure TCutPaintBox.SetLine(X: Integer; Button: TMouseButton; Mode: TMouseMode);
 var
   ArrayPos: Cardinal;
+  Swap: Cardinal;
 begin
   ArrayPos := PixelsToArray(X);
 
-  if ArrayPos < FCutView.FWaveData.CutStart then
-    ArrayPos := FCutView.FWaveData.CutStart;
-  if ArrayPos > FCutView.FWaveData.CutEnd then
-    ArrayPos := FCutView.FWaveData.CutEnd;
+  if ArrayPos < FCutView.FWaveData.ZoomStart then
+    ArrayPos := FCutView.FWaveData.ZoomStart;
+  if ArrayPos > FCutView.FWaveData.ZoomEnd then
+    ArrayPos := FCutView.FWaveData.ZoomEnd;
 
   case FCutView.FLineMode of
     lmEdit:
-      if Button = mbLeft then
+      if (Button = mbLeft) and (Mode <> mmUp) then
       begin
         FStartLine := ArrayPos;
-        if FStartLine >= FCutView.FWaveData.CutEnd then
-          FStartLine := FCutView.FWaveData.CutEnd - 1;
+        if FStartLine >= FCutView.FWaveData.ZoomEnd then
+          FStartLine := FCutView.FWaveData.ZoomEnd - 1;
         if FEndLine <= FStartLine then
           FEndLine := FStartLine + 1;
-      end else if Button = mbRight then
+      end else if (Button = mbRight) and (Mode <> mmUp) then
       begin
         FEndLine := ArrayPos;
-        if FEndLine <= FCutView.FWaveData.CutStart then
-          FEndLine := FCutView.FWaveData.CutStart + 1;
+        if FEndLine <= FCutView.FWaveData.ZoomStart then
+          FEndLine := FCutView.FWaveData.ZoomStart + 1;
         if FStartLine >= FEndLine then
           FStartLine := FEndLine - 1;
       end;
     lmPlay:
-      if Button = mbLeft then
+      if (Button = mbLeft) and (Mode <> mmUp) then
       begin
         if FCutView.FPlayer > 0 then
         begin
@@ -888,6 +1040,46 @@ begin
           BASSChannelSetPosition(FCutView.FPlayer, FCutView.FWaveData.WaveArray[ArrayPos].Pos, BASS_POS_BYTE);
         end;
         FPlayLine := ArrayPos;
+      end;
+    lmZoom:
+      begin
+        if (Button = mbLeft) and (Mode <> mmUp) then
+        begin
+          if (FZoomStartLine = High(Cardinal)) or (Mode = mmDown) then
+          begin
+            FZoomStartLine := ArrayPos;
+            FZoomEndLine := ArrayPos;
+            FDoZoom := False;
+          end else
+          begin
+            FZoomEndLine := ArrayPos;
+          end;
+        end;
+
+        if (Button = mbLeft) and (Mode = mmUp) then
+        begin
+          if FZoomStartLine > FZoomEndLine then
+          begin
+            Swap := FZoomStartLine;
+            FZoomStartLine := FZoomEndLine;
+            FZoomEndLine := Swap;
+          end;
+          if FZoomEndLine - FZoomStartLine < MinimumDisplayedSampleCount then
+          begin
+            if FZoomStartLine = 0 then
+              inc(FZoomEndLine, MinimumDisplayedSampleCount - FZoomEndLine + FZoomStartLine)
+            else
+              dec(FZoomStartLine, MinimumDisplayedSampleCount - FZoomEndLine + FZoomStartLine);
+          end;
+          FDoZoom := True;
+        end;
+
+        if Button = mbRight then
+        begin
+          FZoomStartLine := High(Cardinal);
+          FZoomEndLine := High(Cardinal);
+          FDoZoom := True;
+        end;
       end;
   end;
 
@@ -917,6 +1109,56 @@ begin
   Paint;
 end;
 
+function TCutPaintBox.HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton;
+  Mode: TMouseMode) : Boolean;
+var ButtonData: TMouseButton;
+    StartX, EndX, DiffX: Integer;
+begin
+  if (Button <> nil) then
+  begin
+    ButtonData := Button^;
+    if (ButtonData = mbLeft) and (Y >= Height - ScrollbarHeight - 2) then
+    begin
+      if (Mode = mmMove) or (Mode = mmDown) then
+        FScrollbarActive := True;
+    end;
+  end;
+
+  if FScrollbarActive then
+  begin
+    if Mode = mmUp then
+    begin
+      FScrollbarActive := False;
+      Result := true;
+      Exit;
+    end else
+    begin
+      DiffX := Trunc(((X - FMouseMoveStartX) * High(FCutView.FWaveData.WaveArray)) / (FBuf.Width - 6));
+//      OutputDebugString(PWideChar(' DiffX: '+ IntToStr(DiffX)));
+      StartX := FCutView.FWaveData.ZoomStart + Cardinal(DiffX);
+      EndX := FCutView.FWaveData.ZoomEnd + Cardinal(DiffX);
+      if StartX < 0 then
+      begin
+        StartX := 0;
+        EndX := FCutView.FWaveData.ZoomSize;
+      end;
+      if EndX > High(FCutView.FWaveData.WaveArray) then
+      begin
+        EndX := High(FCutView.FWaveData.WaveArray);
+        StartX := EndX - FCutView.FWaveData.ZoomSize;
+      end;
+      FZoomStartLine := StartX;
+      FZoomEndLine := EndX;
+      FMouseMoveStartX := X;
+      FDoZoom := true;
+      BuildBuffer;
+      Paint;
+    end;
+  end;
+
+  Result := FScrollbarActive;
+end;
+
 procedure TCutPaintBox.TimerTimer(Sender: TObject);
 begin
   if csDestroying in ComponentState then
@@ -944,3 +1186,4 @@ begin
 end;
 
 end.
+

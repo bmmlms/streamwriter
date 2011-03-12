@@ -33,6 +33,7 @@ type
     FSep3: TToolButton;
     //FPosStart: TToolButton;
     //FPosEnd: TToolButton;
+    FPosZoom: TToolButton;
     FPosEdit: TToolButton;
     FPosPlay: TToolButton;
     FSep1: TToolButton;
@@ -97,6 +98,7 @@ begin
   //FToolBar.FPosEnd.Enabled := FCutView.CanSetLine;
   FToolBar.FPosPlay.Enabled := FCutView.CanSetLine;
   FToolBar.FAutoCut.Enabled := FCutView.CanAutoCut;
+  FToolBar.FPosPlay.Enabled := FCutView.CanZoom;
   FToolBar.FCut.Enabled := FCutView.CanCut;
   FToolBar.FUndo.Enabled := FCutView.CanUndo;
   FToolBar.FPlay.Enabled := FCutView.CanPlay;
@@ -137,6 +139,7 @@ begin
 
   FToolBar.FPosEdit.Down := False;
   FToolBar.FPosPlay.Down := False;
+  FToolBar.FPosZoom.Down := False;
 
   if Sender = FToolBar.FPosEdit then
   begin
@@ -147,6 +150,11 @@ begin
   begin
     FCutView.LineMode := lmPlay;
     FToolBar.FPosPlay.Down := True;
+  end;
+  if Sender = FToolBar.FPosZoom then
+  begin
+    FCutView.LineMode := lmZoom;
+    FToolBar.FPosZoom.Down := True;
   end;
 end;
 
@@ -183,7 +191,7 @@ end;
 procedure TCutTab.Setup(Filename: string; ToolBarImages: TImageList);
 begin
   MaxWidth := 120;
-  Caption := StringReplace(ExtractFileName(Filename), '&', '&&', [rfReplaceAll]);
+  Caption := ExtractFileName(Filename);
   FFilename := Filename;
 
   FToolbarPanel := TPanel.Create(Self);
@@ -203,6 +211,7 @@ begin
   FToolBar.FSave.OnClick := SaveClick;
   FToolBar.FPosEdit.OnClick := PosClick;
   FToolBar.FPosPlay.OnClick := PosClick;
+  FToolBar.FPosZoom.OnClick := PosClick;
   FToolBar.FAutoCut.OnClick := AutoCutClick;
   FToolBar.FCut.OnClick := CutClick;
   FToolBar.FUndo.OnClick := UndoClick;
@@ -274,7 +283,10 @@ begin
   FSep1.Style := tbsSeparator;
   FSep1.Width := 8;
 
-
+  FPosZoom := TToolButton.Create(Self);
+  FPosZoom.Parent := Self;
+  FPosZoom.Hint := _('Zoom');
+  FPosZoom.ImageIndex := 14;  //TODO: Falscher ImageIndex!
 
   FPosEdit := TToolButton.Create(Self);
   FPosEdit.Parent := Self;
@@ -307,3 +319,4 @@ begin
 end;
 
 end.
+

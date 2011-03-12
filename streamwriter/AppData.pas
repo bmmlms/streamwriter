@@ -107,6 +107,7 @@ type
     FShortcutPrev: Cardinal;
 
     FHeaderWidth: TIntArray;
+    FClientCols: Integer;
 
     FPluginManager: TPluginManager;
     FLanguageIcons: TLanguageIcons;
@@ -148,6 +149,7 @@ type
     property ShortcutPrev: Cardinal read FShortcutPrev write FShortcutPrev;
 
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
+    property ClientCols: Integer read FClientCols write FClientCols;
 
     property DataFile: string read FGetDataFile;
 
@@ -245,7 +247,7 @@ begin
     FDonors[5] := '''Peter Parker''';
     FDonors[6] := 'Anita Wimmer';
     FDonors[7] := 'Valentin M.';
-    FDonors[8] := '''Rüdi''';
+    FDonors[8] := 'Rüdi';
     FDonors[9] := '''Hummer''';
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
@@ -258,9 +260,10 @@ begin
     Text.Add(_('&U&10...people who contributed code, documentation,'));
     Text.Add(_('&U&10images or translations'));
     Text.Add('');
-    SetLength(FHelpers, 2);
+    SetLength(FHelpers, 3);
     FHelpers[0] := '''HostedDinner''';
     FHelpers[1] := '''bastik''';
+    FHelpers[2] := 'Ralf';
     ShuffleFisherYates(FHelpers);
     for i := 0 to Length(FHelpers) - 1 do
       Text.Add(FHelpers[i]);
@@ -426,6 +429,8 @@ begin
       if i <> 1 then
         FStorage.Read('HeaderWidth' + IntToStr(i), FHeaderWidth[i], 130, 'Cols');
   end;
+  FStorage.Read('ClientCols', FClientCols, 255, 'Cols');
+  FClientCols := FClientCols or (1 shl 0);
 
   if (DefaultActionTmp > Ord(High(TClientActions))) or
      (DefaultActionTmp < Ord(Low(TClientActions))) then
@@ -501,6 +506,7 @@ begin
   for i := 0 to High(FHeaderWidth) do
     if i <> 1 then
       FStorage.Write('HeaderWidth' + IntToStr(i), HeaderWidth[i], 'Cols');
+  FStorage.Write('ClientCols', FClientCols, 'Cols');
 
   FStorage.DeleteKey('Plugins');
   n := 0;
@@ -537,7 +543,8 @@ end;
 procedure TStreamSettings.FSetSaveToMemory(Value: Boolean);
 begin
   FSaveToMemory := Value;
-  FSeparateTracks := True;
+  if Value then
+    FSeparateTracks := True;
 end;
 
 class function TStreamSettings.Load(Stream: TExtendedStream;

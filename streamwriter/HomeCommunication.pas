@@ -136,7 +136,7 @@ type
     procedure Connect;
     procedure SubmitStream(Stream: string);
     function GetGenres: Boolean;
-    function GetStreams(Count, Offset: Integer; Search, Genre: string; Kbps: Integer;
+    function GetStreams(Count, Offset: Integer; Search, Genre, SortType, SortDir: string; Kbps: Integer;
       StreamType: string; ReplaceQuery: Boolean): Boolean;
 
     procedure LogOn(User, Pass: string);
@@ -255,7 +255,7 @@ begin
   end;
 end;
 
-function THomeCommunication.GetStreams(Count, Offset: Integer; Search, Genre: string;
+function THomeCommunication.GetStreams(Count, Offset: Integer; Search, Genre, SortType, SortDir: string;
   Kbps: Integer; StreamType: string; ReplaceQuery: Boolean): Boolean;
 var
   XMLDocument: TXMLLib;
@@ -286,6 +286,8 @@ begin
     Data.Nodes.SimpleAdd('genre', EncodeU(Genre));
     Data.Nodes.SimpleAdd('kbps', IntToStr(Kbps));
     Data.Nodes.SimpleAdd('type', StreamType);
+    Data.Nodes.SimpleAdd('sorttype', SortType);
+    Data.Nodes.SimpleAdd('sortdir', SortDir);
     Data.Nodes.SimpleAdd('format', EncodeU('m3u'));
 
     XMLDocument.SaveToString(XML);
@@ -472,8 +474,8 @@ end;
 constructor THomeThread.Create;
 begin
   {$IFDEF DEBUG}
-  //inherited Create('gaia', 8007);
-  inherited Create('streamwriter.org', 8007);
+  inherited Create('gaia', 8007);
+  //inherited Create('streamwriter.org', 8007);
   {$ELSE}
   inherited Create('streamwriter.org', 8007);
   {$ENDIF}

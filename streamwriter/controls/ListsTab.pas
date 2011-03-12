@@ -88,8 +88,8 @@ type
     FTab: TListsTab;
 
     FType: Integer;
-    FSortColumn: Integer;
-    FSortDirection: TSortDirection;
+    //FSortColumn: Integer;
+    //FSortDirection: TSortDirection;
 
     FColTitle: TVirtualTreeColumn;
 
@@ -196,9 +196,6 @@ begin
   ShowHint := True;
   HintMode := hmTooltip;
 
-  FSortColumn := 0;
-  FSortDirection := sdAscending;
-
   FColTitle := Header.Columns.Add;
   FColTitle.Text := _('Title');
 
@@ -287,18 +284,18 @@ begin
   inherited;
   if HitInfo.Button = mbLeft then
   begin
-    if FSortColumn <> HitInfo.Column then
+    if Header.SortColumn <> HitInfo.Column then
     begin
-      FSortColumn := HitInfo.Column;
-      FSortDirection := sdAscending;
+      Header.SortColumn := HitInfo.Column;
+      Header.SortDirection := sdAscending;
     end else
     begin
-      if FSortDirection = sdAscending then
-        FSortDirection := sdDescending
+      if Header.SortDirection = sdAscending then
+        Header.SortDirection := sdDescending
       else
-        FSortDirection := sdAscending;
+        Header.SortDirection := sdAscending;
     end;
-    Sort(nil, HitInfo.Column, FSortDirection);
+    Sort(nil, HitInfo.Column, Header.SortDirection);
   end;
 end;
 
@@ -518,7 +515,10 @@ begin
     NodeData := FTree.GetNodeData(Node);
     NodeData.Title := FList[i];
   end;
-  FTree.Sort(nil, 0, FTree.FSortDirection);
+  FTree.Sort(nil, 0, FTree.Header.SortDirection);
+
+  FTree.Header.SortColumn := 0;
+  FTree.Header.SortDirection := sdAscending;
 end;
 
 procedure TTitlePanel.Setup(List: TTitleList; Images: TImageList; Title: string);
