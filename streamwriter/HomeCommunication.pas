@@ -142,9 +142,10 @@ type
       StreamType: string; ReplaceQuery: Boolean): Boolean;
 
     procedure LogOn(User, Pass: string);
-    procedure Logoff;
+    procedure LogOff;
     procedure TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
-    procedure UpdateInfo(RecordingCount: Cardinal);
+    procedure SendClientInfo;
+    procedure UpdateStats(RecordingCount: Cardinal);
     procedure RateStream(ID, Rating: Integer);
     procedure RebuildIndex;
 
@@ -350,6 +351,34 @@ begin
   end;
 end;
 
+procedure THomeCommunication.SendClientInfo;
+var
+  XMLDocument: TXMLLib;
+  Data, Node: TXMLNode;
+  XML: AnsiString;
+begin
+  if not Connected then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('clientinfo');
+  try
+    Data := XMLDocument.Root.GetNode('data');
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'version';
+    Node.Value.AsString := AppGlobals.AppVersion.AsString;
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'build';
+    Node.Value.AsInteger := AppGlobals.BuildNumber;
+
+    XMLDocument.SaveToString(XML);
+    FClient.Write(XML);
+  finally
+    XMLDocument.Free;
+  end;
+end;
+
 procedure THomeCommunication.SubmitStream(Stream: string);
 var
   XMLDocument: TXMLLib;
@@ -412,6 +441,8 @@ procedure THomeCommunication.ClientConnected(Sender: TSocketThread);
 begin
   FConnected := True;
 
+  SendClientInfo;
+
   if AppGlobals.UserWasSetup and (AppGlobals.User <> '') and (AppGlobals.Pass <> '') then
     LogOn(AppGlobals.User, AppGlobals.Pass);
 
@@ -471,7 +502,7 @@ begin
   end;
 end;
 
-procedure THomeCommunication.UpdateInfo(RecordingCount: Cardinal);
+procedure THomeCommunication.UpdateStats(RecordingCount: Cardinal);
 var
   XMLDocument: TXMLLib;
   Data, Data2: TXMLNode;
@@ -480,7 +511,7 @@ begin
   if not Connected then
     Exit;
 
-  XMLDocument := FClient.XMLGet('clientinfo');
+  XMLDocument := FClient.XMLGet('updatestats');
   try
     Data := XMLDocument.Root.GetNode('data');
     Data2 := TXMLNode.Create(Data);

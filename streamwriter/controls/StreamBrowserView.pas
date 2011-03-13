@@ -116,6 +116,7 @@ type
     FSelectedSortDir: string;
 
     FLoading: Boolean;
+    FWasConnected: Boolean;
 
     FHomeCommunication: THomeCommunication;
 
@@ -1106,12 +1107,14 @@ end;
 
 procedure TMStreamBrowserView.HomeCommStateChanged(Sender: TObject);
 begin
-  if HomeComm.Connected and (FStreamTree.RootNodeCount = 0) then
+  if (HomeComm.Connected <> FWasConnected) and HomeComm.Connected and
+     (FStreamTree.RootNodeCount = 0) then
   begin
     FHomeCommunication.GetGenres;
     FHomeCommunication.GetStreams(FStreamTree.DisplayCount, 0, FCurrentSearch, FCurrentGenre,
       FCurrentSortType, FCurrentSortDir, FCurrentKbps, FCurrentStreamType, True);
   end;
+  FWasConnected := HomeComm.Connected;
 end;
 
 procedure TMStreamBrowserView.HomeCommunicationGenresReceived(

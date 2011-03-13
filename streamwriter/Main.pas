@@ -245,6 +245,15 @@ type
 
   end;
 
+  TStatusHint = class(TCustomHint)
+  private
+  protected
+    procedure SetHintSize(HintWindow: TCustomHintWindow); override;
+    procedure PaintHint(HintWindow: TCustomHintWindow); override;
+  public
+    constructor Create(AOwner: TComponent);
+  end;
+
 implementation
 
 uses
@@ -562,6 +571,8 @@ begin
   end;
   Left := AppGlobals.MainLeft;
   Top := AppGlobals.MainTop;
+
+  addStatus.CustomHint := TStatusHint.Create(Self);
 
   Language.Translate(Self);
 end;
@@ -1089,7 +1100,7 @@ begin
     if FClients[i].Recording and not FClients[i].AutoRemove then
       Inc(C);
   if AppGlobals.SubmitStats then
-    HomeComm.UpdateInfo(C);
+    HomeComm.UpdateStats(C);
 end;
 
 procedure TfrmStreamWriterMain.tmrSpeedTimer(Sender: TObject);
@@ -1373,6 +1384,40 @@ end;
 procedure TfrmStreamWriterMain.CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
 begin
   FCommunityLogin := nil;
+end;
+
+{ TStatusHint }
+
+constructor TStatusHint.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  Delay := 500;
+end;
+
+procedure TStatusHint.PaintHint(HintWindow: TCustomHintWindow);
+begin
+
+  inherited;
+end;
+
+procedure TStatusHint.SetHintSize(HintWindow: TCustomHintWindow);
+var
+  Pos: TPoint;
+  R: TRect;
+begin
+  inherited;
+
+  Pos := Mouse.CursorPos;
+  Pos := TfrmStreamWriterMain(Owner).addStatus.ScreenToClient(Pos);
+  TfrmStreamWriterMain(Owner).addStatus.Perform(SB_GETRECT, 2, Integer(@R));
+  R.Top := 0;
+
+  if not PtInRect(R, Pos) then
+  begin
+    HintWindow.Width := 0;
+    HintWindow.Height := 0;
+  end;
 end;
 
 end.

@@ -231,7 +231,6 @@ begin
 
   while FMem.Size > MAX_BUFFER_SIZE do
   begin
-    // TODO: Funzt das hier?!
     // Puffer "rotieren"
     FMem.RemoveRange(0, 65536);
   end;

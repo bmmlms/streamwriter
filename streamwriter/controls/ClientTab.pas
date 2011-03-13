@@ -588,8 +588,10 @@ begin
   FVolume.Width := 140;
   FVolume.Align := alRight;
   FVolume.Setup;
-  FVolume.TrackBar.Position := AppGlobals.PlayerVolume;
-  FVolume.TrackBar.OnChange := VolumeTrackbarChange;
+  FVolume.Volume := AppGlobals.PlayerVolume;
+  FVolume.OnVolumeChange := VolumeTrackbarChange;
+//  FVolume.TrackBar.Position := AppGlobals.PlayerVolume;
+//  FVolume.TrackBar.OnChange := VolumeTrackbarChange;
 
   FActionPlay := GetAction('actPlay');
   FActionPause := GetAction('actPause');
@@ -1113,11 +1115,12 @@ var
   Clients: TClientArray;
   Client: TICEClient;
 begin
-  AppGlobals.PlayerVolume := FVolume.Trackbar.Position;
+  AppGlobals.PlayerVolume := FVolume.Volume; // FVolume.Trackbar.Position;
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
   for Client in Clients do
   begin
-    Client.SetVolume(FVolume.Trackbar.Position);
+    Client.SetVolume(FVolume.Volume);
+//    Client.SetVolume(FVolume.Trackbar.Position);
   end;
 end;
 
@@ -1289,4 +1292,5 @@ begin
 end;
 
 end.
+
 

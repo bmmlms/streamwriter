@@ -121,8 +121,8 @@ end;
 
 procedure TCutTab.VolumeTrackbarChange(Sender: TObject);
 begin
-  AppGlobals.CutVolume := FVolume.Trackbar.Position;
-  FCutView.Volume := FVolume.TrackBar.Position;
+  AppGlobals.CutVolume := FVolume.Volume; //  FVolume.Trackbar.Position;
+  FCutView.Volume := FVolume.Volume; //.TrackBar.Position;
 end;
 
 procedure TCutTab.SaveClick(Sender: TObject);
@@ -223,13 +223,15 @@ begin
   FVolume.Width := 140;
   FVolume.Align := alRight;
   FVolume.Setup;
-  FVolume.TrackBar.Position := AppGlobals.CutVolume;
-  FVolume.TrackBar.OnChange := VolumeTrackbarChange;
+  FVolume.Volume := AppGlobals.CutVolume;
+  FVolume.OnVolumeChange := VolumeTrackbarChange;
+//  FVolume.TrackBar.Position := AppGlobals.CutVolume;
+//  FVolume.TrackBar.OnChange := VolumeTrackbarChange;
 
   FCutView := TCutView.Create(Self);
   FCutView.Parent := Self;
   FCutView.Align := alClient;
-  FCutView.Volume := FVolume.TrackBar.Position;
+  FCutView.Volume := FVolume.Volume; //.TrackBar.Position;
   FCutView.OnStateChanged := CutViewStateChanged;
 
   UpdateButtons;
@@ -285,8 +287,8 @@ begin
 
   FPosZoom := TToolButton.Create(Self);
   FPosZoom.Parent := Self;
-  FPosZoom.Hint := _('Zoom');
-  FPosZoom.ImageIndex := 14;  //TODO: Falscher ImageIndex!
+  FPosZoom.Hint := _('Zoom in (right mousebutton zooms back)');
+  FPosZoom.ImageIndex := 48;
 
   FPosEdit := TToolButton.Create(Self);
   FPosEdit.Parent := Self;
@@ -319,4 +321,5 @@ begin
 end;
 
 end.
+
 
