@@ -762,7 +762,7 @@ begin
 end;
 
 function TICEClient.ParsePlaylist: Boolean;
-  procedure ParseLine(Line: string);
+  procedure ParseLine(Line: string; URLs: TStringList);
   var
     Host, URLData: string;
     Port: Integer;
@@ -773,11 +773,11 @@ function TICEClient.ParsePlaylist: Boolean;
       if not PortDetected then
       begin
         // Es gibt keinen Standard scheinbar - beide nehmen.
-        FEntry.URLs.Add(Host + ':80' + URLData);
-        FEntry.URLs.Add(Host + ':6666' + URLData);
+        URLs.Add(Host + ':80' + URLData);
+        URLs.Add(Host + ':6666' + URLData);
       end else
       begin
-        FEntry.URLs.Add(Host + ':' + IntToStr(Port) + URLData);
+        URLs.Add(Host + ':' + IntToStr(Port) + URLData);
         //if Port <> 80 then
         //  FURLs.Add(Host + ':80' + URLData);
       end;
@@ -786,67 +786,42 @@ function TICEClient.ParsePlaylist: Boolean;
 var
   Offset, Offset2: Integer;
   Line, Data: string;
+  URLs: TStringList;
 begin
-  FEntry.URLs.Clear;
-  Offset := 1;
-  Data := string(FICEThread.RecvStream.RecvStream.ToString);
-  if (Copy(LowerCase(Data), 1, 10) = '[playlist]') or
-     (Pos('audio/x-scpls', FICEThread.RecvStream.ContentType) > 0) or
-     (Pos('application/pls+xml', FICEThread.RecvStream.ContentType) > 0) then // .pls
-  begin
-    while True do
+  URLs := TStringList.Create;
+  try
+    Offset := 1;
+    Data := string(FICEThread.RecvStream.RecvStream.ToString);
+    if (Copy(LowerCase(Data), 1, 10) = '[playlist]') or
+       (Pos('audio/x-scpls', FICEThread.RecvStream.ContentType) > 0) or
+       (Pos('application/pls+xml', FICEThread.RecvStream.ContentType) > 0) then // .pls
     begin
-      Offset2 := PosEx(#10, Data, Offset);
-      if Offset2 > 0 then
-        Line := Trim(Copy(Data, Offset, Offset2 - Offset))
-      else
-        Line := Trim(Copy(Data, Offset, Length(Data)));
-
-      Offset := Offset2 + 1;
-
-      if Copy(LowerCase(Line), 1, 4) = 'file' then
+      while True do
       begin
-        Offset2 := Pos('=', Line);
+        Offset2 := PosEx(#10, Data, Offset);
         if Offset2 > 0 then
+          Line := Trim(Copy(Data, Offset, Offset2 - Offset))
+        else
+          Line := Trim(Copy(Data, Offset, Length(Data)));
+
+        Offset := Offset2 + 1;
+
+        if Copy(LowerCase(Line), 1, 4) = 'file' then
         begin
-          Line := Trim(Copy(Line, Offset2 + 1, Length(Line) - Offset2));
-          if (Line <> '') then
-            ParseLine(Line);
+          Offset2 := Pos('=', Line);
+          if Offset2 > 0 then
+          begin
+            Line := Trim(Copy(Line, Offset2 + 1, Length(Line) - Offset2));
+            if (Line <> '') then
+              ParseLine(Line, URLs);
+          end;
         end;
+
+        if Offset2 = 0 then
+          Break;
       end;
-
-      if Offset2 = 0 then
-        Break;
-    end;
-  end else if (LowerCase(Copy(Data, 1, 7)) = '#extm3u') or
-              (Pos('audio/x-mpegurl', FICEThread.RecvStream.ContentType) > 0) then // .m3u
-  begin
-    while True do
-    begin
-      Offset2 := PosEx(#10, Data, Offset);
-      if Offset2 > 0 then
-        Line := Trim(Copy(Data, Offset, Offset2 - Offset))
-      else
-        Line := Trim(Copy(Data, Offset, Length(Data)));
-
-      Offset := Offset2 + 1;
-
-      if (Length(Line) >= 1) and (Line[1] <> '#') then
-        ParseLine(Line);
-
-      if Offset2 = 0 then
-        Break;
-    end;
-  end else
-  begin
-    // Im Notfall alles was empfangen wurde als URLs interpretieren.
-    // Siehe z.B. http://www.rockantenne.de/webradio/rockantenne.m3u
-
-    // Das ist raus, weil ich oben noch die Content-Types abfrage.
-    // Damit sollte dieser Mist hier über sein.
-
-    {
-    if FICEThread.RecvStream.Size < 102400 then
+    end else if (LowerCase(Copy(Data, 1, 7)) = '#extm3u') or
+                (Pos('audio/x-mpegurl', FICEThread.RecvStream.ContentType) > 0) then // .m3u
     begin
       while True do
       begin
@@ -859,16 +834,50 @@ begin
         Offset := Offset2 + 1;
 
         if (Length(Line) >= 1) and (Line[1] <> '#') then
-          ParseLine(Line);
+          ParseLine(Line, URLs);
 
         if Offset2 = 0 then
           Break;
       end;
+    end else
+    begin
+      // Im Notfall alles was empfangen wurde als URLs interpretieren.
+      // Siehe z.B. http://www.rockantenne.de/webradio/rockantenne.m3u
+
+      // Das ist raus, weil ich oben noch die Content-Types abfrage.
+      // Damit sollte dieser Mist hier über sein.
+
+      {
+      if FICEThread.RecvStream.Size < 102400 then
+      begin
+        while True do
+        begin
+          Offset2 := PosEx(#10, Data, Offset);
+          if Offset2 > 0 then
+            Line := Trim(Copy(Data, Offset, Offset2 - Offset))
+          else
+            Line := Trim(Copy(Data, Offset, Length(Data)));
+
+          Offset := Offset2 + 1;
+
+          if (Length(Line) >= 1) and (Line[1] <> '#') then
+            ParseLine(Line);
+
+          if Offset2 = 0 then
+            Break;
+        end;
+      end;
+      }
     end;
-    }
+    Result := URLs.Count > 0;
+    if Result then
+    begin
+      Entry.URLs.Assign(URLs);
+      FURLsIndex := 0;
+    end;
+  finally
+    URLs.Free;
   end;
-  Result := FEntry.URLs.Count > 0;
-  FURLsIndex := 0;
 end;
 
 procedure TICEClient.SetSettings(Settings: TStreamSettings);

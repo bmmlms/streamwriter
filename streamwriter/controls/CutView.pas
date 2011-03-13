@@ -24,7 +24,7 @@ interface
 uses
   SysUtils, Windows, Classes, Controls, StdCtrls, ExtCtrls, Functions,
   Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
-  LanguageObjects, WaveData, Messages, ComCtrls;
+  LanguageObjects, WaveData, Messages, ComCtrls, AppData;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -278,6 +278,8 @@ begin
 
   FPB.BuildBuffer;
   FPB.Paint;
+
+  BASSSetDevice(AppGlobals.SoundDevice + 1);
 
   if FPlayer > 0 then
     BASSStreamFree(FPlayer);

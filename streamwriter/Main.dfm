@@ -330,11 +330,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object actSavePlaylistFile: TAction
       Caption = 'Recorded &file'
     end
-    object actSkipShort: TAction
-      AutoCheck = True
-      Caption = 'S&kip short songs'
-      OnExecute = actStreamSettingsExecute
-    end
     object actResetData: TAction
       Caption = 'Reset &data'
       Hint = 'Reset data'
@@ -355,18 +350,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Hint = 'Help'
       ImageIndex = 29
       OnExecute = actHelpExecute
-    end
-    object actUseNoList: TAction
-      Caption = '&Save every song'
-      OnExecute = actStreamSettingsExecute
-    end
-    object actUseWishlist: TAction
-      Caption = 'Use &Wishlist'
-      OnExecute = actStreamSettingsExecute
-    end
-    object actUseIgnoreList: TAction
-      Caption = 'Use &Ignorelist'
-      OnExecute = actStreamSettingsExecute
     end
     object actPlay: TAction
       Caption = '&Play'

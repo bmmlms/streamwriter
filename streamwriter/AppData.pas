@@ -98,7 +98,7 @@ type
     FAutoScrollLog: Boolean;
     FUserWasSetup: Boolean;
     FUser, FPass: string;
-    FUseNetwork: Boolean;
+    FSoundDevice: Cardinal;
 
     FShortcutPlay: Cardinal;
     FShortcutPause: Cardinal;
@@ -140,7 +140,7 @@ type
     property UserWasSetup: Boolean read FUserWasSetup write FUserWasSetup;
     property User: string read FUser write FUser;
     property Pass: string read FPass write FPass;
-    property UseNetwork: Boolean read FUseNetwork write FUseNetwork;
+    property SoundDevice: Cardinal read FSoundDevice write FSoundDevice;
     property CutVolume: Integer read FCutVolume write FCutVolume;
     property ShortcutPlay: Cardinal read FShortcutPlay write FShortcutPlay;
     property ShortcutPause: Cardinal read FShortcutPause write FShortcutPause;
@@ -384,7 +384,7 @@ begin
   FShowSidebar := True;
   FStorage.Read('TrayClose', FTray, False);
   FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);
-  FStorage.Read('SidebarWidth', FSidebarWidth, 230);
+  FStorage.Read('SidebarWidth', FSidebarWidth, 250);
   FStorage.Read('AutoTuneIn', FAutoTuneIn, True);
   FStorage.Read('SubmitStreamInfo', FSubmitStreamInfo, True);
   FStorage.Read('SubmitStats', FSubmitStats, True);
@@ -405,7 +405,7 @@ begin
   FStorage.Read('User', FUser, '');
   FStorage.Read('Pass', FPass, '');
   FPass := CryptStr(FPass);
-  FStorage.Read('UseNetwork', FUseNetwork, True);
+  FStorage.Read('SoundDevice', FSoundDevice, 0);
 
   FStorage.Read('ShortcutPlay', FShortcutPlay, 0);
   FStorage.Read('ShortcutPause', FShortcutPause, 0);
@@ -495,7 +495,7 @@ begin
   FStorage.Write('UserWasSetup', FUserWasSetup);
   FStorage.Write('User', FUser);
   FStorage.Write('Pass', CryptStr(FPass));
-  FStorage.Write('UseNetwork', FUseNetwork);
+  FStorage.Write('SoundDevice', FSoundDevice);
 
   FStorage.Write('ShortcutPlay', FShortcutPlay);
   FStorage.Write('ShortcutPause', FShortcutPause);

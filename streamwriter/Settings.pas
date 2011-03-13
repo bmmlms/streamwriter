@@ -100,6 +100,8 @@ type
     Label2: TLabel;
     chkSubmitStats: TCheckBox;
     Label8: TLabel;
+    lstSoundDevice: TComboBox;
+    Label11: TLabel;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -591,6 +593,14 @@ begin
       chkOnlySaveFull.Enabled := False;
     end;
 
+    for i := 0 to Bass.Devices.Count - 1 do
+      lstSoundDevice.Items.Add(Bass.Devices[i]);
+    if lstSoundDevice.Items.Count > 0 then
+      lstSoundDevice.ItemIndex := 0;
+    try
+      lstSoundDevice.ItemIndex := AppGlobals.SoundDevice;
+    except end;
+
     lblPanelCut.Caption := _('Settings for cutting are only available'#13#10'if ''Save separated tracks'' is enabled.');
     EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
 
@@ -743,6 +753,9 @@ begin
     AppGlobals.StreamSettings.SeparateTracks := chkSeparateTracks.Checked and chkSeparateTracks.Enabled;
     AppGlobals.StreamSettings.SaveToMemory := chkSaveStreamsToMemory.Checked;
     AppGlobals.StreamSettings.OnlySaveFull := chkOnlySaveFull.Checked;
+
+    if lstSoundDevice.ItemIndex > -1 then
+      AppGlobals.SoundDevice := lstSoundDevice.ItemIndex;
 
     AppGlobals.Dir := txtDir.Text;
     AppGlobals.Tray := chkTray.Checked;
@@ -1061,9 +1074,9 @@ begin
     FPageList.Add(TPage.Create(_('Settings'), pnlMain, 'PROPERTIES'));
     FPageList.Add(TPage.Create(_('Streams'), pnlStreams, 'START'));
     FPageList.Add(TPage.Create(_('Cut'), pnlCut, 'CUT'));
-    FPageList.Add(TPage.Create(_('Community'), pnlCommunity, 'GROUP_PNG'));
     FPageList.Add(TPage.Create(_('Postprocessing'), pnlPlugins, 'LIGHTNING'));
     FPageList.Add(TPage.Create(_('Hotkeys'), pnlHotkeys, 'KEYBOARD'));
+    FPageList.Add(TPage.Create(_('Community'), pnlCommunity, 'GROUP_PNG'));
     FPageList.Add(TPage.Create(_('Advanced'), pnlAdvanced, 'MISC'));
   end else
   begin

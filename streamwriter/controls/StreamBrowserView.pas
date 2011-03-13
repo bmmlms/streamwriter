@@ -195,6 +195,8 @@ type
     FItemRate3: TMenuItem;
     FItemRate4: TMenuItem;
     FItemRate5: TMenuItem;
+    FItemAdministration: TMenuItem;
+    FItemRebuildIndex: TMenuItem;
     FItemOpenWebsite: TMenuItem;
     FItemCopy: TMenuItem;
     FItemSave: TMenuItem;
@@ -357,6 +359,10 @@ begin
   FItemRate1.OnClick := PopupMenuClick;
   FItemRate1.Tag := 1;
 
+  FItemAdministration := CreateItem(_('&Administration'), -1, nil);
+  FItemRebuildIndex := CreateItem(_('&Rebuild index'), -1, FItemAdministration);
+  FItemRebuildIndex.OnClick := PopupMenuClick;
+
   CreateItem('-', -1, nil);
 
   FItemOpenWebsite := FPopupMenu.CreateMenuItem;
@@ -391,6 +397,7 @@ begin
   Header.SortDirection := sdDescending;
 
   FSortPopupMenu := TMStreamTreeHeaderPopup.Create(Self);
+  Header.PopupMenu := FSortPopupMenu;
 end;
 
 function TMStreamTree.CreateItem(Caption: string; ImageIndex: Integer;
@@ -702,6 +709,8 @@ begin
     Action := oaCopy
   else if Sender = FItemSave then
     Action := oaSave
+  else if Sender = FItemRebuildIndex then
+    HomeComm.RebuildIndex
   else if (Sender = FItemRate1) or (Sender = FItemRate2) or (Sender = FItemRate3) or
           (Sender = FItemRate4) or (Sender = FItemRate5) then
     if Length(Streams) = 1 then
@@ -734,6 +743,9 @@ begin
   FItemOpenWebsite.Enabled := (Length(Streams) > 0) and (Trim(Streams[0].Website) <> '');
 
   FItemRate.Enabled := HomeComm.Connected;
+
+  FItemAdministration.Visible := HomeComm.IsAdmin;
+  FItemRebuildIndex.Visible := HomeComm.IsAdmin;
 end;
 
 procedure TMStreamTree.TimerOnTimer(Sender: TObject);
@@ -784,11 +796,22 @@ begin
 end;
 
 procedure TMStreamTree.WndProc(var Message: TMessage);
+  procedure DrawImg(C: TCanvas);
+  var
+    SBW: Integer;
+    R: TRect;
+  begin
+    Windows.GetClientRect(Handle, R);
+    SBW := GetSystemMetrics(SM_CXVSCROLL);
+    FButtonPos := Bounds(Width - SBW - 2, 2, SBW + 1, Height - R.Bottom - 5);
+    C.Brush.Color := clBtnFace;
+    R := FButtonPos;
+    C.FillRect(R);
+    Images.Draw(C, FButtonPos.Left, FButtonPos.Top, 47, True);
+  end;
 var
   DC: HDC;
-  R: TRect;
   Flags: DWORD;
-  SBW: Integer;
   C: TCanvas;
   P: TPoint;
 begin
@@ -803,12 +826,8 @@ begin
         begin
           C := TCanvas.Create;
           try
-            SBW := GetSystemMetrics(SM_CXVSCROLL);
             C.Handle := DC;
-            Windows.GetClientRect(Handle, R);
-            FButtonPos := Bounds(Width - SBW - 2, 2, SBW + 1, Height - R.Bottom - 5);
-            Images.Draw(C, FButtonPos.Left, FButtonPos.Top, 47, True);
-            //DrawButtonFace(C, FButtonPos, 1, bsAutoDetect, False, False, False);
+            DrawImg(C);
           finally
             C.Free;
           end;
@@ -1038,7 +1057,7 @@ end;
 
 procedure TMStreamBrowserView.GetStreams(Search, Genre, SortType, SortDir: string; Kbps: Integer; StreamType: string);
 begin
-  if (Search = CurrentSearch) and (Genre = CurrentGenre) and (SortType = CurrentStreamType) and
+  if (Search = CurrentSearch) and (Genre = CurrentGenre) and (SortType = FCurrentSortType) and
      (SortDir = FCurrentSortDir) and (Kbps = CurrentKbps) and (StreamType = CurrentStreamType) then
     Exit;
 
@@ -1207,7 +1226,7 @@ begin
     FStreamTree.Header.Columns[0].Text := _('Rating');
     FSelectedSortDir := 'desc';
   end else
-    raise Exception.Create('FiAL');
+    raise Exception.Create('');
 
   if FSelectedSortDir = 'asc' then
     FStreamTree.Header.SortDirection := sdAscending
@@ -1220,17 +1239,20 @@ end;
 procedure TMStreamBrowserView.StreamBrowserHeaderClick(Sender: TVTHeader;
   HitInfo: TVTHeaderHitInfo);
 begin
-  if FSelectedSortDir = 'asc' then
+  if HitInfo.Button = mbLeft then
   begin
-    FSelectedSortDir := 'desc';
-    FStreamTree.Header.SortDirection := sdDescending;
-  end else
-  begin
-    FSelectedSortDir := 'asc';
-    FStreamTree.Header.SortDirection := sdAscending;
-  end;
+    if FSelectedSortDir = 'asc' then
+    begin
+      FSelectedSortDir := 'desc';
+      FStreamTree.Header.SortDirection := sdDescending;
+    end else
+    begin
+      FSelectedSortDir := 'asc';
+      FStreamTree.Header.SortDirection := sdAscending;
+    end;
 
-  GetStreams;
+    GetStreams;
+  end;
 end;
 
 procedure TMStreamBrowserView.StreamBrowserNeedData(Sender: TObject;
@@ -1410,13 +1432,13 @@ begin
   FKbpsLabel := TLabel.Create(Self);
   FKbpsLabel.Parent := Self;
   FKbpsLabel.Left := 4;
-  FKbpsLabel.Caption := _('Kbps:') + ':';
+  FKbpsLabel.Caption := _('Kbps') + ':';
   FKbpsLabel.Top := FKbpsList.Top + FKbpsList.Height div 2 - FKbpsLabel.Height div 2;
 
   FTypeLabel := TLabel.Create(Self);
   FTypeLabel.Parent := Self;
   FTypeLabel.Left := 4;
-  FTypeLabel.Caption := _('Type:') + ':';
+  FTypeLabel.Caption := _('Type') + ':';
   FTypeLabel.Top := FTypeList.Top + FTypeList.Height div 2 - FTypeLabel.Height div 2;
 
 

@@ -476,8 +476,8 @@ procedure TClientTab.ActionTuneInFileExecute(Sender: TObject);
 var
   Entries: TPlaylistEntryArray;
 begin
-  if Assigned(FOnUpdateButtons) then
-    FOnUpdateButtons(Self);
+  //if Assigned(FOnUpdateButtons) then
+  //  FOnUpdateButtons(Self);
   if FActionTuneInFile.Enabled then
   begin
     Entries := FClientView.GetEntries(etFile);
@@ -780,7 +780,7 @@ begin
   FClientView.RefreshClient(Sender as TICEClient);
 
   if Assigned(FOnUpdateButtons) then
-    FOnUpdateButtons(Self);
+    FOnUpdateButtons(Sender);
 end;
 
 procedure TClientTab.ClientManagerClientAdded(Sender: TObject);
@@ -888,7 +888,7 @@ begin
   // Ist hier, weil wenn FFilename im Client gesetzt wird, das hier aufgerufen wird.
   // Relativ unschön so, aber Hauptsache es tut..
   if Assigned(FOnUpdateButtons) then
-    FOnUpdateButtons(Self);
+    FOnUpdateButtons(Sender);
 end;
 
 procedure TClientTab.FClientViewKeyDown(Sender: TObject;

@@ -280,6 +280,13 @@ object frmSettings: TfrmSettings
       Height = 13
       Caption = 'seconds'
     end
+    object Label11: TLabel
+      Left = 4
+      Top = 88
+      Width = 69
+      Height = 13
+      Caption = 'Sound device:'
+    end
     object txtMaxRetries: TLabeledEdit
       Left = 4
       Top = 16
@@ -305,6 +312,14 @@ object frmSettings: TfrmSettings
       NumbersOnly = True
       TabOrder = 1
       OnChange = txtRetryDelayChange
+    end
+    object lstSoundDevice: TComboBox
+      Left = 4
+      Top = 104
+      Width = 277
+      Height = 21
+      Style = csDropDownList
+      TabOrder = 2
     end
   end
   object pnlPlugins: TPanel
@@ -673,16 +688,25 @@ object frmSettings: TfrmSettings
     object Label2: TLabel
       Left = 20
       Top = 48
-      Width = 52
-      Height = 13
-      Caption = 'blah blah...'
+      Width = 253
+      Height = 29
+      AutoSize = False
+      Caption = 
+        'Streams unknown to streamWriter will be submitted to the server ' +
+        'so they can appear in the browser.'
+      WordWrap = True
     end
     object Label8: TLabel
       Left = 20
-      Top = 88
-      Width = 52
-      Height = 13
-      Caption = 'blah blah...'
+      Top = 104
+      Width = 253
+      Height = 69
+      AutoSize = False
+      Caption = 
+        'Information about Track changes will be sent to the server and b' +
+        'roadcasted to other users. This is important for the automatic r' +
+        'ecording of songs on the wishlist.'
+      WordWrap = True
     end
     object chkAutoTuneIn: TCheckBox
       Left = 4
@@ -704,11 +728,11 @@ object frmSettings: TfrmSettings
     end
     object chkSubmitStats: TCheckBox
       Left = 4
-      Top = 64
+      Top = 80
       Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Submit statistics to the server'
+      Caption = 'Submit statistics/stream information to the server'
       TabOrder = 2
     end
   end
@@ -721,7 +745,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800180110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800240110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

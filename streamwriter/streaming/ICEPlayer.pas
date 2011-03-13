@@ -3,7 +3,7 @@ unit ICEPlayer;
 interface
 
 uses
-  Windows, SysUtils, Classes, DynBASS, ExtendedStream, SyncObjs, AppData;
+  Windows, SysUtils, Classes, DynBASS, ExtendedStream, SyncObjs, AppData, AudioStream;
 
 type
   TICEPlayer = class
@@ -97,7 +97,7 @@ constructor TICEPlayer.Create;
 begin
   inherited Create;
 
-  FMem := TExtendedStream.Create;
+  FMem := TAudioStreamMemory.Create;
   FLock := TCriticalSection.Create;
   FPlayer := 0;
   FPlayStartBuffer := 0;
@@ -151,6 +151,8 @@ begin
 
   if not Playing then
   begin
+    BASSSetDevice(AppGlobals.SoundDevice + 1);
+
     Funcs.close := BASSClose;
     Funcs.length := BASSLen;
     Funcs.seek := BASSSeek;
@@ -218,12 +220,21 @@ end;
 procedure TICEPlayer.PushData(Buf: Pointer; Len: Integer);
 var
   Time: Double;
-  BufLen: Int64;
+  BufLen, RemoveTo: Int64;
   TempPlayer, BitRate: Cardinal;
+const
+  MAX_BUFFER_SIZE = 1048576;
 begin
   FLock.Enter;
   FMem.Seek(0, soFromEnd);
   FMem.Write(Buf^, Len);
+
+  while FMem.Size > MAX_BUFFER_SIZE do
+  begin
+    // TODO: Funzt das hier?!
+    // Puffer "rotieren"
+    FMem.RemoveRange(0, 65536);
+  end;
 
   if (not Playing) and (not Paused) then
   begin

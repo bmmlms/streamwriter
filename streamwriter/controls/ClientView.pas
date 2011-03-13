@@ -626,8 +626,9 @@ begin
   inherited;
 
   // Frische Nodes die wo rein kommen, Mama bitte immer ausklappen.
-  if not Expanded[Target] then
-    Expanded[Target] := True;
+  if FInitialSorted then
+    if not Expanded[Target] then
+      Expanded[Target] := True;
 end;
 
 function TMClientView.RefreshClient(Client: TICEClient): Boolean;

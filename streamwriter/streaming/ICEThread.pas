@@ -253,7 +253,7 @@ begin
 
     //WriteDebug(Format('Playbuffer size: %d bytes', [FPlayBuffer.Size]));
 
-    if FPlayBuffer.Size > MAX_BUFFER_SIZE then
+    while FPlayBuffer.Size > MAX_BUFFER_SIZE do
     begin
       // Puffer "rotieren"
       RemoveTo := FPlayBuffer.GetFrame(65536, False);

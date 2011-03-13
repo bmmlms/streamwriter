@@ -58,7 +58,6 @@ type
     Entfernen1: TMenuItem;
     tmrSpeed: TTimer;
     mnuStreamSettings1: TMenuItem;
-    actSkipShort: TAction;
     mnuStreamSettings2: TMenuItem;
     TrayIcon1: TTrayIcon;
     mnuTray: TPopupMenu;
@@ -113,9 +112,6 @@ type
     mnuHelp2: TMenuItem;
     N1: TMenuItem;
     actHelp: TAction;
-    actUseNoList: TAction;
-    actUseWishlist: TAction;
-    actUseIgnoreList: TAction;
     actPlay: TAction;
     actStopPlay: TAction;
     mnuStartPlay2: TMenuItem;
@@ -407,7 +403,8 @@ begin
     end;
   end;
 
-  UpdateButtons; // Damit die Entries im Hauptmenü angepasst werden, falls von Popup was geändert wurde.
+  // Damit die Entries im Hauptmenü angepasst werden, falls von Popup was geändert wurde.
+  UpdateButtons;
 end;
 
 procedure TfrmStreamWriterMain.addStatusDrawPanel(StatusBar: TStatusBar;
@@ -939,12 +936,16 @@ var
 begin
   RegisterHotkeys(False);
   S := TfrmSettings.Create(Self, BrowseDir);
-  S.ShowModal;
+  try
+    S.ShowModal;
+  finally
+    S.Free;
+  end;
+
   Language.Translate(Self, PreTranslate, PostTranslate);
   AppGlobals.PluginManager.ReInitPlugins;
   TrayIcon1.Visible := AppGlobals.Tray;
   RegisterHotkeys(True);
-  S.Free;
 end;
 
 procedure TfrmStreamWriterMain.ShowUpdate(Version: string = '';
@@ -1153,19 +1154,32 @@ procedure TfrmStreamWriterMain.UpdateButtons;
 var
   i: Integer;
   B, B4, OnlyAutomatedSelected, OnlyAutomatedCatsSelected: Boolean;
+  URLFound, FilenameFound, OnePlaying: Boolean;
   Clients, AllClients: TClientArray;
   Client: TICEClient;
   CatNodes: TNodeArray;
 begin
+  // Enabled und so wird hier immer nur gesetzt, wenn sich der Status geändert hat.
+  // Das hilft gut gegen flackern, wenn das Popup aufgeklappt ist, während das hier
+  // aufgerufen wird.
+
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
   AllClients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
   CatNodes := tabClients.ClientView.GetNodes(ntCategory, True);
 
+  FilenameFound := False;
   OnlyAutomatedSelected := True;
+  OnePlaying := False;
   OnlyAutomatedCatsSelected := Length(Clients) = 0;
   for Client in Clients do
+  begin
     if not Client.AutoRemove then
       OnlyAutomatedSelected := False;
+    if Client.Filename <> '' then
+      FilenameFound := True;
+    if Client.Playing then
+      OnePlaying := True;
+  end;
   for i := 0 to Length(CatNodes) - 1 do
     if not PClientNodeData(tabClients.ClientView.GetNodeData(CatNodes[i])).Category.IsAuto then
     begin
@@ -1175,88 +1189,76 @@ begin
     end;
 
   B := Length(Clients) > 0;
-  actStart.Enabled := B;
-  actStop.Enabled := B;
+  if actStart.Enabled <> B and not OnlyAutomatedSelected then
+    actStart.Enabled := B and not OnlyAutomatedSelected;
+  if actStop.Enabled <> B and not OnlyAutomatedSelected then
+    actStop.Enabled := B and not OnlyAutomatedSelected;
   mnuStartStreaming1.Default := False;
   mnuStopStreaming1.Default := False;
-  actRemove.Enabled := B;
 
-  actStreamSettings.Enabled := Length(Clients) > 0;
+  if actRemove.Enabled <> (B or (Length(CatNodes) > 0)) and not OnlyAutomatedCatsSelected then
+    actRemove.Enabled := (B or (Length(CatNodes) > 0)) and not OnlyAutomatedCatsSelected;
 
-  actOpenWebsite.Enabled := False;
+  if actStreamSettings.Enabled <> ((Length(Clients) > 0) and not OnlyAutomatedSelected) then
+    actStreamSettings.Enabled := (Length(Clients) > 0) and not OnlyAutomatedSelected;
+
+  URLFound := False;
   if Length(Clients) = 1 then
     if Trim(Clients[0].Entry.StreamURL) <> '' then
-      actOpenWebsite.Enabled := True;
+      URLFound := True;
+  if actOpenWebsite.Enabled <> URLFound then
+    actOpenWebsite.Enabled := URLFound;
 
-  mnuTuneIn1.Enabled := B;
-  mnuTuneIn2.Enabled := B;
-  mnuSavePlaylist1.Enabled := B;
-  mnuSavePlaylist2.Enabled := B;
+  if mnuTuneIn1.Enabled <> B then
+    mnuTuneIn1.Enabled := B;
+  if mnuTuneIn2.Enabled <> B then
+    mnuTuneIn2.Enabled := B;
+  if mnuSavePlaylist1.Enabled <> B then
+    mnuSavePlaylist1.Enabled := B;
+  if mnuSavePlaylist2.Enabled <> B then
+    mnuSavePlaylist2.Enabled := B;
 
-  actResetData.Enabled := B;
-  actTuneInFile.Enabled := False;
+  if actResetData.Enabled <> B then
+    actResetData.Enabled := B;
+  if actTuneInFile.Enabled <> FilenameFound then
+    actTuneInFile.Enabled := FilenameFound;
 
-  actUseNoList.Checked := False;
-  actUseWishlist.Checked := False;
-  actUseIgnoreList.Checked := False;
+  if actStopPlay.Enabled <> OnePlaying then
+    actStopPlay.Enabled := OnePlaying;
+  if actPause.Enabled <> OnePlaying then
+    actPause.Enabled := OnePlaying;
 
-  for Client in Clients do
-  begin
-    if Client.Filename <> '' then
-      actTuneInFile.Enabled := True;
-  end;
+  if actPlay.Enabled <> (Length(Clients) = 1) then
+    actPlay.Enabled := Length(Clients) = 1;
 
-  B4 := False;
-  for Client in AllClients do
-  begin
-    if Client.Playing and Bass.BassLoaded then
-      B4 := True;
-  end;
-
-  actPlay.Enabled := False;
-  actStopPlay.Enabled := B4;
-  actPause.Enabled := B4;
-
+  {
   if Length(Clients) = 1 then
   begin
     Client := Clients[0];
-
-    actPlay.Enabled := Bass.BassLoaded;
-
     case AppGlobals.DefaultAction of
       caStartStop:
         if Client.Recording then
-          mnuStopStreaming1.Default := True
+          if not mnuStopStreaming1.Default then
+            mnuStopStreaming1.Default := True
         else
-          mnuStartStreaming1.Default := True;
+          if not mnuStartStreaming1.Default then
+            mnuStartStreaming1.Default := True;
       caStreamIntegrated:
         if Client.Playing then
-          mnuStopPlay1.Default := True
+          if not mnuStopPlay1.Default then
+            mnuStopPlay1.Default := True
         else
-          mnuStartPlay1.Default := True;
+          if not mnuStartPlay1.Default then
+            mnuStartPlay1.Default := True;
       caStream:
-        mnuListenToStream1.Default := True;
+        if not mnuListenToStream1.Default then
+          mnuListenToStream1.Default := True;
       caFile:
-        mnuListenToFile1.Default := True;
+        if not mnuListenToFile1.Default then
+          mnuListenToFile1.Default := True;
     end;
   end;
-
-  if Length(CatNodes) > 0 then
-  begin
-    actRemove.Enabled := True;
-  end;
-
-  if OnlyAutomatedSelected then
-  begin
-    actStart.Enabled := False;
-    actStop.Enabled := False;
-    actStreamSettings.Enabled := False;
-  end;
-
-  if OnlyAutomatedCatsSelected then
-  begin
-    actRemove.Enabled := False;
-  end;
+  }
 end;
 
 procedure TfrmStreamWriterMain.UpdaterNoUpdateFound(Sender: TObject);

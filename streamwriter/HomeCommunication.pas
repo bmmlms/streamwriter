@@ -46,6 +46,7 @@ type
     FGenres: TStringList;
 
     FAuthAuthenticated: Boolean;
+    FIsAdmin: Boolean;
 
     FCount: Integer;
     FPacketCount: Integer;
@@ -109,6 +110,7 @@ type
     FClient: THomeThread;
     FConnected: Boolean;
     FAuthenticated: Boolean;
+    FIsAdmin: Boolean;
 
     //FOnUserAuthenticated: TBooleanEvent;
     FOnGenresReceived: TGenresReceivedEvent;
@@ -144,11 +146,13 @@ type
     procedure TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
     procedure UpdateInfo(RecordingCount: Cardinal);
     procedure RateStream(ID, Rating: Integer);
+    procedure RebuildIndex;
 
     procedure Terminate;
 
     property Connected: Boolean read FConnected;
     property Authenticated: Boolean read FAuthenticated;
+    property IsAdmin: Boolean read FIsAdmin;
     property OnGenresReceived: TGenresReceivedEvent read FOnGenresReceived write FOnGenresReceived;
     property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
     property OnTitleChanged: TTitleChangedEvent read FOnTitleChanged write FOnTitleChanged;
@@ -195,6 +199,7 @@ end;
 procedure THomeCommunication.ClientLoggedOn(Sender: TSocketThread);
 begin
   FAuthenticated := THomeThread(Sender).FAuthAuthenticated;
+  FIsAdmin := THomeThread(Sender).FIsAdmin;
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
@@ -202,6 +207,7 @@ end;
 procedure THomeCommunication.ClientLoggedOff(Sender: TSocketThread);
 begin
   FAuthenticated := THomeThread(Sender).FAuthAuthenticated;
+  FIsAdmin := THomeThread(Sender).FIsAdmin;
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
@@ -326,6 +332,24 @@ begin
   end;
 end;
 
+procedure THomeCommunication.RebuildIndex;
+var
+  XMLDocument: TXMLLib;
+  Data, Data2: TXMLNode;
+  XML: AnsiString;
+begin
+  if not Connected then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('rebuildindex');
+  try
+    XMLDocument.SaveToString(XML);
+    FClient.Write(XML);
+  finally
+    XMLDocument.Free;
+  end;
+end;
+
 procedure THomeCommunication.SubmitStream(Stream: string);
 var
   XMLDocument: TXMLLib;
@@ -401,6 +425,7 @@ var
 begin
   FConnected := False;
   FAuthenticated := False;
+  FIsAdmin := False;
   FClient := nil;
   Thread := THomeThread(Sender);
 
@@ -474,8 +499,8 @@ end;
 constructor THomeThread.Create;
 begin
   {$IFDEF DEBUG}
-  inherited Create('gaia', 8007);
-  //inherited Create('streamwriter.org', 8007);
+  //inherited Create('gaia', 8007);
+  inherited Create('streamwriter.org', 8007);
   {$ELSE}
   inherited Create('streamwriter.org', 8007);
   {$ENDIF}
@@ -493,6 +518,7 @@ end;
 procedure THomeThread.DoLoggedOn(Version: Integer; Header, Data: TXMLNode);
 begin
   FAuthAuthenticated := Data.Nodes.GetNode('success').Value.AsBoolean;
+  FIsAdmin := Data.Nodes.GetNode('isadmin').Value.AsBoolean;
   if Assigned(FOnLoggedOn) then
     Sync(FOnLoggedOn);
 end;
@@ -651,6 +677,7 @@ procedure THomeThread.DoLoggedOff(Version: Integer; Header,
   Data: TXMLNode);
 begin
   FAuthAuthenticated := False;
+  FIsAdmin := False;
   if Assigned(FOnLoggedOff) then
     Sync(FOnLoggedOff);
 end;

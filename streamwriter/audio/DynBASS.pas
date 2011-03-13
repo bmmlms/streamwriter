@@ -40,6 +40,11 @@ type
     seek: FILESEEKPROC;
   end;
   SYNCPROC = procedure(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
+  BASS_DEVICEINFO = record
+    name: PAnsiChar;
+    driver: PAnsiChar;
+    flags: DWORD;
+  end;
 
   TBassLoader = class
   private
@@ -48,16 +53,24 @@ type
     DLLHandle: Cardinal;
     AACDLLHandle: Cardinal;
 
+    FDevices: TStringList;
+
+    procedure EnumDevices;
     procedure UninitializeBass;
   public
     BassLoaded: Boolean;
 
+    constructor Create;
     destructor Destroy; override;
     function InitializeBass: Boolean;
+
+    property Devices: TStringList read FDevices;
   end;
 
 var
   BASSInit: function(device: LongInt; freq, flags: DWORD; win: HWND; clsid: PGUID): BOOL; stdcall;
+  BASSGetDeviceInfo: function(device: DWORD; var info: BASS_DEVICEINFO): BOOL; stdcall;
+  BASSSetDevice: function(device: DWORD): BOOL; stdcall;
   BASSStreamCreateFile: function(mem: BOOL; f: Pointer; offset, length: QWORD; flags: DWORD): HSTREAM; stdcall;
   BASSStreamCreateFileUser: function(system, flags: DWORD; var procs: BASS_FILEPROCS; user: Pointer): HSTREAM; stdcall;
   BASSChannelIsActive: function(handle: DWORD): DWORD; stdcall;
@@ -121,10 +134,31 @@ end;
 
 { TBassLoader }
 
+constructor TBassLoader.Create;
+begin
+  inherited;
+
+  FDevices := TStringList.Create;
+end;
+
 destructor TBassLoader.Destroy;
 begin
+  FDevices.Free;
   UninitializeBass;
   inherited;
+end;
+
+procedure TBassLoader.EnumDevices;
+var
+  i: Integer;
+  Info: BASS_DEVICEINFO;
+begin
+  i := 1;
+  while BASSGetDeviceInfo(i, Info) do
+  begin
+    FDevices.Add(Info.name);
+    Inc(i);
+  end;
 end;
 
 function TBassLoader.InitializeBass: Boolean;
@@ -159,6 +193,8 @@ begin
   if DLLHandle <> 0 then
   begin
     BASSInit := GetProcAddress(DLLHandle, 'BASS_Init');
+    BASSGetDeviceInfo := GetProcAddress(DLLHandle, 'BASS_GetDeviceInfo');
+    BASSSetDevice := GetProcAddress(DLLHandle, 'BASS_SetDevice');
     BASSStreamCreateFile := GetProcAddress(DLLHandle, 'BASS_StreamCreateFile');
     BASSStreamCreateFileUser := GetProcAddress(DLLHandle, 'BASS_StreamCreateFileUser');
     BASSChannelIsActive := GetProcAddress(DLLHandle, 'BASS_ChannelIsActive');
@@ -214,6 +250,9 @@ begin
       FreeLibrary(DLLHandle);
       DLLHandle := 0;
     end;
+
+    if BassLoaded then
+      EnumDevices;
 
     Result := BassLoaded;
   end;
