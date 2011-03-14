@@ -445,12 +445,21 @@ begin
     ShowSettings(True);
   end;
 
-  {
-  if not AppGlobals.UserWasSetup then
+  if AppGlobals.FirstStart then
   begin
-    ShowCommunityLogin;
+    TfrmMsgDlg.ShowMsg(Self, _('This is the first time you are running streamWriter. There are two ways to record music:'#13#10 +
+                               '1) You can record streams by double-clicking them in the stream-browser on the right.'#13#10 +
+                               '2) Desired songs can be recorded by adding them to the wishlist on the Filter-tab at the top. ' +
+                               'When a song from the wishlist is being played on a stream, streamWriter will automatically tune in to record your song. ' +
+                               'Please add some artists/titles to your wishlist to try this new feature.'), btOK);
+  end else if IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion) then
+  begin
+    // TODO: Das muss raus, sobald ich größer als 2.0.0.0 oder 1.5.0.0 release!
+    //       Sonst werden Menschenkinder genervt!
+    TfrmMsgDlg.ShowMsg(Self, _('You have updated from a streamWriter version that did not have community features. ' +
+                               'With this version, the wishlist becomes more important:'#13#10'When streamWriter detects a stream playing something on your wishlist, ' +
+                               'it will tune into the station and record your desired song. Please try this feature and add some artists/titles to your wishlist.'), btOK);
   end;
-  }
 end;
 
 procedure TfrmStreamWriterMain.FormClose(Sender: TObject;
@@ -1333,7 +1342,7 @@ begin
 
   if Rec then
   begin
-    if TfrmMsgDlg.ShowMsg(Self, _('You are recording at least one stream at the moment. Exiting the application will abort streaming.'#13#10'Do you really want to quit?'), 2, 1) = mtCancel then
+    if TfrmMsgDlg.ShowMsg(Self, _('You are recording at least one stream at the moment. Exiting the application will abort streaming.'#13#10'Do you really want to quit?'), 1, btOKCancel) = mtCancel then
     begin
       Result := False;
     end;

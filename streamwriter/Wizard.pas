@@ -69,7 +69,7 @@ begin
 
   if Step.Panel = pnlDir then
   begin
-    if (AppGlobals.Dir <> '') and (not DirectoryExists(AppGlobals.Dir)) then
+    if (AppGlobals.Dir <> '') and DirectoryExists(AppGlobals.Dir) then
       txtDir.Text := IncludeTrailingBackslash(AppGlobals.Dir)
     else
     begin

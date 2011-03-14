@@ -28,7 +28,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Top = 333
     Width = 689
     Height = 19
-    Hint = 'Users/Active streams'
+    Hint = 'Users/active streams'
     Panels = <
       item
         Bevel = pbNone

@@ -450,7 +450,7 @@ begin
   begin
     Settings := AppGlobals.StreamSettings.Copy;
     TfrmMsgDlg.ShowMsg(Self, _('Settings from the categories "Streams", "Cut" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
-                               'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), 1, 4);
+                               'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), 4, btOK);
   end else
     Settings := FStreamSettings[0].Copy;
 
@@ -1464,7 +1464,7 @@ begin
     RemoveGray(chkOnlySaveFull);
 
     if Length(FStreamSettings) > 0 then
-      TfrmMsgDlg.ShowMsg(Self, _('When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.'), 1, 5);
+      TfrmMsgDlg.ShowMsg(Self, _('When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.'), 5, btOK);
   end;
 end;
 
@@ -1489,7 +1489,7 @@ begin
     if (not chkSeparateTracks.Checked) then
       TfrmMsgDlg.ShowMsg(Self, _('When saving streams without saving separate tracks, keep in mind to change the pattern ' +
                                  'for names of saved files, because the variables for artist, title and tracknumber ' +
-                                 '(%a, %t, %n) will only be filled with default values.'), 1, 2);
+                                 '(%a, %t, %n) will only be filled with default values.'), 2, btOK);
 
     Application.ProcessMessages;
 
@@ -1514,7 +1514,7 @@ begin
     chkDeleteStreams.Checked := chkDeleteStreams.Enabled and AppGlobals.StreamSettings.DeleteStreams;
 
     if Length(FStreamSettings) > 0 then
-      TfrmMsgDlg.ShowMsg(Self, _('When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.'), 1, 3);
+      TfrmMsgDlg.ShowMsg(Self, _('When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.'), 3, btOK);
   end;
 end;
 
