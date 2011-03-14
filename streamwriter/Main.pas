@@ -1191,15 +1191,19 @@ begin
   OnlyAutomatedSelected := True;
   OnePlaying := False;
   OnlyAutomatedCatsSelected := Length(Clients) = 0;
+
   for Client in Clients do
   begin
     if not Client.AutoRemove then
       OnlyAutomatedSelected := False;
     if Client.Filename <> '' then
       FilenameFound := True;
+  end;
+
+  for Client in AllClients do
     if Client.Playing then
       OnePlaying := True;
-  end;
+
   for i := 0 to Length(CatNodes) - 1 do
     if not PClientNodeData(tabClients.ClientView.GetNodeData(CatNodes[i])).Category.IsAuto then
     begin
