@@ -428,8 +428,7 @@ begin
     begin
       if FICEThread.RecvStream.RedirURL <> '' then
       begin
-        FEntry.URLs.Insert(0, FICEThread.RecvStream.RedirURL);
-        FURLsIndex := 0;
+        FRedirectedURL := FICEThread.RecvStream.RedirURL;
       end else if ParsePlaylist then
       begin
         {$IFDEF DEBUG}
@@ -697,7 +696,7 @@ begin
   FFilename := '';
   MaxRetries := FEntry.Settings.MaxRetries;
 
-  if (DiedThread.RecvStream.HaltClient) or (AutoRemove and ((FRetries >= 3) {or (DiedThread.RecvStream.MetaCounter > 0)})) then
+  if DiedThread.RecvStream.HaltClient or AutoRemove then
   begin
     if FProcessingList.Count = 0 then
       Kill
@@ -767,11 +766,11 @@ function TICEClient.ParsePlaylist: Boolean;
       if not PortDetected then
       begin
         // Es gibt keinen Standard scheinbar - beide nehmen.
-        URLs.Add(Host + ':80' + URLData);
-        URLs.Add(Host + ':6666' + URLData);
+        URLs.Add('http://' + Host + ':80' + URLData);
+        URLs.Add('http://' + Host + ':6666' + URLData);
       end else
       begin
-        URLs.Add(Host + ':' + IntToStr(Port) + URLData);
+        URLs.Add('http://' + Host + ':' + IntToStr(Port) + URLData);
         //if Port <> 80 then
         //  FURLs.Add(Host + ':80' + URLData);
       end;

@@ -238,8 +238,8 @@ begin
       // dann das erste Lied. Während der Stream noch in der Liste ist und in ein paar MS
       // die Verbindung kappen wird und noch Plugins laufen oder so würde er hier sonst
       // nicht reingehen, um das zweite Wunschlied aufzunehmen.
-      Client := GetClient('', CurrentURL, nil);
-      if not ((Client <> nil) and (Client.Recording) and (Client.State <> csStopping) and (Client.Entry.Settings.SeparateTracks)) then
+      Client := GetClient(StreamName, CurrentURL, nil);
+      if not ((Client <> nil) and (Client.AutoRemove) and (Client.State <> csStopping) and (Client.Entry.Settings.SeparateTracks)) then
       begin
         Client := AddClient(StreamName, CurrentURL, True);
         Client.Entry.Settings.Filter := ufNone;
@@ -247,9 +247,9 @@ begin
         Client.Entry.Settings.SeparateTracks := True;
         Client.Entry.Settings.OnlySaveFull := False;
         Client.Entry.Settings.DeleteStreams := False;
-        Client.Entry.Settings.AddSavedToIgnore := False;
+        //Client.Entry.Settings.AddSavedToIgnore := False;
         Client.Entry.Settings.OverwriteSmaller := True;
-        Client.Entry.Settings.MaxRetries := 5;
+        Client.Entry.Settings.MaxRetries := 0;
         Client.Entry.Settings.RetryDelay := 0;
         Client.RecordTitle := Title;
         Client.StartRecording;

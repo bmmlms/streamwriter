@@ -324,7 +324,7 @@ end;
 procedure TICEStream.FSetRecordTitle(Value: string);
 begin
   if Value <> FRecordTitle then
-    WriteDebug(Format('Automatically recording "%s"', [Value]), 1, 1);
+    WriteDebug(Format(_('Recording "%s"'), [Value]), 1, 0);
   FRecordTitle := Value;
 end;
 
@@ -460,9 +460,6 @@ begin
         raise;
       end;
     end;
-
-    if Kill then
-      FHaltClient := True;
   except
     on E: Exception do
     begin
@@ -472,6 +469,9 @@ begin
       WriteDebug(Format(_('Error while saving "%s": %s'), [ExtractFilename(Filename), E.Message]), 3, 0);
     end;
   end;
+
+  if Kill then
+    FHaltClient := True;
 end;
 
 procedure TICEStream.StartRecording;
