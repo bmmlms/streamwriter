@@ -248,7 +248,7 @@ begin
         Client.Entry.Settings.OnlySaveFull := False;
         Client.Entry.Settings.DeleteStreams := False;
         //Client.Entry.Settings.AddSavedToIgnore := False;
-        Client.Entry.Settings.OverwriteSmaller := True;
+        Client.Entry.Settings.OverwriteSmaller := False;
         Client.Entry.Settings.MaxRetries := 0;
         Client.Entry.Settings.RetryDelay := 0;
         Client.RecordTitle := Title;
