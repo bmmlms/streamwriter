@@ -187,7 +187,7 @@ begin
 
   inherited Create(AppName, True, W, 500);
 
-  FBuildNumber := 119;
+  FBuildNumber := 139;
 
   BuildThanksText;
 
