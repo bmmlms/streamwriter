@@ -879,7 +879,13 @@ begin
     FLastScrollY := 0;
 
     IsLoading := False;
+
     BeginUpdate;
+
+    // Wichtig! Wenn der Browser bei Programmstart nur ganz klein ist (Height),
+    // funktioniert das scrollen nur so halb. Drinlassen!
+    RootNodeCount := 0;
+
     try
       for i := 0 to Length(Streams) - 1 do
         AddStream(nil, Streams[i].ID, Streams[i].Name, Streams[i].Genre, Streams[i].URL, Streams[i].Website,

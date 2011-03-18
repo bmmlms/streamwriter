@@ -139,7 +139,7 @@ object frmCommunityLogin: TfrmCommunityLogin
       DoubleBuffered = True
       Layout = blGlyphRight
       ParentDoubleBuffered = False
-      TabOrder = 1
+      TabOrder = 0
       OnClick = btnOKClick
     end
     object btnCancel: TBitBtn
@@ -152,7 +152,7 @@ object frmCommunityLogin: TfrmCommunityLogin
       DoubleBuffered = True
       Layout = blGlyphRight
       ParentDoubleBuffered = False
-      TabOrder = 0
+      TabOrder = 1
       OnClick = btnCancelClick
     end
   end
@@ -223,7 +223,7 @@ object frmCommunityLogin: TfrmCommunityLogin
       EditLabel.Height = 13
       EditLabel.Caption = 'Password:'
       PasswordChar = '*'
-      TabOrder = 0
+      TabOrder = 1
     end
     object txtUsername: TLabeledEdit
       Left = 8
@@ -234,7 +234,7 @@ object frmCommunityLogin: TfrmCommunityLogin
       EditLabel.Width = 52
       EditLabel.Height = 13
       EditLabel.Caption = 'Username:'
-      TabOrder = 1
+      TabOrder = 0
     end
     object txtText: TMemo
       Left = 4

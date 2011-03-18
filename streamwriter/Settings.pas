@@ -449,8 +449,11 @@ begin
   if Length(FStreamSettings) = 0 then
   begin
     Settings := AppGlobals.StreamSettings.Copy;
-    TfrmMsgDlg.ShowMsg(Self, _('Settings from the categories "Streams", "Cut" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
-                               'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), 4, btOK);
+
+    // Wir geben AOwner mit, so dass das MsgDlg zentriert angezeigt wird.
+    // Self ist nämlich noch nicht Visible, haben kein Handle, etc..
+    TfrmMsgDlg.ShowMsg(TForm(AOwner), _('Settings from the categories "Streams", "Cut" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
+                                        'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), 4, btOK);
   end else
     Settings := FStreamSettings[0].Copy;
 
@@ -997,7 +1000,13 @@ begin
   end;
 
   for i := 0 to lstPlugins.Items.Count - 1 do
+  begin
+    // Damit Sprache neu gesetzt wird und so..
+    TPluginBase(lstPlugins.Items[i].Data).Initialize;
     lstPlugins.Items[i].Caption := TPluginBase(lstPlugins.Items[i].Data).Name;
+  end;
+
+  txtPreview.Text := ValidatePattern;
 
   BuildHotkeys;
 
@@ -1071,18 +1080,18 @@ procedure TfrmSettings.RegisterPages;
 begin
   if FStreamSettings = nil then
   begin
-    FPageList.Add(TPage.Create(_('Settings'), pnlMain, 'PROPERTIES'));
-    FPageList.Add(TPage.Create(_('Streams'), pnlStreams, 'START'));
-    FPageList.Add(TPage.Create(_('Cut'), pnlCut, 'CUT'));
-    FPageList.Add(TPage.Create(_('Postprocessing'), pnlPlugins, 'LIGHTNING'));
-    FPageList.Add(TPage.Create(_('Hotkeys'), pnlHotkeys, 'KEYBOARD'));
-    FPageList.Add(TPage.Create(_('Community'), pnlCommunity, 'GROUP_PNG'));
-    FPageList.Add(TPage.Create(_('Advanced'), pnlAdvanced, 'MISC'));
+    FPageList.Add(TPage.Create('Settings', pnlMain, 'PROPERTIES'));
+    FPageList.Add(TPage.Create('Streams', pnlStreams, 'START'));
+    FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
+    FPageList.Add(TPage.Create('Postprocessing', pnlPlugins, 'LIGHTNING'));
+    FPageList.Add(TPage.Create('Hotkeys', pnlHotkeys, 'KEYBOARD'));
+    FPageList.Add(TPage.Create('Community', pnlCommunity, 'GROUP_PNG'));
+    FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
   end else
   begin
-    FPageList.Add(TPage.Create(_('Streams'), pnlStreams, 'START'));
-    FPageList.Add(TPage.Create(_('Cut'), pnlCut, 'CUT'));
-    FPageList.Add(TPage.Create(_('Advanced'), pnlAdvanced, 'MISC'));
+    FPageList.Add(TPage.Create('Streams', pnlStreams, 'START'));
+    FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
+    FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
   end;
   inherited;
 end;

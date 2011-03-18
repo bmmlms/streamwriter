@@ -3,8 +3,6 @@
     streamWriter
     Copyright (c) 2010 Alexander Nottelmann
 
-    Portions created by Ralf Kruse
-
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 3
@@ -25,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, ComCtrls, ExtCtrls, Controls, Graphics,
-  Functions, AppData, PngSpeedButton, PngImage;
+  Functions, AppData, PngSpeedButton, PngImage, LanguageObjects;
 
 type
   TVolumePanel = class(TPanel)
@@ -62,6 +60,8 @@ begin
   BevelOuter := bvNone;
 
   FMute := TPngSpeedButton.Create(Self);
+  FMute.Hint := _('Mute');
+  FMute.ShowHint := True;
   FMute.Flat := True;
   FMute.Align := alLeft;
   FMute.Width := 25;
@@ -70,6 +70,10 @@ begin
   FMute.Down := True;
   FMute.OnClick := MuteClick;
   FMute.Parent := Self;
+
+  // Damit der Knopf noch 'drückbar' ist (Unmute), wenn App
+  // im Mute-Modus beendet wurde. Nicht wegmachen.
+  FVolume := 50;
 
   ResStream := TResourceStream.Create(HInstance, 'VOLUME', RT_RCDATA);
   try
@@ -157,5 +161,4 @@ begin
 end;
 
 end.
-
 

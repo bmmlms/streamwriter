@@ -108,6 +108,8 @@ type
     procedure FreeAudioStream;
     function StartRecordingInternal: Boolean;
     procedure StopRecordingInternal;
+
+    procedure FSetRecordTitle(Value: string);
   protected
     procedure DoHeaderRemoved; override;
   public
@@ -119,7 +121,7 @@ type
     procedure StopRecording;
 
     property Settings: TStreamSettings read FSettings;
-    property RecordTitle: string read FRecordTitle write FRecordTitle;
+    property RecordTitle: string read FRecordTitle write FSetRecordTitle;
 
     property MetaCounter: Integer read FMetaCounter;
 
@@ -319,6 +321,13 @@ begin
     DeleteFile(PChar(Filename));
 end;
 
+procedure TICEStream.FSetRecordTitle(Value: string);
+begin
+  if Value <> FRecordTitle then
+    WriteDebug(Format('Automatically recording "%s"', [Value]), 1, 1);
+  FRecordTitle := Value;
+end;
+
 procedure TICEStream.GetSettings;
 begin
   if Assigned(FOnNeedSettings) then
@@ -373,16 +382,19 @@ begin
     // Datei schon existiert, übergehen wir den Filter.
     if not (FSettings.OverwriteSmaller and FileExists(Filename) and (GetFileSize(Filename) < E - S)) then
     begin
-      if Assigned(FOnTitleAllowed) then
-        FOnTitleAllowed(Self);
-      if not FSaveAllowed then
+      if FRecordTitle = '' then
       begin
-        if FSaveAllowedFilter = 0 then
-          WriteDebug(Format(_('Skipping "%s" - not on wishlist'), [Title]), 1, 0)
-        else
-          WriteDebug(Format(_('Skipping "%s" - on ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), 1, 0);
-        Dec(FSongsSaved);
-        Exit;
+        if Assigned(FOnTitleAllowed) then
+          FOnTitleAllowed(Self);
+        if not FSaveAllowed then
+        begin
+          if FSaveAllowedFilter = 0 then
+            WriteDebug(Format(_('Skipping "%s" - not on wishlist'), [Title]), 1, 0)
+          else
+            WriteDebug(Format(_('Skipping "%s" - on ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), 1, 0);
+          Dec(FSongsSaved);
+          Exit;
+        end;
       end;
     end else
     begin
@@ -874,7 +886,6 @@ begin
       raise Exception.Create('Error');
   end;
 
-  // TODO: krass testen. das mit dem überschreiben, und nicht überschreiben, dem anschließenden applien des filters, etc...
   // Zahl anhängen, wenn Datei existiert und
   // Filesize = 0 oder
   // keine kleineren überschreiben oder

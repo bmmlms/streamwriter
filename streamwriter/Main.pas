@@ -433,6 +433,8 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.FormActivate(Sender: TObject);
+var
+  V: TAppVersion;
 begin
   if FWasActivated then
     Exit;
@@ -454,11 +456,17 @@ begin
                                'Please add some artists/titles to your wishlist to try this new feature.'), btOK);
   end else if IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion) then
   begin
-    // TODO: Das muss raus, sobald ich größer als 2.0.0.0 oder 1.5.0.0 release!
-    //       Sonst werden Menschenkinder genervt!
-    TfrmMsgDlg.ShowMsg(Self, _('You have updated from a streamWriter version that did not have community features. ' +
-                               'With this version, the wishlist becomes more important:'#13#10'When streamWriter detects a stream playing something on your wishlist, ' +
-                               'it will tune into the station and record your desired song. Please try this feature and add some artists/titles to your wishlist.'), btOK);
+    V.AsString := '1.9.0.0';
+    V.Major := 1;
+    V.Minor := 9;
+    V.Revision := 0;
+    V.Build := 0;
+    if IsVersionNewer(AppGlobals.LastUsedVersion, V) then
+    begin
+      TfrmMsgDlg.ShowMsg(Self, _('You have updated from a streamWriter version that did not have community features. ' +
+                                 'With this version, the wishlist becomes more important:'#13#10'When streamWriter detects a stream playing something on your wishlist, ' +
+                                 'it will tune into the station and record your desired song. Please try this feature and add some artists/titles to your wishlist.'), btOK);
+    end;
   end;
 end;
 
@@ -953,6 +961,7 @@ end;
 procedure TfrmStreamWriterMain.ShowSettings(BrowseDir: Boolean);
 var
   S: TfrmSettings;
+  NodeData: PClientNodeData;
 begin
   RegisterHotkeys(False);
   S := TfrmSettings.Create(Self, BrowseDir);
@@ -966,6 +975,10 @@ begin
   AppGlobals.PluginManager.ReInitPlugins;
   TrayIcon1.Visible := AppGlobals.Tray;
   RegisterHotkeys(True);
+
+  NodeData := tabClients.ClientView.GetNodeData(tabClients.ClientView.AutoNode);
+  NodeData.Category.Name := _('Managed streams');
+  tabClients.ClientView.Invalidate;
 end;
 
 procedure TfrmStreamWriterMain.ShowUpdate(Version: string = '';
@@ -1181,7 +1194,8 @@ var
 begin
   // Enabled und so wird hier immer nur gesetzt, wenn sich der Status geändert hat.
   // Das hilft gut gegen flackern, wenn das Popup aufgeklappt ist, während das hier
-  // aufgerufen wird.
+  // aufgerufen wird. Vielleicht hilft auch nur, kein Default-Item mehr zu setzen.
+  // Man weiß es nicht!
 
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
   AllClients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
@@ -1242,7 +1256,7 @@ begin
   if mnuSavePlaylist2.Enabled <> B then
     mnuSavePlaylist2.Enabled := B;
 
-  if actResetData.Enabled <> B then
+  if actStreamSettings.Enabled <> ((Length(Clients) > 0) and not OnlyAutomatedSelected) then
     actResetData.Enabled := B;
   if actTuneInFile.Enabled <> FilenameFound then
     actTuneInFile.Enabled := FilenameFound;

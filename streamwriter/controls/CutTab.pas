@@ -94,28 +94,28 @@ procedure TCutTab.UpdateButtons;
 begin
   FToolBar.FSave.Enabled := FCutView.CanSave;
   FToolBar.FPosEdit.Enabled := FCutView.CanSetLine;
-  //FToolBar.FPosStart.Enabled := FCutView.CanSetLine;
-  //FToolBar.FPosEnd.Enabled := FCutView.CanSetLine;
   FToolBar.FPosPlay.Enabled := FCutView.CanSetLine;
   FToolBar.FAutoCut.Enabled := FCutView.CanAutoCut;
   FToolBar.FPosPlay.Enabled := FCutView.CanZoom;
   FToolBar.FCut.Enabled := FCutView.CanCut;
+  FToolbar.FPosZoom.Enabled := FCutView.CanZoom;
   FToolBar.FUndo.Enabled := FCutView.CanUndo;
   FToolBar.FPlay.Enabled := FCutView.CanPlay;
   FToolBar.FStop.Enabled := FCutView.CanStop;
 
   // Das muss so, sonst klappt das .Down := True nicht, wenn sie
   // vorher Disabled waren, vor dem Enable da oben...
-  //FToolBar.FPosStart.Down := False;
-  //FToolBar.FPosEnd.Down := False;
   FToolBar.FPosEdit.Down := False;
   FToolBar.FPosPlay.Down := False;
+  FToolBar.FPosZoom.Down := False;
 
   case FCutView.LineMode of
     lmEdit:
       FToolBar.FPosEdit.Down := True;
     lmPlay:
       FToolBar.FPosPlay.Down := True;
+    lmZoom:
+      FToolBar.FPosZoom.Down := True;
   end;
 end;
 
@@ -287,7 +287,7 @@ begin
 
   FPosZoom := TToolButton.Create(Self);
   FPosZoom.Parent := Self;
-  FPosZoom.Hint := _('Zoom in (right mousebutton zooms back)');
+  FPosZoom.Hint := _('Zoom in (left mousebutton selects area, right mousebutton zooms back)');
   FPosZoom.ImageIndex := 48;
 
   FPosEdit := TToolButton.Create(Self);

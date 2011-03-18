@@ -19,8 +19,8 @@ object frmSettings: TfrmSettings
   OnActivate = FormActivate
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
-  OnKeyDown = FormKeyDown
   OnResize = FormResize
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object pnlStreams: TPanel
@@ -308,7 +308,7 @@ object frmSettings: TfrmSettings
       EditLabel.Width = 101
       EditLabel.Height = 13
       EditLabel.Caption = 'Time between retries:'
-      MaxLength = 2
+      MaxLength = 1
       NumbersOnly = True
       TabOrder = 1
       OnChange = txtRetryDelayChange
@@ -732,7 +732,7 @@ object frmSettings: TfrmSettings
       Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Submit statistics/stream information to the server'
+      Caption = 'Submit statistics/track changes to the server'
       TabOrder = 2
     end
   end
@@ -745,7 +745,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800240110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800380110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

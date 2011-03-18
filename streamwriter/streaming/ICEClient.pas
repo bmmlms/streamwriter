@@ -310,13 +310,14 @@ end;
 
 procedure TICEClient.Disconnect;
 begin
+  FState := csStopping;
+
   if FICEThread = nil then
     Exit;
 
   FRetries := 0;
   FICEThread.StopPlay;
   FICEThread.Terminate;
-  FState := csStopping;
   if Assigned(FOnRefresh) then
     FOnRefresh(Self);
 end;
@@ -518,7 +519,7 @@ begin
       if FAutoRemove then
       begin
         Kill;
-        if Assigned(FOnDisconnected) and (FICEThread = nil) then // TODO: ungetestet.
+        if Assigned(FOnDisconnected) and (FICEThread = nil) then
           FOnDisconnected(Self);
       end;
     end;
@@ -563,18 +564,6 @@ begin
           WriteDebug(Format(_('Plugin "%s" failed.'), [Entry.ActiveThread.Plugin.Name]), dtError, dlNormal);
       end;
 
-      {
-      if FKilled then
-      begin
-        FProcessingList.Delete(i);
-        Entry.Free;
-        if FProcessingList.Count = 0 then
-          if Assigned(FOnDisconnected) and (FICEThread = nil) then
-            FOnDisconnected(Self);
-        Exit;
-      end;
-      }
-
       // Eine externe App könnte das File gelöscht haben
       if Entry.Data.Filesize <> High(UInt64) then // GetFileSize = Int64 => -1
       begin
@@ -596,13 +585,6 @@ begin
 
           Entry.Free;
           FProcessingList.Delete(i);
-
-          if FAutoRemove then
-          begin
-            Kill;
-            if Assigned(FOnDisconnected) and (FICEThread = nil) then // todo: ungetestet.
-              FOnDisconnected(Self);
-          end;
         end;
       end else
       begin
@@ -610,6 +592,15 @@ begin
 
         Entry.Free;
         FProcessingList.Delete(i);
+      end;
+
+      if FAutoRemove then
+      begin
+        if Assigned(FOnDisconnected) and (FICEThread = nil) and (FProcessingList.Count = 0) then
+        begin
+          Kill;
+          FOnDisconnected(Self);
+        end;
       end;
 
       Break;
@@ -708,8 +699,11 @@ begin
 
   if (DiedThread.RecvStream.HaltClient) or (AutoRemove and ((FRetries >= 3) {or (DiedThread.RecvStream.MetaCounter > 0)})) then
   begin
-    Kill;
-    if Assigned(FOnDisconnected) and (FICEThread = nil) then
+    if FProcessingList.Count = 0 then
+      Kill
+    else
+      Disconnect;
+    if Assigned(FOnDisconnected) and (FICEThread = nil) and (FProcessingList.Count = 0) then
       FOnDisconnected(Self);
     Exit;
   end;

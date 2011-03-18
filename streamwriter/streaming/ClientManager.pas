@@ -233,11 +233,16 @@ begin
   begin
     if Like(Title, FLists.SaveList[i].Pattern) then
     begin
+      // csStopping wird extra abgefragt. Stellen wir uns vor es gibt 2 Wunschlieder,
+      // die auf dem selben Stream hintereinander gespielt werden. Der RecordTitle ist
+      // dann das erste Lied. Während der Stream noch in der Liste ist und in ein paar MS
+      // die Verbindung kappen wird und noch Plugins laufen oder so würde er hier sonst
+      // nicht reingehen, um das zweite Wunschlied aufzunehmen.
       Client := GetClient('', CurrentURL, nil);
-      if not ((Client <> nil) and (Client.Recording) and (Client.Entry.Settings.SeparateTracks)) then
+      if not ((Client <> nil) and (Client.Recording) and (Client.State <> csStopping) and (Client.Entry.Settings.SeparateTracks)) then
       begin
         Client := AddClient(StreamName, CurrentURL, True);
-        Client.Entry.Settings.Filter := ufWish;
+        Client.Entry.Settings.Filter := ufNone;
         Client.Entry.Settings.SaveToMemory := True;
         Client.Entry.Settings.SeparateTracks := True;
         Client.Entry.Settings.OnlySaveFull := False;

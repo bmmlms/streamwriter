@@ -616,8 +616,6 @@ begin
   end;
 
   AppGlobals.ClientCols := AppGlobals.ClientCols xor (1 shl Index);
-
-  //FitColumns; // TODO: Ist das sinnig oder nicht? testen!
 end;
 
 procedure TMClientView.MoveTo(Source, Target: PVirtualNode;
@@ -1138,4 +1136,5 @@ begin
 end;
 
 end.
+
 
