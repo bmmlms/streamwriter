@@ -94,7 +94,7 @@ type
     property Items[Index: Integer]: TICEClient read FGetItem; default;
     property Count: Integer read FGetCount;
 
-    function GetClient(Name, URL: string; URLs: TStringList): TICEClient;
+    function GetClient(Name, URL, Title: string; URLs: TStringList): TICEClient;
 
     property Active: Boolean read FGetActive;
     property SongsSaved: Integer read FSongsSaved;
@@ -238,7 +238,7 @@ begin
       // dann das erste Lied. Während der Stream noch in der Liste ist und in ein paar MS
       // die Verbindung kappen wird und noch Plugins laufen oder so würde er hier sonst
       // nicht reingehen, um das zweite Wunschlied aufzunehmen.
-      Client := GetClient(StreamName, CurrentURL, nil);
+      Client := GetClient(StreamName, CurrentURL, Title, nil);
       if not ((Client <> nil) and (Client.AutoRemove) and (Client.State <> csStopping) and (Client.Entry.Settings.SeparateTracks)) then
       begin
         Client := AddClient(StreamName, CurrentURL, True);
@@ -277,7 +277,7 @@ begin
     FOnClientAddRecent(Sender);
 end;
 
-function TClientManager.GetClient(Name, URL: string;
+function TClientManager.GetClient(Name, URL, Title: string;
   URLs: TStringList): TICEClient;
 var
   i: Integer;
@@ -299,6 +299,13 @@ begin
 
     if URL <> '' then
       if LowerCase(Client.Entry.StartURL) = LowerCase(URL) then
+      begin
+        Result := Client;
+        Exit;
+      end;
+
+    if Title <> '' then
+      if LowerCase(Client.Title) = LowerCase(Title) then
       begin
         Result := Client;
         Exit;

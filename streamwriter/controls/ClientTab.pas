@@ -1010,8 +1010,8 @@ begin
   if URL <> '' then
   begin
     // Ist der Client schon in der Liste?
-    Client := FClients.GetClient(Name, URL, nil);
-    if Client <> nil then
+    Client := FClients.GetClient(Name, URL, '', nil);
+    if (Client <> nil) and (not Client.AutoRemove) then
     begin
       if StartPlay then
         Client.StartPlay
@@ -1022,6 +1022,7 @@ begin
     end else
     begin
       // Ist der Client schon bekannt?
+      {
       Entry := FStreams.StreamList.Get(Name, URL, nil);
       if Entry <> nil then
       begin
@@ -1039,6 +1040,7 @@ begin
           Client.StartRecording;
         UnkillCategory;
       end else
+      }
       begin
         if ValidURL(URL) then
         begin
