@@ -154,6 +154,8 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
+    procedure Translate;
+
     procedure DeleteTrack(Track: TTrackInfo);
 
     property OnAction: TTrackActionEvent read FOnAction write FOnAction;
@@ -455,7 +457,7 @@ end;
 
 procedure TSavedTab.Setup(Streams: TDataLists; Images: TImageList);
 begin
-  Caption := _('Saved songs');
+  Caption := 'Saved songs';
 
   FStreams := Streams;
 
@@ -673,6 +675,16 @@ begin
   if Length(Tracks) > 0 then
     if Assigned(FOnAction) then
       FOnAction(Self, Action, Tracks);
+end;
+
+procedure TSavedTree.Translate;
+begin
+  FColFilename.Text := _('Filename');
+  FColSize.Text := _('Size');
+  FColStream.Text := _('Stream');
+  FColSaved.Text := _('Time');
+
+  //TTabSheet(Parent).Caption := _('Saved songs');
 end;
 
 procedure TSavedTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;

@@ -1317,6 +1317,8 @@ procedure TMStreamBrowserView.Translate;
 var
   Idx: Integer;
 begin
+  FStreamTree.FColName.Text := _('Rating');
+
   if FSearch.FGenreList.Items.Count > 0 then
   begin
     Idx := FSearch.FGenreList.ItemIndex;
@@ -1379,13 +1381,13 @@ begin
   FSearchButton.Left := ClientWidth - 8 - FSearchButton.Width;
   FSearchButton.Anchors := [akRight, akTop];
   FSearchButton.Flat := True;
-  FSearchButton.Hint := _('Search');
+  FSearchButton.Hint := 'Search';
   FSearchButton.ShowHint := True;
 
   FSearchLabel := TLabel.Create(Self);
   FSearchLabel.Parent := Self;
   FSearchLabel.Left := 4;
-  FSearchLabel.Caption := _('Search:');
+  FSearchLabel.Caption := 'Search:';
   FSearchLabel.Top := FSearchEdit.Top + FSearchEdit.Height div 2 - FSearchLabel.Height div 2;
 
   TopCnt := TopCnt + 26;

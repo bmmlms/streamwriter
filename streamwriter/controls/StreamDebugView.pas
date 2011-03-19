@@ -164,7 +164,7 @@ constructor TMStreamDebugView.Create(AOwner: TComponent);
 begin
   inherited;
 
-  Caption := _('Please select a stream.');
+  Caption := 'Please select a stream.';
   BevelOuter := bvNone;
   Align := alClient;
 

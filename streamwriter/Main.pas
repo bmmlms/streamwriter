@@ -590,8 +590,6 @@ begin
   Top := AppGlobals.MainTop;
 
   addStatus.CustomHint := TStatusHint.Create(Self);
-
-  Language.Translate(Self);
 end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
@@ -630,6 +628,8 @@ begin
   tabClients.Shown;
   tabLists.Setup(FStreams, imgImages);
   actShowSideBar.Checked := tabClients.SideBar.Visible;
+
+  Language.Translate(Self);
 end;
 
 function TfrmStreamWriterMain.HandleLoadError(E: Exception): Integer;
@@ -832,6 +832,9 @@ procedure TfrmStreamWriterMain.PostTranslate;
 begin
   tabClients.SideBar.BrowserView.Translate;
   tabClients.SideBar.InfoView.Translate;
+  tabClients.ClientView.Translate;
+
+  tabSaved.Tree.Translate;
 end;
 
 procedure TfrmStreamWriterMain.mnuStreamPopupPopup(Sender: TObject);
@@ -858,11 +861,11 @@ begin
   ShortCutToKey(HotKey, Key, Shift);
   Modifiers := 0;
   if (ssShift in Shift) then
-  Modifiers := Modifiers or MOD_SHIFT;
+    Modifiers := Modifiers or MOD_SHIFT;
   if (ssAlt in Shift) then
-  Modifiers := Modifiers or MOD_ALT;
+    Modifiers := Modifiers or MOD_ALT;
   if (ssCtrl in Shift) then
-  Modifiers := Modifiers or MOD_CONTROL;
+    Modifiers := Modifiers or MOD_CONTROL;
 end;
 
 procedure TfrmStreamWriterMain.RegisterHotkeys(Reg: Boolean);

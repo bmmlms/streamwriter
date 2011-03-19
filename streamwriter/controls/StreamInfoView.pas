@@ -194,7 +194,7 @@ constructor TMStreamInfoView.Create(AOwner: TComponent);
 begin
   inherited;
 
-  Caption := _('Please select at least one stream.');
+  Caption := 'Please select at least one stream.';
   BevelOuter := bvNone;
   Align := alClient;
 

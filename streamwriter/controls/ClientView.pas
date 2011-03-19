@@ -124,6 +124,8 @@ type
     function NodesToClients(Nodes: TNodeArray): TClientArray;
     function GetEntries(T: TEntryTypes): TPlaylistEntryArray;
 
+    procedure Translate;
+
     procedure MoveTo(Source, Target: PVirtualNode; Mode: TVTNodeAttachMode; ChildrenOnly: Boolean); reintroduce;
 
     property AutoNode: PVirtualNode read FAutoNode write FAutoNode;
@@ -677,6 +679,16 @@ begin
   for i := 0 to Length(Nodes) - 1 do
     Sort(Nodes[i], -1, sdAscending);
   FInitialSorted := True;
+end;
+
+procedure TMClientView.Translate;
+begin
+  FColName.Text := _('Name');
+  FColTitle.Text := _('Title');
+  FColRcvd.Text := _('Received');
+  FColSongs.Text := _('Songs');
+  FColSpeed.Text := _('Speed');
+  FColStatus.Text := _('State');
 end;
 
 function TMClientView.NodesToData(Nodes: TNodeArray): TNodeDataArray;

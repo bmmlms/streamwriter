@@ -60,7 +60,7 @@ begin
   BevelOuter := bvNone;
 
   FMute := TPngSpeedButton.Create(Self);
-  FMute.Hint := _('Mute');
+  FMute.Hint := 'Mute';
   FMute.ShowHint := True;
   FMute.Flat := True;
   FMute.Align := alLeft;
