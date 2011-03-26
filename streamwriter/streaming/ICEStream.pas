@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2011 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -30,7 +30,7 @@ type
   TDebugEvent = procedure(Text, Data: string) of object;
   TChunkReceivedEvent = procedure(Buf: Pointer; Len: Integer) of object;
 
-  TAudioTypes = (atMPEG, atAAC, atNone);
+  TAudioTypes = (atNone, atMPEG, atAAC);
 
   TStreamTrack = class
   public
@@ -190,6 +190,28 @@ begin
     if BufLen = -1 then
       raise Exception.Create('');
     FBytesPerSec := Trunc((BufLen / (125 * Time) + 0.5) * 125);
+    FBitRate := Trunc(BufLen / floor(((125 * Time)) + 0.5));
+
+    if FBitRate < 40 then
+      FBitRate := 32
+    else if FBitRate < 70 then
+      FBitRate := 64
+    else if FBitRate < 100 then
+      FBitRate := 96
+    else if FBitRate < 130 then
+      FBitRate := 128
+    else if FBitRate < 170 then
+      FBitRate := 160
+    else if FBitRate < 200 then
+      FBitRate := 192
+    else if FBitRate < 230 then
+      FBitRate := 224
+    else if FBitRate < 260 then
+      FBitRate := 256
+    else if FBitRate < 330 then
+      FBitRate := 320
+    else
+      FBitRate := 384;
 
     if FBytesPerSec <= 10 then
       raise Exception.Create('');
@@ -465,7 +487,6 @@ begin
     begin
       if not Saved then
         Dec(FSongsSaved);
-      //WriteDebug(Format('Error while saving to "%s": %s', [Filename, E.Message]));
       WriteDebug(Format(_('Error while saving "%s": %s'), [ExtractFilename(Filename), E.Message]), 3, 0);
     end;
   end;

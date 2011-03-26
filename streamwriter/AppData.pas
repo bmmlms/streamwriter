@@ -1,7 +1,7 @@
 ﻿{
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2011 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -94,11 +94,13 @@ type
     FSubmitStats: Boolean;
     FMinDiskSpace: Integer;
     FDefaultAction: TClientActions;
-    FPlayerVolume, FCutVolume: Integer;
+    FPlayerVolume, FCutVolume, FSavedPlayerVolume: Integer;
     FAutoScrollLog: Boolean;
     FUserWasSetup: Boolean;
     FUser, FPass: string;
     FSoundDevice: Cardinal;
+    FAutoTuneInMinKbps: Cardinal;
+    FAutoTuneInFormat: Cardinal;
 
     FShortcutPlay: Cardinal;
     FShortcutPause: Cardinal;
@@ -142,11 +144,14 @@ type
     property Pass: string read FPass write FPass;
     property SoundDevice: Cardinal read FSoundDevice write FSoundDevice;
     property CutVolume: Integer read FCutVolume write FCutVolume;
+    property SavedPlayerVolume: Integer read FSavedPlayerVolume write FSavedPlayerVolume;
     property ShortcutPlay: Cardinal read FShortcutPlay write FShortcutPlay;
     property ShortcutPause: Cardinal read FShortcutPause write FShortcutPause;
     property ShortcutStop: Cardinal read FShortcutStop write FShortcutStop;
     property ShortcutNext: Cardinal read FShortcutNext write FShortcutNext;
     property ShortcutPrev: Cardinal read FShortcutPrev write FShortcutPrev;
+    property AutoTuneInMinKbps: Cardinal read FAutoTuneInMinKbps write FAutoTuneInMinKbps;
+    property AutoTuneInFormat: Cardinal read FAutoTuneInFormat write FAutoTuneInFormat;
 
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
     property ClientCols: Integer read FClientCols write FClientCols;
@@ -238,7 +243,7 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 11);
+    SetLength(FDonors, 12);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
@@ -249,7 +254,8 @@ begin
     FDonors[7] := 'Valentin M.';
     FDonors[8] := 'Rüdi';
     FDonors[9] := '''Hummer''';
-    FDonors[9] := 'Hans Heintz';
+    FDonors[10] := 'Hans Heintz';
+    FDonors[11] := 'Thomas Hecker';
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
       Text.Add(FDonors[i]);
@@ -390,6 +396,13 @@ begin
   FStorage.Read('SubmitStreamInfo', FSubmitStreamInfo, True);
   FStorage.Read('SubmitStats', FSubmitStats, True);
 
+  FStorage.Read('AutoTuneInMinKbps', FAutoTuneInMinKbps, 3);
+  FStorage.Read('AutoTuneInFormat', FAutoTuneInFormat, 0);
+  if (FAutoTuneInMinKbps > 9) then
+    FAutoTuneInMinKbps := 3;
+  if FAutoTuneInFormat > 2 then
+    FAutoTuneInFormat := 0;
+
   // Wenn das zu viel wird, blockiert der Thread zu lange. Und dann kann man
   // Clients nicht mehr so schnell aus der Liste entfernen...
   if FStreamSettings.FRetryDelay > 10 then
@@ -401,6 +414,7 @@ begin
   FStorage.Read('DefaultFilter', DefaultFilterTmp, Integer(ufNone));
   FStorage.Read('PlayerVolume', FPlayerVolume, 50);
   FStorage.Read('CutVolume', FCutVolume, 50);
+  FStorage.Read('SavedPlayerVolume', FSavedPlayerVolume, 50);
   FStorage.Read('AutoScrollLog', FAutoScrollLog, True);
   FStorage.Read('UserWasSetup', FUserWasSetup, False);
   FStorage.Read('User', FUser, '');
@@ -487,10 +501,13 @@ begin
   FStorage.Write('AutoTuneIn', FAutoTuneIn);
   FStorage.Write('SubmitStats', FSubmitStats);
   FStorage.Write('SubmitStreamInfo', FSubmitStreamInfo);
+  FStorage.Write('AutoTuneInMinKbps', FAutoTuneInMinKbps);
+  FStorage.Write('AutoTuneInFormat', FAutoTuneInFormat);
 
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
   FStorage.Write('PlayerVolume', FPlayerVolume);
+  FStorage.Write('SavedPlayerVolume', FSavedPlayerVolume);
   FStorage.Write('CutVolume', FCutVolume);
   FStorage.Write('AutoScrollLog', FAutoScrollLog);
   FStorage.Write('UserWasSetup', FUserWasSetup);

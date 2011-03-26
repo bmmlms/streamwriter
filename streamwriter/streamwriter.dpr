@@ -81,7 +81,8 @@ uses
   HTTPThread in '..\..\common\sockets\HTTPThread.pas',
   Sockets in '..\..\common\sockets\Sockets.pas',
   Int32Protocol in '..\..\common\sockets\Int32Protocol.pas',
-  HomeCommunication in 'HomeCommunication.pas';
+  HomeCommunication in 'HomeCommunication.pas',
+  Player in 'audio\Player.pas';
 
 {$SetPEOptFlags $0140}
 

@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2011 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -35,6 +35,8 @@ type
     BitRate: Integer;
     StreamType: string;
     Downloads: Integer;
+    MetaData: Boolean;
+    ChangesTitleInSong: Boolean;
     Rating: Integer;
   end;
   TStreamInfoArray = array of TStreamInfo;
@@ -55,6 +57,8 @@ type
     FChangedStreamName: string;
     FChangedTitle: string;
     FChangedCurrentURL: string;
+    FChangedKbps: Cardinal;
+    FChangedFormat: string;
 
     FServerInfoClientCount: Cardinal;
     FServerInfoRecordingCount: Cardinal;
@@ -86,7 +90,7 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
+    procedure TitleChanged(StreamName, Title, CurrentURL, URL, Format: string; Kbps: Cardinal; URLs: TStringList);
     property Genres: TStringList read FGenres write FGenres;
 
     property OnLoggedOn: TSocketEvent read FOnLoggedOn write FOnLoggedOn;
@@ -101,7 +105,7 @@ type
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
   TGenresReceivedEvent = procedure(Sender: TObject; Genres: TStringList) of object;
   TStreamsReceivedEvent = procedure(Sender: TObject; Streams: TStreamInfoArray; Count: Integer) of object;
-  TTitleChangedEvent = procedure(Sender: TObject; Name, Title, CurrentURL: string) of object;
+  TTitleChangedEvent = procedure(Sender: TObject; Name, Title, CurrentURL, Format: string; Kbps: Cardinal) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
 
@@ -143,7 +147,7 @@ type
 
     procedure LogOn(User, Pass: string);
     procedure LogOff;
-    procedure TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
+    procedure TitleChanged(StreamName, Title, CurrentURL, URL, Format: string; Kbps: Cardinal; URLs: TStringList);
     procedure SendClientInfo;
     procedure UpdateStats(RecordingCount: Cardinal);
     procedure RateStream(ID, Rating: Integer);
@@ -194,7 +198,7 @@ procedure THomeCommunication.ClientTitleChanged(Sender: TSocketThread);
 begin
   if Assigned(FOnTitleChanged) then
     FOnTitleChanged(Self, THomeThread(Sender).FChangedStreamName, THomeThread(Sender).FChangedTitle,
-      THomeThread(Sender).FChangedCurrentURL);
+      THomeThread(Sender).FChangedCurrentURL, THomeThread(Sender).FChangedFormat, THomeThread(Sender).FChangedKbps);
 end;
 
 procedure THomeCommunication.ClientLoggedOn(Sender: TSocketThread);
@@ -475,12 +479,13 @@ begin
     FOnError(Self, FClient.FErrorID, FClient.FErrorMsg);
 end;
 
-procedure THomeCommunication.TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
+procedure THomeCommunication.TitleChanged(StreamName, Title, CurrentURL, URL, Format: string;
+  Kbps: Cardinal; URLs: TStringList);
 begin
   if Trim(Title) <> '' then
     if FClient <> nil then
     begin
-      FClient.TitleChanged(StreamName, Title, CurrentURL, URL, URLs);
+      FClient.TitleChanged(StreamName, Title, CurrentURL, URL, Format, Kbps, URLs);
     end;
 end;
 
@@ -683,6 +688,8 @@ begin
     FStreams[High(FStreams)].BitRate := Node.Attributes.AttributeByName['bitrate'].Value.AsInteger;
     FStreams[High(FStreams)].StreamType := Node.Attributes.AttributeByName['type'].Value.AsString;
     FStreams[High(FStreams)].Downloads := Node.Attributes.AttributeByName['downloads'].Value.AsInteger;
+    FStreams[High(FStreams)].MetaData := Node.Attributes.AttributeByName['metadata'].Value.AsBoolean;
+    FStreams[High(FStreams)].ChangesTitleInSong := Node.Attributes.AttributeByName['changestitleinsong'].Value.AsBoolean;
     FStreams[High(FStreams)].Rating := Node.Attributes.AttributeByName['rating'].Value.AsInteger;
   end;
 
@@ -698,6 +705,8 @@ begin
   FChangedStreamName := Data.Nodes.GetNode('streamname').Value.AsString;
   FChangedTitle := Data.Nodes.GetNode('title').Value.AsString;
   FChangedCurrentURL := Data.Nodes.GetNode('currenturl').Value.AsString;
+  FChangedKbps := Data.Nodes.GetNode('kbps').Value.AsLongWord;
+  FChangedFormat := Data.Nodes.GetNode('format').Value.AsString;
 
   if (FChangedStreamName <> '') and (FChangedTitle <> '') and (FChangedCurrentURL <> '') then
     if Assigned(FOnTitleChanged) then
@@ -713,7 +722,7 @@ begin
     Sync(FOnLoggedOff);
 end;
 
-procedure THomeThread.TitleChanged(StreamName, Title, CurrentURL, URL: string; URLs: TStringList);
+procedure THomeThread.TitleChanged(StreamName, Title, CurrentURL, URL, Format: string; Kbps: Cardinal; URLs: TStringList);
 var
   i: Integer;
   XML: TXMLLib;
@@ -737,6 +746,13 @@ begin
     N2 := TXMLNode.Create(N);
     N2.Name := 'url';
     N2.Value.AsString := URL;
+
+    N2 := TXMLNode.Create(N);
+    N2.Name := 'format';
+    N2.Value.AsString := Format;
+    N2 := TXMLNode.Create(N);
+    N2.Name := 'kbps';
+    N2.Value.AsLongWord := Kbps;
 
     if URLs <> nil then
     begin

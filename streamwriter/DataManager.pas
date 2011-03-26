@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2011 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -39,6 +39,8 @@ type
     FStreamname: string;
     FFilesize: UInt64;
     FWasCut: Boolean;
+    FBitRate: Cardinal;
+    FIsAuto: Boolean;
   public
     constructor Create; overload;
     constructor Create(Time: TDateTime; Filename, Streamname: string); overload;
@@ -51,6 +53,8 @@ type
     property Streamname: string read FStreamname write FStreamname;
     property Filesize: UInt64 read FFilesize write FFilesize;
     property WasCut: Boolean read FWasCut write FWasCut;
+    property BitRate: Cardinal read FBitRate write FBitRate;
+    property IsAuto: Boolean read FIsAuto write FIsAuto;
   end;
 
   TTitleInfo = class
@@ -123,6 +127,7 @@ type
     FStartURL: string;
     FURLs: TStringList;
     FBitrate: Cardinal;
+    FAudioType: string;
     FGenre: string;
     FIndex: Integer;
     FCategoryIndex: Integer;
@@ -158,6 +163,7 @@ type
     property StartURL: string read FStartURL write FStartURL;
     property URLs: TStringList read FURLs;
     property Bitrate: Cardinal read FBitrate write FBitrate;
+    property AudioType: string read FAudioType write FAudioType;
     property Genre: string read FGenre write FSetGenre;
     property Index: Integer read FIndex write FIndex;
     property CategoryIndex: Integer read FCategoryIndex write FCategoryIndex;
@@ -213,7 +219,7 @@ type
   end;
 
 const
-  DATAVERSION = 10;
+  DATAVERSION = 11;
 
 implementation
 
@@ -230,6 +236,7 @@ begin
   FIndex := From.FIndex;
   FCategoryIndex := From.CategoryIndex;
   FBitRate := From.BitRate;
+  FAudioType := From.AudioType;
   FGenre := From.Genre;
   FURLs.Assign(From.FURLs);
   FSettings.Assign(From.FSettings);
@@ -304,6 +311,10 @@ begin
   end;
 
   Stream.Read(Result.FBitrate);
+
+  if Version > 10 then
+    Stream.Read(Result.FAudioType);
+
   Stream.Read(Result.FGenre);
 
   if Version <= 5 then
@@ -369,6 +380,7 @@ begin
     Stream.Write(FURLs[i]);
   end;
   Stream.Write(FBitRate);
+  Stream.Write(FAudioType);
   Stream.Write(FGenre);
 
   Stream.Write(FIsInList);
@@ -770,6 +782,11 @@ begin
   Stream.Read(Result.FFilesize);
   Stream.Read(Result.FTime);
   Stream.Read(Result.FWasCut);
+  if Version > 10 then
+  begin
+    Stream.Read(Result.FBitRate);
+    Stream.Read(Result.FIsAuto);
+  end;
 end;
 
 procedure TTrackInfo.Save(Stream: TExtendedStream);
@@ -779,6 +796,8 @@ begin
   Stream.Write(FFilesize);
   Stream.Write(FTime);
   Stream.Write(FWasCut);
+  Stream.Write(FBitRate);
+  Stream.Write(FIsAuto);
 end;
 
 { TStreamList }

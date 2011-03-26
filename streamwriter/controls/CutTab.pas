@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2011 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -29,10 +29,7 @@ type
   TCutToolBar = class(TToolBar)
   private
     FSave: TToolButton;
-    //FSaveAs: TToolButton;
     FSep3: TToolButton;
-    //FPosStart: TToolButton;
-    //FPosEnd: TToolButton;
     FPosZoom: TToolButton;
     FPosEdit: TToolButton;
     FPosPlay: TToolButton;
@@ -121,8 +118,8 @@ end;
 
 procedure TCutTab.VolumeTrackbarChange(Sender: TObject);
 begin
-  AppGlobals.CutVolume := FVolume.Volume; //  FVolume.Trackbar.Position;
-  FCutView.Volume := FVolume.Volume; //.TrackBar.Position;
+  AppGlobals.CutVolume := FVolume.Volume;
+  FCutView.Volume := FVolume.Volume;
 end;
 
 procedure TCutTab.SaveClick(Sender: TObject);
@@ -225,13 +222,11 @@ begin
   FVolume.Setup;
   FVolume.Volume := AppGlobals.CutVolume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
-//  FVolume.TrackBar.Position := AppGlobals.CutVolume;
-//  FVolume.TrackBar.OnChange := VolumeTrackbarChange;
 
   FCutView := TCutView.Create(Self);
   FCutView.Parent := Self;
   FCutView.Align := alClient;
-  FCutView.Volume := FVolume.Volume; //.TrackBar.Position;
+  FCutView.Volume := FVolume.Volume;
   FCutView.OnStateChanged := CutViewStateChanged;
 
   UpdateButtons;
@@ -300,19 +295,10 @@ begin
   FPosPlay.Hint := _('Set playposition');
   FPosPlay.ImageIndex := 27;
 
-
-
   FSep3 := TToolButton.Create(Self);
   FSep3.Parent := Self;
   FSep3.Style := tbsSeparator;
   FSep3.Width := 8;
-
-  {
-  FSaveAs := TToolButton.Create(Self);
-  FSaveAs.Parent := Self;
-  FSaveAs.Hint := _('Save as...');
-  FSaveAs.ImageIndex := 15;
-  }
 
   FSave := TToolButton.Create(Self);
   FSave.Parent := Self;

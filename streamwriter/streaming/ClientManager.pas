@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2011 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -76,7 +76,7 @@ type
     procedure ClientURLsReceived(Sender: TObject);
     procedure ClientTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer);
 
-    procedure HomeCommTitleChanged(Sender: TObject; StreamName, Title, CurrentURL: string);
+    procedure HomeCommTitleChanged(Sender: TObject; StreamName, Title, CurrentURL, Format: string; Kbps: Cardinal);
   public
     constructor Create(Lists: TDataLists);
     destructor Destroy; override;
@@ -224,11 +224,34 @@ begin
   Result := TClientEnum.Create(Self);
 end;
 
-procedure TClientManager.HomeCommTitleChanged(Sender: TObject; StreamName, Title, CurrentURL: string);
+procedure TClientManager.HomeCommTitleChanged(Sender: TObject; StreamName, Title,
+  CurrentURL, Format: string; Kbps: Cardinal);
 var
-  i: Integer;
+  i, AutoTuneInMinKbps: Integer;
   Client: TICEClient;
 begin
+  case AppGlobals.AutoTuneInMinKbps of
+    0: AutoTuneInMinKbps := 0;
+    1: AutoTuneInMinKbps := 64;
+    2: AutoTuneInMinKbps := 96;
+    3: AutoTuneInMinKbps := 128;
+    4: AutoTuneInMinKbps := 160;
+    5: AutoTuneInMinKbps := 192;
+    6: AutoTuneInMinKbps := 224;
+    7: AutoTuneInMinKbps := 256;
+    8: AutoTuneInMinKbps := 320;
+    9: AutoTuneInMinKbps := 384;
+  end;
+
+  if Kbps < AutoTuneInMinKbps then
+    Exit;
+  if (Format = 'mp3') and (AppGlobals.AutoTuneInFormat = 2) then
+    Exit;
+  if (Format = 'aac') and (AppGlobals.AutoTuneInFormat = 1) then
+    Exit;
+  if (Format = '') and (AppGlobals.AutoTuneInFormat > 0) then
+    Exit;
+
   for i := 0 to FLists.SaveList.Count - 1 do
   begin
     if Like(Title, FLists.SaveList[i].Pattern) then

@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2011 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -404,6 +404,13 @@ begin
   if FICEThread.RecvStream.Genre <> '' then
     FEntry.Genre := FICEThread.RecvStream.Genre;
 
+  if FICEThread.RecvStream.AudioType = atMPEG then
+    FEntry.AudioType := 'MP3'
+  else if FICEThread.RecvStream.AudioType = atAAC then
+    FEntry.AudioType := 'AAC'
+  else
+    FEntry.AudioType := '';
+
   if Assigned(FOnAddRecent) then
     FOnAddRecent(Self);
 end;
@@ -636,6 +643,8 @@ begin
 end;
 
 procedure TICEClient.ThreadTitleChanged(Sender: TSocketThread);
+var
+  Format: string;
 begin
   FTitle := FICEThread.RecvStream.Title;
   if Assigned(FOnTitleChanged) then
@@ -645,7 +654,17 @@ begin
 
   if (FICEThread.RecvStream.FullTitleFound) and (not FAutoRemove) and (FRecordTitle = '') then
     if AppGlobals.SubmitStreamInfo then
-      HomeComm.TitleChanged(Entry.Name, FTitle, FCurrentURL, Entry.StartURL, Entry.URLs);
+    begin
+      if FICEThread.RecvStream.AudioType = atMPEG then
+        Format := 'mp3'
+      else if FICEThread.RecvStream.AudioType = atAAC then
+        Format := 'aac'
+      else
+        raise Exception.Create('');
+
+      HomeComm.TitleChanged(Entry.Name, FTitle, FCurrentURL, Entry.StartURL, Format,
+        Entry.BitRate, Entry.URLs);
+    end;
 end;
 
 procedure TICEClient.ThreadStateChanged(Sender: TSocketThread);
@@ -933,3 +952,4 @@ begin
 end;
 
 end.
+

@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2011 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -288,6 +288,8 @@ begin
 
   Hide;
 
+  tabSaved.Tree.Player.Stop;
+
   FUpdater.Kill;
 
   if not Shutdown then
@@ -468,6 +470,13 @@ begin
                                  'it will tune into the station and record your desired song. Please try this feature and add some artists/titles to your wishlist.'), btOK);
     end;
   end;
+
+  // Wird hier gemacht, weil der Browser dann sicher da ist, wenn die
+  // Streams empfangen werden (wg. DisplayCount)
+  HomeComm.OnStateChanged := HomeCommStateChanged;
+  HomeComm.OnServerInfo := HomeCommServerInfo;
+  HomeComm.OnError := HomeCommError;
+  HomeComm.Connect;
 end;
 
 procedure TfrmStreamWriterMain.FormClose(Sender: TObject;
@@ -493,11 +502,6 @@ procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
 begin
   FStreams := TDataLists.Create;
   FClients := TClientManager.Create(FStreams);
-
-  HomeComm.OnStateChanged := HomeCommStateChanged;
-  HomeComm.OnServerInfo := HomeCommServerInfo;
-  HomeComm.OnError := HomeCommError;
-  HomeComm.Connect;
 
   pagMain := TMainPageControl.Create(Self);
   pagMain.Parent := Self;
@@ -1073,13 +1077,13 @@ end;
 procedure TfrmStreamWriterMain.tabClientsTrackAdded(Entry: TStreamEntry;
   Track: TTrackInfo);
 begin
-  tabSaved.AddTrack(Entry, Track);
+  tabSaved.Tree.AddTrack(Track, False);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsTrackRemoved(Entry: TStreamEntry;
   Track: TTrackInfo);
 begin
-  tabSaved.RemoveTrack(Track);
+  tabSaved.Tree.RemoveTrack(Track);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsAddIgnoreList(Sender: TObject;
@@ -1394,7 +1398,7 @@ begin
           eaRemove:
             begin
               FStreams.TrackList.Delete(n);
-              tabSaved.RemoveTrack(Track);
+              tabSaved.Tree.RemoveTrack(Track);
               Track.Free;
             end;
         end;

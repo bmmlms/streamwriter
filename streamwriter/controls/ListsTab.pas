@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2011 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@ uses
   Windows, SysUtils, Messages, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls,
   Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, DataManager,
   ImgList, Functions, GUIFunctions, Menus, Math, DragDrop, DropComboTarget,
-  Dialogs;
+  Dialogs, MsgDlg, Forms;
 
 type
   TTitleTree = class;
@@ -150,10 +150,10 @@ end;
 
 procedure TListsTab.Setup(Streams: TDataLists; Images: TImageList);
 begin
-  Caption := _('Filters');
+  Caption := 'Filters';
 
-  FWishPanel.Setup(Streams.SaveList, Images, _('Wishlist'));
-  FIgnorePanel.Setup(Streams.IgnoreList, Images, _('Ignorelist'));
+  FWishPanel.Setup(Streams.SaveList, Images, 'Wishlist');
+  FIgnorePanel.Setup(Streams.IgnoreList, Images, 'Ignorelist');
 
   FWishPanel.FTree.FType := 0;
   FIgnorePanel.FTree.FType := 1;
@@ -359,8 +359,7 @@ begin
 
     if NumChars <= 3 then
     begin
-      MsgBox(Handle, _('The entry has to contain at least 4 chars.'), _('Info'), MB_ICONINFORMATION);
-      Exit;
+      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('A short pattern may produce many matches, i.e. using ''a'' records/ignores every song containing an ''a''.'), 6, btOK);
     end;
 
     for i := 0 to FList.Count - 1 do
@@ -614,12 +613,12 @@ procedure TTitleToolbar.Setup;
 begin
   FImport := TToolButton.Create(Self);
   FImport.Parent := Self;
-  FImport.Hint := _('Import...');
+  FImport.Hint := 'Import...';
   FImport.ImageIndex := 36;
 
   FExport := TToolButton.Create(Self);
   FExport.Parent := Self;
-  FExport.Hint := _('Export...');
+  FExport.Hint := 'Export...';
   FExport.ImageIndex := 35;
 
   FSep := TToolButton.Create(Self);
@@ -629,12 +628,12 @@ begin
 
   FRemove := TToolButton.Create(Self);
   FRemove.Parent := Self;
-  FRemove.Hint := _('Remove');
+  FRemove.Hint := 'Remove';
   FRemove.ImageIndex := 2;
 
   FAdd := TToolButton.Create(Self);
   FAdd.Parent := Self;
-  FAdd.Hint := _('Add');
+  FAdd.Hint := 'Add';
   FAdd.ImageIndex := 11;
 end;
 

@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2011 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,18 +25,17 @@ uses
   Windows, SysUtils, Messages, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls,
   Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, DataManager,
   ImgList, Functions, DragDropFile, GUIFunctions, StreamInfoView, DynBASS,
-  Menus, Math;
+  Menus, Math, Forms, Player, SharedControls, AppData, Graphics;
 
 type
   TSavedTree = class;
 
   TSavedNodeData = record
-    //Stream: TStreamEntry;
     Track: TTrackInfo;
   end;
   PSavedNodeData = ^TSavedNodeData;
 
-  TTrackActions = (taRefresh, taPlay, taCut, taRemove, taRecycle, taDelete, taShowFile, taProperties);
+  TTrackActions = (taRefresh, taCut, taRemove, taRecycle, taDelete, taShowFile, taProperties);
 
   TTrackInfoArray = array of TTrackInfo;
 
@@ -46,19 +45,24 @@ type
   private
     FItemRefresh: TMenuItem;
     FItemPlay: TMenuItem;
+    FItemPause: TMenuItem;
+    FItemStop: TMenuItem;
     FItemCut: TMenuItem;
     FItemRemove: TMenuItem;
     FItemRecycle: TMenuItem;
     FItemDelete: TMenuItem;
     FItemShowFile: TMenuItem;
     FItemProperties: TMenuItem;
+  protected
   public
     constructor Create(AOwner: TComponent); override;
 
-    procedure EnableItems(Enable: Boolean);
+    procedure EnableItems(Enable, Playing: Boolean);
 
     property ItemRefresh: TMenuItem read FItemRefresh;
     property ItemPlay: TMenuItem read FItemPlay;
+    property ItemPause: TMenuItem read FItemPause;
+    property ItemStop: TMenuItem read FItemStop;
     property ItemCut: TMenuItem read FItemCut;
     property ItemRemove: TMenuItem read FItemRemove;
     property ItemRecycle: TMenuItem read FItemRecycle;
@@ -72,25 +76,47 @@ type
     FRefresh: TToolButton;
     FSep1: TToolButton;
     FPlay: TToolButton;
-    FCut: TToolButton;
+    FPause: TToolButton;
+    FStop: TToolButton;
     FSep2: TToolButton;
+    FCut: TToolButton;
+    FSep3: TToolButton;
     FRemove: TToolButton;
     FRecycle: TToolButton;
     FDelete: TToolButton;
-    FSep3: TToolButton;
+    FSep4: TToolButton;
     FShowFile: TToolButton;
     FProperties: TToolButton;
   public
     constructor Create(AOwner: TComponent); override;
 
-    procedure EnableItems(Enable: Boolean);
+    procedure EnableItems(Enable, Playing: Boolean);
+
+    procedure Setup;
+  end;
+
+  TSearchBar = class(TPanel)
+  private
+    FLabel: TLabel;
+    FSearch: TEdit;
+
+    procedure FSearchChange(Sender: TObject);
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
 
     procedure Setup;
   end;
 
   TSavedTab = class(TMainTabSheet)
   private
+    FPositionTimer: TTimer;
+
+    FToolbarPanel: TPanel;
     FToolbar: TSavedToolBar;
+    FVolume: TVolumePanel;
+    FSeek: TTrackBar;
+    FSearchBar: TSearchBar;
     FSavedTree: TSavedTree;
     FStreams: TDataLists;
 
@@ -101,13 +127,16 @@ type
     procedure BuildTree;
     procedure SavedTreeAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
     procedure ToolBarClick(Sender: TObject);
+    procedure SearchTextChange(Sender: TObject);
+    procedure VolumeTrackbarChange(Sender: TObject);
+    procedure PositionTimer(Sender: TObject);
+
+    procedure UpdateButtons;
   public
     constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
 
     procedure Setup(Streams: TDataLists; Images: TImageList);
-
-    procedure AddTrack(Entry: TStreamEntry; Track: TTrackInfo);
-    procedure RemoveTrack(Track: TTrackInfo); overload;
 
     property Tree: TSavedTree read FSavedTree;
     property OnCut: TTrackEvent read FOnCut write FOnCut;
@@ -117,24 +146,27 @@ type
 
   TSavedTree = class(TVirtualStringTree)
   private
+    FPlayer: TPlayer;
     FDragSource: TDropFileSource;
     FTab: TSavedTab;
+    FTrackList: TTrackList;
 
     FOnAction: TTrackActionEvent;
 
-    //FSortColumn: Integer;
-    //FSortDirection: TSortDirection;
-
     FPopupMenu: TSavedTracksPopup;
 
+    FColImages: TVirtualTreeColumn;
     FColFilename: TVirtualTreeColumn;
     FColSize: TVirtualTreeColumn;
     FColStream: TVirtualTreeColumn;
     FColSaved: TVirtualTreeColumn;
+    FColBitRate: TVirtualTreeColumn;
 
     function GetNodes(SelectedOnly: Boolean): TNodeArray;
     function GetSelected: TTrackInfoArray;
+    function TrackMatchesPattern(Track: TTrackInfo): Boolean;
 
+    procedure PopupMenuPopup(Sender: TObject);
     procedure PopupMenuClick(Sender: TObject);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
@@ -150,14 +182,24 @@ type
     procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; Text: UnicodeString); override;
     procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
     procedure Change(Node: PVirtualNode); override;
+    procedure PaintImage(var PaintInfo: TVTPaintInfo;
+      ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
+    procedure DoEdit; override;
+    procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; Text: string;
+      CellRect: TRect; DrawFormat: Cardinal); override;
+    procedure DoPaintNode(var PaintInfo: TVTPaintInfo); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
     procedure Translate;
 
+    procedure AddTrack(Track: TTrackInfo; FromFilter: Boolean);
+    procedure RemoveTrack(Track: TTrackInfo); overload;
     procedure DeleteTrack(Track: TTrackInfo);
+    procedure Filter(S: string);
 
+    property Player: TPlayer read FPlayer;
     property OnAction: TTrackActionEvent read FOnAction write FOnAction;
   end;
 
@@ -184,6 +226,20 @@ begin
   FItemPlay.Caption := _('&Play');
   FItemPlay.ImageIndex := 33;
   Items.Add(FItemPlay);
+
+  FItemPause := CreateMenuItem;
+  FItemPause.Caption := _('Pa&use');
+  FItemPause.ImageIndex := 39;
+  Items.Add(FItemPause);
+
+  FItemStop := CreateMenuItem;
+  FItemStop.Caption := _('St&op');
+  FItemStop.ImageIndex := 1;
+  Items.Add(FItemStop);
+
+  ItemTmp := CreateMenuItem;
+  ItemTmp.Caption := '-';
+  Items.Add(ItemTmp);
 
   FItemCut := CreateMenuItem;
   FItemCut.Caption := _('&Cut');
@@ -224,10 +280,12 @@ begin
   Items.Add(FItemProperties);
 end;
 
-procedure TSavedTracksPopup.EnableItems(Enable: Boolean);
+procedure TSavedTracksPopup.EnableItems(Enable, Playing: Boolean);
 begin
   FItemRefresh.Enabled := Enable;
   FItemPlay.Enabled := Enable;
+  FItemPause.Enabled := Playing;
+  FItemStop.Enabled := Playing;
   FItemCut.Enabled := Enable;
   FItemRemove.Enabled := Enable;
   FItemRecycle.Enabled := Enable;
@@ -246,10 +304,12 @@ begin
   Transparent := True;
 end;
 
-procedure TSavedToolBar.EnableItems(Enable: Boolean);
+procedure TSavedToolBar.EnableItems(Enable, Playing: Boolean);
 begin
   FRefresh.Enabled := Enable;
   FPlay.Enabled := Enable;
+  FPause.Enabled := Playing;
+  FStop.Enabled := Playing;
   FCut.Enabled := Enable;
   FRemove.Enabled := Enable;
   FRecycle.Enabled := Enable;
@@ -277,32 +337,47 @@ begin
 
   FDelete := TToolButton.Create(Self);
   FDelete.Parent := Self;
-  FDelete.Hint := _('Delete files');
+  FDelete.Hint := 'Delete files';
   FDelete.ImageIndex := 2;
 
   FRecycle := TToolButton.Create(Self);
   FRecycle.Parent := Self;
-  FRecycle.Hint := _('Recycle files');
+  FRecycle.Hint := 'Recycle files';
   FRecycle.ImageIndex := 24;
 
   FRemove := TToolButton.Create(Self);
   FRemove.Parent := Self;
-  FRemove.Hint := _('Remove from list');
+  FRemove.Hint := 'Remove from list';
   FRemove.ImageIndex := 21;
+
+  FSep3 := TToolButton.Create(Self);
+  FSep3.Parent := Self;
+  FSep3.Style := tbsSeparator;
+  FSep3.Width := 8;
+
+  FCut := TToolButton.Create(Self);
+  FCut.Parent := Self;
+  FCut.Hint := 'Cut';
+  FCut.ImageIndex := 17;
 
   FSep2 := TToolButton.Create(Self);
   FSep2.Parent := Self;
   FSep2.Style := tbsSeparator;
   FSep2.Width := 8;
 
-  FCut := TToolButton.Create(Self);
-  FCut.Parent := Self;
-  FCut.Hint := _('Cut');
-  FCut.ImageIndex := 17;
+  FStop := TToolButton.Create(Self);
+  FStop.Parent := Self;
+  FStop.Hint := 'Stop';
+  FStop.ImageIndex := 1;
+
+  FPause := TToolButton.Create(Self);
+  FPause.Parent := Self;
+  FPause.Hint := 'Pause';
+  FPause.ImageIndex := 39;
 
   FPlay := TToolButton.Create(Self);
   FPlay.Parent := Self;
-  FPlay.Hint := _('Play');
+  FPlay.Hint := 'Play';
   FPlay.ImageIndex := 33;
 
   FSep1 := TToolButton.Create(Self);
@@ -312,7 +387,7 @@ begin
 
   FRefresh := TToolButton.Create(Self);
   FRefresh.Parent := Self;
-  FRefresh.Hint := _('Refresh');
+  FRefresh.Hint := 'Refresh';
   FRefresh.ImageIndex := 23;
 end;
 
@@ -325,10 +400,31 @@ begin
   ShowCloseButton := False;
   ImageIndex := 14;
 
+  FPositionTimer := TTimer.Create(Self);
+  FPositionTimer.Interval := 210;
+  FPositionTimer.Enabled := True;
+  FPositionTimer.OnTimer := PositionTimer;
+
   FSavedTree := TSavedTree.Create(Self);
   FSavedTree.Parent := Self;
   FSavedTree.Align := alClient;
   FSavedTree.OnAction := SavedTreeAction;
+end;
+
+destructor TSavedTab.Destroy;
+begin
+
+  inherited;
+end;
+
+procedure TSavedTab.PositionTimer(Sender: TObject);
+var
+  O: TObject;
+begin
+  O := @FSeek.OnChange;
+  FSeek.OnChange := nil;
+  FSeek.Position := Tree.Player.PositionByte;
+  @FSeek.OnChange := O;
 end;
 
 procedure TSavedTab.BuildTree;
@@ -339,10 +435,7 @@ var
 begin
   for i := 0 to FStreams.TrackList.Count - 1 do
   begin
-    Node := FSavedTree.AddChild(nil);
-    NodeData := FSavedTree.GetNodeData(Node);
-    //NodeData.Stream := FStreams.StreamList[i];
-    NodeData.Track := FStreams.TrackList[i];
+    FSavedTree.AddTrack(FStreams.TrackList[i], False);
   end;
 
   FSavedTree.Sort(nil, FSavedTree.Header.SortColumn, FSavedTree.Header.SortDirection);
@@ -363,6 +456,7 @@ begin
         if Assigned(FOnRefresh) then
           FOnRefresh(Self);
       end;
+    {
     taPlay:
       begin
         // Tracks in Playlist konvertieren
@@ -375,6 +469,7 @@ begin
 
         SavePlaylist(Entries, True);
       end;
+    }
     taCut:
       begin
         if Assigned(FOnCut) then
@@ -406,7 +501,7 @@ begin
       end;
     taDelete:
       begin
-        if MsgBox(0, _('Do you really want to delete all selected files?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
+        if MsgBox(GetParentForm(Self).Handle, _('Do you really want to delete all selected files?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
           Exit;
         Error := False;
         for i := 0 to Length(Tracks) - 1 do
@@ -441,6 +536,10 @@ begin
 
   if Sender = FToolbar.FPlay then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemPlay);
+  if Sender = FToolbar.FPause then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemPause);
+  if Sender = FToolbar.FStop then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemStop);
   if Sender = FToolbar.FCut then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemCut);
   if Sender = FToolbar.FRemove then
@@ -455,6 +554,23 @@ begin
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemProperties);
 end;
 
+procedure TSavedTab.UpdateButtons;
+begin
+  FToolbar.FPause.Enabled := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
+  FToolbar.FStop.Enabled := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
+end;
+
+procedure TSavedTab.VolumeTrackbarChange(Sender: TObject);
+begin
+  AppGlobals.SavedPlayerVolume := FVolume.Volume;
+  FSavedTree.Player.Volume := FVolume.Volume;
+end;
+
+procedure TSavedTab.SearchTextChange(Sender: TObject);
+begin
+  FSavedTree.Filter(FSearchBar.FSearch.Text);
+end;
+
 procedure TSavedTab.Setup(Streams: TDataLists; Images: TImageList);
 begin
   Caption := 'Saved songs';
@@ -465,14 +581,50 @@ begin
   FSavedTree.StateImages := Images;
   FSavedTree.FPopupMenu.Images := Images;
 
+  FToolbarPanel := TPanel.Create(Self);
+  FToolbarPanel.Align := alTop;
+  FToolbarPanel.BevelOuter := bvNone;
+  FToolbarPanel.Parent := Self;
+  FToolbarPanel.ClientHeight := 24;
+
+  FSearchBar := TSearchBar.Create(Self);
+  FSearchBar.Parent := Self;
+  FSearchBar.Align := alTop;
+  FSearchBar.Setup;
+  FSearchBar.FSearch.OnChange := SearchTextChange;
+
   FToolBar := TSavedToolBar.Create(Self);
-  FToolBar.Parent := Self;
+  FToolBar.Align := alLeft;
+  FToolBar.AutoSize := True;
+  FToolBar.Parent := FToolbarPanel;
   FToolBar.Height := 24;
   FToolBar.Images := Images;
   FToolBar.Setup;
 
+  FSeek := TTrackBar.Create(Self);
+  FSeek.Parent := FToolbarPanel;
+  FSeek.Align := alRight;
+  FSeek.Left := FToolbar.Left + FToolbar.Width + 10;
+  FSeek.TickStyle := tsNone;
+  FSeek.Width := 150;
+
+  FVolume := TVolumePanel.Create(Self);
+  FVolume.Parent := FToolbarPanel;
+  FVolume.Width := 140;
+  FVolume.Align := alRight;
+  FVolume.Setup;
+  FVolume.OnVolumeChange := VolumeTrackbarChange;
+  FVolume.Volume := AppGlobals.SavedPlayerVolume;
+
+  FVolume.Left := 99999999999;
+
+  FToolbarPanel.Top := 0;
+  FSearchBar.Top := FToolBar.Height + 20;
+
   FToolBar.FRefresh.OnClick := ToolBarClick;
   FToolBar.FPlay.OnClick := ToolBarClick;
+  FToolBar.FPause.OnClick := ToolBarClick;
+  FToolBar.FStop.OnClick := ToolBarClick;
   FToolBar.FCut.OnClick := ToolBarClick;
   FToolBar.FRemove.OnClick := ToolBarClick;
   FToolBar.FRecycle.OnClick := ToolBarClick;
@@ -483,46 +635,14 @@ begin
   BuildTree;
 end;
 
-procedure TSavedTab.AddTrack(Entry: TStreamEntry; Track: TTrackInfo);
-var
-  Node: PVirtualNode;
-  NodeData: PSavedNodeData;
-begin
-  Node := FSavedTree.AddChild(nil);
-  NodeData := FSavedTree.GetNodeData(Node);
-  //NodeData.Stream := Entry;
-  NodeData.Track := Track;
-
-  FSavedTree.Change(nil);
-  //FToolbar.FRefresh.Enabled := FSavedTree.RootNodeCount > 0;
-end;
-
-procedure TSavedTab.RemoveTrack(Track: TTrackInfo);
-var
-  i: Integer;
-  Nodes: TNodeArray;
-  NodeData: PSavedNodeData;
-begin
-  Nodes := FSavedTree.GetNodes(False);
-  for i := 0 to Length(Nodes) - 1 do
-  begin
-    NodeData := FSavedTree.GetNodeData(Nodes[i]);
-    if NodeData.Track = Track then
-    begin
-      FSavedTree.DeleteNode(Nodes[i]);
-      Break;
-    end;
-  end;
-
-  FSavedTree.Change(nil);
-  //FToolbar.FRefresh.Enabled := FSavedTree.RootNodeCount > 0;
-end;
-
 { TSavedTree }
 
 constructor TSavedTree.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
+
+  FPlayer := TPlayer.Create;
+  FTrackList := TTrackList.Create;
 
   FTab := TSavedTab(AOwner);
 
@@ -533,9 +653,9 @@ begin
   TreeOptions.AutoOptions := [toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
-  Header.Options := Header.Options + [hoAutoResize];
+  Header.Options := Header.Options - [hoAutoResize];
   Header.Options := Header.Options - [hoDrag];
-  Header.AutoSizeIndex := 0;
+  Header.AutoSizeIndex := 1;
   DragMode := dmAutomatic;
   ShowHint := True;
   HintMode := hmTooltip;
@@ -545,33 +665,47 @@ begin
   FPopupMenu := TSavedTracksPopup.Create(Self);
   FPopupMenu.ItemRefresh.OnClick := PopupMenuClick;
   FPopupMenu.ItemPlay.OnClick := PopupMenuClick;
+  FPopupMenu.ItemPause.OnClick := PopupMenuClick;
+  FPopupMenu.ItemStop.OnClick := PopupMenuClick;
   FPopupMenu.ItemCut.OnClick := PopupMenuClick;
   FPopupMenu.ItemRemove.OnClick := PopupMenuClick;
   FPopupMenu.ItemRecycle.OnClick := PopupMenuClick;
   FPopupMenu.ItemDelete.OnClick := PopupMenuClick;
   FPopupMenu.ItemShowFile.OnClick := PopupMenuClick;
   FPopupMenu.ItemProperties.OnClick := PopupMenuClick;
+  FPopupMenu.OnPopup := PopupMenuPopUp;
 
   PopupMenu := FPopupMenu;
 
+  FColImages := Header.Columns.Add;
+  FColImages.Text := '';
+  FColImages.Width := 56;
+  FColImages.Options := FColImages.Options - [coResizable];
   FColFilename := Header.Columns.Add;
   FColFilename.Text := _('Filename');
   FColSize := Header.Columns.Add;
   FColSize.Text := _('Size');
   FColSize.Width := 70;
+  FColBitRate := Header.Columns.Add;
+  FColBitRate.Text := _('Bitrate');
+  FColBitRate.Width := 70;
   FColStream := Header.Columns.Add;
   FColStream.Text := _('Stream');
-  FColStream.Width := 300;
+  FColStream.Width := 250;
   FColSaved := Header.Columns.Add;
   FColSaved.Text := _('Time');
   FColSaved.Width := 130;
 
-  Header.SortColumn := 3;
+  Header.Options := Header.Options + [hoAutoResize];
+
+  Header.SortColumn := 1;
   Header.SortDirection := sdAscending;
 end;
 
 destructor TSavedTree.Destroy;
 begin
+  FPlayer.Free;
+  FTrackList.Free;
   FDragSource.Free;
 
   inherited;
@@ -635,6 +769,35 @@ begin
   end;
 end;
 
+procedure TSavedTree.PaintImage(var PaintInfo: TVTPaintInfo;
+  ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
+var
+  L: Integer;
+  NodeData: PSavedNodeData;
+begin
+  if PaintInfo.Column = 0 then
+  begin
+    NodeData := GetNodeData(PaintInfo.Node);
+    L := PaintInfo.ImageInfo[ImageInfoIndex].XPos;
+
+    if LowerCase(FPlayer.Filename) = LowerCase(NodeData.Track.Filename) then
+    begin
+      if FPlayer.Playing then
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 33)
+      else if FPlayer.Paused then
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 39)
+    end else
+      Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20);
+
+    if NodeData.Track.WasCut then
+    begin
+      Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 17);
+    end;
+    if NodeData.Track.IsAuto then
+      Images.Draw(PaintInfo.Canvas, L + 32, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 49);
+  end;
+end;
+
 procedure TSavedTree.PopupMenuClick(Sender: TObject);
 var
   Action: TTrackActions;
@@ -644,8 +807,24 @@ begin
 
   if Sender = FPopupMenu.ItemRefresh then
   begin
-    if Assigned(FOnAction) then
-      FOnAction(Self, taRefresh, Tracks);
+    // TODO: !!!???
+    //if Assigned(FOnAction) then
+    //  FOnAction(Self, taRefresh, Tracks);
+    Exit;
+  end;
+
+  if Sender = FPopupMenu.ItemPause then
+  begin
+    FPlayer.Pause;
+    FTab.UpdateButtons;
+    Invalidate;
+    Exit;
+  end
+  else if Sender = FPopupMenu.ItemStop then
+  begin
+    FPlayer.Stop;
+    FTab.UpdateButtons;
+    Invalidate;
     Exit;
   end;
 
@@ -653,8 +832,13 @@ begin
     Exit;
 
   if Sender = FPopupMenu.ItemPlay then
-    Action := taPlay
-  else if Sender = FPopupMenu.ItemCut then
+  begin
+    FPlayer.Play(Tracks[0].Filename);
+
+    // TODO: Das muss auch irgendwo zurückgesetzt/disabled werden!!!
+    FTab.FSeek.Max := Player.MaxByte;
+    FTab.FSeek.Position := Player.PositionByte;
+  end else if Sender = FPopupMenu.ItemCut then
     Action := taCut
   else if Sender = FPopupMenu.ItemRemove then
   begin
@@ -677,14 +861,73 @@ begin
       FOnAction(Self, Action, Tracks);
 end;
 
+procedure TSavedTree.PopupMenuPopup(Sender: TObject);
+begin
+  FPopupMenu.FItemPause.Enabled := FPlayer.Playing;
+  FPopupMenu.FItemStop.Enabled := FPlayer.Playing;
+end;
+
+procedure TSavedTree.AddTrack(Track: TTrackInfo; FromFilter: Boolean);
+var
+  Node: PVirtualNode;
+  NodeData: PSavedNodeData;
+begin
+  if not FromFilter then
+    FTrackList.Add(Track);
+
+  if not TrackMatchesPattern(Track) then
+    Exit;
+
+  Node := AddChild(nil);
+  NodeData := GetNodeData(Node);
+  NodeData.Track := Track;
+
+  Change(nil);
+end;
+
+procedure TSavedTree.RemoveTrack(Track: TTrackInfo);
+var
+  i: Integer;
+  Nodes: TNodeArray;
+  NodeData: PSavedNodeData;
+begin
+  FTrackList.Remove(Track);
+
+  Nodes := GetNodes(False);
+  for i := 0 to Length(Nodes) - 1 do
+  begin
+    NodeData := GetNodeData(Nodes[i]);
+    if NodeData.Track = Track then
+    begin
+      DeleteNode(Nodes[i]);
+      Break;
+    end;
+  end;
+
+  Change(nil);
+end;
+
+function TSavedTree.TrackMatchesPattern(Track: TTrackInfo): Boolean;
+var
+  Hash: Cardinal;
+  Chars: Integer;
+  P: string;
+begin
+  Result := True;
+  P := BuildPattern(FTab.FSearchBar.FSearch.Text, Hash, Chars);
+  if P = '' then
+    Exit;
+  if (not Like(LowerCase(Track.Filename), LowerCase(P))) and (not Like(LowerCase(Track.Streamname), LowerCase(P))) then
+    Result := False;
+end;
+
 procedure TSavedTree.Translate;
 begin
   FColFilename.Text := _('Filename');
   FColSize.Text := _('Size');
   FColStream.Text := _('Stream');
   FColSaved.Text := _('Time');
-
-  //TTabSheet(Parent).Caption := _('Saved songs');
+  FColBitRate.Text := _('Bitrate');
 end;
 
 procedure TSavedTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
@@ -694,16 +937,21 @@ var
 begin
   inherited;
 
+  Text := '';
+
   if TextType = ttNormal then
   begin
     NodeData := GetNodeData(Node);
     case Column of
-      0: Text := ExtractFileName(NodeData.Track.Filename);
-      1:
-        Text := MakeSize(NodeData.Track.Filesize);
+      1: Text := ExtractFileName(NodeData.Track.Filename);
       2:
-        Text := NodeData.Track.Streamname;
+        Text := MakeSize(NodeData.Track.Filesize);
       3:
+        if NodeData.Track.BitRate > 0 then
+          Text := IntToStr(NodeData.Track.BitRate);
+      4:
+        Text := NodeData.Track.Streamname;
+      5:
         begin
           if Trunc(NodeData.Track.Time) = Trunc(Now) then
             Text := TimeToStr(NodeData.Track.Time)
@@ -724,6 +972,10 @@ begin
 
   NodeData := GetNodeData(Node);
 
+  if (Column = 0) and ((Kind = ikNormal) or (Kind = ikSelected)) then
+    Index := 0;
+
+  {
   if Column = 0 then
     if Kind = ikState then
     begin
@@ -735,6 +987,7 @@ begin
       else
         Index := -1;
     end;
+  }
 end;
 
 procedure TSavedTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
@@ -745,7 +998,10 @@ begin
     if Header.SortColumn <> HitInfo.Column then
     begin
       Header.SortColumn := HitInfo.Column;
-      Header.SortDirection := sdAscending;
+      if (HitInfo.Column = 0) or (HitInfo.Column = 2) or (HitInfo.Column = 3) or (HitInfo.Column = 5) then
+        Header.SortDirection := sdDescending
+      else
+        Header.SortDirection := sdAscending;
     end else
     begin
       if Header.SortDirection = sdAscending then
@@ -786,14 +1042,56 @@ begin
   end;
 end;
 
+procedure TSavedTree.DoPaintNode(var PaintInfo: TVTPaintInfo);
+var
+  NodeData: PSavedNodeData;
+begin
+  NodeData := GetNodeData(PaintInfo.Node);
+
+  inherited;
+end;
+
+procedure TSavedTree.DoTextDrawing(var PaintInfo: TVTPaintInfo;
+  Text: string; CellRect: TRect; DrawFormat: Cardinal);
+var
+  NodeData: PSavedNodeData;
+begin
+  NodeData := GetNodeData(PaintInfo.Node);
+
+  if FPlayer.Playing or FPlayer.Paused then
+    if not Selected[PaintInfo.Node] then
+      if (FPlayer.Playing or FPlayer.Paused) and (LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename)) then
+      begin
+        PaintInfo.Canvas.Font.Color := HTML2Color('#0078ff');
+      end
+    else
+      if (FPlayer.Playing or FPlayer.Paused) and (LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename)) then
+      begin
+        PaintInfo.Canvas.Font.Color := PaintInfo.Canvas.Font.Color - 100;
+      end;
+
+  inherited;
+end;
+
+procedure TSavedTree.Filter(S: string);
+var
+  i: Integer;
+begin
+  BeginUpdate;
+  Clear;
+
+  for i := 0 to FTrackList.Count - 1 do
+    AddTrack(FTrackList[i], True);
+
+  EndUpdate;
+end;
+
 procedure TSavedTree.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;
   var Allowed: Boolean);
 begin
   inherited;
 
-  Allowed := False;
-  if Column = 0 then
-    Allowed := True;
+  Allowed := True;
 end;
 
 procedure TSavedTree.Change(Node: PVirtualNode);
@@ -803,8 +1101,8 @@ begin
   inherited;
 
   Tracks := GetSelected;
-  FPopupMenu.EnableItems(Length(Tracks) > 0);
-  FTab.FToolbar.EnableItems(Length(Tracks) > 0);
+  FPopupMenu.EnableItems(Length(Tracks) > 0, FPlayer.Playing);
+  FTab.FToolbar.EnableItems(Length(Tracks) > 0, FPlayer.Playing or FPlayer.Paused);
 
   FPopupMenu.ItemCut.Enabled := Bass.BassLoaded and (Length(Tracks) > 0);
   FTab.FToolbar.FCut.Enabled := Bass.BassLoaded and (Length(Tracks) > 0);
@@ -816,6 +1114,10 @@ begin
   FTab.FToolbar.FShowFile.Enabled := Length(Tracks) = 1;
   FPopupMenu.ItemProperties.Enabled := Length(Tracks) = 1;
   FTab.FToolbar.FProperties.Enabled := Length(Tracks) = 1;
+
+  Invalidate;
+
+  FTab.UpdateButtons;
 end;
 
 function TSavedTree.DoCompare(Node1, Node2: PVirtualNode;
@@ -830,6 +1132,7 @@ function TSavedTree.DoCompare(Node1, Node2: PVirtualNode;
       Result := 0;
   end;
 var
+  I1, I2: Integer;
   Data1, Data2: PSavedNodeData;
 begin
   Result := 0;
@@ -837,10 +1140,28 @@ begin
   Data2 := GetNodeData(Node2);
 
   case Column of
-    0: Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
-    1: Result := CmpInt(Data1.Track.Filesize, Data2.Track.Filesize);
-    2: Result := CompareText(Data1.Track.Streamname, Data2.Track.Streamname);
-    3: Result := CmpTime(Data1.Track.Time, Data2.Track.Time);
+    0:
+      begin
+        I1 := 0;
+        I2 := 0;
+
+        if Data1.Track.WasCut then
+          I1 := I1 + 2;
+        if Data2.Track.WasCut then
+          I2 := I2 + 2;
+
+        if Data1.Track.IsAuto then
+          I1 := I1 + 1;
+        if Data2.Track.IsAuto then
+          I2 := I2 + 1;
+
+        Result := CmpInt(I1, I2);
+      end;
+    1: Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
+    2: Result := CmpInt(Data1.Track.Filesize, Data2.Track.Filesize);
+    3: Result := CmpInt(Data1.Track.BitRate, Data2.Track.BitRate);
+    4: Result := CompareText(Data1.Track.Streamname, Data2.Track.Streamname);
+    5: Result := CmpTime(Data1.Track.Time, Data2.Track.Time);
   end;
 end;
 
@@ -853,8 +1174,11 @@ begin
   if HitInfo.HitNode <> nil then
   begin
     Tracks := GetSelected;
-    //if (Length(Tracks) > 0) and Assigned(FOnAction) then
-    //  FOnAction(Self, taPlay, Tracks);
+    if Length(Tracks) = 1 then
+      if FPlayer.Playing and (LowerCase(FPlayer.Filename) = LowerCase(Tracks[0].Filename)) then
+        FPlayer.Stop
+      else
+        FPopupMenu.FItemPlay.Click;
   end;
 end;
 
@@ -876,6 +1200,51 @@ begin
 
   DoStateChange([], [tsOLEDragPending, tsOLEDragging, tsClearPending]);
   FDragSource.Execute(True);
+end;
+
+procedure TSavedTree.DoEdit;
+begin
+  EditColumn := 1;
+
+  inherited;
+end;
+
+{ TSearchBar }
+
+constructor TSearchBar.Create(AOwner: TComponent);
+begin
+  inherited;
+
+end;
+
+destructor TSearchBar.Destroy;
+begin
+
+  inherited;
+end;
+
+procedure TSearchBar.FSearchChange(Sender: TObject);
+begin
+
+end;
+
+procedure TSearchBar.Setup;
+begin
+  FLabel := TLabel.Create(Self);
+  FLabel.Parent := Self;
+  FLabel.Left := 4;
+  FLabel.Top := 6;
+  FLabel.Caption := _('Search:');
+
+  FSearch := TEdit.Create(Self);
+  FSearch.Parent := Self;
+  FSearch.Left := FLabel.Left + FLabel.Width + 8;
+
+  FSearch.Top := 2;
+  FSearch.Width := 200;
+  Height := FSearch.Top + FSearch.Height + FSearch.Top + 3;
+
+  BevelOuter := bvNone;
 end;
 
 end.

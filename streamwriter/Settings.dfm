@@ -332,15 +332,6 @@ object frmSettings: TfrmSettings
     DesignSize = (
       294
       273)
-    object btnHelp: TSpeedButton
-      Left = 265
-      Top = 72
-      Width = 24
-      Height = 25
-      Anchors = [akRight, akBottom]
-      Layout = blGlyphRight
-      OnClick = btnHelpClick
-    end
     object lblAppParams: TLabel
       Left = 4
       Top = 252
@@ -365,16 +356,20 @@ object frmSettings: TfrmSettings
       ShowHint = True
       OnClick = btnBrowseAppClick
     end
-    object btnMoveUp: TSpeedButton
+    object btnHelp: TPngSpeedButton
       Left = 265
-      Top = 0
+      Top = 72
       Width = 24
       Height = 25
-      Anchors = [akTop, akRight]
+      Hint = 'Info...'
+      Anchors = [akRight, akBottom]
       Layout = blGlyphRight
-      OnClick = btnMoveClick
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = btnHelpClick
+      PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     end
-    object btnMoveDown: TSpeedButton
+    object btnMoveDown: TPngSpeedButton
       Left = 265
       Top = 28
       Width = 24
@@ -382,6 +377,17 @@ object frmSettings: TfrmSettings
       Anchors = [akTop, akRight]
       Layout = blGlyphRight
       OnClick = btnMoveClick
+      PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
+    end
+    object btnMoveUp: TPngSpeedButton
+      Left = 265
+      Top = 0
+      Width = 24
+      Height = 25
+      Anchors = [akTop, akRight]
+      Layout = blGlyphRight
+      OnClick = btnMoveClick
+      PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     end
     object lstPlugins: TListView
       Left = 4
@@ -687,7 +693,7 @@ object frmSettings: TfrmSettings
       273)
     object Label2: TLabel
       Left = 20
-      Top = 48
+      Top = 140
       Width = 253
       Height = 29
       AutoSize = False
@@ -698,7 +704,7 @@ object frmSettings: TfrmSettings
     end
     object Label8: TLabel
       Left = 20
-      Top = 104
+      Top = 196
       Width = 253
       Height = 69
       AutoSize = False
@@ -708,6 +714,20 @@ object frmSettings: TfrmSettings
         'ecording of songs on the wishlist.'
       WordWrap = True
     end
+    object Label16: TLabel
+      Left = 20
+      Top = 24
+      Width = 76
+      Height = 13
+      Caption = 'Minimum bitrate:'
+    end
+    object Label17: TLabel
+      Left = 20
+      Top = 68
+      Width = 35
+      Height = 13
+      Caption = 'Format:'
+    end
     object chkAutoTuneIn: TCheckBox
       Left = 4
       Top = 0
@@ -716,10 +736,11 @@ object frmSettings: TfrmSettings
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Tune into stations when a wishlist'#39's song is playing'
       TabOrder = 0
+      OnClick = chkAutoTuneInClick
     end
     object chkSubmitStreamInfo: TCheckBox
       Left = 4
-      Top = 24
+      Top = 116
       Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -728,12 +749,43 @@ object frmSettings: TfrmSettings
     end
     object chkSubmitStats: TCheckBox
       Left = 4
-      Top = 80
+      Top = 172
       Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Submit statistics/track changes to the server'
       TabOrder = 2
+    end
+    object lstMinBitrate: TComboBox
+      Left = 20
+      Top = 40
+      Width = 129
+      Height = 21
+      Style = csDropDownList
+      TabOrder = 3
+      Items.Strings = (
+        '32'
+        '64'
+        '96'
+        '128'
+        '160'
+        '192'
+        '224'
+        '256'
+        '320'
+        '384')
+    end
+    object lstFormat: TComboBox
+      Left = 20
+      Top = 84
+      Width = 129
+      Height = 21
+      Style = csDropDownList
+      TabOrder = 4
+      Items.Strings = (
+        'MP3/AAC'
+        'MP3'
+        'AAC')
     end
   end
   object dlgOpen: TOpenDialog
@@ -745,7 +797,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800380110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800440110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

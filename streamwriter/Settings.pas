@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2011 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -26,7 +26,7 @@ uses
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
   Plugins, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus,
-  MsgDlg, PngImageList;
+  MsgDlg, PngImageList, PngSpeedButton, pngimage;
 
 type
   TfrmSettings = class(TfrmSettingsBase)
@@ -68,15 +68,12 @@ type
     lblDefaultFilter: TLabel;
     lstDefaultFilter: TComboBox;
     dlgOpen: TOpenDialog;
-    btnHelp: TSpeedButton;
     btnAddUp: TButton;
     btnRemove: TButton;
     txtApp: TLabeledEdit;
     txtAppParams: TLabeledEdit;
     lblAppParams: TLabel;
     btnBrowseApp: TSpeedButton;
-    btnMoveUp: TSpeedButton;
-    btnMoveDown: TSpeedButton;
     ImageList1: TImageList;
     pnlHotkeys: TPanel;
     lstHotkeys: TListView;
@@ -102,6 +99,13 @@ type
     Label8: TLabel;
     lstSoundDevice: TComboBox;
     Label11: TLabel;
+    Label16: TLabel;
+    lstMinBitrate: TComboBox;
+    Label17: TLabel;
+    lstFormat: TComboBox;
+    btnHelp: TPngSpeedButton;
+    btnMoveDown: TPngSpeedButton;
+    btnMoveUp: TPngSpeedButton;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -139,6 +143,7 @@ type
     procedure chkOverwriteSmallerClick(Sender: TObject);
     procedure txtSilenceBufferSecondsChange(Sender: TObject);
     procedure lstPluginsResize(Sender: TObject);
+    procedure chkAutoTuneInClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -442,6 +447,7 @@ var
   i: Integer;
   Item: TListItem;
   B: TBitmap;
+  P: TPngImage;
   Settings: TStreamSettings;
 begin
   FUseTree := True;
@@ -508,6 +514,8 @@ begin
     chkTrayClick(nil);
 
     chkAutoTuneIn.Checked := AppGlobals.AutoTuneIn;
+    lstMinBitrate.ItemIndex := AppGlobals.AutoTuneInMinKbps;
+    lstFormat.ItemIndex := AppGlobals.AutoTuneInFormat;
     chkSubmitStreamInfo.Checked := AppGlobals.SubmitStreamInfo;
     chkSubmitStats.Checked := AppGlobals.SubmitStats;
 
@@ -550,18 +558,20 @@ begin
       txtDir.Text := '';
 
     B := TBitmap.Create;
+    P := TPngImage.Create;
     try
-      GetBitmap('ARROWUP', 2, B);
-      btnMoveUp.Glyph := B;
-      GetBitmap('ARROWDOWN', 2, B);
-      btnMoveDown.Glyph := B;
-      GetBitmap('QUESTION', 2, B);
-      btnHelp.Glyph := B;
+      P.LoadFromResourceName(HInstance, 'ARROWUP');
+      btnMoveUp.PngImage := P;
+      P.LoadFromResourceName(HInstance, 'ARROWDOWN');
+      btnMoveDown.PngImage := P;
+      P.LoadFromResourceName(HInstance, 'QUESTION');
+      btnHelp.PngImage := P;
       GetBitmap('BROWSE', 2, B);
       btnBrowse.Glyph := B;
       btnBrowseApp.Glyph := B;
     finally
       B.Free;
+      P.Free;
     end;
 
     BuildHotkeys;
@@ -765,6 +775,8 @@ begin
     AppGlobals.TrayOnMinimize := optMinimize.Checked;
 
     AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
+    AppGlobals.AutoTuneInMinKbps := lstMinBitrate.ItemIndex;
+    AppGlobals.AutoTuneInFormat := lstFormat.ItemIndex;
     AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
     AppGlobals.SubmitStats := chkSubmitStats.Checked;
 
@@ -950,7 +962,7 @@ procedure TfrmSettings.lstPluginsSelectItem(Sender: TObject;
   Item: TListItem; Selected: Boolean);
 begin
   cmdConfigure.Enabled := False;
-  //btnHelp.Enabled := (Item <> nil) and Selected and (TPluginBase(Item.Data) is TDLLPlugin) and (TDLLPlugin(Item.Data).Help <> '');
+
   btnHelp.Enabled := (Item <> nil) and Selected and (TPluginBase(Item.Data).Help <> '');
   btnRemove.Enabled := (Item <> nil) and Selected and (TPluginBase(Item.Data) is TExternalPlugin);
 
@@ -958,6 +970,7 @@ begin
   btnMoveDown.Enabled := (Item <> nil) and Selected and (Item.Index < lstPlugins.Items.Count - 1);
 
   chkOnlyIfCut.Checked := (Item <> nil) and Selected and TPluginBase(Item.Data).OnlyIfCut;
+  chkOnlyIfCut.Enabled := (Item <> nil) and Selected;
 
   if Selected and (TPluginBase(Item.Data) is TExternalPlugin) then
   begin
@@ -1439,6 +1452,14 @@ begin
 
   if FInitialized then
     RemoveGray(chkAddSavedToIgnore);
+end;
+
+procedure TfrmSettings.chkAutoTuneInClick(Sender: TObject);
+begin
+  inherited;
+
+  lstMinBitrate.Enabled := chkAutoTuneIn.Enabled;
+  lstFormat.Enabled := chkAutoTuneIn.Enabled;
 end;
 
 procedure TfrmSettings.chkOverwriteSmallerClick(Sender: TObject);

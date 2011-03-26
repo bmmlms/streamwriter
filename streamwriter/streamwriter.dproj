@@ -141,6 +141,7 @@
 			<DCCReference Include="..\..\common\sockets\Sockets.pas"/>
 			<DCCReference Include="..\..\common\sockets\Int32Protocol.pas"/>
 			<DCCReference Include="HomeCommunication.pas"/>
+			<DCCReference Include="audio\Player.pas"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

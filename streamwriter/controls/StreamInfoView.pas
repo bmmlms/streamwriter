@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2011 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -164,15 +164,24 @@ begin
       FName.Caption := Title;
 
     Info := '';
+    if Entries.Count = 1 then
+      if Entries[0].StreamURL <> '' then
+        Info := Info + Entries[0].StreamURL + #13#10;
     if Genres <> '' then
       Info := Info + Genres + #13#10;
+    if Entries.Count = 1 then
+    begin
+      if Entries[0].AudioType <> '' then
+        Info := Info + Entries[0].AudioType + #13#10;
+    end;
     if BitRates <> '' then
       Info := Info + Bitrates + 'kbps' + #13#10;
     Info := Info + Format(_('%d songs saved'), [SongsSaved]) + #13#10;
     Info := Info + Format(_('%s received'), [MakeSize(Received)]);
     if Entries.Count = 1 then
     begin
-      Info := Info + #13#10#13#10 + Format('URL: %s', [Entries[0].StartURL]) + #13#10;
+      Info := Info + #13#10#13#10;
+      Info := Info + Format('URL: %s', [Entries[0].StartURL]) + #13#10;
       if Entries[0].URLs.Count > 0 then
       begin
         Info := Info + 'URLs:' + #13#10;

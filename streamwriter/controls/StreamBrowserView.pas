@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2011 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -52,6 +52,8 @@ type
     Downloads: Integer;
     Rating: Integer;
     HasData: Boolean;
+    MetaData: Boolean;
+    ChangesTitleInSong: Boolean;
   end;
   PStreamNodeData = ^TStreamNodeData;
 
@@ -186,6 +188,9 @@ type
 
     FTimerScroll: TTimer;
 
+    FImageMetaData: TPngImage;
+    FImageChangesTitle: TPngImage;
+
     FPopupMenu: TPopupMenu;
     FItemStart: TMenuItem;
     FItemPlay: TMenuItem;
@@ -216,7 +221,7 @@ type
 
     procedure FitColumns;
     function AddStream(Node: PVirtualNode; ID: Integer; Name, Genre, URL, Website, StreamType: string;
-      BitRate, Downloads: Integer; Rating: Integer; HasData: Boolean): PVirtualNode;
+      BitRate, Downloads: Integer; Rating: Integer; MetaData, ChangesTitleInSong, HasData: Boolean): PVirtualNode;
     procedure GetLoadDataNodes(var FirstVisibleNoData, LastVisibleNoData: PVirtualNode);
     function GetSelected: TStreamDataArray;
   protected
@@ -227,6 +232,8 @@ type
     procedure DoFreeNode(Node: PVirtualNode); override;
     procedure DoDragging(P: TPoint); override;
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; Text: UnicodeString; CellRect: TRect; DrawFormat: Cardinal); override;
+    procedure DoPaintNode(var PaintInfo: TVTPaintInfo); override;
+
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     procedure DoScroll(DeltaX, DeltaY: Integer); override;
     procedure HandleMouseDblClick(var Message: TWMMouse; const HitInfo: THitInfo); override;
@@ -265,7 +272,7 @@ implementation
 { TMStreamView }
 
 function TMStreamTree.AddStream(Node: PVirtualNode; ID: Integer; Name, Genre, URL, Website, StreamType: string;
-  BitRate, Downloads: Integer; Rating: Integer; HasData: Boolean): PVirtualNode;
+  BitRate, Downloads: Integer; Rating: Integer; MetaData, ChangesTitleInSong, HasData: Boolean): PVirtualNode;
 var
   NodeData: PStreamNodeData;
 begin
@@ -282,6 +289,8 @@ begin
   NodeData.Website := Website;
   NodeData.StreamType := StreamType;
   NodeData.Rating := Rating;
+  NodeData.MetaData := MetaData;
+  NodeData.ChangesTitleInSong := ChangesTitleInSong;
   Result := Node;
 end;
 
@@ -297,6 +306,7 @@ begin
   NodeDataSize := SizeOf(TStreamNodeData);
   IncrementalSearch := isVisibleOnly;
 
+  FDisplayCount := 50;
   FScrollDirection := sdDown;
   FLastScrollY := 0;
 
@@ -316,6 +326,21 @@ begin
   FUnloadedVisible := False;
   FIsLoading := False;
   FLoadOffset := 0;
+
+  Res := TResourceStream.Create(HInstance, 'BROWSER_METADATA', MakeIntResource(RT_RCDATA));
+  try
+    FImageMetaData := TPngImage.Create;
+    FImageMetaData.LoadFromStream(Res);
+  finally
+    Res.Free;
+  end;
+  Res := TResourceStream.Create(HInstance, 'BROWSER_CHANGESTITLE', MakeIntResource(RT_RCDATA));
+  try
+    FImageChangesTitle := TPngImage.Create;
+    FImageChangesTitle.LoadFromStream(Res);
+  finally
+    Res.Free;
+  end;
 
   FColName := Header.Columns.Add;
   FColName.Text := _('Rating');
@@ -419,6 +444,9 @@ begin
   FDragSource.Free;
   FTimer.Free;
 
+  FImageMetaData.Free;
+  FImageChangesTitle.Free;
+
   inherited;
 end;
 
@@ -443,13 +471,15 @@ var
 begin
   Result := inherited;
   NodeData := PStreamNodeData(GetNodeData(Node));
-  if ((Kind = ikNormal) or (Kind = ikSelected)) and (Column = 0) then
-  begin
-    if NodeData.Rating > 0 then
-      Index := 39 + NodeData.Rating
-    else
-      Index := 16;
-  end;
+
+  if NodeData.HasData then
+    if ((Kind = ikNormal) or (Kind = ikSelected)) and (Column = 0) then
+    begin
+      if NodeData.Rating > 0 then
+        Index := 39 + NodeData.Rating
+      else
+        Index := 16;
+    end;
 end;
 
 procedure TMStreamTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
@@ -470,6 +500,29 @@ begin
   end;
 end;
 
+procedure TMStreamTree.DoPaintNode(var PaintInfo: TVTPaintInfo);
+var
+  L: Integer;
+  R: TRect;
+  NodeData: PStreamNodeData;
+begin
+  inherited;
+
+  NodeData := GetNodeData(PaintInfo.Node);
+
+  if NodeData.HasData then
+  begin
+    L := 4;
+    if NodeData.MetaData then
+    begin
+      PaintInfo.Canvas.Draw(L, 21, FImageMetaData);
+      L := L + 9;
+    end;
+    if NodeData.ChangesTitleInSong then
+      PaintInfo.Canvas.Draw(L, 21, FImageChangesTitle);
+  end;
+end;
+
 procedure TMStreamTree.DoScroll(DeltaX, DeltaY: Integer);
 begin
   inherited;
@@ -480,7 +533,6 @@ begin
     FScrollDirection := sdUp;
 
   FLastScrollTick := GetTickCount;
-  Exit;
 end;
 
 procedure TMStreamTree.FitColumns;
@@ -889,9 +941,10 @@ begin
     try
       for i := 0 to Length(Streams) - 1 do
         AddStream(nil, Streams[i].ID, Streams[i].Name, Streams[i].Genre, Streams[i].URL, Streams[i].Website,
-          Streams[i].StreamType, Streams[i].BitRate, Streams[i].Downloads, Streams[i].Rating, True);
+          Streams[i].StreamType, Streams[i].BitRate, Streams[i].Downloads, Streams[i].Rating, Streams[i].MetaData,
+          Streams[i].ChangesTitleInSong, True);
       for i := RootNodeCount to Count - 1 do
-        AddStream(nil, 0, '', '', '', '', '', 0, 0, 0, False);
+        AddStream(nil, 0, '', '', '', '', '', 0, 0, 0, False, False, False);
     finally
       EndUpdate;
     end;
@@ -907,7 +960,8 @@ begin
         if (i >= FLoadOffset) and (High(Streams) >= n) then
         begin
           AddStream(Node, 0, Streams[n].Name, Streams[n].Genre, Streams[n].URL, Streams[n].Website,
-            Streams[n].StreamType, Streams[n].BitRate, Streams[n].Downloads, Streams[n].Rating, True);
+            Streams[n].StreamType, Streams[n].BitRate, Streams[n].Downloads, Streams[n].Rating,
+            Streams[n].MetaData, Streams[n].ChangesTitleInSong, True);
           InvalidateNode(Node);
           Inc(n);
         end;

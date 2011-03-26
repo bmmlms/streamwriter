@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2011 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -476,8 +476,6 @@ procedure TClientTab.ActionTuneInFileExecute(Sender: TObject);
 var
   Entries: TPlaylistEntryArray;
 begin
-  //if Assigned(FOnUpdateButtons) then
-  //  FOnUpdateButtons(Self);
   if FActionTuneInFile.Enabled then
   begin
     Entries := FClientView.GetEntries(etFile);
@@ -590,8 +588,6 @@ begin
   FVolume.Setup;
   FVolume.Volume := AppGlobals.PlayerVolume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
-//  FVolume.TrackBar.Position := AppGlobals.PlayerVolume;
-//  FVolume.TrackBar.OnChange := VolumeTrackbarChange;
 
   FActionPlay := GetAction('actPlay');
   FActionPause := GetAction('actPause');
@@ -854,6 +850,8 @@ begin
   Track := TTrackInfo.Create(Now, Filename, Client.Entry.Name);
   Track.Filesize := Filesize;
   Track.WasCut := WasCut;
+  Track.BitRate := Client.Entry.Bitrate;
+  Track.IsAuto := Client.AutoRemove;
   FStreams.TrackList.Add(Track);
 
   if Assigned(FOnTrackAdded) then
@@ -1117,12 +1115,11 @@ var
   Clients: TClientArray;
   Client: TICEClient;
 begin
-  AppGlobals.PlayerVolume := FVolume.Volume; // FVolume.Trackbar.Position;
+  AppGlobals.PlayerVolume := FVolume.Volume;
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
   for Client in Clients do
   begin
     Client.SetVolume(FVolume.Volume);
-//    Client.SetVolume(FVolume.Trackbar.Position);
   end;
 end;
 
