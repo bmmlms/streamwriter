@@ -916,30 +916,19 @@ var
   NumChars: Integer;
   Hash: Cardinal;
   Pattern: string;
-  Data, Data2: string;
+  Data: string;
 begin
-  Result := nil;
-
-  // REMARK: Dieser Check kann irgendwann raus.. Ist Fix für fehlerhafte 1.3.0.0 Daten
-  Stream.Read(Data);
-  Data2 := StringReplace(Data, '*', '', [rfReplaceAll]);
-  Data2 := StringReplace(Data2, '?', '', [rfReplaceAll]);
-  Data2 := StringReplace(Data2, ' ', '', [rfReplaceAll]);
-  Data2 := Trim(Data2);
-  if Length(Data2) > 3 then
+  Result := TTitleInfo.Create;
+  Stream.Read(Result.FTitle);
+  if Version > 3 then
   begin
-    Result := TTitleInfo.Create;
-    Result.FTitle := Data;
-    if Version > 3 then
-    begin
-      Stream.Read(Result.FPattern);
-      Stream.Read(Result.FHash);
-    end else
-    begin
-      Pattern := BuildPattern(Result.FTitle, Hash, NumChars);
-      Result.FPattern := Pattern;
-      Result.FHash := Hash;
-    end;
+    Stream.Read(Result.FPattern);
+    Stream.Read(Result.FHash);
+  end else
+  begin
+    Pattern := BuildPattern(Result.FTitle, Hash, NumChars);
+    Result.FPattern := Pattern;
+    Result.FHash := Hash;
   end;
 end;
 

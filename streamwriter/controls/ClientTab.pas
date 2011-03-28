@@ -840,19 +840,33 @@ var
   Client: TICEClient;
   Track: TTrackInfo;
   i, NumChars: Integer;
-  Pattern: string;
+  Pattern, LowerFilename: string;
   Hash: Cardinal;
 
  Found: Boolean;
 begin
   Client := Sender as TICEClient;
 
-  Track := TTrackInfo.Create(Now, Filename, Client.Entry.Name);
+  Track := nil;
+  LowerFilename := LowerCase(Filename);
+  for i := 0 to FStreams.TrackList.Count - 1 do
+    if LowerCase(FStreams.TrackList[i].Filename) = LowerFilename then
+    begin
+      Track := FStreams.TrackList[i];
+      Break;
+    end;
+
+  if Track = nil then
+  begin
+    Track := TTrackInfo.Create(Now, Filename, Client.Entry.Name);
+    FStreams.TrackList.Add(Track);
+  end;
+
+  Track.Streamname := Client.Entry.Name;
   Track.Filesize := Filesize;
   Track.WasCut := WasCut;
   Track.BitRate := Client.Entry.Bitrate;
   Track.IsAuto := Client.AutoRemove;
-  FStreams.TrackList.Add(Track);
 
   if Assigned(FOnTrackAdded) then
     FOnTrackAdded(Client.Entry, Track);
