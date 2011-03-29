@@ -108,35 +108,6 @@ type
     procedure Setup;
   end;
 
-  TSeekBar = class(TGraphicControl)
-  private
-    FMax: Int64;
-    FPosition: Int64;
-    FKnubbel: Cardinal;
-    FDragFrom: Cardinal;
-    FKnubbelVisible: Boolean;
-
-    FSetting: Boolean;
-    FLastChanged: Cardinal;
-    FOnPositionChanged: TNotifyEvent;
-
-    procedure FSetPosition(Value: Int64);
-    procedure FSetKnubbelVisible(Value: Boolean);
-  protected
-    procedure Paint; override;
-    procedure MouseMove(Shift: TShiftState; X: Integer; Y: Integer);
-      override;
-    procedure MouseDown(Button: TMouseButton; Shift: TShiftState;
-      X: Integer; Y: Integer); override;
-    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X: Integer;
-      Y: Integer); override;
-  public
-    property Max: Int64 read FMax write FMax;
-    property Position: Int64 read FPosition write FSetPosition;
-    property KnubbelVisible: Boolean read FKnubbelVisible write FSetKnubbelVisible;
-    property OnPositionChanged: TNotifyEvent read FOnPositionChanged write FOnPositionChanged;
-  end;
-
   TSavedTab = class(TMainTabSheet)
   private
     FPositionTimer: TTimer;
@@ -220,6 +191,7 @@ type
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; Text: string;
       CellRect: TRect; DrawFormat: Cardinal); override;
     procedure DoPaintNode(var PaintInfo: TVTPaintInfo); override;
+    procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -585,7 +557,7 @@ procedure TSavedTab.UpdateButtons;
 begin
   FToolbar.FPause.Enabled := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
   FToolbar.FStop.Enabled := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
-  FSeek.KnubbelVisible := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
+  FSeek.GripperVisible := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
   FSavedTree.Invalidate;
 end;
 
@@ -652,6 +624,7 @@ begin
   FVolume.Setup;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.Volume := AppGlobals.SavedPlayerVolume;
+  FVolume.Padding.Left := 10;
 
   FVolume.Left := 99999999999;
 
@@ -850,25 +823,18 @@ begin
   Tracks := GetSelected;
 
   if Sender = FPopupMenu.ItemRefresh then
-  begin
-    // TODO: !!!???
-    //if Assigned(FOnAction) then
-    //  FOnAction(Self, taRefresh, Tracks);
     Exit;
-  end;
 
   if Sender = FPopupMenu.ItemPause then
   begin
     FPlayer.Pause;
     FTab.UpdateButtons;
-    Invalidate;
     Exit;
   end
   else if Sender = FPopupMenu.ItemStop then
   begin
-    FPlayer.Stop;
+    FPlayer.Stop(True);
     FTab.UpdateButtons;
-    Invalidate;
     Exit;
   end;
 
@@ -879,7 +845,6 @@ begin
   begin
     FPlayer.Play(Tracks[0].Filename, FTab.FSeek.Position);
 
-    // TODO: Das muss auch irgendwo zurückgesetzt/disabled werden!!!
     FTab.FSeek.Max := Player.MaxByte;
     FTab.FSeek.Position := Player.PositionByte;
   end else if Sender = FPopupMenu.ItemCut then
@@ -1220,10 +1185,17 @@ begin
   begin
     Tracks := GetSelected;
     if Length(Tracks) = 1 then
-      if FPlayer.Playing and (LowerCase(FPlayer.Filename) = LowerCase(Tracks[0].Filename)) then
-        FPlayer.Stop
-      else
-        FPopupMenu.FItemPlay.Click;
+      FPopupMenu.FItemPlay.Click;
+  end;
+end;
+
+procedure TSavedTree.KeyDown(var Key: Word; Shift: TShiftState);
+begin
+  inherited;
+
+  if Key = VK_DELETE then
+  begin
+    FPopupMenu.FItemDelete.Click;
   end;
 end;
 
@@ -1290,146 +1262,6 @@ begin
   Height := FSearch.Top + FSearch.Height + FSearch.Top + 3;
 
   BevelOuter := bvNone;
-end;
-
-{ TSeekBar }
-
-procedure TSeekBar.Paint;
-var
-  P: Cardinal;
-  R: TRect;
-  D: TThemedElementDetails;
-begin
-  inherited;
-
-  PerformEraseBackground(Self, Canvas.Handle);
-
-  R.Top := ClientHeight div 2 - 4;
-  R.Left := 0;
-  R.Bottom := ClientHeight div 2 + 4;
-  R.Right := ClientWidth;
-  DrawEdge(Canvas.Handle, R, EDGE_SUNKEN, BF_RECT);
-
-  {
-  Canvas.Brush.Color := clBlack;
-  Canvas.Pen.Color := clBlack;
-  // Rand links und oben
-  Canvas.MoveTo(0, ClientHeight div 2 + 4);
-  Canvas.LineTo(0, ClientHeight div 2 - 4);
-  Canvas.LineTo(ClientWidth - Canvas.Pen.Width, ClientHeight div 2 - 4);
-  // Rand rechts und unten
-  Canvas.Pen.Color := clGray;
-  Canvas.LineTo(ClientWidth - Canvas.Pen.Width, ClientHeight div 2 + 4);
-  Canvas.LineTo(0, ClientHeight div 2 + 4);
-
-  R.Left := Canvas.Pen.Width;
-  R.Top := ClientHeight div 2 - 4 + Canvas.Pen.Width;
-  R.Bottom := ClientHeight div 2 + 4;
-  R.Right := ClientWidth - Canvas.Pen.Width;
-  Canvas.Brush.Color := clGray - RGB(0, 80, 30);
-  Canvas.FillRect(R);
-  }
-
-  //Canvas.Brush.Style := bsClear;
-  //Canvas.Rectangle(0, ClientHeight div 2 - 4, ClientWidth, ClientHeight div 2 + 4);
-
-  if not FKnubbelVisible then
-    Exit;
-
-  if FMax > 0 then
-  begin
-    P := Trunc((FPosition / FMax) * (ClientWidth - 20));
-    FKnubbel := P;
-
-    if ThemeServices.ThemesEnabled then
-    begin
-      R.Top := 0;
-      R.Left := P;
-      R.Bottom := ClientHeight;
-      R.Right := 20 + R.Left;
-      D := ThemeServices.GetElementDetails(tsThumbBtnHorzNormal);
-      ThemeServices.DrawElement(Canvas.Handle, D, R);
-    end else
-    begin
-      // TODO: !!!
-      Canvas.Rectangle(P, 0, P + 20, ClientHeight);
-    end;
-  end;
-end;
-
-procedure TSeekBar.FSetKnubbelVisible(Value: Boolean);
-begin
-  FKnubbelVisible := Value;
-  Paint;
-end;
-
-procedure TSeekBar.FSetPosition(Value: Int64);
-begin
-  if FSetting then
-    Exit;
-
-  FPosition := Value;
-  Paint;
-end;
-
-procedure TSeekBar.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
-  Y: Integer);
-begin
-  inherited;
-
-  if not FKnubbelVisible then
-    Exit;
-
-  if Button = mbLeft then
-  begin
-    if (X > FKnubbel) and (X < FKnubbel + 20) then
-      FDragFrom := X - FKnubbel
-    else
-    begin
-      FDragFrom := 10;
-
-      FPosition := Trunc(((X - FDragFrom) / (ClientWidth - 20)) * Max);
-      if FPosition < 0 then
-        FPosition := 0;
-      if FPosition > FMax then
-        FPosition := FMax;
-
-      Paint;
-    end;
-
-    FSetting := True;
-  end;
-end;
-
-procedure TSeekBar.MouseMove(Shift: TShiftState; X, Y: Integer);
-var
-  XO: Integer;
-begin
-  inherited;
-
-  if ssLeft in Shift then
-  begin
-    FPosition := Trunc(((X - FDragFrom) / (ClientWidth - 20)) * Max);
-    if FPosition < 0 then
-      FPosition := 0;
-    if FPosition > FMax then
-      FPosition := FMax;
-
-    Paint;
-
-    FSetting := True;
-  end;
-end;
-
-procedure TSeekBar.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
-  Y: Integer);
-begin
-  inherited;
-
-  if Assigned(FOnPositionChanged) then
-    FOnPositionChanged(Self);
-
-  FSetting := False;
 end;
 
 end.

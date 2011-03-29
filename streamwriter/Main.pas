@@ -288,7 +288,7 @@ begin
 
   Hide;
 
-  tabSaved.Tree.Player.Stop;
+  tabSaved.Tree.Player.Stop(True);
 
   FUpdater.Kill;
 

@@ -42,7 +42,7 @@ type
   end;
   PClientNodeData = ^TClientNodeData;
 
-  TEntryTypes = (etStream, {etRelay,} etFile);
+  TEntryTypes = (etStream, etFile);
 
   TNodeDataArray = array of PClientNodeData;
 
@@ -72,8 +72,6 @@ type
     FDragTreshold: Integer;
 
     FInitialSorted: Boolean;
-    //FSortColumn: Integer;
-    //FSortDirection: VirtualTrees.TSortDirection;
 
     FColName: TVirtualTreeColumn;
     FColTitle: TVirtualTreeColumn;

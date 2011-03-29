@@ -2,11 +2,11 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Left = 549
   Top = 450
   Caption = 'streamWriter'
-  ClientHeight = 352
+  ClientHeight = 442
   ClientWidth = 689
   Color = clBtnFace
   Constraints.MinHeight = 300
-  Constraints.MinWidth = 450
+  Constraints.MinWidth = 600
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -25,7 +25,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   TextHeight = 13
   object addStatus: TStatusBar
     Left = 0
-    Top = 333
+    Top = 423
     Width = 689
     Height = 19
     Hint = 'Users/active streams'
@@ -53,6 +53,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     ShowHint = True
     OnDrawPanel = addStatusDrawPanel
     OnResize = addStatusResize
+    ExplicitTop = 333
   end
   object tbClients: TToolBar
     Left = 0

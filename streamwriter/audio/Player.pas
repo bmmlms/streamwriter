@@ -1,3 +1,22 @@
+{
+    ------------------------------------------------------------------------
+    streamWriter
+    Copyright (c) 2010-2011 Alexander Nottelmann
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; either version 3
+    of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
+    ------------------------------------------------------------------------
+}
 unit Player;
 
 interface
@@ -12,6 +31,7 @@ type
     FSync, FSyncEnd: Cardinal;
     FPaused: Boolean;
     FStopped: Boolean;
+    FFree: Boolean;
     FFilename: string;
     FVolume: Integer;
 
@@ -29,7 +49,7 @@ type
 
     procedure Play(Filename: string; From: Cardinal);
     procedure Pause;
-    procedure Stop;
+    procedure Stop(Free: Boolean);
     procedure SetPosition(Bytes: Cardinal);
 
     property Paused: Boolean read FGetPaused;
@@ -58,7 +78,8 @@ begin
   end else if P.FStopped then
   begin
     BASSChannelStop(channel);
-    BASSStreamFree(channel);
+    if P.FFree then
+      BASSStreamFree(channel);
   end;
 
   P.FPaused := False;
@@ -74,6 +95,8 @@ begin
   P := TPlayer(user);
   BASSChannelStop(channel);
   BASSStreamFree(channel);
+  P.FPlayer := 0;
+  P.FFilename := '';
 
   if Assigned(P.OnEndReached) then
     P.OnEndReached(P);
@@ -92,8 +115,7 @@ end;
 
 destructor TPlayer.Destroy;
 begin
-  // TODO: Fadeout hier überall!!!
-  Stop;
+  Stop(True);
 
   inherited;
 end;
@@ -175,16 +197,26 @@ end;
 procedure TPlayer.Play(Filename: string; From: Cardinal);
 begin
   if FPlayer > 0 then
-    if BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PAUSED then
+  begin
+    if Filename <> FFilename then
     begin
-      BASSChannelSetAttribute(FPlayer, 2, FVolume / 100);
-      BASSChannelPlay(FPlayer, False);
-      Exit;
-    end else
-      Stop;
+      From := 0;
+      Stop(True);
+    end;
+
+    if FPlayer > 0 then
+      if BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PAUSED then
+      begin
+        BASSChannelSetAttribute(FPlayer, 2, FVolume / 100);
+        BASSChannelPlay(FPlayer, False);
+        Exit;
+      end else
+        Stop(False);
+  end;
 
   FFilename := Filename;
-  FPlayer := BASSStreamCreateFile(False, PChar(Filename), 0, 0, {$IFDEF UNICODE}BASS_UNICODE{$ENDIF});
+  if FPlayer = 0 then
+    FPlayer := BASSStreamCreateFile(False, PChar(Filename), 0, 0, {$IFDEF UNICODE}BASS_UNICODE{$ENDIF});
   BASSChannelSetAttribute(FPlayer, 2, FVolume / 100);
   BASSChannelSetPosition(FPlayer, From, BASS_POS_BYTE);
   FSyncEnd := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, EndSyncProc, Self);
@@ -197,14 +229,15 @@ begin
   begin
     if Bytes = MaxByte then
     begin
-      BASSChannelStop(FPlayer);
-      BASSChannelSetPosition(FPlayer, 0, BASS_POS_BYTE);
+      Stop(False);
+      //BASSChannelStop(FPlayer);
+      //BASSChannelSetPosition(FPlayer, 0, BASS_POS_BYTE);
     end else
       BASSChannelSetPosition(FPlayer, Bytes, BASS_POS_BYTE);
   end;
 end;
 
-procedure TPlayer.Stop;
+procedure TPlayer.Stop(Free: Boolean);
 var
   Pos, Len: Double;
 begin
@@ -212,6 +245,7 @@ begin
   begin
     FFilename := '';
     FStopped := True;
+    FFree := Free;
 
     if BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING then
     begin
@@ -221,20 +255,27 @@ begin
       if Len - Pos < 0.300 then
       begin
         BASSChannelStop(FPlayer);
-        BASSStreamFree(FPlayer);
+        if Free then
+          BASSStreamFree(FPlayer);
       end else
       begin
         FSync := BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, SlideEndSyncProc, Self);
         BASSChannelSlideAttribute(FPlayer, 2, 0, Min(Trunc(Len - Pos - 10), 300));
         while BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING do
           Sleep(50);
+        if Free then
+          BASSStreamFree(FPlayer);
       end;
-      FPlayer := 0;
+      if Free then
+        FPlayer := 0;
     end else
     begin
       BASSChannelStop(FPlayer);
-      BASSStreamFree(FPlayer);
-      FPlayer := 0;
+      if Free then
+      begin
+        BASSStreamFree(FPlayer);
+        FPlayer := 0;
+      end;
     end;
   end;
 end;

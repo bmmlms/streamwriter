@@ -67,6 +67,7 @@ type
     procedure ImportClick(Sender: TObject);
     procedure AddEditKeyPress(Sender: TObject; var Key: Char);
     procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+    procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   public
     procedure Setup(List: TTitleList; Images: TImageList; Title: string);
   end;
@@ -86,16 +87,11 @@ type
   TTitleTree = class(TVirtualStringTree)
   private
     FTab: TListsTab;
-
     FType: Integer;
-    //FSortColumn: Integer;
-    //FSortDirection: TSortDirection;
-
     FColTitle: TVirtualTreeColumn;
 
     FDropTarget: TDropComboTarget;
 
-    //function GetNodes(SelectedOnly: Boolean): TNodeArray;
     procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
       APoint: TPoint; var Effect: Integer);
   protected
@@ -568,6 +564,7 @@ begin
   FTree.Images := Images;
   FTree.Align := alClient;
   FTree.OnChange := TreeChange;
+  FTree.OnKeyDown := TreeKeyDown;
 
   FList := List;
   BuildTree;
@@ -592,6 +589,15 @@ procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree;
 begin
   FToolbar.FRemove.Enabled := FTree.SelectedCount > 0;
   FToolbar.FExport.Enabled := FTree.RootNodeCount > 0;
+end;
+
+procedure TTitlePanel.TreeKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_DELETE then
+  begin
+    RemoveClick(nil);
+  end;
 end;
 
 { TTitleToolbar }
