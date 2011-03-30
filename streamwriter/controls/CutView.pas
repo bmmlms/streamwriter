@@ -64,7 +64,7 @@ type
 
   PMouseButton = ^TMouseButton;
 
-  TCutPaintBox = class(TGraphicControl)
+  TCutPaintBox = class(TCustomControl)
   const
     ScrollbarHeight = 8;
     MinimumDisplayedSampleCount = 30;
@@ -87,6 +87,8 @@ type
       Mode: TMouseMode): Boolean;
     function PixelsToArray(X: Integer): Cardinal;
     function GetPlayerPos: Cardinal;
+
+    procedure WMEraseBkgnd(var Message: TWMEraseBkgnd); message WM_ERASEBKGND;
 
     procedure TimerTimer(Sender: TObject);
   protected
@@ -1187,6 +1189,11 @@ begin
     BuildBuffer;
     Paint;
   end;
+end;
+
+procedure TCutPaintBox.WMEraseBkgnd(var Message: TWMEraseBkgnd);
+begin
+  Message.Result := 1;
 end;
 
 end.

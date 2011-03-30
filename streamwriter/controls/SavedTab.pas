@@ -892,6 +892,8 @@ begin
   NodeData := GetNodeData(Node);
   NodeData.Track := Track;
 
+  Sort(nil, Header.SortColumn, Header.SortDirection);
+
   Change(nil);
 end;
 
@@ -999,7 +1001,7 @@ begin
     end;
   }
 end;
-
+           // todo: mehr hotkeys, u.a. für volume und den saved-player. und der savedplayer sollte wenn lied vorbei ist, das nächste spielen, was sichtbar ist (falls gefiltert wird)
 procedure TSavedTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
 begin
   inherited;

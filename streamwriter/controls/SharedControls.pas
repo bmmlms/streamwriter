@@ -29,7 +29,7 @@ uses
 type
   TGripperStates = (gsUnknown, gsNormal, gsHot, gsDown);
 
-  TSeekBar = class(TGraphicControl)
+  TSeekBar = class(TCustomControl)
   private
     FMax: Int64;
     FPosition: Int64;
@@ -45,14 +45,16 @@ type
     FLastChanged: Cardinal;
     FOnPositionChanged: TNotifyEvent;
 
-    procedure PaintBackground;
-    procedure PaintGripper;
+    procedure PaintBackground(Bmp: TBitmap);
+    procedure PaintGripper(Bmp: TBitmap);
 
     function GetGripperState: TGripperStates;
     function GetGripperPos(X: Integer): Cardinal;
 
     procedure FSetPosition(Value: Int64);
     procedure FSetGripperVisible(Value: Boolean);
+
+    procedure WMEraseBkgnd(var Msg: TWMEraseBkgnd); message WM_ERASEBKGND;
   protected
     procedure Paint; override;
     procedure MouseMove(Shift: TShiftState; X: Integer; Y: Integer);
@@ -221,39 +223,65 @@ end;
 { TSeekBar }
 
 procedure TSeekBar.Paint;
+var
+  Bmp: TBitmap;
+  R: TRect;
 begin
   inherited;
 
-  PaintBackground;
-  PaintGripper;
+  Bmp := TBitmap.Create;
+  try
+    Bmp.Width := ClientWidth;
+    Bmp.Height := ClientHeight;
+
+    R.Left := 0;
+    R.Top := 0;
+    R.Right := Bmp.Width;
+    R.Bottom := Bmp.Height;
+
+    if not ThemeServices.ThemesEnabled then
+    begin
+      Bmp.Canvas.Brush.Style := bsSolid;
+      Bmp.Canvas.Brush.Color := clBtnFace;
+      Bmp.Canvas.FillRect(R);
+    end else
+    begin
+      ThemeServices.DrawParentBackground(Handle, BMP.Canvas.Handle, nil, False);
+    end;
+
+    PaintBackground(Bmp);
+    PaintGripper(Bmp);
+
+    Canvas.Draw(0, 0, Bmp);
+  finally
+    Bmp.Free;
+  end;
 end;
 
-procedure TSeekBar.PaintBackground;
+procedure TSeekBar.PaintBackground(Bmp: TBitmap);
 var
   R: TRect;
 begin
-  PerformEraseBackground(Self, Canvas.Handle);
-
-  Canvas.Brush.Color := clBlack;
-  Canvas.Pen.Color := clBlack;
+  Bmp.Canvas.Brush.Color := clBlack;
+  Bmp.Canvas.Pen.Color := clBlack;
   // Rand links und oben
-  Canvas.MoveTo(0, ClientHeight div 2 + 3);
-  Canvas.LineTo(0, ClientHeight div 2 - 3);
-  Canvas.LineTo(ClientWidth - Canvas.Pen.Width, ClientHeight div 2 - 3);
+  Bmp.Canvas.MoveTo(0, Bmp.Height div 2 + 3);
+  Bmp.Canvas.LineTo(0, Bmp.Height div 2 - 3);
+  Bmp.Canvas.LineTo(Bmp.Width - Bmp.Canvas.Pen.Width, Bmp.Height div 2 - 3);
   // Rand rechts und unten
-  Canvas.Pen.Color := clGray;
-  Canvas.LineTo(ClientWidth - Canvas.Pen.Width, ClientHeight div 2 + 3);
-  Canvas.LineTo(0, ClientHeight div 2 + 3);
+  Bmp.Canvas.Pen.Color := clGray;
+  Bmp.Canvas.LineTo(Bmp.Width - Bmp.Canvas.Pen.Width, Bmp.Height div 2 + 3);
+  Bmp.Canvas.LineTo(0, Bmp.Height div 2 + 3);
 
   R.Left := Canvas.Pen.Width;
-  R.Top := ClientHeight div 2 - 3 + Canvas.Pen.Width;
-  R.Bottom := ClientHeight div 2 + 3;
-  R.Right := ClientWidth - Canvas.Pen.Width;
-  Canvas.Brush.Color := clBtnFace;
-  Canvas.FillRect(R);
+  R.Top := Bmp.Height div 2 - 3 + Bmp.Canvas.Pen.Width;
+  R.Bottom := Bmp.Height div 2 + 3;
+  R.Right := Bmp.Width - Bmp.Canvas.Pen.Width;
+  Bmp.Canvas.Brush.Color := clBtnFace;
+  Bmp.Canvas.FillRect(R);
 end;
 
-procedure TSeekBar.PaintGripper;
+procedure TSeekBar.PaintGripper(Bmp: TBitmap);
 var
   P: Cardinal;
   R: TRect;
@@ -266,13 +294,13 @@ begin
   begin
     P := Trunc((FPosition / FMax) * (ClientWidth - 20));
 
+    R.Top := 2;
+    R.Left := P;
+    R.Bottom := Bmp.Height - 2;
+    R.Right := 20 + R.Left;
+
     if ThemeServices.ThemesEnabled then
     begin
-      R.Top := 2;
-      R.Left := P;
-      R.Bottom := ClientHeight - 2;
-      R.Right := 20 + R.Left;
-
       case GetGripperState of
         gsNormal:
           begin
@@ -291,23 +319,22 @@ begin
           end;
       end;
 
-      ThemeServices.DrawElement(Canvas.Handle, D, R);
-      ThemeServices.DrawElement(Canvas.Handle, D2, R);
+      ThemeServices.DrawElement(Bmp.Canvas.Handle, D, R);
+      ThemeServices.DrawElement(Bmp.Canvas.Handle, D2, R);
     end else
     begin
-      // TODO: Sieht das akzeptabel aus???
       case GetGripperState of
         gsNormal:
           begin
-            DrawButtonFace(Canvas, R, 1, bsAutoDetect, True, False, False);
+            DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, False);
           end;
         gsHot:
           begin
-            DrawButtonFace(Canvas, R, 1, bsAutoDetect, True, False, True);
+            DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, True);
           end;
         gsDown:
           begin
-            DrawButtonFace(Canvas, R, 1, bsAutoDetect, True, True, True);
+            DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, True, True);
           end;
       end;
     end;
@@ -315,6 +342,19 @@ begin
     FLastGripperState := GetGripperState;
     FLastGripperPos := FPosition;
   end;
+end;                          // todo: lautstärke controls koppeln untereinander
+
+procedure TSeekBar.WMEraseBkgnd(var Msg: TWMEraseBkgnd);
+begin
+  {
+  if ThemeServices.ThemesEnabled and Assigned(Parent) and (csParentBackground in ControlStyle) then
+  begin
+    ThemeServices.DrawParentBackground(Handle, Msg.DC, nil, False);
+  end
+  else
+    FillRect(Canvas.Handle, ClientRect, Canvas.Brush.Handle);
+  }
+  Msg.Result := 1;
 end;
 
 procedure TSeekBar.WndProc(var Message: TMessage);
@@ -336,6 +376,11 @@ var
   R: TRect;
   D, D2: TThemedElementDetails;
 begin
+  Result := gsUnknown;
+
+  if not FGripperVisible then
+    Exit;
+
   P := Trunc((FPosition / FMax) * (ClientWidth - 20));
 
   R.Top := 2;
@@ -384,7 +429,8 @@ begin
     if Assigned(FOnPositionChanged) then
       FOnPositionChanged(Self);
 
-  Paint;
+  if (FLastGripperState <> GetGripperState) or (FLastGripperPos <> FPosition) then
+    Paint;
 end;
 
 procedure TSeekBar.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
@@ -415,9 +461,9 @@ begin
         FPosition := 0;
       if FPosition > FMax then
         FPosition := FMax;
-
-      Paint;
     end;
+
+    Paint;
 
     FSetting := True;
   end;
