@@ -431,53 +431,91 @@ var
   i, n: Integer;
   Children: TNodeArray;
   HitNode: PVirtualNode;
-  NodeData: PClientNodeData;
+  NodeData, ParentNodeData: PClientNodeData;
   R: TRect;
 begin
   NodeData := nil;
   Result := True;
-  if Length(FDragNodes) > 0 then
+
+  HitNode := GetNodeAt(Pt.X, Pt.Y);
+  if HitNode <> nil then
   begin
-    Result := True;
-
-    HitNode := GetNodeAt(Pt.X, Pt.Y);
-    if HitNode <> nil then
-      NodeData := GetNodeData(HitNode);
-
+    NodeData := GetNodeData(HitNode);
     if (NodeData.Category <> nil) and (NodeData.Category.IsAuto) then
     begin
       R := GetDisplayRect(HitNode, 0, False);
-      if (not (Pt.Y > R.Bottom - FDragTreshold)) and (not (Pt.Y < R.Top + FDragTreshold)) then
+      if Expanded[HitNode] then
       begin
-        // Man darf in die automatische Kategorie nix reindraggen
-        Result := False;
-        Exit;
+        if ChildCount[HitNode] > 0 then
+        begin
+          if not (Pt.Y < R.Top + FDragTreshold) then
+          begin
+            Result := False;
+            Exit;
+          end;
+        end else
+        begin
+          if (not (Pt.Y > R.Bottom - FDragTreshold)) and (not (Pt.Y < R.Top + FDragTreshold)) then
+          begin
+            Result := False;
+            Exit;
+          end;
+        end;
+      end else
+        if (not (Pt.Y > R.Bottom - FDragTreshold)) and (not (Pt.Y < R.Top + FDragTreshold)) then
+        begin
+          // Man darf in die automatische Kategorie nix reindraggen
+          Result := False;
+          Exit;
+        end;
+    end;
+
+    if (NodeData.Client <> nil) and (GetNodeLevel(HitNode) > 0) then
+    begin
+      ParentNodeData := GetNodeData(HitNode.Parent);
+      if ParentNodeData.Category <> nil then
+      begin
+        if ParentNodeData.Category.IsAuto then
+        begin
+          Result := False;
+          Exit;
+        end;
       end;
     end;
 
     // Drop darf nur erlaubt sein, wenn Ziel-Node nicht in gedraggten
     // Nodes vorkommt und Ziel-Node kein Kind von Drag-Node ist
-    for i := 0 to Length(FDragNodes) - 1 do
+    if Length(FDragNodes) > 0 then
     begin
-      if HitNode = FDragNodes[i] then
+      // Wir sind im Tree am draggen
+      for i := 0 to Length(FDragNodes) - 1 do
       begin
-        Result := False;
-        Break;
-      end;
-
-      Children := GetNodes(ntClient, False);
-      for n := 0 to Length(Children) - 1 do
-        if (Children[n] = HitNode) and (HitNode.Parent = FDragNodes[i]) then
+        if HitNode = FDragNodes[i] then
         begin
           Result := False;
-          Exit;
+          Break;
         end;
+
+        Children := GetNodes(ntClient, False);
+        for n := 0 to Length(Children) - 1 do
+          if (Children[n] = HitNode) and (HitNode.Parent = FDragNodes[i]) then
+          begin
+            Result := False;
+            Exit;
+          end;
+      end;
+    end else
+    begin
+      // Drag von wo anders (Browser, Streambrowser)
+
     end;
-    //if HitNode <> nil then
-    //  HitNodeData := GetNodeData(HitNode);
-    //if (HitNode = FDragNode) or (HitNode = nil) {or ((HitNode <> nil) and (HitNodeData.Client <> nil))} then
-      //Result := False;
   end;
+
+  //if HitNode <> nil then
+  //  HitNodeData := GetNodeData(HitNode);
+  //if (HitNode = FDragNode) or (HitNode = nil) {or ((HitNode <> nil) and (HitNodeData.Client <> nil))} then
+    //Result := False;
+//end;
 end;
 
 function TMClientView.DoEndEdit: Boolean;
@@ -620,13 +658,18 @@ end;
 
 procedure TMClientView.MoveTo(Source, Target: PVirtualNode;
   Mode: TVTNodeAttachMode; ChildrenOnly: Boolean);
+var
+  NodeData: PClientNodeData;
 begin
   inherited;
 
-  // Frische Nodes die wo rein kommen, Mama bitte immer ausklappen.
-  if FInitialSorted then
+  if FInitialSorted and (Mode in [amAddChildFirst, amAddChildLast]) then
     if not Expanded[Target] then
-      Expanded[Target] := True;
+    begin
+      NodeData := GetNodeData(Source);
+      if NodeData.Client <> nil then
+        Expanded[Target] := True;
+    end;
 end;
 
 function TMClientView.RefreshClient(Client: TICEClient): Boolean;
@@ -945,10 +988,13 @@ begin
             UnkillCategory(HI.HitNode);
           end;
         end;
-        Exit;
       end else
+      begin
         // Nodes ins "nichts" gedraggt
-        Exit;
+        for i := 0 to Length(FDragNodes) - 1 do
+          MoveTo(FDragNodes[i], RootNode, amAddChildLast, False);
+      end;
+      Exit;
     end;
 
     Files := TStringList.Create;

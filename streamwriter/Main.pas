@@ -239,6 +239,8 @@ type
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
 
     procedure tabCutSaved(Sender: TObject);
+
+    procedure tabVolumeChanged(Sender: TObject; Volume: Integer);
   protected
 
   public
@@ -522,6 +524,7 @@ begin
   tabClients.OnTrackAdded := tabClientsTrackAdded;
   tabClients.OnTrackRemoved := tabClientsTrackRemoved;
   tabClients.OnAddIgnoreList := tabClientsAddIgnoreList;
+  tabClients.OnVolumeChanged := tabVolumeChanged;
 
   tabLists := TListsTab.Create(pagMain);
   tabLists.PageControl := pagMain;
@@ -531,6 +534,7 @@ begin
   tabSaved.OnCut := tabClientsCut;
   tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
   tabSaved.OnRefresh := tabSavedRefresh;
+  tabSaved.OnVolumeChanged := tabVolumeChanged;
 
   IconConnected := LoadImage(HInstance, 'CONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
   IconDisconnected := LoadImage(HInstance, 'DISCONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
@@ -803,6 +807,20 @@ begin
           end;
         end;
       end;
+    5:
+      begin
+        AppGlobals.PlayerVolume := AppGlobals.PlayerVolume - 5;
+        if AppGlobals.PlayerVolume < 0 then
+          AppGlobals.PlayerVolume := 0;
+        tabVolumeChanged(nil, AppGlobals.PlayerVolume);
+      end;
+    6:
+      begin
+        AppGlobals.PlayerVolume := AppGlobals.PlayerVolume + 5;
+        if AppGlobals.PlayerVolume > 100 then
+          AppGlobals.PlayerVolume := 100;
+        tabVolumeChanged(nil, AppGlobals.PlayerVolume);
+      end;
   end;
 end;
 
@@ -882,6 +900,8 @@ begin
   UnregisterHotKey(Handle, 2);
   UnregisterHotKey(Handle, 3);
   UnregisterHotKey(Handle, 4);
+  UnregisterHotKey(Handle, 5);
+  UnregisterHotKey(Handle, 6);
 
   if not Reg then
     Exit;
@@ -914,6 +934,18 @@ begin
   begin
     ShortCutToHotKey(AppGlobals.ShortcutPrev, K, M);
     RegisterHotKey(Handle, 4, M, K);
+  end;
+
+  if AppGlobals.ShortcutVolUp > 0 then
+  begin
+    ShortCutToHotKey(AppGlobals.ShortcutVolUp, K, M);
+    RegisterHotKey(Handle, 5, M, K);
+  end;
+
+  if AppGlobals.ShortcutVolDown > 0 then
+  begin
+    ShortCutToHotKey(AppGlobals.ShortcutVolDown, K, M);
+    RegisterHotKey(Handle, 6, M, K);
   end;
 end;
 
@@ -1043,6 +1075,7 @@ begin
     tabCut := TCutTab.Create(pagMain);
     tabCut.PageControl := pagMain;
     tabCut.OnSaved := tabCutSaved;
+    tabCut.OnVolumeChanged := tabVolumeChanged;
 
     pagMain.ActivePage := tabCut;
 
@@ -1104,6 +1137,27 @@ end;
 procedure TfrmStreamWriterMain.tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
 begin
 
+end;
+
+procedure TfrmStreamWriterMain.tabVolumeChanged(Sender: TObject;
+  Volume: Integer);
+var
+  i: Integer;
+  Tab: TTabSheet;
+begin
+  AppGlobals.PlayerVolume := Volume;
+
+  for i := 0 to pagMain.PageCount - 1 do
+  begin
+    Tab := pagMain.Pages[i];
+    if Tab <> Sender then
+      if Tab is TSavedTab then
+        TSavedTab(Tab).Volume := Volume
+      else if Tab is TClientTab then
+        TClientTab(Tab).Volume := Volume
+      else if Tab is TCutTab then
+        TCutTab(Tab).Volume := Volume;
+  end;
 end;
 
 procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject);

@@ -112,7 +112,12 @@ type
   private
     FPositionTimer: TTimer;
 
-    FToolbarPanel: TPanel;
+    FTopPanel: TPanel;
+    FTopLeftPanel: TPanel;
+    FTopRightPanel: TPanel;
+    FTopRightTopPanel: TPanel;
+    FTopRightBottomPanel: TPanel;
+    FPosLabel: TLabel;
     FToolbar: TSavedToolBar;
     FVolume: TVolumePanel;
     FSeek: TSeekBar;
@@ -123,6 +128,7 @@ type
     FOnCut: TTrackEvent;
     FOnTrackRemoved: TTrackEvent;
     FOnRefresh: TNotifyEvent;
+    FOnVolumeChanged: TSeekChangeEvent;
 
     procedure BuildTree;
     procedure SavedTreeAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
@@ -131,6 +137,7 @@ type
     procedure VolumeTrackbarChange(Sender: TObject);
     procedure SeekChange(Sender: TObject);
     procedure PositionTimer(Sender: TObject);
+    procedure FSetVolume(Value: Integer);
 
     procedure UpdateButtons;
   public
@@ -140,9 +147,12 @@ type
     procedure Setup(Streams: TDataLists; Images: TImageList);
 
     property Tree: TSavedTree read FSavedTree;
+    property Volume: Integer write FSetVolume;
+
     property OnCut: TTrackEvent read FOnCut write FOnCut;
     property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
     property OnRefresh: TNotifyEvent read FOnRefresh write FOnRefresh;
+    property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
   end;
 
   TSavedTree = class(TVirtualStringTree)
@@ -163,6 +173,7 @@ type
     FColSaved: TVirtualTreeColumn;
     FColBitRate: TVirtualTreeColumn;
 
+    function GetNode(Filename: string): PVirtualNode;
     function GetNodes(SelectedOnly: Boolean): TNodeArray;
     function GetSelected: TTrackInfoArray;
     function TrackMatchesPattern(Track: TTrackInfo): Boolean;
@@ -406,8 +417,8 @@ begin
 
   FPositionTimer := TTimer.Create(Self);
   FPositionTimer.Interval := 210;
-  FPositionTimer.Enabled := True;
   FPositionTimer.OnTimer := PositionTimer;
+  FPositionTimer.Enabled := False;
 
   FSavedTree := TSavedTree.Create(Self);
   FSavedTree.Parent := Self;
@@ -421,9 +432,41 @@ begin
   inherited;
 end;
 
-procedure TSavedTab.PositionTimer(Sender: TObject);
+procedure TSavedTab.FSetVolume(Value: Integer);
 begin
-  FSeek.Position := Tree.Player.PositionByte;
+  FVolume.NotifyOnMove := False;
+  FVolume.Volume := Value;
+  FVolume.NotifyOnMove := True;
+
+  FSavedTree.Player.Volume := FVolume.Volume;
+end;
+
+procedure TSavedTab.PositionTimer(Sender: TObject);
+  function BuildTime(T: Double): string;
+  var
+    Min, Sec: Word;
+  begin
+    Min := Trunc(T / 60);
+    T := T - Trunc(T / 60) * 60;
+    Sec := Trunc(T);
+    Result := Format('%0.2d:%0.2d', [Min, Sec]);
+  end;
+begin
+  if FSavedTree.Player.Playing or FSavedTree.Player.Paused then
+  begin
+    // Ich habe das Gefühl, dass das hier eine schwer reproduzierbare Exception verursachen
+    // kann, die dank des Timers jede Sekunde ein paar MsgBox() macht, deshalb so komisch hier.
+    try
+      FSeek.Position := Tree.Player.PositionByte;
+      FPosLabel.Caption := BuildTime(Tree.Player.PositionTime);
+    except
+      FPosLabel.Caption := '';
+    end;
+  end else
+  begin
+    FSeek.GripperVisible := False;
+    FPosLabel.Caption := '';
+  end;
 end;
 
 procedure TSavedTab.BuildTree;
@@ -563,8 +606,10 @@ end;
 
 procedure TSavedTab.VolumeTrackbarChange(Sender: TObject);
 begin
-  AppGlobals.SavedPlayerVolume := FVolume.Volume;
   FSavedTree.Player.Volume := FVolume.Volume;
+
+  if Assigned(FOnVolumeChanged) then
+    FOnVolumeChanged(Self, FVolume.Volume);
 end;
 
 procedure TSavedTab.SearchTextChange(Sender: TObject);
@@ -575,10 +620,13 @@ end;
 procedure TSavedTab.SeekChange(Sender: TObject);
 begin
   FSavedTree.FPlayer.SetPosition(FSeek.Position);
+  PositionTimer(FPositionTimer);
   UpdateButtons;
 end;
 
 procedure TSavedTab.Setup(Streams: TDataLists; Images: TImageList);
+var
+  DummyPanel: TPanel;
 begin
   Caption := 'Saved songs';
 
@@ -588,47 +636,85 @@ begin
   FSavedTree.StateImages := Images;
   FSavedTree.FPopupMenu.Images := Images;
 
-  FToolbarPanel := TPanel.Create(Self);
-  FToolbarPanel.Align := alTop;
-  FToolbarPanel.BevelOuter := bvNone;
-  FToolbarPanel.Parent := Self;
-  FToolbarPanel.ClientHeight := 24;
+  // Panel oben komplett
+  FTopPanel := TPanel.Create(Self);
+  FTopPanel.Parent := Self;
+  FTopPanel.Align := alTop;
+  FTopPanel.ClientHeight := 53;
+  FTopPanel.BevelOuter := bvNone;
+
+  // Panel links
+  FTopLeftPanel := TPanel.Create(Self);
+  FTopLeftPanel.Parent := FTopPanel;
+  FTopLeftPanel.Align := alClient;
+  FTopLeftPanel.ClientHeight := 52;
+  FTopLeftPanel.BevelOuter := bvNone;
+
+  // Panel rechts
+  FTopRightPanel := TPanel.Create(Self);
+  FTopRightPanel.Parent := FTopPanel;
+  FTopRightPanel.Align := alRight;
+  FTopRightPanel.ClientHeight := 52;
+  FTopRightPanel.ClientWidth := 300;
+  FTopRightPanel.BevelOuter := bvNone;
+
+  // Panel rechts unten für Position
+  FTopRightBottomPanel := TPanel.Create(Self);
+  FTopRightBottomPanel.Parent := FTopRightPanel;
+  FTopRightBottomPanel.Align := alTop;
+  FTopRightBottomPanel.BevelOuter := bvNone;
+
+  // Panel rechts für Position suchen und Lautstärke
+  FTopRightTopPanel := TPanel.Create(Self);
+  FTopRightTopPanel.Parent := FTopRightPanel;
+  FTopRightTopPanel.Align := alTop;
+  FTopRightTopPanel.ClientHeight := 24;
+  FTopRightTopPanel.BevelOuter := bvNone;
+
+  FPosLabel := TLabel.Create(Self);
+  FPosLabel.Parent := FTopRightBottomPanel;
+  FPosLabel.Align := alLeft;
+  FPosLabel.Caption := '';
 
   FSearchBar := TSearchBar.Create(Self);
-  FSearchBar.Parent := Self;
+  FSearchBar.Parent := FTopLeftPanel;
   FSearchBar.Align := alTop;
   FSearchBar.Setup;
   FSearchBar.FSearch.OnChange := SearchTextChange;
 
+  DummyPanel := TPanel.Create(Self);
+  DummyPanel.Parent := FTopLeftPanel;
+  DummyPanel.Align := alTop;
+  DummyPanel.ClientHeight := 2;
+  DummyPanel.BevelOuter := bvNone;
+
   FToolBar := TSavedToolBar.Create(Self);
-  FToolBar.Align := alLeft;
+  FToolBar.Parent := FTopLeftPanel;
+  FToolBar.Align := alTop;
   FToolBar.AutoSize := True;
-  FToolBar.Parent := FToolbarPanel;
   FToolBar.Height := 24;
   FToolBar.Images := Images;
   FToolBar.Setup;
 
   FSeek := TSeekBar.Create(Self);
-  FSeek.Parent := FToolbarPanel;
+  FSeek.Parent := FTopRightTopPanel;
   FSeek.Align := alRight;
   FSeek.Left := FToolbar.Left + FToolbar.Width + 10;
-  //FSeek.TickStyle := tsNone;
   FSeek.Width := 150;
-  //FSeek.OnChange := SeekChange;
   FSeek.OnPositionChanged := SeekChange;
 
   FVolume := TVolumePanel.Create(Self);
-  FVolume.Parent := FToolbarPanel;
-  FVolume.Width := 140;
+  FVolume.Parent := FTopRightTopPanel;
   FVolume.Align := alRight;
   FVolume.Setup;
+  FVolume.Width := 150;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
-  FVolume.Volume := AppGlobals.SavedPlayerVolume;
+  FVolume.Volume := AppGlobals.PlayerVolume;
   FVolume.Padding.Left := 10;
 
   FVolume.Left := 99999999999;
 
-  FToolbarPanel.Top := 0;
+  FToolbar.Top := 0;
   FSearchBar.Top := FToolBar.Height + 20;
 
   FToolBar.FRefresh.OnClick := ToolBarClick;
@@ -643,6 +729,8 @@ begin
   FToolBar.FProperties.OnClick := ToolBarClick;
 
   BuildTree;
+
+  FPositionTimer.Enabled := True;
 end;
 
 { TSavedTree }
@@ -722,6 +810,25 @@ begin
   inherited;
 end;
 
+function TSavedTree.GetNode(Filename: string): PVirtualNode;
+var
+  Node: PVirtualNode;
+  NodeData: PSavedNodeData;
+begin
+  Result := nil;
+  Node := GetFirst;
+  while Node <> nil do
+  begin
+    NodeData := GetNodeData(Node);
+    if LowerCase(NodeData.Track.Filename) = LowerCase(Filename) then
+    begin
+      Result := Node;
+      Exit;
+    end;
+    Node := GetNext(Node);
+  end;
+end;
+
 function TSavedTree.GetNodes(SelectedOnly: Boolean): TNodeArray;
 var
   i: Integer;
@@ -729,17 +836,21 @@ var
   Nodes: TNodeArray;
 begin
   SetLength(Result, 0);
-  if not SelectedOnly then begin
+  if not SelectedOnly then
+  begin
     Node := GetFirst;
-    while Node <> nil do begin
+    while Node <> nil do
+    begin
       SetLength(Result, Length(Result) + 1);
       Result[Length(Result) - 1] := Node;
       Node := GetNext(Node);
     end;
-  end else begin
+  end else
+  begin
     SetLength(Result, 0);
     Nodes := GetSortedSelection(True);
-    for i := 0 to Length(Nodes) - 1 do begin
+    for i := 0 to Length(Nodes) - 1 do
+    begin
       SetLength(Result, Length(Result) + 1);
       Result[Length(Result) - 1] := Nodes[i];
     end;
@@ -811,7 +922,49 @@ begin
 end;
 
 procedure TSavedTree.PlayerEndReached(Sender: TObject);
+var
+  i, n: Integer;
+  Node, PlayedNode, NextNode: PVirtualNode;
+  Nodes: TNodeArray;
+  NodeData: PSavedNodeData;
 begin
+  // Nächsten Track in der Liste suchen, der auch in der Ansicht
+  // angezeigt wird. Wenn gefunden, abspielen.
+  PlayedNode := GetNode(Player.Filename);
+  if PlayedNode <> nil then
+  begin
+    {
+    for i := 0 to FTrackList.Count - 1 do
+    begin
+      if LowerCase(FTrackList[i].Filename) = LowerCase(Player.Filename) then
+      begin
+        if i < FTrackList.Count - 1 then
+        begin
+          for n := i + 1 to FTrackList.Count - 1 do
+          begin
+            NextNode := GetNode(FTrackList[n].Filename);
+            if NextNode <> nil then
+            begin
+              FPlayer.Play(FTrackList[n].Filename, 0);
+              Break;
+            end;
+          end;
+        end;
+        Break;
+      end;
+    end;
+    }
+    NextNode := GetNext(PlayedNode);
+    if NextNode <> nil then
+    begin
+      NodeData := GetNodeData(NextNode);
+
+      FPlayer.Play(NodeData.Track.Filename, 0);
+      FTab.FSeek.Max := Player.MaxByte;
+      FTab.FSeek.Position := Player.PositionByte;
+    end;
+  end;
+
   FTab.UpdateButtons;
 end;
 
@@ -844,7 +997,6 @@ begin
   if Sender = FPopupMenu.ItemPlay then
   begin
     FPlayer.Play(Tracks[0].Filename, FTab.FSeek.Position);
-
     FTab.FSeek.Max := Player.MaxByte;
     FTab.FSeek.Position := Player.PositionByte;
   end else if Sender = FPopupMenu.ItemCut then
@@ -984,24 +1136,11 @@ begin
 
   NodeData := GetNodeData(Node);
 
+  // Wir müssen irgendeinen Index setzen, damit PaintImage() getriggert wird
   if (Column = 0) and ((Kind = ikNormal) or (Kind = ikSelected)) then
     Index := 0;
-
-  {
-  if Column = 0 then
-    if Kind = ikState then
-    begin
-      Index := 20
-    end else
-    begin
-      if NodeData.Track.WasCut then
-        Index := 17
-      else
-        Index := -1;
-    end;
-  }
 end;
-           // todo: mehr hotkeys, u.a. für volume und den saved-player. und der savedplayer sollte wenn lied vorbei ist, das nächste spielen, was sichtbar ist (falls gefiltert wird)
+
 procedure TSavedTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
 begin
   inherited;
@@ -1115,6 +1254,9 @@ begin
   Tracks := GetSelected;
   FPopupMenu.EnableItems(Length(Tracks) > 0, FPlayer.Playing);
   FTab.FToolbar.EnableItems(Length(Tracks) > 0, FPlayer.Playing or FPlayer.Paused);
+
+  FPopupMenu.ItemPlay.Enabled := Bass.BassLoaded and (Length(Tracks) = 1);
+  FTab.FToolbar.FPlay.Enabled := Bass.BassLoaded and (Length(Tracks) = 1);
 
   FPopupMenu.ItemCut.Enabled := Bass.BassLoaded and (Length(Tracks) > 0);
   FTab.FToolbar.FCut.Enabled := Bass.BassLoaded and (Length(Tracks) > 0);

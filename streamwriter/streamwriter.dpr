@@ -103,7 +103,7 @@ begin
   Bass := TBassLoader.Create;
   if not Bass.InitializeBass then
   begin
-    MsgBox(0, _('The BASS library or it''s AAC plugin could not be extracted/loaded. Without this library streamWriter can not record streams. Please look for help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
+    MsgBox(0, _('The BASS library or it''s AAC plugin could not be extracted/loaded. Without this library streamWriter can not record streams. Make sure that you have at least one sound device installed, otherwise look for help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
     Bass.Free;
     Exit;
   end;

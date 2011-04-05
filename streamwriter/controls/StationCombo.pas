@@ -113,7 +113,7 @@ begin
   Result := ItemsEx.Add;
   Result.Caption := Name;
   Result.Data := Entry;
-  Result.ImageIndex := 0;
+  Result.ImageIndex := 16;
   ReOrganize(Result);
 end;
 

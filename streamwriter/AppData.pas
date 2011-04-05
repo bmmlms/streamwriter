@@ -50,6 +50,7 @@ type
     FSaveToMemory: Boolean;
     FOnlySaveFull: Boolean;
     FOverwriteSmaller: Boolean;
+    FDiscardSmaller: Boolean;
 
     procedure FSetSaveToMemory(Value: Boolean);
   public
@@ -75,6 +76,7 @@ type
     property SaveToMemory: Boolean read FSaveToMemory write FSetSaveToMemory;
     property OnlySaveFull: Boolean read FOnlySaveFull write FOnlySaveFull;
     property OverwriteSmaller: Boolean read FOverwriteSmaller write FOverwriteSmaller;
+    property DiscardSmaller: Boolean read FDiscardSmaller write FDiscardSmaller;
   end;
 
   TStreamSettingsArray = array of TStreamSettings;
@@ -94,7 +96,8 @@ type
     FSubmitStats: Boolean;
     FMinDiskSpace: Integer;
     FDefaultAction: TClientActions;
-    FPlayerVolume, FCutVolume, FSavedPlayerVolume: Integer;
+    FPlayerVolume: Integer;
+    FPlayerVolumeBeforeMute: Integer;
     FAutoScrollLog: Boolean;
     FUserWasSetup: Boolean;
     FUser, FPass: string;
@@ -107,6 +110,8 @@ type
     FShortcutStop: Cardinal;
     FShortcutNext: Cardinal;
     FShortcutPrev: Cardinal;
+    FShortcutVolDown: Cardinal;
+    FShortcutVolUp: Cardinal;
 
     FHeaderWidth: TIntArray;
     FClientCols: Integer;
@@ -138,18 +143,21 @@ type
     property MinDiskSpace: Integer read FMinDiskSpace write FMinDiskSpace;
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
     property PlayerVolume: Integer read FPlayerVolume write FPlayerVolume;
+    property PlayerVolumeBeforeMute: Integer read FPlayerVolumeBeforeMute write FPlayerVolumeBeforeMute;
     property AutoScrollLog: Boolean read FAutoScrollLog write FAutoScrollLog;
     property UserWasSetup: Boolean read FUserWasSetup write FUserWasSetup;
     property User: string read FUser write FUser;
     property Pass: string read FPass write FPass;
     property SoundDevice: Cardinal read FSoundDevice write FSoundDevice;
-    property CutVolume: Integer read FCutVolume write FCutVolume;
-    property SavedPlayerVolume: Integer read FSavedPlayerVolume write FSavedPlayerVolume;
+    //property CutVolume: Integer read FCutVolume write FCutVolume;
+    //property SavedPlayerVolume: Integer read FSavedPlayerVolume write FSavedPlayerVolume;
     property ShortcutPlay: Cardinal read FShortcutPlay write FShortcutPlay;
     property ShortcutPause: Cardinal read FShortcutPause write FShortcutPause;
     property ShortcutStop: Cardinal read FShortcutStop write FShortcutStop;
     property ShortcutNext: Cardinal read FShortcutNext write FShortcutNext;
     property ShortcutPrev: Cardinal read FShortcutPrev write FShortcutPrev;
+    property ShortcutVolDown: Cardinal read FShortcutVolDown write FShortcutVolDown;
+    property ShortcutVolUp: Cardinal read FShortcutVolUp write FShortcutVolUp;
     property AutoTuneInMinKbps: Cardinal read FAutoTuneInMinKbps write FAutoTuneInMinKbps;
     property AutoTuneInFormat: Cardinal read FAutoTuneInFormat write FAutoTuneInFormat;
 
@@ -243,7 +251,7 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 16);
+    SetLength(FDonors, 17);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
@@ -260,6 +268,7 @@ begin
     FDonors[13] := 'Markus Bauer';
     FDonors[14] := '''Palm''';
     FDonors[15] := 'Peter Hörth';
+    FDonors[16] := 'Roman Roscher';
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
       Text.Add(FDonors[i]);
@@ -381,6 +390,7 @@ begin
   FStorage.Read('SaveToMemory', FStreamSettings.FSaveToMemory, False);
   FStorage.Read('OnlySaveFull', FStreamSettings.FOnlySaveFull, True);
   FStorage.Read('OverwriteSmaller', FStreamSettings.FOverwriteSmaller, True);
+  FStorage.Read('DiscardSmaller', FStreamSettings.FDiscardSmaller, False);
 
   if (FStreamSettings.FSilenceLevel < 1) or (FStreamSettings.FSilenceLevel > 100) then
     FStreamSettings.FSilenceLevel := 5;
@@ -417,8 +427,10 @@ begin
   FStorage.Read('DefaultAction', DefaultActionTmp, Integer(caStartStop));
   FStorage.Read('DefaultFilter', DefaultFilterTmp, Integer(ufNone));
   FStorage.Read('PlayerVolume', FPlayerVolume, 50);
-  FStorage.Read('CutVolume', FCutVolume, 50);
-  FStorage.Read('SavedPlayerVolume', FSavedPlayerVolume, 50);
+  FStorage.Read('PlayerVolumeBeforeMute', FPlayerVolumeBeforeMute, 50);
+
+  //FStorage.Read('CutVolume', FCutVolume, 50);
+  //FStorage.Read('SavedPlayerVolume', FSavedPlayerVolume, 50);
   FStorage.Read('AutoScrollLog', FAutoScrollLog, True);
   FStorage.Read('UserWasSetup', FUserWasSetup, False);
   FStorage.Read('User', FUser, '');
@@ -431,6 +443,8 @@ begin
   FStorage.Read('ShortcutStop', FShortcutStop, 0);
   FStorage.Read('ShortcutNext', FShortcutNext, 0);
   FStorage.Read('ShortcutPrev', FShortcutPrev, 0);
+  FStorage.Read('ShortcutVolDown', FShortcutVolDown, 0);
+  FStorage.Read('ShortcutVolUp', FShortcutVolUp, 0);
 
   FStorage.Read('HeaderWidth0', i, -1, 'Cols');
   if i = -1 then
@@ -498,6 +512,7 @@ begin
   FStorage.Write('DefaultFilter', Integer(FStreamSettings.Filter));
   FStorage.Write('SeparateTracks', FStreamSettings.FSeparateTracks);
   FStorage.Write('OverwriteSmaller', FStreamSettings.FOverwriteSmaller);
+  FStorage.Write('DiscardSmaller', FStreamSettings.FDiscardSmaller);
 
   FStorage.Write('TrayClose', FTray);
   FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
@@ -511,8 +526,9 @@ begin
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
   FStorage.Write('PlayerVolume', FPlayerVolume);
-  FStorage.Write('SavedPlayerVolume', FSavedPlayerVolume);
-  FStorage.Write('CutVolume', FCutVolume);
+  FStorage.Write('PlayerVolumeBeforeMute', FPlayerVolumeBeforeMute);
+  //FStorage.Write('SavedPlayerVolume', FSavedPlayerVolume);
+  //FStorage.Write('CutVolume', FCutVolume);
   FStorage.Write('AutoScrollLog', FAutoScrollLog);
   FStorage.Write('UserWasSetup', FUserWasSetup);
   FStorage.Write('User', FUser);
@@ -524,6 +540,8 @@ begin
   FStorage.Write('ShortcutStop', FShortcutStop);
   FStorage.Write('ShortcutNext', FShortcutNext);
   FStorage.Write('ShortcutPrev', FShortcutPrev);
+  FStorage.Write('ShortcutVolDown', FShortcutVolDown);
+  FStorage.Write('ShortcutVolUp', FShortcutVolUp);
 
   for i := 0 to High(FHeaderWidth) do
     if i <> 1 then
@@ -634,6 +652,11 @@ begin
   else
     Result.FOverwriteSmaller := True;
 
+  if Version >= 12 then
+    Stream.Read(Result.FDiscardSmaller)
+  else
+    Result.FDiscardSmaller := False;
+
   if not Result.FSeparateTracks then
     Result.FDeleteStreams := False;
 
@@ -663,6 +686,7 @@ begin
   Stream.Write(FSaveToMemory);
   Stream.Write(FOnlySaveFull);
   Stream.Write(FOverwriteSmaller);
+  Stream.Write(FDiscardSmaller);
 end;
 
 procedure TStreamSettings.Assign(From: TStreamSettings);
@@ -684,6 +708,7 @@ begin
   FSaveToMemory := From.FSaveToMemory;
   FOnlySaveFull := From.FOnlySaveFull;
   FOverwriteSmaller := From.FOverwriteSmaller;
+  FDiscardSmaller := From.DiscardSmaller;
 end;
 
 initialization

@@ -18,28 +18,27 @@ object frmSettings: TfrmSettings
   Position = poOwnerFormCenter
   OnActivate = FormActivate
   OnCloseQuery = FormCloseQuery
-  OnCreate = FormCreate
   OnResize = FormResize
-  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object pnlStreams: TPanel
     Left = 304
     Top = 4
     Width = 293
-    Height = 369
+    Height = 377
     TabOrder = 0
     Visible = False
     DesignSize = (
       293
-      369)
+      377)
     object lblDefaultFilter: TLabel
       Left = 4
-      Top = 328
+      Top = 336
       Width = 25
       Height = 13
       Anchors = [akLeft, akBottom]
       Caption = 'Filter:'
+      ExplicitTop = 328
     end
     object GroupBox2: TGroupBox
       Left = 4
@@ -90,7 +89,7 @@ object frmSettings: TfrmSettings
     end
     object chkDeleteStreams: TCheckBox
       Left = 4
-      Top = 248
+      Top = 236
       Width = 265
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -100,7 +99,7 @@ object frmSettings: TfrmSettings
     end
     object chkAddSavedToIgnore: TCheckBox
       Left = 4
-      Top = 272
+      Top = 260
       Width = 281
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -110,7 +109,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultFilter: TComboBox
       Left = 4
-      Top = 344
+      Top = 352
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -124,7 +123,7 @@ object frmSettings: TfrmSettings
     end
     object chkSeparateTracks: TCheckBox
       Left = 4
-      Top = 200
+      Top = 188
       Width = 281
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -134,7 +133,7 @@ object frmSettings: TfrmSettings
     end
     object chkSaveStreamsToMemory: TCheckBox
       Left = 4
-      Top = 176
+      Top = 164
       Width = 281
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -144,7 +143,7 @@ object frmSettings: TfrmSettings
     end
     object chkOnlySaveFull: TCheckBox
       Left = 20
-      Top = 224
+      Top = 212
       Width = 265
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -154,13 +153,23 @@ object frmSettings: TfrmSettings
     end
     object chkOverwriteSmaller: TCheckBox
       Left = 4
-      Top = 296
+      Top = 284
       Width = 281
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
       Caption = 'Always overwrite existing files if newer file is larger'
       TabOrder = 7
       OnClick = chkOverwriteSmallerClick
+    end
+    object chkDiscardSmaller: TCheckBox
+      Left = 4
+      Top = 308
+      Width = 281
+      Height = 21
+      Anchors = [akLeft, akRight, akBottom]
+      Caption = 'Discard new file if existing one is lager'
+      TabOrder = 8
+      OnClick = chkDiscardSmallerClick
     end
   end
   object pnlMain: TPanel
@@ -797,7 +806,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800440110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800580110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

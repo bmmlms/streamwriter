@@ -106,6 +106,7 @@ type
     btnHelp: TPngSpeedButton;
     btnMoveDown: TPngSpeedButton;
     btnMoveUp: TPngSpeedButton;
+    chkDiscardSmaller: TCheckBox;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -144,6 +145,7 @@ type
     procedure txtSilenceBufferSecondsChange(Sender: TObject);
     procedure lstPluginsResize(Sender: TObject);
     procedure chkAutoTuneInClick(Sender: TObject);
+    procedure chkDiscardSmallerClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -247,6 +249,19 @@ constructor TfrmSettings.Create(AOwner: TComponent; BrowseDir: Boolean = False);
     end;
     if F then
       AddField(chkOverwriteSmaller);
+
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
+      if S.DiscardSmaller <> FStreamSettings[i].DiscardSmaller then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(chkDiscardSmaller);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -471,7 +486,7 @@ begin
     SetFields;
 
     ClientWidth := 510;
-    ClientHeight := 455;
+    ClientHeight := 475;
 
     lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
     lstDefaultFilter.ItemIndex := Integer(Settings.Filter);
@@ -501,6 +516,7 @@ begin
     chkDeleteStreams.Checked := Settings.DeleteStreams;
     chkAddSavedToIgnore.Checked := Settings.AddSavedToIgnore;
     chkOverwriteSmaller.Checked := Settings.OverwriteSmaller;
+    chkDiscardSmaller.Checked := Settings.DiscardSmaller;
 
     chkSkipShort.Checked := Settings.SkipShort;
     chkSearchSilence.Checked := Settings.SearchSilence;
@@ -698,6 +714,9 @@ begin
       if FIgnoreFieldList.IndexOf(chkOverwriteSmaller) = -1 then
         FStreamSettings[i].OverwriteSmaller := chkOverwriteSmaller.Checked;
 
+      if FIgnoreFieldList.IndexOf(chkDiscardSmaller) = -1 then
+        FStreamSettings[i].DiscardSmaller := chkDiscardSmaller.Checked;
+
       if pnlCut.Tag = 0 then
       begin
         if FIgnoreFieldList.IndexOf(chkSkipShort) = -1 then
@@ -739,6 +758,9 @@ begin
 
       if FIgnoreFieldList.IndexOf(chkOnlySaveFull) = -1 then
         FStreamSettings[i].OnlySaveFull := chkOnlySaveFull.Checked;
+
+      if FIgnoreFieldList.IndexOf(chkDiscardSmaller) = -1 then
+        FStreamSettings[i].DiscardSmaller := chkDiscardSmaller.Checked;
     end;
   end else
   begin
@@ -747,6 +769,7 @@ begin
     AppGlobals.StreamSettings.DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
     AppGlobals.StreamSettings.AddSavedToIgnore := chkAddSavedToIgnore.Checked;
     AppGlobals.StreamSettings.OverwriteSmaller := chkOverwriteSmaller.Checked;
+    AppGlobals.StreamSettings.DiscardSmaller := chkDiscardSmaller.Checked;
 
     if pnlCut.Tag = 0 then
     begin
@@ -766,6 +789,7 @@ begin
     AppGlobals.StreamSettings.SeparateTracks := chkSeparateTracks.Checked and chkSeparateTracks.Enabled;
     AppGlobals.StreamSettings.SaveToMemory := chkSaveStreamsToMemory.Checked;
     AppGlobals.StreamSettings.OnlySaveFull := chkOnlySaveFull.Checked;
+    AppGlobals.StreamSettings.DiscardSmaller := chkDiscardSmaller.Checked;
 
     if lstSoundDevice.ItemIndex > -1 then
       AppGlobals.SoundDevice := lstSoundDevice.ItemIndex;
@@ -784,15 +808,39 @@ begin
     AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
 
     if lstHotkeys.Items[0].SubItems[0] <> '' then
-      AppGlobals.ShortcutPlay := TextToShortCut(lstHotkeys.Items[0].SubItems[0]);
+      AppGlobals.ShortcutPlay := TextToShortCut(lstHotkeys.Items[0].SubItems[0])
+    else
+      AppGlobals.ShortcutPlay := 0;
+
     if lstHotkeys.Items[1].SubItems[0] <> '' then
-      AppGlobals.ShortcutPause := TextToShortCut(lstHotkeys.Items[1].SubItems[0]);
+      AppGlobals.ShortcutPause := TextToShortCut(lstHotkeys.Items[1].SubItems[0])
+    else
+      AppGlobals.ShortcutPause := 0;
+
     if lstHotkeys.Items[2].SubItems[0] <> '' then
-      AppGlobals.ShortcutStop := TextToShortCut(lstHotkeys.Items[2].SubItems[0]);
+      AppGlobals.ShortcutStop := TextToShortCut(lstHotkeys.Items[2].SubItems[0])
+    else
+      AppGlobals.ShortcutStop := 0;
+
     if lstHotkeys.Items[3].SubItems[0] <> '' then
-      AppGlobals.ShortcutNext := TextToShortCut(lstHotkeys.Items[3].SubItems[0]);
+      AppGlobals.ShortcutNext := TextToShortCut(lstHotkeys.Items[3].SubItems[0])
+    else
+      AppGlobals.ShortcutNext := 0;
+
     if lstHotkeys.Items[4].SubItems[0] <> '' then
-      AppGlobals.ShortcutPrev := TextToShortCut(lstHotkeys.Items[4].SubItems[0]);
+      AppGlobals.ShortcutPrev := TextToShortCut(lstHotkeys.Items[4].SubItems[0])
+    else
+      AppGlobals.ShortcutPrev := 0;
+
+    if lstHotkeys.Items[5].SubItems[0] <> '' then
+      AppGlobals.ShortcutVolUp := TextToShortCut(lstHotkeys.Items[5].SubItems[0])
+    else
+      AppGlobals.ShortcutVolUp := 0;
+
+    if lstHotkeys.Items[6].SubItems[0] <> '' then
+      AppGlobals.ShortcutVolDown := TextToShortCut(lstHotkeys.Items[6].SubItems[0])
+    else
+      AppGlobals.ShortcutVolDown := 0;
 
     for i := 0 to FTemporaryPlugins.Count - 1 do
     begin
@@ -1309,23 +1357,37 @@ begin
     lstHotkeys.Items[2].Caption := _('Stop');
     lstHotkeys.Items[3].Caption := _('Next stream');
     lstHotkeys.Items[4].Caption := _('Previous stream');
+    lstHotkeys.Items[5].Caption := _('Volume up');
+    lstHotkeys.Items[6].Caption := _('Volume down');
   end else
   begin
     Item := lstHotkeys.Items.Add;
     Item.Caption := _('Play');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutPlay));
+
     Item := lstHotkeys.Items.Add;
     Item.Caption := _('Pause');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutPause));
+
     Item := lstHotkeys.Items.Add;
     Item.Caption := _('Stop');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutStop));
+
     Item := lstHotkeys.Items.Add;
     Item.Caption := _('Next stream');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutNext));
+
     Item := lstHotkeys.Items.Add;
     Item.Caption := _('Previous stream');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutPrev));
+
+    Item := lstHotkeys.Items.Add;
+    Item.Caption := _('Volume up');
+    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutVolUp));
+
+    Item := lstHotkeys.Items.Add;
+    Item.Caption := _('Volume down');
+    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutVolDown));
   end;
 end;
 
@@ -1476,6 +1538,14 @@ begin
 
   if FInitialized then
     RemoveGray(chkDeleteStreams);
+end;
+
+procedure TfrmSettings.chkDiscardSmallerClick(Sender: TObject);
+begin
+  inherited;
+
+  if FInitialized then
+    RemoveGray(chkDiscardSmaller);
 end;
 
 procedure TfrmSettings.chkOnlyIfCutClick(Sender: TObject);

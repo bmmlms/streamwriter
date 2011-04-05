@@ -53,7 +53,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     ShowHint = True
     OnDrawPanel = addStatusDrawPanel
     OnResize = addStatusResize
-    ExplicitTop = 333
   end
   object tbClients: TToolBar
     Left = 0

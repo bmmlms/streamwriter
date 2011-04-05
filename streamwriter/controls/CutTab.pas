@@ -54,6 +54,7 @@ type
     FFilename: string;
 
     FOnSaved: TNotifyEvent;
+    FOnVolumeChanged: TSeekChangeEvent;
 
     procedure UpdateButtons;
 
@@ -67,13 +68,18 @@ type
 
     procedure CutViewStateChanged(Sender: TObject);
     procedure VolumeTrackbarChange(Sender: TObject);
+
+    procedure FSetVolume(Value: Integer);
   public
     constructor Create(AOwner: TComponent); override;
 
     procedure Setup(Filename: string; ToolBarImages: TImageList);
 
     property Filename: string read FFilename;
+    property Volume: Integer write FSetVolume;
+
     property OnSaved: TNotifyEvent read FOnSaved write FOnSaved;
+    property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
   end;
 
 implementation
@@ -118,8 +124,11 @@ end;
 
 procedure TCutTab.VolumeTrackbarChange(Sender: TObject);
 begin
-  AppGlobals.CutVolume := FVolume.Volume;
+  //AppGlobals.CutVolume := FVolume.Volume;
   FCutView.Volume := FVolume.Volume;
+
+  if Assigned(FOnVolumeChanged) then
+    FOnVolumeChanged(Self, FVolume.Volume);
 end;
 
 procedure TCutTab.SaveClick(Sender: TObject);
@@ -185,6 +194,15 @@ begin
   UpdateButtons;
 end;
 
+procedure TCutTab.FSetVolume(Value: Integer);
+begin
+  FVolume.NotifyOnMove := False;
+  FVolume.Volume := Value;
+  FVolume.NotifyOnMove := True;
+
+  FCutView.Volume := FVolume.Volume;
+end;
+
 procedure TCutTab.Setup(Filename: string; ToolBarImages: TImageList);
 begin
   MaxWidth := 120;
@@ -217,10 +235,10 @@ begin
 
   FVolume := TVolumePanel.Create(Self);
   FVolume.Parent := FToolbarPanel;
-  FVolume.Width := 140;
   FVolume.Align := alRight;
   FVolume.Setup;
-  FVolume.Volume := AppGlobals.CutVolume;
+  FVolume.Width := 140;
+  FVolume.Volume := AppGlobals.PlayerVolume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
 
   FCutView := TCutView.Create(Self);

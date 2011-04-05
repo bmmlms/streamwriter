@@ -219,7 +219,7 @@ type
   end;
 
 const
-  DATAVERSION = 11;
+  DATAVERSION = 12;
 
 implementation
 

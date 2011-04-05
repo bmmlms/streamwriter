@@ -103,7 +103,8 @@ type
     FOnTrackAdded: TTrackEvent;
     FOnTrackRemoved: TTrackEvent;
     FOnAddIgnoreList: TStringEvent;
-    FOnSetVolume: TIntegerEvent;
+    //FOnSetVolume: TIntegerEvent;
+    FOnVolumeChanged: TSeekChangeEvent;
 
     procedure ShowInfo;
 
@@ -146,6 +147,8 @@ type
     procedure AddressBarStart(Sender: TObject);
 
     procedure DebugClear(Sender: TObject);
+
+    procedure FSetVolume(Value: Integer);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -164,13 +167,15 @@ type
     property ClientView: TMClientView read FClientView;
     property SideBar: TSideBar read FSideBar;
     property Received: UInt64 read FReceived;
+    property Volume: Integer write FSetVolume;
 
     property OnUpdateButtons: TNotifyEvent read FOnUpdateButtons write FOnUpdateButtons;
     property OnCut: TTrackEvent read FOnCut write FOnCut;
     property OnTrackAdded: TTrackEvent read FOnTrackAdded write FOnTrackAdded;
     property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
     property OnAddIgnoreList: TStringEvent read FOnAddIgnoreList write FOnAddIgnoreList;
-    property OnSetVolume: TIntegerEvent read FOnSetVolume write FOnSetVolume;
+    property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
+    //property OnSetVolume: TIntegerEvent read FOnSetVolume write FOnSetVolume;
   end;
 
 implementation
@@ -583,9 +588,9 @@ begin
 
   FVolume := TVolumePanel.Create(Self);
   FVolume.Parent := FToolbarPanel;
-  FVolume.Width := 140;
   FVolume.Align := alRight;
   FVolume.Setup;
+  FVolume.Width := 140;
   FVolume.Volume := AppGlobals.PlayerVolume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
 
@@ -739,7 +744,6 @@ var
   i: Integer;
   List: TTitleList;
 begin
-  Filter := 1000;
   Match := '';
   if Length(Title) < 1 then
     Exit;
@@ -923,6 +927,22 @@ begin
   StartStreaming('', URL, False, Node, Mode);
 end;
 
+procedure TClientTab.FSetVolume(Value: Integer);
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+begin
+  FVolume.NotifyOnMove := False;
+  FVolume.Volume := Value;
+  FVolume.NotifyOnMove := True;
+
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
+  for Client in Clients do
+  begin
+    Client.SetVolume(FVolume.Volume);
+  end;
+end;
+
 procedure TClientTab.FClientViewKeyPress(Sender: TObject;
   var Key: Char);
 begin
@@ -958,22 +978,28 @@ begin
   Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
   if Length(Clients) = 1 then
   begin
-    if Clients[0].Client.AutoRemove then
-      Exit;
     case AppGlobals.DefaultAction of
       caStartStop:
-        if Clients[0].Client.Recording then
-          Clients[0].Client.StopRecording
-        else
         begin
-          if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
-            MsgBox(Handle, _('Available disk space is below the set limit, so recording will not start.'), _('Info'), MB_ICONINFORMATION)
+          if Clients[0].Client.AutoRemove then
+            Exit;
+
+          if Clients[0].Client.Recording then
+            Clients[0].Client.StopRecording
           else
-            Clients[0].Client.StartRecording;
+          begin
+            if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
+              MsgBox(Handle, _('Available disk space is below the set limit, so recording will not start.'), _('Info'), MB_ICONINFORMATION)
+            else
+              Clients[0].Client.StartRecording;
+          end;
         end;
       caStreamIntegrated:
         if Clients[0].Client.Playing then
-          FActionStopPlay.Execute
+          if Clients[0].Client.Paused then
+            FActionPlay.Execute
+          else
+            FActionStopPlay.Execute
         else
           FActionPlay.Execute;
       caStream:
@@ -1132,12 +1158,14 @@ var
   Clients: TClientArray;
   Client: TICEClient;
 begin
-  AppGlobals.PlayerVolume := FVolume.Volume;
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
   for Client in Clients do
   begin
     Client.SetVolume(FVolume.Volume);
   end;
+
+  if Assigned(FOnVolumeChanged) then
+    FOnVolumeChanged(Self, FVolume.Volume);
 end;
 
 procedure TClientTab.TimerTick;

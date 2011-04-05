@@ -43,6 +43,7 @@ type
     procedure FSetVolume(Value: Integer);
     function FGetMaxByte: Cardinal;
     function FGetPositionByte: Cardinal;
+    function FGetPositionTime: Double;
   public
     constructor Create;
     destructor Destroy; override;
@@ -59,6 +60,7 @@ type
     property Volume: Integer read FVolume write FSetVolume;
     property MaxByte: Cardinal read FGetMaxByte;
     property PositionByte: Cardinal read FGetPositionByte;
+    property PositionTime: Double read FGetPositionTime;
 
     property OnEndReached: TNotifyEvent read FOnEndReached write FOnEndReached;
   end;
@@ -95,11 +97,17 @@ begin
   P := TPlayer(user);
   BASSChannelStop(channel);
   BASSStreamFree(channel);
-  P.FPlayer := 0;
-  P.FFilename := '';
 
   if Assigned(P.OnEndReached) then
     P.OnEndReached(P);
+
+  // Wird nochmal abgefragt, weil in OnEndReached evtl. der nächste
+  // Track zur Wiedergabe gestartet wird.
+  if not P.Playing then
+  begin
+    P.FPlayer := 0;
+    P.FFilename := '';
+  end;
 
   P.FPaused := False;
   P.FStopped := False;
@@ -146,8 +154,14 @@ function TPlayer.FGetPositionByte: Cardinal;
 begin
   Result := 0;
   if FPlayer > 0 then
-    if BASSChannelGetPosition(FPlayer, BASS_POS_BYTE) > 0 then
-      Result := BASSChannelGetPosition(FPlayer, BASS_POS_BYTE);
+    Result := BASSChannelGetPosition(FPlayer, BASS_POS_BYTE);
+end;
+
+function TPlayer.FGetPositionTime: Double;
+begin
+  Result := 0;
+  if FPlayer > 0 then
+    Result := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetPosition(FPlayer, BASS_POS_BYTE));
 end;
 
 function TPlayer.FGetStopped: Boolean;

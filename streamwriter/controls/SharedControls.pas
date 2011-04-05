@@ -29,6 +29,8 @@ uses
 type
   TGripperStates = (gsUnknown, gsNormal, gsHot, gsDown);
 
+  TSeekChangeEvent = procedure(Sender: TObject; Position: Integer) of object;
+
   TSeekBar = class(TCustomControl)
   private
     FMax: Int64;
@@ -38,6 +40,7 @@ type
     FGripperVisible: Boolean;
     FGripperDown: Boolean;
     FNotifyOnMove: Boolean;
+    FNotifyOnDown: Boolean;
 
     FLastGripperState: TGripperStates;
 
@@ -70,6 +73,7 @@ type
     property Position: Int64 read FPosition write FSetPosition;
     property GripperVisible: Boolean read FGripperDown write FSetGripperVisible;
     property NotifyOnMove: Boolean read FNotifyOnMove write FNotifyOnMove;
+    property NotifyOnDown: Boolean read FNotifyOnDown write FNotifyOnDown;
     property OnPositionChanged: TNotifyEvent read FOnPositionChanged write FOnPositionChanged;
   end;
 
@@ -85,14 +89,16 @@ type
 
     procedure MuteClick(Sender: TObject);
     procedure VolumeChange(Sender: TObject);
-    procedure RefreshButtonState;
+    procedure RefreshButtonState(DoIt: Boolean);
     procedure FSetVolume(Volume: Integer);
+    procedure FSetNotifyOnMove(Value: Boolean);
     function FGetVolume: Integer;
   public
     procedure Setup;
 
     property OnVolumeChange: TNotifyEvent read FVolumeChange write FVolumeChange;
     property Volume: Integer read FGetVolume write FSetVolume;
+    property NotifyOnMove: Boolean write FSetNotifyOnMove;
 
     destructor Destroy; override;
   end;
@@ -118,10 +124,6 @@ begin
   FMute.Down := True;
   FMute.OnClick := MuteClick;
   FMute.Parent := Self;
-
-  // Damit der Knopf noch 'drückbar' ist (Unmute), wenn App
-  // im Mute-Modus beendet wurde. Nicht wegmachen.
-  FVolume := 50;
 
   ResStream := TResourceStream.Create(HInstance, 'VOLUME', RT_RCDATA);
   try
@@ -153,44 +155,50 @@ begin
   FTrackBar.Parent := FTrackBarPanel;
   FTrackBar.GripperVisible := True;
   FTrackBar.NotifyOnMove := True;
+  FTrackBar.NotifyOnDown := True;
+
+  RefreshButtonState(True);
 end;
 
 procedure TVolumePanel.MuteClick(Sender: TObject);
 begin
-  if FMute.Down or (FVolume = 0) then
+  if FMute.Down then
   begin
-    FVolume := FTrackBar.Position;
+    AppGlobals.PlayerVolumeBeforeMute := FTrackBar.Position;
     FTrackBar.Position := 0;
+
     FMute.PngImage := FVolumeMutedPng;
     if not FMute.Down then
       FMute.Down := True;
   end else
   begin
-    FTrackBar.Position := FVolume;
+    FTrackBar.Position := AppGlobals.PlayerVolumeBeforeMute;
     FMute.PngImage := FVolumePng;
   end;
 end;
 
 procedure TVolumePanel.VolumeChange(Sender: TObject);
 begin
-  RefreshButtonState;
+  RefreshButtonState(False);
+
+  FVolume := FTrackBar.Position;
+
   if Assigned(OnVolumeChange) then
     OnVolumeChange(Self);
 end;
 
-procedure TVolumePanel.RefreshButtonState;
+procedure TVolumePanel.RefreshButtonState(DoIt: Boolean);
 begin
   if Volume = 0 then
   begin
-    if not FMute.Down then
+    if not FMute.Down or DoIt then
     begin
       FMute.Down := True;
       FMute.PngImage := FVolumeMutedPng;
     end;
-  end
-  else
+  end else
   begin
-    if FMute.Down then
+    if FMute.Down or DoIt then
     begin
       FMute.Down := False;
       FMute.PngImage := FVolumePng;
@@ -201,15 +209,17 @@ end;
 procedure TVolumePanel.FSetVolume(Volume: Integer);
 begin
   FTrackBar.Position := Volume;
-  RefreshButtonState;
-
-  if Assigned(OnVolumeChange) then
-    OnVolumeChange(Self);
+  RefreshButtonState(False);
 end;
 
-function TVolumePanel.FGetVolume: integer;
+function TVolumePanel.FGetVolume: Integer;
 begin
   Result := FTrackBar.Position;
+end;
+
+procedure TVolumePanel.FSetNotifyOnMove(Value: Boolean);
+begin
+  FTrackBar.NotifyOnMove := Value;
 end;
 
 destructor TVolumePanel.Destroy;
@@ -342,7 +352,7 @@ begin
     FLastGripperState := GetGripperState;
     FLastGripperPos := FPosition;
   end;
-end;                          // todo: lautstärke controls koppeln untereinander
+end;
 
 procedure TSeekBar.WMEraseBkgnd(var Msg: TWMEraseBkgnd);
 begin
@@ -461,6 +471,10 @@ begin
         FPosition := 0;
       if FPosition > FMax then
         FPosition := FMax;
+
+      if FNotifyOnDown then
+        if Assigned(FOnPositionChanged) then
+          FOnPositionChanged(Self);
     end;
 
     Paint;
