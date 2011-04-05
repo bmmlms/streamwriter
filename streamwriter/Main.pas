@@ -809,16 +809,16 @@ begin
       end;
     5:
       begin
-        AppGlobals.PlayerVolume := AppGlobals.PlayerVolume - 5;
-        if AppGlobals.PlayerVolume < 0 then
-          AppGlobals.PlayerVolume := 0;
+        AppGlobals.PlayerVolume := AppGlobals.PlayerVolume + 5;
+        if AppGlobals.PlayerVolume > 100 then
+          AppGlobals.PlayerVolume := 100;
         tabVolumeChanged(nil, AppGlobals.PlayerVolume);
       end;
     6:
       begin
-        AppGlobals.PlayerVolume := AppGlobals.PlayerVolume + 5;
-        if AppGlobals.PlayerVolume > 100 then
-          AppGlobals.PlayerVolume := 100;
+        AppGlobals.PlayerVolume := AppGlobals.PlayerVolume - 5;
+        if AppGlobals.PlayerVolume < 0 then
+          AppGlobals.PlayerVolume := 0;
         tabVolumeChanged(nil, AppGlobals.PlayerVolume);
       end;
   end;
