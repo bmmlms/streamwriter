@@ -103,8 +103,8 @@ type
     FOnTrackAdded: TTrackEvent;
     FOnTrackRemoved: TTrackEvent;
     FOnAddIgnoreList: TStringEvent;
-    //FOnSetVolume: TIntegerEvent;
     FOnVolumeChanged: TSeekChangeEvent;
+    FOnPlayStarted: TNotifyEvent;
 
     procedure ShowInfo;
 
@@ -162,6 +162,7 @@ type
     procedure TimerTick;
     procedure UpdateStreams(Streams: TDataLists);
     procedure BuildTree(Streams: TDataLists);
+    procedure PausePlay;
 
     property AddressBar: TClientAddressBar read FAddressBar;
     property ClientView: TMClientView read FClientView;
@@ -175,6 +176,7 @@ type
     property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
     property OnAddIgnoreList: TStringEvent read FOnAddIgnoreList write FOnAddIgnoreList;
     property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
+    property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
     //property OnSetVolume: TIntegerEvent read FOnSetVolume write FOnSetVolume;
   end;
 
@@ -384,6 +386,9 @@ begin
       Client.Client.StopPlay;
 
   SelectedClient.Client.StartPlay;
+
+  if Assigned(FOnPlayStarted) then
+    FOnPlayStarted(Self);
 end;
 
 procedure TClientTab.ActionPauseExecute(Sender: TObject);
@@ -394,6 +399,9 @@ begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
   for Client in Clients do
   begin
+    if (not Client.Playing) and (Client.Paused) then
+      if Assigned(FOnPlayStarted) then
+        FOnPlayStarted(Self);
     Client.PausePlay;
   end;
 end;
@@ -940,6 +948,19 @@ begin
   for Client in Clients do
   begin
     Client.SetVolume(FVolume.Volume);
+  end;
+end;
+
+procedure TClientTab.PausePlay;
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+begin
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
+  for Client in Clients do
+  begin
+    if Client.Playing and (not Client.Paused) then
+      Client.PausePlay;
   end;
 end;
 

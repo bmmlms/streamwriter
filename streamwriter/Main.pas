@@ -241,12 +241,14 @@ type
     procedure tabCutSaved(Sender: TObject);
 
     procedure tabVolumeChanged(Sender: TObject; Volume: Integer);
+    procedure tabPlayStarted(Sender: TObject);
   protected
 
   public
 
   end;
 
+  // REMARK: Das hier könnte auch gut THintWindow werden, sieht schöner aus. Siehe VirtualTrees.
   TStatusHint = class(TCustomHint)
   private
   protected
@@ -291,6 +293,9 @@ begin
   Hide;
 
   tabSaved.Tree.Player.Stop(True);
+  for i := 0 to pagMain.PageCount - 1 do
+    if pagMain.Pages[i] is TCutTab then
+      TCutTab(pagMain.Pages[i]).PausePlay;
 
   FUpdater.Kill;
 
@@ -525,6 +530,7 @@ begin
   tabClients.OnTrackRemoved := tabClientsTrackRemoved;
   tabClients.OnAddIgnoreList := tabClientsAddIgnoreList;
   tabClients.OnVolumeChanged := tabVolumeChanged;
+  tabClients.OnPlayStarted := tabPlayStarted;
 
   tabLists := TListsTab.Create(pagMain);
   tabLists.PageControl := pagMain;
@@ -535,6 +541,7 @@ begin
   tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
   tabSaved.OnRefresh := tabSavedRefresh;
   tabSaved.OnVolumeChanged := tabVolumeChanged;
+  tabSaved.OnPlayStarted := tabPlayStarted;
 
   IconConnected := LoadImage(HInstance, 'CONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
   IconDisconnected := LoadImage(HInstance, 'DISCONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
@@ -743,7 +750,8 @@ begin
         //actPlay.Execute;
       end;
     1:
-      actPause.Execute;
+      tabPlayStarted(nil);
+      //actPause.Execute;
     2:
       //StopPlay;
       actStopPlay.Execute;
@@ -1076,6 +1084,7 @@ begin
     tabCut.PageControl := pagMain;
     tabCut.OnSaved := tabCutSaved;
     tabCut.OnVolumeChanged := tabVolumeChanged;
+    tabCut.OnPlayStarted := tabPlayStarted;
 
     pagMain.ActivePage := tabCut;
 
@@ -1171,6 +1180,28 @@ begin
       FStreams.TrackList[i].WasCut := True;
       Exit;
     end;
+end;
+
+procedure TfrmStreamWriterMain.tabPlayStarted(Sender: TObject);
+var
+  i: Integer;
+  Tab: TTabSheet;
+begin
+  for i := 0 to pagMain.PageCount - 1 do
+  begin
+    Tab := pagMain.Pages[i];
+    if Tab <> Sender then
+      if Tab is TSavedTab then
+      begin
+        TSavedTab(Tab).PausePlay;
+      end else if Tab is TClientTab then
+      begin
+        TClientTab(Tab).PausePlay;
+      end else if Tab is TCutTab then
+      begin
+        TCutTab(Tab).PausePlay;
+      end;
+  end;
 end;
 
 procedure TfrmStreamWriterMain.tmrRecordingsTimer(Sender: TObject);

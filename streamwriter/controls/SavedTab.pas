@@ -129,6 +129,7 @@ type
     FOnTrackRemoved: TTrackEvent;
     FOnRefresh: TNotifyEvent;
     FOnVolumeChanged: TSeekChangeEvent;
+    FOnPlayStarted: TNotifyEvent;
 
     procedure BuildTree;
     procedure SavedTreeAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
@@ -145,6 +146,7 @@ type
     destructor Destroy; override;
 
     procedure Setup(Streams: TDataLists; Images: TImageList);
+    procedure PausePlay;
 
     property Tree: TSavedTree read FSavedTree;
     property Volume: Integer write FSetVolume;
@@ -153,6 +155,7 @@ type
     property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
     property OnRefresh: TNotifyEvent read FOnRefresh write FOnRefresh;
     property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
+    property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
   end;
 
   TSavedTree = class(TVirtualStringTree)
@@ -416,7 +419,7 @@ begin
   ImageIndex := 14;
 
   FPositionTimer := TTimer.Create(Self);
-  FPositionTimer.Interval := 210;
+  FPositionTimer.Interval := 50;
   FPositionTimer.OnTimer := PositionTimer;
   FPositionTimer.Enabled := False;
 
@@ -439,6 +442,13 @@ begin
   FVolume.NotifyOnMove := True;
 
   FSavedTree.Player.Volume := FVolume.Volume;
+end;
+
+procedure TSavedTab.PausePlay;
+begin
+  if Tree.Player.Playing then
+    Tree.Player.Pause;
+  UpdateButtons;
 end;
 
 procedure TSavedTab.PositionTimer(Sender: TObject);
@@ -980,6 +990,9 @@ begin
 
   if Sender = FPopupMenu.ItemPause then
   begin
+    if FPlayer.Paused then
+      if Assigned(FTab.FOnPlayStarted) then
+        FTab.FOnPlayStarted(FTab);
     FPlayer.Pause;
     FTab.UpdateButtons;
     Exit;
@@ -999,6 +1012,8 @@ begin
     FPlayer.Play(Tracks[0].Filename, FTab.FSeek.Position);
     FTab.FSeek.Max := Player.MaxByte;
     FTab.FSeek.Position := Player.PositionByte;
+    if Assigned(FTab.FOnPlayStarted) then
+      FTab.FOnPlayStarted(FTab);
   end else if Sender = FPopupMenu.ItemCut then
     Action := taCut
   else if Sender = FPopupMenu.ItemRemove then

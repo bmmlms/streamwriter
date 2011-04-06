@@ -55,6 +55,7 @@ type
 
     FOnSaved: TNotifyEvent;
     FOnVolumeChanged: TSeekChangeEvent;
+    FOnPlayStarted: TNotifyEvent;
 
     procedure UpdateButtons;
 
@@ -72,14 +73,17 @@ type
     procedure FSetVolume(Value: Integer);
   public
     constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
 
     procedure Setup(Filename: string; ToolBarImages: TImageList);
+    procedure PausePlay;
 
     property Filename: string read FFilename;
     property Volume: Integer write FSetVolume;
 
     property OnSaved: TNotifyEvent read FOnSaved write FOnSaved;
     property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
+    property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
   end;
 
 implementation
@@ -179,9 +183,17 @@ begin
   FCutView.Undo;
 end;
 
+procedure TCutTab.PausePlay;
+begin
+  FCutView.Stop;
+end;
+
 procedure TCutTab.PlayClick(Sender: TObject);
 begin
   FCutView.Play;
+
+  if Assigned(FOnPlayStarted) then
+    FOnPlayStarted(Self);
 end;
 
 procedure TCutTab.StopClick(Sender: TObject);
@@ -192,6 +204,12 @@ end;
 procedure TCutTab.CutViewStateChanged(Sender: TObject);
 begin
   UpdateButtons;
+end;
+
+destructor TCutTab.Destroy;
+begin
+
+  inherited;
 end;
 
 procedure TCutTab.FSetVolume(Value: Integer);
