@@ -189,6 +189,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object mnuStreams: TMenuItem
       Caption = '&Stream'
+      Visible = False
       object Newcategory1: TMenuItem
         Action = actNewCategory
       end
