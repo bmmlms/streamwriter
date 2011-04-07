@@ -99,8 +99,6 @@ type
   private
     FLabel: TLabel;
     FSearch: TEdit;
-
-    procedure FSearchChange(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -204,7 +202,6 @@ type
     procedure DoEdit; override;
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; Text: string;
       CellRect: TRect; DrawFormat: Cardinal); override;
-    procedure DoPaintNode(var PaintInfo: TVTPaintInfo); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
     constructor Create(AOwner: TComponent); override;
@@ -348,10 +345,10 @@ begin
   FShowFile.Hint := _('Show in explorer');
   FShowFile.ImageIndex := 28;
 
-  FSep3 := TToolButton.Create(Self);
-  FSep3.Parent := Self;
-  FSep3.Style := tbsSeparator;
-  FSep3.Width := 8;
+  FSep4 := TToolButton.Create(Self);
+  FSep4.Parent := Self;
+  FSep4.Style := tbsSeparator;
+  FSep4.Width := 8;
 
   FDelete := TToolButton.Create(Self);
   FDelete.Parent := Self;
@@ -482,8 +479,6 @@ end;
 procedure TSavedTab.BuildTree;
 var
   i: Integer;
-  Node: PVirtualNode;
-  NodeData: PSavedNodeData;
 begin
   for i := 0 to FStreams.TrackList.Count - 1 do
   begin
@@ -498,7 +493,6 @@ end;
 procedure TSavedTab.SavedTreeAction(Sender: TObject; Action: TTrackActions;
   Tracks: TTrackInfoArray);
 var
-  Entries: TPlaylistEntryArray;
   i: Integer;
   Error: Boolean;
 begin
@@ -508,20 +502,6 @@ begin
         if Assigned(FOnRefresh) then
           FOnRefresh(Self);
       end;
-    {
-    taPlay:
-      begin
-        // Tracks in Playlist konvertieren
-        SetLength(Entries, Length(Tracks));
-        for i := 0 to Length(Tracks) - 1 do
-        begin
-          Entries[i].Name := Tracks[i].Filename;
-          Entries[i].URL := Tracks[i].Filename;
-        end;
-
-        SavePlaylist(Entries, True);
-      end;
-    }
     taCut:
       begin
         if Assigned(FOnCut) then
@@ -722,7 +702,7 @@ begin
   FVolume.Volume := AppGlobals.PlayerVolume;
   FVolume.Padding.Left := 10;
 
-  FVolume.Left := 99999999999;
+  FVolume.Left := High(Integer);
 
   FToolbar.Top := 0;
   FSearchBar.Top := FToolBar.Height + 20;
@@ -933,9 +913,7 @@ end;
 
 procedure TSavedTree.PlayerEndReached(Sender: TObject);
 var
-  i, n: Integer;
-  Node, PlayedNode, NextNode: PVirtualNode;
-  Nodes: TNodeArray;
+  PlayedNode, NextNode: PVirtualNode;
   NodeData: PSavedNodeData;
 begin
   // Nächsten Track in der Liste suchen, der auch in der Ansicht
@@ -943,27 +921,6 @@ begin
   PlayedNode := GetNode(Player.Filename);
   if PlayedNode <> nil then
   begin
-    {
-    for i := 0 to FTrackList.Count - 1 do
-    begin
-      if LowerCase(FTrackList[i].Filename) = LowerCase(Player.Filename) then
-      begin
-        if i < FTrackList.Count - 1 then
-        begin
-          for n := i + 1 to FTrackList.Count - 1 do
-          begin
-            NextNode := GetNode(FTrackList[n].Filename);
-            if NextNode <> nil then
-            begin
-              FPlayer.Play(FTrackList[n].Filename, 0);
-              Break;
-            end;
-          end;
-        end;
-        Break;
-      end;
-    end;
-    }
     NextNode := GetNext(PlayedNode);
     if NextNode <> nil then
     begin
@@ -1014,6 +971,7 @@ begin
     FTab.FSeek.Position := Player.PositionByte;
     if Assigned(FTab.FOnPlayStarted) then
       FTab.FOnPlayStarted(FTab);
+    Exit;
   end else if Sender = FPopupMenu.ItemCut then
     Action := taCut
   else if Sender = FPopupMenu.ItemRemove then
@@ -1045,7 +1003,6 @@ end;
 
 procedure TSavedTree.AddTrack(Track: TTrackInfo; FromFilter: Boolean);
 var
-  i: Integer;
   Node: PVirtualNode;
   NodeData: PSavedNodeData;
 begin
@@ -1144,12 +1101,8 @@ end;
 function TSavedTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
   Column: TColumnIndex; var Ghosted: Boolean;
   var Index: Integer): TCustomImageList;
-var
-  NodeData: PSavedNodeData;
 begin
   Result := inherited;
-
-  NodeData := GetNodeData(Node);
 
   // Wir müssen irgendeinen Index setzen, damit PaintImage() getriggert wird
   if (Column = 0) and ((Kind = ikNormal) or (Kind = ikSelected)) then
@@ -1206,15 +1159,6 @@ begin
   begin
     NodeData.Track.Filename := IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + Text;
   end;
-end;
-
-procedure TSavedTree.DoPaintNode(var PaintInfo: TVTPaintInfo);
-var
-  NodeData: PSavedNodeData;
-begin
-  NodeData := GetNodeData(PaintInfo.Node);
-
-  inherited;
 end;
 
 procedure TSavedTree.DoTextDrawing(var PaintInfo: TVTPaintInfo;
@@ -1397,11 +1341,6 @@ destructor TSearchBar.Destroy;
 begin
 
   inherited;
-end;
-
-procedure TSearchBar.FSearchChange(Sender: TObject);
-begin
-
 end;
 
 procedure TSearchBar.Setup;

@@ -220,7 +220,7 @@ end;
 procedure TICEPlayer.PushData(Buf: Pointer; Len: Integer);
 var
   Time: Double;
-  BufLen, RemoveTo: Int64;
+  BufLen: Int64;
   TempPlayer, BitRate: Cardinal;
 const
   MAX_BUFFER_SIZE = 1048576;

@@ -80,8 +80,8 @@ type
 
   TMStreamSearchPanel = class(TPanel)
   private
-    FExpandLabel: TLabel;
-    FExpandButton: TSpeedButton;
+    //FExpandLabel: TLabel;
+    //FExpandButton: TSpeedButton;
 
     FSearchLabel: TLabel;
     FGenreLabel: TLabel;
@@ -93,9 +93,9 @@ type
     FTypeList: TComboBox;
     FSearchButton: TSpeedButton;
 
-    procedure SetVisible(Value: Boolean);
+    //procedure SetVisible(Value: Boolean);
 
-    procedure ExpandButtonClick(Sender: TObject);
+    //procedure ExpandButtonClick(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
     procedure Setup;
@@ -138,8 +138,8 @@ type
     procedure HomeCommunicationStreamsReceived(Sender: TObject; Streams: TStreamInfoArray;
       Count: Integer);
     procedure HomeCommunicationGenresReceived(Sender: TObject; Genres: TStringList);
-    procedure HomeCommunicationReceiveError(Sender: TObject);
-    procedure HomeCommunicationOldVersion(Sender: TObject);
+    //procedure HomeCommunicationReceiveError(Sender: TObject);
+    //procedure HomeCommunicationOldVersion(Sender: TObject);
   protected
     procedure Resize; override;
   public
@@ -160,8 +160,6 @@ type
 
   TMStreamTreeHeaderPopup = class(TPopupMenu)
   private
-    FFileView: TMStreamTree;
-
     FItemName: TMenuItem;
     FItemKbps: TMenuItem;
     FItemType: TMenuItem;
@@ -296,10 +294,7 @@ end;
 
 constructor TMStreamTree.Create(AOwner: TComponent);
 var
-  i: Integer;
-  Png: TPngImage;
   Res: TResourceStream;
-  MenuItem: TMenuItem;
 begin
   inherited Create(AOwner);
 
@@ -503,7 +498,6 @@ end;
 procedure TMStreamTree.DoPaintNode(var PaintInfo: TVTPaintInfo);
 var
   L: Integer;
-  R: TRect;
   NodeData: PStreamNodeData;
 begin
   inherited;
@@ -1193,6 +1187,7 @@ begin
     SwitchMode(moShow);
 end;
 
+{
 procedure TMStreamBrowserView.HomeCommunicationOldVersion(Sender: TObject);
 begin
   SwitchMode(moOldVersion);
@@ -1202,6 +1197,7 @@ procedure TMStreamBrowserView.HomeCommunicationReceiveError(Sender: TObject);
 begin
   SwitchMode(moError);
 end;
+}
 
 procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject;
   Streams: TStreamInfoArray; Count: Integer);
@@ -1407,14 +1403,13 @@ begin
   BevelOuter := bvNone;
 end;
 
-procedure TMStreamSearchPanel.ExpandButtonClick(Sender: TObject);
+{procedure TMStreamSearchPanel.ExpandButtonClick(Sender: TObject);
 begin
   SetVisible(not FTypeList.Visible);
-end;
+end;}
 
 procedure TMStreamSearchPanel.Setup;
 var
-  n: Integer;
   I: TIcon;
   B: TBitmap;
   TopCnt: Integer;
@@ -1543,7 +1538,7 @@ begin
   //SetVisible(False);
 end;
 
-procedure TMStreamSearchPanel.SetVisible(Value: Boolean);
+{procedure TMStreamSearchPanel.SetVisible(Value: Boolean);
 var
   i: Integer;
 begin
@@ -1558,7 +1553,7 @@ begin
     ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4
   else
     ClientHeight := FExpandButton.Top + FExpandButton.Height + FSearchEdit.Top + 4;
-end;
+end;}
 
 { TMLoadingPanel }
 

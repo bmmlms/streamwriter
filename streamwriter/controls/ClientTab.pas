@@ -857,17 +857,18 @@ var
   i, NumChars: Integer;
   Pattern, LowerFilename: string;
   Hash: Cardinal;
-
- Found: Boolean;
+  Added, Found: Boolean;
 begin
   Client := Sender as TICEClient;
 
+  Added := True;
   Track := nil;
   LowerFilename := LowerCase(Filename);
   for i := 0 to FStreams.TrackList.Count - 1 do
     if LowerCase(FStreams.TrackList[i].Filename) = LowerFilename then
     begin
       Track := FStreams.TrackList[i];
+      Added := False;
       Break;
     end;
 
@@ -883,27 +884,30 @@ begin
   Track.BitRate := Client.Entry.Bitrate;
   Track.IsAuto := Client.AutoRemove;
 
-  if Assigned(FOnTrackAdded) then
-    FOnTrackAdded(Client.Entry, Track);
-
-  Client := Sender as TICEClient;
-  if Client.Entry.Settings.AddSavedToIgnore then
+  if Added then
   begin
-    Pattern := BuildPattern(Title, Hash, NumChars);
-    if NumChars > 3 then
-    begin
-      Found := False;
-      for i := 0 to FStreams.IgnoreList.Count - 1 do
-        if FStreams.IgnoreList[i].Hash = Hash then
-        begin
-          Found := True;
-          Break;
-        end;
+    if Assigned(FOnTrackAdded) then
+      FOnTrackAdded(Client.Entry, Track);
 
-      if not Found then
+    Client := Sender as TICEClient;
+    if Client.Entry.Settings.AddSavedToIgnore then
+    begin
+      Pattern := BuildPattern(Title, Hash, NumChars);
+      if NumChars > 3 then
       begin
-        if Assigned(FOnAddIgnoreList) then
-          FOnAddIgnoreList(Self, Title);
+        Found := False;
+        for i := 0 to FStreams.IgnoreList.Count - 1 do
+          if FStreams.IgnoreList[i].Hash = Hash then
+          begin
+            Found := True;
+            Break;
+          end;
+
+        if not Found then
+        begin
+          if Assigned(FOnAddIgnoreList) then
+            FOnAddIgnoreList(Self, Title);
+        end;
       end;
     end;
   end;
@@ -1047,7 +1051,6 @@ function TClientTab.StartStreaming(Name, URL: string; StartPlay: Boolean;
 var
   Clients: TClientArray;
   Client: TICEClient;
-  Entry: TStreamEntry;
   Node: PVirtualNode;
 begin
   Result := True;

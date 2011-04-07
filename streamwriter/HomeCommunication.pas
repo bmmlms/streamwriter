@@ -123,7 +123,7 @@ type
     //FOnReceiveError: TNotifyEvent;
     FOnServerInfo: TServerInfoEvent;
     FOnError: TErrorEvent;
-    FOnOldVersion: TNotifyEvent;
+    //FOnOldVersion: TNotifyEvent;
     FOnStateChanged: TNotifyEvent;
 
     procedure ClientConnected(Sender: TSocketThread);
@@ -340,7 +340,6 @@ end;
 procedure THomeCommunication.RebuildIndex;
 var
   XMLDocument: TXMLLib;
-  Data, Data2: TXMLNode;
   XML: AnsiString;
 begin
   if not Connected then
@@ -492,7 +491,6 @@ end;
 procedure THomeCommunication.LogOff;
 var
   XMLDocument: TXMLLib;
-  Data, Data2: TXMLNode;
   XML: AnsiString;
 begin
   if not Connected then
@@ -605,7 +603,7 @@ begin
     try
       XMLDocument := TXMLLib.Create;
       try
-        XMLDocument.LoadFromString(D);
+        XMLDocument.LoadFromString(AnsiString(D));
 
         Header := XMLDocument.Root.Nodes.GetNode('header');
         Data := XMLDocument.Root.Nodes.GetNode('data');
@@ -762,7 +760,7 @@ begin
       begin
         N2 := TXMLNode.Create(N3);
         N2.Name := 'url';
-        TmpURL := URLs[i];
+        TmpURL := AnsiString(URLs[i]);
         if TmpURL[Length(TmpURL)] = '/' then
           TmpURL := Copy(TmpURL, 1, Length(TmpURL) - 1);
         N2.Value.AsString := TmpURL;

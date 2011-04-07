@@ -307,6 +307,7 @@ begin
   if FClosed then
     if (FTypedStream.AudioType <> atNone) then
       raise Exception.Create(_('Connection closed'));
+
   Sleep(100);
 end;
 

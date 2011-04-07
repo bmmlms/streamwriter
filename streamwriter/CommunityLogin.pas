@@ -70,22 +70,15 @@ begin
 end;
 
 procedure TfrmCommunityLogin.DoClose(var Action: TCloseAction);
-var
-  Res: Integer;
 begin
   if AppGlobals.UserWasSetup then
     Action := caFree
   else
   begin
-    //Res := MsgBox(Handle, _('If you cancel logging in, you won''t be asked another time. You can always login from selecting the ''Logon...'' entry in the main menu.'#13#10'Are you sure you want to cancel logging in?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
-    //if Res = IDYES then
-    begin
-      Action := caFree;
-      AppGlobals.UserWasSetup := True;
-      AppGlobals.User := '';
-      AppGlobals.Pass := '';
-    end;// else
-    //  Action := caNone;
+    Action := caFree;
+    AppGlobals.UserWasSetup := True;
+    AppGlobals.User := '';
+    AppGlobals.Pass := '';
   end;
 
   if Action = caFree then

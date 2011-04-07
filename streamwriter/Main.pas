@@ -185,7 +185,6 @@ type
 
     FClientCount: Cardinal;
     FRecordingCount: Cardinal;
-    FLastLocalRecordingCount: Cardinal;
 
     FWasActivated: Boolean;
     FWasShown: Boolean;
@@ -250,12 +249,11 @@ type
 
   // REMARK: Das hier könnte auch gut THintWindow werden, sieht schöner aus. Siehe VirtualTrees.
   TStatusHint = class(TCustomHint)
-  private
-  protected
+  public
+    constructor Create(AOwner: TComponent); override;
+
     procedure SetHintSize(HintWindow: TCustomHintWindow); override;
     procedure PaintHint(HintWindow: TCustomHintWindow); override;
-  public
-    constructor Create(AOwner: TComponent);
   end;
 
 implementation
@@ -1278,7 +1276,7 @@ end;
 procedure TfrmStreamWriterMain.UpdateButtons;
 var
   i: Integer;
-  B, B4, OnlyAutomatedSelected, OnlyAutomatedCatsSelected: Boolean;
+  B, OnlyAutomatedSelected, OnlyAutomatedCatsSelected: Boolean;
   URLFound, FilenameFound, OnePlaying: Boolean;
   Clients, AllClients: TClientArray;
   Client: TICEClient;

@@ -254,7 +254,7 @@ begin
     Exit;
   
   NodeData := GetNodeData(Node);
-  if NodeData.Client <> nil then    
+  if NodeData.Client <> nil then
     case Column of
       0:
         begin
@@ -434,7 +434,6 @@ var
   NodeData, ParentNodeData: PClientNodeData;
   R: TRect;
 begin
-  NodeData := nil;
   Result := True;
 
   HitNode := GetNodeAt(Pt.X, Pt.Y);
@@ -510,12 +509,6 @@ begin
 
     end;
   end;
-
-  //if HitNode <> nil then
-  //  HitNodeData := GetNodeData(HitNode);
-  //if (HitNode = FDragNode) or (HitNode = nil) {or ((HitNode <> nil) and (HitNodeData.Client <> nil))} then
-    //Result := False;
-//end;
 end;
 
 function TMClientView.DoEndEdit: Boolean;
@@ -608,32 +601,6 @@ begin
     Result[Length(Result) - 1] := Node;
     Node := GetNext(Node);
   end;
-
-{
-  SetLength(Result, 0);
-  if not SelectedOnly then begin
-    Node := GetFirst;
-    while Node <> nil do begin
-      if GetNodeLevel(Node) = 0 then
-      begin
-        Node := GetNext(Node);
-        Continue;
-      end;
-      SetLength(Result, Length(Result) + 1);
-      Result[Length(Result) - 1] := Node;
-      Node := GetNext(Node);
-    end;
-  end else begin
-    SetLength(Result, 0);
-    Nodes := GetSortedSelection(True);
-    for i := 0 to Length(Nodes) - 1 do begin
-      if GetNodeLevel(Node) = 0 then
-        Continue;
-      SetLength(Result, Length(Result) + 1);
-      Result[Length(Result) - 1] := Nodes[i];
-    end;
-  end;
-}
 end;
 
 procedure TMClientView.MenuColsAction(Sender: TMClientView; Index: Integer;
@@ -1036,14 +1003,12 @@ end;
 procedure TMClientView.DoDragging(P: TPoint);
 var
   i: Integer;
-  //UseRelay: Boolean;
   UseFile: Boolean;
   Entries: TPlaylistEntryArray;
   Client: TICEClient;
   Clients: TClientArray;
   Node: PVirtualNode;
   Nodes: TNodeArray;
-  NodeData: PClientNodeData;
 begin
   if FDragSource.DragInProgress then
     Exit;
@@ -1096,7 +1061,6 @@ begin
     Nodes := GetNodes(ntCategory, True);
     for Node in Nodes do
     begin
-      NodeData := GetNodeData(Node);
       SetLength(FDragNodes, Length(FDragNodes) + 1);
       FDragNodes[High(FDragNodes)] := Node;
     end;
@@ -1124,8 +1088,6 @@ begin
     else
       Name := Client.Entry.Name;
 
-    //if (T = etRelay) and (not Client.Active) then
-    //  Add := False;
     if (T = etFile) and (Client.Filename = '') then
       Add := False;
 
@@ -1133,7 +1095,6 @@ begin
     begin
       case T of
         etStream: URL := Client.Entry.StartURL;
-        //etRelay: URL := Client.RelayURL;
         etFile: URL := Client.Filename;
       end;
 

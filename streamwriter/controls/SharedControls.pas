@@ -45,14 +45,12 @@ type
     FLastGripperState: TGripperStates;
 
     FSetting: Boolean;
-    FLastChanged: Cardinal;
     FOnPositionChanged: TNotifyEvent;
 
     procedure PaintBackground(Bmp: TBitmap);
     procedure PaintGripper(Bmp: TBitmap);
 
     function GetGripperState: TGripperStates;
-    function GetGripperPos(X: Integer): Cardinal;
 
     procedure FSetPosition(Value: Int64);
     procedure FSetGripperVisible(Value: Boolean);
@@ -375,16 +373,10 @@ begin
     Paint;
 end;
 
-function TSeekBar.GetGripperPos(X: Integer): Cardinal;
-begin
-  FPosition := Trunc(((X - FDragFrom) / (ClientWidth - 20)) * Max);
-end;
-
 function TSeekBar.GetGripperState: TGripperStates;
 var
   P: Cardinal;
   R: TRect;
-  D, D2: TThemedElementDetails;
 begin
   Result := gsUnknown;
 
@@ -484,10 +476,6 @@ begin
 end;
 
 procedure TSeekBar.MouseMove(Shift: TShiftState; X, Y: Integer);
-var
-  XO: Integer;
-  P: Cardinal;
-  R: TRect;
 begin
   inherited;
 

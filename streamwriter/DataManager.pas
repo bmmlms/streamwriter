@@ -687,7 +687,7 @@ end;
 
 procedure TDataLists.Save;
 var
-  i, CatCount: Integer;
+  i: Integer;
   S: TExtendedStream;
 begin
   if (AppGlobals.SkipSave) or (AppGlobals.DataFile = '') then
@@ -916,7 +916,6 @@ var
   NumChars: Integer;
   Hash: Cardinal;
   Pattern: string;
-  Data: string;
 begin
   Result := TTitleInfo.Create;
   Stream.Read(Result.FTitle);

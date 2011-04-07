@@ -141,6 +141,7 @@ type
 
     procedure StartRecording;
     procedure StopRecording;
+    procedure Disconnected; override;
 
     property Settings: TStreamSettings read FSettings;
     property RecordTitle: string read FRecordTitle write FSetRecordTitle;
@@ -272,6 +273,22 @@ begin
   FSettings.Free;
 
   inherited;
+end;
+
+procedure TICEStream.Disconnected;
+var
+  Track: TStreamTrack;
+begin
+  // Falls erlaubt, versuchen, das Empfangene wegzuschpeichern..
+  if (FAudioStream <> nil) and (FStreamTracks.Count > 0) and (not FSettings.OnlySaveFull) then
+  begin
+    Track := FStreamTracks[0];
+    Track.E := FAudioStream.Size;
+    if Track.S - FSettings.SongBufferSeconds * FBytesPerSec >= 0 then
+      Track.S := Track.S - FSettings.SongBufferSeconds * FBytesPerSec;
+    SaveData(Track.S, Track.E, Track.Title);
+    FStreamTracks.Clear;
+  end;
 end;
 
 procedure TICEStream.DataReceived(CopySize: Integer);
@@ -414,9 +431,8 @@ procedure TICEStream.SaveData(S, E: UInt64; Title: string);
   end;
 var
   Saved, Kill: Boolean;
-  RangeBegin, RangeEnd, BufLen: Int64;
+  RangeBegin, RangeEnd: Int64;
   Dir, Filename: string;
-  i: Integer;
   FileCheck: TFileChecker;
 begin
   Saved := False;
@@ -557,7 +573,6 @@ end;
 
 function TICEStream.StartRecordingInternal: Boolean;
 var
-  i: Integer;
   Dir, Filename: string;
   FileCheck: TFileChecker;
 begin
@@ -624,7 +639,7 @@ begin
     // Falls schon abgespielt wurde, jetzt aufgenommen wird und 'nur ganze Lieder' speichern aus ist,
     // können wir hier direkt mit der Aufnahme anfangen.
     // Achtung: Der Block hier ist so ähnlich in ProcessData() nochmal!
-    if (not FSettings.OnlySaveFull) and (FAudioStream <> nil) and (FMetaCounter > 1) then
+    if (not FSettings.OnlySaveFull) and (FAudioStream <> nil) and (FMetaCounter >= 1) and (Title <> '') then
     begin
       FRecordingTitleFound := True;
       FStreamTracks.FoundTitle(0, Title);
@@ -642,6 +657,11 @@ end;
 
 procedure TICEStream.StopRecordingInternal;
 begin
+  // Das hier wird nur aufgerufen, wenn Play noch aktiv ist, also
+  // die Verbindung nicht beendet wird. Dann müssen wir hier am
+  // Disconnect aufrufen, damit er ein halbes Lied speichert falls gewünscht.
+  Disconnected;
+
   FreeAudioStream;
 end;
 
@@ -1008,7 +1028,6 @@ end;
 
 procedure TFileChecker.GetFilename(Filesize: UInt64; Name: string; AudioType: TAudioTypes);
 var
-  Append: Integer;
   Filename, Ext: string;
 begin
   FResult := crSave;

@@ -227,9 +227,12 @@ end;
 procedure TClientManager.HomeCommTitleChanged(Sender: TObject; StreamName, Title,
   CurrentURL, Format: string; Kbps: Cardinal);
 var
-  i, AutoTuneInMinKbps: Integer;
+  i: Integer;
+  AutoTuneInMinKbps: Cardinal;
   Client: TICEClient;
 begin
+  AutoTuneInMinKbps := 0;
+
   case AppGlobals.AutoTuneInMinKbps of
     0: AutoTuneInMinKbps := 0;
     1: AutoTuneInMinKbps := 64;
