@@ -31,7 +31,8 @@ uses
   About, MsgDlg, HomeCommunication, StreamBrowserView, Clipbrd,
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
-  CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin;
+  CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
+  PlayerManager;
 
 type
   TfrmStreamWriterMain = class(TForm)
@@ -145,6 +146,8 @@ type
     Login1: TMenuItem;
     actLogOff: TAction;
     Logoff1: TMenuItem;
+    ToolButton8: TToolButton;
+    cmdOpenWebsite: TToolButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -237,7 +240,7 @@ type
 
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
 
-    procedure tabCutSaved(Sender: TObject);
+    procedure tabCutSaved(Sender: TObject; Filesize, Length: UInt64);
 
     procedure tabVolumeChanged(Sender: TObject; Volume: Integer);
     procedure tabPlayStarted(Sender: TObject);
@@ -290,10 +293,7 @@ begin
 
   Hide;
 
-  tabSaved.Tree.Player.Stop(True);
-  for i := 0 to pagMain.PageCount - 1 do
-    if pagMain.Pages[i] is TCutTab then
-      TCutTab(pagMain.Pages[i]).PausePlay;
+  Players.StopAll;
 
   FUpdater.Kill;
 
@@ -726,7 +726,6 @@ begin
   case Msg.HotKey of
     0:
       begin
-        //StopPlay;
         Nodes := tabClients.ClientView.GetNodes(ntClient, True);
         if Length(Nodes) > 0 then
         begin
@@ -745,14 +744,11 @@ begin
             NodeData.Client.StartPlay;
           end;
         end;
-        //actPlay.Execute;
       end;
     1:
-      tabPlayStarted(nil);
-      //actPause.Execute;
+      Players.PauseAll;
     2:
-      //StopPlay;
-      actStopPlay.Execute;
+      Players.StopAll;
     3:
       begin
         Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
@@ -1167,14 +1163,15 @@ begin
   end;
 end;
 
-procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject);
+procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject; Filesize, Length: UInt64);
 var
   i: Integer;
 begin
   for i := 0 to FStreams.TrackList.Count - 1 do
     if LowerCase(FStreams.TrackList[i].Filename) = LowerCase(TCutTab(Sender).Filename) then
     begin
-      FStreams.TrackList[i].Filesize := GetFileSize(FStreams.TrackList[i].Filename);
+      FStreams.TrackList[i].Filesize := Filesize;
+      FStreams.TrackList[i].Length := Length;
       FStreams.TrackList[i].WasCut := True;
       Exit;
     end;
@@ -1341,6 +1338,7 @@ begin
     mnuTuneIn1.Enabled := B;
   if mnuTuneIn2.Enabled <> B then
     mnuTuneIn2.Enabled := B;
+
   if mnuSavePlaylist1.Enabled <> B then
     mnuSavePlaylist1.Enabled := B;
   if mnuSavePlaylist2.Enabled <> B then
@@ -1350,6 +1348,8 @@ begin
     actResetData.Enabled := B;
   if actTuneInFile.Enabled <> FilenameFound then
     actTuneInFile.Enabled := FilenameFound;
+  if actSavePlaylistFile.Enabled <> FilenameFound then
+    actSavePlaylistFile.Enabled := FilenameFound;
 
   if actStopPlay.Enabled <> OnePlaying then
     actStopPlay.Enabled := OnePlaying;

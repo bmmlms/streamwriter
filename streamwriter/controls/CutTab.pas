@@ -45,6 +45,8 @@ type
     procedure Setup;
   end;
 
+  TFileSavedEvent = procedure(Sender: TObject; Filesize, Length: UInt64) of object;
+
   TCutTab = class(TMainTabSheet)
   private
     FToolbarPanel: TPanel;
@@ -53,7 +55,7 @@ type
     FCutView: TCutView;
     FFilename: string;
 
-    FOnSaved: TNotifyEvent;
+    FOnSaved: TFileSavedEvent;
     FOnVolumeChanged: TSeekChangeEvent;
     FOnPlayStarted: TNotifyEvent;
 
@@ -81,7 +83,7 @@ type
     property Filename: string read FFilename;
     property Volume: Integer write FSetVolume;
 
-    property OnSaved: TNotifyEvent read FOnSaved write FOnSaved;
+    property OnSaved: TFileSavedEvent read FOnSaved write FOnSaved;
     property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
   end;
@@ -128,8 +130,7 @@ end;
 
 procedure TCutTab.VolumeTrackbarChange(Sender: TObject);
 begin
-  //AppGlobals.CutVolume := FVolume.Volume;
-  FCutView.Volume := FVolume.Volume;
+  FCutView.Player.Volume := FVolume.Volume;
 
   if Assigned(FOnVolumeChanged) then
     FOnVolumeChanged(Self, FVolume.Volume);
@@ -137,9 +138,7 @@ end;
 
 procedure TCutTab.SaveClick(Sender: TObject);
 begin
-  if FCutView.Save then
-    if Assigned(FOnSaved) then
-      FOnSaved(Self);
+  FCutView.Save;
 end;
 
 procedure TCutTab.PosClick(Sender: TObject);
@@ -216,9 +215,8 @@ procedure TCutTab.FSetVolume(Value: Integer);
 begin
   FVolume.NotifyOnMove := False;
   FVolume.Volume := Value;
+  FCutView.Player.Volume := Value;
   FVolume.NotifyOnMove := True;
-
-  FCutView.Volume := FVolume.Volume;
 end;
 
 procedure TCutTab.Setup(Filename: string; ToolBarImages: TImageList);
@@ -262,7 +260,6 @@ begin
   FCutView := TCutView.Create(Self);
   FCutView.Parent := Self;
   FCutView.Align := alClient;
-  FCutView.Volume := FVolume.Volume;
   FCutView.OnStateChanged := CutViewStateChanged;
 
   UpdateButtons;

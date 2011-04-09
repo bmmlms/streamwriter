@@ -26,7 +26,8 @@ interface
 uses
   SysUtils, Windows, Classes, Controls, StdCtrls, ExtCtrls, Functions,
   Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
-  LanguageObjects, WaveData, Messages, ComCtrls, AppData;
+  LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
+  PlayerManager;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -113,12 +114,13 @@ type
     FWaveData: TWaveData;
     FError: Boolean;
     FLineMode: TLineMode;
-    FVolume: Integer;
     FProgressBarLoad: TProgressBar;
+    FWasSaved: Boolean;
 
-    FPlayer: Cardinal;
-    FSync, FSync2: Cardinal;
+    FPlayer: TPlayer;
     FFilename: string;
+    FFilesize: UInt64;
+    FLength: UInt64;
 
     FOnStateChanged: TNotifyEvent;
 
@@ -127,9 +129,12 @@ type
     procedure ThreadScanError(Sender: TObject);
     procedure ThreadTerminate(Sender: TObject);
 
-    procedure MsgRefresh(var Msg: TMessage); message WM_USER + 1234;
+    procedure PlayerEndReached(Sender: TObject);
+    procedure PlayerPlay(Sender: TObject);
+    procedure PlayerPause(Sender: TObject);
+    procedure PlayerStop(Sender: TObject);
 
-    procedure FSetVolume(Value: Integer);
+    procedure MsgRefresh(var Msg: TMessage); message WM_USER + 1234;
   protected
     procedure Resize; override;
   public
@@ -155,14 +160,17 @@ type
     function CanSetLine: Boolean;
     function CanZoom: Boolean;
 
+    property Player: TPlayer read FPlayer;
     property LineMode: TLineMode read FLineMode write FLineMode;
+    property Filesize: UInt64 read FFilesize;
+    property Length: UInt64 read FLength;
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
-    property Volume: Integer read FVolume write FSetVolume;
   end;
 
-  procedure LoopSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
-
 implementation
+
+uses
+  CutTab;
 
 { TScanThread }
 
@@ -231,10 +239,13 @@ begin
 
   FProgressBarLoad := TProgressBar.Create(Self);
   FProgressBarLoad.Parent := Self;
+  FProgressBarLoad.Visible := False;
 end;
 
 destructor TCutView.Destroy;
 begin
+  Players.RemovePlayer(FPlayer);
+
   if FScanThread <> nil then
   begin
     FScanThread.Terminate;
@@ -246,24 +257,16 @@ begin
 
   FWaveData.Free;
 
-  if FPlayer > 0 then
+  if FPlayer <> nil then
   begin
     // Das hier gibt gerne Exceptions. Aber nur, wenn ein CutView auf ist, und mann das Programm beendet.
     // Schieß mich tot... das hier hilft, keine Ahnung woher der Fehler kommt.
     try
-      BASSStreamFree(FPlayer);
+      FreeAndNil(FPlayer);
     except end;
-    FPlayer := 0;
   end;
 
   inherited;
-end;
-
-procedure TCutView.FSetVolume(Value: Integer);
-begin
-  FVolume := Value;
-  if FPlayer > 0 then
-    BASSChannelSetAttribute(FPlayer, 2, Value / 100);
 end;
 
 procedure TCutView.LoadFile(Filename: string);
@@ -272,6 +275,24 @@ begin
     Exit;
 
   FFilename := Filename;
+
+  if FPlayer <> nil then
+    FreeAndNil(FPlayer);
+  FPlayer := TPlayer.Create;
+  FPlayer.OnEndReached := PlayerEndReached;
+  FPlayer.OnPlay := PlayerPlay;
+  FPlayer.OnPause := PlayerPause;
+  FPlayer.OnStop := PlayerStop;
+  Players.AddPlayer(FPlayer);
+
+  try
+    FPlayer.Filename := FFilename;
+  except
+    ThreadScanError(Self);
+    Exit;
+  end;
+
+  FProgressBarLoad.Visible := True;
 
   FScanThread := TScanThread.Create(Filename);
   FScanThread.FreeOnTerminate := True;
@@ -285,10 +306,6 @@ begin
 
   BASSSetDevice(AppGlobals.SoundDevice + 1);
 
-  if FPlayer > 0 then
-    BASSStreamFree(FPlayer);
-  FPlayer := BASSStreamCreateFile(False, PChar(FFilename), 0, 0, {$IFDEF UNICODE}BASS_UNICODE{$ENDIF});
-
   FScanThread.Resume;
 
   if Assigned(FOnStateChanged) then
@@ -299,6 +316,8 @@ procedure TCutView.MsgRefresh(var Msg: TMessage);
 begin
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
+
+  FPB.FPlayLine := 0;
 
   FPB.BuildBuffer;
   FPB.Paint;
@@ -313,16 +332,17 @@ begin
 
   FWaveData.Cut(FPB.FStartLine, FPB.FEndLine);
 
-  if FPlayer > 0 then
+  if FPlayer <> nil then
   begin
-    P := BASSChannelGetPosition(FPlayer, BASS_POS_BYTE);
+    P := FPlayer.PositionByte;
     if (FWaveData.WaveArray[FPB.FStartLine].Pos > P) or
        (FWaveData.WaveArray[FPB.FEndLine].Pos < P) then
     begin
-      BASSChannelStop(FPlayer);
+      FPlayer.Pause;
       FPB.FPlayLine := FWaveData.CutStart;
     end;
 
+    {
     if FSync > 0 then
     begin
       BASSChannelRemoveSync(FPlayer, FSync);
@@ -330,6 +350,9 @@ begin
     end;
     FSync := BASSChannelSetSync(FPlayer, BASS_SYNC_POS, FWaveData.WaveArray[FWaveData.CutEnd].Pos, LoopSyncProc, Self);
     FSync2 := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, LoopSyncProc, Self);
+    }
+
+    FPlayer.PosToReach := FWaveData.WaveArray[FWaveData.CutEnd].Pos;
   end;
 
   FPB.FZoomStartLine := FPB.FStartLine;
@@ -351,8 +374,9 @@ begin
   FWaveData.CutStates[FWaveData.CutStates.Count - 1].Free;
   FWaveData.CutStates.Delete(FWaveData.CutStates.Count - 1);
 
-  if FPlayer > 0 then
+  if FPlayer <> nil then
   begin
+    {
     if FSync > 0 then
     begin
       BASSChannelRemoveSync(FPlayer, FSync);
@@ -360,6 +384,8 @@ begin
     end;
     FSync := BASSChannelSetSync(FPlayer, BASS_SYNC_POS, FWaveData.WaveArray[FWaveData.CutEnd].Pos, LoopSyncProc, Self);
     FSync2 := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, LoopSyncProc, Self);
+    }
+    FPlayer.PosToReach := FWaveData.WaveArray[FWaveData.CutEnd].Pos;
   end;
 
   FPB.FStartLine := FWaveData.CutStates[FWaveData.CutStates.Count - 1].CutStart;
@@ -384,16 +410,16 @@ begin
   if not CanSave then
     Exit;
 
-  if FPlayer > 0 then
+  if FPlayer <> nil then
   begin
-    BASSStreamFree(FPlayer);
-    FPlayer := 0;
+    FreeAndNil(FPlayer);
   end;
 
   try
     if FWaveData.Save(FFilename) then
     begin
       FreeAndNil(FWaveData);
+      FWasSaved := True;
       LoadFile(FFilename);
 
       Result := True;
@@ -405,7 +431,17 @@ begin
     // Wenn Result = True wird FPlayer in LoadFile() neu erstellt
     if not Result then
     begin
-      FPlayer := BASSStreamCreateFile(False, PChar(FFilename), 0, 0, {$IFDEF UNICODE}BASS_UNICODE{$ENDIF});
+      FPlayer := TPlayer.Create;
+      try
+        FPlayer.Filename := FFilename;
+
+        FPlayer.OnEndReached := PlayerEndReached;
+        FPlayer.OnPlay := PlayerPlay;
+        FPlayer.OnPause := PlayerPause;
+        FPlayer.OnStop := PlayerStop;
+      except
+        ThreadScanError(Self);
+      end;
     end;
   end;
 
@@ -425,7 +461,7 @@ begin
 
   FPB.FPlayingIndex := 0;
 
-  if FPlayer = 0 then
+  if FPlayer = nil then
   begin
     Exit;
   end;
@@ -433,18 +469,45 @@ begin
   if FWaveData.TimeBetween(FPB.FPlayLine, FWaveData.CutEnd) <= 0.3 then
     FPB.FPlayLine := FWaveData.CutStart;
 
-  BASSChannelSetPosition(FPlayer, FWaveData.WaveArray[FPB.FPlayLine].Pos, BASS_POS_BYTE);
-  if FPlayer > 0 then
-    BASSChannelSetAttribute(FPlayer, 2, FVolume / 100);
-  BASSChannelPlay(FPlayer, False);
-  if FSync > 0 then
-  begin
-    BASSChannelRemoveSync(FPlayer, FSync);
-    BASSChannelRemoveSync(FPlayer, FSync2);
-  end;
-  FSync := BASSChannelSetSync(FPlayer, BASS_SYNC_POS, FWaveData.WaveArray[FWaveData.CutEnd].Pos, LoopSyncProc, Self);
-  FSync2 := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, LoopSyncProc, Self);
 
+  // Das muss so, damit die rote Linie da bleibt wo sie vor dem ersten
+  // Play hingesetzt wurde, falls sie vorher bewegt wurde.
+  FPlayer.Volume := 0;
+  //FPlayer.Play;
+  //FPlayer.Pause;
+  FPlayer.Volume := AppGlobals.PlayerVolume;
+  FPlayer.PositionByte := FWaveData.WaveArray[FPB.FPlayLine].Pos;
+
+  FPlayer.Play;
+
+  FPlayer.PosToReach := FWaveData.WaveArray[FWaveData.CutEnd].Pos;
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
+end;
+
+procedure TCutView.PlayerEndReached(Sender: TObject);
+begin
+  FPlayer.Stop(False);
+  FPlayer.PositionByte := 0;
+
+  PostMessage(Handle, WM_USER + 1234, 0, 0);
+end;
+
+procedure TCutView.PlayerPause(Sender: TObject);
+begin
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
+end;
+
+procedure TCutView.PlayerPlay(Sender: TObject);
+begin
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
+end;
+
+procedure TCutView.PlayerStop(Sender: TObject);
+begin
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
@@ -464,9 +527,9 @@ begin
   if not CanStop then
     Exit;
 
-  if FPlayer > 0 then
+  if FPlayer <> nil then
   begin
-    BASSChannelStop(FPlayer);
+    FPlayer.Pause;
   end;
   FPB.BuildBuffer;
   FPB.Paint;
@@ -505,17 +568,13 @@ end;
 
 function TCutView.CanPlay: Boolean;
 begin
-  Result := (FPlayer > 0) and (FWaveData <> nil) and (FPB.FStartLine < FPB.FEndLine) and
-    //(FWaveData.TimeBetween(FPB.FStartLine, FPB.FEndLine) >= 0.5) and
-
-    //(FWaveData.TimeBetween(FPB.FPlayLine, FWaveData.CutEnd) >= 0.5) and
-
-    (BASSChannelIsActive(FPlayer) <> BASS_ACTIVE_PLAYING);
+  Result := (FPlayer <> nil) and (FWaveData <> nil) and (FPB.FStartLine < FPB.FEndLine) and
+    (not FPlayer.Playing);
 end;
 
 function TCutView.CanStop: Boolean;
 begin
-  Result := (FPlayer > 0) and (BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING);
+  Result := (FPlayer <> nil) and FPlayer.Playing;
 end;
 
 function TCutView.CanAutoCut: Boolean;
@@ -549,12 +608,22 @@ begin
   FPB.BuildBuffer;
   FPB.Repaint;
 
+  if FWasSaved then
+  begin
+    if Assigned(TCutTab(Owner).OnSaved) then
+      TCutTab(Owner).OnSaved(Owner, FWaveData.Filesize, Trunc(FWaveData.Secs));
+  end;
+
+  FWasSaved := False;
+
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
 
 procedure TCutView.ThreadScanError(Sender: TObject);
 begin
+  FProgressBarLoad.Visible := False;
+  FWasSaved := False;
   FError := True;
 
   FPB.BuildBuffer;
@@ -568,18 +637,9 @@ end;
 
 procedure TCutView.ThreadTerminate(Sender: TObject);
 begin
+  FWasSaved := False;
   FProgressBarLoad.Visible := False;
   FScanThread := nil;
-end;
-
-procedure LoopSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
-var
-  PV: TCutView;
-begin
-  PV := TCutView(user);
-  BASSChannelStop(PV.FPlayer);
-
-  PostMessage(PV.Handle, WM_USER + 1234, 0, 0);
 end;
 
 { TCutPaintBox }
@@ -990,7 +1050,7 @@ var
   SearchFrom, BytePos: Cardinal;
 begin
   Result := 0;
-  BytePos := BASSChannelGetPosition(FCutView.FPlayer, BASS_POS_BYTE);
+  BytePos := FCutView.FPlayer.PositionByte;
 
   SearchFrom := 0;
   if BytePos > FCutView.FWaveData.WaveArray[FPlayingIndex].Pos then
@@ -1040,10 +1100,9 @@ begin
     lmPlay:
       if (Button = mbLeft) and (Mode <> mmUp) then
       begin
-        if FCutView.FPlayer > 0 then
+        if FCutView.FPlayer <> nil then
         begin
-          //BASSChannelStop(FCutView.FPlayer);
-          BASSChannelSetPosition(FCutView.FPlayer, FCutView.FWaveData.WaveArray[ArrayPos].Pos, BASS_POS_BYTE);
+          FCutView.FPlayer.PositionByte := FCutView.FWaveData.WaveArray[ArrayPos].Pos;
         end;
         FPlayLine := ArrayPos;
       end;
@@ -1170,7 +1229,7 @@ begin
   if csDestroying in ComponentState then
     Exit;
 
-  if (FCutView.FPlayer > 0) and (BASSChannelIsActive(FCutView.FPlayer) = BASS_ACTIVE_PLAYING) then
+  if (FCutView.FPlayer <> nil) and FCutView.FPlayer.Playing and (not FCutView.FPlayer.Paused) then
   begin
     FPlayingIndex := GetPlayerPos;
     FPlayLine := FPlayingIndex;

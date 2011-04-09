@@ -28,14 +28,22 @@ type
   TPlayer = class
   private
     FPlayer: Cardinal;
-    FSync, FSyncEnd: Cardinal;
+    FSyncSlide, FSyncPos, FSyncEnd: Cardinal;
     FPaused: Boolean;
     FStopped: Boolean;
     FFree: Boolean;
     FFilename: string;
     FVolume: Integer;
+    FPosToReach: Cardinal;
+    FEndPos: Cardinal;
 
+    FOnPosReached: TNotifyEvent;
     FOnEndReached: TNotifyEvent;
+    FOnPlay: TNotifyEvent;
+    FOnPause: TNotifyEvent;
+    FOnStop: TNotifyEvent;
+
+    procedure CreatePlayer;
 
     function FGetPaused: Boolean;
     function FGetStopped: Boolean;
@@ -44,25 +52,34 @@ type
     function FGetMaxByte: Cardinal;
     function FGetPositionByte: Cardinal;
     function FGetPositionTime: Double;
+    procedure FSetFilename(Value: string);
+    procedure FSetPosToReach(Value: Cardinal);
+    procedure FSetEndPos(Value: Cardinal);
+    procedure FSetPositionByte(Value: Cardinal);
   public
     constructor Create;
     destructor Destroy; override;
 
-    procedure Play(Filename: string; From: Cardinal);
+    procedure Play;
     procedure Pause;
     procedure Stop(Free: Boolean);
-    procedure SetPosition(Bytes: Cardinal);
 
     property Paused: Boolean read FGetPaused;
     property Stopped: Boolean read FGetStopped;
     property Playing: Boolean read FGetPlaying;
-    property Filename: string read FFilename;
+    property Filename: string read FFilename write FSetFilename;
     property Volume: Integer read FVolume write FSetVolume;
     property MaxByte: Cardinal read FGetMaxByte;
-    property PositionByte: Cardinal read FGetPositionByte;
+    property PositionByte: Cardinal read FGetPositionByte write FSetPositionByte;
     property PositionTime: Double read FGetPositionTime;
+    property PosToReach: Cardinal read FPosToReach write FSetPosToReach;
+    property EndPos: Cardinal read FEndPos write FSetEndPos;
 
+    property OnPosReached: TNotifyEvent read FOnPosReached write FOnPosReached;
     property OnEndReached: TNotifyEvent read FOnEndReached write FOnEndReached;
+    property OnPlay: TNotifyEvent read FOnPlay write FOnPlay;
+    property OnPause: TNotifyEvent read FOnPause write FOnPause;
+    property OnStop: TNotifyEvent read FOnStop write FOnStop;
   end;
 
 implementation
@@ -88,29 +105,28 @@ begin
   P.FStopped := False;
 end;
 
+procedure PosSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
+var
+  P: TPlayer;
+begin
+  P := TPlayer(user);
+
+  //PostMessage(PV.Handle, WM_USER + 1234, 0, 0);
+  if Assigned(P.FOnPosReached) then
+    P.FOnPosReached(P);
+end;
+
 procedure EndSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
 var
   P: TPlayer;
 begin
-  BASSChannelRemoveSync(channel, handle);
-
   P := TPlayer(user);
-  BASSChannelStop(channel);
-  BASSStreamFree(channel);
-
-  if Assigned(P.OnEndReached) then
-    P.OnEndReached(P);
-
-  // Wird nochmal abgefragt, weil in OnEndReached evtl. der nächste
-  // Track zur Wiedergabe gestartet wird.
-  if not P.Playing then
-  begin
-    P.FPlayer := 0;
-    P.FFilename := '';
-  end;
 
   P.FPaused := False;
   P.FStopped := False;
+
+  if Assigned(P.OnEndReached) then
+    P.OnEndReached(P);
 end;
 
 { TPlayer }
@@ -121,9 +137,21 @@ begin
 
 end;
 
+procedure TPlayer.CreatePlayer;
+begin
+  FPlayer := BASSStreamCreateFile(False, PChar(FFilename), 0, 0, {$IFDEF UNICODE}BASS_UNICODE{$ENDIF});
+  if FPlayer = 0 then
+    raise Exception.Create('');
+  FSyncEnd := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, EndSyncProc, Self);
+end;
+
 destructor TPlayer.Destroy;
 begin
-  Stop(True);
+  // Crashed bei Programmende, deshalb try..except. Ist nötig wegen dem SavedTab,
+  // wenn man hier nicht freigibt, kann er nicht speichern.
+  try
+    BASSStreamFree(FPlayer);
+  except end;
 
   inherited;
 end;
@@ -169,6 +197,50 @@ begin
   Result := FPlayer = 0;
 end;
 
+procedure TPlayer.FSetEndPos(Value: Cardinal);
+begin
+  if FSyncPos > 0 then
+    BASSChannelRemoveSync(FPlayer, FSyncEnd);
+  if Value > 0 then
+    FSyncEnd := BASSChannelSetSync(FPlayer, BASS_SYNC_POS, Value, EndSyncProc, Self);
+end;
+
+procedure TPlayer.FSetFilename(Value: string);
+begin
+  if FPlayer > 0 then
+  begin
+    if Value <> FFilename then
+    begin
+      Stop(True);
+    end;
+  end;
+
+  if FPlayer = 0 then
+  begin
+    FFilename := Value;
+    CreatePlayer;
+  end;
+end;
+
+procedure TPlayer.FSetPositionByte(Value: Cardinal);
+begin
+  if FPlayer > 0 then
+  begin
+    if Value = MaxByte then
+      Stop(False)
+    else
+      BASSChannelSetPosition(FPlayer, Value, BASS_POS_BYTE);
+  end;
+end;
+
+procedure TPlayer.FSetPosToReach(Value: Cardinal);
+begin
+  if FSyncPos > 0 then
+    BASSChannelRemoveSync(FPlayer, FSyncPos);
+  if Value > 0 then
+    FSyncPos := BASSChannelSetSync(FPlayer, BASS_SYNC_POS, Value, PosSyncProc, Self);
+end;
+
 procedure TPlayer.FSetVolume(Value: Integer);
 begin
   FVolume := Value;
@@ -182,73 +254,40 @@ var
 begin
   if FPlayer > 0 then
   begin
-    if BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PAUSED then
+    if BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING then
+      FPaused := True;
+
+    Pos := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetPosition(FPlayer, BASS_FILEPOS_CURRENT));
+    Len := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetLength(FPlayer, BASS_POS_BYTE));
+
+    if Len - Pos < 0.300 then
     begin
-      BASSChannelSetAttribute(FPlayer, 2, FVolume / 100);
-      BASSChannelPlay(FPlayer, False)
+      BASSChannelPause(FPlayer);
     end else
     begin
-      if BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING then
-        FPaused := True;
-
-      Pos := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetPosition(FPlayer, BASS_FILEPOS_CURRENT));
-      Len := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetLength(FPlayer, BASS_POS_BYTE));
-
-      if Len - Pos < 0.300 then
-      begin
-        BASSChannelPause(FPlayer);
-      end else
-      begin
-        FSync := BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, SlideEndSyncProc, Self);
-        BASSChannelSlideAttribute(FPlayer, 2, 0, Trunc(Min(Len - Pos - 10, 300)));
-        while BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING do
-          Sleep(50);
-      end;
+      FSyncSlide := BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, SlideEndSyncProc, Self);
+      BASSChannelSlideAttribute(FPlayer, 2, 0, Trunc(Min(Len - Pos - 10, 300)));
+      while BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING do
+        Sleep(50);
     end;
+
+    if Assigned(FOnPause) then
+      FOnPause(Self)
   end;
 end;
 
-procedure TPlayer.Play(Filename: string; From: Cardinal);
+procedure TPlayer.Play;
 begin
-  if FPlayer > 0 then
-  begin
-    if Filename <> FFilename then
-    begin
-      From := 0;
-      Stop(True);
-    end;
-
-    if FPlayer > 0 then
-      if BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PAUSED then
-      begin
-        BASSChannelSetAttribute(FPlayer, 2, FVolume / 100);
-        BASSChannelPlay(FPlayer, False);
-        Exit;
-      end else
-        Stop(False);
-  end;
-
-  FFilename := Filename;
   if FPlayer = 0 then
-    FPlayer := BASSStreamCreateFile(False, PChar(Filename), 0, 0, {$IFDEF UNICODE}BASS_UNICODE{$ENDIF});
-  BASSChannelSetAttribute(FPlayer, 2, FVolume / 100);
-  BASSChannelSetPosition(FPlayer, From, BASS_POS_BYTE);
-  FSyncEnd := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, EndSyncProc, Self);
-  BASSChannelPlay(FPlayer, True);
-end;
-
-procedure TPlayer.SetPosition(Bytes: Cardinal);
-begin
-  if FPlayer > 0 then
   begin
-    if Bytes = MaxByte then
-    begin
-      Stop(False);
-      //BASSChannelStop(FPlayer);
-      //BASSChannelSetPosition(FPlayer, 0, BASS_POS_BYTE);
-    end else
-      BASSChannelSetPosition(FPlayer, Bytes, BASS_POS_BYTE);
+    CreatePlayer;
   end;
+
+  BASSChannelSetAttribute(FPlayer, 2, FVolume / 100);
+  BASSChannelPlay(FPlayer, False);
+
+  if Assigned(FOnPlay) then
+    FOnPlay(Self);
 end;
 
 procedure TPlayer.Stop(Free: Boolean);
@@ -257,7 +296,6 @@ var
 begin
   if FPlayer > 0 then
   begin
-    FFilename := '';
     FStopped := True;
     FFree := Free;
 
@@ -273,7 +311,7 @@ begin
           BASSStreamFree(FPlayer);
       end else
       begin
-        FSync := BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, SlideEndSyncProc, Self);
+        FSyncSlide := BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, SlideEndSyncProc, Self);
         BASSChannelSlideAttribute(FPlayer, 2, 0, Min(Trunc(Len - Pos - 10), 300));
         while BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING do
           Sleep(50);
@@ -291,6 +329,9 @@ begin
         FPlayer := 0;
       end;
     end;
+
+    if Assigned(FOnStop) then
+      FOnStop(Self);
   end;
 end;
 

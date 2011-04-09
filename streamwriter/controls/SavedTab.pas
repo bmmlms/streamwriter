@@ -25,7 +25,8 @@ uses
   Windows, SysUtils, Messages, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls,
   Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, DataManager,
   ImgList, Functions, DragDropFile, GUIFunctions, StreamInfoView, DynBASS,
-  Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes;
+  Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
+  PlayerManager;
 
 type
   TSavedTree = class;
@@ -170,6 +171,7 @@ type
     FColImages: TVirtualTreeColumn;
     FColFilename: TVirtualTreeColumn;
     FColSize: TVirtualTreeColumn;
+    FColLength: TVirtualTreeColumn;
     FColStream: TVirtualTreeColumn;
     FColSaved: TVirtualTreeColumn;
     FColBitRate: TVirtualTreeColumn;
@@ -183,6 +185,9 @@ type
     procedure PopupMenuClick(Sender: TObject);
 
     procedure PlayerEndReached(Sender: TObject);
+    procedure PlayerPlay(Sender: TObject);
+    procedure PlayerPause(Sender: TObject);
+    procedure PlayerStop(Sender: TObject);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -428,6 +433,7 @@ end;
 
 destructor TSavedTab.Destroy;
 begin
+  FPositionTimer.Enabled := False;
 
   inherited;
 end;
@@ -461,6 +467,8 @@ procedure TSavedTab.PositionTimer(Sender: TObject);
 begin
   if FSavedTree.Player.Playing or FSavedTree.Player.Paused then
   begin
+    FSeek.GripperVisible := True;
+
     // Ich habe das Gefühl, dass das hier eine schwer reproduzierbare Exception verursachen
     // kann, die dank des Timers jede Sekunde ein paar MsgBox() macht, deshalb so komisch hier.
     try
@@ -609,7 +617,7 @@ end;
 
 procedure TSavedTab.SeekChange(Sender: TObject);
 begin
-  FSavedTree.FPlayer.SetPosition(FSeek.Position);
+  FSavedTree.FPlayer.PositionByte := FSeek.Position;
   PositionTimer(FPositionTimer);
   UpdateButtons;
 end;
@@ -731,6 +739,11 @@ begin
 
   FPlayer := TPlayer.Create;
   FPlayer.OnEndReached := PlayerEndReached;
+  FPlayer.OnPlay := PlayerPlay;
+  FPlayer.OnPause := PlayerPause;
+  FPlayer.OnStop := PlayerStop;
+  Players.AddPlayer(FPlayer);
+
   FTrackList := TTrackList.Create;
 
   FTab := TSavedTab(AOwner);
@@ -775,9 +788,12 @@ begin
   FColSize := Header.Columns.Add;
   FColSize.Text := _('Size');
   FColSize.Width := 70;
+  FColLength := Header.Columns.Add;
+  FColLength.Text := _('Length');
+  FColLength.Width := 60;
   FColBitRate := Header.Columns.Add;
   FColBitRate.Text := _('Bitrate');
-  FColBitRate.Width := 70;
+  FColBitRate.Width := 60;
   FColStream := Header.Columns.Add;
   FColStream.Text := _('Stream');
   FColStream.Width := 250;
@@ -793,6 +809,8 @@ end;
 
 destructor TSavedTree.Destroy;
 begin
+  Players.RemovePlayer(FPlayer);
+
   FPlayer.Free;
   FTrackList.Free;
   FDragSource.Free;
@@ -899,6 +917,8 @@ begin
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 33)
       else if FPlayer.Paused then
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 39)
+      else
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20);
     end else
       Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20);
 
@@ -926,13 +946,39 @@ begin
     begin
       NodeData := GetNodeData(NextNode);
 
-      FPlayer.Play(NodeData.Track.Filename, 0);
+      try
+        FPlayer.Filename := NodeData.Track.Filename;
+      except
+        Exit;
+      end;
+
+      FPlayer.Play;
+
       FTab.FSeek.Max := Player.MaxByte;
       FTab.FSeek.Position := Player.PositionByte;
     end;
   end;
 
   FTab.UpdateButtons;
+end;
+
+procedure TSavedTree.PlayerPause(Sender: TObject);
+begin
+  Players.LastPlayer := FPlayer;
+  FTab.UpdateButtons;
+  Invalidate;
+end;
+
+procedure TSavedTree.PlayerPlay(Sender: TObject);
+begin
+  FTab.UpdateButtons;
+  Invalidate;
+end;
+
+procedure TSavedTree.PlayerStop(Sender: TObject);
+begin
+  FTab.UpdateButtons;
+  Invalidate;
 end;
 
 procedure TSavedTree.PopupMenuClick(Sender: TObject);
@@ -948,9 +994,12 @@ begin
   if Sender = FPopupMenu.ItemPause then
   begin
     if FPlayer.Paused then
+    begin
       if Assigned(FTab.FOnPlayStarted) then
         FTab.FOnPlayStarted(FTab);
-    FPlayer.Pause;
+      FPlayer.Play;
+    end else
+      FPlayer.Pause;
     FTab.UpdateButtons;
     Exit;
   end
@@ -966,11 +1015,27 @@ begin
 
   if Sender = FPopupMenu.ItemPlay then
   begin
-    FPlayer.Play(Tracks[0].Filename, FTab.FSeek.Position);
-    FTab.FSeek.Max := Player.MaxByte;
-    FTab.FSeek.Position := Player.PositionByte;
+    try
+      FPlayer.Filename := Tracks[0].Filename;
+    except
+      MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
+      Exit;
+    end;
+
+    FTab.FSeek.Max := FPlayer.MaxByte;
+    if not FPlayer.Paused then
+    begin
+      FTab.FSeek.Position := 0;
+      FPlayer.PositionByte := 0;
+    end;
+    FPlayer.Play;
+
     if Assigned(FTab.FOnPlayStarted) then
       FTab.FOnPlayStarted(FTab);
+
+    FTab.UpdateButtons;
+    Invalidate;
+
     Exit;
   end else if Sender = FPopupMenu.ItemCut then
     Action := taCut
@@ -1061,6 +1126,7 @@ procedure TSavedTree.Translate;
 begin
   FColFilename.Text := _('Filename');
   FColSize.Text := _('Size');
+  FColLength.Text := _('Length');
   FColStream.Text := _('Stream');
   FColSaved.Text := _('Time');
   FColBitRate.Text := _('Bitrate');
@@ -1068,6 +1134,15 @@ end;
 
 procedure TSavedTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
   TextType: TVSTTextType; var Text: UnicodeString);
+  function BuildTime(T: UInt64): string;
+  var
+    Min, Sec: Word;
+  begin
+    Min := Trunc(T / 60);
+    T := T - Trunc(T / 60) * 60;
+    Sec := T;
+    Result := Format('%0.2d:%0.2d', [Min, Sec]);
+  end;
 var
   NodeData: PSavedNodeData;
 begin
@@ -1083,11 +1158,13 @@ begin
       2:
         Text := MakeSize(NodeData.Track.Filesize);
       3:
+        Text := BuildTime(NodeData.Track.Length);
+      4:
         if NodeData.Track.BitRate > 0 then
           Text := IntToStr(NodeData.Track.BitRate);
-      4:
-        Text := NodeData.Track.Streamname;
       5:
+        Text := NodeData.Track.Streamname;
+      6:
         begin
           if Trunc(NodeData.Track.Time) = Trunc(Now) then
             Text := TimeToStr(NodeData.Track.Time)
@@ -1272,9 +1349,10 @@ begin
       end;
     1: Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
     2: Result := CmpInt(Data1.Track.Filesize, Data2.Track.Filesize);
-    3: Result := CmpInt(Data1.Track.BitRate, Data2.Track.BitRate);
-    4: Result := CompareText(Data1.Track.Streamname, Data2.Track.Streamname);
-    5: Result := CmpTime(Data1.Track.Time, Data2.Track.Time);
+    3: Result := CmpInt(Data1.Track.Length, Data2.Track.Length);
+    4: Result := CmpInt(Data1.Track.BitRate, Data2.Track.BitRate);
+    5: Result := CompareText(Data1.Track.Streamname, Data2.Track.Streamname);
+    6: Result := CmpTime(Data1.Track.Time, Data2.Track.Time);
   end;
 end;
 

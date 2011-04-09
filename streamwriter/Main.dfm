@@ -131,18 +131,31 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       ImageIndex = 11
       Style = tbsSeparator
     end
-    object cmdStreamSettings: TToolButton
+    object cmdOpenWebsite: TToolButton
       Left = 195
+      Top = 0
+      Action = actOpenWebsite
+    end
+    object ToolButton8: TToolButton
+      Left = 218
+      Top = 0
+      Width = 8
+      Caption = 'ToolButton8'
+      ImageIndex = 13
+      Style = tbsSeparator
+    end
+    object cmdStreamSettings: TToolButton
+      Left = 226
       Top = 0
       Action = actStreamSettings
     end
     object ToolButton6: TToolButton
-      Left = 218
+      Left = 249
       Top = 0
       Action = actResetData
     end
     object ToolButton4: TToolButton
-      Left = 241
+      Left = 272
       Top = 0
       Width = 8
       Caption = '-'
@@ -151,7 +164,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Visible = False
     end
     object cmdShowStreamBrowser: TToolButton
-      Left = 249
+      Left = 280
       Top = 0
       Action = actShowSideBar
       Visible = False
@@ -441,7 +454,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Caption = '-'
     end
     object mnuTuneIn1: TMenuItem
-      Caption = '&Listen'
+      Caption = 'Open'
       object mnuListenToStream1: TMenuItem
         Action = actTuneInStream
       end
@@ -450,7 +463,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       end
     end
     object mnuSavePlaylist1: TMenuItem
-      Caption = 'S&ave playlist'
+      Caption = 'Save playlist'
       Hint = 'Save as playlist...'
       object Stream1: TMenuItem
         Action = actSavePlaylistStream

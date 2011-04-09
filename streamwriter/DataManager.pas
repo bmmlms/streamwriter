@@ -38,6 +38,7 @@ type
     FFilename: string;
     FStreamname: string;
     FFilesize: UInt64;
+    FLength: UInt64;
     FWasCut: Boolean;
     FBitRate: Cardinal;
     FIsAuto: Boolean;
@@ -52,6 +53,7 @@ type
     property Filename: string read FFilename write FFilename;
     property Streamname: string read FStreamname write FStreamname;
     property Filesize: UInt64 read FFilesize write FFilesize;
+    property Length: UInt64 read FLength write FLength;
     property WasCut: Boolean read FWasCut write FWasCut;
     property BitRate: Cardinal read FBitRate write FBitRate;
     property IsAuto: Boolean read FIsAuto write FIsAuto;
@@ -219,7 +221,7 @@ type
   end;
 
 const
-  DATAVERSION = 12;
+  DATAVERSION = 13;
 
 implementation
 
@@ -780,6 +782,10 @@ begin
   Stream.Read(Result.FFilename);
   Stream.Read(Result.FStreamname);
   Stream.Read(Result.FFilesize);
+  if Version >= 13 then
+  begin
+    Stream.Read(Result.FLength);
+  end;
   Stream.Read(Result.FTime);
   Stream.Read(Result.FWasCut);
   if Version > 10 then
@@ -794,6 +800,7 @@ begin
   Stream.Write(FFilename);
   Stream.Write(FStreamname);
   Stream.Write(FFilesize);
+  Stream.Write(FLength);
   Stream.Write(FTime);
   Stream.Write(FWasCut);
   Stream.Write(FBitRate);

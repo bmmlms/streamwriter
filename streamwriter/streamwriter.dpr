@@ -82,7 +82,8 @@ uses
   Sockets in '..\..\common\sockets\Sockets.pas',
   Int32Protocol in '..\..\common\sockets\Int32Protocol.pas',
   HomeCommunication in 'HomeCommunication.pas',
-  Player in 'audio\Player.pas';
+  Player in 'audio\Player.pas',
+  PlayerManager in 'audio\PlayerManager.pas';
 
 {$SetPEOptFlags $0140}
 
@@ -114,5 +115,8 @@ begin
   end;
 
   Application.Run;
+
   Bass.Free;
 end.
+
+

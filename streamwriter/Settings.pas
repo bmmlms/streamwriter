@@ -146,6 +146,7 @@ type
     procedure lstPluginsResize(Sender: TObject);
     procedure chkAutoTuneInClick(Sender: TObject);
     procedure chkDiscardSmallerClick(Sender: TObject);
+    procedure lstHotkeysResize(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -925,9 +926,6 @@ procedure TfrmSettings.FormResize(Sender: TObject);
 begin
   inherited;
 
-  lstHotkeys.Columns[0].Width := lstHotkeys.ClientWidth - 130;
-  lstHotkeys.Columns[1].Width := lstHotkeys.ClientWidth - lstHotkeys.Columns[0].Width - 25;
-
   lblPanelCut.Top := pnlCut.ClientHeight div 2 - lblPanelCut.Height div 2;
   lblPanelCut.Left := pnlCut.ClientWidth div 2 - lblPanelCut.Width div 2;
 
@@ -983,9 +981,18 @@ begin
   if txtHotkey.Enabled then
   begin
     txtHotkey.HotKey := TextToShortCut(lstHotkeys.Selected.SubItems[0]);
-    txtHotkey.SetFocus;
+    if txtHotkey.CanFocus then
+      txtHotkey.SetFocus;
   end else
     txtHotkey.HotKey := 0;
+end;
+
+procedure TfrmSettings.lstHotkeysResize(Sender: TObject);
+begin
+  inherited;
+
+  lstHotkeys.Columns[0].Width := lstHotkeys.ClientWidth div 2;
+  lstHotkeys.Columns[1].Width := lstHotkeys.ClientWidth div 2 - 25;
 end;
 
 procedure TfrmSettings.lstPluginsCompare(Sender: TObject; Item1,

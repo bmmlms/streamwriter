@@ -23,7 +23,7 @@ interface
 
 uses
   SysUtils, Windows, Classes, Generics.Collections, ICEClient,
-  Functions, AppData, DataManager, HomeCommunication;
+  Functions, AppData, DataManager, HomeCommunication, PlayerManager;
 
 type
   TClientManager = class;
@@ -41,7 +41,7 @@ type
 
   TClientList = TList<TICEClient>;
 
-  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize: UInt64; WasCut: Boolean) of object;
+  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut: Boolean) of object;
   TTitleChangedEvent = procedure(Sender: TObject; Title: string) of object;
   TICYReceivedEvent = procedure(Sender: TObject; Received: Integer) of object;
 
@@ -69,12 +69,16 @@ type
     procedure ClientDebug(Sender: TObject);
     procedure ClientRefresh(Sender: TObject);
     procedure ClientAddRecent(Sender: TObject);
-    procedure ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize: UInt64; WasCut: Boolean);
+    procedure ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut: Boolean);
     procedure ClientTitleChanged(Sender: TObject; Title: string);
     procedure ClientDisconnected(Sender: TObject);
     procedure ClientICYReceived(Sender: TObject; Bytes: Integer);
     procedure ClientURLsReceived(Sender: TObject);
     procedure ClientTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer);
+
+    procedure ClientPlay(Sender: TObject);
+    procedure ClientPause(Sender: TObject);
+    procedure ClientStop(Sender: TObject);
 
     procedure HomeCommTitleChanged(Sender: TObject; StreamName, Title, CurrentURL, Format: string; Kbps: Cardinal);
   public
@@ -169,6 +173,9 @@ begin
   Client.OnICYReceived := ClientICYReceived;
   Client.OnURLsReceived := ClientURLsReceived;
   Client.OnTitleAllowed := ClientTitleAllowed;
+  Client.OnPlay := ClientPlay;
+  Client.OnPause := ClientPause;
+  Client.OnStop := ClientStop;
   if Assigned(FOnClientAdded) then
     FOnClientAdded(Client);
 end;
@@ -349,11 +356,17 @@ begin
   end;
 end;
 
-procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize: UInt64; WasCut: Boolean);
+procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut: Boolean);
 begin
   Inc(FSongsSaved);
   if Assigned(FOnClientSongSaved) then
-    FOnClientSongSaved(Sender, Filename, Title, Filesize, WasCut);
+    FOnClientSongSaved(Sender, Filename, Title, Filesize, Length, WasCut);
+end;
+
+procedure TClientManager.ClientStop(Sender: TObject);
+begin
+  if Assigned(FOnClientRefresh) then
+    FOnClientRefresh(Sender);
 end;
 
 procedure TClientManager.ClientTitleChanged(Sender: TObject;
@@ -417,6 +430,19 @@ procedure TClientManager.ClientICYReceived(Sender: TObject;
 begin
   if Assigned(FOnClientICYReceived) then
     FOnClientICYReceived(Sender, Bytes);
+end;
+
+procedure TClientManager.ClientPause(Sender: TObject);
+begin
+  Players.LastPlayer := TICEClient(Sender);
+  if Assigned(FOnClientRefresh) then
+    FOnClientRefresh(Sender);
+end;
+
+procedure TClientManager.ClientPlay(Sender: TObject);
+begin
+  if Assigned(FOnClientRefresh) then
+    FOnClientRefresh(Sender);
 end;
 
 { TClientEnum }

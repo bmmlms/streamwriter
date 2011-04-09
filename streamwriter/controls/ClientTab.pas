@@ -128,7 +128,7 @@ type
     procedure ClientManagerAddRecent(Sender: TObject);
     procedure ClientManagerClientAdded(Sender: TObject);
     procedure ClientManagerClientRemoved(Sender: TObject);
-    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title: string; Filesize: UInt64; WasCut: Boolean);
+    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut: Boolean);
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
     procedure ClientManagerTitleAllowed(Sender: TObject; Title: string;
@@ -214,7 +214,7 @@ begin
   FLabel.Parent := Self;
   FLabel.Left := 4;
   FLabel.Top := 6;
-  FLabel.Caption := _('Playlist/Stream-URL:');
+  FLabel.Caption := 'Playlist/Stream-URL:';
 
   FStart := TSpeedButton.Create(Self);
   FStart.Parent := Self;
@@ -224,7 +224,7 @@ begin
   FStart.Left := ClientWidth - 4 - FStart.Width;
   FStart.Anchors := [akRight];
   FStart.Flat := True;
-  FStart.Hint := _('Add and start recording');
+  FStart.Hint := 'Add and start recording';
   FStart.ShowHint := True;
   FStart.NumGlyphs := 2;
   FStart.OnClick := FStartClick;
@@ -573,7 +573,7 @@ begin
 
   FHomeCommunication := HomeComm;
 
-  Caption := _('Streams');
+  Caption := 'Streams';
 
   FAddressBar := TClientAddressBar.Create(Self);
   FAddressBar.Parent := Self;
@@ -850,7 +850,7 @@ begin
 end;
 
 procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
-  Filename, Title: string; Filesize: UInt64; WasCut: Boolean);
+  Filename, Title: string; Filesize, Length: UInt64; WasCut: Boolean);
 var
   Client: TICEClient;
   Track: TTrackInfo;
@@ -880,6 +880,7 @@ begin
 
   Track.Streamname := Client.Entry.Name;
   Track.Filesize := Filesize;
+  Track.Length := Length;
   Track.WasCut := WasCut;
   Track.BitRate := Client.Entry.Bitrate;
   Track.IsAuto := Client.AutoRemove;

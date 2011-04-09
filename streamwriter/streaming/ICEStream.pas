@@ -94,6 +94,7 @@ type
     FSavedFilename: string;
     FSavedTitle: string;
     FSavedSize: UInt64;
+    FSavedLength: UInt64;
     FFilename: string;
     FSavedWasCut: Boolean;
     FBytesPerSec: Integer;
@@ -156,6 +157,7 @@ type
     property SavedFilename: string read FSavedFilename;
     property SavedTitle: string read FSavedTitle;
     property SavedSize: UInt64 read FSavedSize;
+    property SavedLength: UInt64 read FSavedLength;
     property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
     property Filename: string read FFilename;
     property SavedWasCut: Boolean read FSavedWasCut;
@@ -371,6 +373,7 @@ var
   Filename: string;
 begin
   Filename := '';
+  FFilename := '';
   if FAudioStream <> nil then
   begin
     if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
@@ -534,6 +537,7 @@ begin
       FSavedFilename := Dir + Filename;
       FSavedTitle := Title;
       FSavedSize := RangeEnd - RangeBegin;
+      FSavedLength := Trunc(FSavedSize / FBytesPerSec);
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self);
       WriteDebug(Format(_('Saved song "%s"'), [ExtractFilename(Filename)]), '', 1, 0);
@@ -610,14 +614,20 @@ begin
             if FSettings.SaveToMemory then
               FAudioStream := TMPEGStreamMemory.Create
             else
+            begin
               FAudioStream := TMPEGStreamFile.Create(Dir + Filename, fmCreate or fmShareDenyWrite);
+              FFilename := Dir + Filename;
+            end;
           end;
         atAAC:
           begin
             if FSettings.SaveToMemory then
               FAudioStream := TAACStreamMemory.Create
             else
+            begin
               FAudioStream := TAACStreamFile.Create(Dir + Filename, fmCreate or fmShareDenyWrite);
+              FFilename := Dir + Filename;
+            end;
           end;
       end;
 
@@ -634,8 +644,6 @@ begin
     FRecordingTitleFound := False;
     FStreamTracks.Clear;
 
-
-
     // Falls schon abgespielt wurde, jetzt aufgenommen wird und 'nur ganze Lieder' speichern aus ist,
     // können wir hier direkt mit der Aufnahme anfangen.
     // Achtung: Der Block hier ist so ähnlich in ProcessData() nochmal!
@@ -644,8 +652,6 @@ begin
       FRecordingTitleFound := True;
       FStreamTracks.FoundTitle(0, Title);
     end;
-
-    FFilename := Dir + Filename;
 
     // Damit Der ICEStream sich FFilename wieder setzt, so dass aussen das Menü-Item fürs Play an ist.
     if Assigned(FOnTitleChanged) then

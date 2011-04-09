@@ -46,6 +46,7 @@ type
     Filename, Station, Title: string;
     TrackNumber: Cardinal;
     Filesize: UInt64;
+    Length: UInt64;
     WasCut: Boolean;
   end;
   PPluginProcessInformation = ^TPluginProcessInformation;
@@ -522,6 +523,7 @@ begin
   FData.Title := Data.Title;
   FData.TrackNumber := Data.TrackNumber;
   FData.Filesize := Data.Filesize;
+  FData.Length := Data.Length;
   FData.WasCut := Data.WasCut;
 
   FPluginsProcessed := TList<TPluginBase>.Create;

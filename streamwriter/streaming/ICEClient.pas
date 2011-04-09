@@ -24,7 +24,7 @@ interface
 uses
   SysUtils, Windows, StrUtils, Classes, ICEThread, ICEStream, AppData,
   Generics.Collections, Functions, Sockets, Plugins, LanguageObjects,
-  DataManager, HomeCommunication;
+  DataManager, HomeCommunication, PlayerManager;
 
 type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
@@ -57,7 +57,7 @@ type
 
   TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
-  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize: UInt64; WasCut: Boolean) of object;
+  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut: Boolean) of object;
   TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer) of object;
 
   TICEClient = class
@@ -92,6 +92,10 @@ type
     FOnICYReceived: TIntegerEvent;
     FOnURLsReceived: TNotifyEvent;
     FOnTitleAllowed: TTitleAllowedEvent;
+
+    FOnPlay: TNotifyEvent;
+    FOnPause: TNotifyEvent;
+    FOnStop: TNotifyEvent;
 
     procedure Connect;
     procedure Disconnect;
@@ -165,6 +169,10 @@ type
     property OnICYReceived: TIntegerEvent read FOnICYReceived write FOnICYReceived;
     property OnURLsReceived: TNotifyEvent read FOnURLsReceived write FOnURLsReceived;
     property OnTitleAllowed: TTitleAllowedEvent read FOnTitleAllowed write FOnTitleAllowed;
+
+    property OnPlay: TNotifyEvent read FOnPlay write FOnPlay;
+    property OnPause: TNotifyEvent read FOnPause write FOnPause;
+    property OnStop: TNotifyEvent read FOnStop write FOnStop;
   end;
 
 implementation
@@ -193,6 +201,8 @@ end;
 
 procedure TICEClient.Initialize;
 begin
+  Players.AddPlayer(Self);
+
   FDebugLog := TDebugLog.Create;
   FProcessingList := TProcessingList.Create;
 
@@ -221,13 +231,21 @@ begin
   Connect;
 
   if FICEThread <> nil then
+  begin
     FICEThread.StartPlay;
+    if Assigned(FOnPlay) then
+      FOnPlay(Self);
+  end;
 end;
 
 procedure TICEClient.PausePlay;
 begin
   if FICEThread <> nil then
+  begin
     FICEThread.PausePlay;
+    if Assigned(FOnPause) then
+      FOnPause(Self);
+  end;
 end;
 
 procedure TICEClient.StopPlay;
@@ -235,6 +253,9 @@ begin
   if FICEThread <> nil then
   begin
     FICEThread.StopPlay;
+
+    if Assigned(FOnStop) then
+      FOnStop(Self);
 
     if (not FICEThread.Recording) and (not FICEThread.Playing) and (not FICEThread.Paused) then
     begin
@@ -302,6 +323,7 @@ end;
 
 destructor TICEClient.Destroy;
 begin
+  Players.RemovePlayer(Self);
   FEntry.Free;
   FDebugLog.Free;
   FreeAndNil(FProcessingList);
@@ -497,6 +519,7 @@ begin
     Data.Title := FICEThread.RecvStream.SavedTitle;
     Data.TrackNumber := FEntry.SongsSaved;
     Data.Filesize := FICEThread.RecvStream.SavedSize;
+    Data.Length := FICEThread.RecvStream.SavedLength;
     Data.WasCut := FICEThread.RecvStream.SavedWasCut;
 
     if not FKilled then
@@ -518,7 +541,7 @@ begin
       // jetzt schon als gespeichert. Ansonsten macht das PluginThreadTerminate.
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedTitle,
-          FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedWasCut);
+          FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut);
       if Assigned(FOnRefresh) then
         FOnRefresh(Self);
 
@@ -585,7 +608,7 @@ begin
           WriteDebug('All plugins done', dtMessage, dlDebug);
 
           if Assigned(FOnSongSaved) then
-            FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.Title, Entry.Data.Filesize, Entry.Data.WasCut);
+            FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.Title, Entry.Data.Filesize, Entry.Data.Length, Entry.Data.WasCut);
           if Assigned(FOnRefresh) then
             FOnRefresh(Self);
 
