@@ -481,8 +481,6 @@ var
   P: TPngImage;
   Settings: TStreamSettings;
 begin
-  FUseTree := True;
-
   if Length(FStreamSettings) = 0 then
   begin
     Settings := AppGlobals.StreamSettings.Copy;
