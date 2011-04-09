@@ -399,7 +399,7 @@ begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
   for Client in Clients do
   begin
-    if (not Client.Playing) and (Client.Paused) then
+    if Client.Paused then
       if Assigned(FOnPlayStarted) then
         FOnPlayStarted(Self);
     Client.PausePlay;
@@ -421,12 +421,11 @@ end;
 procedure TClientTab.ActionOpenWebsiteExecute(Sender: TObject);
 var
   Clients: TClientArray;
+  Client: TICEClient;
 begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
-  if Length(Clients) = 1 then
-  begin
-    ShellExecute(Handle, 'open', PChar(Clients[0].Entry.StreamURL), '', '', 1);
-  end;
+  for Client in Clients do
+    ShellExecute(Handle, 'open', PChar(Client.Entry.StreamURL), '', '', 1);
 end;
 
 procedure TClientTab.ActionResetDataExecute(Sender: TObject);
@@ -1167,10 +1166,10 @@ begin
     oaCopy:
       begin
         s := '';
-        Clipboard.Clear;
         for i := 0 to Length(Streams) - 1 do
           s := s + Streams[i].URL + #13#10;
         s := Trim(s);
+        Clipboard.Clear;
         Clipboard.SetTextBuf(PChar(s));
       end;
     oaSave:

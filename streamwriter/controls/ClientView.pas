@@ -34,7 +34,7 @@ type
 
   TClientArray = array of TICEClient;
 
-  TNodeTypes = (ntCategory, ntClient, ntAll);
+  TNodeTypes = (ntCategory, ntClient, ntClientNoAuto, ntAll);
 
   TClientNodeData = record
     Client: TICEClient;
@@ -591,6 +591,7 @@ begin
     end;
 
     if ((NodeTypes = ntClient) and (NodeData.Client = nil)) or
+       (((NodeTypes = ntClientNoAuto) and (NodeData.Client = nil)) or ((NodeTypes = ntClientNoAuto) and (NodeData.Client <> nil) and (NodeData.Client.AutoRemove))) or
        ((NodeTypes = ntCategory) and (NodeData.Client <> nil)) then
     begin
       Node := GetNext(Node);
@@ -890,17 +891,16 @@ procedure TMClientView.DoDragDrop(Source: TObject; DataObject: IDataObject;
 var
   Attachmode: TVTNodeAttachMode;
   Nodes: TNodeArray;
-  i: Integer;
+  i, n: Integer;
   Files: TStringList;
-  HitNodeData, DragNodeData: PClientNodeData;
   DropURL: string;
+  HitNodeData, DragNodeData: PClientNodeData;
   HI: THitInfo;
   R: TRect;
 begin
   inherited;
 
   Nodes := nil;
-  DropURL := '';
   Attachmode := amInsertAfter;
   Effect := DROPEFFECT_COPY;
   HitNodeData := nil;
@@ -966,33 +966,36 @@ begin
 
     Files := TStringList.Create;
     try
-      if GetFileListFromObj(DataObject, Files) and (Files.Count > 0) then
-        DropURL := Files[0];
-
-      if DropURL = '' then
-        for i := 0 to High(Formats) do
+      if GetFileListFromObj(DataObject, Files) then
+        for i := 0 to Files.Count - 1 do
         begin
-          case Formats[i] of
-            CF_UNICODETEXT:
-              begin
-                if GetWideStringFromObj(DataObject, DropURL) then
-                  Break;
+          DropURL := Files[i];
+
+          if Files[i] = '' then
+            for n := 0 to High(Formats) do
+            begin
+              case Formats[n] of
+                CF_UNICODETEXT:
+                  begin
+                    if GetWideStringFromObj(DataObject, DropURL) then
+                      Break;
+                  end;
               end;
-          end;
-        end;
+            end;
 
-      if (DropURL <> '') then
-        if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere) then
-          OnStartStreaming(Self, DropURL, HI.HitNode, amAddChildLast)
-        else
-        begin
-          if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
-            Attachmode := amAddChildLast;
-          if AttachMode = amNoWhere then
-            AttachMode := amInsertAfter;
-          OnStartStreaming(Self, DropURL, HI.HitNode, Attachmode);
+          if (DropURL <> '') then
+            if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere) then
+              OnStartStreaming(Self, DropURL, HI.HitNode, amAddChildLast)
+            else
+            begin
+              if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
+                Attachmode := amAddChildLast;
+              if AttachMode = amNoWhere then
+                AttachMode := amInsertAfter;
+              OnStartStreaming(Self, DropURL, HI.HitNode, Attachmode);
+            end;
+            UnkillCategory(HI.HitNode);
         end;
-        UnkillCategory(HI.HitNode);
     finally
       Files.Free;
     end;

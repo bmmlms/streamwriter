@@ -25,7 +25,7 @@ uses
   Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
   StdCtrls, Menus, ImgList, Math, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls,
-  HomeCommunication, DynBASS, pngimage, PngImageList;
+  HomeCommunication, DynBASS, pngimage, PngImageList, Forms;
 
 type
   TModes = (moShow, moLoading, moError, moOldVersion);
@@ -222,6 +222,7 @@ type
       BitRate, Downloads: Integer; Rating: Integer; MetaData, ChangesTitleInSong, HasData: Boolean): PVirtualNode;
     procedure GetLoadDataNodes(var FirstVisibleNoData, LastVisibleNoData: PVirtualNode);
     function GetSelected: TStreamDataArray;
+    procedure KeyDown(var Key: Word; Shift: TShiftState);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -246,6 +247,8 @@ type
     procedure TimerOnTimer(Sender: TObject);
     procedure PopupMenuPopup(Sender: TObject);
     procedure PopupMenuClick(Sender: TObject);
+
+    procedure WMKeyDown(var Message: TWMKeyDown); message WM_KEYDOWN;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -305,7 +308,7 @@ begin
   FScrollDirection := sdDown;
   FLastScrollY := 0;
 
-  TreeOptions.SelectionOptions := [toDisableDrawSelection, toRightClickSelect, toFullRowSelect];
+  TreeOptions.SelectionOptions := [toDisableDrawSelection, toRightClickSelect, toFullRowSelect, toMultiSelect];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop] + [toFullRowDrag];
   Header.Options := Header.Options + [hoShowSortGlyphs, hoVisible, hoOwnerDraw] - [hoDrag];
@@ -634,6 +637,14 @@ begin
   end;
 end;
 
+procedure TMStreamTree.KeyDown(var Key: Word; Shift: TShiftState);
+begin
+  if (Key = 65) and (ssCtrl in Shift) then
+    Exit;
+
+  inherited;
+end;
+
 procedure TMStreamTree.KeyPress(var Key: Char);
 begin
   inherited;
@@ -786,10 +797,11 @@ var
 begin
   Streams := GetSelected;
 
-  FItemPlay.Enabled := Bass.BassLoaded;
+  FItemPlay.Enabled := Length(Streams) = 1;
+  FItemOpen.Enabled := Length(Streams) = 1;
   FItemOpenWebsite.Enabled := (Length(Streams) > 0) and (Trim(Streams[0].Website) <> '');
 
-  FItemRate.Enabled := HomeComm.Connected;
+  FItemRate.Enabled := HomeComm.Connected and (Length(Streams) = 1);
 
   FItemAdministration.Visible := HomeComm.IsAdmin;
   FItemRebuildIndex.Visible := HomeComm.IsAdmin;
@@ -840,6 +852,20 @@ begin
     end;
     FLastScrollTick := 0;
   end;
+end;
+
+procedure TMStreamTree.WMKeyDown(var Message: TWMKeyDown);
+var
+  Shift: TShiftState;
+begin
+  if (Message.CharCode = Ord('a')) or (Message.CharCode = Ord('A')) then
+  begin
+    Shift := KeyDataToShiftState(Message.KeyData);
+    if ssCtrl in Shift then
+      Exit;
+  end;
+
+  inherited;
 end;
 
 procedure TMStreamTree.WndProc(var Message: TMessage);

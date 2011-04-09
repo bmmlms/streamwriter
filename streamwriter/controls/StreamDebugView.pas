@@ -318,7 +318,7 @@ end;
 procedure TDebugView.Resize;
 begin
   inherited;
-  Header.Columns[0].Width := Canvas.TextWidth(TimeToStr(Now)) + 15;
+  Header.Columns[0].Width := Canvas.TextWidth(TimeToStr(Now)) + 10;
   Header.Columns[1].Width := ClientWidth - Header.Columns[0].Width;
 end;
 

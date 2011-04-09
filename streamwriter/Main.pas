@@ -148,6 +148,7 @@ type
     Logoff1: TMenuItem;
     ToolButton8: TToolButton;
     cmdOpenWebsite: TToolButton;
+    mnuMoveToCategory1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -244,6 +245,8 @@ type
 
     procedure tabVolumeChanged(Sender: TObject; Volume: Integer);
     procedure tabPlayStarted(Sender: TObject);
+
+    procedure mnuMoveToCategory(Sender: TObject);
   protected
 
   public
@@ -399,7 +402,8 @@ var
   Settings: TStreamSettingsArray;
   i: Integer;
 begin
-  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
+  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
+
   SetLength(Settings, Length(Clients));
 
   for i := 0 to Length(Clients) - 1 do
@@ -412,7 +416,6 @@ begin
 
     if S.SaveSettings then
     begin
-      Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
       for i := 0 to Length(Clients) - 1 do
         if not Clients[i].AutoRemove then
           Clients[i].Entry.Settings.Assign(S.StreamSettings[i]);
@@ -831,6 +834,41 @@ begin
   ShowUpdate;
 end;
 
+procedure TfrmStreamWriterMain.mnuMoveToCategory(Sender: TObject);
+var
+  Cats: TNodeArray;
+  NodeData: PClientNodeData;
+  Cat: PVirtualNode;
+  Node: PVirtualNode;
+  Item: TMenuItem;
+  Nodes: TNodeArray;
+  Client: TICEClient;
+  OnlyAutomatedSelected: Boolean;
+begin
+  Item := TMenuItem(Sender);
+
+  Nodes := tabClients.ClientView.GetNodes(ntClientNoAuto, True);
+  Cats := tabClients.ClientView.GetNodes(ntCategory, False);
+
+  Cat := nil;
+
+  for Node in Cats do
+  begin
+    NodeData := tabClients.ClientView.GetNodeData(Node);
+    if Integer(NodeData) = Item.Tag then
+    begin
+      Cat := Node;
+      Break;
+    end;
+  end;
+
+  if (Length(Nodes) > 0) and (Cat <> nil) then
+  begin
+    for Node in Nodes do
+      tabClients.ClientView.MoveTo(Node, Cat, amAddChildLast, False);
+  end;
+end;
+
 procedure TfrmStreamWriterMain.mnuShowClick(Sender: TObject);
 begin
   ToggleWindow(False);
@@ -862,8 +900,35 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.mnuStreamPopupPopup(Sender: TObject);
+var
+  Cats: TNodeArray;
+  Cat: PClientNodeData;
+  Node: PVirtualNode;
+  Item: TMenuItem;
+  Clients: TClientArray;
+  Client: TICEClient;
+  OnlyAutomatedSelected: Boolean;
 begin
   UpdateButtons;
+
+  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
+
+  mnuMoveToCategory1.Clear;
+  Cats := tabClients.ClientView.GetNodes(ntCategory, False);
+  for Node in Cats do
+  begin
+    Cat := tabClients.ClientView.GetNodeData(Node);
+    if not Cat.Category.IsAuto then
+    begin
+      Item := mnuStreamPopup.CreateMenuItem;
+      Item.Caption := Cat.Category.Name;
+      Item.Tag := Integer(Cat);
+      Item.OnClick := mnuMoveToCategory;
+      mnuMoveToCategory1.Add(Item);
+    end;
+  end;
+
+  mnuMoveToCategory1.Enabled := (Length(Clients) > 0) and (mnuMoveToCategory1.Count > 0);
 end;
 
 procedure TfrmStreamWriterMain.mnuStreamSettingsToolbarPopup(
@@ -1328,7 +1393,7 @@ begin
     actStreamSettings.Enabled := (Length(Clients) > 0) and not OnlyAutomatedSelected;
 
   URLFound := False;
-  if Length(Clients) = 1 then
+  if Length(Clients) > 0 then
     if Trim(Clients[0].Entry.StreamURL) <> '' then
       URLFound := True;
   if actOpenWebsite.Enabled <> URLFound then
@@ -1344,8 +1409,8 @@ begin
   if mnuSavePlaylist2.Enabled <> B then
     mnuSavePlaylist2.Enabled := B;
 
-  if actStreamSettings.Enabled <> ((Length(Clients) > 0) and not OnlyAutomatedSelected) then
-    actResetData.Enabled := B;
+  if actResetData.Enabled <> ((Length(Clients) > 0) and not OnlyAutomatedSelected) then
+    actResetData.Enabled := ((Length(Clients) > 0) and not OnlyAutomatedSelected);
   if actTuneInFile.Enabled <> FilenameFound then
     actTuneInFile.Enabled := FilenameFound;
   if actSavePlaylistFile.Enabled <> FilenameFound then

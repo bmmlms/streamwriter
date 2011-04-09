@@ -34,6 +34,7 @@ type
   TStreamSettings = class
   private
     FFilePattern: string;
+    FFilePatternDecimals: Cardinal;
     FDeleteStreams: Boolean;
     FAddSavedToIgnore: Boolean;
     FSkipShort: Boolean;
@@ -60,6 +61,7 @@ type
     function Copy: TStreamSettings;
 
     property FilePattern: string read FFilePattern write FFilePattern;
+    property FilePatternDecimals: Cardinal read FFilePatternDecimals write FFilePatternDecimals;
     property DeleteStreams: Boolean read FDeleteStreams write FDeleteStreams;
     property AddSavedToIgnore: Boolean read FAddSavedToIgnore write FAddSavedToIgnore;
     property SkipShort: Boolean read FSkipShort write FSkipShort;
@@ -377,6 +379,7 @@ begin
   inherited;
 
   FStorage.Read('FilePattern', FStreamSettings.FFilePattern, '%s\%a - %t');
+  FStorage.Read('FilePatternDecimals', FStreamSettings.FFilePatternDecimals, 3);
   FStorage.Read('Dir', FDir, '');
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
@@ -495,6 +498,7 @@ begin
   inherited;
 
   FStorage.Write('FilePattern', FStreamSettings.FFilePattern);
+  FStorage.Write('FilePatternDecimals', FStreamSettings.FFilePatternDecimals);
   FStorage.Write('Dir', FDir);
   FStorage.Write('DeleteStreams', FStreamSettings.FDeleteStreams);
   FStorage.Write('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore);
@@ -595,6 +599,12 @@ begin
   Result := TStreamSettings.Create;
 
   Stream.Read(Result.FFilePattern);
+
+  if Version >= 14 then
+    Stream.Read(Result.FFilePatternDecimals)
+  else
+    Result.FFilePatternDecimals := 3;
+
   Stream.Read(Result.FDeleteStreams);
   Stream.Read(Result.FAddSavedToIgnore);
   Stream.Read(Result.FSkipShort);
@@ -624,9 +634,6 @@ begin
   end;
 
   Stream.Read(Result.FMaxRetries);
-
-  //if Result.FMaxRetries > 10 then
-  //  Result.FMaxRetires := 10;
 
   if Version >= 7 then
     Stream.Read(Result.FRetryDelay)
@@ -670,6 +677,7 @@ end;
 procedure TStreamSettings.Save(Stream: TExtendedStream);
 begin
   Stream.Write(FFilePattern);
+  Stream.Write(FFilePatternDecimals);
   Stream.Write(FDeleteStreams);
   Stream.Write(FAddSavedToIgnore);
   Stream.Write(FSkipShort);
@@ -692,6 +700,7 @@ end;
 procedure TStreamSettings.Assign(From: TStreamSettings);
 begin
   FFilePattern := From.FFilePattern;
+  FFilePatternDecimals := From.FilePatternDecimals;
   FDeleteStreams := From.FDeleteStreams;
   FAddSavedToIgnore := From.FAddSavedToIgnore;
   FSkipShort := From.FSkipShort;

@@ -472,6 +472,9 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         Action = actSavePlaylistFile
       end
     end
+    object mnuMoveToCategory1: TMenuItem
+      Caption = 'Move to category'
+    end
     object mnuStreamSettings1: TMenuItem
       Action = actStreamSettings
     end

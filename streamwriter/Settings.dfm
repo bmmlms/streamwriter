@@ -25,96 +25,46 @@ object frmSettings: TfrmSettings
     Left = 304
     Top = 4
     Width = 293
-    Height = 377
+    Height = 381
     TabOrder = 0
     Visible = False
     DesignSize = (
       293
-      377)
+      381)
     object lblDefaultFilter: TLabel
       Left = 4
-      Top = 336
+      Top = 172
       Width = 25
       Height = 13
-      Anchors = [akLeft, akBottom]
       Caption = 'Filter:'
-      ExplicitTop = 328
-    end
-    object GroupBox2: TGroupBox
-      Left = 4
-      Top = 4
-      Width = 285
-      Height = 157
-      Anchors = [akLeft, akTop, akRight]
-      Caption = ' Filenames '
-      TabOrder = 0
-      DesignSize = (
-        285
-        157)
-      object lblFilePattern: TLabel
-        Left = 8
-        Top = 108
-        Width = 269
-        Height = 41
-        Anchors = [akLeft, akTop, akRight]
-        AutoSize = False
-        Caption = '-'
-        WordWrap = True
-      end
-      object txtFilePattern: TLabeledEdit
-        Left = 8
-        Top = 36
-        Width = 269
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        EditLabel.Width = 151
-        EditLabel.Height = 13
-        EditLabel.Caption = 'Pattern for names of saved files:'
-        TabOrder = 0
-        OnChange = txtFilePatternChange
-      end
-      object txtPreview: TLabeledEdit
-        Left = 8
-        Top = 80
-        Width = 269
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        Color = 15790320
-        EditLabel.Width = 41
-        EditLabel.Height = 13
-        EditLabel.Caption = 'Preview:'
-        ReadOnly = True
-        TabOrder = 1
-      end
     end
     object chkDeleteStreams: TCheckBox
       Left = 4
-      Top = 236
+      Top = 72
       Width = 265
       Height = 21
-      Anchors = [akLeft, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Delete stream-files when recording stops'
-      TabOrder = 1
+      TabOrder = 0
       OnClick = chkDeleteStreamsClick
     end
     object chkAddSavedToIgnore: TCheckBox
       Left = 4
-      Top = 260
+      Top = 96
       Width = 281
       Height = 21
-      Anchors = [akLeft, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Automatically add saved titles to ignore list'
-      TabOrder = 2
+      TabOrder = 1
       OnClick = chkAddSavedToIgnoreClick
     end
     object lstDefaultFilter: TComboBox
       Left = 4
-      Top = 352
+      Top = 188
       Width = 213
       Height = 21
       Style = csDropDownList
-      Anchors = [akLeft, akBottom]
-      TabOrder = 3
+      TabOrder = 2
       OnChange = lstDefaultFilterChange
       Items.Strings = (
         'Save every song'
@@ -123,52 +73,52 @@ object frmSettings: TfrmSettings
     end
     object chkSeparateTracks: TCheckBox
       Left = 4
-      Top = 188
+      Top = 24
       Width = 281
       Height = 21
-      Anchors = [akLeft, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Save separated tracks'
-      TabOrder = 4
+      TabOrder = 3
       OnClick = chkSeparateTracksClick
     end
     object chkSaveStreamsToMemory: TCheckBox
       Left = 4
-      Top = 164
+      Top = 0
       Width = 281
       Height = 21
-      Anchors = [akLeft, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Save received data to memory instead of disk'
-      TabOrder = 5
+      TabOrder = 4
       OnClick = chkSaveStreamsToMemoryClick
     end
     object chkOnlySaveFull: TCheckBox
       Left = 20
-      Top = 212
+      Top = 48
       Width = 265
       Height = 21
-      Anchors = [akLeft, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Only save whole songs'
-      TabOrder = 6
+      TabOrder = 5
       OnClick = chkOnlySaveFullClick
     end
     object chkOverwriteSmaller: TCheckBox
       Left = 4
-      Top = 284
+      Top = 120
       Width = 281
       Height = 21
-      Anchors = [akLeft, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Always overwrite existing files if newer file is larger'
-      TabOrder = 7
+      TabOrder = 6
       OnClick = chkOverwriteSmallerClick
     end
     object chkDiscardSmaller: TCheckBox
       Left = 4
-      Top = 308
+      Top = 144
       Width = 281
       Height = 21
-      Anchors = [akLeft, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Discard new file if existing one is lager'
-      TabOrder = 8
+      TabOrder = 7
       OnClick = chkDiscardSmallerClick
     end
   end
@@ -291,14 +241,14 @@ object frmSettings: TfrmSettings
     end
     object Label11: TLabel
       Left = 4
-      Top = 88
+      Top = 92
       Width = 69
       Height = 13
       Caption = 'Sound device:'
     end
     object txtMaxRetries: TLabeledEdit
       Left = 4
-      Top = 16
+      Top = 20
       Width = 49
       Height = 21
       EditLabel.Width = 168
@@ -311,7 +261,7 @@ object frmSettings: TfrmSettings
     end
     object txtRetryDelay: TLabeledEdit
       Left = 4
-      Top = 60
+      Top = 64
       Width = 49
       Height = 21
       EditLabel.Width = 101
@@ -324,7 +274,7 @@ object frmSettings: TfrmSettings
     end
     object lstSoundDevice: TComboBox
       Left = 4
-      Top = 104
+      Top = 108
       Width = 277
       Height = 21
       Style = csDropDownList
@@ -663,7 +613,7 @@ object frmSettings: TfrmSettings
     end
     object lstHotkeys: TListView
       Left = 4
-      Top = 4
+      Top = 0
       Width = 285
       Height = 129
       Anchors = [akLeft, akTop, akRight, akBottom]
@@ -800,6 +750,65 @@ object frmSettings: TfrmSettings
         'AAC')
     end
   end
+  object pnlFilenames: TPanel
+    Left = 904
+    Top = 284
+    Width = 294
+    Height = 273
+    TabOrder = 7
+    Visible = False
+    DesignSize = (
+      294
+      273)
+    object lblFilePattern: TLabel
+      Left = 4
+      Top = 44
+      Width = 285
+      Height = 41
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      Caption = '-'
+      WordWrap = True
+    end
+    object txtPreview: TLabeledEdit
+      Left = 4
+      Top = 156
+      Width = 285
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Color = 15790320
+      EditLabel.Width = 41
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Preview:'
+      ReadOnly = True
+      TabOrder = 0
+    end
+    object txtFilePattern: TLabeledEdit
+      Left = 4
+      Top = 20
+      Width = 285
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      EditLabel.Width = 151
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Pattern for names of saved files:'
+      TabOrder = 1
+      OnChange = txtFilePatternChange
+    end
+    object txtFilePatternDecimals: TLabeledEdit
+      Left = 4
+      Top = 112
+      Width = 49
+      Height = 21
+      EditLabel.Width = 212
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Minimum count of decimals for tracknumbers:'
+      MaxLength = 1
+      NumbersOnly = True
+      TabOrder = 2
+      OnChange = txtFilePatternDecimalsChange
+    end
+  end
   object dlgOpen: TOpenDialog
     Filter = 'Executable files (*.exe, *.bat)|*.exe;*.bat'
     Left = 548
@@ -809,7 +818,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C0101020008005C0110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800600110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

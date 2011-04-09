@@ -1,6 +1,7 @@
 A ICON ".\\ico\\appicon\\combined.ico"
 MISC RCDATA ".\\png\\misc.png"
 START RCDATA ".\\png\\record.png"
+FILENAMES RCDATA ".\\png\\script_edit.png"
 CUT RCDATA ".\\png\\cut.png"
 PLUGINS ICON ".\\ico\\plugin.ico"
 EXTAPPS ICON ".\\ico\\application-terminal.ico"

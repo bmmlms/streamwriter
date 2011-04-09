@@ -1160,7 +1160,7 @@ begin
   Arr[2].C := 's';
   Arr[2].Replace := StreamName;
   Arr[3].C := 'n';
-  Arr[3].Replace := IntToStr(FSongsSaved);
+  Arr[3].Replace := Format('%.*d', [FSettings.FilePatternDecimals, FSongsSaved]);
   Arr[4].C := 'd';
   Arr[4].Replace := FormatDateTime('dd.mm.yy', Now);
   Arr[5].C := 'i';

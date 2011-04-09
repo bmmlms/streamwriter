@@ -42,10 +42,6 @@ type
     pnlPlugins: TPanel;
     lstPlugins: TListView;
     cmdConfigure: TBitBtn;
-    GroupBox2: TGroupBox;
-    txtFilePattern: TLabeledEdit;
-    txtPreview: TLabeledEdit;
-    lblFilePattern: TLabel;
     Label3: TLabel;
     pnlCut: TPanel;
     txtSongBuffer: TLabeledEdit;
@@ -107,6 +103,11 @@ type
     btnMoveDown: TPngSpeedButton;
     btnMoveUp: TPngSpeedButton;
     chkDiscardSmaller: TCheckBox;
+    pnlFilenames: TPanel;
+    txtPreview: TLabeledEdit;
+    txtFilePattern: TLabeledEdit;
+    txtFilePatternDecimals: TLabeledEdit;
+    lblFilePattern: TLabel;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -147,6 +148,7 @@ type
     procedure chkAutoTuneInClick(Sender: TObject);
     procedure chkDiscardSmallerClick(Sender: TObject);
     procedure lstHotkeysResize(Sender: TObject);
+    procedure txtFilePatternDecimalsChange(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -211,6 +213,19 @@ constructor TfrmSettings.Create(AOwner: TComponent; BrowseDir: Boolean = False);
     end;
     if F then
       AddField(txtFilePattern);
+
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
+      if S.FilePatternDecimals <> FStreamSettings[i].FilePatternDecimals then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(txtFilePatternDecimals);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -474,7 +489,7 @@ begin
 
     // Wir geben AOwner mit, so dass das MsgDlg zentriert angezeigt wird.
     // Self ist nämlich noch nicht Visible, haben kein Handle, etc..
-    TfrmMsgDlg.ShowMsg(TForm(AOwner), _('Settings from the categories "Streams", "Cut" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
+    TfrmMsgDlg.ShowMsg(TForm(AOwner), _('Settings from the categories "Streams", "Filenames", "Cut" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
                                         'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), 4, btOK);
   end else
     Settings := FStreamSettings[0].Copy;
@@ -487,7 +502,7 @@ begin
     SetFields;
 
     ClientWidth := 510;
-    ClientHeight := 475;
+    ClientHeight := 415;
 
     lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
     lstDefaultFilter.ItemIndex := Integer(Settings.Filter);
@@ -513,6 +528,7 @@ begin
 
     AppGlobals.Lock;
     txtFilePattern.Text := Settings.FilePattern;
+    txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
     txtDir.Text := AppGlobals.Dir;
     chkDeleteStreams.Checked := Settings.DeleteStreams;
     chkAddSavedToIgnore.Checked := Settings.AddSavedToIgnore;
@@ -706,6 +722,9 @@ begin
       if FIgnoreFieldList.IndexOf(txtFilePattern) = -1 then
         FStreamSettings[i].FilePattern := txtFilePattern.Text;
 
+      if FIgnoreFieldList.IndexOf(txtFilePatternDecimals) = -1 then
+        FStreamSettings[i].FilePatternDecimals := StrToIntDef(txtFilePatternDecimals.Text, 3);
+
       if FIgnoreFieldList.IndexOf(chkDeleteStreams) = -1 then
         FStreamSettings[i].DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
 
@@ -767,6 +786,7 @@ begin
   begin
     AppGlobals.Lock;
     AppGlobals.StreamSettings.FilePattern := txtFilePattern.Text;
+    AppGlobals.StreamSettings.FilePatternDecimals := StrToIntDef(txtFilePatternDecimals.Text, 3);
     AppGlobals.StreamSettings.DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
     AppGlobals.StreamSettings.AddSavedToIgnore := chkAddSavedToIgnore.Checked;
     AppGlobals.StreamSettings.OverwriteSmaller := chkOverwriteSmaller.Checked;
@@ -1100,7 +1120,7 @@ begin
   Arr[2].C := 's';
   Arr[2].Replace := _('Streamname');
   Arr[3].C := 'n';
-  Arr[3].Replace := IntToStr(78);
+  Arr[3].Replace := Format('%.*d', [StrToIntDef(txtFilePatternDecimals.Text, 3), 78]);
   Arr[4].C := 'd';
   Arr[4].Replace := FormatDateTime('dd.mm.yy', Now);
   Arr[5].C := 'i';
@@ -1150,6 +1170,7 @@ begin
   begin
     FPageList.Add(TPage.Create('Settings', pnlMain, 'PROPERTIES'));
     FPageList.Add(TPage.Create('Streams', pnlStreams, 'START'));
+    FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Postprocessing', pnlPlugins, 'LIGHTNING'));
     FPageList.Add(TPage.Create('Hotkeys', pnlHotkeys, 'KEYBOARD'));
@@ -1158,6 +1179,7 @@ begin
   end else
   begin
     FPageList.Add(TPage.Create('Streams', pnlStreams, 'START'));
+    FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
   end;
@@ -1200,6 +1222,16 @@ begin
 
   if FInitialized then
     RemoveGray(txtFilePattern);
+end;
+
+procedure TfrmSettings.txtFilePatternDecimalsChange(Sender: TObject);
+begin
+  inherited;
+
+  txtPreview.Text := ValidatePattern;
+
+  if FInitialized then
+    RemoveGray(txtFilePatternDecimals);
 end;
 
 procedure TfrmSettings.txtHotkeyChange(Sender: TObject);
@@ -1420,6 +1452,14 @@ begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames, i.e. a preview text must be visible.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePattern.Parent.Parent)));
     txtFilePattern.SetFocus;
+    Exit;
+  end;
+
+  if (StrToIntDef(txtFilePatternDecimals.Text, -1) > 9) or (StrToIntDef(txtFilePatternDecimals.Text, -1) < 1) then
+  begin
+    MsgBox(Handle, _('Please enter the minimum count of decimals for tracknumbers in filenames.'), _('Info'), MB_ICONINFORMATION);
+    SetPage(FPageList.Find(TPanel(txtFilePatternDecimals.Parent)));
+    txtFilePatternDecimals.SetFocus;
     Exit;
   end;
 
