@@ -977,6 +977,8 @@ end;
 
 procedure TSavedTree.PlayerStop(Sender: TObject);
 begin
+  if Players.LastPlayer = Sender then
+    Players.LastPlayer := nil;
   FTab.UpdateButtons;
   Invalidate;
 end;

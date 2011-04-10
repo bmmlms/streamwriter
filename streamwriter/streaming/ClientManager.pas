@@ -365,6 +365,8 @@ end;
 
 procedure TClientManager.ClientStop(Sender: TObject);
 begin
+  if Players.LastPlayer = Sender then
+    Players.LastPlayer := nil;
   if Assigned(FOnClientRefresh) then
     FOnClientRefresh(Sender);
 end;

@@ -1048,21 +1048,26 @@ function TClientTab.StartStreaming(Name, URL: string; StartPlay: Boolean;
         NodeData.Category.Killed := False;
     end;
   end;
+  procedure PlayStarted(Client: TICEClient);
+  var
+    Clients: TClientArray;
+    C: TICEClient;
+  begin
+    Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
+    for C in Clients do
+    begin
+      if C <> Client then
+        C.StopPlay;
+    end;
+    if Assigned(FOnPlayStarted) then
+      FOnPlayStarted(Self);
+  end;
 var
   Clients: TClientArray;
   Client: TICEClient;
   Node: PVirtualNode;
 begin
   Result := True;
-
-  if StartPlay then
-  begin
-    Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
-    for Client in Clients do
-    begin
-      Client.StopPlay;
-    end;
-  end;
 
   if (not StartPlay) and (not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace)) then
   begin
@@ -1079,19 +1084,18 @@ begin
     if (Client <> nil) and (not Client.AutoRemove) then
     begin
       if StartPlay then
-        Client.StartPlay
-      else
+      begin
+        Client.StartPlay;
+        PlayStarted(Client);
+      end else
         Client.StartRecording;
       UnkillCategory;
       Exit;
     end else
     begin
-      // Ist der Client schon bekannt?
-      {
-      Entry := FStreams.StreamList.Get(Name, URL, nil);
-      if Entry <> nil then
+      if ValidURL(URL) then
       begin
-        Client := FClients.AddClient(Entry);
+        Client := FClients.AddClient(Name, URL);
 
         if HitNode <> nil then
         begin
@@ -1100,33 +1104,16 @@ begin
         end;
 
         if StartPlay then
-          Client.StartPlay
-        else
+        begin
+          Client.StartPlay;
+          PlayStarted(Client);
+        end else
           Client.StartRecording;
         UnkillCategory;
       end else
-      }
       begin
-        if ValidURL(URL) then
-        begin
-          Client := FClients.AddClient(Name, URL);
-
-          if HitNode <> nil then
-          begin
-            Node := FClientView.GetClientNode(Client);
-            FClientView.MoveTo(Node, HitNode, Mode, False);
-          end;
-
-          if StartPlay then
-            Client.StartPlay
-          else
-            Client.StartRecording;
-          UnkillCategory;
-        end else
-        begin
-          Result := False;
-          MsgBox(Handle, _('The stream could not be added to the list because the URL is invalid.'), _('Info'), MB_ICONINFORMATION);
-        end;
+        Result := False;
+        MsgBox(Handle, _('The stream could not be added to the list because the URL is invalid.'), _('Info'), MB_ICONINFORMATION);
       end;
     end;
   end;
