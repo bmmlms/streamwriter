@@ -282,7 +282,7 @@ var
   Track: TStreamTrack;
 begin
   // Falls erlaubt, versuchen, das Empfangene wegzuschpeichern..
-  if (FAudioStream <> nil) and (FStreamTracks.Count > 0) and (not FSettings.OnlySaveFull) then
+  if (FAudioStream <> nil) and (FStreamTracks.Count > 0) and (not FSettings.OnlySaveFull) and (FRecordTitle = '') then
   begin
     Track := FStreamTracks[0];
     Track.E := FAudioStream.Size;
