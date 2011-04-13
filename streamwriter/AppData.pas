@@ -215,6 +215,8 @@ begin
   FPluginManager.Free;
   FStreamSettings.Free;
 
+  DeleteFile(TempDir + 'playlist.m3u');
+
   inherited;
 end;
 
@@ -239,7 +241,7 @@ procedure TAppData.BuildThanksText;
   end;
 var
   i: Integer;
-  FDonors, FHelpers{, FBoard}: TArray;
+  FDonors, FHelpers: TArray;
   Text: TStringList;
 begin
   inherited;

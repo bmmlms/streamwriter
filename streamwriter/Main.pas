@@ -201,6 +201,8 @@ type
     tabSaved: TSavedTab;
     tabLists: TListsTab;
 
+    FExiting: Boolean;
+
     procedure OneInstanceMessage(var Msg: TMessage); message WM_USER + 1234;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
     procedure EndSession(var Msg: TMessage); message WM_ENDSESSION;
@@ -276,6 +278,8 @@ var
   StartTime: Cardinal;
   Saved, Hard: Boolean;
 begin
+  FExiting := True;
+
   AppGlobals.MainMaximized := WindowState = wsMaximized;
   if not AppGlobals.MainMaximized then
   begin
@@ -347,6 +351,8 @@ begin
     Sleep(100);
     Application.ProcessMessages;
   end;
+
+  Bass.Free;
 
   if FUpdateOnExit then
     FUpdater.RunUpdate(Handle);
@@ -508,6 +514,24 @@ end;
 
 procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
 begin
+  // Initialisierung...
+  // Ich hätte das hier gerne direkt im .dpr gehabt, aber wenn man in Windows 7
+  // streamWriter über die Taskbar startet, als 'gepinntes' Programm, geht BASS_Init() schief.
+  // So wie Afrob am Flughafen hab ich keinen Plan warum.
+  Bass := TBassLoader.Create;
+  if not Bass.InitializeBass(Handle) then
+  begin
+    MsgBox(0, _('The BASS library or it''s AAC plugin could not be extracted/loaded. Without this library streamWriter can not record streams. Make sure that you have at least one sound device installed, otherwise look for help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
+    Bass.Free;
+    Application.ShowMainForm := False;
+    FExiting := True;
+    Application.Terminate;
+    Exit;
+  end;
+
+  // Initialisierung hat geklappt, Programm darf starten
+  Application.ShowMainForm := True;
+
   FStreams := TDataLists.Create;
   FClients := TClientManager.Create(FStreams);
 
@@ -522,7 +546,6 @@ begin
   tabClients.Setup(tbClients, ActionList1, mnuStreamPopup, imgImages, imgClients,
     FClients, FStreams);
   tabClients.SideBar.BrowserView.StreamTree.Images := imgImages;
-//  tabClients.SideBar.BrowserView.StreamTree.PopupMenu.Images := imgStations;
   tabClients.AddressBar.Stations.Images := imgImages;
   tabClients.SideBar.DebugView.DebugView.DebugView.Images := imgLog;
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
@@ -876,6 +899,8 @@ end;
 
 procedure TfrmStreamWriterMain.OneInstanceMessage(var Msg: TMessage);
 begin
+  if FExiting then
+    Exit;
   ToggleWindow(True);
 end;
 

@@ -132,22 +132,10 @@ end;
 procedure TICEPlayer.Play;
 var
   Funcs: BASS_FILEPROCS;
-  //State: Cardinal;
   R: Integer;
 begin
-  //State := BASSChannelIsActive(FPlayer);
-
   if (FPlayStartBuffer = 0) or (not Paused and (FMem.Size < FPlayStartBuffer)) then
     Exit;
-
-
-
-  {
-  if (FPlayer > 0) and (State <> BASS_ACTIVE_PLAYING) and (State <> BASS_ACTIVE_STALLED) and (State <> BASS_ACTIVE_PAUSED) then
-  begin
-    Stop;
-  end;
-  }
 
   if not Playing then
   begin
@@ -163,7 +151,6 @@ begin
 
     SetVolume(AppGlobals.PlayerVolume);
 
-    //State := BASSChannelIsActive(FPlayer);
     BASSChannelPlay(FPlayer, False);
     R := BASSErrorGetCode;
 
