@@ -201,7 +201,7 @@ begin
       begin
         if (T + 10000 < GetTickCount) then
           Break;
-        Sleep(200);
+        Sleep(50);
       end;
     end;
 
