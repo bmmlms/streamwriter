@@ -62,7 +62,7 @@ type
 
     constructor Create;
     destructor Destroy; override;
-    function InitializeBass(WndHandle: THandle): Boolean;
+    function InitializeBass(Handle: THandle): Boolean;
 
     property Devices: TStringList read FDevices;
   end;
@@ -100,6 +100,38 @@ var
 
 implementation
 
+{
+function GetTempFile(SubDir, Name: string): string;
+var
+  Dir, TmpDir, DataDir, AppDir: string;
+  Test: TMemoryStream;
+begin
+  Result := '';
+  Dir := '';
+
+  Test := TMemoryStream.Create;
+  try
+    try
+      TmpDir := GetTempDir;
+      if not DirectoryExists(TmpDir) then
+        ForceDirectories(TmpDir);
+      Test.SaveToFile(TmpDir + 'justatestfile');
+      DeleteFile(TmpDir + IntToStr(Rnd));
+      Dir := TmpDir;
+    except
+      Exit;
+    end;
+  finally
+    Test.Free;
+  end;
+
+  if Dir = '' then
+    Exit;
+
+  Result := Dir + Name;
+end;
+}
+
 { TBassLoader }
 
 constructor TBassLoader.Create;
@@ -129,7 +161,7 @@ begin
   end;
 end;
 
-function TBassLoader.InitializeBass(WndHandle: THandle): Boolean;
+function TBassLoader.InitializeBass(Handle: THandle): Boolean;
 var
   Res: TResourceStream;
   T: Cardinal;
@@ -191,15 +223,15 @@ begin
     while True do
     begin
       // Manchmal klappt BASSInit nicht, mit nem ErrorCode von -1 ...
-      // in der Doku steht "Some other mystery problem!"...
+      // in der Doku steht "some other mysterious error occured"...
       // Deshalb diese komische Schleife hier.
-      if BASSInit(-1, 44100, 0, WndHandle, nil) then
+      if BASSInit(-1, 44100, 0, Handle, nil) then
       begin
         BassLoaded := True;
         Break;
       end else
       begin
-        if (T + 10000 < GetTickCount) then
+        if (T + 5000 < GetTickCount) then
           Break;
         Sleep(50);
       end;

@@ -101,12 +101,22 @@ begin
   Application.Title := AppGlobals.AppName;
   Application.Icon.Handle := LoadIcon(HInstance, 'A');
 
+  Bass := TBassLoader.Create;
+  if Bass.InitializeBass(Application.Handle) then
+  begin
+    MsgBox(0, _('The BASS library or it''s AAC plugin could not be extracted/loaded. Without this library streamWriter can not record streams. Make sure that you have at least one sound device installed, otherwise look for help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
+    Bass.Free;
+    Exit;
+  end;
+
   if InitApp and AppGlobals.WasSetup then
   begin
     Application.CreateForm(TfrmStreamWriterMain, frmStreamWriterMain);
   end;
 
   Application.Run;
+
+  Bass.Free;
 end.
 
 
