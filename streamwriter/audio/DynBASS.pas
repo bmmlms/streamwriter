@@ -199,7 +199,7 @@ begin
         Break;
       end else
       begin
-        if (T + 5000 < GetTickCount) then
+        if (T + 10000 < GetTickCount) then
           Break;
         Sleep(200);
       end;
