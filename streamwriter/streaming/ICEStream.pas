@@ -358,7 +358,7 @@ begin
     // Wenn wir hier drin sind, müsste es eigentlich eine Playlist sein.
     // Es gibt aber Stationen (z.B. http://stream.laut.fm/disco), die
     // bei einem ICY-Stream einen HTTP-Header liefern...
-    if Pos(#10'icy-metaint:', LowerCase(FHeader)) > 0 then
+    if (Pos(#10'icy-metaint:', LowerCase(FHeader)) > 0) or (Pos(#10'icy-name:', LowerCase(FHeader)) > 0) then
     begin
       WriteDebug(_('HTTP header detected but icy fields found - treating as icy header'), 1, 1);
       FHeaderType := 'icy';

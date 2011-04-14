@@ -966,36 +966,34 @@ begin
 
     Files := TStringList.Create;
     try
-      if GetFileListFromObj(DataObject, Files) then
-        for i := 0 to Files.Count - 1 do
+      GetFileListFromObj(DataObject, Files);
+      if Files.Count = 0 then
+        for n := 0 to High(Formats) do
         begin
-          DropURL := Files[i];
-
-          if Files[i] = '' then
-            for n := 0 to High(Formats) do
-            begin
-              case Formats[n] of
-                CF_UNICODETEXT:
-                  begin
-                    if GetWideStringFromObj(DataObject, DropURL) then
-                      Break;
-                  end;
+          case Formats[n] of
+            CF_UNICODETEXT:
+              begin
+                if GetWideStringFromObj(DataObject, DropURL) then
+                begin
+                  Files.Add(DropURL);
+                  Break;
+                end;
               end;
-            end;
-
-          if (DropURL <> '') then
-            if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere) then
-              OnStartStreaming(Self, DropURL, HI.HitNode, amAddChildLast)
-            else
-            begin
-              if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
-                Attachmode := amAddChildLast;
-              if AttachMode = amNoWhere then
-                AttachMode := amInsertAfter;
-              OnStartStreaming(Self, DropURL, HI.HitNode, Attachmode);
-            end;
-            UnkillCategory(HI.HitNode);
+          end;
         end;
+      for i := 0 to Files.Count - 1 do
+        if (Files[i] <> '') then
+          if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere) then
+            OnStartStreaming(Self, Files[i], HI.HitNode, amAddChildLast)
+          else
+          begin
+            if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
+              Attachmode := amAddChildLast;
+            if AttachMode = amNoWhere then
+              AttachMode := amInsertAfter;
+            OnStartStreaming(Self, Files[i], HI.HitNode, Attachmode);
+          end;
+          UnkillCategory(HI.HitNode);
     finally
       Files.Free;
     end;
