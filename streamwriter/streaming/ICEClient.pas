@@ -472,7 +472,7 @@ begin
           FOnURLsReceived(Self);
       end else
       begin
-        raise Exception.Create(_('Response was HTTP, but without playlist or redirect'));
+        raise Exception.Create(_('Response was HTTP, but without supported playlist or redirect'));
       end;
     end else
     begin
@@ -819,7 +819,7 @@ function TICEClient.ParsePlaylist: Boolean;
     end;
   end;
 var
-  Offset, Offset2: Integer;
+  Offset, Offset2, Offset3: Integer;
   Line, Data: string;
   URLs: TStringList;
 begin
@@ -843,10 +843,10 @@ begin
 
         if Copy(LowerCase(Line), 1, 4) = 'file' then
         begin
-          Offset2 := Pos('=', Line);
-          if Offset2 > 0 then
+          Offset3 := Pos('=', Line);
+          if Offset3 > 0 then
           begin
-            Line := Trim(Copy(Line, Offset2 + 1, Length(Line) - Offset2));
+            Line := Trim(Copy(Line, Offset3 + 1, Length(Line) - Offset3));
             if (Line <> '') then
               ParseLine(Line, URLs);
           end;

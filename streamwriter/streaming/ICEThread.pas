@@ -330,7 +330,7 @@ var
 begin
   inherited;
 
-  WriteDebug(Format(_('%s'), [E.Message]), '', 3, 0);
+  WriteDebug(Format(_('%s'), [_(E.Message)]), '', 3, 0);
 
   Delay := FTypedStream.Settings.RetryDelay * 1000;
   if FState <> tsIOError then
