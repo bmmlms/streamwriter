@@ -107,7 +107,9 @@ object frmSettings: TfrmSettings
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Always overwrite existing files if newer file is larger'
+      Caption = 'Overwrite existing file if newer file is larger'
+      Checked = True
+      State = cbChecked
       TabOrder = 6
       OnClick = chkOverwriteSmallerClick
     end
@@ -818,7 +820,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800600110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C0101020008006C0110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

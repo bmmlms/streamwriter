@@ -473,7 +473,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       end
     end
     object mnuMoveToCategory1: TMenuItem
-      Caption = 'Move to category'
+      Caption = 'Move to &category'
     end
     object mnuStreamSettings1: TMenuItem
       Action = actStreamSettings

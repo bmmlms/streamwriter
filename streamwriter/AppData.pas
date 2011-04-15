@@ -355,16 +355,6 @@ begin
 
     Text.Add('');
     Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
 
     Text.Add('D1734FA178BF7D5AE50CB1AD54442494');
 

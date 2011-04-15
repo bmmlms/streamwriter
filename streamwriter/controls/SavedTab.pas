@@ -295,7 +295,7 @@ begin
   Items.Add(FItemShowFile);
 
   FItemProperties := CreateMenuItem;
-  FItemProperties.Caption := _('Pr&operties');
+  FItemProperties.Caption := _('Proper&ties');
   FItemProperties.ImageIndex := 22;
   Items.Add(FItemProperties);
 end;
