@@ -23,7 +23,8 @@ interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
-  LanguageObjects, LanguageIcons, Plugins, ExtendedStream, Forms, Functions;
+  LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions, Plugins,
+  PluginManager;
 
 type
   TClientActions = (caStartStop, caStreamIntegrated, caStream, caFile);

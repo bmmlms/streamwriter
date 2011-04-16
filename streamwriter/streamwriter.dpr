@@ -46,12 +46,10 @@ uses
   AppStartup in '..\..\common\AppStartup.pas',
   ProfileSettings in '..\..\common\forms\ProfileSettings.pas' {frmProfileSettings},
   SettingsBase in '..\..\common\forms\SettingsBase.pas' {frmSettingsBase},
-  Plugins in 'Plugins.pas',
   StreamBrowserView in 'controls\StreamBrowserView.pas',
   StationCombo in 'controls\StationCombo.pas',
   StreamInfoView in 'controls\StreamInfoView.pas',
   StreamDebugView in 'controls\StreamDebugView.pas',
-  PluginsShared in 'PluginsShared.pas',
   Base64 in 'Base64.pas',
   DynBASS in 'audio\DynBASS.pas',
   AudioStream in 'audio\AudioStream.pas',
@@ -83,7 +81,11 @@ uses
   Int32Protocol in '..\..\common\sockets\Int32Protocol.pas',
   HomeCommunication in 'HomeCommunication.pas',
   Player in 'audio\Player.pas',
-  PlayerManager in 'audio\PlayerManager.pas';
+  PlayerManager in 'audio\PlayerManager.pas',
+  Plugins in 'plugins\Plugins.pas',
+  PluginsShared in 'plugins\PluginsShared.pas',
+  SetTags in 'plugins\SetTags.pas',
+  PluginManager in 'plugins\PluginManager.pas';
 
 {$SetPEOptFlags $0140}
 

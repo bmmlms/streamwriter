@@ -1,0 +1,144 @@
+{
+    ------------------------------------------------------------------------
+    streamWriter
+    Copyright (c) 2010-2011 Alexander Nottelmann
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; either version 3
+    of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
+    ------------------------------------------------------------------------
+}
+unit SetTags;
+
+interface
+
+uses
+  Windows, SysUtils, Classes, Plugins, PluginsShared, LanguageObjects,
+  Mp3FileUtils, Functions;
+
+type
+  TSetTagsThread = class(TProcessThreadBase)
+  protected
+    procedure Execute; override;
+  end;
+
+  TSetTagsPlugin = class(TInternalPlugin)
+  public
+    constructor Create;
+    function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
+    function Copy: TPluginBase; override;
+    procedure Initialize; override;
+  end;
+
+implementation
+
+uses
+  AppData;
+
+{ TSetTagsThread }
+
+procedure TSetTagsThread.Execute;
+var
+  p: Integer;
+  Artist, Title2: string;
+  ID3V1: TID3v1Tag;
+  ID3V2: TID3v2Tag;
+begin
+  inherited;
+
+  FResult := arFail;
+
+  ID3V1 := TID3v1Tag.Create;
+  ID3V2 := TID3v2Tag.Create;
+  try
+    try
+      Artist := '';
+      Title2 := '';
+
+      p := Pos(' - ', FData.Title);
+      if p > 0 then
+      begin
+        Artist := Copy(FData.Title, 1, p - 1);
+        Title2 := Copy(FData.Title, p + 3, Length(FData.Title));
+      end;
+
+      if (Trim(Artist) <> '') and (Trim(Title2) <> '') then
+      begin
+        ID3V1.Artist := Artist;
+        ID3V1.Title := Title2;
+        ID3V2.Artist := Artist;
+        ID3V2.Title := Title2;
+      end else
+      begin
+        ID3V1.Title := FData.Title;
+        ID3V2.Title := FData.Title;
+      end;
+      ID3V1.Track := IntToStr(FData.TrackNumber);
+      ID3V2.Track := IntToStr(FData.TrackNumber);
+      ID3V1.Album := FData.Station;
+      ID3V2.Album := FData.Station;
+      ID3V1.Comment := 'Recorded by streamWriter';
+      ID3V2.Comment := 'Recorded by streamWriter';
+      if (ID3V1.WriteToFile(FData.Filename) = MP3ERR_None) and (ID3V2.WriteToFile(FData.Filename) = MP3ERR_None) then
+      begin
+        FData.Filesize := GetFileSize(FData.Filename);
+        FResult := arWin;
+      end;
+    except
+    end;
+  finally
+    ID3V1.Free;
+    ID3V2.Free;
+  end;
+end;
+
+{ TSetTagsPlugin }
+
+function TSetTagsPlugin.Copy: TPluginBase;
+begin
+  Result := TSetTagsPlugin.Create;
+
+  Result.Active := FActive;
+  Result.Order := FOrder;
+  Result.OnlyIfCut := FOnlyIfCut;
+end;
+
+constructor TSetTagsPlugin.Create;
+begin
+  inherited;
+  FActive := True;
+  FOrder := 100;
+
+  FName := _('Set ID3-tags');
+  FHelp := _('This adds ID3-tags to saved songs.');
+
+  try
+    AppGlobals.Storage.Read('Active_' + ClassName, FActive, True, 'Plugins');
+    AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 100, 'Plugins');
+    AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
+  except end;
+end;
+
+procedure TSetTagsPlugin.Initialize;
+begin
+  inherited;
+  FName := _('Set ID3-tags');
+  FHelp := _('This adds ID3-tags to saved songs.');
+end;
+
+function TSetTagsPlugin.ProcessFile(
+  Data: PPluginProcessInformation): TProcessThreadBase;
+begin
+  Result := TSetTagsThread.Create(Data, Self);
+end;
+
+end.

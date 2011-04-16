@@ -2,7 +2,7 @@
 		<PropertyGroup>
 			<ProjectGuid>{A7EA0E64-51B5-4E52-9036-F60A7276864D}</ProjectGuid>
 			<MainSource>streamwriter.dpr</MainSource>
-			<Config Condition="'$(Config)'==''">Release</Config>
+			<Config Condition="'$(Config)'==''">Debug</Config>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
 			<ProjectVersion>12.2</ProjectVersion>
 			<Basis>True</Basis>
@@ -99,12 +99,10 @@
 			<DCCReference Include="..\..\common\forms\SettingsBase.pas">
 				<Form>frmSettingsBase</Form>
 			</DCCReference>
-			<DCCReference Include="Plugins.pas"/>
 			<DCCReference Include="controls\StreamBrowserView.pas"/>
 			<DCCReference Include="controls\StationCombo.pas"/>
 			<DCCReference Include="controls\StreamInfoView.pas"/>
 			<DCCReference Include="controls\StreamDebugView.pas"/>
-			<DCCReference Include="PluginsShared.pas"/>
 			<DCCReference Include="Base64.pas"/>
 			<DCCReference Include="audio\DynBASS.pas"/>
 			<DCCReference Include="audio\AudioStream.pas"/>
@@ -143,6 +141,10 @@
 			<DCCReference Include="HomeCommunication.pas"/>
 			<DCCReference Include="audio\Player.pas"/>
 			<DCCReference Include="audio\PlayerManager.pas"/>
+			<DCCReference Include="plugins\Plugins.pas"/>
+			<DCCReference Include="plugins\PluginsShared.pas"/>
+			<DCCReference Include="plugins\SetTags.pas"/>
+			<DCCReference Include="plugins\PluginManager.pas"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
@@ -169,10 +171,10 @@
 					<VersionInfo>
 						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
 						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
-						<VersionInfo Name="MajorVer">1</VersionInfo>
-						<VersionInfo Name="MinorVer">9</VersionInfo>
+						<VersionInfo Name="MajorVer">2</VersionInfo>
+						<VersionInfo Name="MinorVer">0</VersionInfo>
 						<VersionInfo Name="Release">0</VersionInfo>
-						<VersionInfo Name="Build">1</VersionInfo>
+						<VersionInfo Name="Build">0</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
@@ -184,13 +186,13 @@
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName">streamwriter.org</VersionInfoKeys>
 						<VersionInfoKeys Name="FileDescription">streamWriter</VersionInfoKeys>
-						<VersionInfoKeys Name="FileVersion">1.9.0.1</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">2.0.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName">streamwriter</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalCopyright">streamwriter.org</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
 						<VersionInfoKeys Name="OriginalFilename">streamwriter.exe</VersionInfoKeys>
 						<VersionInfoKeys Name="ProductName">streamWriter</VersionInfoKeys>
-						<VersionInfoKeys Name="ProductVersion">1.9.0.1</VersionInfoKeys>
+						<VersionInfoKeys Name="ProductVersion">2.0.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
 					<Excluded_Packages>

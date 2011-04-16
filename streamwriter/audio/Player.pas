@@ -50,6 +50,7 @@ type
     function FGetPlaying: Boolean;
     procedure FSetVolume(Value: Integer);
     function FGetMaxByte: Cardinal;
+    function FGetMaxTime: Double;
     function FGetPositionByte: Cardinal;
     function FGetPositionTime: Double;
     procedure FSetFilename(Value: string);
@@ -70,6 +71,7 @@ type
     property Filename: string read FFilename write FSetFilename;
     property Volume: Integer read FVolume write FSetVolume;
     property MaxByte: Cardinal read FGetMaxByte;
+    property MaxTime: Double read FGetMaxTime;
     property PositionByte: Cardinal read FGetPositionByte write FSetPositionByte;
     property PositionTime: Double read FGetPositionTime;
     property PosToReach: Cardinal read FPosToReach write FSetPosToReach;
@@ -160,8 +162,14 @@ function TPlayer.FGetMaxByte: Cardinal;
 begin
   Result := 0;
   if FPlayer > 0 then
-    if BASSChannelGetLength(FPlayer, BASS_POS_BYTE) > 0 then
-      Result := BASSChannelGetLength(FPlayer, BASS_POS_BYTE);
+    Result := BASSChannelGetLength(FPlayer, BASS_POS_BYTE);
+end;
+
+function TPlayer.FGetMaxTime: Double;
+begin
+  Result := 0;
+  if FPlayer > 0 then
+    Result := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetLength(FPlayer, BASS_POS_BYTE));
 end;
 
 function TPlayer.FGetPaused: Boolean;
@@ -227,8 +235,11 @@ begin
   if FPlayer > 0 then
   begin
     if Value = MaxByte then
-      Stop(False)
-    else
+    begin
+      Stop(False);
+      if Assigned(FOnEndReached) then
+        FOnEndReached(Self);
+    end else
       BASSChannelSetPosition(FPlayer, Value, BASS_POS_BYTE);
   end;
 end;

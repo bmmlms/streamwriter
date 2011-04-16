@@ -37,10 +37,11 @@ ShowLanguageDialog=yes
 LanguageDetectionMethod=none
 AlwaysShowComponentsList=false
 WizardImageFile=compiler:wizmodernimage-is.bmp
-WizardSmallImageFile=compiler:wizmodernsmallimage-is.bmp
+;WizardSmallImageFile=compiler:wizmodernsmallimage-is.bmp
+WizardSmallImageFile=wizmodernsmallimage-is.bmp
 Compression=lzma/ultra
 LicenseFile=license.txt
-VersionInfoVersion=1.9.0.1
+VersionInfoVersion=2.0.0.0
 
 [Run]
 Filename: {app}\streamwriter.exe; WorkingDir: {app}; Flags: waituntilidle postinstall skipifsilent; Description: "{cm:Launch}"
@@ -110,6 +111,7 @@ begin
     //RegDeleteKeyIncludingSubkeys(HKCU, 'Software\mistake.ws\streamWriter');
   end;
 end;
+
 
 
 

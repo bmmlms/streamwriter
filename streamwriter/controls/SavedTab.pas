@@ -936,6 +936,8 @@ var
   PlayedNode, NextNode: PVirtualNode;
   NodeData: PSavedNodeData;
 begin
+  FPlayer.Stop(True);
+
   // Nächsten Track in der Liste suchen, der auch in der Ansicht
   // angezeigt wird. Wenn gefunden, abspielen.
   PlayedNode := GetNode(Player.Filename);
