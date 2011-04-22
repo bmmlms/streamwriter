@@ -27,7 +27,7 @@ uses
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
   Plugins, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus,
   MsgDlg, PngImageList, PngSpeedButton, pngimage, VirtualTrees, Math,
-  DataManager;
+  DataManager, PngBitBtn;
 
 type
   TBlacklistNodeData = record
@@ -141,6 +141,8 @@ type
     pnlBlacklist: TPanel;
     btnBlacklistRemove: TButton;
     Label19: TLabel;
+    txtTitlePattern: TLabeledEdit;
+    btnResetTitlePattern: TPngSpeedButton;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -183,6 +185,8 @@ type
     procedure lstHotkeysResize(Sender: TObject);
     procedure txtFilePatternDecimalsChange(Sender: TObject);
     procedure btnBlacklistRemoveClick(Sender: TObject);
+    procedure txtTitlePatternChange(Sender: TObject);
+    procedure btnResetTitlePatternClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -331,6 +335,19 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
     end;
     if F then
       AddField(chkSkipShort);
+
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
+      if S.TitlePattern <> FStreamSettings[i].TitlePattern then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(txtTitlePattern);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -575,6 +592,7 @@ begin
     chkAddSavedToIgnore.Checked := Settings.AddSavedToIgnore;
     chkOverwriteSmaller.Checked := Settings.OverwriteSmaller;
     chkDiscardSmaller.Checked := Settings.DiscardSmaller;
+    txtTitlePattern.Text := Settings.TitlePattern;
 
     chkSkipShort.Checked := Settings.SkipShort;
     chkSearchSilence.Checked := Settings.SearchSilence;
@@ -797,6 +815,9 @@ begin
       if FIgnoreFieldList.IndexOf(chkDiscardSmaller) = -1 then
         FStreamSettings[i].DiscardSmaller := chkDiscardSmaller.Checked;
 
+      if FIgnoreFieldList.IndexOf(txtTitlePattern) = -1 then
+        FStreamSettings[i].TitlePattern := txtTitlePattern.Text;
+
       if pnlCut.Tag = 0 then
       begin
         if FIgnoreFieldList.IndexOf(chkSkipShort) = -1 then
@@ -838,9 +859,6 @@ begin
 
       if FIgnoreFieldList.IndexOf(chkOnlySaveFull) = -1 then
         FStreamSettings[i].OnlySaveFull := chkOnlySaveFull.Checked;
-
-      if FIgnoreFieldList.IndexOf(chkDiscardSmaller) = -1 then
-        FStreamSettings[i].DiscardSmaller := chkDiscardSmaller.Checked;
     end;
   end else
   begin
@@ -851,6 +869,7 @@ begin
     AppGlobals.StreamSettings.AddSavedToIgnore := chkAddSavedToIgnore.Checked;
     AppGlobals.StreamSettings.OverwriteSmaller := chkOverwriteSmaller.Checked;
     AppGlobals.StreamSettings.DiscardSmaller := chkDiscardSmaller.Checked;
+    AppGlobals.StreamSettings.TitlePattern := txtTitlePattern.Text;
 
     if pnlCut.Tag = 0 then
     begin
@@ -870,7 +889,6 @@ begin
     AppGlobals.StreamSettings.SeparateTracks := chkSeparateTracks.Checked and chkSeparateTracks.Enabled;
     AppGlobals.StreamSettings.SaveToMemory := chkSaveStreamsToMemory.Checked;
     AppGlobals.StreamSettings.OnlySaveFull := chkOnlySaveFull.Checked;
-    AppGlobals.StreamSettings.DiscardSmaller := chkDiscardSmaller.Checked;
 
     if lstSoundDevice.ItemIndex > -1 then
       AppGlobals.SoundDevice := lstSoundDevice.ItemIndex;
@@ -1362,6 +1380,14 @@ begin
     RemoveGray(txtSongBuffer);
 end;
 
+procedure TfrmSettings.txtTitlePatternChange(Sender: TObject);
+begin
+  inherited;
+
+  if FInitialized then
+    RemoveGray(txtTitlePattern);
+end;
+
 procedure TfrmSettings.BlacklistTreeChange(Sender: TBaseVirtualTree;
   Node: PVirtualNode);
 begin
@@ -1471,6 +1497,14 @@ begin
   end;
 end;
 
+procedure TfrmSettings.btnResetTitlePatternClick(Sender: TObject);
+begin
+  inherited;
+
+  txtTitlePattern.Text := '(?P<a>.*) - (?P<t>.*)';
+  RemoveGray(txtTitlePattern);
+end;
+
 procedure TfrmSettings.BuildHotkeys;
 var
   Item: TListItem;
@@ -1522,6 +1556,10 @@ var
 begin
   Result := False;
 
+  // TODO: bei den stille-textfeldern den inhalt rausmachen. dann den haken wegmachen, wg. disabled.
+  //       dann schmiert .SetFocus() ab. vllt sollte man ein control gar nicht prüfen wenn es nicht enabled ist.
+  //       und evtl auch gar nicht abspeichern den inhalt?
+
   if not inherited then
     Exit;
 
@@ -1536,8 +1574,16 @@ begin
   if Trim(RemoveFileExt(ValidatePattern)) = '' then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames, i.e. a preview text must be visible.'), _('Info'), MB_ICONINFORMATION);
-    SetPage(FPageList.Find(TPanel(txtFilePattern.Parent.Parent)));
+    SetPage(FPageList.Find(TPanel(txtFilePattern.Parent)));
     txtFilePattern.SetFocus;
+    Exit;
+  end;
+
+  if Trim(txtTitlePattern.Text) = '' then
+  begin
+    MsgBox(Handle, _('Please enter a regular expression to retrieve artist and title from broadcastet track information.'), _('Info'), MB_ICONINFORMATION);
+    SetPage(FPageList.Find(TPanel(txtTitlePattern.Parent)));
+    txtTitlePattern.SetFocus;
     Exit;
   end;
 

@@ -49,7 +49,7 @@ uses
 procedure TSetTagsThread.Execute;
 var
   p: Integer;
-  Artist, Title2: string;
+  Artist, Title: string;
   ID3V1: TID3v1Tag;
   ID3V2: TID3v2Tag;
 begin
@@ -61,22 +61,15 @@ begin
   ID3V2 := TID3v2Tag.Create;
   try
     try
-      Artist := '';
-      Title2 := '';
+      Artist := FData.Artist;
+      Title := FData.Title;
 
-      p := Pos(' - ', FData.Title);
-      if p > 0 then
-      begin
-        Artist := Copy(FData.Title, 1, p - 1);
-        Title2 := Copy(FData.Title, p + 3, Length(FData.Title));
-      end;
-
-      if (Trim(Artist) <> '') and (Trim(Title2) <> '') then
+      if (Trim(Artist) <> '') and (Trim(Title) <> '') then
       begin
         ID3V1.Artist := Artist;
-        ID3V1.Title := Title2;
+        ID3V1.Title := Title;
         ID3V2.Artist := Artist;
-        ID3V2.Title := Title2;
+        ID3V2.Title := Title;
       end else
       begin
         ID3V1.Title := FData.Title;

@@ -43,7 +43,7 @@ type
   TConfigure = function(Handle: Cardinal; ShowMessages: Boolean): Boolean; stdcall;
 
   TPluginProcessInformation = record
-    Filename, Station, Title: string;
+    Filename, Station, Artist, Title: string;
     TrackNumber: Cardinal;
     Filesize: UInt64;
     Length: UInt64;
@@ -310,6 +310,7 @@ begin
 
   FData.Filename := Data.Filename;
   FData.Station := Data.Station;
+  FData.Artist := Data.Artist;
   FData.Title := Data.Title;
   FData.TrackNumber := Data.TrackNumber;
   FData.Filesize := Data.Filesize;

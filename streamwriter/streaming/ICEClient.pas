@@ -518,6 +518,7 @@ begin
     // Pluginbearbeitung starten
     Data.Filename := FICEThread.RecvStream.SavedFilename;
     Data.Station := FEntry.Name;
+    Data.Artist := FICEThread.RecvStream.SavedArtist;
     Data.Title := FICEThread.RecvStream.SavedTitle;
     Data.TrackNumber := FEntry.SongsSaved;
     Data.Filesize := FICEThread.RecvStream.SavedSize;
@@ -754,6 +755,7 @@ begin
       Disconnect;
     if Assigned(FOnDisconnected) and (FICEThread = nil) and (FProcessingList.Count = 0) then
       FOnDisconnected(Self);
+    FState := csStopped;
     Exit;
   end;
 
@@ -781,7 +783,8 @@ begin
     end;
     if FRedirectedURL = '' then
       Inc(FRetries);
-  end;
+  end else
+    FState := csStopped;
 
   if Assigned(FOnRefresh) then
     FOnRefresh(Self);

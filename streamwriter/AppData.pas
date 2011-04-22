@@ -35,6 +35,7 @@ type
 
   TStreamSettings = class
   private
+    FTitlePattern: string;
     FFilePattern: string;
     FFilePatternDecimals: Cardinal;
     FDeleteStreams: Boolean;
@@ -62,6 +63,7 @@ type
     procedure Assign(From: TStreamSettings);
     function Copy: TStreamSettings;
 
+    property TitlePattern: string read FTitlePattern write FTitlePattern;
     property FilePattern: string read FFilePattern write FFilePattern;
     property FilePatternDecimals: Cardinal read FFilePatternDecimals write FFilePatternDecimals;
     property DeleteStreams: Boolean read FDeleteStreams write FDeleteStreams;
@@ -155,8 +157,6 @@ type
     property User: string read FUser write FUser;
     property Pass: string read FPass write FPass;
     property SoundDevice: Cardinal read FSoundDevice write FSoundDevice;
-    //property CutVolume: Integer read FCutVolume write FCutVolume;
-    //property SavedPlayerVolume: Integer read FSavedPlayerVolume write FSavedPlayerVolume;
     property ShortcutPlay: Cardinal read FShortcutPlay write FShortcutPlay;
     property ShortcutPause: Cardinal read FShortcutPause write FShortcutPause;
     property ShortcutStop: Cardinal read FShortcutStop write FShortcutStop;
@@ -380,6 +380,7 @@ var
 begin
   inherited;
 
+  FStorage.Read('TitlePattern', FStreamSettings.FTitlePattern, '(?P<a>.*) - (?P<t>.*)');
   FStorage.Read('FilePattern', FStreamSettings.FFilePattern, '%s\%a - %t');
   FStorage.Read('FilePatternDecimals', FStreamSettings.FFilePatternDecimals, 3);
   FStorage.Read('Dir', FDir, '');
@@ -506,6 +507,7 @@ var
 begin
   inherited;
 
+  FStorage.Write('TitlePattern', FStreamSettings.FTitlePattern);
   FStorage.Write('FilePattern', FStreamSettings.FFilePattern);
   FStorage.Write('FilePatternDecimals', FStreamSettings.FFilePatternDecimals);
   FStorage.Write('Dir', FDir);
@@ -608,6 +610,11 @@ var
 begin
   Result := TStreamSettings.Create;
 
+  if Version >= 15 then
+    Stream.Read(Result.FTitlePattern)
+  else
+    Result.FTitlePattern := '(?P<a>.*) - (?P<t>.*)';
+
   Stream.Read(Result.FFilePattern);
 
   if Version >= 14 then
@@ -686,6 +693,7 @@ end;
 
 procedure TStreamSettings.Save(Stream: TExtendedStream);
 begin
+  Stream.Write(FTitlePattern);
   Stream.Write(FFilePattern);
   Stream.Write(FFilePatternDecimals);
   Stream.Write(FDeleteStreams);
@@ -709,6 +717,7 @@ end;
 
 procedure TStreamSettings.Assign(From: TStreamSettings);
 begin
+  FTitlePattern := From.FTitlePattern;
   FFilePattern := From.FFilePattern;
   FFilePatternDecimals := From.FilePatternDecimals;
   FDeleteStreams := From.FDeleteStreams;

@@ -24,7 +24,7 @@ interface
 uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
   AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
-  Math;
+  Math, RegularExpressions;
 
 type
   TDebugEvent = procedure(Text, Data: string) of object;
@@ -62,12 +62,12 @@ type
 
     function GetValidFilename(Name: string): string;
     function GetAppendNumber(Dir, Filename, Extension: string): Integer;
-    function TitleInfoToFilename(TitleInfo: string): string;
+    function TitleInfoToFilename(Artist, Title: string): string;
   public
     constructor Create(Streamname, Dir: string; SongsSaved: Cardinal; Settings: TStreamSettings);
 
     procedure GetStreamFilename(Name: string; AudioType: TAudioTypes);
-    procedure GetFilename(Filesize: UInt64; Name: string; AudioType: TAudioTypes);
+    procedure GetFilename(Filesize: UInt64; Artist, Title: string; AudioType: TAudioTypes);
 
     property Result: TCheckResults read FResult;
     property SaveDir: string read FSaveDir;
@@ -93,6 +93,7 @@ type
 
     FTitle: string;
     FSavedFilename: string;
+    FSavedArtist: string;
     FSavedTitle: string;
     FSavedSize: UInt64;
     FSavedLength: UInt64;
@@ -133,6 +134,8 @@ type
     function StartRecordingInternal: Boolean;
     procedure StopRecordingInternal;
 
+    procedure ParseTitle(S, Pattern: string; var Artist: string; var Title: string);
+
     procedure FSetRecordTitle(Value: string);
   protected
     procedure DoHeaderRemoved; override;
@@ -157,6 +160,7 @@ type
     property Genre: string read FGenre;
     property Title: string read FTitle;
     property SavedFilename: string read FSavedFilename;
+    property SavedArtist: string read FSavedArtist;
     property SavedTitle: string read FSavedTitle;
     property SavedSize: UInt64 read FSavedSize;
     property SavedLength: UInt64 read FSavedLength;
@@ -261,6 +265,7 @@ begin
   FGenre := '';
   FTitle := '';
   FSavedFilename := '';
+  FSavedArtist := '';
   FSavedTitle := '';
   FRecording := False;
   FRecordingStarted := False;
@@ -437,7 +442,7 @@ procedure TICEStream.SaveData(S, E: UInt64; Title: string);
 var
   Saved, Kill: Boolean;
   RangeBegin, RangeEnd: Int64;
-  Dir, Filename: string;
+  Dir, Filename, FileArtist, FileTitle: string;
   FileCheck: TFileChecker;
 begin
   Saved := False;
@@ -472,9 +477,11 @@ begin
     FSaveAllowedTitle := Title;
     FSaveAllowed := True;
 
+    ParseTitle(Title, FSettings.TitlePattern, FileArtist, FileTitle);
+
     FileCheck := TFileChecker.Create(FStreamName, FSaveDir, FSongsSaved, FSettings);
     try
-      FileCheck.GetFilename(E - S, Title, FAudioType);
+      FileCheck.GetFilename(E - S, FileArtist, FileTitle, FAudioType);
       if (FileCheck.Result in [crSave, crOverwrite]) and (FileCheck.FFilename <> '') then
       begin
         Dir := FileCheck.SaveDir;
@@ -537,7 +544,7 @@ begin
 
     try
       FSavedFilename := Dir + Filename;
-      FSavedTitle := Title;
+      ParseTitle(Title, FSettings.TitlePattern, FSavedArtist, FSavedTitle);
       FSavedSize := RangeEnd - RangeBegin;
       FSavedLength := Trunc(FSavedSize / FBytesPerSec);
       if Assigned(FOnSongSaved) then
@@ -931,6 +938,53 @@ begin
   end;
 end;
 
+procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Title: string);
+var
+  A, T: string;
+  R: TRegEx;
+  Match: TMatch;
+  Matches: TMatchCollection;
+  Group: TGroup;
+begin
+  Artist := '';
+  Title := '';
+
+  try
+    if S <> '' then
+    begin
+      Matches := R.Matches(S, Pattern);
+
+      A := '';
+      T := '';
+      for Match in Matches do
+      begin
+        try
+          A := Match.Groups['a'].Value;
+          T := Match.Groups['t'].Value;
+        except
+          A := '';
+          T := '';
+        end;
+
+        if (A <> '') or (T <> '') then
+        begin
+          Artist := Trim(A);
+          Title := Trim(T);
+          Break;
+        end;
+      end;
+    end;
+  except end;
+
+  if (Artist = '') or (Title = '') then
+  begin
+    Artist := _('Unknown artist');
+    Title := S;
+    if Title = '' then
+      Title := _('Unknown title');
+  end;
+end;
+
 procedure TICEStream.Process;
 begin
   inherited;
@@ -1034,7 +1088,7 @@ begin
     Result := Append;
 end;
 
-procedure TFileChecker.GetFilename(Filesize: UInt64; Name: string; AudioType: TAudioTypes);
+procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title: string; AudioType: TAudioTypes);
 var
   Filename, Ext: string;
 begin
@@ -1049,13 +1103,9 @@ begin
       Ext := '.aac';
   end;
 
-  if Trim(Name) = '' then
-  begin
-    Name := _('[Unnamed title]');
-  end else
-    Name := TitleInfoToFilename(Name);
+  Filename := TitleInfoToFilename(Artist, Title);
 
-  Filename := GetValidFilename(Name);
+  Filename := GetValidFilename(Filename);
 
   if FileExists(FSaveDir + Filename + Ext) then
   begin
@@ -1120,10 +1170,10 @@ begin
   Result := Name;
 end;
 
-function TFileChecker.TitleInfoToFilename(TitleInfo: string): string;
+function TFileChecker.TitleInfoToFilename(Artist, Title: string): string;
 var
   i, p: Integer;
-  Dir, Artist, Title, StreamName, SaveTitle: string;
+  Dir, StreamName: string;
   Replaced: string;
   Arr: TPatternReplaceArray;
 begin
@@ -1131,25 +1181,10 @@ begin
 
   Dir := '';
 
-  Artist := '';
-  Title := '';
   StreamName := GetValidFileName(Trim(FStreamname));
-  SaveTitle := GetValidFileName(Trim(TitleInfo));
 
-  p := Pos(' - ', SaveTitle);
-  if p > 0 then
-  begin
-    Artist := Trim(Copy(SaveTitle, 1, p - 1));
-    Title := Trim(Copy(SaveTitle, p + 3, Length(SaveTitle)));
-  end;
-
-  if (Artist = '') or (Title = '') then
-  begin
-    Artist := _('Unknown artist');
-    Title := SaveTitle;
-    if Title = '' then
-      Title := _('Unknown title');
-  end;
+  Artist := GetValidFilename(Artist);
+  Title := GetValidFilename(Title);
 
   if StreamName = '' then
     StreamName := _('Unknown stream');
@@ -1204,8 +1239,6 @@ begin
   if Length(Replaced) > 0 then
     if Replaced[Length(Replaced)] = '\' then
       Replaced := Copy(Replaced, 1, Length(Replaced) - 1);
-
-
 
   FSaveDir := IncludeTrailingBackslash(ExtractFilePath(FSaveDir + Replaced));
   Result := ExtractFileName(Replaced);
