@@ -78,6 +78,7 @@ type
   private
     FSettings: TStreamSettings;
     FRecordTitle: string;
+    FStopAfterSong: Boolean;
 
     FMetaInt: Integer;
     FSongsSaved: Cardinal;
@@ -146,6 +147,7 @@ type
 
     property Settings: TStreamSettings read FSettings;
     property RecordTitle: string read FRecordTitle write FSetRecordTitle;
+    property StopAfterSong: Boolean read FStopAfterSong write FStopAfterSong;
 
     property MetaCounter: Integer read FMetaCounter;
 

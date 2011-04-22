@@ -199,6 +199,7 @@ type
     FIgnoreList: TTitleList;
     FSubmittedStreamList: TStringList;
     FRecentList: TRecentList;
+    FStreamBlacklist: TStringList;
     FLoadError: Boolean;
     FReceived: UInt64;
   public
@@ -215,13 +216,14 @@ type
     property IgnoreList: TTitleList read FIgnoreList;
     property SubmittedStreamList: TStringList read FSubmittedStreamList;
     property RecentList: TRecentList read FRecentList;
+    property StreamBlacklist: TStringList read FStreamBlacklist;
 
     property LoadError: Boolean read FLoadError write FLoadError;
     property Received: UInt64 read FReceived write FReceived;
   end;
 
 const
-  DATAVERSION = 14;
+  DATAVERSION = 15;
 
 implementation
 
@@ -476,6 +478,7 @@ begin
   FIgnoreList := TTitleList.Create;
   FSubmittedStreamList := TStringList.Create;
   FRecentList := TRecentList.Create;
+  FStreamBlacklist := TStringList.Create;
 end;
 
 destructor TDataLists.Destroy;
@@ -507,6 +510,8 @@ begin
   for i := 0 to FRecentList.Count - 1 do
     FRecentList[i].Free;
   FRecentList.Free;
+
+  FStreamBlackList.Free;
 
   inherited;
 end;
@@ -606,6 +611,16 @@ begin
             S.Read(EntryCount);
             for i := 0 to EntryCount - 1 do
               FRecentList.Add(TRecentEntry.Load(S, Version));
+
+            if Version >= 15 then
+            begin
+              S.Read(EntryCount);
+              for i := 0 to EntryCount - 1 do
+              begin
+                S.Read(Str);
+                FStreamBlacklist.Add(Str);
+              end;
+            end;
           end;
 
           // REMARK: Irgendwann raus. Fehler in Version 3... doppelte entfernen!
@@ -711,14 +726,9 @@ begin
 
       S.Write(FReceived);
 
-      //CatCount := FCategoryList.Count;
-      //for i := 0 to CatCount - 1 do
-      //  if FCategoryList[i].IsAuto then
-      //    Dec(CatCount);
       S.Write(FCategoryList.Count);
       for i := 0 to FCategoryList.Count - 1 do
-        //if not FCategoryList[i].IsAuto then
-          FCategoryList[i].Save(S);
+        FCategoryList[i].Save(S);
 
       S.Write(FStreamList.Count);
       for i := 0 to FStreamList.Count - 1 do
@@ -749,6 +759,10 @@ begin
       S.Write(FRecentList.Count);
       for i := 0 to FRecentList.Count - 1 do
         FRecentList[i].Save(S);
+
+      S.Write(FStreamBlacklist.Count);
+      for i := 0 to FStreamBlacklist.Count - 1 do
+        S.Write(FStreamBlacklist[i]);
 
       S.SaveToFile(AppGlobals.DataFile);
     finally

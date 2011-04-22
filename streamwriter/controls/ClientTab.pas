@@ -27,7 +27,8 @@ uses
   LanguageObjects, HomeCommunication, StationCombo, Menus, ActnList, ImgList,
   DataManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
   GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs,
-  Graphics, SharedControls, Generics.Collections, Generics.Defaults;
+  Graphics, SharedControls, Generics.Collections, Generics.Defaults,
+  Logging, DynBass;
 
 type
   TSidebar = class(TPageControl)
@@ -92,6 +93,7 @@ type
 
     FActionRemove: TAction;
     FActionShowSideBar: TAction;
+    FActionStopAfterSong: TAction;
     FActionPlay: TAction;
     FActionPause: TAction;
     FActionStopPlay: TAction;
@@ -118,6 +120,7 @@ type
     procedure ActionPlayStopExecute(Sender: TObject);
     procedure ActionResetDataExecute(Sender: TObject);
     procedure ActionShowSideBarExecute(Sender: TObject);
+    procedure ActionStopAfterSongExecute(Sender: TObject);
     procedure ActionSavePlaylistStreamExecute(Sender: TObject);
     procedure ActionSavePlaylistFileExecute(Sender: TObject);
     procedure ActionTuneInStreamExecute(Sender: TObject);
@@ -302,6 +305,16 @@ begin
     if not Client.AutoRemove then
       Client.StartRecording;
   end;
+end;
+
+procedure TClientTab.ActionStopAfterSongExecute(Sender: TObject);
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+begin
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
+  for Client in Clients do
+    Client.StopAfterSong := FActionStopAfterSong.Checked;
 end;
 
 procedure TClientTab.ActionStopExecute(Sender: TObject);
@@ -608,6 +621,7 @@ begin
   FActionTuneInFile := GetAction('actTuneInFile');
   FActionRemove := GetAction('actRemove');
   FActionShowSideBar := GetAction('actShowSideBar');
+  FActionStopAfterSong := GetAction('actStopAfterSong');
 
   FActionPlay.OnExecute := ActionPlayExecute;
   FActionPause.OnExecute := ActionPauseExecute;
@@ -616,6 +630,7 @@ begin
   FActionTuneInFile.OnExecute := ActionTuneInFileExecute;
   FActionRemove.OnExecute := ActionRemoveExecute;
   FActionShowSideBar.OnExecute := ActionShowSideBarExecute;
+  FActionStopAfterSong.OnExecute := ActionStopAfterSongExecute;
 
   GetAction('actNewCategory').OnExecute := ActionNewCategoryExecute;
   GetAction('actStart').OnExecute := ActionStartExecute;
@@ -1143,13 +1158,19 @@ begin
         if not StartStreaming(Streams[i].Name, Streams[i].URL, False, nil, amNoWhere) then
           Break;
     oaPlay:
-      for i := 0 to Length(Streams) - 1 do
-        StartStreaming(Streams[i].Name, Streams[i].URL, True, nil, amNoWhere);
+      if Bass.DeviceAvailable then
+        for i := 0 to Length(Streams) - 1 do
+          StartStreaming(Streams[i].Name, Streams[i].URL, True, nil, amNoWhere);
     oaOpen:
       SavePlaylist(Entries, True);
     oaOpenWebsite:
       for i := 0 to Length(Streams) - 1 do
         ShellExecute(Handle, 'open', PChar(Streams[i].Website), '', '', 1);
+    oaBlacklist:
+      for i := 0 to Length(Streams) - 1 do
+        if Streams[i].Name <> '' then
+          if FStreams.StreamBlacklist.IndexOf(Streams[i].Name) = -1 then
+            FStreams.StreamBlacklist.Add(Streams[i].Name);
     oaCopy:
       begin
         s := '';

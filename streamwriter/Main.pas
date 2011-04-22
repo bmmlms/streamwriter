@@ -32,7 +32,7 @@ uses
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
-  PlayerManager;
+  PlayerManager, Logging, Timers;
 
 type
   TfrmStreamWriterMain = class(TForm)
@@ -149,6 +149,10 @@ type
     ToolButton8: TToolButton;
     cmdOpenWebsite: TToolButton;
     mnuMoveToCategory1: TMenuItem;
+    actTimers: TAction;
+    actStopAfterSong: TAction;
+    Setuptimers1: TMenuItem;
+    Stopaftercurrenttitle1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -175,6 +179,7 @@ type
     procedure actLogOnExecute(Sender: TObject);
     procedure Community1Click(Sender: TObject);
     procedure actLogOffExecute(Sender: TObject);
+    procedure actTimersExecute(Sender: TObject);
   private
     FCommunityLogin: TfrmCommunityLogin;
 
@@ -426,6 +431,18 @@ begin
   UpdateButtons;
 end;
 
+procedure TfrmStreamWriterMain.actTimersExecute(Sender: TObject);
+var
+  T: TfrmTimers;
+begin
+  T := TfrmTimers.Create(Self);
+  try
+    T.ShowModal;
+  finally
+    T.Free;
+  end;
+end;
+
 procedure TfrmStreamWriterMain.addStatusDrawPanel(StatusBar: TStatusBar;
   Panel: TStatusPanel; const Rect: TRect);
 begin
@@ -450,6 +467,11 @@ begin
     Exit;
 
   FWasActivated := True;
+
+  if not Bass.DeviceAvailable then
+  begin
+    TfrmMsgDlg.ShowMsg(Self, _('No sound devices could be detected so playback of streams and files will not be possible.'), 7, btOk);
+  end;
 
   if not DirectoryExists(AppGlobals.Dir) then
   begin
@@ -578,7 +600,6 @@ begin
 
   // Ist hier unten, weil hier erst Tracks geladen wurden
   tabSaved.Setup(FStreams, imgImages);
-
   tabClients.AddressBar.Stations.Sort;
 
   {$IFDEF DEBUG}Caption := Caption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
@@ -587,7 +608,6 @@ begin
   UpdateStatus;
   tmrSpeed.Enabled := True;
   TrayIcon1.Visible := AppGlobals.Tray;
-
   FUpdater := TUpdateClient.Create;
   FUpdater.OnNoUpdateFound := UpdaterNoUpdateFound;
   FUpdater.OnUpdateFound := UpdaterUpdateFound;
@@ -1069,7 +1089,7 @@ var
   NodeData: PClientNodeData;
 begin
   RegisterHotkeys(False);
-  S := TfrmSettings.Create(Self, BrowseDir);
+  S := TfrmSettings.Create(Self, FStreams, BrowseDir);
   try
     S.ShowModal;
   finally
@@ -1178,6 +1198,7 @@ procedure TfrmStreamWriterMain.tabClientsTrackAdded(Entry: TStreamEntry;
   Track: TTrackInfo);
 begin
   tabSaved.Tree.AddTrack(Track, False);
+  tabSaved.Tree.Sort(nil, tabSaved.Tree.Header.SortColumn, tabSaved.Tree.Header.SortDirection);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsTrackRemoved(Entry: TStreamEntry;
@@ -1400,7 +1421,7 @@ begin
 
   if mnuTuneIn1.Enabled <> B then
     mnuTuneIn1.Enabled := B;
-  if mnuTuneIn2.Enabled <> B then
+  if mnuTuneIn2.Enabled <> B then    // TODO: Das timer form...
     mnuTuneIn2.Enabled := B;
 
   if mnuSavePlaylist1.Enabled <> B then
@@ -1415,13 +1436,19 @@ begin
   if actSavePlaylistFile.Enabled <> FilenameFound then
     actSavePlaylistFile.Enabled := FilenameFound;
 
-  if actStopPlay.Enabled <> OnePlaying then
-    actStopPlay.Enabled := OnePlaying;
-  if actPause.Enabled <> OnePlaying then
-    actPause.Enabled := OnePlaying;
+  if actStopPlay.Enabled <> OnePlaying and Bass.DeviceAvailable then
+    actStopPlay.Enabled := OnePlaying and Bass.DeviceAvailable;
+  if actPause.Enabled <> OnePlaying and Bass.DeviceAvailable then
+    actPause.Enabled := OnePlaying and Bass.DeviceAvailable;
 
-  if actPlay.Enabled <> (Length(Clients) = 1) then
-    actPlay.Enabled := Length(Clients) = 1;
+  if actPlay.Enabled <> (Length(Clients) = 1) and Bass.DeviceAvailable then
+    actPlay.Enabled := (Length(Clients) = 1) and Bass.DeviceAvailable;
+
+  if actStopAfterSong.Enabled <> (Length(Clients) = 1) and (Clients[0].Title <> '') and (Clients[0].Recording) then
+    actStopAfterSong.Enabled := (Length(Clients) = 1) and (Clients[0].Title <> '') and (Clients[0].Recording);
+
+  if actStopAfterSong.Checked <> (Length(Clients) = 1) and (Clients[0].StopAfterSong) then
+    actStopAfterSong.Checked := (Length(Clients) = 1) and (Clients[0].StopAfterSong);
 
   {
   if Length(Clients) = 1 then

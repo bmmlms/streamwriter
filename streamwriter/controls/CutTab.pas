@@ -23,7 +23,8 @@ interface
 
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
-  MControls, LanguageObjects, Tabs, CutView, Functions, AppData, SharedControls;
+  MControls, LanguageObjects, Tabs, CutView, Functions, AppData, SharedControls,
+  DynBass;
 
 type
   TCutToolBar = class(TToolBar)
@@ -109,8 +110,8 @@ begin
   FToolBar.FCut.Enabled := FCutView.CanCut;
   FToolbar.FPosZoom.Enabled := FCutView.CanZoom;
   FToolBar.FUndo.Enabled := FCutView.CanUndo;
-  FToolBar.FPlay.Enabled := FCutView.CanPlay;
-  FToolBar.FStop.Enabled := FCutView.CanStop;
+  FToolBar.FPlay.Enabled := FCutView.CanPlay and Bass.DeviceAvailable;
+  FToolBar.FStop.Enabled := FCutView.CanStop and Bass.DeviceAvailable;
 
   // Das muss so, sonst klappt das .Down := True nicht, wenn sie
   // vorher Disabled waren, vor dem Enable da oben...

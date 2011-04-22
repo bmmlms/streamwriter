@@ -26,7 +26,7 @@ uses
   Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, DataManager,
   ImgList, Functions, DragDropFile, GUIFunctions, StreamInfoView, DynBASS,
   Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
-  PlayerManager;
+  PlayerManager, Logging;
 
 type
   TSavedTree = class;
@@ -327,9 +327,9 @@ end;
 procedure TSavedToolBar.EnableItems(Enable, Playing: Boolean);
 begin
   FRefresh.Enabled := Enable;
-  FPlay.Enabled := Enable;
-  FPause.Enabled := Playing;
-  FStop.Enabled := Playing;
+  FPlay.Enabled := Enable and Bass.DeviceAvailable;
+  FPause.Enabled := Playing and Bass.DeviceAvailable;
+  FStop.Enabled := Playing and Bass.DeviceAvailable;
   FCut.Enabled := Enable;
   FRemove.Enabled := Enable;
   FRecycle.Enabled := Enable;
@@ -494,7 +494,6 @@ begin
   end;
 
   FSavedTree.Sort(nil, FSavedTree.Header.SortColumn, FSavedTree.Header.SortDirection);
-
   FSavedTree.Change(nil);
 end;
 
@@ -1076,18 +1075,14 @@ var
   NodeData: PSavedNodeData;
 begin
   if not FromFilter then
-    FTrackList.Add(Track);
-
-  if not TrackMatchesPattern(Track) then
-    Exit;
+    FTrackList.Add(Track)
+  else
+    if not TrackMatchesPattern(Track) then
+      Exit;
 
   Node := AddChild(nil);
   NodeData := GetNodeData(Node);
   NodeData.Track := Track;
-
-  Sort(nil, Header.SortColumn, Header.SortDirection);
-
-  Change(nil);
 end;
 
 procedure TSavedTree.RemoveTrack(Track: TTrackInfo);
@@ -1274,7 +1269,11 @@ begin
   for i := 0 to FTrackList.Count - 1 do
     AddTrack(FTrackList[i], True);
 
+  Sort(nil, Header.SortColumn, Header.SortDirection);
+
   EndUpdate;
+
+  Change(nil);
 end;
 
 procedure TSavedTree.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;
@@ -1295,11 +1294,11 @@ begin
   FPopupMenu.EnableItems(Length(Tracks) > 0, FPlayer.Playing);
   FTab.FToolbar.EnableItems(Length(Tracks) > 0, FPlayer.Playing or FPlayer.Paused);
 
-  FPopupMenu.ItemPlay.Enabled := Bass.BassLoaded and (Length(Tracks) = 1);
-  FTab.FToolbar.FPlay.Enabled := Bass.BassLoaded and (Length(Tracks) = 1);
+  FPopupMenu.ItemPlay.Enabled := Bass.DeviceAvailable and (Length(Tracks) = 1);
+  FTab.FToolbar.FPlay.Enabled := Bass.DeviceAvailable and (Length(Tracks) = 1);
 
-  FPopupMenu.ItemCut.Enabled := Bass.BassLoaded and (Length(Tracks) > 0);
-  FTab.FToolbar.FCut.Enabled := Bass.BassLoaded and (Length(Tracks) > 0);
+  FPopupMenu.ItemCut.Enabled := Length(Tracks) > 0;
+  FTab.FToolbar.FCut.Enabled := Length(Tracks) > 0;
 
   FPopupMenu.ItemRefresh.Enabled := RootNodeCount > 0;
   FTab.FToolbar.FRefresh.Enabled := RootNodeCount > 0;

@@ -24,6 +24,7 @@ program streamwriter;
 uses
   MM in '..\..\common\MM.pas',
   Windows,
+  SysUtils,
   Forms,
   Main in 'Main.pas' {frmStreamWriterMain},
   ClientView in 'controls\ClientView.pas',
@@ -85,7 +86,9 @@ uses
   Plugins in 'plugins\Plugins.pas',
   PluginsShared in 'plugins\PluginsShared.pas',
   SetTags in 'plugins\SetTags.pas',
-  PluginManager in 'plugins\PluginManager.pas';
+  PluginManager in 'plugins\PluginManager.pas',
+  Logging in '..\..\common\Logging.pas',
+  Timers in 'Timers.pas' {frmTimers};
 
 {$SetPEOptFlags $0140}
 
@@ -120,5 +123,3 @@ begin
 
   Bass.Free;
 end.
-
-

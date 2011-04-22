@@ -26,9 +26,36 @@ uses
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
   Plugins, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus,
-  MsgDlg, PngImageList, PngSpeedButton, pngimage;
+  MsgDlg, PngImageList, PngSpeedButton, pngimage, VirtualTrees, Math,
+  DataManager;
 
 type
+  TBlacklistNodeData = record
+    Name: string;
+  end;
+  PBlacklistNodeData = ^TBlacklistNodeData;
+
+  TBlacklistTree = class(TVirtualStringTree)
+  private
+    FType: Integer;
+    FColTitle: TVirtualTreeColumn;
+  protected
+    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
+      TextType: TVSTTextType; var Text: UnicodeString); override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
+      var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
+    procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
+    function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
+    function DoIncrementalSearch(Node: PVirtualNode;
+      const Text: string): Integer; override;
+    procedure DoFreeNode(Node: PVirtualNode); override;
+  public
+    constructor Create(AOwner: TComponent; Streams: TStringList); reintroduce;
+    destructor Destroy; override;
+    procedure Update(List: TStringList);
+    procedure RemoveSelected;
+  end;
+
   TfrmSettings = class(TfrmSettingsBase)
     pnlStreams: TPanel;
     pnlMain: TPanel;
@@ -108,6 +135,12 @@ type
     txtFilePattern: TLabeledEdit;
     txtFilePatternDecimals: TLabeledEdit;
     lblFilePattern: TLabel;
+    Label18: TLabel;
+    lstDefaultActionBrowser: TComboBox;
+    pnlCommunityBlacklist: TPanel;
+    pnlBlacklist: TPanel;
+    btnBlacklistRemove: TButton;
+    Label19: TLabel;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -149,20 +182,27 @@ type
     procedure chkDiscardSmallerClick(Sender: TObject);
     procedure lstHotkeysResize(Sender: TObject);
     procedure txtFilePatternDecimalsChange(Sender: TObject);
+    procedure btnBlacklistRemoveClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
     FRelayChanged: Boolean;
     FDefaultActionIdx: Integer;
+    FDefaultActionBrowserIdx: Integer;
     FDefaultFilterIdx: Integer;
     FTemporaryPlugins: TList<TPluginBase>;
     FStreamSettings: TStreamSettingsArray;
     FIgnoreFieldList: TList;
+    FLists: TDataLists;
+    lstBlacklist: TBlacklistTree;
     function ValidatePattern: string;
     function GetNewID: Integer;
     procedure BuildHotkeys;
     procedure RemoveGray(C: TControl);
     procedure EnablePanel(Panel: TPanel; Enable: Boolean);
+
+    procedure BlacklistTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+    procedure BlacklistTreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   protected
     procedure RegisterPages; override;
     procedure Finish; override;
@@ -171,7 +211,7 @@ type
     procedure PostTranslate; override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
-    constructor Create(AOwner: TComponent; BrowseDir: Boolean = False); reintroduce; overload;
+    constructor Create(AOwner: TComponent; Lists: TDataLists; BrowseDir: Boolean = False); reintroduce; overload;
     constructor Create(AOwner: TComponent; StreamSettings: TStreamSettingsArray); overload;
     destructor Destroy; override;
     property RelayChanged: Boolean read FRelayChanged;
@@ -182,7 +222,7 @@ implementation
 
 {$R *.dfm}
 
-constructor TfrmSettings.Create(AOwner: TComponent; BrowseDir: Boolean = False);
+constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir: Boolean = False);
   procedure AddField(F: TControl);
   begin
     if FIgnoreFieldList.IndexOf(F) = -1 then
@@ -481,6 +521,8 @@ var
   P: TPngImage;
   Settings: TStreamSettings;
 begin
+  FLists := Lists;
+
   if Length(FStreamSettings) = 0 then
   begin
     Settings := AppGlobals.StreamSettings.Copy;
@@ -503,6 +545,7 @@ begin
     ClientHeight := 415;
 
     lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
+    lstDefaultActionBrowser.ItemIndex := Integer(AppGlobals.DefaultActionBrowser);
     lstDefaultFilter.ItemIndex := Integer(Settings.Filter);
     chkSeparateTracks.Checked := Settings.SeparateTracks;
     chkSaveStreamsToMemory.Checked := Settings.SaveToMemory;
@@ -637,13 +680,32 @@ begin
       chkOnlySaveFull.Enabled := False;
     end;
 
-    for i := 0 to Bass.Devices.Count - 1 do
-      lstSoundDevice.Items.Add(Bass.Devices[i]);
-    if lstSoundDevice.Items.Count > 0 then
-      lstSoundDevice.ItemIndex := 0;
-    try
-      lstSoundDevice.ItemIndex := AppGlobals.SoundDevice;
-    except end;
+    if (Bass.DeviceAvailable) and (Bass.Devices.Count > 0) then
+    begin
+      for i := 0 to Bass.Devices.Count - 1 do
+        lstSoundDevice.Items.Add(Bass.Devices[i]);
+      if lstSoundDevice.Items.Count > 0 then
+        lstSoundDevice.ItemIndex := 0;
+      try
+        lstSoundDevice.ItemIndex := AppGlobals.SoundDevice;
+      except end;
+    end else
+    begin
+      lstSoundDevice.Style := csDropDown;
+      lstSoundDevice.ItemIndex := -1;
+      lstSoundDevice.Enabled := False;
+      lstSoundDevice.Text := _('(no devices available)');
+    end;
+
+    if FLists <> nil then
+    begin
+      lstBlacklist := TBlacklistTree.Create(Self, FLists.StreamBlacklist);
+      lstBlacklist.OnChange := BlacklistTreeChange;
+      lstBlacklist.OnKeyDown := BlacklistTreeKeyDown;
+      lstBlacklist.Images := PngImageList1;
+      lstBlacklist.Parent := pnlBlacklist;
+      lstBlacklist.Align := alClient;
+    end;
 
     lblPanelCut.Caption := _('Settings for cutting are only available'#13#10'if ''Save separated tracks'' is enabled.');
     EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
@@ -667,7 +729,7 @@ begin
     FStreamSettings[i] := StreamSettings[i].Copy;
   end;
 
-  Create(AOwner, False);
+  Create(AOwner, nil, False);
 
   lblTop.Caption := _('Stream settings');
 end;
@@ -825,6 +887,7 @@ begin
 
     AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
     AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
+    AppGlobals.DefaultActionBrowser := TBrowserActions(lstDefaultActionBrowser.ItemIndex);
 
     if lstHotkeys.Items[0].SubItems[0] <> '' then
       AppGlobals.ShortcutPlay := TextToShortCut(lstHotkeys.Items[0].SubItems[0])
@@ -913,6 +976,8 @@ begin
         end;
       end;
     end;
+
+    lstBlacklist.Update(FLists.StreamBlacklist);
 
     AppGlobals.Unlock;
   end;
@@ -1068,6 +1133,7 @@ procedure TfrmSettings.PreTranslate;
 begin
   inherited;
   FDefaultActionIdx := lstDefaultAction.ItemIndex;
+  FDefaultActionBrowserIdx := lstDefaultActionBrowser.ItemIndex;
   FDefaultFilterIdx := lstDefaultFilter.ItemIndex;
 end;
 
@@ -1098,6 +1164,7 @@ begin
 
   AppGlobals.PluginManager.ReInitPlugins;
   lstDefaultAction.ItemIndex := FDefaultActionIdx;
+  lstDefaultActionBrowser.ItemIndex := FDefaultActionBrowserIdx;
   lstDefaultFilter.ItemIndex := FDefaultFilterIdx;
 
   FormResize(Self);
@@ -1173,6 +1240,7 @@ begin
     FPageList.Add(TPage.Create('Postprocessing', pnlPlugins, 'LIGHTNING'));
     FPageList.Add(TPage.Create('Hotkeys', pnlHotkeys, 'KEYBOARD'));
     FPageList.Add(TPage.Create('Community', pnlCommunity, 'GROUP_PNG'));
+    FPageList.Add(TPage.Create('Blacklist', pnlCommunityBlacklist, 'BLACKLIST', FPageList.Find(pnlCommunity)));
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
   end else
   begin
@@ -1294,6 +1362,21 @@ begin
     RemoveGray(txtSongBuffer);
 end;
 
+procedure TfrmSettings.BlacklistTreeChange(Sender: TBaseVirtualTree;
+  Node: PVirtualNode);
+begin
+  btnBlacklistRemove.Enabled := lstBlacklist.SelectedCount > 0;
+end;
+
+procedure TfrmSettings.BlacklistTreeKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_DELETE then
+  begin
+    btnBlacklistRemoveClick(nil);
+  end;
+end;
+
 procedure TfrmSettings.btnAddUpClick(Sender: TObject);
 var
   Item: TListItem;
@@ -1314,6 +1397,11 @@ begin
       Item.Selected := True;
     end;
   end;
+end;
+
+procedure TfrmSettings.btnBlacklistRemoveClick(Sender: TObject);
+begin
+  lstBlacklist.RemoveSelected;
 end;
 
 procedure TfrmSettings.btnBrowseAppClick(Sender: TObject);
@@ -1693,6 +1781,177 @@ begin
 
   optClose.Enabled := chkTray.Checked;
   optMinimize.Enabled := chkTray.Checked;
+end;
+
+{ TBlacklistTree }
+
+constructor TBlacklistTree.Create(AOwner: TComponent; Streams: TStringList);
+var
+  i: Integer;
+  Node: PVirtualNode;
+  NodeData: PBlacklistNodeData;
+begin
+  inherited Create(AOwner);
+
+  NodeDataSize := SizeOf(TBlacklistNodeData);
+  IncrementalSearch := isVisibleOnly;
+  Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
+  TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
+  TreeOptions.AutoOptions := [toAutoScrollOnExpand];
+  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
+  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
+  Header.Options := Header.Options + [hoAutoResize];
+  Header.Options := Header.Options - [hoDrag];
+  Header.AutoSizeIndex := 0;
+  DragMode := dmManual;
+  ShowHint := True;
+  HintMode := hmTooltip;
+
+  for i := 0 to Streams.Count - 1 do
+  begin
+    Node := AddChild(nil);
+    NodeData := GetNodeData(Node);
+    NodeData.Name := Streams[i];
+  end;
+
+  FColTitle := Header.Columns.Add;
+  FColTitle.Text := _('Name');
+
+  Sort(nil, 0, Header.SortDirection);
+
+  Header.SortColumn := 0;
+  Header.SortDirection := sdAscending;
+end;
+
+destructor TBlacklistTree.Destroy;
+begin
+
+  inherited;
+end;
+
+procedure TBlacklistTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
+  TextType: TVSTTextType; var Text: UnicodeString);
+var
+  NodeData: PBlacklistNodeData;
+begin
+  inherited;
+
+  if TextType = ttNormal then
+  begin
+    NodeData := GetNodeData(Node);
+    case Column of
+      0: Text := NodeData.Name;
+    end;
+  end;
+end;
+
+function TBlacklistTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
+  Column: TColumnIndex; var Ghosted: Boolean;
+  var Index: Integer): TCustomImageList;
+begin
+  Result := inherited;
+
+  if Column = 0 then
+    Index := 1;
+end;
+
+procedure TBlacklistTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
+begin
+  inherited;
+  if HitInfo.Button = mbLeft then
+  begin
+    if Header.SortColumn <> HitInfo.Column then
+    begin
+      Header.SortColumn := HitInfo.Column;
+      Header.SortDirection := sdAscending;
+    end else
+    begin
+      if Header.SortDirection = sdAscending then
+        Header.SortDirection := sdDescending
+      else
+        Header.SortDirection := sdAscending;
+    end;
+    Sort(nil, HitInfo.Column, Header.SortDirection);
+  end;
+end;
+
+function TBlacklistTree.DoIncrementalSearch(Node: PVirtualNode;
+  const Text: string): Integer;
+var
+  S: string;
+  NodeData: PBlacklistNodeData;
+begin
+  Result := 0;
+  S := Text;
+  NodeData := GetNodeData(Node);
+  Result := StrLIComp(PChar(S), PChar(NodeData.Name),
+    Min(Length(S), Length(NodeData.Name)));
+end;
+
+procedure TBlacklistTree.RemoveSelected;
+var
+  Node, Node2: PVirtualNode;
+begin
+  Node := GetLast;
+  BeginUpdate;
+  while Node <> nil do
+  begin
+    if Selected[Node] then
+    begin
+      Node2 := GetPrevious(Node);
+      DeleteNode(Node);
+      Node := Node2;
+    end else
+      Node := GetPrevious(Node);
+  end;
+  EndUpdate;
+end;
+
+procedure TBlacklistTree.Update(List: TStringList);
+var
+  Node: PVirtualNode;
+  NodeData: PBlacklistNodeData;
+begin
+  List.Clear;
+
+  Node := GetLast;
+  BeginUpdate;
+  while Node <> nil do
+  begin
+    NodeData := GetNodeData(Node);
+    List.Add(NodeData.Name);
+    Node := GetPrevious(Node);
+  end;
+  EndUpdate;
+end;
+
+function TBlacklistTree.DoCompare(Node1, Node2: PVirtualNode;
+  Column: TColumnIndex): Integer;
+  function CmpTime(a, b: TDateTime): Integer;
+  begin
+    if a > b then
+      Result := 1
+    else if a < b then
+      Result := -1
+    else
+      Result := 0;
+  end;
+var
+  ND1, ND2: PBlacklistNodeData;
+begin
+  Result := 0;
+
+  ND1 := GetNodeData(Node1);
+  ND2 := GetNodeData(Node2);
+  case Column of
+    0: Result := CompareText(ND1.Name, ND2.Name);
+  end;
+end;
+
+procedure TBlacklistTree.DoFreeNode(Node: PVirtualNode);
+begin
+  inherited;
+
 end;
 
 end.

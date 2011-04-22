@@ -59,6 +59,7 @@ type
     procedure UninitializeBass;
   public
     BassLoaded: Boolean;
+    DeviceAvailable: Boolean;
 
     constructor Create;
     destructor Destroy; override;
@@ -219,25 +220,22 @@ begin
     BASSPluginLoad := GetProcAddress(DLLHandle, 'BASS_PluginLoad');
     BASSPluginFree := GetProcAddress(DLLHandle, 'BASS_PluginFree');
 
-    T := GetTickCount;
-    while True do
+    BassLoaded := False;
+    DeviceAvailable := False;
+
+    if BASSInit(-1, 44100, 0, Handle, nil) then
     begin
-      // Manchmal klappt BASSInit nicht, mit nem ErrorCode von -1 ...
-      // in der Doku steht "some other mysterious error occured"...
-      // Deshalb diese komische Schleife hier.
-      if BASSInit(-1, 44100, 0, Handle, nil) then
+      BassLoaded := True;
+      DeviceAvailable := True;
+    end else
+    begin
+      if BassInit(0, 44100, 0, Handle, nil) then
       begin
-        BassLoaded := True;
-        Break;
-      end else
-      begin
-        if (T + 5000 < GetTickCount) then
-          Break;
-        Sleep(50);
+        BassLoaded := True
       end;
     end;
 
-    if not BassLoaded then    
+    if not BassLoaded then
     begin
       FreeLibrary(DLLHandle);
       Exit;

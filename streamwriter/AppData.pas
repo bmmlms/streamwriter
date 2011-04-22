@@ -24,10 +24,11 @@ interface
 uses
   Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
   LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions, Plugins,
-  PluginManager;
+  PluginManager, Logging;
 
 type
   TClientActions = (caStartStop, caStreamIntegrated, caStream, caFile);
+  TBrowserActions = (baStart, baListen, baListenExternal);
   TUseFilters = (ufNone, ufWish, ufIgnore);
 
   TIntArray = array of Integer;
@@ -99,6 +100,7 @@ type
     FSubmitStats: Boolean;
     FMinDiskSpace: Integer;
     FDefaultAction: TClientActions;
+    FDefaultActionBrowser: TBrowserActions;
     FPlayerVolume: Integer;
     FPlayerVolumeBeforeMute: Integer;
     FAutoScrollLog: Boolean;
@@ -145,6 +147,7 @@ type
     property SubmitStats: Boolean read FSubmitStats write FSubmitStats;
     property MinDiskSpace: Integer read FMinDiskSpace write FMinDiskSpace;
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
+    property DefaultActionBrowser: TBrowserActions read FDefaultActionBrowser write FDefaultActionBrowser;
     property PlayerVolume: Integer read FPlayerVolume write FPlayerVolume;
     property PlayerVolumeBeforeMute: Integer read FPlayerVolumeBeforeMute write FPlayerVolumeBeforeMute;
     property AutoScrollLog: Boolean read FAutoScrollLog write FAutoScrollLog;
@@ -203,7 +206,7 @@ begin
 
   inherited Create(AppName, True, W, 500);
 
-  FBuildNumber := 146;
+  FBuildNumber := 170;
 
   BuildThanksText;
 
@@ -256,7 +259,7 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 17);
+    SetLength(FDonors, 22);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
@@ -274,6 +277,12 @@ begin
     FDonors[14] := '''Palm''';
     FDonors[15] := 'Peter Hörth';
     FDonors[16] := 'Roman Roscher';
+    FDonors[17] := 'Paul Küpper';
+    FDonors[18] := 'Thomas Krössin';
+    FDonors[19] := 'Roland Zettier';
+    FDonors[20] := '''Roman Regenpfeifer''';
+    FDonors[21] := '''brumex''';
+
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
       Text.Add(FDonors[i]);
@@ -367,7 +376,7 @@ end;
 
 procedure TAppData.Load;
 var
-  i, DefaultActionTmp, DefaultFilterTmp: Integer;
+  i, DefaultActionTmp, DefaultActionBrowser, DefaultFilterTmp: Integer;
 begin
   inherited;
 
@@ -421,6 +430,7 @@ begin
   FStorage.Read('SeparateTracks', FStreamSettings.FSeparateTracks, True);
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
   FStorage.Read('DefaultAction', DefaultActionTmp, Integer(caStartStop));
+  FStorage.Read('DefaultActionBrowser', DefaultActionBrowser, Integer(baStart));
   FStorage.Read('DefaultFilter', DefaultFilterTmp, Integer(ufNone));
   FStorage.Read('PlayerVolume', FPlayerVolume, 50);
   FStorage.Read('PlayerVolumeBeforeMute', FPlayerVolumeBeforeMute, 50);
@@ -466,6 +476,12 @@ begin
     FDefaultAction := caStartStop
   else
     FDefaultAction := TClientActions(DefaultActionTmp);
+
+  if (DefaultActionBrowser > Ord(High(TBrowserActions))) or
+     (DefaultActionBrowser < Ord(Low(TBrowserActions))) then
+    FDefaultActionBrowser := baStart
+  else
+    FDefaultActionBrowser := TBrowserActions(DefaultActionBrowser);
 
   if (DefaultFilterTmp > Ord(High(TUseFilters))) or
      (DefaultFilterTmp < Ord(Low(TUseFilters))) then
@@ -522,6 +538,7 @@ begin
 
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
+  FStorage.Write('DefaultActionBrowser', Integer(FDefaultActionBrowser));
   FStorage.Write('PlayerVolume', FPlayerVolume);
   FStorage.Write('PlayerVolumeBeforeMute', FPlayerVolumeBeforeMute);
   //FStorage.Write('SavedPlayerVolume', FSavedPlayerVolume);

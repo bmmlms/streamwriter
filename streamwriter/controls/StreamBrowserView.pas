@@ -57,7 +57,7 @@ type
   end;
   PStreamNodeData = ^TStreamNodeData;
 
-  TOpenActions = (oaStart, oaPlay, oaOpen, oaOpenWebsite, oaCopy, oaSave, oaNone);
+  TOpenActions = (oaStart, oaPlay, oaOpen, oaOpenWebsite, oaBlacklist, oaCopy, oaSave, oaNone);
 
   TNeedDataEvent = procedure(Sender: TObject; Offset, Count: Integer) of object;
   TAddStreamEvent = procedure(Sender: TObject; URL, Name: string) of object;
@@ -202,6 +202,7 @@ type
     FItemAdministration: TMenuItem;
     FItemRebuildIndex: TMenuItem;
     FItemOpenWebsite: TMenuItem;
+    FItemBlacklist: TMenuItem;
     FItemCopy: TMenuItem;
     FItemSave: TMenuItem;
 
@@ -348,20 +349,20 @@ begin
   FPopupMenu.OnPopup := PopupMenuPopup;
 
   FItemStart := FPopupMenu.CreateMenuItem;
-  FItemStart.Caption := _('&Start recording');
+  FItemStart.Caption := '&Start recording';
   FItemStart.ImageIndex := 0;
   FItemStart.Default := True;
   FItemStart.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemStart);
 
   FItemPlay := FPopupMenu.CreateMenuItem;
-  FItemPlay.Caption := _('&Play stream');
+  FItemPlay.Caption := '&Play stream';
   FItemPlay.ImageIndex := 33;
   FItemPlay.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemPlay);
 
   FItemOpen := FPopupMenu.CreateMenuItem;
-  FItemOpen.Caption := _('&Play stream (external player)');
+  FItemOpen.Caption := '&Play stream (external player)';
   FItemOpen.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemOpen);
 
@@ -383,25 +384,31 @@ begin
   FItemRate1.OnClick := PopupMenuClick;
   FItemRate1.Tag := 1;
 
-  FItemAdministration := CreateItem(_('&Administration'), -1, nil);
-  FItemRebuildIndex := CreateItem(_('&Rebuild index'), -1, FItemAdministration);
+  FItemAdministration := CreateItem('&Administration', -1, nil);
+  FItemRebuildIndex := CreateItem('&Rebuild index', -1, FItemAdministration);
   FItemRebuildIndex.OnClick := PopupMenuClick;
 
   CreateItem('-', -1, nil);
 
   FItemOpenWebsite := FPopupMenu.CreateMenuItem;
-  FItemOpenWebsite.Caption := _('Open &website...');
+  FItemOpenWebsite.Caption := 'Open &website...';
   FItemOpenWebsite.ImageIndex := 38;
   FItemOpenWebsite.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemOpenWebsite);
 
+  FItemBlacklist := FPopupMenu.CreateMenuItem;
+  FItemBlacklist.Caption := 'Add to &blacklist';
+  FItemBlacklist.ImageIndex := 51;
+  FItemBlacklist.OnClick := PopupMenuClick;
+  FPopupMenu.Items.Add(FItemBlacklist);
+
   FItemCopy := FPopupMenu.CreateMenuItem;
-  FItemCopy.Caption := _('&Copy URL');
+  FItemCopy.Caption := '&Copy URL';
   FItemCopy.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemCopy);
 
   FItemSave := FPopupMenu.CreateMenuItem;
-  FItemSave.Caption := _('&Save as playlist...');
+  FItemSave.Caption := '&Save as playlist...';
   FItemSave.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemSave);
 
@@ -633,7 +640,14 @@ begin
   begin
     Entries := GetSelected;
     if (Length(Entries) > 0) and Assigned(FOnAction) then
-      FOnAction(Self, oaStart, Entries);
+      case AppGlobals.DefaultActionBrowser of
+        baStart:
+          FOnAction(Self, oaStart, Entries);
+        baListen:
+          FOnAction(Self, oaPlay, Entries);
+        baListenExternal:
+          FOnAction(Self, oaOpen, Entries);
+      end;
   end;
 end;
 
@@ -650,7 +664,14 @@ begin
   inherited;
   if Key = #13 then
   begin
-    FItemStart.Click;
+    case AppGlobals.DefaultActionBrowser of
+      baStart:
+        FItemStart.Click;
+      baListen:
+        FItemPlay.Click;
+      baListenExternal:
+        FItemOpen.Click;
+    end;
     Key := #0;
   end;
 end;
@@ -758,11 +779,15 @@ begin
   if Sender = FItemStart then
     Action := oaStart
   else if Sender = FItemPlay then
-    Action := oaPlay
-  else if Sender = FItemOpen then
+  begin
+    if Bass.DeviceAvailable then
+      Action := oaPlay;
+  end else if Sender = FItemOpen then
     Action := oaOpen
   else if Sender = FItemOpenWebsite then
     Action := oaOpenWebsite
+  else if Sender = FItemBlacklist then
+    Action := oaBlacklist
   else if Sender = FItemCopy then
     Action := oaCopy
   else if Sender = FItemSave then
@@ -797,9 +822,10 @@ var
 begin
   Streams := GetSelected;
 
-  FItemPlay.Enabled := Length(Streams) = 1;
+  FItemPlay.Enabled := (Length(Streams) = 1) and Bass.DeviceAvailable;
   FItemOpen.Enabled := Length(Streams) = 1;
   FItemOpenWebsite.Enabled := (Length(Streams) > 0) and (Trim(Streams[0].Website) <> '');
+  FItemBlacklist.Enabled := Length(Streams) > 0;
 
   FItemRate.Enabled := HomeComm.Connected and (Length(Streams) = 1);
 

@@ -262,6 +262,10 @@ begin
   if (Format = '') and (AppGlobals.AutoTuneInFormat > 0) then
     Exit;
 
+  for i := 0 to FLists.StreamBlacklist.Count - 1 do
+    if FLists.StreamBlacklist[i] = StreamName then
+      Exit;
+
   for i := 0 to FLists.SaveList.Count - 1 do
   begin
     if Like(Title, FLists.SaveList[i].Pattern) then
@@ -280,8 +284,6 @@ begin
         Client.Entry.Settings.SeparateTracks := True;
         Client.Entry.Settings.OnlySaveFull := False;
         Client.Entry.Settings.DeleteStreams := False;
-        //Client.Entry.Settings.AddSavedToIgnore := False;
-        //Client.Entry.Settings.OverwriteSmaller := False;
         Client.Entry.Settings.MaxRetries := 0;
         Client.Entry.Settings.RetryDelay := 0;
         Client.RecordTitle := Title;

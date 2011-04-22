@@ -70,7 +70,9 @@ type
     ScrollbarHeight = 8;
     MinimumDisplayedSampleCount = 30;
   private
-    FBuf: TBitmap;
+    FWaveBuf: TBitmap;
+    FDrawBuf: TBitmap;
+
     FCutView: TCutView;
     FTimer: TTimer;
     FPlayingIndex: Cardinal;
@@ -83,6 +85,8 @@ type
     FScrollbarActive: boolean;
 
     procedure BuildBuffer;
+    procedure BuildDrawBuffer;
+
     procedure SetLine(X: Integer; Button: TMouseButton; Mode: TMouseMode);
     function HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton;
       Mode: TMouseMode): Boolean;
@@ -302,6 +306,7 @@ begin
   FScanThread.OnScanProgress := ThreadScanProgress;
 
   FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
   FPB.Paint;
 
   BASSSetDevice(AppGlobals.SoundDevice + 1);
@@ -319,7 +324,8 @@ begin
 
   FPB.FPlayLine := 0;
 
-  FPB.BuildBuffer;
+  //FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
   FPB.Paint;
 end;
 
@@ -360,6 +366,7 @@ begin
   FPB.FDoZoom := True;
 
   FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
   FPB.Paint;
 
   if Assigned(FOnStateChanged) then
@@ -397,6 +404,7 @@ begin
   FPB.FDoZoom := True;
 
   FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
   FPB.Paint;
 
   if Assigned(FOnStateChanged) then
@@ -531,7 +539,8 @@ begin
   begin
     FPlayer.Pause;
   end;
-  FPB.BuildBuffer;
+  //FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
   FPB.Paint;
 
   if Assigned(FOnStateChanged) then
@@ -546,6 +555,7 @@ begin
   FWaveData.AutoCut(MaxPeaks, MinDuration);
 
   FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
   FPB.Repaint;
 end;
 
@@ -606,6 +616,7 @@ begin
   FScanThread := nil;
 
   FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
   FPB.Repaint;
 
   if FWasSaved then
@@ -627,6 +638,7 @@ begin
   FError := True;
 
   FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
   FPB.Repaint;
 end;
 
@@ -645,31 +657,19 @@ end;
 { TCutPaintBox }
 
 procedure TCutPaintBox.BuildBuffer;
-  procedure DrawLine(ArrayIdx: Cardinal; Color: TColor);
-  var
-    L: Cardinal;
-  begin
-    L := Trunc(((ArrayIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FBuf.Width);
-
-    FBuf.Canvas.Pen.Color := Color;
-    FBuf.Canvas.MoveTo(L, 0);
-    FBuf.Canvas.LineTo(L, FBuf.Height - ScrollbarHeight - 1);
-
-    FBuf.Canvas.Brush.Color := clBlack;
-  end;
   procedure DrawTransparentBox(StartIdx: Cardinal; EndIdx: Cardinal; LineColor: TColor; FillColor: TColor);
   var rectStart, rectEnd: Cardinal;
       originalMode: TPenMode;
   begin
-    rectStart := Trunc(((StartIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FBuf.Width);
-    rectEnd := Trunc(((EndIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FBuf.Width);
-    with FBuf.Canvas do
+    rectStart := Trunc(((StartIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FWaveBuf.Width);
+    rectEnd := Trunc(((EndIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FWaveBuf.Width);
+    with FWaveBuf.Canvas do
     begin
       Pen.Color := LineColor;
       originalMode := Pen.Mode;
       Pen.Mode := TPenMode.pmNotXor;
       Brush.Color := FillColor;
-      Rectangle(rectStart, 0, rectEnd, FBuf.Height - ScrollbarHeight - 1);
+      Rectangle(rectStart, 0, rectEnd, FWaveBuf.Height - ScrollbarHeight - 1);
       Pen.Mode := originalMode;
     end;
   end;
@@ -677,7 +677,7 @@ procedure TCutPaintBox.BuildBuffer;
   var StartX, StartY, EndX: Integer;
       y: Cardinal;
   begin
-    with FBuf.Canvas do
+    with FWaveBuf.Canvas do
     begin
       //Draw Outline
       Pen.Color := Color;
@@ -689,8 +689,8 @@ procedure TCutPaintBox.BuildBuffer;
       LineTo(1, StartY);
 
       //Draw Bar
-      StartX := Trunc((FCutView.FWaveData.ZoomStart * (FBuf.Width - 6)) / High(FCutView.FWaveData.WaveArray)) + 3;
-      EndX := Trunc((FCutView.FWaveData.ZoomEnd * (FBuf.Width - 6)) / High(FCutView.FWaveData.WaveArray)) + 3;
+      StartX := Trunc((FCutView.FWaveData.ZoomStart * (FWaveBuf.Width - 6)) / High(FCutView.FWaveData.WaveArray)) + 3;
+      EndX := Trunc((FCutView.FWaveData.ZoomEnd * (FWaveBuf.Width - 6)) / High(FCutView.FWaveData.WaveArray)) + 3;
       if StartX = EndX then
         EndX := StartX + 1;
       for y := 0 to ScrollbarHeight - 4 do
@@ -699,33 +699,6 @@ procedure TCutPaintBox.BuildBuffer;
         LineTo(EndX, StartY + y + 2);
       end;
     end;
-  end;
-  function BuildTime(T: Double): string;
-  var
-    Min, Sec, MSec: Word;
-  begin
-    Min := Trunc(T / 60);
-    T := T - Trunc(T / 60) * 60;
-    Sec := Trunc(T);
-    T := T - Trunc(T);
-    MSec := (Trunc(T * 1000) div 10) * 10;
-    Result := Format('%0.2d:%0.2d.%0.3d', [Min, Sec, MSec]) + ' ' + _('minutes');
-  end;
-  procedure DrawLineText(ArrayIdx, X: Cardinal);
-  var
-    L: Integer;
-    TS: TSize;
-    SecText: string;
-  begin
-    L := Trunc(((ArrayIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FBuf.Width);
-    SecText := BuildTime(FCutView.FWaveData.WaveArray[ArrayIdx].Sec); // - FCutView.FWaveData.WaveArray[FCutView.FWaveData.ZoomStart].Sec);
-    FBuf.Canvas.Font.Color := clWhite;
-    SetBkMode(FBuf.Canvas.Handle, TRANSPARENT);
-    TS := GetTextSize(SecText, Canvas.Font);
-    if FBuf.Width < L + 4 + TS.cx then
-      FBuf.Canvas.TextOut(L - 4 - TS.cx, X, SecText)
-    else
-      FBuf.Canvas.TextOut(L + 4, X, SecText);
   end;
 var
   i, v, vnext: Integer;
@@ -740,8 +713,8 @@ var
   L1, L2: Cardinal;
   CS, CE: Cardinal;
 begin
-  FBuf.Canvas.Brush.Color := clBlack;
-  FBuf.Canvas.FillRect(Rect(0, 0, FBuf.Width, FBuf.Height));
+  FWaveBuf.Canvas.Brush.Color := clBlack;
+  FWaveBuf.Canvas.FillRect(Rect(0, 0, FWaveBuf.Width, FWaveBuf.Height));
 
   if (ClientHeight < 2) or (ClientWidth < 2) then
     Exit;
@@ -750,9 +723,9 @@ begin
   begin
     Txt := _('Error loading file');
     TS := GetTextSize(Txt, Canvas.Font);
-    FBuf.Canvas.Font.Color := clWhite;
-    SetBkMode(FBuf.Canvas.Handle, TRANSPARENT);
-    FBuf.Canvas.TextOut(FBuf.Width div 2 - TS.cx div 2, FBuf.Height div 2 - TS.cy, Txt);
+    FWaveBuf.Canvas.Font.Color := clWhite;
+    SetBkMode(FWaveBuf.Canvas.Handle, TRANSPARENT);
+    FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - TS.cx div 2, FWaveBuf.Height div 2 - TS.cy, Txt);
     Exit;
   end;
 
@@ -760,9 +733,9 @@ begin
   begin
     Txt := _('Loading file...');
     TS := GetTextSize(Txt, Canvas.Font);
-    FBuf.Canvas.Font.Color := clWhite;
-    SetBkMode(FBuf.Canvas.Handle, TRANSPARENT);
-    FBuf.Canvas.TextOut(FBuf.Width div 2 - TS.cx div 2, FBuf.Height div 2 - TS.cy, Txt);
+    FWaveBuf.Canvas.Font.Color := clWhite;
+    SetBkMode(FWaveBuf.Canvas.Handle, TRANSPARENT);
+    FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - TS.cx div 2, FWaveBuf.Height div 2 - TS.cy, Txt);
   end;
 
   if (FCutView = nil) or (FCutView.FWaveData = nil) then
@@ -772,7 +745,7 @@ begin
     Exit;
 
 
-  ht := (FBuf.Height div 2) - ScrollbarHeight - 1;
+  ht := (FWaveBuf.Height div 2) - ScrollbarHeight - 1;
 
   LBuf := 0;
   RBuf := 0;
@@ -810,23 +783,23 @@ begin
     if CE > FCutView.FWaveData.CutEnd then
       CE := FCutView.FWaveData.CutEnd;
 
-    L1 := Floor(((CS - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FBuf.Width);
-    L2 := Ceil(((CE - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FBuf.Width);
+    L1 := Floor(((CS - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FWaveBuf.Width);
+    L2 := Ceil(((CE - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FWaveBuf.Width);
 
     if L2 - L1 <= 2 then
       Inc(L2);
 
-    FBuf.Canvas.Brush.Color := clGray;
-    FBuf.Canvas.FillRect(Rect(L1, 0, L2, ht - 1));
-    FBuf.Canvas.FillRect(Rect(L1, ht + 1, L2, FBuf.Height - ScrollbarHeight - 3));
+    FWaveBuf.Canvas.Brush.Color := clGray;
+    FWaveBuf.Canvas.FillRect(Rect(L1, 0, L2, ht - 1));
+    FWaveBuf.Canvas.FillRect(Rect(L1, ht + 1, L2, FWaveBuf.Height - ScrollbarHeight - 3));
   end;
 
   ArrayFrom := FCutView.FWaveData.ZoomStart;
   ArrayTo := FCutView.FWaveData.ZoomEnd;
 
-  v2 := (1 / 1) * FBuf.Width;
+  v2 := (1 / 1) * FWaveBuf.Width;
 
-  for i := ArrayFrom - 1 to ArrayTo do
+  for i := ArrayFrom to ArrayTo do
   begin
     v := Integer(Trunc(((i - Int64(ArrayFrom)) / (ArrayTo - ArrayFrom)) * v2));
     vnext := Integer(Trunc(((i - Int64(ArrayFrom) + 1) / (ArrayTo - ArrayFrom)) * v2));
@@ -850,20 +823,20 @@ begin
       end;
     end;
 
-    FBuf.Canvas.Pen.Color := FPeakColor;
-    FBuf.Canvas.Brush.Color := FPeakColor;
+    FWaveBuf.Canvas.Pen.Color := FPeakColor;
+    FWaveBuf.Canvas.Brush.Color := FPeakColor;
     if abs(vnext - v) <= 2 then
     begin
-      FBuf.Canvas.MoveTo(v, ht - 1);
-      FBuf.Canvas.LineTo(v, ht - 1 - Trunc((LBuf / 33000) * ht));
-      FBuf.Canvas.Pixels[v, ht - 1 - Trunc((LBuf / 33000) * ht)] := FPeakEndColor;
-      FBuf.Canvas.MoveTo(v, ht + 1);
-      FBuf.Canvas.LineTo(v, ht + 1 + Trunc((RBuf / 33000) * ht));
-      FBuf.Canvas.Pixels[v, ht + 1 + Trunc((RBuf / 33000) * ht)] := FPeakEndColor;
+      FWaveBuf.Canvas.MoveTo(v, ht - 1);
+      FWaveBuf.Canvas.LineTo(v, ht - 1 - Trunc((LBuf / 33000) * ht));
+      FWaveBuf.Canvas.Pixels[v, ht - 1 - Trunc((LBuf / 33000) * ht)] := FPeakEndColor;
+      FWaveBuf.Canvas.MoveTo(v, ht + 1);
+      FWaveBuf.Canvas.LineTo(v, ht + 1 + Trunc((RBuf / 33000) * ht));
+      FWaveBuf.Canvas.Pixels[v, ht + 1 + Trunc((RBuf / 33000) * ht)] := FPeakEndColor;
     end else
     begin
-      FBuf.Canvas.FillRect(Rect(v, ht, vnext - 1, ht - Trunc((LBuf / 33000) * ht)));
-      FBuf.Canvas.FillRect(Rect(v, ht + 1, vnext - 1, ht + 1 + Trunc((LBuf / 33000) * ht)));
+      FWaveBuf.Canvas.FillRect(Rect(v, ht, vnext - 1, ht - Trunc((LBuf / 33000) * ht)));
+      FWaveBuf.Canvas.FillRect(Rect(v, ht + 1, vnext - 1, ht + 1 + Trunc((LBuf / 33000) * ht)));
     end;
 
     RBuf := 0;
@@ -873,43 +846,75 @@ begin
     Last := v;
   end;
 
-  FBuf.Canvas.Pen.Color := FZoomOuterColor;
-  FBuf.Canvas.MoveTo(0, ht);
-  FBuf.Canvas.LineTo(FBuf.Width, ht);
-
-  DrawLine(FStartLine, FStartColor);
-  DrawLine(FEndLine, FEndColor);
+  FWaveBuf.Canvas.Pen.Color := FZoomOuterColor;
+  FWaveBuf.Canvas.MoveTo(0, ht);
+  FWaveBuf.Canvas.LineTo(FWaveBuf.Width, ht);
 
   DrawTransparentBox(FZoomStartLine, FZoomEndLine, FZoomOuterColor, FZoomInnerColor);
 
-  DrawLineText(FStartLine, 16);
-  DrawLineText(FEndLine, 28);
-
-  DrawLine(FPlayLine, FPlayColor);
-  DrawLineText(FPlayLine, 40);
-
   DrawScrollBar(FZoomOuterColor);
+end;
 
-  {
-  if BASSChannelIsActive(FCutView.FPlayer) = BASS_ACTIVE_PLAYING then
+procedure TCutPaintBox.BuildDrawBuffer;
+  procedure DrawLine(ArrayIdx: Cardinal; Color: TColor);
+  var
+    L: Cardinal;
   begin
-  end;
-  }
+    L := Trunc(((ArrayIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FDrawBuf.Width);
 
-  {
-  for i := 0 to FCutView.FWaveData.Silence.Count - 1 do
+    FDrawBuf.Canvas.Pen.Color := Color;
+    FDrawBuf.Canvas.MoveTo(L, 0);
+    FDrawBuf.Canvas.LineTo(L, FDrawBuf.Height - ScrollbarHeight - 1);
+
+    FDrawBuf.Canvas.Brush.Color := clBlack;
+  end;
+  function BuildTime(T: Double): string;
+  var
+    Min, Sec, MSec: Word;
   begin
-    if (FCutView.FWaveData.CutStart <= FCutView.FWaveData.Silence[i].CutStart) and
-       (FCutView.FWaveData.CutEnd >= FCutView.FWaveData.Silence[i].CutEnd) then
-    begin
-      DrawLine(FCutView.FWaveData.Silence[i].CutStart, clPurple);
-      DrawLine(FCutView.FWaveData.Silence[i].CutEnd, clPurple);
-    end;
+    Min := Trunc(T / 60);
+    T := T - Trunc(T / 60) * 60;
+    Sec := Trunc(T);
+    T := T - Trunc(T);
+    MSec := (Trunc(T * 1000) div 10) * 10;
+    Result := Format('%0.2d:%0.2d.%0.3d', [Min, Sec, MSec]) + ' ' + _('minutes');
   end;
-  }
+  procedure DrawLineText(ArrayIdx, X: Cardinal);
+  var
+    L: Integer;
+    TS: TSize;
+    SecText: string;
+  begin
+    L := Trunc(((ArrayIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FDrawBuf.Width);
+    SecText := BuildTime(FCutView.FWaveData.WaveArray[ArrayIdx].Sec); // - FCutView.FWaveData.WaveArray[FCutView.FWaveData.ZoomStart].Sec);
+    FDrawBuf.Canvas.Font.Color := clWhite;
+    SetBkMode(FDrawBuf.Canvas.Handle, TRANSPARENT);
+    TS := GetTextSize(SecText, Canvas.Font);
+    if FDrawBuf.Width < L + 4 + TS.cx then
+      FDrawBuf.Canvas.TextOut(L - 4 - TS.cx, X, SecText)
+    else
+      FDrawBuf.Canvas.TextOut(L + 4, X, SecText);
+  end;
+begin
+  FDrawBuf.Width := FWaveBuf.Width;
+  FDrawBuf.Height := FWaveBuf.Height;
 
-  FBuf.Canvas.Font.Color := clWhite;
-  FBuf.Canvas.TextOut(4, 4, BuildTime(FCutView.FWaveData.Secs) + ' - ' + RemoveFileExt(ExtractFileName(FCutView.FFilename)));
+  FDrawBuf.Canvas.Draw(0, 0, FWaveBuf);
+
+  if FCutView.FWaveData <> nil then
+  begin
+    DrawLine(FStartLine, FStartColor);
+    DrawLine(FEndLine, FEndColor);
+
+    DrawLineText(FStartLine, 16);
+    DrawLineText(FEndLine, 28);
+
+    DrawLine(FPlayLine, FPlayColor);
+    DrawLineText(FPlayLine, 40);
+
+    FDrawBuf.Canvas.Font.Color := clWhite;
+    FDrawBuf.Canvas.TextOut(4, 4, BuildTime(FCutView.FWaveData.Secs) + ' - ' + RemoveFileExt(ExtractFileName(FCutView.FFilename)));
+  end;
 end;
 
 constructor TCutPaintBox.Create(AOwner: TComponent);
@@ -925,8 +930,10 @@ begin
   FZoomInnerColor := HTML2Color('4d5ea5');
 
   FCutView := TCutView(AOwner);
-  if FBuf = nil then
-    FBuf := TBitmap.Create;
+  if FWaveBuf = nil then
+    FWaveBuf := TBitmap.Create;
+  if FDrawBuf = nil then
+    FDrawBuf := TBitmap.Create;
 
   FZoomStartLine := High(Cardinal);
   FZoomEndLine := High(Cardinal);
@@ -938,7 +945,8 @@ end;
 
 destructor TCutPaintBox.Destroy;
 begin
-  FBuf.Free;
+  FWaveBuf.Free;
+  FDrawBuf.Free;
   FTimer.Enabled := False;
   inherited;
 end;
@@ -1012,20 +1020,21 @@ procedure TCutPaintBox.Paint;
 begin
   inherited;
 
-  Canvas.Draw(0, 0, FBuf);
+  Canvas.Draw(0, 0, FDrawBuf);
 end;
 
 procedure TCutPaintBox.Resize;
 begin
   inherited;
 
-  if FBuf = nil then
+  if FWaveBuf = nil then
     Exit;
 
-  FBuf.Width := ClientWidth;
-  FBuf.Height := ClientHeight;
+  FWaveBuf.Width := ClientWidth;
+  FWaveBuf.Height := ClientHeight;
 
   BuildBuffer;
+  BuildDrawBuffer;
 end;
 
 function TCutPaintBox.PixelsToArray(X: Integer): Cardinal;
@@ -1036,7 +1045,7 @@ begin
   if X > ClientWidth then
     X := ClientWidth;
 
-  Result := FCutView.FWaveData.ZoomStart + Cardinal(Ceil((X / FBuf.Width) * FCutView.FWaveData.ZoomSize));
+  Result := FCutView.FWaveData.ZoomStart + Cardinal(Ceil((X / FWaveBuf.Width) * FCutView.FWaveData.ZoomSize));
 
   if Result > FCutView.FWaveData.ZoomEnd then
     Result := FCutView.FWaveData.ZoomEnd;
@@ -1074,7 +1083,7 @@ var
   Swap: Cardinal;
 begin
   ArrayPos := PixelsToArray(X);
-
+// TODO: Die Linien ragen in die scrollbar rein. fiaaaal!
   if ArrayPos < FCutView.FWaveData.ZoomStart then
     ArrayPos := FCutView.FWaveData.ZoomStart;
   if ArrayPos > FCutView.FWaveData.ZoomEnd then
@@ -1145,6 +1154,8 @@ begin
           FZoomEndLine := High(Cardinal);
           FDoZoom := True;
         end;
+
+        BuildBuffer;
       end;
   end;
 
@@ -1170,7 +1181,7 @@ begin
     }
   end;
 
-  BuildBuffer;
+  BuildDrawBuffer;
   Paint;
 end;
 
@@ -1198,7 +1209,7 @@ begin
       Exit;
     end else
     begin
-      DiffX := Trunc(((X - FMouseMoveStartX) * High(FCutView.FWaveData.WaveArray)) / (FBuf.Width - 6));
+      DiffX := Trunc(((X - FMouseMoveStartX) * High(FCutView.FWaveData.WaveArray)) / (FWaveBuf.Width - 6));
 //      OutputDebugString(PWideChar(' DiffX: '+ IntToStr(DiffX)));
       StartX := FCutView.FWaveData.ZoomStart + Cardinal(DiffX);
       EndX := FCutView.FWaveData.ZoomEnd + Cardinal(DiffX);
@@ -1217,6 +1228,7 @@ begin
       FMouseMoveStartX := X;
       FDoZoom := true;
       BuildBuffer;
+      BuildDrawBuffer;
       Paint;
     end;
   end;
@@ -1245,7 +1257,7 @@ begin
       end;
     end;
     }
-    BuildBuffer;
+    BuildDrawBuffer;
     Paint;
   end;
 end;

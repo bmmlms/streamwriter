@@ -80,6 +80,7 @@ type
 
     FAutoRemove: Boolean;
     FRecordTitle: string;
+    FStopAfterSong: Boolean;
     FKilled: Boolean;
     FRetries: Integer;
 
@@ -142,6 +143,7 @@ type
 
     property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
     property RecordTitle: string read FRecordTitle write FRecordTitle;
+    property StopAfterSong: Boolean read FStopAfterSong write FStopAfterSong;
 
     property Entry: TStreamEntry read FEntry;
 
@@ -502,7 +504,7 @@ end;
 
 procedure TICEClient.ThreadNeedSettings(Sender: TSocketThread);
 begin
-  FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FRecordTitle);
+  FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FStopAfterSong, FRecordTitle);
 end;
 
 procedure TICEClient.ThreadSongSaved(Sender: TSocketThread);
@@ -557,6 +559,12 @@ begin
     begin
       WriteDebug(Format(_('Could not postprocess song: %s'), [E.Message]), dtError, dlNormal);
     end;
+  end;
+
+  if FStopAfterSong then
+  begin
+    StopRecording;
+    FStopAfterSong := False;
   end;
 end;
 
@@ -749,6 +757,12 @@ begin
     Exit;
   end;
 
+  if FStopAfterSong then
+  begin
+    StopAfterSong := False;
+    StopRecording;
+  end;
+
   if (FState <> csStopping) and (FState <> csIOError) then
   begin
     if (FRetries >= MaxRetries) and (MaxRetries > 0) then
@@ -767,10 +781,6 @@ begin
     end;
     if FRedirectedURL = '' then
       Inc(FRetries);
-  end else if FState = csStopping then
-  begin
-    FState := csStopped;
-    WriteDebug(_('Stopped'), dtMessage, dlNormal);
   end;
 
   if Assigned(FOnRefresh) then

@@ -4,7 +4,7 @@ object frmSettings: TfrmSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Settings'
-  ClientHeight = 702
+  ClientHeight = 793
   ClientWidth = 1229
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -25,12 +25,12 @@ object frmSettings: TfrmSettings
     Left = 304
     Top = 4
     Width = 293
-    Height = 381
+    Height = 257
     TabOrder = 0
     Visible = False
     DesignSize = (
       293
-      381)
+      257)
     object lblDefaultFilter: TLabel
       Left = 4
       Top = 172
@@ -128,12 +128,12 @@ object frmSettings: TfrmSettings
     Left = 4
     Top = 4
     Width = 293
-    Height = 273
+    Height = 257
     TabOrder = 1
     Visible = False
     DesignSize = (
       293
-      273)
+      257)
     object Label7: TLabel
       Left = 56
       Top = 136
@@ -160,6 +160,13 @@ object frmSettings: TfrmSettings
       ParentShowHint = False
       ShowHint = True
       OnClick = btnBrowseClick
+    end
+    object Label18: TLabel
+      Left = 4
+      Top = 212
+      Width = 192
+      Height = 13
+      Caption = 'Default action on doubleclick in browser:'
     end
     object chkTray: TCheckBox
       Left = 4
@@ -226,12 +233,24 @@ object frmSettings: TfrmSettings
       ReadOnly = True
       TabOrder = 5
     end
+    object lstDefaultActionBrowser: TComboBox
+      Left = 4
+      Top = 228
+      Width = 213
+      Height = 21
+      Style = csDropDownList
+      TabOrder = 6
+      Items.Strings = (
+        'Start recording'
+        'Listen to stream'
+        'Listen to stream (external player)')
+    end
   end
   object pnlAdvanced: TPanel
     Left = 604
     Top = 4
     Width = 294
-    Height = 273
+    Height = 257
     TabOrder = 2
     Visible = False
     object Label1: TLabel
@@ -285,27 +304,28 @@ object frmSettings: TfrmSettings
   end
   object pnlPlugins: TPanel
     Left = 4
-    Top = 332
+    Top = 268
     Width = 294
-    Height = 273
+    Height = 257
     TabOrder = 3
     Visible = False
     DesignSize = (
       294
-      273)
+      257)
     object lblAppParams: TLabel
       Left = 4
-      Top = 252
+      Top = 236
       Width = 281
       Height = 17
       Anchors = [akLeft, akRight, akBottom]
       AutoSize = False
       Caption = '-'
       WordWrap = True
+      ExplicitTop = 252
     end
     object btnBrowseApp: TSpeedButton
       Left = 268
-      Top = 180
+      Top = 164
       Width = 21
       Height = 21
       Hint = 'Browse...'
@@ -316,10 +336,11 @@ object frmSettings: TfrmSettings
       ParentShowHint = False
       ShowHint = True
       OnClick = btnBrowseAppClick
+      ExplicitTop = 180
     end
     object btnHelp: TPngSpeedButton
-      Left = 265
-      Top = 72
+      Left = 269
+      Top = 56
       Width = 24
       Height = 25
       Hint = 'Info...'
@@ -329,9 +350,10 @@ object frmSettings: TfrmSettings
       ShowHint = True
       OnClick = btnHelpClick
       PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
+      ExplicitTop = 72
     end
     object btnMoveDown: TPngSpeedButton
-      Left = 265
+      Left = 269
       Top = 28
       Width = 24
       Height = 25
@@ -341,7 +363,7 @@ object frmSettings: TfrmSettings
       PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     end
     object btnMoveUp: TPngSpeedButton
-      Left = 265
+      Left = 269
       Top = 0
       Width = 24
       Height = 25
@@ -353,8 +375,8 @@ object frmSettings: TfrmSettings
     object lstPlugins: TListView
       Left = 4
       Top = 1
-      Width = 257
-      Height = 96
+      Width = 261
+      Height = 80
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
       Checkboxes = True
@@ -374,7 +396,7 @@ object frmSettings: TfrmSettings
     end
     object cmdConfigure: TBitBtn
       Left = 57
-      Top = 28
+      Top = 12
       Width = 84
       Height = 25
       Anchors = [akRight, akBottom]
@@ -387,7 +409,7 @@ object frmSettings: TfrmSettings
     end
     object btnAddUp: TButton
       Left = 96
-      Top = 104
+      Top = 88
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
@@ -397,7 +419,7 @@ object frmSettings: TfrmSettings
     end
     object btnRemove: TButton
       Left = 196
-      Top = 104
+      Top = 88
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
@@ -408,7 +430,7 @@ object frmSettings: TfrmSettings
     end
     object txtApp: TLabeledEdit
       Left = 4
-      Top = 180
+      Top = 164
       Width = 257
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -423,7 +445,7 @@ object frmSettings: TfrmSettings
     end
     object txtAppParams: TLabeledEdit
       Left = 4
-      Top = 224
+      Top = 208
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -436,7 +458,7 @@ object frmSettings: TfrmSettings
     end
     object chkOnlyIfCut: TCheckBox
       Left = 4
-      Top = 136
+      Top = 120
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -447,14 +469,14 @@ object frmSettings: TfrmSettings
   end
   object pnlCut: TPanel
     Left = 604
-    Top = 284
+    Top = 268
     Width = 293
-    Height = 273
+    Height = 257
     TabOrder = 4
     Visible = False
     DesignSize = (
       293
-      273)
+      257)
     object Label4: TLabel
       Left = 56
       Top = 48
@@ -499,7 +521,7 @@ object frmSettings: TfrmSettings
     end
     object lblPanelCut: TLabel
       Left = 232
-      Top = 252
+      Top = 240
       Width = 53
       Height = 13
       Alignment = taCenter
@@ -597,27 +619,28 @@ object frmSettings: TfrmSettings
   end
   object pnlHotkeys: TPanel
     Left = 304
-    Top = 420
+    Top = 268
     Width = 293
-    Height = 185
+    Height = 257
     TabOrder = 5
     Visible = False
     DesignSize = (
       293
-      185)
+      257)
     object Label9: TLabel
       Left = 4
-      Top = 144
+      Top = 216
       Width = 37
       Height = 13
       Anchors = [akLeft, akBottom]
       Caption = 'Hotkey:'
+      ExplicitTop = 144
     end
     object lstHotkeys: TListView
       Left = 4
       Top = 0
       Width = 285
-      Height = 129
+      Height = 201
       Anchors = [akLeft, akTop, akRight, akBottom]
       Columns = <
         item
@@ -635,7 +658,7 @@ object frmSettings: TfrmSettings
     end
     object txtHotkey: THotKey
       Left = 4
-      Top = 160
+      Top = 232
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -649,12 +672,12 @@ object frmSettings: TfrmSettings
     Left = 904
     Top = 4
     Width = 294
-    Height = 273
+    Height = 257
     TabOrder = 6
     Visible = False
     DesignSize = (
       294
-      273)
+      257)
     object Label2: TLabel
       Left = 20
       Top = 140
@@ -754,14 +777,14 @@ object frmSettings: TfrmSettings
   end
   object pnlFilenames: TPanel
     Left = 904
-    Top = 284
+    Top = 268
     Width = 294
-    Height = 273
+    Height = 257
     TabOrder = 7
     Visible = False
     DesignSize = (
       294
-      273)
+      257)
     object lblFilePattern: TLabel
       Left = 4
       Top = 44
@@ -811,6 +834,44 @@ object frmSettings: TfrmSettings
       OnChange = txtFilePatternDecimalsChange
     end
   end
+  object pnlCommunityBlacklist: TPanel
+    Left = 4
+    Top = 532
+    Width = 293
+    Height = 257
+    TabOrder = 8
+    Visible = False
+    DesignSize = (
+      293
+      257)
+    object Label19: TLabel
+      Left = 4
+      Top = 4
+      Width = 256
+      Height = 13
+      Caption = 'Do not automatically record from the following streams:'
+    end
+    object pnlBlacklist: TPanel
+      Left = 4
+      Top = 20
+      Width = 285
+      Height = 201
+      Anchors = [akLeft, akTop, akRight, akBottom]
+      BevelOuter = bvNone
+      TabOrder = 0
+    end
+    object btnBlacklistRemove: TButton
+      Left = 196
+      Top = 228
+      Width = 93
+      Height = 25
+      Anchors = [akRight, akBottom]
+      Caption = '&Remove'
+      Enabled = False
+      TabOrder = 1
+      OnClick = btnBlacklistRemoveClick
+    end
+  end
   object dlgOpen: TOpenDialog
     Filter = 'Executable files (*.exe, *.bat)|*.exe;*.bat'
     Left = 548
@@ -820,7 +881,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C0101020008006C0110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800900110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -987,9 +1048,36 @@ object frmSettings: TfrmSettings
           D7D7FDC4D0280288EC9D4824B245F263AAE07F411510253FFD7EFF21C9090488
           C5E21552F8947C7F34E763FA4D40DF3B9DCE15E3A1CFF90F7E7F33F08269B48E
           0000000049454E44AE426082}
+      end
+      item
+        Background = clWindow
+        Name = 'IconNeu16'
+        PngImage.Data = {
+          89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+          610000000473424954080808087C08648800000009704859730000024F000002
+          4F01F79138900000001974455874536F667477617265007777772E696E6B7363
+          6170652E6F72679BEE3C1A000002284944415478DA63FCFFFF3F033A90ED7FC2
+          C9F4E39FD1C34AB9A30C0400233603947A9FCBFFBC79FF062337CB66012BB398
+          2BA10CBF48320004A452F73D61FCF25F9A4180ED0683B440C0D31ADD9B241920
+          9D7D70F7BF2F5F6D19FEFEFEC7C8C6FB8B495C34E749BBEE12A20D90ADB95AF5
+          E7F1E3BA5FFFEF7630FF628F66E5529665E0E75EF44CC02CE37F3DC33F820648
+          F4DE1363BEF1F8D1CF6FE75B78D918A67CFEFCB399954B33968197FBE0F3A9CE
+          FE040D0001C9B4BD67FF7E7DFAF9F5B27847A0BAFF62696BA3591878A7FD657A
+          61F87246DC3D820648575EACF9FFFC59F95F813F2A2F27F8BE04BB2C7BCBB41F
+          2F2E5CFBB0B6660A4E03A45BEEAB337CFAECCBC8C8C8C7F0FA5DE5EF7FCF16BF
+          5C10990493172BDBADFAAACBF5368601F28D77B498DE7D9C2DC7CF62262CC2CD
+          72FBCD4F8677CF3F33FCFDF1FCE54B154199FFF50E7FF0C6824CCEE9FDBEC682
+          0E29B6620C475EFC65D8F7F81FC38537FF18FEDD7AC8F0FBF783961733426A71
+          1AC00844B259C7DE47FB6BF08B7030323CF9FA9FE1F8F37F0CCFBFFD67F8FFF9
+          2BC3AFABC7EEBE54BBADF6BFBEFE1F4E1748A5EEBA2AAAA4A4252223C0F0E6C7
+          7F860F3F20E220177CBDBBED9EB0B9BBE1ED7AF34F380D10CBDBECC6F4EEDB52
+          16515521467E5EA6FFBFFF32FCFFF8E6F78F0747DEFD787369E6D713CBEA09A6
+          44C19066C3FFEF9F853071CA7AFC7D7F9FFDD7BB3B0758C5E44EF31BFBAC7ADC
+          17FA9DE8A4CCD8C8C024C77E84FF51A5ED87FF78120B00457C20F0ADF5CF9600
+          00000049454E44AE426082}
       end>
-    Left = 416
-    Top = 484
+    Left = 420
+    Top = 316
     Bitmap = {}
   end
 end
