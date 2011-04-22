@@ -290,7 +290,8 @@ begin
   Players.AddPlayer(FPlayer);
 
   try
-    FPlayer.Filename := FFilename;
+    if Bass.DeviceAvailable then
+      FPlayer.Filename := FFilename;
   except
     ThreadScanError(Self);
     Exit;
