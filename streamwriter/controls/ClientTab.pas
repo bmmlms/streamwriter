@@ -1113,7 +1113,7 @@ begin
       if ValidURL(URL) then
       begin
         Client := FClients.AddClient(Name, URL);
-        if TitlePattern <> '' then
+        if Trim(TitlePattern) <> '' then
           Client.Entry.Settings.TitlePattern := TitlePattern;
 
         if HitNode <> nil then

@@ -286,7 +286,8 @@ begin
         Client.Entry.Settings.DeleteStreams := False;
         Client.Entry.Settings.MaxRetries := 0;
         Client.Entry.Settings.RetryDelay := 0;
-        Client.Entry.Settings.TitlePattern := TitlePattern;
+        if Trim(TitlePattern) <> '' then
+          Client.Entry.Settings.TitlePattern := TitlePattern;
         Client.RecordTitle := Title;
         Client.StartRecording;
       end;

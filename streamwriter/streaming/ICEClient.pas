@@ -749,7 +749,6 @@ begin
 
   if DiedThread.RecvStream.HaltClient or AutoRemove then
   begin
-    FState := csStopped;
     if FProcessingList.Count = 0 then
       Kill
     else

@@ -576,7 +576,7 @@ begin
   FWasActivated := False;
   FWasShown := False;
   FUpdateOnExit := False;
-
+                          // TODO: wenn auf dem server kein muster, oder das standard muster ist, muss es durch das vom user überschrieben werden. IMMER!
   try
     FStreams.Load;
   except
