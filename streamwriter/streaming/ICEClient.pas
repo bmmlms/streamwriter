@@ -749,13 +749,13 @@ begin
 
   if DiedThread.RecvStream.HaltClient or AutoRemove then
   begin
+    FState := csStopped;
     if FProcessingList.Count = 0 then
       Kill
     else
       Disconnect;
     if Assigned(FOnDisconnected) and (FICEThread = nil) and (FProcessingList.Count = 0) then
       FOnDisconnected(Self);
-    FState := csStopped;
     Exit;
   end;
 
