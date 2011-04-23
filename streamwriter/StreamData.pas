@@ -125,6 +125,8 @@ begin
   optGood.Checked := FIsOkay;
   optBad.Checked := not FIsOkay;
   txtTitlePattern.Text := RegEx;
+  if txtTitlePattern.Text = '' then
+    txtTitlePattern.Text := '(?P<a>.*) - (?P<t>.*)';
 
   FInitialized := True;
 end;

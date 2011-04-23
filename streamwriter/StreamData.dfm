@@ -136,9 +136,6 @@ object frmStreamData: TfrmStreamData
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 3
-    ExplicitLeft = -224
-    ExplicitTop = 268
-    ExplicitWidth = 609
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -162,7 +159,6 @@ object frmStreamData: TfrmStreamData
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 508
     end
   end
   object pnlHeader: TPanel
@@ -177,7 +173,6 @@ object frmStreamData: TfrmStreamData
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 4
-    ExplicitWidth = 350
     object Shape1: TShape
       Left = 4
       Top = 4
