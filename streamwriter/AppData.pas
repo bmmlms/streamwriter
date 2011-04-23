@@ -614,7 +614,7 @@ var
 begin
   Result := TStreamSettings.Create;
 
-  if Version >= 15 then
+  if Version >= 16 then
     Stream.Read(Result.FTitlePattern)
   else
     Result.FTitlePattern := '(?P<a>.*) - (?P<t>.*)';

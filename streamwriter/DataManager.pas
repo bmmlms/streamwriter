@@ -223,7 +223,7 @@ type
   end;
 
 const
-  DATAVERSION = 15;
+  DATAVERSION = 16;
 
 implementation
 
