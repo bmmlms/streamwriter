@@ -978,6 +978,12 @@ begin
     end;
   end;
 
+  if (Artist = '') and (Title = '') and (Pattern <> '(?P<a>.*) - (?P<t>.*)') then
+  begin
+    // Wenn nichts gefunden wurde, Fallback mit normalem Muster..
+    ParseTitle(S, '(?P<a>.*) - (?P<t>.*)', Artist, Title);
+  end;
+
   if (Artist = '') or (Title = '') then
   begin
     Artist := _('Unknown artist');

@@ -208,6 +208,7 @@ type
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; Text: string;
       CellRect: TRect; DrawFormat: Cardinal); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
+    procedure KeyPress(var Key: Char); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1380,6 +1381,23 @@ begin
   if Key = VK_DELETE then
   begin
     FPopupMenu.FItemDelete.Click;
+  end;
+end;
+
+procedure TSavedTree.KeyPress(var Key: Char);
+var
+  Tracks: TTrackInfoArray;
+begin
+  inherited;
+
+  if (Key = #13) or (Key = #32) then
+  begin
+    Key := #0;
+    Tracks := GetSelected;
+    if Length(Tracks) = 1 then
+    begin
+      FPopupMenu.FItemPlay.Click;
+    end;
   end;
 end;
 

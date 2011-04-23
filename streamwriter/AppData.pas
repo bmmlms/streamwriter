@@ -95,6 +95,7 @@ type
     FDir: string;
     FTray: Boolean;
     FTrayOnMinimize: Boolean;
+    FSnapMain: Boolean;
     FShowSidebar: Boolean;
     FSidebarWidth: Integer;
     FAutoTuneIn: Boolean;
@@ -142,6 +143,7 @@ type
     property Dir: string read FDir write FDir;
     property Tray: Boolean read FTray write FTray;
     property TrayOnMinimize: Boolean read FTrayOnMinimize write FTrayOnMinimize;
+    property SnapMain: Boolean read FSnapMain write FSnapMain;
     property ShowSidebar: Boolean read FShowSidebar write FShowSidebar;
     property SidebarWidth: Integer read FSidebarWidth write FSidebarWidth;
     property AutoTuneIn: Boolean read FAutoTuneIn write FAutoTuneIn;
@@ -411,6 +413,7 @@ begin
   FShowSidebar := True;
   FStorage.Read('TrayClose', FTray, False);
   FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);
+  FStorage.Read('SnapMain', FSnapMain, False);
   FStorage.Read('SidebarWidth', FSidebarWidth, 250);
   FStorage.Read('AutoTuneIn', FAutoTuneIn, True);
   FStorage.Read('SubmitStreamInfo', FSubmitStreamInfo, True);
@@ -531,6 +534,7 @@ begin
 
   FStorage.Write('TrayClose', FTray);
   FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
+  FStorage.Write('SnapMain', FSnapMain);
   FStorage.Write('SidebarWidth', FSidebarWidth);
   FStorage.Write('AutoTuneIn', FAutoTuneIn);
   FStorage.Write('SubmitStats', FSubmitStats);

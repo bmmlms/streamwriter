@@ -80,7 +80,7 @@ type
     procedure ClientPause(Sender: TObject);
     procedure ClientStop(Sender: TObject);
 
-    procedure HomeCommTitleChanged(Sender: TObject; StreamName, Title, CurrentURL, Format: string; Kbps: Cardinal);
+    procedure HomeCommTitleChanged(Sender: TObject; StreamName, Title, CurrentURL, Format, TitlePattern: string; Kbps: Cardinal);
   public
     constructor Create(Lists: TDataLists);
     destructor Destroy; override;
@@ -232,7 +232,7 @@ begin
 end;
 
 procedure TClientManager.HomeCommTitleChanged(Sender: TObject; StreamName, Title,
-  CurrentURL, Format: string; Kbps: Cardinal);
+  CurrentURL, Format, TitlePattern: string; Kbps: Cardinal);
 var
   i: Integer;
   AutoTuneInMinKbps: Cardinal;
@@ -286,6 +286,7 @@ begin
         Client.Entry.Settings.DeleteStreams := False;
         Client.Entry.Settings.MaxRetries := 0;
         Client.Entry.Settings.RetryDelay := 0;
+        Client.Entry.Settings.TitlePattern := TitlePattern;
         Client.RecordTitle := Title;
         Client.StartRecording;
       end;

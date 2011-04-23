@@ -88,7 +88,8 @@ uses
   SetTags in 'plugins\SetTags.pas',
   PluginManager in 'plugins\PluginManager.pas',
   Logging in '..\..\common\Logging.pas',
-  Timers in 'Timers.pas' {frmTimers};
+  Timers in 'Timers.pas' {frmTimers},
+  StreamData in 'StreamData.pas' {frmStreamData};
 
 {$SetPEOptFlags $0140}
 

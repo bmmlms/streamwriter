@@ -25,7 +25,7 @@ uses
   Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
   StdCtrls, Menus, ImgList, Math, ICEClient, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, Tabs, DropComboTarget,
-  DropSource, ShlObj, ComObj, ShellAPI, DataManager;
+  DropSource, ShlObj, ComObj, ShellAPI, DataManager, StreamBrowserView;
 
 type
   TAccessCanvas = class(TCanvas);
@@ -46,7 +46,7 @@ type
 
   TNodeDataArray = array of PClientNodeData;
 
-  TStartStreamingEvent = procedure(Sender: TObject; URL: string; Node: PVirtualNode; Mode: TVTNodeAttachMode) of object;
+  TStartStreamingEvent = procedure(Sender: TObject; URL, TitlePattern: string; Node: PVirtualNode; Mode: TVTNodeAttachMode) of object;
 
   TMenuColEvent = procedure(Sender: TMClientView; Index: Integer; Checken: Boolean) of object;
 
@@ -65,6 +65,8 @@ type
 
   TMClientView = class(TVirtualStringTree)
   private
+    FBrowser: TMStreamTree;
+
     FPopupMenu: TPopupMenu;
     FDragSource: TDropFileSource;
     FDragNodes: TNodeArray;
@@ -104,7 +106,7 @@ type
     function DoEndEdit: Boolean; override;
     procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; Text: UnicodeString); override;
   public
-    constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu); reintroduce;
+    constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree); reintroduce;
     destructor Destroy; override;
 
     function AddClient(Client: TICEClient): PVirtualNode;
@@ -131,6 +133,9 @@ type
   end;
 
 implementation
+
+uses
+  ClientTab;
 
 { TMStreamView }
 
@@ -181,11 +186,13 @@ begin
   Result := Node;
 end;
 
-constructor TMClientView.Create(AOwner: TComponent; PopupMenu: TPopupMenu);
+constructor TMClientView.Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree);
 var
   i: Integer;
 begin
   inherited Create(AOwner);
+
+  FBrowser := Browser;
 
   FDragTreshold := 6;
 
@@ -964,40 +971,64 @@ begin
       Exit;
     end;
 
-    Files := TStringList.Create;
-    try
-      GetFileListFromObj(DataObject, Files);
-      if Files.Count = 0 then
-        for n := 0 to High(Formats) do
-        begin
-          case Formats[n] of
-            CF_UNICODETEXT:
-              begin
-                if GetWideStringFromObj(DataObject, DropURL) then
-                begin
-                  Files.Add(DropURL);
-                  Break;
-                end;
-              end;
-          end;
-        end;
-      for i := 0 to Files.Count - 1 do
-        if (Files[i] <> '') then
-          if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere) then
-            OnStartStreaming(Self, Files[i], HI.HitNode, amAddChildLast)
-          else
-          begin
-            if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
-              Attachmode := amAddChildLast;
-            if AttachMode = amNoWhere then
-              AttachMode := amInsertAfter;
-            OnStartStreaming(Self, Files[i], HI.HitNode, Attachmode);
-          end;
-          UnkillCategory(HI.HitNode);
-    finally
-      Files.Free;
-    end;
+    if Length(FBrowser.DraggedStreams) > 0 then
+    begin
+      for i := 0 to High(FBrowser.DraggedStreams) do
+      begin
 
+        // Das hier ist das selbe wie hier drunter, nur mit anderer URL/RegEx...
+        if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere) then
+          OnStartStreaming(Self, FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].RegEx, HI.HitNode, amAddChildLast)
+        else
+        begin
+          if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
+            Attachmode := amAddChildLast;
+          if AttachMode = amNoWhere then
+            AttachMode := amInsertAfter;
+          OnStartStreaming(Self, FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].RegEx, HI.HitNode, Attachmode);
+        end;
+        UnkillCategory(HI.HitNode);
+      end;
+
+    end else
+    begin
+      Files := TStringList.Create;
+      try
+        GetFileListFromObj(DataObject, Files);
+        if Files.Count = 0 then
+          for n := 0 to High(Formats) do
+          begin
+            case Formats[n] of
+              CF_UNICODETEXT:
+                begin
+                  if GetWideStringFromObj(DataObject, DropURL) then
+                  begin
+                    Files.Add(DropURL);
+                    Break;
+                  end;
+                end;
+            end;
+          end;
+        for i := 0 to Files.Count - 1 do
+          if (Files[i] <> '') then
+
+            // Das selbe wie im Kommentar oben beschrieben...
+            if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere) then
+              OnStartStreaming(Self, Files[i], '', HI.HitNode, amAddChildLast)
+            else
+            begin
+              if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
+                Attachmode := amAddChildLast;
+              if AttachMode = amNoWhere then
+                AttachMode := amInsertAfter;
+              OnStartStreaming(Self, Files[i], '', HI.HitNode, Attachmode);
+            end;
+            UnkillCategory(HI.HitNode);
+
+      finally
+        Files.Free;
+      end;
+    end;
   end;
 end;
 

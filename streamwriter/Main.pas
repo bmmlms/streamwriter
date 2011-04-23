@@ -153,6 +153,7 @@ type
     actStopAfterSong: TAction;
     Setuptimers1: TMenuItem;
     Stopaftercurrenttitle1: TMenuItem;
+    ToolButton9: TToolButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -238,13 +239,13 @@ type
 
     procedure tabClientsUpdateButtons(Sender: TObject);
     procedure tabClientsCut(Entry: TStreamEntry; Track: TTrackInfo);
-    procedure tabSavedRefresh(Sender: TObject);
-
     procedure tabClientsTrackAdded(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsAddIgnoreList(Sender: TObject; Data: string);
+    procedure tabClientsAuthRequired(Sender: TObject);
 
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
+    procedure tabSavedRefresh(Sender: TObject);
 
     procedure tabCutSaved(Sender: TObject; Filesize, Length: UInt64);
 
@@ -553,6 +554,7 @@ begin
   tabClients.OnAddIgnoreList := tabClientsAddIgnoreList;
   tabClients.OnVolumeChanged := tabVolumeChanged;
   tabClients.OnPlayStarted := tabPlayStarted;
+  tabClients.OnAuthRequired := tabClientsAuthRequired;
 
   tabLists := TListsTab.Create(pagMain);
   tabLists.PageControl := pagMain;
@@ -623,6 +625,7 @@ begin
   end;
   Left := AppGlobals.MainLeft;
   Top := AppGlobals.MainTop;
+  ScreenSnap := AppGlobals.SnapMain;
 
   addStatus.CustomHint := TStatusHint.Create(Self);
 end;
@@ -1099,6 +1102,7 @@ begin
   Language.Translate(Self, PreTranslate, PostTranslate);
   AppGlobals.PluginManager.ReInitPlugins;
   TrayIcon1.Visible := AppGlobals.Tray;
+  ScreenSnap := AppGlobals.SnapMain;
   RegisterHotkeys(True);
 
   NodeData := tabClients.ClientView.GetNodeData(tabClients.ClientView.AutoNode);
@@ -1215,6 +1219,12 @@ begin
   Ignore := TTitleInfo.Create(Data);
   FStreams.IgnoreList.Add(Ignore);
   tabLists.AddIgnore(Ignore);
+end;
+
+procedure TfrmStreamWriterMain.tabClientsAuthRequired(Sender: TObject);
+begin
+  if MsgBox(Handle, _('You need to be logged in to perform that action.'#13#10'Do you want to login now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+    ShowCommunityLogin;
 end;
 
 procedure TfrmStreamWriterMain.tabClientsUpdateButtons(Sender: TObject);

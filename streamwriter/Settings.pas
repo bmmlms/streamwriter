@@ -143,6 +143,7 @@ type
     Label19: TLabel;
     txtTitlePattern: TLabeledEdit;
     btnResetTitlePattern: TPngSpeedButton;
+    chkSnapMain: TCheckBox;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -600,6 +601,7 @@ begin
     chkSearchSilenceClick(nil);
 
     chkTray.Checked := AppGlobals.Tray;
+    chkSnapMain.Checked := AppGlobals.SnapMain;
     optClose.Checked := not AppGlobals.TrayOnMinimize;
     optMinimize.Checked := AppGlobals.TrayOnMinimize;
 
@@ -895,6 +897,7 @@ begin
 
     AppGlobals.Dir := txtDir.Text;
     AppGlobals.Tray := chkTray.Checked;
+    AppGlobals.SnapMain := chkSnapMain.Checked;
     AppGlobals.TrayOnMinimize := optMinimize.Checked;
 
     AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;

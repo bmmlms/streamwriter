@@ -29,6 +29,8 @@ type
     procedure FormShow(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure lblSignupClick(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
   private
     procedure ShowConnecting(Show: Boolean);
   protected
@@ -97,6 +99,16 @@ begin
 
   txtUsername.Text := AppGlobals.User;
   txtPassword.Text := AppGlobals.Pass;
+end;
+
+procedure TfrmCommunityLogin.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = 27 then
+  begin
+    Key := 0;
+    Close;
+  end;
 end;
 
 procedure TfrmCommunityLogin.FormShow(Sender: TObject);

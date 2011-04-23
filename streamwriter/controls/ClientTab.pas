@@ -28,7 +28,7 @@ uses
   DataManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
   GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs,
   Graphics, SharedControls, Generics.Collections, Generics.Defaults,
-  Logging, DynBass;
+  Logging, DynBass, StreamData, Forms;
 
 type
   TSidebar = class(TPageControl)
@@ -107,6 +107,7 @@ type
     FOnAddIgnoreList: TStringEvent;
     FOnVolumeChanged: TSeekChangeEvent;
     FOnPlayStarted: TNotifyEvent;
+    FOnAuthRequired: TNotifyEvent;
 
     procedure ShowInfo;
 
@@ -141,7 +142,7 @@ type
     procedure FClientViewDblClick(Sender: TObject);
     procedure FClientViewKeyPress(Sender: TObject; var Key: Char);
     procedure FClientViewKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure FClientViewStartStreaming(Sender: TObject; URL: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
+    procedure FClientViewStartStreaming(Sender: TObject; URL, TitlePattern: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 
     procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
 
@@ -160,7 +161,7 @@ type
       ClientImages: TImageList; Clients: TClientManager;
       Streams: TDataLists);
     procedure Shown;
-    function StartStreaming(Name, URL: string; StartPlay: Boolean;
+    function StartStreaming(Name, URL, TitlePattern: string; StartPlay: Boolean;
       HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
     procedure TimerTick;
     procedure UpdateStreams(Streams: TDataLists);
@@ -180,6 +181,7 @@ type
     property OnAddIgnoreList: TStringEvent read FOnAddIgnoreList write FOnAddIgnoreList;
     property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
+    property OnAuthRequired: TNotifyEvent read FOnAuthRequired write FOnAuthRequired;
     //property OnSetVolume: TIntegerEvent read FOnSetVolume write FOnSetVolume;
   end;
 
@@ -521,11 +523,11 @@ var
   Entry: TRecentEntry;
 begin
   if FAddressBar.FStations.ItemIndex = -1 then
-    StartStreaming('', FAddressBar.FStations.Text, False, nil, amNoWhere)
+    StartStreaming('', FAddressBar.FStations.Text, '', False, nil, amNoWhere)
   else
   begin
     Entry := TRecentEntry(FAddressBar.FStations.ItemsEx[FAddressBar.FStations.ItemIndex].Data);
-    StartStreaming(Entry.Name, Entry.StartURL, False, nil, amNoWhere);
+    StartStreaming(Entry.Name, Entry.StartURL, '', False, nil, amNoWhere);
   end;
 end;
 
@@ -640,19 +642,6 @@ begin
   GetAction('actSavePlaylistStream').OnExecute := ActionSavePlaylistStreamExecute;
   GetAction('actSavePlaylistFile').OnExecute := ActionSavePlaylistFileExecute;
 
-  FClientView := TMClientView.Create(Self, Popup);
-  FClientView.Parent := Self;
-  FClientView.Align := alClient;
-  FClientView.Visible := True;
-  FClientView.PopupMenu := Popup;
-  FClientView.Images := ClientImages;
-  FClientView.OnChange := FClientViewChange;
-  FClientView.OnDblClick := FClientViewDblClick;
-  FClientView.OnKeyPress := FClientViewKeyPress;
-  FClientView.OnKeyDown := FClientViewKeyDown;
-  FClientView.OnStartStreaming := FClientViewStartStreaming;
-  FClientView.Show;
-
   FSplitter := TSplitter.Create(Self);
   FSplitter.Parent := Self;
   FSplitter.Align := alRight;
@@ -671,7 +660,20 @@ begin
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
   FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := MenuImages;
-  //FSideBar.FInfoView.InfoView.Tree.OnAction := StreamInfoAction;
+
+  // Das ClientView wird erst hier erzeugt, weil es eine Referenz auf FSideBar.FBrowserView.StreamTree braucht!
+  FClientView := TMClientView.Create(Self, Popup, FSideBar.FBrowserView.StreamTree);
+  FClientView.Parent := Self;
+  FClientView.Align := alClient;
+  FClientView.Visible := True;
+  FClientView.PopupMenu := Popup;
+  FClientView.Images := ClientImages;
+  FClientView.OnChange := FClientViewChange;
+  FClientView.OnDblClick := FClientViewDblClick;
+  FClientView.OnKeyPress := FClientViewKeyPress;
+  FClientView.OnKeyDown := FClientViewKeyDown;
+  FClientView.OnStartStreaming := FClientViewStartStreaming;
+  FClientView.Show;
 
   FSplitter.Left := FSideBar.Left - 5;
 
@@ -949,9 +951,9 @@ begin
 end;
 
 procedure TClientTab.FClientViewStartStreaming(Sender: TObject;
-  URL: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
+  URL, TitlePattern: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 begin
-  StartStreaming('', URL, False, Node, Mode);
+  StartStreaming('', URL, TitlePattern, False, Node, Mode);
 end;
 
 procedure TClientTab.FSetVolume(Value: Integer);
@@ -1050,7 +1052,7 @@ begin
   end;
 end;
 
-function TClientTab.StartStreaming(Name, URL: string; StartPlay: Boolean;
+function TClientTab.StartStreaming(Name, URL, TitlePattern: string; StartPlay: Boolean;
   HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
   procedure UnkillCategory;
   var
@@ -1111,6 +1113,8 @@ begin
       if ValidURL(URL) then
       begin
         Client := FClients.AddClient(Name, URL);
+        if TitlePattern <> '' then
+          Client.Entry.Settings.TitlePattern := TitlePattern;
 
         if HitNode <> nil then
         begin
@@ -1136,10 +1140,31 @@ end;
 
 procedure TClientTab.StreamBrowserAction(Sender: TObject; Action: TOpenActions;
   Streams: TStreamDataArray);
+  procedure Rate(R: Integer);
+  var
+    ND: PStreamNodeData;
+  begin
+    if not HomeComm.Authenticated then
+      FOnAuthRequired(Self)
+    else
+    begin
+      HomeComm.RateStream(Streams[0].ID, R);
+      if HomeComm.Authenticated and (Streams[0].Rating = 0) then
+      begin
+        try
+          ND := FSideBar.FBrowserView.StreamTree.GetNodeData(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
+          ND.Rating := R;
+          FSideBar.FBrowserView.StreamTree.InvalidateNode(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
+        except end;
+      end;
+    end;
+  end;
 var
   i: Integer;
   s: string;
   Entries: TPlaylistEntryArray;
+  SD: TfrmStreamData;
+  ND: PStreamNodeData;
 begin
   if Action in [oaOpen, oaSave] then
   begin
@@ -1155,12 +1180,12 @@ begin
   case Action of
     oaStart:
       for i := 0 to Length(Streams) - 1 do
-        if not StartStreaming(Streams[i].Name, Streams[i].URL, False, nil, amNoWhere) then
+        if not StartStreaming(Streams[i].Name, Streams[i].URL, Streams[i].RegEx, False, nil, amNoWhere) then
           Break;
     oaPlay:
       if Bass.DeviceAvailable then
         for i := 0 to Length(Streams) - 1 do
-          StartStreaming(Streams[i].Name, Streams[i].URL, True, nil, amNoWhere);
+          StartStreaming(Streams[i].Name, Streams[i].URL, Streams[i].RegEx, True, nil, amNoWhere);
     oaOpen:
       SavePlaylist(Entries, True);
     oaOpenWebsite:
@@ -1182,6 +1207,40 @@ begin
       end;
     oaSave:
       SavePlaylist(Entries, False);
+    oaSetData:
+      begin
+        if not HomeComm.Authenticated then
+          FOnAuthRequired(Self)
+        else
+        begin
+          SD := TfrmStreamData.Create(GetParentForm(Self), Streams[0].ID, Streams[0].Name, Streams[0].RegEx, Streams[0].RecordingOkay);
+          try
+            SD.ShowModal;
+
+            try
+              ND := FSideBar.FBrowserView.StreamTree.GetNodeData(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
+              if SD.RegExChanged then
+                ND.RegEx := SD.RegEx;
+              if SD.IsOkayChanged then
+                ND.RecordingOkay := SD.RecordingOkay;
+              FSideBar.FBrowserView.StreamTree.InvalidateNode(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
+            except end;
+
+          finally
+            SD.Free;
+          end;
+        end;
+      end;
+    oaRate1:
+      Rate(1);
+    oaRate2:
+      Rate(2);
+    oaRate3:
+      Rate(3);
+    oaRate4:
+      Rate(4);
+    oaRate5:
+      Rate(5);
   end;
 end;
 

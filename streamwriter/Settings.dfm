@@ -176,22 +176,22 @@ object frmSettings: TfrmSettings
     Left = 4
     Top = 4
     Width = 293
-    Height = 257
+    Height = 293
     TabOrder = 1
     Visible = False
     DesignSize = (
       293
-      257)
+      293)
     object Label7: TLabel
       Left = 56
-      Top = 136
+      Top = 172
       Width = 15
       Height = 13
       Caption = 'GB'
     end
     object Label3: TLabel
       Left = 4
-      Top = 164
+      Top = 200
       Width = 190
       Height = 13
       Caption = 'Default action on doubleclick on stream:'
@@ -211,7 +211,7 @@ object frmSettings: TfrmSettings
     end
     object Label18: TLabel
       Left = 4
-      Top = 212
+      Top = 248
       Width = 192
       Height = 13
       Caption = 'Default action on doubleclick in browser:'
@@ -228,7 +228,7 @@ object frmSettings: TfrmSettings
     end
     object txtMinDiskSpace: TLabeledEdit
       Left = 4
-      Top = 132
+      Top = 168
       Width = 49
       Height = 21
       EditLabel.Width = 205
@@ -240,7 +240,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultAction: TComboBox
       Left = 4
-      Top = 180
+      Top = 216
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -269,7 +269,7 @@ object frmSettings: TfrmSettings
     end
     object txtDir: TLabeledEdit
       Left = 4
-      Top = 84
+      Top = 124
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -283,7 +283,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultActionBrowser: TComboBox
       Left = 4
-      Top = 228
+      Top = 264
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -292,6 +292,14 @@ object frmSettings: TfrmSettings
         'Start recording'
         'Listen to stream'
         'Listen to stream (external player)')
+    end
+    object chkSnapMain: TCheckBox
+      Left = 4
+      Top = 72
+      Width = 281
+      Height = 21
+      Caption = 'Snap mainwindow to screen edges'
+      TabOrder = 7
     end
   end
   object pnlAdvanced: TPanel
@@ -352,7 +360,7 @@ object frmSettings: TfrmSettings
   end
   object pnlPlugins: TPanel
     Left = 4
-    Top = 268
+    Top = 304
     Width = 294
     Height = 257
     TabOrder = 3
@@ -884,14 +892,14 @@ object frmSettings: TfrmSettings
   end
   object pnlCommunityBlacklist: TPanel
     Left = 4
-    Top = 532
+    Top = 568
     Width = 293
-    Height = 257
+    Height = 221
     TabOrder = 8
     Visible = False
     DesignSize = (
       293
-      257)
+      221)
     object Label19: TLabel
       Left = 4
       Top = 4
@@ -903,14 +911,15 @@ object frmSettings: TfrmSettings
       Left = 4
       Top = 20
       Width = 285
-      Height = 201
+      Height = 165
       Anchors = [akLeft, akTop, akRight, akBottom]
       BevelOuter = bvNone
       TabOrder = 0
+      ExplicitHeight = 201
     end
     object btnBlacklistRemove: TButton
       Left = 196
-      Top = 228
+      Top = 192
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
@@ -918,6 +927,7 @@ object frmSettings: TfrmSettings
       Enabled = False
       TabOrder = 1
       OnClick = btnBlacklistRemoveClick
+      ExplicitTop = 228
     end
   end
   object dlgOpen: TOpenDialog
@@ -929,7 +939,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800900110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800940110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

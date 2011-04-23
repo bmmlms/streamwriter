@@ -38,6 +38,8 @@ type
     MetaData: Boolean;
     ChangesTitleInSong: Boolean;
     Rating: Integer;
+    RecordingOkay: Boolean;
+    RegEx: string;
   end;
   TStreamInfoArray = array of TStreamInfo;
 
@@ -59,6 +61,7 @@ type
     FChangedCurrentURL: string;
     FChangedKbps: Cardinal;
     FChangedFormat: string;
+    FChangedTitlePattern: string;
 
     FServerInfoClientCount: Cardinal;
     FServerInfoRecordingCount: Cardinal;
@@ -105,7 +108,7 @@ type
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
   TGenresReceivedEvent = procedure(Sender: TObject; Genres: TStringList) of object;
   TStreamsReceivedEvent = procedure(Sender: TObject; Streams: TStreamInfoArray; Count: Integer) of object;
-  TTitleChangedEvent = procedure(Sender: TObject; Name, Title, CurrentURL, Format: string; Kbps: Cardinal) of object;
+  TTitleChangedEvent = procedure(Sender: TObject; Name, Title, CurrentURL, Format, TitlePattern: string; Kbps: Cardinal) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
 
@@ -151,6 +154,9 @@ type
     procedure SendClientInfo;
     procedure UpdateStats(RecordingCount: Cardinal);
     procedure RateStream(ID, Rating: Integer);
+    procedure SetData(ID: Integer; RecordingOkay: Boolean; RegEx: string); overload;
+    procedure SetData(ID: Integer; RecordingOkay: Boolean); overload;
+    procedure SetData(ID: Integer; RegEx: string); overload;
     procedure RebuildIndex;
 
     procedure Terminate;
@@ -198,7 +204,8 @@ procedure THomeCommunication.ClientTitleChanged(Sender: TSocketThread);
 begin
   if Assigned(FOnTitleChanged) then
     FOnTitleChanged(Self, THomeThread(Sender).FChangedStreamName, THomeThread(Sender).FChangedTitle,
-      THomeThread(Sender).FChangedCurrentURL, THomeThread(Sender).FChangedFormat, THomeThread(Sender).FChangedKbps);
+      THomeThread(Sender).FChangedCurrentURL, THomeThread(Sender).FChangedFormat,
+      THomeThread(Sender).FChangedTitlePattern, THomeThread(Sender).FChangedKbps);
 end;
 
 procedure THomeCommunication.ClientLoggedOn(Sender: TSocketThread);
@@ -374,6 +381,95 @@ begin
     Node := TXMLNode.Create(Data);
     Node.Name := 'build';
     Node.Value.AsInteger := AppGlobals.BuildNumber;
+
+    XMLDocument.SaveToString(XML);
+    FClient.Write(XML);
+  finally
+    XMLDocument.Free;
+  end;
+end;
+
+procedure THomeCommunication.SetData(ID: Integer; RecordingOkay: Boolean;
+  RegEx: string);
+var
+  XMLDocument: TXMLLib;
+  Data, Node: TXMLNode;
+  XML: AnsiString;
+begin
+  if not Connected then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('setdata');
+  try
+    Data := XMLDocument.Root.GetNode('data');
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'id';
+    Node.Value.AsInteger := ID;
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'recordingokay';
+    Node.Value.AsBoolean := RecordingOkay;
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'regex';
+    Node.Value.AsString := RegEx;
+
+    XMLDocument.SaveToString(XML);
+    FClient.Write(XML);
+  finally
+    XMLDocument.Free;
+  end;
+end;
+
+procedure THomeCommunication.SetData(ID: Integer; RecordingOkay: Boolean);
+var
+  XMLDocument: TXMLLib;
+  Data, Node: TXMLNode;
+  XML: AnsiString;
+begin
+  if not Connected then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('setdata');
+  try
+    Data := XMLDocument.Root.GetNode('data');
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'id';
+    Node.Value.AsInteger := ID;
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'recordingokay';
+    Node.Value.AsBoolean := RecordingOkay;
+
+    XMLDocument.SaveToString(XML);
+    FClient.Write(XML);
+  finally
+    XMLDocument.Free;
+  end;
+end;
+
+procedure THomeCommunication.SetData(ID: Integer; RegEx: string);
+var
+  XMLDocument: TXMLLib;
+  Data, Node: TXMLNode;
+  XML: AnsiString;
+begin
+  if not Connected then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('setdata');
+  try
+    Data := XMLDocument.Root.GetNode('data');
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'id';
+    Node.Value.AsInteger := ID;
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'regex';
+    Node.Value.AsString := RegEx;
 
     XMLDocument.SaveToString(XML);
     FClient.Write(XML);
@@ -689,6 +785,8 @@ begin
     FStreams[High(FStreams)].MetaData := Node.Attributes.AttributeByName['metadata'].Value.AsBoolean;
     FStreams[High(FStreams)].ChangesTitleInSong := Node.Attributes.AttributeByName['changestitleinsong'].Value.AsBoolean;
     FStreams[High(FStreams)].Rating := Node.Attributes.AttributeByName['rating'].Value.AsInteger;
+    FStreams[High(FStreams)].RecordingOkay := Node.Attributes.AttributeByName['recordingokay'].Value.AsBoolean;
+    FStreams[High(FStreams)].RegEx := Node.Attributes.AttributeByName['regex'].Value.AsString;
   end;
 
   if Assigned(FOnStreamsReceived) then
@@ -705,6 +803,7 @@ begin
   FChangedCurrentURL := Data.Nodes.GetNode('currenturl').Value.AsString;
   FChangedKbps := Data.Nodes.GetNode('kbps').Value.AsLongWord;
   FChangedFormat := Data.Nodes.GetNode('format').Value.AsString;
+  FChangedTitlePattern := Data.Nodes.GetNode('regex').Value.AsString;
 
   if (FChangedStreamName <> '') and (FChangedTitle <> '') and (FChangedCurrentURL <> '') then
     if Assigned(FOnTitleChanged) then

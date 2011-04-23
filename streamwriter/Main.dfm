@@ -2,7 +2,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Left = 549
   Top = 450
   Caption = 'streamWriter'
-  ClientHeight = 442
+  ClientHeight = 322
   ClientWidth = 689
   Color = clBtnFace
   Constraints.MinHeight = 300
@@ -15,6 +15,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   KeyPreview = True
   Menu = mnuMain
   OldCreateOrder = False
+  SnapBuffer = 12
   OnActivate = FormActivate
   OnClose = FormClose
   OnCreate = FormCreate
@@ -25,7 +26,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   TextHeight = 13
   object addStatus: TStatusBar
     Left = 0
-    Top = 423
+    Top = 303
     Width = 689
     Height = 19
     Hint = 'Users/active streams'
@@ -53,6 +54,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     ShowHint = True
     OnDrawPanel = addStatusDrawPanel
     OnResize = addStatusResize
+    ExplicitTop = 423
   end
   object tbClients: TToolBar
     Left = 0
@@ -131,13 +133,19 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       ImageIndex = 11
       Style = tbsSeparator
     end
-    object cmdOpenWebsite: TToolButton
+    object ToolButton9: TToolButton
       Left = 195
+      Top = 0
+      Action = actStopAfterSong
+      ImageIndex = 52
+    end
+    object cmdOpenWebsite: TToolButton
+      Left = 218
       Top = 0
       Action = actOpenWebsite
     end
     object ToolButton8: TToolButton
-      Left = 218
+      Left = 241
       Top = 0
       Width = 8
       Caption = 'ToolButton8'
@@ -145,17 +153,17 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsSeparator
     end
     object cmdStreamSettings: TToolButton
-      Left = 226
+      Left = 249
       Top = 0
       Action = actStreamSettings
     end
     object ToolButton6: TToolButton
-      Left = 249
+      Left = 272
       Top = 0
       Action = actResetData
     end
     object ToolButton4: TToolButton
-      Left = 272
+      Left = 295
       Top = 0
       Width = 8
       Caption = '-'
@@ -164,7 +172,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Visible = False
     end
     object cmdShowStreamBrowser: TToolButton
-      Left = 280
+      Left = 303
       Top = 0
       Action = actShowSideBar
       Visible = False
@@ -419,6 +427,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object actStopAfterSong: TAction
       AutoCheck = True
       Caption = 'Stop after &current title'
+      Hint = 'Stop after current title'
     end
   end
   object mnuStreamPopup: TPopupMenu
@@ -2198,6 +2207,36 @@ object frmStreamWriterMain: TfrmStreamWriterMain
           0280D3E9CC2712090677E5CFBBCF040DC873FE42DE42400070381C5F5996BDCD
           4FE6E36A0131E47239A452A96F8D46C32600D8EDF624F9DC84FF8B9FCD66137F
           2AF80B2CA390F0F740ACC00000000049454E44AE426082}
+      end
+      item
+        Background = clWindow
+        Name = 'stop-after-current'
+        PngImage.Data = {
+          89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+          61000000017352474200AECE1CE900000006624B474400FF00FF00FFA0BDA793
+          000000097048597300000B1300000B1301009A9C180000000774494D4507DB04
+          1711392F34D2F60E0000029A4944415478DA95935F48935118C69FEFCFE6E674
+          FFDAC69C7353492C332C275E245257D245D24511444117294222D445845D4911
+          746175D155084150147561646441969569A65F5A314D9D2E756D4E659BCECD6F
+          FFBED3B71473ACC89EC3B9389CF7FDF19C87F750D824F3F55939CD0BE53317AD
+          EFB145519B0F05AD6E6B64CCF98D52B01DEA7D9527EDC7A8E87F0192CAADEF5A
+          2141A260B552DEA0954C4A89C0FFA597EBBD52D59006C86FEA5E8A06C34A2A11
+          0323CB4655450EB6EB1808E4778D84A1D0D9EFE6FAAFEEAF4803145FE87305BD
+          81DC22531C336E3F62B419568B12E5C60C50EBD5720583AE21173778AD261D50
+          7AB67338109297E5AB7C2834983032EDC0DC8A126AAD02BB5480202EAD26131F
+          1C3EEEF3CDDA74C0EE86FB8331598E4D08CDA3D4A841980FC11B8E623EA64481
+          CC0F294543A7CDC2A86799FB7AEB783A60E7A9B64163F11EDBD8F83CAC1A1EEC
+          7A8537C680595D804EA9853A4B0EC7F40F6EF44E7D2AC07479AA9899B5BFD49B
+          8D66AF7305B4DC876CAD72E33E2E26C9D21434992C3C5F46B8A9078D6B004BCB
+          4409ED5B6AB3A8D8CA6D3A053BB11881CF13443CEE05293589E1A51A553234C2
+          6FDE72EEF6736B80DCC68FAF6B6D9A0375D506F4CC25F06A56C0F0A218D7F834
+          963521F046630A40C102E4690717E8382F0208A1F2CEF4FA4F1CDEA1D2C928B8
+          42047D1E019E3001098ACD931C42956520491712B13106302284B43FE2C2CF9B
+          D71CE4D4BDB0EB0B0B4B746635167982C0FAEC251D041DCF2261413A2AC4E389
+          141B01A73DF1E9F6E95F007DD3931ADA17BEC7EA8BB4942A9B26B10484C0429C
+          FFFECECF7B06EEAE0E3D6EFDC32847C4BDB4918EFAC8A5BDC4EF3E4ACBF30E26
+          FCCE8CA8CFD12D31580654B6430F5D378EAD6EF933A185D0968C1ED54C737520
+          F954FC433F01098D12288D1A3DEF0000000049454E44AE426082}
       end>
     PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     Left = 32

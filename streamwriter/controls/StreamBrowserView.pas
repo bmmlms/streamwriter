@@ -38,6 +38,8 @@ type
     URL: string;
     Website: string;
     Rating: Integer;
+    RegEx: string;
+    RecordingOkay: Boolean;
   end;
   TStreamDataArray = array of TStreamData;
 
@@ -54,10 +56,13 @@ type
     HasData: Boolean;
     MetaData: Boolean;
     ChangesTitleInSong: Boolean;
+    RecordingOkay: Boolean;
+    RegEx: string;
   end;
   PStreamNodeData = ^TStreamNodeData;
 
-  TOpenActions = (oaStart, oaPlay, oaOpen, oaOpenWebsite, oaBlacklist, oaCopy, oaSave, oaNone);
+  TOpenActions = (oaStart, oaPlay, oaOpen, oaOpenWebsite, oaBlacklist, oaCopy, oaSave, oaSetData,
+    oaRate1, oaRate2, oaRate3, oaRate4, oaRate5, oaNone);
 
   TNeedDataEvent = procedure(Sender: TObject; Offset, Count: Integer) of object;
   TAddStreamEvent = procedure(Sender: TObject; URL, Name: string) of object;
@@ -200,6 +205,7 @@ type
     FItemRate4: TMenuItem;
     FItemRate5: TMenuItem;
     FItemAdministration: TMenuItem;
+    FItemSetData: TMenuItem;
     FItemRebuildIndex: TMenuItem;
     FItemOpenWebsite: TMenuItem;
     FItemBlacklist: TMenuItem;
@@ -212,6 +218,8 @@ type
     FLoadOffset: Integer;
     FButtonPos: TRect;
 
+    FDraggedStreams: TStreamDataArray;
+
     FOnNeedData: TNeedDataEvent;
     FOnAction: TActionEvent;
 
@@ -219,8 +227,8 @@ type
     function CreateItem(Caption: string; ImageIndex: Integer; Parent: TMenuItem): TMenuItem;
 
     procedure FitColumns;
-    function AddStream(Node: PVirtualNode; ID: Integer; Name, Genre, URL, Website, StreamType: string;
-      BitRate, Downloads: Integer; Rating: Integer; MetaData, ChangesTitleInSong, HasData: Boolean): PVirtualNode;
+    function AddStream(Node: PVirtualNode; ID: Integer; Name, Genre, URL, Website, StreamType, RegEx: string;
+      BitRate, Downloads: Integer; Rating: Integer; MetaData, ChangesTitleInSong, RecordingOkay, HasData: Boolean): PVirtualNode;
     procedure GetLoadDataNodes(var FirstVisibleNoData, LastVisibleNoData: PVirtualNode);
     function GetSelected: TStreamDataArray;
     procedure KeyDown(var Key: Word; Shift: TShiftState);
@@ -262,6 +270,7 @@ type
 
     property IsLoading: Boolean read FIsLoading write FSetIsLoading;
     property PopupMenu2: TPopupMenu read FPopupMenu;
+    property DraggedStreams: TStreamDataArray read FDraggedStreams;
 
     property DisplayCount: Integer read FDisplayCount;
     property LoadOffset: Integer read FLoadOffset write FLoadOffset;
@@ -273,8 +282,8 @@ implementation
 
 { TMStreamView }
 
-function TMStreamTree.AddStream(Node: PVirtualNode; ID: Integer; Name, Genre, URL, Website, StreamType: string;
-  BitRate, Downloads: Integer; Rating: Integer; MetaData, ChangesTitleInSong, HasData: Boolean): PVirtualNode;
+function TMStreamTree.AddStream(Node: PVirtualNode; ID: Integer; Name, Genre, URL, Website, StreamType, RegEx: string;
+  BitRate, Downloads: Integer; Rating: Integer; MetaData, ChangesTitleInSong, RecordingOkay, HasData: Boolean): PVirtualNode;
 var
   NodeData: PStreamNodeData;
 begin
@@ -293,6 +302,8 @@ begin
   NodeData.Rating := Rating;
   NodeData.MetaData := MetaData;
   NodeData.ChangesTitleInSong := ChangesTitleInSong;
+  NodeData.RecordingOkay := RecordingOkay;
+  NodeData.RegEx := RegEx;
   Result := Node;
 end;
 
@@ -351,7 +362,7 @@ begin
   FItemStart := FPopupMenu.CreateMenuItem;
   FItemStart.Caption := '&Start recording';
   FItemStart.ImageIndex := 0;
-  FItemStart.Default := True;
+  //FItemStart.Default := True;
   FItemStart.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemStart);
 
@@ -362,7 +373,7 @@ begin
   FPopupMenu.Items.Add(FItemPlay);
 
   FItemOpen := FPopupMenu.CreateMenuItem;
-  FItemOpen.Caption := '&Play stream (external player)';
+  FItemOpen.Caption := 'P&lay stream (external player)';
   FItemOpen.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemOpen);
 
@@ -385,6 +396,10 @@ begin
   FItemRate1.Tag := 1;
 
   FItemAdministration := CreateItem('&Administration', -1, nil);
+
+  FItemSetData := CreateItem('S&et data...', -1, FItemAdministration);
+  FItemSetData.OnClick := PopupMenuClick;
+
   FItemRebuildIndex := CreateItem('&Rebuild index', -1, FItemAdministration);
   FItemRebuildIndex.OnClick := PopupMenuClick;
 
@@ -465,6 +480,7 @@ begin
   Finalize(NodeData.URL);
   Finalize(NodeData.Website);
   Finalize(NodeData.StreamType);
+  Finalize(NodeData.RegEx);
   inherited;
 end;
 
@@ -522,7 +538,7 @@ begin
       PaintInfo.Canvas.Draw(L, 21, FImageMetaData);
       L := L + 9;
     end;
-    if NodeData.ChangesTitleInSong then
+    if NodeData.ChangesTitleInSong or (not NodeData.RecordingOkay) then
       PaintInfo.Canvas.Draw(L, 21, FImageChangesTitle);
   end;
 end;
@@ -626,6 +642,8 @@ begin
       Result[High(Result)].URL := NodeData.URL;
       Result[High(Result)].Website := NodeData.Website;
       Result[High(Result)].Rating := NodeData.Rating;
+      Result[High(Result)].RegEx := NodeData.RegEx;
+      Result[High(Result)].RecordingOkay := NodeData.RecordingOkay;
     end;
   end;
 end;
@@ -792,20 +810,20 @@ begin
     Action := oaCopy
   else if Sender = FItemSave then
     Action := oaSave
+  else if Sender = FItemSetData then
+    Action := oaSetData
   else if Sender = FItemRebuildIndex then
     HomeComm.RebuildIndex
   else if (Sender = FItemRate1) or (Sender = FItemRate2) or (Sender = FItemRate3) or
           (Sender = FItemRate4) or (Sender = FItemRate5) then
     if Length(Streams) = 1 then
     begin
-      // Wir schicken es trotz eventuellem nicht-angemeldet-sein. Weil dann bekommt die GUI
-      // einen Fehler zugeschickt und zeigt das Login-Ding an.
-      HomeComm.RateStream(Streams[0].ID, TMenuItem(Sender).Tag);
-      if HomeComm.Authenticated and (Streams[0].Rating = 0) then
-      begin
-        NodeData := GetNodeData(GetNodes(True)[0]);
-        NodeData.Rating := TMenuItem(Sender).Tag;
-        InvalidateNode(GetNodes(True)[0]);
+      case TMenuItem(Sender).Tag of
+        1: Action := oaRate1;
+        2: Action := oaRate2;
+        3: Action := oaRate3;
+        4: Action := oaRate4;
+        5: Action := oaRate5;
       end;
     end
   else
@@ -822,6 +840,7 @@ var
 begin
   Streams := GetSelected;
 
+  FItemStart.Enabled := Length(Streams) > 0;
   FItemPlay.Enabled := (Length(Streams) = 1) and Bass.DeviceAvailable;
   FItemOpen.Enabled := Length(Streams) = 1;
   FItemOpenWebsite.Enabled := (Length(Streams) > 0) and (Trim(Streams[0].Website) <> '');
@@ -829,8 +848,11 @@ begin
 
   FItemRate.Enabled := HomeComm.Connected and (Length(Streams) = 1);
 
-  FItemAdministration.Visible := HomeComm.IsAdmin;
-  FItemRebuildIndex.Visible := HomeComm.IsAdmin;
+  FItemRebuildIndex.Enabled := HomeComm.IsAdmin;
+  FItemSetData.Enabled := HomeComm.Connected and (Length(Streams) = 1);
+
+  FItemCopy.Enabled := Length(Streams) > 0;
+  FItemSave.Enabled := Length(Streams) > 0;
 end;
 
 procedure TMStreamTree.TimerOnTimer(Sender: TObject);
@@ -962,7 +984,9 @@ begin
     Exit;
 
   DoStateChange([], [tsOLEDragPending, tsOLEDragging, tsClearPending]);
-  FDragSource.Execute(True);
+  FDraggedStreams := GetSelected;
+  FDragSource.Execute(False);
+  SetLength(FDraggedStreams, 0);
 end;
 
 procedure TMStreamTree.AddStreams(Streams: TStreamInfoArray;
@@ -987,10 +1011,10 @@ begin
     try
       for i := 0 to Length(Streams) - 1 do
         AddStream(nil, Streams[i].ID, Streams[i].Name, Streams[i].Genre, Streams[i].URL, Streams[i].Website,
-          Streams[i].StreamType, Streams[i].BitRate, Streams[i].Downloads, Streams[i].Rating, Streams[i].MetaData,
-          Streams[i].ChangesTitleInSong, True);
+          Streams[i].StreamType, Streams[i].RegEx, Streams[i].BitRate, Streams[i].Downloads, Streams[i].Rating,
+          Streams[i].MetaData, Streams[i].ChangesTitleInSong, Streams[i].RecordingOkay, True);
       for i := RootNodeCount to Count - 1 do
-        AddStream(nil, 0, '', '', '', '', '', 0, 0, 0, False, False, False);
+        AddStream(nil, 0, '', '', '', '', '', '', 0, 0, 0, False, False, False, False);
     finally
       EndUpdate;
     end;
@@ -1006,8 +1030,9 @@ begin
         if (i >= FLoadOffset) and (High(Streams) >= n) then
         begin
           AddStream(Node, 0, Streams[n].Name, Streams[n].Genre, Streams[n].URL, Streams[n].Website,
-            Streams[n].StreamType, Streams[n].BitRate, Streams[n].Downloads, Streams[n].Rating,
-            Streams[n].MetaData, Streams[n].ChangesTitleInSong, True);
+            Streams[n].StreamType, Streams[n].RegEx, Streams[n].BitRate, Streams[n].Downloads,
+            Streams[n].Rating, Streams[n].MetaData, Streams[n].ChangesTitleInSong, Streams[n].RecordingOkay,
+            True);
           InvalidateNode(Node);
           Inc(n);
         end;
@@ -1067,12 +1092,12 @@ begin
   inherited;
   if Button = mbRight then
   begin
-    if Length(GetSelected) > 0 then
-    begin
+    //if Length(GetSelected) > 0 then
+    //begin
       P.X := X;
       P.Y := Y;
       FPopupMenu.Popup(ClientToScreen(P).X, ClientToScreen(P).Y);
-    end;
+    //end;
   end;
 end;
 
@@ -1664,7 +1689,7 @@ begin
   Items.Add(FItemName);
 
   FItemKbps := CreateMenuItem;
-  FItemKbps.Caption := _('Kbps');
+  FItemKbps.Caption := _('Kbps');                 // TODO: Beim 'rate' item click sollte nicht immer gesendet werden. so login prüfen, wie bei SetData form.
   Items.Add(FItemKbps);
 
   FItemType := CreateMenuItem;
