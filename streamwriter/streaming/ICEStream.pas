@@ -24,7 +24,7 @@ interface
 uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
   AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
-  Math, RegularExpressions;
+  Math, PerlRegEx;
 
 type
   TDebugEvent = procedure(Text, Data: string) of object;
@@ -442,7 +442,7 @@ procedure TICEStream.SaveData(S, E: UInt64; Title: string);
 var
   Saved, Kill: Boolean;
   RangeBegin, RangeEnd: Int64;
-  Dir, Filename, FileArtist, FileTitle: string;
+  Dir, Filename: string;
   FileCheck: TFileChecker;
 begin
   Saved := False;
@@ -456,6 +456,14 @@ begin
   begin
     RangeBegin := TAudioStreamMemory(FAudioStream).GetFrame(S, False);
     RangeEnd := TAudioStreamMemory(FAudioStream).GetFrame(E, True);
+  end;
+
+  if FBytesPerSec = 0 then
+  begin
+    if Kill then
+      FHaltClient := True;
+    RemoveData;
+    Exit;
   end;
 
   WriteDebug(Format(_('Saving from %d to %d'), [S, E]), 1, 1);
@@ -477,11 +485,11 @@ begin
     FSaveAllowedTitle := Title;
     FSaveAllowed := True;
 
-    ParseTitle(Title, FSettings.TitlePattern, FileArtist, FileTitle);
+    ParseTitle(Title, FSettings.TitlePattern, FSavedArtist, FSavedTitle);
 
     FileCheck := TFileChecker.Create(FStreamName, FSaveDir, FSongsSaved, FSettings);
     try
-      FileCheck.GetFilename(E - S, FileArtist, FileTitle, FAudioType);
+      FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FAudioType);
       if (FileCheck.Result in [crSave, crOverwrite]) and (FileCheck.FFilename <> '') then
       begin
         Dir := FileCheck.SaveDir;
@@ -544,9 +552,11 @@ begin
 
     try
       FSavedFilename := Dir + Filename;
-      ParseTitle(Title, FSettings.TitlePattern, FSavedArtist, FSavedTitle);
       FSavedSize := RangeEnd - RangeBegin;
-      FSavedLength := Trunc(FSavedSize / FBytesPerSec);
+      if FBytesPerSec > 0 then
+        FSavedLength := Trunc(FSavedSize / FBytesPerSec)
+      else
+        FSavedLength := 0;
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self);
       WriteDebug(Format(_('Saved song "%s"'), [ExtractFilename(Filename)]), '', 1, 0);
@@ -941,40 +951,32 @@ end;
 procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Title: string);
 var
   A, T: string;
-  R: TRegEx;
-  Match: TMatch;
-  Matches: TMatchCollection;
-  Group: TGroup;
+  R: TPerlRegEx;
 begin
   Artist := '';
   Title := '';
 
-  try
-    if S <> '' then
-    begin
-      Matches := R.Matches(S, Pattern);
-
-      A := '';
-      T := '';
-      for Match in Matches do
-      begin
-        try
-          A := Match.Groups['a'].Value;
-          T := Match.Groups['t'].Value;
-        except
-          A := '';
-          T := '';
-        end;
-
-        if (A <> '') or (T <> '') then
+  if (S <> '') and (Pattern <> '') then
+  begin
+    R := TPerlRegEx.Create;
+    try
+      R.Subject := S;
+      R.RegEx := Pattern;
+      try
+        if R.Match then
         begin
-          Artist := Trim(A);
-          Title := Trim(T);
-          Break;
+          try
+            Artist := Trim(R.Groups[R.NamedGroup('a')]);
+          except end;
+          try
+            Title := Trim(R.Groups[R.NamedGroup('t')]);
+          except end;
         end;
-      end;
+      except end;
+    finally
+      R.Free;
     end;
-  except end;
+  end;
 
   if (Artist = '') or (Title = '') then
   begin
