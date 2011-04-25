@@ -612,15 +612,43 @@ class function TStreamSettings.Load(Stream: TExtendedStream;
   Version: Integer): TStreamSettings;
 var
   FilterTmp: Integer;
+  S1, S2: string;
 begin
   Result := TStreamSettings.Create;
 
-  if Version >= 16 then
-    Stream.Read(Result.FTitlePattern)
-  else
-    Result.FTitlePattern := '(?P<a>.*) - (?P<t>.*)';
+  // Weil ich mal Mist mit den Versionen gebaut habe, hilft das hier vielleicht..
+  // Der obere Block kann eigentlich bald raus.
+  // Die letzte veröffentlichte Programmversion war auch nicht Version 15
+  // sondern 14, darum müsste das cremig ablaufen.
+  if Version = 15 then
+  begin
+    S1 := '';
+    S2 := '';
+    try
+      Stream.Read(S1);
+    except end;
+    try
+      Stream.Read(S2);
+    except end;
 
-  Stream.Read(Result.FFilePattern);
+    if (S1 <> '') and (S2 <> '') then
+    begin
+      Result.FTitlePattern := S1;
+      Result.FFilePattern := S2;
+    end else
+    begin
+      Result.FTitlePattern := '(?P<a>.*) - (?P<t>.*)';
+      Result.FFilePattern := S1;
+    end;
+  end else if Version < 15 then
+  begin
+    Result.FTitlePattern := '(?P<a>.*) - (?P<t>.*)';
+    Stream.Read(Result.FFilePattern);
+  end else if Version > 15 then
+  begin
+    Stream.Read(Result.FTitlePattern);
+    Stream.Read(Result.FFilePattern);
+  end;
 
   if Version >= 14 then
     Stream.Read(Result.FFilePatternDecimals)

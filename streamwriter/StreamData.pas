@@ -133,7 +133,7 @@ end;
 
 procedure TfrmStreamData.FormActivate(Sender: TObject);
 begin
-  lblTop.Caption := TruncateText(lblTop.Caption + ' ' + Name, lblTop.Width, lblTop.Font);
+  lblTop.Caption := TruncateText(lblTop.Caption + ' ' + FName, lblTop.Width, lblTop.Font);
 end;
 
 procedure TfrmStreamData.FormKeyDown(Sender: TObject; var Key: Word;
