@@ -151,7 +151,7 @@ object frmSettings: TfrmSettings
     end
     object btnBrowse: TSpeedButton
       Left = 268
-      Top = 84
+      Top = 124
       Width = 21
       Height = 21
       Hint = 'Browse...'
@@ -223,7 +223,7 @@ object frmSettings: TfrmSettings
     object txtDir: TLabeledEdit
       Left = 4
       Top = 124
-      Width = 257
+      Width = 261
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
@@ -953,7 +953,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C0101020008009C0110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800A00110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
