@@ -121,7 +121,7 @@ type
     chkSubmitStats: TCheckBox;
     Label8: TLabel;
     lstSoundDevice: TComboBox;
-    Label11: TLabel;
+    lblSoundDevice: TLabel;
     Label16: TLabel;
     lstMinBitrate: TComboBox;
     Label17: TLabel;
@@ -141,9 +141,10 @@ type
     pnlBlacklist: TPanel;
     btnBlacklistRemove: TButton;
     Label19: TLabel;
+    chkSnapMain: TCheckBox;
+    pnlStreamsAdvanced: TPanel;
     txtTitlePattern: TLabeledEdit;
     btnResetTitlePattern: TPngSpeedButton;
-    chkSnapMain: TCheckBox;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -200,14 +201,18 @@ type
     FIgnoreFieldList: TList;
     FLists: TDataLists;
     lstBlacklist: TBlacklistTree;
+    btnReset: TBitBtn;
     function ValidatePattern: string;
     function GetNewID: Integer;
     procedure BuildHotkeys;
     procedure RemoveGray(C: TControl);
     procedure EnablePanel(Panel: TPanel; Enable: Boolean);
+    procedure FillFields(Settings: TStreamSettings);
+    procedure SetGray;
 
     procedure BlacklistTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure BlacklistTreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure btnResetClick(Sender: TObject);
   protected
     procedure RegisterPages; override;
     procedure Finish; override;
@@ -512,26 +517,6 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
 
     end;
   end;
-
-  procedure SetGray;
-  var
-    i: Integer;
-  begin
-    if FIgnoreFieldList = nil then
-      Exit;
-
-    for i := 0 to FIgnoreFieldList.Count - 1 do
-      if (TControl(FIgnoreFieldList[i]) is TEdit) or (TControl(FIgnoreFieldList[i]) is TLabeledEdit) then
-      begin
-        TEdit(FIgnoreFieldList[i]).Color := clGrayText;
-      end else if TControl(FIgnoreFieldList[i]) is TCheckBox then
-      begin
-        TCheckBox(FIgnoreFieldList[i]).State := cbGrayed;
-      end else if TControl(FIgnoreFieldList[i]) is TComboBox then
-      begin
-
-      end;
-  end;
 var
   i: Integer;
   Item: TListItem;
@@ -550,10 +535,23 @@ begin
     TfrmMsgDlg.ShowMsg(TForm(AOwner), _('Settings from the categories "Streams", "Filenames", "Cut" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
                                         'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), 4, btOK);
   end else
+  begin
     Settings := FStreamSettings[0].Copy;
+  end;
 
   try
     inherited Create(AOwner, Length(FStreamSettings) = 0);
+
+    if Length(FStreamSettings) > 0 then
+    begin
+      lstSoundDevice.Visible := False;
+      lblSoundDevice.Visible := False;
+
+      btnReset := TBitBtn.Create(Self);
+      btnReset.Parent := pnlNav;
+      btnReset.Caption := '&Apply general settings';
+      btnReset.OnClick := btnResetClick;
+    end;
 
     FBrowseDir := BrowseDir;
 
@@ -561,15 +559,6 @@ begin
 
     ClientWidth := 510;
     ClientHeight := 415;
-
-    lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
-    lstDefaultActionBrowser.ItemIndex := Integer(AppGlobals.DefaultActionBrowser);
-    lstDefaultFilter.ItemIndex := Integer(Settings.Filter);
-    chkSeparateTracks.Checked := Settings.SeparateTracks;
-    chkSaveStreamsToMemory.Checked := Settings.SaveToMemory;
-    chkOnlySaveFull.Checked := Settings.OnlySaveFull;
-
-    Language.Translate(Self, PreTranslate, PostTranslate);
 
     for i := 0 to Self.ControlCount - 1 do begin
       if Self.Controls[i] is TPanel then begin
@@ -581,48 +570,8 @@ begin
       end;
     end;
 
-    pnlGeneral.BringToFront;
 
-    FRelayChanged := False;
-
-    AppGlobals.Lock;
-    txtFilePattern.Text := Settings.FilePattern;
-    txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
-    txtDir.Text := AppGlobals.Dir;
-    chkDeleteStreams.Checked := Settings.DeleteStreams;
-    chkAddSavedToIgnore.Checked := Settings.AddSavedToIgnore;
-    chkOverwriteSmaller.Checked := Settings.OverwriteSmaller;
-    chkDiscardSmaller.Checked := Settings.DiscardSmaller;
-    txtTitlePattern.Text := Settings.TitlePattern;
-
-    chkSkipShort.Checked := Settings.SkipShort;
-    chkSearchSilence.Checked := Settings.SearchSilence;
-
-    chkSearchSilenceClick(nil);
-
-    chkTray.Checked := AppGlobals.Tray;
-    chkSnapMain.Checked := AppGlobals.SnapMain;
-    optClose.Checked := not AppGlobals.TrayOnMinimize;
-    optMinimize.Checked := AppGlobals.TrayOnMinimize;
-
-    chkTrayClick(nil);
-
-    chkAutoTuneIn.Checked := AppGlobals.AutoTuneIn;
-    lstMinBitrate.ItemIndex := AppGlobals.AutoTuneInMinKbps;
-    lstFormat.ItemIndex := AppGlobals.AutoTuneInFormat;
-    chkSubmitStreamInfo.Checked := AppGlobals.SubmitStreamInfo;
-    chkSubmitStats.Checked := AppGlobals.SubmitStats;
-
-    txtShortLengthSeconds.Text := IntToStr(Settings.ShortLengthSeconds);
-    txtSongBuffer.Text := IntToStr(Settings.SongBufferSeconds);
-    txtMaxRetries.Text := IntToStr(Settings.MaxRetries);
-    txtRetryDelay.Text := IntToStr(Settings.RetryDelay);
-    txtMinDiskSpace.Text := IntToStr(AppGlobals.MinDiskSpace);
-
-    txtSilenceLevel.Text := IntToStr(Settings.SilenceLevel);
-    txtSilenceLength.Text := IntToStr(Settings.SilenceLength);
-    txtSilenceBufferSeconds.Text := IntToStr(Settings.SilenceBufferSeconds);
-    AppGlobals.Unlock;
+    FillFields(Settings);
 
     FTemporaryPlugins := TList<TPluginBase>.Create;
 
@@ -648,9 +597,6 @@ begin
     if lstPlugins.Items.Count > 0 then
       lstPlugins.Items[0].Selected := True;
 
-    if not DirectoryExists(txtDir.Text) then
-      txtDir.Text := '';
-
     B := TBitmap.Create;
     P := TPngImage.Create;
     try
@@ -669,36 +615,6 @@ begin
     end;
 
     BuildHotkeys;
-
-    if not Bass.BassLoaded then
-    begin
-      chkSearchSilence.Enabled := False;
-      chkSearchSilence.Checked := False;
-      txtSilenceLevel.Enabled := False;
-      txtSilenceLength.Enabled := False;
-      txtSilenceBufferSeconds.Enabled := False;
-      Label10.Enabled := False;
-      Label12.Enabled := False;
-      Label13.Enabled := False;
-    end;
-
-    SetGray;
-
-    if chkSaveStreamsToMemory.Checked then
-    begin
-      chkSeparateTracks.Enabled := False;
-      chkSeparateTracks.Checked := True;
-      chkDeleteStreams.Enabled := False;
-      chkDeleteStreams.Checked := False;
-    end;
-
-    if not chkSeparateTracks.Checked then
-    begin
-      chkDeleteStreams.Enabled := False;
-      chkDeleteStreams.Checked := False;
-
-      chkOnlySaveFull.Enabled := False;
-    end;
 
     if (Bass.DeviceAvailable) and (Bass.Devices.Count > 0) then
     begin
@@ -728,7 +644,6 @@ begin
     end;
 
     lblPanelCut.Caption := _('Settings for cutting are only available'#13#10'if ''Save separated tracks'' is enabled.');
-    EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
 
     FInitialized := True;
   finally
@@ -786,6 +701,99 @@ begin
     lblPanelCut.Visible := False
   else
     lblPanelCut.Visible := True;
+end;
+
+procedure TfrmSettings.FillFields(Settings: TStreamSettings);
+begin
+  lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
+  lstDefaultActionBrowser.ItemIndex := Integer(AppGlobals.DefaultActionBrowser);
+  lstDefaultFilter.ItemIndex := Integer(Settings.Filter);
+  chkSeparateTracks.Checked := Settings.SeparateTracks;
+  chkSaveStreamsToMemory.Checked := Settings.SaveToMemory;
+  chkOnlySaveFull.Checked := Settings.OnlySaveFull;
+
+  Language.Translate(Self, PreTranslate, PostTranslate);
+
+  pnlGeneral.BringToFront;
+
+  FRelayChanged := False;
+
+  AppGlobals.Lock;
+  txtFilePattern.Text := Settings.FilePattern;
+  txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
+  txtDir.Text := AppGlobals.Dir;
+  chkDeleteStreams.Checked := Settings.DeleteStreams;
+  chkAddSavedToIgnore.Checked := Settings.AddSavedToIgnore;
+  chkOverwriteSmaller.Checked := Settings.OverwriteSmaller;
+  chkDiscardSmaller.Checked := Settings.DiscardSmaller;
+  txtTitlePattern.Text := Settings.TitlePattern;
+
+  chkSkipShort.Checked := Settings.SkipShort;
+  chkSearchSilence.Checked := Settings.SearchSilence;
+
+  chkSearchSilenceClick(nil);
+
+  chkTray.Checked := AppGlobals.Tray;
+  chkSnapMain.Checked := AppGlobals.SnapMain;
+  optClose.Checked := not AppGlobals.TrayOnMinimize;
+  optMinimize.Checked := AppGlobals.TrayOnMinimize;
+
+  chkTrayClick(nil);
+
+  chkAutoTuneIn.Checked := AppGlobals.AutoTuneIn;
+  lstMinBitrate.ItemIndex := AppGlobals.AutoTuneInMinKbps;
+  lstFormat.ItemIndex := AppGlobals.AutoTuneInFormat;
+  chkSubmitStreamInfo.Checked := AppGlobals.SubmitStreamInfo;
+  chkSubmitStats.Checked := AppGlobals.SubmitStats;
+
+  txtShortLengthSeconds.Text := IntToStr(Settings.ShortLengthSeconds);
+  txtSongBuffer.Text := IntToStr(Settings.SongBufferSeconds);
+  txtMaxRetries.Text := IntToStr(Settings.MaxRetries);
+  txtRetryDelay.Text := IntToStr(Settings.RetryDelay);
+  txtMinDiskSpace.Text := IntToStr(AppGlobals.MinDiskSpace);
+
+  txtSilenceLevel.Text := IntToStr(Settings.SilenceLevel);
+  txtSilenceLength.Text := IntToStr(Settings.SilenceLength);
+  txtSilenceBufferSeconds.Text := IntToStr(Settings.SilenceBufferSeconds);
+  AppGlobals.Unlock;
+
+  FTemporaryPlugins := TList<TPluginBase>.Create;
+
+  if not DirectoryExists(txtDir.Text) then
+    txtDir.Text := '';
+
+  if not Bass.BassLoaded then
+  begin
+    chkSearchSilence.Enabled := False;
+    chkSearchSilence.Checked := False;
+    txtSilenceLevel.Enabled := False;
+    txtSilenceLength.Enabled := False;
+    txtSilenceBufferSeconds.Enabled := False;
+    Label10.Enabled := False;
+    Label12.Enabled := False;
+    Label13.Enabled := False;
+  end;
+
+  SetGray;
+
+  if chkSaveStreamsToMemory.Checked then
+  begin
+    chkSeparateTracks.Enabled := False;
+    chkSeparateTracks.Checked := True;
+    chkDeleteStreams.Enabled := False;
+    chkDeleteStreams.Checked := False;
+  end;
+
+  if not chkSeparateTracks.Checked then
+  begin
+    chkDeleteStreams.Enabled := False;
+    chkDeleteStreams.Checked := False;
+
+    chkOnlySaveFull.Enabled := False;
+  end;
+
+  txtShortLengthSeconds.Enabled := chkSkipShort.State <> cbUnchecked;
+  EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
 end;
 
 procedure TfrmSettings.Finish;
@@ -871,7 +879,6 @@ begin
     AppGlobals.StreamSettings.AddSavedToIgnore := chkAddSavedToIgnore.Checked;
     AppGlobals.StreamSettings.OverwriteSmaller := chkOverwriteSmaller.Checked;
     AppGlobals.StreamSettings.DiscardSmaller := chkDiscardSmaller.Checked;
-    AppGlobals.StreamSettings.TitlePattern := txtTitlePattern.Text;
 
     if pnlCut.Tag = 0 then
     begin
@@ -1035,6 +1042,14 @@ begin
 
   txtSilenceBufferSeconds.Left := Label6.Left + Label6.Width + 4;
   Label15.Left := txtSilenceBufferSeconds.Left + txtSilenceBufferSeconds.Width + 4;
+
+  if btnReset <> nil then
+  begin
+    btnReset.Width := 130;
+    btnReset.Height := btnOK.Height;
+    btnReset.Left := 4;
+    btnReset.Top := btnOK.Top;
+  end;
 end;
 
 function TfrmSettings.GetNewID: Integer;
@@ -1266,6 +1281,7 @@ begin
   end else
   begin
     FPageList.Add(TPage.Create('Streams', pnlStreams, 'START'));
+    FPageList.Add(TPage.Create('Advanced', pnlStreamsAdvanced, 'MISC', FPageList.Find(pnlStreams)));
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
@@ -1290,6 +1306,26 @@ begin
   begin
 
   end;
+end;
+
+procedure TfrmSettings.SetGray;
+var
+  i: Integer;
+begin
+  if FIgnoreFieldList = nil then
+    Exit;
+
+  for i := 0 to FIgnoreFieldList.Count - 1 do
+    if (TControl(FIgnoreFieldList[i]) is TEdit) or (TControl(FIgnoreFieldList[i]) is TLabeledEdit) then
+    begin
+      TEdit(FIgnoreFieldList[i]).Color := clGrayText;
+    end else if TControl(FIgnoreFieldList[i]) is TCheckBox then
+    begin
+      TCheckBox(FIgnoreFieldList[i]).State := cbGrayed;
+    end else if TControl(FIgnoreFieldList[i]) is TComboBox then
+    begin
+
+    end;
 end;
 
 procedure TfrmSettings.txtAppParamsChange(Sender: TObject);
@@ -1498,6 +1534,20 @@ begin
     TExternalPlugin(lstPlugins.Selected.Data).Free;
     lstPlugins.Selected.Delete;
   end;
+end;
+
+procedure TfrmSettings.btnResetClick(Sender: TObject);
+var
+  i: Integer;
+begin
+  FInitialized := False;
+  if FIgnoreFieldList <> nil then
+  begin
+    while FIgnoreFieldList.Count > 0 do
+      RemoveGray(TControl(FIgnoreFieldList[0]));
+  end;
+  FillFields(AppGlobals.StreamSettings);
+  FInitialized := True;
 end;
 
 procedure TfrmSettings.btnResetTitlePatternClick(Sender: TObject);

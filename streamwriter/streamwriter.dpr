@@ -22,10 +22,16 @@ program streamwriter;
 {$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
 
 uses
-  MM in '..\..\common\MM.pas',
+  madExcept,
+  madLinkDisAsm,
+  madListHardware,
+  madListProcesses,
+  madListModules,
+  //MM in '..\..\common\MM.pas',
   Windows,
   SysUtils,
   Forms,
+  ShlObj,
   Main in 'Main.pas' {frmStreamWriterMain},
   ClientView in 'controls\ClientView.pas',
   DataManager in 'DataManager.pas',
@@ -104,6 +110,8 @@ uses
 var
   frmStreamWriterMain: TfrmStreamWriterMain;
 begin
+  MESettings.BugReportFile := IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt';
+
   Application.Title := AppGlobals.AppName;
   Application.Icon.Handle := LoadIcon(HInstance, 'A');
 

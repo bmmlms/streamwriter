@@ -1689,7 +1689,7 @@ begin
   Items.Add(FItemName);
 
   FItemKbps := CreateMenuItem;
-  FItemKbps.Caption := _('Kbps');                 // TODO: Beim 'rate' item click sollte nicht immer gesendet werden. so login prüfen, wie bei SetData form.
+  FItemKbps.Caption := _('Kbps');
   Items.Add(FItemKbps);
 
   FItemType := CreateMenuItem;

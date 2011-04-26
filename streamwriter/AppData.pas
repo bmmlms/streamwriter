@@ -261,7 +261,7 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 23);
+    SetLength(FDonors, 24);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
@@ -285,6 +285,7 @@ begin
     FDonors[20] := '''Roman Regenpfeifer''';
     FDonors[21] := '''brumex''';
     FDonors[22] := '''Taube''';
+    FDonors[23] := '''GoFB''';
 
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
@@ -383,7 +384,9 @@ var
 begin
   inherited;
 
-  FStorage.Read('TitlePattern', FStreamSettings.FTitlePattern, '(?P<a>.*) - (?P<t>.*)');
+  //FStorage.Read('TitlePattern', FStreamSettings.FTitlePattern, '(?P<a>.*) - (?P<t>.*)');
+  FStreamSettings.FTitlePattern := '(?P<a>.*) - (?P<t>.*)';
+
   FStorage.Read('FilePattern', FStreamSettings.FFilePattern, '%s\%a - %t');
   FStorage.Read('FilePatternDecimals', FStreamSettings.FFilePatternDecimals, 3);
   FStorage.Read('Dir', FDir, '');
@@ -616,6 +619,7 @@ var
 begin
   Result := TStreamSettings.Create;
 
+  // TODO: Raus das hier, vor Release. Und Menschen nochmal testen lassen! Bzw. Selber testen mit Builds > 174 (siehe Post HostedDinner)
   // Weil ich mal Mist mit den Versionen gebaut habe, hilft das hier vielleicht..
   // Der obere Block kann eigentlich bald raus.
   // Die letzte veröffentlichte Programmversion war auch nicht Version 15

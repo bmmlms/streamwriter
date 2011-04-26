@@ -455,6 +455,12 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object mnuStopPlay1: TMenuItem
       Action = actStopPlay
     end
+    object N4: TMenuItem
+      Caption = '-'
+    end
+    object Entfernen1: TMenuItem
+      Action = actRemove
+    end
     object N11: TMenuItem
       Caption = '-'
     end
@@ -468,12 +474,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object mnuOpenWebsite1: TMenuItem
       Action = actOpenWebsite
-    end
-    object N4: TMenuItem
-      Caption = '-'
-    end
-    object Entfernen1: TMenuItem
-      Action = actRemove
     end
     object N9: TMenuItem
       Caption = '-'

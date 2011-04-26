@@ -63,12 +63,6 @@ begin
     MsgBox(Handle, _('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
-            // TODO: Prüfen, ob die RegEx valid ist!!! sind a und t drin, und lässt es sich compilen?
-  if (Trim(txtTitlePattern.Text) = '') then
-  begin
-    MsgBox(Handle, 'TODO: !!!', 'TODO: !!!', MB_ICONINFORMATION);
-    Exit;
-  end;
 
   RValid := False;
   R := TPerlRegEx.Create;
@@ -118,7 +112,7 @@ begin
   inherited Create(AOwner);
 
   FID := ID;
-  FName := Name;
+  FName := Name;             // TODO: Hier nen msgdlg zeigen, was das fenster eigentlich macht. nur für server, nix lokales, etcpp.
   FRegEx := RegEx;
   FIsOkay := IsOkay;
 
