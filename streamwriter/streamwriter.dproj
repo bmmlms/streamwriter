@@ -58,6 +58,7 @@
 			<DelphiCompile Include="streamwriter.dpr">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
+			<DCCReference Include="..\..\common\MM.pas"/>
 			<DCCReference Include="Main.pas">
 				<Form>frmStreamWriterMain</Form>
 			</DCCReference>

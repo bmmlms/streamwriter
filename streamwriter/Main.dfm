@@ -132,19 +132,26 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       ImageIndex = 11
       Style = tbsSeparator
     end
-    object ToolButton9: TToolButton
+    object cmdSetupTimers: TToolButton
       Left = 195
+      Top = 0
+      Caption = 'cmdSetupTimers'
+      ImageIndex = 50
+      Visible = False
+    end
+    object cmdStopAfterSong: TToolButton
+      Left = 218
       Top = 0
       Action = actStopAfterSong
       ImageIndex = 52
     end
     object cmdOpenWebsite: TToolButton
-      Left = 218
+      Left = 241
       Top = 0
       Action = actOpenWebsite
     end
     object ToolButton8: TToolButton
-      Left = 241
+      Left = 264
       Top = 0
       Width = 8
       Caption = 'ToolButton8'
@@ -152,17 +159,17 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsSeparator
     end
     object cmdStreamSettings: TToolButton
-      Left = 249
+      Left = 272
       Top = 0
       Action = actStreamSettings
     end
     object ToolButton6: TToolButton
-      Left = 272
+      Left = 295
       Top = 0
       Action = actResetData
     end
     object ToolButton4: TToolButton
-      Left = 295
+      Left = 318
       Top = 0
       Width = 8
       Caption = '-'
@@ -171,7 +178,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Visible = False
     end
     object cmdShowStreamBrowser: TToolButton
-      Left = 303
+      Left = 326
       Top = 0
       Action = actShowSideBar
       Visible = False
@@ -420,21 +427,24 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object actTimers: TAction
       Caption = 'Setup t&imers...'
+      Hint = 'Setup timers...'
+      ImageIndex = 50
       Visible = False
       OnExecute = actTimersExecute
     end
     object actStopAfterSong: TAction
       AutoCheck = True
-      Caption = 'Stop after &current title'
-      Hint = 'Stop after current title'
+      Caption = 'Stop recording after &current title'
+      Hint = 'Stop recording after current title'
     end
   end
   object mnuStreamPopup: TPopupMenu
+    AutoHotkeys = maManual
     Images = imgImages
     OnPopup = mnuStreamPopupPopup
     Left = 32
     Top = 88
-    object Addcategory1: TMenuItem
+    object mnuNewCategory1: TMenuItem
       Action = actNewCategory
     end
     object N12: TMenuItem
@@ -449,7 +459,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object mnuStartPlay1: TMenuItem
       Action = actPlay
     end
-    object Pause2: TMenuItem
+    object mnuPause1: TMenuItem
       Action = actPause
     end
     object mnuStopPlay1: TMenuItem
@@ -458,17 +468,16 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object N4: TMenuItem
       Caption = '-'
     end
-    object Entfernen1: TMenuItem
+    object mnuRemove1: TMenuItem
       Action = actRemove
     end
     object N11: TMenuItem
       Caption = '-'
     end
-    object Setuptimers1: TMenuItem
+    object mnuSetupTimers1: TMenuItem
       Action = actTimers
-      ImageIndex = 50
     end
-    object Stopaftercurrenttitle1: TMenuItem
+    object mnuStopAfterSong1: TMenuItem
       Action = actStopAfterSong
       AutoCheck = True
     end

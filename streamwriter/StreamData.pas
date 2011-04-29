@@ -79,7 +79,7 @@ begin
   if (Trim(txtTitlePattern.Text) = '') or (Pos('(?P<a>.*)', txtTitlePattern.Text) = 0) or
     (Pos('(?P<t>.*)', txtTitlePattern.Text) = 0) or not RValid then
   begin
-    MsgBox(Handle, 'TODO: !!!', 'TODO: !!!', MB_ICONINFORMATION);
+    MsgBox(Handle, _('Please supply a valid regular expression containing the groups (?P<a>.*) and (?P<t>.*). If you don''t have a clue about regular expressions, click the button next to the text field to reset the pattern.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 
@@ -112,7 +112,7 @@ begin
   inherited Create(AOwner);
 
   FID := ID;
-  FName := Name;             // TODO: Hier nen msgdlg zeigen, was das fenster eigentlich macht. nur für server, nix lokales, etcpp.
+  FName := Name;
   FRegEx := RegEx;
   FIsOkay := IsOkay;
 
@@ -123,6 +123,8 @@ begin
     txtTitlePattern.Text := '(?P<a>.*) - (?P<t>.*)';
 
   FInitialized := True;
+
+  Language.Translate(Self);
 end;
 
 procedure TfrmStreamData.FormActivate(Sender: TObject);

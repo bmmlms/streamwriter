@@ -670,7 +670,7 @@ procedure TCutPaintBox.BuildBuffer;
       originalMode := Pen.Mode;
       Pen.Mode := TPenMode.pmNotXor;
       Brush.Color := FillColor;
-      Rectangle(rectStart, 0, rectEnd, FWaveBuf.Height - ScrollbarHeight - 1);
+      Rectangle(rectStart, 0, rectEnd, FWaveBuf.Height - ScrollbarHeight - 2);
       Pen.Mode := originalMode;
     end;
   end;
@@ -865,7 +865,7 @@ procedure TCutPaintBox.BuildDrawBuffer;
 
     FDrawBuf.Canvas.Pen.Color := Color;
     FDrawBuf.Canvas.MoveTo(L, 0);
-    FDrawBuf.Canvas.LineTo(L, FDrawBuf.Height - ScrollbarHeight - 1);
+    FDrawBuf.Canvas.LineTo(L, FDrawBuf.Height - ScrollbarHeight - 2);
 
     FDrawBuf.Canvas.Brush.Color := clBlack;
   end;
@@ -1084,7 +1084,7 @@ var
   Swap: Cardinal;
 begin
   ArrayPos := PixelsToArray(X);
-// TODO: Die Linien ragen in die scrollbar rein. fiaaaal!
+
   if ArrayPos < FCutView.FWaveData.ZoomStart then
     ArrayPos := FCutView.FWaveData.ZoomStart;
   if ArrayPos > FCutView.FWaveData.ZoomEnd then

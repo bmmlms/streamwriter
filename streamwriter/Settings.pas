@@ -145,6 +145,7 @@ type
     pnlStreamsAdvanced: TPanel;
     txtTitlePattern: TLabeledEdit;
     btnResetTitlePattern: TPngSpeedButton;
+    btnResetFilePattern: TPngSpeedButton;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -189,6 +190,7 @@ type
     procedure btnBlacklistRemoveClick(Sender: TObject);
     procedure txtTitlePatternChange(Sender: TObject);
     procedure btnResetTitlePatternClick(Sender: TObject);
+    procedure btnResetFilePatternClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -1550,6 +1552,14 @@ begin
   FInitialized := True;
 end;
 
+procedure TfrmSettings.btnResetFilePatternClick(Sender: TObject);
+begin
+  inherited;
+
+  txtFilePattern.Text := '%s\%a - %t';
+  RemoveGray(txtTitlePattern);
+end;
+
 procedure TfrmSettings.btnResetTitlePatternClick(Sender: TObject);
 begin
   inherited;
@@ -1609,10 +1619,6 @@ var
 begin
   Result := False;
 
-  // TODO: bei den stille-textfeldern den inhalt rausmachen. dann den haken wegmachen, wg. disabled.
-  //       dann schmiert .SetFocus() ab. vllt sollte man ein control gar nicht prüfen wenn es nicht enabled ist.
-  //       und evtl auch gar nicht abspeichern den inhalt?
-
   if not inherited then
     Exit;
 
@@ -1634,7 +1640,7 @@ begin
 
   if Trim(txtTitlePattern.Text) = '' then
   begin
-    MsgBox(Handle, _('Please enter a regular expression to retrieve artist and title from broadcastet track information.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('Please enter a regular expression to retrieve artist and title from broadcasted track information.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtTitlePattern.Parent)));
     txtTitlePattern.SetFocus;
     Exit;
@@ -1672,26 +1678,38 @@ begin
 
     if (StrToIntDef(txtSilenceLevel.Text, -1) > 100) or (StrToIntDef(txtSilenceLevel.Text, -1) < 1) then
     begin
-      MsgBox(Handle, _('Please enter the maximum volume level for silence detection as a value ranging from 1 to 100.'), _('Info'), MB_ICONINFORMATION);
-      SetPage(FPageList.Find(TPanel(txtSilenceLevel.Parent)));
-      txtSilenceLevel.SetFocus;
-      Exit;
+      if chkSearchSilence.Checked then
+      begin
+        MsgBox(Handle, _('Please enter the maximum volume level for silence detection as a value ranging from 1 to 100.'), _('Info'), MB_ICONINFORMATION);
+        SetPage(FPageList.Find(TPanel(txtSilenceLevel.Parent)));
+        txtSilenceLevel.SetFocus;
+        Exit;
+      end else
+        txtSilenceLevel.Text := IntToStr(AppGlobals.StreamSettings.SilenceLevel);
     end;
 
     if StrToIntDef(txtSilenceLength.Text, -1) < 20 then
     begin
-      MsgBox(Handle, _('Please enter the minimum length for silence (at least 20 ms).'), _('Info'), MB_ICONINFORMATION);
-      SetPage(FPageList.Find(TPanel(txtSilenceLength.Parent)));
-      txtSilenceLength.SetFocus;
-      Exit;
+      if chkSearchSilence.Checked then
+      begin
+        MsgBox(Handle, _('Please enter the minimum length for silence (at least 20 ms).'), _('Info'), MB_ICONINFORMATION);
+        SetPage(FPageList.Find(TPanel(txtSilenceLength.Parent)));
+        txtSilenceLength.SetFocus;
+        Exit;
+      end else
+        txtSilenceLength.Text := IntToStr(AppGlobals.StreamSettings.SilenceLength);
     end;
 
     if (StrToIntDef(txtSilenceBufferSeconds.Text, -1) < 1) or (StrToIntDef(txtSilenceBufferSeconds.Text, -1) > 15) then
     begin
-      MsgBox(Handle, _('Please enter the length in seconds to search for silence at beginning and end of song as a value ranging from 1 to 15.'), _('Info'), MB_ICONINFORMATION);
-      SetPage(FPageList.Find(TPanel(txtSilenceBufferSeconds.Parent)));
-      txtSilenceBufferSeconds.SetFocus;
-      Exit;
+      if chkSearchSilence.Checked then
+      begin
+        MsgBox(Handle, _('Please enter the length in seconds to search for silence at beginning and end of song as a value ranging from 1 to 15.'), _('Info'), MB_ICONINFORMATION);
+        SetPage(FPageList.Find(TPanel(txtSilenceBufferSeconds.Parent)));
+        txtSilenceBufferSeconds.SetFocus;
+        Exit;
+      end else
+        txtSilenceBufferSeconds.Text := IntToStr(AppGlobals.StreamSettings.SilenceBufferSeconds);
     end;
 
     if Trim(txtSongBuffer.Text) = '' then

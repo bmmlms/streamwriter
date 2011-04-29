@@ -261,7 +261,7 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 24);
+    SetLength(FDonors, 25);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
@@ -286,6 +286,7 @@ begin
     FDonors[21] := '''brumex''';
     FDonors[22] := '''Taube''';
     FDonors[23] := '''GoFB''';
+    FDonors[24] := '''Radiohoerer''';
 
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
@@ -619,7 +620,7 @@ var
 begin
   Result := TStreamSettings.Create;
 
-  // TODO: Raus das hier, vor Release. Und Menschen nochmal testen lassen! Bzw. Selber testen mit Builds > 174 (siehe Post HostedDinner)
+  // REMARK: Raus das hier, vor Release. Und Menschen nochmal testen lassen! Bzw. Selber testen mit Builds > 174 (siehe Post HostedDinner)
   // Weil ich mal Mist mit den Versionen gebaut habe, hilft das hier vielleicht..
   // Der obere Block kann eigentlich bald raus.
   // Die letzte veröffentlichte Programmversion war auch nicht Version 15

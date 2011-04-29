@@ -235,7 +235,7 @@ begin
   inherited;
 
   FItemRefresh := CreateMenuItem;
-  FItemRefresh.Caption := _('Re&fresh');
+  FItemRefresh.Caption := 'Re&fresh';
   FItemRefresh.ImageIndex := 23;
   Items.Add(FItemRefresh);
 
@@ -244,17 +244,17 @@ begin
   Items.Add(ItemTmp);
 
   FItemPlay := CreateMenuItem;
-  FItemPlay.Caption := _('&Play');
+  FItemPlay.Caption := '&Play';
   FItemPlay.ImageIndex := 33;
   Items.Add(FItemPlay);
 
   FItemPause := CreateMenuItem;
-  FItemPause.Caption := _('Pa&use');
+  FItemPause.Caption := 'Pa&use';
   FItemPause.ImageIndex := 39;
   Items.Add(FItemPause);
 
   FItemStop := CreateMenuItem;
-  FItemStop.Caption := _('St&op');
+  FItemStop.Caption := 'St&op';
   FItemStop.ImageIndex := 1;
   Items.Add(FItemStop);
 
@@ -263,7 +263,7 @@ begin
   Items.Add(ItemTmp);
 
   FItemCut := CreateMenuItem;
-  FItemCut.Caption := _('&Cut');
+  FItemCut.Caption := '&Cut';
   FItemCut.ImageIndex := 17;
   Items.Add(FItemCut);
 
@@ -272,17 +272,17 @@ begin
   Items.Add(ItemTmp);
 
   FItemRemove := CreateMenuItem;
-  FItemRemove.Caption := _('&Remove from list');
+  FItemRemove.Caption := '&Remove from list';
   FItemRemove.ImageIndex := 21;
   Items.Add(FItemRemove);
 
   FItemRecycle := CreateMenuItem;
-  FItemRecycle.Caption := _('R&ecycle files');
+  FItemRecycle.Caption := 'R&ecycle files';
   FItemRecycle.ImageIndex := 24;
   Items.Add(FItemRecycle);
 
   FItemDelete := CreateMenuItem;
-  FItemDelete.Caption := _('&Delete files');
+  FItemDelete.Caption := '&Delete files';
   FItemDelete.ImageIndex := 2;
   Items.Add(FItemDelete);
 
@@ -291,12 +291,12 @@ begin
   Items.Add(ItemTmp);
 
   FItemShowFile := CreateMenuItem;
-  FItemShowFile.Caption := _('&Show in explorer');
+  FItemShowFile.Caption := '&Show in explorer';
   FItemShowFile.ImageIndex := 28;
   Items.Add(FItemShowFile);
 
   FItemProperties := CreateMenuItem;
-  FItemProperties.Caption := _('Proper&ties');
+  FItemProperties.Caption := 'Proper&ties';
   FItemProperties.ImageIndex := 22;
   Items.Add(FItemProperties);
 end;
@@ -518,12 +518,17 @@ begin
       end;
     taRemove:
       begin
-        for i := 0 to Length(Tracks) - 1 do
-        begin
-          FStreams.TrackList.RemoveTrack(Tracks[i]);
-          FSavedTree.DeleteTrack(Tracks[i]);
-          if Assigned(FOnTrackRemoved) then
-            FOnTrackRemoved(nil, Tracks[i]);
+        FSavedTree.BeginUpdate;
+        try
+          for i := 0 to Length(Tracks) - 1 do
+          begin
+            FStreams.TrackList.RemoveTrack(Tracks[i]);
+            FSavedTree.DeleteTrack(Tracks[i]);
+            if Assigned(FOnTrackRemoved) then
+              FOnTrackRemoved(nil, Tracks[i]);
+          end;
+        finally
+          FSavedTree.EndUpdate;
         end;
       end;
     taRecycle:
@@ -544,16 +549,21 @@ begin
         if MsgBox(GetParentForm(Self).Handle, _('Do you really want to delete all selected files?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
           Exit;
         Error := False;
-        for i := 0 to Length(Tracks) - 1 do
-        begin
-          if Windows.DeleteFile(PChar(Tracks[i].Filename)) or (GetLastError = ERROR_FILE_NOT_FOUND) then
+        FSavedTree.BeginUpdate;
+        try
+          for i := 0 to Length(Tracks) - 1 do
           begin
-            FSavedTree.DeleteTrack(Tracks[i]);
-            FStreams.TrackList.RemoveTrack(Tracks[i]);
-            if Assigned(FOnTrackRemoved) then
-              FOnTrackRemoved(nil, Tracks[i]);
-          end else
-            Error := True;
+            if Windows.DeleteFile(PChar(Tracks[i].Filename)) or (GetLastError = ERROR_FILE_NOT_FOUND) then
+            begin
+              FSavedTree.DeleteTrack(Tracks[i]);
+              FStreams.TrackList.RemoveTrack(Tracks[i]);
+              if Assigned(FOnTrackRemoved) then
+                FOnTrackRemoved(nil, Tracks[i]);
+            end else
+              Error := True;
+          end;
+        finally
+          FSavedTree.EndUpdate;
         end;
         if Error then
           MsgBox(Handle, _('Some files could not be deleted.'#13#10'Please make sure they are not in use by another application.'), _('Info'), MB_ICONINFORMATION);

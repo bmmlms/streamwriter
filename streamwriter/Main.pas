@@ -56,7 +56,7 @@ type
     mnuStreamPopup: TPopupMenu;
     mnuStartStreaming1: TMenuItem;
     mnuStopStreaming1: TMenuItem;
-    Entfernen1: TMenuItem;
+    mnuRemove1: TMenuItem;
     tmrSpeed: TTimer;
     mnuStreamSettings1: TMenuItem;
     mnuStreamSettings2: TMenuItem;
@@ -122,7 +122,7 @@ type
     mnuStartPlay1: TMenuItem;
     mnuStopPlay1: TMenuItem;
     actNewCategory: TAction;
-    Addcategory1: TMenuItem;
+    mnuNewCategory1: TMenuItem;
     N12: TMenuItem;
     N13: TMenuItem;
     Newcategory1: TMenuItem;
@@ -136,7 +136,7 @@ type
     cmdPause: TToolButton;
     actPause: TAction;
     Pause1: TMenuItem;
-    Pause2: TMenuItem;
+    mnuPause1: TMenuItem;
     tmrRecordings: TTimer;
     imgClients: TPngImageList;
     imgImages: TPngImageList;
@@ -151,9 +151,10 @@ type
     mnuMoveToCategory1: TMenuItem;
     actTimers: TAction;
     actStopAfterSong: TAction;
-    Setuptimers1: TMenuItem;
-    Stopaftercurrenttitle1: TMenuItem;
-    ToolButton9: TToolButton;
+    mnuSetupTimers1: TMenuItem;
+    mnuStopAfterSong1: TMenuItem;
+    cmdStopAfterSong: TToolButton;
+    cmdSetupTimers: TToolButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -576,7 +577,7 @@ begin
   FWasActivated := False;
   FWasShown := False;
   FUpdateOnExit := False;
-                          // TODO: wenn auf dem server kein muster, oder das standard muster ist, muss es durch das vom user überschrieben werden. IMMER!
+
   try
     FStreams.Load;
   except
@@ -586,7 +587,7 @@ begin
         FStreams.Free;
       except end;
       FStreams := TDataLists.Create;
-      // Damit nichts überschrieben wird.
+      // Damit beim beenden nichts überschrieben wird.
       FStreams.LoadError := True;
 
       if HandleLoadError(E) = IDYES then
@@ -1431,7 +1432,7 @@ begin
 
   if mnuTuneIn1.Enabled <> B then
     mnuTuneIn1.Enabled := B;
-  if mnuTuneIn2.Enabled <> B then    // TODO: Das timer form...
+  if mnuTuneIn2.Enabled <> B then
     mnuTuneIn2.Enabled := B;
 
   if mnuSavePlaylist1.Enabled <> B then
@@ -1454,11 +1455,11 @@ begin
   if actPlay.Enabled <> (Length(Clients) = 1) and Bass.DeviceAvailable then
     actPlay.Enabled := (Length(Clients) = 1) and Bass.DeviceAvailable;
 
-  if actStopAfterSong.Enabled <> (Length(Clients) = 1) and (Clients[0].Title <> '') and (Clients[0].Recording) then
-    actStopAfterSong.Enabled := (Length(Clients) = 1) and (Clients[0].Title <> '') and (Clients[0].Recording);
+  if actStopAfterSong.Enabled <> (Length(Clients) = 1) and (Clients[0].Title <> '') and (Clients[0].Recording) and (not OnlyAutomatedSelected) then
+    actStopAfterSong.Enabled := (Length(Clients) = 1) and (Clients[0].Title <> '') and (Clients[0].Recording) and (not OnlyAutomatedSelected);
 
-  if actStopAfterSong.Checked <> (Length(Clients) = 1) and (Clients[0].StopAfterSong) then
-    actStopAfterSong.Checked := (Length(Clients) = 1) and (Clients[0].StopAfterSong);
+  if actStopAfterSong.Checked <> (Length(Clients) = 1) and (Clients[0].StopAfterSong) and (not OnlyAutomatedSelected) then
+    actStopAfterSong.Checked := (Length(Clients) = 1) and (Clients[0].StopAfterSong) and (not OnlyAutomatedSelected);
 
   {
   if Length(Clients) = 1 then
@@ -1564,30 +1565,35 @@ var
   Track: TTrackInfo;
   E: TFileEntry;
 begin
-  for i := 0 to FCheckFiles.Files.Count - 1 do
-  begin
-    E := TFileEntry(FCheckFiles.Files[i]);
+  tabSaved.Tree.BeginUpdate;
+  try
+    for i := 0 to FCheckFiles.Files.Count - 1 do
+    begin
+      E := TFileEntry(FCheckFiles.Files[i]);
 
-    if E.Action = eaNone then
-      Continue;
+      if E.Action = eaNone then
+        Continue;
 
-    for n := 0 to FStreams.TrackList.Count - 1 do
-      if FStreams.TrackList[n].Filename = E.Filename then
-      begin
-        Track := FStreams.TrackList[n];
-        case E.Action of
-          eaNone: ;
-          eaSize:
-            Track.Filesize := E.Size;
-          eaRemove:
-            begin
-              FStreams.TrackList.Delete(n);
-              tabSaved.Tree.RemoveTrack(Track);
-              Track.Free;
-            end;
+      for n := 0 to FStreams.TrackList.Count - 1 do
+        if FStreams.TrackList[n].Filename = E.Filename then
+        begin
+          Track := FStreams.TrackList[n];
+          case E.Action of
+            eaNone: ;
+            eaSize:
+              Track.Filesize := E.Size;
+            eaRemove:
+              begin
+                FStreams.TrackList.Delete(n);
+                tabSaved.Tree.RemoveTrack(Track);
+                Track.Free;
+              end;
+          end;
+          Break;
         end;
-        Break;
-      end;
+    end;
+  finally
+    tabSaved.Tree.EndUpdate;
   end;
 
   FCheckFiles := nil;

@@ -169,6 +169,8 @@ type
     FItemKbps: TMenuItem;
     FItemType: TMenuItem;
     FItemRating: TMenuItem;
+
+    procedure Translate;
   protected
     procedure DoPopup(Sender: TObject); override;
   public
@@ -357,6 +359,7 @@ begin
   FitColumns;
 
   FPopupMenu := TPopupMenu.Create(Self);
+  FPopupMenu.AutoHotkeys := maManual;
   FPopupMenu.OnPopup := PopupMenuPopup;
 
   FItemStart := FPopupMenu.CreateMenuItem;
@@ -377,7 +380,7 @@ begin
   FItemOpen.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemOpen);
 
-  FItemRate := CreateItem(_('&Rate'), 44, nil);
+  FItemRate := CreateItem('&Rate', 44, nil);
 
   FItemRate5 := CreateItem('&5', 44, FItemRate);
   FItemRate5.OnClick := PopupMenuClick;
@@ -1442,7 +1445,7 @@ end;
 
 procedure TMStreamBrowserView.Translate;
 var
-  Idx: Integer;
+  i, Idx: Integer;
 begin
   FStreamTree.FColName.Text := _('Rating');
 
@@ -1469,6 +1472,8 @@ begin
     FCountLabel.Caption := Format(_('%d stream found'), [FStreamTree.RootNodeCount])
   else
    FCountLabel.Caption := Format(_('%d streams found'), [FStreamTree.RootNodeCount]);
+
+  FStreamTree.FSortPopupMenu.Translate;
 end;
 
 { TMStreamSearch }
@@ -1706,6 +1711,14 @@ procedure TMStreamTreeHeaderPopup.DoPopup(Sender: TObject);
 begin
   inherited;
 
+end;
+
+procedure TMStreamTreeHeaderPopup.Translate;
+begin
+  FItemName.Caption := _('Name');
+  FItemKbps.Caption := _('Kbps');
+  FItemType.Caption := _('Type');
+  FItemRating.Caption := _('Rating');
 end;
 
 end.

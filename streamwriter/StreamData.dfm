@@ -4,8 +4,8 @@ object frmStreamData: TfrmStreamData
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Stream data'
-  ClientHeight = 345
-  ClientWidth = 333
+  ClientHeight = 358
+  ClientWidth = 373
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -18,15 +18,15 @@ object frmStreamData: TfrmStreamData
   OnActivate = FormActivate
   OnKeyDown = FormKeyDown
   DesignSize = (
-    333
-    345)
+    373
+    358)
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
     Left = 24
-    Top = 112
-    Width = 301
-    Height = 45
+    Top = 128
+    Width = 341
+    Height = 49
     AutoSize = False
     Caption = 
       'This option means that the stream sends complete titles which ca' +
@@ -36,9 +36,9 @@ object frmStreamData: TfrmStreamData
   end
   object Label2: TLabel
     Left = 24
-    Top = 188
-    Width = 301
-    Height = 57
+    Top = 204
+    Width = 341
+    Height = 49
     AutoSize = False
     Caption = 
       'This option means that no complete titles are broadcasted, there' +
@@ -49,17 +49,18 @@ object frmStreamData: TfrmStreamData
   object Label3: TLabel
     Left = 8
     Top = 48
-    Width = 317
-    Height = 37
+    Width = 357
+    Height = 53
     AutoSize = False
     Caption = 
       'Information entered here will be sent to the streamWriter server' +
-      ' and become available to other users.'
+      ' and become available to other users so the community profits fr' +
+      'om information you supply for the selected stream.'
     WordWrap = True
   end
   object btnResetTitlePattern: TPngSpeedButton
-    Left = 300
-    Top = 268
+    Left = 344
+    Top = 280
     Width = 25
     Height = 21
     Hint = 'Reset pattern to default'
@@ -95,19 +96,21 @@ object frmStreamData: TfrmStreamData
   end
   object txtTitlePattern: TLabeledEdit
     Left = 8
-    Top = 268
-    Width = 289
+    Top = 280
+    Width = 333
     Height = 21
-    EditLabel.Width = 169
+    EditLabel.Width = 307
     EditLabel.Height = 13
-    EditLabel.Caption = 'Regular expression to detect titles:'
+    EditLabel.Caption = 
+      'Regular expression to detect artist/title from broadcasted title' +
+      's:'
     TabOrder = 0
     OnChange = txtTitlePatternChange
   end
   object optGood: TRadioButton
     Left = 8
-    Top = 88
-    Width = 233
+    Top = 104
+    Width = 357
     Height = 21
     Caption = 'Stream is good for recordings'
     Checked = True
@@ -117,8 +120,8 @@ object frmStreamData: TfrmStreamData
   end
   object optBad: TRadioButton
     Left = 8
-    Top = 164
-    Width = 233
+    Top = 180
+    Width = 357
     Height = 21
     Caption = 'Stream is bad for recordings'
     TabOrder = 2
@@ -126,8 +129,8 @@ object frmStreamData: TfrmStreamData
   end
   object pnlNav: TPanel
     Left = 0
-    Top = 296
-    Width = 333
+    Top = 309
+    Width = 373
     Height = 49
     Align = alBottom
     BevelOuter = bvNone
@@ -136,10 +139,12 @@ object frmStreamData: TfrmStreamData
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 3
+    ExplicitTop = 296
+    ExplicitWidth = 333
     object Bevel2: TBevel
       Left = 4
       Top = 4
-      Width = 325
+      Width = 365
       Height = 5
       Align = alTop
       Shape = bsTopLine
@@ -147,7 +152,7 @@ object frmStreamData: TfrmStreamData
       ExplicitWidth = 396
     end
     object btnOK: TBitBtn
-      Left = 232
+      Left = 272
       Top = 9
       Width = 97
       Height = 36
@@ -159,12 +164,13 @@ object frmStreamData: TfrmStreamData
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
+      ExplicitLeft = 232
     end
   end
   object pnlHeader: TPanel
     Left = 0
     Top = 0
-    Width = 333
+    Width = 373
     Height = 41
     Align = alTop
     BevelOuter = bvNone
@@ -173,10 +179,11 @@ object frmStreamData: TfrmStreamData
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 4
+    ExplicitWidth = 333
     object Shape1: TShape
       Left = 4
       Top = 4
-      Width = 325
+      Width = 365
       Height = 33
       Align = alClient
       Brush.Color = clActiveCaption
@@ -189,7 +196,7 @@ object frmStreamData: TfrmStreamData
       AlignWithMargins = True
       Left = 10
       Top = 9
-      Width = 316
+      Width = 356
       Height = 25
       Margins.Left = 6
       Margins.Top = 5
