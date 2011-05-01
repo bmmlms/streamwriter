@@ -27,7 +27,7 @@ uses
   SysUtils, Windows, Classes, Controls, StdCtrls, ExtCtrls, Functions,
   Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
-  PlayerManager;
+  PlayerManager, Plugins, SoX, DownloadAddons;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -78,7 +78,7 @@ type
     FPlayingIndex: Cardinal;
 
     FPeakColor, FPeakEndColor, FStartColor, FEndColor, FPlayColor, FZoomOuterColor, FZoomInnerColor: TColor;
-    FStartLine, FEndLine, FPlayLine, FZoomStartLine, FZoomEndLine: Cardinal;
+    FStartLine, FEndLine, FPlayLine, FZoomStartLine, FZoomEndLine, FEffectStartLine, FEffectEndLine: Cardinal;
     FDoZoom: Boolean;
 
     FMouseOldX, FMouseOldY, FMouseMoveStartX: integer;
@@ -109,13 +109,14 @@ type
     destructor Destroy; override;
   end;
 
-  TLineMode = (lmEdit, lmPlay, lmZoom);
+  TLineMode = (lmEdit, lmPlay, lmZoom, lmEffectsMarker);
 
   TCutView = class(TPanel)
   private
     FScanThread: TScanThread;
     FPB: TCutPaintBox;
     FWaveData: TWaveData;
+    FWorking: Boolean;
     FError: Boolean;
     FLineMode: TLineMode;
     FProgressBarLoad: TProgressBar;
@@ -154,6 +155,9 @@ type
     procedure Play;
     procedure Stop;
     procedure AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
+    function ApplyFade(Fadein: Boolean): Boolean;
+    function ApplyFadein: Boolean;
+    function ApplyFadeout: Boolean;
 
     function CanCut: Boolean;
     function CanUndo: Boolean;
@@ -163,6 +167,9 @@ type
     function CanAutoCut: Boolean;
     function CanSetLine: Boolean;
     function CanZoom: Boolean;
+    function CanEffectsMarker: Boolean;
+    function CanApplyFadeIn: Boolean;
+    function CanApplyFadeOut: Boolean;
 
     property Player: TPlayer read FPlayer;
     property LineMode: TLineMode read FLineMode write FLineMode;
@@ -306,6 +313,9 @@ begin
   FScanThread.OnScanError := ThreadScanError;
   FScanThread.OnScanProgress := ThreadScanProgress;
 
+  FPB.FEffectStartLine := 0;
+  FPB.FEffectEndLine := 0;
+
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
   FPB.Paint;
@@ -348,16 +358,6 @@ begin
       FPlayer.Pause;
       FPB.FPlayLine := FWaveData.CutStart;
     end;
-
-    {
-    if FSync > 0 then
-    begin
-      BASSChannelRemoveSync(FPlayer, FSync);
-      BASSChannelRemoveSync(FPlayer, FSync2);
-    end;
-    FSync := BASSChannelSetSync(FPlayer, BASS_SYNC_POS, FWaveData.WaveArray[FWaveData.CutEnd].Pos, LoopSyncProc, Self);
-    FSync2 := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, LoopSyncProc, Self);
-    }
 
     FPlayer.PosToReach := FWaveData.WaveArray[FWaveData.CutEnd].Pos;
   end;
@@ -548,6 +548,149 @@ begin
     FOnStateChanged(Self);
 end;
 
+function TCutView.ApplyFade(Fadein: Boolean): Boolean;
+var
+  i, Res: Integer;
+  DA: TfrmDownloadAddons;
+  Found, Failed: Boolean;
+  TempFile: string;
+  Plugin: TSoXPlugin;
+  Output: AnsiString;
+  T: Cardinal;
+begin
+  Result := False;
+
+  Plugin := nil;
+  for i := 0 to AppGlobals.PluginManager.Plugins.Count - 1 do
+    if AppGlobals.PluginManager.Plugins[i] is TSoXPlugin then
+    begin
+      Plugin := TSoXPlugin(AppGlobals.PluginManager.Plugins[i]);
+      Break;
+    end;
+
+  if not Plugin.ReadyForUse then
+  begin
+    Res := MsgBox(Handle, _('This function cannot be used because needed files have not been downloaded.'#10#13'Do you want to download these files now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
+    if Res = IDYES then
+    begin
+      DA := TfrmDownloadAddons.Create(Self, Plugin);
+      try
+        DA.ShowModal;
+
+        if not DA.Downloaded then
+        begin
+          if DA.Error then
+            MsgBox(Handle, _('An error occured while downloading the file.'), _('Error'), MB_ICONEXCLAMATION);
+          Exit;
+        end;
+      finally
+        DA.Free;
+      end;
+    end else if Res = IDNO then
+    begin
+      Exit;
+    end;
+
+    // Nochmal initialisieren. Evtl. wurde eben erst die .dll heruntergeladen, dann extrahiert .Initialize() jetzt
+    Plugin.Initialize;
+
+    if not Plugin.ReadyForUse then
+    begin
+      MsgBox(Handle, _('The plugin is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
+      Exit;
+    end;
+  end;
+
+  if FPlayer <> nil then
+  begin
+    FreeAndNil(FPlayer);
+  end;
+
+  TempFile := RemoveFileExt(FFilename) + '_soxconvert' + ExtractFileExt(FFilename);
+
+  FWorking := True;
+  FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
+  FPB.Paint;
+
+  if Fadein then
+    RunProcess('"' + Plugin.SoXExe + '" "' + FFilename + '" ' + '"' + TempFile + '" fade p ' + IntToStr(Round(FWaveData.WaveArray[FPB.FEffectStartLine].Sec)), ExtractFilePath(Plugin.SoXExe), 120, Output)
+  else
+    RunProcess('"' + Plugin.SoXExe + '" "' + FFilename + '" ' + '"' + TempFile + '" fade p 0 ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec)) + ' ' + IntToStr(Round(FWaveData.WaveArray[FPB.FEffectEndLine].Sec)), ExtractFilePath(Plugin.SoXExe), 120, Output);
+
+  FWorking := False;
+
+  if FWaveData <> nil then
+    FreeAndNil(FWaveData);
+
+  T := GetTickCount;
+  while not DeleteFile(PChar(FFilename)) do
+  begin
+    Sleep(50);
+    if GetTickCount > T + 5000 then
+    begin
+      Failed := True;
+      Break;
+    end;
+  end;
+
+  try
+    if Failed then
+    begin
+      MsgBox(GetParentForm(Self).Handle, _('An error occured while saving the file.'), _('Error'), MB_ICONERROR);
+      FError := True;
+      FPB.BuildBuffer;
+      FPB.BuildDrawBuffer;
+      FPB.Paint;
+      Exit;
+    end;
+
+    T := GetTickCount;
+    while not MoveFile(PChar(TempFile), PChar(FFilename)) do
+    begin
+      Sleep(50);
+      if GetTickCount > T + 5000 then
+      begin
+        Failed := True;
+        Break;
+      end;
+    end;
+
+    if not Failed then
+    begin
+      Result := True;
+      LoadFile(FFilename);
+    end else if Failed then
+    begin
+      MsgBox(GetParentForm(Self).Handle, _('An error occured while saving the file.'), _('Error'), MB_ICONERROR);
+      FError := True;
+      FPB.BuildBuffer;
+      FPB.BuildDrawBuffer;
+      FPB.Paint;
+      Exit;
+    end;
+  finally
+    if Assigned(FOnStateChanged) then
+      FOnStateChanged(Self);
+  end;
+end;
+
+function TCutView.ApplyFadein: Boolean;
+begin
+  if not CanApplyFadeIn then
+    Exit;
+
+  ApplyFade(True);
+end;
+
+function TCutView.ApplyFadeout: Boolean;
+begin
+  if not CanApplyFadeOut then
+    Exit;
+
+  ApplyFade(False);
+end;
+
 procedure TCutView.AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
 begin
   if FWaveData = nil then
@@ -565,6 +708,11 @@ begin
   Result := (FWaveData <> nil) and (FPB.FEndLine - FPB.FStartLine > 0) and
     (FWaveData.TimeBetween(FPB.FStartLine, FPB.FEndLine) >= 0.5) and
     ((FWaveData.CutStart <> FPB.FStartLine) or (FWaveData.CutEnd <> FPB.FEndLine));
+end;
+
+function TCutView.CanEffectsMarker: Boolean;
+begin
+  Result := FWaveData <> nil;
 end;
 
 function TCutView.CanUndo: Boolean;
@@ -586,6 +734,20 @@ end;
 function TCutView.CanStop: Boolean;
 begin
   Result := (FPlayer <> nil) and FPlayer.Playing;
+end;
+
+function TCutView.CanApplyFadeIn: Boolean;
+begin
+  Result := (FWaveData <> nil) and
+            (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
+            (((FPB.FEffectStartLine = 0) or (FPB.FEffectEndLine = 0)));
+end;
+
+function TCutView.CanApplyFadeOut: Boolean;
+begin
+  Result := (FWaveData <> nil) and
+            (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
+            (((FPB.FEffectEndLine = High(FWaveData.WaveArray)) or (FPB.FEffectEndLine = High(FWaveData.WaveArray))));
 end;
 
 function TCutView.CanAutoCut: Boolean;
@@ -730,6 +892,16 @@ begin
     Exit;
   end;
 
+  if FCutView.FWorking then
+  begin
+    Txt := _('Working...');
+    TS := GetTextSize(Txt, Canvas.Font);
+    FWaveBuf.Canvas.Font.Color := clWhite;
+    SetBkMode(FWaveBuf.Canvas.Handle, TRANSPARENT);
+    FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - TS.cx div 2, FWaveBuf.Height div 2 - TS.cy, Txt);
+    Exit;
+  end;
+
   if (FCutView.FWaveData = nil) or (FCutView.FScanThread <> nil) then
   begin
     Txt := _('Loading file...');
@@ -853,6 +1025,8 @@ begin
 
   DrawTransparentBox(FZoomStartLine, FZoomEndLine, FZoomOuterColor, FZoomInnerColor);
 
+  DrawTransparentBox(FEffectStartLine, FEffectEndLine, clRed, clRed);
+
   DrawScrollBar(FZoomOuterColor);
 end;
 
@@ -902,7 +1076,7 @@ begin
 
   FDrawBuf.Canvas.Draw(0, 0, FWaveBuf);
 
-  if FCutView.FWaveData <> nil then
+  if (FCutView.FWaveData <> nil) and (not FCutView.FWorking) then
   begin
     DrawLine(FStartLine, FStartColor);
     DrawLine(FEndLine, FEndColor);
@@ -1142,9 +1316,9 @@ begin
           if FZoomEndLine - FZoomStartLine < MinimumDisplayedSampleCount then
           begin
             if FZoomStartLine = 0 then
-              inc(FZoomEndLine, MinimumDisplayedSampleCount - FZoomEndLine + FZoomStartLine)
+              Inc(FZoomEndLine, MinimumDisplayedSampleCount - FZoomEndLine + FZoomStartLine)
             else
-              dec(FZoomStartLine, MinimumDisplayedSampleCount - FZoomEndLine + FZoomStartLine);
+              Dec(FZoomStartLine, MinimumDisplayedSampleCount - FZoomEndLine + FZoomStartLine);
           end;
           FDoZoom := True;
         end;
@@ -1154,6 +1328,22 @@ begin
           FZoomStartLine := High(Cardinal);
           FZoomEndLine := High(Cardinal);
           FDoZoom := True;
+        end;
+
+        BuildBuffer;
+      end;
+    lmEffectsMarker:
+      begin
+        if (Button = mbLeft) and (Mode <> mmUp) then
+        begin
+          if (FEffectStartLine = High(Cardinal)) or (Mode = mmDown) then
+          begin
+            FEffectStartLine := ArrayPos;
+            FEffectEndLine := ArrayPos;
+          end else
+          begin
+            FEffectEndLine := ArrayPos;
+          end;
         end;
 
         BuildBuffer;

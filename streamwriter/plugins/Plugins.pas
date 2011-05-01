@@ -97,6 +97,7 @@ type
   TPluginBase = class
   private
   protected
+    FCanConfigure: Boolean;
     FName: string;
     FHelp: string;
     FActive: Boolean;
@@ -105,8 +106,12 @@ type
   public
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; virtual; abstract;
     function Copy: TPluginBase; virtual; abstract;
+    procedure Assign(Source: TPluginBase); virtual;
     procedure Initialize; virtual;
+    procedure Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean); virtual;
+    procedure Save; virtual;
 
+    property CanConfigure: Boolean read FCanConfigure;
     property Name: string read FName;
     property Help: string read FHelp;
     property Active: Boolean read FActive write FActive;
@@ -136,7 +141,7 @@ type
     procedure Initialize; override;
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
     function Copy: TPluginBase; override;
-    function Configure(Handle: Cardinal; ShowMessages: Boolean): Boolean;
+    function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean;
 
     property Handle: Cardinal read FDLLHandle;
     property Filename: string read FFilename;
@@ -145,7 +150,18 @@ type
   end;
 
   TInternalPlugin = class(TPluginBase)
+  private
+  protected
+    FDownloadPackage: string;
+    FDownloadName: string;
 
+    function FGetReadyForUse: Boolean; virtual;
+    function FGetFilesInstalled: Boolean; virtual;
+  public
+    property FilesInstalled: Boolean read FGetFilesInstalled;
+    property DownloadPackage: string read FDownloadPackage write FDownloadPackage;
+    property DownloadName: string read FDownloadName;
+    property ReadyForUse: Boolean read FGetReadyForUse;
   end;
 
   TExternalProcessThread = class(TProcessThreadBase)
@@ -171,6 +187,7 @@ type
     constructor Create(Exe, Params: string; Active, OnlyIfCut: Boolean; Identifier, Order: Integer);
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
     function Copy: TPluginBase; override;
+    procedure Assign(Source: TPluginBase); override;
 
     property Exe: string read FExe write FSetExe;
     property Params: string read FParams write FParams;
@@ -196,7 +213,7 @@ begin
   Result := Thread;
 end;
 
-function TDLLPlugin.Configure(Handle: Cardinal; ShowMessages: Boolean): Boolean;
+function TDLLPlugin.Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean;
 begin
   Result := FConfigure(Handle, ShowMessages);
 end;
@@ -427,7 +444,7 @@ begin
         CmdLine := '"' + FExe + '" ' + Replaced;
       end else
         CmdLine := FExe;
-      Res := RunProcess(CmdLine, 120000, Output);
+      Res := RunProcess(CmdLine, ExtractFilePath(FExe), 120000, Output);
       FData.Filesize := GetFileSize(FData.Filename);
       FOutput := Output;
       case Res of
@@ -443,6 +460,12 @@ begin
 end;
 
 { TExternalPlugin }
+
+procedure TExternalPlugin.Assign(Source: TPluginBase);
+begin
+  FExe := TExternalPlugin(Source).FExe;
+  FParams := TExternalPlugin(Source).FParams;
+end;
 
 function TExternalPlugin.Copy: TPluginBase;
 begin
@@ -480,9 +503,36 @@ end;
 
 { TPluginBase }
 
+procedure TPluginBase.Assign(Source: TPluginBase);
+begin
+
+end;
+
+procedure TPluginBase.Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean);
+begin
+
+end;
+
 procedure TPluginBase.Initialize;
 begin
 
+end;
+
+procedure TPluginBase.Save;
+begin
+
+end;
+
+{ TInternalPlugin }
+
+function TInternalPlugin.FGetFilesInstalled: Boolean;
+begin
+  Result := False;
+end;
+
+function TInternalPlugin.FGetReadyForUse: Boolean;
+begin
+  Result := False;
 end;
 
 end.

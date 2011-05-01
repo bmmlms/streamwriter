@@ -27,7 +27,7 @@ uses
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
   Plugins, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus,
   MsgDlg, PngImageList, PngSpeedButton, pngimage, VirtualTrees, Math,
-  DataManager, PngBitBtn;
+  DataManager, PngBitBtn, DownloadAddons;
 
 type
   TBlacklistNodeData = record
@@ -68,7 +68,6 @@ type
     Label7: TLabel;
     pnlPlugins: TPanel;
     lstPlugins: TListView;
-    cmdConfigure: TBitBtn;
     Label3: TLabel;
     pnlCut: TPanel;
     txtSongBuffer: TLabeledEdit;
@@ -146,6 +145,7 @@ type
     txtTitlePattern: TLabeledEdit;
     btnResetTitlePattern: TPngSpeedButton;
     btnResetFilePattern: TPngSpeedButton;
+    btnConfigure: TButton;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -191,6 +191,8 @@ type
     procedure txtTitlePatternChange(Sender: TObject);
     procedure btnResetTitlePatternClick(Sender: TObject);
     procedure btnResetFilePatternClick(Sender: TObject);
+    procedure lstPluginsItemChecked(Sender: TObject; Item: TListItem);
+    procedure btnConfigureClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -759,8 +761,6 @@ begin
   txtSilenceBufferSeconds.Text := IntToStr(Settings.SilenceBufferSeconds);
   AppGlobals.Unlock;
 
-  FTemporaryPlugins := TList<TPluginBase>.Create;
-
   if not DirectoryExists(txtDir.Text) then
     txtDir.Text := '';
 
@@ -977,12 +977,16 @@ begin
       Plugin.Order := Item.Index;
       Plugin.Active := Item.Checked;
 
+      {
       if Plugin is TExternalPlugin then
       begin
         EP := TExternalPlugin(Plugin);
         EP.Exe := TExternalPlugin(FTemporaryPlugins[i]).Exe;
         EP.Params := TExternalPlugin(FTemporaryPlugins[i]).Params;
       end;
+      }
+
+      Plugin.Assign(FTemporaryPlugins[i]);
     end;
 
     // Vom Benutzer entfernte Plugins aus den echten Plugins entfernen..
@@ -1127,6 +1131,62 @@ begin
   Compare := CmpInt(P1.Order, P2.Order);
 end;
 
+procedure TfrmSettings.lstPluginsItemChecked(Sender: TObject;
+  Item: TListItem);
+var
+  Res: Integer;
+  DA: TfrmDownloadAddons;
+begin
+  inherited;
+
+  if TObject(Item.Data) is TInternalPlugin then
+  begin
+    if Item.Checked and (not TInternalPlugin(Item.Data).FilesInstalled) then
+    begin
+      Res := MsgBox(Handle, _('The plugin cannot be activated because needed files have not been downloaded.'#10#13'Do you want to download these files now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
+      if Res = IDYES then
+      begin
+        DA := TfrmDownloadAddons.Create(Self, TInternalPlugin(Item.Data));
+        try
+          DA.ShowModal;
+
+          if not DA.Downloaded then
+          begin
+            if DA.Error then
+              MsgBox(Handle, _('An error occured while downloading the file.'), _('Error'), MB_ICONEXCLAMATION);
+
+            lstPlugins.OnItemChecked := nil;
+            Item.Checked := False;
+            lstPlugins.OnItemChecked := lstPluginsItemChecked;
+          end;
+        finally
+          DA.Free;
+        end;
+      end else if Res = IDNO then
+      begin
+        lstPlugins.OnItemChecked := nil;
+        Item.Checked := False;
+        lstPlugins.OnItemChecked := lstPluginsItemChecked;
+      end;
+    end;
+
+    // Nochmal initialisieren. Evtl. wurde eben erst die .dll heruntergeladen, dann extrahiert .Initialize() jetzt
+    TInternalPlugin(Item.Data).Initialize;
+
+    if Item.Checked and not TInternalPlugin(Item.Data).ReadyForUse then
+    begin
+      MsgBox(Handle, _('The plugin is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
+
+      lstPlugins.OnItemChecked := nil;
+      Item.Checked := False;
+      lstPlugins.OnItemChecked := lstPluginsItemChecked;
+    end;
+
+    Item.Selected := True;
+    btnConfigure.Enabled := Item.Checked and TPluginBase(Item.Data).CanConfigure;
+  end;
+end;
+
 procedure TfrmSettings.lstPluginsResize(Sender: TObject);
 begin
   inherited;
@@ -1137,7 +1197,7 @@ end;
 procedure TfrmSettings.lstPluginsSelectItem(Sender: TObject;
   Item: TListItem; Selected: Boolean);
 begin
-  cmdConfigure.Enabled := False;
+  btnConfigure.Enabled := False;
 
   btnHelp.Enabled := (Item <> nil) and Selected and (TPluginBase(Item.Data).Help <> '');
   btnRemove.Enabled := (Item <> nil) and Selected and (TPluginBase(Item.Data) is TExternalPlugin);
@@ -1165,6 +1225,8 @@ begin
     btnBrowseApp.Enabled := False;
     btnRemove.Enabled := False;
   end;
+
+  btnConfigure.Enabled := Item.Checked and TPluginBase(Item.Data).CanConfigure;
 end;
 
 procedure TfrmSettings.PreTranslate;
@@ -1498,6 +1560,14 @@ begin
     txtDir.Text := IncludeTrailingBackslash(Dir)
   else
     MsgBox(Self.Handle, _('The selected folder does not exist. Please choose another one.'), _('Info'), MB_ICONINFORMATION);
+end;
+
+procedure TfrmSettings.btnConfigureClick(Sender: TObject);
+begin
+  inherited;
+
+  if lstPlugins.Selected <> nil then
+    TPluginBase(lstPlugins.Selected.Data).Configure(Self, 0, True);
 end;
 
 procedure TfrmSettings.btnHelpClick(Sender: TObject);

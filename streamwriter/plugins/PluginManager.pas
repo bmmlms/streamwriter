@@ -22,7 +22,7 @@ unit PluginManager;
 interface
 
 uses
-  Windows, SysUtils, Classes, Generics.Collections, Plugins, SetTags;
+  Windows, SysUtils, Classes, Generics.Collections, Plugins, SetTags, SoX;
 
 type
   TPluginManager = class
@@ -161,6 +161,7 @@ begin
   }
 
   Plugins.Add(TSetTagsPlugin.Create);
+  Plugins.Add(TSoXPlugin.Create);
 
   i := 0;
   repeat

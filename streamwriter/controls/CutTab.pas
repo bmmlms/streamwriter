@@ -32,6 +32,7 @@ type
     FSave: TToolButton;
     FSep3: TToolButton;
     FPosZoom: TToolButton;
+    FPosEffectsMarker: TToolButton;
     FPosEdit: TToolButton;
     FPosPlay: TToolButton;
     FSep1: TToolButton;
@@ -39,6 +40,9 @@ type
     FCut: TToolButton;
     FUndo: TToolButton;
     FSep2: TToolButton;
+    FApplyFadein: TToolButton;
+    FApplyFadeout: TToolButton;
+    FSep4: TToolButton;
     FPlay: TToolButton;
     FStop: TToolButton;
   public
@@ -69,6 +73,8 @@ type
     procedure UndoClick(Sender: TObject);
     procedure PlayClick(Sender: TObject);
     procedure StopClick(Sender: TObject);
+    procedure ApplyFadeinClick(Sender: TObject);
+    procedure ApplyFadeoutClick(Sender: TObject);
 
     procedure CutViewStateChanged(Sender: TObject);
     procedure VolumeTrackbarChange(Sender: TObject);
@@ -109,7 +115,10 @@ begin
   FToolBar.FPosPlay.Enabled := FCutView.CanZoom;
   FToolBar.FCut.Enabled := FCutView.CanCut;
   FToolbar.FPosZoom.Enabled := FCutView.CanZoom;
+  FToolbar.FPosEffectsMarker.Enabled := FCutView.CanEffectsMarker;
   FToolBar.FUndo.Enabled := FCutView.CanUndo;
+  FToolBar.FApplyFadein.Enabled := FCutView.CanApplyFadeIn;
+  FToolBar.FApplyFadeout.Enabled := FCutView.CanApplyFadeOut;
   FToolBar.FPlay.Enabled := FCutView.CanPlay and Bass.DeviceAvailable;
   FToolBar.FStop.Enabled := FCutView.CanStop and Bass.DeviceAvailable;
 
@@ -118,6 +127,7 @@ begin
   FToolBar.FPosEdit.Down := False;
   FToolBar.FPosPlay.Down := False;
   FToolBar.FPosZoom.Down := False;
+  FToolBar.FPosEffectsMarker.Down := False;
 
   case FCutView.LineMode of
     lmEdit:
@@ -126,6 +136,8 @@ begin
       FToolBar.FPosPlay.Down := True;
     lmZoom:
       FToolBar.FPosZoom.Down := True;
+    lmEffectsMarker:
+      FToolBar.FPosEffectsMarker.Down := True;
   end;
 end;
 
@@ -166,6 +178,21 @@ begin
     FCutView.LineMode := lmZoom;
     FToolBar.FPosZoom.Down := True;
   end;
+  if Sender = FToolBar.FPosEffectsMarker then
+  begin
+    FCutView.LineMode := lmEffectsMarker;
+    FToolBar.FPosEffectsMarker.Down := True;
+  end;
+end;
+
+procedure TCutTab.ApplyFadeinClick(Sender: TObject);
+begin
+  FCutView.ApplyFadein;
+end;
+
+procedure TCutTab.ApplyFadeoutClick(Sender: TObject);
+begin
+  FCutView.ApplyFadeout;
 end;
 
 procedure TCutTab.AutoCutClick(Sender: TObject);
@@ -244,9 +271,12 @@ begin
   FToolBar.FPosEdit.OnClick := PosClick;
   FToolBar.FPosPlay.OnClick := PosClick;
   FToolBar.FPosZoom.OnClick := PosClick;
+  FToolBar.FPosEffectsMarker.OnClick := PosClick;
   FToolBar.FAutoCut.OnClick := AutoCutClick;
   FToolBar.FCut.OnClick := CutClick;
   FToolBar.FUndo.OnClick := UndoClick;
+  FToolBar.FApplyFadein.OnClick := ApplyFadeinClick;
+  FToolBar.FApplyFadeout.OnClick := ApplyFadeoutClick;
   FToolBar.FPlay.OnClick := PlayClick;
   FToolBar.FStop.OnClick := StopClick;
 
@@ -279,6 +309,8 @@ end;
 
 procedure TCutToolBar.Setup;
 begin
+  // TODO: Die Hints hier sind in _() .. werden die übersetzt?
+
   FStop := TToolButton.Create(Self);
   FStop.Parent := Self;
   FStop.Hint := _('Stop');
@@ -293,6 +325,21 @@ begin
   FSep2.Parent := Self;
   FSep2.Style := tbsSeparator;
   FSep2.Width := 8;
+
+  FApplyFadeout := TToolButton.Create(Self);
+  FApplyFadeout.Parent := Self;
+  FApplyFadeout.Hint := _('Apply Fadeout');
+  FApplyFadeout.ImageIndex := 55;
+
+  FApplyFadein := TToolButton.Create(Self);
+  FApplyFadein.Parent := Self;
+  FApplyFadein.Hint := _('Apply Fadein');
+  FApplyFadein.ImageIndex := 54;
+
+  FSep4 := TToolButton.Create(Self);
+  FSep4.Parent := Self;
+  FSep4.Style := tbsSeparator;
+  FSep4.Width := 8;
 
   FUndo := TToolButton.Create(Self);
   FUndo.Parent := Self;
@@ -313,6 +360,11 @@ begin
   FSep1.Parent := Self;
   FSep1.Style := tbsSeparator;
   FSep1.Width := 8;
+
+  FPosEffectsMarker := TToolButton.Create(Self);
+  FPosEffectsMarker.Parent := Self;
+  FPosEffectsMarker.Hint := _('TODO: !!!');
+  FPosEffectsMarker.ImageIndex := 53;
 
   FPosZoom := TToolButton.Create(Self);
   FPosZoom.Parent := Self;

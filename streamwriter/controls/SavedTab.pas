@@ -700,7 +700,8 @@ begin
   FToolBar.Parent := FTopLeftPanel;
   FToolBar.Align := alTop;
   FToolBar.AutoSize := True;
-  FToolBar.Height := 24;
+  FToolBar.Height := 25;
+  FToolbar.Indent := 2;
   FToolBar.Images := Images;
   FToolBar.Setup;
 

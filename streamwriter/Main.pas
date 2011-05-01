@@ -481,7 +481,8 @@ begin
     ShowSettings(True);
   end;
 
-  if AppGlobals.FirstStart then
+  // TODO: Nochmal alles mit FirstStartShown checken. Es gab als property FirstStart, die ist jetzt weg!
+  if not AppGlobals.FirstStartShown then
   begin
     TfrmMsgDlg.ShowMsg(Self, _('This is the first time you are running streamWriter. There are two ways to record music:'#13#10 +
                                '1) You can record streams by double-clicking them in the stream-browser on the right.'#13#10 +
@@ -502,6 +503,8 @@ begin
                                  'it will tune into the station and record your desired song. Please try this feature and add some artists/titles to your wishlist.'), btOK);
     end;
   end;
+
+  AppGlobals.FirstStartShown := True;
 
   // Wird hier gemacht, weil der Browser dann sicher da ist, wenn die
   // Streams empfangen werden (wg. DisplayCount)

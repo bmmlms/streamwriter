@@ -402,19 +402,7 @@ object frmSettings: TfrmSettings
       OnCompare = lstPluginsCompare
       OnResize = lstPluginsResize
       OnSelectItem = lstPluginsSelectItem
-    end
-    object cmdConfigure: TBitBtn
-      Left = 57
-      Top = 12
-      Width = 84
-      Height = 25
-      Anchors = [akRight, akBottom]
-      Caption = '&Configure...'
-      DoubleBuffered = True
-      Enabled = False
-      ParentDoubleBuffered = False
-      TabOrder = 1
-      Visible = False
+      OnItemChecked = lstPluginsItemChecked
     end
     object btnAddUp: TButton
       Left = 96
@@ -423,7 +411,7 @@ object frmSettings: TfrmSettings
       Height = 25
       Anchors = [akRight, akBottom]
       Caption = '&Add...'
-      TabOrder = 2
+      TabOrder = 1
       OnClick = btnAddUpClick
     end
     object btnRemove: TButton
@@ -434,7 +422,7 @@ object frmSettings: TfrmSettings
       Anchors = [akRight, akBottom]
       Caption = '&Remove'
       Enabled = False
-      TabOrder = 3
+      TabOrder = 2
       OnClick = btnRemoveClick
     end
     object txtApp: TLabeledEdit
@@ -450,7 +438,7 @@ object frmSettings: TfrmSettings
       EditLabel.Caption = 'Path to application:'
       Enabled = False
       ReadOnly = True
-      TabOrder = 4
+      TabOrder = 3
     end
     object txtAppParams: TLabeledEdit
       Left = 4
@@ -462,7 +450,7 @@ object frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Caption = 'Parameters:'
       Enabled = False
-      TabOrder = 5
+      TabOrder = 4
       OnChange = txtAppParamsChange
     end
     object chkOnlyIfCut: TCheckBox
@@ -472,8 +460,18 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
       Caption = 'Use only if file was cut successfully'
-      TabOrder = 6
+      TabOrder = 5
       OnClick = chkOnlyIfCutClick
+    end
+    object btnConfigure: TButton
+      Left = 4
+      Top = 88
+      Width = 93
+      Height = 25
+      Anchors = [akLeft, akBottom]
+      Caption = '&Configure...'
+      TabOrder = 6
+      OnClick = btnConfigureClick
     end
   end
   object pnlCut: TPanel
@@ -969,7 +967,7 @@ object frmSettings: TfrmSettings
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 289
+      EditLabel.Width = 276
       EditLabel.Height = 26
       EditLabel.Caption = 
         'Regular expression to detect artist/title (only change if you kn' +
@@ -989,7 +987,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800A40110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800B00110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

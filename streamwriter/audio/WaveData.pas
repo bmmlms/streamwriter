@@ -128,12 +128,17 @@ end;
 procedure TWaveData.Load(Stream: TMemoryStream);
 begin
   FDecoder := BASSStreamCreateFile(True, Stream.Memory, 0, Stream.Size, BASS_STREAM_DECODE {or BASS_STREAM_PRESCAN} {$IFDEF UNICODE} or BASS_UNICODE{$ENDIF});
+
   if FDecoder = 0 then
   begin
     raise Exception.Create('Error creating decoder');
   end;
 
-  AnalyzeData;
+  try
+    AnalyzeData;
+  finally
+    BASSStreamFree(FDecoder);
+  end;
 end;
 
 procedure TWaveData.Load(Filename: string);
@@ -151,7 +156,11 @@ begin
     raise Exception.Create('Error creating decoder');
   end;
 
-  AnalyzeData;
+  try
+    AnalyzeData;
+  finally
+    BASSStreamFree(FDecoder);
+  end;
 end;
 
 function TWaveData.Save(Filename: string): Boolean;
@@ -181,6 +190,7 @@ begin
 
     FOut := TMemoryStream.Create;
     try
+      // TODO: Das ist aber nicht immer ein mpegstream.....
       FIn := TMPEGStreamFile.Create(FFilename, fmOpenRead or fmShareDenyWrite);
       try
         // Tags kopieren
@@ -278,8 +288,6 @@ begin
 
   FAudioStart := BASSStreamGetFilePosition(FDecoder, BASS_FILEPOS_START);
   FAudioEnd := BASSStreamGetFilePosition(FDecoder, BASS_FILEPOS_END);
-
-  BASSStreamFree(FDecoder);
 
   for i := 0 to FCutStates.Count - 1 do
     FCutStates[i].Free;
@@ -420,7 +428,7 @@ end;
 function TWaveData.TimeBetween(F, T: Cardinal): Double;
 begin
   // REMARK: Falsch wegen letztem element etc..
-  Result := FWaveArray[T].Sec - FWaveArray[F].Sec;
+  Result := Max(FWaveArray[F].Sec, FWaveArray[T].Sec) - Min(FWaveArray[F].Sec, FWaveArray[T].Sec);
 end;
 
 { TCutState }

@@ -32,6 +32,9 @@ type
   end;
 
   TSetTagsPlugin = class(TInternalPlugin)
+  protected
+    function FGetReadyForUse: Boolean; override;
+    function FGetFilesInstalled: Boolean; override;
   public
     constructor Create;
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
@@ -119,6 +122,16 @@ begin
     AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 100, 'Plugins');
     AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
   except end;
+end;
+
+function TSetTagsPlugin.FGetFilesInstalled: Boolean;
+begin
+  Result := True;
+end;
+
+function TSetTagsPlugin.FGetReadyForUse: Boolean;
+begin
+  Result := True;
 end;
 
 procedure TSetTagsPlugin.Initialize;

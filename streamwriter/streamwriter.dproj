@@ -2,7 +2,7 @@
 		<PropertyGroup>
 			<ProjectGuid>{A7EA0E64-51B5-4E52-9036-F60A7276864D}</ProjectGuid>
 			<MainSource>streamwriter.dpr</MainSource>
-			<Config Condition="'$(Config)'==''">Release</Config>
+			<Config Condition="'$(Config)'==''">Debug</Config>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
 			<ProjectVersion>12.2</ProjectVersion>
 			<Basis>True</Basis>
@@ -151,6 +151,14 @@
 			<DCCReference Include="StreamData.pas">
 				<Form>frmStreamData</Form>
 			</DCCReference>
+			<DCCReference Include="plugins\SoX.pas"/>
+			<DCCReference Include="DownloadAddons.pas">
+				<Form>frmDownloadAddons</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\common\DownloadClient.pas"/>
+			<DCCReference Include="plugins\ConfigureSoX.pas">
+				<Form>frmConfigureSoX</Form>
+			</DCCReference>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
@@ -178,7 +186,7 @@
 						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
 						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
 						<VersionInfo Name="MajorVer">2</VersionInfo>
-						<VersionInfo Name="MinorVer">0</VersionInfo>
+						<VersionInfo Name="MinorVer">1</VersionInfo>
 						<VersionInfo Name="Release">0</VersionInfo>
 						<VersionInfo Name="Build">0</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
@@ -192,13 +200,13 @@
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName">streamwriter.org</VersionInfoKeys>
 						<VersionInfoKeys Name="FileDescription">streamWriter</VersionInfoKeys>
-						<VersionInfoKeys Name="FileVersion">2.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">2.1.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName">streamwriter</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalCopyright">streamwriter.org</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
 						<VersionInfoKeys Name="OriginalFilename">streamwriter.exe</VersionInfoKeys>
 						<VersionInfoKeys Name="ProductName">streamWriter</VersionInfoKeys>
-						<VersionInfoKeys Name="ProductVersion">2.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="ProductVersion">2.1.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
 					<Excluded_Packages>

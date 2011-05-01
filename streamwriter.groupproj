@@ -6,6 +6,9 @@
 			<Projects Include="streamwriter\streamwriter.dproj">
 				<Dependencies/>
 			</Projects>
+			<Projects Include="plugins\sox\sox.dproj">
+				<Dependencies/>
+			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -18,19 +21,28 @@
 			<MSBuild Projects="streamwriter\streamwriter.dproj"/>
 		</Target>
 		<Target Name="streamwriter:Clean">
-			<MSBuild Targets="Clean" Projects="streamwriter\streamwriter.dproj"/>
+			<MSBuild Projects="streamwriter\streamwriter.dproj" Targets="Clean"/>
 		</Target>
 		<Target Name="streamwriter:Make">
-			<MSBuild Targets="Make" Projects="streamwriter\streamwriter.dproj"/>
+			<MSBuild Projects="streamwriter\streamwriter.dproj" Targets="Make"/>
+		</Target>
+		<Target Name="sox">
+			<MSBuild Projects="plugins\sox\sox.dproj"/>
+		</Target>
+		<Target Name="sox:Clean">
+			<MSBuild Projects="plugins\sox\sox.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="sox:Make">
+			<MSBuild Projects="plugins\sox\sox.dproj" Targets="Make"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="streamwriter"/>
+			<CallTarget Targets="streamwriter;sox"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="streamwriter:Clean"/>
+			<CallTarget Targets="streamwriter:Clean;sox:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="streamwriter:Make"/>
+			<CallTarget Targets="streamwriter:Make;sox:Make"/>
 		</Target>
-		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>

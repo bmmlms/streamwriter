@@ -95,7 +95,11 @@ uses
   PluginManager in 'plugins\PluginManager.pas',
   Logging in '..\..\common\Logging.pas',
   Timers in 'Timers.pas' {frmTimers},
-  StreamData in 'StreamData.pas' {frmStreamData};
+  StreamData in 'StreamData.pas' {frmStreamData},
+  SoX in 'plugins\SoX.pas',
+  DownloadAddons in 'DownloadAddons.pas' {frmDownloadAddons},
+  DownloadClient in '..\..\common\DownloadClient.pas',
+  ConfigureSoX in 'plugins\ConfigureSoX.pas' {frmConfigureSoX};
 
 {$SetPEOptFlags $0140}
 
