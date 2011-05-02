@@ -45,6 +45,10 @@ type
     FFadeoutEnd: Boolean;
     FFadeoutStartLength: Integer;
     FFadeoutEndLength: Integer;
+    FSilenceStart: Boolean;
+    FSilenceEnd: Boolean;
+    FSilenceStartLength: Integer;
+    FSilenceEndLength: Integer;
 
     function DeleteFiles: Boolean;
   protected
@@ -82,20 +86,23 @@ end;
 
 procedure TSoXThread.Execute;
 var
-  OutFile, CmdLine, Params: string;
+  TempFile, CmdLine, Params: string;
   Output: AnsiString;
   P: TSoXPlugin;
   LoopStarted: Integer;
-  F, F2: Boolean;
+  Failed: Boolean;
+  FS: TFileStream;
 begin
   inherited;
 
   FResult := arFail;
 
-  OutFile := RemoveFileExt(FData.Filename) + '_soxconvert' + ExtractFileExt(FData.Filename);
-  CmdLine := '"' + FSoxPath + '"' + ' "' + FData.Filename + '" "' + OutFile + '" ';
+  TempFile := RemoveFileExt(FData.Filename) + '_soxconvert' + ExtractFileExt(FData.Filename);
+  CmdLine := '"' + FSoxPath + '"' + ' "' + FData.Filename + '" "' + TempFile + '" ';
 
   P := TSoXPlugin(Plugin);
+
+  Params := '';
 
   if P.FFadeoutStart and P.FFadeoutEnd then
     Params := 'fade p ' + IntToStr(P.FFadeoutStartLength) + ' ' + IntToStr(FData.Length) + ' ' + IntToStr(P.FFadeoutEndLength)
@@ -104,43 +111,53 @@ begin
   else if P.FFadeoutEnd then
     Params := 'fade p 0 ' + IntToStr(FData.Length) + ' ' + IntToStr(P.FFadeoutEndLength);
 
+  if P.FSilenceStart and P.FSilenceEnd then
+    Params := Params + ' ' + 'pad ' + IntToStr(P.FSilenceStartLength) + ' ' + IntToStr(P.FSilenceEndLength)
+  else if P.FSilenceStart then
+    Params := Params + ' ' + 'pad ' + IntToStr(P.FSilenceStartLength)
+  else
+    Params := Params + ' ' + 'pad 0 ' + IntToStr(P.FSilenceEndLength);
+
   if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120, Output) = 2 then
   begin
     FResult := arTimeout;
   end else
   begin
-    if FileExists(OutFile) then
+    Failed := True;
+    if FileExists(TempFile) then
     begin
-      FData.Filesize := GetFileSize(OutFile);
-
-      F := False;
       LoopStarted := GetTickCount;
-      while not DeleteFile(FData.Filename) do
+      while Failed do
       begin
-        Sleep(50);
-        if GetTickCount > LoopStarted + 5000 then
-        begin
-          F := True;
-          Break;
-        end;
-      end;
-
-      if not F then
-      begin
-        F2 := False;
-        LoopStarted := GetTickCount;
-        while not MoveFile(PChar(OutFile), PChar(FData.Filename)) do
-        begin
+        try
+          FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
+          try
+            Failed := False;
+            Break;
+          finally
+            FS.Free;
+          end;
+        except
           Sleep(50);
           if GetTickCount > LoopStarted + 5000 then
           begin
-            F2 := True;
             Break;
           end;
         end;
+      end;
 
-        if not F2 then
-          FResult := arWin;
+      if not Failed then
+        if not DeleteFile(FData.Filename) then
+          Failed := True;
+
+      if not Failed then
+        if not MoveFile(PChar(TempFile), PChar(FData.Filename)) then
+          Failed := True;
+
+      if not Failed then
+      begin
+        FData.Filesize := GetFileSize(FData.Filename);
+        FResult := arWin;
       end;
     end;
   end;
@@ -156,6 +173,10 @@ begin
   FFadeoutEnd := TSoXPlugin(Source).FFadeoutEnd;
   FFadeoutStartLength := TSoXPlugin(Source).FFadeoutStartLength;
   FFadeoutEndLength := TSoXPlugin(Source).FFadeoutEndLength;
+  FSilenceStart := TSoXPlugin(Source).FSilenceStart;
+  FSilenceEnd := TSoXPlugin(Source).FSilenceEnd;
+  FSilenceStartLength := TSoXPlugin(Source).FSilenceStartLength;
+  FSilenceEndLength := TSoXPlugin(Source).FSilenceEndLength;
 end;
 
 procedure TSoXPlugin.Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean);
@@ -165,7 +186,8 @@ begin
   inherited Configure(AOwner, Handle, ShowMessages);
 
   try
-    F := TfrmConfigureSoX.Create(AOwner, FFadeoutStart, FFadeoutEnd, FFadeoutStartLength, FFadeoutEndLength);
+    F := TfrmConfigureSoX.Create(AOwner, FFadeoutStart, FFadeoutEnd, FFadeoutStartLength, FFadeoutEndLength, FSilenceStart, FSilenceEnd,
+      FSilenceStartLength, FSilenceEndLength);
 
     F.ShowModal;
 
@@ -175,6 +197,10 @@ begin
       FFadeoutEnd := F.FadeoutEnd;
       FFadeoutStartLength := F.FadeoutStartLength;
       FFadeoutEndLength := F.FadeoutEndLength;
+      FSilenceStart := F.SilenceStart;
+      FSilenceEnd := F.SilenceEnd;
+      FSilenceStartLength := F.SilenceStartLength;
+      FSilenceEndLength := F.SilenceEndLength;
       Save;
     end;
   finally
@@ -226,6 +252,11 @@ begin
     AppGlobals.Storage.Read('FadeoutEnd_' + ClassName, FFadeoutEnd, False, 'Plugins');
     AppGlobals.Storage.Read('FadeoutStartLength_' + ClassName, FFadeoutStartLength, 5, 'Plugins');
     AppGlobals.Storage.Read('FadeoutEndLength_' + ClassName, FFadeoutEndLength, 5, 'Plugins');
+
+    AppGlobals.Storage.Read('SilenceStart_' + ClassName, FSilenceStart, False, 'Plugins');
+    AppGlobals.Storage.Read('SilenceEnd_' + ClassName, FSilenceEnd, False, 'Plugins');
+    AppGlobals.Storage.Read('SilenceStartLength_' + ClassName, FSilenceStartLength, 5, 'Plugins');
+    AppGlobals.Storage.Read('SilenceEndLength_' + ClassName, FSilenceEndLength, 5, 'Plugins');
 
     if not FGetFilesInstalled then
       FActive := False;
@@ -323,7 +354,7 @@ function TSoXPlugin.ProcessFile(
   Data: PPluginProcessInformation): TProcessThreadBase;
 begin
   Result := nil;
-  if (not FGetReadyForUse) or ((not FFadeoutStart) and (not FFadeoutEnd)) then
+  if (not FGetReadyForUse) or ((not FFadeoutStart) and (not FFadeoutEnd) and (not FSilenceStart) and (not FSilenceEnd)) then
     Exit;
 
   Result := TSoXThread.Create(Data, Self);
@@ -337,6 +368,11 @@ begin
   AppGlobals.Storage.Write('FadeoutEnd_' + ClassName, FFadeoutEnd, 'Plugins');
   AppGlobals.Storage.Write('FadeoutStartLength_' + ClassName, FFadeoutStartLength, 'Plugins');
   AppGlobals.Storage.Write('FadeoutEndLength_' + ClassName, FFadeoutEndLength, 'Plugins');
+
+  AppGlobals.Storage.Write('SilenceStart_' + ClassName, FSilenceStart, 'Plugins');
+  AppGlobals.Storage.Write('SilenceEnd_' + ClassName, FSilenceEnd, 'Plugins');
+  AppGlobals.Storage.Write('SilenceStartLength_' + ClassName, FSilenceStartLength, 'Plugins');
+  AppGlobals.Storage.Write('SilenceEndLength_' + ClassName, FSilenceEndLength, 'Plugins');
 end;
 
 end.

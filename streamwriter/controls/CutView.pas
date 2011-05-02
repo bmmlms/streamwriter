@@ -556,7 +556,8 @@ var
   TempFile: string;
   Plugin: TSoXPlugin;
   Output: AnsiString;
-  T: Cardinal;
+  LoopStarted: Cardinal;
+  FS: TFileStream;
 begin
   Result := False;
 
@@ -623,15 +624,37 @@ begin
   if FWaveData <> nil then
     FreeAndNil(FWaveData);
 
-  T := GetTickCount;
-  while not DeleteFile(PChar(FFilename)) do
+  Failed := True;
+
+  if FileExists(TempFile) then
   begin
-    Sleep(50);
-    if GetTickCount > T + 5000 then
+    LoopStarted := GetTickCount;
+    while Failed do
     begin
-      Failed := True;
-      Break;
+      try
+        FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
+        try
+          Failed := False;
+          Break;
+        finally
+          FS.Free;
+        end;
+      except
+        Sleep(50);
+        if GetTickCount > LoopStarted + 5000 then
+        begin
+          Break;
+        end;
+      end;
     end;
+
+    if not Failed then
+      if not DeleteFile(PChar(FFilename)) then
+        Failed := True;
+
+    if not Failed then
+      if not MoveFile(PChar(TempFile), PChar(FFilename)) then
+        Failed := True;
   end;
 
   try
@@ -645,30 +668,8 @@ begin
       Exit;
     end;
 
-    T := GetTickCount;
-    while not MoveFile(PChar(TempFile), PChar(FFilename)) do
-    begin
-      Sleep(50);
-      if GetTickCount > T + 5000 then
-      begin
-        Failed := True;
-        Break;
-      end;
-    end;
-
-    if not Failed then
-    begin
-      Result := True;
-      LoadFile(FFilename);
-    end else if Failed then
-    begin
-      MsgBox(GetParentForm(Self).Handle, _('An error occured while saving the file.'), _('Error'), MB_ICONERROR);
-      FError := True;
-      FPB.BuildBuffer;
-      FPB.BuildDrawBuffer;
-      FPB.Paint;
-      Exit;
-    end;
+    Result := True;
+    LoadFile(FFilename);
   finally
     if Assigned(FOnStateChanged) then
       FOnStateChanged(Self);

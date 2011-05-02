@@ -4,8 +4,8 @@ object frmConfigureSoX: TfrmConfigureSoX
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Configure SoX'
-  ClientHeight = 201
-  ClientWidth = 289
+  ClientHeight = 206
+  ClientWidth = 397
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -54,28 +54,35 @@ object frmConfigureSoX: TfrmConfigureSoX
   OnKeyDown = FormKeyDown
   PixelsPerInch = 96
   TextHeight = 13
+  object Bevel1: TBevel
+    Left = 8
+    Top = 76
+    Width = 381
+    Height = 5
+    Shape = bsTopLine
+  end
   object chkFadeoutStart: TCheckBox
     Left = 8
     Top = 8
-    Width = 273
+    Width = 181
     Height = 21
     Caption = 'Add fadein at beginning'
     TabOrder = 0
-    OnClick = chkFadeoutClick
+    OnClick = chkClick
   end
   object chkFadeoutEnd: TCheckBox
-    Left = 4
-    Top = 80
-    Width = 277
+    Left = 208
+    Top = 8
+    Width = 181
     Height = 21
     Caption = 'Add fadeout at end'
     TabOrder = 1
-    OnClick = chkFadeoutClick
+    OnClick = chkClick
   end
   object pnlNav: TPanel
     Left = 0
-    Top = 152
-    Width = 289
+    Top = 157
+    Width = 397
     Height = 49
     Align = alBottom
     BevelOuter = bvNone
@@ -84,12 +91,12 @@ object frmConfigureSoX: TfrmConfigureSoX
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 2
-    ExplicitTop = 136
-    ExplicitWidth = 301
+    ExplicitTop = 152
+    ExplicitWidth = 289
     object Bevel2: TBevel
       Left = 4
       Top = 4
-      Width = 281
+      Width = 389
       Height = 5
       Align = alTop
       Shape = bsTopLine
@@ -97,7 +104,7 @@ object frmConfigureSoX: TfrmConfigureSoX
       ExplicitWidth = 396
     end
     object btnOK: TBitBtn
-      Left = 188
+      Left = 296
       Top = 9
       Width = 97
       Height = 36
@@ -109,7 +116,7 @@ object frmConfigureSoX: TfrmConfigureSoX
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 200
+      ExplicitLeft = 188
     end
   end
   object txtFadeoutStart: TLabeledEdit
@@ -126,8 +133,8 @@ object frmConfigureSoX: TfrmConfigureSoX
     TabOrder = 3
   end
   object txtFadeoutEnd: TLabeledEdit
-    Left = 24
-    Top = 120
+    Left = 224
+    Top = 48
     Width = 53
     Height = 21
     EditLabel.Width = 90
@@ -137,5 +144,49 @@ object frmConfigureSoX: TfrmConfigureSoX
     MaxLength = 1
     NumbersOnly = True
     TabOrder = 4
+  end
+  object chkSilenceStart: TCheckBox
+    Left = 8
+    Top = 88
+    Width = 181
+    Height = 21
+    Caption = 'Add silence at beginning'
+    TabOrder = 5
+    OnClick = chkClick
+  end
+  object chkSilenceEnd: TCheckBox
+    Left = 208
+    Top = 88
+    Width = 181
+    Height = 21
+    Caption = 'Add silence at end'
+    TabOrder = 6
+    OnClick = chkClick
+  end
+  object txtSilenceStart: TLabeledEdit
+    Left = 24
+    Top = 128
+    Width = 53
+    Height = 21
+    EditLabel.Width = 90
+    EditLabel.Height = 13
+    EditLabel.Caption = 'Length in seconds:'
+    Enabled = False
+    MaxLength = 1
+    NumbersOnly = True
+    TabOrder = 7
+  end
+  object txtSilenceEnd: TLabeledEdit
+    Left = 224
+    Top = 128
+    Width = 53
+    Height = 21
+    EditLabel.Width = 90
+    EditLabel.Height = 13
+    EditLabel.Caption = 'Length in seconds:'
+    Enabled = False
+    MaxLength = 1
+    NumbersOnly = True
+    TabOrder = 8
   end
 end
