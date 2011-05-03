@@ -120,6 +120,7 @@ type
     function AddCategory: PVirtualNode; overload;
 
     function GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
+    function GetChildNodes(Parent: PVirtualNode): TNodeArray;
     function NodesToData(Nodes: TNodeArray): TNodeDataArray;
     function NodesToClients(Nodes: TNodeArray): TClientArray;
     function GetEntries(T: TEntryTypes): TPlaylistEntryArray;
@@ -580,6 +581,24 @@ begin
   end;
 end;
 
+function TMClientView.GetChildNodes(Parent: PVirtualNode): TNodeArray;
+var
+  Node: PVirtualNode;
+  NodeData: PClientNodeData;
+begin
+  SetLength(Result, 0);
+  Node := GetFirst;
+  while Node <> nil do
+  begin
+    if Node.Parent = Parent then
+    begin
+      SetLength(Result, Length(Result) + 1);
+      Result[Length(Result) - 1] := Node;
+    end;
+    Node := GetNext(Node);
+  end;
+end;
+
 function TMClientView.GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
 var
   Node: PVirtualNode;
@@ -604,7 +623,7 @@ begin
       Node := GetNext(Node);
       Continue;
     end;
-    
+
     SetLength(Result, Length(Result) + 1);
     Result[Length(Result) - 1] := Node;
     Node := GetNext(Node);

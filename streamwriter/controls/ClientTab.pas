@@ -294,6 +294,9 @@ procedure TClientTab.ActionStartExecute(Sender: TObject);
 var
   Clients: TClientArray;
   Client: TICEClient;
+  Node, ChildNode: PVirtualNode;
+  Nodes, ChildNodes: TNodeArray;
+  NodeData, ChildNodeData: PClientNodeData;
 begin
   if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
   begin
@@ -306,6 +309,20 @@ begin
   begin
     if not Client.AutoRemove then
       Client.StartRecording;
+  end;
+
+  Nodes := FClientView.GetNodes(ntCategory, True);
+  for Node in Nodes do
+  begin
+    NodeData := FClientView.GetNodeData(Node);
+    if not NodeData.Category.IsAuto then
+    begin
+      Clients := FClientView.NodesToClients(FClientView.GetChildNodes(Node));
+      for Client in Clients do
+      begin
+        Client.StartRecording;
+      end;
+    end;
   end;
 end;
 
@@ -323,12 +340,29 @@ procedure TClientTab.ActionStopExecute(Sender: TObject);
 var
   Clients: TClientArray;
   Client: TICEClient;
+  Node, ChildNode: PVirtualNode;
+  Nodes, ChildNodes: TNodeArray;
+  NodeData, ChildNodeData: PClientNodeData;
 begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
   for Client in Clients do
   begin
     if not Client.AutoRemove then
       Client.StopRecording;
+  end;
+
+  Nodes := FClientView.GetNodes(ntCategory, True);
+  for Node in Nodes do
+  begin
+    NodeData := FClientView.GetNodeData(Node);
+    if not NodeData.Category.IsAuto then
+    begin
+      Clients := FClientView.NodesToClients(FClientView.GetChildNodes(Node));
+      for Client in Clients do
+      begin
+        Client.StopRecording;
+      end;
+    end;
   end;
 end;
 

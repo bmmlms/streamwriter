@@ -1413,10 +1413,10 @@ begin
     end;
 
   B := Length(Clients) > 0;
-  if actStart.Enabled <> B and not OnlyAutomatedSelected then
-    actStart.Enabled := B and not OnlyAutomatedSelected;
-  if actStop.Enabled <> B and not OnlyAutomatedSelected then
-    actStop.Enabled := B and not OnlyAutomatedSelected;
+  if actStart.Enabled <> (B and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected)) then
+    actStart.Enabled := (B and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected));
+  if actStop.Enabled <> (B and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected)) then
+    actStop.Enabled := (B and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected));
   mnuStartStreaming1.Default := False;
   mnuStopStreaming1.Default := False;
 
