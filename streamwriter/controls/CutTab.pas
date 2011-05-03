@@ -294,6 +294,7 @@ begin
   FCutView.OnStateChanged := CutViewStateChanged;
 
   UpdateButtons;
+  Language.Translate(Self);
   FCutView.LoadFile(Filename);
 end;
 
@@ -309,16 +310,14 @@ end;
 
 procedure TCutToolBar.Setup;
 begin
-  // TODO: Die Hints hier sind in _() .. werden die übersetzt?
-
   FStop := TToolButton.Create(Self);
   FStop.Parent := Self;
-  FStop.Hint := _('Stop');
+  FStop.Hint := 'Stop';
   FStop.ImageIndex := 1;
 
   FPlay := TToolButton.Create(Self);
   FPlay.Parent := Self;
-  FPlay.Hint := _('Play');
+  FPlay.Hint := 'Play';
   FPlay.ImageIndex := 33;
 
   FSep2 := TToolButton.Create(Self);
@@ -328,12 +327,12 @@ begin
 
   FApplyFadeout := TToolButton.Create(Self);
   FApplyFadeout.Parent := Self;
-  FApplyFadeout.Hint := _('Apply Fadeout');
+  FApplyFadeout.Hint := 'Apply Fadeout';
   FApplyFadeout.ImageIndex := 55;
 
   FApplyFadein := TToolButton.Create(Self);
   FApplyFadein.Parent := Self;
-  FApplyFadein.Hint := _('Apply Fadein');
+  FApplyFadein.Hint := 'Apply Fadein';
   FApplyFadein.ImageIndex := 54;
 
   FSep4 := TToolButton.Create(Self);
@@ -343,17 +342,17 @@ begin
 
   FUndo := TToolButton.Create(Self);
   FUndo.Parent := Self;
-  FUndo.Hint := _('Undo');
+  FUndo.Hint := 'Undo';
   FUndo.ImageIndex := 18;
 
   FCut := TToolButton.Create(Self);
   FCut.Parent := Self;
-  FCut.Hint := _('Cut');
+  FCut.Hint := 'Cut';
   FCut.ImageIndex := 17;
 
   FAutoCut := TToolButton.Create(Self);
   FAutoCut.Parent := Self;
-  FAutoCut.Hint := _('Show silence according to configured settings');
+  FAutoCut.Hint := 'Show silence according to configured settings';
   FAutoCut.ImageIndex := 19;
 
   FSep1 := TToolButton.Create(Self);
@@ -363,22 +362,22 @@ begin
 
   FPosEffectsMarker := TToolButton.Create(Self);
   FPosEffectsMarker.Parent := Self;
-  FPosEffectsMarker.Hint := _('TODO: !!!');
+  FPosEffectsMarker.Hint := 'Select area (left mousebutton selects area)';
   FPosEffectsMarker.ImageIndex := 53;
 
   FPosZoom := TToolButton.Create(Self);
   FPosZoom.Parent := Self;
-  FPosZoom.Hint := _('Zoom in (left mousebutton selects area, right mousebutton zooms back)');
+  FPosZoom.Hint := 'Zoom in (left mousebutton selects area, right mousebutton zooms back';
   FPosZoom.ImageIndex := 48;
 
   FPosEdit := TToolButton.Create(Self);
   FPosEdit.Parent := Self;
-  FPosEdit.Hint := _('Set cutpositions (left mousebutton sets start, right button sets end)');
+  FPosEdit.Hint := 'Set cutpositions (left mousebutton sets start, right button sets end)';
   FPosEdit.ImageIndex := 37;
 
   FPosPlay := TToolButton.Create(Self);
   FPosPlay.Parent := Self;
-  FPosPlay.Hint := _('Set playposition');
+  FPosPlay.Hint := 'Set playposition';
   FPosPlay.ImageIndex := 27;
 
   FSep3 := TToolButton.Create(Self);
@@ -388,7 +387,7 @@ begin
 
   FSave := TToolButton.Create(Self);
   FSave.Parent := Self;
-  FSave.Hint := _('Save');
+  FSave.Hint := 'Save';
   FSave.ImageIndex := 14;
 end;
 

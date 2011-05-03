@@ -316,9 +316,14 @@ procedure TICEThread.DoEnded;
 begin
   inherited;
 
+  FPlaying := False;
+  FPlayer.Stop;
+
   // Noch schön ausfaden lassen
   while FPlayer.Playing or FPlayer.Pausing or FPlayer.Stopping do
+  begin
     Sleep(100);
+  end;
 
   // Das hier ist die Schlaf-Zeit, die von aussen festgelegt wird. Nicht Retry-Delay!
   Sleep(FSleepTime * 1000);
@@ -330,6 +335,9 @@ var
   Delay: Cardinal;
 begin
   inherited;
+
+  FPlaying := False;
+  FPlayer.Stop;
 
   WriteDebug(Format(_('%s'), [_(E.Message)]), '', 3, 0);
 

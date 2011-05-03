@@ -118,7 +118,7 @@ begin
   else
     Params := Params + ' ' + 'pad 0 ' + IntToStr(P.FSilenceEndLength);
 
-  if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120, Output) = 2 then
+  if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120000, Output) = 2 then
   begin
     FResult := arTimeout;
   end else

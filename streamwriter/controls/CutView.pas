@@ -614,10 +614,11 @@ begin
   FPB.BuildDrawBuffer;
   FPB.Paint;
 
+  // TODO: Das muss in nem thread ausgeführt werden, WaitForSingleObject blockiert!!
   if Fadein then
-    RunProcess('"' + Plugin.SoXExe + '" "' + FFilename + '" ' + '"' + TempFile + '" fade p ' + IntToStr(Round(FWaveData.WaveArray[FPB.FEffectStartLine].Sec)), ExtractFilePath(Plugin.SoXExe), 120, Output)
+    RunProcess('"' + Plugin.SoXExe + '" -S "' + FFilename + '" ' + '"' + TempFile + '" fade p ' + IntToStr(Round(FWaveData.WaveArray[FPB.FEffectStartLine].Sec)), ExtractFilePath(Plugin.SoXExe), 120000, Output)
   else
-    RunProcess('"' + Plugin.SoXExe + '" "' + FFilename + '" ' + '"' + TempFile + '" fade p 0 ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec)) + ' ' + IntToStr(Round(FWaveData.WaveArray[FPB.FEffectEndLine].Sec)), ExtractFilePath(Plugin.SoXExe), 120, Output);
+    RunProcess('"' + Plugin.SoXExe + '" -S "' + FFilename + '" ' + '"' + TempFile + '" fade p 0 ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec)) + ' ' + IntToStr(Round(FWaveData.WaveArray[FPB.FEffectEndLine].Sec)), ExtractFilePath(Plugin.SoXExe), 120000, Output);
 
   FWorking := False;
 
