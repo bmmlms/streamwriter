@@ -36,6 +36,30 @@ type
 
   TCutView = class;
 
+  TProcessThread = class(TThread)
+  private
+    FCommandLine: string;
+    FWorkingDir: string;
+    FFilePath: string;
+    FTempFile: string;
+
+    FOnSuccess: TNotifyEvent;
+    FOnError: TNotifyEvent;
+
+    procedure SyncSuccess;
+    procedure SyncError;
+  protected
+    procedure Execute; override;
+  public
+    constructor Create(CommandLine, WorkingDir, FilePath, TempFile: string);
+    destructor Destroy; override;
+
+    property TempFile: string read FTempFile;
+
+    property OnSuccess: TNotifyEvent read FOnSuccess write FOnSuccess;
+    property OnError: TNotifyEvent read FOnError write FOnError;
+  end;
+
   TScanThread = class(TThread)
   private
     FFilename: string;
@@ -114,10 +138,12 @@ type
   TCutView = class(TPanel)
   private
     FScanThread: TScanThread;
+    FProcessThread: TProcessThread;
     FPB: TCutPaintBox;
     FWaveData: TWaveData;
     FWorking: Boolean;
     FError: Boolean;
+    FLoading: Boolean;
     FLineMode: TLineMode;
     FProgressBarLoad: TProgressBar;
     FWasSaved: Boolean;
@@ -133,6 +159,10 @@ type
     procedure ThreadEndScan(Sender: TObject);
     procedure ThreadScanError(Sender: TObject);
     procedure ThreadTerminate(Sender: TObject);
+
+    procedure ProcessThreadSuccess(Sender: TObject);
+    procedure ProcessThreadError(Sender: TObject);
+    procedure ProcessThreadTerminate(Sender: TObject);
 
     procedure PlayerEndReached(Sender: TObject);
     procedure PlayerPlay(Sender: TObject);
@@ -188,6 +218,7 @@ uses
 constructor TScanThread.Create(Filename: string);
 begin
   inherited Create(True);
+  FreeOnTerminate := True;
   FFilename := Filename;
   FWaveData := TWaveData.Create;
   FWaveData.OnProgress := WaveDataScanProgress;
@@ -195,7 +226,7 @@ end;
 
 destructor TScanThread.Destroy;
 begin
-  //FWaveData.Free;
+
   inherited;
 end;
 
@@ -203,28 +234,36 @@ procedure TScanThread.Execute;
 begin
   try
     FWaveData.Load(FFilename);
+    Synchronize(SyncEndScan);
   except
-    FWaveData.Free;
+    FreeAndNil(FWaveData);
     Synchronize(SyncScanError);
-    Exit;
   end;
-  Synchronize(SyncEndScan);
+
+  if Terminated then
+    FWaveData.Free;
 end;
 
 procedure TScanThread.SyncEndScan;
 begin
+  if Terminated then
+    Exit;
   if Assigned(FOnEndScan) then
     FOnEndScan(Self);
 end;
 
 procedure TScanThread.SyncScanError;
 begin
+  if Terminated then
+    Exit;
   if Assigned(FOnScanError) then
     FOnScanError(Self);
 end;
 
 procedure TScanThread.SyncScanProgress;
 begin
+  if Terminated then
+    Exit;
   if Assigned(FOnScanProgress) then
     FOnScanProgress(Self);
 end;
@@ -259,14 +298,18 @@ begin
 
   if FScanThread <> nil then
   begin
+    FScanThread.OnTerminate := nil;
     FScanThread.Terminate;
-    while FScanThread <> nil do
-    begin
-      Application.ProcessMessages;
-    end;
   end;
 
-  FWaveData.Free;
+  if FProcessThread <> nil then
+  begin
+    FProcessThread.OnTerminate := nil;
+    FProcessThread.Terminate;
+  end;
+
+  if FWaveData <> nil then
+    FreeAndNil(FWaveData);
 
   if FPlayer <> nil then
   begin
@@ -282,7 +325,7 @@ end;
 
 procedure TCutView.LoadFile(Filename: string);
 begin
-  if FScanThread <> nil then
+  if (FScanThread <> nil) or (FProcessThread <> nil) then
     Exit;
 
   FFilename := Filename;
@@ -304,10 +347,11 @@ begin
     Exit;
   end;
 
+  FLoading := True;
+
   FProgressBarLoad.Visible := True;
 
   FScanThread := TScanThread.Create(Filename);
-  FScanThread.FreeOnTerminate := True;
   FScanThread.OnTerminate := ThreadTerminate;
   FScanThread.OnEndScan := ThreadEndScan;
   FScanThread.OnScanError := ThreadScanError;
@@ -521,6 +565,32 @@ begin
     FOnStateChanged(Self);
 end;
 
+procedure TCutView.ProcessThreadError(Sender: TObject);
+begin
+  FWorking := False;
+  FProcessThread := nil;
+  MsgBox(GetParentForm(Self).Handle, _('An error occured while processing the file.'), _('Error'), MB_ICONERROR);
+  FError := True;
+  FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
+  FPB.Paint;
+end;
+
+procedure TCutView.ProcessThreadSuccess(Sender: TObject);
+begin
+  FProcessThread := nil;
+  FWorking := False;
+  LoadFile(FFilename);
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
+end;
+
+procedure TCutView.ProcessThreadTerminate(Sender: TObject);
+begin
+
+end;
+
 procedure TCutView.Resize;
 begin
   inherited;
@@ -558,6 +628,7 @@ var
   Output: AnsiString;
   LoopStarted: Cardinal;
   FS: TFileStream;
+  CmdLine: string;
 begin
   Result := False;
 
@@ -609,72 +680,27 @@ begin
 
   TempFile := RemoveFileExt(FFilename) + '_soxconvert' + ExtractFileExt(FFilename);
 
+  if Fadein then
+    CmdLine := '"' + Plugin.SoXExe + '" -S --multi-threaded "' + FFilename + '" ' + '"' + TempFile + '" fade p ' + IntToStr(Round(FWaveData.WaveArray[FPB.FEffectStartLine].Sec))
+  else
+    CmdLine := '"' + Plugin.SoXExe + '" -S --multi-threaded "' + FFilename + '" ' + '"' + TempFile + '" fade p 0 ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec)) + ' ' + IntToStr(Round(FWaveData.WaveArray[FPB.FEffectEndLine].Sec));
+
+  if FWaveData <> nil then
+    FreeAndNil(FWaveData);
+
   FWorking := True;
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
   FPB.Paint;
 
-  // TODO: Das muss in nem thread ausgeführt werden, WaitForSingleObject blockiert!!
-  if Fadein then
-    RunProcess('"' + Plugin.SoXExe + '" -S "' + FFilename + '" ' + '"' + TempFile + '" fade p ' + IntToStr(Round(FWaveData.WaveArray[FPB.FEffectStartLine].Sec)), ExtractFilePath(Plugin.SoXExe), 120000, Output)
-  else
-    RunProcess('"' + Plugin.SoXExe + '" -S "' + FFilename + '" ' + '"' + TempFile + '" fade p 0 ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec)) + ' ' + IntToStr(Round(FWaveData.WaveArray[FPB.FEffectEndLine].Sec)), ExtractFilePath(Plugin.SoXExe), 120000, Output);
+  FProcessThread := TProcessThread.Create(CmdLine, ExtractFilePath(Plugin.SoXExe), FFilename, TempFile);
+  FProcessThread.OnSuccess := ProcessThreadSuccess;
+  FProcessThread.OnError := ProcessThreadError;
+  FProcessThread.OnTerminate := ProcessThreadTerminate;
+  FProcessThread.Resume;
 
-  FWorking := False;
-
-  if FWaveData <> nil then
-    FreeAndNil(FWaveData);
-
-  Failed := True;
-
-  if FileExists(TempFile) then
-  begin
-    LoopStarted := GetTickCount;
-    while Failed do
-    begin
-      try
-        FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
-        try
-          Failed := False;
-          Break;
-        finally
-          FS.Free;
-        end;
-      except
-        Sleep(50);
-        if GetTickCount > LoopStarted + 5000 then
-        begin
-          Break;
-        end;
-      end;
-    end;
-
-    if not Failed then
-      if not DeleteFile(PChar(FFilename)) then
-        Failed := True;
-
-    if not Failed then
-      if not MoveFile(PChar(TempFile), PChar(FFilename)) then
-        Failed := True;
-  end;
-
-  try
-    if Failed then
-    begin
-      MsgBox(GetParentForm(Self).Handle, _('An error occured while saving the file.'), _('Error'), MB_ICONERROR);
-      FError := True;
-      FPB.BuildBuffer;
-      FPB.BuildDrawBuffer;
-      FPB.Paint;
-      Exit;
-    end;
-
-    Result := True;
-    LoadFile(FFilename);
-  finally
-    if Assigned(FOnStateChanged) then
-      FOnStateChanged(Self);
-  end;
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
 function TCutView.ApplyFadein: Boolean;
@@ -791,6 +817,7 @@ begin
   end;
 
   FWasSaved := False;
+  FLoading := False;
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
@@ -801,6 +828,7 @@ begin
   FProgressBarLoad.Visible := False;
   FWasSaved := False;
   FError := True;
+  FLoading := False;
 
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
@@ -817,6 +845,7 @@ begin
   FWasSaved := False;
   FProgressBarLoad.Visible := False;
   FScanThread := nil;
+  FLoading := False;
 end;
 
 { TCutPaintBox }
@@ -904,7 +933,7 @@ begin
     Exit;
   end;
 
-  if (FCutView.FWaveData = nil) or (FCutView.FScanThread <> nil) then
+  if (FCutView.FWaveData = nil) or FCutView.FLoading then
   begin
     Txt := _('Loading file...');
     TS := GetTextSize(Txt, Canvas.Font);
@@ -1434,7 +1463,7 @@ begin
   if csDestroying in ComponentState then
     Exit;
 
-  if (FCutView.FPlayer <> nil) and FCutView.FPlayer.Playing and (not FCutView.FPlayer.Paused) then
+  if (FCutView.FWaveData <> nil) and (FCutView.FPlayer <> nil) and FCutView.FPlayer.Playing and (not FCutView.FPlayer.Paused) then
   begin
     FPlayingIndex := GetPlayerPos;
     FPlayLine := FPlayingIndex;
@@ -1458,6 +1487,97 @@ end;
 procedure TCutPaintBox.WMEraseBkgnd(var Message: TWMEraseBkgnd);
 begin
   Message.Result := 1;
+end;
+
+{ TProcessThread }
+
+constructor TProcessThread.Create(CommandLine, WorkingDir, FilePath, TempFile: string);
+begin
+  inherited Create(True);
+  FreeOnTerminate := True;
+  FCommandLine := CommandLine;
+  FWorkingDir := WorkingDir;
+  FFilePath := FilePath;
+  FTempFile := TempFile;
+end;
+
+destructor TProcessThread.Destroy;
+begin
+
+  inherited;
+end;
+
+procedure TProcessThread.Execute;
+var
+  Res: Integer;
+  Output: AnsiString;
+  LoopStarted: Cardinal;
+  FS: TFileStream;
+  Failed: Boolean;
+begin
+  inherited;
+
+  Res := RunProcess(FCommandLine, FWorkingDir, 120000, Output);
+
+  if Terminated then
+  begin
+    DeleteFile(PChar(TempFile));
+    Exit;
+  end;
+
+  Failed := True;
+
+  if FileExists(TempFile) and (Res = 0) then
+  begin
+    LoopStarted := GetTickCount;
+    while Failed do
+    begin
+      try
+        FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
+        try
+          Failed := False;
+          Break;
+        finally
+          FS.Free;
+        end;
+      except
+        Sleep(50);
+        if GetTickCount > LoopStarted + 5000 then
+        begin
+          Break;
+        end;
+      end;
+    end;
+
+    if not Failed then
+      if not DeleteFile(PChar(FFilePath)) then
+        Failed := True;
+
+    if not Failed then
+      if not MoveFile(PChar(TempFile), PChar(FFilePath)) then
+        Failed := True;
+  end;
+
+  if Failed then
+    SyncError
+  else
+    SyncSuccess;
+end;
+
+procedure TProcessThread.SyncError;
+begin
+  if Terminated then
+    Exit;
+  if Assigned(FOnSuccess) then
+    FOnError(Self);
+end;
+
+procedure TProcessThread.SyncSuccess;
+begin
+  if Terminated then
+    Exit;
+  if Assigned(FOnError) then
+    FOnSuccess(Self);
 end;
 
 end.

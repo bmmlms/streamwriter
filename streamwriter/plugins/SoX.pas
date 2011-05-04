@@ -98,7 +98,7 @@ begin
   FResult := arFail;
 
   TempFile := RemoveFileExt(FData.Filename) + '_soxconvert' + ExtractFileExt(FData.Filename);
-  CmdLine := '"' + FSoxPath + '"' + ' "' + FData.Filename + '" "' + TempFile + '" ';
+  CmdLine := '"' + FSoxPath + '"' + ' --multi-threaded "' + FData.Filename + '" "' + TempFile + '" ';
 
   P := TSoXPlugin(Plugin);
 
