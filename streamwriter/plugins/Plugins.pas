@@ -48,6 +48,8 @@ type
     Filesize: UInt64;
     Length: UInt64;
     WasCut: Boolean;
+    FullTitle: Boolean;
+    StreamTitle: string;
   end;
   PPluginProcessInformation = ^TPluginProcessInformation;
 
@@ -333,6 +335,8 @@ begin
   FData.Filesize := Data.Filesize;
   FData.Length := Data.Length;
   FData.WasCut := Data.WasCut;
+  FData.FullTitle := Data.FullTitle;
+  FData.StreamTitle := Data.StreamTitle;
 
   FPluginsProcessed := TList<TPluginBase>.Create;
   if FirstPlugin <> nil then
@@ -381,6 +385,8 @@ begin
   FActData.TrackNumber := FData.TrackNumber;
   FActData.Filesize := FData.Filesize;
   FActData.WasCut := FData.WasCut;
+  FActData.FullTitle := FData.FullTitle;
+  StrPCopy(FActData.StreamTitle, FData.StreamTitle);
 
   FResult := TActResults(TDLLPlugin(FPlugin).FAct(FActData));
 

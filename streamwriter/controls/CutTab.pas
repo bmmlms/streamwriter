@@ -32,7 +32,6 @@ type
     FSave: TToolButton;
     FSep3: TToolButton;
     FPosZoom: TToolButton;
-    FPosEffectsMarker: TToolButton;
     FPosEdit: TToolButton;
     FPosPlay: TToolButton;
     FSep1: TToolButton;
@@ -40,8 +39,10 @@ type
     FCut: TToolButton;
     FUndo: TToolButton;
     FSep2: TToolButton;
+    FPosEffectsMarker: TToolButton;
     FApplyFadein: TToolButton;
     FApplyFadeout: TToolButton;
+    FApplyEffects: TToolButton;
     FSep4: TToolButton;
     FPlay: TToolButton;
     FStop: TToolButton;
@@ -75,6 +76,7 @@ type
     procedure StopClick(Sender: TObject);
     procedure ApplyFadeinClick(Sender: TObject);
     procedure ApplyFadeoutClick(Sender: TObject);
+    procedure ApplyEffectsClick(Sender: TObject);
 
     procedure CutViewStateChanged(Sender: TObject);
     procedure VolumeTrackbarChange(Sender: TObject);
@@ -119,6 +121,7 @@ begin
   FToolBar.FUndo.Enabled := FCutView.CanUndo;
   FToolBar.FApplyFadein.Enabled := FCutView.CanApplyFadeIn;
   FToolBar.FApplyFadeout.Enabled := FCutView.CanApplyFadeOut;
+  FToolBar.FApplyEffects.Enabled := FCutView.CanApplyEffects;
   FToolBar.FPlay.Enabled := FCutView.CanPlay and Bass.DeviceAvailable;
   FToolBar.FStop.Enabled := FCutView.CanStop and Bass.DeviceAvailable;
 
@@ -143,7 +146,8 @@ end;
 
 procedure TCutTab.VolumeTrackbarChange(Sender: TObject);
 begin
-  FCutView.Player.Volume := FVolume.Volume;
+  if FCutView.Player <> nil then
+    FCutView.Player.Volume := FVolume.Volume;
 
   if Assigned(FOnVolumeChanged) then
     FOnVolumeChanged(Self, FVolume.Volume);
@@ -162,6 +166,7 @@ begin
   FToolBar.FPosEdit.Down := False;
   FToolBar.FPosPlay.Down := False;
   FToolBar.FPosZoom.Down := False;
+  FToolBar.FPosEffectsMarker.Down := False;
 
   if Sender = FToolBar.FPosEdit then
   begin
@@ -193,6 +198,11 @@ end;
 procedure TCutTab.ApplyFadeoutClick(Sender: TObject);
 begin
   FCutView.ApplyFadeout;
+end;
+
+procedure TCutTab.ApplyEffectsClick(Sender: TObject);
+begin
+  FCutView.ApplyEffects;
 end;
 
 procedure TCutTab.AutoCutClick(Sender: TObject);
@@ -243,7 +253,8 @@ procedure TCutTab.FSetVolume(Value: Integer);
 begin
   FVolume.NotifyOnMove := False;
   FVolume.Volume := Value;
-  FCutView.Player.Volume := Value;
+  if FCutView.Player <> nil then
+    FCutView.Player.Volume := Value;
   FVolume.NotifyOnMove := True;
 end;
 
@@ -277,6 +288,7 @@ begin
   FToolBar.FUndo.OnClick := UndoClick;
   FToolBar.FApplyFadein.OnClick := ApplyFadeinClick;
   FToolBar.FApplyFadeout.OnClick := ApplyFadeoutClick;
+  FToolBar.FApplyEffects.OnClick := ApplyEffectsClick;
   FToolBar.FPlay.OnClick := PlayClick;
   FToolBar.FStop.OnClick := StopClick;
 
@@ -325,6 +337,11 @@ begin
   FSep2.Style := tbsSeparator;
   FSep2.Width := 8;
 
+  FApplyEffects := TToolButton.Create(Self);
+  FApplyEffects.Parent := Self;
+  FApplyEffects.Hint := 'Apply effects';
+  FApplyEffects.ImageIndex := 56;
+
   FApplyFadeout := TToolButton.Create(Self);
   FApplyFadeout.Parent := Self;
   FApplyFadeout.Hint := 'Apply Fadeout';
@@ -334,6 +351,11 @@ begin
   FApplyFadein.Parent := Self;
   FApplyFadein.Hint := 'Apply Fadein';
   FApplyFadein.ImageIndex := 54;
+
+  FPosEffectsMarker := TToolButton.Create(Self);
+  FPosEffectsMarker.Parent := Self;
+  FPosEffectsMarker.Hint := 'Select area';
+  FPosEffectsMarker.ImageIndex := 53;
 
   FSep4 := TToolButton.Create(Self);
   FSep4.Parent := Self;
@@ -360,14 +382,9 @@ begin
   FSep1.Style := tbsSeparator;
   FSep1.Width := 8;
 
-  FPosEffectsMarker := TToolButton.Create(Self);
-  FPosEffectsMarker.Parent := Self;
-  FPosEffectsMarker.Hint := 'Select area (left mousebutton selects area)';
-  FPosEffectsMarker.ImageIndex := 53;
-
   FPosZoom := TToolButton.Create(Self);
   FPosZoom.Parent := Self;
-  FPosZoom.Hint := 'Zoom in (left mousebutton selects area, right mousebutton zooms back';
+  FPosZoom.Hint := 'Zoom in (left mousebutton selects area, right mousebutton zooms back)';
   FPosZoom.ImageIndex := 48;
 
   FPosEdit := TToolButton.Create(Self);
@@ -392,5 +409,4 @@ begin
 end;
 
 end.
-
 

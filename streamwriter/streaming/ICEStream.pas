@@ -36,7 +36,8 @@ type
   public
     S, E: Int64;
     Title: string;
-    constructor Create(S, E: Int64; Title: string);
+    FullTitle: Boolean;
+    constructor Create(S, E: Int64; Title: string; FullTitle: Boolean);
   end;
 
   TStreamTracks = class(TList<TStreamTrack>)
@@ -46,7 +47,7 @@ type
     destructor Destroy; override;
     procedure Clear; reintroduce;
 
-    procedure FoundTitle(Offset: Int64; Title: string);
+    procedure FoundTitle(Offset: Int64; Title: string; FullTitle: Boolean);
   end;
 
   TCheckResults = (crSave, crDiscard, crOverwrite);
@@ -62,12 +63,12 @@ type
 
     function GetValidFilename(Name: string): string;
     function GetAppendNumber(Dir, Filename, Extension: string): Integer;
-    function TitleInfoToFilename(Artist, Title: string): string;
+    function TitleInfoToFilename(Artist, Title: string; FullTitle: Boolean): string;
   public
     constructor Create(Streamname, Dir: string; SongsSaved: Cardinal; Settings: TStreamSettings);
 
     procedure GetStreamFilename(Name: string; AudioType: TAudioTypes);
-    procedure GetFilename(Filesize: UInt64; Artist, Title: string; AudioType: TAudioTypes);
+    procedure GetFilename(Filesize: UInt64; Artist, Title: string; AudioType: TAudioTypes; FullTitle: Boolean);
 
     property Result: TCheckResults read FResult;
     property SaveDir: string read FSaveDir;
@@ -97,8 +98,10 @@ type
     FSavedTitle: string;
     FSavedSize: UInt64;
     FSavedLength: UInt64;
+    FSavedStreamTitle: string;
     FFilename: string;
     FSavedWasCut: Boolean;
+    FSavedFullTitle: Boolean;
     FBytesPerSec: Integer;
 
     FSaveAllowedTitle: string;
@@ -125,7 +128,7 @@ type
 
     procedure CalcBytesPerSec;
     procedure DataReceived(CopySize: Integer);
-    procedure SaveData(S, E: UInt64; Title: string);
+    procedure SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
     procedure TrySave;
     procedure ProcessData;
     procedure GetSettings;
@@ -164,9 +167,11 @@ type
     property SavedTitle: string read FSavedTitle;
     property SavedSize: UInt64 read FSavedSize;
     property SavedLength: UInt64 read FSavedLength;
+    property SavedStreamTitle: string read FSavedStreamTitle;
     property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
     property Filename: string read FFilename;
     property SavedWasCut: Boolean read FSavedWasCut;
+    property SavedFullTitle: Boolean read FSavedFullTitle;
 
     property FullTitleFound: Boolean read FFullTitleFound write FFullTitleFound;
     property RecordingTitleFound: Boolean read FRecordingTitleFound write FRecordingTitleFound;
@@ -288,14 +293,14 @@ procedure TICEStream.Disconnected;
 var
   Track: TStreamTrack;
 begin
-  // Falls erlaubt, versuchen, das Empfangene wegzuschpeichern..
+  // Falls erlaubt, versuchen, das Empfangene wegzuspeichern..
   if (FAudioStream <> nil) and (FStreamTracks.Count > 0) and (not FSettings.OnlySaveFull) and (FRecordTitle = '') then
   begin
     Track := FStreamTracks[0];
     Track.E := FAudioStream.Size;
     if Track.S - FSettings.SongBufferSeconds * FBytesPerSec >= 0 then
       Track.S := Track.S - FSettings.SongBufferSeconds * FBytesPerSec;
-    SaveData(Track.S, Track.E, Track.Title);
+    SaveData(Track.S, Track.E, Track.Title, False);
     FStreamTracks.Clear;
   end;
 end;
@@ -409,7 +414,7 @@ begin
   AppGlobals.Unlock;
 end;
 
-procedure TICEStream.SaveData(S, E: UInt64; Title: string);
+procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
   procedure RemoveData;
   var
     i: Integer;
@@ -489,7 +494,7 @@ begin
 
     FileCheck := TFileChecker.Create(FStreamName, FSaveDir, FSongsSaved, FSettings);
     try
-      FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FAudioType);
+      FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FAudioType, FullTitle);
       if (FileCheck.Result in [crSave, crOverwrite]) and (FileCheck.FFilename <> '') then
       begin
         Dir := FileCheck.SaveDir;
@@ -553,6 +558,8 @@ begin
     try
       FSavedFilename := Dir + Filename;
       FSavedSize := RangeEnd - RangeBegin;
+      FSavedFullTitle := FullTitle;
+      FSavedStreamTitle := Title;
       if FBytesPerSec > 0 then
         FSavedLength := Trunc(FSavedSize / FBytesPerSec)
       else
@@ -669,7 +676,7 @@ begin
     if (not FSettings.OnlySaveFull) and (FAudioStream <> nil) and (FMetaCounter >= 1) and (Title <> '') then
     begin
       FRecordingTitleFound := True;
-      FStreamTracks.FoundTitle(0, Title);
+      FStreamTracks.FoundTitle(0, Title, False);
     end;
 
     // Damit Der ICEStream sich FFilename wieder setzt, so dass aussen das Menü-Item fürs Play an ist.
@@ -752,7 +759,7 @@ begin
             WriteDebug(Format('Scanned song start/end: %d/%d', [R.A, R.B]), 1, 1);
 
             if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
-              SaveData(R.A, R.B, Track.Title)
+              SaveData(R.A, R.B, Track.Title, Track.FullTitle)
             else
               WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
 
@@ -767,7 +774,7 @@ begin
               WriteDebug(Format('No silence found, saving using buffer of %d bytes...', [FSettings.SongBufferSeconds * FBytesPerSec]), 1, 1);
 
               if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
-                SaveData(Track.S - FSettings.SongBufferSeconds * FBytesPerSec, Track.E + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title)
+                SaveData(Track.S - FSettings.SongBufferSeconds * FBytesPerSec, Track.E + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title, Track.FullTitle)
               else
                 WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
 
@@ -791,7 +798,7 @@ begin
           WriteDebug(Format('Saving using buffer of %d bytes...', [FSettings.SongBufferSeconds * FBytesPerSec]), 1, 1);
 
           if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
-            SaveData(Track.S - FSettings.SongBufferSeconds * FBytesPerSec, Track.E + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title)
+            SaveData(Track.S - FSettings.SongBufferSeconds * FBytesPerSec, Track.E + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title, Track.FullTitle)
           else
             WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
 
@@ -910,7 +917,7 @@ begin
           if (Title <> FTitle) and (FRecordingTitleFound) then
           begin
             if FAudioStream <> nil then
-              FStreamTracks.FoundTitle(FAudioStream.Size, Title);
+              FStreamTracks.FoundTitle(FAudioStream.Size, Title, True);
           end else if Title = FTitle then
           begin
 
@@ -931,7 +938,11 @@ begin
                     else
                       TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SongBufferSeconds));
                   end;
-                  FStreamTracks.FoundTitle(FAudioStream.Size, Title);
+
+                  if FMetaCounter >= 2 then
+                    FStreamTracks.FoundTitle(FAudioStream.Size, Title, True)
+                  else
+                    FStreamTracks.FoundTitle(FAudioStream.Size, Title, False);
                 end;
               end;
           end;
@@ -1027,11 +1038,12 @@ end;
 
 { TStreamTrack }
 
-constructor TStreamTrack.Create(S, E: Int64; Title: string);
+constructor TStreamTrack.Create(S, E: Int64; Title: string; FullTitle: Boolean);
 begin
   Self.S := S;
   Self.E := E;
   Self.Title := Title;
+  Self.FullTitle := FullTitle;
 end;
 
 { TStreamTracks }
@@ -1051,7 +1063,7 @@ begin
   inherited;
 end;
 
-procedure TStreamTracks.FoundTitle(Offset: Int64; Title: string);
+procedure TStreamTracks.FoundTitle(Offset: Int64; Title: string; FullTitle: Boolean);
 begin
   if Count > 0 then
   begin
@@ -1059,7 +1071,7 @@ begin
     //if Assigned(FOnDebug) then
     //  FOnDebug(Format('Setting SongEnd of "%s" to %d', [Items[Count - 1].Title, Offset]), '');
   end;
-  Add(TStreamTrack.Create(Offset, -1, Title));
+  Add(TStreamTrack.Create(Offset, -1, Title, FullTitle));
   //if Assigned(FOnDebug) then
   //  FOnDebug(Format('Added "%s" with SongStart %d', [Items[Count - 1].Title, Offset]), '');
 end;
@@ -1096,7 +1108,7 @@ begin
     Result := Append;
 end;
 
-procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title: string; AudioType: TAudioTypes);
+procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title: string; AudioType: TAudioTypes; FullTitle: Boolean);
 var
   Filename, Ext: string;
 begin
@@ -1111,7 +1123,7 @@ begin
       Ext := '.aac';
   end;
 
-  Filename := TitleInfoToFilename(Artist, Title);
+  Filename := TitleInfoToFilename(Artist, Title, FullTitle);
 
   Filename := GetValidFilename(Filename);
 
@@ -1178,7 +1190,7 @@ begin
   Result := Name;
 end;
 
-function TFileChecker.TitleInfoToFilename(Artist, Title: string): string;
+function TFileChecker.TitleInfoToFilename(Artist, Title: string; FullTitle: Boolean): string;
 var
   i, p: Integer;
   Dir, StreamName: string;
@@ -1211,9 +1223,10 @@ begin
   Arr[5].C := 'i';
   Arr[5].Replace := FormatDateTime('hh.nn.ss', Now);
 
-  Replaced := PatternReplace(FSettings.FilePattern, Arr);
-
-
+  if FullTitle then
+    Replaced := PatternReplace(FSettings.FilePattern, Arr)
+  else
+    Replaced := PatternReplace(FSettings.IncompleteFilePattern, Arr);
 
   // REMARK: Das folgende ist so genau gleich auch im Settings-Fenster.. wegen DRY..
   // Aneinandergereihte \ entfernen

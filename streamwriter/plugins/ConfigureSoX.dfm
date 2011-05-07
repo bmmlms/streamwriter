@@ -49,6 +49,7 @@ object frmConfigureSoX: TfrmConfigureSoX
     FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
     0000830F0000830F0000800F0000800F000080010000E0010000E00100008001
     0000800F0000800F0000800F0000F87F0000F87F0000F87F0000FFFF0000}
+  KeyPreview = True
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnKeyDown = FormKeyDown
@@ -91,8 +92,6 @@ object frmConfigureSoX: TfrmConfigureSoX
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 2
-    ExplicitTop = 152
-    ExplicitWidth = 289
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -116,7 +115,6 @@ object frmConfigureSoX: TfrmConfigureSoX
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 188
     end
   end
   object txtFadeoutStart: TLabeledEdit

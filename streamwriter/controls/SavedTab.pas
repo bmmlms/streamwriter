@@ -820,8 +820,6 @@ end;
 
 destructor TSavedTree.Destroy;
 begin
-  Players.RemovePlayer(FPlayer);
-
   FPlayer.Free;
   FTrackList.Free;
   FDragSource.Free;

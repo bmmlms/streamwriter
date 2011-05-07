@@ -27,12 +27,12 @@ uses
   SysUtils, Windows, Classes, Controls, StdCtrls, ExtCtrls, Functions,
   Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
-  PlayerManager, Plugins, SoX, DownloadAddons;
+  PlayerManager, Plugins, SoX, DownloadAddons, ConfigureSoX;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
-
   TWavBufArray = array of SmallInt;
+  TCutStates = (csReady, csLoading, csWorking, csError);
 
   TCutView = class;
 
@@ -141,9 +141,7 @@ type
     FProcessThread: TProcessThread;
     FPB: TCutPaintBox;
     FWaveData: TWaveData;
-    FWorking: Boolean;
-    FError: Boolean;
-    FLoading: Boolean;
+    FState: TCutStates;
     FLineMode: TLineMode;
     FProgressBarLoad: TProgressBar;
     FWasSaved: Boolean;
@@ -154,6 +152,9 @@ type
     FLength: UInt64;
 
     FOnStateChanged: TNotifyEvent;
+
+    function GetSoX: TSoXPlugin;
+    procedure StartProcessing(CmdLine: string);
 
     procedure ThreadScanProgress(Sender: TObject);
     procedure ThreadEndScan(Sender: TObject);
@@ -178,6 +179,8 @@ type
 
     procedure LoadFile(Filename: string);
 
+    function CheckSoX: Boolean;
+
     procedure Cut;
     procedure Undo;
     function Save: Boolean;
@@ -188,6 +191,7 @@ type
     function ApplyFade(Fadein: Boolean): Boolean;
     function ApplyFadein: Boolean;
     function ApplyFadeout: Boolean;
+    function ApplyEffects: Boolean;
 
     function CanCut: Boolean;
     function CanUndo: Boolean;
@@ -200,6 +204,7 @@ type
     function CanEffectsMarker: Boolean;
     function CanApplyFadeIn: Boolean;
     function CanApplyFadeOut: Boolean;
+    function CanApplyEffects: Boolean;
 
     property Player: TPlayer read FPlayer;
     property LineMode: TLineMode read FLineMode write FLineMode;
@@ -294,8 +299,6 @@ end;
 
 destructor TCutView.Destroy;
 begin
-  Players.RemovePlayer(FPlayer);
-
   if FScanThread <> nil then
   begin
     FScanThread.OnTerminate := nil;
@@ -323,6 +326,19 @@ begin
   inherited;
 end;
 
+function TCutView.GetSoX: TSoXPlugin;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to AppGlobals.PluginManager.Plugins.Count - 1 do
+    if AppGlobals.PluginManager.Plugins[i] is TSoXPlugin then
+    begin
+      Result := TSoXPlugin(AppGlobals.PluginManager.Plugins[i]);
+      Break;
+    end;
+end;
+
 procedure TCutView.LoadFile(Filename: string);
 begin
   if (FScanThread <> nil) or (FProcessThread <> nil) then
@@ -331,7 +347,9 @@ begin
   FFilename := Filename;
 
   if FPlayer <> nil then
+  begin
     FreeAndNil(FPlayer);
+  end;
   FPlayer := TPlayer.Create;
   FPlayer.OnEndReached := PlayerEndReached;
   FPlayer.OnPlay := PlayerPlay;
@@ -347,7 +365,7 @@ begin
     Exit;
   end;
 
-  FLoading := True;
+  FState := csLoading;
 
   FProgressBarLoad.Visible := True;
 
@@ -492,6 +510,7 @@ begin
         FPlayer.OnPlay := PlayerPlay;
         FPlayer.OnPause := PlayerPause;
         FPlayer.OnStop := PlayerStop;
+        Players.AddPlayer(FPlayer);
       except
         ThreadScanError(Self);
       end;
@@ -567,10 +586,9 @@ end;
 
 procedure TCutView.ProcessThreadError(Sender: TObject);
 begin
-  FWorking := False;
+  FState := csError;
   FProcessThread := nil;
   MsgBox(GetParentForm(Self).Handle, _('An error occured while processing the file.'), _('Error'), MB_ICONERROR);
-  FError := True;
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
   FPB.Paint;
@@ -579,7 +597,7 @@ end;
 procedure TCutView.ProcessThreadSuccess(Sender: TObject);
 begin
   FProcessThread := nil;
-  FWorking := False;
+  FState := csReady;
   LoadFile(FFilename);
 
   if Assigned(FOnStateChanged) then
@@ -599,6 +617,37 @@ begin
   FProgressBarLoad.Height := 24;
   FProgressBarLoad.Left := ClientWidth div 2 - FProgressBarLoad.Width div 2;
   FProgressBarLoad.Top := ClientHeight div 2 - FProgressBarLoad.Height div 2 + 20;
+end;
+
+procedure TCutView.StartProcessing(CmdLine: string);
+var
+  TempFile: string;
+begin
+  if FPlayer <> nil then
+  begin
+    FreeAndNil(FPlayer);
+  end;
+
+  TempFile := RemoveFileExt(FFilename) + '_soxconvert' + ExtractFileExt(FFilename);
+
+  CmdLine := '"' + GetSoX.SoXExe + '" --multi-threaded "' + FFilename + '" ' + '"' + TempFile + '" ' + CmdLine;
+
+  if FWaveData <> nil then
+    FreeAndNil(FWaveData);
+
+  FState := csWorking;
+  FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
+  FPB.Paint;
+
+  FProcessThread := TProcessThread.Create(CmdLine, ExtractFilePath(GetSoX.SoXExe), FFilename, TempFile);
+  FProcessThread.OnSuccess := ProcessThreadSuccess;
+  FProcessThread.OnError := ProcessThreadError;
+  FProcessThread.OnTerminate := ProcessThreadTerminate;
+  FProcessThread.Resume;
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
 procedure TCutView.Stop;
@@ -629,78 +678,27 @@ var
   LoopStarted: Cardinal;
   FS: TFileStream;
   CmdLine: string;
+  FadeTo, FadeStart, FadeEnd: Cardinal;
 begin
   Result := False;
 
-  Plugin := nil;
-  for i := 0 to AppGlobals.PluginManager.Plugins.Count - 1 do
-    if AppGlobals.PluginManager.Plugins[i] is TSoXPlugin then
-    begin
-      Plugin := TSoXPlugin(AppGlobals.PluginManager.Plugins[i]);
-      Break;
-    end;
-
-  if not Plugin.ReadyForUse then
-  begin
-    Res := MsgBox(Handle, _('This function cannot be used because needed files have not been downloaded.'#10#13'Do you want to download these files now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
-    if Res = IDYES then
-    begin
-      DA := TfrmDownloadAddons.Create(Self, Plugin);
-      try
-        DA.ShowModal;
-
-        if not DA.Downloaded then
-        begin
-          if DA.Error then
-            MsgBox(Handle, _('An error occured while downloading the file.'), _('Error'), MB_ICONEXCLAMATION);
-          Exit;
-        end;
-      finally
-        DA.Free;
-      end;
-    end else if Res = IDNO then
-    begin
-      Exit;
-    end;
-
-    // Nochmal initialisieren. Evtl. wurde eben erst die .dll heruntergeladen, dann extrahiert .Initialize() jetzt
-    Plugin.Initialize;
-
-    if not Plugin.ReadyForUse then
-    begin
-      MsgBox(Handle, _('The plugin is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
-      Exit;
-    end;
-  end;
-
-  if FPlayer <> nil then
-  begin
-    FreeAndNil(FPlayer);
-  end;
-
-  TempFile := RemoveFileExt(FFilename) + '_soxconvert' + ExtractFileExt(FFilename);
+  if not CheckSoX then
+    Exit;
 
   if Fadein then
-    CmdLine := '"' + Plugin.SoXExe + '" -S --multi-threaded "' + FFilename + '" ' + '"' + TempFile + '" fade p ' + IntToStr(Round(FWaveData.WaveArray[FPB.FEffectStartLine].Sec))
-  else
-    CmdLine := '"' + Plugin.SoXExe + '" -S --multi-threaded "' + FFilename + '" ' + '"' + TempFile + '" fade p 0 ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec)) + ' ' + IntToStr(Round(FWaveData.WaveArray[FPB.FEffectEndLine].Sec));
+  begin
+    FadeTo := Max(FPB.FEffectStartLine, FPB.FEffectEndLine);
 
-  if FWaveData <> nil then
-    FreeAndNil(FWaveData);
+    CmdLine := 'fade p ' + IntToStr(Round(FWaveData.WaveArray[FadeTo].Sec))
+  end else
+  begin
+    FadeStart := Min(FPB.FEffectStartLine, FPB.FEffectEndLine);
 
-  FWorking := True;
-  FPB.BuildBuffer;
-  FPB.BuildDrawBuffer;
-  FPB.Paint;
+    CmdLine := 'fade p 0 ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - (FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - FWaveData.WaveArray[FadeStart].Sec))) + ' ' +
+      IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - FWaveData.WaveArray[FadeStart].Sec))
+  end;
 
-  FProcessThread := TProcessThread.Create(CmdLine, ExtractFilePath(Plugin.SoXExe), FFilename, TempFile);
-  FProcessThread.OnSuccess := ProcessThreadSuccess;
-  FProcessThread.OnError := ProcessThreadError;
-  FProcessThread.OnTerminate := ProcessThreadTerminate;
-  FProcessThread.Resume;
-
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
+  StartProcessing(CmdLine);
 end;
 
 function TCutView.ApplyFadein: Boolean;
@@ -717,6 +715,54 @@ begin
     Exit;
 
   ApplyFade(False);
+end;
+
+function TCutView.ApplyEffects: Boolean;
+var
+  i, Res: Integer;
+  DA: TfrmDownloadAddons;
+  Found, Failed: Boolean;
+  TempFile: string;
+  Plugin: TSoXPlugin;
+  Output: AnsiString;
+  LoopStarted: Cardinal;
+  FS: TFileStream;
+  CmdLine: string;
+  F: TfrmConfigureSoX;
+begin
+  Result := False;
+
+  if not CheckSoX then
+    Exit;
+
+  F := TfrmConfigureSox.Create(Self, False, False, 5, 5, False, False, 3, 3);
+  try
+    F.ShowModal;
+
+    if F.SaveData then
+    begin
+      CmdLine := '';
+
+      if F.FadeoutStart and F.FadeoutEnd then
+        CmdLine := 'fade p ' + IntToStr(F.FadeoutStartLength) + ' ' + IntToStr(Round(FWaveData.Secs) - F.FadeoutEndLength) + ' ' + IntToStr(F.FadeoutEndLength)
+      else if F.FadeoutStart then
+        CmdLine := 'fade p ' + IntToStr(F.FadeoutStartLength)
+      else if F.FadeoutEnd then
+        CmdLine := 'fade p 0 ' + IntToStr(Round(FWaveData.Secs) - F.FadeoutEndLength) + ' ' + IntToStr(F.FadeoutEndLength);
+
+      if F.SilenceStart and F.SilenceEnd then
+        CmdLine := CmdLine + ' ' + 'pad ' + IntToStr(F.SilenceStartLength) + ' ' + IntToStr(F.SilenceEndLength)
+      else if F.SilenceStart then
+        CmdLine := CmdLine + ' ' + 'pad ' + IntToStr(F.SilenceStartLength)
+      else if F.SilenceEnd then
+        CmdLine := CmdLine + ' ' + 'pad 0 ' + IntToStr(F.SilenceEndLength);
+
+      if CmdLine <> '' then
+        StartProcessing(CmdLine);
+    end;
+  finally
+    F.Free;
+  end;
 end;
 
 procedure TCutView.AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
@@ -775,7 +821,12 @@ function TCutView.CanApplyFadeOut: Boolean;
 begin
   Result := (FWaveData <> nil) and
             (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
-            (((FPB.FEffectEndLine = High(FWaveData.WaveArray)) or (FPB.FEffectEndLine = High(FWaveData.WaveArray))));
+            (((FPB.FEffectStartLine = High(FWaveData.WaveArray)) or (FPB.FEffectEndLine = High(FWaveData.WaveArray))));
+end;
+
+function TCutView.CanApplyEffects: Boolean;
+begin
+  Result := (FWaveData <> nil);
 end;
 
 function TCutView.CanAutoCut: Boolean;
@@ -793,6 +844,60 @@ begin
   Result := FWaveData <> nil;
 end;
 
+function TCutView.CheckSoX: Boolean;
+var
+  i, Res: Integer;
+  DA: TfrmDownloadAddons;
+  Found, Failed: Boolean;
+  TempFile: string;
+  Plugin: TSoXPlugin;
+  Output: AnsiString;
+  LoopStarted: Cardinal;
+  FS: TFileStream;
+  CmdLine: string;
+begin
+  Result := False;
+
+  Plugin := GetSox;
+  if Plugin = nil then
+    Exit;
+
+  if not Plugin.ReadyForUse then
+  begin
+    Res := MsgBox(Handle, _('This function cannot be used because needed files have not been downloaded.'#13#10'Do you want to download these files now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
+    if Res = IDYES then
+    begin
+      DA := TfrmDownloadAddons.Create(Self, Plugin);
+      try
+        DA.ShowModal;
+
+        if not DA.Downloaded then
+        begin
+          if DA.Error then
+            MsgBox(Handle, _('An error occured while downloading the file.'), _('Error'), MB_ICONEXCLAMATION);
+          Exit;
+        end;
+      finally
+        DA.Free;
+      end;
+    end else if Res = IDNO then
+    begin
+      Exit;
+    end;
+
+    // Nochmal initialisieren. Evtl. wurde eben erst die .dll heruntergeladen, dann extrahiert .Initialize() jetzt
+    Plugin.Initialize;
+
+    if not Plugin.ReadyForUse then
+    begin
+      MsgBox(Handle, _('The plugin is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
+      Exit;
+    end else
+      Result := True;
+  end else
+    Result := True;
+end;
+
 procedure TCutView.ThreadEndScan(Sender: TObject);
 begin
   if FWaveData <> nil then
@@ -803,8 +908,10 @@ begin
   FPB.FEndLine := High(FWaveData.WaveArray);
   FPB.FPlayLine := 0;
 
-  // Hier auch, damit BuildBuffer kein "Loading..." malt.
   FScanThread := nil;
+
+  FWasSaved := False;
+  FState := csReady;
 
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
@@ -816,9 +923,6 @@ begin
       TCutTab(Owner).OnSaved(Owner, FWaveData.Filesize, Trunc(FWaveData.Secs));
   end;
 
-  FWasSaved := False;
-  FLoading := False;
-
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
@@ -827,8 +931,7 @@ procedure TCutView.ThreadScanError(Sender: TObject);
 begin
   FProgressBarLoad.Visible := False;
   FWasSaved := False;
-  FError := True;
-  FLoading := False;
+  FState := csError;
 
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
@@ -845,7 +948,6 @@ begin
   FWasSaved := False;
   FProgressBarLoad.Visible := False;
   FScanThread := nil;
-  FLoading := False;
 end;
 
 { TCutPaintBox }
@@ -913,7 +1015,7 @@ begin
   if (ClientHeight < 2) or (ClientWidth < 2) then
     Exit;
 
-  if FCutView.FError then
+  if FCutView.FState = csError then
   begin
     Txt := _('Error loading file');
     TS := GetTextSize(Txt, Canvas.Font);
@@ -923,7 +1025,7 @@ begin
     Exit;
   end;
 
-  if FCutView.FWorking then
+  if FCutView.FState = csWorking then
   begin
     Txt := _('Working...');
     TS := GetTextSize(Txt, Canvas.Font);
@@ -933,7 +1035,7 @@ begin
     Exit;
   end;
 
-  if (FCutView.FWaveData = nil) or FCutView.FLoading then
+  if (FCutView.FWaveData = nil) or (FCutView.FState = csLoading) then
   begin
     Txt := _('Loading file...');
     TS := GetTextSize(Txt, Canvas.Font);
@@ -1102,12 +1204,14 @@ procedure TCutPaintBox.BuildDrawBuffer;
       FDrawBuf.Canvas.TextOut(L + 4, X, SecText);
   end;
 begin
+  FDrawBuf.Free;
+  FDrawBuf := TBitmap.Create;
   FDrawBuf.Width := FWaveBuf.Width;
   FDrawBuf.Height := FWaveBuf.Height;
 
   FDrawBuf.Canvas.Draw(0, 0, FWaveBuf);
 
-  if (FCutView.FWaveData <> nil) and (not FCutView.FWorking) then
+  if (FCutView.FWaveData <> nil) and (FCutView.FState <> csWorking) then
   begin
     DrawLine(FStartLine, FStartColor);
     DrawLine(FEndLine, FEndColor);
@@ -1236,6 +1340,8 @@ begin
   if FWaveBuf = nil then
     Exit;
 
+  FWaveBuf.Free;
+  FWaveBuf := TBitmap.Create;
   FWaveBuf.Width := ClientWidth;
   FWaveBuf.Height := ClientHeight;
 

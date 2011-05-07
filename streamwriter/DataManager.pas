@@ -133,6 +133,7 @@ type
     FGenre: string;
     FIndex: Integer;
     FCategoryIndex: Integer;
+    FWasRecording: Boolean;
 
     // REMARK: IsInList kann raus. Ist für Updates von Versionen < 6 da. Das Feld ist über,
     // weil in neueren Versionen alles IsInList ist.
@@ -169,6 +170,7 @@ type
     property Genre: string read FGenre write FSetGenre;
     property Index: Integer read FIndex write FIndex;
     property CategoryIndex: Integer read FCategoryIndex write FCategoryIndex;
+    property WasRecording: Boolean read FWasRecording write FWasRecording;
 
     property IsInList: Boolean read FIsInList write FSetIsInList;
     property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
@@ -223,7 +225,7 @@ type
   end;
 
 const
-  DATAVERSION = 16;
+  DATAVERSION = 17;
 
 implementation
 
@@ -242,6 +244,7 @@ begin
   FBitRate := From.BitRate;
   FAudioType := From.AudioType;
   FGenre := From.Genre;
+  FWasRecording := From.WasRecording;
   FURLs.Assign(From.FURLs);
   FSettings.Assign(From.FSettings);
 end;
@@ -367,6 +370,11 @@ begin
   end;
   Stream.Read(Result.FSongsSaved);
   Stream.Read(Result.FBytesReceived);
+
+  if Version >= 17 then
+  begin
+    Stream.Read(Result.FWasRecording);
+  end;
 end;
 
 procedure TStreamEntry.Save(Stream: TExtendedStream);
@@ -393,6 +401,8 @@ begin
 
   Stream.Write(FSongsSaved);
   Stream.Write(FBytesReceived);
+
+  Stream.Write(FWasRecording);
 end;
 
 procedure TStreamEntry.FSetGenre(Value: string);

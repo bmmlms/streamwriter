@@ -155,6 +155,9 @@ type
     mnuStopAfterSong1: TMenuItem;
     cmdStopAfterSong: TToolButton;
     cmdSetupTimers: TToolButton;
+    mnuCopyTitle1: TMenuItem;
+    actCopyTitle: TAction;
+    cmdCopyTitle: TToolButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -1373,7 +1376,7 @@ procedure TfrmStreamWriterMain.UpdateButtons;
 var
   i: Integer;
   B, OnlyAutomatedSelected, OnlyAutomatedCatsSelected: Boolean;
-  URLFound, FilenameFound, OnePlaying: Boolean;
+  URLFound, FilenameFound, OnePlaying, AnyClientHasTitle: Boolean;
   Clients, AllClients: TClientArray;
   Client: TICEClient;
   CatNodes: TNodeArray;
@@ -1402,7 +1405,18 @@ begin
 
   for Client in AllClients do
     if Client.Playing then
+    begin
       OnePlaying := True;
+      Break;
+    end;
+
+  AnyClientHasTitle := False;
+  for Client in AllClients do
+    if Client.Title <> '' then
+    begin
+      AnyClientHasTitle := True;
+      Break;
+    end;
 
   for i := 0 to Length(CatNodes) - 1 do
     if not PClientNodeData(tabClients.ClientView.GetNodeData(CatNodes[i])).Category.IsAuto then
@@ -1463,6 +1477,10 @@ begin
 
   if actStopAfterSong.Checked <> (Length(Clients) = 1) and (Clients[0].StopAfterSong) and (not OnlyAutomatedSelected) then
     actStopAfterSong.Checked := (Length(Clients) = 1) and (Clients[0].StopAfterSong) and (not OnlyAutomatedSelected);
+
+  if actCopyTitle.Enabled <> (Length(Clients) > 0) and AnyClientHasTitle then
+    actCopyTitle.Enabled := (Length(Clients) > 0) and AnyClientHasTitle;
+
 
   {
   if Length(Clients) = 1 then

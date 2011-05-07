@@ -105,59 +105,62 @@ begin
   Params := '';
 
   if P.FFadeoutStart and P.FFadeoutEnd then
-    Params := 'fade p ' + IntToStr(P.FFadeoutStartLength) + ' ' + IntToStr(FData.Length) + ' ' + IntToStr(P.FFadeoutEndLength)
+    Params := 'fade p ' + IntToStr(P.FFadeoutStartLength) + ' ' + IntToStr(FData.Length - P.FFadeoutEndLength) + ' ' + IntToStr(P.FFadeoutEndLength)
   else if P.FFadeoutStart then
     Params := 'fade p ' + IntToStr(P.FFadeoutStartLength)
   else if P.FFadeoutEnd then
-    Params := 'fade p 0 ' + IntToStr(FData.Length) + ' ' + IntToStr(P.FFadeoutEndLength);
+    Params := 'fade p 0 ' + IntToStr(FData.Length - P.FFadeoutEndLength) + ' ' + IntToStr(P.FFadeoutEndLength);
 
   if P.FSilenceStart and P.FSilenceEnd then
     Params := Params + ' ' + 'pad ' + IntToStr(P.FSilenceStartLength) + ' ' + IntToStr(P.FSilenceEndLength)
   else if P.FSilenceStart then
     Params := Params + ' ' + 'pad ' + IntToStr(P.FSilenceStartLength)
-  else
+  else if P.FSilenceEnd then
     Params := Params + ' ' + 'pad 0 ' + IntToStr(P.FSilenceEndLength);
 
-  if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120000, Output) = 2 then
+  if Params <> '' then
   begin
-    FResult := arTimeout;
-  end else
-  begin
-    Failed := True;
-    if FileExists(TempFile) then
+    if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120000, Output) = 2 then
     begin
-      LoopStarted := GetTickCount;
-      while Failed do
+      FResult := arTimeout;
+    end else
+    begin
+      Failed := True;
+      if FileExists(TempFile) then
       begin
-        try
-          FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
+        LoopStarted := GetTickCount;
+        while Failed do
+        begin
           try
-            Failed := False;
-            Break;
-          finally
-            FS.Free;
-          end;
-        except
-          Sleep(50);
-          if GetTickCount > LoopStarted + 5000 then
-          begin
-            Break;
+            FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
+            try
+              Failed := False;
+              Break;
+            finally
+              FS.Free;
+            end;
+          except
+            Sleep(50);
+            if GetTickCount > LoopStarted + 5000 then
+            begin
+              Break;
+            end;
           end;
         end;
-      end;
 
-      if not Failed then
-        if not DeleteFile(FData.Filename) then
-          Failed := True;
+        if not Failed then
+          if not DeleteFile(FData.Filename) then
+            Failed := True;
 
-      if not Failed then
-        if not MoveFile(PChar(TempFile), PChar(FData.Filename)) then
-          Failed := True;
+        if not Failed then
+          if not MoveFile(PChar(TempFile), PChar(FData.Filename)) then
+            Failed := True;
 
-      if not Failed then
-      begin
-        FData.Filesize := GetFileSize(FData.Filename);
-        FResult := arWin;
+        if not Failed then
+        begin
+          FData.Filesize := GetFileSize(FData.Filename);
+          FResult := arWin;
+        end;
       end;
     end;
   end;

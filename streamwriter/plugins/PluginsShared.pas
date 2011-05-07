@@ -27,6 +27,8 @@ type
     TrackNumber: Cardinal;
     Filesize: UInt64;
     WasCut: Boolean;
+    FullTitle: Boolean;
+    StreamTitle: PChar;
   end;
 
 implementation

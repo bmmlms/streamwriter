@@ -129,30 +129,30 @@ object frmSettings: TfrmSettings
     Left = 4
     Top = 4
     Width = 293
-    Height = 293
+    Height = 313
     TabOrder = 1
     Visible = False
     DesignSize = (
       293
-      293)
+      313)
     object Label7: TLabel
       Left = 56
-      Top = 172
+      Top = 192
       Width = 15
       Height = 13
       Caption = 'GB'
     end
     object Label3: TLabel
       Left = 4
-      Top = 200
+      Top = 220
       Width = 190
       Height = 13
       Caption = 'Default action on doubleclick on stream:'
     end
     object btnBrowse: TSpeedButton
-      Left = 268
-      Top = 124
-      Width = 21
+      Left = 264
+      Top = 144
+      Width = 25
       Height = 21
       Hint = 'Browse...'
       Anchors = [akTop, akRight]
@@ -164,7 +164,7 @@ object frmSettings: TfrmSettings
     end
     object Label18: TLabel
       Left = 4
-      Top = 248
+      Top = 268
       Width = 192
       Height = 13
       Caption = 'Default action on doubleclick in browser:'
@@ -181,7 +181,7 @@ object frmSettings: TfrmSettings
     end
     object txtMinDiskSpace: TLabeledEdit
       Left = 4
-      Top = 168
+      Top = 188
       Width = 49
       Height = 21
       EditLabel.Width = 205
@@ -193,7 +193,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultAction: TComboBox
       Left = 4
-      Top = 216
+      Top = 236
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -222,8 +222,8 @@ object frmSettings: TfrmSettings
     end
     object txtDir: TLabeledEdit
       Left = 4
-      Top = 124
-      Width = 261
+      Top = 144
+      Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
@@ -236,7 +236,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultActionBrowser: TComboBox
       Left = 4
-      Top = 264
+      Top = 284
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -251,8 +251,18 @@ object frmSettings: TfrmSettings
       Top = 72
       Width = 281
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Snap mainwindow to screen edges'
       TabOrder = 7
+    end
+    object chkRememberRecordings: TCheckBox
+      Left = 4
+      Top = 96
+      Width = 281
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Remember streams that were recording on exit'
+      TabOrder = 8
     end
   end
   object pnlAdvanced: TPanel
@@ -313,7 +323,7 @@ object frmSettings: TfrmSettings
   end
   object pnlPlugins: TPanel
     Left = 4
-    Top = 304
+    Top = 388
     Width = 294
     Height = 257
     TabOrder = 3
@@ -786,17 +796,17 @@ object frmSettings: TfrmSettings
     Left = 904
     Top = 268
     Width = 294
-    Height = 257
+    Height = 289
     TabOrder = 7
     Visible = False
     DesignSize = (
       294
-      257)
+      289)
     object lblFilePattern: TLabel
       Left = 4
-      Top = 44
+      Top = 180
       Width = 285
-      Height = 41
+      Height = 53
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
       Caption = '-'
@@ -838,9 +848,45 @@ object frmSettings: TfrmSettings
         D31C60289BED2D3FA2C740006035C0B1DD8A191870A5C08CD341C80000DC1D99
         CCC6DEEDD30000000049454E44AE426082}
     end
+    object btnResetIncompleteFilePattern: TPngSpeedButton
+      Left = 264
+      Top = 116
+      Width = 25
+      Height = 21
+      Hint = 'Reset pattern to default'
+      Anchors = [akTop, akRight]
+      Flat = True
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = btnResetFilePatternClick
+      PngImage.Data = {
+        89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+        610000001974455874536F6674776172650041646F626520496D616765526561
+        647971C9653C000002734944415478DA63FCFFFF3F032110B1C4BFE2D78FDFDD
+        EB52B6FD45976324C68080591E977EFDF8756A5BDEBE149C06E41F4C91FDF3FB
+        4FF0EF9F7FDC7FFDFC6DFCFBE72FD19F3F7E33003532480B4933FCFAF59BE1C6
+        9D9B138F369E2EC030206F7FB2E5EFDF7FCAA5B9A4FDF9D90518B8D8B8199818
+        19197EFFFBCDF0FBCF1F30FDE3F74F86B317CF31DCB871B3F5F2A41B35700372
+        F624C8FEFEF567B2BAB0A6BF18B718C3975F5F809A99197EFFFD0D3500E80A20
+        FD0BC83F7BE61CC3CD1BB7BB6FCDBA5B063720754B748124B754BFB2B03250D3
+        1F868F3F3E31DC787083E1F6FDDB40E7FF66F809F4828C943403D0850CB76EDC
+        9E727BCEFD5C142FC4AD0ED9AE2DA1E3C1C3C9CBF0F5C737865DC7773D02FA7B
+        CDC19A13C530451AE92A9780E173F6CEBC0789188118BAD0F70550830010FFFB
+        F9FDD777203DED70FDA95A64454A09F2D57FFFFCED7008B08C03B9E817347041
+        6C46DF69AE8910C15F702703152E026AA8E8B79DDD8A6C50D822BF66A0BA2C20
+        E6045AC604A43F604D07C0289D0F74B2F15497057A30B190F93EBD400D218E06
+        8E728CCC4C0CCF5F3D67D87B78FF0E0C0380513A59825332076800C3DD977719
+        604E961294625010576060616381C408304AAF5DBB5E886240EEDEC42E710EC9
+        5215615586BF7FFF02A3F10F243AA151FA091843CC4C2C0CF71EDC67387EFCE4
+        4660F4E7A21890B635A6459C53A25A594499E1EFBF7FE0F8076906D9F8EDFB57
+        86D7EF5F333C7DFA8CE1C6B59B1B81D1DA098CD2E3185E00669C09E2BC12F9A0
+        A47BE7E11D6868030DFAF9EB3530899F0526F59D40EFAD0546E9639C99C96B92
+        D31C60289BED2D3FA2C740006035C0B1DD8A191870A5C08CD341C80000DC1D99
+        CCC6DEEDD30000000049454E44AE426082}
+    end
     object txtPreview: TLabeledEdit
       Left = 4
-      Top = 156
+      Top = 60
       Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -865,7 +911,7 @@ object frmSettings: TfrmSettings
     end
     object txtFilePatternDecimals: TLabeledEdit
       Left = 4
-      Top = 112
+      Top = 260
       Width = 49
       Height = 21
       EditLabel.Width = 212
@@ -876,17 +922,42 @@ object frmSettings: TfrmSettings
       TabOrder = 2
       OnChange = txtFilePatternDecimalsChange
     end
+    object txtIncompleteFilePattern: TLabeledEdit
+      Left = 4
+      Top = 116
+      Width = 257
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      EditLabel.Width = 205
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Pattern for names of incomplete saved files:'
+      TabOrder = 3
+      OnChange = txtIncompleteFilePatternChange
+    end
+    object txtIncompletePreview: TLabeledEdit
+      Left = 4
+      Top = 156
+      Width = 285
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Color = 15790320
+      EditLabel.Width = 41
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Preview:'
+      ReadOnly = True
+      TabOrder = 4
+    end
   end
   object pnlCommunityBlacklist: TPanel
     Left = 4
-    Top = 568
+    Top = 652
     Width = 293
-    Height = 221
+    Height = 137
     TabOrder = 8
     Visible = False
     DesignSize = (
       293
-      221)
+      137)
     object Label19: TLabel
       Left = 4
       Top = 4
@@ -898,14 +969,15 @@ object frmSettings: TfrmSettings
       Left = 4
       Top = 20
       Width = 285
-      Height = 165
+      Height = 81
       Anchors = [akLeft, akTop, akRight, akBottom]
       BevelOuter = bvNone
       TabOrder = 0
+      ExplicitHeight = 165
     end
     object btnBlacklistRemove: TButton
       Left = 196
-      Top = 192
+      Top = 108
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
@@ -913,6 +985,7 @@ object frmSettings: TfrmSettings
       Enabled = False
       TabOrder = 1
       OnClick = btnBlacklistRemoveClick
+      ExplicitTop = 192
     end
   end
   object pnlStreamsAdvanced: TPanel
@@ -987,7 +1060,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800B00110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800B80110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

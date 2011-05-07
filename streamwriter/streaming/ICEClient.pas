@@ -57,7 +57,7 @@ type
 
   TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
-  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut: Boolean) of object;
+  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle: Boolean) of object;
   TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer) of object;
 
   TICEClient = class
@@ -524,6 +524,8 @@ begin
     Data.Filesize := FICEThread.RecvStream.SavedSize;
     Data.Length := FICEThread.RecvStream.SavedLength;
     Data.WasCut := FICEThread.RecvStream.SavedWasCut;
+    Data.FullTitle := FICEThread.RecvStream.SavedFullTitle;
+    Data.StreamTitle := FICEThread.RecvStream.SavedStreamTitle;
 
     if not FKilled then
     begin
@@ -543,8 +545,8 @@ begin
       // Wenn kein Plugin die Verarbeitung übernimmt, gilt die Datei
       // jetzt schon als gespeichert. Ansonsten macht das PluginThreadTerminate.
       if Assigned(FOnSongSaved) then
-        FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedTitle,
-          FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut);
+        FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
+          FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut, FICEThread.RecvStream.SavedFullTitle);
       if Assigned(FOnRefresh) then
         FOnRefresh(Self);
 
@@ -617,7 +619,7 @@ begin
           WriteDebug('All plugins done', dtMessage, dlDebug);
 
           if Assigned(FOnSongSaved) then
-            FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.Title, Entry.Data.Filesize, Entry.Data.Length, Entry.Data.WasCut);
+            FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Filesize, Entry.Data.Length, Entry.Data.WasCut, Entry.Data.FullTitle);
           if Assigned(FOnRefresh) then
             FOnRefresh(Self);
 

@@ -146,6 +146,10 @@ type
     btnResetTitlePattern: TPngSpeedButton;
     btnResetFilePattern: TPngSpeedButton;
     btnConfigure: TButton;
+    txtIncompleteFilePattern: TLabeledEdit;
+    btnResetIncompleteFilePattern: TPngSpeedButton;
+    txtIncompletePreview: TLabeledEdit;
+    chkRememberRecordings: TCheckBox;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -193,6 +197,7 @@ type
     procedure btnResetFilePatternClick(Sender: TObject);
     procedure lstPluginsItemChecked(Sender: TObject; Item: TListItem);
     procedure btnConfigureClick(Sender: TObject);
+    procedure txtIncompleteFilePatternChange(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -206,7 +211,7 @@ type
     FLists: TDataLists;
     lstBlacklist: TBlacklistTree;
     btnReset: TBitBtn;
-    function ValidatePattern: string;
+    function ValidatePattern(Text: string): string;
     function GetNewID: Integer;
     procedure BuildHotkeys;
     procedure RemoveGray(C: TControl);
@@ -267,6 +272,19 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
     end;
     if F then
       AddField(txtFilePattern);
+
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
+      if S.IncompleteFilePattern <> FStreamSettings[i].IncompleteFilePattern then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(txtIncompleteFilePattern);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -724,6 +742,7 @@ begin
 
   AppGlobals.Lock;
   txtFilePattern.Text := Settings.FilePattern;
+  txtIncompleteFilePattern.Text := Settings.IncompleteFilePattern;
   txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
   txtDir.Text := AppGlobals.Dir;
   chkDeleteStreams.Checked := Settings.DeleteStreams;
@@ -739,6 +758,7 @@ begin
 
   chkTray.Checked := AppGlobals.Tray;
   chkSnapMain.Checked := AppGlobals.SnapMain;
+  chkRememberRecordings.Checked := AppGlobals.RememberRecordings;
   optClose.Checked := not AppGlobals.TrayOnMinimize;
   optMinimize.Checked := AppGlobals.TrayOnMinimize;
 
@@ -812,6 +832,9 @@ begin
       if FIgnoreFieldList.IndexOf(txtFilePattern) = -1 then
         FStreamSettings[i].FilePattern := txtFilePattern.Text;
 
+      if FIgnoreFieldList.IndexOf(txtIncompleteFilePattern) = -1 then
+        FStreamSettings[i].IncompleteFilePattern := txtIncompleteFilePattern.Text;
+
       if FIgnoreFieldList.IndexOf(txtFilePatternDecimals) = -1 then
         FStreamSettings[i].FilePatternDecimals := StrToIntDef(txtFilePatternDecimals.Text, 3);
 
@@ -876,6 +899,7 @@ begin
   begin
     AppGlobals.Lock;
     AppGlobals.StreamSettings.FilePattern := txtFilePattern.Text;
+    AppGlobals.StreamSettings.IncompleteFilePattern := txtIncompleteFilePattern.Text;
     AppGlobals.StreamSettings.FilePatternDecimals := StrToIntDef(txtFilePatternDecimals.Text, 3);
     AppGlobals.StreamSettings.DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
     AppGlobals.StreamSettings.AddSavedToIgnore := chkAddSavedToIgnore.Checked;
@@ -907,6 +931,7 @@ begin
     AppGlobals.Dir := txtDir.Text;
     AppGlobals.Tray := chkTray.Checked;
     AppGlobals.SnapMain := chkSnapMain.Checked;
+    AppGlobals.RememberRecordings := chkRememberRecordings.Checked;
     AppGlobals.TrayOnMinimize := optMinimize.Checked;
 
     AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
@@ -1051,7 +1076,7 @@ begin
 
   if btnReset <> nil then
   begin
-    btnReset.Width := 130;
+    btnReset.Width := 200;
     btnReset.Height := btnOK.Height;
     btnReset.Left := 4;
     btnReset.Top := btnOK.Top;
@@ -1143,7 +1168,7 @@ begin
   begin
     if Item.Checked and (not TInternalPlugin(Item.Data).FilesInstalled) then
     begin
-      Res := MsgBox(Handle, _('The plugin cannot be activated because needed files have not been downloaded.'#10#13'Do you want to download these files now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
+      Res := MsgBox(Handle, _('The plugin cannot be activated because needed files have not been downloaded.'#13#10'Do you want to download these files now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
       if Res = IDYES then
       begin
         DA := TfrmDownloadAddons.Create(Self, TInternalPlugin(Item.Data));
@@ -1258,7 +1283,8 @@ begin
     lstPlugins.Items[i].Caption := TPluginBase(lstPlugins.Items[i].Data).Name;
   end;
 
-  txtPreview.Text := ValidatePattern;
+  txtPreview.Text := ValidatePattern(txtFilePattern.Text);
+  txtIncompletePreview.Text := ValidatePattern(txtIncompleteFilePattern.Text);
 
   BuildHotkeys;
 
@@ -1270,7 +1296,7 @@ begin
   FormResize(Self);
 end;
 
-function TfrmSettings.ValidatePattern: string;
+function TfrmSettings.ValidatePattern(Text: string): string;
 var
   Arr: TPatternReplaceArray;
   i: Integer;
@@ -1291,7 +1317,7 @@ begin
   Arr[5].C := 'i';
   Arr[5].Replace := FormatDateTime('hh.nn.ss', Now);
 
-  Result := PatternReplace(txtFilePattern.Text, Arr);
+  Result := PatternReplace(Text, Arr);
 
   // Aneinandergereihte \ entfernen
   i := 1;
@@ -1402,7 +1428,7 @@ end;
 procedure TfrmSettings.txtFilePatternChange(Sender: TObject);
 begin
   inherited;
-  txtPreview.Text := ValidatePattern;
+  txtPreview.Text := ValidatePattern(txtFilePattern.Text);
 
   if Trim(RemoveFileExt(txtPreview.Text)) = '' then
     txtPreview.Text := '';
@@ -1415,7 +1441,8 @@ procedure TfrmSettings.txtFilePatternDecimalsChange(Sender: TObject);
 begin
   inherited;
 
-  txtPreview.Text := ValidatePattern;
+  txtPreview.Text := ValidatePattern(txtFilePattern.Text);
+  txtIncompletePreview.Text := ValidatePattern(txtIncompleteFilePattern.Text);
 
   if FInitialized then
     RemoveGray(txtFilePatternDecimals);
@@ -1425,6 +1452,18 @@ procedure TfrmSettings.txtHotkeyChange(Sender: TObject);
 begin
   inherited;
   lstHotkeys.Selected.SubItems[0] := ShortCutToText(txtHotkey.HotKey);
+end;
+
+procedure TfrmSettings.txtIncompleteFilePatternChange(Sender: TObject);
+begin
+  inherited;
+  txtIncompletePreview.Text := ValidatePattern(txtIncompleteFilePattern.Text);
+
+  if Trim(RemoveFileExt(txtIncompletePreview.Text)) = '' then
+    txtIncompletePreview.Text := '';
+
+  if FInitialized then
+    RemoveGray(txtIncompleteFilePattern);
 end;
 
 procedure TfrmSettings.txtMaxRetriesChange(Sender: TObject);
@@ -1626,8 +1665,15 @@ procedure TfrmSettings.btnResetFilePatternClick(Sender: TObject);
 begin
   inherited;
 
-  txtFilePattern.Text := '%s\%a - %t';
-  RemoveGray(txtTitlePattern);
+  if Sender = txtTitlePattern then
+  begin
+    txtFilePattern.Text := '%s\%a - %t';
+    RemoveGray(txtTitlePattern);
+  end else
+  begin
+    txtIncompleteFilePattern.Text := '%s\%a - %t';
+    RemoveGray(txtIncompleteFilePattern);
+  end;
 end;
 
 procedure TfrmSettings.btnResetTitlePatternClick(Sender: TObject);
@@ -1700,11 +1746,19 @@ begin
     Exit;
   end;
 
-  if Trim(RemoveFileExt(ValidatePattern)) = '' then
+  if Trim(RemoveFileExt(ValidatePattern(txtFilePattern.Text))) = '' then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames, i.e. a preview text must be visible.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePattern.Parent)));
     txtFilePattern.SetFocus;
+    Exit;
+  end;
+
+  if Trim(RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Text))) = '' then
+  begin
+    MsgBox(Handle, _('Please enter a valid pattern for names of incomplete files, i.e. a preview text must be visible.'), _('Info'), MB_ICONINFORMATION);
+    SetPage(FPageList.Find(TPanel(txtIncompleteFilePattern.Parent)));
+    txtIncompleteFilePattern.SetFocus;
     Exit;
   end;
 

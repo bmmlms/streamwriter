@@ -126,13 +126,14 @@ type
     procedure ActionSavePlaylistFileExecute(Sender: TObject);
     procedure ActionTuneInStreamExecute(Sender: TObject);
     procedure ActionTuneInFileExecute(Sender: TObject);
+    procedure ActionCopyTitleExecute(Sender: TObject);
 
     procedure ClientManagerDebug(Sender: TObject);
     procedure ClientManagerRefresh(Sender: TObject);
     procedure ClientManagerAddRecent(Sender: TObject);
     procedure ClientManagerClientAdded(Sender: TObject);
     procedure ClientManagerClientRemoved(Sender: TObject);
-    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut: Boolean);
+    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle: Boolean);
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
     procedure ClientManagerTitleAllowed(Sender: TObject; Title: string;
@@ -281,6 +282,29 @@ begin
 end;
 
 { TClientTab }
+
+procedure TClientTab.ActionCopyTitleExecute(Sender: TObject);
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+  Node, ChildNode: PVirtualNode;
+  Nodes, ChildNodes: TNodeArray;
+  NodeData, ChildNodeData: PClientNodeData;
+  Title: string;
+begin
+  Title := '';
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
+  for Client in Clients do
+  begin
+    if Client.Title <> '' then
+      Title := Title + Client.Title + #13#10;
+  end;
+  Title := Trim(Title);
+  if Title <> '' then
+  begin
+    Clipboard.SetTextBuf(PChar(Title));
+  end;
+end;
 
 procedure TClientTab.ActionNewCategoryExecute(Sender: TObject);
 var
@@ -675,6 +699,7 @@ begin
   GetAction('actResetData').OnExecute := ActionResetDataExecute;
   GetAction('actSavePlaylistStream').OnExecute := ActionSavePlaylistStreamExecute;
   GetAction('actSavePlaylistFile').OnExecute := ActionSavePlaylistFileExecute;
+  GetAction('actCopyTitle').OnExecute := ActionCopyTitleExecute;
 
   FSplitter := TSplitter.Create(Self);
   FSplitter.Parent := Self;
@@ -900,7 +925,7 @@ begin
 end;
 
 procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
-  Filename, Title: string; Filesize, Length: UInt64; WasCut: Boolean);
+  Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle: Boolean);
 var
   Client: TICEClient;
   Track: TTrackInfo;
@@ -941,7 +966,7 @@ begin
       FOnTrackAdded(Client.Entry, Track);
 
     Client := Sender as TICEClient;
-    if Client.Entry.Settings.AddSavedToIgnore then
+    if Client.Entry.Settings.AddSavedToIgnore and FullTitle then
     begin
       Pattern := BuildPattern(Title, Hash, NumChars);
       if NumChars > 3 then
@@ -1347,6 +1372,7 @@ begin
         E.IsInList := True;
         E.Index := Nodes[i].Index;
         E.CategoryIndex := 0;
+        E.WasRecording := NodeData.Client.Recording and AppGlobals.RememberRecordings;
         if Nodes[i].Parent <> FClientView.RootNode then
         begin
           E.CategoryIndex := CatIdx;
@@ -1399,6 +1425,8 @@ begin
         if ParentNode <> nil then
           FClientView.MoveTo(Node, ParentNode, amAddChildLast, False);
       end;
+      if Streams.StreamList[i].WasRecording and AppGlobals.RememberRecordings then
+        Client.StartRecording;
     end;
   end;
 

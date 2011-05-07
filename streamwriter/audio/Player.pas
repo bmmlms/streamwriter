@@ -86,6 +86,9 @@ type
 
 implementation
 
+uses
+  PlayerManager;
+
 procedure SlideEndSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
 var
   P: TPlayer;
@@ -151,6 +154,7 @@ destructor TPlayer.Destroy;
 begin
   // Crashed bei Programmende, deshalb try..except. Ist nötig wegen dem SavedTab,
   // wenn man hier nicht freigibt, kann er nicht speichern.
+  Players.RemovePlayer(Self);
   try
     BASSStreamFree(FPlayer);
   except end;

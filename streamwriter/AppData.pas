@@ -37,6 +37,7 @@ type
   private
     FTitlePattern: string;
     FFilePattern: string;
+    FIncompleteFilePattern: string;
     FFilePatternDecimals: Cardinal;
     FDeleteStreams: Boolean;
     FAddSavedToIgnore: Boolean;
@@ -65,6 +66,7 @@ type
 
     property TitlePattern: string read FTitlePattern write FTitlePattern;
     property FilePattern: string read FFilePattern write FFilePattern;
+    property IncompleteFilePattern: string read FIncompleteFilePattern write FIncompleteFilePattern;
     property FilePatternDecimals: Cardinal read FFilePatternDecimals write FFilePatternDecimals;
     property DeleteStreams: Boolean read FDeleteStreams write FDeleteStreams;
     property AddSavedToIgnore: Boolean read FAddSavedToIgnore write FAddSavedToIgnore;
@@ -96,6 +98,7 @@ type
     FTray: Boolean;
     FTrayOnMinimize: Boolean;
     FSnapMain: Boolean;
+    FRememberRecordings: Boolean;
     FShowSidebar: Boolean;
     FSidebarWidth: Integer;
     FAutoTuneIn: Boolean;
@@ -144,6 +147,7 @@ type
     property Tray: Boolean read FTray write FTray;
     property TrayOnMinimize: Boolean read FTrayOnMinimize write FTrayOnMinimize;
     property SnapMain: Boolean read FSnapMain write FSnapMain;
+    property RememberRecordings: Boolean read FRememberRecordings write FRememberRecordings;
     property ShowSidebar: Boolean read FShowSidebar write FShowSidebar;
     property SidebarWidth: Integer read FSidebarWidth write FSidebarWidth;
     property AutoTuneIn: Boolean read FAutoTuneIn write FAutoTuneIn;
@@ -261,7 +265,7 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 25);
+    SetLength(FDonors, 26);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
@@ -287,6 +291,7 @@ begin
     FDonors[22] := '''Taube''';
     FDonors[23] := '''GoFB''';
     FDonors[24] := '''Radiohoerer''';
+    FDonors[25] := 'NJOY Radio (Austria)';
 
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
@@ -389,6 +394,7 @@ begin
   FStreamSettings.FTitlePattern := '(?P<a>.*) - (?P<t>.*)';
 
   FStorage.Read('FilePattern', FStreamSettings.FFilePattern, '%s\%a - %t');
+  FStorage.Read('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern, '%s\%a - %t');
   FStorage.Read('FilePatternDecimals', FStreamSettings.FFilePatternDecimals, 3);
   FStorage.Read('Dir', FDir, '');
   if FDir <> '' then
@@ -419,6 +425,7 @@ begin
   FStorage.Read('TrayClose', FTray, False);
   FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);
   FStorage.Read('SnapMain', FSnapMain, False);
+  FStorage.Read('RememberRecordings', FRememberRecordings, False);
   FStorage.Read('SidebarWidth', FSidebarWidth, 250);
   FStorage.Read('AutoTuneIn', FAutoTuneIn, True);
   FStorage.Read('SubmitStreamInfo', FSubmitStreamInfo, True);
@@ -517,6 +524,7 @@ begin
 
   FStorage.Write('TitlePattern', FStreamSettings.FTitlePattern);
   FStorage.Write('FilePattern', FStreamSettings.FFilePattern);
+  FStorage.Write('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern);
   FStorage.Write('FilePatternDecimals', FStreamSettings.FFilePatternDecimals);
   FStorage.Write('Dir', FDir);
   FStorage.Write('DeleteStreams', FStreamSettings.FDeleteStreams);
@@ -540,6 +548,7 @@ begin
   FStorage.Write('TrayClose', FTray);
   FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
   FStorage.Write('SnapMain', FSnapMain);
+  FStorage.Write('RememberRecordings', FRememberRecordings);
   FStorage.Write('SidebarWidth', FSidebarWidth);
   FStorage.Write('AutoTuneIn', FAutoTuneIn);
   FStorage.Write('SubmitStats', FSubmitStats);
@@ -656,6 +665,14 @@ begin
     Stream.Read(Result.FFilePattern);
   end;
 
+  if Version >= 17 then
+  begin
+    Stream.Read(Result.FIncompleteFilePattern);
+    if Result.FIncompleteFilePattern = '' then
+      Result.FIncompleteFilePattern := Result.FFilePattern;
+  end else
+    Result.FIncompleteFilePattern := Result.FFilePattern;
+
   if Version >= 14 then
     Stream.Read(Result.FFilePatternDecimals)
   else
@@ -734,6 +751,7 @@ procedure TStreamSettings.Save(Stream: TExtendedStream);
 begin
   Stream.Write(FTitlePattern);
   Stream.Write(FFilePattern);
+  Stream.Write(FIncompleteFilePattern);
   Stream.Write(FFilePatternDecimals);
   Stream.Write(FDeleteStreams);
   Stream.Write(FAddSavedToIgnore);
@@ -758,6 +776,7 @@ procedure TStreamSettings.Assign(From: TStreamSettings);
 begin
   FTitlePattern := From.FTitlePattern;
   FFilePattern := From.FFilePattern;
+  FIncompleteFilePattern := From.FIncompleteFilePattern;
   FFilePatternDecimals := From.FilePatternDecimals;
   FDeleteStreams := From.FDeleteStreams;
   FAddSavedToIgnore := From.FAddSavedToIgnore;
