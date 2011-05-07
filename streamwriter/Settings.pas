@@ -1900,9 +1900,9 @@ procedure TfrmSettings.chkAutoTuneInClick(Sender: TObject);
 begin
   inherited;
 
-  lstMinBitrate.Enabled := chkAutoTuneIn.Enabled;
-  lstFormat.Enabled := chkAutoTuneIn.Enabled;
-  chkAutoTuneInConsiderIgnore.Enabled := chkAutoTuneIn.Enabled;
+  lstMinBitrate.Enabled := chkAutoTuneIn.Checked;
+  lstFormat.Enabled := chkAutoTuneIn.Checked;
+  chkAutoTuneInConsiderIgnore.Enabled := chkAutoTuneIn.Checked;
 end;
 
 procedure TfrmSettings.chkOverwriteSmallerClick(Sender: TObject);
