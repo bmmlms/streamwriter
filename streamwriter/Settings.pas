@@ -150,6 +150,8 @@ type
     btnResetIncompleteFilePattern: TPngSpeedButton;
     txtIncompletePreview: TLabeledEdit;
     chkRememberRecordings: TCheckBox;
+    chkDisplayPlayNotifications: TCheckBox;
+    chkAutoTuneInConsiderIgnore: TCheckBox;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -580,7 +582,7 @@ begin
     SetFields;
 
     ClientWidth := 510;
-    ClientHeight := 415;
+    ClientHeight := 435;
 
     for i := 0 to Self.ControlCount - 1 do begin
       if Self.Controls[i] is TPanel then begin
@@ -759,12 +761,14 @@ begin
   chkTray.Checked := AppGlobals.Tray;
   chkSnapMain.Checked := AppGlobals.SnapMain;
   chkRememberRecordings.Checked := AppGlobals.RememberRecordings;
+  chkDisplayPlayNotifications.Checked := AppGlobals.DisplayPlayNotifications;
   optClose.Checked := not AppGlobals.TrayOnMinimize;
   optMinimize.Checked := AppGlobals.TrayOnMinimize;
 
   chkTrayClick(nil);
 
   chkAutoTuneIn.Checked := AppGlobals.AutoTuneIn;
+  chkAutoTuneInConsiderIgnore.Checked := AppGlobals.AutoTuneInConsiderIgnore;
   lstMinBitrate.ItemIndex := AppGlobals.AutoTuneInMinKbps;
   lstFormat.ItemIndex := AppGlobals.AutoTuneInFormat;
   chkSubmitStreamInfo.Checked := AppGlobals.SubmitStreamInfo;
@@ -932,9 +936,11 @@ begin
     AppGlobals.Tray := chkTray.Checked;
     AppGlobals.SnapMain := chkSnapMain.Checked;
     AppGlobals.RememberRecordings := chkRememberRecordings.Checked;
+    AppGlobals.DisplayPlayNotifications := chkDisplayPlayNotifications.Checked;
     AppGlobals.TrayOnMinimize := optMinimize.Checked;
 
     AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
+    AppGlobals.AutoTuneInConsiderIgnore := chkAutoTuneInConsiderIgnore.Checked;
     AppGlobals.AutoTuneInMinKbps := lstMinBitrate.ItemIndex;
     AppGlobals.AutoTuneInFormat := lstFormat.ItemIndex;
     AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
@@ -1665,10 +1671,10 @@ procedure TfrmSettings.btnResetFilePatternClick(Sender: TObject);
 begin
   inherited;
 
-  if Sender = txtTitlePattern then
+  if Sender = btnResetFilePattern then
   begin
     txtFilePattern.Text := '%s\%a - %t';
-    RemoveGray(txtTitlePattern);
+    RemoveGray(txtFilePattern);
   end else
   begin
     txtIncompleteFilePattern.Text := '%s\%a - %t';
@@ -1896,6 +1902,7 @@ begin
 
   lstMinBitrate.Enabled := chkAutoTuneIn.Enabled;
   lstFormat.Enabled := chkAutoTuneIn.Enabled;
+  chkAutoTuneInConsiderIgnore.Enabled := chkAutoTuneIn.Enabled;
 end;
 
 procedure TfrmSettings.chkOverwriteSmallerClick(Sender: TObject);

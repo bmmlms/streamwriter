@@ -167,7 +167,7 @@ function TWaveData.Save(Filename: string): Boolean;
 var
   S, E: Cardinal;
   FS, StartTagBytes, EndTagBytes: Int64;
-  FIn: TMPEGStreamFile;
+  FIn: TAudioStreamFile;
   FOut: TMemoryStream;
 begin
   Result := False;
@@ -190,8 +190,10 @@ begin
 
     FOut := TMemoryStream.Create;
     try
-      // TODO: Das ist aber nicht immer ein mpegstream.....
-      FIn := TMPEGStreamFile.Create(FFilename, fmOpenRead or fmShareDenyWrite);
+      if LowerCase(ExtractFileExt(Filename)) = '.mp3' then
+        FIn := TMPEGStreamFile.Create(FFilename, fmOpenRead or fmShareDenyWrite)
+      else
+        FIn := TAACStreamFile.Create(FFilename, fmOpenRead or fmShareDenyWrite);
       try
         // Tags kopieren
         if StartTagBytes > 0 then

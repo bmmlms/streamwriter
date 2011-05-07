@@ -94,7 +94,8 @@ uses
   SoX in 'plugins\SoX.pas',
   DownloadAddons in 'DownloadAddons.pas' {frmDownloadAddons},
   DownloadClient in '..\..\common\DownloadClient.pas',
-  ConfigureSoX in 'plugins\ConfigureSoX.pas' {frmConfigureSoX};
+  ConfigureSoX in 'plugins\ConfigureSoX.pas' {frmConfigureSoX},
+  Notifications in 'Notifications.pas' {frmNotification};
 
 {$SetPEOptFlags $0140}
 

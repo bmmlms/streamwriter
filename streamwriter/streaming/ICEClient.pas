@@ -24,7 +24,7 @@ interface
 uses
   SysUtils, Windows, StrUtils, Classes, ICEThread, ICEStream, AppData,
   Generics.Collections, Functions, Sockets, Plugins, LanguageObjects,
-  DataManager, HomeCommunication, PlayerManager;
+  DataManager, HomeCommunication, PlayerManager, Notifications;
 
 type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
@@ -680,6 +680,11 @@ procedure TICEClient.ThreadTitleChanged(Sender: TSocketThread);
 var
   Format: string;
 begin
+  if (FICEThread.RecvStream.Title <> '') and Playing and AppGlobals.DisplayPlayNotifications then
+  begin
+    TfrmNotification.Act(FICEThread.RecvStream.Title, FEntry.Name);
+  end;
+
   FTitle := FICEThread.RecvStream.Title;
   if Assigned(FOnTitleChanged) then
     FOnTitleChanged(Self, FICEThread.RecvStream.Title);

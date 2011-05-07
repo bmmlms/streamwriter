@@ -70,7 +70,8 @@ object frmSettings: TfrmSettings
       Items.Strings = (
         'Save every song'
         'Use wishlist'
-        'Use ignorelist')
+        'Use ignorelist'
+        'Use both lists')
     end
     object chkSeparateTracks: TCheckBox
       Left = 4
@@ -129,33 +130,35 @@ object frmSettings: TfrmSettings
     Left = 4
     Top = 4
     Width = 293
-    Height = 313
+    Height = 341
     TabOrder = 1
     Visible = False
     DesignSize = (
       293
-      313)
+      341)
     object Label7: TLabel
       Left = 56
-      Top = 192
+      Top = 224
       Width = 15
       Height = 13
+      Anchors = [akLeft, akTop, akBottom]
       Caption = 'GB'
     end
     object Label3: TLabel
       Left = 4
-      Top = 220
+      Top = 252
       Width = 190
       Height = 13
+      Anchors = [akLeft, akTop, akBottom]
       Caption = 'Default action on doubleclick on stream:'
     end
     object btnBrowse: TSpeedButton
       Left = 264
-      Top = 144
+      Top = 176
       Width = 25
       Height = 21
       Hint = 'Browse...'
-      Anchors = [akTop, akRight]
+      Anchors = [akTop, akRight, akBottom]
       Flat = True
       Layout = blGlyphRight
       ParentShowHint = False
@@ -164,9 +167,10 @@ object frmSettings: TfrmSettings
     end
     object Label18: TLabel
       Left = 4
-      Top = 268
+      Top = 300
       Width = 192
       Height = 13
+      Anchors = [akLeft, akTop, akBottom]
       Caption = 'Default action on doubleclick in browser:'
     end
     object chkTray: TCheckBox
@@ -181,9 +185,10 @@ object frmSettings: TfrmSettings
     end
     object txtMinDiskSpace: TLabeledEdit
       Left = 4
-      Top = 188
+      Top = 220
       Width = 49
       Height = 21
+      Anchors = [akLeft, akTop, akBottom]
       EditLabel.Width = 205
       EditLabel.Height = 13
       EditLabel.Caption = 'Stop recording when free space gets below'
@@ -193,10 +198,11 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultAction: TComboBox
       Left = 4
-      Top = 236
+      Top = 268
       Width = 213
       Height = 21
       Style = csDropDownList
+      Anchors = [akLeft, akTop, akBottom]
       TabOrder = 2
       Items.Strings = (
         'Start/stop recording'
@@ -222,7 +228,7 @@ object frmSettings: TfrmSettings
     end
     object txtDir: TLabeledEdit
       Left = 4
-      Top = 144
+      Top = 176
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -236,10 +242,11 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultActionBrowser: TComboBox
       Left = 4
-      Top = 284
+      Top = 316
       Width = 213
       Height = 21
       Style = csDropDownList
+      Anchors = [akLeft, akTop, akBottom]
       TabOrder = 6
       Items.Strings = (
         'Start recording'
@@ -263,6 +270,15 @@ object frmSettings: TfrmSettings
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Remember streams that were recording on exit'
       TabOrder = 8
+    end
+    object chkDisplayPlayNotifications: TCheckBox
+      Left = 4
+      Top = 120
+      Width = 281
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Display notifications on trackchange when playing'
+      TabOrder = 9
     end
   end
   object pnlAdvanced: TPanel
@@ -689,15 +705,15 @@ object frmSettings: TfrmSettings
     Left = 904
     Top = 4
     Width = 294
-    Height = 257
+    Height = 297
     TabOrder = 6
     Visible = False
     DesignSize = (
       294
-      257)
+      297)
     object Label2: TLabel
       Left = 20
-      Top = 140
+      Top = 172
       Width = 253
       Height = 29
       AutoSize = False
@@ -708,9 +724,9 @@ object frmSettings: TfrmSettings
     end
     object Label8: TLabel
       Left = 20
-      Top = 196
+      Top = 228
       Width = 253
-      Height = 69
+      Height = 65
       AutoSize = False
       Caption = 
         'Information about Track changes will be sent to the server and b' +
@@ -720,14 +736,14 @@ object frmSettings: TfrmSettings
     end
     object Label16: TLabel
       Left = 20
-      Top = 24
+      Top = 52
       Width = 76
       Height = 13
       Caption = 'Minimum bitrate:'
     end
     object Label17: TLabel
       Left = 20
-      Top = 68
+      Top = 96
       Width = 35
       Height = 13
       Caption = 'Format:'
@@ -744,7 +760,7 @@ object frmSettings: TfrmSettings
     end
     object chkSubmitStreamInfo: TCheckBox
       Left = 4
-      Top = 116
+      Top = 148
       Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -753,7 +769,7 @@ object frmSettings: TfrmSettings
     end
     object chkSubmitStats: TCheckBox
       Left = 4
-      Top = 172
+      Top = 204
       Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -762,7 +778,7 @@ object frmSettings: TfrmSettings
     end
     object lstMinBitrate: TComboBox
       Left = 20
-      Top = 40
+      Top = 68
       Width = 129
       Height = 21
       Style = csDropDownList
@@ -781,7 +797,7 @@ object frmSettings: TfrmSettings
     end
     object lstFormat: TComboBox
       Left = 20
-      Top = 84
+      Top = 112
       Width = 129
       Height = 21
       Style = csDropDownList
@@ -791,10 +807,20 @@ object frmSettings: TfrmSettings
         'MP3'
         'AAC')
     end
+    object chkAutoTuneInConsiderIgnore: TCheckBox
+      Left = 20
+      Top = 24
+      Width = 269
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Do not tune in if song is on ignorelist'
+      TabOrder = 5
+      OnClick = chkAutoTuneInClick
+    end
   end
   object pnlFilenames: TPanel
     Left = 904
-    Top = 268
+    Top = 308
     Width = 294
     Height = 289
     TabOrder = 7
@@ -804,7 +830,7 @@ object frmSettings: TfrmSettings
       289)
     object lblFilePattern: TLabel
       Left = 4
-      Top = 180
+      Top = 0
       Width = 285
       Height = 53
       Anchors = [akLeft, akTop, akRight]
@@ -814,7 +840,7 @@ object frmSettings: TfrmSettings
     end
     object btnResetFilePattern: TPngSpeedButton
       Left = 264
-      Top = 20
+      Top = 72
       Width = 25
       Height = 21
       Hint = 'Reset pattern to default'
@@ -850,7 +876,7 @@ object frmSettings: TfrmSettings
     end
     object btnResetIncompleteFilePattern: TPngSpeedButton
       Left = 264
-      Top = 116
+      Top = 168
       Width = 25
       Height = 21
       Hint = 'Reset pattern to default'
@@ -886,7 +912,7 @@ object frmSettings: TfrmSettings
     end
     object txtPreview: TLabeledEdit
       Left = 4
-      Top = 60
+      Top = 112
       Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -899,7 +925,7 @@ object frmSettings: TfrmSettings
     end
     object txtFilePattern: TLabeledEdit
       Left = 4
-      Top = 20
+      Top = 72
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -924,7 +950,7 @@ object frmSettings: TfrmSettings
     end
     object txtIncompleteFilePattern: TLabeledEdit
       Left = 4
-      Top = 116
+      Top = 168
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -936,7 +962,7 @@ object frmSettings: TfrmSettings
     end
     object txtIncompletePreview: TLabeledEdit
       Left = 4
-      Top = 156
+      Top = 208
       Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -973,7 +999,6 @@ object frmSettings: TfrmSettings
       Anchors = [akLeft, akTop, akRight, akBottom]
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitHeight = 165
     end
     object btnBlacklistRemove: TButton
       Left = 196
@@ -985,7 +1010,6 @@ object frmSettings: TfrmSettings
       Enabled = False
       TabOrder = 1
       OnClick = btnBlacklistRemoveClick
-      ExplicitTop = 192
     end
   end
   object pnlStreamsAdvanced: TPanel
@@ -1060,7 +1084,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800B80110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800BC0110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

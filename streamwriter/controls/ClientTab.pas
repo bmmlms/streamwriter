@@ -823,9 +823,22 @@ end;
 
 procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string;
   var Allowed: Boolean; var Match: string; var Filter: Integer);
-var
-  i: Integer;
-  List: TTitleList;
+  function ContainsTitle(List: TTitleList; Title: string; var Match: string): Boolean;
+  var
+    i: Integer;
+  begin
+    Result := False;
+    Title := LowerCase(Title);
+    for i := 0 to List.Count - 1 do
+    begin
+      if Like(Title, List[i].Pattern) then
+      begin
+        Result := True;
+        Match := List[i].Title;
+        Exit;
+      end;
+    end;
+  end;
 begin
   Match := '';
   if Length(Title) < 1 then
@@ -834,32 +847,30 @@ begin
   case TICEClient(Sender).Entry.Settings.Filter of
     ufWish:
       begin
-        Allowed := False;
+        Allowed := ContainsTitle(FStreams.SaveList, Title, Match);
         Filter := 0;
-        List := FStreams.SaveList;
       end;
     ufIgnore:
       begin
-        Allowed := True;
+        Allowed := not ContainsTitle(FStreams.IgnoreList, Title, Match);
         Filter := 1;
-        List := FStreams.IgnoreList;
+      end;
+    ufBoth:
+      begin
+        Allowed := ContainsTitle(FStreams.SaveList, Title, Match);
+        if Allowed then
+        begin
+          Allowed := not ContainsTitle(FStreams.IgnoreList, Title, Match);
+          if not Allowed then
+            Filter := 1;
+        end else
+          Filter := 0;
       end
     else
       begin
         Allowed := True;
         Exit;
       end;
-  end;
-
-  Title := LowerCase(Title);
-  for i := 0 to List.Count - 1 do
-  begin
-    if Like(Title, List[i].Pattern) then
-    begin
-      Allowed := not Allowed;
-      Match := List[i].Title;
-      Exit;
-    end;
   end;
 end;
 

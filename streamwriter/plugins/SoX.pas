@@ -97,6 +97,12 @@ begin
 
   FResult := arFail;
 
+  if LowerCase(ExtractFileExt(FData.Filename)) <> '.mp3' then
+  begin
+    FResult := arImpossible;
+    Exit;
+  end;
+
   TempFile := RemoveFileExt(FData.Filename) + '_soxconvert' + ExtractFileExt(FData.Filename);
   CmdLine := '"' + FSoxPath + '"' + ' --multi-threaded "' + FData.Filename + '" "' + TempFile + '" ';
 
@@ -349,8 +355,8 @@ begin
   if not FGetReadyForUse then
     ExtractFiles;
 
-  FName := _('Apply effects (using SoX)');
-  FHelp := _('This applies effects to recorded songs using SoX (Sound eXchange).');
+  FName := _('Apply effects to MP3s (using SoX)');
+  FHelp := _('This applies effects to recorded songs in MP3-format using SoX (Sound eXchange).');
 end;
 
 function TSoXPlugin.ProcessFile(

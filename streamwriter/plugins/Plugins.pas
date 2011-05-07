@@ -32,7 +32,7 @@ type
   TProcessThreadBase = class;
   TFilenameArray = array of string;
 
-  TActResults = (arWin, arTimeout, arFail);
+  TActResults = (arWin, arTimeout, arFail, arImpossible);
   TReadWrite = procedure(Name, Value: PChar);
 
   TInitialize = procedure(L: PChar; RF, WF: TReadWrite); stdcall;

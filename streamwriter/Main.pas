@@ -32,7 +32,7 @@ uses
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
-  PlayerManager, Logging, Timers;
+  PlayerManager, Logging, Timers, Notifications;
 
 type
   TfrmStreamWriterMain = class(TForm)
@@ -304,6 +304,7 @@ begin
   TrayIcon1.Visible := False;
   tmrSpeed.Enabled := False;
 
+  TfrmNotification.Stop;
   Hide;
 
   Players.StopAll;

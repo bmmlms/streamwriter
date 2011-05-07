@@ -29,7 +29,7 @@ uses
 type
   TClientActions = (caStartStop, caStreamIntegrated, caStream, caFile);
   TBrowserActions = (baStart, baListen, baListenExternal);
-  TUseFilters = (ufNone, ufWish, ufIgnore);
+  TUseFilters = (ufNone, ufWish, ufIgnore, ufBoth);
 
   TIntArray = array of Integer;
 
@@ -99,9 +99,11 @@ type
     FTrayOnMinimize: Boolean;
     FSnapMain: Boolean;
     FRememberRecordings: Boolean;
+    FDisplayPlayNotifications: Boolean;
     FShowSidebar: Boolean;
     FSidebarWidth: Integer;
     FAutoTuneIn: Boolean;
+    FAutoTuneInConsiderIgnore: Boolean;
     FSubmitStreamInfo: Boolean;
     FSubmitStats: Boolean;
     FMinDiskSpace: Integer;
@@ -148,9 +150,11 @@ type
     property TrayOnMinimize: Boolean read FTrayOnMinimize write FTrayOnMinimize;
     property SnapMain: Boolean read FSnapMain write FSnapMain;
     property RememberRecordings: Boolean read FRememberRecordings write FRememberRecordings;
+    property DisplayPlayNotifications: Boolean read FDisplayPlayNotifications write FDisplayPlayNotifications;
     property ShowSidebar: Boolean read FShowSidebar write FShowSidebar;
     property SidebarWidth: Integer read FSidebarWidth write FSidebarWidth;
     property AutoTuneIn: Boolean read FAutoTuneIn write FAutoTuneIn;
+    property AutoTuneInConsiderIgnore: Boolean read FAutoTuneInConsiderIgnore write FAutoTuneInConsiderIgnore;
     property SubmitStreamInfo: Boolean read FSubmitStreamInfo write FSubmitStreamInfo;
     property SubmitStats: Boolean read FSubmitStats write FSubmitStats;
     property MinDiskSpace: Integer read FMinDiskSpace write FMinDiskSpace;
@@ -426,8 +430,10 @@ begin
   FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);
   FStorage.Read('SnapMain', FSnapMain, False);
   FStorage.Read('RememberRecordings', FRememberRecordings, False);
+  FStorage.Read('DisplayPlayNotifications', FDisplayPlayNotifications, True);
   FStorage.Read('SidebarWidth', FSidebarWidth, 250);
   FStorage.Read('AutoTuneIn', FAutoTuneIn, True);
+  FStorage.Read('AutoTuneInConsiderIgnore', FAutoTuneInConsiderIgnore, False);
   FStorage.Read('SubmitStreamInfo', FSubmitStreamInfo, True);
   FStorage.Read('SubmitStats', FSubmitStats, True);
 
@@ -549,8 +555,10 @@ begin
   FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
   FStorage.Write('SnapMain', FSnapMain);
   FStorage.Write('RememberRecordings', FRememberRecordings);
+  FStorage.Write('DisplayPlayNotifications', FDisplayPlayNotifications);
   FStorage.Write('SidebarWidth', FSidebarWidth);
   FStorage.Write('AutoTuneIn', FAutoTuneIn);
+  FStorage.Write('AutoTuneInConsiderIgnore', FAutoTuneInConsiderIgnore);
   FStorage.Write('SubmitStats', FSubmitStats);
   FStorage.Write('SubmitStreamInfo', FSubmitStreamInfo);
   FStorage.Write('AutoTuneInMinKbps', FAutoTuneInMinKbps);

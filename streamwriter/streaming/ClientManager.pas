@@ -234,7 +234,7 @@ end;
 procedure TClientManager.HomeCommTitleChanged(Sender: TObject; StreamName, Title,
   CurrentURL, Format, TitlePattern: string; Kbps: Cardinal);
 var
-  i: Integer;
+  i, n: Integer;
   AutoTuneInMinKbps: Cardinal;
   Client: TICEClient;
 begin
@@ -270,6 +270,17 @@ begin
   begin
     if Like(Title, FLists.SaveList[i].Pattern) then
     begin
+      if AppGlobals.AutoTuneInConsiderIgnore then
+      begin
+        for n := 0 to FLists.IgnoreList.Count - 1 do
+        begin
+          if Like(Title, FLists.IgnoreList[n].Pattern) then
+          begin
+            Exit;
+          end;
+        end;
+      end;
+
       // csStopping wird extra abgefragt. Stellen wir uns vor es gibt 2 Wunschlieder,
       // die auf dem selben Stream hintereinander gespielt werden. Der RecordTitle ist
       // dann das erste Lied. Während der Stream noch in der Liste ist und in ein paar MS
