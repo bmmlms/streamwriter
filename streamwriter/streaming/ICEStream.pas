@@ -566,7 +566,11 @@ begin
         FSavedLength := 0;
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self);
-      WriteDebug(Format(_('Saved song "%s"'), [ExtractFilename(Filename)]), '', 1, 0);
+
+      if FullTitle then
+        WriteDebug(Format(_('Saved song "%s"'), [ExtractFilename(Filename)]), '', 1, 0)
+      else
+        WriteDebug(Format(_('Saved incomplete song "%s"'), [ExtractFilename(Filename)]), '', 1, 0);
     except
       on E: Exception do
       begin
