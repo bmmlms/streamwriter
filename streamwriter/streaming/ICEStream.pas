@@ -445,150 +445,147 @@ procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
     end;
   end;
 var
-  Saved, Kill: Boolean;
+  Saved: Boolean;
   RangeBegin, RangeEnd: Int64;
   Dir, Filename: string;
   FileCheck: TFileChecker;
 begin
   Saved := False;
-  Kill := Title = FRecordTitle;
 
-  if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
-  begin
-    RangeBegin := TAudioStreamFile(FAudioStream).GetFrame(S, False);
-    RangeEnd := TAudioStreamFile(FAudioStream).GetFrame(E, True);
-  end else
-  begin
-    RangeBegin := TAudioStreamMemory(FAudioStream).GetFrame(S, False);
-    RangeEnd := TAudioStreamMemory(FAudioStream).GetFrame(E, True);
-  end;
-
-  if FBytesPerSec = 0 then
-  begin
-    if Kill then
-      FHaltClient := True;
-    RemoveData;
-    Exit;
-  end;
-
-  WriteDebug(Format(_('Saving from %d to %d'), [S, E]), 1, 1);
-
-  if (RangeEnd <= -1) or (RangeBegin <= -1) then
-    raise Exception.Create(_('Error in audio data'));
-
-  if FSettings.SkipShort and (RangeEnd - RangeBegin < FBytesPerSec * FSettings.ShortLengthSeconds) then
-  begin
-    WriteDebug(Format(_('Skipping "%s" because it''s too small (%d bytes)'), [Title, RangeEnd - RangeBegin]), 1, 0);
-    if Kill then
-      FHaltClient := True;
-    RemoveData;
-    Exit;
-  end;
-
-  Inc(FSongsSaved);
   try
-    FSaveAllowedTitle := Title;
-    FSaveAllowed := True;
+    if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
+    begin
+      RangeBegin := TAudioStreamFile(FAudioStream).GetFrame(S, False);
+      RangeEnd := TAudioStreamFile(FAudioStream).GetFrame(E, True);
+    end else
+    begin
+      RangeBegin := TAudioStreamMemory(FAudioStream).GetFrame(S, False);
+      RangeEnd := TAudioStreamMemory(FAudioStream).GetFrame(E, True);
+    end;
 
-    ParseTitle(Title, FSettings.TitlePattern, FSavedArtist, FSavedTitle);
+    if FBytesPerSec = 0 then
+    begin
+      RemoveData;
+      Exit;
+    end;
 
-    FileCheck := TFileChecker.Create(FStreamName, FSaveDir, FSongsSaved, FSettings);
+    WriteDebug(Format(_('Saving from %d to %d'), [S, E]), 1, 1);
+
+    if (RangeEnd <= -1) or (RangeBegin <= -1) then
+      raise Exception.Create(_('Error in audio data'));
+
+    if FSettings.SkipShort and (RangeEnd - RangeBegin < FBytesPerSec * FSettings.ShortLengthSeconds) then
+    begin
+      WriteDebug(Format(_('Skipping "%s" because it''s too small (%d bytes)'), [Title, RangeEnd - RangeBegin]), 1, 0);
+      RemoveData;
+      Exit;
+    end;
+
+    Inc(FSongsSaved);
     try
-      FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FAudioType, FullTitle);
-      if (FileCheck.Result in [crSave, crOverwrite]) and (FileCheck.FFilename <> '') then
-      begin
-        Dir := FileCheck.SaveDir;
-        Filename := FileCheck.Filename;
-      end else if FileCheck.Result <> crDiscard then               
-        raise Exception.Create(_('Could not determine filename for title'));
+      FSaveAllowedTitle := Title;
+      FSaveAllowed := True;
 
-      if FileCheck.Result = crDiscard then
-      begin
-        WriteDebug(Format(_('Skipping "%s" - existing file is larger'), [Title]), 1, 0);
-        RemoveData;
-        Exit;
-      end else if (FileCheck.Result <> crOverwrite) and (FRecordTitle = '') then
-      begin
-        if Assigned(FOnTitleAllowed) then
-          FOnTitleAllowed(Self);
-        if not FSaveAllowed then
+      ParseTitle(Title, FSettings.TitlePattern, FSavedArtist, FSavedTitle);
+
+      FileCheck := TFileChecker.Create(FStreamName, FSaveDir, FSongsSaved, FSettings);
+      try
+        FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FAudioType, FullTitle);
+        if (FileCheck.Result in [crSave, crOverwrite]) and (FileCheck.FFilename <> '') then
         begin
-          if FSaveAllowedFilter = 0 then
-            WriteDebug(Format(_('Skipping "%s" - not on wishlist'), [Title]), 1, 0)
-          else
-            WriteDebug(Format(_('Skipping "%s" - on ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), 1, 0);
-          Dec(FSongsSaved);
+          Dir := FileCheck.SaveDir;
+          Filename := FileCheck.Filename;
+        end else if FileCheck.Result <> crDiscard then
+          raise Exception.Create(_('Could not determine filename for title'));
+
+        if FileCheck.Result = crDiscard then
+        begin
+          WriteDebug(Format(_('Skipping "%s" - existing file is larger'), [Title]), 1, 0);
           RemoveData;
           Exit;
+        end else if (FileCheck.Result <> crOverwrite) and (FRecordTitle = '') then
+        begin
+          if Assigned(FOnTitleAllowed) then
+            FOnTitleAllowed(Self);
+          if not FSaveAllowed then
+          begin
+            if FSaveAllowedFilter = 0 then
+              WriteDebug(Format(_('Skipping "%s" - not on wishlist'), [Title]), 1, 0)
+            else
+              WriteDebug(Format(_('Skipping "%s" - on ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), 1, 0);
+            Dec(FSongsSaved);
+            RemoveData;
+            Exit;
+          end;
+        end else if FileCheck.Result = crOverwrite then
+        begin
+          WriteDebug(Format(_('Saving "%s" - it overwrites a smaller same named file'), [Title]), 1, 0)
         end;
-      end else if FileCheck.Result = crOverwrite then
-      begin
-        WriteDebug(Format(_('Saving "%s" - it overwrites a smaller same named file'), [Title]), 1, 0)
-      end;
-    finally
-      FileCheck.Free;
-    end;
-
-    if Length(Title) > 0 then
-      WriteDebug(Format('Saving title "%s"', [Title]), 1, 1)
-    else
-      WriteDebug('Saving unnamed title', 1, 1);
-
-    try
-      ForceDirectories(Dir);
-    except
-      raise Exception.Create(Format(_('Folder for saved tracks "%s" could not be created'), [Dir]));
-    end;
-
-    try
-      if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
-        TAudioStreamFile(FAudioStream).SaveToFile(Dir + Filename, RangeBegin, RangeEnd - RangeBegin)
-      else
-      begin
-        TAudioStreamMemory(FAudioStream).SaveToFile(Dir + Filename, RangeBegin, RangeEnd - RangeBegin);
+      finally
+        FileCheck.Free;
       end;
 
-      RemoveData;
-    except
-      raise Exception.Create(_('Could not save file'));
-    end;
-
-    Saved := True;
-
-    try
-      FSavedFilename := Dir + Filename;
-      FSavedSize := RangeEnd - RangeBegin;
-      FSavedFullTitle := FullTitle;
-      FSavedStreamTitle := Title;
-      if FBytesPerSec > 0 then
-        FSavedLength := Trunc(FSavedSize / FBytesPerSec)
+      if Length(Title) > 0 then
+        WriteDebug(Format('Saving title "%s"', [Title]), 1, 1)
       else
-        FSavedLength := 0;
-      if Assigned(FOnSongSaved) then
-        FOnSongSaved(Self);
+        WriteDebug('Saving unnamed title', 1, 1);
 
-      if FullTitle then
-        WriteDebug(Format(_('Saved song "%s"'), [ExtractFilename(Filename)]), '', 1, 0)
-      else
-        WriteDebug(Format(_('Saved incomplete song "%s"'), [ExtractFilename(Filename)]), '', 1, 0);
+      try
+        ForceDirectories(Dir);
+      except
+        raise Exception.Create(Format(_('Folder for saved tracks "%s" could not be created'), [Dir]));
+      end;
+
+      try
+        if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
+          TAudioStreamFile(FAudioStream).SaveToFile(Dir + Filename, RangeBegin, RangeEnd - RangeBegin)
+        else
+        begin
+          TAudioStreamMemory(FAudioStream).SaveToFile(Dir + Filename, RangeBegin, RangeEnd - RangeBegin);
+        end;
+
+        RemoveData;
+      except
+        raise Exception.Create(_('Could not save file'));
+      end;
+
+      Saved := True;
+
+      try
+        FSavedFilename := Dir + Filename;
+        FSavedSize := RangeEnd - RangeBegin;
+        FSavedFullTitle := FullTitle;
+        FSavedStreamTitle := Title;
+        if FBytesPerSec > 0 then
+          FSavedLength := Trunc(FSavedSize / FBytesPerSec)
+        else
+          FSavedLength := 0;
+        if Assigned(FOnSongSaved) then
+          FOnSongSaved(Self);
+
+        if FullTitle then
+          WriteDebug(Format(_('Saved song "%s"'), [ExtractFilename(Filename)]), '', 1, 0)
+        else
+          WriteDebug(Format(_('Saved incomplete song "%s"'), [ExtractFilename(Filename)]), '', 1, 0);
+      except
+        on E: Exception do
+        begin
+          WriteDebug(Format('Error after successful save: %s', [E.Message]), 1, 0);
+          raise;
+        end;
+      end;
     except
       on E: Exception do
       begin
-        WriteDebug(Format('Error after successful save: %s', [E.Message]), 1, 0);
-        raise;
+        if not Saved then
+          Dec(FSongsSaved);
+        WriteDebug(Format(_('Error while saving "%s": %s'), [ExtractFilename(Filename), E.Message]), 3, 0);
       end;
     end;
-  except
-    on E: Exception do
-    begin
-      if not Saved then
-        Dec(FSongsSaved);
-      WriteDebug(Format(_('Error while saving "%s": %s'), [ExtractFilename(Filename), E.Message]), 3, 0);
-    end;
+  finally
+    if (Title = FRecordTitle) and (FRecordTitle <> '') then
+      FHaltClient := True;
   end;
-
-  if Kill then
-    FHaltClient := True;
 end;
 
 procedure TICEStream.StartRecording;
@@ -894,6 +891,10 @@ begin
           // Titel scheint nicht zu kommen..
           FHaltClient := True;
         end;
+
+        // Paranoid, I is it.
+        if FMetaCounter > 4 then
+          FHaltClient := True;
       end;
 
       Read(Buf, 1);
