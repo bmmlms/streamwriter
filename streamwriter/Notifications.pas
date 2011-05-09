@@ -73,6 +73,7 @@ end;
 procedure TfrmNotification.CreateParams(var Params: TCreateParams);
 begin
   inherited;
+  Params.WndParent := 0;
   Params.Style := WS_POPUP or WS_THICKFRAME or WS_EX_TOPMOST;
   Params.ExStyle := Params.ExStyle or WS_EX_NOACTIVATE;
 end;
