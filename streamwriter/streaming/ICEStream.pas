@@ -760,8 +760,12 @@ begin
             WriteDebug(Format('Scanned song start/end: %d/%d', [R.A, R.B]), 1, 1);
 
             if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
-              SaveData(R.A, R.B, Track.Title, Track.FullTitle)
-            else
+            begin
+              if FRecordTitle <> '' then
+                SaveData(R.A, R.B, Track.Title, True)
+              else
+                SaveData(R.A, R.B, Track.Title, Track.FullTitle);
+            end else
               WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
 
             Track.Free;
@@ -775,8 +779,12 @@ begin
               WriteDebug(Format('No silence found, saving using buffer of %d bytes...', [FSettings.SongBufferSeconds * FBytesPerSec]), 1, 1);
 
               if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
-                SaveData(Track.S - FSettings.SongBufferSeconds * FBytesPerSec, Track.E + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title, Track.FullTitle)
-              else
+              begin
+                if FRecordTitle <> '' then
+                  SaveData(Track.S - FSettings.SongBufferSeconds * FBytesPerSec, Track.E + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title, True)
+                else
+                  SaveData(Track.S - FSettings.SongBufferSeconds * FBytesPerSec, Track.E + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title, Track.FullTitle);
+              end else
                 WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
 
               Track.Free;
@@ -799,8 +807,12 @@ begin
           WriteDebug(Format('Saving using buffer of %d bytes...', [FSettings.SongBufferSeconds * FBytesPerSec]), 1, 1);
 
           if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
-            SaveData(Track.S - FSettings.SongBufferSeconds * FBytesPerSec, Track.E + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title, Track.FullTitle)
-          else
+          begin
+            if FRecordTitle <> '' then
+              SaveData(Track.S - FSettings.SongBufferSeconds * FBytesPerSec, Track.E + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title, True)
+            else
+              SaveData(Track.S - FSettings.SongBufferSeconds * FBytesPerSec, Track.E + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title, Track.FullTitle);
+          end else
             WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
 
           Track.Free;

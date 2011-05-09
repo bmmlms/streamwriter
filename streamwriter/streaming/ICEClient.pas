@@ -680,7 +680,7 @@ procedure TICEClient.ThreadTitleChanged(Sender: TSocketThread);
 var
   Format: string;
 begin
-  if (FICEThread.RecvStream.Title <> '') and Playing and AppGlobals.DisplayPlayNotifications then
+  if (FICEThread.RecvStream.Title <> '') and Playing and (not Paused) and AppGlobals.DisplayPlayNotifications then
   begin
     TfrmNotification.Act(FICEThread.RecvStream.Title, FEntry.Name);
   end;
@@ -875,7 +875,8 @@ begin
           Break;
       end;
     end else if (LowerCase(Copy(Data, 1, 7)) = '#extm3u') or
-                (Pos('audio/x-mpegurl', FICEThread.RecvStream.ContentType) > 0) then // .m3u
+                (Pos('audio/x-mpegurl', FICEThread.RecvStream.ContentType) > 0) or
+                (Pos('audio/mpegurl', FICEThread.RecvStream.ContentType) > 0) then // .m3u
     begin
       while True do
       begin

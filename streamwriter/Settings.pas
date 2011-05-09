@@ -746,7 +746,15 @@ begin
   txtFilePattern.Text := Settings.FilePattern;
   txtIncompleteFilePattern.Text := Settings.IncompleteFilePattern;
   txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
-  txtDir.Text := AppGlobals.Dir;
+
+
+  if (Length(AppGlobals.Dir) >= 3) and (Copy(AppGlobals.Dir, 1, 2) <> '\\') and (Copy(AppGlobals.Dir, 2, 2) <> ':\') then
+  begin
+    txtDir.Text := IncludeTrailingBackslash(ExpandFileName(IncludeTrailingBackslash(AppGlobals.Dir)));
+  end else
+    txtDir.Text := AppGlobals.Dir;
+
+
   chkDeleteStreams.Checked := Settings.DeleteStreams;
   chkAddSavedToIgnore.Checked := Settings.AddSavedToIgnore;
   chkOverwriteSmaller.Checked := Settings.OverwriteSmaller;
@@ -828,6 +836,7 @@ var
   Plugin: TPluginBase;
   EP: TExternalPlugin;
   Item: TListItem;
+  Dir, TmpDir, AppDir: string;
 begin
   if Length(FStreamSettings) > 0 then
   begin
@@ -932,7 +941,21 @@ begin
     if lstSoundDevice.ItemIndex > -1 then
       AppGlobals.SoundDevice := lstSoundDevice.ItemIndex;
 
-    AppGlobals.Dir := txtDir.Text;
+
+    Dir := txtDir.Text;
+    if (Length(Dir) >= 2) and (Copy(Dir, 1, 2) = '\\') then
+    begin
+
+    end else
+    begin
+      TmpDir := LowerCase(IncludeTrailingBackslash(txtDir.Text));
+      AppDir := LowerCase(IncludeTrailingBackslash(ExtractFilePath(Application.ExeName)));
+      if Length(TmpDir) > Length(AppDir) then
+        if Copy(TmpDir, 1, Length(AppDir)) = AppDir then
+          Dir := ExtractRelativePath(IncludeTrailingBackslash(ExtractFilePath(Application.ExeName)), IncludeTrailingBackslash(txtDir.Text));
+    end;
+
+    AppGlobals.Dir := Dir;
     AppGlobals.Tray := chkTray.Checked;
     AppGlobals.SnapMain := chkSnapMain.Checked;
     AppGlobals.RememberRecordings := chkRememberRecordings.Checked;
