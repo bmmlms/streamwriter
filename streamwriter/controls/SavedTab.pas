@@ -537,6 +537,7 @@ begin
         begin
           if Recycle(Handle, Tracks[i].Filename) then
           begin
+            Windows.RemoveDirectory(PChar(ExtractFilePath(Tracks[i].Filename)));
             FSavedTree.DeleteTrack(Tracks[i]);
             FStreams.TrackList.RemoveTrack(Tracks[i]);
             if Assigned(FOnTrackRemoved) then
@@ -555,6 +556,7 @@ begin
           begin
             if Windows.DeleteFile(PChar(Tracks[i].Filename)) or (GetLastError = ERROR_FILE_NOT_FOUND) then
             begin
+              Windows.RemoveDirectory(PChar(ExtractFilePath(Tracks[i].Filename)));
               FSavedTree.DeleteTrack(Tracks[i]);
               FStreams.TrackList.RemoveTrack(Tracks[i]);
               if Assigned(FOnTrackRemoved) then
