@@ -137,6 +137,7 @@ type
     function StartRecordingInternal: Boolean;
     procedure StopRecordingInternal;
 
+    function CleanTitle(Title: string): string;
     procedure ParseTitle(S, Pattern: string; var Artist: string; var Title: string);
 
     procedure FSetRecordTitle(Value: string);
@@ -253,6 +254,18 @@ begin
       raise Exception.Create('');
   finally
     BASSStreamFree(TempPlayer);
+  end;
+end;
+
+function TICEStream.CleanTitle(Title: string): string;
+var
+  i: Integer;
+begin
+  Result := '';
+  for i := 0 to Length(Title) - 1 do
+  begin
+    if (Ord(Title[i]) >= 32) and (Ord(Title[i]) < 126) then
+      Result := Result + Title[i];
   end;
 end;
 
@@ -918,6 +931,7 @@ begin
         Seek(MetaLen, soFromCurrent);
         P := PosEx(''';', MetaData, 14);
         Title := Trim(Copy(MetaData, 14, P - 14));
+        Title := CleanTitle(Title);
 
         if Title <> FTitle then
         begin
@@ -1195,16 +1209,16 @@ end;
 
 function TFileChecker.GetValidFilename(Name: string): string;
 begin
-  Name := StringReplace(Name, '\', '_', [rfReplaceAll]);
-  Name := StringReplace(Name, '/', '_', [rfReplaceAll]);
-  Name := StringReplace(Name, ':', '_', [rfReplaceAll]);
-  Name := StringReplace(Name, '*', '_', [rfReplaceAll]);
-  Name := StringReplace(Name, '"', '_', [rfReplaceAll]);
-  Name := StringReplace(Name, '?', '_', [rfReplaceAll]);
-  Name := StringReplace(Name, '<', '_', [rfReplaceAll]);
-  Name := StringReplace(Name, '>', '_', [rfReplaceAll]);
-  Name := StringReplace(Name, '|', '_', [rfReplaceAll]);
   Result := Name;
+  Result := StringReplace(Result, '\', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '/', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, ':', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '*', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '"', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '?', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '<', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '>', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '|', '_', [rfReplaceAll]);
 end;
 
 function TFileChecker.TitleInfoToFilename(Artist, Title: string; FullTitle: Boolean): string;
