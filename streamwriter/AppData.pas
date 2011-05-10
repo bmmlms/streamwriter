@@ -401,9 +401,18 @@ begin
   FStorage.Read('FilePattern', FStreamSettings.FFilePattern, '%s\%a - %t');
   FStorage.Read('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern, '%s\%a - %t');
   FStorage.Read('FilePatternDecimals', FStreamSettings.FFilePatternDecimals, 3);
+
+
   FStorage.Read('Dir', FDir, '');
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
+
+  // TODO: TESTEN TESTEN TESTEN!!!
+  if not ((Length(FDir) >= 3) and ((Copy(FDir, 1, 2) = '\\') or (Copy(FDir, 2, 2) = ':\'))) then
+  begin
+    FDir := IncludeTrailingBackslash(ExtractFilePath(Application.ExeName)) + FDir;
+  end;
+
   FStorage.Read('DeleteStreams', FStreamSettings.FDeleteStreams, False);
   FStorage.Read('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore, True);
   FStorage.Read('SkipShort', FStreamSettings.FSkipShort, True);
@@ -526,6 +535,7 @@ end;
 procedure TAppData.DoSave;
 var
   i, n: Integer;
+  SaveDir, TmpDir, AppDir: string;
 begin
   inherited;
 
@@ -533,7 +543,26 @@ begin
   FStorage.Write('FilePattern', FStreamSettings.FFilePattern);
   FStorage.Write('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern);
   FStorage.Write('FilePatternDecimals', FStreamSettings.FFilePatternDecimals);
-  FStorage.Write('Dir', FDir);
+
+
+  // TODO: TESTEN TESTEN TESTEN !!!!!!!!!
+  SaveDir := FDir;
+  if not ((Length(FDir) >= 2) and (Copy(FDir, 1, 2) = '\\')) then
+  begin
+    TmpDir := LowerCase(IncludeTrailingBackslash(FDir));
+    AppDir := LowerCase(IncludeTrailingBackslash(ExtractFilePath(Application.ExeName)));
+    if Length(TmpDir) >= Length(AppDir) then
+      if Copy(TmpDir, 1, Length(AppDir)) = AppDir then
+      begin
+        TmpDir := Copy(TmpDir, Length(AppDir), Length(TmpDir) - Length(AppDir));
+        if (Length(TmpDir) > 0) and (Copy(TmpDir, 1, 1) = '\') then
+          TmpDir := Copy(TmpDir, 2, Length(TmpDir) - 1);
+        SaveDir := TmpDir;
+      end;
+  end;
+  FStorage.Write('Dir', SaveDir);
+
+
   FStorage.Write('DeleteStreams', FStreamSettings.FDeleteStreams);
   FStorage.Write('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore);
   FStorage.Write('SkipShort', FStreamSettings.FSkipShort);

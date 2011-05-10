@@ -748,12 +748,11 @@ begin
   txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
 
 
-  if (Length(AppGlobals.Dir) >= 3) and (Copy(AppGlobals.Dir, 1, 2) <> '\\') and (Copy(AppGlobals.Dir, 2, 2) <> ':\') then
-  begin
-    txtDir.Text := IncludeTrailingBackslash(ExpandFileName(IncludeTrailingBackslash(AppGlobals.Dir)));
-  end else
-    txtDir.Text := AppGlobals.Dir;
-
+  //if (Length(AppGlobals.Dir) >= 3) and (Copy(AppGlobals.Dir, 1, 2) <> '\\') and (Copy(AppGlobals.Dir, 2, 2) <> ':\') then
+  //begin
+  //  txtDir.Text := IncludeTrailingBackslash(ExpandFileName(IncludeTrailingBackslash(AppGlobals.Dir)));
+  //end else
+  txtDir.Text := AppGlobals.Dir;
 
   chkDeleteStreams.Checked := Settings.DeleteStreams;
   chkAddSavedToIgnore.Checked := Settings.AddSavedToIgnore;
@@ -943,6 +942,7 @@ begin
 
 
     Dir := txtDir.Text;
+    {
     if (Length(Dir) >= 2) and (Copy(Dir, 1, 2) = '\\') then
     begin
 
@@ -954,6 +954,7 @@ begin
         if Copy(TmpDir, 1, Length(AppDir)) = AppDir then
           Dir := ExtractRelativePath(IncludeTrailingBackslash(ExtractFilePath(Application.ExeName)), IncludeTrailingBackslash(txtDir.Text));
     end;
+    }
 
     AppGlobals.Dir := Dir;
     AppGlobals.Tray := chkTray.Checked;
