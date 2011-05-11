@@ -439,9 +439,17 @@ end;
 
 procedure TfrmStreamWriterMain.actTimersExecute(Sender: TObject);
 var
+  Clients: TClientArray;
+  S: TfrmSettings;
+  i: Integer;
   T: TfrmTimers;
 begin
-  T := TfrmTimers.Create(Self);
+  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
+
+  if (Length(Clients) <> 1) and (Clients[0].AutoRemove) then
+    Exit;
+
+  T := TfrmTimers.Create(Self, Clients[0].Entry.Settings.Copy);
   try
     T.ShowModal;
   finally
@@ -636,6 +644,10 @@ begin
   ScreenSnap := AppGlobals.SnapMain;
 
   addStatus.CustomHint := TStatusHint.Create(Self);
+
+  {$IFNDEF DEBUG}
+  actTimers.Visible := False;
+  {$ENDIF}
 end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
@@ -1478,6 +1490,9 @@ begin
 
   if actStopAfterSong.Checked <> (Length(Clients) = 1) and (Clients[0].StopAfterSong) and (not OnlyAutomatedSelected) then
     actStopAfterSong.Checked := (Length(Clients) = 1) and (Clients[0].StopAfterSong) and (not OnlyAutomatedSelected);
+
+  if actTimers.Enabled <> (Length(Clients) = 1) and (not Clients[0].AutoRemove) then
+    actTimers.Enabled := (Length(Clients) = 1) and (not Clients[0].AutoRemove);
 
   if actCopyTitle.Enabled <> (Length(Clients) > 0) and AnyClientHasTitle then
     actCopyTitle.Enabled := (Length(Clients) > 0) and AnyClientHasTitle;

@@ -407,7 +407,6 @@ begin
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
 
-  // TODO: TESTEN TESTEN TESTEN!!!
   if not ((Length(FDir) >= 3) and ((Copy(FDir, 1, 2) = '\\') or (Copy(FDir, 2, 2) = ':\'))) then
   begin
     FDir := IncludeTrailingBackslash(ExtractFilePath(Application.ExeName)) + FDir;
@@ -544,8 +543,6 @@ begin
   FStorage.Write('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern);
   FStorage.Write('FilePatternDecimals', FStreamSettings.FFilePatternDecimals);
 
-
-  // TODO: TESTEN TESTEN TESTEN !!!!!!!!!
   SaveDir := FDir;
   if not ((Length(FDir) >= 2) and (Copy(FDir, 1, 2) = '\\')) then
   begin
@@ -554,14 +551,13 @@ begin
     if Length(TmpDir) >= Length(AppDir) then
       if Copy(TmpDir, 1, Length(AppDir)) = AppDir then
       begin
-        TmpDir := Copy(TmpDir, Length(AppDir), Length(TmpDir) - Length(AppDir));
+        TmpDir := Copy(IncludeTrailingBackslash(FDir), Length(AppDir), Length(IncludeTrailingBackslash(FDir)) - Length(AppDir));
         if (Length(TmpDir) > 0) and (Copy(TmpDir, 1, 1) = '\') then
           TmpDir := Copy(TmpDir, 2, Length(TmpDir) - 1);
         SaveDir := TmpDir;
       end;
   end;
   FStorage.Write('Dir', SaveDir);
-
 
   FStorage.Write('DeleteStreams', FStreamSettings.FDeleteStreams);
   FStorage.Write('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore);

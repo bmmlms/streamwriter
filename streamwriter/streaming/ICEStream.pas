@@ -262,11 +262,12 @@ var
   i: Integer;
 begin
   Result := '';
-  for i := 0 to Length(Title) - 1 do
-  begin
-    if (Ord(Title[i]) >= 32) and (Ord(Title[i]) < 126) then
-      Result := Result + Title[i];
-  end;
+  if Length(Title) > 0 then
+    for i := 1 to Length(Title) do
+    begin
+      if (Ord(Title[i]) >= 32) and (Ord(Title[i]) < 126) then
+        Result := Result + Title[i];
+    end;
 end;
 
 constructor TICEStream.Create;

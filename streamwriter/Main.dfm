@@ -434,7 +434,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Caption = 'Setup t&imers...'
       Hint = 'Setup timers...'
       ImageIndex = 50
-      Visible = False
       OnExecute = actTimersExecute
     end
     object actStopAfterSong: TAction
