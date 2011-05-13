@@ -5,17 +5,19 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ComCtrls, StdCtrls, Mask, Buttons, ExtCtrls, LanguageObjects,
-  VirtualTrees, AppData, Functions, Logging;
+  VirtualTrees, AppData, Functions, DateUtils, Logging;
 
 type
-  TScheduleInterval = (siDaily, siWeekly);
-  TScheduleDay = (sdMonday, sdTuesday, sdWednesday, sdThursday, sdFriday, sdSaturday, sdSunday);
+  // Die ..None-Dinger müssen am Ende stehen!
+  TScheduleInterval = (siDaily, siWeekly, siNone);
+  TScheduleDay = (sdMonday, sdTuesday, sdWednesday, sdThursday, sdFriday, sdSaturday, sdSunday, sdNone);
 
   TScheduleTreeNodeData = record
     Recurring: Boolean;
     Specific: Boolean;
     Interval: TScheduleInterval;
     Day: TScheduleDay;
+    Date: TDateTime;
     StartHour, StartMinute, EndHour, EndMinute: Integer;
   end;
   PScheduleTreeNodeData =^ TScheduleTreeNodeData;
@@ -29,30 +31,34 @@ type
   public
     constructor Create(AOwner: TComponent);
 
-    procedure Add(Interval: TScheduleInterval; Day: TScheduleDay; SH, SM, EH, EM: Integer);
+    procedure Add(Interval: TScheduleInterval; Day: TScheduleDay; SH, SM, EH, EM: Integer); overload;
+    procedure Add(Date: TDateTime; SH, SM, EH, EM: Integer); overload;
   end;
 
   TfrmTimers = class(TForm)
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;
+    btnCancel: TBitBtn;
+    Panel2: TPanel;
+    Panel1: TPanel;
     pnlConfig: TPanel;
+    Label1: TLabel;
+    Label2: TLabel;
     rbRecurring: TRadioButton;
     rbDate: TRadioButton;
     lstInterval: TComboBox;
     lstDay: TComboBox;
     dtpDate: TDateTimePicker;
-    Label1: TLabel;
-    Label2: TLabel;
-    btnCancel: TBitBtn;
-    btnAdd: TButton;
-    Panel2: TPanel;
-    Panel3: TPanel;
-    btnRemove: TButton;
     txtStartHour: TEdit;
     txtStartMinute: TEdit;
     txtEndHour: TEdit;
     txtEndMinute: TEdit;
+    pnlTree: TPanel;
+    Panel3: TPanel;
+    btnRemove: TButton;
+    Panel4: TPanel;
+    btnAdd: TButton;
     procedure FormCreate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
@@ -65,12 +71,15 @@ type
     procedure txtStartChange(Sender: TObject);
     procedure txtEndChange(Sender: TObject);
     procedure btnAddClick(Sender: TObject);
+    procedure btnRemoveClick(Sender: TObject);
   private
     Tree: TScheduleTree;
     FSettings: TStreamSettings;
 
     function TimesOkay: Boolean;
     procedure UpdateButtons;
+
+    procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
   public
     constructor Create(AOwner: TComponent; Settings: TStreamSettings);
   end;
@@ -106,7 +115,8 @@ begin
       StrToInt(txtEndMinute.Text));
   end else
   begin
-    // TODO: !!!
+    Tree.Add(dtpDate.DateTime, StrToInt(txtStartHour.Text), StrToInt(txtStartMinute.Text),
+      StrToInt(txtEndHour.Text), StrToInt(txtEndMinute.Text));
   end;
 end;
 
@@ -118,6 +128,12 @@ end;
 procedure TfrmTimers.btnOKClick(Sender: TObject);
 begin
   Close;
+end;
+
+procedure TfrmTimers.btnRemoveClick(Sender: TObject);
+begin
+  if Tree.GetFirstSelected <> nil then
+    Tree.DeleteNode(Tree.GetFirstSelected);
 end;
 
 constructor TfrmTimers.Create(AOwner: TComponent;
@@ -141,8 +157,12 @@ end;
 procedure TfrmTimers.FormCreate(Sender: TObject);
 begin
   Tree := TScheduleTree.Create(Self);
-  Tree.Parent := Panel2;
+  Tree.Parent := pnlTree;
   Tree.Align := alClient;
+
+  Tree.OnChange := TreeChange;
+
+  UpdateButtons;
 end;
 
 procedure TfrmTimers.lstDayChange(Sender: TObject);
@@ -172,7 +192,7 @@ begin
   Result := False;
 
   SH := StrToIntDef(txtStartHour.Text, -1);
-  SM:= StrToIntDef(txtStartMinute.Text, -1);
+  SM := StrToIntDef(txtStartMinute.Text, -1);
   EH := StrToIntDef(txtEndHour.Text, -1);
   EM := StrToIntDef(txtEndMinute.Text, -1);
 
@@ -199,6 +219,12 @@ begin
   Result := True;
 end;
 
+procedure TfrmTimers.TreeChange(Sender: TBaseVirtualTree;
+  Node: PVirtualNode);
+begin
+  btnRemove.Enabled := Node <> nil;
+end;
+
 procedure TfrmTimers.txtEndChange(Sender: TObject);
 begin
   UpdateButtons;
@@ -211,7 +237,9 @@ end;
 
 procedure TfrmTimers.UpdateButtons;
 begin
-
+  lstInterval.Enabled := rbRecurring.Checked;
+  lstDay.Enabled := rbRecurring.Checked and (lstInterval.ItemIndex > 0);
+  dtpDate.Enabled := rbDate.Checked;
 end;
 
 { TScheduleTree }
@@ -223,10 +251,32 @@ var
   Data: PScheduleTreeNodeData;
 begin
   P := AddChild(nil);
+  P.CheckType := ctCheckBox;
+
   Data := GetNodeData(P);
   Data.Recurring := True;
   Data.Interval := Interval;
   Data.Day := Day;
+  Data.Date := 0;
+  Data.StartHour := SH;
+  Data.StartMinute := SM;
+  Data.EndHour := EH;
+  Data.EndMinute := EM;
+end;
+
+procedure TScheduleTree.Add(Date: TDateTime; SH, SM, EH, EM: Integer);
+var
+  P: PVirtualNode;
+  Data: PScheduleTreeNodeData;
+begin
+  P := AddChild(nil);
+  P.CheckType := ctCheckBox;
+
+  Data := GetNodeData(P);
+  Data.Recurring := False;
+  Data.Interval := siNone;
+  Data.Day := sdNone;
+  Data.Date := Date;
   Data.StartHour := SH;
   Data.StartMinute := SM;
   Data.EndHour := EH;
@@ -241,32 +291,70 @@ begin
 
   NodeDataSize := SizeOf(TScheduleTreeNodeData);
 
+  TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toCheckSupport];
+  TreeOptions.PaintOptions := TreeOptions.PaintOptions - [toShowTreeLines];
+  TreeOptions.SelectionOptions := TreeOptions.SelectionOptions + [toFullRowSelect];
+
+  Indent := 4;
+
   Header.Options := [hoVisible];
 
   C := Header.Columns.Add;
-  C.Text := _('Active');
-
-  C := Header.Columns.Add;
-  C.Text := _('Details');
+  C.Text := _('Scheduled recordings');
 end;
 
 procedure TScheduleTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
   TextType: TVSTTextType; var Text: string);
 var
   NodeData: PScheduleTreeNodeData;
+  Day, StartTime, EndTime: string;
+  DTStart, DTEnd: TDateTime;
 begin
   inherited;
 
   NodeData := GetNodeData(Node);
-  Text := IntToStr(NodeData.StartHour);
+
+  if (Column = 0) and (TextType = ttNormal) then
+  begin
+    DTStart := StrToTime(IntToStr(NodeData.StartHour) + FormatSettings.TimeSeparator + IntToStr(NodeData.StartMinute) + FormatSettings.TimeSeparator + '00');
+    DTEnd := StrToTime(IntToStr(NodeData.EndHour) + FormatSettings.TimeSeparator + IntToStr(NodeData.EndMinute) + FormatSettings.TimeSeparator + '00');
+
+    if NodeData.Recurring then
+    begin
+      if NodeData.Interval = siDaily then
+      begin
+        Text := _('Record daily from %s to %s');
+        Text := Format(Text, [TimeToStr(DTStart), TimeToStr(DTEnd)]);
+      end else
+      begin
+        Text := _('Record every %s from %s to %s');
+
+        case NodeData.Day of
+          sdMonday: Day := _('Monday');
+          sdTuesday: Day := _('Tuesday');
+          sdWednesday: Day := _('Wednesday');
+          sdThursday: Day := _('Thursday');
+          sdFriday: Day := _('Friday');
+          sdSaturday: Day := _('Saturday');
+          sdSunday: Day := _('Sunday');
+        end;
+
+        Text := Format(Text, [Day, TimeToStr(DTStart), TimeToStr(DTEnd)]);
+      end;
+    end else
+    begin
+      Text := _('Record on %s from %s to %s');
+      Text := Format(Text, [DateToStr(NodeData.Date), TimeToStr(DTStart), TimeToStr(DTEnd)]);
+    end;
+  end else
+    Text := '';
 end;
 
 procedure TScheduleTree.Resize;
 begin
   inherited;
 
-  Header.Columns[0].Width := 75;
-  Header.Columns[1].Width := ClientWidth - Header.Columns[0].Width;
+  Header.Columns[0].Width := ClientWidth;
 end;
 
 end.

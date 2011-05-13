@@ -4,8 +4,8 @@ object frmTimers: TfrmTimers
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Setup timers'
-  ClientHeight = 413
-  ClientWidth = 410
+  ClientHeight = 272
+  ClientWidth = 579
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -55,10 +55,228 @@ object frmTimers: TfrmTimers
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 13
+  object Panel2: TPanel
+    Left = 0
+    Top = 0
+    Width = 579
+    Height = 223
+    Align = alClient
+    BevelOuter = bvNone
+    TabOrder = 1
+    ExplicitTop = 233
+    ExplicitWidth = 410
+    ExplicitHeight = 131
+    object Panel1: TPanel
+      Left = 0
+      Top = 0
+      Width = 579
+      Height = 223
+      Align = alClient
+      BevelOuter = bvNone
+      TabOrder = 0
+      ExplicitLeft = 140
+      ExplicitTop = 4
+      ExplicitWidth = 521
+      ExplicitHeight = 285
+      object pnlConfig: TPanel
+        Left = 0
+        Top = 0
+        Width = 232
+        Height = 223
+        Align = alLeft
+        BevelOuter = bvNone
+        TabOrder = 0
+        ExplicitLeft = 1
+        ExplicitTop = 1
+        ExplicitHeight = 238
+        object Label1: TLabel
+          Left = 4
+          Top = 140
+          Width = 53
+          Height = 13
+          Caption = 'Start Time:'
+        end
+        object Label2: TLabel
+          Left = 128
+          Top = 140
+          Width = 47
+          Height = 13
+          Caption = 'End Time:'
+        end
+        object rbRecurring: TRadioButton
+          Left = 4
+          Top = 0
+          Width = 221
+          Height = 21
+          Caption = 'Recurring schedule'
+          Checked = True
+          TabOrder = 0
+          TabStop = True
+          OnClick = rbRecurringClick
+        end
+        object rbDate: TRadioButton
+          Left = 4
+          Top = 80
+          Width = 221
+          Height = 21
+          Caption = 'Specific date'
+          TabOrder = 1
+          OnClick = rbDateClick
+        end
+        object lstInterval: TComboBox
+          Left = 20
+          Top = 24
+          Width = 204
+          Height = 21
+          Style = csDropDownList
+          ItemIndex = 0
+          TabOrder = 2
+          Text = 'Daily'
+          OnChange = lstIntervalChange
+          Items.Strings = (
+            'Daily'
+            'Weekly')
+        end
+        object lstDay: TComboBox
+          Left = 20
+          Top = 52
+          Width = 204
+          Height = 21
+          Style = csDropDownList
+          Enabled = False
+          ItemIndex = 0
+          TabOrder = 3
+          Text = 'Monday'
+          OnChange = lstDayChange
+          Items.Strings = (
+            'Monday'
+            'Tuesday'
+            'Wednesday'
+            'Thursday'
+            'Friday'
+            'Saturday'
+            'Sunday')
+        end
+        object dtpDate: TDateTimePicker
+          Left = 20
+          Top = 104
+          Width = 204
+          Height = 21
+          Date = 40674.868549270830000000
+          Time = 40674.868549270830000000
+          TabOrder = 4
+          OnChange = dtpDateChange
+        end
+        object txtStartHour: TEdit
+          Left = 4
+          Top = 156
+          Width = 37
+          Height = 21
+          MaxLength = 2
+          NumbersOnly = True
+          TabOrder = 5
+        end
+        object txtStartMinute: TEdit
+          Left = 60
+          Top = 156
+          Width = 37
+          Height = 21
+          MaxLength = 2
+          NumbersOnly = True
+          TabOrder = 6
+        end
+        object txtEndHour: TEdit
+          Left = 128
+          Top = 156
+          Width = 37
+          Height = 21
+          MaxLength = 2
+          NumbersOnly = True
+          TabOrder = 7
+        end
+        object txtEndMinute: TEdit
+          Left = 184
+          Top = 156
+          Width = 37
+          Height = 21
+          MaxLength = 2
+          NumbersOnly = True
+          TabOrder = 8
+        end
+        object Panel4: TPanel
+          Left = 0
+          Top = 185
+          Width = 232
+          Height = 38
+          Align = alBottom
+          BevelOuter = bvNone
+          Padding.Left = 4
+          Padding.Top = 4
+          Padding.Right = 4
+          Padding.Bottom = 4
+          TabOrder = 9
+          ExplicitTop = 93
+          ExplicitWidth = 410
+          object btnAdd: TButton
+            Left = 4
+            Top = 4
+            Width = 97
+            Height = 30
+            Align = alLeft
+            Caption = '&Add'
+            TabOrder = 0
+            OnClick = btnAddClick
+            ExplicitTop = 9
+            ExplicitHeight = 29
+          end
+        end
+      end
+      object pnlTree: TPanel
+        Left = 232
+        Top = 0
+        Width = 347
+        Height = 223
+        Align = alClient
+        BevelOuter = bvNone
+        Padding.Top = 4
+        Padding.Right = 4
+        TabOrder = 1
+        ExplicitTop = 1
+        ExplicitWidth = 300
+        ExplicitHeight = 238
+        object Panel3: TPanel
+          Left = 0
+          Top = 185
+          Width = 343
+          Height = 38
+          Align = alBottom
+          BevelOuter = bvNone
+          Padding.Left = 4
+          Padding.Top = 4
+          Padding.Bottom = 4
+          TabOrder = 0
+          ExplicitTop = 93
+          ExplicitWidth = 410
+          object btnRemove: TButton
+            Left = 247
+            Top = 4
+            Width = 96
+            Height = 30
+            Align = alRight
+            Caption = '&Remove'
+            Enabled = False
+            TabOrder = 0
+            OnClick = btnRemoveClick
+            ExplicitLeft = 245
+          end
+        end
+      end
+    end
+  end
   object pnlNav: TPanel
     Left = 0
-    Top = 364
-    Width = 410
+    Top = 223
+    Width = 579
     Height = 49
     Align = alBottom
     BevelOuter = bvNone
@@ -67,10 +285,12 @@ object frmTimers: TfrmTimers
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
+    ExplicitTop = 364
+    ExplicitWidth = 410
     object Bevel2: TBevel
       Left = 4
       Top = 4
-      Width = 402
+      Width = 571
       Height = 5
       Align = alTop
       Shape = bsTopLine
@@ -78,7 +298,7 @@ object frmTimers: TfrmTimers
       ExplicitWidth = 396
     end
     object btnOK: TBitBtn
-      Left = 309
+      Left = 478
       Top = 9
       Width = 97
       Height = 36
@@ -90,6 +310,7 @@ object frmTimers: TfrmTimers
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
+      ExplicitLeft = 309
     end
     object btnCancel: TBitBtn
       Left = 4
@@ -103,167 +324,6 @@ object frmTimers: TfrmTimers
       ParentDoubleBuffered = False
       TabOrder = 1
       OnClick = btnCancelClick
-    end
-  end
-  object pnlConfig: TPanel
-    Left = 0
-    Top = 0
-    Width = 410
-    Height = 233
-    Align = alTop
-    BevelOuter = bvNone
-    TabOrder = 1
-    object Label1: TLabel
-      Left = 4
-      Top = 152
-      Width = 53
-      Height = 13
-      Caption = 'Start Time:'
-    end
-    object Label2: TLabel
-      Left = 128
-      Top = 152
-      Width = 47
-      Height = 13
-      Caption = 'End Time:'
-    end
-    object rbRecurring: TRadioButton
-      Left = 4
-      Top = 8
-      Width = 221
-      Height = 21
-      Caption = 'Recurring schedule'
-      Checked = True
-      TabOrder = 0
-      TabStop = True
-      OnClick = rbRecurringClick
-    end
-    object rbDate: TRadioButton
-      Left = 4
-      Top = 92
-      Width = 221
-      Height = 21
-      Caption = 'Specific date'
-      TabOrder = 1
-      OnClick = rbDateClick
-    end
-    object lstInterval: TComboBox
-      Left = 20
-      Top = 32
-      Width = 204
-      Height = 21
-      Style = csDropDownList
-      ItemIndex = 0
-      TabOrder = 2
-      Text = 'Daily'
-      OnChange = lstIntervalChange
-      Items.Strings = (
-        'Daily'
-        'Weekly')
-    end
-    object lstDay: TComboBox
-      Left = 20
-      Top = 60
-      Width = 204
-      Height = 21
-      Style = csDropDownList
-      TabOrder = 3
-      OnChange = lstDayChange
-      Items.Strings = (
-        'Monday'
-        'Tuesday'
-        'Thursday'
-        'Wednesday'
-        'Friday'
-        'Saturday'
-        'Sunday')
-    end
-    object dtpDate: TDateTimePicker
-      Left = 20
-      Top = 116
-      Width = 204
-      Height = 21
-      Date = 40674.868549270830000000
-      Time = 40674.868549270830000000
-      TabOrder = 4
-      OnChange = dtpDateChange
-    end
-    object btnAdd: TButton
-      Left = 4
-      Top = 196
-      Width = 97
-      Height = 29
-      Caption = '&Add'
-      TabOrder = 5
-      OnClick = btnAddClick
-    end
-    object txtStartHour: TEdit
-      Left = 4
-      Top = 168
-      Width = 37
-      Height = 21
-      MaxLength = 2
-      NumbersOnly = True
-      TabOrder = 6
-    end
-    object txtStartMinute: TEdit
-      Left = 60
-      Top = 168
-      Width = 37
-      Height = 21
-      MaxLength = 2
-      NumbersOnly = True
-      TabOrder = 7
-    end
-    object txtEndHour: TEdit
-      Left = 128
-      Top = 168
-      Width = 37
-      Height = 21
-      MaxLength = 2
-      NumbersOnly = True
-      TabOrder = 8
-    end
-    object txtEndMinute: TEdit
-      Left = 184
-      Top = 168
-      Width = 37
-      Height = 21
-      MaxLength = 2
-      NumbersOnly = True
-      TabOrder = 9
-    end
-  end
-  object Panel2: TPanel
-    Left = 0
-    Top = 233
-    Width = 410
-    Height = 131
-    Align = alClient
-    BevelOuter = bvNone
-    TabOrder = 2
-    object Panel3: TPanel
-      Left = 0
-      Top = 93
-      Width = 410
-      Height = 38
-      Align = alBottom
-      BevelOuter = bvNone
-      Padding.Left = 4
-      Padding.Top = 4
-      Padding.Right = 4
-      Padding.Bottom = 4
-      TabOrder = 0
-      object btnRemove: TButton
-        Left = 4
-        Top = 4
-        Width = 96
-        Height = 30
-        Align = alLeft
-        Caption = '&Remove'
-        Enabled = False
-        TabOrder = 0
-      end
     end
   end
 end
