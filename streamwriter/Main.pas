@@ -263,7 +263,6 @@ type
 
   end;
 
-  // REMARK: Das hier könnte auch gut THintWindow werden, sieht schöner aus. Siehe VirtualTrees.
   TStatusHint = class(TCustomHint)
   public
     constructor Create(AOwner: TComponent); override;
