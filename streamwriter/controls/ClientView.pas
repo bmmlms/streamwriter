@@ -25,7 +25,8 @@ uses
   Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
   StdCtrls, Menus, ImgList, Math, ICEClient, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, Tabs, DropComboTarget,
-  DropSource, ShlObj, ComObj, ShellAPI, DataManager, StreamBrowserView;
+  DropSource, ShlObj, ComObj, ShellAPI, DataManager, StreamBrowserView,
+  Logging;
 
 type
   TAccessCanvas = class(TCanvas);

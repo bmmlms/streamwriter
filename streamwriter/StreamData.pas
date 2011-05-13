@@ -26,7 +26,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, PngSpeedButton, GUIFunctions,
-  HomeCommunication, Functions, LanguageObjects, PerlRegEx;
+  HomeCommunication, Functions, LanguageObjects, PerlRegEx, Logging;
 
 type
   TfrmStreamData = class(TForm)

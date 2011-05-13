@@ -25,7 +25,7 @@ uses
   Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
   StdCtrls, Menus, ImgList, Math, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls,
-  HomeCommunication, DynBASS, pngimage, PngImageList, Forms;
+  HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging;
 
 type
   TModes = (moShow, moLoading, moError, moOldVersion);

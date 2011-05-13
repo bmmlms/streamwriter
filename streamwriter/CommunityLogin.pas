@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, ExtCtrls, Buttons, LanguageObjects, ShellAPI, Functions,
-  AppData, ComCtrls, HomeCommunication;
+  AppData, ComCtrls, HomeCommunication, Logging;
 
 type
   TfrmCommunityLogin = class(TForm)

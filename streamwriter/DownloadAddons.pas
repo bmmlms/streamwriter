@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, ComCtrls, Plugins, DownloadClient,
-  Functions, LanguageObjects, AppData;
+  Functions, LanguageObjects, AppData, Logging;
 
 type
   TfrmDownloadAddons = class(TForm)

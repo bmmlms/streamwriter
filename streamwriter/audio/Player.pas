@@ -22,7 +22,7 @@ unit Player;
 interface
 
 uses
-  Windows, SysUtils, Classes, DynBass, Math;
+  Windows, SysUtils, Classes, DynBass, Math, Logging;
 
 type
   TPlayer = class

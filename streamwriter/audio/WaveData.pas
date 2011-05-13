@@ -23,7 +23,7 @@ interface
 
 uses
   SysUtils, Windows, Classes, Functions, DynBASS, Math,
-  Generics.Collections, AudioStream;
+  Generics.Collections, AudioStream, Logging;
 
 type
   TWaveEntry = record

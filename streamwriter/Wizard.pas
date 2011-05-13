@@ -24,7 +24,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ComCtrls, ExtCtrls, Buttons, StdCtrls, ShellAPI, ShlObj, AppData,
-  ImgList, LanguageObjects, Functions, WizardBase, GUIFunctions;
+  ImgList, LanguageObjects, Functions, WizardBase, GUIFunctions, Logging;
 
 type
   TStepIceServer = class(TStep)

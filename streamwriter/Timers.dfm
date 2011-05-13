@@ -67,9 +67,6 @@ object frmTimers: TfrmTimers
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitLeft = -186
-    ExplicitTop = 300
-    ExplicitWidth = 609
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -93,7 +90,6 @@ object frmTimers: TfrmTimers
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 508
     end
     object btnCancel: TBitBtn
       Left = 4
@@ -107,7 +103,6 @@ object frmTimers: TfrmTimers
       ParentDoubleBuffered = False
       TabOrder = 1
       OnClick = btnCancelClick
-      ExplicitLeft = 508
     end
   end
   object pnlConfig: TPanel
@@ -247,10 +242,6 @@ object frmTimers: TfrmTimers
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitLeft = 4
-    ExplicitTop = 244
-    ExplicitWidth = 397
-    ExplicitHeight = 117
     object Panel3: TPanel
       Left = 0
       Top = 93
@@ -263,9 +254,6 @@ object frmTimers: TfrmTimers
       Padding.Right = 4
       Padding.Bottom = 4
       TabOrder = 0
-      ExplicitLeft = 1
-      ExplicitTop = 92
-      ExplicitWidth = 408
       object btnRemove: TButton
         Left = 4
         Top = 4
@@ -275,7 +263,6 @@ object frmTimers: TfrmTimers
         Caption = '&Remove'
         Enabled = False
         TabOrder = 0
-        ExplicitLeft = 8
       end
     end
   end

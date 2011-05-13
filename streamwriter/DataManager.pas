@@ -22,8 +22,8 @@ unit DataManager;
 interface
 
 uses
-  Windows, Classes, SysUtils, ExtendedStream,
-  Generics.Collections, ComCtrls, AppData, Functions;
+  Windows, Classes, SysUtils, ExtendedStream, Generics.Collections,
+  ComCtrls, AppData, Functions, Logging;
 
 type
   TStreamList = class;

@@ -24,7 +24,7 @@ interface
 uses
   SysUtils, Windows, WinSock, Classes, HTTPThread, ExtendedStream, ICEStream,
   Functions, Sockets, SyncObjs, AudioStream, Generics.Collections,
-  AppData, ICEPlayer, LanguageObjects, PlayerManager;
+  AppData, ICEPlayer, LanguageObjects, PlayerManager, Logging;
 
 type
   TICEThreadStates = (tsRecording, tsRetrying, tsIOError);

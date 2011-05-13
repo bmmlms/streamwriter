@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Plugins, PluginsShared, LanguageObjects,
-  Mp3FileUtils, Functions;
+  Mp3FileUtils, Functions, Logging;
 
 type
   TSetTagsThread = class(TProcessThreadBase)

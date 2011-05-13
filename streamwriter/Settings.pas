@@ -27,7 +27,7 @@ uses
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
   Plugins, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus,
   MsgDlg, PngImageList, PngSpeedButton, pngimage, VirtualTrees, Math,
-  DataManager, PngBitBtn, DownloadAddons;
+  DataManager, PngBitBtn, DownloadAddons, Logging;
 
 type
   TBlacklistNodeData = record

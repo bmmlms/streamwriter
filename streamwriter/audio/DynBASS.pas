@@ -3,7 +3,7 @@ unit DynBASS;
 interface
 
 uses
-  Windows, SysUtils, Classes, Functions, GUIFunctions, AppData;
+  Windows, SysUtils, Classes, Functions, GUIFunctions, AppData, Logging;
 
 const
   STREAMFILE_BUFFER = 1;

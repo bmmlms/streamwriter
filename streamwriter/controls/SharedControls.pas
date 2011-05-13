@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Classes, ComCtrls, ExtCtrls, Controls, Graphics,
   Functions, AppData, PngSpeedButton, PngImage, LanguageObjects,
-  Themes, Messages, Math, Buttons;
+  Themes, Messages, Math, Buttons, Logging;
 
 type
   TGripperStates = (gsUnknown, gsNormal, gsHot, gsDown);

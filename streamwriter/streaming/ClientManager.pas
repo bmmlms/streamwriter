@@ -22,7 +22,7 @@ unit ClientManager;
 interface
 
 uses
-  SysUtils, Windows, Classes, Generics.Collections, ICEClient,
+  SysUtils, Windows, Classes, Generics.Collections, ICEClient, Logging,
   Functions, AppData, DataManager, HomeCommunication, PlayerManager;
 
 type

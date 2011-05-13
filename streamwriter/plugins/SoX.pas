@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Plugins, PluginsShared, LanguageObjects,
-  Functions, ConfigureSoX;
+  Functions, ConfigureSoX, Logging;
 
 type
   TSoXThread = class(TProcessThreadBase)

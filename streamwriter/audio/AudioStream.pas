@@ -22,7 +22,8 @@ unit AudioStream;
 interface
 
 uses
-  Windows, SysUtils, StrUtils, Classes, ExtendedStream, MPEG, DynBASS;
+  Windows, SysUtils, StrUtils, Classes, ExtendedStream, MPEG, DynBASS,
+  Logging;
 
 type
   TPosRect = record

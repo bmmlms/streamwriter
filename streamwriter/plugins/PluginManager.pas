@@ -22,7 +22,8 @@ unit PluginManager;
 interface
 
 uses
-  Windows, SysUtils, Classes, Generics.Collections, Plugins, SetTags, SoX;
+  Windows, SysUtils, Classes, Generics.Collections, Plugins, SetTags, SoX,
+  Logging;
 
 type
   TPluginManager = class

@@ -22,7 +22,7 @@ unit StationCombo;
 interface
 
 uses
-  Windows, SysUtils, Classes, ListActns, ComCtrls, DataManager;
+  Windows, SysUtils, Classes, ListActns, ComCtrls, DataManager, Logging;
 
 type
   TMStationCombo = class(TComboBoxEx)

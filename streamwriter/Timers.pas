@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ComCtrls, StdCtrls, Mask, Buttons, ExtCtrls, LanguageObjects,
-  VirtualTrees, AppData, Functions;
+  VirtualTrees, AppData, Functions, Logging;
 
 type
   TScheduleInterval = (siDaily, siWeekly);

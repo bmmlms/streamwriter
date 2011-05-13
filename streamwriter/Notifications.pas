@@ -5,7 +5,7 @@ interface
 uses
   Windows, SysUtils, Messages, Classes, Controls, Forms, StdCtrls,
   Graphics, UxTheme, DWMAPI, PngImageList, ImgList, Math,
-  GUIFunctions, LanguageObjects;
+  GUIFunctions, LanguageObjects, Logging;
 
 type
   TNotificationStates = (nsFadingIn, nsVisible, nsFadingOut);

@@ -27,7 +27,7 @@ uses
   SysUtils, Windows, Classes, Controls, StdCtrls, ExtCtrls, Functions,
   Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
-  PlayerManager, Plugins, SoX, DownloadAddons, ConfigureSoX;
+  PlayerManager, Plugins, SoX, DownloadAddons, ConfigureSoX, Logging;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;

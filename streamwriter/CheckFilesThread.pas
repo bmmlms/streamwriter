@@ -3,7 +3,7 @@ unit CheckFilesThread;
 interface
 
 uses
-  Windows, SysUtils, Classes, Functions;
+  Windows, SysUtils, Classes, Functions, Logging;
 
 type
   TFileEntryAction = (eaNone, eaSize, eaRemove);

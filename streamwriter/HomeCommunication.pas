@@ -23,7 +23,8 @@ interface
 
 uses
   Windows, SysUtils, Classes, Functions, HTTPThread, Base64, XMLLib,
-  StrUtils, Generics.Collections, Sockets, WinSock, Int32Protocol;
+  StrUtils, Generics.Collections, Sockets, WinSock, Int32Protocol,
+  Logging;
 
 type
   TStreamInfo = record

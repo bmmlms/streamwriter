@@ -24,7 +24,8 @@ interface
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
   DataManager, VirtualTrees, LanguageObjects, GUIFunctions,
-  Generics.Collections, Graphics, Forms, ICEClient, Clipbrd, AppData;
+  Generics.Collections, Graphics, Forms, ICEClient, Clipbrd, AppData,
+  Logging;
 
 type
   TDebugView = class(TVirtualStringTree)

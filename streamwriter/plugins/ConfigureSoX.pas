@@ -23,7 +23,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, Functions;
+  Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, Functions,
+  Logging;
 
 type
   TfrmConfigureSoX = class(TForm)

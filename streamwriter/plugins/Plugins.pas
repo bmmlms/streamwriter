@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, Functions,
-  LanguageObjects, PluginsShared;
+  LanguageObjects, PluginsShared, Logging;
 
 type
   TDLLPlugin = class;

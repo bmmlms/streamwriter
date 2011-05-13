@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
   MControls, LanguageObjects, Tabs, CutView, Functions, AppData, SharedControls,
-  DynBass;
+  DynBass, Logging;
 
 type
   TCutToolBar = class(TToolBar)
