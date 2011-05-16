@@ -387,8 +387,8 @@ begin
 
   if (Column = 0) and (TextType = ttNormal) then
   begin
-    DTStart := StrToTime(IntToStr(NodeData.Schedule.StartHour) + FormatSettings.TimeSeparator + IntToStr(NodeData.Schedule.StartMinute) + FormatSettings.TimeSeparator + '00');
-    DTEnd := StrToTime(IntToStr(NodeData.Schedule.EndHour) + FormatSettings.TimeSeparator + IntToStr(NodeData.Schedule.EndMinute) + FormatSettings.TimeSeparator + '00');
+    DTStart := StrToTime(IntToStr(NodeData.Schedule.StartHour) + TimeSeparator + IntToStr(NodeData.Schedule.StartMinute) + TimeSeparator + '00');
+    DTEnd := StrToTime(IntToStr(NodeData.Schedule.EndHour) + TimeSeparator + IntToStr(NodeData.Schedule.EndMinute) + TimeSeparator + '00');
 
     if NodeData.Schedule.Recurring then
     begin
