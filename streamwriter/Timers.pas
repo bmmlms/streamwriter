@@ -195,6 +195,8 @@ var
 begin
   for i := 0 to FEntry.Schedules.Count - 1 do
     Tree.Add(FEntry.Schedules[i].Copy);
+
+  Language.Translate(Self);
 end;
 
 procedure TfrmTimers.lstDayChange(Sender: TObject);

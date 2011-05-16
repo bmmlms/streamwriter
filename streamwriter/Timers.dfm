@@ -203,7 +203,7 @@ object frmTimers: TfrmTimers
           Top = 141
           Width = 93
           Height = 27
-          Caption = 'btnAdd'
+          Caption = '&Add'
           TabOrder = 9
           OnClick = btnAddClick
         end
@@ -215,6 +215,7 @@ object frmTimers: TfrmTimers
         Height = 136
         Align = alClient
         BevelOuter = bvNone
+        Padding.Left = 4
         Padding.Top = 4
         Padding.Right = 4
         TabOrder = 1
@@ -222,9 +223,9 @@ object frmTimers: TfrmTimers
         ExplicitWidth = 579
         ExplicitHeight = 204
         object Panel3: TPanel
-          Left = 0
+          Left = 4
           Top = 101
-          Width = 326
+          Width = 322
           Height = 35
           Align = alBottom
           BevelOuter = bvNone
@@ -232,14 +233,16 @@ object frmTimers: TfrmTimers
           Padding.Top = 4
           Padding.Bottom = 4
           TabOrder = 0
+          ExplicitLeft = 0
           ExplicitTop = 72
+          ExplicitWidth = 326
           object btnRemove: TButton
-            Left = 233
+            Left = 229
             Top = 4
             Width = 93
             Height = 27
             Align = alRight
-            Caption = 'btnRemove'
+            Caption = '&Remove'
             Enabled = False
             TabOrder = 0
             OnClick = btnRemoveClick
