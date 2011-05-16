@@ -794,7 +794,7 @@ begin
 
   FColImages := Header.Columns.Add;
   FColImages.Text := '';
-  FColImages.Width := 56;
+  FColImages.Width := 72;
   FColImages.Options := FColImages.Options - [coResizable];
   FColFilename := Header.Columns.Add;
   FColFilename.Text := _('Filename');
@@ -934,11 +934,11 @@ begin
       Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20);
 
     if NodeData.Track.WasCut then
-    begin
-      Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 17);
-    end;
+      Images.Draw(PaintInfo.Canvas, L + 32, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 17);
     if NodeData.Track.IsAuto then
-      Images.Draw(PaintInfo.Canvas, L + 32, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 49);
+      Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 49);
+    if NodeData.Track.Finalized then
+      Images.Draw(PaintInfo.Canvas, L + 48, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 58);
   end;
 end;
 
@@ -1126,7 +1126,7 @@ var
   P: string;
 begin
   Result := True;
-  P := BuildPattern(FTab.FSearchBar.FSearch.Text, Hash, Chars);
+  P := BuildPattern(FTab.FSearchBar.FSearch.Text, Hash, Chars, True);
   if P = '' then
     Exit;
   if (not Like(LowerCase(Track.Filename), LowerCase(P))) and (not Like(LowerCase(Track.Streamname), LowerCase(P))) then
@@ -1349,6 +1349,11 @@ begin
       begin
         I1 := 0;
         I2 := 0;
+
+        if Data1.Track.Finalized then
+          I1 := I1 + 3;
+        if Data2.Track.Finalized then
+          I2 := I2 + 3;
 
         if Data1.Track.WasCut then
           I1 := I1 + 2;

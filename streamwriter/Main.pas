@@ -158,6 +158,7 @@ type
     mnuCopyTitle1: TMenuItem;
     actCopyTitle: TAction;
     cmdCopyTitle: TToolButton;
+    tmrSchedule: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -185,6 +186,7 @@ type
     procedure Community1Click(Sender: TObject);
     procedure actLogOffExecute(Sender: TObject);
     procedure actTimersExecute(Sender: TObject);
+    procedure tmrScheduleTimer(Sender: TObject);
   private
     FCommunityLogin: TfrmCommunityLogin;
 
@@ -302,6 +304,7 @@ begin
 
   TrayIcon1.Visible := False;
   tmrSpeed.Enabled := False;
+  tmrSchedule.Enabled := False;
 
   TfrmNotification.Stop;
   Hide;
@@ -348,8 +351,8 @@ begin
   StartTime := GetTickCount;
   while (FClients.Count > 0) or (HomeComm.Connected) or (FClients.Active) or (FCheckFiles <> nil) or (FUpdater.Active) do
   begin
-    // 5 Sekunden warten, für sauberes beenden
-    if StartTime < GetTickCount - 5000 then
+    // 10 Sekunden warten, für sauberes beenden
+    if StartTime < GetTickCount - 10000 then
     begin
       Hard := True;
       Break;
@@ -448,7 +451,7 @@ begin
   if (Length(Clients) <> 1) and (Clients[0].AutoRemove) then
     Exit;
 
-  T := TfrmTimers.Create(Self, Clients[0].Entry.Settings.Copy);
+  T := TfrmTimers.Create(Self, Clients[0].Entry);
   try
     T.ShowModal;
   finally
@@ -624,6 +627,7 @@ begin
   UpdateButtons;
   UpdateStatus;
   tmrSpeed.Enabled := True;
+  tmrSchedule.Enabled := True;
   TrayIcon1.Visible := AppGlobals.Tray;
   FUpdater := TUpdateClient.Create;
   FUpdater.OnNoUpdateFound := UpdaterNoUpdateFound;
@@ -643,10 +647,6 @@ begin
   ScreenSnap := AppGlobals.SnapMain;
 
   addStatus.CustomHint := TStatusHint.Create(Self);
-
-  {$IFNDEF DEBUG}
-  actTimers.Visible := False;
-  {$ENDIF}
 end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
@@ -1287,6 +1287,8 @@ begin
       FStreams.TrackList[i].Filesize := Filesize;
       FStreams.TrackList[i].Length := Length;
       FStreams.TrackList[i].WasCut := True;
+      FStreams.TrackList[i].Time := Now;
+      FStreams.TrackList[i].Finalized := True;
       Exit;
     end;
 end;
@@ -1324,6 +1326,28 @@ begin
       Inc(C);
   if AppGlobals.SubmitStats then
     HomeComm.UpdateStats(C);
+end;
+
+procedure TfrmStreamWriterMain.tmrScheduleTimer(Sender: TObject);
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+  Schedule: TSchedule;
+begin
+  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
+  for Client in Clients do
+  begin
+    for Schedule in Client.Entry.Schedules do
+    begin
+      if Schedule.Active then
+      begin
+        if TSchedule.MatchesStart(Schedule) then
+          Client.StartRecording;
+        if TSchedule.MatchesEnd(Schedule) then
+          Client.StopRecording;
+      end;
+    end;
+  end;
 end;
 
 procedure TfrmStreamWriterMain.tmrSpeedTimer(Sender: TObject);

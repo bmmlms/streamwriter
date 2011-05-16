@@ -31,6 +31,10 @@ type
   TBrowserActions = (baStart, baListen, baListenExternal);
   TUseFilters = (ufNone, ufWish, ufIgnore, ufBoth);
 
+  // Die ..None-Dinger müssen am Ende stehen!
+  TScheduleInterval = (siDaily, siWeekly, siNone);
+  TScheduleDay = (sdMonday, sdTuesday, sdWednesday, sdThursday, sdFriday, sdSaturday, sdSunday, sdNone);
+
   TIntArray = array of Integer;
 
   TStreamSettings = class
@@ -408,10 +412,7 @@ begin
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
 
-  if not ((Length(FDir) >= 3) and ((Copy(FDir, 1, 2) = '\\') or (Copy(FDir, 2, 2) = ':\'))) then
-  begin
-    FDir := IncludeTrailingBackslash(ExtractFilePath(Application.ExeName)) + FDir;
-  end;
+  FDir := TryUnRelativePath(FDir, False);
 
   FStorage.Read('DeleteStreams', FStreamSettings.FDeleteStreams, False);
   FStorage.Read('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore, True);
@@ -544,21 +545,7 @@ begin
   FStorage.Write('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern);
   FStorage.Write('FilePatternDecimals', FStreamSettings.FFilePatternDecimals);
 
-  SaveDir := FDir;
-  if not ((Length(FDir) >= 2) and (Copy(FDir, 1, 2) = '\\')) then
-  begin
-    TmpDir := LowerCase(IncludeTrailingBackslash(FDir));
-    AppDir := LowerCase(IncludeTrailingBackslash(ExtractFilePath(Application.ExeName)));
-    if Length(TmpDir) >= Length(AppDir) then
-      if Copy(TmpDir, 1, Length(AppDir)) = AppDir then
-      begin
-        TmpDir := Copy(IncludeTrailingBackslash(FDir), Length(AppDir), Length(IncludeTrailingBackslash(FDir)) - Length(AppDir));
-        if (Length(TmpDir) > 0) and (Copy(TmpDir, 1, 1) = '\') then
-          TmpDir := Copy(TmpDir, 2, Length(TmpDir) - 1);
-        SaveDir := TmpDir;
-      end;
-  end;
-  FStorage.Write('Dir', SaveDir);
+  FStorage.Write('Dir', TryRelativePath(FDir, False));
 
   FStorage.Write('DeleteStreams', FStreamSettings.FDeleteStreams);
   FStorage.Write('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore);

@@ -165,6 +165,13 @@ begin
         if not Failed then
         begin
           FData.Filesize := GetFileSize(FData.Filename);
+
+          // Okay, das hier ist nicht ordentlich, aber sollte passen...
+          if P.FSilenceStart then
+            FData.Length := FData.Length + P.FSilenceStartLength;
+          if P.FSilenceEnd then
+            FData.Length := FData.Length + P.FSilenceEndLength;
+
           FResult := arWin;
         end;
       end;

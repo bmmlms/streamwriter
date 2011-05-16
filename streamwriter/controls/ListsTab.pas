@@ -351,7 +351,7 @@ var
 begin
   if Trim(FAddEdit.Text) <> '' then
   begin
-    Pattern := BuildPattern(Trim(FAddEdit.Text), Hash, NumChars);
+    Pattern := BuildPattern(FAddEdit.Text, Hash, NumChars, False);
 
     if NumChars <= 3 then
     begin
@@ -463,7 +463,7 @@ begin
           for i := 0 to Lst.Count - 1 do
           begin
             Lst[i] := Trim(Lst[i]);
-            Pattern := BuildPattern(Lst[i], Hash, NumChars);
+            Pattern := BuildPattern(Lst[i], Hash, NumChars, False);
             if NumChars <= 3 then
               Continue;
 

@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, Classes, SysUtils, ExtendedStream, Generics.Collections,
-  ComCtrls, AppData, Functions, Logging;
+  ComCtrls, AppData, Functions, Logging, DateUtils;
 
 type
   TStreamList = class;
@@ -42,6 +42,7 @@ type
     FWasCut: Boolean;
     FBitRate: Cardinal;
     FIsAuto: Boolean;
+    FFinalized: Boolean;
   public
     constructor Create; overload;
     constructor Create(Time: TDateTime; Filename, Streamname: string); overload;
@@ -49,7 +50,7 @@ type
     class function Load(Stream: TExtendedStream; Version: Integer): TTrackInfo;
     procedure Save(Stream: TExtendedStream);
 
-    property Time: TDateTime read FTime;
+    property Time: TDateTime read FTime write FTime;
     property Filename: string read FFilename write FFilename;
     property Streamname: string read FStreamname write FStreamname;
     property Filesize: UInt64 read FFilesize write FFilesize;
@@ -57,6 +58,7 @@ type
     property WasCut: Boolean read FWasCut write FWasCut;
     property BitRate: Cardinal read FBitRate write FBitRate;
     property IsAuto: Boolean read FIsAuto write FIsAuto;
+    property Finalized: Boolean read FFinalized write FFinalized;
   end;
 
   TTitleInfo = class
@@ -118,6 +120,41 @@ type
     property Index: Cardinal read FIndex write FIndex;
   end;
 
+  TSchedule = class(TObject)
+  private
+    FActive: Boolean;
+    FRecurring: Boolean;
+    FInterval: TScheduleInterval;
+    FDay: TScheduleDay;
+    FDate: TDateTime;
+    FStartHour, FStartMinute, FEndHour, FEndMinute: Integer;
+
+    class function MatchesDay(S: TSchedule; NextDay: Boolean): Boolean;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    procedure Assign(From: TSchedule);
+    function Copy: TSchedule;
+    class function Load(Stream: TExtendedStream; Version: Integer): TSchedule;
+    procedure Save(Stream: TExtendedStream);
+
+    class function MatchesStart(S: TSchedule): Boolean;
+    class function MatchesEnd(S: TSchedule): Boolean;
+
+    property Active: Boolean read FActive write FActive;
+    property Recurring: Boolean read FRecurring write FRecurring;
+    property Interval: TScheduleInterval read FInterval write FInterval;
+    property Day: TScheduleDay read FDay write FDay;
+    property Date: TDateTime read FDate write FDate;
+    property StartHour: Integer read FStartHour write FStartHour;
+    property StartMinute: Integer read FStartMinute write FStartMinute;
+    property EndHour: Integer read FEndHour write FEndHour;
+    property EndMinute: Integer read FEndMinute write FEndMinute;
+  end;
+
+  TScheduleList = TList<TSchedule>;
+
   TStreamEntry = class(TObject)
   private
     FSettings: TStreamSettings;
@@ -144,6 +181,8 @@ type
     FMigrationSubmitted: Boolean;
     FMigrationTrackList: TTrackList;
     FMigrationRecentIndex: Integer;
+
+    FSchedules: TScheduleList;
 
     procedure FSetName(Value: string);
     procedure FSetIsInList(Value: Boolean);
@@ -175,6 +214,8 @@ type
     property IsInList: Boolean read FIsInList write FSetIsInList;
     property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
     property BytesReceived: UInt64 read FBytesReceived write FBytesReceived;
+
+    property Schedules: TScheduleList read FSchedules;
   end;
 
   TStreamList = class(TList<TStreamEntry>)
@@ -225,13 +266,16 @@ type
   end;
 
 const
-  DATAVERSION = 17;
+  DATAVERSION = 19;
 
 implementation
 
 { TStreamEntry }
 
 procedure TStreamEntry.Assign(From: TStreamEntry);
+var
+  i: Integer;
+  S: TSchedule;
 begin
   FName := From.FName;
   FStreamURL := From.FStreamURL;
@@ -247,6 +291,14 @@ begin
   FWasRecording := From.WasRecording;
   FURLs.Assign(From.FURLs);
   FSettings.Assign(From.FSettings);
+
+  FSchedules.Clear;
+  for i := 0 to From.FSchedules.Count - 1 do
+  begin
+    S := TSchedule.Create;
+    S.Assign(From.FSchedules[i]);
+    FSchedules.Add(S);
+  end;
 end;
 
 function TStreamEntry.Copy: TStreamEntry;
@@ -264,13 +316,20 @@ begin
   FIsInList := False;
   FSongsSaved := 0;
   FMigrationTrackList := TTrackList.Create;
+
+  FSchedules := TScheduleList.Create;
 end;
 
 destructor TStreamEntry.Destroy;
+var
+  i: Integer;
 begin
   FURLs.Free;
   FMigrationTrackList.Free;
   FSettings.Free;
+  for i := 0 to FSchedules.Count - 1 do
+    FSchedules[i].Free;
+  FSchedules.Free;
   inherited;
 end;
 
@@ -375,6 +434,13 @@ begin
   begin
     Stream.Read(Result.FWasRecording);
   end;
+
+  if Version >= 18 then
+  begin
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+      Result.FSchedules.Add(TSchedule.Load(Stream, Version));
+  end;
 end;
 
 procedure TStreamEntry.Save(Stream: TExtendedStream);
@@ -403,6 +469,10 @@ begin
   Stream.Write(FBytesReceived);
 
   Stream.Write(FWasRecording);
+
+  Stream.Write(FSchedules.Count);
+  for i := 0 to FSchedules.Count - 1 do
+    FSchedules[i].Save(Stream);
 end;
 
 procedure TStreamEntry.FSetGenre(Value: string);
@@ -804,6 +874,10 @@ begin
   Result := TTrackInfo.Create;
 
   Stream.Read(Result.FFilename);
+
+  // !!!TESTEN TESTEN TESTEN!!!
+  Result.FFilename := TryUnRelativePath(Result.FFilename, True);
+
   Stream.Read(Result.FStreamname);
   Stream.Read(Result.FFilesize);
   if Version >= 13 then
@@ -817,11 +891,18 @@ begin
     Stream.Read(Result.FBitRate);
     Stream.Read(Result.FIsAuto);
   end;
+
+  if Version > 18 then
+  begin
+    Stream.Read(Result.FFinalized);
+  end;
 end;
 
 procedure TTrackInfo.Save(Stream: TExtendedStream);
 begin
-  Stream.Write(FFilename);
+  // !!!TESTEN TESTEN TESTEN!!!
+  Stream.Write(TryRelativePath(FFilename, True));
+
   Stream.Write(FStreamname);
   Stream.Write(FFilesize);
   Stream.Write(FLength);
@@ -829,6 +910,7 @@ begin
   Stream.Write(FWasCut);
   Stream.Write(FBitRate);
   Stream.Write(FIsAuto);
+  Stream.Write(FFinalized);
 end;
 
 { TStreamList }
@@ -936,7 +1018,7 @@ begin
 
   FTitle := Title;
 
-  Pattern := BuildPattern(Title, Hash, NumChars);
+  Pattern := BuildPattern(Title, Hash, NumChars, False);
   FPattern := Pattern;
   FHash := Hash;
 end;
@@ -956,7 +1038,7 @@ begin
     Stream.Read(Result.FHash);
   end else
   begin
-    Pattern := BuildPattern(Result.FTitle, Hash, NumChars);
+    Pattern := BuildPattern(Result.FTitle, Hash, NumChars, False);
     Result.FPattern := Pattern;
     Result.FHash := Hash;
   end;
@@ -1044,6 +1126,141 @@ begin
   Stream.Write(FName);
   Stream.Write(FStartURL);
   Stream.Write(FIndex);
+end;
+
+{ TScheduledRecording }
+
+procedure TSchedule.Assign(From: TSchedule);
+begin
+  FActive := From.FActive;
+  FRecurring := From.FRecurring;
+  FInterval := From.FInterval;
+  FDay := From.FDay;
+  FDate := From.FDate;
+  FStartHour := From.FStartHour;
+  FStartMinute := From.FStartMinute;
+  FEndHour := From.FEndHour;
+  FEndMinute := From.FEndMinute;
+end;
+
+function TSchedule.Copy: TSchedule;
+begin
+  Result := TSchedule.Create;
+  Result.Assign(Self);
+end;
+
+constructor TSchedule.Create;
+begin
+
+end;
+
+destructor TSchedule.Destroy;
+begin
+
+  inherited;
+end;
+
+class function TSchedule.Load(Stream: TExtendedStream;
+  Version: Integer): TSchedule;
+var
+  B: Byte;
+begin
+  Result := TSchedule.Create;
+  Stream.Read(Result.FActive);
+  Stream.Read(Result.FRecurring);
+  Stream.Read(B);
+  Result.FInterval := TScheduleInterval(B);
+  Stream.Read(B);
+  Result.FDay := TScheduleDay(B);
+  Stream.Read(Result.FDate);
+  Stream.Read(Result.FStartHour);
+  Stream.Read(Result.FStartMinute);
+  Stream.Read(Result.FEndHour);
+  Stream.Read(Result.FEndMinute);
+end;
+
+class function TSchedule.MatchesDay(S: TSchedule; NextDay: Boolean): Boolean;
+var
+  DOW: Word;
+begin
+  Result := False;
+  if S.FRecurring then
+  begin
+    Result := True;
+    if S.FInterval = siWeekly then
+    begin
+      DOW := DayOfWeek(Now);
+
+      // Weil Sonntag bei DayOfWeek() der erste ist...
+      if DOW = 1 then
+        DOW := 7
+      else
+        Dec(DOW);
+
+      if NextDay then
+        Inc(DOW);
+
+      if not (DOW = Word(S.FDay) + 1) then
+        Result := False;
+    end;
+  end else
+  begin
+    if NextDay then
+      S.Date := S.Date + 1;
+
+    if Trunc(S.Date) = Trunc(Now) then
+      Result := True;
+  end;
+end;
+
+class function TSchedule.MatchesStart(S: TSchedule): Boolean;
+begin
+  Result := False;
+  if not MatchesDay(S, False) then
+    Exit;
+
+  if (S.StartHour = HourOf(Now)) and (S.StartMinute = MinuteOf(Now)) and (SecondOf(Now) <= 5) then
+    Result := True;
+end;
+
+class function TSchedule.MatchesEnd(S: TSchedule): Boolean;
+var
+  NextDay: Boolean;
+  StartTime, EndTime: TDateTime;
+begin
+  Result := False;
+
+  StartTime := StrToTime(IntToStr(S.StartHour) + FormatSettings.TimeSeparator + IntToStr(S.StartMinute) + FormatSettings.TimeSeparator + '00');
+  EndTime := StrToTime(IntToStr(S.StartHour) + FormatSettings.TimeSeparator + IntToStr(S.StartMinute) + FormatSettings.TimeSeparator + '00');
+
+  NextDay := False;
+  if EndTime < StartTime then
+  begin
+    // Das hier geht von z.B. 23:00 bis 01:00, also über 24 Uhr hinaus.
+    // Für MatchesDay muss dann ein Tag drauf gepackt werden.
+
+    // TODO: !!!!!TESTEN!!!!!
+    NextDay := True;
+  end;
+
+  if not MatchesDay(S, NextDay) then
+    Exit;
+
+  if (S.EndHour = HourOf(Now)) and (S.EndMinute = MinuteOf(Now)) and (SecondOf(Now) <= 5) then
+    Result := True;
+end;
+
+procedure TSchedule.Save(Stream: TExtendedStream);
+begin
+  Stream.Write(FActive);
+  Stream.Write(FRecurring);
+  Stream.Write(Byte(FInterval));
+  Stream.Write(Byte(FDay));
+  Stream.Write(FDate);
+  Stream.Write(FStartHour);
+  Stream.Write(FStartMinute);
+  Stream.Write(FEndHour);
+  Stream.Write(FEndMinute);
 end;
 
 end.

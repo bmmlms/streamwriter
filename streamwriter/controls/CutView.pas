@@ -586,6 +586,7 @@ end;
 
 procedure TCutView.ProcessThreadError(Sender: TObject);
 begin
+  FWasSaved := False;
   FState := csError;
   FProcessThread := nil;
   MsgBox(GetParentForm(Self).Handle, _('An error occured while processing the file.'), _('Error'), MB_ICONERROR);
@@ -635,6 +636,7 @@ begin
   if FWaveData <> nil then
     FreeAndNil(FWaveData);
 
+  FWasSaved := True;
   FState := csWorking;
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
@@ -912,7 +914,6 @@ begin
 
   FScanThread := nil;
 
-  FWasSaved := False;
   FState := csReady;
 
   FPB.BuildBuffer;
@@ -924,6 +925,7 @@ begin
     if Assigned(TCutTab(Owner).OnSaved) then
       TCutTab(Owner).OnSaved(Owner, FWaveData.Filesize, Trunc(FWaveData.Secs));
   end;
+  FWasSaved := False;
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);

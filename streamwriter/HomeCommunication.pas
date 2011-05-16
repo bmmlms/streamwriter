@@ -81,7 +81,7 @@ type
     function XMLGet(T: string): TXMLLib;
   protected
     procedure DoConnected; override;
-    procedure DoReceivedString(D: string); override;
+    procedure DoReceivedString(D: AnsiString); override;
     procedure DoLoggedOn(Version: Integer; Header, Data: TXMLNode);
     procedure DoLoggedOff(Version: Integer; Header, Data: TXMLNode);
     procedure DoGenresReceived(Version: Integer; Header, Data: TXMLNode);
@@ -689,18 +689,20 @@ begin
     Sync(FOnGenresReceived);
 end;
 
-procedure THomeThread.DoReceivedString(D: string);
+procedure THomeThread.DoReceivedString(D: AnsiString);
 var
   Version: Integer;
   XMLDocument: TXMLLib;
   Header, Data: TXMLNode;
   T: string;
 begin
+  TLogger.Write('RCVD: ' + D);
+
   inherited;
     try
       XMLDocument := TXMLLib.Create;
       try
-        XMLDocument.LoadFromString(AnsiString(D));
+        XMLDocument.LoadFromString(D);
 
         Header := XMLDocument.Root.Nodes.GetNode('header');
         Data := XMLDocument.Root.Nodes.GetNode('data');
@@ -749,6 +751,8 @@ begin
     except
       raise Exception.Create('Invalid data received');
     end;
+
+  TLogger.Write('END');
 end;
 
 procedure THomeThread.DoServerInfo(Version: Integer; Header,
@@ -799,7 +803,7 @@ begin
   if not AppGlobals.AutoTuneIn then
     Exit;
 
-  FChangedStreamName := Data.Nodes.GetNode('streamname').Value.AsString;
+  FChangedStreamName := Trim(Data.Nodes.GetNode('streamname').Value.AsString);
   FChangedTitle := Data.Nodes.GetNode('title').Value.AsString;
   FChangedCurrentURL := Data.Nodes.GetNode('currenturl').Value.AsString;
   FChangedKbps := Data.Nodes.GetNode('kbps').Value.AsLongWord;

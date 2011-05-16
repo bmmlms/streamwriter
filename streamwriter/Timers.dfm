@@ -4,8 +4,8 @@ object frmTimers: TfrmTimers
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Setup timers'
-  ClientHeight = 272
-  ClientWidth = 579
+  ClientHeight = 362
+  ClientWidth = 330
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -53,52 +53,47 @@ object frmTimers: TfrmTimers
   Position = poOwnerFormCenter
   OnClose = FormClose
   OnCreate = FormCreate
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object Panel2: TPanel
     Left = 0
     Top = 0
-    Width = 579
-    Height = 223
+    Width = 330
+    Height = 313
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitTop = 233
-    ExplicitWidth = 410
-    ExplicitHeight = 131
+    ExplicitWidth = 579
+    ExplicitHeight = 223
     object Panel1: TPanel
       Left = 0
       Top = 0
-      Width = 579
-      Height = 223
+      Width = 330
+      Height = 313
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitLeft = 140
-      ExplicitTop = 4
-      ExplicitWidth = 521
-      ExplicitHeight = 285
+      ExplicitWidth = 579
+      ExplicitHeight = 223
       object pnlConfig: TPanel
         Left = 0
         Top = 0
-        Width = 232
-        Height = 223
-        Align = alLeft
+        Width = 330
+        Height = 177
+        Align = alTop
         BevelOuter = bvNone
         TabOrder = 0
-        ExplicitLeft = 1
-        ExplicitTop = 1
-        ExplicitHeight = 238
         object Label1: TLabel
           Left = 4
-          Top = 140
+          Top = 132
           Width = 53
           Height = 13
           Caption = 'Start Time:'
         end
         object Label2: TLabel
-          Left = 128
-          Top = 140
+          Left = 108
+          Top = 132
           Width = 47
           Height = 13
           Caption = 'End Time:'
@@ -126,7 +121,7 @@ object frmTimers: TfrmTimers
         object lstInterval: TComboBox
           Left = 20
           Top = 24
-          Width = 204
+          Width = 305
           Height = 21
           Style = csDropDownList
           ItemIndex = 0
@@ -140,7 +135,7 @@ object frmTimers: TfrmTimers
         object lstDay: TComboBox
           Left = 20
           Top = 52
-          Width = 204
+          Width = 305
           Height = 21
           Style = csDropDownList
           Enabled = False
@@ -160,7 +155,7 @@ object frmTimers: TfrmTimers
         object dtpDate: TDateTimePicker
           Left = 20
           Top = 104
-          Width = 204
+          Width = 305
           Height = 21
           Date = 40674.868549270830000000
           Time = 40674.868549270830000000
@@ -169,7 +164,7 @@ object frmTimers: TfrmTimers
         end
         object txtStartHour: TEdit
           Left = 4
-          Top = 156
+          Top = 148
           Width = 37
           Height = 21
           MaxLength = 2
@@ -177,8 +172,8 @@ object frmTimers: TfrmTimers
           TabOrder = 5
         end
         object txtStartMinute: TEdit
-          Left = 60
-          Top = 156
+          Left = 52
+          Top = 148
           Width = 37
           Height = 21
           MaxLength = 2
@@ -186,8 +181,8 @@ object frmTimers: TfrmTimers
           TabOrder = 6
         end
         object txtEndHour: TEdit
-          Left = 128
-          Top = 156
+          Left = 108
+          Top = 148
           Width = 37
           Height = 21
           MaxLength = 2
@@ -195,79 +190,60 @@ object frmTimers: TfrmTimers
           TabOrder = 7
         end
         object txtEndMinute: TEdit
-          Left = 184
-          Top = 156
+          Left = 156
+          Top = 148
           Width = 37
           Height = 21
           MaxLength = 2
           NumbersOnly = True
           TabOrder = 8
         end
-        object Panel4: TPanel
-          Left = 0
-          Top = 185
-          Width = 232
-          Height = 38
-          Align = alBottom
-          BevelOuter = bvNone
-          Padding.Left = 4
-          Padding.Top = 4
-          Padding.Right = 4
-          Padding.Bottom = 4
+        object btnAdd: TButton
+          Left = 232
+          Top = 141
+          Width = 93
+          Height = 27
+          Caption = 'btnAdd'
           TabOrder = 9
-          ExplicitTop = 93
-          ExplicitWidth = 410
-          object btnAdd: TButton
-            Left = 4
-            Top = 4
-            Width = 97
-            Height = 30
-            Align = alLeft
-            Caption = '&Add'
-            TabOrder = 0
-            OnClick = btnAddClick
-            ExplicitTop = 9
-            ExplicitHeight = 29
-          end
+          OnClick = btnAddClick
         end
       end
       object pnlTree: TPanel
-        Left = 232
-        Top = 0
-        Width = 347
-        Height = 223
+        Left = 0
+        Top = 177
+        Width = 330
+        Height = 136
         Align = alClient
         BevelOuter = bvNone
         Padding.Top = 4
         Padding.Right = 4
         TabOrder = 1
-        ExplicitTop = 1
-        ExplicitWidth = 300
-        ExplicitHeight = 238
+        ExplicitTop = 0
+        ExplicitWidth = 579
+        ExplicitHeight = 204
         object Panel3: TPanel
           Left = 0
-          Top = 185
-          Width = 343
-          Height = 38
+          Top = 101
+          Width = 326
+          Height = 35
           Align = alBottom
           BevelOuter = bvNone
           Padding.Left = 4
           Padding.Top = 4
           Padding.Bottom = 4
           TabOrder = 0
-          ExplicitTop = 93
-          ExplicitWidth = 410
+          ExplicitTop = 72
           object btnRemove: TButton
-            Left = 247
+            Left = 233
             Top = 4
-            Width = 96
-            Height = 30
+            Width = 93
+            Height = 27
             Align = alRight
-            Caption = '&Remove'
+            Caption = 'btnRemove'
             Enabled = False
             TabOrder = 0
             OnClick = btnRemoveClick
-            ExplicitLeft = 245
+            ExplicitLeft = 244
           end
         end
       end
@@ -275,8 +251,8 @@ object frmTimers: TfrmTimers
   end
   object pnlNav: TPanel
     Left = 0
-    Top = 223
-    Width = 579
+    Top = 313
+    Width = 330
     Height = 49
     Align = alBottom
     BevelOuter = bvNone
@@ -285,12 +261,12 @@ object frmTimers: TfrmTimers
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitTop = 364
-    ExplicitWidth = 410
+    ExplicitTop = 223
+    ExplicitWidth = 579
     object Bevel2: TBevel
       Left = 4
       Top = 4
-      Width = 571
+      Width = 322
       Height = 5
       Align = alTop
       Shape = bsTopLine
@@ -298,7 +274,7 @@ object frmTimers: TfrmTimers
       ExplicitWidth = 396
     end
     object btnOK: TBitBtn
-      Left = 478
+      Left = 229
       Top = 9
       Width = 97
       Height = 36
@@ -310,20 +286,7 @@ object frmTimers: TfrmTimers
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 309
-    end
-    object btnCancel: TBitBtn
-      Left = 4
-      Top = 9
-      Width = 97
-      Height = 36
-      Align = alLeft
-      Caption = '&Cancel'
-      DoubleBuffered = False
-      Layout = blGlyphRight
-      ParentDoubleBuffered = False
-      TabOrder = 1
-      OnClick = btnCancelClick
+      ExplicitLeft = 478
     end
   end
 end

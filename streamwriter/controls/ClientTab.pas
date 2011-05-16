@@ -979,7 +979,7 @@ begin
     Client := Sender as TICEClient;
     if Client.Entry.Settings.AddSavedToIgnore and FullTitle then
     begin
-      Pattern := BuildPattern(Title, Hash, NumChars);
+      Pattern := BuildPattern(Title, Hash, NumChars, True);
       if NumChars > 3 then
       begin
         Found := False;
