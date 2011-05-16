@@ -1230,8 +1230,8 @@ var
 begin
   Result := False;
 
-  StartTime := StrToTime(IntToStr(S.StartHour) + FormatSettings.TimeSeparator + IntToStr(S.StartMinute) + FormatSettings.TimeSeparator + '00');
-  EndTime := StrToTime(IntToStr(S.StartHour) + FormatSettings.TimeSeparator + IntToStr(S.StartMinute) + FormatSettings.TimeSeparator + '00');
+  StartTime := StrToTime(IntToStr(S.StartHour) + TimeSeparator + IntToStr(S.StartMinute) + TimeSeparator + '00');
+  EndTime := StrToTime(IntToStr(S.StartHour) + TimeSeparator + IntToStr(S.StartMinute) + TimeSeparator + '00');
 
   NextDay := False;
   if EndTime < StartTime then
