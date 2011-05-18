@@ -1239,7 +1239,7 @@ begin
     // Das hier geht von z.B. 23:00 bis 01:00, also über 24 Uhr hinaus.
     // Für MatchesDay muss dann ein Tag drauf gepackt werden.
 
-    // TODO: !!!!!TESTEN!!!!!
+    // TODO: !!!!!TESTEN!!!!!  funzt nicht!!!
     NextDay := True;
   end;
 

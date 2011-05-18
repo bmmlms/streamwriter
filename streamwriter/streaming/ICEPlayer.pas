@@ -255,7 +255,7 @@ begin
         raise Exception.Create('');
       BitRate := Trunc(BufLen / (125 * Time) + 0.5);
 
-      FPlayStartBuffer := BitRate * 1000;
+      FPlayStartBuffer := BitRate * 900;
     finally
       BASSStreamFree(TempPlayer);
     end;

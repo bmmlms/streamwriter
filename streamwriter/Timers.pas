@@ -103,16 +103,19 @@ end;
 
 procedure TfrmTimers.btnAddClick(Sender: TObject);
 begin
-  if lstInterval.ItemIndex = -1 then
+  if rbRecurring.Checked then
   begin
-    MsgBox(Handle, 'TODO: !!!', 'TODO: !!!', MB_ICONINFORMATION);
-    Exit;
-  end;
+    if lstInterval.ItemIndex = -1 then
+    begin
+      MsgBox(Handle, 'TODO: !!!', 'TODO: !!!', MB_ICONINFORMATION);
+      Exit;
+    end;
 
-  if lstDay.ItemIndex = -1 then
-  begin
-    MsgBox(Handle, 'TODO: !!!', 'TODO: !!!', MB_ICONINFORMATION);
-    Exit;
+    if lstDay.ItemIndex = -1 then
+    begin
+      MsgBox(Handle, 'TODO: !!!', 'TODO: !!!', MB_ICONINFORMATION);
+      Exit;
+    end;
   end;
 
   if not TimesOkay then
@@ -197,6 +200,10 @@ begin
     Tree.Add(FEntry.Schedules[i].Copy);
 
   Language.Translate(Self);
+
+  dtpDate.DateTime := Now;
+  lstInterval.ItemIndex := 0;
+  lstDay.ItemIndex := 0;
 end;
 
 procedure TfrmTimers.lstDayChange(Sender: TObject);

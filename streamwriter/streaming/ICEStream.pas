@@ -82,6 +82,7 @@ type
     FStopAfterSong: Boolean;
 
     FMetaInt: Integer;
+    FNextMetaInt: Integer;
     FSongsSaved: Cardinal;
     FStreamName: string;
     FStreamURL: string;
@@ -130,7 +131,7 @@ type
     procedure DataReceived(CopySize: Integer);
     procedure SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
     procedure TrySave;
-    procedure ProcessData;
+    procedure ProcessData(Received: Cardinal);
     procedure GetSettings;
     procedure StreamTracksDebug(Text, Data: string);
     procedure FreeAudioStream;
@@ -146,7 +147,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Process; override;
+    procedure Process(Received: Cardinal); override;
 
     procedure StartRecording;
     procedure StopRecording;
@@ -265,7 +266,7 @@ begin
   if Length(Title) > 0 then
     for i := 1 to Length(Title) do
     begin
-      if (Ord(Title[i]) >= 32) and (Ord(Title[i]) < 126) then
+      if (Ord(Title[i]) >= 32) then // and (Ord(Title[i]) < 126) then
         Result := Result + Title[i];
     end;
 end;
@@ -352,6 +353,7 @@ begin
     begin
       try
         FMetaInt := StrToInt(GetHeaderData('icy-metaint'));
+        FNextMetaInt := FMetaInt;
       except
         WriteDebug(_('Meta-interval could not be found'), 1, 1);
       end;
@@ -841,14 +843,16 @@ begin
   end;
 end;
 
-procedure TICEStream.ProcessData;
+procedure TICEStream.ProcessData(Received: Cardinal);
 var
   TitleChanged: Boolean;
-  MetaLen, P: Integer;
-  Title, MetaData: string;
+  MetaLen, P, BytesWritten, DataCopied: Integer;
+  Title: string;
+  MetaData: AnsiString;
   Buf: Byte;
   Track: TStreamTrack;
 begin
+  DataCopied := 0;
   Seek(0, soFromBeginning);
 
   // Falls Einstellungen vom User geändert wurde, die nicht zu unserem Stream-Typ passen, müssen
@@ -888,106 +892,139 @@ begin
   end else
   begin
     TitleChanged := False;
-    while Position < Size - FMetaInt - 4081 do // 4081 wegen 255*16+1 (Max-MetaLen)
+
+
+
+
+    // TODO: TESTEN!!!
+    if FSettings.SeparateTracks then
+      TrySave;
+
+    if (RecordTitle <> '') and (FBytesPerSec > 0) and (FTitle <> FRecordTitle) then
     begin
-      DataReceived(FMetaInt);
-
-      if FSettings.SeparateTracks then
-        TrySave;
-
-      if (RecordTitle <> '') and (FBytesPerSec > 0) and (FTitle <> FRecordTitle) then
+      if FStreamTracks.Count > 0 then
       begin
-        if FStreamTracks.Count > 0 then
-        begin
-          Track := FStreamTracks[FStreamTracks.Count - 1];
+        Track := FStreamTracks[FStreamTracks.Count - 1];
 
-          if (FMetaCounter > 2) and (Track.E > -1) and (FAudioStream.Size > Track.E + Max(FBytesPerSec * (FSettings.SilenceBufferSeconds + 10) * 2, FBytesPerSec * (FSettings.SongBufferSeconds + 10) * 2)) then
-          begin
-            // Zuviel empfangen und Titel war nicht dabei
-            FHaltClient := True;
-          end;
-        end else
+        if (FMetaCounter > 2) and (Track.E > -1) and (FAudioStream.Size > Track.E + Max(FBytesPerSec * (FSettings.SilenceBufferSeconds + 10) * 2, FBytesPerSec * (FSettings.SongBufferSeconds + 10) * 2)) then
         begin
-          // Keine Tracks in der Liste..
-          //FHaltClient := True;
-        end;
-
-        if (FAudioStream.Size > FBytesPerSec * 30) and (FMetaCounter = 1) then
-        begin
-          // Titel scheint nicht zu kommen..
+          // Zuviel empfangen und Titel war nicht dabei
           FHaltClient := True;
         end;
-
-        // Paranoid, I is it.
-        if FMetaCounter > 4 then
-          FHaltClient := True;
-      end;
-
-      Read(Buf, 1);
-      if Buf > 0 then
+      end else
       begin
-        MetaLen := Buf * 16;
-
-        MetaData := Trim(string(ToString(Position, MetaLen)));
-        Seek(MetaLen, soFromCurrent);
-        P := PosEx(''';', MetaData, 14);
-        Title := Trim(Copy(MetaData, 14, P - 14));
-        Title := CleanTitle(Title);
-
-        if Title <> FTitle then
-        begin
-          WriteDebug(Format(_('"%s" now playing'), [Title]), 2, 0);
-          TitleChanged := True;
-          Inc(FMetaCounter);
-
-          // Ist nur dafür da, um dem Server zu sagen "hier läuft jetzt ein volles Lied"
-          if (FMetaCounter >= 2) then
-            FFullTitleFound := True;
-        end;
-
-        if FSettings.SeparateTracks then
-          if (Title <> FTitle) and (FRecordingTitleFound) then
-          begin
-            if FAudioStream <> nil then
-              FStreamTracks.FoundTitle(FAudioStream.Size, Title, True);
-          end else if Title = FTitle then
-          begin
-
-          end else
-          begin
-            // Achtung: Der Block hier ist so ähnlich in StartRecordingInternal() nochmal!
-            if not FRecordingTitleFound then
-              if (FMetaCounter >= 2) or ((FMetaCounter = 1) and (not FSettings.OnlySaveFull)) then
-              begin
-                if FAudioStream <> nil then
-                begin
-                  FRecordingTitleFound := True;
-                  if FAudioStream.InheritsFrom(TAudioStreamMemory) then
-                  begin
-                    // Stream sauber machen.
-                    if FSettings.SearchSilence then
-                      TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SilenceBufferSeconds))
-                    else
-                      TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SongBufferSeconds));
-                  end;
-
-                  if FMetaCounter >= 2 then
-                    FStreamTracks.FoundTitle(FAudioStream.Size, Title, True)
-                  else
-                    FStreamTracks.FoundTitle(FAudioStream.Size, Title, False);
-                end;
-              end;
-          end;
-
-        FTitle := Title;
-
-        if TitleChanged then
-          if Assigned(FOnTitleChanged) then
-            FOnTitleChanged(Self);
+        // Keine Tracks in der Liste..
+        //FHaltClient := True;
       end;
+
+      if (FAudioStream.Size > FBytesPerSec * 30) and (FMetaCounter = 1) then
+      begin
+        // Titel scheint nicht zu kommen..
+        FHaltClient := True;
+      end;
+
+      // Paranoid, I is it.
+      if FMetaCounter > 4 then
+        FHaltClient := True;
     end;
 
+
+
+
+
+    //while Position < Size - FMetaInt - 4081 do // 4081 wegen 255*16+1 (Max-MetaLen)
+    while Size > 0 do
+    begin
+      if (FNextMetaInt > FMetaInt) or (FNextMetaInt < 0) then
+        raise Exception.Create('Fehlermeldung');
+
+
+      if FNextMetaInt > 0 then
+      begin
+        DataCopied := Min(FNextMetaInt, Size - Position);
+        if DataCopied = 0 then
+          Break;
+        DataReceived(DataCopied);
+        FNextMetaInt := FNextMetaInt - DataCopied;
+      end;
+
+      if FNextMetaInt = 0 then
+      begin
+        if Position < Size - 4081 then
+        begin
+          FNextMetaInt := FMetaInt;
+
+          Read(Buf, 1);
+          if Buf > 0 then
+          begin
+            MetaLen := Buf * 16;
+
+            MetaData := Trim(string(ToString(Position, MetaLen)));
+            Seek(MetaLen, soFromCurrent);
+            P := PosEx(''';', MetaData, 14);
+            MetaData := Trim(Copy(MetaData, 14, P - 14));
+            if IsUTF8String(MetaData) then
+              Title := CleanTitle(UTF8ToString(MetaData))
+            else
+              Title := CleanTitle(MetaData);
+
+            if Title <> FTitle then
+            begin
+              WriteDebug(Format(_('"%s" now playing'), [Title]), 2, 0);
+              TitleChanged := True;
+              Inc(FMetaCounter);
+
+              // Ist nur dafür da, um dem Server zu sagen "hier läuft jetzt ein volles Lied"
+              if (FMetaCounter >= 2) then
+                FFullTitleFound := True;
+            end;
+
+            if FSettings.SeparateTracks then
+              if (Title <> FTitle) and (FRecordingTitleFound) then
+              begin
+                if FAudioStream <> nil then
+                  FStreamTracks.FoundTitle(FAudioStream.Size, Title, True);
+              end else if Title = FTitle then
+              begin
+
+              end else
+              begin
+                // Achtung: Der Block hier ist so ähnlich in StartRecordingInternal() nochmal!
+                if not FRecordingTitleFound then
+                  if (FMetaCounter >= 2) or ((FMetaCounter = 1) and (not FSettings.OnlySaveFull)) then
+                  begin
+                    if FAudioStream <> nil then
+                    begin
+                      FRecordingTitleFound := True;
+                      if FAudioStream.InheritsFrom(TAudioStreamMemory) then
+                      begin
+                        // Stream sauber machen. TODO: Sicher??? Damit klaue ich mir wertvolle Bytes!
+                        if FSettings.SearchSilence then
+                          TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SilenceBufferSeconds))
+                        else
+                          TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SongBufferSeconds));
+                      end;
+
+                      if FMetaCounter >= 2 then
+                        FStreamTracks.FoundTitle(FAudioStream.Size, Title, True)
+                      else
+                        FStreamTracks.FoundTitle(FAudioStream.Size, Title, False);
+                    end;
+                  end;
+              end;
+
+            FTitle := Title;
+
+            if TitleChanged then
+              if Assigned(FOnTitleChanged) then
+                FOnTitleChanged(Self);
+          end;
+        end else
+          Break;
+      end;
+    end;
     RemoveRange(0, Position);
+    Seek(0, soFromBeginning);
   end;
 end;
 
@@ -1036,14 +1073,14 @@ begin
   end;
 end;
 
-procedure TICEStream.Process;
+procedure TICEStream.Process(Received: Cardinal);
 begin
   inherited;
   if not HeaderRemoved then
     Exit;
   if HeaderType = 'icy'  then
   begin
-    if (HeaderRemoved) and (Size > 32768) then
+    if (HeaderRemoved) and (Size > 8192) then
     begin
       GetSettings;
 
@@ -1058,7 +1095,7 @@ begin
         FRecording := False;
       end;
 
-      ProcessData;
+      ProcessData(Received);
     end;
   end else if HeaderType = 'http' then
   begin

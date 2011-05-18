@@ -177,7 +177,7 @@ end;
 procedure TMStreamDebugView.ShowDebug(Client: TICEClient);
 begin
   FDebugView.ShowDebug(Client);
-  FDebugView.Visible := (Client <> nil) and (not Client.Killed);
+  FDebugView.Visible := (Client <> nil);// and (not Client.Killed);
 end;
 
 { TDebugView }

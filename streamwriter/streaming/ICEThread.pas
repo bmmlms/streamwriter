@@ -227,13 +227,14 @@ var
 const
   MAX_BUFFER_SIZE = 1048576;
 begin
-  if (not FPaused) and (FPlaying and (not FPlayer.Playing)) then
-    FPlayer.Play;
 
   if FPlaying then
   begin
     try
       FPlayer.PushData(Buf, Len);
+
+      if (not FPaused) and (FPlaying and (not FPlayer.Playing)) then
+        FPlayer.Play;
     except
       // Unbekannte Daten (kein MP3/AAC) - Ende.
       FPlayingStarted := False;
