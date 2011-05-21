@@ -152,6 +152,11 @@ type
     chkRememberRecordings: TCheckBox;
     chkDisplayPlayNotifications: TCheckBox;
     chkAutoTuneInConsiderIgnore: TCheckBox;
+    txtRemoveChars: TLabeledEdit;
+    pnlBandwidth: TPanel;
+    Label11: TLabel;
+    txtMaxSpeed: TLabeledEdit;
+    chkLimit: TCheckBox;
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -200,6 +205,8 @@ type
     procedure lstPluginsItemChecked(Sender: TObject; Item: TListItem);
     procedure btnConfigureClick(Sender: TObject);
     procedure txtIncompleteFilePatternChange(Sender: TObject);
+    procedure txtRemoveCharsChange(Sender: TObject);
+    procedure chkLimitClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -300,6 +307,19 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
     end;
     if F then
       AddField(txtFilePatternDecimals);
+
+    F := False;
+    for i := 0 to Length(FStreamSettings) - 1 do
+    begin
+      if S.RemoveChars <> FStreamSettings[i].RemoveChars then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(txtRemoveChars);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -746,6 +766,7 @@ begin
   txtFilePattern.Text := Settings.FilePattern;
   txtIncompleteFilePattern.Text := Settings.IncompleteFilePattern;
   txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
+  txtRemoveChars.Text := Settings.RemoveChars;
 
 
   //if (Length(AppGlobals.Dir) >= 3) and (Copy(AppGlobals.Dir, 1, 2) <> '\\') and (Copy(AppGlobals.Dir, 2, 2) <> ':\') then
@@ -780,6 +801,9 @@ begin
   lstFormat.ItemIndex := AppGlobals.AutoTuneInFormat;
   chkSubmitStreamInfo.Checked := AppGlobals.SubmitStreamInfo;
   chkSubmitStats.Checked := AppGlobals.SubmitStats;
+  chkLimit.Checked := AppGlobals.LimitSpeed;
+  if AppGlobals.MaxSpeed > 0 then
+    txtMaxSpeed.Text := IntToStr(AppGlobals.MaxSpeed);
 
   txtShortLengthSeconds.Text := IntToStr(Settings.ShortLengthSeconds);
   txtSongBuffer.Text := IntToStr(Settings.SongBufferSeconds);
@@ -850,6 +874,9 @@ begin
       if FIgnoreFieldList.IndexOf(txtFilePatternDecimals) = -1 then
         FStreamSettings[i].FilePatternDecimals := StrToIntDef(txtFilePatternDecimals.Text, 3);
 
+      if FIgnoreFieldList.IndexOf(txtRemoveChars) = -1 then
+        FStreamSettings[i].RemoveChars := txtRemoveChars.Text;
+
       if FIgnoreFieldList.IndexOf(chkDeleteStreams) = -1 then
         FStreamSettings[i].DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
 
@@ -913,6 +940,7 @@ begin
     AppGlobals.StreamSettings.FilePattern := txtFilePattern.Text;
     AppGlobals.StreamSettings.IncompleteFilePattern := txtIncompleteFilePattern.Text;
     AppGlobals.StreamSettings.FilePatternDecimals := StrToIntDef(txtFilePatternDecimals.Text, 3);
+    AppGlobals.StreamSettings.RemoveChars := txtRemoveChars.Text;
     AppGlobals.StreamSettings.DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
     AppGlobals.StreamSettings.AddSavedToIgnore := chkAddSavedToIgnore.Checked;
     AppGlobals.StreamSettings.OverwriteSmaller := chkOverwriteSmaller.Checked;
@@ -969,6 +997,9 @@ begin
     AppGlobals.AutoTuneInFormat := lstFormat.ItemIndex;
     AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
     AppGlobals.SubmitStats := chkSubmitStats.Checked;
+    AppGlobals.LimitSpeed := chkLimit.Checked;
+    if chkLimit.Checked and (StrToIntDef(txtMaxSpeed.Text, -1) > 0) then
+      AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);
 
     AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
     AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
@@ -1394,9 +1425,10 @@ begin
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Postprocessing', pnlPlugins, 'LIGHTNING'));
-    FPageList.Add(TPage.Create('Hotkeys', pnlHotkeys, 'KEYBOARD'));
     FPageList.Add(TPage.Create('Community', pnlCommunity, 'GROUP_PNG'));
     FPageList.Add(TPage.Create('Blacklist', pnlCommunityBlacklist, 'BLACKLIST', FPageList.Find(pnlCommunity)));
+    FPageList.Add(TPage.Create('Bandwidth', pnlBandwidth, 'BANDWIDTH'));
+    FPageList.Add(TPage.Create('Hotkeys', pnlHotkeys, 'KEYBOARD'));
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
   end else
   begin
@@ -1502,6 +1534,14 @@ begin
 
   if FInitialized then
     RemoveGray(txtMaxRetries);
+end;
+
+procedure TfrmSettings.txtRemoveCharsChange(Sender: TObject);
+begin
+  inherited;
+
+  if FInitialized then
+    RemoveGray(txtRemoveChars);
 end;
 
 procedure TfrmSettings.txtRetryDelayChange(Sender: TObject);
@@ -1891,6 +1931,14 @@ begin
     Exit;
   end;
 
+  if StrToIntDef(txtMaxSpeed.Text, -1) <= 0 then
+  begin
+    MsgBox(Handle, _('TODO: !!!'), _('Info'), MB_ICONINFORMATION);
+    SetPage(FPageList.Find(TPanel(txtMaxSpeed.Parent)));
+    txtMaxSpeed.SetFocus;
+    Exit;
+  end;
+
   // Sonst wird kann es zu lange dauern, Clients zu entfernen, wenn der Thread gerade noch schläft.
   // Deshalb Limit auf 10..
   if StrToIntDef(txtRetryDelay.Text, 5) > 10 then
@@ -1951,6 +1999,13 @@ begin
 
   if FInitialized then
     RemoveGray(chkDiscardSmaller);
+end;
+
+procedure TfrmSettings.chkLimitClick(Sender: TObject);
+begin
+  inherited;
+
+  txtMaxSpeed.Enabled := chkLimit.Checked;
 end;
 
 procedure TfrmSettings.chkOnlyIfCutClick(Sender: TObject);

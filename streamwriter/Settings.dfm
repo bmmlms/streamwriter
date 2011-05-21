@@ -822,12 +822,12 @@ object frmSettings: TfrmSettings
     Left = 904
     Top = 308
     Width = 294
-    Height = 289
+    Height = 341
     TabOrder = 7
     Visible = False
     DesignSize = (
       294
-      289)
+      341)
     object lblFilePattern: TLabel
       Left = 4
       Top = 0
@@ -973,6 +973,17 @@ object frmSettings: TfrmSettings
       ReadOnly = True
       TabOrder = 4
     end
+    object txtRemoveChars: TLabeledEdit
+      Left = 4
+      Top = 304
+      Width = 105
+      Height = 21
+      EditLabel.Width = 228
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Remove the following characters from filenames:'
+      TabOrder = 5
+      OnChange = txtRemoveCharsChange
+    end
   end
   object pnlCommunityBlacklist: TPanel
     Left = 4
@@ -1075,6 +1086,43 @@ object frmSettings: TfrmSettings
       OnChange = txtTitlePatternChange
     end
   end
+  object pnlBandwidth: TPanel
+    Left = 604
+    Top = 532
+    Width = 293
+    Height = 257
+    TabOrder = 10
+    Visible = False
+    object Label11: TLabel
+      Left = 80
+      Top = 44
+      Width = 24
+      Height = 13
+      Caption = 'KB/s'
+    end
+    object txtMaxSpeed: TLabeledEdit
+      Left = 20
+      Top = 40
+      Width = 53
+      Height = 21
+      EditLabel.Width = 131
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Maximum bandwidth to use:'
+      Enabled = False
+      MaxLength = 5
+      NumbersOnly = True
+      TabOrder = 0
+    end
+    object chkLimit: TCheckBox
+      Left = 4
+      Top = 0
+      Width = 169
+      Height = 25
+      Caption = 'Limit bandwidth'
+      TabOrder = 1
+      OnClick = chkLimitClick
+    end
+  end
   object dlgOpen: TOpenDialog
     Filter = 'Executable files (*.exe, *.bat)|*.exe;*.bat'
     Left = 548
@@ -1084,7 +1132,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800BC0110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800D40110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

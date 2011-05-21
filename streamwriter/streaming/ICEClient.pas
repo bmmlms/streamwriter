@@ -895,36 +895,8 @@ begin
         if Offset2 = 0 then
           Break;
       end;
-    end else
-    begin
-      // Im Notfall alles was empfangen wurde als URLs interpretieren.
-      // Siehe z.B. http://www.rockantenne.de/webradio/rockantenne.m3u
-
-      // Das ist raus, weil ich oben noch die Content-Types abfrage.
-      // Damit sollte dieser Mist hier über sein.
-
-      {
-      if FICEThread.RecvStream.Size < 102400 then
-      begin
-        while True do
-        begin
-          Offset2 := PosEx(#10, Data, Offset);
-          if Offset2 > 0 then
-            Line := Trim(Copy(Data, Offset, Offset2 - Offset))
-          else
-            Line := Trim(Copy(Data, Offset, Length(Data)));
-
-          Offset := Offset2 + 1;
-
-          if (Length(Line) >= 1) and (Line[1] <> '#') then
-            ParseLine(Line);
-
-          if Offset2 = 0 then
-            Break;
-        end;
-      end;
-      }
     end;
+
     Result := URLs.Count > 0;
     if Result then
     begin

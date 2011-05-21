@@ -49,6 +49,7 @@ type
   private
     FClients: TClientList;
     FSongsSaved: Integer;
+    FSpeed: Integer;
     FLists: TDataLists;
 
     FOnClientDebug: TNotifyEvent;
@@ -102,6 +103,7 @@ type
 
     property Active: Boolean read FGetActive;
     property SongsSaved: Integer read FSongsSaved;
+    property Speed: Integer read FSpeed write FSpeed;
 
     property OnClientDebug: TNotifyEvent read FOnClientDebug write FOnClientDebug;
     property OnClientRefresh: TNotifyEvent read FOnClientRefresh write FOnClientRefresh;
@@ -262,6 +264,10 @@ begin
   if (Format = '') and (AppGlobals.AutoTuneInFormat > 0) then
     Exit;
 
+  if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
+    if (FSpeed / 1024) + (Kbps / 8) + 12 > AppGlobals.MaxSpeed then
+      Exit;
+
   for i := 0 to FLists.StreamBlacklist.Count - 1 do
     if FLists.StreamBlacklist[i] = StreamName then
       Exit;
@@ -282,7 +288,7 @@ begin
       end;
 
       Client := GetClient(StreamName, CurrentURL, Title, nil);
-      if not ((Client <> nil) and (Client.AutoRemove) and (Client.RecordTitle = Title)) then
+      if (Client = nil) or ((Client <> nil) and not Client.AutoRemove and (Client.RecordTitle <> Title)) then
       begin
         Client := AddClient(StreamName, CurrentURL, True);
         Client.Entry.Settings.Filter := ufNone;

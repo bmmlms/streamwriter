@@ -18,8 +18,8 @@ object frmWizard: TfrmWizard
   PixelsPerInch = 96
   TextHeight = 13
   object pnlDir: TPanel
-    Left = 12
-    Top = 288
+    Left = 8
+    Top = 8
     Width = 389
     Height = 233
     BevelOuter = bvNone
@@ -77,18 +77,6 @@ object frmWizard: TfrmWizard
       WordWrap = True
       ExplicitWidth = 381
     end
-    object Label2: TLabel
-      Left = 8
-      Top = 128
-      Width = 369
-      Height = 57
-      Anchors = [akLeft, akTop, akRight]
-      AutoSize = False
-      Caption = 
-        'You can configure all application'#39's options using the correspond' +
-        'ing menu entry when the main window is shown.'
-      WordWrap = True
-    end
     object txtDir: TLabeledEdit
       Left = 8
       Top = 56
@@ -101,6 +89,57 @@ object frmWizard: TfrmWizard
       EditLabel.Caption = 'Folder:'
       ReadOnly = True
       TabOrder = 0
+    end
+  end
+  object pnlBandwidth: TPanel
+    Left = 8
+    Top = 260
+    Width = 389
+    Height = 233
+    BevelOuter = bvNone
+    TabOrder = 1
+    DesignSize = (
+      389
+      233)
+    object Label1: TLabel
+      Left = 8
+      Top = 4
+      Width = 377
+      Height = 41
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      Caption = 'Please choose whether to limit bandwidth used by streamWriter.'
+      WordWrap = True
+      ExplicitWidth = 381
+    end
+    object Label2: TLabel
+      Left = 84
+      Top = 80
+      Width = 21
+      Height = 13
+      Caption = 'KB/s'
+    end
+    object chkLimit: TCheckBox
+      Left = 8
+      Top = 36
+      Width = 169
+      Height = 25
+      Caption = 'Limit bandwidth'
+      TabOrder = 0
+      OnClick = chkLimitClick
+    end
+    object txtMaxSpeed: TLabeledEdit
+      Left = 24
+      Top = 76
+      Width = 53
+      Height = 21
+      EditLabel.Width = 134
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Maximum bandwidth to use:'
+      Enabled = False
+      MaxLength = 5
+      NumbersOnly = True
+      TabOrder = 1
     end
   end
 end

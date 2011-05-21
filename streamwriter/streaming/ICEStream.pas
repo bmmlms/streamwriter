@@ -24,7 +24,7 @@ interface
 uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
   AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
-  Math, PerlRegEx, Logging;
+  Math, PerlRegEx, Logging, WideStrUtils;
 
 type
   TDebugEvent = procedure(Text, Data: string) of object;
@@ -1179,6 +1179,7 @@ end;
 
 procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title: string; AudioType: TAudioTypes; FullTitle: Boolean);
 var
+  i: Integer;
   Filename, Ext: string;
 begin
   FResult := crSave;
@@ -1193,7 +1194,6 @@ begin
   end;
 
   Filename := TitleInfoToFilename(Artist, Title, FullTitle);
-
   Filename := GetValidFilename(Filename);
 
   if FileExists(FSaveDir + Filename + Ext) then
@@ -1220,6 +1220,7 @@ end;
 
 procedure TFileChecker.GetStreamFilename(Name: string; AudioType: TAudioTypes);
 var
+  i: Integer;
   Ext: string;
 begin
   case AudioType of
@@ -1231,9 +1232,13 @@ begin
       Ext := '.aac';
   end;
 
+  // REMARK: Zugriff ist nicht Threadsicher!
+  for i := 1 to Length(FSettings.RemoveChars) do
+    Name := StringReplace(Name, FSettings.RemoveChars[i], '', [rfReplaceAll]);
+
   if Trim(Name) = '' then
   begin
-    Name := _('[Unnamed stream]');
+    Name := _('Unknown stream');
   end;
 
   FFilename := GetValidFilename(Name);
@@ -1267,6 +1272,12 @@ var
   Arr: TPatternReplaceArray;
 begin
   inherited;
+
+  // REMARK: Zugriff ist nicht Threadsicher!
+  for i := 1 to Length(FSettings.RemoveChars) do
+    Artist := StringReplace(Artist, FSettings.RemoveChars[i], '', [rfReplaceAll]);
+  for i := 1 to Length(FSettings.RemoveChars) do
+    Title := StringReplace(Title, FSettings.RemoveChars[i], '', [rfReplaceAll]);
 
   Dir := '';
 

@@ -24,37 +24,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
-  object addStatus: TStatusBar
-    Left = 0
-    Top = 303
-    Width = 689
-    Height = 19
-    Hint = 'Users/active streams'
-    Panels = <
-      item
-        Bevel = pbNone
-        Width = 20
-      end
-      item
-        Width = 100
-      end
-      item
-        Width = 90
-      end
-      item
-        Width = 80
-      end
-      item
-        Width = 200
-      end
-      item
-        Width = 100
-      end>
-    ParentShowHint = False
-    ShowHint = True
-    OnDrawPanel = addStatusDrawPanel
-    OnResize = addStatusResize
-  end
   object tbClients: TToolBar
     Left = 0
     Top = 0
@@ -64,7 +33,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Indent = 2
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 1
+    TabOrder = 0
     Transparent = True
     object ToolButton5: TToolButton
       Left = 2

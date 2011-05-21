@@ -43,6 +43,7 @@ type
     FFilePattern: string;
     FIncompleteFilePattern: string;
     FFilePatternDecimals: Cardinal;
+    FRemoveChars: string;
     FDeleteStreams: Boolean;
     FAddSavedToIgnore: Boolean;
     FSkipShort: Boolean;
@@ -72,6 +73,7 @@ type
     property FilePattern: string read FFilePattern write FFilePattern;
     property IncompleteFilePattern: string read FIncompleteFilePattern write FIncompleteFilePattern;
     property FilePatternDecimals: Cardinal read FFilePatternDecimals write FFilePatternDecimals;
+    property RemoveChars: string read FRemoveChars write FRemoveChars;
     property DeleteStreams: Boolean read FDeleteStreams write FDeleteStreams;
     property AddSavedToIgnore: Boolean read FAddSavedToIgnore write FAddSavedToIgnore;
     property SkipShort: Boolean read FSkipShort write FSkipShort;
@@ -121,6 +123,8 @@ type
     FSoundDevice: Cardinal;
     FAutoTuneInMinKbps: Cardinal;
     FAutoTuneInFormat: Cardinal;
+    FLimitSpeed: Boolean;
+    FMaxSpeed: Cardinal;
 
     FShortcutPlay: Cardinal;
     FShortcutPause: Cardinal;
@@ -180,6 +184,8 @@ type
     property ShortcutVolUp: Cardinal read FShortcutVolUp write FShortcutVolUp;
     property AutoTuneInMinKbps: Cardinal read FAutoTuneInMinKbps write FAutoTuneInMinKbps;
     property AutoTuneInFormat: Cardinal read FAutoTuneInFormat write FAutoTuneInFormat;
+    property LimitSpeed: Boolean read FLimitSpeed write FLimitSpeed;
+    property MaxSpeed: Cardinal read FMaxSpeed write FMaxSpeed;
 
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
     property ClientCols: Integer read FClientCols write FClientCols;
@@ -410,7 +416,7 @@ begin
   FStorage.Read('FilePattern', FStreamSettings.FFilePattern, '%s\%a - %t');
   FStorage.Read('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern, '%s\%a - %t');
   FStorage.Read('FilePatternDecimals', FStreamSettings.FFilePatternDecimals, 3);
-
+  FStorage.Read('RemoveChars', FStreamSettings.FRemoveChars, '[]{}#$§%~^');
 
   FStorage.Read('Dir', FDir, '');
   if FDir <> '' then
@@ -451,6 +457,10 @@ begin
   FStorage.Read('AutoTuneInConsiderIgnore', FAutoTuneInConsiderIgnore, False);
   FStorage.Read('SubmitStreamInfo', FSubmitStreamInfo, True);
   FStorage.Read('SubmitStats', FSubmitStats, True);
+  FStorage.Read('LimitSpeed', FLimitSpeed, False);
+  FStorage.Read('MaxSpeed', FMaxSpeed, 0);
+  if FMaxSpeed <= 0 then
+    FLimitSpeed := False;
 
   FStorage.Read('AutoTuneInMinKbps', FAutoTuneInMinKbps, 3);
   FStorage.Read('AutoTuneInFormat', FAutoTuneInFormat, 0);
@@ -548,6 +558,7 @@ begin
   FStorage.Write('FilePattern', FStreamSettings.FFilePattern);
   FStorage.Write('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern);
   FStorage.Write('FilePatternDecimals', FStreamSettings.FFilePatternDecimals);
+  FStorage.Write('RemoveChars', FStreamSettings.FRemoveChars);
 
   FStorage.Write('Dir', TryRelativePath(FDir, False));
 
@@ -581,6 +592,8 @@ begin
   FStorage.Write('SubmitStreamInfo', FSubmitStreamInfo);
   FStorage.Write('AutoTuneInMinKbps', FAutoTuneInMinKbps);
   FStorage.Write('AutoTuneInFormat', FAutoTuneInFormat);
+  FStorage.Write('LimitSpeed', FLimitSpeed);
+  FStorage.Write('MaxSpeed', FMaxSpeed);
 
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
@@ -704,6 +717,11 @@ begin
   else
     Result.FFilePatternDecimals := 3;
 
+  if Version >= 20 then
+    Stream.Read(Result.FRemoveChars)
+  else
+    Result.FRemoveChars := '[]{}#$§%~^';
+
   Stream.Read(Result.FDeleteStreams);
   Stream.Read(Result.FAddSavedToIgnore);
   Stream.Read(Result.FSkipShort);
@@ -779,6 +797,7 @@ begin
   Stream.Write(FFilePattern);
   Stream.Write(FIncompleteFilePattern);
   Stream.Write(FFilePatternDecimals);
+  Stream.Write(FRemoveChars);
   Stream.Write(FDeleteStreams);
   Stream.Write(FAddSavedToIgnore);
   Stream.Write(FSkipShort);
@@ -804,6 +823,7 @@ begin
   FFilePattern := From.FFilePattern;
   FIncompleteFilePattern := From.FIncompleteFilePattern;
   FFilePatternDecimals := From.FilePatternDecimals;
+  FRemoveChars := From.RemoveChars;
   FDeleteStreams := From.FDeleteStreams;
   FAddSavedToIgnore := From.FAddSavedToIgnore;
   FSkipShort := From.FSkipShort;

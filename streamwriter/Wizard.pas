@@ -40,8 +40,13 @@ type
     cmdBrowse: TSpeedButton;
     txtDir: TLabeledEdit;
     lblDir: TLabel;
+    pnlBandwidth: TPanel;
+    Label1: TLabel;
+    chkLimit: TCheckBox;
+    txtMaxSpeed: TLabeledEdit;
     Label2: TLabel;
     procedure cmdBrowseClick(Sender: TObject);
+    procedure chkLimitClick(Sender: TObject);
   protected
     procedure RegisterSteps; override;
     procedure Finish; override;
@@ -58,6 +63,9 @@ implementation
 procedure TfrmWizard.Finish;
 begin
   AppGlobals.Dir := txtDir.Text;
+  AppGlobals.LimitSpeed := chkLimit.Checked;
+  if chkLimit.Checked and (StrToIntDef(txtMaxSpeed.Text, -1) > 0) then
+    AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);
   inherited;
 end;
 
@@ -80,6 +88,11 @@ begin
         txtDir.Text := s;
       end;
     end;
+  end else
+  begin
+    chkLimit.Checked := AppGlobals.LimitSpeed;
+    if AppGlobals.MaxSpeed > 0 then
+      txtMaxSpeed.Text := IntToStr(AppGlobals.MaxSpeed);
   end;
 end;
 
@@ -105,6 +118,14 @@ begin
       MsgBox(Handle, _('The selected folder does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
       Result := False;
     end;
+  end else if Step.Panel = pnlBandwidth then
+  begin
+    if chkLimit.Checked then
+      if StrToIntDef(txtMaxSpeed.Text, -1) <= 0 then
+      begin
+        MsgBox(Handle, _('TODO: !!!'), _('Info'), MB_ICONINFORMATION);
+        Result := False;
+      end;
   end;
 end;
 
@@ -112,6 +133,12 @@ procedure TfrmWizard.RegisterSteps;
 begin
   inherited;
   FStepList.Add(TStepDir.Create('Select folder', pnlDir));
+  FStepList.Add(TStepDir.Create('Limit bandwidth', pnlBandwidth));
+end;
+
+procedure TfrmWizard.chkLimitClick(Sender: TObject);
+begin
+  txtMaxSpeed.Enabled := chkLimit.Checked;
 end;
 
 procedure TfrmWizard.cmdBrowseClick(Sender: TObject);

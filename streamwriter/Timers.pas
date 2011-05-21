@@ -64,6 +64,8 @@ type
     procedure FormShow(Sender: TObject);
     procedure btnAddClick(Sender: TObject);
     procedure btnRemoveClick(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
   private
     Tree: TScheduleTree;
     FEntry: TStreamEntry;
@@ -189,6 +191,16 @@ begin
   Tree.OnChange := TreeChange;
 
   UpdateButtons;
+end;
+
+procedure TfrmTimers.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = 27 then
+  begin
+    Key := 0;
+    Close;
+  end;
 end;
 
 procedure TfrmTimers.FormShow(Sender: TObject);

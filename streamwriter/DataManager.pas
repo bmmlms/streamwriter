@@ -266,7 +266,7 @@ type
   end;
 
 const
-  DATAVERSION = 19;
+  DATAVERSION = 20;
 
 implementation
 
@@ -831,6 +831,9 @@ begin
       begin
         FIgnoreList[i].Save(S);
       end;
+
+      while FSubmittedStreamList.Count > 200 do
+        FSubmittedStreamList.Delete(0);
 
       S.Write(FSubmittedStreamList.Count);
       for i := 0 to FSubmittedStreamList.Count - 1 do
