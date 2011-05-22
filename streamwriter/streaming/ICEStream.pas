@@ -893,10 +893,6 @@ begin
   begin
     TitleChanged := False;
 
-
-
-
-    // TODO: TESTEN!!!
     if FSettings.SeparateTracks then
       TrySave;
 
@@ -911,10 +907,6 @@ begin
           // Zuviel empfangen und Titel war nicht dabei
           FHaltClient := True;
         end;
-      end else
-      begin
-        // Keine Tracks in der Liste..
-        //FHaltClient := True;
       end;
 
       if (FAudioStream.Size > FBytesPerSec * 30) and (FMetaCounter = 1) then
@@ -928,16 +920,10 @@ begin
         FHaltClient := True;
     end;
 
-
-
-
-
-    //while Position < Size - FMetaInt - 4081 do // 4081 wegen 255*16+1 (Max-MetaLen)
     while Size > 0 do
     begin
       if (FNextMetaInt > FMetaInt) or (FNextMetaInt < 0) then
-        raise Exception.Create('Fehlermeldung');
-
+        raise Exception.Create('Sync failed');
 
       if FNextMetaInt > 0 then
       begin
@@ -950,7 +936,7 @@ begin
 
       if FNextMetaInt = 0 then
       begin
-        if Position < Size - 4081 then
+        if Position < Size - 4081 then // 4081 wegen 255*16+1 (Max-MetaLen)
         begin
           FNextMetaInt := FMetaInt;
 
@@ -998,11 +984,13 @@ begin
                       FRecordingTitleFound := True;
                       if FAudioStream.InheritsFrom(TAudioStreamMemory) then
                       begin
-                        // Stream sauber machen. TODO: Sicher??? Damit klaue ich mir wertvolle Bytes!
+                        // Stream sauber machen.
+                        {
                         if FSettings.SearchSilence then
                           TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SilenceBufferSeconds))
                         else
                           TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SongBufferSeconds));
+                        }
                       end;
 
                       if FMetaCounter >= 2 then

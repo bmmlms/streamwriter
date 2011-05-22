@@ -64,7 +64,7 @@ procedure TfrmWizard.Finish;
 begin
   AppGlobals.Dir := txtDir.Text;
   AppGlobals.LimitSpeed := chkLimit.Checked;
-  if chkLimit.Checked and (StrToIntDef(txtMaxSpeed.Text, -1) > 0) then
+  if StrToIntDef(txtMaxSpeed.Text, -1) > 0 then
     AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);
   inherited;
 end;
@@ -123,7 +123,7 @@ begin
     if chkLimit.Checked then
       if StrToIntDef(txtMaxSpeed.Text, -1) <= 0 then
       begin
-        MsgBox(Handle, _('TODO: !!!'), _('Info'), MB_ICONINFORMATION);
+        MsgBox(Handle, _('Please enter the maximum bandwidth in KB/s available to streamWriter.'), _('Info'), MB_ICONINFORMATION);
         Result := False;
       end;
   end;

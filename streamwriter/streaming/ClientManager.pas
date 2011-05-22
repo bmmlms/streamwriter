@@ -49,7 +49,7 @@ type
   private
     FClients: TClientList;
     FSongsSaved: Integer;
-    FSpeed: Integer;
+    //FSpeed: Integer;
     FLists: TDataLists;
 
     FOnClientDebug: TNotifyEvent;
@@ -103,7 +103,7 @@ type
 
     property Active: Boolean read FGetActive;
     property SongsSaved: Integer read FSongsSaved;
-    property Speed: Integer read FSpeed write FSpeed;
+    //property Speed: Integer read FSpeed write FSpeed;
 
     property OnClientDebug: TNotifyEvent read FOnClientDebug write FOnClientDebug;
     property OnClientRefresh: TNotifyEvent read FOnClientRefresh write FOnClientRefresh;
@@ -239,6 +239,7 @@ var
   i, n: Integer;
   AutoTuneInMinKbps: Cardinal;
   Client: TICEClient;
+  UsedKBs: Cardinal;
 begin
   AutoTuneInMinKbps := 0;
 
@@ -264,8 +265,20 @@ begin
   if (Format = '') and (AppGlobals.AutoTuneInFormat > 0) then
     Exit;
 
+  UsedKBs := Kbps div 8;
+  for Client in FClients do
+  begin
+    if Client.Recording or Client.Playing then
+    begin
+      if Client.Entry.Bitrate >= 64 then
+        UsedKBs := UsedKBs + (Client.Entry.Bitrate div 8) + 3
+      else
+        UsedKBs := UsedKBs + Client.Speed div 1024;
+    end;
+  end;
+
   if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
-    if (FSpeed / 1024) + (Kbps / 8) + 12 > AppGlobals.MaxSpeed then
+    if UsedKBs > AppGlobals.MaxSpeed then
       Exit;
 
   for i := 0 to FLists.StreamBlacklist.Count - 1 do
@@ -298,6 +311,7 @@ begin
         Client.Entry.Settings.DeleteStreams := False;
         Client.Entry.Settings.MaxRetries := 0;
         Client.Entry.Settings.RetryDelay := 0;
+        Client.Entry.Bitrate := Kbps;
         if Trim(TitlePattern) <> '' then
           Client.Entry.Settings.TitlePattern := TitlePattern;
         Client.RecordTitle := Title;

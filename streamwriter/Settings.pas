@@ -859,7 +859,6 @@ var
   Plugin: TPluginBase;
   EP: TExternalPlugin;
   Item: TListItem;
-  Dir, TmpDir, AppDir: string;
 begin
   if Length(FStreamSettings) > 0 then
   begin
@@ -968,23 +967,7 @@ begin
     if lstSoundDevice.ItemIndex > -1 then
       AppGlobals.SoundDevice := lstSoundDevice.ItemIndex;
 
-
-    Dir := txtDir.Text;
-    {
-    if (Length(Dir) >= 2) and (Copy(Dir, 1, 2) = '\\') then
-    begin
-
-    end else
-    begin
-      TmpDir := LowerCase(IncludeTrailingBackslash(txtDir.Text));
-      AppDir := LowerCase(IncludeTrailingBackslash(ExtractFilePath(Application.ExeName)));
-      if Length(TmpDir) > Length(AppDir) then
-        if Copy(TmpDir, 1, Length(AppDir)) = AppDir then
-          Dir := ExtractRelativePath(IncludeTrailingBackslash(ExtractFilePath(Application.ExeName)), IncludeTrailingBackslash(txtDir.Text));
-    end;
-    }
-
-    AppGlobals.Dir := Dir;
+    AppGlobals.Dir := txtDir.Text;
     AppGlobals.Tray := chkTray.Checked;
     AppGlobals.SnapMain := chkSnapMain.Checked;
     AppGlobals.RememberRecordings := chkRememberRecordings.Checked;
@@ -998,7 +981,7 @@ begin
     AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
     AppGlobals.SubmitStats := chkSubmitStats.Checked;
     AppGlobals.LimitSpeed := chkLimit.Checked;
-    if chkLimit.Checked and (StrToIntDef(txtMaxSpeed.Text, -1) > 0) then
+    if StrToIntDef(txtMaxSpeed.Text, -1) > 0 then
       AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);
 
     AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
@@ -1931,13 +1914,14 @@ begin
     Exit;
   end;
 
-  if StrToIntDef(txtMaxSpeed.Text, -1) <= 0 then
-  begin
-    MsgBox(Handle, _('TODO: !!!'), _('Info'), MB_ICONINFORMATION);
-    SetPage(FPageList.Find(TPanel(txtMaxSpeed.Parent)));
-    txtMaxSpeed.SetFocus;
-    Exit;
-  end;
+  if chkLimit.Checked then
+    if StrToIntDef(txtMaxSpeed.Text, -1) <= 0 then
+    begin
+      MsgBox(Handle, _('Please enter the maximum bandwidth in KB/s available to streamWriter.'), _('Info'), MB_ICONINFORMATION);
+      SetPage(FPageList.Find(TPanel(txtMaxSpeed.Parent)));
+      txtMaxSpeed.SetFocus;
+      Exit;
+    end;
 
   // Sonst wird kann es zu lange dauern, Clients zu entfernen, wenn der Thread gerade noch schläft.
   // Deshalb Limit auf 10..

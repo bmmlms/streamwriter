@@ -42,6 +42,9 @@ type
     FClients: Integer;
     FRecordings: Integer;
     FSpeed: UInt64;
+    FSongsSaved: Cardinal;
+    FCurrentReceived: UInt64;
+    FOverallReceived: UInt64;
     FLastPos: Integer;
 
     FSpeedBmp: TBitmap;
@@ -49,18 +52,25 @@ type
     IconLoggedIn, IconLoggedOff: TIcon;
     IconGroup: TIcon;
 
+    procedure PaintPanel(Index: Integer);
     procedure FSetSpeed(Value: UInt64);
+    procedure FSetCurrentReceived(Value: UInt64);
+    procedure FSetOverallReceived(Value: UInt64);
   protected
-    procedure DrawPanel(Panel: TStatusPanel; const Rect: TRect); override;
+    procedure DrawPanel(Panel: TStatusPanel; const R: TRect); override;
     procedure Resize; override;
     procedure CreateParams(var Params: TCreateParams); override;
+    procedure CNDrawitem(var Message: TWMDrawItem); message CN_DRAWITEM;
+    procedure WMPaint(var Message: TWMPaint); message WM_PAINT;
   public
     constructor Create(AOwner: TComponent);
     destructor Destroy; override;
 
-    procedure SetState(Connected, LoggedIn: Boolean; Clients, Recordings: Integer);
+    procedure SetState(Connected, LoggedIn: Boolean; Clients, Recordings: Integer; SongsSaved: Cardinal);
     procedure BuildSpeedBmp;
     property Speed: UInt64 read FSpeed write FSetSpeed;
+    property CurrentReceived: UInt64 read FCurrentReceived write FSetCurrentReceived;
+    property OverallReceived: UInt64 read FOverallReceived write FSetOverallReceived;
   end;
 
   TfrmStreamWriterMain = class(TForm)
@@ -205,8 +215,6 @@ type
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure actHelpExecute(Sender: TObject);
-    procedure addStatusDrawPanel(StatusBar: TStatusBar;
-      Panel: TStatusPanel; const Rect: TRect);
     procedure tmrRecordingsTimer(Sender: TObject);
     procedure actLogOnExecute(Sender: TObject);
     procedure Community1Click(Sender: TObject);
@@ -247,7 +255,6 @@ type
     procedure ShowUpdate(Version: string = ''; UpdateURL: string = '');
     procedure UpdateButtons;
     procedure UpdateStatus;
-    procedure SetConnected;
     procedure ToggleWindow(AlwaysShow: Boolean = False);
     procedure UpdaterUpdateFound(Sender: TObject);
     procedure UpdaterNoUpdateFound(Sender: TObject);
@@ -276,6 +283,7 @@ type
     procedure tabSavedRefresh(Sender: TObject);
 
     procedure tabCutSaved(Sender: TObject; Filesize, Length: UInt64);
+    procedure tabCutClosed(Sender: TObject);
 
     procedure tabVolumeChanged(Sender: TObject; Volume: Integer);
     procedure tabPlayStarted(Sender: TObject);
@@ -478,30 +486,6 @@ begin
     T.ShowModal;
   finally
     T.Free;
-  end;
-end;
-
-procedure TfrmStreamWriterMain.addStatusDrawPanel(StatusBar: TStatusBar;
-  Panel: TStatusPanel; const Rect: TRect);
-var
-  R: TRect;
-  Bmp: TBitmap;
-begin
-  StatusBar.Canvas.TextOut(Rect.Left, Rect.Top, 'LOL');
-
-  Bmp := TBitmap.Create;
-  try
-    Bmp.Width := 60;
-    Bmp.Height := Rect.Bottom - Rect.Top;
-    R.Left := 0;
-    R.Top := 0;
-    R.Right := Bmp.Width;
-    R.Bottom := Bmp.Height;
-    Bmp.Canvas.FillRect(R);
-
-      StatusBar.Canvas.Draw(Rect.Left, Rect.Top, Bmp);
-  finally
-    Bmp.Free;
   end;
 end;
 
@@ -765,7 +749,7 @@ procedure TfrmStreamWriterMain.HomeCommServerInfo(Sender: TObject;
 begin
   FClientCount := ClientCount;
   FRecordingCount := RecordingCount;
-  //SetConnected; TODO: !!
+  UpdateStatus;
 end;
 
 procedure TfrmStreamWriterMain.HomeCommStateChanged(Sender: TObject);
@@ -1098,11 +1082,6 @@ begin
   end;
 end;
 
-procedure TfrmStreamWriterMain.SetConnected;
-begin
-  addStatus.SetState(HomeComm.Connected, HomeComm.Authenticated, FClientCount, FRecordingCount);
-end;
-
 procedure TfrmStreamWriterMain.ShowCommunityLogin;
 begin
   if FCommunityLogin <> nil then
@@ -1179,6 +1158,18 @@ begin
   DefaultHandler(Msg);
 end;
 
+procedure TfrmStreamWriterMain.tabCutClosed(Sender: TObject);
+var
+  i: Integer;
+begin
+  for i := 0 to FStreams.TrackList.Count - 1 do
+    if LowerCase(FStreams.TrackList[i].Filename) = LowerCase(TCutTab(Sender).Filename) then
+    begin
+      FStreams.TrackList[i].Finalized := True;
+      Exit;
+    end;
+end;
+
 procedure TfrmStreamWriterMain.tabClientsCut(Entry: TStreamEntry;
   Track: TTrackInfo);
 var
@@ -1195,6 +1186,7 @@ begin
     tabCut := TCutTab.Create(pagMain);
     tabCut.PageControl := pagMain;
     tabCut.OnSaved := tabCutSaved;
+    tabCut.OnClosed := tabCutClosed;
     tabCut.OnVolumeChanged := tabVolumeChanged;
     tabCut.OnPlayStarted := tabPlayStarted;
 
@@ -1299,7 +1291,6 @@ begin
       FStreams.TrackList[i].Length := Length;
       FStreams.TrackList[i].WasCut := True;
       FStreams.TrackList[i].Time := Now;
-      FStreams.TrackList[i].Finalized := True;
       Exit;
     end;
 end;
@@ -1365,8 +1356,26 @@ procedure TfrmStreamWriterMain.tmrSpeedTimer(Sender: TObject);
 var
   Active: Boolean;
   i: Integer;
+var
+  Clients: TNodeDataArray;
+  Client: PClientNodeData;
+  Speed: UInt64;
 begin
+  Speed := 0;
+  Clients := tabClients.ClientView.NodesToData(tabClients.ClientView.GetNodes(ntClient, False));
+  for Client in Clients do
+  begin
+    Speed := Speed + Client.Client.Speed;
+    tabClients.ClientView.RefreshClient(Client.Client);
+  end;
+
+  //FClients.Speed := Speed;
+
+  addStatus.Speed := Speed;
   addStatus.BuildSpeedBmp;
+  addStatus.CurrentReceived := tabClients.Received;
+  addStatus.OverallReceived := FStreams.Received;
+
   UpdateStatus;
 
   tabClients.TimerTick;
@@ -1584,30 +1593,8 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.UpdateStatus;
-var
-  Clients: TNodeDataArray;
-  Client: PClientNodeData;
-  Speed: UInt64;
 begin
-  Speed := 0;
-  Clients := tabClients.ClientView.NodesToData(tabClients.ClientView.GetNodes(ntClient, False));
-  for Client in Clients do
-  begin
-    Speed := Speed + Client.Client.Speed;
-    tabClients.ClientView.RefreshClient(Client.Client);
-  end;
-
-  addStatus.Speed := Speed;
-
-  // TODO: Evtl nur alle 5 sek. einen durschnittswert setzen. das hier wird bei jedem statusupdate gemacht!!!
-  // TODO: generell das konzept von diesem updatestatus hinterfragen. der speed soll nur jede sek refreshed werden z.B.
-  FClients.Speed := Speed;
-
-  SetConnected;
-
-  addStatus.Panels[2].Text := MakeSize(Speed) + '/s';
-  addStatus.Panels[3].Text := Format(_('%s/%s received'), [MakeSize(tabClients.Received), MakeSize(FStreams.Received)]);
-  addStatus.Panels[4].Text := Format(_('%d songs saved'), [FClients.SongsSaved]);
+  addStatus.SetState(HomeComm.Connected, HomeComm.Authenticated, FClientCount, FRecordingCount, FClients.SongsSaved);
 end;
 
 function TfrmStreamWriterMain.CanExitApp: Boolean;
@@ -1720,7 +1707,7 @@ begin
     HintWindow.Width := 0;
     HintWindow.Height := 0;
   end;
-end;                             // TODO: Bandbreitenbegrenzung. ist noch lange nicht fertig. warnung bei aufnahmen, keine automatischen streams aufnehmen wenn überschritten!
+end;
 
 { TSWStatusBar }
 
@@ -1732,7 +1719,8 @@ var
 begin
   NewBmp := TBitmap.Create;
   NewBmp.Width := 35;
-  NewBmp.Height := 16;
+  NewBmp.Height := 15;
+  NewBmp.Canvas.Pen.Width := 1;
   NewBmp.Canvas.Brush.Color := clBtnFace;
   NewBmp.Canvas.FillRect(Rect(0, 0, NewBmp.Width, NewBmp.Height));
 
@@ -1749,14 +1737,24 @@ begin
     P := Trunc(((FSpeed / 1024) / AppGlobals.MaxSpeed) * NewBmp.Height - 1);
     if P > NewBmp.Height - 1 then
       P := NewBmp.Height - 1;
-    if P < 2 then
-      P := 2;
+    if P < 1 then
+      P := 1;
   end;
+
+  FSpeedBmp.Canvas.MoveTo(0, FSpeedBmp.Height - 1);
+  FSpeedBmp.Canvas.LineTo(FSpeedBmp.Width - 1, FSpeedBmp.Height - 1);
 
   FSpeedBmp.Canvas.MoveTo(FSpeedBmp.Width - 1, FSpeedBmp.Height - P);
   FSpeedBmp.Canvas.LineTo(FSpeedBmp.Width - 1, FSpeedBmp.Height);
 
   FLastPos := P;
+end;
+
+procedure TSWStatusBar.CNDrawitem(var Message: TWMDrawItem);
+begin
+  inherited;
+
+  Message.Result := 1;
 end;
 
 constructor TSWStatusBar.Create(AOwner: TComponent);
@@ -1767,18 +1765,18 @@ begin
 
   Hint := 'Users/active streams';
   ShowHint := True;
-  DoubleBuffered := True;
+  Height := 19;
 
   IconConnected := TIcon.Create;
-  IconConnected.Handle := LoadImage(HInstance, 'CONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+  IconConnected.Handle := LoadImage(HInstance, 'CONNECT', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
   IconDisconnected := TIcon.Create;
-  IconDisconnected.Handle := LoadImage(HInstance, 'DISCONNECT', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+  IconDisconnected.Handle := LoadImage(HInstance, 'DISCONNECT', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
   IconLoggedIn := TIcon.Create;
-  IconLoggedIn.Handle := LoadImage(HInstance, 'USER_GO', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+  IconLoggedIn.Handle := LoadImage(HInstance, 'USER_GO', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
   IconLoggedOff := TIcon.Create;
-  IconLoggedOff.Handle := LoadImage(HInstance, 'USER_DELETE', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+  IconLoggedOff.Handle := LoadImage(HInstance, 'USER_DELETE', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
   IconGroup := TIcon.Create;
-  IconGroup.Handle := LoadImage(HInstance, 'GROUP', IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+  IconGroup.Handle := LoadImage(HInstance, 'GROUP', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
 
   P := Panels.Add;
   P.Width := 120;
@@ -1790,7 +1788,7 @@ begin
 
   P := Panels.Add;
   if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
-    P.Width := 110
+    P.Width := 115
   else
     P.Width := 75;
   P.Style := psOwnerDraw;
@@ -1807,8 +1805,6 @@ end;
 procedure TSWStatusBar.CreateParams(var Params: TCreateParams);
 begin
   inherited;
-
-  // Ohne wird manchmal DrawPanel nicht aufgerufen. Dann sieht alles doof aus!
   //Params.ExStyle := Params.ExStyle or WS_EX_COMPOSITED;
 end;
 
@@ -1824,53 +1820,93 @@ begin
   inherited;
 end;
 
-procedure TSWStatusBar.DrawPanel(Panel: TStatusPanel; const Rect: TRect);
+procedure TSWStatusBar.DrawPanel(Panel: TStatusPanel; const R: TRect);
 begin
   inherited;
+
+  Canvas.Brush.Color := clBtnFace;
+  Canvas.FillRect(R);
 
   case Panel.Index of
     0:
       begin
         if FConnected then
         begin
-          Canvas.Draw(Rect.Left, Rect.Top, IconConnected);
-          Canvas.TextOut(Rect.Left + 38, Rect.Top, _('Connected'));
+          Canvas.Draw(R.Left, R.Top, IconConnected);
+          Canvas.TextOut(R.Left + 38, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connected')) div 2, _('Connected'));
         end else
         begin
-          Canvas.Draw(Rect.Left, Rect.Top, IconDisconnected);
-          Canvas.TextOut(Rect.Left + 38, Rect.Top, _('Connecting...'));
+          Canvas.Draw(R.Left, R.Top, IconDisconnected);
+          Canvas.TextOut(R.Left + 38, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connecting...')) div 2, _('Connecting...'));
         end;
 
         if FLoggedIn then
-          Canvas.Draw(Rect.Left + 18, Rect.Top, IconLoggedIn)
+          Canvas.Draw(R.Left + 18, R.Top, IconLoggedIn)
         else
-          Canvas.Draw(Rect.Left + 18, Rect.Top, IconLoggedOff);
+          Canvas.Draw(R.Left + 18, R.Top, IconLoggedOff);
       end;
     1:
       begin
-        Canvas.Draw(Rect.Left, Rect.Top, IconGroup);
-        Canvas.TextOut(Rect.Left + 20, Rect.Top, IntToStr(FClients) + '/' + IntToStr(FRecordings));
+        Canvas.Draw(R.Left, R.Top, IconGroup);
+        Canvas.TextOut(R.Left + 20, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FClients) + '/' + IntToStr(FRecordings)) div 2, IntToStr(FClients) + '/' + IntToStr(FRecordings));
       end;
     2:
       begin
-        Canvas.TextOut(Rect.Left, Rect.Top, Panel.Text);
+        Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(MakeSize(FSpeed) + '/s') div 2, MakeSize(FSpeed) + '/s');
         if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
         begin
-          Panels[2].Width := 110;
+          Panels[2].Width := 115;
           if FSpeedBmp <> nil then
-            Canvas.Draw(Rect.Right - FSpeedBmp.Width - 2, Rect.Top, FSpeedBmp);
+            Canvas.Draw(R.Right - FSpeedBmp.Width - 2, R.Top, FSpeedBmp);
         end else
           Panels[2].Width := 75;
       end;
-    3, 4:
-      Canvas.TextOut(Rect.Left, Rect.Top, Panel.Text);
+    3:
+      Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(Format(_('%s/%s received'), [MakeSize(FCurrentReceived), MakeSize(FOverallReceived)])) div 2, Format(_('%s/%s received'), [MakeSize(FCurrentReceived), MakeSize(FOverallReceived)]));
+    4:
+      Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(Format(_('%d songs saved'), [FSongsSaved])) div 2, Format(_('%d songs saved'), [FSongsSaved]));
   end;
+end;
+
+procedure TSWStatusBar.FSetCurrentReceived(Value: UInt64);
+var
+  C: Boolean;
+begin
+  C := FCurrentReceived <> Value;
+  FCurrentReceived := Value;
+
+  if C then
+    PaintPanel(3);
+end;
+
+procedure TSWStatusBar.FSetOverallReceived(Value: UInt64);
+var
+  C: Boolean;
+begin
+  C := FOverallReceived <> Value;
+  FOverallReceived := Value;
+
+  if C then
+    PaintPanel(3);
 end;
 
 procedure TSWStatusBar.FSetSpeed(Value: UInt64);
 begin
   FSpeed := Value;
   BuildSpeedBmp;
+  PaintPanel(2);
+end;
+
+procedure TSWStatusBar.PaintPanel(Index: Integer);
+var
+  R: TRect;
+begin
+  Perform(SB_GETRECT, Index, Integer(@R));
+  R.Right := R.Right - 2;
+  R.Top := R.Top + 1;
+  R.Left := R.Left + 2;
+  R.Bottom := R.Bottom - 1;
+  DrawPanel(Panels[Index], R);
 end;
 
 procedure TSWStatusBar.Resize;
@@ -1880,15 +1916,44 @@ begin
   BuildSpeedBmp;
 end;
 
-procedure TSWStatusBar.SetState(Connected, LoggedIn: Boolean; Clients, Recordings: Integer);
+procedure TSWStatusBar.SetState(Connected, LoggedIn: Boolean; Clients, Recordings: Integer; SongsSaved: Cardinal);
+var
+  OldConnected, OldLoggedIn: Boolean;
+  OldClients, OldRecordings: Integer;
+  OldSongsSaved: Cardinal;
 begin
-  // TODO: Das hier wird nicht sekündlich nur aufgerufen. sollte es aber, wegen dem graphen! ne, der brauch einfach ne eigene funktion dafür die sekündlich im timer getiggert wird.
+  OldConnected := FConnected;
+  OldLoggedIn := FLoggedIn;
+  OldClients := FClients;
+  OldRecordings := FRecordings;
+  OldSongsSaved := FSongsSaved;
+
   FConnected := Connected;
   FLoggedIn := LoggedIn;
   FClients := Clients;
   FRecordings := Recordings;
+  FSongsSaved := SongsSaved;
 
-  Repaint;
+  if (OldConnected <> FConnected) or (OldLoggedIn <> FLoggedIn) then
+    PaintPanel(0);
+  if (OldClients <> FClients) or (OldRecordings <> FRecordings) then
+    PaintPanel(1);
+
+  if OldSongsSaved <> FSongsSaved then
+    PaintPanel(4);
+end;
+
+procedure TSWStatusBar.WMPaint(var Message: TWMPaint);
+var
+  i: Integer;
+  R: TRect;
+begin
+  inherited;
+
+  for i := 0 to Panels.Count - 1 do
+  begin
+    PaintPanel(i);
+  end;
 end;
 
 end.

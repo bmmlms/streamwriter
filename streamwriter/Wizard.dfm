@@ -113,7 +113,7 @@ object frmWizard: TfrmWizard
       ExplicitWidth = 381
     end
     object Label2: TLabel
-      Left = 84
+      Left = 80
       Top = 80
       Width = 21
       Height = 13
@@ -122,9 +122,9 @@ object frmWizard: TfrmWizard
     object chkLimit: TCheckBox
       Left = 8
       Top = 36
-      Width = 169
+      Width = 281
       Height = 25
-      Caption = 'Limit bandwidth'
+      Caption = 'Limit bandwidth for automated recordings'
       TabOrder = 0
       OnClick = chkLimitClick
     end
@@ -133,9 +133,9 @@ object frmWizard: TfrmWizard
       Top = 76
       Width = 53
       Height = 21
-      EditLabel.Width = 134
+      EditLabel.Width = 225
       EditLabel.Height = 13
-      EditLabel.Caption = 'Maximum bandwidth to use:'
+      EditLabel.Caption = 'Maximum bandwidth available to streamWriter:'
       Enabled = False
       MaxLength = 5
       NumbersOnly = True

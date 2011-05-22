@@ -51,6 +51,8 @@ type
     Panel3: TPanel;
     btnAdd: TButton;
     btnRemove: TButton;
+    Label3: TLabel;
+    Label4: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure rbRecurringClick(Sender: TObject);
@@ -105,24 +107,9 @@ end;
 
 procedure TfrmTimers.btnAddClick(Sender: TObject);
 begin
-  if rbRecurring.Checked then
-  begin
-    if lstInterval.ItemIndex = -1 then
-    begin
-      MsgBox(Handle, 'TODO: !!!', 'TODO: !!!', MB_ICONINFORMATION);
-      Exit;
-    end;
-
-    if lstDay.ItemIndex = -1 then
-    begin
-      MsgBox(Handle, 'TODO: !!!', 'TODO: !!!', MB_ICONINFORMATION);
-      Exit;
-    end;
-  end;
-
   if not TimesOkay then
   begin
-    MsgBox(Handle, 'TODO: !!!', 'TODO: !!!', MB_ICONINFORMATION);
+    MsgBox(Handle, _('Please enter a valid start and end time for the schedule.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 

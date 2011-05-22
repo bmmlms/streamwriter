@@ -1234,15 +1234,13 @@ begin
   Result := False;
 
   StartTime := StrToTime(IntToStr(S.StartHour) + TimeSeparator + IntToStr(S.StartMinute) + TimeSeparator + '00');
-  EndTime := StrToTime(IntToStr(S.StartHour) + TimeSeparator + IntToStr(S.StartMinute) + TimeSeparator + '00');
+  EndTime := StrToTime(IntToStr(S.EndHour) + TimeSeparator + IntToStr(S.EndMinute) + TimeSeparator + '00');
 
   NextDay := False;
   if EndTime < StartTime then
   begin
     // Das hier geht von z.B. 23:00 bis 01:00, also über 24 Uhr hinaus.
     // Für MatchesDay muss dann ein Tag drauf gepackt werden.
-
-    // TODO: !!!!!TESTEN!!!!!  funzt nicht!!!
     NextDay := True;
   end;
 

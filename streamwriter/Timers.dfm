@@ -85,16 +85,32 @@ object frmTimers: TfrmTimers
         object Label1: TLabel
           Left = 4
           Top = 132
-          Width = 53
+          Width = 82
           Height = 13
-          Caption = 'Start Time:'
+          Caption = 'Start Time (24h):'
         end
         object Label2: TLabel
           Left = 108
           Top = 132
-          Width = 47
+          Width = 76
           Height = 13
-          Caption = 'End Time:'
+          Caption = 'End Time (24h):'
+        end
+        object Label3: TLabel
+          Left = 44
+          Top = 152
+          Width = 4
+          Height = 13
+          Alignment = taCenter
+          Caption = ':'
+        end
+        object Label4: TLabel
+          Left = 148
+          Top = 152
+          Width = 4
+          Height = 13
+          Alignment = taCenter
+          Caption = ':'
         end
         object rbRecurring: TRadioButton
           Left = 4
@@ -198,7 +214,7 @@ object frmTimers: TfrmTimers
         end
         object btnAdd: TButton
           Left = 232
-          Top = 141
+          Top = 145
           Width = 93
           Height = 27
           Caption = '&Add'

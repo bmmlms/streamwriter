@@ -1093,8 +1093,11 @@ object frmSettings: TfrmSettings
     Height = 257
     TabOrder = 10
     Visible = False
+    DesignSize = (
+      293
+      257)
     object Label11: TLabel
-      Left = 80
+      Left = 76
       Top = 44
       Width = 24
       Height = 13
@@ -1105,9 +1108,9 @@ object frmSettings: TfrmSettings
       Top = 40
       Width = 53
       Height = 21
-      EditLabel.Width = 131
+      EditLabel.Width = 218
       EditLabel.Height = 13
-      EditLabel.Caption = 'Maximum bandwidth to use:'
+      EditLabel.Caption = 'Maximum bandwidth available to streamWriter:'
       Enabled = False
       MaxLength = 5
       NumbersOnly = True
@@ -1116,9 +1119,10 @@ object frmSettings: TfrmSettings
     object chkLimit: TCheckBox
       Left = 4
       Top = 0
-      Width = 169
-      Height = 25
-      Caption = 'Limit bandwidth'
+      Width = 285
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Limit bandwidth for automated recordings'
       TabOrder = 1
       OnClick = chkLimitClick
     end
@@ -1132,7 +1136,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800D40110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800D80110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
