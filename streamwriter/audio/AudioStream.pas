@@ -34,36 +34,36 @@ type
 
   TAudioStreamFile = class(TFileStream)
   public
-    function GetFrame(From: Int64; SearchBackwards: Boolean): Int64; virtual; abstract;
+    function GetFrame(F, T: Int64): TPosRect; virtual; abstract;
     procedure SaveToFile(const Filename: string; From, Length: Int64);
     function SearchSilence(StartPos, EndPos, Len, MaxPeaks, MinDuration: Int64): TPosRect;
   end;
 
   TMPEGStreamFile = class(TAudioStreamFile)
   public
-    function GetFrame(From: Int64; SearchBackwards: Boolean): Int64; override;
+    function GetFrame(F, T: Int64): TPosRect; override;
   end;
 
   TAACStreamFile = class(TAudioStreamFile)
   public
-    function GetFrame(From: Int64; SearchBackwards: Boolean): Int64; override;
+    function GetFrame(F, T: Int64): TPosRect; override;
   end;
 
   TAudioStreamMemory = class(TExtendedStream)
   public
-    function GetFrame(From: Int64; SearchBackwards: Boolean): Int64; virtual; abstract;
+    function GetFrame(F, T: Int64): TPosRect; virtual; abstract;
     procedure SaveToFile(const Filename: string; From, Length: Int64);
     function SearchSilence(StartPos, EndPos, Len, MaxPeaks, MinDuration: Int64): TPosRect;
   end;
 
   TMPEGStreamMemory = class(TAudioStreamMemory)
   public
-    function GetFrame(From: Int64; SearchBackwards: Boolean): Int64; override;
+    function GetFrame(F, T: Int64): TPosRect; override;
   end;
 
   TAACStreamMemory = class(TAudioStreamMemory)
   public
-    function GetFrame(From: Int64; SearchBackwards: Boolean): Int64; override;
+    function GetFrame(F, T: Int64): TPosRect; override;
   end;
 
 implementation
@@ -157,122 +157,158 @@ end;
 
 { TMPEGStreamFile }
 
-function TMPEGStreamFile.GetFrame(From: Int64; SearchBackwards: Boolean): Int64;
+function TMPEGStreamFile.GetFrame(F, T: Int64): TPosRect;
 var
   i, OldPos: Int64;
   Frame: FrameData;
-  Len: Integer;
+  FL, LastFrame: Integer;
   Buf: array[0..3] of byte;
 begin
+  Result.A := -1;
+  Result.B := -1;
+
+  LastFrame := -1;
   OldPos := Position;
-  Result := -1;
 
-  if SearchBackwards then
+  i := F;
+  while i <= T - 4 do
   begin
-    i := From - 4;
-    while i >= 0 do
+    Position := i;
+    Read(Buf, 4);
+
+    if IsFrameHeader(Buf, 0) then
     begin
-      Position := i;
-      Read(Buf, 4);
+      DecodeHeader(Buf, Frame, 0);
+      FL := GetFrameLength(Frame);
 
-      if IsFrameHeader(Buf, 0) then
+      if Result.A = -1 then
       begin
-        DecodeHeader(Buf, Frame, 0);
-        Len := GetFrameLength(Frame);
+        // Wenn das der erste gefundene ist, prüfen, ob es wirklich ein Header ist,
+        // indem wir schauen, ob nach der Länge wieder ein Header kommt.
 
-        if i + Len <= Size then
+        if Size < Position + FL * 2 then
+          Exit;
+
+        Seek(FL - 4, soFromCurrent);
+        Read(Buf, 4);
+        if IsFrameHeader(Buf, 0) then
         begin
-          Result := i + Len;
-          Break;
+          Result.A := i;
+        end else
+        begin
+          Inc(i);
+          Continue;
         end;
       end;
-      Dec(i);
-    end;
-  end else
-  begin
-    i := From;
-    while i <= Size - 4 do
-    begin
-      Position := i;
-      Read(Buf, 4);
 
-      if IsFrameHeader(Buf, 0) then
+      Inc(i, FL);
+
+      if (Result.B = -1) and (i + FL >= T) then
       begin
-        DecodeHeader(Buf, Frame, 0);
-        Result := i;
+        if LastFrame > -1 then
+          Result.B := LastFrame;
         Break;
       end;
+
+      LastFrame := i;
+
+      if (Result.A <> -1) and (Result.B <> -1) then
+        Break;
+    end else
       Inc(i);
-    end;
   end;
   Position := OldPos;
+
+  if Result.A = -1 then
+    Result.A := F;
+  if Result.B = -1 then
+    Result.B := T;
 end;
 
 { TAACStreamFile }
 
-function TAACStreamFile.GetFrame(From: Int64; SearchBackwards: Boolean): Int64;
+function TAACStreamFile.GetFrame(F, T: Int64): TPosRect;
 begin
-  Result := From
+  Result.A := F;
+  Result.B := T;
 end;
 
 { TMPEGStreamMemory }
 
-function TMPEGStreamMemory.GetFrame(From: Int64; SearchBackwards: Boolean): Int64;
+function TMPEGStreamMemory.GetFrame(F, T: Int64): TPosRect;
 var
   i, OldPos: Int64;
   Frame: FrameData;
-  Len: Integer;
+  FL, LastFrame: Integer;
   Buf: array[0..3] of byte;
 begin
+  Result.A := -1;
+  Result.B := -1;
+
+  LastFrame := -1;
   OldPos := Position;
-  Result := -1;
 
-  if SearchBackwards then
+  i := F;
+  while i <= T - 4 do
   begin
-    i := From - 4;
-    while i >= 0 do
+    Position := i;
+    Read(Buf, 4);
+
+    if IsFrameHeader(Buf, 0) then
     begin
-      Position := i;
-      Read(Buf, 4);
+      DecodeHeader(Buf, Frame, 0);
+      FL := GetFrameLength(Frame);
 
-      if IsFrameHeader(Buf, 0) then
+      if Result.A = -1 then
       begin
-        DecodeHeader(Buf, Frame, 0);
-        Len := GetFrameLength(Frame);
+        // Wenn das der erste gefundene ist, prüfen, ob es wirklich ein Header ist,
+        // indem wir schauen, ob nach der Länge wieder ein Header kommt.
 
-        if i + Len <= Size then
+        if Size < Position + FL * 2 then
+          Exit;
+
+        Seek(FL - 4, soFromCurrent);
+        Read(Buf, 4);
+        if IsFrameHeader(Buf, 0) then
         begin
-          Result := i + Len;
-          Break;
+          Result.A := i;
+        end else
+        begin
+          Inc(i);
+          Continue;
         end;
       end;
-      Dec(i);
-    end;
-  end else
-  begin
-    i := From;
-    while i <= Size - 4 do
-    begin
-      Position := i;
-      Read(Buf, 4);
 
-      if IsFrameHeader(Buf, 0) then
+      Inc(i, FL);
+
+      if (Result.B = -1) and (i + FL >= T) then
       begin
-        DecodeHeader(Buf, Frame, 0);
-        Result := i;
+        if LastFrame > -1 then
+          Result.B := LastFrame;
         Break;
       end;
+
+      LastFrame := i;
+
+      if (Result.A <> -1) and (Result.B <> -1) then
+        Break;
+    end else
       Inc(i);
-    end;
   end;
   Position := OldPos;
+
+  if Result.A = -1 then
+    Result.A := F;
+  if Result.B = -1 then
+    Result.B := T;
 end;
 
 { TAACStreamMemory }
 
-function TAACStreamMemory.GetFrame(From: Int64; SearchBackwards: Boolean): Int64;
+function TAACStreamMemory.GetFrame(F, T: Int64): TPosRect;
 begin
-  Result := From;
+  Result.A := F;
+  Result.B := T;
 end;
 
 { TAudioStreamMemory }

@@ -136,7 +136,7 @@ end;
 
 procedure TICEThread.StartPlayInternal;
 var
-  P: Integer;
+  P: TPosRect;
 begin
   FPlaying := True;
   if FPlayBuffer = nil then
@@ -148,12 +148,14 @@ begin
 
     FPlayBufferLock.Enter;
     try
-      P := FPlayBuffer.GetFrame(0, False);
-      if P = -1 then
-        P := 0;
-      FPlayBuffer.Seek(P, soFromBeginning);
+      P := FPlayBuffer.GetFrame(0, FPlayBuffer.Size);
+      if P.A = -1 then
+        P.A := 0;
+      if P.B = -1 then
+        P.B := FPlayBuffer.Size;
+      FPlayBuffer.Seek(P.A, soFromBeginning);
       try
-        FPlayer.PushData(Pointer(Integer(FPlayBuffer.Memory) + P), FPlayBuffer.Size - P);
+        FPlayer.PushData(Pointer(Integer(FPlayBuffer.Memory) + P.A), FPlayBuffer.Size - P.A);
       except
         // Unbekannte Daten (kein MP3/AAC) - ende.
         FPlayingStarted := False;
@@ -223,7 +225,7 @@ end;
 
 procedure TICEThread.StreamChunkReceived(Buf: Pointer; Len: Integer);
 var
-  RemoveTo: Int64;
+  RemoveTo: TPosRect;
 const
   MAX_BUFFER_SIZE = 1048576;
 begin
@@ -258,8 +260,8 @@ begin
     while FPlayBuffer.Size > MAX_BUFFER_SIZE do
     begin
       // Puffer "rotieren"
-      RemoveTo := FPlayBuffer.GetFrame(65536, False);
-      FPlayBuffer.RemoveRange(0, RemoveTo - 1);
+      RemoveTo := FPlayBuffer.GetFrame(65536, FPlayBuffer.Size);
+      FPlayBuffer.RemoveRange(0, RemoveTo.A - 1);
       //WriteDebug(Format('Playbuffer size after remove: %d bytes', [FPlayBuffer.Size]));
     end;
   finally

@@ -37,7 +37,6 @@ type
 
   TBlacklistTree = class(TVirtualStringTree)
   private
-    FType: Integer;
     FColTitle: TVirtualTreeColumn;
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
@@ -52,7 +51,7 @@ type
   public
     constructor Create(AOwner: TComponent; Streams: TStringList); reintroduce;
     destructor Destroy; override;
-    procedure Update(List: TStringList);
+    procedure UpdateList(List: TStringList);
     procedure RemoveSelected;
   end;
 
@@ -1080,7 +1079,7 @@ begin
       end;
     end;
 
-    lstBlacklist.Update(FLists.StreamBlacklist);
+    lstBlacklist.UpdateList(FLists.StreamBlacklist);
 
     AppGlobals.Unlock;
   end;
@@ -1398,7 +1397,7 @@ begin
       Result := Copy(Result, 1, Length(Result) - 1);
   Result := Result + '.mp3';
 end;
-
+                               // TODO: Das Community-Teil in settings darf nicht mit doppelklick einklappbar sein!!!
 procedure TfrmSettings.RegisterPages;
 begin
   if FStreamSettings = nil then
@@ -1409,8 +1408,8 @@ begin
     FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Postprocessing', pnlPlugins, 'LIGHTNING'));
     FPageList.Add(TPage.Create('Community', pnlCommunity, 'GROUP_PNG'));
+    FPageList.Add(TPage.Create('Bandwidth', pnlBandwidth, 'BANDWIDTH', FPageList.Find(pnlCommunity)));
     FPageList.Add(TPage.Create('Blacklist', pnlCommunityBlacklist, 'BLACKLIST', FPageList.Find(pnlCommunity)));
-    FPageList.Add(TPage.Create('Bandwidth', pnlBandwidth, 'BANDWIDTH'));
     FPageList.Add(TPage.Create('Hotkeys', pnlHotkeys, 'KEYBOARD'));
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
   end else
@@ -1701,8 +1700,6 @@ begin
 end;
 
 procedure TfrmSettings.btnResetClick(Sender: TObject);
-var
-  i: Integer;
 begin
   FInitialized := False;
   if FIgnoreFieldList <> nil then
@@ -2192,7 +2189,6 @@ var
   S: string;
   NodeData: PBlacklistNodeData;
 begin
-  Result := 0;
   S := Text;
   NodeData := GetNodeData(Node);
   Result := StrLIComp(PChar(S), PChar(NodeData.Name),
@@ -2218,7 +2214,7 @@ begin
   EndUpdate;
 end;
 
-procedure TBlacklistTree.Update(List: TStringList);
+procedure TBlacklistTree.UpdateList(List: TStringList);
 var
   Node: PVirtualNode;
   NodeData: PBlacklistNodeData;
@@ -2261,8 +2257,9 @@ end;
 
 procedure TBlacklistTree.DoFreeNode(Node: PVirtualNode);
 begin
-  inherited;
+  Finalize(PBlacklistNodeData(GetNodeData(Node)).Name);
 
+  inherited;
 end;
 
 end.

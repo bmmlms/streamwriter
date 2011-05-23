@@ -50,7 +50,7 @@ type
     FSilenceStartLength: Integer;
     FSilenceEndLength: Integer;
 
-    function DeleteFiles: Boolean;
+    procedure DeleteFiles;
   protected
     function FGetReadyForUse: Boolean; override;
     function FGetFilesInstalled: Boolean; override;
@@ -61,7 +61,7 @@ type
     function Copy: TPluginBase; override;
     procedure Assign(Source: TPluginBase); override;
     procedure Initialize; override;
-    procedure Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean); override;
+    function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
     procedure Save; override;
     function ExtractFiles: Boolean;
     property SoXExe: string read FSoXExe;
@@ -89,7 +89,7 @@ var
   TempFile, CmdLine, Params: string;
   Output: AnsiString;
   P: TSoXPlugin;
-  LoopStarted: Integer;
+  LoopStarted: Cardinal;
   Failed: Boolean;
   FS: TFileStream;
 begin
@@ -195,16 +195,15 @@ begin
   FSilenceEndLength := TSoXPlugin(Source).FSilenceEndLength;
 end;
 
-procedure TSoXPlugin.Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean);
+function TSoXPlugin.Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean;
 var
   F: TfrmConfigureSoX;
 begin
-  inherited Configure(AOwner, Handle, ShowMessages);
+  Result := True;
 
+  F := TfrmConfigureSoX.Create(AOwner, FFadeoutStart, FFadeoutEnd, FFadeoutStartLength, FFadeoutEndLength, FSilenceStart, FSilenceEnd,
+    FSilenceStartLength, FSilenceEndLength);
   try
-    F := TfrmConfigureSoX.Create(AOwner, FFadeoutStart, FFadeoutEnd, FFadeoutStartLength, FFadeoutEndLength, FSilenceStart, FSilenceEnd,
-      FSilenceStartLength, FSilenceEndLength);
-
     F.ShowModal;
 
     if F.SaveData then
@@ -285,7 +284,7 @@ begin
     FActive := False;
 end;
 
-function TSoXPlugin.DeleteFiles: Boolean;
+procedure TSoXPlugin.DeleteFiles;
 var
   i: Integer;
 begin

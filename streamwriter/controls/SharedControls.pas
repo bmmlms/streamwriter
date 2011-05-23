@@ -35,8 +35,8 @@ type
   private
     FMax: Int64;
     FPosition: Int64;
-    FGripperPos, FLastGripperPos: Cardinal;
-    FDragFrom: Int64;
+    FGripperPos, FLastGripperPos: Integer;
+    FDragFrom: Integer;
     FGripperVisible: Boolean;
     FGripperDown: Boolean;
     FNotifyOnMove: Boolean;

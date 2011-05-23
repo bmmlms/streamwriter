@@ -462,22 +462,17 @@ procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
   end;
 var
   Saved: Boolean;
-  RangeBegin, RangeEnd: Int64;
   Dir, Filename: string;
   FileCheck: TFileChecker;
+  P: TPosRect;
 begin
   Saved := False;
 
   try
     if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
-    begin
-      RangeBegin := TAudioStreamFile(FAudioStream).GetFrame(S, False);
-      RangeEnd := TAudioStreamFile(FAudioStream).GetFrame(E, True);
-    end else
-    begin
-      RangeBegin := TAudioStreamMemory(FAudioStream).GetFrame(S, False);
-      RangeEnd := TAudioStreamMemory(FAudioStream).GetFrame(E, True);
-    end;
+      P := TAudioStreamFile(FAudioStream).GetFrame(S, E)
+    else
+      P := TAudioStreamMemory(FAudioStream).GetFrame(S, E);
 
     if FBytesPerSec = 0 then
     begin
@@ -485,14 +480,14 @@ begin
       Exit;
     end;
 
-    WriteDebug(Format(_('Saving from %d to %d'), [S, E]), 1, 1);
-
-    if (RangeEnd <= -1) or (RangeBegin <= -1) then
+    if (P.A <= -1) or (P.B <= -1) then
       raise Exception.Create(_('Error in audio data'));
 
-    if FSettings.SkipShort and (RangeEnd - RangeBegin < FBytesPerSec * FSettings.ShortLengthSeconds) then
+    WriteDebug(Format(_('Saving from %d to %d'), [S, E]), 1, 1);
+
+    if FSettings.SkipShort and (P.B - P.A < FBytesPerSec * FSettings.ShortLengthSeconds) then
     begin
-      WriteDebug(Format(_('Skipping "%s" because it''s too small (%d bytes)'), [Title, RangeEnd - RangeBegin]), 1, 0);
+      WriteDebug(Format(_('Skipping "%s" because it''s too small (%d bytes)'), [Title, P.B - P.A]), 1, 0);
       RemoveData;
       Exit;
     end;
@@ -554,10 +549,10 @@ begin
 
       try
         if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
-          TAudioStreamFile(FAudioStream).SaveToFile(Dir + Filename, RangeBegin, RangeEnd - RangeBegin)
+          TAudioStreamFile(FAudioStream).SaveToFile(Dir + Filename, P.A, P.B - P.A)
         else
         begin
-          TAudioStreamMemory(FAudioStream).SaveToFile(Dir + Filename, RangeBegin, RangeEnd - RangeBegin);
+          TAudioStreamMemory(FAudioStream).SaveToFile(Dir + Filename, P.A, P.B - P.A);
         end;
 
         RemoveData;
@@ -569,7 +564,7 @@ begin
 
       try
         FSavedFilename := Dir + Filename;
-        FSavedSize := RangeEnd - RangeBegin;
+        FSavedSize := P.B - P.A;
         FSavedFullTitle := FullTitle;
         FSavedStreamTitle := Title;
         if FBytesPerSec > 0 then
@@ -846,13 +841,12 @@ end;
 procedure TICEStream.ProcessData(Received: Cardinal);
 var
   TitleChanged: Boolean;
-  MetaLen, P, BytesWritten, DataCopied: Integer;
+  MetaLen, P, DataCopied: Integer;
   Title: string;
   MetaData: AnsiString;
   Buf: Byte;
   Track: TStreamTrack;
 begin
-  DataCopied := 0;
   Seek(0, soFromBeginning);
 
   // Falls Einstellungen vom User geändert wurde, die nicht zu unserem Stream-Typ passen, müssen
@@ -945,10 +939,10 @@ begin
           begin
             MetaLen := Buf * 16;
 
-            MetaData := Trim(string(ToString(Position, MetaLen)));
+            MetaData := AnsiString(Trim(ToString(Position, MetaLen)));
             Seek(MetaLen, soFromCurrent);
             P := PosEx(''';', MetaData, 14);
-            MetaData := Trim(Copy(MetaData, 14, P - 14));
+            MetaData := AnsiString(Trim(Copy(MetaData, 14, P - 14)));
             if IsUTF8String(MetaData) then
               Title := CleanTitle(UTF8ToString(MetaData))
             else
@@ -1018,7 +1012,6 @@ end;
 
 procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Title: string);
 var
-  A, T: string;
   R: TPerlRegEx;
 begin
   Artist := '';
@@ -1167,7 +1160,6 @@ end;
 
 procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title: string; AudioType: TAudioTypes; FullTitle: Boolean);
 var
-  i: Integer;
   Filename, Ext: string;
 begin
   FResult := crSave;
@@ -1254,7 +1246,7 @@ end;
 
 function TFileChecker.TitleInfoToFilename(Artist, Title: string; FullTitle: Boolean): string;
 var
-  i, p: Integer;
+  i: Integer;
   Dir, StreamName: string;
   Replaced: string;
   Arr: TPatternReplaceArray;

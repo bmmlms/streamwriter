@@ -239,7 +239,7 @@ var
   i, n: Integer;
   AutoTuneInMinKbps: Cardinal;
   Client: TICEClient;
-  UsedKBs: Cardinal;
+  UsedKBs: Integer;
 begin
   AutoTuneInMinKbps := 0;
 
@@ -271,14 +271,14 @@ begin
     if Client.Recording or Client.Playing then
     begin
       if Client.Entry.Bitrate >= 64 then
-        UsedKBs := UsedKBs + (Client.Entry.Bitrate div 8) + 3
+        UsedKBs := UsedKBs + (Integer(Client.Entry.Bitrate) div 8) + 3
       else
         UsedKBs := UsedKBs + Client.Speed div 1024;
     end;
   end;
 
   if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
-    if UsedKBs > AppGlobals.MaxSpeed then
+    if Cardinal(UsedKBs) > AppGlobals.MaxSpeed then
       Exit;
 
   for i := 0 to FLists.StreamBlacklist.Count - 1 do

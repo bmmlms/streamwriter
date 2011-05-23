@@ -189,9 +189,9 @@ type
     procedure Stop;
     procedure AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
     function ApplyFade(Fadein: Boolean): Boolean;
-    function ApplyFadein: Boolean;
-    function ApplyFadeout: Boolean;
-    function ApplyEffects: Boolean;
+    procedure ApplyFadein;
+    procedure ApplyFadeout;
+    procedure ApplyEffects;
 
     function CanCut: Boolean;
     function CanUndo: Boolean;
@@ -671,16 +671,8 @@ end;
 
 function TCutView.ApplyFade(Fadein: Boolean): Boolean;
 var
-  i, Res: Integer;
-  DA: TfrmDownloadAddons;
-  Found, Failed: Boolean;
-  TempFile: string;
-  Plugin: TSoXPlugin;
-  Output: AnsiString;
-  LoopStarted: Cardinal;
-  FS: TFileStream;
   CmdLine: string;
-  FadeTo, FadeStart, FadeEnd: Cardinal;
+  FadeTo, FadeStart: Cardinal;
 begin
   Result := False;
 
@@ -703,7 +695,7 @@ begin
   StartProcessing(CmdLine);
 end;
 
-function TCutView.ApplyFadein: Boolean;
+procedure TCutView.ApplyFadein;
 begin
   if not CanApplyFadeIn then
     Exit;
@@ -711,7 +703,7 @@ begin
   ApplyFade(True);
 end;
 
-function TCutView.ApplyFadeout: Boolean;
+procedure TCutView.ApplyFadeout;
 begin
   if not CanApplyFadeOut then
     Exit;
@@ -719,21 +711,11 @@ begin
   ApplyFade(False);
 end;
 
-function TCutView.ApplyEffects: Boolean;
+procedure TCutView.ApplyEffects;
 var
-  i, Res: Integer;
-  DA: TfrmDownloadAddons;
-  Found, Failed: Boolean;
-  TempFile: string;
-  Plugin: TSoXPlugin;
-  Output: AnsiString;
-  LoopStarted: Cardinal;
-  FS: TFileStream;
   CmdLine: string;
   F: TfrmConfigureSoX;
 begin
-  Result := False;
-
   if not CheckSoX then
     Exit;
 
@@ -850,15 +832,9 @@ end;
 
 function TCutView.CheckSoX: Boolean;
 var
-  i, Res: Integer;
+  Res: Integer;
   DA: TfrmDownloadAddons;
-  Found, Failed: Boolean;
-  TempFile: string;
   Plugin: TSoXPlugin;
-  Output: AnsiString;
-  LoopStarted: Cardinal;
-  FS: TFileStream;
-  CmdLine: string;
 begin
   Result := False;
 

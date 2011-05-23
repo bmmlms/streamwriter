@@ -110,7 +110,7 @@ type
     function Copy: TPluginBase; virtual; abstract;
     procedure Assign(Source: TPluginBase); virtual;
     procedure Initialize; virtual;
-    procedure Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean); virtual;
+    function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; virtual;
     procedure Save; virtual;
 
     property CanConfigure: Boolean read FCanConfigure;
@@ -143,7 +143,7 @@ type
     procedure Initialize; override;
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
     function Copy: TPluginBase; override;
-    function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean;
+    function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
 
     property Handle: Cardinal read FDLLHandle;
     property Filename: string read FFilename;
@@ -514,9 +514,9 @@ begin
 
 end;
 
-procedure TPluginBase.Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean);
+function TPluginBase.Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean;
 begin
-
+  Result := False;
 end;
 
 procedure TPluginBase.Initialize;

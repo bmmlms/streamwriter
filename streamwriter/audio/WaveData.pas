@@ -169,6 +169,7 @@ var
   FS, StartTagBytes, EndTagBytes: Int64;
   FIn: TAudioStreamFile;
   FOut: TMemoryStream;
+  P: TPosRect;
 begin
   Result := False;
   if CutStates.Count <= 1 then
@@ -185,7 +186,7 @@ begin
     S := Round(S * (FS / Wavesize));
     E := Round(E * (FS / Wavesize));
 
-    S := S + AudioStart;
+    S := S + AudioStart;             // TODO: Bandbreiten-warn-fenster für manuelle streams
     E := E + AudioStart;
 
     FOut := TMemoryStream.Create;
@@ -202,12 +203,18 @@ begin
           FOut.CopyFrom(FIn, StartTagBytes);
         end;
 
-        S := FIn.GetFrame(S, False);
-        E := FIn.GetFrame(E, True);
+        P := FIn.GetFrame(S, E);
 
         // Daten kopieren
-        FIn.Seek(S, soFromBeginning);
-        FOut.CopyFrom(FIn, E - S);
+        if (P.A > 0) and (P.B > 0) then
+        begin
+          FIn.Seek(P.A, soFromBeginning);
+          FOut.CopyFrom(FIn, P.B - P.A);
+        end else
+        begin
+          FIn.Seek(S, soFromBeginning);
+          FOut.CopyFrom(FIn, E - S);
+        end;
 
         // Tags kopieren
         if EndTagBytes > 0 then

@@ -51,7 +51,6 @@ uses
 
 procedure TSetTagsThread.Execute;
 var
-  p: Integer;
   Artist, Title: string;
   ID3V1: TID3v1Tag;
   ID3V2: TID3v2Tag;

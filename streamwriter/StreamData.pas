@@ -62,7 +62,7 @@ type
     FIsOkayChanged: Boolean;
     FRegExChanged: Boolean;
   public
-    constructor Create(AOwner: TComponent; ID: Integer; Name: string; RegEx: string; IsOkay: Boolean);
+    constructor Create(AOwner: TComponent; ID: Integer; Name: string; RegEx: string; IsOkay: Boolean); reintroduce;
 
     property RecordingOkay: Boolean read FIsOkay;
     property RegEx: string read FRegEx;
@@ -91,8 +91,8 @@ begin
     R.RegEx := txtTitlePattern.Text;
     try
       R.Compile;
+      RValid := True;
     except end;
-    RValid := True;
   finally
     R.Free;
   end;

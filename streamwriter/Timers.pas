@@ -20,9 +20,8 @@ type
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: string); override;
     procedure DoChecked(Node: PVirtualNode); override;
-    procedure DoFreeNode(Node: PVirtualNode); override;
   public
-    constructor Create(AOwner: TComponent);
+    constructor Create(AOwner: TComponent); reintroduce;
 
     procedure Add(Interval: TScheduleInterval; Day: TScheduleDay; SH, SM, EH, EM: Integer); overload;
     procedure Add(Date: TDateTime; SH, SM, EH, EM: Integer); overload;
@@ -77,7 +76,7 @@ type
 
     procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
   public
-    constructor Create(AOwner: TComponent; Entry: TStreamEntry);
+    constructor Create(AOwner: TComponent; Entry: TStreamEntry); reintroduce;
   end;
 
 implementation
@@ -193,7 +192,6 @@ end;
 procedure TfrmTimers.FormShow(Sender: TObject);
 var
   i: Integer;
-  S: TSchedule;
 begin
   for i := 0 to FEntry.Schedules.Count - 1 do
     Tree.Add(FEntry.Schedules[i].Copy);
@@ -374,19 +372,11 @@ begin
   NodeData.Schedule.Active := Node.CheckState = csCheckedNormal;
 end;
 
-procedure TScheduleTree.DoFreeNode(Node: PVirtualNode);
-var
-  NodeData: PScheduleTreeNodeData;
-begin
-  inherited;
-
-end;
-
 procedure TScheduleTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
   TextType: TVSTTextType; var Text: string);
 var
   NodeData: PScheduleTreeNodeData;
-  Day, StartTime, EndTime: string;
+  Day: string;
   DTStart, DTEnd: TDateTime;
 begin
   inherited;

@@ -287,9 +287,6 @@ procedure TClientTab.ActionCopyTitleExecute(Sender: TObject);
 var
   Clients: TClientArray;
   Client: TICEClient;
-  Node, ChildNode: PVirtualNode;
-  Nodes, ChildNodes: TNodeArray;
-  NodeData, ChildNodeData: PClientNodeData;
   Title: string;
 begin
   Title := '';
@@ -318,9 +315,9 @@ procedure TClientTab.ActionStartExecute(Sender: TObject);
 var
   Clients: TClientArray;
   Client: TICEClient;
-  Node, ChildNode: PVirtualNode;
-  Nodes, ChildNodes: TNodeArray;
-  NodeData, ChildNodeData: PClientNodeData;
+  Node: PVirtualNode;
+  Nodes: TNodeArray;
+  NodeData: PClientNodeData;
 begin
   if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
   begin
@@ -364,9 +361,9 @@ procedure TClientTab.ActionStopExecute(Sender: TObject);
 var
   Clients: TClientArray;
   Client: TICEClient;
-  Node, ChildNode: PVirtualNode;
-  Nodes, ChildNodes: TNodeArray;
-  NodeData, ChildNodeData: PClientNodeData;
+  Node: PVirtualNode;
+  Nodes: TNodeArray;
+  NodeData: PClientNodeData;
 begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
   for Client in Clients do
@@ -1150,7 +1147,6 @@ function TClientTab.StartStreaming(Name, URL, TitlePattern: string; StartPlay: B
       FOnPlayStarted(Self);
   end;
 var
-  Clients: TClientArray;
   Client: TICEClient;
   Node: PVirtualNode;
 begin

@@ -19,7 +19,6 @@ type
     FState: TNotificationStates;
     FDisplayOnEndTitle: string;
     FDisplayOnEndStream: string;
-    procedure Hide;
   protected
     procedure CreateParams(var Params: TCreateParams); override;
     procedure DoShow; override;
@@ -29,7 +28,7 @@ type
     procedure WMTimer(var Message: TWMTimer); message WM_TIMER;
     procedure Paint; override;
   public
-    constructor Create(AOwner: TComponent);
+    constructor Create(AOwner: TComponent); reintroduce;
 
     class procedure Act(Title, Stream: string);
     class procedure Stop;
@@ -60,8 +59,6 @@ begin
 end;
 
 constructor TfrmNotification.Create(AOwner: TComponent);
-var
-  OldStyle, NewStyle: Cardinal;
 begin
   inherited;
 
@@ -129,14 +126,6 @@ begin
   NotificationForm := nil;
 end;
 
-procedure TfrmNotification.Hide;
-begin
-  KillTimer(Handle, 0);
-  KillTimer(Handle, 1);
-  KillTimer(Handle, 2);
-  SetTimer(Handle, 2, 20, nil);
-end;
-
 procedure TfrmNotification.Paint;
 begin
   inherited;
@@ -171,8 +160,6 @@ begin
 end;
 
 procedure TfrmNotification.WMTimer(var Message: TWMTimer);
-var
-  s: cardinal;
 begin
   if Message.TimerID = 0 then
   begin

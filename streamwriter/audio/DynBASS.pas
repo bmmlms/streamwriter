@@ -165,7 +165,6 @@ end;
 function TBassLoader.InitializeBass(Handle: THandle): Boolean;
 var
   Res: TResourceStream;
-  T: Cardinal;
 begin
   Result := False;
 

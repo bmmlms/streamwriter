@@ -233,7 +233,6 @@ type
       BitRate, Downloads: Integer; Rating: Integer; MetaData, ChangesTitleInSong, RecordingOkay, HasData: Boolean): PVirtualNode;
     procedure GetLoadDataNodes(var FirstVisibleNoData, LastVisibleNoData: PVirtualNode);
     function GetSelected: TStreamDataArray;
-    procedure KeyDown(var Key: Word; Shift: TShiftState);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -672,14 +671,6 @@ begin
   end;
 end;
 
-procedure TMStreamTree.KeyDown(var Key: Word; Shift: TShiftState);
-begin
-  if (Key = 65) and (ssCtrl in Shift) then
-    Exit;
-
-  inherited;
-end;
-
 procedure TMStreamTree.KeyPress(var Key: Char);
 begin
   inherited;
@@ -792,7 +783,6 @@ procedure TMStreamTree.PopupMenuClick(Sender: TObject);
 var
   Action: TOpenActions;
   Streams: TStreamDataArray;
-  NodeData: PStreamNodeData;
 begin
   Action := oaNone;
   Streams := GetSelected;
@@ -1445,7 +1435,7 @@ end;
 
 procedure TMStreamBrowserView.Translate;
 var
-  i, Idx: Integer;
+  Idx: Integer;
 begin
   FStreamTree.FColName.Text := _('Rating');
 

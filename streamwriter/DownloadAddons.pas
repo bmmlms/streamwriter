@@ -23,7 +23,7 @@ type
     procedure DownloaderDownloaded(Sender: TObject);
     procedure DownloaderError(Sender: TObject);
   public
-    constructor Create(AOwner: TComponent; Plugin: TInternalPlugin);
+    constructor Create(AOwner: TComponent; Plugin: TInternalPlugin); reintroduce;
     property Downloaded: Boolean read FDownloaded;
     property Error: Boolean read FError;
   end;
@@ -33,8 +33,6 @@ implementation
 {$R *.dfm}
 
 constructor TfrmDownloadAddons.Create(AOwner: TComponent; Plugin: TInternalPlugin);
-var
-  URL: string;
 begin
   inherited Create(AOwner);
 

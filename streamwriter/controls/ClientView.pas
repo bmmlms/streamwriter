@@ -585,7 +585,6 @@ end;
 function TMClientView.GetChildNodes(Parent: PVirtualNode): TNodeArray;
 var
   Node: PVirtualNode;
-  NodeData: PClientNodeData;
 begin
   SetLength(Result, 0);
   Node := GetFirst;

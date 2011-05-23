@@ -57,7 +57,7 @@ type
     FSaveData: Boolean;
   public
     constructor Create(AOwner: TComponent; FadeoutStart, FadeoutEnd: Boolean; FadeoutStartLength, FadeoutEndLength: Integer;
-      SilenceStart, SilenceEnd: Boolean; SilenceStartLength, SilenceEndLength: Integer);
+      SilenceStart, SilenceEnd: Boolean; SilenceStartLength, SilenceEndLength: Integer); reintroduce;
 
     property FadeoutStart: Boolean read FFadeoutStart write FFadeoutStart;
     property FadeoutEnd: Boolean read FFadeoutEnd write FFadeoutEnd;

@@ -550,7 +550,6 @@ end;
 procedure TAppData.DoSave;
 var
   i, n: Integer;
-  SaveDir, TmpDir, AppDir: string;
 begin
   inherited;
 

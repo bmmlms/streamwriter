@@ -63,7 +63,7 @@ type
     procedure CNDrawitem(var Message: TWMDrawItem); message CN_DRAWITEM;
     procedure WMPaint(var Message: TWMPaint); message WM_PAINT;
   public
-    constructor Create(AOwner: TComponent);
+    constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
 
     procedure SetState(Connected, LoggedIn: Boolean; Clients, Recordings: Integer; SongsSaved: Cardinal);
@@ -472,8 +472,6 @@ end;
 procedure TfrmStreamWriterMain.actTimersExecute(Sender: TObject);
 var
   Clients: TClientArray;
-  S: TfrmSettings;
-  i: Integer;
   T: TfrmTimers;
 begin
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
@@ -899,8 +897,6 @@ var
   Node: PVirtualNode;
   Item: TMenuItem;
   Nodes: TNodeArray;
-  Client: TICEClient;
-  OnlyAutomatedSelected: Boolean;
 begin
   Item := TMenuItem(Sender);
 
@@ -963,8 +959,6 @@ var
   Node: PVirtualNode;
   Item: TMenuItem;
   Clients: TClientArray;
-  Client: TICEClient;
-  OnlyAutomatedSelected: Boolean;
 begin
   UpdateButtons;
 
@@ -1468,7 +1462,7 @@ begin
     end;
 
   AnyClientHasTitle := False;
-  for Client in AllClients do
+  for Client in Clients do
     if Client.Title <> '' then
     begin
       AnyClientHasTitle := True;
@@ -1545,6 +1539,7 @@ begin
   {
   if Length(Clients) = 1 then
   begin
+
     Client := Clients[0];
     case AppGlobals.DefaultAction of
       caStartStop:
@@ -1715,7 +1710,6 @@ procedure TSWStatusBar.BuildSpeedBmp;
 var
   P: Integer;
   NewBmp: TBitmap;
-  f,t: trect;
 begin
   NewBmp := TBitmap.Create;
   NewBmp.Width := 35;
@@ -1746,6 +1740,33 @@ begin
 
   FSpeedBmp.Canvas.MoveTo(FSpeedBmp.Width - 1, FSpeedBmp.Height - P);
   FSpeedBmp.Canvas.LineTo(FSpeedBmp.Width - 1, FSpeedBmp.Height);
+
+
+  if P > 9 then
+  begin
+    FSpeedBmp.Canvas.Pixels[FSpeedBmp.Width - 1, FSpeedBmp.Height - 11] := HTML2Color('4b1616');
+  end;
+
+  if P > 10 then
+  begin
+    FSpeedBmp.Canvas.Pixels[FSpeedBmp.Width - 1, FSpeedBmp.Height - 12] := HTML2Color('722222');
+  end;
+
+  if P > 11 then
+  begin
+    FSpeedBmp.Canvas.Pixels[FSpeedBmp.Width - 1, FSpeedBmp.Height - 13] := HTML2Color('9d2626');
+  end;
+
+  if P > 12 then
+  begin
+    FSpeedBmp.Canvas.Pixels[FSpeedBmp.Width - 1, FSpeedBmp.Height - 14] := HTML2Color('c42c2c');
+  end;
+
+  if P > 13 then
+  begin
+    FSpeedBmp.Canvas.Pixels[FSpeedBmp.Width - 1, FSpeedBmp.Height - 15] := HTML2Color('d71717');
+  end;
+
 
   FLastPos := P;
 end;
@@ -1946,7 +1967,6 @@ end;
 procedure TSWStatusBar.WMPaint(var Message: TWMPaint);
 var
   i: Integer;
-  R: TRect;
 begin
   inherited;
 
