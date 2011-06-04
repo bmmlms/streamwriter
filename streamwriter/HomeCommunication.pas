@@ -704,6 +704,8 @@ begin
       try
         XMLDocument.LoadFromString(D);
 
+        TLogger.Write('LOADED');
+
         Header := XMLDocument.Root.Nodes.GetNode('header');
         Data := XMLDocument.Root.Nodes.GetNode('data');
 

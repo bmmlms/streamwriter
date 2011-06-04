@@ -35,6 +35,7 @@ type
   protected
     function FGetReadyForUse: Boolean; override;
     function FGetFilesInstalled: Boolean; override;
+    function FGetReadyForActivate: Boolean; override;
   public
     constructor Create;
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
@@ -124,6 +125,11 @@ begin
 end;
 
 function TSetTagsPlugin.FGetFilesInstalled: Boolean;
+begin
+  Result := True;
+end;
+
+function TSetTagsPlugin.FGetReadyForActivate: Boolean;
 begin
   Result := True;
 end;

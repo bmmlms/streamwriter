@@ -719,7 +719,7 @@ begin
   if not CheckSoX then
     Exit;
 
-  F := TfrmConfigureSox.Create(Self, False, False, 5, 5, False, False, 3, 3);
+  F := TfrmConfigureSox.Create(Self, GetSox, False, False, 5, 5, False, False, 3, 3);
   try
     F.ShowModal;
 
@@ -834,6 +834,7 @@ function TCutView.CheckSoX: Boolean;
 var
   Res: Integer;
   DA: TfrmDownloadAddons;
+  CS: TfrmConfigureSoX;
   Plugin: TSoXPlugin;
 begin
   Result := False;
@@ -842,7 +843,7 @@ begin
   if Plugin = nil then
     Exit;
 
-  if not Plugin.ReadyForUse then
+  if not Plugin.ReadyForActivate then
   begin
     Res := MsgBox(Handle, _('This function cannot be used because needed files have not been downloaded.'#13#10'Do you want to download these files now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
     if Res = IDYES then
@@ -867,13 +868,27 @@ begin
 
     // Nochmal initialisieren. Evtl. wurde eben erst die .dll heruntergeladen, dann extrahiert .Initialize() jetzt
     Plugin.Initialize;
+  end;
 
-    if not Plugin.ReadyForUse then
-    begin
-      MsgBox(Handle, _('The plugin is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
-      Exit;
-    end else
-      Result := True;
+  if Plugin.ReadyForActivate and (not Plugin.ReadyForUse) then
+  begin
+    CS := TfrmConfigureSoX.Create(GetParentForm(Self), Plugin);
+    try
+      CS.ShowModal;
+
+      Plugin.Initialize;
+
+      if not Plugin.ReadyForUse then
+        Exit;
+    finally
+      CS.Free;
+    end;
+  end;
+
+  if not Plugin.ReadyForUse then
+  begin
+    MsgBox(Handle, _('The plugin is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
+    Exit;
   end else
     Result := True;
 end;

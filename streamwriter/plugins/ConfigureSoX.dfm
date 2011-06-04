@@ -4,8 +4,8 @@ object frmConfigureSoX: TfrmConfigureSoX
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Configure SoX'
-  ClientHeight = 206
-  ClientWidth = 397
+  ClientHeight = 392
+  ClientWidth = 405
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -55,35 +55,10 @@ object frmConfigureSoX: TfrmConfigureSoX
   OnKeyDown = FormKeyDown
   PixelsPerInch = 96
   TextHeight = 13
-  object Bevel1: TBevel
-    Left = 8
-    Top = 76
-    Width = 381
-    Height = 5
-    Shape = bsTopLine
-  end
-  object chkFadeoutStart: TCheckBox
-    Left = 8
-    Top = 8
-    Width = 181
-    Height = 21
-    Caption = 'Add fadein at beginning'
-    TabOrder = 0
-    OnClick = chkClick
-  end
-  object chkFadeoutEnd: TCheckBox
-    Left = 208
-    Top = 8
-    Width = 181
-    Height = 21
-    Caption = 'Add fadeout at end'
-    TabOrder = 1
-    OnClick = chkClick
-  end
   object pnlNav: TPanel
     Left = 0
-    Top = 157
-    Width = 397
+    Top = 343
+    Width = 405
     Height = 49
     Align = alBottom
     BevelOuter = bvNone
@@ -91,11 +66,12 @@ object frmConfigureSoX: TfrmConfigureSoX
     Padding.Top = 4
     Padding.Right = 4
     Padding.Bottom = 4
-    TabOrder = 2
+    TabOrder = 0
+    ExplicitTop = 521
     object Bevel2: TBevel
       Left = 4
       Top = 4
-      Width = 389
+      Width = 397
       Height = 5
       Align = alTop
       Shape = bsTopLine
@@ -103,7 +79,7 @@ object frmConfigureSoX: TfrmConfigureSoX
       ExplicitWidth = 396
     end
     object btnOK: TBitBtn
-      Left = 296
+      Left = 304
       Top = 9
       Width = 97
       Height = 36
@@ -117,74 +93,183 @@ object frmConfigureSoX: TfrmConfigureSoX
       OnClick = btnOKClick
     end
   end
-  object txtFadeoutStart: TLabeledEdit
-    Left = 24
-    Top = 48
-    Width = 53
-    Height = 21
-    EditLabel.Width = 90
-    EditLabel.Height = 13
-    EditLabel.Caption = 'Length in seconds:'
-    Enabled = False
-    MaxLength = 1
-    NumbersOnly = True
-    TabOrder = 3
+  object pnlConfigure: TPanel
+    Left = 4
+    Top = 176
+    Width = 397
+    Height = 161
+    TabOrder = 1
+    Visible = False
+    object Bevel1: TBevel
+      Left = 8
+      Top = 76
+      Width = 381
+      Height = 5
+      Shape = bsTopLine
+    end
+    object chkFadeoutStart: TCheckBox
+      Left = 4
+      Top = 0
+      Width = 181
+      Height = 21
+      Caption = 'Add fadein at beginning'
+      TabOrder = 0
+      OnClick = chkClick
+    end
+    object chkFadeoutEnd: TCheckBox
+      Left = 204
+      Top = 0
+      Width = 181
+      Height = 21
+      Caption = 'Add fadeout at end'
+      TabOrder = 1
+      OnClick = chkClick
+    end
+    object txtFadeoutStart: TLabeledEdit
+      Left = 20
+      Top = 40
+      Width = 53
+      Height = 21
+      EditLabel.Width = 90
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Length in seconds:'
+      Enabled = False
+      MaxLength = 1
+      NumbersOnly = True
+      TabOrder = 2
+    end
+    object txtFadeoutEnd: TLabeledEdit
+      Left = 220
+      Top = 40
+      Width = 53
+      Height = 21
+      EditLabel.Width = 90
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Length in seconds:'
+      Enabled = False
+      MaxLength = 1
+      NumbersOnly = True
+      TabOrder = 3
+    end
+    object chkSilenceStart: TCheckBox
+      Left = 8
+      Top = 92
+      Width = 181
+      Height = 21
+      Caption = 'Add silence at beginning'
+      TabOrder = 4
+      OnClick = chkClick
+    end
+    object chkSilenceEnd: TCheckBox
+      Left = 204
+      Top = 92
+      Width = 181
+      Height = 21
+      Caption = 'Add silence at end'
+      TabOrder = 5
+      OnClick = chkClick
+    end
+    object txtSilenceStart: TLabeledEdit
+      Left = 24
+      Top = 132
+      Width = 53
+      Height = 21
+      EditLabel.Width = 90
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Length in seconds:'
+      Enabled = False
+      MaxLength = 1
+      NumbersOnly = True
+      TabOrder = 6
+    end
+    object txtSilenceEnd: TLabeledEdit
+      Left = 224
+      Top = 132
+      Width = 53
+      Height = 21
+      EditLabel.Width = 90
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Length in seconds:'
+      Enabled = False
+      MaxLength = 1
+      NumbersOnly = True
+      TabOrder = 7
+    end
   end
-  object txtFadeoutEnd: TLabeledEdit
-    Left = 224
-    Top = 48
-    Width = 53
-    Height = 21
-    EditLabel.Width = 90
-    EditLabel.Height = 13
-    EditLabel.Caption = 'Length in seconds:'
-    Enabled = False
-    MaxLength = 1
-    NumbersOnly = True
-    TabOrder = 4
+  object pnlSetup: TPanel
+    Left = 4
+    Top = 4
+    Width = 397
+    Height = 161
+    TabOrder = 2
+    Visible = False
+    object btnBrowse1: TSpeedButton
+      Left = 308
+      Top = 84
+      Width = 25
+      Height = 21
+      Hint = 'Browse...'
+      Flat = True
+      Layout = blGlyphRight
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = btnBrowseClick
+    end
+    object btnBrowse2: TSpeedButton
+      Left = 308
+      Top = 132
+      Width = 25
+      Height = 21
+      Hint = 'Browse...'
+      Flat = True
+      Layout = blGlyphRight
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = btnBrowseClick
+    end
+    object lblInfo: TLabel
+      Left = 4
+      Top = 0
+      Width = 385
+      Height = 65
+      AutoSize = False
+      Caption = 
+        'Due to licensing issues streamWriter does not supply two needed ' +
+        'DLLs. Please download both DLLs and select them using the "Brows' +
+        'e..." buttons. If clicking "Next" does not show any error messag' +
+        'es, you can delete the downloaded files.'
+      WordWrap = True
+    end
+    object txtLameDLL: TLabeledEdit
+      Left = 4
+      Top = 84
+      Width = 301
+      Height = 21
+      AutoSize = False
+      Color = 15790320
+      EditLabel.Width = 107
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Path to "lame-enc.dll":'
+      ReadOnly = True
+      TabOrder = 0
+    end
+    object txtMadDLL: TLabeledEdit
+      Left = 4
+      Top = 132
+      Width = 301
+      Height = 21
+      AutoSize = False
+      Color = 15790320
+      EditLabel.Width = 94
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Path to "libmad.dll":'
+      ReadOnly = True
+      TabOrder = 1
+    end
   end
-  object chkSilenceStart: TCheckBox
-    Left = 8
-    Top = 88
-    Width = 181
-    Height = 21
-    Caption = 'Add silence at beginning'
-    TabOrder = 5
-    OnClick = chkClick
-  end
-  object chkSilenceEnd: TCheckBox
-    Left = 208
-    Top = 88
-    Width = 181
-    Height = 21
-    Caption = 'Add silence at end'
-    TabOrder = 6
-    OnClick = chkClick
-  end
-  object txtSilenceStart: TLabeledEdit
-    Left = 24
-    Top = 128
-    Width = 53
-    Height = 21
-    EditLabel.Width = 90
-    EditLabel.Height = 13
-    EditLabel.Caption = 'Length in seconds:'
-    Enabled = False
-    MaxLength = 1
-    NumbersOnly = True
-    TabOrder = 7
-  end
-  object txtSilenceEnd: TLabeledEdit
-    Left = 224
-    Top = 128
-    Width = 53
-    Height = 21
-    EditLabel.Width = 90
-    EditLabel.Height = 13
-    EditLabel.Caption = 'Length in seconds:'
-    Enabled = False
-    MaxLength = 1
-    NumbersOnly = True
-    TabOrder = 8
+  object dlgOpen: TOpenDialog
+    Filter = 'lame-enc.dll|lame-enc.dll'
+    Left = 168
+    Top = 60
   end
 end

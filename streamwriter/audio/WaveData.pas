@@ -186,7 +186,7 @@ begin
     S := Round(S * (FS / Wavesize));
     E := Round(E * (FS / Wavesize));
 
-    S := S + AudioStart;             // TODO: Bandbreiten-warn-fenster für manuelle streams
+    S := S + AudioStart;
     E := E + AudioStart;
 
     FOut := TMemoryStream.Create;

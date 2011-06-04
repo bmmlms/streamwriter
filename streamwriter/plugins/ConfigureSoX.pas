@@ -24,26 +24,35 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, Functions,
-  Logging;
+  Logging, SoX;
 
 type
   TfrmConfigureSoX = class(TForm)
-    chkFadeoutStart: TCheckBox;
-    chkFadeoutEnd: TCheckBox;
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;
+    pnlConfigure: TPanel;
+    Bevel1: TBevel;
+    chkFadeoutStart: TCheckBox;
+    chkFadeoutEnd: TCheckBox;
     txtFadeoutStart: TLabeledEdit;
     txtFadeoutEnd: TLabeledEdit;
     chkSilenceStart: TCheckBox;
     chkSilenceEnd: TCheckBox;
     txtSilenceStart: TLabeledEdit;
     txtSilenceEnd: TLabeledEdit;
-    Bevel1: TBevel;
+    pnlSetup: TPanel;
+    btnBrowse1: TSpeedButton;
+    btnBrowse2: TSpeedButton;
+    txtLameDLL: TLabeledEdit;
+    txtMadDLL: TLabeledEdit;
+    lblInfo: TLabel;
+    dlgOpen: TOpenDialog;
     procedure btnOKClick(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure chkClick(Sender: TObject);
+    procedure btnBrowseClick(Sender: TObject);
   private
     FFadeoutStart: Boolean;
     FFadeoutEnd: Boolean;
@@ -54,10 +63,16 @@ type
     FSilenceStartLength: Integer;
     FSilenceEndLength: Integer;
 
+    FOnlySetup: Boolean;
+    FPlugin: TSoXPlugin;
+
     FSaveData: Boolean;
+
+    procedure InitForm;
   public
-    constructor Create(AOwner: TComponent; FadeoutStart, FadeoutEnd: Boolean; FadeoutStartLength, FadeoutEndLength: Integer;
-      SilenceStart, SilenceEnd: Boolean; SilenceStartLength, SilenceEndLength: Integer); reintroduce;
+    constructor Create(AOwner: TComponent; Plugin: TSoxPlugin); overload;
+    constructor Create(AOwner: TComponent; Plugin: TSoxPlugin; FadeoutStart, FadeoutEnd: Boolean; FadeoutStartLength, FadeoutEndLength: Integer;
+      SilenceStart, SilenceEnd: Boolean; SilenceStartLength, SilenceEndLength: Integer); reintroduce; overload;
 
     property FadeoutStart: Boolean read FFadeoutStart write FFadeoutStart;
     property FadeoutEnd: Boolean read FFadeoutEnd write FFadeoutEnd;
@@ -75,49 +90,111 @@ implementation
 
 {$R *.dfm}
 
-procedure TfrmConfigureSoX.btnOKClick(Sender: TObject);
+procedure TfrmConfigureSoX.btnBrowseClick(Sender: TObject);
 begin
-  if chkFadeoutStart.Checked and (StrToIntDef(txtFadeoutStart.Text, 0) = 0) then
+  if Sender = btnBrowse1 then
+    dlgOpen.Filter := 'lame-enc.dll|*.dll'
+  else
+    dlgOpen.Filter := 'libmad.dll|*.dll';
+
+  if dlgOpen.Execute then
   begin
-    MsgBox(Handle, _('Please enter the length of the fadein in seconds.'), _('Info'), MB_ICONINFORMATION);
-    Exit;
-  end else if (StrToIntDef(txtFadeoutStart.Text, 0) = 0) then
-    txtFadeoutStart.Text := '5';
+    if FileExists(dlgOpen.FileName) then
+    begin
+      if Sender = btnBrowse1 then
+        txtLameDLL.Text := dlgOpen.FileName
+      else
+        txtMadDLL.Text := dlgOpen.FileName;
+    end;
+  end;
+end;
 
-  if chkFadeoutEnd.Checked and (StrToIntDef(txtFadeoutEnd.Text, 0) = 0) then
+procedure TfrmConfigureSoX.btnOKClick(Sender: TObject);
+var
+  Res: Integer;
+begin
+  if pnlSetup.Visible then
   begin
-    MsgBox(Handle, _('Please enter the length of the fadeout in seconds.'), _('Info'), MB_ICONINFORMATION);
-    Exit;
-  end else if (StrToIntDef(txtFadeoutEnd.Text, 0) = 0) then
-    txtFadeoutEnd.Text := '5';
+    if (not FileExists(txtLameDLL.Text)) or (not FileExists(txtMadDLL.Text)) then
+    begin
+      MsgBox(Handle, _('Please browse for "lame-enc.dll" and "libmad.dll".'), _('Info'), MB_ICONINFORMATION);
+      Exit;
+    end;
 
-  if chkSilenceStart.Checked and (StrToIntDef(txtSilenceStart.Text, 0) = 0) then
+    if LowerCase(ExtractFileName(txtLameDLL.Text)) <> 'lame-enc.dll' then
+    begin
+      Res := MsgBox(Handle, _('The selected file for "lame-enc.dll" has a different filename.'#13#10'Are you really sure you want to use that file?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
+      if Res = IDNO then
+        Exit;
+    end;
+
+    if LowerCase(ExtractFileName(txtMadDLL.Text)) <> 'libmad.dll' then
+    begin
+      Res := MsgBox(Handle, _('The selected file for "libmad.dll" has a different filename.'#13#10'Are you really sure you want to use that file?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
+      if Res = IDNO then
+        Exit;
+    end;
+
+    if FPlugin.EatFiles(txtLameDLL.Text, txtMadDLL.Text) then
+    begin
+      if FOnlySetup then
+      begin
+        Close;
+      end else
+      begin
+        pnlSetup.Visible := False;
+        pnlConfigure.Visible := True;
+
+        btnOK.Caption := '&OK';
+      end;
+    end else
+    begin
+      MsgBox(Handle, _('The selected files could not be included to the SoX-Addon. Please make sure the files are readable by streamWriter.'), _('Error'), MB_ICONERROR);
+    end;
+  end else
   begin
-    MsgBox(Handle, _('Please enter the length of silence at the beginning in seconds.'), _('Info'), MB_ICONINFORMATION);
-    Exit;
-  end else if (StrToIntDef(txtSilenceStart.Text, 0) = 0) then
-    txtSilenceStart.Text := '5';
+    if chkFadeoutStart.Checked and (StrToIntDef(txtFadeoutStart.Text, 0) = 0) then
+    begin
+      MsgBox(Handle, _('Please enter the length of the fadein in seconds.'), _('Info'), MB_ICONINFORMATION);
+      Exit;
+    end else if (StrToIntDef(txtFadeoutStart.Text, 0) = 0) then
+      txtFadeoutStart.Text := '5';
 
-  if chkSilenceEnd.Checked and (StrToIntDef(txtSilenceEnd.Text, 0) = 0) then
-  begin
-    MsgBox(Handle, _('Please enter the length of silence at the end in seconds.'), _('Info'), MB_ICONINFORMATION);
-    Exit;
-  end else if (StrToIntDef(txtSilenceEnd.Text, 0) = 0) then
-    txtSilenceEnd.Text := '5';
+    if chkFadeoutEnd.Checked and (StrToIntDef(txtFadeoutEnd.Text, 0) = 0) then
+    begin
+      MsgBox(Handle, _('Please enter the length of the fadeout in seconds.'), _('Info'), MB_ICONINFORMATION);
+      Exit;
+    end else if (StrToIntDef(txtFadeoutEnd.Text, 0) = 0) then
+      txtFadeoutEnd.Text := '5';
 
-  FFadeoutStart := chkFadeoutStart.Checked;
-  FFadeoutEnd := chkFadeoutEnd.Checked;
-  FFadeoutStartLength := StrToInt(txtFadeoutStart.Text);
-  FFadeoutEndLength := StrToInt(txtFadeoutEnd.Text);
+    if chkSilenceStart.Checked and (StrToIntDef(txtSilenceStart.Text, 0) = 0) then
+    begin
+      MsgBox(Handle, _('Please enter the length of silence at the beginning in seconds.'), _('Info'), MB_ICONINFORMATION);
+      Exit;
+    end else if (StrToIntDef(txtSilenceStart.Text, 0) = 0) then
+      txtSilenceStart.Text := '5';
 
-  FSilenceStart := chkSilenceStart.Checked;
-  FSilenceEnd := chkSilenceEnd.Checked;
-  FSilenceStartLength := StrToInt(txtSilenceStart.Text);
-  FSilenceEndLength := StrToInt(txtSilenceEnd.Text);
+    if chkSilenceEnd.Checked and (StrToIntDef(txtSilenceEnd.Text, 0) = 0) then
+    begin
+      MsgBox(Handle, _('Please enter the length of silence at the end in seconds.'), _('Info'), MB_ICONINFORMATION);
+      Exit;
+    end else if (StrToIntDef(txtSilenceEnd.Text, 0) = 0) then
+      txtSilenceEnd.Text := '5';
 
-  FSaveData := True;
+    FFadeoutStart := chkFadeoutStart.Checked;
+    FFadeoutEnd := chkFadeoutEnd.Checked;
+    FFadeoutStartLength := StrToInt(txtFadeoutStart.Text);
+    FFadeoutEndLength := StrToInt(txtFadeoutEnd.Text);
 
-  Close;
+    FSilenceStart := chkSilenceStart.Checked;
+    FSilenceEnd := chkSilenceEnd.Checked;
+    FSilenceStartLength := StrToInt(txtSilenceStart.Text);
+    FSilenceEndLength := StrToInt(txtSilenceEnd.Text);
+
+    FSaveData := True;
+
+    Close;
+  end;
 end;
 
 procedure TfrmConfigureSoX.chkClick(Sender: TObject);
@@ -128,10 +205,41 @@ begin
   txtSilenceEnd.Enabled := chkSilenceEnd.Checked;
 end;
 
-constructor TfrmConfigureSoX.Create(AOwner: TComponent; FadeoutStart, FadeoutEnd: Boolean; FadeoutStartLength, FadeoutEndLength: Integer;
-  SilenceStart, SilenceEnd: Boolean; SilenceStartLength, SilenceEndLength: Integer);
+constructor TfrmConfigureSoX.Create(AOwner: TComponent; Plugin: TSoxPlugin);
 begin
   inherited Create(AOwner);
+
+  InitForm;
+
+  FPlugin := Plugin;
+
+  pnlSetup.Show;
+  btnOK.Caption := '&OK';
+  FOnlySetup := True;
+
+  Language.Translate(Self);
+end;
+
+constructor TfrmConfigureSoX.Create(AOwner: TComponent; Plugin: TSoxPlugin; FadeoutStart, FadeoutEnd: Boolean; FadeoutStartLength, FadeoutEndLength: Integer;
+  SilenceStart, SilenceEnd: Boolean; SilenceStartLength, SilenceEndLength: Integer);
+var
+  i: Integer;
+begin
+  inherited Create(AOwner);
+
+  InitForm;
+
+  FPlugin := Plugin;
+
+  if not FPlugin.ReadyForUse then
+  begin
+    pnlSetup.Show;
+    btnOK.Caption := '&Next';
+  end else
+  begin
+    pnlConfigure.Show;
+    btnOK.Caption := '&OK';
+  end;
 
   chkFadeoutStart.Checked := FadeoutStart;
   chkFadeoutEnd.Checked := FadeoutEnd;
@@ -153,6 +261,32 @@ begin
   begin
     Key := 0;
     Close;
+  end;
+end;
+
+procedure TfrmConfigureSoX.InitForm;
+var
+  i: Integer;
+  B: TBitmap;
+begin
+  Height := 243;
+  for i := 0 to Self.ControlCount - 1 do
+  begin
+    if Self.Controls[i] is TPanel then
+    begin
+      Self.Controls[i].Left := 4;
+      Self.Controls[i].Top := 4;
+      TPanel(Self.Controls[i]).BevelOuter := bvNone;
+    end;
+  end;
+
+  B := TBitmap.Create;
+  try
+    GetBitmap('BROWSE', 2, B);
+    btnBrowse1.Glyph := B;
+    btnBrowse2.Glyph := B;
+  finally
+    B.Free;
   end;
 end;
 

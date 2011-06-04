@@ -128,6 +128,8 @@ type
     FDay: TScheduleDay;
     FDate: TDateTime;
     FStartHour, FStartMinute, FEndHour, FEndMinute: Integer;
+    FTriedStart: Boolean;
+    FTriedStop: Boolean;
 
     class function MatchesDay(S: TSchedule; NextDay: Boolean): Boolean;
   public
@@ -151,6 +153,8 @@ type
     property StartMinute: Integer read FStartMinute write FStartMinute;
     property EndHour: Integer read FEndHour write FEndHour;
     property EndMinute: Integer read FEndMinute write FEndMinute;
+    property TriedStart: Boolean read FTriedStart write FTriedStart;
+    property TriedStop: Boolean read FTriedStop write FTriedStop;
   end;
 
   TScheduleList = TList<TSchedule>;
@@ -172,9 +176,6 @@ type
     FCategoryIndex: Integer;
     FWasRecording: Boolean;
 
-    // REMARK: IsInList kann raus. Ist für Updates von Versionen < 6 da. Das Feld ist über,
-    // weil in neueren Versionen alles IsInList ist.
-    FIsInList: Boolean;
     FSongsSaved: Cardinal;
     FBytesReceived: UInt64;
 
@@ -185,7 +186,6 @@ type
     FSchedules: TScheduleList;
 
     procedure FSetName(Value: string);
-    procedure FSetIsInList(Value: Boolean);
 
     procedure FSetGenre(Value: string);
   public
@@ -211,7 +211,6 @@ type
     property CategoryIndex: Integer read FCategoryIndex write FCategoryIndex;
     property WasRecording: Boolean read FWasRecording write FWasRecording;
 
-    property IsInList: Boolean read FIsInList write FSetIsInList;
     property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
     property BytesReceived: UInt64 read FBytesReceived write FBytesReceived;
 
@@ -266,7 +265,7 @@ type
   end;
 
 const
-  DATAVERSION = 20;
+  DATAVERSION = 21;
 
 implementation
 
@@ -279,7 +278,6 @@ var
 begin
   FName := From.FName;
   FStreamURL := From.FStreamURL;
-  FIsInList := From.FIsInList;
   FStartURL := From.FStartURL;
   FSongsSaved := From.FSongsSaved;
   FBytesReceived := From.FBytesReceived;
@@ -313,7 +311,6 @@ begin
 
   FParent := Parent;
   FURLs := TStringList.Create;
-  FIsInList := False;
   FSongsSaved := 0;
   FMigrationTrackList := TTrackList.Create;
 
@@ -397,7 +394,8 @@ begin
     Stream.Read(Result.FMigrationSubmitted);
   end;
 
-  Stream.Read(Result.FIsInList);
+  if Version <= 20 then
+    Stream.Read(BTmp);
   if Version >= 5 then
   begin
     Stream.Read(Result.FIndex);
@@ -461,7 +459,6 @@ begin
   Stream.Write(FAudioType);
   Stream.Write(FGenre);
 
-  Stream.Write(FIsInList);
   Stream.Write(FIndex);
   Stream.Write(FCategoryIndex);
 
@@ -478,11 +475,6 @@ end;
 procedure TStreamEntry.FSetGenre(Value: string);
 begin
   FGenre := Value;
-end;
-
-procedure TStreamEntry.FSetIsInList(Value: Boolean);
-begin
-  FIsInList := Value;
 end;
 
 {
@@ -755,12 +747,6 @@ begin
             FSubmittedStreamList.Add(Entry.StartURL);
           if Entry.FMigrationRecentIndex > -1 then
             FRecentList.Add(TRecentEntry.Create(Entry.Name, Entry.StartURL, Entry.FMigrationRecentIndex));
-
-          if not Entry.IsInList then
-          begin
-            FStreamList.Remove(Entry);
-            Entry.Free;
-          end;
         end;
       end;
     except
@@ -1222,7 +1208,7 @@ begin
   if not MatchesDay(S, False) then
     Exit;
 
-  if (S.StartHour = HourOf(Now)) and (S.StartMinute = MinuteOf(Now)) and (SecondOf(Now) <= 5) then
+  if (S.StartHour = HourOf(Now)) and (S.StartMinute = MinuteOf(Now)) then
     Result := True;
 end;
 
@@ -1237,7 +1223,7 @@ begin
   EndTime := StrToTime(IntToStr(S.EndHour) + TimeSeparator + IntToStr(S.EndMinute) + TimeSeparator + '00');
 
   NextDay := False;
-  if EndTime < StartTime then
+  if EndTime <= StartTime then
   begin
     // Das hier geht von z.B. 23:00 bis 01:00, also über 24 Uhr hinaus.
     // Für MatchesDay muss dann ein Tag drauf gepackt werden.
@@ -1247,7 +1233,7 @@ begin
   if not MatchesDay(S, NextDay) then
     Exit;
 
-  if (S.EndHour = HourOf(Now)) and (S.EndMinute = MinuteOf(Now)) and (SecondOf(Now) <= 5) then
+  if (S.EndHour = HourOf(Now)) and (S.EndMinute = MinuteOf(Now)) then
     Result := True;
 end;
 

@@ -28,7 +28,7 @@ uses
   DataManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
   GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs,
   Graphics, SharedControls, Generics.Collections, Generics.Defaults,
-  Logging, DynBass, StreamData, Forms;
+  Logging, DynBass, StreamData, Forms, MsgDlg;
 
 type
   TSidebar = class(TPageControl)
@@ -108,6 +108,7 @@ type
     FOnVolumeChanged: TSeekChangeEvent;
     FOnPlayStarted: TNotifyEvent;
     FOnAuthRequired: TNotifyEvent;
+    FOnShowErrorMessage: TShowErrorMessageEvent;
 
     procedure ShowInfo;
 
@@ -138,12 +139,13 @@ type
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
     procedure ClientManagerTitleAllowed(Sender: TObject; Title: string;
       var Allowed: Boolean; var Match: string; var Filter: Integer);
+    procedure ClientManagerShowErrorMessage(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
 
     procedure FClientViewChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure FClientViewDblClick(Sender: TObject);
     procedure FClientViewKeyPress(Sender: TObject; var Key: Char);
     procedure FClientViewKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure FClientViewStartStreaming(Sender: TObject; URL, TitlePattern: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
+    procedure FClientViewStartStreaming(Sender: TObject; Name, URL, TitlePattern: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 
     procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
 
@@ -183,7 +185,7 @@ type
     property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
     property OnAuthRequired: TNotifyEvent read FOnAuthRequired write FOnAuthRequired;
-    //property OnSetVolume: TIntegerEvent read FOnSetVolume write FOnSetVolume;
+    property OnShowErrorMessage: TShowErrorMessageEvent read FOnShowErrorMessage write FOnShowErrorMessage;
   end;
 
 implementation
@@ -318,18 +320,20 @@ var
   Node: PVirtualNode;
   Nodes: TNodeArray;
   NodeData: PClientNodeData;
+  Res: TMayConnectResults;
 begin
-  if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
-  begin
-    MsgBox(Handle, _('Available disk space is below the set limit, so recording will not start.'), _('Info'), MB_ICONINFORMATION);
-    Exit;
-  end;
-
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
   for Client in Clients do
   begin
     if not Client.AutoRemove then
-      Client.StartRecording;
+    begin
+      Res := Client.StartRecording(True);
+      if Res <> crOk then
+      begin
+        OnShowErrorMessage(Client, Res, False, False);
+        Exit;
+      end;
+    end;
   end;
 
   Nodes := FClientView.GetNodes(ntCategory, True);
@@ -341,7 +345,12 @@ begin
       Clients := FClientView.NodesToClients(FClientView.GetChildNodes(Node));
       for Client in Clients do
       begin
-        Client.StartRecording;
+        Res := Client.StartRecording(True);
+        if Res <> crOk then
+        begin
+          OnShowErrorMessage(Client, Res, False, False);
+          Exit;
+        end;
       end;
     end;
   end;
@@ -455,10 +464,11 @@ begin
     if Client <> SelectedClient then
       Client.Client.StopPlay;
 
-  SelectedClient.Client.StartPlay;
-
-  if Assigned(FOnPlayStarted) then
-    FOnPlayStarted(Self);
+  if SelectedClient.Client.StartPlay(True) <> crOk then
+    OnShowErrorMessage(SelectedClient.Client, crNoBandwidth, False, False)
+  else
+    if Assigned(FOnPlayStarted) then
+      FOnPlayStarted(Self);
 end;
 
 procedure TClientTab.ActionPauseExecute(Sender: TObject);
@@ -578,8 +588,9 @@ var
   Entry: TRecentEntry;
 begin
   if FAddressBar.FStations.ItemIndex = -1 then
+  begin
     StartStreaming('', FAddressBar.FStations.Text, '', False, nil, amNoWhere)
-  else
+  end else
   begin
     Entry := TRecentEntry(FAddressBar.FStations.ItemsEx[FAddressBar.FStations.ItemIndex].Data);
     StartStreaming(Entry.Name, Entry.StartURL, '', False, nil, amNoWhere);
@@ -637,6 +648,7 @@ begin
   FClients.OnClientTitleChanged := ClientManagerTitleChanged;
   FClients.OnClientICYReceived := ClientManagerICYReceived;
   FClients.OnClientTitleAllowed := ClientManagerTitleAllowed;
+  FClients.OnShowErrorMessage := ClientManagerShowErrorMessage;
 
   FStreams := Streams;
 
@@ -932,6 +944,13 @@ begin
   end;
 end;
 
+procedure TClientTab.ClientManagerShowErrorMessage(Sender: TICEClient;
+  Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
+begin
+  if Assigned(FOnShowErrorMessage) then
+    FOnShowErrorMessage(Sender, Msg, WasAuto, WasScheduled);
+end;
+
 procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
   Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle: Boolean);
 var
@@ -1018,9 +1037,9 @@ begin
 end;
 
 procedure TClientTab.FClientViewStartStreaming(Sender: TObject;
-  URL, TitlePattern: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
+  Name, URL, TitlePattern: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 begin
-  StartStreaming('', URL, TitlePattern, False, Node, Mode);
+  StartStreaming(Name, URL, TitlePattern, AppGlobals.DefaultActionBrowser = baListen, Node, Mode);
 end;
 
 procedure TClientTab.FSetVolume(Value: Integer);
@@ -1083,6 +1102,7 @@ end;
 procedure TClientTab.FClientViewDblClick(Sender: TObject);
 var
   Clients: TNodeDataArray;
+  Res: TMayConnectResults;
 begin
   Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
   if Length(Clients) = 1 then
@@ -1097,10 +1117,9 @@ begin
             Clients[0].Client.StopRecording
           else
           begin
-            if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
-              MsgBox(Handle, _('Available disk space is below the set limit, so recording will not start.'), _('Info'), MB_ICONINFORMATION)
-            else
-              Clients[0].Client.StartRecording;
+            Res := Clients[0].Client.StartRecording(True);
+            if Res <> crOk then
+              OnShowErrorMessage(Clients[0].Client, Res, False, False);
           end;
         end;
       caStreamIntegrated:
@@ -1149,15 +1168,9 @@ function TClientTab.StartStreaming(Name, URL, TitlePattern: string; StartPlay: B
 var
   Client: TICEClient;
   Node: PVirtualNode;
+  Res: TMayConnectResults;
 begin
   Result := True;
-
-  if (not StartPlay) and (not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace)) then
-  begin
-    Result := False;
-    MsgBox(Handle, _('Available disk space is below the set limit, so recording will not start.'), _('Info'), MB_ICONINFORMATION);
-    Exit;
-  end;
 
   URL := Trim(URL);
   if URL <> '' then
@@ -1168,12 +1181,16 @@ begin
     begin
       if StartPlay then
       begin
-        Client.StartPlay;
-        PlayStarted(Client);
+        Res := Client.StartPlay(True);
+        if Res = crOk then
+          PlayStarted(Client);
       end else
-        Client.StartRecording;
-      UnkillCategory;
-      Exit;
+        Res := Client.StartRecording(True);
+
+      if Res = crOk then
+        UnkillCategory
+      else
+        OnShowErrorMessage(Client, Res, False, False);
     end else
     begin
       if ValidURL(URL) then
@@ -1190,11 +1207,16 @@ begin
 
         if StartPlay then
         begin
-          Client.StartPlay;
-          PlayStarted(Client);
+          Res := Client.StartPlay(True);
+          if Res = crOk then
+            PlayStarted(Client);
         end else
-          Client.StartRecording;
-        UnkillCategory;
+          Res := Client.StartRecording(True);
+
+        if Res = crOk then
+          UnkillCategory
+        else
+          OnShowErrorMessage(Client, Res, False, False);
       end else
       begin
         Result := False;
@@ -1376,7 +1398,6 @@ begin
           Continue;
 
         E := NodeData.Client.Entry.Copy;
-        E.IsInList := True;
         E.Index := Nodes[i].Index;
         E.CategoryIndex := 0;
         E.WasRecording := NodeData.Client.Recording and AppGlobals.RememberRecordings;
@@ -1419,9 +1440,6 @@ begin
 
   for i := 0 to Streams.StreamList.Count - 1 do
   begin
-    if not Streams.StreamList[i].IsInList then
-      Continue;
-
     Client := FClients.AddClient(Streams.StreamList[i]);
     Node := FClientView.GetClientNode(Client);
     if Client <> nil then
@@ -1433,7 +1451,7 @@ begin
           FClientView.MoveTo(Node, ParentNode, amAddChildLast, False);
       end;
       if Streams.StreamList[i].WasRecording and AppGlobals.RememberRecordings then
-        Client.StartRecording;
+        Client.StartRecording(True);
     end;
   end;
 

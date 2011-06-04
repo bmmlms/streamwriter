@@ -2444,7 +2444,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   end
   object tmrSchedule: TTimer
     Enabled = False
-    Interval = 400
+    Interval = 100
     OnTimer = tmrScheduleTimer
     Left = 172
     Top = 144

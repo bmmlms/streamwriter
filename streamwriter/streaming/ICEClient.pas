@@ -31,10 +31,14 @@ type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
   TICEClientStates = (csConnecting, csConnected, csStopping, csStopped, csRetrying, csIOError);
 
+  TMayConnectResults = (crOk, crNoFreeSpace, crNoBandwidth);
+
   TDebugTypes = (dtSocket, dtMessage, dtSong, dtError);
   TDebugLevels = (dlNormal, dlDebug);
 
   TICEClient = class;
+
+  TShowErrorMessageEvent = procedure(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean) of object;
 
   TDebugEntry = class
   public
@@ -63,6 +67,7 @@ type
 
   TICEClient = class
   private
+    FManager: TObject;
     FEntry: TStreamEntry;
 
     FDebugLog: TDebugLog;
@@ -119,23 +124,25 @@ type
     procedure ThreadStateChanged(Sender: TSocketThread);
     procedure ThreadNeedSettings(Sender: TSocketThread);
     procedure ThreadTitleAllowed(Sender: TSocketThread);
+    procedure ThreadRefreshInfo(Sender: TSocketThread);
     procedure ThreadBeforeEnded(Sender: TSocketThread);
     procedure ThreadTerminated(Sender: TObject);
 
     procedure PluginThreadTerminate(Sender: TObject);
   public
-    constructor Create(StartURL: string); overload;
-    constructor Create(Name, StartURL: string); overload;
-    constructor Create(Entry: TStreamEntry); overload;
+    constructor Create(Manager: TObject; StartURL: string); overload;
+    constructor Create(Manager: TObject; Name, StartURL: string); overload;
+    constructor Create(Manager: TObject; Entry: TStreamEntry); overload;
     destructor Destroy; override;
 
     procedure WriteDebug(Text, Data: string; T: TDebugTypes; Level: TDebugLevels); overload;
     procedure WriteDebug(Text: string; T: TDebugTypes; Level: TDebugLevels); overload;
 
-    procedure StartPlay;
+    function StartPlay(CheckConditions: Boolean): TMayConnectResults;
     procedure PausePlay;
     procedure StopPlay;
-    procedure StartRecording;
+    class function MayConnect(PlayOnly: Boolean; UsedBandwidth: Integer): TMayConnectResults;
+    function StartRecording(CheckConditions: Boolean): TMayConnectResults;
     procedure StopRecording;
     procedure SetVolume(Vol: Integer);
 
@@ -180,24 +187,30 @@ type
 
 implementation
 
+uses
+  ClientManager;
+
 { TICEClient }
 
-constructor TICEClient.Create(StartURL: string);
+constructor TICEClient.Create(Manager: TObject; StartURL: string);
 begin
   inherited Create;
+  FManager := Manager;
   Initialize;
   FEntry.StartURL := Trim(StartURL);
 end;
 
-constructor TICEClient.Create(Name, StartURL: string);
+constructor TICEClient.Create(Manager: TObject; Name, StartURL: string);
 begin
+  FManager := Manager;
   Initialize;
   FEntry.StartURL := Trim(StartURL);
   FEntry.Name := Trim(Name);
 end;
 
-constructor TICEClient.Create(Entry: TStreamEntry);
+constructor TICEClient.Create(Manager: TObject; Entry: TStreamEntry);
 begin
+  FManager := Manager;
   Initialize;
   FEntry.Assign(Entry);
 end;
@@ -229,8 +242,16 @@ begin
   Disconnect;
 end;
 
-procedure TICEClient.StartPlay;
+function TICEClient.StartPlay(CheckConditions: Boolean): TMayConnectResults;
 begin
+  if CheckConditions then
+  begin
+    Result := MayConnect(True, TClientManager(FManager).GetUsedBandwidth(FEntry.Bitrate, FSpeed, Self));
+
+    if Result <> crOk then
+      Exit;
+  end;
+
   Connect;
 
   if FICEThread <> nil then
@@ -267,8 +288,36 @@ begin
   end;
 end;
 
-procedure TICEClient.StartRecording;
+class function TICEClient.MayConnect(PlayOnly: Boolean; UsedBandwidth: Integer): TMayConnectResults;
 begin
+  Result := crOk;
+
+  if not PlayOnly then
+    if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
+    begin
+      Result := crNoFreeSpace;
+      Exit;
+    end;
+
+  if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
+    if UsedBandwidth > AppGlobals.MaxSpeed then
+      Result := crNoBandwidth;
+end;
+
+function TICEClient.StartRecording(CheckConditions: Boolean): TMayConnectResults;
+var
+  Client: TICEClient;
+begin
+  Result := crOk;
+
+  if CheckConditions then
+  begin
+    Result := MayConnect(False, TClientManager(FManager).GetUsedBandwidth(FEntry.Bitrate, FSpeed, Self));
+
+    if Result <> crOk then
+      Exit;
+  end;
+
   Connect;
 
   if FICEThread <> nil then
@@ -316,6 +365,7 @@ begin
   FICEThread.OnTerminate := ThreadTerminated;
   FICEThread.OnAddRecent := ThreadAddRecent;
   FICEThread.OnTitleAllowed := ThreadTitleAllowed;
+  FICEThread.OnRefreshInfo := ThreadRefreshInfo;
 
   // Das muss hier so früh sein, wegen z.B. RetryDelay - das hat der Stream nämlich nicht,
   // wenn z.B. beim Verbinden was daneben geht.
@@ -417,25 +467,6 @@ end;
 
 procedure TICEClient.ThreadAddRecent(Sender: TSocketThread);
 begin
-  FEntry.Name := FICEThread.RecvStream.StreamName;
-  if FEntry.Name = '' then
-    FEntry.Name := FEntry.StartURL;
-
-  FEntry.StreamURL := FICEThread.RecvStream.StreamURL;
-
-  FContentType := FICEThread.RecvStream.ContentType;
-  if FICEThread.RecvStream.BitRate > 0 then
-    FEntry.Bitrate := FICEThread.RecvStream.BitRate;
-  if FICEThread.RecvStream.Genre <> '' then
-    FEntry.Genre := FICEThread.RecvStream.Genre;
-
-  if FICEThread.RecvStream.AudioType = atMPEG then
-    FEntry.AudioType := 'MP3'
-  else if FICEThread.RecvStream.AudioType = atAAC then
-    FEntry.AudioType := 'AAC'
-  else
-    FEntry.AudioType := '';
-
   if Assigned(FOnAddRecent) then
     FOnAddRecent(Self);
 end;
@@ -506,6 +537,31 @@ end;
 procedure TICEClient.ThreadNeedSettings(Sender: TSocketThread);
 begin
   FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FStopAfterSong, FRecordTitle);
+end;
+
+procedure TICEClient.ThreadRefreshInfo(Sender: TSocketThread);
+begin
+  FEntry.Name := FICEThread.RecvStream.StreamName;
+  if FEntry.Name = '' then
+    FEntry.Name := FEntry.StartURL;
+
+  FEntry.StreamURL := FICEThread.RecvStream.StreamURL;
+
+  FContentType := FICEThread.RecvStream.ContentType;
+  if FICEThread.RecvStream.BitRate > 0 then
+    FEntry.Bitrate := FICEThread.RecvStream.BitRate;
+  if FICEThread.RecvStream.Genre <> '' then
+    FEntry.Genre := FICEThread.RecvStream.Genre;
+
+  if FICEThread.RecvStream.AudioType = atMPEG then
+    FEntry.AudioType := 'MP3'
+  else if FICEThread.RecvStream.AudioType = atAAC then
+    FEntry.AudioType := 'AAC'
+  else
+    FEntry.AudioType := '';
+
+  if Assigned(FOnRefresh) then
+    FOnRefresh(Self);
 end;
 
 procedure TICEClient.ThreadSongSaved(Sender: TSocketThread);

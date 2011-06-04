@@ -158,12 +158,14 @@ type
     FDownloadName: string;
 
     function FGetReadyForUse: Boolean; virtual;
+    function FGetReadyForActivate: Boolean; virtual;
     function FGetFilesInstalled: Boolean; virtual;
   public
     property FilesInstalled: Boolean read FGetFilesInstalled;
     property DownloadPackage: string read FDownloadPackage write FDownloadPackage;
     property DownloadName: string read FDownloadName;
     property ReadyForUse: Boolean read FGetReadyForUse;
+    property ReadyForActivate: Boolean read FGetReadyForActivate;
   end;
 
   TExternalProcessThread = class(TProcessThreadBase)
@@ -532,6 +534,11 @@ end;
 { TInternalPlugin }
 
 function TInternalPlugin.FGetFilesInstalled: Boolean;
+begin
+  Result := False;
+end;
+
+function TInternalPlugin.FGetReadyForActivate: Boolean;
 begin
   Result := False;
 end;

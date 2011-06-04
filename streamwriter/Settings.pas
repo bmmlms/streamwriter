@@ -603,8 +603,10 @@ begin
     ClientWidth := 510;
     ClientHeight := 435;
 
-    for i := 0 to Self.ControlCount - 1 do begin
-      if Self.Controls[i] is TPanel then begin
+    for i := 0 to Self.ControlCount - 1 do
+    begin
+      if Self.Controls[i] is TPanel then
+      begin
         if TPanel(Self.Controls[i]) = pnlLeft then
           Continue;
         Self.Controls[i].Left := 96;
@@ -1241,7 +1243,7 @@ begin
     // Nochmal initialisieren. Evtl. wurde eben erst die .dll heruntergeladen, dann extrahiert .Initialize() jetzt
     TInternalPlugin(Item.Data).Initialize;
 
-    if Item.Checked and not TInternalPlugin(Item.Data).ReadyForUse then
+    if Item.Checked and not TInternalPlugin(Item.Data).ReadyForActivate then
     begin
       MsgBox(Handle, _('The plugin is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
 
@@ -1397,7 +1399,7 @@ begin
       Result := Copy(Result, 1, Length(Result) - 1);
   Result := Result + '.mp3';
 end;
-                               // TODO: Das Community-Teil in settings darf nicht mit doppelklick einklappbar sein!!!
+
 procedure TfrmSettings.RegisterPages;
 begin
   if FStreamSettings = nil then
@@ -1407,8 +1409,8 @@ begin
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Postprocessing', pnlPlugins, 'LIGHTNING'));
+    FPageList.Add(TPage.Create('Bandwidth', pnlBandwidth, 'BANDWIDTH'));
     FPageList.Add(TPage.Create('Community', pnlCommunity, 'GROUP_PNG'));
-    FPageList.Add(TPage.Create('Bandwidth', pnlBandwidth, 'BANDWIDTH', FPageList.Find(pnlCommunity)));
     FPageList.Add(TPage.Create('Blacklist', pnlCommunityBlacklist, 'BLACKLIST', FPageList.Find(pnlCommunity)));
     FPageList.Add(TPage.Create('Hotkeys', pnlHotkeys, 'KEYBOARD'));
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));

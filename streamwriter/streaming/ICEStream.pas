@@ -126,6 +126,7 @@ type
     FOnChunkReceived: TChunkReceivedEvent;
     FOnIOError: TNotifyEvent;
     FOnTitleAllowed: TNotifyEvent;
+    FOnRefreshInfo: TNotifyEvent;
 
     procedure CalcBytesPerSec;
     procedure DataReceived(CopySize: Integer);
@@ -192,6 +193,7 @@ type
     property OnChunkReceived: TChunkReceivedEvent read FOnChunkReceived write FOnChunkReceived;
     property OnIOError: TNotifyEvent read FOnIOError write FOnIOError;
     property OnTitleAllowed: TNotifyEvent read FOnTitleAllowed write FOnTitleAllowed;
+    property OnRefreshInfo: TNotifyEvent read FOnRefreshInfo write FOnRefreshInfo;
   end;
 
 implementation
@@ -865,6 +867,7 @@ begin
     begin
       try
         CalcBytesPerSec;
+        FOnRefreshInfo(Self);;
       except
         raise Exception.Create(_('Bytes per second could not be calculated'));
       end;
@@ -1233,15 +1236,15 @@ end;
 function TFileChecker.GetValidFilename(Name: string): string;
 begin
   Result := Name;
-  Result := StringReplace(Result, '\', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '/', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, ':', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '*', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '"', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '?', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '<', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '>', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '|', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '\', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, '/', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, ':', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, '*', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, '"', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, '?', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, '<', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, '>', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, '|', ' ', [rfReplaceAll]);
 end;
 
 function TFileChecker.TitleInfoToFilename(Artist, Title: string; FullTitle: Boolean): string;

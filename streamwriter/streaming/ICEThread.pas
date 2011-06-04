@@ -48,6 +48,7 @@ type
     FOnStateChanged: TSocketEvent;
     FOnAddRecent: TSocketEvent;
     FOnTitleAllowed: TSocketEvent;
+    FOnRefreshInfo: TSocketEvent;
 
     FTypedStream: TICEStream;
     FPlayBufferLock: TCriticalSection;
@@ -64,6 +65,7 @@ type
     procedure StreamChunkReceived(Buf: Pointer; Len: Integer);
     procedure StreamIOError(Sender: TObject);
     procedure StreamTitleAllowed(Sender: TObject);
+    procedure StreamRefreshInfo(Sender: TObject);
   protected
     procedure Execute; override;
 
@@ -108,6 +110,7 @@ type
     property OnStateChanged: TSocketEvent read FOnStateChanged write FOnStateChanged;
     property OnAddRecent: TSocketEvent read FOnAddRecent write FOnAddRecent;
     property OnTitleAllowed: TSocketEvent read FOnTitleAllowed write FOnTitleAllowed;
+    property OnRefreshInfo: TSocketEvent read FOnRefreshInfo write FOnRefreshInfo;
   end;
 
 implementation
@@ -221,6 +224,11 @@ end;
 procedure TICEThread.StreamNeedSettings(Sender: TObject);
 begin
   Sync(FOnNeedSettings);
+end;
+
+procedure TICEThread.StreamRefreshInfo(Sender: TObject);
+begin
+  Sync(FOnRefreshInfo);
 end;
 
 procedure TICEThread.StreamChunkReceived(Buf: Pointer; Len: Integer);
@@ -419,7 +427,10 @@ begin
 
   if (FTypedStream.HeaderType = 'icy') and
      (FTypedStream.StreamName <> '') then
+  begin
+    Sync(FOnRefreshInfo);
     Sync(FOnAddRecent);
+  end;
 end;
 
 procedure TICEThread.DoReceivedData(Buf: Pointer; Len: Integer);
@@ -491,6 +502,7 @@ begin
   FTypedStream.OnChunkReceived := StreamChunkReceived;
   FTypedStream.OnIOError := StreamIOError;
   FTypedStream.OnTitleAllowed := StreamTitleAllowed;
+  FTypedStream.OnRefreshInfo := StreamRefreshInfo;
 
   if ProxyEnabled then
     SendData := 'GET ' + AnsiString(URL) + ' HTTP/1.1'#13#10

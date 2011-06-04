@@ -793,7 +793,7 @@ begin
   PopupMenu := FPopupMenu;
 
   FColImages := Header.Columns.Add;
-  FColImages.Text := '';
+  FColImages.Text := _('State');
   FColImages.Width := 72;
   FColImages.Options := FColImages.Options - [coResizable];
   FColFilename := Header.Columns.Add;
@@ -1137,6 +1137,7 @@ end;
 
 procedure TSavedTree.Translate;
 begin
+  FColImages.Text := _('State');
   FColFilename.Text := _('Filename');
   FColSize.Text := _('Size');
   FColLength.Text := _('Length');

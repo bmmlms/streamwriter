@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Plugins, PluginsShared, LanguageObjects,
-  Functions, ConfigureSoX, Logging;
+  Functions, Logging;
 
 type
   TSoXThread = class(TProcessThreadBase)
@@ -51,9 +51,12 @@ type
     FSilenceEndLength: Integer;
 
     procedure DeleteFiles;
+
+    function FGetLameMADPackaged: Boolean;
   protected
     function FGetReadyForUse: Boolean; override;
     function FGetFilesInstalled: Boolean; override;
+    function FGetReadyForActivate: Boolean; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -63,14 +66,16 @@ type
     procedure Initialize; override;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
     procedure Save; override;
+    function EatFiles(LameFile, MADFile: string): Boolean;
     function ExtractFiles: Boolean;
     property SoXExe: string read FSoXExe;
+    property LameMADPackaged: Boolean read FGetLameMADPackaged;
   end;
 
 implementation
 
 uses
-  AppData;
+  AppData, ConfigureSoX;
 
 const
   Filenames: array[0..5] of string = ('libgomp-1.dll', 'pthreadgc2.dll', 'zlib1.dll', 'sox.exe', 'lame-enc.dll', 'libmad.dll');
@@ -201,7 +206,7 @@ var
 begin
   Result := True;
 
-  F := TfrmConfigureSoX.Create(AOwner, FFadeoutStart, FFadeoutEnd, FFadeoutStartLength, FFadeoutEndLength, FSilenceStart, FSilenceEnd,
+  F := TfrmConfigureSoX.Create(AOwner, Self, FFadeoutStart, FFadeoutEnd, FFadeoutStartLength, FFadeoutEndLength, FSilenceStart, FSilenceEnd,
     FSilenceStartLength, FSilenceEndLength);
   try
     F.ShowModal;
@@ -277,10 +282,10 @@ begin
       FActive := False;
   except end;
 
-  if not FGetReadyForUse then
+  if not FGetReadyForActivate then
     ExtractFiles;
 
-  if not FGetReadyForUse then
+  if not FGetReadyForActivate then
     FActive := False;
 end;
 
@@ -305,6 +310,58 @@ begin
   inherited;
 end;
 
+function TSoXPlugin.EatFiles(LameFile, MADFile: string): Boolean;
+var
+  Lame, MAD: Boolean;
+  H: Cardinal;
+  MS1, MS2: TMemoryStream;
+begin
+  Result := False;
+  Lame := False;
+  MAD := False;
+
+  if FileExists(AppGlobals.Storage.DataDir + FDownloadPackage) then
+  begin
+    try
+      MS1 := TMemoryStream.Create;
+      MS2 := TMemoryStream.Create;
+
+      try
+        MS1.LoadFromFile(LameFile);
+        MS2.LoadFromFile(MADFile);
+      except
+        Exit;
+      end;
+
+      H := BeginUpdateResource(PChar(AppGlobals.Storage.DataDir + FDownloadPackage), False);
+      if H > 0 then
+      begin
+        UpdateResource(H, RT_RCDATA, 'lame-enc_dll',
+          MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL), MS1.Memory, MS1.Size);
+        if EndUpdateResource(H, False) then
+          Lame := True;
+      end;
+
+      H := BeginUpdateResource(PChar(AppGlobals.Storage.DataDir + FDownloadPackage), False);
+      if H > 0 then
+      begin
+        UpdateResource(H, RT_RCDATA, 'libmad_dll',
+          MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL), MS2.Memory, MS2.Size);
+        if EndUpdateResource(H, False) then
+          MAD := True;
+      end;
+    finally
+      MS1.Free;
+      MS2.Free;
+    end;
+  end;
+
+  Result := Lame and MAD;
+
+  if Result then
+    ExtractFiles;
+end;
+
 function TSoXPlugin.ExtractFiles: Boolean;
 var
   i: Integer;
@@ -319,18 +376,21 @@ begin
     H := LoadLibrary(PChar(AppGlobals.Storage.DataDir + FDownloadPackage));
     if H > 0 then
     begin
-      try
-        for i := 0 to High(Filenames) do
-        begin
+      for i := 0 to High(Filenames) do
+      begin
+        try
+        //if (Filenames[i] <> 'lame-enc.dll') and (Filenames[i] <> 'libmad.dll') then
+        //begin
           Res := TResourceStream.Create(H, StringReplace(Filenames[i], '.', '_', [rfReplaceAll]), RT_RCDATA);
           try
             Res.SaveToFile(FFilesDir + Filenames[i]);
           finally
             Res.Free;
           end;
-        end;
-        Result := True;
-      except end;
+        //end;
+        except end;
+      end;
+      Result := True;
       FreeLibrary(H);
     end;
   end;
@@ -341,12 +401,27 @@ begin
   Result := FileExists(AppGlobals.Storage.DataDir + FDownloadPackage);
 end;
 
+function TSoXPlugin.FGetReadyForActivate: Boolean;
+var
+  i: Integer;
+begin
+  Result := True;
+  for i := 0 to High(Filenames) do
+    if (Filenames[i] <> 'lame-enc.dll') and (Filenames[i] <> 'libmad.dll') then
+      if not FileExists(FFilesDir + Filenames[i]) then
+      begin
+        Result := False;
+        Break;
+      end;
+end;
+
 function TSoXPlugin.FGetReadyForUse: Boolean;
 var
   i: Integer;
 begin
   Result := True;
   for i := 0 to High(Filenames) do
+    //if (Filenames[i] <> 'lame-enc.dll') and (Filenames[i] <> 'libmad.dll') then
     if not FileExists(FFilesDir + Filenames[i]) then
     begin
       Result := False;
@@ -354,11 +429,16 @@ begin
     end;
 end;
 
+function TSoXPlugin.FGetLameMADPackaged: Boolean;
+begin
+
+end;
+
 procedure TSoXPlugin.Initialize;
 begin
   inherited;
 
-  if not FGetReadyForUse then
+  if (not FGetReadyForUse) or (not FGetReadyForActivate) then
     ExtractFiles;
 
   FName := _('Apply effects to MP3s (using SoX)');

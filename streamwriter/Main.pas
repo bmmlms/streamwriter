@@ -76,7 +76,7 @@ type
   TfrmStreamWriterMain = class(TForm)
     addXP: TXPManifest;
     mnuMain: TMainMenu;
-    mnuFile: TMenuItem;
+    mnuFile: TMenuItem;                 // TODO: timer funzen nicht über 00:00 hinaus, also tagwechsel...
     mnuSettings: TMenuItem;
     N3: TMenuItem;
     mnuExit: TMenuItem;
@@ -278,6 +278,7 @@ type
     procedure tabClientsTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsAddIgnoreList(Sender: TObject; Data: string);
     procedure tabClientsAuthRequired(Sender: TObject);
+    procedure tabClientsShowErrorMessage(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
 
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedRefresh(Sender: TObject);
@@ -512,7 +513,6 @@ begin
     ShowSettings(True);
   end;
 
-  // TODO: Nochmal alles mit FirstStartShown checken. Es gab als property FirstStart, die ist jetzt weg!
   if not AppGlobals.FirstStartShown then
   begin
     TfrmMsgDlg.ShowMsg(Self, _('This is the first time you are running streamWriter. There are two ways to record music:'#13#10 +
@@ -593,6 +593,7 @@ begin
   tabClients.OnVolumeChanged := tabVolumeChanged;
   tabClients.OnPlayStarted := tabPlayStarted;
   tabClients.OnAuthRequired := tabClientsAuthRequired;
+  tabClients.OnShowErrorMessage := tabClientsShowErrorMessage;
 
   tabLists := TListsTab.Create(pagMain);
   tabLists.PageControl := pagMain;
@@ -790,7 +791,7 @@ begin
           NodeData := tabClients.ClientView.GetNodeData(Nodes[0]);
           if not NodeData.Client.Playing then
             StopPlay;
-          NodeData.Client.StartPlay;
+          NodeData.Client.StartPlay(True);
         end else
         begin
           Nodes := tabClients.ClientView.GetNodes(ntClient, False);
@@ -799,7 +800,7 @@ begin
             NodeData := tabClients.ClientView.GetNodeData(Nodes[0]);
             if not NodeData.Client.Playing then
               StopPlay;
-            NodeData.Client.StartPlay;
+            NodeData.Client.StartPlay(True);
           end;
         end;
       end;
@@ -833,7 +834,7 @@ begin
           if StartPlayClient <> PlayingClient then
           begin
             StopPlay;
-            StartPlayClient.StartPlay;
+            StartPlayClient.StartPlay(True);
           end;
         end;
       end;
@@ -863,7 +864,7 @@ begin
           if StartPlayClient <> PlayingClient then
           begin
             StopPlay;
-            StartPlayClient.StartPlay;
+            StartPlayClient.StartPlay(True);
           end;
         end;
       end;
@@ -1193,6 +1194,39 @@ begin
   end;
 end;
 
+procedure TfrmStreamWriterMain.tabClientsShowErrorMessage(Sender: TICEClient;
+  Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
+var
+  Txt: string;
+begin
+  Txt := '';
+
+  if WasAuto then
+    case Msg of
+      crNoFreeSpace:
+        Txt := 'Automatic recording will not start because available disk space is below the set limit.';
+      crNoBandwidth:
+        Exit;
+    end
+  else if WasScheduled then
+    case Msg of
+      crNoFreeSpace:
+        Txt := Format(_('Scheduled recording of %s will not start because available disk space is below the set limit.'), [Sender.Entry.Name]);
+      crNoBandwidth:
+        Txt := Format(_('Scheduled recording of %s will not start because it would exceed the maximum available bandwidth.'), [Sender.Entry.Name]);
+    end
+  else
+    case Msg of
+      crNoFreeSpace:
+        Txt := _('No connection will be established because available disk space is below the set limit.');
+      crNoBandwidth:
+        Txt := _('No connection will be established because it would exceed the maximum available bandwidth.');
+    end;
+
+  if Txt <> '' then
+    TfrmMsgDlg.ShowMsg(Self, Txt, -1, btOK);
+end;
+
 procedure TfrmStreamWriterMain.tabSavedRefresh(Sender: TObject);
 var
   i: Integer;
@@ -1329,6 +1363,7 @@ var
   Clients: TClientArray;
   Client: TICEClient;
   Schedule: TSchedule;
+  Res: TMayConnectResults;
 begin
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
   for Client in Clients do
@@ -1337,10 +1372,21 @@ begin
     begin
       if Schedule.Active then
       begin
-        if TSchedule.MatchesStart(Schedule) then
-          Client.StartRecording;
-        if TSchedule.MatchesEnd(Schedule) then
+        if TSchedule.MatchesStart(Schedule) and (not Schedule.TriedStart) then
+        begin
+          Schedule.TriedStart := True;
+          Res := Client.StartRecording(True);
+          if Res <> crOk then
+            tabClientsShowErrorMessage(Client, Res, False, True);
+        end else if not TSchedule.MatchesStart(Schedule) then
+          Schedule.TriedStart := False;
+
+        if TSchedule.MatchesEnd(Schedule) and (not Schedule.TriedStop) then
+        begin
           Client.StopRecording;
+          Schedule.TriedStop := True;
+        end else if not TSchedule.MatchesEnd(Schedule) then
+          Schedule.TriedStop := False;
       end;
     end;
   end;
@@ -1354,6 +1400,7 @@ var
   Clients: TNodeDataArray;
   Client: PClientNodeData;
   Speed: UInt64;
+  OnlyAuto: Boolean;
 begin
   Speed := 0;
   Clients := tabClients.ClientView.NodesToData(tabClients.ClientView.GetNodes(ntClient, False));
@@ -1362,8 +1409,6 @@ begin
     Speed := Speed + Client.Client.Speed;
     tabClients.ClientView.RefreshClient(Client.Client);
   end;
-
-  //FClients.Speed := Speed;
 
   addStatus.Speed := Speed;
   addStatus.BuildSpeedBmp;
@@ -1382,13 +1427,26 @@ begin
       Break;
     end;
 
+  OnlyAuto := True;
   if Active and not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
   begin
     for i := 0 to FClients.Count - 1 do
-      FClients[i].StopRecording;
-    tmrSpeed.Enabled := False;
-    MsgBox(Handle, _('Available disk space is below the set limit, so recording will be stopped.'), _('Info'), MB_ICONINFORMATION);
-    tmrSpeed.Enabled := True;
+      if FClients[i].Recording and (not FClients[i].AutoRemove) then
+      begin
+        OnlyAuto := False;
+        Break;
+      end;
+
+    for i := 0 to FClients.Count - 1 do
+      if not FClients[i].AutoRemove then
+        FClients[i].StopRecording;
+
+    if not OnlyAuto then
+    begin
+      tmrSpeed.Enabled := False;
+      MsgBox(Handle, _('Available disk space is below the set limit, so recording will be stopped.'), _('Info'), MB_ICONINFORMATION);
+      tmrSpeed.Enabled := True;
+    end;
   end;
 end;
 
@@ -1534,37 +1592,6 @@ begin
 
   if actCopyTitle.Enabled <> (Length(Clients) > 0) and AnyClientHasTitle then
     actCopyTitle.Enabled := (Length(Clients) > 0) and AnyClientHasTitle;
-
-
-  {
-  if Length(Clients) = 1 then
-  begin
-
-    Client := Clients[0];
-    case AppGlobals.DefaultAction of
-      caStartStop:
-        if Client.Recording then
-          if not mnuStopStreaming1.Default then
-            mnuStopStreaming1.Default := True
-        else
-          if not mnuStartStreaming1.Default then
-            mnuStartStreaming1.Default := True;
-      caStreamIntegrated:
-        if Client.Playing then
-          if not mnuStopPlay1.Default then
-            mnuStopPlay1.Default := True
-        else
-          if not mnuStartPlay1.Default then
-            mnuStartPlay1.Default := True;
-      caStream:
-        if not mnuListenToStream1.Default then
-          mnuListenToStream1.Default := True;
-      caFile:
-        if not mnuListenToFile1.Default then
-          mnuListenToFile1.Default := True;
-    end;
-  end;
-  }
 end;
 
 procedure TfrmStreamWriterMain.UpdaterNoUpdateFound(Sender: TObject);

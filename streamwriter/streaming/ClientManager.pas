@@ -49,8 +49,8 @@ type
   private
     FClients: TClientList;
     FSongsSaved: Integer;
-    //FSpeed: Integer;
     FLists: TDataLists;
+    FErrorShown: Boolean;
 
     FOnClientDebug: TNotifyEvent;
     FOnClientRefresh: TNotifyEvent;
@@ -61,6 +61,7 @@ type
     FOnClientTitleChanged: TTitleChangedEvent;
     FOnClientICYReceived: TICYReceivedEvent;
     FOnClientTitleAllowed: TTitleAllowedEvent;
+    FOnShowErrorMessage: TShowErrorMessageEvent;
 
     function FGetItem(Index: Integer): TICEClient;
     function FGetCount: Integer;
@@ -100,10 +101,10 @@ type
     property Count: Integer read FGetCount;
 
     function GetClient(Name, URL, Title: string; URLs: TStringList): TICEClient;
+    function GetUsedBandwidth(Bitrate, Speed: Int64; ClientToAdd: TICEClient = nil): Integer;
 
     property Active: Boolean read FGetActive;
     property SongsSaved: Integer read FSongsSaved;
-    //property Speed: Integer read FSpeed write FSpeed;
 
     property OnClientDebug: TNotifyEvent read FOnClientDebug write FOnClientDebug;
     property OnClientRefresh: TNotifyEvent read FOnClientRefresh write FOnClientRefresh;
@@ -114,6 +115,7 @@ type
     property OnClientTitleChanged: TTitleChangedEvent read FOnClientTitleChanged write FOnClientTitleChanged;
     property OnClientICYReceived: TICYReceivedEvent read FOnClientICYReceived write FOnClientICYReceived;
     property OnClientTitleAllowed: TTitleAllowedEvent read FOnClientTitleAllowed write FOnClientTitleAllowed;
+    property OnShowErrorMessage: TShowErrorMessageEvent read FOnShowErrorMessage write FOnShowErrorMessage;
   end;
 
 implementation
@@ -124,7 +126,7 @@ function TClientManager.AddClient(URL: string): TICEClient;
 var
   C: TICEClient;
 begin
-  C := TICEClient.Create(URL);
+  C := TICEClient.Create(Self, URL);
   SetupClient(C);
   Result := C;
 end;
@@ -133,7 +135,7 @@ function TClientManager.AddClient(Name, StartURL: string; IsAuto: Boolean = Fals
 var
   C: TICEClient;
 begin
-  C := TICEClient.Create(Name, StartURL);
+  C := TICEClient.Create(Self, Name, StartURL);
   // Ist hier, damit das ClientView das direkt weiß und passig in die Kategorie packt
   if IsAuto then
     C.AutoRemove := True;
@@ -145,9 +147,49 @@ function TClientManager.AddClient(Entry: TStreamEntry): TICEClient;
 var
   C: TICEClient;
 begin
-  C := TICEClient.Create(Entry);
+  C := TICEClient.Create(Self, Entry);
   SetupClient(C);
   Result := C;
+end;
+
+function TClientManager.GetUsedBandwidth(Bitrate, Speed: Int64; ClientToAdd: TICEClient = nil): Integer;
+var
+  Client: TICEClient;
+  UsedKBs: Integer;
+begin
+  UsedKBs := -1;
+
+  for Client in FClients do
+  begin
+    if ClientToAdd = Client then
+      if Client.Recording or Client.Playing then
+      begin
+        Result := 0;
+        Exit;
+      end;
+  end;
+
+  if UsedKBs = -1 then
+    if (Bitrate = 0) and (Speed = 0) then
+      UsedKBs := 18
+    else if Bitrate > 0 then
+      UsedKBs := Bitrate div 8
+    else
+      UsedKBs := Speed;
+
+  for Client in FClients do
+  begin
+    if ClientToAdd <> Client then
+      if Client.Recording or Client.Playing then
+      begin
+        if Client.Entry.Bitrate >= 64 then
+          UsedKBs := UsedKBs + (Integer(Client.Entry.Bitrate) div 8) + 3
+        else
+          UsedKBs := UsedKBs + Client.Speed div 1024;
+      end;
+  end;
+
+  Result := UsedKBs;
 end;
 
 procedure TClientManager.RemoveClient(Client: TICEClient);
@@ -239,7 +281,7 @@ var
   i, n: Integer;
   AutoTuneInMinKbps: Cardinal;
   Client: TICEClient;
-  UsedKBs: Integer;
+  Res: TMayConnectResults;
 begin
   AutoTuneInMinKbps := 0;
 
@@ -265,22 +307,6 @@ begin
   if (Format = '') and (AppGlobals.AutoTuneInFormat > 0) then
     Exit;
 
-  UsedKBs := Kbps div 8;
-  for Client in FClients do
-  begin
-    if Client.Recording or Client.Playing then
-    begin
-      if Client.Entry.Bitrate >= 64 then
-        UsedKBs := UsedKBs + (Integer(Client.Entry.Bitrate) div 8) + 3
-      else
-        UsedKBs := UsedKBs + Client.Speed div 1024;
-    end;
-  end;
-
-  if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
-    if Cardinal(UsedKBs) > AppGlobals.MaxSpeed then
-      Exit;
-
   for i := 0 to FLists.StreamBlacklist.Count - 1 do
     if FLists.StreamBlacklist[i] = StreamName then
       Exit;
@@ -300,6 +326,18 @@ begin
         end;
       end;
 
+      Res := TICEClient.MayConnect(False, GetUsedBandwidth(Kbps, 0));
+      if Res <> crOk then
+      begin
+        if (not FErrorShown) and (Res = crNoFreeSpace) then
+        begin
+          OnShowErrorMessage(nil, Res, True, False);
+          FErrorShown := True;
+        end;
+        Exit;
+      end;
+      FErrorShown := False;
+
       Client := GetClient(StreamName, CurrentURL, Title, nil);
       if (Client = nil) or ((Client <> nil) and not Client.AutoRemove and (Client.RecordTitle <> Title)) then
       begin
@@ -315,7 +353,7 @@ begin
         if Trim(TitlePattern) <> '' then
           Client.Entry.Settings.TitlePattern := TitlePattern;
         Client.RecordTitle := Title;
-        Client.StartRecording;
+        Client.StartRecording(False);
       end;
       Break;
     end;
@@ -423,9 +461,9 @@ begin
           if not FClients[i].Killed then
           begin
             if Client.Playing then
-              FClients[i].StartPlay;
+              FClients[i].StartPlay(False);
             if Client.Recording then
-              FClients[i].StartRecording;
+              FClients[i].StartRecording(False);
             Client.Kill;
           end;
           Break;

@@ -482,8 +482,6 @@ begin
   FStorage.Read('PlayerVolume', FPlayerVolume, 50);
   FStorage.Read('PlayerVolumeBeforeMute', FPlayerVolumeBeforeMute, 50);
 
-  //FStorage.Read('CutVolume', FCutVolume, 50);
-  //FStorage.Read('SavedPlayerVolume', FSavedPlayerVolume, 50);
   FStorage.Read('AutoScrollLog', FAutoScrollLog, True);
   FStorage.Read('UserWasSetup', FUserWasSetup, False);
   FStorage.Read('User', FUser, '');
@@ -599,8 +597,6 @@ begin
   FStorage.Write('DefaultActionBrowser', Integer(FDefaultActionBrowser));
   FStorage.Write('PlayerVolume', FPlayerVolume);
   FStorage.Write('PlayerVolumeBeforeMute', FPlayerVolumeBeforeMute);
-  //FStorage.Write('SavedPlayerVolume', FSavedPlayerVolume);
-  //FStorage.Write('CutVolume', FCutVolume);
   FStorage.Write('AutoScrollLog', FAutoScrollLog);
   FStorage.Write('UserWasSetup', FUserWasSetup);
   FStorage.Write('User', FUser);
@@ -668,36 +664,11 @@ var
 begin
   Result := TStreamSettings.Create;
 
-  // REMARK: Raus das hier, vor Release. Und Menschen nochmal testen lassen! Bzw. Selber testen mit Builds > 174 (siehe Post HostedDinner)
-  // Weil ich mal Mist mit den Versionen gebaut habe, hilft das hier vielleicht..
-  // Der obere Block kann eigentlich bald raus.
-  // Die letzte veröffentlichte Programmversion war auch nicht Version 15
-  // sondern 14, darum müsste das cremig ablaufen.
-  if Version = 15 then
-  begin
-    S1 := '';
-    S2 := '';
-    try
-      Stream.Read(S1);
-    except end;
-    try
-      Stream.Read(S2);
-    except end;
-
-    if (S1 <> '') and (S2 <> '') then
-    begin
-      Result.FTitlePattern := S1;
-      Result.FFilePattern := S2;
-    end else
-    begin
-      Result.FTitlePattern := '(?P<a>.*) - (?P<t>.*)';
-      Result.FFilePattern := S1;
-    end;
-  end else if Version < 15 then
+  if Version < 15 then
   begin
     Result.FTitlePattern := '(?P<a>.*) - (?P<t>.*)';
     Stream.Read(Result.FFilePattern);
-  end else if Version > 15 then
+  end else
   begin
     Stream.Read(Result.FTitlePattern);
     Stream.Read(Result.FFilePattern);
@@ -854,7 +825,6 @@ initialization
   except
     on E: Exception do
     begin
-      //MessageBox(0, PChar(Format('The application could not be started.'#13#10'Message: %s', [E.Message])), PChar(_('Error')), MB_ICONERROR);
       MessageBox(0, PChar(E.Message), PChar(_('Error')), MB_ICONERROR);
       Halt;
     end;

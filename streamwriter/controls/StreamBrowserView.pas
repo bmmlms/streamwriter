@@ -245,6 +245,9 @@ type
 
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     procedure DoScroll(DeltaX, DeltaY: Integer); override;
+    procedure DoBeforeCellPaint(Canvas: TCanvas; Node: PVirtualNode;
+      Column: TColumnIndex; CellPaintMode: TVTCellPaintMode;
+      CellRect: TRect; var ContentRect: TRect); override;
     procedure HandleMouseDblClick(var Message: TWMMouse; const HitInfo: THitInfo); override;
     procedure Resize; override;
     procedure Paint; override;
@@ -957,6 +960,26 @@ begin
           FSortPopupMenu.Popup(P.X, P.Y - Header.Height);
         end;
       end;
+  end;
+end;
+
+procedure TMStreamTree.DoBeforeCellPaint(Canvas: TCanvas;
+  Node: PVirtualNode; Column: TColumnIndex;
+  CellPaintMode: TVTCellPaintMode; CellRect: TRect;
+  var ContentRect: TRect);
+begin
+  inherited;
+
+  if CellPaintMode = cpmPaint then
+  begin
+    case Node.Index mod 2 of
+      0:
+        Canvas.Brush.Color := clWindow;
+      1:
+        Canvas.Brush.Color := HTML2Color('f3f3f3');
+    end;
+
+    Canvas.FillRect(CellRect);
   end;
 end;
 
