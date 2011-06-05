@@ -161,6 +161,8 @@ type
     function FGetReadyForActivate: Boolean; virtual;
     function FGetFilesInstalled: Boolean; virtual;
   public
+    function ShowInitMessage(Handle: THandle): Boolean; virtual;
+
     property FilesInstalled: Boolean read FGetFilesInstalled;
     property DownloadPackage: string read FDownloadPackage write FDownloadPackage;
     property DownloadName: string read FDownloadName;
@@ -433,6 +435,7 @@ var
   CmdLine, Replaced: string;
   Output: AnsiString;
   Arr: TPatternReplaceArray;
+  EC: DWORD;
 begin
   if Trim(FExe) <> '' then
   begin
@@ -452,7 +455,7 @@ begin
         CmdLine := '"' + FExe + '" ' + Replaced;
       end else
         CmdLine := FExe;
-      Res := RunProcess(CmdLine, ExtractFilePath(FExe), 120000, Output);
+      Res := RunProcess(CmdLine, ExtractFilePath(FExe), 120000, Output, EC);
       FData.Filesize := GetFileSize(FData.Filename);
       FOutput := Output;
       case Res of
@@ -546,6 +549,11 @@ end;
 function TInternalPlugin.FGetReadyForUse: Boolean;
 begin
   Result := False;
+end;
+
+function TInternalPlugin.ShowInitMessage(Handle: THandle): Boolean;
+begin
+  Result := True;
 end;
 
 end.

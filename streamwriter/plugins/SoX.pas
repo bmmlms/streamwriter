@@ -60,6 +60,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+    function ShowInitMessage(Handle: THandle): Boolean; override;
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
     function Copy: TPluginBase; override;
     procedure Assign(Source: TPluginBase); override;
@@ -97,6 +98,7 @@ var
   LoopStarted: Cardinal;
   Failed: Boolean;
   FS: TFileStream;
+  EC: DWORD;
 begin
   inherited;
 
@@ -131,13 +133,13 @@ begin
 
   if Params <> '' then
   begin
-    if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120000, Output) = 2 then
+    if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120000, Output, EC) = 2 then
     begin
       FResult := arTimeout;
     end else
     begin
       Failed := True;
-      if FileExists(TempFile) then
+      if FileExists(TempFile) and (EC = 0) then
       begin
         LoopStarted := GetTickCount;
         while Failed do
@@ -179,7 +181,8 @@ begin
 
           FResult := arWin;
         end;
-      end;
+      end else
+        DeleteFile(PChar(TempFile));
     end;
   end;
 end;
@@ -368,6 +371,8 @@ var
   H: THandle;
   Res: TResourceStream;
 begin
+  SetErrorMode(SEM_FAILCRITICALERRORS);
+
   Result := False;
 
   ForceDirectories(FFilesDir);
@@ -392,7 +397,8 @@ begin
       end;
       Result := True;
       FreeLibrary(H);
-    end;
+    end else
+      Windows.DeleteFile(PChar(AppGlobals.Storage.DataDir + FDownloadPackage));
   end;
 end;
 
@@ -468,6 +474,13 @@ begin
   AppGlobals.Storage.Write('SilenceEnd_' + ClassName, FSilenceEnd, 'Plugins');
   AppGlobals.Storage.Write('SilenceStartLength_' + ClassName, FSilenceStartLength, 'Plugins');
   AppGlobals.Storage.Write('SilenceEndLength_' + ClassName, FSilenceEndLength, 'Plugins');
+end;
+
+function TSoXPlugin.ShowInitMessage(Handle: THandle): Boolean;
+begin
+  Result := MsgBox(Handle, _('WARNING:'#13#10'It is not be allowed in some contries to use this plugin because it contains libmad.dll ' +
+                             'and lame_enc.dll that make use of some patented technologies. Please make sure you may use these files in your country. ' +
+                             'If you are sure you may use these files, press "Yes" to continue.'), _('Warning'), MB_ICONWARNING or MB_YESNO or MB_DEFBUTTON2) = IDYES;
 end;
 
 end.

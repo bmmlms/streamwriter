@@ -67,7 +67,6 @@ object frmConfigureSoX: TfrmConfigureSoX
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitTop = 521
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -247,9 +246,9 @@ object frmConfigureSoX: TfrmConfigureSoX
       Height = 21
       AutoSize = False
       Color = 15790320
-      EditLabel.Width = 107
+      EditLabel.Width = 109
       EditLabel.Height = 13
-      EditLabel.Caption = 'Path to "lame-enc.dll":'
+      EditLabel.Caption = 'Path to "lame_enc.dll":'
       ReadOnly = True
       TabOrder = 0
     end

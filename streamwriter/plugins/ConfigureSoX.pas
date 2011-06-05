@@ -93,7 +93,7 @@ implementation
 procedure TfrmConfigureSoX.btnBrowseClick(Sender: TObject);
 begin
   if Sender = btnBrowse1 then
-    dlgOpen.Filter := 'lame-enc.dll|*.dll'
+    dlgOpen.Filter := 'lame_enc.dll|*.dll'
   else
     dlgOpen.Filter := 'libmad.dll|*.dll';
 
@@ -117,13 +117,13 @@ begin
   begin
     if (not FileExists(txtLameDLL.Text)) or (not FileExists(txtMadDLL.Text)) then
     begin
-      MsgBox(Handle, _('Please browse for "lame-enc.dll" and "libmad.dll".'), _('Info'), MB_ICONINFORMATION);
+      MsgBox(Handle, _('Please browse for "lame_enc.dll" and "libmad.dll".'), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
 
-    if LowerCase(ExtractFileName(txtLameDLL.Text)) <> 'lame-enc.dll' then
+    if LowerCase(ExtractFileName(txtLameDLL.Text)) <> 'lame_enc.dll' then
     begin
-      Res := MsgBox(Handle, _('The selected file for "lame-enc.dll" has a different filename.'#13#10'Are you really sure you want to use that file?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
+      Res := MsgBox(Handle, _('The selected file for "lame_enc.dll" has a different filename.'#13#10'Are you really sure you want to use that file?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
       if Res = IDNO then
         Exit;
     end;

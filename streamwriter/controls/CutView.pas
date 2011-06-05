@@ -42,6 +42,7 @@ type
     FWorkingDir: string;
     FFilePath: string;
     FTempFile: string;
+    FProcessOutput: AnsiString;
 
     FOnSuccess: TNotifyEvent;
     FOnError: TNotifyEvent;
@@ -55,6 +56,7 @@ type
     destructor Destroy; override;
 
     property TempFile: string read FTempFile;
+    property ProcessOutput: AnsiString read FProcessOutput;
 
     property OnSuccess: TNotifyEvent read FOnSuccess write FOnSuccess;
     property OnError: TNotifyEvent read FOnError write FOnError;
@@ -585,14 +587,15 @@ begin
 end;
 
 procedure TCutView.ProcessThreadError(Sender: TObject);
+var
+  Msg: string;
 begin
   FWasSaved := False;
-  FState := csError;
+  Msg := FProcessThread.ProcessOutput;
   FProcessThread := nil;
-  MsgBox(GetParentForm(Self).Handle, _('An error occured while processing the file.'), _('Error'), MB_ICONERROR);
-  FPB.BuildBuffer;
-  FPB.BuildDrawBuffer;
-  FPB.Paint;
+  MsgBox(GetParentForm(Self).Handle, Format(_('An error occured while processing the file:'#13#10'%s'), [Msg]) , _('Error'), MB_ICONERROR);
+
+  LoadFile(FFilename);
 end;
 
 procedure TCutView.ProcessThreadSuccess(Sender: TObject);
@@ -846,8 +849,11 @@ begin
   if not Plugin.ReadyForActivate then
   begin
     Res := MsgBox(Handle, _('This function cannot be used because needed files have not been downloaded.'#13#10'Do you want to download these files now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
-    if Res = IDYES then
+    if Res = IDYES  then
     begin
+      if not Plugin.ShowInitMessage(Handle) then
+        Exit;
+
       DA := TfrmDownloadAddons.Create(Self, Plugin);
       try
         DA.ShowModal;
@@ -1611,14 +1617,14 @@ end;
 procedure TProcessThread.Execute;
 var
   Res: Integer;
-  Output: AnsiString;
   LoopStarted: Cardinal;
   FS: TFileStream;
   Failed: Boolean;
+  EC: DWORD;
 begin
   inherited;
 
-  Res := RunProcess(FCommandLine, FWorkingDir, 120000, Output);
+  Res := RunProcess(FCommandLine, FWorkingDir, 120000, FProcessOutput, EC);
 
   if Terminated then
   begin
@@ -1628,7 +1634,7 @@ begin
 
   Failed := True;
 
-  if FileExists(TempFile) and (Res = 0) then
+  if FileExists(TempFile) and (Res = 0) and (EC = 0) then
   begin
     LoopStarted := GetTickCount;
     while Failed do
@@ -1657,7 +1663,8 @@ begin
     if not Failed then
       if not MoveFile(PChar(TempFile), PChar(FFilePath)) then
         Failed := True;
-  end;
+  end else
+    DeleteFile(PChar(TempFile));
 
   if Failed then
     SyncError

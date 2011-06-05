@@ -1204,16 +1204,16 @@ begin
   if WasAuto then
     case Msg of
       crNoFreeSpace:
-        Txt := 'Automatic recording will not start because available disk space is below the set limit.';
+        Txt := 'Automatic recording will be stopped as long as available disk space is below the set limit.';
       crNoBandwidth:
         Exit;
     end
   else if WasScheduled then
     case Msg of
       crNoFreeSpace:
-        Txt := Format(_('Scheduled recording of %s will not start because available disk space is below the set limit.'), [Sender.Entry.Name]);
+        Txt := Format(_('Scheduled recording of "%s" will not start because available disk space is below the set limit.'), [Sender.Entry.Name]);
       crNoBandwidth:
-        Txt := Format(_('Scheduled recording of %s will not start because it would exceed the maximum available bandwidth.'), [Sender.Entry.Name]);
+        Txt := Format(_('Scheduled recording of "%s" will not start because it would exceed the maximum available bandwidth.'), [Sender.Entry.Name]);
     end
   else
     case Msg of

@@ -1216,6 +1216,14 @@ begin
       Res := MsgBox(Handle, _('The plugin cannot be activated because needed files have not been downloaded.'#13#10'Do you want to download these files now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
       if Res = IDYES then
       begin
+        if not TInternalPlugin(Item.Data).ShowInitMessage(Handle) then
+        begin
+          lstPlugins.OnItemChecked := nil;
+          Item.Checked := False;
+          lstPlugins.OnItemChecked := lstPluginsItemChecked;
+          Exit;
+        end;
+
         DA := TfrmDownloadAddons.Create(Self, TInternalPlugin(Item.Data));
         try
           DA.ShowModal;
