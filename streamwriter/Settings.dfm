@@ -855,9 +855,9 @@ object frmSettings: TfrmSettings
       341)
     object lblFilePattern: TLabel
       Left = 4
-      Top = 0
+      Top = 4
       Width = 285
-      Height = 53
+      Height = 49
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
       Caption = '-'
