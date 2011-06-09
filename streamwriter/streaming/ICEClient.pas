@@ -244,6 +244,8 @@ end;
 
 function TICEClient.StartPlay(CheckConditions: Boolean): TMayConnectResults;
 begin
+  Result := crOK;
+
   if CheckConditions then
   begin
     Result := MayConnect(True, TClientManager(FManager).GetUsedBandwidth(FEntry.Bitrate, FSpeed, Self));
@@ -300,13 +302,11 @@ begin
     end;
 
   if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
-    if UsedBandwidth > AppGlobals.MaxSpeed then
+    if Cardinal(UsedBandwidth) > AppGlobals.MaxSpeed then
       Result := crNoBandwidth;
 end;
 
 function TICEClient.StartRecording(CheckConditions: Boolean): TMayConnectResults;
-var
-  Client: TICEClient;
 begin
   Result := crOk;
 

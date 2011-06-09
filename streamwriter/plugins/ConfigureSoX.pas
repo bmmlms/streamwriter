@@ -222,8 +222,6 @@ end;
 
 constructor TfrmConfigureSoX.Create(AOwner: TComponent; Plugin: TSoxPlugin; FadeoutStart, FadeoutEnd: Boolean; FadeoutStartLength, FadeoutEndLength: Integer;
   SilenceStart, SilenceEnd: Boolean; SilenceStartLength, SilenceEndLength: Integer);
-var
-  i: Integer;
 begin
   inherited Create(AOwner);
 

@@ -51,8 +51,6 @@ type
     FSilenceEndLength: Integer;
 
     procedure DeleteFiles;
-
-    function FGetLameMADPackaged: Boolean;
   protected
     function FGetReadyForUse: Boolean; override;
     function FGetFilesInstalled: Boolean; override;
@@ -70,7 +68,6 @@ type
     function EatFiles(LameFile, MADFile: string): Boolean;
     function ExtractFiles: Boolean;
     property SoXExe: string read FSoXExe;
-    property LameMADPackaged: Boolean read FGetLameMADPackaged;
   end;
 
 implementation
@@ -325,10 +322,9 @@ begin
 
   if FileExists(AppGlobals.Storage.DataDir + FDownloadPackage) then
   begin
+    MS1 := TMemoryStream.Create;
+    MS2 := TMemoryStream.Create;
     try
-      MS1 := TMemoryStream.Create;
-      MS2 := TMemoryStream.Create;
-
       try
         MS1.LoadFromFile(LameFile);
         MS2.LoadFromFile(MADFile);
@@ -433,11 +429,6 @@ begin
       Result := False;
       Break;
     end;
-end;
-
-function TSoXPlugin.FGetLameMADPackaged: Boolean;
-begin
-
 end;
 
 procedure TSoXPlugin.Initialize;

@@ -164,14 +164,12 @@ begin
 end;
 
 procedure TPlayerManager.Play(Player: TObject);
-var
-  Res: TMayConnectResults;
 begin
   if TObject(Player) is TPlayer then
     TPlayer(Player).Play
   else if TObject(Player) is TICEClient then
   begin
-    Res := TICEClient(Player).StartPlay(True);
+    TICEClient(Player).StartPlay(True);
   end;
 end;
 

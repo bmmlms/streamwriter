@@ -279,7 +279,7 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 31);
+    SetLength(FDonors, 32);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
@@ -311,6 +311,7 @@ begin
     FDonors[28] := 'Alexander Koch';
     FDonors[29] := 'Claus Wien';
     FDonors[30] := 'Hartmut Schiller';
+    FDonors[31] := 'Michael Dreßler';
 
 
     ShuffleFisherYates(FDonors);
@@ -660,7 +661,6 @@ class function TStreamSettings.Load(Stream: TExtendedStream;
   Version: Integer): TStreamSettings;
 var
   FilterTmp: Integer;
-  S1, S2: string;
 begin
   Result := TStreamSettings.Create;
 
