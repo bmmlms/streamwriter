@@ -100,8 +100,6 @@ type
     lstHotkeys: TListView;
     txtHotkey: THotKey;
     Label9: TLabel;
-    txtDir: TLabeledEdit;
-    btnBrowse: TSpeedButton;
     chkSeparateTracks: TCheckBox;
     chkSaveStreamsToMemory: TCheckBox;
     chkOnlyIfCut: TCheckBox;
@@ -156,7 +154,10 @@ type
     Label11: TLabel;
     txtMaxSpeed: TLabeledEdit;
     chkLimit: TCheckBox;
-    procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+    txtDir: TLabeledEdit;
+    btnBrowse: TSpeedButton;
+    txtDirAuto: TLabeledEdit;
+    btnBrowseAuto: TSpeedButton;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
@@ -209,6 +210,7 @@ type
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
+    FBrowseAutoDir: Boolean;
     FRelayChanged: Boolean;
     FDefaultActionIdx: Integer;
     FDefaultActionBrowserIdx: Integer;
@@ -238,7 +240,7 @@ type
     procedure PostTranslate; override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
-    constructor Create(AOwner: TComponent; Lists: TDataLists; BrowseDir: Boolean = False); reintroduce; overload;
+    constructor Create(AOwner: TComponent; Lists: TDataLists; BrowseDir, BrowseAutoDir: Boolean); reintroduce; overload;
     constructor Create(AOwner: TComponent; StreamSettings: TStreamSettingsArray); overload;
     destructor Destroy; override;
     property RelayChanged: Boolean read FRelayChanged;
@@ -249,7 +251,7 @@ implementation
 
 {$R *.dfm}
 
-constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir: Boolean = False);
+constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir, BrowseAutoDir: Boolean);
   procedure AddField(F: TControl);
   begin
     if FIgnoreFieldList.IndexOf(F) = -1 then
@@ -597,11 +599,12 @@ begin
     end;
 
     FBrowseDir := BrowseDir;
+    FBrowseAutoDir := BrowseAutoDir;
 
     SetFields;
 
     ClientWidth := 510;
-    ClientHeight := 435;
+    ClientHeight := 425;
 
     for i := 0 to Self.ControlCount - 1 do
     begin
@@ -614,7 +617,6 @@ begin
         TPanel(Self.Controls[i]).BevelOuter := bvNone;
       end;
     end;
-
 
     FillFields(Settings);
 
@@ -653,6 +655,7 @@ begin
       btnHelp.PngImage := P;
       GetBitmap('BROWSE', 2, B);
       btnBrowse.Glyph := B;
+      btnBrowseAuto.Glyph := B;
       btnBrowseApp.Glyph := B;
     finally
       B.Free;
@@ -699,7 +702,7 @@ end;
 constructor TfrmSettings.Create(AOwner: TComponent;
   StreamSettings: TStreamSettingsArray);
 var
-  i: Integer;
+  i, Substract: Integer;
 begin
   FIgnoreFieldList := TList.Create;
 
@@ -709,7 +712,19 @@ begin
     FStreamSettings[i] := StreamSettings[i].Copy;
   end;
 
-  Create(AOwner, nil, False);
+  Create(AOwner, nil, False, False);
+
+  txtDir.Visible := False;
+  txtDirAuto.Visible := False;
+  btnBrowse.Visible := False;
+  btnBrowseAuto.Visible := False;
+
+  Substract := chkSaveStreamsToMemory.Top;
+  for i := 0 to pnlStreams.ControlCount - 1 do
+  begin
+    if (pnlStreams.Controls[i].ClassType <> TEdit) and (pnlStreams.Controls[i].ClassType <> TSpeedButton) then
+      pnlStreams.Controls[i].Top := pnlStreams.Controls[i].Top - Substract - 1;
+  end;
 
   lblTop.Caption := _('Stream settings');
 end;
@@ -769,12 +784,8 @@ begin
   txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
   txtRemoveChars.Text := Settings.RemoveChars;
 
-
-  //if (Length(AppGlobals.Dir) >= 3) and (Copy(AppGlobals.Dir, 1, 2) <> '\\') and (Copy(AppGlobals.Dir, 2, 2) <> ':\') then
-  //begin
-  //  txtDir.Text := IncludeTrailingBackslash(ExpandFileName(IncludeTrailingBackslash(AppGlobals.Dir)));
-  //end else
   txtDir.Text := AppGlobals.Dir;
+  txtDirAuto.Text := AppGlobals.DirAuto;
 
   chkDeleteStreams.Checked := Settings.DeleteStreams;
   chkAddSavedToIgnore.Checked := Settings.AddSavedToIgnore;
@@ -819,6 +830,9 @@ begin
 
   if not DirectoryExists(txtDir.Text) then
     txtDir.Text := '';
+
+  if not DirectoryExists(txtDirAuto.Text) then
+    txtDirAuto.Text := '';
 
   if not Bass.BassLoaded then
   begin
@@ -969,6 +983,7 @@ begin
       AppGlobals.SoundDevice := lstSoundDevice.ItemIndex;
 
     AppGlobals.Dir := txtDir.Text;
+    AppGlobals.DirAuto := txtDirAuto.Text;
     AppGlobals.Tray := chkTray.Checked;
     AppGlobals.SnapMain := chkSnapMain.Checked;
     AppGlobals.RememberRecordings := chkRememberRecordings.Checked;
@@ -1093,19 +1108,16 @@ procedure TfrmSettings.FormActivate(Sender: TObject);
 begin
   if FBrowseDir then
   begin
+    SetPage(FPageList.Find(TPanel(txtDir.Parent)));
     btnBrowse.Click;
     FBrowseDir := False;
   end;
-end;
 
-procedure TfrmSettings.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
-begin
-  if not DirectoryExists(txtDir.Text) then
+  if FBrowseAutoDir then
   begin
-    if MsgBox(Handle, _('The selected folder does not exist.'#13#10'Do you really want to close this window?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDYES then
-      CanClose := True
-    else
-      CanClose := False;
+    SetPage(FPageList.Find(TPanel(txtDirAuto.Parent)));
+    btnBrowseAuto.Click;
+    FBrowseAutoDir := False;
   end;
 end;
 
@@ -1658,7 +1670,10 @@ begin
     Exit;
 
   if DirectoryExists(Dir) then
-    txtDir.Text := IncludeTrailingBackslash(Dir)
+    if Sender = btnBrowse then
+      txtDir.Text := IncludeTrailingBackslash(Dir)
+    else
+      txtDirAuto.Text := IncludeTrailingBackslash(Dir)
   else
     MsgBox(Self.Handle, _('The selected folder does not exist. Please choose another one.'), _('Info'), MB_ICONINFORMATION);
 end;
@@ -1843,6 +1858,14 @@ begin
     MsgBox(Handle, _('The selected folder for saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtDir.Parent)));
     btnBrowse.Click;
+    Exit;
+  end;
+
+  if not DirectoryExists(txtDirAuto.Text) then
+  begin
+    MsgBox(Handle, _('The selected folder for automatically saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
+    SetPage(FPageList.Find(TPanel(txtDirAuto.Parent)));
+    btnBrowseAuto.Click;
     Exit;
   end;
 

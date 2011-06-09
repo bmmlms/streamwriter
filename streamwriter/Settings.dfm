@@ -17,7 +17,6 @@ object frmSettings: TfrmSettings
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnActivate = FormActivate
-  OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnResize = FormResize
   PixelsPerInch = 96
@@ -34,37 +33,65 @@ object frmSettings: TfrmSettings
       333)
     object lblDefaultFilter: TLabel
       Left = 4
-      Top = 176
+      Top = 288
       Width = 25
       Height = 13
+      Anchors = [akLeft, akRight, akBottom]
       Caption = 'Filter:'
+    end
+    object btnBrowse: TSpeedButton
+      Left = 264
+      Top = 20
+      Width = 25
+      Height = 21
+      Hint = 'Browse...'
+      Anchors = [akTop, akRight]
+      Flat = True
+      Layout = blGlyphRight
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = btnBrowseClick
+    end
+    object btnBrowseAuto: TSpeedButton
+      Left = 264
+      Top = 64
+      Width = 25
+      Height = 21
+      Hint = 'Browse...'
+      Anchors = [akTop, akRight]
+      Flat = True
+      Layout = blGlyphRight
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = btnBrowseClick
     end
     object chkDeleteStreams: TCheckBox
       Left = 4
-      Top = 72
+      Top = 184
       Width = 265
       Height = 21
-      Anchors = [akLeft, akTop, akRight]
+      Anchors = [akLeft, akTop, akRight, akBottom]
       Caption = 'Delete stream-files when recording stops'
       TabOrder = 0
       OnClick = chkDeleteStreamsClick
     end
     object chkAddSavedToIgnore: TCheckBox
       Left = 4
-      Top = 96
+      Top = 208
       Width = 281
       Height = 21
-      Anchors = [akLeft, akTop, akRight]
+      Anchors = [akLeft, akTop, akRight, akBottom]
       Caption = 'Automatically add saved titles to ignore list'
       TabOrder = 1
       OnClick = chkAddSavedToIgnoreClick
     end
     object lstDefaultFilter: TComboBox
       Left = 4
-      Top = 192
+      Top = 304
       Width = 213
       Height = 21
       Style = csDropDownList
+      Anchors = [akLeft, akRight, akBottom]
       TabOrder = 2
       OnChange = lstDefaultFilterChange
       Items.Strings = (
@@ -75,40 +102,40 @@ object frmSettings: TfrmSettings
     end
     object chkSeparateTracks: TCheckBox
       Left = 4
-      Top = 24
+      Top = 136
       Width = 281
       Height = 21
-      Anchors = [akLeft, akTop, akRight]
+      Anchors = [akLeft, akTop, akRight, akBottom]
       Caption = 'Save separated tracks'
       TabOrder = 3
       OnClick = chkSeparateTracksClick
     end
     object chkSaveStreamsToMemory: TCheckBox
       Left = 4
-      Top = 0
+      Top = 112
       Width = 281
       Height = 21
-      Anchors = [akLeft, akTop, akRight]
+      Anchors = [akLeft, akTop, akRight, akBottom]
       Caption = 'Save received data to memory instead of disk'
       TabOrder = 4
       OnClick = chkSaveStreamsToMemoryClick
     end
     object chkOnlySaveFull: TCheckBox
       Left = 20
-      Top = 48
+      Top = 160
       Width = 265
       Height = 21
-      Anchors = [akLeft, akTop, akRight]
+      Anchors = [akLeft, akTop, akRight, akBottom]
       Caption = 'Only save whole songs'
       TabOrder = 5
       OnClick = chkOnlySaveFullClick
     end
     object chkOverwriteSmaller: TCheckBox
       Left = 4
-      Top = 120
+      Top = 232
       Width = 281
       Height = 21
-      Anchors = [akLeft, akTop, akRight]
+      Anchors = [akLeft, akTop, akRight, akBottom]
       Caption = 'Overwrite existing file if newer file is larger'
       Checked = True
       State = cbChecked
@@ -117,13 +144,41 @@ object frmSettings: TfrmSettings
     end
     object chkDiscardSmaller: TCheckBox
       Left = 4
-      Top = 144
+      Top = 256
       Width = 281
       Height = 21
-      Anchors = [akLeft, akTop, akRight]
+      Anchors = [akLeft, akTop, akRight, akBottom]
       Caption = 'Discard new file if existing one is lager'
       TabOrder = 7
       OnClick = chkDiscardSmallerClick
+    end
+    object txtDir: TLabeledEdit
+      Left = 4
+      Top = 20
+      Width = 257
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      Color = 15790320
+      EditLabel.Width = 110
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Folder for saved songs:'
+      ReadOnly = True
+      TabOrder = 8
+    end
+    object txtDirAuto: TLabeledEdit
+      Left = 4
+      Top = 64
+      Width = 257
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      Color = 15790320
+      EditLabel.Width = 174
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Folder for automatically saved songs:'
+      ReadOnly = True
+      TabOrder = 9
     end
   end
   object pnlMain: TPanel
@@ -138,39 +193,25 @@ object frmSettings: TfrmSettings
       341)
     object Label7: TLabel
       Left = 56
-      Top = 224
+      Top = 172
       Width = 15
       Height = 13
-      Anchors = [akLeft, akTop, akBottom]
       Caption = 'GB'
     end
     object Label3: TLabel
       Left = 4
-      Top = 252
+      Top = 248
       Width = 190
       Height = 13
-      Anchors = [akLeft, akTop, akBottom]
+      Anchors = [akLeft, akBottom]
       Caption = 'Default action on doubleclick on stream:'
-    end
-    object btnBrowse: TSpeedButton
-      Left = 264
-      Top = 176
-      Width = 25
-      Height = 21
-      Hint = 'Browse...'
-      Anchors = [akTop, akRight]
-      Flat = True
-      Layout = blGlyphRight
-      ParentShowHint = False
-      ShowHint = True
-      OnClick = btnBrowseClick
     end
     object Label18: TLabel
       Left = 4
-      Top = 300
+      Top = 296
       Width = 192
       Height = 13
-      Anchors = [akLeft, akTop, akBottom]
+      Anchors = [akLeft, akBottom]
       Caption = 'Default action on doubleclick in browser:'
     end
     object chkTray: TCheckBox
@@ -185,10 +226,9 @@ object frmSettings: TfrmSettings
     end
     object txtMinDiskSpace: TLabeledEdit
       Left = 4
-      Top = 220
+      Top = 168
       Width = 49
       Height = 21
-      Anchors = [akLeft, akTop, akBottom]
       EditLabel.Width = 205
       EditLabel.Height = 13
       EditLabel.Caption = 'Stop recording when free space gets below'
@@ -198,11 +238,11 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultAction: TComboBox
       Left = 4
-      Top = 268
+      Top = 264
       Width = 213
       Height = 21
       Style = csDropDownList
-      Anchors = [akLeft, akTop, akBottom]
+      Anchors = [akLeft, akBottom]
       TabOrder = 2
       Items.Strings = (
         'Start/stop recording'
@@ -226,28 +266,14 @@ object frmSettings: TfrmSettings
       Caption = '...on minimize'
       TabOrder = 4
     end
-    object txtDir: TLabeledEdit
-      Left = 4
-      Top = 176
-      Width = 257
-      Height = 21
-      Anchors = [akLeft, akTop, akRight]
-      AutoSize = False
-      Color = 15790320
-      EditLabel.Width = 110
-      EditLabel.Height = 13
-      EditLabel.Caption = 'Folder for saved songs:'
-      ReadOnly = True
-      TabOrder = 5
-    end
     object lstDefaultActionBrowser: TComboBox
       Left = 4
-      Top = 316
+      Top = 312
       Width = 213
       Height = 21
       Style = csDropDownList
-      Anchors = [akLeft, akTop, akBottom]
-      TabOrder = 6
+      Anchors = [akLeft, akBottom]
+      TabOrder = 5
       Items.Strings = (
         'Start recording'
         'Listen to stream'
@@ -260,7 +286,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Snap mainwindow to screen edges'
-      TabOrder = 7
+      TabOrder = 6
     end
     object chkRememberRecordings: TCheckBox
       Left = 4
@@ -269,7 +295,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Remember streams that were recording on exit'
-      TabOrder = 8
+      TabOrder = 7
     end
     object chkDisplayPlayNotifications: TCheckBox
       Left = 4
@@ -278,7 +304,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Display notifications on trackchange when playing'
-      TabOrder = 9
+      TabOrder = 8
     end
   end
   object pnlAdvanced: TPanel
@@ -1137,7 +1163,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800F00110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800FC0110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

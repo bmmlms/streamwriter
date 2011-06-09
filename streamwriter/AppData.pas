@@ -101,6 +101,7 @@ type
     FUserLoggedIn: Boolean;
 
     FDir: string;
+    FDirAuto: string;
     FTray: Boolean;
     FTrayOnMinimize: Boolean;
     FSnapMain: Boolean;
@@ -154,6 +155,7 @@ type
     property UserLoggedIn: Boolean read FUserLoggedIn write FUserLoggedIn;
 
     property Dir: string read FDir write FDir;
+    property DirAuto: string read FDirAuto write FDirAuto;
     property Tray: Boolean read FTray write FTray;
     property TrayOnMinimize: Boolean read FTrayOnMinimize write FTrayOnMinimize;
     property SnapMain: Boolean read FSnapMain write FSnapMain;
@@ -422,8 +424,14 @@ begin
   FStorage.Read('Dir', FDir, '');
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
-
   FDir := TryUnRelativePath(FDir, False);
+
+  FStorage.Read('DirAuto', FDirAuto, '');
+  if FDirAuto = '' then
+    FDirAuto := FDir;
+  if FDirAuto <> '' then
+    FDirAuto := IncludeTrailingBackslash(FDirAuto);
+  FDirAuto := TryUnRelativePath(FDirAuto, False);
 
   FStorage.Read('DeleteStreams', FStreamSettings.FDeleteStreams, False);
   FStorage.Read('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore, True);
@@ -559,6 +567,7 @@ begin
   FStorage.Write('RemoveChars', FStreamSettings.FRemoveChars);
 
   FStorage.Write('Dir', TryRelativePath(FDir, False));
+  FStorage.Write('DirAuto', TryRelativePath(FDirAuto, False));
 
   FStorage.Write('DeleteStreams', FStreamSettings.FDeleteStreams);
   FStorage.Write('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore);

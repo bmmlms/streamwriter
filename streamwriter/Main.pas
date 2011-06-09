@@ -251,7 +251,7 @@ type
 
     function CanExitApp: Boolean;
     procedure ExitApp(Shutdown: Boolean);
-    procedure ShowSettings(BrowseDir: Boolean);
+    procedure ShowSettings(BrowseDir, BrowseAutoDir: Boolean);
     procedure ShowUpdate(Version: string = ''; UpdateURL: string = '');
     procedure UpdateButtons;
     procedure UpdateStatus;
@@ -338,6 +338,9 @@ begin
   tmrSchedule.Enabled := False;
 
   TfrmNotification.Stop;
+
+  HomeComm.Terminate;
+
   Hide;
 
   Players.StopAll;
@@ -373,8 +376,6 @@ begin
 
   FClients.Terminate;
 
-  HomeComm.Terminate;
-
   if FCheckFiles <> nil then
     FCheckFiles.Terminate;
 
@@ -403,7 +404,7 @@ end;
 
 procedure TfrmStreamWriterMain.actSettingsExecute(Sender: TObject);
 begin
-  ShowSettings(False);
+  ShowSettings(False, False);
 end;
 
 procedure TfrmStreamWriterMain.actAboutExecute(Sender: TObject);
@@ -510,7 +511,14 @@ begin
   if not DirectoryExists(AppGlobals.Dir) then
   begin
     MsgBox(Handle, _('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
-    ShowSettings(True);
+    ShowSettings(True, False);
+  end;
+
+  // Das erste DirectoryExists() ist da, damit der Settings-Dialog nicht doppelt kommt.
+  if DirectoryExists(AppGlobals.Dir) and (not DirectoryExists(AppGlobals.DirAuto)) then
+  begin
+    MsgBox(Handle, _('The folder for automatically saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
+    ShowSettings(False, True);
   end;
 
   if not AppGlobals.FirstStartShown then
@@ -1090,13 +1098,13 @@ begin
   FCommunityLogin.Show;
 end;
 
-procedure TfrmStreamWriterMain.ShowSettings(BrowseDir: Boolean);
+procedure TfrmStreamWriterMain.ShowSettings(BrowseDir, BrowseAutoDir: Boolean);
 var
   S: TfrmSettings;
   NodeData: PClientNodeData;
 begin
   RegisterHotkeys(False);
-  S := TfrmSettings.Create(Self, FStreams, BrowseDir);
+  S := TfrmSettings.Create(Self, FStreams, BrowseDir, BrowseAutoDir);
   try
     S.ShowModal;
   finally

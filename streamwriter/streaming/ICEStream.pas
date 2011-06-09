@@ -90,6 +90,7 @@ type
     FGenre: string;
 
     FSaveDir: string;
+    FSaveDirAuto: string;
 
     FMetaCounter: Integer;
 
@@ -429,6 +430,7 @@ begin
 
   AppGlobals.Lock;
   FSaveDir := AppGlobals.Dir;
+  FSaveDirAuto := AppGlobals.DirAuto;
   AppGlobals.Unlock;
 end;
 
@@ -501,7 +503,11 @@ begin
 
       ParseTitle(Title, FSettings.TitlePattern, FSavedArtist, FSavedTitle);
 
-      FileCheck := TFileChecker.Create(FStreamName, FSaveDir, FSongsSaved, FSettings);
+      if FRecordTitle <> '' then
+        FileCheck := TFileChecker.Create(FStreamName, FSaveDirAuto, FSongsSaved, FSettings)
+      else
+        FileCheck := TFileChecker.Create(FStreamName, FSaveDir, FSongsSaved, FSettings);
+
       try
         FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FAudioType, FullTitle);
         if (FileCheck.Result in [crSave, crOverwrite]) and (FileCheck.FFilename <> '') then
