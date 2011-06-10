@@ -1162,15 +1162,17 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.tabCutClosed(Sender: TObject);
-var
-  i: Integer;
+//var
+//  i: Integer;
 begin
+  {
   for i := 0 to FStreams.TrackList.Count - 1 do
     if LowerCase(FStreams.TrackList[i].Filename) = LowerCase(TCutTab(Sender).Filename) then
     begin
       FStreams.TrackList[i].Finalized := True;
       Exit;
     end;
+  }
 end;
 
 procedure TfrmStreamWriterMain.tabClientsCut(Entry: TStreamEntry;
@@ -1327,6 +1329,8 @@ begin
       FStreams.TrackList[i].Length := Length;
       FStreams.TrackList[i].WasCut := True;
       FStreams.TrackList[i].Time := Now;
+
+      FStreams.TrackList[i].Finalized := True;
       Exit;
     end;
 end;

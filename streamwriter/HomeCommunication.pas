@@ -696,65 +696,60 @@ var
   Header, Data: TXMLNode;
   T: string;
 begin
-  TLogger.Write('RCVD: ' + D);
-
   inherited;
+
+  try
+    XMLDocument := TXMLLib.Create;
     try
-      XMLDocument := TXMLLib.Create;
-      try
-        XMLDocument.LoadFromString(D);
+      XMLDocument.LoadFromString(D);
 
-        TLogger.Write('LOADED');
+      Header := XMLDocument.Root.Nodes.GetNode('header');
+      Data := XMLDocument.Root.Nodes.GetNode('data');
 
-        Header := XMLDocument.Root.Nodes.GetNode('header');
-        Data := XMLDocument.Root.Nodes.GetNode('data');
+      Version := Header.Attributes.AttributeByName['version'].Value.AsInteger;
+      T := Header.Attributes.AttributeByName['type'].Value.AsString;
 
-        Version := Header.Attributes.AttributeByName['version'].Value.AsInteger;
-        T := Header.Attributes.AttributeByName['type'].Value.AsString;
-
-        if Header.Attributes.AttributeByName['type'].Value.AsString = 'logon' then
-        begin
-          DoLoggedOn(Version, Header, Data);
-        end;
-
-        if Header.Attributes.AttributeByName['type'].Value.AsString = 'logoff' then
-        begin
-          DoLoggedOff(Version, Header, Data);
-        end;
-
-        if Header.Attributes.AttributeByName['type'].Value.AsString = 'getgenres' then
-        begin
-          DoGenresReceived(Version, Header, Data);
-        end;
-
-        if Header.Attributes.AttributeByName['type'].Value.AsString = 'getstreams' then
-        begin
-          DoStreamsReceived(Version, Header, Data);
-        end;
-
-        if Header.Attributes.AttributeByName['type'].Value.AsString = 'fulltitlechange' then
-        begin
-          DoTitleChanged(Version, Header, Data);
-        end;
-
-        if Header.Attributes.AttributeByName['type'].Value.AsString = 'serverinfo' then
-        begin
-          DoServerInfo(Version, Header, Data);
-        end;
-
-        if Header.Attributes.AttributeByName['type'].Value.AsString = 'error' then
-        begin
-          DoError(Version, Header, Data);
-        end;
-
-      finally
-        XMLDocument.Free;
+      if Header.Attributes.AttributeByName['type'].Value.AsString = 'logon' then
+      begin
+        DoLoggedOn(Version, Header, Data);
       end;
-    except
-      raise Exception.Create('Invalid data received');
-    end;
 
-  TLogger.Write('END');
+      if Header.Attributes.AttributeByName['type'].Value.AsString = 'logoff' then
+      begin
+        DoLoggedOff(Version, Header, Data);
+      end;
+
+      if Header.Attributes.AttributeByName['type'].Value.AsString = 'getgenres' then
+      begin
+        DoGenresReceived(Version, Header, Data);
+      end;
+
+      if Header.Attributes.AttributeByName['type'].Value.AsString = 'getstreams' then
+      begin
+        DoStreamsReceived(Version, Header, Data);
+      end;
+
+      if Header.Attributes.AttributeByName['type'].Value.AsString = 'fulltitlechange' then
+      begin
+        DoTitleChanged(Version, Header, Data);
+      end;
+
+      if Header.Attributes.AttributeByName['type'].Value.AsString = 'serverinfo' then
+      begin
+        DoServerInfo(Version, Header, Data);
+      end;
+
+      if Header.Attributes.AttributeByName['type'].Value.AsString = 'error' then
+      begin
+        DoError(Version, Header, Data);
+      end;
+
+    finally
+      XMLDocument.Free;
+    end;
+  except
+    raise Exception.Create('Invalid data received');
+  end;
 end;
 
 procedure THomeThread.DoServerInfo(Version: Integer; Header,
