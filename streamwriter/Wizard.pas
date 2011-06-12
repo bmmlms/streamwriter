@@ -78,17 +78,21 @@ begin
 
   if Step.Panel = pnlDir then
   begin
+    {            TODO: !!!
     if (AppGlobals.Dir <> '') and DirectoryExists(AppGlobals.Dir) then
       txtDir.Text := IncludeTrailingBackslash(AppGlobals.Dir)
     else
     begin
+    }
       s := GetShellFolder(CSIDL_MYMUSIC);
       if (Trim(s) <> '') then
       begin
         s := IncludeTrailingPathDelimiter(s) + 'streamWriter\';
         txtDir.Text := s;
       end;
+    {
     end;
+    }
   end else
   begin
     chkLimit.Checked := AppGlobals.LimitSpeed;
