@@ -63,6 +63,7 @@ implementation
 procedure TfrmWizard.Finish;
 begin
   AppGlobals.Dir := txtDir.Text;
+  AppGlobals.DirAuto := txtDir.Text;
   AppGlobals.LimitSpeed := chkLimit.Checked;
   if StrToIntDef(txtMaxSpeed.Text, -1) > 0 then
     AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);

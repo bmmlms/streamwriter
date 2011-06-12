@@ -228,7 +228,7 @@ begin
 
   inherited Create(AppName, True, W, 500);
 
-  FBuildNumber := 170;
+  FBuildNumber := 221;
 
   BuildThanksText;
 
@@ -281,7 +281,7 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 32);
+    SetLength(FDonors, 34);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
@@ -314,6 +314,8 @@ begin
     FDonors[29] := 'Claus Wien';
     FDonors[30] := 'Hartmut Schiller';
     FDonors[31] := 'Michael Dreßler';
+    FDonors[32] := 'Jörn Räuber';
+    FDonors[33] := '''Klaus''';
 
 
     ShuffleFisherYates(FDonors);
