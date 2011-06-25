@@ -505,6 +505,13 @@ end;
 
 procedure THomeCommunication.Terminate;
 begin
+  FOnGenresReceived := nil;
+  FOnStreamsReceived := nil;
+  FOnTitleChanged := nil;
+  FOnServerInfo := nil;
+  FOnError := nil;
+  FOnStateChanged := nil;
+
   if FClient <> nil then
     FClient.Terminate;
 end;

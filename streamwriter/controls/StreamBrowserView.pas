@@ -25,7 +25,8 @@ uses
   Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
   StdCtrls, Menus, ImgList, Math, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls,
-  HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging;
+  HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging,
+  DataManager;
 
 type
   TModes = (moShow, moLoading, moError, moOldVersion);
@@ -53,6 +54,7 @@ type
     StreamType: string;
     Downloads: Integer;
     Rating: Integer;
+    OwnRating: Integer;
     HasData: Boolean;
     MetaData: Boolean;
     ChangesTitleInSong: Boolean;
@@ -67,6 +69,7 @@ type
   TNeedDataEvent = procedure(Sender: TObject; Offset, Count: Integer) of object;
   TAddStreamEvent = procedure(Sender: TObject; URL, Name: string) of object;
   TActionEvent = procedure(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray) of object;
+  TIsInClientListEvent = function(Sender: TObject; Name, URL: string): Boolean of object;
 
   TScrollDirection = (sdUp, sdDown);
 
@@ -112,6 +115,7 @@ type
     FStreamTree: TMStreamTree;
     FCountLabel: TLabel;
     FLoadingPanel: TMLoadingPanel;
+    FDataLists: TDataLists;
 
     FCurrentSearch: string;
     FCurrentGenre: string;
@@ -148,7 +152,7 @@ type
   protected
     procedure Resize; override;
   public
-    constructor Create(AOwner: TComponent); reintroduce;
+    constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
     destructor Destroy; override;
 
     procedure Setup;
@@ -180,6 +184,7 @@ type
   TMStreamTree = class(TVirtualStringTree)
   private
     FDragSource: TDropFileSource;
+    FDataLists: TDataLists;
 
     FColName: TVirtualTreeColumn;
     FDisplayCount: Integer;
@@ -224,6 +229,7 @@ type
 
     FOnNeedData: TNeedDataEvent;
     FOnAction: TActionEvent;
+    FOnIsInClientList: TIsInClientListEvent;
 
     procedure FSetIsLoading(Value: Boolean);
     function CreateItem(Caption: string; ImageIndex: Integer; Parent: TMenuItem): TMenuItem;
@@ -263,7 +269,7 @@ type
 
     procedure WMKeyDown(var Message: TWMKeyDown); message WM_KEYDOWN;
   public
-    constructor Create(AOwner: TComponent); reintroduce;
+    constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
     destructor Destroy; override;
     procedure Setup;
 
@@ -280,6 +286,7 @@ type
     property LoadOffset: Integer read FLoadOffset write FLoadOffset;
     property OnNeedData: TNeedDataEvent read FOnNeedData write FOnNeedData;
     property OnAction: TActionEvent read FOnAction write FOnAction;
+    property OnIsInClientList: TIsInClientListEvent read FOnIsInClientList write FOnIsInClientList;
   end;
 
 implementation
@@ -304,6 +311,7 @@ begin
   NodeData.Website := Website;
   NodeData.StreamType := StreamType;
   NodeData.Rating := Rating;
+  NodeData.OwnRating := FDataLists.RatingList.GetRating(Name, URL);
   NodeData.MetaData := MetaData;
   NodeData.ChangesTitleInSong := ChangesTitleInSong;
   NodeData.RecordingOkay := RecordingOkay;
@@ -311,11 +319,13 @@ begin
   Result := Node;
 end;
 
-constructor TMStreamTree.Create(AOwner: TComponent);
+constructor TMStreamTree.Create(AOwner: TComponent; DataLists: TDataLists);
 var
   Res: TResourceStream;
 begin
   inherited Create(AOwner);
+
+  FDataLists := DataLists;
 
   NodeDataSize := SizeOf(TStreamNodeData);
   IncrementalSearch := isVisibleOnly;
@@ -382,21 +392,21 @@ begin
   FItemOpen.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemOpen);
 
-  FItemRate := CreateItem('&Rate', 44, nil);
+  FItemRate := CreateItem('&Rate', 64, nil);
 
-  FItemRate5 := CreateItem('&5', 44, FItemRate);
+  FItemRate5 := CreateItem('&5', 64, FItemRate);
   FItemRate5.OnClick := PopupMenuClick;
   FItemRate5.Tag := 5;
-  FItemRate4 := CreateItem('&4', 43, FItemRate);
+  FItemRate4 := CreateItem('&4', 63, FItemRate);
   FItemRate4.OnClick := PopupMenuClick;
   FItemRate4.Tag := 4;
-  FItemRate3 := CreateItem('&3', 42, FItemRate);
+  FItemRate3 := CreateItem('&3', 62, FItemRate);
   FItemRate3.OnClick := PopupMenuClick;
   FItemRate3.Tag := 3;
-  FItemRate2 := CreateItem('&2', 41, FItemRate);
+  FItemRate2 := CreateItem('&2', 61, FItemRate);
   FItemRate2.OnClick := PopupMenuClick;
   FItemRate2.Tag := 2;
-  FItemRate1 := CreateItem('&1', 40, FItemRate);
+  FItemRate1 := CreateItem('&1', 60, FItemRate);
   FItemRate1.OnClick := PopupMenuClick;
   FItemRate1.Tag := 1;
 
@@ -501,10 +511,13 @@ begin
   if NodeData.HasData then
     if ((Kind = ikNormal) or (Kind = ikSelected)) and (Column = 0) then
     begin
-      if NodeData.Rating > 0 then
-        Index := 39 + NodeData.Rating
+      if NodeData.OwnRating > 0 then
+        Index := 59 + NodeData.OwnRating
       else
-        Index := 16;
+        if NodeData.Rating > 0 then
+          Index := 39 + NodeData.Rating
+        else
+          Index := 16;
     end;
 end;
 
@@ -967,18 +980,25 @@ procedure TMStreamTree.DoBeforeCellPaint(Canvas: TCanvas;
   Node: PVirtualNode; Column: TColumnIndex;
   CellPaintMode: TVTCellPaintMode; CellRect: TRect;
   var ContentRect: TRect);
+var
+  NodeData: PStreamNodeData;
+  B: Boolean;
 begin
   inherited;
 
+  NodeData := GetNodeData(Node);
+
   if CellPaintMode = cpmPaint then
   begin
-    case Node.Index mod 2 of
-      0:
-        Canvas.Brush.Color := clWindow;
-      1:
-        Canvas.Brush.Color := HTML2Color('f3f3f3');
-    end;
-
+    if NodeData.HasData and FOnIsInClientList(Self, NodeData.Name, NodeData.URL) then
+      Canvas.Brush.Color := HTML2Color('c3c1c1')
+    else
+      case Node.Index mod 2 of
+        0:
+          Canvas.Brush.Color := clWindow;
+        1:
+          Canvas.Brush.Color := HTML2Color('f3f3f3');
+      end;
     Canvas.FillRect(CellRect);
   end;
 end;
@@ -1149,9 +1169,11 @@ begin
     FCurrentSortType, FCurrentSortDir, FCurrentKbps, FCurrentStreamType, True);
 end;
 
-constructor TMStreamBrowserView.Create(AOwner: TComponent);
+constructor TMStreamBrowserView.Create(AOwner: TComponent; DataLists: TDataLists);
 begin
   inherited Create(AOwner);
+
+  FDataLists := DataLists;
 
   Align := alClient;
   BevelOuter := bvNone;
@@ -1177,7 +1199,7 @@ begin
   FCountLabel.Parent := Self;
   FCountLabel.Visible := True;
 
-  FStreamTree := TMStreamTree.Create(Self);
+  FStreamTree := TMStreamTree.Create(Self, FDataLists);
   FStreamTree.Align := alClient;
   FStreamTree.Parent := Self;
   FStreamTree.Visible := True;

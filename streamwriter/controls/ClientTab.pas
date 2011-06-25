@@ -33,13 +33,15 @@ uses
 type
   TSidebar = class(TPageControl)
   private
+    FDataLists: TDataLists;
+
     FPage1, FPage2, FPage3: TTabSheet;
 
     FBrowserView: TMStreamBrowserView;
     FInfoView: TMStreamInfoView;
     FDebugView: TMStreamDebugView;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
     destructor Destroy; override;
 
     procedure Init;
@@ -148,6 +150,7 @@ type
     procedure FClientViewStartStreaming(Sender: TObject; Name, URL, TitlePattern: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 
     procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
+    function StreamBrowserIsInClientList(Sender: TObject; Name, URL: string): Boolean;
 
     procedure VolumeTrackbarChange(Sender: TObject);
 
@@ -719,7 +722,7 @@ begin
   FSplitter.AutoSnap := False;
   FSplitter.ResizeStyle := rsUpdate;
 
-  FSideBar := TSidebar.Create(Self);
+  FSideBar := TSidebar.Create(Self, FStreams);
   FSideBar.Parent := Self;
   FSideBar.Align := alRight;
   FSideBar.Visible := True;
@@ -727,6 +730,7 @@ begin
 
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
+  FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
   FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := MenuImages;
 
   // Das ClientView wird erst hier erzeugt, weil es eine Referenz auf FSideBar.FBrowserView.StreamTree braucht!
@@ -1237,13 +1241,18 @@ procedure TClientTab.StreamBrowserAction(Sender: TObject; Action: TOpenActions;
     else
     begin
       HomeComm.RateStream(Streams[0].ID, R);
-      if HomeComm.Authenticated and (Streams[0].Rating = 0) then
+
+      ND := FSideBar.FBrowserView.StreamTree.GetNodeData(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
+      if ND <> nil then
       begin
-        try
-          ND := FSideBar.FBrowserView.StreamTree.GetNodeData(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
+        if HomeComm.Authenticated and (Streams[0].Rating = 0) then
+        begin
           ND.Rating := R;
-          FSideBar.FBrowserView.StreamTree.InvalidateNode(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
-        except end;
+        end;
+
+        FStreams.RatingList.SetRating(ND.Name, ND.URL, R);
+        FSideBar.FBrowserView.StreamTree.InvalidateNode(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
+        ND.OwnRating := R;
       end;
     end;
   end;
@@ -1329,6 +1338,26 @@ begin
       Rate(4);
     oaRate5:
       Rate(5);
+  end;
+end;
+
+function TClientTab.StreamBrowserIsInClientList(Sender: TObject; Name,
+  URL: string): Boolean;
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+begin
+  Result := False;
+  Name := LowerCase(Name);
+  URL := LowerCase(URL);
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
+  for Client in Clients do
+  begin
+    if (LowerCase(Client.Entry.Name) = Name) or (LowerCase(Client.Entry.StartURL) = URL) then
+    begin
+      Result := True;
+      Break;
+    end;
   end;
 end;
 
@@ -1478,10 +1507,11 @@ end;
 
 { TSidebar }
 
-constructor TSidebar.Create(AOwner: TComponent);
+constructor TSidebar.Create(AOwner: TComponent; DataLists: TDataLists);
 begin
-  inherited;
+  inherited Create(AOwner);
 
+  FDataLists := DataLists;
 end;
 
 destructor TSidebar.Destroy;
@@ -1504,7 +1534,7 @@ begin
   FPage3.PageControl := Self;
   FPage3.Caption := 'Log';
 
-  FBrowserView := TMStreamBrowserView.Create(Self);
+  FBrowserView := TMStreamBrowserView.Create(Self, FDataLists);
   FInfoView := TMStreamInfoView.Create(Self);
   FDebugView := TMStreamDebugView.Create(Self);
 

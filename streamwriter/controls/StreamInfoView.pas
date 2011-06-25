@@ -141,7 +141,11 @@ begin
     begin
       EntriesNew.Add(Entry);
 
-      Title := Title + Entry.Name;
+      if Entry.Name <> '' then
+        Title := Title + Entry.Name
+      else
+        Title := Title + Entry.StartURL;
+
       if Entry.Genre <> '' then
       begin
         if Genres <> '' then

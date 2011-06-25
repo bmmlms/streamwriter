@@ -106,6 +106,7 @@ begin
   inherited;
 
   ImageIndex := 17;
+  ShowCloseButton := True;
 end;
 
 procedure TCutTab.UpdateButtons;

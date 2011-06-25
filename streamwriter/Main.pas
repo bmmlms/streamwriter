@@ -32,7 +32,7 @@ uses
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
-  PlayerManager, Logging, Timers, Notifications;
+  PlayerManager, Logging, Timers, Notifications, MPageControl;
 
 type
   TSWStatusBar = class(TStatusBar)
@@ -584,7 +584,7 @@ begin
   pagMain.Parent := Self;
   pagMain.Visible := True;
   pagMain.Align := alClient;
-  pagMain.Images := imgImages;
+  pagMain.Images := imgImages;  // TODO: Was passiert, wenn man SW <W2k startet? ich benutze APIs, die es da nicht gibt! was bei win9x??
 
   tabClients := TClientTab.Create(pagMain);
   tabClients.PageControl := pagMain;
@@ -707,6 +707,7 @@ begin
 
   tabClients.Shown;
   tabLists.Setup(FStreams, imgImages);
+
   actShowSideBar.Checked := tabClients.SideBar.Visible;
 
   Language.Translate(Self);
@@ -1200,7 +1201,7 @@ begin
     tabCut.Setup(Track.Filename, imgImages);
   end else
   begin
-    pagMain.ActivePageIndex := tabCut.PageIndex;
+    pagMain.ActivePage := tabCut;
   end;
 end;
 
@@ -1301,7 +1302,7 @@ procedure TfrmStreamWriterMain.tabVolumeChanged(Sender: TObject;
   Volume: Integer);
 var
   i: Integer;
-  Tab: TTabSheet;
+  Tab: TMTabSheet;
 begin
   AppGlobals.PlayerVolume := Volume;
 
@@ -1338,7 +1339,7 @@ end;
 procedure TfrmStreamWriterMain.tabPlayStarted(Sender: TObject);
 var
   i: Integer;
-  Tab: TTabSheet;
+  Tab: TMTabSheet;
 begin
   for i := 0 to pagMain.PageCount - 1 do
   begin

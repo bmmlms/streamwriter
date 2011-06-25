@@ -553,12 +553,16 @@ begin
   if FICEThread.RecvStream.Genre <> '' then
     FEntry.Genre := FICEThread.RecvStream.Genre;
 
-  if FICEThread.RecvStream.AudioType = atMPEG then
-    FEntry.AudioType := 'MP3'
-  else if FICEThread.RecvStream.AudioType = atAAC then
-    FEntry.AudioType := 'AAC'
-  else
-    FEntry.AudioType := '';
+  case FICEThread.RecvStream.AudioType of
+    atMPEG:
+      FEntry.AudioType := 'MP3';
+    atAAC:
+      FEntry.AudioType := 'AAC';
+    atOGG:
+      FEntry.AudioType := 'OGG'
+    else
+      FEntry.AudioType := '';
+  end;
 
   if Assigned(FOnRefresh) then
     FOnRefresh(Self);
@@ -751,12 +755,16 @@ begin
   if (FICEThread.RecvStream.FullTitleFound) and (not FAutoRemove) and (FRecordTitle = '') then
     if AppGlobals.SubmitStreamInfo then
     begin
-      if FICEThread.RecvStream.AudioType = atMPEG then
-        Format := 'mp3'
-      else if FICEThread.RecvStream.AudioType = atAAC then
-        Format := 'aac'
-      else
-        raise Exception.Create('');
+      case FICEThread.RecvStream.AudioType of
+        atMPEG:
+          Format := 'mp3';
+        atAAC:
+          Format := 'aac';
+        atOGG:
+          Format := 'ogg'; // TODO: Der Server muss OGG auch kennen! die scripte halt und so..
+        else
+          raise Exception.Create('');
+      end;
 
       HomeComm.TitleChanged(Entry.Name, FTitle, FCurrentURL, Entry.StartURL, Format,
         Entry.BitRate, Entry.URLs);

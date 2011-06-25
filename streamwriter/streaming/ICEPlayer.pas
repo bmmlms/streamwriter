@@ -242,6 +242,9 @@ begin
     FMem.RemoveRange(0, 65536);
   end;
 
+  if FMem.Size < 8192 then
+    Exit;
+
   if (not Playing) and (not Paused) then
   begin
     TempPlayer := BASSStreamCreateFile(True, FMem.Memory, 0, FMem.Size, BASS_STREAM_DECODE);

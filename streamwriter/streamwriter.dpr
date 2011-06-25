@@ -100,7 +100,9 @@ uses
   DownloadAddons in 'DownloadAddons.pas' {frmDownloadAddons},
   DownloadClient in '..\..\common\DownloadClient.pas',
   ConfigureSoX in 'plugins\ConfigureSoX.pas' {frmConfigureSoX},
-  Notifications in 'Notifications.pas' {frmNotification};
+  Notifications in 'Notifications.pas' {frmNotification},
+  AdvancedRect in '..\..\common\AdvancedRect.pas',
+  MPageControl in '..\..\common\MPageControl.pas';
 
 {$SetPEOptFlags $0140}
 

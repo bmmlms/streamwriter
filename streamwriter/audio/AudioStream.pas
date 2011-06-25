@@ -49,6 +49,11 @@ type
     function GetFrame(F, T: Int64): TPosRect; override;
   end;
 
+  TOGGStreamFile = class(TAudioStreamFile)
+  public
+    function GetFrame(F, T: Int64): TPosRect; override;
+  end;
+
   TAudioStreamMemory = class(TExtendedStream)
   public
     function GetFrame(F, T: Int64): TPosRect; virtual; abstract;
@@ -62,6 +67,11 @@ type
   end;
 
   TAACStreamMemory = class(TAudioStreamMemory)
+  public
+    function GetFrame(F, T: Int64): TPosRect; override;
+  end;
+
+  TOGGStreamMemory = class(TAudioStreamMemory)
   public
     function GetFrame(F, T: Int64): TPosRect; override;
   end;
@@ -395,6 +405,22 @@ begin
   end;
 
   Seek(OldPos, soFromBeginning);
+end;
+
+{ TOGGStreamFile }
+
+function TOGGStreamFile.GetFrame(F, T: Int64): TPosRect;
+begin
+  Result.A := F;
+  Result.B := T;
+end;
+
+{ TOGGStreamMemory }
+
+function TOGGStreamMemory.GetFrame(F, T: Int64): TPosRect;
+begin
+  Result.A := F;
+  Result.B := T;
 end;
 
 end.

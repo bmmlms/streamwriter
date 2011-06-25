@@ -120,6 +120,22 @@ type
     property Index: Cardinal read FIndex write FIndex;
   end;
 
+  TRatingEntry = class
+  private
+    FName: string;
+    FURL: string;
+    FRating: Integer;
+  public
+    constructor Create(Name, URL: string; Rating: Integer);
+
+    class function Load(Stream: TExtendedStream; Version: Integer): TRatingEntry;
+    procedure Save(Stream: TExtendedStream);
+
+    property Name: string read FName;
+    property URL: string read FURL;
+    property Rating: Integer read FRating write FRating;
+  end;
+
   TSchedule = class(TObject)
   private
     FActive: Boolean;
@@ -232,6 +248,12 @@ type
   TRecentList = class(TList<TRecentEntry>)
   end;
 
+  TRatingList = class(TList<TRatingEntry>)
+  public
+    procedure SetRating(Name, URL: string; Rating: Integer);
+    function GetRating(Name, URL: string): Integer;
+  end;
+
   TDataLists = class
   private
     FCategoryList: TListCategoryList;
@@ -242,6 +264,7 @@ type
     FSubmittedStreamList: TStringList;
     FRecentList: TRecentList;
     FStreamBlacklist: TStringList;
+    FRatingList: TRatingList;
     FLoadError: Boolean;
     FReceived: UInt64;
   public
@@ -259,13 +282,14 @@ type
     property SubmittedStreamList: TStringList read FSubmittedStreamList;
     property RecentList: TRecentList read FRecentList;
     property StreamBlacklist: TStringList read FStreamBlacklist;
+    property RatingList: TRatingList read FRatingList;
 
     property LoadError: Boolean read FLoadError write FLoadError;
     property Received: UInt64 read FReceived write FReceived;
   end;
 
 const
-  DATAVERSION = 21;
+  DATAVERSION = 22;
 
 implementation
 
@@ -551,6 +575,7 @@ begin
   FSubmittedStreamList := TStringList.Create;
   FRecentList := TRecentList.Create;
   FStreamBlacklist := TStringList.Create;
+  FRatingList := TRatingList.Create;
 end;
 
 destructor TDataLists.Destroy;
@@ -584,6 +609,10 @@ begin
   FRecentList.Free;
 
   FStreamBlackList.Free;
+
+  for i := 0 to FRatingList.Count - 1 do
+    FRatingList[i].Free;
+  FRatingList.Free;
 
   inherited;
 end;
@@ -692,6 +721,13 @@ begin
                 S.Read(Str);
                 FStreamBlacklist.Add(Str);
               end;
+            end;
+
+            if Version >= 22 then
+            begin
+              S.Read(EntryCount);
+              for i := 0 to EntryCount - 1 do
+                FRatingList.Add(TRatingEntry.Load(S, Version));
             end;
           end;
 
@@ -832,6 +868,10 @@ begin
       S.Write(FStreamBlacklist.Count);
       for i := 0 to FStreamBlacklist.Count - 1 do
         S.Write(FStreamBlacklist[i]);
+
+      S.Write(FRatingList.Count);
+      for i := 0 to FRatingList.Count - 1 do
+        FRatingList[i].Save(S);
 
       S.SaveToFile(AppGlobals.DataFile);
     finally
@@ -1248,6 +1288,68 @@ begin
   Stream.Write(FStartMinute);
   Stream.Write(FEndHour);
   Stream.Write(FEndMinute);
+end;
+
+{ TRatingEntry }
+
+constructor TRatingEntry.Create(Name, URL: string; Rating: Integer);
+begin
+  inherited Create;
+
+  FName := Name;
+  FURL := URL;
+  FRating := Rating;
+end;
+
+class function TRatingEntry.Load(Stream: TExtendedStream;
+  Version: Integer): TRatingEntry;
+begin
+  Result := TRatingEntry.Create('', '', 0);
+  Stream.Read(Result.FName);
+  Stream.Read(Result.FURL);
+  Stream.Read(Result.FRating);
+end;
+
+procedure TRatingEntry.Save(Stream: TExtendedStream);
+begin
+  Stream.Write(FName);
+  Stream.Write(FURL);
+  Stream.Write(FRating);
+end;
+
+{ TRatingList }
+
+function TRatingList.GetRating(Name, URL: string): Integer;
+var
+  i: Integer;
+  E: TRatingEntry;
+begin
+  Result := 0;
+  Name := LowerCase(Name);
+  URL := LowerCase(URL);
+  for i := 0 to Count - 1 do
+    if (Items[i].Name = Name) or (Items[i].URL = URL) then
+    begin
+      Result := Items[i].Rating;
+      Exit;
+    end;
+end;
+
+procedure TRatingList.SetRating(Name, URL: string; Rating: Integer);
+var
+  i: Integer;
+  E: TRatingEntry;
+begin
+  Name := LowerCase(Name);
+  URL := LowerCase(URL);
+  for i := 0 to Count - 1 do
+    if (Items[i].Name = Name) or (Items[i].URL = URL) then
+    begin
+      Items[i].Rating := Rating;
+      Exit;
+    end;
+  E := TRatingEntry.Create(Name, URL, Rating);
+  Add(E);
 end;
 
 end.

@@ -30,7 +30,7 @@ type
   TDebugEvent = procedure(Text, Data: string) of object;
   TChunkReceivedEvent = procedure(Buf: Pointer; Len: Integer) of object;
 
-  TAudioTypes = (atNone, atMPEG, atAAC);
+  TAudioTypes = (atNone, atMPEG, atAAC, atOGG);
 
   TStreamTrack = class
   public
@@ -330,14 +330,14 @@ begin
   if FAudioStream <> nil then
   begin
     FAudioStream.Seek(0, soFromEnd);
-    FAudioStream.CopyFrom(Self, CopySize);
+    FAudioStream.CopyFrom(RecvStream, CopySize);
   end else
     Seek(CopySize, soFromCurrent);
 
   if Assigned(FOnChunkReceived) then
   begin
     GetMem(Buf, CopySize);
-    CopyMemory(Buf, Pointer(Integer(Memory) + (Position - CopySize)), CopySize);
+    CopyMemory(Buf, Pointer(Integer(RecvStream.Memory) + (RecvStream.Position - CopySize)), CopySize);
     FOnChunkReceived(Buf, CopySize);
     FreeMem(Buf);
   end;
@@ -369,12 +369,12 @@ begin
       Dir := FSaveDir;
 
       if LowerCase(ContentType) = 'audio/mpeg' then
-      begin
-        FAudioType := atMPEG;
-      end else if LowerCase(ContentType) = 'audio/aacp' then
-      begin
-        FAudioType := atAAC;
-      end else
+        FAudioType := atMPEG
+      else if LowerCase(ContentType) = 'audio/aacp' then
+        FAudioType := atAAC
+      else if LowerCase(ContentType) = 'application/ogg' then
+        FAudioType := atOGG
+      else
         raise Exception.Create(_('Unknown content-type'));
 
       if FRecording then
@@ -675,6 +675,16 @@ begin
               FFilename := Dir + Filename;
             end;
           end;
+        atOGG:
+          begin
+            if FSettings.SaveToMemory then
+              FAudioStream := TOGGStreamMemory.Create
+            else
+            begin
+              FAudioStream := TOGGStreamFile.Create(Dir + Filename, fmCreate or fmShareDenyWrite);
+              FFilename := Dir + Filename;
+            end;
+          end;
       end;
 
       if FAudioStream <> nil then
@@ -855,7 +865,7 @@ var
   Buf: Byte;
   Track: TStreamTrack;
 begin
-  Seek(0, soFromBeginning);
+  RecvStream.Seek(0, soFromBeginning);
 
   // Falls Einstellungen vom User geändert wurde, die nicht zu unserem Stream-Typ passen, müssen
   // diese rückgängig gemacht werden. Beim nächsten Aufnahmestart müsstes dann passen.
@@ -890,8 +900,8 @@ begin
 
   if FMetaInt = -1 then
   begin
-    DataReceived(Size);
-    Clear;
+    DataReceived(RecvStream.Size);
+    RecvStream.Clear;
   end else
   begin
     TitleChanged := False;
@@ -923,14 +933,14 @@ begin
         FHaltClient := True;
     end;
 
-    while Size > 0 do
+    while RecvStream.Size > 0 do
     begin
       if (FNextMetaInt > FMetaInt) or (FNextMetaInt < 0) then
         raise Exception.Create('Sync failed');
 
       if FNextMetaInt > 0 then
       begin
-        DataCopied := Min(FNextMetaInt, Size - Position);
+        DataCopied := Min(FNextMetaInt, RecvStream.Size - RecvStream.Position);
         if DataCopied = 0 then
           Break;
         DataReceived(DataCopied);
@@ -939,17 +949,17 @@ begin
 
       if FNextMetaInt = 0 then
       begin
-        if Position < Size - 4081 then // 4081 wegen 255*16+1 (Max-MetaLen)
+        if RecvStream.Position < RecvStream.Size - 4081 then // 4081 wegen 255*16+1 (Max-MetaLen)
         begin
           FNextMetaInt := FMetaInt;
 
-          Read(Buf, 1);
+          RecvStream.Read(Buf, 1);
           if Buf > 0 then
           begin
             MetaLen := Buf * 16;
 
-            MetaData := AnsiString(Trim(ToString(Position, MetaLen)));
-            Seek(MetaLen, soFromCurrent);
+            MetaData := AnsiString(Trim(RecvStream.ToString(RecvStream.Position, MetaLen)));
+            RecvStream.Seek(MetaLen, soFromCurrent);
             P := PosEx(''';', MetaData, 14);
             MetaData := AnsiString(Trim(Copy(MetaData, 14, P - 14)));
             if IsUTF8String(MetaData) then
@@ -1014,8 +1024,8 @@ begin
           Break;
       end;
     end;
-    RemoveRange(0, Position);
-    Seek(0, soFromBeginning);
+    RecvStream.RemoveRange(0, Position);
+    RecvStream.Seek(0, soFromBeginning);
   end;
 end;
 
@@ -1180,6 +1190,8 @@ begin
       Ext := '.mp3';
     atAAC:
       Ext := '.aac';
+    atOGG:
+      Ext := '.ogg';
   end;
 
   Filename := TitleInfoToFilename(Artist, Title, FullTitle);
@@ -1219,6 +1231,8 @@ begin
       Ext := '.mp3';
     atAAC:
       Ext := '.aac';
+    atOGG:
+      Ext := '.ogg';
   end;
 
   // REMARK: Zugriff ist nicht Threadsicher!
