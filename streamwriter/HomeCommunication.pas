@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Classes, Functions, HTTPThread, Base64, XMLLib,
   StrUtils, Generics.Collections, Sockets, WinSock, Int32Protocol,
-  Logging;
+  Logging, ZLib;
 
 type
   TStreamInfo = record
@@ -79,6 +79,7 @@ type
     FOnError: TSocketEvent;
 
     function XMLGet(T: string): TXMLLib;
+    function ZDecompressStr(const s: AnsiString): AnsiString;
   protected
     procedure DoConnected; override;
     procedure DoReceivedString(D: AnsiString); override;
@@ -94,7 +95,6 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure TitleChanged(StreamName, Title, CurrentURL, URL, Format: string; Kbps: Cardinal; URLs: TStringList);
     property Genres: TStringList read FGenres write FGenres;
 
     property OnLoggedOn: TSocketEvent read FOnLoggedOn write FOnLoggedOn;
@@ -120,14 +120,11 @@ type
     FAuthenticated: Boolean;
     FIsAdmin: Boolean;
 
-    //FOnUserAuthenticated: TBooleanEvent;
     FOnGenresReceived: TGenresReceivedEvent;
     FOnStreamsReceived: TStreamsReceivedEvent;
     FOnTitleChanged: TTitleChangedEvent;
-    //FOnReceiveError: TNotifyEvent;
     FOnServerInfo: TServerInfoEvent;
     FOnError: TErrorEvent;
-    //FOnOldVersion: TNotifyEvent;
     FOnStateChanged: TNotifyEvent;
 
     procedure ClientConnected(Sender: TSocketThread);
@@ -139,6 +136,8 @@ type
     procedure ClientTitleChanged(Sender: TSocketThread);
     procedure ClientServerInfo(Sender: TSocketThread);
     procedure ClientError(Sender: TSocketThread);
+
+    function ZCompressStr(const s: AnsiString): AnsiString;
   public
     constructor Create;
     destructor Destroy; override;
@@ -267,7 +266,7 @@ begin
   try
     XMLDocument.SaveToString(XML);
 
-    FClient.Write(XML);
+    FClient.Write(ZCompressStr(XML));
     Result := True;
   finally
     XMLDocument.Free;
@@ -311,7 +310,7 @@ begin
 
     XMLDocument.SaveToString(XML);
 
-    FClient.Write(XML);
+    FClient.Write(ZCompressStr(XML));
     Result := True;
   finally
     XMLDocument.Free;
@@ -339,7 +338,7 @@ begin
     Node.Value.AsInteger := Rating;
 
     XMLDocument.SaveToString(XML);
-    FClient.Write(XML);
+    FClient.Write(ZCompressStr(XML));
   finally
     XMLDocument.Free;
   end;
@@ -383,6 +382,10 @@ begin
     Node.Name := 'build';
     Node.Value.AsInteger := AppGlobals.BuildNumber;
 
+    Node := TXmlNode.Create(Data);
+    Node.Name := 'compression';
+    Node.Value.AsBoolean := True;
+
     XMLDocument.SaveToString(XML);
     FClient.Write(XML);
   finally
@@ -417,7 +420,7 @@ begin
     Node.Value.AsString := RegEx;
 
     XMLDocument.SaveToString(XML);
-    FClient.Write(XML);
+    FClient.Write(ZCompressStr(XML));
   finally
     XMLDocument.Free;
   end;
@@ -445,7 +448,7 @@ begin
     Node.Value.AsBoolean := RecordingOkay;
 
     XMLDocument.SaveToString(XML);
-    FClient.Write(XML);
+    FClient.Write(ZCompressStr(XML));
   finally
     XMLDocument.Free;
   end;
@@ -473,7 +476,7 @@ begin
     Node.Value.AsString := RegEx;
 
     XMLDocument.SaveToString(XML);
-    FClient.Write(XML);
+    FClient.Write(ZCompressStr(XML));
   finally
     XMLDocument.Free;
   end;
@@ -497,7 +500,7 @@ begin
     Data.Value.AsString := Stream;
 
     XMLDocument.SaveToString(XML);
-    FClient.Write(XML);
+    FClient.Write(ZCompressStr(XML));
   finally
     XMLDocument.Free;
   end;
@@ -521,6 +524,7 @@ var
   XMLDocument: TXMLLib;
   Data, Node: TXMLNode;
   XML: AnsiString;
+  i: integer;
 begin
   if not Connected then
     Exit;
@@ -538,7 +542,7 @@ begin
     Node.Value.AsString := Pass;
 
     XMLDocument.SaveToString(XML);
-    FClient.Write(XML);
+    FClient.Write(ZCompressStr(XML));
   finally
     XMLDocument.Free;
   end;
@@ -584,12 +588,62 @@ end;
 
 procedure THomeCommunication.TitleChanged(StreamName, Title, CurrentURL, URL, Format: string;
   Kbps: Cardinal; URLs: TStringList);
+var
+  i: Integer;
+  XMLDocument: TXMLLib;
+  N, N2, N3: TXMLNode;
+  XML: AnsiString;
+  TmpURL: AnsiString;
 begin
-  if Trim(Title) <> '' then
-    if FClient <> nil then
+  if not Connected then
+    Exit;
+  if Trim(Title) = '' then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('fulltitlechange');
+  try
+    N := XMLDocument.Root.Nodes.GetNode('data');
+
+    N2 := TXMLNode.Create(N);
+    N2.Name := 'streamname';
+    N2.Value.AsString := StreamName;
+    N2 := TXMLNode.Create(N);
+    N2.Name := 'title';
+    N2.Value.AsString := Title;
+    N2 := TXMLNode.Create(N);
+    N2.Name := 'currenturl';
+    N2.Value.AsString := CurrentURL;
+    N2 := TXMLNode.Create(N);
+    N2.Name := 'url';
+    N2.Value.AsString := URL;
+
+    N2 := TXMLNode.Create(N);
+    N2.Name := 'format';
+    N2.Value.AsString := Format;
+    N2 := TXMLNode.Create(N);
+    N2.Name := 'kbps';
+    N2.Value.AsLongWord := Kbps;
+
+    if URLs <> nil then
     begin
-      FClient.TitleChanged(StreamName, Title, CurrentURL, URL, Format, Kbps, URLs);
+      N3 := TXMLNode.Create(N);
+      N3.Name := 'urls';
+      for i := 0 to URLs.Count - 1 do
+      begin
+        N2 := TXMLNode.Create(N3);
+        N2.Name := 'url';
+        TmpURL := AnsiString(URLs[i]);
+        if TmpURL[Length(TmpURL)] = '/' then
+          TmpURL := Copy(TmpURL, 1, Length(TmpURL) - 1);
+        N2.Value.AsString := TmpURL;
+      end;
     end;
+
+    XMLDocument.SaveToString(XML);
+    FClient.Write(ZCompressStr(XML));
+  finally
+    XMLDocument.Free;
+  end;
 end;
 
 procedure THomeCommunication.LogOff;
@@ -603,7 +657,7 @@ begin
   XMLDocument := FClient.XMLGet('logoff');
   try
     XMLDocument.SaveToString(XML);
-    FClient.Write(XML);
+    FClient.Write(ZCompressStr(XML));
   finally
     XMLDocument.Free;
   end;
@@ -626,10 +680,21 @@ begin
     Data2.Value.AsLongWord := RecordingCount;
 
     XMLDocument.SaveToString(XML);
-    FClient.Write(XML);
+    FClient.Write(ZCompressStr(XML));
   finally
     XMLDocument.Free;
   end;
+end;
+
+function THomeCommunication.ZCompressStr(const s: AnsiString): AnsiString;
+var
+  buffer: Pointer;
+  size: Integer;
+begin
+  ZCompress(PAnsiChar(s), Length(s), buffer, size, zcMax);
+  SetLength(result, size);
+  Move(buffer^, pointer(result)^, size);
+  FreeMem(buffer);
 end;
 
 { THomeThread }
@@ -704,6 +769,8 @@ var
   T: string;
 begin
   inherited;
+
+  D := ZDecompressStr(D);
 
   try
     XMLDocument := TXMLLib.Create;
@@ -828,65 +895,13 @@ begin
     Sync(FOnLoggedOff);
 end;
 
-procedure THomeThread.TitleChanged(StreamName, Title, CurrentURL, URL, Format: string; Kbps: Cardinal; URLs: TStringList);
-var
-  i: Integer;
-  XML: TXMLLib;
-  N, N2, N3: TXMLNode;
-  S: AnsiString;
-  TmpURL: AnsiString;
-begin
-  XML := XMLGet('fulltitlechange');
-  try
-    N := XML.Root.Nodes.GetNode('data');
-
-    N2 := TXMLNode.Create(N);
-    N2.Name := 'streamname';
-    N2.Value.AsString := StreamName;
-    N2 := TXMLNode.Create(N);
-    N2.Name := 'title';
-    N2.Value.AsString := Title;
-    N2 := TXMLNode.Create(N);
-    N2.Name := 'currenturl';
-    N2.Value.AsString := CurrentURL;
-    N2 := TXMLNode.Create(N);
-    N2.Name := 'url';
-    N2.Value.AsString := URL;
-
-    N2 := TXMLNode.Create(N);
-    N2.Name := 'format';
-    N2.Value.AsString := Format;
-    N2 := TXMLNode.Create(N);
-    N2.Name := 'kbps';
-    N2.Value.AsLongWord := Kbps;
-
-    if URLs <> nil then
-    begin
-      N3 := TXMLNode.Create(N);
-      N3.Name := 'urls';
-      for i := 0 to URLs.Count - 1 do
-      begin
-        N2 := TXMLNode.Create(N3);
-        N2.Name := 'url';
-        TmpURL := AnsiString(URLs[i]);
-        if TmpURL[Length(TmpURL)] = '/' then
-          TmpURL := Copy(TmpURL, 1, Length(TmpURL) - 1);
-        N2.Value.AsString := TmpURL;
-      end;
-    end;
-
-    XML.SaveToString(S);
-    Write(S);
-  finally
-    XML.Free;
-  end;
-end;
-
 function THomeThread.XMLGet(T: string): TXMLLib;
 var
   Root, Header, Data: TXMLNode;
 begin
   Result := TXMLLib.Create;
+  Result.Options.WriteStandardEOL := True;
+  Result.Options.OutputLevelCharIndent := 0;
 
   Root := TXMLNode.Create();
   Root.Name := 'request';
@@ -899,6 +914,17 @@ begin
 
   Data := TXMLNode.Create(Root);
   Data.Name := 'data';
+end;
+
+function THomeThread.ZDecompressStr(const s: AnsiString): AnsiString;
+var
+  buffer: Pointer;
+  size: Integer;
+begin
+  ZDecompress(Pointer(s), Length(s), buffer, size);
+  SetLength(result, size);
+  Move(buffer^, pointer(result)^, size);
+  FreeMem(buffer);
 end;
 
 initialization
