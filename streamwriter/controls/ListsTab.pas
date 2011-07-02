@@ -53,6 +53,7 @@ type
   TTitlePanel = class(TPanel)
   private
     FLabel: TLabel;
+    FTopPanel: TPanel;
     FToolbarPanel: TPanel;
     FAddEdit: TEdit;
     FToolbar: TTitleToolbar;
@@ -133,15 +134,15 @@ procedure TListsTab.Resize;
 begin
   inherited;
 
-  FWishPanel.Top := 0;
+  FWishPanel.Top := Padding.Top;
   FWishPanel.Left := 0;
-  FWishPanel.Height := ClientHeight;
-  FWishPanel.Width := ClientWidth div 2 - 4;
+  FWishPanel.Height := ClientHeight - 4;
+  FWishPanel.Width := ClientWidth div 2 - 2;
 
-  FIgnorePanel.Top := 0;
+  FIgnorePanel.Top := Padding.Top;
   FIgnorePanel.Left := FWishPanel.Left + FWishPanel.Width + 4;
-  FIgnorePanel.Height := ClientHeight;
-  FIgnorePanel.Width := ClientWidth div 2;
+  FIgnorePanel.Height := ClientHeight - 4;
+  FIgnorePanel.Width := ClientWidth div 2 - 2;
 end;
 
 procedure TListsTab.Setup(Streams: TDataLists; Images: TImageList);
@@ -520,13 +521,20 @@ procedure TTitlePanel.Setup(List: TTitleList; Images: TImageList; Title: string)
 var
   P: TPanel;
 begin
+  FTopPanel := TPanel.Create(Self);
+  FTopPanel.Parent := Self;
+  FTopPanel.BevelOuter := bvNone;
+  FTopPanel.Align := alTop;
+  FTopPanel.Padding.Top := 0;
+  FTopPanel.Padding.Left := 2;
+
   FLabel := TLabel.Create(Self);
-  FLabel.Parent := Self;
+  FLabel.Parent := FTopPanel;
   FLabel.Caption := Title;
   FLabel.Align := alTop;
 
   FToolbarPanel := TPanel.Create(Self);
-  FToolbarPanel.Parent := Self;
+  FToolbarPanel.Parent := FTopPanel;
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Align := alTop;
   FToolbarPanel.Height := 24;

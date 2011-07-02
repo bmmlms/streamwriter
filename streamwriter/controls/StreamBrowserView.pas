@@ -241,6 +241,7 @@ type
     constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
     destructor Destroy; override;
     procedure Setup;
+    procedure InvalidateVisible;
 
     procedure Sort(Node: PVirtualNode; Column: TColumnIndex; SortType: TSortTypes; Direction: TSortDirection); reintroduce;
 
@@ -553,6 +554,22 @@ begin
         baListenExternal:
           FOnAction(Self, oaOpen, Entries);
       end;
+  end;
+end;
+
+procedure TMStreamTree.InvalidateVisible;
+var
+  Node: PVirtualNode;
+begin
+  Node := GetFirstVisible(nil);
+  while Node <> nil do
+  begin
+    InvalidateNode(Node);
+    if Node = GetLastVisible then
+    begin
+      Exit;
+    end;
+    Node := GetNextVisible(Node);
   end;
 end;
 
@@ -1119,10 +1136,9 @@ end;
 procedure TMStreamBrowserView.HomeCommStateChanged(Sender: TObject);
 begin
   if (HomeComm.Connected <> FWasConnected) and HomeComm.Connected and
-     (FStreamTree.RootNodeCount = 0) then
+     ((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) then
   begin
-    if (FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0) then
-      FHomeCommunication.GetStreams;
+    FHomeCommunication.GetStreams;
   end;
   FWasConnected := HomeComm.Connected;
 end;
@@ -1242,7 +1258,7 @@ begin
 
   FStreamTree.Sort(nil, 0, FSelectedSortType, FStreamTree.Header.SortDirection);
 end;
-                                     // TODO: sichtbare invalidaten, wenn ClientView einen stream entfernt. nach klick auf record/play im tree hier auch invalidate!
+
 procedure TMStreamBrowserView.StreamBrowserHeaderClick(Sender: TVTHeader;
   HitInfo: TVTHeaderHitInfo);
 begin

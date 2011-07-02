@@ -946,6 +946,9 @@ begin
     FreeCategory.Free;
     FClientView.DeleteNode(RemoveNode);
   end;
+
+  // Um die Markierung für "Ist in Liste" wegzubekommen
+  SideBar.FBrowserView.StreamTree.InvalidateVisible;
 end;
 
 procedure TClientTab.ClientManagerShowErrorMessage(Sender: TICEClient;

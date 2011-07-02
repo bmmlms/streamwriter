@@ -802,7 +802,7 @@ begin
   Result := (FWaveData <> nil) and
             (LowerCase(ExtractFileExt(FFilename)) = '.mp3') and
             (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
-            (((FPB.FEffectStartLine = 0) or (FPB.FEffectEndLine = 0)));
+            (((FPB.FEffectStartLine <= 5) or (FPB.FEffectEndLine <= 5)));
 end;
 
 function TCutView.CanApplyFadeOut: Boolean;
@@ -810,7 +810,7 @@ begin
   Result := (FWaveData <> nil) and
             (LowerCase(ExtractFileExt(FFilename)) = '.mp3') and
             (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
-            (((FPB.FEffectStartLine = High(FWaveData.WaveArray)) or (FPB.FEffectEndLine = High(FWaveData.WaveArray))));
+            (((FPB.FEffectStartLine >= High(FWaveData.WaveArray) - 5) or (FPB.FEffectEndLine >= High(FWaveData.WaveArray) - 5)));
 end;
 
 function TCutView.CanApplyEffects: Boolean;
