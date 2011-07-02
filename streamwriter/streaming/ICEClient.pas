@@ -25,7 +25,7 @@ uses
   SysUtils, Windows, StrUtils, Classes, ICEThread, ICEStream, AppData,
   Generics.Collections, Functions, Sockets, Plugins, LanguageObjects,
   DataManager, HomeCommunication, PlayerManager, Notifications,
-  Logging;
+  Logging, TypeDefs;
 
 type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.

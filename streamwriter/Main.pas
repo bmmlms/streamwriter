@@ -339,7 +339,7 @@ begin
 
   TfrmNotification.Stop;
 
-  HomeComm.Terminate;
+  HomeComm.Terminate; // TODO: Auf den muss u.U. gewartet werden, denn er könnte die DataList.BrowserList modifizieren, die noch gespeichert wird. vorsicht!!
 
   Hide;
 
@@ -550,6 +550,7 @@ begin
   HomeComm.OnStateChanged := HomeCommStateChanged;
   HomeComm.OnServerInfo := HomeCommServerInfo;
   HomeComm.OnError := HomeCommError;
+  HomeComm.DataLists := FStreams;
   HomeComm.Connect;
 end;
 

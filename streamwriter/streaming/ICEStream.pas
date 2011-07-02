@@ -24,13 +24,11 @@ interface
 uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
   AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
-  Math, PerlRegEx, Logging, WideStrUtils;
+  Math, PerlRegEx, Logging, WideStrUtils, TypeDefs;
 
 type
   TDebugEvent = procedure(Text, Data: string) of object;
   TChunkReceivedEvent = procedure(Buf: Pointer; Len: Integer) of object;
-
-  TAudioTypes = (atNone, atMPEG, atAAC, atOGG);
 
   TStreamTrack = class
   public

@@ -102,7 +102,8 @@ uses
   ConfigureSoX in 'plugins\ConfigureSoX.pas' {frmConfigureSoX},
   Notifications in 'Notifications.pas' {frmNotification},
   AdvancedRect in '..\..\common\AdvancedRect.pas',
-  MPageControl in '..\..\common\MPageControl.pas';
+  MPageControl in '..\..\common\MPageControl.pas',
+  TypeDefs in 'TypeDefs.pas';
 
 {$SetPEOptFlags $0140}
 

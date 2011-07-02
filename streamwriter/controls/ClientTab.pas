@@ -1234,6 +1234,7 @@ procedure TClientTab.StreamBrowserAction(Sender: TObject; Action: TOpenActions;
   Streams: TStreamDataArray);
   procedure Rate(R: Integer);
   var
+    Node: PVirtualNode;
     ND: PStreamNodeData;
   begin
     if not HomeComm.Authenticated then
@@ -1242,17 +1243,12 @@ procedure TClientTab.StreamBrowserAction(Sender: TObject; Action: TOpenActions;
     begin
       HomeComm.RateStream(Streams[0].ID, R);
 
-      ND := FSideBar.FBrowserView.StreamTree.GetNodeData(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
+      Node := FSideBar.FBrowserView.StreamTree.GetNodes(True)[0];
+      ND := FSideBar.FBrowserView.StreamTree.GetNodeData(Node);
       if ND <> nil then
       begin
-        if HomeComm.Authenticated and (Streams[0].Rating = 0) then
-        begin
-          ND.Rating := R;
-        end;
-
-        FStreams.RatingList.SetRating(ND.Name, ND.URL, R);
-        FSideBar.FBrowserView.StreamTree.InvalidateNode(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
-        ND.OwnRating := R;
+        ND.Data.OwnRating := R;
+        FSideBar.FBrowserView.StreamTree.InvalidateNode(Node);
       end;
     end;
   end;
@@ -1304,6 +1300,8 @@ begin
       end;
     oaSave:
       SavePlaylist(Entries, False);
+    oaRefresh:
+      FSideBar.FBrowserView.RefreshStreams;
     oaSetData:
       begin
         if not HomeComm.Authenticated then
@@ -1317,9 +1315,9 @@ begin
             try
               ND := FSideBar.FBrowserView.StreamTree.GetNodeData(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
               if SD.RegExChanged then
-                ND.RegEx := SD.RegEx;
+                ND.Data.RegEx := SD.RegEx;
               if SD.IsOkayChanged then
-                ND.RecordingOkay := SD.RecordingOkay;
+                ND.Data.RecordingOkay := SD.RecordingOkay;
               FSideBar.FBrowserView.StreamTree.InvalidateNode(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
             except end;
 

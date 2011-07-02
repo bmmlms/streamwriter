@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Classes, Functions, HTTPThread, Base64, XMLLib,
   StrUtils, Generics.Collections, Sockets, WinSock, Int32Protocol,
-  Logging, ZLib;
+  Logging, ZLib, DataManager, TypeDefs;
 
 type
   TStreamInfo = record
@@ -50,12 +50,10 @@ type
   private
     FGenres: TStringList;
 
+    FDataLists: TDataLists;
+
     FAuthAuthenticated: Boolean;
     FIsAdmin: Boolean;
-
-    FCount: Integer;
-    FPacketCount: Integer;
-    FStreams: TStreamInfoArray;
 
     FChangedStreamName: string;
     FChangedTitle: string;
@@ -85,21 +83,17 @@ type
     procedure DoReceivedString(D: AnsiString); override;
     procedure DoLoggedOn(Version: Integer; Header, Data: TXMLNode);
     procedure DoLoggedOff(Version: Integer; Header, Data: TXMLNode);
-    procedure DoGenresReceived(Version: Integer; Header, Data: TXMLNode);
     procedure DoStreamsReceived(Version: Integer; Header, Data: TXMLNode);
     procedure DoTitleChanged(Version: Integer; Header, Data: TXMLNode);
     procedure DoServerInfo(Version: Integer; Header, Data: TXMLNode);
     procedure DoError(Version: Integer; Header, Data: TXMLNode);
     procedure DoEnded; override;
   public
-    constructor Create;
+    constructor Create(DataLists: TDataLists);
     destructor Destroy; override;
-
-    property Genres: TStringList read FGenres write FGenres;
 
     property OnLoggedOn: TSocketEvent read FOnLoggedOn write FOnLoggedOn;
     property OnLoggedOff: TSocketEvent read FOnLoggedOff write FOnLoggedOff;
-    property OnGenresReceived: TSocketEvent read FOnGenresReceived write FOnGenresReceived;
     property OnStreamsReceived: TSocketEvent read FOnStreamsReceived write FOnStreamsReceived;
     property OnTitleChanged: TSocketEvent read FOnTitleChanged write FOnTitleChanged;
     property OnServerInfo: TSocketEvent read FOnServerInfo write FOnServerInfo;
@@ -107,8 +101,6 @@ type
   end;
 
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
-  TGenresReceivedEvent = procedure(Sender: TObject; Genres: TStringList) of object;
-  TStreamsReceivedEvent = procedure(Sender: TObject; Streams: TStreamInfoArray; Count: Integer) of object;
   TTitleChangedEvent = procedure(Sender: TObject; Name, Title, CurrentURL, Format, TitlePattern: string; Kbps: Cardinal) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
@@ -119,9 +111,9 @@ type
     FConnected: Boolean;
     FAuthenticated: Boolean;
     FIsAdmin: Boolean;
+    FDataLists: TDataLists;
 
-    FOnGenresReceived: TGenresReceivedEvent;
-    FOnStreamsReceived: TStreamsReceivedEvent;
+    FOnStreamsReceived: TNotifyEvent;
     FOnTitleChanged: TTitleChangedEvent;
     FOnServerInfo: TServerInfoEvent;
     FOnError: TErrorEvent;
@@ -131,7 +123,6 @@ type
     procedure ClientEnded(Sender: TSocketThread);
     procedure ClientLoggedOn(Sender: TSocketThread);
     procedure ClientLoggedOff(Sender: TSocketThread);
-    procedure ClientGenresReceived(Sender: TSocketThread);
     procedure ClientStreamsReceived(Sender: TSocketThread);
     procedure ClientTitleChanged(Sender: TSocketThread);
     procedure ClientServerInfo(Sender: TSocketThread);
@@ -144,9 +135,7 @@ type
 
     procedure Connect;
     procedure SubmitStream(Stream: string);
-    function GetGenres: Boolean;
-    function GetStreams(Count, Offset: Integer; Search, Genre, SortType, SortDir: string; Kbps: Integer;
-      StreamType: string; ReplaceQuery: Boolean): Boolean;
+    function GetStreams: Boolean;
 
     procedure LogOn(User, Pass: string);
     procedure LogOff;
@@ -161,11 +150,11 @@ type
 
     procedure Terminate;
 
+    property DataLists: TDataLists read FDataLists write FDataLists;
     property Connected: Boolean read FConnected;
     property Authenticated: Boolean read FAuthenticated;
     property IsAdmin: Boolean read FIsAdmin;
-    property OnGenresReceived: TGenresReceivedEvent read FOnGenresReceived write FOnGenresReceived;
-    property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
+    property OnStreamsReceived: TNotifyEvent read FOnStreamsReceived write FOnStreamsReceived;
     property OnTitleChanged: TTitleChangedEvent read FOnTitleChanged write FOnTitleChanged;
     property OnServerInfo: TServerInfoEvent read FOnServerInfo write FOnServerInfo;
     property OnError: TErrorEvent read FOnError write FOnError;
@@ -180,13 +169,7 @@ implementation
 uses
   AppData;
 
-{ TStreamSubmit }
-
-procedure THomeCommunication.ClientGenresReceived(Sender: TSocketThread);
-begin
-  if Assigned(FOnGenresReceived) then
-    FOnGenresReceived(Self, THomeThread(Sender).Genres);
-end;
+{ THomeCommunication }
 
 procedure THomeCommunication.ClientServerInfo(Sender: TSocketThread);
 begin
@@ -197,7 +180,7 @@ end;
 procedure THomeCommunication.ClientStreamsReceived(Sender: TSocketThread);
 begin
   if Assigned(FOnStreamsReceived) then
-    FOnStreamsReceived(Self, THomeThread(Sender).FStreams, THomeThread(Sender).FCount);
+    FOnStreamsReceived(Self);
 end;
 
 procedure THomeCommunication.ClientTitleChanged(Sender: TSocketThread);
@@ -229,11 +212,10 @@ begin
   if FClient <> nil then
     Exit;
 
-  FClient := THomeThread.Create;
+  FClient := THomeThread.Create(FDataLists);
   FClient.OnConnected := ClientConnected;
   FClient.OnLoggedOn := ClientLoggedOn;
   FClient.OnLoggedOff := ClientLoggedOff;
-  FClient.OnGenresReceived := ClientGenresReceived;
   FClient.OnStreamsReceived := ClientStreamsReceived;
   FClient.OnTitleChanged := ClientTitleChanged;
   FClient.OnServerInfo := ClientServerInfo;
@@ -253,28 +235,7 @@ begin
   inherited;
 end;
 
-function THomeCommunication.GetGenres: Boolean;
-var
-  XMLDocument: TXMLLib;
-  XML: AnsiString;
-begin
-  Result := False;
-  if not Connected then
-    Exit;
-
-  XMLDocument := FClient.XMLGet('getgenres');
-  try
-    XMLDocument.SaveToString(XML);
-
-    FClient.Write(ZCompressStr(XML));
-    Result := True;
-  finally
-    XMLDocument.Free;
-  end;
-end;
-
-function THomeCommunication.GetStreams(Count, Offset: Integer; Search, Genre, SortType, SortDir: string;
-  Kbps: Integer; StreamType: string; ReplaceQuery: Boolean): Boolean;
+function THomeCommunication.GetStreams;
 var
   XMLDocument: TXMLLib;
   Root, Header, Data: TXMLNode;
@@ -284,30 +245,8 @@ begin
   if not Connected then
     Exit;
 
-  XMLDocument := TXMLLib.Create;
+  XMLDocument := FClient.XMLGet('getstreams');
   try
-    Root := TXMLNode.Create();
-    Root.Name := 'request';
-    XMLDocument.Root := Root;
-
-    Header := TXMLNode.Create(Root);
-    Header.Name := 'header';
-    Header.Attributes.SimpleAdd('version', '3');
-    Header.Attributes.SimpleAdd('type', 'getstreams');
-
-    Data := TXMLNode.Create(Root);
-    Data.Name := 'data';
-
-    Data.Nodes.SimpleAdd('count', IntToStr(Count));
-    Data.Nodes.SimpleAdd('offset', IntToStr(Offset));
-    Data.Nodes.SimpleAdd('search', EncodeU(Search));
-    Data.Nodes.SimpleAdd('genre', EncodeU(Genre));
-    Data.Nodes.SimpleAdd('kbps', IntToStr(Kbps));
-    Data.Nodes.SimpleAdd('type', StreamType);
-    Data.Nodes.SimpleAdd('sorttype', SortType);
-    Data.Nodes.SimpleAdd('sortdir', SortDir);
-    Data.Nodes.SimpleAdd('format', EncodeU('m3u'));
-
     XMLDocument.SaveToString(XML);
 
     FClient.Write(ZCompressStr(XML));
@@ -508,7 +447,6 @@ end;
 
 procedure THomeCommunication.Terminate;
 begin
-  FOnGenresReceived := nil;
   FOnStreamsReceived := nil;
   FOnTitleChanged := nil;
   FOnServerInfo := nil;
@@ -699,7 +637,7 @@ end;
 
 { THomeThread }
 
-constructor THomeThread.Create;
+constructor THomeThread.Create(DataLists: TDataLists);
 begin
   {$IFDEF DEBUG}
   //inherited Create('gaia', 8007);
@@ -710,6 +648,7 @@ begin
 
   UseSynchronize := True;
   FGenres := TStringList.Create;
+  FDataLists := DataLists;
 end;
 
 destructor THomeThread.Destroy;
@@ -747,20 +686,6 @@ begin
     Sync(FOnError);
 end;
 
-procedure THomeThread.DoGenresReceived(Version: Integer; Header, Data: TXMLNode);
-var
-  i: Integer;
-begin
-  FGenres.Clear;
-  for i := 0 to Data.Nodes.GetNode('genres').Nodes.Count - 1 do
-  begin
-    Genres.Add(Data.Nodes.GetNode('genres').Nodes[i].Value.AsString);
-  end;
-
-  if Assigned(FOnGenresReceived) then
-    Sync(FOnGenresReceived);
-end;
-
 procedure THomeThread.DoReceivedString(D: AnsiString);
 var
   Version: Integer;
@@ -791,11 +716,6 @@ begin
       if Header.Attributes.AttributeByName['type'].Value.AsString = 'logoff' then
       begin
         DoLoggedOff(Version, Header, Data);
-      end;
-
-      if Header.Attributes.AttributeByName['type'].Value.AsString = 'getgenres' then
-      begin
-        DoGenresReceived(Version, Header, Data);
       end;
 
       if Header.Attributes.AttributeByName['type'].Value.AsString = 'getstreams' then
@@ -838,31 +758,75 @@ end;
 
 procedure THomeThread.DoStreamsReceived(Version: Integer; Header, Data: TXMLNode);
 var
-  i: Integer;
+  i, n: Integer;
+  T: string;
   Node: TXMLNode;
+  NewList: TList<TStreamBrowserEntry>;
+  Entry, Entry2: TStreamBrowserEntry;
 begin
-  SetLength(FStreams, 0);
+  FDataLists.GenreList.Clear;
 
-  FCount := Data.Nodes.GetNode('count').Value.AsInteger;
-  FPacketCount := Data.Nodes.GetNode('packetcount').Value.AsInteger;
-
-  for i := 0 to Data.Nodes.GetNode('streams').Nodes.Count - 1 do
+  for Node in Data.Nodes.GetNode('genres').Nodes do
   begin
-    Node := Data.Nodes.GetNode('streams').Nodes[i];
-    SetLength(FStreams, Length(FStreams) + 1);
-    FStreams[High(FStreams)].ID := Node.Attributes.AttributeByName['id'].Value.AsInteger;
-    FStreams[High(FStreams)].Name := Node.Attributes.AttributeByName['name'].Value.AsString;
-    FStreams[High(FStreams)].Genre := Node.Attributes.AttributeByName['genre'].Value.AsString;
-    FStreams[High(FStreams)].URL := Node.Value.AsString;
-    FStreams[High(FStreams)].Website := Node.Attributes.AttributeByName['website'].Value.AsString;
-    FStreams[High(FStreams)].BitRate := Node.Attributes.AttributeByName['bitrate'].Value.AsInteger;
-    FStreams[High(FStreams)].StreamType := Node.Attributes.AttributeByName['type'].Value.AsString;
-    FStreams[High(FStreams)].Downloads := Node.Attributes.AttributeByName['downloads'].Value.AsInteger;
-    FStreams[High(FStreams)].MetaData := Node.Attributes.AttributeByName['metadata'].Value.AsBoolean;
-    FStreams[High(FStreams)].ChangesTitleInSong := Node.Attributes.AttributeByName['changestitleinsong'].Value.AsBoolean;
-    FStreams[High(FStreams)].Rating := Node.Attributes.AttributeByName['rating'].Value.AsInteger;
-    FStreams[High(FStreams)].RecordingOkay := Node.Attributes.AttributeByName['recordingokay'].Value.AsBoolean;
-    FStreams[High(FStreams)].RegEx := Node.Attributes.AttributeByName['regex'].Value.AsString;
+    FDataLists.GenreList.Add(Node.Value.AsString);
+  end;
+
+  NewList := TList<TStreamBrowserEntry>.Create;
+  try
+    for Node in Data.Nodes.GetNode('streams').Nodes do
+    begin
+      Entry := TStreamBrowserEntry.Create;
+      NewList.Add(Entry);
+      Entry.ID := Node.Attributes.AttributeByName['id'].Value.AsInteger;
+      Entry.Name := Node.Attributes.AttributeByName['name'].Value.AsString;
+      Entry.Genre := Node.Attributes.AttributeByName['genre'].Value.AsString;
+      Entry.URL := Node.Value.AsString;
+      Entry.Website := Node.Attributes.AttributeByName['website'].Value.AsString;
+      Entry.BitRate := Node.Attributes.AttributeByName['bitrate'].Value.AsInteger;
+      T := Node.Attributes.AttributeByName['type'].Value.AsString;
+      if T = 'mpeg' then
+        Entry.AudioType := atMPEG
+      else if T = 'aacp' then
+        Entry.AudioType := atAAC
+      else
+        Entry.AudioType := atNone;
+      Entry.MetaData := Node.Attributes.AttributeByName['metadata'].Value.AsBoolean;
+      Entry.ChangesTitleInSong := Node.Attributes.AttributeByName['changestitleinsong'].Value.AsBoolean;
+      Entry.Rating := Node.Attributes.AttributeByName['rating'].Value.AsInteger;
+      Entry.RecordingOkay := Node.Attributes.AttributeByName['recordingokay'].Value.AsBoolean;
+      Entry.RegEx := Node.Attributes.AttributeByName['regex'].Value.AsString;
+    end;
+
+    // Synchronisieren
+    for Entry in FDataLists.BrowserList do
+      for Entry2 in NewList do
+        if (Entry.ID = Entry2.ID) or (LowerCase(Entry.Name) = LowerCase(Entry2.Name)) then
+        begin
+          Entry2.OwnRating := Entry.OwnRating;
+        end;
+
+    // Alte Liste leeren
+    for i := 0 to FDataLists.BrowserList.Count - 1 do
+      FDataLists.BrowserList[i].Free;
+    FDataLists.BrowserList.Clear;
+
+    // Der Liste alle Sachen wieder hinzufügen
+    for Entry in NewList do
+      FDataLists.BrowserList.Add(Entry);
+
+    // REMARK: Update von Version 22 auf 23 - den Streams die RatingList beibringen. Kann irgendwann raus.
+    for i := 0 to FDataLists.RatingList.Count - 1 do
+    begin
+      for n := 0 to FDataLists.BrowserList.Count - 1 do
+        if (LowerCase(FDataLists.RatingList[i].Name) = LowerCase(FDataLists.BrowserList[n].Name)) or
+           (LowerCase(FDataLists.RatingList[i].URL) = LowerCase(FDataLists.BrowserList[n].URL)) then
+          FDataLists.BrowserList[n].OwnRating := FDataLists.RatingList[i].Rating;
+    end;
+    for i := 0 to FDataLists.RatingList.Count - 1 do
+      FDataLists.RatingList[i].Free;
+    FDataLists.RatingList.Clear;
+  finally
+    NewList.Free;
   end;
 
   if Assigned(FOnStreamsReceived) then

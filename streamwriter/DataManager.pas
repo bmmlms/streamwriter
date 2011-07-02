@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, Classes, SysUtils, ExtendedStream, Generics.Collections,
-  ComCtrls, AppData, Functions, Logging, DateUtils;
+  ComCtrls, AppData, Functions, Logging, DateUtils, TypeDefs;
 
 type
   TStreamList = class;
@@ -31,6 +31,40 @@ type
   TListCategory = class;
 
   EVersionException = class(Exception);
+
+  TStreamBrowserEntry = class
+  private
+    FID: Integer;
+    FName: string;
+    FGenre: string;
+    FURL: string;
+    FWebsite: string;
+    FBitRate: Integer;
+    FAudioType: TAudioTypes;
+    FMetaData: Boolean;
+    FChangesTitleInSong: Boolean;
+    FOwnRating: Byte;
+    FRating: Byte;
+    FRecordingOkay: Boolean;
+    FRegEx: string;
+  public
+    class function Load(Stream: TExtendedStream; Version: Integer): TStreamBrowserEntry;
+    procedure Save(Stream: TExtendedStream);
+
+    property ID: Integer read FID write FID;
+    property Name: string read FName write FName;
+    property Genre: string read FGenre write FGenre;
+    property URL: string read FURL write FURL;
+    property Website: string read FWebsite write FWebsite;
+    property BitRate: Integer read FBitRate write FBitRate;
+    property AudioType: TAudioTypes read FAudioType write FAudioType;
+    property MetaData: Boolean read FMetaData write FMetaData;
+    property ChangesTitleInSong: Boolean read FChangesTitleInSong write FChangesTitleInSong;
+    property OwnRating: Byte read FOwnRating write FOwnRating;
+    property Rating: Byte read FRating write FRating;
+    property RecordingOkay: Boolean read FRecordingOkay write FRecordingOkay;
+    property RegEx: string read FRegEx write FRegEx;
+  end;
 
   TTrackInfo = class
   private
@@ -265,6 +299,8 @@ type
     FRecentList: TRecentList;
     FStreamBlacklist: TStringList;
     FRatingList: TRatingList;
+    FBrowserList: TList<TStreamBrowserEntry>;
+    FGenreList: TStringList;
     FLoadError: Boolean;
     FReceived: UInt64;
   public
@@ -283,13 +319,15 @@ type
     property RecentList: TRecentList read FRecentList;
     property StreamBlacklist: TStringList read FStreamBlacklist;
     property RatingList: TRatingList read FRatingList;
+    property BrowserList: TList<TStreamBrowserEntry> read FBrowserList write FBrowserList;
+    property GenreList: TStringList read FGenreList write FGenreList;
 
     property LoadError: Boolean read FLoadError write FLoadError;
     property Received: UInt64 read FReceived write FReceived;
   end;
 
 const
-  DATAVERSION = 22;
+  DATAVERSION = 23;
 
 implementation
 
@@ -576,6 +614,8 @@ begin
   FRecentList := TRecentList.Create;
   FStreamBlacklist := TStringList.Create;
   FRatingList := TRatingList.Create;
+  FBrowserList := TList<TStreamBrowserEntry>.Create;
+  FGenreList := TStringList.Create;
 end;
 
 destructor TDataLists.Destroy;
@@ -613,6 +653,12 @@ begin
   for i := 0 to FRatingList.Count - 1 do
     FRatingList[i].Free;
   FRatingList.Free;
+
+  for i := 0 to FBrowserList.Count - 1 do
+    FBrowserList[i].Free;
+  FBrowserList.Free;
+
+  FGenreList.Free;
 
   inherited;
 end;
@@ -723,11 +769,25 @@ begin
               end;
             end;
 
-            if Version >= 22 then
+            if Version = 22 then
             begin
               S.Read(EntryCount);
               for i := 0 to EntryCount - 1 do
                 FRatingList.Add(TRatingEntry.Load(S, Version));
+            end;
+
+            if Version >= 23 then
+            begin
+              S.Read(EntryCount);
+              for i := 0 to EntryCount - 1 do
+                FBrowserList.Add(TStreamBrowserEntry.Load(S, Version));
+
+              S.Read(EntryCount);
+              for i := 0 to EntryCount - 1 do
+              begin
+                S.Read(Str);
+                FGenreList.Add(Str);
+              end;
             end;
           end;
 
@@ -815,7 +875,8 @@ begin
   end;
 
   if (FCategoryList.Count = 1) and (FStreamList.Count = 0) and (FRecentList.Count = 0) and
-     (FIgnoreList.Count = 0) and (FSaveList.Count = 0) and not (FileExists(AppGlobals.DataFile)) then
+     (FIgnoreList.Count = 0) and (FSaveList.Count = 0) and (FBrowserList.Count = 0) and
+     not (FileExists(AppGlobals.DataFile)) then
   begin
     Exit;
   end;
@@ -869,9 +930,19 @@ begin
       for i := 0 to FStreamBlacklist.Count - 1 do
         S.Write(FStreamBlacklist[i]);
 
+      {
       S.Write(FRatingList.Count);
       for i := 0 to FRatingList.Count - 1 do
         FRatingList[i].Save(S);
+      }
+
+      S.Write(FBrowserList.Count);
+      for i := 0 to FBrowserList.Count - 1 do
+        FBrowserList[i].Save(S);
+
+      S.Write(FGenreList.Count);
+      for i := 0 to FGenreList.Count - 1 do
+        S.Write(FGenreList[i]);
 
       S.SaveToFile(AppGlobals.DataFile);
     finally
@@ -1350,6 +1421,47 @@ begin
     end;
   E := TRatingEntry.Create(Name, URL, Rating);
   Add(E);
+end;
+
+{ TStreamBrowserEntry }
+
+class function TStreamBrowserEntry.Load(Stream: TExtendedStream;
+  Version: Integer): TStreamBrowserEntry;
+var
+  B: Byte;
+begin
+  Result := TStreamBrowserEntry.Create;
+  Stream.Read(Result.FID);
+  Stream.Read(Result.FName);
+  Stream.Read(Result.FGenre);
+  Stream.Read(Result.FURL);
+  Stream.Read(Result.FWebsite);
+  Stream.Read(Result.FBitRate);
+  Stream.Read(B);
+  Result.FAudioType := TAudioTypes(B);
+  Stream.Read(Result.FMetaData);
+  Stream.Read(Result.FChangesTitleInSong);
+  Stream.Read(Result.FOwnRating);
+  Stream.Read(Result.FRating);
+  Stream.Read(Result.FRecordingOkay);
+  Stream.Read(Result.FRegEx);
+end;
+
+procedure TStreamBrowserEntry.Save(Stream: TExtendedStream);
+begin
+  Stream.Write(FID);
+  Stream.Write(FName);
+  Stream.Write(FGenre);
+  Stream.Write(FURL);
+  Stream.Write(FWebsite);
+  Stream.Write(FBitRate);
+  Stream.Write(Byte(FAudioType));
+  Stream.Write(FMetaData);
+  Stream.Write(FChangesTitleInSong);
+  Stream.Write(FOwnRating);
+  Stream.Write(FRating);
+  Stream.Write(FRecordingOkay);
+  Stream.Write(FRegEx);
 end;
 
 end.
