@@ -33,7 +33,6 @@ type
     FEntries: TStreamList;
     FResized: Boolean;
     FTopPanel: TPanel;
-    FSplitter: TSplitter;
     FName: TLabel;
     FInfo: TMemo;
 
@@ -94,13 +93,6 @@ begin
   FInfo.ScrollBars := ssVertical;
   FInfo.ReadOnly := True;
   FInfo.Visible := True;
-
-  FSplitter := TSplitter.Create(Self);
-  FSplitter.Parent := Self;
-  FSplitter.Align := alTop;
-  FSplitter.ResizeStyle := rsUpdate;
-  FSplitter.Visible := True;
-  FSplitter.Top := FTopPanel.Top + FTopPanel.Height;
 
   Align := alClient;
 end;
@@ -171,15 +163,15 @@ begin
     if Entries.Count = 1 then
       if Entries[0].StreamURL <> '' then
         Info := Info + Entries[0].StreamURL + #13#10;
-    if Genres <> '' then
-      Info := Info + Genres + #13#10;
     if Entries.Count = 1 then
     begin
+      if Genres <> '' then
+        Info := Info + Genres + #13#10;
       if Entries[0].AudioType <> '' then
         Info := Info + Entries[0].AudioType + #13#10;
+      if BitRates <> '' then
+        Info := Info + Bitrates + 'kbps' + #13#10;
     end;
-    if BitRates <> '' then
-      Info := Info + Bitrates + 'kbps' + #13#10;
     Info := Info + Format(_('%d songs saved'), [SongsSaved]) + #13#10;
     Info := Info + Format(_('%s received'), [MakeSize(Received)]);
     if Entries.Count = 1 then

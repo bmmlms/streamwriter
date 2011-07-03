@@ -640,8 +640,8 @@ end;
 constructor THomeThread.Create(DataLists: TDataLists);
 begin
   {$IFDEF DEBUG}
-  //inherited Create('gaia', 8007);
-  inherited Create('streamwriter.org', 8007);
+  inherited Create('gaia', 8007);
+  //inherited Create('streamwriter.org', 8007);
   {$ELSE}
   inherited Create('streamwriter.org', 8007);
   {$ENDIF}
@@ -814,7 +814,7 @@ begin
     for Entry in NewList do
       FDataLists.BrowserList.Add(Entry);
 
-    // REMARK: Update von Version 22 auf 23 - den Streams die RatingList beibringen. Kann irgendwann raus.
+    // REMARK: Update von Version 22 auf 23 - den Streams die RatingList beibringen. Kann irgendwann raus. Version 22 war keine Rlsd version.
     for i := 0 to FDataLists.RatingList.Count - 1 do
     begin
       for n := 0 to FDataLists.BrowserList.Count - 1 do

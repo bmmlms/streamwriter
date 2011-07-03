@@ -32,7 +32,7 @@ uses
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
-  PlayerManager, Logging, Timers, Notifications, MPageControl;
+  PlayerManager, Logging, Timers, Notifications;
 
 type
   TSWStatusBar = class(TStatusBar)
@@ -1303,7 +1303,7 @@ procedure TfrmStreamWriterMain.tabVolumeChanged(Sender: TObject;
   Volume: Integer);
 var
   i: Integer;
-  Tab: TMTabSheet;
+  Tab: TTabSheet;
 begin
   AppGlobals.PlayerVolume := Volume;
 
@@ -1340,7 +1340,7 @@ end;
 procedure TfrmStreamWriterMain.tabPlayStarted(Sender: TObject);
 var
   i: Integer;
-  Tab: TMTabSheet;
+  Tab: TTabSheet;
 begin
   for i := 0 to pagMain.PageCount - 1 do
   begin

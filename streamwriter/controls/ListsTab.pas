@@ -134,14 +134,14 @@ procedure TListsTab.Resize;
 begin
   inherited;
 
-  FWishPanel.Top := Padding.Top;
+  FWishPanel.Top := 0;
   FWishPanel.Left := 0;
-  FWishPanel.Height := ClientHeight - 4;
+  FWishPanel.Height := ClientHeight;
   FWishPanel.Width := ClientWidth div 2 - 2;
 
-  FIgnorePanel.Top := Padding.Top;
+  FIgnorePanel.Top := 0;
   FIgnorePanel.Left := FWishPanel.Left + FWishPanel.Width + 4;
-  FIgnorePanel.Height := ClientHeight - 4;
+  FIgnorePanel.Height := ClientHeight;
   FIgnorePanel.Width := ClientWidth div 2 - 2;
 end;
 
@@ -526,7 +526,7 @@ begin
   FTopPanel.BevelOuter := bvNone;
   FTopPanel.Align := alTop;
   FTopPanel.Padding.Top := 0;
-  FTopPanel.Padding.Left := 2;
+  FTopPanel.Padding.Left := 0;
 
   FLabel := TLabel.Create(Self);
   FLabel.Parent := FTopPanel;
@@ -559,13 +559,17 @@ begin
   FToolbar.FExport.OnClick := ExportClick;
   FToolbar.FImport.OnClick := ImportClick;
 
+  FTopPanel.Height := FLabel.Height + FToolbarPanel.Height;
+
   // Ist nur für den Abstand zwischen Toolbar-Panel und Tree
+  {
   P := TPanel.Create(Self);
   P.Parent := Self;
   P.BevelOuter := bvNone;
   P.Height := 4;
   P.Top := FToolbarPanel.Top + 5;
   P.Align := alTop;
+  }
 
   FTree := TTitleTree.Create(Self);
   FTree.Parent := Self;

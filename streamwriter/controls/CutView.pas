@@ -151,7 +151,7 @@ type
     FPlayer: TPlayer;
     FFilename: string;
     FFilesize: UInt64;
-    FLength: UInt64;
+    //FLength: UInt64;
 
     FOnStateChanged: TNotifyEvent;
 
@@ -211,7 +211,7 @@ type
     property Player: TPlayer read FPlayer;
     property LineMode: TLineMode read FLineMode write FLineMode;
     property Filesize: UInt64 read FFilesize;
-    property Length: UInt64 read FLength;
+    //property Length: UInt64 read FLength;
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
   end;
 
@@ -399,7 +399,6 @@ begin
 
   FPB.FPlayLine := 0;
 
-  //FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
   FPB.Paint;
 end;
@@ -437,35 +436,30 @@ begin
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
-
+                       // TODO: Das cutview KOMPLETT TESTEN ALLE KOMBIS!!!!!!!!!! das cutview braucht noch viel aufmerksamkeit denke ich! SEHR VIEL!!!
 procedure TCutView.Undo;
+var
+  L1, L2: Cardinal;
 begin
   if not CanUndo then
     Exit;
+
+  L1 := FWaveData.CutStates[FWaveData.CutStates.Count - 1].CutStart;
+  L2 := FWaveData.CutStates[FWaveData.CutStates.Count - 1].CutEnd;
 
   FWaveData.CutStates[FWaveData.CutStates.Count - 1].Free;
   FWaveData.CutStates.Delete(FWaveData.CutStates.Count - 1);
 
   if FPlayer <> nil then
-  begin
-    {
-    if FSync > 0 then
-    begin
-      BASSChannelRemoveSync(FPlayer, FSync);
-      BASSChannelRemoveSync(FPlayer, FSync2);
-    end;
-    FSync := BASSChannelSetSync(FPlayer, BASS_SYNC_POS, FWaveData.WaveArray[FWaveData.CutEnd].Pos, LoopSyncProc, Self);
-    FSync2 := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, LoopSyncProc, Self);
-    }
     FPlayer.PosToReach := FWaveData.WaveArray[FWaveData.CutEnd].Pos;
-  end;
 
-  FPB.FStartLine := FWaveData.CutStates[FWaveData.CutStates.Count - 1].CutStart;
-  FPB.FEndLine := FWaveData.CutStates[FWaveData.CutStates.Count - 1].CutEnd;
-  FPB.FPlayLine := FPB.FStartLine;
+  FPB.FStartLine := L1;
+  FPB.FEndLine := L2;
+  FPB.FPlayLine := L1;
 
-  FPB.FZoomStartLine := FPB.FStartLine;
-  FPB.FZoomEndLine := FPB.FEndLine;
+  FPB.FZoomStartLine := High(Cardinal);
+  FPB.FZoomEndLine := High(Cardinal);
+
   FPB.FDoZoom := True;
 
   FPB.BuildBuffer;
@@ -543,12 +537,6 @@ begin
   if FWaveData.TimeBetween(FPB.FPlayLine, FWaveData.CutEnd) <= 0.3 then
     FPB.FPlayLine := FWaveData.CutStart;
 
-
-  // Das muss so, damit die rote Linie da bleibt wo sie vor dem ersten
-  // Play hingesetzt wurde, falls sie vorher bewegt wurde.
-  FPlayer.Volume := 0;
-  //FPlayer.Play;
-  //FPlayer.Pause;
   FPlayer.Volume := AppGlobals.PlayerVolume;
   FPlayer.PositionByte := FWaveData.WaveArray[FPB.FPlayLine].Pos;
 
@@ -664,7 +652,7 @@ begin
   begin
     FPlayer.Pause;
   end;
-  //FPB.BuildBuffer;
+
   FPB.BuildDrawBuffer;
   FPB.Paint;
 
@@ -798,19 +786,28 @@ begin
 end;
 
 function TCutView.CanApplyFadeIn: Boolean;
+var
+  Tolerance: Cardinal;
 begin
+  if FWaveData <> nil then
+    Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5);
+  OutputDebugString(pchar(inttostr(tolerance)));
   Result := (FWaveData <> nil) and
             (LowerCase(ExtractFileExt(FFilename)) = '.mp3') and
             (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
-            (((FPB.FEffectStartLine <= 5) or (FPB.FEffectEndLine <= 5)));
+            (((FPB.FEffectStartLine <= Tolerance) or (FPB.FEffectEndLine <= Tolerance)));
 end;
 
 function TCutView.CanApplyFadeOut: Boolean;
+var
+  Tolerance: Cardinal;
 begin
+  if FWaveData <> nil then
+    Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5);
   Result := (FWaveData <> nil) and
             (LowerCase(ExtractFileExt(FFilename)) = '.mp3') and
             (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
-            (((FPB.FEffectStartLine >= High(FWaveData.WaveArray) - 5) or (FPB.FEffectEndLine >= High(FWaveData.WaveArray) - 5)));
+            (((FPB.FEffectStartLine >= Tolerance) or (FPB.FEffectEndLine >= Tolerance)));
 end;
 
 function TCutView.CanApplyEffects: Boolean;
@@ -1195,7 +1192,7 @@ procedure TCutPaintBox.BuildDrawBuffer;
     SecText: string;
   begin
     L := Trunc(((ArrayIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FDrawBuf.Width);
-    SecText := BuildTime(FCutView.FWaveData.WaveArray[ArrayIdx].Sec); // - FCutView.FWaveData.WaveArray[FCutView.FWaveData.ZoomStart].Sec);
+    SecText := BuildTime(FCutView.FWaveData.WaveArray[ArrayIdx].Sec);
     FDrawBuf.Canvas.Font.Color := clWhite;
     SetBkMode(FDrawBuf.Canvas.Handle, TRANSPARENT);
     TS := GetTextSize(SecText, Canvas.Font);
@@ -1304,11 +1301,6 @@ begin
     begin
       if Button <> nil then
         SetLine(X, Button^, mmMove);
-
-{      if ssLeft in Shift then
-        SetLine(X, mbLeft, mmMove)
-      else if ssRight in Shift then
-        SetLine(X, mbRight, mmMove);}
     end;
     FMouseOldX := X;
     FMouseOldY := Y;
@@ -1445,6 +1437,9 @@ begin
 
         if (Button = mbLeft) and (Mode = mmUp) then
         begin
+          if FZoomStartLine = FZoomEndLine then
+            Exit;
+
           if FZoomStartLine > FZoomEndLine then
           begin
             Swap := FZoomStartLine;
@@ -1466,6 +1461,9 @@ begin
           FZoomStartLine := High(Cardinal);
           FZoomEndLine := High(Cardinal);
           FDoZoom := True;
+
+
+          // TODO: Wir schneiden. Danach nehmen wir das Zoom-Tool. Wir zoomen heraus. Dann bitte "Schneiden"-Knopf wieder aktivieren!
         end;
 
         BuildBuffer;
@@ -1490,25 +1488,6 @@ begin
 
   if Assigned(FCutView.FOnStateChanged) then
     FCutView.FOnStateChanged(FCutView);
-
-  begin
-    {
-    P := BASSChannelGetPosition(FCutView.FPlayer, BASS_POS_BYTE);
-    if (FCutView.FWaveData.WaveArray[FStartLine].Pos > P) or
-       (FCutView.FWaveData.WaveArray[FEndLine].Pos < P) then
-    begin
-      BASSChannelStop(FCutView.FPlayer);
-    end else
-    begin
-      if not IsStart then
-      begin
-        if FCutView.FSync > 0 then
-          BASSChannelRemoveSync(FCutView.FPlayer, FCutView.FSync);
-        FCutView.FSync := BASSChannelSetSync(FCutView.FPlayer, BASS_SYNC_POS or BASS_SYNC_MIXTIME, FCutView.FWaveData.WaveArray[FEndLine].Pos, LoopSyncProc, FCutView);
-      end;
-    end;
-    }
-  end;
 
   BuildDrawBuffer;
   Paint;
@@ -1539,7 +1518,6 @@ begin
     end else
     begin
       DiffX := Trunc(((X - FMouseMoveStartX) * High(FCutView.FWaveData.WaveArray)) / (FWaveBuf.Width - 6));
-//      OutputDebugString(PWideChar(' DiffX: '+ IntToStr(DiffX)));
       StartX := FCutView.FWaveData.ZoomStart + Cardinal(DiffX);
       EndX := FCutView.FWaveData.ZoomEnd + Cardinal(DiffX);
       if StartX < 0 then
@@ -1574,18 +1552,7 @@ begin
   begin
     FPlayingIndex := GetPlayerPos;
     FPlayLine := FPlayingIndex;
-    {
-    if FCutStates.Count > 1 then
-    begin
-      LastCut := FCutStates[FCutStates.Count - 1];
-      P := BASSChannelGetPosition(FPlayer, BASS_POS_BYTE);
-      if (P < LastCut.CutStart + FStartLine) or
-         (P > LastCut.CutStart + FEndLine) then
-      begin
-        BASSChannelStop(FPlayer);
-      end;
-    end;
-    }
+
     BuildDrawBuffer;
     Paint;
   end;

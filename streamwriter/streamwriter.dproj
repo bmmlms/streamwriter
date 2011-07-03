@@ -163,7 +163,6 @@
 				<Form>frmNotification</Form>
 			</DCCReference>
 			<DCCReference Include="..\..\common\AdvancedRect.pas"/>
-			<DCCReference Include="..\..\common\MPageControl.pas"/>
 			<DCCReference Include="TypeDefs.pas"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>

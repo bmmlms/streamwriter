@@ -29,7 +29,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Top = 0
     Width = 689
     Height = 25
-    GradientEndColor = 11319229
     Images = imgImages
     Indent = 2
     ParentShowHint = False

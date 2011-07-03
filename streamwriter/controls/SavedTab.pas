@@ -1249,7 +1249,8 @@ begin
     IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + Text) then
   begin
     NodeData.Track.Filename := IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + Text;
-  end;
+  end else
+    MsgBox(GetParentForm(Self).Handle, _('The file could not be renamed. Make sure that it is not in use.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TSavedTree.DoTextDrawing(var PaintInfo: TVTPaintInfo;
