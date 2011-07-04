@@ -800,7 +800,7 @@ begin
     // Synchronisieren
     for Entry in FDataLists.BrowserList do
       for Entry2 in NewList do
-        if (Entry.ID = Entry2.ID) or (LowerCase(Entry.Name) = LowerCase(Entry2.Name)) then
+        if (Entry.ID = Entry2.ID) then
         begin
           Entry2.OwnRating := Entry.OwnRating;
         end;
