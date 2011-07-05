@@ -294,7 +294,7 @@ begin
   XMLDocument := FClient.XMLGet('rebuildindex');
   try
     XMLDocument.SaveToString(XML);
-    FClient.Write(XML);
+    FClient.Write(ZCompressStr(XML));
   finally
     XMLDocument.Free;
   end;

@@ -712,8 +712,14 @@ begin
     raise Exception.Create('');
 
   if (Action <> oaNone) and (Length(Streams) > 0) then
+  begin
     if Assigned(FOnAction) then
       FOnAction(Self, Action, Streams);
+  end else if Action = oaRefresh then
+  begin
+    if Assigned(FOnAction) then
+      FOnAction(Self, Action, Streams);
+  end;
 end;
 
 procedure TMStreamTree.PopupMenuPopup(Sender: TObject);
@@ -1034,7 +1040,12 @@ end;
 procedure TMStreamBrowserView.BuildGenres;
 var
   i: Integer;
+  LastGenre: string;
 begin
+  LastGenre := '';
+  if FSearch.FGenreList.ItemIndex > -1 then
+    LastGenre := FSearch.FGenreList.Text;
+
   FSearch.FGenreList.Clear;
   FSearch.FGenreList.Items.Add(_('- No genre -'));
   for i := 0 to FDataLists.GenreList.Count - 1 do
@@ -1042,6 +1053,13 @@ begin
   if FSearch.FGenreList.Items.Count > 0 then
     FSearch.FGenreList.ItemIndex := 0;
   FSearch.FGenreList.Sorted := True;
+
+  for i := 0 to FSearch.FGenreList.Items.Count - 1 do
+    if FSearch.FGenreList.Items[i] = LastGenre then
+    begin
+      FSearch.FGenreList.ItemIndex := i;
+      Break;
+    end;
 end;
 
 procedure TMStreamBrowserView.BuildTree(AlwaysBuild: Boolean);
@@ -1159,8 +1177,8 @@ procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject);
 var
   i: Integer;
 begin
-  BuildTree(True);
   BuildGenres;
+  BuildTree(True);
 
   SwitchMode(moShow);
 end;
@@ -1208,8 +1226,8 @@ begin
 
   if (FDataLists.BrowserList.Count > 0) and (FDataLists.GenreList.Count > 0) then
   begin
-    BuildTree(True);
     BuildGenres;
+    BuildTree(True);
     SwitchMode(moShow);
   end;
 end;
