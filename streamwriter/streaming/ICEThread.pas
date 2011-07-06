@@ -163,7 +163,7 @@ begin
         // Unbekannte Daten (kein MP3/AAC) - ende.
         FPlayingStarted := False;
         FPlaying := False;
-        WriteDebug(_('Stream cannot be played because data is not mpeg/aac/ogg'), 3, 0);
+        WriteDebug(_('Stream cannot be played because format is unknown'), 3, 0);
       end;
     finally
       FPlayBufferLock.Leave;
@@ -249,7 +249,7 @@ begin
       // Unbekannte Daten (kein MP3/AAC) - Ende.
       FPlayingStarted := False;
       FPlaying := False;
-      WriteDebug(_('Stream cannot be played because data is not mpeg/aac/ogg'), 3, 0);
+      WriteDebug(_('Stream cannot be played because format is unknown'), 3, 0);
 
       Sync(FOnStateChanged);
     end;

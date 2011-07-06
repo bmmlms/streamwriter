@@ -83,15 +83,32 @@ function BASSRead(buffer: Pointer; length: DWORD; user: Pointer): DWORD; stdcall
 var
   Mem: TExtendedStream;
   CopyLen: Cardinal;
+  Tries: Integer;
 begin
-  SetThreadPriority(GetCurrentThread, THREAD_PRIORITY_TIME_CRITICAL);
-
+  Tries := 0;
   Result := 0;
-  // Funktion muss schnell sein, also wenn Lock nicht offen, raus.
-  if not TICEPlayer(user).FLock.TryEnter then
-    Exit;
+
+  while not TICEPlayer(user).FLock.TryEnter do
+  begin
+    Inc(Tries);
+    Sleep(10);
+
+    if Tries > 20 then
+      Exit;
+  end;
+
   try
     Mem := TICEPlayer(user).FMem;
+
+    Tries := 0;
+    while Mem.Size = 0 do
+    begin
+      Inc(Tries);
+      Sleep(10);
+
+      if Tries > 100 then
+        Exit;
+    end;
 
     CopyLen := Mem.Size;
     if Length < CopyLen then
@@ -142,11 +159,8 @@ begin
 end;
 
 function TICEPlayer.FGetPaused: Boolean;
-var
-  State: Cardinal;
 begin
-  State := BASSChannelIsActive(FPlayer);
-  Result := (FPlayer > 0) and ((State = BASS_ACTIVE_PAUSED) or FPausing);
+  Result := (FPlayer > 0) and ((BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PAUSED) or FPausing);
 end;
 
 procedure TICEPlayer.Play;
@@ -166,18 +180,20 @@ begin
     Funcs.seek := BASSSeek;
     Funcs.read := BASSRead;
 
-    if FPlayer = 0 then
-      FPlayer := BASSStreamCreateFileUser(STREAMFILE_BUFFER, 0, Funcs, Self);
+    if FPlayer > 0 then
+      BASSStreamFree(FPlayer);
+    FPlayer := BASSStreamCreateFileUser(STREAMFILE_BUFFER, 0, Funcs, Self);
 
     SetVolume(AppGlobals.PlayerVolume);
 
     BASSChannelPlay(FPlayer, False);
+
     R := BASSErrorGetCode;
 
     if R <> 0 then
     begin
       BASSStreamFree(FPlayer);
-      FPlayer := BASSStreamCreateFileUser(STREAMFILE_BUFFER, 0, Funcs, Self);
+      FPlayer := 0;
     end;
   end;
 end;
@@ -233,38 +249,40 @@ const
   MAX_BUFFER_SIZE = 1048576;
 begin
   FLock.Enter;
-  FMem.Seek(0, soFromEnd);
-  FMem.Write(Buf^, Len);
+  try
+    FMem.Seek(0, soFromEnd);
+    FMem.Write(Buf^, Len);
 
-  while FMem.Size > MAX_BUFFER_SIZE do
-  begin
-    // Puffer "rotieren"
-    FMem.RemoveRange(0, 65536);
-  end;
-
-  if FMem.Size < 8192 then
-    Exit;
-
-  if (not Playing) and (not Paused) then
-  begin
-    TempPlayer := BASSStreamCreateFile(True, FMem.Memory, 0, FMem.Size, BASS_STREAM_DECODE);
-    if TempPlayer = 0 then
-      raise Exception.Create('');
-    try
-      BASSChannelSetPosition(TempPlayer, FMem.Size, BASS_POS_BYTE);
-      Time := BASSChannelBytes2Seconds(TempPlayer, BASSChannelGetLength(TempPlayer, BASS_POS_BYTE));
-      BufLen := BASSStreamGetFilePosition(TempPlayer, BASS_FILEPOS_END);
-      if BufLen = -1 then
-        raise Exception.Create('');
-      BitRate := Trunc(BufLen / (125 * Time) + 0.5);
-
-      FPlayStartBuffer := BitRate * 1100;
-    finally
-      BASSStreamFree(TempPlayer);
+    while FMem.Size > MAX_BUFFER_SIZE do
+    begin
+      // Puffer "rotieren"
+      FMem.RemoveRange(0, 65536);
     end;
-  end;
 
-  FLock.Leave;
+    if FMem.Size < 8192 then
+      Exit;
+
+    if (not Playing) and (not Paused) then
+    begin
+      TempPlayer := BASSStreamCreateFile(True, FMem.Memory, 0, FMem.Size, BASS_STREAM_DECODE);
+      if TempPlayer = 0 then
+        raise Exception.Create('');
+      try
+        BASSChannelSetPosition(TempPlayer, FMem.Size, BASS_POS_BYTE);
+        Time := BASSChannelBytes2Seconds(TempPlayer, BASSChannelGetLength(TempPlayer, BASS_POS_BYTE));
+        BufLen := BASSStreamGetFilePosition(TempPlayer, BASS_FILEPOS_END);
+        if BufLen = -1 then
+          raise Exception.Create('');
+        BitRate := Trunc(BufLen / (125 * Time) + 0.5);
+
+        FPlayStartBuffer := BitRate * 1100;
+      finally
+        BASSStreamFree(TempPlayer);
+      end;
+    end;
+  finally
+    FLock.Leave;
+  end;
 end;
 
 end.
