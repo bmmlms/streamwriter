@@ -24,12 +24,9 @@ object frmWizard: TfrmWizard
     Height = 233
     BevelOuter = bvNone
     TabOrder = 0
-    DesignSize = (
-      389
-      233)
     object cmdBrowse: TSpeedButton
       Left = 308
-      Top = 56
+      Top = 16
       Width = 21
       Height = 21
       Hint = 'Browse...'
@@ -66,20 +63,9 @@ object frmWizard: TfrmWizard
       ShowHint = True
       OnClick = cmdBrowseClick
     end
-    object lblDir: TLabel
-      Left = 8
-      Top = 4
-      Width = 377
-      Height = 41
-      Anchors = [akLeft, akTop, akRight]
-      AutoSize = False
-      Caption = 'Please select a folder where songs will be saved.'
-      WordWrap = True
-      ExplicitWidth = 381
-    end
     object txtDir: TLabeledEdit
       Left = 8
-      Top = 56
+      Top = 16
       Width = 293
       Height = 21
       AutoSize = False
@@ -98,39 +84,25 @@ object frmWizard: TfrmWizard
     Height = 233
     BevelOuter = bvNone
     TabOrder = 1
-    DesignSize = (
-      389
-      233)
-    object Label1: TLabel
-      Left = 8
-      Top = 4
-      Width = 377
-      Height = 41
-      Anchors = [akLeft, akTop, akRight]
-      AutoSize = False
-      Caption = 'Please choose whether to limit bandwidth used by streamWriter.'
-      WordWrap = True
-      ExplicitWidth = 381
-    end
     object Label2: TLabel
       Left = 80
-      Top = 80
+      Top = 44
       Width = 21
       Height = 13
       Caption = 'KB/s'
     end
     object chkLimit: TCheckBox
       Left = 8
-      Top = 36
+      Top = 0
       Width = 281
-      Height = 25
+      Height = 21
       Caption = 'Limit bandwidth for automated recordings'
       TabOrder = 0
       OnClick = chkLimitClick
     end
     object txtMaxSpeed: TLabeledEdit
       Left = 24
-      Top = 76
+      Top = 40
       Width = 53
       Height = 21
       EditLabel.Width = 225

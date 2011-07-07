@@ -39,9 +39,7 @@ type
     pnlDir: TPanel;
     cmdBrowse: TSpeedButton;
     txtDir: TLabeledEdit;
-    lblDir: TLabel;
     pnlBandwidth: TPanel;
-    Label1: TLabel;
     chkLimit: TCheckBox;
     txtMaxSpeed: TLabeledEdit;
     Label2: TLabel;
@@ -78,21 +76,17 @@ begin
 
   if Step.Panel = pnlDir then
   begin
-    {            TODO: !!!
     if (AppGlobals.Dir <> '') and DirectoryExists(AppGlobals.Dir) then
       txtDir.Text := IncludeTrailingBackslash(AppGlobals.Dir)
     else
     begin
-    }
       s := GetShellFolder(CSIDL_MYMUSIC);
       if (Trim(s) <> '') then
       begin
         s := IncludeTrailingPathDelimiter(s) + 'streamWriter\';
         txtDir.Text := s;
       end;
-    {
     end;
-    }
   end else
   begin
     chkLimit.Checked := AppGlobals.LimitSpeed;
@@ -115,10 +109,7 @@ begin
     except
     end;
 
-    if DirectoryExists(txtDir.Text) then
-    begin
-      AppGlobals.Dir := txtDir.Text;
-    end else
+    if not DirectoryExists(txtDir.Text) then
     begin
       MsgBox(Handle, _('The selected folder does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
       Result := False;
@@ -138,7 +129,9 @@ procedure TfrmWizard.RegisterSteps;
 begin
   inherited;
   FStepList.Add(TStepDir.Create('Select folder', pnlDir));
+  FStepList[FStepList.Count - 1].Description := _('Please select a folder where songs will be saved.');
   FStepList.Add(TStepDir.Create('Limit bandwidth', pnlBandwidth));
+  FStepList[FStepList.Count - 1].Description := _('Please choose whether to limit bandwidth used by streamWriter.');
 end;
 
 procedure TfrmWizard.chkLimitClick(Sender: TObject);

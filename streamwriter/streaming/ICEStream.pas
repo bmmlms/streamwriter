@@ -370,8 +370,8 @@ begin
         FAudioType := atMPEG
       else if LowerCase(ContentType) = 'audio/aacp' then
         FAudioType := atAAC
-      else if LowerCase(ContentType) = 'application/ogg' then
-        FAudioType := atOGG
+      //else if LowerCase(ContentType) = 'application/ogg' then
+      //  FAudioType := atOGG
       else
         raise Exception.Create(_('Unknown content-type'));
 

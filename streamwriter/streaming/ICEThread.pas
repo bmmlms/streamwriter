@@ -54,6 +54,8 @@ type
     FPlayBufferLock: TCriticalSection;
     FPlayBuffer: TAudioStreamMemory;
 
+    function FGetPaused: Boolean;
+
     procedure StartRecordingInternal;
     procedure StopRecordingInternal;
     procedure StartPlayInternal;
@@ -101,7 +103,7 @@ type
 
     property Recording: Boolean read FRecordingStarted;
     property Playing: Boolean read FPlayingStarted;
-    property Paused: Boolean read FPaused;
+    property Paused: Boolean read FGetPaused;
     property SleepTime: Integer read FSleepTime write FSleepTime;
 
     property OnTitleChanged: TSocketEvent read FOnTitleChanged write FOnTitleChanged;
@@ -451,6 +453,11 @@ procedure TICEThread.Execute;
 begin
   inherited;
 
+end;
+
+function TICEThread.FGetPaused: Boolean;
+begin
+  Result := FPaused or FPlayingPaused;
 end;
 
 procedure TICEThread.LockRelay;

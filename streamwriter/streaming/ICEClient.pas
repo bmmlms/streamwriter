@@ -761,7 +761,7 @@ begin
         atAAC:
           Format := 'aac';
         atOGG:
-          Format := 'ogg'; // TODO: Der Server muss OGG auch kennen! die scripte halt und so..
+          Format := 'ogg';
         else
           raise Exception.Create('');
       end;

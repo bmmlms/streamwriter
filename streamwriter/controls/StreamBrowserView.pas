@@ -29,7 +29,7 @@ uses
   DataManager, TypeDefs;
 
 type
-  TModes = (moShow, moLoading, moError, moOldVersion);
+  TModes = (moShow, moLoading, moOldVersion);
 
   TMStreamTree = class;
 
@@ -62,7 +62,6 @@ type
   TMLoadingPanel = class(TPanel)
   private
     FLabel: TLabel;
-    FBtnRetry: TButton;
     FDots: string;
     FTimer: TTimer;
     procedure TimerOnTimer(Sender: TObject);
@@ -115,7 +114,6 @@ type
     procedure ListsChange(Sender: TObject);
     procedure SearchEditKeyPress(Sender: TObject; var Key: Char);
     procedure SearchButtonClick(Sender: TObject);
-    procedure BtnRetryClick(Sender: TObject);
     procedure SortItemClick(Sender: TObject);
 
     procedure SwitchMode(Mode: TModes);
@@ -1031,12 +1029,6 @@ end;
 
 { TMStreamView }
 
-procedure TMStreamBrowserView.BtnRetryClick(Sender: TObject); // TODO: Den Button hier mal testen. wo ist der, wann kommt der??
-begin
-  SwitchMode(moLoading);
-  FHomeCommunication.GetStreams;
-end;
-
 procedure TMStreamBrowserView.BuildGenres;
 var
   i: Integer;
@@ -1142,8 +1134,6 @@ begin
   FLoadingPanel.Align := alClient;
   FLoadingPanel.Parent := Self;
   FLoadingPanel.Visible := False;
-
-  FLoadingPanel.FBtnRetry.OnClick := BtnRetryClick;
 end;
 
 destructor TMStreamBrowserView.Destroy;
@@ -1312,16 +1302,10 @@ begin
     FLoadingPanel.FLabel.Caption := _('Loading streams');
     FLoadingPanel.FDots := '';
     FLoadingPanel.FTimer.Enabled := True;
-    FLoadingPanel.FBtnRetry.Visible := False;
     FLoading := True;
-  end else if Mode = moError then
-  begin
-    FLoadingPanel.FLabel.Caption := _('Error loading streams.');
-    FLoadingPanel.FBtnRetry.Visible := True;
   end else if Mode = moOldVersion then
   begin
     FLoadingPanel.FLabel.Caption := _('Error loading streams.'#13#10'Please update your version of streamWriter.');
-    FLoadingPanel.FBtnRetry.Visible := False;
   end;
 
   if Mode <> moLoading then
@@ -1540,11 +1524,6 @@ begin
   FLabel.Visible := True;
   FLabel.Alignment := taCenter;
 
-  FBtnRetry := TButton.Create(Self);
-  FBtnRetry.Parent := Self;
-  FBtnRetry.Visible := True;
-  FBtnRetry.Caption := _('Retry');
-
   FDots := '';
   FTimer := TTimer.Create(Self);
   FTimer.OnTimer := TimerOnTimer;
@@ -1558,9 +1537,6 @@ begin
 
   FLabel.Left := ClientWidth div 2 - FLabel.Width div 2;
   FLabel.Top := ClientHeight div 2 - FLabel.Height;
-
-  FBtnRetry.Left := ClientWidth div 2 - FBtnRetry.Width div 2;
-  FBtnRetry.Top := FLabel.Top + FLabel.Height + 8;
 end;
 
 procedure TMLoadingPanel.TimerOnTimer(Sender: TObject);
