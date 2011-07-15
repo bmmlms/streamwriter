@@ -107,9 +107,12 @@ type
 
   THomeCommunication = class
   private
+    FLastUpdateXML: string;
     FClient: THomeThread;
     FConnected: Boolean;
+    FWasConnected: Boolean;
     FAuthenticated: Boolean;
+    FTitleNotificationsEnabled: Boolean;
     FIsAdmin: Boolean;
     FDataLists: TDataLists;
 
@@ -141,17 +144,19 @@ type
     procedure LogOff;
     procedure TitleChanged(StreamName, Title, CurrentURL, URL, Format: string; Kbps: Cardinal; URLs: TStringList);
     procedure SendClientInfo;
-    procedure UpdateStats(RecordingCount: Cardinal);
+    procedure UpdateStats(List: TList<Cardinal>; RecordingCount: Cardinal);
     procedure RateStream(ID, Rating: Integer);
     procedure SetData(ID: Integer; RecordingOkay: Boolean; RegEx: string); overload;
     procedure SetData(ID: Integer; RecordingOkay: Boolean); overload;
     procedure SetData(ID: Integer; RegEx: string); overload;
+    procedure SetTitleNotifications(Enable: Boolean);
     procedure RebuildIndex;
 
     procedure Terminate;
 
     property DataLists: TDataLists read FDataLists write FDataLists;
     property Connected: Boolean read FConnected;
+    property WasConnected: Boolean read FWasConnected;
     property Authenticated: Boolean read FAuthenticated;
     property IsAdmin: Boolean read FIsAdmin;
     property OnStreamsReceived: TNotifyEvent read FOnStreamsReceived write FOnStreamsReceived;
@@ -226,7 +231,8 @@ end;
 
 constructor THomeCommunication.Create;
 begin
-
+  FLastUpdateXML := '';
+  FTitleNotificationsEnabled := False;
 end;
 
 destructor THomeCommunication.Destroy;
@@ -325,6 +331,10 @@ begin
     Node.Name := 'compression';
     Node.Value.AsBoolean := True;
 
+    Node := TXmlNode.Create(Data);
+    Node.Name := 'protoversion';
+    Node.Value.AsInteger := 2;
+
     XMLDocument.SaveToString(XML);
     FClient.Write(XML);
   finally
@@ -421,6 +431,36 @@ begin
   end;
 end;
 
+procedure THomeCommunication.SetTitleNotifications(Enable: Boolean);
+var
+  XMLDocument: TXMLLib;
+  Data, Header, Node: TXMLNode;
+  Attr: TXMLAttribute;
+  XML: AnsiString;
+begin
+  if not Connected then
+    Exit;
+
+  if Enable = FTitleNotificationsEnabled then
+    Exit;
+
+  FTitleNotificationsEnabled := Enable;
+
+  XMLDocument := FClient.XMLGet('settitlenotifications');
+  try
+    Data := XMLDocument.Root.GetNode('data');
+
+    Attr := Data.Attributes.Add;
+    Attr.Name := 'enable';
+    Attr.Value.AsBoolean := Enable;
+
+    XMLDocument.SaveToString(XML);
+    FClient.Write(ZCompressStr(XML));
+  finally
+    XMLDocument.Free;
+  end;
+end;
+
 procedure THomeCommunication.SubmitStream(Stream: string);
 var
   XMLDocument: TXMLLib;
@@ -495,8 +535,10 @@ begin
   if AppGlobals.UserWasSetup and (AppGlobals.User <> '') and (AppGlobals.Pass <> '') then
     LogOn(AppGlobals.User, AppGlobals.Pass);
 
+  FWasConnected := False;
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
+  FWasConnected := True;
 end;
 
 procedure THomeCommunication.ClientEnded(Sender: TSocketThread);
@@ -601,8 +643,9 @@ begin
   end;
 end;
 
-procedure THomeCommunication.UpdateStats(RecordingCount: Cardinal);
+procedure THomeCommunication.UpdateStats(List: TList<Cardinal>; RecordingCount: Cardinal);
 var
+  i: Integer;
   XMLDocument: TXMLLib;
   Data, Data2: TXMLNode;
   XML: AnsiString;
@@ -612,13 +655,25 @@ begin
 
   XMLDocument := FClient.XMLGet('updatestats');
   try
+    XMLDocument.Root.GetNode('header').Attributes.AttributeByName['version'].Value.AsString := '2';
+
     Data := XMLDocument.Root.GetNode('data');
+
+    for i := 0 to List.Count - 1 do
+    begin
+      Data2 := TXMLNode.Create(Data);
+      Data2.Name := 'stream';
+      Data2.Value.AsLongWord := List[i];
+    end;
+
     Data2 := TXMLNode.Create(Data);
-    Data2.Name := 'recordingcount';
+    Data2.Name := 'unknowncount';
     Data2.Value.AsLongWord := RecordingCount;
 
     XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
+    if FLastUpdateXML <> XML then
+      FClient.Write(ZCompressStr(XML));
+    FLastUpdateXML := XML;
   finally
     XMLDocument.Free;
   end;
@@ -640,8 +695,8 @@ end;
 constructor THomeThread.Create(DataLists: TDataLists);
 begin
   {$IFDEF DEBUG}
-  inherited Create('gaia', 8007);
-  //inherited Create('streamwriter.org', 8007);
+  //inherited Create('gaia', 8007);     // TODO: Nochmal das auto recording durchtesten... klappt das immer? auch nach neuer installation???
+  inherited Create('streamwriter.org', 8007);
   {$ELSE}
   inherited Create('streamwriter.org', 8007);
   {$ENDIF}

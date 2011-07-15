@@ -90,7 +90,7 @@ type
     function GetEnumerator: TClientEnum;
 
     function AddClient(URL: string): TICEClient; overload;
-    function AddClient(Name, StartURL: string; IsAuto: Boolean = False): TICEClient; overload;
+    function AddClient(ID: Cardinal; Name, StartURL: string; IsAuto: Boolean = False): TICEClient; overload;
     function AddClient(Entry: TStreamEntry): TICEClient; overload;
     procedure RemoveClient(Client: TICEClient);
     procedure Terminate;
@@ -131,11 +131,11 @@ begin
   Result := C;
 end;
 
-function TClientManager.AddClient(Name, StartURL: string; IsAuto: Boolean = False): TICEClient;
+function TClientManager.AddClient(ID: Cardinal; Name, StartURL: string; IsAuto: Boolean = False): TICEClient;
 var
   C: TICEClient;
 begin
-  C := TICEClient.Create(Self, Name, StartURL);
+  C := TICEClient.Create(Self, ID, Name, StartURL);
   // Ist hier, damit das ClientView das direkt weiﬂ und passig in die Kategorie packt
   if IsAuto then
     C.AutoRemove := True;
@@ -341,7 +341,7 @@ begin
       Client := GetClient(StreamName, CurrentURL, Title, nil);
       if (Client = nil) or ((Client <> nil) and not Client.AutoRemove and (Client.RecordTitle <> Title)) then
       begin
-        Client := AddClient(StreamName, CurrentURL, True);
+        Client := AddClient(0, StreamName, CurrentURL, True);
         Client.Entry.Settings.Filter := ufNone;
         Client.Entry.Settings.SaveToMemory := True;
         Client.Entry.Settings.SeparateTracks := True;

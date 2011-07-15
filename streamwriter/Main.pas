@@ -32,7 +32,7 @@ uses
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
-  PlayerManager, Logging, Timers, Notifications;
+  PlayerManager, Logging, Timers, Notifications, Generics.Collections;
 
 type
   TSWStatusBar = class(TStatusBar)
@@ -224,7 +224,7 @@ type
   private
     FCommunityLogin: TfrmCommunityLogin;
 
-    FStreams: TDataLists;
+    FDataLists: TDataLists;
     FUpdater: TUpdateClient;
     FUpdateOnExit: Boolean;
 
@@ -339,9 +339,14 @@ begin
 
   TfrmNotification.Stop;
 
-  HomeComm.Terminate; // TODO: Auf den muss u.U. gewartet werden, denn er könnte die DataList.BrowserList modifizieren, die noch gespeichert wird. vorsicht!!
-
   Hide;
+
+  HomeComm.Terminate;
+  while HomeComm.Connected do
+  begin
+    Sleep(100);
+    Application.ProcessMessages;
+  end;
 
   Players.StopAll;
 
@@ -358,8 +363,8 @@ begin
   while not Saved do
   begin
     try
-      tabClients.UpdateStreams(FStreams);
-      FStreams.Save;
+      tabClients.UpdateStreams(FDataLists);
+      FDataLists.Save;
       Break;
     except
       if not Shutdown then
@@ -550,7 +555,7 @@ begin
   HomeComm.OnStateChanged := HomeCommStateChanged;
   HomeComm.OnServerInfo := HomeCommServerInfo;
   HomeComm.OnError := HomeCommError;
-  HomeComm.DataLists := FStreams;
+  HomeComm.DataLists := FDataLists;
   HomeComm.Connect;
 end;
 
@@ -578,8 +583,8 @@ begin
   addStatus := TSWStatusBar.Create(Self);
   addStatus.Parent := Self;
 
-  FStreams := TDataLists.Create;
-  FClients := TClientManager.Create(FStreams);
+  FDataLists := TDataLists.Create;
+  FClients := TClientManager.Create(FDataLists);
 
   pagMain := TMainPageControl.Create(Self);
   pagMain.Parent := Self;
@@ -590,7 +595,7 @@ begin
   tabClients := TClientTab.Create(pagMain);
   tabClients.PageControl := pagMain;
   tabClients.Setup(tbClients, ActionList1, mnuStreamPopup, imgImages, imgClients,
-    FClients, FStreams);
+    FClients, FDataLists);
   tabClients.SideBar.BrowserView.StreamTree.Images := imgImages;
   tabClients.AddressBar.Stations.Images := imgImages;
   tabClients.SideBar.DebugView.DebugView.DebugView.Images := imgLog;
@@ -620,30 +625,30 @@ begin
   FUpdateOnExit := False;
 
   try
-    FStreams.Load;
+    FDataLists.Load;
   except
     on E: Exception do
     begin
       try
-        FStreams.Free;
+        FDataLists.Free;
       except end;
-      FStreams := TDataLists.Create;
+      FDataLists := TDataLists.Create;
       // Damit beim beenden nichts überschrieben wird.
-      FStreams.LoadError := True;
+      FDataLists.LoadError := True;
 
       if HandleLoadError(E) = IDYES then
       begin
         DeleteFile(E.Message);
-        FStreams.LoadError := False;
+        FDataLists.LoadError := False;
       end;
     end;
   end;
 
-  tabClients.AddressBar.Stations.BuildList(FStreams.RecentList);
-  tabClients.BuildTree(FStreams);
+  tabClients.AddressBar.Stations.BuildList(FDataLists.RecentList);
+  tabClients.BuildTree(FDataLists);
 
   // Ist hier unten, weil hier erst Tracks geladen wurden
-  tabSaved.Setup(FStreams, imgImages);
+  tabSaved.Setup(FDataLists, imgImages);
   tabClients.AddressBar.Stations.Sort;
 
   {$IFDEF DEBUG}Caption := Caption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
@@ -677,7 +682,7 @@ procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
 begin
   FreeAndNil(FClients);
   FreeAndNil(FUpdater);
-  FreeAndNil(FStreams);
+  FreeAndNil(FDataLists);
 end;
 
 procedure TfrmStreamWriterMain.FormKeyDown(Sender: TObject; var Key: Word;
@@ -707,7 +712,7 @@ begin
   FWasMaximized := WindowState = wsMaximized;
 
   tabClients.Shown;
-  tabLists.Setup(FStreams, imgImages);
+  tabLists.Setup(FDataLists, imgImages);
 
   actShowSideBar.Checked := tabClients.SideBar.Visible;
 
@@ -767,6 +772,11 @@ begin
   tabClients.SideBar.BrowserView.HomeCommStateChanged(Sender);
   if FCommunityLogin <> nil then
     FCommunityLogin.HomeCommStateChanged(Sender);
+
+  if HomeComm.Connected and (not HomeComm.WasConnected) and AppGlobals.AutoTuneIn then
+  begin
+    HomeComm.SetTitleNotifications(FDataLists.SaveList.Count > 0);
+  end;
 end;
 
 procedure TfrmStreamWriterMain.Hotkey(var Msg: TWMHotKey);
@@ -1106,11 +1116,19 @@ var
   NodeData: PClientNodeData;
 begin
   RegisterHotkeys(False);
-  S := TfrmSettings.Create(Self, FStreams, BrowseDir, BrowseAutoDir);
+  S := TfrmSettings.Create(Self, FDataLists, BrowseDir, BrowseAutoDir);
   try
     S.ShowModal;
   finally
     S.Free;
+  end;
+
+  if HomeComm.Connected then
+  begin
+    if AppGlobals.AutoTuneIn then
+      HomeComm.SetTitleNotifications(FDataLists.SaveList.Count > 0)
+    else
+      HomeComm.SetTitleNotifications(False);
   end;
 
   Language.Translate(Self, PreTranslate, PostTranslate);
@@ -1249,8 +1267,8 @@ begin
 
   Files := TList.Create;
   try
-    for i := 0 to FStreams.TrackList.Count - 1 do
-      Files.Add(TFileEntry.Create(FStreams.TrackList[i].Filename, FStreams.TrackList[i].Filesize, eaNone));
+    for i := 0 to FDataLists.TrackList.Count - 1 do
+      Files.Add(TFileEntry.Create(FDataLists.TrackList[i].Filename, FDataLists.TrackList[i].Filesize, eaNone));
     FCheckFiles := TCheckFilesThread.Create(Files);
     FCheckFiles.OnTerminate := CheckFilesTerminate;
     FCheckFiles.Resume;
@@ -1279,7 +1297,7 @@ var
   Ignore: TTitleInfo;
 begin
   Ignore := TTitleInfo.Create(Data);
-  FStreams.IgnoreList.Add(Ignore);
+  FDataLists.IgnoreList.Add(Ignore);
   tabLists.AddIgnore(Ignore);
 end;
 
@@ -1324,15 +1342,15 @@ procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject; Filesize, Length: UI
 var
   i: Integer;
 begin
-  for i := 0 to FStreams.TrackList.Count - 1 do
-    if LowerCase(FStreams.TrackList[i].Filename) = LowerCase(TCutTab(Sender).Filename) then
+  for i := 0 to FDataLists.TrackList.Count - 1 do
+    if LowerCase(FDataLists.TrackList[i].Filename) = LowerCase(TCutTab(Sender).Filename) then
     begin
-      FStreams.TrackList[i].Filesize := Filesize;
-      FStreams.TrackList[i].Length := Length;
-      FStreams.TrackList[i].WasCut := True;
-      FStreams.TrackList[i].Time := Now;
+      FDataLists.TrackList[i].Filesize := Filesize;
+      FDataLists.TrackList[i].Length := Length;
+      FDataLists.TrackList[i].WasCut := True;
+      FDataLists.TrackList[i].Time := Now;
 
-      FStreams.TrackList[i].Finalized := True;
+      FDataLists.TrackList[i].Finalized := True;
       Exit;
     end;
 end;
@@ -1363,13 +1381,25 @@ procedure TfrmStreamWriterMain.tmrRecordingsTimer(Sender: TObject);
 var
   i: Integer;
   C: Cardinal;
+  L: TList<Cardinal>;
 begin
   C := 0;
-  for i := 0 to FClients.Count - 1 do
-    if FClients[i].Recording and not FClients[i].AutoRemove then
-      Inc(C);
-  if AppGlobals.SubmitStats then
-    HomeComm.UpdateStats(C);
+
+  L := TList<Cardinal>.Create;
+  try
+    for i := 0 to FClients.Count - 1 do
+      if FClients[i].Recording and not FClients[i].AutoRemove then
+      begin
+        if FClients[i].Entry.ID > 0 then
+          L.Add(FClients[i].Entry.ID)
+        else
+          Inc(C);
+      end;
+    if AppGlobals.SubmitStats then
+      HomeComm.UpdateStats(L, C);
+  finally
+    L.Free;
+  end;
 end;
 
 procedure TfrmStreamWriterMain.tmrScheduleTimer(Sender: TObject);
@@ -1427,7 +1457,7 @@ begin
   addStatus.Speed := Speed;
   addStatus.BuildSpeedBmp;
   addStatus.CurrentReceived := tabClients.Received;
-  addStatus.OverallReceived := FStreams.Received;
+  addStatus.OverallReceived := FDataLists.Received;
 
   UpdateStatus;
 
@@ -1675,17 +1705,17 @@ begin
       if E.Action = eaNone then
         Continue;
 
-      for n := 0 to FStreams.TrackList.Count - 1 do
-        if FStreams.TrackList[n].Filename = E.Filename then
+      for n := 0 to FDataLists.TrackList.Count - 1 do
+        if FDataLists.TrackList[n].Filename = E.Filename then
         begin
-          Track := FStreams.TrackList[n];
+          Track := FDataLists.TrackList[n];
           case E.Action of
             eaNone: ;
             eaSize:
               Track.Filesize := E.Size;
             eaRemove:
               begin
-                FStreams.TrackList.Delete(n);
+                FDataLists.TrackList.Delete(n);
                 tabSaved.Tree.RemoveTrack(Track);
                 Track.Free;
               end;

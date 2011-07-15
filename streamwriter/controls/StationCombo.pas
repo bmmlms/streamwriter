@@ -109,7 +109,7 @@ begin
     end;
   end;
 
-  Entry := TRecentEntry.Create(Name, URL, 0);
+  Entry := TRecentEntry.Create(0, Name, URL, 0);
   Result := ItemsEx.Add;
   Result.Caption := Name;
   Result.Data := Entry;

@@ -138,17 +138,19 @@ type
 
   TRecentEntry = class
   private
+    FID: Cardinal;
     FName: string;
     FStartURL: string;
     FIndex: Cardinal;
   public
-    constructor Create(Name, StartURL: string; Index: Cardinal);
+    constructor Create(ID: Cardinal; Name, StartURL: string; Index: Cardinal);
 
     procedure Assign(From: TRecentEntry);
     function Copy: TRecentEntry;
     class function Load(Stream: TExtendedStream; Version: Integer): TRecentEntry;
     procedure Save(Stream: TExtendedStream);
 
+    property ID: Cardinal read FID write FID;
     property Name: string read FName write FName;
     property StartURL: string read FStartURL write FStartURL;
     property Index: Cardinal read FIndex write FIndex;
@@ -215,6 +217,7 @@ type
 
     FParent: TStreamList;
 
+    FID: Cardinal;
     FName: string;
     FStreamURL: string;
     FStartURL: string;
@@ -250,6 +253,7 @@ type
     property Settings: TStreamSettings read FSettings;
 
     property Parent: TStreamList read FParent write FParent;
+    property ID: Cardinal read FID write FID;
     property Name: string read FName write FSetName;
     property StreamURL: string read FStreamURL write FStreamURL;
     property StartURL: string read FStartURL write FStartURL;
@@ -327,7 +331,7 @@ type
   end;
 
 const
-  DATAVERSION = 23;
+  DATAVERSION = 24;
 
 implementation
 
@@ -338,6 +342,7 @@ var
   i: Integer;
   S: TSchedule;
 begin
+  FID := From.FID;
   FName := From.FName;
   FStreamURL := From.FStreamURL;
   FStartURL := From.FStartURL;
@@ -371,6 +376,7 @@ constructor TStreamEntry.Create;
 begin
   FSettings := TStreamSettings.Create;
 
+  FID := 0;
   FParent := Parent;
   FURLs := TStringList.Create;
   FSongsSaved := 0;
@@ -423,6 +429,9 @@ begin
     // Defaults benutzen..
     Result.FSettings.Assign(AppGlobals.StreamSettings);
   end;
+
+  if Version >= 24 then
+    Stream.Read(Result.FID);
 
   Stream.Read(Result.FName);
   if Version >= 8 then
@@ -509,6 +518,7 @@ var
 begin
   FSettings.Save(Stream);
 
+  Stream.Write(FID);
   Stream.Write(FName);
   Stream.Write(FStreamURL);
   Stream.Write(FStartURL);
@@ -842,7 +852,7 @@ begin
           if Entry.FMigrationSubmitted then
             FSubmittedStreamList.Add(Entry.StartURL);
           if Entry.FMigrationRecentIndex > -1 then
-            FRecentList.Add(TRecentEntry.Create(Entry.Name, Entry.StartURL, Entry.FMigrationRecentIndex));
+            FRecentList.Add(TRecentEntry.Create(Entry.ID, Entry.Name, Entry.StartURL, Entry.FMigrationRecentIndex));
         end;
       end;
     except
@@ -1193,6 +1203,7 @@ end;
 
 procedure TRecentEntry.Assign(From: TRecentEntry);
 begin
+  FID := From.FID;
   FName := From.FName;
   FStartURL := From.FStartURL;
   FIndex := From.FIndex;
@@ -1200,13 +1211,14 @@ end;
 
 function TRecentEntry.Copy: TRecentEntry;
 begin
-  Result := TRecentEntry.Create(FName, FStartURL, FIndex);
+  Result := TRecentEntry.Create(FID, FName, FStartURL, FIndex);
 end;
 
-constructor TRecentEntry.Create(Name, StartURL: string; Index: Cardinal);
+constructor TRecentEntry.Create(ID: Cardinal; Name, StartURL: string; Index: Cardinal);
 begin
   inherited Create;
 
+  FID := ID;
   FName := Name;
   FStartURL := StartURL;
   FIndex := Index;
@@ -1215,7 +1227,9 @@ end;
 class function TRecentEntry.Load(Stream: TExtendedStream;
   Version: Integer): TRecentEntry;
 begin
-  Result := TRecentEntry.Create('', '', 0);
+  Result := TRecentEntry.Create(0, '', '', 0);
+  if Version >= 24 then
+    Stream.Read(Result.FID);
   Stream.Read(Result.FName);
   Stream.Read(Result.FStartURL);
   Stream.Read(Result.FIndex);
@@ -1223,6 +1237,7 @@ end;
 
 procedure TRecentEntry.Save(Stream: TExtendedStream);
 begin
+  Stream.Write(FID);
   Stream.Write(FName);
   Stream.Write(FStartURL);
   Stream.Write(FIndex);

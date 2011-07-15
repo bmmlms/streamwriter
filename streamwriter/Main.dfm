@@ -561,7 +561,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
   end
   object tmrRecordings: TTimer
-    Interval = 120000
+    Interval = 60000
     OnTimer = tmrRecordingsTimer
     Left = 108
     Top = 144

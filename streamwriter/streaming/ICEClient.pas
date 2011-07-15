@@ -131,7 +131,7 @@ type
     procedure PluginThreadTerminate(Sender: TObject);
   public
     constructor Create(Manager: TObject; StartURL: string); overload;
-    constructor Create(Manager: TObject; Name, StartURL: string); overload;
+    constructor Create(Manager: TObject; ID: Cardinal; Name, StartURL: string); overload;
     constructor Create(Manager: TObject; Entry: TStreamEntry); overload;
     destructor Destroy; override;
 
@@ -200,10 +200,11 @@ begin
   FEntry.StartURL := Trim(StartURL);
 end;
 
-constructor TICEClient.Create(Manager: TObject; Name, StartURL: string);
+constructor TICEClient.Create(Manager: TObject; ID: Cardinal; Name, StartURL: string);
 begin
   FManager := Manager;
   Initialize;
+  FEntry.ID := ID;
   FEntry.StartURL := Trim(StartURL);
   FEntry.Name := Trim(Name);
 end;

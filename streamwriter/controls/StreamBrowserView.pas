@@ -107,7 +107,6 @@ type
     FSelectedSortType: TSortTypes;
 
     FLoading: Boolean;
-    FWasConnected: Boolean;
 
     FHomeCommunication: THomeCommunication;
 
@@ -1143,12 +1142,11 @@ end;
 
 procedure TMStreamBrowserView.HomeCommStateChanged(Sender: TObject);
 begin
-  if (HomeComm.Connected <> FWasConnected) and HomeComm.Connected and
+  if HomeComm.Connected and (HomeComm.Connected <> HomeComm.WasConnected) and
      ((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) then
   begin
     FHomeCommunication.GetStreams;
   end;
-  FWasConnected := HomeComm.Connected;
 end;
 
 {

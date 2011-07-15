@@ -25,7 +25,7 @@ uses
   Windows, SysUtils, Messages, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls,
   Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, DataManager,
   ImgList, Functions, GUIFunctions, Menus, Math, DragDrop, DropComboTarget,
-  Dialogs, MsgDlg, Forms, Logging;
+  Dialogs, MsgDlg, Forms, Logging, AppData, HomeCommunication;
 
 type
   TTitleTree = class;
@@ -58,6 +58,7 @@ type
     FAddEdit: TEdit;
     FToolbar: TTitleToolbar;
     FTree: TTitleTree;
+    FLists: TDataLists;
     FList: TTitleList;
 
     procedure BuildTree;
@@ -70,7 +71,7 @@ type
     procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   public
-    procedure Setup(List: TTitleList; Images: TImageList; Title: string);
+    procedure Setup(Lists: TDataLists; List: TTitleList; Images: TImageList; Title: string);
   end;
 
   TListsTab = class(TMainTabSheet)
@@ -149,8 +150,8 @@ procedure TListsTab.Setup(Streams: TDataLists; Images: TImageList);
 begin
   Caption := 'Filters';
 
-  FWishPanel.Setup(Streams.SaveList, Images, 'Wishlist');
-  FIgnorePanel.Setup(Streams.IgnoreList, Images, 'Ignorelist');
+  FWishPanel.Setup(Streams, Streams.SaveList, Images, 'Wishlist');
+  FIgnorePanel.Setup(Streams, Streams.IgnoreList, Images, 'Ignorelist');
 
   FWishPanel.FTree.FType := 0;
   FIgnorePanel.FTree.FType := 1;
@@ -374,6 +375,11 @@ begin
     FList.Add(Title);
     FAddEdit.Text := '';
     FToolbar.FExport.Enabled := FTree.RootNodeCount > 0;
+
+    if (FList = FLists.SaveList) and AppGlobals.AutoTuneIn then
+    begin
+      HomeComm.SetTitleNotifications(FList.Count > 0);
+    end;
   end else
     MsgBox(Handle, _('Please enter a pattern to add to list.'), _('Info'), MB_ICONINFORMATION);
 end;
@@ -399,6 +405,11 @@ begin
       Node := FTree.GetPrevious(Node);
   end;
   FTree.EndUpdate;
+
+  if (FList = FLists.SaveList) and AppGlobals.AutoTuneIn then
+  begin
+    HomeComm.SetTitleNotifications(FList.Count > 0);
+  end;
 end;
 
 procedure TTitlePanel.ExportClick(Sender: TObject);
@@ -517,7 +528,7 @@ begin
   FTree.Header.SortDirection := sdAscending;
 end;
 
-procedure TTitlePanel.Setup(List: TTitleList; Images: TImageList; Title: string);
+procedure TTitlePanel.Setup(Lists: TDataLists; List: TTitleList; Images: TImageList; Title: string);
 var
   P: TPanel;
 begin
@@ -579,6 +590,7 @@ begin
   FTree.OnKeyDown := TreeKeyDown;
 
   FList := List;
+  FLists := Lists;
   BuildTree;
 
   FToolbar.FRemove.Enabled := FTree.SelectedCount > 0;
