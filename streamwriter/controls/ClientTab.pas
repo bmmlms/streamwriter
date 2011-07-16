@@ -147,7 +147,7 @@ type
     procedure FClientViewDblClick(Sender: TObject);
     procedure FClientViewKeyPress(Sender: TObject; var Key: Char);
     procedure FClientViewKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure FClientViewStartStreaming(Sender: TObject; ID: Cardinal; Name, URL, TitlePattern: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
+    procedure FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL, TitlePattern: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 
     procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
     function StreamBrowserIsInClientList(Sender: TObject; Name, URL: string): Boolean;
@@ -167,7 +167,7 @@ type
       ClientImages: TImageList; Clients: TClientManager;
       Streams: TDataLists);
     procedure Shown;
-    function StartStreaming(ID: Cardinal; Name, URL, TitlePattern: string; StartPlay: Boolean;
+    function StartStreaming(ID, Bitrate: Cardinal; Name, URL, TitlePattern: string; StartPlay: Boolean;
       HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
     procedure TimerTick;
     procedure UpdateStreams(Streams: TDataLists);
@@ -592,11 +592,11 @@ var
 begin
   if FAddressBar.FStations.ItemIndex = -1 then
   begin
-    StartStreaming(0, '', FAddressBar.FStations.Text, '', False, nil, amNoWhere)
+    StartStreaming(0, 0, '', FAddressBar.FStations.Text, '', False, nil, amNoWhere)
   end else
   begin
     Entry := TRecentEntry(FAddressBar.FStations.ItemsEx[FAddressBar.FStations.ItemIndex].Data);
-    StartStreaming(Entry.ID, Entry.Name, Entry.StartURL, '', False, nil, amNoWhere);
+    StartStreaming(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, '', False, nil, amNoWhere);
   end;
 end;
 
@@ -800,7 +800,7 @@ begin
 
   if not Client.AutoRemove then
   begin
-    FAddressBar.Stations.AddItem(Client.Entry.Name, Client.Entry.StartURL);
+    FAddressBar.Stations.AddItem(Client.Entry.ID, Client.Entry.Bitrate, Client.Entry.Name, Client.Entry.StartURL);
 
     if FStreams.SubmittedStreamList.IndexOf(Client.Entry.StartURL) = -1 then
     begin
@@ -1044,9 +1044,9 @@ begin
 end;
 
 procedure TClientTab.FClientViewStartStreaming(Sender: TObject;
-  ID: Cardinal; Name, URL, TitlePattern: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
+  ID, Bitrate: Cardinal; Name, URL, TitlePattern: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 begin
-  StartStreaming(ID, Name, URL, TitlePattern, AppGlobals.DefaultActionBrowser = baListen, Node, Mode);
+  StartStreaming(ID, Bitrate, Name, URL, TitlePattern, AppGlobals.DefaultActionBrowser = baListen, Node, Mode);
 end;
 
 procedure TClientTab.FSetVolume(Value: Integer);
@@ -1145,7 +1145,7 @@ begin
   end;
 end;
 
-function TClientTab.StartStreaming(ID: Cardinal; Name, URL, TitlePattern: string; StartPlay: Boolean;
+function TClientTab.StartStreaming(ID, Bitrate: Cardinal; Name, URL, TitlePattern: string; StartPlay: Boolean;
   HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
   procedure UnkillCategory;
   var
@@ -1202,7 +1202,7 @@ begin
     begin
       if ValidURL(URL) then
       begin
-        Client := FClients.AddClient(ID, Name, URL);
+        Client := FClients.AddClient(ID, Bitrate, Name, URL);
         if Trim(TitlePattern) <> '' then
           Client.Entry.Settings.TitlePattern := TitlePattern;
 
@@ -1276,12 +1276,12 @@ begin
   case Action of
     oaStart:
       for i := 0 to Length(Streams) - 1 do
-        if not StartStreaming(Streams[i].ID, Streams[i].Name, Streams[i].URL, Streams[i].RegEx, False, nil, amNoWhere) then
+        if not StartStreaming(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].RegEx, False, nil, amNoWhere) then
           Break;
     oaPlay:
       if Bass.DeviceAvailable then
         for i := 0 to Length(Streams) - 1 do
-          StartStreaming(Streams[i].ID, Streams[i].Name, Streams[i].URL, Streams[i].RegEx, True, nil, amNoWhere);
+          StartStreaming(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].RegEx, True, nil, amNoWhere);
     oaOpen:
       SavePlaylist(Entries, True);
     oaOpenWebsite:

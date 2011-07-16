@@ -35,7 +35,7 @@ type
     procedure Sort;
     procedure ReOrganize(FirstItem: TListControlItem);
     procedure BuildList(List: TRecentList);
-    function AddItem(Name, URL: string): TListControlItem; reintroduce; overload;
+    function AddItem(ID, Bitrate: Cardinal; Name, URL: string): TListControlItem; reintroduce; overload;
     function AddItem(Entry: TRecentEntry): TListControlItem; reintroduce; overload;
   end;
 
@@ -86,7 +86,7 @@ begin
       ItemIndex := 0;
 end;
 
-function TMStationCombo.AddItem(Name, URL: string): TListControlItem;
+function TMStationCombo.AddItem(ID, Bitrate: Cardinal; Name, URL: string): TListControlItem;
 var
   i: Integer;
   Entry: TRecentEntry;
@@ -109,7 +109,7 @@ begin
     end;
   end;
 
-  Entry := TRecentEntry.Create(0, Name, URL, 0);
+  Entry := TRecentEntry.Create(ID, Bitrate, Name, URL, 0);
   Result := ItemsEx.Add;
   Result.Caption := Name;
   Result.Data := Entry;

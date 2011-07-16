@@ -35,6 +35,7 @@ type
 
   TStreamData = record
     ID: Integer;
+    Bitrate: Cardinal;
     Name: string;
     URL: string;
     Website: string;
@@ -524,6 +525,7 @@ begin
 
     SetLength(Result, Length(Result) + 1);
     Result[High(Result)].ID := NodeData.Data.ID;
+    Result[High(Result)].Bitrate := NodeData.Data.BitRate;
     Result[High(Result)].Name := NodeData.Data.Name;
     Result[High(Result)].URL := NodeData.Data.URL;
     Result[High(Result)].Website := NodeData.Data.Website;

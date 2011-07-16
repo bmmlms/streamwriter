@@ -142,8 +142,9 @@ type
     FName: string;
     FStartURL: string;
     FIndex: Cardinal;
+    FBitrate: Cardinal;
   public
-    constructor Create(ID: Cardinal; Name, StartURL: string; Index: Cardinal);
+    constructor Create(ID, Bitrate: Cardinal; Name, StartURL: string; Index: Cardinal);
 
     procedure Assign(From: TRecentEntry);
     function Copy: TRecentEntry;
@@ -154,6 +155,7 @@ type
     property Name: string read FName write FName;
     property StartURL: string read FStartURL write FStartURL;
     property Index: Cardinal read FIndex write FIndex;
+    property Bitrate: Cardinal read FBitrate write FBitrate;
   end;
 
   TRatingEntry = class
@@ -331,7 +333,7 @@ type
   end;
 
 const
-  DATAVERSION = 24;
+  DATAVERSION = 25;
 
 implementation
 
@@ -548,64 +550,6 @@ procedure TStreamEntry.FSetGenre(Value: string);
 begin
   FGenre := Value;
 end;
-
-{
-procedure TStreamEntry.FSetRecentIndex(Value: Integer);
-  function RemoveOld: Boolean;
-  var
-    i: Integer;
-    Greatest, GreatestIndex, RecentCount: Integer;
-  begin
-    Result := False;
-    Greatest := -1;
-    GreatestIndex := -1;
-    RecentCount := 0;
-    for i := 0 to FParent.Count - 1 do
-    begin
-      if FParent[i].RecentIndex > -1 then
-        Inc(RecentCount);
-      if FParent[i].RecentIndex > GreatestIndex then
-      begin
-        Greatest := i;
-        GreatestIndex := FParent[i].RecentIndex;
-      end;
-    end;
-
-    if RecentCount > 15 then
-    begin
-      FParent[Greatest].RecentIndex := -1;
-      Result := True;
-    end;
-  end;
-var
-  i: Integer;
-  HasZero: Boolean;
-begin
-  FRecentIndex := Value;
-  if (FParent <> nil) and (Value = 0) then
-  begin
-    HasZero := False;
-    for i := 0 to FParent.Count - 1 do
-    begin
-      if (FParent[i].RecentIndex = 0) and (FParent[i] <> Self) then
-      begin
-        HasZero := True;
-        Break;
-      end;
-    end;
-
-    if HasZero then
-      for i := 0 to FParent.Count - 1 do
-      begin
-        if FParent[i].FRecentIndex > -1 then
-          FParent[i].FRecentIndex := FParent[i].FRecentIndex + 1;
-      end;
-
-    while RemoveOld do
-      RemoveOld;
-  end;
-end;
-}
 
 { TStreamDataList }
 
@@ -852,7 +796,7 @@ begin
           if Entry.FMigrationSubmitted then
             FSubmittedStreamList.Add(Entry.StartURL);
           if Entry.FMigrationRecentIndex > -1 then
-            FRecentList.Add(TRecentEntry.Create(Entry.ID, Entry.Name, Entry.StartURL, Entry.FMigrationRecentIndex));
+            FRecentList.Add(TRecentEntry.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, Entry.FMigrationRecentIndex));
         end;
       end;
     except
@@ -1204,6 +1148,7 @@ end;
 procedure TRecentEntry.Assign(From: TRecentEntry);
 begin
   FID := From.FID;
+  FBitrate := From.FBitrate;
   FName := From.FName;
   FStartURL := From.FStartURL;
   FIndex := From.FIndex;
@@ -1211,10 +1156,10 @@ end;
 
 function TRecentEntry.Copy: TRecentEntry;
 begin
-  Result := TRecentEntry.Create(FID, FName, FStartURL, FIndex);
+  Result := TRecentEntry.Create(FID, FBitrate, FName, FStartURL, FIndex);
 end;
 
-constructor TRecentEntry.Create(ID: Cardinal; Name, StartURL: string; Index: Cardinal);
+constructor TRecentEntry.Create(ID, Bitrate: Cardinal; Name, StartURL: string; Index: Cardinal);
 begin
   inherited Create;
 
@@ -1222,17 +1167,20 @@ begin
   FName := Name;
   FStartURL := StartURL;
   FIndex := Index;
+  FBitrate := Bitrate;
 end;
 
 class function TRecentEntry.Load(Stream: TExtendedStream;
   Version: Integer): TRecentEntry;
 begin
-  Result := TRecentEntry.Create(0, '', '', 0);
+  Result := TRecentEntry.Create(0, 0, '', '', 0);
   if Version >= 24 then
     Stream.Read(Result.FID);
   Stream.Read(Result.FName);
   Stream.Read(Result.FStartURL);
   Stream.Read(Result.FIndex);
+  if Version >= 25 then
+    Stream.Read(Result.FBitrate);
 end;
 
 procedure TRecentEntry.Save(Stream: TExtendedStream);
@@ -1241,6 +1189,7 @@ begin
   Stream.Write(FName);
   Stream.Write(FStartURL);
   Stream.Write(FIndex);
+  Stream.Write(FBitrate);
 end;
 
 { TScheduledRecording }

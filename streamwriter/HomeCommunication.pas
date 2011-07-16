@@ -695,7 +695,7 @@ end;
 constructor THomeThread.Create(DataLists: TDataLists);
 begin
   {$IFDEF DEBUG}
-  //inherited Create('gaia', 8007);     // TODO: Nochmal das auto recording durchtesten... klappt das immer? auch nach neuer installation???
+  //inherited Create('gaia', 8007);
   inherited Create('streamwriter.org', 8007);
   {$ELSE}
   inherited Create('streamwriter.org', 8007);

@@ -390,6 +390,7 @@ begin
     Text.Add('');
     Text.Add('');
     Text.Add('');
+
     Text.Add('');
     Text.Add('');
     Text.Add('');
@@ -399,8 +400,16 @@ begin
     Text.Add('');
     Text.Add('');
 
-    Text.Add('&IMG');
+    Text.Add('&IMG0');
+    Text.Add('&IMG1');
+    Text.Add('&IMG2');
 
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
     Text.Add('');
     Text.Add('');
 
