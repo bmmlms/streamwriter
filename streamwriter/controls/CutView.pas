@@ -791,7 +791,6 @@ var
 begin
   if FWaveData <> nil then
     Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5);
-  OutputDebugString(pchar(inttostr(tolerance)));
   Result := (FWaveData <> nil) and
             (LowerCase(ExtractFileExt(FFilename)) = '.mp3') and
             (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and

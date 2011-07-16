@@ -1228,6 +1228,8 @@ var
   SortDir: TSortDirection;
   LastItem: TMenuItem;
 begin
+  LastItem := nil;
+
   for i := 0 to FStreamTree.FSortPopupMenu.Items.Count - 1 do
   begin
     if FStreamTree.FSortPopupMenu.Items[i].Checked then
