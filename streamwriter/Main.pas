@@ -338,7 +338,9 @@ begin
   tmrSchedule.Enabled := False;
 
   TfrmNotification.Stop;
-
+  
+  Players.StopAll;
+  
   Hide;
 
   HomeComm.Terminate;
@@ -347,8 +349,6 @@ begin
     Sleep(100);
     Application.ProcessMessages;
   end;
-
-  Players.StopAll;
 
   FUpdater.Kill;
 
