@@ -505,13 +505,16 @@ procedure TSeekBar.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
 begin
   inherited;
 
-  if Assigned(FOnPositionChanged) then
-    FOnPositionChanged(Self);
+  if Button = mbLeft then
+  begin
+    if Assigned(FOnPositionChanged) then
+      FOnPositionChanged(Self);
 
-  FSetting := False;
-  FGripperDown := False;
+    FSetting := False;
+    FGripperDown := False;
 
-  Paint;
+    Paint;
+  end;
 end;
 
 end.

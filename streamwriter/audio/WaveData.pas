@@ -44,7 +44,7 @@ type
   private
     FDecoder: Cardinal;
     FWaveArray: TWaveEntryArray;
-    FCutStates: TList<TCutState>;
+    //FCutStates: TList<TCutState>;
     FSilence: TList<TCutState>;
 
     FFilename: string;
@@ -60,9 +60,6 @@ type
 
     procedure FSetWaveArray(Value: TWaveEntryArray);
 
-    function FGetCutStart: Cardinal;
-    function FGetCutEnd: Cardinal;
-    function FGetCutSize: Cardinal;
     function FGetZoomStart: Cardinal;
     function FGetZoomEnd: Cardinal;
     function FGetZoomSize: Cardinal;
@@ -75,22 +72,19 @@ type
 
     procedure Load(Stream: TMemoryStream); overload;
     procedure Load(Filename: string); overload;
-    function Save(Filename: string): Boolean;
-    procedure Cut(F, T: Cardinal);
+    function Save(Filename: string; StartPos, EndPos: Cardinal): Boolean;
+    //procedure Cut(F, T: Cardinal);
     procedure AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
     function TimeBetween(F, T: Cardinal): Double;
     function IsInSilence(O: Cardinal): Boolean;
 
-    property CutStart: Cardinal read FGetCutStart;
-    property CutEnd: Cardinal read FGetCutEnd;
-    property CutSize: Cardinal read FGetCutSize;
     property ZoomStart: Cardinal read FGetZoomStart write FSetZoomStart;
     property ZoomEnd: Cardinal read FGetZoomEnd write FSetZoomEnd;
     property ZoomSize: Cardinal read FGetZoomSize;
     property Secs: Double read FGetSecs;
 
     property WaveArray: TWaveEntryArray read FWaveArray write FSetWaveArray;
-    property CutStates: TList<TCutState> read FCutStates;
+    //property CutStates: TList<TCutState> read FCutStates;
     property Silence: TList<TCutState> read FSilence;
 
     property Wavesize: Int64 read FWavesize;
@@ -108,7 +102,7 @@ implementation
 
 constructor TWaveData.Create;
 begin
-  FCutStates := TList<TCutState>.Create;
+  //FCutStates := TList<TCutState>.Create;
   FSilence := TList<TCutState>.Create;
 end;
 
@@ -116,11 +110,11 @@ destructor TWaveData.Destroy;
 var
   i: Integer;
 begin
-  for i := 0 to FCutStates.Count - 1 do
-    FCutStates[i].Free;
+  //for i := 0 to FCutStates.Count - 1 do
+  //  FCutStates[i].Free;
   for i := 0 to FSilence.Count - 1 do
     FSilence[i].Free;
-  FCutStates.Free;
+  //FCutStates.Free;
   FSilence.Free;
   inherited;
 end;
@@ -163,7 +157,7 @@ begin
   end;
 end;
 
-function TWaveData.Save(Filename: string): Boolean;
+function TWaveData.Save(Filename: string; StartPos, EndPos: Cardinal): Boolean;
 var
   S, E: Cardinal;
   FS, StartTagBytes, EndTagBytes: Int64;
@@ -172,22 +166,24 @@ var
   P: TPosRect;
 begin
   Result := False;
-  if CutStates.Count <= 1 then
-    Exit;
+  //if CutStates.Count <= 1 then
+  //  Exit;
+
+  // TODO: Speichern darf nur, wenn auch was gemacht wurde (schneiden oder sow)
 
   try
-    S := WaveArray[CutStart].Pos;
-    E := WaveArray[CutEnd].Pos + WaveArray[CutEnd].Len;
+    S := WaveArray[StartPos].Pos;
+    E := WaveArray[EndPos].Pos + WaveArray[EndPos].Len;
 
     FS := Filesize - AudioStart - (Filesize - AudioEnd);
     StartTagBytes := FAudioStart;
     EndTagBytes := Filesize - FAudioEnd;
 
-    S := Round(S * (FS / Wavesize));
-    E := Round(E * (FS / Wavesize));
+    StartPos := Round(S * (FS / Wavesize));
+    EndPos := Round(E * (FS / Wavesize));
 
-    S := S + AudioStart;
-    E := E + AudioStart;
+    StartPos := StartPos + AudioStart;
+    EndPos := EndPos + AudioStart;
 
     FOut := TMemoryStream.Create;
     try
@@ -203,7 +199,7 @@ begin
           FOut.CopyFrom(FIn, StartTagBytes);
         end;
 
-        P := FIn.GetFrame(S, E);
+        P := FIn.GetFrame(StartPos, EndPos);
 
         // Daten kopieren
         if (P.A > 0) and (P.B > 0) then
@@ -212,8 +208,8 @@ begin
           FOut.CopyFrom(FIn, P.B - P.A);
         end else
         begin
-          FIn.Seek(S, soFromBeginning);
-          FOut.CopyFrom(FIn, E - S);
+          FIn.Seek(StartPos, soFromBeginning);
+          FOut.CopyFrom(FIn, EndPos - StartPos);
         end;
 
         // Tags kopieren
@@ -236,10 +232,12 @@ begin
   end;
 end;
 
+{
 procedure TWaveData.Cut(F, T: Cardinal);
 begin
   FCutStates.Add(TCutState.Create(F, T));
 end;
+}
 
 procedure TWaveData.AnalyzeData;
 var
@@ -298,10 +296,12 @@ begin
   FAudioStart := BASSStreamGetFilePosition(FDecoder, BASS_FILEPOS_START);
   FAudioEnd := BASSStreamGetFilePosition(FDecoder, BASS_FILEPOS_END);
 
+  {
   for i := 0 to FCutStates.Count - 1 do
     FCutStates[i].Free;
   FCutStates.Clear;
   FCutStates.Add(TCutState.Create(0, High(FWaveArray)));
+  }
 
   FZoomStart := 0;
   FZoomEnd := High(FWaveArray);
@@ -362,25 +362,6 @@ begin
     FSilence.Add(TCutState.Create(SilenceStart, High(FWaveArray)));
 end;
 
-function TWaveData.FGetCutEnd: Cardinal;
-begin
-  Result := High(FWaveArray);
-  if FCutStates.Count > 0 then
-    Result := FCutStates[FCutStates.Count - 1].CutEnd;
-end;
-
-function TWaveData.FGetCutSize: Cardinal;
-begin
-  Result := CutEnd - CutStart;
-end;
-
-function TWaveData.FGetCutStart: Cardinal;
-begin
-  Result := 0;
-  if FCutStates.Count > 0 then
-    Result := FCutStates[FCutStates.Count - 1].CutStart;
-end;
-
 function TWaveData.FGetZoomStart: Cardinal;
 begin
   Result := FZoomStart;
@@ -410,8 +391,7 @@ end;
 
 function TWaveData.FGetSecs: Double;
 begin
-  // REMARK: Weil das nur die Start-Ende - Sekunden sind ist das nicht die echte Länge.
-  Result := FWaveArray[CutEnd].Sec - FWaveArray[CutStart].Sec;
+  Result := FWaveArray[High(FWaveArray)].Sec;
 end;
 
 procedure TWaveData.FSetWaveArray(Value: TWaveEntryArray);

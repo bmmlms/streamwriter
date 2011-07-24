@@ -590,7 +590,7 @@ begin
   pagMain.Parent := Self;
   pagMain.Visible := True;
   pagMain.Align := alClient;
-  pagMain.Images := imgImages;  // TODO: Was passiert, wenn man SW <W2k startet? ich benutze APIs, die es da nicht gibt! was bei win9x??
+  pagMain.Images := imgImages;
 
   tabClients := TClientTab.Create(pagMain);
   tabClients.PageControl := pagMain;

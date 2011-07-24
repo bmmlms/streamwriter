@@ -31,7 +31,7 @@ type
   private
     FSep: TToolButton;
 
-    FSave: TToolButton;
+    //FSave: TToolButton;
     FPosZoom: TToolButton;
     FPosEdit: TToolButton;
     FPosPlay: TToolButton;
@@ -65,7 +65,7 @@ type
 
     procedure UpdateButtons;
 
-    procedure SaveClick(Sender: TObject);
+    //procedure SaveClick(Sender: TObject);
     procedure PosClick(Sender: TObject);
     procedure AutoCutClick(Sender: TObject);
     procedure CutClick(Sender: TObject);
@@ -109,7 +109,7 @@ end;
 
 procedure TCutTab.UpdateButtons;
 begin
-  FToolBar.FSave.Enabled := FCutView.CanSave;
+  //FToolBar.FSave.Enabled := FCutView.CanSave;
   FToolBar.FPosEdit.Enabled := FCutView.CanSetLine;
   FToolBar.FPosPlay.Enabled := FCutView.CanSetLine;
   FToolBar.FAutoCut.Enabled := FCutView.CanAutoCut;
@@ -152,10 +152,12 @@ begin
     FOnVolumeChanged(Self, FVolume.Volume);
 end;
 
+{
 procedure TCutTab.SaveClick(Sender: TObject);
 begin
   FCutView.Save;
 end;
+}
 
 procedure TCutTab.PosClick(Sender: TObject);
 begin
@@ -278,7 +280,7 @@ begin
   FToolBar.Indent := 2;
   FToolBar.Setup;
 
-  FToolBar.FSave.OnClick := SaveClick;
+  //FToolBar.FSave.OnClick := SaveClick;
   FToolBar.FPosEdit.OnClick := PosClick;
   FToolBar.FPosPlay.OnClick := PosClick;
   FToolBar.FPosZoom.OnClick := PosClick;
@@ -323,10 +325,45 @@ end;
 
 procedure TCutToolBar.Setup;
 begin
+  FStop := TToolButton.Create(Self);
+  FStop.Parent := Self;
+  FStop.Hint := 'Stop';
+  FStop.ImageIndex := 1;
+
+  FPlay := TToolButton.Create(Self);
+  FPlay.Parent := Self;
+  FPlay.Hint := 'Play';
+  FPlay.ImageIndex := 33;
+
+  FPosPlay := TToolButton.Create(Self);
+  FPosPlay.Parent := Self;
+  FPosPlay.Hint := 'Set playposition';
+  FPosPlay.ImageIndex := 27;
+
+  FSep := TToolButton.Create(Self);
+  FSep.Parent := Self;
+  FSep.Style := tbsSeparator;
+  FSep.Width := 8;
+
   FAutoCut := TToolButton.Create(Self);
   FAutoCut.Parent := Self;
   FAutoCut.Hint := 'Show silence according to configured settings';
   FAutoCut.ImageIndex := 19;
+
+  FSep := TToolButton.Create(Self);
+  FSep.Parent := Self;
+  FSep.Style := tbsSeparator;
+  FSep.Width := 8;
+
+  FUndo := TToolButton.Create(Self);
+  FUndo.Parent := Self;
+  FUndo.Hint := 'Undo';
+  FUndo.ImageIndex := 18;
+
+  FSep := TToolButton.Create(Self);
+  FSep.Parent := Self;
+  FSep.Style := tbsSeparator;
+  FSep.Width := 8;
 
   FApplyEffects := TToolButton.Create(Self);
   FApplyEffects.Parent := Self;
@@ -358,11 +395,6 @@ begin
   FSep.Style := tbsSeparator;
   FSep.Width := 8;
 
-  FUndo := TToolButton.Create(Self);
-  FUndo.Parent := Self;
-  FUndo.Hint := 'Undo';
-  FUndo.ImageIndex := 18;
-
   FCut := TToolButton.Create(Self);
   FCut.Parent := Self;
   FCut.Hint := 'Cut';
@@ -372,11 +404,6 @@ begin
   FPosEdit.Parent := Self;
   FPosEdit.Hint := 'Set cutpositions (left mousebutton sets start, right button sets end)';
   FPosEdit.ImageIndex := 37;
-
-  FSave := TToolButton.Create(Self);
-  FSave.Parent := Self;
-  FSave.Hint := 'Save';
-  FSave.ImageIndex := 14;
 
   FSep := TToolButton.Create(Self);
   FSep.Parent := Self;
@@ -388,25 +415,12 @@ begin
   FPosZoom.Hint := 'Zoom in (left mousebutton selects area, right mousebutton zooms back)';
   FPosZoom.ImageIndex := 48;
 
-  FSep := TToolButton.Create(Self);
-  FSep.Parent := Self;
-  FSep.Style := tbsSeparator;
-  FSep.Width := 8;
-
-  FStop := TToolButton.Create(Self);
-  FStop.Parent := Self;
-  FStop.Hint := 'Stop';
-  FStop.ImageIndex := 1;
-
-  FPlay := TToolButton.Create(Self);
-  FPlay.Parent := Self;
-  FPlay.Hint := 'Play';
-  FPlay.ImageIndex := 33;
-
-  FPosPlay := TToolButton.Create(Self);
-  FPosPlay.Parent := Self;
-  FPosPlay.Hint := 'Set playposition';
-  FPosPlay.ImageIndex := 27;
+  {
+  FSave := TToolButton.Create(Self);
+  FSave.Parent := Self;
+  FSave.Hint := 'Save';
+  FSave.ImageIndex := 14;
+  }
 end;
 
 end.

@@ -1296,7 +1296,7 @@ begin
   Arr[1].C := 't';
   Arr[1].Replace := Title;
   Arr[2].C := 's';
-  Arr[2].Replace := StreamName;
+  Arr[2].Replace := Trim(StreamName);
   Arr[3].C := 'n';
   Arr[3].Replace := Format('%.*d', [FSettings.FilePatternDecimals, FSongsSaved]);
   Arr[4].C := 'd';

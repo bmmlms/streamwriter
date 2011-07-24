@@ -135,6 +135,16 @@ type
     destructor Destroy; override;
   end;
 
+  TUndoStep = class
+  public
+    Filename: string;
+    Number: Integer;
+
+    constructor Create(Filename: string; Number: Integer);
+  end;
+
+  TUndoList = class(TList<TUndoStep>);
+
   TLineMode = (lmEdit, lmPlay, lmZoom, lmEffectsMarker);
 
   TCutView = class(TPanel)
@@ -147,6 +157,8 @@ type
     FLineMode: TLineMode;
     FProgressBarLoad: TProgressBar;
     FWasSaved: Boolean;
+    FUndoList: TUndoList;
+    FID: Integer;
 
     FPlayer: TPlayer;
     FFilename: string;
@@ -157,6 +169,7 @@ type
 
     function GetSoX: TSoXPlugin;
     procedure StartProcessing(CmdLine: string);
+    function AddUndo: Boolean;
 
     procedure ThreadScanProgress(Sender: TObject);
     procedure ThreadEndScan(Sender: TObject);
@@ -185,7 +198,7 @@ type
 
     procedure Cut;
     procedure Undo;
-    function Save: Boolean;
+    function Save(StartPos, EndPos: Cardinal): Boolean;
     procedure SaveAs;
     procedure Play;
     procedure Stop;
@@ -197,7 +210,7 @@ type
 
     function CanCut: Boolean;
     function CanUndo: Boolean;
-    function CanSave: Boolean;
+    //function CanSave: Boolean;
     function CanPlay: Boolean;
     function CanStop: Boolean;
     function CanAutoCut: Boolean;
@@ -286,6 +299,7 @@ constructor TCutView.Create(AOwner: TComponent);
 begin
   inherited;
 
+  FID := Random(1000);
   BevelOuter := bvNone;
 
   FPB := TCutPaintBox.Create(Self);
@@ -297,9 +311,13 @@ begin
   FProgressBarLoad := TProgressBar.Create(Self);
   FProgressBarLoad.Parent := Self;
   FProgressBarLoad.Visible := False;
+
+  FUndoList := TUndoList.Create;
 end;
 
 destructor TCutView.Destroy;
+var
+  i: Integer;
 begin
   if FScanThread <> nil then
   begin
@@ -324,6 +342,13 @@ begin
       FreeAndNil(FPlayer);
     except end;
   end;
+
+  for i := 0 to FUndoList.Count - 1 do
+  begin
+    DeleteFile(PChar(FUndoList[i].Filename));
+    FUndoList[i].Free;
+  end;
+  FUndoList.Free;
 
   inherited;
 end;
@@ -359,6 +384,11 @@ begin
   FPlayer.OnStop := PlayerStop;
   Players.AddPlayer(FPlayer);
 
+  FState := csLoading;
+  FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
+  FPB.Paint;
+
   try
     if Bass.DeviceAvailable then
       FPlayer.Filename := FFilename;
@@ -366,8 +396,6 @@ begin
     ThreadScanError(Self);
     Exit;
   end;
-
-  FState := csLoading;
 
   FProgressBarLoad.Visible := True;
 
@@ -379,10 +407,6 @@ begin
 
   FPB.FEffectStartLine := 0;
   FPB.FEffectEndLine := 0;
-
-  FPB.BuildBuffer;
-  FPB.BuildDrawBuffer;
-  FPB.Paint;
 
   BASSSetDevice(AppGlobals.SoundDevice + 1);
 
@@ -410,10 +434,14 @@ begin
   if not CanCut then
     Exit;
 
-  FWaveData.Cut(FPB.FStartLine, FPB.FEndLine);
+  AddUndo;
+  Save(FPB.FStartLine, FPB.FEndLine);
 
   if FPlayer <> nil then
   begin
+    FPlayer.Stop(False);
+    FPB.FPlayLine := 0;
+    {
     P := FPlayer.PositionByte;
     if (FWaveData.WaveArray[FPB.FStartLine].Pos > P) or
        (FWaveData.WaveArray[FPB.FEndLine].Pos < P) then
@@ -423,16 +451,23 @@ begin
     end;
 
     FPlayer.PosToReach := FWaveData.WaveArray[FWaveData.CutEnd].Pos;
+    }
   end;
 
+  {
   FPB.FZoomStartLine := FPB.FStartLine;
   FPB.FZoomEndLine := FPB.FEndLine;
   FPB.FDoZoom := True;
+  }
+
+  FPB.FZoomStartLine := High(Cardinal);
+  FPB.FZoomEndLine := High(Cardinal);
+  FPB.FDoZoom := False;
 
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
   FPB.Paint;
-
+  // TODO: NEULADEN!!!
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
@@ -444,6 +479,26 @@ begin
   if not CanUndo then
     Exit;
 
+  if CopyFile(PChar(FUndoList[FUndoList.Count - 1].Filename), PChar(FFilename), False) then
+  begin
+    LoadFile(FFilename);
+
+    DeleteFile(PChar(FUndoList[FUndoList.Count - 1].Filename));
+    FUndoList[FUndoList.Count - 1].Free;
+    FUndoList.Delete(FUndoList.Count - 1);
+
+    FPB.BuildBuffer;
+    FPB.BuildDrawBuffer;
+    FPB.Paint;
+
+    if Assigned(FOnStateChanged) then
+      FOnStateChanged(Self);
+  end else
+  begin
+    // TODO: !!!
+  end;
+
+{
   L1 := FWaveData.CutStates[FWaveData.CutStates.Count - 1].CutStart;
   L2 := FWaveData.CutStates[FWaveData.CutStates.Count - 1].CutEnd;
 
@@ -468,14 +523,15 @@ begin
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
+}
 end;
 
-function TCutView.Save: Boolean;
+function TCutView.Save(StartPos, EndPos: Cardinal): Boolean;
 begin
   Result := False;
 
-  if not CanSave then
-    Exit;
+  //if not CanSave then
+  //  Exit;
 
   if FPlayer <> nil then
   begin
@@ -483,7 +539,7 @@ begin
   end;
 
   try
-    if FWaveData.Save(FFilename) then
+    if FWaveData.Save(FFilename, StartPos, EndPos) then
     begin
       FreeAndNil(FWaveData);
       FWasSaved := True;
@@ -534,15 +590,12 @@ begin
     Exit;
   end;
 
-  if FWaveData.TimeBetween(FPB.FPlayLine, FWaveData.CutEnd) <= 0.3 then
-    FPB.FPlayLine := FWaveData.CutStart;
-
   FPlayer.Volume := AppGlobals.PlayerVolume;
   FPlayer.PositionByte := FWaveData.WaveArray[FPB.FPlayLine].Pos;
 
   FPlayer.Play;
 
-  FPlayer.PosToReach := FWaveData.WaveArray[FWaveData.CutEnd].Pos;
+  FPlayer.PosToReach := FWaveData.WaveArray[High(FWaveData.WaveArray)].Pos;
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
@@ -683,6 +736,8 @@ begin
       IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - FWaveData.WaveArray[FadeStart].Sec))
   end;
 
+  AddUndo;
+
   StartProcessing(CmdLine);
 end;
 
@@ -700,6 +755,28 @@ begin
     Exit;
 
   ApplyFade(False);
+end;
+
+function TCutView.AddUndo: Boolean;
+var
+  Number: Integer;
+  FN, Dest: string;
+begin
+  Result := False;
+
+  if FUndoList.Count > 0 then
+  begin
+    Number := FUndoList[FUndoList.Count - 1].Number + 1;
+  end else
+    Number := 1;
+
+  FN := ExtractFileName(FFilename);
+  Dest := AppGlobals.TempDir + 'UNDO_' + Copy(FN, 1, Length(FN) - Length(ExtractFileExt(FN))) + '_' + IntToStr(FID) + '_' + IntToStr(Number) + (ExtractFileExt(FN));
+  if CopyFile(PChar(FFilename), PChar(Dest), False) then
+  begin
+    FUndoList.Add(TUndoStep.Create(Dest, Number));
+    Result := True;
+  end;
 end;
 
 procedure TCutView.ApplyEffects;
@@ -733,7 +810,10 @@ begin
         CmdLine := CmdLine + ' ' + 'pad 0 ' + IntToStr(F.SilenceEndLength);
 
       if CmdLine <> '' then
+      begin
+        AddUndo;
         StartProcessing(CmdLine);
+      end;
     end;
   finally
     F.Free;
@@ -756,7 +836,7 @@ function TCutView.CanCut: Boolean;
 begin
   Result := (FWaveData <> nil) and (FPB.FEndLine - FPB.FStartLine > 0) and
     (FWaveData.TimeBetween(FPB.FStartLine, FPB.FEndLine) >= 0.5) and
-    ((FWaveData.CutStart <> FPB.FStartLine) or (FWaveData.CutEnd <> FPB.FEndLine));
+    ((FWaveData.WaveArray[0].Pos <> FPB.FStartLine) or (FWaveData.WaveArray[High(FWaveData.WaveArray)].Pos <> FPB.FEndLine));
 end;
 
 function TCutView.CanEffectsMarker: Boolean;
@@ -766,13 +846,15 @@ end;
 
 function TCutView.CanUndo: Boolean;
 begin
-  Result := (FWaveData <> nil) and (FWaveData.CutStates.Count > 1);
+  Result := (FWaveData <> nil) and (FUndoList.Count > 0);
 end;
 
+{
 function TCutView.CanSave: Boolean;
 begin
-  Result := (FWaveData <> nil) and (FWaveData.CutStates.Count > 1);
+  Result := (FWaveData <> nil) and (FWaveData.CutStates.Count > 1); TODO: !!!
 end;
+}
 
 function TCutView.CanPlay: Boolean;
 begin
@@ -790,11 +872,11 @@ var
   Tolerance: Cardinal;
 begin
   if FWaveData <> nil then
-    Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5);
+    Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5) + 4;
   Result := (FWaveData <> nil) and
             (LowerCase(ExtractFileExt(FFilename)) = '.mp3') and
             (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
-            (((FPB.FEffectStartLine <= Tolerance) or (FPB.FEffectEndLine <= Tolerance)));
+            ((FPB.FEffectStartLine <= Tolerance) or (FPB.FEffectEndLine <= Tolerance));
 end;
 
 function TCutView.CanApplyFadeOut: Boolean;
@@ -802,11 +884,11 @@ var
   Tolerance: Cardinal;
 begin
   if FWaveData <> nil then
-    Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5);
+    Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5) + 4;
   Result := (FWaveData <> nil) and
             (LowerCase(ExtractFileExt(FFilename)) = '.mp3') and
             (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
-            (((FPB.FEffectStartLine >= Tolerance) or (FPB.FEffectEndLine >= Tolerance)));
+            ((FPB.FEffectStartLine >= Length(FWaveData.WaveArray) - Tolerance) or (FPB.FEffectEndLine >= Length(FWaveData.WaveArray) - Tolerance));
 end;
 
 function TCutView.CanApplyEffects: Boolean;
@@ -915,8 +997,8 @@ begin
 
   if FWasSaved then
   begin
-    if Assigned(TCutTab(Owner).OnSaved) then
-      TCutTab(Owner).OnSaved(Owner, FWaveData.Filesize, Trunc(FWaveData.Secs));
+    //if Assigned(TCutTab(Owner).OnSaved) then TODO: !!!
+    //  TCutTab(Owner).OnSaved(Owner, FWaveData.Filesize, Trunc(FWaveData.Secs));
   end;
   FWasSaved := False;
 
@@ -1039,6 +1121,7 @@ begin
     FWaveBuf.Canvas.Font.Color := clWhite;
     SetBkMode(FWaveBuf.Canvas.Handle, TRANSPARENT);
     FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - TS.cx div 2, FWaveBuf.Height div 2 - TS.cy, Txt);
+    Exit;
   end;
 
   if (FCutView = nil) or (FCutView.FWaveData = nil) then
@@ -1046,7 +1129,6 @@ begin
 
   if Length(FCutView.FWaveData.WaveArray) = 0 then
     Exit;
-
 
   ht := (FWaveBuf.Height div 2) - ScrollbarHeight - 1;
 
@@ -1076,6 +1158,7 @@ begin
     CS := FCutView.FWaveData.Silence[i].CutStart;
     CE := FCutView.FWaveData.Silence[i].CutEnd;
 
+    {
     if (CS < FCutView.FWaveData.CutStart) and (CE < FCutView.FWaveData.CutStart) then
       Continue;
     if CS > FCutView.FWaveData.CutEnd then
@@ -1085,6 +1168,7 @@ begin
       CS := FCutView.FWaveData.CutStart;
     if CE > FCutView.FWaveData.CutEnd then
       CE := FCutView.FWaveData.CutEnd;
+    }
 
     L1 := Floor(((CS - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FWaveBuf.Width);
     L2 := Ceil(((CE - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FWaveBuf.Width);
@@ -1274,8 +1358,9 @@ begin
 end;
 
 procedure TCutPaintBox.MouseMove(Shift: TShiftState; X, Y: Integer);
-var Button: PMouseButton;
-    ButtonData: TMouseButton;
+var
+  Button: PMouseButton;
+  ButtonData: TMouseButton;
 begin
   inherited;
 
@@ -1371,7 +1456,7 @@ begin
     SearchFrom := FPlayingIndex;
   end;
 
-  for i := SearchFrom to FCutView.FWaveData.CutEnd do
+  for i := SearchFrom to High(FCutView.FWaveData.WaveArray) - 1 do
   begin
     if FCutView.FWaveData.WaveArray[i].Pos >= BytePos then
     begin
@@ -1652,6 +1737,14 @@ begin
     Exit;
   if Assigned(FOnError) then
     FOnSuccess(Self);
+end;
+
+{ TUndoStep }
+
+constructor TUndoStep.Create(Filename: string; Number: Integer);
+begin
+  Self.Filename := Filename;
+  Self.Number := Number;
 end;
 
 end.

@@ -503,6 +503,7 @@ procedure TSavedTab.SavedTreeAction(Sender: TObject; Action: TTrackActions;
 var
   i: Integer;
   Error: Boolean;
+  LowerDir: string;
 begin
   case Action of
     taRefresh:
@@ -537,7 +538,9 @@ begin
         begin
           if Recycle(Handle, Tracks[i].Filename) then
           begin
-            Windows.RemoveDirectory(PChar(ExtractFilePath(Tracks[i].Filename)));
+            LowerDir := LowerCase(IncludeTrailingBackslash(ExtractFilePath(Tracks[i].Filename)));
+            if not ((LowerDir = LowerCase(IncludeTrailingBackslash(AppGlobals.Dir))) and (LowerDir = LowerCase(IncludeTrailingBackslash(AppGlobals.DirAuto)))) then
+              Windows.RemoveDirectory(PChar(ExtractFilePath(Tracks[i].Filename)));
             FSavedTree.DeleteTrack(Tracks[i]);
             FStreams.TrackList.RemoveTrack(Tracks[i]);
             if Assigned(FOnTrackRemoved) then
@@ -556,7 +559,9 @@ begin
           begin
             if Windows.DeleteFile(PChar(Tracks[i].Filename)) or (GetLastError = ERROR_FILE_NOT_FOUND) then
             begin
-              Windows.RemoveDirectory(PChar(ExtractFilePath(Tracks[i].Filename)));
+              LowerDir := LowerCase(IncludeTrailingBackslash(ExtractFilePath(Tracks[i].Filename)));
+              if not ((LowerDir = LowerCase(IncludeTrailingBackslash(AppGlobals.Dir))) and (LowerDir = LowerCase(IncludeTrailingBackslash(AppGlobals.DirAuto)))) then
+                Windows.RemoveDirectory(PChar(ExtractFilePath(Tracks[i].Filename)));
               FSavedTree.DeleteTrack(Tracks[i]);
               FStreams.TrackList.RemoveTrack(Tracks[i]);
               if Assigned(FOnTrackRemoved) then

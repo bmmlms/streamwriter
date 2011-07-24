@@ -29,7 +29,7 @@ uses
   DataManager, TypeDefs;
 
 type
-  TModes = (moShow, moLoading, moOldVersion);
+  TModes = (moShow, moLoading);
 
   TMStreamTree = class;
 
@@ -74,8 +74,8 @@ type
 
   TMStreamSearchPanel = class(TPanel)
   private
-    //FExpandLabel: TLabel;
-    //FExpandButton: TSpeedButton;
+    FExpandLabel: TLabel;
+    FExpandButton: TSpeedButton;
 
     FSearchLabel: TLabel;
     FGenreLabel: TLabel;
@@ -123,8 +123,6 @@ type
     procedure StreamBrowserHeaderClick(Sender: TVTHeader; HitInfo: TVTHeaderHitInfo);
 
     procedure HomeCommunicationStreamsReceived(Sender: TObject);
-    //procedure HomeCommunicationReceiveError(Sender: TObject);
-    //procedure HomeCommunicationOldVersion(Sender: TObject);
   protected
   public
     constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
@@ -314,7 +312,6 @@ begin
   FItemStart := FPopupMenu.CreateMenuItem;
   FItemStart.Caption := '&Start recording';
   FItemStart.ImageIndex := 0;
-  //FItemStart.Default := True;
   FItemStart.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemStart);
 
@@ -1145,23 +1142,13 @@ end;
 procedure TMStreamBrowserView.HomeCommStateChanged(Sender: TObject);
 begin
   if HomeComm.Connected and (HomeComm.Connected <> HomeComm.WasConnected) and
-     ((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) then
+     (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or
+      (AppGlobals.LastBrowserUpdate < Now - 15)) then
   begin
+    SwitchMode(moLoading);
     FHomeCommunication.GetStreams;
   end;
 end;
-
-{
-procedure TMStreamBrowserView.HomeCommunicationOldVersion(Sender: TObject);
-begin
-  SwitchMode(moOldVersion);
-end;
-
-procedure TMStreamBrowserView.HomeCommunicationReceiveError(Sender: TObject);
-begin
-  SwitchMode(moError);
-end;
-}
 
 procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject);
 var
@@ -1171,6 +1158,8 @@ begin
   BuildTree(True);
 
   SwitchMode(moShow);
+
+  AppGlobals.LastBrowserUpdate := Trunc(Now);
 end;
 
 procedure TMStreamBrowserView.ListsChange(Sender: TObject);
@@ -1285,19 +1274,10 @@ end;
 
 procedure TMStreamBrowserView.SwitchMode(Mode: TModes);
 begin
-  if (Mode <> moShow) then
-  begin
-    FSearch.Visible := False;
-    FStreamTree.Visible := False;
-    FCountLabel.Visible := False;
-    FLoadingPanel.Visible := True;
-  end else
-  begin
-    FSearch.Visible := True;
-    FStreamTree.Visible := True;
-    FCountLabel.Visible := True;
-    FLoadingPanel.Visible := False;
-  end;
+  FSearch.Visible := Mode = moShow;
+  FStreamTree.Visible := Mode = moShow;
+  FCountLabel.Visible := Mode = moShow;
+  FLoadingPanel.Visible := Mode <> moShow;
 
   if Mode = moLoading then
   begin
@@ -1305,12 +1285,7 @@ begin
     FLoadingPanel.FDots := '';
     FLoadingPanel.FTimer.Enabled := True;
     FLoading := True;
-  end else if Mode = moOldVersion then
-  begin
-    FLoadingPanel.FLabel.Caption := _('Error loading streams.'#13#10'Please update your version of streamWriter.');
-  end;
-
-  if Mode <> moLoading then
+  end else if Mode <> moLoading then
   begin
     FLoadingPanel.FTimer.Enabled := False;
     FLoading := False;
@@ -1361,10 +1336,12 @@ begin
   BevelOuter := bvNone;
 end;
 
-{procedure TMStreamSearchPanel.ExpandButtonClick(Sender: TObject);
+{
+procedure TMStreamSearchPanel.ExpandButtonClick(Sender: TObject);
 begin
   SetVisible(not FTypeList.Visible);
-end;}
+end;
+}
 
 procedure TMStreamSearchPanel.Setup;
 var
@@ -1398,6 +1375,7 @@ begin
   FSearchLabel.Top := FSearchEdit.Top + FSearchEdit.Height div 2 - FSearchLabel.Height div 2;
 
   TopCnt := TopCnt + 26;
+
 
   {
   FExpandButton := TSpeedButton.Create(Self);
@@ -1496,7 +1474,8 @@ begin
   //SetVisible(False);
 end;
 
-{procedure TMStreamSearchPanel.SetVisible(Value: Boolean);
+{
+procedure TMStreamSearchPanel.SetVisible(Value: Boolean);
 var
   i: Integer;
 begin
@@ -1511,7 +1490,8 @@ begin
     ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4
   else
     ClientHeight := FExpandButton.Top + FExpandButton.Height + FSearchEdit.Top + 4;
-end;}
+end;
+}
 
 { TMLoadingPanel }
 

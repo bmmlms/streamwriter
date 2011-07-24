@@ -126,6 +126,7 @@ type
     FAutoTuneInFormat: Cardinal;
     FLimitSpeed: Boolean;
     FMaxSpeed: Cardinal;
+    FLastBrowserUpdate: Cardinal;
 
     FShortcutPlay: Cardinal;
     FShortcutPause: Cardinal;
@@ -188,6 +189,7 @@ type
     property AutoTuneInFormat: Cardinal read FAutoTuneInFormat write FAutoTuneInFormat;
     property LimitSpeed: Boolean read FLimitSpeed write FLimitSpeed;
     property MaxSpeed: Cardinal read FMaxSpeed write FMaxSpeed;
+    property LastBrowserUpdate: Cardinal read FLastBrowserUpdate write FLastBrowserUpdate;
 
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
     property ClientCols: Integer read FClientCols write FClientCols;
@@ -206,6 +208,7 @@ implementation
 constructor TAppData.Create(AppName: string);
 var
   W: Integer;
+  SR: TSearchRec;
 begin
   FStreamSettings := TStreamSettings.Create;
 
@@ -233,6 +236,15 @@ begin
   BuildThanksText;
 
   FLanguageIcons := TLanguageIcons.Create;
+
+  if FindFirst(TempDir + 'UNDO_*', faAnyFile and not faDirectory, SR) = 0 then
+  begin
+    repeat
+      if (SR.Name <> '.') and (SR.Name <> '..') then
+        DeleteFile(TempDir + SR.Name);
+    until FindNext(SR) <> 0;
+    FindClose(SR);
+  end;
 end;
 
 destructor TAppData.Destroy;
@@ -281,7 +293,7 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 38);
+    SetLength(FDonors, 40);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
@@ -320,6 +332,8 @@ begin
     FDonors[35] := 'Jörn Räuber';
     FDonors[36] := 'Sebastian Hein';
     FDonors[37] := 'Johannes Schneider';
+    FDonors[38] := 'Edwin de Boer';
+    FDonors[39] := 'Alexander Maier (www.kommtel.info)';
 
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
@@ -484,6 +498,7 @@ begin
   FStorage.Read('MaxSpeed', FMaxSpeed, 0);
   if FMaxSpeed <= 0 then
     FLimitSpeed := False;
+  FStorage.Read('LastBrowserUpdate', FLastBrowserUpdate, Trunc(Now));
 
   FStorage.Read('AutoTuneInMinKbps', FAutoTuneInMinKbps, 3);
   FStorage.Read('AutoTuneInFormat', FAutoTuneInFormat, 0);
@@ -615,6 +630,7 @@ begin
   FStorage.Write('AutoTuneInFormat', FAutoTuneInFormat);
   FStorage.Write('LimitSpeed', FLimitSpeed);
   FStorage.Write('MaxSpeed', FMaxSpeed);
+  FStorage.Write('LastBrowserUpdate', FLastBrowserUpdate);
 
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));

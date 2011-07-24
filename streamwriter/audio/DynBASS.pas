@@ -101,38 +101,6 @@ var
 
 implementation
 
-{
-function GetTempFile(SubDir, Name: string): string;
-var
-  Dir, TmpDir, DataDir, AppDir: string;
-  Test: TMemoryStream;
-begin
-  Result := '';
-  Dir := '';
-
-  Test := TMemoryStream.Create;
-  try
-    try
-      TmpDir := GetTempDir;
-      if not DirectoryExists(TmpDir) then
-        ForceDirectories(TmpDir);
-      Test.SaveToFile(TmpDir + 'justatestfile');
-      DeleteFile(TmpDir + IntToStr(Rnd));
-      Dir := TmpDir;
-    except
-      Exit;
-    end;
-  finally
-    Test.Free;
-  end;
-
-  if Dir = '' then
-    Exit;
-
-  Result := Dir + Name;
-end;
-}
-
 { TBassLoader }
 
 constructor TBassLoader.Create;
