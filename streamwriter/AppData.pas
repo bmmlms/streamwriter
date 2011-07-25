@@ -293,7 +293,7 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 41);
+    SetLength(FDonors, 42);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
@@ -335,6 +335,7 @@ begin
     FDonors[38] := 'Edwin de Boer';
     FDonors[39] := 'Alexander Maier (www.kommtel.info)';
     FDonors[40] := 'Bernhard Langheim';
+    FDonors[41] := 'Eike R.';
 
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
