@@ -467,6 +467,7 @@ var
   Dir, Filename: string;
   FileCheck: TFileChecker;
   P: TPosRect;
+  Error: Cardinal;
 begin
   Saved := False;
 
@@ -561,9 +562,14 @@ begin
           TAudioStreamMemory(FAudioStream).SaveToFile(Dir + Filename, P.A, P.B - P.A);
         end;
 
+        Error := GetLastError;
+
         RemoveData;
       except
-        raise Exception.Create(_('Could not save file'));
+        if (Error = 3) and (Length(Dir + Filename) > MAX_PATH - 1) then
+          raise Exception.Create('Could not save file because it exceeds the maximum path length (259)')
+        else
+          raise Exception.Create(_('Could not save file'));
       end;
 
       Saved := True;
@@ -622,6 +628,7 @@ end;
 function TICEStream.StartRecordingInternal: Boolean;
 var
   Dir, Filename: string;
+  Error: Cardinal;
   FileCheck: TFileChecker;
 begin
   Result := False;
@@ -691,6 +698,7 @@ begin
     except
       if Assigned(FOnIOError) then
         FOnIOError(Self);
+
       raise Exception.Create(Format(_('Could not create "%s"'), [Filename]));
     end;
 
@@ -1233,22 +1241,33 @@ begin
       Ext := '.ogg';
   end;
 
-  // REMARK: Zugriff ist nicht Threadsicher!
-  for i := 1 to Length(FSettings.RemoveChars) do
-    Name := StringReplace(Name, FSettings.RemoveChars[i], '', [rfReplaceAll]);
+  repeat
+    // REMARK: Zugriff ist nicht Threadsicher!
+    for i := 1 to Length(FSettings.RemoveChars) do
+      Name := StringReplace(Name, FSettings.RemoveChars[i], '', [rfReplaceAll]);
 
-  if Trim(Name) = '' then
-  begin
-    Name := _('Unknown stream');
-  end;
+    if Trim(Name) = '' then
+    begin
+      Name := _('Unknown stream');
+    end;
 
-  FFilename := GetValidFilename(Name);
+    Name := Trim(Name);
 
-  if FileExists(FSaveDir + Filename + Ext) then
-  begin
-    FFilename := Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename, Ext)) + ')' + Ext;
-  end else
-    FFilename := Filename + Ext;
+    FFilename := GetValidFilename(Name);
+
+    if FileExists(FSaveDir + Filename + Ext) then
+    begin
+      FFilename := Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename, Ext)) + ')' + Ext;
+    end else
+      FFilename := Filename + Ext;
+
+    if Length(FSaveDir + FFilename) > MAX_PATH - 1 then
+      if Length(Name) = 1 then
+        raise Exception.Create('Could not save file because it exceeds the maximum path length (259)')
+      else
+        Name := Copy(Name, 1, Length(Name) - 1);
+
+  until Length(FSaveDir + FFilename) <= MAX_PATH - 1;
 end;
 
 function TFileChecker.GetValidFilename(Name: string): string;
@@ -1282,7 +1301,9 @@ begin
 
   Dir := '';
 
-  StreamName := GetValidFileName(Trim(FStreamname));
+  StreamName := Trim(GetValidFileName(FStreamname));
+  if Length(StreamName) > 80 then
+    StreamName := Copy(StreamName, 1, 80);
 
   Artist := GetValidFilename(Artist);
   Title := GetValidFilename(Title);

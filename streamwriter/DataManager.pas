@@ -333,7 +333,7 @@ type
   end;
 
 const
-  DATAVERSION = 25;
+  DATAVERSION = 26;
 
 implementation
 

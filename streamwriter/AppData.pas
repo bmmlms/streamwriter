@@ -61,9 +61,13 @@ type
     FOnlySaveFull: Boolean;
     FOverwriteSmaller: Boolean;
     FDiscardSmaller: Boolean;
+    FIgnoreTrackChangePattern: TStringList;
 
     procedure FSetSaveToMemory(Value: Boolean);
   public
+    constructor Create;
+    destructor Destroy; override;
+
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamSettings;
     procedure Save(Stream: TExtendedStream);
     procedure Assign(From: TStreamSettings);
@@ -91,6 +95,7 @@ type
     property OnlySaveFull: Boolean read FOnlySaveFull write FOnlySaveFull;
     property OverwriteSmaller: Boolean read FOverwriteSmaller write FOverwriteSmaller;
     property DiscardSmaller: Boolean read FDiscardSmaller write FDiscardSmaller;
+    property IgnoreTrackChangePattern: TStringList read FIgnoreTrackChangePattern write FIgnoreTrackChangePattern;
   end;
 
   TStreamSettingsArray = array of TStreamSettings;
@@ -691,6 +696,20 @@ begin
   Result.Assign(Self);
 end;
 
+constructor TStreamSettings.Create;
+begin
+  inherited;
+
+  FIgnoreTrackChangePattern := TStringList.Create;
+end;
+
+destructor TStreamSettings.Destroy;
+begin
+  FIgnoreTrackChangePattern.Free;
+
+  inherited;
+end;
+
 procedure TStreamSettings.FSetSaveToMemory(Value: Boolean);
 begin
   FSaveToMemory := Value;
@@ -701,7 +720,8 @@ end;
 class function TStreamSettings.Load(Stream: TExtendedStream;
   Version: Integer): TStreamSettings;
 var
-  FilterTmp: Integer;
+  i, Count, FilterTmp: Integer;
+  IgnoreTmp: string;
 begin
   Result := TStreamSettings.Create;
 
@@ -800,9 +820,21 @@ begin
     Result.FFilter := ufNone
   else
     Result.FFilter := TUseFilters(FilterTmp);
+
+  if Version >= 26 then
+  begin
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+    begin
+      Stream.Read(IgnoreTmp);
+      Result.FIgnoreTrackChangePattern.Add(IgnoreTmp);
+    end;
+  end;
 end;
 
 procedure TStreamSettings.Save(Stream: TExtendedStream);
+var
+  i: Integer;
 begin
   Stream.Write(FTitlePattern);
   Stream.Write(FFilePattern);
@@ -826,6 +858,10 @@ begin
   Stream.Write(FOnlySaveFull);
   Stream.Write(FOverwriteSmaller);
   Stream.Write(FDiscardSmaller);
+
+  Stream.Write(FIgnoreTrackChangePattern.Count);
+  for i := 0 to FIgnoreTrackChangePattern.Count - 1 do
+    Stream.Write(FIgnoreTrackChangePattern[i]);
 end;
 
 procedure TStreamSettings.Assign(From: TStreamSettings);
@@ -852,6 +888,7 @@ begin
   FOnlySaveFull := From.FOnlySaveFull;
   FOverwriteSmaller := From.FOverwriteSmaller;
   FDiscardSmaller := From.DiscardSmaller;
+  FIgnoreTrackChangePattern.Assign(From.FIgnoreTrackChangePattern);
 end;
 
 initialization

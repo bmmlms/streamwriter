@@ -679,15 +679,15 @@ object frmSettings: TfrmSettings
     Left = 304
     Top = 344
     Width = 293
-    Height = 257
+    Height = 141
     TabOrder = 5
     Visible = False
     DesignSize = (
       293
-      257)
+      141)
     object Label9: TLabel
       Left = 4
-      Top = 216
+      Top = 100
       Width = 37
       Height = 13
       Anchors = [akLeft, akBottom]
@@ -698,7 +698,7 @@ object frmSettings: TfrmSettings
       Left = 4
       Top = 0
       Width = 285
-      Height = 201
+      Height = 85
       Anchors = [akLeft, akTop, akRight, akBottom]
       Columns = <
         item
@@ -713,10 +713,11 @@ object frmSettings: TfrmSettings
       ViewStyle = vsReport
       OnChange = lstHotkeysChange
       OnResize = lstHotkeysResize
+      ExplicitHeight = 201
     end
     object txtHotkey: THotKey
       Left = 4
-      Top = 232
+      Top = 116
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -724,6 +725,7 @@ object frmSettings: TfrmSettings
       HotKey = 32833
       TabOrder = 1
       OnChange = txtHotkeyChange
+      ExplicitTop = 232
     end
   end
   object pnlCommunity: TPanel
@@ -1052,14 +1054,14 @@ object frmSettings: TfrmSettings
   end
   object pnlStreamsAdvanced: TPanel
     Left = 304
-    Top = 608
+    Top = 492
     Width = 293
-    Height = 181
+    Height = 297
     TabOrder = 9
     Visible = False
     DesignSize = (
       293
-      181)
+      297)
     object btnResetTitlePattern: TPngSpeedButton
       Left = 264
       Top = 32
@@ -1096,6 +1098,18 @@ object frmSettings: TfrmSettings
         D31C60289BED2D3FA2C740006035C0B1DD8A191870A5C08CD341C80000DC1D99
         CCC6DEEDD30000000049454E44AE426082}
     end
+    object lblIgnoreTitles: TLabel
+      Left = 4
+      Top = 64
+      Width = 285
+      Height = 29
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      Caption = 
+        'Ignore the following stream title changes (i.e. announcements li' +
+        'ke '#39'Next playing: ...'#39') to disable saving:'
+      WordWrap = True
+    end
     object txtTitlePattern: TLabeledEdit
       Left = 4
       Top = 32
@@ -1111,6 +1125,60 @@ object frmSettings: TfrmSettings
       EditLabel.WordWrap = True
       TabOrder = 0
       OnChange = txtTitlePatternChange
+    end
+    object lstIgnoreTitles: TListView
+      Left = 4
+      Top = 95
+      Width = 285
+      Height = 118
+      Align = alCustom
+      Anchors = [akLeft, akTop, akRight, akBottom]
+      Columns = <
+        item
+        end>
+      RowSelect = True
+      ShowColumnHeaders = False
+      SmallImages = PngImageList1
+      TabOrder = 1
+      ViewStyle = vsReport
+      OnChange = lstIgnoreTitlesChange
+      OnResize = lstIgnoreTitlesResize
+    end
+    object btnRemoveIgnoreTitlePattern: TButton
+      Left = 196
+      Top = 268
+      Width = 93
+      Height = 25
+      Anchors = [akRight, akBottom]
+      Caption = '&Remove'
+      Enabled = False
+      TabOrder = 2
+      OnClick = btnRemoveIgnoreTitlePatternClick
+      ExplicitTop = 152
+    end
+    object btnAddIgnoreTitlePattern: TButton
+      Left = 100
+      Top = 268
+      Width = 93
+      Height = 25
+      Anchors = [akRight, akBottom]
+      Caption = '&Add'
+      Enabled = False
+      TabOrder = 3
+      OnClick = btnAddIgnoreTitlePatternClick
+      ExplicitTop = 152
+    end
+    object txtIgnoreTitlePattern: TLabeledEdit
+      Left = 4
+      Top = 240
+      Width = 285
+      Height = 21
+      Anchors = [akLeft, akRight, akBottom]
+      EditLabel.Width = 174
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Pattern to ignore (use '#39'*'#39' as wildcard):'
+      TabOrder = 4
+      OnChange = txtIgnoreTitlePatternChange
     end
   end
   object pnlBandwidth: TPanel
@@ -1163,7 +1231,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800FC0110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800000210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1357,9 +1425,37 @@ object frmSettings: TfrmSettings
           44C19066C3FFEF9F853071CA7AFC7D7F9FFDD7BB3B0758C5E44EF31BFBAC7ADC
           17FA9DE8A4CCD8C8C024C77E84FF51A5ED87FF78120B00457C20F0ADF5CF9600
           00000049454E44AE426082}
+      end
+      item
+        Background = clWindow
+        Name = 'cross-script'
+        PngImage.Data = {
+          89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+          61000000017352474200AECE1CE900000006624B474400FF00FF00FFA0BDA793
+          000000097048597300000B1300000B1301009A9C180000000774494D4507DA0B
+          11121B1FDB982573000002504944415478DAAD934B6813511486CFA4790C4393
+          34D2D176B048EBA24234D2461ADD145A4445978A2F280842B3D00A62BBF0B151
+          44295AB4B8D22C74E3424454100B2E5A77421B0B959AA4514A5DB4D1511347DA
+          BC6692EB3F3337524457F5C261EEDC39E73BE7BFFC2330C6682D4BF82F804782
+          4002D13EBC5FE5E76FAA44033A36458413E1B69F41E41DC4B613F1F23063F72C
+          C04300B0E2470707C3C54281CD4D4D65929393990AD18E1207B888865D6EF71E
+          A35CCE227B044763C7516C011ED8807E88E90F4622CDADC1A052CAE7F5F8F8F8
+          C7AFAADAE7F7F94ECB8AD2BD904A2591790AB04F660500F41B60DE4499288CD1
+          8F60DB1BE9E969AB6F68F0CF27124B1E51A4D4CCCC342689A2F8B3CBD4FE0F80
+          A519A387917037D4D1D14E0E87E74322912E140A5BCDA2DA956F580DB86C4BB0
+          96834846A7589BA244EA45715D7A71712EE0F5FAB39AA6ADE87AC86C62F0DCEB
+          35C0790EA8B363748B2C1F6A12C5A6B8AA26574AA55BE87A60BD2485D47C3E8D
+          E2FDD53F01673900DAA2AD5EEF5097246D4E148B4BEF35EDB687E88661771D6D
+          743A777F338CE79078C1943252030CD83ED88478725296B7FF348CD2E35CEE35
+          E4F4212F27F2FB01E40A1E5D281E464CDCA901A2F604377749D2B16E5154629A
+          369BAB544EA8446F9FF2717772F718B6D95C907131C69861019A01D80B235D0A
+          043A67753DFB6C79F9FE2BA2A1CC5FAC6B42B6119DFB8209C6189BB60082206C
+          C487DE76A23320FF9820BA86EEF3C8CD234C3356F91D9B1670B710B5341035BE
+          63EC450DE0E37677F146152E5BE77BC6BD53B72A1CA8FDBEE6BFF11738CD0DF0
+          5FE2B5BF0000000049454E44AE426082}
       end>
-    Left = 420
-    Top = 316
+    Left = 460
+    Top = 144
     Bitmap = {}
   end
 end

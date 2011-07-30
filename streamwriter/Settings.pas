@@ -158,6 +158,11 @@ type
     btnBrowse: TSpeedButton;
     txtDirAuto: TLabeledEdit;
     btnBrowseAuto: TSpeedButton;
+    lblIgnoreTitles: TLabel;
+    lstIgnoreTitles: TListView;
+    btnRemoveIgnoreTitlePattern: TButton;
+    btnAddIgnoreTitlePattern: TButton;
+    txtIgnoreTitlePattern: TLabeledEdit;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
@@ -207,6 +212,12 @@ type
     procedure txtIncompleteFilePatternChange(Sender: TObject);
     procedure txtRemoveCharsChange(Sender: TObject);
     procedure chkLimitClick(Sender: TObject);
+    procedure lstIgnoreTitlesResize(Sender: TObject);
+    procedure txtIgnoreTitlePatternChange(Sender: TObject);
+    procedure lstIgnoreTitlesChange(Sender: TObject; Item: TListItem;
+      Change: TItemChange);
+    procedure btnAddIgnoreTitlePatternClick(Sender: TObject);
+    procedure btnRemoveIgnoreTitlePatternClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -598,6 +609,25 @@ begin
       btnReset.OnClick := btnResetClick;
     end;
 
+    if Length(FStreamSettings) = 1 then
+    begin
+      for i := 0 to Settings.IgnoreTrackChangePattern.Count - 1 do
+      begin
+        Item := lstIgnoreTitles.Items.Add;
+        Item.Caption := Settings.IgnoreTrackChangePattern[i];
+        Item.ImageIndex := 2;
+      end;
+    end;
+
+    if Length(FStreamSettings) > 1 then
+    begin
+      lblIgnoreTitles.Visible := False;
+      lstIgnoreTitles.Visible := False;
+      txtIgnoreTitlePattern.Visible := False;
+      btnAddIgnoreTitlePattern.Visible := False;
+      btnRemoveIgnoreTitlePattern.Visible := False;
+    end;
+
     FBrowseDir := BrowseDir;
     FBrowseAutoDir := BrowseAutoDir;
 
@@ -947,6 +977,13 @@ begin
 
       if FIgnoreFieldList.IndexOf(chkOnlySaveFull) = -1 then
         FStreamSettings[i].OnlySaveFull := chkOnlySaveFull.Checked;
+
+      if Length(FStreamSettings) = 1 then
+      begin
+        FStreamSettings[i].IgnoreTrackChangePattern.Clear;
+        for n := 0 to lstIgnoreTitles.Items.Count - 1 do
+          FStreamSettings[i].IgnoreTrackChangePattern.Add(lstIgnoreTitles.Items[n].Caption);
+      end;
     end;
   end else
   begin
@@ -1200,6 +1237,17 @@ begin
 
   lstHotkeys.Columns[0].Width := lstHotkeys.ClientWidth div 2;
   lstHotkeys.Columns[1].Width := lstHotkeys.ClientWidth div 2 - 25;
+end;
+
+procedure TfrmSettings.lstIgnoreTitlesChange(Sender: TObject; Item: TListItem;
+  Change: TItemChange);
+begin
+  btnRemoveIgnoreTitlePattern.Enabled := lstIgnoreTitles.Selected <> nil;
+end;
+
+procedure TfrmSettings.lstIgnoreTitlesResize(Sender: TObject);
+begin
+  lstIgnoreTitles.Columns[0].Width := lstIgnoreTitles.ClientWidth - 25;
 end;
 
 procedure TfrmSettings.lstPluginsCompare(Sender: TObject; Item1,
@@ -1520,6 +1568,11 @@ begin
   lstHotkeys.Selected.SubItems[0] := ShortCutToText(txtHotkey.HotKey);
 end;
 
+procedure TfrmSettings.txtIgnoreTitlePatternChange(Sender: TObject);
+begin
+  btnAddIgnoreTitlePattern.Enabled := Length(Trim(txtIgnoreTitlePattern.Text)) >= 1;
+end;
+
 procedure TfrmSettings.txtIncompleteFilePatternChange(Sender: TObject);
 begin
   inherited;
@@ -1617,6 +1670,17 @@ begin
   begin
     btnBlacklistRemoveClick(nil);
   end;
+end;
+
+procedure TfrmSettings.btnAddIgnoreTitlePatternClick(Sender: TObject);
+var
+  Item: TListItem;
+begin
+  Item := lstIgnoreTitles.Items.Add;
+  Item.Caption := txtIgnoreTitlePattern.Text;
+  Item.ImageIndex := 2;
+  txtIgnoreTitlePattern.Text := '';
+  txtIgnoreTitlePattern.SetFocus;
 end;
 
 procedure TfrmSettings.btnAddUpClick(Sender: TObject);
@@ -1722,6 +1786,11 @@ begin
     TExternalPlugin(lstPlugins.Selected.Data).Free;
     lstPlugins.Selected.Delete;
   end;
+end;
+
+procedure TfrmSettings.btnRemoveIgnoreTitlePatternClick(Sender: TObject);
+begin
+  lstIgnoreTitles.Items.Delete(lstIgnoreTitles.Selected.Index);
 end;
 
 procedure TfrmSettings.btnResetClick(Sender: TObject);
