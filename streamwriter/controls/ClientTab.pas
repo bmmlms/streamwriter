@@ -853,6 +853,7 @@ procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string;
     end;
   end;
 begin
+  Allowed := False;
   Match := '';
   if Length(Title) < 1 then
     Exit;

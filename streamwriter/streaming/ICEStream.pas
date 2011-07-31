@@ -973,7 +973,7 @@ begin
             else
               Title := CleanTitle(MetaData);
 
-            IgnoreTitle := False;
+            IgnoreTitle := Title = '';
             // TODO: Das ist so nicht Threadsicher.
             for i := 0 to FSettings.IgnoreTrackChangePattern.Count - 1 do
               if Like(Title, FSettings.IgnoreTrackChangePattern[i]) then
