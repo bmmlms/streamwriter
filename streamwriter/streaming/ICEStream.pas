@@ -864,8 +864,8 @@ end;
 
 procedure TICEStream.ProcessData(Received: Cardinal);
 var
-  TitleChanged: Boolean;
-  MetaLen, P, DataCopied: Integer;
+  TitleChanged, IgnoreTitle: Boolean;
+  i, MetaLen, P, DataCopied: Integer;
   Title: string;
   MetaData: AnsiString;
   Buf: Byte;
@@ -973,58 +973,70 @@ begin
             else
               Title := CleanTitle(MetaData);
 
-            if Title <> FTitle then
-            begin
-              WriteDebug(Format(_('"%s" now playing'), [Title]), 2, 0);
-              TitleChanged := True;
-              Inc(FMetaCounter);
-
-              // Ist nur dafür da, um dem Server zu sagen "hier läuft jetzt ein volles Lied"
-              if (FMetaCounter >= 2) then
-                FFullTitleFound := True;
-            end;
-
-            if FSettings.SeparateTracks then
-              if (Title <> FTitle) and (FRecordingTitleFound) then
+            IgnoreTitle := False;
+            // TODO: Das ist so nicht Threadsicher.
+            for i := 0 to FSettings.IgnoreTrackChangePattern.Count - 1 do
+              if Like(Title, FSettings.IgnoreTrackChangePattern[i]) then
               begin
-                if FAudioStream <> nil then
-                  FStreamTracks.FoundTitle(FAudioStream.Size, Title, True);
-              end else if Title = FTitle then
-              begin
-
-              end else
-              begin
-                // Achtung: Der Block hier ist so ähnlich in StartRecordingInternal() nochmal!
-                if not FRecordingTitleFound then
-                  if (FMetaCounter >= 2) or ((FMetaCounter = 1) and (not FSettings.OnlySaveFull)) then
-                  begin
-                    if FAudioStream <> nil then
-                    begin
-                      FRecordingTitleFound := True;
-                      if FAudioStream.InheritsFrom(TAudioStreamMemory) then
-                      begin
-                        // Stream sauber machen.
-                        {
-                        if FSettings.SearchSilence then
-                          TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SilenceBufferSeconds))
-                        else
-                          TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SongBufferSeconds));
-                        }
-                      end;
-
-                      if FMetaCounter >= 2 then
-                        FStreamTracks.FoundTitle(FAudioStream.Size, Title, True)
-                      else
-                        FStreamTracks.FoundTitle(FAudioStream.Size, Title, False);
-                    end;
-                  end;
+                IgnoreTitle := True;
+                Break;
               end;
 
-            FTitle := Title;
+            if not IgnoreTitle then
+            begin
+              if Title <> FTitle then
+              begin
+                WriteDebug(Format(_('"%s" now playing'), [Title]), 2, 0);
+                TitleChanged := True;
+                Inc(FMetaCounter);
 
-            if TitleChanged then
-              if Assigned(FOnTitleChanged) then
-                FOnTitleChanged(Self);
+                // Ist nur dafür da, um dem Server zu sagen "hier läuft jetzt ein volles Lied"
+                if (FMetaCounter >= 2) then
+                  FFullTitleFound := True;
+              end;
+
+              if FSettings.SeparateTracks then
+                if (Title <> FTitle) and (FRecordingTitleFound) then
+                begin
+                  if FAudioStream <> nil then
+                    FStreamTracks.FoundTitle(FAudioStream.Size, Title, True);
+                end else if Title = FTitle then
+                begin
+
+                end else
+                begin
+                  // Achtung: Der Block hier ist so ähnlich in StartRecordingInternal() nochmal!
+                  if not FRecordingTitleFound then
+                    if (FMetaCounter >= 2) or ((FMetaCounter = 1) and (not FSettings.OnlySaveFull)) then
+                    begin
+                      if FAudioStream <> nil then
+                      begin
+                        FRecordingTitleFound := True;
+                        if FAudioStream.InheritsFrom(TAudioStreamMemory) then
+                        begin
+                          // Stream sauber machen.
+                          {
+                          if FSettings.SearchSilence then
+                            TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SilenceBufferSeconds))
+                          else
+                            TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SongBufferSeconds));
+                          }
+                        end;
+
+                        if FMetaCounter >= 2 then
+                          FStreamTracks.FoundTitle(FAudioStream.Size, Title, True)
+                        else
+                          FStreamTracks.FoundTitle(FAudioStream.Size, Title, False);
+                      end;
+                    end;
+                end;
+
+              FTitle := Title;
+
+              if TitleChanged then
+                if Assigned(FOnTitleChanged) then
+                  FOnTitleChanged(Self);
+            end;
           end;
         end else
           Break;
