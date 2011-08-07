@@ -27,7 +27,7 @@ uses
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
   Plugins, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus,
   MsgDlg, PngImageList, PngSpeedButton, pngimage, VirtualTrees, Math,
-  DataManager, PngBitBtn, DownloadAddons, Logging;
+  DataManager, PngBitBtn, DownloadAddons, Logging, ToolWin, ListsTab;
 
 type
   TBlacklistNodeData = record
@@ -53,6 +53,13 @@ type
     destructor Destroy; override;
     procedure UpdateList(List: TStringList);
     procedure RemoveSelected;
+  end;
+
+  TTitleSettingsTree = class(TTitleTree)
+  protected
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
+      Column: TColumnIndex; var Ghosted: Boolean;
+      var Index: Integer): TCustomImageList; override;
   end;
 
   TfrmSettings = class(TfrmSettingsBase)
@@ -163,6 +170,13 @@ type
     btnRemoveIgnoreTitlePattern: TButton;
     btnAddIgnoreTitlePattern: TButton;
     txtIgnoreTitlePattern: TLabeledEdit;
+    pnlStreamIgnoreList: TPanel;
+    Panel1: TPanel;
+    tbIgnoreTitles: TToolBar;
+    btnIgnoreListAdd: TToolButton;
+    btnIgnoreListRemove: TToolButton;
+    txtIgnoreList: TEdit;
+    chkAddSavedToStreamIgnore: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
@@ -218,6 +232,9 @@ type
       Change: TItemChange);
     procedure btnAddIgnoreTitlePatternClick(Sender: TObject);
     procedure btnRemoveIgnoreTitlePatternClick(Sender: TObject);
+    procedure btnIgnoreListAddClick(Sender: TObject);
+    procedure btnIgnoreListRemoveClick(Sender: TObject);
+    procedure chkAddSavedToStreamIgnoreClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -232,6 +249,7 @@ type
     FLists: TDataLists;
     lstBlacklist: TBlacklistTree;
     btnReset: TBitBtn;
+    lstIgnoreListTitles: TTitleSettingsTree;
     function ValidatePattern(Text: string): string;
     function GetNewID: Integer;
     procedure BuildHotkeys;
@@ -243,6 +261,8 @@ type
     procedure BlacklistTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure BlacklistTreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure btnResetClick(Sender: TObject);
+    procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+    procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   protected
     procedure RegisterPages; override;
     procedure Finish; override;
@@ -358,6 +378,19 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
     end;
     if F then
       AddField(chkAddSavedToIgnore);
+
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
+      if S.AddSavedToStreamIgnore <> FStreamSettings[i].AddSavedToStreamIgnore then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(chkAddSavedToStreamIgnore);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -579,6 +612,8 @@ var
   B: TBitmap;
   P: TPngImage;
   Settings: TStreamSettings;
+  Node: PVirtualNode;
+  NodeData: PTitleNodeData;
 begin
   FLists := Lists;
 
@@ -634,7 +669,7 @@ begin
     SetFields;
 
     ClientWidth := 510;
-    ClientHeight := 425;
+    ClientHeight := 430;
 
     for i := 0 to Self.ControlCount - 1 do
     begin
@@ -709,6 +744,23 @@ begin
       lstSoundDevice.ItemIndex := -1;
       lstSoundDevice.Enabled := False;
       lstSoundDevice.Text := _('(no devices available)');
+    end;
+
+    if Length(FStreamSettings) = 1 then
+    begin
+      lstIgnoreListTitles := TTitleSettingsTree.Create(Self);
+      lstIgnoreListTitles.Parent := pnlStreamIgnoreList;
+      lstIgnoreListTitles.Images := PngImageList1;
+      lstIgnoreListTitles.Align := alClient;
+      lstIgnoreListTitles.OnChange := TreeChange;
+      lstIgnoreListTitles.OnKeyDown := TreeKeyDown;
+
+      for i := 0 to FStreamSettings[0].IgnoreList.Count - 1 do
+      begin
+        Node := lstIgnoreListTitles.AddChild(nil);
+        NodeData := lstIgnoreListTitles.GetNodeData(Node);
+        NodeData.Title := FStreamSettings[0].IgnoreList[i].Copy;
+      end;
     end;
 
     if FLists <> nil then
@@ -819,6 +871,7 @@ begin
 
   chkDeleteStreams.Checked := Settings.DeleteStreams;
   chkAddSavedToIgnore.Checked := Settings.AddSavedToIgnore;
+  chkAddSavedToStreamIgnore.Checked := Settings.AddSavedToStreamIgnore;
   chkOverwriteSmaller.Checked := Settings.OverwriteSmaller;
   chkDiscardSmaller.Checked := Settings.DiscardSmaller;
   txtTitlePattern.Text := Settings.TitlePattern;
@@ -900,10 +953,12 @@ end;
 
 procedure TfrmSettings.Finish;
 var
-  i, n: Integer;
+  i, n, z: Integer;
   Plugin: TPluginBase;
   EP: TExternalPlugin;
   Item: TListItem;
+  Node: PVirtualNode;
+  NodeData: PTitleNodeData;
 begin
   if Length(FStreamSettings) > 0 then
   begin
@@ -926,6 +981,9 @@ begin
 
       if FIgnoreFieldList.IndexOf(chkAddSavedToIgnore) = -1 then
         FStreamSettings[i].AddSavedToIgnore := chkAddSavedToIgnore.Checked;
+
+      if FIgnoreFieldList.IndexOf(chkAddSavedToStreamIgnore) = -1 then
+        FStreamSettings[i].AddSavedToStreamIgnore := chkAddSavedToStreamIgnore.Checked;
 
       if FIgnoreFieldList.IndexOf(chkOverwriteSmaller) = -1 then
         FStreamSettings[i].OverwriteSmaller := chkOverwriteSmaller.Checked;
@@ -983,6 +1041,17 @@ begin
         FStreamSettings[i].IgnoreTrackChangePattern.Clear;
         for n := 0 to lstIgnoreTitles.Items.Count - 1 do
           FStreamSettings[i].IgnoreTrackChangePattern.Add(lstIgnoreTitles.Items[n].Caption);
+
+        for z := 0 to FStreamSettings[i].IgnoreList.Count - 1 do
+          FStreamSettings[i].IgnoreList[z].Free;
+        FStreamSettings[i].IgnoreList.Clear;
+        Node := lstIgnoreListTitles.GetFirst;
+        while Node <> nil do
+        begin
+          NodeData := lstIgnoreListTitles.GetNodeData(Node);
+          FStreamSettings[i].IgnoreList.Add(NodeData.Title);
+          Node := lstIgnoreListTitles.GetNext(Node);
+        end;
       end;
     end;
   end else
@@ -994,6 +1063,7 @@ begin
     AppGlobals.StreamSettings.RemoveChars := txtRemoveChars.Text;
     AppGlobals.StreamSettings.DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
     AppGlobals.StreamSettings.AddSavedToIgnore := chkAddSavedToIgnore.Checked;
+    AppGlobals.StreamSettings.AddSavedToStreamIgnore := chkAddSavedToStreamIgnore.Checked;
     AppGlobals.StreamSettings.OverwriteSmaller := chkOverwriteSmaller.Checked;
     AppGlobals.StreamSettings.DiscardSmaller := chkDiscardSmaller.Checked;
 
@@ -1473,7 +1543,7 @@ begin
   if FStreamSettings = nil then
   begin
     FPageList.Add(TPage.Create('Settings', pnlMain, 'PROPERTIES'));
-    FPageList.Add(TPage.Create('Streams', pnlStreams, 'START'));
+    FPageList.Add(TPage.Create('Streams', pnlStreams, 'APPICON'));
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Postprocessing', pnlPlugins, 'LIGHTNING'));
@@ -1484,8 +1554,10 @@ begin
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
   end else
   begin
-    FPageList.Add(TPage.Create('Streams', pnlStreams, 'START'));
+    FPageList.Add(TPage.Create('Streams', pnlStreams, 'APPICON'));
     FPageList.Add(TPage.Create('Advanced', pnlStreamsAdvanced, 'MISC', FPageList.Find(pnlStreams)));
+    if Length(FStreamSettings) = 1 then
+      FPageList.Add(TPage.Create('Ignorelist', pnlStreamIgnoreList, 'IGNORE'));
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
@@ -1530,6 +1602,21 @@ begin
     begin
 
     end;
+end;
+
+procedure TfrmSettings.TreeChange(Sender: TBaseVirtualTree;
+  Node: PVirtualNode);
+begin
+  btnIgnoreListRemove.Enabled := lstIgnoreListTitles.SelectedCount > 0;
+end;
+
+procedure TfrmSettings.TreeKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_DELETE then
+  begin
+    btnIgnoreListRemoveClick(nil);
+  end;
 end;
 
 procedure TfrmSettings.txtAppParamsChange(Sender: TObject);
@@ -1754,6 +1841,65 @@ procedure TfrmSettings.btnHelpClick(Sender: TObject);
 begin
   if lstPlugins.Selected <> nil then
     MsgBox(Handle, TDLLPlugin(lstPlugins.Selected.Data).Help, _('Help'), MB_ICONINFORMATION);
+end;
+
+procedure TfrmSettings.btnIgnoreListAddClick(Sender: TObject);
+var
+  i, NumChars: Integer;
+  Pattern: string;
+  Node: PVirtualNode;
+  NodeData: PTitleNodeData;
+  Title: TTitleInfo;
+  Hash: Cardinal;
+begin
+  if Trim(txtIgnoreList.Text) <> '' then
+  begin
+    Pattern := BuildPattern(txtIgnoreList.Text, Hash, NumChars, False);
+
+    if NumChars <= 3 then
+    begin
+      TfrmMsgDlg.ShowMsg(Self, _('A short pattern may produce many matches, i.e. using ''a'' ignores every song containing an ''a''.'), 6, btOK);
+    end;
+
+    Node := lstIgnoreListTitles.GetFirst;
+    while Node <> nil do
+    begin
+      NodeData := lstIgnoreListTitles.GetNodeData(Node);
+      if NodeData.Title.Hash = Hash then
+      begin
+        MsgBox(Handle, Format(_('The list already contains an entry matching the pattern "%s".'), [Pattern]), _('Info'), MB_ICONINFORMATION);
+        Exit;
+      end;
+      Node := lstIgnoreListTitles.GetNext(Node);
+    end;
+
+    Node := lstIgnoreListTitles.AddChild(nil);
+    NodeData := lstIgnoreListTitles.GetNodeData(Node);
+
+    Title := TTitleInfo.Create(Trim(txtIgnoreList.Text));
+    NodeData.Title := Title;
+    txtIgnoreList.Text := '';
+  end else
+    MsgBox(Handle, _('Please enter a pattern to add to list.'), _('Info'), MB_ICONINFORMATION);
+end;
+
+procedure TfrmSettings.btnIgnoreListRemoveClick(Sender: TObject);
+var
+  Node, Node2: PVirtualNode;
+begin
+  Node := lstIgnoreListTitles.GetLast;
+  lstIgnoreListTitles.BeginUpdate;
+  while Node <> nil do
+  begin
+    if lstIgnoreListTitles.Selected[Node] then
+    begin
+      Node2 := lstIgnoreListTitles.GetPrevious(Node);
+      lstIgnoreListTitles.DeleteNode(Node);
+      Node := Node2;
+    end else
+      Node := lstIgnoreListTitles.GetPrevious(Node);
+  end;
+  lstIgnoreListTitles.EndUpdate;
 end;
 
 procedure TfrmSettings.btnMoveClick(Sender: TObject);
@@ -2049,6 +2195,14 @@ begin
 
   if FInitialized then
     RemoveGray(chkAddSavedToIgnore);
+end;
+
+procedure TfrmSettings.chkAddSavedToStreamIgnoreClick(Sender: TObject);
+begin
+  inherited;
+
+  if FInitialized then
+    RemoveGray(chkAddSavedToStreamIgnore);
 end;
 
 procedure TfrmSettings.chkAutoTuneInClick(Sender: TObject);
@@ -2362,6 +2516,190 @@ begin
   Finalize(PBlacklistNodeData(GetNodeData(Node)).Name);
 
   inherited;
+end;
+
+{ TIgnoreTree }
+{
+constructor TIgnoreTree.Create(AOwner: TComponent; Streams: TStringList);
+var
+  i: Integer;
+  Node: PVirtualNode;
+  NodeData: PBlacklistNodeData;
+begin
+  inherited Create(AOwner);
+
+  NodeDataSize := SizeOf(TBlacklistNodeData);
+  IncrementalSearch := isVisibleOnly;
+  Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
+  TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
+  TreeOptions.AutoOptions := [toAutoScrollOnExpand];
+  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
+  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
+  Header.Options := Header.Options + [hoAutoResize];
+  Header.Options := Header.Options - [hoDrag];
+  Header.AutoSizeIndex := 0;
+  DragMode := dmManual;
+  ShowHint := True;
+  HintMode := hmTooltip;
+
+  for i := 0 to Streams.Count - 1 do
+  begin
+    Node := AddChild(nil);
+    NodeData := GetNodeData(Node);
+    NodeData.Name := Streams[i];
+  end;
+
+  FColTitle := Header.Columns.Add;
+  FColTitle.Text := _('Name');
+
+  Sort(nil, 0, Header.SortDirection);
+
+  Header.SortColumn := 0;
+  Header.SortDirection := sdAscending;
+end;
+
+destructor TIgnoreTree.Destroy;
+begin
+
+  inherited;
+end;
+
+procedure TIgnoreTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
+  TextType: TVSTTextType; var Text: UnicodeString);
+var
+  NodeData: PBlacklistNodeData;
+begin
+  inherited;
+
+  if TextType = ttNormal then
+  begin
+    NodeData := GetNodeData(Node);
+    case Column of
+      0: Text := NodeData.Name;
+    end;
+  end;
+end;
+
+function TIgnoreTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
+  Column: TColumnIndex; var Ghosted: Boolean;
+  var Index: Integer): TCustomImageList;
+begin
+  Result := inherited;
+
+  if Column = 0 then
+    Index := 1;
+end;
+
+procedure TIgnoreTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
+begin
+  inherited;
+  if HitInfo.Button = mbLeft then
+  begin
+    if Header.SortColumn <> HitInfo.Column then
+    begin
+      Header.SortColumn := HitInfo.Column;
+      Header.SortDirection := sdAscending;
+    end else
+    begin
+      if Header.SortDirection = sdAscending then
+        Header.SortDirection := sdDescending
+      else
+        Header.SortDirection := sdAscending;
+    end;
+    Sort(nil, HitInfo.Column, Header.SortDirection);
+  end;
+end;
+
+function TIgnoreTree.DoIncrementalSearch(Node: PVirtualNode;
+  const Text: string): Integer;
+var
+  S: string;
+  NodeData: PBlacklistNodeData;
+begin
+  S := Text;
+  NodeData := GetNodeData(Node);
+  Result := StrLIComp(PChar(S), PChar(NodeData.Name),
+    Min(Length(S), Length(NodeData.Name)));
+end;
+
+procedure TIgnoreTree.RemoveSelected;
+var
+  Node, Node2: PVirtualNode;
+begin
+  Node := GetLast;
+  BeginUpdate;
+  while Node <> nil do
+  begin
+    if Selected[Node] then
+    begin
+      Node2 := GetPrevious(Node);
+      DeleteNode(Node);
+      Node := Node2;
+    end else
+      Node := GetPrevious(Node);
+  end;
+  EndUpdate;
+end;
+
+procedure TIgnoreTree.UpdateList(List: TStringList);
+var
+  Node: PVirtualNode;
+  NodeData: PBlacklistNodeData;
+begin
+  List.Clear;
+
+  Node := GetLast;
+  BeginUpdate;
+  while Node <> nil do
+  begin
+    NodeData := GetNodeData(Node);
+    List.Add(NodeData.Name);
+    Node := GetPrevious(Node);
+  end;
+  EndUpdate;
+end;
+
+function TIgnoreTree.DoCompare(Node1, Node2: PVirtualNode;
+  Column: TColumnIndex): Integer;
+  function CmpTime(a, b: TDateTime): Integer;
+  begin
+    if a > b then
+      Result := 1
+    else if a < b then
+      Result := -1
+    else
+      Result := 0;
+  end;
+var
+  ND1, ND2: PBlacklistNodeData;
+begin
+  Result := 0;
+
+  ND1 := GetNodeData(Node1);
+  ND2 := GetNodeData(Node2);
+  case Column of
+    0: Result := CompareText(ND1.Name, ND2.Name);
+  end;
+end;
+
+procedure TIgnoreTree.DoFreeNode(Node: PVirtualNode);
+begin
+  Finalize(PBlacklistNodeData(GetNodeData(Node)).Name);
+
+  inherited;
+end;
+}
+
+{ TTitleSettingsTree }
+
+function TTitleSettingsTree.DoGetImageIndex(Node: PVirtualNode;
+  Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean;
+  var Index: Integer): TCustomImageList;
+begin
+  Result := inherited;
+
+  if Column = 0 then
+    Index := 1;
 end;
 
 end.

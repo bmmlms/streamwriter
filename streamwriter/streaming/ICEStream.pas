@@ -529,8 +529,10 @@ begin
           begin
             if FSaveAllowedFilter = 0 then
               WriteDebug(Format(_('Skipping "%s" - not on wishlist'), [Title]), 1, 0)
+            else if FSaveAllowedFilter = 1 then
+              WriteDebug(Format(_('Skipping "%s" - on global ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), 1, 0)
             else
-              WriteDebug(Format(_('Skipping "%s" - on ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), 1, 0);
+              WriteDebug(Format(_('Skipping "%s" - on stream ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), 1, 0);
             Dec(FSongsSaved);
             RemoveData;
             Exit;

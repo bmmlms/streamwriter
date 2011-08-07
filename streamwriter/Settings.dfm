@@ -5,7 +5,7 @@ object frmSettings: TfrmSettings
   BorderStyle = bsSingle
   Caption = 'Settings'
   ClientHeight = 793
-  ClientWidth = 1229
+  ClientWidth = 1201
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -17,7 +17,6 @@ object frmSettings: TfrmSettings
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnActivate = FormActivate
-  OnCreate = FormCreate
   OnResize = FormResize
   PixelsPerInch = 96
   TextHeight = 13
@@ -25,15 +24,15 @@ object frmSettings: TfrmSettings
     Left = 304
     Top = 4
     Width = 293
-    Height = 333
+    Height = 377
     TabOrder = 0
     Visible = False
     DesignSize = (
       293
-      333)
+      377)
     object lblDefaultFilter: TLabel
       Left = 4
-      Top = 288
+      Top = 336
       Width = 25
       Height = 13
       Anchors = [akLeft, akRight, akBottom]
@@ -67,27 +66,27 @@ object frmSettings: TfrmSettings
     end
     object chkDeleteStreams: TCheckBox
       Left = 4
-      Top = 184
+      Top = 168
       Width = 265
       Height = 21
-      Anchors = [akLeft, akTop, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Delete stream-files when recording stops'
       TabOrder = 0
       OnClick = chkDeleteStreamsClick
     end
     object chkAddSavedToIgnore: TCheckBox
       Left = 4
-      Top = 208
+      Top = 192
       Width = 281
       Height = 21
-      Anchors = [akLeft, akTop, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Automatically add saved titles to ignore list'
       TabOrder = 1
       OnClick = chkAddSavedToIgnoreClick
     end
     object lstDefaultFilter: TComboBox
       Left = 4
-      Top = 304
+      Top = 352
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -97,45 +96,47 @@ object frmSettings: TfrmSettings
       Items.Strings = (
         'Save every song'
         'Use wishlist'
-        'Use ignorelist'
-        'Use both lists')
+        'Use global ignorelist'
+        'Use stream ignorelist'
+        'Use both ignorelists'
+        'Use all lists')
     end
     object chkSeparateTracks: TCheckBox
       Left = 4
-      Top = 136
+      Top = 120
       Width = 281
       Height = 21
-      Anchors = [akLeft, akTop, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Save separated tracks'
       TabOrder = 3
       OnClick = chkSeparateTracksClick
     end
     object chkSaveStreamsToMemory: TCheckBox
       Left = 4
-      Top = 112
+      Top = 96
       Width = 281
       Height = 21
-      Anchors = [akLeft, akTop, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Save received data to memory instead of disk'
       TabOrder = 4
       OnClick = chkSaveStreamsToMemoryClick
     end
     object chkOnlySaveFull: TCheckBox
       Left = 20
-      Top = 160
+      Top = 144
       Width = 265
       Height = 21
-      Anchors = [akLeft, akTop, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Only save whole songs'
       TabOrder = 5
       OnClick = chkOnlySaveFullClick
     end
     object chkOverwriteSmaller: TCheckBox
       Left = 4
-      Top = 232
+      Top = 240
       Width = 281
       Height = 21
-      Anchors = [akLeft, akTop, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Overwrite existing file if newer file is larger'
       Checked = True
       State = cbChecked
@@ -144,10 +145,10 @@ object frmSettings: TfrmSettings
     end
     object chkDiscardSmaller: TCheckBox
       Left = 4
-      Top = 256
+      Top = 264
       Width = 281
       Height = 21
-      Anchors = [akLeft, akTop, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Discard new file if existing one is lager'
       TabOrder = 7
       OnClick = chkDiscardSmallerClick
@@ -180,6 +181,16 @@ object frmSettings: TfrmSettings
       ReadOnly = True
       TabOrder = 9
     end
+    object chkAddSavedToStreamIgnore: TCheckBox
+      Left = 4
+      Top = 216
+      Width = 281
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Automatically add saved titles to stream ignore list'
+      TabOrder = 10
+      OnClick = chkAddSavedToStreamIgnoreClick
+    end
   end
   object pnlMain: TPanel
     Left = 4
@@ -200,7 +211,7 @@ object frmSettings: TfrmSettings
     end
     object Label3: TLabel
       Left = 4
-      Top = 248
+      Top = 252
       Width = 190
       Height = 13
       Anchors = [akLeft, akBottom]
@@ -208,7 +219,7 @@ object frmSettings: TfrmSettings
     end
     object Label18: TLabel
       Left = 4
-      Top = 296
+      Top = 300
       Width = 192
       Height = 13
       Anchors = [akLeft, akBottom]
@@ -238,7 +249,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultAction: TComboBox
       Left = 4
-      Top = 264
+      Top = 268
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -268,7 +279,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultActionBrowser: TComboBox
       Left = 4
-      Top = 312
+      Top = 316
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -316,7 +327,7 @@ object frmSettings: TfrmSettings
     Visible = False
     object Label1: TLabel
       Left = 56
-      Top = 64
+      Top = 68
       Width = 40
       Height = 13
       Caption = 'seconds'
@@ -677,7 +688,7 @@ object frmSettings: TfrmSettings
   end
   object pnlHotkeys: TPanel
     Left = 304
-    Top = 344
+    Top = 388
     Width = 293
     Height = 141
     TabOrder = 5
@@ -687,18 +698,17 @@ object frmSettings: TfrmSettings
       141)
     object Label9: TLabel
       Left = 4
-      Top = 100
+      Top = 104
       Width = 37
       Height = 13
       Anchors = [akLeft, akBottom]
       Caption = 'Hotkey:'
-      ExplicitTop = 144
     end
     object lstHotkeys: TListView
       Left = 4
       Top = 0
       Width = 285
-      Height = 85
+      Height = 93
       Anchors = [akLeft, akTop, akRight, akBottom]
       Columns = <
         item
@@ -713,11 +723,10 @@ object frmSettings: TfrmSettings
       ViewStyle = vsReport
       OnChange = lstHotkeysChange
       OnResize = lstHotkeysResize
-      ExplicitHeight = 201
     end
     object txtHotkey: THotKey
       Left = 4
-      Top = 116
+      Top = 120
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -725,7 +734,6 @@ object frmSettings: TfrmSettings
       HotKey = 32833
       TabOrder = 1
       OnChange = txtHotkeyChange
-      ExplicitTop = 232
     end
   end
   object pnlCommunity: TPanel
@@ -1042,7 +1050,7 @@ object frmSettings: TfrmSettings
     end
     object btnBlacklistRemove: TButton
       Left = 196
-      Top = 108
+      Top = 112
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
@@ -1054,14 +1062,14 @@ object frmSettings: TfrmSettings
   end
   object pnlStreamsAdvanced: TPanel
     Left = 304
-    Top = 492
+    Top = 536
     Width = 293
-    Height = 297
+    Height = 253
     TabOrder = 9
     Visible = False
     DesignSize = (
       293
-      297)
+      253)
     object btnResetTitlePattern: TPngSpeedButton
       Left = 264
       Top = 32
@@ -1130,7 +1138,7 @@ object frmSettings: TfrmSettings
       Left = 4
       Top = 95
       Width = 285
-      Height = 118
+      Height = 78
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
       Columns = <
@@ -1143,10 +1151,11 @@ object frmSettings: TfrmSettings
       ViewStyle = vsReport
       OnChange = lstIgnoreTitlesChange
       OnResize = lstIgnoreTitlesResize
+      ExplicitHeight = 122
     end
     object btnRemoveIgnoreTitlePattern: TButton
       Left = 196
-      Top = 268
+      Top = 228
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
@@ -1154,11 +1163,11 @@ object frmSettings: TfrmSettings
       Enabled = False
       TabOrder = 2
       OnClick = btnRemoveIgnoreTitlePatternClick
-      ExplicitTop = 152
+      ExplicitTop = 272
     end
     object btnAddIgnoreTitlePattern: TButton
       Left = 100
-      Top = 268
+      Top = 228
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
@@ -1166,11 +1175,11 @@ object frmSettings: TfrmSettings
       Enabled = False
       TabOrder = 3
       OnClick = btnAddIgnoreTitlePatternClick
-      ExplicitTop = 152
+      ExplicitTop = 272
     end
     object txtIgnoreTitlePattern: TLabeledEdit
       Left = 4
-      Top = 240
+      Top = 200
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -1179,6 +1188,7 @@ object frmSettings: TfrmSettings
       EditLabel.Caption = 'Pattern to ignore (use '#39'*'#39' as wildcard):'
       TabOrder = 4
       OnChange = txtIgnoreTitlePatternChange
+      ExplicitTop = 244
     end
   end
   object pnlBandwidth: TPanel
@@ -1222,6 +1232,66 @@ object frmSettings: TfrmSettings
       OnClick = chkLimitClick
     end
   end
+  object pnlStreamIgnoreList: TPanel
+    Left = 904
+    Top = 656
+    Width = 293
+    Height = 133
+    Padding.Left = 4
+    Padding.Right = 4
+    TabOrder = 11
+    Visible = False
+    object Panel1: TPanel
+      Left = 5
+      Top = 1
+      Width = 283
+      Height = 28
+      Align = alTop
+      BevelOuter = bvNone
+      TabOrder = 0
+      ExplicitWidth = 287
+      object tbIgnoreTitles: TToolBar
+        Left = 232
+        Top = 0
+        Width = 51
+        Height = 28
+        Align = alRight
+        Caption = 'tbIgnoreTitles'
+        Images = PngImageList1
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 0
+        ExplicitLeft = 236
+        object btnIgnoreListAdd: TToolButton
+          Left = 0
+          Top = 0
+          Hint = 'Add'
+          Caption = 'btnIgnoreListAdd'
+          ImageIndex = 2
+          OnClick = btnIgnoreListAddClick
+        end
+        object btnIgnoreListRemove: TToolButton
+          Left = 23
+          Top = 0
+          Hint = 'Remove'
+          Caption = 'btnIgnoreListRemove'
+          Enabled = False
+          ImageIndex = 3
+          OnClick = btnIgnoreListRemoveClick
+        end
+      end
+      object txtIgnoreList: TEdit
+        Left = 0
+        Top = 0
+        Width = 217
+        Height = 21
+        Align = alCustom
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 1
+        ExplicitWidth = 221
+      end
+    end
+  end
   object dlgOpen: TOpenDialog
     Filter = 'Executable files (*.exe, *.bat)|*.exe;*.bat'
     Left = 548
@@ -1231,7 +1301,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800000210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800100210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1401,30 +1471,71 @@ object frmSettings: TfrmSettings
       end
       item
         Background = clWindow
-        Name = 'IconNeu16'
+        Name = 'delete'
         PngImage.Data = {
           89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
-          610000000473424954080808087C08648800000009704859730000024F000002
-          4F01F79138900000001974455874536F667477617265007777772E696E6B7363
-          6170652E6F72679BEE3C1A000002284944415478DA63FCFFFF3F033A90ED7FC2
-          C9F4E39FD1C34AB9A30C0400233603947A9FCBFFBC79FF062337CB66012BB398
-          2BA10CBF48320004A452F73D61FCF25F9A4180ED0683B440C0D31ADD9B241920
-          9D7D70F7BF2F5F6D19FEFEFEC7C8C6FB8B495C34E749BBEE12A20D90ADB95AF5
-          E7F1E3BA5FFFEF7630FF628F66E5529665E0E75EF44CC02CE37F3DC33F820648
-          F4DE1363BEF1F8D1CF6FE75B78D918A67CFEFCB399954B33968197FBE0F3A9CE
-          FE040D0001C9B4BD67FF7E7DFAF9F5B27847A0BAFF62696BA3591878A7FD657A
-          61F87246DC3D820648575EACF9FFFC59F95F813F2A2F27F8BE04BB2C7BCBB41F
-          2F2E5CFBB0B6660A4E03A45BEEAB337CFAECCBC8C8C8C7F0FA5DE5EF7FCF16BF
-          5C10990493172BDBADFAAACBF5368601F28D77B498DE7D9C2DC7CF62262CC2CD
-          72FBCD4F8677CF3F33FCFDF1FCE54B154199FFF50E7FF0C6824CCEE9FDBEC682
-          0E29B6620C475EFC65D8F7F81FC38537FF18FEDD7AC8F0FBF783961733426A71
-          1AC00844B259C7DE47FB6BF08B7030323CF9FA9FE1F8F37F0CCFBFFD67F8FFF9
-          2BC3AFABC7EEBE54BBADF6BFBEFE1F4E1748A5EEBA2AAAA4A4252223C0F0E6C7
-          7F860F3F20E220177CBDBBED9EB0B9BBE1ED7AF34F380D10CBDBECC6F4EEDB52
-          16515521467E5EA6FFBFFF32FCFFF8E6F78F0747DEFD787369E6D713CBEA09A6
-          44C19066C3FFEF9F853071CA7AFC7D7F9FFDD7BB3B0758C5E44EF31BFBAC7ADC
-          17FA9DE8A4CCD8C8C024C77E84FF51A5ED87FF78120B00457C20F0ADF5CF9600
-          00000049454E44AE426082}
+          610000001974455874536F6674776172650041646F626520496D616765526561
+          647971C9653C0000037B4944415478DA55930D6C136518C7FF6F8FB56C6DAFEB
+          DA6E6CEB0AC887EC833936328DC282130CC4282A8318962598190C060C51188C
+          A112ADD86D0685A10D06E302C144CDE2448D7C0D70332AEA18E2DCE868EDC6B6
+          E2B8B65BBBEBDA5EDB3BDF9E13C79BFCF2E6EEDEE7FFDCF33EFF874892844847
+          2BFE5B9DD53B32E8B695524E29A33094EE69EC15A75A38CC5864A6C0E5EA1DEF
+          A468D2F666573E0276C15C68E65B40140493EE61F094D10B5D8805F9E655A75A
+          EAEE11089FFF04976A5E6EC928CEDF5EF0E26610FF10C4000731E8950F29B406
+          285823609A8F1BAD6DE07EB9667FF4E49197EE0A7C93C55A8DA5450D059B1F87
+          70FD32029E71DCFE9343C81F41F2BB3A231573F28D4837EBA15A5A01475B27C6
+          AEF434579E78AF8EB4676A7353D46923E5BB6A10EFFF0123BD6318EDF37E9FAC
+          977291723F2DA36BD16345D0A7C7E53F4A295C895F0F7F86E878C04CDA4C5AEB
+          82F56B1A8CCABFE11FF6E1E6CF9ED3F4CC0BAB3F7E97BB50BB6B055128BA0A6B
+          9F834E3981C8E00022BC008D490B6F740E5C5F77BC4D3E37B13DA5D5AB4B18BF
+          0B8EAB7E04C702EBD67CD478E6FCD63D7270D1F39BC02AFC080F3A30F0DB1D48
+          202878280BA26911BA4F9CEB239F1AD9E883CF9628C5A00FDD973C10130955B2
+          85C9E0A55B36422B7108BB69F0351FF889888D96B3B76C552E18568F2BED7F08
+          E4A45137B96C458E464144F4FCC8250556CAC1351BA0498C61CAE580B36F027C
+          206A5B7BD45A7F66FBFE6869458E327917573B3D026935EA7AF28B0D25A934EF
+          5F5C2A02B73C28AE7E06EAC86D845C37E0BCC9233429D8D6BDFF66FD773B5FAF
+          D46667752CB648884612E8FDDDE724C70D3AABF93E4343261B476CDE72306A1D
+          D453A3E09DFD70B9C3E0F998ED894307EA9319BF7DE5C0170F54ADAD629C3FC1
+          37C960C8E53F4A8E19D27355A9AA91251606EA854BE436C9C123318442711B7D
+          7C63DAD65B2CE5CB6ACD060953EE01F40DC521848542D9487683BE49CFCEDA3D
+          37939105423106DE044B3BE285244A48CFCB41DEF2626468198C779DC5309780
+          2F103FFC6463C34E59E0D6B1669CDE77F043BD9A6CCB333048335BA02B7B184A
+          5336F5B102C21D7A1F8E5E04FBAF63D42FC2C78BF6A70EEEFBDFCA43F64639F3
+          57FB1B9B5218B2DBA896A09B0DA866FD3B304202088401EF148110970EADB7EE
+          79F59E611AFCC076773CDB5F6BB2D06D1BA58AB270FAB59BF265D2DE4FBF55E7
+          9C39CEFF00233280974F14462B0000000049454E44AE426082}
+      end
+      item
+        Background = clWindow
+        Name = 'list-add'
+        PngImage.Data = {
+          89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+          61000000017352474200AECE1CE900000006624B474400FF00FF00FFA0BDA793
+          000000097048597300000B1300000B1301009A9C180000000774494D4507DA06
+          0D091303F56C9333000002DB4944415478DA75536B485361187EBE733677CBDB
+          B6BC2C2DCCE10F2B2F1564FE28BAD00FA1C82E988159E81FD30AD3C2148D2C10
+          B1D440EC5F38BBAA2111DD142AB454FA91D518CB426D611AA9CD79D9D0EDEC9C
+          CEF9066B527DF072F8E07CCFFB3ECFFB3C04F90CE061016F10001E29F3A55006
+          EBA1D1C64210BC10782F185606D7CC04E6A7BF81611898492BE016DF712C880F
+          80882543CA422954A19168AE3A8AC43561083CDFA75DC8AD6C8363DC0A8B6012
+          1B2AC47E1440ECEEE6C51290EC2C4784310D8F6B3350DF6111AC3607E42C8141
+          AF46454E2A29BADE8F81EE36583DB701460510990F20F5572578CE4D470E8FD9
+          80270D59C8ADE911266C43747C759801EDD57B48417D1F3EF4B48B3464742A2B
+          FF1064D3C16A2843221019130FD722878D097A5CCC4D457EDD1BE1EBC8671046
+          8E50FD2AB4946D23F75E8CA0F3A5057285067393A35898B6816C3DD684E6CA23
+          CB38CF3A3D286CEC137E8C8D5080109D018D45696475E40AFF3F63534EE49499
+          40769EEAC0B36B9994F3ABC17128837CE3CDCE4CD10D1086A534620C51502958
+          701C8F7571E128CA4C247B2F7481EC28BC8FE70D8728E7914FEFC0CA14F4112B
+          5788A5A2608410511FC1DF3D217E359ACEA4938CD2477F004ED4BE1686AD8322
+          805C7CC1FC1340F200CFF3CB01769D7E80A757F7E392E9BDD03FF8057265309D
+          60C939B38C8256A78742CEC2C37991B4568BF3D949645F793748FAF11B305DCE
+          8624906B8983D72BD06F49F35B2A22C30621581B8DBA822D44F2838C65A837EC
+          F36E1C28BEE95BA32A2C1A46630216DD1C928D3A9C3DBCFEAF35DEAAD84E3A7B
+          6D904AAD944102774C0C8946CA63906AAFFAAF91244D2423DDADDA4D4E36F6C3
+          DC1B6024AED30740ADECC1322BD7DCF9289847ED54C0D8951A5CC9DF4C8A9B06
+          D0D7255AD9DD1A60E53CE20B132785E91CD4DA18BF268147E29C55D606FB9819
+          16BEC5975E1A260A1018E7126874B1D045C5C1CB0BFE353A266D98FB394CEF66
+          886974131AE7DF14233FBBCEB8CA430000000049454E44AE426082}
       end
       item
         Background = clWindow

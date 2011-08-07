@@ -95,22 +95,6 @@ type
     property Finalized: Boolean read FFinalized write FFinalized;
   end;
 
-  TTitleInfo = class
-  private
-    FTitle: string;
-    FPattern: string;
-    FHash: Cardinal;
-  public
-    constructor Create(Title: string); overload;
-
-    class function Load(Stream: TExtendedStream; Version: Integer): TTitleInfo;
-    procedure Save(Stream: TExtendedStream);
-
-    property Title: string read FTitle;
-    property Pattern: string read FPattern;
-    property Hash: Cardinal read FHash;
-  end;
-
   TListCategoryList = TList<TListCategory>;
 
   TListCategory = class
@@ -247,8 +231,8 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure Assign(From: TStreamEntry);
-    function Copy: TStreamEntry;
+    procedure Assign(From: TStreamEntry; CopyIgnoreList: Boolean);
+    function Copy(CopyIgnoreList: Boolean): TStreamEntry;
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamEntry;
     procedure Save(Stream: TExtendedStream);
 
@@ -276,13 +260,8 @@ type
   TStreamList = class(TList<TStreamEntry>)
   private
   public
-    //function Add(Name: string; URL: string; URLs: TStringList; BitRate: Cardinal; Genre: string;
-    //  SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal): TStreamEntry; overload;
     function Add(Entry: TStreamEntry): TStreamEntry; overload;
     function Get(Name, URL: string; URLs: TStringList): TStreamEntry; overload;
-  end;
-
-  TTitleList = class(TList<TTitleInfo>)
   end;
 
   TRecentList = class(TList<TRecentEntry>)
@@ -333,13 +312,13 @@ type
   end;
 
 const
-  DATAVERSION = 26;
+  DATAVERSION = 27;
 
 implementation
 
 { TStreamEntry }
 
-procedure TStreamEntry.Assign(From: TStreamEntry);
+procedure TStreamEntry.Assign(From: TStreamEntry; CopyIgnoreList: Boolean);
 var
   i: Integer;
   S: TSchedule;
@@ -357,7 +336,7 @@ begin
   FGenre := From.Genre;
   FWasRecording := From.WasRecording;
   FURLs.Assign(From.FURLs);
-  FSettings.Assign(From.FSettings);
+  FSettings.Assign(From.FSettings, CopyIgnoreList);
 
   FSchedules.Clear;
   for i := 0 to From.FSchedules.Count - 1 do
@@ -368,10 +347,10 @@ begin
   end;
 end;
 
-function TStreamEntry.Copy: TStreamEntry;
+function TStreamEntry.Copy(CopyIgnoreList: Boolean): TStreamEntry;
 begin
   Result := TStreamEntry.Create;
-  Result.Assign(Self);
+  Result.Assign(Self, CopyIgnoreList);
 end;
 
 constructor TStreamEntry.Create;
@@ -397,6 +376,7 @@ begin
   for i := 0 to FSchedules.Count - 1 do
     FSchedules[i].Free;
   FSchedules.Free;
+
   inherited;
 end;
 
@@ -414,6 +394,7 @@ var
   URL: string;
   TrackInfo: TTrackInfo;
   DTTmp: TDateTime;
+  TitleInfo: TTitleInfo;
 begin
   Result := TStreamEntry.Create;
 
@@ -429,7 +410,7 @@ begin
   end else
   begin
     // Defaults benutzen..
-    Result.FSettings.Assign(AppGlobals.StreamSettings);
+    Result.FSettings.Assign(AppGlobals.StreamSettings, False);
   end;
 
   if Version >= 24 then
@@ -461,7 +442,21 @@ begin
     if (Version >= 3) then
     begin
       Stream.Read(B);
-      Result.FSettings.Filter := TUseFilters(B);
+      if Version > 26 then
+        Result.FSettings.Filter := TUseFilters(B)
+      else
+      begin
+        if B = 0 then
+          Result.FSettings.Filter := ufNone
+        else if B = 1 then
+          Result.FSettings.Filter := ufWish
+        else if B = 2 then
+          Result.FSettings.Filter := ufIgnoreBoth
+        else if B = 3 then
+          Result.FSettings.Filter := ufBoth
+        else
+          Result.FSettings.Filter := ufNone;
+      end;
     end;
 
     Stream.Read(Result.FMigrationSubmitted);
@@ -884,12 +879,6 @@ begin
       for i := 0 to FStreamBlacklist.Count - 1 do
         S.Write(FStreamBlacklist[i]);
 
-      {
-      S.Write(FRatingList.Count);
-      for i := 0 to FRatingList.Count - 1 do
-        FRatingList[i].Save(S);
-      }
-
       S.Write(FBrowserList.Count);
       for i := 0 to FBrowserList.Count - 1 do
         FBrowserList[i].Save(S);
@@ -982,41 +971,6 @@ begin
   inherited Add(Result);
 end;
 
-{
-function TStreamList.Add(Name, URL: string;
-  URLs: TStringList; BitRate: Cardinal; Genre: string; SkipShort: Boolean; UseFilter: TUseFilters; SongsSaved: Cardinal): TStreamEntry;
-var
-  Entry: TStreamEntry;
-begin
-  Result := Get(Name, URL, URLs);
-
-  if Result <> nil then
-  begin
-    if BitRate > 0 then
-      Result.BitRate := BitRate;
-    if Genre <> '' then
-      Result.Genre := Genre;
-    Exit;
-  end;
-
-  Entry := TStreamEntry.Create;
-  Entry.Name := Name;
-  Entry.StartURL := URL;
-  Entry.URLs.Assign(URLs);
-  //Entry.SkipShort := SkipShort;
-  //Entry.BitRate := BitRate;
-  //Entry.Genre := Genre;
-  Entry.SongsSaved := SongsSaved;
-  //Entry.UseFilter := UseFilter;
-
-  Entry.FParent := Self;
-
-  Add(Entry);
-
-  Result := Entry;
-end;
-}
-
 function TStreamList.Get(Name, URL: string;
   URLs: TStringList): TStreamEntry;
 var
@@ -1058,51 +1012,6 @@ begin
           end;
     end;
   end;
-end;
-
-{ TTitleInfo }
-
-constructor TTitleInfo.Create(Title: string);
-var
-  NumChars: Integer;
-  Hash: Cardinal;
-  Pattern: string;
-begin
-  inherited Create;
-
-  FTitle := Title;
-
-  Pattern := BuildPattern(Title, Hash, NumChars, False);
-  FPattern := Pattern;
-  FHash := Hash;
-end;
-
-class function TTitleInfo.Load(Stream: TExtendedStream;
-  Version: Integer): TTitleInfo;
-var
-  NumChars: Integer;
-  Hash: Cardinal;
-  Pattern: string;
-begin
-  Result := TTitleInfo.Create;
-  Stream.Read(Result.FTitle);
-  if Version > 3 then
-  begin
-    Stream.Read(Result.FPattern);
-    Stream.Read(Result.FHash);
-  end else
-  begin
-    Pattern := BuildPattern(Result.FTitle, Hash, NumChars, False);
-    Result.FPattern := Pattern;
-    Result.FHash := Hash;
-  end;
-end;
-
-procedure TTitleInfo.Save(Stream: TExtendedStream);
-begin
-  Stream.Write(FTitle);
-  Stream.Write(FPattern);
-  Stream.Write(FHash);
 end;
 
 { TListCategory }

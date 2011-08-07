@@ -852,22 +852,41 @@ procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string;
       end;
     end;
   end;
+var
+  Client: TICEClient;
 begin
+  Client := Sender as TICEClient;
   Allowed := False;
   Match := '';
   if Length(Title) < 1 then
     Exit;
 
-  case TICEClient(Sender).Entry.Settings.Filter of
+  case Client.Entry.Settings.Filter of
     ufWish:
       begin
         Allowed := ContainsTitle(FStreams.SaveList, Title, Match);
         Filter := 0;
       end;
-    ufIgnore:
+    ufIgnoreGlobal:
       begin
         Allowed := not ContainsTitle(FStreams.IgnoreList, Title, Match);
         Filter := 1;
+      end;
+    ufIgnoreLocal:
+      begin
+        Allowed := not ContainsTitle(Client.Entry.Settings.IgnoreList, Title, Match);
+        Filter := 2;
+      end;
+    ufIgnoreBoth:
+      begin
+        Allowed := not ContainsTitle(FStreams.IgnoreList, Title, Match);
+        Filter := 1;
+
+        if Allowed then
+        begin
+          Allowed := not ContainsTitle(Client.Entry.Settings.IgnoreList, Title, Match);
+          Filter := 2;
+        end;
       end;
     ufBoth:
       begin
@@ -875,8 +894,13 @@ begin
         if Allowed then
         begin
           Allowed := not ContainsTitle(FStreams.IgnoreList, Title, Match);
-          if not Allowed then
-            Filter := 1;
+          Filter := 1;
+
+          if Allowed then
+          begin
+            Allowed := not ContainsTitle(Client.Entry.Settings.IgnoreList, Title, Match);
+            Filter := 2;
+          end;
         end else
           Filter := 0;
       end
@@ -1018,6 +1042,26 @@ begin
         begin
           if Assigned(FOnAddIgnoreList) then
             FOnAddIgnoreList(Self, Title);
+        end;
+      end;
+    end;
+
+    if Client.Entry.Settings.AddSavedToStreamIgnore and FullTitle then
+    begin
+      Pattern := BuildPattern(Title, Hash, NumChars, True);
+      if NumChars > 3 then
+      begin
+        Found := False;
+        for i := 0 to Client.Entry.Settings.IgnoreList.Count - 1 do
+          if Client.Entry.Settings.IgnoreList[i].Hash = Hash then
+          begin
+            Found := True;
+            Break;
+          end;
+
+        if not Found then
+        begin
+          Client.Entry.Settings.IgnoreList.Add(TTitleInfo.Create(Title));
         end;
       end;
     end;
@@ -1428,7 +1472,7 @@ begin
         if NodeData.Client.AutoRemove then
           Continue;
 
-        E := NodeData.Client.Entry.Copy;
+        E := NodeData.Client.Entry.Copy(True);
         E.Index := Nodes[i].Index;
         E.CategoryIndex := 0;
         E.WasRecording := NodeData.Client.Recording and AppGlobals.RememberRecordings;

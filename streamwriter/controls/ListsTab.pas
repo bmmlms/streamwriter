@@ -274,7 +274,7 @@ begin
     if FType = 0 then
       Index := 31
     else
-      Index := 32;
+      Index := 65;
 end;
 
 procedure TTitleTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);

@@ -147,7 +147,6 @@ type
     procedure SetVolume(Vol: Integer);
 
     procedure Kill;
-    procedure SetSettings(Settings: TStreamSettings);
 
     property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
     property RecordTitle: string read FRecordTitle write FRecordTitle;
@@ -214,7 +213,7 @@ constructor TICEClient.Create(Manager: TObject; Entry: TStreamEntry);
 begin
   FManager := Manager;
   Initialize;
-  FEntry.Assign(Entry);
+  FEntry.Assign(Entry, True);
 end;
 
 procedure TICEClient.Initialize;
@@ -225,7 +224,7 @@ begin
   FProcessingList := TProcessingList.Create;
 
   FEntry := TStreamEntry.Create;
-  FEntry.Settings.Assign(AppGlobals.StreamSettings);
+  FEntry.Settings.Assign(AppGlobals.StreamSettings, True);
 
   FKilled := False;
   FState := csStopped;
@@ -538,6 +537,8 @@ end;
 
 procedure TICEClient.ThreadNeedSettings(Sender: TSocketThread);
 begin
+  // TODO: Das hier evtl. nur machen wenn settings auch geändert wurden in der zwischenzeit!
+  // Ignore list etc werden immer kopiert, das kann zeit kosten.
   FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FStopAfterSong, FRecordTitle);
 end;
 
@@ -974,11 +975,6 @@ begin
   end;
 end;
 
-procedure TICEClient.SetSettings(Settings: TStreamSettings);
-begin
-  FEntry.Settings.Assign(Settings);
-end;
-
 procedure TICEClient.SetVolume(Vol: Integer);
 begin
   if FICEThread <> nil then
@@ -1034,4 +1030,5 @@ begin
 end;
 
 end.
+
 

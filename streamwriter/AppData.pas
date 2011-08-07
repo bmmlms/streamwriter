@@ -29,13 +29,33 @@ uses
 type
   TClientActions = (caStartStop, caStreamIntegrated, caStream, caFile);
   TBrowserActions = (baStart, baListen, baListenExternal);
-  TUseFilters = (ufNone, ufWish, ufIgnore, ufBoth);
+  TUseFilters = (ufNone, ufWish, ufIgnoreGlobal, ufIgnoreLocal, ufIgnoreBoth, ufBoth);
 
   // Die ..None-Dinger müssen am Ende stehen!
   TScheduleInterval = (siDaily, siWeekly, siNone);
   TScheduleDay = (sdMonday, sdTuesday, sdWednesday, sdThursday, sdFriday, sdSaturday, sdSunday, sdNone);
 
   TIntArray = array of Integer;
+
+  TTitleInfo = class
+  private
+    FTitle: string;
+    FPattern: string;
+    FHash: Cardinal;
+  public
+    constructor Create(Title: string); overload;
+
+    class function Load(Stream: TExtendedStream; Version: Integer): TTitleInfo;
+    procedure Save(Stream: TExtendedStream);
+    function Copy: TTitleInfo;
+
+    property Title: string read FTitle;
+    property Pattern: string read FPattern;
+    property Hash: Cardinal read FHash;
+  end;
+
+  TTitleList = class(TList<TTitleInfo>)
+  end;
 
   TStreamSettings = class
   private
@@ -46,6 +66,7 @@ type
     FRemoveChars: string;
     FDeleteStreams: Boolean;
     FAddSavedToIgnore: Boolean;
+    FAddSavedToStreamIgnore: Boolean;
     FSkipShort: Boolean;
     FSearchSilence: Boolean;
     FSilenceLevel: Cardinal;
@@ -62,6 +83,7 @@ type
     FOverwriteSmaller: Boolean;
     FDiscardSmaller: Boolean;
     FIgnoreTrackChangePattern: TStringList;
+    FIgnoreList: TTitleList;
 
     procedure FSetSaveToMemory(Value: Boolean);
   public
@@ -70,7 +92,7 @@ type
 
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamSettings;
     procedure Save(Stream: TExtendedStream);
-    procedure Assign(From: TStreamSettings);
+    procedure Assign(From: TStreamSettings; CopyIgnoreList: Boolean);
     function Copy: TStreamSettings;
 
     property TitlePattern: string read FTitlePattern write FTitlePattern;
@@ -80,6 +102,7 @@ type
     property RemoveChars: string read FRemoveChars write FRemoveChars;
     property DeleteStreams: Boolean read FDeleteStreams write FDeleteStreams;
     property AddSavedToIgnore: Boolean read FAddSavedToIgnore write FAddSavedToIgnore;
+    property AddSavedToStreamIgnore: Boolean read FAddSavedToStreamIgnore write FAddSavedToStreamIgnore;
     property SkipShort: Boolean read FSkipShort write FSkipShort;
     property SearchSilence: Boolean read FSearchSilence write FSearchSilence;
     property SilenceLevel: Cardinal read FSilenceLevel write FSilenceLevel;
@@ -96,6 +119,7 @@ type
     property OverwriteSmaller: Boolean read FOverwriteSmaller write FOverwriteSmaller;
     property DiscardSmaller: Boolean read FDiscardSmaller write FDiscardSmaller;
     property IgnoreTrackChangePattern: TStringList read FIgnoreTrackChangePattern write FIgnoreTrackChangePattern;
+    property IgnoreList: TTitleList read FIgnoreList;
   end;
 
   TStreamSettingsArray = array of TStreamSettings;
@@ -209,6 +233,61 @@ var
   AppGlobals: TAppData;
 
 implementation
+
+{ TTitleInfo }
+
+constructor TTitleInfo.Create(Title: string);
+var
+  NumChars: Integer;
+  Hash: Cardinal;
+  Pattern: string;
+begin
+  inherited Create;
+
+  FTitle := Title;
+
+  Pattern := BuildPattern(Title, Hash, NumChars, False);
+  FPattern := Pattern;
+  FHash := Hash;
+end;
+
+class function TTitleInfo.Load(Stream: TExtendedStream;
+  Version: Integer): TTitleInfo;
+var
+  NumChars: Integer;
+  Hash: Cardinal;
+  Pattern: string;
+begin
+  Result := TTitleInfo.Create;
+  Stream.Read(Result.FTitle);
+  if Version > 3 then
+  begin
+    Stream.Read(Result.FPattern);
+    Stream.Read(Result.FHash);
+  end else
+  begin
+    Pattern := BuildPattern(Result.FTitle, Hash, NumChars, False);
+    Result.FPattern := Pattern;
+    Result.FHash := Hash;
+  end;
+end;
+
+procedure TTitleInfo.Save(Stream: TExtendedStream);
+begin
+  Stream.Write(FTitle);
+  Stream.Write(FPattern);
+  Stream.Write(FHash);
+end;
+
+function TTitleInfo.Copy: TTitleInfo;
+begin
+  Result := TTitleInfo.Create;
+  Result.FTitle := FTitle;
+  Result.FPattern := FPattern;
+  Result.FHash := FHash;
+end;
+
+{ TAppData }
 
 constructor TAppData.Create(AppName: string);
 var
@@ -445,6 +524,7 @@ end;
 procedure TAppData.Load;
 var
   i, DefaultActionTmp, DefaultActionBrowser, DefaultFilterTmp: Integer;
+  Version: TAppVersion;
 begin
   inherited;
 
@@ -470,6 +550,7 @@ begin
 
   FStorage.Read('DeleteStreams', FStreamSettings.FDeleteStreams, False);
   FStorage.Read('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore, True);
+  FStorage.Read('AddSavedToStreamIgnore', FStreamSettings.FAddSavedToStreamIgnore, False);
   FStorage.Read('SkipShort', FStreamSettings.FSkipShort, True);
   FStorage.Read('SearchSilence', FStreamSettings.FSearchSilence, True);
   FStorage.Read('SilenceLevel', FStreamSettings.FSilenceLevel, 5);
@@ -573,12 +654,23 @@ begin
   else
     FDefaultActionBrowser := TBrowserActions(DefaultActionBrowser);
 
-  if (DefaultFilterTmp > Ord(High(TUseFilters))) or
-     (DefaultFilterTmp < Ord(Low(TUseFilters))) then
+  if IsVersionNewer(LastUsedVersion, AppVersion) and (IsVersionNewer(LastUsedVersion, ParseVersion('2.1.0.9'))) then
+  begin
+    if DefaultFilterTmp = 0 then
+      FStreamSettings.Filter := ufNone
+    else if DefaultFilterTmp = 1 then
+      FStreamSettings.Filter := ufWish
+    else if DefaultFilterTmp = 2 then
+      FStreamSettings.Filter := ufIgnoreBoth
+    else if DefaultFilterTmp = 3 then
+      FStreamSettings.Filter := ufBoth
+    else
+      FStreamSettings.Filter := ufNone;
+  end else if (DefaultFilterTmp > Ord(High(TUseFilters))) or
+              (DefaultFilterTmp < Ord(Low(TUseFilters))) then
     FStreamSettings.Filter := ufNone
   else
     FStreamSettings.Filter := TUseFilters(DefaultFilterTmp);
-
 
   if FStreamSettings.FSaveToMemory then
   begin
@@ -607,6 +699,7 @@ begin
 
   FStorage.Write('DeleteStreams', FStreamSettings.FDeleteStreams);
   FStorage.Write('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore);
+  FStorage.Write('AddSavedToStreamIgnore', FStreamSettings.FAddSavedToStreamIgnore);
   FStorage.Write('SkipShort', FStreamSettings.FSkipShort);
   FStorage.Write('SearchSilence', FStreamSettings.FSearchSilence);
   FStorage.Write('SilenceLevel', FStreamSettings.FSilenceLevel);
@@ -693,7 +786,7 @@ end;
 function TStreamSettings.Copy: TStreamSettings;
 begin
   Result := TStreamSettings.Create;
-  Result.Assign(Self);
+  Result.Assign(Self, True);
 end;
 
 constructor TStreamSettings.Create;
@@ -701,11 +794,19 @@ begin
   inherited;
 
   FIgnoreTrackChangePattern := TStringList.Create;
+
+  FIgnoreList := TTitleList.Create;
 end;
 
 destructor TStreamSettings.Destroy;
+var
+  i: Integer;
 begin
   FIgnoreTrackChangePattern.Free;
+
+  for i := 0 to FIgnoreList.Count - 1 do
+    FIgnoreList[i].Free;
+  FIgnoreList.Free;
 
   inherited;
 end;
@@ -722,6 +823,7 @@ class function TStreamSettings.Load(Stream: TExtendedStream;
 var
   i, Count, FilterTmp: Integer;
   IgnoreTmp: string;
+  TitleInfo: TTitleInfo;
 begin
   Result := TStreamSettings.Create;
 
@@ -755,6 +857,8 @@ begin
 
   Stream.Read(Result.FDeleteStreams);
   Stream.Read(Result.FAddSavedToIgnore);
+  if Version >= 27 then
+    Stream.Read(Result.FAddSavedToStreamIgnore);
   Stream.Read(Result.FSkipShort);
   Stream.Read(Result.FSearchSilence);
   Stream.Read(Result.FSilenceLevel);
@@ -819,7 +923,20 @@ begin
      (FilterTmp < Ord(Low(TUseFilters))) then
     Result.FFilter := ufNone
   else
-    Result.FFilter := TUseFilters(FilterTmp);
+    if Version > 26 then
+      Result.FFilter := TUseFilters(FilterTmp)
+    else
+    begin
+      if FilterTmp = 0 then
+        Result.FFilter := ufNone
+      else if FilterTmp = 1 then
+        Result.FFilter := ufWish
+      else if FilterTmp = 2 then
+        Result.FFilter := ufIgnoreBoth
+      else if FilterTmp = 3 then
+        Result.FFilter := ufBoth
+      else Result.FFilter := ufNone;
+    end;
 
   if Version >= 26 then
   begin
@@ -828,6 +945,17 @@ begin
     begin
       Stream.Read(IgnoreTmp);
       Result.FIgnoreTrackChangePattern.Add(IgnoreTmp);
+    end;
+  end;
+
+  if Version >= 27 then
+  begin
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+    begin
+      TitleInfo := TTitleInfo.Load(Stream, Version);
+      if TitleInfo <> nil then
+        Result.FIgnoreList.Add(TitleInfo);
     end;
   end;
 end;
@@ -843,6 +971,7 @@ begin
   Stream.Write(FRemoveChars);
   Stream.Write(FDeleteStreams);
   Stream.Write(FAddSavedToIgnore);
+  Stream.Write(FAddSavedToStreamIgnore);
   Stream.Write(FSkipShort);
   Stream.Write(FSearchSilence);
   Stream.Write(FSilenceLevel);
@@ -862,9 +991,15 @@ begin
   Stream.Write(FIgnoreTrackChangePattern.Count);
   for i := 0 to FIgnoreTrackChangePattern.Count - 1 do
     Stream.Write(FIgnoreTrackChangePattern[i]);
+
+  Stream.Write(FIgnoreList.Count);
+  for i := 0 to FIgnoreList.Count - 1 do
+    FIgnoreList[i].Save(Stream);
 end;
 
-procedure TStreamSettings.Assign(From: TStreamSettings);
+procedure TStreamSettings.Assign(From: TStreamSettings; CopyIgnoreList: Boolean);
+var
+  i: Integer;
 begin
   FTitlePattern := From.FTitlePattern;
   FFilePattern := From.FFilePattern;
@@ -873,6 +1008,7 @@ begin
   FRemoveChars := From.RemoveChars;
   FDeleteStreams := From.FDeleteStreams;
   FAddSavedToIgnore := From.FAddSavedToIgnore;
+  FAddSavedToStreamIgnore := From.FAddSavedToStreamIgnore;
   FSkipShort := From.FSkipShort;
   FSearchSilence := From.FSearchSilence;
   FSilenceLevel := From.FSilenceLevel;
@@ -889,6 +1025,15 @@ begin
   FOverwriteSmaller := From.FOverwriteSmaller;
   FDiscardSmaller := From.DiscardSmaller;
   FIgnoreTrackChangePattern.Assign(From.FIgnoreTrackChangePattern);
+
+  if CopyIgnoreList then
+  begin
+    for i := 0 to FIgnoreList.Count - 1 do
+      FIgnoreList[i].Free;
+    FIgnoreList.Clear;
+    for i := 0 to From.IgnoreList.Count - 1 do
+      FIgnoreList.Add(From.IgnoreList[i].Copy);
+  end;
 end;
 
 initialization

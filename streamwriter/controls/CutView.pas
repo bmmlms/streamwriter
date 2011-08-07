@@ -210,7 +210,6 @@ type
 
     function CanCut: Boolean;
     function CanUndo: Boolean;
-    //function CanSave: Boolean;
     function CanPlay: Boolean;
     function CanStop: Boolean;
     function CanAutoCut: Boolean;
@@ -224,7 +223,6 @@ type
     property Player: TPlayer read FPlayer;
     property LineMode: TLineMode read FLineMode write FLineMode;
     property Filesize: UInt64 read FFilesize;
-    //property Length: UInt64 read FLength;
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
   end;
 
@@ -836,7 +834,7 @@ function TCutView.CanCut: Boolean;
 begin
   Result := (FWaveData <> nil) and (FPB.FEndLine - FPB.FStartLine > 0) and
     (FWaveData.TimeBetween(FPB.FStartLine, FPB.FEndLine) >= 0.5) and
-    ((FWaveData.WaveArray[0].Pos <> FPB.FStartLine) or (FWaveData.WaveArray[High(FWaveData.WaveArray)].Pos <> FPB.FEndLine));
+    ((FPB.FStartLine > 0) or (FPB.FEndLine < High(FWaveData.WaveArray)));
 end;
 
 function TCutView.CanEffectsMarker: Boolean;
@@ -848,13 +846,6 @@ function TCutView.CanUndo: Boolean;
 begin
   Result := (FWaveData <> nil) and (FUndoList.Count > 0);
 end;
-
-{
-function TCutView.CanSave: Boolean;
-begin
-  Result := (FWaveData <> nil) and (FWaveData.CutStates.Count > 1); TODO: !!!
-end;
-}
 
 function TCutView.CanPlay: Boolean;
 begin

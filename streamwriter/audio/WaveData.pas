@@ -166,10 +166,6 @@ var
   P: TPosRect;
 begin
   Result := False;
-  //if CutStates.Count <= 1 then
-  //  Exit;
-
-  // TODO: Speichern darf nur, wenn auch was gemacht wurde (schneiden oder sow)
 
   try
     S := WaveArray[StartPos].Pos;

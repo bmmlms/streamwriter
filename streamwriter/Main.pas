@@ -468,7 +468,7 @@ begin
     begin
       for i := 0 to Length(Clients) - 1 do
         if not Clients[i].AutoRemove then
-          Clients[i].Entry.Settings.Assign(S.StreamSettings[i]);
+          Clients[i].Entry.Settings.Assign(S.StreamSettings[i], True);
     end;
   end;
 
