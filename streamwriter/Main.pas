@@ -1409,7 +1409,7 @@ var
   Schedule: TSchedule;
   Res: TMayConnectResults;
 begin
-  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
+  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, False));
   for Client in Clients do
   begin
     for Schedule in Client.Entry.Schedules do
