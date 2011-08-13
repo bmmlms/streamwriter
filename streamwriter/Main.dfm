@@ -5,7 +5,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   ClientHeight = 321
   ClientWidth = 689
   Color = clBtnFace
-  Constraints.MinHeight = 300
+  Constraints.MinHeight = 350
   Constraints.MinWidth = 600
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -409,9 +409,24 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Hint = 'Stop recording after current title'
     end
     object actCopyTitle: TAction
-      Caption = 'Copy tit&le to clipboard'
+      Caption = '&Copy title to clipboard'
       Hint = 'Copy title to clipboard'
       ImageIndex = 57
+    end
+    object actAddToSaveList: TAction
+      Caption = 'Add to &wishlist'
+      Hint = 'Add to wishlist'
+      ImageIndex = 31
+    end
+    object actAddToGlobalIgnoreList: TAction
+      Caption = 'Add to &global ignorelist'
+      Hint = 'Add to global ignorelist'
+      ImageIndex = 65
+    end
+    object actAddToStreamIgnoreList: TAction
+      Caption = 'Add to &stream ignorelist'
+      Hint = 'Add to stream ignorelist'
+      ImageIndex = 65
     end
   end
   object mnuStreamPopup: TPopupMenu
@@ -479,11 +494,26 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         Action = actSavePlaylistFile
       end
     end
+    object mnuCurrentTitle1: TMenuItem
+      Caption = 'Current tit&le'
+      object Copytitletoclipboard1: TMenuItem
+        Action = actCopyTitle
+      end
+      object N5: TMenuItem
+        Caption = '-'
+      end
+      object Addtowishlist1: TMenuItem
+        Action = actAddToSaveList
+      end
+      object Addtoglobalignorelist1: TMenuItem
+        Action = actAddToGlobalIgnoreList
+      end
+      object Addtostreamignorelist1: TMenuItem
+        Action = actAddToStreamIgnoreList
+      end
+    end
     object mnuOpenWebsite1: TMenuItem
       Action = actOpenWebsite
-    end
-    object mnuCopyTitle1: TMenuItem
-      Action = actCopyTitle
     end
     object mnuMoveToCategory1: TMenuItem
       Caption = 'Move to &category'

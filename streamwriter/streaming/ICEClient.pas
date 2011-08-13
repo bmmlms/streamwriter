@@ -213,7 +213,7 @@ constructor TICEClient.Create(Manager: TObject; Entry: TStreamEntry);
 begin
   FManager := Manager;
   Initialize;
-  FEntry.Assign(Entry, True);
+  FEntry.Assign(Entry);
 end;
 
 procedure TICEClient.Initialize;
@@ -224,7 +224,7 @@ begin
   FProcessingList := TProcessingList.Create;
 
   FEntry := TStreamEntry.Create;
-  FEntry.Settings.Assign(AppGlobals.StreamSettings, True);
+  FEntry.Settings.Assign(AppGlobals.StreamSettings);
 
   FKilled := False;
   FState := csStopped;
@@ -1030,5 +1030,6 @@ begin
 end;
 
 end.
+
 
 

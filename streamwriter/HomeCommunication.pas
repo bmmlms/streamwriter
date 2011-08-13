@@ -113,6 +113,7 @@ type
     FWasConnected: Boolean;
     FAuthenticated: Boolean;
     FTitleNotificationsEnabled: Boolean;
+    FTitleNotificationsSet: Boolean;
     FIsAdmin: Boolean;
     FDataLists: TDataLists;
 
@@ -441,10 +442,11 @@ begin
   if not Connected then
     Exit;
 
-  if Enable = FTitleNotificationsEnabled then
+  if (Enable = FTitleNotificationsEnabled) and FTitleNotificationsSet then
     Exit;
 
   FTitleNotificationsEnabled := Enable;
+  FTitleNotificationsSet := True;
 
   XMLDocument := FClient.XMLGet('settitlenotifications');
   try

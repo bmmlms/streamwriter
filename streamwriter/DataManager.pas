@@ -224,6 +224,9 @@ type
 
     FSchedules: TScheduleList;
 
+    FSaveList: TTitleList;
+    FIgnoreList: TTitleList;
+
     procedure FSetName(Value: string);
 
     procedure FSetGenre(Value: string);
@@ -231,8 +234,8 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure Assign(From: TStreamEntry; CopyIgnoreList: Boolean);
-    function Copy(CopyIgnoreList: Boolean): TStreamEntry;
+    procedure Assign(From: TStreamEntry);
+    function Copy: TStreamEntry;
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamEntry;
     procedure Save(Stream: TExtendedStream);
 
@@ -255,6 +258,9 @@ type
     property BytesReceived: UInt64 read FBytesReceived write FBytesReceived;
 
     property Schedules: TScheduleList read FSchedules;
+
+    property SaveList: TTitleList read FSaveList;
+    property IgnoreList: TTitleList read FIgnoreList;
   end;
 
   TStreamList = class(TList<TStreamEntry>)
@@ -312,13 +318,13 @@ type
   end;
 
 const
-  DATAVERSION = 27;
+  DATAVERSION = 28;
 
 implementation
 
 { TStreamEntry }
 
-procedure TStreamEntry.Assign(From: TStreamEntry; CopyIgnoreList: Boolean);
+procedure TStreamEntry.Assign(From: TStreamEntry);
 var
   i: Integer;
   S: TSchedule;
@@ -336,8 +342,10 @@ begin
   FGenre := From.Genre;
   FWasRecording := From.WasRecording;
   FURLs.Assign(From.FURLs);
-  FSettings.Assign(From.FSettings, CopyIgnoreList);
+  FSettings.Assign(From.FSettings);
 
+  for i := 0 to FSchedules.Count - 1 do
+    FSchedules[i].Free;
   FSchedules.Clear;
   for i := 0 to From.FSchedules.Count - 1 do
   begin
@@ -345,12 +353,24 @@ begin
     S.Assign(From.FSchedules[i]);
     FSchedules.Add(S);
   end;
+
+  for i := 0 to FSaveList.Count - 1 do
+    FSaveList[i].Free;
+  for i := 0 to FIgnoreList.Count - 1 do
+    FIgnoreList[i].Free;
+  FSaveList.Clear;
+  FIgnoreList.Clear;
+
+  for i := 0 to From.FSaveList.Count - 1 do
+    FSaveList.Add(From.FSaveList[i].Copy);
+  for i := 0 to From.FIgnoreList.Count - 1 do
+    FIgnoreList.Add(From.FIgnoreList[i].Copy);
 end;
 
-function TStreamEntry.Copy(CopyIgnoreList: Boolean): TStreamEntry;
+function TStreamEntry.Copy: TStreamEntry;
 begin
   Result := TStreamEntry.Create;
-  Result.Assign(Self, CopyIgnoreList);
+  Result.Assign(Self);
 end;
 
 constructor TStreamEntry.Create;
@@ -364,6 +384,9 @@ begin
   FMigrationTrackList := TTrackList.Create;
 
   FSchedules := TScheduleList.Create;
+
+  FSaveList := TTitleList.Create;
+  FIgnoreList := TTitleList.Create;
 end;
 
 destructor TStreamEntry.Destroy;
@@ -376,6 +399,13 @@ begin
   for i := 0 to FSchedules.Count - 1 do
     FSchedules[i].Free;
   FSchedules.Free;
+
+  for i := 0 to FSaveList.Count - 1 do
+    FSaveList[i].Free;
+  FSaveList.Free;
+  for i := 0 to FIgnoreList.Count - 1 do
+    FIgnoreList[i].Free;
+  FIgnoreList.Free;
 
   inherited;
 end;
@@ -410,7 +440,7 @@ begin
   end else
   begin
     // Defaults benutzen..
-    Result.FSettings.Assign(AppGlobals.StreamSettings, False);
+    Result.FSettings.Assign(AppGlobals.StreamSettings);
   end;
 
   if Version >= 24 then
@@ -507,6 +537,24 @@ begin
     for i := 0 to Count - 1 do
       Result.FSchedules.Add(TSchedule.Load(Stream, Version));
   end;
+
+  if Version >= 28 then
+  begin
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+      Result.FSaveList.Add(TTitleInfo.Load(Stream, Version));
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+      Result.FIgnoreList.Add(TTitleInfo.Load(Stream, Version));
+  end else if Version = 27 then
+  begin
+    for i := Result.FSettings.MigrationIgnoreList.Count - 1 downto 0 do
+    begin
+      Result.FIgnoreList.Add(Result.FSettings.MigrationIgnoreList[i].Copy);
+      Result.FSettings.MigrationIgnoreList[i].Free;
+      Result.FSettings.MigrationIgnoreList.Delete(i);
+    end;
+  end;
 end;
 
 procedure TStreamEntry.Save(Stream: TExtendedStream);
@@ -539,6 +587,14 @@ begin
   Stream.Write(FSchedules.Count);
   for i := 0 to FSchedules.Count - 1 do
     FSchedules[i].Save(Stream);
+
+  Stream.Write(FSaveList.Count);
+  for i := 0 to FSaveList.Count - 1 do
+    FSaveList[i].Save(Stream);
+
+  Stream.Write(FIgnoreList.Count);
+  for i := 0 to FIgnoreList.Count - 1 do
+    FIgnoreList[i].Save(Stream);
 end;
 
 procedure TStreamEntry.FSetGenre(Value: string);

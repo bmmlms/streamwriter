@@ -546,7 +546,7 @@ begin
       Result := True;
     end else
     begin
-      MsgBox(Handle, _('The file could not be saved.'#13#10'Please make sure the file is not in use by another application.'), _('Info'), MB_ICONINFORMATION);
+      MsgBox(GetParentForm(Self).Handle, _('The file could not be saved.'#13#10'Please make sure the file is not in use by another application.'), _('Info'), MB_ICONINFORMATION);
     end;
   finally
     // Wenn Result = True wird FPlayer in LoadFile() neu erstellt
@@ -917,7 +917,7 @@ begin
 
   if not Plugin.ReadyForActivate then
   begin
-    Res := MsgBox(Handle, _('This function cannot be used because needed files have not been downloaded.'#13#10'Do you want to download these files now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
+    Res := MsgBox(GetParentForm(Self).Handle, _('This function cannot be used because needed files have not been downloaded.'#13#10'Do you want to download these files now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
     if Res = IDYES  then
     begin
       if not Plugin.ShowInitMessage(Handle) then
@@ -930,7 +930,7 @@ begin
         if not DA.Downloaded then
         begin
           if DA.Error then
-            MsgBox(Handle, _('An error occured while downloading the file.'), _('Error'), MB_ICONEXCLAMATION);
+            MsgBox(GetParentForm(Self).Handle, _('An error occured while downloading the file.'), _('Error'), MB_ICONEXCLAMATION);
           Exit;
         end;
       finally
@@ -962,7 +962,7 @@ begin
 
   if not Plugin.ReadyForUse then
   begin
-    MsgBox(Handle, _('The plugin is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
+    MsgBox(GetParentForm(Self).Handle, _('The plugin is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
     Exit;
   end else
     Result := True;

@@ -32,7 +32,8 @@ uses
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
-  PlayerManager, Logging, Timers, Notifications, Generics.Collections;
+  PlayerManager, Logging, Timers, Notifications, Generics.Collections,
+  TypeDefs;
 
 type
   TSWStatusBar = class(TStatusBar)
@@ -192,10 +193,18 @@ type
     mnuStopAfterSong1: TMenuItem;
     cmdStopAfterSong: TToolButton;
     cmdSetupTimers: TToolButton;
-    mnuCopyTitle1: TMenuItem;
+    mnuCurrentTitle1: TMenuItem;
     actCopyTitle: TAction;
     cmdCopyTitle: TToolButton;
     tmrSchedule: TTimer;
+    Copytitletoclipboard1: TMenuItem;
+    actAddToSaveList: TAction;
+    Addtowishlist1: TMenuItem;
+    actAddToGlobalIgnoreList: TAction;
+    actAddToStreamIgnoreList: TAction;
+    Addtoglobalignorelist1: TMenuItem;
+    Addtostreamignorelist1: TMenuItem;
+    N5: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -276,9 +285,11 @@ type
     procedure tabClientsCut(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsTrackAdded(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
-    procedure tabClientsAddIgnoreList(Sender: TObject; Data: string);
+    procedure tabClientsAddTitleToList(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string);
     procedure tabClientsAuthRequired(Sender: TObject);
     procedure tabClientsShowErrorMessage(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
+    procedure tabClientsClientAdded(Sender: TObject);
+    procedure tabClientsClientRemoved(Sender: TObject);
 
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedRefresh(Sender: TObject);
@@ -352,6 +363,7 @@ begin
 
   FUpdater.Kill;
 
+  AppGlobals.LastUsedDataVersion := DataManager.DATAVERSION;
   if not Shutdown then
     AppGlobals.Save(Handle)
   else
@@ -362,10 +374,12 @@ begin
   Saved := False;
   while not Saved do
   begin
-    try
+    //try
+    // TODO: Das Try..Except ist temporär draußen, weil es 2 mal beim speichern crashte. Vllt kann madExcept helfen!
       tabClients.UpdateStreams(FDataLists);
       FDataLists.Save;
       Break;
+    {
     except
       if not Shutdown then
       begin
@@ -375,6 +389,7 @@ begin
       end else
         Break;
     end;
+    }
   end;
 
   tabClients.ClientView.Clear;
@@ -468,7 +483,7 @@ begin
     begin
       for i := 0 to Length(Clients) - 1 do
         if not Clients[i].AutoRemove then
-          Clients[i].Entry.Settings.Assign(S.StreamSettings[i], True);
+          Clients[i].Entry.Settings.Assign(S.StreamSettings[i]);
     end;
   end;
 
@@ -589,7 +604,7 @@ begin
   pagMain := TMainPageControl.Create(Self);
   pagMain.Parent := Self;
   pagMain.Visible := True;
-  pagMain.Align := alClient;
+  pagMain.Align := alClient;     // TODO: stream aktuellen titel per kontextmenü auf ignoreliste packen
   pagMain.Images := imgImages;
 
   tabClients := TClientTab.Create(pagMain);
@@ -603,7 +618,7 @@ begin
   tabClients.OnCut := tabClientsCut;
   tabClients.OnTrackAdded := tabClientsTrackAdded;
   tabClients.OnTrackRemoved := tabClientsTrackRemoved;
-  tabClients.OnAddIgnoreList := tabClientsAddIgnoreList;
+  tabClients.OnAddTitleToList := tabClientsAddTitleToList;
   tabClients.OnVolumeChanged := tabVolumeChanged;
   tabClients.OnPlayStarted := tabPlayStarted;
   tabClients.OnAuthRequired := tabClientsAuthRequired;
@@ -676,6 +691,9 @@ begin
   ScreenSnap := AppGlobals.SnapMain;
 
   addStatus.CustomHint := TStatusHint.Create(Self);
+
+  tabClients.OnClientAdded := tabClientsClientAdded;
+  tabClients.OnClientRemoved := tabClientsClientRemoved;
 end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
@@ -712,7 +730,7 @@ begin
   FWasMaximized := WindowState = wsMaximized;
 
   tabClients.Shown;
-  tabLists.Setup(FDataLists, imgImages);
+  tabLists.Setup(FClients, FDataLists, imgImages);
 
   actShowSideBar.Checked := tabClients.SideBar.Visible;
 
@@ -1195,6 +1213,22 @@ begin
   }
 end;
 
+procedure TfrmStreamWriterMain.tabClientsClientAdded(Sender: TObject);
+var
+  Client: TICEClient;
+begin
+  Client := Sender as TICEClient;
+  tabLists.AddClient(Client);
+end;
+
+procedure TfrmStreamWriterMain.tabClientsClientRemoved(Sender: TObject);
+var
+  Client: TICEClient;
+begin
+  Client := Sender as TICEClient;
+  tabLists.RemoveClient(Client);
+end;
+
 procedure TfrmStreamWriterMain.tabClientsCut(Entry: TStreamEntry;
   Track: TTrackInfo);
 var
@@ -1290,15 +1324,53 @@ procedure TfrmStreamWriterMain.tabClientsTrackRemoved(Entry: TStreamEntry;
 begin
   tabSaved.Tree.RemoveTrack(Track);
 end;
-
-procedure TfrmStreamWriterMain.tabClientsAddIgnoreList(Sender: TObject;
-  Data: string);
+                // TODO: Die Toolbar unten bekommt sprach-änderung nicht mit!
+procedure TfrmStreamWriterMain.tabClientsAddTitleToList(Sender: TObject; Client: TICEClient;
+  ListType: TListType; Title: string);
 var
-  Ignore: TTitleInfo;
+  i, NumChars: Integer;
+  Hash: Cardinal;
+  Found: Boolean;
+  Pattern, LowerFilename: string;
+  T: TTitleInfo;
+  List: TTitleList;
 begin
-  Ignore := TTitleInfo.Create(Data);
-  FDataLists.IgnoreList.Add(Ignore);
-  tabLists.AddIgnore(Ignore);
+  if Client = nil then
+    if ListType = ltSave then
+      List := FDataLists.SaveList
+    else
+      List := FDataLists.IgnoreList
+  else
+    if ListType = ltSave then
+      List := Client.Entry.SaveList
+    else
+      List := Client.Entry.IgnoreList;
+
+
+  Pattern := BuildPattern(Title, Hash, NumChars, True);
+  if NumChars > 3 then
+  begin
+    Found := False;
+    for i := 0 to List.Count - 1 do
+      if List[i].Hash = Hash then
+      begin
+        Found := True;
+        Break;
+      end;
+
+    if not Found then
+    begin
+      T := TTitleInfo.Create(Title);
+
+      List.Add(T);
+      tabLists.AddTitle(Client, ListType, T);
+
+      if (ListType = ltSave) and AppGlobals.AutoTuneIn then
+      begin
+        HomeComm.SetTitleNotifications(True);
+      end;
+    end;
+  end;
 end;
 
 procedure TfrmStreamWriterMain.tabClientsAuthRequired(Sender: TObject);
@@ -1634,8 +1706,8 @@ begin
   if actTimers.Enabled <> (Length(Clients) = 1) and (not Clients[0].AutoRemove) then
     actTimers.Enabled := (Length(Clients) = 1) and (not Clients[0].AutoRemove);
 
-  if actCopyTitle.Enabled <> (Length(Clients) > 0) and AnyClientHasTitle then
-    actCopyTitle.Enabled := (Length(Clients) > 0) and AnyClientHasTitle;
+  if mnuCurrentTitle1.Enabled <> (Length(Clients) > 0) and AnyClientHasTitle then
+    mnuCurrentTitle1.Enabled := (Length(Clients) > 0) and AnyClientHasTitle;
 end;
 
 procedure TfrmStreamWriterMain.UpdaterNoUpdateFound(Sender: TObject);
@@ -1886,7 +1958,7 @@ begin
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
-  P.Width := 200;
+  P.Width := 190;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;

@@ -303,7 +303,7 @@ end;
 
 procedure TSavedTracksPopup.EnableItems(Enable, Playing: Boolean);
 begin
-  FItemRefresh.Enabled := Enable;
+  //FItemRefresh.Enabled := Enable;
   FItemPlay.Enabled := Enable;
   FItemPause.Enabled := Playing;
   FItemStop.Enabled := Playing;
@@ -327,7 +327,7 @@ end;
 
 procedure TSavedToolBar.EnableItems(Enable, Playing: Boolean);
 begin
-  FRefresh.Enabled := Enable;
+  //FRefresh.Enabled := Enable;
   FPlay.Enabled := Enable and Bass.DeviceAvailable;
   FPause.Enabled := Playing and Bass.DeviceAvailable;
   FStop.Enabled := Playing and Bass.DeviceAvailable;
@@ -573,7 +573,7 @@ begin
           FSavedTree.EndUpdate;
         end;
         if Error then
-          MsgBox(Handle, _('Some files could not be deleted.'#13#10'Please make sure they are not in use by another application.'), _('Info'), MB_ICONINFORMATION);
+          MsgBox(GetParentForm(Self).Handle, _('Some files could not be deleted.'#13#10'Please make sure they are not in use by another application.'), _('Info'), MB_ICONINFORMATION);
       end;
     taShowFile:
       RunProcess('explorer.exe /select,"' + Tracks[0].Filename + '"');
@@ -1321,8 +1321,8 @@ begin
   FPopupMenu.ItemCut.Enabled := Length(Tracks) > 0;
   FTab.FToolbar.FCut.Enabled := Length(Tracks) > 0;
 
-  FPopupMenu.ItemRefresh.Enabled := RootNodeCount > 0;
-  FTab.FToolbar.FRefresh.Enabled := RootNodeCount > 0;
+  //FPopupMenu.ItemRefresh.Enabled := RootNodeCount > 0;
+  //FTab.FToolbar.FRefresh.Enabled := RootNodeCount > 0;
 
   FPopupMenu.ItemShowFile.Enabled := Length(Tracks) = 1;
   FTab.FToolbar.FShowFile.Enabled := Length(Tracks) = 1;

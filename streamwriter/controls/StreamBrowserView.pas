@@ -26,7 +26,7 @@ uses
   StdCtrls, Menus, ImgList, Math, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls,
   HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging,
-  DataManager, TypeDefs;
+  DataManager, TypeDefs, DropSource;
 
 type
   TModes = (moShow, moLoading);
@@ -556,16 +556,32 @@ end;
 procedure TMStreamTree.InvalidateVisible;
 var
   Node: PVirtualNode;
+  R, R2: TRect;
+  FoundStart, InRect: Boolean;
 begin
-  Node := GetFirstVisible(nil);
+  FoundStart := False;
+
+  R2 := Self.ClientRect;
+
+  Node := GetFirst;
   while Node <> nil do
   begin
-    InvalidateNode(Node);
-    if Node = GetLastVisible then
+    R := GetDisplayRect(Node, 0, False);
+
+    InRect := PtInRect(R2, R.TopLeft);
+    if not InRect then
+      InRect := PtInRect(R2, R.BottomRight);
+
+    if InRect then
     begin
-      Exit;
-    end;
-    Node := GetNextVisible(Node);
+      FoundStart := True;
+      InvalidateNode(Node);
+      RepaintNode(Node);
+    end else
+      if FoundStart then
+        Exit;
+
+    Node := GetNext(Node);
   end;
 end;
 

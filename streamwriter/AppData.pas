@@ -30,6 +30,7 @@ type
   TClientActions = (caStartStop, caStreamIntegrated, caStream, caFile);
   TBrowserActions = (baStart, baListen, baListenExternal);
   TUseFilters = (ufNone, ufWish, ufIgnoreGlobal, ufIgnoreLocal, ufIgnoreBoth, ufBoth);
+  TTrackOffsetDirection = (toForward, toBackward);
 
   // Die ..None-Dinger müssen am Ende stehen!
   TScheduleInterval = (siDaily, siWeekly, siNone);
@@ -37,6 +38,7 @@ type
 
   TIntArray = array of Integer;
 
+  // REMARK: Wenn FMigrationIgnoreList weg ist, das hier zurück in den DataManager packen.
   TTitleInfo = class
   private
     FTitle: string;
@@ -74,6 +76,9 @@ type
     FSilenceBufferSeconds: Integer;
     FShortLengthSeconds: Integer;
     FSongBufferSeconds: Integer;
+    FAdjustTrackOffset: Boolean;
+    FAdjustTrackOffsetSeconds: Cardinal;
+    FAdjustTrackOffsetDirection: TTrackOffsetDirection;
     FMaxRetries: Integer;
     FRetryDelay: Cardinal;
     FFilter: TUseFilters;
@@ -83,7 +88,8 @@ type
     FOverwriteSmaller: Boolean;
     FDiscardSmaller: Boolean;
     FIgnoreTrackChangePattern: TStringList;
-    FIgnoreList: TTitleList;
+    // REMARK: Kann raus, ein paar Wochen nachdem Version 2.2.0.0 raus ist. Fixt fail aus den Builds, keine offizielle Version.
+    FMigrationIgnoreList: TTitleList;
 
     procedure FSetSaveToMemory(Value: Boolean);
   public
@@ -92,7 +98,7 @@ type
 
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamSettings;
     procedure Save(Stream: TExtendedStream);
-    procedure Assign(From: TStreamSettings; CopyIgnoreList: Boolean);
+    procedure Assign(From: TStreamSettings);
     function Copy: TStreamSettings;
 
     property TitlePattern: string read FTitlePattern write FTitlePattern;
@@ -110,6 +116,9 @@ type
     property SilenceBufferSeconds: Integer read FSilenceBufferSeconds write FSilenceBufferSeconds;
     property ShortLengthSeconds: Integer read FShortLengthSeconds write FShortLengthSeconds;
     property SongBufferSeconds: Integer read FSongBufferSeconds write FSongBufferSeconds;
+    property AdjustTrackOffset: Boolean read FAdjustTrackOffset write FAdjustTrackOffset;
+    property AdjustTrackOffsetSeconds: Cardinal read FAdjustTrackOffsetSeconds write FAdjustTrackOffsetSeconds;
+    property AdjustTrackOffsetDirection: TTrackOffsetDirection read FAdjustTrackOffsetDirection write FAdjustTrackOffsetDirection;
     property MaxRetries: Integer read FMaxRetries write FMaxRetries;
     property RetryDelay: Cardinal read FRetryDelay write FRetryDelay;
     property Filter: TUseFilters read FFilter write FFilter;
@@ -119,7 +128,7 @@ type
     property OverwriteSmaller: Boolean read FOverwriteSmaller write FOverwriteSmaller;
     property DiscardSmaller: Boolean read FDiscardSmaller write FDiscardSmaller;
     property IgnoreTrackChangePattern: TStringList read FIgnoreTrackChangePattern write FIgnoreTrackChangePattern;
-    property IgnoreList: TTitleList read FIgnoreList;
+    property MigrationIgnoreList: TTitleList read FMigrationIgnoreList;
   end;
 
   TStreamSettingsArray = array of TStreamSettings;
@@ -167,6 +176,7 @@ type
 
     FHeaderWidth: TIntArray;
     FClientCols: Integer;
+    FLastUsedDataVersion: Integer;
 
     FPluginManager: TPluginManager;
     FLanguageIcons: TLanguageIcons;
@@ -222,6 +232,7 @@ type
 
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
     property ClientCols: Integer read FClientCols write FClientCols;
+    property LastUsedDataVersion: Integer read FLastUsedDataVersion write FLastUsedDataVersion;
 
     property DataFile: string read FGetDataFile;
 
@@ -447,7 +458,7 @@ begin
     Text.Add('');
     Text.Add('');
 
-    Text.Add(_('&U&10...and all other sweet people I know!'));
+    Text.Add(_('&U&10...and all other nice people I know!'));
 
     Text.Add('');
     Text.Add('');
@@ -523,12 +534,12 @@ end;
 
 procedure TAppData.Load;
 var
-  i, DefaultActionTmp, DefaultActionBrowser, DefaultFilterTmp: Integer;
+  i, DefaultActionTmp, DefaultActionBrowser,
+    DefaultFilterTmp, Tmp: Integer;
   Version: TAppVersion;
 begin
   inherited;
 
-  //FStorage.Read('TitlePattern', FStreamSettings.FTitlePattern, '(?P<a>.*) - (?P<t>.*)');
   FStreamSettings.FTitlePattern := '(?P<a>.*) - (?P<t>.*)';
 
   FStorage.Read('FilePattern', FStreamSettings.FFilePattern, '%s\%a - %t');
@@ -556,6 +567,11 @@ begin
   FStorage.Read('SilenceLevel', FStreamSettings.FSilenceLevel, 5);
   FStorage.Read('SilenceLength', FStreamSettings.FSilenceLength, 150);
   FStorage.Read('SilenceBufferSeconds', FStreamSettings.FSilenceBufferSeconds, 3);
+
+  FStreamSettings.FAdjustTrackOffset := False;
+  FStreamSettings.FAdjustTrackOffsetSeconds := 0;
+  FStreamSettings.FAdjustTrackOffsetDirection := toForward;
+
   FStorage.Read('SaveToMemory', FStreamSettings.FSaveToMemory, False);
   FStorage.Read('OnlySaveFull', FStreamSettings.FOnlySaveFull, True);
   FStorage.Read('OverwriteSmaller', FStreamSettings.FOverwriteSmaller, True);
@@ -642,6 +658,8 @@ begin
   FStorage.Read('ClientCols', FClientCols, 255, 'Cols');
   FClientCols := FClientCols or (1 shl 0);
 
+  FStorage.Read('LastUsedDataVersion', FLastUsedDataVersion, 0);
+
   if (DefaultActionTmp > Ord(High(TClientActions))) or
      (DefaultActionTmp < Ord(Low(TClientActions))) then
     FDefaultAction := caStartStop
@@ -688,7 +706,6 @@ var
 begin
   inherited;
 
-  FStorage.Write('TitlePattern', FStreamSettings.FTitlePattern);
   FStorage.Write('FilePattern', FStreamSettings.FFilePattern);
   FStorage.Write('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern);
   FStorage.Write('FilePatternDecimals', FStreamSettings.FFilePatternDecimals);
@@ -705,6 +722,7 @@ begin
   FStorage.Write('SilenceLevel', FStreamSettings.FSilenceLevel);
   FStorage.Write('SilenceLength', FStreamSettings.FSilenceLength);
   FStorage.Write('SilenceBufferSeconds', FStreamSettings.FSilenceBufferSeconds);
+
   FStorage.Write('SaveToMemory', FStreamSettings.FSaveToMemory);
   FStorage.Write('OnlySaveFull', FStreamSettings.FOnlySaveFull);
   FStorage.Write('ShortLengthSeconds', FStreamSettings.FShortLengthSeconds);
@@ -756,6 +774,8 @@ begin
       FStorage.Write('HeaderWidth' + IntToStr(i), HeaderWidth[i], 'Cols');
   FStorage.Write('ClientCols', FClientCols, 'Cols');
 
+  FStorage.Write('LastUsedDataVersion', FLastUsedDataVersion);
+
   FStorage.DeleteKey('Plugins');
   n := 0;
   for i := 0 to FPluginManager.Plugins.Count - 1 do
@@ -786,7 +806,7 @@ end;
 function TStreamSettings.Copy: TStreamSettings;
 begin
   Result := TStreamSettings.Create;
-  Result.Assign(Self, True);
+  Result.Assign(Self);
 end;
 
 constructor TStreamSettings.Create;
@@ -795,7 +815,7 @@ begin
 
   FIgnoreTrackChangePattern := TStringList.Create;
 
-  FIgnoreList := TTitleList.Create;
+  FMigrationIgnoreList := TTitleList.Create;
 end;
 
 destructor TStreamSettings.Destroy;
@@ -804,9 +824,9 @@ var
 begin
   FIgnoreTrackChangePattern.Free;
 
-  for i := 0 to FIgnoreList.Count - 1 do
-    FIgnoreList[i].Free;
-  FIgnoreList.Free;
+  for i := 0 to FMigrationIgnoreList.Count - 1 do
+    FMigrationIgnoreList[i].Free;
+  FMigrationIgnoreList.Free;
 
   inherited;
 end;
@@ -821,6 +841,7 @@ end;
 class function TStreamSettings.Load(Stream: TExtendedStream;
   Version: Integer): TStreamSettings;
 var
+  B: Byte;
   i, Count, FilterTmp: Integer;
   IgnoreTmp: string;
   TitleInfo: TTitleInfo;
@@ -938,6 +959,14 @@ begin
       else Result.FFilter := ufNone;
     end;
 
+  if Version >= 28 then
+  begin
+    Stream.Read(Result.FAdjustTrackOffset);
+    Stream.Read(Result.FAdjustTrackOffsetSeconds);
+    Stream.Read(B);
+    Result.FAdjustTrackOffsetDirection := TTrackOffsetDirection(B);
+  end;
+
   if Version >= 26 then
   begin
     Stream.Read(Count);
@@ -948,14 +977,14 @@ begin
     end;
   end;
 
-  if Version >= 27 then
+  if Version = 27 then
   begin
     Stream.Read(Count);
     for i := 0 to Count - 1 do
     begin
       TitleInfo := TTitleInfo.Load(Stream, Version);
       if TitleInfo <> nil then
-        Result.FIgnoreList.Add(TitleInfo);
+        Result.FMigrationIgnoreList.Add(TitleInfo);
     end;
   end;
 end;
@@ -988,16 +1017,16 @@ begin
   Stream.Write(FOverwriteSmaller);
   Stream.Write(FDiscardSmaller);
 
+  Stream.Write(FAdjustTrackOffset);
+  Stream.Write(FAdjustTrackOffsetSeconds);
+  Stream.Write(Byte(FAdjustTrackOffsetDirection));
+
   Stream.Write(FIgnoreTrackChangePattern.Count);
   for i := 0 to FIgnoreTrackChangePattern.Count - 1 do
     Stream.Write(FIgnoreTrackChangePattern[i]);
-
-  Stream.Write(FIgnoreList.Count);
-  for i := 0 to FIgnoreList.Count - 1 do
-    FIgnoreList[i].Save(Stream);
 end;
 
-procedure TStreamSettings.Assign(From: TStreamSettings; CopyIgnoreList: Boolean);
+procedure TStreamSettings.Assign(From: TStreamSettings);
 var
   i: Integer;
 begin
@@ -1023,17 +1052,11 @@ begin
   FSaveToMemory := From.FSaveToMemory;
   FOnlySaveFull := From.FOnlySaveFull;
   FOverwriteSmaller := From.FOverwriteSmaller;
-  FDiscardSmaller := From.DiscardSmaller;
+  FDiscardSmaller := From.FDiscardSmaller;
+  FAdjustTrackOffset := From.FAdjustTrackOffset;
+  FAdjustTrackOffsetSeconds := From.FAdjustTrackOffsetSeconds;
+  FAdjustTrackOffsetDirection := From.FAdjustTrackOffsetDirection;
   FIgnoreTrackChangePattern.Assign(From.FIgnoreTrackChangePattern);
-
-  if CopyIgnoreList then
-  begin
-    for i := 0 to FIgnoreList.Count - 1 do
-      FIgnoreList[i].Free;
-    FIgnoreList.Clear;
-    for i := 0 to From.IgnoreList.Count - 1 do
-      FIgnoreList.Add(From.IgnoreList[i].Copy);
-  end;
 end;
 
 initialization

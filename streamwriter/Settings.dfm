@@ -17,6 +17,7 @@ object frmSettings: TfrmSettings
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnActivate = FormActivate
+  OnCreate = FormCreate
   OnResize = FormResize
   PixelsPerInch = 96
   TextHeight = 13
@@ -344,9 +345,9 @@ object frmSettings: TfrmSettings
       Top = 20
       Width = 49
       Height = 21
-      EditLabel.Width = 168
+      EditLabel.Width = 210
       EditLabel.Height = 13
-      EditLabel.Caption = 'Max. retries on error (zero is infinite):'
+      EditLabel.Caption = 'Max. connect retries on error (zero is infinite):'
       MaxLength = 3
       NumbersOnly = True
       TabOrder = 0
@@ -540,12 +541,12 @@ object frmSettings: TfrmSettings
     Left = 604
     Top = 264
     Width = 293
-    Height = 257
+    Height = 357
     TabOrder = 4
     Visible = False
     DesignSize = (
       293
-      257)
+      357)
     object Label4: TLabel
       Left = 56
       Top = 48
@@ -684,6 +685,52 @@ object frmSettings: TfrmSettings
       NumbersOnly = True
       TabOrder = 6
       OnChange = txtSilenceBufferSecondsChange
+    end
+    object chkAdjustTrackOffset: TCheckBox
+      Left = 4
+      Top = 248
+      Width = 281
+      Height = 21
+      Caption = 'Adjust offset of detected track changes'
+      TabOrder = 7
+      OnClick = chkAdjustTrackOffsetClick
+    end
+    object txtAdjustTrackOffset: TLabeledEdit
+      Left = 20
+      Top = 272
+      Width = 61
+      Height = 21
+      EditLabel.Width = 40
+      EditLabel.Height = 13
+      EditLabel.Caption = 'seconds'
+      Enabled = False
+      LabelPosition = lpRight
+      MaxLength = 2
+      NumbersOnly = True
+      TabOrder = 8
+      OnChange = txtAdjustTrackOffsetChange
+    end
+    object optAdjustBackward: TRadioButton
+      Left = 20
+      Top = 296
+      Width = 189
+      Height = 21
+      Caption = 'Before detected change'
+      Checked = True
+      Enabled = False
+      TabOrder = 9
+      TabStop = True
+      OnClick = optAdjustClick
+    end
+    object optAdjustForward: TRadioButton
+      Left = 20
+      Top = 316
+      Width = 189
+      Height = 21
+      Caption = 'After detected change'
+      Enabled = False
+      TabOrder = 10
+      OnClick = optAdjustClick
     end
   end
   object pnlHotkeys: TPanel
@@ -848,7 +895,7 @@ object frmSettings: TfrmSettings
       Width = 269
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Do not tune in if song is on ignorelist'
+      Caption = 'Do not tune in if song is on global ignorelist'
       TabOrder = 5
       OnClick = chkAutoTuneInClick
     end
@@ -1151,7 +1198,6 @@ object frmSettings: TfrmSettings
       ViewStyle = vsReport
       OnChange = lstIgnoreTitlesChange
       OnResize = lstIgnoreTitlesResize
-      ExplicitHeight = 122
     end
     object btnRemoveIgnoreTitlePattern: TButton
       Left = 196
@@ -1163,7 +1209,6 @@ object frmSettings: TfrmSettings
       Enabled = False
       TabOrder = 2
       OnClick = btnRemoveIgnoreTitlePatternClick
-      ExplicitTop = 272
     end
     object btnAddIgnoreTitlePattern: TButton
       Left = 100
@@ -1175,7 +1220,6 @@ object frmSettings: TfrmSettings
       Enabled = False
       TabOrder = 3
       OnClick = btnAddIgnoreTitlePatternClick
-      ExplicitTop = 272
     end
     object txtIgnoreTitlePattern: TLabeledEdit
       Left = 4
@@ -1188,19 +1232,18 @@ object frmSettings: TfrmSettings
       EditLabel.Caption = 'Pattern to ignore (use '#39'*'#39' as wildcard):'
       TabOrder = 4
       OnChange = txtIgnoreTitlePatternChange
-      ExplicitTop = 244
     end
   end
   object pnlBandwidth: TPanel
     Left = 604
-    Top = 532
+    Top = 628
     Width = 293
-    Height = 257
+    Height = 161
     TabOrder = 10
     Visible = False
     DesignSize = (
       293
-      257)
+      161)
     object Label11: TLabel
       Left = 76
       Top = 44
@@ -1232,66 +1275,6 @@ object frmSettings: TfrmSettings
       OnClick = chkLimitClick
     end
   end
-  object pnlStreamIgnoreList: TPanel
-    Left = 904
-    Top = 656
-    Width = 293
-    Height = 133
-    Padding.Left = 4
-    Padding.Right = 4
-    TabOrder = 11
-    Visible = False
-    object Panel1: TPanel
-      Left = 5
-      Top = 1
-      Width = 283
-      Height = 28
-      Align = alTop
-      BevelOuter = bvNone
-      TabOrder = 0
-      ExplicitWidth = 287
-      object tbIgnoreTitles: TToolBar
-        Left = 232
-        Top = 0
-        Width = 51
-        Height = 28
-        Align = alRight
-        Caption = 'tbIgnoreTitles'
-        Images = PngImageList1
-        ParentShowHint = False
-        ShowHint = True
-        TabOrder = 0
-        ExplicitLeft = 236
-        object btnIgnoreListAdd: TToolButton
-          Left = 0
-          Top = 0
-          Hint = 'Add'
-          Caption = 'btnIgnoreListAdd'
-          ImageIndex = 2
-          OnClick = btnIgnoreListAddClick
-        end
-        object btnIgnoreListRemove: TToolButton
-          Left = 23
-          Top = 0
-          Hint = 'Remove'
-          Caption = 'btnIgnoreListRemove'
-          Enabled = False
-          ImageIndex = 3
-          OnClick = btnIgnoreListRemoveClick
-        end
-      end
-      object txtIgnoreList: TEdit
-        Left = 0
-        Top = 0
-        Width = 217
-        Height = 21
-        Align = alCustom
-        Anchors = [akLeft, akTop, akRight]
-        TabOrder = 1
-        ExplicitWidth = 221
-      end
-    end
-  end
   object dlgOpen: TOpenDialog
     Filter = 'Executable files (*.exe, *.bat)|*.exe;*.bat'
     Left = 548
@@ -1301,7 +1284,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800100210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800240210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

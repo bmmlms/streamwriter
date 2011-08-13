@@ -28,7 +28,7 @@ uses
   DataManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
   GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs,
   Graphics, SharedControls, Generics.Collections, Generics.Defaults,
-  Logging, DynBass, StreamData, Forms, MsgDlg;
+  Logging, DynBass, StreamData, Forms, MsgDlg, TypeDefs;
 
 type
   TSidebar = class(TPageControl)
@@ -76,6 +76,8 @@ type
     property OnStart: TNotifyEvent read FOnStart write FOnStart;
   end;
 
+  TAddTitleEvent = procedure(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string) of object;
+
   TClientTab = class(TMainTabSheet)
   private
     FToolbarPanel: TPanel;
@@ -106,11 +108,13 @@ type
     FOnCut: TTrackEvent;
     FOnTrackAdded: TTrackEvent;
     FOnTrackRemoved: TTrackEvent;
-    FOnAddIgnoreList: TStringEvent;
     FOnVolumeChanged: TSeekChangeEvent;
     FOnPlayStarted: TNotifyEvent;
     FOnAuthRequired: TNotifyEvent;
     FOnShowErrorMessage: TShowErrorMessageEvent;
+    FOnClientAdded: TNotifyEvent;
+    FOnClientRemoved: TNotifyEvent;
+    FOnAddTitleToList: TAddTitleEvent;
 
     procedure ShowInfo;
 
@@ -130,6 +134,9 @@ type
     procedure ActionTuneInStreamExecute(Sender: TObject);
     procedure ActionTuneInFileExecute(Sender: TObject);
     procedure ActionCopyTitleExecute(Sender: TObject);
+    procedure ActionAddToSaveListExecute(Sender: TObject);
+    procedure ActionAddToGlobalIgnoreList(Sender: TObject);
+    procedure ActionAddToStreamIgnoreList(Sender: TObject);
 
     procedure ClientManagerDebug(Sender: TObject);
     procedure ClientManagerRefresh(Sender: TObject);
@@ -184,11 +191,13 @@ type
     property OnCut: TTrackEvent read FOnCut write FOnCut;
     property OnTrackAdded: TTrackEvent read FOnTrackAdded write FOnTrackAdded;
     property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
-    property OnAddIgnoreList: TStringEvent read FOnAddIgnoreList write FOnAddIgnoreList;
     property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
     property OnAuthRequired: TNotifyEvent read FOnAuthRequired write FOnAuthRequired;
     property OnShowErrorMessage: TShowErrorMessageEvent read FOnShowErrorMessage write FOnShowErrorMessage;
+    property OnClientAdded: TNotifyEvent read FOnClientAdded write FOnClientAdded;
+    property OnClientRemoved: TNotifyEvent read FOnClientRemoved write FOnClientRemoved;
+    property OnAddTitleToList: TAddTitleEvent read FOnAddTitleToList write FOnAddTitleToList;
   end;
 
 implementation
@@ -287,6 +296,39 @@ begin
 end;
 
 { TClientTab }
+
+procedure TClientTab.ActionAddToGlobalIgnoreList(Sender: TObject);
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+begin
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
+  for Client in Clients do
+    if Assigned(FOnAddTitleToList) then
+      FOnAddTitleToList(Self, nil, ltIgnore, Client.Title);
+end;
+
+procedure TClientTab.ActionAddToStreamIgnoreList(Sender: TObject);
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+begin
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
+  for Client in Clients do
+    if Assigned(FOnAddTitleToList) then
+      FOnAddTitleToList(Self, Client, ltIgnore, Client.Title);
+end;
+
+procedure TClientTab.ActionAddToSaveListExecute(Sender: TObject);
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+begin
+  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
+  for Client in Clients do
+    if Assigned(FOnAddTitleToList) then
+      FOnAddTitleToList(Self, nil, ltSave, Client.Title);
+end;
 
 procedure TClientTab.ActionCopyTitleExecute(Sender: TObject);
 var
@@ -405,6 +447,12 @@ var
   Nodes, ChildNodes: TNodeArray;
   NodeData, ChildNodeData: PClientNodeData;
 begin
+  if TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('All selected streams will be removed from the list. This also means that their ' +
+                                               'settings and ignorelists get deleted.'#13#10'Are you sure you want to continue?'),
+                                               8, btOKCancel) = mtCancel
+  then
+    Exit;
+
   Nodes := FClientView.GetNodes(ntClient, True);
   for Node in Nodes do
   begin
@@ -517,9 +565,10 @@ var
   Clients: TNodeDataArray;
   Client: PClientNodeData;
 begin
-  Res := MsgBox(Handle, _('This will reset the saved song and bytes received counters.'#13#10 +
-                          'The tracknumber of new saved titles will be 1 if you specified the tracknumber in the filename pattern, this number will also be set in ID3 tags.'#13#10 +
-                          'Do you want to continue?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
+  Res := MsgBox(GetParentForm(Self).Handle,
+                _('This will reset the saved song and bytes received counters.'#13#10 +
+                  'The tracknumber of new saved titles will be 1 if you specified the tracknumber in the filename pattern, this number will also be set in ID3 tags.'#13#10 +
+                  'Do you want to continue?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
   if Res = IDYES then
   begin
     Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
@@ -712,6 +761,9 @@ begin
   GetAction('actSavePlaylistStream').OnExecute := ActionSavePlaylistStreamExecute;
   GetAction('actSavePlaylistFile').OnExecute := ActionSavePlaylistFileExecute;
   GetAction('actCopyTitle').OnExecute := ActionCopyTitleExecute;
+  GetAction('actAddToSaveList').OnExecute := ActionAddToSaveListExecute;
+  GetAction('actAddToGlobalIgnoreList').OnExecute := ActionAddToGlobalIgnoreList;
+  GetAction('actAddToStreamIgnoreList').OnExecute := ActionAddToStreamIgnoreList;
 
   FSplitter := TSplitter.Create(Self);
   FSplitter.Parent := Self;
@@ -874,7 +926,7 @@ begin
       end;
     ufIgnoreLocal:
       begin
-        Allowed := not ContainsTitle(Client.Entry.Settings.IgnoreList, Title, Match);
+        Allowed := not ContainsTitle(Client.Entry.IgnoreList, Title, Match);
         Filter := 2;
       end;
     ufIgnoreBoth:
@@ -884,7 +936,7 @@ begin
 
         if Allowed then
         begin
-          Allowed := not ContainsTitle(Client.Entry.Settings.IgnoreList, Title, Match);
+          Allowed := not ContainsTitle(Client.Entry.IgnoreList, Title, Match);
           Filter := 2;
         end;
       end;
@@ -898,7 +950,7 @@ begin
 
           if Allowed then
           begin
-            Allowed := not ContainsTitle(Client.Entry.Settings.IgnoreList, Title, Match);
+            Allowed := not ContainsTitle(Client.Entry.IgnoreList, Title, Match);
             Filter := 2;
           end;
         end else
@@ -926,6 +978,9 @@ var
 begin
   Client := Sender as TICEClient;
   FClientView.AddClient(Client);
+
+  if Assigned(FOnClientAdded) then
+    FOnClientAdded(Client);
 end;
 
 procedure TClientTab.ClientManagerClientRemoved(Sender: TObject);
@@ -974,6 +1029,9 @@ begin
 
   // Um die Markierung für "Ist in Liste" wegzubekommen
   SideBar.FBrowserView.StreamTree.InvalidateVisible;
+
+  if Assigned(FOnClientRemoved) then
+    FOnClientRemoved(Client);
 end;
 
 procedure TClientTab.ClientManagerShowErrorMessage(Sender: TICEClient;
@@ -1026,45 +1084,12 @@ begin
 
     Client := Sender as TICEClient;
     if Client.Entry.Settings.AddSavedToIgnore and FullTitle then
-    begin
-      Pattern := BuildPattern(Title, Hash, NumChars, True);
-      if NumChars > 3 then
-      begin
-        Found := False;
-        for i := 0 to FStreams.IgnoreList.Count - 1 do
-          if FStreams.IgnoreList[i].Hash = Hash then
-          begin
-            Found := True;
-            Break;
-          end;
-
-        if not Found then
-        begin
-          if Assigned(FOnAddIgnoreList) then
-            FOnAddIgnoreList(Self, Title);
-        end;
-      end;
-    end;
+      if Assigned(FOnAddTitleToList) then
+        FOnAddTitleToList(Self, nil, ltIgnore, Title);
 
     if Client.Entry.Settings.AddSavedToStreamIgnore and FullTitle then
-    begin
-      Pattern := BuildPattern(Title, Hash, NumChars, True);
-      if NumChars > 3 then
-      begin
-        Found := False;
-        for i := 0 to Client.Entry.Settings.IgnoreList.Count - 1 do
-          if Client.Entry.Settings.IgnoreList[i].Hash = Hash then
-          begin
-            Found := True;
-            Break;
-          end;
-
-        if not Found then
-        begin
-          Client.Entry.Settings.IgnoreList.Add(TTitleInfo.Create(Title));
-        end;
-      end;
-    end;
+      if Assigned(FOnAddTitleToList) then
+        FOnAddTitleToList(Self, Client, ltIgnore, Title);
   end;
 
   ShowInfo;
@@ -1472,7 +1497,7 @@ begin
         if NodeData.Client.AutoRemove then
           Continue;
 
-        E := NodeData.Client.Entry.Copy(True);
+        E := NodeData.Client.Entry.Copy;
         E.Index := Nodes[i].Index;
         E.CategoryIndex := 0;
         E.WasRecording := NodeData.Client.Recording and AppGlobals.RememberRecordings;

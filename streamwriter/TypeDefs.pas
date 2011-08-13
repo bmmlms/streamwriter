@@ -23,6 +23,7 @@ interface
 
 type
   TAudioTypes = (atNone, atMPEG, atAAC, atOGG);
+  TListType = (ltSave, ltIgnore);
 
 implementation
 

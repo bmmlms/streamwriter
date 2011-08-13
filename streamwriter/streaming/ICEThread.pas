@@ -122,7 +122,7 @@ implementation
 procedure TICEThread.SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong: Boolean; RecordTitle: string);
 begin
   // Das hier wird nur gesynct aus dem Mainthread heraus aufgerufen.
-  FTypedStream.Settings.Assign(Settings, True);
+  FTypedStream.Settings.Assign(Settings);
   FTypedStream.RecordTitle := RecordTitle;
   FTypedStream.StopAfterSong := StopAfterSong;
 end;
