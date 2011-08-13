@@ -426,8 +426,6 @@ begin
 end;
 
 procedure TCutView.Cut;
-var
-  P: QWORD;
 begin
   if not CanCut then
     Exit;
@@ -471,8 +469,6 @@ begin
 end;
                        // TODO: Das cutview KOMPLETT TESTEN ALLE KOMBIS!!!!!!!!!! das cutview braucht noch viel aufmerksamkeit denke ich! SEHR VIEL!!!
 procedure TCutView.Undo;
-var
-  L1, L2: Cardinal;
 begin
   if not CanUndo then
     Exit;

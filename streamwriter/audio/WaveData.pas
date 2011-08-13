@@ -237,7 +237,6 @@ end;
 
 procedure TWaveData.AnalyzeData;
 var
-  i: Integer;
   Level: DWord;
   Position: QWORD;
   Counter, OldPercent: Cardinal;

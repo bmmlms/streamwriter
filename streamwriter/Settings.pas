@@ -589,7 +589,6 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
     if F then
       AddField(chkOnlySaveFull);
 
-    // TODO: Hier die neuen felder testen.
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
     begin
@@ -644,8 +643,6 @@ var
   B: TBitmap;
   P: TPngImage;
   Settings: TStreamSettings;
-  Node: PVirtualNode;
-  NodeData: PTitleNodeData;
 begin
   FLists := Lists;
 
@@ -992,12 +989,10 @@ end;
 
 procedure TfrmSettings.Finish;
 var
-  i, n, z: Integer;
+  i, n: Integer;
   Plugin: TPluginBase;
   EP: TExternalPlugin;
   Item: TListItem;
-  Node: PVirtualNode;
-  NodeData: PTitleNodeData;
 begin
   if Length(FStreamSettings) > 0 then
   begin

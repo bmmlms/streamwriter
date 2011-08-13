@@ -424,7 +424,6 @@ var
   URL: string;
   TrackInfo: TTrackInfo;
   DTTmp: TDateTime;
-  TitleInfo: TTitleInfo;
 begin
   Result := TStreamEntry.Create;
 
@@ -1322,7 +1321,6 @@ end;
 function TRatingList.GetRating(Name, URL: string): Integer;
 var
   i: Integer;
-  E: TRatingEntry;
 begin
   Result := 0;
   Name := LowerCase(Name);

@@ -242,9 +242,9 @@ begin
 
     Node := FTree.AddChild(FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex])));
     NodeData := FTree.GetNodeData(Node);
-
     Title := TTitleInfo.Create(Trim(FAddEdit.Text));
     NodeData.Title := Title;
+    NodeData.Stream := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]);
     List.Add(Title);
     FAddEdit.Text := '';
 
@@ -253,7 +253,7 @@ begin
 
     FTree.SortItems;
 
-    if (List = FLists.SaveList) and AppGlobals.AutoTuneIn then
+    if (FList = FLists.SaveList) and AppGlobals.AutoTuneIn then
     begin
       HomeComm.SetTitleNotifications(FList.Count > 0);
     end;
@@ -263,7 +263,7 @@ end;
 
 procedure TTitlePanel.RemoveClick(Sender: TObject);
 var
-  i, n: Integer;
+  i: Integer;
   Node, SubNode, DeleteNode: PVirtualNode;
   NodeData: PTitleNodeData;
   DeleteList: TList<PVirtualNode>;
@@ -275,7 +275,6 @@ begin
     Node := FTree.GetFirst;
     while Node <> nil do
     begin
-      NodeData := FTree.GetNodeData(Node);
       if FTree.Selected[Node] then
       begin
         SubNode := FTree.GetFirstChild(Node);
@@ -418,8 +417,6 @@ var
   Hash: Cardinal;
   Exists: Boolean;
   Pattern: string;
-  Node: PVirtualNode;
-  NodeData: PTitleNodeData;
   Dlg: TOpenDialog;
   Lst: TStringList;
   Title: TTitleInfo;
@@ -480,7 +477,7 @@ begin
     Dlg.Free;
   end;
 
-  if (List = FLists.SaveList) and AppGlobals.AutoTuneIn then
+  if (FList = FLists.SaveList) and AppGlobals.AutoTuneIn then
   begin
     HomeComm.SetTitleNotifications(FList.Count > 0);
   end;
@@ -496,9 +493,11 @@ begin
   FTree.BeginUpdate;
   try
     if FList.Count > 0 then
+    begin
       ClientNode := FTree.GetNode(nil);
       for i := 0 to FList.Count - 1 do
         FTree.AddTitle(FList[i], ClientNode, nil);
+    end;
 
     for i := 0 to FClients.Count - 1 do
     begin
@@ -572,7 +571,7 @@ end;
 
 procedure TTitlePanel.ClientRemoved(Client: TICEClient);
 var
-  i, n: Integer;
+  i: Integer;
 begin
   FTree.RemoveClient(Client);
   for i := 0 to FAddCombo.Items.Count - 1 do
@@ -587,11 +586,7 @@ end;
 
 procedure TTitlePanel.Setup(Clients: TClientManager; Lists: TDataLists; T: TListType; Images: TImageList; Title: string);
 var
-  Found: Boolean;
   i: Integer;
-  P: TPanel;
-  Node: PVirtualNode;
-  NodeData: PTitleNodeData;
 begin
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := Self;
@@ -686,34 +681,27 @@ end;
 procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree;
   Node: PVirtualNode);
 var
-  i, n: Integer;
+  i: Integer;
   NodeData: PTitleNodeData;
 begin
   FToolbar.FRemove.Enabled := FTree.SelectedCount > 0;
 
-  if FTree.SelectedCount > 0 then
+  Node := FTree.GetFirstSelected;
+  if Node <> nil then
   begin
-    if Node = nil then
-      Node := FTree.GetFirstSelected;
-    if Node <> nil then
+    NodeData := FTree.GetNodeData(Node);
+
+    if NodeData.Stream = nil then
     begin
-      NodeData := FTree.GetNodeData(Node);
-
-      if Node.Parent <> FTree.RootNode then
-        Node := Node.Parent;
-
-      if NodeData.Stream = nil then
-      begin
-        FAddCombo.ItemIndex := 0;
-      end else
-      begin
-        for i := 0 to FAddCombo.Items.Count - 1 do
-          if FAddCombo.Items.Objects[i] = NodeData.Stream then
-          begin
-            FAddCombo.ItemIndex := i;
-            Break;
-          end;
-      end;
+      FAddCombo.ItemIndex := 0;
+    end else
+    begin
+      for i := 0 to FAddCombo.Items.Count - 1 do
+        if FAddCombo.Items.Objects[i] = NodeData.Stream then
+        begin
+          FAddCombo.ItemIndex := i;
+          Break;
+        end;
     end;
   end else
   begin
@@ -837,17 +825,14 @@ procedure TTitleTree.DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
   APoint: TPoint; var Effect: Integer);
 var
   i, n: Integer;
-  s: string;
   Found: Boolean;
   HI: THitInfo;
-  Node, Node2: PVirtualNode;
-  NodeData, NodeData2: PTitleNodeData;
+  Node: PVirtualNode;
+  NodeData: PTitleNodeData;
   Title: TTitleInfo;
   List: TTitleList;
   Stream: TICEClient;
 begin
-  Node := nil;
-  NodeData := nil;
   Stream := nil;
 
   GetHitTestInfoAt(APoint.X, APoint.Y, True, HI);
@@ -855,17 +840,15 @@ begin
   begin
     if HI.HitNode.Parent <> RootNode then
     begin
-      Node2 := HI.HitNode.Parent;
+      Node := HI.HitNode.Parent;
     end else
-      Node2 := HI.HitNode;
+      Node := HI.HitNode;
 
-    NodeData2 := GetNodeData(Node2);
+    NodeData := GetNodeData(Node);
 
-    if (NodeData2.Stream <> nil) or ((NodeData2.Stream = nil) and (NodeData2.Title = nil)) then
+    if (NodeData.Stream <> nil) or ((NodeData.Stream = nil) and (NodeData.Title = nil)) then
     begin
-      Node := Node2;
-      NodeData := NodeData2;
-      Stream := NodeData2.Stream;
+      Stream := NodeData.Stream;
     end;
   end;
 
@@ -989,9 +972,6 @@ begin
 end;
 
 procedure TTitleTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
-var
-  Node: PVirtualNode;
-  NodeData: PTitleNodeData;
 begin
   inherited;
   if HitInfo.Button = mbLeft then

@@ -245,7 +245,6 @@ end;
 function THomeCommunication.GetStreams;
 var
   XMLDocument: TXMLLib;
-  Root, Header, Data: TXMLNode;
   XML: AnsiString;
 begin
   Result := False;
@@ -435,7 +434,7 @@ end;
 procedure THomeCommunication.SetTitleNotifications(Enable: Boolean);
 var
   XMLDocument: TXMLLib;
-  Data, Header, Node: TXMLNode;
+  Data: TXMLNode;
   Attr: TXMLAttribute;
   XML: AnsiString;
 begin
@@ -504,7 +503,6 @@ var
   XMLDocument: TXMLLib;
   Data, Node: TXMLNode;
   XML: AnsiString;
-  i: integer;
 begin
   if not Connected then
     Exit;

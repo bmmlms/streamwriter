@@ -374,12 +374,10 @@ begin
   Saved := False;
   while not Saved do
   begin
-    //try
-    // TODO: Das Try..Except ist temporär draußen, weil es 2 mal beim speichern crashte. Vllt kann madExcept helfen!
+    try
       tabClients.UpdateStreams(FDataLists);
       FDataLists.Save;
       Break;
-    {
     except
       if not Shutdown then
       begin
@@ -389,7 +387,6 @@ begin
       end else
         Break;
     end;
-    }
   end;
 
   tabClients.ClientView.Clear;
@@ -604,7 +601,7 @@ begin
   pagMain := TMainPageControl.Create(Self);
   pagMain.Parent := Self;
   pagMain.Visible := True;
-  pagMain.Align := alClient;     // TODO: stream aktuellen titel per kontextmenü auf ignoreliste packen
+  pagMain.Align := alClient;
   pagMain.Images := imgImages;
 
   tabClients := TClientTab.Create(pagMain);
@@ -1151,6 +1148,10 @@ begin
 
   Language.Translate(Self, PreTranslate, PostTranslate);
   AppGlobals.PluginManager.ReInitPlugins;
+
+  // Damit es sich übersetzt
+  addStatus.Invalidate;
+
   TrayIcon1.Visible := AppGlobals.Tray;
   ScreenSnap := AppGlobals.SnapMain;
   RegisterHotkeys(True);
@@ -1324,14 +1325,14 @@ procedure TfrmStreamWriterMain.tabClientsTrackRemoved(Entry: TStreamEntry;
 begin
   tabSaved.Tree.RemoveTrack(Track);
 end;
-                // TODO: Die Toolbar unten bekommt sprach-änderung nicht mit!
+
 procedure TfrmStreamWriterMain.tabClientsAddTitleToList(Sender: TObject; Client: TICEClient;
   ListType: TListType; Title: string);
 var
   i, NumChars: Integer;
   Hash: Cardinal;
   Found: Boolean;
-  Pattern, LowerFilename: string;
+  Pattern: string;
   T: TTitleInfo;
   List: TTitleList;
 begin

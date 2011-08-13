@@ -1046,10 +1046,9 @@ procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
 var
   Client: TICEClient;
   Track: TTrackInfo;
-  i, NumChars: Integer;
-  Pattern, LowerFilename: string;
-  Hash: Cardinal;
-  Added, Found: Boolean;
+  i: Integer;
+  LowerFilename: string;
+  Added: Boolean;
 begin
   Client := Sender as TICEClient;
 

@@ -534,9 +534,7 @@ end;
 
 procedure TAppData.Load;
 var
-  i, DefaultActionTmp, DefaultActionBrowser,
-    DefaultFilterTmp, Tmp: Integer;
-  Version: TAppVersion;
+  i, DefaultActionTmp, DefaultActionBrowser, DefaultFilterTmp: Integer;
 begin
   inherited;
 
@@ -1027,8 +1025,6 @@ begin
 end;
 
 procedure TStreamSettings.Assign(From: TStreamSettings);
-var
-  i: Integer;
 begin
   FTitlePattern := From.FTitlePattern;
   FFilePattern := From.FFilePattern;

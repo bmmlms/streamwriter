@@ -417,10 +417,7 @@ begin
 end;
 
 procedure TMStreamTree.DoFreeNode(Node: PVirtualNode);
-var
-  NodeData: PStreamNodeData;
 begin
-  NodeData := GetNodeData(Node);
 
   inherited;
 end;
@@ -605,8 +602,7 @@ end;
 procedure TMStreamTree.DoTextDrawing(var PaintInfo: TVTPaintInfo;
   Text: UnicodeString; CellRect: TRect; DrawFormat: Cardinal);
 var
-  Size, Size2: TSize;
-  TmpText: string;
+  Size: TSize;
   NodeData: PStreamNodeData;
 begin
   NodeData := PStreamNodeData(GetNodeData(PaintInfo.Node));
@@ -757,9 +753,6 @@ begin
 end;
 
 procedure TMStreamTree.TimerOnTimer(Sender: TObject);
-var
-  i: Integer;
-  Nodes: TNodeArray;
 begin
   FDots := FDots + '.';
 
@@ -841,7 +834,6 @@ procedure TMStreamTree.DoBeforeCellPaint(Canvas: TCanvas;
   var ContentRect: TRect);
 var
   NodeData: PStreamNodeData;
-  B: Boolean;
 begin
   inherited;
 
@@ -875,7 +867,6 @@ function TMStreamTree.DoCompare(Node1, Node2: PVirtualNode;
   end;
 var
   Data1, Data2: PStreamNodeData;
-  I1, I2: Integer;
   S1, S2: string;
 begin
   Result := 0;
@@ -1167,8 +1158,6 @@ begin
 end;
 
 procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject);
-var
-  i: Integer;
 begin
   BuildGenres;
   BuildTree(True);

@@ -537,7 +537,6 @@ end;
 
 procedure TICEClient.ThreadNeedSettings(Sender: TSocketThread);
 begin
-  // TODO: Das hier evtl. nur machen wenn settings auch geändert wurden in der zwischenzeit!
   // Ignore list etc werden immer kopiert, das kann zeit kosten.
   FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FStopAfterSong, FRecordTitle);
 end;

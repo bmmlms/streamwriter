@@ -584,9 +584,8 @@ begin
         begin
           TAudioStreamMemory(FAudioStream).SaveToFile(Dir + Filename, P.A, P.B - P.A);
         end;
-
-        Error := GetLastError;
       except
+        Error := GetLastError;
         if (Error = 3) and (Length(Dir + Filename) > MAX_PATH - 1) then
           raise Exception.Create('Could not save file because it exceeds the maximum path length (259)')
         else
@@ -651,7 +650,6 @@ end;
 function TICEStream.StartRecordingInternal: Boolean;
 var
   Dir, Filename: string;
-  Error: Cardinal;
   FileCheck: TFileChecker;
 begin
   Result := False;
@@ -1001,7 +999,7 @@ begin
               Title := CleanTitle(MetaData);
 
             IgnoreTitle := Title = '';
-            // TODO: Das ist so nicht Threadsicher.
+
             for i := 0 to FSettings.IgnoreTrackChangePattern.Count - 1 do
               if Like(Title, FSettings.IgnoreTrackChangePattern[i]) then
               begin
