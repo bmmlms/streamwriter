@@ -764,11 +764,16 @@ begin
     if (Bass.DeviceAvailable) and (Bass.Devices.Count > 0) then
     begin
       for i := 0 to Bass.Devices.Count - 1 do
-        lstSoundDevice.Items.Add(Bass.Devices[i]);
+        lstSoundDevice.Items.AddObject(Bass.Devices[i].Name, Bass.Devices[i]);
       if lstSoundDevice.Items.Count > 0 then
         lstSoundDevice.ItemIndex := 0;
       try
-        lstSoundDevice.ItemIndex := AppGlobals.SoundDevice;
+        for i := 0 to lstSoundDevice.Items.Count - 1 do
+          if TBassDevice(lstSoundDevice.Items.Objects[i]).ID = AppGlobals.SoundDevice then
+          begin
+            lstSoundDevice.ItemIndex := i;
+            Break;
+          end;
       except end;
     end else
     begin
@@ -1092,19 +1097,6 @@ begin
         FStreamSettings[i].IgnoreTrackChangePattern.Clear;
         for n := 0 to lstIgnoreTitles.Items.Count - 1 do
           FStreamSettings[i].IgnoreTrackChangePattern.Add(lstIgnoreTitles.Items[n].Caption);
-
-        {
-        for z := 0 to FStreamSettings[i].IgnoreList.Count - 1 do
-          FStreamSettings[i].IgnoreList[z].Free;
-        FStreamSettings[i].IgnoreList.Clear;
-        Node := lstIgnoreListTitles.GetFirst;
-        while Node <> nil do
-        begin
-          NodeData := lstIgnoreListTitles.GetNodeData(Node);
-          FStreamSettings[i].IgnoreList.Add(NodeData.Title);
-          Node := lstIgnoreListTitles.GetNext(Node);
-        end;
-        }
       end;
     end;
   end else
@@ -1140,7 +1132,7 @@ begin
     AppGlobals.StreamSettings.OnlySaveFull := chkOnlySaveFull.Checked;
 
     if lstSoundDevice.ItemIndex > -1 then
-      AppGlobals.SoundDevice := lstSoundDevice.ItemIndex;
+      AppGlobals.SoundDevice := TBassDevice(lstSoundDevice.Items.Objects[lstSoundDevice.ItemIndex]).ID;
 
     AppGlobals.Dir := txtDir.Text;
     AppGlobals.DirAuto := txtDirAuto.Text;
@@ -1221,15 +1213,6 @@ begin
       Plugin.OnlyIfCut := FTemporaryPlugins[i].OnlyIfCut;
       Plugin.Order := Item.Index;
       Plugin.Active := Item.Checked;
-
-      {
-      if Plugin is TExternalPlugin then
-      begin
-        EP := TExternalPlugin(Plugin);
-        EP.Exe := TExternalPlugin(FTemporaryPlugins[i]).Exe;
-        EP.Params := TExternalPlugin(FTemporaryPlugins[i]).Params;
-      end;
-      }
 
       Plugin.Assign(FTemporaryPlugins[i]);
     end;

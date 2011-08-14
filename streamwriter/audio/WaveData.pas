@@ -44,7 +44,6 @@ type
   private
     FDecoder: Cardinal;
     FWaveArray: TWaveEntryArray;
-    //FCutStates: TList<TCutState>;
     FSilence: TList<TCutState>;
 
     FFilename: string;
@@ -73,7 +72,6 @@ type
     procedure Load(Stream: TMemoryStream); overload;
     procedure Load(Filename: string); overload;
     function Save(Filename: string; StartPos, EndPos: Cardinal): Boolean;
-    //procedure Cut(F, T: Cardinal);
     procedure AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
     function TimeBetween(F, T: Cardinal): Double;
     function IsInSilence(O: Cardinal): Boolean;
@@ -102,7 +100,6 @@ implementation
 
 constructor TWaveData.Create;
 begin
-  //FCutStates := TList<TCutState>.Create;
   FSilence := TList<TCutState>.Create;
 end;
 
@@ -110,11 +107,8 @@ destructor TWaveData.Destroy;
 var
   i: Integer;
 begin
-  //for i := 0 to FCutStates.Count - 1 do
-  //  FCutStates[i].Free;
   for i := 0 to FSilence.Count - 1 do
     FSilence[i].Free;
-  //FCutStates.Free;
   FSilence.Free;
   inherited;
 end;
@@ -228,41 +222,38 @@ begin
   end;
 end;
 
-{
-procedure TWaveData.Cut(F, T: Cardinal);
-begin
-  FCutStates.Add(TCutState.Create(F, T));
-end;
-}
-
 procedure TWaveData.AnalyzeData;
 var
   Level: DWord;
   Position: QWORD;
   Counter, OldPercent: Cardinal;
+  Len: Extended;
 begin
   Counter := 0;
+  OldPercent := 0;
 
-  SetLength(FWaveArray, 500);
+  SetLength(FWaveArray, 1000);
+
+  Len := BASSChannelGetLength(FDecoder, BASS_POS_BYTE);
 
   while BASSChannelIsActive(FDecoder) = BASS_ACTIVE_PLAYING do
   begin
     if Counter >= Cardinal(Length(FWaveArray)) then
     begin
-      SetLength(FWaveArray, Length(FWaveArray) + 500);
+      SetLength(FWaveArray, Length(FWaveArray) + 1000);
     end;
 
     Position := BASSChannelGetPosition(FDecoder, BASS_POS_BYTE);
 
-    if FFilesize > 0 then
+    if Len > 0 then
     begin
-      OldPercent := FProgress;
-      FProgress := Trunc((Position / FFilesize) * 100);
+      FProgress := Trunc((Position / Len) * 100);
       if FProgress <> OldPercent then
       begin
         if Assigned(FOnProgress) then
           FOnProgress(Self);
       end;
+      OldPercent := FProgress;
     end;
 
     Level := BASSChannelGetLevel(FDecoder);
@@ -291,13 +282,6 @@ begin
   FAudioStart := BASSStreamGetFilePosition(FDecoder, BASS_FILEPOS_START);
   FAudioEnd := BASSStreamGetFilePosition(FDecoder, BASS_FILEPOS_END);
 
-  {
-  for i := 0 to FCutStates.Count - 1 do
-    FCutStates[i].Free;
-  FCutStates.Clear;
-  FCutStates.Add(TCutState.Create(0, High(FWaveArray)));
-  }
-
   FZoomStart := 0;
   FZoomEnd := High(FWaveArray);
 end;
@@ -320,9 +304,6 @@ begin
   SilenceEnd := 0;
   for i := 0 to High(FWaveArray) do
   begin
-    //if (FWaveArray[i].L = 0) or (FWaveArray[i].R = 0) then
-    //  Continue;
-
     Avg := (FWaveArray[i].L + FWaveArray[i].R) div 2;
 
     if Avg < MaxPeaks then

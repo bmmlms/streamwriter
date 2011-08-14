@@ -77,7 +77,7 @@ type
   TfrmStreamWriterMain = class(TForm)
     addXP: TXPManifest;
     mnuMain: TMainMenu;
-    mnuFile: TMenuItem;                 // TODO: timer funzen nicht über 00:00 hinaus, also tagwechsel...
+    mnuFile: TMenuItem;
     mnuSettings: TMenuItem;
     N3: TMenuItem;
     mnuExit: TMenuItem;
@@ -512,8 +512,6 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.FormActivate(Sender: TObject);
-var
-  V: TAppVersion;
 begin
   if FWasActivated then
     Exit;
@@ -545,19 +543,6 @@ begin
                                '2) Desired songs can be recorded by adding them to the wishlist on the Filter-tab at the top. ' +
                                'When a song from the wishlist is being played on a stream, streamWriter will automatically tune in to record your song. ' +
                                'Please add some artists/titles to your wishlist to try this new feature.'), btOK);
-  end else if IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion) then
-  begin
-    V.AsString := '1.9.0.0';
-    V.Major := 1;
-    V.Minor := 9;
-    V.Revision := 0;
-    V.Build := 0;
-    if IsVersionNewer(AppGlobals.LastUsedVersion, V) then
-    begin
-      TfrmMsgDlg.ShowMsg(Self, _('You have updated from a streamWriter version that did not have community features. ' +
-                                 'With this version, the wishlist becomes more important:'#13#10'When streamWriter detects a stream playing something on your wishlist, ' +
-                                 'it will tune into the station and record your desired song. Please try this feature and add some artists/titles to your wishlist.'), btOK);
-    end;
   end;
 
   AppGlobals.FirstStartShown := True;
@@ -1424,6 +1409,9 @@ begin
       FDataLists.TrackList[i].Time := Now;
 
       FDataLists.TrackList[i].Finalized := True;
+
+      tabSaved.Tree.UpdateTrack(FDataLists.TrackList[i]);
+
       Exit;
     end;
 end;

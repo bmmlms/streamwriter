@@ -3,7 +3,8 @@ unit DynBASS;
 interface
 
 uses
-  Windows, SysUtils, Classes, Functions, GUIFunctions, AppData, Logging;
+  Windows, SysUtils, Classes, Functions, GUIFunctions, AppData, Logging,
+  Generics.Collections;
 
 const
   STREAMFILE_BUFFER = 1;
@@ -24,6 +25,8 @@ const
   BASS_SYNC_END = 2;
   BASS_SYNC_MIXTIME = $40000000;
   BASS_SYNC_SLIDE = 5;
+  BASS_DEVICE_ENABLED = 1;
+  BASS_DEVICE_DEFAULT = 2;
 
 type
   QWORD = Int64;
@@ -46,6 +49,19 @@ type
     flags: DWORD;
   end;
 
+  TBassDevice = class
+  private
+    FID: Cardinal;
+    FName: string;
+    FIsDefault: Boolean;
+  public
+    constructor Create(ID: Cardinal; Name: string; IsDefault: Boolean);
+
+    property ID: Cardinal read FID;
+    property Name: string read FName;
+    property IsDefault: Boolean read FIsDefault;
+  end;
+
   TBassLoader = class
   private
     BassDLLPath: string;
@@ -53,7 +69,7 @@ type
     DLLHandle: Cardinal;
     AACDLLHandle: Cardinal;
 
-    FDevices: TStringList;
+    FDevices: TList<TBassDevice>;
 
     procedure EnumDevices;
     procedure UninitializeBass;
@@ -65,7 +81,7 @@ type
     destructor Destroy; override;
     function InitializeBass(Handle: THandle): Boolean;
 
-    property Devices: TStringList read FDevices;
+    property Devices: TList<TBassDevice> read FDevices;
   end;
 
 var
@@ -107,11 +123,15 @@ constructor TBassLoader.Create;
 begin
   inherited;
 
-  FDevices := TStringList.Create;
+  FDevices := TList<TBassDevice>.Create();
 end;
 
 destructor TBassLoader.Destroy;
+var
+  i: Integer;
 begin
+  for i := 0 to FDevices.Count - 1 do
+    FDevices[i].Free;
   FDevices.Free;
   UninitializeBass;
   inherited;
@@ -125,13 +145,19 @@ begin
   i := 1;
   while BASSGetDeviceInfo(i, Info) do
   begin
-    FDevices.Add(Info.name);
+    if (Info.flags and BASS_DEVICE_ENABLED) = BASS_DEVICE_ENABLED then
+    begin
+      FDevices.Add(TBassDevice.Create(i, Info.name,
+        (Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT));
+    end;
     Inc(i);
   end;
 end;
 
 function TBassLoader.InitializeBass(Handle: THandle): Boolean;
 var
+  i: Integer;
+  Found: Boolean;
   Res: TResourceStream;
 begin
   Result := False;
@@ -190,17 +216,34 @@ begin
     BassLoaded := False;
     DeviceAvailable := False;
 
-    if BASSInit(-1, 44100, 0, Handle, nil) then
-    begin
-      BassLoaded := True;
-      DeviceAvailable := True;
-    end else
-    begin
-      if BassInit(0, 44100, 0, Handle, nil) then
+    EnumDevices;
+
+    Found := False;
+    for i := 0 to FDevices.Count - 1 do
+      if FDevices[i].ID = AppGlobals.SoundDevice then
       begin
-        BassLoaded := True
+        Found := True;
+        Break;
       end;
+    if not Found then
+    begin
+      for i := 0 to FDevices.Count - 1 do
+        if FDevices[i].IsDefault then
+        begin
+          AppGlobals.SoundDevice := FDevices[i].ID;
+          Break;
+        end;
     end;
+
+    for i := 0 to FDevices.Count - 1 do
+      if BASSInit(FDevices[i].ID, 44100, 0, Handle, nil) then
+      begin
+        BassLoaded := True;
+        DeviceAvailable := True;
+      end;
+    if not BassLoaded then
+      if BassInit(0, 44100, 0, Handle, nil) then
+        BassLoaded := True;
 
     if not BassLoaded then
     begin
@@ -215,9 +258,6 @@ begin
       FreeLibrary(DLLHandle);
       DLLHandle := 0;
     end;
-
-    if BassLoaded then
-      EnumDevices;
 
     Result := BassLoaded;
   end;
@@ -238,6 +278,15 @@ begin
       DeleteFile(BassAACDLLPath);
   except
   end;
+end;
+
+{ TBassDevice }
+
+constructor TBassDevice.Create(ID: Cardinal; Name: string; IsDefault: Boolean);
+begin
+  FID := ID;
+  FName := Name;
+  FIsDefault := IsDefault;
 end;
 
 end.

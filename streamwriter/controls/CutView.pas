@@ -27,7 +27,8 @@ uses
   SysUtils, Windows, Classes, Controls, StdCtrls, ExtCtrls, Functions,
   Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
-  PlayerManager, Plugins, SoX, DownloadAddons, ConfigureSoX, Logging;
+  PlayerManager, Plugins, SoX, DownloadAddons, ConfigureSoX, Logging,
+  MsgDlg;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -136,16 +137,28 @@ type
   end;
 
   TUndoStep = class
+  private
+    FFilename: string;
+    FNumber: Integer;
+    FStartLine: Cardinal;
+    FEndLine: Cardinal;
+    FEffectStartLine: Cardinal;
+    FEffectEndLine: Cardinal;
   public
-    Filename: string;
-    Number: Integer;
+    constructor Create(Filename: string; Number: Integer;
+      StartLine, EndLine, EffectStartLine, EffectEndLine: Cardinal);
 
-    constructor Create(Filename: string; Number: Integer);
+    property Filename: string read FFilename;
+    property Number: Integer read FNumber;
+    property StartLine: Cardinal read FStartLine;
+    property EndLine: Cardinal read FEndLine;
+    property EffectStartLine: Cardinal read FEffectStartLine;
+    property EffectEndLine: Cardinal read FEffectEndLine;
   end;
 
   TUndoList = class(TList<TUndoStep>);
 
-  TLineMode = (lmEdit, lmPlay, lmZoom, lmEffectsMarker);
+  TLineMode = (lmEdit, lmPlay, lmEffectsMarker);
 
   TCutView = class(TPanel)
   private
@@ -159,11 +172,11 @@ type
     FWasSaved: Boolean;
     FUndoList: TUndoList;
     FID: Integer;
+    FUndoStep: TUndoStep;
 
     FPlayer: TPlayer;
     FFilename: string;
     FFilesize: UInt64;
-    //FLength: UInt64;
 
     FOnStateChanged: TNotifyEvent;
 
@@ -207,6 +220,8 @@ type
     procedure ApplyFadein;
     procedure ApplyFadeout;
     procedure ApplyEffects;
+    procedure ZoomIn;
+    procedure ZoomOut;
 
     function CanCut: Boolean;
     function CanUndo: Boolean;
@@ -214,7 +229,8 @@ type
     function CanStop: Boolean;
     function CanAutoCut: Boolean;
     function CanSetLine: Boolean;
-    function CanZoom: Boolean;
+    function CanZoomIn: Boolean;
+    function CanZoomOut: Boolean;
     function CanEffectsMarker: Boolean;
     function CanApplyFadeIn: Boolean;
     function CanApplyFadeOut: Boolean;
@@ -307,6 +323,7 @@ begin
   FLineMode := lmPlay;
 
   FProgressBarLoad := TProgressBar.Create(Self);
+  FProgressBarLoad.Max := 100;
   FProgressBarLoad.Parent := Self;
   FProgressBarLoad.Visible := False;
 
@@ -406,8 +423,6 @@ begin
   FPB.FEffectStartLine := 0;
   FPB.FEffectEndLine := 0;
 
-  BASSSetDevice(AppGlobals.SoundDevice + 1);
-
   FScanThread.Resume;
 
   if Assigned(FOnStateChanged) then
@@ -430,31 +445,16 @@ begin
   if not CanCut then
     Exit;
 
-  AddUndo;
+  if not AddUndo then
+    Exit;
+
   Save(FPB.FStartLine, FPB.FEndLine);
 
   if FPlayer <> nil then
   begin
     FPlayer.Stop(False);
     FPB.FPlayLine := 0;
-    {
-    P := FPlayer.PositionByte;
-    if (FWaveData.WaveArray[FPB.FStartLine].Pos > P) or
-       (FWaveData.WaveArray[FPB.FEndLine].Pos < P) then
-    begin
-      FPlayer.Pause;
-      FPB.FPlayLine := FWaveData.CutStart;
-    end;
-
-    FPlayer.PosToReach := FWaveData.WaveArray[FWaveData.CutEnd].Pos;
-    }
   end;
-
-  {
-  FPB.FZoomStartLine := FPB.FStartLine;
-  FPB.FZoomEndLine := FPB.FEndLine;
-  FPB.FDoZoom := True;
-  }
 
   FPB.FZoomStartLine := High(Cardinal);
   FPB.FZoomEndLine := High(Cardinal);
@@ -463,52 +463,81 @@ begin
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
   FPB.Paint;
-  // TODO: NEULADEN!!!
+
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
                        // TODO: Das cutview KOMPLETT TESTEN ALLE KOMBIS!!!!!!!!!! das cutview braucht noch viel aufmerksamkeit denke ich! SEHR VIEL!!!
 procedure TCutView.Undo;
+var
+  UndoStep: TUndoStep;
 begin
   if not CanUndo then
     Exit;
 
-  if CopyFile(PChar(FUndoList[FUndoList.Count - 1].Filename), PChar(FFilename), False) then
+  UndoStep := FUndoList[FUndoList.Count - 1];
+
+  if CopyFile(PChar(UndoStep.Filename), PChar(FFilename), False) then
   begin
+    FWaveData.Free;
+    FWaveData := nil;
+
+    FWasSaved := True;
     LoadFile(FFilename);
 
-    DeleteFile(PChar(FUndoList[FUndoList.Count - 1].Filename));
-    FUndoList[FUndoList.Count - 1].Free;
-    FUndoList.Delete(FUndoList.Count - 1);
+    DeleteFile(PChar(UndoStep.Filename));
 
     FPB.BuildBuffer;
     FPB.BuildDrawBuffer;
     FPB.Paint;
 
+    FUndoStep := UndoStep;
+    FUndoList.Remove(UndoStep);
+
     if Assigned(FOnStateChanged) then
       FOnStateChanged(Self);
   end else
   begin
-    // TODO: !!!
+    MsgBox(GetParentForm(Self).Handle, _('The file could not be replaced by the saved undo file that contains the last version of the file.'), _('Error'), MB_ICONERROR);
+  end;
+end;
+
+procedure TCutView.ZoomIn;
+var
+  Swap: Cardinal;
+begin
+  if not CanZoomIn then
+    Exit;
+
+  if FPB.FEffectStartLine > FPB.FEffectEndLine then
+  begin
+    Swap := FPB.FEffectStartLine;
+    FPB.FEffectStartLine := FPB.FEffectEndLine;
+    FPB.FEffectEndLine := Swap;
   end;
 
-{
-  L1 := FWaveData.CutStates[FWaveData.CutStates.Count - 1].CutStart;
-  L2 := FWaveData.CutStates[FWaveData.CutStates.Count - 1].CutEnd;
+  FPB.FZoomStartLine := FPB.FEffectStartLine;
+  FPB.FZoomEndLine := FPB.FEffectEndLine;
+  FPB.FDoZoom := True;
 
-  FWaveData.CutStates[FWaveData.CutStates.Count - 1].Free;
-  FWaveData.CutStates.Delete(FWaveData.CutStates.Count - 1);
+  FPB.FEffectStartLine := High(Cardinal);
+  FPB.FEffectEndLine := High(Cardinal);
 
-  if FPlayer <> nil then
-    FPlayer.PosToReach := FWaveData.WaveArray[FWaveData.CutEnd].Pos;
+  FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
+  FPB.Paint;
 
-  FPB.FStartLine := L1;
-  FPB.FEndLine := L2;
-  FPB.FPlayLine := L1;
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
+end;
 
-  FPB.FZoomStartLine := High(Cardinal);
-  FPB.FZoomEndLine := High(Cardinal);
+procedure TCutView.ZoomOut;
+begin
+  if not CanZoomOut then
+    Exit;
 
+  FPB.FZoomStartLine := 0;
+  FPB.FZoomEndLine := High(FWaveData.WaveArray);
   FPB.FDoZoom := True;
 
   FPB.BuildBuffer;
@@ -517,15 +546,11 @@ begin
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
-}
 end;
 
 function TCutView.Save(StartPos, EndPos: Cardinal): Boolean;
 begin
   Result := False;
-
-  //if not CanSave then
-  //  Exit;
 
   if FPlayer <> nil then
   begin
@@ -637,6 +662,7 @@ procedure TCutView.ProcessThreadSuccess(Sender: TObject);
 begin
   FProcessThread := nil;
   FState := csReady;
+  FWasSaved := True;
   LoadFile(FFilename);
 
   if Assigned(FOnStateChanged) then
@@ -730,7 +756,8 @@ begin
       IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - FWaveData.WaveArray[FadeStart].Sec))
   end;
 
-  AddUndo;
+  if not AddUndo then
+    Exit;
 
   StartProcessing(CmdLine);
 end;
@@ -768,8 +795,17 @@ begin
   Dest := AppGlobals.TempDir + 'UNDO_' + Copy(FN, 1, Length(FN) - Length(ExtractFileExt(FN))) + '_' + IntToStr(FID) + '_' + IntToStr(Number) + (ExtractFileExt(FN));
   if CopyFile(PChar(FFilename), PChar(Dest), False) then
   begin
-    FUndoList.Add(TUndoStep.Create(Dest, Number));
+    FUndoList.Add(TUndoStep.Create(Dest, Number, FPB.FStartLine, FPB.FEndLine,
+      FPB.FEffectStartLine, FPB.FEffectEndLine));
     Result := True;
+  end;
+
+  if not Result then
+  begin
+    if TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('The temporary file for making the undo functionality work could not be created.'#13#10 +
+                                                 'Do you want to continue with undo disabled?'), 9, btOKCancel) <> mtCancel
+    then
+      Result := True;
   end;
 end;
 
@@ -805,7 +841,8 @@ begin
 
       if CmdLine <> '' then
       begin
-        AddUndo;
+        if not AddUndo then
+          Exit;
         StartProcessing(CmdLine);
       end;
     end;
@@ -845,8 +882,7 @@ end;
 
 function TCutView.CanPlay: Boolean;
 begin
-  Result := (FPlayer <> nil) and (FWaveData <> nil) and (FPB.FStartLine < FPB.FEndLine) and
-    (not FPlayer.Playing);
+  Result := (FPlayer <> nil) and (FWaveData <> nil) and (not FPlayer.Playing);
 end;
 
 function TCutView.CanStop: Boolean;
@@ -893,9 +929,14 @@ begin
   Result := FWaveData <> nil;
 end;
 
-function TCutView.CanZoom: Boolean;
+function TCutView.CanZoomIn: Boolean;
 begin
-  Result := FWaveData <> nil;
+  Result := (FWaveData <> nil) and (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5);
+end;
+
+function TCutView.CanZoomOut: Boolean;
+begin
+  Result := (FWaveData <> nil) and ((FWaveData.ZoomStart <> High(Cardinal)) or (FWaveData.ZoomEnd <> High(FWaveData.WaveArray)));
 end;
 
 function TCutView.CheckSoX: Boolean;
@@ -970,9 +1011,18 @@ begin
     FWaveData.Free;
   FWaveData := FScanThread.FWaveData;
 
-  FPB.FStartLine := 0;
-  FPB.FEndLine := High(FWaveData.WaveArray);
-  FPB.FPlayLine := 0;
+  if FUndoStep <> nil then
+  begin
+    FPB.FStartLine := FUndoStep.StartLine;
+    FPB.FEndLine := FUndoStep.EndLine;
+    FPB.FEffectStartLine := FUndoStep.EffectStartLine;
+    FPB.FEffectEndLine := FUndoStep.EffectEndLine;
+  end else
+  begin
+    FPB.FStartLine := 0;
+    FPB.FEndLine := High(FWaveData.WaveArray);
+    FPB.FPlayLine := 0;
+  end;
 
   FScanThread := nil;
 
@@ -984,8 +1034,8 @@ begin
 
   if FWasSaved then
   begin
-    //if Assigned(TCutTab(Owner).OnSaved) then TODO: !!!
-    //  TCutTab(Owner).OnSaved(Owner, FWaveData.Filesize, Trunc(FWaveData.Secs));
+    if Assigned(TCutTab(Owner).OnSaved) then
+      TCutTab(Owner).OnSaved(Owner, FWaveData.Filesize, Trunc(FWaveData.Secs));
   end;
   FWasSaved := False;
 
@@ -1006,6 +1056,8 @@ end;
 
 procedure TCutView.ThreadScanProgress(Sender: TObject);
 begin
+  if FScanThread.FWaveData.Progress < 100 then
+    FProgressBarLoad.Position := FScanThread.FWaveData.Progress + 1;
   FProgressBarLoad.Position := FScanThread.FWaveData.Progress;
 end;
 
@@ -1014,6 +1066,8 @@ begin
   FWasSaved := False;
   FProgressBarLoad.Visible := False;
   FScanThread := nil;
+  if FUndoStep <> nil then
+    FreeAndNil(FUndoStep);
 end;
 
 { TCutPaintBox }
@@ -1456,7 +1510,6 @@ end;
 procedure TCutPaintBox.SetLine(X: Integer; Button: TMouseButton; Mode: TMouseMode);
 var
   ArrayPos: Cardinal;
-  Swap: Cardinal;
 begin
   ArrayPos := PixelsToArray(X);
 
@@ -1490,54 +1543,6 @@ begin
           FCutView.FPlayer.PositionByte := FCutView.FWaveData.WaveArray[ArrayPos].Pos;
         end;
         FPlayLine := ArrayPos;
-      end;
-    lmZoom:
-      begin
-        if (Button = mbLeft) and (Mode <> mmUp) then
-        begin
-          if (FZoomStartLine = High(Cardinal)) or (Mode = mmDown) then
-          begin
-            FZoomStartLine := ArrayPos;
-            FZoomEndLine := ArrayPos;
-            FDoZoom := False;
-          end else
-          begin
-            FZoomEndLine := ArrayPos;
-          end;
-        end;
-
-        if (Button = mbLeft) and (Mode = mmUp) then
-        begin
-          if FZoomStartLine = FZoomEndLine then
-            Exit;
-
-          if FZoomStartLine > FZoomEndLine then
-          begin
-            Swap := FZoomStartLine;
-            FZoomStartLine := FZoomEndLine;
-            FZoomEndLine := Swap;
-          end;
-          if FZoomEndLine - FZoomStartLine < MinimumDisplayedSampleCount then
-          begin
-            if FZoomStartLine = 0 then
-              Inc(FZoomEndLine, MinimumDisplayedSampleCount - FZoomEndLine + FZoomStartLine)
-            else
-              Dec(FZoomStartLine, MinimumDisplayedSampleCount - FZoomEndLine + FZoomStartLine);
-          end;
-          FDoZoom := True;
-        end;
-
-        if Button = mbRight then
-        begin
-          FZoomStartLine := High(Cardinal);
-          FZoomEndLine := High(Cardinal);
-          FDoZoom := True;
-
-
-          // TODO: Wir schneiden. Danach nehmen wir das Zoom-Tool. Wir zoomen heraus. Dann bitte "Schneiden"-Knopf wieder aktivieren!
-        end;
-
-        BuildBuffer;
       end;
     lmEffectsMarker:
       begin
@@ -1728,10 +1733,15 @@ end;
 
 { TUndoStep }
 
-constructor TUndoStep.Create(Filename: string; Number: Integer);
+constructor TUndoStep.Create(Filename: string; Number: Integer;
+  StartLine, EndLine, EffectStartLine, EffectEndLine: Cardinal);
 begin
-  Self.Filename := Filename;
-  Self.Number := Number;
+  FFilename := Filename;
+  FNumber := Number;
+  FStartLine := StartLine;
+  FEndLine := EndLine;
+  FEffectStartLine := EffectStartLine;
+  FEffectEndLine := EffectEndLine;
 end;
 
 end.

@@ -22,7 +22,7 @@ unit Player;
 interface
 
 uses
-  Windows, SysUtils, Classes, DynBass, Math, Logging;
+  Windows, SysUtils, Classes, DynBass, Math, Logging, AppData;
 
 type
   TPlayer = class
@@ -144,6 +144,7 @@ end;
 
 procedure TPlayer.CreatePlayer;
 begin
+  BASSSetDevice(AppGlobals.SoundDevice);
   FPlayer := BASSStreamCreateFile(False, PChar(FFilename), 0, 0, {$IFDEF UNICODE}BASS_UNICODE{$ENDIF});
   if FPlayer = 0 then
     raise Exception.Create('');

@@ -176,7 +176,8 @@ type
     FColSaved: TVirtualTreeColumn;
     FColBitRate: TVirtualTreeColumn;
 
-    function GetNode(Filename: string): PVirtualNode;
+    function GetNode(Filename: string): PVirtualNode; overload;
+    function GetNode(Track: TTrackInfo): PVirtualNode; overload;
     function GetNodes(SelectedOnly: Boolean): TNodeArray;
     function GetSelected: TTrackInfoArray;
     function TrackMatchesPattern(Track: TTrackInfo): Boolean;
@@ -218,6 +219,7 @@ type
     procedure AddTrack(Track: TTrackInfo; FromFilter: Boolean);
     procedure RemoveTrack(Track: TTrackInfo); overload;
     procedure DeleteTrack(Track: TTrackInfo);
+    procedure UpdateTrack(Track: TTrackInfo);
     procedure Filter(S: string);
 
     property Player: TPlayer read FPlayer;
@@ -853,6 +855,25 @@ begin
   end;
 end;
 
+function TSavedTree.GetNode(Track: TTrackInfo): PVirtualNode;
+var
+  Node: PVirtualNode;
+  NodeData: PSavedNodeData;
+begin
+  Result := nil;
+  Node := GetFirst;
+  while Node <> nil do
+  begin
+    NodeData := GetNodeData(Node);
+    if NodeData.Track = Track then
+    begin
+      Result := Node;
+      Exit;
+    end;
+    Node := GetNext(Node);
+  end;
+end;
+
 function TSavedTree.GetNodes(SelectedOnly: Boolean): TNodeArray;
 var
   i: Integer;
@@ -1149,6 +1170,15 @@ begin
   FColStream.Text := _('Stream');
   FColSaved.Text := _('Time');
   FColBitRate.Text := _('Bitrate');
+end;
+
+procedure TSavedTree.UpdateTrack(Track: TTrackInfo);
+var
+  Node: PVirtualNode;
+begin
+  Node := GetNode(Track);
+  if Node <> nil then
+    InvalidateNode(Node);
 end;
 
 procedure TSavedTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;

@@ -30,9 +30,8 @@ type
   TCutToolBar = class(TToolBar)
   private
     FSep: TToolButton;
-
-    //FSave: TToolButton;
-    FPosZoom: TToolButton;
+    FZoomIn: TToolButton;
+    FZoomOut: TToolButton;
     FPosEdit: TToolButton;
     FPosPlay: TToolButton;
     FAutoCut: TToolButton;
@@ -65,7 +64,6 @@ type
 
     procedure UpdateButtons;
 
-    //procedure SaveClick(Sender: TObject);
     procedure PosClick(Sender: TObject);
     procedure AutoCutClick(Sender: TObject);
     procedure CutClick(Sender: TObject);
@@ -75,6 +73,8 @@ type
     procedure ApplyFadeinClick(Sender: TObject);
     procedure ApplyFadeoutClick(Sender: TObject);
     procedure ApplyEffectsClick(Sender: TObject);
+    procedure ZoomInClick(Sender: TObject);
+    procedure ZoomOutClick(Sender: TObject);
 
     procedure CutViewStateChanged(Sender: TObject);
     procedure VolumeTrackbarChange(Sender: TObject);
@@ -109,14 +109,14 @@ end;
 
 procedure TCutTab.UpdateButtons;
 begin
-  //FToolBar.FSave.Enabled := FCutView.CanSave;
   FToolBar.FPosEdit.Enabled := FCutView.CanSetLine;
   FToolBar.FPosPlay.Enabled := FCutView.CanSetLine;
   FToolBar.FAutoCut.Enabled := FCutView.CanAutoCut;
-  FToolBar.FPosPlay.Enabled := FCutView.CanZoom;
+  FToolBar.FPosPlay.Enabled := FCutView.CanPlay;
   FToolBar.FCut.Enabled := FCutView.CanCut;
-  FToolbar.FPosZoom.Enabled := FCutView.CanZoom;
-  FToolbar.FPosEffectsMarker.Enabled := FCutView.CanEffectsMarker;
+  FToolBar.FZoomIn.Enabled := FCutView.CanZoomIn;
+  FToolBar.FZoomOut.Enabled := FCutView.CanZoomOut;
+  FToolBar.FPosEffectsMarker.Enabled := FCutView.CanEffectsMarker;
   FToolBar.FUndo.Enabled := FCutView.CanUndo;
   FToolBar.FApplyFadein.Enabled := FCutView.CanApplyFadeIn;
   FToolBar.FApplyFadeout.Enabled := FCutView.CanApplyFadeOut;
@@ -128,7 +128,6 @@ begin
   // vorher Disabled waren, vor dem Enable da oben...
   FToolBar.FPosEdit.Down := False;
   FToolBar.FPosPlay.Down := False;
-  FToolBar.FPosZoom.Down := False;
   FToolBar.FPosEffectsMarker.Down := False;
 
   case FCutView.LineMode of
@@ -136,8 +135,6 @@ begin
       FToolBar.FPosEdit.Down := True;
     lmPlay:
       FToolBar.FPosPlay.Down := True;
-    lmZoom:
-      FToolBar.FPosZoom.Down := True;
     lmEffectsMarker:
       FToolBar.FPosEffectsMarker.Down := True;
   end;
@@ -152,12 +149,15 @@ begin
     FOnVolumeChanged(Self, FVolume.Volume);
 end;
 
-{
-procedure TCutTab.SaveClick(Sender: TObject);
+procedure TCutTab.ZoomInClick(Sender: TObject);
 begin
-  FCutView.Save;
+  FCutView.ZoomIn;
 end;
-}
+
+procedure TCutTab.ZoomOutClick(Sender: TObject);
+begin
+  FCutView.ZoomOut;
+end;
 
 procedure TCutTab.PosClick(Sender: TObject);
 begin
@@ -166,7 +166,6 @@ begin
 
   FToolBar.FPosEdit.Down := False;
   FToolBar.FPosPlay.Down := False;
-  FToolBar.FPosZoom.Down := False;
   FToolBar.FPosEffectsMarker.Down := False;
 
   if Sender = FToolBar.FPosEdit then
@@ -178,11 +177,6 @@ begin
   begin
     FCutView.LineMode := lmPlay;
     FToolBar.FPosPlay.Down := True;
-  end;
-  if Sender = FToolBar.FPosZoom then
-  begin
-    FCutView.LineMode := lmZoom;
-    FToolBar.FPosZoom.Down := True;
   end;
   if Sender = FToolBar.FPosEffectsMarker then
   begin
@@ -280,10 +274,10 @@ begin
   FToolBar.Indent := 2;
   FToolBar.Setup;
 
-  //FToolBar.FSave.OnClick := SaveClick;
   FToolBar.FPosEdit.OnClick := PosClick;
   FToolBar.FPosPlay.OnClick := PosClick;
-  FToolBar.FPosZoom.OnClick := PosClick;
+  FToolBar.FZoomIn.OnClick := ZoomInClick;
+  FToolBar.FZoomOut.OnClick := ZoomOutClick;
   FToolBar.FPosEffectsMarker.OnClick := PosClick;
   FToolBar.FAutoCut.OnClick := AutoCutClick;
   FToolBar.FCut.OnClick := CutClick;
@@ -375,26 +369,6 @@ begin
   FSep.Style := tbsSeparator;
   FSep.Width := 8;
 
-  FApplyFadeout := TToolButton.Create(Self);
-  FApplyFadeout.Parent := Self;
-  FApplyFadeout.Hint := 'Apply Fadeout';
-  FApplyFadeout.ImageIndex := 55;
-
-  FApplyFadein := TToolButton.Create(Self);
-  FApplyFadein.Parent := Self;
-  FApplyFadein.Hint := 'Apply Fadein';
-  FApplyFadein.ImageIndex := 54;
-
-  FPosEffectsMarker := TToolButton.Create(Self);
-  FPosEffectsMarker.Parent := Self;
-  FPosEffectsMarker.Hint := 'Select area';
-  FPosEffectsMarker.ImageIndex := 53;
-
-  FSep := TToolButton.Create(Self);
-  FSep.Parent := Self;
-  FSep.Style := tbsSeparator;
-  FSep.Width := 8;
-
   FCut := TToolButton.Create(Self);
   FCut.Parent := Self;
   FCut.Hint := 'Cut';
@@ -410,17 +384,30 @@ begin
   FSep.Style := tbsSeparator;
   FSep.Width := 8;
 
-  FPosZoom := TToolButton.Create(Self);
-  FPosZoom.Parent := Self;
-  FPosZoom.Hint := 'Zoom in (left mousebutton selects area, right mousebutton zooms back)';
-  FPosZoom.ImageIndex := 48;
+  FApplyFadeout := TToolButton.Create(Self);
+  FApplyFadeout.Parent := Self;
+  FApplyFadeout.Hint := 'Apply Fadeout';
+  FApplyFadeout.ImageIndex := 55;
 
-  {
-  FSave := TToolButton.Create(Self);
-  FSave.Parent := Self;
-  FSave.Hint := 'Save';
-  FSave.ImageIndex := 14;
-  }
+  FApplyFadein := TToolButton.Create(Self);
+  FApplyFadein.Parent := Self;
+  FApplyFadein.Hint := 'Apply Fadein';
+  FApplyFadein.ImageIndex := 54;
+
+  FZoomOut := TToolButton.Create(Self);
+  FZoomOut.Parent := Self;
+  FZoomOut.Hint := 'Zoom out';
+  FZoomOut.ImageIndex := 66;
+
+  FZoomIn := TToolButton.Create(Self);
+  FZoomIn.Parent := Self;
+  FZoomIn.Hint := 'Zoom in';
+  FZoomIn.ImageIndex := 48;
+
+  FPosEffectsMarker := TToolButton.Create(Self);
+  FPosEffectsMarker.Parent := Self;
+  FPosEffectsMarker.Hint := 'Select area';
+  FPosEffectsMarker.ImageIndex := 53;
 end;
 
 end.

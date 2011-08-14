@@ -173,7 +173,7 @@ begin
 
   if not Playing then
   begin
-    BASSSetDevice(AppGlobals.SoundDevice + 1);
+    BASSSetDevice(AppGlobals.SoundDevice);
 
     Funcs.close := BASSClose;
     Funcs.length := BASSLen;
