@@ -26,7 +26,8 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, PngSpeedButton, GUIFunctions,
-  HomeCommunication, Functions, LanguageObjects, PerlRegEx, Logging;
+  HomeCommunication, Functions, LanguageObjects, PerlRegEx, Logging,
+  ComCtrls, AppData, ImgList, PngImageList;
 
 type
   TfrmStreamData = class(TForm)
@@ -43,6 +44,12 @@ type
     lblTop: TLabel;
     Label3: TLabel;
     btnResetTitlePattern: TPngSpeedButton;
+    lstIgnoreTitles: TListView;
+    btnAddIgnoreTitlePattern: TButton;
+    btnRemoveIgnoreTitlePattern: TButton;
+    lblIgnoreTitles: TLabel;
+    btnApplyFromStream: TButton;
+    PngImageList1: TPngImageList;
     procedure btnResetTitlePatternClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
@@ -51,31 +58,80 @@ type
     procedure optGoodClick(Sender: TObject);
     procedure optBadClick(Sender: TObject);
     procedure txtTitlePatternChange(Sender: TObject);
+    procedure Label1Click(Sender: TObject);
+    procedure Label2Click(Sender: TObject);
+    procedure btnApplyFromStreamClick(Sender: TObject);
+    procedure lstIgnoreTitlesResize(Sender: TObject);
+    procedure lstIgnoreTitlesChange(Sender: TObject; Item: TListItem;
+      Change: TItemChange);
+    procedure btnRemoveIgnoreTitlePatternClick(Sender: TObject);
+    procedure lstIgnoreTitlesEdited(Sender: TObject; Item: TListItem;
+      var S: string);
+    procedure btnAddIgnoreTitlePatternClick(Sender: TObject);
   private
     FInitialized: Boolean;
 
+    FSaveSettings: Boolean;
+    FStreamSettings: TStreamSettings;
     FID: Integer;
     FName: string;
     FRegEx: string;
     FIsOkay: Boolean;
+    FIgnoreList: TStringList;
 
     FIsOkayChanged: Boolean;
     FRegExChanged: Boolean;
+    FIgnoreTracksChanged: Boolean;
   public
-    constructor Create(AOwner: TComponent; ID: Integer; Name: string; RegEx: string; IsOkay: Boolean); reintroduce;
+    constructor Create(AOwner: TComponent; StreamSettings: TStreamSettings; ID: Integer;
+      Name: string; RegEx: string; IsOkay: Boolean; IgnoreTracks: TStringList); reintroduce;
+    destructor Destroy; override;
 
+    property SaveSettings: Boolean read FSaveSettings;
     property RecordingOkay: Boolean read FIsOkay;
     property RegEx: string read FRegEx;
-    property RegExChanged: Boolean read FRegExChanged;
+    property IgnoreTracks: TStringList read FIgnoreList;
     property IsOkayChanged: Boolean read FIsOkayChanged;
+    property RegExChanged: Boolean read FRegExChanged;
+    property IgnoreTracksChanged: Boolean read FIgnoreTracksChanged;
   end;
 
 implementation
 
 {$R *.dfm}
 
+procedure TfrmStreamData.btnAddIgnoreTitlePatternClick(Sender: TObject);
+var
+  Item: TListItem;
+begin
+  Item := lstIgnoreTitles.Items.Add;
+  Item.ImageIndex := 0;
+
+  Item.EditCaption;
+
+  FIgnoreTracksChanged := True;
+end;
+
+procedure TfrmStreamData.btnApplyFromStreamClick(Sender: TObject);
+var
+  i: Integer;
+  Item: TListItem;
+begin
+  txtTitlePattern.Text := FStreamSettings.TitlePattern;
+  lstIgnoreTitles.Clear;
+  for i := 0 to FStreamSettings.IgnoreTrackChangePattern.Count - 1 do
+  begin
+    Item := lstIgnoreTitles.Items.Add;
+    Item.Caption := FStreamSettings.IgnoreTrackChangePattern[i];
+    Item.ImageIndex := 0;
+  end;
+
+  FIgnoreTracksChanged := True;
+end;
+
 procedure TfrmStreamData.btnOKClick(Sender: TObject);
 var
+  i: Integer;
   R: TPerlRegEx;
   RValid: Boolean;
 begin
@@ -104,22 +160,44 @@ begin
     Exit;
   end;
 
-  if ((optGood.Checked <> FIsOkay) and FIsOkayChanged) and ((FRegEx <> txtTitlePattern.Text) and FRegExChanged) then
+  // Das mit das ListView bei "Enter" das bearbeiten aufhört, dass der Wert
+  // uns hier zur Verfügung steht.
+  btnOK.SetFocus;
+  Application.ProcessMessages;
+
+  if (optGood.Checked <> FIsOkay) and FIsOkayChanged then
   begin
-    HomeComm.SetData(FID, optGood.Checked, txtTitlePattern.Text);
+    HomeComm.SetDataOkay(FID, optGood.Checked);
     FIsOkay := optGood.Checked;
-    FRegEx := txtTitlePattern.Text;
-  end else if (optGood.Checked <> FIsOkay) and (FIsOkayChanged) then
+    FSaveSettings := True;
+  end else
+    FIsOkayChanged := False;
+
+  if (FRegEx <> txtTitlePattern.Text) and (FRegExChanged) then
   begin
-    HomeComm.SetData(FID, optGood.Checked);
-    FIsOkay := optGood.Checked;
-  end else if (txtTitlePattern.Text <> FRegEx) and (FRegExChanged) then
-  begin
-    HomeComm.SetData(FID, txtTitlePattern.Text);
+    HomeComm.SetDataTitlePattern(FID, txtTitlePattern.Text);
     FRegEx := txtTitlePattern.Text;
+    FSaveSettings := True;
+  end else
+    FRegExChanged := False;
+
+  if FIgnoreTracksChanged then
+  begin
+    FIgnoreList.Clear;
+    for i := 0 to lstIgnoreTitles.Items.Count - 1 do
+      FIgnoreList.Add(Trim(lstIgnoreTitles.Items[i].Caption));
+    HomeComm.SetDataIgnoreTracks(FID, FIgnoreList);
+    FSaveSettings := True;
   end;
 
   Close;
+end;
+
+procedure TfrmStreamData.btnRemoveIgnoreTitlePatternClick(Sender: TObject);
+begin
+  lstIgnoreTitles.Items.Delete(lstIgnoreTitles.Selected.Index);
+
+  FIgnoreTracksChanged := True;
 end;
 
 procedure TfrmStreamData.btnResetTitlePatternClick(Sender: TObject);
@@ -127,15 +205,20 @@ begin
   txtTitlePattern.Text := '(?P<a>.*) - (?P<t>.*)';
 end;
 
-constructor TfrmStreamData.Create(AOwner: TComponent; ID: Integer; Name, RegEx: string;
-  IsOkay: Boolean);
+constructor TfrmStreamData.Create(AOwner: TComponent; StreamSettings: TStreamSettings;
+  ID: Integer; Name, RegEx: string; IsOkay: Boolean; IgnoreTracks: TStringList);
+var
+  i: Integer;
+  Item: TListItem;
 begin
   inherited Create(AOwner);
 
+  FStreamSettings := StreamSettings;
   FID := ID;
   FName := Name;
   FRegEx := RegEx;
   FIsOkay := IsOkay;
+  FIgnoreList := TStringList.Create;
 
   optGood.Checked := FIsOkay;
   optBad.Checked := not FIsOkay;
@@ -146,6 +229,22 @@ begin
   FInitialized := True;
 
   Language.Translate(Self);
+
+  btnApplyFromStream.Enabled := FStreamSettings <> nil;
+
+  for i := 0 to IgnoreTracks.Count - 1 do
+  begin
+    Item := lstIgnoreTitles.Items.Add;
+    Item.Caption := IgnoreTracks[i];
+    Item.ImageIndex := 0;
+  end;
+end;
+
+destructor TfrmStreamData.Destroy;
+begin
+  FIgnoreList.Free;
+
+  inherited;
 end;
 
 procedure TfrmStreamData.FormActivate(Sender: TObject);
@@ -161,6 +260,36 @@ begin
     Key := 0;
     Close;
   end;
+end;
+
+procedure TfrmStreamData.Label1Click(Sender: TObject);
+begin
+  optGood.Checked := True;
+end;
+
+procedure TfrmStreamData.Label2Click(Sender: TObject);
+begin
+  optBad.Checked := True;
+end;
+
+procedure TfrmStreamData.lstIgnoreTitlesChange(Sender: TObject;
+  Item: TListItem; Change: TItemChange);
+begin
+  btnRemoveIgnoreTitlePattern.Enabled := lstIgnoreTitles.Selected <> nil;
+end;
+
+procedure TfrmStreamData.lstIgnoreTitlesEdited(Sender: TObject;
+  Item: TListItem; var S: string);
+begin
+  if Trim(S) = '' then
+    S := Item.Caption
+  else
+    FIgnoreTracksChanged := True;
+end;
+
+procedure TfrmStreamData.lstIgnoreTitlesResize(Sender: TObject);
+begin
+  lstIgnoreTitles.Columns[0].Width := lstIgnoreTitles.ClientWidth - 25;
 end;
 
 procedure TfrmStreamData.optBadClick(Sender: TObject);

@@ -81,7 +81,7 @@ begin
     else
     begin
       s := GetShellFolder(CSIDL_MYMUSIC);
-      if (Trim(s) <> '') then
+      if (Trim(s) <> '') and (txtDir.Text = '') then
       begin
         s := IncludeTrailingPathDelimiter(s) + 'streamWriter\';
         txtDir.Text := s;
@@ -129,9 +129,9 @@ procedure TfrmWizard.RegisterSteps;
 begin
   inherited;
   FStepList.Add(TStepDir.Create('Select folder', pnlDir));
-  FStepList[FStepList.Count - 1].Description := _('Please select a folder where songs will be saved.');
+  FStepList[FStepList.Count - 1].Description := 'Please select a folder where recorded songs will be saved.';
   FStepList.Add(TStepDir.Create('Limit bandwidth', pnlBandwidth));
-  FStepList[FStepList.Count - 1].Description := _('Please choose whether to limit bandwidth used by streamWriter.');
+  FStepList[FStepList.Count - 1].Description := 'Please choose whether to limit bandwidth used by streamWriter.';
 end;
 
 procedure TfrmWizard.chkLimitClick(Sender: TObject);

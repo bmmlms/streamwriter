@@ -1,3 +1,22 @@
+{
+    ------------------------------------------------------------------------
+    streamWriter
+    Copyright (c) 2010-2011 Alexander Nottelmann
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; either version 3
+    of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
+    ------------------------------------------------------------------------
+}
 unit Timers;
 
 interface
@@ -385,8 +404,8 @@ begin
 
   if (Column = 0) and (TextType = ttNormal) then
   begin
-    DTStart := StrToTime(IntToStr(NodeData.Schedule.StartHour) + TimeSeparator + IntToStr(NodeData.Schedule.StartMinute) + TimeSeparator + '00');
-    DTEnd := StrToTime(IntToStr(NodeData.Schedule.EndHour) + TimeSeparator + IntToStr(NodeData.Schedule.EndMinute) + TimeSeparator + '00');
+    DTStart := EncodeTime(NodeData.Schedule.StartHour, NodeData.Schedule.StartMinute, 0, 0);
+    DTEnd := EncodeTime(NodeData.Schedule.EndHour, NodeData.Schedule.EndMinute, 0, 0);
 
     if NodeData.Schedule.Recurring then
     begin

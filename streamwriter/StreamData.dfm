@@ -4,8 +4,8 @@ object frmStreamData: TfrmStreamData
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Stream data'
-  ClientHeight = 358
-  ClientWidth = 373
+  ClientHeight = 406
+  ClientWidth = 457
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -18,39 +18,44 @@ object frmStreamData: TfrmStreamData
   OnActivate = FormActivate
   OnKeyDown = FormKeyDown
   DesignSize = (
-    373
-    358)
+    457
+    406)
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
     Left = 24
-    Top = 128
-    Width = 341
-    Height = 49
+    Top = 108
+    Width = 425
+    Height = 29
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     Caption = 
       'This option means that the stream sends complete titles which ca' +
       'n be detected by streamWriter and that there is no moderation at' +
       ' beginning/end of titles.'
     WordWrap = True
+    OnClick = Label1Click
   end
   object Label2: TLabel
     Left = 24
-    Top = 204
-    Width = 341
-    Height = 49
+    Top = 168
+    Width = 425
+    Height = 33
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     Caption = 
       'This option means that no complete titles are broadcasted, there' +
       ' is moderation in recorded tracks or that the stream sends only ' +
       'silence.'
     WordWrap = True
+    OnClick = Label2Click
   end
   object Label3: TLabel
     Left = 8
     Top = 48
-    Width = 357
-    Height = 53
+    Width = 441
+    Height = 29
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     Caption = 
       'Information entered here will be sent to the streamWriter server' +
@@ -59,8 +64,8 @@ object frmStreamData: TfrmStreamData
     WordWrap = True
   end
   object btnResetTitlePattern: TPngSpeedButton
-    Left = 344
-    Top = 280
+    Left = 424
+    Top = 224
     Width = 25
     Height = 21
     Hint = 'Reset pattern to default'
@@ -94,11 +99,24 @@ object frmStreamData: TfrmStreamData
       D31C60289BED2D3FA2C740006035C0B1DD8A191870A5C08CD341C80000DC1D99
       CCC6DEEDD30000000049454E44AE426082}
   end
+  object lblIgnoreTitles: TLabel
+    Left = 8
+    Top = 252
+    Width = 441
+    Height = 29
+    Anchors = [akLeft, akTop, akRight]
+    AutoSize = False
+    Caption = 
+      'Ignore the following stream title changes (i.e. announcements li' +
+      'ke '#39'Next playing: ...'#39') to disable saving:'
+    WordWrap = True
+  end
   object txtTitlePattern: TLabeledEdit
     Left = 8
-    Top = 280
-    Width = 333
+    Top = 224
+    Width = 409
     Height = 21
+    Anchors = [akLeft, akTop, akRight]
     EditLabel.Width = 307
     EditLabel.Height = 13
     EditLabel.Caption = 
@@ -109,9 +127,10 @@ object frmStreamData: TfrmStreamData
   end
   object optGood: TRadioButton
     Left = 8
-    Top = 104
-    Width = 357
+    Top = 84
+    Width = 441
     Height = 21
+    Anchors = [akLeft, akTop, akRight]
     Caption = 'Stream is good for recordings'
     Checked = True
     TabOrder = 1
@@ -120,17 +139,18 @@ object frmStreamData: TfrmStreamData
   end
   object optBad: TRadioButton
     Left = 8
-    Top = 180
-    Width = 357
+    Top = 144
+    Width = 441
     Height = 21
+    Anchors = [akLeft, akTop, akRight]
     Caption = 'Stream is bad for recordings'
     TabOrder = 2
     OnClick = optBadClick
   end
   object pnlNav: TPanel
     Left = 0
-    Top = 309
-    Width = 373
+    Top = 357
+    Width = 457
     Height = 49
     Align = alBottom
     BevelOuter = bvNone
@@ -139,10 +159,11 @@ object frmStreamData: TfrmStreamData
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 3
+    ExplicitTop = 438
     object Bevel2: TBevel
       Left = 4
       Top = 4
-      Width = 365
+      Width = 449
       Height = 5
       Align = alTop
       Shape = bsTopLine
@@ -150,7 +171,7 @@ object frmStreamData: TfrmStreamData
       ExplicitWidth = 396
     end
     object btnOK: TBitBtn
-      Left = 272
+      Left = 356
       Top = 9
       Width = 97
       Height = 36
@@ -163,11 +184,21 @@ object frmStreamData: TfrmStreamData
       TabOrder = 0
       OnClick = btnOKClick
     end
+    object btnApplyFromStream: TButton
+      Left = 4
+      Top = 9
+      Width = 173
+      Height = 36
+      Align = alLeft
+      Caption = 'Apply &data from stream'
+      TabOrder = 1
+      OnClick = btnApplyFromStreamClick
+    end
   end
   object pnlHeader: TPanel
     Left = 0
     Top = 0
-    Width = 373
+    Width = 457
     Height = 41
     Align = alTop
     BevelOuter = bvNone
@@ -179,7 +210,7 @@ object frmStreamData: TfrmStreamData
     object Shape1: TShape
       Left = 4
       Top = 4
-      Width = 365
+      Width = 449
       Height = 33
       Align = alClient
       Brush.Color = clActiveCaption
@@ -192,7 +223,7 @@ object frmStreamData: TfrmStreamData
       AlignWithMargins = True
       Left = 10
       Top = 9
-      Width = 356
+      Width = 440
       Height = 25
       Margins.Left = 6
       Margins.Top = 5
@@ -214,5 +245,87 @@ object frmStreamData: TfrmStreamData
       ExplicitWidth = 190
       ExplicitHeight = 30
     end
+  end
+  object lstIgnoreTitles: TListView
+    Left = 8
+    Top = 283
+    Width = 341
+    Height = 70
+    Align = alCustom
+    Anchors = [akLeft, akTop, akRight]
+    Columns = <
+      item
+      end>
+    RowSelect = True
+    ShowColumnHeaders = False
+    SmallImages = PngImageList1
+    TabOrder = 5
+    ViewStyle = vsReport
+    OnChange = lstIgnoreTitlesChange
+    OnEdited = lstIgnoreTitlesEdited
+    OnResize = lstIgnoreTitlesResize
+  end
+  object btnAddIgnoreTitlePattern: TButton
+    Left = 356
+    Top = 284
+    Width = 93
+    Height = 25
+    Anchors = [akLeft, akTop, akRight]
+    Caption = '&Add'
+    TabOrder = 6
+    OnClick = btnAddIgnoreTitlePatternClick
+  end
+  object btnRemoveIgnoreTitlePattern: TButton
+    Left = 356
+    Top = 312
+    Width = 93
+    Height = 25
+    Anchors = [akLeft, akTop, akRight]
+    Caption = '&Remove'
+    Enabled = False
+    TabOrder = 7
+    OnClick = btnRemoveIgnoreTitlePatternClick
+  end
+  object PngImageList1: TPngImageList
+    PngImages = <
+      item
+        Background = clWindow
+        Name = 'delete'
+        PngImage.Data = {
+          89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+          610000001974455874536F6674776172650041646F626520496D616765526561
+          647971C9653C0000037B4944415478DA55930D6C136518C7FF6F8FB56C6DAFEB
+          DA6E6CEB0AC887EC833936328DC282130CC4282A8318962598190C060C51188C
+          A112ADD86D0685A10D06E302C144CDE2448D7C0D70332AEA18E2DCE868EDC6B6
+          E2B8B65BBBEBDA5EDB3BDF9E13C79BFCF2E6EEDEE7FFDCF33EFF874892844847
+          2BFE5B9DD53B32E8B695524E29A33094EE69EC15A75A38CC5864A6C0E5EA1DEF
+          A468D2F666573E0276C15C68E65B40140493EE61F094D10B5D8805F9E655A75A
+          EAEE11089FFF04976A5E6EC928CEDF5EF0E26610FF10C4000731E8950F29B406
+          285823609A8F1BAD6DE07EB9667FF4E49197EE0A7C93C55A8DA5450D059B1F87
+          70FD32029E71DCFE9343C81F41F2BB3A231573F28D4837EBA15A5A01475B27C6
+          AEF434579E78AF8EB4676A7353D46923E5BB6A10EFFF0123BD6318EDF37E9FAC
+          977291723F2DA36BD16345D0A7C7E53F4A295C895F0F7F86E878C04CDA4C5AEB
+          82F56B1A8CCABFE11FF6E1E6CF9ED3F4CC0BAB3F7E97BB50BB6B055128BA0A6B
+          9F834E3981C8E00022BC008D490B6F740E5C5F77BC4D3E37B13DA5D5AB4B18BF
+          0B8EAB7E04C702EBD67CD478E6FCD63D7270D1F39BC02AFC080F3A30F0DB1D48
+          202878280BA26911BA4F9CEB239F1AD9E883CF9628C5A00FDD973C10130955B2
+          85C9E0A55B36422B7108BB69F0351FF889888D96B3B76C552E18568F2BED7F08
+          E4A45137B96C458E464144F4FCC8250556CAC1351BA0498C61CAE580B36F027C
+          206A5B7BD45A7F66FBFE6869458E327917573B3D026935EA7AF28B0D25A934EF
+          5F5C2A02B73C28AE7E06EAC86D845C37E0BCC9233429D8D6BDFF66FD773B5FAF
+          D46667752CB648884612E8FDDDE724C70D3AABF93E4343261B476CDE72306A1D
+          D453A3E09DFD70B9C3E0F998ED894307EA9319BF7DE5C0170F54ADAD629C3FC1
+          37C960C8E53F4A8E19D27355A9AA91251606EA854BE436C9C123318442711B7D
+          7C63DAD65B2CE5CB6ACD060953EE01F40DC521848542D9487683BE49CFCEDA3D
+          37939105423106DE044B3BE285244A48CFCB41DEF2626468198C779DC5309780
+          2F103FFC6463C34E59E0D6B1669CDE77F043BD9A6CCB333048335BA02B7B184A
+          5336F5B102C21D7A1F8E5E04FBAF63D42FC2C78BF6A70EEEFBDFCA43F64639F3
+          57FB1B9B5218B2DBA896A09B0DA866FD3B304202088401EF148110970EADB7EE
+          79F59E611AFCC076773CDB5F6BB2D06D1BA58AB270FAB59BF265D2DE4FBF55E7
+          9C39CEFF00233280974F14462B0000000049454E44AE426082}
+      end>
+    Left = 212
+    Top = 116
+    Bitmap = {}
   end
 end

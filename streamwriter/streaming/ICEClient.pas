@@ -400,7 +400,7 @@ end;
 
 function TICEClient.FGetActive: Boolean;
 begin
-  Result := ((FState <> csStopped) and (FState <> csIOError)) or (FProcessingList.Count > 0); { or (C > 0); }
+  Result := ((FState <> csStopped) and (FState <> csIOError)) or (FProcessingList.Count > 0);
 end;
 
 function TICEClient.FGetRecording: Boolean;
@@ -899,8 +899,6 @@ function TICEClient.ParsePlaylist: Boolean;
       end else
       begin
         URLs.Add('http://' + Host + ':' + IntToStr(Port) + URLData);
-        //if Port <> 80 then
-        //  FURLs.Add(Host + ':80' + URLData);
       end;
     end;
   end;

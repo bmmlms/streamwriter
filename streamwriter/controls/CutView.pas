@@ -337,12 +337,17 @@ begin
   if FScanThread <> nil then
   begin
     FScanThread.OnTerminate := nil;
+    FScanThread.OnScanProgress := nil;
+    FScanThread.OnEndScan := nil;
+    FScanThread.OnScanError := nil;
     FScanThread.Terminate;
   end;
 
   if FProcessThread <> nil then
   begin
     FProcessThread.OnTerminate := nil;
+    FProcessThread.OnSuccess := nil;
+    FProcessThread.OnError := nil;
     FProcessThread.Terminate;
   end;
 
@@ -467,7 +472,7 @@ begin
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
-                       // TODO: Das cutview KOMPLETT TESTEN ALLE KOMBIS!!!!!!!!!! das cutview braucht noch viel aufmerksamkeit denke ich! SEHR VIEL!!!
+
 procedure TCutView.Undo;
 var
   UndoStep: TUndoStep;
@@ -1199,18 +1204,6 @@ begin
     CS := FCutView.FWaveData.Silence[i].CutStart;
     CE := FCutView.FWaveData.Silence[i].CutEnd;
 
-    {
-    if (CS < FCutView.FWaveData.CutStart) and (CE < FCutView.FWaveData.CutStart) then
-      Continue;
-    if CS > FCutView.FWaveData.CutEnd then
-      Continue;
-
-    if CS < FCutView.FWaveData.CutStart then
-      CS := FCutView.FWaveData.CutStart;
-    if CE > FCutView.FWaveData.CutEnd then
-      CE := FCutView.FWaveData.CutEnd;
-    }
-
     L1 := Floor(((CS - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FWaveBuf.Width);
     L2 := Ceil(((CE - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FWaveBuf.Width);
 
@@ -1667,7 +1660,7 @@ var
 begin
   inherited;
 
-  Res := RunProcess(FCommandLine, FWorkingDir, 120000, FProcessOutput, EC);
+  Res := RunProcess(FCommandLine, FWorkingDir, 120000, FProcessOutput, EC, @Self.Terminated);
 
   if Terminated then
   begin

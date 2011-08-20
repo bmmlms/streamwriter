@@ -42,6 +42,7 @@ type
     Rating: Integer;
     RegEx: string;
     RecordingOkay: Boolean;
+    IgnoreTitles: TStringList;
   end;
   TStreamDataArray = array of TStreamData;
 
@@ -526,6 +527,7 @@ begin
     Result[High(Result)].Rating := NodeData.Data.Rating;
     Result[High(Result)].RegEx := NodeData.Data.RegEx;
     Result[High(Result)].RecordingOkay := NodeData.Data.RecordingOkay;
+    Result[High(Result)].IgnoreTitles := NodeData.Data.IgnoreTitles;
   end;
 end;
 
@@ -1150,7 +1152,7 @@ procedure TMStreamBrowserView.HomeCommStateChanged(Sender: TObject);
 begin
   if HomeComm.Connected and (HomeComm.Connected <> HomeComm.WasConnected) and
      (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or
-      (AppGlobals.LastBrowserUpdate < Now - 15)) then
+      (AppGlobals.LastBrowserUpdate < Now - 15) or FLoading) then
   begin
     SwitchMode(moLoading);
     FHomeCommunication.GetStreams;
@@ -1381,7 +1383,6 @@ begin
 
   TopCnt := TopCnt + 26;
 
-
   {
   FExpandButton := TSpeedButton.Create(Self);
   FExpandButton.Parent := Self;
@@ -1442,7 +1443,6 @@ begin
   FTypeLabel.Caption := _('Type') + ':';
   FTypeLabel.Top := FTypeList.Top + FTypeList.Height div 2 - FTypeLabel.Height div 2;
 
-
   I := TIcon.Create;
   I.LoadFromResourceName(HInstance, 'SEARCH');
   B := TBitmap.Create;
@@ -1456,7 +1456,6 @@ begin
   FSearchButton.Glyph.PixelFormat := pf24bit;
   B.Free;
   I.Free;
-
 
   FSearchEdit.Width := ClientWidth - FSearchEdit.Left - 12 - FSearchButton.Width;
   FGenreList.Width := ClientWidth - FGenreList.Left - 8;

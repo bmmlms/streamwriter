@@ -130,7 +130,7 @@ begin
 
   if Params <> '' then
   begin
-    if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120000, Output, EC) = 2 then
+    if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120000, Output, EC, @Terminated) = 2 then
     begin
       FResult := arTimeout;
     end else
@@ -239,12 +239,6 @@ begin
   Result.OnlyIfCut := FOnlyIfCut;
 
   Result.Assign(Self);
-  {
-  TSoXPlugin(Result).FFadeoutStart := FFadeoutStart;
-  TSoXPlugin(Result).FFadeoutEnd := FFadeoutEnd;
-  TSoXPlugin(Result).FFadeoutStartLength := FFadeoutStartLength;
-  TSoXPlugin(Result).FFadeoutEndLength := FFadeoutEndLength;
-  }
 end;
 
 constructor TSoXPlugin.Create;

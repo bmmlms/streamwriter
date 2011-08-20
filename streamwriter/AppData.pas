@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
   LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions, Plugins,
-  PluginManager, Logging;
+  PluginManager, Logging, Base64;
 
 type
   TClientActions = (caStartStop, caStreamIntegrated, caStream, caFile);
@@ -324,7 +324,7 @@ begin
   FProjectForumLink := 'http://streamwriter.org/forum/';
   FProjectDonateLink := 'http://streamwriter.org/inhalt/donate/';
 
-  inherited Create(AppName, True, W, 500);
+  inherited Create(AppName, True, W, 650);
 
   FBuildNumber := 221;
 
@@ -388,7 +388,7 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    SetLength(FDonors, 42);
+    SetLength(FDonors, 44);
     FDonors[0] := 'Thomas Franke';
     FDonors[1] := '''bastik''';
     FDonors[2] := 'Reto Pitsch';
@@ -431,6 +431,8 @@ begin
     FDonors[39] := 'Alexander Maier (www.kommtel.info)';
     FDonors[40] := 'Bernhard Langheim';
     FDonors[41] := 'Eike R.';
+    FDonors[42] := '''Nobbe''';
+    FDonors[43] := 'Kay Dubberke';
 
     ShuffleFisherYates(FDonors);
     for i := 0 to Length(FDonors) - 1 do
@@ -538,6 +540,8 @@ var
 begin
   inherited;
 
+  FStorage.Read('LastUsedDataVersion', FLastUsedDataVersion, 0);
+
   FStreamSettings.FTitlePattern := '(?P<a>.*) - (?P<t>.*)';
 
   FStorage.Read('FilePattern', FStreamSettings.FFilePattern, '%s\%a - %t');
@@ -626,7 +630,18 @@ begin
   FStorage.Read('UserWasSetup', FUserWasSetup, False);
   FStorage.Read('User', FUser, '');
   FStorage.Read('Pass', FPass, '');
-  FPass := CryptStr(FPass);
+  if FLastUsedDataVersion >= 29 then
+  begin
+    // Wenn FPass beim Einlesen leer war, gibt das eine Exception!
+    // Die MÜSSEN wir hier fangen, sonst geht der Ladevorgang nicht weiter!
+    try
+      FPass := CryptStr(Decode(RawByteString(FPass)));
+    except
+      FPass := '';
+    end;
+  end else
+    FPass := CryptStr(FPass);
+
   FStorage.Read('SoundDevice', FSoundDevice, 0);
 
   FStorage.Read('ShortcutPlay', FShortcutPlay, 0);
@@ -655,8 +670,6 @@ begin
   end;
   FStorage.Read('ClientCols', FClientCols, 255, 'Cols');
   FClientCols := FClientCols or (1 shl 0);
-
-  FStorage.Read('LastUsedDataVersion', FLastUsedDataVersion, 0);
 
   if (DefaultActionTmp > Ord(High(TClientActions))) or
      (DefaultActionTmp < Ord(Low(TClientActions))) then
@@ -703,6 +716,8 @@ var
   i, n: Integer;
 begin
   inherited;
+
+  FStorage.Write('LastUsedDataVersion', FLastUsedDataVersion);
 
   FStorage.Write('FilePattern', FStreamSettings.FFilePattern);
   FStorage.Write('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern);
@@ -756,7 +771,7 @@ begin
   FStorage.Write('AutoScrollLog', FAutoScrollLog);
   FStorage.Write('UserWasSetup', FUserWasSetup);
   FStorage.Write('User', FUser);
-  FStorage.Write('Pass', CryptStr(FPass));
+  FStorage.Write('Pass', EncodeU(CryptStr(FPass)));
   FStorage.Write('SoundDevice', FSoundDevice);
 
   FStorage.Write('ShortcutPlay', FShortcutPlay);
@@ -771,8 +786,6 @@ begin
     if i <> 1 then
       FStorage.Write('HeaderWidth' + IntToStr(i), HeaderWidth[i], 'Cols');
   FStorage.Write('ClientCols', FClientCols, 'Cols');
-
-  FStorage.Write('LastUsedDataVersion', FLastUsedDataVersion);
 
   FStorage.DeleteKey('Plugins');
   n := 0;

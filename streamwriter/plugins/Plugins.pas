@@ -455,7 +455,7 @@ begin
         CmdLine := '"' + FExe + '" ' + Replaced;
       end else
         CmdLine := FExe;
-      Res := RunProcess(CmdLine, ExtractFilePath(FExe), 120000, Output, EC);
+      Res := RunProcess(CmdLine, ExtractFilePath(FExe), 120000, Output, EC, @Terminated);
       FData.Filesize := GetFileSize(FData.Filename);
       FOutput := Output;
       case Res of

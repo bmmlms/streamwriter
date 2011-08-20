@@ -227,6 +227,8 @@ type
     procedure chkAdjustTrackOffsetClick(Sender: TObject);
     procedure txtAdjustTrackOffsetChange(Sender: TObject);
     procedure optAdjustClick(Sender: TObject);
+    procedure lstIgnoreTitlesEdited(Sender: TObject; Item: TListItem;
+      var S: string);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -243,6 +245,8 @@ type
     btnReset: TBitBtn;
     function ValidatePattern(Text: string): string;
     function GetNewID: Integer;
+
+    function GetStringListHash(Lst: TStringList): Cardinal;
     procedure BuildHotkeys;
     procedure RemoveGray(C: TControl);
     procedure EnablePanel(Panel: TPanel; Enable: Boolean);
@@ -252,6 +256,7 @@ type
     procedure BlacklistTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure BlacklistTreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure btnResetClick(Sender: TObject);
+    function ListDiffers(S1, S2: TStringList): Boolean;
   protected
     procedure RegisterPages; override;
     procedure Finish; override;
@@ -280,7 +285,7 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
 
   procedure SetFields;
   var
-    i: Integer;
+    i, n: Integer;
     S: TStreamSettings;
     F, ShowDialog: Boolean;
   begin
@@ -289,6 +294,11 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
 
     ShowDialog := False;
     S := FStreamSettings[0];
+
+    if Length(FStreamSettings) > 1 then
+      for i := 1 to Length(FStreamSettings) - 1 do
+        if GetStringListHash(S.IgnoreTrackChangePattern) <> GetStringListHash(FStreamSettings[i].IgnoreTrackChangePattern) then
+          AddField(lstIgnoreTitles);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -676,7 +686,7 @@ begin
 
     end;
 
-    if Length(FStreamSettings) = 1 then
+    if Length(FStreamSettings) >= 1 then
     begin
       for i := 0 to Settings.IgnoreTrackChangePattern.Count - 1 do
       begin
@@ -686,6 +696,7 @@ begin
       end;
     end;
 
+    {
     if Length(FStreamSettings) > 1 then
     begin
       lblIgnoreTitles.Visible := False;
@@ -694,6 +705,7 @@ begin
       btnAddIgnoreTitlePattern.Visible := False;
       btnRemoveIgnoreTitlePattern.Visible := False;
     end;
+    }
 
     FBrowseDir := BrowseDir;
     FBrowseAutoDir := BrowseAutoDir;
@@ -995,12 +1007,18 @@ end;
 procedure TfrmSettings.Finish;
 var
   i, n: Integer;
+  AdvancedDiffers: Boolean;
   Plugin: TPluginBase;
   EP: TExternalPlugin;
   Item: TListItem;
+  OldTitlePattern: string;
+  OldIgnoreTitles: Cardinal;
 begin
   if Length(FStreamSettings) > 0 then
   begin
+    OldTitlePattern := FStreamSettings[0].TitlePattern;
+    OldIgnoreTitles := GetStringListHash(FStreamSettings[0].IgnoreTrackChangePattern);
+
     for i := 0 to Length(FStreamSettings) - 1 do
     begin
       if FIgnoreFieldList.IndexOf(txtFilePattern) = -1 then
@@ -1030,8 +1048,9 @@ begin
       if FIgnoreFieldList.IndexOf(chkDiscardSmaller) = -1 then
         FStreamSettings[i].DiscardSmaller := chkDiscardSmaller.Checked;
 
-      if FIgnoreFieldList.IndexOf(txtTitlePattern) = -1 then
-        FStreamSettings[i].TitlePattern := txtTitlePattern.Text;
+      if Length(FStreamSettings) > 0 then
+        if FIgnoreFieldList.IndexOf(txtTitlePattern) = -1 then
+          FStreamSettings[i].TitlePattern := txtTitlePattern.Text;
 
       if pnlCut.Tag = 0 then
       begin
@@ -1092,13 +1111,22 @@ begin
       if FIgnoreFieldList.IndexOf(chkOnlySaveFull) = -1 then
         FStreamSettings[i].OnlySaveFull := chkOnlySaveFull.Checked;
 
-      if Length(FStreamSettings) = 1 then
+      if (FIgnoreFieldList.IndexOf(lstIgnoreTitles) = -1) and (Length(FStreamSettings) > 0) then
       begin
         FStreamSettings[i].IgnoreTrackChangePattern.Clear;
         for n := 0 to lstIgnoreTitles.Items.Count - 1 do
           FStreamSettings[i].IgnoreTrackChangePattern.Add(lstIgnoreTitles.Items[n].Caption);
       end;
+
+      AdvancedDiffers := False;
+      if (FIgnoreFieldList.IndexOf(txtTitlePattern) = -1) and (OldTitlePattern <> FStreamSettings[i].TitlePattern) then
+        AdvancedDiffers := True;
+      if (FIgnoreFieldList.IndexOf(lstIgnoreTitles) = -1) and (GetStringListHash(FStreamSettings[i].IgnoreTrackChangePattern) <> OldIgnoreTitles) then
+        AdvancedDiffers := True;
     end;
+
+    if AdvancedDiffers then
+      TfrmMsgDlg.ShowMsg(Self, _('You changed some advanced stream specific settings. If they work, please contribute them to the community by selecting ''Set data...'' using the ''Administration'' menu from the stream browser popup menu.'), 10, btOK);
   end else
   begin
     AppGlobals.Lock;
@@ -1271,6 +1299,9 @@ begin
   lblPanelCut.Top := pnlCut.ClientHeight div 2 - lblPanelCut.Height div 2;
   lblPanelCut.Left := pnlCut.ClientWidth div 2 - lblPanelCut.Width div 2;
 
+  txtSilenceLength.Left := Label12.Left + Label12.Width + 4;
+  Label13.Left := txtSilenceLength.Left + txtSilenceLength.Width + 4;
+
   txtSilenceBufferSeconds.Left := Label6.Left + Label6.Width + 4;
   Label15.Left := txtSilenceBufferSeconds.Left + txtSilenceBufferSeconds.Width + 4;
 
@@ -1306,6 +1337,31 @@ begin
         Continue;
       end;
   end;
+end;
+
+function TfrmSettings.GetStringListHash(Lst: TStringList): Cardinal;
+var
+  i: Integer;
+begin
+  Result := 0;
+  for i := 0 to Lst.Count - 1 do
+    Result := Result + HashString(Lst[i]);
+end;
+
+function TfrmSettings.ListDiffers(S1, S2: TStringList): Boolean;
+var
+  i: Integer;
+  Str1, Str2: string;
+begin
+  Str1 := '';
+  Str2 := '';
+
+  for i := 0 to S1.Count - 1 do
+    Str1 := Str1 + S1[i];
+  for i := 0 to S2.Count - 1 do
+    Str2 := Str2 + S2[i];
+
+  Result := HashString(Str1) <> HashString(Str2);
 end;
 
 procedure TfrmSettings.KeyDown(var Key: Word; Shift: TShiftState);
@@ -1349,6 +1405,17 @@ procedure TfrmSettings.lstIgnoreTitlesChange(Sender: TObject; Item: TListItem;
   Change: TItemChange);
 begin
   btnRemoveIgnoreTitlePattern.Enabled := lstIgnoreTitles.Selected <> nil;
+end;
+
+procedure TfrmSettings.lstIgnoreTitlesEdited(Sender: TObject;
+  Item: TListItem; var S: string);
+begin
+  inherited;
+
+  if Trim(S) = '' then
+    S := Item.Caption
+  else
+    RemoveGray(lstIgnoreTitles);
 end;
 
 procedure TfrmSettings.lstIgnoreTitlesResize(Sender: TObject);
@@ -1626,6 +1693,9 @@ begin
   end else if TControl(C) is TComboBox then
   begin
 
+  end else if TControl(C) is TListView then
+  begin
+    TListView(C).Color := clWindow;
   end;
 end;
 
@@ -1646,7 +1716,8 @@ begin
     end else if TControl(FIgnoreFieldList[i]) is TComboBox then
     begin
 
-    end;
+    end else if TControl(FIgnoreFieldList[i]) is TListView then
+      TListView(FIgnoreFieldList[i]).Color := clGrayText;
 end;
 
 procedure TfrmSettings.txtAdjustTrackOffsetChange(Sender: TObject);
@@ -1806,6 +1877,8 @@ begin
   Item.ImageIndex := 1;
   txtIgnoreTitlePattern.Text := '';
   txtIgnoreTitlePattern.SetFocus;
+
+  RemoveGray(lstIgnoreTitles);
 end;
 
 procedure TfrmSettings.btnAddUpClick(Sender: TObject);
@@ -1916,6 +1989,8 @@ end;
 procedure TfrmSettings.btnRemoveIgnoreTitlePatternClick(Sender: TObject);
 begin
   lstIgnoreTitles.Items.Delete(lstIgnoreTitles.Selected.Index);
+
+  RemoveGray(lstIgnoreTitles);
 end;
 
 procedure TfrmSettings.btnResetClick(Sender: TObject);

@@ -60,7 +60,6 @@ type
   protected
     procedure DrawPanel(Panel: TStatusPanel; const R: TRect); override;
     procedure Resize; override;
-    procedure CreateParams(var Params: TCreateParams); override;
     procedure CNDrawitem(var Message: TWMDrawItem); message CN_DRAWITEM;
     procedure WMPaint(var Message: TWMPaint); message WM_PAINT;
   public
@@ -349,7 +348,7 @@ begin
   tmrSchedule.Enabled := False;
 
   TfrmNotification.Stop;
-  
+
   Players.StopAll;
   
   Hide;
@@ -400,8 +399,8 @@ begin
   StartTime := GetTickCount;
   while (FClients.Count > 0) or (HomeComm.Connected) or (FClients.Active) or (FCheckFiles <> nil) or (FUpdater.Active) do
   begin
-    // 10 Sekunden warten, für sauberes beenden
-    if StartTime < GetTickCount - 10000 then
+    // 15 Sekunden warten, für sauberes beenden
+    if StartTime < GetTickCount - 15000 then
     begin
       Hard := True;
       Break;
@@ -526,7 +525,7 @@ begin
   if not DirectoryExists(AppGlobals.Dir) then
   begin
     MsgBox(Handle, _('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
-    ShowSettings(True, False);
+    ShowSettings(True, DirectoryExists(AppGlobals.DirAuto));
   end;
 
   // Das erste DirectoryExists() ist da, damit der Settings-Dialog nicht doppelt kommt.
@@ -536,6 +535,14 @@ begin
     ShowSettings(False, True);
   end;
 
+  // Wird hier gemacht, weil der Browser dann sicher da ist, wenn die
+  // Streams empfangen werden (wg. DisplayCount)
+  HomeComm.OnStateChanged := HomeCommStateChanged;
+  HomeComm.OnServerInfo := HomeCommServerInfo;
+  HomeComm.OnError := HomeCommError;
+  HomeComm.DataLists := FDataLists;
+  HomeComm.Connect;
+
   if not AppGlobals.FirstStartShown then
   begin
     TfrmMsgDlg.ShowMsg(Self, _('This is the first time you are running streamWriter. There are two ways to record music:'#13#10 +
@@ -544,16 +551,7 @@ begin
                                'When a song from the wishlist is being played on a stream, streamWriter will automatically tune in to record your song. ' +
                                'Please add some artists/titles to your wishlist to try this new feature.'), btOK);
   end;
-
   AppGlobals.FirstStartShown := True;
-
-  // Wird hier gemacht, weil der Browser dann sicher da ist, wenn die
-  // Streams empfangen werden (wg. DisplayCount)
-  HomeComm.OnStateChanged := HomeCommStateChanged;
-  HomeComm.OnServerInfo := HomeCommServerInfo;
-  HomeComm.OnError := HomeCommError;
-  HomeComm.DataLists := FDataLists;
-  HomeComm.Connect;
 end;
 
 procedure TfrmStreamWriterMain.FormClose(Sender: TObject;
@@ -1953,12 +1951,6 @@ begin
   P := Panels.Add;
   P.Width := 100;
   P.Style := psOwnerDraw;
-end;
-
-procedure TSWStatusBar.CreateParams(var Params: TCreateParams);
-begin
-  inherited;
-  //Params.ExStyle := Params.ExStyle or WS_EX_COMPOSITED;
 end;
 
 destructor TSWStatusBar.Destroy;

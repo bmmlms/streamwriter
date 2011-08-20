@@ -47,7 +47,11 @@ type
     FRating: Byte;
     FRecordingOkay: Boolean;
     FRegEx: string;
+    FIgnoreTitles: TStringList;
   public
+    constructor Create;
+    destructor Destroy; override;
+
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamBrowserEntry;
     procedure Save(Stream: TExtendedStream);
 
@@ -64,6 +68,7 @@ type
     property Rating: Byte read FRating write FRating;
     property RecordingOkay: Boolean read FRecordingOkay write FRecordingOkay;
     property RegEx: string read FRegEx write FRegEx;
+    property IgnoreTitles: TStringList read FIgnoreTitles;
   end;
 
   TTrackInfo = class
@@ -318,7 +323,7 @@ type
   end;
 
 const
-  DATAVERSION = 28;
+  DATAVERSION = 29;
 
 implementation
 
@@ -973,7 +978,6 @@ begin
 
   Stream.Read(Result.FFilename);
 
-  // !!!TESTEN TESTEN TESTEN!!!
   Result.FFilename := TryUnRelativePath(Result.FFilename, True);
 
   Stream.Read(Result.FStreamname);
@@ -998,7 +1002,6 @@ end;
 
 procedure TTrackInfo.Save(Stream: TExtendedStream);
 begin
-  // !!!TESTEN TESTEN TESTEN!!!
   Stream.Write(TryRelativePath(FFilename, True));
 
   Stream.Write(FStreamname);
@@ -1258,8 +1261,8 @@ var
 begin
   Result := False;
 
-  StartTime := StrToTime(IntToStr(S.StartHour) + TimeSeparator + IntToStr(S.StartMinute) + TimeSeparator + '00');
-  EndTime := StrToTime(IntToStr(S.EndHour) + TimeSeparator + IntToStr(S.EndMinute) + TimeSeparator + '00');
+  StartTime := EncodeTime(S.StartHour, S.StartMinute, 0, 0);
+  EndTime := EncodeTime(S.EndHour, S.EndMinute, 0, 0);
 
   NextDay := False;
   if EndTime <= StartTime then
@@ -1352,10 +1355,27 @@ end;
 
 { TStreamBrowserEntry }
 
+constructor TStreamBrowserEntry.Create;
+begin
+  inherited;
+
+  FIgnoreTitles := TStringList.Create;
+end;
+
+destructor TStreamBrowserEntry.Destroy;
+begin
+  FIgnoreTitles.Free;
+
+  inherited;
+end;
+
 class function TStreamBrowserEntry.Load(Stream: TExtendedStream;
   Version: Integer): TStreamBrowserEntry;
 var
+  i: Integer;
   B: Byte;
+  Count: Cardinal;
+  E: string;
 begin
   Result := TStreamBrowserEntry.Create;
   Stream.Read(Result.FID);
@@ -1372,9 +1392,21 @@ begin
   Stream.Read(Result.FRating);
   Stream.Read(Result.FRecordingOkay);
   Stream.Read(Result.FRegEx);
+
+  if Version >= 29 then
+  begin
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+    begin
+      Stream.Read(E);
+      Result.FIgnoreTitles.Add(E);
+    end;
+  end;
 end;
 
 procedure TStreamBrowserEntry.Save(Stream: TExtendedStream);
+var
+  i: Integer;
 begin
   Stream.Write(FID);
   Stream.Write(FName);
@@ -1389,7 +1421,12 @@ begin
   Stream.Write(FRating);
   Stream.Write(FRecordingOkay);
   Stream.Write(FRegEx);
+
+  Stream.Write(Cardinal(FIgnoreTitles.Count));
+  for i := 0 to FIgnoreTitles.Count - 1 do
+    Stream.Write(FIgnoreTitles[i]);
 end;
 
 end.
+
 

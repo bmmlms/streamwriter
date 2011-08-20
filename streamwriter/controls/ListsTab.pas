@@ -548,9 +548,12 @@ begin
       Exit;
 
   O := FAddCombo.Items.Objects[FAddCombo.ItemIndex];
-  FAddCombo.AddItem(Client.Entry.Name, Client);
+
+  // Unbedingt mit InsertObject. Das normale Add hat das neue Teil teilweise mit Index 0 geadded.
+  FAddCombo.Items.InsertObject(FAddCombo.Items.Count, Client.Entry.Name, Client);
 
   FAddCombo.Items.Delete(0);
+  FAddCombo.Sorted := False;
   FAddCombo.Sorted := True;
   FAddCombo.Items.InsertObject(0, _('Global'), nil);
 
@@ -561,12 +564,10 @@ begin
       Break;
     end;
 
-  if ((FListType = ltSave) and (Client.Entry.SaveList.Count = 0)) or
-     ((FListType = ltIgnore) and (Client.Entry.IgnoreList.Count = 0))
+  if not (((FListType = ltSave) and (Client.Entry.SaveList.Count = 0)) or
+         ((FListType = ltIgnore) and (Client.Entry.IgnoreList.Count = 0)))
   then
-    Exit;
-
-  FTree.GetNode(Client);
+    FTree.GetNode(Client);
 end;
 
 procedure TTitlePanel.ClientRemoved(Client: TICEClient);

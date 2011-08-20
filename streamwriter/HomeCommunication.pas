@@ -147,9 +147,9 @@ type
     procedure SendClientInfo;
     procedure UpdateStats(List: TList<Cardinal>; RecordingCount: Cardinal);
     procedure RateStream(ID, Rating: Integer);
-    procedure SetData(ID: Integer; RecordingOkay: Boolean; RegEx: string); overload;
-    procedure SetData(ID: Integer; RecordingOkay: Boolean); overload;
-    procedure SetData(ID: Integer; RegEx: string); overload;
+    procedure SetDataOkay(ID: Integer; RecordingOkay: Boolean); overload;
+    procedure SetDataTitlePattern(ID: Integer; RegEx: string); overload;
+    procedure SetDataIgnoreTracks(ID: Integer; Lst: TStringList); overload;
     procedure SetTitleNotifications(Enable: Boolean);
     procedure RebuildIndex;
 
@@ -342,40 +342,7 @@ begin
   end;
 end;
 
-procedure THomeCommunication.SetData(ID: Integer; RecordingOkay: Boolean;
-  RegEx: string);
-var
-  XMLDocument: TXMLLib;
-  Data, Node: TXMLNode;
-  XML: AnsiString;
-begin
-  if not Connected then
-    Exit;
-
-  XMLDocument := FClient.XMLGet('setdata');
-  try
-    Data := XMLDocument.Root.GetNode('data');
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'id';
-    Node.Value.AsInteger := ID;
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'recordingokay';
-    Node.Value.AsBoolean := RecordingOkay;
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'regex';
-    Node.Value.AsString := RegEx;
-
-    XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
-  finally
-    XMLDocument.Free;
-  end;
-end;
-
-procedure THomeCommunication.SetData(ID: Integer; RecordingOkay: Boolean);
+procedure THomeCommunication.SetDataOkay(ID: Integer; RecordingOkay: Boolean);
 var
   XMLDocument: TXMLLib;
   Data, Node: TXMLNode;
@@ -403,7 +370,7 @@ begin
   end;
 end;
 
-procedure THomeCommunication.SetData(ID: Integer; RegEx: string);
+procedure THomeCommunication.SetDataTitlePattern(ID: Integer; RegEx: string);
 var
   XMLDocument: TXMLLib;
   Data, Node: TXMLNode;
@@ -423,6 +390,34 @@ begin
     Node := TXMLNode.Create(Data);
     Node.Name := 'regex';
     Node.Value.AsString := RegEx;
+
+    XMLDocument.SaveToString(XML);
+    FClient.Write(ZCompressStr(XML));
+  finally
+    XMLDocument.Free;
+  end;
+end;
+
+procedure THomeCommunication.SetDataIgnoreTracks(ID: Integer; Lst: TStringList);
+var
+  XMLDocument: TXMLLib;
+  Data, Node: TXMLNode;
+  XML: AnsiString;
+begin
+  if not Connected then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('setdata');
+  try
+    Data := XMLDocument.Root.GetNode('data');
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'id';
+    Node.Value.AsInteger := ID;
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'ignoretitles';
+    Node.Value.AsString := Lst.Text;
 
     XMLDocument.SaveToString(XML);
     FClient.Write(ZCompressStr(XML));
@@ -818,6 +813,7 @@ var
   Node: TXMLNode;
   NewList: TList<TStreamBrowserEntry>;
   Entry, Entry2: TStreamBrowserEntry;
+  Lst: TStringList;
 begin
   FDataLists.GenreList.Clear;
 
@@ -850,6 +846,7 @@ begin
       Entry.Rating := Node.Attributes.AttributeByName['rating'].Value.AsInteger;
       Entry.RecordingOkay := Node.Attributes.AttributeByName['recordingokay'].Value.AsBoolean;
       Entry.RegEx := Node.Attributes.AttributeByName['regex'].Value.AsString;
+      Entry.IgnoreTitles.Text := Node.GetNode('ignoretitles').Value.AsString;
     end;
 
     // Synchronisieren

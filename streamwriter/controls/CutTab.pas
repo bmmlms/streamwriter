@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
   MControls, LanguageObjects, Tabs, CutView, Functions, AppData, SharedControls,
-  DynBass, Logging;
+  DynBass, Logging, CutTabSearchSilence;
 
 type
   TCutToolBar = class(TToolBar)
@@ -201,8 +201,20 @@ begin
 end;
 
 procedure TCutTab.AutoCutClick(Sender: TObject);
+var
+  F: TfrmCutTabSearchSilence;
 begin
-  FCutView.AutoCut(AppGlobals.StreamSettings.SilenceLevel, AppGlobals.StreamSettings.SilenceLength);
+  F := TfrmCutTabSearchSilence.Create(Self);
+  try
+    F.ShowModal;
+
+    if F.Okay then
+    begin
+      FCutView.AutoCut(F.SilenceLevel, F.SilenceLength);
+    end;
+  finally
+    F.Free;
+  end;
 end;
 
 procedure TCutTab.CutClick(Sender: TObject);

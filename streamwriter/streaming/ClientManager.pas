@@ -100,7 +100,7 @@ type
     property Items[Index: Integer]: TICEClient read FGetItem; default;
     property Count: Integer read FGetCount;
 
-    function GetClient(Name, URL, Title: string; URLs: TStringList): TICEClient;
+    function GetClient(ID: Integer; Name, URL, Title: string; URLs: TStringList): TICEClient;
     function GetUsedBandwidth(Bitrate, Speed: Int64; ClientToAdd: TICEClient = nil): Integer;
 
     property Active: Boolean read FGetActive;
@@ -338,7 +338,7 @@ begin
       end;
       FErrorShown := False;
 
-      Client := GetClient(StreamName, CurrentURL, Title, nil);
+      Client := GetClient(0, StreamName, CurrentURL, Title, nil);
       if (Client = nil) or ((Client <> nil) and not Client.AutoRemove and (Client.RecordTitle <> Title)) then
       begin
         Client := AddClient(0, 0, StreamName, CurrentURL, True);
@@ -378,7 +378,7 @@ begin
     FOnClientAddRecent(Sender);
 end;
 
-function TClientManager.GetClient(Name, URL, Title: string;
+function TClientManager.GetClient(ID: Integer; Name, URL, Title: string;
   URLs: TStringList): TICEClient;
 var
   i: Integer;
@@ -391,6 +391,13 @@ begin
   Result := nil;
   for Client in FClients do
   begin
+    if ID > 0 then
+      if Client.Entry.ID = ID then
+      begin
+        Result := Client;
+        Exit;
+      end;
+
     if Name <> '' then
       if LowerCase(Client.Entry.Name) = LowerCase(Name) then
       begin

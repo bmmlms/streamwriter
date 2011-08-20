@@ -102,7 +102,8 @@ uses
   ConfigureSoX in 'plugins\ConfigureSoX.pas' {frmConfigureSoX},
   Notifications in 'Notifications.pas' {frmNotification},
   AdvancedRect in '..\..\common\AdvancedRect.pas',
-  TypeDefs in 'TypeDefs.pas';
+  TypeDefs in 'TypeDefs.pas',
+  CutTabSearchSilence in 'controls\CutTabSearchSilence.pas' {frmCutTabSearchSilence};
 
 {$SetPEOptFlags $0140}
 

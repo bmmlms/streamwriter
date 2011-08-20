@@ -154,7 +154,8 @@ type
     procedure FClientViewDblClick(Sender: TObject);
     procedure FClientViewKeyPress(Sender: TObject; var Key: Char);
     procedure FClientViewKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL, TitlePattern: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
+    procedure FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL, TitlePattern: string;
+      IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 
     procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
     function StreamBrowserIsInClientList(Sender: TObject; Name, URL: string): Boolean;
@@ -174,8 +175,8 @@ type
       ClientImages: TImageList; Clients: TClientManager;
       Streams: TDataLists);
     procedure Shown;
-    function StartStreaming(ID, Bitrate: Cardinal; Name, URL, TitlePattern: string; StartPlay: Boolean;
-      HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
+    function StartStreaming(ID, Bitrate: Cardinal; Name, URL, TitlePattern: string;
+      IgnoreTitles: TStringList; StartPlay: Boolean; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
     procedure TimerTick;
     procedure UpdateStreams(Streams: TDataLists);
     procedure BuildTree(Streams: TDataLists);
@@ -443,17 +444,30 @@ end;
 
 procedure TClientTab.ActionRemoveExecute(Sender: TObject);
 var
+  OnlyAutomatic: Boolean;
   Node, ChildNode: PVirtualNode;
   Nodes, ChildNodes: TNodeArray;
   NodeData, ChildNodeData: PClientNodeData;
 begin
-  if TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('All selected streams will be removed from the list. This also means that their ' +
-                                               'settings and ignorelists get deleted.'#13#10'Are you sure you want to continue?'),
-                                               8, btOKCancel) = mtCancel
-  then
-    Exit;
-
   Nodes := FClientView.GetNodes(ntClient, True);
+  OnlyAutomatic := True;
+  for Node in Nodes do
+  begin
+    NodeData := FClientView.GetNodeData(Node);
+    if not NodeData.Client.AutoRemove then
+    begin
+      OnlyAutomatic := False;
+      Break;
+    end;
+  end;
+
+  if not OnlyAutomatic then
+    if TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('All selected streams will be removed from the list. This also means that their ' +
+                                                 'settings and ignorelists get deleted.'#13#10'Are you sure you want to continue?'),
+                                                 8, btOKCancel) = mtCancel
+    then
+      Exit;
+
   for Node in Nodes do
   begin
     NodeData := FClientView.GetNodeData(Node);
@@ -641,11 +655,11 @@ var
 begin
   if FAddressBar.FStations.ItemIndex = -1 then
   begin
-    StartStreaming(0, 0, '', FAddressBar.FStations.Text, '', False, nil, amNoWhere)
+    StartStreaming(0, 0, '', FAddressBar.FStations.Text, '', nil, False, nil, amNoWhere)
   end else
   begin
     Entry := TRecentEntry(FAddressBar.FStations.ItemsEx[FAddressBar.FStations.ItemIndex].Data);
-    StartStreaming(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, '', False, nil, amNoWhere);
+    StartStreaming(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, '', nil, False, nil, amNoWhere);
   end;
 end;
 
@@ -1113,9 +1127,10 @@ begin
 end;
 
 procedure TClientTab.FClientViewStartStreaming(Sender: TObject;
-  ID, Bitrate: Cardinal; Name, URL, TitlePattern: string; Node: PVirtualNode; Mode: TVTNodeAttachMode);
+  ID, Bitrate: Cardinal; Name, URL, TitlePattern: string; IgnoreTitles: TStringList;
+  Node: PVirtualNode; Mode: TVTNodeAttachMode);
 begin
-  StartStreaming(ID, Bitrate, Name, URL, TitlePattern, AppGlobals.DefaultActionBrowser = baListen, Node, Mode);
+  StartStreaming(ID, Bitrate, Name, URL, TitlePattern, IgnoreTitles, AppGlobals.DefaultActionBrowser = baListen, Node, Mode);
 end;
 
 procedure TClientTab.FSetVolume(Value: Integer);
@@ -1214,8 +1229,8 @@ begin
   end;
 end;
 
-function TClientTab.StartStreaming(ID, Bitrate: Cardinal; Name, URL, TitlePattern: string; StartPlay: Boolean;
-  HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
+function TClientTab.StartStreaming(ID, Bitrate: Cardinal; Name, URL, TitlePattern: string;
+  IgnoreTitles: TStringList; StartPlay: Boolean; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
   procedure UnkillCategory;
   var
     NodeData: PClientNodeData;
@@ -1252,7 +1267,7 @@ begin
   if URL <> '' then
   begin
     // Ist der Client schon in der Liste?
-    Client := FClients.GetClient(Name, URL, '', nil);
+    Client := FClients.GetClient(0, Name, URL, '', nil);
     if (Client <> nil) and (not Client.AutoRemove) then
     begin
       if StartPlay then
@@ -1274,6 +1289,9 @@ begin
         Client := FClients.AddClient(ID, Bitrate, Name, URL);
         if Trim(TitlePattern) <> '' then
           Client.Entry.Settings.TitlePattern := TitlePattern;
+
+        if IgnoreTitles <> nil then
+          Client.Entry.Settings.IgnoreTrackChangePattern.Assign(IgnoreTitles);
 
         if HitNode <> nil then
         begin
@@ -1330,6 +1348,8 @@ var
   Entries: TPlaylistEntryArray;
   SD: TfrmStreamData;
   ND: PStreamNodeData;
+  Settings: TStreamSettings;
+  Client: TICEClient;
 begin
   if Action in [oaOpen, oaSave] then
   begin
@@ -1345,12 +1365,12 @@ begin
   case Action of
     oaStart:
       for i := 0 to Length(Streams) - 1 do
-        if not StartStreaming(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].RegEx, False, nil, amNoWhere) then
+        if not StartStreaming(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].RegEx, Streams[i].IgnoreTitles, False, nil, amNoWhere) then
           Break;
     oaPlay:
       if Bass.DeviceAvailable then
         for i := 0 to Length(Streams) - 1 do
-          StartStreaming(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].RegEx, True, nil, amNoWhere);
+          StartStreaming(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].RegEx, Streams[i].IgnoreTitles, True, nil, amNoWhere);
     oaOpen:
       SavePlaylist(Entries, True);
     oaOpenWebsite:
@@ -1380,17 +1400,30 @@ begin
           FOnAuthRequired(Self)
         else
         begin
-          SD := TfrmStreamData.Create(GetParentForm(Self), Streams[0].ID, Streams[0].Name, Streams[0].RegEx, Streams[0].RecordingOkay);
+          Client := FClients.GetClient(Streams[0].ID, Streams[0].Name, Streams[0].URL, '', nil);
+
+          if Client <> nil then
+            Settings := Client.Entry.Settings
+          else
+            Settings := nil;
+
+          SD := TfrmStreamData.Create(GetParentForm(Self), Settings, Streams[0].ID, Streams[0].Name, Streams[0].RegEx,
+            Streams[0].RecordingOkay, Streams[0].IgnoreTitles);
           try
             SD.ShowModal;
 
             try
-              ND := FSideBar.FBrowserView.StreamTree.GetNodeData(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
-              if SD.RegExChanged then
-                ND.Data.RegEx := SD.RegEx;
-              if SD.IsOkayChanged then
-                ND.Data.RecordingOkay := SD.RecordingOkay;
-              FSideBar.FBrowserView.StreamTree.InvalidateNode(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
+              if SD.SaveSettings then
+              begin
+                ND := FSideBar.FBrowserView.StreamTree.GetNodeData(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
+                if SD.IsOkayChanged then
+                  ND.Data.RecordingOkay := SD.RecordingOkay;
+                if SD.RegExChanged then
+                  ND.Data.RegEx := SD.RegEx;
+                if SD.IgnoreTracksChanged then
+                  ND.Data.IgnoreTitles.Assign(SD.IgnoreTracks);
+                FSideBar.FBrowserView.StreamTree.InvalidateNode(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
+              end;
             except end;
 
           finally

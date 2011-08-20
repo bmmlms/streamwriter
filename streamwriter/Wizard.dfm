@@ -96,7 +96,7 @@ object frmWizard: TfrmWizard
       Top = 0
       Width = 281
       Height = 21
-      Caption = 'Limit bandwidth for automated recordings'
+      Caption = 'Limit bandwidth for recordings'
       TabOrder = 0
       OnClick = chkLimitClick
     end

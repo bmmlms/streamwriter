@@ -354,14 +354,6 @@ end;
 
 procedure TSeekBar.WMEraseBkgnd(var Msg: TWMEraseBkgnd);
 begin
-  {
-  if ThemeServices.ThemesEnabled and Assigned(Parent) and (csParentBackground in ControlStyle) then
-  begin
-    ThemeServices.DrawParentBackground(Handle, Msg.DC, nil, False);
-  end
-  else
-    FillRect(Canvas.Handle, ClientRect, Canvas.Brush.Handle);
-  }
   Msg.Result := 1;
 end;
 

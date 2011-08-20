@@ -305,7 +305,6 @@ end;
 
 procedure TSavedTracksPopup.EnableItems(Enable, Playing: Boolean);
 begin
-  //FItemRefresh.Enabled := Enable;
   FItemPlay.Enabled := Enable;
   FItemPause.Enabled := Playing;
   FItemStop.Enabled := Playing;
@@ -329,7 +328,6 @@ end;
 
 procedure TSavedToolBar.EnableItems(Enable, Playing: Boolean);
 begin
-  //FRefresh.Enabled := Enable;
   FPlay.Enabled := Enable and Bass.DeviceAvailable;
   FPause.Enabled := Playing and Bass.DeviceAvailable;
   FStop.Enabled := Playing and Bass.DeviceAvailable;
@@ -583,7 +581,6 @@ begin
       PropertiesDialog(Tracks[0].Filename);
   end;
 
-  //FToolbar.FRefresh.Enabled := FSavedTree.RootNodeCount > 0;
   FSavedTree.Change(nil);
 end;
 
@@ -1350,9 +1347,6 @@ begin
 
   FPopupMenu.ItemCut.Enabled := Length(Tracks) > 0;
   FTab.FToolbar.FCut.Enabled := Length(Tracks) > 0;
-
-  //FPopupMenu.ItemRefresh.Enabled := RootNodeCount > 0;
-  //FTab.FToolbar.FRefresh.Enabled := RootNodeCount > 0;
 
   FPopupMenu.ItemShowFile.Enabled := Length(Tracks) = 1;
   FTab.FToolbar.FShowFile.Enabled := Length(Tracks) = 1;

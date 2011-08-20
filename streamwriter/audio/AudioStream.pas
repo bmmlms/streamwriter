@@ -388,7 +388,6 @@ begin
 
       if WD2.Silence.Count > 0 then
       begin
-        //S := WD2.WaveArray[WD2.Silence[WD2.Silence.Count - 1].CutStart].Pos;
         S := WD2.WaveArray[WD2.Silence[0].CutStart].Pos;
         S := Round(S * (M2.Size / WD2.Wavesize));
         Result.B := S + EndPos - Len div 2;

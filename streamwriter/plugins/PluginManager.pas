@@ -177,8 +177,7 @@ begin
       try
         Plugins.Add(EP);
       except
-        //on E: Exception do
-        //  messagebox(0, pchar(e.Message), '', 0);
+
       end;
     end;
     Inc(i);

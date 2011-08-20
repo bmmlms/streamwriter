@@ -282,7 +282,7 @@ begin
   if Length(Title) > 0 then
     for i := 1 to Length(Title) do
     begin
-      if (Ord(Title[i]) >= 32) then // and (Ord(Title[i]) < 126) then
+      if (Ord(Title[i]) >= 32) then
         Result := Result + Title[i];
     end;
 end;
@@ -635,15 +635,11 @@ end;
 
 procedure TICEStream.StartRecording;
 begin
-  //I := Integer(@FRecordingStarted);
-  //InterlockedExchange(I, Integer(True));
   FRecordingStarted := True;
 end;
 
 procedure TICEStream.StopRecording;
 begin
-  //I := Integer(@FRecordingStarted);
-  //InterlockedExchange(I, Integer(False));
   FRecordingStarted := False;
 end;
 
@@ -1037,16 +1033,6 @@ begin
                       if FAudioStream <> nil then
                       begin
                         FRecordingTitleFound := True;
-                        if FAudioStream.InheritsFrom(TAudioStreamMemory) then
-                        begin
-                          // Stream sauber machen.
-                          {
-                          if FSettings.SearchSilence then
-                            TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SilenceBufferSeconds))
-                          else
-                            TAudioStreamMemory(FAudioStream).RemoveRange(0, FAudioStream.Size - (FBytesPerSec * FSettings.SongBufferSeconds));
-                          }
-                        end;
 
                         if FMetaCounter >= 2 then
                           FStreamTracks.FoundTitle(FAudioStream.Size, Title, True)
@@ -1279,7 +1265,6 @@ begin
   end;
 
   repeat
-    // REMARK: Zugriff ist nicht Threadsicher!
     for i := 1 to Length(FSettings.RemoveChars) do
       Name := StringReplace(Name, FSettings.RemoveChars[i], '', [rfReplaceAll]);
 
@@ -1330,7 +1315,6 @@ var
 begin
   inherited;
 
-  // REMARK: Zugriff ist nicht Threadsicher!
   for i := 1 to Length(FSettings.RemoveChars) do
     Artist := StringReplace(Artist, FSettings.RemoveChars[i], '', [rfReplaceAll]);
   for i := 1 to Length(FSettings.RemoveChars) do

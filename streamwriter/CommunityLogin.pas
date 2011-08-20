@@ -124,7 +124,7 @@ begin
   if (not HomeComm.Connected) and (pnlConnecting.Visible) then
   begin
     ShowConnecting(False);
-    MsgBox(Handle, _('The connection to the server was close while authenticating.'#13#10'Please try again later.'), _('Error'), MB_ICONERROR);
+    MsgBox(Handle, _('The connection to the server was closed while authenticating.'#13#10'Please try again later.'), _('Error'), MB_ICONERROR);
   end;
 
   if HomeComm.Connected and pnlConnecting.Visible then

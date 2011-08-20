@@ -1197,6 +1197,7 @@ object frmSettings: TfrmSettings
       TabOrder = 1
       ViewStyle = vsReport
       OnChange = lstIgnoreTitlesChange
+      OnEdited = lstIgnoreTitlesEdited
       OnResize = lstIgnoreTitlesResize
     end
     object btnRemoveIgnoreTitlePattern: TButton
@@ -1270,7 +1271,7 @@ object frmSettings: TfrmSettings
       Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Limit bandwidth'
+      Caption = 'Limit bandwidth for recordings'
       TabOrder = 1
       OnClick = chkLimitClick
     end
@@ -1284,7 +1285,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800240210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800380210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

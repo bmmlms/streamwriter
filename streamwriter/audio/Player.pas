@@ -116,7 +116,6 @@ var
 begin
   P := TPlayer(user);
 
-  //PostMessage(PV.Handle, WM_USER + 1234, 0, 0);
   if Assigned(P.FOnPosReached) then
     P.FOnPosReached(P);
 end;
