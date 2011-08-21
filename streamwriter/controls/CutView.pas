@@ -455,7 +455,8 @@ begin
   if not AddUndo then
     Exit;
 
-  Save(FPB.FStartLine, FPB.FEndLine);
+  if not Save(FPB.FStartLine, FPB.FEndLine) then
+    Exit;
 
   if FPlayer <> nil then
   begin
