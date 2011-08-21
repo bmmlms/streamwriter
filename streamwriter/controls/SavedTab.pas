@@ -163,6 +163,7 @@ type
     FDragSource: TDropFileSource;
     FTab: TSavedTab;
     FTrackList: TTrackList;
+    FStreamNode: PVirtualNode;
 
     FOnAction: TTrackActionEvent;
 
@@ -210,6 +211,7 @@ type
       CellRect: TRect; DrawFormat: Cardinal); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure KeyPress(var Key: Char); override;
+
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -221,10 +223,15 @@ type
     procedure DeleteTrack(Track: TTrackInfo);
     procedure UpdateTrack(Track: TTrackInfo);
     procedure Filter(S: string);
+    procedure Sort(Node: PVirtualNode; Column: TColumnIndex;
+      Direction: TSortDirection; DoInit: Boolean = True); override;
 
     property Player: TPlayer read FPlayer;
     property OnAction: TTrackActionEvent read FOnAction write FOnAction;
   end;
+
+const
+  STREAMNODETEXT = 'Stream files';
 
 implementation
 
@@ -494,6 +501,8 @@ begin
     FSavedTree.AddTrack(FStreams.TrackList[i], False);
   end;
 
+  FSavedTree.Expanded[FSavedTree.FStreamNode] := False;
+
   FSavedTree.Sort(nil, FSavedTree.Header.SortColumn, FSavedTree.Header.SortDirection);
   FSavedTree.Change(nil);
 end;
@@ -751,6 +760,8 @@ end;
 { TSavedTree }
 
 constructor TSavedTree.Create(AOwner: TComponent);
+var
+  Node: PVirtualNode;
 begin
   inherited Create(AOwner);
 
@@ -813,12 +824,14 @@ begin
   FColBitRate.Width := 60;
   FColStream := Header.Columns.Add;
   FColStream.Text := _('Stream');
-  FColStream.Width := 250;
+  FColStream.Width := 200;
   FColSaved := Header.Columns.Add;
   FColSaved.Text := _('Time');
   FColSaved.Width := 130;
 
   Header.Options := Header.Options + [hoAutoResize];
+
+  FStreamNode := AddChild(nil);
 
   Header.SortColumn := 1;
   Header.SortDirection := sdAscending;
@@ -843,7 +856,7 @@ begin
   while Node <> nil do
   begin
     NodeData := GetNodeData(Node);
-    if LowerCase(NodeData.Track.Filename) = LowerCase(Filename) then
+    if (NodeData.Track <> nil) and (LowerCase(NodeData.Track.Filename) = LowerCase(Filename)) then
     begin
       Result := Node;
       Exit;
@@ -862,7 +875,7 @@ begin
   while Node <> nil do
   begin
     NodeData := GetNodeData(Node);
-    if NodeData.Track = Track then
+    if (NodeData.Track <> nil) and (NodeData.Track = Track) then
     begin
       Result := Node;
       Exit;
@@ -883,18 +896,24 @@ begin
     Node := GetFirst;
     while Node <> nil do
     begin
-      SetLength(Result, Length(Result) + 1);
-      Result[Length(Result) - 1] := Node;
+      if PSavedNodeData(GetNodeData(Node)).Track <> nil then
+      begin
+        SetLength(Result, Length(Result) + 1);
+        Result[Length(Result) - 1] := Node;
+      end;
       Node := GetNext(Node);
     end;
   end else
   begin
     SetLength(Result, 0);
-    Nodes := GetSortedSelection(True);
+    Nodes := GetSortedSelection(False);
     for i := 0 to Length(Nodes) - 1 do
     begin
-      SetLength(Result, Length(Result) + 1);
-      Result[Length(Result) - 1] := Nodes[i];
+      if PSavedNodeData(GetNodeData(Nodes[i])).Track <> nil then
+      begin
+        SetLength(Result, Length(Result) + 1);
+        Result[Length(Result) - 1] := Nodes[i];
+      end;
     end;
   end;
 end;
@@ -910,8 +929,11 @@ begin
   for i := 0 to Length(Nodes) - 1 do
   begin
     NodeData := GetNodeData(Nodes[i]);
-    SetLength(Result, Length(Result) + 1);
-    Result[High(Result)] := NodeData.Track;
+    if NodeData.Track <> nil then
+    begin
+      SetLength(Result, Length(Result) + 1);
+      Result[High(Result)] := NodeData.Track;
+    end;
   end;
 end;
 
@@ -943,7 +965,14 @@ begin
   if PaintInfo.Column = 0 then
   begin
     NodeData := GetNodeData(PaintInfo.Node);
+
     L := PaintInfo.ImageInfo[ImageInfoIndex].XPos;
+
+    if NodeData.Track = nil then
+    begin
+      Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 67);
+      Exit;
+    end;
 
     if LowerCase(FPlayer.Filename) = LowerCase(NodeData.Track.Filename) then
     begin
@@ -956,12 +985,22 @@ begin
     end else
       Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20);
 
-    if NodeData.Track.WasCut then
-      Images.Draw(PaintInfo.Canvas, L + 32, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 17);
-    if NodeData.Track.IsAuto then
-      Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 49);
-    if NodeData.Track.Finalized then
-      Images.Draw(PaintInfo.Canvas, L + 48, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 58);
+    if NodeData.Track.IsStreamFile then
+    begin
+      if NodeData.Track.WasCut then
+        Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 17);
+      if NodeData.Track.Finalized then
+        Images.Draw(PaintInfo.Canvas, L + 32, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 58);
+    end else
+    begin
+      if NodeData.Track.WasCut then
+        Images.Draw(PaintInfo.Canvas, L + 32, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 17);
+      if NodeData.Track.IsAuto then
+        Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 49);
+      if NodeData.Track.Finalized then
+        Images.Draw(PaintInfo.Canvas, L + 48, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 58);
+    end;
+
     //else
     //  Images.Draw(PaintInfo.Canvas, L + 48, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 59);
   end;
@@ -983,17 +1022,19 @@ begin
     if NextNode <> nil then
     begin
       NodeData := GetNodeData(NextNode);
+      if NodeData.Track <> nil then
+      begin
+        try
+          FPlayer.Filename := NodeData.Track.Filename;
+        except
+          Exit;
+        end;
 
-      try
-        FPlayer.Filename := NodeData.Track.Filename;
-      except
-        Exit;
+        FPlayer.Play;
+
+        FTab.FSeek.Max := Player.MaxByte;
+        FTab.FSeek.Position := Player.PositionByte;
       end;
-
-      FPlayer.Play;
-
-      FTab.FSeek.Max := Player.MaxByte;
-      FTab.FSeek.Position := Player.PositionByte;
     end;
   end;
 
@@ -1117,7 +1158,13 @@ begin
     if not TrackMatchesPattern(Track) then
       Exit;
 
-  Node := AddChild(nil);
+  if Track.IsStreamFile then
+  begin
+    Node := AddChild(FStreamNode);
+    if FStreamNode.ChildCount = 1 then
+      Expanded[FStreamNode] := True;
+  end else
+    Node := AddChild(nil);
   NodeData := GetNodeData(Node);
   NodeData.Track := Track;
 end;
@@ -1142,6 +1189,14 @@ begin
   end;
 
   Change(nil);
+end;
+
+procedure TSavedTree.Sort(Node: PVirtualNode; Column: TColumnIndex;
+  Direction: TSortDirection; DoInit: Boolean);
+begin
+  inherited;
+
+  MoveTo(FStreamNode, nil, amAddChildFirst, False);
 end;
 
 function TSavedTree.TrackMatchesPattern(Track: TTrackInfo): Boolean;
@@ -1199,25 +1254,31 @@ begin
   if TextType = ttNormal then
   begin
     NodeData := GetNodeData(Node);
-    case Column of
-      1: Text := ExtractFileName(NodeData.Track.Filename);
-      2:
-        Text := MakeSize(NodeData.Track.Filesize);
-      3:
-        Text := BuildTime(NodeData.Track.Length);
-      4:
-        if NodeData.Track.BitRate > 0 then
-          Text := IntToStr(NodeData.Track.BitRate);
-      5:
-        Text := NodeData.Track.Streamname;
-      6:
-        begin
-          if Trunc(NodeData.Track.Time) = Trunc(Now) then
-            Text := TimeToStr(NodeData.Track.Time)
-          else
-            Text := DateTimeToStr(NodeData.Track.Time);
-        end;
-    end;
+
+    if NodeData.Track = nil then
+    begin
+      if Column = 1 then
+        Text := _(STREAMNODETEXT);
+    end else
+      case Column of
+        1: Text := ExtractFileName(NodeData.Track.Filename);
+        2:
+          Text := MakeSize(NodeData.Track.Filesize);
+        3:
+          Text := BuildTime(NodeData.Track.Length);
+        4:
+          if NodeData.Track.BitRate > 0 then
+            Text := IntToStr(NodeData.Track.BitRate);
+        5:
+          Text := NodeData.Track.Streamname;
+        6:
+          begin
+            if Trunc(NodeData.Track.Time) = Trunc(Now) then
+              Text := TimeToStr(NodeData.Track.Time)
+            else
+              Text := DateTimeToStr(NodeData.Track.Time);
+          end;
+      end;
   end;
 end;
 
@@ -1252,21 +1313,23 @@ begin
         Header.SortDirection := sdAscending;
     end;
     Sort(nil, HitInfo.Column, Header.SortDirection);
+    Sort(FStreamNode, HitInfo.Column, Header.SortDirection);
   end;
 end;
 
 function TSavedTree.DoIncrementalSearch(Node: PVirtualNode;
   const Text: string): Integer;
 var
-  s: string;
+  CmpTxt: string;
   NodeData: PSavedNodeData;
 begin
   Result := 0;
-  S := Text;
   NodeData := GetNodeData(Node);
-  if NodeData = nil then
-    Exit;
-  Result := StrLIComp(PChar(s), PChar(ExtractFileName(NodeData.Track.Filename)), Min(Length(s), Length(ExtractFileName(NodeData.Track.Filename))));
+  if NodeData.Track = nil then
+    CmpTxt := _(STREAMNODETEXT)
+  else
+    CmpTxt := ExtractFileName(NodeData.Track.Filename);
+  Result := StrLIComp(PChar(Text), PChar(CmpTxt), Min(Length(Text), Length(CmpTxt)));
 end;
 
 procedure TSavedTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex;
@@ -1292,17 +1355,18 @@ var
 begin
   NodeData := GetNodeData(PaintInfo.Node);
 
-  if FPlayer.Playing or FPlayer.Paused then
-    if not Selected[PaintInfo.Node] then
-      if (FPlayer.Playing or FPlayer.Paused) and (LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename)) then
-      begin
-        PaintInfo.Canvas.Font.Color := HTML2Color('#0078ff');
-      end
-    else
-      if (FPlayer.Playing or FPlayer.Paused) and (LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename)) then
-      begin
-        PaintInfo.Canvas.Font.Color := PaintInfo.Canvas.Font.Color - 100;
-      end;
+  if NodeData.Track <> nil then
+    if FPlayer.Playing or FPlayer.Paused then
+      if not Selected[PaintInfo.Node] then
+        if (FPlayer.Playing or FPlayer.Paused) and (LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename)) then
+        begin
+          PaintInfo.Canvas.Font.Color := HTML2Color('#0078ff');
+        end
+      else
+        if (FPlayer.Playing or FPlayer.Paused) and (LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename)) then
+        begin
+          PaintInfo.Canvas.Font.Color := PaintInfo.Canvas.Font.Color - 100;
+        end;
 
   inherited;
 end;
@@ -1313,6 +1377,8 @@ var
 begin
   BeginUpdate;
   Clear;
+
+  FStreamNode := AddChild(nil);
 
   for i := 0 to FTrackList.Count - 1 do
     AddTrack(FTrackList[i], True);
@@ -1329,7 +1395,7 @@ procedure TSavedTree.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;
 begin
   inherited;
 
-  Allowed := True;
+  Allowed := PSavedNodeData(GetNodeData(Node)).Track <> nil;
 end;
 
 procedure TSavedTree.Change(Node: PVirtualNode);
@@ -1376,6 +1442,11 @@ begin
   Result := 0;
   Data1 := GetNodeData(Node1);
   Data2 := GetNodeData(Node2);
+
+  if Data1.Track = nil then
+    Exit(-1);
+  if Data2.Track = nil then
+    Exit(-1);
 
   case Column of
     0:

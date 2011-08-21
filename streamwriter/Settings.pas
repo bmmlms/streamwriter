@@ -168,6 +168,7 @@ type
     txtAdjustTrackOffset: TLabeledEdit;
     optAdjustBackward: TRadioButton;
     optAdjustForward: TRadioButton;
+    chkAutoTuneInAddToIgnore: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
@@ -683,7 +684,7 @@ begin
       btnReset.OnClick := btnResetClick;
     end else
     begin
-
+      chkAutoTuneInClick(chkAutoTuneIn);
     end;
 
     if Length(FStreamSettings) >= 1 then
@@ -695,17 +696,6 @@ begin
         Item.ImageIndex := 1;
       end;
     end;
-
-    {
-    if Length(FStreamSettings) > 1 then
-    begin
-      lblIgnoreTitles.Visible := False;
-      lstIgnoreTitles.Visible := False;
-      txtIgnoreTitlePattern.Visible := False;
-      btnAddIgnoreTitlePattern.Visible := False;
-      btnRemoveIgnoreTitlePattern.Visible := False;
-    end;
-    }
 
     FBrowseDir := BrowseDir;
     FBrowseAutoDir := BrowseAutoDir;
@@ -932,6 +922,7 @@ begin
 
   chkAutoTuneIn.Checked := AppGlobals.AutoTuneIn;
   chkAutoTuneInConsiderIgnore.Checked := AppGlobals.AutoTuneInConsiderIgnore;
+  chkAutoTuneInAddToIgnore.Checked := AppGlobals.AutoTuneInAddToIgnore;
   lstMinBitrate.ItemIndex := AppGlobals.AutoTuneInMinKbps;
   lstFormat.ItemIndex := AppGlobals.AutoTuneInFormat;
   chkSubmitStreamInfo.Checked := AppGlobals.SubmitStreamInfo;
@@ -1172,6 +1163,7 @@ begin
 
     AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
     AppGlobals.AutoTuneInConsiderIgnore := chkAutoTuneInConsiderIgnore.Checked;
+    AppGlobals.AutoTuneInAddToIgnore := chkAutoTuneInAddToIgnore.Checked;
     AppGlobals.AutoTuneInMinKbps := lstMinBitrate.ItemIndex;
     AppGlobals.AutoTuneInFormat := lstFormat.ItemIndex;
     AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
@@ -2291,6 +2283,7 @@ begin
   lstMinBitrate.Enabled := chkAutoTuneIn.Checked;
   lstFormat.Enabled := chkAutoTuneIn.Checked;
   chkAutoTuneInConsiderIgnore.Enabled := chkAutoTuneIn.Checked;
+  chkAutoTuneInAddToIgnore.Enabled := chkAutoTuneIn.Checked;
 end;
 
 procedure TfrmSettings.chkOverwriteSmallerClick(Sender: TObject);

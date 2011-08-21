@@ -143,7 +143,7 @@ type
     procedure ClientManagerAddRecent(Sender: TObject);
     procedure ClientManagerClientAdded(Sender: TObject);
     procedure ClientManagerClientRemoved(Sender: TObject);
-    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle: Boolean);
+    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
     procedure ClientManagerTitleAllowed(Sender: TObject; Title: string;
@@ -1056,7 +1056,7 @@ begin
 end;
 
 procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
-  Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle: Boolean);
+  Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
 var
   Client: TICEClient;
   Track: TTrackInfo;
@@ -1089,6 +1089,7 @@ begin
   Track.WasCut := WasCut;
   Track.BitRate := Client.Entry.Bitrate;
   Track.IsAuto := Client.AutoRemove;
+  Track.IsStreamFile := IsStreamFile;
 
   if Added then
   begin

@@ -62,7 +62,8 @@ type
 
   TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
-  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle: Boolean) of object;
+  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut,
+    FullTitle, IsStreamFile: Boolean) of object;
   TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer) of object;
 
   TICEClient = class
@@ -575,50 +576,62 @@ var
   Data: TPluginProcessInformation;
   Entry: TProcessingEntry;
 begin
-  FEntry.SongsSaved := FEntry.SongsSaved + 1;
-
   try
     // Pluginbearbeitung starten
-    Data.Filename := FICEThread.RecvStream.SavedFilename;
-    Data.Station := FEntry.Name;
-    Data.Artist := FICEThread.RecvStream.SavedArtist;
-    Data.Title := FICEThread.RecvStream.SavedTitle;
-    Data.TrackNumber := FEntry.SongsSaved;
-    Data.Filesize := FICEThread.RecvStream.SavedSize;
-    Data.Length := FICEThread.RecvStream.SavedLength;
-    Data.WasCut := FICEThread.RecvStream.SavedWasCut;
-    Data.FullTitle := FICEThread.RecvStream.SavedFullTitle;
-    Data.StreamTitle := FICEThread.RecvStream.SavedStreamTitle;
-
-    if not FKilled then
+    if not FICEThread.RecvStream.SavedIsStreamFile then
     begin
-      Entry := AppGlobals.PluginManager.ProcessFile(Data);
-      if Entry <> nil then
+      FEntry.SongsSaved := FEntry.SongsSaved + 1;
+
+      Data.Filename := FICEThread.RecvStream.SavedFilename;
+      Data.Station := FEntry.Name;
+      Data.Artist := FICEThread.RecvStream.SavedArtist;
+      Data.Title := FICEThread.RecvStream.SavedTitle;
+      Data.TrackNumber := FEntry.SongsSaved;
+      Data.Filesize := FICEThread.RecvStream.SavedSize;
+      Data.Length := FICEThread.RecvStream.SavedLength;
+      Data.WasCut := FICEThread.RecvStream.SavedWasCut;
+      Data.FullTitle := FICEThread.RecvStream.SavedFullTitle;
+      Data.StreamTitle := FICEThread.RecvStream.SavedStreamTitle;
+
+      if not FKilled then
       begin
-        WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]), dtMessage, dlDebug);
+        Entry := AppGlobals.PluginManager.ProcessFile(Data);
+        if Entry <> nil then
+        begin
+          WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]), dtMessage, dlDebug);
 
-        Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
-        Entry.ActiveThread.Resume;
-        FProcessingList.Add(Entry);
+          Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
+          Entry.ActiveThread.Resume;
+          FProcessingList.Add(Entry);
+        end;
       end;
-    end;
 
-    if FProcessingList.Count = 0 then
+      if FProcessingList.Count = 0 then
+      begin
+        // Wenn kein Plugin die Verarbeitung übernimmt, gilt die Datei
+        // jetzt schon als gespeichert. Ansonsten macht das PluginThreadTerminate.
+        if Assigned(FOnSongSaved) then
+          FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
+            FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut,
+            FICEThread.RecvStream.SavedFullTitle, False);
+        if Assigned(FOnRefresh) then
+          FOnRefresh(Self);
+
+        if FAutoRemove then
+        begin
+          Kill;
+          if Assigned(FOnDisconnected) and (FICEThread = nil) then
+            FOnDisconnected(Self);
+        end;
+      end;
+    end else
     begin
-      // Wenn kein Plugin die Verarbeitung übernimmt, gilt die Datei
-      // jetzt schon als gespeichert. Ansonsten macht das PluginThreadTerminate.
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
-          FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut, FICEThread.RecvStream.SavedFullTitle);
+          FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut,
+          FICEThread.RecvStream.SavedFullTitle, True);
       if Assigned(FOnRefresh) then
         FOnRefresh(Self);
-
-      if FAutoRemove then
-      begin
-        Kill;
-        if Assigned(FOnDisconnected) and (FICEThread = nil) then
-          FOnDisconnected(Self);
-      end;
     end;
   except
     on E: Exception do
@@ -682,7 +695,8 @@ begin
           WriteDebug('All plugins done', dtMessage, dlDebug);
 
           if Assigned(FOnSongSaved) then
-            FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Filesize, Entry.Data.Length, Entry.Data.WasCut, Entry.Data.FullTitle);
+            FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Filesize, Entry.Data.Length,
+              Entry.Data.WasCut, Entry.Data.FullTitle, False);
           if Assigned(FOnRefresh) then
             FOnRefresh(Self);
 

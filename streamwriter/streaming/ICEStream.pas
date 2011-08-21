@@ -99,6 +99,7 @@ type
     FSavedSize: UInt64;
     FSavedLength: UInt64;
     FSavedStreamTitle: string;
+    FSavedIsStreamFile: Boolean;
     FFilename: string;
     FSavedWasCut: Boolean;
     FSavedFullTitle: Boolean;
@@ -171,6 +172,7 @@ type
     property SavedSize: UInt64 read FSavedSize;
     property SavedLength: UInt64 read FSavedLength;
     property SavedStreamTitle: string read FSavedStreamTitle;
+    property SavedIsStreamFile: Boolean read FSavedIsStreamFile;
     property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
     property Filename: string read FFilename;
     property SavedWasCut: Boolean read FSavedWasCut;
@@ -334,6 +336,24 @@ begin
     SaveData(Track.S, Track.E, Track.Title, False);
     FStreamTracks.Clear;
   end;
+
+  // Und noch die dicke Stream-Datei melden
+  if (FAudioStream <> nil) and FAudioStream.InheritsFrom(TAudioStreamFile) and
+    not (FSettings.SeparateTracks and FSettings.DeleteStreams) and (FRecordTitle = '') and
+    (FAudioStream.Size > 0) then
+  begin
+    FSavedFilename := TAudioStreamFile(FAudioStream).FileName;
+    FSavedSize := TAudioStreamFile(FAudioStream).Size;
+    FSavedFullTitle := False;
+    FSavedStreamTitle := TAudioStreamFile(FAudioStream).FileName;
+    FSavedIsStreamFile := True;
+    if FBytesPerSec > 0 then
+      FSavedLength := Trunc(FSavedSize / FBytesPerSec)
+    else
+      FSavedLength := 0;
+    if Assigned(FOnSongSaved) then
+      FOnSongSaved(Self);
+  end;
 end;
 
 procedure TICEStream.DataReceived(CopySize: Integer);
@@ -415,13 +435,17 @@ end;
 procedure TICEStream.FreeAudioStream;
 var
   Filename: string;
+  Filesize: UInt64;
 begin
   Filename := '';
   FFilename := '';
   if FAudioStream <> nil then
   begin
     if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
+    begin
       Filename := TAudioStreamFile(FAudioStream).FileName;
+      Filesize := TAudioStreamFile(FAudioStream).Size;
+    end;
     FreeAndNil(FAudioStream);
   end;
 
@@ -601,6 +625,7 @@ begin
         FSavedSize := P.B - P.A;
         FSavedFullTitle := FullTitle;
         FSavedStreamTitle := Title;
+        FSavedIsStreamFile := False;
         if FBytesPerSec > 0 then
           FSavedLength := Trunc(FSavedSize / FBytesPerSec)
         else

@@ -1463,6 +1463,7 @@ end;
 
 procedure TfrmStreamWriterMain.tmrScheduleTimer(Sender: TObject);
 var
+  i: Integer;
   Clients: TClientArray;
   Client: TICEClient;
   Schedule: TSchedule;
@@ -1471,8 +1472,9 @@ begin
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, False));
   for Client in Clients do
   begin
-    for Schedule in Client.Entry.Schedules do
+    for i := Client.Entry.Schedules.Count - 1 downto 0 do
     begin
+      Schedule := Client.Entry.Schedules[i];
       if Schedule.Active then
       begin
         if TSchedule.MatchesStart(Schedule) and (not Schedule.TriedStart) then
@@ -1488,6 +1490,11 @@ begin
         begin
           Client.StopRecording;
           Schedule.TriedStop := True;
+          if Schedule.AutoRemove then
+          begin
+            Client.Entry.Schedules.Remove(Schedule);
+            Schedule.Free;
+          end;
         end else if not TSchedule.MatchesEnd(Schedule) then
           Schedule.TriedStop := False;
       end;

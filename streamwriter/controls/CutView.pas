@@ -103,13 +103,13 @@ type
     FCutView: TCutView;
     FTimer: TTimer;
     FPlayingIndex: Cardinal;
+    FPlayerPaused: Boolean;
 
     FPeakColor, FPeakEndColor, FStartColor, FEndColor, FPlayColor, FZoomOuterColor, FZoomInnerColor: TColor;
     FStartLine, FEndLine, FPlayLine, FZoomStartLine, FZoomEndLine, FEffectStartLine, FEffectEndLine: Cardinal;
     FDoZoom: Boolean;
 
     FMouseOldX, FMouseOldY, FMouseMoveStartX: integer;
-    FScrollbarActive: boolean;
 
     procedure BuildBuffer;
     procedure BuildDrawBuffer;
@@ -144,9 +144,10 @@ type
     FEndLine: Cardinal;
     FEffectStartLine: Cardinal;
     FEffectEndLine: Cardinal;
+    FPlayLine: Cardinal;
   public
     constructor Create(Filename: string; Number: Integer;
-      StartLine, EndLine, EffectStartLine, EffectEndLine: Cardinal);
+      StartLine, EndLine, EffectStartLine, EffectEndLine, PlayLine: Cardinal);
 
     property Filename: string read FFilename;
     property Number: Integer read FNumber;
@@ -154,6 +155,7 @@ type
     property EndLine: Cardinal read FEndLine;
     property EffectStartLine: Cardinal read FEffectStartLine;
     property EffectEndLine: Cardinal read FEffectEndLine;
+    property PlayLine: Cardinal read FPlayLine;
   end;
 
   TUndoList = class(TList<TUndoStep>);
@@ -801,7 +803,7 @@ begin
   if CopyFile(PChar(FFilename), PChar(Dest), False) then
   begin
     FUndoList.Add(TUndoStep.Create(Dest, Number, FPB.FStartLine, FPB.FEndLine,
-      FPB.FEffectStartLine, FPB.FEffectEndLine));
+      FPB.FEffectStartLine, FPB.FEffectEndLine, FPB.FPlayLine));
     Result := True;
   end;
 
@@ -941,7 +943,8 @@ end;
 
 function TCutView.CanZoomOut: Boolean;
 begin
-  Result := (FWaveData <> nil) and ((FWaveData.ZoomStart <> High(Cardinal)) or (FWaveData.ZoomEnd <> High(FWaveData.WaveArray)));
+  Result := (FWaveData <> nil) and ((FWaveData.ZoomStart <> High(Cardinal)) or (FWaveData.ZoomEnd <> High(FWaveData.WaveArray))) and
+    ((FWaveData.ZoomStart <> 0) or (FWaveData.ZoomEnd <> High(FWaveData.WaveArray)));
 end;
 
 function TCutView.CheckSoX: Boolean;
@@ -1022,6 +1025,7 @@ begin
     FPB.FEndLine := FUndoStep.EndLine;
     FPB.FEffectStartLine := FUndoStep.EffectStartLine;
     FPB.FEffectEndLine := FUndoStep.EffectEndLine;
+    FPB.FPlayLine := FUndoStep.PlayLine;
   end else
   begin
     FPB.FStartLine := 0;
@@ -1529,13 +1533,27 @@ begin
           FStartLine := FEndLine - 1;
       end;
     lmPlay:
-      if (Button = mbLeft) and (Mode <> mmUp) then
       begin
-        if FCutView.FPlayer <> nil then
+        if (Button = mbLeft) and (Mode <> mmUp) then
         begin
-          FCutView.FPlayer.PositionByte := FCutView.FWaveData.WaveArray[ArrayPos].Pos;
+          if FCutView.FPlayer <> nil then
+          begin
+            if FCutView.FPlayer.Playing then
+            begin
+              FPlayerPaused := True;
+              FCutView.FPlayer.Pause;
+            end;
+            FCutView.FPlayer.PositionByte := FCutView.FWaveData.WaveArray[ArrayPos].Pos;
+          end;
+          FPlayLine := ArrayPos;
         end;
-        FPlayLine := ArrayPos;
+
+        if (Button = mbLeft) and (Mode = mmUp) then
+          if (FCutView.FPlayer <> nil) and FPlayerPaused then
+          begin
+            FCutView.FPlayer.Play;
+            FPlayerPaused := False;
+          end;
       end;
     lmEffectsMarker:
       begin
@@ -1564,25 +1582,29 @@ end;
 
 function TCutPaintBox.HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton;
   Mode: TMouseMode) : Boolean;
-var ButtonData: TMouseButton;
-    StartX, EndX, DiffX: Integer;
+var
+  ButtonData: TMouseButton;
+  StartX, EndX, DiffX: Integer;
+  ScrollbarActive: Boolean;
 begin
+  ScrollbarActive := False;
+
   if (Button <> nil) then
   begin
     ButtonData := Button^;
     if (ButtonData = mbLeft) and (Y >= Height - ScrollbarHeight - 2) then
     begin
       if (Mode = mmMove) or (Mode = mmDown) then
-        FScrollbarActive := True;
+        ScrollbarActive := True;
     end;
   end;
 
-  if FScrollbarActive then
+  if ScrollbarActive then
   begin
     if Mode = mmUp then
     begin
-      FScrollbarActive := False;
-      Result := true;
+      ScrollbarActive := False;
+      Result := True;
       Exit;
     end else
     begin
@@ -1609,7 +1631,7 @@ begin
     end;
   end;
 
-  Result := FScrollbarActive;
+  Result := ScrollbarActive;
 end;
 
 procedure TCutPaintBox.TimerTimer(Sender: TObject);
@@ -1727,7 +1749,7 @@ end;
 { TUndoStep }
 
 constructor TUndoStep.Create(Filename: string; Number: Integer;
-  StartLine, EndLine, EffectStartLine, EffectEndLine: Cardinal);
+  StartLine, EndLine, EffectStartLine, EffectEndLine, PlayLine: Cardinal);
 begin
   FFilename := Filename;
   FNumber := Number;
@@ -1735,6 +1757,7 @@ begin
   FEndLine := EndLine;
   FEffectStartLine := EffectStartLine;
   FEffectEndLine := EffectEndLine;
+  FPlayLine := PlayLine;
 end;
 
 end.

@@ -43,7 +43,7 @@ type
     constructor Create(AOwner: TComponent); reintroduce;
 
     procedure Add(Interval: TScheduleInterval; Day: TScheduleDay; SH, SM, EH, EM: Integer); overload;
-    procedure Add(Date: TDateTime; SH, SM, EH, EM: Integer); overload;
+    procedure Add(Date: TDateTime; SH, SM, EH, EM: Integer; AutoRemove: Boolean); overload;
     procedure Add(S: TSchedule); overload;
   end;
 
@@ -71,6 +71,7 @@ type
     btnRemove: TButton;
     Label3: TLabel;
     Label4: TLabel;
+    chkAutoRemove: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure rbRecurringClick(Sender: TObject);
@@ -139,7 +140,7 @@ begin
   end else
   begin
     Tree.Add(dtpDate.DateTime, StrToInt(txtStartHour.Text), StrToInt(txtStartMinute.Text),
-      StrToInt(txtEndHour.Text), StrToInt(txtEndMinute.Text));
+      StrToInt(txtEndHour.Text), StrToInt(txtEndMinute.Text), chkAutoRemove.Checked);
   end;
 end;
 
@@ -297,6 +298,7 @@ begin
   lstInterval.Enabled := rbRecurring.Checked;
   lstDay.Enabled := rbRecurring.Checked and (lstInterval.ItemIndex > 0);
   dtpDate.Enabled := rbDate.Checked;
+  chkAutoRemove.Enabled := rbDate.Checked;
 end;
 
 { TScheduleTree }
@@ -324,7 +326,7 @@ begin
   Data.Schedule.EndMinute := EM;
 end;
 
-procedure TScheduleTree.Add(Date: TDateTime; SH, SM, EH, EM: Integer);
+procedure TScheduleTree.Add(Date: TDateTime; SH, SM, EH, EM: Integer; AutoRemove: Boolean);
 var
   P: PVirtualNode;
   Data: PScheduleTreeNodeData;
@@ -340,6 +342,7 @@ begin
   Data.Schedule.Interval := siNone;
   Data.Schedule.Day := sdNone;
   Data.Schedule.Date := Date;
+  Data.Schedule.AutoRemove := AutoRemove;
   Data.Schedule.StartHour := SH;
   Data.Schedule.StartMinute := SM;
   Data.Schedule.EndHour := EH;
@@ -379,6 +382,9 @@ begin
 
   C := Header.Columns.Add;
   C.Text := _('Scheduled recordings');
+
+  C := Header.Columns.Add;
+  C.Text := _('Remove');
 end;
 
 procedure TScheduleTree.DoChecked(Node: PVirtualNode);
@@ -402,47 +408,55 @@ begin
 
   NodeData := GetNodeData(Node);
 
-  if (Column = 0) and (TextType = ttNormal) then
-  begin
-    DTStart := EncodeTime(NodeData.Schedule.StartHour, NodeData.Schedule.StartMinute, 0, 0);
-    DTEnd := EncodeTime(NodeData.Schedule.EndHour, NodeData.Schedule.EndMinute, 0, 0);
+  if TextType = ttNormal then
+    case Column of
+      0:
+        begin
+          DTStart := EncodeTime(NodeData.Schedule.StartHour, NodeData.Schedule.StartMinute, 0, 0);
+          DTEnd := EncodeTime(NodeData.Schedule.EndHour, NodeData.Schedule.EndMinute, 0, 0);
 
-    if NodeData.Schedule.Recurring then
-    begin
-      if NodeData.Schedule.Interval = siDaily then
-      begin
-        Text := _('Record daily from %s to %s');
-        Text := Format(Text, [TimeToStr(DTStart), TimeToStr(DTEnd)]);
-      end else
-      begin
-        Text := _('Record every %s from %s to %s');
+          if NodeData.Schedule.Recurring then
+          begin
+            if NodeData.Schedule.Interval = siDaily then
+            begin
+              Text := _('Record daily from %s to %s');
+              Text := Format(Text, [TimeToStr(DTStart), TimeToStr(DTEnd)]);
+            end else
+            begin
+              Text := _('Record every %s from %s to %s');
 
-        case NodeData.Schedule.Day of
-          sdMonday: Day := _('monday');
-          sdTuesday: Day := _('tuesday');
-          sdWednesday: Day := _('wednesday');
-          sdThursday: Day := _('thursday');
-          sdFriday: Day := _('friday');
-          sdSaturday: Day := _('saturday');
-          sdSunday: Day := _('sunday');
+              case NodeData.Schedule.Day of
+                sdMonday: Day := _('monday');
+                sdTuesday: Day := _('tuesday');
+                sdWednesday: Day := _('wednesday');
+                sdThursday: Day := _('thursday');
+                sdFriday: Day := _('friday');
+                sdSaturday: Day := _('saturday');
+                sdSunday: Day := _('sunday');
+              end;
+
+              Text := Format(Text, [Day, TimeToStr(DTStart), TimeToStr(DTEnd)]);
+            end;
+          end else
+          begin
+            Text := _('Record on %s from %s to %s');
+            Text := Format(Text, [DateToStr(NodeData.Schedule.Date), TimeToStr(DTStart), TimeToStr(DTEnd)]);
+          end;
         end;
-
-        Text := Format(Text, [Day, TimeToStr(DTStart), TimeToStr(DTEnd)]);
-      end;
-    end else
-    begin
-      Text := _('Record on %s from %s to %s');
-      Text := Format(Text, [DateToStr(NodeData.Schedule.Date), TimeToStr(DTStart), TimeToStr(DTEnd)]);
+      1:
+        if NodeData.Schedule.AutoRemove then
+          Text := _('Yes')
+        else
+          Text := _('No');
     end;
-  end else
-    Text := '';
 end;
 
 procedure TScheduleTree.Resize;
 begin
   inherited;
 
-  Header.Columns[0].Width := ClientWidth;
+  Header.Columns[0].Width := ClientWidth - 70;
+  Header.Columns[1].Width := 70;
 end;
 
 end.

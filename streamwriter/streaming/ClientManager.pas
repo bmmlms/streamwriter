@@ -41,7 +41,6 @@ type
 
   TClientList = TList<TICEClient>;
 
-  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle: Boolean) of object;
   TTitleChangedEvent = procedure(Sender: TObject; Title: string) of object;
   TICYReceivedEvent = procedure(Sender: TObject; Received: Integer) of object;
 
@@ -71,7 +70,7 @@ type
     procedure ClientDebug(Sender: TObject);
     procedure ClientRefresh(Sender: TObject);
     procedure ClientAddRecent(Sender: TObject);
-    procedure ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle: Boolean);
+    procedure ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
     procedure ClientTitleChanged(Sender: TObject; Title: string);
     procedure ClientDisconnected(Sender: TObject);
     procedure ClientICYReceived(Sender: TObject; Bytes: Integer);
@@ -349,6 +348,8 @@ begin
         Client.Entry.Settings.DeleteStreams := False;
         Client.Entry.Settings.MaxRetries := 0;
         Client.Entry.Settings.RetryDelay := 0;
+        Client.Entry.Settings.AddSavedToIgnore := AppGlobals.AutoTuneInAddToIgnore;
+        Client.Entry.Settings.AddSavedToStreamIgnore := False;
         Client.Entry.Bitrate := Kbps;
         if Trim(TitlePattern) <> '' then
           Client.Entry.Settings.TitlePattern := TitlePattern;
@@ -431,11 +432,12 @@ begin
   end;
 end;
 
-procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle: Boolean);
+procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64;
+  WasCut, FullTitle, IsStreamFile: Boolean);
 begin
   Inc(FSongsSaved);
   if Assigned(FOnClientSongSaved) then
-    FOnClientSongSaved(Sender, Filename, Title, Filesize, Length, WasCut, FullTitle);
+    FOnClientSongSaved(Sender, Filename, Title, Filesize, Length, WasCut, FullTitle, IsStreamFile);
 end;
 
 procedure TClientManager.ClientStop(Sender: TObject);

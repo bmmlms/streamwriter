@@ -81,7 +81,7 @@ object frmSettings: TfrmSettings
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Automatically add saved titles to ignore list'
+      Caption = 'Add saved titles to global ignorelist'
       TabOrder = 1
       OnClick = chkAddSavedToIgnoreClick
     end
@@ -188,7 +188,7 @@ object frmSettings: TfrmSettings
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Automatically add saved titles to stream ignore list'
+      Caption = 'Add saved titles to stream ignorelist'
       TabOrder = 10
       OnClick = chkAddSavedToStreamIgnoreClick
     end
@@ -787,15 +787,15 @@ object frmSettings: TfrmSettings
     Left = 904
     Top = 4
     Width = 294
-    Height = 297
+    Height = 345
     TabOrder = 6
     Visible = False
     DesignSize = (
       294
-      297)
+      345)
     object Label2: TLabel
       Left = 20
-      Top = 172
+      Top = 192
       Width = 253
       Height = 29
       AutoSize = False
@@ -806,7 +806,7 @@ object frmSettings: TfrmSettings
     end
     object Label8: TLabel
       Left = 20
-      Top = 228
+      Top = 248
       Width = 253
       Height = 65
       AutoSize = False
@@ -818,14 +818,14 @@ object frmSettings: TfrmSettings
     end
     object Label16: TLabel
       Left = 20
-      Top = 52
+      Top = 72
       Width = 76
       Height = 13
       Caption = 'Minimum bitrate:'
     end
     object Label17: TLabel
       Left = 20
-      Top = 96
+      Top = 116
       Width = 35
       Height = 13
       Caption = 'Format:'
@@ -842,7 +842,7 @@ object frmSettings: TfrmSettings
     end
     object chkSubmitStreamInfo: TCheckBox
       Left = 4
-      Top = 148
+      Top = 168
       Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -851,7 +851,7 @@ object frmSettings: TfrmSettings
     end
     object chkSubmitStats: TCheckBox
       Left = 4
-      Top = 204
+      Top = 224
       Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -860,7 +860,7 @@ object frmSettings: TfrmSettings
     end
     object lstMinBitrate: TComboBox
       Left = 20
-      Top = 68
+      Top = 88
       Width = 129
       Height = 21
       Style = csDropDownList
@@ -879,7 +879,7 @@ object frmSettings: TfrmSettings
     end
     object lstFormat: TComboBox
       Left = 20
-      Top = 112
+      Top = 132
       Width = 129
       Height = 21
       Style = csDropDownList
@@ -899,10 +899,18 @@ object frmSettings: TfrmSettings
       TabOrder = 5
       OnClick = chkAutoTuneInClick
     end
+    object chkAutoTuneInAddToIgnore: TCheckBox
+      Left = 20
+      Top = 48
+      Width = 269
+      Height = 21
+      Caption = 'Add saved titles to global ignorelist'
+      TabOrder = 6
+    end
   end
   object pnlFilenames: TPanel
     Left = 904
-    Top = 308
+    Top = 384
     Width = 294
     Height = 341
     TabOrder = 7
@@ -1285,7 +1293,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800380210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800400210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

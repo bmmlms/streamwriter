@@ -81,6 +81,7 @@ type
     FWasCut: Boolean;
     FBitRate: Cardinal;
     FIsAuto: Boolean;
+    FIsStreamFile: Boolean;
     FFinalized: Boolean;
   public
     constructor Create; overload;
@@ -97,6 +98,7 @@ type
     property WasCut: Boolean read FWasCut write FWasCut;
     property BitRate: Cardinal read FBitRate write FBitRate;
     property IsAuto: Boolean read FIsAuto write FIsAuto;
+    property IsStreamFile: Boolean read FIsStreamFile write FIsStreamFile;
     property Finalized: Boolean read FFinalized write FFinalized;
   end;
 
@@ -170,6 +172,7 @@ type
     FInterval: TScheduleInterval;
     FDay: TScheduleDay;
     FDate: TDateTime;
+    FAutoRemove: Boolean;
     FStartHour, FStartMinute, FEndHour, FEndMinute: Integer;
     FTriedStart: Boolean;
     FTriedStop: Boolean;
@@ -192,6 +195,7 @@ type
     property Interval: TScheduleInterval read FInterval write FInterval;
     property Day: TScheduleDay read FDay write FDay;
     property Date: TDateTime read FDate write FDate;
+    property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
     property StartHour: Integer read FStartHour write FStartHour;
     property StartMinute: Integer read FStartMinute write FStartMinute;
     property EndHour: Integer read FEndHour write FEndHour;
@@ -323,7 +327,7 @@ type
   end;
 
 const
-  DATAVERSION = 29;
+  DATAVERSION = 30;
 
 implementation
 
@@ -969,6 +973,7 @@ begin
   FFilename := Filename;
   FStreamname := Streamname;
   FWasCut := False;
+  FIsStreamFile := False;
 end;
 
 class function TTrackInfo.Load(Stream: TExtendedStream;
@@ -994,6 +999,9 @@ begin
     Stream.Read(Result.FIsAuto);
   end;
 
+  if Version >= 30 then
+    Stream.Read(Result.FIsStreamFile);
+
   if Version > 18 then
   begin
     Stream.Read(Result.FFinalized);
@@ -1011,6 +1019,7 @@ begin
   Stream.Write(FWasCut);
   Stream.Write(FBitRate);
   Stream.Write(FIsAuto);
+  Stream.Write(FIsStreamFile);
   Stream.Write(FFinalized);
 end;
 
@@ -1168,6 +1177,7 @@ begin
   FInterval := From.FInterval;
   FDay := From.FDay;
   FDate := From.FDate;
+  FAutoRemove := From.FAutoRemove;
   FStartHour := From.FStartHour;
   FStartMinute := From.FStartMinute;
   FEndHour := From.FEndHour;
@@ -1204,6 +1214,8 @@ begin
   Stream.Read(B);
   Result.FDay := TScheduleDay(B);
   Stream.Read(Result.FDate);
+  if Version >= 30 then
+    Stream.Read(Result.FAutoRemove);
   Stream.Read(Result.FStartHour);
   Stream.Read(Result.FStartMinute);
   Stream.Read(Result.FEndHour);
@@ -1286,6 +1298,7 @@ begin
   Stream.Write(Byte(FInterval));
   Stream.Write(Byte(FDay));
   Stream.Write(FDate);
+  Stream.Write(FAutoRemove);
   Stream.Write(FStartHour);
   Stream.Write(FStartMinute);
   Stream.Write(FEndHour);

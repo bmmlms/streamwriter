@@ -112,7 +112,7 @@ begin
   FToolBar.FPosEdit.Enabled := FCutView.CanSetLine;
   FToolBar.FPosPlay.Enabled := FCutView.CanSetLine;
   FToolBar.FAutoCut.Enabled := FCutView.CanAutoCut;
-  FToolBar.FPosPlay.Enabled := FCutView.CanPlay;
+  FToolBar.FPosPlay.Enabled := FCutView.CanSetLine;
   FToolBar.FCut.Enabled := FCutView.CanCut;
   FToolBar.FZoomIn.Enabled := FCutView.CanZoomIn;
   FToolBar.FZoomOut.Enabled := FCutView.CanZoomOut;

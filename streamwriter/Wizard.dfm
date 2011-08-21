@@ -24,12 +24,16 @@ object frmWizard: TfrmWizard
     Height = 233
     BevelOuter = bvNone
     TabOrder = 0
+    DesignSize = (
+      389
+      233)
     object cmdBrowse: TSpeedButton
-      Left = 308
+      Left = 364
       Top = 16
       Width = 21
       Height = 21
       Hint = 'Browse...'
+      Anchors = [akTop, akRight]
       Flat = True
       Glyph.Data = {
         36030000424D3603000000000000360000002800000010000000100000000100
@@ -66,8 +70,9 @@ object frmWizard: TfrmWizard
     object txtDir: TLabeledEdit
       Left = 8
       Top = 16
-      Width = 293
+      Width = 349
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       AutoSize = False
       Color = 15790320
       EditLabel.Width = 34

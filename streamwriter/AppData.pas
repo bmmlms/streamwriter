@@ -149,6 +149,7 @@ type
     FSidebarWidth: Integer;
     FAutoTuneIn: Boolean;
     FAutoTuneInConsiderIgnore: Boolean;
+    FAutoTuneInAddToIgnore: Boolean;
     FSubmitStreamInfo: Boolean;
     FSubmitStats: Boolean;
     FMinDiskSpace: Integer;
@@ -205,6 +206,7 @@ type
     property SidebarWidth: Integer read FSidebarWidth write FSidebarWidth;
     property AutoTuneIn: Boolean read FAutoTuneIn write FAutoTuneIn;
     property AutoTuneInConsiderIgnore: Boolean read FAutoTuneInConsiderIgnore write FAutoTuneInConsiderIgnore;
+    property AutoTuneInAddToIgnore: Boolean read FAutoTuneInAddToIgnore write FAutoTuneInAddToIgnore;
     property SubmitStreamInfo: Boolean read FSubmitStreamInfo write FSubmitStreamInfo;
     property SubmitStats: Boolean read FSubmitStats write FSubmitStats;
     property MinDiskSpace: Integer read FMinDiskSpace write FMinDiskSpace;
@@ -598,6 +600,7 @@ begin
   FStorage.Read('SidebarWidth', FSidebarWidth, 250);
   FStorage.Read('AutoTuneIn', FAutoTuneIn, True);
   FStorage.Read('AutoTuneInConsiderIgnore', FAutoTuneInConsiderIgnore, False);
+  FStorage.Read('AutoTuneInAddToIgnore', FAutoTuneInAddToIgnore, True);
   FStorage.Read('SubmitStreamInfo', FSubmitStreamInfo, True);
   FStorage.Read('SubmitStats', FSubmitStats, True);
   FStorage.Read('LimitSpeed', FLimitSpeed, False);
@@ -755,6 +758,7 @@ begin
   FStorage.Write('SidebarWidth', FSidebarWidth);
   FStorage.Write('AutoTuneIn', FAutoTuneIn);
   FStorage.Write('AutoTuneInConsiderIgnore', FAutoTuneInConsiderIgnore);
+  FStorage.Write('AutoTuneInAddToIgnore', FAutoTuneInAddToIgnore);
   FStorage.Write('SubmitStats', FSubmitStats);
   FStorage.Write('SubmitStreamInfo', FSubmitStreamInfo);
   FStorage.Write('AutoTuneInMinKbps', FAutoTuneInMinKbps);
