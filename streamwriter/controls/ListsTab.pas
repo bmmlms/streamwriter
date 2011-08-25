@@ -434,6 +434,15 @@ begin
           for i := 0 to Lst.Count - 1 do
           begin
             Lst[i] := Trim(Lst[i]);
+
+            // Wenn es ein ganzer Pfad sein könnte, dann bearbeiten
+            if Length(Lst[i]) > 4 then
+              if (Copy(Lst[i], 2, 2) = ':\') and (Pos('\', Lst[i]) > -1) and (Pos('.', Lst[i]) > -1) then
+              begin
+                Lst[i] := ExtractFileName(Lst[i]);
+                Lst[i] := RemoveFileExt(Lst[i]);
+              end;
+
             Pattern := BuildPattern(Lst[i], Hash, NumChars, False);
             if NumChars <= 3 then
               Continue;
@@ -476,6 +485,8 @@ begin
   finally
     Dlg.Free;
   end;
+
+  FTree.SortItems;
 
   if (FList = FLists.SaveList) and AppGlobals.AutoTuneIn then
   begin
