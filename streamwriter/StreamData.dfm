@@ -159,7 +159,6 @@ object frmStreamData: TfrmStreamData
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 3
-    ExplicitTop = 438
     object Bevel2: TBevel
       Left = 4
       Top = 4

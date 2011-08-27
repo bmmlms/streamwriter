@@ -270,6 +270,7 @@ type
     procedure CheckFilesTerminate(Sender: TObject);
     procedure RegisterHotkeys(Reg: Boolean);
     procedure ShowCommunityLogin;
+    procedure OpenCut(Filename: string);
 
     procedure CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
 
@@ -293,6 +294,7 @@ type
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedRefresh(Sender: TObject);
 
+    procedure tabCutCutFile(Sender: TObject; Filename: string);
     procedure tabCutSaved(Sender: TObject; Filesize, Length: UInt64);
     procedure tabCutClosed(Sender: TObject);
 
@@ -951,6 +953,24 @@ begin
   ToggleWindow(True);
 end;
 
+procedure TfrmStreamWriterMain.OpenCut(Filename: string);
+var
+  tabCut: TCutTab;
+begin
+  tabCut := TCutTab.Create(pagMain);
+  tabCut.PageControl := pagMain;
+  tabCut.OnSaved := tabCutSaved;
+  tabCut.OnClosed := tabCutClosed;
+  tabCut.OnVolumeChanged := tabVolumeChanged;
+  tabCut.OnPlayStarted := tabPlayStarted;
+
+  pagMain.ActivePage := tabCut;
+
+  tabCut.Setup(Filename, imgImages);
+
+  tabCut.CutView.OnCutFile := tabCutCutFile;
+end;
+
 procedure TfrmStreamWriterMain.pagSidebarChange(Sender: TObject);
 begin
   // Damit Child-Controls passende Dimensionen in ShowInfo haben
@@ -1129,6 +1149,8 @@ begin
       HomeComm.SetTitleNotifications(False);
   end;
 
+  tabSaved.Tree.SetFileWatcher;
+
   Language.Translate(Self, PreTranslate, PostTranslate);
   AppGlobals.PluginManager.ReInitPlugins;
 
@@ -1197,6 +1219,26 @@ begin
   }
 end;
 
+procedure TfrmStreamWriterMain.tabCutCutFile(Sender: TObject;
+  Filename: string);
+var
+  tabCut: TCutTab;
+begin
+  Application.ProcessMessages;
+
+  if TfrmMsgDlg.ShowMsg(Self, _('You dragged an unknown file into streamWriter. If this file has VBR, it cannot be cut correctly. No responsibility for broken files after editing will be taken! If you are not sure what you are doing, press ''Cancel''.'), 11, btOKCancel) <> mtCancel then
+  begin
+    tabCut := TCutTab(Sender);
+    if tabCut <> nil then
+    begin
+      OpenCut(Filename);
+    end else
+    begin
+      pagMain.ActivePage := tabCut;
+    end;
+  end;
+end;
+
 procedure TfrmStreamWriterMain.tabClientsClientAdded(Sender: TObject);
 var
   Client: TICEClient;
@@ -1226,16 +1268,7 @@ begin
   tabCut := TCutTab(pagMain.FindCut(Track.Filename));
   if tabCut = nil then
   begin
-    tabCut := TCutTab.Create(pagMain);
-    tabCut.PageControl := pagMain;
-    tabCut.OnSaved := tabCutSaved;
-    tabCut.OnClosed := tabCutClosed;
-    tabCut.OnVolumeChanged := tabVolumeChanged;
-    tabCut.OnPlayStarted := tabPlayStarted;
-
-    pagMain.ActivePage := tabCut;
-
-    tabCut.Setup(Track.Filename, imgImages);
+    OpenCut(Track.Filename);
   end else
   begin
     pagMain.ActivePage := tabCut;

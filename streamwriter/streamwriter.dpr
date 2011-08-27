@@ -103,7 +103,9 @@ uses
   Notifications in 'Notifications.pas' {frmNotification},
   AdvancedRect in '..\..\common\AdvancedRect.pas',
   TypeDefs in 'TypeDefs.pas',
-  CutTabSearchSilence in 'controls\CutTabSearchSilence.pas' {frmCutTabSearchSilence};
+  CutTabSearchSilence in 'controls\CutTabSearchSilence.pas' {frmCutTabSearchSilence},
+  FileWatcher in '..\..\common\FileWatcher.pas',
+  MP3Gain in 'plugins\MP3Gain.pas';
 
 {$SetPEOptFlags $0140}
 

@@ -126,6 +126,7 @@ type
     procedure ThreadNeedSettings(Sender: TSocketThread);
     procedure ThreadTitleAllowed(Sender: TSocketThread);
     procedure ThreadRefreshInfo(Sender: TSocketThread);
+    procedure ThreadRecordingStopped(Sender: TSocketThread);
     procedure ThreadBeforeEnded(Sender: TSocketThread);
     procedure ThreadTerminated(Sender: TObject);
 
@@ -368,6 +369,7 @@ begin
   FICEThread.OnAddRecent := ThreadAddRecent;
   FICEThread.OnTitleAllowed := ThreadTitleAllowed;
   FICEThread.OnRefreshInfo := ThreadRefreshInfo;
+  FICEThread.OnRecordingStopped := ThreadRecordingStopped;
 
   // Das muss hier so früh sein, wegen z.B. RetryDelay - das hat der Stream nämlich nicht,
   // wenn z.B. beim Verbinden was daneben geht.
@@ -542,6 +544,14 @@ begin
   FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FStopAfterSong, FRecordTitle);
 end;
 
+procedure TICEClient.ThreadRecordingStopped(Sender: TSocketThread);
+begin
+  StopRecording;
+  FStopAfterSong := False;
+  if Assigned(FOnRefresh) then
+    FOnRefresh(Self);
+end;
+
 procedure TICEClient.ThreadRefreshInfo(Sender: TSocketThread);
 begin
   FEntry.Name := FICEThread.RecvStream.StreamName;
@@ -638,12 +648,6 @@ begin
     begin
       WriteDebug(Format(_('Could not postprocess song: %s'), [E.Message]), dtError, dlNormal);
     end;
-  end;
-
-  if FStopAfterSong then
-  begin
-    StopRecording;
-    FStopAfterSong := False;
   end;
 end;
 
@@ -762,6 +766,14 @@ begin
     TfrmNotification.Act(FICEThread.RecvStream.Title, FEntry.Name);
   end;
 
+  {
+  if FStopAfterSong and (not FICEThread.Recording) then
+  begin
+    FStopAfterSong := False;
+    StopRecording;
+  end;
+  }
+
   FTitle := FICEThread.RecvStream.Title;
   if Assigned(FOnTitleChanged) then
     FOnTitleChanged(Self, FICEThread.RecvStream.Title);
@@ -835,7 +847,7 @@ begin
   FFilename := '';
   MaxRetries := FEntry.Settings.MaxRetries;
 
-  if DiedThread.RecvStream.HaltClient or AutoRemove then
+  if DiedThread.RecvStream.RemoveClient or AutoRemove then
   begin
     if FProcessingList.Count = 0 then
       Kill
@@ -850,6 +862,12 @@ begin
   begin
     StopAfterSong := False;
     StopRecording;
+    if not DiedThread.Playing then
+    begin
+      if Assigned(FOnDisconnected) and (FICEThread = nil) and (FProcessingList.Count = 0) then
+        FOnDisconnected(Self);
+      FState := csStopping;
+    end;
   end;
 
   if (FState <> csStopping) and (FState <> csIOError) then

@@ -49,6 +49,7 @@ type
     FOnAddRecent: TSocketEvent;
     FOnTitleAllowed: TSocketEvent;
     FOnRefreshInfo: TSocketEvent;
+    FOnRecordingStopped: TSocketEvent;
 
     FTypedStream: TICEStream;
     FPlayBufferLock: TCriticalSection;
@@ -113,6 +114,7 @@ type
     property OnAddRecent: TSocketEvent read FOnAddRecent write FOnAddRecent;
     property OnTitleAllowed: TSocketEvent read FOnTitleAllowed write FOnTitleAllowed;
     property OnRefreshInfo: TSocketEvent read FOnRefreshInfo write FOnRefreshInfo;
+    property OnRecordingStopped: TSocketEvent read FOnRecordingStopped write FOnRecordingStopped;
   end;
 
 implementation
@@ -373,10 +375,22 @@ procedure TICEThread.DoStuff;
 begin
   inherited;
 
-  if FTypedStream.HaltClient then
+  if FTypedStream.RemoveClient then
   begin
     FPlayer.Stop;
     Terminate;
+  end;
+
+  if FTypedStream.ClientStopRecording then
+  begin
+    StopRecordingInternal;
+    FTypedStream.ClientStopRecording := False;
+
+    if (not FRecording) and (not FPlaying) then
+      Terminate
+    else
+      if Assigned(FOnRecordingStopped) then
+        Sync(FOnRecordingStopped);
   end;
 
   while FPlayer.Pausing or FPlayer.Stopping do

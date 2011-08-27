@@ -34,10 +34,10 @@ object frmSettings: TfrmSettings
     object lblDefaultFilter: TLabel
       Left = 4
       Top = 336
-      Width = 25
+      Width = 24
       Height = 13
       Anchors = [akLeft, akRight, akBottom]
-      Caption = 'Filter:'
+      Caption = 'Lists:'
     end
     object btnBrowse: TSpeedButton
       Left = 264
@@ -1293,7 +1293,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800400210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C0101020008004C0210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

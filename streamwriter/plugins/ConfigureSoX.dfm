@@ -4,8 +4,8 @@ object frmConfigureSoX: TfrmConfigureSoX
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Configure SoX'
-  ClientHeight = 392
-  ClientWidth = 405
+  ClientHeight = 511
+  ClientWidth = 417
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -57,8 +57,8 @@ object frmConfigureSoX: TfrmConfigureSoX
   TextHeight = 13
   object pnlNav: TPanel
     Left = 0
-    Top = 343
-    Width = 405
+    Top = 462
+    Width = 417
     Height = 49
     Align = alBottom
     BevelOuter = bvNone
@@ -67,10 +67,12 @@ object frmConfigureSoX: TfrmConfigureSoX
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
+    ExplicitTop = 343
+    ExplicitWidth = 405
     object Bevel2: TBevel
       Left = 4
       Top = 4
-      Width = 397
+      Width = 409
       Height = 5
       Align = alTop
       Shape = bsTopLine
@@ -78,7 +80,7 @@ object frmConfigureSoX: TfrmConfigureSoX
       ExplicitWidth = 396
     end
     object btnOK: TBitBtn
-      Left = 304
+      Left = 316
       Top = 9
       Width = 97
       Height = 36
@@ -90,109 +92,136 @@ object frmConfigureSoX: TfrmConfigureSoX
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
+      ExplicitLeft = 304
     end
   end
   object pnlConfigure: TPanel
     Left = 4
     Top = 176
-    Width = 397
-    Height = 161
+    Width = 409
+    Height = 221
     TabOrder = 1
     Visible = False
-    object Bevel1: TBevel
-      Left = 8
-      Top = 76
-      Width = 381
-      Height = 5
-      Shape = bsTopLine
-    end
-    object chkFadeoutStart: TCheckBox
+    object GroupBox1: TGroupBox
       Left = 4
-      Top = 0
-      Width = 181
-      Height = 21
-      Caption = 'Add fadein at beginning'
+      Top = 4
+      Width = 197
+      Height = 157
+      Caption = ' Fadein/Fadeout '
       TabOrder = 0
-      OnClick = chkClick
+      object txtFadeoutStart: TLabeledEdit
+        Left = 24
+        Top = 60
+        Width = 53
+        Height = 21
+        EditLabel.Width = 90
+        EditLabel.Height = 13
+        EditLabel.Caption = 'Length in seconds:'
+        Enabled = False
+        MaxLength = 1
+        NumbersOnly = True
+        TabOrder = 0
+      end
+      object chkFadeoutStart: TCheckBox
+        Left = 8
+        Top = 20
+        Width = 181
+        Height = 21
+        Caption = 'Add fadein at beginning'
+        TabOrder = 1
+        OnClick = chkClick
+      end
+      object txtFadeoutEnd: TLabeledEdit
+        Left = 24
+        Top = 124
+        Width = 53
+        Height = 21
+        EditLabel.Width = 90
+        EditLabel.Height = 13
+        EditLabel.Caption = 'Length in seconds:'
+        Enabled = False
+        MaxLength = 1
+        NumbersOnly = True
+        TabOrder = 2
+      end
+      object chkFadeoutEnd: TCheckBox
+        Left = 8
+        Top = 84
+        Width = 181
+        Height = 21
+        Caption = 'Add fadeout at end'
+        TabOrder = 3
+        OnClick = chkClick
+      end
     end
-    object chkFadeoutEnd: TCheckBox
-      Left = 204
-      Top = 0
-      Width = 181
-      Height = 21
-      Caption = 'Add fadeout at end'
+    object GroupBox2: TGroupBox
+      Left = 208
+      Top = 4
+      Width = 197
+      Height = 157
+      Caption = ' Silence '
       TabOrder = 1
-      OnClick = chkClick
+      object txtSilenceStart: TLabeledEdit
+        Left = 24
+        Top = 60
+        Width = 53
+        Height = 21
+        EditLabel.Width = 90
+        EditLabel.Height = 13
+        EditLabel.Caption = 'Length in seconds:'
+        Enabled = False
+        MaxLength = 1
+        NumbersOnly = True
+        TabOrder = 0
+      end
+      object chkSilenceStart: TCheckBox
+        Left = 8
+        Top = 20
+        Width = 181
+        Height = 21
+        Caption = 'Add silence at beginning'
+        TabOrder = 1
+        OnClick = chkClick
+      end
+      object txtSilenceEnd: TLabeledEdit
+        Left = 24
+        Top = 124
+        Width = 53
+        Height = 21
+        EditLabel.Width = 90
+        EditLabel.Height = 13
+        EditLabel.Caption = 'Length in seconds:'
+        Enabled = False
+        MaxLength = 1
+        NumbersOnly = True
+        TabOrder = 2
+      end
+      object chkSilenceEnd: TCheckBox
+        Left = 8
+        Top = 84
+        Width = 181
+        Height = 21
+        Caption = 'Add silence at end'
+        TabOrder = 3
+        OnClick = chkClick
+      end
     end
-    object txtFadeoutStart: TLabeledEdit
-      Left = 20
-      Top = 40
-      Width = 53
-      Height = 21
-      EditLabel.Width = 90
-      EditLabel.Height = 13
-      EditLabel.Caption = 'Length in seconds:'
-      Enabled = False
-      MaxLength = 1
-      NumbersOnly = True
+    object GroupBox3: TGroupBox
+      Left = 4
+      Top = 168
+      Width = 401
+      Height = 49
+      Caption = ' Misc '
       TabOrder = 2
-    end
-    object txtFadeoutEnd: TLabeledEdit
-      Left = 220
-      Top = 40
-      Width = 53
-      Height = 21
-      EditLabel.Width = 90
-      EditLabel.Height = 13
-      EditLabel.Caption = 'Length in seconds:'
-      Enabled = False
-      MaxLength = 1
-      NumbersOnly = True
-      TabOrder = 3
-    end
-    object chkSilenceStart: TCheckBox
-      Left = 8
-      Top = 92
-      Width = 181
-      Height = 21
-      Caption = 'Add silence at beginning'
-      TabOrder = 4
-      OnClick = chkClick
-    end
-    object chkSilenceEnd: TCheckBox
-      Left = 204
-      Top = 92
-      Width = 181
-      Height = 21
-      Caption = 'Add silence at end'
-      TabOrder = 5
-      OnClick = chkClick
-    end
-    object txtSilenceStart: TLabeledEdit
-      Left = 24
-      Top = 132
-      Width = 53
-      Height = 21
-      EditLabel.Width = 90
-      EditLabel.Height = 13
-      EditLabel.Caption = 'Length in seconds:'
-      Enabled = False
-      MaxLength = 1
-      NumbersOnly = True
-      TabOrder = 6
-    end
-    object txtSilenceEnd: TLabeledEdit
-      Left = 224
-      Top = 132
-      Width = 53
-      Height = 21
-      EditLabel.Width = 90
-      EditLabel.Height = 13
-      EditLabel.Caption = 'Length in seconds:'
-      Enabled = False
-      MaxLength = 1
-      NumbersOnly = True
-      TabOrder = 7
+      object chkNormalize: TCheckBox
+        Left = 8
+        Top = 20
+        Width = 181
+        Height = 21
+        Caption = 'Normalize'
+        TabOrder = 0
+        OnClick = chkClick
+      end
     end
   end
   object pnlSetup: TPanel

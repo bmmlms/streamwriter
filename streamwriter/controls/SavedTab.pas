@@ -26,7 +26,7 @@ uses
   Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, DataManager,
   ImgList, Functions, DragDropFile, GUIFunctions, StreamInfoView, DynBASS,
   Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
-  PlayerManager, Logging;
+  PlayerManager, Logging, FileWatcher;
 
 type
   TSavedTree = class;
@@ -163,6 +163,7 @@ type
     FDragSource: TDropFileSource;
     FTab: TSavedTab;
     FTrackList: TTrackList;
+    FFileWatcher, FFileWatcherAuto: TFileWatcher;
     FStreamNode: PVirtualNode;
 
     FOnAction: TTrackActionEvent;
@@ -190,6 +191,9 @@ type
     procedure PlayerPlay(Sender: TObject);
     procedure PlayerPause(Sender: TObject);
     procedure PlayerStop(Sender: TObject);
+
+    procedure FileWatcherEvent(Sender: TObject; Action: DWORD; OldName, NewName: string);
+    procedure FileWatcherTerminate(Sender: TObject);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -225,6 +229,7 @@ type
     procedure Filter(S: string);
     procedure Sort(Node: PVirtualNode; Column: TColumnIndex;
       Direction: TSortDirection; DoInit: Boolean = True); override;
+    procedure SetFileWatcher;
 
     property Player: TPlayer read FPlayer;
     property OnAction: TTrackActionEvent read FOnAction write FOnAction;
@@ -503,7 +508,8 @@ begin
 
   FSavedTree.Expanded[FSavedTree.FStreamNode] := False;
 
-  FSavedTree.Sort(nil, FSavedTree.Header.SortColumn, FSavedTree.Header.SortDirection);
+  FSavedTree.SortTree(FSavedTree.Header.SortColumn, FSavedTree.Header.SortDirection);
+
   FSavedTree.Change(nil);
 end;
 
@@ -835,6 +841,8 @@ begin
 
   Header.SortColumn := 1;
   Header.SortDirection := sdAscending;
+
+  SetFileWatcher;
 end;
 
 destructor TSavedTree.Destroy;
@@ -842,6 +850,17 @@ begin
   FPlayer.Free;
   FTrackList.Free;
   FDragSource.Free;
+
+  if FFileWatcher <> nil then
+  begin
+    FFileWatcher.OnEvent := nil;
+    FFileWatcher.Terminate;
+  end;
+  if FFileWatcherAuto <> nil then
+  begin
+    FFileWatcherAuto.OnEvent := nil;
+    FFileWatcherAuto.Terminate;
+  end;
 
   inherited;
 end;
@@ -1175,6 +1194,9 @@ var
   Nodes: TNodeArray;
   NodeData: PSavedNodeData;
 begin
+  if Track = nil then
+    Exit;
+
   FTrackList.Remove(Track);
 
   Nodes := GetNodes(False);
@@ -1189,6 +1211,30 @@ begin
   end;
 
   Change(nil);
+end;
+
+procedure TSavedTree.SetFileWatcher;
+begin
+  if FFileWatcher <> nil then
+  begin
+    FFileWatcher.OnEvent := nil;
+    FFileWatcher.Terminate;
+  end;
+  if FFileWatcherAuto <> nil then
+  begin
+    FFileWatcherAuto.OnEvent := nil;
+    FFileWatcherAuto.Terminate;
+  end;
+
+  FFileWatcher := TFileWatcher.Create(AppGlobals.Dir, FILE_NOTIFY_CHANGE_FILE_NAME);
+  FFileWatcher.OnEvent := FileWatcherEvent;
+  FFileWatcher.OnTerminate := FileWatcherTerminate;
+  FFileWatcher.Start;
+
+  FFileWatcherAuto := TFileWatcher.Create(AppGlobals.DirAuto, FILE_NOTIFY_CHANGE_FILE_NAME);
+  FFileWatcherAuto.OnEvent := FileWatcherEvent;
+  FFileWatcherAuto.OnTerminate := FileWatcherTerminate;
+  FFileWatcherAuto.Start;
 end;
 
 procedure TSavedTree.Sort(Node: PVirtualNode; Column: TColumnIndex;
@@ -1369,6 +1415,48 @@ begin
         end;
 
   inherited;
+end;
+
+procedure TSavedTree.FileWatcherEvent(Sender: TObject; Action: DWORD;
+  OldName, NewName: string);
+var
+  Track: TTrackInfo;
+  Node: PVirtualNode;
+begin
+  Track := nil;
+  if (Action = FILE_ACTION_REMOVED) or (Action = FILE_ACTION_RENAMED_NEW_NAME) then
+    if Sender = FFileWatcher then
+      Track := FTrackList.GetTrack(AppGlobals.Dir + OldName)
+    else
+      Track := FTrackList.GetTrack(AppGlobals.DirAuto + OldName);
+
+  if Track = nil then
+    Exit;
+
+  case Action of
+    FILE_ACTION_REMOVED:
+      begin
+        RemoveTrack(Track);
+      end;
+    FILE_ACTION_RENAMED_NEW_NAME:
+      begin
+        if Sender = FFileWatcher then
+          Track.Filename := AppGlobals.Dir + NewName
+        else
+          Track.Filename := AppGlobals.DirAuto + NewName;
+        Node := GetNode(Track);
+        if Node <> nil then
+          InvalidateNode(Node);
+      end;
+  end;
+end;
+
+procedure TSavedTree.FileWatcherTerminate(Sender: TObject);
+begin
+  if Sender = FFileWatcher then
+    FFileWatcher := nil;
+  if Sender = FFileWatcherAuto then
+    FFileWatcherAuto := nil;
 end;
 
 procedure TSavedTree.Filter(S: string);

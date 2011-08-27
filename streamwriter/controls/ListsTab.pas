@@ -165,7 +165,7 @@ end;
 
 procedure TListsTab.Setup(Clients: TClientManager; Streams: TDataLists; Images: TImageList);
 begin
-  Caption := 'Filters';
+  Caption := 'Lists';
 
   FWishPanel.Setup(Clients, Streams, ltSave, Images, 'Wishlist');
   FIgnorePanel.Setup(Clients, Streams, ltIgnore, Images, 'Ignorelist');
@@ -617,12 +617,13 @@ begin
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Align := alTop;
   FToolbarPanel.Height := 24;
+  FToolbarPanel.Padding.Top := 2;
 
   FAddEdit := TEdit.Create(Self);
   FAddEdit.Parent := FToolbarPanel;
   FAddEdit.OnKeyPress := AddEditKeyPress;
   FAddEdit.Left := 0;
-  FAddEdit.Top := 0;
+  FAddEdit.Top := 2;
 
   FAddCombo := TComboBox.Create(Self);
   FAddCombo.Parent := FToolbarPanel;
@@ -642,7 +643,7 @@ begin
   FToolbar.FExport.OnClick := ExportClick;
   FToolbar.FImport.OnClick := ImportClick;
 
-  FTopPanel.Height := FLabel.Height + FToolbarPanel.Height;
+  FTopPanel.Height := FLabel.Height + FToolbarPanel.Height + 2;
 
   FTree := TTitleTree.Create(Self, Lists);
   FTree.Parent := Self;

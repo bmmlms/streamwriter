@@ -28,7 +28,7 @@ uses
   Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
   PlayerManager, Plugins, SoX, DownloadAddons, ConfigureSoX, Logging,
-  MsgDlg;
+  MsgDlg, DragDrop, DropTarget, DropComboTarget;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -162,6 +162,8 @@ type
 
   TLineMode = (lmEdit, lmPlay, lmEffectsMarker);
 
+  TCutFileEvent = procedure(Sender: TObject; Filename: string) of object;
+
   TCutView = class(TPanel)
   private
     FScanThread: TScanThread;
@@ -180,7 +182,10 @@ type
     FFilename: string;
     FFilesize: UInt64;
 
+    FDropTarget: TDropComboTarget;
+
     FOnStateChanged: TNotifyEvent;
+    FOnCutFile: TCutFileEvent;
 
     function GetSoX: TSoXPlugin;
     procedure StartProcessing(CmdLine: string);
@@ -201,6 +206,9 @@ type
     procedure PlayerStop(Sender: TObject);
 
     procedure MsgRefresh(var Msg: TMessage); message WM_USER + 1234;
+
+    procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
+      APoint: TPoint; var Effect: Integer);
   protected
     procedure Resize; override;
   public
@@ -242,6 +250,7 @@ type
     property LineMode: TLineMode read FLineMode write FLineMode;
     property Filesize: UInt64 read FFilesize;
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
+    property OnCutFile: TCutFileEvent read FOnCutFile write FOnCutFile;
   end;
 
 implementation
@@ -329,6 +338,11 @@ begin
   FProgressBarLoad.Parent := Self;
   FProgressBarLoad.Visible := False;
 
+  FDropTarget := TDropComboTarget.Create(Self);
+  FDropTarget.Formats := [mfFile];
+  FDropTarget.Register(Self);
+  FDropTarget.OnDrop := DropTargetDrop;
+
   FUndoList := TUndoList.Create;
 end;
 
@@ -375,6 +389,23 @@ begin
   inherited;
 end;
 
+procedure TCutView.DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
+  APoint: TPoint; var Effect: Integer);
+var
+  i: Integer;
+begin
+  for i := 0 to FDropTarget.Files.Count - 1 do
+  begin
+    // REMARK: Bei neuen Formaten brauche ich dafür vielleicht ein Array!
+    if (LowerCase(ExtractFileExt(FDropTarget.Files[i])) = '.mp3') or
+       (LowerCase(ExtractFileExt(FDropTarget.Files[i])) = '.aac') then
+    begin
+      if Assigned(FOnCutFile) then
+        FOnCutFile(TCutTab(Self.Parent), FDropTarget.Files[i]);
+    end;
+  end;
+end;
+
 function TCutView.GetSoX: TSoXPlugin;
 var
   i: Integer;
@@ -406,11 +437,6 @@ begin
   FPlayer.OnStop := PlayerStop;
   Players.AddPlayer(FPlayer);
 
-  FState := csLoading;
-  FPB.BuildBuffer;
-  FPB.BuildDrawBuffer;
-  FPB.Paint;
-
   try
     if Bass.DeviceAvailable then
       FPlayer.Filename := FFilename;
@@ -420,6 +446,11 @@ begin
   end;
 
   FProgressBarLoad.Visible := True;
+
+  FState := csLoading;
+  FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
+  FPB.Repaint;
 
   FScanThread := TScanThread.Create(Filename);
   FScanThread.OnTerminate := ThreadTerminate;
@@ -575,7 +606,7 @@ begin
       Result := True;
     end else
     begin
-      MsgBox(GetParentForm(Self).Handle, _('The file could not be saved.'#13#10'Please make sure the file is not in use by another application.'), _('Info'), MB_ICONINFORMATION);
+      MsgBox(GetParentForm(Self).Handle, _('The file could not be saved.'#13#10'Please make sure the file is not played back in the "Saved songs"-tab or in use by another application.'), _('Info'), MB_ICONINFORMATION);
     end;
   finally
     // Wenn Result = True wird FPlayer in LoadFile() neu erstellt
@@ -701,12 +732,11 @@ begin
     FreeAndNil(FPlayer);
   end;
 
-  TempFile := RemoveFileExt(FFilename) + '_soxconvert' + ExtractFileExt(FFilename);
-
-  CmdLine := '"' + GetSoX.SoXExe + '" --multi-threaded "' + FFilename + '" ' + '"' + TempFile + '" ' + CmdLine;
-
   if FWaveData <> nil then
     FreeAndNil(FWaveData);
+
+  TempFile := RemoveFileExt(FFilename) + '_soxconvert' + ExtractFileExt(FFilename);
+  CmdLine := StringReplace(CmdLine, '[[TEMPFILE]]', TempFile, [rfReplaceAll]);
 
   FWasSaved := True;
   FState := csWorking;
@@ -751,16 +781,18 @@ begin
   if not CheckSoX then
     Exit;
 
+  CmdLine := '"' + GetSoX.SoXExe + '" --norm "' + FFilename + '" ' + '"[[TEMPFILE]]" ';
+
   if Fadein then
   begin
     FadeTo := Max(FPB.FEffectStartLine, FPB.FEffectEndLine);
 
-    CmdLine := 'fade p ' + IntToStr(Round(FWaveData.WaveArray[FadeTo].Sec))
+    CmdLine := CmdLine + 'fade p ' + IntToStr(Round(FWaveData.WaveArray[FadeTo].Sec))
   end else
   begin
     FadeStart := Min(FPB.FEffectStartLine, FPB.FEffectEndLine);
 
-    CmdLine := 'fade p 0 ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - (FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - FWaveData.WaveArray[FadeStart].Sec))) + ' ' +
+    CmdLine := CmdLine + 'fade p 0 ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - (FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - FWaveData.WaveArray[FadeStart].Sec))) + ' ' +
       IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - FWaveData.WaveArray[FadeStart].Sec))
   end;
 
@@ -825,7 +857,7 @@ begin
   if not CheckSoX then
     Exit;
 
-  F := TfrmConfigureSox.Create(Self, GetSox, False, False, 5, 5, False, False, 3, 3);
+  F := TfrmConfigureSox.Create(Self, GetSox, False, False, False, 5, 5, False, False, 3, 3);
   try
     F.ShowModal;
 
@@ -833,24 +865,30 @@ begin
     begin
       CmdLine := '';
 
+      if F.Normalize then
+        CmdLine := CmdLine + 'gain -b -n';
+
       if F.FadeoutStart and F.FadeoutEnd then
-        CmdLine := 'fade p ' + IntToStr(F.FadeoutStartLength) + ' ' + IntToStr(Round(FWaveData.Secs) - F.FadeoutEndLength) + ' ' + IntToStr(F.FadeoutEndLength)
+        CmdLine := CmdLine + ' fade p ' + IntToStr(F.FadeoutStartLength) + ' ' + IntToStr(Round(FWaveData.Secs) - F.FadeoutEndLength) + ' ' + IntToStr(F.FadeoutEndLength)
       else if F.FadeoutStart then
-        CmdLine := 'fade p ' + IntToStr(F.FadeoutStartLength)
+        CmdLine := CmdLine + ' fade p ' + IntToStr(F.FadeoutStartLength)
       else if F.FadeoutEnd then
-        CmdLine := 'fade p 0 ' + IntToStr(Round(FWaveData.Secs) - F.FadeoutEndLength) + ' ' + IntToStr(F.FadeoutEndLength);
+        CmdLine := CmdLine + ' fade p 0 ' + IntToStr(Round(FWaveData.Secs) - F.FadeoutEndLength) + ' ' + IntToStr(F.FadeoutEndLength);
 
       if F.SilenceStart and F.SilenceEnd then
-        CmdLine := CmdLine + ' ' + 'pad ' + IntToStr(F.SilenceStartLength) + ' ' + IntToStr(F.SilenceEndLength)
+        CmdLine := CmdLine + ' pad ' + IntToStr(F.SilenceStartLength) + ' ' + IntToStr(F.SilenceEndLength)
       else if F.SilenceStart then
-        CmdLine := CmdLine + ' ' + 'pad ' + IntToStr(F.SilenceStartLength)
+        CmdLine := CmdLine + ' pad ' + IntToStr(F.SilenceStartLength)
       else if F.SilenceEnd then
-        CmdLine := CmdLine + ' ' + 'pad 0 ' + IntToStr(F.SilenceEndLength);
+        CmdLine := CmdLine + ' pad 0 ' + IntToStr(F.SilenceEndLength);
 
       if CmdLine <> '' then
       begin
         if not AddUndo then
           Exit;
+
+        CmdLine := '"' + GetSoX.SoXExe + '" --norm "' + FFilename + '" ' + '"[[TEMPFILE]]" ' + CmdLine;
+
         StartProcessing(CmdLine);
       end;
     end;
@@ -1016,6 +1054,8 @@ end;
 
 procedure TCutView.ThreadEndScan(Sender: TObject);
 begin
+  FProgressBarLoad.Visible := False;
+
   if FWaveData <> nil then
     FWaveData.Free;
   FWaveData := FScanThread.FWaveData;
@@ -1038,10 +1078,6 @@ begin
 
   FState := csReady;
 
-  FPB.BuildBuffer;
-  FPB.BuildDrawBuffer;
-  FPB.Repaint;
-
   if FWasSaved then
   begin
     if Assigned(TCutTab(Owner).OnSaved) then
@@ -1051,6 +1087,10 @@ begin
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
+
+  FPB.Resize;
+  FPB.Paint;
+  FPB.Repaint;
 end;
 
 procedure TCutView.ThreadScanError(Sender: TObject);
@@ -1074,7 +1114,8 @@ end;
 procedure TCutView.ThreadTerminate(Sender: TObject);
 begin
   FWasSaved := False;
-  FProgressBarLoad.Visible := False;
+  if FProgressBarLoad.Visible then
+    FProgressBarLoad.Visible := False;
   FScanThread := nil;
   if FUndoStep <> nil then
     FreeAndNil(FUndoStep);
@@ -1762,5 +1803,6 @@ begin
 end;
 
 end.
+
 
 

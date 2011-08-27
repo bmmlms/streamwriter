@@ -32,15 +32,6 @@ type
     Bevel2: TBevel;
     btnOK: TBitBtn;
     pnlConfigure: TPanel;
-    Bevel1: TBevel;
-    chkFadeoutStart: TCheckBox;
-    chkFadeoutEnd: TCheckBox;
-    txtFadeoutStart: TLabeledEdit;
-    txtFadeoutEnd: TLabeledEdit;
-    chkSilenceStart: TCheckBox;
-    chkSilenceEnd: TCheckBox;
-    txtSilenceStart: TLabeledEdit;
-    txtSilenceEnd: TLabeledEdit;
     pnlSetup: TPanel;
     btnBrowse1: TSpeedButton;
     btnBrowse2: TSpeedButton;
@@ -48,12 +39,25 @@ type
     txtMadDLL: TLabeledEdit;
     lblInfo: TLabel;
     dlgOpen: TOpenDialog;
+    GroupBox1: TGroupBox;
+    txtFadeoutStart: TLabeledEdit;
+    chkFadeoutStart: TCheckBox;
+    txtFadeoutEnd: TLabeledEdit;
+    chkFadeoutEnd: TCheckBox;
+    GroupBox2: TGroupBox;
+    txtSilenceStart: TLabeledEdit;
+    chkSilenceStart: TCheckBox;
+    txtSilenceEnd: TLabeledEdit;
+    chkSilenceEnd: TCheckBox;
+    GroupBox3: TGroupBox;
+    chkNormalize: TCheckBox;
     procedure btnOKClick(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure chkClick(Sender: TObject);
     procedure btnBrowseClick(Sender: TObject);
   private
+    FNormalize: Boolean;
     FFadeoutStart: Boolean;
     FFadeoutEnd: Boolean;
     FFadeoutStartLength: Integer;
@@ -71,9 +75,11 @@ type
     procedure InitForm;
   public
     constructor Create(AOwner: TComponent; Plugin: TSoxPlugin); overload;
-    constructor Create(AOwner: TComponent; Plugin: TSoxPlugin; FadeoutStart, FadeoutEnd: Boolean; FadeoutStartLength, FadeoutEndLength: Integer;
-      SilenceStart, SilenceEnd: Boolean; SilenceStartLength, SilenceEndLength: Integer); reintroduce; overload;
+    constructor Create(AOwner: TComponent; Plugin: TSoxPlugin; Normalize, FadeoutStart, FadeoutEnd: Boolean;
+      FadeoutStartLength, FadeoutEndLength: Integer; SilenceStart, SilenceEnd: Boolean; SilenceStartLength,
+      SilenceEndLength: Integer); reintroduce; overload;
 
+    property Normalize: Boolean read FNormalize write FNormalize;
     property FadeoutStart: Boolean read FFadeoutStart write FFadeoutStart;
     property FadeoutEnd: Boolean read FFadeoutEnd write FFadeoutEnd;
     property FadeoutStartLength: Integer read FFadeoutStartLength write FFadeoutStartLength;
@@ -181,6 +187,8 @@ begin
     end else if (StrToIntDef(txtSilenceEnd.Text, 0) = 0) then
       txtSilenceEnd.Text := '5';
 
+    FNormalize := chkNormalize.Checked;
+
     FFadeoutStart := chkFadeoutStart.Checked;
     FFadeoutEnd := chkFadeoutEnd.Checked;
     FFadeoutStartLength := StrToInt(txtFadeoutStart.Text);
@@ -220,8 +228,9 @@ begin
   Language.Translate(Self);
 end;
 
-constructor TfrmConfigureSoX.Create(AOwner: TComponent; Plugin: TSoxPlugin; FadeoutStart, FadeoutEnd: Boolean; FadeoutStartLength, FadeoutEndLength: Integer;
-  SilenceStart, SilenceEnd: Boolean; SilenceStartLength, SilenceEndLength: Integer);
+constructor TfrmConfigureSoX.Create(AOwner: TComponent; Plugin: TSoxPlugin; Normalize, FadeoutStart,
+  FadeoutEnd: Boolean; FadeoutStartLength, FadeoutEndLength: Integer; SilenceStart, SilenceEnd: Boolean;
+  SilenceStartLength, SilenceEndLength: Integer);
 begin
   inherited Create(AOwner);
 
@@ -238,6 +247,8 @@ begin
     pnlConfigure.Show;
     btnOK.Caption := '&OK';
   end;
+
+  chkNormalize.Checked := Normalize;
 
   chkFadeoutStart.Checked := FadeoutStart;
   chkFadeoutEnd.Checked := FadeoutEnd;
@@ -267,7 +278,7 @@ var
   i: Integer;
   B: TBitmap;
 begin
-  Height := 243;
+  ClientHeight := pnlNav.Height + pnlConfigure.Height + 4;
   for i := 0 to Self.ControlCount - 1 do
   begin
     if Self.Controls[i] is TPanel then

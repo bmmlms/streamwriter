@@ -113,7 +113,8 @@ type
     FRecordingStarted: Boolean;
     FFullTitleFound: Boolean;
     FRecordingTitleFound: Boolean;
-    FHaltClient: Boolean;
+    FRemoveClient: Boolean;
+    FClientStopRecording: Boolean;
 
     FStreamTracks: TStreamTracks;
 
@@ -180,7 +181,8 @@ type
 
     property FullTitleFound: Boolean read FFullTitleFound write FFullTitleFound;
     property RecordingTitleFound: Boolean read FRecordingTitleFound write FRecordingTitleFound;
-    property HaltClient: Boolean read FHaltClient;
+    property RemoveClient: Boolean read FRemoveClient;
+    property ClientStopRecording: Boolean read FClientStopRecording write FClientStopRecording;
 
     property SaveAllowedTitle: string read FSaveAllowedTitle;
     property SaveAllowed: Boolean read FSaveAllowed write FSaveAllowed;
@@ -517,6 +519,9 @@ begin
   Saved := False;
 
   try
+    if FClientStopRecording then
+      Exit;
+
     if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
       P := TAudioStreamFile(FAudioStream).GetFrame(S, E)
     else
@@ -654,7 +659,10 @@ begin
     end;
   finally
     if (Title = FRecordTitle) and (FRecordTitle <> '') then
-      FHaltClient := True;
+      FRemoveClient := True;
+
+    if StopAfterSong then
+      FClientStopRecording := True;
   end;
 end;
 
@@ -970,19 +978,19 @@ begin
         if (FMetaCounter > 2) and (Track.E > -1) and (FAudioStream.Size > Track.E + Max(FBytesPerSec * (FSettings.SilenceBufferSeconds + 10) * 2, FBytesPerSec * (FSettings.SongBufferSeconds + 10) * 2)) then
         begin
           // Zuviel empfangen und Titel war nicht dabei
-          FHaltClient := True;
+          FRemoveClient := True;
         end;
       end;
 
       if (FAudioStream.Size > FBytesPerSec * 30) and (FMetaCounter = 1) then
       begin
         // Titel scheint nicht zu kommen..
-        FHaltClient := True;
+        FRemoveClient := True;
       end;
 
       // Paranoid, I is it.
       if FMetaCounter > 4 then
-        FHaltClient := True;
+        FRemoveClient := True;
     end;
 
     while RecvStream.Size > 0 do
@@ -1039,6 +1047,13 @@ begin
                 // Ist nur dafür da, um dem Server zu sagen "hier läuft jetzt ein volles Lied"
                 if (FMetaCounter >= 2) then
                   FFullTitleFound := True;
+
+                // Wenn eh nur ganze gespeichert werden sollen, dann jetzt schon raus,
+                // sonst wird nie ins SaveData gegangen, wo das auch gemacht wird.
+                if FStopAfterSong and (FMetaCounter = 2) and FSettings.OnlySaveFull then
+                begin
+                  FClientStopRecording := True;
+                end;
               end;
 
               if FSettings.SeparateTracks then

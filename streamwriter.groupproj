@@ -9,6 +9,9 @@
 			<Projects Include="plugins\sox\sox.dproj">
 				<Dependencies/>
 			</Projects>
+			<Projects Include="plugins\mp3gain\mp3gain.dproj">
+				<Dependencies/>
+			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -35,14 +38,23 @@
 		<Target Name="sox:Make">
 			<MSBuild Projects="plugins\sox\sox.dproj" Targets="Make"/>
 		</Target>
+		<Target Name="mp3gain">
+			<MSBuild Projects="plugins\mp3gain\mp3gain.dproj"/>
+		</Target>
+		<Target Name="mp3gain:Clean">
+			<MSBuild Projects="plugins\mp3gain\mp3gain.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="mp3gain:Make">
+			<MSBuild Projects="plugins\mp3gain\mp3gain.dproj" Targets="Make"/>
+		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="streamwriter;sox"/>
+			<CallTarget Targets="streamwriter;sox;mp3gain"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="streamwriter:Clean;sox:Clean"/>
+			<CallTarget Targets="streamwriter:Clean;sox:Clean;mp3gain:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="streamwriter:Make;sox:Make"/>
+			<CallTarget Targets="streamwriter:Make;sox:Make;mp3gain:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>

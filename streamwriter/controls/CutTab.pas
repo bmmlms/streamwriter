@@ -90,6 +90,7 @@ type
     property Filename: string read FFilename;
     property Volume: Integer write FSetVolume;
 
+    property CutView: TCutView read FCutView;
     property OnSaved: TFileSavedEvent read FOnSaved write FOnSaved;
     property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;

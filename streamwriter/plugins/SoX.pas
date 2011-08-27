@@ -41,6 +41,7 @@ type
     FCopied: Boolean;
     FSoXExe: string;
 
+    FNormalize: Boolean;
     FFadeoutStart: Boolean;
     FFadeoutEnd: Boolean;
     FFadeoutStartLength: Integer;
@@ -108,25 +109,29 @@ begin
   end;
 
   TempFile := RemoveFileExt(FData.Filename) + '_soxconvert' + ExtractFileExt(FData.Filename);
-  CmdLine := '"' + FSoxPath + '"' + ' --multi-threaded "' + FData.Filename + '" "' + TempFile + '" ';
 
   P := TSoXPlugin(Plugin);
 
+  CmdLine := '"' + FSoxPath + '"' + ' --norm "' + FData.Filename + '" "' + TempFile + '" ';
+
   Params := '';
 
+  if P.FNormalize then
+    Params := Params + 'gain -b -n';
+
   if P.FFadeoutStart and P.FFadeoutEnd then
-    Params := 'fade p ' + IntToStr(P.FFadeoutStartLength) + ' ' + IntToStr(FData.Length - P.FFadeoutEndLength) + ' ' + IntToStr(P.FFadeoutEndLength)
+    Params := ' fade p ' + IntToStr(P.FFadeoutStartLength) + ' ' + IntToStr(FData.Length - P.FFadeoutEndLength) + ' ' + IntToStr(P.FFadeoutEndLength)
   else if P.FFadeoutStart then
-    Params := 'fade p ' + IntToStr(P.FFadeoutStartLength)
+    Params := ' fade p ' + IntToStr(P.FFadeoutStartLength)
   else if P.FFadeoutEnd then
-    Params := 'fade p 0 ' + IntToStr(FData.Length - P.FFadeoutEndLength) + ' ' + IntToStr(P.FFadeoutEndLength);
+    Params := ' fade p 0 ' + IntToStr(FData.Length - P.FFadeoutEndLength) + ' ' + IntToStr(P.FFadeoutEndLength);
 
   if P.FSilenceStart and P.FSilenceEnd then
-    Params := Params + ' ' + 'pad ' + IntToStr(P.FSilenceStartLength) + ' ' + IntToStr(P.FSilenceEndLength)
+    Params := Params + ' pad ' + IntToStr(P.FSilenceStartLength) + ' ' + IntToStr(P.FSilenceEndLength)
   else if P.FSilenceStart then
-    Params := Params + ' ' + 'pad ' + IntToStr(P.FSilenceStartLength)
+    Params := Params + ' pad ' + IntToStr(P.FSilenceStartLength)
   else if P.FSilenceEnd then
-    Params := Params + ' ' + 'pad 0 ' + IntToStr(P.FSilenceEndLength);
+    Params := Params + ' pad 0 ' + IntToStr(P.FSilenceEndLength);
 
   if Params <> '' then
   begin
@@ -190,6 +195,7 @@ procedure TSoXPlugin.Assign(Source: TPluginBase);
 begin
   inherited;
 
+  FNormalize := TSoXPlugin(Source).FNormalize;
   FFadeoutStart := TSoXPlugin(Source).FFadeoutStart;
   FFadeoutEnd := TSoXPlugin(Source).FFadeoutEnd;
   FFadeoutStartLength := TSoXPlugin(Source).FFadeoutStartLength;
@@ -206,13 +212,15 @@ var
 begin
   Result := True;
 
-  F := TfrmConfigureSoX.Create(AOwner, Self, FFadeoutStart, FFadeoutEnd, FFadeoutStartLength, FFadeoutEndLength, FSilenceStart, FSilenceEnd,
-    FSilenceStartLength, FSilenceEndLength);
+  F := TfrmConfigureSoX.Create(AOwner, Self, FNormalize, FFadeoutStart, FFadeoutEnd,
+    FFadeoutStartLength, FFadeoutEndLength, FSilenceStart, FSilenceEnd, FSilenceStartLength,
+    FSilenceEndLength);
   try
     F.ShowModal;
 
     if F.SaveData then
     begin
+      FNormalize := F.Normalize;
       FFadeoutStart := F.FadeoutStart;
       FFadeoutEnd := F.FadeoutEnd;
       FFadeoutStartLength := F.FadeoutStartLength;
@@ -254,13 +262,15 @@ begin
   FFilesDir := AppGlobals.TempDir + 'sox\';
   FSoXExe := FFilesDir + 'sox.exe';
 
-  FName := _('Apply effects (using SoX)');
+  FName := _('Apply effects using SoX (MP3)');
   FHelp := _('This applies effects to recorded songs using SoX (Sound eXchange).');
 
   try
     AppGlobals.Storage.Read('Active_' + ClassName, FActive, True, 'Plugins');
     AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 90, 'Plugins');
     AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
+
+    AppGlobals.Storage.Read('Normalize_' + ClassName, FNormalize, False, 'Plugins');
 
     AppGlobals.Storage.Read('FadeoutStart_' + ClassName, FFadeoutStart, False, 'Plugins');
     AppGlobals.Storage.Read('FadeoutEnd_' + ClassName, FFadeoutEnd, False, 'Plugins');
@@ -432,7 +442,7 @@ begin
   if (not FGetReadyForUse) or (not FGetReadyForActivate) then
     ExtractFiles;
 
-  FName := _('Apply effects to MP3s (using SoX)');
+  FName := _('Apply effects using SoX (MP3)');
   FHelp := _('This applies effects to recorded songs in MP3-format using SoX (Sound eXchange).');
 end;
 
@@ -440,7 +450,7 @@ function TSoXPlugin.ProcessFile(
   Data: PPluginProcessInformation): TProcessThreadBase;
 begin
   Result := nil;
-  if (not FGetReadyForUse) or ((not FFadeoutStart) and (not FFadeoutEnd) and (not FSilenceStart) and (not FSilenceEnd)) then
+  if (not FGetReadyForUse) or ((not FNormalize) and (not FFadeoutStart) and (not FFadeoutEnd) and (not FSilenceStart) and (not FSilenceEnd)) then
     Exit;
 
   Result := TSoXThread.Create(Data, Self);
@@ -449,6 +459,8 @@ end;
 procedure TSoXPlugin.Save;
 begin
   inherited;
+
+  AppGlobals.Storage.Write('Normalize_' + ClassName, FNormalize, 'Plugins');
 
   AppGlobals.Storage.Write('FadeoutStart_' + ClassName, FFadeoutStart, 'Plugins');
   AppGlobals.Storage.Write('FadeoutEnd_' + ClassName, FFadeoutEnd, 'Plugins');

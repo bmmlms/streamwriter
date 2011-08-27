@@ -185,7 +185,8 @@ begin
   begin
     FIgnoreList.Clear;
     for i := 0 to lstIgnoreTitles.Items.Count - 1 do
-      FIgnoreList.Add(Trim(lstIgnoreTitles.Items[i].Caption));
+      if Trim(lstIgnoreTitles.Items[i].Caption) <> '' then
+        FIgnoreList.Add(Trim(lstIgnoreTitles.Items[i].Caption));
     HomeComm.SetDataIgnoreTracks(FID, FIgnoreList);
     FSaveSettings := True;
   end;

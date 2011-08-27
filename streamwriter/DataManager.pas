@@ -125,6 +125,7 @@ type
   TTrackList = class(TList<TTrackInfo>)
   public
     procedure RemoveTrack(Track: TTrackInfo);
+    function GetTrack(Filename: string): TTrackInfo;
   end;
 
   TRecentEntry = class
@@ -1112,6 +1113,16 @@ begin
 end;
 
 { TTrackList }
+
+function TTrackList.GetTrack(Filename: string): TTrackInfo;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+    if LowerCase(Items[i].FFilename) = LowerCase(Filename) then
+      Exit(Items[i]);
+end;
 
 procedure TTrackList.RemoveTrack(Track: TTrackInfo);
 begin
