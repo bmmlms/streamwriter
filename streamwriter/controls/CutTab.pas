@@ -374,7 +374,7 @@ begin
 
   FApplyEffects := TToolButton.Create(Self);
   FApplyEffects.Parent := Self;
-  FApplyEffects.Hint := 'Apply effects';
+  FApplyEffects.Hint := 'Apply effects...';
   FApplyEffects.ImageIndex := 56;
 
   FSep := TToolButton.Create(Self);

@@ -112,7 +112,7 @@ begin
 
   P := TSoXPlugin(Plugin);
 
-  CmdLine := '"' + FSoxPath + '"' + ' --norm "' + FData.Filename + '" "' + TempFile + '" ';
+  CmdLine := '"' + FSoxPath + '" --norm "' + FData.Filename + '" "' + TempFile + '" ';
 
   Params := '';
 
@@ -183,8 +183,8 @@ begin
 
           FResult := arWin;
         end;
-      end else
-        DeleteFile(PChar(TempFile));
+      end;
+      DeleteFile(PChar(TempFile));
     end;
   end;
 end;
@@ -263,7 +263,7 @@ begin
   FSoXExe := FFilesDir + 'sox.exe';
 
   FName := _('Apply effects using SoX (MP3)');
-  FHelp := _('This applies effects to recorded songs using SoX (Sound eXchange).');
+  FHelp := _('This plugin applies effects to recorded songs using SoX (Sound eXchange) (MP3 only).');
 
   try
     AppGlobals.Storage.Read('Active_' + ClassName, FActive, True, 'Plugins');
@@ -443,7 +443,7 @@ begin
     ExtractFiles;
 
   FName := _('Apply effects using SoX (MP3)');
-  FHelp := _('This applies effects to recorded songs in MP3-format using SoX (Sound eXchange).');
+  FHelp := _('This plugin applies effects to recorded songs using SoX (Sound eXchange) (MP3 only).');
 end;
 
 function TSoXPlugin.ProcessFile(

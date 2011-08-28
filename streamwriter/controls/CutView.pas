@@ -1756,15 +1756,17 @@ begin
       end;
     end;
 
-    if not Failed then
-      if not DeleteFile(PChar(FFilePath)) then
-        Failed := True;
+    //if not Failed then
+    //  if not DeleteFile(PChar(FFilePath)) then
+    //    Failed := True;
 
+    // Hier ist MoveFileEx, damit der DirWatcher keine Benachrichtigung bekommt.
     if not Failed then
-      if not MoveFile(PChar(TempFile), PChar(FFilePath)) then
+      if not MoveFileEx(PChar(TempFile), PChar(FFilePath), MOVEFILE_REPLACE_EXISTING) then
         Failed := True;
-  end else
-    DeleteFile(PChar(TempFile));
+  end;
+
+  DeleteFile(PChar(TempFile));
 
   if Failed then
     SyncError

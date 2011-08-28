@@ -543,6 +543,7 @@ begin
   FConnected := False;
   FAuthenticated := False;
   FIsAdmin := False;
+  FTitleNotificationsSet := False;
   FClient := nil;
   Thread := THomeThread(Sender);
 

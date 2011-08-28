@@ -340,6 +340,12 @@ begin
     Sleep(100);
   end;
 
+  if FTypedStream.StopAfterSong then
+  begin
+    if Assigned(FOnRecordingStopped) then
+      Sync(FOnRecordingStopped);
+  end;
+
   // Das hier ist die Schlaf-Zeit, die von aussen festgelegt wird. Nicht Retry-Delay!
   Sleep(FSleepTime * 1000);
 end;

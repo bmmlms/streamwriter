@@ -127,9 +127,6 @@ type
     btnMoveUp: TPngSpeedButton;
     chkDiscardSmaller: TCheckBox;
     pnlFilenames: TPanel;
-    txtPreview: TLabeledEdit;
-    txtFilePattern: TLabeledEdit;
-    txtFilePatternDecimals: TLabeledEdit;
     lblFilePattern: TLabel;
     Label18: TLabel;
     lstDefaultActionBrowser: TComboBox;
@@ -141,15 +138,10 @@ type
     pnlStreamsAdvanced: TPanel;
     txtTitlePattern: TLabeledEdit;
     btnResetTitlePattern: TPngSpeedButton;
-    btnResetFilePattern: TPngSpeedButton;
     btnConfigure: TButton;
-    txtIncompleteFilePattern: TLabeledEdit;
-    btnResetIncompleteFilePattern: TPngSpeedButton;
-    txtIncompletePreview: TLabeledEdit;
     chkRememberRecordings: TCheckBox;
     chkDisplayPlayNotifications: TCheckBox;
     chkAutoTuneInConsiderIgnore: TCheckBox;
-    txtRemoveChars: TLabeledEdit;
     pnlBandwidth: TPanel;
     Label11: TLabel;
     txtMaxSpeed: TLabeledEdit;
@@ -169,6 +161,19 @@ type
     optAdjustBackward: TRadioButton;
     optAdjustForward: TRadioButton;
     chkAutoTuneInAddToIgnore: TCheckBox;
+    pnlFilenamesExt: TPanel;
+    txtRemoveChars: TLabeledEdit;
+    txtFilePatternDecimals: TLabeledEdit;
+    txtFilePattern: TLabeledEdit;
+    btnResetFilePattern: TPngSpeedButton;
+    txtPreview: TLabeledEdit;
+    txtIncompleteFilePattern: TLabeledEdit;
+    btnResetIncompleteFilePattern: TPngSpeedButton;
+    txtIncompletePreview: TLabeledEdit;
+    txtAutomaticPreview: TLabeledEdit;
+    txtAutomaticFilePattern: TLabeledEdit;
+    btnResetAutomaticFilePattern: TPngSpeedButton;
+    btnResetRemoveChars: TPngSpeedButton;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
@@ -230,6 +235,8 @@ type
     procedure optAdjustClick(Sender: TObject);
     procedure lstIgnoreTitlesEdited(Sender: TObject; Item: TListItem;
       var S: string);
+    procedure txtAutomaticFilePatternChange(Sender: TObject);
+    procedure btnResetRemoveCharsClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -682,19 +689,20 @@ begin
       btnReset.Parent := pnlNav;
       btnReset.Caption := '&Apply general settings';
       btnReset.OnClick := btnResetClick;
-    end else
-    begin
-      chkAutoTuneInClick(chkAutoTuneIn);
-    end;
 
-    if Length(FStreamSettings) >= 1 then
-    begin
       for i := 0 to Settings.IgnoreTrackChangePattern.Count - 1 do
       begin
         Item := lstIgnoreTitles.Items.Add;
         Item.Caption := Settings.IgnoreTrackChangePattern[i];
         Item.ImageIndex := 1;
       end;
+
+      txtAutomaticFilePattern.Visible := False;
+      btnResetAutomaticFilePattern.Visible := False;
+      txtAutomaticPreview.Visible := False;
+    end else
+    begin
+      chkAutoTuneInClick(chkAutoTuneIn);
     end;
 
     FBrowseDir := BrowseDir;
@@ -702,7 +710,7 @@ begin
 
     SetFields;
 
-    ClientWidth := 510;
+    ClientWidth := 525;
     ClientHeight := 430;
 
     for i := 0 to Self.ControlCount - 1 do
@@ -893,6 +901,7 @@ begin
   AppGlobals.Lock;
   txtFilePattern.Text := Settings.FilePattern;
   txtIncompleteFilePattern.Text := Settings.IncompleteFilePattern;
+  txtAutomaticFilePattern.Text := AppGlobals.AutomaticFilePattern;
   txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
   txtRemoveChars.Text := Settings.RemoveChars;
 
@@ -1121,8 +1130,9 @@ begin
   end else
   begin
     AppGlobals.Lock;
-    AppGlobals.StreamSettings.FilePattern := txtFilePattern.Text;
-    AppGlobals.StreamSettings.IncompleteFilePattern := txtIncompleteFilePattern.Text;
+    AppGlobals.StreamSettings.FilePattern := Trim(txtFilePattern.Text);
+    AppGlobals.StreamSettings.IncompleteFilePattern := Trim(txtIncompleteFilePattern.Text);
+    AppGlobals.AutomaticFilePattern := Trim(txtAutomaticFilePattern.Text);
     AppGlobals.StreamSettings.FilePatternDecimals := StrToIntDef(txtFilePatternDecimals.Text, 3);
     AppGlobals.StreamSettings.RemoveChars := txtRemoveChars.Text;
     AppGlobals.StreamSettings.DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
@@ -1651,6 +1661,7 @@ begin
     FPageList.Add(TPage.Create('Settings', pnlMain, 'PROPERTIES'));
     FPageList.Add(TPage.Create('Streams', pnlStreams, 'APPICON'));
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
+    FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
     FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Postprocessing', pnlPlugins, 'LIGHTNING'));
     FPageList.Add(TPage.Create('Bandwidth', pnlBandwidth, 'BANDWIDTH'));
@@ -1663,6 +1674,7 @@ begin
     FPageList.Add(TPage.Create('Streams', pnlStreams, 'APPICON'));
     FPageList.Add(TPage.Create('Advanced', pnlStreamsAdvanced, 'MISC', FPageList.Find(pnlStreams)));
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
+    FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
     FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
   end;
@@ -1725,6 +1737,15 @@ begin
   inherited;
   if (lstPlugins.Selected <> nil) and txtAppParams.Focused then
     TExternalPlugin(lstPlugins.Selected.Data).Params := txtAppParams.Text;
+end;
+
+procedure TfrmSettings.txtAutomaticFilePatternChange(Sender: TObject);
+begin
+  inherited;
+  txtAutomaticPreview.Text := ValidatePattern(txtAutomaticFilePattern.Text);
+
+  if Trim(RemoveFileExt(txtAutomaticPreview.Text)) = '' then
+    txtAutomaticPreview.Text := '';
 end;
 
 procedure TfrmSettings.txtFilePatternChange(Sender: TObject);
@@ -2005,11 +2026,23 @@ begin
   begin
     txtFilePattern.Text := '%s\%a - %t';
     RemoveGray(txtFilePattern);
-  end else
+  end else if Sender = btnResetIncompleteFilePattern then
   begin
     txtIncompleteFilePattern.Text := '%s\%a - %t';
     RemoveGray(txtIncompleteFilePattern);
+  end else
+  begin
+    txtAutomaticFilePattern.Text := '%s\%a - %t';
+    RemoveGray(txtAutomaticFilePattern);
   end;
+end;
+
+procedure TfrmSettings.btnResetRemoveCharsClick(Sender: TObject);
+begin
+  inherited;
+
+  txtRemoveChars.Text := '[]{}#$§%~^';
+  RemoveGray(txtRemoveChars);
 end;
 
 procedure TfrmSettings.btnResetTitlePatternClick(Sender: TObject);
@@ -2084,7 +2117,7 @@ begin
 
   if Trim(RemoveFileExt(ValidatePattern(txtFilePattern.Text))) = '' then
   begin
-    MsgBox(Handle, _('Please enter a valid pattern for filenames, i.e. a preview text must be visible.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('Please enter a valid pattern for filenames of completely recorded tracks, i.e. a preview text must be visible.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePattern.Parent)));
     txtFilePattern.SetFocus;
     Exit;
@@ -2092,9 +2125,17 @@ begin
 
   if Trim(RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Text))) = '' then
   begin
-    MsgBox(Handle, _('Please enter a valid pattern for names of incomplete files, i.e. a preview text must be visible.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('Please enter a valid pattern for filenames of incompletely recorded tracks, i.e. a preview text must be visible.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtIncompleteFilePattern.Parent)));
     txtIncompleteFilePattern.SetFocus;
+    Exit;
+  end;
+
+  if Trim(RemoveFileExt(ValidatePattern(txtAutomaticFilePattern.Text))) = '' then
+  begin
+    MsgBox(Handle, _('Please enter a valid pattern for filenames of automatically recorded tracks, i.e. a preview text must be visible.'), _('Info'), MB_ICONINFORMATION);
+    SetPage(FPageList.Find(TPanel(txtAutomaticFilePattern.Parent)));
+    txtAutomaticFilePattern.SetFocus;
     Exit;
   end;
 

@@ -166,6 +166,7 @@ type
     FLimitSpeed: Boolean;
     FMaxSpeed: Cardinal;
     FLastBrowserUpdate: Cardinal;
+    FAutomaticFilePattern: string;
 
     FShortcutPlay: Cardinal;
     FShortcutPause: Cardinal;
@@ -231,6 +232,7 @@ type
     property LimitSpeed: Boolean read FLimitSpeed write FLimitSpeed;
     property MaxSpeed: Cardinal read FMaxSpeed write FMaxSpeed;
     property LastBrowserUpdate: Cardinal read FLastBrowserUpdate write FLastBrowserUpdate;
+    property AutomaticFilePattern: string read FAutomaticFilePattern write FAutomaticFilePattern;
 
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
     property ClientCols: Integer read FClientCols write FClientCols;
@@ -531,6 +533,10 @@ begin
 
     Text.Add('D1734FA178BF7D5AE50CB1AD54442494');
 
+    Text.Add('');
+    Text.Add('');
+    Text.Add('Korrekt, Banze!');
+
     FProjectThanksText := Text.Text;
   finally
     Text.Free;
@@ -609,6 +615,7 @@ begin
   if FMaxSpeed <= 0 then
     FLimitSpeed := False;
   FStorage.Read('LastBrowserUpdate', FLastBrowserUpdate, Trunc(Now));
+  FStorage.Read('AutomaticFilePattern', FAutomaticFilePattern, '%s\%a - %t');
 
   FStorage.Read('AutoTuneInMinKbps', FAutoTuneInMinKbps, 3);
   FStorage.Read('AutoTuneInFormat', FAutoTuneInFormat, 0);
@@ -767,6 +774,7 @@ begin
   FStorage.Write('LimitSpeed', FLimitSpeed);
   FStorage.Write('MaxSpeed', FMaxSpeed);
   FStorage.Write('LastBrowserUpdate', FLastBrowserUpdate);
+  FStorage.Write('AutomaticFilePattern', FAutomaticFilePattern);
 
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));

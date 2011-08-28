@@ -1437,6 +1437,7 @@ begin
     FILE_ACTION_REMOVED:
       begin
         RemoveTrack(Track);
+        FTab.FStreams.TrackList.RemoveTrack(Track);
       end;
     FILE_ACTION_RENAMED_NEW_NAME:
       begin

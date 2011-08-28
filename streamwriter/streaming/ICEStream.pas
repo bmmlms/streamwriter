@@ -50,6 +50,8 @@ type
 
   TCheckResults = (crSave, crDiscard, crOverwrite);
 
+  TTitleStates = (tsFull, tsIncomplete, tsAuto);
+
   TFileChecker = class
   private
     FSettings: TStreamSettings;
@@ -61,12 +63,12 @@ type
 
     function GetValidFilename(Name: string): string;
     function GetAppendNumber(Dir, Filename, Extension: string): Integer;
-    function TitleInfoToFilename(Artist, Title: string; FullTitle: Boolean): string;
+    function TitleInfoToFilename(Artist, Title: string; TitleState: TTitleStates): string;
   public
     constructor Create(Streamname, Dir: string; SongsSaved: Cardinal; Settings: TStreamSettings);
 
     procedure GetStreamFilename(Name: string; AudioType: TAudioTypes);
-    procedure GetFilename(Filesize: UInt64; Artist, Title: string; AudioType: TAudioTypes; FullTitle: Boolean);
+    procedure GetFilename(Filesize: UInt64; Artist, Title: string; AudioType: TAudioTypes; TitleState: TTitleStates);
 
     property Result: TCheckResults read FResult;
     property SaveDir: string read FSaveDir;
@@ -91,6 +93,7 @@ type
     FSaveDirAuto: string;
 
     FMetaCounter: Integer;
+    FRecordingSessionMetaCounter: Integer;
 
     FTitle: string;
     FSavedFilename: string;
@@ -299,6 +302,7 @@ begin
 
   FMetaInt := -1;
   FMetaCounter := 0;
+  FRecordingSessionMetaCounter := 0;
   FSongsSaved := 0;
   FFilename := '';
   FBitRate := 0;
@@ -515,6 +519,7 @@ var
   FileCheck: TFileChecker;
   P: TPosRect;
   Error: Cardinal;
+  TitleState: TTitleStates;
 begin
   Saved := False;
 
@@ -558,7 +563,17 @@ begin
         FileCheck := TFileChecker.Create(FStreamName, FSaveDir, FSongsSaved, FSettings);
 
       try
-        FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FAudioType, FullTitle);
+        if FRecordTitle <> '' then
+          TitleState := tsAuto
+        else
+        begin
+          if FullTitle then
+            TitleState := tsFull
+          else
+            TitleState := tsIncomplete;
+        end;
+
+        FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FAudioType, TitleState);
         if (FileCheck.Result in [crSave, crOverwrite]) and (FileCheck.FFilename <> '') then
         begin
           Dir := FileCheck.SaveDir;
@@ -669,6 +684,10 @@ end;
 procedure TICEStream.StartRecording;
 begin
   FRecordingStarted := True;
+  if FMetaCounter > 0 then
+    FRecordingSessionMetaCounter := 1
+  else
+    FRecordingSessionMetaCounter := 0;
 end;
 
 procedure TICEStream.StopRecording;
@@ -1043,6 +1062,7 @@ begin
                 WriteDebug(Format(_('"%s" now playing'), [Title]), 2, 0);
                 TitleChanged := True;
                 Inc(FMetaCounter);
+                Inc(FRecordingSessionMetaCounter);
 
                 // Ist nur dafür da, um dem Server zu sagen "hier läuft jetzt ein volles Lied"
                 if (FMetaCounter >= 2) then
@@ -1050,7 +1070,7 @@ begin
 
                 // Wenn eh nur ganze gespeichert werden sollen, dann jetzt schon raus,
                 // sonst wird nie ins SaveData gegangen, wo das auch gemacht wird.
-                if FStopAfterSong and (FMetaCounter = 2) and FSettings.OnlySaveFull then
+                if FStopAfterSong and (FRecordingSessionMetaCounter = 2) and FSettings.OnlySaveFull then
                 begin
                   FClientStopRecording := True;
                 end;
@@ -1246,7 +1266,7 @@ begin
     Result := Append;
 end;
 
-procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title: string; AudioType: TAudioTypes; FullTitle: Boolean);
+procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title: string; AudioType: TAudioTypes; TitleState: TTitleStates);
 var
   Filename, Ext: string;
 begin
@@ -1263,7 +1283,7 @@ begin
       Ext := '.ogg';
   end;
 
-  Filename := TitleInfoToFilename(Artist, Title, FullTitle);
+  Filename := TitleInfoToFilename(Artist, Title, TitleState);
   Filename := GetValidFilename(Filename);
 
   if FileExists(FSaveDir + Filename + Ext) then
@@ -1346,7 +1366,7 @@ begin
   Result := StringReplace(Result, '|', ' ', [rfReplaceAll]);
 end;
 
-function TFileChecker.TitleInfoToFilename(Artist, Title: string; FullTitle: Boolean): string;
+function TFileChecker.TitleInfoToFilename(Artist, Title: string; TitleState: TTitleStates): string;
 var
   i: Integer;
   Dir, StreamName: string;
@@ -1386,10 +1406,18 @@ begin
   Arr[5].C := 'i';
   Arr[5].Replace := FormatDateTime('hh.nn.ss', Now);
 
-  if FullTitle then
-    Replaced := PatternReplace(FSettings.FilePattern, Arr)
-  else
-    Replaced := PatternReplace(FSettings.IncompleteFilePattern, Arr);
+  case TitleState of
+    tsFull:
+      Replaced := PatternReplace(FSettings.FilePattern, Arr);
+    tsIncomplete:
+      Replaced := PatternReplace(FSettings.IncompleteFilePattern, Arr);
+    tsAuto:
+      begin
+        AppGlobals.Lock;
+        Replaced := PatternReplace(AppGlobals.AutomaticFilePattern, Arr);
+        AppGlobals.Unlock;
+      end;
+  end;
 
   // REMARK: Das folgende ist so genau gleich auch im Settings-Fenster.. wegen DRY..
   // Aneinandergereihte \ entfernen

@@ -106,6 +106,7 @@ type
     FColTitle: TVirtualTreeColumn;
 
     FLists: TDataLists;
+    FListType: TListType;
     FDropTarget: TDropComboTarget;
 
     function GetNode(Stream: TICEClient): PVirtualNode;
@@ -122,7 +123,7 @@ type
     function DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
   public
-    constructor Create(AOwner: TComponent; Lists: TDataLists);
+    constructor Create(AOwner: TComponent; Lists: TDataLists; T: TListType);
     destructor Destroy; override;
 
     procedure AddTitle(Title: TTitleInfo; Parent: PVirtualNode; ParentData: PTitleNodeData);
@@ -253,10 +254,7 @@ begin
 
     FTree.SortItems;
 
-    if (FList = FLists.SaveList) and AppGlobals.AutoTuneIn then
-    begin
-      HomeComm.SetTitleNotifications(FList.Count > 0);
-    end;
+    HomeComm.SetTitleNotifications((FList = FLists.SaveList) and (FList.Count > 0) and AppGlobals.AutoTuneIn);
   end else
     MsgBox(GetParentForm(Self).Handle, _('Please enter a pattern to add to list.'), _('Info'), MB_ICONINFORMATION);
 end;
@@ -328,10 +326,7 @@ begin
     DeleteList.Free;
   end;
 
-  if (FList = FLists.SaveList) and AppGlobals.AutoTuneIn then
-  begin
-    HomeComm.SetTitleNotifications(FList.Count > 0);
-  end;
+  HomeComm.SetTitleNotifications((FList = FLists.SaveList) and (FList.Count > 0) and AppGlobals.AutoTuneIn);
 
   FTree.EndUpdate;
 end;
@@ -488,10 +483,7 @@ begin
 
   FTree.SortItems;
 
-  if (FList = FLists.SaveList) and AppGlobals.AutoTuneIn then
-  begin
-    HomeComm.SetTitleNotifications(FList.Count > 0);
-  end;
+  HomeComm.SetTitleNotifications((FList = FLists.SaveList) and (FList.Count > 0) and AppGlobals.AutoTuneIn);
 end;
 
 procedure TTitlePanel.BuildTree;
@@ -645,7 +637,7 @@ begin
 
   FTopPanel.Height := FLabel.Height + FToolbarPanel.Height + 2;
 
-  FTree := TTitleTree.Create(Self, Lists);
+  FTree := TTitleTree.Create(Self, Lists, T);
   FTree.Parent := Self;
   FTree.Images := Images;
   FTree.Align := alClient;
@@ -796,14 +788,17 @@ begin
     NodeData.Stream := ParentData.Stream;
 
   if (Parent <> nil) and (Parent.ChildCount = 1) then
+  begin
     Expanded[Parent] := True;
+  end;
 end;
 
-constructor TTitleTree.Create(AOwner: TComponent; Lists: TDataLists);
+constructor TTitleTree.Create(AOwner: TComponent; Lists: TDataLists; T: TListType);
 begin
   inherited Create(AOwner);
 
   FLists := Lists;
+  FListType := T;
 
   NodeDataSize := SizeOf(TTitleNodeData);
   IncrementalSearch := isVisibleOnly;
@@ -958,6 +953,9 @@ begin
       Text := NodeData.Title.Title
     else
       Text := NodeData.Stream.Entry.Name;
+
+    if (Node.Parent = RootNode) and (FListType = ltIgnore) then
+      Text := Text + ' (' + IntToStr(ChildCount[Node]) + ')';
   end;
 end;
 

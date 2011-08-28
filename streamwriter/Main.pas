@@ -401,8 +401,8 @@ begin
   StartTime := GetTickCount;
   while (FClients.Count > 0) or (HomeComm.Connected) or (FClients.Active) or (FCheckFiles <> nil) or (FUpdater.Active) do
   begin
-    // 15 Sekunden warten, für sauberes beenden
-    if StartTime < GetTickCount - 15000 then
+    // 30 Sekunden warten, für sauberes beenden
+    if StartTime < GetTickCount - 30000 then
     begin
       Hard := True;
       Break;
@@ -773,10 +773,7 @@ begin
   if FCommunityLogin <> nil then
     FCommunityLogin.HomeCommStateChanged(Sender);
 
-  if HomeComm.Connected and (not HomeComm.WasConnected) and AppGlobals.AutoTuneIn then
-  begin
-    HomeComm.SetTitleNotifications(FDataLists.SaveList.Count > 0);
-  end;
+  HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 end;
 
 procedure TfrmStreamWriterMain.Hotkey(var Msg: TWMHotKey);
@@ -1141,13 +1138,7 @@ begin
     S.Free;
   end;
 
-  if HomeComm.Connected then
-  begin
-    if AppGlobals.AutoTuneIn then
-      HomeComm.SetTitleNotifications(FDataLists.SaveList.Count > 0)
-    else
-      HomeComm.SetTitleNotifications(False);
-  end;
+  HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 
   tabSaved.Tree.SetFileWatcher;
 
@@ -1382,10 +1373,7 @@ begin
       List.Add(T);
       tabLists.AddTitle(Client, ListType, T);
 
-      if (ListType = ltSave) and AppGlobals.AutoTuneIn then
-      begin
-        HomeComm.SetTitleNotifications(True);
-      end;
+      HomeComm.SetTitleNotifications((ListType = ltSave) and AppGlobals.AutoTuneIn);
     end;
   end;
 end;

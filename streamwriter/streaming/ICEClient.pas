@@ -329,6 +329,8 @@ end;
 
 procedure TICEClient.StopRecording;
 begin
+  FStopAfterSong := False;
+
   FFilename := '';
   if FICEThread <> nil then
   begin
@@ -860,7 +862,6 @@ begin
 
   if FStopAfterSong then
   begin
-    StopAfterSong := False;
     StopRecording;
     if not DiedThread.Playing then
     begin
