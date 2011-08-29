@@ -792,7 +792,7 @@ begin
   begin
     FadeStart := Min(FPB.FEffectStartLine, FPB.FEffectEndLine);
 
-    CmdLine := CmdLine + 'fade p 0 ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - (FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - FWaveData.WaveArray[FadeStart].Sec))) + ' ' +
+    CmdLine := CmdLine + 'fade p 0 ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec)) + ' ' +
       IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - FWaveData.WaveArray[FadeStart].Sec))
   end;
 
@@ -869,11 +869,11 @@ begin
         CmdLine := CmdLine + 'gain -b -n';
 
       if F.FadeoutStart and F.FadeoutEnd then
-        CmdLine := CmdLine + ' fade p ' + IntToStr(F.FadeoutStartLength) + ' ' + IntToStr(Round(FWaveData.Secs) - F.FadeoutEndLength) + ' ' + IntToStr(F.FadeoutEndLength)
+        CmdLine := CmdLine + ' fade p ' + IntToStr(F.FadeoutStartLength) + ' ' + IntToStr(Round(FWaveData.Secs)) + ' ' + IntToStr(F.FadeoutEndLength)
       else if F.FadeoutStart then
         CmdLine := CmdLine + ' fade p ' + IntToStr(F.FadeoutStartLength)
       else if F.FadeoutEnd then
-        CmdLine := CmdLine + ' fade p 0 ' + IntToStr(Round(FWaveData.Secs) - F.FadeoutEndLength) + ' ' + IntToStr(F.FadeoutEndLength);
+        CmdLine := CmdLine + ' fade p 0 ' + IntToStr(Round(FWaveData.Secs)) + ' ' + IntToStr(F.FadeoutEndLength);
 
       if F.SilenceStart and F.SilenceEnd then
         CmdLine := CmdLine + ' pad ' + IntToStr(F.SilenceStartLength) + ' ' + IntToStr(F.SilenceEndLength)
