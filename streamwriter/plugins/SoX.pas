@@ -120,11 +120,11 @@ begin
     Params := Params + 'gain -b -n';
 
   if P.FFadeoutStart and P.FFadeoutEnd then
-    Params := ' fade p ' + IntToStr(P.FFadeoutStartLength) + ' ' + IntToStr(Round(FData.Length)) + ' ' + IntToStr(P.FFadeoutEndLength)
+    Params := ' fade p ' + IntToStr(P.FFadeoutStartLength) + ' ' + IntToStr(FData.Length) + ' ' + IntToStr(P.FFadeoutEndLength)
   else if P.FFadeoutStart then
     Params := ' fade p ' + IntToStr(P.FFadeoutStartLength)
   else if P.FFadeoutEnd then
-    Params := ' fade p 0 ' + IntToStr(Round(FData.Length)) + ' ' + IntToStr(P.FFadeoutEndLength);
+    Params := ' fade p 0 ' + IntToStr(FData.Length) + ' ' + IntToStr(P.FFadeoutEndLength);
 
   if P.FSilenceStart and P.FSilenceEnd then
     Params := Params + ' pad ' + IntToStr(P.FSilenceStartLength) + ' ' + IntToStr(P.FSilenceEndLength)
