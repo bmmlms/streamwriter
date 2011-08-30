@@ -63,6 +63,7 @@ type
 
     function GetValidFilename(Name: string): string;
     function GetAppendNumber(Dir, Filename, Extension: string): Integer;
+    function StreamInfoToFilename(Name: string): string;
     function TitleInfoToFilename(Artist, Title: string; TitleState: TTitleStates): string;
   public
     constructor Create(Streamname, Dir: string; SongsSaved: Cardinal; Settings: TStreamSettings);
@@ -1333,8 +1334,7 @@ begin
       Name := _('Unknown stream');
     end;
 
-    Name := Trim(Name);
-
+    Name := StreamInfoToFilename(Trim(Name));
     FFilename := GetValidFilename(Name);
 
     if FileExists(FSaveDir + Filename + Ext) then
@@ -1364,6 +1364,50 @@ begin
   Result := StringReplace(Result, '<', ' ', [rfReplaceAll]);
   Result := StringReplace(Result, '>', ' ', [rfReplaceAll]);
   Result := StringReplace(Result, '|', ' ', [rfReplaceAll]);
+end;
+
+function TFileChecker.StreamInfoToFilename(Name: string): string;
+var
+  i: Integer;
+  Dir, StreamName: string;
+  Replaced: string;
+  Arr: TPatternReplaceArray;
+begin
+  inherited;
+
+  Dir := '';
+
+  StreamName := Trim(GetValidFileName(Name));
+  if Length(StreamName) > 80 then
+    StreamName := Copy(StreamName, 1, 80);
+
+  if StreamName = '' then
+    StreamName := _('Unknown stream');
+
+  SetLength(Arr, 3);
+  Arr[0].C := 's';
+  Arr[0].Replace := Trim(StreamName);
+  Arr[1].C := 'd';
+  Arr[1].Replace := FormatDateTime('dd.mm.yy', Now);
+  Arr[2].C := 'i';
+  Arr[2].Replace := FormatDateTime('hh.nn.ss', Now);
+
+  Replaced := PatternReplace(FSettings.StreamFilePattern, Arr);
+
+  // Ungültige Zeichen entfernen
+  Replaced := StringReplace(Replaced, '\', '_', [rfReplaceAll]);
+  Replaced := StringReplace(Replaced, '/', '_', [rfReplaceAll]);
+  Replaced := StringReplace(Replaced, ':', '_', [rfReplaceAll]);
+  Replaced := StringReplace(Replaced, '*', '_', [rfReplaceAll]);
+  Replaced := StringReplace(Replaced, '"', '_', [rfReplaceAll]);
+  Replaced := StringReplace(Replaced, '?', '_', [rfReplaceAll]);
+  Replaced := StringReplace(Replaced, '<', '_', [rfReplaceAll]);
+  Replaced := StringReplace(Replaced, '>', '_', [rfReplaceAll]);
+  Replaced := StringReplace(Replaced, '|', '_', [rfReplaceAll]);
+
+  Result := Replaced;
+
+  //Result := ExtractFileName(Replaced);
 end;
 
 function TFileChecker.TitleInfoToFilename(Artist, Title: string; TitleState: TTitleStates): string;

@@ -169,11 +169,11 @@ type
     txtPreview: TLabeledEdit;
     txtIncompleteFilePattern: TLabeledEdit;
     btnResetIncompleteFilePattern: TPngSpeedButton;
-    txtIncompletePreview: TLabeledEdit;
-    txtAutomaticPreview: TLabeledEdit;
     txtAutomaticFilePattern: TLabeledEdit;
     btnResetAutomaticFilePattern: TPngSpeedButton;
     btnResetRemoveChars: TPngSpeedButton;
+    txtStreamFilePattern: TLabeledEdit;
+    btnResetStreamFilePattern: TPngSpeedButton;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
@@ -220,7 +220,6 @@ type
     procedure btnResetFilePatternClick(Sender: TObject);
     procedure lstPluginsItemChecked(Sender: TObject; Item: TListItem);
     procedure btnConfigureClick(Sender: TObject);
-    procedure txtIncompleteFilePatternChange(Sender: TObject);
     procedure txtRemoveCharsChange(Sender: TObject);
     procedure chkLimitClick(Sender: TObject);
     procedure lstIgnoreTitlesResize(Sender: TObject);
@@ -235,8 +234,10 @@ type
     procedure optAdjustClick(Sender: TObject);
     procedure lstIgnoreTitlesEdited(Sender: TObject; Item: TListItem;
       var S: string);
-    procedure txtAutomaticFilePatternChange(Sender: TObject);
     procedure btnResetRemoveCharsClick(Sender: TObject);
+    procedure txtFilePatternClick(Sender: TObject);
+    procedure txtStreamFilePatternChange(Sender: TObject);
+    procedure txtStreamFilePatternClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -251,7 +252,10 @@ type
     FLists: TDataLists;
     lstBlacklist: TBlacklistTree;
     btnReset: TBitBtn;
+    FActivePreviewField: TLabeledEdit;
+
     function ValidatePattern(Text: string): string;
+    function ValidateStreamPattern(Text: string): string;
     function GetNewID: Integer;
 
     function GetStringListHash(Lst: TStringList): Cardinal;
@@ -269,6 +273,7 @@ type
     procedure RegisterPages; override;
     procedure Finish; override;
     function CanFinish: Boolean; override;
+    procedure SetPage(Page: TPage); override;
     procedure PreTranslate; override;
     procedure PostTranslate; override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
@@ -333,6 +338,19 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
     end;
     if F then
       AddField(txtIncompleteFilePattern);
+
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
+      if S.StreamFilePattern <> FStreamSettings[i].StreamFilePattern then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(txtStreamFilePattern);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -699,7 +717,10 @@ begin
 
       txtAutomaticFilePattern.Visible := False;
       btnResetAutomaticFilePattern.Visible := False;
-      txtAutomaticPreview.Visible := False;
+
+      txtStreamFilePattern.Top := txtIncompleteFilePattern.Top + (txtIncompleteFilePattern.Top - txtFilePattern.Top);
+      btnResetStreamFilePattern.Top := btnResetIncompleteFilePattern.Top + (btnResetIncompleteFilePattern.Top - btnResetFilePattern.Top);
+      txtPreview.Top := txtStreamFilePattern.Top + (txtIncompleteFilePattern.Top - txtFilePattern.Top);
     end else
     begin
       chkAutoTuneInClick(chkAutoTuneIn);
@@ -902,6 +923,7 @@ begin
   txtFilePattern.Text := Settings.FilePattern;
   txtIncompleteFilePattern.Text := Settings.IncompleteFilePattern;
   txtAutomaticFilePattern.Text := AppGlobals.AutomaticFilePattern;
+  txtStreamFilePattern.Text := Settings.StreamFilePattern;
   txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
   txtRemoveChars.Text := Settings.RemoveChars;
 
@@ -1022,10 +1044,13 @@ begin
     for i := 0 to Length(FStreamSettings) - 1 do
     begin
       if FIgnoreFieldList.IndexOf(txtFilePattern) = -1 then
-        FStreamSettings[i].FilePattern := txtFilePattern.Text;
+        FStreamSettings[i].FilePattern := Trim(txtFilePattern.Text);
 
       if FIgnoreFieldList.IndexOf(txtIncompleteFilePattern) = -1 then
-        FStreamSettings[i].IncompleteFilePattern := txtIncompleteFilePattern.Text;
+        FStreamSettings[i].IncompleteFilePattern := Trim(txtIncompleteFilePattern.Text);
+
+      if FIgnoreFieldList.IndexOf(txtStreamFilePattern) = -1 then
+        FStreamSettings[i].StreamFilePattern := Trim(txtStreamFilePattern.Text);
 
       if FIgnoreFieldList.IndexOf(txtFilePatternDecimals) = -1 then
         FStreamSettings[i].FilePatternDecimals := StrToIntDef(txtFilePatternDecimals.Text, 3);
@@ -1582,8 +1607,12 @@ begin
     lstPlugins.Items[i].Caption := TPluginBase(lstPlugins.Items[i].Data).Name;
   end;
 
-  txtPreview.Text := ValidatePattern(txtFilePattern.Text);
-  txtIncompletePreview.Text := ValidatePattern(txtIncompleteFilePattern.Text);
+  if FActivePreviewField <> nil then
+  begin
+    txtPreview.Text := ValidatePattern(FActivePreviewField.Text);
+    if Trim(RemoveFileExt(txtPreview.Text)) = '' then
+      txtPreview.Text := '';
+  end;
 
   BuildHotkeys;
 
@@ -1651,6 +1680,37 @@ begin
   if Length(Result) > 0 then
     if Result[Length(Result)] = '\' then
       Result := Copy(Result, 1, Length(Result) - 1);
+  Result := Result + '.mp3';
+end;
+
+function TfrmSettings.ValidateStreamPattern(Text: string): string;
+var
+  Arr: TPatternReplaceArray;
+  i: Integer;
+begin
+  inherited;
+
+  SetLength(Arr, 3);
+  Arr[0].C := 's';
+  Arr[0].Replace := _('Streamname');
+  Arr[1].C := 'd';
+  Arr[1].Replace := FormatDateTime('dd.mm.yy', Now);
+  Arr[2].C := 'i';
+  Arr[2].Replace := FormatDateTime('hh.nn.ss', Now);
+
+  Result := PatternReplace(Text, Arr);
+
+  // Ungültige Zeichen entfernen
+  Result := StringReplace(Result, '\', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '/', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, ':', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '*', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '"', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '?', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '<', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '>', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '|', '_', [rfReplaceAll]);
+
   Result := Result + '.mp3';
 end;
 
@@ -1724,6 +1784,14 @@ begin
       TListView(FIgnoreFieldList[i]).Color := clGrayText;
 end;
 
+procedure TfrmSettings.SetPage(Page: TPage);
+begin
+  inherited;
+
+  if Page = FPageList.Find(pnlFilenames) then
+    txtPreview.Text := '';
+end;
+
 procedure TfrmSettings.txtAdjustTrackOffsetChange(Sender: TObject);
 begin
   inherited;
@@ -1739,33 +1807,43 @@ begin
     TExternalPlugin(lstPlugins.Selected.Data).Params := txtAppParams.Text;
 end;
 
-procedure TfrmSettings.txtAutomaticFilePatternChange(Sender: TObject);
-begin
-  inherited;
-  txtAutomaticPreview.Text := ValidatePattern(txtAutomaticFilePattern.Text);
-
-  if Trim(RemoveFileExt(txtAutomaticPreview.Text)) = '' then
-    txtAutomaticPreview.Text := '';
-end;
-
 procedure TfrmSettings.txtFilePatternChange(Sender: TObject);
 begin
   inherited;
-  txtPreview.Text := ValidatePattern(txtFilePattern.Text);
+
+  if FInitialized then
+  begin
+    RemoveGray(Sender as TLabeledEdit);
+
+    FActivePreviewField := Sender as TLabeledEdit;
+    txtPreview.Text := ValidatePattern(FActivePreviewField.Text);
+
+    if Trim(RemoveFileExt(txtPreview.Text)) = '' then
+      txtPreview.Text := '';
+  end;
+end;
+
+procedure TfrmSettings.txtFilePatternClick(Sender: TObject);
+begin
+  inherited;
+
+  FActivePreviewField := Sender as TLabeledEdit;
+  txtPreview.Text := ValidatePattern(FActivePreviewField.Text);
 
   if Trim(RemoveFileExt(txtPreview.Text)) = '' then
     txtPreview.Text := '';
-
-  if FInitialized then
-    RemoveGray(txtFilePattern);
 end;
 
 procedure TfrmSettings.txtFilePatternDecimalsChange(Sender: TObject);
 begin
   inherited;
 
-  txtPreview.Text := ValidatePattern(txtFilePattern.Text);
-  txtIncompletePreview.Text := ValidatePattern(txtIncompleteFilePattern.Text);
+  if FActivePreviewField <> nil then
+  begin
+    txtPreview.Text := ValidatePattern(FActivePreviewField.Text);
+    if Trim(RemoveFileExt(txtPreview.Text)) = '' then
+      txtPreview.Text := '';
+  end;
 
   if FInitialized then
     RemoveGray(txtFilePatternDecimals);
@@ -1780,18 +1858,6 @@ end;
 procedure TfrmSettings.txtIgnoreTitlePatternChange(Sender: TObject);
 begin
   btnAddIgnoreTitlePattern.Enabled := Length(Trim(txtIgnoreTitlePattern.Text)) >= 1;
-end;
-
-procedure TfrmSettings.txtIncompleteFilePatternChange(Sender: TObject);
-begin
-  inherited;
-  txtIncompletePreview.Text := ValidatePattern(txtIncompleteFilePattern.Text);
-
-  if Trim(RemoveFileExt(txtIncompletePreview.Text)) = '' then
-    txtIncompletePreview.Text := '';
-
-  if FInitialized then
-    RemoveGray(txtIncompleteFilePattern);
 end;
 
 procedure TfrmSettings.txtMaxRetriesChange(Sender: TObject);
@@ -1856,6 +1922,33 @@ begin
 
   if FInitialized then
     RemoveGray(txtSongBuffer);
+end;
+
+procedure TfrmSettings.txtStreamFilePatternChange(Sender: TObject);
+begin
+  inherited;
+
+  if FInitialized then
+  begin
+    RemoveGray(Sender as TLabeledEdit);
+
+    FActivePreviewField := Sender as TLabeledEdit;
+    txtPreview.Text := ValidateStreamPattern(FActivePreviewField.Text);
+
+    if Trim(RemoveFileExt(txtPreview.Text)) = '' then
+      txtPreview.Text := '';
+  end;
+end;
+
+procedure TfrmSettings.txtStreamFilePatternClick(Sender: TObject);
+begin
+  inherited;
+
+  FActivePreviewField := Sender as TLabeledEdit;
+  txtPreview.Text := ValidateStreamPattern(FActivePreviewField.Text);
+
+  if Trim(RemoveFileExt(txtPreview.Text)) = '' then
+    txtPreview.Text := '';
 end;
 
 procedure TfrmSettings.txtTitlePatternChange(Sender: TObject);
@@ -2025,15 +2118,22 @@ begin
   if Sender = btnResetFilePattern then
   begin
     txtFilePattern.Text := '%s\%a - %t';
+    txtFilePattern.SetFocus;
     RemoveGray(txtFilePattern);
   end else if Sender = btnResetIncompleteFilePattern then
   begin
     txtIncompleteFilePattern.Text := '%s\%a - %t';
+    txtIncompleteFilePattern.SetFocus;
     RemoveGray(txtIncompleteFilePattern);
-  end else
+  end else if Sender = btnResetAutomaticFilePattern then
   begin
     txtAutomaticFilePattern.Text := '%s\%a - %t';
+    txtAutomaticFilePattern.SetFocus;
     RemoveGray(txtAutomaticFilePattern);
+  end else
+  begin
+    txtStreamFilePattern.Text := '%s';
+    txtStreamFilePattern.SetFocus;
   end;
 end;
 
@@ -2117,7 +2217,7 @@ begin
 
   if Trim(RemoveFileExt(ValidatePattern(txtFilePattern.Text))) = '' then
   begin
-    MsgBox(Handle, _('Please enter a valid pattern for filenames of completely recorded tracks, i.e. a preview text must be visible.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('Please enter a valid pattern for filenames of completely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePattern.Parent)));
     txtFilePattern.SetFocus;
     Exit;
@@ -2125,7 +2225,7 @@ begin
 
   if Trim(RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Text))) = '' then
   begin
-    MsgBox(Handle, _('Please enter a valid pattern for filenames of incompletely recorded tracks, i.e. a preview text must be visible.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('Please enter a valid pattern for filenames of incompletely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtIncompleteFilePattern.Parent)));
     txtIncompleteFilePattern.SetFocus;
     Exit;
@@ -2133,9 +2233,17 @@ begin
 
   if Trim(RemoveFileExt(ValidatePattern(txtAutomaticFilePattern.Text))) = '' then
   begin
-    MsgBox(Handle, _('Please enter a valid pattern for filenames of automatically recorded tracks, i.e. a preview text must be visible.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('Please enter a valid pattern for filenames of automatically recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtAutomaticFilePattern.Parent)));
     txtAutomaticFilePattern.SetFocus;
+    Exit;
+  end;
+
+  if Trim(RemoveFileExt(ValidateStreamPattern(txtStreamFilePattern.Text))) = '' then
+  begin
+    MsgBox(Handle, _('Please enter a valid pattern for filenames of stream files so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
+    SetPage(FPageList.Find(TPanel(txtStreamFilePattern.Parent)));
+    txtStreamFilePattern.SetFocus;
     Exit;
   end;
 
@@ -2396,11 +2504,13 @@ begin
     if (not chkSeparateTracks.Checked) or (chkSaveStreamsToMemory.Checked) then
       chkDeleteStreams.Checked := False;
 
+    // REMARK: Auskommentiert. Ich weiß nicht, welchen Sinn die Meldung macht...
+    {
     if (not chkSeparateTracks.Checked) then
       TfrmMsgDlg.ShowMsg(Self, _('When saving streams without saving separate tracks, keep in mind to change the pattern ' +
                                  'for names of saved files, because the variables for artist, title and tracknumber ' +
                                  '(%a, %t, %n) will only be filled with default values.'), 2, btOK);
-
+    }
     Application.ProcessMessages;
 
     EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));

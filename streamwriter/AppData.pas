@@ -64,6 +64,7 @@ type
     FTitlePattern: string;
     FFilePattern: string;
     FIncompleteFilePattern: string;
+    FStreamFilePattern: string;
     FFilePatternDecimals: Cardinal;
     FRemoveChars: string;
     FDeleteStreams: Boolean;
@@ -104,6 +105,7 @@ type
     property TitlePattern: string read FTitlePattern write FTitlePattern;
     property FilePattern: string read FFilePattern write FFilePattern;
     property IncompleteFilePattern: string read FIncompleteFilePattern write FIncompleteFilePattern;
+    property StreamFilePattern: string read FStreamFilePattern write FStreamFilePattern;
     property FilePatternDecimals: Cardinal read FFilePatternDecimals write FFilePatternDecimals;
     property RemoveChars: string read FRemoveChars write FRemoveChars;
     property DeleteStreams: Boolean read FDeleteStreams write FDeleteStreams;
@@ -555,6 +557,7 @@ begin
 
   FStorage.Read('FilePattern', FStreamSettings.FFilePattern, '%s\%a - %t');
   FStorage.Read('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern, '%s\%a - %t');
+  FStorage.Read('StreamFilePattern', FStreamSettings.FStreamFilePattern, '%s');
   FStorage.Read('FilePatternDecimals', FStreamSettings.FFilePatternDecimals, 3);
   FStorage.Read('RemoveChars', FStreamSettings.FRemoveChars, '[]{}#$§%~^');
 
@@ -732,6 +735,7 @@ begin
 
   FStorage.Write('FilePattern', FStreamSettings.FFilePattern);
   FStorage.Write('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern);
+  FStorage.Write('StreamFilePattern', FStreamSettings.FStreamFilePattern);
   FStorage.Write('FilePatternDecimals', FStreamSettings.FFilePatternDecimals);
   FStorage.Write('RemoveChars', FStreamSettings.FRemoveChars);
 
@@ -890,6 +894,14 @@ begin
   end else
     Result.FIncompleteFilePattern := Result.FFilePattern;
 
+  if Version >= 31 then
+  begin
+    Stream.Read(Result.FStreamFilePattern);
+    if Result.FStreamFilePattern = '' then
+      Result.FStreamFilePattern := '%s';
+  end else
+    Result.FStreamFilePattern := '%s';
+
   if Version >= 14 then
     Stream.Read(Result.FFilePatternDecimals)
   else
@@ -1020,6 +1032,7 @@ begin
   Stream.Write(FTitlePattern);
   Stream.Write(FFilePattern);
   Stream.Write(FIncompleteFilePattern);
+  Stream.Write(FStreamFilePattern);
   Stream.Write(FFilePatternDecimals);
   Stream.Write(FRemoveChars);
   Stream.Write(FDeleteStreams);
@@ -1055,6 +1068,7 @@ begin
   FTitlePattern := From.FTitlePattern;
   FFilePattern := From.FFilePattern;
   FIncompleteFilePattern := From.FIncompleteFilePattern;
+  FStreamFilePattern := From.FStreamFilePattern;
   FFilePatternDecimals := From.FilePatternDecimals;
   FRemoveChars := From.RemoveChars;
   FDeleteStreams := From.FDeleteStreams;
