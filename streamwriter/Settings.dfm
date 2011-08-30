@@ -411,7 +411,7 @@ object frmSettings: TfrmSettings
       OnClick = btnBrowseAppClick
     end
     object btnHelp: TPngSpeedButton
-      Left = 269
+      Left = 266
       Top = 56
       Width = 24
       Height = 25
@@ -422,10 +422,9 @@ object frmSettings: TfrmSettings
       ShowHint = True
       OnClick = btnHelpClick
       PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
-      ExplicitTop = 72
     end
     object btnMoveDown: TPngSpeedButton
-      Left = 269
+      Left = 266
       Top = 28
       Width = 24
       Height = 25
@@ -435,7 +434,7 @@ object frmSettings: TfrmSettings
       PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     end
     object btnMoveUp: TPngSpeedButton
-      Left = 269
+      Left = 266
       Top = 0
       Width = 24
       Height = 25
@@ -447,7 +446,7 @@ object frmSettings: TfrmSettings
     object lstPlugins: TListView
       Left = 4
       Top = 1
-      Width = 261
+      Width = 257
       Height = 80
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]

@@ -1157,6 +1157,7 @@ begin
     AppGlobals.Lock;
     AppGlobals.StreamSettings.FilePattern := Trim(txtFilePattern.Text);
     AppGlobals.StreamSettings.IncompleteFilePattern := Trim(txtIncompleteFilePattern.Text);
+    AppGlobals.StreamSettings.StreamFilePattern := Trim(txtStreamFilePattern.Text);
     AppGlobals.AutomaticFilePattern := Trim(txtAutomaticFilePattern.Text);
     AppGlobals.StreamSettings.FilePatternDecimals := StrToIntDef(txtFilePatternDecimals.Text, 3);
     AppGlobals.StreamSettings.RemoveChars := txtRemoveChars.Text;
