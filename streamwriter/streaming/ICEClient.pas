@@ -512,7 +512,14 @@ begin
           FOnURLsReceived(Self);
       end else
       begin
-        raise Exception.Create(_('Response was HTTP, but without supported playlist or redirect'));
+        if FICEThread.RecvStream.ResponseCode = 404 then
+          raise Exception.Create(_('HTTP error 404, document not found'))
+        else
+          if IntToStr(FICEThread.RecvStream.ResponseCode)[1] <> '2' then
+            raise Exception.Create(Format(_('HTTP error %d'),
+              [FICEThread.RecvStream.ResponseCode]))
+          else
+            raise Exception.Create(_('Response was HTTP, but without supported playlist or redirect'));
       end;
     end else
     begin
