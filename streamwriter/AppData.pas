@@ -334,7 +334,7 @@ begin
 
   inherited Create(AppName, True, W, 650);
 
-  FRecoveryFile := TempDir + 'streamwriter_data_recovery.dat';
+  FRecoveryFile := FStorage.DataDir + 'streamwriter_data_recovery.dat';
 
   FBuildNumber := 221;
 

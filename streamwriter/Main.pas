@@ -665,6 +665,7 @@ begin
           Recovered := True;
         finally
           S.Free;
+          DeleteFile(AppGlobals.RecoveryFile);
         end;
       except
         MsgBox(0, _('Data could not be loaded.'), _('Error'), MB_ICONERROR);
