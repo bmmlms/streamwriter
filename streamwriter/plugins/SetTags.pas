@@ -115,7 +115,7 @@ begin
   FOrder := 100;
 
   FName := _('Set ID3-tags');
-  FHelp := _('This adds ID3-tags to saved songs.');
+  FHelp := _('This plugin adds ID3-tags to recorded songs.');
 
   try
     AppGlobals.Storage.Read('Active_' + ClassName, FActive, True, 'Plugins');
@@ -143,7 +143,7 @@ procedure TSetTagsPlugin.Initialize;
 begin
   inherited;
   FName := _('Set ID3-tags');
-  FHelp := _('This adds ID3-tags to saved songs.');
+  FHelp := _('This plugin adds ID3-tags to recorded songs.');
 end;
 
 function TSetTagsPlugin.ProcessFile(

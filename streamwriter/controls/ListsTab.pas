@@ -254,7 +254,7 @@ begin
 
     FTree.SortItems;
 
-    HomeComm.SetTitleNotifications((FList = FLists.SaveList) and (FList.Count > 0) and AppGlobals.AutoTuneIn);
+    HomeComm.SetTitleNotifications((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
   end else
     MsgBox(GetParentForm(Self).Handle, _('Please enter a pattern to add to list.'), _('Info'), MB_ICONINFORMATION);
 end;
@@ -326,7 +326,7 @@ begin
     DeleteList.Free;
   end;
 
-  HomeComm.SetTitleNotifications((FList = FLists.SaveList) and (FList.Count > 0) and AppGlobals.AutoTuneIn);
+  HomeComm.SetTitleNotifications((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 
   FTree.EndUpdate;
 end;
@@ -511,7 +511,7 @@ begin
 
   FTree.SortItems;
 
-  HomeComm.SetTitleNotifications((FList = FLists.SaveList) and (FList.Count > 0) and AppGlobals.AutoTuneIn);
+  HomeComm.SetTitleNotifications((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 end;
 
 procedure TTitlePanel.BuildTree;

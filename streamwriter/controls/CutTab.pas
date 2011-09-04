@@ -354,7 +354,7 @@ begin
 
   FAutoCut := TToolButton.Create(Self);
   FAutoCut.Parent := Self;
-  FAutoCut.Hint := 'Show silence according to configured settings';
+  FAutoCut.Hint := 'Show silence...';
   FAutoCut.ImageIndex := 19;
 
   FSep := TToolButton.Create(Self);
@@ -399,12 +399,12 @@ begin
 
   FApplyFadeout := TToolButton.Create(Self);
   FApplyFadeout.Parent := Self;
-  FApplyFadeout.Hint := 'Apply Fadeout';
+  FApplyFadeout.Hint := 'Apply fadeout';
   FApplyFadeout.ImageIndex := 55;
 
   FApplyFadein := TToolButton.Create(Self);
   FApplyFadein.Parent := Self;
-  FApplyFadein.Hint := 'Apply Fadein';
+  FApplyFadein.Hint := 'Apply fadein';
   FApplyFadein.ImageIndex := 54;
 
   FZoomOut := TToolButton.Create(Self);

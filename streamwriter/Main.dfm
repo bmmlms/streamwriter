@@ -398,8 +398,8 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       OnExecute = actLogOffExecute
     end
     object actTimers: TAction
-      Caption = 'Setup t&imers...'
-      Hint = 'Setup timers...'
+      Caption = 'Setup scheduled record&ings...'
+      Hint = 'Setup scheduled recordings...'
       ImageIndex = 50
       OnExecute = actTimersExecute
     end

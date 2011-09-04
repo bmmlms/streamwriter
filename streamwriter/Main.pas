@@ -665,13 +665,11 @@ begin
           Recovered := True;
         finally
           S.Free;
-          DeleteFile(AppGlobals.RecoveryFile);
         end;
       except
         MsgBox(0, _('Data could not be loaded.'), _('Error'), MB_ICONERROR);
       end;
     end;
-    DeleteFile(AppGlobals.RecoveryFile);
   end;
 
   try
@@ -1436,7 +1434,7 @@ begin
       List.Add(T);
       tabLists.AddTitle(Client, ListType, T);
 
-      HomeComm.SetTitleNotifications((ListType = ltSave) and AppGlobals.AutoTuneIn);
+      HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
     end;
   end;
 end;
