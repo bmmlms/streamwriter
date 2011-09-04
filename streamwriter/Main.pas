@@ -1190,6 +1190,9 @@ procedure TfrmStreamWriterMain.ShowSettings(BrowseDir, BrowseAutoDir: Boolean);
 var
   S: TfrmSettings;
 begin
+  // Ist hier, damit der Profilexport korrekt funktioniert
+  tabClients.UpdateStreams(FDataLists);
+
   RegisterHotkeys(False);
   S := TfrmSettings.Create(Self, FDataLists, BrowseDir, BrowseAutoDir);
   try
