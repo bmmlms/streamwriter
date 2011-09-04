@@ -359,7 +359,6 @@ begin
   FStreamSettings.Free;
 
   DeleteFile(TempDir + 'playlist.m3u');
-  DeleteFile(FRecoveryFile);
 
   inherited;
 end;

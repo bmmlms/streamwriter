@@ -991,6 +991,8 @@ var
   i: Integer;
   S: TExtendedStream;
 begin
+  DeleteFile(AppGlobals.RecoveryFile);
+
   if (AppGlobals.SkipSave) or (AppGlobals.DataFile = '') then
   begin
     Exit;

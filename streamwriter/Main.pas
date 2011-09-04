@@ -671,6 +671,7 @@ begin
         MsgBox(0, _('Data could not be loaded.'), _('Error'), MB_ICONERROR);
       end;
     end;
+    DeleteFile(AppGlobals.RecoveryFile);
   end;
 
   try
