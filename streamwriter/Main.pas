@@ -33,7 +33,7 @@ uses
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
-  TypeDefs;
+  TypeDefs, ExtendedStream, SettingsStorage;
 
 type
   TSWStatusBar = class(TStatusBar)
@@ -204,6 +204,7 @@ type
     Addtoglobalignorelist1: TMenuItem;
     Addtostreamignorelist1: TMenuItem;
     N5: TMenuItem;
+    tmrAutoSave: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -229,6 +230,7 @@ type
     procedure actLogOffExecute(Sender: TObject);
     procedure actTimersExecute(Sender: TObject);
     procedure tmrScheduleTimer(Sender: TObject);
+    procedure tmrAutoSaveTimer(Sender: TObject);
   private
     FCommunityLogin: TfrmCommunityLogin;
 
@@ -258,7 +260,7 @@ type
     procedure Hotkey(var Msg: TWMHotKey); message WM_HOTKEY;
 
     function CanExitApp: Boolean;
-    procedure ExitApp(Shutdown: Boolean);
+    procedure ExitApp(Shutdown: Boolean; ImportFilename: string = '');
     procedure ShowSettings(BrowseDir, BrowseAutoDir: Boolean);
     procedure ShowUpdate(Version: string = ''; UpdateURL: string = '');
     procedure UpdateButtons;
@@ -323,12 +325,14 @@ uses
 
 {$R *.dfm}
 
-procedure TfrmStreamWriterMain.ExitApp(Shutdown: Boolean);
+procedure TfrmStreamWriterMain.ExitApp(Shutdown: Boolean; ImportFilename: string);
 var
   i: Integer;
   Res: Integer;
-  StartTime: Cardinal;
+  StartTime, Version: Cardinal;
   Saved, Hard: Boolean;
+  S: TExtendedStream;
+  Lst: TSettingsList;
 begin
   AppGlobals.MainMaximized := WindowState = wsMaximized;
   if not AppGlobals.MainMaximized then
@@ -352,7 +356,7 @@ begin
   TfrmNotification.Stop;
 
   Players.StopAll;
-  
+
   Hide;
 
   HomeComm.Terminate;
@@ -413,6 +417,28 @@ begin
 
   if FUpdateOnExit then
     FUpdater.RunUpdate(Handle);
+
+  if ImportFilename <> '' then
+  begin
+    try
+      S := TExtendedStream.Create;
+      try
+        S.LoadFromFile(ImportFilename);
+        S.Read(Version);
+        Lst := TSettingsList.Load(S);
+        AppGlobals.Storage.Assign(Lst);
+        FDataLists.Load(S);
+        FDataLists.Save;
+        RunProcess('"' + Application.ExeName + '" /profileupdate', False)
+      finally
+        Lst.Free;
+        S.Free;
+      end;
+    except
+      on E: Exception do
+        MsgBox(0, E.Message, '', 0);
+    end;
+  end;
 
   if Hard then
     Halt
@@ -554,6 +580,8 @@ begin
                                'Please add some artists/titles to your wishlist to try this new feature.'), btOK);
   end;
   AppGlobals.FirstStartShown := True;
+
+  tmrAutoSave.Enabled := True;
 end;
 
 procedure TfrmStreamWriterMain.FormClose(Sender: TObject;
@@ -576,6 +604,9 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
+var
+  Recovered: Boolean;
+  S: TExtendedStream;
 begin
   addStatus := TSWStatusBar.Create(Self);
   addStatus.Parent := Self;
@@ -621,8 +652,29 @@ begin
   FWasShown := False;
   FUpdateOnExit := False;
 
+  Recovered := False;
+  if FileExists(AppGlobals.RecoveryFile) then
+  begin
+    if MsgBox(0, _('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+    begin
+      try
+        S := TExtendedStream.Create;
+        try
+          S.LoadFromFile(AppGlobals.RecoveryFile);
+          FDataLists.Load(S);
+          Recovered := True;
+        finally
+          S.Free;
+        end;
+      except
+        MsgBox(0, _('Data could not be loaded.'), _('Error'), MB_ICONERROR);
+      end;
+    end;
+  end;
+
   try
-    FDataLists.Load;
+    if not Recovered then
+      FDataLists.Load;
   except
     on E: Exception do
     begin
@@ -630,7 +682,7 @@ begin
         FDataLists.Free;
       except end;
       FDataLists := TDataLists.Create;
-      // Damit beim beenden nichts überschrieben wird.
+      // Damit beim Beenden nichts überschrieben wird.
       FDataLists.LoadError := True;
 
       if HandleLoadError(E) = IDYES then
@@ -980,12 +1032,20 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.PostTranslate;
+var
+  NodeData: PClientNodeData;
 begin
   tabClients.SideBar.BrowserView.Translate;
   tabClients.SideBar.InfoView.Translate;
   tabClients.ClientView.Translate;
 
   tabSaved.Tree.Translate;
+
+  NodeData := tabClients.ClientView.GetNodeData(tabClients.ClientView.AutoNode);
+  NodeData.Category.Name := _('Managed streams');
+  tabClients.ClientView.Invalidate;
+
+  addStatus.Invalidate;
 end;
 
 procedure TfrmStreamWriterMain.mnuStreamPopupPopup(Sender: TObject);
@@ -1128,12 +1188,17 @@ end;
 procedure TfrmStreamWriterMain.ShowSettings(BrowseDir, BrowseAutoDir: Boolean);
 var
   S: TfrmSettings;
-  NodeData: PClientNodeData;
 begin
   RegisterHotkeys(False);
   S := TfrmSettings.Create(Self, FDataLists, BrowseDir, BrowseAutoDir);
   try
     S.ShowModal;
+
+    if S.ImportFilename <> '' then
+    begin
+      ExitApp(False, S.ImportFilename);
+      Exit;
+    end;
   finally
     S.Free;
   end;
@@ -1145,16 +1210,9 @@ begin
   Language.Translate(Self, PreTranslate, PostTranslate);
   AppGlobals.PluginManager.ReInitPlugins;
 
-  // Damit es sich übersetzt
-  addStatus.Invalidate;
-
   TrayIcon1.Visible := AppGlobals.Tray;
   ScreenSnap := AppGlobals.SnapMain;
   RegisterHotkeys(True);
-
-  NodeData := tabClients.ClientView.GetNodeData(tabClients.ClientView.AutoNode);
-  NodeData.Category.Name := _('Managed streams');
-  tabClients.ClientView.Invalidate;
 end;
 
 procedure TfrmStreamWriterMain.ShowUpdate(Version: string = '';
@@ -1454,6 +1512,24 @@ begin
       begin
         TCutTab(Tab).PausePlay;
       end;
+  end;
+end;
+
+procedure TfrmStreamWriterMain.tmrAutoSaveTimer(Sender: TObject);
+var
+  i: Integer;
+  Res: Integer;
+  StartTime: Cardinal;
+  Saved, Hard: Boolean;
+begin
+  if AppGlobals.SkipSave or FDataLists.LoadError then
+    Exit;
+
+  try
+    tabClients.UpdateStreams(FDataLists);
+    FDataLists.SaveRecover;
+  except
+    tmrAutoSave.Enabled := False;
   end;
 end;
 

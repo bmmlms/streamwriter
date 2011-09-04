@@ -308,8 +308,12 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure Load;
-    procedure Save;
+    procedure CleanLists;
+    procedure Load; overload;
+    procedure Load(S: TExtendedStream); overload;
+    procedure Save; overload;
+    procedure Save(S: TExtendedStream); overload;
+    procedure SaveRecover;
 
     property CategoryList: TListCategoryList read FCategoryList;
     property StreamList: TStreamList read FStreamList;
@@ -613,6 +617,49 @@ end;
 
 { TStreamDataList }
 
+procedure TDataLists.CleanLists;
+var
+  i: Integer;
+begin
+  for i := 0 to FCategoryList.Count - 1 do
+    FCategoryList[i].Free;
+  FCategoryList.Clear;
+
+  for i := 0 to FTrackList.Count - 1 do
+    FTrackList[i].Free;
+  FTrackList.Clear;
+
+  for i := 0 to FStreamList.Count - 1 do
+    FStreamList[i].Free;
+  FStreamList.Clear;
+
+  for i := 0 to FSaveList.Count - 1 do
+    FSaveList[i].Free;
+  FSaveList.Clear;
+
+  for i := 0 to FIgnoreList.Count - 1 do
+    FIgnoreList[i].Free;
+  FIgnoreList.Clear;
+
+  FSubmittedStreamList.Clear;
+
+  for i := 0 to FRecentList.Count - 1 do
+    FRecentList[i].Free;
+  FRecentList.Clear;
+
+  FStreamBlackList.Clear;
+
+  for i := 0 to FRatingList.Count - 1 do
+    FRatingList[i].Free;
+  FRatingList.Clear;
+
+  for i := 0 to FBrowserList.Count - 1 do
+    FBrowserList[i].Free;
+  FBrowserList.Clear;
+
+  FGenreList.Clear;
+end;
+
 constructor TDataLists.Create;
 begin
   inherited;
@@ -636,45 +683,194 @@ destructor TDataLists.Destroy;
 var
   i: Integer;
 begin
-  for i := 0 to FCategoryList.Count - 1 do
-    FCategoryList[i].Free;
+  CleanLists;
+
   FCategoryList.Free;
-
-  for i := 0 to FTrackList.Count - 1 do
-    FTrackList[i].Free;
   FTrackList.Free;
-
-  for i := 0 to FStreamList.Count - 1 do
-    FStreamList[i].Free;
   FStreamList.Free;
-
-  for i := 0 to FSaveList.Count - 1 do
-    FSaveList[i].Free;
   FSaveList.Free;
-
-  for i := 0 to FIgnoreList.Count - 1 do
-    FIgnoreList[i].Free;
   FIgnoreList.Free;
-
   FSubmittedStreamList.Free;
-
-  for i := 0 to FRecentList.Count - 1 do
-    FRecentList[i].Free;
   FRecentList.Free;
-
   FStreamBlackList.Free;
-
-  for i := 0 to FRatingList.Count - 1 do
-    FRatingList[i].Free;
   FRatingList.Free;
-
-  for i := 0 to FBrowserList.Count - 1 do
-    FBrowserList[i].Free;
   FBrowserList.Free;
-
   FGenreList.Free;
 
   inherited;
+end;
+
+procedure TDataLists.Load(S: TExtendedStream);
+var
+  Entry: TStreamEntry;
+  TitleInfo: TTitleInfo;
+  TrackInfo: TTrackInfo;
+  Str: string;
+  Version, CatCount, EntryCount: Integer;
+  i, n: Integer;
+begin
+  CleanLists;
+
+  S.Read(Version);
+
+  if Version > DATAVERSION then
+    raise EVersionException.Create(AppGlobals.DataFile);
+
+  S.Read(FReceived);
+
+  if Version <= 2 then
+  begin
+    while S.Position < S.Size do
+    begin
+      Entry := TStreamEntry.Load(S, Version);
+      Entry.FParent := FStreamList;
+      FStreamList.Add(Entry);
+    end;
+  end else
+  begin
+    if Version >= 5 then
+    begin
+      S.Read(CatCount);
+      for i := 0 to CatCount - 1 do
+      begin
+        FCategoryList.Add(TListCategory.Load(S, Version));
+      end;
+    end;
+
+    S.Read(EntryCount);
+    for i := 0 to EntryCount - 1 do
+    begin
+      Entry := TStreamEntry.Load(S, Version);
+      Entry.FParent := FStreamList;
+      FStreamList.Add(Entry);
+    end;
+
+    if Version >= 6 then
+    begin
+      S.Read(EntryCount);
+      for i := 0 to EntryCount - 1 do
+      begin
+        TrackInfo := TTrackInfo.Load(S, Version);
+        FTrackList.Add(TrackInfo);
+      end;
+    end;
+
+    if Version >= 3 then
+    begin
+      S.Read(EntryCount);
+      for i := 0 to EntryCount - 1 do
+      begin
+        TitleInfo := TTitleInfo.Load(S, Version);
+        if TitleInfo <> nil then
+          FSaveList.Add(TitleInfo);
+      end;
+      S.Read(EntryCount);
+      for i := 0 to EntryCount - 1 do
+      begin
+        TitleInfo := TTitleInfo.Load(S, Version);
+        if TitleInfo <> nil then
+          FIgnoreList.Add(TitleInfo);
+      end;
+
+      if Version >= 6 then
+      begin
+        S.Read(EntryCount);
+        for i := 0 to EntryCount - 1 do
+        begin
+          S.Read(Str);
+          FSubmittedStreamList.Add(Str);
+        end;
+
+        S.Read(EntryCount);
+        for i := 0 to EntryCount - 1 do
+          FRecentList.Add(TRecentEntry.Load(S, Version));
+
+        if Version >= 15 then
+        begin
+          S.Read(EntryCount);
+          for i := 0 to EntryCount - 1 do
+          begin
+            S.Read(Str);
+            FStreamBlacklist.Add(Str);
+          end;
+        end;
+
+        if Version = 22 then
+        begin
+          S.Read(EntryCount);
+          for i := 0 to EntryCount - 1 do
+            FRatingList.Add(TRatingEntry.Load(S, Version));
+        end;
+
+        if Version >= 23 then
+        begin
+          S.Read(EntryCount);
+          for i := 0 to EntryCount - 1 do
+            FBrowserList.Add(TStreamBrowserEntry.Load(S, Version));
+
+          S.Read(EntryCount);
+          for i := 0 to EntryCount - 1 do
+          begin
+            S.Read(Str);
+            FGenreList.Add(Str);
+          end;
+        end;
+      end;
+
+      // REMARK: Irgendwann raus. Fehler in Version 3... doppelte entfernen!
+      if Version = 3 then
+      begin
+        i := 0;
+        while True do
+        begin
+          for n := FSaveList.Count - 1 downto i + 1 do
+            if FSaveList[n].Hash = FSaveList[i].Hash then
+            begin
+              FSaveList[n].Free;
+              FSaveList.Delete(n);
+            end;
+          Inc(i);
+          if i > FSaveList.Count - 1 then
+            Break;
+        end;
+
+        i := 0;
+        while True do
+        begin
+          for n := FIgnoreList.Count - 1 downto i + 1 do
+            if FIgnoreList[n].Hash = FIgnoreList[i].Hash then
+            begin
+              FIgnoreList[n].Free;
+              FIgnoreList.Delete(n);
+            end;
+          Inc(i);
+          if i > FIgnoreList.Count - 1 then
+            Break;
+        end;
+      end;
+
+    end;
+  end;
+
+  if Version < 6 then
+  begin
+    for i := FStreamList.Count - 1 downto 0 do
+    begin
+      Entry := FStreamList[i];
+      // REMARK: Für das Update von 5 auf 6: Alle gespeicherten Tracks von
+      // den Entries in die TrackList übernehmen. Kann irgendwann weg.
+      // Natürlich auch das alte FSubmitted übernehmen.
+      for n := 0 to Entry.FMigrationTrackList.Count - 1 do
+      begin
+        FTrackList.Add(Entry.FMigrationTrackList[n]);
+      end;
+      Entry.FMigrationTrackList.Clear;
+      if Entry.FMigrationSubmitted then
+        FSubmittedStreamList.Add(Entry.StartURL);
+      if Entry.FMigrationRecentIndex > -1 then
+        FRecentList.Add(TRecentEntry.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, Entry.FMigrationRecentIndex));
+    end;
+  end;
 end;
 
 procedure TDataLists.Load;
@@ -699,166 +895,7 @@ begin
     end;
 
     try
-      S.Read(Version);
-
-      if Version > DATAVERSION then
-        raise EVersionException.Create(AppGlobals.DataFile);
-
-      S.Read(FReceived);
-
-      if Version <= 2 then
-      begin
-        while S.Position < S.Size do
-        begin
-          Entry := TStreamEntry.Load(S, Version);
-          Entry.FParent := FStreamList;
-          FStreamList.Add(Entry);
-        end;
-      end else
-      begin
-        if Version >= 5 then
-        begin
-          S.Read(CatCount);
-          for i := 0 to CatCount - 1 do
-          begin
-            FCategoryList.Add(TListCategory.Load(S, Version));
-          end;
-        end;
-
-        S.Read(EntryCount);
-        for i := 0 to EntryCount - 1 do
-        begin
-          Entry := TStreamEntry.Load(S, Version);
-          Entry.FParent := FStreamList;
-          FStreamList.Add(Entry);
-        end;
-
-        if Version >= 6 then
-        begin
-          S.Read(EntryCount);
-          for i := 0 to EntryCount - 1 do
-          begin
-            TrackInfo := TTrackInfo.Load(S, Version);
-            FTrackList.Add(TrackInfo);
-          end;
-        end;
-
-        if Version >= 3 then
-        begin
-          S.Read(EntryCount);
-          for i := 0 to EntryCount - 1 do
-          begin
-            TitleInfo := TTitleInfo.Load(S, Version);
-            if TitleInfo <> nil then
-              FSaveList.Add(TitleInfo);
-          end;
-          S.Read(EntryCount);
-          for i := 0 to EntryCount - 1 do
-          begin
-            TitleInfo := TTitleInfo.Load(S, Version);
-            if TitleInfo <> nil then
-              FIgnoreList.Add(TitleInfo);
-          end;
-
-          if Version >= 6 then
-          begin
-            S.Read(EntryCount);
-            for i := 0 to EntryCount - 1 do
-            begin
-              S.Read(Str);
-              FSubmittedStreamList.Add(Str);
-            end;
-
-            S.Read(EntryCount);
-            for i := 0 to EntryCount - 1 do
-              FRecentList.Add(TRecentEntry.Load(S, Version));
-
-            if Version >= 15 then
-            begin
-              S.Read(EntryCount);
-              for i := 0 to EntryCount - 1 do
-              begin
-                S.Read(Str);
-                FStreamBlacklist.Add(Str);
-              end;
-            end;
-
-            if Version = 22 then
-            begin
-              S.Read(EntryCount);
-              for i := 0 to EntryCount - 1 do
-                FRatingList.Add(TRatingEntry.Load(S, Version));
-            end;
-
-            if Version >= 23 then
-            begin
-              S.Read(EntryCount);
-              for i := 0 to EntryCount - 1 do
-                FBrowserList.Add(TStreamBrowserEntry.Load(S, Version));
-
-              S.Read(EntryCount);
-              for i := 0 to EntryCount - 1 do
-              begin
-                S.Read(Str);
-                FGenreList.Add(Str);
-              end;
-            end;
-          end;
-
-          // REMARK: Irgendwann raus. Fehler in Version 3... doppelte entfernen!
-          if Version = 3 then
-          begin
-            i := 0;
-            while True do
-            begin
-              for n := FSaveList.Count - 1 downto i + 1 do
-                if FSaveList[n].Hash = FSaveList[i].Hash then
-                begin
-                  FSaveList[n].Free;
-                  FSaveList.Delete(n);
-                end;
-              Inc(i);
-              if i > FSaveList.Count - 1 then
-                Break;
-            end;
-
-            i := 0;
-            while True do
-            begin
-              for n := FIgnoreList.Count - 1 downto i + 1 do
-                if FIgnoreList[n].Hash = FIgnoreList[i].Hash then
-                begin
-                  FIgnoreList[n].Free;
-                  FIgnoreList.Delete(n);
-                end;
-              Inc(i);
-              if i > FIgnoreList.Count - 1 then
-                Break;
-            end;
-          end;
-
-        end;
-      end;
-
-      if Version < 6 then
-      begin
-        for i := FStreamList.Count - 1 downto 0 do
-        begin
-          Entry := FStreamList[i];
-          // REMARK: Für das Update von 5 auf 6: Alle gespeicherten Tracks von
-          // den Entries in die TrackList übernehmen. Kann irgendwann weg.
-          // Natürlich auch das alte FSubmitted übernehmen.
-          for n := 0 to Entry.FMigrationTrackList.Count - 1 do
-          begin
-            FTrackList.Add(Entry.FMigrationTrackList[n]);
-          end;
-          Entry.FMigrationTrackList.Clear;
-          if Entry.FMigrationSubmitted then
-            FSubmittedStreamList.Add(Entry.StartURL);
-          if Entry.FMigrationRecentIndex > -1 then
-            FRecentList.Add(TRecentEntry.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, Entry.FMigrationRecentIndex));
-        end;
-      end;
+      Load(S);
     except
       on E: EVersionException do
       begin
@@ -873,6 +910,77 @@ begin
         raise Exception.Create(AppGlobals.DataFile);
       end;
     end;
+  finally
+    S.Free;
+  end;
+end;
+
+procedure TDataLists.Save(S: TExtendedStream);
+var
+  i: Integer;
+begin
+  S.Write(Integer(DATAVERSION));
+
+  S.Write(FReceived);
+
+  S.Write(FCategoryList.Count);
+  for i := 0 to FCategoryList.Count - 1 do
+    FCategoryList[i].Save(S);
+
+  S.Write(FStreamList.Count);
+  for i := 0 to FStreamList.Count - 1 do
+  begin
+    FStreamList[i].Save(S);
+  end;
+
+  S.Write(FTrackList.Count);
+  for i := 0 to FTrackList.Count - 1 do
+    FTrackList[i].Save(S);
+
+  S.Write(FSaveList.Count);
+  for i := 0 to FSaveList.Count - 1 do
+  begin
+    FSaveList[i].Save(S);
+  end;
+
+  S.Write(FIgnoreList.Count);
+  for i := 0 to FIgnoreList.Count - 1 do
+  begin
+    FIgnoreList[i].Save(S);
+  end;
+
+  while FSubmittedStreamList.Count > 200 do
+    FSubmittedStreamList.Delete(0);
+
+  S.Write(FSubmittedStreamList.Count);
+  for i := 0 to FSubmittedStreamList.Count - 1 do
+    S.Write(FSubmittedStreamList[i]);
+
+  S.Write(FRecentList.Count);
+  for i := 0 to FRecentList.Count - 1 do
+    FRecentList[i].Save(S);
+
+  S.Write(FStreamBlacklist.Count);
+  for i := 0 to FStreamBlacklist.Count - 1 do
+    S.Write(FStreamBlacklist[i]);
+
+  S.Write(FBrowserList.Count);
+  for i := 0 to FBrowserList.Count - 1 do
+    FBrowserList[i].Save(S);
+
+  S.Write(FGenreList.Count);
+  for i := 0 to FGenreList.Count - 1 do
+    S.Write(FGenreList[i]);
+end;
+
+procedure TDataLists.SaveRecover;
+var
+  S: TExtendedStream;
+begin
+  S := TExtendedStream.Create;
+  try
+    Save(S);
+    S.SaveToFile(AppGlobals.RecoveryFile);
   finally
     S.Free;
   end;
@@ -899,59 +1007,7 @@ begin
   begin
     S := TExtendedStream.Create;
     try
-      S.Write(Integer(DATAVERSION));
-
-      S.Write(FReceived);
-
-      S.Write(FCategoryList.Count);
-      for i := 0 to FCategoryList.Count - 1 do
-        FCategoryList[i].Save(S);
-
-      S.Write(FStreamList.Count);
-      for i := 0 to FStreamList.Count - 1 do
-      begin
-        FStreamList[i].Save(S);
-      end;
-
-      S.Write(FTrackList.Count);
-      for i := 0 to FTrackList.Count - 1 do
-        FTrackList[i].Save(S);
-
-      S.Write(FSaveList.Count);
-      for i := 0 to FSaveList.Count - 1 do
-      begin
-        FSaveList[i].Save(S);
-      end;
-
-      S.Write(FIgnoreList.Count);
-      for i := 0 to FIgnoreList.Count - 1 do
-      begin
-        FIgnoreList[i].Save(S);
-      end;
-
-      while FSubmittedStreamList.Count > 200 do
-        FSubmittedStreamList.Delete(0);
-
-      S.Write(FSubmittedStreamList.Count);
-      for i := 0 to FSubmittedStreamList.Count - 1 do
-        S.Write(FSubmittedStreamList[i]);
-
-      S.Write(FRecentList.Count);
-      for i := 0 to FRecentList.Count - 1 do
-        FRecentList[i].Save(S);
-
-      S.Write(FStreamBlacklist.Count);
-      for i := 0 to FStreamBlacklist.Count - 1 do
-        S.Write(FStreamBlacklist[i]);
-
-      S.Write(FBrowserList.Count);
-      for i := 0 to FBrowserList.Count - 1 do
-        FBrowserList[i].Save(S);
-
-      S.Write(FGenreList.Count);
-      for i := 0 to FGenreList.Count - 1 do
-        S.Write(FGenreList[i]);
-
+      Save(S);
       S.SaveToFile(AppGlobals.DataFile);
     finally
       S.Free;

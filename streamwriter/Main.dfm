@@ -2705,4 +2705,11 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 172
     Top = 144
   end
+  object tmrAutoSave: TTimer
+    Enabled = False
+    Interval = 120000
+    OnTimer = tmrAutoSaveTimer
+    Left = 288
+    Top = 204
+  end
 end

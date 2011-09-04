@@ -377,6 +377,7 @@ begin
   try
     Dlg.Filter := _('Text files') + ' (*.txt)|*.txt';
     Dlg.Options := Dlg.Options + [ofOverwritePrompt];
+    Dlg.DefaultExt := '.txt';
     if Dlg.Execute(Handle) then
     begin
       Lst := TStringList.Create;
@@ -390,8 +391,6 @@ begin
           Node := FTree.GetNext(Node);
         end;
         try
-          if LowerCase(ExtractFileExt(Dlg.FileName)) <> '.txt' then
-            Dlg.FileName := Dlg.FileName + '.txt';
           Lst.SaveToFile(Dlg.FileName);
         except
           MsgBox(GetParentForm(Self).Handle, _('The file could not be saved.'), _('Error'), MB_ICONEXCLAMATION);
@@ -410,8 +409,8 @@ var
   i, n: Integer;
   NumChars: Integer;
   Hash: Cardinal;
-  Exists: Boolean;
-  Pattern: string;
+  Exists, UseTitleInfo: Boolean;
+  Pattern, Ext: string;
   Dlg: TOpenDialog;
   Lst: TStringList;
   Title: TTitleInfo;
@@ -419,18 +418,48 @@ var
 begin
   Dlg := TOpenDialog.Create(Self);
   try
-    Dlg.Filter := _('Text files') + ' (*.txt)|*.txt';
+    Dlg.Filter := _('All supported types') + ' (*.txt, *.m3u, *.pls)|*.txt;*.m3u;*.pls|' +  _('Text files') + ' (*.txt)|*.txt|' + _('M3U playlists') + ' (*.m3u)|*.m3u|' + _('PLS playlists') + ' (*.pls)|*.pls';
     if Dlg.Execute(Handle) then
     begin
       Lst := TStringList.Create;
       try
         try
           Lst.LoadFromFile(Dlg.FileName);
+
+          UseTitleInfo := False;
+          for i := 0 to Lst.Count - 1 do
+            if (LowerCase(Copy(Lst[i], 1, 5)) = 'title') and (Pos('=', Lst[i]) > 0) then
+            begin
+              UseTitleInfo := True;
+              Break;
+            end;
+
           for i := 0 to Lst.Count - 1 do
           begin
             Lst[i] := Trim(Lst[i]);
 
-            // Wenn es ein ganzer Pfad sein könnte, dann bearbeiten
+            if Lst[i] = '' then
+              Continue;
+
+            Ext := LowerCase(ExtractFileExt(Dlg.FileName));
+
+            if Ext = '.m3u' then
+              if Lst[i][1] = '#' then
+                Continue;
+
+            if Ext = '.pls' then
+            begin
+              if (UseTitleInfo and (LowerCase(Copy(Lst[i], 1, 5)) = 'title')) or
+                 (not UseTitleInfo and (LowerCase(Copy(Lst[i], 1, 4)) = 'file')) then
+              begin
+                n := Pos('=', Lst[i]);
+                if (n > 0) and (Length(Lst[i]) > n) then
+                  Lst[i] := Copy(Lst[i], n + 1, Length(Lst[i]) - n);
+              end else
+                Continue;
+            end;
+
+            // Wenn es ein ganzer Pfad sein könnte bearbeiten
             if Length(Lst[i]) > 4 then
               if (Copy(Lst[i], 2, 2) = ':\') and (Pos('\', Lst[i]) > -1) and (Pos('.', Lst[i]) > -1) then
               begin
@@ -441,7 +470,6 @@ begin
             Pattern := BuildPattern(Lst[i], Hash, NumChars, False);
             if NumChars <= 3 then
               Continue;
-
 
             if FAddCombo.Items.Objects[FAddCombo.ItemIndex] = nil then
               if FListType = ltSave then

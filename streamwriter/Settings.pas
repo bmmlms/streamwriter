@@ -27,7 +27,8 @@ uses
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
   Plugins, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus,
   MsgDlg, PngImageList, PngSpeedButton, pngimage, VirtualTrees, Math,
-  DataManager, PngBitBtn, DownloadAddons, Logging, ToolWin, ListsTab;
+  DataManager, PngBitBtn, DownloadAddons, Logging, ToolWin, ListsTab,
+  ExtendedStream;
 
 type
   TBlacklistNodeData = record
@@ -242,7 +243,6 @@ type
     FInitialized: Boolean;
     FBrowseDir: Boolean;
     FBrowseAutoDir: Boolean;
-    FRelayChanged: Boolean;
     FDefaultActionIdx: Integer;
     FDefaultActionBrowserIdx: Integer;
     FDefaultFilterIdx: Integer;
@@ -276,12 +276,12 @@ type
     procedure SetPage(Page: TPage); override;
     procedure PreTranslate; override;
     procedure PostTranslate; override;
+    procedure GetExportData(Stream: TExtendedStream); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists; BrowseDir, BrowseAutoDir: Boolean); reintroduce; overload;
     constructor Create(AOwner: TComponent; StreamSettings: TStreamSettingsArray); overload;
     destructor Destroy; override;
-    property RelayChanged: Boolean read FRelayChanged;
     property StreamSettings: TStreamSettingsArray read FStreamSettings;
   end;
 
@@ -917,8 +917,6 @@ begin
 
   pnlGeneral.BringToFront;
 
-  FRelayChanged := False;
-
   AppGlobals.Lock;
   txtFilePattern.Text := Settings.FilePattern;
   txtIncompleteFilePattern.Text := Settings.IncompleteFilePattern;
@@ -1340,6 +1338,13 @@ begin
     btnReset.Left := 4;
     btnReset.Top := btnOK.Top;
   end;
+end;
+
+procedure TfrmSettings.GetExportData(Stream: TExtendedStream);
+begin
+  inherited;
+
+  FLists.Save(Stream);
 end;
 
 function TfrmSettings.GetNewID: Integer;

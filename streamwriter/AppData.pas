@@ -181,6 +181,7 @@ type
     FHeaderWidth: TIntArray;
     FClientCols: Integer;
     FLastUsedDataVersion: Integer;
+    FRecoveryFile: string;
 
     FPluginManager: TPluginManager;
     FLanguageIcons: TLanguageIcons;
@@ -239,6 +240,7 @@ type
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
     property ClientCols: Integer read FClientCols write FClientCols;
     property LastUsedDataVersion: Integer read FLastUsedDataVersion write FLastUsedDataVersion;
+    property RecoveryFile: string read FRecoveryFile;
 
     property DataFile: string read FGetDataFile;
 
@@ -332,6 +334,8 @@ begin
 
   inherited Create(AppName, True, W, 650);
 
+  FRecoveryFile := TempDir + 'streamwriter_data_recovery.dat';
+
   FBuildNumber := 221;
 
   BuildThanksText;
@@ -355,6 +359,7 @@ begin
   FStreamSettings.Free;
 
   DeleteFile(TempDir + 'playlist.m3u');
+  DeleteFile(FRecoveryFile);
 
   inherited;
 end;

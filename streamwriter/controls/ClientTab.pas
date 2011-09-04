@@ -1457,7 +1457,7 @@ begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
   for Client in Clients do
   begin
-    if (LowerCase(Client.Entry.Name) = Name) or (LowerCase(Client.Entry.StartURL) = URL) then
+    if (LowerCase(Client.Entry.Name) = Name) or (LowerCase(Client.Entry.StartURL) = URL) and (not Client.AutoRemove) then
     begin
       Result := True;
       Break;
@@ -1546,6 +1546,8 @@ begin
         C.Expanded := FClientView.Expanded[Nodes[i]];
         C.IsAuto := NodeData.Category.IsAuto;
         Streams.CategoryList.Add(C);
+
+        NodeData.Category := C;
       end;
     end;
 
