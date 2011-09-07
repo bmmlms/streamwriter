@@ -437,7 +437,6 @@ begin
           AppGlobals.Storage.Assign(Lst);
           FDataLists.Load(S);
           FDataLists.Save;
-          RunProcess('"' + Application.ExeName + '" /profileupdate', False)
         finally
           Lst.Free;
         end;
@@ -445,9 +444,9 @@ begin
         S.Free;
       end;
     except
-      on E: Exception do
-        MsgBox(0, E.Message, '', 0);
+      MsgBox(0, _('The file could not be imported.'), _('Error'), MB_ICONERROR);
     end;
+    RunProcess('"' + Application.ExeName + '" /profileupdate', False);
   end;
 
   if Hard then
