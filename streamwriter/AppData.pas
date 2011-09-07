@@ -42,6 +42,8 @@ type
   TTitleInfo = class
   private
     FTitle: string;
+    FAdded: TDateTime;
+    FIndex: Cardinal;
     FPattern: string;
     FHash: Cardinal;
   public
@@ -51,7 +53,9 @@ type
     procedure Save(Stream: TExtendedStream);
     function Copy: TTitleInfo;
 
-    property Title: string read FTitle;
+    property Title: string read FTitle write FTitle;
+    property Added: TDateTime read FAdded write FAdded;
+    property Index: Cardinal read FIndex write FIndex;
     property Pattern: string read FPattern;
     property Hash: Cardinal read FHash;
   end;
@@ -264,6 +268,7 @@ begin
   inherited Create;
 
   FTitle := Title;
+  FAdded := Now;
 
   Pattern := BuildPattern(Title, Hash, NumChars, False);
   FPattern := Pattern;
@@ -279,6 +284,17 @@ var
 begin
   Result := TTitleInfo.Create;
   Stream.Read(Result.FTitle);
+
+  if Version > 31 then
+    Stream.Read(Result.FAdded)
+  else
+    Result.FAdded := Now;
+
+  if Version > 31 then
+    Stream.Read(Result.FIndex)
+  else
+    Result.FIndex := High(Cardinal);
+
   if Version > 3 then
   begin
     Stream.Read(Result.FPattern);
@@ -294,6 +310,8 @@ end;
 procedure TTitleInfo.Save(Stream: TExtendedStream);
 begin
   Stream.Write(FTitle);
+  Stream.Write(FAdded);
+  Stream.Write(FIndex);
   Stream.Write(FPattern);
   Stream.Write(FHash);
 end;
@@ -302,6 +320,8 @@ function TTitleInfo.Copy: TTitleInfo;
 begin
   Result := TTitleInfo.Create;
   Result.FTitle := FTitle;
+  Result.FAdded := FAdded;
+  Result.FIndex := FIndex;
   Result.FPattern := FPattern;
   Result.FHash := FHash;
 end;

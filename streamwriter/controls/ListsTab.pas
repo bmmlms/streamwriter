@@ -83,6 +83,7 @@ type
     procedure ClientAdded(Client: TICEClient);
     procedure ClientRemoved(Client: TICEClient);
     procedure Setup(Clients: TClientManager; Lists: TDataLists; T: TListType; Images: TImageList; Title: string);
+    procedure UpdateList;
   end;
 
   TListsTab = class(TMainTabSheet)
@@ -98,12 +99,15 @@ type
 
     procedure AddClient(Client: TICEClient);
     procedure RemoveClient(Client: TICEClient);
+
+    procedure UpdateLists;
   end;
 
   TTitleTree = class(TVirtualStringTree)
   private
     FType: TListType;
     FColTitle: TVirtualTreeColumn;
+    FColAdded: TVirtualTreeColumn;
 
     FLists: TDataLists;
     FListType: TListType;
@@ -172,6 +176,12 @@ begin
   FIgnorePanel.Setup(Clients, Streams, ltIgnore, Images, 'Ignorelist');
 end;
 
+procedure TListsTab.UpdateLists;
+begin
+  FWishPanel.UpdateList;
+  FIgnorePanel.UpdateList;
+end;
+
 procedure TListsTab.AddClient(Client: TICEClient);
 begin
   FWishPanel.ClientAdded(Client);
@@ -190,12 +200,12 @@ begin
   begin
     FWishPanel.FTree.AddTitle(Title, FWishPanel.FTree.GetNode(Client),
       FWishPanel.FTree.GetNodeData(FWishPanel.FTree.GetNode(Client)));
-    FWishPanel.FTree.SortItems;
+    //FWishPanel.FTree.SortItems;
   end else
   begin
     FIgnorePanel.FTree.AddTitle(Title, FIgnorePanel.FTree.GetNode(Client),
       FIgnorePanel.FTree.GetNodeData(FIgnorePanel.FTree.GetNode(Client)));
-    FIgnorePanel.FTree.SortItems;
+    //FIgnorePanel.FTree.SortItems;
   end;
 end;
 
@@ -252,7 +262,7 @@ begin
     if Node.Parent.ChildCount = 1 then
       FTree.Expanded[Node.Parent] := True;
 
-    FTree.SortItems;
+    //FTree.SortItems;
 
     HomeComm.SetTitleNotifications((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
   end else
@@ -509,7 +519,7 @@ begin
     Dlg.Free;
   end;
 
-  FTree.SortItems;
+  //FTree.SortItems;
 
   HomeComm.SetTitleNotifications((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 end;
@@ -560,8 +570,7 @@ begin
     FTree.EndUpdate;
   end;
 
-  FTree.Header.SortColumn := 0;
-  FTree.Header.SortDirection := sdAscending;
+  FTree.Header.SortColumn := -1;
 
   FTree.SortItems;
 end;
@@ -758,6 +767,30 @@ begin
   FToolbar.FRemove.Enabled := FTree.GetFirstSelected <> nil;
 end;
 
+procedure TTitlePanel.UpdateList;
+var
+  Node: PVirtualNode;
+  NodeData: PTitleNodeData;
+begin
+  Node := FTree.GetFirst;
+  while Node <> nil do
+  begin
+    NodeData := FTree.GetNodeData(Node);
+
+    if NodeData.Title <> nil then
+    begin
+      NodeData.Title.Index := Node.Index;
+    end;
+
+    if (NodeData.Stream <> nil) and (NodeData.Title = nil) then
+    begin
+      NodeData.Stream.Entry.IgnoreListIndex := Node.Index;
+    end;
+
+    Node := FTree.GetNext(Node);
+  end;
+end;
+
 { TTitleToolbar }
 
 constructor TTitleToolbar.Create(AOwner: TComponent);
@@ -844,6 +877,10 @@ begin
 
   FColTitle := Header.Columns.Add;
   FColTitle.Text := _('Title');
+
+  FColAdded := Header.Columns.Add;
+  FColAdded.Text := _('Date');
+  FColAdded.Width := 90;
 
   FDropTarget := TDropComboTarget.Create(Self);
   FDropTarget.Formats := [mfFile];
@@ -975,15 +1012,31 @@ begin
   if TextType = ttNormal then
   begin
     NodeData := GetNodeData(Node);
-    if (NodeData.Stream = nil) and (NodeData.Title = nil) then
-      Text := _('Global')
-    else if NodeData.Title <> nil then
-      Text := NodeData.Title.Title
-    else
-      Text := NodeData.Stream.Entry.Name;
+    case Column of
+      0:
+        begin
+          if (NodeData.Stream = nil) and (NodeData.Title = nil) then
+            Text := _('Global')
+          else if NodeData.Title <> nil then
+            Text := NodeData.Title.Title
+          else
+            Text := NodeData.Stream.Entry.Name;
 
-    if (Node.Parent = RootNode) and (FListType = ltIgnore) then
-      Text := Text + ' (' + IntToStr(ChildCount[Node]) + ')';
+          if (Node.Parent = RootNode) and (FListType = ltIgnore) then
+            Text := Text + ' (' + IntToStr(ChildCount[Node]) + ')';
+        end;
+      1:
+        begin
+          if NodeData.Title <> nil then
+          begin
+            {if Trunc(NodeData.Title.Added) = Trunc(Now) then
+              Text := TimeToStr(NodeData.Title.Added)
+            else}
+            Text := DateToStr(NodeData.Title.Added);
+          end else
+            Text := '';
+        end;
+    end;
   end;
 end;
 
@@ -1062,27 +1115,56 @@ function TTitleTree.DoCompare(Node1, Node2: PVirtualNode;
     else
       Result := 0;
   end;
+  function CmpC(a, b: Cardinal): Integer;
+  begin
+    if a > b then
+      Result := 1
+    else if a < b then
+      Result := -1
+    else
+      Result := 0;
+  end;
 var
   Data1, Data2: PTitleNodeData;
 begin
+  Result := 0;
+
   Data1 := GetNodeData(Node1);
   Data2 := GetNodeData(Node2);
 
-  if (Data1.Title = nil) and (Data1.Stream = nil) then
-  begin
-    Result := -1;
-    Exit;
-  end;
-  if (Data2.Title = nil) and (Data2.Stream = nil) then
-  begin
-    Result := 1;
-    Exit;
-  end;
+  if ((Data1.Stream = nil) and (Data1.Title = nil)) or ((Data2.Stream = nil) and (Data2.Title = nil)) then
+    if Header.SortDirection = sdAscending then
+      Exit(-1)
+    else
+      Exit(1);
 
-  if (Data1.Title <> nil) and (Data2.Title <> nil) then
-    Result := CompareText(Data1.Title.Title, Data2.Title.Title)
-  else
-    Result := CompareText(Data1.Stream.Entry.Name, Data2.Stream.Entry.Name);
+  case Header.SortColumn of
+    -1:
+      // REMARK: Das High(Cardinal) kann raus irgendwann. Ist für Update von Versionen die das nicht konnten.
+      if (Data1.Stream <> nil) and (Data1.Title = nil) and (Data2.Stream <> nil) and (Data2.Title = nil) then
+      begin
+        if Data1.Stream.Entry.IgnoreListIndex = High(Cardinal) then
+          Result := CompareText(Data1.Stream.Entry.Name, Data2.Stream.Entry.Name)
+        else
+          Result := CmpC(Data1.Stream.Entry.IgnoreListIndex, Data2.Stream.Entry.IgnoreListIndex);
+      end else if (Data1.Title <> nil) and (Data2.Title <> nil) then
+      begin
+        if Data1.Title.Index = High(Cardinal) then
+          Result := CompareText(Data1.Title.Title, Data2.Title.Title)
+        else
+          Result := CmpC(Data1.Title.Index, Data2.Title.Index);
+      end;
+    0:
+      if (Data1.Title <> nil) and (Data2.Title <> nil) then
+        Result := CompareText(Data1.Title.Title, Data2.Title.Title)
+      else
+        Result := CompareText(Data1.Stream.Entry.Name, Data2.Stream.Entry.Name);
+    1:
+      if (Data1.Title <> nil) and (Data2.Title <> nil) then
+        Result := CmpTime(Data1.Title.Added, Data2.Title.Added)
+      else
+        Result := 0;
+  end;
 end;
 
 procedure TTitleTree.DoFreeNode(Node: PVirtualNode);

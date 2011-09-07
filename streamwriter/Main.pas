@@ -253,6 +253,8 @@ type
     tabLists: TListsTab;
     addStatus: TSWStatusBar;
 
+    FExiting: Boolean;
+
     procedure OneInstanceMessage(var Msg: TMessage); message WM_USER + 1234;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
     procedure EndSession(var Msg: TMessage); message WM_ENDSESSION;
@@ -334,6 +336,8 @@ var
   S: TExtendedStream;
   Lst: TSettingsList;
 begin
+  FExiting := True;
+
   AppGlobals.MainMaximized := WindowState = wsMaximized;
   if not AppGlobals.MainMaximized then
   begin
@@ -380,6 +384,9 @@ begin
   while not Saved do
   begin
     try
+      // Erst Lists updaten, dann Streams!
+      tabSaved.Tree.UpdateList;
+      tabLists.UpdateLists;
       tabClients.UpdateStreams(FDataLists);
       FDataLists.Save;
       Break;
@@ -426,12 +433,15 @@ begin
         S.LoadFromFile(ImportFilename);
         S.Read(Version);
         Lst := TSettingsList.Load(S);
-        AppGlobals.Storage.Assign(Lst);
-        FDataLists.Load(S);
-        FDataLists.Save;
-        RunProcess('"' + Application.ExeName + '" /profileupdate', False)
+        try
+          AppGlobals.Storage.Assign(Lst);
+          FDataLists.Load(S);
+          FDataLists.Save;
+          RunProcess('"' + Application.ExeName + '" /profileupdate', False)
+        finally
+          Lst.Free;
+        end;
       finally
-        Lst.Free;
         S.Free;
       end;
     except
@@ -575,9 +585,9 @@ begin
   begin
     TfrmMsgDlg.ShowMsg(Self, _('This is the first time you are running streamWriter. There are two ways to record music:'#13#10 +
                                '1) You can record streams by double-clicking them in the stream-browser on the right.'#13#10 +
-                               '2) Desired songs can be recorded by adding them to the wishlist on the Filter-tab at the top. ' +
+                               '2) Desired songs can be recorded by adding them to the wishlist on the Lists-tab at the top. ' +
                                'When a song from the wishlist is being played on a stream, streamWriter will automatically tune in to record your song. ' +
-                               'Please add some artists/titles to your wishlist to try this new feature.'), btOK);
+                               'Please add some artists/titles to your wishlist to try this feature.'), btOK);
   end;
   AppGlobals.FirstStartShown := True;
 
@@ -805,7 +815,7 @@ begin
       end;
     ceNotification:
       begin
-        MsgBox(Handle, Format(_('A notification from the server was received:'#13#10'%s'), [Msg]), _('Info'), MB_ICONINFORMATION);
+        TfrmMsgDlg.ShowMsg(Self, Format(_('A notification from the server was received:'#13#10'%s'), [Msg]), btOK);
       end;
   end;
 end;
@@ -999,7 +1009,8 @@ end;
 
 procedure TfrmStreamWriterMain.OneInstanceMessage(var Msg: TMessage);
 begin
-  ToggleWindow(True);
+  if not FExiting then
+    ToggleWindow(True);
 end;
 
 procedure TfrmStreamWriterMain.OpenCut(Filename: string);
@@ -1190,6 +1201,9 @@ var
   S: TfrmSettings;
 begin
   // Ist hier, damit der Profilexport korrekt funktioniert
+  // Erst Lists updaten, dann Streams!
+  tabSaved.Tree.UpdateList;
+  tabLists.UpdateLists;
   tabClients.UpdateStreams(FDataLists);
 
   RegisterHotkeys(False);
@@ -1519,16 +1533,14 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.tmrAutoSaveTimer(Sender: TObject);
-var
-  i: Integer;
-  Res: Integer;
-  StartTime: Cardinal;
-  Saved, Hard: Boolean;
 begin
   if AppGlobals.SkipSave or FDataLists.LoadError then
     Exit;
 
   try
+    // Erst Lists updaten, dann Streams!
+    tabSaved.Tree.UpdateList;
+    tabLists.UpdateLists;
     tabClients.UpdateStreams(FDataLists);
     FDataLists.SaveRecover;
   except

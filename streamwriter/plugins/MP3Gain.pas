@@ -79,12 +79,10 @@ end;
 
 procedure TNormalizeThread.Execute;
 var
-  TempFile, CmdLine, Params: string;
+  CmdLine: string;
   Output: AnsiString;
   P: TNormalizePlugin;
-  LoopStarted: Cardinal;
   Failed: Boolean;
-  FS: TFileStream;
   EC: DWORD;
 begin
   inherited;

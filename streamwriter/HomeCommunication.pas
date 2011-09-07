@@ -327,6 +327,10 @@ begin
     Node.Name := 'build';
     Node.Value.AsInteger := AppGlobals.BuildNumber;
 
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'language';
+    Node.Value.AsString := AppGlobals.Language;
+
     Node := TXmlNode.Create(Data);
     Node.Name := 'compression';
     Node.Value.AsBoolean := True;
@@ -788,7 +792,6 @@ begin
       begin
         DoError(Version, Header, Data);
       end;
-
     finally
       XMLDocument.Free;
     end;
@@ -814,7 +817,6 @@ var
   Node: TXMLNode;
   NewList: TList<TStreamBrowserEntry>;
   Entry, Entry2: TStreamBrowserEntry;
-  Lst: TStringList;
 begin
   FDataLists.GenreList.Clear;
 

@@ -83,6 +83,7 @@ type
     FIsAuto: Boolean;
     FIsStreamFile: Boolean;
     FFinalized: Boolean;
+    FIndex: Cardinal;
   public
     constructor Create; overload;
     constructor Create(Time: TDateTime; Filename, Streamname: string); overload;
@@ -100,6 +101,7 @@ type
     property IsAuto: Boolean read FIsAuto write FIsAuto;
     property IsStreamFile: Boolean read FIsStreamFile write FIsStreamFile;
     property Finalized: Boolean read FFinalized write FFinalized;
+    property Index: Cardinal read FIndex write FIndex;
   end;
 
   TListCategoryList = TList<TListCategory>;
@@ -236,6 +238,7 @@ type
 
     FSaveList: TTitleList;
     FIgnoreList: TTitleList;
+    FIgnoreListIndex: Cardinal;
 
     procedure FSetName(Value: string);
 
@@ -271,6 +274,7 @@ type
 
     property SaveList: TTitleList read FSaveList;
     property IgnoreList: TTitleList read FIgnoreList;
+    property IgnoreListIndex: Cardinal read FIgnoreListIndex write FIgnoreListIndex;
   end;
 
   TStreamList = class(TList<TStreamEntry>)
@@ -332,7 +336,7 @@ type
   end;
 
 const
-  DATAVERSION = 31;
+  DATAVERSION = 32;
 
 implementation
 
@@ -379,6 +383,8 @@ begin
     FSaveList.Add(From.FSaveList[i].Copy);
   for i := 0 to From.FIgnoreList.Count - 1 do
     FIgnoreList.Add(From.FIgnoreList[i].Copy);
+
+  FIgnoreListIndex := From.FIgnoreListIndex;
 end;
 
 function TStreamEntry.Copy: TStreamEntry;
@@ -568,6 +574,11 @@ begin
       Result.FSettings.MigrationIgnoreList.Delete(i);
     end;
   end;
+
+  if Version > 31 then
+    Stream.Read(Result.FIgnoreListIndex)
+  else
+    Result.FIgnoreListIndex := High(Cardinal);
 end;
 
 procedure TStreamEntry.Save(Stream: TExtendedStream);
@@ -608,6 +619,8 @@ begin
   Stream.Write(FIgnoreList.Count);
   for i := 0 to FIgnoreList.Count - 1 do
     FIgnoreList[i].Save(Stream);
+
+  Stream.Write(FIgnoreListIndex);
 end;
 
 procedure TStreamEntry.FSetGenre(Value: string);
@@ -680,8 +693,6 @@ begin
 end;
 
 destructor TDataLists.Destroy;
-var
-  i: Integer;
 begin
   CleanLists;
 
@@ -875,13 +886,7 @@ end;
 
 procedure TDataLists.Load;
 var
-  Entry: TStreamEntry;
-  TitleInfo: TTitleInfo;
-  TrackInfo: TTrackInfo;
   S: TExtendedStream;
-  Str: string;
-  Version, CatCount, EntryCount: Integer;
-  i, n: Integer;
 begin
   if AppGlobals.DataFile = '' then
     Exit;
@@ -988,7 +993,6 @@ end;
 
 procedure TDataLists.Save;
 var
-  i: Integer;
   S: TExtendedStream;
 begin
   DeleteFile(AppGlobals.RecoveryFile);
@@ -1046,10 +1050,10 @@ begin
 
   Stream.Read(Result.FStreamname);
   Stream.Read(Result.FFilesize);
+
   if Version >= 13 then
-  begin
     Stream.Read(Result.FLength);
-  end;
+
   Stream.Read(Result.FTime);
   Stream.Read(Result.FWasCut);
   if Version > 10 then
@@ -1062,9 +1066,12 @@ begin
     Stream.Read(Result.FIsStreamFile);
 
   if Version > 18 then
-  begin
     Stream.Read(Result.FFinalized);
-  end;
+
+  if Version > 31 then
+    Stream.Read(Result.FIndex)
+  else
+    Result.FIndex := High(Cardinal);
 end;
 
 procedure TTrackInfo.Save(Stream: TExtendedStream);
@@ -1080,6 +1087,7 @@ begin
   Stream.Write(FIsAuto);
   Stream.Write(FIsStreamFile);
   Stream.Write(FFinalized);
+  Stream.Write(FIndex);
 end;
 
 { TStreamList }

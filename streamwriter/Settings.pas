@@ -268,7 +268,6 @@ type
     procedure BlacklistTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure BlacklistTreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure btnResetClick(Sender: TObject);
-    function ListDiffers(S1, S2: TStringList): Boolean;
   protected
     procedure RegisterPages; override;
     procedure Finish; override;
@@ -298,7 +297,7 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
 
   procedure SetFields;
   var
-    i, n: Integer;
+    i: Integer;
     S: TStreamSettings;
     F, ShowDialog: Boolean;
   begin
@@ -1034,6 +1033,8 @@ var
   OldTitlePattern: string;
   OldIgnoreTitles: Cardinal;
 begin
+  AdvancedDiffers := False;
+
   if Length(FStreamSettings) > 0 then
   begin
     OldTitlePattern := FStreamSettings[0].TitlePattern;
@@ -1141,7 +1142,6 @@ begin
           FStreamSettings[i].IgnoreTrackChangePattern.Add(lstIgnoreTitles.Items[n].Caption);
       end;
 
-      AdvancedDiffers := False;
       if (FIgnoreFieldList.IndexOf(txtTitlePattern) = -1) and (OldTitlePattern <> FStreamSettings[i].TitlePattern) then
         AdvancedDiffers := True;
       if (FIgnoreFieldList.IndexOf(lstIgnoreTitles) = -1) and (GetStringListHash(FStreamSettings[i].IgnoreTrackChangePattern) <> OldIgnoreTitles) then
@@ -1379,22 +1379,6 @@ begin
   Result := 0;
   for i := 0 to Lst.Count - 1 do
     Result := Result + HashString(Lst[i]);
-end;
-
-function TfrmSettings.ListDiffers(S1, S2: TStringList): Boolean;
-var
-  i: Integer;
-  Str1, Str2: string;
-begin
-  Str1 := '';
-  Str2 := '';
-
-  for i := 0 to S1.Count - 1 do
-    Str1 := Str1 + S1[i];
-  for i := 0 to S2.Count - 1 do
-    Str2 := Str2 + S2[i];
-
-  Result := HashString(Str1) <> HashString(Str2);
 end;
 
 procedure TfrmSettings.KeyDown(var Key: Word; Shift: TShiftState);
@@ -1692,7 +1676,6 @@ end;
 function TfrmSettings.ValidateStreamPattern(Text: string): string;
 var
   Arr: TPatternReplaceArray;
-  i: Integer;
 begin
   inherited;
 

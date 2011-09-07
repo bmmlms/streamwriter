@@ -215,7 +215,6 @@ type
       CellRect: TRect; DrawFormat: Cardinal); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure KeyPress(var Key: Char); override;
-
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -230,6 +229,7 @@ type
     procedure Sort(Node: PVirtualNode; Column: TColumnIndex;
       Direction: TSortDirection; DoInit: Boolean = True); override;
     procedure SetFileWatcher;
+    procedure UpdateList;
 
     property Player: TPlayer read FPlayer;
     property OnAction: TTrackActionEvent read FOnAction write FOnAction;
@@ -508,6 +508,8 @@ begin
 
   FSavedTree.Expanded[FSavedTree.FStreamNode] := False;
 
+  FSavedTree.Header.SortColumn := -1;
+
   FSavedTree.SortTree(FSavedTree.Header.SortColumn, FSavedTree.Header.SortDirection);
 
   FSavedTree.Change(nil);
@@ -766,8 +768,6 @@ end;
 { TSavedTree }
 
 constructor TSavedTree.Create(AOwner: TComponent);
-var
-  Node: PVirtualNode;
 begin
   inherited Create(AOwner);
 
@@ -838,9 +838,6 @@ begin
   Header.Options := Header.Options + [hoAutoResize];
 
   FStreamNode := AddChild(nil);
-
-  Header.SortColumn := 1;
-  Header.SortDirection := sdAscending;
 
   SetFileWatcher;
 end;
@@ -1270,6 +1267,24 @@ begin
   FColBitRate.Text := _('Bitrate');
 end;
 
+procedure TSavedTree.UpdateList;
+var
+  Node: PVirtualNode;
+  NodeData: PSavedNodeData;
+begin
+  Node := GetFirst;
+  while Node <> nil do
+  begin
+    if Node <> FStreamNode then
+    begin
+      NodeData := GetNodeData(Node);
+      NodeData.Track.Index := Node.Index;
+    end;
+
+    Node := GetNext(Node);
+  end;
+end;
+
 procedure TSavedTree.UpdateTrack(Track: TTrackInfo);
 var
   Node: PVirtualNode;
@@ -1524,6 +1539,15 @@ function TSavedTree.DoCompare(Node1, Node2: PVirtualNode;
     else
       Result := 0;
   end;
+  function CmpC(a, b: Cardinal): Integer;
+  begin
+    if a > b then
+      Result := 1
+    else if a < b then
+      Result := -1
+    else
+      Result := 0;
+  end;
 var
   I1, I2: Integer;
   Data1, Data2: PSavedNodeData;
@@ -1538,6 +1562,12 @@ begin
     Exit(-1);
 
   case Column of
+    -1:
+      // REMARK: Das High(Cardinal) kann raus irgendwann. Ist für Update von Versionen die das nicht konnten.
+      if Data1.Track.Index = High(Cardinal) then
+        Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename))
+      else
+        Result := CmpC(Data1.Track.Index, Data2.Track.Index);
     0:
       begin
         I1 := 0;

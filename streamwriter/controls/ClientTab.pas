@@ -1547,6 +1547,7 @@ begin
         C.IsAuto := NodeData.Category.IsAuto;
         Streams.CategoryList.Add(C);
 
+        // Weil hier nicht mit Kopien gearbeitet wird Referenz ändern
         NodeData.Category := C;
       end;
     end;
@@ -1650,5 +1651,6 @@ begin
 end;
 
 end.
+
 
 

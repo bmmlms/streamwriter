@@ -442,7 +442,6 @@ end;
 procedure TICEStream.FreeAudioStream;
 var
   Filename: string;
-  Filesize: UInt64;
 begin
   Filename := '';
   FFilename := '';
@@ -451,7 +450,6 @@ begin
     if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
     begin
       Filename := TAudioStreamFile(FAudioStream).FileName;
-      Filesize := TAudioStreamFile(FAudioStream).Size;
     end;
     FreeAndNil(FAudioStream);
   end;
@@ -1368,7 +1366,6 @@ end;
 
 function TFileChecker.StreamInfoToFilename(Name: string): string;
 var
-  i: Integer;
   Dir, StreamName: string;
   Replaced: string;
   Arr: TPatternReplaceArray;
