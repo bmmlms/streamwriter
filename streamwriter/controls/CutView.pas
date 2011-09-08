@@ -89,6 +89,7 @@ type
   end;
 
   TMouseMode = (mmDown, mmMove, mmUp);
+  TControlMode = (cmNone, cmView, cmScroll);
 
   PMouseButton = ^TMouseButton;
 
@@ -110,6 +111,7 @@ type
     FDoZoom: Boolean;
 
     FMouseOldX, FMouseOldY, FMouseMoveStartX: integer;
+    FControlMode: TControlMode;
 
     procedure BuildBuffer;
     procedure BuildDrawBuffer;
@@ -117,6 +119,7 @@ type
     procedure SetLine(X: Integer; Button: TMouseButton; Mode: TMouseMode);
     function HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton;
       Mode: TMouseMode): Boolean;
+    function GetControlMode(Y: Integer): TControlMode;
     function PixelsToArray(X: Integer): Cardinal;
     function GetPlayerPos: Cardinal;
 
@@ -559,8 +562,8 @@ begin
   FPB.FZoomEndLine := FPB.FEffectEndLine;
   FPB.FDoZoom := True;
 
-  FPB.FEffectStartLine := High(Cardinal);
-  FPB.FEffectEndLine := High(Cardinal);
+  //FPB.FEffectStartLine := High(Cardinal);
+  //FPB.FEffectEndLine := High(Cardinal);
 
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
@@ -1125,11 +1128,16 @@ end;
 
 procedure TCutPaintBox.BuildBuffer;
   procedure DrawTransparentBox(StartIdx: Cardinal; EndIdx: Cardinal; LineColor: TColor; FillColor: TColor);
-  var rectStart, rectEnd: Cardinal;
-      originalMode: TPenMode;
+  var
+    RectStart, RectEnd: Int64;
+    OriginalMode: TPenMode;
   begin
-    rectStart := Trunc(((StartIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FWaveBuf.Width);
-    rectEnd := Trunc(((EndIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FWaveBuf.Width);
+    // Die Konvertierung nach Int64 ist wichtig. Sonst gibt es Darstellungsfehler:
+    // Wenn man im Zoom-Modus was markiert und nach rechts scrollt, über den Anfang des markierten,
+    // wird alles als ausgewählt angezeigt. Darum bloß nicht entfernen :)
+    RectStart := Trunc(((Int64(StartIdx) - Int64(FCutView.FWaveData.ZoomStart)) / Int64(FCutView.FWaveData.ZoomSize)) * FWaveBuf.Width);
+    RectEnd := Trunc(((Int64(EndIdx) - Int64(FCutView.FWaveData.ZoomStart)) / Int64(FCutView.FWaveData.ZoomSize)) * FWaveBuf.Width);
+
     with FWaveBuf.Canvas do
     begin
       Pen.Color := LineColor;
@@ -1400,6 +1408,8 @@ begin
   FZoomOuterColor :=  HTML2Color('748cf7');
   FZoomInnerColor := HTML2Color('4d5ea5');
 
+  FControlMode := cmNone;
+
   FCutView := TCutView(AOwner);
   if FWaveBuf = nil then
     FWaveBuf := TBitmap.Create;
@@ -1433,8 +1443,26 @@ begin
   if Button = mbLeft then
     FMouseMoveStartX := X;
 
-  if not HandleScrollBar(X, Y, @Button, mmDown) then
-    SetLine(X, Button, mmDown);
+  SetCaptureControl(Self);
+
+  FControlMode := GetControlMode(Y);
+
+  case FControlMode of
+    cmView:
+      if (Button = mbLeft) or (Button = mbRight) then
+        SetLine(X, Button, mmDown);
+    cmScroll:
+      if Button = mbLeft then
+        HandleScrollBar(X, Y, @Button, mmDown);
+  end;
+end;
+
+function TCutPaintBox.GetControlMode(Y: Integer): TControlMode;
+begin
+  if Y >= Height - ScrollbarHeight - 2 then
+    Result := cmScroll
+  else
+    Result := cmView;
 end;
 
 procedure TCutPaintBox.MouseMove(Shift: TShiftState; X, Y: Integer);
@@ -1461,11 +1489,16 @@ begin
     end
     else
       Button := nil;
-    if not HandleScrollBar(X, Y, Button, mmMove) then
-    begin
-      if Button <> nil then
-        SetLine(X, Button^, mmMove);
+
+    case FControlMode of
+      cmView:
+        if (ssLeft in Shift) or (ssRight in Shift) then
+          SetLine(X, Button^, mmMove);
+      cmScroll:
+        if ssLeft in Shift then
+          HandleScrollBar(X, Y, Button, mmMove);
     end;
+
     FMouseOldX := X;
     FMouseOldY := Y;
   end;
@@ -1476,11 +1509,11 @@ procedure TCutPaintBox.MouseUp(Button: TMouseButton; Shift: TShiftState;
 begin
   inherited;
 
-  if FCutView.FWaveData = nil then
-    Exit;
-
-  if not HandleScrollBar(X, Y, @Button, mmUp) then
+  if FControlMode = cmView then
     SetLine(X, Button, mmUp);
+
+  ReleaseCapture;
+  FControlMode := cmNone;
 end;
 
 procedure TCutPaintBox.Paint;
@@ -1627,53 +1660,27 @@ function TCutPaintBox.HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButt
 var
   ButtonData: TMouseButton;
   StartX, EndX, DiffX: Integer;
-  ScrollbarActive: Boolean;
 begin
-  ScrollbarActive := False;
-
-  if (Button <> nil) then
+  DiffX := Trunc(((X - FMouseMoveStartX) * High(FCutView.FWaveData.WaveArray)) / (FWaveBuf.Width - 6));
+  StartX := FCutView.FWaveData.ZoomStart + Cardinal(DiffX);
+  EndX := FCutView.FWaveData.ZoomEnd + Cardinal(DiffX);
+  if StartX < 0 then
   begin
-    ButtonData := Button^;
-    if (ButtonData = mbLeft) and (Y >= Height - ScrollbarHeight - 2) then
-    begin
-      if (Mode = mmMove) or (Mode = mmDown) then
-        ScrollbarActive := True;
-    end;
+    StartX := 0;
+    EndX := FCutView.FWaveData.ZoomSize;
   end;
-
-  if ScrollbarActive then
+  if EndX > High(FCutView.FWaveData.WaveArray) then
   begin
-    if Mode = mmUp then
-    begin
-      ScrollbarActive := False;
-      Result := True;
-      Exit;
-    end else
-    begin
-      DiffX := Trunc(((X - FMouseMoveStartX) * High(FCutView.FWaveData.WaveArray)) / (FWaveBuf.Width - 6));
-      StartX := FCutView.FWaveData.ZoomStart + Cardinal(DiffX);
-      EndX := FCutView.FWaveData.ZoomEnd + Cardinal(DiffX);
-      if StartX < 0 then
-      begin
-        StartX := 0;
-        EndX := FCutView.FWaveData.ZoomSize;
-      end;
-      if EndX > High(FCutView.FWaveData.WaveArray) then
-      begin
-        EndX := High(FCutView.FWaveData.WaveArray);
-        StartX := EndX - FCutView.FWaveData.ZoomSize;
-      end;
-      FZoomStartLine := StartX;
-      FZoomEndLine := EndX;
-      FMouseMoveStartX := X;
-      FDoZoom := true;
-      BuildBuffer;
-      BuildDrawBuffer;
-      Paint;
-    end;
+    EndX := High(FCutView.FWaveData.WaveArray);
+    StartX := EndX - FCutView.FWaveData.ZoomSize;
   end;
-
-  Result := ScrollbarActive;
+  FZoomStartLine := StartX;
+  FZoomEndLine := EndX;
+  FMouseMoveStartX := X;
+  FDoZoom := true;
+  BuildBuffer;
+  BuildDrawBuffer;
+  Paint;
 end;
 
 procedure TCutPaintBox.TimerTimer(Sender: TObject);

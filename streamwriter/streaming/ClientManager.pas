@@ -350,6 +350,11 @@ begin
         Client.Entry.Settings.RetryDelay := 0;
         Client.Entry.Settings.AddSavedToIgnore := AppGlobals.AutoTuneInAddToIgnore;
         Client.Entry.Settings.AddSavedToStreamIgnore := False;
+
+        // TODO: Hier sollte ich noch mehr Einstellungen setzen. Was ist z.B. mit dem Suchen nach Stille?
+        //       Dem Puffer? Etc... Weil der user weiﬂ nicht, dass sich globale settings ATM hierdrauf
+        //       auswirken...
+
         Client.Entry.Bitrate := Kbps;
         if Trim(TitlePattern) <> '' then
           Client.Entry.Settings.TitlePattern := TitlePattern;

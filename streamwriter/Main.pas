@@ -444,7 +444,10 @@ begin
         S.Free;
       end;
     except
-      MsgBox(0, _('The file could not be imported.'), _('Error'), MB_ICONERROR);
+      on E: EVersionException do
+        MsgBox(0, _('The file could not be imported because it was exported with a newer version of streamWriter.'), _('Error'), MB_ICONERROR)
+      else
+        MsgBox(0, _('The file could not be imported.'), _('Error'), MB_ICONERROR)
     end;
     RunProcess('"' + Application.ExeName + '" /profileupdate', False);
   end;
@@ -1052,7 +1055,7 @@ begin
   tabSaved.Tree.Translate;
 
   NodeData := tabClients.ClientView.GetNodeData(tabClients.ClientView.AutoNode);
-  NodeData.Category.Name := _('Managed streams');
+  NodeData.Category.Name := _('Automatic recordings');
   tabClients.ClientView.Invalidate;
 
   addStatus.Invalidate;
@@ -1398,7 +1401,7 @@ procedure TfrmStreamWriterMain.tabClientsTrackAdded(Entry: TStreamEntry;
   Track: TTrackInfo);
 begin
   tabSaved.Tree.AddTrack(Track, False);
-  tabSaved.Tree.Sort(nil, tabSaved.Tree.Header.SortColumn, tabSaved.Tree.Header.SortDirection);
+  //tabSaved.Tree.Sort(nil, tabSaved.Tree.Header.SortColumn, tabSaved.Tree.Header.SortDirection);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsTrackRemoved(Entry: TStreamEntry;

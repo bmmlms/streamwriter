@@ -1600,14 +1600,14 @@ begin
 
   if FClientView.AutoNode = nil then
   begin
-    Cat := TListCategory.Create(_('Managed streams'), High(Integer));
+    Cat := TListCategory.Create(_('Automatic recordings'), High(Integer));
     Cat.IsAuto := True;
     FClientView.AddCategory(Cat);
     Streams.CategoryList.Add(Cat);
   end;
 
   Cat := PClientNodeData(FClientView.GetNodeData(FClientView.AutoNode)).Category;
-  Cat.Name := _('Managed streams');
+  Cat.Name := _('Automatic recordings');
 
   FClientView.SortItems;
 end;

@@ -40,12 +40,15 @@ type
 
   TStreamTracks = class(TList<TStreamTrack>)
   private
+    FRecordTitle: string;
     FOnDebug: TDebugEvent;
   public
     destructor Destroy; override;
     procedure Clear; reintroduce;
 
     procedure FoundTitle(Offset: Int64; Title: string; FullTitle: Boolean);
+
+    property RecordTitle: string read FRecordTitle write FRecordTitle;
   end;
 
   TCheckResults = (crSave, crDiscard, crOverwrite);
@@ -463,6 +466,7 @@ begin
   if Value <> FRecordTitle then
     WriteDebug(Format(_('Recording "%s"'), [Value]), 1, 0);
   FRecordTitle := Value;
+  FStreamTracks.RecordTitle := Value;
 end;
 
 procedure TICEStream.GetSettings;
@@ -1228,6 +1232,13 @@ begin
     //if Assigned(FOnDebug) then
     //  FOnDebug(Format('Setting SongEnd of "%s" to %d', [Items[Count - 1].Title, Offset]), '');
   end;
+
+  // Wenn wir automatisch aufnehmen und der Titel der Titel ist, den wir haben wollen,
+  // dann nutzen wir nicht den Start bei empfangener Meta-Länge, sondern den Start
+  // des Streams. Vielleicht gibt es da noch 1-2 Sekunden vom Song...
+  if (FRecordTitle <> '') and (Title = FRecordTitle) then
+    Offset := 0;
+
   Add(TStreamTrack.Create(Offset, -1, Title, FullTitle));
   //if Assigned(FOnDebug) then
   //  FOnDebug(Format('Added "%s" with SongStart %d', [Items[Count - 1].Title, Offset]), '');
