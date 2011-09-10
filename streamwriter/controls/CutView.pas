@@ -117,8 +117,8 @@ type
     procedure BuildDrawBuffer;
 
     procedure SetLine(X: Integer; Button: TMouseButton; Mode: TMouseMode);
-    function HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton;
-      Mode: TMouseMode): Boolean;
+    procedure HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton;
+      Mode: TMouseMode);
     function GetControlMode(Y: Integer): TControlMode;
     function PixelsToArray(X: Integer): Cardinal;
     function GetPlayerPos: Cardinal;
@@ -1655,8 +1655,8 @@ begin
   Paint;
 end;
 
-function TCutPaintBox.HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton;
-  Mode: TMouseMode) : Boolean;
+procedure TCutPaintBox.HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton;
+  Mode: TMouseMode);
 var
   ButtonData: TMouseButton;
   StartX, EndX, DiffX: Integer;

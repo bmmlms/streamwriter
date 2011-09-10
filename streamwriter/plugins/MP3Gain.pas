@@ -81,7 +81,6 @@ procedure TNormalizeThread.Execute;
 var
   CmdLine: string;
   Output: AnsiString;
-  P: TNormalizePlugin;
   Failed: Boolean;
   EC: DWORD;
 begin
@@ -96,8 +95,6 @@ begin
   end;
 
   CmdLine := '"' + FMP3GainPath + '" "' + FData.Filename + '"';
-
-  P := TNormalizePlugin(Plugin);
 
   if RunProcess(CmdLine, ExtractFilePath(FMP3GainPath), 120000, Output, EC, @Terminated) = 2 then
   begin
