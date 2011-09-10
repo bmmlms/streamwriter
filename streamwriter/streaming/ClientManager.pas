@@ -351,9 +351,11 @@ begin
         Client.Entry.Settings.AddSavedToIgnore := AppGlobals.AutoTuneInAddToIgnore;
         Client.Entry.Settings.AddSavedToStreamIgnore := False;
 
-        // TODO: Hier sollte ich noch mehr Einstellungen setzen. Was ist z.B. mit dem Suchen nach Stille?
-        //       Dem Puffer? Etc... Weil der user weiﬂ nicht, dass sich globale settings ATM hierdrauf
-        //       auswirken...
+        Client.Entry.Settings.SilenceLevel := 5;
+        Client.Entry.Settings.SilenceLength := 100;
+        Client.Entry.Settings.SongBufferSeconds := 10;
+        Client.Entry.Settings.SilenceBufferSecondsStart := 20;
+        Client.Entry.Settings.SilenceBufferSecondsEnd := 10;
 
         Client.Entry.Bitrate := Kbps;
         if Trim(TitlePattern) <> '' then

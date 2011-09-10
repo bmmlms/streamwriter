@@ -46,7 +46,8 @@ type
     destructor Destroy; override;
     procedure Clear; reintroduce;
 
-    procedure FoundTitle(Offset: Int64; Title: string; FullTitle: Boolean);
+    procedure FoundTitle(Offset: Int64; Title: string; BytesPerSec: Cardinal; FullTitle: Boolean);
+    function Find(const Title: string): TStreamTrack;
 
     property RecordTitle: string read FRecordTitle write FRecordTitle;
   end;
@@ -136,6 +137,8 @@ type
     FOnTitleAllowed: TNotifyEvent;
     FOnRefreshInfo: TNotifyEvent;
 
+    function RoundBitrate(Bitrate: Cardinal): Cardinal;
+    function GetFileLength(Filename: string; Filesize: Int64; var Length: UInt64): Boolean;
     function CalcAdjustment(Offset: Int64): Int64;
     procedure CalcBytesPerSec;
     procedure DataReceived(CopySize: Integer);
@@ -237,13 +240,13 @@ begin
     Size := TAudioStreamFile(FAudioStream).Size;
     if Size = 0 then
       raise Exception.Create('');
-    TempPlayer := BASSStreamCreateFile(False, PChar(TAudioStreamFile(FAudioStream).FileName), 0, 0, BASS_STREAM_DECODE or BASS_UNICODE);
+    TempPlayer := BASSStreamCreateFile(False, PChar(TAudioStreamFile(FAudioStream).FileName), 0, 0, BASS_STREAM_DECODE or BASS_STREAM_PRESCAN or BASS_UNICODE);
   end else
   begin
     Size := TAudioStreamMemory(FAudioStream).Size;
     if Size = 0 then
       raise Exception.Create('');
-    TempPlayer := BASSStreamCreateFile(True, TAudioStreamMemory(FAudioStream).Memory, 0, Size, BASS_STREAM_DECODE);
+    TempPlayer := BASSStreamCreateFile(True, TAudioStreamMemory(FAudioStream).Memory, 0, Size, BASS_STREAM_DECODE or BASS_STREAM_PRESCAN);
   end;
 
   if TempPlayer = 0 then
@@ -255,28 +258,9 @@ begin
     if BufLen = -1 then
       raise Exception.Create('');
     FBytesPerSec := Trunc((BufLen / (125 * Time) + 0.5) * 125);
-    FBitRate := Trunc(BufLen / floor(((125 * Time)) + 0.5));
+    FBitRate := Trunc(BufLen / Floor(((125 * Time)) + 0.5));
 
-    if FBitRate < 40 then
-      FBitRate := 32
-    else if FBitRate < 70 then
-      FBitRate := 64
-    else if FBitRate < 100 then
-      FBitRate := 96
-    else if FBitRate < 130 then
-      FBitRate := 128
-    else if FBitRate < 170 then
-      FBitRate := 160
-    else if FBitRate < 200 then
-      FBitRate := 192
-    else if FBitRate < 230 then
-      FBitRate := 224
-    else if FBitRate < 260 then
-      FBitRate := 256
-    else if FBitRate < 330 then
-      FBitRate := 320
-    else
-      FBitRate := 384;
+    FBitrate := RoundBitrate(FBitrate);
 
     if FBytesPerSec <= 10 then
       raise Exception.Create('');
@@ -469,6 +453,49 @@ begin
   FStreamTracks.RecordTitle := Value;
 end;
 
+function TICEStream.GetFileLength(Filename: string; Filesize: Int64; var Length: UInt64): Boolean;
+var
+  TempPlayer: Cardinal;
+  Time: Double;
+  BufLen: Int64;
+  Bitrate: Cardinal;
+  Len: QWORD;
+  OldBitrate: Cardinal;
+begin
+  TempPlayer := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE or BASS_UNICODE or BASS_STREAM_PRESCAN);
+
+  if TempPlayer = 0 then
+    Exit(False);
+
+  try
+    Len := BASSChannelGetLength(TempPlayer, BASS_POS_BYTE);
+    BASSChannelSetPosition(TempPlayer, Len, BASS_POS_BYTE);
+    Time := BASSChannelBytes2Seconds(TempPlayer, Len);
+    BufLen := BASSStreamGetFilePosition(TempPlayer, BASS_FILEPOS_END);
+    if BufLen = -1 then
+      Exit(False);
+    Bitrate := Trunc(BufLen / Floor(((125 * Time)) + 0.5));
+
+    Length := Trunc(Time);
+
+    Bitrate := RoundBitrate(Bitrate);
+
+    // Wir setzen auch diese beiden Stream-Eigenschaften, weil die Datei ja aussagekräftiger
+    // ist, als die paar Bytes aus CalcBytesPerSec()
+    FBytesPerSec := Trunc((BufLen / (125 * Time) + 0.5) * 125);
+
+    OldBitrate := FBitRate;
+    FBitrate := Bitrate;
+
+    if FBitrate <> OldBitrate then
+      FOnRefreshInfo(Self);
+  finally
+    BASSStreamFree(TempPlayer);
+  end;
+
+  Result := True;
+end;
+
 procedure TICEStream.GetSettings;
 begin
   if Assigned(FOnNeedSettings) then
@@ -491,7 +518,7 @@ procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
     // oder der normale Puffer genutzt wird.
     if FAudioStream.ClassType.InheritsFrom(TAudioStreamMemory) then
     begin
-      BufLen := Max(FBytesPerSec * FSettings.SilenceBufferSeconds, FBytesPerSec * FSettings.SongBufferSeconds);
+      BufLen := Max(FBytesPerSec * FSettings.SilenceBufferSecondsStart, FBytesPerSec * FSettings.SongBufferSeconds);
 
       if FSettings.AdjustTrackOffset and (FSettings.AdjustTrackOffsetDirection = toBackward) then
         BufLen := BufLen + FSettings.AdjustTrackOffsetSeconds * FBytesPerSec;
@@ -649,10 +676,16 @@ begin
         FSavedFullTitle := FullTitle;
         FSavedStreamTitle := Title;
         FSavedIsStreamFile := False;
-        if FBytesPerSec > 0 then
-          FSavedLength := Trunc(FSavedSize / FBytesPerSec)
-        else
-          FSavedLength := 0;
+
+        // Wenn kleiner als 20MB wird FSavedLength ausgegeben, sonst selber rechnen
+        if not ((FSavedSize < 20971520) and (GetFileLength(Dir + Filename, P.B - P.A, FSavedLength))) then
+        begin
+          if FBytesPerSec > 0 then
+            FSavedLength := Trunc(FSavedSize / FBytesPerSec)
+          else
+            FSavedLength := 0;
+        end;
+
         if Assigned(FOnSongSaved) then
           FOnSongSaved(Self);
 
@@ -784,7 +817,7 @@ begin
     if (not FSettings.OnlySaveFull) and (FAudioStream <> nil) and (FMetaCounter >= 1) and (Title <> '') then
     begin
       FRecordingTitleFound := True;
-      FStreamTracks.FoundTitle(0, Title, False);
+      FStreamTracks.FoundTitle(0, Title, FBytesPerSec, False);
     end;
 
     // Damit Der ICEStream sich FFilename wieder setzt, so dass aussen das Menü-Item fürs Play an ist.
@@ -830,14 +863,17 @@ begin
 
       if FSettings.SearchSilence then
       begin
-        if FAudioStream.Size > TrackEnd + FBytesPerSec * FSettings.SilenceBufferSeconds then
+        if FAudioStream.Size > TrackEnd + FBytesPerSec * FSettings.SilenceBufferSecondsEnd then
         begin
-          WriteDebug(Format('Searching for silence using search range of %d bytes...', [FBytesPerSec * FSettings.SilenceBufferSeconds]), 1, 1);
+          WriteDebug(Format('Searching for silence using search range of %d/%d bytes...', [FBytesPerSec * FSettings.SilenceBufferSecondsStart,
+            FBytesPerSec * FSettings.SilenceBufferSecondsEnd]), 1, 1);
 
           if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
-            R := TAudioStreamFile(FAudioStream).SearchSilence(TrackStart, TrackEnd, FBytesPerSec * FSettings.SilenceBufferSeconds, FSettings.SilenceLevel, FSettings.SilenceLength)
+            R := TAudioStreamFile(FAudioStream).SearchSilence(TrackStart, TrackEnd, FBytesPerSec * FSettings.SilenceBufferSecondsStart,
+              FBytesPerSec * FSettings.SilenceBufferSecondsEnd, FSettings.SilenceLevel, FSettings.SilenceLength)
           else
-            R := TAudioStreamMemory(FAudioStream).SearchSilence(TrackStart, TrackEnd, FBytesPerSec * FSettings.SilenceBufferSeconds, FSettings.SilenceLevel, FSettings.SilenceLength);
+            R := TAudioStreamMemory(FAudioStream).SearchSilence(TrackStart, TrackEnd, FBytesPerSec * FSettings.SilenceBufferSecondsStart,
+              FBytesPerSec * FSettings.SilenceBufferSecondsEnd, FSettings.SilenceLevel, FSettings.SilenceLength);
 
           if (R.A > -1) or (R.B > -1) then
           begin
@@ -903,7 +939,7 @@ begin
               WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]), 1, 1);
             end else
             begin
-              // WriteDebug('Waiting for full buffer because no silence found...');
+              WriteDebug('Waiting for full buffer because no silence found...', 1, 1);
             end;
           end;
         end else
@@ -931,7 +967,7 @@ begin
           WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]), 1, 1);
         end else
         begin
-          // WriteDebug('Waiting for full buffer...');
+          WriteDebug('Waiting for full buffer...', 1, 1);
         end;
       end;
     end;
@@ -945,7 +981,6 @@ var
   Title: string;
   MetaData: AnsiString;
   Buf: Byte;
-  Track: TStreamTrack;
 begin
   RecvStream.Seek(0, soFromBeginning);
 
@@ -961,11 +996,11 @@ begin
     if not FSettings.SeparateTracks then
       FSettings.DeleteStreams := False;
 
-    if (FBytesPerSec = 0) and (FAudioStream.Size > 32768) then
+    if (FBytesPerSec = 0) and (FAudioStream.Size > 131072) then
     begin
       try
         CalcBytesPerSec;
-        FOnRefreshInfo(Self);;
+        FOnRefreshInfo(Self);
       except
         raise Exception.Create(_('Bytes per second could not be calculated'));
       end;
@@ -991,20 +1026,28 @@ begin
     if FSettings.SeparateTracks then
       TrySave;
 
-    if (RecordTitle <> '') and (FBytesPerSec > 0) and (FTitle <> FRecordTitle) then
+    if ((RecordTitle <> '') and (FBytesPerSec > 0) and (FAudioStream.Size > FBytesPerSec * 40) and (FTitle <> FRecordTitle) and (FStreamTracks.Find(FRecordTitle) = nil)) or
+       (FMetaCounter > 5) then
+    begin
+      FRemoveClient := True;
+    end;
+
+    {
+    if (RecordTitle <> '') and (FBytesPerSec > 0) and (FTitle <> FRecordTitle) and (not FStreamTracks.Find(FRecordTitle)) then
     begin
       if FStreamTracks.Count > 0 then
       begin
         Track := FStreamTracks[FStreamTracks.Count - 1];
 
-        if (FMetaCounter > 2) and (Track.E > -1) and (FAudioStream.Size > Track.E + Max(FBytesPerSec * (FSettings.SilenceBufferSeconds + 10) * 2, FBytesPerSec * (FSettings.SongBufferSeconds + 10) * 2)) then
+        if (FMetaCounter > 2) and (Track.E > -1) and (FAudioStream.Size > Track.E +
+          Max(FBytesPerSec * (FSettings.SilenceBufferSecondsEnd + 10), FBytesPerSec * (FSettings.SongBufferSeconds + 10))) then
         begin
           // Zuviel empfangen und Titel war nicht dabei
           FRemoveClient := True;
         end;
       end;
 
-      if (FAudioStream.Size > FBytesPerSec * 30) and (FMetaCounter = 1) then
+      if (FAudioStream.Size > FBytesPerSec * 30) and (FMetaCounter <= 1) then
       begin
         // Titel scheint nicht zu kommen..
         FRemoveClient := True;
@@ -1014,6 +1057,7 @@ begin
       if FMetaCounter > 4 then
         FRemoveClient := True;
     end;
+    }
 
     while RecvStream.Size > 0 do
     begin
@@ -1083,7 +1127,7 @@ begin
                 if (Title <> FTitle) and (FRecordingTitleFound) then
                 begin
                   if FAudioStream <> nil then
-                    FStreamTracks.FoundTitle(FAudioStream.Size, Title, True);
+                    FStreamTracks.FoundTitle(FAudioStream.Size, Title, FBytesPerSec, True);
                 end else if Title = FTitle then
                 begin
 
@@ -1098,9 +1142,9 @@ begin
                         FRecordingTitleFound := True;
 
                         if FMetaCounter >= 2 then
-                          FStreamTracks.FoundTitle(FAudioStream.Size, Title, True)
+                          FStreamTracks.FoundTitle(FAudioStream.Size, Title, FBytesPerSec, True)
                         else
-                          FStreamTracks.FoundTitle(FAudioStream.Size, Title, False);
+                          FStreamTracks.FoundTitle(FAudioStream.Size, Title, FBytesPerSec, False);
                       end;
                     end;
                 end;
@@ -1119,6 +1163,30 @@ begin
     RecvStream.RemoveRange(0, Position);
     RecvStream.Seek(0, soFromBeginning);
   end;
+end;
+
+function TICEStream.RoundBitrate(Bitrate: Cardinal): Cardinal;
+begin
+  if Bitrate < 63 then
+    Result := 32
+  else if Bitrate < 95 then
+    Result := 64
+  else if Bitrate < 127 then
+    Result := 96
+  else if Bitrate < 159 then
+    Result := 128
+  else if Bitrate < 191 then
+    Result := 160
+  else if Bitrate < 223 then
+    Result := 192
+  else if Bitrate < 255 then
+    Result := 224
+  else if Bitrate < 319 then
+    Result := 256
+  else if Bitrate < 383 then
+    Result := 320
+  else
+    Result := 384;
 end;
 
 procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Title: string);
@@ -1224,7 +1292,17 @@ begin
   inherited;
 end;
 
-procedure TStreamTracks.FoundTitle(Offset: Int64; Title: string; FullTitle: Boolean);
+function TStreamTracks.Find(const Title: string): TStreamTrack;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+    if Items[i].Title = Title then
+      Exit(Items[i]);
+  Exit(nil);
+end;
+
+procedure TStreamTracks.FoundTitle(Offset: Int64; Title: string; BytesPerSec: Cardinal; FullTitle: Boolean);
 begin
   if Count > 0 then
   begin
@@ -1233,11 +1311,16 @@ begin
     //  FOnDebug(Format('Setting SongEnd of "%s" to %d', [Items[Count - 1].Title, Offset]), '');
   end;
 
-  // Wenn wir automatisch aufnehmen und der Titel der Titel ist, den wir haben wollen,
-  // dann nutzen wir nicht den Start bei empfangener Meta-Länge, sondern den Start
-  // des Streams. Vielleicht gibt es da noch 1-2 Sekunden vom Song...
-  if (FRecordTitle <> '') and (Title = FRecordTitle) then
-    Offset := 0;
+  // Wenn wir automatisch aufnehmen und der Titel der Titel ist, den wir haben wollen
+  // und dabei der erste empfangene ist, dann nutzen wir nicht den Start bei
+  // empfangener Meta-Länge, sondern den Start des Streams.
+  // Vielleicht gibt es da noch 1-2 Sekunden mehr vom Song...
+  if (FRecordTitle <> '') and (Title = FRecordTitle) and (Count = 0) then
+  begin
+    Offset := Offset - BytesPerSec * 10;
+    if Offset < 0 then
+      Offset := 0;
+  end;
 
   Add(TStreamTrack.Create(Offset, -1, Title, FullTitle));
   //if Assigned(FOnDebug) then

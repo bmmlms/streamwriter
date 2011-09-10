@@ -22,8 +22,8 @@ unit WaveData;
 interface
 
 uses
-  SysUtils, Windows, Classes, Functions, DynBASS, Math,
-  Generics.Collections, AudioStream, Logging;
+  SysUtils, Windows, Classes, DynBass, Math, Generics.Collections,
+  Functions, AudioStream;
 
 type
   TWaveEntry = record

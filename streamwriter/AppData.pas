@@ -78,7 +78,8 @@ type
     FSearchSilence: Boolean;
     FSilenceLevel: Cardinal;
     FSilenceLength: Cardinal;
-    FSilenceBufferSeconds: Integer;
+    FSilenceBufferSecondsStart: Integer;
+    FSilenceBufferSecondsEnd: Integer;
     FShortLengthSeconds: Integer;
     FSongBufferSeconds: Integer;
     FAdjustTrackOffset: Boolean;
@@ -119,7 +120,8 @@ type
     property SearchSilence: Boolean read FSearchSilence write FSearchSilence;
     property SilenceLevel: Cardinal read FSilenceLevel write FSilenceLevel;
     property SilenceLength: Cardinal read FSilenceLength write FSilenceLength;
-    property SilenceBufferSeconds: Integer read FSilenceBufferSeconds write FSilenceBufferSeconds;
+    property SilenceBufferSecondsStart: Integer read FSilenceBufferSecondsStart write FSilenceBufferSecondsStart;
+    property SilenceBufferSecondsEnd: Integer read FSilenceBufferSecondsEnd write FSilenceBufferSecondsEnd;
     property ShortLengthSeconds: Integer read FShortLengthSeconds write FShortLengthSeconds;
     property SongBufferSeconds: Integer read FSongBufferSeconds write FSongBufferSeconds;
     property AdjustTrackOffset: Boolean read FAdjustTrackOffset write FAdjustTrackOffset;
@@ -573,7 +575,7 @@ end;
 
 procedure TAppData.Load;
 var
-  i, DefaultActionTmp, DefaultActionBrowser, DefaultFilterTmp: Integer;
+  i, DefaultActionTmp, DefaultActionBrowser, DefaultFilterTmp, SilenceBuffer: Integer;
 begin
   inherited;
 
@@ -606,7 +608,17 @@ begin
   FStorage.Read('SearchSilence', FStreamSettings.FSearchSilence, True);
   FStorage.Read('SilenceLevel', FStreamSettings.FSilenceLevel, 5);
   FStorage.Read('SilenceLength', FStreamSettings.FSilenceLength, 150);
-  FStorage.Read('SilenceBufferSeconds', FStreamSettings.FSilenceBufferSeconds, 3);
+
+  FStorage.Read('SilenceBufferSeconds', SilenceBuffer, 3);
+  if SilenceBuffer <> 3 then
+  begin
+    FStreamSettings.FSilenceBufferSecondsStart := SilenceBuffer;
+    FStreamSettings.FSilenceBufferSecondsEnd := SilenceBuffer;
+  end else
+  begin
+    FStorage.Read('SilenceBufferSecondsStart', FStreamSettings.FSilenceBufferSecondsStart, 5);
+    FStorage.Read('SilenceBufferSecondsEnd', FStreamSettings.FSilenceBufferSecondsEnd, 5);
+  end;
 
   FStreamSettings.FAdjustTrackOffset := False;
   FStreamSettings.FAdjustTrackOffsetSeconds := 0;
@@ -775,7 +787,11 @@ begin
   FStorage.Write('SearchSilence', FStreamSettings.FSearchSilence);
   FStorage.Write('SilenceLevel', FStreamSettings.FSilenceLevel);
   FStorage.Write('SilenceLength', FStreamSettings.FSilenceLength);
-  FStorage.Write('SilenceBufferSeconds', FStreamSettings.FSilenceBufferSeconds);
+  FStorage.Write('SilenceBufferSecondsStart', FStreamSettings.FSilenceBufferSecondsStart);
+  FStorage.Write('SilenceBufferSecondsEnd', FStreamSettings.FSilenceBufferSecondsEnd);
+
+  // REMARK: Kann irgendwann Raus. Für Update auf SW Version 3.
+  FStorage.Delete('SilenceBufferSeconds');
 
   FStorage.Write('SaveToMemory', FStreamSettings.FSaveToMemory);
   FStorage.Write('OnlySaveFull', FStreamSettings.FOnlySaveFull);
@@ -947,10 +963,22 @@ begin
   Stream.Read(Result.FSilenceLevel);
   Stream.Read(Result.FSilenceLength);
 
-  if Version >= 9 then
-    Stream.Read(Result.FSilenceBufferSeconds)
-  else
-    Result.FSilenceBufferSeconds := 3;
+  if Version >= 33 then
+  begin
+    Stream.Read(Result.FSilenceBufferSecondsStart);
+    Stream.Read(Result.FSilenceBufferSecondsEnd);
+  end else
+  begin
+    if Version >= 9 then
+    begin
+      Stream.Read(Result.FSilenceBufferSecondsStart);
+      Result.FSilenceBufferSecondsEnd := Result.FSilenceBufferSecondsStart;
+    end else
+    begin
+      Result.FSilenceBufferSecondsStart := 5;
+      Result.FSilenceBufferSecondsEnd := 5;
+    end;
+  end;
 
   if Version >= 9 then
     Stream.Read(Result.FShortLengthSeconds)
@@ -1068,7 +1096,8 @@ begin
   Stream.Write(FSearchSilence);
   Stream.Write(FSilenceLevel);
   Stream.Write(FSilenceLength);
-  Stream.Write(FSilenceBufferSeconds);
+  Stream.Write(FSilenceBufferSecondsStart);
+  Stream.Write(FSilenceBufferSecondsEnd);
   Stream.Write(FShortLengthSeconds);
   Stream.Write(FSongBufferSeconds);
   Stream.Write(FMaxRetries);
@@ -1104,7 +1133,8 @@ begin
   FSearchSilence := From.FSearchSilence;
   FSilenceLevel := From.FSilenceLevel;
   FSilenceLength := From.FSilenceLength;
-  FSilenceBufferSeconds := From.FSilenceBufferSeconds;
+  FSilenceBufferSecondsStart := From.FSilenceBufferSecondsStart;
+  FSilenceBufferSecondsEnd := From.FSilenceBufferSecondsEnd;
   FShortLengthSeconds := From.FShortLengthSeconds;
   FSongBufferSeconds := From.FSongBufferSeconds;
   FMaxRetries := From.FMaxRetries;

@@ -22,8 +22,8 @@ unit AudioStream;
 interface
 
 uses
-  Windows, SysUtils, StrUtils, Classes, ExtendedStream, MPEG, DynBASS,
-  Logging;
+  Windows, SysUtils, StrUtils, Classes, ExtendedStream, MPEG, DynBass,
+  Math;
 
 type
   TPosRect = record
@@ -36,7 +36,7 @@ type
   public
     function GetFrame(F, T: Int64): TPosRect; virtual; abstract;
     procedure SaveToFile(const Filename: string; From, Length: Int64);
-    function SearchSilence(StartPos, EndPos, Len, MaxPeaks, MinDuration: Int64): TPosRect;
+    function SearchSilence(StartPos, EndPos, LenStart, LenEnd, MaxPeaks, MinDuration: Int64): TPosRect;
   end;
 
   TMPEGStreamFile = class(TAudioStreamFile)
@@ -58,7 +58,7 @@ type
   public
     function GetFrame(F, T: Int64): TPosRect; virtual; abstract;
     procedure SaveToFile(const Filename: string; From, Length: Int64);
-    function SearchSilence(StartPos, EndPos, Len, MaxPeaks, MinDuration: Int64): TPosRect;
+    function SearchSilence(StartPos, EndPos, LenStart, LenEnd, MaxPeaks, MinDuration: Int64): TPosRect;
   end;
 
   TMPEGStreamMemory = class(TAudioStreamMemory)
@@ -99,7 +99,7 @@ begin
   end;
 end;
 
-function TAudioStreamFile.SearchSilence(StartPos, EndPos, Len, MaxPeaks, MinDuration: Int64): TPosRect;
+function TAudioStreamFile.SearchSilence(StartPos, EndPos, LenStart, LenEnd, MaxPeaks, MinDuration: Int64): TPosRect;
 var
   WD, WD2: TWaveData;
   M1, M2: TExtendedStream;
@@ -117,19 +117,25 @@ begin
   WD2 := TWaveData.Create;
   try
     try
-      StartPos := StartPos - Len div 2;
-      EndPos := EndPos - Len div 2;
+      // Um die Hälfte zurückgehen, damit wir dann das Komplette einlesen können
+      StartPos := StartPos - LenStart div 2;
+      EndPos := EndPos - LenEnd div 2;
 
-      if StartPos < Len div 2 then
-        StartPos := Len div 2;
-      if EndPos > Size - Len div 2 then
-        EndPos := Size - Len div 2;
+      if StartPos < 0 then
+        StartPos := 0;
+      if StartPos + LenStart > Size then
+        LenStart := Size - StartPos;
 
-      Seek(StartPos - Len div 2, soFromBeginning);
-      M1.CopyFrom(Self, Len);
+      if EndPos < 0 then
+        EndPos := 0;
+      if EndPos + LenEnd > Size then
+        LenEnd := Size - EndPos;
 
-      Seek(EndPos - Len div 2, soFromBeginning);
-      M2.CopyFrom(Self, Len);
+      Seek(StartPos, soFromBeginning);
+      M1.CopyFrom(Self, LenStart);
+
+      Seek(EndPos, soFromBeginning);
+      M2.CopyFrom(Self, LenEnd);
 
       // Okay, dann wollen wir mal suchen
       WD.Load(M1);
@@ -141,15 +147,14 @@ begin
       begin
         S := WD.WaveArray[WD.Silence[0].CutEnd].Pos;
         S := Round(S * (M1.Size / WD.Wavesize));
-        Result.A := S + StartPos - Len div 2;
+        Result.A := S + StartPos;
       end;
 
       if WD2.Silence.Count > 0 then
       begin
-        //S := WD2.WaveArray[WD2.Silence[WD2.Silence.Count - 1].CutStart].Pos;
-        S := WD2.WaveArray[WD2.Silence[0].CutStart].Pos;
+        S := WD2.WaveArray[WD2.Silence[WD2.Silence.Count - 1].CutStart].Pos;
         S := Round(S * (M2.Size / WD2.Wavesize));
-        Result.B := S + EndPos - Len div 2;
+        Result.B := S + EndPos;
       end;
     except
       on E: Exception do
@@ -340,7 +345,7 @@ begin
   end;
 end;
 
-function TAudioStreamMemory.SearchSilence(StartPos, EndPos, Len, MaxPeaks,
+function TAudioStreamMemory.SearchSilence(StartPos, EndPos, LenStart, LenEnd, MaxPeaks,
   MinDuration: Int64): TPosRect;
 var
   WD, WD2: TWaveData;
@@ -359,19 +364,25 @@ begin
   WD2 := TWaveData.Create;
   try
     try
-      StartPos := StartPos - Len div 2;
-      EndPos := EndPos - Len div 2;
+      // Um die Hälfte zurückgehen, damit wir dann das Komplette einlesen können
+      StartPos := StartPos - LenStart div 2;
+      EndPos := EndPos - LenEnd div 2;
 
-      if StartPos < Len div 2 then
-        StartPos := Len div 2;
-      if EndPos > Size - Len div 2 then
-        EndPos := Size - Len div 2;
+      if StartPos < 0 then
+        StartPos := 0;
+      if StartPos + LenStart > Size then
+        LenStart := Size - StartPos;
 
-      Seek(StartPos - Len div 2, soFromBeginning);
-      M1.CopyFrom(Self, Len);
+      if EndPos < 0 then
+        EndPos := 0;
+      if EndPos + LenEnd > Size then
+        LenEnd := Size - EndPos;
 
-      Seek(EndPos - Len div 2, soFromBeginning);
-      M2.CopyFrom(Self, Len);
+      Seek(StartPos, soFromBeginning);
+      M1.CopyFrom(Self, LenStart);
+
+      Seek(EndPos, soFromBeginning);
+      M2.CopyFrom(Self, LenEnd);
 
       // Okay, dann wollen wir mal suchen
       WD.Load(M1);
@@ -383,14 +394,14 @@ begin
       begin
         S := WD.WaveArray[WD.Silence[0].CutEnd].Pos;
         S := Round(S * (M1.Size / WD.Wavesize));
-        Result.A := S + StartPos - Len div 2;
+        Result.A := S + StartPos;
       end;
 
       if WD2.Silence.Count > 0 then
       begin
-        S := WD2.WaveArray[WD2.Silence[0].CutStart].Pos;
+        S := WD2.WaveArray[WD2.Silence[WD2.Silence.Count - 1].CutStart].Pos;
         S := Round(S * (M2.Size / WD2.Wavesize));
-        Result.B := S + EndPos - Len div 2;
+        Result.B := S + EndPos;
       end;
     except
       on E: Exception do

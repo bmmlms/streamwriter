@@ -269,7 +269,7 @@ end;
 procedure TCutTab.Setup(Filename: string; ToolBarImages: TImageList);
 begin
   MaxWidth := 120;
-  Caption := ExtractFileName(Filename);
+  Caption := ExtractFileName(StringReplace(Filename, '&', '&&', [rfReplaceAll]));
   FFilename := Filename;
 
   FToolbarPanel := TPanel.Create(Self);

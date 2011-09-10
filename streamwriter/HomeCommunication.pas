@@ -900,6 +900,19 @@ begin
   FChangedFormat := Data.Nodes.GetNode('format').Value.AsString;
   FChangedTitlePattern := Data.Nodes.GetNode('regex').Value.AsString;
 
+  // REMARK: Entweder lesen manche Versionen (die aktuelle???) die Meta-Infos
+  // falsch aus oder es gibt subversive Elemente im Netzwerk. Oder XML-Probleme..
+  {
+  Raw := FChangedTitle;
+  for i := 1 to Length(Raw) do
+  begin
+    if Ord(Raw[i]) >= 128 then
+    begin
+      Exit;
+    end;
+  end;
+  }
+
   if (FChangedStreamName <> '') and (FChangedTitle <> '') and (FChangedCurrentURL <> '') then
     if Assigned(FOnTitleChanged) then
       Sync(FOnTitleChanged);

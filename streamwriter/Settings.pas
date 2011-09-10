@@ -510,7 +510,7 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
     begin
-      if S.SilenceBufferSeconds <> FStreamSettings[i].SilenceBufferSeconds then
+      if S.SilenceBufferSecondsStart <> FStreamSettings[i].SilenceBufferSecondsStart then
       begin
         F := True;
         ShowDialog := True;
@@ -967,7 +967,7 @@ begin
 
   txtSilenceLevel.Text := IntToStr(Settings.SilenceLevel);
   txtSilenceLength.Text := IntToStr(Settings.SilenceLength);
-  txtSilenceBufferSeconds.Text := IntToStr(Settings.SilenceBufferSeconds);
+  txtSilenceBufferSeconds.Text := IntToStr(Settings.SilenceBufferSecondsStart);
 
   chkAdjustTrackOffset.Checked := Settings.AdjustTrackOffset;
   txtAdjustTrackOffset.Text := IntToStr(Settings.AdjustTrackOffsetSeconds);
@@ -1097,7 +1097,10 @@ begin
           FStreamSettings[i].SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
 
         if FIgnoreFieldList.IndexOf(txtSilenceBufferSeconds) = -1 then
-          FStreamSettings[i].SilenceBufferSeconds := StrToIntDef(txtSilenceBufferSeconds.Text, 3);
+        begin
+          FStreamSettings[i].SilenceBufferSecondsStart := StrToIntDef(txtSilenceBufferSeconds.Text, 5);
+          FStreamSettings[i].SilenceBufferSecondsEnd := StrToIntDef(txtSilenceBufferSeconds.Text, 5);
+        end;
 
         if Length(FStreamSettings) > 0 then
         begin
@@ -1173,7 +1176,8 @@ begin
       AppGlobals.StreamSettings.SearchSilence := chkSearchSilence.Checked;
       AppGlobals.StreamSettings.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
       AppGlobals.StreamSettings.SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
-      AppGlobals.StreamSettings.SilenceBufferSeconds := StrToIntDef(txtSilenceBufferSeconds.Text, 3);
+      AppGlobals.StreamSettings.SilenceBufferSecondsStart := StrToIntDef(txtSilenceBufferSeconds.Text, 5);
+      AppGlobals.StreamSettings.SilenceBufferSecondsEnd := StrToIntDef(txtSilenceBufferSeconds.Text, 5);
     end;
 
     AppGlobals.StreamSettings.MaxRetries := StrToIntDef(txtMaxRetries.Text, 100);
@@ -2315,7 +2319,7 @@ begin
         txtSilenceBufferSeconds.SetFocus;
         Exit;
       end else
-        txtSilenceBufferSeconds.Text := IntToStr(AppGlobals.StreamSettings.SilenceBufferSeconds);
+        txtSilenceBufferSeconds.Text := IntToStr(AppGlobals.StreamSettings.SilenceBufferSecondsStart);
     end;
 
     if Trim(txtSongBuffer.Text) = '' then

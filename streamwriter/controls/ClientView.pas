@@ -351,7 +351,7 @@ begin
     end
   end else
     if Column = 0 then    
-      Text := NodeData.Category.Name;
+      Text := NodeData.Category.Name + ' (' + IntToStr(Node.ChildCount) + ')';
 end;
 
 procedure TMClientView.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
