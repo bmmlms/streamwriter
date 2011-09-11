@@ -1384,7 +1384,6 @@ var
   CmpTxt: string;
   NodeData: PSavedNodeData;
 begin
-  Result := 0;
   NodeData := GetNodeData(Node);
   if NodeData.Track = nil then
     CmpTxt := _(STREAMNODETEXT)

@@ -1658,7 +1658,6 @@ end;
 procedure TCutPaintBox.HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton;
   Mode: TMouseMode);
 var
-  ButtonData: TMouseButton;
   StartX, EndX, DiffX: Integer;
 begin
   DiffX := Trunc(((X - FMouseMoveStartX) * High(FCutView.FWaveData.WaveArray)) / (FWaveBuf.Width - 6));

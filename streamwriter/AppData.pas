@@ -332,14 +332,17 @@ end;
 
 constructor TAppData.Create(AppName: string);
 var
-  W: Integer;
+  W, H: Integer;
   SR: TSearchRec;
 begin
   FStreamSettings := TStreamSettings.Create;
 
   W := 900;
-  if Screen.Width < W then
+  H := 630;
+  if Screen.WorkAreaWidth < W then
     W := Screen.Width - 20;
+  if Screen.WorkAreaHeight < H then
+    H := Screen.WorkAreaHeight - 20;
 
   SetLength(FHeaderWidth, 6);
 
@@ -354,11 +357,11 @@ begin
   FProjectForumLink := 'http://streamwriter.org/forum/';
   FProjectDonateLink := 'http://streamwriter.org/inhalt/donate/';
 
-  inherited Create(AppName, True, W, 650);
+  inherited Create(AppName, True, W, H);
 
   FRecoveryFile := FStorage.DataDir + 'streamwriter_data_recovery.dat';
 
-  FBuildNumber := 221;
+  FBuildNumber := 274;
 
   BuildThanksText;
 
@@ -491,7 +494,7 @@ begin
     Text.Add('');
     Text.Add('');
 
-    Text.Add(_('&U&10...everyone supporting streamWriter'#13#10'&U&10at http://streamwriter.org/forum/'));
+    Text.Add(_('&U&10...everyone supporting streamWriter at the board'));
     Text.Add('');
     Text.Add('');
 
@@ -502,14 +505,14 @@ begin
     Text.Add('');
     Text.Add('');
 
-    Text.Add(_('&U&10Also, thanks to some other projects I make use of'#13#10'&U&10to develop streamWriter and it''s website'));
+    Text.Add(_('&U&10Also thanks to some other projects I make use of'#13#10'&U&10to develop streamWriter and it''s website'));
     Text.Add('');
     Text.Add('Apache HTTP Server');
     Text.Add('Bass');
+    Text.Add('Delphi-Praxis');
     Text.Add('Django');
     Text.Add('Drag and Drop Component Suite');
-    Text.Add('Delphi-Praxis');
-    Text.Add('Embarcadero Delphi');
+    Text.Add('Embarcadero');
     Text.Add('famfamfam');
     Text.Add('FastMM');
     Text.Add('freecsstemplates.org');
@@ -517,6 +520,7 @@ begin
     Text.Add('Gimp');
     Text.Add('Inno Setup');
     Text.Add('jQuery');
+    Text.Add('LED icons');
     Text.Add('MySQL');
     Text.Add('Notepad++');
     Text.Add('Mp3FileUtils');
@@ -527,7 +531,6 @@ begin
 
     Text.Add('');
     Text.Add('');
-
     Text.Add('');
     Text.Add('');
     Text.Add('');
@@ -538,7 +541,6 @@ begin
     Text.Add('');
     Text.Add('');
     Text.Add('');
-
     Text.Add('');
     Text.Add('');
     Text.Add('');
@@ -552,6 +554,12 @@ begin
     Text.Add('&IMG1');
     Text.Add('&IMG2');
 
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
     Text.Add('');
     Text.Add('');
     Text.Add('');
