@@ -340,7 +340,7 @@ begin
   W := 900;
   H := 630;
   if Screen.WorkAreaWidth < W then
-    W := Screen.Width - 20;
+    W := Screen.WorkAreaWidth - 20;
   if Screen.WorkAreaHeight < H then
     H := Screen.WorkAreaHeight - 20;
 
@@ -361,7 +361,7 @@ begin
 
   FRecoveryFile := FStorage.DataDir + 'streamwriter_data_recovery.dat';
 
-  FBuildNumber := 278;
+  FBuildNumber := 279;
 
   BuildThanksText;
 

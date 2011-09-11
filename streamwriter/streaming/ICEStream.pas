@@ -1026,11 +1026,12 @@ begin
     if FSettings.SeparateTracks then
       TrySave;
 
-    if ((RecordTitle <> '') and (FBytesPerSec > 0) and (FAudioStream.Size > FBytesPerSec * 40) and (FTitle <> FRecordTitle) and (FStreamTracks.Find(FRecordTitle) = nil)) or
-       (FMetaCounter > 5) then
-    begin
-      FRemoveClient := True;
-    end;
+    if RecordTitle <> '' then
+      if ((FBytesPerSec > 0) and (FAudioStream.Size > FBytesPerSec * 40) and (FTitle <> FRecordTitle) and (FStreamTracks.Find(FRecordTitle) = nil)) or
+         (FMetaCounter > 5) then
+      begin
+        FRemoveClient := True;
+      end;
 
     {
     if (RecordTitle <> '') and (FBytesPerSec > 0) and (FTitle <> FRecordTitle) and (not FStreamTracks.Find(FRecordTitle)) then
