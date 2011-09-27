@@ -70,7 +70,7 @@ type
     procedure ClientDebug(Sender: TObject);
     procedure ClientRefresh(Sender: TObject);
     procedure ClientAddRecent(Sender: TObject);
-    procedure ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
+    procedure ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string; Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
     procedure ClientTitleChanged(Sender: TObject; Title: string);
     procedure ClientDisconnected(Sender: TObject);
     procedure ClientICYReceived(Sender: TObject; Bytes: Integer);
@@ -81,7 +81,7 @@ type
     procedure ClientPause(Sender: TObject);
     procedure ClientStop(Sender: TObject);
 
-    procedure HomeCommTitleChanged(Sender: TObject; StreamName, Title, CurrentURL, Format, TitlePattern: string; Kbps: Cardinal);
+    procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; StreamName, Title, CurrentURL, Format, TitlePattern: string; Kbps: Cardinal);
   public
     constructor Create(Lists: TDataLists);
     destructor Destroy; override;
@@ -99,6 +99,8 @@ type
     property Items[Index: Integer]: TICEClient read FGetItem; default;
     property Count: Integer read FGetCount;
 
+    function MatchesClient(Client: TICEClient; ID: Integer; Name, URL, Title: string;
+      URLs: TStringList): Boolean;
     function GetClient(ID: Integer; Name, URL, Title: string; URLs: TStringList): TICEClient;
     function GetUsedBandwidth(Bitrate, Speed: Int64; ClientToAdd: TICEClient = nil): Integer;
 
@@ -274,13 +276,14 @@ begin
   Result := TClientEnum.Create(Self);
 end;
 
-procedure TClientManager.HomeCommTitleChanged(Sender: TObject; StreamName, Title,
-  CurrentURL, Format, TitlePattern: string; Kbps: Cardinal);
+procedure TClientManager.HomeCommTitleChanged(Sender: TObject; ID: Cardinal;
+  StreamName, Title, CurrentURL, Format, TitlePattern: string; Kbps: Cardinal);
 var
   i, n: Integer;
   AutoTuneInMinKbps: Cardinal;
   Client: TICEClient;
   Res: TMayConnectResults;
+  Found: Boolean;
 begin
   AutoTuneInMinKbps := 0;
 
@@ -337,8 +340,20 @@ begin
       end;
       FErrorShown := False;
 
-      Client := GetClient(0, StreamName, CurrentURL, Title, nil);
-      if (Client = nil) or ((Client <> nil) and not Client.AutoRemove and (Client.RecordTitle <> Title)) then
+      Found := False;
+      for Client in Self.FClients do
+      begin
+        if MatchesClient(Client, ID, StreamName, CurrentURL, Title, nil) then
+        begin
+          if (Client.AutoRemove and (Client.RecordTitle = Title)) or (Client.Recording) then
+          begin
+            Found := True;
+            Break;
+          end;
+        end;
+      end;
+
+      if not Found then
       begin
         Client := AddClient(0, 0, StreamName, CurrentURL, True);
         Client.Entry.Settings.Filter := ufNone;
@@ -349,6 +364,7 @@ begin
         Client.Entry.Settings.MaxRetries := 0;
         Client.Entry.Settings.RetryDelay := 0;
         Client.Entry.Settings.AddSavedToIgnore := AppGlobals.AutoTuneInAddToIgnore;
+        Client.Entry.Settings.RemoveSavedFromWishlist := AppGlobals.AutoRemoveSavedFromWishlist;
         Client.Entry.Settings.AddSavedToStreamIgnore := False;
 
         Client.Entry.Settings.SilenceLevel := 5;
@@ -386,6 +402,38 @@ begin
     FOnClientAddRecent(Sender);
 end;
 
+function TClientManager.MatchesClient(Client: TICEClient; ID: Integer; Name, URL, Title: string;
+  URLs: TStringList): Boolean;
+var
+  i, n: Integer;
+begin
+  if ID > 0 then
+    if Client.Entry.ID = ID then
+      Exit(True);
+
+  if Name <> '' then
+    if LowerCase(Client.Entry.Name) = LowerCase(Name) then
+      Exit(True);
+
+  if URL <> '' then
+    if LowerCase(Client.Entry.StartURL) = LowerCase(URL) then
+      Exit(True);
+
+  if Title <> '' then
+    if LowerCase(Client.Title) = LowerCase(Title) then
+      Exit(True);
+
+  if URLs <> nil then
+    for i := 0 to Client.Entry.URLs.Count - 1 do
+      for n := 0 to URLs.Count - 1 do
+        if (LowerCase(Client.Entry.URLs[i]) = LowerCase(URL)) or
+           (LowerCase(Client.Entry.URLs[i]) = LowerCase(URLs[n])) then
+        begin
+          Exit(True);
+        end;
+  Exit(False);
+end;
+
 function TClientManager.GetClient(ID: Integer; Name, URL, Title: string;
   URLs: TStringList): TICEClient;
 var
@@ -399,52 +447,17 @@ begin
   Result := nil;
   for Client in FClients do
   begin
-    if ID > 0 then
-      if Client.Entry.ID = ID then
-      begin
-        Result := Client;
-        Exit;
-      end;
-
-    if Name <> '' then
-      if LowerCase(Client.Entry.Name) = LowerCase(Name) then
-      begin
-        Result := Client;
-        Exit;
-      end;
-
-    if URL <> '' then
-      if LowerCase(Client.Entry.StartURL) = LowerCase(URL) then
-      begin
-        Result := Client;
-        Exit;
-      end;
-
-    if Title <> '' then
-      if LowerCase(Client.Title) = LowerCase(Title) then
-      begin
-        Result := Client;
-        Exit;
-      end;
-
-    if URLs <> nil then
-      for i := 0 to Client.Entry.URLs.Count - 1 do
-        for n := 0 to URLs.Count - 1 do
-          if (LowerCase(Client.Entry.URLs[i]) = LowerCase(URL)) or
-             (LowerCase(Client.Entry.URLs[i]) = LowerCase(URLs[n])) then
-          begin
-            Result := Client;
-            Exit;
-          end;
+    if MatchesClient(Client, ID, Name, URL, Title, URLs) then
+      Exit(Client);
   end;
 end;
 
-procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64;
-  WasCut, FullTitle, IsStreamFile: Boolean);
+procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
+  Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
 begin
   Inc(FSongsSaved);
   if Assigned(FOnClientSongSaved) then
-    FOnClientSongSaved(Sender, Filename, Title, Filesize, Length, WasCut, FullTitle, IsStreamFile);
+    FOnClientSongSaved(Sender, Filename, Title, SongArtist, SongTitle, Filesize, Length, WasCut, FullTitle, IsStreamFile);
 end;
 
 procedure TClientManager.ClientStop(Sender: TObject);
@@ -468,6 +481,11 @@ var
   Client: TICEClient;
 begin
   Client := Sender as TICEClient;
+
+  // Wenn der neue Client eine automatische Aufnahme ist raus hier!
+  if Client.AutoRemove then
+    Exit;
+
   for i := 0 to FClients.Count - 1 do
     if FClients[i] <> Client then
       for n := 0 to Client.Entry.URLs.Count - 1 do

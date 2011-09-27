@@ -33,7 +33,7 @@ uses
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
-  TypeDefs, ExtendedStream, SettingsStorage;
+  TypeDefs, ExtendedStream, SettingsStorage, ChartsTab;
 
 type
   TSWStatusBar = class(TStatusBar)
@@ -73,6 +73,11 @@ type
     property OverallReceived: UInt64 read FOverallReceived write FSetOverallReceived;
   end;
 
+const
+  WM_UPDATEFOUND = WM_USER + 628;
+  WM_AFTERSHOWN = WM_USER + 678;
+
+type
   TfrmStreamWriterMain = class(TForm)
     addXP: TXPManifest;
     mnuMain: TMainMenu;
@@ -213,7 +218,6 @@ type
     procedure mnuCheckUpdateClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure mnuShowClick(Sender: TObject);
-    procedure FormActivate(Sender: TObject);
     procedure mnuStreamPopupPopup(Sender: TObject);
     procedure actExitExecute(Sender: TObject);
     procedure actSettingsExecute(Sender: TObject);
@@ -249,17 +253,20 @@ type
     FClients: TClientManager;
     pagMain: TMainPageControl;
     tabClients: TClientTab;
-    tabSaved: TSavedTab;
+    tabCharts: TChartsTab;
     tabLists: TListsTab;
+    tabSaved: TSavedTab;
     addStatus: TSWStatusBar;
 
     FExiting: Boolean;
 
     procedure OneInstanceMessage(var Msg: TMessage); message WM_USER + 1234;
+    procedure AfterShown(var Msg: TMessage); message WM_AFTERSHOWN;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
     procedure EndSession(var Msg: TMessage); message WM_ENDSESSION;
     procedure SysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
     procedure Hotkey(var Msg: TWMHotKey); message WM_HOTKEY;
+    procedure UpdateFound(var Msg: TMessage); message WM_UPDATEFOUND;
 
     function CanExitApp: Boolean;
     procedure ExitApp(Shutdown: Boolean; ImportFilename: string = '');
@@ -290,6 +297,7 @@ type
     procedure tabClientsTrackAdded(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsAddTitleToList(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string);
+    procedure tabClientsRemoveTitleFromList(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string);
     procedure tabClientsAuthRequired(Sender: TObject);
     procedure tabClientsShowErrorMessage(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
     procedure tabClientsClientAdded(Sender: TObject);
@@ -304,6 +312,8 @@ type
 
     procedure tabVolumeChanged(Sender: TObject; Volume: Integer);
     procedure tabPlayStarted(Sender: TObject);
+
+    procedure tabChartsAddToWishlist(Sender: TObject; List: TStringList);
 
     procedure mnuMoveToCategory(Sender: TObject);
   protected
@@ -336,6 +346,8 @@ var
   S: TExtendedStream;
   Lst: TSettingsList;
 begin
+  AppGlobals.WindowHandle := 0;
+
   FExiting := True;
 
   AppGlobals.MainMaximized := WindowState = wsMaximized;
@@ -550,7 +562,7 @@ begin
   ToggleWindow(False);
 end;
 
-procedure TfrmStreamWriterMain.FormActivate(Sender: TObject);
+procedure TfrmStreamWriterMain.AfterShown(var Msg: TMessage);
 begin
   if FWasActivated then
     Exit;
@@ -594,6 +606,9 @@ begin
   AppGlobals.FirstStartShown := True;
 
   tmrAutoSave.Enabled := True;
+
+  if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
+    FUpdater.Start(uaVersion);
 end;
 
 procedure TfrmStreamWriterMain.FormClose(Sender: TObject;
@@ -620,49 +635,7 @@ var
   Recovered: Boolean;
   S: TExtendedStream;
 begin
-  addStatus := TSWStatusBar.Create(Self);
-  addStatus.Parent := Self;
-
   FDataLists := TDataLists.Create;
-  FClients := TClientManager.Create(FDataLists);
-
-  pagMain := TMainPageControl.Create(Self);
-  pagMain.Parent := Self;
-  pagMain.Visible := True;
-  pagMain.Align := alClient;
-  pagMain.Images := imgImages;
-
-  tabClients := TClientTab.Create(pagMain);
-  tabClients.PageControl := pagMain;
-  tabClients.Setup(tbClients, ActionList1, mnuStreamPopup, imgImages, imgClients,
-    FClients, FDataLists);
-  tabClients.SideBar.BrowserView.StreamTree.Images := imgImages;
-  tabClients.AddressBar.Stations.Images := imgImages;
-  tabClients.SideBar.DebugView.DebugView.DebugView.Images := imgLog;
-  tabClients.OnUpdateButtons := tabClientsUpdateButtons;
-  tabClients.OnCut := tabClientsCut;
-  tabClients.OnTrackAdded := tabClientsTrackAdded;
-  tabClients.OnTrackRemoved := tabClientsTrackRemoved;
-  tabClients.OnAddTitleToList := tabClientsAddTitleToList;
-  tabClients.OnVolumeChanged := tabVolumeChanged;
-  tabClients.OnPlayStarted := tabPlayStarted;
-  tabClients.OnAuthRequired := tabClientsAuthRequired;
-  tabClients.OnShowErrorMessage := tabClientsShowErrorMessage;
-
-  tabLists := TListsTab.Create(pagMain);
-  tabLists.PageControl := pagMain;
-
-  tabSaved := TSavedTab.Create(pagMain);
-  tabSaved.PageControl := pagMain;
-  tabSaved.OnCut := tabClientsCut;
-  tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
-  tabSaved.OnRefresh := tabSavedRefresh;
-  tabSaved.OnVolumeChanged := tabVolumeChanged;
-  tabSaved.OnPlayStarted := tabPlayStarted;
-
-  FWasActivated := False;
-  FWasShown := False;
-  FUpdateOnExit := False;
 
   Recovered := False;
   if FileExists(AppGlobals.RecoveryFile) then
@@ -705,6 +678,54 @@ begin
     end;
   end;
 
+  addStatus := TSWStatusBar.Create(Self);
+  addStatus.Parent := Self;
+
+  FClients := TClientManager.Create(FDataLists);
+
+  pagMain := TMainPageControl.Create(Self);
+  pagMain.Parent := Self;
+  pagMain.Visible := True;
+  pagMain.Align := alClient;
+  pagMain.Images := imgImages;
+
+  tabClients := TClientTab.Create(pagMain);
+  tabClients.PageControl := pagMain;
+  tabClients.Setup(tbClients, ActionList1, mnuStreamPopup, imgImages, imgClients,
+    FClients, FDataLists);
+  tabClients.SideBar.BrowserView.StreamTree.Images := imgImages;
+  tabClients.AddressBar.Stations.Images := imgImages;
+  tabClients.SideBar.DebugView.DebugView.DebugView.Images := imgLog;
+  tabClients.OnUpdateButtons := tabClientsUpdateButtons;
+  tabClients.OnCut := tabClientsCut;
+  tabClients.OnTrackAdded := tabClientsTrackAdded;
+  tabClients.OnTrackRemoved := tabClientsTrackRemoved;
+  tabClients.OnAddTitleToList := tabClientsAddTitleToList;
+  tabClients.OnRemoveTitleFromList := tabClientsRemoveTitleFromList;
+  tabClients.OnVolumeChanged := tabVolumeChanged;
+  tabClients.OnPlayStarted := tabPlayStarted;
+  tabClients.OnAuthRequired := tabClientsAuthRequired;
+  tabClients.OnShowErrorMessage := tabClientsShowErrorMessage;
+
+  tabCharts := TChartsTab.Create(pagMain);
+  tabCharts.PageControl := pagMain;
+  tabCharts.OnAddToWishlist := tabChartsAddToWishlist;
+
+  tabLists := TListsTab.Create(pagMain);
+  tabLists.PageControl := pagMain;
+
+  tabSaved := TSavedTab.Create(pagMain);
+  tabSaved.PageControl := pagMain;
+  tabSaved.OnCut := tabClientsCut;
+  tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
+  tabSaved.OnRefresh := tabSavedRefresh;
+  tabSaved.OnVolumeChanged := tabVolumeChanged;
+  tabSaved.OnPlayStarted := tabPlayStarted;
+
+  FWasActivated := False;
+  FWasShown := False;
+  FUpdateOnExit := False;
+
   tabClients.AddressBar.Stations.BuildList(FDataLists.RecentList);
   tabClients.BuildTree(FDataLists);
 
@@ -722,8 +743,6 @@ begin
   FUpdater := TUpdateClient.Create;
   FUpdater.OnNoUpdateFound := UpdaterNoUpdateFound;
   FUpdater.OnUpdateFound := UpdaterUpdateFound;
-  if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
-    FUpdater.Start(uaVersion);
 
   Width := AppGlobals.MainWidth;
   Height := AppGlobals.MainHeight;
@@ -740,6 +759,11 @@ begin
 
   tabClients.OnClientAdded := tabClientsClientAdded;
   tabClients.OnClientRemoved := tabClientsClientRemoved;
+
+  // Ist nun hier, damit man nicht sieht, wie sich alle Controls resizen.
+  if AppGlobals.MainMaximized then
+    WindowState := wsMaximized;
+  FWasMaximized := WindowState = wsMaximized;
 end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
@@ -761,8 +785,6 @@ begin
   if FWasShown then
     Exit;
 
-  SetPriorityClass(GetCurrentProcess, HIGH_PRIORITY_CLASS);
-
   FWasShown := True;
 
   tabSavedRefresh(nil);
@@ -771,16 +793,18 @@ begin
 
   AppGlobals.WindowHandle := Handle;
 
-  if AppGlobals.MainMaximized then
-    WindowState := wsMaximized;
-  FWasMaximized := WindowState = wsMaximized;
-
   tabClients.Shown;
+
+  tabCharts.Setup(FDataLists, imgImages);
   tabLists.Setup(FClients, FDataLists, imgImages);
 
   actShowSideBar.Checked := tabClients.SideBar.Visible;
 
   Language.Translate(Self);
+
+  Application.ProcessMessages;
+
+  PostMessage(Handle, WM_AFTERSHOWN, 0, 0);
 end;
 
 function TfrmStreamWriterMain.HandleLoadError(E: Exception): Integer;
@@ -834,6 +858,7 @@ procedure TfrmStreamWriterMain.HomeCommStateChanged(Sender: TObject);
 begin
   UpdateStatus;
   tabClients.SideBar.BrowserView.HomeCommStateChanged(Sender);
+  tabCharts.HomeCommStateChanged(Sender);
   if FCommunityLogin <> nil then
     FCommunityLogin.HomeCommStateChanged(Sender);
 
@@ -1410,6 +1435,38 @@ begin
   tabSaved.Tree.RemoveTrack(Track);
 end;
 
+procedure TfrmStreamWriterMain.tabChartsAddToWishlist(Sender: TObject;
+  List: TStringList);
+var
+  i, n, NumChars: Integer;
+  Hash: Cardinal;
+  Found: Boolean;
+  Pattern: string;
+  T: TTitleInfo;
+begin
+  for i := 0 to List.Count - 1 do
+  begin
+    Pattern := BuildPattern(List[i], Hash, NumChars, True);
+    Found := False;
+    for n := 0 to FDataLists.SaveList.Count - 1 do
+      if FDataLists.SaveList[n].Hash = Hash then
+      begin
+        Found := True;
+        Break;
+      end;
+
+    if not Found then
+    begin
+      T := TTitleInfo.Create(List[i]);
+
+      FDataLists.SaveList.Add(T);
+      tabLists.AddTitle(nil, ltSave, T);
+
+      HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+    end;
+  end;
+end;
+
 procedure TfrmStreamWriterMain.tabClientsAddTitleToList(Sender: TObject; Client: TICEClient;
   ListType: TListType; Title: string);
 var
@@ -1451,6 +1508,35 @@ begin
       tabLists.AddTitle(Client, ListType, T);
 
       HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+    end;
+  end;
+end;
+
+procedure TfrmStreamWriterMain.tabClientsRemoveTitleFromList(
+  Sender: TObject; Client: TICEClient; ListType: TListType; Title: string);
+var
+  i: Integer;
+  List: TTitleList;
+begin
+  if Client = nil then
+    if ListType = ltSave then
+      List := FDataLists.SaveList
+    else
+      List := FDataLists.IgnoreList
+  else
+    if ListType = ltSave then
+      List := Client.Entry.SaveList
+    else
+      List := Client.Entry.IgnoreList;
+
+  for i := List.Count - 1 downto 0 do
+  begin
+    if Like(Title, List[i].Pattern) then
+    begin
+      tabLists.RemoveTitle(Client, ListType, List[i]);
+
+      List[i].Free;
+      List.Delete(i);
     end;
   end;
 end;
@@ -1818,17 +1904,11 @@ begin
     mnuCurrentTitle1.Enabled := (Length(Clients) > 0) and AnyClientHasTitle;
 end;
 
-procedure TfrmStreamWriterMain.UpdaterNoUpdateFound(Sender: TObject);
-begin
-  AppGlobals.LastUpdateChecked := Trunc(Now);
-end;
-
-procedure TfrmStreamWriterMain.UpdaterUpdateFound(Sender: TObject);
+procedure TfrmStreamWriterMain.UpdateFound(var Msg: TMessage);
 var
   Res: Integer;
 begin
-  AppGlobals.LastUpdateChecked := Trunc(Now);
-  Res := MsgBox(Handle, _('A new version was found.'#13#10'Do you want to download the update now?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
+  Res := MsgBox(Handle, _('A new version was found.'#13#10'Do you want to download the update now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
   if Res = IDYES then
   begin
     if AppGlobals.RunningFromInstalledLocation then
@@ -1836,6 +1916,22 @@ begin
     else
       ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectLink), nil, nil, 1);
   end;
+end;
+
+procedure TfrmStreamWriterMain.UpdaterNoUpdateFound(Sender: TObject);
+begin
+  AppGlobals.LastUpdateChecked := Trunc(Now);
+end;
+
+procedure TfrmStreamWriterMain.UpdaterUpdateFound(Sender: TObject);
+begin
+  AppGlobals.LastUpdateChecked := Trunc(Now);
+
+  // REMARK: Hier war mal die MsgBox mit 'A new version was found...'
+  //         Das konnte aber zu Deadlocks führen, weil während allem was jetzt kam
+  //         (z.B. ShowUpdate() mit Modaler Form) der UpdateThread nicht nil gesetzt
+  //         wurde. Deshalb ist hier nun ein PostMessage.
+  PostMessage(Handle, WM_UPDATEFOUND, 0, 0);
 end;
 
 procedure TfrmStreamWriterMain.UpdateStatus;
@@ -2196,8 +2292,16 @@ begin
 
   FConnected := Connected;
   FLoggedIn := LoggedIn;
-  FClients := Clients;
-  FRecordings := Recordings;
+  if Connected then
+  begin
+    FClients := Clients;
+    FRecordings := Recordings;
+  end else
+  begin
+    FClients := 0;
+    FRecordings := 0;
+  end;
+
   FSongsSaved := SongsSaved;
 
   if (OldConnected <> FConnected) or (OldLoggedIn <> FLoggedIn) then

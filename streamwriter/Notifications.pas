@@ -19,6 +19,8 @@ type
     FState: TNotificationStates;
     FDisplayOnEndTitle: string;
     FDisplayOnEndStream: string;
+
+    class function OtherWindowIsFullscreen: Boolean;
   protected
     procedure CreateParams(var Params: TCreateParams); override;
     procedure DoShow; override;
@@ -48,6 +50,9 @@ implementation
 
 class procedure TfrmNotification.Act(Title, Stream: string);
 begin
+  if OtherWindowIsFullscreen then
+    Exit;
+
   if NotificationForm = nil then
   begin
     NotificationForm := TfrmNotification.Create(nil);
@@ -124,6 +129,41 @@ begin
   KillTimer(Handle, 10);
   Action := caFree;
   NotificationForm := nil;
+end;
+
+class function TfrmNotification.OtherWindowIsFullscreen: Boolean;
+  function RectMatches(R: TRect; R2: TRect): Boolean;
+  begin
+    Result := (R.Left = R2.Left) and (R.Top = R2.Top) and (R.Right = R2.Right) and (R.Bottom = R2.Bottom);
+  end;
+type
+  TGetShellWindow = function(): HWND; stdcall;
+var
+  i: Integer;
+  H, Handle: Cardinal;
+  R: TRect;
+  GetShellWindow: TGetShellWindow;
+begin
+  H := GetForegroundWindow;
+
+  @GetShellWindow := nil;
+  Handle := GetModuleHandle('user32.dll');
+  if (Handle > 0) then
+  begin
+    @GetShellWindow := GetProcAddress(Handle, 'GetShellWindow');
+  end;
+
+  if ((H <> GetDesktopWindow) and ((@GetShellWindow <> nil) and (H <> GetShellWindow))) then
+  begin
+    GetWindowRect(H, R);
+    for i := 0 to Screen.MonitorCount - 1 do
+      if RectMatches(Screen.Monitors[i].BoundsRect, R) then
+      begin
+        Exit(True);
+      end;
+  end;
+
+  Exit(False);
 end;
 
 procedure TfrmNotification.Paint;

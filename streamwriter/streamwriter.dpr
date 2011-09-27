@@ -23,6 +23,11 @@ program streamwriter;
 
 uses
   MM in '..\..\common\MM.pas',
+  madExcept,
+  madLinkDisAsm,
+  madListHardware,
+  madListProcesses,
+  madListModules,
   Windows,
   SysUtils,
   Forms,
@@ -100,7 +105,9 @@ uses
   TypeDefs in 'TypeDefs.pas',
   CutTabSearchSilence in 'controls\CutTabSearchSilence.pas' {frmCutTabSearchSilence},
   FileWatcher in '..\..\common\FileWatcher.pas',
-  MP3Gain in 'plugins\MP3Gain.pas';
+  MP3Gain in 'plugins\MP3Gain.pas',
+  ChartsTab in 'controls\ChartsTab.pas',
+  ChartsTabAdjustTitleName in 'controls\ChartsTabAdjustTitleName.pas' {frmChartsTabAdjustTitleName};
 
 {$SetPEOptFlags $0140}
 

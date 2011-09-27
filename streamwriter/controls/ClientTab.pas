@@ -115,6 +115,7 @@ type
     FOnClientAdded: TNotifyEvent;
     FOnClientRemoved: TNotifyEvent;
     FOnAddTitleToList: TAddTitleEvent;
+    FOnRemoveTitleFromList: TAddTitleEvent;
 
     procedure ShowInfo;
 
@@ -143,7 +144,7 @@ type
     procedure ClientManagerAddRecent(Sender: TObject);
     procedure ClientManagerClientAdded(Sender: TObject);
     procedure ClientManagerClientRemoved(Sender: TObject);
-    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
+    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string; Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
     procedure ClientManagerTitleAllowed(Sender: TObject; Title: string;
@@ -199,6 +200,7 @@ type
     property OnClientAdded: TNotifyEvent read FOnClientAdded write FOnClientAdded;
     property OnClientRemoved: TNotifyEvent read FOnClientRemoved write FOnClientRemoved;
     property OnAddTitleToList: TAddTitleEvent read FOnAddTitleToList write FOnAddTitleToList;
+    property OnRemoveTitleFromList: TAddTitleEvent read FOnRemoveTitleFromList write FOnRemoveTitleFromList;
   end;
 
 implementation
@@ -1056,7 +1058,7 @@ begin
 end;
 
 procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
-  Filename, Title: string; Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
+  Filename, Title, SongArtist, SongTitle: string; Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
 var
   Client: TICEClient;
   Track: TTrackInfo;
@@ -1096,14 +1098,26 @@ begin
     if Assigned(FOnTrackAdded) then
       FOnTrackAdded(Client.Entry, Track);
 
-    Client := Sender as TICEClient;
-    if Client.Entry.Settings.AddSavedToIgnore and FullTitle then
-      if Assigned(FOnAddTitleToList) then
-        FOnAddTitleToList(Self, nil, ltIgnore, Title);
+    if (SongArtist <> '') and (SongTitle <> '') then
+      Title := SongArtist + ' - ' + SongTitle;
 
-    if Client.Entry.Settings.AddSavedToStreamIgnore and FullTitle then
-      if Assigned(FOnAddTitleToList) then
-        FOnAddTitleToList(Self, Client, ltIgnore, Title);
+    if FullTitle then
+    begin
+      Client := Sender as TICEClient;
+      if Client.Entry.Settings.AddSavedToIgnore then
+        if Assigned(FOnAddTitleToList) then
+          FOnAddTitleToList(Self, nil, ltIgnore, Title);
+
+      if Client.Entry.Settings.AddSavedToStreamIgnore then
+        if Assigned(FOnAddTitleToList) then
+          FOnAddTitleToList(Self, Client, ltIgnore, Title);
+
+      if Client.Entry.Settings.RemoveSavedFromWishlist then
+      begin
+        if Assigned(FOnRemoveTitleFromList) then
+          FOnRemoveTitleFromList(Self, nil, ltSave, Title);
+      end;
+    end;
   end;
 
   ShowInfo;

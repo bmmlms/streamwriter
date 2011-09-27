@@ -134,19 +134,17 @@ object frmSettings: TfrmSettings
     end
     object chkOverwriteSmaller: TCheckBox
       Left = 4
-      Top = 240
+      Top = 264
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Overwrite existing file if newer file is larger'
-      Checked = True
-      State = cbChecked
       TabOrder = 6
       OnClick = chkOverwriteSmallerClick
     end
     object chkDiscardSmaller: TCheckBox
       Left = 4
-      Top = 264
+      Top = 288
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -191,6 +189,16 @@ object frmSettings: TfrmSettings
       Caption = 'Add saved titles to stream ignorelist'
       TabOrder = 10
       OnClick = chkAddSavedToStreamIgnoreClick
+    end
+    object chkRemoveSavedFromWishlist: TCheckBox
+      Left = 4
+      Top = 240
+      Width = 281
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Remove saved titles from wishlist'
+      TabOrder = 11
+      OnClick = chkRemoveSavedFromWishlistClick
     end
   end
   object pnlMain: TPanel
@@ -786,15 +794,15 @@ object frmSettings: TfrmSettings
     Left = 904
     Top = 4
     Width = 293
-    Height = 297
+    Height = 373
     TabOrder = 6
     Visible = False
     DesignSize = (
       293
-      297)
+      373)
     object Label2: TLabel
       Left = 20
-      Top = 192
+      Top = 220
       Width = 268
       Height = 29
       Anchors = [akLeft, akTop, akRight]
@@ -803,11 +811,10 @@ object frmSettings: TfrmSettings
         'Streams unknown to streamWriter will be submitted to the server ' +
         'so they can appear in the browser.'
       WordWrap = True
-      ExplicitWidth = 269
     end
     object Label8: TLabel
       Left = 20
-      Top = 248
+      Top = 276
       Width = 268
       Height = 65
       Anchors = [akLeft, akTop, akRight]
@@ -817,18 +824,17 @@ object frmSettings: TfrmSettings
         'roadcasted to other users. This is important for the automatic r' +
         'ecording of songs on the wishlist.'
       WordWrap = True
-      ExplicitWidth = 269
     end
     object Label16: TLabel
       Left = 20
-      Top = 72
+      Top = 100
       Width = 76
       Height = 13
       Caption = 'Minimum bitrate:'
     end
     object Label17: TLabel
       Left = 20
-      Top = 116
+      Top = 144
       Width = 35
       Height = 13
       Caption = 'Format:'
@@ -845,7 +851,7 @@ object frmSettings: TfrmSettings
     end
     object chkSubmitStreamInfo: TCheckBox
       Left = 4
-      Top = 168
+      Top = 196
       Width = 284
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -854,7 +860,7 @@ object frmSettings: TfrmSettings
     end
     object chkSubmitStats: TCheckBox
       Left = 4
-      Top = 224
+      Top = 252
       Width = 284
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -863,7 +869,7 @@ object frmSettings: TfrmSettings
     end
     object lstMinBitrate: TComboBox
       Left = 20
-      Top = 88
+      Top = 116
       Width = 129
       Height = 21
       Style = csDropDownList
@@ -882,7 +888,7 @@ object frmSettings: TfrmSettings
     end
     object lstFormat: TComboBox
       Left = 20
-      Top = 132
+      Top = 160
       Width = 129
       Height = 21
       Style = csDropDownList
@@ -910,10 +916,18 @@ object frmSettings: TfrmSettings
       Caption = 'Add saved titles to global ignorelist'
       TabOrder = 6
     end
+    object chkAutoRemoveSavedFromWishlist: TCheckBox
+      Left = 20
+      Top = 72
+      Width = 269
+      Height = 21
+      Caption = 'Remove saved titles from wishlist'
+      TabOrder = 7
+    end
   end
   object pnlFilenames: TPanel
     Left = 904
-    Top = 308
+    Top = 384
     Width = 293
     Height = 305
     TabOrder = 7
@@ -1357,7 +1371,7 @@ object frmSettings: TfrmSettings
   end
   object pnlFilenamesExt: TPanel
     Left = 904
-    Top = 620
+    Top = 696
     Width = 293
     Height = 93
     TabOrder = 11
@@ -1436,7 +1450,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C0101020008006C0210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800800210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

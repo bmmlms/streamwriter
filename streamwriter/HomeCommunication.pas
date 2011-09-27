@@ -48,13 +48,14 @@ type
 
   THomeThread = class(TInt32SocketThread)
   private
-    FGenres: TStringList;
-
     FDataLists: TDataLists;
 
     FAuthAuthenticated: Boolean;
     FIsAdmin: Boolean;
+    FCharts: TList<TChartEntry>;
+    FChartGenres: TList<TGenre>;
 
+    FChangedStreamID: Cardinal;
     FChangedStreamName: string;
     FChangedTitle: string;
     FChangedCurrentURL: string;
@@ -68,10 +69,15 @@ type
     FErrorID: TCommErrors;
     FErrorMsg: string;
 
+    FChartGenreID: Cardinal;
+    FChartSearch: string;
+
     FOnLoggedOn: TSocketEvent;
     FOnLoggedOff: TSocketEvent;
     FOnGenresReceived: TSocketEvent;
     FOnStreamsReceived: TSocketEvent;
+    FOnChartsReceived: TSocketEvent;
+    FOnChartGenresReceived: TSocketEvent;
     FOnTitleChanged: TSocketEvent;
     FOnServerInfo: TSocketEvent;
     FOnError: TSocketEvent;
@@ -84,6 +90,8 @@ type
     procedure DoLoggedOn(Version: Integer; Header, Data: TXMLNode);
     procedure DoLoggedOff(Version: Integer; Header, Data: TXMLNode);
     procedure DoStreamsReceived(Version: Integer; Header, Data: TXMLNode);
+    procedure DoChartGenresReceived(Version: Integer; Header, Data: TXMLNode);
+    procedure DoChartsReceived(Version: Integer; Header, Data: TXMLNode);
     procedure DoTitleChanged(Version: Integer; Header, Data: TXMLNode);
     procedure DoServerInfo(Version: Integer; Header, Data: TXMLNode);
     procedure DoError(Version: Integer; Header, Data: TXMLNode);
@@ -95,15 +103,19 @@ type
     property OnLoggedOn: TSocketEvent read FOnLoggedOn write FOnLoggedOn;
     property OnLoggedOff: TSocketEvent read FOnLoggedOff write FOnLoggedOff;
     property OnStreamsReceived: TSocketEvent read FOnStreamsReceived write FOnStreamsReceived;
+    property OnChartsReceived: TSocketEvent read FOnChartsReceived write FOnChartsReceived;
+    property OnChartGenresReceived: TSocketEvent read FOnChartGenresReceived write FOnChartGenresReceived;
     property OnTitleChanged: TSocketEvent read FOnTitleChanged write FOnTitleChanged;
     property OnServerInfo: TSocketEvent read FOnServerInfo write FOnServerInfo;
     property OnError: TSocketEvent read FOnError write FOnError;
   end;
 
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
-  TTitleChangedEvent = procedure(Sender: TObject; Name, Title, CurrentURL, Format, TitlePattern: string; Kbps: Cardinal) of object;
+  TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, Format, TitlePattern: string; Kbps: Cardinal) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
+  TChartsReceivedEvent = procedure(Sender: TObject; GenreID: Cardinal; Search: string; List: TList<TChartEntry>) of object;
+  TChartGenresReceivedEvent = procedure(Sender: TObject; List: TList<TGenre>) of object;
 
   THomeCommunication = class
   private
@@ -118,6 +130,8 @@ type
     FDataLists: TDataLists;
 
     FOnStreamsReceived: TNotifyEvent;
+    FOnChartsReceived: TChartsReceivedEvent;
+    FOnChartGenresReceived: TChartGenresReceivedEvent;
     FOnTitleChanged: TTitleChangedEvent;
     FOnServerInfo: TServerInfoEvent;
     FOnError: TErrorEvent;
@@ -128,6 +142,8 @@ type
     procedure ClientLoggedOn(Sender: TSocketThread);
     procedure ClientLoggedOff(Sender: TSocketThread);
     procedure ClientStreamsReceived(Sender: TSocketThread);
+    procedure ClientChartsReceived(Sender: TSocketThread);
+    procedure ClientChartGenresReceived(Sender: TSocketThread);
     procedure ClientTitleChanged(Sender: TSocketThread);
     procedure ClientServerInfo(Sender: TSocketThread);
     procedure ClientError(Sender: TSocketThread);
@@ -140,10 +156,12 @@ type
     procedure Connect;
     procedure SubmitStream(Stream: string);
     function GetStreams: Boolean;
+    function GetCharts(Search: string; ID: Cardinal): Boolean;
+    function GetChartGenres: Boolean;
 
     procedure LogOn(User, Pass: string);
     procedure LogOff;
-    procedure TitleChanged(StreamName, Title, CurrentURL, URL, Format: string; Kbps: Cardinal; URLs: TStringList);
+    procedure TitleChanged(ID: Cardinal; StreamName, Title, CurrentURL, URL, Format: string; Kbps: Cardinal; URLs: TStringList);
     procedure SendClientInfo;
     procedure UpdateStats(List: TList<Cardinal>; RecordingCount: Cardinal);
     procedure RateStream(ID, Rating: Integer);
@@ -161,6 +179,8 @@ type
     property Authenticated: Boolean read FAuthenticated;
     property IsAdmin: Boolean read FIsAdmin;
     property OnStreamsReceived: TNotifyEvent read FOnStreamsReceived write FOnStreamsReceived;
+    property OnChartsReceived: TChartsReceivedEvent read FOnChartsReceived write FOnChartsReceived;
+    property OnChartGenresReceived: TChartGenresReceivedEvent read FOnChartGenresReceived write FOnChartGenresReceived;
     property OnTitleChanged: TTitleChangedEvent read FOnTitleChanged write FOnTitleChanged;
     property OnServerInfo: TServerInfoEvent read FOnServerInfo write FOnServerInfo;
     property OnError: TErrorEvent read FOnError write FOnError;
@@ -192,9 +212,10 @@ end;
 procedure THomeCommunication.ClientTitleChanged(Sender: TSocketThread);
 begin
   if Assigned(FOnTitleChanged) then
-    FOnTitleChanged(Self, THomeThread(Sender).FChangedStreamName, THomeThread(Sender).FChangedTitle,
-      THomeThread(Sender).FChangedCurrentURL, THomeThread(Sender).FChangedFormat,
-      THomeThread(Sender).FChangedTitlePattern, THomeThread(Sender).FChangedKbps);
+    FOnTitleChanged(Self, THomeThread(Sender).FChangedStreamID, THomeThread(Sender).FChangedStreamName,
+      THomeThread(Sender).FChangedTitle, THomeThread(Sender).FChangedCurrentURL,
+      THomeThread(Sender).FChangedFormat, THomeThread(Sender).FChangedTitlePattern,
+      THomeThread(Sender).FChangedKbps);
 end;
 
 procedure THomeCommunication.ClientLoggedOn(Sender: TSocketThread);
@@ -223,6 +244,8 @@ begin
   FClient.OnLoggedOn := ClientLoggedOn;
   FClient.OnLoggedOff := ClientLoggedOff;
   FClient.OnStreamsReceived := ClientStreamsReceived;
+  FClient.OnChartsReceived := ClientChartsReceived;
+  FClient.OnChartGenresReceived := ClientChartGenresReceived;
   FClient.OnTitleChanged := ClientTitleChanged;
   FClient.OnServerInfo := ClientServerInfo;
   FClient.OnError := ClientError;
@@ -240,6 +263,55 @@ destructor THomeCommunication.Destroy;
 begin
   Terminate;
   inherited;
+end;
+
+function THomeCommunication.GetChartGenres: Boolean;
+var
+  XMLDocument: TXMLLib;
+  XML: AnsiString;
+begin
+  Result := False;
+  if not Connected then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('getchartgenres');
+  try
+    XMLDocument.SaveToString(XML);
+
+    FClient.Write(ZCompressStr(XML));
+    Result := True;
+  finally
+    XMLDocument.Free;
+  end;
+end;
+
+function THomeCommunication.GetCharts(Search: string; ID: Cardinal): Boolean;
+var
+  XMLDocument: TXMLLib;
+  Data, Node: TXMLNode;
+  XML: AnsiString;
+begin
+  Result := False;
+  if not Connected then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('getcharts');
+  try
+    Data := XMLDocument.Root.GetNode('data');
+
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'search';
+    Node.Value.AsString := Search;
+    Node := TXMLNode.Create(Data);
+    Node.Name := 'genre';
+    Node.Value.AsInteger := ID;
+
+    XMLDocument.SaveToString(XML);
+    FClient.Write(ZCompressStr(XML));
+    Result := True;
+  finally
+    XMLDocument.Free;
+  end;
 end;
 
 function THomeCommunication.GetStreams;
@@ -525,6 +597,19 @@ begin
   end;
 end;
 
+procedure THomeCommunication.ClientChartGenresReceived(
+  Sender: TSocketThread);
+begin
+  if Assigned(FOnChartGenresReceived) then
+    FOnChartGenresReceived(Self, FClient.FChartGenres);
+end;
+
+procedure THomeCommunication.ClientChartsReceived(Sender: TSocketThread);
+begin
+  if Assigned(FOnChartsReceived) then
+    FOnChartsReceived(Self, FClient.FChartGenreID, FClient.FChartSearch, FClient.FCharts);
+end;
+
 procedure THomeCommunication.ClientConnected(Sender: TSocketThread);
 begin
   FConnected := True;
@@ -566,7 +651,7 @@ begin
     FOnError(Self, FClient.FErrorID, FClient.FErrorMsg);
 end;
 
-procedure THomeCommunication.TitleChanged(StreamName, Title, CurrentURL, URL, Format: string;
+procedure THomeCommunication.TitleChanged(ID: Cardinal; StreamName, Title, CurrentURL, URL, Format: string;
   Kbps: Cardinal; URLs: TStringList);
 var
   i: Integer;
@@ -584,6 +669,9 @@ begin
   try
     N := XMLDocument.Root.Nodes.GetNode('data');
 
+    N2 := TXMLNode.Create(N);
+    N2.Name := 'id';
+    N2.Value.AsLongWord := ID;
     N2 := TXMLNode.Create(N);
     N2.Name := 'streamname';
     N2.Value.AsString := StreamName;
@@ -702,13 +790,15 @@ begin
   {$ENDIF}
 
   UseSynchronize := True;
-  FGenres := TStringList.Create;
   FDataLists := DataLists;
+  FCharts := TList<TChartEntry>.Create;
+  FChartGenres := TList<TGenre>.Create;
 end;
 
 destructor THomeThread.Destroy;
 begin
-  FGenres.Free;
+  FCharts.Free;
+  FChartGenres.Free;
   inherited;
 end;
 
@@ -718,6 +808,48 @@ begin
   FIsAdmin := Data.Nodes.GetNode('isadmin').Value.AsBoolean;
   if Assigned(FOnLoggedOn) then
     Sync(FOnLoggedOn);
+end;
+
+procedure THomeThread.DoChartsReceived(Version: Integer; Header,
+  Data: TXMLNode);
+var
+  i, n: Integer;
+  T: string;
+  Node: TXMLNode;
+  NewList: TList<TStreamBrowserEntry>;
+  Entry, Entry2: TStreamBrowserEntry;
+begin
+  FCharts.Clear;
+
+  FChartGenreID := Data.Nodes.GetNode('charts').Attributes.AttributeByName['genreid'].Value.AsInteger;
+  FChartSearch := Data.Nodes.GetNode('charts').Attributes.AttributeByName['search'].Value.AsString;
+
+  for Node in Data.Nodes.GetNode('charts').Nodes do
+  begin
+    FCharts.Add(TChartEntry.Create(Node.Value.AsString, Node.Attributes.AttributeByName['chance'].Value.AsInteger));
+  end;
+
+  if Assigned(FOnChartsReceived) then
+    Sync(FOnChartsReceived);
+end;
+
+procedure THomeThread.DoChartGenresReceived(Version: Integer; Header,
+  Data: TXMLNode);
+var
+  i, n: Integer;
+  T: string;
+  Node: TXMLNode;
+  NewList: TList<TStreamBrowserEntry>;
+  Entry, Entry2: TStreamBrowserEntry;
+begin
+  FChartGenres.Clear;
+
+  for Node in Data.Nodes.GetNode('chartgenres').Nodes do
+    FChartGenres.Add(TGenre.Create(Node.Value.AsString, Node.Attributes.AttributeByName['id'].Value.AsLongWord,
+      Node.Attributes.AttributeByName['chartcount'].Value.AsLongWord));
+
+  if Assigned(FOnChartGenresReceived) then
+    Sync(FOnChartGenresReceived);
 end;
 
 procedure THomeThread.DoConnected;
@@ -778,6 +910,16 @@ begin
         DoStreamsReceived(Version, Header, Data);
       end;
 
+      if Header.Attributes.AttributeByName['type'].Value.AsString = 'getcharts' then
+      begin
+        DoChartsReceived(Version, Header, Data);
+      end;
+
+      if Header.Attributes.AttributeByName['type'].Value.AsString = 'getchartgenres' then
+      begin
+        DoChartGenresReceived(Version, Header, Data);
+      end;
+
       if Header.Attributes.AttributeByName['type'].Value.AsString = 'fulltitlechange' then
       begin
         DoTitleChanged(Version, Header, Data);
@@ -816,13 +958,20 @@ var
   T: string;
   Node: TXMLNode;
   NewList: TList<TStreamBrowserEntry>;
+  Genre: TGenre;
   Entry, Entry2: TStreamBrowserEntry;
 begin
+  for i := 0 to FDataLists.GenreList.Count - 1 do
+    FDataLists.GenreList[i].Free;
   FDataLists.GenreList.Clear;
 
   for Node in Data.Nodes.GetNode('genres').Nodes do
   begin
-    FDataLists.GenreList.Add(Node.Value.AsString);
+    Genre := TGenre.Create;
+    Genre.ID := Node.Attributes.AttributeByName['id'].Value.AsLongWord;
+    Genre.Name := Node.Value.AsString;
+    Genre.ChartCount := Node.Attributes.AttributeByName['chartcount'].Value.AsLongWord;
+    FDataLists.GenreList.Add(Genre);
   end;
 
   NewList := TList<TStreamBrowserEntry>.Create;
@@ -893,6 +1042,7 @@ begin
   if not AppGlobals.AutoTuneIn then
     Exit;
 
+  FChangedStreamID := Data.Nodes.GetNode('id').Value.AsLongWord;
   FChangedStreamName := Trim(Data.Nodes.GetNode('streamname').Value.AsString);
   FChangedTitle := Data.Nodes.GetNode('title').Value.AsString;
   FChangedCurrentURL := Data.Nodes.GetNode('currenturl').Value.AsString;

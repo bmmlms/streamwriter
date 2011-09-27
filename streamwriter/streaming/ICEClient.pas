@@ -62,8 +62,8 @@ type
 
   TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
-  TSongSavedEvent = procedure(Sender: TObject; Filename, Title: string; Filesize, Length: UInt64; WasCut,
-    FullTitle, IsStreamFile: Boolean) of object;
+  TSongSavedEvent = procedure(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
+    Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean) of object;
   TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer) of object;
 
   TICEClient = class
@@ -586,8 +586,8 @@ begin
       FEntry.AudioType := '';
   end;
 
-  if Assigned(FOnRefresh) then
-    FOnRefresh(Self);
+//  if Assigned(FOnRefresh) then
+//    FOnRefresh(Self);
 end;
 
 procedure TICEClient.ThreadSongSaved(Sender: TSocketThread);
@@ -631,6 +631,7 @@ begin
         // jetzt schon als gespeichert. Ansonsten macht das PluginThreadTerminate.
         if Assigned(FOnSongSaved) then
           FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
+            FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
             FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut,
             FICEThread.RecvStream.SavedFullTitle, False);
         if Assigned(FOnRefresh) then
@@ -647,6 +648,7 @@ begin
     begin
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
+          FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
           FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut,
           FICEThread.RecvStream.SavedFullTitle, True);
       if Assigned(FOnRefresh) then
@@ -708,7 +710,8 @@ begin
           WriteDebug('All plugins done', dtMessage, dlDebug);
 
           if Assigned(FOnSongSaved) then
-            FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Filesize, Entry.Data.Length,
+            FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.StreamTitle,
+              Entry.Data.Artist, Entry.Data.Title, Entry.Data.Filesize, Entry.Data.Length,
               Entry.Data.WasCut, Entry.Data.FullTitle, False);
           if Assigned(FOnRefresh) then
             FOnRefresh(Self);
@@ -775,14 +778,6 @@ begin
     TfrmNotification.Act(FICEThread.RecvStream.Title, FEntry.Name);
   end;
 
-  {
-  if FStopAfterSong and (not FICEThread.Recording) then
-  begin
-    FStopAfterSong := False;
-    StopRecording;
-  end;
-  }
-
   FTitle := FICEThread.RecvStream.Title;
   if Assigned(FOnTitleChanged) then
     FOnTitleChanged(Self, FICEThread.RecvStream.Title);
@@ -803,7 +798,7 @@ begin
           raise Exception.Create('');
       end;
 
-      HomeComm.TitleChanged(Entry.Name, FTitle, FCurrentURL, Entry.StartURL, Format,
+      HomeComm.TitleChanged(Entry.ID, Entry.Name, FTitle, FCurrentURL, Entry.StartURL, Format,
         Entry.BitRate, Entry.URLs);
     end;
 end;

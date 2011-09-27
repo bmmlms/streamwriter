@@ -930,8 +930,8 @@ var
   Chars: Integer;
 begin
   Result := False;
-  P := BuildPattern(Search, Hash, Chars, True);
-  P2 := BuildPattern(Genre, Hash, Chars, True);
+  P := BuildPattern(Search, Hash, Chars, False);
+  P2 := BuildPattern(Genre, Hash, Chars, False);
 
   if (not AlwaysBuild) and (P = FLastSearch) and (Genre = FLastGenre) and
      (AudioType = FLastAudioType) and (Bitrate = FLastBitrate) then
@@ -1048,7 +1048,7 @@ begin
   FSearch.FGenreList.Clear;
   FSearch.FGenreList.Items.Add(_('- No genre -'));
   for i := 0 to FDataLists.GenreList.Count - 1 do
-    FSearch.FGenreList.Items.Add(FDataLists.GenreList[i]);
+    FSearch.FGenreList.Items.Add(FDataLists.GenreList[i].Name);
   if FSearch.FGenreList.Items.Count > 0 then
     FSearch.FGenreList.ItemIndex := 0;
   FSearch.FGenreList.Sorted := True;
@@ -1149,10 +1149,21 @@ begin
 end;
 
 procedure TMStreamBrowserView.HomeCommStateChanged(Sender: TObject);
+var
+  Found: Boolean;
+  i: Integer;
 begin
+  Found := False;
+  for i := 0 to FDataLists.GenreList.Count - 1 do
+    if FDataLists.GenreList[i].ID = 0 then
+    begin
+      Found := True;
+      Break;
+    end;
+
   if HomeComm.Connected and (HomeComm.Connected <> HomeComm.WasConnected) and
      (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or
-      (AppGlobals.LastBrowserUpdate < Now - 15) or FLoading) then
+      (AppGlobals.LastBrowserUpdate < Now - 15) or FLoading or Found) then
   begin
     SwitchMode(moLoading);
     FHomeCommunication.GetStreams;

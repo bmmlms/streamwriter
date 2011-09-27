@@ -96,6 +96,7 @@ type
 
     procedure Setup(Clients: TClientManager; Streams: TDataLists; Images: TImageList);
     procedure AddTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
+    procedure RemoveTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
 
     procedure AddClient(Client: TICEClient);
     procedure RemoveClient(Client: TICEClient);
@@ -131,6 +132,7 @@ type
     destructor Destroy; override;
 
     procedure AddTitle(Title: TTitleInfo; Parent: PVirtualNode; ParentData: PTitleNodeData);
+    procedure RemoveTitle(Title: TTitleInfo);
     procedure RemoveClient(Client: TICEClient);
     procedure SortItems;
   end;
@@ -192,6 +194,15 @@ procedure TListsTab.RemoveClient(Client: TICEClient);
 begin
   FWishPanel.ClientRemoved(Client);
   FIgnorePanel.ClientRemoved(Client);
+end;
+
+procedure TListsTab.RemoveTitle(Client: TICEClient; ListType: TListType;
+  Title: TTitleInfo);
+begin
+  if ListType = ltSave then
+  begin
+    FWishPanel.FTree.RemoveTitle(Title);
+  end;
 end;
 
 procedure TListsTab.AddTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
@@ -983,6 +994,29 @@ var
 begin
   Node := GetNode(Client);
   DeleteNode(Node);
+end;
+
+procedure TTitleTree.RemoveTitle(Title: TTitleInfo);
+var
+  Node, DelNode: PVirtualNode;
+  NodeData: PTitleNodeData;
+begin
+  Node := GetFirst;
+
+  while Node <> nil do
+  begin
+    NodeData := GetNodeData(Node);
+
+    DelNode := nil;
+
+    if NodeData.Title = Title then
+      DelNode := Node;
+
+    Node := GetNext(Node);
+
+    if DelNode <> nil then
+      Self.DeleteNode(DelNode);
+  end;
 end;
 
 procedure TTitleTree.SortItems;

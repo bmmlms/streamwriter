@@ -293,6 +293,40 @@ type
     function GetRating(Name, URL: string): Integer;
   end;
 
+  TChartEntry = class
+  private
+    FName: string;
+    FChance: Integer;
+  public
+    constructor Create(Name: string; Chance: Integer);
+
+    property Name: string read FName;
+    property Chance: Integer read FChance;
+  end;
+
+  TChartList = class(TList<TChartEntry>)
+  end;
+
+  TGenre = class
+  private
+    FID: Cardinal;
+    FName: string;
+    FChartCount: Cardinal;
+  public
+    constructor Create; overload;
+    constructor Create(Name: string; ID, ChartCount: Cardinal); overload;
+
+    class function Load(Stream: TExtendedStream; Version: Integer): TGenre;
+    procedure Save(Stream: TExtendedStream);
+
+    property ID: Cardinal read FID write FID;
+    property Name: string read FName write FName;
+    property ChartCount: Cardinal read FChartCount write FChartCount;
+  end;
+
+  TGenreList = class(TList<TGenre>)
+  end;
+
   TDataLists = class
   private
     FCategoryList: TListCategoryList;
@@ -305,7 +339,7 @@ type
     FStreamBlacklist: TStringList;
     FRatingList: TRatingList;
     FBrowserList: TList<TStreamBrowserEntry>;
-    FGenreList: TStringList;
+    FGenreList: TGenreList;
     FLoadError: Boolean;
     FReceived: UInt64;
   public
@@ -329,14 +363,14 @@ type
     property StreamBlacklist: TStringList read FStreamBlacklist;
     property RatingList: TRatingList read FRatingList;
     property BrowserList: TList<TStreamBrowserEntry> read FBrowserList write FBrowserList;
-    property GenreList: TStringList read FGenreList write FGenreList;
+    property GenreList: TGenreList read FGenreList write FGenreList;
 
     property LoadError: Boolean read FLoadError write FLoadError;
     property Received: UInt64 read FReceived write FReceived;
   end;
 
 const
-  DATAVERSION = 33;
+  DATAVERSION = 34;
 
 implementation
 
@@ -670,6 +704,14 @@ begin
     FBrowserList[i].Free;
   FBrowserList.Clear;
 
+  {
+  for i := 0 to FChartList.Count - 1 do
+    FChartList[i].Free;
+  FChartList.Clear;
+  }
+
+  for i := 0 to FGenreList.Count - 1 do
+    FGenreList[i].Free;
   FGenreList.Clear;
 end;
 
@@ -689,7 +731,8 @@ begin
   FStreamBlacklist := TStringList.Create;
   FRatingList := TRatingList.Create;
   FBrowserList := TList<TStreamBrowserEntry>.Create;
-  FGenreList := TStringList.Create;
+  FGenreList := TGenreList.Create;
+  //FChartList := TChartList.Create;
 end;
 
 destructor TDataLists.Destroy;
@@ -707,6 +750,7 @@ begin
   FRatingList.Free;
   FBrowserList.Free;
   FGenreList.Free;
+  //FChartList.Free;
 
   inherited;
 end;
@@ -789,6 +833,7 @@ begin
         for i := 0 to EntryCount - 1 do
         begin
           S.Read(Str);
+
           FSubmittedStreamList.Add(Str);
         end;
 
@@ -821,10 +866,7 @@ begin
 
           S.Read(EntryCount);
           for i := 0 to EntryCount - 1 do
-          begin
-            S.Read(Str);
-            FGenreList.Add(Str);
-          end;
+            FGenreList.Add(TGenre.Load(S, Version));
         end;
       end;
 
@@ -975,7 +1017,7 @@ begin
 
   S.Write(FGenreList.Count);
   for i := 0 to FGenreList.Count - 1 do
-    S.Write(FGenreList[i]);
+    FGenreList[i].Save(S);
 end;
 
 procedure TDataLists.SaveRecover;
@@ -1515,6 +1557,58 @@ begin
   Stream.Write(Cardinal(FIgnoreTitles.Count));
   for i := 0 to FIgnoreTitles.Count - 1 do
     Stream.Write(FIgnoreTitles[i]);
+end;
+
+{ TChartEntry }
+
+constructor TChartEntry.Create(Name: string; Chance: Integer);
+begin
+  inherited Create;
+
+  FName := Name;
+  FChance := Chance;
+end;
+
+{ TGenre }
+
+constructor TGenre.Create(Name: string; ID, ChartCount: Cardinal);
+begin
+  inherited Create;
+
+  FName := Name;
+  FID := ID;
+  FChartCount := ChartCount;
+end;
+
+constructor TGenre.Create;
+begin
+  inherited;
+
+end;
+
+class function TGenre.Load(Stream: TExtendedStream;
+  Version: Integer): TGenre;
+begin
+  Result := TGenre.Create;
+
+  if Version >= 34 then
+  begin
+    Stream.Read(Result.FID);
+    Stream.Read(Result.FName);
+    Stream.Read(Result.FChartCount);
+  end else
+  begin
+    Result.FID := 0;
+    Stream.Read(Result.FName);
+    Result.FChartCount := 1;
+  end;
+end;
+
+procedure TGenre.Save(Stream: TExtendedStream);
+begin
+  Stream.Write(FID);
+  Stream.Write(FName);
+  Stream.Write(FChartCount);
 end;
 
 end.

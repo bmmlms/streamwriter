@@ -1084,7 +1084,6 @@ begin
           if Buf > 0 then
           begin
             MetaLen := Buf * 16;
-
             MetaData := AnsiString(Trim(RecvStream.ToString(RecvStream.Position, MetaLen)));
             RecvStream.Seek(MetaLen, soFromCurrent);
             P := PosEx(''';', MetaData, 14);

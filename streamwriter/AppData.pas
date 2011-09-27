@@ -74,6 +74,7 @@ type
     FDeleteStreams: Boolean;
     FAddSavedToIgnore: Boolean;
     FAddSavedToStreamIgnore: Boolean;
+    FRemoveSavedFromWishlist: Boolean;
     FSkipShort: Boolean;
     FSearchSilence: Boolean;
     FSilenceLevel: Cardinal;
@@ -116,6 +117,7 @@ type
     property DeleteStreams: Boolean read FDeleteStreams write FDeleteStreams;
     property AddSavedToIgnore: Boolean read FAddSavedToIgnore write FAddSavedToIgnore;
     property AddSavedToStreamIgnore: Boolean read FAddSavedToStreamIgnore write FAddSavedToStreamIgnore;
+    property RemoveSavedFromWishlist: Boolean read FRemoveSavedFromWishlist write FRemoveSavedFromWishlist;
     property SkipShort: Boolean read FSkipShort write FSkipShort;
     property SearchSilence: Boolean read FSearchSilence write FSearchSilence;
     property SilenceLevel: Cardinal read FSilenceLevel write FSilenceLevel;
@@ -158,6 +160,7 @@ type
     FAutoTuneIn: Boolean;
     FAutoTuneInConsiderIgnore: Boolean;
     FAutoTuneInAddToIgnore: Boolean;
+    FAutoRemoveSavedFromWishlist: Boolean;
     FSubmitStreamInfo: Boolean;
     FSubmitStats: Boolean;
     FMinDiskSpace: Integer;
@@ -217,6 +220,7 @@ type
     property AutoTuneIn: Boolean read FAutoTuneIn write FAutoTuneIn;
     property AutoTuneInConsiderIgnore: Boolean read FAutoTuneInConsiderIgnore write FAutoTuneInConsiderIgnore;
     property AutoTuneInAddToIgnore: Boolean read FAutoTuneInAddToIgnore write FAutoTuneInAddToIgnore;
+    property AutoRemoveSavedFromWishlist: Boolean read FAutoRemoveSavedFromWishlist write FAutoRemoveSavedFromWishlist;
     property SubmitStreamInfo: Boolean read FSubmitStreamInfo write FSubmitStreamInfo;
     property SubmitStats: Boolean read FSubmitStats write FSubmitStats;
     property MinDiskSpace: Integer read FMinDiskSpace write FMinDiskSpace;
@@ -612,6 +616,7 @@ begin
   FStorage.Read('DeleteStreams', FStreamSettings.FDeleteStreams, False);
   FStorage.Read('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore, True);
   FStorage.Read('AddSavedToStreamIgnore', FStreamSettings.FAddSavedToStreamIgnore, False);
+  FStorage.Read('RemoveSavedFromWishlist', FStreamSettings.FRemoveSavedFromWishlist, False);
   FStorage.Read('SkipShort', FStreamSettings.FSkipShort, True);
   FStorage.Read('SearchSilence', FStreamSettings.FSearchSilence, True);
   FStorage.Read('SilenceLevel', FStreamSettings.FSilenceLevel, 5);
@@ -657,6 +662,7 @@ begin
   FStorage.Read('AutoTuneIn', FAutoTuneIn, True);
   FStorage.Read('AutoTuneInConsiderIgnore', FAutoTuneInConsiderIgnore, False);
   FStorage.Read('AutoTuneInAddToIgnore', FAutoTuneInAddToIgnore, True);
+  FStorage.Read('AutoRemoveSavedFromWishlist', FAutoRemoveSavedFromWishlist, False);
   FStorage.Read('SubmitStreamInfo', FSubmitStreamInfo, True);
   FStorage.Read('SubmitStats', FSubmitStats, True);
   FStorage.Read('LimitSpeed', FLimitSpeed, False);
@@ -791,6 +797,7 @@ begin
   FStorage.Write('DeleteStreams', FStreamSettings.FDeleteStreams);
   FStorage.Write('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore);
   FStorage.Write('AddSavedToStreamIgnore', FStreamSettings.FAddSavedToStreamIgnore);
+  FStorage.Write('RemoveSavedFromWishlist', FStreamSettings.FRemoveSavedFromWishlist);
   FStorage.Write('SkipShort', FStreamSettings.FSkipShort);
   FStorage.Write('SearchSilence', FStreamSettings.FSearchSilence);
   FStorage.Write('SilenceLevel', FStreamSettings.FSilenceLevel);
@@ -821,6 +828,7 @@ begin
   FStorage.Write('AutoTuneIn', FAutoTuneIn);
   FStorage.Write('AutoTuneInConsiderIgnore', FAutoTuneInConsiderIgnore);
   FStorage.Write('AutoTuneInAddToIgnore', FAutoTuneInAddToIgnore);
+  FStorage.Write('AutoRemoveSavedFromWishlist', FAutoRemoveSavedFromWishlist);
   FStorage.Write('SubmitStats', FSubmitStats);
   FStorage.Write('SubmitStreamInfo', FSubmitStreamInfo);
   FStorage.Write('AutoTuneInMinKbps', FAutoTuneInMinKbps);
@@ -966,6 +974,10 @@ begin
   Stream.Read(Result.FAddSavedToIgnore);
   if Version >= 27 then
     Stream.Read(Result.FAddSavedToStreamIgnore);
+
+  if Version >= 34 then
+    Stream.Read(Result.FRemoveSavedFromWishlist);
+
   Stream.Read(Result.FSkipShort);
   Stream.Read(Result.FSearchSilence);
   Stream.Read(Result.FSilenceLevel);
@@ -1100,6 +1112,7 @@ begin
   Stream.Write(FDeleteStreams);
   Stream.Write(FAddSavedToIgnore);
   Stream.Write(FAddSavedToStreamIgnore);
+  Stream.Write(FRemoveSavedFromWishlist);
   Stream.Write(FSkipShort);
   Stream.Write(FSearchSilence);
   Stream.Write(FSilenceLevel);
@@ -1137,6 +1150,7 @@ begin
   FDeleteStreams := From.FDeleteStreams;
   FAddSavedToIgnore := From.FAddSavedToIgnore;
   FAddSavedToStreamIgnore := From.FAddSavedToStreamIgnore;
+  FRemoveSavedFromWishlist := From.FRemoveSavedFromWishlist;
   FSkipShort := From.FSkipShort;
   FSearchSilence := From.FSearchSilence;
   FSilenceLevel := From.FSilenceLevel;

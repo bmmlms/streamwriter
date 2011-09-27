@@ -175,6 +175,8 @@ type
     btnResetRemoveChars: TPngSpeedButton;
     txtStreamFilePattern: TLabeledEdit;
     btnResetStreamFilePattern: TPngSpeedButton;
+    chkAutoRemoveSavedFromWishlist: TCheckBox;
+    chkRemoveSavedFromWishlist: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
@@ -239,6 +241,7 @@ type
     procedure txtFilePatternClick(Sender: TObject);
     procedure txtStreamFilePatternChange(Sender: TObject);
     procedure txtStreamFilePatternClick(Sender: TObject);
+    procedure chkRemoveSavedFromWishlistClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -415,6 +418,19 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
     end;
     if F then
       AddField(chkAddSavedToStreamIgnore);
+
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
+      if S.RemoveSavedFromWishlist <> FStreamSettings[i].RemoveSavedFromWishlist then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(chkRemoveSavedFromWishlist);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -731,7 +747,7 @@ begin
     SetFields;
 
     ClientWidth := 525;
-    ClientHeight := 430;
+    ClientHeight := 450;
 
     for i := 0 to Self.ControlCount - 1 do
     begin
@@ -930,6 +946,7 @@ begin
   chkDeleteStreams.Checked := Settings.DeleteStreams;
   chkAddSavedToIgnore.Checked := Settings.AddSavedToIgnore;
   chkAddSavedToStreamIgnore.Checked := Settings.AddSavedToStreamIgnore;
+  chkRemoveSavedFromWishlist.Checked := Settings.RemoveSavedFromWishlist;
   chkOverwriteSmaller.Checked := Settings.OverwriteSmaller;
   chkDiscardSmaller.Checked := Settings.DiscardSmaller;
   txtTitlePattern.Text := Settings.TitlePattern;
@@ -951,6 +968,7 @@ begin
   chkAutoTuneIn.Checked := AppGlobals.AutoTuneIn;
   chkAutoTuneInConsiderIgnore.Checked := AppGlobals.AutoTuneInConsiderIgnore;
   chkAutoTuneInAddToIgnore.Checked := AppGlobals.AutoTuneInAddToIgnore;
+  chkAutoRemoveSavedFromWishlist.Checked := AppGlobals.AutoRemoveSavedFromWishlist;
   lstMinBitrate.ItemIndex := AppGlobals.AutoTuneInMinKbps;
   lstFormat.ItemIndex := AppGlobals.AutoTuneInFormat;
   chkSubmitStreamInfo.Checked := AppGlobals.SubmitStreamInfo;
@@ -1066,6 +1084,9 @@ begin
       if FIgnoreFieldList.IndexOf(chkAddSavedToStreamIgnore) = -1 then
         FStreamSettings[i].AddSavedToStreamIgnore := chkAddSavedToStreamIgnore.Checked;
 
+      if FIgnoreFieldList.IndexOf(chkRemoveSavedFromWishlist) = -1 then
+        FStreamSettings[i].RemoveSavedFromWishlist := chkRemoveSavedFromWishlist.Checked;
+
       if FIgnoreFieldList.IndexOf(chkOverwriteSmaller) = -1 then
         FStreamSettings[i].OverwriteSmaller := chkOverwriteSmaller.Checked;
 
@@ -1165,6 +1186,7 @@ begin
     AppGlobals.StreamSettings.DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
     AppGlobals.StreamSettings.AddSavedToIgnore := chkAddSavedToIgnore.Checked;
     AppGlobals.StreamSettings.AddSavedToStreamIgnore := chkAddSavedToStreamIgnore.Checked;
+    AppGlobals.StreamSettings.RemoveSavedFromWishlist := chkRemoveSavedFromWishlist.Checked;
     AppGlobals.StreamSettings.OverwriteSmaller := chkOverwriteSmaller.Checked;
     AppGlobals.StreamSettings.DiscardSmaller := chkDiscardSmaller.Checked;
 
@@ -1202,6 +1224,7 @@ begin
     AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
     AppGlobals.AutoTuneInConsiderIgnore := chkAutoTuneInConsiderIgnore.Checked;
     AppGlobals.AutoTuneInAddToIgnore := chkAutoTuneInAddToIgnore.Checked;
+    AppGlobals.AutoRemoveSavedFromWishlist := chkAutoRemoveSavedFromWishlist.Checked;
     AppGlobals.AutoTuneInMinKbps := lstMinBitrate.ItemIndex;
     AppGlobals.AutoTuneInFormat := lstFormat.ItemIndex;
     AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
@@ -2426,6 +2449,7 @@ begin
   lstFormat.Enabled := chkAutoTuneIn.Checked;
   chkAutoTuneInConsiderIgnore.Enabled := chkAutoTuneIn.Checked;
   chkAutoTuneInAddToIgnore.Enabled := chkAutoTuneIn.Checked;
+  chkAutoRemoveSavedFromWishlist.Enabled := chkAutoTuneIn.Checked;
 end;
 
 procedure TfrmSettings.chkOverwriteSmallerClick(Sender: TObject);
@@ -2434,6 +2458,14 @@ begin
 
   if FInitialized then
     RemoveGray(chkOverwriteSmaller);
+end;
+
+procedure TfrmSettings.chkRemoveSavedFromWishlistClick(Sender: TObject);
+begin
+  inherited;
+
+  if FInitialized then
+    RemoveGray(chkRemoveSavedFromWishlist);
 end;
 
 procedure TfrmSettings.chkDeleteStreamsClick(Sender: TObject);
