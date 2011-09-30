@@ -159,7 +159,7 @@ type
       IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 
     procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
-    function StreamBrowserIsInClientList(Sender: TObject; Name, URL: string): Boolean;
+    function StreamBrowserIsInClientList(Sender: TObject; ID: Cardinal): Boolean;
 
     procedure VolumeTrackbarChange(Sender: TObject);
 
@@ -1282,7 +1282,7 @@ begin
   if URL <> '' then
   begin
     // Ist der Client schon in der Liste?
-    Client := FClients.GetClient(0, Name, URL, '', nil);
+    Client := FClients.GetClient(ID, '', URL, '', nil);
     if (Client <> nil) and (not Client.AutoRemove) then
     begin
       if StartPlay then
@@ -1459,24 +1459,18 @@ begin
   end;
 end;
 
-function TClientTab.StreamBrowserIsInClientList(Sender: TObject; Name,
-  URL: string): Boolean;
+function TClientTab.StreamBrowserIsInClientList(Sender: TObject; ID: Cardinal): Boolean;
 var
   Clients: TClientArray;
   Client: TICEClient;
 begin
-  Result := False;
-  Name := LowerCase(Name);
-  URL := LowerCase(URL);
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
   for Client in Clients do
   begin
-    if (LowerCase(Client.Entry.Name) = Name) or (LowerCase(Client.Entry.StartURL) = URL) and (not Client.AutoRemove) then
-    begin
-      Result := True;
-      Break;
-    end;
+    if Client.Entry.ID = ID then
+      Exit(True);
   end;
+  Exit(False);
 end;
 
 procedure TClientTab.VolumeTrackbarChange(Sender: TObject);

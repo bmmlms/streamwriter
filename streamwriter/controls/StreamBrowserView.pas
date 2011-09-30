@@ -57,7 +57,7 @@ type
   TNeedDataEvent = procedure(Sender: TObject; Offset, Count: Integer) of object;
   TAddStreamEvent = procedure(Sender: TObject; URL, Name: string) of object;
   TActionEvent = procedure(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray) of object;
-  TIsInClientListEvent = function(Sender: TObject; Name, URL: string): Boolean of object;
+  TIsInClientListEvent = function(Sender: TObject; ID: Cardinal): Boolean of object;
 
   TScrollDirection = (sdUp, sdDown);
 
@@ -843,7 +843,7 @@ begin
 
   if CellPaintMode = cpmPaint then
   begin
-    if FOnIsInClientList(Self, NodeData.Data.Name, NodeData.Data.URL) then
+    if FOnIsInClientList(Self, NodeData.Data.ID) then
       Canvas.Brush.Color := HTML2Color('c3c1c1')
     else
       case Node.Index mod 2 of

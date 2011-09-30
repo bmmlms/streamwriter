@@ -28,7 +28,7 @@ uses
   Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
   PlayerManager, Plugins, SoX, DownloadAddons, ConfigureSoX, Logging,
-  MsgDlg, DragDrop, DropTarget, DropComboTarget;
+  MsgDlg, DragDrop, DropTarget, DropComboTarget, Mp3FileUtils;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -1727,10 +1727,27 @@ var
   FS: TFileStream;
   Failed: Boolean;
   EC: DWORD;
+
+  ID3V1: TID3v1Tag;
+  ID3V2: TID3v2Tag;
 begin
   inherited;
 
-  Res := RunProcess(FCommandLine, FWorkingDir, 120000, FProcessOutput, EC, @Self.Terminated);
+  ID3V1 := TID3v1Tag.Create;
+  ID3V2 := TID3v2Tag.Create;
+  try
+    ID3V1.ReadFromFile(FFilePath);
+    ID3V2.ReadFromFile(FFilePath);
+
+    Res := RunProcess(FCommandLine, FWorkingDir, 120000, FProcessOutput, EC, @Self.Terminated);
+
+    ID3V1.WriteToFile(FTempFile);
+    ID3V2.WriteToFile(FTempFile);
+  finally
+    ID3V1.Free;
+    ID3V2.Free;
+  end;
+
 
   if Terminated then
   begin

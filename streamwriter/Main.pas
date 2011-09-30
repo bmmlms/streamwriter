@@ -346,7 +346,8 @@ var
   S: TExtendedStream;
   Lst: TSettingsList;
 begin
-  AppGlobals.WindowHandle := 0;
+  if ImportFilename = '' then
+    AppGlobals.WindowHandle := 0;
 
   FExiting := True;
 
@@ -707,7 +708,7 @@ begin
   tabClients.OnAuthRequired := tabClientsAuthRequired;
   tabClients.OnShowErrorMessage := tabClientsShowErrorMessage;
 
-  tabCharts := TChartsTab.Create(pagMain);
+  tabCharts := TChartsTab.Create(pagMain, FDataLists);
   tabCharts.PageControl := pagMain;
   tabCharts.OnAddToWishlist := tabChartsAddToWishlist;
 
@@ -795,7 +796,7 @@ begin
 
   tabClients.Shown;
 
-  tabCharts.Setup(FDataLists, imgImages);
+  tabCharts.Setup(imgImages);
   tabLists.Setup(FClients, FDataLists, imgImages);
 
   actShowSideBar.Checked := tabClients.SideBar.Visible;
@@ -1082,6 +1083,8 @@ begin
   NodeData := tabClients.ClientView.GetNodeData(tabClients.ClientView.AutoNode);
   NodeData.Category.Name := _('Automatic recordings');
   tabClients.ClientView.Invalidate;
+
+  tabCharts.Translate;
 
   addStatus.Invalidate;
 end;

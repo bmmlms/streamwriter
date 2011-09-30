@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Plugins, PluginsShared, LanguageObjects,
-  Functions, Logging, Math;
+  Functions, Logging, Math, Mp3FileUtils;
 
 type
   TSoXThread = class(TProcessThreadBase)
@@ -97,6 +97,9 @@ var
   Failed: Boolean;
   FS: TFileStream;
   EC: DWORD;
+
+  ID3V1: TID3v1Tag;
+  ID3V2: TID3v2Tag;
 begin
   inherited;
 
@@ -135,56 +138,74 @@ begin
 
   if Params <> '' then
   begin
-    if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120000, Output, EC, @Terminated) = 2 then
-    begin
-      FResult := arTimeout;
-    end else
-    begin
-      Failed := True;
-      if FileExists(TempFile) and (EC = 0) then
+    ID3V1 := TID3v1Tag.Create;
+    ID3V2 := TID3v2Tag.Create;
+
+    try
+      ID3V1.ReadFromFile(FData.Filename);
+      ID3V2.ReadFromFile(FData.Filename);
+
+      if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120000, Output, EC, @Terminated) = 2 then
       begin
-        LoopStarted := GetTickCount;
-        while Failed do
+        FResult := arTimeout;
+      end else
+      begin
+        Failed := True;
+        if FileExists(TempFile) and (EC = 0) then
         begin
-          try
-            FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
+          LoopStarted := GetTickCount;
+          while Failed do
+          begin
             try
-              Failed := False;
-              Break;
-            finally
-              FS.Free;
-            end;
-          except
-            Sleep(50);
-            if GetTickCount > LoopStarted + 5000 then
-            begin
-              Break;
+              FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
+              try
+                Failed := False;
+                Break;
+              finally
+                FS.Free;
+              end;
+            except
+              Sleep(50);
+              if GetTickCount > LoopStarted + 5000 then
+              begin
+                Break;
+              end;
             end;
           end;
+
+          if not Failed then
+            if not DeleteFile(FData.Filename) then
+              Failed := True;
+
+          if not Failed then
+            if not MoveFile(PChar(TempFile), PChar(FData.Filename)) then
+              Failed := True
+            else
+            begin
+              try
+                ID3V1.WriteToFile(TempFile);
+                ID3V2.WriteToFile(TempFile);
+              except end;
+            end;
+
+          if not Failed then
+          begin
+            FData.Filesize := GetFileSize(FData.Filename);
+
+            // Okay, das hier ist nicht ordentlich, aber sollte passen...
+            if P.FSilenceStart then
+              FData.Length := FData.Length + P.FSilenceStartLength;
+            if P.FSilenceEnd then
+              FData.Length := FData.Length + P.FSilenceEndLength;
+
+            FResult := arWin;
+          end;
         end;
-
-        if not Failed then
-          if not DeleteFile(FData.Filename) then
-            Failed := True;
-
-        if not Failed then
-          if not MoveFile(PChar(TempFile), PChar(FData.Filename)) then
-            Failed := True;
-
-        if not Failed then
-        begin
-          FData.Filesize := GetFileSize(FData.Filename);
-
-          // Okay, das hier ist nicht ordentlich, aber sollte passen...
-          if P.FSilenceStart then
-            FData.Length := FData.Length + P.FSilenceStartLength;
-          if P.FSilenceEnd then
-            FData.Length := FData.Length + P.FSilenceEndLength;
-
-          FResult := arWin;
-        end;
+        DeleteFile(PChar(TempFile));
       end;
-      DeleteFile(PChar(TempFile));
+    finally
+      ID3V1.Free;
+      ID3V2.Free;
     end;
   end;
 end;

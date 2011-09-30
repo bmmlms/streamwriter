@@ -38,6 +38,7 @@ type
 
   TChartNodeData = record
     Chart: TChartEntry;
+    IsOnWishlist: Boolean;
   end;
   PChartNodeData = ^TChartNodeData;
 
@@ -49,7 +50,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
 
-    procedure EnableItems(SelectedCount: Integer);
+    procedure EnableItems(SelectedCount: Integer; AllOnList: Boolean);
 
     property ItemAddToWishlist: TMenuItem read FItemAddToWishlist;
     property ItemEditAndAddToWishlist: TMenuItem read FItemEditAndAddToWishlist;
@@ -79,10 +80,13 @@ type
     procedure DoChange(Node: PVirtualNode); override;
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode;
       Column: TColumnIndex): Integer; override;
+    function DoIncrementalSearch(Node: PVirtualNode;
+      const Text: string): Integer; override;
   public
     constructor Create(AOwner: TComponent);
 
     procedure Setup(Lists: TDataLists; Images: TImageList);
+    procedure PostTranslate;
 
     property OnCategoryChanged: TCategoryChangedEvent read FOnCategoryChanged write FOnCategoryChanged;
   end;
@@ -104,17 +108,19 @@ type
   end;
 
   TChartArray = array of TChartEntry;
-
   TChartStates = (csNormal, csLoading, csError);
 
   TChartsTree = class(TVirtualStringTree)
   private
     FPopupMenu: TChartsPopup;
 
+    FColImages: TVirtualTreeColumn;
     FColTitle: TVirtualTreeColumn;
     FColChance: TVirtualTreeColumn;
 
     FState: TChartStates;
+
+    FLists: TDataLists;
 
     procedure PopupMenuClick(Sender: TObject);
   protected
@@ -123,7 +129,6 @@ type
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
       Column: TColumnIndex; var Ghosted: Boolean;
       var Index: Integer): TCustomImageList; override;
-    procedure DoPaintNode(var PaintInfo: TVTPaintInfo); override;
     procedure DoFreeNode(Node: PVirtualNode); override;
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode;
       Column: TColumnIndex): Integer; override;
@@ -133,8 +138,14 @@ type
     function GetSelected: TChartArray;
     procedure Paint; override;
     procedure DblClick; override;
+    procedure DoAfterCellPaint(Canvas: TCanvas; Node: PVirtualNode;
+      Column: TColumnIndex; CellRect: TRect); override;
+    procedure PaintImage(var PaintInfo: TVTPaintInfo;
+      ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
+    function DoIncrementalSearch(Node: PVirtualNode;
+      const Text: string): Integer; override;
   public
-    constructor Create(AOwner: TComponent);
+    constructor Create(AOwner: TComponent; Lists: TDataLists);
 
     procedure BuildTree(List: TList<TChartEntry>);
   end;
@@ -161,15 +172,19 @@ type
     procedure HomeCommChartsReceived(Sender: TObject; GenreID: Cardinal; Search: string; List: TList<TChartEntry>);
     procedure CategoriesCategoryChanged(Data: PCategoryNodeData);
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent; Lists: TDataLists);
     destructor Destroy; override;
 
-    procedure Setup(Lists: TDataLists; Images: TImageList);
+    procedure Setup(Images: TImageList);
+    procedure Translate;
 
     procedure HomeCommStateChanged(Sender: TObject);
 
     property OnAddToWishlist: TAddToWishlistEvent read FOnAddToWishlist write FOnAddToWishlist;
   end;
+
+const
+  GENRENODETEXT = 'Search all genres';
 
 implementation
 
@@ -180,15 +195,17 @@ begin
   GetCharts;
 end;
 
-constructor TChartsTab.Create(AOwner: TComponent);
+constructor TChartsTab.Create(AOwner: TComponent; Lists: TDataLists);
 begin
-  inherited;
+  inherited Create(AOwner);
+
+  FLists := Lists;
 
   FSearchPanel := TSearchPanel.Create(Self);
   FSearchPanel.Parent := Self;
   FSearchPanel.Align := alLeft;
 
-  FChartsTree := TChartsTree.Create(Self);
+  FChartsTree := TChartsTree.Create(Self, FLists);
   FChartsTree.Parent := Self;
   FChartsTree.Align := alClient;
 
@@ -310,6 +327,16 @@ begin
   end;
 end;
 
+procedure TChartsTab.Translate;
+begin
+  FChartsTree.FColImages.Text := _('State');
+  FChartsTree.FColTitle.Text := _('Name');
+  FChartsTree.FColChance.Text := _('Chance');
+
+  FSearchPanel.FLabel.Caption := _('Search:');
+  FSearchPanel.FCategories.PostTranslate;
+end;
+
 procedure TChartsTab.SearchButtonClick(Sender: TObject);
 begin
   GetCharts;
@@ -336,13 +363,11 @@ begin
   end;
 end;
 
-procedure TChartsTab.Setup(Lists: TDataLists; Images: TImageList);
+procedure TChartsTab.Setup(Images: TImageList);
 begin
-  FLists := Lists;
-
   FSearchPanel.Setup;
 
-  FSearchPanel.FCategories.Setup(Lists, Images);
+  FSearchPanel.FCategories.Setup(FLists, Images);
 
   FChartsTree.Images := Images;
 
@@ -376,19 +401,27 @@ begin
   end;
 end;
 
-constructor TChartsTree.Create(AOwner: TComponent);
+constructor TChartsTree.Create(AOwner: TComponent; Lists: TDataLists);
 begin
-  inherited;
+  inherited Create(AOwner);
+
+  FLists := Lists;
 
   NodeDataSize := SizeOf(TChartNodeData);
 
+  IncrementalSearch := isVisibleOnly;
   Header.Options := [hoColumnResize, hoShowSortGlyphs, hoVisible];
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
   TreeOptions.AutoOptions := [toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
-  Header.Options := Header.Options + [hoAutoResize];
+  Header.Options := Header.Options - [hoAutoResize];
   Header.Options := Header.Options - [hoDrag];
-  Header.AutoSizeIndex := 0;
+  Header.AutoSizeIndex := 1;
+
+  FColImages := Header.Columns.Add;
+  FColImages.Text := _('State');
+  FColImages.Width := 50;
+  FColImages.Options := FColImages.Options - [coResizable];
 
   FColTitle := Header.Columns.Add;
   FColTitle.Text := _('Name');
@@ -397,13 +430,15 @@ begin
   FColChance.Text := _('Chance');
   FColChance.Width := 200;
 
+  Header.Options := Header.Options + [hoAutoResize];
+
   FPopupMenu := TChartsPopup.Create(Self);
   FPopupMenu.ItemAddToWishlist.OnClick := PopupMenuClick;
   FPopupMenu.ItemEditAndAddToWishlist.OnClick := PopupMenuClick;
 
   PopupMenu := FPopupMenu;
 
-  Header.SortColumn := 1;
+  Header.SortColumn := 2;
   Header.SortDirection := sdDescending;
 end;
 
@@ -417,16 +452,72 @@ begin
   FPopupMenu.FItemAddToWishlist.Click;
 end;
 
-procedure TChartsTree.DoChange(Node: PVirtualNode);
+procedure TChartsTree.DoAfterCellPaint(Canvas: TCanvas; Node: PVirtualNode;
+  Column: TColumnIndex; CellRect: TRect);
+var
+  R: TRect;
+  DrawWidth, MaxWidth, TextWidth: Integer;
+  NodeData: PChartNodeData;
 begin
   inherited;
 
-  FPopupMenu.EnableItems(SelectedCount);
+  if Column = 2 then
+  begin
+    Canvas.Brush.Color := HTML2Color('#005fb0');
+    if Selected[Node] and Focused then
+      Canvas.Brush.Color := HTML2Color('#d2d2d2');
+
+    NodeData := GetNodeData(Node);
+
+    TextWidth := Canvas.TextWidth(IntToStr(NodeData.Chart.Chance) + '%');
+    MaxWidth := CellRect.Right - CellRect.Left - 8 - TextWidth;
+    DrawWidth := Trunc((NodeData.Chart.Chance / 100) * MaxWidth) - 2;
+
+    R.Left := CellRect.Left + 2;
+    R.Top := CellRect.Top + 2;
+    R.Right := R.Left + DrawWidth;
+    R.Bottom := CellRect.Bottom - 2;
+
+    Canvas.FillRect(R);
+
+    SetBkMode(Canvas.Handle, TRANSPARENT);
+    Canvas.TextOut(R.Right + 2, R.Top, IntToStr(NodeData.Chart.Chance) + '%');
+  end;
+end;
+
+procedure TChartsTree.DoChange(Node: PVirtualNode);
+var
+  i: Integer;
+  AllOnList: Boolean;
+  N: PVirtualNode;
+  NodeData: PChartNodeData;
+begin
+  inherited;
+
+  AllOnList := True;
+
+  N := GetFirst;
+  while N <> nil do
+  begin
+    if Selected[N] then
+    begin
+      NodeData := GetNodeData(N);
+      if not NodeData.IsOnWishlist then
+      begin
+        AllOnList := False;
+        Break;
+      end;
+    end;
+    N := GetNext(N);
+  end;
+
+  FPopupMenu.EnableItems(SelectedCount, AllOnList);
 end;
 
 function TChartsTree.DoCompare(Node1, Node2: PVirtualNode;
   Column: TColumnIndex): Integer;
 var
+  C1, C2: Integer;
   Data1, Data2: PChartNodeData;
 begin
   Result := 0;
@@ -436,8 +527,19 @@ begin
 
   case Header.SortColumn of
     0:
-      Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
+      begin
+        C1 := 0;
+        C2 := 0;
+        if Data1.IsOnWishlist then
+          C1 := C1 + 1;
+        if Data2.IsOnWishlist then
+          C2 := C2 + 1;
+
+        Result := CmpInt(C1, C2);
+      end;
     1:
+      Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
+    2:
       Result := CmpInt(Data1.Chart.Chance, Data2.Chart.Chance);
   end;
 end;
@@ -458,11 +560,9 @@ function TChartsTree.DoGetImageIndex(Node: PVirtualNode;
 begin
   Result := inherited;
 
-  if Kind = ikOverlay then
-    Exit;
-
-  if Column = 0 then
-    Index := 20;
+  // Wir müssen irgendeinen Index setzen, damit PaintImage() getriggert wird
+  if (Column = 0) and ((Kind = ikNormal) or (Kind = ikSelected)) then
+    Index := 0;
 end;
 
 procedure TChartsTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
@@ -476,10 +576,8 @@ begin
 
   NodeData := GetNodeData(Node);
   case Column of
-    0:
-      Text := NodeData.Chart.Name;
     1:
-      Text := IntToStr(NodeData.Chart.Chance);
+      Text := NodeData.Chart.Name;
   end;
 end;
 
@@ -491,10 +589,11 @@ begin
     if Header.SortColumn <> HitInfo.Column then
     begin
       Header.SortColumn := HitInfo.Column;
-      if HitInfo.Column = 1 then
-        Header.SortDirection := sdDescending
-      else
-        Header.SortDirection := sdAscending;
+      case HitInfo.Column of
+        0: Header.SortDirection := sdDescending;
+        1: Header.SortDirection := sdAscending;
+        2: Header.SortDirection := sdDescending;
+      end;
     end else
     begin
       if Header.SortDirection = sdAscending then
@@ -506,54 +605,14 @@ begin
   end;
 end;
 
-procedure GradHorizontal(Canvas:TCanvas; Rect:TRect; FromColor, ToColor:TColor) ;
- var
-   X:integer;
-   dr,dg,db:Extended;
-   C1,C2:TColor;
-   r1,r2,g1,g2,b1,b2:Byte;
-   R,G,B:Byte;
-   cnt:integer;
- begin
-   C1 := FromColor;
-   R1 := GetRValue(C1) ;
-   G1 := GetGValue(C1) ;
-   B1 := GetBValue(C1) ;
-
-   C2 := ToColor;
-   R2 := GetRValue(C2) ;
-   G2 := GetGValue(C2) ;
-   B2 := GetBValue(C2) ;
-
-   dr := (R2-R1) / Rect.Right-Rect.Left;
-   dg := (G2-G1) / Rect.Right-Rect.Left;
-   db := (B2-B1) / Rect.Right-Rect.Left;
-
-   cnt := 0;
-   for X := Rect.Left to Rect.Right-1 do
-   begin
-     R := R1+Ceil(dr*cnt) ;
-     G := G1+Ceil(dg*cnt) ;
-     B := B1+Ceil(db*cnt) ;
-
-     Canvas.Pen.Color := RGB(R,G,B) ;
-     Canvas.MoveTo(X,Rect.Top) ;
-     Canvas.LineTo(X,Rect.Bottom) ;
-     inc(cnt) ;
-   end;
- end;
-
-procedure TChartsTree.DoPaintNode(var PaintInfo: TVTPaintInfo);
+function TChartsTree.DoIncrementalSearch(Node: PVirtualNode;
+  const Text: string): Integer;
 var
-  R: TRect;
+  CmpTxt: string;
+  NodeData: PChartNodeData;
 begin
-  inherited;
-
-  if PaintInfo.Column = 1 then
-  begin
-    //R := GetDisplayRect(PaintInfo.Node, PaintInfo.Column, False);
-    //GradHorizontal(PaintInfo.Canvas, R, clRed, clGreen);
-  end;
+  NodeData := GetNodeData(Node);
+  Result := StrLIComp(PChar(Text), PChar(NodeData.Chart.Name), Min(Length(Text), Length(NodeData.Chart.Name)));
 end;
 
 function TChartsTree.GetSelected: TChartArray;
@@ -614,6 +673,36 @@ begin
     end;
 end;
 
+procedure TChartsTree.PaintImage(var PaintInfo: TVTPaintInfo;
+  ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
+var
+  L, i: Integer;
+  Found: Boolean;
+  NodeData: PChartNodeData;
+begin
+  if PaintInfo.Column = 0 then
+  begin
+    NodeData := GetNodeData(PaintInfo.Node);
+
+    L := PaintInfo.ImageInfo[ImageInfoIndex].XPos;
+
+    Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20);
+
+    Found := False;
+    for i := 0 to FLists.SaveList.Count - 1 do
+      if LowerCase(FLists.SaveList[i].Title) = LowerCase(NodeData.Chart.Name) then
+      begin
+        Found := True;
+        Break;
+      end;
+
+    NodeData.IsOnWishlist := Found;
+
+    if Found then
+      Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 31);
+  end;
+end;
+                  // TODO: erste spalte darf nicht resized werden!!!
 procedure TChartsTree.PopupMenuClick(Sender: TObject);
 var
   i: Integer;
@@ -661,6 +750,8 @@ begin
   finally
     Titles.Free;
   end;
+
+  Invalidate;
 end;
 
 { TSearchPanel }
@@ -749,6 +840,7 @@ begin
 
   NodeDataSize := SizeOf(TCategoryNodeData);
 
+  IncrementalSearch := isVisibleOnly;
   TreeOptions.SelectionOptions := [toDisableDrawSelection, toFullRowSelect];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop] + [toFullRowDrag];
@@ -826,12 +918,17 @@ begin
 
   NodeData := GetNodeData(Node);
 
-  if GetNodeLevel(Node) = 0 then
-    case Node.Index of
-      0: Text := _('Search all genres');
-    end
-  else if GetNodeLevel(Node) = 1 then
-    Text := NodeData.Genre.Name;
+  Text := NodeData.Genre.Name;
+end;
+
+function TCategoryTree.DoIncrementalSearch(Node: PVirtualNode;
+  const Text: string): Integer;
+var
+  CmpTxt: string;
+  NodeData: PCategoryNodeData;
+begin
+  NodeData := GetNodeData(Node);
+  Result := StrLIComp(PChar(Text), PChar(NodeData.Genre.Name), Min(Length(Text), Length(NodeData.Genre.Name)));
 end;
 
 procedure TCategoryTree.HomeCommChartGenresReceived(Sender: TObject;
@@ -866,6 +963,14 @@ begin
   end;
 end;
 
+procedure TCategoryTree.PostTranslate;
+var
+  NodeData: PCategoryNodeData;
+begin
+  NodeData := GetNodeData(FGenreNode);
+  NodeData.Genre.Name := _(GENRENODETEXT);
+end;
+
 procedure TCategoryTree.Setup(Lists: TDataLists; Images: TImageList);
 var
   i: Integer;
@@ -879,7 +984,8 @@ begin
 
   Node := AddChild(nil);
   NodeData := GetNodeData(Node);
-  NodeData.Genre := TGenre.Create('', 0, 0);
+  // TODO: Das hier muss ins POST-TRANSLATE!!!
+  NodeData.Genre := TGenre.Create(_(GENRENODETEXT), 0, 0);
   NodeData.CatType := ctAll;
   FGenreNode := Node;
 
@@ -905,9 +1011,9 @@ begin
   Items.Add(FItemEditAndAddToWishlist);
 end;
 
-procedure TChartsPopup.EnableItems(SelectedCount: Integer);
+procedure TChartsPopup.EnableItems(SelectedCount: Integer; AllOnList: Boolean);
 begin
-  FItemAddToWishlist.Enabled := SelectedCount > 0;
+  FItemAddToWishlist.Enabled := (SelectedCount > 0) and (not AllOnList);
   FItemEditAndAddToWishlist.Enabled := SelectedCount = 1;
 end;
 
