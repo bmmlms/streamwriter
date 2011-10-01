@@ -38,31 +38,6 @@ type
 
   TIntArray = array of Integer;
 
-  // REMARK: Wenn FMigrationIgnoreList weg ist, das hier zurück in den DataManager packen.
-  TTitleInfo = class
-  private
-    FTitle: string;
-    FAdded: TDateTime;
-    FIndex: Cardinal;
-    FPattern: string;
-    FHash: Cardinal;
-  public
-    constructor Create(Title: string); overload;
-
-    class function Load(Stream: TExtendedStream; Version: Integer): TTitleInfo;
-    procedure Save(Stream: TExtendedStream);
-    function Copy: TTitleInfo;
-
-    property Title: string read FTitle write FTitle;
-    property Added: TDateTime read FAdded write FAdded;
-    property Index: Cardinal read FIndex write FIndex;
-    property Pattern: string read FPattern;
-    property Hash: Cardinal read FHash;
-  end;
-
-  TTitleList = class(TList<TTitleInfo>)
-  end;
-
   TStreamSettings = class
   private
     FTitlePattern: string;
@@ -95,8 +70,6 @@ type
     FOverwriteSmaller: Boolean;
     FDiscardSmaller: Boolean;
     FIgnoreTrackChangePattern: TStringList;
-    // REMARK: Kann raus, ein paar Wochen nachdem Version 2.2.0.0 raus ist. Fixt fail aus den Builds, keine offizielle Version.
-    FMigrationIgnoreList: TTitleList;
 
     procedure FSetSaveToMemory(Value: Boolean);
   public
@@ -138,7 +111,6 @@ type
     property OverwriteSmaller: Boolean read FOverwriteSmaller write FOverwriteSmaller;
     property DiscardSmaller: Boolean read FDiscardSmaller write FDiscardSmaller;
     property IgnoreTrackChangePattern: TStringList read FIgnoreTrackChangePattern write FIgnoreTrackChangePattern;
-    property MigrationIgnoreList: TTitleList read FMigrationIgnoreList;
   end;
 
   TStreamSettingsArray = array of TStreamSettings;
@@ -262,75 +234,6 @@ var
   AppGlobals: TAppData;
 
 implementation
-
-{ TTitleInfo }
-
-constructor TTitleInfo.Create(Title: string);
-var
-  NumChars: Integer;
-  Hash: Cardinal;
-  Pattern: string;
-begin
-  inherited Create;
-
-  FTitle := Title;
-  FAdded := Now;
-
-  Pattern := BuildPattern(Title, Hash, NumChars, False);
-  FPattern := Pattern;
-  FHash := Hash;
-end;
-
-class function TTitleInfo.Load(Stream: TExtendedStream;
-  Version: Integer): TTitleInfo;
-var
-  NumChars: Integer;
-  Hash: Cardinal;
-  Pattern: string;
-begin
-  Result := TTitleInfo.Create;
-  Stream.Read(Result.FTitle);
-
-  if Version > 31 then
-    Stream.Read(Result.FAdded)
-  else
-    Result.FAdded := Now;
-
-  if Version > 31 then
-    Stream.Read(Result.FIndex)
-  else
-    Result.FIndex := High(Cardinal);
-
-  if Version > 3 then
-  begin
-    Stream.Read(Result.FPattern);
-    Stream.Read(Result.FHash);
-  end else
-  begin
-    Pattern := BuildPattern(Result.FTitle, Hash, NumChars, False);
-    Result.FPattern := Pattern;
-    Result.FHash := Hash;
-  end;
-end;
-
-procedure TTitleInfo.Save(Stream: TExtendedStream);
-begin
-  Stream.Write(FTitle);
-  Stream.Write(FAdded);
-  Stream.Write(FIndex);
-  Stream.Write(FPattern);
-  Stream.Write(FHash);
-end;
-
-function TTitleInfo.Copy: TTitleInfo;
-begin
-  Result := TTitleInfo.Create;
-  Result.FTitle := FTitle;
-  Result.FAdded := FAdded;
-  Result.FIndex := FIndex;
-  Result.FPattern := FPattern;
-  Result.FHash := FHash;
-end;
 
 { TAppData }
 
@@ -900,8 +803,6 @@ begin
   inherited;
 
   FIgnoreTrackChangePattern := TStringList.Create;
-
-  FMigrationIgnoreList := TTitleList.Create;
 end;
 
 destructor TStreamSettings.Destroy;
@@ -909,10 +810,6 @@ var
   i: Integer;
 begin
   FIgnoreTrackChangePattern.Free;
-
-  for i := 0 to FMigrationIgnoreList.Count - 1 do
-    FMigrationIgnoreList[i].Free;
-  FMigrationIgnoreList.Free;
 
   inherited;
 end;
@@ -930,7 +827,6 @@ var
   B: Byte;
   i, Count, FilterTmp: Integer;
   IgnoreTmp: string;
-  TitleInfo: TTitleInfo;
 begin
   Result := TStreamSettings.Create;
 
@@ -1087,6 +983,7 @@ begin
     end;
   end;
 
+  {
   if Version = 27 then
   begin
     Stream.Read(Count);
@@ -1097,6 +994,7 @@ begin
         Result.FMigrationIgnoreList.Add(TitleInfo);
     end;
   end;
+  }
 end;
 
 procedure TStreamSettings.Save(Stream: TExtendedStream);

@@ -1520,6 +1520,7 @@ procedure TfrmStreamWriterMain.tabClientsRemoveTitleFromList(
 var
   i: Integer;
   List: TTitleList;
+  T: TTitleInfo;
 begin
   if Client = nil then
     if ListType = ltSave then
@@ -1538,8 +1539,9 @@ begin
     begin
       tabLists.RemoveTitle(Client, ListType, List[i]);
 
-      List[i].Free;
+      T := List[i];
       List.Delete(i);
+      T.Free;
     end;
   end;
 end;

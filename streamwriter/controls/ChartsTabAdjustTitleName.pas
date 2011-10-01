@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, AppData, Functions,
+  Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, DataManager, Functions,
   MsgDlg;
 
 type

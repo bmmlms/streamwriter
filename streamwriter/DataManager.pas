@@ -32,6 +32,43 @@ type
 
   EVersionException = class(Exception);
 
+  TTitleInfo = class
+  private
+    FTitle: string;
+    FAdded: TDateTime;
+    FIndex: Cardinal;
+    FPattern: string;
+    FHash: Cardinal;
+  public
+    constructor Create(Title: string); overload;
+
+    class function Load(Stream: TExtendedStream; Version: Integer): TTitleInfo;
+    procedure Save(Stream: TExtendedStream);
+    function Copy: TTitleInfo;
+
+    property Title: string read FTitle write FTitle;
+    property Added: TDateTime read FAdded write FAdded;
+    property Index: Cardinal read FIndex write FIndex;
+    property Pattern: string read FPattern;
+    property Hash: Cardinal read FHash;
+  end;
+
+  TN = procedure(Sender: TObject; const Item: TTitleInfo; Action: TCollectionNotification) of object;
+
+  TTitleList = class(TList<TTitleInfo>)
+  private
+    FNotifications: Boolean;
+    FOnChange: TList<TN>;
+  protected
+    procedure Notify(const Item: TTitleInfo; Action: TCollectionNotification); override;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    property OnChange: TList<TN> read FOnChange;
+    property Notifications: Boolean read FNotifications write FNotifications;
+  end;
+
   TStreamBrowserEntry = class
   private
     FID: Integer;
@@ -374,6 +411,104 @@ const
 
 implementation
 
+{ TTitleInfo }
+
+constructor TTitleInfo.Create(Title: string);
+var
+  NumChars: Integer;
+  Hash: Cardinal;
+  Pattern: string;
+begin
+  inherited Create;
+
+  FTitle := Title;
+  FAdded := Now;
+
+  Pattern := BuildPattern(Title, Hash, NumChars, False);
+  FPattern := Pattern;
+  FHash := Hash;
+end;
+
+class function TTitleInfo.Load(Stream: TExtendedStream;
+  Version: Integer): TTitleInfo;
+var
+  NumChars: Integer;
+  Hash: Cardinal;
+  Pattern: string;
+begin
+  Result := TTitleInfo.Create;
+  Stream.Read(Result.FTitle);
+
+  if Version > 31 then
+    Stream.Read(Result.FAdded)
+  else
+    Result.FAdded := Now;
+
+  if Version > 31 then
+    Stream.Read(Result.FIndex)
+  else
+    Result.FIndex := High(Cardinal);
+
+  if Version > 3 then
+  begin
+    Stream.Read(Result.FPattern);
+    Stream.Read(Result.FHash);
+  end else
+  begin
+    Pattern := BuildPattern(Result.FTitle, Hash, NumChars, False);
+    Result.FPattern := Pattern;
+    Result.FHash := Hash;
+  end;
+end;
+
+procedure TTitleInfo.Save(Stream: TExtendedStream);
+begin
+  Stream.Write(FTitle);
+  Stream.Write(FAdded);
+  Stream.Write(FIndex);
+  Stream.Write(FPattern);
+  Stream.Write(FHash);
+end;
+
+function TTitleInfo.Copy: TTitleInfo;
+begin
+  Result := TTitleInfo.Create;
+  Result.FTitle := FTitle;
+  Result.FAdded := FAdded;
+  Result.FIndex := FIndex;
+  Result.FPattern := FPattern;
+  Result.FHash := FHash;
+end;
+
+{ TTitleList }
+
+constructor TTitleList.Create;
+begin
+  inherited;
+
+  FNotifications := True;
+  FOnChange := TList<TN>.Create;
+end;
+
+destructor TTitleList.Destroy;
+begin
+  FOnChange.Free;
+
+  inherited;
+end;
+
+procedure TTitleList.Notify(const Item: TTitleInfo;
+  Action: TCollectionNotification);
+var
+  T: TN;
+begin
+  if FNotifications then
+    for T in FOnChange do
+      T(Self, Item, Action);
+
+  inherited;
+end;
+
 { TStreamEntry }
 
 procedure TStreamEntry.Assign(From: TStreamEntry);
@@ -599,7 +734,7 @@ begin
     Stream.Read(Count);
     for i := 0 to Count - 1 do
       Result.FIgnoreList.Add(TTitleInfo.Load(Stream, Version));
-  end else if Version = 27 then
+  end;{ else if Version = 27 then
   begin
     for i := Result.FSettings.MigrationIgnoreList.Count - 1 downto 0 do
     begin
@@ -607,7 +742,7 @@ begin
       Result.FSettings.MigrationIgnoreList[i].Free;
       Result.FSettings.MigrationIgnoreList.Delete(i);
     end;
-  end;
+  end; }
 
   if Version > 31 then
     Stream.Read(Result.FIgnoreListIndex)
@@ -680,9 +815,11 @@ begin
     FStreamList[i].Free;
   FStreamList.Clear;
 
+  FSaveList.Notifications := False;
   for i := 0 to FSaveList.Count - 1 do
     FSaveList[i].Free;
   FSaveList.Clear;
+  FSaveList.Notifications := True;
 
   for i := 0 to FIgnoreList.Count - 1 do
     FIgnoreList[i].Free;

@@ -122,7 +122,10 @@ type
 
     FLists: TDataLists;
 
+    procedure PopupMenuPopup(Sender: TObject);
     procedure PopupMenuClick(Sender: TObject);
+
+    procedure OnSaveListNotify(Sender: TObject; const Item: TTitleInfo; Action: TCollectionNotification);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: string); override;
@@ -133,7 +136,6 @@ type
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode;
       Column: TColumnIndex): Integer; override;
     procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
-    procedure DoChange(Node: PVirtualNode); override;
     procedure KeyPress(var Key: Char); override;
     function GetSelected: TChartArray;
     procedure Paint; override;
@@ -146,6 +148,7 @@ type
       const Text: string): Integer; override;
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists);
+    destructor Destroy; override;
 
     procedure BuildTree(List: TList<TChartEntry>);
   end;
@@ -380,7 +383,7 @@ end;
 
 procedure TChartsTree.BuildTree(List: TList<TChartEntry>);
 var
-  i: Integer;
+  i, n: Integer;
   Node: PVirtualNode;
   NodeData: PChartNodeData;
 begin
@@ -393,6 +396,14 @@ begin
       Node := AddChild(nil);
       NodeData := GetNodeData(Node);
       NodeData.Chart := List[i];
+      NodeData.IsOnWishlist := False;
+
+      for n := 0 to FLists.SaveList.Count - 1 do
+        if LowerCase(FLists.SaveList[n].Title) = LowerCase(NodeData.Chart.Name) then
+        begin
+          NodeData.IsOnWishlist := True;
+          Break;
+        end;
     end;
   finally
     SortTree(Header.SortColumn, Header.SortDirection);
@@ -406,6 +417,8 @@ begin
   inherited Create(AOwner);
 
   FLists := Lists;
+
+  FLists.SaveList.OnChange.Add(OnSaveListNotify);
 
   NodeDataSize := SizeOf(TChartNodeData);
 
@@ -433,6 +446,7 @@ begin
   Header.Options := Header.Options + [hoAutoResize];
 
   FPopupMenu := TChartsPopup.Create(Self);
+  FPopupMenu.OnPopup := PopupMenuPopup;
   FPopupMenu.ItemAddToWishlist.OnClick := PopupMenuClick;
   FPopupMenu.ItemEditAndAddToWishlist.OnClick := PopupMenuClick;
 
@@ -450,6 +464,12 @@ begin
   inherited;
 
   FPopupMenu.FItemAddToWishlist.Click;
+end;
+
+destructor TChartsTree.Destroy;
+begin
+
+  inherited;
 end;
 
 procedure TChartsTree.DoAfterCellPaint(Canvas: TCanvas; Node: PVirtualNode;
@@ -483,35 +503,6 @@ begin
     SetBkMode(Canvas.Handle, TRANSPARENT);
     Canvas.TextOut(R.Right + 2, R.Top, IntToStr(NodeData.Chart.Chance) + '%');
   end;
-end;
-
-procedure TChartsTree.DoChange(Node: PVirtualNode);
-var
-  i: Integer;
-  AllOnList: Boolean;
-  N: PVirtualNode;
-  NodeData: PChartNodeData;
-begin
-  inherited;
-
-  AllOnList := True;
-
-  N := GetFirst;
-  while N <> nil do
-  begin
-    if Selected[N] then
-    begin
-      NodeData := GetNodeData(N);
-      if not NodeData.IsOnWishlist then
-      begin
-        AllOnList := False;
-        Break;
-      end;
-    end;
-    N := GetNext(N);
-  end;
-
-  FPopupMenu.EnableItems(SelectedCount, AllOnList);
 end;
 
 function TChartsTree.DoCompare(Node1, Node2: PVirtualNode;
@@ -649,6 +640,32 @@ begin
   end;
 end;
 
+procedure TChartsTree.OnSaveListNotify(Sender: TObject;
+  const Item: TTitleInfo; Action: TCollectionNotification);
+var
+  Node: PVirtualNode;
+  NodeData: PChartNodeData;
+begin
+  if Sender = FLists.SaveList then
+  begin
+    if (Action = cnAdded) or (Action = cnRemoved) then
+    begin
+      Node := GetFirst;
+      while Node <> nil do
+      begin
+        NodeData := GetNodeData(Node);
+        if LowerCase(NodeData.Chart.Name) = LowerCase(Item.Title) then
+        begin
+          NodeData.IsOnWishlist := Action = cnAdded;
+          InvalidateNode(Node);
+          Break;
+        end;
+        Node := GetNext(Node);
+      end;
+    end;
+  end;
+end;
+
 procedure TChartsTree.Paint;
 var
   Msg: string;
@@ -688,21 +705,11 @@ begin
 
     Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20);
 
-    Found := False;
-    for i := 0 to FLists.SaveList.Count - 1 do
-      if LowerCase(FLists.SaveList[i].Title) = LowerCase(NodeData.Chart.Name) then
-      begin
-        Found := True;
-        Break;
-      end;
-
-    NodeData.IsOnWishlist := Found;
-
-    if Found then
+    if NodeData.IsOnWishlist then
       Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 31);
   end;
 end;
-                  // TODO: erste spalte darf nicht resized werden!!!
+
 procedure TChartsTree.PopupMenuClick(Sender: TObject);
 var
   i: Integer;
@@ -752,6 +759,35 @@ begin
   end;
 
   Invalidate;
+end;
+
+procedure TChartsTree.PopupMenuPopup(Sender: TObject);
+var
+  i: Integer;
+  AllOnList: Boolean;
+  N: PVirtualNode;
+  NodeData: PChartNodeData;
+begin
+  inherited;
+
+  AllOnList := True;
+
+  N := GetFirst;
+  while N <> nil do
+  begin
+    if Selected[N] then
+    begin
+      NodeData := GetNodeData(N);
+      if not NodeData.IsOnWishlist then
+      begin
+        AllOnList := False;
+        Break;
+      end;
+    end;
+    N := GetNext(N);
+  end;
+
+  FPopupMenu.EnableItems(SelectedCount, AllOnList);
 end;
 
 { TSearchPanel }

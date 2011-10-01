@@ -2764,6 +2764,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Interval = 120000
     OnTimer = tmrAutoSaveTimer
     Left = 288
-    Top = 204
+    Top = 200
   end
 end
