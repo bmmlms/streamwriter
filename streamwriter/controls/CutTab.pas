@@ -58,7 +58,6 @@ type
     FCutView: TCutView;
     FFilename: string;
 
-    // TODO: Das hier wird leider nirgens aufgerufen???
     FOnSaved: TFileSavedEvent;
     FOnVolumeChanged: TSeekChangeEvent;
     FOnPlayStarted: TNotifyEvent;

@@ -638,6 +638,7 @@ var
 begin
   FDataLists := TDataLists.Create;
 
+  {$IFNDEF DEBUG}
   Recovered := False;
   if FileExists(AppGlobals.RecoveryFile) then
   begin
@@ -657,6 +658,7 @@ begin
       end;
     end;
   end;
+  {$ENDIF}
 
   try
     if not Recovered then
@@ -862,6 +864,9 @@ begin
   tabCharts.HomeCommStateChanged(Sender);
   if FCommunityLogin <> nil then
     FCommunityLogin.HomeCommStateChanged(Sender);
+
+  if HomeComm.Connected then
+    tmrRecordingsTimer(tmrRecordings);
 
   HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 end;
@@ -1084,7 +1089,7 @@ begin
   NodeData.Category.Name := _('Automatic recordings');
   tabClients.ClientView.Invalidate;
 
-  tabCharts.Translate;
+  tabCharts.PostTranslate;
 
   addStatus.Invalidate;
 end;
@@ -1544,6 +1549,8 @@ begin
       T.Free;
     end;
   end;
+
+  HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsAuthRequired(Sender: TObject);

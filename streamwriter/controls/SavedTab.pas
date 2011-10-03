@@ -724,7 +724,7 @@ begin
   FToolBar.Align := alTop;
   FToolBar.AutoSize := True;
   FToolBar.Height := 25;
-  FToolbar.Indent := 2;
+  FToolbar.Indent := 0;
   FToolBar.Images := Images;
   FToolBar.Setup;
 
@@ -1588,13 +1588,65 @@ begin
           I2 := I2 + 1;
 
         Result := CmpInt(I1, I2);
+
+        if Result = 0 then
+        begin
+          Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
+          if Header.SortDirection = sdDescending then
+            Result := Result * -1;
+        end;
       end;
     1: Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
-    2: Result := CmpInt(Data1.Track.Filesize, Data2.Track.Filesize);
-    3: Result := CmpInt(Data1.Track.Length, Data2.Track.Length);
-    4: Result := CmpInt(Data1.Track.BitRate, Data2.Track.BitRate);
-    5: Result := CompareText(Data1.Track.Streamname, Data2.Track.Streamname);
-    6: Result := CmpTime(Data1.Track.Time, Data2.Track.Time);
+    2:
+      begin
+        Result := CmpInt(Data1.Track.Filesize, Data2.Track.Filesize);
+        if Result = 0 then
+        begin
+          Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
+          if Header.SortDirection = sdDescending then
+            Result := Result * -1;
+        end;
+      end;
+    3:
+      begin
+        Result := CmpInt(Data1.Track.Length, Data2.Track.Length);
+        if Result = 0 then
+        begin
+          Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
+          if Header.SortDirection = sdDescending then
+            Result := Result * -1;
+        end;
+      end;
+    4:
+      begin
+        Result := CmpInt(Data1.Track.BitRate, Data2.Track.BitRate);
+        if Result = 0 then
+        begin
+          Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
+          if Header.SortDirection = sdDescending then
+            Result := Result * -1;
+        end;
+      end;
+    5:
+      begin
+        Result := CompareText(Data1.Track.Streamname, Data2.Track.Streamname);
+        if Result = 0 then
+        begin
+          Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
+          if Header.SortDirection = sdDescending then
+            Result := Result * -1;
+        end;
+      end;
+    6:
+      begin
+        Result := CmpTime(Data1.Track.Time, Data2.Track.Time);
+        if Result = 0 then
+        begin
+          Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
+          if Header.SortDirection = sdDescending then
+            Result := Result * -1;
+        end;
+      end;
   end;
 end;
 
@@ -1684,7 +1736,7 @@ procedure TSearchBar.Setup;
 begin
   FLabel := TLabel.Create(Self);
   FLabel.Parent := Self;
-  FLabel.Left := 4;
+  FLabel.Left := 0;
   FLabel.Top := 6;
   FLabel.Caption := _('Search:');
 

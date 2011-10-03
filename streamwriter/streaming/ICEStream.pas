@@ -587,6 +587,16 @@ begin
 
       ParseTitle(Title, FSettings.TitlePattern, FSavedArtist, FSavedTitle);
 
+      if (FSavedArtist <> '') and (FSavedTitle <> '') then
+        FSaveAllowedTitle := FSavedArtist + ' - ' + FSavedTitle;
+
+      if (FSavedArtist = '') or (FSavedTitle = '') then
+      begin
+        FSavedArtist := _('Unknown artist');
+        if FSavedTitle = '' then
+          FSavedTitle := _('Unknown title');
+      end;
+
       if FRecordTitle <> '' then
         FileCheck := TFileChecker.Create(FStreamName, FSaveDirAuto, FSongsSaved, FSettings)
       else
@@ -1222,14 +1232,6 @@ begin
   begin
     // Wenn nichts gefunden wurde, Fallback mit normalem Muster..
     ParseTitle(S, '(?P<a>.*) - (?P<t>.*)', Artist, Title);
-  end;
-
-  if (Artist = '') or (Title = '') then
-  begin
-    Artist := _('Unknown artist');
-    Title := S;
-    if Title = '' then
-      Title := _('Unknown title');
   end;
 end;
 

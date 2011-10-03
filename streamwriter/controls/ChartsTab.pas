@@ -28,14 +28,6 @@ uses
   Menus, ChartsTabAdjustTitleName, Forms;
 
 type
-  TCategoryTypes = (ctAll, ctGenre);
-
-  TCategoryNodeData = record
-    CatType: TCategoryTypes;
-    Genre: TGenre;
-  end;
-  PCategoryNodeData = ^TCategoryNodeData;
-
   TChartNodeData = record
     Chart: TChartEntry;
     IsOnWishlist: Boolean;
@@ -56,55 +48,27 @@ type
     property ItemEditAndAddToWishlist: TMenuItem read FItemEditAndAddToWishlist;
   end;
 
-  TCategoryChangedEvent = procedure(Data: PCategoryNodeData) of object;
-
-  TCategoryTree = class(TVirtualStringTree)
+  TCategoryCombo = class(TComboBoxEx)
   private
-    FLists: TDataLists;
-
-    FGenreNode: PVirtualNode;
-
-    FChangeEnabled: Boolean;
-
-    FOnCategoryChanged: TCategoryChangedEvent;
-
-    procedure HomeCommChartGenresReceived(Sender: TObject; List: TList<TGenre>);
-  protected
-    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-      TextType: TVSTTextType; var Text: string); override;
-    function DoCollapsing(Node: PVirtualNode): Boolean; override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
-      Column: TColumnIndex; var Ghosted: Boolean;
-      var Index: Integer): TCustomImageList; override;
-    procedure DoFreeNode(Node: PVirtualNode); override;
-    procedure DoChange(Node: PVirtualNode); override;
-    function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode;
-      Column: TColumnIndex): Integer; override;
-    function DoIncrementalSearch(Node: PVirtualNode;
-      const Text: string): Integer; override;
   public
-    constructor Create(AOwner: TComponent);
-
-    procedure Setup(Lists: TDataLists; Images: TImageList);
+    procedure LoadCategories(Categories: TList<TChartCategory>);
     procedure PostTranslate;
-
-    property OnCategoryChanged: TCategoryChangedEvent read FOnCategoryChanged write FOnCategoryChanged;
   end;
 
   TSearchPanel = class(TPanel)
   private
-    FTopPanel: TPanel;
     FLabel: TLabel;
-    FSearchPanel: TPanel;
     FSearch: TEdit;
-    FSearchButton: TSpeedButton;
-    FCategories: TCategoryTree;
+    FCategories: TCategoryCombo;
+    FToolbar: TToolBar;
+
+    FButtonReload: TToolButton;
   protected
     procedure Resize; override;
   public
     constructor Create(AOwner: TComponent);
 
-    procedure Setup;
+    procedure Setup(Images: TImageList);
   end;
 
   TChartArray = array of TChartEntry;
@@ -112,6 +76,10 @@ type
 
   TChartsTree = class(TVirtualStringTree)
   private
+    FTimer: TTimer;
+    FDots: string;
+    FTextLeft: Integer;
+
     FPopupMenu: TChartsPopup;
 
     FColImages: TVirtualTreeColumn;
@@ -126,6 +94,10 @@ type
     procedure PopupMenuClick(Sender: TObject);
 
     procedure OnSaveListNotify(Sender: TObject; const Item: TTitleInfo; Action: TCollectionNotification);
+
+    procedure TimerOnTimer(Sender: TObject);
+
+    procedure FSetState(Value: TChartStates);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: string); override;
@@ -151,6 +123,8 @@ type
     destructor Destroy; override;
 
     procedure BuildTree(List: TList<TChartEntry>);
+
+    property State: TChartStates read FState write FSetState;
   end;
 
   TAddToWishlistEvent = procedure(Sender: TObject; List: TStringList) of object;
@@ -160,26 +134,26 @@ type
     FLists: TDataLists;
     FSearchPanel: TSearchPanel;
     FChartsTree: TChartsTree;
-
-    FLastSearch: string;
-    FLastGenreID: Cardinal;
+    FResultLabel: TLabel;
 
     FOnAddToWishlist: TAddToWishlistEvent;
 
     procedure GetCharts;
+    procedure ShowCharts;
     procedure SetState(State: TChartStates);
 
-    procedure SearchEditKeyPress(Sender: TObject; var Key: Char);
-    procedure SearchButtonClick(Sender: TObject);
+    procedure SearchKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 
-    procedure HomeCommChartsReceived(Sender: TObject; GenreID: Cardinal; Search: string; List: TList<TChartEntry>);
-    procedure CategoriesCategoryChanged(Data: PCategoryNodeData);
+    procedure HomeCommChartsReceived(Sender: TObject; CategoryList: TList<TChartCategory>;
+      Genres: TList<TGenre>; ChartList: TList<TChartEntry>);
+    procedure CategoriesChange(Sender: TObject);
+    procedure ButtonReloadClick(Sender: TObject);
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists);
     destructor Destroy; override;
 
     procedure Setup(Images: TImageList);
-    procedure Translate;
+    procedure PostTranslate;
 
     procedure HomeCommStateChanged(Sender: TObject);
 
@@ -187,15 +161,23 @@ type
   end;
 
 const
-  GENRENODETEXT = 'Search all genres';
+  TEXT_LOADING = 'Loading charts';
+  TEXT_ERROR = 'You need to be connected to the server.';
+  TEXT_EVERYSONG = 'Every song';
+  TEXT_RESULTS = '%d songs found';
 
 implementation
 
 { TChartsTab }
 
-procedure TChartsTab.CategoriesCategoryChanged(Data: PCategoryNodeData);
+procedure TChartsTab.ButtonReloadClick(Sender: TObject);
 begin
   GetCharts;
+end;
+
+procedure TChartsTab.CategoriesChange(Sender: TObject);
+begin
+  ShowCharts;
 end;
 
 constructor TChartsTab.Create(AOwner: TComponent; Lists: TDataLists);
@@ -206,23 +188,23 @@ begin
 
   FSearchPanel := TSearchPanel.Create(Self);
   FSearchPanel.Parent := Self;
-  FSearchPanel.Align := alLeft;
+  FSearchPanel.Align := alTop;
 
   FChartsTree := TChartsTree.Create(Self, FLists);
   FChartsTree.Parent := Self;
   FChartsTree.Align := alClient;
+
+  FResultLabel := TLabel.Create(Self);
+  FResultLabel.Parent := Self;
+  FResultLabel.Align := alBottom;
 
   HomeComm.OnChartsReceived := HomeCommChartsReceived;
 
   ImageIndex := 68;
   ShowCloseButton := False;
 
-  FSearchPanel.FSearch.OnKeyPress := SearchEditKeyPress;
-  FSearchPanel.FSearchButton.OnClick := SearchButtonClick;
-
-  FSearchPanel.FCategories.OnCategoryChanged := CategoriesCategoryChanged;
-
-  FLastGenreID := High(Cardinal);
+  FSearchPanel.FSearch.OnKeyUp := SearchKeyUp;
+  FSearchPanel.FCategories.OnChange := CategoriesChange;
 end;
 
 destructor TChartsTab.Destroy;
@@ -232,105 +214,58 @@ begin
 end;
 
 procedure TChartsTab.GetCharts;
-var
-  Node: PVirtualNode;
-  NodeData: PCategoryNodeData;
-  P: string;
-  Hash: Cardinal;
-  Chars: Integer;
-  Res: Boolean;
 begin
-  Node := FSearchPanel.FCategories.GetFirstSelected;
-  if Node <> nil then
-  begin
-    NodeData := FSearchPanel.FCategories.GetNodeData(Node);
-
-    P := BuildPattern(FSearchPanel.FSearch.Text, Hash, Chars, False);
-
-    if P = '*' then
-      P := '';
-
-    if (P = FLastSearch) and (NodeData.Genre.ID = FLastGenreID) then
-    begin
-      Exit;
-    end;
-
-    if (Trim(FSearchPanel.FSearch.Text) <> '') and (Chars < 3) then
-    begin
-      MsgBox(GetParentForm(Self).Handle, _('Please enter at least three characters to search for.'), _('Info'), MB_ICONINFORMATION);
-      Exit;
-    end;
-
-    FChartsTree.Clear;
-
-    if HomeComm.Connected then
-    begin
-      Res := False;
-      case NodeData.CatType of
-        ctAll:
-            Res := HomeComm.GetCharts(P, 0);
-        ctGenre:
-            Res := HomeComm.GetCharts(P, NodeData.Genre.ID);
-      end;
-
-      if Res then
-      begin
-        SetState(csLoading);
-
-        FLastSearch := P;
-        FLastGenreID := NodeData.Genre.ID;
-      end;
-    end else
-      SetState(csError);
-  end;
+  if HomeComm.GetCharts then
+    SetState(csLoading)
+  else
+    SetState(csError);
 end;
 
-procedure TChartsTab.HomeCommChartsReceived(Sender: TObject; GenreID: Cardinal; Search: string; List: TList<TChartEntry>);
+procedure TChartsTab.HomeCommChartsReceived(Sender: TObject; CategoryList: TList<TChartCategory>;
+  Genres: TList<TGenre>; ChartList: TList<TChartEntry>);
 var
   i: Integer;
   Node: PVirtualNode;
-  NodeData: PCategoryNodeData;
 begin
-  Node := FSearchPanel.FCategories.FocusedNode;
-  if Node <> nil then
-  begin
-    NodeData := FSearchPanel.FCategories.GetNodeData(Node);
+  SetState(csNormal);
 
-    if (FLastGenreID = GenreID) and (FLastSearch = Search) then
-    begin
-      FChartsTree.BuildTree(List);
+  FChartsTree.Clear;
 
-      SetState(csNormal);
-    end else
-    begin
-      // Wenn wir die Charts nicht hinzufügen, werden sie nicht freigegeben. Also hier machen.
-      for i := 0 to List.Count - 1 do
-        List[i].Free;
-    end;
-  end else
-    for i := 0 to List.Count - 1 do
-      List[i].Free;
+  for i := 0 to FLists.ChartCategoryList.Count - 1 do
+    FLists.ChartCategoryList[i].Free;
+  FLists.ChartCategoryList.Clear;
+
+  for i := 0 to CategoryList.Count - 1 do
+    FLists.ChartCategoryList.Add(CategoryList[i]);
+
+  for i := 0 to FLists.ChartList.Count - 1 do
+    FLists.ChartList[i].Free;
+  FLists.ChartList.Clear;
+
+  for i := 0 to ChartList.Count - 1 do
+    FLists.ChartList.Add(ChartList[i]);
+
+  FSearchPanel.FCategories.LoadCategories(FLists.ChartCategoryList);
+
+  ShowCharts;
 end;
 
 procedure TChartsTab.HomeCommStateChanged(Sender: TObject);
 var
   K: Char;
 begin
-  if (not HomeComm.WasConnected) and (HomeComm.Connected) then
+  FSearchPanel.FButtonReload.Enabled := HomeComm.Connected;
+
+  if (HomeComm.Connected) and
+      (((FLists.ChartCategoryList.Count = 0) or (FLists.ChartList.Count = 0)) or (FChartsTree.FState <> csNormal)) then
   begin
     GetCharts;
-    if FSearchPanel.FCategories.FGenreNode.ChildCount = 0 then
-      HomeComm.GetChartGenres;
-  end;
-
-  if (HomeComm.WasConnected) and (not HomeComm.Connected) then
-  begin
-    if FChartsTree.FState <> csNormal then
+  end else
+    if (not HomeComm.Connected) and (FChartsTree.FState = csLoading) then
       SetState(csError);
-  end;
 end;
 
-procedure TChartsTab.Translate;
+procedure TChartsTab.PostTranslate;
 begin
   FChartsTree.FColImages.Text := _('State');
   FChartsTree.FColTitle.Text := _('Name');
@@ -338,45 +273,130 @@ begin
 
   FSearchPanel.FLabel.Caption := _('Search:');
   FSearchPanel.FCategories.PostTranslate;
+
+  FResultLabel.Caption := Format(_(TEXT_RESULTS), [FChartsTree.RootNodeCount]);
 end;
 
-procedure TChartsTab.SearchButtonClick(Sender: TObject);
+procedure TChartsTab.SearchKeyUp(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
 begin
-  GetCharts;
-end;
-
-procedure TChartsTab.SearchEditKeyPress(Sender: TObject; var Key: Char);
-var
-  Node: PVirtualNode;
-  NodeData: PCategoryNodeData;
-begin
-  if Key <> #13 then
-    Exit;
-
-  GetCharts;
-  Key := #0;
+  ShowCharts;
 end;
 
 procedure TChartsTab.SetState(State: TChartStates);
 begin
   if FChartsTree.FState <> State then
   begin
-    FChartsTree.FState := State;
+    FResultLabel.Enabled := State = csNormal;
+
+    FChartsTree.BeginUpdate;
+    FChartsTree.Clear;
+    FChartsTree.EndUpdate;
+
+    FChartsTree.State := State;
     FChartsTree.Invalidate;
+
+    FSearchPanel.FSearch.Enabled := State = csNormal;
+    FSearchPanel.FCategories.Enabled := State = csNormal;
+    FSearchPanel.FToolbar.Enabled := State = csNormal;
+
+    FSearchPanel.FButtonReload.Enabled := State = csNormal;
   end;
 end;
 
 procedure TChartsTab.Setup(Images: TImageList);
 begin
-  FSearchPanel.Setup;
-
-  FSearchPanel.FCategories.Setup(FLists, Images);
+  FSearchPanel.Setup(Images);
 
   FChartsTree.Images := Images;
 
   FChartsTree.PopupMenu.Images := Images;
 
+  FSearchPanel.FButtonReload.OnClick := ButtonReloadClick;
+
   Caption := _('Charts');
+
+  if ((FLists.ChartCategoryList.Count = 0) or (FLists.ChartList.Count = 0)) and (not HomeComm.Connected) then
+  begin
+    SetState(csError);
+  end;
+
+  if (FChartsTree.FState = csNormal) and (FLists.ChartList.Count > 0) and (FLists.CategoryList.Count > 0) then
+  begin
+    FSearchPanel.FCategories.LoadCategories(FLists.ChartCategoryList);
+    FSearchPanel.FCategories.ItemIndex := 0;
+    ShowCharts;
+  end;
+end;
+
+procedure TChartsTab.ShowCharts;
+var
+  i, n: Integer;
+  Add: Boolean;
+  Node: PVirtualNode;
+  NodeData: PChartNodeData;
+  CatData: TChartCategory;
+
+  P: string;
+  Hash: Cardinal;
+  Chars: Integer;
+  Res: Boolean;
+
+  CatMatch: Boolean;
+  SearchMatch: Boolean;
+begin
+  if FSearchPanel.FCategories.ItemIndex = -1 then
+    Exit;
+
+  P := BuildPattern(FSearchPanel.FSearch.Text, Hash, Chars, False);
+
+  try
+    FChartsTree.BeginUpdate;
+    FChartsTree.Clear;
+
+    CatData := TChartCategory(FSearchPanel.FCategories.ItemsEx[FSearchPanel.FCategories.ItemIndex].Data);
+
+    for i := 0 to FLists.ChartList.Count - 1 do
+    begin
+      CatMatch := False;
+      SearchMatch := False;
+
+      if CatData = nil then
+      begin
+        CatMatch := True
+      end else
+      begin
+        for n := 0 to High(FLists.ChartList[i].Categories) do
+          if FLists.ChartList[i].Categories[n] = CatData.ID then
+          begin
+            CatMatch := True;
+            Break;
+          end;
+      end;
+
+      SearchMatch := Like(FLists.ChartList[i].Name, P);
+
+      if CatMatch and SearchMatch then
+      begin
+        Node := FChartsTree.AddChild(nil);
+        NodeData := FChartsTree.GetNodeData(Node);
+        NodeData.Chart := FLists.ChartList[i];
+
+        for n := 0 to FLists.SaveList.Count - 1 do
+          if LowerCase(FLists.SaveList[n].Title) = LowerCase(NodeData.Chart.Name) then
+          begin
+            NodeData.IsOnWishlist := True;
+            Break;
+          end;
+      end;
+    end;
+
+    FChartsTree.SortTree(FChartsTree.Header.SortColumn, FChartsTree.Header.SortDirection);
+  finally
+    FChartsTree.EndUpdate;
+  end;
+
+  FResultLabel.Caption := Format(_(TEXT_RESULTS), [FChartsTree.RootNodeCount]);
 end;
 
 { TChartsTree }
@@ -419,6 +439,11 @@ begin
   FLists := Lists;
 
   FLists.SaveList.OnChange.Add(OnSaveListNotify);
+
+  FTimer := TTimer.Create(Self);
+  FTimer.Interval := 1000;
+  FTimer.Enabled := False;
+  FTimer.OnTimer := TimerOnTimer;
 
   NodeDataSize := SizeOf(TChartNodeData);
 
@@ -516,7 +541,7 @@ begin
   Data1 := GetNodeData(Node1);
   Data2 := GetNodeData(Node2);
 
-  case Header.SortColumn of
+  case Column of
     0:
       begin
         C1 := 0;
@@ -527,11 +552,25 @@ begin
           C2 := C2 + 1;
 
         Result := CmpInt(C1, C2);
+        if Result = 0 then
+        begin
+          Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
+          if Header.SortDirection = sdDescending then
+            Result := Result * -1;
+        end;
       end;
     1:
       Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
     2:
-      Result := CmpInt(Data1.Chart.Chance, Data2.Chart.Chance);
+      begin
+        Result := CmpInt(Data1.Chart.Chance, Data2.Chart.Chance);
+        if Result = 0 then
+        begin
+          Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
+          if Header.SortDirection = sdDescending then
+            Result := Result * -1;
+        end;
+      end;
   end;
 end;
 
@@ -539,8 +578,6 @@ procedure TChartsTree.DoFreeNode(Node: PVirtualNode);
 var
   NodeData: PChartNodeData;
 begin
-  NodeData := GetNodeData(Node);
-  NodeData.Chart.Free;
 
   inherited;
 end;
@@ -604,6 +641,33 @@ var
 begin
   NodeData := GetNodeData(Node);
   Result := StrLIComp(PChar(Text), PChar(NodeData.Chart.Name), Min(Length(Text), Length(NodeData.Chart.Name)));
+end;
+
+procedure TChartsTree.FSetState(Value: TChartStates);
+begin
+  FDots := '';
+
+  FTimer.Enabled := False;
+
+  case Value of
+    csNormal:
+      Enabled := True;
+    csLoading:
+      begin
+        Enabled := False;
+        FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_LOADING) + '..') div 2;
+        FTimer.Enabled := True;
+        Invalidate;
+      end;
+    csError:
+      begin
+        Enabled := False;
+        FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_ERROR)) div 2;
+        Invalidate;
+      end;
+  end;
+
+  FState := Value;
 end;
 
 function TChartsTree.GetSelected: TChartArray;
@@ -679,13 +743,13 @@ begin
       csNormal: ;
       csLoading:
         begin
-          Msg := _('Loading...');
-          Canvas.TextOut(ClientWidth div 2 - Canvas.TextWidth(MSg) div 2, ClientHeight div 2 - Canvas.TextHeight(Msg), Msg);
+          Msg := _(TEXT_LOADING) + FDots;
+          Canvas.TextOut(FTextLeft, ClientHeight div 2 - Canvas.TextHeight(Msg), Msg);
         end;
       csError:
         begin
-          Msg := _('You need to be connected to the server.');
-          Canvas.TextOut(ClientWidth div 2 - Canvas.TextWidth(Msg) div 2, ClientHeight div 2 - Canvas.TextHeight(Msg), Msg);
+          Msg := _(TEXT_ERROR);
+          Canvas.TextOut(FTextLeft, ClientHeight div 2 - Canvas.TextHeight(Msg), Msg);
         end;
     end;
 end;
@@ -790,6 +854,16 @@ begin
   FPopupMenu.EnableItems(SelectedCount, AllOnList);
 end;
 
+procedure TChartsTree.TimerOnTimer(Sender: TObject);
+begin
+  FDots := FDots + '.';
+
+  if Length(FDots) = 4 then
+    FDots := '';
+
+  Invalidate;
+end;
+
 { TSearchPanel }
 
 constructor TSearchPanel.Create(AOwner: TComponent);
@@ -801,232 +875,57 @@ begin
 
   BevelOuter := bvNone;
 
-  FTopPanel := TPanel.Create(Self);
-  FTopPanel.Parent := Self;
-  FTopPanel.BevelOuter := bvNone;
-  FTopPanel.Align := alTop;
-  FTopPanel.Padding.Top := 0;
-  FTopPanel.Padding.Left := 0;
-
   FLabel := TLabel.Create(Self);
-  FLabel.Parent := FTopPanel;
+  FLabel.Parent := Self;
   FLabel.Caption := _('Search:');
-  FLabel.Align := alTop;
-
-  FSearchPanel := TPanel.Create(Self);
-  FSearchPanel.Parent := FTopPanel;
-  FSearchPanel.BevelOuter := bvNone;
-  FSearchPanel.Align := alTop;
-  FSearchPanel.Height := 24;
-  FSearchPanel.Padding.Top := 2;
 
   FSearch := TEdit.Create(Self);
-  FSearch.Parent := FSearchPanel;
+  FSearch.Parent := Self;
   FSearch.Left := 0;
   FSearch.Top := 2;
 
-  FSearchButton := TSpeedButton.Create(Self);
-  FSearchButton.Parent := FSearchPanel;
-  FSearchButton.Anchors := [akRight, akTop];
-  FSearchButton.Flat := True;
-  FSearchButton.Hint := 'Search';
-  FSearchButton.ShowHint := True;
-
-  I := TIcon.Create;
-  I.LoadFromResourceName(HInstance, 'SEARCH');
-  B := TBitmap.Create;
-  B.Width := 32;
-  B.Height := 32;
-  B.Canvas.Draw(0, 0, I);
-  B.Canvas.StretchDraw(Rect(0, 0, 16, 16), B);
-  B.Width := 16;
-  B.Height := 16;
-  FSearchButton.Glyph := B;
-  FSearchButton.Glyph.PixelFormat := pf24bit;
-  B.Free;
-  I.Free;
-
-  FCategories := TCategoryTree.Create(Self);
-  FCategories.Align := alClient;
+  FCategories := TCategoryCombo.Create(Self);
+  FCategories.Style := csExDropDownList;
   FCategories.Parent := Self;
+
+  FToolbar := TToolBar.Create(Self);
+  FToolbar.Parent := Self;
+  FToolbar.ShowHint := True;
+  FToolbar.Align := alCustom;
 end;
 
 procedure TSearchPanel.Resize;
 begin
   inherited;
 
-  FSearchButton.Left := ClientWidth - 4 - FSearchButton.Width;
-  FSearch.Width := FTopPanel.ClientWidth - 8 - FSearchButton.Width;
 end;
 
-procedure TSearchPanel.Setup;
+procedure TSearchPanel.Setup(Images: TImageList);
 begin
-  FTopPanel.Height := FLabel.Height + FSearchPanel.Height + 2;
+  FCategories.Left := 0;
+  FCategories.Top := 2;
 
-  FSearchButton.Width := 24;
-  FSearchButton.Height := 24;
-  FSearchButton.Top := 0;
-end;
+  FLabel.Top := FCategories.Top + (FCategories.Height div 2 - FLabel.Height div 2);
+  FLabel.Left := FCategories.Left + FCategories.Width + 8;
 
-{ TCategoryTree }
+  FSearch.Width := 200;
+  FSearch.Top := FCategories.Top + (FCategories.Height div 2 - FSearch.Height div 2);
+  FSearch.Left := FLabel.Left + FLabel.Width + 4;
 
-constructor TCategoryTree.Create(AOwner: TComponent);
-begin
-  inherited;
+  ClientHeight := FSearch.Top * 2 + FSearch.Height;
 
-  NodeDataSize := SizeOf(TCategoryNodeData);
+  FToolbar.Images := Images;
 
-  IncrementalSearch := isVisibleOnly;
-  TreeOptions.SelectionOptions := [toDisableDrawSelection, toFullRowSelect];
-  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
-  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop] + [toFullRowDrag];
+  FButtonReload := TToolButton.Create(FToolbar);
+  FButtonReload.Parent := FToolbar;
+  FButtonReload.Hint := _('Reload');
+  FButtonReload.ImageIndex := 23;
 
-  FChangeEnabled := True;
-
-  HomeComm.OnChartGenresReceived := HomeCommChartGenresReceived;
-end;
-
-procedure TCategoryTree.DoChange(Node: PVirtualNode);
-begin
-  inherited;
-
-  if Node = nil then
-    Exit;
-
-  if Assigned(FOnCategoryChanged) then
-    FOnCategoryChanged(PCategoryNodeData(GetNodeData(Node)));
-end;
-
-function TCategoryTree.DoCollapsing(Node: PVirtualNode): Boolean;
-begin
-  Result := False;
-end;
-
-function TCategoryTree.DoCompare(Node1, Node2: PVirtualNode;
-  Column: TColumnIndex): Integer;
-var
-  ND1, ND2: PCategoryNodeData;
-begin
-  ND1 := GetNodeData(Node1);
-  ND2 := GetNodeData(Node2);
-
-  Result := CompareText(ND1.Genre.Name, ND2.Genre.Name);
-end;
-
-procedure TCategoryTree.DoFreeNode(Node: PVirtualNode);
-var
-  NodeData: PCategoryNodeData;
-begin
-  NodeData := GetNodeData(Node);
-
-  if NodeData.Genre <> nil then
-    NodeData.Genre.Free;
-
-  inherited;
-end;
-
-function TCategoryTree.DoGetImageIndex(Node: PVirtualNode;
-  Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean;
-  var Index: Integer): TCustomImageList;
-var
-  NodeData: PCategoryNodeData;
-begin
-  Result := inherited;
-
-  NodeData := GetNodeData(Node);
-  case NodeData.CatType of
-    ctAll:
-      Index := 28;
-    ctGenre:
-      Index := 16;
-  end;
-end;
-
-procedure TCategoryTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-  TextType: TVSTTextType; var Text: string);
-var
-  NodeData: PCategoryNodeData;
-begin
-  inherited;
-
-  if TextType = ttStatic then
-    Exit;
-
-  NodeData := GetNodeData(Node);
-
-  Text := NodeData.Genre.Name;
-end;
-
-function TCategoryTree.DoIncrementalSearch(Node: PVirtualNode;
-  const Text: string): Integer;
-var
-  CmpTxt: string;
-  NodeData: PCategoryNodeData;
-begin
-  NodeData := GetNodeData(Node);
-  Result := StrLIComp(PChar(Text), PChar(NodeData.Genre.Name), Min(Length(Text), Length(NodeData.Genre.Name)));
-end;
-
-procedure TCategoryTree.HomeCommChartGenresReceived(Sender: TObject;
-  List: TList<TGenre>);
-var
-  i: Integer;
-  Node: PVirtualNode;
-  NodeData: PCategoryNodeData;
-begin
-  BeginUpdate;
-  try
-    DeleteChildren(FGenreNode);
-
-    for i := 0 to List.Count - 1 do
-    begin
-      if List[i].ChartCount = 0 then
-        Continue;
-
-      Node :=  AddChild(FGenreNode);
-      NodeData := GetNodeData(Node);
-      NodeData.Genre := List[i];
-      NodeData.CatType := ctGenre;
-    end;
-
-    Sort(FGenreNode, 0, sdAscending);
-
-    Expanded[FGenreNode] := True;
-
-    ScrollIntoView(GetFirst, False)
-  finally
-    EndUpdate;
-  end;
-end;
-
-procedure TCategoryTree.PostTranslate;
-var
-  NodeData: PCategoryNodeData;
-begin
-  NodeData := GetNodeData(FGenreNode);
-  NodeData.Genre.Name := _(GENRENODETEXT);
-end;
-
-procedure TCategoryTree.Setup(Lists: TDataLists; Images: TImageList);
-var
-  i: Integer;
-  NodeGenres, Node: PVirtualNode;
-  NodeData: PCategoryNodeData;
-begin
-  FLists := Lists;
-  Self.Images := Images;
-
-  Clear;
-
-  Node := AddChild(nil);
-  NodeData := GetNodeData(Node);
-  // TODO: Das hier muss ins POST-TRANSLATE!!!
-  NodeData.Genre := TGenre.Create(_(GENRENODETEXT), 0, 0);
-  NodeData.CatType := ctAll;
-  FGenreNode := Node;
-
-  FocusedNode := GetFirst;
-  Selected[GetFirst] := True;
+  //FToolbar.Top := 2;
+  //FToolbar.Left := ClientWidth - FButtonReload.Width - 2;
+  FToolbar.Padding.Top := 2;
+  FToolbar.Align := alRight;
+  FToolbar.Width := FButtonReload.Width + 2;
 end;
 
 { TChartsPopup }
@@ -1051,6 +950,50 @@ procedure TChartsPopup.EnableItems(SelectedCount: Integer; AllOnList: Boolean);
 begin
   FItemAddToWishlist.Enabled := (SelectedCount > 0) and (not AllOnList);
   FItemEditAndAddToWishlist.Enabled := SelectedCount = 1;
+end;
+
+{ TCategoryCombo }
+
+procedure TCategoryCombo.LoadCategories(Categories: TList<TChartCategory>);
+var
+  i: Integer;
+  ComboItem: TComboExItem;
+begin
+  ItemsEx.Clear;
+
+  ComboItem := ItemsEx.Add;
+  ComboItem.Caption := _(TEXT_EVERYSONG);
+  ComboItem.Data := nil;
+
+  for i := 0 to Categories.Count - 1 do
+  begin
+    ComboItem := ItemsEx.Add;
+    ComboItem.Caption := Categories[i].Name;
+    ComboItem.Data := Categories[i];
+    //ComboItem.ImageIndex := AppGlobals.LanguageIcons.GetIconIndex(LanguageList[i].ID);
+  end;
+
+  ItemIndex := 0;
+end;
+
+procedure TCategoryCombo.PostTranslate;
+var
+  OldIdx: Integer;
+begin
+  if ItemsEx.Count > 0 then
+  begin
+    OldIdx := ItemIndex;
+    if OldIdx = -1 then
+      OldIdx := 0;
+
+    ItemIndex := -1;
+    ItemsEx[0].Caption := _(TEXT_EVERYSONG);
+
+    // Ja, das sieht doof aus, aber muss, damit sich die Caption übersetzt!
+    Application.ProcessMessages;
+    ItemIndex := OldIdx;
+    Application.ProcessMessages;
+  end;
 end;
 
 end.

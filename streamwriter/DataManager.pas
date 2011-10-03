@@ -330,15 +330,36 @@ type
     function GetRating(Name, URL: string): Integer;
   end;
 
+  TChartCategory = class
+  private
+    FID: Cardinal;
+    FName: string;
+  public
+    constructor Create; overload;
+    constructor Create(ID: Cardinal; Name: string); overload;
+
+    class function Load(Stream: TExtendedStream; Version: Integer): TChartCategory;
+    procedure Save(Stream: TExtendedStream);
+
+    property ID: Cardinal read FID;
+    property Name: string read FName;
+  end;
+
   TChartEntry = class
   private
     FName: string;
     FChance: Integer;
+    FCategories: TIntArray;
   public
-    constructor Create(Name: string; Chance: Integer);
+    constructor Create; overload;
+    constructor Create(Name: string; Chance: Integer; Categories: TIntArray); overload;
+
+    class function Load(Stream: TExtendedStream; Version: Integer): TChartEntry;
+    procedure Save(Stream: TExtendedStream);
 
     property Name: string read FName;
     property Chance: Integer read FChance;
+    property Categories: TIntArray read FCategories;
   end;
 
   TChartList = class(TList<TChartEntry>)
@@ -364,6 +385,9 @@ type
   TGenreList = class(TList<TGenre>)
   end;
 
+  TChartCategoryList = class(TList<TChartCategory>)
+  end;
+
   TDataLists = class
   private
     FCategoryList: TListCategoryList;
@@ -375,6 +399,8 @@ type
     FRecentList: TRecentList;
     FStreamBlacklist: TStringList;
     FRatingList: TRatingList;
+    FChartList: TChartList;
+    FChartCategoryList: TChartCategoryList;
     FBrowserList: TList<TStreamBrowserEntry>;
     FGenreList: TGenreList;
     FLoadError: Boolean;
@@ -399,6 +425,8 @@ type
     property RecentList: TRecentList read FRecentList;
     property StreamBlacklist: TStringList read FStreamBlacklist;
     property RatingList: TRatingList read FRatingList;
+    property ChartList: TChartList read FChartList;
+    property ChartCategoryList: TChartCategoryList read FChartCategoryList;
     property BrowserList: TList<TStreamBrowserEntry> read FBrowserList write FBrowserList;
     property GenreList: TGenreList read FGenreList write FGenreList;
 
@@ -407,7 +435,7 @@ type
   end;
 
 const
-  DATAVERSION = 34;
+  DATAVERSION = 35;
 
 implementation
 
@@ -841,11 +869,13 @@ begin
     FBrowserList[i].Free;
   FBrowserList.Clear;
 
-  {
   for i := 0 to FChartList.Count - 1 do
     FChartList[i].Free;
   FChartList.Clear;
-  }
+
+  for i := 0 to FChartCategoryList.Count - 1 do
+    FChartCategoryList[i].Free;
+  FChartCategoryList.Clear;
 
   for i := 0 to FGenreList.Count - 1 do
     FGenreList[i].Free;
@@ -869,7 +899,8 @@ begin
   FRatingList := TRatingList.Create;
   FBrowserList := TList<TStreamBrowserEntry>.Create;
   FGenreList := TGenreList.Create;
-  //FChartList := TChartList.Create;
+  FChartList := TChartList.Create;
+  FChartCategoryList := TChartCategoryList.Create;
 end;
 
 destructor TDataLists.Destroy;
@@ -887,7 +918,8 @@ begin
   FRatingList.Free;
   FBrowserList.Free;
   FGenreList.Free;
-  //FChartList.Free;
+  FChartList.Free;
+  FChartCategoryList.Free;
 
   inherited;
 end;
@@ -1061,6 +1093,18 @@ begin
         FRecentList.Add(TRecentEntry.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, Entry.FMigrationRecentIndex));
     end;
   end;
+
+  if Version >= 35 then
+  begin
+    S.Read(CatCount);
+    for i := 0 to CatCount - 1 do
+      FChartCategoryList.Add(TChartCategory.Load(S, Version));
+
+    S.Read(CatCount);
+    for i := 0 to CatCount - 1 do
+      FChartList.Add(TChartEntry.Load(S, Version));
+  end;
+
 end;
 
 procedure TDataLists.Load;
@@ -1155,6 +1199,14 @@ begin
   S.Write(FGenreList.Count);
   for i := 0 to FGenreList.Count - 1 do
     FGenreList[i].Save(S);
+
+  S.Write(FChartCategoryList.Count);
+  for i := 0 to FChartCategoryList.Count - 1 do
+    FChartCategoryList[i].Save(S);
+
+  S.Write(FChartList.Count);
+  for i := 0 to FChartList.Count - 1 do
+    FChartList[i].Save(S);
 end;
 
 procedure TDataLists.SaveRecover;
@@ -1698,12 +1750,49 @@ end;
 
 { TChartEntry }
 
-constructor TChartEntry.Create(Name: string; Chance: Integer);
+constructor TChartEntry.Create(Name: string; Chance: Integer; Categories: TIntArray);
 begin
   inherited Create;
 
   FName := Name;
   FChance := Chance;
+  FCategories := Categories;
+end;
+
+constructor TChartEntry.Create;
+begin
+  inherited;
+
+  SetLength(FCategories, 0);
+end;
+
+class function TChartEntry.Load(Stream: TExtendedStream;
+  Version: Integer): TChartEntry;
+var
+  i: Integer;
+  C, Cat: Cardinal;
+begin
+  Result := TChartEntry.Create;
+  Stream.Read(Result.FName);
+  Stream.Read(Result.FChance);
+
+  Stream.Read(C);
+  for i := 0 to C - 1 do
+  begin
+    SetLength(Result.FCategories, Length(Result.FCategories) + 1);
+    Stream.Read(Result.FCategories[High(Result.FCategories)]);
+  end;
+end;
+
+procedure TChartEntry.Save(Stream: TExtendedStream);
+var
+  i: Integer;
+begin
+  Stream.Write(FName);
+  Stream.Write(FChance);
+  Stream.Write(Length(FCategories));
+  for i := 0 to High(FCategories) do
+    Stream.Write(FCategories[i]);
 end;
 
 { TGenre }
@@ -1746,6 +1835,35 @@ begin
   Stream.Write(FID);
   Stream.Write(FName);
   Stream.Write(FChartCount);
+end;
+
+{ TChartCategory }
+
+constructor TChartCategory.Create(ID: Cardinal; Name: string);
+begin
+  inherited Create;
+
+  FID := ID;
+  FName := Name;
+end;
+
+constructor TChartCategory.Create;
+begin
+  inherited;
+end;
+
+class function TChartCategory.Load(Stream: TExtendedStream;
+  Version: Integer): TChartCategory;
+begin
+  Result := TChartCategory.Create;
+  Stream.Read(Result.FID);
+  Stream.Read(Result.FName);
+end;
+
+procedure TChartCategory.Save(Stream: TExtendedStream);
+begin
+  Stream.Write(FID);
+  Stream.Write(FName);
 end;
 
 end.

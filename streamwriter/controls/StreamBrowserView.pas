@@ -61,6 +61,7 @@ type
 
   TScrollDirection = (sdUp, sdDown);
 
+  {
   TMLoadingPanel = class(TPanel)
   private
     FLabel: TLabel;
@@ -72,6 +73,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
   end;
+  }
 
   TMStreamSearchPanel = class(TPanel)
   private
@@ -86,7 +88,7 @@ type
     FGenreList: TComboBox;
     FKbpsList: TComboBox;
     FTypeList: TComboBox;
-    FSearchButton: TSpeedButton;
+    //FSearchButton: TSpeedButton;
 
     //procedure SetVisible(Value: Boolean);
 
@@ -103,7 +105,6 @@ type
     FSearch: TMStreamSearchPanel;
     FStreamTree: TMStreamTree;
     FCountLabel: TLabel;
-    FLoadingPanel: TMLoadingPanel;
     FDataLists: TDataLists;
 
     FSelectedSortType: TSortTypes;
@@ -113,8 +114,7 @@ type
     FHomeCommunication: THomeCommunication;
 
     procedure ListsChange(Sender: TObject);
-    procedure SearchEditKeyPress(Sender: TObject; var Key: Char);
-    procedure SearchButtonClick(Sender: TObject);
+    procedure SearchEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure SortItemClick(Sender: TObject);
 
     procedure SwitchMode(Mode: TModes);
@@ -160,7 +160,6 @@ type
     FDisplayCount: Integer;
     FUnloadedVisible: Boolean;
 
-    FIsLoading: Boolean;
     FLastSearch: string;
     FLastGenre: string;
     FLastAudioType: TAudioTypes;
@@ -190,6 +189,7 @@ type
     FItemSave: TMenuItem;
 
     FSortPopupMenu: TMStreamTreeHeaderPopup;
+    FMode: TModes;
     FTimer: TTimer;
     FDots: string;
     FButtonPos: TRect;
@@ -200,7 +200,7 @@ type
     FOnAction: TActionEvent;
     FOnIsInClientList: TIsInClientListEvent;
 
-    procedure FSetIsLoading(Value: Boolean);
+    procedure FSetMode(Value: TModes);
     function CreateItem(Caption: string; ImageIndex: Integer; Parent: TMenuItem): TMenuItem;
 
     procedure FitColumns;
@@ -240,13 +240,14 @@ type
     procedure Setup;
     procedure InvalidateVisible;
 
+    procedure SwitchMode(Mode: TModes);
+
     procedure Sort(Node: PVirtualNode; Column: TColumnIndex; SortType: TSortTypes; Direction: TSortDirection); reintroduce;
 
     function GetNodes(SelectedOnly: Boolean): TNodeArray;
     function Build(AlwaysBuild: Boolean; Search, Genre: string; AudioType: TAudioTypes; Bitrate: Cardinal): Boolean;
     procedure ReceiveError;
 
-    property IsLoading: Boolean read FIsLoading write FSetIsLoading;
     property PopupMenu2: TPopupMenu read FPopupMenu;
     property DraggedStreams: TStreamDataArray read FDraggedStreams;
 
@@ -265,6 +266,8 @@ var
   Res: TResourceStream;
 begin
   inherited Create(AOwner);
+
+  FMode := moShow;
 
   FDataLists := DataLists;
 
@@ -285,7 +288,6 @@ begin
   FDragSource := TDropFileSource.Create(Self);
 
   FUnloadedVisible := False;
-  FIsLoading := False;
 
   Res := TResourceStream.Create(HInstance, 'BROWSER_METADATA', MakeIntResource(RT_RCDATA));
   try
@@ -482,6 +484,11 @@ begin
   Header.Options := Header.Options + [hoAutoResize];
 end;
 
+procedure TMStreamTree.FSetMode(Value: TModes);
+begin
+
+end;
+
 function TMStreamTree.GetNodes(SelectedOnly: Boolean): TNodeArray;
 var
   i: Integer;
@@ -655,7 +662,7 @@ var
   R: TRect;
 begin
   inherited;
-  if FIsLoading and (RootNodeCount = 0) then
+  if (FMode = moLoading) and (RootNodeCount = 0) then
   begin
     TmpText := _('Loading streams');
     GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
@@ -761,8 +768,7 @@ begin
   if Length(FDots) = 4 then
     FDots := '';
 
-  if FIsLoading then
-    Invalidate;
+  Invalidate;
 end;
 
 procedure TMStreamTree.WMKeyDown(var Message: TWMKeyDown);
@@ -966,15 +972,6 @@ begin
   end;
 end;
 
-procedure TMStreamTree.FSetIsLoading(Value: Boolean);
-begin
-  FIsLoading := Value;
-  FDots := '';
-  FTimer.Enabled := False;
-  FTimer.Enabled := True;
-  Invalidate;
-end;
-
 procedure TMStreamTree.ReceiveError;
 begin
   Clear;
@@ -1001,6 +998,24 @@ procedure TMStreamTree.Sort(Node: PVirtualNode; Column: TColumnIndex;
 begin
   FSelectedSortType := SortType;
   inherited Sort(nil, 0, Direction);
+end;
+
+procedure TMStreamTree.SwitchMode(Mode: TModes);
+begin
+  Enabled := Mode = moShow;
+
+  if Mode = moLoading then
+  begin
+    Clear;
+
+    FDots := '';
+    FTimer.Enabled := False;
+    FTimer.Enabled := True;
+  end;
+
+  FMode := Mode;
+
+  Invalidate;
 end;
 
 procedure TMStreamTree.MouseUp(Button: TMouseButton; Shift: TShiftState;
@@ -1136,11 +1151,6 @@ begin
   FStreamTree.FSortPopupMenu.FItemRating.OnClick := SortItemClick;
 
   FStreamTree.FSortPopupMenu.FItemRating.Checked := True;
-
-  FLoadingPanel := TMLoadingPanel.Create(Self);
-  FLoadingPanel.Align := alClient;
-  FLoadingPanel.Parent := Self;
-  FLoadingPanel.Visible := False;
 end;
 
 destructor TMStreamBrowserView.Destroy;
@@ -1161,12 +1171,12 @@ begin
       Break;
     end;
 
-  if HomeComm.Connected and (HomeComm.Connected <> HomeComm.WasConnected) and
+  if HomeComm.Connected and
      (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or
-      (AppGlobals.LastBrowserUpdate < Now - 15) or FLoading or Found) then
+      (AppGlobals.LastBrowserUpdate < Now - 15) or Found or (FStreamTree.FMode = moLoading)) then
   begin
-    SwitchMode(moLoading);
-    FHomeCommunication.GetStreams;
+    if FHomeCommunication.GetStreams then
+      SwitchMode(moLoading);
   end;
 end;
 
@@ -1191,19 +1201,10 @@ begin
   FHomeCommunication.GetStreams;
 end;
 
-procedure TMStreamBrowserView.SearchButtonClick(Sender: TObject);
+procedure TMStreamBrowserView.SearchEditKeyUp(Sender: TObject;
+  var Key: Word; Shift: TShiftState);
 begin
   BuildTree(False);
-end;
-
-procedure TMStreamBrowserView.SearchEditKeyPress(Sender: TObject;
-  var Key: Char);
-begin
-  if Key = #13 then
-  begin
-    BuildTree(False);
-    Key := #0;
-  end;
 end;
 
 procedure TMStreamBrowserView.Setup;
@@ -1213,8 +1214,8 @@ begin
   FSearch.Setup;
   FStreamTree.Setup;
 
-  FSearch.FSearchEdit.OnKeyPress := SearchEditKeyPress;
-  FSearch.FSearchButton.OnClick := SearchButtonClick;
+  FSearch.FSearchEdit.OnKeyUp := SearchEditKeyUp;
+  //FSearch.FSearchButton.OnClick := SearchButtonClick;
   FSearch.FGenreList.OnChange := ListsChange;
   FSearch.FKbpsList.OnChange := ListsChange;
   FSearch.FTypeList.OnChange := ListsChange;
@@ -1292,24 +1293,15 @@ end;
 
 procedure TMStreamBrowserView.SwitchMode(Mode: TModes);
 begin
-  FSearch.Visible := Mode = moShow;
-  FStreamTree.Visible := Mode = moShow;
-  FCountLabel.Visible := Mode = moShow;
-  FLoadingPanel.Visible := Mode <> moShow;
+  FSearch.FSearchEdit.Enabled := Mode = moShow;
+  FSearch.FGenreList.Enabled := Mode = moShow;
+  FSearch.FKbpsList.Enabled := Mode = moShow;
+  FSearch.FTypeList.Enabled := Mode = moShow;
+  //FSearch.FSearchButton.Enabled := Mode = moShow;
 
-  if Mode = moLoading then
-  begin
-    FLoadingPanel.FLabel.Caption := _('Loading streams');
-    FLoadingPanel.FDots := '';
-    FLoadingPanel.FTimer.Enabled := True;
-    FLoading := True;
-  end else if Mode <> moLoading then
-  begin
-    FLoadingPanel.FTimer.Enabled := False;
-    FLoading := False;
-  end;
+  FCountLabel.Enabled := Mode = moShow;
 
-  FLoadingPanel.Resize;
+  FStreamTree.SwitchMode(Mode);
 end;
 
 procedure TMStreamBrowserView.Translate;
@@ -1352,6 +1344,13 @@ begin
   inherited;
 
   BevelOuter := bvNone;
+
+  FSearchEdit := TEdit.Create(Self);
+  //FSearchButton := TSpeedButton.Create(Self);
+  FSearchLabel := TLabel.Create(Self);
+  FGenreList := TComboBox.Create(Self);
+  FKbpsList := TComboBox.Create(Self);
+  FTypeList := TComboBox.Create(Self);
 end;
 
 {
@@ -1369,13 +1368,12 @@ var
 begin
   TopCnt := 4;
 
-  FSearchEdit := TEdit.Create(Self);
   FSearchEdit.Parent := Self;
   FSearchEdit.Left := 50;
   FSearchEdit.Top := TopCnt;
   FSearchEdit.Anchors := [akLeft, akRight, akTop];
 
-  FSearchButton := TSpeedButton.Create(Self);
+  {
   FSearchButton.Parent := Self;
   FSearchButton.Width := 24;
   FSearchButton.Height := 24;
@@ -1385,8 +1383,8 @@ begin
   FSearchButton.Flat := True;
   FSearchButton.Hint := 'Search';
   FSearchButton.ShowHint := True;
+  }
 
-  FSearchLabel := TLabel.Create(Self);
   FSearchLabel.Parent := Self;
   FSearchLabel.Left := 4;
   FSearchLabel.Caption := 'Search:';
@@ -1410,7 +1408,6 @@ begin
   TopCnt := TopCnt + 26;
   }
 
-  FGenreList := TComboBox.Create(Self);
   FGenreList.Parent := Self;
   FGenreList.Style := csDropDownList;
   FGenreList.Left := 50;
@@ -1420,7 +1417,6 @@ begin
 
   TopCnt := TopCnt + 26;
 
-  FKbpsList := TComboBox.Create(Self);
   FKbpsList.Parent := Self;
   FKbpsList.Style := csDropDownList;
   FKbpsList.Left := 50;
@@ -1429,7 +1425,6 @@ begin
 
   TopCnt := TopCnt + 26;
 
-  FTypeList := TComboBox.Create(Self);
   FTypeList.Parent := Self;
   FTypeList.Style := csDropDownList;
   FTypeList.Left := 50;
@@ -1454,6 +1449,7 @@ begin
   FTypeLabel.Caption := _('Type') + ':';
   FTypeLabel.Top := FTypeList.Top + FTypeList.Height div 2 - FTypeLabel.Height div 2;
 
+  {
   I := TIcon.Create;
   I.LoadFromResourceName(HInstance, 'SEARCH');
   B := TBitmap.Create;
@@ -1467,8 +1463,9 @@ begin
   FSearchButton.Glyph.PixelFormat := pf24bit;
   B.Free;
   I.Free;
+  }
 
-  FSearchEdit.Width := ClientWidth - FSearchEdit.Left - 12 - FSearchButton.Width;
+  FSearchEdit.Width := ClientWidth - FSearchEdit.Left - 8;
   FGenreList.Width := ClientWidth - FGenreList.Left - 8;
   FKbpsList.Width := ClientWidth - FKbpsList.Left - 8;
   FTypeList.Width := ClientWidth - FTypeList.Left - 8;
@@ -1507,44 +1504,6 @@ begin
     ClientHeight := FExpandButton.Top + FExpandButton.Height + FSearchEdit.Top + 4;
 end;
 }
-
-{ TMLoadingPanel }
-
-constructor TMLoadingPanel.Create(AOwner: TComponent);
-begin
-  inherited Create(AOwner);
-
-  BevelOuter := bvNone;
-
-  FLabel := TLabel.Create(Self);
-  FLabel.Parent := Self;
-  FLabel.Visible := True;
-  FLabel.Alignment := taCenter;
-
-  FDots := '';
-  FTimer := TTimer.Create(Self);
-  FTimer.OnTimer := TimerOnTimer;
-  FTimer.Interval := 1000;
-  FTimer.Enabled := False;
-end;
-
-procedure TMLoadingPanel.Resize;
-begin
-  inherited;
-
-  FLabel.Left := ClientWidth div 2 - FLabel.Width div 2;
-  FLabel.Top := ClientHeight div 2 - FLabel.Height;
-end;
-
-procedure TMLoadingPanel.TimerOnTimer(Sender: TObject);
-begin
-  FDots := FDots + '.';
-
-  if Length(FDots) = 4 then
-    FDots := '';
-
-  FLabel.Caption := _('Loading streams') + FDots;
-end;
 
 { TMStreamTreeHeaderPopup }
 
