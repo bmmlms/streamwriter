@@ -1914,6 +1914,8 @@ begin
 
   if mnuCurrentTitle1.Enabled <> (Length(Clients) > 0) and AnyClientHasTitle then
     mnuCurrentTitle1.Enabled := (Length(Clients) > 0) and AnyClientHasTitle;
+
+  actCopyTitle.Enabled := (Length(Clients) > 0) and AnyClientHasTitle;
 end;
 
 procedure TfrmStreamWriterMain.UpdateFound(var Msg: TMessage);
