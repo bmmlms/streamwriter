@@ -739,8 +739,10 @@ begin
 
   FToolbar := Toolbar;
   FToolbar.Align := alLeft;
+  FToolbar.Indent := 0;
+  FToolbar.Top := 0;
   FToolbar.Width := FToolbarPanel.ClientWidth - 130;
-  FToolbar.Height := 24;
+  FToolbar.Height := 25;
   FToolbar.Parent := FToolbarPanel;
 
   FVolume := TVolumePanel.Create(Self);
