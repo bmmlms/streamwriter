@@ -656,7 +656,7 @@ begin
   FToolbarPanel.Parent := FTopPanel;
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Align := alTop;
-  FToolbarPanel.Height := 24;
+  FToolbarPanel.Height := 26;
   FToolbarPanel.Padding.Top := 2;
 
   FAddEdit := TEdit.Create(Self);

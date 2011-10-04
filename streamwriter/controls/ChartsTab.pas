@@ -118,6 +118,7 @@ type
       ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     function DoIncrementalSearch(Node: PVirtualNode;
       const Text: string): Integer; override;
+    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists);
     destructor Destroy; override;
@@ -854,6 +855,18 @@ begin
   FPopupMenu.EnableItems(SelectedCount, AllOnList);
 end;
 
+procedure TChartsTree.Resize;
+begin
+  inherited;
+
+  case FState of
+    csLoading:
+      FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_LOADING) + '..') div 2;
+    csError:
+      FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_ERROR)) div 2;
+  end;
+end;
+
 procedure TChartsTree.TimerOnTimer(Sender: TObject);
 begin
   FDots := FDots + '.';
@@ -881,8 +894,6 @@ begin
 
   FSearch := TEdit.Create(Self);
   FSearch.Parent := Self;
-  FSearch.Left := 0;
-  FSearch.Top := 2;
 
   FCategories := TCategoryCombo.Create(Self);
   FCategories.Style := csExDropDownList;
@@ -905,14 +916,14 @@ begin
   FCategories.Left := 0;
   FCategories.Top := 2;
 
-  FLabel.Top := FCategories.Top + (FCategories.Height div 2 - FLabel.Height div 2);
+  FLabel.Top := 7;
   FLabel.Left := FCategories.Left + FCategories.Width + 8;
 
   FSearch.Width := 200;
-  FSearch.Top := FCategories.Top + (FCategories.Height div 2 - FSearch.Height div 2);
+  FSearch.Top := FCategories.Top + 1;
   FSearch.Left := FLabel.Left + FLabel.Width + 4;
 
-  ClientHeight := FSearch.Top * 2 + FSearch.Height;
+  ClientHeight := FSearch.Top + 6 + FSearch.Height;
 
   FToolbar.Images := Images;
 

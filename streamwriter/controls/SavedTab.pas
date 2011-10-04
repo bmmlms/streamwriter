@@ -1744,7 +1744,7 @@ begin
   FSearch.Parent := Self;
   FSearch.Left := FLabel.Left + FLabel.Width + 8;
 
-  FSearch.Top := 2;
+  FSearch.Top := 3;
   FSearch.Width := 200;
   Height := FSearch.Top + FSearch.Height + FSearch.Top + 3;
 
