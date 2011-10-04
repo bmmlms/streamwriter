@@ -48,7 +48,7 @@ type
     property ItemEditAndAddToWishlist: TMenuItem read FItemEditAndAddToWishlist;
   end;
 
-  TCategoryCombo = class(TComboBoxEx)
+  TCategoryCombo = class(TComboBox)
   private
   public
     procedure LoadCategories(Categories: TList<TChartCategory>);
@@ -355,7 +355,7 @@ begin
     FChartsTree.BeginUpdate;
     FChartsTree.Clear;
 
-    CatData := TChartCategory(FSearchPanel.FCategories.ItemsEx[FSearchPanel.FCategories.ItemIndex].Data);
+    CatData := TChartCategory(FSearchPanel.FCategories.Items.Objects[FSearchPanel.FCategories.ItemIndex]);
 
     for i := 0 to FLists.ChartList.Count - 1 do
     begin
@@ -896,7 +896,7 @@ begin
   FSearch.Parent := Self;
 
   FCategories := TCategoryCombo.Create(Self);
-  FCategories.Style := csExDropDownList;
+  FCategories.Style := csDropDownList;
   FCategories.Parent := Self;
 
   FToolbar := TToolBar.Create(Self);
@@ -920,7 +920,7 @@ begin
   FLabel.Left := FCategories.Left + FCategories.Width + 8;
 
   FSearch.Width := 200;
-  FSearch.Top := FCategories.Top + 1;
+  FSearch.Top := FCategories.Top;
   FSearch.Left := FLabel.Left + FLabel.Width + 4;
 
   ClientHeight := FSearch.Top + 6 + FSearch.Height;
@@ -968,21 +968,13 @@ end;
 procedure TCategoryCombo.LoadCategories(Categories: TList<TChartCategory>);
 var
   i: Integer;
-  ComboItem: TComboExItem;
 begin
-  ItemsEx.Clear;
+  Items.Clear;
 
-  ComboItem := ItemsEx.Add;
-  ComboItem.Caption := _(TEXT_EVERYSONG);
-  ComboItem.Data := nil;
+  Items.AddObject(_(TEXT_EVERYSONG), nil);
 
   for i := 0 to Categories.Count - 1 do
-  begin
-    ComboItem := ItemsEx.Add;
-    ComboItem.Caption := Categories[i].Name;
-    ComboItem.Data := Categories[i];
-    //ComboItem.ImageIndex := AppGlobals.LanguageIcons.GetIconIndex(LanguageList[i].ID);
-  end;
+    Items.AddObject(Categories[i].Name, Categories[i]);
 
   ItemIndex := 0;
 end;
@@ -991,14 +983,14 @@ procedure TCategoryCombo.PostTranslate;
 var
   OldIdx: Integer;
 begin
-  if ItemsEx.Count > 0 then
+  if Items.Count > 0 then
   begin
     OldIdx := ItemIndex;
     if OldIdx = -1 then
       OldIdx := 0;
 
     ItemIndex := -1;
-    ItemsEx[0].Caption := _(TEXT_EVERYSONG);
+    Items[0] := _(TEXT_EVERYSONG);
 
     // Ja, das sieht doof aus, aber muss, damit sich die Caption übersetzt!
     Application.ProcessMessages;
