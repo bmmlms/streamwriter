@@ -80,9 +80,9 @@ begin
       end;
       ID3V1.Track := IntToStr(FData.TrackNumber);
       ID3V2.Track := IntToStr(FData.TrackNumber);
-      ID3V1.Genre := 'ASDFFDSA'; // Dann setzt Mp3FileUtils das auf "Undefined"
-      ID3V1.Comment := FData.Station + ' / ' + FData.StreamTitle;
-      ID3V2.Comment := FData.Station + ' / ' + FData.StreamTitle;
+      ID3V1.Genre := ''; // Dann setzt Mp3FileUtils das auf "Undefined"
+      ID3V1.Comment := FData.Station + ' / ' + FData.StreamTitle + ' / ' + 'Recorded using streamWriter';
+      ID3V2.Comment := FData.Station + ' / ' + FData.StreamTitle + ' / ' + 'Recorded using streamWriter';
       if (ID3V1.WriteToFile(FData.Filename) = MP3ERR_None) and (ID3V2.WriteToFile(FData.Filename) = MP3ERR_None) then
       begin
         FData.Filesize := GetFileSize(FData.Filename);

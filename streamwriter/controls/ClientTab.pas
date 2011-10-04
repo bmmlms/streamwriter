@@ -235,7 +235,7 @@ procedure TClientAddressBar.Setup;
 begin
   FLabel := TLabel.Create(Self);
   FLabel.Parent := Self;
-  FLabel.Left := 0;
+  FLabel.Left := 4;
   FLabel.Top := 6;
   FLabel.Caption := 'Playlist/Stream-URL:';
 
@@ -244,7 +244,7 @@ begin
   FStart.Width := 24;
   FStart.Height := 24;
   FStart.Top := 6;
-  FStart.Left := ClientWidth - 2 - FStart.Width;
+  FStart.Left := ClientWidth - 4 - FStart.Width;
   FStart.Anchors := [akRight];
   FStart.Flat := True;
   FStart.Hint := 'Add and start recording';
@@ -738,11 +738,9 @@ begin
   FToolbarPanel.ClientHeight := 24;
 
   FToolbar := Toolbar;
-  FToolbar.Align := alTop;
-  FToolbar.Indent := 0;
-  FToolbar.Top := 0;
+  FToolbar.Align := alLeft;
   FToolbar.Width := FToolbarPanel.ClientWidth - 130;
-  FToolbar.Height := 25;
+  FToolbar.Height := 24;
   FToolbar.Parent := FToolbarPanel;
 
   FVolume := TVolumePanel.Create(Self);
