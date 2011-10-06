@@ -44,6 +44,7 @@ type
     FSep: TToolButton;
     FExport: TToolButton;
     FImport: TToolButton;
+    FSelectSaved: TToolButton;
   public
     constructor Create(AOwner: TComponent); override;
 
@@ -74,6 +75,7 @@ type
     procedure RemoveClick(Sender: TObject);
     procedure ExportClick(Sender: TObject);
     procedure ImportClick(Sender: TObject);
+    procedure SelectSavedClick(Sender: TObject);
     procedure AddEditKeyPress(Sender: TObject; var Key: Char);
     procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -635,6 +637,34 @@ begin
       Exit;
     end;
 end;
+     // TODO: In dem willkommens-screen auch noch auf das chart-tab hinweisen. und den screen größer machen damit text reinpasst.
+procedure TTitlePanel.SelectSavedClick(Sender: TObject);
+var
+  i: Integer;
+  Node: PVirtualNode;
+  NodeData: PTitleNodeData;
+  Dlg: TSaveDialog;
+  Lst: TStringList;
+  Ok: Boolean;
+begin
+  Node := FTree.GetFirst;
+  while Node <> nil do
+  begin
+    FTree.Selected[Node] := False;
+    NodeData := FTree.GetNodeData(Node);
+
+    for i := 0 to FLists.TrackList.Count - 1 do
+    begin
+      if Like(RemoveFileExt(ExtractFileName(FLists.TrackList[i].Filename)), NodeData.Title.Pattern) then
+      begin
+        FTree.Selected[Node] := True;
+      end;
+    end;
+
+    Node := FTree.GetNext(Node);
+  end;
+  FTree.SetFocus;
+end;
 
 procedure TTitlePanel.Setup(Clients: TClientManager; Lists: TDataLists; T: TListType; Images: TImageList; Title: string);
 var
@@ -682,6 +712,7 @@ begin
   FToolbar.FRemove.OnClick := RemoveClick;
   FToolbar.FExport.OnClick := ExportClick;
   FToolbar.FImport.OnClick := ImportClick;
+  FToolbar.FSelectSaved.OnClick := SelectSavedClick;
 
   FTopPanel.Height := FLabel.Height + FToolbarPanel.Height + 2;
 
@@ -716,7 +747,9 @@ begin
   if FListType = ltSave then
   begin
     FAddCombo.Visible := False;
-
+  end else
+  begin
+    FToolbar.FSelectSaved.Visible := False;
   end;
 
   Resize;
@@ -833,6 +866,11 @@ begin
   FSep.Parent := Self;
   FSep.Style := tbsSeparator;
   FSep.Width := 8;
+
+  FSelectSaved := TToolButton.Create(Self);
+  FSelectSaved.Parent := Self;
+  FSelectSaved.Hint := 'Select saved (by pattern)';
+  FSelectSaved.ImageIndex := 70;
 
   FRemove := TToolButton.Create(Self);
   FRemove.Parent := Self;

@@ -114,7 +114,7 @@ type
     FHomeCommunication: THomeCommunication;
 
     procedure ListsChange(Sender: TObject);
-    procedure SearchEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure SearchEditChange(Sender: TObject);
     procedure SortItemClick(Sender: TObject);
 
     procedure SwitchMode(Mode: TModes);
@@ -1201,8 +1201,7 @@ begin
   FHomeCommunication.GetStreams;
 end;
 
-procedure TMStreamBrowserView.SearchEditKeyUp(Sender: TObject;
-  var Key: Word; Shift: TShiftState);
+procedure TMStreamBrowserView.SearchEditChange(Sender: TObject);
 begin
   BuildTree(False);
 end;
@@ -1214,7 +1213,7 @@ begin
   FSearch.Setup;
   FStreamTree.Setup;
 
-  FSearch.FSearchEdit.OnKeyUp := SearchEditKeyUp;
+  FSearch.FSearchEdit.OnChange := SearchEditChange;
   //FSearch.FSearchButton.OnClick := SearchButtonClick;
   FSearch.FGenreList.OnChange := ListsChange;
   FSearch.FKbpsList.OnChange := ListsChange;

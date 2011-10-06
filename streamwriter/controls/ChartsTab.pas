@@ -143,7 +143,7 @@ type
     procedure ShowCharts;
     procedure SetState(State: TChartStates);
 
-    procedure SearchKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure SearchChange(Sender: TObject);
 
     procedure HomeCommChartsReceived(Sender: TObject; CategoryList: TList<TChartCategory>;
       Genres: TList<TGenre>; ChartList: TList<TChartEntry>);
@@ -204,7 +204,7 @@ begin
   ImageIndex := 68;
   ShowCloseButton := False;
 
-  FSearchPanel.FSearch.OnKeyUp := SearchKeyUp;
+  FSearchPanel.FSearch.OnChange := SearchChange;
   FSearchPanel.FCategories.OnChange := CategoriesChange;
 end;
 
@@ -278,8 +278,7 @@ begin
   FResultLabel.Caption := Format(_(TEXT_RESULTS), [FChartsTree.RootNodeCount]);
 end;
 
-procedure TChartsTab.SearchKeyUp(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TChartsTab.SearchChange(Sender: TObject);
 begin
   ShowCharts;
 end;
