@@ -583,6 +583,7 @@ end;
 procedure THomeCommunication.ClientConnected(Sender: TSocketThread);
 begin
   FConnected := True;
+  FLastUpdateXML := '';
 
   SendClientInfo;
 
@@ -592,6 +593,7 @@ begin
   FWasConnected := False;
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
+  FWasConnected := True;
 end;
 
 procedure THomeCommunication.ClientEnded(Sender: TSocketThread);

@@ -865,7 +865,7 @@ begin
   if FCommunityLogin <> nil then
     FCommunityLogin.HomeCommStateChanged(Sender);
 
-  if HomeComm.Connected then
+  if (not HomeComm.WasConnected) and HomeComm.Connected then
     tmrRecordingsTimer(tmrRecordings);
 
   HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
