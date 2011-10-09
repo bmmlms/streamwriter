@@ -521,6 +521,7 @@ end;
 destructor TTitleList.Destroy;
 begin
   FOnChange.Free;
+  FOnChange := nil;
 
   inherited;
 end;
@@ -530,7 +531,7 @@ procedure TTitleList.Notify(const Item: TTitleInfo;
 var
   T: TN;
 begin
-  if FNotifications then
+  if FNotifications and (FOnChange <> nil) then
     for T in FOnChange do
       T(Self, Item, Action);
 
