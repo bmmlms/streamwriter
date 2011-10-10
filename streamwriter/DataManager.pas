@@ -1571,8 +1571,11 @@ begin
   if not MatchesDay(S, False) then
     Exit;
 
-  if (S.StartHour = HourOf(Now)) and (S.StartMinute = MinuteOf(Now)) then
+  if (S.StartHour = HourOf(Now)) and (S.StartMinute = MinuteOf(Now)) and
+     (SecondOf(Now) = 1) then
+  begin
     Result := True;
+  end;
 end;
 
 class function TSchedule.MatchesEnd(S: TSchedule): Boolean;
@@ -1596,8 +1599,11 @@ begin
   if not MatchesDay(S, NextDay) then
     Exit;
 
-  if (S.EndHour = HourOf(Now)) and (S.EndMinute = MinuteOf(Now)) then
+  if (S.EndHour = HourOf(Now)) and (S.EndMinute = MinuteOf(Now)) and
+     (SecondOf(Now) = 0) then
+  begin
     Result := True;
+  end;
 end;
 
 procedure TSchedule.Save(Stream: TExtendedStream);
