@@ -67,6 +67,8 @@ begin
   Result := False;
   Order := 0;
 
+  // TODO: wenn alles bei sox aus ist und es das erste plugin ist werden die folgenden nicht bearbeitet.
+
   // Das soeben beendete Plugin der Liste hinzufügen
   if Entry.ActiveThread <> nil then
   begin
