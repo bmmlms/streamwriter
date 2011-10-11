@@ -53,6 +53,7 @@ object frmConfigureSoX: TfrmConfigureSoX
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnKeyDown = FormKeyDown
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object pnlNav: TPanel
@@ -67,8 +68,6 @@ object frmConfigureSoX: TfrmConfigureSoX
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitTop = 343
-    ExplicitWidth = 405
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -92,7 +91,6 @@ object frmConfigureSoX: TfrmConfigureSoX
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 304
     end
   end
   object pnlConfigure: TPanel

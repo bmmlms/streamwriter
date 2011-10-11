@@ -285,8 +285,8 @@ var
   Res: TMayConnectResults;
   Found: Boolean;
 begin
+  // REMARK: Das case hier ist auch im ICEStream nochmal.
   AutoTuneInMinKbps := 0;
-
   case AppGlobals.AutoTuneInMinKbps of
     0: AutoTuneInMinKbps := 0;
     1: AutoTuneInMinKbps := 64;

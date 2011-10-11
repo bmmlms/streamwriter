@@ -988,6 +988,7 @@ procedure TICEStream.ProcessData(Received: Cardinal);
 var
   TitleChanged, IgnoreTitle: Boolean;
   i, MetaLen, P, DataCopied: Integer;
+  AutoTuneInMinKbps: Cardinal;
   Title: string;
   MetaData: AnsiString;
   Buf: Byte;
@@ -1010,6 +1011,25 @@ begin
     begin
       try
         CalcBytesPerSec;
+
+        // REMARK: Das case hier ist auch im ClientManager nochmal.
+        AutoTuneInMinKbps := 0;
+        case AppGlobals.AutoTuneInMinKbps of
+          0: AutoTuneInMinKbps := 0;
+          1: AutoTuneInMinKbps := 64;
+          2: AutoTuneInMinKbps := 96;
+          3: AutoTuneInMinKbps := 128;
+          4: AutoTuneInMinKbps := 160;
+          5: AutoTuneInMinKbps := 192;
+          6: AutoTuneInMinKbps := 224;
+          7: AutoTuneInMinKbps := 256;
+          8: AutoTuneInMinKbps := 320;
+          9: AutoTuneInMinKbps := 384;
+        end;
+
+        if (FRecordTitle <> '') and (FBitRate < AutoTuneInMinKbps) then
+          FRemoveClient := True;
+
         FOnRefreshInfo(Self);
       except
         raise Exception.Create(_('Bytes per second could not be calculated'));

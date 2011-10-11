@@ -56,6 +56,7 @@ type
       Shift: TShiftState);
     procedure chkClick(Sender: TObject);
     procedure btnBrowseClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
   private
     FNormalize: Boolean;
     FFadeoutStart: Boolean;
@@ -271,6 +272,11 @@ begin
     Key := 0;
     Close;
   end;
+end;
+
+procedure TfrmConfigureSoX.FormShow(Sender: TObject);
+begin
+  Caption := Format(_('Configure "%s"'), [FPlugin.Name]);
 end;
 
 procedure TfrmConfigureSoX.InitForm;

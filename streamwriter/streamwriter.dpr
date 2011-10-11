@@ -101,13 +101,13 @@ uses
   DownloadClient in '..\..\common\DownloadClient.pas',
   ConfigureSoX in 'plugins\ConfigureSoX.pas' {frmConfigureSoX},
   Notifications in 'Notifications.pas' {frmNotification},
-  AdvancedRect in '..\..\common\AdvancedRect.pas',
   TypeDefs in 'TypeDefs.pas',
   CutTabSearchSilence in 'controls\CutTabSearchSilence.pas' {frmCutTabSearchSilence},
   FileWatcher in '..\..\common\FileWatcher.pas',
   MP3Gain in 'plugins\MP3Gain.pas',
   ChartsTab in 'controls\ChartsTab.pas',
-  ChartsTabAdjustTitleName in 'controls\ChartsTabAdjustTitleName.pas' {frmChartsTabAdjustTitleName};
+  ChartsTabAdjustTitleName in 'controls\ChartsTabAdjustTitleName.pas' {frmChartsTabAdjustTitleName},
+  ConfigureSetTags in 'plugins\ConfigureSetTags.pas' {Form1};
 
 {$SetPEOptFlags $0140}
 
