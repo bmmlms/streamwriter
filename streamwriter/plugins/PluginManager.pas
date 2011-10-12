@@ -63,11 +63,10 @@ end;
 function TPluginManager.ProcessFile(Entry: TProcessingEntry): Boolean;
 var
   i, Order, SmallestActive: Integer;
+  TriedPlugins: TList<TPluginBase>;
 begin
   Result := False;
   Order := 0;
-
-  // TODO: wenn alles bei sox aus ist und es das erste plugin ist werden die folgenden nicht bearbeitet.
 
   // Das soeben beendete Plugin der Liste hinzufügen
   if Entry.ActiveThread <> nil then
@@ -80,6 +79,7 @@ begin
   for i := 0 to FPlugins.Count - 1 do
     if FPlugins[i].Active and (FPlugins[i].Order < SmallestActive) and (FPlugins[i].Order >= Order) and
        (not Entry.PluginsProcessed.Contains(FPlugins[i])) and
+       (FPlugins[i].CanProcess(Entry.Data)) and
        ((FPlugins[i].OnlyIfCut and Entry.Data.WasCut) or (not FPlugins[i].OnlyIfCut)) then
     begin
       SmallestActive := FPlugins[i].Order;

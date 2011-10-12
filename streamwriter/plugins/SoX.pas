@@ -60,6 +60,7 @@ type
     constructor Create;
     destructor Destroy; override;
     function ShowInitMessage(Handle: THandle): Boolean; override;
+    function CanProcess(Data: PPluginProcessInformation): Boolean; override;
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
     function Copy: TPluginBase; override;
     procedure Assign(Source: TPluginBase); override;
@@ -225,6 +226,12 @@ begin
   FSilenceEnd := TSoXPlugin(Source).FSilenceEnd;
   FSilenceStartLength := TSoXPlugin(Source).FSilenceStartLength;
   FSilenceEndLength := TSoXPlugin(Source).FSilenceEndLength;
+end;
+
+function TSoXPlugin.CanProcess(Data: PPluginProcessInformation): Boolean;
+begin
+  Result := FGetReadyForUse and (FNormalize or FFadeoutStart or
+    FFadeoutEnd or FSilenceStart or FSilenceEnd);
 end;
 
 function TSoXPlugin.Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean;
@@ -471,7 +478,7 @@ function TSoXPlugin.ProcessFile(
   Data: PPluginProcessInformation): TProcessThreadBase;
 begin
   Result := nil;
-  if (not FGetReadyForUse) or ((not FNormalize) and (not FFadeoutStart) and (not FFadeoutEnd) and (not FSilenceStart) and (not FSilenceEnd)) then
+  if not CanProcess(Data) then
     Exit;
 
   Result := TSoXThread.Create(Data, Self);

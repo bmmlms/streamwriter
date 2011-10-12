@@ -81,6 +81,7 @@ begin
 
   // TODO: Was ist, wenn es nicht da ist??? quasi leer??????
   // TODO: Klassenname hier ist scheiße!!!
+  // TODO: wenn man die settings ändert im betrieb dann werden sie erst nach neustart vom plugin übernommen
   AppGlobals.Storage.Read('Artist_TSetTagsPlugin', Artist, '%a', 'Plugins');
   AppGlobals.Storage.Read('Title_TSetTagsPlugin', Title, '%t', 'Plugins');
   AppGlobals.Storage.Read('Comment_TSetTagsPlugin', Comment, '%a / %t / %s', 'Plugins');

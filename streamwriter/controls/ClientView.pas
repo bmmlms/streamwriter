@@ -147,7 +147,7 @@ var
   Node: PVirtualNode;
   NodeData: PClientNodeData;
 begin
-  Node := AddChild(nil);                      
+  Node := AddChild(nil);
   NodeData := GetNodeData(Node);
   NodeData.Client := nil;
   NodeData.Category := Category;
@@ -262,7 +262,7 @@ begin
 
   if Kind = ikOverlay then
     Exit;
-  
+
   NodeData := GetNodeData(Node);
   if NodeData.Client <> nil then
     case Column of
@@ -350,7 +350,7 @@ begin
         end;
     end
   end else
-    if Column = 0 then    
+    if Column = 0 then
       Text := NodeData.Category.Name + ' (' + IntToStr(Node.ChildCount) + ')';
 end;
 
@@ -758,7 +758,7 @@ procedure TMClientView.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;
 var
   NodeData: PClientNodeData;
 begin
-  inherited; 
+  inherited;
   NodeData := GetNodeData(Node);
   Allowed := (NodeData.Category <> nil) and (not NodeData.Category.IsAuto);
 end;
@@ -1014,21 +1014,23 @@ begin
     begin
       Files := TStringList.Create;
       try
-        GetFileListFromObj(DataObject, Files);
-        if Files.Count = 0 then
-          for n := 0 to High(Formats) do
-          begin
-            case Formats[n] of
-              CF_UNICODETEXT:
+        for n := 0 to High(Formats) do
+        begin
+          case Formats[n] of
+            CF_UNICODETEXT:
+              begin
+                if GetWideStringFromObj(DataObject, DropURL) then
                 begin
-                  if GetWideStringFromObj(DataObject, DropURL) then
-                  begin
-                    Files.Add(DropURL);
-                    Break;
-                  end;
+                  Files.Add(DropURL);
+                  Break;
                 end;
-            end;
+              end;
           end;
+        end;
+
+        if Files.Count = 0 then
+          GetFileListFromObj(DataObject, Files);
+
         for i := 0 to Files.Count - 1 do
           if (Files[i] <> '') then
             // Das selbe wie im Kommentar oben beschrieben...
@@ -1203,5 +1205,3 @@ begin
 end;
 
 end.
-
-

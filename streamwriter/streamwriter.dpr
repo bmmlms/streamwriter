@@ -23,11 +23,6 @@ program streamwriter;
 
 uses
   MM in '..\..\common\MM.pas',
-  madExcept,
-  madLinkDisAsm,
-  madListHardware,
-  madListProcesses,
-  madListModules,
   Windows,
   SysUtils,
   Forms,
@@ -123,7 +118,6 @@ var
   frmStreamWriterMain: TfrmStreamWriterMain;
 begin
   {$IFDEF madExcept}
-  MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
   {$ENDIF}
 
   Application.Title := AppGlobals.AppName;

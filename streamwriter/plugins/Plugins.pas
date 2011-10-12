@@ -106,6 +106,7 @@ type
     FOrder: Integer;
     FOnlyIfCut: Boolean;
   public
+    function CanProcess(Data: PPluginProcessInformation): Boolean; virtual;
     function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; virtual; abstract;
     function Copy: TPluginBase; virtual; abstract;
     procedure Assign(Source: TPluginBase); virtual;
@@ -517,6 +518,11 @@ end;
 procedure TPluginBase.Assign(Source: TPluginBase);
 begin
 
+end;
+
+function TPluginBase.CanProcess(Data: PPluginProcessInformation): Boolean;
+begin
+  Result := True;
 end;
 
 function TPluginBase.Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean;

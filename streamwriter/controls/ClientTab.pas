@@ -224,10 +224,10 @@ procedure TClientAddressBar.DropTargetDrop(Sender: TObject;
 begin
   FStations.ItemIndex := -1;
   if FDropTarget.URL <> '' then
-    FStations.Text := string(FDropTarget.URL);
-  if FDropTarget.Text <> '' then
-    FStations.Text := string(FDropTarget.Text);
-  if FDropTarget.Files.Count > 0 then
+    FStations.Text := string(FDropTarget.URL)
+  else if FDropTarget.Text <> '' then
+    FStations.Text := string(FDropTarget.Text)
+  else if FDropTarget.Files.Count > 0 then
     FStations.Text := string(FDropTarget.Files[0]);
 end;
 

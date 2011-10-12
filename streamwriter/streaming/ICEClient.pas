@@ -612,9 +612,6 @@ begin
       Data.FullTitle := FICEThread.RecvStream.SavedFullTitle;
       Data.StreamTitle := FICEThread.RecvStream.SavedStreamTitle;
 
-      // TODO: !!!!
-      //TODO: Pluginbearbeitung geht nicht mehr!!! ALLES TESTEN!!! sortieren und alle möglichen plugins testen, sox, tags, extern!!
-
       if not FKilled then
       begin
         Entry := AppGlobals.PluginManager.ProcessFile(Data);
