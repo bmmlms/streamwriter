@@ -637,7 +637,7 @@ begin
       Exit;
     end;
 end;
-     // TODO: In dem willkommens-screen auch noch auf das chart-tab hinweisen. und den screen größer machen damit text reinpasst.
+
 procedure TTitlePanel.SelectSavedClick(Sender: TObject);
 var
   i: Integer;

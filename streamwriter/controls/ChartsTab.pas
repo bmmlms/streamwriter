@@ -928,7 +928,7 @@ begin
 
   FButtonReload := TToolButton.Create(FToolbar);
   FButtonReload.Parent := FToolbar;
-  FButtonReload.Hint := _('Reload');
+  FButtonReload.Hint := _('Refresh');
   FButtonReload.ImageIndex := 23;
 
   //FToolbar.Top := 2;

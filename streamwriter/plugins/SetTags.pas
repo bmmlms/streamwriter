@@ -79,22 +79,25 @@ var
 begin
   inherited;
 
-  // TODO: Was ist, wenn es nicht da ist??? quasi leer??????
-  // TODO: Klassenname hier ist scheiße!!!
-  // TODO: wenn man die settings ändert im betrieb dann werden sie erst nach neustart vom plugin übernommen
-  AppGlobals.Storage.Read('Artist_TSetTagsPlugin', Artist, '%a', 'Plugins');
-  AppGlobals.Storage.Read('Title_TSetTagsPlugin', Title, '%t', 'Plugins');
-  AppGlobals.Storage.Read('Comment_TSetTagsPlugin', Comment, '%a / %t / %s', 'Plugins');
+  AppGlobals.Storage.Read('Artist_' + Plugin.ClassName, Artist, '%a', 'Plugins');
+  AppGlobals.Storage.Read('Title_' + Plugin.ClassName, Title, '%t', 'Plugins');
+  AppGlobals.Storage.Read('Comment_' + Plugin.ClassName, Comment, '%s / %u / Recorded using streamWriter', 'Plugins');
 
   FResult := arFail;
 
-  SetLength(Arr, 3);
+  SetLength(Arr, 6);
   Arr[0].C := 'a';
   Arr[0].Replace := FData.Artist;
   Arr[1].C := 't';
   Arr[1].Replace := FData.Title;
   Arr[2].C := 's';
   Arr[2].Replace := Trim(FData.Station);
+  Arr[3].C := 'u';
+  Arr[3].Replace := Trim(FData.StreamTitle);
+  Arr[4].C := 'd';
+  Arr[4].Replace := FormatDateTime('dd.mm.yy', Now);
+  Arr[5].C := 'i';
+  Arr[5].Replace := FormatDateTime('hh.nn.ss', Now);
 
   P := TSetTagsPlugin(Plugin);
 
@@ -120,8 +123,8 @@ begin
       ID3V1.Track := IntToStr(FData.TrackNumber);
       ID3V2.Track := IntToStr(FData.TrackNumber);
       ID3V1.Genre := ''; // Dann setzt Mp3FileUtils das auf "Undefined"
-      ID3V1.Comment := PatternReplace(Comment, Arr) + ' / Recorded using streamWriter';
-      ID3V2.Comment := PatternReplace(Comment, Arr) + ' / Recorded using streamWriter';
+      ID3V1.Comment := Comment;
+      ID3V2.Comment := Comment;
       if (ID3V1.WriteToFile(FData.Filename) = MP3ERR_None) and (ID3V2.WriteToFile(FData.Filename) = MP3ERR_None) then
       begin
         FData.Filesize := GetFileSize(FData.Filename);
@@ -172,10 +175,12 @@ end;
 function TSetTagsPlugin.Copy: TPluginBase;
 begin
   Result := TSetTagsPlugin.Create;
-// TODO: !!!
+
   Result.Active := FActive;
   Result.Order := FOrder;
   Result.OnlyIfCut := FOnlyIfCut;
+
+  Result.Assign(Self);
 end;
 
 constructor TSetTagsPlugin.Create;
@@ -196,7 +201,7 @@ begin
 
     AppGlobals.Storage.Read('Artist_' + ClassName, FArtist, '%a', 'Plugins');
     AppGlobals.Storage.Read('Title_' + ClassName, FTitle, '%t', 'Plugins');
-    AppGlobals.Storage.Read('Comment_' + ClassName, FComment, '%a / %t / %s', 'Plugins');
+    AppGlobals.Storage.Read('Comment_' + ClassName, FComment, '%s / %u / Recorded using streamWriter', 'Plugins');
 
     if not FGetFilesInstalled then
       FActive := False;

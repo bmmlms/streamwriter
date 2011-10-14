@@ -399,10 +399,8 @@ begin
       Text.Add(FHelpers[i]);
 
     Text.Add('');
-    Text.Add('');
 
     Text.Add(_('&U&10...everyone supporting streamWriter at the board'));
-    Text.Add('');
     Text.Add('');
 
     Text.Add(_('&U&10...and all other nice people I know!'));

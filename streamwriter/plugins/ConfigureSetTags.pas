@@ -4,7 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, SetTags;
+  Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, SetTags,
+  PngSpeedButton;
 
 type
   TfrmConfigureSetTags = class(TForm)
@@ -15,9 +16,15 @@ type
     txtTitle: TLabeledEdit;
     Label1: TLabel;
     txtComment: TMemo;
+    btnResetArtistPattern: TPngSpeedButton;
+    btnResetTitlePattern: TPngSpeedButton;
+    btnResetCommentPattern: TPngSpeedButton;
+    lblPattern: TLabel;
     procedure FormShow(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
-    procedure FormCreate(Sender: TObject);
+    procedure btnResetPatternClick(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
   private
     FSaveData: Boolean;
 
@@ -41,34 +48,31 @@ procedure TfrmConfigureSetTags.btnOKClick(Sender: TObject);
 var
   Res: Integer;
 begin
-  if Trim(txtArtist.Text) = '' then
-  begin
-    // TODO: !!!
-    Exit;
-  end else
-    FArtist := Trim(txtArtist.Text);
-
-  if Trim(txtTitle.Text) = '' then
-  begin
-    // TODO: !!!
-    Exit;
-  end else
-    FTitle := Trim(txtTitle.Text);
-
-  if Trim(txtComment.Text) = '' then
-  begin
-    // TODO: !!!
-    Exit;
-  end else
-    FComment := Trim(txtComment.Text);
-
-  FArtist := txtArtist.Text;
-  FTitle := txtTitle.Text;
-  FComment := txtComment.Text;
+  FArtist := Trim(txtArtist.Text);
+  FTitle := Trim(txtTitle.Text);
+  FComment := Trim(txtComment.Text);
 
   FSaveData := True;
 
   Close;
+end;
+
+procedure TfrmConfigureSetTags.btnResetPatternClick(Sender: TObject);
+begin
+  if Sender = btnResetArtistPattern then
+  begin
+    txtArtist.Text := '%a';
+    txtArtist.SetFocus;
+  end else if Sender = btnResetTitlePattern then
+  begin
+    txtTitle.Text := '%t';
+    txtTitle.SetFocus;
+  end else if Sender = btnResetCommentPattern then
+  begin
+    txtComment.Text := '%s / %u / Recorded using streamWriter';
+    txtComment.SelectAll;
+    txtComment.SetFocus;
+  end;
 end;
 
 constructor TfrmConfigureSetTags.Create(AOwner: TComponent;
@@ -89,9 +93,14 @@ begin
   Language.Translate(Self);
 end;
 
-procedure TfrmConfigureSetTags.FormCreate(Sender: TObject);
+procedure TfrmConfigureSetTags.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
 begin
-  // TODO: Hier fehlen noch captions (oben!!!!) und msgdlg texte....
+  if Key = 27 then
+  begin
+    Key := 0;
+    Close;
+  end;
 end;
 
 procedure TfrmConfigureSetTags.FormShow(Sender: TObject);

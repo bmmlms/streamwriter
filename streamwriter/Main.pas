@@ -346,10 +346,13 @@ var
   S: TExtendedStream;
   Lst: TSettingsList;
 begin
-  if ImportFilename = '' then
-    AppGlobals.WindowHandle := 0;
+  if FExiting then
+    Exit;
 
   FExiting := True;
+
+  if ImportFilename = '' then
+    AppGlobals.WindowHandle := 0;
 
   AppGlobals.MainMaximized := WindowState = wsMaximized;
   if not AppGlobals.MainMaximized then
@@ -598,11 +601,10 @@ begin
 
   if not AppGlobals.FirstStartShown then
   begin
-    TfrmMsgDlg.ShowMsg(Self, _('This is the first time you are running streamWriter. There are two ways to record music:'#13#10 +
+    TfrmMsgDlg.ShowMsg(Self, _('This is the first time you are running streamWriter. There are three ways to record music:'#13#10 +
                                '1) You can record streams by double-clicking them in the stream-browser on the right.'#13#10 +
-                               '2) Desired songs can be recorded by adding them to the wishlist on the Lists-tab at the top. ' +
-                               'When a song from the wishlist is being played on a stream, streamWriter will automatically tune in to record your song. ' +
-                               'Please add some artists/titles to your wishlist to try this feature.'), btOK);
+                               '2) Desired songs can be added to the wishlist in the Charts-tab by double-clicking them.'#13#10 +
+                               '3) Desired songs can be added to the wishlist manually using the Lists-tab at the top.'), btOk);
   end;
   AppGlobals.FirstStartShown := True;
 
