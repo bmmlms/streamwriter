@@ -177,6 +177,7 @@ type
     btnResetStreamFilePattern: TPngSpeedButton;
     chkAutoRemoveSavedFromWishlist: TCheckBox;
     chkRemoveSavedFromWishlist: TCheckBox;
+    chkNormalizeVariables: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
@@ -242,6 +243,7 @@ type
     procedure txtStreamFilePatternChange(Sender: TObject);
     procedure txtStreamFilePatternClick(Sender: TObject);
     procedure chkRemoveSavedFromWishlistClick(Sender: TObject);
+    procedure chkNormalizeVariablesClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -379,6 +381,19 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
     end;
     if F then
       AddField(txtRemoveChars);
+
+    F := False;
+    for i := 0 to Length(FStreamSettings) - 1 do
+    begin
+      if S.NormalizeVariables <> FStreamSettings[i].NormalizeVariables then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(chkNormalizeVariables);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -939,6 +954,7 @@ begin
   txtStreamFilePattern.Text := Settings.StreamFilePattern;
   txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
   txtRemoveChars.Text := Settings.RemoveChars;
+  chkNormalizeVariables.Checked := Settings.NormalizeVariables;
 
   txtDir.Text := AppGlobals.Dir;
   txtDirAuto.Text := AppGlobals.DirAuto;
@@ -1075,6 +1091,9 @@ begin
       if FIgnoreFieldList.IndexOf(txtRemoveChars) = -1 then
         FStreamSettings[i].RemoveChars := txtRemoveChars.Text;
 
+      if FIgnoreFieldList.IndexOf(chkNormalizeVariables) = -1 then
+        FStreamSettings[i].NormalizeVariables := chkNormalizeVariables.Checked;
+
       if FIgnoreFieldList.IndexOf(chkDeleteStreams) = -1 then
         FStreamSettings[i].DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
 
@@ -1183,6 +1202,7 @@ begin
     AppGlobals.AutomaticFilePattern := Trim(txtAutomaticFilePattern.Text);
     AppGlobals.StreamSettings.FilePatternDecimals := StrToIntDef(txtFilePatternDecimals.Text, 3);
     AppGlobals.StreamSettings.RemoveChars := txtRemoveChars.Text;
+    AppGlobals.StreamSettings.NormalizeVariables := chkNormalizeVariables.Checked;
     AppGlobals.StreamSettings.DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
     AppGlobals.StreamSettings.AddSavedToIgnore := chkAddSavedToIgnore.Checked;
     AppGlobals.StreamSettings.AddSavedToStreamIgnore := chkAddSavedToStreamIgnore.Checked;
@@ -2158,6 +2178,7 @@ begin
   inherited;
 
   txtRemoveChars.Text := '[]{}#$§%~^';
+  txtRemoveChars.SetFocus;
   RemoveGray(txtRemoveChars);
 end;
 
@@ -2489,6 +2510,14 @@ begin
   inherited;
 
   txtMaxSpeed.Enabled := chkLimit.Checked;
+end;
+
+procedure TfrmSettings.chkNormalizeVariablesClick(Sender: TObject);
+begin
+  inherited;
+
+  if FInitialized then
+    RemoveGray(chkNormalizeVariables);
 end;
 
 procedure TfrmSettings.chkOnlyIfCutClick(Sender: TObject);

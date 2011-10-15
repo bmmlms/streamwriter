@@ -204,6 +204,7 @@ end;
 procedure TfrmStreamData.btnResetTitlePatternClick(Sender: TObject);
 begin
   txtTitlePattern.Text := '(?P<a>.*) - (?P<t>.*)';
+  txtTitlePattern.SetFocus;
 end;
 
 constructor TfrmStreamData.Create(AOwner: TComponent; StreamSettings: TStreamSettings;

@@ -794,12 +794,12 @@ object frmSettings: TfrmSettings
     Left = 904
     Top = 4
     Width = 293
-    Height = 373
+    Height = 337
     TabOrder = 6
     Visible = False
     DesignSize = (
       293
-      373)
+      337)
     object Label2: TLabel
       Left = 20
       Top = 220
@@ -927,7 +927,7 @@ object frmSettings: TfrmSettings
   end
   object pnlFilenames: TPanel
     Left = 904
-    Top = 384
+    Top = 348
     Width = 293
     Height = 305
     TabOrder = 7
@@ -1371,13 +1371,13 @@ object frmSettings: TfrmSettings
   end
   object pnlFilenamesExt: TPanel
     Left = 904
-    Top = 696
+    Top = 660
     Width = 293
-    Height = 93
+    Height = 129
     TabOrder = 11
     DesignSize = (
       293
-      93)
+      129)
     object btnResetRemoveChars: TPngSpeedButton
       Left = 264
       Top = 68
@@ -1440,6 +1440,16 @@ object frmSettings: TfrmSettings
       TabOrder = 1
       OnChange = txtFilePatternDecimalsChange
     end
+    object chkNormalizeVariables: TCheckBox
+      Left = 4
+      Top = 100
+      Width = 284
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Adjust upper-/lowercase of artist/title'
+      TabOrder = 2
+      OnClick = chkNormalizeVariablesClick
+    end
   end
   object dlgOpen: TOpenDialog
     Filter = 'Executable files (*.exe, *.bat)|*.exe;*.bat'
@@ -1450,7 +1460,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800800210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800900210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

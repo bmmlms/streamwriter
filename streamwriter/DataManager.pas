@@ -435,7 +435,7 @@ type
   end;
 
 const
-  DATAVERSION = 35;
+  DATAVERSION = 36;
 
 implementation
 

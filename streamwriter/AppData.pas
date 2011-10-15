@@ -46,6 +46,7 @@ type
     FStreamFilePattern: string;
     FFilePatternDecimals: Cardinal;
     FRemoveChars: string;
+    FNormalizeVariables: Boolean;
     FDeleteStreams: Boolean;
     FAddSavedToIgnore: Boolean;
     FAddSavedToStreamIgnore: Boolean;
@@ -87,6 +88,7 @@ type
     property StreamFilePattern: string read FStreamFilePattern write FStreamFilePattern;
     property FilePatternDecimals: Cardinal read FFilePatternDecimals write FFilePatternDecimals;
     property RemoveChars: string read FRemoveChars write FRemoveChars;
+    property NormalizeVariables: Boolean read FNormalizeVariables write FNormalizeVariables;
     property DeleteStreams: Boolean read FDeleteStreams write FDeleteStreams;
     property AddSavedToIgnore: Boolean read FAddSavedToIgnore write FAddSavedToIgnore;
     property AddSavedToStreamIgnore: Boolean read FAddSavedToStreamIgnore write FAddSavedToStreamIgnore;
@@ -501,6 +503,7 @@ begin
   FStorage.Read('StreamFilePattern', FStreamSettings.FStreamFilePattern, '%s');
   FStorage.Read('FilePatternDecimals', FStreamSettings.FFilePatternDecimals, 3);
   FStorage.Read('RemoveChars', FStreamSettings.FRemoveChars, '[]{}#$§%~^');
+  FStorage.Read('NormalizeVariables', FStreamSettings.FNormalizeVariables, True);
 
   FStorage.Read('Dir', FDir, '');
   if FDir <> '' then
@@ -691,6 +694,7 @@ begin
   FStorage.Write('StreamFilePattern', FStreamSettings.FStreamFilePattern);
   FStorage.Write('FilePatternDecimals', FStreamSettings.FFilePatternDecimals);
   FStorage.Write('RemoveChars', FStreamSettings.FRemoveChars);
+  FStorage.Write('NormalizeVariables', FStreamSettings.FNormalizeVariables);
 
   FStorage.Write('Dir', TryRelativePath(FDir, False));
   FStorage.Write('DirAuto', TryRelativePath(FDirAuto, False));
@@ -864,6 +868,11 @@ begin
   else
     Result.FRemoveChars := '[]{}#$§%~^';
 
+  if Version >= 36 then
+    Stream.Read(Result.FNormalizeVariables)
+  else
+    Result.FNormalizeVariables := True;
+
   Stream.Read(Result.FDeleteStreams);
   Stream.Read(Result.FAddSavedToIgnore);
   if Version >= 27 then
@@ -1005,6 +1014,7 @@ begin
   Stream.Write(FStreamFilePattern);
   Stream.Write(FFilePatternDecimals);
   Stream.Write(FRemoveChars);
+  Stream.Write(FNormalizeVariables);
   Stream.Write(FDeleteStreams);
   Stream.Write(FAddSavedToIgnore);
   Stream.Write(FAddSavedToStreamIgnore);
@@ -1043,6 +1053,7 @@ begin
   FStreamFilePattern := From.FStreamFilePattern;
   FFilePatternDecimals := From.FilePatternDecimals;
   FRemoveChars := From.RemoveChars;
+  FNormalizeVariables := From.NormalizeVariables;
   FDeleteStreams := From.FDeleteStreams;
   FAddSavedToIgnore := From.FAddSavedToIgnore;
   FAddSavedToStreamIgnore := From.FAddSavedToStreamIgnore;

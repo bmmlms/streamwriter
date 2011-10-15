@@ -4,7 +4,7 @@ object frmTimers: TfrmTimers
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Setup timers'
-  ClientHeight = 362
+  ClientHeight = 430
   ClientWidth = 387
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -62,20 +62,20 @@ object frmTimers: TfrmTimers
     Left = 0
     Top = 0
     Width = 387
-    Height = 313
+    Height = 381
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitWidth = 330
+    ExplicitHeight = 313
     object Panel1: TPanel
       Left = 0
       Top = 0
       Width = 387
-      Height = 313
+      Height = 381
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitWidth = 330
+      ExplicitHeight = 313
       object pnlConfig: TPanel
         Left = 0
         Top = 0
@@ -84,7 +84,6 @@ object frmTimers: TfrmTimers
         Align = alTop
         BevelOuter = bvNone
         TabOrder = 0
-        ExplicitWidth = 330
         DesignSize = (
           387
           197)
@@ -152,7 +151,6 @@ object frmTimers: TfrmTimers
           Items.Strings = (
             'Daily'
             'Weekly')
-          ExplicitWidth = 305
         end
         object lstDay: TComboBox
           Left = 20
@@ -174,7 +172,6 @@ object frmTimers: TfrmTimers
             'Friday'
             'Saturday'
             'Sunday')
-          ExplicitWidth = 305
         end
         object dtpDate: TDateTimePicker
           Left = 20
@@ -186,7 +183,6 @@ object frmTimers: TfrmTimers
           Time = 40674.868549270830000000
           TabOrder = 4
           OnChange = dtpDateChange
-          ExplicitWidth = 305
         end
         object txtStartHour: TEdit
           Left = 4
@@ -233,7 +229,6 @@ object frmTimers: TfrmTimers
           Caption = '&Add'
           TabOrder = 9
           OnClick = btnAddClick
-          ExplicitLeft = 232
         end
         object chkAutoRemove: TCheckBox
           Left = 20
@@ -243,24 +238,23 @@ object frmTimers: TfrmTimers
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Remove schedule when recording finished'
           TabOrder = 10
-          ExplicitWidth = 305
         end
       end
       object pnlTree: TPanel
         Left = 0
         Top = 197
         Width = 387
-        Height = 116
+        Height = 184
         Align = alClient
         BevelOuter = bvNone
         Padding.Left = 4
         Padding.Top = 4
         Padding.Right = 4
         TabOrder = 1
-        ExplicitWidth = 330
+        ExplicitHeight = 116
         object Panel3: TPanel
           Left = 4
-          Top = 81
+          Top = 149
           Width = 379
           Height = 35
           Align = alBottom
@@ -269,7 +263,7 @@ object frmTimers: TfrmTimers
           Padding.Top = 4
           Padding.Bottom = 4
           TabOrder = 0
-          ExplicitWidth = 322
+          ExplicitTop = 81
           object btnRemove: TButton
             Left = 286
             Top = 4
@@ -281,7 +275,6 @@ object frmTimers: TfrmTimers
             Enabled = False
             TabOrder = 0
             OnClick = btnRemoveClick
-            ExplicitLeft = 229
           end
         end
       end
@@ -289,7 +282,7 @@ object frmTimers: TfrmTimers
   end
   object pnlNav: TPanel
     Left = 0
-    Top = 313
+    Top = 381
     Width = 387
     Height = 49
     Align = alBottom
@@ -299,7 +292,7 @@ object frmTimers: TfrmTimers
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitWidth = 330
+    ExplicitTop = 313
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -323,7 +316,6 @@ object frmTimers: TfrmTimers
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 229
     end
   end
 end

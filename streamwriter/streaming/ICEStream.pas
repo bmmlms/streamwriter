@@ -1220,6 +1220,24 @@ begin
 end;
 
 procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Title: string);
+  function NormalizeText(const Text: string): string;
+  var
+    i: Integer;
+    LastChar: Char;
+  begin
+    Result := '';
+    LastChar := #0;
+    Title := StringReplace(Title, '_', ' ', [rfReplaceAll]);
+
+    for i := 1 to Length(Title) do
+    begin
+      if (LastChar = #0) or (LastChar = ' ') or (LastChar = '.') or (LastChar = '-') or (LastChar = '/') or (LastChar = '(') then
+        Result := Result + UpperCase(Title[i])
+      else
+        Result := Result + LowerCase(Title[i]);
+      LastChar := Title[i];
+    end;
+  end;
 var
   R: TPerlRegEx;
 begin
@@ -1252,6 +1270,12 @@ begin
   begin
     // Wenn nichts gefunden wurde, Fallback mit normalem Muster..
     ParseTitle(S, '(?P<a>.*) - (?P<t>.*)', Artist, Title);
+  end;
+
+  if FSettings.NormalizeVariables then
+  begin
+    Artist := NormalizeText(Artist);
+    Title := NormalizeText(Title);
   end;
 end;
 
