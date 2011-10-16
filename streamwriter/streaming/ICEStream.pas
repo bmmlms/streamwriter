@@ -1220,22 +1220,22 @@ begin
 end;
 
 procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Title: string);
-  function NormalizeText(const Text: string): string;
+  function NormalizeText(Text: string): string;
   var
     i: Integer;
     LastChar: Char;
   begin
     Result := '';
     LastChar := #0;
-    Title := StringReplace(Title, '_', ' ', [rfReplaceAll]);
+    Text := StringReplace(Text, '_', ' ', [rfReplaceAll]);
 
-    for i := 1 to Length(Title) do
+    for i := 1 to Length(Text) do
     begin
       if (LastChar = #0) or (LastChar = ' ') or (LastChar = '.') or (LastChar = '-') or (LastChar = '/') or (LastChar = '(') then
-        Result := Result + UpperCase(Title[i])
+        Result := Result + UpperCase(Text[i])
       else
-        Result := Result + LowerCase(Title[i]);
-      LastChar := Title[i];
+        Result := Result + LowerCase(Text[i]);
+      LastChar := Text[i];
     end;
   end;
 var
