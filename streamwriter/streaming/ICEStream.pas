@@ -217,12 +217,13 @@ implementation
 function TICEStream.CalcAdjustment(Offset: Int64): Int64;
 begin
   Result := Offset;
-  if (FBytesPerSec > 0) and (FSettings.AdjustTrackOffset) and (FSettings.AdjustTrackOffsetSeconds > 0) then
+  if (FBytesPerSec > 0) and (FSettings.AdjustTrackOffset) and (FSettings.AdjustTrackOffsetMS > 0) then
   begin
     if FSettings.AdjustTrackOffsetDirection = toForward then
-      Result := Result + FSettings.AdjustTrackOffsetSeconds * FBytesPerSec
+      Result := Result + Trunc(FSettings.AdjustTrackOffsetMS * (FBytesPerSec / 1000))
     else
-      Result := Result - FSettings.AdjustTrackOffsetSeconds * FBytesPerSec;
+      Result := Result - Trunc(FSettings.AdjustTrackOffsetMS * (FBytesPerSec / 1000));
+
     if Result < 0 then
       Result := 0;
   end;
@@ -429,6 +430,7 @@ end;
 procedure TICEStream.FreeAudioStream;
 var
   Filename: string;
+  LowerDir: string;
 begin
   Filename := '';
   FFilename := '';
@@ -442,7 +444,13 @@ begin
   end;
 
   if (FSettings.SeparateTracks) and (FSettings.DeleteStreams and (Filename <> '')) then
+  begin
     DeleteFile(PChar(Filename));
+
+    LowerDir := LowerCase(IncludeTrailingBackslash(ExtractFilePath(Filename)));
+    if (LowerDir <> LowerCase(IncludeTrailingBackslash(AppGlobals.Dir))) and (LowerDir <> LowerCase(IncludeTrailingBackslash(AppGlobals.DirAuto))) then
+      Windows.RemoveDirectory(PChar(ExtractFilePath(Filename)));
+  end;
 end;
 
 procedure TICEStream.FSetRecordTitle(Value: string);
@@ -521,7 +529,7 @@ procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
       BufLen := Max(FBytesPerSec * FSettings.SilenceBufferSecondsStart, FBytesPerSec * FSettings.SongBufferSeconds);
 
       if FSettings.AdjustTrackOffset and (FSettings.AdjustTrackOffsetDirection = toBackward) then
-        BufLen := BufLen + FSettings.AdjustTrackOffsetSeconds * FBytesPerSec;
+        BufLen := BufLen + Trunc(FSettings.AdjustTrackOffsetMS * (FBytesPerSec / 1000));
 
       if FStreamTracks.Count > 0 then
       begin
@@ -1506,6 +1514,7 @@ end;
 
 function TFileChecker.StreamInfoToFilename(Name: string): string;
 var
+  i: Integer;
   Dir, StreamName: string;
   Replaced: string;
   Arr: TPatternReplaceArray;
@@ -1531,8 +1540,25 @@ begin
 
   Replaced := PatternReplace(FSettings.StreamFilePattern, Arr);
 
+  // REMARK: Das folgende ist so genau gleich auch im Settings-Fenster.. wegen DRY..
+  // Aneinandergereihte \ entfernen
+  i := 1;
+  if Length(Replaced) > 0 then
+    while True do
+    begin
+      if i = Length(Replaced) then
+        Break;
+      if Replaced[i] = '\' then
+        if Replaced[i + 1] = '\' then
+        begin
+          Replaced := Copy(Replaced, 1, i) + Copy(Replaced, i + 2, Length(Replaced) - i);
+          Continue;
+        end;
+      Inc(i);
+    end;
+
   // Ungültige Zeichen entfernen
-  Replaced := StringReplace(Replaced, '\', '_', [rfReplaceAll]);
+  //Replaced := StringReplace(Replaced, '\', '_', [rfReplaceAll]);
   Replaced := StringReplace(Replaced, '/', '_', [rfReplaceAll]);
   Replaced := StringReplace(Replaced, ':', '_', [rfReplaceAll]);
   Replaced := StringReplace(Replaced, '*', '_', [rfReplaceAll]);
@@ -1542,9 +1568,16 @@ begin
   Replaced := StringReplace(Replaced, '>', '_', [rfReplaceAll]);
   Replaced := StringReplace(Replaced, '|', '_', [rfReplaceAll]);
 
-  Result := Replaced;
+  // Sicherstellen, dass am Anfang/Ende kein \ steht
+  if Length(Replaced) > 0 then
+    if Replaced[1] = '\' then
+      Replaced := Copy(Replaced, 2, Length(Replaced) - 1);
+  if Length(Replaced) > 0 then
+    if Replaced[Length(Replaced)] = '\' then
+      Replaced := Copy(Replaced, 1, Length(Replaced) - 1);
 
-  //Result := ExtractFileName(Replaced);
+  FSaveDir := IncludeTrailingBackslash(ExtractFilePath(FSaveDir + Replaced));
+  Result := ExtractFileName(Replaced);
 end;
 
 function TFileChecker.TitleInfoToFilename(Artist, Title: string; TitleState: TTitleStates): string;
@@ -1616,6 +1649,7 @@ begin
         end;
       Inc(i);
     end;
+
   // Ungültige Zeichen entfernen
   Replaced := StringReplace(Replaced, '/', '_', [rfReplaceAll]);
   Replaced := StringReplace(Replaced, ':', '_', [rfReplaceAll]);
@@ -1625,6 +1659,7 @@ begin
   Replaced := StringReplace(Replaced, '<', '_', [rfReplaceAll]);
   Replaced := StringReplace(Replaced, '>', '_', [rfReplaceAll]);
   Replaced := StringReplace(Replaced, '|', '_', [rfReplaceAll]);
+
   // Sicherstellen, dass am Anfang/Ende kein \ steht
   if Length(Replaced) > 0 then
     if Replaced[1] = '\' then

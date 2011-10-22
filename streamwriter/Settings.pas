@@ -671,7 +671,7 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
     begin
-      if S.AdjustTrackOffsetSeconds <> FStreamSettings[i].AdjustTrackOffsetSeconds then
+      if S.AdjustTrackOffsetMS <> FStreamSettings[i].AdjustTrackOffsetMS then
       begin
         F := True;
         ShowDialog := True;
@@ -1004,7 +1004,7 @@ begin
   txtSilenceBufferSeconds.Text := IntToStr(Settings.SilenceBufferSecondsStart);
 
   chkAdjustTrackOffset.Checked := Settings.AdjustTrackOffset;
-  txtAdjustTrackOffset.Text := IntToStr(Settings.AdjustTrackOffsetSeconds);
+  txtAdjustTrackOffset.Text := IntToStr(Settings.AdjustTrackOffsetMS);
   if Settings.AdjustTrackOffsetDirection = toForward then
     optAdjustForward.Checked := True
   else
@@ -1148,7 +1148,7 @@ begin
             FStreamSettings[i].AdjustTrackOffset := chkAdjustTrackOffset.Checked;
 
           if FIgnoreFieldList.IndexOf(txtAdjustTrackOffset) = -1 then
-            FStreamSettings[i].AdjustTrackOffsetSeconds := StrToInt(txtAdjustTrackOffset.Text);
+            FStreamSettings[i].AdjustTrackOffsetMS := StrToInt(txtAdjustTrackOffset.Text);
 
           if FIgnoreFieldList.IndexOf(optAdjustBackward) = -1 then
           begin
@@ -1663,8 +1663,8 @@ end;
 
 function TfrmSettings.ValidatePattern(Text: string): string;
 var
-  Arr: TPatternReplaceArray;
   i: Integer;
+  Arr: TPatternReplaceArray;
 begin
   inherited;
 
@@ -1722,6 +1722,7 @@ end;
 
 function TfrmSettings.ValidateStreamPattern(Text: string): string;
 var
+  i: Integer;
   Arr: TPatternReplaceArray;
 begin
   inherited;
@@ -1736,8 +1737,24 @@ begin
 
   Result := PatternReplace(Text, Arr);
 
+  // Aneinandergereihte \ entfernen
+  i := 1;
+  if Length(Result) > 0 then
+    while True do
+    begin
+      if i = Length(Result) then
+        Break;
+      if Result[i] = '\' then
+        if Result[i + 1] = '\' then
+        begin
+          Result := Copy(Result, 1, i) + Copy(Result, i + 2, Length(Result) - i);
+          Continue;
+        end;
+      Inc(i);
+    end;
+
   // Ungültige Zeichen entfernen
-  Result := StringReplace(Result, '\', '_', [rfReplaceAll]);
+  //Result := StringReplace(Result, '\', '_', [rfReplaceAll]);
   Result := StringReplace(Result, '/', '_', [rfReplaceAll]);
   Result := StringReplace(Result, ':', '_', [rfReplaceAll]);
   Result := StringReplace(Result, '*', '_', [rfReplaceAll]);
@@ -1747,6 +1764,13 @@ begin
   Result := StringReplace(Result, '>', '_', [rfReplaceAll]);
   Result := StringReplace(Result, '|', '_', [rfReplaceAll]);
 
+  // Sicherstellen, dass am Anfang/Ende kein \ steht
+  if Length(Result) > 0 then
+    if Result[1] = '\' then
+      Result := Copy(Result, 2, Length(Result) - 1);
+  if Length(Result) > 0 then
+    if Result[Length(Result)] = '\' then
+      Result := Copy(Result, 1, Length(Result) - 1);
   Result := Result + '.mp3';
 end;
 
@@ -2384,7 +2408,7 @@ begin
           txtAdjustTrackOffset.SetFocus;
           Exit;
         end else
-          txtAdjustTrackOffset.Text := IntToStr(AppGlobals.StreamSettings.AdjustTrackOffsetSeconds);
+          txtAdjustTrackOffset.Text := IntToStr(AppGlobals.StreamSettings.AdjustTrackOffsetMS);
       end;
   end;
 

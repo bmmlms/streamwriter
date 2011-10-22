@@ -556,7 +556,7 @@ begin
           if Recycle(Handle, Tracks[i].Filename) then
           begin
             LowerDir := LowerCase(IncludeTrailingBackslash(ExtractFilePath(Tracks[i].Filename)));
-            if not ((LowerDir = LowerCase(IncludeTrailingBackslash(AppGlobals.Dir))) and (LowerDir = LowerCase(IncludeTrailingBackslash(AppGlobals.DirAuto)))) then
+            if (LowerDir <> LowerCase(IncludeTrailingBackslash(AppGlobals.Dir))) and (LowerDir <> LowerCase(IncludeTrailingBackslash(AppGlobals.DirAuto))) then
               Windows.RemoveDirectory(PChar(ExtractFilePath(Tracks[i].Filename)));
             FSavedTree.DeleteTrack(Tracks[i]);
             FStreams.TrackList.RemoveTrack(Tracks[i]);
@@ -1562,11 +1562,7 @@ begin
 
   case Column of
     -1:
-      // REMARK: Das High(Cardinal) kann raus irgendwann. Ist für Update von Versionen die das nicht konnten.
-      if Data1.Track.Index = High(Cardinal) then
-        Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename))
-      else
-        Result := CmpC(Data1.Track.Index, Data2.Track.Index);
+      Result := CmpC(Data1.Track.Index, Data2.Track.Index);
     0:
       begin
         I1 := 0;

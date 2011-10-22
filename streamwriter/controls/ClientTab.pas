@@ -871,12 +871,6 @@ begin
   if not Client.AutoRemove then
   begin
     FAddressBar.Stations.AddItem(Client.Entry.ID, Client.Entry.Bitrate, Client.Entry.Name, Client.Entry.StartURL);
-
-    if FStreams.SubmittedStreamList.IndexOf(Client.Entry.StartURL) = -1 then
-    begin
-      FHomeCommunication.SubmitStream(Client.Entry.StartURL);
-      FStreams.SubmittedStreamList.Add(Client.Entry.StartURL);
-    end;
   end;
 
   ShowInfo;

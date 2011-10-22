@@ -60,7 +60,7 @@ type
     FShortLengthSeconds: Integer;
     FSongBufferSeconds: Integer;
     FAdjustTrackOffset: Boolean;
-    FAdjustTrackOffsetSeconds: Cardinal;
+    FAdjustTrackOffsetMS: Cardinal;
     FAdjustTrackOffsetDirection: TTrackOffsetDirection;
     FMaxRetries: Integer;
     FRetryDelay: Cardinal;
@@ -102,7 +102,7 @@ type
     property ShortLengthSeconds: Integer read FShortLengthSeconds write FShortLengthSeconds;
     property SongBufferSeconds: Integer read FSongBufferSeconds write FSongBufferSeconds;
     property AdjustTrackOffset: Boolean read FAdjustTrackOffset write FAdjustTrackOffset;
-    property AdjustTrackOffsetSeconds: Cardinal read FAdjustTrackOffsetSeconds write FAdjustTrackOffsetSeconds;
+    property AdjustTrackOffsetMS: Cardinal read FAdjustTrackOffsetMS write FAdjustTrackOffsetMS;
     property AdjustTrackOffsetDirection: TTrackOffsetDirection read FAdjustTrackOffsetDirection write FAdjustTrackOffsetDirection;
     property MaxRetries: Integer read FMaxRetries write FMaxRetries;
     property RetryDelay: Cardinal read FRetryDelay write FRetryDelay;
@@ -481,6 +481,14 @@ begin
     Text.Add('');
     Text.Add('');
     Text.Add('Korrekt Banze!');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+    Text.Add('');
+
+    Text.Add(_('Thanks for reading everything...'));
 
     FProjectThanksText := Text.Text;
   finally
@@ -538,7 +546,7 @@ begin
   end;
 
   FStreamSettings.FAdjustTrackOffset := False;
-  FStreamSettings.FAdjustTrackOffsetSeconds := 0;
+  FStreamSettings.FAdjustTrackOffsetMS := 0;
   FStreamSettings.FAdjustTrackOffsetDirection := toForward;
 
   FStorage.Read('SaveToMemory', FStreamSettings.FSaveToMemory, False);
@@ -709,9 +717,6 @@ begin
   FStorage.Write('SilenceLength', FStreamSettings.FSilenceLength);
   FStorage.Write('SilenceBufferSecondsStart', FStreamSettings.FSilenceBufferSecondsStart);
   FStorage.Write('SilenceBufferSecondsEnd', FStreamSettings.FSilenceBufferSecondsEnd);
-
-  // REMARK: Kann irgendwann Raus. Für Update auf SW Version 3.
-  FStorage.Delete('SilenceBufferSeconds');
 
   FStorage.Write('SaveToMemory', FStreamSettings.FSaveToMemory);
   FStorage.Write('OnlySaveFull', FStreamSettings.FOnlySaveFull);
@@ -975,7 +980,11 @@ begin
   if Version >= 28 then
   begin
     Stream.Read(Result.FAdjustTrackOffset);
-    Stream.Read(Result.FAdjustTrackOffsetSeconds);
+    Stream.Read(Result.FAdjustTrackOffsetMS);
+
+    if Version < 37 then
+      Result.FAdjustTrackOffsetMS := Result.FAdjustTrackOffsetMS * 1000;
+
     Stream.Read(B);
     Result.FAdjustTrackOffsetDirection := TTrackOffsetDirection(B);
   end;
@@ -1037,7 +1046,7 @@ begin
   Stream.Write(FDiscardSmaller);
 
   Stream.Write(FAdjustTrackOffset);
-  Stream.Write(FAdjustTrackOffsetSeconds);
+  Stream.Write(FAdjustTrackOffsetMS);
   Stream.Write(Byte(FAdjustTrackOffsetDirection));
 
   Stream.Write(FIgnoreTrackChangePattern.Count);
@@ -1075,7 +1084,7 @@ begin
   FOverwriteSmaller := From.FOverwriteSmaller;
   FDiscardSmaller := From.FDiscardSmaller;
   FAdjustTrackOffset := From.FAdjustTrackOffset;
-  FAdjustTrackOffsetSeconds := From.FAdjustTrackOffsetSeconds;
+  FAdjustTrackOffsetMS := From.FAdjustTrackOffsetMS;
   FAdjustTrackOffsetDirection := From.FAdjustTrackOffsetDirection;
   FIgnoreTrackChangePattern.Assign(From.FIgnoreTrackChangePattern);
 end;

@@ -267,10 +267,6 @@ type
     FSongsSaved: Cardinal;
     FBytesReceived: UInt64;
 
-    FMigrationSubmitted: Boolean;
-    FMigrationTrackList: TTrackList;
-    FMigrationRecentIndex: Integer;
-
     FSchedules: TScheduleList;
 
     FSaveList: TTitleList;
@@ -395,7 +391,6 @@ type
     FTrackList: TTrackList;
     FSaveList: TTitleList;
     FIgnoreList: TTitleList;
-    FSubmittedStreamList: TStringList;
     FRecentList: TRecentList;
     FStreamBlacklist: TStringList;
     FRatingList: TRatingList;
@@ -421,7 +416,6 @@ type
     property TrackList: TTrackList read FTrackList;
     property SaveList: TTitleList read FSaveList;
     property IgnoreList: TTitleList read FIgnoreList;
-    property SubmittedStreamList: TStringList read FSubmittedStreamList;
     property RecentList: TRecentList read FRecentList;
     property StreamBlacklist: TStringList read FStreamBlacklist;
     property RatingList: TRatingList read FRatingList;
@@ -435,7 +429,7 @@ type
   end;
 
 const
-  DATAVERSION = 36;
+  DATAVERSION = 37;
 
 implementation
 
@@ -599,7 +593,6 @@ begin
   FParent := Parent;
   FURLs := TStringList.Create;
   FSongsSaved := 0;
-  FMigrationTrackList := TTrackList.Create;
 
   FSchedules := TScheduleList.Create;
 
@@ -612,7 +605,6 @@ var
   i: Integer;
 begin
   FURLs.Free;
-  FMigrationTrackList.Free;
   FSettings.Free;
   for i := 0 to FSchedules.Count - 1 do
     FSchedules[i].Free;
@@ -681,34 +673,6 @@ begin
 
   Stream.Read(Result.FGenre);
 
-  if Version <= 5 then
-  begin
-    Stream.Read(BTmp);
-    Result.FSettings.SkipShort := BTmp;
-
-    if (Version >= 3) then
-    begin
-      Stream.Read(B);
-      if Version > 26 then
-        Result.FSettings.Filter := TUseFilters(B)
-      else
-      begin
-        if B = 0 then
-          Result.FSettings.Filter := ufNone
-        else if B = 1 then
-          Result.FSettings.Filter := ufWish
-        else if B = 2 then
-          Result.FSettings.Filter := ufIgnoreBoth
-        else if B = 3 then
-          Result.FSettings.Filter := ufBoth
-        else
-          Result.FSettings.Filter := ufNone;
-      end;
-    end;
-
-    Stream.Read(Result.FMigrationSubmitted);
-  end;
-
   if Version <= 20 then
     Stream.Read(BTmp);
   if Version >= 5 then
@@ -717,29 +681,6 @@ begin
     Stream.Read(Result.FCategoryIndex);
   end;
 
-  if Version < 6 then
-    Stream.Read(Result.FMigrationRecentIndex);
-
-  if Version <= 5 then
-    Stream.Read(DTTmp);
-
-  if Version <= 5 then
-  begin
-    Stream.Read(Count);
-    for i := 0 to Count - 1 do
-    begin
-      TrackInfo := TTrackInfo.Create(Now, '', '');
-      Stream.Read(TrackInfo.FTime);
-      Stream.Read(TrackInfo.FFilename);
-      TrackInfo.Streamname := Result.FName;
-      if Version > 1 then
-      begin
-        Stream.Read(TrackInfo.FFilesize);
-        Stream.Read(TrackInfo.FWasCut);
-      end;
-      Result.FMigrationTrackList.Add(TrackInfo);
-    end;
-  end;
   Stream.Read(Result.FSongsSaved);
   Stream.Read(Result.FBytesReceived);
 
@@ -763,15 +704,7 @@ begin
     Stream.Read(Count);
     for i := 0 to Count - 1 do
       Result.FIgnoreList.Add(TTitleInfo.Load(Stream, Version));
-  end;{ else if Version = 27 then
-  begin
-    for i := Result.FSettings.MigrationIgnoreList.Count - 1 downto 0 do
-    begin
-      Result.FIgnoreList.Add(Result.FSettings.MigrationIgnoreList[i].Copy);
-      Result.FSettings.MigrationIgnoreList[i].Free;
-      Result.FSettings.MigrationIgnoreList.Delete(i);
-    end;
-  end; }
+  end;
 
   if Version > 31 then
     Stream.Read(Result.FIgnoreListIndex)
@@ -854,8 +787,6 @@ begin
     FIgnoreList[i].Free;
   FIgnoreList.Clear;
 
-  FSubmittedStreamList.Clear;
-
   for i := 0 to FRecentList.Count - 1 do
     FRecentList[i].Free;
   FRecentList.Clear;
@@ -894,7 +825,6 @@ begin
   FTrackList := TTrackList.Create;
   FSaveList := TTitleList.Create;
   FIgnoreList := TTitleList.Create;
-  FSubmittedStreamList := TStringList.Create;
   FRecentList := TRecentList.Create;
   FStreamBlacklist := TStringList.Create;
   FRatingList := TRatingList.Create;
@@ -913,7 +843,6 @@ begin
   FStreamList.Free;
   FSaveList.Free;
   FIgnoreList.Free;
-  FSubmittedStreamList.Free;
   FRecentList.Free;
   FStreamBlackList.Free;
   FRatingList.Free;
@@ -999,12 +928,14 @@ begin
 
       if Version >= 6 then
       begin
-        S.Read(EntryCount);
-        for i := 0 to EntryCount - 1 do
+        if Version < 37 then
         begin
-          S.Read(Str);
-
-          FSubmittedStreamList.Add(Str);
+          S.Read(EntryCount);
+          for i := 0 to EntryCount - 1 do
+          begin
+            S.Read(Str);
+            //FSubmittedStreamList.Add(Str);
+          end;
         end;
 
         S.Read(EntryCount);
@@ -1039,59 +970,6 @@ begin
             FGenreList.Add(TGenre.Load(S, Version));
         end;
       end;
-
-      // REMARK: Irgendwann raus. Fehler in Version 3... doppelte entfernen!
-      if Version = 3 then
-      begin
-        i := 0;
-        while True do
-        begin
-          for n := FSaveList.Count - 1 downto i + 1 do
-            if FSaveList[n].Hash = FSaveList[i].Hash then
-            begin
-              FSaveList[n].Free;
-              FSaveList.Delete(n);
-            end;
-          Inc(i);
-          if i > FSaveList.Count - 1 then
-            Break;
-        end;
-
-        i := 0;
-        while True do
-        begin
-          for n := FIgnoreList.Count - 1 downto i + 1 do
-            if FIgnoreList[n].Hash = FIgnoreList[i].Hash then
-            begin
-              FIgnoreList[n].Free;
-              FIgnoreList.Delete(n);
-            end;
-          Inc(i);
-          if i > FIgnoreList.Count - 1 then
-            Break;
-        end;
-      end;
-
-    end;
-  end;
-
-  if Version < 6 then
-  begin
-    for i := FStreamList.Count - 1 downto 0 do
-    begin
-      Entry := FStreamList[i];
-      // REMARK: Für das Update von 5 auf 6: Alle gespeicherten Tracks von
-      // den Entries in die TrackList übernehmen. Kann irgendwann weg.
-      // Natürlich auch das alte FSubmitted übernehmen.
-      for n := 0 to Entry.FMigrationTrackList.Count - 1 do
-      begin
-        FTrackList.Add(Entry.FMigrationTrackList[n]);
-      end;
-      Entry.FMigrationTrackList.Clear;
-      if Entry.FMigrationSubmitted then
-        FSubmittedStreamList.Add(Entry.StartURL);
-      if Entry.FMigrationRecentIndex > -1 then
-        FRecentList.Add(TRecentEntry.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, Entry.FMigrationRecentIndex));
     end;
   end;
 
@@ -1177,13 +1055,6 @@ begin
   begin
     FIgnoreList[i].Save(S);
   end;
-
-  while FSubmittedStreamList.Count > 200 do
-    FSubmittedStreamList.Delete(0);
-
-  S.Write(FSubmittedStreamList.Count);
-  for i := 0 to FSubmittedStreamList.Count - 1 do
-    S.Write(FSubmittedStreamList[i]);
 
   S.Write(FRecentList.Count);
   for i := 0 to FRecentList.Count - 1 do

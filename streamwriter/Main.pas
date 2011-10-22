@@ -1943,10 +1943,10 @@ procedure TfrmStreamWriterMain.UpdaterUpdateFound(Sender: TObject);
 begin
   AppGlobals.LastUpdateChecked := Trunc(Now);
 
-  // REMARK: Hier war mal die MsgBox mit 'A new version was found...'
-  //         Das konnte aber zu Deadlocks führen, weil während allem was jetzt kam
-  //         (z.B. ShowUpdate() mit Modaler Form) der UpdateThread nicht nil gesetzt
-  //         wurde. Deshalb ist hier nun ein PostMessage.
+  // Hier war mal die MsgBox mit 'A new version was found...'
+  // Das konnte aber zu Deadlocks führen, weil während allem was jetzt kam
+  // (z.B. ShowUpdate() mit Modaler Form) der UpdateThread nicht nil gesetzt
+  // wurde. Deshalb ist hier nun ein PostMessage.
   PostMessage(Handle, WM_UPDATEFOUND, 0, 0);
 end;
 

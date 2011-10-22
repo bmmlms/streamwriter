@@ -1212,19 +1212,12 @@ begin
 
   case Header.SortColumn of
     -1:
-      // REMARK: Das High(Cardinal) kann raus irgendwann. Ist für Update von Versionen die das nicht konnten.
       if (Data1.Stream <> nil) and (Data1.Title = nil) and (Data2.Stream <> nil) and (Data2.Title = nil) then
       begin
-        if Data1.Stream.Entry.IgnoreListIndex = High(Cardinal) then
-          Result := CompareText(Data1.Stream.Entry.Name, Data2.Stream.Entry.Name)
-        else
-          Result := CmpC(Data1.Stream.Entry.IgnoreListIndex, Data2.Stream.Entry.IgnoreListIndex);
+        Result := CmpC(Data1.Stream.Entry.IgnoreListIndex, Data2.Stream.Entry.IgnoreListIndex);
       end else if (Data1.Title <> nil) and (Data2.Title <> nil) then
       begin
-        if Data1.Title.Index = High(Cardinal) then
-          Result := CompareText(Data1.Title.Title, Data2.Title.Title)
-        else
-          Result := CmpC(Data1.Title.Index, Data2.Title.Index);
+        Result := CmpC(Data1.Title.Index, Data2.Title.Index);
       end;
     0:
       if (Data1.Title <> nil) and (Data2.Title <> nil) then
