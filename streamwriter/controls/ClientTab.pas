@@ -871,6 +871,8 @@ begin
   if not Client.AutoRemove then
   begin
     FAddressBar.Stations.AddItem(Client.Entry.ID, Client.Entry.Bitrate, Client.Entry.Name, Client.Entry.StartURL);
+
+    FHomeCommunication.SubmitStream(Client.Entry.StartURL);
   end;
 
   ShowInfo;
