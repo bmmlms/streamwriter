@@ -158,7 +158,6 @@ type
 
     FColName: TVirtualTreeColumn;
     FDisplayCount: Integer;
-    FUnloadedVisible: Boolean;
 
     FLastSearch: string;
     FLastGenre: string;
@@ -222,7 +221,7 @@ type
     procedure HandleMouseDblClick(var Message: TWMMouse; const HitInfo: THitInfo); override;
     procedure Resize; override;
     procedure Paint; override;
-    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    //procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure KeyPress(var Key: Char); override;
     function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
@@ -286,8 +285,6 @@ begin
   ScrollBarOptions.AlwaysVisible := True;
 
   FDragSource := TDropFileSource.Create(Self);
-
-  FUnloadedVisible := False;
 
   Res := TResourceStream.Create(HInstance, 'BROWSER_METADATA', MakeIntResource(RT_RCDATA));
   try
@@ -382,6 +379,8 @@ begin
   FItemSave.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemSave);
 
+  PopupMenu := FPopupMenu;
+
   FDots := '';
   FTimer := TTimer.Create(Self);
   FTimer.OnTimer := TimerOnTimer;
@@ -409,7 +408,7 @@ end;
 
 destructor TMStreamTree.Destroy;
 begin
-  FPopupMenu.Free;
+  //FPopupMenu.Free;
   FDragSource.Free;
   FTimer.Free;
 
@@ -1018,6 +1017,7 @@ begin
   Invalidate;
 end;
 
+{
 procedure TMStreamTree.MouseUp(Button: TMouseButton; Shift: TShiftState;
   X, Y: Integer);
 var
@@ -1031,6 +1031,7 @@ begin
     FPopupMenu.Popup(ClientToScreen(P).X, ClientToScreen(P).Y);
   end;
 end;
+}
 
 function TMStreamTree.DoGetNodeTooltip(Node: PVirtualNode;
   Column: TColumnIndex;

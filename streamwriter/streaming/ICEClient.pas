@@ -33,7 +33,7 @@ type
 
   TMayConnectResults = (crOk, crNoFreeSpace, crNoBandwidth);
 
-  TDebugTypes = (dtSocket, dtMessage, dtSong, dtError);
+  TDebugTypes = (dtSocket, dtMessage, dtSong, dtError, dtSaved);
   TDebugLevels = (dlNormal, dlDebug);
 
   TICEClient = class;

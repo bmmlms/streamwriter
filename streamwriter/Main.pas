@@ -835,6 +835,11 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.HomeCommError(Sender: TObject; ID: TCommErrors; Msg: string);
+const
+  Notification = 'A notification from the server was received:'#13#10'%s';
+var
+  MsgHC: Cardinal;
+  MsgHash: Integer;
 begin
   case ID of
     ceUnknown:
@@ -846,7 +851,22 @@ begin
       end;
     ceNotification:
       begin
-        TfrmMsgDlg.ShowMsg(Self, Format(_('A notification from the server was received:'#13#10'%s'), [Msg]), btOK);
+        TfrmMsgDlg.ShowMsg(Self, Format(_(Notification), [Msg]), btOK);
+      end;
+    ceOneTimeNotification:
+      begin
+        MsgHC := HashString(Msg);
+        if MsgHC > MaxInt then
+          MsgHash := MsgHC - MaxInt
+        else
+          MsgHash := MsgHC;
+
+        if MsgHash < 0 then
+          MsgHash := MsgHash * -1;
+        if MsgHash < 100 then
+          MsgHash := MsgHash + 100;
+
+        TfrmMsgDlg.ShowMsg(Self, Format(_(Notification), [Msg]), HashString(Msg), btOK);
       end;
   end;
 end;

@@ -712,7 +712,7 @@ object frmSettings: TfrmSettings
       EditLabel.Caption = 'milliseconds'
       Enabled = False
       LabelPosition = lpRight
-      MaxLength = 4
+      MaxLength = 5
       NumbersOnly = True
       TabOrder = 8
       OnChange = txtAdjustTrackOffsetChange
@@ -1380,7 +1380,7 @@ object frmSettings: TfrmSettings
       129)
     object btnResetRemoveChars: TPngSpeedButton
       Left = 264
-      Top = 68
+      Top = 64
       Width = 25
       Height = 21
       Hint = 'Reset pattern to default'
@@ -1417,7 +1417,7 @@ object frmSettings: TfrmSettings
     end
     object txtRemoveChars: TLabeledEdit
       Left = 4
-      Top = 68
+      Top = 64
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1442,7 +1442,7 @@ object frmSettings: TfrmSettings
     end
     object chkNormalizeVariables: TCheckBox
       Left = 4
-      Top = 100
+      Top = 96
       Width = 284
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1460,7 +1460,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800940210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C0101020008009C0210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

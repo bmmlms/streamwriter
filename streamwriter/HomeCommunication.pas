@@ -44,7 +44,7 @@ type
   end;
   TStreamInfoArray = array of TStreamInfo;
 
-  TCommErrors = (ceUnknown, ceAuthRequired, ceNotification);
+  TCommErrors = (ceUnknown, ceAuthRequired, ceNotification, ceOneTimeNotification);
 
   THomeThread = class(TInt32SocketThread)
   private
@@ -755,8 +755,8 @@ end;
 constructor THomeThread.Create(DataLists: TDataLists);
 begin
   {$IFDEF DEBUG}
-  //inherited Create('gaia', 8007);
-  inherited Create('streamwriter.org', 8007);
+  inherited Create('gaia', 8007);
+  //inherited Create('streamwriter.org', 8007);
   {$ELSE}
   inherited Create('streamwriter.org', 8007);
   {$ENDIF}

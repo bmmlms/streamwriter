@@ -25,7 +25,7 @@ uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
   DataManager, VirtualTrees, LanguageObjects, GUIFunctions,
   Generics.Collections, Graphics, Forms, ICEClient, Clipbrd, AppData,
-  Logging;
+  Logging, Math;
 
 type
   TDebugView = class(TVirtualStringTree)
@@ -233,7 +233,7 @@ procedure TDebugView.DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
   var NodeHeight: Integer);
 begin
   inherited;
-  NodeHeight := ComputeNodeHeight(Canvas, Node, 0);
+  NodeHeight := Max(ComputeNodeHeight(Canvas, Node, 0), 18);
 end;
 
 procedure TDebugView.FSetClient(Value: TICEClient);
@@ -264,6 +264,8 @@ begin
         Index := 0;
       dtError:
         Index := 1;
+      dtSaved:
+        Index := 2;
     end;
 end;
 

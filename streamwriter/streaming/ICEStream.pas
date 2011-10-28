@@ -708,13 +708,13 @@ begin
           FOnSongSaved(Self);
 
         if FullTitle then
-          WriteDebug(Format(_('Saved song "%s"'), [ExtractFilename(Filename)]), '', 1, 0)
+          WriteDebug(Format(_('Saved song "%s"'), [ExtractFilename(Filename)]), '', 4, 0)
         else
-          WriteDebug(Format(_('Saved incomplete song "%s"'), [ExtractFilename(Filename)]), '', 1, 0);
+          WriteDebug(Format(_('Saved incomplete song "%s"'), [ExtractFilename(Filename)]), '', 4, 0);
       except
         on E: Exception do
         begin
-          WriteDebug(Format('Error after successful save: %s', [E.Message]), 1, 0);
+          WriteDebug(Format('Error after successful save: %s', [E.Message]), 3, 0);
           raise;
         end;
       end;
