@@ -49,9 +49,11 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
     4FF7C78B4FF7C5894BD4C4763B91B3683C06FFFFFF00FFFFFF00FFFFFF00C003
     0000800100008001000080010000800100008001000080010000800100008001
     0000800100008001000080000000800000008001000080070000C00F0000}
+  KeyPreview = True
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
   OnShow = FormShow
   DesignSize = (
     297
@@ -70,8 +72,6 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitTop = 78
-    ExplicitWidth = 253
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -95,7 +95,6 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 152
     end
   end
   object txtTitle: TLabeledEdit
@@ -108,6 +107,5 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
     EditLabel.Height = 13
     EditLabel.Caption = 'Please enter the name of the title to add:'
     TabOrder = 1
-    ExplicitWidth = 237
   end
 end

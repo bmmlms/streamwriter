@@ -38,6 +38,8 @@ type
     btnOK: TBitBtn;
     procedure FormCreate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
   private
   public
     SilenceLevel: Integer;
@@ -83,6 +85,16 @@ begin
 
   txtSilenceLevel.Text := IntToStr(AppGlobals.StreamSettings.SilenceLevel);
   txtSilenceLength.Text := IntToStr(AppGlobals.StreamSettings.SilenceLength);
+end;
+
+procedure TfrmCutTabSearchSilence.FormKeyDown(Sender: TObject;
+  var Key: Word; Shift: TShiftState);
+begin
+  if Key = 27 then
+  begin
+    Key := 0;
+    Close;
+  end;
 end;
 
 end.

@@ -49,9 +49,11 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
     FF0031C5F5092FC5F566FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF009FFF
     00000FFF000007FF000083FF0000C1FF0000E0DF0000F0170000F8070000F803
     0000FC030000FE030000F8010000FF070000FE170000FFDF0000FFFF0000}
+  KeyPreview = True
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
   PixelsPerInch = 96
   TextHeight = 13
   object Label14: TLabel
@@ -112,7 +114,6 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 2
-    ExplicitTop = 112
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -136,9 +137,6 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 104
-      ExplicitTop = 24
-      ExplicitHeight = 21
     end
   end
 end

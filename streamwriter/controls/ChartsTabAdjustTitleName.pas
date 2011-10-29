@@ -35,6 +35,8 @@ type
     procedure FormCreate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
   private
   public
     TitleName: string;
@@ -79,6 +81,16 @@ begin
   Language.Translate(Self);
 
   Okay := False;
+end;
+
+procedure TfrmChartsTabAdjustTitleName.FormKeyDown(Sender: TObject;
+  var Key: Word; Shift: TShiftState);
+begin
+  if Key = 27 then
+  begin
+    Key := 0;
+    Close;
+  end;
 end;
 
 procedure TfrmChartsTabAdjustTitleName.FormShow(Sender: TObject);
