@@ -2,7 +2,7 @@
 		<PropertyGroup>
 			<ProjectGuid>{A7EA0E64-51B5-4E52-9036-F60A7276864D}</ProjectGuid>
 			<MainSource>streamwriter.dpr</MainSource>
-			<Config Condition="'$(Config)'==''">Debug</Config>
+			<Config Condition="'$(Config)'==''">Release</Config>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
 			<ProjectVersion>12.2</ProjectVersion>
 			<Basis>True</Basis>
@@ -202,9 +202,9 @@
 						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
 						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
 						<VersionInfo Name="MajorVer">3</VersionInfo>
-						<VersionInfo Name="MinorVer">0</VersionInfo>
+						<VersionInfo Name="MinorVer">5</VersionInfo>
 						<VersionInfo Name="Release">0</VersionInfo>
-						<VersionInfo Name="Build">1</VersionInfo>
+						<VersionInfo Name="Build">0</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
@@ -216,13 +216,13 @@
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName">streamwriter.org</VersionInfoKeys>
 						<VersionInfoKeys Name="FileDescription">streamWriter</VersionInfoKeys>
-						<VersionInfoKeys Name="FileVersion">3.0.0.1</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">3.5.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName">streamwriter</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalCopyright">streamwriter.org</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
 						<VersionInfoKeys Name="OriginalFilename">streamwriter.exe</VersionInfoKeys>
 						<VersionInfoKeys Name="ProductName">streamWriter</VersionInfoKeys>
-						<VersionInfoKeys Name="ProductVersion">3.0.0.1</VersionInfoKeys>
+						<VersionInfoKeys Name="ProductVersion">3.5.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
 					<Excluded_Packages/>

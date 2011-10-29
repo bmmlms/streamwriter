@@ -270,7 +270,7 @@ begin
 
   FRecoveryFile := FStorage.DataDir + 'streamwriter_data_recovery.dat';
 
-  FBuildNumber := 279;
+  FBuildNumber := 302;
 
   BuildThanksText;
 

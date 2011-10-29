@@ -6,7 +6,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   ClientWidth = 689
   Color = clBtnFace
   Constraints.MinHeight = 350
-  Constraints.MinWidth = 615
+  Constraints.MinWidth = 630
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
