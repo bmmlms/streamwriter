@@ -255,8 +255,10 @@ function TDebugView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
   var Index: Integer): TCustomImageList;
 begin
   Result := inherited;
-  Index := 4;
+  Index := -1;
   if Column = 1 then
+  begin
+    Index := 4;
     case FClient.DebugLog[Node.Index].T of
       dtSocket:;
       dtMessage:;
@@ -269,6 +271,7 @@ begin
       dtPlugin:
         Index := 3;
     end;
+  end;
 end;
 
 procedure TDebugView.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
