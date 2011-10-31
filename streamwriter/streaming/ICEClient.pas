@@ -33,7 +33,7 @@ type
 
   TMayConnectResults = (crOk, crNoFreeSpace, crNoBandwidth);
 
-  TDebugTypes = (dtSocket, dtMessage, dtSong, dtError, dtSaved);
+  TDebugTypes = (dtSocket, dtMessage, dtSong, dtError, dtSaved, dtPlugin);
   TDebugLevels = (dlNormal, dlDebug);
 
   TICEClient = class;
@@ -676,7 +676,7 @@ begin
 
       case Entry.ActiveThread.Result of
         arWin:
-          WriteDebug(Format(_('Plugin "%s" successfully finished.'), [Entry.ActiveThread.Plugin.Name]), dtMessage, dlNormal);
+          WriteDebug(Format(_('Plugin "%s" successfully finished.'), [Entry.ActiveThread.Plugin.Name]), dtPlugin, dlNormal);
           {
           if Entry.ActiveThread.Output <> '' then
             WriteDebug(Format(_('Plugin "%s" successfully finished.'), [Entry.ActiveThread.Plugin.Name]), Entry.ActiveThread.Output, dlNormal)
