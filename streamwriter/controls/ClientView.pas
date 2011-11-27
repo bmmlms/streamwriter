@@ -997,8 +997,12 @@ begin
       begin
         // Das hier ist das selbe wie hier drunter, nur mit anderer URL/RegEx...
         if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere) then
-          OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
-            FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].RegEx, FBrowser.DraggedStreams[i].IgnoreTitles, HI.HitNode, amAddChildLast)
+          if (HitNodeData <> nil) and (HitNodeData.Client <> nil) then
+            OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
+              FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].RegEx, FBrowser.DraggedStreams[i].IgnoreTitles, HI.HitNode, amInsertAfter)
+          else
+            OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
+              FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].RegEx, FBrowser.DraggedStreams[i].IgnoreTitles, HI.HitNode, amAddChildLast)
         else
         begin
           if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then

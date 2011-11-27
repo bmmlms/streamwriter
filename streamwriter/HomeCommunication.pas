@@ -64,6 +64,8 @@ type
     FChangedFormat: string;
     FChangedTitlePattern: string;
 
+    FLastPing: Extended;
+
     FServerInfoClientCount: Cardinal;
     FServerInfoRecordingCount: Cardinal;
 
@@ -83,6 +85,7 @@ type
     function XMLGet(T: string): TXMLLib;
     function ZDecompressStr(const s: AnsiString): AnsiString;
   protected
+    procedure DoStuff; override;
     procedure DoConnected; override;
     procedure DoReceivedString(D: AnsiString); override;
     procedure DoLoggedOn(Version: Integer; Header, Data: TXMLNode);
@@ -798,13 +801,6 @@ begin
   for Node in Data.Nodes.GetNode('categories').Nodes do
     FChartCategories.Add(TChartCategory.Create(Node.Attributes.AttributeByName['id'].Value.AsLongWord, Node.Value.AsString));
 
-  {
-  FChartGenres.Clear;
-  for Node in Data.Nodes.GetNode('chartgenres').Nodes do
-    FChartGenres.Add(TGenre.Create(Node.Value.AsString, Node.Attributes.AttributeByName['id'].Value.AsLongWord,
-      Node.Attributes.AttributeByName['chartcount'].Value.AsLongWord));
-  }
-
   FCharts.Clear;
   for Node in Data.Nodes.GetNode('charts').Nodes do
   begin
@@ -887,13 +883,6 @@ begin
       begin
         DoChartsReceived(Version, Header, Data);
       end;
-
-      {
-      if Header.Attributes.AttributeByName['type'].Value.AsString = 'getchartgenres' then
-      begin
-        DoChartGenresReceived(Version, Header, Data);
-      end;
-      }
 
       if Header.Attributes.AttributeByName['type'].Value.AsString = 'fulltitlechange' then
       begin
@@ -1010,6 +999,14 @@ begin
 
   if Assigned(FOnStreamsReceived) then
     Sync(FOnStreamsReceived);
+end;
+
+procedure THomeThread.DoStuff;
+begin
+  inherited;
+
+  if (FLastTimeReceived > 0) and (FLastTimeReceived < GetTickCount - 40000) then
+    raise Exception.Create('No data/ping received');
 end;
 
 procedure THomeThread.DoTitleChanged(Version: Integer; Header, Data: TXMLNode);
