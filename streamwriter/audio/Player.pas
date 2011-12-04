@@ -63,7 +63,7 @@ type
 
     procedure Play;
     procedure Pause;
-    procedure Stop(Free: Boolean);
+    procedure Stop(Free: Boolean; NoFadeOut: Boolean = False);
 
     property Paused: Boolean read FGetPaused;
     property Stopped: Boolean read FGetStopped;
@@ -305,7 +305,7 @@ begin
     FOnPlay(Self);
 end;
 
-procedure TPlayer.Stop(Free: Boolean);
+procedure TPlayer.Stop(Free: Boolean; NoFadeOut: Boolean = False);
 var
   Pos, Len: Double;
 begin
@@ -319,7 +319,7 @@ begin
       Pos := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetPosition(FPlayer, BASS_FILEPOS_CURRENT));
       Len := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetLength(FPlayer, BASS_POS_BYTE));
 
-      if Len - Pos < 0.300 then
+      if (Len - Pos < 0.300) or NoFadeOut then
       begin
         BASSChannelStop(FPlayer);
         if Free then

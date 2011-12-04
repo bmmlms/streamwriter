@@ -26,7 +26,7 @@ uses
   Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, DataManager,
   ImgList, Functions, DragDropFile, GUIFunctions, StreamInfoView, DynBASS,
   Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
-  PlayerManager, Logging, FileWatcher;
+  PlayerManager, Logging, FileWatcher, MessageBus, AppMessages;
 
 type
   TSavedTree = class;
@@ -194,6 +194,8 @@ type
 
     procedure FileWatcherEvent(Sender: TObject; Action: DWORD; OldName, NewName: string);
     procedure FileWatcherTerminate(Sender: TObject);
+
+    procedure MessageReceived(Msg: TMessageBase);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -553,6 +555,8 @@ begin
       begin
         for i := 0 to Length(Tracks) - 1 do
         begin
+          MsgBus.SendMessage(TFileModifyMsg.Create(Tracks[i].Filename));
+
           if Recycle(Handle, Tracks[i].Filename) then
           begin
             LowerDir := LowerCase(IncludeTrailingBackslash(ExtractFilePath(Tracks[i].Filename)));
@@ -574,6 +578,8 @@ begin
         try
           for i := 0 to Length(Tracks) - 1 do
           begin
+            MsgBus.SendMessage(TFileModifyMsg.Create(Tracks[i].Filename));
+
             if Windows.DeleteFile(PChar(Tracks[i].Filename)) or (GetLastError = ERROR_FILE_NOT_FOUND) then
             begin
               LowerDir := LowerCase(IncludeTrailingBackslash(ExtractFilePath(Tracks[i].Filename)));
@@ -590,7 +596,7 @@ begin
           FSavedTree.EndUpdate;
         end;
         if Error then
-          MsgBox(GetParentForm(Self).Handle, _('Some files could not be deleted.'#13#10'Please make sure they are not in use by another application.'), _('Info'), MB_ICONINFORMATION);
+          MsgBox(GetParentForm(Self).Handle, _('Some files could not be deleted.'#13#10'Please make sure they are not opened in a cut-tab or in use by another application.'), _('Info'), MB_ICONINFORMATION);
       end;
     taShowFile:
       RunProcess('explorer.exe /select,"' + Tracks[0].Filename + '"');
@@ -840,6 +846,8 @@ begin
   FStreamNode := AddChild(nil);
 
   SetFileWatcher;
+
+  MsgBus.AddSubscriber(MessageReceived);
 end;
 
 destructor TSavedTree.Destroy;
@@ -1684,6 +1692,17 @@ begin
     begin
       FPopupMenu.FItemPlay.Click;
     end;
+  end;
+end;
+
+procedure TSavedTree.MessageReceived(Msg: TMessageBase);
+var
+  M: TFileModifyMsg;
+begin
+  if Msg is TFileModifyMsg then
+  begin
+    if LowerCase(FPlayer.Filename) = LowerCase(TFileModifyMsg(Msg).Filename) then
+      FPlayer.Stop(True, True);
   end;
 end;
 

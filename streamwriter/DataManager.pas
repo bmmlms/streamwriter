@@ -254,6 +254,7 @@ type
 
     FID: Cardinal;
     FName: string;
+    FCustomName: string;
     FStreamURL: string;
     FStartURL: string;
     FURLs: TStringList;
@@ -290,6 +291,7 @@ type
     property Parent: TStreamList read FParent write FParent;
     property ID: Cardinal read FID write FID;
     property Name: string read FName write FSetName;
+    property CustomName: string read FCustomName write FCustomName;
     property StreamURL: string read FStreamURL write FStreamURL;
     property StartURL: string read FStartURL write FStartURL;
     property URLs: TStringList read FURLs;
@@ -429,7 +431,7 @@ type
   end;
 
 const
-  DATAVERSION = 37;
+  DATAVERSION = 38;
 
 implementation
 
@@ -541,6 +543,7 @@ var
 begin
   FID := From.FID;
   FName := From.FName;
+  FCustomName := From.FCustomName;
   FStreamURL := From.FStreamURL;
   FStartURL := From.FStartURL;
   FSongsSaved := From.FSongsSaved;
@@ -656,6 +659,12 @@ begin
     Stream.Read(Result.FID);
 
   Stream.Read(Result.FName);
+
+  if Version >= 38 then
+    Stream.Read(Result.FCustomName)
+  else
+    Result.FCustomName := Result.FName;
+
   if Version >= 8 then
     Stream.Read(Result.FStreamURL);
   Stream.Read(Result.FStartURL);
@@ -720,6 +729,7 @@ begin
 
   Stream.Write(FID);
   Stream.Write(FName);
+  Stream.Write(FCustomName);
   Stream.Write(FStreamURL);
   Stream.Write(FStartURL);
   Stream.Write(FURLs.Count);

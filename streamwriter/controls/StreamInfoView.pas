@@ -114,7 +114,7 @@ var
   i: Integer;
   SongsSaved: Cardinal;
   Received: UInt64;
-  Title, Info, Genres, BitRates: string;
+  Title, Info, Genres, BitRates, NextTitle: string;
   Entry: TStreamEntry;
   EntriesNew: TStreamList;
 begin
@@ -125,6 +125,7 @@ begin
   begin
     EntriesNew := TStreamList.Create;
 
+    Title := '';
     Genres := '';
     BitRates := '';
     SongsSaved := 0;
@@ -133,10 +134,13 @@ begin
     begin
       EntriesNew.Add(Entry);
 
-      if Entry.Name <> '' then
-        Title := Title + Entry.Name
+      if Entry.CustomName <> '' then
+        NextTitle := Entry.CustomName
       else
-        Title := Title + Entry.StartURL;
+        NextTitle := Entry.StartURL;
+      if Title <> '' then
+        Title := Title + ' / ';
+      Title := Title + NextTitle;
 
       if Entry.Genre <> '' then
       begin
@@ -161,10 +165,11 @@ begin
 
     Info := '';
     if Entries.Count = 1 then
+    begin
+      if Entries[0].Name <> Entries[0].CustomName then
+        Info := Info + Entries[0].Name + #13#10;
       if Entries[0].StreamURL <> '' then
         Info := Info + Entries[0].StreamURL + #13#10;
-    if Entries.Count = 1 then
-    begin
       if Genres <> '' then
         Info := Info + Genres + #13#10;
       if Entries[0].AudioType <> '' then

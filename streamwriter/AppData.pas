@@ -122,6 +122,7 @@ type
     FStreamSettings: TStreamSettings;
     FUserLoggedIn: Boolean;
 
+    FID: Integer;
     FDir: string;
     FDirAuto: string;
     FTray: Boolean;
@@ -173,7 +174,7 @@ type
   protected
     procedure DoSave; override;
   public
-    constructor Create(AppName: String);
+    constructor Create(AppName: string);
     destructor Destroy; override;
 
     procedure Load; override;
@@ -182,6 +183,7 @@ type
     property StreamSettings: TStreamSettings read FStreamSettings;
     property UserLoggedIn: Boolean read FUserLoggedIn write FUserLoggedIn;
 
+    property ID: Integer read FID;
     property Dir: string read FDir write FDir;
     property DirAuto: string read FDirAuto write FDirAuto;
     property Tray: Boolean read FTray write FTray;
@@ -497,10 +499,37 @@ begin
 end;
 
 procedure TAppData.Load;
+  function GetID: Integer;
+  var
+    Len: Cardinal;
+    i: Integer;
+    Name: string;
+  begin
+    Result := Random(9999) + 1;
+
+    SetLength(Name, 255);
+    Len := 255;
+    if GetComputerName(@Name[1], Len) then
+    begin
+      SetLength(Name, Len);
+      Result := Result + HashString(Name);
+    end;
+    Result := Result + GetTickCount;
+    if Result < 1 then
+      Result := Result * -1;
+    if Result = 0 then
+      Result := GetID;
+  end;
 var
   i, DefaultActionTmp, DefaultActionBrowser, DefaultFilterTmp, SilenceBuffer: Integer;
 begin
   inherited;
+
+  FStorage.Read('ID', FID, 0);
+  if FID < 1 then
+  begin
+    FID := GetID;
+  end;
 
   FStorage.Read('LastUsedDataVersion', FLastUsedDataVersion, 0);
 
@@ -694,6 +723,8 @@ var
   i, n: Integer;
 begin
   inherited;
+
+  FStorage.Write('ID', FID);
 
   FStorage.Write('LastUsedDataVersion', FLastUsedDataVersion);
 

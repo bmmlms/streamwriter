@@ -169,6 +169,7 @@ type
     procedure SetDataIgnoreTracks(ID: Integer; Lst: TStringList); overload;
     procedure SetTitleNotifications(Enable: Boolean);
     procedure RebuildIndex;
+    procedure SendClientStats(Auto: Boolean);
 
     procedure Terminate;
 
@@ -365,6 +366,10 @@ begin
     Data := XMLDocument.Root.GetNode('data');
 
     Node := TXMLNode.Create(Data);
+    Node.Name := 'id';
+    Node.Value.AsInteger := AppGlobals.ID;
+
+    Node := TXMLNode.Create(Data);
     Node.Name := 'version';
     Node.Value.AsString := AppGlobals.AppVersion.AsString;
 
@@ -386,6 +391,33 @@ begin
 
     XMLDocument.SaveToString(XML);
     FClient.Write(XML);
+  finally
+    XMLDocument.Free;
+  end;
+end;
+
+procedure THomeCommunication.SendClientStats(Auto: Boolean);
+var
+  XMLDocument: TXMLLib;
+  Data, Node: TXMLNode;
+  XML: AnsiString;
+begin
+  if not Connected then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('clientstats');
+  try
+    Data := XMLDocument.Root.GetNode('data');
+
+    Node := TXMLNode.Create(Data);
+    if Auto then
+      Node.Name := 'autosaved'
+    else
+      Node.Name := 'saved';
+    Node.Value.AsInteger := 1;
+
+    XMLDocument.SaveToString(XML);
+    FClient.Write(ZCompressStr(XML));
   finally
     XMLDocument.Free;
   end;

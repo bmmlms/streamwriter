@@ -209,6 +209,7 @@ begin
   FEntry.Bitrate := Bitrate;
   FEntry.StartURL := Trim(StartURL);
   FEntry.Name := Trim(Name);
+  FEntry.CustomName := Trim(Name);
 end;
 
 constructor TICEClient.Create(Manager: TObject; Entry: TStreamEntry);
@@ -562,10 +563,22 @@ begin
 end;
 
 procedure TICEClient.ThreadRefreshInfo(Sender: TSocketThread);
+var
+  KeepCustom: Boolean;
 begin
+  KeepCustom := False;
+  if FEntry.Name <> FEntry.CustomName then
+    KeepCustom := True;
+
   FEntry.Name := FICEThread.RecvStream.StreamName;
+  if not KeepCustom then
+    FEntry.CustomName := FEntry.Name;
   if FEntry.Name = '' then
+  begin
     FEntry.Name := FEntry.StartURL;
+    if not KeepCustom then
+      FEntry.CustomName := FEntry.Name;
+  end;
 
   FEntry.StreamURL := FICEThread.RecvStream.StreamURL;
 
@@ -660,6 +673,9 @@ begin
       WriteDebug(Format(_('Could not postprocess song: %s'), [E.Message]), dtError, dlNormal);
     end;
   end;
+
+  if FICEThread.RecvStream.SavedFullTitle then
+    HomeComm.SendClientStats(AutoRemove);
 end;
 
 procedure TICEClient.PluginThreadTerminate(Sender: TObject);

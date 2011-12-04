@@ -107,7 +107,10 @@ uses
   MP3Gain in 'plugins\MP3Gain.pas',
   ChartsTab in 'controls\ChartsTab.pas',
   ChartsTabAdjustTitleName in 'controls\ChartsTabAdjustTitleName.pas' {frmChartsTabAdjustTitleName},
-  ConfigureSetTags in 'plugins\ConfigureSetTags.pas' {Form1};
+  ConfigureSetTags in 'plugins\ConfigureSetTags.pas' {Form1},
+  MessageBus in '..\..\common\MessageBus.pas',
+  AppMessages in 'AppMessages.pas',
+  StatusBar in 'controls\StatusBar.pas';
 
 {$SetPEOptFlags $0140}
 

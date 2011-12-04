@@ -312,13 +312,13 @@ begin
   begin
     case Column of
       0:
-        if NodeData.Client.Entry.Name = '' then
+        if NodeData.Client.Entry.CustomName = '' then
           if NodeData.Client.Entry.StartURL = '' then
             Text := _('Unknown')
           else
             Text := NodeData.Client.Entry.StartURL
         else
-          Text := NodeData.Client.Entry.Name;
+          Text := NodeData.Client.Entry.CustomName;
       1:
         if NodeData.Client.Title = '' then
           if (NodeData.Client.State = csConnected) or (NodeData.Client.State = csConnecting) then
@@ -408,7 +408,11 @@ begin
   if Trim(Text) <> '' then
   begin
     NodeData := GetNodeData(Node);
-    NodeData.Category.Name := Text;
+
+    if NodeData.Category <> nil then
+      NodeData.Category.Name := Text
+    else if NodeData.Client <> nil then
+      NodeData.Client.Entry.CustomName := Text;
   end;
 end;
 
@@ -760,7 +764,8 @@ var
 begin
   inherited;
   NodeData := GetNodeData(Node);
-  Allowed := (NodeData.Category <> nil) and (not NodeData.Category.IsAuto);
+  Allowed := ((NodeData.Client <> nil) and (not NodeData.Client.AutoRemove)) or
+             ((NodeData.Category <> nil) and (not NodeData.Category.IsAuto));
 end;
 
 function TMClientView.DoCompare(Node1, Node2: PVirtualNode;

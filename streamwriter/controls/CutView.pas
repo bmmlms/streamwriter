@@ -28,7 +28,8 @@ uses
   Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
   PlayerManager, Plugins, SoX, DownloadAddons, ConfigureSoX, Logging,
-  MsgDlg, DragDrop, DropTarget, DropComboTarget, Mp3FileUtils;
+  MsgDlg, DragDrop, DropTarget, DropComboTarget, Mp3FileUtils,
+  MessageBus, AppMessages;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -212,6 +213,8 @@ type
 
     procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
       APoint: TPoint; var Effect: Integer);
+
+    procedure MessageReceived(Msg: TMessageBase);
   protected
     procedure Resize; override;
   public
@@ -347,12 +350,16 @@ begin
   FDropTarget.OnDrop := DropTargetDrop;
 
   FUndoList := TUndoList.Create;
+
+  MsgBus.AddSubscriber(MessageReceived);
 end;
 
 destructor TCutView.Destroy;
 var
   i: Integer;
 begin
+  MsgBus.RemoveSubscriber(MessageReceived);
+
   if FScanThread <> nil then
   begin
     FScanThread.OnTerminate := nil;
@@ -468,6 +475,19 @@ begin
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
+end;
+
+procedure TCutView.MessageReceived(Msg: TMessageBase);
+var
+  M: TFileModifyMsg;
+begin
+  {
+  if Msg is TFileModifyMsg then
+  begin
+    if LowerCase(FPlayer.Filename) = LowerCase(TFileModifyMsg(Msg).Filename) then
+      FPlayer.Stop(False);
+  end;
+  }
 end;
 
 procedure TCutView.MsgRefresh(var Msg: TMessage);
@@ -600,6 +620,8 @@ begin
   end;
 
   try
+    MsgBus.SendMessage(TFileModifyMsg.Create(FFilename));
+
     if FWaveData.Save(FFilename, StartPos, EndPos) then
     begin
       FreeAndNil(FWaveData);
@@ -609,7 +631,7 @@ begin
       Result := True;
     end else
     begin
-      MsgBox(GetParentForm(Self).Handle, _('The file could not be saved.'#13#10'Please make sure the file is not played back in the "Saved songs"-tab or in use by another application.'), _('Info'), MB_ICONINFORMATION);
+      MsgBox(GetParentForm(Self).Handle, _('The file could not be saved.'#13#10'Please make sure the file is not in use by another application.'), _('Info'), MB_ICONINFORMATION);
     end;
   finally
     // Wenn Result = True wird FPlayer in LoadFile() neu erstellt
