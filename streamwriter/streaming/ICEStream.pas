@@ -68,12 +68,12 @@ type
     function GetValidFilename(Name: string): string;
     function GetAppendNumber(Dir, Filename, Extension: string): Integer;
     function StreamInfoToFilename(Name: string): string;
-    function TitleInfoToFilename(Artist, Title: string; TitleState: TTitleStates): string;
+    function TitleInfoToFilename(Artist, Title, Album: string; TitleState: TTitleStates): string;
   public
     constructor Create(Streamname, Dir: string; SongsSaved: Cardinal; Settings: TStreamSettings);
 
     procedure GetStreamFilename(Name: string; AudioType: TAudioTypes);
-    procedure GetFilename(Filesize: UInt64; Artist, Title: string; AudioType: TAudioTypes; TitleState: TTitleStates);
+    procedure GetFilename(Filesize: UInt64; Artist, Title, Album: string; AudioType: TAudioTypes; TitleState: TTitleStates);
 
     property Result: TCheckResults read FResult;
     property SaveDir: string read FSaveDir;
@@ -104,6 +104,7 @@ type
     FSavedFilename: string;
     FSavedArtist: string;
     FSavedTitle: string;
+    FSavedAlbum: string;
     FSavedSize: UInt64;
     FSavedLength: UInt64;
     FSavedStreamTitle: string;
@@ -152,7 +153,7 @@ type
     procedure StopRecordingInternal;
 
     function CleanTitle(Title: string): string;
-    procedure ParseTitle(S, Pattern: string; var Artist: string; var Title: string);
+    procedure ParseTitle(S, Pattern: string; var Artist: string; var Title: string; var Album: string);
 
     procedure FSetRecordTitle(Value: string);
   protected
@@ -180,6 +181,7 @@ type
     property SavedFilename: string read FSavedFilename;
     property SavedArtist: string read FSavedArtist;
     property SavedTitle: string read FSavedTitle;
+    property SavedAlbum: string read FSavedAlbum;
     property SavedSize: UInt64 read FSavedSize;
     property SavedLength: UInt64 read FSavedLength;
     property SavedStreamTitle: string read FSavedStreamTitle;
@@ -300,6 +302,7 @@ begin
   FSavedFilename := '';
   FSavedArtist := '';
   FSavedTitle := '';
+  FSavedAlbum := '';
   FRecording := False;
   FRecordingStarted := False;
   FAudioType := atNone;
@@ -593,7 +596,7 @@ begin
       FSaveAllowedTitle := Title;
       FSaveAllowed := True;
 
-      ParseTitle(Title, FSettings.TitlePattern, FSavedArtist, FSavedTitle);
+      ParseTitle(Title, FSettings.TitlePattern, FSavedArtist, FSavedTitle, FSavedAlbum);
 
       if (FSavedArtist <> '') and (FSavedTitle <> '') then
         FSaveAllowedTitle := FSavedArtist + ' - ' + FSavedTitle;
@@ -621,7 +624,9 @@ begin
             TitleState := tsIncomplete;
         end;
 
-        FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FAudioType, TitleState);
+        // TODO: Album muss bei filename pattern nutzbar sein, quasi in settings drauf hinweisen! und TESTEN!!!
+
+        FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FSavedAlbum, FAudioType, TitleState);
         if (FileCheck.Result in [crSave, crOverwrite]) and (FileCheck.FFilename <> '') then
         begin
           Dir := FileCheck.SaveDir;
@@ -860,12 +865,12 @@ procedure TICEStream.StreamTracksDebug(Text, Data: string);
 begin
   WriteDebug(Text, Data, 1, 1);
 end;
-
+             // TODO: Nen Knopf um stille auto suchen in cutting zu machen!
 procedure TICEStream.TrySave;
 var
   R: TPosRect;
   i: Integer;
-  TrackStart, TrackEnd: Int64;
+  TrackStart, TrackEnd, MaxPeaks: Int64;
   Track: TStreamTrack;
 begin
   FSavedWasCut := False;
@@ -886,12 +891,17 @@ begin
           WriteDebug(Format('Searching for silence using search range of %d/%d bytes...', [FBytesPerSec * FSettings.SilenceBufferSecondsStart,
             FBytesPerSec * FSettings.SilenceBufferSecondsEnd]), 1, 1);
 
+          if FSettings.AutoDetectSilenceLevel then
+            MaxPeaks := -1
+          else
+            MaxPeaks := FSettings.SilenceLevel;
+
           if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
             R := TAudioStreamFile(FAudioStream).SearchSilence(TrackStart, TrackEnd, FBytesPerSec * FSettings.SilenceBufferSecondsStart,
-              FBytesPerSec * FSettings.SilenceBufferSecondsEnd, FSettings.SilenceLevel, FSettings.SilenceLength)
+              FBytesPerSec * FSettings.SilenceBufferSecondsEnd, MaxPeaks, FSettings.SilenceLength)
           else
             R := TAudioStreamMemory(FAudioStream).SearchSilence(TrackStart, TrackEnd, FBytesPerSec * FSettings.SilenceBufferSecondsStart,
-              FBytesPerSec * FSettings.SilenceBufferSecondsEnd, FSettings.SilenceLevel, FSettings.SilenceLength);
+              FBytesPerSec * FSettings.SilenceBufferSecondsEnd, MaxPeaks, FSettings.SilenceLength);
 
           if (R.A > -1) or (R.B > -1) then
           begin
@@ -1227,7 +1237,7 @@ begin
     Result := 384;
 end;
 
-procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Title: string);
+procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Title: string; var Album: string);
   function NormalizeText(Text: string): string;
   var
     i: Integer;
@@ -1251,6 +1261,7 @@ var
 begin
   Artist := '';
   Title := '';
+  Album := '';
 
   if (S <> '') and (Pattern <> '') then
   begin
@@ -1267,6 +1278,9 @@ begin
           try
             Title := Trim(R.Groups[R.NamedGroup('t')]);
           except end;
+          try
+            Album := Trim(R.Groups[R.NamedGroup('l')]);
+          except end;
         end;
       except end;
     finally
@@ -1277,13 +1291,14 @@ begin
   if (Artist = '') and (Title = '') and (Pattern <> '(?P<a>.*) - (?P<t>.*)') then
   begin
     // Wenn nichts gefunden wurde, Fallback mit normalem Muster..
-    ParseTitle(S, '(?P<a>.*) - (?P<t>.*)', Artist, Title);
+    ParseTitle(S, '(?P<a>.*) - (?P<t>.*)', Artist, Title, Album);
   end;
 
   if FSettings.NormalizeVariables then
   begin
     Artist := NormalizeText(Artist);
     Title := NormalizeText(Title);
+    Album := NormalizeText(Album);
   end;
 end;
 
@@ -1413,7 +1428,7 @@ begin
     Result := Append;
 end;
 
-procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title: string; AudioType: TAudioTypes; TitleState: TTitleStates);
+procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title, Album: string; AudioType: TAudioTypes; TitleState: TTitleStates);
 var
   Filename, Ext: string;
 begin
@@ -1430,7 +1445,7 @@ begin
       Ext := '.ogg';
   end;
 
-  Filename := TitleInfoToFilename(Artist, Title, TitleState);
+  Filename := TitleInfoToFilename(Artist, Title, Album, TitleState);
   Filename := GetValidFilename(Filename);
 
   if FileExists(FSaveDir + Filename + Ext) then
@@ -1580,7 +1595,7 @@ begin
   Result := ExtractFileName(Replaced);
 end;
 
-function TFileChecker.TitleInfoToFilename(Artist, Title: string; TitleState: TTitleStates): string;
+function TFileChecker.TitleInfoToFilename(Artist, Title, Album: string; TitleState: TTitleStates): string;
 var
   i: Integer;
   Dir, StreamName: string;
@@ -1606,19 +1621,21 @@ begin
   if StreamName = '' then
     StreamName := _('Unknown stream');
 
-  SetLength(Arr, 6);
+  SetLength(Arr, 7);
   Arr[0].C := 'a';
   Arr[0].Replace := Artist;
   Arr[1].C := 't';
   Arr[1].Replace := Title;
-  Arr[2].C := 's';
-  Arr[2].Replace := Trim(StreamName);
-  Arr[3].C := 'n';
-  Arr[3].Replace := Format('%.*d', [FSettings.FilePatternDecimals, FSongsSaved]);
-  Arr[4].C := 'd';
-  Arr[4].Replace := FormatDateTime('dd.mm.yy', Now);
-  Arr[5].C := 'i';
-  Arr[5].Replace := FormatDateTime('hh.nn.ss', Now);
+  Arr[2].C := 'l';
+  Arr[2].Replace := Album;
+  Arr[3].C := 's';
+  Arr[3].Replace := Trim(StreamName);
+  Arr[4].C := 'n';
+  Arr[4].Replace := Format('%.*d', [FSettings.FilePatternDecimals, FSongsSaved]);
+  Arr[5].C := 'd';
+  Arr[5].Replace := FormatDateTime('dd.mm.yy', Now);
+  Arr[6].C := 'i';
+  Arr[6].Replace := FormatDateTime('hh.nn.ss', Now);
 
   case TitleState of
     tsFull:

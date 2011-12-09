@@ -231,7 +231,7 @@ type
     procedure SaveAs;
     procedure Play;
     procedure Stop;
-    procedure AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
+    procedure AutoCut(MaxPeaks: Integer; MinDuration: Cardinal);
     function ApplyFade(Fadein: Boolean): Boolean;
     procedure ApplyFadein;
     procedure ApplyFadeout;
@@ -922,12 +922,21 @@ begin
   end;
 end;
 
-procedure TCutView.AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
+procedure TCutView.AutoCut(MaxPeaks: Integer; MinDuration: Cardinal);
+var
+  i, n, MaxLenIdx, ArrIdx: Integer;
+  WD, WD2: TWaveData;
+  OldPos: Int64;
+  Avg, Avg2: Cardinal;
+  MinSilence: TMinSilenceArray;
+  MS: TMinSilence;
+  EntryCount: Cardinal;
+  A, B: Int64;
 begin
   if FWaveData = nil then
     Exit;
 
-  FWaveData.AutoCut(MaxPeaks, MinDuration);
+  FWaveData.AutoCut(-1, MinDuration);
 
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;

@@ -36,15 +36,18 @@ type
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;
-    procedure FormCreate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
+    procedure FormCreate(Sender: TObject);
   private
+    FAutoDetect: Boolean;
   public
     SilenceLevel: Integer;
     SilenceLength: Integer;
     Okay: Boolean;
+
+    constructor Create(AOwner: TComponent; AutoDetect: Boolean); reintroduce;
   end;
 
 implementation
@@ -53,7 +56,7 @@ implementation
 
 procedure TfrmCutTabSearchSilence.btnOKClick(Sender: TObject);
 begin
-  if (StrToIntDef(txtSilenceLevel.Text, -1) > 100) or (StrToIntDef(txtSilenceLevel.Text, -1) < 1) then
+  if (not FAutoDetect) and ((StrToIntDef(txtSilenceLevel.Text, -1) > 100) or (StrToIntDef(txtSilenceLevel.Text, -1) < 1)) then
   begin
     MsgBox(Handle, _('Please enter the maximum volume level for silence detection as a value ranging from 1 to 100.'), _('Info'), MB_ICONINFORMATION);
     txtSilenceLevel.SetFocus;
@@ -67,11 +70,21 @@ begin
     Exit;
   end;
 
-  SilenceLevel := StrToInt(txtSilenceLevel.Text);
+  if not FAutoDetect then
+    SilenceLevel := StrToInt(txtSilenceLevel.Text);
+
   SilenceLength := StrToInt(txtSilenceLength.Text);
   Okay := True;
 
   Close;
+end;
+
+constructor TfrmCutTabSearchSilence.Create(AOwner: TComponent;
+  AutoDetect: Boolean);
+begin
+  inherited Create(AOwner);
+
+  FAutoDetect := AutoDetect;
 end;
 
 procedure TfrmCutTabSearchSilence.FormCreate(Sender: TObject);
@@ -83,8 +96,19 @@ begin
   txtSilenceLength.Left := Label12.Left + Label12.Width + 4;
   Label13.Left := txtSilenceLength.Left + txtSilenceLength.Width + 4;
 
-  txtSilenceLevel.Text := IntToStr(AppGlobals.StreamSettings.SilenceLevel);
   txtSilenceLength.Text := IntToStr(AppGlobals.StreamSettings.SilenceLength);
+
+  if FAutoDetect then
+  begin
+    SilenceLevel := -1;
+    txtSilenceLevel.Enabled := False;
+    Label10.Enabled := False;
+    Label14.Enabled := False;
+    txtSilenceLevel.Text := '';
+  end else
+  begin
+    txtSilenceLevel.Text := IntToStr(AppGlobals.StreamSettings.SilenceLevel);
+  end;
 end;
 
 procedure TfrmCutTabSearchSilence.FormKeyDown(Sender: TObject;

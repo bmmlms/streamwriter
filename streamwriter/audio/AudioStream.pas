@@ -101,14 +101,19 @@ end;
 
 function TAudioStreamFile.SearchSilence(StartPos, EndPos, LenStart, LenEnd, MaxPeaks, MinDuration: Int64): TPosRect;
 var
+  i, n, MaxLenIdx, ArrIdx: Integer;
   WD, WD2: TWaveData;
   M1, M2: TExtendedStream;
   OldPos: Int64;
-  S: Int64;
+  Avg, Avg2: Cardinal;
+  MinSilence: TMinSilenceArray;
+  MS: TMinSilence;
+  EntryCount: Cardinal;
+  A, B: Int64;
 begin
   OldPos := Position;
 
-  Result.A := -1;
+  Result.A := -1;                         // TODO: Testen mit Memory und Filestream!!! und das Settings-Fenster passig machen!!!
   Result.B := -1;
 
   M1 := TExtendedStream.Create;
@@ -137,25 +142,61 @@ begin
       Seek(EndPos, soFromBeginning);
       M2.CopyFrom(Self, LenEnd);
 
-      // Okay, dann wollen wir mal suchen
       WD.Load(M1);
       WD2.Load(M2);
-      WD.AutoCut(MaxPeaks, MinDuration);
-      WD2.AutoCut(MaxPeaks, MinDuration);
 
-      if WD.Silence.Count > 0 then
+      {
+      if MaxPeaks = -1 then // TODO: Die checkbox in settings muss hier sagen, ob MaxPeaks -1 ist, oder vom user definiert ist!!!
       begin
-        S := WD.WaveArray[WD.Silence[0].CutEnd].Pos;
-        S := Round(S * (M1.Size / WD.Wavesize));
-        Result.A := S + StartPos;
-      end;
+        A := WD.FindLowestArea(MinDuration, False).B;
+        if A > -1 then
+        begin
+          Result.A := WD.WaveArray[A].Pos;
+          Result.A := Round(Result.A * M1.Size / WD.Wavesize);
+          Result.A := Result.A + StartPos;
+        end else
+          Result.A := -1;
 
-      if WD2.Silence.Count > 0 then
+        B := WD2.FindLowestArea(MinDuration, True).A;
+        if B > -1 then
+        begin
+          Result.B := WD2.WaveArray[B].Pos;
+          Result.B := Round(Result.B * M2.Size / WD2.Wavesize);
+          Result.B := Result.B + EndPos;
+        end else
+          Result.B := -1;
+      end else
       begin
-        S := WD2.WaveArray[WD2.Silence[WD2.Silence.Count - 1].CutStart].Pos;
-        S := Round(S * (M2.Size / WD2.Wavesize));
-        Result.B := S + EndPos;
-      end;
+      }
+        if MaxPeaks > -1 then
+          MaxPeaks := Trunc((MaxPeaks / 100) * 6000);
+
+        WD.AutoCut(MaxPeaks, MinDuration);
+        WD2.AutoCut(MaxPeaks, MinDuration);
+
+        if WD.Silence.Count > 0 then
+        begin
+          MaxLenIdx := 0;
+          for i := 0 to WD.Silence.Count - 1 do
+            if WD.Silence[i].CutEnd - WD.Silence[i].CutStart > WD.Silence[MaxLenIdx].CutEnd - WD.Silence[MaxLenIdx].CutStart then
+              MaxLenIdx := i;
+          Result.A := WD.WaveArray[WD.Silence[MaxLenIdx].CutEnd].Pos;
+          Result.A := Round(Result.A * M1.Size / WD.Wavesize);
+          Result.A := Result.A + StartPos;
+        end;
+
+        if WD2.Silence.Count > 0 then
+        begin
+          MaxLenIdx := 0;
+          for i := 0 to WD2.Silence.Count - 1 do
+            if WD2.Silence[i].CutEnd - WD2.Silence[i].CutStart > WD2.Silence[MaxLenIdx].CutEnd - WD2.Silence[MaxLenIdx].CutStart then
+              MaxLenIdx := i;
+          Result.B := WD2.WaveArray[WD2.Silence[MaxLenIdx].CutStart].Pos;
+          Result.B := Round(Result.B * M2.Size / WD2.Wavesize);
+          Result.B := Result.B + EndPos;
+        end;
+
+      //end;
     except
       on E: Exception do
         raise Exception.Create('Error in SearchSilence(): ' + E.Message);
@@ -348,14 +389,19 @@ end;
 function TAudioStreamMemory.SearchSilence(StartPos, EndPos, LenStart, LenEnd, MaxPeaks,
   MinDuration: Int64): TPosRect;
 var
+  i, n, MaxLenIdx, ArrIdx: Integer;
   WD, WD2: TWaveData;
   M1, M2: TExtendedStream;
   OldPos: Int64;
-  S: Int64;
+  Avg, Avg2: Cardinal;
+  MinSilence: TMinSilenceArray;
+  MS: TMinSilence;
+  EntryCount: Cardinal;
+  A, B: Int64;
 begin
   OldPos := Position;
 
-  Result.A := -1;
+  Result.A := -1;                         // TODO: Testen mit Memory und Filestream!!! und das Settings-Fenster passig machen!!!
   Result.B := -1;
 
   M1 := TExtendedStream.Create;
@@ -384,25 +430,61 @@ begin
       Seek(EndPos, soFromBeginning);
       M2.CopyFrom(Self, LenEnd);
 
-      // Okay, dann wollen wir mal suchen
       WD.Load(M1);
       WD2.Load(M2);
-      WD.AutoCut(MaxPeaks, MinDuration);
-      WD2.AutoCut(MaxPeaks, MinDuration);
 
-      if WD.Silence.Count > 0 then
+      {
+      if MaxPeaks = -1 then // TODO: Die checkbox in settings muss hier sagen, ob MaxPeaks -1 ist, oder vom user definiert ist!!!
       begin
-        S := WD.WaveArray[WD.Silence[0].CutEnd].Pos;
-        S := Round(S * (M1.Size / WD.Wavesize));
-        Result.A := S + StartPos;
-      end;
+        A := WD.FindLowestArea(MinDuration, False).B;
+        if A > -1 then
+        begin
+          Result.A := WD.WaveArray[A].Pos;
+          Result.A := Round(Result.A * M1.Size / WD.Wavesize);
+          Result.A := Result.A + StartPos;
+        end else
+          Result.A := -1;
 
-      if WD2.Silence.Count > 0 then
+        B := WD2.FindLowestArea(MinDuration, True).A;
+        if B > -1 then
+        begin
+          Result.B := WD2.WaveArray[B].Pos;
+          Result.B := Round(Result.B * M2.Size / WD2.Wavesize);
+          Result.B := Result.B + EndPos;
+        end else
+          Result.B := -1;
+      end else
       begin
-        S := WD2.WaveArray[WD2.Silence[WD2.Silence.Count - 1].CutStart].Pos;
-        S := Round(S * (M2.Size / WD2.Wavesize));
-        Result.B := S + EndPos;
-      end;
+      }
+        if MaxPeaks > -1 then
+          MaxPeaks := Trunc((MaxPeaks / 100) * 6000);
+
+        WD.AutoCut(MaxPeaks, MinDuration);
+        WD2.AutoCut(MaxPeaks, MinDuration);
+
+        if WD.Silence.Count > 0 then
+        begin
+          MaxLenIdx := 0;
+          for i := 0 to WD.Silence.Count - 1 do
+            if WD.Silence[i].CutEnd - WD.Silence[i].CutStart > WD.Silence[MaxLenIdx].CutEnd - WD.Silence[MaxLenIdx].CutStart then
+              MaxLenIdx := i;
+          Result.A := WD.WaveArray[WD.Silence[MaxLenIdx].CutEnd].Pos;
+          Result.A := Round(Result.A * M1.Size / WD.Wavesize);
+          Result.A := Result.A + StartPos;
+        end;
+
+        if WD2.Silence.Count > 0 then
+        begin
+          MaxLenIdx := 0;
+          for i := 0 to WD2.Silence.Count - 1 do
+            if WD2.Silence[i].CutEnd - WD2.Silence[i].CutStart > WD2.Silence[MaxLenIdx].CutEnd - WD2.Silence[MaxLenIdx].CutStart then
+              MaxLenIdx := i;
+          Result.B := WD2.WaveArray[WD2.Silence[MaxLenIdx].CutStart].Pos;
+          Result.B := Round(Result.B * M2.Size / WD2.Wavesize);
+          Result.B := Result.B + EndPos;
+        end;
+
+      //end;
     except
       on E: Exception do
         raise Exception.Create('Error in SearchSilence(): ' + E.Message);

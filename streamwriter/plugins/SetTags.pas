@@ -37,6 +37,7 @@ type
   private
     FArtist: string;
     FTitle: string;
+    FAlbum: string;
     FComment: string;
   protected
     function FGetReadyForUse: Boolean; override;
@@ -67,7 +68,7 @@ end;
 
 procedure TSetTagsThread.Execute;
 var
-  Artist, Title, Comment: string;
+  Artist, Title, Album, Comment: string;
   P: TSetTagsPlugin;
   ID3V1: TID3v1Tag;
   ID3V2: TID3v2Tag;
@@ -81,23 +82,26 @@ begin
 
   AppGlobals.Storage.Read('Artist_' + Plugin.ClassName, Artist, '%a', 'Plugins');
   AppGlobals.Storage.Read('Title_' + Plugin.ClassName, Title, '%t', 'Plugins');
+  AppGlobals.Storage.Read('Album_' + Plugin.ClassName, Album, '%l', 'Plugins');
   AppGlobals.Storage.Read('Comment_' + Plugin.ClassName, Comment, '%s / %u / Recorded using streamWriter', 'Plugins');
 
   FResult := arFail;
 
-  SetLength(Arr, 6);
+  SetLength(Arr, 7);
   Arr[0].C := 'a';
   Arr[0].Replace := FData.Artist;
   Arr[1].C := 't';
   Arr[1].Replace := FData.Title;
-  Arr[2].C := 's';
-  Arr[2].Replace := Trim(FData.Station);
-  Arr[3].C := 'u';
-  Arr[3].Replace := Trim(FData.StreamTitle);
-  Arr[4].C := 'd';
-  Arr[4].Replace := FormatDateTime('dd.mm.yy', Now);
-  Arr[5].C := 'i';
-  Arr[5].Replace := FormatDateTime('hh.nn.ss', Now);
+  Arr[2].C := 'l';
+  Arr[2].Replace := FData.Album;
+  Arr[3].C := 's';
+  Arr[3].Replace := Trim(FData.Station);
+  Arr[4].C := 'u';
+  Arr[4].Replace := Trim(FData.StreamTitle);
+  Arr[5].C := 'd';
+  Arr[5].Replace := FormatDateTime('dd.mm.yy', Now);
+  Arr[6].C := 'i';
+  Arr[6].Replace := FormatDateTime('hh.nn.ss', Now);
 
   P := TSetTagsPlugin(Plugin);
 
@@ -107,6 +111,7 @@ begin
     try
       Artist := PatternReplace(Artist, Arr);
       Title := PatternReplace(Title, Arr);
+      Album := PatternReplace(Album, Arr);
       Comment := PatternReplace(Comment, Arr);
 
       if (Trim(Artist) <> '') and (Trim(Title) <> '') then
@@ -120,6 +125,8 @@ begin
         ID3V1.Title := FData.Title;
         ID3V2.Title := FData.Title;
       end;
+      ID3V1.Album := Album;
+      ID3V2.Album := Album;
       ID3V1.Track := IntToStr(FData.TrackNumber);
       ID3V2.Track := IntToStr(FData.TrackNumber);
       ID3V1.Genre := ''; // Dann setzt Mp3FileUtils das auf "Undefined"
@@ -146,6 +153,7 @@ begin
 
   FArtist := TSetTagsPlugin(Source).FArtist;
   FTitle := TSetTagsPlugin(Source).FTitle;
+  FAlbum := TSetTagsPlugin(Source).FAlbum;
   FComment := TSetTagsPlugin(Source).FComment;
 end;
 
@@ -156,7 +164,7 @@ var
 begin
   Result := True;
 
-  F := TfrmConfigureSetTags.Create(AOwner, Self, FArtist, FTitle, FComment);
+  F := TfrmConfigureSetTags.Create(AOwner, Self, FArtist, FTitle, FAlbum, FComment);
   try
     F.ShowModal;
 
@@ -164,6 +172,7 @@ begin
     begin
       FArtist := F.Artist;
       FTitle := F.Title;
+      FAlbum := F.Album;
       FComment := F.Comment;
       Save;
     end;
@@ -200,6 +209,7 @@ begin
     AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
 
     AppGlobals.Storage.Read('Artist_' + ClassName, FArtist, '%a', 'Plugins');
+    AppGlobals.Storage.Read('Album_' + ClassName, FAlbum, '%l', 'Plugins');
     AppGlobals.Storage.Read('Title_' + ClassName, FTitle, '%t', 'Plugins');
     AppGlobals.Storage.Read('Comment_' + ClassName, FComment, '%s / %u / Recorded using streamWriter', 'Plugins');
 
@@ -242,6 +252,7 @@ begin
 
   AppGlobals.Storage.Write('Artist_' + ClassName, FArtist, 'Plugins');
   AppGlobals.Storage.Write('Title_' + ClassName, FTitle, 'Plugins');
+  AppGlobals.Storage.Write('Album_' + ClassName, FAlbum, 'Plugins');
   AppGlobals.Storage.Write('Comment_' + ClassName, FComment, 'Plugins');
 end;
 

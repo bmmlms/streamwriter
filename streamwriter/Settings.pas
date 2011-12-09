@@ -178,6 +178,7 @@ type
     chkAutoRemoveSavedFromWishlist: TCheckBox;
     chkRemoveSavedFromWishlist: TCheckBox;
     chkNormalizeVariables: TCheckBox;
+    chkAutoDetectSilenceLevel: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
@@ -244,6 +245,7 @@ type
     procedure txtStreamFilePatternClick(Sender: TObject);
     procedure chkRemoveSavedFromWishlistClick(Sender: TObject);
     procedure chkNormalizeVariablesClick(Sender: TObject);
+    procedure chkAutoDetectSilenceLevelClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -511,6 +513,19 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
     end;
     if F then
       AddField(chkSearchSilence);
+
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
+      if S.AutoDetectSilenceLevel <> FStreamSettings[i].AutoDetectSilenceLevel then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(chkAutoDetectSilenceLevel);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -969,8 +984,10 @@ begin
 
   chkSkipShort.Checked := Settings.SkipShort;
   chkSearchSilence.Checked := Settings.SearchSilence;
+  chkAutoDetectSilenceLevel.Checked := Settings.AutoDetectSilenceLevel;
 
   chkSearchSilenceClick(nil);
+  chkAutoDetectSilenceLevelClick(nil);
 
   chkTray.Checked := AppGlobals.Tray;
   chkSnapMain.Checked := AppGlobals.SnapMain;
@@ -1022,6 +1039,8 @@ begin
   begin
     chkSearchSilence.Enabled := False;
     chkSearchSilence.Checked := False;
+    chkAutoDetectSilenceLevel.Enabled := False;
+    chkAutoDetectSilenceLevel.Checked := False;
     txtSilenceLevel.Enabled := False;
     txtSilenceLength.Enabled := False;
     txtSilenceBufferSeconds.Enabled := False;
@@ -1130,6 +1149,9 @@ begin
         if FIgnoreFieldList.IndexOf(chkSearchSilence) = -1 then
           FStreamSettings[i].SearchSilence := chkSearchSilence.Checked;
 
+        if FIgnoreFieldList.IndexOf(chkAutoDetectSilenceLevel) = -1 then
+          FStreamSettings[i].AutoDetectSilenceLevel := chkAutoDetectSilenceLevel.Checked;
+
         if FIgnoreFieldList.IndexOf(txtSilenceLevel) = -1 then
           FStreamSettings[i].SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
 
@@ -1216,6 +1238,7 @@ begin
       AppGlobals.StreamSettings.SongBufferSeconds := StrToIntDef(txtSongBuffer.Text, 0);
       AppGlobals.StreamSettings.ShortLengthSeconds := StrToIntDef(txtShortLengthSeconds.Text, 45);
       AppGlobals.StreamSettings.SearchSilence := chkSearchSilence.Checked;
+      AppGlobals.StreamSettings.AutoDetectSilenceLevel := chkAutoDetectSilenceLevel.Checked;
       AppGlobals.StreamSettings.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
       AppGlobals.StreamSettings.SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
       AppGlobals.StreamSettings.SilenceBufferSecondsStart := StrToIntDef(txtSilenceBufferSeconds.Text, 5);
@@ -2356,7 +2379,7 @@ begin
 
     if (StrToIntDef(txtSilenceLevel.Text, -1) > 100) or (StrToIntDef(txtSilenceLevel.Text, -1) < 1) then
     begin
-      if chkSearchSilence.Checked then
+      if chkSearchSilence.Checked and (not chkAutoDetectSilenceLevel.Checked) then
       begin
         MsgBox(Handle, _('Please enter the maximum volume level for silence detection as a value ranging from 1 to 100.'), _('Info'), MB_ICONINFORMATION);
         SetPage(FPageList.Find(TPanel(txtSilenceLevel.Parent)));
@@ -2484,6 +2507,18 @@ begin
 
   if FInitialized then
     RemoveGray(chkAdjustTrackOffset);
+end;
+
+procedure TfrmSettings.chkAutoDetectSilenceLevelClick(Sender: TObject);
+begin
+  inherited;
+
+  txtSilenceLevel.Enabled := (not (chkAutoDetectSilenceLevel.State <> cbUnchecked)) and (chkSearchSilence.State <> cbUnchecked);
+  Label10.Enabled := (not (chkAutoDetectSilenceLevel.State <> cbUnchecked)) and (chkSearchSilence.State <> cbUnchecked);
+  Label14.Enabled := (not (chkAutoDetectSilenceLevel.State <> cbUnchecked)) and (chkSearchSilence.State <> cbUnchecked);
+
+  if FInitialized then
+    RemoveGray(chkAutoDetectSilenceLevel);
 end;
 
 procedure TfrmSettings.chkAutoTuneInClick(Sender: TObject);
@@ -2623,9 +2658,16 @@ begin
   txtSilenceLevel.Enabled := chkSearchSilence.Checked;
   txtSilenceLength.Enabled := chkSearchSilence.Checked;
   txtSilenceBufferSeconds.Enabled := chkSearchSilence.Checked;
-  Label10.Enabled := chkSearchSilence.Checked;
   Label12.Enabled := chkSearchSilence.Checked;
   Label13.Enabled := chkSearchSilence.Checked;
+  Label6.Enabled := chkSearchSilence.Checked;
+  Label15.Enabled := chkSearchSilence.Checked;
+
+  txtSilenceLevel.Enabled := (chkAutoDetectSilenceLevel.State <> cbUnchecked) and (chkSearchSilence.State <> cbUnchecked);
+  Label10.Enabled := (chkAutoDetectSilenceLevel.State <> cbUnchecked) and (chkSearchSilence.State <> cbUnchecked);
+  Label14.Enabled := (chkAutoDetectSilenceLevel.State <> cbUnchecked) and (chkSearchSilence.State <> cbUnchecked);
+
+  chkAutoDetectSilenceLevel.Enabled := chkSearchSilence.Checked;
 
   if FInitialized then
     RemoveGray(chkSearchSilence);

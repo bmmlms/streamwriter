@@ -20,6 +20,8 @@ type
     btnResetTitlePattern: TPngSpeedButton;
     btnResetCommentPattern: TPngSpeedButton;
     lblPattern: TLabel;
+    txtAlbum: TLabeledEdit;
+    btnResetAlbumPattern: TPngSpeedButton;
     procedure FormShow(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure btnResetPatternClick(Sender: TObject);
@@ -29,12 +31,13 @@ type
     FSaveData: Boolean;
 
     FPlugin: TSetTagsPlugin;
-    FArtist, FTitle, FComment: string;
+    FArtist, FTitle, FAlbum, FComment: string;
   public
-    constructor Create(AOwner: TComponent; Plugin: TSetTagsPlugin; Artist, Title, Comment: string); overload;
+    constructor Create(AOwner: TComponent; Plugin: TSetTagsPlugin; Artist, Title, Album, Comment: string); overload;
 
     property Artist: string read FArtist;
     property Title: string read FTitle;
+    property Album: string read FAlbum;
     property Comment: string read FComment;
 
     property SaveData: Boolean read FSaveData;
@@ -50,6 +53,7 @@ var
 begin
   FArtist := Trim(txtArtist.Text);
   FTitle := Trim(txtTitle.Text);
+  FAlbum := Trim(txtAlbum.Text);
   FComment := Trim(txtComment.Text);
 
   FSaveData := True;
@@ -67,6 +71,10 @@ begin
   begin
     txtTitle.Text := '%t';
     txtTitle.SetFocus;
+  end else if Sender = btnResetAlbumPattern then
+  begin
+    txtTitle.Text := '%l';
+    txtTitle.SetFocus;
   end else if Sender = btnResetCommentPattern then
   begin
     txtComment.Text := '%s / %u / Recorded using streamWriter';
@@ -76,7 +84,7 @@ begin
 end;
 
 constructor TfrmConfigureSetTags.Create(AOwner: TComponent;
-  Plugin: TSetTagsPlugin; Artist, Title, Comment: string);
+  Plugin: TSetTagsPlugin; Artist, Title, Album, Comment: string);
 begin
   inherited Create(AOwner);
 
@@ -84,10 +92,12 @@ begin
 
   FArtist := Artist;
   FTitle := Title;
+  FAlbum := Album;
   FComment := Comment;
 
   txtArtist.Text := Artist;
   txtTitle.Text := Title;
+  txtAlbum.Text := Album;
   txtComment.Text := Comment;
 
   Language.Translate(Self);

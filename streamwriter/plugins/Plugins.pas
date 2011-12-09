@@ -43,7 +43,7 @@ type
   TConfigure = function(Handle: Cardinal; ShowMessages: Boolean): Boolean; stdcall;
 
   TPluginProcessInformation = record
-    Filename, Station, Artist, Title: string;
+    Filename, Station, Artist, Album, Title: string;
     TrackNumber: Cardinal;
     Filesize: UInt64;
     Length: UInt64;
@@ -336,6 +336,7 @@ begin
   FData.Station := Data.Station;
   FData.Artist := Data.Artist;
   FData.Title := Data.Title;
+  FData.Album := Data.Album;
   FData.TrackNumber := Data.TrackNumber;
   FData.Filesize := Data.Filesize;
   FData.Length := Data.Length;
@@ -387,6 +388,7 @@ begin
   StrPCopy(FActData.Filename, FData.Filename);
   StrPCopy(FActData.Station, FData.Station);
   StrPCopy(FActData.Title, FData.Title);
+  StrPCopy(FActData.Album, FData.Album);
   FActData.TrackNumber := FData.TrackNumber;
   FActData.Filesize := FData.Filesize;
   FActData.WasCut := FData.WasCut;
@@ -402,6 +404,7 @@ begin
     FData.Filename := FActData.Filename;
     FData.Station := FActData.Station;
     FData.Title := FActData.Title;
+    FData.Album := FActData.Album;
     FData.TrackNumber := FActData.TrackNumber;
     FData.Filesize := FActData.Filesize;
   end;
@@ -409,6 +412,7 @@ begin
   FreeMem(FActData.Filename);
   FreeMem(FActData.Station);
   FreeMem(FActData.Title);
+  FreeMem(FActData.Album);
 end;
 
 { TExternalProcessThread }

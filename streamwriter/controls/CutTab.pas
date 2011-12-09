@@ -35,6 +35,7 @@ type
     FPosEdit: TToolButton;
     FPosPlay: TToolButton;
     FAutoCut: TToolButton;
+    FAutoCutAutoDetect: TToolButton;
     FCut: TToolButton;
     FUndo: TToolButton;
     FPosEffectsMarker: TToolButton;
@@ -66,6 +67,7 @@ type
 
     procedure PosClick(Sender: TObject);
     procedure AutoCutClick(Sender: TObject);
+    procedure AutoCutAutoDetectClick(Sender: TObject);
     procedure CutClick(Sender: TObject);
     procedure UndoClick(Sender: TObject);
     procedure PlayClick(Sender: TObject);
@@ -205,13 +207,30 @@ procedure TCutTab.AutoCutClick(Sender: TObject);
 var
   F: TfrmCutTabSearchSilence;
 begin
-  F := TfrmCutTabSearchSilence.Create(Self);
+  F := TfrmCutTabSearchSilence.Create(Self, False);
   try
     F.ShowModal;
 
     if F.Okay then
     begin
       FCutView.AutoCut(F.SilenceLevel, F.SilenceLength);
+    end;
+  finally
+    F.Free;
+  end;
+end;
+
+procedure TCutTab.AutoCutAutoDetectClick(Sender: TObject);
+var
+  F: TfrmCutTabSearchSilence;
+begin
+  F := TfrmCutTabSearchSilence.Create(Self, True);
+  try
+    F.ShowModal;
+
+    if F.Okay then
+    begin
+      FCutView.AutoCut(-1, F.SilenceLength);
     end;
   finally
     F.Free;
@@ -293,6 +312,7 @@ begin
   FToolBar.FZoomOut.OnClick := ZoomOutClick;
   FToolBar.FPosEffectsMarker.OnClick := PosClick;
   FToolBar.FAutoCut.OnClick := AutoCutClick;
+  FToolBar.FAutoCutAutoDetect.OnClick := AutoCutAutoDetectClick;
   FToolBar.FCut.OnClick := CutClick;
   FToolBar.FUndo.OnClick := UndoClick;
   FToolBar.FApplyFadein.OnClick := ApplyFadeinClick;
@@ -356,6 +376,11 @@ begin
   FAutoCut.Parent := Self;
   FAutoCut.Hint := 'Show silence...';
   FAutoCut.ImageIndex := 19;
+
+  FAutoCutAutoDetect := TToolButton.Create(Self); // TODO: !!! texte, image, etc...
+  FAutoCutAutoDetect.Parent := Self;
+  FAutoCutAutoDetect.Hint := 'Show silence 2...';
+  FAutoCutAutoDetect.ImageIndex := 19;
 
   FSep := TToolButton.Create(Self);
   FSep.Parent := Self;

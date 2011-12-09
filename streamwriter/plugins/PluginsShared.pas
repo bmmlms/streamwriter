@@ -23,7 +23,7 @@ interface
 
 type
   TPluginActData = record
-    Filename, Station, Title: PChar;
+    Filename, Station, Title, Album: PChar;
     TrackNumber: Cardinal;
     Filesize: UInt64;
     WasCut: Boolean;

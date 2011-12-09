@@ -26,10 +26,17 @@ uses
   Functions, AudioStream;
 
 type
+  TMinSilence = record
+    A, B: Int64;
+    Peak: Cardinal;
+  end;
+  TMinSilenceArray = array of TMinSilence;
+
   TWaveEntry = record
     Pos, Len: Cardinal;
     Sec: Double;
     L, R: Word;
+    Avg: Cardinal; // TODO: Hier tut es vermutlich auch ein WORD
   end;
   TWaveEntryArray = array of TWaveEntry;
 
@@ -65,6 +72,8 @@ type
     function FGetSecs: Double;
     procedure FSetZoomStart(StartPos: Cardinal);
     procedure FSetZoomEnd(EndPos: Cardinal);
+
+    function FindLowestArea(Duration: Double; FromStart: Boolean;  FromEntry, ToEntry: Integer): TMinSilence;
   public
     constructor Create;
     destructor Destroy; override;
@@ -72,7 +81,7 @@ type
     procedure Load(Stream: TMemoryStream); overload;
     procedure Load(Filename: string); overload;
     function Save(Filename: string; StartPos, EndPos: Cardinal): Boolean;
-    procedure AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
+    procedure AutoCut(MaxPeaks: Integer; MinDuration: Cardinal);
     function TimeBetween(F, T: Cardinal): Double;
     function IsInSilence(O: Cardinal): Boolean;
 
@@ -82,7 +91,6 @@ type
     property Secs: Double read FGetSecs;
 
     property WaveArray: TWaveEntryArray read FWaveArray write FSetWaveArray;
-    //property CutStates: TList<TCutState> read FCutStates;
     property Silence: TList<TCutState> read FSilence;
 
     property Wavesize: Int64 read FWavesize;
@@ -259,6 +267,7 @@ begin
     Level := BASSChannelGetLevel(FDecoder);
     FWaveArray[Counter].L := LOWORD(Level);
     FWaveArray[Counter].R := HIWORD(Level);
+    FWaveArray[Counter].Avg := (LOWORD(Level) + HIWORD(Level)) div 2;
     FWaveArray[Counter].Pos := Position;
     if Counter > 0 then
       FWaveArray[Counter - 1].Len := FWaveArray[Counter].Pos - FWaveArray[Counter - 1].Pos;
@@ -286,7 +295,7 @@ begin
   FZoomEnd := High(FWaveArray);
 end;
 
-procedure TWaveData.AutoCut(MaxPeaks: Cardinal; MinDuration: Cardinal);
+procedure TWaveData.AutoCut(MaxPeaks: Integer; MinDuration: Cardinal);
 var
   i: Integer;
   Avg: Cardinal;
@@ -297,50 +306,141 @@ begin
     FSilence[i].Free;
   FSilence.Clear;
 
-  MaxPeaks := Trunc((MaxPeaks / 100) * 6000);
   MinDurationD := MinDuration / 1000;
 
-  SilenceStart := 0;
-  SilenceEnd := 0;
-  for i := 0 to High(FWaveArray) do
+  if MaxPeaks = -1 then
   begin
-    Avg := (FWaveArray[i].L + FWaveArray[i].R) div 2;
-
-    if Avg < MaxPeaks then
+    // TODO: Den Bereich hier nicht selber ermitteln, sondern anhand der Eínstellungen.
+    //       Oder noch eine Einstellung anbieten - bereich selber ermitteln/bereich user definiert
+    FindLowestArea(MinDurationD, False, 0, High(FWaveArray) div 2);
+    FindLowestArea(MinDurationD, False, High(FWaveArray) div 2, High(FWaveArray));
+  end else
+  begin
+    SilenceStart := 0;
+    SilenceEnd := 0;
+    for i := 0 to High(FWaveArray) do
     begin
-      if SilenceStart = 0 then
-      begin
-        SilenceStart := i;
-      end;
-    end else
-    begin
-      if SilenceStart > 0 then
-      begin
-        SilenceEnd := i;
+      Avg := (FWaveArray[i].L + FWaveArray[i].R) div 2;
 
-        if TimeBetween(SilenceStart, SilenceEnd) >= MinDurationD then
+      if Avg < MaxPeaks then
+      begin
+        if SilenceStart = 0 then
         begin
-          FSilence.Add(TCutState.Create(SilenceStart, SilenceEnd));
-        end else
-        begin
+          SilenceStart := i;
         end;
-
-        SilenceStart := 0;
-        SilenceEnd := 0;
       end else
       begin
+        if SilenceStart > 0 then
+        begin
+          SilenceEnd := i;
 
+          if TimeBetween(SilenceStart, SilenceEnd) >= MinDurationD then
+          begin
+            FSilence.Add(TCutState.Create(SilenceStart, SilenceEnd));
+          end else
+          begin
+          end;
+
+          SilenceStart := 0;
+          SilenceEnd := 0;
+        end else
+        begin
+
+        end;
       end;
     end;
-  end;
 
-  if (SilenceStart > 0) and (SilenceEnd = 0) then
-    FSilence.Add(TCutState.Create(SilenceStart, High(FWaveArray)));
+    if (SilenceStart > 0) and (SilenceEnd = 0) then
+      FSilence.Add(TCutState.Create(SilenceStart, High(FWaveArray)));
+  end;
 end;
 
 function TWaveData.FGetZoomStart: Cardinal;
 begin
   Result := FZoomStart;
+end;
+
+function TWaveData.FindLowestArea(Duration: Double; FromStart: Boolean; FromEntry, ToEntry: Integer): TMinSilence;
+var
+  i, n, Ret: Integer;
+  MinSilence: TMinSilenceArray;
+  MS: TMinSilence;
+  EntryCount, MaxPeaks, Avg: Cardinal;
+begin
+  Result.A := -1;
+  Result.B := -1;
+
+  EntryCount := 0;
+  for i := 0 to High(WaveArray) do
+    if WaveArray[i].Sec >= Duration then
+    begin
+      EntryCount := i;
+      Break;
+    end;
+
+  if EntryCount = 0 then
+    Exit;
+
+  MaxPeaks := High(Cardinal);
+  SetLength(MinSilence, 0);
+  for i := FromEntry to ToEntry - EntryCount do
+  begin
+    Avg := 0;
+    for n := i to i + EntryCount do
+      Avg := Avg + ((WaveArray[n].L + WaveArray[n].R) div 2);
+
+    SetLength(MinSilence, Length(MinSilence) + 1);
+    MS.A := i;
+    MS.B := i + EntryCount;
+    MS.Peak := Avg div EntryCount;
+    MinSilence[High(MinSilence)] := MS;
+  end;
+
+  Ret := -1;
+
+  if FromStart then
+  begin
+    for i := 0 to High(MinSilence) do
+      if MinSilence[i].Peak < MaxPeaks then
+      begin
+        Ret := i;
+        Result.A := MinSilence[i].A;
+        Result.B := MinSilence[i].B;
+        MaxPeaks := MinSilence[i].Peak;
+      end;
+  end else
+  begin
+    for i := High(MinSilence) downto 0 do
+      if MinSilence[i].Peak < MaxPeaks then
+      begin
+        Ret := i;
+        Result.A := MinSilence[i].A;
+        Result.B := MinSilence[i].B;
+        MaxPeaks := MinSilence[i].Peak;
+      end;
+  end;
+
+  // TODO: Die 400 hier drunter optimieren. irgendnen durschnittswert muss das sein!!!
+  // TODO: Und prüfen was passiert wenn in den nächsten beiden Loops nix gefunden wird etc.... Fehler suchen!!!
+
+  if Ret > -1 then
+  begin
+    for i := MinSilence[Ret].A downto FromEntry do
+      if FWaveArray[i].Avg > MinSilence[Ret].Peak + (MinSilence[Ret].Peak div 2) then
+      begin
+        Result.A := i;
+        Break;
+      end;
+
+    for i := MinSilence[Ret].B to ToEntry do
+      if FWaveArray[i].Avg > MinSilence[Ret].Peak + (MinSilence[Ret].Peak div 2) then
+      begin
+        Result.B := i;
+        Break;
+      end;
+
+    FSilence.Add(TCutState.Create(Result.A, Result.B));
+  end;
 end;
 
 function TWaveData.FGetZoomEnd: Cardinal;

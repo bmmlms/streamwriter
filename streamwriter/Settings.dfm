@@ -548,12 +548,12 @@ object frmSettings: TfrmSettings
     Left = 604
     Top = 264
     Width = 293
-    Height = 357
+    Height = 385
     TabOrder = 4
     Visible = False
     DesignSize = (
       293
-      357)
+      385)
     object Label4: TLabel
       Left = 56
       Top = 48
@@ -563,42 +563,42 @@ object frmSettings: TfrmSettings
     end
     object Label5: TLabel
       Left = 56
-      Top = 220
+      Top = 248
       Width = 40
       Height = 13
       Caption = 'seconds'
     end
     object Label10: TLabel
       Left = 20
-      Top = 96
+      Top = 124
       Width = 186
       Height = 13
       Caption = 'Silence is defined by volume lower than'
     end
     object Label12: TLabel
       Left = 20
-      Top = 140
+      Top = 168
       Width = 30
       Height = 13
       Caption = 'lasting'
     end
     object Label13: TLabel
       Left = 144
-      Top = 140
+      Top = 168
       Width = 56
       Height = 13
       Caption = 'ms (min. 20)'
     end
     object Label14: TLabel
       Left = 104
-      Top = 116
+      Top = 144
       Width = 33
       Height = 13
       Caption = '(1-100)'
     end
     object lblPanelCut: TLabel
-      Left = 232
-      Top = 240
+      Left = 272
+      Top = 172
       Width = 53
       Height = 13
       Alignment = taCenter
@@ -606,21 +606,21 @@ object frmSettings: TfrmSettings
     end
     object Label6: TLabel
       Left = 20
-      Top = 164
+      Top = 192
       Width = 59
       Height = 13
       Caption = 'in a range of'
     end
     object Label15: TLabel
       Left = 160
-      Top = 164
+      Top = 192
       Width = 40
       Height = 13
       Caption = 'seconds'
     end
     object txtSongBuffer: TLabeledEdit
       Left = 4
-      Top = 216
+      Top = 244
       Width = 49
       Height = 21
       EditLabel.Width = 242
@@ -665,7 +665,7 @@ object frmSettings: TfrmSettings
     end
     object txtSilenceLevel: TEdit
       Left = 20
-      Top = 112
+      Top = 140
       Width = 81
       Height = 21
       MaxLength = 3
@@ -675,7 +675,7 @@ object frmSettings: TfrmSettings
     end
     object txtSilenceLength: TEdit
       Left = 60
-      Top = 136
+      Top = 164
       Width = 81
       Height = 21
       MaxLength = 4
@@ -685,7 +685,7 @@ object frmSettings: TfrmSettings
     end
     object txtSilenceBufferSeconds: TEdit
       Left = 88
-      Top = 160
+      Top = 188
       Width = 69
       Height = 21
       MaxLength = 2
@@ -695,7 +695,7 @@ object frmSettings: TfrmSettings
     end
     object chkAdjustTrackOffset: TCheckBox
       Left = 4
-      Top = 248
+      Top = 276
       Width = 281
       Height = 21
       Caption = 'Adjust offset of detected track changes'
@@ -704,7 +704,7 @@ object frmSettings: TfrmSettings
     end
     object txtAdjustTrackOffset: TLabeledEdit
       Left = 20
-      Top = 272
+      Top = 300
       Width = 61
       Height = 21
       EditLabel.Width = 56
@@ -719,7 +719,7 @@ object frmSettings: TfrmSettings
     end
     object optAdjustBackward: TRadioButton
       Left = 20
-      Top = 296
+      Top = 324
       Width = 189
       Height = 21
       Caption = 'Before detected change'
@@ -731,13 +731,22 @@ object frmSettings: TfrmSettings
     end
     object optAdjustForward: TRadioButton
       Left = 20
-      Top = 316
+      Top = 344
       Width = 189
       Height = 21
       Caption = 'After detected change'
       Enabled = False
       TabOrder = 10
       OnClick = optAdjustClick
+    end
+    object chkAutoDetectSilenceLevel: TCheckBox
+      Left = 20
+      Top = 96
+      Width = 209
+      Height = 21
+      Caption = 'Automatically detect silence level'
+      TabOrder = 11
+      OnClick = chkAutoDetectSilenceLevelClick
     end
   end
   object pnlHotkeys: TPanel
@@ -1330,14 +1339,14 @@ object frmSettings: TfrmSettings
   end
   object pnlBandwidth: TPanel
     Left = 604
-    Top = 628
+    Top = 668
     Width = 293
-    Height = 161
+    Height = 121
     TabOrder = 10
     Visible = False
     DesignSize = (
       293
-      161)
+      121)
     object Label11: TLabel
       Left = 76
       Top = 44
@@ -1460,7 +1469,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C0101020008009C0210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800A00210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

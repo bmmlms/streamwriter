@@ -53,6 +53,7 @@ type
     FRemoveSavedFromWishlist: Boolean;
     FSkipShort: Boolean;
     FSearchSilence: Boolean;
+    FAutoDetectSilenceLevel: Boolean;
     FSilenceLevel: Cardinal;
     FSilenceLength: Cardinal;
     FSilenceBufferSecondsStart: Integer;
@@ -95,6 +96,7 @@ type
     property RemoveSavedFromWishlist: Boolean read FRemoveSavedFromWishlist write FRemoveSavedFromWishlist;
     property SkipShort: Boolean read FSkipShort write FSkipShort;
     property SearchSilence: Boolean read FSearchSilence write FSearchSilence;
+    property AutoDetectSilenceLevel: Boolean read FAutoDetectSilenceLevel write FAutoDetectSilenceLevel;
     property SilenceLevel: Cardinal read FSilenceLevel write FSilenceLevel;
     property SilenceLength: Cardinal read FSilenceLength write FSilenceLength;
     property SilenceBufferSecondsStart: Integer read FSilenceBufferSecondsStart write FSilenceBufferSecondsStart;
@@ -560,8 +562,9 @@ begin
   FStorage.Read('RemoveSavedFromWishlist', FStreamSettings.FRemoveSavedFromWishlist, False);
   FStorage.Read('SkipShort', FStreamSettings.FSkipShort, True);
   FStorage.Read('SearchSilence', FStreamSettings.FSearchSilence, True);
+  FStorage.Read('AutoDetectSilenceLevel', FStreamSettings.FAutoDetectSilenceLevel, True);
   FStorage.Read('SilenceLevel', FStreamSettings.FSilenceLevel, 5);
-  FStorage.Read('SilenceLength', FStreamSettings.FSilenceLength, 150);
+  FStorage.Read('SilenceLength', FStreamSettings.FSilenceLength, 100);
 
   FStorage.Read('SilenceBufferSeconds', SilenceBuffer, 3);
   if SilenceBuffer <> 3 then
@@ -744,6 +747,7 @@ begin
   FStorage.Write('RemoveSavedFromWishlist', FStreamSettings.FRemoveSavedFromWishlist);
   FStorage.Write('SkipShort', FStreamSettings.FSkipShort);
   FStorage.Write('SearchSilence', FStreamSettings.FSearchSilence);
+  FStorage.Write('AutoDetectSilenceLevel', FStreamSettings.FAutoDetectSilenceLevel);
   FStorage.Write('SilenceLevel', FStreamSettings.FSilenceLevel);
   FStorage.Write('SilenceLength', FStreamSettings.FSilenceLength);
   FStorage.Write('SilenceBufferSecondsStart', FStreamSettings.FSilenceBufferSecondsStart);
@@ -919,6 +923,12 @@ begin
 
   Stream.Read(Result.FSkipShort);
   Stream.Read(Result.FSearchSilence);
+
+  if Version >= 39 then
+    Stream.Read(Result.FAutoDetectSilenceLevel)
+  else
+    Result.AutoDetectSilenceLevel := True;
+
   Stream.Read(Result.FSilenceLevel);
   Stream.Read(Result.FSilenceLength);
 
@@ -1061,6 +1071,7 @@ begin
   Stream.Write(FRemoveSavedFromWishlist);
   Stream.Write(FSkipShort);
   Stream.Write(FSearchSilence);
+  Stream.Write(FAutoDetectSilenceLevel);
   Stream.Write(FSilenceLevel);
   Stream.Write(FSilenceLength);
   Stream.Write(FSilenceBufferSecondsStart);
@@ -1100,6 +1111,7 @@ begin
   FRemoveSavedFromWishlist := From.FRemoveSavedFromWishlist;
   FSkipShort := From.FSkipShort;
   FSearchSilence := From.FSearchSilence;
+  FAutoDetectSilenceLevel := From.FAutoDetectSilenceLevel;
   FSilenceLevel := From.FSilenceLevel;
   FSilenceLength := From.FSilenceLength;
   FSilenceBufferSecondsStart := From.FSilenceBufferSecondsStart;

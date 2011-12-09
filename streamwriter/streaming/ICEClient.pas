@@ -618,6 +618,7 @@ begin
       Data.Station := FEntry.Name;
       Data.Artist := FICEThread.RecvStream.SavedArtist;
       Data.Title := FICEThread.RecvStream.SavedTitle;
+      Data.Album := FICEThread.RecvStream.SavedAlbum;
       Data.TrackNumber := FEntry.SongsSaved;
       Data.Filesize := FICEThread.RecvStream.SavedSize;
       Data.Length := FICEThread.RecvStream.SavedLength;
