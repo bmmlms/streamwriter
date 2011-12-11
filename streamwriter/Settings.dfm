@@ -563,35 +563,35 @@ object frmSettings: TfrmSettings
     end
     object Label5: TLabel
       Left = 56
-      Top = 248
+      Top = 240
       Width = 40
       Height = 13
       Caption = 'seconds'
     end
     object Label10: TLabel
-      Left = 20
-      Top = 124
+      Left = 36
+      Top = 148
       Width = 186
       Height = 13
       Caption = 'Silence is defined by volume lower than'
     end
     object Label12: TLabel
-      Left = 20
-      Top = 168
+      Left = 36
+      Top = 192
       Width = 30
       Height = 13
       Caption = 'lasting'
     end
     object Label13: TLabel
-      Left = 144
-      Top = 168
+      Left = 164
+      Top = 192
       Width = 56
       Height = 13
       Caption = 'ms (min. 20)'
     end
     object Label14: TLabel
-      Left = 104
-      Top = 144
+      Left = 124
+      Top = 168
       Width = 33
       Height = 13
       Caption = '(1-100)'
@@ -606,21 +606,21 @@ object frmSettings: TfrmSettings
     end
     object Label6: TLabel
       Left = 20
-      Top = 192
+      Top = 100
       Width = 59
       Height = 13
       Caption = 'in a range of'
     end
     object Label15: TLabel
-      Left = 160
-      Top = 192
+      Left = 164
+      Top = 100
       Width = 40
       Height = 13
       Caption = 'seconds'
     end
     object txtSongBuffer: TLabeledEdit
       Left = 4
-      Top = 244
+      Top = 236
       Width = 49
       Height = 21
       EditLabel.Width = 242
@@ -664,8 +664,8 @@ object frmSettings: TfrmSettings
       OnClick = chkSearchSilenceClick
     end
     object txtSilenceLevel: TEdit
-      Left = 20
-      Top = 140
+      Left = 36
+      Top = 164
       Width = 81
       Height = 21
       MaxLength = 3
@@ -674,8 +674,8 @@ object frmSettings: TfrmSettings
       OnChange = txtSilenceLevelChange
     end
     object txtSilenceLength: TEdit
-      Left = 60
-      Top = 164
+      Left = 76
+      Top = 188
       Width = 81
       Height = 21
       MaxLength = 4
@@ -685,7 +685,7 @@ object frmSettings: TfrmSettings
     end
     object txtSilenceBufferSeconds: TEdit
       Left = 88
-      Top = 188
+      Top = 96
       Width = 69
       Height = 21
       MaxLength = 2
@@ -695,7 +695,7 @@ object frmSettings: TfrmSettings
     end
     object chkAdjustTrackOffset: TCheckBox
       Left = 4
-      Top = 276
+      Top = 268
       Width = 281
       Height = 21
       Caption = 'Adjust offset of detected track changes'
@@ -704,7 +704,7 @@ object frmSettings: TfrmSettings
     end
     object txtAdjustTrackOffset: TLabeledEdit
       Left = 20
-      Top = 300
+      Top = 292
       Width = 61
       Height = 21
       EditLabel.Width = 56
@@ -719,7 +719,7 @@ object frmSettings: TfrmSettings
     end
     object optAdjustBackward: TRadioButton
       Left = 20
-      Top = 324
+      Top = 316
       Width = 189
       Height = 21
       Caption = 'Before detected change'
@@ -731,7 +731,7 @@ object frmSettings: TfrmSettings
     end
     object optAdjustForward: TRadioButton
       Left = 20
-      Top = 344
+      Top = 336
       Width = 189
       Height = 21
       Caption = 'After detected change'
@@ -739,14 +739,14 @@ object frmSettings: TfrmSettings
       TabOrder = 10
       OnClick = optAdjustClick
     end
-    object chkAutoDetectSilenceLevel: TCheckBox
+    object chkManualSilenceLevel: TCheckBox
       Left = 20
-      Top = 96
-      Width = 209
+      Top = 120
+      Width = 265
       Height = 21
-      Caption = 'Automatically detect silence level'
+      Caption = 'Use manual silence detection settings:'
       TabOrder = 11
-      OnClick = chkAutoDetectSilenceLevelClick
+      OnClick = chkManualSilenceLevelClick
     end
   end
   object pnlHotkeys: TPanel
@@ -1469,7 +1469,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800A00210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800A80210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

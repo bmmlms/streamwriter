@@ -936,7 +936,9 @@ begin
   if FWaveData = nil then
     Exit;
 
-  FWaveData.AutoCut(-1, MinDuration);
+  FWaveData.ClearSilence;
+  FWaveData.AutoCut(False, MaxPeaks, MinDuration, 0, High(FWaveData.WaveArray) div 2);
+  FWaveData.AutoCut(True, MaxPeaks, MinDuration, High(FWaveData.WaveArray) div 2, High(FWaveData.WaveArray));
 
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;

@@ -624,8 +624,6 @@ begin
             TitleState := tsIncomplete;
         end;
 
-        // TODO: Album muss bei filename pattern nutzbar sein, quasi in settings drauf hinweisen! und TESTEN!!!
-
         FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FSavedAlbum, FAudioType, TitleState);
         if (FileCheck.Result in [crSave, crOverwrite]) and (FileCheck.FFilename <> '') then
         begin
@@ -865,7 +863,7 @@ procedure TICEStream.StreamTracksDebug(Text, Data: string);
 begin
   WriteDebug(Text, Data, 1, 1);
 end;
-             // TODO: Nen Knopf um stille auto suchen in cutting zu machen!
+
 procedure TICEStream.TrySave;
 var
   R: TPosRect;

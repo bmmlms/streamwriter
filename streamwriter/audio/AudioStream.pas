@@ -113,7 +113,7 @@ var
 begin
   OldPos := Position;
 
-  Result.A := -1;                         // TODO: Testen mit Memory und Filestream!!! und das Settings-Fenster passig machen!!!
+  Result.A := -1;
   Result.B := -1;
 
   M1 := TExtendedStream.Create;
@@ -122,7 +122,7 @@ begin
   WD2 := TWaveData.Create;
   try
     try
-      // Um die Hälfte zurückgehen, damit wir dann das Komplette einlesen können
+      // Um die Hälfte zurückgehen, damit wir dann alles einlesen können
       StartPos := StartPos - LenStart div 2;
       EndPos := EndPos - LenEnd div 2;
 
@@ -145,58 +145,33 @@ begin
       WD.Load(M1);
       WD2.Load(M2);
 
-      {
-      if MaxPeaks = -1 then // TODO: Die checkbox in settings muss hier sagen, ob MaxPeaks -1 ist, oder vom user definiert ist!!!
+      if MaxPeaks > -1 then
+        MaxPeaks := Trunc((MaxPeaks / 100) * 6000);
+
+      WD.AutoCut(False, MaxPeaks, MinDuration, 0, High(WD.WaveArray));
+      WD2.AutoCut(True, MaxPeaks, MinDuration, 0, High(WD.WaveArray));
+
+      if WD.Silence.Count > 0 then
       begin
-        A := WD.FindLowestArea(MinDuration, False).B;
-        if A > -1 then
-        begin
-          Result.A := WD.WaveArray[A].Pos;
-          Result.A := Round(Result.A * M1.Size / WD.Wavesize);
-          Result.A := Result.A + StartPos;
-        end else
-          Result.A := -1;
+        MaxLenIdx := 0;
+        for i := 0 to WD.Silence.Count - 1 do
+          if WD.Silence[i].CutEnd - WD.Silence[i].CutStart > WD.Silence[MaxLenIdx].CutEnd - WD.Silence[MaxLenIdx].CutStart then
+            MaxLenIdx := i;
+        Result.A := WD.WaveArray[WD.Silence[MaxLenIdx].CutEnd].Pos;
+        Result.A := Round(Result.A * M1.Size / WD.Wavesize);
+        Result.A := Result.A + StartPos;
+      end;
 
-        B := WD2.FindLowestArea(MinDuration, True).A;
-        if B > -1 then
-        begin
-          Result.B := WD2.WaveArray[B].Pos;
-          Result.B := Round(Result.B * M2.Size / WD2.Wavesize);
-          Result.B := Result.B + EndPos;
-        end else
-          Result.B := -1;
-      end else
+      if WD2.Silence.Count > 0 then
       begin
-      }
-        if MaxPeaks > -1 then
-          MaxPeaks := Trunc((MaxPeaks / 100) * 6000);
-
-        WD.AutoCut(MaxPeaks, MinDuration);
-        WD2.AutoCut(MaxPeaks, MinDuration);
-
-        if WD.Silence.Count > 0 then
-        begin
-          MaxLenIdx := 0;
-          for i := 0 to WD.Silence.Count - 1 do
-            if WD.Silence[i].CutEnd - WD.Silence[i].CutStart > WD.Silence[MaxLenIdx].CutEnd - WD.Silence[MaxLenIdx].CutStart then
-              MaxLenIdx := i;
-          Result.A := WD.WaveArray[WD.Silence[MaxLenIdx].CutEnd].Pos;
-          Result.A := Round(Result.A * M1.Size / WD.Wavesize);
-          Result.A := Result.A + StartPos;
-        end;
-
-        if WD2.Silence.Count > 0 then
-        begin
-          MaxLenIdx := 0;
-          for i := 0 to WD2.Silence.Count - 1 do
-            if WD2.Silence[i].CutEnd - WD2.Silence[i].CutStart > WD2.Silence[MaxLenIdx].CutEnd - WD2.Silence[MaxLenIdx].CutStart then
-              MaxLenIdx := i;
-          Result.B := WD2.WaveArray[WD2.Silence[MaxLenIdx].CutStart].Pos;
-          Result.B := Round(Result.B * M2.Size / WD2.Wavesize);
-          Result.B := Result.B + EndPos;
-        end;
-
-      //end;
+        MaxLenIdx := 0;
+        for i := 0 to WD2.Silence.Count - 1 do
+          if WD2.Silence[i].CutEnd - WD2.Silence[i].CutStart > WD2.Silence[MaxLenIdx].CutEnd - WD2.Silence[MaxLenIdx].CutStart then
+            MaxLenIdx := i;
+        Result.B := WD2.WaveArray[WD2.Silence[MaxLenIdx].CutStart].Pos;
+        Result.B := Round(Result.B * M2.Size / WD2.Wavesize);
+        Result.B := Result.B + EndPos;
+      end;
     except
       on E: Exception do
         raise Exception.Create('Error in SearchSilence(): ' + E.Message);
@@ -401,7 +376,7 @@ var
 begin
   OldPos := Position;
 
-  Result.A := -1;                         // TODO: Testen mit Memory und Filestream!!! und das Settings-Fenster passig machen!!!
+  Result.A := -1;
   Result.B := -1;
 
   M1 := TExtendedStream.Create;
@@ -410,7 +385,7 @@ begin
   WD2 := TWaveData.Create;
   try
     try
-      // Um die Hälfte zurückgehen, damit wir dann das Komplette einlesen können
+      // Um die Hälfte zurückgehen, damit wir dann alles einlesen können
       StartPos := StartPos - LenStart div 2;
       EndPos := EndPos - LenEnd div 2;
 
@@ -433,58 +408,33 @@ begin
       WD.Load(M1);
       WD2.Load(M2);
 
-      {
-      if MaxPeaks = -1 then // TODO: Die checkbox in settings muss hier sagen, ob MaxPeaks -1 ist, oder vom user definiert ist!!!
+      if MaxPeaks > -1 then
+        MaxPeaks := Trunc((MaxPeaks / 100) * 6000);
+
+      WD.AutoCut(False, MaxPeaks, MinDuration, 0, High(WD.WaveArray));
+      WD2.AutoCut(True, MaxPeaks, MinDuration, 0, High(WD.WaveArray));
+
+      if WD.Silence.Count > 0 then
       begin
-        A := WD.FindLowestArea(MinDuration, False).B;
-        if A > -1 then
-        begin
-          Result.A := WD.WaveArray[A].Pos;
-          Result.A := Round(Result.A * M1.Size / WD.Wavesize);
-          Result.A := Result.A + StartPos;
-        end else
-          Result.A := -1;
+        MaxLenIdx := 0;
+        for i := 0 to WD.Silence.Count - 1 do
+          if WD.Silence[i].CutEnd - WD.Silence[i].CutStart > WD.Silence[MaxLenIdx].CutEnd - WD.Silence[MaxLenIdx].CutStart then
+            MaxLenIdx := i;
+        Result.A := WD.WaveArray[WD.Silence[MaxLenIdx].CutEnd].Pos;
+        Result.A := Round(Result.A * M1.Size / WD.Wavesize);
+        Result.A := Result.A + StartPos;
+      end;
 
-        B := WD2.FindLowestArea(MinDuration, True).A;
-        if B > -1 then
-        begin
-          Result.B := WD2.WaveArray[B].Pos;
-          Result.B := Round(Result.B * M2.Size / WD2.Wavesize);
-          Result.B := Result.B + EndPos;
-        end else
-          Result.B := -1;
-      end else
+      if WD2.Silence.Count > 0 then
       begin
-      }
-        if MaxPeaks > -1 then
-          MaxPeaks := Trunc((MaxPeaks / 100) * 6000);
-
-        WD.AutoCut(MaxPeaks, MinDuration);
-        WD2.AutoCut(MaxPeaks, MinDuration);
-
-        if WD.Silence.Count > 0 then
-        begin
-          MaxLenIdx := 0;
-          for i := 0 to WD.Silence.Count - 1 do
-            if WD.Silence[i].CutEnd - WD.Silence[i].CutStart > WD.Silence[MaxLenIdx].CutEnd - WD.Silence[MaxLenIdx].CutStart then
-              MaxLenIdx := i;
-          Result.A := WD.WaveArray[WD.Silence[MaxLenIdx].CutEnd].Pos;
-          Result.A := Round(Result.A * M1.Size / WD.Wavesize);
-          Result.A := Result.A + StartPos;
-        end;
-
-        if WD2.Silence.Count > 0 then
-        begin
-          MaxLenIdx := 0;
-          for i := 0 to WD2.Silence.Count - 1 do
-            if WD2.Silence[i].CutEnd - WD2.Silence[i].CutStart > WD2.Silence[MaxLenIdx].CutEnd - WD2.Silence[MaxLenIdx].CutStart then
-              MaxLenIdx := i;
-          Result.B := WD2.WaveArray[WD2.Silence[MaxLenIdx].CutStart].Pos;
-          Result.B := Round(Result.B * M2.Size / WD2.Wavesize);
-          Result.B := Result.B + EndPos;
-        end;
-
-      //end;
+        MaxLenIdx := 0;
+        for i := 0 to WD2.Silence.Count - 1 do
+          if WD2.Silence[i].CutEnd - WD2.Silence[i].CutStart > WD2.Silence[MaxLenIdx].CutEnd - WD2.Silence[MaxLenIdx].CutStart then
+            MaxLenIdx := i;
+        Result.B := WD2.WaveArray[WD2.Silence[MaxLenIdx].CutStart].Pos;
+        Result.B := Round(Result.B * M2.Size / WD2.Wavesize);
+        Result.B := Result.B + EndPos;
+      end;
     except
       on E: Exception do
         raise Exception.Create('Error in SearchSilence(): ' + E.Message);

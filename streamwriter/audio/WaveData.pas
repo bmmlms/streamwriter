@@ -36,7 +36,7 @@ type
     Pos, Len: Cardinal;
     Sec: Double;
     L, R: Word;
-    Avg: Cardinal; // TODO: Hier tut es vermutlich auch ein WORD
+    Avg: Cardinal;
   end;
   TWaveEntryArray = array of TWaveEntry;
 
@@ -73,7 +73,7 @@ type
     procedure FSetZoomStart(StartPos: Cardinal);
     procedure FSetZoomEnd(EndPos: Cardinal);
 
-    function FindLowestArea(Duration: Double; FromStart: Boolean;  FromEntry, ToEntry: Integer): TMinSilence;
+    function FindLowestArea(SearchFirst: Boolean; FromEntry, ToEntry: Integer): TMinSilence;
   public
     constructor Create;
     destructor Destroy; override;
@@ -81,7 +81,8 @@ type
     procedure Load(Stream: TMemoryStream); overload;
     procedure Load(Filename: string); overload;
     function Save(Filename: string; StartPos, EndPos: Cardinal): Boolean;
-    procedure AutoCut(MaxPeaks: Integer; MinDuration: Cardinal);
+    procedure AutoCut(SearchFirst: Boolean; MaxPeaks: Integer; MinDuration: Cardinal; FromEntry, ToEntry: Integer);
+    procedure ClearSilence;
     function TimeBetween(F, T: Cardinal): Double;
     function IsInSilence(O: Cardinal): Boolean;
 
@@ -105,6 +106,15 @@ type
 implementation
 
 { TWaveData }
+
+procedure TWaveData.ClearSilence;
+var
+  i: Integer;
+begin
+  for i := 0 to FSilence.Count - 1 do
+    FSilence[i].Free;
+  FSilence.Clear;
+end;
 
 constructor TWaveData.Create;
 begin
@@ -295,27 +305,20 @@ begin
   FZoomEnd := High(FWaveArray);
 end;
 
-procedure TWaveData.AutoCut(MaxPeaks: Integer; MinDuration: Cardinal);
+procedure TWaveData.AutoCut(SearchFirst: Boolean; MaxPeaks: Integer; MinDuration: Cardinal; FromEntry, ToEntry: Integer);
 var
   i: Integer;
   Avg: Cardinal;
   MinDurationD: Double;
   SilenceStart, SilenceEnd: Cardinal;
 begin
-  for i := 0 to FSilence.Count - 1 do
-    FSilence[i].Free;
-  FSilence.Clear;
-
-  MinDurationD := MinDuration / 1000;
-
   if MaxPeaks = -1 then
   begin
-    // TODO: Den Bereich hier nicht selber ermitteln, sondern anhand der Eínstellungen.
-    //       Oder noch eine Einstellung anbieten - bereich selber ermitteln/bereich user definiert
-    FindLowestArea(MinDurationD, False, 0, High(FWaveArray) div 2);
-    FindLowestArea(MinDurationD, False, High(FWaveArray) div 2, High(FWaveArray));
+    FindLowestArea(SearchFirst, FromEntry, ToEntry);
   end else
   begin
+    MinDurationD := MinDuration / 1000;
+    MaxPeaks := Trunc((MaxPeaks / 100) * 6000);
     SilenceStart := 0;
     SilenceEnd := 0;
     for i := 0 to High(FWaveArray) do
@@ -360,19 +363,20 @@ begin
   Result := FZoomStart;
 end;
 
-function TWaveData.FindLowestArea(Duration: Double; FromStart: Boolean; FromEntry, ToEntry: Integer): TMinSilence;
+function TWaveData.FindLowestArea(SearchFirst: Boolean; FromEntry, ToEntry: Integer): TMinSilence;
 var
   i, n, Ret: Integer;
   MinSilence: TMinSilenceArray;
   MS: TMinSilence;
   EntryCount, MaxPeaks, Avg: Cardinal;
+  CmpVal: Int64;
 begin
   Result.A := -1;
   Result.B := -1;
 
   EntryCount := 0;
   for i := 0 to High(WaveArray) do
-    if WaveArray[i].Sec >= Duration then
+    if WaveArray[i].Sec * 1000 >= 100 then // 100ms absuchen
     begin
       EntryCount := i;
       Break;
@@ -389,16 +393,24 @@ begin
     for n := i to i + EntryCount do
       Avg := Avg + ((WaveArray[n].L + WaveArray[n].R) div 2);
 
-    SetLength(MinSilence, Length(MinSilence) + 1);
-    MS.A := i;
-    MS.B := i + EntryCount;
-    MS.Peak := Avg div EntryCount;
-    MinSilence[High(MinSilence)] := MS;
+    Avg := Avg div EntryCount;
+
+    // Stille ist es nur, wenn unter 5000
+    if Avg < 3000 then
+    begin
+      MS.A := i;
+      MS.B := i + EntryCount;
+      MS.Peak := Avg;
+      SetLength(MinSilence, Length(MinSilence) + 1);
+      MinSilence[High(MinSilence)] := MS;
+    end;
   end;
 
   Ret := -1;
 
-  if FromStart then
+  // Die passende Stille aus dem Array suchen, je nachdem, ob wir von
+  // vorne, oder von hinten Suchen sollen
+  if SearchFirst then
   begin
     for i := 0 to High(MinSilence) do
       if MinSilence[i].Peak < MaxPeaks then
@@ -420,24 +432,35 @@ begin
       end;
   end;
 
-  // TODO: Die 400 hier drunter optimieren. irgendnen durschnittswert muss das sein!!!
-  // TODO: Und prüfen was passiert wenn in den nächsten beiden Loops nix gefunden wird etc.... Fehler suchen!!!
-
+  // Jetzt die gefundene Stille noch breiter ziehen, wenn die Bereiche
+  // davor/danach auch leise sind
   if Ret > -1 then
   begin
     for i := MinSilence[Ret].A downto FromEntry do
-      if FWaveArray[i].Avg > MinSilence[Ret].Peak + (MinSilence[Ret].Peak div 2) then
+    begin
+      CmpVal := MinSilence[Ret].Peak;
+      if CmpVal < 1 then
+        CmpVal := 200;
+      CmpVal := Trunc(CmpVal + (CmpVal / 2));
+      if FWaveArray[i].Avg > CmpVal then
       begin
         Result.A := i;
         Break;
       end;
+    end;
 
     for i := MinSilence[Ret].B to ToEntry do
-      if FWaveArray[i].Avg > MinSilence[Ret].Peak + (MinSilence[Ret].Peak div 2) then
+    begin
+      CmpVal := MinSilence[Ret].Peak;
+      if CmpVal < 1 then
+        CmpVal := 200;
+      CmpVal := Trunc(CmpVal + (CmpVal / 2));
+      if FWaveArray[i].Avg > CmpVal then
       begin
         Result.B := i;
         Break;
       end;
+    end;
 
     FSilence.Add(TCutState.Create(Result.A, Result.B));
   end;

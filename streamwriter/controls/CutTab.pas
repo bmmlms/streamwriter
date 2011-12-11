@@ -312,7 +312,11 @@ begin
   FToolBar.FZoomOut.OnClick := ZoomOutClick;
   FToolBar.FPosEffectsMarker.OnClick := PosClick;
   FToolBar.FAutoCut.OnClick := AutoCutClick;
+
+  {$IFDEF DEBUG}
   FToolBar.FAutoCutAutoDetect.OnClick := AutoCutAutoDetectClick;
+  {$ENDIF}
+
   FToolBar.FCut.OnClick := CutClick;
   FToolBar.FUndo.OnClick := UndoClick;
   FToolBar.FApplyFadein.OnClick := ApplyFadeinClick;
@@ -377,10 +381,12 @@ begin
   FAutoCut.Hint := 'Show silence...';
   FAutoCut.ImageIndex := 19;
 
-  FAutoCutAutoDetect := TToolButton.Create(Self); // TODO: !!! texte, image, etc...
+  {$IFDEF DEBUG}
+  FAutoCutAutoDetect := TToolButton.Create(Self);
   FAutoCutAutoDetect.Parent := Self;
-  FAutoCutAutoDetect.Hint := 'Show silence 2...';
+  FAutoCutAutoDetect.Hint := 'Show silence...';
   FAutoCutAutoDetect.ImageIndex := 19;
+  {$ENDIF}
 
   FSep := TToolButton.Create(Self);
   FSep.Parent := Self;

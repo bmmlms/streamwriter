@@ -4,7 +4,7 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'frmConfigureSetTags'
-  ClientHeight = 293
+  ClientHeight = 310
   ClientWidth = 329
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -56,19 +56,19 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   OnShow = FormShow
   DesignSize = (
     329
-    293)
+    310)
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
     Left = 4
-    Top = 172
+    Top = 188
     Width = 49
     Height = 13
     Caption = 'Comment:'
   end
   object btnResetArtistPattern: TPngSpeedButton
     Left = 300
-    Top = 56
+    Top = 72
     Width = 25
     Height = 21
     Hint = 'Reset pattern to default'
@@ -102,11 +102,10 @@ object frmConfigureSetTags: TfrmConfigureSetTags
       A47BE7E11D6868030DFAF9EB3530899F0526F59D40EFAD0546E9639C99C96B92
       D31C60289BED2D3FA2C740006035C0B1DD8A191870A5C08CD341C80000DC1D99
       CCC6DEEDD30000000049454E44AE426082}
-    ExplicitLeft = 368
   end
   object btnResetTitlePattern: TPngSpeedButton
     Left = 300
-    Top = 100
+    Top = 116
     Width = 25
     Height = 21
     Hint = 'Reset pattern to default'
@@ -140,11 +139,10 @@ object frmConfigureSetTags: TfrmConfigureSetTags
       A47BE7E11D6868030DFAF9EB3530899F0526F59D40EFAD0546E9639C99C96B92
       D31C60289BED2D3FA2C740006035C0B1DD8A191870A5C08CD341C80000DC1D99
       CCC6DEEDD30000000049454E44AE426082}
-    ExplicitLeft = 368
   end
   object btnResetCommentPattern: TPngSpeedButton
     Left = 300
-    Top = 188
+    Top = 204
     Width = 25
     Height = 21
     Hint = 'Reset pattern to default'
@@ -183,18 +181,17 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Left = 4
     Top = 4
     Width = 321
-    Height = 33
+    Height = 45
     Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     Caption = 
-      '%a = artist, %t = title, %u = title on stream, %s = streamname, ' +
-      '%d = date song was saved, %i = time song was saved'
+      '%a = artist, %t = title, %l = album, %u = title on stream, %s = ' +
+      'streamname, %d = date song was saved, %i = time song was saved'
     WordWrap = True
-    ExplicitWidth = 389
   end
   object btnResetAlbumPattern: TPngSpeedButton
     Left = 300
-    Top = 144
+    Top = 160
     Width = 25
     Height = 21
     Hint = 'Reset pattern to default'
@@ -231,7 +228,7 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   end
   object pnlNav: TPanel
     Left = 0
-    Top = 244
+    Top = 261
     Width = 329
     Height = 49
     Align = alBottom
@@ -241,7 +238,7 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitTop = 183
+    ExplicitTop = 244
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -269,7 +266,7 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   end
   object txtArtist: TLabeledEdit
     Left = 4
-    Top = 56
+    Top = 72
     Width = 293
     Height = 21
     Anchors = [akLeft, akTop, akRight]
@@ -280,7 +277,7 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   end
   object txtTitle: TLabeledEdit
     Left = 4
-    Top = 100
+    Top = 116
     Width = 293
     Height = 21
     Anchors = [akLeft, akTop, akRight]
@@ -291,16 +288,16 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   end
   object txtComment: TMemo
     Left = 4
-    Top = 188
+    Top = 204
     Width = 293
-    Height = 55
+    Height = 56
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 3
-    ExplicitHeight = 84
+    ExplicitHeight = 90
   end
   object txtAlbum: TLabeledEdit
     Left = 4
-    Top = 144
+    Top = 160
     Width = 293
     Height = 21
     Anchors = [akLeft, akTop, akRight]
