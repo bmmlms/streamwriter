@@ -358,6 +358,10 @@ begin
       AppGlobals.Save;
     except end;
 
+  // Das muss so, damit der Import von Profilen klappt. Sonst wird beim Hinzufügen
+  // in die SaveList das OnChange aufgerufen und es crashed. Also hier lassen.
+  FDataLists.SaveList.OnChange.Clear;
+
   Saved := False;
   while not Saved do
   begin

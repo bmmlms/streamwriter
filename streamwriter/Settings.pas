@@ -1691,19 +1691,21 @@ var
 begin
   inherited;
 
-  SetLength(Arr, 6);
+  SetLength(Arr, 7);
   Arr[0].C := 'a';
   Arr[0].Replace := _('Artist');
   Arr[1].C := 't';
   Arr[1].Replace := _('Title');
-  Arr[2].C := 's';
-  Arr[2].Replace := _('Streamname');
-  Arr[3].C := 'n';
-  Arr[3].Replace := Format('%.*d', [StrToIntDef(txtFilePatternDecimals.Text, 3), 78]);
-  Arr[4].C := 'd';
-  Arr[4].Replace := FormatDateTime('dd.mm.yy', Now);
-  Arr[5].C := 'i';
-  Arr[5].Replace := FormatDateTime('hh.nn.ss', Now);
+  Arr[2].C := 'l';
+  Arr[2].Replace := _('Album');
+  Arr[3].C := 's';
+  Arr[3].Replace := _('Streamname');
+  Arr[4].C := 'n';
+  Arr[4].Replace := Format('%.*d', [StrToIntDef(txtFilePatternDecimals.Text, 3), 78]);
+  Arr[5].C := 'd';
+  Arr[5].Replace := FormatDateTime('dd.mm.yy', Now);
+  Arr[6].C := 'i';
+  Arr[6].Replace := FormatDateTime('hh.nn.ss', Now);
 
   Result := PatternReplace(Text, Arr);
 
@@ -1740,7 +1742,7 @@ begin
   if Length(Result) > 0 then
     if Result[Length(Result)] = '\' then
       Result := Copy(Result, 1, Length(Result) - 1);
-  Result := Result + '.mp3';
+  Result := FixPathName(Result + '.mp3');
 end;
 
 function TfrmSettings.ValidateStreamPattern(Text: string): string;
@@ -1794,7 +1796,7 @@ begin
   if Length(Result) > 0 then
     if Result[Length(Result)] = '\' then
       Result := Copy(Result, 1, Length(Result) - 1);
-  Result := Result + '.mp3';
+  Result := FixPathName(Result + '.mp3');
 end;
 
 procedure TfrmSettings.RegisterPages;

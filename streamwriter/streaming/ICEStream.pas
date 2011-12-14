@@ -1466,6 +1466,8 @@ begin
     FResult := crSave;
     FFilename := Filename + Ext;
   end;
+
+  FFilename := FixPathName(FFilename);
 end;
 
 procedure TFileChecker.GetStreamFilename(Name: string; AudioType: TAudioTypes);
@@ -1509,6 +1511,8 @@ begin
         Name := Copy(Name, 1, Length(Name) - 1);
 
   until Length(FSaveDir + FFilename) <= MAX_PATH - 1;
+
+  FFilename := FixPathName(FFilename);
 end;
 
 function TFileChecker.GetValidFilename(Name: string): string;
@@ -1589,7 +1593,7 @@ begin
     if Replaced[Length(Replaced)] = '\' then
       Replaced := Copy(Replaced, 1, Length(Replaced) - 1);
 
-  FSaveDir := IncludeTrailingBackslash(ExtractFilePath(FSaveDir + Replaced));
+  FSaveDir := FixPathName(IncludeTrailingBackslash(ExtractFilePath(FSaveDir + Replaced)));
   Result := ExtractFileName(Replaced);
 end;
 
@@ -1606,6 +1610,8 @@ begin
     Artist := StringReplace(Artist, FSettings.RemoveChars[i], '', [rfReplaceAll]);
   for i := 1 to Length(FSettings.RemoveChars) do
     Title := StringReplace(Title, FSettings.RemoveChars[i], '', [rfReplaceAll]);
+  for i := 1 to Length(FSettings.RemoveChars) do
+    Album := StringReplace(Album, FSettings.RemoveChars[i], '', [rfReplaceAll]);
 
   Dir := '';
 
@@ -1683,7 +1689,7 @@ begin
     if Replaced[Length(Replaced)] = '\' then
       Replaced := Copy(Replaced, 1, Length(Replaced) - 1);
 
-  FSaveDir := IncludeTrailingBackslash(ExtractFilePath(FSaveDir + Replaced));
+  FSaveDir := FixPathName(IncludeTrailingBackslash(ExtractFilePath(FSaveDir + Replaced)));
   Result := ExtractFileName(Replaced);
 end;
 
