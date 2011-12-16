@@ -172,6 +172,12 @@ type
     Addtostreamignorelist1: TMenuItem;
     N5: TMenuItem;
     tmrAutoSave: TTimer;
+    mnuPlayer: TMenuItem;
+    mnuPlayPause: TMenuItem;
+    mnuStop: TMenuItem;
+    mnuIncreaseVolume: TMenuItem;
+    mnuPlayerDecreaseVolume: TMenuItem;
+    actPlayerDecreaseVolume: TAction;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -197,6 +203,7 @@ type
     procedure actTimersExecute(Sender: TObject);
     procedure tmrScheduleTimer(Sender: TObject);
     procedure tmrAutoSaveTimer(Sender: TObject);
+    procedure actPlayerDecreaseVolumeExecute(Sender: TObject);
   private
     FCommunityLogin: TfrmCommunityLogin;
 
@@ -295,7 +302,7 @@ type
 implementation
 
 uses
-  AppData;
+  AppData, Player;
 
 {$R *.dfm}
 
@@ -471,6 +478,12 @@ end;
 procedure TfrmStreamWriterMain.actLogOnExecute(Sender: TObject);
 begin
   ShowCommunityLogin;
+end;
+
+procedure TfrmStreamWriterMain.actPlayerDecreaseVolumeExecute(
+  Sender: TObject);
+begin
+  Players.DecreaseVolume;
 end;
 
 procedure TfrmStreamWriterMain.actLogOffExecute(Sender: TObject);
@@ -970,6 +983,7 @@ begin
       end;
     5:
       begin
+        // TODO: MessageBus und direkt den PlayerManager steuern.
         AppGlobals.PlayerVolume := AppGlobals.PlayerVolume + 5;
         if AppGlobals.PlayerVolume > 100 then
           AppGlobals.PlayerVolume := 100;
@@ -977,6 +991,7 @@ begin
       end;
     6:
       begin
+        // TODO: MessageBus und direkt den PlayerManager steuern.
         AppGlobals.PlayerVolume := AppGlobals.PlayerVolume - 5;
         if AppGlobals.PlayerVolume < 0 then
           AppGlobals.PlayerVolume := 0;

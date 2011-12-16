@@ -250,6 +250,21 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         Action = actResetData
       end
     end
+    object mnuPlayer: TMenuItem
+      Caption = '&Player'
+      object mnuPlayPause: TMenuItem
+        Caption = '&Play/Pause'
+      end
+      object mnuStop: TMenuItem
+        Caption = '&Stop'
+      end
+      object mnuIncreaseVolume: TMenuItem
+        Caption = '&Increase volume'
+      end
+      object mnuPlayerDecreaseVolume: TMenuItem
+        Action = actPlayerDecreaseVolume
+      end
+    end
     object View1: TMenuItem
       Caption = '&View'
       Visible = False
@@ -426,6 +441,10 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Caption = 'Add to &stream ignorelist'
       Hint = 'Add to stream ignorelist'
       ImageIndex = 65
+    end
+    object actPlayerDecreaseVolume: TAction
+      Caption = '&Decrease volume'
+      OnExecute = actPlayerDecreaseVolumeExecute
     end
   end
   object mnuStreamPopup: TPopupMenu

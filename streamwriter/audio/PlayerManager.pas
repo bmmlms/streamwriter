@@ -46,6 +46,9 @@ type
     procedure AddPlayer(Player: TObject);
     procedure RemovePlayer(Player: TObject);
 
+    procedure IncreaseVolume;
+    procedure DecreaseVolume;
+
     property Volume: Cardinal read FVolume write FSetVolume;
     property AllStoppedOrPaused: Boolean read FGetAllStoppedOrPaused;
     property LastPlayer: TObject read FLastPlayer write FLastPlayer;
@@ -70,6 +73,16 @@ constructor TPlayerManager.Create;
 begin
   FCS := TCriticalSection.Create;
   FPlayers := TList.Create;
+end;
+
+procedure TPlayerManager.IncreaseVolume;
+begin
+
+end;
+
+procedure TPlayerManager.DecreaseVolume;
+begin
+
 end;
 
 destructor TPlayerManager.Destroy;
