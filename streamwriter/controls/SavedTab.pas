@@ -127,7 +127,6 @@ type
     FOnCut: TTrackEvent;
     FOnTrackRemoved: TTrackEvent;
     FOnRefresh: TNotifyEvent;
-    FOnVolumeChanged: TSeekChangeEvent;
     FOnPlayStarted: TNotifyEvent;
 
     procedure BuildTree;
@@ -137,9 +136,10 @@ type
     procedure VolumeTrackbarChange(Sender: TObject);
     procedure SeekChange(Sender: TObject);
     procedure PositionTimer(Sender: TObject);
-    procedure FSetVolume(Value: Integer);
 
     procedure UpdateButtons;
+
+    procedure MessageReceived(Msg: TMessageBase);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -148,12 +148,10 @@ type
     procedure PausePlay;
 
     property Tree: TSavedTree read FSavedTree;
-    property Volume: Integer write FSetVolume;
 
     property OnCut: TTrackEvent read FOnCut write FOnCut;
     property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
     property OnRefresh: TNotifyEvent read FOnRefresh write FOnRefresh;
-    property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
   end;
 
@@ -432,6 +430,8 @@ constructor TSavedTab.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
+  MsgBus.AddSubscriber(MessageReceived);
+
   ShowCloseButton := False;
   ImageIndex := 14;
 
@@ -448,18 +448,23 @@ end;
 
 destructor TSavedTab.Destroy;
 begin
+  MsgBus.RemoveSubscriber(MessageReceived);
   FPositionTimer.Enabled := False;
 
   inherited;
 end;
 
-procedure TSavedTab.FSetVolume(Value: Integer);
+procedure TSavedTab.MessageReceived(Msg: TMessageBase);
+var
+  VolMsg: TVolumeChangedMsg;
 begin
-  FVolume.NotifyOnMove := False;
-  FVolume.Volume := Value;
-  FVolume.NotifyOnMove := True;
+  if Msg is TVolumeChangedMsg then
+  begin
+    VolMsg := TVolumeChangedMsg(Msg);
 
-  FSavedTree.Player.Volume := FVolume.Volume;
+    if VolMsg.Volume <> FVolume.Volume then
+      FVolume.Volume := TVolumeChangedMsg(Msg).Volume;
+  end;
 end;
 
 procedure TSavedTab.PausePlay;
@@ -643,10 +648,7 @@ end;
 
 procedure TSavedTab.VolumeTrackbarChange(Sender: TObject);
 begin
-  FSavedTree.Player.Volume := FVolume.Volume;
-
-  if Assigned(FOnVolumeChanged) then
-    FOnVolumeChanged(Self, FVolume.Volume);
+  Players.Volume := FVolume.Volume;
 end;
 
 procedure TSavedTab.SearchTextChange(Sender: TObject);
@@ -747,7 +749,6 @@ begin
   FVolume.Setup;
   FVolume.Width := 150;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
-  FVolume.Volume := AppGlobals.PlayerVolume;
   FVolume.Padding.Left := 10;
 
   FVolume.Left := High(Integer);

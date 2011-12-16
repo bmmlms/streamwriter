@@ -24,17 +24,18 @@ interface
 uses
   Windows, SysUtils, Classes, ComCtrls, ExtCtrls, Controls, Graphics,
   Functions, AppData, PngSpeedButton, PngImage, LanguageObjects,
-  Themes, Messages, Math, Buttons, Logging;
+  Themes, Messages, Math, Buttons, Logging, PlayerManager;
 
 type
   TGripperStates = (gsUnknown, gsNormal, gsHot, gsDown);
-
-  TSeekChangeEvent = procedure(Sender: TObject; Position: Integer) of object;
 
   TSeekBar = class(TCustomControl)
   private
     FMax: Int64;
     FPosition: Int64;
+
+    FPositionBeforeDrag: Int64;
+
     FGripperPos, FLastGripperPos: Integer;
     FDragFrom: Integer;
     FGripperVisible: Boolean;
@@ -69,6 +70,7 @@ type
     constructor Create(AOwner: TComponent); override;
     property Max: Int64 read FMax write FMax;
     property Position: Int64 read FPosition write FSetPosition;
+    property PositionBeforeDrag: Int64 read FPositionBeforeDrag;
     property GripperVisible: Boolean read FGripperDown write FSetGripperVisible;
     property NotifyOnMove: Boolean read FNotifyOnMove write FNotifyOnMove;
     property NotifyOnDown: Boolean read FNotifyOnDown write FNotifyOnDown;
@@ -81,6 +83,7 @@ type
     FTrackBar: TSeekBar;
     FMute: TPngSpeedButton;
     FVolume: Integer;
+    FVolumeBeforeDrag: Integer;
     FVolumeChange: TNotifyEvent;
     FVolumePng: TPngImage;
     FVolumeMutedPng: TPngImage;
@@ -96,6 +99,7 @@ type
 
     property OnVolumeChange: TNotifyEvent read FVolumeChange write FVolumeChange;
     property Volume: Integer read FGetVolume write FSetVolume;
+    property VolumeBeforeDrag: Integer read FVolumeBeforeDrag;
     property NotifyOnMove: Boolean write FSetNotifyOnMove;
 
     destructor Destroy; override;
@@ -155,6 +159,8 @@ begin
   FTrackBar.NotifyOnMove := True;
   FTrackBar.NotifyOnDown := True;
 
+  Volume := Players.Volume;
+
   RefreshButtonState(True);
 end;
 
@@ -162,7 +168,7 @@ procedure TVolumePanel.MuteClick(Sender: TObject);
 begin
   if FMute.Down then
   begin
-    AppGlobals.PlayerVolumeBeforeMute := FTrackBar.Position;
+    FTrackBar.FPositionBeforeDrag := FTrackBar.Position;
     FTrackBar.Position := 0;
 
     FMute.PngImage := FVolumeMutedPng;
@@ -170,7 +176,8 @@ begin
       FMute.Down := True;
   end else
   begin
-    FTrackBar.Position := AppGlobals.PlayerVolumeBeforeMute;
+    // TODO: Playervolumebeforemute muss auch in AppGlobals gesetzt werden, also beim speichern!!!
+    FTrackBar.Position := Players.VolumeBeforeMute;
     FMute.PngImage := FVolumePng;
   end;
 end;
@@ -180,6 +187,7 @@ begin
   RefreshButtonState(False);
 
   FVolume := FTrackBar.Position;
+  FVolumeBeforeDrag := FTrackBar.PositionBeforeDrag;
 
   if Assigned(OnVolumeChange) then
     OnVolumeChange(Self);
@@ -400,6 +408,7 @@ begin
   inherited;
 
   FMax := 0;
+  FPositionBeforeDrag := -1;
 end;
 
 procedure TSeekBar.FSetGripperVisible(Value: Boolean);
@@ -448,6 +457,9 @@ begin
     begin
       FDragFrom := 10;
 
+      if FPositionBeforeDrag = -1 then
+        FPositionBeforeDrag := FPosition;
+
       FPosition := Trunc(((X - FDragFrom) / (ClientWidth - 20)) * Max);
       FGripperPos := X - FDragFrom;
 
@@ -473,6 +485,9 @@ begin
 
   if ssLeft in Shift then
   begin
+    if FPositionBeforeDrag = -1 then
+      FPositionBeforeDrag := FPosition;
+
     FPosition := Trunc(((X - FDragFrom) / (ClientWidth - 20)) * Max);
     FGripperPos := X - FDragFrom;
 
@@ -501,6 +516,8 @@ begin
   begin
     if Assigned(FOnPositionChanged) then
       FOnPositionChanged(Self);
+
+    FPositionBeforeDrag := -1;
 
     FSetting := False;
     FGripperDown := False;

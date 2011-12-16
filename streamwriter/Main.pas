@@ -178,6 +178,12 @@ type
     mnuIncreaseVolume: TMenuItem;
     mnuPlayerDecreaseVolume: TMenuItem;
     actPlayerDecreaseVolume: TAction;
+    actPlayerIncreaseVolume: TAction;
+    N7: TMenuItem;
+    actPlayerPlayPause: TAction;
+    actPlayerStop: TAction;
+    actPlayerMuteVolume: TAction;
+    mnuPlayerMuteVolume: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -204,6 +210,12 @@ type
     procedure tmrScheduleTimer(Sender: TObject);
     procedure tmrAutoSaveTimer(Sender: TObject);
     procedure actPlayerDecreaseVolumeExecute(Sender: TObject);
+    procedure actPlayerIncreaseVolumeExecute(Sender: TObject);
+    procedure actPlayerStopExecute(Sender: TObject);
+    procedure actPlayerPlayPauseExecute(Sender: TObject);
+    procedure actPlayerMuteVolumeExecute(Sender: TObject);
+    procedure mnuMainChange(Sender: TObject; Source: TMenuItem;
+      Rebuild: Boolean);
   private
     FCommunityLogin: TfrmCommunityLogin;
 
@@ -279,7 +291,6 @@ type
     procedure tabCutSaved(Sender: TObject; Filesize, Length: UInt64);
     procedure tabCutClosed(Sender: TObject);
 
-    procedure tabVolumeChanged(Sender: TObject; Volume: Integer);
     procedure tabPlayStarted(Sender: TObject);
 
     procedure tabChartsAddToWishlist(Sender: TObject; List: TStringList);
@@ -345,6 +356,9 @@ begin
   TfrmNotification.Stop;
 
   Players.StopAll;
+
+  AppGlobals.PlayerVolume := Players.Volume;
+  AppGlobals.PlayerVolumeBeforeMute := Players.VolumeBeforeMute;
 
   Hide;
 
@@ -473,6 +487,32 @@ end;
 procedure TfrmStreamWriterMain.actHelpExecute(Sender: TObject);
 begin
   ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLink), '', '', 1);
+end;
+
+procedure TfrmStreamWriterMain.actPlayerIncreaseVolumeExecute(Sender: TObject);
+begin
+  Players.IncreaseVolume;
+end;
+
+procedure TfrmStreamWriterMain.actPlayerMuteVolumeExecute(Sender: TObject);
+begin
+  if Players.Volume > 0 then
+  begin
+    Players.Volume := 0;
+  end else
+  begin
+    Players.Volume := Players.VolumeBeforeMute;
+  end;
+end;
+
+procedure TfrmStreamWriterMain.actPlayerPlayPauseExecute(Sender: TObject);
+begin
+  Players.PauseAll;
+end;
+
+procedure TfrmStreamWriterMain.actPlayerStopExecute(Sender: TObject);
+begin
+  Players.StopAll;
 end;
 
 procedure TfrmStreamWriterMain.actLogOnExecute(Sender: TObject);
@@ -686,7 +726,6 @@ begin
   tabClients.OnTrackRemoved := tabClientsTrackRemoved;
   tabClients.OnAddTitleToList := tabClientsAddTitleToList;
   tabClients.OnRemoveTitleFromList := tabClientsRemoveTitleFromList;
-  tabClients.OnVolumeChanged := tabVolumeChanged;
   tabClients.OnPlayStarted := tabPlayStarted;
   tabClients.OnAuthRequired := tabClientsAuthRequired;
   tabClients.OnShowErrorMessage := tabClientsShowErrorMessage;
@@ -703,7 +742,6 @@ begin
   tabSaved.OnCut := tabClientsCut;
   tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
   tabSaved.OnRefresh := tabSavedRefresh;
-  tabSaved.OnVolumeChanged := tabVolumeChanged;
   tabSaved.OnPlayStarted := tabPlayStarted;
 
   FWasActivated := False;
@@ -984,18 +1022,20 @@ begin
     5:
       begin
         // TODO: MessageBus und direkt den PlayerManager steuern.
-        AppGlobals.PlayerVolume := AppGlobals.PlayerVolume + 5;
-        if AppGlobals.PlayerVolume > 100 then
-          AppGlobals.PlayerVolume := 100;
-        tabVolumeChanged(nil, AppGlobals.PlayerVolume);
+        Players.IncreaseVolume;
+        //AppGlobals.PlayerVolume := AppGlobals.PlayerVolume + 5;
+        //if AppGlobals.PlayerVolume > 100 then
+        //  AppGlobals.PlayerVolume := 100;
+        //tabVolumeChanged(nil, AppGlobals.PlayerVolume);
       end;
     6:
       begin
         // TODO: MessageBus und direkt den PlayerManager steuern.
-        AppGlobals.PlayerVolume := AppGlobals.PlayerVolume - 5;
-        if AppGlobals.PlayerVolume < 0 then
-          AppGlobals.PlayerVolume := 0;
-        tabVolumeChanged(nil, AppGlobals.PlayerVolume);
+        Players.DecreaseVolume;
+        //AppGlobals.PlayerVolume := AppGlobals.PlayerVolume - 5;
+        //if AppGlobals.PlayerVolume < 0 then
+        //  AppGlobals.PlayerVolume := 0;
+        //tabVolumeChanged(nil, AppGlobals.PlayerVolume);
       end;
   end;
 end;
@@ -1003,6 +1043,13 @@ end;
 procedure TfrmStreamWriterMain.mnuCheckUpdateClick(Sender: TObject);
 begin
   ShowUpdate;
+end;
+
+procedure TfrmStreamWriterMain.mnuMainChange(Sender: TObject;
+  Source: TMenuItem; Rebuild: Boolean);
+begin
+  actPlayerPlayPause.Enabled := Players.AnyPlayingOrPaused;
+  actPlayerStop.Enabled := Players.AnyPlayingOrPaused;
 end;
 
 procedure TfrmStreamWriterMain.mnuMoveToCategory(Sender: TObject);
@@ -1057,7 +1104,6 @@ begin
   tabCut.PageControl := pagMain;
   tabCut.OnSaved := tabCutSaved;
   tabCut.OnClosed := tabCutClosed;
-  tabCut.OnVolumeChanged := tabVolumeChanged;
   tabCut.OnPlayStarted := tabPlayStarted;
 
   pagMain.ActivePage := tabCut;
@@ -1570,27 +1616,6 @@ end;
 procedure TfrmStreamWriterMain.tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
 begin
 
-end;
-
-procedure TfrmStreamWriterMain.tabVolumeChanged(Sender: TObject;
-  Volume: Integer);
-var
-  i: Integer;
-  Tab: TTabSheet;
-begin
-  AppGlobals.PlayerVolume := Volume;
-
-  for i := 0 to pagMain.PageCount - 1 do
-  begin
-    Tab := pagMain.Pages[i];
-    if Tab <> Sender then
-      if Tab is TSavedTab then
-        TSavedTab(Tab).Volume := Volume
-      else if Tab is TClientTab then
-        TClientTab(Tab).Volume := Volume
-      else if Tab is TCutTab then
-        TCutTab(Tab).Volume := Volume;
-  end;
 end;
 
 procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject; Filesize, Length: UInt64);

@@ -673,7 +673,7 @@ begin
     Exit;
   end;
 
-  FPlayer.Volume := AppGlobals.PlayerVolume;
+  FPlayer.Volume := Players.Volume;
   FPlayer.PositionByte := FWaveData.WaveArray[FPB.FPlayLine].Pos;
 
   FPlayer.Play;

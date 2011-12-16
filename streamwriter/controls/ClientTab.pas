@@ -28,7 +28,8 @@ uses
   DataManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
   GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs,
   Graphics, SharedControls, Generics.Collections, Generics.Defaults,
-  Logging, DynBass, StreamData, Forms, MsgDlg, TypeDefs;
+  Logging, DynBass, StreamData, Forms, MsgDlg, TypeDefs, MessageBus,
+  AppMessages, PlayerManager;
 
 type
   TSidebar = class(TPageControl)
@@ -108,7 +109,7 @@ type
     FOnCut: TTrackEvent;
     FOnTrackAdded: TTrackEvent;
     FOnTrackRemoved: TTrackEvent;
-    FOnVolumeChanged: TSeekChangeEvent;
+    //FOnVolumeChanged: TSeekChangeEvent;
     FOnPlayStarted: TNotifyEvent;
     FOnAuthRequired: TNotifyEvent;
     FOnShowErrorMessage: TShowErrorMessageEvent;
@@ -167,7 +168,7 @@ type
 
     procedure DebugClear(Sender: TObject);
 
-    procedure FSetVolume(Value: Integer);
+    procedure MessageReceived(Msg: TMessageBase);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -187,13 +188,12 @@ type
     property ClientView: TMClientView read FClientView;
     property SideBar: TSideBar read FSideBar;
     property Received: UInt64 read FReceived;
-    property Volume: Integer write FSetVolume;
 
     property OnUpdateButtons: TNotifyEvent read FOnUpdateButtons write FOnUpdateButtons;
     property OnCut: TTrackEvent read FOnCut write FOnCut;
     property OnTrackAdded: TTrackEvent read FOnTrackAdded write FOnTrackAdded;
     property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
-    property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
+    //property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
     property OnAuthRequired: TNotifyEvent read FOnAuthRequired write FOnAuthRequired;
     property OnShowErrorMessage: TShowErrorMessageEvent read FOnShowErrorMessage write FOnShowErrorMessage;
@@ -681,6 +681,7 @@ end;
 
 destructor TClientTab.Destroy;
 begin
+  MsgBus.RemoveSubscriber(MessageReceived);
 
   inherited;
 end;
@@ -750,7 +751,6 @@ begin
   FVolume.Align := alRight;
   FVolume.Setup;
   FVolume.Width := 140;
-  FVolume.Volume := AppGlobals.PlayerVolume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
 
   FActionPlay := GetAction('actPlay');
@@ -822,6 +822,8 @@ begin
   FSideBar.Visible := AppGlobals.ShowSidebar;
   FSplitter.Visible := AppGlobals.ShowSidebar;
   FSideBar.Width := AppGlobals.SidebarWidth;
+
+  MsgBus.AddSubscriber(MessageReceived);
 end;
 
 procedure TClientTab.ShowInfo;
@@ -1146,19 +1148,16 @@ begin
   StartStreaming(ID, Bitrate, Name, URL, TitlePattern, IgnoreTitles, AppGlobals.DefaultActionBrowser = baListen, Node, Mode);
 end;
 
-procedure TClientTab.FSetVolume(Value: Integer);
+procedure TClientTab.MessageReceived(Msg: TMessageBase);
 var
-  Clients: TClientArray;
-  Client: TICEClient;
+  VolMsg: TVolumeChangedMsg;
 begin
-  FVolume.NotifyOnMove := False;
-  FVolume.Volume := Value;
-  FVolume.NotifyOnMove := True;
-
-  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
-  for Client in Clients do
+  if Msg is TVolumeChangedMsg then
   begin
-    Client.SetVolume(FVolume.Volume);
+    VolMsg := TVolumeChangedMsg(Msg);
+
+    if VolMsg.Volume <> FVolume.Volume then
+      FVolume.Volume := TVolumeChangedMsg(Msg).Volume;
   end;
 end;
 
@@ -1476,14 +1475,9 @@ var
   Clients: TClientArray;
   Client: TICEClient;
 begin
-  Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
-  for Client in Clients do
-  begin
-    Client.SetVolume(FVolume.Volume);
-  end;
-
-  if Assigned(FOnVolumeChanged) then
-    FOnVolumeChanged(Self, FVolume.Volume);
+  Players.Volume := FVolume.Volume;
+  if FVolume.VolumeBeforeDrag > -1 then
+    Players.VolumeBeforeMute := FVolume.VolumeBeforeDrag;
 end;
 
 procedure TClientTab.TimerTick;

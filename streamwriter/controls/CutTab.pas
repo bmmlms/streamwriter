@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
   MControls, LanguageObjects, Tabs, CutView, Functions, AppData, SharedControls,
-  DynBass, Logging, CutTabSearchSilence;
+  DynBass, Logging, CutTabSearchSilence, MessageBus, AppMessages, PlayerManager;
 
 type
   TCutToolBar = class(TToolBar)
@@ -60,7 +60,6 @@ type
     FFilename: string;
 
     FOnSaved: TFileSavedEvent;
-    FOnVolumeChanged: TSeekChangeEvent;
     FOnPlayStarted: TNotifyEvent;
 
     procedure UpdateButtons;
@@ -81,7 +80,7 @@ type
     procedure CutViewStateChanged(Sender: TObject);
     procedure VolumeTrackbarChange(Sender: TObject);
 
-    procedure FSetVolume(Value: Integer);
+    procedure MessageReceived(Msg: TMessageBase);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -90,11 +89,9 @@ type
     procedure PausePlay;
 
     property Filename: string read FFilename;
-    property Volume: Integer write FSetVolume;
 
     property CutView: TCutView read FCutView;
     property OnSaved: TFileSavedEvent read FOnSaved write FOnSaved;
-    property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
   end;
 
@@ -105,6 +102,8 @@ implementation
 constructor TCutTab.Create(AOwner: TComponent);
 begin
   inherited;
+
+  MsgBus.AddSubscriber(MessageReceived);
 
   ImageIndex := 17;
   ShowCloseButton := True;
@@ -145,11 +144,7 @@ end;
 
 procedure TCutTab.VolumeTrackbarChange(Sender: TObject);
 begin
-  if FCutView.Player <> nil then
-    FCutView.Player.Volume := FVolume.Volume;
-
-  if Assigned(FOnVolumeChanged) then
-    FOnVolumeChanged(Self, FVolume.Volume);
+  Players.Volume := FVolume.Volume;
 end;
 
 procedure TCutTab.ZoomInClick(Sender: TObject);
@@ -272,17 +267,22 @@ end;
 
 destructor TCutTab.Destroy;
 begin
+  MsgBus.RemoveSubscriber(MessageReceived);
 
   inherited;
 end;
 
-procedure TCutTab.FSetVolume(Value: Integer);
+procedure TCutTab.MessageReceived(Msg: TMessageBase);
+var
+  VolMsg: TVolumeChangedMsg;
 begin
-  FVolume.NotifyOnMove := False;
-  FVolume.Volume := Value;
-  if FCutView.Player <> nil then
-    FCutView.Player.Volume := Value;
-  FVolume.NotifyOnMove := True;
+  if Msg is TVolumeChangedMsg then
+  begin
+    VolMsg := TVolumeChangedMsg(Msg);
+
+    if VolMsg.Volume <> FVolume.Volume then
+      FVolume.Volume := TVolumeChangedMsg(Msg).Volume;
+  end;
 end;
 
 procedure TCutTab.Setup(Filename: string; ToolBarImages: TImageList);
@@ -330,7 +330,6 @@ begin
   FVolume.Align := alRight;
   FVolume.Setup;
   FVolume.Width := 140;
-  FVolume.Volume := AppGlobals.PlayerVolume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
 
   FCutView := TCutView.Create(Self);

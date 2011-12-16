@@ -22,20 +22,23 @@ unit PlayerManager;
 interface
 
 uses
-  Windows, SysUtils, Classes, SyncObjs, Logging;
+  Windows, SysUtils, Classes, SyncObjs, Logging, MessageBus, AppMessages,
+  AppData;
 
 type
   TPlayerManager = class
   private
     FCS: TCriticalSection;
     FPlayers: TList;
-    FVolume: Cardinal;
+    FVolume: Integer;
+    FVolumeBeforeMute: Integer;
     FLastPlayer: TObject;
 
     procedure Play(Player: TObject);
 
-    procedure FSetVolume(Value: Cardinal);
+    procedure FSetVolume(Value: Integer);
     function FGetAllStoppedOrPaused: Boolean;
+    function FGetAnyPlayingOrPaused: Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -49,8 +52,10 @@ type
     procedure IncreaseVolume;
     procedure DecreaseVolume;
 
-    property Volume: Cardinal read FVolume write FSetVolume;
+    property Volume: Integer read FVolume write FSetVolume;
+    property VolumeBeforeMute: Integer read FVolumeBeforeMute write FVolumeBeforeMute;
     property AllStoppedOrPaused: Boolean read FGetAllStoppedOrPaused;
+    property AnyPlayingOrPaused: Boolean read FGetAnyPlayingOrPaused;
     property LastPlayer: TObject read FLastPlayer write FLastPlayer;
   end;
 
@@ -73,16 +78,19 @@ constructor TPlayerManager.Create;
 begin
   FCS := TCriticalSection.Create;
   FPlayers := TList.Create;
+
+  FVolume := AppGlobals.PlayerVolume;
+  FVolumeBeforeMute := AppGlobals.PlayerVolumeBeforeMute;
 end;
 
 procedure TPlayerManager.IncreaseVolume;
 begin
-
+  Volume := FVolume + 10;
 end;
 
 procedure TPlayerManager.DecreaseVolume;
 begin
-
+  Volume := FVolume - 10;
 end;
 
 destructor TPlayerManager.Destroy;
@@ -119,23 +127,63 @@ begin
     end;
 end;
 
-procedure TPlayerManager.FSetVolume(Value: Cardinal);
+function TPlayerManager.FGetAnyPlayingOrPaused: Boolean;
 var
   i: Integer;
   P: TPlayer;
   IP: TICEClient;
 begin
-  FVolume := Value;
+  Result := False;
   for i := 0 to FPlayers.Count - 1 do
-    if TPlayer(FPlayers[i]) is TPlayer then
+    if TObject(FPlayers[i]) is TPlayer then
+    begin
+      P := TPlayer(FPlayers[i]);
+      if P.Playing or P.Paused then
+      begin
+        Result := True;
+        Exit;
+      end;
+    end else if TObject(FPlayers[i]) is TICEClient then
+    begin
+      IP := TICEClient(FPlayers[i]);
+      if IP.Playing or IP.Paused then
+      begin
+        Result := True;
+        Exit;
+      end;
+    end;
+end;
+
+procedure TPlayerManager.FSetVolume(Value: Integer);
+var
+  i: Integer;
+  P: TPlayer;
+  IP: TICEClient;
+begin
+  if Value > 100 then
+    Value := 100;
+  if Value < 0 then
+    Value := 0;
+
+  if (Value = 0) and (Volume > 0) then
+    FVolumeBeforeMute := Volume;
+
+  FVolume := Value;
+
+  for i := 0 to FPlayers.Count - 1 do
+  begin
+    if TObject(FPlayers[i]).ClassType = TPlayer then
     begin
       P := TPlayer(FPlayers[i]);
       P.Volume := Value;
-    end else if TICEClient(FPlayers[i]) is TICEClient then
+    end else if TObject(FPlayers[i]).ClassType = TICEClient then
     begin
       IP := TICEClient(FPlayers[i]);
       IP.SetVolume(Value);
     end;
+  end;
+
+  MsgBus.SendMessage(TVolumeChangedMsg.Create(Value));
 end;
 
 procedure TPlayerManager.PauseAll;

@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, DynBASS, ExtendedStream, SyncObjs, AppData,
-  AudioStream, Logging;
+  AudioStream, Logging, PlayerManager;
 
 type
   TICEPlayer = class
@@ -184,7 +184,7 @@ begin
       BASSStreamFree(FPlayer);
     FPlayer := BASSStreamCreateFileUser(STREAMFILE_BUFFER, 0, Funcs, Self);
 
-    SetVolume(AppGlobals.PlayerVolume);
+    SetVolume(Players.Volume);
 
     BASSChannelPlay(FPlayer, False);
 
