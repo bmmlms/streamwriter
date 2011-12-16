@@ -261,8 +261,7 @@ type
     btnReset: TBitBtn;
     FActivePreviewField: TLabeledEdit;
 
-    function ValidatePattern(Text: string): string;
-    function ValidateStreamPattern(Text: string): string;
+    function ValidatePattern(Text, Patterns: string): string;
     function GetNewID: Integer;
 
     function GetStringListHash(Lst: TStringList): Cardinal;
@@ -776,7 +775,7 @@ begin
 
     SetFields;
 
-    ClientWidth := 525;
+    ClientWidth := 590;
     ClientHeight := 450;
 
     for i := 0 to Self.ControlCount - 1 do
@@ -1669,9 +1668,10 @@ begin
 
   if FActivePreviewField <> nil then
   begin
-    txtPreview.Text := ValidatePattern(FActivePreviewField.Text);
-    if Trim(RemoveFileExt(txtPreview.Text)) = '' then
-      txtPreview.Text := '';
+    // TODO: HIER FELD TYP UNTERSCHEIDEN, NICHT EINFACH TEXTE SETZEN!!!!!!!! MACHEN!!!
+    //txtPreview.Text := ValidatePattern(FActivePreviewField.Text);
+    //if Trim(RemoveFileExt(txtPreview.Text)) = '' then
+    //  txtPreview.Text := '';
   end;
 
   BuildHotkeys;
@@ -1684,13 +1684,36 @@ begin
   FormResize(Self);
 end;
 
-function TfrmSettings.ValidatePattern(Text: string): string;
+function TfrmSettings.ValidatePattern(Text, Patterns: string): string;
 var
   i: Integer;
   Arr: TPatternReplaceArray;
 begin
   inherited;
 
+  SetLength(Arr, Length(Patterns));
+  for i := 0 to Length(Patterns) - 1 do
+  begin
+    Arr[i].C := Patterns[i + 1];
+    case Arr[i].C of
+      'a':
+        Arr[i].Replace := _('Artist');
+      't':
+        Arr[i].Replace := _('Title');
+      'l':
+        Arr[i].Replace := _('Album');
+      's':
+        Arr[i].Replace := _('Streamname');
+      'n':
+        Arr[i].Replace := Format('%.*d', [StrToIntDef(txtFilePatternDecimals.Text, 3), 78]);
+      'd':
+        Arr[i].Replace := FormatDateTime('dd.mm.yy', Now);
+      'i':
+        Arr[i].Replace := FormatDateTime('hh.nn.ss', Now);
+    end;
+  end;
+
+  {
   SetLength(Arr, 7);
   Arr[0].C := 'a';
   Arr[0].Replace := _('Artist');
@@ -1706,6 +1729,7 @@ begin
   Arr[5].Replace := FormatDateTime('dd.mm.yy', Now);
   Arr[6].C := 'i';
   Arr[6].Replace := FormatDateTime('hh.nn.ss', Now);
+  }
 
   Result := PatternReplace(Text, Arr);
 
@@ -1726,60 +1750,6 @@ begin
     end;
 
   // Ungültige Zeichen entfernen
-  Result := StringReplace(Result, '/', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, ':', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '*', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '"', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '?', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '<', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '>', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '|', '_', [rfReplaceAll]);
-
-  // Sicherstellen, dass am Anfang/Ende kein \ steht
-  if Length(Result) > 0 then
-    if Result[1] = '\' then
-      Result := Copy(Result, 2, Length(Result) - 1);
-  if Length(Result) > 0 then
-    if Result[Length(Result)] = '\' then
-      Result := Copy(Result, 1, Length(Result) - 1);
-  Result := FixPathName(Result + '.mp3');
-end;
-
-function TfrmSettings.ValidateStreamPattern(Text: string): string;
-var
-  i: Integer;
-  Arr: TPatternReplaceArray;
-begin
-  inherited;
-
-  SetLength(Arr, 3);
-  Arr[0].C := 's';
-  Arr[0].Replace := _('Streamname');
-  Arr[1].C := 'd';
-  Arr[1].Replace := FormatDateTime('dd.mm.yy', Now);
-  Arr[2].C := 'i';
-  Arr[2].Replace := FormatDateTime('hh.nn.ss', Now);
-
-  Result := PatternReplace(Text, Arr);
-
-  // Aneinandergereihte \ entfernen
-  i := 1;
-  if Length(Result) > 0 then
-    while True do
-    begin
-      if i = Length(Result) then
-        Break;
-      if Result[i] = '\' then
-        if Result[i + 1] = '\' then
-        begin
-          Result := Copy(Result, 1, i) + Copy(Result, i + 2, Length(Result) - i);
-          Continue;
-        end;
-      Inc(i);
-    end;
-
-  // Ungültige Zeichen entfernen
-  //Result := StringReplace(Result, '\', '_', [rfReplaceAll]);
   Result := StringReplace(Result, '/', '_', [rfReplaceAll]);
   Result := StringReplace(Result, ':', '_', [rfReplaceAll]);
   Result := StringReplace(Result, '*', '_', [rfReplaceAll]);
@@ -1901,7 +1871,13 @@ begin
     RemoveGray(Sender as TLabeledEdit);
 
     FActivePreviewField := Sender as TLabeledEdit;
-    txtPreview.Text := ValidatePattern(FActivePreviewField.Text);
+
+    if Sender = txtAutomaticFilePattern then
+      txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlsdi')
+    else if Sender = txtStreamFilePattern then
+      txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'sdi')
+    else
+      txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlsndi');
 
     if Trim(RemoveFileExt(txtPreview.Text)) = '' then
       txtPreview.Text := '';
@@ -1913,7 +1889,13 @@ begin
   inherited;
 
   FActivePreviewField := Sender as TLabeledEdit;
-  txtPreview.Text := ValidatePattern(FActivePreviewField.Text);
+
+  if Sender = txtAutomaticFilePattern then
+    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlsdi')
+  else if Sender = txtStreamFilePattern then
+    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'sdi')
+  else
+    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlsndi');
 
   if Trim(RemoveFileExt(txtPreview.Text)) = '' then
     txtPreview.Text := '';
@@ -1925,7 +1907,8 @@ begin
 
   if FActivePreviewField <> nil then
   begin
-    txtPreview.Text := ValidatePattern(FActivePreviewField.Text);
+    // TODO: Das hier besonders behandeln wenn das aktive ein streamfeld ist. weil nicht alle platzhalter erlaubt sind!!!
+    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'sdi');
     if Trim(RemoveFileExt(txtPreview.Text)) = '' then
       txtPreview.Text := '';
   end;
@@ -2018,7 +2001,7 @@ begin
     RemoveGray(Sender as TLabeledEdit);
 
     FActivePreviewField := Sender as TLabeledEdit;
-    txtPreview.Text := ValidateStreamPattern(FActivePreviewField.Text);
+    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'sdi');
 
     if Trim(RemoveFileExt(txtPreview.Text)) = '' then
       txtPreview.Text := '';
@@ -2030,7 +2013,7 @@ begin
   inherited;
 
   FActivePreviewField := Sender as TLabeledEdit;
-  txtPreview.Text := ValidateStreamPattern(FActivePreviewField.Text);
+  txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'sdi');
 
   if Trim(RemoveFileExt(txtPreview.Text)) = '' then
     txtPreview.Text := '';
@@ -2293,6 +2276,7 @@ begin
   if not inherited then
     Exit;
 
+  // TODO: Passen die parameter für ValidatePattern() überall??? hier im check und auch beim onchange und so...???
   if Trim(txtMinDiskSpace.Text) = '' then
   begin
     MsgBox(Handle, _('Please enter the minumum free space that must be available for recording.'), _('Info'), MB_ICONINFORMATION);
@@ -2301,7 +2285,7 @@ begin
     Exit;
   end;
 
-  if Trim(RemoveFileExt(ValidatePattern(txtFilePattern.Text))) = '' then
+  if Trim(RemoveFileExt(ValidatePattern(txtFilePattern.Text, 'atlsndi'))) = '' then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of completely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePattern.Parent)));
@@ -2309,7 +2293,7 @@ begin
     Exit;
   end;
 
-  if Trim(RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Text))) = '' then
+  if Trim(RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Text, 'atlsndi'))) = '' then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of incompletely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtIncompleteFilePattern.Parent)));
@@ -2317,7 +2301,7 @@ begin
     Exit;
   end;
 
-  if Trim(RemoveFileExt(ValidatePattern(txtAutomaticFilePattern.Text))) = '' then
+  if Trim(RemoveFileExt(ValidatePattern(txtAutomaticFilePattern.Text, 'atlsdi'))) = '' then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of automatically recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtAutomaticFilePattern.Parent)));
@@ -2325,7 +2309,7 @@ begin
     Exit;
   end;
 
-  if Trim(RemoveFileExt(ValidateStreamPattern(txtStreamFilePattern.Text))) = '' then
+  if Trim(RemoveFileExt(ValidatePattern(txtStreamFilePattern.Text, 'sdi'))) = '' then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of stream files so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtStreamFilePattern.Parent)));

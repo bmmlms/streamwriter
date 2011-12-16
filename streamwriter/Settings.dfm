@@ -91,7 +91,7 @@ object frmSettings: TfrmSettings
       Width = 213
       Height = 21
       Style = csDropDownList
-      Anchors = [akLeft, akRight, akBottom]
+      Anchors = [akLeft, akBottom]
       TabOrder = 2
       OnChange = lstDefaultFilterChange
       Items.Strings = (
@@ -1148,9 +1148,11 @@ object frmSettings: TfrmSettings
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 252
+      EditLabel.Width = 318
       EditLabel.Height = 13
-      EditLabel.Caption = 'Pattern for filenames of automatically recorded tracks:'
+      EditLabel.Caption = 
+        'Pattern for filenames of automatically recorded tracks (%n is in' +
+        'valid):'
       TabOrder = 3
       OnChange = txtFilePatternChange
       OnClick = txtFilePatternClick
@@ -1161,11 +1163,11 @@ object frmSettings: TfrmSettings
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 295
+      EditLabel.Width = 311
       EditLabel.Height = 13
       EditLabel.Caption = 
-        'Pattern for filenames of stream files (%a, %t and %n are invalid' +
-        '):'
+        'Pattern for filenames of stream files (%a, %t, %l and %n are inv' +
+        'alid):'
       TabOrder = 4
       OnChange = txtStreamFilePatternChange
       OnClick = txtStreamFilePatternClick
@@ -1469,7 +1471,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800A80210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800B00210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

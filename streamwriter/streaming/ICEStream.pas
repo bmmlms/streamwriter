@@ -54,7 +54,7 @@ type
 
   TCheckResults = (crSave, crDiscard, crOverwrite);
 
-  TTitleStates = (tsFull, tsIncomplete, tsAuto);
+  TTitleStates = (tsFull, tsIncomplete, tsAuto, tsStream);
 
   TFileChecker = class
   private
@@ -67,8 +67,7 @@ type
 
     function GetValidFilename(Name: string): string;
     function GetAppendNumber(Dir, Filename, Extension: string): Integer;
-    function StreamInfoToFilename(Name: string): string;
-    function TitleInfoToFilename(Artist, Title, Album: string; TitleState: TTitleStates): string;
+    function InfoToFilename(Artist, Title, Album: string; TitleState: TTitleStates; Patterns: string): string;
   public
     constructor Create(Streamname, Dir: string; SongsSaved: Cardinal; Settings: TStreamSettings);
 
@@ -1428,7 +1427,7 @@ end;
 
 procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title, Album: string; AudioType: TAudioTypes; TitleState: TTitleStates);
 var
-  Filename, Ext: string;
+  Filename, Ext, Patterns: string;
 begin
   FResult := crSave;
 
@@ -1443,7 +1442,16 @@ begin
       Ext := '.ogg';
   end;
 
-  Filename := TitleInfoToFilename(Artist, Title, Album, TitleState);
+  case TitleState of
+    tsAuto:
+      Patterns := 'atlsdi';
+    tsStream:
+      Patterns := 'sdi';
+    else
+      Patterns := 'atlsndi';
+  end;
+
+  Filename := InfoToFilename(Artist, Title, Album, TitleState, Patterns);
   Filename := GetValidFilename(Filename);
 
   if FileExists(FSaveDir + Filename + Ext) then
@@ -1495,7 +1503,7 @@ begin
       Name := _('Unknown stream');
     end;
 
-    Name := StreamInfoToFilename(Trim(Name));
+    Name := InfoToFilename('', '', '', tsStream, 'sdi');
     FFilename := GetValidFilename(Name);
 
     if FileExists(FSaveDir + Filename + Ext) then
@@ -1529,75 +1537,7 @@ begin
   Result := StringReplace(Result, '|', ' ', [rfReplaceAll]);
 end;
 
-function TFileChecker.StreamInfoToFilename(Name: string): string;
-var
-  i: Integer;
-  Dir, StreamName: string;
-  Replaced: string;
-  Arr: TPatternReplaceArray;
-begin
-  inherited;
-
-  Dir := '';
-
-  StreamName := Trim(GetValidFileName(Name));
-  if Length(StreamName) > 80 then
-    StreamName := Copy(StreamName, 1, 80);
-
-  if StreamName = '' then
-    StreamName := _('Unknown stream');
-
-  SetLength(Arr, 3);
-  Arr[0].C := 's';
-  Arr[0].Replace := Trim(StreamName);
-  Arr[1].C := 'd';
-  Arr[1].Replace := FormatDateTime('dd.mm.yy', Now);
-  Arr[2].C := 'i';
-  Arr[2].Replace := FormatDateTime('hh.nn.ss', Now);
-
-  Replaced := PatternReplace(FSettings.StreamFilePattern, Arr);
-
-  // REMARK: Das folgende ist so genau gleich auch im Settings-Fenster.. wegen DRY..
-  // Aneinandergereihte \ entfernen
-  i := 1;
-  if Length(Replaced) > 0 then
-    while True do
-    begin
-      if i = Length(Replaced) then
-        Break;
-      if Replaced[i] = '\' then
-        if Replaced[i + 1] = '\' then
-        begin
-          Replaced := Copy(Replaced, 1, i) + Copy(Replaced, i + 2, Length(Replaced) - i);
-          Continue;
-        end;
-      Inc(i);
-    end;
-
-  // Ungültige Zeichen entfernen
-  //Replaced := StringReplace(Replaced, '\', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, '/', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, ':', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, '*', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, '"', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, '?', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, '<', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, '>', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, '|', '_', [rfReplaceAll]);
-
-  // Sicherstellen, dass am Anfang/Ende kein \ steht
-  if Length(Replaced) > 0 then
-    if Replaced[1] = '\' then
-      Replaced := Copy(Replaced, 2, Length(Replaced) - 1);
-  if Length(Replaced) > 0 then
-    if Replaced[Length(Replaced)] = '\' then
-      Replaced := Copy(Replaced, 1, Length(Replaced) - 1);
-
-  FSaveDir := FixPathName(IncludeTrailingBackslash(ExtractFilePath(FSaveDir + Replaced)));
-  Result := ExtractFileName(Replaced);
-end;
-
-function TFileChecker.TitleInfoToFilename(Artist, Title, Album: string; TitleState: TTitleStates): string;
+function TFileChecker.InfoToFilename(Artist, Title, Album: string; TitleState: TTitleStates; Patterns: string): string;
 var
   i: Integer;
   Dir, StreamName: string;
@@ -1625,21 +1565,27 @@ begin
   if StreamName = '' then
     StreamName := _('Unknown stream');
 
-  SetLength(Arr, 7);
-  Arr[0].C := 'a';
-  Arr[0].Replace := Artist;
-  Arr[1].C := 't';
-  Arr[1].Replace := Title;
-  Arr[2].C := 'l';
-  Arr[2].Replace := Album;
-  Arr[3].C := 's';
-  Arr[3].Replace := Trim(StreamName);
-  Arr[4].C := 'n';
-  Arr[4].Replace := Format('%.*d', [FSettings.FilePatternDecimals, FSongsSaved]);
-  Arr[5].C := 'd';
-  Arr[5].Replace := FormatDateTime('dd.mm.yy', Now);
-  Arr[6].C := 'i';
-  Arr[6].Replace := FormatDateTime('hh.nn.ss', Now);
+  SetLength(Arr, Length(Patterns));
+  for i := 0 to Length(Patterns) - 1 do
+  begin
+    Arr[i].C := Patterns[i + 1];
+    case Arr[i].C of
+      'a':
+        Arr[i].Replace := Artist;
+      't':
+        Arr[i].Replace := Title;
+      'l':
+        Arr[i].Replace := Album;
+      's':
+        Arr[i].Replace := Trim(StreamName);
+      'n':
+        Arr[i].Replace := Format('%.*d', [FSettings.FilePatternDecimals, FSongsSaved]);
+      'd':
+        Arr[i].Replace := FormatDateTime('dd.mm.yy', Now);
+      'i':
+        Arr[i].Replace := FormatDateTime('hh.nn.ss', Now);
+    end;
+  end;
 
   case TitleState of
     tsFull:
@@ -1652,6 +1598,8 @@ begin
         Replaced := PatternReplace(AppGlobals.AutomaticFilePattern, Arr);
         AppGlobals.Unlock;
       end;
+    tsStream:
+      Replaced := PatternReplace(FSettings.StreamFilePattern, Arr);
   end;
 
   // REMARK: Das folgende ist so genau gleich auch im Settings-Fenster.. wegen DRY..
