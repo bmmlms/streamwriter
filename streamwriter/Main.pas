@@ -214,8 +214,7 @@ type
     procedure actPlayerStopExecute(Sender: TObject);
     procedure actPlayerPlayPauseExecute(Sender: TObject);
     procedure actPlayerMuteVolumeExecute(Sender: TObject);
-    procedure mnuMainChange(Sender: TObject; Source: TMenuItem;
-      Rebuild: Boolean);
+    procedure mnuPlayerClick(Sender: TObject);
   private
     FCommunityLogin: TfrmCommunityLogin;
 
@@ -1045,13 +1044,6 @@ begin
   ShowUpdate;
 end;
 
-procedure TfrmStreamWriterMain.mnuMainChange(Sender: TObject;
-  Source: TMenuItem; Rebuild: Boolean);
-begin
-  actPlayerPlayPause.Enabled := Players.AnyPlayingOrPaused;
-  actPlayerStop.Enabled := Players.AnyPlayingOrPaused;
-end;
-
 procedure TfrmStreamWriterMain.mnuMoveToCategory(Sender: TObject);
 var
   Cats: TNodeArray;
@@ -1083,6 +1075,12 @@ begin
     for Node in Nodes do
       tabClients.ClientView.MoveTo(Node, Cat, amAddChildLast, False);
   end;
+end;
+
+procedure TfrmStreamWriterMain.mnuPlayerClick(Sender: TObject);
+begin
+  actPlayerPlayPause.Enabled := Players.AnyPlayingOrPaused;
+  actPlayerStop.Enabled := Players.AnyPlayingOrPaused;
 end;
 
 procedure TfrmStreamWriterMain.mnuShowClick(Sender: TObject);

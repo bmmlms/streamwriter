@@ -145,6 +145,8 @@ end;
 procedure TCutTab.VolumeTrackbarChange(Sender: TObject);
 begin
   Players.Volume := FVolume.Volume;
+  if FVolume.VolumeBeforeDrag > -1 then
+    Players.VolumeBeforeMute := FVolume.VolumeBeforeDrag;
 end;
 
 procedure TCutTab.ZoomInClick(Sender: TObject);

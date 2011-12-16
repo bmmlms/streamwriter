@@ -649,6 +649,8 @@ end;
 procedure TSavedTab.VolumeTrackbarChange(Sender: TObject);
 begin
   Players.Volume := FVolume.Volume;
+  if FVolume.VolumeBeforeDrag > -1 then
+    Players.VolumeBeforeMute := FVolume.VolumeBeforeDrag;
 end;
 
 procedure TSavedTab.SearchTextChange(Sender: TObject);
@@ -1122,6 +1124,7 @@ begin
   if Sender = FPopupMenu.ItemPlay then
   begin
     try
+      FPlayer.Volume := Players.Volume;
       FPlayer.Filename := Tracks[0].Filename;
     except
       MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);

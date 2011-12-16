@@ -161,7 +161,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   end
   object mnuMain: TMainMenu
     Images = imgImages
-    OnChange = mnuMainChange
     Left = 32
     Top = 32
     object mnuFile: TMenuItem
@@ -253,6 +252,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object mnuPlayer: TMenuItem
       Caption = '&Player'
+      OnClick = mnuPlayerClick
       object mnuPlayPause: TMenuItem
         Action = actPlayerPlayPause
       end
