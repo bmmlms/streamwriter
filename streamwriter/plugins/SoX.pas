@@ -104,13 +104,13 @@ var
 begin
   inherited;
 
-  FResult := arFail;
-
   if LowerCase(ExtractFileExt(FData.Filename)) <> '.mp3' then
   begin
     FResult := arImpossible;
     Exit;
   end;
+
+  FResult := arFail;
 
   TempFile := RemoveFileExt(FData.Filename) + '_soxconvert' + ExtractFileExt(FData.Filename);
 
@@ -470,7 +470,7 @@ begin
   if (not FGetReadyForUse) or (not FGetReadyForActivate) then
     ExtractFiles;
 
-  FName := _('Apply effects using SoX (MP3)');
+  FName := _('MP3 - Apply effects using SoX');
   FHelp := _('This plugin applies effects to recorded songs using SoX (Sound eXchange) (MP3 only).');
 end;
 

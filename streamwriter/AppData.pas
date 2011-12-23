@@ -260,7 +260,8 @@ begin
   SetLength(FHeaderWidth, 6);
 
   {$IFDEF DEBUG}
-  FProjectUpdateLink := 'http://streamwriter.gaia/';
+  // TODO: Hier wieder .gaia hinmachen!!!
+  FProjectUpdateLink := 'http://streamwriter.org/';
   {$ELSE}
   FProjectUpdateLink := 'http://streamwriter.org/';
   {$ENDIF}

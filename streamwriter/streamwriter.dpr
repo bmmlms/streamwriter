@@ -110,7 +110,8 @@ uses
   ConfigureSetTags in 'plugins\ConfigureSetTags.pas' {Form1},
   MessageBus in '..\..\common\MessageBus.pas',
   AppMessages in 'AppMessages.pas',
-  StatusBar in 'controls\StatusBar.pas';
+  StatusBar in 'controls\StatusBar.pas',
+  AACPostProcess in 'plugins\AACPostProcess.pas';
 
 {$SetPEOptFlags $0140}
 

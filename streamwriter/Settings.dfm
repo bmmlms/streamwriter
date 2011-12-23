@@ -1197,7 +1197,6 @@ object frmSettings: TfrmSettings
       Anchors = [akLeft, akTop, akRight, akBottom]
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitHeight = 81
     end
     object btnBlacklistRemove: TButton
       Left = 196
@@ -1209,7 +1208,6 @@ object frmSettings: TfrmSettings
       Enabled = False
       TabOrder = 1
       OnClick = btnBlacklistRemoveClick
-      ExplicitTop = 112
     end
   end
   object pnlStreamsAdvanced: TPanel
@@ -1472,7 +1470,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800B40210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800B80210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

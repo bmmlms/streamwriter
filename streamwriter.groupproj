@@ -12,6 +12,9 @@
 			<Projects Include="plugins\mp3gain\mp3gain.dproj">
 				<Dependencies/>
 			</Projects>
+			<Projects Include="plugins\aacpostprocess\aacpostprocess.dproj">
+				<Dependencies/>
+			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -47,14 +50,23 @@
 		<Target Name="mp3gain:Make">
 			<MSBuild Projects="plugins\mp3gain\mp3gain.dproj" Targets="Make"/>
 		</Target>
+		<Target Name="aacpostprocess">
+			<MSBuild Projects="plugins\aacpostprocess\aacpostprocess.dproj"/>
+		</Target>
+		<Target Name="aacpostprocess:Clean">
+			<MSBuild Projects="plugins\aacpostprocess\aacpostprocess.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="aacpostprocess:Make">
+			<MSBuild Projects="plugins\aacpostprocess\aacpostprocess.dproj" Targets="Make"/>
+		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="streamwriter;sox;mp3gain"/>
+			<CallTarget Targets="streamwriter;sox;mp3gain;aacpostprocess"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="streamwriter:Clean;sox:Clean;mp3gain:Clean"/>
+			<CallTarget Targets="streamwriter:Clean;sox:Clean;mp3gain:Clean;aacpostprocess:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="streamwriter:Make;sox:Make;mp3gain:Make"/>
+			<CallTarget Targets="streamwriter:Make;sox:Make;mp3gain:Make;aacpostprocess:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>

@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, Plugins, SetTags, SoX,
-  MP3Gain, Logging;
+  MP3Gain, Logging, AACPostProcess;
 
 type
   TPluginManager = class
@@ -165,6 +165,7 @@ begin
 
   Plugins.Add(TSetTagsPlugin.Create);
   Plugins.Add(TSoXPlugin.Create);
+  //Plugins.Add(TAACPostProcessPlugin.Create);
   //Plugins.Add(TNormalizePlugin.Create);
 
   i := 0;

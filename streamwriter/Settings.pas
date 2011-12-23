@@ -1655,8 +1655,7 @@ begin
   lblFilePattern.Caption := _('%a = artist, %t = title, %l = album, %u = title on stream, %s = streamname,'#13#10'%n = tracknumber, %d = date song was saved, %i = time song was saved'#13#10 +
                               'Backslashes can be used to seperate directories.');
 
-  // TODO: TEXT ZU LANG!
-  lblAppParams.Caption := _('%a = artist, %t = title, %l = album, %u = title on stream, %s = streamname, %n = tracknumber, %d = date song was saved, %i = time song was saved (everything should be quoted using ")');
+  lblAppParams.Caption := _('%f = filename, %a = artist, %t = title, %l = album, %u = title on stream, %s = streamname, %n = tracknumber, %d = date song was saved, %i = time song was saved (everything should be quoted using ")');
 
   if lstPlugins.Selected <> nil then
   begin

@@ -80,12 +80,18 @@ var
 begin
   inherited;
 
+  if LowerCase(ExtractFileExt(FData.Filename)) <> '.mp3' then
+  begin
+    FResult := arImpossible;
+    Exit;
+  end;
+
+  FResult := arFail;
+
   AppGlobals.Storage.Read('Artist_' + Plugin.ClassName, Artist, '%a', 'Plugins');
   AppGlobals.Storage.Read('Title_' + Plugin.ClassName, Title, '%t', 'Plugins');
   AppGlobals.Storage.Read('Album_' + Plugin.ClassName, Album, '%l', 'Plugins');
   AppGlobals.Storage.Read('Comment_' + Plugin.ClassName, Comment, '%s / %u / Recorded using streamWriter', 'Plugins');
-
-  FResult := arFail;
 
   SetLength(Arr, 7);
   Arr[0].C := 'a';
@@ -200,8 +206,8 @@ begin
   FOrder := 100;
   FCanConfigure := True;
 
-  FName := _('Set ID3-tags');
-  FHelp := _('This plugin adds ID3-tags to recorded songs.');
+  FName := _('MP3 - Set ID3-tags');
+  FHelp := _('This plugin adds ID3-tags to recorded songs (MP3 only).');
 
   try
     AppGlobals.Storage.Read('Active_' + ClassName, FActive, True, 'Plugins');
@@ -236,8 +242,8 @@ end;
 procedure TSetTagsPlugin.Initialize;
 begin
   inherited;
-  FName := _('Set ID3-tags');
-  FHelp := _('This plugin adds ID3-tags to recorded songs.');
+  FName := _('MP3 - Set ID3-tags');
+  FHelp := _('This plugin adds ID3-tags to recorded songs (MP3 only).');
 end;
 
 function TSetTagsPlugin.ProcessFile(
