@@ -1612,6 +1612,7 @@ begin
     txtApp.Enabled := True;
     txtAppParams.Enabled := True;
     btnBrowseApp.Enabled := True;
+    lblAppParams.Enabled := True;
     btnRemove.Enabled := True;
   end else
   begin
@@ -1620,6 +1621,7 @@ begin
     txtApp.Enabled := False;
     txtAppParams.Enabled := False;
     btnBrowseApp.Enabled := False;
+    lblAppParams.Enabled := False;
     btnRemove.Enabled := False;
   end;
 
@@ -1650,9 +1652,12 @@ var
   i: Integer;
 begin
   inherited;
-  lblFilePattern.Caption := _('%a = artist, %t = title, %l = album, %s = streamname, %n = tracknumber,'#13#10'%d = date song was saved, %i = time song was saved'#13#10 +
+  lblFilePattern.Caption := _('%a = artist, %t = title, %l = album, %u = title on stream, %s = streamname,'#13#10'%n = tracknumber, %d = date song was saved, %i = time song was saved'#13#10 +
                               'Backslashes can be used to seperate directories.');
-  lblAppParams.Caption := _('%f = filename (should be quoted using ")');
+
+  // TODO: TEXT ZU LANG!
+  lblAppParams.Caption := _('%a = artist, %t = title, %l = album, %u = title on stream, %s = streamname, %n = tracknumber, %d = date song was saved, %i = time song was saved (everything should be quoted using ")');
+
   if lstPlugins.Selected <> nil then
   begin
     AppGlobals.PluginManager.ReInitPlugins;
@@ -1702,6 +1707,8 @@ begin
         Arr[i].Replace := _('Title');
       'l':
         Arr[i].Replace := _('Album');
+      'u':
+        Arr[i].Replace := _('Title on stream');
       's':
         Arr[i].Replace := _('Streamname');
       'n':
@@ -1873,11 +1880,11 @@ begin
     FActivePreviewField := Sender as TLabeledEdit;
 
     if Sender = txtAutomaticFilePattern then
-      txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlsdi')
+      txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlusdi')
     else if Sender = txtStreamFilePattern then
       txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'sdi')
     else
-      txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlsndi');
+      txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlusndi');
 
     if Trim(RemoveFileExt(txtPreview.Text)) = '' then
       txtPreview.Text := '';
@@ -1891,11 +1898,11 @@ begin
   FActivePreviewField := Sender as TLabeledEdit;
 
   if Sender = txtAutomaticFilePattern then
-    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlsdi')
+    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlusdi')
   else if Sender = txtStreamFilePattern then
     txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'sdi')
   else
-    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlsndi');
+    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlusndi');
 
   if Trim(RemoveFileExt(txtPreview.Text)) = '' then
     txtPreview.Text := '';
@@ -2285,7 +2292,7 @@ begin
     Exit;
   end;
 
-  if Trim(RemoveFileExt(ValidatePattern(txtFilePattern.Text, 'atlsndi'))) = '' then
+  if Trim(RemoveFileExt(ValidatePattern(txtFilePattern.Text, 'atlusndi'))) = '' then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of completely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePattern.Parent)));
@@ -2293,7 +2300,7 @@ begin
     Exit;
   end;
 
-  if Trim(RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Text, 'atlsndi'))) = '' then
+  if Trim(RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Text, 'atlusndi'))) = '' then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of incompletely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtIncompleteFilePattern.Parent)));
@@ -2301,7 +2308,7 @@ begin
     Exit;
   end;
 
-  if Trim(RemoveFileExt(ValidatePattern(txtAutomaticFilePattern.Text, 'atlsdi'))) = '' then
+  if Trim(RemoveFileExt(ValidatePattern(txtAutomaticFilePattern.Text, 'atlusdi'))) = '' then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of automatically recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtAutomaticFilePattern.Parent)));

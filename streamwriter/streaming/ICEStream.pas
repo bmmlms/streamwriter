@@ -67,12 +67,12 @@ type
 
     function GetValidFilename(Name: string): string;
     function GetAppendNumber(Dir, Filename, Extension: string): Integer;
-    function InfoToFilename(Artist, Title, Album: string; TitleState: TTitleStates; Patterns: string): string;
+    function InfoToFilename(Artist, Title, Album, StreamTitle: string; TitleState: TTitleStates; Patterns: string): string;
   public
     constructor Create(Streamname, Dir: string; SongsSaved: Cardinal; Settings: TStreamSettings);
 
     procedure GetStreamFilename(Name: string; AudioType: TAudioTypes);
-    procedure GetFilename(Filesize: UInt64; Artist, Title, Album: string; AudioType: TAudioTypes; TitleState: TTitleStates);
+    procedure GetFilename(Filesize: UInt64; Artist, Title, Album, StreamTitle: string; AudioType: TAudioTypes; TitleState: TTitleStates);
 
     property Result: TCheckResults read FResult;
     property SaveDir: string read FSaveDir;
@@ -623,7 +623,7 @@ begin
             TitleState := tsIncomplete;
         end;
 
-        FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FSavedAlbum, FAudioType, TitleState);
+        FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FSavedAlbum, Title, FAudioType, TitleState);
         if (FileCheck.Result in [crSave, crOverwrite]) and (FileCheck.FFilename <> '') then
         begin
           Dir := FileCheck.SaveDir;
@@ -1425,7 +1425,7 @@ begin
     Result := Append;
 end;
 
-procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title, Album: string; AudioType: TAudioTypes; TitleState: TTitleStates);
+procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title, Album, StreamTitle: string; AudioType: TAudioTypes; TitleState: TTitleStates);
 var
   Filename, Ext, Patterns: string;
 begin
@@ -1444,14 +1444,14 @@ begin
 
   case TitleState of
     tsAuto:
-      Patterns := 'atlsdi';
+      Patterns := 'atlusdi';
     tsStream:
       Patterns := 'sdi';
     else
-      Patterns := 'atlsndi';
+      Patterns := 'atlusndi';
   end;
 
-  Filename := InfoToFilename(Artist, Title, Album, TitleState, Patterns);
+  Filename := InfoToFilename(Artist, Title, Album, StreamTitle, TitleState, Patterns);
   Filename := GetValidFilename(Filename);
 
   if FileExists(FSaveDir + Filename + Ext) then
@@ -1503,7 +1503,7 @@ begin
       Name := _('Unknown stream');
     end;
 
-    Name := InfoToFilename('', '', '', tsStream, 'sdi');
+    Name := InfoToFilename('', '', '', '', tsStream, 'sdi');
     FFilename := GetValidFilename(Name);
 
     if FileExists(FSaveDir + Filename + Ext) then
@@ -1537,7 +1537,7 @@ begin
   Result := StringReplace(Result, '|', ' ', [rfReplaceAll]);
 end;
 
-function TFileChecker.InfoToFilename(Artist, Title, Album: string; TitleState: TTitleStates; Patterns: string): string;
+function TFileChecker.InfoToFilename(Artist, Title, Album, StreamTitle: string; TitleState: TTitleStates; Patterns: string): string;
 var
   i: Integer;
   Dir, StreamName: string;
@@ -1576,6 +1576,8 @@ begin
         Arr[i].Replace := Title;
       'l':
         Arr[i].Replace := Album;
+      'u':
+        Arr[i].Replace := StreamTitle;
       's':
         Arr[i].Replace := Trim(StreamName);
       'n':

@@ -385,28 +385,27 @@ object frmSettings: TfrmSettings
   end
   object pnlPlugins: TPanel
     Left = 4
-    Top = 388
+    Top = 368
     Width = 294
-    Height = 257
+    Height = 309
     TabOrder = 3
     Visible = False
     DesignSize = (
       294
-      257)
+      309)
     object lblAppParams: TLabel
       Left = 4
-      Top = 236
+      Top = 264
       Width = 281
-      Height = 17
+      Height = 41
       Anchors = [akLeft, akRight, akBottom]
       AutoSize = False
       Caption = '-'
       WordWrap = True
-      ExplicitTop = 252
     end
     object btnBrowseApp: TSpeedButton
       Left = 264
-      Top = 164
+      Top = 192
       Width = 25
       Height = 21
       Hint = 'Browse...'
@@ -420,7 +419,7 @@ object frmSettings: TfrmSettings
     end
     object btnHelp: TPngSpeedButton
       Left = 266
-      Top = 56
+      Top = 88
       Width = 24
       Height = 25
       Hint = 'Info...'
@@ -455,7 +454,7 @@ object frmSettings: TfrmSettings
       Left = 4
       Top = 1
       Width = 257
-      Height = 80
+      Height = 112
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
       Checkboxes = True
@@ -476,7 +475,7 @@ object frmSettings: TfrmSettings
     end
     object btnAddUp: TButton
       Left = 96
-      Top = 88
+      Top = 120
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
@@ -486,7 +485,7 @@ object frmSettings: TfrmSettings
     end
     object btnRemove: TButton
       Left = 196
-      Top = 88
+      Top = 120
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
@@ -497,7 +496,7 @@ object frmSettings: TfrmSettings
     end
     object txtApp: TLabeledEdit
       Left = 4
-      Top = 164
+      Top = 192
       Width = 257
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -512,7 +511,7 @@ object frmSettings: TfrmSettings
     end
     object txtAppParams: TLabeledEdit
       Left = 4
-      Top = 208
+      Top = 236
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -525,7 +524,7 @@ object frmSettings: TfrmSettings
     end
     object chkOnlyIfCut: TCheckBox
       Left = 4
-      Top = 120
+      Top = 152
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -535,7 +534,7 @@ object frmSettings: TfrmSettings
     end
     object btnConfigure: TButton
       Left = 4
-      Top = 88
+      Top = 120
       Width = 93
       Height = 25
       Anchors = [akLeft, akBottom]
@@ -1163,11 +1162,11 @@ object frmSettings: TfrmSettings
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 311
+      EditLabel.Width = 331
       EditLabel.Height = 13
       EditLabel.Caption = 
-        'Pattern for filenames of stream files (%a, %t, %l and %n are inv' +
-        'alid):'
+        'Pattern for filenames of stream files (%a, %t, %l, %u and %n are' +
+        ' invalid):'
       TabOrder = 4
       OnChange = txtStreamFilePatternChange
       OnClick = txtStreamFilePatternClick
@@ -1175,14 +1174,14 @@ object frmSettings: TfrmSettings
   end
   object pnlCommunityBlacklist: TPanel
     Left = 4
-    Top = 652
+    Top = 684
     Width = 293
-    Height = 137
+    Height = 105
     TabOrder = 8
     Visible = False
     DesignSize = (
       293
-      137)
+      105)
     object Label19: TLabel
       Left = 4
       Top = 4
@@ -1194,14 +1193,15 @@ object frmSettings: TfrmSettings
       Left = 4
       Top = 20
       Width = 285
-      Height = 81
+      Height = 49
       Anchors = [akLeft, akTop, akRight, akBottom]
       BevelOuter = bvNone
       TabOrder = 0
+      ExplicitHeight = 81
     end
     object btnBlacklistRemove: TButton
       Left = 196
-      Top = 112
+      Top = 80
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
@@ -1209,6 +1209,7 @@ object frmSettings: TfrmSettings
       Enabled = False
       TabOrder = 1
       OnClick = btnBlacklistRemoveClick
+      ExplicitTop = 112
     end
   end
   object pnlStreamsAdvanced: TPanel
@@ -1471,7 +1472,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800B00210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800B40210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
