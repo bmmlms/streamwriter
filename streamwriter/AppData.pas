@@ -260,8 +260,7 @@ begin
   SetLength(FHeaderWidth, 6);
 
   {$IFDEF DEBUG}
-  // TODO: Hier wieder .gaia hinmachen!!!
-  FProjectUpdateLink := 'http://streamwriter.org/';
+  FProjectUpdateLink := 'http://streamwriter.gaia/';
   {$ELSE}
   FProjectUpdateLink := 'http://streamwriter.org/';
   {$ENDIF}
@@ -275,7 +274,7 @@ begin
 
   FRecoveryFile := FStorage.DataDir + 'streamwriter_data_recovery.dat';
 
-  FBuildNumber := 303;
+  FBuildNumber := 322;
 
   BuildThanksText;
 
@@ -505,7 +504,6 @@ procedure TAppData.Load;
   function GetID: Integer;
   var
     Len: Cardinal;
-    i: Integer;
     Name: string;
   begin
     Result := Random(9999) + 1;
@@ -849,8 +847,6 @@ begin
 end;
 
 destructor TStreamSettings.Destroy;
-var
-  i: Integer;
 begin
   FIgnoreTrackChangePattern.Free;
 

@@ -643,9 +643,6 @@ var
   i: Integer;
   Node: PVirtualNode;
   NodeData: PTitleNodeData;
-  Dlg: TSaveDialog;
-  Lst: TStringList;
-  Ok: Boolean;
 begin
   Node := FTree.GetFirst;
   while Node <> nil do

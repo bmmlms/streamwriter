@@ -48,8 +48,6 @@ implementation
 {$R *.dfm}
 
 procedure TfrmConfigureSetTags.btnOKClick(Sender: TObject);
-var
-  Res: Integer;
 begin
   FArtist := Trim(txtArtist.Text);
   FTitle := Trim(txtTitle.Text);

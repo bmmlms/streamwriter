@@ -631,12 +631,9 @@ end;
 class function TStreamEntry.Load(Stream: TExtendedStream; Version: Integer): TStreamEntry;
 var
   BTmp: Boolean;
-  B: Byte;
   i: Integer;
   Count: Cardinal;
   URL: string;
-  TrackInfo: TTrackInfo;
-  DTTmp: TDateTime;
 begin
   Result := TStreamEntry.Create;
 
@@ -871,7 +868,7 @@ var
   TrackInfo: TTrackInfo;
   Str: string;
   Version, CatCount, EntryCount: Integer;
-  i, n: Integer;
+  i: Integer;
 begin
   CleanLists;
 
@@ -1658,7 +1655,7 @@ class function TChartEntry.Load(Stream: TExtendedStream;
   Version: Integer): TChartEntry;
 var
   i: Integer;
-  C, Cat: Cardinal;
+  C: Cardinal;
 begin
   Result := TChartEntry.Create;
   Stream.Read(Result.FName);

@@ -69,13 +69,8 @@ end;
 procedure TSetTagsThread.Execute;
 var
   Artist, Title, Album, Comment: string;
-  P: TSetTagsPlugin;
   ID3V1: TID3v1Tag;
   ID3V2: TID3v2Tag;
-
-  i: Integer;
-  Dir, StreamName: string;
-  Replaced: string;
   Arr: TPatternReplaceArray;
 begin
   inherited;
@@ -108,8 +103,6 @@ begin
   Arr[5].Replace := FormatDateTime('dd.mm.yy', Now);
   Arr[6].C := 'i';
   Arr[6].Replace := FormatDateTime('hh.nn.ss', Now);
-
-  P := TSetTagsPlugin(Plugin);
 
   ID3V1 := TID3v1Tag.Create;
   ID3V2 := TID3v2Tag.Create;

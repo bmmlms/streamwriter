@@ -101,15 +101,10 @@ end;
 
 function TAudioStreamFile.SearchSilence(StartPos, EndPos, LenStart, LenEnd, MaxPeaks, MinDuration: Int64): TPosRect;
 var
-  i, n, MaxLenIdx, ArrIdx: Integer;
+  i, MaxLenIdx: Integer;
   WD, WD2: TWaveData;
   M1, M2: TExtendedStream;
   OldPos: Int64;
-  Avg, Avg2: Cardinal;
-  MinSilence: TMinSilenceArray;
-  MS: TMinSilence;
-  EntryCount: Cardinal;
-  A, B: Int64;
 begin
   OldPos := Position;
 
@@ -364,15 +359,10 @@ end;
 function TAudioStreamMemory.SearchSilence(StartPos, EndPos, LenStart, LenEnd, MaxPeaks,
   MinDuration: Int64): TPosRect;
 var
-  i, n, MaxLenIdx, ArrIdx: Integer;
+  i, MaxLenIdx: Integer;
   WD, WD2: TWaveData;
   M1, M2: TExtendedStream;
   OldPos: Int64;
-  Avg, Avg2: Cardinal;
-  MinSilence: TMinSilenceArray;
-  MS: TMinSilence;
-  EntryCount: Cardinal;
-  A, B: Int64;
 begin
   OldPos := Position;
 

@@ -446,7 +446,7 @@ begin
   begin
     if FileExists(FExe) then
     begin
-      SetLength(Arr, 8);
+      SetLength(Arr, 9);
 
       Arr[0].C := 'f';
       Arr[0].Replace := FData.Filename;
@@ -460,10 +460,12 @@ begin
       Arr[4].Replace := FData.StreamTitle;
       Arr[5].C := 's';
       Arr[5].Replace := FData.Station;
-      Arr[6].C := 'd';
-      Arr[6].Replace := FormatDateTime('dd.mm.yy', Now);
-      Arr[7].C := 'i';
-      Arr[7].Replace := FormatDateTime('hh.nn.ss', Now);
+      Arr[6].C := 'n';
+      Arr[6].Replace := IntToStr(FData.TrackNumber);
+      Arr[7].C := 'd';
+      Arr[7].Replace := FormatDateTime('dd.mm.yy', Now);
+      Arr[8].C := 'i';
+      Arr[8].Replace := FormatDateTime('hh.nn.ss', Now);
 
       Replaced := PatternReplace(FParams, Arr);
       if Trim(Replaced) <> '' then

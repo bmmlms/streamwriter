@@ -1700,8 +1700,6 @@ begin
 end;
 
 procedure TSavedTree.MessageReceived(Msg: TMessageBase);
-var
-  M: TFileModifyMsg;
 begin
   if Msg is TFileModifyMsg then
   begin

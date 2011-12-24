@@ -438,8 +438,6 @@ end;
 function TClientManager.GetClient(ID: Integer; Name, URL, Title: string;
   URLs: TStringList): TICEClient;
 var
-  i: Integer;
-  n: Integer;
   Client: TICEClient;
 begin
   Name := Trim(Name);

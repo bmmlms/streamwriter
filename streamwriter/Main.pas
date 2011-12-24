@@ -882,7 +882,7 @@ begin
         if MsgHash < 100 then
           MsgHash := MsgHash + 100;
 
-        TfrmMsgDlg.ShowMsg(Self, Format(_(Notification), [Msg]), HashString(Msg), btOK);
+        TfrmMsgDlg.ShowMsg(Self, Format(_(Notification), [Msg]), MsgHash, btOK);
       end;
   end;
 end;

@@ -51,11 +51,9 @@ implementation
 
 procedure TfrmChartsTabAdjustTitleName.btnOKClick(Sender: TObject);
 var
-  i, n, NumChars: Integer;
+  NumChars: Integer;
   Hash: Cardinal;
-  Found: Boolean;
   Pattern: string;
-  T: TTitleInfo;
 begin
   Pattern := BuildPattern(txtTitle.Text, Hash, NumChars, True);
 

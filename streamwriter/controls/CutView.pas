@@ -478,8 +478,6 @@ begin
 end;
 
 procedure TCutView.MessageReceived(Msg: TMessageBase);
-var
-  M: TFileModifyMsg;
 begin
   {
   if Msg is TFileModifyMsg then
@@ -923,15 +921,6 @@ begin
 end;
 
 procedure TCutView.AutoCut(MaxPeaks: Integer; MinDuration: Cardinal);
-var
-  i, n, MaxLenIdx, ArrIdx: Integer;
-  WD, WD2: TWaveData;
-  OldPos: Int64;
-  Avg, Avg2: Cardinal;
-  MinSilence: TMinSilenceArray;
-  MS: TMinSilence;
-  EntryCount: Cardinal;
-  A, B: Int64;
 begin
   if FWaveData = nil then
     Exit;
@@ -976,10 +965,11 @@ function TCutView.CanApplyFadeIn: Boolean;
 var
   Tolerance: Cardinal;
 begin
-  if FWaveData <> nil then
-    Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5) + 4;
-  Result := (FWaveData <> nil) and
-            (LowerCase(ExtractFileExt(FFilename)) = '.mp3') and
+  if FWaveData = nil then
+    Exit(False);
+
+  Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5) + 4;
+  Result := (LowerCase(ExtractFileExt(FFilename)) = '.mp3') and
             (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
             ((FPB.FEffectStartLine <= Tolerance) or (FPB.FEffectEndLine <= Tolerance));
 end;
@@ -988,10 +978,11 @@ function TCutView.CanApplyFadeOut: Boolean;
 var
   Tolerance: Cardinal;
 begin
-  if FWaveData <> nil then
-    Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5) + 4;
-  Result := (FWaveData <> nil) and
-            (LowerCase(ExtractFileExt(FFilename)) = '.mp3') and
+  if FWaveData = nil then
+    Exit(False);
+
+  Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5) + 4;
+  Result := (LowerCase(ExtractFileExt(FFilename)) = '.mp3') and
             (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
             ((FPB.FEffectStartLine >= Length(FWaveData.WaveArray) - Tolerance) or (FPB.FEffectEndLine >= Length(FWaveData.WaveArray) - Tolerance));
 end;

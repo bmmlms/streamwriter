@@ -1362,8 +1362,6 @@ end;
 
 procedure TMStreamSearchPanel.Setup;
 var
-  I: TIcon;
-  B: TBitmap;
   TopCnt: Integer;
 begin
   TopCnt := 4;

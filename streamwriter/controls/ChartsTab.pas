@@ -104,7 +104,6 @@ type
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
       Column: TColumnIndex; var Ghosted: Boolean;
       var Index: Integer): TCustomImageList; override;
-    procedure DoFreeNode(Node: PVirtualNode); override;
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode;
       Column: TColumnIndex): Integer; override;
     procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
@@ -226,7 +225,6 @@ procedure TChartsTab.HomeCommChartsReceived(Sender: TObject; CategoryList: TList
   Genres: TList<TGenre>; ChartList: TList<TChartEntry>);
 var
   i: Integer;
-  Node: PVirtualNode;
 begin
   SetState(csNormal);
 
@@ -252,8 +250,6 @@ begin
 end;
 
 procedure TChartsTab.HomeCommStateChanged(Sender: TObject);
-var
-  K: Char;
 begin
   FSearchPanel.FButtonReload.Enabled := HomeComm.Connected;
 
@@ -332,7 +328,6 @@ end;
 procedure TChartsTab.ShowCharts;
 var
   i, n: Integer;
-  Add: Boolean;
   Node: PVirtualNode;
   NodeData: PChartNodeData;
   CatData: TChartCategory;
@@ -340,7 +335,6 @@ var
   P: string;
   Hash: Cardinal;
   Chars: Integer;
-  Res: Boolean;
 
   CatMatch: Boolean;
   SearchMatch: Boolean;
@@ -359,7 +353,6 @@ begin
     for i := 0 to FLists.ChartList.Count - 1 do
     begin
       CatMatch := False;
-      SearchMatch := False;
 
       if CatData = nil then
       begin
@@ -482,9 +475,6 @@ begin
 end;
 
 procedure TChartsTree.DblClick;
-var
-  i: Integer;
-  Tracks: TChartArray;
 begin
   inherited;
 
@@ -574,14 +564,6 @@ begin
   end;
 end;
 
-procedure TChartsTree.DoFreeNode(Node: PVirtualNode);
-var
-  NodeData: PChartNodeData;
-begin
-
-  inherited;
-end;
-
 function TChartsTree.DoGetImageIndex(Node: PVirtualNode;
   Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean;
   var Index: Integer): TCustomImageList;
@@ -636,7 +618,6 @@ end;
 function TChartsTree.DoIncrementalSearch(Node: PVirtualNode;
   const Text: string): Integer;
 var
-  CmpTxt: string;
   NodeData: PChartNodeData;
 begin
   NodeData := GetNodeData(Node);
@@ -672,7 +653,6 @@ end;
 
 function TChartsTree.GetSelected: TChartArray;
 var
-  i: Integer;
   Node: PVirtualNode;
   NodeData: PChartNodeData;
 begin
@@ -691,9 +671,6 @@ begin
 end;
 
 procedure TChartsTree.KeyPress(var Key: Char);
-var
-  i: Integer;
-  Tracks: TChartArray;
 begin
   inherited;
 
@@ -757,8 +734,7 @@ end;
 procedure TChartsTree.PaintImage(var PaintInfo: TVTPaintInfo;
   ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
 var
-  L, i: Integer;
-  Found: Boolean;
+  L: Integer;
   NodeData: PChartNodeData;
 begin
   if PaintInfo.Column = 0 then
@@ -780,7 +756,6 @@ var
   Titles: TStringList;
   Charts: TChartArray;
   P: TControl;
-  Pattern: string;
   F: TfrmChartsTabAdjustTitleName;
 begin
   Titles := TStringList.Create;
@@ -827,7 +802,6 @@ end;
 
 procedure TChartsTree.PopupMenuPopup(Sender: TObject);
 var
-  i: Integer;
   AllOnList: Boolean;
   N: PVirtualNode;
   NodeData: PChartNodeData;
@@ -879,9 +853,6 @@ end;
 { TSearchPanel }
 
 constructor TSearchPanel.Create(AOwner: TComponent);
-var
-  I: TIcon;
-  B: TBitmap;
 begin
   inherited;
 

@@ -64,8 +64,6 @@ type
     FChangedFormat: string;
     FChangedTitlePattern: string;
 
-    FLastPing: Extended;
-
     FServerInfoClientCount: Cardinal;
     FServerInfoRecordingCount: Cardinal;
 
@@ -271,7 +269,6 @@ end;
 function THomeCommunication.GetCharts: Boolean;
 var
   XMLDocument: TXMLLib;
-  Data, Node: TXMLNode;
   XML: AnsiString;
 begin
   Result := False;
@@ -822,11 +819,7 @@ end;
 procedure THomeThread.DoChartsReceived(Version: Integer; Header,
   Data: TXMLNode);
 var
-  i, n: Integer;
-  T: string;
   Node, Node2: TXMLNode;
-  NewList: TList<TStreamBrowserEntry>;
-  Entry, Entry2: TStreamBrowserEntry;
   Categories: TIntArray;
 begin
   FChartCategories.Clear;

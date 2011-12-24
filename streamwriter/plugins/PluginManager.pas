@@ -63,7 +63,6 @@ end;
 function TPluginManager.ProcessFile(Entry: TProcessingEntry): Boolean;
 var
   i, Order, SmallestActive: Integer;
-  TriedPlugins: TList<TPluginBase>;
 begin
   Result := False;
   Order := 0;

@@ -1471,9 +1471,6 @@ begin
 end;
 
 procedure TClientTab.VolumeTrackbarChange(Sender: TObject);
-var
-  Clients: TClientArray;
-  Client: TICEClient;
 begin
   Players.Volume := FVolume.Volume;
   if FVolume.VolumeBeforeDrag > -1 then
