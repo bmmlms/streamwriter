@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2011 Alexander Nottelmann
+    Copyright (c) 2010-2012 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -240,12 +240,12 @@ type
     procedure lstIgnoreTitlesEdited(Sender: TObject; Item: TListItem;
       var S: string);
     procedure btnResetRemoveCharsClick(Sender: TObject);
-    procedure txtFilePatternClick(Sender: TObject);
     procedure txtStreamFilePatternChange(Sender: TObject);
     procedure txtStreamFilePatternClick(Sender: TObject);
     procedure chkRemoveSavedFromWishlistClick(Sender: TObject);
     procedure chkNormalizeVariablesClick(Sender: TObject);
     procedure chkManualSilenceLevelClick(Sender: TObject);
+    procedure txtFilePatternEnter(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -1670,14 +1670,6 @@ begin
     lstPlugins.Items[i].Caption := TPluginBase(lstPlugins.Items[i].Data).Name;
   end;
 
-  if FActivePreviewField <> nil then
-  begin
-    // TODO: HIER FELD TYP UNTERSCHEIDEN, NICHT EINFACH TEXTE SETZEN!!!!!!!! MACHEN!!!
-    //txtPreview.Text := ValidatePattern(FActivePreviewField.Text);
-    //if Trim(RemoveFileExt(txtPreview.Text)) = '' then
-    //  txtPreview.Text := '';
-  end;
-
   BuildHotkeys;
 
   AppGlobals.PluginManager.ReInitPlugins;
@@ -1890,34 +1882,9 @@ begin
   end;
 end;
 
-procedure TfrmSettings.txtFilePatternClick(Sender: TObject);
-begin
-  inherited;
-
-  FActivePreviewField := Sender as TLabeledEdit;
-
-  if Sender = txtAutomaticFilePattern then
-    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlusdi')
-  else if Sender = txtStreamFilePattern then
-    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'sdi')
-  else
-    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlusndi');
-
-  if Trim(RemoveFileExt(txtPreview.Text)) = '' then
-    txtPreview.Text := '';
-end;
-
 procedure TfrmSettings.txtFilePatternDecimalsChange(Sender: TObject);
 begin
   inherited;
-
-  if FActivePreviewField <> nil then
-  begin
-    // TODO: Das hier besonders behandeln wenn das aktive ein streamfeld ist. weil nicht alle platzhalter erlaubt sind!!!
-    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'sdi');
-    if Trim(RemoveFileExt(txtPreview.Text)) = '' then
-      txtPreview.Text := '';
-  end;
 
   if FInitialized then
     RemoveGray(txtFilePatternDecimals);
@@ -1932,6 +1899,23 @@ end;
 procedure TfrmSettings.txtIgnoreTitlePatternChange(Sender: TObject);
 begin
   btnAddIgnoreTitlePattern.Enabled := Length(Trim(txtIgnoreTitlePattern.Text)) >= 1;
+end;
+
+procedure TfrmSettings.txtFilePatternEnter(Sender: TObject);
+begin
+  inherited;
+
+  FActivePreviewField := Sender as TLabeledEdit;
+
+  if Sender = txtAutomaticFilePattern then
+    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlusdi')
+  else if Sender = txtStreamFilePattern then
+    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'sdi')
+  else
+    txtPreview.Text := ValidatePattern(FActivePreviewField.Text, 'atlusndi');
+
+  if Trim(RemoveFileExt(txtPreview.Text)) = '' then
+    txtPreview.Text := '';
 end;
 
 procedure TfrmSettings.txtMaxRetriesChange(Sender: TObject);
@@ -2282,7 +2266,6 @@ begin
   if not inherited then
     Exit;
 
-  // TODO: Passen die parameter für ValidatePattern() überall??? hier im check und auch beim onchange und so...???
   if Trim(txtMinDiskSpace.Text) = '' then
   begin
     MsgBox(Handle, _('Please enter the minumum free space that must be available for recording.'), _('Info'), MB_ICONINFORMATION);

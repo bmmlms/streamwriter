@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2011 Alexander Nottelmann
+    Copyright (c) 2010-2012 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -33,7 +33,8 @@ uses
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
-  TypeDefs, ExtendedStream, SettingsStorage, ChartsTab, StatusBar;
+  TypeDefs, ExtendedStream, SettingsStorage, ChartsTab, StatusBar,
+  SystemCritical;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -1020,21 +1021,11 @@ begin
       end;
     5:
       begin
-        // TODO: MessageBus und direkt den PlayerManager steuern.
         Players.IncreaseVolume;
-        //AppGlobals.PlayerVolume := AppGlobals.PlayerVolume + 5;
-        //if AppGlobals.PlayerVolume > 100 then
-        //  AppGlobals.PlayerVolume := 100;
-        //tabVolumeChanged(nil, AppGlobals.PlayerVolume);
       end;
     6:
       begin
-        // TODO: MessageBus und direkt den PlayerManager steuern.
         Players.DecreaseVolume;
-        //AppGlobals.PlayerVolume := AppGlobals.PlayerVolume - 5;
-        //if AppGlobals.PlayerVolume < 0 then
-        //  AppGlobals.PlayerVolume := 0;
-        //tabVolumeChanged(nil, AppGlobals.PlayerVolume);
       end;
   end;
 end;
@@ -1742,9 +1733,10 @@ end;
 
 procedure TfrmStreamWriterMain.tmrSpeedTimer(Sender: TObject);
 var
-  Active: Boolean;
+  RecordingActive: Boolean;
+  PlayingActive: Boolean;
+  ScheduleActive: Boolean;
   i: Integer;
-var
   Clients: TNodeDataArray;
   Client: PClientNodeData;
   Speed: UInt64;
@@ -1767,16 +1759,26 @@ begin
 
   tabClients.TimerTick;
 
-  Active := False;
+  RecordingActive := False;
+  PlayingActive := False;
   for i := 0 to FClients.Count - 1 do
+  begin
     if FClients[i].Recording then
     begin
-      Active := True;
-      Break;
+      RecordingActive := True;
     end;
+    if FClients[i].Playing then
+    begin
+      PlayingActive := True;
+    end;
+    if FClients[i].Entry.Schedules.Count > 0 then
+    begin
+      ScheduleActive := True;
+    end;
+  end;
 
   OnlyAuto := True;
-  if Active and not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
+  if RecordingActive and not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
   begin
     for i := 0 to FClients.Count - 1 do
       if FClients[i].Recording and (not FClients[i].AutoRemove) then
@@ -1796,6 +1798,8 @@ begin
       tmrSpeed.Enabled := True;
     end;
   end;
+
+  Critical.Critical := (PlayingActive or RecordingActive or ScheduleActive) or (FDataLists.SaveList.Count > 0);
 end;
 
 procedure TfrmStreamWriterMain.ToggleWindow(AlwaysShow: Boolean);

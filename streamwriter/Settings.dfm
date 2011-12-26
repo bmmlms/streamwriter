@@ -1113,7 +1113,7 @@ object frmSettings: TfrmSettings
       EditLabel.Caption = 'Pattern for filenames of completely recorded tracks:'
       TabOrder = 0
       OnChange = txtFilePatternChange
-      OnClick = txtFilePatternClick
+      OnEnter = txtFilePatternEnter
     end
     object txtPreview: TLabeledEdit
       Left = 4
@@ -1139,7 +1139,7 @@ object frmSettings: TfrmSettings
       EditLabel.Caption = 'Pattern for filenames of incompletely recorded tracks:'
       TabOrder = 2
       OnChange = txtFilePatternChange
-      OnClick = txtFilePatternClick
+      OnEnter = txtFilePatternEnter
     end
     object txtAutomaticFilePattern: TLabeledEdit
       Left = 4
@@ -1154,7 +1154,7 @@ object frmSettings: TfrmSettings
         'valid):'
       TabOrder = 3
       OnChange = txtFilePatternChange
-      OnClick = txtFilePatternClick
+      OnEnter = txtFilePatternEnter
     end
     object txtStreamFilePattern: TLabeledEdit
       Left = 4
@@ -1170,6 +1170,7 @@ object frmSettings: TfrmSettings
       TabOrder = 4
       OnChange = txtStreamFilePatternChange
       OnClick = txtStreamFilePatternClick
+      OnEnter = txtFilePatternEnter
     end
   end
   object pnlCommunityBlacklist: TPanel
@@ -1470,7 +1471,7 @@ object frmSettings: TfrmSettings
     Left = 536
     Top = 112
     Bitmap = {
-      494C010102000800B80210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800BC0210001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

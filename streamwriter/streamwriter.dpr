@@ -111,7 +111,8 @@ uses
   MessageBus in '..\..\common\MessageBus.pas',
   AppMessages in 'AppMessages.pas',
   StatusBar in 'controls\StatusBar.pas',
-  AACPostProcess in 'plugins\AACPostProcess.pas';
+  AACPostProcess in 'plugins\AACPostProcess.pas',
+  SystemCritical in '..\..\common\SystemCritical.pas';
 
 {$SetPEOptFlags $0140}
 

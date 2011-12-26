@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2011 Alexander Nottelmann
+    Copyright (c) 2010-2012 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -176,7 +176,6 @@ begin
       FMute.Down := True;
   end else
   begin
-    // TODO: Playervolumebeforemute muss auch in AppGlobals gesetzt werden, also beim speichern!!!
     FTrackBar.Position := Players.VolumeBeforeMute;
     FMute.PngImage := FVolumePng;
   end;
