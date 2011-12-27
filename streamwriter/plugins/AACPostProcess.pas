@@ -31,7 +31,7 @@ type
     FMP4BoxPath: string;
     FAtomicParsleyPath: string;
 
-    function ProcessAtomicParsley(FromFile: string): Boolean;
+    function ProcessAtomicParsley(FromFile: string; var Outfile: string): Boolean;
   protected
     procedure Execute; override;
   public
@@ -82,7 +82,7 @@ end;
             // TODO: streamwriter kommt nicht damit klar, wenn sich die dateierweiterung ändert. er sagt dann "plugin hat datei gelöscht"...
 procedure TAACPostProcessThread.Execute;
 var
-  TempFile, CmdLine, Params: string;
+  TempFile, CmdLine, Params, Outfile: string;
   Output: AnsiString;
   P: TAACPostProcessPlugin;
   LoopStarted: Cardinal;
@@ -124,30 +124,14 @@ begin
           if FileExists(TempFile) then
           begin
             // TODO: Was ist result, wenn das hier fehlschlägt??
-            Failed := not ProcessAtomicParsley(RemoveFileExt(TempFile) + '.m4a');
+            Failed := not ProcessAtomicParsley(RemoveFileExt(TempFile) + '.m4a', Outfile);
+            if not Failed then
+              FData.Filename := Outfile;
           end;
         end;
 
         if not Failed then
-          if not DeleteFile(FData.Filename) then
-            Failed := True;
-
-        if not Failed then
-          if not MoveFile(PChar(TempFile), PChar(RemoveFileExt(FData.Filename) + '.m4a')) then
-            Failed := True;
-
-        if not Failed then
         begin
-          FData.Filesize := GetFileSize(FData.Filename);
-
-          // Okay, das hier ist nicht ordentlich, aber sollte passen...
-          { TODO:
-          if P.FSilenceStart then
-            FData.Length := FData.Length + P.FSilenceStartLength;
-          if P.FSilenceEnd then
-            FData.Length := FData.Length + P.FSilenceEndLength;
-          }
-
           FResult := arWin;
         end;
       end;
@@ -156,7 +140,7 @@ begin
   end;
 end;
 
-function TAACPostProcessThread.ProcessAtomicParsley(FromFile: string): Boolean;
+function TAACPostProcessThread.ProcessAtomicParsley(FromFile: string; var Outfile: string): Boolean;
 var
   TempFile, CmdLine, Params: string;
   Output: AnsiString;
@@ -169,9 +153,12 @@ var
 begin
   inherited;
 
+  Outfile := '';
+
   Result := False;
 
-  CmdLine := '"' + FAtomicParsleyPath + '" "' + FromFile + '" --title "LOL"';
+  CmdLine := '"' + FAtomicParsleyPath + '" "' + FromFile + '" --title "' + FData.Title + '" --artist "' + FData.Artist + '"' +
+    ' --album ' + '"' + FData.Album + '"' + ' --tracknum ' + '"' + IntToStr(FData.TrackNumber) + '"' + ' --comment ' + '"TODO: !!!"';
 
   Params := '123';
 
@@ -198,6 +185,26 @@ begin
       Failed := True;
       if FileExists(TempFile) and (EC = 0) then
       begin
+        LoopStarted := GetTickCount;
+        while Failed do
+        begin
+          try
+            FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
+            try
+              Failed := False;
+              Break;
+            finally
+              FS.Free;
+            end;
+          except
+            Sleep(50);
+            if GetTickCount > LoopStarted + 5000 then
+            begin
+              Break;
+            end;
+          end;
+        end;
+
         if not Failed then
           if not DeleteFile(FData.Filename) then
             Failed := True;
@@ -208,18 +215,13 @@ begin
 
         if not Failed then
         begin
-          FData.Filesize := GetFileSize(FData.Filename);
-
-          // Okay, das hier ist nicht ordentlich, aber sollte passen...
-          { TODO:
-          if P.FSilenceStart then
-            FData.Length := FData.Length + P.FSilenceStartLength;
-          if P.FSilenceEnd then
-            FData.Length := FData.Length + P.FSilenceEndLength;
-          }
+          Outfile := RemoveFileExt(FData.Filename) + '.m4a';
+          FData.Filesize := GetFileSize(Outfile);
         end;
       end;
       DeleteFile(PChar(TempFile));
+
+      Result := not Failed;
     end;
   end;
 end;

@@ -880,7 +880,8 @@ begin
   if not CheckSoX then
     Exit;
 
-  F := TfrmConfigureSox.Create(Self, GetSox, False, False, False, 5, 5, False, False, 3, 3);
+  F := TfrmConfigureSox.Create(Self, GetSox, False, False, False, 5, 5, False, False, 3, 3,
+    Trunc(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec));
   try
     F.ShowModal;
 
@@ -1056,9 +1057,10 @@ begin
     Plugin.Initialize;
   end;
 
+  // Ich glaube, dass das hier nur eintreten konnte, wenn man da noch lame_enc.dll und so manuell "eaten" musste...
   if Plugin.ReadyForActivate and (not Plugin.ReadyForUse) then
   begin
-    CS := TfrmConfigureSoX.Create(GetParentForm(Self), Plugin);
+    CS := TfrmConfigureSoX.Create(GetParentForm(Self), Plugin, Trunc(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec));
     try
       CS.ShowModal;
 

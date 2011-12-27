@@ -51,6 +51,7 @@ type
 
     procedure IncreaseVolume;
     procedure DecreaseVolume;
+    procedure Mute;
 
     property Volume: Integer read FVolume write FSetVolume;
     property VolumeBeforeMute: Integer read FVolumeBeforeMute write FVolumeBeforeMute;
@@ -86,6 +87,14 @@ end;
 procedure TPlayerManager.IncreaseVolume;
 begin
   Volume := FVolume + 10;
+end;
+
+procedure TPlayerManager.Mute;
+begin
+  if Volume = 0 then
+    Volume := FVolumeBeforeMute
+  else
+    Volume := 0;
 end;
 
 procedure TPlayerManager.DecreaseVolume;

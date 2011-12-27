@@ -116,7 +116,7 @@ object frmConfigureSoX: TfrmConfigureSoX
         EditLabel.Height = 13
         EditLabel.Caption = 'Length in seconds:'
         Enabled = False
-        MaxLength = 1
+        MaxLength = 2
         NumbersOnly = True
         TabOrder = 0
       end
@@ -138,7 +138,7 @@ object frmConfigureSoX: TfrmConfigureSoX
         EditLabel.Height = 13
         EditLabel.Caption = 'Length in seconds:'
         Enabled = False
-        MaxLength = 1
+        MaxLength = 2
         NumbersOnly = True
         TabOrder = 2
       end
@@ -168,7 +168,7 @@ object frmConfigureSoX: TfrmConfigureSoX
         EditLabel.Height = 13
         EditLabel.Caption = 'Length in seconds:'
         Enabled = False
-        MaxLength = 1
+        MaxLength = 2
         NumbersOnly = True
         TabOrder = 0
       end
@@ -190,7 +190,7 @@ object frmConfigureSoX: TfrmConfigureSoX
         EditLabel.Height = 13
         EditLabel.Caption = 'Length in seconds:'
         Enabled = False
-        MaxLength = 1
+        MaxLength = 2
         NumbersOnly = True
         TabOrder = 2
       end
@@ -205,8 +205,8 @@ object frmConfigureSoX: TfrmConfigureSoX
       end
     end
     object GroupBox3: TGroupBox
-      Left = 148
-      Top = 112
+      Left = 136
+      Top = 96
       Width = 401
       Height = 49
       Caption = ' Misc '

@@ -1314,6 +1314,11 @@ begin
     else
       AppGlobals.ShortcutVolDown := 0;
 
+    if lstHotkeys.Items[7].SubItems[0] <> '' then
+      AppGlobals.ShortcutMute := TextToShortCut(lstHotkeys.Items[7].SubItems[0])
+    else
+      AppGlobals.ShortcutMute := 0;
+
     for i := 0 to FTemporaryPlugins.Count - 1 do
     begin
       Plugin := AppGlobals.PluginManager.Find(FTemporaryPlugins[i]);
@@ -2225,6 +2230,7 @@ begin
     lstHotkeys.Items[4].Caption := _('Previous stream');
     lstHotkeys.Items[5].Caption := _('Volume up');
     lstHotkeys.Items[6].Caption := _('Volume down');
+    lstHotkeys.Items[7].Caption := _('Mute');
   end else
   begin
     Item := lstHotkeys.Items.Add;
@@ -2254,6 +2260,10 @@ begin
     Item := lstHotkeys.Items.Add;
     Item.Caption := _('Volume down');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutVolDown));
+
+    Item := lstHotkeys.Items.Add;
+    Item.Caption := _('Mute');
+    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutMute));
   end;
 end;
 

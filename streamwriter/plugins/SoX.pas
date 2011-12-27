@@ -242,7 +242,7 @@ begin
 
   F := TfrmConfigureSoX.Create(AOwner, Self, FNormalize, FFadeoutStart, FFadeoutEnd,
     FFadeoutStartLength, FFadeoutEndLength, FSilenceStart, FSilenceEnd, FSilenceStartLength,
-    FSilenceEndLength);
+    FSilenceEndLength, 0);
   try
     F.ShowModal;
 

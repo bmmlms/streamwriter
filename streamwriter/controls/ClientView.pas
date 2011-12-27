@@ -26,7 +26,7 @@ uses
   StdCtrls, Menus, ImgList, Math, ICEClient, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, Tabs, DropComboTarget,
   DropSource, ShlObj, ComObj, ShellAPI, DataManager, StreamBrowserView,
-  Logging;
+  Logging, PngImage;
 
 type
   TAccessCanvas = class(TCanvas);
@@ -107,6 +107,8 @@ type
     procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
     function DoEndEdit: Boolean; override;
     procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; Text: UnicodeString); override;
+    procedure PaintImage(var PaintInfo: TVTPaintInfo;
+      ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
   public
     constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree); reintroduce;
     destructor Destroy; override;
@@ -742,6 +744,19 @@ begin
     Data := GetNodeData(Nodes[i]);
     Result[i] := Data;
   end;
+end;
+
+procedure TMClientView.PaintImage(var PaintInfo: TVTPaintInfo;
+  ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
+var
+  NodeData: PClientNodeData;
+begin
+  inherited;
+
+  NodeData := GetNodeData(PaintInfo.Node);
+
+  if (NodeData.Client <> nil) and (NodeData.Client.Entry.Schedules.Count > 0) then
+    Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 8);
 end;
 
 function TMClientView.NodesToClients(Nodes: TNodeArray): TClientArray;

@@ -1027,6 +1027,10 @@ begin
       begin
         Players.DecreaseVolume;
       end;
+    7:
+      begin
+        Players.Mute;
+      end;
   end;
 end;
 
@@ -1200,6 +1204,7 @@ begin
   UnregisterHotKey(Handle, 4);
   UnregisterHotKey(Handle, 5);
   UnregisterHotKey(Handle, 6);
+  UnregisterHotKey(Handle, 7);
 
   if not Reg then
     Exit;
@@ -1244,6 +1249,12 @@ begin
   begin
     ShortCutToHotKey(AppGlobals.ShortcutVolDown, K, M);
     RegisterHotKey(Handle, 6, M, K);
+  end;
+
+  if AppGlobals.ShortcutMute > 0 then
+  begin
+    ShortCutToHotKey(AppGlobals.ShortcutMute, K, M);
+    RegisterHotkey(Handle, 7, M, K);
   end;
 end;
 
@@ -1722,6 +1733,9 @@ begin
           if Schedule.AutoRemove then
           begin
             Client.Entry.Schedules.Remove(Schedule);
+
+            tabClients.ClientView.RefreshClient(Client);
+
             Schedule.Free;
           end;
         end else if not TSchedule.MatchesEnd(Schedule) then

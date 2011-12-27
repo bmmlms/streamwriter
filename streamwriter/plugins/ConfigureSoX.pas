@@ -24,7 +24,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, Functions,
-  Logging, SoX;
+  Logging, SoX, ComCtrls;
 
 type
   TfrmConfigureSoX = class(TForm)
@@ -70,15 +70,16 @@ type
 
     FOnlySetup: Boolean;
     FPlugin: TSoXPlugin;
+    FTitleLength: Cardinal;
 
     FSaveData: Boolean;
 
     procedure InitForm;
   public
-    constructor Create(AOwner: TComponent; Plugin: TSoxPlugin); overload;
+    constructor Create(AOwner: TComponent; Plugin: TSoxPlugin; TitleLength: Cardinal); overload;
     constructor Create(AOwner: TComponent; Plugin: TSoxPlugin; Normalize, FadeoutStart, FadeoutEnd: Boolean;
       FadeoutStartLength, FadeoutEndLength: Integer; SilenceStart, SilenceEnd: Boolean; SilenceStartLength,
-      SilenceEndLength: Integer); reintroduce; overload;
+      SilenceEndLength: Integer; TitleLength: Cardinal); reintroduce; overload;
 
     property Normalize: Boolean read FNormalize write FNormalize;
     property FadeoutStart: Boolean read FFadeoutStart write FFadeoutStart;
@@ -188,6 +189,35 @@ begin
     end else if (StrToIntDef(txtSilenceEnd.Text, 0) = 0) then
       txtSilenceEnd.Text := '5';
 
+
+    if FTitleLength > 0 then
+    begin
+      if chkFadeoutStart.Checked and (StrToInt(txtFadeoutStart.Text) > FTitleLength) then
+      begin
+        MsgBox(Handle, Format(_('The length for fadeout cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
+        Exit;
+      end;
+
+      if chkFadeoutEnd.Checked and (StrToInt(txtFadeoutEnd.Text) > FTitleLength) then
+      begin
+        MsgBox(Handle, Format(_('The length for fadein cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
+        Exit;
+      end;
+
+      if chkSilenceStart.Checked and (StrToInt(txtSilenceStart.Text) > FTitleLength) then
+      begin
+        MsgBox(Handle, Format(_('The length for silence at the beginning cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
+        Exit;
+      end;
+
+      if chkFadeoutEnd.Checked and (StrToInt(txtFadeoutEnd.Text) > FTitleLength) then
+      begin
+        MsgBox(Handle, Format(_('The length for silence at the end cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
+        Exit;
+      end;
+    end;
+
+
     FNormalize := chkNormalize.Checked;
 
     FFadeoutStart := chkFadeoutStart.Checked;
@@ -214,13 +244,14 @@ begin
   txtSilenceEnd.Enabled := chkSilenceEnd.Checked;
 end;
 
-constructor TfrmConfigureSoX.Create(AOwner: TComponent; Plugin: TSoxPlugin);
+constructor TfrmConfigureSoX.Create(AOwner: TComponent; Plugin: TSoxPlugin; TitleLength: Cardinal);
 begin
   inherited Create(AOwner);
 
   InitForm;
 
   FPlugin := Plugin;
+  FTitleLength := TitleLength;
 
   pnlSetup.Show;
   btnOK.Caption := '&OK';
@@ -231,13 +262,14 @@ end;
 
 constructor TfrmConfigureSoX.Create(AOwner: TComponent; Plugin: TSoxPlugin; Normalize, FadeoutStart,
   FadeoutEnd: Boolean; FadeoutStartLength, FadeoutEndLength: Integer; SilenceStart, SilenceEnd: Boolean;
-  SilenceStartLength, SilenceEndLength: Integer);
+  SilenceStartLength, SilenceEndLength: Integer; TitleLength: Cardinal);
 begin
   inherited Create(AOwner);
 
   InitForm;
 
   FPlugin := Plugin;
+  FTitleLength := TitleLength;
 
   if not FPlugin.ReadyForUse then
   begin

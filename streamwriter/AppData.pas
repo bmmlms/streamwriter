@@ -163,6 +163,7 @@ type
     FShortcutPrev: Cardinal;
     FShortcutVolDown: Cardinal;
     FShortcutVolUp: Cardinal;
+    FShortcutMute: Cardinal;
 
     FHeaderWidth: TIntArray;
     FClientCols: Integer;
@@ -218,6 +219,7 @@ type
     property ShortcutPrev: Cardinal read FShortcutPrev write FShortcutPrev;
     property ShortcutVolDown: Cardinal read FShortcutVolDown write FShortcutVolDown;
     property ShortcutVolUp: Cardinal read FShortcutVolUp write FShortcutVolUp;
+    property ShortcutMute: Cardinal read FShortcutMute write FShortcutMute;
     property AutoTuneInMinKbps: Cardinal read FAutoTuneInMinKbps write FAutoTuneInMinKbps;
     property AutoTuneInFormat: Cardinal read FAutoTuneInFormat write FAutoTuneInFormat;
     property LimitSpeed: Boolean read FLimitSpeed write FLimitSpeed;
@@ -660,6 +662,7 @@ begin
   FStorage.Read('ShortcutPrev', FShortcutPrev, 0);
   FStorage.Read('ShortcutVolDown', FShortcutVolDown, 0);
   FStorage.Read('ShortcutVolUp', FShortcutVolUp, 0);
+  FStorage.Read('ShortcutMute', FShortcutMute, 0);
 
   FStorage.Read('HeaderWidth0', i, -1, 'Cols');
   if i = -1 then
@@ -800,6 +803,7 @@ begin
   FStorage.Write('ShortcutPrev', FShortcutPrev);
   FStorage.Write('ShortcutVolDown', FShortcutVolDown);
   FStorage.Write('ShortcutVolUp', FShortcutVolUp);
+  FStorage.Write('ShortcutMute', FShortcutMute);
 
   for i := 0 to High(FHeaderWidth) do
     if i <> 1 then
