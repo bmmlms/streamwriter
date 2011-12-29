@@ -1497,7 +1497,7 @@ end;
 
 constructor TSchedule.Create;
 begin
-
+  inherited;
 end;
 
 destructor TSchedule.Destroy;
@@ -1530,6 +1530,7 @@ end;
 class function TSchedule.MatchesDay(S: TSchedule; NextDay: Boolean): Boolean;
 var
   DOW: Word;
+  SDate: TDateTime;
 begin
   Result := False;
   if S.FRecurring then
@@ -1553,10 +1554,12 @@ begin
     end;
   end else
   begin
-    if NextDay then
-      S.Date := S.Date + 1;
+    SDate := S.Date;
 
-    if Trunc(S.Date) = Trunc(Now) then
+    if NextDay then
+      SDate := SDate + 1;
+
+    if Trunc(SDate) = Trunc(Now) then
       Result := True;
   end;
 end;
