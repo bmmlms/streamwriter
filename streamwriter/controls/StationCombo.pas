@@ -17,6 +17,8 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit contains the ComboBox for the recently added/used streams }
 unit StationCombo;
 
 interface

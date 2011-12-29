@@ -17,6 +17,8 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit is for showing radio-charts in the main-window }
 unit ChartsTab;
 
 interface

@@ -17,6 +17,9 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit handles everything needed for streaming... By using a sub-class of
+  TAudioStreamFile/TAudioStreamMemory it does it stuff }
 unit ICEThread;
 
 interface

@@ -17,6 +17,9 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit.... is the master of streamWriter.
+  It handles everything regarding recording, saving, etc... }
 unit ICEStream;
 
 interface

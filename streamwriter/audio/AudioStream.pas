@@ -17,6 +17,9 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit defines stream-classes where audio-data is written to.
+  It contains classes for MPEG, AAC and OGG. }
 unit AudioStream;
 
 interface
@@ -26,12 +29,15 @@ uses
   Math;
 
 type
+  // TODO: !!!
   TPosRect = record
     A, B: Int64;
   end;
 
+  // TODO: !!!
   TPosArray = array of TPosRect;
 
+  // Abstract class for streams saved to disk
   TAudioStreamFile = class(TFileStream)
   public
     function GetFrame(F, T: Int64): TPosRect; virtual; abstract;
@@ -39,21 +45,26 @@ type
     function SearchSilence(StartPos, EndPos, LenStart, LenEnd, MaxPeaks, MinDuration: Int64): TPosRect;
   end;
 
+  // Class for MPEG-streams saved to disk
   TMPEGStreamFile = class(TAudioStreamFile)
   public
+    // Gets a frame in the MPEG-data to produce MPEG-compliant saved titles
     function GetFrame(F, T: Int64): TPosRect; override;
   end;
 
+  // Class for AAC-streams saved to disk
   TAACStreamFile = class(TAudioStreamFile)
   public
     function GetFrame(F, T: Int64): TPosRect; override;
   end;
 
+  // Class for OGG-streams saved to disk
   TOGGStreamFile = class(TAudioStreamFile)
   public
     function GetFrame(F, T: Int64): TPosRect; override;
   end;
 
+  // Abstract class for streams saved to memory
   TAudioStreamMemory = class(TExtendedStream)
   public
     function GetFrame(F, T: Int64): TPosRect; virtual; abstract;
@@ -61,16 +72,20 @@ type
     function SearchSilence(StartPos, EndPos, LenStart, LenEnd, MaxPeaks, MinDuration: Int64): TPosRect;
   end;
 
+  // Class for MPEG-streams saved to memory
   TMPEGStreamMemory = class(TAudioStreamMemory)
   public
+    // Gets a frame in the MPEG-data to produce MPEG-compliant saved titles
     function GetFrame(F, T: Int64): TPosRect; override;
   end;
 
+  // Class for AAC-streams saved to memory
   TAACStreamMemory = class(TAudioStreamMemory)
   public
     function GetFrame(F, T: Int64): TPosRect; override;
   end;
 
+  // Class for OGG-streams saved to memory
   TOGGStreamMemory = class(TAudioStreamMemory)
   public
     function GetFrame(F, T: Int64): TPosRect; override;

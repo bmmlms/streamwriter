@@ -17,6 +17,8 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit contains controls used in this applications, TSeekBar and TVolumePanel }
 unit SharedControls;
 
 interface

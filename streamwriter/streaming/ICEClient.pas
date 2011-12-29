@@ -17,6 +17,9 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit contains the ICEClient which connects to a stream and records it.
+  It makes heavy use of ICEThread which uses ICEThread to record songs }
 unit ICEClient;
 
 interface

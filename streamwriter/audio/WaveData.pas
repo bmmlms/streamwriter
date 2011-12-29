@@ -17,6 +17,9 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit contains stuff to work with wave-data extracted from streams/files
+  by using the BASS-library }
 unit WaveData;
 
 interface

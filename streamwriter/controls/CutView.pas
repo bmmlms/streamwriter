@@ -19,6 +19,8 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit contains every control the TCutTab displays }
 unit CutView;
 
 interface

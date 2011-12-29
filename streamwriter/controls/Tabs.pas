@@ -17,6 +17,8 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit encapsulates basic functionality for tabe used in the main-window }
 unit Tabs;
 
 interface

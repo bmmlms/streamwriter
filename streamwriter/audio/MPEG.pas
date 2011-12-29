@@ -1,3 +1,4 @@
+{ This unit contains stuff to handle MPEG-files }
 unit MPEG;
 
 interface

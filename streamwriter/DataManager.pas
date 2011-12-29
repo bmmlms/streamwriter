@@ -17,6 +17,9 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit contains everything to load and save data from files containing settings.
+  It mainly contains methods to load/save stuff from binary data files }
 unit DataManager;
 
 interface
@@ -30,8 +33,11 @@ type
   TDataLists = class;
   TListCategory = class;
 
+  { This exception is raised when streamWriter tries to load a file saved with
+    a newer file-format that it does not know (because it is an old version) }
   EVersionException = class(Exception);
 
+  // Contains information about titles in the wishlist/ignorelist
   TTitleInfo = class
   private
     FTitle: string;
@@ -41,10 +47,10 @@ type
     FHash: Cardinal;
   public
     constructor Create(Title: string); overload;
+    function Copy: TTitleInfo;
 
     class function Load(Stream: TExtendedStream; Version: Integer): TTitleInfo;
     procedure Save(Stream: TExtendedStream);
-    function Copy: TTitleInfo;
 
     property Title: string read FTitle write FTitle;
     property Added: TDateTime read FAdded write FAdded;
@@ -53,8 +59,10 @@ type
     property Hash: Cardinal read FHash;
   end;
 
+  // TODO: ???
   TN = procedure(Sender: TObject; const Item: TTitleInfo; Action: TCollectionNotification) of object;
 
+  // A list that might be used as wishlist/ignorelist
   TTitleList = class(TList<TTitleInfo>)
   private
     FNotifications: Boolean;
@@ -69,6 +77,7 @@ type
     property Notifications: Boolean read FNotifications write FNotifications;
   end;
 
+  // An entry in the stream-browser
   TStreamBrowserEntry = class
   private
     FID: Integer;
@@ -92,22 +101,38 @@ type
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamBrowserEntry;
     procedure Save(Stream: TExtendedStream);
 
+    // The unique ID of the stream
     property ID: Integer read FID write FID;
+    // The broadcasted name of the stream
     property Name: string read FName write FName;
+    // The broadcasted genre(s) of the stream (might be "rock,punk  , gothic")
     property Genre: string read FGenre write FGenre;
+    // The URL to the stream
     property URL: string read FURL write FURL;
+    // The broadcasted URL to the stream's website
     property Website: string read FWebsite write FWebsite;
+    { The broadcasted bitrate of the stream. This value might get overriden
+      when streamWriter parses received audio data }
     property BitRate: Integer read FBitRate write FBitRate;
+    // The format of the audio-data
     property AudioType: TAudioTypes read FAudioType write FAudioType;
+    // When set the stream broadcasts metadata
     property MetaData: Boolean read FMetaData write FMetaData;
+    // When set the stream changes it's title within a song (not good for recording)
     property ChangesTitleInSong: Boolean read FChangesTitleInSong write FChangesTitleInSong;
+    // The rating for the stream applied by the user
     property OwnRating: Byte read FOwnRating write FOwnRating;
+    // The average rating for the stream applied by all users
     property Rating: Byte read FRating write FRating;
+    // When set recording from this stream is okay (user rated it this way and it does not change titles in songs (see (ChangesTitleInSong))
     property RecordingOkay: Boolean read FRecordingOkay write FRecordingOkay;
+    // The regular expression to extract artist/title/album from stream titles
     property RegEx: string read FRegEx write FRegEx;
+    // A list containing titles to ignore for track changes
     property IgnoreTitles: TStringList read FIgnoreTitles;
   end;
 
+  // An entry in the "Saved tracks" tab
   TTrackInfo = class
   private
     FTime: TDateTime;
@@ -128,21 +153,33 @@ type
     class function Load(Stream: TExtendedStream; Version: Integer): TTrackInfo;
     procedure Save(Stream: TExtendedStream);
 
+    // The time the title was saved
     property Time: TDateTime read FTime write FTime;
+    // The filename of the title
     property Filename: string read FFilename write FFilename;
+    // The name of the stream which led to recording of this title
     property Streamname: string read FStreamname write FStreamname;
+    // The size of the file
     property Filesize: UInt64 read FFilesize write FFilesize;
+    // The length of the file
     property Length: UInt64 read FLength write FLength;
+    // Indicates whether the title was cut (silence on begin/end detected)
     property WasCut: Boolean read FWasCut write FWasCut;
+    // The bitrate of the file
     property BitRate: Cardinal read FBitRate write FBitRate;
+    // When set the file was automatically recorded from the wishlist
     property IsAuto: Boolean read FIsAuto write FIsAuto;
+    // When set this is a stream-file (not a single saved file from a stream with artist/title)
     property IsStreamFile: Boolean read FIsStreamFile write FIsStreamFile;
+    // When set the file was post-processed by the user
     property Finalized: Boolean read FFinalized write FFinalized;
+    // TODO: ???
     property Index: Cardinal read FIndex write FIndex;
   end;
 
   TListCategoryList = TList<TListCategory>;
 
+  // A category-entry in client-view
   TListCategory = class
   private
     FName: string;
@@ -152,12 +189,19 @@ type
     FIsAuto: Boolean;
   public
     constructor Create(Name: string; Idx: Integer); overload;
+
     class function Load(Stream: TExtendedStream; Version: Integer): TListCategory;
     procedure Save(Stream: TExtendedStream);
+
+    // The name of the category
     property Name: string read FName write FName;
+    // The index of the category - it's used when starting up streamWriter to determine the position of the category
     property Index: Integer read FIndex write FIndex;
+    // When set the category is expanded
     property Expanded: Boolean read FExpanded write FExpanded;
+    // When set all children of the category are "killed" - so remove the category when all children are removed from the tree
     property Killed: Boolean read FKilled write FKilled;
+    // When set this is the category for automatic recordings
     property IsAuto: Boolean read FIsAuto write FIsAuto;
   end;
 
@@ -167,6 +211,7 @@ type
     function GetTrack(Filename: string): TTrackInfo;
   end;
 
+  // An entry in the stream dropdown-combobox
   TRecentEntry = class
   private
     FID: Cardinal;
@@ -176,19 +221,25 @@ type
     FBitrate: Cardinal;
   public
     constructor Create(ID, Bitrate: Cardinal; Name, StartURL: string; Index: Cardinal);
-
     procedure Assign(From: TRecentEntry);
     function Copy: TRecentEntry;
+
     class function Load(Stream: TExtendedStream; Version: Integer): TRecentEntry;
     procedure Save(Stream: TExtendedStream);
 
+    // The stream's id
     property ID: Cardinal read FID write FID;
+    // The name of this recent stream
     property Name: string read FName write FName;
+    // The URL
     property StartURL: string read FStartURL write FStartURL;
+    // The list index
     property Index: Cardinal read FIndex write FIndex;
+    // Bitrate
     property Bitrate: Cardinal read FBitrate write FBitrate;
   end;
 
+  // TODO: !!!
   TRatingEntry = class
   private
     FName: string;
@@ -205,6 +256,7 @@ type
     property Rating: Integer read FRating write FRating;
   end;
 
+  // Defines an entry in the "scheduled recordings" of a stream
   TSchedule = class(TObject)
   private
     FActive: Boolean;
@@ -221,57 +273,94 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-
     procedure Assign(From: TSchedule);
     function Copy: TSchedule;
+
     class function Load(Stream: TExtendedStream; Version: Integer): TSchedule;
     procedure Save(Stream: TExtendedStream);
 
+    // Does the current time meet the scheduled start-time?
     class function MatchesStart(S: TSchedule): Boolean;
+    // Does the current time meet the scheduled end-time?
     class function MatchesEnd(S: TSchedule): Boolean;
 
+    // When set this schedule is active
     property Active: Boolean read FActive write FActive;
+    // When set this schedule is recurring
     property Recurring: Boolean read FRecurring write FRecurring;
+    // This defines the interval of the schedule
     property Interval: TScheduleInterval read FInterval write FInterval;
+    // This defines the day of the schedule
     property Day: TScheduleDay read FDay write FDay;
+    // This defines the date of the schedule
     property Date: TDateTime read FDate write FDate;
+    // When set the schedule will be removed after recording
     property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
+    // Defines the start hour for the schedule
     property StartHour: Integer read FStartHour write FStartHour;
+    // Defines the start minute for the schedule
     property StartMinute: Integer read FStartMinute write FStartMinute;
+    // Defines the end hour for the schedule
     property EndHour: Integer read FEndHour write FEndHour;
+    // Defines the end minute for the schedule
     property EndMinute: Integer read FEndMinute write FEndMinute;
+
+    // TODO: !!!
     property TriedStart: Boolean read FTriedStart write FTriedStart;
     property TriedStop: Boolean read FTriedStop write FTriedStop;
   end;
 
+  // A list of items of TSchedule
   TScheduleList = TList<TSchedule>;
 
+  { An entry about a stream that is/was in the stream-list.
+    This class contains an instance of TStreamSettings and other data. }
   TStreamEntry = class(TObject)
   private
+    // Defines stream-specific settings
     FSettings: TStreamSettings;
 
+    // TODO: !!!
     FParent: TStreamList;
 
+    // Unique ID of the stream
     FID: Cardinal;
+    // Name of the stream broadcasted by itself
     FName: string;
+    // Name of the stream set by the user (this is editable in the clientview)
     FCustomName: string;
+    // TODO: !!!
     FStreamURL: string;
+    // TODO: !!!
     FStartURL: string;
+    // List of URLs to the stream (excluding the primary URL)
     FURLs: TStringList;
+    // Bitrate of the stream
     FBitrate: Cardinal;
+    // Audiotype ('mpg', 'aac', 'ogg', ...)
     FAudioType: string;
+    // Genre ('punk   , rock, speedmetal')
     FGenre: string;
+    // The stream's index on the list
     FIndex: Integer;
+    // The category this stream belongs to
     FCategoryIndex: Integer;
+    // When set this stream was being recorded when streamWriter exited on the last run
     FWasRecording: Boolean;
 
+    // Number of songs saved
     FSongsSaved: Cardinal;
+    // Amount of bytes received
     FBytesReceived: UInt64;
 
+    // List of configured schedules for this stream
     FSchedules: TScheduleList;
 
+    // List of titles to save for this stream
     FSaveList: TTitleList;
+    // List of titles to ignore for this stream
     FIgnoreList: TTitleList;
+    // TODO: !!!
     FIgnoreListIndex: Cardinal;
 
     procedure FSetName(Value: string);
@@ -312,6 +401,7 @@ type
     property IgnoreListIndex: Cardinal read FIgnoreListIndex write FIgnoreListIndex;
   end;
 
+  // TODO: !!!
   TStreamList = class(TList<TStreamEntry>)
   private
   public
@@ -319,15 +409,18 @@ type
     function Get(Name, URL: string; URLs: TStringList): TStreamEntry; overload;
   end;
 
+  // TODO: !!!
   TRecentList = class(TList<TRecentEntry>)
   end;
 
+  // TODO: !!!
   TRatingList = class(TList<TRatingEntry>)
   public
     procedure SetRating(Name, URL: string; Rating: Integer);
     function GetRating(Name, URL: string): Integer;
   end;
 
+  // TODO: !!!
   TChartCategory = class
   private
     FID: Cardinal;
@@ -343,6 +436,7 @@ type
     property Name: string read FName;
   end;
 
+  // An entry within the "Charts"-window
   TChartEntry = class
   private
     FName: string;
@@ -355,14 +449,18 @@ type
     class function Load(Stream: TExtendedStream; Version: Integer): TChartEntry;
     procedure Save(Stream: TExtendedStream);
 
+    // The name
     property Name: string read FName;
+    // The chance of the title to get played
     property Chance: Integer read FChance;
+    // Categories. TODO: Not used??
     property Categories: TIntArray read FCategories;
   end;
 
   TChartList = class(TList<TChartEntry>)
   end;
 
+  // TODO: !!!
   TGenre = class
   private
     FID: Cardinal;
@@ -380,12 +478,17 @@ type
     property ChartCount: Cardinal read FChartCount write FChartCount;
   end;
 
+  // TODO: !!!
   TGenreList = class(TList<TGenre>)
   end;
 
+  // TODO: !!!
   TChartCategoryList = class(TList<TChartCategory>)
   end;
 
+  { This class contains lists and stuff about everything streamWriter
+    needs to know at runtime. This class gets loaded at startup and
+    disposed/saved at the end }
   TDataLists = class
   private
     FCategoryList: TListCategoryList;
@@ -406,6 +509,7 @@ type
     constructor Create;
     destructor Destroy; override;
 
+    // Cleans all lists and frees all their items
     procedure CleanLists;
     procedure Load; overload;
     procedure Load(S: TExtendedStream); overload;
@@ -413,20 +517,34 @@ type
     procedure Save(S: TExtendedStream); overload;
     procedure SaveRecover;
 
+    // List that contains all categories
     property CategoryList: TListCategoryList read FCategoryList;
+    // List that contains all streams
     property StreamList: TStreamList read FStreamList;
+    // List that contains all saved tracks
     property TrackList: TTrackList read FTrackList;
+    // List that contains all titles to be saved
     property SaveList: TTitleList read FSaveList;
+    // List that contains all titles to be ignored
     property IgnoreList: TTitleList read FIgnoreList;
+    // List that contains all recently used streams
     property RecentList: TRecentList read FRecentList;
+    // List that contains all streams to blacklist for automatic recordings
     property StreamBlacklist: TStringList read FStreamBlacklist;
+    // List that contains all ratings for streams
     property RatingList: TRatingList read FRatingList;
+    // List that contains charts
     property ChartList: TChartList read FChartList;
+    // List that contains categories for charts
     property ChartCategoryList: TChartCategoryList read FChartCategoryList;
+    // List that contains all TStreamBrowserEntries
     property BrowserList: TList<TStreamBrowserEntry> read FBrowserList write FBrowserList;
+    // List that contains all genres
     property GenreList: TGenreList read FGenreList write FGenreList;
 
+    // When set an error occured while loading the data-file
     property LoadError: Boolean read FLoadError write FLoadError;
+    // Overall amount of data received
     property Received: UInt64 read FReceived write FReceived;
   end;
 

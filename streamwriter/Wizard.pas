@@ -27,10 +27,6 @@ uses
   ImgList, LanguageObjects, Functions, WizardBase, GUIFunctions, Logging;
 
 type
-  TStepIceServer = class(TStep)
-
-  end;
-
   TStepDir = class(TStep)
 
   end;

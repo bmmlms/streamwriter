@@ -17,12 +17,16 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ Unit TypeDefs }
 unit TypeDefs;
 
 interface
 
 type
+  // Defines all possible types of audio-data
   TAudioTypes = (atNone, atMPEG, atAAC, atOGG);
+  // Defines all possible types of lists
   TListType = (ltSave, ltIgnore);
 
 implementation

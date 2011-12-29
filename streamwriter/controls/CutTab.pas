@@ -17,6 +17,8 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit contains the TabControl to display cutting of recorded files }
 unit CutTab;
 
 interface

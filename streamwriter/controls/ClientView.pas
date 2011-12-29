@@ -17,6 +17,9 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit is for displaying different streams (or TICEClients) in the main-window
+  in a separated tab }
 unit ClientView;
 
 interface

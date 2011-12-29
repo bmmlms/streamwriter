@@ -17,6 +17,8 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit contains everything needed to display the stream-infos }
 unit StreamInfoView;
 
 interface

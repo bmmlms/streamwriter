@@ -17,6 +17,12 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
+{ This unit contains classes to define application-specific settings.
+  It contains TAppData, which is a descendand of TAppDataBase.
+  This class contains everything related to the application settings.
+  TAppDataBase defines more basic elements that all applications
+  made by mistake.ws have in common. }
 unit AppData;
 
 interface
@@ -27,17 +33,23 @@ uses
   PluginManager, Logging, Base64;
 
 type
+  // Actions that can be executed in the stream-view
   TClientActions = (caStartStop, caStreamIntegrated, caStream, caFile);
+  // Actions that can be exucuted using the stream-browser
   TBrowserActions = (baStart, baListen, baListenExternal);
+  // Set for definition of filters to use
   TUseFilters = (ufNone, ufWish, ufIgnoreGlobal, ufIgnoreLocal, ufIgnoreBoth, ufBoth);
+  // Definitions for directions for where to adjust the track-offset
   TTrackOffsetDirection = (toForward, toBackward);
-
-  // Die ..None-Dinger müssen am Ende stehen!
+  // Definitions for scheduling intervals. siNone has to be the last element!
   TScheduleInterval = (siDaily, siWeekly, siNone);
+  // A specific day for a schedule. sdNone has to be the last element!
   TScheduleDay = (sdMonday, sdTuesday, sdWednesday, sdThursday, sdFriday, sdSaturday, sdSunday, sdNone);
-
+  // An array of integer... what you say??
   TIntArray = array of Integer;
 
+  { This class defines stream-specific settings. It is used in the settings (AppData) for general
+    settings, it is also used in every TStreamEntry which defines configuration of a specific stream }
   TStreamSettings = class
   private
     FTitlePattern: string;
@@ -75,55 +87,99 @@ type
 
     procedure FSetSaveToMemory(Value: Boolean);
   public
+    // Creates a new instance of TStreamSettings class
     constructor Create;
+    // Destroys this instance of TStreamSettings
     destructor Destroy; override;
 
+    // Loads an instance of TStreamSettings from a stream
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamSettings;
+    // Saves this instance of TStreamSettings to a stream
     procedure Save(Stream: TExtendedStream);
+    // Assigns this instance of TStreamSettings to From
     procedure Assign(From: TStreamSettings);
+    // Copies this instance of TStreamSettings
     function Copy: TStreamSettings;
 
+    // The pattern (Regex) to detect artist/title/album from broadcasted titles
     property TitlePattern: string read FTitlePattern write FTitlePattern;
+    // The pattern for recorded files
     property FilePattern: string read FFilePattern write FFilePattern;
+    // The pattern for incompletely recorded files
     property IncompleteFilePattern: string read FIncompleteFilePattern write FIncompleteFilePattern;
+    // The pattern for stream-files
     property StreamFilePattern: string read FStreamFilePattern write FStreamFilePattern;
+    // Minimum number of decimals for %n (Tracknumber) in filenames
     property FilePatternDecimals: Cardinal read FFilePatternDecimals write FFilePatternDecimals;
+    // Chars to remove from filenames of recorded songs
     property RemoveChars: string read FRemoveChars write FRemoveChars;
+    // When set variables get normalized (i.e. %a = ArTiSt becomes Artist)
     property NormalizeVariables: Boolean read FNormalizeVariables write FNormalizeVariables;
+    { When set stream-files are deleted when recording stops.
+      This option is only enabled when FSaveToMemory is false }
     property DeleteStreams: Boolean read FDeleteStreams write FDeleteStreams;
+    // When set recorded titles are added to ignorelist
     property AddSavedToIgnore: Boolean read FAddSavedToIgnore write FAddSavedToIgnore;
+    // When set recorded titles are added to stream-specific ignorelist
     property AddSavedToStreamIgnore: Boolean read FAddSavedToStreamIgnore write FAddSavedToStreamIgnore;
+    // When set recorded titles are removed from wishlist
     property RemoveSavedFromWishlist: Boolean read FRemoveSavedFromWishlist write FRemoveSavedFromWishlist;
+    // When set short songs will not be saved (see FShortLengthSeconds)
     property SkipShort: Boolean read FSkipShort write FSkipShort;
+    // When set silence will be searched to detect cut-positions
     property SearchSilence: Boolean read FSearchSilence write FSearchSilence;
+    // When set the level for silence will be automatically detected
     property AutoDetectSilenceLevel: Boolean read FAutoDetectSilenceLevel write FAutoDetectSilenceLevel;
+    // Manual silence control: The maximum level of volume to detect as silence
     property SilenceLevel: Cardinal read FSilenceLevel write FSilenceLevel;
+    // Manual silence control: The minumum length of set volume level (SilenceLevel) to detect as silence
     property SilenceLength: Cardinal read FSilenceLength write FSilenceLength;
+    // Seconds to search for silence before track-change occured
     property SilenceBufferSecondsStart: Integer read FSilenceBufferSecondsStart write FSilenceBufferSecondsStart;
+    // Seconds to search for silence after track-change occured
     property SilenceBufferSecondsEnd: Integer read FSilenceBufferSecondsEnd write FSilenceBufferSecondsEnd;
+    // When a recorded song is shorter than the defined length it is discarded if SkipShort is set
     property ShortLengthSeconds: Integer read FShortLengthSeconds write FShortLengthSeconds;
+    // Use this area of audio data if no silence could be found. It will be appended to the start/end of the song
     property SongBufferSeconds: Integer read FSongBufferSeconds write FSongBufferSeconds;
+    // When set the detected track offset will be moved
     property AdjustTrackOffset: Boolean read FAdjustTrackOffset write FAdjustTrackOffset;
+    // Milliseconds to move the detected track offset
     property AdjustTrackOffsetMS: Cardinal read FAdjustTrackOffsetMS write FAdjustTrackOffsetMS;
+    // The direction to move the adjusted track offset to
     property AdjustTrackOffsetDirection: TTrackOffsetDirection read FAdjustTrackOffsetDirection write FAdjustTrackOffsetDirection;
+    // Maximum number of retries on error
     property MaxRetries: Integer read FMaxRetries write FMaxRetries;
+    // The delay between retries (defined by MaxRetries)
     property RetryDelay: Cardinal read FRetryDelay write FRetryDelay;
+    // The filter to use
     property Filter: TUseFilters read FFilter write FFilter;
+    // When set separated tracks will be saved (not only the stream-file)
     property SeparateTracks: Boolean read FSeparateTracks write FSeparateTracks;
+    // When set all data will be saved to memory (instead of harddisk)
     property SaveToMemory: Boolean read FSaveToMemory write FSetSaveToMemory;
+    // When set only completely received songs will be saved
     property OnlySaveFull: Boolean read FOnlySaveFull write FOnlySaveFull;
+    // When set smaller files with the same name will be overwritten
     property OverwriteSmaller: Boolean read FOverwriteSmaller write FOverwriteSmaller;
+    // When set a file will not be saved if it is smaller than an existing same-named song
     property DiscardSmaller: Boolean read FDiscardSmaller write FDiscardSmaller;
+    { This list defines when to ignore track changes.
+      If if contains "Radio XYZ - Greatest Hits!!" the following will happen:
+      Artist A - Title A              <- Okay
+      Radio XYZ - Greatest Hits!!     <- No track change detection
+      Artist B -> Title B             <- Okay, track change is detected here, so Radio XYZ... will not be saved }
     property IgnoreTrackChangePattern: TStringList read FIgnoreTrackChangePattern write FIgnoreTrackChangePattern;
   end;
 
+  // An array of TStreamSettings
   TStreamSettingsArray = array of TStreamSettings;
 
+  // Application-specific settings
   TAppData = class(TAppDataBase)
   private
     FStreamSettings: TStreamSettings;
     FUserLoggedIn: Boolean;
-
     FID: Integer;
     FDir: string;
     FDirAuto: string;
@@ -175,6 +231,7 @@ type
 
     function FGetDataFile: string;
   protected
+    // Save ALL the things!
     procedure DoSave; override;
   public
     constructor Create(AppName: string);
@@ -186,55 +243,103 @@ type
     property StreamSettings: TStreamSettings read FStreamSettings;
     property UserLoggedIn: Boolean read FUserLoggedIn write FUserLoggedIn;
 
+    // The unique ID generated for this specific client
     property ID: Integer read FID;
+    // The directory songs get saved to
     property Dir: string read FDir write FDir;
+    // The direcroty automatically recorded songs get saved to
     property DirAuto: string read FDirAuto write FDirAuto;
+    // When set streamWriter will have a tray icon
     property Tray: Boolean read FTray write FTray;
+    // When set streamWriter will minimize to tray when the window is minimized (will not minimize to tray on close)
     property TrayOnMinimize: Boolean read FTrayOnMinimize write FTrayOnMinimize;
+    // When set the main window will snap to screen edges
     property SnapMain: Boolean read FSnapMain write FSnapMain;
+    // When set streamWriter will resume recordings on startup if it is closed while recording streams
     property RememberRecordings: Boolean read FRememberRecordings write FRememberRecordings;
+    // When set notifications on the lower right of the screen will be displayed when a title on a stream changes
     property DisplayPlayNotifications: Boolean read FDisplayPlayNotifications write FDisplayPlayNotifications;
+    // REMARK: No used ATM
     property ShowSidebar: Boolean read FShowSidebar write FShowSidebar;
+    // Defines the width of the sidebar (streams/info/log)
     property SidebarWidth: Integer read FSidebarWidth write FSidebarWidth;
+    // When set streamWriter automatically records songs from the wishlist
     property AutoTuneIn: Boolean read FAutoTuneIn write FAutoTuneIn;
+    // When set streamWriter will not record songs automatically when they are on the ignorelist
     property AutoTuneInConsiderIgnore: Boolean read FAutoTuneInConsiderIgnore write FAutoTuneInConsiderIgnore;
+    // When set automatically recorded songs will be added to the global ignorelist
     property AutoTuneInAddToIgnore: Boolean read FAutoTuneInAddToIgnore write FAutoTuneInAddToIgnore;
+    // When set automatically recorded songs will be removed from the wishlist
     property AutoRemoveSavedFromWishlist: Boolean read FAutoRemoveSavedFromWishlist write FAutoRemoveSavedFromWishlist;
+    // When set information about streams the user records will be sent to the server (only the URL of the stream)
     property SubmitStreamInfo: Boolean read FSubmitStreamInfo write FSubmitStreamInfo;
+    // When set some statistics will be sent to the server (number of recoring streams/automatically recording streams)
     property SubmitStats: Boolean read FSubmitStats write FSubmitStats;
+    // The minimum amount of free disk space that has to be available in order to record streams
     property MinDiskSpace: Integer read FMinDiskSpace write FMinDiskSpace;
+    // The default action to execute when double-clicking a stream in the mainview
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
+    // The default action to execute when double-clicking a stream in the streamview
     property DefaultActionBrowser: TBrowserActions read FDefaultActionBrowser write FDefaultActionBrowser;
+    // The volume of the player
     property PlayerVolume: Integer read FPlayerVolume write FPlayerVolume;
+    // The volume of the player before muting the volume
     property PlayerVolumeBeforeMute: Integer read FPlayerVolumeBeforeMute write FPlayerVolumeBeforeMute;
+    // When set the log will scroll automatically
     property AutoScrollLog: Boolean read FAutoScrollLog write FAutoScrollLog;
+    // Indicates whether streamWriter was setup successfully
     property UserWasSetup: Boolean read FUserWasSetup write FUserWasSetup;
+    // The username to authenticate at streamWriter's server
     property User: string read FUser write FUser;
+    // The password to authenticate at streamWriter's server
     property Pass: string read FPass write FPass;
+    // The index of the BASS-sound-device to use for playback
     property SoundDevice: Cardinal read FSoundDevice write FSoundDevice;
+    // The hotkey to trigger "Play"
     property ShortcutPlay: Cardinal read FShortcutPlay write FShortcutPlay;
+    // The hotkey to trigger "Pause"
     property ShortcutPause: Cardinal read FShortcutPause write FShortcutPause;
+    // The hotkey to trigger "Stop"
     property ShortcutStop: Cardinal read FShortcutStop write FShortcutStop;
+    // The hotkey to trigger "Next"
     property ShortcutNext: Cardinal read FShortcutNext write FShortcutNext;
+    // The hotkey to trigger "Previous"
     property ShortcutPrev: Cardinal read FShortcutPrev write FShortcutPrev;
+    // The hotkey to trigger "Volume down"
     property ShortcutVolDown: Cardinal read FShortcutVolDown write FShortcutVolDown;
+    // The hotkey to trigger "Volume up"
     property ShortcutVolUp: Cardinal read FShortcutVolUp write FShortcutVolUp;
+    // The hotkey to trigger "Mute"
     property ShortcutMute: Cardinal read FShortcutMute write FShortcutMute;
+    // Minimum Kbps needed for automatic recording of a stream
     property AutoTuneInMinKbps: Cardinal read FAutoTuneInMinKbps write FAutoTuneInMinKbps;
+    // Desired format of streams to tune in automatically
     property AutoTuneInFormat: Cardinal read FAutoTuneInFormat write FAutoTuneInFormat;
+    // When set the overall speedlimit is active
     property LimitSpeed: Boolean read FLimitSpeed write FLimitSpeed;
+    // Overall speedlimit for recording/playback
     property MaxSpeed: Cardinal read FMaxSpeed write FMaxSpeed;
+    // Time of last browser update (Browser will be updated automatically in specific intervals)
     property LastBrowserUpdate: Cardinal read FLastBrowserUpdate write FLastBrowserUpdate;
+    // The pattern for automatically recorded files
     property AutomaticFilePattern: string read FAutomaticFilePattern write FAutomaticFilePattern;
 
+    // Widths of column headers of the mainview
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
+    // Widths of column headers. Yes, they are stored in a single integer
     property ClientCols: Integer read FClientCols write FClientCols;
+    // Last used version of the data-file format
     property LastUsedDataVersion: Integer read FLastUsedDataVersion write FLastUsedDataVersion;
+    // Path to the recovery-file (this is set if streamWriter crashed or something)
     property RecoveryFile: string read FRecoveryFile;
 
+    // Path to streamWriter's data-file
     property DataFile: string read FGetDataFile;
 
+    // The manager for plugins
     property PluginManager: TPluginManager read FPluginManager;
+
+    // Icons for languages
     property LanguageIcons: TLanguageIcons read FLanguageIcons;
   end;
 
@@ -250,8 +355,11 @@ var
   W, H: Integer;
   SR: TSearchRec;
 begin
+  // Create an instance for global stream-settings
+  // (these are used for new streams that do not have user-specified settings)
   FStreamSettings := TStreamSettings.Create;
 
+  // Adjust dimensions of the main-form
   W := 900;
   H := 630;
   if Screen.WorkAreaWidth < W then
@@ -259,8 +367,10 @@ begin
   if Screen.WorkAreaHeight < H then
     H := Screen.WorkAreaHeight - 20;
 
+  // Adjust amount of column headers
   SetLength(FHeaderWidth, 6);
 
+  // Set some application-specific settings
   {$IFDEF DEBUG}
   FProjectUpdateLink := 'http://streamwriter.gaia/';
   {$ELSE}
@@ -272,16 +382,21 @@ begin
   FProjectForumLink := 'http://streamwriter.org/forum/';
   FProjectDonateLink := 'http://streamwriter.org/inhalt/donate/';
 
+  // Call the base-constructor with our defined variables
   inherited Create(AppName, True, W, H);
 
+  // Set the name for the recovery-file
   FRecoveryFile := FStorage.DataDir + 'streamwriter_data_recovery.dat';
 
+  // The number of the current build
   FBuildNumber := 322;
 
+  // This builds a large string used to generate the about-window
   BuildThanksText;
 
   FLanguageIcons := TLanguageIcons.Create;
 
+  // Delete any undo-files of a possible previous session
   if FindFirst(TempDir + 'UNDO_*', faAnyFile and not faDirectory, SR) = 0 then
   begin
     repeat
@@ -303,11 +418,13 @@ begin
   inherited;
 end;
 
+// Gets the path to the data file where streamWriter saved it's settings
 function TAppData.FGetDataFile;
 begin
   Result := FStorage.GetFilePath('data.dat');
 end;
 
+// Builds a large string stored into FProjectThanksText
 procedure TAppData.BuildThanksText;
   procedure ShuffleFisherYates(var A: TArray);
   var
@@ -338,62 +455,6 @@ begin
 
     Text.Add(_('&U&10...everybody who donated something'));
     Text.Add('');
-    {SetLength(FDonors, 45);
-    FDonors[0] := 'Thomas Franke';
-    FDonors[1] := '''bastik''';
-    FDonors[2] := 'Reto Pitsch';
-    FDonors[3] := '''RogerPP''';
-    FDonors[4] := 'Gabor Kubik';
-    FDonors[5] := '''Peter Parker''';
-    FDonors[6] := 'Anita Wimmer';
-    FDonors[7] := 'Valentin M.';
-    FDonors[8] := '''Rüdi''';
-    FDonors[9] := '''Hummer''';
-    FDonors[10] := 'Hans Heintz';
-    FDonors[11] := 'Thomas Hecker';
-    FDonors[12] := 'Michael Schwarz';
-    FDonors[13] := 'Markus Bauer';
-    FDonors[14] := '''Palm''';
-    FDonors[15] := 'Peter Hörth';
-    FDonors[16] := 'Roman Roscher';
-    FDonors[17] := 'Paul Küpper';
-    FDonors[18] := 'Thomas Krössin';
-    FDonors[19] := 'Roland Zettier';
-    FDonors[20] := '''Roman Regenpfeifer''';
-    FDonors[21] := '''brumex''';
-    FDonors[22] := '''Taube''';
-    FDonors[23] := '''GoFB''';
-    FDonors[24] := '''Radiohoerer''';
-    FDonors[25] := 'NJOY Radio (Austria)';
-    FDonors[26] := 'Yo24hua';
-    FDonors[27] := 'Mirko Schal';
-    FDonors[28] := 'Alexander Koch';
-    FDonors[29] := 'Claus Wien';
-    FDonors[30] := 'Hartmut Schiller';
-    FDonors[31] := 'Michael Dreßler';
-    FDonors[32] := 'Jörn Räuber';
-    FDonors[33] := '''Klaus''';
-    FDonors[34] := '''bwso''';
-    FDonors[35] := 'Jörn Räuber';
-    FDonors[36] := 'Sebastian Hein';
-    FDonors[37] := 'Johannes Schneider';
-    FDonors[38] := 'Edwin de Boer';
-    FDonors[39] := 'Alexander Maier (www.kommtel.info)';
-    FDonors[40] := 'Bernhard Langheim';
-    FDonors[41] := 'Eike R.';
-    FDonors[42] := '''Nobbe''';
-    FDonors[43] := 'Kay Dubberke';
-    FDonors[44] := '''chessbase''';
-
-    ShuffleFisherYates(FDonors);
-    for i := 0 to Length(FDonors) - 1 do
-      Text.Add(FDonors[i]);
-
-    Text.Add(_('and everyone who does not want to be mentioned'));
-
-    Text.Add('');
-    Text.Add('');
-    }
 
     Text.Add(_('&U&10...people who contributed code, documentation,'));
     Text.Add(_('&U&10images or translations'));
@@ -502,7 +563,9 @@ begin
   end;
 end;
 
+// Loads everything streamWriter needs to know for startup
 procedure TAppData.Load;
+  // Generates an unique ID (this is only used to know how many people are using streamWriter - seriously!)
   function GetID: Integer;
   var
     Len: Cardinal;
@@ -624,8 +687,8 @@ begin
   if FAutoTuneInFormat > 2 then
     FAutoTuneInFormat := 0;
 
-  // Wenn das zu viel wird, blockiert der Thread zu lange. Und dann kann man
-  // Clients nicht mehr so schnell aus der Liste entfernen...
+  // If the delay is too high the thread will block too long so that the user
+  // cannot remove clients from the list (if the delay has not yet expired)...
   if FStreamSettings.FRetryDelay > 10 then
     FStreamSettings.RetryDelay := 10;
 
@@ -643,8 +706,8 @@ begin
   FStorage.Read('Pass', FPass, '');
   if FLastUsedDataVersion >= 29 then
   begin
-    // Wenn FPass beim Einlesen leer war, gibt das eine Exception!
-    // Die MÜSSEN wir hier fangen, sonst geht der Ladevorgang nicht weiter!
+    // If FPass was empty when reading it, this leads to an exception!
+    // We NEED to catch it here so that the startup process does not get interrupted..
     try
       FPass := CryptStr(Decode(RawByteString(FPass)));
     except
@@ -1040,19 +1103,6 @@ begin
       Result.FIgnoreTrackChangePattern.Add(IgnoreTmp);
     end;
   end;
-
-  {
-  if Version = 27 then
-  begin
-    Stream.Read(Count);
-    for i := 0 to Count - 1 do
-    begin
-      TitleInfo := TTitleInfo.Load(Stream, Version);
-      if TitleInfo <> nil then
-        Result.FMigrationIgnoreList.Add(TitleInfo);
-    end;
-  end;
-  }
 end;
 
 procedure TStreamSettings.Save(Stream: TExtendedStream);
