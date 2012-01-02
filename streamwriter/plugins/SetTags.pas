@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Plugins, PluginsShared, LanguageObjects,
-  Mp3FileUtils, Functions, Logging;
+  Mp3FileUtils, Functions, Logging, ConfigureSetTags;
 
 type
   TSetTagsThread = class(TProcessThreadBase)
@@ -51,12 +51,13 @@ type
     procedure Initialize; override;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
     procedure Save; override;
+    procedure LoadSharedSettings; override;
   end;
 
 implementation
 
 uses
-  AppData, ConfigureSetTags;
+  AppData;
 
 { TSetTagsThread }
 
@@ -83,10 +84,10 @@ begin
 
   FResult := arFail;
 
-  AppGlobals.Storage.Read('Artist_' + Plugin.ClassName, Artist, '%a', 'Plugins');
-  AppGlobals.Storage.Read('Title_' + Plugin.ClassName, Title, '%t', 'Plugins');
-  AppGlobals.Storage.Read('Album_' + Plugin.ClassName, Album, '%l', 'Plugins');
-  AppGlobals.Storage.Read('Comment_' + Plugin.ClassName, Comment, '%s / %u / Recorded using streamWriter', 'Plugins');
+  AppGlobals.Storage.Read('Shared_Tags_Artist', Artist, '%a', 'Plugins');
+  AppGlobals.Storage.Read('Shared_Tags_Title', Title, '%t', 'Plugins');
+  AppGlobals.Storage.Read('Shared_Tags_Album', Album, '%l', 'Plugins');
+  AppGlobals.Storage.Read('Shared_Tags_Comment', Comment, '%s / %u / Recorded using streamWriter', 'Plugins');
 
   SetLength(Arr, 7);
   Arr[0].C := 'a';
@@ -173,6 +174,7 @@ begin
       FTitle := F.Title;
       FAlbum := F.Album;
       FComment := F.Comment;
+
       Save;
     end;
   finally
@@ -207,10 +209,7 @@ begin
     AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 100, 'Plugins');
     AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
 
-    AppGlobals.Storage.Read('Artist_' + ClassName, FArtist, '%a', 'Plugins');
-    AppGlobals.Storage.Read('Album_' + ClassName, FAlbum, '%l', 'Plugins');
-    AppGlobals.Storage.Read('Title_' + ClassName, FTitle, '%t', 'Plugins');
-    AppGlobals.Storage.Read('Comment_' + ClassName, FComment, '%s / %u / Recorded using streamWriter', 'Plugins');
+    LoadSharedSettings;
 
     if not FGetFilesInstalled then
       FActive := False;
@@ -235,8 +234,36 @@ end;
 procedure TSetTagsPlugin.Initialize;
 begin
   inherited;
+
   FName := _('MP3 - Set ID3-tags');
   FHelp := _('This plugin adds ID3-tags to recorded songs (MP3 only).');
+end;
+
+procedure TSetTagsPlugin.LoadSharedSettings;
+var
+  Tmp: string;
+begin
+  inherited;
+
+  AppGlobals.Storage.Read('Shared_Tags_Artist', FArtist, '%a', 'Plugins');
+  AppGlobals.Storage.Read('Shared_Tags_Title', FTitle, '%t', 'Plugins');
+  AppGlobals.Storage.Read('Shared_Tags_Album', FAlbum, '%l', 'Plugins');
+  AppGlobals.Storage.Read('Shared_Tags_Comment', FComment, '%s / %u / Recorded using streamWriter', 'Plugins');
+
+  // Wenn die alten Werte noch existieren, einmal einlesen und dann löschen
+  AppGlobals.Storage.Read('Artist_' + ClassName, Tmp, 'dummyasdftest', 'Plugins');
+  if Tmp <> 'dummyasdftest' then
+  begin
+    AppGlobals.Storage.Read('Artist_' + ClassName, FArtist, '%a', 'Plugins');
+    AppGlobals.Storage.Read('Album_' + ClassName, FAlbum, '%l', 'Plugins');
+    AppGlobals.Storage.Read('Title_' + ClassName, FTitle, '%t', 'Plugins');
+    AppGlobals.Storage.Read('Comment_' + ClassName, FComment, '%s / %u / Recorded using streamWriter', 'Plugins');
+
+    AppGlobals.Storage.Delete('Artist_' + ClassName, 'Plugins');
+    AppGlobals.Storage.Delete('Album_' + ClassName, 'Plugins');
+    AppGlobals.Storage.Delete('Title_' + ClassName, 'Plugins');
+    AppGlobals.Storage.Delete('Comment_' + ClassName, 'Plugins');
+  end;
 end;
 
 function TSetTagsPlugin.ProcessFile(
@@ -249,10 +276,10 @@ procedure TSetTagsPlugin.Save;
 begin
   inherited;
 
-  AppGlobals.Storage.Write('Artist_' + ClassName, FArtist, 'Plugins');
-  AppGlobals.Storage.Write('Title_' + ClassName, FTitle, 'Plugins');
-  AppGlobals.Storage.Write('Album_' + ClassName, FAlbum, 'Plugins');
-  AppGlobals.Storage.Write('Comment_' + ClassName, FComment, 'Plugins');
+  AppGlobals.Storage.Write('Shared_Tags_Artist', FArtist, 'Plugins');
+  AppGlobals.Storage.Write('Shared_Tags_Title', FTitle, 'Plugins');
+  AppGlobals.Storage.Write('Shared_Tags_Album', FAlbum, 'Plugins');
+  AppGlobals.Storage.Write('Shared_Tags_Comment', FComment, 'Plugins');
 end;
 
 end.

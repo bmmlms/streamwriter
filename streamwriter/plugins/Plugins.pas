@@ -113,6 +113,7 @@ type
     procedure Initialize; virtual;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; virtual;
     procedure Save; virtual;
+    procedure LoadSharedSettings; virtual;
 
     property CanConfigure: Boolean read FCanConfigure;
     property Name: string read FName;
@@ -553,6 +554,11 @@ begin
 end;
 
 procedure TPluginBase.Initialize;
+begin
+
+end;
+
+procedure TPluginBase.LoadSharedSettings;
 begin
 
 end;

@@ -441,26 +441,17 @@ var
 begin
   Result := True;
   for i := 0 to High(Filenames) do
-    if (Filenames[i] <> 'lame-enc.dll') and (Filenames[i] <> 'libmad.dll') then
-      if not FileExists(FFilesDir + Filenames[i]) then
-      begin
-        Result := False;
-        Break;
-      end;
-end;
-
-function TSoXPlugin.FGetReadyForUse: Boolean;
-var
-  i: Integer;
-begin
-  Result := True;
-  for i := 0 to High(Filenames) do
     //if (Filenames[i] <> 'lame-enc.dll') and (Filenames[i] <> 'libmad.dll') then
     if not FileExists(FFilesDir + Filenames[i]) then
     begin
       Result := False;
       Break;
     end;
+end;
+
+function TSoXPlugin.FGetReadyForUse: Boolean;
+begin
+  Result := FGetReadyForActivate;
 end;
 
 procedure TSoXPlugin.Initialize;

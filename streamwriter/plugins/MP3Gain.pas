@@ -243,16 +243,8 @@ begin
 end;
 
 function TNormalizePlugin.FGetReadyForUse: Boolean;
-var
-  i: Integer;
 begin
-  Result := True;
-  for i := 0 to High(Filenames) do
-    if not FileExists(FFilesDir + Filenames[i]) then
-    begin
-      Result := False;
-      Break;
-    end;
+  Result := FGetReadyForActivate;
 end;
 
 procedure TNormalizePlugin.Initialize;

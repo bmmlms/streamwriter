@@ -1797,7 +1797,7 @@ begin
     end;
   end;
 
-  Critical.Critical := (PlayingActive or RecordingActive or ScheduleActive) or (FDataLists.SaveList.Count > 0);
+  Critical.Critical := (PlayingActive or RecordingActive or ScheduleActive) or ((FDataLists.SaveList.Count > 0) and (AppGlobals.AutoTuneIn));
 end;
 
 procedure TfrmStreamWriterMain.ToggleWindow(AlwaysShow: Boolean);

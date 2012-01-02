@@ -2110,11 +2110,21 @@ begin
 end;
 
 procedure TfrmSettings.btnConfigureClick(Sender: TObject);
+var
+  i: Integer;
+  Plugin: TPluginBase;
 begin
   inherited;
 
   if lstPlugins.Selected <> nil then
     TPluginBase(lstPlugins.Selected.Data).Configure(Self, 0, True);
+
+  for i := 0 to lstPlugins.Items.Count - 1 do
+  begin
+    Plugin := lstPlugins.Items[i].Data;
+    if Plugin.InheritsFrom(TInternalPlugin) or (Plugin.ClassType = TInternalPlugin) then
+      TInternalPlugin(Plugin).LoadSharedSettings;
+  end;
 end;
 
 procedure TfrmSettings.btnHelpClick(Sender: TObject);

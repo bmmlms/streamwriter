@@ -238,7 +238,6 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitTop = 244
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -293,7 +292,6 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Height = 56
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 3
-    ExplicitHeight = 90
   end
   object txtAlbum: TLabeledEdit
     Left = 4

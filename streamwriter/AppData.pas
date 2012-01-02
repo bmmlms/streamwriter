@@ -789,6 +789,7 @@ end;
 procedure TAppData.DoSave;
 var
   i, n: Integer;
+  Lst: TStringList;
 begin
   inherited;
 
@@ -874,6 +875,7 @@ begin
   FStorage.Write('ClientCols', FClientCols, 'Cols');
 
   FStorage.DeleteKey('Plugins');
+
   n := 0;
   for i := 0 to FPluginManager.Plugins.Count - 1 do
     if (FPluginManager.Plugins[i] is TExternalPlugin) then

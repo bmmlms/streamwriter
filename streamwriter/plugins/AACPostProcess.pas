@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Plugins, PluginsShared, LanguageObjects,
-  Functions, Logging, Math, Mp3FileUtils;
+  Functions, Logging, Math, Mp3FileUtils, ConfigureSetTags;
 
 type
   TAACPostProcessThread = class(TProcessThreadBase)
@@ -31,7 +31,8 @@ type
     FMP4BoxPath: string;
     FAtomicParsleyPath: string;
 
-    function ProcessAtomicParsley(FromFile: string; var Outfile: string): Boolean;
+    function ProcessMP4Box(FromFile: string; var OutFile: string): TActResults;
+    function ProcessAtomicParsley(FromFile: string; var OutFile: string): TActResults;
   protected
     procedure Execute; override;
   public
@@ -42,6 +43,11 @@ type
   private
     FFilesDir: string;
     FCopied: Boolean;
+
+    FArtist: string;
+    FTitle: string;
+    FAlbum: string;
+    FComment: string;
 
     procedure DeleteFiles;
   protected
@@ -60,6 +66,7 @@ type
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
     procedure Save; override;
     function ExtractFiles: Boolean;
+    procedure LoadSharedSettings; override;
   end;
 
 implementation
@@ -79,10 +86,10 @@ begin
   FMP4BoxPath := TAACPostProcessPlugin(Plugin).FFilesDir + 'mp4box.exe';
   FAtomicParsleyPath := TAACPostProcessPlugin(Plugin).FFilesDir + 'atomicparsley.exe';
 end;
-            // TODO: streamwriter kommt nicht damit klar, wenn sich die dateierweiterung ändert. er sagt dann "plugin hat datei gelöscht"...
+
 procedure TAACPostProcessThread.Execute;
 var
-  TempFile, CmdLine, Params, Outfile: string;
+  TempFile, CmdLine, Params, OutFile, OutFile2, MovedFileName: string;
   Output: AnsiString;
   P: TAACPostProcessPlugin;
   LoopStarted: Cardinal;
@@ -98,51 +105,68 @@ begin
     Exit;
   end;
 
-  FResult := arFail;
+  OutFile := '';
+  OutFile2 := '';
 
-  TempFile := RemoveFileExt(FData.Filename) + '_aacpostprocess.m4a';
+  FResult := ProcessMP4Box(FData.Filename, OutFile);
+  case FResult of
+    arWin:
+      begin
+        FResult := ProcessAtomicParsley(OutFile, OutFile2);
+        case FResult of
+          arWin:
+            begin
+              MovedFileName := RemoveFileExt(FData.Filename) + '.m4a';
+              if MoveFile(PChar(OutFile2), PChar(MovedFileName)) then
+              begin
+                DeleteFile(FData.Filename);
+                FData.Filename := MovedFileName;
+                FData.Filesize := GetFileSize(MovedFileName);
+              end;
+            end;
+          arFail:;
+          arTimeOut:;
+          arImpossible:;
+        end;
+      end;
+    arFail:;
+    arTimeOut:;
+    arImpossible:;
+  end;
 
-  P := TAACPostProcessPlugin(Plugin);
+  DeleteFile(OutFile);
+  DeleteFile(OutFile2);
+end;
+
+function TAACPostProcessThread.ProcessMP4Box(FromFile: string; var OutFile: string): TActResults;
+var
+  TempFile, CmdLine: string;
+  Output: AnsiString;
+  EC: DWORD;
+begin
+  Result := arFail;
+
+  TempFile := RemoveFileExt(FromFile) + '_aacpostprocess.m4a';
 
   CmdLine := '"' + FMP4BoxPath + '" -add "' + FData.Filename + '" "' + TempFile + '" ';
 
-  Params := '123';
-
-  if Params <> '' then
+  if RunProcess(CmdLine, ExtractFilePath(FMP4BoxPath), 120000, Output, EC, @Terminated) = 2 then
   begin
-    if RunProcess(CmdLine, ExtractFilePath(FMP4BoxPath), 120000, Output, EC, @Terminated) = 2 then
+    Result := arTimeout;
+  end else
+  begin
+    if FileExists(TempFile) and (EC = 0) then
     begin
-      FResult := arTimeout;
-    end else
-    begin
-      Failed := True;
-      if FileExists(TempFile) and (EC = 0) then
-      begin
-        LoopStarted := GetTickCount;
-        while Failed do
-        begin
-          if FileExists(TempFile) then
-          begin
-            // TODO: Was ist result, wenn das hier fehlschlägt??
-            Failed := not ProcessAtomicParsley(RemoveFileExt(TempFile) + '.m4a', Outfile);
-            if not Failed then
-              FData.Filename := Outfile;
-          end;
-        end;
-
-        if not Failed then
-        begin
-          FResult := arWin;
-        end;
-      end;
-      DeleteFile(PChar(TempFile));
+      OutFile := TempFile;
+      Result := arWin;
     end;
   end;
 end;
 
-function TAACPostProcessThread.ProcessAtomicParsley(FromFile: string; var Outfile: string): Boolean;
+function TAACPostProcessThread.ProcessAtomicParsley(FromFile: string; var OutFile: string): TActResults;
 var
   TempFile, CmdLine, Params: string;
+  Artist, Title, Album, Comment: string;
   Output: AnsiString;
   P: TAACPostProcessPlugin;
   LoopStarted: Cardinal;
@@ -150,78 +174,66 @@ var
   FS: TFileStream;
   EC: DWORD;
   Files: TStringList;
+  Arr: TPatternReplaceArray;
 begin
-  inherited;
+  Result := arFail;
 
-  Outfile := '';
+  AppGlobals.Storage.Read('Shared_Tags_Artist', Artist, '%a', 'Plugins');
+  AppGlobals.Storage.Read('Shared_Tags_Title', Title, '%t', 'Plugins');
+  AppGlobals.Storage.Read('Shared_Tags_Album', Album, '%l', 'Plugins');
+  AppGlobals.Storage.Read('Shared_Tags_Comment', Comment, '%s / %u / Recorded using streamWriter', 'Plugins');
 
-  Result := False;
+  SetLength(Arr, 7);
+  Arr[0].C := 'a';
+  Arr[0].Replace := FData.Artist;
+  Arr[1].C := 't';
+  Arr[1].Replace := FData.Title;
+  Arr[2].C := 'l';
+  Arr[2].Replace := FData.Album;
+  Arr[3].C := 's';
+  Arr[3].Replace := Trim(FData.Station);
+  Arr[4].C := 'u';
+  Arr[4].Replace := Trim(FData.StreamTitle);
+  Arr[5].C := 'd';
+  Arr[5].Replace := FormatDateTime('dd.mm.yy', Now);
+  Arr[6].C := 'i';
+  Arr[6].Replace := FormatDateTime('hh.nn.ss', Now);
 
-  CmdLine := '"' + FAtomicParsleyPath + '" "' + FromFile + '" --title "' + FData.Title + '" --artist "' + FData.Artist + '"' +
-    ' --album ' + '"' + FData.Album + '"' + ' --tracknum ' + '"' + IntToStr(FData.TrackNumber) + '"' + ' --comment ' + '"TODO: !!!"';
+  Artist := PatternReplace(Artist, Arr);
+  Title := PatternReplace(Title, Arr);
+  Album := PatternReplace(Album, Arr);
+  Comment := PatternReplace(Comment, Arr);
 
-  Params := '123';
-
-  if Params <> '' then
+  if (Trim(Artist) <> '') and (Trim(Title) <> '') then
   begin
-    if RunProcess(CmdLine, ExtractFilePath(FAtomicParsleyPath), 120000, Output, EC, @Terminated) = 2 then
+    CmdLine := '"' + FAtomicParsleyPath + '" "' + FromFile + '" --title "' + Title + '" --artist "' + Artist + '"' +
+      ' --album ' + '"' + Album + '"' + ' --tracknum ' + '"' + IntToStr(FData.TrackNumber) + '"' + ' --comment "' + Comment + '"';
+  end else
+  begin
+    CmdLine := '"' + FAtomicParsleyPath + '" "' + FromFile + '" --title "' + Title + '"' +
+      ' --album ' + '"' + Album + '"' + ' --tracknum ' + '"' + IntToStr(FData.TrackNumber) + '"' + ' --comment "' + Comment + '"';
+  end;
+
+  if RunProcess(CmdLine, ExtractFilePath(FAtomicParsleyPath), 120000, Output, EC, @Terminated) = 2 then
+  begin
+    Result := arTimeout;
+  end else
+  begin
+    Files := TStringList.Create;
+    try
+      FindFiles(RemoveFileExt(FromFile) + '-temp-*.m4a', Files);
+      if Files.Count > 0 then
+        TempFile := IncludeTrailingBackslash(ExtractFilePath(FromFile)) + Files[0]
+      else
+        Exit;
+    finally
+      Files.Free;
+    end;
+
+    if FileExists(TempFile) and (EC = 0) then
     begin
-
-    end else
-    begin
-      Files := TStringList.Create;
-      try
-        FindFiles(RemoveFileExt(FromFile) + '-temp-*.m4a', Files);
-
-        if Files.Count > 0 then
-          TempFile := IncludeTrailingBackslash(ExtractFilePath(FromFile)) + Files[0]
-        else
-          Exit;
-
-      finally
-        Files.Free;
-      end;
-
-      Failed := True;
-      if FileExists(TempFile) and (EC = 0) then
-      begin
-        LoopStarted := GetTickCount;
-        while Failed do
-        begin
-          try
-            FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
-            try
-              Failed := False;
-              Break;
-            finally
-              FS.Free;
-            end;
-          except
-            Sleep(50);
-            if GetTickCount > LoopStarted + 5000 then
-            begin
-              Break;
-            end;
-          end;
-        end;
-
-        if not Failed then
-          if not DeleteFile(FData.Filename) then
-            Failed := True;
-
-        if not Failed then
-          if not MoveFile(PChar(TempFile), PChar(RemoveFileExt(FData.Filename) + '.m4a')) then
-            Failed := True;
-
-        if not Failed then
-        begin
-          Outfile := RemoveFileExt(FData.Filename) + '.m4a';
-          FData.Filesize := GetFileSize(Outfile);
-        end;
-      end;
-      DeleteFile(PChar(TempFile));
-
-      Result := not Failed;
+      Result := arWin;
+      OutFile := TempFile;
     end;
   end;
 end;
@@ -232,6 +244,10 @@ procedure TAACPostProcessPlugin.Assign(Source: TPluginBase);
 begin
   inherited;
 
+  FArtist := TAACPostProcessPlugin(Source).FArtist;
+  FTitle := TAACPostProcessPlugin(Source).FTitle;
+  FAlbum := TAACPostProcessPlugin(Source).FAlbum;
+  FComment := TAACPostProcessPlugin(Source).FComment;
 end;
 
 function TAACPostProcessPlugin.CanProcess(Data: PPluginProcessInformation): Boolean;
@@ -240,8 +256,27 @@ begin
 end;
 
 function TAACPostProcessPlugin.Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean;
+var
+  F: TfrmConfigureSetTags;
 begin
+  Result := True;
 
+  F := TfrmConfigureSetTags.Create(AOwner, Self, FArtist, FTitle, FAlbum, FComment);
+  try
+    F.ShowModal;
+
+    if F.SaveData then
+    begin
+      FArtist := F.Artist;
+      FTitle := F.Title;
+      FAlbum := F.Album;
+      FComment := F.Comment;
+
+      Save;
+    end;
+  finally
+    F.Free;
+  end;
 end;
 
 function TAACPostProcessPlugin.Copy: TPluginBase;
@@ -268,14 +303,14 @@ begin
   FFilesDir := AppGlobals.TempDir + 'aacpostprocess\';
 
   FName := _('AAC - Convert to M4A and set tags');
-  FHelp := _('This plugin converts recorded songs from AAC to M4A an sets tags.');
+  FHelp := _('This plugin converts recorded songs from AAC to M4A an sets tags (AAC only).');
 
   try
     AppGlobals.Storage.Read('Active_' + ClassName, FActive, True, 'Plugins');
     AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 100, 'Plugins');
     AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
 
-
+    LoadSharedSettings;
 
     if not FGetFilesInstalled then
       FActive := False;
@@ -357,26 +392,16 @@ var
 begin
   Result := True;
   for i := 0 to High(Filenames) do
-    if (Filenames[i] <> 'atomicparsley.exe') and (Filenames[i] <> 'js32.dll') and (Filenames[i] <> 'mp4box.exe') then
-      if not FileExists(FFilesDir + Filenames[i]) then
-      begin
-        Result := False;
-        Break;
-      end;
-end;
-
-function TAACPostProcessPlugin.FGetReadyForUse: Boolean;
-var
-  i: Integer;
-begin
-  Result := True;
-  for i := 0 to High(Filenames) do
-    //if (Filenames[i] <> 'lame-enc.dll') and (Filenames[i] <> 'libmad.dll') then
     if not FileExists(FFilesDir + Filenames[i]) then
     begin
       Result := False;
       Break;
     end;
+end;
+
+function TAACPostProcessPlugin.FGetReadyForUse: Boolean;
+begin
+  Result := FGetReadyForActivate;
 end;
 
 procedure TAACPostProcessPlugin.Initialize;
@@ -387,7 +412,17 @@ begin
     ExtractFiles;
 
   FName := _('AAC - Convert to M4A and set tags');
-  FHelp := _('This plugin converts recorded songs from AAC to M4A an sets tags.');
+  FHelp := _('This plugin converts recorded songs from AAC to M4A an sets tags (AAC only).');
+end;
+
+procedure TAACPostProcessPlugin.LoadSharedSettings;
+begin
+  inherited;
+
+  AppGlobals.Storage.Read('Shared_Tags_Artist', FArtist, '%a', 'Plugins');
+  AppGlobals.Storage.Read('Shared_Tags_Title', FTitle, '%t', 'Plugins');
+  AppGlobals.Storage.Read('Shared_Tags_Album', FAlbum, '%l', 'Plugins');
+  AppGlobals.Storage.Read('Shared_Tags_Comment', FComment, '%s / %u / Recorded using streamWriter', 'Plugins');
 end;
 
 function TAACPostProcessPlugin.ProcessFile(
@@ -404,6 +439,10 @@ procedure TAACPostProcessPlugin.Save;
 begin
   inherited;
 
+  AppGlobals.Storage.Write('Shared_Tags_Artist', FArtist, 'Plugins');
+  AppGlobals.Storage.Write('Shared_Tags_Title', FTitle, 'Plugins');
+  AppGlobals.Storage.Write('Shared_Tags_Album', FAlbum, 'Plugins');
+  AppGlobals.Storage.Write('Shared_Tags_Comment', FComment, 'Plugins');
 end;
 
 function TAACPostProcessPlugin.ShowInitMessage(Handle: THandle): Boolean;

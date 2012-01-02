@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, SetTags,
+  Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, Plugins,
   PngSpeedButton;
 
 type
@@ -30,10 +30,10 @@ type
   private
     FSaveData: Boolean;
 
-    FPlugin: TSetTagsPlugin;
+    FPlugin: TPluginBase;
     FArtist, FTitle, FAlbum, FComment: string;
   public
-    constructor Create(AOwner: TComponent; Plugin: TSetTagsPlugin; Artist, Title, Album, Comment: string); overload;
+    constructor Create(AOwner: TComponent; Plugin: TPluginBase; Artist, Title, Album, Comment: string); overload;
 
     property Artist: string read FArtist;
     property Title: string read FTitle;
@@ -82,7 +82,7 @@ begin
 end;
 
 constructor TfrmConfigureSetTags.Create(AOwner: TComponent;
-  Plugin: TSetTagsPlugin; Artist, Title, Album, Comment: string);
+  Plugin: TPluginBase; Artist, Title, Album, Comment: string);
 begin
   inherited Create(AOwner);
 

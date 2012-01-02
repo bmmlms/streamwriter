@@ -164,7 +164,7 @@ begin
 
   Plugins.Add(TSetTagsPlugin.Create);
   Plugins.Add(TSoXPlugin.Create);
-  //Plugins.Add(TAACPostProcessPlugin.Create);
+  Plugins.Add(TAACPostProcessPlugin.Create);
   //Plugins.Add(TNormalizePlugin.Create);
 
   i := 0;
