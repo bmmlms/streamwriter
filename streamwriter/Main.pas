@@ -1394,7 +1394,8 @@ procedure TfrmStreamWriterMain.tabClientsCut(Entry: TStreamEntry;
 var
   tabCut: TCutTab;
 begin
-  if (LowerCase(ExtractFileExt(Track.Filename)) <> '.mp3') and (LowerCase(ExtractFileExt(Track.Filename)) <> '.aac') then
+  if (LowerCase(ExtractFileExt(Track.Filename)) <> '.mp3') and (LowerCase(ExtractFileExt(Track.Filename)) <> '.aac') and
+     (LowerCase(ExtractFileExt(Track.Filename)) <> '.m4a') then
   begin
     Exit;
   end;

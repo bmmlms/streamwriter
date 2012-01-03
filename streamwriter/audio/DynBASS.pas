@@ -24,8 +24,7 @@ unit DynBASS;
 interface
 
 uses
-  Windows, SysUtils, Classes, Functions, GUIFunctions, AppData, Logging,
-  Generics.Collections;
+  Windows, SysUtils, Classes, AppData, Generics.Collections;
 
 const
   STREAMFILE_BUFFER = 1;
@@ -68,6 +67,16 @@ type
     name: PAnsiChar;
     driver: PAnsiChar;
     flags: DWORD;
+  end;
+  BASS_CHANNELINFO = record
+    freq: DWORD;        // default playback rate
+    chans: DWORD;       // channels
+    flags: DWORD;       // BASS_SAMPLE/STREAM/MUSIC/SPEAKER flags
+    ctype: DWORD;       // type of channel
+    origres: DWORD;     // original resolution
+    plugin: DWORD;    // plugin
+    sample: DWORD;    // sample
+    filename: PChar;    // filename
   end;
 
   TBassDevice = class
@@ -132,6 +141,9 @@ var
   BASSSetConfig: function(option, value: DWORD): BOOL; stdcall;
   BASSPluginLoad: function(filename: PChar; flags: DWORD): DWORD; stdcall;
   BASSPluginFree: function(handle: DWORD): BOOL; stdcall;
+  BASSChannelGetInfo: function(handle: DWORD; var info: BASS_CHANNELINFO):BOOL; stdcall;
+  BASSChannelGetAttribute: function(handle, attrib: DWORD; var value: Single): BOOL; stdcall;
+  BASSChannelGetData: function(handle: DWORD; buffer: Pointer; length: DWORD): DWORD; stdcall;
 
 var
   Bass: TBassLoader;
@@ -233,6 +245,9 @@ begin
     BASSSetConfig := GetProcAddress(DLLHandle, 'BASS_SetConfig');
     BASSPluginLoad := GetProcAddress(DLLHandle, 'BASS_PluginLoad');
     BASSPluginFree := GetProcAddress(DLLHandle, 'BASS_PluginFree');
+    BASSChannelGetInfo := GetProcAddress(DLLHandle, 'BASS_ChannelGetInfo');
+    BASSChannelGetAttribute := GetProcAddress(DLLHandle, 'BASS_ChannelGetAttribute');
+    BASSChannelGetData := GetProcAddress(DLLHandle, 'BASS_ChannelGetData');
 
     BassLoaded := False;
     DeviceAvailable := False;

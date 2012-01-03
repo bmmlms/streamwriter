@@ -203,6 +203,8 @@ begin
       else
         FIn := TAACStreamFile.Create(FFilename, fmOpenRead or fmShareDenyWrite);
       try
+        // TODO: Ist das hier alles noch mit dem MP4 Valid? funzts? Da müsste StartTagBytes immer 0 sein - wie EndTagBytes.
+
         // Tags kopieren
         if StartTagBytes > 0 then
         begin

@@ -31,7 +31,7 @@ uses
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
   PlayerManager, Plugins, SoX, DownloadAddons, ConfigureSoX, Logging,
   MsgDlg, DragDrop, DropTarget, DropComboTarget, Mp3FileUtils,
-  MessageBus, AppMessages;
+  MessageBus, AppMessages, AACPostProcess;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -186,6 +186,7 @@ type
 
     FPlayer: TPlayer;
     FFilename: string;
+    FDisplayFilename: string;
     FFilesize: UInt64;
 
     FDropTarget: TDropComboTarget;
@@ -432,11 +433,33 @@ begin
 end;
 
 procedure TCutView.LoadFile(Filename: string);
+var
+  Plugin: TAACPostProcessPlugin;
+  DemuxedFile: string;
 begin
   if (FScanThread <> nil) or (FProcessThread <> nil) then
     Exit;
 
   FFilename := Filename;
+  FDisplayFilename := Filename;
+
+  if LowerCase(ExtractFileExt(FFilename)) = '.m4a' then
+  begin
+    Plugin := AppGlobals.PluginManager.Find(TAACPostProcessPlugin) as TAACPostProcessPlugin;
+    if not Plugin.ReadyForUse then
+    begin
+      // TODO: !!! ausserdem muss schon im savedview geprüft werden, ob das m4a überhaupt aufmachbar ist (also ob plugin ReadyForUse ist)!
+    end;
+
+
+    DemuxedFile := RemoveFileExt(FFilename) + '_demux.aac';
+    if Plugin.MP4BoxDemux('', FFilename, DemuxedFile, nil) <> arWin then
+    begin
+      // TODO: !!!
+    end;
+
+    FFilename := DemuxedFile;
+  end;
 
   if FPlayer <> nil then
   begin
@@ -1420,7 +1443,7 @@ begin
     DrawLineText(FPlayLine, 40);
 
     FDrawBuf.Canvas.Font.Color := clWhite;
-    FDrawBuf.Canvas.TextOut(4, 4, BuildTime(FCutView.FWaveData.Secs) + ' - ' + RemoveFileExt(ExtractFileName(FCutView.FFilename)));
+    FDrawBuf.Canvas.TextOut(4, 4, BuildTime(FCutView.FWaveData.Secs) + ' - ' + RemoveFileExt(ExtractFileName(FCutView.FDisplayFilename)));
   end;
 end;
 
