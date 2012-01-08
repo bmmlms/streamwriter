@@ -1,6 +1,0 @@
-libgomp-1_dll RCDATA ".\libgomp-1.dll"
-pthreadgc2_dll RCDATA ".\pthreadgc2.dll"
-zlib1_dll RCDATA ".\zlib1.dll"
-sox_exe RCDATA ".\sox.exe"
-lame-enc_dll RCDATA ".\lame_enc.dll"
-libmad_dll RCDATA ".\libmad.dll"
