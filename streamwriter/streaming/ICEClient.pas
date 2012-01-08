@@ -26,7 +26,7 @@ interface
 
 uses
   SysUtils, Windows, StrUtils, Classes, ICEThread, ICEStream, AppData,
-  Generics.Collections, Functions, Sockets, Plugins, LanguageObjects,
+  Generics.Collections, Functions, Sockets, PostProcess, LanguageObjects,
   DataManager, HomeCommunication, PlayerManager, Notifications,
   Logging, TypeDefs;
 
@@ -631,7 +631,7 @@ begin
 
       if not FKilled then
       begin
-        Entry := AppGlobals.PluginManager.ProcessFile(Data);
+        Entry := AppGlobals.PostProcessManager.ProcessFile(Data);
         if Entry <> nil then
         begin
           WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]), dtMessage, dlDebug);
@@ -718,7 +718,7 @@ begin
       // Eine externe App könnte das File gelöscht haben
       if Entry.Data.Filesize <> High(UInt64) then // GetFileSize = Int64 => -1
       begin
-        Processed := AppGlobals.PluginManager.ProcessFile(Entry);
+        Processed := AppGlobals.PostProcessManager.ProcessFile(Entry);
         if Processed then
         begin
           WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]), dtMessage, dlDebug);

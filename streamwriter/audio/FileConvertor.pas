@@ -3,7 +3,7 @@ unit FileConvertor;
 interface
 
 uses
-  SysUtils, Windows, Classes, DynBASS, ExtendedStream;
+  SysUtils, Windows, Classes, DynBASS, ExtendedStream, PluginLAME, AppData, Functions;
 
 const
   BE_CONFIG_MP3 = 0;
@@ -30,6 +30,7 @@ const
   LOW_QUALITY = 1;
   HIGH_QUALITY = 2;
   VOICE_QUALITY = 3;
+
 type
   // Stuff LAME makes use of
   PHBE_STREAM = ^THBE_STREAM;
@@ -125,14 +126,36 @@ type
 
   TFileConvertorProgressEvent = procedure(Sender: TObject; Percent: Integer) of object;
 
+  TFileConvertorThread = class(TThread)
+  private
+    FFromFile: string;
+    FToFile: string;
+
+    FOnProgress: TFileConvertorProgressEvent;
+    FOnFinish: TNotifyEvent;
+    FOnError: TNotifyEvent;
+
+    procedure FileConvertorProgress(Sender: TObject; Percent: Integer);
+  protected
+    procedure Execute; override;
+  public
+    constructor Create;
+
+    procedure Convert(FromFile, ToFile: string);
+
+    property OnProgress: TFileConvertorProgressEvent read FOnProgress write FOnProgress;
+    property OnFinish: TNotifyEvent read FOnFinish write FOnFinish;
+    property OnError: TNotifyEvent read FOnError write FOnError;
+  end;
+
   TFileConvertor = class
   private
     FOnProgress: TFileConvertorProgressEvent;
 
-    function Convert2WAV(FromFile, ToFile: string): Boolean;
-    function ConvertWAV2MP3(FromFile, ToFile: string): Boolean;
+    function Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean): Boolean;
+    function ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PBoolean): Boolean;
   public
-    function Convert(FromFile, ToFile: string): Boolean;
+    function Convert(FromFile, ToFile: string; TerminateFlag: PBoolean): Boolean;
 
     property OnProgress: TFileConvertorProgressEvent read FOnProgress write FOnProgress;
   end;
@@ -141,7 +164,7 @@ implementation
 
 { TFileConvertor }
 
-function TFileConvertor.Convert(FromFile, ToFile: string): Boolean;
+function TFileConvertor.Convert(FromFile, ToFile: string; TerminateFlag: PBoolean): Boolean;
 var
   ExtFrom: string;
   ExtTo: string;
@@ -150,12 +173,12 @@ begin
   ExtTo := LowerCase(ExtractFileExt(ToFile));
 
   if (ExtFrom = '.mp3') and (ExtTo = '.wav') then
-    Result := Convert2WAV(FromFile, ToFile)
+    Result := Convert2WAV(FromFile, ToFile, TerminateFlag)
   else if (ExtFrom = '.wav') and (ExtTo = '.mp3') then
-    Result := ConvertWAV2MP3(FromFile, ToFile);
+    Result := ConvertWAV2MP3(FromFile, ToFile, TerminateFlag);
 end;
 
-function TFileConvertor.Convert2WAV(FromFile, ToFile: string): Boolean;
+function TFileConvertor.Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean): Boolean;
 var
   Channel: DWORD;
   Freq: Single;
@@ -172,7 +195,9 @@ var
   ChanInfo: BASS_CHANNELINFO;
   PercentDone: Integer;
 begin
-  Channel := BASSStreamCreateFile(FALSE, PChar(FromFile), 0, 0, BASS_STREAM_DECODE {$IFDEF UNICODE}or BASS_UNICODE{$ENDIF});
+  Result := False;
+
+  Channel := BASSStreamCreateFile(False, PChar(FromFile), 0, 0, BASS_STREAM_DECODE {$IFDEF UNICODE}or BASS_UNICODE{$ENDIF});
 
   BASSChannelGetInfo(Channel, ChanInfo);
 	Channels := ChanInfo.chans;
@@ -218,10 +243,10 @@ begin
     OutStream.Write(BitsPerSample, 2);
 
     Tmp := 'data';
-    OutStream.Write(Tmp[1],length(Tmp));
+    OutStream.Write(Tmp[1], Length(Tmp));
 
     Tmp := #0#0#0#0;
-    OutStream.Write(Tmp[1],length(Tmp));
+    OutStream.Write(Tmp[1], Length(Tmp));
 
     while (BASSChannelIsActive(Channel) > 0) do
     begin
@@ -233,6 +258,9 @@ begin
         PercentDone := Trunc(100 * (BASSChannelGetPosition(Channel, BASS_POS_BYTE) / BASSChannelGetLength(Channel, BASS_POS_BYTE)));
         FOnProgress(Self, PercentDone);
       end;
+
+      if (TerminateFlag <> nil) and (TerminateFlag^) then
+        Break;
     end;
     BASSStreamFree(Channel);
 
@@ -242,15 +270,23 @@ begin
     i := i - $24;
     OutStream.Position := 40;
     OutStream.Write(i, 4);
+
+    Result := True;
   finally
     OutStream.Free;
   end;
+
+  if Result and (TerminateFlag <> nil) and (TerminateFlag^) then
+  begin
+    DeleteFile(PChar(ToFile));
+    Result := False;
+  end
 end;
 
-function TFileConvertor.ConvertWAV2MP3(FromFile, ToFile: string): Boolean;
+function TFileConvertor.ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PBoolean): Boolean;
 var
   DLLHandle: THandle;
-  Encoder: string;
+  ToFileTemp: string;
   InStream, OutStream: TFileStream;
 
   InitStream: LameInitStream;
@@ -270,13 +306,20 @@ var
   PMP3Buffer: PByte;
   Buffer: PSmallInt;
   Len, Write, ToRead, ToWrite: LongWord;
+
+  Plugin: TPluginLAME;
 begin
+  Result := False;
+
   Done := 0;
   PercentDone := 0;
   PrevPercentDone := 0;
 
-  Encoder := 'z:\lame-enc.dll';
-  DLLHandle := LoadLibrary(PChar(Encoder));
+  Plugin := AppGlobals.PluginManager.Find(TPluginLAME) as TPluginLAME;
+  if not Plugin.FilesExtracted then
+    Exit(False);
+
+  DLLHandle := LoadLibrary(PChar(Plugin.DLLPath));
   if DLLHandle <= 32 then
   begin
     raise Exception.Create('Could not load lame-enc.dll');
@@ -290,37 +333,38 @@ begin
 
     InStream := TFileStream.Create(FromFile, fmOpenRead);
     try
-      OutStream := TFileStream.Create(ToFile, fmCreate);
+      ToFileTemp := RemoveFileExt(ToFile) + '_save.mp3';
+      OutStream := TFileStream.Create(ToFileTemp, fmCreate);
+
+      Config.dwConfig := BE_CONFIG_LAME;
+      Config.Format.lhv1.dwStructVersion := 1;
+      Config.Format.lhv1.dwStructSize := SizeOf(Config);
+      Config.Format.lhv1.dwSampleRate := 44100;
+      Config.Format.lhv1.dwReSampleRate := 44100;
+      Config.Format.lhv1.nMode := BE_MP3_MODE_STEREO;
+      Config.Format.lhv1.dwBitrate := 256;
+      Config.Format.lhv1.dwMaxBitrate := 256;
+      Config.Format.lhv1.nQuality := HIGH_QUALITY;
+      Config.Format.lhv1.dwMPegVersion := 1;
+      Config.Format.lhv1.dwPsyModel := 0;
+      Config.Format.lhv1.dwEmphasis := 0;
+      Config.Format.lhv1.bPrivate := False;
+      Config.Format.lhv1.bCRC := False;
+      Config.Format.lhv1.bCopyright := True;
+      Config.Format.lhv1.bOriginal := True;
+      Config.Format.lhv1.bWriteVBRHeader := false;
+      Config.Format.lhv1.bEnableVBR := false;
+      Config.Format.lhv1.nVBRQuality := 0;
+
       try
+        Err := InitStream(@Config, @Samples, @MP3Buffer, @HBEStream);
+
         GetMem(PMP3Buffer, MP3Buffer);
         GetMem(Buffer, Samples * SizeOf(SmallInt));
 
-        Config.dwConfig := BE_CONFIG_LAME;
-
-        Config.Format.lhv1.dwStructVersion := 1;
-        Config.Format.lhv1.dwStructSize := SizeOf(Config);
-        Config.Format.lhv1.dwSampleRate := 44100;
-        Config.Format.lhv1.dwReSampleRate := 44100;
-        Config.Format.lhv1.nMode := BE_MP3_MODE_STEREO;
-        Config.Format.lhv1.dwBitrate := 256;
-        Config.Format.lhv1.dwMaxBitrate := 256;
-        Config.Format.lhv1.nQuality := HIGH_QUALITY;
-        Config.Format.lhv1.dwMPegVersion := 1;
-        Config.Format.lhv1.dwPsyModel := 0;
-        Config.Format.lhv1.dwEmphasis := 0;
-        Config.Format.lhv1.bPrivate := False;
-        Config.Format.lhv1.bCRC := False;
-        Config.Format.lhv1.bCopyright := True;
-        Config.Format.lhv1.bOriginal := True;
-        Config.Format.lhv1.bWriteVBRHeader := false;
-        Config.Format.lhv1.bEnableVBR := false;
-        Config.Format.lhv1.nVBRQuality := 0;
-
-        Err := InitStream(@Config, @Samples, @MP3Buffer, @HBEStream);
-
         if (Err <> BE_ERR_SUCCESSFUL) then
         begin
-          raise Exception.Create('Err <> BE_ERR_SUCCESSFUL');
+          Exit;
         end;
 
         Len := InStream.Size;
@@ -342,7 +386,7 @@ begin
           if (Err <> BE_ERR_SUCCESSFUL) then
           begin
             CloseStream(HBEStream);
-            raise Exception.Create('Err <> BE_ERR_SUCCESSFUL');
+            Exit;
           end;
 
           OutStream.WriteBuffer(PMP3Buffer^, ToWrite);
@@ -354,6 +398,9 @@ begin
             PercentDone := Round(100.0 * Done / Len);
             FOnProgress(Self, PercentDone);
           end;
+
+          if (TerminateFlag <> nil) and (TerminateFlag^) then
+            Break;
         end;
 
         Err := DeInitStream(HBEStream, PMP3Buffer, @Write);
@@ -361,7 +408,7 @@ begin
         if (err <> BE_ERR_SUCCESSFUL) then
         begin
           CloseStream(HBEStream);
-          raise Exception.Create('Err <> BE_ERR_SUCCESSFUL');
+          Exit;
         end;
 
         if (Write <> 0) then
@@ -370,6 +417,11 @@ begin
         end;
 
         CloseStream(HBEStream);
+
+        if (TerminateFlag <> nil) and (TerminateFlag^) then
+          DeleteFile(PChar(ToFileTemp))
+        else
+          Result := True;
       finally
         OutStream.Free;
 
@@ -382,6 +434,78 @@ begin
   finally
     FreeLibrary(DLLHandle);
   end;
+
+  if Result then
+    MoveFile(PChar(ToFileTemp), PChar(ToFile));
+end;
+
+{ TFileConvertorThread }
+
+procedure TFileConvertorThread.Convert(FromFile, ToFile: string);
+begin
+  FFromFile := FromFile;
+  FToFile := ToFile;
+
+  Resume;
+end;
+
+constructor TFileConvertorThread.Create;
+begin
+  inherited Create(True);
+
+  FreeOnTerminate := True;
+end;
+
+procedure TFileConvertorThread.Execute;
+var
+  FC: TFileConvertor;
+begin
+  inherited;
+
+  FC := TFileConvertor.Create;
+  try
+    FC.OnProgress := FileConvertorProgress;
+
+    try
+      if FC.Convert(FFromFile, FToFile, @Terminated) then
+      begin
+        Synchronize(
+          procedure
+          begin
+            if Assigned(FOnFinish) then
+              FOnFinish(Self)
+          end);
+      end else
+      begin
+        Synchronize(
+          procedure
+          begin
+            if Assigned(FOnError) then
+              FOnError(Self)
+          end);
+      end;
+    except
+      Synchronize(
+        procedure
+        begin
+          if Assigned(FOnError) then
+            FOnError(Self)
+        end);
+    end;
+  finally
+    FC.Free;
+  end;
+end;
+
+procedure TFileConvertorThread.FileConvertorProgress(Sender: TObject;
+  Percent: Integer);
+begin
+  Synchronize(
+    procedure
+    begin
+      if Assigned(FOnProgress) then
+        FOnProgress(Sender, Percent);
+    end);
 end;
 
 end.

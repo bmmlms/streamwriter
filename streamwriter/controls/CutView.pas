@@ -29,14 +29,14 @@ uses
   SysUtils, Windows, Classes, Controls, StdCtrls, ExtCtrls, Functions,
   Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
-  PlayerManager, Plugins, SoX, DownloadAddons, ConfigureSoX, Logging,
+  PlayerManager, PostProcess, PostProcessSoX, DownloadAddons, ConfigureSoX, Logging,
   MsgDlg, DragDrop, DropTarget, DropComboTarget, Mp3FileUtils,
-  MessageBus, AppMessages, AACPostProcess;
+  MessageBus, AppMessages, FileConvertor;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
   TWavBufArray = array of SmallInt;
-  TCutStates = (csReady, csLoading, csWorking, csError);
+  TCutStates = (csReady, csLoading, csWorking, csDecoding, csEncoding, csConvertorError, csError);
 
   TCutView = class;
 
@@ -145,18 +145,15 @@ type
   TUndoStep = class
   private
     FFilename: string;
-    FNumber: Integer;
     FStartLine: Cardinal;
     FEndLine: Cardinal;
     FEffectStartLine: Cardinal;
     FEffectEndLine: Cardinal;
     FPlayLine: Cardinal;
   public
-    constructor Create(Filename: string; Number: Integer;
-      StartLine, EndLine, EffectStartLine, EffectEndLine, PlayLine: Cardinal);
+    constructor Create(Filename: string; StartLine, EndLine, EffectStartLine, EffectEndLine, PlayLine: Cardinal);
 
     property Filename: string read FFilename;
-    property Number: Integer read FNumber;
     property StartLine: Cardinal read FStartLine;
     property EndLine: Cardinal read FEndLine;
     property EffectStartLine: Cardinal read FEffectStartLine;
@@ -185,8 +182,8 @@ type
     FUndoStep: TUndoStep;
 
     FPlayer: TPlayer;
-    FFilename: string;
-    FDisplayFilename: string;
+    FOriginalFilename: string;
+    FWorkingFilename: string;
     FFilesize: UInt64;
 
     FDropTarget: TDropComboTarget;
@@ -194,7 +191,9 @@ type
     FOnStateChanged: TNotifyEvent;
     FOnCutFile: TCutFileEvent;
 
-    function GetSoX: TSoXPlugin;
+    FFileConvertorThread: TFileConvertorThread;
+
+    function GetSoX: TPostProcessSoX;
     procedure StartProcessing(CmdLine: string);
     function AddUndo: Boolean;
 
@@ -205,7 +204,6 @@ type
 
     procedure ProcessThreadSuccess(Sender: TObject);
     procedure ProcessThreadError(Sender: TObject);
-    procedure ProcessThreadTerminate(Sender: TObject);
 
     procedure PlayerEndReached(Sender: TObject);
     procedure PlayerPlay(Sender: TObject);
@@ -218,20 +216,30 @@ type
       APoint: TPoint; var Effect: Integer);
 
     procedure MessageReceived(Msg: TMessageBase);
+
+    procedure CreateConvertor;
+
+    procedure FileConvertorProgress(Sender: TObject; Percent: Integer);
+    procedure FileConvertorFinish(Sender: TObject);
+    procedure FileConvertorError(Sender: TObject);
+    procedure FileConvertorTerminate(Sender: TObject);
+
+    function GetUndoFilename: string;
+    function GetFilename: string;
   protected
     procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    procedure LoadFile(Filename: string);
+    procedure LoadFile(Filename: string; IsConverted: Boolean);
 
     function CheckSoX: Boolean;
 
+    procedure Save;
     procedure Cut;
     procedure Undo;
-    function Save(StartPos, EndPos: Cardinal): Boolean;
-    procedure SaveAs;
+    function SaveCut(OutFile: string; StartPos, EndPos: Cardinal): Boolean;
     procedure Play;
     procedure Stop;
     procedure AutoCut(MaxPeaks: Integer; MinDuration: Cardinal);
@@ -357,10 +365,28 @@ begin
   MsgBus.AddSubscriber(MessageReceived);
 end;
 
+procedure TCutView.CreateConvertor;
+begin
+  FFileConvertorThread := TFileConvertorThread.Create;
+  FFileConvertorThread.OnProgress := FileConvertorProgress;
+  FFileConvertorThread.OnFinish := FileConvertorFinish;
+  FFileConvertorThread.OnError := FileConvertorError;
+  FFileConvertorThread.OnTerminate := FileConvertorTerminate;
+end;
+
 destructor TCutView.Destroy;
 var
   i: Integer;
 begin
+  if FFileConvertorThread <> nil then
+  begin
+    FFileConvertorThread.OnTerminate := nil;
+    FFileConvertorThread.OnProgress := nil;
+    FFileConvertorThread.OnFinish := nil;
+    FFileConvertorThread.OnError := nil;
+    FFileConvertorThread.Terminate;
+  end;
+
   MsgBus.RemoveSubscriber(MessageReceived);
 
   if FScanThread <> nil then
@@ -398,6 +424,7 @@ begin
     FUndoList[i].Free;
   end;
   FUndoList.Free;
+  DeleteFile(PChar(FWorkingFilename));
 
   inherited;
 end;
@@ -411,6 +438,7 @@ begin
   begin
     // REMARK: Bei neuen Formaten brauche ich dafür vielleicht ein Array!
     if (LowerCase(ExtractFileExt(FDropTarget.Files[i])) = '.mp3') or
+       (LowerCase(ExtractFileExt(FDropTarget.Files[i])) = '.m4a') or
        (LowerCase(ExtractFileExt(FDropTarget.Files[i])) = '.aac') then
     begin
       if Assigned(FOnCutFile) then
@@ -419,87 +447,128 @@ begin
   end;
 end;
 
-function TCutView.GetSoX: TSoXPlugin;
+procedure TCutView.FileConvertorError(Sender: TObject);
+begin
+  FState := csConvertorError;
+
+
+end;
+
+procedure TCutView.FileConvertorFinish(Sender: TObject);
+begin
+  if FState = csEncoding then
+  begin
+    if Assigned(TCutTab(Owner).OnSaved) then
+      TCutTab(Owner).OnSaved(Owner, FWaveData.Filesize, Trunc(FWaveData.Secs));
+  end;
+
+  LoadFile(FWorkingFilename, True);
+end;
+
+procedure TCutView.FileConvertorProgress(Sender: TObject;
+  Percent: Integer);
+begin
+  if Percent < 100 then
+    FProgressBarLoad.Position := Percent + 1;
+  FProgressBarLoad.Position := Percent;
+end;
+
+procedure TCutView.FileConvertorTerminate(Sender: TObject);
+begin
+  FFileConvertorThread := nil;
+end;
+
+function TCutView.GetFilename: string;
+begin
+  Result := 'asf';
+end;
+
+function TCutView.GetSoX: TPostProcessSoX;
 var
   i: Integer;
 begin
   Result := nil;
-  for i := 0 to AppGlobals.PluginManager.Plugins.Count - 1 do
-    if AppGlobals.PluginManager.Plugins[i] is TSoXPlugin then
+  for i := 0 to AppGlobals.PostProcessManager.PostProcessors.Count - 1 do
+    if AppGlobals.PostProcessManager.PostProcessors[i] is TPostProcessSoX then
     begin
-      Result := TSoXPlugin(AppGlobals.PluginManager.Plugins[i]);
+      Result := TPostProcessSoX(AppGlobals.PostProcessManager.PostProcessors[i]);
       Break;
     end;
 end;
 
-procedure TCutView.LoadFile(Filename: string);
+function TCutView.GetUndoFilename: string;
+begin
+  Result := AppGlobals.TempDir + 'UNDO_' + IntToStr(GetTickCount) + '_' + RemoveFileExt(ExtractFileName(FOriginalFilename)) + '_cut.wav';
+end;
+
+procedure TCutView.LoadFile(Filename: string; IsConverted: Boolean);
 var
-  Plugin: TAACPostProcessPlugin;
-  DemuxedFile: string;
+  FileExt: string;
 begin
   if (FScanThread <> nil) or (FProcessThread <> nil) then
     Exit;
 
-  FFilename := Filename;
-  FDisplayFilename := Filename;
-
-  if LowerCase(ExtractFileExt(FFilename)) = '.m4a' then
+  if IsConverted then
   begin
-    Plugin := AppGlobals.PluginManager.Find(TAACPostProcessPlugin) as TAACPostProcessPlugin;
-    if not Plugin.ReadyForUse then
+    if FPlayer <> nil then
     begin
-      // TODO: !!! ausserdem muss schon im savedview geprüft werden, ob das m4a überhaupt aufmachbar ist (also ob plugin ReadyForUse ist)!
+      FreeAndNil(FPlayer);
+    end;
+    FPlayer := TPlayer.Create;
+    FPlayer.OnEndReached := PlayerEndReached;
+    FPlayer.OnPlay := PlayerPlay;
+    FPlayer.OnPause := PlayerPause;
+    FPlayer.OnStop := PlayerStop;
+    Players.AddPlayer(FPlayer);
+
+    try
+      if Bass.DeviceAvailable then
+        FPlayer.Filename := Filename;
+    except
+      ThreadScanError(Self);
+      Exit;
     end;
 
+    FProgressBarLoad.Visible := True;
 
-    DemuxedFile := RemoveFileExt(FFilename) + '_demux.aac';
-    if Plugin.MP4BoxDemux('', FFilename, DemuxedFile, nil) <> arWin then
-    begin
-      // TODO: !!!
-    end;
+    FState := csLoading;
+    FPB.BuildBuffer;
+    FPB.BuildDrawBuffer;
+    FPB.Repaint;
 
-    FFilename := DemuxedFile;
-  end;
+    FScanThread := TScanThread.Create(Filename);
+    FScanThread.OnTerminate := ThreadTerminate;
+    FScanThread.OnEndScan := ThreadEndScan;
+    FScanThread.OnScanError := ThreadScanError;
+    FScanThread.OnScanProgress := ThreadScanProgress;
 
-  if FPlayer <> nil then
+    FPB.FEffectStartLine := 0;
+    FPB.FEffectEndLine := 0;
+
+    FScanThread.Resume;
+
+    if Assigned(FOnStateChanged) then
+      FOnStateChanged(Self);
+  end else
   begin
-    FreeAndNil(FPlayer);
+    FOriginalFilename := Filename;
+    FWorkingFilename := GetUndoFilename;
+
+    FState := csLoading;
+
+    // TODO: Prüfen ob das Plugin da ist zum re-encoden und wenn nicht rumnerven.
+    FState := csDecoding;
+
+    CreateConvertor;
+
+    FProgressBarLoad.Visible := True;
+
+    FFileConvertorThread.Convert(FOriginalFilename, FWorkingFilename);
+
+    FPB.BuildBuffer;
+    FPB.BuildDrawBuffer;
+    FPB.Repaint;
   end;
-  FPlayer := TPlayer.Create;
-  FPlayer.OnEndReached := PlayerEndReached;
-  FPlayer.OnPlay := PlayerPlay;
-  FPlayer.OnPause := PlayerPause;
-  FPlayer.OnStop := PlayerStop;
-  Players.AddPlayer(FPlayer);
-
-  try
-    if Bass.DeviceAvailable then
-      FPlayer.Filename := FFilename;
-  except
-    ThreadScanError(Self);
-    Exit;
-  end;
-
-  FProgressBarLoad.Visible := True;
-
-  FState := csLoading;
-  FPB.BuildBuffer;
-  FPB.BuildDrawBuffer;
-  FPB.Repaint;
-
-  FScanThread := TScanThread.Create(Filename);
-  FScanThread.OnTerminate := ThreadTerminate;
-  FScanThread.OnEndScan := ThreadEndScan;
-  FScanThread.OnScanError := ThreadScanError;
-  FScanThread.OnScanProgress := ThreadScanProgress;
-
-  FPB.FEffectStartLine := 0;
-  FPB.FEffectEndLine := 0;
-
-  FScanThread.Resume;
-
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
 end;
 
 procedure TCutView.MessageReceived(Msg: TMessageBase);
@@ -532,7 +601,7 @@ begin
   if not AddUndo then
     Exit;
 
-  if not Save(FPB.FStartLine, FPB.FEndLine) then
+  if not SaveCut(GetUndoFilename, FPB.FStartLine, FPB.FEndLine) then
     Exit;
 
   if FPlayer <> nil then
@@ -552,7 +621,7 @@ begin
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
-
+          // TODO: BEi undo ist manchmal die end-pos falsch markiert!
 procedure TCutView.Undo;
 var
   UndoStep: TUndoStep;
@@ -560,15 +629,18 @@ begin
   if not CanUndo then
     Exit;
 
+  if (FUndoList.Count > 0) then
+    FreeAndNil(FPlayer);
+
   UndoStep := FUndoList[FUndoList.Count - 1];
 
-  if CopyFile(PChar(UndoStep.Filename), PChar(FFilename), False) then
+  if CopyFile(PChar(UndoStep.Filename), PChar(FWorkingFilename), False) then
   begin
     FWaveData.Free;
     FWaveData := nil;
 
     FWasSaved := True;
-    LoadFile(FFilename);
+    LoadFile(FWorkingFilename, True);
 
     DeleteFile(PChar(UndoStep.Filename));
 
@@ -633,7 +705,28 @@ begin
     FOnStateChanged(Self);
 end;
 
-function TCutView.Save(StartPos, EndPos: Cardinal): Boolean;
+procedure TCutView.Save;
+begin
+  if FPlayer <> nil then
+    FreeAndNil(FPlayer);
+  // TODO: Was passiert bei fehlern beim encoden?
+
+  CreateConvertor;
+  FFileConvertorThread.Convert(FWorkingFilename, FOriginalFilename);
+
+  FState := csEncoding;
+  FProgressBarLoad.Position := 0;
+  FProgressBarLoad.Visible := True;
+
+  FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
+  FPB.Paint;
+end;
+
+// TODO: Sicherstellen, dass ALLE temp-files beim schneiden und postprocessing in APPGLOBALS.TEMP landen. und um löschung kümmern!!!
+//       wenn nen cutview auf ist und man das schließt wird gelöscht. wenn hauptfenster auf und cutview und man fenster schließt nicht :(
+
+function TCutView.SaveCut(OutFile: string; StartPos, EndPos: Cardinal): Boolean;
 begin
   Result := False;
 
@@ -643,26 +736,29 @@ begin
   end;
 
   try
-    MsgBus.SendMessage(TFileModifyMsg.Create(FFilename));
+    //MsgBus.SendMessage(TFileModifyMsg.Create(FOriginalFilename));
 
-    if FWaveData.Save(FFilename, StartPos, EndPos) then
+    if FWaveData.Save(OutFile, StartPos, EndPos) then
     begin
       FreeAndNil(FWaveData);
       FWasSaved := True;
-      LoadFile(FFilename);
+      LoadFile(OutFile, True);
 
       Result := True;
+
+      FWorkingFilename := OutFile;
     end else
     begin
       MsgBox(GetParentForm(Self).Handle, _('The file could not be saved.'#13#10'Please make sure the file is not in use by another application.'), _('Info'), MB_ICONINFORMATION);
     end;
   finally
     // Wenn Result = True wird FPlayer in LoadFile() neu erstellt
+    // TODO: Funzt Result=False noch??? TESTEN!!!
     if not Result then
     begin
       FPlayer := TPlayer.Create;
       try
-        FPlayer.Filename := FFilename;
+        FPlayer.Filename := FWorkingFilename;
 
         FPlayer.OnEndReached := PlayerEndReached;
         FPlayer.OnPlay := PlayerPlay;
@@ -677,11 +773,6 @@ begin
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
-end;
-
-procedure TCutView.SaveAs;
-begin
-  raise Exception.Create('');
 end;
 
 procedure TCutView.Play;
@@ -742,7 +833,7 @@ begin
   FProcessThread := nil;
   MsgBox(GetParentForm(Self).Handle, Format(_('An error occured while processing the file:'#13#10'%s'), [Msg]) , _('Error'), MB_ICONERROR);
 
-  LoadFile(FFilename);
+  LoadFile(FWorkingFilename, True);
 end;
 
 procedure TCutView.ProcessThreadSuccess(Sender: TObject);
@@ -750,15 +841,11 @@ begin
   FProcessThread := nil;
   FState := csReady;
   FWasSaved := True;
-  LoadFile(FFilename);
+
+  LoadFile(FWorkingFilename, True);
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
-end;
-
-procedure TCutView.ProcessThreadTerminate(Sender: TObject);
-begin
-
 end;
 
 procedure TCutView.Resize;
@@ -783,7 +870,7 @@ begin
   if FWaveData <> nil then
     FreeAndNil(FWaveData);
 
-  TempFile := RemoveFileExt(FFilename) + '_soxconvert' + ExtractFileExt(FFilename);
+  TempFile := RemoveFileExt(FWorkingFilename) + '_soxconvert' + ExtractFileExt(FWorkingFilename);
   CmdLine := StringReplace(CmdLine, '[[TEMPFILE]]', TempFile, [rfReplaceAll]);
 
   FWasSaved := True;
@@ -792,10 +879,9 @@ begin
   FPB.BuildDrawBuffer;
   FPB.Paint;
 
-  FProcessThread := TProcessThread.Create(CmdLine, ExtractFilePath(GetSoX.SoXExe), FFilename, TempFile);
+  FProcessThread := TProcessThread.Create(CmdLine, ExtractFilePath(GetSoX.SoXExe), FWorkingFilename, TempFile);
   FProcessThread.OnSuccess := ProcessThreadSuccess;
   FProcessThread.OnError := ProcessThreadError;
-  FProcessThread.OnTerminate := ProcessThreadTerminate;
   FProcessThread.Resume;
 
   if Assigned(FOnStateChanged) then
@@ -829,7 +915,7 @@ begin
   if not CheckSoX then
     Exit;
 
-  CmdLine := '"' + GetSoX.SoXExe + '" --norm "' + FFilename + '" ' + '"[[TEMPFILE]]" ';
+  CmdLine := '"' + GetSoX.SoXExe + '" --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ';
 
   if Fadein then
   begin
@@ -868,25 +954,13 @@ end;
 
 function TCutView.AddUndo: Boolean;
 var
-  Number: Integer;
   FN, Dest: string;
 begin
   Result := False;
 
-  if FUndoList.Count > 0 then
-  begin
-    Number := FUndoList[FUndoList.Count - 1].Number + 1;
-  end else
-    Number := 1;
-
-  FN := ExtractFileName(FFilename);
-  Dest := AppGlobals.TempDir + 'UNDO_' + Copy(FN, 1, Length(FN) - Length(ExtractFileExt(FN))) + '_' + IntToStr(FID) + '_' + IntToStr(Number) + (ExtractFileExt(FN));
-  if CopyFile(PChar(FFilename), PChar(Dest), False) then
-  begin
-    FUndoList.Add(TUndoStep.Create(Dest, Number, FPB.FStartLine, FPB.FEndLine,
-      FPB.FEffectStartLine, FPB.FEffectEndLine, FPB.FPlayLine));
-    Result := True;
-  end;
+  FUndoList.Add(TUndoStep.Create(FWorkingFilename, FPB.FStartLine, FPB.FEndLine,
+    FPB.FEffectStartLine, FPB.FEffectEndLine, FPB.FPlayLine));
+  Result := True;
 
   if not Result then
   begin
@@ -936,7 +1010,7 @@ begin
         if not AddUndo then
           Exit;
 
-        CmdLine := '"' + GetSoX.SoXExe + '" --norm "' + FFilename + '" ' + '"[[TEMPFILE]]" ' + CmdLine;
+        CmdLine := '"' + GetSoX.SoXExe + '" --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ' + CmdLine;
 
         StartProcessing(CmdLine);
       end;
@@ -969,7 +1043,7 @@ end;
 
 function TCutView.CanEffectsMarker: Boolean;
 begin
-  Result := (FWaveData <> nil) and (LowerCase(ExtractFileExt(FFilename)) = '.mp3');
+  Result := (FWaveData <> nil);
 end;
 
 function TCutView.CanUndo: Boolean;
@@ -995,8 +1069,7 @@ begin
     Exit(False);
 
   Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5) + 4;
-  Result := (LowerCase(ExtractFileExt(FFilename)) = '.mp3') and
-            (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
+  Result := (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
             ((FPB.FEffectStartLine <= Tolerance) or (FPB.FEffectEndLine <= Tolerance));
 end;
 
@@ -1008,14 +1081,13 @@ begin
     Exit(False);
 
   Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5) + 4;
-  Result := (LowerCase(ExtractFileExt(FFilename)) = '.mp3') and
-            (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
+  Result := (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
             ((FPB.FEffectStartLine >= Length(FWaveData.WaveArray) - Tolerance) or (FPB.FEffectEndLine >= Length(FWaveData.WaveArray) - Tolerance));
 end;
 
 function TCutView.CanApplyEffects: Boolean;
 begin
-  Result := (FWaveData <> nil) and (LowerCase(ExtractFileExt(FFilename)) = '.mp3');
+  Result := (FWaveData <> nil);
 end;
 
 function TCutView.CanAutoCut: Boolean;
@@ -1044,65 +1116,14 @@ var
   Res: Integer;
   DA: TfrmDownloadAddons;
   CS: TfrmConfigureSoX;
-  Plugin: TSoXPlugin;
+  PostProcessor: TPostProcessSoX;
 begin
-  Result := False;
+  // TODO: Testen in allen Konstellationen.
+  PostProcessor := AppGlobals.PostProcessManager.Find(TPostProcessSoX) as TPostProcessSoX;
 
-  Plugin := GetSox;
-  if Plugin = nil then
-    Exit;
-
-  if not Plugin.ReadyForActivate then
-  begin
-    Res := MsgBox(GetParentForm(Self).Handle, _('This function cannot be used because needed files have not been downloaded.'#13#10'Do you want to download these files now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
-    if Res = IDYES  then
-    begin
-      if not Plugin.ShowInitMessage(Handle) then
-        Exit;
-
-      DA := TfrmDownloadAddons.Create(Self, Plugin);
-      try
-        DA.ShowModal;
-
-        if not DA.Downloaded then
-        begin
-          if DA.Error then
-            MsgBox(GetParentForm(Self).Handle, _('An error occured while downloading the file.'), _('Error'), MB_ICONEXCLAMATION);
-          Exit;
-        end;
-      finally
-        DA.Free;
-      end;
-    end else if Res = IDNO then
-    begin
-      Exit;
-    end;
-
-    // Nochmal initialisieren. Evtl. wurde eben erst die .dll heruntergeladen, dann extrahiert .Initialize() jetzt
-    Plugin.Initialize;
-  end;
-
-  // Ich glaube, dass das hier nur eintreten konnte, wenn man da noch lame_enc.dll und so manuell "eaten" musste...
-  if Plugin.ReadyForActivate and (not Plugin.ReadyForUse) then
-  begin
-    CS := TfrmConfigureSoX.Create(GetParentForm(Self), Plugin, Trunc(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec));
-    try
-      CS.ShowModal;
-
-      Plugin.Initialize;
-
-      if not Plugin.ReadyForUse then
-        Exit;
-    finally
-      CS.Free;
-    end;
-  end;
-
-  if not Plugin.ReadyForUse then
-  begin
-    MsgBox(GetParentForm(Self).Handle, _('The plugin is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
-    Exit;
-  end else
+  if not PostProcessor.DependenciesMet then
+    Result := AppGlobals.PostProcessManager.EnablePostProcess(GetParentForm(Self), True, PostProcessor)
+  else
     Result := True;
 end;
 
@@ -1132,11 +1153,6 @@ begin
 
   FState := csReady;
 
-  if FWasSaved then
-  begin
-    if Assigned(TCutTab(Owner).OnSaved) then
-      TCutTab(Owner).OnSaved(Owner, FWaveData.Filesize, Trunc(FWaveData.Secs));
-  end;
   FWasSaved := False;
 
   if Assigned(FOnStateChanged) then
@@ -1234,44 +1250,44 @@ var
   Added: Cardinal;
   HT: Cardinal;
   TS: TSize;
-  Txt: string;
   ArrayFrom, ArrayTo: Cardinal;
   L1, L2: Cardinal;
   CS, CE: Cardinal;
+
+  TextWrite: string;
 begin
+  TextWrite := '';
+
+  // TODO: beim zumachen der schneideansicht fragen "wollen sie speichern?" falls nicht gespeichert wurde bei änderungen!!!
+
   FWaveBuf.Canvas.Brush.Color := clBlack;
   FWaveBuf.Canvas.FillRect(Rect(0, 0, FWaveBuf.Width, FWaveBuf.Height));
 
   if (ClientHeight < 2) or (ClientWidth < 2) then
     Exit;
 
-  if FCutView.FState = csError then
-  begin
-    Txt := _('Error loading file');
-    TS := GetTextSize(Txt, Canvas.Font);
-    FWaveBuf.Canvas.Font.Color := clWhite;
-    SetBkMode(FWaveBuf.Canvas.Handle, TRANSPARENT);
-    FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - TS.cx div 2, FWaveBuf.Height div 2 - TS.cy, Txt);
-    Exit;
+  TextWrite := '';
+  case FCutView.FState of
+    csError:
+      TextWrite := _('Error loading file');
+    csConvertorError:
+      TextWrite := _('Error converting file');
+    csWorking:
+      TextWrite := _('Working...');
+    csDecoding:
+      TextWrite := _('Decoding...');
+    csEncoding:
+      TextWrite := _('Encoding...');
+    csLoading:
+      TextWrite := _('Loading...');
   end;
 
-  if FCutView.FState = csWorking then
+  if TextWrite <> '' then
   begin
-    Txt := _('Working...');
-    TS := GetTextSize(Txt, Canvas.Font);
+    TS := GetTextSize(TextWrite, Canvas.Font);
     FWaveBuf.Canvas.Font.Color := clWhite;
     SetBkMode(FWaveBuf.Canvas.Handle, TRANSPARENT);
-    FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - TS.cx div 2, FWaveBuf.Height div 2 - TS.cy, Txt);
-    Exit;
-  end;
-
-  if (FCutView.FWaveData = nil) or (FCutView.FState = csLoading) then
-  begin
-    Txt := _('Loading file...');
-    TS := GetTextSize(Txt, Canvas.Font);
-    FWaveBuf.Canvas.Font.Color := clWhite;
-    SetBkMode(FWaveBuf.Canvas.Handle, TRANSPARENT);
-    FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - TS.cx div 2, FWaveBuf.Height div 2 - TS.cy, Txt);
+    FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - TS.cx div 2, FWaveBuf.Height div 2 - TS.cy, TextWrite);
     Exit;
   end;
 
@@ -1431,7 +1447,7 @@ begin
 
   FDrawBuf.Canvas.Draw(0, 0, FWaveBuf);
 
-  if (FCutView.FWaveData <> nil) and (FCutView.FState <> csWorking) then
+  if (FCutView.FWaveData <> nil) and (not (FCutView.FState in [csWorking, csDecoding, csEncoding])) then
   begin
     DrawLine(FStartLine, FStartColor);
     DrawLine(FEndLine, FEndColor);
@@ -1443,7 +1459,8 @@ begin
     DrawLineText(FPlayLine, 40);
 
     FDrawBuf.Canvas.Font.Color := clWhite;
-    FDrawBuf.Canvas.TextOut(4, 4, BuildTime(FCutView.FWaveData.Secs) + ' - ' + RemoveFileExt(ExtractFileName(FCutView.FDisplayFilename)));
+
+    FDrawBuf.Canvas.TextOut(4, 4, BuildTime(FCutView.FWaveData.Secs) + ' - ' + RemoveFileExt(ExtractFileName(FCutView.FOriginalFilename)));
   end;
 end;
 
@@ -1866,11 +1883,9 @@ end;
 
 { TUndoStep }
 
-constructor TUndoStep.Create(Filename: string; Number: Integer;
-  StartLine, EndLine, EffectStartLine, EffectEndLine, PlayLine: Cardinal);
+constructor TUndoStep.Create(Filename: string; StartLine, EndLine, EffectStartLine, EffectEndLine, PlayLine: Cardinal);
 begin
   FFilename := Filename;
-  FNumber := Number;
   FStartLine := StartLine;
   FEndLine := EndLine;
   FEffectStartLine := EffectStartLine;

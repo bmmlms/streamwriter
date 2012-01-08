@@ -29,12 +29,12 @@ uses
   DragDropInternet, DragDropText, DragDropFile, Update, UpdateClient,
   LanguageObjects, AppDataBase, Functions, ClientManager, ShellAPI, DropSource,
   About, MsgDlg, HomeCommunication, StreamBrowserView, Clipbrd,
-  StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, Plugins,
+  StationCombo, GUIFunctions, StreamInfoView, StreamDebugView,
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   TypeDefs, ExtendedStream, SettingsStorage, ChartsTab, StatusBar,
-  SystemCritical;
+  SystemCritical, Intro;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -585,6 +585,8 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.AfterShown(var Msg: TMessage);
+var
+  FormIntro: TfrmIntro;
 begin
   if FWasActivated then
     Exit;
@@ -619,12 +621,24 @@ begin
 
   if not AppGlobals.FirstStartShown then
   begin
-    TfrmMsgDlg.ShowMsg(Self, _('This is the first time you are running streamWriter. There are three ways to record music:'#13#10 +
-                               '1) You can record streams by double-clicking them in the stream-browser on the right.'#13#10 +
-                               '2) Desired songs can be added to the wishlist in the Charts-tab by double-clicking them.'#13#10 +
-                               '3) Desired songs can be added to the wishlist manually using the Lists-tab at the top.'), btOk);
+    FormIntro := TfrmIntro.Create(Self);
+    try
+      FormIntro.ShowModal;
+    finally
+      FormIntro.Free;
+    end;
   end;
   AppGlobals.FirstStartShown := True;
+
+  if AppGlobals.PluginManager.ShowVersionWarning then
+  begin
+    MsgBox(Handle, _('At least one plugin is outdated and was deleted because it does not work with this version of streamWriter. Please check the plugin page in the settings window.'), _('Info'), MB_ICONINFORMATION);
+  end;
+
+  if AppGlobals.LastUsedVersion.AsString = '3.6.0.0' then
+  begin
+    MsgBox(Handle, _('Because many internals from the last version have changed you need to reconfigure options regarding plugins and postprocessing using the settings window.'), _('Info'), MB_ICONINFORMATION);
+  end;
 
   tmrAutoSave.Enabled := True;
 
@@ -1307,7 +1321,7 @@ begin
   tabSaved.Tree.SetFileWatcher;
 
   Language.Translate(Self, PreTranslate, PostTranslate);
-  AppGlobals.PluginManager.ReInitPlugins;
+  AppGlobals.PostProcessManager.ReInitPlugins;
 
   TrayIcon1.Visible := AppGlobals.Tray;
   ScreenSnap := AppGlobals.SnapMain;

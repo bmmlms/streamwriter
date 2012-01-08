@@ -6,13 +6,13 @@
 			<Projects Include="streamwriter\streamwriter.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="plugins\sox\sox.dproj">
+			<Projects Include="plugins\plugin_lame\plugin_lame.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="plugins\mp3gain\mp3gain.dproj">
+			<Projects Include="plugins\plugin_sox\plugin_sox.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="plugins\aacpostprocess\aacpostprocess.dproj">
+			<Projects Include="plugins\plugin_faac\plugin_faac.dproj">
 				<Dependencies/>
 			</Projects>
 		</ItemGroup>
@@ -32,41 +32,41 @@
 		<Target Name="streamwriter:Make">
 			<MSBuild Projects="streamwriter\streamwriter.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="sox">
-			<MSBuild Projects="plugins\sox\sox.dproj"/>
+		<Target Name="plugin_lame">
+			<MSBuild Projects="plugins\plugin_lame\plugin_lame.dproj"/>
 		</Target>
-		<Target Name="sox:Clean">
-			<MSBuild Projects="plugins\sox\sox.dproj" Targets="Clean"/>
+		<Target Name="plugin_lame:Clean">
+			<MSBuild Projects="plugins\plugin_lame\plugin_lame.dproj" Targets="Clean"/>
 		</Target>
-		<Target Name="sox:Make">
-			<MSBuild Projects="plugins\sox\sox.dproj" Targets="Make"/>
+		<Target Name="plugin_lame:Make">
+			<MSBuild Projects="plugins\plugin_lame\plugin_lame.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="mp3gain">
-			<MSBuild Projects="plugins\mp3gain\mp3gain.dproj"/>
+		<Target Name="plugin_sox">
+			<MSBuild Projects="plugins\plugin_sox\plugin_sox.dproj"/>
 		</Target>
-		<Target Name="mp3gain:Clean">
-			<MSBuild Projects="plugins\mp3gain\mp3gain.dproj" Targets="Clean"/>
+		<Target Name="plugin_sox:Clean">
+			<MSBuild Projects="plugins\plugin_sox\plugin_sox.dproj" Targets="Clean"/>
 		</Target>
-		<Target Name="mp3gain:Make">
-			<MSBuild Projects="plugins\mp3gain\mp3gain.dproj" Targets="Make"/>
+		<Target Name="plugin_sox:Make">
+			<MSBuild Projects="plugins\plugin_sox\plugin_sox.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="aacpostprocess">
-			<MSBuild Projects="plugins\aacpostprocess\aacpostprocess.dproj"/>
+		<Target Name="plugin_faac">
+			<MSBuild Projects="plugins\plugin_faac\plugin_faac.dproj"/>
 		</Target>
-		<Target Name="aacpostprocess:Clean">
-			<MSBuild Projects="plugins\aacpostprocess\aacpostprocess.dproj" Targets="Clean"/>
+		<Target Name="plugin_faac:Clean">
+			<MSBuild Projects="plugins\plugin_faac\plugin_faac.dproj" Targets="Clean"/>
 		</Target>
-		<Target Name="aacpostprocess:Make">
-			<MSBuild Projects="plugins\aacpostprocess\aacpostprocess.dproj" Targets="Make"/>
+		<Target Name="plugin_faac:Make">
+			<MSBuild Projects="plugins\plugin_faac\plugin_faac.dproj" Targets="Make"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="streamwriter;sox;mp3gain;aacpostprocess"/>
+			<CallTarget Targets="streamwriter;plugin_lame;plugin_sox;plugin_faac"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="streamwriter:Clean;sox:Clean;mp3gain:Clean;aacpostprocess:Clean"/>
+			<CallTarget Targets="streamwriter:Clean;plugin_lame:Clean;plugin_sox:Clean;plugin_faac:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="streamwriter:Make;sox:Make;mp3gain:Make;aacpostprocess:Make"/>
+			<CallTarget Targets="streamwriter:Make;plugin_lame:Make;plugin_sox:Make;plugin_faac:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>

@@ -581,14 +581,14 @@ begin
       Exit;
     end;
 
-    if (P.A <= -1) or (P.B <= -1) then
+    if (P.DataStart <= -1) or (P.DataEnd <= -1) then
       raise Exception.Create(_('Error in audio data'));
 
     WriteDebug(Format(_('Saving from %d to %d'), [S, E]), 1, 1);
 
-    if FSettings.SkipShort and (P.B - P.A < FBytesPerSec * FSettings.ShortLengthSeconds) then
+    if FSettings.SkipShort and (P.DataEnd - P.DataStart < FBytesPerSec * FSettings.ShortLengthSeconds) then
     begin
-      WriteDebug(Format(_('Skipping "%s" because it''s too small (%d bytes)'), [Title, P.B - P.A]), 1, 0);
+      WriteDebug(Format(_('Skipping "%s" because it''s too small (%d bytes)'), [Title, P.DataEnd - P.DataStart]), 1, 0);
       RemoveData;
       Exit;
     end;
@@ -676,10 +676,10 @@ begin
 
       try
         if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
-          TAudioStreamFile(FAudioStream).SaveToFile(Dir + Filename, P.A, P.B - P.A)
+          TAudioStreamFile(FAudioStream).SaveToFile(Dir + Filename, P.DataStart, P.DataEnd - P.DataStart)
         else
         begin
-          TAudioStreamMemory(FAudioStream).SaveToFile(Dir + Filename, P.A, P.B - P.A);
+          TAudioStreamMemory(FAudioStream).SaveToFile(Dir + Filename, P.DataStart, P.DataEnd - P.DataStart);
         end;
       except
         Error := GetLastError;
@@ -695,13 +695,13 @@ begin
 
       try
         FSavedFilename := Dir + Filename;
-        FSavedSize := P.B - P.A;
+        FSavedSize := P.DataEnd - P.DataStart;
         FSavedFullTitle := FullTitle;
         FSavedStreamTitle := Title;
         FSavedIsStreamFile := False;
 
         // Wenn kleiner als 20MB wird FSavedLength ausgegeben, sonst selber rechnen
-        if not ((FSavedSize < 20971520) and (GetFileLength(Dir + Filename, P.B - P.A, FSavedLength))) then
+        if not ((FSavedSize < 20971520) and (GetFileLength(Dir + Filename, P.DataEnd - P.DataStart, FSavedLength))) then
         begin
           if FBytesPerSec > 0 then
             FSavedLength := Trunc(FSavedSize / FBytesPerSec)
@@ -903,25 +903,25 @@ begin
             R := TAudioStreamMemory(FAudioStream).SearchSilence(TrackStart, TrackEnd, FBytesPerSec * FSettings.SilenceBufferSecondsStart,
               FBytesPerSec * FSettings.SilenceBufferSecondsEnd, MaxPeaks, FSettings.SilenceLength);
 
-          if (R.A > -1) or (R.B > -1) then
+          if (R.DataStart > -1) or (R.DataEnd > -1) then
           begin
-            if (R.A > -1) and (R.B > -1) then
+            if (R.DataStart > -1) and (R.DataEnd > -1) then
               FSavedWasCut := True;
 
-            if R.A = -1 then
+            if R.DataStart = -1 then
             begin
               WriteDebug('No silence at SongStart could be found, using configured buffer', 1, 1);
-              R.A := TrackStart - FSettings.SongBufferSeconds * FBytesPerSec;
-              if R.A < FAudioStream.Size then
-                R.A := TrackStart;
+              R.DataStart := TrackStart - FSettings.SongBufferSeconds * FBytesPerSec;
+              if R.DataStart < FAudioStream.Size then
+                R.DataStart := TrackStart;
             end else
               WriteDebug('Silence at SongStart found', 1, 1);
 
-            if R.B = -1 then
+            if R.DataEnd = -1 then
             begin
               WriteDebug('No silence at SongEnd could be found', 1, 1);
-              R.B := TrackEnd + FSettings.SongBufferSeconds * FBytesPerSec;
-              if R.B > FAudioStream.Size then
+              R.DataEnd := TrackEnd + FSettings.SongBufferSeconds * FBytesPerSec;
+              if R.DataEnd > FAudioStream.Size then
               begin
                 WriteDebug('Stream is too small, waiting for more data...', 1, 1);
                 Exit;
@@ -932,14 +932,14 @@ begin
             end else
               WriteDebug('Silence at SongEnd found', 1, 1);
 
-            WriteDebug(Format('Scanned song start/end: %d/%d', [R.A, R.B]), 1, 1);
+            WriteDebug(Format('Scanned song start/end: %d/%d', [R.DataStart, R.DataEnd]), 1, 1);
 
             if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
             begin
               if FRecordTitle <> '' then
-                SaveData(R.A, R.B, Track.Title, True)
+                SaveData(R.DataStart, R.DataEnd, Track.Title, True)
               else
-                SaveData(R.A, R.B, Track.Title, Track.FullTitle);
+                SaveData(R.DataStart, R.DataEnd, Track.Title, Track.FullTitle);
             end else
               WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
 

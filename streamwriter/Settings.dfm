@@ -422,7 +422,7 @@ object frmSettings: TfrmSettings
       OnClick = btnBrowseAppClick
       ExplicitTop = 192
     end
-    object btnHelp: TPngSpeedButton
+    object btnHelpPostProcess: TPngSpeedButton
       Left = 266
       Top = 56
       Width = 24
@@ -1475,11 +1475,35 @@ object frmSettings: TfrmSettings
     Width = 293
     Height = 233
     TabOrder = 12
+    DesignSize = (
+      293
+      233)
+    object Label20: TLabel
+      Left = 4
+      Top = 164
+      Width = 285
+      Height = 65
+      AutoSize = False
+      Caption = 'Label20'
+    end
+    object btnHelpPlugin: TPngSpeedButton
+      Left = 266
+      Top = 132
+      Width = 24
+      Height = 25
+      Hint = 'Info...'
+      Anchors = [akRight, akBottom]
+      Layout = blGlyphRight
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = btnHelpClick
+      PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
+    end
     object lstPlugins: TListView
       Left = 4
       Top = 1
-      Width = 285
-      Height = 124
+      Width = 257
+      Height = 156
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
       Checkboxes = True
@@ -1493,10 +1517,9 @@ object frmSettings: TfrmSettings
       SmallImages = PngImageList1
       TabOrder = 0
       ViewStyle = vsReport
-      OnCompare = lstPostProcessCompare
-      OnResize = lstPostProcessResize
-      OnSelectItem = lstPostProcessSelectItem
-      OnItemChecked = lstPostProcessItemChecked
+      OnResize = lstPluginsResize
+      OnSelectItem = lstPluginsSelectItem
+      OnItemChecked = lstPluginsItemChecked
     end
   end
   object dlgOpen: TOpenDialog
@@ -1677,6 +1700,33 @@ object frmSettings: TfrmSettings
           074DBBB145942479EB1B3A02F178FC6928147A4665C0662EBCDE0089781CA224
           E1DA191D81F95C874EE7CB0E52F30435F1E6FF0C12A5FDC192DEF5202957E49B
           3C5078DD71FE03BAFD19B28F3DD1DC0000000049454E44AE426082}
+      end
+      item
+        Background = clWindow
+        Name = 'plugin'
+        PngImage.Data = {
+          89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+          61000000017352474200AECE1CE900000006624B474400FF00FF00FFA0BDA793
+          000000097048597300000B1300000B1301009A9C180000000774494D4507DA07
+          080E2524D68B782A0000022B4944415478DAA5934148146114C7FFA3B83BBB6E
+          D4BAA69B65EE1A11692B81D0A1ECD2A18B22114197A02E11D6C12228A482A043
+          74A84BF720E8D4A540CCF2B258D6B6502DB89BB6ACB59BB290A046923BCECE7C
+          DFEBCDB7EE41262AE9C1CC2E33EFFDFEFFF7FF188D88F03FA5FD0E70F2563223
+          0475DA82C8B2E9D9C8ED837DFF0CE0E1061E5EDCB955872508D9626971ECCEA1
+          C60D39E8BF9EF8D9D6A4D79B9644AE68C4E3F77A8EFC11C0AAC4AA60CB90CCE3
+          FF140DEB9A9040BAB0F2C3284BC16E6AC82E23FDE068D0053871F32D39969D61
+          DB99E25AFB516B087E61DB8454761E99877D9A0B70EC468222CD3E35FCED7B19
+          CB86506EAA450C8B847524276731F5E8B81BD03BF4862C56F17B6AB0ADC1EB04
+          C76BB0BA5DB161B27A47AB1F99D9124A4B7390C204F135F3F4BCB62EC4C31727
+          686FAB0FD3730603A45AC95ACB25A0D7A22554E7E4A37A53EF93F83C3CB81E70
+          E0C24B8A45FCF8F8B5A4069D52B958163607BC0807EB506D4FBD7B8D2F23972B
+          809EC157C44923B4A916DB1B754CE6572AA7C1371236536CEC69DB824FF90594
+          1672657EE091FCBCF0FC6A05D03D304E5DD17A957471C964258F1A56A7C14EF2
+          F326224D5E564DB0EA257788B1B371DA1F0DA890AA19386191B4E00934A37D47
+          104E5FE6C304F2A357DC807D6746A96B7748A93A8AE9A919641F9F528DBBFAEF
+          5347AC9B8F15984E8DA3F062C80DE83C3D4CD25E55FB92B078656335F7E49CCF
+          6968EFBD2B480A76230CBE2D17C6AEB5FCF55BD848FD02C9156CF0B43B4FAC00
+          00000049454E44AE426082}
       end>
     Left = 232
     Top = 160

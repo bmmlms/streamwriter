@@ -4,8 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, ExtCtrls, ComCtrls, Plugins, DownloadClient,
-  Functions, LanguageObjects, AppData, Logging;
+  Dialogs, StdCtrls, Buttons, ExtCtrls, ComCtrls, PostProcess, DownloadClient,
+  Functions, LanguageObjects, AppData, Logging, PluginBase;
 
 type
   TfrmDownloadAddons = class(TForm)
@@ -17,13 +17,14 @@ type
     FDownloader: TDownloadClient;
     FDownloaded: Boolean;
     FError: Boolean;
-    FPlugin: TInternalPlugin;
+    FDownloadName: string;
+    FDownloadPackage: string;
 
     procedure DownloaderDownloadProgress(Sender: TObject);
     procedure DownloaderDownloaded(Sender: TObject);
     procedure DownloaderError(Sender: TObject);
   public
-    constructor Create(AOwner: TComponent; Plugin: TInternalPlugin); reintroduce;
+    constructor Create(AOwner: TComponent; Plugin: TPluginBase); overload;
     property Downloaded: Boolean read FDownloaded;
     property Error: Boolean read FError;
   end;
@@ -32,11 +33,12 @@ implementation
 
 {$R *.dfm}
 
-constructor TfrmDownloadAddons.Create(AOwner: TComponent; Plugin: TInternalPlugin);
+constructor TfrmDownloadAddons.Create(AOwner: TComponent; Plugin: TPluginBase);
 begin
   inherited Create(AOwner);
 
-  FPlugin := Plugin;
+  FDownloadName := Plugin.DownloadName;
+  FDownloadPackage := Plugin.DownloadPackage;
 
   Language.Translate(Self);
 end;
@@ -46,7 +48,7 @@ begin
   FDownloader.Thread.RecvDataStream.Seek(0, soFromBeginning);
 
   try
-    FDownloader.Thread.RecvDataStream.SaveToFile(AppGlobals.Storage.DataDir + FPlugin.DownloadPackage);
+    FDownloader.Thread.RecvDataStream.SaveToFile(AppGlobals.Storage.DataDir + FDownloadPackage);
     FDownloaded := True;
   except
     FError := True;
@@ -76,9 +78,9 @@ begin
     Exit;
 
   if AppGlobals.Language <> '' then
-    URL := AppGlobals.ProjectUpdateLink + Trim(AppGlobals.Language) + '/downloads/getaddon/' + LowerCase(AppGlobals.AppName) + '/' + AppGlobals.AppVersion.AsString + '/' + LowerCase(FPlugin.DownloadName) + '/'
+    URL := AppGlobals.ProjectUpdateLink + Trim(AppGlobals.Language) + '/downloads/getaddon/' + LowerCase(AppGlobals.AppName) + '/' + AppGlobals.AppVersion.AsString + '/' + LowerCase(FDownloadName) + '/'
   else
-    URL := AppGlobals.ProjectUpdateLink + 'en/downloads/getaddon/' + LowerCase(AppGlobals.AppName) + '/' + AppGlobals.AppVersion.AsString + '/' + LowerCase(FPlugin.DownloadName) + '/';
+    URL := AppGlobals.ProjectUpdateLink + 'en/downloads/getaddon/' + LowerCase(AppGlobals.AppName) + '/' + AppGlobals.AppVersion.AsString + '/' + LowerCase(FDownloadName) + '/';
 
   FDownloader := TDownloadClient.Create(URL);
   FDownloader.OnDownloadProgress := DownloaderDownloadProgress;

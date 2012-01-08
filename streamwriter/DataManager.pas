@@ -59,7 +59,6 @@ type
     property Hash: Cardinal read FHash;
   end;
 
-  // TODO: ???
   TN = procedure(Sender: TObject; const Item: TTitleInfo; Action: TCollectionNotification) of object;
 
   // A list that might be used as wishlist/ignorelist
@@ -173,7 +172,6 @@ type
     property IsStreamFile: Boolean read FIsStreamFile write FIsStreamFile;
     // When set the file was post-processed by the user
     property Finalized: Boolean read FFinalized write FFinalized;
-    // TODO: ???
     property Index: Cardinal read FIndex write FIndex;
   end;
 
@@ -239,7 +237,6 @@ type
     property Bitrate: Cardinal read FBitrate write FBitrate;
   end;
 
-  // TODO: !!!
   TRatingEntry = class
   private
     FName: string;
@@ -305,7 +302,6 @@ type
     // Defines the end minute for the schedule
     property EndMinute: Integer read FEndMinute write FEndMinute;
 
-    // TODO: !!!
     property TriedStart: Boolean read FTriedStart write FTriedStart;
     property TriedStop: Boolean read FTriedStop write FTriedStop;
   end;
@@ -320,7 +316,6 @@ type
     // Defines stream-specific settings
     FSettings: TStreamSettings;
 
-    // TODO: !!!
     FParent: TStreamList;
 
     // Unique ID of the stream
@@ -329,9 +324,7 @@ type
     FName: string;
     // Name of the stream set by the user (this is editable in the clientview)
     FCustomName: string;
-    // TODO: !!!
     FStreamURL: string;
-    // TODO: !!!
     FStartURL: string;
     // List of URLs to the stream (excluding the primary URL)
     FURLs: TStringList;
@@ -360,7 +353,6 @@ type
     FSaveList: TTitleList;
     // List of titles to ignore for this stream
     FIgnoreList: TTitleList;
-    // TODO: !!!
     FIgnoreListIndex: Cardinal;
 
     procedure FSetName(Value: string);
@@ -401,7 +393,6 @@ type
     property IgnoreListIndex: Cardinal read FIgnoreListIndex write FIgnoreListIndex;
   end;
 
-  // TODO: !!!
   TStreamList = class(TList<TStreamEntry>)
   private
   public
@@ -409,18 +400,15 @@ type
     function Get(Name, URL: string; URLs: TStringList): TStreamEntry; overload;
   end;
 
-  // TODO: !!!
   TRecentList = class(TList<TRecentEntry>)
   end;
 
-  // TODO: !!!
   TRatingList = class(TList<TRatingEntry>)
   public
     procedure SetRating(Name, URL: string; Rating: Integer);
     function GetRating(Name, URL: string): Integer;
   end;
 
-  // TODO: !!!
   TChartCategory = class
   private
     FID: Cardinal;
@@ -453,14 +441,13 @@ type
     property Name: string read FName;
     // The chance of the title to get played
     property Chance: Integer read FChance;
-    // Categories. TODO: Not used??
+    // Categories this title is included (i.e. "Top 100")
     property Categories: TIntArray read FCategories;
   end;
 
   TChartList = class(TList<TChartEntry>)
   end;
 
-  // TODO: !!!
   TGenre = class
   private
     FID: Cardinal;
@@ -478,11 +465,9 @@ type
     property ChartCount: Cardinal read FChartCount write FChartCount;
   end;
 
-  // TODO: !!!
   TGenreList = class(TList<TGenre>)
   end;
 
-  // TODO: !!!
   TChartCategoryList = class(TList<TChartCategory>)
   end;
 

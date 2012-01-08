@@ -31,6 +31,7 @@ uses
 type
   TCutToolBar = class(TToolBar)
   private
+    FSave: TToolButton;
     FSep: TToolButton;
     FZoomIn: TToolButton;
     FZoomOut: TToolButton;
@@ -66,6 +67,7 @@ type
 
     procedure UpdateButtons;
 
+    procedure SaveClick(Sender: TObject);
     procedure PosClick(Sender: TObject);
     procedure AutoCutClick(Sender: TObject);
     procedure AutoCutAutoDetectClick(Sender: TObject);
@@ -289,6 +291,11 @@ begin
   end;
 end;
 
+procedure TCutTab.SaveClick(Sender: TObject);
+begin
+  FCutView.Save;
+end;
+
 procedure TCutTab.Setup(Filename: string; ToolBarImages: TImageList);
 begin
   MaxWidth := 120;
@@ -310,6 +317,7 @@ begin
   FToolBar.Indent := 2;
   FToolBar.Setup;
 
+  FToolbar.FSave.OnClick := SaveClick;
   FToolBar.FPosEdit.OnClick := PosClick;
   FToolBar.FPosPlay.OnClick := PosClick;
   FToolBar.FZoomIn.OnClick := ZoomInClick;
@@ -344,7 +352,7 @@ begin
 
   UpdateButtons;
   Language.Translate(Self);
-  FCutView.LoadFile(Filename);
+  FCutView.LoadFile(Filename, False);
 end;
 
 { TCutToolbar }
@@ -455,6 +463,16 @@ begin
   FPosEffectsMarker.Parent := Self;
   FPosEffectsMarker.Hint := 'Select area';
   FPosEffectsMarker.ImageIndex := 53;
+
+  FSep := TToolButton.Create(Self);
+  FSep.Parent := Self;
+  FSep.Style := tbsSeparator;
+  FSep.Width := 8;
+
+  FSave := TToolButton.Create(Self);
+  FSave.Parent := Self;
+  FSave.Hint := 'Save';
+  FSave.ImageIndex := 14;
 end;
 
 end.

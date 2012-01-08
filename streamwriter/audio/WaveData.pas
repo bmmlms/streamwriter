@@ -83,7 +83,7 @@ type
 
     procedure Load(Stream: TMemoryStream); overload;
     procedure Load(Filename: string); overload;
-    function Save(Filename: string; StartPos, EndPos: Cardinal): Boolean;
+    function Save(OutFile: string; StartPos, EndPos: Cardinal): Boolean;
     procedure AutoCut(SearchFirst: Boolean; MaxPeaks: Integer; MinDuration: Cardinal; FromEntry, ToEntry: Integer);
     procedure ClearSilence;
     function TimeBetween(F, T: Cardinal): Double;
@@ -172,76 +172,82 @@ begin
   end;
 end;
 
-function TWaveData.Save(Filename: string; StartPos, EndPos: Cardinal): Boolean;
+function TWaveData.Save(OutFile: string; StartPos, EndPos: Cardinal): Boolean;
 var
-  S, E: Cardinal;
+  S, E, Sx, FoundS, FoundE ,R: Cardinal;
   FS, StartTagBytes, EndTagBytes: Int64;
   FIn: TAudioStreamFile;
-  FOut: TMemoryStream;
+  FOut: TFileStream;
   P: TPosRect;
+  OutFilename: string;
+
+  BitsPerSample: Word;
+  BytesPerSample: Integer;
+  Channels: Word;
+  SampleDW: DWORD;
+  SampleW: Word;
 begin
   Result := False;
 
   try
-    S := WaveArray[StartPos].Pos;
-    E := WaveArray[EndPos].Pos + WaveArray[EndPos].Len;
+    S := WaveArray[StartPos].Pos + 44;
+    E := WaveArray[EndPos].Pos + WaveArray[EndPos].Len + 44;
 
-    FS := Filesize - AudioStart - (Filesize - AudioEnd);
-    StartTagBytes := FAudioStart;
-    EndTagBytes := Filesize - FAudioEnd;
-
-    StartPos := Round(S * (FS / Wavesize));
-    EndPos := Round(E * (FS / Wavesize));
-
-    StartPos := StartPos + AudioStart;
-    EndPos := EndPos + AudioStart;
-
-    FOut := TMemoryStream.Create;
+    FIn := TAudioStreamFile.Create(FFilename, fmOpenRead);
     try
-      if LowerCase(ExtractFileExt(Filename)) = '.mp3' then
-        FIn := TMPEGStreamFile.Create(FFilename, fmOpenRead or fmShareDenyWrite)
-      else
-        FIn := TAACStreamFile.Create(FFilename, fmOpenRead or fmShareDenyWrite);
+      FOut := TFileStream.Create(OutFile, fmCreate);
+
       try
-        // TODO: Ist das hier alles noch mit dem MP4 Valid? funzts? Da müsste StartTagBytes immer 0 sein - wie EndTagBytes.
+        // Jump to Channels
+        // (see https://ccrma.stanford.edu/courses/422/projects/WaveFormat/)
+        FIn.Seek(22, soFromBeginning);
+        FIn.ReadBuffer(Channels, 2);
+        // Jump to BitsPerSample
+        FIn.Seek(34, soFromBeginning);
+        FIn.ReadBuffer(BitsPerSample, 2);
 
-        // Tags kopieren
-        if StartTagBytes > 0 then
+        BytesPerSample := BitsPerSample div 8;
+
+        // Now we can calculate the offsets from where and to where to save the new file
+        // while keeping channels and stuff right
+        FoundS := 0;
+        FoundE := 0;
+        FIn.Seek(44, soFromBeginning);
+        repeat
+          R := S mod (Channels * BitsPerSample);
+          if R <> 0 then
+            Dec(S)
+          else
+            FoundS := S;
+        until R = 0;
+        repeat
+          R := E mod (Channels * BitsPerSample);
+          if R <> 0 then
+            Dec(E)
+          else
+            FoundE := E;
+        until R = 0;
+
+        if (FoundS > 0) and (FoundE > 0) then
         begin
+          // Copy header
           FIn.Seek(0, soFromBeginning);
-          FOut.CopyFrom(FIn, StartTagBytes);
+          FOut.CopyFrom(FIn, 44);
+
+          // Copy stuff between FoundS and FoundE
+          FIn.Seek(FoundS, soFromBeginning);
+          FOut.CopyFrom(FIn, FoundE - FoundS);
+
+          Result := True;
         end;
-
-        P := FIn.GetFrame(StartPos, EndPos);
-
-        // Daten kopieren
-        if (P.A > 0) and (P.B > 0) then
-        begin
-          FIn.Seek(P.A, soFromBeginning);
-          FOut.CopyFrom(FIn, P.B - P.A);
-        end else
-        begin
-          FIn.Seek(StartPos, soFromBeginning);
-          FOut.CopyFrom(FIn, EndPos - StartPos);
-        end;
-
-        // Tags kopieren
-        if EndTagBytes > 0 then
-        begin
-          FIn.Seek(FFilesize - EndTagBytes, soFromBeginning);
-          FOut.CopyFrom(FIn, EndTagBytes);
-        end;
-
-        FreeAndNil(FIn);
-        FOut.SaveToFile(Filename);
-        Result := True;
-      except
-        FreeAndNil(FIn);
+      finally
+        FOut.Free;
       end;
     finally
-      FOut.Free;
+      FIn.Free;
     end;
   except
+
   end;
 end;
 

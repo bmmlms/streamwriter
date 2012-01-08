@@ -29,13 +29,10 @@ uses
   Math;
 
 type
-  // TODO: !!!
+  // Defines where data starts/ends
   TPosRect = record
-    A, B: Int64;
+    DataStart, DataEnd: Int64;
   end;
-
-  // TODO: !!!
-  TPosArray = array of TPosRect;
 
   // Abstract class for streams saved to disk
   TAudioStreamFile = class(TFileStream)
@@ -123,8 +120,8 @@ var
 begin
   OldPos := Position;
 
-  Result.A := -1;
-  Result.B := -1;
+  Result.DataStart := -1;
+  Result.DataEnd := -1;
 
   M1 := TExtendedStream.Create;
   M2 := TExtendedStream.Create;
@@ -167,9 +164,9 @@ begin
         for i := 0 to WD.Silence.Count - 1 do
           if WD.Silence[i].CutEnd - WD.Silence[i].CutStart > WD.Silence[MaxLenIdx].CutEnd - WD.Silence[MaxLenIdx].CutStart then
             MaxLenIdx := i;
-        Result.A := WD.WaveArray[WD.Silence[MaxLenIdx].CutEnd].Pos;
-        Result.A := Round(Result.A * M1.Size / WD.Wavesize);
-        Result.A := Result.A + StartPos;
+        Result.DataStart := WD.WaveArray[WD.Silence[MaxLenIdx].CutEnd].Pos;
+        Result.DataStart := Round(Result.DataStart * M1.Size / WD.Wavesize);
+        Result.DataStart := Result.DataStart + StartPos;
       end;
 
       if WD2.Silence.Count > 0 then
@@ -178,9 +175,9 @@ begin
         for i := 0 to WD2.Silence.Count - 1 do
           if WD2.Silence[i].CutEnd - WD2.Silence[i].CutStart > WD2.Silence[MaxLenIdx].CutEnd - WD2.Silence[MaxLenIdx].CutStart then
             MaxLenIdx := i;
-        Result.B := WD2.WaveArray[WD2.Silence[MaxLenIdx].CutStart].Pos;
-        Result.B := Round(Result.B * M2.Size / WD2.Wavesize);
-        Result.B := Result.B + EndPos;
+        Result.DataEnd := WD2.WaveArray[WD2.Silence[MaxLenIdx].CutStart].Pos;
+        Result.DataEnd := Round(Result.DataEnd * M2.Size / WD2.Wavesize);
+        Result.DataEnd := Result.DataEnd + EndPos;
       end;
     except
       on E: Exception do
@@ -205,8 +202,8 @@ var
   FL, LastFrame: Integer;
   Buf: array[0..3] of byte;
 begin
-  Result.A := -1;
-  Result.B := -1;
+  Result.DataStart := -1;
+  Result.DataEnd := -1;
 
   LastFrame := -1;
   OldPos := Position;
@@ -222,7 +219,7 @@ begin
       DecodeHeader(Buf, Frame, 0);
       FL := GetFrameLength(Frame);
 
-      if Result.A = -1 then
+      if Result.DataStart = -1 then
       begin
         // Wenn das der erste gefundene ist, prüfen, ob es wirklich ein Header ist,
         // indem wir schauen, ob nach der Länge wieder ein Header kommt.
@@ -234,7 +231,7 @@ begin
         Read(Buf, 4);
         if IsFrameHeader(Buf, 0) then
         begin
-          Result.A := i;
+          Result.DataStart := i;
         end else
         begin
           Inc(i);
@@ -244,34 +241,34 @@ begin
 
       Inc(i, FL);
 
-      if (Result.B = -1) and (i + FL >= T) then
+      if (Result.DataStart = -1) and (i + FL >= T) then
       begin
         if LastFrame > -1 then
-          Result.B := LastFrame;
+          Result.DataEnd := LastFrame;
         Break;
       end;
 
       LastFrame := i;
 
-      if (Result.A <> -1) and (Result.B <> -1) then
+      if (Result.DataStart <> -1) and (Result.DataEnd <> -1) then
         Break;
     end else
       Inc(i);
   end;
   Position := OldPos;
 
-  if Result.A = -1 then
-    Result.A := F;
-  if Result.B = -1 then
-    Result.B := T;
+  if Result.DataStart = -1 then
+    Result.DataStart := F;
+  if Result.DataEnd = -1 then
+    Result.DataEnd := T;
 end;
 
 { TAACStreamFile }
 
 function TAACStreamFile.GetFrame(F, T: Int64): TPosRect;
 begin
-  Result.A := F;
-  Result.B := T;
+  Result.DataStart := F;
+  Result.DataEnd := T;
 end;
 
 { TMPEGStreamMemory }
@@ -283,8 +280,8 @@ var
   FL, LastFrame: Integer;
   Buf: array[0..3] of byte;
 begin
-  Result.A := -1;
-  Result.B := -1;
+  Result.DataStart := -1;
+  Result.DataEnd := -1;
 
   LastFrame := -1;
   OldPos := Position;
@@ -300,7 +297,7 @@ begin
       DecodeHeader(Buf, Frame, 0);
       FL := GetFrameLength(Frame);
 
-      if Result.A = -1 then
+      if Result.DataStart = -1 then
       begin
         // Wenn das der erste gefundene ist, prüfen, ob es wirklich ein Header ist,
         // indem wir schauen, ob nach der Länge wieder ein Header kommt.
@@ -312,7 +309,7 @@ begin
         Read(Buf, 4);
         if IsFrameHeader(Buf, 0) then
         begin
-          Result.A := i;
+          Result.DataStart := i;
         end else
         begin
           Inc(i);
@@ -322,34 +319,34 @@ begin
 
       Inc(i, FL);
 
-      if (Result.B = -1) and (i + FL >= T) then
+      if (Result.DataEnd = -1) and (i + FL >= T) then
       begin
         if LastFrame > -1 then
-          Result.B := LastFrame;
+          Result.DataEnd := LastFrame;
         Break;
       end;
 
       LastFrame := i;
 
-      if (Result.A <> -1) and (Result.B <> -1) then
+      if (Result.DataStart <> -1) and (Result.DataEnd <> -1) then
         Break;
     end else
       Inc(i);
   end;
   Position := OldPos;
 
-  if Result.A = -1 then
-    Result.A := F;
-  if Result.B = -1 then
-    Result.B := T;
+  if Result.DataStart = -1 then
+    Result.DataStart := F;
+  if Result.DataEnd = -1 then
+    Result.DataEnd := T;
 end;
 
 { TAACStreamMemory }
 
 function TAACStreamMemory.GetFrame(F, T: Int64): TPosRect;
 begin
-  Result.A := F;
-  Result.B := T;
+  Result.DataStart := F;
+  Result.DataEnd := T;
 end;
 
 { TAudioStreamMemory }
@@ -381,8 +378,8 @@ var
 begin
   OldPos := Position;
 
-  Result.A := -1;
-  Result.B := -1;
+  Result.DataStart := -1;
+  Result.DataEnd := -1;
 
   M1 := TExtendedStream.Create;
   M2 := TExtendedStream.Create;
@@ -425,9 +422,9 @@ begin
         for i := 0 to WD.Silence.Count - 1 do
           if WD.Silence[i].CutEnd - WD.Silence[i].CutStart > WD.Silence[MaxLenIdx].CutEnd - WD.Silence[MaxLenIdx].CutStart then
             MaxLenIdx := i;
-        Result.A := WD.WaveArray[WD.Silence[MaxLenIdx].CutEnd].Pos;
-        Result.A := Round(Result.A * M1.Size / WD.Wavesize);
-        Result.A := Result.A + StartPos;
+        Result.DataStart := WD.WaveArray[WD.Silence[MaxLenIdx].CutEnd].Pos;
+        Result.DataStart := Round(Result.DataStart * M1.Size / WD.Wavesize);
+        Result.DataStart := Result.DataStart + StartPos;
       end;
 
       if WD2.Silence.Count > 0 then
@@ -436,9 +433,9 @@ begin
         for i := 0 to WD2.Silence.Count - 1 do
           if WD2.Silence[i].CutEnd - WD2.Silence[i].CutStart > WD2.Silence[MaxLenIdx].CutEnd - WD2.Silence[MaxLenIdx].CutStart then
             MaxLenIdx := i;
-        Result.B := WD2.WaveArray[WD2.Silence[MaxLenIdx].CutStart].Pos;
-        Result.B := Round(Result.B * M2.Size / WD2.Wavesize);
-        Result.B := Result.B + EndPos;
+        Result.DataEnd := WD2.WaveArray[WD2.Silence[MaxLenIdx].CutStart].Pos;
+        Result.DataEnd := Round(Result.DataEnd * M2.Size / WD2.Wavesize);
+        Result.DataEnd := Result.DataEnd + EndPos;
       end;
     except
       on E: Exception do
@@ -458,16 +455,16 @@ end;
 
 function TOGGStreamFile.GetFrame(F, T: Int64): TPosRect;
 begin
-  Result.A := F;
-  Result.B := T;
+  Result.DataStart := F;
+  Result.DataEnd := T;
 end;
 
 { TOGGStreamMemory }
 
 function TOGGStreamMemory.GetFrame(F, T: Int64): TPosRect;
 begin
-  Result.A := F;
-  Result.B := T;
+  Result.DataStart := F;
+  Result.DataEnd := T;
 end;
 
 end.

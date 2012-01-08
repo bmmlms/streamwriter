@@ -29,8 +29,8 @@ interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
-  LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions, Plugins,
-  PluginManager, Logging, Base64;
+  LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions, PostProcess,
+  PluginManager, PostProcessManager, Logging, Base64;
 
 type
   // Actions that can be executed in the stream-view
@@ -227,6 +227,7 @@ type
     FRecoveryFile: string;
 
     FPluginManager: TPluginManager;
+    FPostProcessManager: TPostProcessManager;
     FLanguageIcons: TLanguageIcons;
 
     function FGetDataFile: string;
@@ -239,6 +240,7 @@ type
 
     procedure Load; override;
     procedure BuildThanksText; override;
+    procedure DeleteUndoFiles;
 
     property StreamSettings: TStreamSettings read FStreamSettings;
     property UserLoggedIn: Boolean read FUserLoggedIn write FUserLoggedIn;
@@ -339,6 +341,9 @@ type
     // The manager for plugins
     property PluginManager: TPluginManager read FPluginManager;
 
+    // The manager for postprocessing
+    property PostProcessManager: TPostProcessManager read FPostProcessManager;
+
     // Icons for languages
     property LanguageIcons: TLanguageIcons read FLanguageIcons;
   end;
@@ -396,6 +401,13 @@ begin
 
   FLanguageIcons := TLanguageIcons.Create;
 
+  DeleteUndoFiles;
+end;
+
+procedure TAppData.DeleteUndoFiles;
+var
+  SR: TSearchRec;
+begin
   // Delete any undo-files of a possible previous session
   if FindFirst(TempDir + 'UNDO_*', faAnyFile and not faDirectory, SR) = 0 then
   begin
@@ -411,9 +423,11 @@ destructor TAppData.Destroy;
 begin
   FLanguageIcons.Free;
   FPluginManager.Free;
+  FPostProcessManager.Free;
   FStreamSettings.Free;
 
   DeleteFile(TempDir + 'playlist.m3u');
+  DeleteUndoFiles;
 
   inherited;
 end;
@@ -877,26 +891,21 @@ begin
   FStorage.DeleteKey('Plugins');
 
   n := 0;
-  for i := 0 to FPluginManager.Plugins.Count - 1 do
-    if (FPluginManager.Plugins[i] is TExternalPlugin) then
+  for i := 0 to FPostProcessManager.PostProcessors.Count - 1 do
+    if (FPostProcessManager.PostProcessors[i] is TExternalPostProcess) then
     begin
-      FStorage.Write('Active_' + IntToStr(n), TExternalPlugin(FPluginManager.Plugins[i]).Active, 'Plugins');
-      FStorage.Write('Exe_' + IntToStr(n), TExternalPlugin(FPluginManager.Plugins[i]).Exe, 'Plugins');
-      FStorage.Write('Params_' + IntToStr(n), TExternalPlugin(FPluginManager.Plugins[i]).Params, 'Plugins');
-      FStorage.Write('OrderExe_' + IntToStr(n), FPluginManager.Plugins[i].Order, 'Plugins');
-      FStorage.Write('OnlyIfCut_' + IntToStr(n), FPluginManager.Plugins[i].OnlyIfCut, 'Plugins');
+      FStorage.Write('Active_' + IntToStr(n), TExternalPostProcess(FPostProcessManager.PostProcessors[i]).Active, 'Plugins');
+      FStorage.Write('Exe_' + IntToStr(n), TExternalPostProcess(FPostProcessManager.PostProcessors[i]).Exe, 'Plugins');
+      FStorage.Write('Params_' + IntToStr(n), TExternalPostProcess(FPostProcessManager.PostProcessors[i]).Params, 'Plugins');
+      FStorage.Write('OrderExe_' + IntToStr(n), FPostProcessManager.PostProcessors[i].Order, 'Plugins');
+      FStorage.Write('OnlyIfCut_' + IntToStr(n), FPostProcessManager.PostProcessors[i].OnlyIfCut, 'Plugins');
       Inc(n);
-    end else if (FPluginManager.Plugins[i] is TDLLPlugin) then
+    end else if (FPostProcessManager.PostProcessors[i] is TInternalPostProcess) then
     begin
-      FStorage.Write('Active_' + ExtractFileName(TDLLPlugin(FPluginManager.Plugins[i]).Filename), FPluginManager.Plugins[i].Active, 'Plugins');
-      FStorage.Write('Order_' + ExtractFileName(TDLLPlugin(FPluginManager.Plugins[i]).Filename), FPluginManager.Plugins[i].Order, 'Plugins');
-      FStorage.Write('OnlyIfCut_' + ExtractFileName(TDLLPlugin(FPluginManager.Plugins[i]).Filename), FPluginManager.Plugins[i].OnlyIfCut, 'Plugins');
-    end else if (FPluginManager.Plugins[i] is TInternalPlugin) then
-    begin
-      FStorage.Write('Active_' + FPluginManager.Plugins[i].ClassName, FPluginManager.Plugins[i].Active, 'Plugins');
-      FStorage.Write('Order_' + FPluginManager.Plugins[i].ClassName, FPluginManager.Plugins[i].Order, 'Plugins');
-      FStorage.Write('OnlyIfCut_' + FPluginManager.Plugins[i].ClassName, FPluginManager.Plugins[i].OnlyIfCut, 'Plugins');
-      FPluginManager.Plugins[i].Save;
+      FStorage.Write('Active_' + FPostProcessManager.PostProcessors[i].ClassName, FPostProcessManager.PostProcessors[i].Active, 'Plugins');
+      FStorage.Write('Order_' + FPostProcessManager.PostProcessors[i].ClassName, FPostProcessManager.PostProcessors[i].Order, 'Plugins');
+      FStorage.Write('OnlyIfCut_' + FPostProcessManager.PostProcessors[i].ClassName, FPostProcessManager.PostProcessors[i].OnlyIfCut, 'Plugins');
+      FPostProcessManager.PostProcessors[i].Save;
     end;
 end;
 
@@ -1193,7 +1202,8 @@ initialization
 
     // PluginManager wird hier erstellt, da erstellte Plugin-Items Zugriff
     // auf ein bereits zugewiesenes AppGlobals brauchen.
-    AppGlobals.FPluginManager := TPluginManager.Create(AppGlobals.AppPath + 'plugins\');
+    AppGlobals.FPluginManager := TPluginManager.Create;
+    AppGlobals.FPostProcessManager := TPostProcessManager.Create;
   except
     on E: Exception do
     begin
@@ -1206,4 +1216,5 @@ finalization
   FreeAndNil(AppGlobals);
 
 end.
+
 

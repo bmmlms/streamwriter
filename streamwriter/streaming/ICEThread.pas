@@ -159,13 +159,13 @@ begin
     FPlayBufferLock.Enter;
     try
       P := FPlayBuffer.GetFrame(0, FPlayBuffer.Size);
-      if P.A = -1 then
-        P.A := 0;
-      if P.B = -1 then
-        P.B := FPlayBuffer.Size;
-      FPlayBuffer.Seek(P.A, soFromBeginning);
+      if P.DataStart = -1 then
+        P.DataStart := 0;
+      if P.DataEnd = -1 then
+        P.DataEnd := FPlayBuffer.Size;
+      FPlayBuffer.Seek(P.DataStart, soFromBeginning);
       try
-        FPlayer.PushData(Pointer(Integer(FPlayBuffer.Memory) + P.A), FPlayBuffer.Size - P.A);
+        FPlayer.PushData(Pointer(Integer(FPlayBuffer.Memory) + P.DataStart), FPlayBuffer.Size - P.DataStart);
       except
         // Unbekannte Daten (kein MP3/AAC) - ende.
         FPlayingStarted := False;
@@ -276,7 +276,7 @@ begin
     begin
       // Puffer "rotieren"
       RemoveTo := FPlayBuffer.GetFrame(65536, FPlayBuffer.Size);
-      FPlayBuffer.RemoveRange(0, RemoveTo.A - 1);
+      FPlayBuffer.RemoveRange(0, RemoveTo.DataStart - 1);
       //WriteDebug(Format('Playbuffer size after remove: %d bytes', [FPlayBuffer.Size]));
     end;
   finally

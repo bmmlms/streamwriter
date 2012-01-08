@@ -25,10 +25,10 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
-  Plugins, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus,
+  PostProcess, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus,
   MsgDlg, PngImageList, PngSpeedButton, pngimage, VirtualTrees, Math,
-  DataManager, PngBitBtn, DownloadAddons, Logging, ToolWin, ListsTab,
-  ExtendedStream;
+  DataManager, PngBitBtn, Logging, ToolWin, ListsTab, DownloadAddons,
+  ExtendedStream, PluginManager, PluginBase;
 
 type
   TBlacklistNodeData = record
@@ -122,7 +122,7 @@ type
     lstMinBitrate: TComboBox;
     Label17: TLabel;
     lstFormat: TComboBox;
-    btnHelp: TPngSpeedButton;
+    btnHelpPostProcess: TPngSpeedButton;
     btnMoveDown: TPngSpeedButton;
     btnMoveUp: TPngSpeedButton;
     chkDiscardSmaller: TCheckBox;
@@ -180,6 +180,8 @@ type
     chkManualSilenceLevel: TCheckBox;
     pnlPlugins: TPanel;
     lstPlugins: TListView;
+    Label20: TLabel;
+    btnHelpPlugin: TPngSpeedButton;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -247,6 +249,10 @@ type
     procedure chkNormalizeVariablesClick(Sender: TObject);
     procedure chkManualSilenceLevelClick(Sender: TObject);
     procedure txtFilePatternEnter(Sender: TObject);
+    procedure lstPluginsResize(Sender: TObject);
+    procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
+      Selected: Boolean);
+    procedure lstPluginsItemChecked(Sender: TObject; Item: TListItem);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -254,7 +260,7 @@ type
     FDefaultActionIdx: Integer;
     FDefaultActionBrowserIdx: Integer;
     FDefaultFilterIdx: Integer;
-    FTemporaryPlugins: TList<TPluginBase>;
+    FTemporaryPostProcesses: TList<TPostProcessBase>;
     FStreamSettings: TStreamSettingsArray;
     FIgnoreFieldList: TList;
     FLists: TDataLists;
@@ -793,19 +799,17 @@ begin
 
     FillFields(Settings);
 
-    FTemporaryPlugins := TList<TPluginBase>.Create;
+    FTemporaryPostProcesses := TList<TPostProcessBase>.Create;
 
-    for i := 0 to AppGlobals.PluginManager.Plugins.Count - 1 do
+    for i := 0 to AppGlobals.PostProcessManager.PostProcessors.Count - 1 do
     begin
       Item := lstPostProcess.Items.Add;
-      Item.Caption := AppGlobals.PluginManager.Plugins[i].Name;
-      Item.Checked := AppGlobals.PluginManager.Plugins[i].Active;
-      Item.Data := AppGlobals.PluginManager.Plugins[i].Copy;
-      FTemporaryPlugins.Add(TPluginBase(Item.Data));
-      if AppGlobals.PluginManager.Plugins[i] is TDLLPlugin then
-      begin
-        Item.ImageIndex := 4;
-      end else if AppGlobals.PluginManager.Plugins[i] is TInternalPlugin then
+      Item.Caption := AppGlobals.PostProcessManager.PostProcessors[i].Name;
+      Item.Checked := AppGlobals.PostProcessManager.PostProcessors[i].Active;
+      Item.Data := AppGlobals.PostProcessManager.PostProcessors[i].Copy;
+      FTemporaryPostProcesses.Add(TPostProcessBase(Item.Data));
+
+      if AppGlobals.PostProcessManager.PostProcessors[i] is TInternalPostProcess then
       begin
         Item.ImageIndex := 4;
       end else
@@ -825,7 +829,8 @@ begin
       P.LoadFromResourceName(HInstance, 'ARROWDOWN');
       btnMoveDown.PngImage := P;
       P.LoadFromResourceName(HInstance, 'QUESTION');
-      btnHelp.PngImage := P;
+      btnHelpPostProcess.PngImage := P;
+      btnHelpPlugin.PngImage := P;
       GetBitmap('BROWSE', 2, B);
       btnBrowse.Glyph := B;
       btnBrowseAuto.Glyph := B;
@@ -834,6 +839,18 @@ begin
       B.Free;
       P.Free;
     end;
+
+    for i := 0 to AppGlobals.PluginManager.Plugins.Count - 1 do
+    begin
+      Item := lstPlugins.Items.Add;
+      Item.Caption := AppGlobals.PluginManager.Plugins[i].Name;
+      Item.Checked := AppGlobals.PluginManager.Plugins[i].FilesExtracted;
+      Item.Data := AppGlobals.PluginManager.Plugins[i].Copy;
+
+      Item.ImageIndex := 6;
+    end;
+    if lstPlugins.Items.Count > 0 then
+      lstPlugins.Items[0].Selected := True;
 
     BuildHotkeys;
 
@@ -921,9 +938,9 @@ var
 begin
   FIgnoreFieldList.Free;
 
-  for i := 0 to FTemporaryPlugins.Count - 1 do
-    FTemporaryPlugins[i].Free;
-  FTemporaryPlugins.Free;
+  for i := 0 to FTemporaryPostProcesses.Count - 1 do
+    FTemporaryPostProcesses[i].Free;
+  FTemporaryPostProcesses.Free;
 
   for i := 0 to Length(FStreamSettings) - 1 do
     FStreamSettings[i].Free;
@@ -1080,8 +1097,8 @@ procedure TfrmSettings.Finish;
 var
   i, n: Integer;
   AdvancedDiffers: Boolean;
-  Plugin: TPluginBase;
-  EP: TExternalPlugin;
+  PostProcessor: TPostProcessBase;
+  EP: TExternalPostProcess;
   Item: TListItem;
   OldTitlePattern: string;
   OldIgnoreTitles: Cardinal;
@@ -1320,49 +1337,49 @@ begin
     else
       AppGlobals.ShortcutMute := 0;
 
-    for i := 0 to FTemporaryPlugins.Count - 1 do
+    for i := 0 to FTemporaryPostProcesses.Count - 1 do
     begin
-      Plugin := AppGlobals.PluginManager.Find(FTemporaryPlugins[i]);
+      PostProcessor := AppGlobals.PostProcessManager.Find(FTemporaryPostProcesses[i]);
 
-      if Plugin = nil then
+      if PostProcessor = nil then
       begin
         // Ein neues Plugin kann nur TExternalPlugin sein.
-        Plugin := FTemporaryPlugins[i].Copy;
-        AppGlobals.PluginManager.Plugins.Add(Plugin);
+        PostProcessor := FTemporaryPostProcesses[i].Copy;
+        AppGlobals.PostProcessManager.PostProcessors.Add(PostProcessor);
       end;
 
       Item := nil;
       for n := 0 to lstPostProcess.Items.Count - 1 do
-        if lstPostProcess.Items[n].Data = FTemporaryPlugins[i] then
+        if lstPostProcess.Items[n].Data = FTemporaryPostProcesses[i] then
         begin
           Item := lstPostProcess.Items[n];
           Break;
         end;
 
-      Plugin.OnlyIfCut := FTemporaryPlugins[i].OnlyIfCut;
-      Plugin.Order := Item.Index;
-      Plugin.Active := Item.Checked;
+      PostProcessor.OnlyIfCut := FTemporaryPostProcesses[i].OnlyIfCut;
+      PostProcessor.Order := Item.Index;
+      PostProcessor.Active := Item.Checked;
 
-      Plugin.Assign(FTemporaryPlugins[i]);
+      PostProcessor.Assign(FTemporaryPostProcesses[i]);
     end;
 
     // Vom Benutzer entfernte Plugins aus den echten Plugins entfernen..
-    for i := AppGlobals.PluginManager.Plugins.Count - 1 downto 0 do
+    for i := AppGlobals.PostProcessManager.PostProcessors.Count - 1 downto 0 do
     begin
-      if AppGlobals.PluginManager.Plugins[i] is TExternalPlugin then
+      if AppGlobals.PostProcessManager.PostProcessors[i] is TExternalPostProcess then
       begin
         EP := nil;
-        for n := 0 to FTemporaryPlugins.Count - 1 do
-          if FTemporaryPlugins[n] is TExternalPlugin then
-            if TExternalPlugin(FTemporaryPlugins[n]).Identifier = TExternalPlugin(AppGlobals.PluginManager.Plugins[i]).Identifier then
+        for n := 0 to FTemporaryPostProcesses.Count - 1 do
+          if FTemporaryPostProcesses[n] is TExternalPostProcess then
+            if TExternalPostProcess(FTemporaryPostProcesses[n]).Identifier = TExternalPostProcess(AppGlobals.PostProcessManager.PostProcessors[i]).Identifier then
               begin
-                EP := TExternalPlugin(AppGlobals.PluginManager.Plugins[i]);
+                EP := TExternalPostProcess(AppGlobals.PostProcessManager.PostProcessors[i]);
                 Break;
               end;
         if EP = nil then
         begin
-          AppGlobals.PluginManager.Plugins[i].Free;
-          AppGlobals.PluginManager.Plugins.Delete(i);
+          AppGlobals.PostProcessManager.PostProcessors[i].Free;
+          AppGlobals.PostProcessManager.PostProcessors.Delete(i);
           Continue;
         end;
       end;
@@ -1429,17 +1446,17 @@ begin
   Result := 0;
   for i := 0 to lstPostProcess.Items.Count - 1 do
   begin
-    if TPluginBase(lstPostProcess.Items[i].Data) is TExternalPlugin then
-      if TExternalPlugin(lstPostProcess.Items[i].Data).Identifier = Result then
+    if TPostProcessBase(lstPostProcess.Items[i].Data) is TExternalPostProcess then
+      if TExternalPostProcess(lstPostProcess.Items[i].Data).Identifier = Result then
       begin
         Inc(Result);
         Continue;
       end;
   end;
-  for i := 0 to AppGlobals.PluginManager.Plugins.Count - 1 do
+  for i := 0 to AppGlobals.PostProcessManager.PostProcessors.Count - 1 do
   begin
-    if TPluginBase(AppGlobals.PluginManager.Plugins[i]) is TExternalPlugin then
-      if TExternalPlugin(AppGlobals.PluginManager.Plugins[i]).Identifier = Result then
+    if TPostProcessBase(AppGlobals.PostProcessManager.PostProcessors[i]) is TExternalPostProcess then
+      if TExternalPostProcess(AppGlobals.PostProcessManager.PostProcessors[i]).Identifier = Result then
       begin
         Inc(Result);
         Continue;
@@ -1515,79 +1532,64 @@ begin
   lstIgnoreTitles.Columns[0].Width := lstIgnoreTitles.ClientWidth - 25;
 end;
 
-procedure TfrmSettings.lstPostProcessCompare(Sender: TObject; Item1,
-  Item2: TListItem; Data: Integer; var Compare: Integer);
-var
-  P1, P2: TPluginBase;
-begin
-  inherited;
-  P1 := TPluginBase(Item1.Data);
-  P2 := TPluginBase(Item2.Data);
-  Compare := CmpInt(P1.Order, P2.Order);
-end;
-
-procedure TfrmSettings.lstPostProcessItemChecked(Sender: TObject;
+procedure TfrmSettings.lstPluginsItemChecked(Sender: TObject;
   Item: TListItem);
 var
   Res: Integer;
   DA: TfrmDownloadAddons;
 begin
+  if not FInitialized then
+    Exit;
+
+  lstPlugins.OnItemChecked := nil;
+  Item.Checked := AppGlobals.PluginManager.EnablePlugin(Self, TPluginBase(Item.Data), True);
+  lstPlugins.OnItemChecked := lstPluginsItemChecked;
+end;
+
+procedure TfrmSettings.lstPluginsResize(Sender: TObject);
+begin
   inherited;
 
-  if TObject(Item.Data) is TInternalPlugin then
+  lstPlugins.Columns[0].Width := lstPlugins.ClientWidth - 25;
+end;
+
+procedure TfrmSettings.lstPluginsSelectItem(Sender: TObject;
+  Item: TListItem; Selected: Boolean);
+begin
+  btnHelpPlugin.Enabled := (Item <> nil) and Selected and (TPluginBase(Item.Data).Help <> '');
+end;
+
+procedure TfrmSettings.lstPostProcessCompare(Sender: TObject; Item1,
+  Item2: TListItem; Data: Integer; var Compare: Integer);
+var
+  P1, P2: TPostProcessBase;
+begin
+  inherited;
+  P1 := TPostProcessBase(Item1.Data);
+  P2 := TPostProcessBase(Item2.Data);
+  Compare := CmpInt(P1.Order, P2.Order);
+end;
+
+procedure TfrmSettings.lstPostProcessItemChecked(Sender: TObject; Item: TListItem);
+var
+  i: Integer;
+begin
+  if not FInitialized then
+    Exit;
+
+  if TObject(Item.Data) is TInternalPostProcess then
   begin
-    if Item.Checked and (not TInternalPlugin(Item.Data).FilesInstalled) then
-    begin
-      Res := MsgBox(Handle, _('The plugin cannot be activated because needed files have not been downloaded.'#13#10'Do you want to download these files now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
-      if Res = IDYES then
-      begin
-        if not TInternalPlugin(Item.Data).ShowInitMessage(Handle) then
-        begin
-          lstPostProcess.OnItemChecked := nil;
-          Item.Checked := False;
-          lstPostProcess.OnItemChecked := lstPostProcessItemChecked;
-          Exit;
-        end;
+    lstPostProcess.OnItemChecked := nil;
+    Item.Checked := AppGlobals.PostProcessManager.EnablePostProcess(Self, Item.Checked, TInternalPostProcess(Item.Data));
+    lstPostProcess.OnItemChecked := lstPostProcessItemChecked;
 
-        DA := TfrmDownloadAddons.Create(Self, TInternalPlugin(Item.Data));
-        try
-          DA.ShowModal;
-
-          if not DA.Downloaded then
-          begin
-            if DA.Error then
-              MsgBox(Handle, _('An error occured while downloading the file.'), _('Error'), MB_ICONEXCLAMATION);
-
-            lstPostProcess.OnItemChecked := nil;
-            Item.Checked := False;
-            lstPostProcess.OnItemChecked := lstPostProcessItemChecked;
-          end;
-        finally
-          DA.Free;
-        end;
-      end else if Res = IDNO then
-      begin
-        lstPostProcess.OnItemChecked := nil;
-        Item.Checked := False;
-        lstPostProcess.OnItemChecked := lstPostProcessItemChecked;
-      end;
-    end;
-
-    // Nochmal initialisieren. Evtl. wurde eben erst die .dll heruntergeladen, dann extrahiert .Initialize() jetzt
-    TInternalPlugin(Item.Data).Initialize;
-
-    if Item.Checked and not TInternalPlugin(Item.Data).ReadyForActivate then
-    begin
-      MsgBox(Handle, _('The plugin is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
-
-      lstPostProcess.OnItemChecked := nil;
-      Item.Checked := False;
-      lstPostProcess.OnItemChecked := lstPostProcessItemChecked;
-    end;
-
-    Item.Selected := True;
-    btnConfigure.Enabled := Item.Checked and TPluginBase(Item.Data).CanConfigure;
+    btnConfigure.Enabled := Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
   end;
+
+  lstPlugins.OnItemChecked := nil;
+  for i := 0 to lstPlugins.Items.Count - 1 do
+    lstPlugins.Items[i].Checked := TPluginBase(lstPlugins.Items[i].Data).PackageDownloaded;
+  lstPlugins.OnItemChecked := lstPluginsItemChecked;
 end;
 
 procedure TfrmSettings.lstPostProcessResize(Sender: TObject);
@@ -1602,19 +1604,19 @@ procedure TfrmSettings.lstPostProcessSelectItem(Sender: TObject;
 begin
   btnConfigure.Enabled := False;
 
-  btnHelp.Enabled := (Item <> nil) and Selected and (TPluginBase(Item.Data).Help <> '');
-  btnRemove.Enabled := (Item <> nil) and Selected and (TPluginBase(Item.Data) is TExternalPlugin);
+  btnHelpPostProcess.Enabled := (Item <> nil) and Selected and (TPostProcessBase(Item.Data).Help <> '');
+  btnRemove.Enabled := (Item <> nil) and Selected and (TPostProcessBase(Item.Data) is TExternalPostProcess);
 
   btnMoveUp.Enabled := (Item <> nil) and Selected and (Item.Index > 0);
   btnMoveDown.Enabled := (Item <> nil) and Selected and (Item.Index < lstPostProcess.Items.Count - 1);
 
-  chkOnlyIfCut.Checked := (Item <> nil) and Selected and TPluginBase(Item.Data).OnlyIfCut;
+  chkOnlyIfCut.Checked := (Item <> nil) and Selected and TPostProcessBase(Item.Data).OnlyIfCut;
   chkOnlyIfCut.Enabled := (Item <> nil) and Selected;
 
-  if Selected and (TPluginBase(Item.Data) is TExternalPlugin) then
+  if Selected and (TPostProcessBase(Item.Data) is TExternalPostProcess) then
   begin
-    txtApp.Text := TExternalPlugin(Item.Data).Exe;
-    txtAppParams.Text := TExternalPlugin(Item.Data).Params;
+    txtApp.Text := TExternalPostProcess(Item.Data).Exe;
+    txtAppParams.Text := TExternalPostProcess(Item.Data).Params;
     txtApp.Enabled := True;
     txtAppParams.Enabled := True;
     btnBrowseApp.Enabled := True;
@@ -1631,7 +1633,7 @@ begin
     btnRemove.Enabled := False;
   end;
 
-  btnConfigure.Enabled := Item.Checked and TPluginBase(Item.Data).CanConfigure;
+  btnConfigure.Enabled := Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
 end;
 
 procedure TfrmSettings.optAdjustClick(Sender: TObject);
@@ -1665,20 +1667,20 @@ begin
 
   if lstPostProcess.Selected <> nil then
   begin
-    AppGlobals.PluginManager.ReInitPlugins;
+    AppGlobals.PostProcessManager.ReInitPlugins;
     lstPostProcessSelectItem(lstPostProcess, lstPostProcess.Selected, True);
   end;
 
   for i := 0 to lstPostProcess.Items.Count - 1 do
   begin
     // Damit Sprache neu gesetzt wird und so..
-    TPluginBase(lstPostProcess.Items[i].Data).Initialize;
-    lstPostProcess.Items[i].Caption := TPluginBase(lstPostProcess.Items[i].Data).Name;
+    TPostProcessBase(lstPostProcess.Items[i].Data).Initialize;
+    lstPostProcess.Items[i].Caption := TPostProcessBase(lstPostProcess.Items[i].Data).Name;
   end;
 
   BuildHotkeys;
 
-  AppGlobals.PluginManager.ReInitPlugins;
+  AppGlobals.PostProcessManager.ReInitPlugins;
   lstDefaultAction.ItemIndex := FDefaultActionIdx;
   lstDefaultActionBrowser.ItemIndex := FDefaultActionBrowserIdx;
   lstDefaultFilter.ItemIndex := FDefaultFilterIdx;
@@ -1864,7 +1866,7 @@ procedure TfrmSettings.txtAppParamsChange(Sender: TObject);
 begin
   inherited;
   if (lstPostProcess.Selected <> nil) and txtAppParams.Focused then
-    TExternalPlugin(lstPostProcess.Selected.Data).Params := txtAppParams.Text;
+    TExternalPostProcess(lstPostProcess.Selected.Data).Params := txtAppParams.Text;
 end;
 
 procedure TfrmSettings.txtFilePatternChange(Sender: TObject);
@@ -2055,7 +2057,7 @@ end;
 procedure TfrmSettings.btnAddUpClick(Sender: TObject);
 var
   Item: TListItem;
-  Plugin: TExternalPlugin;
+  Plugin: TExternalPostProcess;
 begin
   inherited;
   if dlgOpen.Execute then
@@ -2064,8 +2066,8 @@ begin
     begin
       Item := lstPostProcess.Items.Add;
       Item.Caption := ExtractFileName(dlgOpen.FileName);
-      Plugin := TExternalPlugin.Create(dlgOpen.FileName, '"%f"', True, False, GetNewID, 0);
-      FTemporaryPlugins.Add(Plugin);
+      Plugin := TExternalPostProcess.Create(dlgOpen.FileName, '"%f"', True, False, GetNewID, 0);
+      FTemporaryPostProcesses.Add(Plugin);
       Item.Checked := Plugin.Active;
       Item.Data := Plugin;
       Item.ImageIndex := 5;
@@ -2088,7 +2090,7 @@ begin
     begin
       txtApp.Text := dlgOpen.FileName;
       lstPostProcess.Selected.Caption := ExtractFileName(dlgOpen.FileName);
-      TExternalPlugin(lstPostProcess.Selected.Data).Exe := dlgOpen.FileName;
+      TExternalPostProcess(lstPostProcess.Selected.Data).Exe := dlgOpen.FileName;
     end;
   end;
 end;
@@ -2114,25 +2116,39 @@ end;
 procedure TfrmSettings.btnConfigureClick(Sender: TObject);
 var
   i: Integer;
-  Plugin: TPluginBase;
+  Plugin: TPostProcessBase;
 begin
   inherited;
 
   if lstPostProcess.Selected <> nil then
-    TPluginBase(lstPostProcess.Selected.Data).Configure(Self, 0, True);
+    TPostProcessBase(lstPostProcess.Selected.Data).Configure(Self, 0, True);
 
   for i := 0 to lstPostProcess.Items.Count - 1 do
   begin
     Plugin := lstPostProcess.Items[i].Data;
-    if Plugin.InheritsFrom(TInternalPlugin) or (Plugin.ClassType = TInternalPlugin) then
-      TInternalPlugin(Plugin).LoadSharedSettings;
+    if Plugin.InheritsFrom(TInternalPostProcess) or (Plugin.ClassType = TInternalPostProcess) then
+      TInternalPostProcess(Plugin).LoadSharedSettings;
   end;
 end;
 
 procedure TfrmSettings.btnHelpClick(Sender: TObject);
+var
+  Plugin: TPluginBase;
+  PostProcess: TPostProcessBase;
 begin
-  if lstPostProcess.Selected <> nil then
-    MsgBox(Handle, TDLLPlugin(lstPostProcess.Selected.Data).Help, _('Help'), MB_ICONINFORMATION);
+  if Sender = btnHelpPlugin then
+  begin
+    if lstPlugins.Selected = nil then
+      Exit;
+    Plugin := lstPlugins.Selected.Data;
+    MessageBox(Handle, PChar(Plugin.Help), 'Info', MB_ICONINFORMATION)
+  end else
+  begin
+    if lstPostProcess.Selected = nil then
+      Exit;
+    PostProcess := lstPostProcess.Selected.Data;
+    MessageBox(Handle, PChar(PostProcess.Help), 'Info', MB_ICONINFORMATION);
+  end;
 end;
 
 procedure TfrmSettings.btnMoveClick(Sender: TObject);
@@ -2161,8 +2177,8 @@ procedure TfrmSettings.btnRemoveClick(Sender: TObject);
 begin
   if lstPostProcess.Selected <> nil then
   begin
-    FTemporaryPlugins.Remove(TExternalPlugin(lstPostProcess.Selected.Data));
-    TExternalPlugin(lstPostProcess.Selected.Data).Free;
+    FTemporaryPostProcesses.Remove(TExternalPostProcess(lstPostProcess.Selected.Data));
+    TExternalPostProcess(lstPostProcess.Selected.Data).Free;
     lstPostProcess.Selected.Delete;
   end;
 end;
@@ -2583,7 +2599,7 @@ procedure TfrmSettings.chkOnlyIfCutClick(Sender: TObject);
 begin
   inherited;
   if (lstPostProcess.Selected <> nil) and chkOnlyIfCut.Focused then
-    TPluginBase(lstPostProcess.Selected.Data).OnlyIfCut := chkOnlyIfCut.Checked;
+    TPostProcessBase(lstPostProcess.Selected.Data).OnlyIfCut := chkOnlyIfCut.Checked;
 end;
 
 procedure TfrmSettings.chkOnlySaveFullClick(Sender: TObject);
