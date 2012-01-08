@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899.12.30 00:00:00.000.596,E:\Entwicklung\Mistake\streamwriter\plugins\plugin_sox\postprocess_sox.dproj=E:\Entwicklung\Mistake\streamwriter\plugins\plugin_sox\plugin_sox.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.725,E:\Entwicklung\Mistake\streamwriter\plugins\sox\sox.dproj=E:\Home\Documents\RAD Studio\Projekte\Project1.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.432,E:\Entwicklung\Mistake\streamwriter\plugins\sox\sox.dproj=E:\Entwicklung\Mistake\streamwriter\plugins\sox\postprocess_sox.dproj</Transaction>
+  </Transactions>
+</BorlandProject>

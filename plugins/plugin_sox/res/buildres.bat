@@ -1,0 +1,1 @@
+rc.exe res.rc
