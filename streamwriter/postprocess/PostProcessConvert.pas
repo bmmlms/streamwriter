@@ -30,8 +30,10 @@ type
   private
     FFromFile: string;
     FToFile: string;
+    FBitRate: Cardinal;
+    FProgress: Integer;
 
-//    FOnProgress: TFileConvertorProgressEvent;
+    FOnProgress: TNotifyEvent;
     FOnFinish: TNotifyEvent;
     FOnError: TNotifyEvent;
 
@@ -41,9 +43,11 @@ type
   public
     constructor Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
 
-    procedure Convert(FromFile, ToFile: string);
+    procedure Convert(FromFile, ToFile: string; BitRate: Cardinal);
 
-//    property OnProgress: TFileConvertorProgressEvent read FOnProgress write FOnProgress;
+    property Progress: Integer read FProgress;
+
+    property OnProgress: TNotifyEvent read FOnProgress write FOnProgress;
     property OnFinish: TNotifyEvent read FOnFinish write FOnFinish;
     property OnError: TNotifyEvent read FOnError write FOnError;
   end;
@@ -64,12 +68,13 @@ uses
 
 { TPostProcessConvertThread }
 
-procedure TPostProcessConvertThread.Convert(FromFile, ToFile: string);
+procedure TPostProcessConvertThread.Convert(FromFile, ToFile: string; BitRate: Cardinal);
 var
   ToExt: string;
 begin
   FFromFile := FromFile;
   FToFile := ToFile;
+  FBitRate := BitRate;
 
   Resume;
 end;
@@ -89,6 +94,7 @@ begin
   FResult := arFail;
 
   FC := TFileConvertor.Create;
+  FC.BitRate := FBitRate;
   try
     FC.OnProgress := FileConvertorProgress;
 
@@ -131,8 +137,9 @@ begin
   Synchronize(
     procedure
     begin
-      {if Assigned(FOnProgress) then  TODO:
-        FOnProgress(Sender, Percent);}
+      FProgress := Percent;
+      if Assigned(FOnProgress) then
+        FOnProgress(Sender);
     end);
 end;
 

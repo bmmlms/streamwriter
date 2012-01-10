@@ -4,9 +4,12 @@ interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, PluginBase, PluginLAME,
-  Forms, Functions, LanguageObjects, PluginSoX;
+  Forms, Functions, LanguageObjects, PluginSoX, TypeDefs, PluginFAAC, PluginOggEnc,
+  PluginM4ATools;
 
 type
+  TCanEncodeResults = (ceNoPlugin, cePluginNeeded, ceOkay);
+
   TPluginManager = class
   private
     FShowVersionWarning: Boolean;
@@ -17,8 +20,9 @@ type
 
     function Find(ClassType: TClass): TPluginBase;
     function EnablePlugin(Owner: TCustomForm; Plugin: TPluginBase; ShowMessage: Boolean): Boolean;
-    function CanEncode(FileExtension: string): Boolean;
-    function InstallEncoderFor(Owner: TCustomForm; FileExtension: string): Boolean;
+    function CanEncode(FileExtension: string): TCanEncodeResults; overload;
+    function CanEncode(AudioType: TAudioTypes): TCanEncodeResults; overload;
+    function InstallEncoderFor(Owner: TCustomForm; AudioType: TAudioTypes): Boolean;
 
     property ShowVersionWarning: Boolean read FShowVersionWarning;
     property Plugins: TList<TPluginBase> read FPlugins;
@@ -31,15 +35,24 @@ uses
 
 { TPluginManager }
 
-function TPluginManager.CanEncode(FileExtension: string): Boolean;
+function TPluginManager.CanEncode(FileExtension: string): TCanEncodeResults;
 var
   i: Integer;
 begin
-  Result := False;
+  Result := CanEncode(FiletypeToFormat(FileExtension));
+end;
+
+function TPluginManager.CanEncode(AudioType: TAudioTypes): TCanEncodeResults;
+var
+  i: Integer;
+begin
+  Result := ceNoPlugin;
   for i := 0 to Plugins.Count - 1 do
-    if (Plugins[i].FilesExtracted) and (Plugins[i].CanEncode(FileExtension)) then
+    if Plugins[i].CanEncode(AudioType) then
     begin
-      Result := True;
+      Result := cePluginNeeded;
+      if Plugins[i].FilesExtracted then
+        Result := ceOkay;
       Exit;
     end;
 end;
@@ -53,8 +66,11 @@ begin
 
   FPlugins := TList<TPluginBase>.Create;
 
+  FPlugins.Add(TPluginOggEnc.Create);
   FPlugins.Add(TPluginLAME.Create);
+  FPlugins.Add(TPluginFAAC.Create);
   FPlugins.Add(TPluginSoX.Create);
+  FPlugins.Add(TPluginM4ATools.Create);
 
   for i := 0 to Plugins.Count - 1 do
     if Plugins[i].ClassType.InheritsFrom(TPluginBase) then
@@ -154,13 +170,13 @@ begin
 end;
 
 function TPluginManager.InstallEncoderFor(Owner: TCustomForm;
-  FileExtension: string): Boolean;
+  AudioType: TAudioTypes): Boolean;
 var
   i: Integer;
 begin
   Result := False;
   for i := 0 to Plugins.Count - 1 do
-    if Plugins[i].CanEncode(FileExtension) then
+    if Plugins[i].CanEncode(AudioType) then
     begin
       Result := EnablePlugin(Owner, Plugins[i], False);
       Exit;

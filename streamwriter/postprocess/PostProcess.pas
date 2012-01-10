@@ -45,13 +45,13 @@ type
     WasCut: Boolean;
     FullTitle: Boolean;
     StreamTitle: string;
+    BitRate: Cardinal;
   end;
   PPluginProcessInformation = ^TPluginProcessInformation;
 
   TProcessingEntry = class
   private
     // The owner is a TICEClient
-    // TODO: der zeigt auf nen iceclient. der kann aber entfernt werden. das muss hier mitbekommen werden, dann GENILT werden.
     FOwner: TObject;
     FNeedsWave: Boolean;
     FOutputFormat: TAudioTypes;
@@ -64,7 +64,7 @@ type
       Data: TPluginProcessInformation; OutputFormat: TAudioTypes);
     destructor Destroy; override;
 
-    property Owner: TObject read FOwner;
+    property Owner: TObject read FOwner write FOwner;
     property NeedsWave: Boolean read FNeedsWave write FNeedsWave;
     property ActiveThread: TPostProcessThreadBase read FActiveThread write FActiveThread;
     property OutputFormat: TAudioTypes read FOutputFormat;
@@ -167,7 +167,7 @@ type
     procedure FSetExe(Value: string);
   protected
   public
-    constructor Create(Exe, Params: string; Active, OnlyIfCut: Boolean; Identifier, Order: Integer);
+    constructor Create(Exe, Params: string; Active, OnlyIfCut: Boolean; Identifier, Order, GroupID: Integer);
     function ProcessFile(Data: PPluginProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
@@ -206,6 +206,7 @@ begin
   FData.WasCut := Data.WasCut;
   FData.FullTitle := Data.FullTitle;
   FData.StreamTitle := Data.StreamTitle;
+  FData.BitRate := Data.BitRate;
 
   FPluginsProcessed := TList<TPostProcessBase>.Create;
 end;
@@ -326,10 +327,10 @@ end;
 
 function TExternalPostProcess.Copy: TPostProcessBase;
 begin
-  Result := TExternalPostProcess.Create(FExe, FParams, FActive, FOnlyIfCut, FIdentifier, FOrder);
+  Result := TExternalPostProcess.Create(FExe, FParams, FActive, FOnlyIfCut, FIdentifier, FOrder, FGroupID);
 end;
 
-constructor TExternalPostProcess.Create(Exe, Params: string; Active, OnlyIfCut: Boolean; Identifier, Order: Integer);
+constructor TExternalPostProcess.Create(Exe, Params: string; Active, OnlyIfCut: Boolean; Identifier, Order, GroupID: Integer);
 begin
   inherited Create;
 
@@ -339,6 +340,7 @@ begin
   FParams := Params;
   FIdentifier := Identifier;
   FOrder := Order;
+  FGroupID := GroupID;
 
   FName := ExtractFileName(FExe);
 end;

@@ -3,7 +3,8 @@ unit FileConvertor;
 interface
 
 uses
-  SysUtils, Windows, Classes, DynBASS, ExtendedStream, PluginLAME, AppData, Functions;
+  SysUtils, Windows, Classes, DynBASS, ExtendedStream, PluginLAME, AppData,
+  PluginOGGEnc, Functions;
 
 const
   BE_CONFIG_MP3 = 0;
@@ -126,39 +127,18 @@ type
 
   TFileConvertorProgressEvent = procedure(Sender: TObject; Percent: Integer) of object;
 
-  // TODO: Den hier sollte ich wegmachen, und im CutView nur noch den PostProcessConvertThread nutzen!
-  //       Das wäre ordentlich.
-  TFileConvertorThread = class(TThread)
-  private
-    FFromFile: string;
-    FToFile: string;
-
-    FOnProgress: TFileConvertorProgressEvent;
-    FOnFinish: TNotifyEvent;
-    FOnError: TNotifyEvent;
-
-    procedure FileConvertorProgress(Sender: TObject; Percent: Integer);
-  protected
-    procedure Execute; override;
-  public
-    constructor Create;
-
-    procedure Convert(FromFile, ToFile: string);
-
-    property OnProgress: TFileConvertorProgressEvent read FOnProgress write FOnProgress;
-    property OnFinish: TNotifyEvent read FOnFinish write FOnFinish;
-    property OnError: TNotifyEvent read FOnError write FOnError;
-  end;
-
   TFileConvertor = class
   private
+    FBitRate: Cardinal;
     FOnProgress: TFileConvertorProgressEvent;
 
     function Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
     function ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
+    function ConvertWAV2OGG(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
   public
     function Convert(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
 
+    property BitRate: Cardinal read FBitRate write FBitRate;
     property OnProgress: TFileConvertorProgressEvent read FOnProgress write FOnProgress;
   end;
 
@@ -179,7 +159,9 @@ begin
   if (ExtFrom = '.mp3') and (ExtTo = '.wav') then
     Result := Convert2WAV(FromFile, ToFile, TerminateFlag)
   else if (ExtFrom = '.wav') and (ExtTo = '.mp3') then
-    Result := ConvertWAV2MP3(FromFile, ToFile, TerminateFlag);
+    Result := ConvertWAV2MP3(FromFile, ToFile, TerminateFlag)
+  else if (ExtFrom = '.wav') and (ExtTo = '.ogg') then
+    Result := ConvertWAV2OGG(FromFile, ToFile, TerminateFlag);
 end;
 
 function TFileConvertor.Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
@@ -340,14 +322,17 @@ begin
       ToFileTemp := RemoveFileExt(ToFile) + '_save.mp3';
       OutStream := TFileStream.Create(ToFileTemp, fmCreate);
 
+      if FBitRate = 0 then
+        FBitRate := 128;
+
       Config.dwConfig := BE_CONFIG_LAME;
       Config.Format.lhv1.dwStructVersion := 1;
       Config.Format.lhv1.dwStructSize := SizeOf(Config);
       Config.Format.lhv1.dwSampleRate := 44100;
       Config.Format.lhv1.dwReSampleRate := 44100;
       Config.Format.lhv1.nMode := BE_MP3_MODE_STEREO;
-      Config.Format.lhv1.dwBitrate := 256;
-      Config.Format.lhv1.dwMaxBitrate := 256;
+      Config.Format.lhv1.dwBitrate := FBitRate;
+      Config.Format.lhv1.dwMaxBitrate := FBitRate;
       Config.Format.lhv1.nQuality := HIGH_QUALITY;
       Config.Format.lhv1.dwMPegVersion := 1;
       Config.Format.lhv1.dwPsyModel := 0;
@@ -443,73 +428,27 @@ begin
     MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);
 end;
 
-{ TFileConvertorThread }
-
-procedure TFileConvertorThread.Convert(FromFile, ToFile: string);
-begin
-  FFromFile := FromFile;
-  FToFile := ToFile;
-
-  Resume;
-end;
-
-constructor TFileConvertorThread.Create;
-begin
-  inherited Create(True);
-
-  FreeOnTerminate := True;
-end;
-
-procedure TFileConvertorThread.Execute;
+function TFileConvertor.ConvertWAV2OGG(FromFile, ToFile: string;
+  TerminateFlag: PBoolean): Boolean;
 var
-  FC: TFileConvertor;
+  CmdLine: string;
+  Output: AnsiString;
+  Plugin: TPluginOGGEnc;
+  EC: Cardinal;
 begin
-  inherited;
+  Plugin := AppGlobals.PluginManager.Find(TPluginOggEnc) as TPluginOGGEnc;
 
-  FC := TFileConvertor.Create;
-  try
-    FC.OnProgress := FileConvertorProgress;
+  if not Plugin.FilesExtracted then
+    Exit(False);
 
-    try
-      if FC.Convert(FFromFile, FToFile, @Terminated) then
-      begin
-        Synchronize(
-          procedure
-          begin
-            if Assigned(FOnFinish) then
-              FOnFinish(Self)
-          end);
-      end else
-      begin
-        Synchronize(
-          procedure
-          begin
-            if Assigned(FOnError) then
-              FOnError(Self)
-          end);
-      end;
-    except
-      Synchronize(
-        procedure
-        begin
-          if Assigned(FOnError) then
-            FOnError(Self)
-        end);
-    end;
-  finally
-    FC.Free;
+  CmdLine := Plugin.EXEPath + ' "' + FromFile + '" -o "' + ToFile + '"';
+  if RunProcess(CmdLine, ExtractFilePath(Plugin.EXEPath), 300000, Output, EC, TerminateFlag) = 2 then
+  begin
+    Result := False;
+  end else
+  begin
+    Result := FileExists(ToFile);
   end;
-end;
-
-procedure TFileConvertorThread.FileConvertorProgress(Sender: TObject;
-  Percent: Integer);
-begin
-  Synchronize(
-    procedure
-    begin
-      if Assigned(FOnProgress) then
-        FOnProgress(Sender, Percent);
-    end);
 end;
 
 end.

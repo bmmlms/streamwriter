@@ -118,7 +118,9 @@ uses
   PluginFAAC in 'plugin\PluginFAAC.pas',
   PluginSoX in 'plugin\PluginSoX.pas',
   Intro in 'Intro.pas' {frmIntro},
-  PostProcessConvert in 'postprocess\PostProcessConvert.pas';
+  PostProcessConvert in 'postprocess\PostProcessConvert.pas',
+  PluginOggEnc in 'plugin\PluginOggEnc.pas',
+  PluginM4ATools in 'plugin\PluginM4ATools.pas';
 
 {$SetPEOptFlags $0140}
 

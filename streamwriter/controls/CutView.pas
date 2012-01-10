@@ -31,7 +31,7 @@ uses
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
   PlayerManager, PostProcess, PostProcessSoX, DownloadAddons, ConfigureSoX, Logging,
   MsgDlg, DragDrop, DropTarget, DropComboTarget, Mp3FileUtils,
-  MessageBus, AppMessages, FileConvertor, PluginSoX;
+  MessageBus, AppMessages, PluginSoX, PostProcessConvert;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -191,7 +191,7 @@ type
     FOnStateChanged: TNotifyEvent;
     FOnCutFile: TCutFileEvent;
 
-    FFileConvertorThread: TFileConvertorThread;
+    FFileConvertorThread: TPostProcessConvertThread;
 
     procedure StartProcessing(CmdLine: string);
     function AddUndo: Boolean;
@@ -218,7 +218,7 @@ type
 
     procedure CreateConvertor;
 
-    procedure FileConvertorProgress(Sender: TObject; Percent: Integer);
+    procedure FileConvertorProgress(Sender: TObject);
     procedure FileConvertorFinish(Sender: TObject);
     procedure FileConvertorError(Sender: TObject);
     procedure FileConvertorTerminate(Sender: TObject);
@@ -367,7 +367,7 @@ end;
 
 procedure TCutView.CreateConvertor;
 begin
-  FFileConvertorThread := TFileConvertorThread.Create;
+  FFileConvertorThread := TPostProcessConvertThread.Create(nil, AppGlobals.PostProcessManager.PostProcessors[0]);
   FFileConvertorThread.OnProgress := FileConvertorProgress;
   FFileConvertorThread.OnFinish := FileConvertorFinish;
   FFileConvertorThread.OnError := FileConvertorError;
@@ -469,12 +469,11 @@ begin
   LoadFile(FWorkingFilename, True);
 end;
 
-procedure TCutView.FileConvertorProgress(Sender: TObject;
-  Percent: Integer);
+procedure TCutView.FileConvertorProgress(Sender: TObject);
 begin
-  if Percent < 100 then
-    FProgressBarLoad.Position := Percent + 1;
-  FProgressBarLoad.Position := Percent;
+  if FFileConvertorThread.Progress < 100 then
+    FProgressBarLoad.Position := FFileConvertorThread.Progress + 1;
+  FProgressBarLoad.Position := FFileConvertorThread.Progress;
 end;
 
 procedure TCutView.FileConvertorTerminate(Sender: TObject);
@@ -553,7 +552,7 @@ begin
 
     FProgressBarLoad.Visible := True;
 
-    FFileConvertorThread.Convert(FOriginalFilename, FWorkingFilename);
+    FFileConvertorThread.Convert(FOriginalFilename, FWorkingFilename, 128); // TODO: 128..
 
     FPB.BuildBuffer;
     FPB.BuildDrawBuffer;
@@ -702,7 +701,7 @@ begin
   FreeAndNil(FWaveData);
 
   CreateConvertor;
-  FFileConvertorThread.Convert(FWorkingFilename, FOriginalFilename);
+  FFileConvertorThread.Convert(FWorkingFilename, FOriginalFilename, 128); // TODO: 128...
 
   FState := csEncoding;
   FProgressBarLoad.Position := 0;

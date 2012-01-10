@@ -66,13 +66,12 @@ implementation
 uses
   AppData, ConfigureSoX;
 
-{ TSoXThread }
+{ TPostProcessAACThread }
 
 constructor TPostProcessAACThread.Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
 begin
   inherited Create(Data, Plugin);
 
-  // TODO: !!!
   //FMP4BoxPath := TPostProcessAAC(Plugin).MP4BoxFilename;
   //FAtomicParsleyPath := TPostProcessAAC(Plugin).AtomicParsleyFilename;
 end;
@@ -126,7 +125,7 @@ begin
   DeleteFile(OutFile2);
 end;
 
-{ TSoXPlugin }
+{ TPostProcessAAC }
 
 procedure TPostProcessAAC.Assign(Source: TPostProcessBase);
 begin
@@ -173,6 +172,10 @@ begin
 
   TPostProcessAAC(Result).FCopied := True;
 
+  Result.Active := FActive;
+  Result.Order := FOrder;
+  Result.OnlyIfCut := FOnlyIfCut;
+
   Result.Assign(Self);
 end;
 
@@ -183,6 +186,7 @@ begin
   FActive := False;
   FOrder := 100;
   FCanConfigure := True;
+  FGroupID := 1;
 
   FName := _('AAC - Convert to M4A and set tags');
   FHelp := _('This plugin converts recorded songs from AAC to M4A an sets tags (AAC only).');

@@ -17,7 +17,7 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
-unit PluginFAAC;
+unit PluginM4ATools;
 
 interface
 
@@ -25,7 +25,7 @@ uses
   SysUtils, Windows, Classes, PluginBase, LanguageObjects, Functions, TypeDefs;
 
 type
-  TPluginFAAC = class(TPluginBase)
+  TPluginM4ATools = class(TPluginBase)
   private
   protected
   public
@@ -45,9 +45,9 @@ implementation
 uses
   AppData;
 
-{ TPluginFAAC }
+{ TPluginM4ATools }
 
-procedure TPluginFAAC.Assign(Source: TPluginBase);
+procedure TPluginM4ATools.Assign(Source: TPluginBase);
 begin
   inherited;
 
@@ -57,45 +57,45 @@ begin
   FDownloadPackage := Source.DownloadPackage;
 end;
 
-function TPluginFAAC.CanEncode(AudioType: TAudioTypes): Boolean;
+function TPluginM4ATools.CanEncode(AudioType: TAudioTypes): Boolean;
 begin
   Result := AudioType = atAAC;
 end;
 
-function TPluginFAAC.Copy: TPluginBase;
+function TPluginM4ATools.Copy: TPluginBase;
 begin
-  Result := TPluginFAAC.Create;
+  Result := TPluginM4ATools.Create;
 
   Result.Assign(Self);
 end;
 
-constructor TPluginFAAC.Create;
+constructor TPluginM4ATools.Create;
 begin
   inherited;
 
-  FName := _('Support encoding of AAC using FAAC');
-  FHelp := _('This plugin adds support for encoding of AAC files to the application which is useful for postprocessing of recorded songs.');
-  FDownloadName := 'plugin_faac';
-  FDownloadPackage := 'plugin_faac.dll';
+  FName := _('Support conversion of AAC files to M4A container');
+  FHelp := _('This plugin adds support for converting AAC files to M4A files to the application which is useful for postprocessing of recorded songs.');
+  FDownloadName := 'plugin_m4atools';
+  FDownloadPackage := 'plugin_m4atools.dll';
 
-  FFilesDir := AppGlobals.TempDir + 'plugin_faac\';
+  FFilesDir := AppGlobals.TempDir + 'plugin_m4atools\';
 
-  FFilenames.Add('faac.exe');
+  FFilenames.Add('AtomicParsley.exe');
+  FFilenames.Add('js32.dll');
+  FFilenames.Add('MP4Box.exe');
 end;
 
-procedure TPluginFAAC.Initialize;
+procedure TPluginM4ATools.Initialize;
 begin
   inherited;
 
-  FName := _('Support encoding of AAC using FAAC');
-  FHelp := _('This plugin adds support for encoding of AAC files to the application which is useful for postprocessing of recorded songs.');
+  FName := _('Support conversion of AAC files to M4A container');
+  FHelp := _('This plugin adds support for converting AAC files to M4A files to the application which is useful for postprocessing of recorded songs.');
 end;
 
-function TPluginFAAC.ShowInitMessage(Handle: THandle): Boolean;
+function TPluginM4ATools.ShowInitMessage(Handle: THandle): Boolean;
 begin
-  Result := MsgBox(Handle, _('WARNING:'#13#10'It is not be allowed in some contries to use this plugin because it contains faac.exe ' +
-                             'that makes use of some patented technologies. Please make sure you may use these files in your country. ' +
-                             'If you are sure you may use these files, press "Yes" to continue.'), _('Warning'), MB_ICONWARNING or MB_YESNO or MB_DEFBUTTON2) = IDYES;
+  Result := True;
 end;
 
 end.

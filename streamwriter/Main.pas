@@ -34,7 +34,7 @@ uses
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   TypeDefs, ExtendedStream, SettingsStorage, ChartsTab, StatusBar,
-  SystemCritical, Intro;
+  SystemCritical, Intro, PluginManager;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -1371,31 +1371,36 @@ procedure TfrmStreamWriterMain.tabCutCutFile(Sender: TObject;
   Filename: string);
 var
   tabCut: TCutTab;
+  AudioType: TAudioTypes;
 begin
   Application.ProcessMessages;
 
-  if not AppGlobals.PluginManager.CanEncode(ExtractFileExt(Filename)) then
-  begin
-    if MsgBox(Handle, _('To cut the selected file the required encoder-plugin needs to be installed. Do you want to download and install the required plugin now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
-    begin
-      // TODO: Hier auch patent warnmeldung zeigen.... jedesmal vorm installen!!! das muss mit ins EnablePlugin() funktion eigentlich.
-      if not AppGlobals.PluginManager.InstallEncoderFor(Self, ExtractFileExt(Filename)) then
+  AudioType := FiletypeToFormat(ExtractFileExt(Filename));
+
+  case AppGlobals.PluginManager.CanEncode(AudioType) of
+    ceNoPlugin:
+      begin
+        MsgBox(Handle, _('This filetype is not supported by streamWriter.'), _('Info'), MB_ICONINFORMATION);
         Exit;
-    end else
-      Exit;
+      end;
+    cePluginNeeded:
+      begin
+        if MsgBox(Handle, _('To cut the selected file the required encoder-plugin needs to be installed. Do you want to download and install the required plugin now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+        begin
+          if not AppGlobals.PluginManager.InstallEncoderFor(Self, AudioType) then
+            Exit;
+        end else
+          Exit;
+      end;
   end;
 
-  // TODO: Macht die Message noch sinn, wenn ich per hand re-encode? wegen VBR...
-  if TfrmMsgDlg.ShowMsg(Self, _('You dragged an unknown file into streamWriter. If this file has VBR, it cannot be cut correctly. No responsibility for broken files after editing will be taken! If you are not sure what you are doing, press ''Cancel''.'), 11, btOKCancel) <> mtCancel then
+  tabCut := TCutTab(Sender);
+  if tabCut <> nil then
   begin
-    tabCut := TCutTab(Sender);
-    if tabCut <> nil then
-    begin
-      OpenCut(Filename);
-    end else
-    begin
-      pagMain.ActivePage := tabCut;
-    end;
+    OpenCut(Filename);
+  end else
+  begin
+    pagMain.ActivePage := tabCut;
   end;
 end;
 
@@ -1413,29 +1418,25 @@ var
 begin
   Client := Sender as TICEClient;
   tabLists.RemoveClient(Client);
+  AppGlobals.PostProcessManager.ClientRemoved(Sender);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsCut(Entry: TStreamEntry;
   Track: TTrackInfo);
 var
   tabCut: TCutTab;
+  AudioType: TAudioTypes;
 begin
-  if (LowerCase(ExtractFileExt(Track.Filename)) <> '.mp3') and (LowerCase(ExtractFileExt(Track.Filename)) <> '.aac') and
-     (LowerCase(ExtractFileExt(Track.Filename)) <> '.m4a') then
-  begin
-    Exit;
-  end;
-
-  if not AppGlobals.PluginManager.CanEncode(ExtractFileExt(Track.Filename)) then
+  AudioType := FiletypeToFormat(ExtractFileExt(Track.Filename));
+  if AppGlobals.PluginManager.CanEncode(AudioType) <> ceOkay then
   begin
     if MsgBox(Handle, _('To cut the selected file the required encoder-plugin needs to be installed. Do you want to download and install the required plugin now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
     begin
-      // TODO: Hier auch patent warnmeldung zeigen.... jedesmal vorm installen!!! das muss mit ins EnablePlugin() funktion eigentlich.
-      if not AppGlobals.PluginManager.InstallEncoderFor(Self, ExtractFileExt(Track.Filename)) then
+      if not AppGlobals.PluginManager.InstallEncoderFor(Self, AudioType) then
         Exit;
     end else
       Exit;
-  end;
+  end;        // TODO: wenn man anhört, aufnimmt, aufnahme beendet wird nix gespeichert?
 
   tabCut := TCutTab(pagMain.FindCut(Track.Filename));
   if tabCut = nil then

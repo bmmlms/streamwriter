@@ -258,8 +258,7 @@ begin
 
   // TODO: dieser postprocessor sollte nur sox benötigen. und falls er auch noch lame/faac braucht,
   // sollte das cutview drauf hinweisen. prüfen ob das so klappt.
-  FNeededPlugins.Add(TPluginLAME);
-  FNeededPlugins.Add(TPluginSoX);
+  FNeededPlugins.Add(TPluginSoX); // TODO: Mensch sagen: ey du willst sox, brauchstn encoder!!
 
   FNeedsWave := True;
 

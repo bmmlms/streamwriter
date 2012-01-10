@@ -459,9 +459,9 @@ object frmSettings: TfrmSettings
     object lblOutputFormat: TLabel
       Left = 4
       Top = 4
-      Width = 150
+      Width = 164
       Height = 13
-      Caption = 'Format to save recorded files in:'
+      Caption = 'Format to convert recorded files to:'
     end
     object lstPostProcess: TListView
       Left = 4
@@ -511,6 +511,7 @@ object frmSettings: TfrmSettings
       Height = 25
       Anchors = [akRight, akBottom]
       Caption = '&Add...'
+      Enabled = False
       TabOrder = 1
       OnClick = btnAddClick
     end
@@ -576,14 +577,17 @@ object frmSettings: TfrmSettings
     object lstOutputFormat: TComboBox
       Left = 4
       Top = 20
-      Width = 213
+      Width = 257
       Height = 21
       Style = csDropDownList
+      Anchors = [akLeft, akTop, akRight]
       TabOrder = 7
+      OnSelect = lstOutputFormatSelect
       Items.Strings = (
         'Do not change format'
         'MP3'
-        'M4A')
+        'AAC'
+        'OGG')
     end
   end
   object pnlCut: TPanel
@@ -1512,6 +1516,7 @@ object frmSettings: TfrmSettings
     Width = 293
     Height = 189
     TabOrder = 12
+    Visible = False
     DesignSize = (
       293
       189)

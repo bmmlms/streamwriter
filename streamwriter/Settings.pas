@@ -28,7 +28,7 @@ uses
   PostProcess, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus,
   MsgDlg, PngImageList, PngSpeedButton, pngimage, VirtualTrees, Math,
   DataManager, PngBitBtn, Logging, ToolWin, ListsTab, DownloadAddons,
-  ExtendedStream, PluginManager, PluginBase;
+  ExtendedStream, PluginManager, PluginBase, TypeDefs;
 
 type
   TBlacklistNodeData = record
@@ -255,6 +255,7 @@ type
     procedure lstPluginsSelectItem(Sender: TObject; Item: TListItem;
       Selected: Boolean);
     procedure lstPluginsItemChecked(Sender: TObject; Item: TListItem);
+    procedure lstOutputFormatSelect(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -269,6 +270,7 @@ type
     lstBlacklist: TBlacklistTree;
     btnReset: TBitBtn;
     FActivePreviewField: TLabeledEdit;
+    OutputFormatLastIndex: Integer;
 
     function ValidatePattern(Text, Patterns: string): string;
     function GetNewID: Integer;
@@ -803,6 +805,8 @@ begin
 
     FTemporaryPostProcesses := TList<TPostProcessBase>.Create;
 
+    lstOutputFormat.ItemIndex := Integer(AppGlobals.OutputFormat);
+    OutputFormatLastIndex := lstOutputFormat.ItemIndex;
     for i := 0 to AppGlobals.PostProcessManager.PostProcessors.Count - 1 do
     begin
       if AppGlobals.PostProcessManager.PostProcessors[i].Hidden then
@@ -1343,6 +1347,7 @@ begin
     else
       AppGlobals.ShortcutMute := 0;
 
+    AppGlobals.OutputFormat := TAudioTypes(lstOutputFormat.ItemIndex);
     for i := 0 to FTemporaryPostProcesses.Count - 1 do
     begin
       PostProcessor := AppGlobals.PostProcessManager.Find(FTemporaryPostProcesses[i]);
@@ -1538,6 +1543,29 @@ begin
   lstIgnoreTitles.Columns[0].Width := lstIgnoreTitles.ClientWidth - 25;
 end;
 
+procedure TfrmSettings.lstOutputFormatSelect(Sender: TObject);
+begin
+  inherited;
+
+  if not FInitialized then
+    Exit;
+
+  if lstOutputFormat.ItemIndex = 0 then
+  begin
+    OutputFormatLastIndex := lstOutputFormat.ItemIndex;
+    Exit;
+  end;
+
+  if AppGlobals.PluginManager.CanEncode(TAudioTypes(lstOutputFormat.ItemIndex)) <> ceOkay then
+    if MsgBox(Handle, _('Additional plugins are needed to use the selected output format. Do you want to download these plugins now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
+      AppGlobals.PluginManager.InstallEncoderFor(Self, TAudioTypes(lstOutputFormat.ItemIndex));
+
+  if AppGlobals.PluginManager.CanEncode(TAudioTypes(lstOutputFormat.ItemIndex)) <> ceOkay then
+    lstOutputFormat.ItemIndex := OutputFormatLastIndex
+  else
+    OutputFormatLastIndex := lstOutputFormat.ItemIndex;
+end;
+
 procedure TfrmSettings.lstPluginsItemChecked(Sender: TObject;
   Item: TListItem);
 var
@@ -1623,8 +1651,8 @@ begin
   btnHelpPostProcess.Enabled := (Item <> nil) and Selected and (TPostProcessBase(Item.Data).Help <> '');
   btnRemove.Enabled := (Item <> nil) and Selected and (TPostProcessBase(Item.Data) is TExternalPostProcess);
 
-  btnMoveUp.Enabled := (Item <> nil) and Selected and (not (Item.Index = 0)) and (not (lstPostProcess.Items[Item.Index - 1].Data = nil));
-  btnMoveDown.Enabled := (Item <> nil) and Selected and (not (Item.Index = lstPostProcess.Items.Count - 1)) and (not (lstPostProcess.Items[Item.Index + 1].Data = nil));
+  btnMoveUp.Enabled := (Item <> nil) and Selected and (not (Item.Index = 0)) and (not (lstPostProcess.Items[Item.Index - 1].GroupID <> Item.GroupID));
+  btnMoveDown.Enabled := (Item <> nil) and Selected and (not (Item.Index = lstPostProcess.Items.Count - 1)) and (not (lstPostProcess.Items[Item.Index + 1].GroupID <> Item.GroupID));
 
   chkOnlyIfCut.Checked := (Item <> nil) and Selected and TPostProcessBase(Item.Data).OnlyIfCut;
   chkOnlyIfCut.Enabled := (Item <> nil) and Selected;
@@ -2082,7 +2110,7 @@ begin
     begin
       Item := lstPostProcess.Items.Add;
       Item.Caption := ExtractFileName(dlgOpen.FileName);
-      Plugin := TExternalPostProcess.Create(dlgOpen.FileName, '"%f"', True, False, GetNewID, 0);
+      Plugin := TExternalPostProcess.Create(dlgOpen.FileName, '"%f"', True, False, GetNewID, 0, 1); // TODO: die 1 hinten..
       FTemporaryPostProcesses.Add(Plugin);
       Item.GroupID := 0; // TODO: !!!
       Item.Checked := Plugin.Active;
@@ -2170,22 +2198,27 @@ end;
 
 procedure TfrmSettings.btnMoveClick(Sender: TObject);
 var
-  Item: TListItem;
-
-var
   TmpItem: TListItem;
   i, j: integer;
 begin
   if lstPostProcess.Selected = nil then
     Exit;
 
-  // TODO: Bewegen von Einträgen funzt nicht.
-
   i := TPostProcessBase(lstPostProcess.Selected.Data).Order;
-  TPostProcessBase(lstPostProcess.Selected.Data).Order := TPostProcessBase(lstPostProcess.Items[lstPostProcess.Selected.Index + 1].Data).Order;
-  TPostProcessBase(lstPostProcess.Items[lstPostProcess.Selected.Index + 1].Data).Order := i;
+  if Sender = btnMoveUp then
+  begin
+    TPostProcessBase(lstPostProcess.Selected.Data).Order := TPostProcessBase(lstPostProcess.Items[lstPostProcess.Selected.Index - 1].Data).Order;
+    TPostProcessBase(lstPostProcess.Items[lstPostProcess.Selected.Index - 1].Data).Order := i;
+  end else
+  begin
+    TPostProcessBase(lstPostProcess.Selected.Data).Order := TPostProcessBase(lstPostProcess.Items[lstPostProcess.Selected.Index + 1].Data).Order;
+    TPostProcessBase(lstPostProcess.Items[lstPostProcess.Selected.Index + 1].Data).Order := i;
+  end;
 
   lstPostProcess.CustomSort(nil, 0);
+
+  btnMoveUp.Enabled := (lstPostProcess.Selected <> nil) and (not (lstPostProcess.Selected.Index = 0)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index - 1].GroupID <> lstPostProcess.Selected.GroupID));
+  btnMoveDown.Enabled := (lstPostProcess.Selected <> nil) and (not (lstPostProcess.Selected.Index = lstPostProcess.Items.Count - 1)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index + 1].GroupID <> lstPostProcess.Selected.GroupID));
 end;
 
 procedure TfrmSettings.btnRemoveClick(Sender: TObject);

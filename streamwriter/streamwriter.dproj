@@ -188,6 +188,8 @@
 				<Form>frmIntro</Form>
 			</DCCReference>
 			<DCCReference Include="postprocess\PostProcessConvert.pas"/>
+			<DCCReference Include="plugin\PluginOggEnc.pas"/>
+			<DCCReference Include="plugin\PluginM4ATools.pas"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

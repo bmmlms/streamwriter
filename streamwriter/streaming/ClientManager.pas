@@ -523,6 +523,7 @@ begin
   begin
     if Assigned(FOnClientRemoved) then
       FOnClientRemoved(Sender);
+
     FClients.Remove(Client);
     Client.Free;
   end;

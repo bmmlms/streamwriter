@@ -615,6 +615,7 @@ begin
       Data.WasCut := FICEThread.RecvStream.SavedWasCut;
       Data.FullTitle := FICEThread.RecvStream.SavedFullTitle;
       Data.StreamTitle := FICEThread.RecvStream.SavedStreamTitle;
+      Data.Bitrate := FICEThread.RecvStream.BitRate;
 
       if not FKilled then
         if not AppGlobals.PostProcessManager.ProcessFile(Self, Data) then

@@ -3,7 +3,7 @@ unit PluginBase;
 interface
 
 uses
-  SysUtils, Windows, Classes, Functions;
+  SysUtils, Windows, Classes, Functions, TypeDefs;
 
 type
   TPluginBase = class
@@ -39,7 +39,7 @@ type
 
     function ShowInitMessage(Handle: THandle): Boolean; virtual;
 
-    function CanEncode(FileExtension: string): Boolean; virtual;
+    function CanEncode(AudioType: TAudioTypes): Boolean; virtual;
 
     property Name: string read FName;
     property Help: string read FHelp;
@@ -64,7 +64,7 @@ begin
   FFilenames.Assign(Source.FFilenames);
 end;
 
-function TPluginBase.CanEncode(FileExtension: string): Boolean;
+function TPluginBase.CanEncode(AudioType: TAudioTypes): Boolean;
 begin
   Result := False;
 end;

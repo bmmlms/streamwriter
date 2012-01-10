@@ -23,6 +23,9 @@ unit TypeDefs;
 
 interface
 
+uses
+  Windows, SysUtils;
+
 type
   TDebugTypes = (dtSocket, dtMessage, dtSong, dtError, dtSaved, dtPlugin);
   TDebugLevels = (dlNormal, dlDebug);
@@ -32,6 +35,32 @@ type
   // Defines all possible types of lists
   TListType = (ltSave, ltIgnore);
 
+function FiletypeToFormat(Filename: string): TAudioTypes;
+function FormatToFiletype(Format: TAudioTypes): string;
+
 implementation
+
+function FiletypeToFormat(Filename: string): TAudioTypes;
+begin
+  Filename := LowerCase(ExtractFileExt(Filename));
+
+  if Filename = '.mp3' then
+    Exit(atMPEG)
+  else if Filename = '.aac' then
+    Exit(atAAC)
+  else if Filename = '.ogg' then
+    Exit(atOGG);
+end;
+
+function FormatToFiletype(Format: TAudioTypes): string;
+begin
+  Result := '';
+  case Format of
+    atNone: ;
+    atMPEG: Result := '.mp3';
+    atAAC: Result := '.aac';
+    atOGG: Result := '.ogg';
+  end;
+end;
 
 end.

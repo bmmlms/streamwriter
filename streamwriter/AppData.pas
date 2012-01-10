@@ -30,7 +30,7 @@ interface
 uses
   Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
   LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions, PostProcess,
-  PluginManager, PostProcessManager, Logging, Base64;
+  PluginManager, PostProcessManager, Logging, Base64, TypeDefs;
 
 type
   // Actions that can be executed in the stream-view
@@ -211,6 +211,7 @@ type
     FMaxSpeed: Cardinal;
     FLastBrowserUpdate: Cardinal;
     FAutomaticFilePattern: string;
+    FOutputFormat: TAudioTypes;
 
     FShortcutPlay: Cardinal;
     FShortcutPause: Cardinal;
@@ -325,6 +326,7 @@ type
     property LastBrowserUpdate: Cardinal read FLastBrowserUpdate write FLastBrowserUpdate;
     // The pattern for automatically recorded files
     property AutomaticFilePattern: string read FAutomaticFilePattern write FAutomaticFilePattern;
+    property OutputFormat: TAudioTypes read FOutputFormat write FOutputFormat;
 
     // Widths of column headers of the mainview
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
@@ -601,7 +603,7 @@ procedure TAppData.Load;
       Result := GetID;
   end;
 var
-  i, DefaultActionTmp, DefaultActionBrowser, DefaultFilterTmp, SilenceBuffer: Integer;
+  i, DefaultActionTmp, DefaultActionBrowser, DefaultFilterTmp, SilenceBuffer, OutputFormatTmp: Integer;
 begin
   inherited;
 
@@ -693,6 +695,13 @@ begin
     FLimitSpeed := False;
   FStorage.Read('LastBrowserUpdate', FLastBrowserUpdate, Trunc(Now));
   FStorage.Read('AutomaticFilePattern', FAutomaticFilePattern, '%s\%a - %t');
+
+  FStorage.Read('OutputFormat', OutputFormatTmp, 0);
+  if (OutputFormatTmp > Ord(High(TAudioTypes))) or
+     (OutputFormatTmp < Ord(Low(TAudioTypes))) then
+    FOutputFormat := atNone
+  else
+    FOutputFormat := TAudioTypes(OutputFormatTmp);
 
   FStorage.Read('AutoTuneInMinKbps', FAutoTuneInMinKbps, 3);
   FStorage.Read('AutoTuneInFormat', FAutoTuneInFormat, 0);
@@ -862,6 +871,7 @@ begin
   FStorage.Write('MaxSpeed', FMaxSpeed);
   FStorage.Write('LastBrowserUpdate', FLastBrowserUpdate);
   FStorage.Write('AutomaticFilePattern', FAutomaticFilePattern);
+  FStorage.Write('OutputFormat', Integer(FOutputFormat));
 
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
@@ -900,11 +910,15 @@ begin
       FStorage.Write('Params_' + IntToStr(n), TExternalPostProcess(FPostProcessManager.PostProcessors[i]).Params, 'Plugins');
       FStorage.Write('OrderExe_' + IntToStr(n), FPostProcessManager.PostProcessors[i].Order, 'Plugins');
       FStorage.Write('OnlyIfCut_' + IntToStr(n), FPostProcessManager.PostProcessors[i].OnlyIfCut, 'Plugins');
+      FStorage.Write('Group_' + IntToStr(n), FPostProcessManager.PostProcessors[i].GroupID, 'Plugins');
       Inc(n);
     end else if (FPostProcessManager.PostProcessors[i] is TInternalPostProcess) then
     begin
       FStorage.Write('Active_' + FPostProcessManager.PostProcessors[i].ClassName, FPostProcessManager.PostProcessors[i].Active, 'Plugins');
-      FStorage.Write('Order_' + FPostProcessManager.PostProcessors[i].ClassName, FPostProcessManager.PostProcessors[i].Order, 'Plugins');
+      if FPostProcessManager.PostProcessors[i].GroupID = 1 then
+        FStorage.Write('Order_' + FPostProcessManager.PostProcessors[i].ClassName, FPostProcessManager.PostProcessors[i].Order + 1000, 'Plugins')
+      else
+        FStorage.Write('Order_' + FPostProcessManager.PostProcessors[i].ClassName, FPostProcessManager.PostProcessors[i].Order, 'Plugins');
       FStorage.Write('OnlyIfCut_' + FPostProcessManager.PostProcessors[i].ClassName, FPostProcessManager.PostProcessors[i].OnlyIfCut, 'Plugins');
       FPostProcessManager.PostProcessors[i].Save;
     end;
@@ -1205,6 +1219,9 @@ initialization
     // auf ein bereits zugewiesenes AppGlobals brauchen.
     AppGlobals.FPluginManager := TPluginManager.Create;
     AppGlobals.FPostProcessManager := TPostProcessManager.Create;
+
+    if AppGlobals.PluginManager.CanEncode(AppGlobals.OutputFormat) <> ceOkay then
+      AppGlobals.OutputFormat := atNone;
   except
     on E: Exception do
     begin

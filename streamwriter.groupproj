@@ -15,6 +15,12 @@
 			<Projects Include="plugins\plugin_faac\plugin_faac.dproj">
 				<Dependencies/>
 			</Projects>
+			<Projects Include="plugins\plugin_m4atools\plugin_m4atools.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="plugins\plugin_oggenc\plugin_oggenc.dproj">
+				<Dependencies/>
+			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -59,14 +65,32 @@
 		<Target Name="plugin_faac:Make">
 			<MSBuild Projects="plugins\plugin_faac\plugin_faac.dproj" Targets="Make"/>
 		</Target>
+		<Target Name="plugin_m4atools">
+			<MSBuild Projects="plugins\plugin_m4atools\plugin_m4atools.dproj"/>
+		</Target>
+		<Target Name="plugin_m4atools:Clean">
+			<MSBuild Projects="plugins\plugin_m4atools\plugin_m4atools.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="plugin_m4atools:Make">
+			<MSBuild Projects="plugins\plugin_m4atools\plugin_m4atools.dproj" Targets="Make"/>
+		</Target>
+		<Target Name="plugin_oggenc">
+			<MSBuild Projects="plugins\plugin_oggenc\plugin_oggenc.dproj"/>
+		</Target>
+		<Target Name="plugin_oggenc:Clean">
+			<MSBuild Projects="plugins\plugin_oggenc\plugin_oggenc.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="plugin_oggenc:Make">
+			<MSBuild Projects="plugins\plugin_oggenc\plugin_oggenc.dproj" Targets="Make"/>
+		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="streamwriter;plugin_lame;plugin_sox;plugin_faac"/>
+			<CallTarget Targets="streamwriter;plugin_lame;plugin_sox;plugin_faac;plugin_m4atools;plugin_oggenc"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="streamwriter:Clean;plugin_lame:Clean;plugin_sox:Clean;plugin_faac:Clean"/>
+			<CallTarget Targets="streamwriter:Clean;plugin_lame:Clean;plugin_sox:Clean;plugin_faac:Clean;plugin_m4atools:Clean;plugin_oggenc:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="streamwriter:Make;plugin_lame:Make;plugin_sox:Make;plugin_faac:Make"/>
+			<CallTarget Targets="streamwriter:Make;plugin_lame:Make;plugin_sox:Make;plugin_faac:Make;plugin_m4atools:Make;plugin_oggenc:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>
