@@ -156,7 +156,7 @@ begin
   ExtFrom := LowerCase(ExtractFileExt(FromFile));
   ExtTo := LowerCase(ExtractFileExt(ToFile));
 
-  if (ExtFrom = '.mp3') and (ExtTo = '.wav') then
+  if ExtTo = '.wav' then
     Result := Convert2WAV(FromFile, ToFile, TerminateFlag)
   else if (ExtFrom = '.wav') and (ExtTo = '.mp3') then
     Result := ConvertWAV2MP3(FromFile, ToFile, TerminateFlag)
@@ -184,6 +184,9 @@ begin
   Result := False;
 
   Channel := BASSStreamCreateFile(False, PChar(FromFile), 0, 0, BASS_STREAM_DECODE {$IFDEF UNICODE}or BASS_UNICODE{$ENDIF});
+
+  if Channel = 0 then
+    Exit;
 
   BASSChannelGetInfo(Channel, ChanInfo);
 	Channels := ChanInfo.chans;

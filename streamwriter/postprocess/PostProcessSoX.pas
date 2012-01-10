@@ -87,7 +87,7 @@ var
 begin
   inherited;
 
-  if LowerCase(ExtractFileExt(FData.Filename)) <> '.mp3' then
+  if LowerCase(ExtractFileExt(FData.Filename)) <> '.wav' then
   begin
     FResult := arImpossible;
     Exit;

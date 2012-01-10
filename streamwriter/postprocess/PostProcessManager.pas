@@ -154,7 +154,7 @@ begin
           Entry.ActiveThread.Resume;
         end;
         Break;
-      end;
+      end;                      // TODO: ein aac stream hat 48 bitrate. man encoded zu mp3. dann hat der auch nur 48, das ist doch mist!
   end;
 
   // TODO: Das SetTags von MP3 wird noch vor dem neu-enkodieren genutzt. das sollte natürlich danach passieren!
