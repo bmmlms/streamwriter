@@ -519,7 +519,7 @@ begin
     FOnClientRefresh(Sender);
   Client := Sender as TICEClient;
 
-  if Client.Killed and (Client.ProcessingList.Count = 0) then
+  if Client.Killed then
   begin
     if Assigned(FOnClientRemoved) then
       FOnClientRemoved(Sender);

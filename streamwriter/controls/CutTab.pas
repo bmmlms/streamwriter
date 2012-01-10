@@ -115,6 +115,7 @@ end;
 
 procedure TCutTab.UpdateButtons;
 begin
+  FToolBar.FSave.Enabled := FCutView.CanSave;
   FToolBar.FPosEdit.Enabled := FCutView.CanSetLine;
   FToolBar.FPosPlay.Enabled := FCutView.CanSetLine;
   FToolBar.FAutoCut.Enabled := FCutView.CanAutoCut;

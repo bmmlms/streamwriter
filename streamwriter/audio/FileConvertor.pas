@@ -126,6 +126,8 @@ type
 
   TFileConvertorProgressEvent = procedure(Sender: TObject; Percent: Integer) of object;
 
+  // TODO: Den hier sollte ich wegmachen, und im CutView nur noch den PostProcessConvertThread nutzen!
+  //       Das wäre ordentlich.
   TFileConvertorThread = class(TThread)
   private
     FFromFile: string;
@@ -152,10 +154,10 @@ type
   private
     FOnProgress: TFileConvertorProgressEvent;
 
-    function Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean): Boolean;
-    function ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PBoolean): Boolean;
+    function Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
+    function ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
   public
-    function Convert(FromFile, ToFile: string; TerminateFlag: PBoolean): Boolean;
+    function Convert(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
 
     property OnProgress: TFileConvertorProgressEvent read FOnProgress write FOnProgress;
   end;
@@ -164,11 +166,13 @@ implementation
 
 { TFileConvertor }
 
-function TFileConvertor.Convert(FromFile, ToFile: string; TerminateFlag: PBoolean): Boolean;
+function TFileConvertor.Convert(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
 var
   ExtFrom: string;
   ExtTo: string;
 begin
+  Result := False;
+
   ExtFrom := LowerCase(ExtractFileExt(FromFile));
   ExtTo := LowerCase(ExtractFileExt(ToFile));
 
@@ -178,7 +182,7 @@ begin
     Result := ConvertWAV2MP3(FromFile, ToFile, TerminateFlag);
 end;
 
-function TFileConvertor.Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean): Boolean;
+function TFileConvertor.Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
 var
   Channel: DWORD;
   Freq: Single;
@@ -283,7 +287,7 @@ begin
   end
 end;
 
-function TFileConvertor.ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PBoolean): Boolean;
+function TFileConvertor.ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
 var
   DLLHandle: THandle;
   ToFileTemp: string;
@@ -349,11 +353,11 @@ begin
       Config.Format.lhv1.dwPsyModel := 0;
       Config.Format.lhv1.dwEmphasis := 0;
       Config.Format.lhv1.bPrivate := False;
-      Config.Format.lhv1.bCRC := False;
+      Config.format.lhv1.bCRC := False;
       Config.Format.lhv1.bCopyright := True;
       Config.Format.lhv1.bOriginal := True;
-      Config.Format.lhv1.bWriteVBRHeader := false;
-      Config.Format.lhv1.bEnableVBR := false;
+      Config.Format.lhv1.bWriteVBRHeader := False;
+      Config.Format.lhv1.bEnableVBR := False;
       Config.Format.lhv1.nVBRQuality := 0;
 
       try
@@ -436,7 +440,7 @@ begin
   end;
 
   if Result then
-    MoveFile(PChar(ToFileTemp), PChar(ToFile));
+    MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);
 end;
 
 { TFileConvertorThread }

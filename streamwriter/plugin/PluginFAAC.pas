@@ -3,10 +3,10 @@ unit PluginFAAC;
 interface
 
 uses
-  SysUtils, Windows, Classes, PluginBase, LanguageObjects;
+  SysUtils, Windows, Classes, PluginBase, LanguageObjects, Functions;
 
 type
-  TPluginLAME = class(TPluginBase)
+  TPluginFAAC = class(TPluginBase)
   private
   protected
   public
@@ -16,6 +16,9 @@ type
     procedure Assign(Source: TPluginBase); override;
 
     procedure Initialize; override;
+    function ShowInitMessage(Handle: THandle): Boolean; override;
+
+    function CanEncode(FileExtension: string): Boolean; override;
   end;
 
 implementation
@@ -23,9 +26,9 @@ implementation
 uses
   AppData;
 
-{ TPluginLAME }
+{ TPluginFAAC }
 
-procedure TPluginLAME.Assign(Source: TPluginBase);
+procedure TPluginFAAC.Assign(Source: TPluginBase);
 begin
   inherited;
 
@@ -35,14 +38,19 @@ begin
   FDownloadPackage := Source.DownloadPackage;
 end;
 
-function TPluginLAME.Copy: TPluginBase;
+function TPluginFAAC.CanEncode(FileExtension: string): Boolean;
 begin
-  Result := TPluginLAME.Create;
+  Result := (LowerCase(FileExtension) = '.aac') or (LowerCase(FileExtension) = '.m4a');
+end;
+
+function TPluginFAAC.Copy: TPluginBase;
+begin
+  Result := TPluginFAAC.Create;
 
   Result.Assign(Self);
 end;
 
-constructor TPluginLAME.Create;
+constructor TPluginFAAC.Create;
 begin
   inherited;
 
@@ -58,12 +66,19 @@ begin
   FFilenames.Add('mp4box.exe');
 end;
 
-procedure TPluginLAME.Initialize;
+procedure TPluginFAAC.Initialize;
 begin
   inherited;
 
   FName := _('Support encoding of MP3s using LAME');
   FHelp := _('This plugin adds support for encoding of MP3s to the application which is useful for postprocessing of recorded songs.');
+end;
+
+function TPluginFAAC.ShowInitMessage(Handle: THandle): Boolean;
+begin
+  Result := MsgBox(Handle, _('WARNING:'#13#10'It is not be allowed in some contries to use this plugin because it contains lame-enc.dll ' +
+                             'that make use of some patented technologies. Please make sure you may use these files in your country. ' +
+                             'If you are sure you may use these files, press "Yes" to continue.'), _('Warning'), MB_ICONWARNING or MB_YESNO or MB_DEFBUTTON2) = IDYES;
 end;
 
 end.

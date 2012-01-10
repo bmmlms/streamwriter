@@ -31,7 +31,7 @@ uses
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
   PlayerManager, PostProcess, PostProcessSoX, DownloadAddons, ConfigureSoX, Logging,
   MsgDlg, DragDrop, DropTarget, DropComboTarget, Mp3FileUtils,
-  MessageBus, AppMessages, FileConvertor;
+  MessageBus, AppMessages, FileConvertor, PluginSoX;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -176,7 +176,6 @@ type
     FState: TCutStates;
     FLineMode: TLineMode;
     FProgressBarLoad: TProgressBar;
-    FWasSaved: Boolean;
     FUndoList: TUndoList;
     FID: Integer;
     FUndoStep: TUndoStep;
@@ -185,6 +184,7 @@ type
     FOriginalFilename: string;
     FWorkingFilename: string;
     FFilesize: UInt64;
+    FSaveSecs: UInt64;
 
     FDropTarget: TDropComboTarget;
 
@@ -193,7 +193,6 @@ type
 
     FFileConvertorThread: TFileConvertorThread;
 
-    function GetSoX: TPostProcessSoX;
     procedure StartProcessing(CmdLine: string);
     function AddUndo: Boolean;
 
@@ -250,6 +249,7 @@ type
     procedure ZoomIn;
     procedure ZoomOut;
 
+    function CanSave: Boolean;
     function CanCut: Boolean;
     function CanUndo: Boolean;
     function CanPlay: Boolean;
@@ -451,7 +451,11 @@ procedure TCutView.FileConvertorError(Sender: TObject);
 begin
   FState := csConvertorError;
 
+  FProgressBarLoad.Visible := False;
 
+  FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
+  FPB.Repaint;
 end;
 
 procedure TCutView.FileConvertorFinish(Sender: TObject);
@@ -459,7 +463,7 @@ begin
   if FState = csEncoding then
   begin
     if Assigned(TCutTab(Owner).OnSaved) then
-      TCutTab(Owner).OnSaved(Owner, FWaveData.Filesize, Trunc(FWaveData.Secs));
+      TCutTab(Owner).OnSaved(Owner, GetFileSize(FOriginalFilename), FSaveSecs);
   end;
 
   LoadFile(FWorkingFilename, True);
@@ -481,19 +485,6 @@ end;
 function TCutView.GetFilename: string;
 begin
   Result := 'asf';
-end;
-
-function TCutView.GetSoX: TPostProcessSoX;
-var
-  i: Integer;
-begin
-  Result := nil;
-  for i := 0 to AppGlobals.PostProcessManager.PostProcessors.Count - 1 do
-    if AppGlobals.PostProcessManager.PostProcessors[i] is TPostProcessSoX then
-    begin
-      Result := TPostProcessSoX(AppGlobals.PostProcessManager.PostProcessors[i]);
-      Break;
-    end;
 end;
 
 function TCutView.GetUndoFilename: string;
@@ -556,7 +547,6 @@ begin
 
     FState := csLoading;
 
-    // TODO: Prüfen ob das Plugin da ist zum re-encoden und wenn nicht rumnerven.
     FState := csDecoding;
 
     CreateConvertor;
@@ -621,7 +611,7 @@ begin
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
-          // TODO: BEi undo ist manchmal die end-pos falsch markiert!
+
 procedure TCutView.Undo;
 var
   UndoStep: TUndoStep;
@@ -629,8 +619,7 @@ begin
   if not CanUndo then
     Exit;
 
-  if (FUndoList.Count > 0) then
-    FreeAndNil(FPlayer);
+  FreeAndNil(FPlayer);
 
   UndoStep := FUndoList[FUndoList.Count - 1];
 
@@ -639,7 +628,6 @@ begin
     FWaveData.Free;
     FWaveData := nil;
 
-    FWasSaved := True;
     LoadFile(FWorkingFilename, True);
 
     DeleteFile(PChar(UndoStep.Filename));
@@ -709,7 +697,9 @@ procedure TCutView.Save;
 begin
   if FPlayer <> nil then
     FreeAndNil(FPlayer);
-  // TODO: Was passiert bei fehlern beim encoden?
+
+  FSaveSecs := Trunc(FWaveData.Secs);
+  FreeAndNil(FWaveData);
 
   CreateConvertor;
   FFileConvertorThread.Convert(FWorkingFilename, FOriginalFilename);
@@ -721,10 +711,12 @@ begin
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
   FPB.Paint;
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
-// TODO: Sicherstellen, dass ALLE temp-files beim schneiden und postprocessing in APPGLOBALS.TEMP landen. und um löschung kümmern!!!
-//       wenn nen cutview auf ist und man das schließt wird gelöscht. wenn hauptfenster auf und cutview und man fenster schließt nicht :(
+// TODO: wenn nen cutview auf ist und man das schließt wird gelöscht. wenn hauptfenster auf und cutview und man fenster schließt nicht :(
 
 function TCutView.SaveCut(OutFile: string; StartPos, EndPos: Cardinal): Boolean;
 begin
@@ -736,12 +728,11 @@ begin
   end;
 
   try
-    //MsgBus.SendMessage(TFileModifyMsg.Create(FOriginalFilename));
+    //MsgBus.SendMessage(TFileModifyMsg.Create(FOriginalFilename)); TODO: Relevant??
 
     if FWaveData.Save(OutFile, StartPos, EndPos) then
     begin
       FreeAndNil(FWaveData);
-      FWasSaved := True;
       LoadFile(OutFile, True);
 
       Result := True;
@@ -749,11 +740,10 @@ begin
       FWorkingFilename := OutFile;
     end else
     begin
-      MsgBox(GetParentForm(Self).Handle, _('The file could not be saved.'#13#10'Please make sure the file is not in use by another application.'), _('Info'), MB_ICONINFORMATION);
+      MsgBox(GetParentForm(Self).Handle, _('The file could not be saved.'#13#10'Please make sure there is enough free space/the file is not in use by another application.'), _('Info'), MB_ICONINFORMATION);
     end;
   finally
     // Wenn Result = True wird FPlayer in LoadFile() neu erstellt
-    // TODO: Funzt Result=False noch??? TESTEN!!!
     if not Result then
     begin
       FPlayer := TPlayer.Create;
@@ -828,7 +818,6 @@ procedure TCutView.ProcessThreadError(Sender: TObject);
 var
   Msg: string;
 begin
-  FWasSaved := False;
   Msg := FProcessThread.ProcessOutput;
   FProcessThread := nil;
   MsgBox(GetParentForm(Self).Handle, Format(_('An error occured while processing the file:'#13#10'%s'), [Msg]) , _('Error'), MB_ICONERROR);
@@ -840,7 +829,6 @@ procedure TCutView.ProcessThreadSuccess(Sender: TObject);
 begin
   FProcessThread := nil;
   FState := csReady;
-  FWasSaved := True;
 
   LoadFile(FWorkingFilename, True);
 
@@ -870,16 +858,17 @@ begin
   if FWaveData <> nil then
     FreeAndNil(FWaveData);
 
-  TempFile := RemoveFileExt(FWorkingFilename) + '_soxconvert' + ExtractFileExt(FWorkingFilename);
+  TempFile := RemoveFileExt(FWorkingFilename) + '_sox' + ExtractFileExt(FWorkingFilename);
   CmdLine := StringReplace(CmdLine, '[[TEMPFILE]]', TempFile, [rfReplaceAll]);
 
-  FWasSaved := True;
   FState := csWorking;
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
   FPB.Paint;
 
-  FProcessThread := TProcessThread.Create(CmdLine, ExtractFilePath(GetSoX.SoXExe), FWorkingFilename, TempFile);
+  FProcessThread := TProcessThread.Create(CmdLine,
+    IncludeTrailingBackslash(ExtractFilePath((AppGlobals.PluginManager.Find(TPluginSoX) as TPluginSoX).EXEPath)),
+    FWorkingFilename, TempFile);
   FProcessThread.OnSuccess := ProcessThreadSuccess;
   FProcessThread.OnError := ProcessThreadError;
   FProcessThread.Resume;
@@ -915,7 +904,7 @@ begin
   if not CheckSoX then
     Exit;
 
-  CmdLine := '"' + GetSoX.SoXExe + '" --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ';
+  CmdLine := '"' + (AppGlobals.PluginManager.Find(TPluginSoX) as TPluginSoX).EXEPath + '" --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ';
 
   if Fadein then
   begin
@@ -979,7 +968,7 @@ begin
   if not CheckSoX then
     Exit;
 
-  F := TfrmConfigureSox.Create(Self, GetSox, False, False, False, 5, 5, False, False, 3, 3,
+  F := TfrmConfigureSox.Create(Self, (AppGlobals.PostProcessManager.Find(TPostProcessSoX) as TPostProcessSoX), False, False, False, 5, 5, False, False, 3, 3,
     Trunc(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec));
   try
     F.ShowModal;
@@ -1010,7 +999,7 @@ begin
         if not AddUndo then
           Exit;
 
-        CmdLine := '"' + GetSoX.SoXExe + '" --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ' + CmdLine;
+        CmdLine := '"' + (AppGlobals.PluginManager.Find(TPluginSoX) as TPluginSoX).EXEPath + '" --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ' + CmdLine;
 
         StartProcessing(CmdLine);
       end;
@@ -1095,6 +1084,11 @@ begin
   Result := FWaveData <> nil;
 end;
 
+function TCutView.CanSave: Boolean;
+begin
+  Result := (FWaveData <> nil);
+end;
+
 function TCutView.CanSetLine: Boolean;
 begin
   Result := FWaveData <> nil;
@@ -1153,8 +1147,6 @@ begin
 
   FState := csReady;
 
-  FWasSaved := False;
-
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 
@@ -1166,7 +1158,6 @@ end;
 procedure TCutView.ThreadScanError(Sender: TObject);
 begin
   FProgressBarLoad.Visible := False;
-  FWasSaved := False;
   FState := csError;
 
   FPB.BuildBuffer;
@@ -1183,7 +1174,6 @@ end;
 
 procedure TCutView.ThreadTerminate(Sender: TObject);
 begin
-  FWasSaved := False;
   if FProgressBarLoad.Visible then
     FProgressBarLoad.Visible := False;
   FScanThread := nil;
@@ -1271,7 +1261,7 @@ begin
     csError:
       TextWrite := _('Error loading file');
     csConvertorError:
-      TextWrite := _('Error converting file');
+      TextWrite := _('Error decoding/encoding file');
     csWorking:
       TextWrite := _('Working...');
     csDecoding:
@@ -1447,7 +1437,7 @@ begin
 
   FDrawBuf.Canvas.Draw(0, 0, FWaveBuf);
 
-  if (FCutView.FWaveData <> nil) and (not (FCutView.FState in [csWorking, csDecoding, csEncoding])) then
+  if (FCutView.FWaveData <> nil) and (not (FCutView.FState in [csWorking, csDecoding, csEncoding, csConvertorError])) then
   begin
     DrawLine(FStartLine, FStartColor);
     DrawLine(FEndLine, FEndColor);
@@ -1800,6 +1790,8 @@ var
   ID3V2: TID3v2Tag;
 begin
   inherited;
+
+  // TODO: Hier mit ID3 tags hampeln ist fail!!! das muss anders laufen.
 
   ID3V1 := TID3v1Tag.Create;
   ID3V2 := TID3v2Tag.Create;

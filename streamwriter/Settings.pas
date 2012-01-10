@@ -90,7 +90,7 @@ type
     lblDefaultFilter: TLabel;
     lstDefaultFilter: TComboBox;
     dlgOpen: TOpenDialog;
-    btnAddUp: TButton;
+    btnAdd: TButton;
     btnRemove: TButton;
     txtApp: TLabeledEdit;
     txtAppParams: TLabeledEdit;
@@ -180,8 +180,10 @@ type
     chkManualSilenceLevel: TCheckBox;
     pnlPlugins: TPanel;
     lstPlugins: TListView;
-    Label20: TLabel;
     btnHelpPlugin: TPngSpeedButton;
+    lblOutputFormat: TLabel;
+    Label20: TLabel;
+    lstOutputFormat: TComboBox;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -191,7 +193,7 @@ type
     procedure chkSearchSilenceClick(Sender: TObject);
     procedure chkTrayClick(Sender: TObject);
     procedure btnBrowseAppClick(Sender: TObject);
-    procedure btnAddUpClick(Sender: TObject);
+    procedure btnAddClick(Sender: TObject);
     procedure txtAppParamsChange(Sender: TObject);
     procedure btnRemoveClick(Sender: TObject);
     procedure btnHelpClick(Sender: TObject);
@@ -803,7 +805,11 @@ begin
 
     for i := 0 to AppGlobals.PostProcessManager.PostProcessors.Count - 1 do
     begin
+      if AppGlobals.PostProcessManager.PostProcessors[i].Hidden then
+        Continue;
+
       Item := lstPostProcess.Items.Add;
+      Item.GroupID := AppGlobals.PostProcessManager.PostProcessors[i].GroupID;
       Item.Caption := AppGlobals.PostProcessManager.PostProcessors[i].Name;
       Item.Checked := AppGlobals.PostProcessManager.PostProcessors[i].Active;
       Item.Data := AppGlobals.PostProcessManager.PostProcessors[i].Copy;
@@ -1544,6 +1550,8 @@ begin
   lstPlugins.OnItemChecked := nil;
   Item.Checked := AppGlobals.PluginManager.EnablePlugin(Self, TPluginBase(Item.Data), True);
   lstPlugins.OnItemChecked := lstPluginsItemChecked;
+
+  lstPlugins.Selected := Item;
 end;
 
 procedure TfrmSettings.lstPluginsResize(Sender: TObject);
@@ -1577,6 +1585,9 @@ begin
   if not FInitialized then
     Exit;
 
+  if Item.Data = nil then
+    Exit;
+
   if TObject(Item.Data) is TInternalPostProcess then
   begin
     lstPostProcess.OnItemChecked := nil;
@@ -1590,6 +1601,8 @@ begin
   for i := 0 to lstPlugins.Items.Count - 1 do
     lstPlugins.Items[i].Checked := TPluginBase(lstPlugins.Items[i].Data).PackageDownloaded;
   lstPlugins.OnItemChecked := lstPluginsItemChecked;
+
+  lstPostProcess.Selected := Item;
 end;
 
 procedure TfrmSettings.lstPostProcessResize(Sender: TObject);
@@ -1602,13 +1615,16 @@ end;
 procedure TfrmSettings.lstPostProcessSelectItem(Sender: TObject;
   Item: TListItem; Selected: Boolean);
 begin
+  if Item.Data = nil then
+    Exit;
+
   btnConfigure.Enabled := False;
 
   btnHelpPostProcess.Enabled := (Item <> nil) and Selected and (TPostProcessBase(Item.Data).Help <> '');
   btnRemove.Enabled := (Item <> nil) and Selected and (TPostProcessBase(Item.Data) is TExternalPostProcess);
 
-  btnMoveUp.Enabled := (Item <> nil) and Selected and (Item.Index > 0);
-  btnMoveDown.Enabled := (Item <> nil) and Selected and (Item.Index < lstPostProcess.Items.Count - 1);
+  btnMoveUp.Enabled := (Item <> nil) and Selected and (not (Item.Index = 0)) and (not (lstPostProcess.Items[Item.Index - 1].Data = nil));
+  btnMoveDown.Enabled := (Item <> nil) and Selected and (not (Item.Index = lstPostProcess.Items.Count - 1)) and (not (lstPostProcess.Items[Item.Index + 1].Data = nil));
 
   chkOnlyIfCut.Checked := (Item <> nil) and Selected and TPostProcessBase(Item.Data).OnlyIfCut;
   chkOnlyIfCut.Enabled := (Item <> nil) and Selected;
@@ -1633,7 +1649,7 @@ begin
     btnRemove.Enabled := False;
   end;
 
-  btnConfigure.Enabled := Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
+  btnConfigure.Enabled := (Item <> nil) and Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
 end;
 
 procedure TfrmSettings.optAdjustClick(Sender: TObject);
@@ -2054,7 +2070,7 @@ begin
   RemoveGray(lstIgnoreTitles);
 end;
 
-procedure TfrmSettings.btnAddUpClick(Sender: TObject);
+procedure TfrmSettings.btnAddClick(Sender: TObject);
 var
   Item: TListItem;
   Plugin: TExternalPostProcess;
@@ -2068,6 +2084,7 @@ begin
       Item.Caption := ExtractFileName(dlgOpen.FileName);
       Plugin := TExternalPostProcess.Create(dlgOpen.FileName, '"%f"', True, False, GetNewID, 0);
       FTemporaryPostProcesses.Add(Plugin);
+      Item.GroupID := 0; // TODO: !!!
       Item.Checked := Plugin.Active;
       Item.Data := Plugin;
       Item.ImageIndex := 5;
@@ -2154,23 +2171,21 @@ end;
 procedure TfrmSettings.btnMoveClick(Sender: TObject);
 var
   Item: TListItem;
+
+var
+  TmpItem: TListItem;
+  i, j: integer;
 begin
   if lstPostProcess.Selected = nil then
     Exit;
 
-  lstPostProcess.Items.BeginUpdate;
-  if Sender = btnMoveUp then
-    Item := lstPostProcess.Items.Insert(lstPostProcess.Selected.Index - 1)
-  else
-    Item := lstPostProcess.Items.Insert(lstPostProcess.Selected.Index + 2);
-  Item.Caption := lstPostProcess.Selected.Caption;
-  Item.Checked := lstPostProcess.Selected.Checked;;
-  Item.Data := lstPostProcess.Selected.Data;
-  Item.ImageIndex := lstPostProcess.Selected.ImageIndex;
-  lstPostProcess.DeleteSelected;
+  // TODO: Bewegen von Einträgen funzt nicht.
 
-  Item.Selected := True;
-  lstPostProcess.Items.EndUpdate;
+  i := TPostProcessBase(lstPostProcess.Selected.Data).Order;
+  TPostProcessBase(lstPostProcess.Selected.Data).Order := TPostProcessBase(lstPostProcess.Items[lstPostProcess.Selected.Index + 1].Data).Order;
+  TPostProcessBase(lstPostProcess.Items[lstPostProcess.Selected.Index + 1].Data).Order := i;
+
+  lstPostProcess.CustomSort(nil, 0);
 end;
 
 procedure TfrmSettings.btnRemoveClick(Sender: TObject);

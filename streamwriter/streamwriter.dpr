@@ -117,7 +117,8 @@ uses
   PluginBase in 'plugin\PluginBase.pas',
   PluginFAAC in 'plugin\PluginFAAC.pas',
   PluginSoX in 'plugin\PluginSoX.pas',
-  Intro in 'Intro.pas' {frmIntro};
+  Intro in 'Intro.pas' {frmIntro},
+  PostProcessConvert in 'postprocess\PostProcessConvert.pas';
 
 {$SetPEOptFlags $0140}
 

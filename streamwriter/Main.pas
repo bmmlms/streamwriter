@@ -637,7 +637,7 @@ begin
 
   if AppGlobals.LastUsedVersion.AsString = '3.6.0.0' then
   begin
-    MsgBox(Handle, _('Because many internals from the last version have changed you need to reconfigure options regarding plugins and postprocessing using the settings window.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('Because many internals of the last version have changed you need to reconfigure options regarding plugins and postprocessing using the settings window.'), _('Info'), MB_ICONINFORMATION);
   end;
 
   tmrAutoSave.Enabled := True;
@@ -1374,6 +1374,18 @@ var
 begin
   Application.ProcessMessages;
 
+  if not AppGlobals.PluginManager.CanEncode(ExtractFileExt(Filename)) then
+  begin
+    if MsgBox(Handle, _('To cut the selected file the required encoder-plugin needs to be installed. Do you want to download and install the required plugin now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+    begin
+      // TODO: Hier auch patent warnmeldung zeigen.... jedesmal vorm installen!!! das muss mit ins EnablePlugin() funktion eigentlich.
+      if not AppGlobals.PluginManager.InstallEncoderFor(Self, ExtractFileExt(Filename)) then
+        Exit;
+    end else
+      Exit;
+  end;
+
+  // TODO: Macht die Message noch sinn, wenn ich per hand re-encode? wegen VBR...
   if TfrmMsgDlg.ShowMsg(Self, _('You dragged an unknown file into streamWriter. If this file has VBR, it cannot be cut correctly. No responsibility for broken files after editing will be taken! If you are not sure what you are doing, press ''Cancel''.'), 11, btOKCancel) <> mtCancel then
   begin
     tabCut := TCutTab(Sender);
@@ -1412,6 +1424,17 @@ begin
      (LowerCase(ExtractFileExt(Track.Filename)) <> '.m4a') then
   begin
     Exit;
+  end;
+
+  if not AppGlobals.PluginManager.CanEncode(ExtractFileExt(Track.Filename)) then
+  begin
+    if MsgBox(Handle, _('To cut the selected file the required encoder-plugin needs to be installed. Do you want to download and install the required plugin now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+    begin
+      // TODO: Hier auch patent warnmeldung zeigen.... jedesmal vorm installen!!! das muss mit ins EnablePlugin() funktion eigentlich.
+      if not AppGlobals.PluginManager.InstallEncoderFor(Self, ExtractFileExt(Track.Filename)) then
+        Exit;
+    end else
+      Exit;
   end;
 
   tabCut := TCutTab(pagMain.FindCut(Track.Filename));

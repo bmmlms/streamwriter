@@ -55,7 +55,7 @@ begin
   FDownloadPackage := 'plugin_sox.dll';
 
   FFilesDir := AppGlobals.TempDir + 'plugin_sox\';
-  FEXEPath := FFilesDir + '';
+  FEXEPath := FFilesDir + 'sox.exe';
 
   FFilenames.Add('libgomp-1.dll');
   FFilenames.Add('pthreadgc2.dll');

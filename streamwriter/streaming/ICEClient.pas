@@ -19,14 +19,14 @@
 }
 
 { This unit contains the ICEClient which connects to a stream and records it.
-  It makes heavy use of ICEThread which uses ICEThread to record songs }
+  It makes heavy use of ICEThread which uses TICEThread to record songs }
 unit ICEClient;
 
 interface
 
 uses
   SysUtils, Windows, StrUtils, Classes, ICEThread, ICEStream, AppData,
-  Generics.Collections, Functions, Sockets, PostProcess, LanguageObjects,
+  Generics.Collections, Functions, Sockets, LanguageObjects,
   DataManager, HomeCommunication, PlayerManager, Notifications,
   Logging, TypeDefs;
 
@@ -35,9 +35,6 @@ type
   TICEClientStates = (csConnecting, csConnected, csStopping, csStopped, csRetrying, csIOError);
 
   TMayConnectResults = (crOk, crNoFreeSpace, crNoBandwidth);
-
-  TDebugTypes = (dtSocket, dtMessage, dtSong, dtError, dtSaved, dtPlugin);
-  TDebugLevels = (dlNormal, dlDebug);
 
   TICEClient = class;
 
@@ -76,7 +73,6 @@ type
 
     FDebugLog: TDebugLog;
     FICEThread: TICEThread;
-    FProcessingList: TProcessingList;
 
     FURLsIndex: Integer;
     FCurrentURL: string;
@@ -132,8 +128,6 @@ type
     procedure ThreadRecordingStopped(Sender: TSocketThread);
     procedure ThreadBeforeEnded(Sender: TSocketThread);
     procedure ThreadTerminated(Sender: TObject);
-
-    procedure PluginThreadTerminate(Sender: TObject);
   public
     constructor Create(Manager: TObject; StartURL: string); overload;
     constructor Create(Manager: TObject; ID, Bitrate: Cardinal; Name, StartURL: string); overload;
@@ -172,8 +166,6 @@ type
     property ContentType: string read FContentType;
     property Filename: string read FFilename;
 
-    property ProcessingList: TProcessingList read FProcessingList;
-
     property OnDebug: TNotifyEvent read FOnDebug write FOnDebug;
     property OnRefresh: TNotifyEvent read FOnRefresh write FOnRefresh;
     property OnAddRecent: TNotifyEvent read FOnAddRecent write FOnAddRecent;
@@ -192,7 +184,7 @@ type
 implementation
 
 uses
-  ClientManager;
+  ClientManager, PostProcess;
 
 { TICEClient }
 
@@ -227,7 +219,6 @@ begin
   Players.AddPlayer(Self);
 
   FDebugLog := TDebugLog.Create;
-  FProcessingList := TProcessingList.Create;
 
   FEntry := TStreamEntry.Create;
   FEntry.Settings.Assign(AppGlobals.StreamSettings);
@@ -389,7 +380,7 @@ begin
   Players.RemovePlayer(Self);
   FEntry.Free;
   FDebugLog.Free;
-  FreeAndNil(FProcessingList);
+
   inherited;
 end;
 
@@ -409,7 +400,7 @@ end;
 
 function TICEClient.FGetActive: Boolean;
 begin
-  Result := ((FState <> csStopped) and (FState <> csIOError)) or (FProcessingList.Count > 0);
+  Result := ((FState <> csStopped) and (FState <> csIOError));
 end;
 
 function TICEClient.FGetRecording: Boolean;
@@ -601,23 +592,19 @@ begin
     else
       FEntry.AudioType := '';
   end;
-
-//  if Assigned(FOnRefresh) then
-//    FOnRefresh(Self);
 end;
 
 procedure TICEClient.ThreadSongSaved(Sender: TSocketThread);
 var
   Data: TPluginProcessInformation;
-  Entry: TProcessingEntry;
 begin
   try
-    // Pluginbearbeitung starten
     if not FICEThread.RecvStream.SavedIsStreamFile then
     begin
       FEntry.SongsSaved := FEntry.SongsSaved + 1;
 
       Data.Filename := FICEThread.RecvStream.SavedFilename;
+      Data.WorkFilename := '';
       Data.Station := FEntry.Name;
       Data.Artist := FICEThread.RecvStream.SavedArtist;
       Data.Title := FICEThread.RecvStream.SavedTitle;
@@ -630,35 +617,23 @@ begin
       Data.StreamTitle := FICEThread.RecvStream.SavedStreamTitle;
 
       if not FKilled then
-      begin
-        Entry := AppGlobals.PostProcessManager.ProcessFile(Data);
-        if Entry <> nil then
+        if not AppGlobals.PostProcessManager.ProcessFile(Self, Data) then
         begin
-          WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]), dtMessage, dlDebug);
-
-          Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
-          Entry.ActiveThread.Resume;
-          FProcessingList.Add(Entry);
+          if Assigned(FOnSongSaved) then
+            FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
+              FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
+              FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut,
+              FICEThread.RecvStream.SavedFullTitle, False);
+          if Assigned(FOnRefresh) then
+            FOnRefresh(Self);
         end;
-      end;
 
-      if FProcessingList.Count = 0 then
+      if FAutoRemove then
       begin
-        // Wenn kein Plugin die Verarbeitung übernimmt, gilt die Datei
-        // jetzt schon als gespeichert. Ansonsten macht das PluginThreadTerminate.
-        if Assigned(FOnSongSaved) then
-          FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
-            FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
-            FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut,
-            FICEThread.RecvStream.SavedFullTitle, False);
-        if Assigned(FOnRefresh) then
-          FOnRefresh(Self);
-
-        if FAutoRemove then
+        if Assigned(FOnDisconnected) and (FICEThread = nil) then
         begin
           Kill;
-          if Assigned(FOnDisconnected) and (FICEThread = nil) then
-            FOnDisconnected(Self);
+          FOnDisconnected(Self);
         end;
       end;
     end else
@@ -674,91 +649,12 @@ begin
   except
     on E: Exception do
     begin
-      WriteDebug(Format(_('Could not postprocess song: %s'), [E.Message]), dtError, dlNormal);
+      WriteDebug(Format(_('Could not postprocess song: %s'), [E.Message]), dtError, dlNormal); // TODO: Falsche meldung..
     end;
   end;
 
   if FICEThread.RecvStream.SavedFullTitle then
     HomeComm.SendClientStats(AutoRemove);
-end;
-
-procedure TICEClient.PluginThreadTerminate(Sender: TObject);
-var
-  i: Integer;
-  Processed: Boolean;
-  Entry: TProcessingEntry;
-begin
-  for i := 0 to FProcessingList.Count - 1 do
-  begin
-    if FProcessingList[i].ActiveThread = Sender then
-    begin
-      Entry := FProcessingList[i];
-
-      case Entry.ActiveThread.Result of
-        arWin:
-          WriteDebug(Format(_('Plugin "%s" successfully finished.'), [Entry.ActiveThread.Plugin.Name]), dtPlugin, dlNormal);
-          {
-          if Entry.ActiveThread.Output <> '' then
-            WriteDebug(Format(_('Plugin "%s" successfully finished.'), [Entry.ActiveThread.Plugin.Name]), Entry.ActiveThread.Output, dlNormal)
-          else
-            WriteDebug(Format(_('Plugin "%s" successfully finished.'), [Entry.ActiveThread.Plugin.Name]), dlNormal);
-          }
-        arTimeout:
-          WriteDebug(Format(_('Plugin "%s" timed out.'), [Entry.ActiveThread.Plugin.Name]), dtError, dlNormal);
-          {
-          if Entry.ActiveThread.Output <> '' then
-            WriteDebug(Format(_('Plugin "%s" timed out.'), [Entry.ActiveThread.Plugin.Name]), Entry.ActiveThread.Output, dlNormal)
-          else
-            WriteDebug(Format(_('Plugin "%s" timed out.'), [Entry.ActiveThread.Plugin.Name]), dlNormal);
-          }
-        arFail:
-          WriteDebug(Format(_('Plugin "%s" failed.'), [Entry.ActiveThread.Plugin.Name]), dtError, dlNormal);
-      end;
-
-      // Eine externe App könnte das File gelöscht haben
-      if Entry.Data.Filesize <> High(UInt64) then // GetFileSize = Int64 => -1
-      begin
-        Processed := AppGlobals.PostProcessManager.ProcessFile(Entry);
-        if Processed then
-        begin
-          WriteDebug(Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]), dtMessage, dlDebug);
-
-          Entry.ActiveThread.OnTerminate := PluginThreadTerminate;
-          Entry.ActiveThread.Resume;
-        end else
-        begin
-          WriteDebug('All plugins done', dtMessage, dlDebug);
-
-          if Assigned(FOnSongSaved) then
-            FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.StreamTitle,
-              Entry.Data.Artist, Entry.Data.Title, Entry.Data.Filesize, Entry.Data.Length,
-              Entry.Data.WasCut, Entry.Data.FullTitle, False);
-          if Assigned(FOnRefresh) then
-            FOnRefresh(Self);
-
-          Entry.Free;
-          FProcessingList.Delete(i);
-        end;
-      end else
-      begin
-        WriteDebug(_('An external application or plugin has deleted the saved file.'), dtError, dlNormal);
-
-        Entry.Free;
-        FProcessingList.Delete(i);
-      end;
-
-      if FAutoRemove then
-      begin
-        if Assigned(FOnDisconnected) and (FICEThread = nil) and (FProcessingList.Count = 0) then
-        begin
-          Kill;
-          FOnDisconnected(Self);
-        end;
-      end;
-
-      Break;
-    end;
-  end;
 end;
 
 procedure TICEClient.ThreadSpeedChanged(Sender: TSocketThread);
@@ -873,11 +769,8 @@ begin
 
   if DiedThread.RecvStream.RemoveClient or AutoRemove then
   begin
-    if FProcessingList.Count = 0 then
-      Kill
-    else
-      Disconnect;
-    if Assigned(FOnDisconnected) and (FICEThread = nil) and (FProcessingList.Count = 0) then
+    Disconnect;
+    if Assigned(FOnDisconnected) and (FICEThread = nil) then
       FOnDisconnected(Self);
     Exit;
   end;
@@ -887,7 +780,7 @@ begin
     StopRecording;
     if not DiedThread.Playing then
     begin
-      if Assigned(FOnDisconnected) and (FICEThread = nil) and (FProcessingList.Count = 0) then
+      if Assigned(FOnDisconnected) and (FICEThread = nil) then
         FOnDisconnected(Self);
       FState := csStopping;
     end;

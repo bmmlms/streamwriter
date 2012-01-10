@@ -23,12 +23,12 @@ interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, Functions,
-  LanguageObjects, Logging, PluginBase;
+  LanguageObjects, Logging, PluginBase, TypeDefs;
 
 type
   TPostProcessBase = class;
   TExternalPostProcess = class;
-  TProcessThreadBase = class;
+  TPostProcessThreadBase = class;
   TFilenameArray = array of string;
 
   TActResults = (arWin, arTimeout, arFail, arImpossible);
@@ -38,7 +38,7 @@ type
   TConfigure = function(Handle: Cardinal; ShowMessages: Boolean): Boolean; stdcall;
 
   TPluginProcessInformation = record
-    Filename, Station, Artist, Album, Title: string;
+    Filename, WorkFilename, ReEncodedFilename, Station, Artist, Album, Title: string;
     TrackNumber: Cardinal;
     Filesize: UInt64;
     Length: UInt64;
@@ -50,15 +50,24 @@ type
 
   TProcessingEntry = class
   private
-    FActiveThread: TProcessThreadBase;
+    // The owner is a TICEClient
+    // TODO: der zeigt auf nen iceclient. der kann aber entfernt werden. das muss hier mitbekommen werden, dann GENILT werden.
+    FOwner: TObject;
+    FNeedsWave: Boolean;
+    FOutputFormat: TAudioTypes;
+
+    FActiveThread: TPostProcessThreadBase;
     FData: PPluginProcessInformation;
     FPluginsProcessed: TList<TPostProcessBase>;
   public
-    constructor Create(ActiveThread: TProcessThreadBase;
-      Data: TPluginProcessInformation; FirstPlugin: TPostProcessBase);
+    constructor Create(Owner: TObject; ActiveThread: TPostProcessThreadBase;
+      Data: TPluginProcessInformation; OutputFormat: TAudioTypes);
     destructor Destroy; override;
 
-    property ActiveThread: TProcessThreadBase read FActiveThread write FActiveThread;
+    property Owner: TObject read FOwner;
+    property NeedsWave: Boolean read FNeedsWave write FNeedsWave;
+    property ActiveThread: TPostProcessThreadBase read FActiveThread write FActiveThread;
+    property OutputFormat: TAudioTypes read FOutputFormat;
     property Data: PPluginProcessInformation read FData;
     property PluginsProcessed: TList<TPostProcessBase> read FPluginsProcessed;
   end;
@@ -67,7 +76,7 @@ type
 
   end;
 
-  TProcessThreadBase = class(TThread)
+  TPostProcessThreadBase = class(TThread)
   private
     FPlugin: TPostProcessBase;
     FOutput: string;
@@ -88,17 +97,20 @@ type
   protected
     FCopied: Boolean;
 
+    FNeedsWave: Boolean;
+    FHidden: Boolean;
     FCanConfigure: Boolean;
     FName: string;
     FHelp: string;
     FActive: Boolean;
     FOrder: Integer;
     FOnlyIfCut: Boolean;
+    FGroupID: Integer;
   public
     constructor Create;
 
     function CanProcess(Data: PPluginProcessInformation): Boolean; virtual;
-    function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; virtual; abstract;
+    function ProcessFile(Data: PPluginProcessInformation): TPostProcessThreadBase; virtual; abstract;
     function Copy: TPostProcessBase; virtual; abstract;
     procedure Assign(Source: TPostProcessBase); virtual;
     procedure Initialize; virtual;
@@ -106,12 +118,15 @@ type
     procedure Save; virtual;
     procedure LoadSharedSettings; virtual;
 
+    property NeedsWave: Boolean read FNeedsWave;
+    property Hidden: Boolean read FHidden;
     property CanConfigure: Boolean read FCanConfigure;
     property Name: string read FName;
     property Help: string read FHelp;
     property Active: Boolean read FActive write FActive;
     property Order: Integer read FOrder write FOrder;
     property OnlyIfCut: Boolean read FOnlyIfCut write FOnlyIfCut;
+    property GroupID: Integer read FGroupID;
     property Copied: Boolean read FCopied;
   end;
 
@@ -132,7 +147,7 @@ type
     property DependenciesMet: Boolean read FGetDependenciesMet;
   end;
 
-  TExternalProcessThread = class(TProcessThreadBase)
+  TExternalProcessThread = class(TPostProcessThreadBase)
   private
     FExe: string;
     FParams: string;
@@ -153,7 +168,7 @@ type
   protected
   public
     constructor Create(Exe, Params: string; Active, OnlyIfCut: Boolean; Identifier, Order: Integer);
-    function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
+    function ProcessFile(Data: PPluginProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
 
@@ -169,12 +184,14 @@ uses
 
 { TProcessingEntry }
 
-constructor TProcessingEntry.Create(ActiveThread: TProcessThreadBase;
-  Data: TPluginProcessInformation; FirstPlugin: TPostProcessBase);
+constructor TProcessingEntry.Create(Owner: TObject; ActiveThread: TPostProcessThreadBase;
+  Data: TPluginProcessInformation; OutputFormat: TAudioTypes);
 begin
   inherited Create;
 
+  FOwner := Owner;
   FActiveThread := ActiveThread;
+  FOutputFormat := OutputFormat;
 
   New(FData);
 
@@ -191,8 +208,6 @@ begin
   FData.StreamTitle := Data.StreamTitle;
 
   FPluginsProcessed := TList<TPostProcessBase>.Create;
-  if FirstPlugin <> nil then
-    FPluginsProcessed.Add(FirstPlugin);
 end;
 
 destructor TProcessingEntry.Destroy;
@@ -205,7 +220,7 @@ end;
 
 { TProcessThreadBase }
 
-constructor TProcessThreadBase.Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
+constructor TPostProcessThreadBase.Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
 begin
   inherited Create(True);
 
@@ -216,7 +231,7 @@ begin
   FOutput := '';
 end;
 
-destructor TProcessThreadBase.Destroy;
+destructor TPostProcessThreadBase.Destroy;
 begin
 
   inherited;
@@ -227,6 +242,7 @@ end;
 constructor TExternalProcessThread.Create(Exe, Params: string; Data: PPluginProcessInformation; Plugin: TExternalPostProcess);
 begin
   inherited Create(Data, Plugin);
+
   FreeOnTerminate := True;
   FExe := Exe;
   FParams := Params;
@@ -300,7 +316,7 @@ begin
   end;
 end;
 
-{ TExternalPlugin }
+{ TExternalPostProcess }
 
 procedure TExternalPostProcess.Assign(Source: TPostProcessBase);
 begin
@@ -334,7 +350,7 @@ begin
 end;
 
 function TExternalPostProcess.ProcessFile(
-  Data: PPluginProcessInformation): TProcessThreadBase;
+  Data: PPluginProcessInformation): TPostProcessThreadBase;
 var
   Thread: TExternalProcessThread;
 begin
@@ -342,7 +358,7 @@ begin
   Result := Thread;
 end;
 
-{ TPluginBase }
+{ TPostProcessBase }
 
 procedure TPostProcessBase.Assign(Source: TPostProcessBase);
 begin
@@ -380,7 +396,7 @@ begin
 
 end;
 
-{ TInternalPlugin }
+{ TInternalPostProcess }
 
 constructor TInternalPostProcess.Create;
 begin

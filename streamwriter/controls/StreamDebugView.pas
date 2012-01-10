@@ -27,7 +27,7 @@ uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
   DataManager, VirtualTrees, LanguageObjects, GUIFunctions,
   Generics.Collections, Graphics, Forms, ICEClient, Clipbrd, AppData,
-  Logging, Math;
+  Logging, Math, TypeDefs;
 
 type
   TDebugView = class(TVirtualStringTree)

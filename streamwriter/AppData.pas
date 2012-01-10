@@ -892,6 +892,7 @@ begin
 
   n := 0;
   for i := 0 to FPostProcessManager.PostProcessors.Count - 1 do
+    if not FPostProcessManager.PostProcessors[i].Hidden then
     if (FPostProcessManager.PostProcessors[i] is TExternalPostProcess) then
     begin
       FStorage.Write('Active_' + IntToStr(n), TExternalPostProcess(FPostProcessManager.PostProcessors[i]).Active, 'Plugins');

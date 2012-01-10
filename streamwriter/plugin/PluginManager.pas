@@ -17,6 +17,8 @@ type
 
     function Find(ClassType: TClass): TPluginBase;
     function EnablePlugin(Owner: TCustomForm; Plugin: TPluginBase; ShowMessage: Boolean): Boolean;
+    function CanEncode(FileExtension: string): Boolean;
+    function InstallEncoderFor(Owner: TCustomForm; FileExtension: string): Boolean;
 
     property ShowVersionWarning: Boolean read FShowVersionWarning;
     property Plugins: TList<TPluginBase> read FPlugins;
@@ -28,6 +30,19 @@ uses
   DownloadAddons;
 
 { TPluginManager }
+
+function TPluginManager.CanEncode(FileExtension: string): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 0 to Plugins.Count - 1 do
+    if (Plugins[i].FilesExtracted) and (Plugins[i].CanEncode(FileExtension)) then
+    begin
+      Result := True;
+      Exit;
+    end;
+end;
 
 constructor TPluginManager.Create;
 var
@@ -135,6 +150,20 @@ begin
     begin
       Result := FPlugins[i];
       Break;
+    end;
+end;
+
+function TPluginManager.InstallEncoderFor(Owner: TCustomForm;
+  FileExtension: string): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 0 to Plugins.Count - 1 do
+    if Plugins[i].CanEncode(FileExtension) then
+    begin
+      Result := EnablePlugin(Owner, Plugins[i], False);
+      Exit;
     end;
 end;
 

@@ -23,10 +23,10 @@ interface
 
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects,
-  Functions, Logging, Math, PluginBase, Mp3FileUtils, PluginSoX;
+  Functions, Logging, Math, PluginBase, Mp3FileUtils;
 
 type
-  TPostProcessSoxThread = class(TProcessThreadBase)
+  TPostProcessSoxThread = class(TPostProcessThreadBase)
   private
     FSoxPath: string;
   protected
@@ -37,8 +37,6 @@ type
 
   TPostProcessSoX = class(TInternalPostProcess)
   private
-    FSoXExe: string;
-
     FNormalize: Boolean;
     FFadeoutStart: Boolean;
     FFadeoutEnd: Boolean;
@@ -54,22 +52,21 @@ type
     destructor Destroy; override;
     function ShowInitMessage(Handle: THandle): Boolean; override;
     function CanProcess(Data: PPluginProcessInformation): Boolean; override;
-    function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
+    function ProcessFile(Data: PPluginProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
     procedure Initialize; override;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
     procedure Save; override;
     //function EatFiles(LameFile, MADFile: string): Boolean;
-    property SoXExe: string read FSoXExe;
   end;
 
 implementation
 
 uses
-  AppData, ConfigureSoX, PluginLame;
+  AppData, ConfigureSoX, PluginLAME, PluginSoX;
 
-{ TSoXThread }
+{ TPostProcessSoxThread }
 
 constructor TPostProcessSoxThread.Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
 begin
@@ -80,16 +77,13 @@ end;
 
 procedure TPostProcessSoxThread.Execute;
 var
-  TempFile, CmdLine, Params: string;
+  SoXOutFile, CmdLine, Params: string;
   Output: AnsiString;
   P: TPostProcessSoX;
   LoopStarted: Cardinal;
   Failed: Boolean;
   FS: TFileStream;
   EC: DWORD;
-
-  ID3V1: TID3v1Tag;
-  ID3V2: TID3v2Tag;
 begin
   inherited;
 
@@ -101,11 +95,11 @@ begin
 
   FResult := arFail;
 
-  TempFile := RemoveFileExt(FData.Filename) + '_soxconvert' + ExtractFileExt(FData.Filename);
+  SoxOutFile := RemoveFileExt(FData.WorkFilename) + '_sox.wav';
 
   P := TPostProcessSoX(Plugin);
 
-  CmdLine := '"' + FSoxPath + '" --norm "' + FData.Filename + '" "' + TempFile + '" ';
+  CmdLine := '"' + FSoxPath + '" --norm "' + FData.WorkFilename + '" "' + SoxOutFile + '" ';
 
   Params := '';
 
@@ -128,59 +122,52 @@ begin
 
   if Params <> '' then
   begin
-    ID3V1 := TID3v1Tag.Create;
-    ID3V2 := TID3v2Tag.Create;
 
     try
-      ID3V1.ReadFromFile(FData.Filename);
-      ID3V2.ReadFromFile(FData.Filename);
 
-      if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120000, Output, EC, @Terminated) = 2 then
-      begin
-        FResult := arTimeout;
-      end else
-      begin
-        Failed := True;
-        if FileExists(TempFile) and (EC = 0) then
+
+        if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120000, Output, EC, @Terminated) = 2 then
         begin
-          LoopStarted := GetTickCount;
-          while Failed do
+          FResult := arTimeout;
+        end else
+        begin
+          Failed := True;
+          if FileExists(SoxOutFile) and (EC = 0) then
           begin
-            try
-              FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
+            LoopStarted := GetTickCount;
+            while Failed do
+            begin
               try
-                Failed := False;
-                Break;
-              finally
-                FS.Free;
-              end;
-            except
-              Sleep(50);
-              if GetTickCount > LoopStarted + 5000 then
-              begin
-                Break;
+                FS := TFileStream.Create(SoxOutFile, fmOpenRead or fmShareExclusive);
+                try
+                  Failed := False;
+                  Break;
+                finally
+                  FS.Free;
+                end;
+              except
+                Sleep(50);
+                if GetTickCount > LoopStarted + 5000 then
+                begin
+                  Break;
+                end;
               end;
             end;
-          end;
+        end;
+
+
+
+
+        if not Failed then
+        begin
 
           if not Failed then
-            if not DeleteFile(FData.Filename) then
+            if not MoveFileEx(PChar(SoXOutFile), PChar(FData.WorkFilename), MOVEFILE_REPLACE_EXISTING) then
               Failed := True;
 
           if not Failed then
-            if not MoveFile(PChar(TempFile), PChar(FData.Filename)) then
-              Failed := True
-            else
-            begin
-              try
-                ID3V1.WriteToFile(TempFile);
-                ID3V2.WriteToFile(TempFile);
-              except end;
-            end;
-
-          if not Failed then
           begin
-            FData.Filesize := GetFileSize(FData.Filename);
+            //FData.Filesize := GetFileSize(FData.Filename);
 
             // Okay, das hier ist nicht ordentlich, aber sollte passen...
             if P.FSilenceStart then
@@ -191,16 +178,15 @@ begin
             FResult := arWin;
           end;
         end;
-        DeleteFile(PChar(TempFile));
       end;
+
     finally
-      ID3V1.Free;
-      ID3V2.Free;
+
     end;
   end;
 end;
 
-{ TSoXPlugin }
+{ TPostProcessSoX }
 
 procedure TPostProcessSoX.Assign(Source: TPostProcessBase);
 begin
@@ -270,9 +256,12 @@ constructor TPostProcessSoX.Create;
 begin
   inherited;
 
-  FNeededPlugins.Add(TPluginSoX);
+  // TODO: dieser postprocessor sollte nur sox benötigen. und falls er auch noch lame/faac braucht,
+  // sollte das cutview drauf hinweisen. prüfen ob das so klappt.
   FNeededPlugins.Add(TPluginLAME);
-  // FNeededPlugins.Add(TPluginAAC); TODO:
+  FNeededPlugins.Add(TPluginSoX);
+
+  FNeedsWave := True;
 
   FActive := False;
   FOrder := 100;
@@ -371,7 +360,7 @@ begin
 end;
 
 function TPostProcessSoX.ProcessFile(
-  Data: PPluginProcessInformation): TProcessThreadBase;
+  Data: PPluginProcessInformation): TPostProcessThreadBase;
 begin
   Result := nil;
   if not CanProcess(Data) then
@@ -399,11 +388,7 @@ end;
 
 function TPostProcessSoX.ShowInitMessage(Handle: THandle): Boolean;
 begin
-  { TODO:
-  Result := MsgBox(Handle, _('WARNING:'#13#10'It is not be allowed in some contries to use this plugin because it contains libmad.dll ' +
-                             'and lame_enc.dll that make use of some patented technologies. Please make sure you may use these files in your country. ' +
-                             'If you are sure you may use these files, press "Yes" to continue.'), _('Warning'), MB_ICONWARNING or MB_YESNO or MB_DEFBUTTON2) = IDYES;
-  }
+  Result := inherited;
 end;
 
 end.

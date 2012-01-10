@@ -26,7 +26,7 @@ uses
   Functions, Logging, Math, Mp3FileUtils, ConfigureSetTags;
 
 type
-  TPostProcessAACThread = class(TProcessThreadBase)
+  TPostProcessAACThread = class(TPostProcessThreadBase)
   private
     FMP4BoxPath: string;
     FAtomicParsleyPath: string;
@@ -48,7 +48,7 @@ type
     destructor Destroy; override;
     function ShowInitMessage(Handle: THandle): Boolean; override;
     function CanProcess(Data: PPluginProcessInformation): Boolean; override;
-    function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
+    function ProcessFile(Data: PPluginProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
     procedure Initialize; override;
@@ -356,7 +356,7 @@ begin
 end;
 
 function TPostProcessAAC.ProcessFile(
-  Data: PPluginProcessInformation): TProcessThreadBase;
+  Data: PPluginProcessInformation): TPostProcessThreadBase;
 begin
   Result := nil;
   if not CanProcess(Data) then
@@ -377,12 +377,7 @@ end;
 
 function TPostProcessAAC.ShowInitMessage(Handle: THandle): Boolean;
 begin
-  Result := True;
-  { TODO: !!!
-  Result := MsgBox(Handle, _('WARNING:'#13#10'It is not be allowed in some contries to use this plugin because it contains libmad.dll ' +
-                             'and lame_enc.dll that make use of some patented technologies. Please make sure you may use these files in your country. ' +
-                             'If you are sure you may use these files, press "Yes" to continue.'), _('Warning'), MB_ICONWARNING or MB_YESNO or MB_DEFBUTTON2) = IDYES;
-  }
+  Result := inherited;
 end;
 
 end.

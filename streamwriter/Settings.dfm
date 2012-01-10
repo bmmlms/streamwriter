@@ -387,18 +387,18 @@ object frmSettings: TfrmSettings
     end
   end
   object pnlPostProcess: TPanel
-    Left = 4
-    Top = 296
+    Left = 304
+    Top = 372
     Width = 294
-    Height = 277
+    Height = 349
     TabOrder = 3
     Visible = False
     DesignSize = (
       294
-      277)
+      349)
     object lblAppParams: TLabel
       Left = 4
-      Top = 232
+      Top = 304
       Width = 281
       Height = 41
       Anchors = [akLeft, akRight, akBottom]
@@ -409,7 +409,7 @@ object frmSettings: TfrmSettings
     end
     object btnBrowseApp: TSpeedButton
       Left = 264
-      Top = 160
+      Top = 232
       Width = 25
       Height = 21
       Hint = 'Browse...'
@@ -424,7 +424,7 @@ object frmSettings: TfrmSettings
     end
     object btnHelpPostProcess: TPngSpeedButton
       Left = 266
-      Top = 56
+      Top = 128
       Width = 24
       Height = 25
       Hint = 'Info...'
@@ -438,7 +438,7 @@ object frmSettings: TfrmSettings
     end
     object btnMoveDown: TPngSpeedButton
       Left = 266
-      Top = 28
+      Top = 80
       Width = 24
       Height = 25
       Anchors = [akTop, akRight]
@@ -448,7 +448,7 @@ object frmSettings: TfrmSettings
     end
     object btnMoveUp: TPngSpeedButton
       Left = 266
-      Top = 0
+      Top = 52
       Width = 24
       Height = 25
       Anchors = [akTop, akRight]
@@ -456,11 +456,18 @@ object frmSettings: TfrmSettings
       OnClick = btnMoveClick
       PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     end
+    object lblOutputFormat: TLabel
+      Left = 4
+      Top = 4
+      Width = 150
+      Height = 13
+      Caption = 'Format to save recorded files in:'
+    end
     object lstPostProcess: TListView
       Left = 4
-      Top = 1
+      Top = 52
       Width = 257
-      Height = 80
+      Height = 101
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
       Checkboxes = True
@@ -468,6 +475,24 @@ object frmSettings: TfrmSettings
         item
           Width = 200
         end>
+      Groups = <
+        item
+          Header = 'Bearbeitung auf WAVE-Ebene'
+          GroupID = 0
+          State = [lgsNormal]
+          HeaderAlign = taLeftJustify
+          FooterAlign = taLeftJustify
+          TitleImage = -1
+        end
+        item
+          Header = 'Bearbeitung nach R'#252'ckkonvertierung'
+          GroupID = 1
+          State = [lgsNormal]
+          HeaderAlign = taLeftJustify
+          FooterAlign = taLeftJustify
+          TitleImage = -1
+        end>
+      GroupView = True
       ReadOnly = True
       RowSelect = True
       ShowColumnHeaders = False
@@ -479,19 +504,19 @@ object frmSettings: TfrmSettings
       OnSelectItem = lstPostProcessSelectItem
       OnItemChecked = lstPostProcessItemChecked
     end
-    object btnAddUp: TButton
+    object btnAdd: TButton
       Left = 96
-      Top = 88
+      Top = 160
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
       Caption = '&Add...'
       TabOrder = 1
-      OnClick = btnAddUpClick
+      OnClick = btnAddClick
     end
     object btnRemove: TButton
       Left = 196
-      Top = 88
+      Top = 160
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
@@ -502,7 +527,7 @@ object frmSettings: TfrmSettings
     end
     object txtApp: TLabeledEdit
       Left = 4
-      Top = 160
+      Top = 232
       Width = 257
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -517,7 +542,7 @@ object frmSettings: TfrmSettings
     end
     object txtAppParams: TLabeledEdit
       Left = 4
-      Top = 204
+      Top = 276
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -530,7 +555,7 @@ object frmSettings: TfrmSettings
     end
     object chkOnlyIfCut: TCheckBox
       Left = 4
-      Top = 120
+      Top = 192
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -540,13 +565,25 @@ object frmSettings: TfrmSettings
     end
     object btnConfigure: TButton
       Left = 4
-      Top = 88
+      Top = 160
       Width = 93
       Height = 25
       Anchors = [akLeft, akBottom]
       Caption = '&Configure...'
       TabOrder = 6
       OnClick = btnConfigureClick
+    end
+    object lstOutputFormat: TComboBox
+      Left = 4
+      Top = 20
+      Width = 213
+      Height = 21
+      Style = csDropDownList
+      TabOrder = 7
+      Items.Strings = (
+        'Do not change format'
+        'MP3'
+        'M4A')
     end
   end
   object pnlCut: TPanel
@@ -602,8 +639,8 @@ object frmSettings: TfrmSettings
       Caption = '(1-100)'
     end
     object lblPanelCut: TLabel
-      Left = 272
-      Top = 172
+      Left = 208
+      Top = 168
       Width = 53
       Height = 13
       Alignment = taCenter
@@ -755,8 +792,8 @@ object frmSettings: TfrmSettings
     end
   end
   object pnlHotkeys: TPanel
-    Left = 304
-    Top = 372
+    Left = 4
+    Top = 300
     Width = 293
     Height = 109
     TabOrder = 5
@@ -1182,14 +1219,14 @@ object frmSettings: TfrmSettings
   end
   object pnlCommunityBlacklist: TPanel
     Left = 4
-    Top = 576
+    Top = 612
     Width = 293
-    Height = 105
+    Height = 69
     TabOrder = 8
     Visible = False
     DesignSize = (
       293
-      105)
+      69)
     object Label19: TLabel
       Left = 4
       Top = 4
@@ -1201,14 +1238,14 @@ object frmSettings: TfrmSettings
       Left = 4
       Top = 20
       Width = 285
-      Height = 49
+      Height = 13
       Anchors = [akLeft, akTop, akRight, akBottom]
       BevelOuter = bvNone
       TabOrder = 0
     end
     object btnBlacklistRemove: TButton
       Left = 196
-      Top = 80
+      Top = 44
       Width = 93
       Height = 25
       Anchors = [akRight, akBottom]
@@ -1470,25 +1507,17 @@ object frmSettings: TfrmSettings
     end
   end
   object pnlPlugins: TPanel
-    Left = 304
-    Top = 488
+    Left = 4
+    Top = 416
     Width = 293
-    Height = 233
+    Height = 189
     TabOrder = 12
     DesignSize = (
       293
-      233)
-    object Label20: TLabel
-      Left = 4
-      Top = 164
-      Width = 285
-      Height = 65
-      AutoSize = False
-      Caption = 'Label20'
-    end
+      189)
     object btnHelpPlugin: TPngSpeedButton
       Left = 266
-      Top = 132
+      Top = 88
       Width = 24
       Height = 25
       Hint = 'Info...'
@@ -1498,12 +1527,23 @@ object frmSettings: TfrmSettings
       ShowHint = True
       OnClick = btnHelpClick
       PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
+      ExplicitTop = 132
+    end
+    object Label20: TLabel
+      Left = 4
+      Top = 120
+      Width = 285
+      Height = 65
+      Anchors = [akLeft, akRight, akBottom]
+      AutoSize = False
+      Caption = 'Label20'
+      ExplicitTop = 160
     end
     object lstPlugins: TListView
       Left = 4
       Top = 1
       Width = 257
-      Height = 156
+      Height = 112
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
       Checkboxes = True

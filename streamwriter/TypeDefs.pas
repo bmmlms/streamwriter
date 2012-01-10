@@ -24,6 +24,9 @@ unit TypeDefs;
 interface
 
 type
+  TDebugTypes = (dtSocket, dtMessage, dtSong, dtError, dtSaved, dtPlugin);
+  TDebugLevels = (dlNormal, dlDebug);
+
   // Defines all possible types of audio-data
   TAudioTypes = (atNone, atMPEG, atAAC, atOGG);
   // Defines all possible types of lists

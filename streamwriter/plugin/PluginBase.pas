@@ -39,6 +39,8 @@ type
 
     function ShowInitMessage(Handle: THandle): Boolean; virtual;
 
+    function CanEncode(FileExtension: string): Boolean; virtual;
+
     property Name: string read FName;
     property Help: string read FHelp;
 
@@ -60,6 +62,11 @@ uses
 procedure TPluginBase.Assign(Source: TPluginBase);
 begin
   FFilenames.Assign(Source.FFilenames);
+end;
+
+function TPluginBase.CanEncode(FileExtension: string): Boolean;
+begin
+  Result := False;
 end;
 
 constructor TPluginBase.Create;
@@ -97,6 +104,9 @@ var
   H: THandle;
   Res: TResourceStream;
 begin
+  if FilesExtracted then
+    Exit(True);
+
   SetErrorMode(SEM_FAILCRITICALERRORS);
 
   Result := False;

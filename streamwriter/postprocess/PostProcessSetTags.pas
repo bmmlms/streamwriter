@@ -26,7 +26,7 @@ uses
   Mp3FileUtils, Functions, Logging, ConfigureSetTags;
 
 type
-  TPostProcessSetTagsThread = class(TProcessThreadBase)
+  TPostProcessSetTagsThread = class(TPostProcessThreadBase)
   protected
     procedure Execute; override;
   public
@@ -42,7 +42,7 @@ type
   protected
   public
     constructor Create;
-    function ProcessFile(Data: PPluginProcessInformation): TProcessThreadBase; override;
+    function ProcessFile(Data: PPluginProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
     procedure Initialize; override;
@@ -197,6 +197,7 @@ begin
   FActive := True;
   FOrder := 100;
   FCanConfigure := True;
+  FGroupID := 1;
 
   FName := _('MP3 - Set ID3-tags');
   FHelp := _('This plugin adds ID3-tags to recorded songs (MP3 only).');
@@ -249,7 +250,7 @@ begin
 end;
 
 function TPostProcessSetTags.ProcessFile(
-  Data: PPluginProcessInformation): TProcessThreadBase;
+  Data: PPluginProcessInformation): TPostProcessThreadBase;
 begin
   Result := TPostProcessSetTagsThread.Create(Data, Self);
 end;
