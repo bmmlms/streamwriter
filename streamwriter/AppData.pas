@@ -513,7 +513,6 @@ begin
     Text.Add('LED icons');
     Text.Add('MySQL');
     Text.Add('Notepad++');
-    Text.Add('Mp3FileUtils');
     Text.Add('Python');
     Text.Add('Tango Desktop Project');
     Text.Add('Virtual Treeview');

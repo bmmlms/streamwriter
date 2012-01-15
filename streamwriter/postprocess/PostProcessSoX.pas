@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects,
-  Functions, Logging, Math, PluginBase, Mp3FileUtils;
+  Functions, Logging, Math, PluginBase, TypeDefs;
 
 type
   TPostProcessSoxThread = class(TPostProcessThreadBase)
@@ -64,7 +64,7 @@ type
 implementation
 
 uses
-  AppData, ConfigureSoX, PluginLAME, PluginSoX;
+  AppData, ConfigureSoX, PluginManager, PluginLAME, PluginSoX;
 
 { TPostProcessSoxThread }
 
@@ -86,12 +86,6 @@ var
   EC: DWORD;
 begin
   inherited;
-
-  if LowerCase(ExtractFileExt(FData.Filename)) <> '.wav' then
-  begin
-    FResult := arImpossible;
-    Exit;
-  end;
 
   FResult := arFail;
 
@@ -204,8 +198,14 @@ begin
 end;
 
 function TPostProcessSoX.CanProcess(Data: PPluginProcessInformation): Boolean;
+var
+  OutputFormat: TAudioTypes;
 begin
-  Result := FGetDependenciesMet and (FNormalize or FFadeoutStart or
+  OutputFormat := Data.OutputFormat;
+  if OutputFormat = atNone then
+    OutputFormat := FiletypeToFormat(Data.Filename);
+
+  Result := (AppGlobals.PluginManager.CanEncode(OutputFormat) = ceOkay) and FGetDependenciesMet and (FNormalize or FFadeoutStart or
     FFadeoutEnd or FSilenceStart or FSilenceEnd);
 end;
 
@@ -256,9 +256,7 @@ constructor TPostProcessSoX.Create;
 begin
   inherited;
 
-  // TODO: dieser postprocessor sollte nur sox benötigen. und falls er auch noch lame/faac braucht,
-  // sollte das cutview drauf hinweisen. prüfen ob das so klappt.
-  FNeededPlugins.Add(TPluginSoX); // TODO: Mensch sagen: ey du willst sox, brauchstn encoder!!
+  FNeededPlugins.Add(TPluginSoX);
 
   FNeedsWave := True;
 
@@ -267,10 +265,10 @@ begin
   FCanConfigure := True;
 
   FName := _('Apply effects using SoX');
-  FHelp := _('This plugin applies effects to recorded songs using Sound eXchange (SoX).');
+  FHelp := _('This postprocessor applies effects to recorded songs using Sound eXchange (SoX).');
 
   try
-    AppGlobals.Storage.Read('Active_' + ClassName, FActive, True, 'Plugins');
+    AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
     AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 90, 'Plugins');
     AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
 
@@ -355,7 +353,7 @@ begin
   inherited;
 
   FName := _('Apply effects using SoX');
-  FHelp := _('This plugin applies effects to recorded songs using Sound eXchange (SoX).');
+  FHelp := _('This postprocessor applies effects to recorded songs using Sound eXchange (SoX).');
 end;
 
 function TPostProcessSoX.ProcessFile(
@@ -388,6 +386,9 @@ end;
 function TPostProcessSoX.ShowInitMessage(Handle: THandle): Boolean;
 begin
   Result := inherited;
+
+  MsgBox(Handle, _('Additional encoding-plugins might be needed to have this postprocessor working, that is an encoder for the desired output format if set or an encoder for the format of the stream itself.'),
+    _('Info'), MB_ICONINFORMATION);
 end;
 
 end.

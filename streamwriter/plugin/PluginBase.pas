@@ -21,10 +21,12 @@ type
     FDownloadName: string;
 
     FFilenames: TStringList;
+    FNeededPlugins: TList;
 
     function FGetFilesExtracted: Boolean; virtual;
     function FGetPackageDownloaded: Boolean; virtual;
     function FGetVersionOkay: Boolean;
+    function FGetDependenciesMet: Boolean; virtual;
 
     procedure DeleteFiles; virtual;
   public
@@ -46,10 +48,12 @@ type
 
     property DownloadPackage: string read FDownloadPackage;
     property DownloadName: string read FDownloadName;
+    property NeededPlugins: TList read FNeededPlugins;
 
     property FilesExtracted: Boolean read FGetFilesExtracted;
     property PackageDownloaded: Boolean read FGetPackageDownloaded;
     property VersionOkay: Boolean read FGetVersionOkay;
+    property DependenciesMet: Boolean read FGetDependenciesMet;
   end;
 
 implementation
@@ -74,6 +78,7 @@ begin
   inherited;
 
   FFilenames := TStringList.Create;
+  FNeededPlugins := TList.Create;
 end;
 
 procedure TPluginBase.DeleteFiles;
@@ -94,6 +99,7 @@ destructor TPluginBase.Destroy;
 begin
   DeleteFiles;
   FFilenames.Free;
+  FNeededPlugins.Free;
 
   inherited;
 end;
@@ -133,6 +139,20 @@ begin
     end else
       Windows.DeleteFile(PChar(AppGlobals.Storage.DataDir + FDownloadPackage));
   end;
+end;
+
+function TPluginBase.FGetDependenciesMet: Boolean;
+var
+  i: Integer;
+  Plugin: TPluginBase;
+begin
+  for i := 0 to FNeededPlugins.Count - 1 do
+  begin
+    Plugin := AppGlobals.PluginManager.Find(FNeededPlugins[i]);
+    if (Plugin = nil) or (not Plugin.FilesExtracted) then
+      Exit(False);
+  end;
+  Exit(True);
 end;
 
 function TPluginBase.FGetFilesExtracted: Boolean;

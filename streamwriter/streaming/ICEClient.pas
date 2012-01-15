@@ -39,6 +39,11 @@ type
   TICEClient = class;
 
   TShowErrorMessageEvent = procedure(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean) of object;
+  TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
+  TStringEvent = procedure(Sender: TObject; Data: string) of object;
+  TSongSavedEvent = procedure(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
+    Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean) of object;
+  TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer) of object;
 
   TDebugEntry = class
   public
@@ -59,12 +64,6 @@ type
   protected
     procedure Notify(const Item: TDebugEntry; Action: TCollectionNotification); override;
   end;
-
-  TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
-  TStringEvent = procedure(Sender: TObject; Data: string) of object;
-  TSongSavedEvent = procedure(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
-    Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean) of object;
-  TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer) of object;
 
   TICEClient = class
   private
@@ -144,6 +143,8 @@ type
     function StartRecording(CheckConditions: Boolean): TMayConnectResults;
     procedure StopRecording;
     procedure SetVolume(Vol: Integer);
+    procedure PostProcessingFinished(Filename, Title, SongArtist, SongTitle: string;
+      Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
 
     procedure Kill;
 
@@ -270,6 +271,19 @@ begin
     if Assigned(FOnPause) then
       FOnPause(Self);
   end;
+end;
+
+procedure TICEClient.PostProcessingFinished(Filename, Title, SongArtist,
+  SongTitle: string; Filesize, Length: UInt64; WasCut, FullTitle,
+  IsStreamFile: Boolean);
+begin
+  if Assigned(FOnSongSaved) then
+    FOnSongSaved(Self, Filename, Title, SongArtist, SongTitle, Filesize, Length, WasCut, FullTitle, IsStreamFile);
+  if Assigned(FOnRefresh) then
+    FOnRefresh(Self);
+
+  if Assigned(FOnDisconnected) and (FICEThread = nil) and (not AppGlobals.PostProcessManager.WorkingForClient(Self)) then
+    FOnDisconnected(Self);
 end;
 
 procedure TICEClient.StopPlay;
@@ -400,7 +414,7 @@ end;
 
 function TICEClient.FGetActive: Boolean;
 begin
-  Result := ((FState <> csStopped) and (FState <> csIOError));
+  Result := ((FState <> csStopped) and (FState <> csIOError)) or (AppGlobals.PostProcessManager.WorkingForClient(Self));
 end;
 
 function TICEClient.FGetRecording: Boolean;
@@ -598,60 +612,54 @@ procedure TICEClient.ThreadSongSaved(Sender: TSocketThread);
 var
   Data: TPluginProcessInformation;
 begin
-  try
-    if not FICEThread.RecvStream.SavedIsStreamFile then
-    begin
-      FEntry.SongsSaved := FEntry.SongsSaved + 1;
+  if not FICEThread.RecvStream.SavedIsStreamFile then
+  begin
+    FEntry.SongsSaved := FEntry.SongsSaved + 1;
 
-      Data.Filename := FICEThread.RecvStream.SavedFilename;
-      Data.WorkFilename := '';
-      Data.Station := FEntry.Name;
-      Data.Artist := FICEThread.RecvStream.SavedArtist;
-      Data.Title := FICEThread.RecvStream.SavedTitle;
-      Data.Album := FICEThread.RecvStream.SavedAlbum;
-      Data.TrackNumber := FEntry.SongsSaved;
-      Data.Filesize := FICEThread.RecvStream.SavedSize;
-      Data.Length := FICEThread.RecvStream.SavedLength;
-      Data.WasCut := FICEThread.RecvStream.SavedWasCut;
-      Data.FullTitle := FICEThread.RecvStream.SavedFullTitle;
-      Data.StreamTitle := FICEThread.RecvStream.SavedStreamTitle;
-      Data.Bitrate := FICEThread.RecvStream.BitRate;
+    Data.Filename := FICEThread.RecvStream.SavedFilename;
+    Data.WorkFilename := '';
+    Data.Station := FEntry.Name;
+    Data.Artist := FICEThread.RecvStream.SavedArtist;
+    Data.Title := FICEThread.RecvStream.SavedTitle;
+    Data.Album := FICEThread.RecvStream.SavedAlbum;
+    Data.TrackNumber := FEntry.SongsSaved;
+    Data.Filesize := FICEThread.RecvStream.SavedSize;
+    Data.Length := FICEThread.RecvStream.SavedLength;
+    Data.WasCut := FICEThread.RecvStream.SavedWasCut;
+    Data.FullTitle := FICEThread.RecvStream.SavedFullTitle;
+    Data.StreamTitle := FICEThread.RecvStream.SavedStreamTitle;
+    Data.Bitrate := FICEThread.RecvStream.BitRate;
+    Data.OutputFormat := AppGlobals.OutputFormat;
 
-      if not FKilled then
-        if not AppGlobals.PostProcessManager.ProcessFile(Self, Data) then
-        begin
-          if Assigned(FOnSongSaved) then
-            FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
-              FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
-              FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut,
-              FICEThread.RecvStream.SavedFullTitle, False);
-          if Assigned(FOnRefresh) then
-            FOnRefresh(Self);
-        end;
-
-      if FAutoRemove then
+    if not FKilled then
+      if not AppGlobals.PostProcessManager.ProcessFile(Self, Data) then
       begin
-        if Assigned(FOnDisconnected) and (FICEThread = nil) then
-        begin
-          Kill;
-          FOnDisconnected(Self);
-        end;
+        if Assigned(FOnSongSaved) then
+          FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
+            FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
+            FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut,
+            FICEThread.RecvStream.SavedFullTitle, False);
+        if Assigned(FOnRefresh) then
+          FOnRefresh(Self);
       end;
-    end else
+
+    if FAutoRemove then
     begin
-      if Assigned(FOnSongSaved) then
-        FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
-          FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
-          FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut,
-          FICEThread.RecvStream.SavedFullTitle, True);
-      if Assigned(FOnRefresh) then
-        FOnRefresh(Self);
+      if Assigned(FOnDisconnected) and (FICEThread = nil) then
+      begin
+        Kill;
+        FOnDisconnected(Self);
+      end;
     end;
-  except
-    on E: Exception do
-    begin
-      WriteDebug(Format(_('Could not postprocess song: %s'), [E.Message]), dtError, dlNormal); // TODO: Falsche meldung..
-    end;
+  end else
+  begin
+    if Assigned(FOnSongSaved) then
+      FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
+        FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
+        FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut,
+        FICEThread.RecvStream.SavedFullTitle, True);
+    if Assigned(FOnRefresh) then
+      FOnRefresh(Self);
   end;
 
   if FICEThread.RecvStream.SavedFullTitle then
@@ -770,8 +778,11 @@ begin
 
   if DiedThread.RecvStream.RemoveClient or AutoRemove then
   begin
-    Disconnect;
-    if Assigned(FOnDisconnected) and (FICEThread = nil) then
+    if not AppGlobals.PostProcessManager.WorkingForClient(Self) then
+      Kill
+    else
+      Disconnect;
+    if Assigned(FOnDisconnected) and (FICEThread = nil) and (not AppGlobals.PostProcessManager.WorkingForClient(Self)) then
       FOnDisconnected(Self);
     Exit;
   end;
@@ -781,7 +792,7 @@ begin
     StopRecording;
     if not DiedThread.Playing then
     begin
-      if Assigned(FOnDisconnected) and (FICEThread = nil) then
+      if Assigned(FOnDisconnected) and (FICEThread = nil) and (not AppGlobals.PostProcessManager.WorkingForClient(Self)) then
         FOnDisconnected(Self);
       FState := csStopping;
     end;
@@ -976,6 +987,7 @@ begin
 end;
 
 end.
+
 
 
 

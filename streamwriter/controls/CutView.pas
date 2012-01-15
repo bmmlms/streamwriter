@@ -30,8 +30,8 @@ uses
   Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
   PlayerManager, PostProcess, PostProcessSoX, DownloadAddons, ConfigureSoX, Logging,
-  MsgDlg, DragDrop, DropTarget, DropComboTarget, Mp3FileUtils,
-  MessageBus, AppMessages, PluginSoX, PostProcessConvert;
+  MsgDlg, DragDrop, DropTarget, DropComboTarget,
+  MessageBus, AppMessages, PluginSoX, PostProcessConvert, FileTagger;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -191,6 +191,7 @@ type
     FOnStateChanged: TNotifyEvent;
     FOnCutFile: TCutFileEvent;
 
+    FFileTagger: TFileTagger;
     FFileConvertorThread: TPostProcessConvertThread;
 
     procedure StartProcessing(CmdLine: string);
@@ -224,7 +225,6 @@ type
     procedure FileConvertorTerminate(Sender: TObject);
 
     function GetUndoFilename: string;
-    function GetFilename: string;
   protected
     procedure Resize; override;
   public
@@ -361,6 +361,7 @@ begin
   FDropTarget.OnDrop := DropTargetDrop;
 
   FUndoList := TUndoList.Create;
+  FFileTagger := TFileTagger.Create;
 
   MsgBus.AddSubscriber(MessageReceived);
 end;
@@ -378,6 +379,8 @@ destructor TCutView.Destroy;
 var
   i: Integer;
 begin
+  FFileTagger.Free;
+
   if FFileConvertorThread <> nil then
   begin
     FFileConvertorThread.OnTerminate := nil;
@@ -462,6 +465,9 @@ procedure TCutView.FileConvertorFinish(Sender: TObject);
 begin
   if FState = csEncoding then
   begin
+    // Ggf. Tags übernehmen
+    FFileTagger.Write(FOriginalFilename);
+
     if Assigned(TCutTab(Owner).OnSaved) then
       TCutTab(Owner).OnSaved(Owner, GetFileSize(FOriginalFilename), FSaveSecs);
   end;
@@ -479,11 +485,6 @@ end;
 procedure TCutView.FileConvertorTerminate(Sender: TObject);
 begin
   FFileConvertorThread := nil;
-end;
-
-function TCutView.GetFilename: string;
-begin
-  Result := 'asf';
 end;
 
 function TCutView.GetUndoFilename: string;
@@ -538,7 +539,7 @@ begin
     FScanThread.Resume;
 
     if Assigned(FOnStateChanged) then
-      FOnStateChanged(Self);
+      FOnStateChanged(Self);                    // TODO: Kann ich vom OGG encoder irgendwie den progress bekommen? für die progressbar ;)...
   end else
   begin
     FOriginalFilename := Filename;
@@ -548,11 +549,15 @@ begin
 
     FState := csDecoding;
 
+    // TODO: fehler vom tagger werden nirgens abgefangen! auch nich beim write. und wenn ein fehler passiert das dem user sagen - sprich result = FALSE. auch bei .write!
+    FFileTagger.Read(FOriginalFilename);
+
     CreateConvertor;
 
     FProgressBarLoad.Visible := True;
 
     FFileConvertorThread.Convert(FOriginalFilename, FWorkingFilename, 128); // TODO: 128..
+    FFileConvertorThread.Resume;
 
     FPB.BuildBuffer;
     FPB.BuildDrawBuffer;
@@ -702,6 +707,7 @@ begin
 
   CreateConvertor;
   FFileConvertorThread.Convert(FWorkingFilename, FOriginalFilename, 128); // TODO: 128...
+  FFileConvertorThread.Resume;
 
   FState := csEncoding;
   FProgressBarLoad.Position := 0;
@@ -1784,29 +1790,10 @@ var
   FS: TFileStream;
   Failed: Boolean;
   EC: DWORD;
-
-  ID3V1: TID3v1Tag;
-  ID3V2: TID3v2Tag;
 begin
   inherited;
 
-  // TODO: Hier mit ID3 tags hampeln ist fail!!! das muss anders laufen.
-
-  ID3V1 := TID3v1Tag.Create;
-  ID3V2 := TID3v2Tag.Create;
-  try
-    ID3V1.ReadFromFile(FFilePath);
-    ID3V2.ReadFromFile(FFilePath);
-
-    Res := RunProcess(FCommandLine, FWorkingDir, 120000, FProcessOutput, EC, @Self.Terminated);
-
-    ID3V1.WriteToFile(FTempFile);
-    ID3V2.WriteToFile(FTempFile);
-  finally
-    ID3V1.Free;
-    ID3V2.Free;
-  end;
-
+  Res := RunProcess(FCommandLine, FWorkingDir, 120000, FProcessOutput, EC, @Self.Terminated);
 
   if Terminated then
   begin

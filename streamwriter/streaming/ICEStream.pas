@@ -1025,7 +1025,7 @@ begin
     if not FSettings.SeparateTracks then
       FSettings.DeleteStreams := False;
 
-    if (FBytesPerSec = 0) and (FAudioStream.Size > 131072) then
+    if (FBytesPerSec = 0) and (FAudioStream.Size > 8192) and (FAudioStream.Size < 131072) then
     begin
       try
         CalcBytesPerSec;

@@ -1544,6 +1544,8 @@ begin
 end;
 
 procedure TfrmSettings.lstOutputFormatSelect(Sender: TObject);
+var
+  i: Integer;
 begin
   inherited;
 
@@ -1564,6 +1566,11 @@ begin
     lstOutputFormat.ItemIndex := OutputFormatLastIndex
   else
     OutputFormatLastIndex := lstOutputFormat.ItemIndex;
+
+  lstPlugins.OnItemChecked := nil;
+  for i := 0 to lstPlugins.Items.Count - 1 do
+    lstPlugins.Items[i].Checked := TPluginBase(lstPlugins.Items[i].Data).PackageDownloaded;
+  lstPlugins.OnItemChecked := lstPluginsItemChecked;
 end;
 
 procedure TfrmSettings.lstPluginsItemChecked(Sender: TObject;
@@ -1575,11 +1582,11 @@ begin
   if not FInitialized then
     Exit;
 
+  lstPlugins.Selected := Item;
+
   lstPlugins.OnItemChecked := nil;
   Item.Checked := AppGlobals.PluginManager.EnablePlugin(Self, TPluginBase(Item.Data), True);
   lstPlugins.OnItemChecked := lstPluginsItemChecked;
-
-  lstPlugins.Selected := Item;
 end;
 
 procedure TfrmSettings.lstPluginsResize(Sender: TObject);

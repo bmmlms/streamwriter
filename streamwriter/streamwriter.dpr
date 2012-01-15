@@ -109,7 +109,7 @@ uses
   MessageBus in '..\..\common\MessageBus.pas',
   AppMessages in 'AppMessages.pas',
   StatusBar in 'controls\StatusBar.pas',
-  PostProcessAAC in 'postprocess\PostProcessAAC.pas',
+  PostProcessMP4Box in 'postprocess\PostProcessMP4Box.pas',
   SystemCritical in '..\..\common\SystemCritical.pas',
   FileConvertor in 'audio\FileConvertor.pas',
   PluginManager in 'plugin\PluginManager.pas',
@@ -119,8 +119,11 @@ uses
   PluginSoX in 'plugin\PluginSoX.pas',
   Intro in 'Intro.pas' {frmIntro},
   PostProcessConvert in 'postprocess\PostProcessConvert.pas',
-  PluginOggEnc in 'plugin\PluginOggEnc.pas',
-  PluginM4ATools in 'plugin\PluginM4ATools.pas';
+  PluginOGGEnc in 'plugin\PluginOGGEnc.pas',
+  PluginMP4Box in 'plugin\PluginMP4Box.pas',
+  FileTagger in 'audio\FileTagger.pas',
+  PluginAudioGenie in 'plugin\PluginAudioGenie.pas',
+  AudioGenie in 'audio\AudioGenie.pas';
 
 {$SetPEOptFlags $0140}
 

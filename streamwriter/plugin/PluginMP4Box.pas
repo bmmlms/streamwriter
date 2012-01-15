@@ -17,7 +17,7 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
-unit PluginM4ATools;
+unit PluginMP4Box;
 
 interface
 
@@ -25,8 +25,9 @@ uses
   SysUtils, Windows, Classes, PluginBase, LanguageObjects, Functions, TypeDefs;
 
 type
-  TPluginM4ATools = class(TPluginBase)
+  TPluginMP4Box = class(TPluginBase)
   private
+    FMP4BoxEXEPath: string;
   protected
   public
     constructor Create;
@@ -38,16 +39,18 @@ type
     function ShowInitMessage(Handle: THandle): Boolean; override;
 
     function CanEncode(AudioType: TAudioTypes): Boolean; override;
+
+    property MP4BoxEXEPath: string read FMP4BoxEXEPath;
   end;
 
 implementation
 
 uses
-  AppData;
+  AppData, PluginFAAC;
 
-{ TPluginM4ATools }
+{ TPluginMP4Box }
 
-procedure TPluginM4ATools.Assign(Source: TPluginBase);
+procedure TPluginMP4Box.Assign(Source: TPluginBase);
 begin
   inherited;
 
@@ -55,37 +58,41 @@ begin
   FHelp := Source.Help;
   FDownloadName := Source.DownloadName;
   FDownloadPackage := Source.DownloadPackage;
+
+  FMP4BoxEXEPath := TPluginMP4Box(Source).MP4BoxEXEPath;
 end;
 
-function TPluginM4ATools.CanEncode(AudioType: TAudioTypes): Boolean;
+function TPluginMP4Box.CanEncode(AudioType: TAudioTypes): Boolean;
 begin
-  Result := AudioType = atAAC;
+  Result := AudioType = atM4A;
 end;
 
-function TPluginM4ATools.Copy: TPluginBase;
+function TPluginMP4Box.Copy: TPluginBase;
 begin
-  Result := TPluginM4ATools.Create;
+  Result := TPluginMP4Box.Create;
 
   Result.Assign(Self);
 end;
 
-constructor TPluginM4ATools.Create;
+constructor TPluginMP4Box.Create;
 begin
   inherited;
 
+  FNeededPlugins.Add(TPluginFAAC);
+
   FName := _('Support conversion of AAC files to M4A container');
   FHelp := _('This plugin adds support for converting AAC files to M4A files to the application which is useful for postprocessing of recorded songs.');
-  FDownloadName := 'plugin_m4atools';
-  FDownloadPackage := 'plugin_m4atools.dll';
+  FDownloadName := 'plugin_mp4box';
+  FDownloadPackage := 'plugin_mp4box.dll';
 
-  FFilesDir := AppGlobals.TempDir + 'plugin_m4atools\';
+  FFilesDir := AppGlobals.TempDir + 'plugin_mp4box\';
+  FMP4BoxEXEPath := FFilesDir + 'MP4Box.exe';
 
-  FFilenames.Add('AtomicParsley.exe');
   FFilenames.Add('js32.dll');
   FFilenames.Add('MP4Box.exe');
 end;
 
-procedure TPluginM4ATools.Initialize;
+procedure TPluginMP4Box.Initialize;
 begin
   inherited;
 
@@ -93,7 +100,7 @@ begin
   FHelp := _('This plugin adds support for converting AAC files to M4A files to the application which is useful for postprocessing of recorded songs.');
 end;
 
-function TPluginM4ATools.ShowInitMessage(Handle: THandle): Boolean;
+function TPluginMP4Box.ShowInitMessage(Handle: THandle): Boolean;
 begin
   Result := True;
 end;

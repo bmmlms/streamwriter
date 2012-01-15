@@ -31,9 +31,10 @@ type
   TDebugLevels = (dlNormal, dlDebug);
 
   // Defines all possible types of audio-data
-  TAudioTypes = (atNone, atMPEG, atAAC, atOGG);
+  TAudioTypes = (atNone, atMPEG, atAAC, atOGG, atM4A);
   // Defines all possible types of lists
   TListType = (ltSave, ltIgnore);
+
 
 function FiletypeToFormat(Filename: string): TAudioTypes;
 function FormatToFiletype(Format: TAudioTypes): string;
@@ -42,6 +43,8 @@ implementation
 
 function FiletypeToFormat(Filename: string): TAudioTypes;
 begin
+  Result := atNone;
+
   Filename := LowerCase(ExtractFileExt(Filename));
 
   if Filename = '.mp3' then
@@ -49,7 +52,9 @@ begin
   else if Filename = '.aac' then
     Exit(atAAC)
   else if Filename = '.ogg' then
-    Exit(atOGG);
+    Exit(atOGG)
+  else if Filename = '.m4a' then
+    Exit(atM4A);
 end;
 
 function FormatToFiletype(Format: TAudioTypes): string;
@@ -60,6 +65,7 @@ begin
     atMPEG: Result := '.mp3';
     atAAC: Result := '.aac';
     atOGG: Result := '.ogg';
+    atM4A: Result := '.m4a';
   end;
 end;
 

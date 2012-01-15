@@ -1103,7 +1103,6 @@ begin
 
     if FullTitle then
     begin
-      Client := Sender as TICEClient;
       if Client.Entry.Settings.AddSavedToIgnore then
         if Assigned(FOnAddTitleToList) then
           FOnAddTitleToList(Self, nil, ltIgnore, Title);

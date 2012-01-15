@@ -1418,7 +1418,6 @@ var
 begin
   Client := Sender as TICEClient;
   tabLists.RemoveClient(Client);
-  AppGlobals.PostProcessManager.ClientRemoved(Sender);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsCut(Entry: TStreamEntry;
@@ -1436,7 +1435,7 @@ begin
         Exit;
     end else
       Exit;
-  end;        // TODO: wenn man anhört, aufnimmt, aufnahme beendet wird nix gespeichert?
+  end;
 
   tabCut := TCutTab(pagMain.FindCut(Track.Filename));
   if tabCut = nil then

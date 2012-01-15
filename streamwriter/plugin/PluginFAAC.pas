@@ -27,6 +27,7 @@ uses
 type
   TPluginFAAC = class(TPluginBase)
   private
+    FEXEPath: string;
   protected
   public
     constructor Create;
@@ -38,6 +39,8 @@ type
     function ShowInitMessage(Handle: THandle): Boolean; override;
 
     function CanEncode(AudioType: TAudioTypes): Boolean; override;
+
+    property EXEPath: string read FEXEPath;
   end;
 
 implementation
@@ -79,6 +82,7 @@ begin
   FDownloadPackage := 'plugin_faac.dll';
 
   FFilesDir := AppGlobals.TempDir + 'plugin_faac\';
+  FEXEPath := FFilesDir + 'faac.exe';
 
   FFilenames.Add('faac.exe');
 end;

@@ -20,13 +20,14 @@
 unit PostProcessManager;
 
 // TODO: Immer wenn ich convertiere sollte ich die UR-BITRATE beibehalten und so.
+// TODO: ein aac stream hat 48 bitrate. man encoded zu mp3. dann hat der auch nur 48, das ist doch mist!
 
 interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, PostProcess, PostProcessSetTags,
-  PostProcessSoX, Logging, PostProcessAAC, PluginBase, Forms, Functions,
-  LanguageObjects, TypeDefs, PostProcessConvert;
+  PostProcessSoX, Logging, PostProcessMP4Box, PluginBase, Forms, Functions,
+  LanguageObjects, TypeDefs, PostProcessConvert, Generics.Defaults;
 
 type
   TPostProcessManager = class
@@ -36,6 +37,9 @@ type
 
     procedure WriteDebug(Sender: TObject; Text, Data: string; T: TDebugTypes; Level: TDebugLevels); overload;
     procedure WriteDebug(Sender: TObject; Text: string; T: TDebugTypes; Level: TDebugLevels); overload;
+
+    function FindNextIdx(Entry: TProcessingEntry; Group: Integer): Integer;
+    procedure BuildProcessingList(Entry: TProcessingEntry);
 
     procedure ThreadTerminate(Sender: TObject);
   public
@@ -48,7 +52,7 @@ type
     function Find(Plugin: TPostProcessBase): TPostProcessBase; overload;
     function Find(ClassType: TClass): TPostProcessBase; overload;
     function EnablePostProcess(Owner: TCustomForm; Enable: Boolean; PostProcess: TInternalPostProcess): Boolean;
-    procedure ClientRemoved(Client: TObject);
+    function WorkingForClient(Client: TObject): Boolean;
 
     property PostProcessors: TList<TPostProcessBase> read FPostProcessors;
   end;
@@ -60,20 +64,15 @@ uses
 
 { TPluginManager }
 
-// TODO: HIER ALLES CHECKEN WAS MIT POSTPROCESSING ZU TUN HAT!!!
-// TODO: und sehen, was passiert, wenn noch threads laufen aber app beendet wird..
-
 function TPostProcessManager.ProcessFile(Owner: TObject; Data: TPluginProcessInformation): Boolean;
 var
   Entry: TProcessingEntry;
 begin
   Result := False;
-  Entry := TProcessingEntry.Create(Owner, nil, Data, AppGlobals.OutputFormat);;
+  Entry := TProcessingEntry.Create(Owner, nil, Data);
   if not ProcessFile(Entry) then
   begin
     Entry.Free;
-
-    // TODO: Was soll hier passieren?
   end else
   begin
     Result := True;
@@ -84,16 +83,72 @@ begin
   end;
 end;
 
+procedure TPostProcessManager.BuildProcessingList(Entry: TProcessingEntry);
+var
+  i, n: Integer;
+
+  function PostProcessingNeedsWave: Boolean;
+  var
+    i: Integer;
+  begin
+    if (Entry.Data.OutputFormat <> atNone) and (Entry.Data.OutputFormat <> FiletypeToFormat(Entry.Data.Filename)) then
+      Exit(True);
+
+    for i := 0 to FPostProcessors.Count - 1 do
+      if FPostProcessors[i].CanProcess(Entry.Data) and FPostProcessors[i].Active and FPostProcessors[i].NeedsWave then
+        Exit(True);
+
+    Exit(False);
+  end;
+begin
+  Entry.NeedsWave := PostProcessingNeedsWave;
+
+  if Entry.NeedsWave then
+  begin
+    Entry.PluginList.Add(FPostProcessors[0]);
+  end;
+
+  // Nach Order sortieren
+  FPostProcessors.Sort(TComparer<TPostProcessBase>.Construct(
+    function (const L, R: TPostProcessBase): integer
+    begin
+      Result := CmpInt(L.Order, R.Order);;
+    end
+  ));
+
+  // Erst die mit GroupID 0 fitmachen (WAVE-Phase)
+  for i := 0 to FPostProcessors.Count - 1 do
+    if FPostProcessors[i].Active and (FPostProcessors[i].CanProcess(Entry.Data)) and (not FPostProcessors[i].Hidden) and
+       (FPostProcessors[i].GroupID = 0) and ((FPostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not FPostProcessors[i].OnlyIfCut)) then
+    begin
+      Entry.PluginList.Add(FPostProcessors[i].Copy);
+    end;
+
+  if Entry.NeedsWave then
+  begin
+    Entry.PluginList.Add(FPostProcessors[0]);
+  end;
+
+  // Jetzt GroupID 1 (Nach WAVE-Phase)
+  for i := 0 to FPostProcessors.Count - 1 do
+    if FPostProcessors[i].Active and (FPostProcessors[i].CanProcess(Entry.Data)) and (not FPostProcessors[i].Hidden) and
+       (FPostProcessors[i].GroupID = 1) and ((FPostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not FPostProcessors[i].OnlyIfCut)) then
+    begin
+      Entry.PluginList.Add(FPostProcessors[i].Copy);
+    end;
+end;
+
 function TPostProcessManager.ProcessFile(Entry: TProcessingEntry): Boolean;
 var
   i, n, Order, SmallestActive: Integer;
+  NextIdx: Integer;
   Output: string;
 
   function PostProcessingNeedsWave: Boolean;
   var
     i: Integer;
   begin
-    if Entry.OutputFormat <> FiletypeToFormat(Entry.Data.Filename) then
+    if Entry.Data.OutputFormat <> FiletypeToFormat(Entry.Data.Filename) then
       Exit(True);
 
     for i := 0 to FPostProcessors.Count - 1 do
@@ -104,93 +159,33 @@ var
   end;
 begin
   Result := False;
-  Order := -1;
 
-  // Das soeben beendete Plugin der Liste hinzufügen
-  if Entry.ActiveThread <> nil then
-  begin
-    Entry.PluginsProcessed.Add(TPostProcessThreadBase(Entry.ActiveThread).Plugin);
-    if not (Entry.ActiveThread.Plugin is TPostProcessConvert) then
-      Order := Entry.ActiveThread.Plugin.Order;
-    Entry.ActiveThread := nil;
-  end else
-    Entry.NeedsWave := PostProcessingNeedsWave;
+  if Entry.PluginList.Count = 0 then
+    BuildProcessingList(Entry);
 
-  // Erstmal sehen, ob wir dekodieren müssen. Falls ja startet zuerst ein Thread zum dekodieren.
-  if Entry.NeedsWave and (not Entry.PluginsProcessed.Contains(FPostProcessors[0])) then
-  begin
-    // TODO: Was passiert wenn für TPostProcessConvert ein Plugin nicht am start ist???
-    // TODO: Nach jedem schritt result vom vorherigen auswerten..
+  if Entry.PluginList.Count = 0 then
+    Exit(False);
 
-    Entry.ActiveThread := TPostProcessConvertThread.Create(Entry.Data, FPostProcessors[0]);
-    Entry.ActiveThread.OnTerminate := ThreadTerminate;
-    Entry.Data.WorkFilename := RemoveFileExt(Entry.Data.Filename) + '_convert' + '.wav';
-
-    TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.Filename, RemoveFileExt(Entry.Data.Filename) + '_convert' + '.wav', Entry.Data.BitRate);
-
+  NextIdx := FindNextIdx(Entry, 0);
+  if NextIdx > -1 then
     Exit(True);
-  end;
 
-  SmallestActive := MaxInt;
-  for i := 0 to FPostProcessors.Count - 1 do
-    if FPostProcessors[i].Active and (FPostProcessors[i].Order < SmallestActive) and (FPostProcessors[i].Order >= Order) and
-       (not Entry.PluginsProcessed.Contains(FPostProcessors[i])) and
-       (FPostProcessors[i].CanProcess(Entry.Data)) and (not FPostProcessors[i].Hidden) and (FPostProcessors[i].GroupID = 0) and
-       ((FPostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not FPostProcessors[i].OnlyIfCut)) then
-    begin
-      SmallestActive := FPostProcessors[i].Order;
-    end;
+  if Entry.Data.WorkFilename <> '' then
+    DeleteFile(PChar(Entry.Data.WorkFilename));
 
-  if SmallestActive <> MaxInt then
+  if Entry.Data.ReEncodedFilename <> '' then
   begin
-    for i := 0 to FPostProcessors.Count - 1 do
-      if FPostProcessors[i].Order = SmallestActive then
-      begin
-        Entry.ActiveThread := FPostProcessors[i].ProcessFile(Entry.Data);
-        Result := Entry.ActiveThread <> nil;
-        if Result then
-        begin
-          Entry.ActiveThread.OnTerminate := ThreadTerminate;
-          Entry.ActiveThread.Resume;
-        end;
-        Break;
-      end;                      // TODO: ein aac stream hat 48 bitrate. man encoded zu mp3. dann hat der auch nur 48, das ist doch mist!
+    DeleteFile(PChar(Entry.Data.Filename));
+    Entry.Data.Filename := RemoveFileExt(Entry.Data.Filename) + FormatToFiletype(Entry.Data.OutputFormat);
+    MoveFileEx(PChar(Entry.Data.ReEncodedFilename), PChar(Entry.Data.Filename), MOVEFILE_REPLACE_EXISTING);
+
+    Entry.Data.WorkFilename := '';
+    Entry.Data.ReEncodedFilename := '';
   end;
 
-  // TODO: Das SetTags von MP3 wird noch vor dem neu-enkodieren genutzt. das sollte natürlich danach passieren!
-
-  if (Entry.ActiveThread = nil) and (Entry.NeedsWave) then
-  begin
-    // Von WAVE in ein anderes Format umwandeln wenn alles gelaufen ist
-    if Entry.Data.ReEncodedFilename = '' then
-    begin
-      Output := FormatToFiletype(Entry.OutputFormat);
-      if Output = '' then
-        Output := ExtractFileExt(Entry.Data.Filename);
-      Entry.ActiveThread := TPostProcessConvertThread.Create(Entry.Data, FPostProcessors[0]);
-      Entry.ActiveThread.OnTerminate := ThreadTerminate;
-      Entry.Data.ReEncodedFilename := RemoveFileExt(Entry.Data.Filename) + '_convert' + Output;
-      TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.WorkFilename, Entry.Data.ReEncodedFilename, Entry.Data.BitRate);
-
-      Exit(True);
-    end else
-    begin
-      // Jetzt noch die Datei, die umgewandelt wurde, in den Original-Dateinamen umbenennen
-
-      DeleteFile(PChar(Entry.Data.WorkFilename));
-
-      // TODO: FileSize und so übernehmen für den saved track!
-
-      if MoveFileEx(PChar(Entry.Data.ReEncodedFilename), PChar(RemoveFileExt(Entry.Data.Filename) + ExtractFileExt(Entry.Data.ReEncodedFilename)), MOVEFILE_REPLACE_EXISTING) then
-      begin
-        if RemoveFileExt(Entry.Data.Filename) + ExtractFileExt(Entry.Data.ReEncodedFilename) <> Entry.Data.Filename then
-          DeleteFile(PChar(Entry.Data.Filename));
-        Entry.Data.Filename := RemoveFileExt(Entry.Data.Filename) + ExtractFileExt(Entry.Data.ReEncodedFilename);
-      end;
-
-      Exit(False);
-    end;
-  end;
+  NextIdx := FindNextIdx(Entry, 1);
+  if NextIdx > -1 then
+    Exit(True);
 end;
 
 procedure TPostProcessManager.ReInitPlugins;
@@ -206,8 +201,6 @@ var
   i: Integer;
   Entry: TProcessingEntry;
 begin
-  // TODO: Der ConverThread braucht ne property, ob er erfolgreich war, die ich hier auswerten kann!!!
-
   for i := 0 to FProcessingList.Count - 1 do
   begin
     if FProcessingList[i].ActiveThread = Sender then
@@ -223,6 +216,27 @@ begin
           WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" failed.'), [Entry.ActiveThread.Plugin.Name]), dtError, dlNormal);
       end;
 
+
+      // Wenn das Result nicht gut ist, dann wird die Chain hier beendet und der Song gilt als gespeichert.
+      if (Entry.ActiveThread.Result <> arWin) and (Entry.ActiveThread.Result <> arImpossible) then
+      begin
+        if Entry.Data.WorkFilename <> '' then
+          DeleteFile(PChar(Entry.Data.WorkFilename));
+        if Entry.Data.ReEncodedFilename <> '' then
+          DeleteFile(PChar(Entry.Data.ReEncodedFilename));
+
+        // Wird hier gemacht, damit WorkingForClient() false zurückliefert. Wichtig!
+        FProcessingList.Remove(Entry);
+
+        TICEClient(Entry.Owner).PostProcessingFinished(Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Artist, Entry.Data.Title,
+          Entry.Data.Filesize, Entry.Data.Length, Entry.Data.WasCut, Entry.Data.FullTitle, False);
+
+        Entry.Free;
+
+        Exit;
+      end;
+
+
       // Eine externe App könnte das File gelöscht haben
       if Entry.Data.Filesize <> High(UInt64) then // GetFileSize = Int64 => -1
       begin
@@ -234,17 +248,13 @@ begin
         begin
           WriteDebug(Entry.Owner, 'All postprocessors done', dtMessage, dlDebug);
 
-          {
-          if Assigned(FOnSongSaved) then
-            FOnSongSaved(Self, Entry.Data.Filename, Entry.Data.StreamTitle,
-              Entry.Data.Artist, Entry.Data.Title, Entry.Data.Filesize, Entry.Data.Length,
-              Entry.Data.WasCut, Entry.Data.FullTitle, False);
-          if Assigned(FOnRefresh) then
-            FOnRefresh(Self);
-          }
+          // Wird hier gemacht, damit WorkingForClient() false zurückliefert. Wichtig!
+          FProcessingList.Delete(i);
+
+          TICEClient(Entry.Owner).PostProcessingFinished(Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Artist, Entry.Data.Title,
+            Entry.Data.Filesize, Entry.Data.Length, Entry.Data.WasCut, Entry.Data.FullTitle, False);
 
           Entry.Free;
-          FProcessingList.Delete(i);
         end;
       end else
       begin
@@ -266,20 +276,21 @@ begin
     TICEClient(Sender).WriteDebug(Text, Data, T, Level);
 end;
 
+function TPostProcessManager.WorkingForClient(Client: TObject): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 0 to FProcessingList.Count - 1 do
+    if FProcessingList[i].Owner = Client then
+      Exit(True);
+end;
+
 procedure TPostProcessManager.WriteDebug(Sender: TObject; Text: string;
   T: TDebugTypes; Level: TDebugLevels);
 begin
   if Sender <> nil then
     TICEClient(Sender).WriteDebug(Text, T, Level);
-end;
-
-procedure TPostProcessManager.ClientRemoved(Client: TObject);
-var
-  i: Integer;
-begin
-  for i := 0 to FProcessingList.Count - 1 do
-    if FProcessingList[i].Owner = Client then
-      FProcessingList[i].Owner := nil;
 end;
 
 constructor TPostProcessManager.Create;
@@ -298,7 +309,7 @@ begin
   PostProcessors.Add(TPostProcessConvert.Create);
   PostProcessors.Add(TPostProcessSetTags.Create);
   PostProcessors.Add(TPostProcessSoX.Create);
-  PostProcessors.Add(TPostProcessAAC.Create);
+  PostProcessors.Add(TPostProcessMP4Box.Create);
 
   for i := 0 to PostProcessors.Count - 1 do
     if PostProcessors[i].ClassType.InheritsFrom(TInternalPostProcess) then
@@ -352,6 +363,11 @@ begin
 
   if Enable and (not PostProcess.DependenciesMet) then
   begin
+    if not PostProcess.ShowInitMessage(Owner.Handle) then
+    begin
+      Exit(False);
+    end;
+
     if MsgBox(Owner.Handle, _('This postprocessor needs additional plugins. Do you want to download these plugins now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
     begin
       for i := 0 to PostProcess.NeededPlugins.Count - 1 do
@@ -382,6 +398,49 @@ begin
       Result := FPostProcessors[i];
       Break;
     end;
+end;
+
+function TPostProcessManager.FindNextIdx(Entry: TProcessingEntry;
+  Group: Integer): Integer;
+var
+  i, NextIdx: Integer;
+begin
+  Result := -1;
+
+  if Entry.ActivePluginIndex > -1 then
+    NextIdx := Entry.ActivePluginIndex + 1
+  else
+    NextIdx := 0;
+
+  for i := NextIdx to Entry.PluginList.Count - 1 do
+  begin
+    if Entry.PluginList[i].CanProcess(Entry.Data) and (Group = Entry.PluginList[i].GroupID) then
+    begin
+      Entry.ActiveThread := Entry.PluginList[i].ProcessFile(Entry.Data);
+      if Entry.ActiveThread <> nil then
+      begin
+        Entry.ActivePluginIndex := i;
+
+        if Entry.PluginList[i] is TPostProcessConvert then
+        begin
+          if Entry.Data.WorkFilename = '' then
+          begin
+            Entry.Data.WorkFilename := RemoveFileExt(Entry.Data.Filename) + '_convert.wav';
+            TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.Filename, Entry.Data.WorkFilename, Entry.Data.BitRate);
+          end else if Entry.Data.ReEncodedFilename = '' then
+          begin
+            Entry.Data.ReEncodedFilename := RemoveFileExt(Entry.Data.Filename) + '_convert' + FormatToFiletype(Entry.Data.OutputFormat);
+            TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.WorkFilename, Entry.Data.ReEncodedFilename, Entry.Data.BitRate);
+          end;
+        end;
+
+        Entry.ActiveThread.OnTerminate := ThreadTerminate;
+        Entry.ActiveThread.Resume;
+
+        Exit(i);
+      end;
+    end;
+  end;
 end;
 
 function TPostProcessManager.Find(Plugin: TPostProcessBase): TPostProcessBase;

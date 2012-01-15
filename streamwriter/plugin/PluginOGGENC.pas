@@ -1,4 +1,4 @@
-unit PluginOggEnc;
+unit PluginOGGEnc;
 
 interface
 

@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects,
-  Functions, Logging, Math, PluginBase, Mp3FileUtils, StrUtils;
+  Functions, Logging, Math, PluginBase, StrUtils;
 
 type
   TPostProcessConvertThread = class(TPostProcessThreadBase)
@@ -75,14 +75,11 @@ begin
   FFromFile := FromFile;
   FToFile := ToFile;
   FBitRate := BitRate;
-
-  Resume;
 end;
 
 constructor TPostProcessConvertThread.Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
 begin
   inherited Create(Data, Plugin);
-
 end;
 
 procedure TPostProcessConvertThread.Execute;
@@ -149,7 +146,7 @@ constructor TPostProcessConvert.Create;
 begin
   inherited;
 
-  FOrder := MaxInt;
+  FOrder := -100; // Das muss, weil die Liste manchmal nach Order sortiert wird und er immer Position 0 haben muss.
   FHidden := True;
   FName := 'Convert file';
 end;
@@ -163,7 +160,11 @@ end;
 function TPostProcessConvert.ProcessFile(
   Data: PPluginProcessInformation): TPostProcessThreadBase;
 begin
+  Result := nil;
+  if not CanProcess(Data) then
+    Exit;
 
+  Result := TPostProcessConvertThread.Create(Data, Self);
 end;
 
 end.

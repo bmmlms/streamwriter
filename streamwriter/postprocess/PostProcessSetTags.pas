@@ -22,8 +22,8 @@ unit PostProcessSetTags;
 interface
 
 uses
-  Windows, SysUtils, Classes, PostProcess, LanguageObjects,
-  Mp3FileUtils, Functions, Logging, ConfigureSetTags;
+  Windows, SysUtils, Classes, PostProcess, LanguageObjects, AudioGenie,
+  PluginAudioGenie, Functions, Logging, ConfigureSetTags, TypeDefs;
 
 type
   TPostProcessSetTagsThread = class(TPostProcessThreadBase)
@@ -42,6 +42,8 @@ type
   protected
   public
     constructor Create;
+
+    function CanProcess(Data: PPluginProcessInformation): Boolean; virtual;
     function ProcessFile(Data: PPluginProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
@@ -56,7 +58,7 @@ implementation
 uses
   AppData;
 
-{ TSetTagsThread }
+{ TPostProcessSetTagsThread }
 
 constructor TPostProcessSetTagsThread.Create(Data: PPluginProcessInformation;
   Plugin: TPostProcessBase);
@@ -67,17 +69,10 @@ end;
 procedure TPostProcessSetTagsThread.Execute;
 var
   Artist, Title, Album, Comment: string;
-  ID3V1: TID3v1Tag;
-  ID3V2: TID3v2Tag;
   Arr: TPatternReplaceArray;
+  AG: TAudioGenie3;
 begin
   inherited;
-
-  if LowerCase(ExtractFileExt(FData.Filename)) <> '.mp3' then
-  begin
-    FResult := arImpossible;
-    Exit;
-  end;
 
   FResult := arFail;
 
@@ -102,47 +97,36 @@ begin
   Arr[6].C := 'i';
   Arr[6].Replace := FormatDateTime('hh.nn.ss', Now);
 
-  ID3V1 := TID3v1Tag.Create;
-  ID3V2 := TID3v2Tag.Create;
+  AG := TAudioGenie3.Create(TPluginAudioGenie(AppGlobals.PluginManager.Find(TPluginAudioGenie)).DLLPath);
   try
     try
-      Artist := PatternReplace(Artist, Arr);
-      Title := PatternReplace(Title, Arr);
-      Album := PatternReplace(Album, Arr);
-      Comment := PatternReplace(Comment, Arr);
+      if AG.AUDIOAnalyzeFileW(FData.Filename) <> UNKNOWN then
+      begin
+        Artist := PatternReplace(Artist, Arr);
+        Title := PatternReplace(Title, Arr);
+        Album := PatternReplace(Album, Arr);
+        Comment := PatternReplace(Comment, Arr);
 
-      if (Trim(Artist) <> '') and (Trim(Title) <> '') then
-      begin
-        ID3V1.Artist := Artist;
-        ID3V1.Title := Title;
-        ID3V2.Artist := Artist;
-        ID3V2.Title := Title;
-      end else
-      begin
-        ID3V1.Title := FData.Title;
-        ID3V2.Title := FData.Title;
-      end;
-      ID3V1.Album := Album;
-      ID3V2.Album := Album;
-      ID3V1.Track := IntToStr(FData.TrackNumber);
-      ID3V2.Track := IntToStr(FData.TrackNumber);
-      ID3V1.Genre := ''; // Dann setzt Mp3FileUtils das auf "Undefined"
-      ID3V1.Comment := Comment;
-      ID3V2.Comment := Comment;
-      if (ID3V1.WriteToFile(FData.Filename) = MP3ERR_None) and (ID3V2.WriteToFile(FData.Filename) = MP3ERR_None) then
-      begin
-        FData.Filesize := GetFileSize(FData.Filename);
-        FResult := arWin;
+        AG.AUDIOArtistW := Artist;
+        AG.AUDIOTitleW := Title;
+        AG.AUDIOAlbumW := Album;
+        AG.AUDIOTrackW := IntToStr(FData.TrackNumber);
+        AG.AUDIOCommentW := Comment;
+
+        if AG.AUDIOSaveChangesW then
+        begin
+          FData.Filesize := GetFileSize(FData.Filename);
+          FResult := arWin;
+        end;
       end;
     except
     end;
   finally
-    ID3V1.Free;
-    ID3V2.Free;
+    AG.Free;
   end;
 end;
-
-{ TSetTagsPlugin }
+                     // TODO: passen die standard plugin reihenfolgen? das mp4box sollte z.b. immer vor tags setzen sein. evtl sonst warnen oder so?
+{ TPostProcessSetTags }
 
 procedure TPostProcessSetTags.Assign(Source: TPostProcessBase);
 begin
@@ -152,6 +136,12 @@ begin
   FTitle := TPostProcessSetTags(Source).FTitle;
   FAlbum := TPostProcessSetTags(Source).FAlbum;
   FComment := TPostProcessSetTags(Source).FComment;
+end;
+
+function TPostProcessSetTags.CanProcess(
+  Data: PPluginProcessInformation): Boolean;
+begin
+  Result := (FiletypeToFormat(Data.Filename) <> atNone) and FGetDependenciesMet;
 end;
 
 function TPostProcessSetTags.Configure(AOwner: TComponent; Handle: Cardinal;
@@ -194,16 +184,18 @@ constructor TPostProcessSetTags.Create;
 begin
   inherited;
 
+  FNeededPlugins.Add(TPluginAudioGenie);
+
   FActive := True;
   FOrder := 100;
   FCanConfigure := True;
   FGroupID := 1;
 
-  FName := _('MP3 - Set ID3-tags');
-  FHelp := _('This plugin adds ID3-tags to recorded songs (MP3 only).');
+  FName := _('Write tags to recorded songs');
+  FHelp := _('This postprocessor writes tags to recorded songs.');
 
   try
-    AppGlobals.Storage.Read('Active_' + ClassName, FActive, True, 'Plugins');
+    AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
     AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 100, 'Plugins');
     AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
 
@@ -218,8 +210,8 @@ procedure TPostProcessSetTags.Initialize;
 begin
   inherited;
 
-  FName := _('MP3 - Set ID3-tags');
-  FHelp := _('This plugin adds ID3-tags to recorded songs (MP3 only).');
+  FName := _('Write tags to recorded songs');
+  FHelp := _('This postprocessor writes tags to recorded songs.');
 end;
 
 procedure TPostProcessSetTags.LoadSharedSettings;

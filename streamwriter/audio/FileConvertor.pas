@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Windows, Classes, DynBASS, ExtendedStream, PluginLAME, AppData,
-  PluginOGGEnc, Functions;
+  PluginOGGEnc, PluginFAAC, Functions, PerlRegEx;
 
 const
   BE_CONFIG_MP3 = 0;
@@ -132,9 +132,14 @@ type
     FBitRate: Cardinal;
     FOnProgress: TFileConvertorProgressEvent;
 
+    procedure ReadCallbackOGG(Data: AnsiString);
+    procedure ReadCallbackAAC(Data: AnsiString);
+
     function Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
     function ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
     function ConvertWAV2OGG(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
+    function ConvertWAV2AAC(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
+    function ConvertWAV2M4A(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
   public
     function Convert(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
 
@@ -143,6 +148,9 @@ type
   end;
 
 implementation
+
+uses
+  PostProcess, PostProcessMP4Box;
 
 { TFileConvertor }
 
@@ -161,7 +169,11 @@ begin
   else if (ExtFrom = '.wav') and (ExtTo = '.mp3') then
     Result := ConvertWAV2MP3(FromFile, ToFile, TerminateFlag)
   else if (ExtFrom = '.wav') and (ExtTo = '.ogg') then
-    Result := ConvertWAV2OGG(FromFile, ToFile, TerminateFlag);
+    Result := ConvertWAV2OGG(FromFile, ToFile, TerminateFlag)
+  else if (ExtFrom = '.wav') and (ExtTo = '.aac') then
+    Result := ConvertWAV2AAC(FromFile, ToFile, TerminateFlag)
+  else if (ExtFrom = '.wav') and (ExtTo = '.m4a') then
+    Result := ConvertWAV2M4A(FromFile, ToFile, TerminateFlag);
 end;
 
 function TFileConvertor.Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
@@ -272,6 +284,54 @@ begin
   end
 end;
 
+function TFileConvertor.ConvertWAV2AAC(FromFile, ToFile: string;
+  TerminateFlag: PBoolean): Boolean;
+var
+  CmdLine: string;
+  Output: AnsiString;
+  Plugin: TPluginFAAC;
+  EC: Cardinal;
+begin
+  Plugin := AppGlobals.PluginManager.Find(TPluginFAAC) as TPluginFAAC;
+
+  if not Plugin.FilesExtracted then
+    Exit(False);
+
+  CmdLine := Plugin.EXEPath + ' -o "' + ToFile + '" "' + FromFile + '"';
+  if RunProcess(CmdLine, ExtractFilePath(Plugin.EXEPath), 300000, Output, EC, TerminateFlag, ReadCallbackAAC) = 2 then
+  begin
+    Result := False;
+  end else
+  begin
+    Result := FileExists(ToFile);
+  end;
+end;
+
+function TFileConvertor.ConvertWAV2M4A(FromFile, ToFile: string;
+  TerminateFlag: PBoolean): Boolean;
+var
+  ToFileTemp, ToFileTemp2: string;
+begin
+  ToFileTemp := RemoveFileExt(ToFile) + '_temp.aac';
+  ToFileTemp2 := '';
+
+  Result := ConvertWAV2AAC(FromFile, ToFileTemp, TerminateFlag);
+
+  if Result then
+  begin
+    // TODO: Was wenn es nicht da ist? was bei fehlern? das hier wird nur vom cutview genutzt!
+    ToFileTemp2 := RemoveFileExt(ToFile) + '_temp.m4a';
+    Result := TPostProcessMP4Box(AppGlobals.PostProcessManager.Find(TPostProcessMP4Box)).MP4BoxMux('', ToFileTemp, ToFileTemp2, TerminateFlag) = arWin;
+
+    if Result then
+      MoveFileEx(PChar(ToFileTemp2), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);
+  end;
+
+  DeleteFile(PChar(ToFileTemp));
+  if ToFileTemp2 <> '' then
+    DeleteFile(PChar(ToFileTemp2));
+end;
+
 function TFileConvertor.ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
 var
   DLLHandle: THandle;
@@ -322,7 +382,7 @@ begin
 
     InStream := TFileStream.Create(FromFile, fmOpenRead);
     try
-      ToFileTemp := RemoveFileExt(ToFile) + '_save.mp3';
+      ToFileTemp := RemoveFileExt(ToFile) + '_save.mp3';    // TODO: Die anderen encoder bräuchten auch so ein _save oder???
       OutStream := TFileStream.Create(ToFileTemp, fmCreate);
 
       if FBitRate = 0 then
@@ -445,12 +505,64 @@ begin
     Exit(False);
 
   CmdLine := Plugin.EXEPath + ' "' + FromFile + '" -o "' + ToFile + '"';
-  if RunProcess(CmdLine, ExtractFilePath(Plugin.EXEPath), 300000, Output, EC, TerminateFlag) = 2 then
+  if RunProcess(CmdLine, ExtractFilePath(Plugin.EXEPath), 300000, Output, EC, TerminateFlag, ReadCallbackOGG) = 2 then
   begin
     Result := False;
   end else
   begin
     Result := FileExists(ToFile);
+  end;
+end;
+
+procedure TFileConvertor.ReadCallbackAAC(Data: AnsiString);
+var
+  R: TPerlRegEx;
+  M: string;
+begin
+  if not Assigned(FOnProgress) then
+   Exit;
+
+  R := TPerlRegEx.Create;
+  try
+    R.Subject := Data;
+    R.RegEx := '(\d+)%\)';
+    try
+      if R.Match then
+      begin
+        M := R.MatchedText;
+        M := Copy(M, 1, Length(M) - 2);
+        FOnProgress(Self, StrToInt(M));
+      end;
+    except
+    end;
+  finally
+    R.Free;
+  end;
+end;
+
+procedure TFileConvertor.ReadCallbackOGG(Data: AnsiString);
+var
+  R: TPerlRegEx;
+  M: string;
+begin
+  if not Assigned(FOnProgress) then
+   Exit;
+
+  R := TPerlRegEx.Create;
+  try
+    R.Subject := Data;
+    R.RegEx := '(\d+)[.,](\d+)%';
+    try
+      if R.Match then
+      begin
+        M := R.MatchedText;
+        M := Copy(M, 1, Length(M) - 1);
+        FOnProgress(Self, Trunc(StrToFloat(M)));
+      end;
+    except
+    end;
+  finally
+    R.Free;
   end;
 end;
 

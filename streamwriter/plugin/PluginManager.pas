@@ -5,7 +5,7 @@ interface
 uses
   Windows, SysUtils, Classes, Generics.Collections, PluginBase, PluginLAME,
   Forms, Functions, LanguageObjects, PluginSoX, TypeDefs, PluginFAAC, PluginOggEnc,
-  PluginM4ATools;
+  PluginMP4Box, PluginAudioGenie;
 
 type
   TCanEncodeResults = (ceNoPlugin, cePluginNeeded, ceOkay);
@@ -70,7 +70,8 @@ begin
   FPlugins.Add(TPluginLAME.Create);
   FPlugins.Add(TPluginFAAC.Create);
   FPlugins.Add(TPluginSoX.Create);
-  FPlugins.Add(TPluginM4ATools.Create);
+  FPlugins.Add(TPluginMP4Box.Create);
+  FPlugins.Add(TPluginAudioGenie.Create);
 
   for i := 0 to Plugins.Count - 1 do
     if Plugins[i].ClassType.InheritsFrom(TPluginBase) then
@@ -112,6 +113,13 @@ var
   Res: Integer;
   DA: TfrmDownloadAddons;
 begin
+  if not Plugin.DependenciesMet then
+  begin
+    for i := 0 to Plugin.NeededPlugins.Count - 1 do
+      if not EnablePlugin(Owner, Find(Plugin.NeededPlugins[i]), False) then
+        Exit(False);
+  end;
+
   if not Plugin.PackageDownloaded then
   begin
     if ShowMessage then

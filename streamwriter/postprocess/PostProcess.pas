@@ -46,6 +46,7 @@ type
     FullTitle: Boolean;
     StreamTitle: string;
     BitRate: Cardinal;
+    OutputFormat: TAudioTypes;
   end;
   PPluginProcessInformation = ^TPluginProcessInformation;
 
@@ -54,22 +55,22 @@ type
     // The owner is a TICEClient
     FOwner: TObject;
     FNeedsWave: Boolean;
-    FOutputFormat: TAudioTypes;
 
     FActiveThread: TPostProcessThreadBase;
     FData: PPluginProcessInformation;
-    FPluginsProcessed: TList<TPostProcessBase>;
+    FPluginList: TList<TPostProcessBase>;
+    FActivePluginIndex: Integer;
   public
     constructor Create(Owner: TObject; ActiveThread: TPostProcessThreadBase;
-      Data: TPluginProcessInformation; OutputFormat: TAudioTypes);
+      Data: TPluginProcessInformation);
     destructor Destroy; override;
 
     property Owner: TObject read FOwner write FOwner;
     property NeedsWave: Boolean read FNeedsWave write FNeedsWave;
     property ActiveThread: TPostProcessThreadBase read FActiveThread write FActiveThread;
-    property OutputFormat: TAudioTypes read FOutputFormat;
     property Data: PPluginProcessInformation read FData;
-    property PluginsProcessed: TList<TPostProcessBase> read FPluginsProcessed;
+    property PluginList: TList<TPostProcessBase> read FPluginList;
+    property ActivePluginIndex: Integer read FActivePluginIndex write FActivePluginIndex;
   end;
 
   TProcessingList = class(TList<TProcessingEntry>)
@@ -117,6 +118,7 @@ type
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; virtual;
     procedure Save; virtual;
     procedure LoadSharedSettings; virtual;
+    function ShowInitMessage(Handle: THandle): Boolean; virtual;
 
     property NeedsWave: Boolean read FNeedsWave;
     property Hidden: Boolean read FHidden;
@@ -140,8 +142,6 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Initialize; override;
-
-    function ShowInitMessage(Handle: THandle): Boolean; virtual;
 
     property NeededPlugins: TList read FNeededPlugins;
     property DependenciesMet: Boolean read FGetDependenciesMet;
@@ -185,13 +185,13 @@ uses
 { TProcessingEntry }
 
 constructor TProcessingEntry.Create(Owner: TObject; ActiveThread: TPostProcessThreadBase;
-  Data: TPluginProcessInformation; OutputFormat: TAudioTypes);
+  Data: TPluginProcessInformation);
 begin
   inherited Create;
 
   FOwner := Owner;
   FActiveThread := ActiveThread;
-  FOutputFormat := OutputFormat;
+  FActivePluginIndex := -1;
 
   New(FData);
 
@@ -207,13 +207,14 @@ begin
   FData.FullTitle := Data.FullTitle;
   FData.StreamTitle := Data.StreamTitle;
   FData.BitRate := Data.BitRate;
+  FData.OutputFormat := Data.OutputFormat;
 
-  FPluginsProcessed := TList<TPostProcessBase>.Create;
+  FPluginList := TList<TPostProcessBase>.Create;
 end;
 
 destructor TProcessingEntry.Destroy;
 begin
-  FPluginsProcessed.Free;
+  FPluginList.Free;
   Dispose(FData);
 
   inherited;
@@ -398,6 +399,11 @@ begin
 
 end;
 
+function TPostProcessBase.ShowInitMessage(Handle: THandle): Boolean;
+begin
+  Result := True;
+end;
+
 { TInternalPostProcess }
 
 constructor TInternalPostProcess.Create;
@@ -432,11 +438,6 @@ procedure TInternalPostProcess.Initialize;
 begin
   inherited;
 
-end;
-
-function TInternalPostProcess.ShowInitMessage(Handle: THandle): Boolean;
-begin
-  Result := True;
 end;
 
 end.
