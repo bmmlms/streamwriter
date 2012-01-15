@@ -529,9 +529,11 @@ begin
     try
       if R.Match then
       begin
-        M := R.MatchedText;
-        M := Copy(M, 1, Length(M) - 2);
-        FOnProgress(Self, StrToInt(M));
+        repeat
+          M := R.MatchedText;
+          M := Copy(M, 1, Length(M) - 2);
+          FOnProgress(Self, StrToInt(M));
+        until not R.MatchAgain;
       end;
     except
     end;
@@ -555,9 +557,11 @@ begin
     try
       if R.Match then
       begin
-        M := R.MatchedText;
-        M := Copy(M, 1, Length(M) - 1);
-        FOnProgress(Self, Trunc(StrToFloat(M)));
+        repeat
+          M := R.MatchedText;
+          M := Copy(M, 1, Length(M) - 1);
+          FOnProgress(Self, Trunc(StrToFloat(M)));
+        until not R.MatchAgain;
       end;
     except
     end;
