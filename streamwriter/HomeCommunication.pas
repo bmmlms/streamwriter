@@ -586,10 +586,12 @@ begin
 
     Node := TXMLNode.Create(Data);
     Node.Name := 'user';
+    Node.Value.UseCDATA := False;
     Node.Value.AsString := User;
 
     Node := TXMLNode.Create(Data);
     Node.Name := 'pass';
+    Node.Value.UseCDATA := False;
     Node.Value.AsString := Pass;
 
     XMLDocument.SaveToString(XML);
