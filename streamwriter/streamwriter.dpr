@@ -123,7 +123,8 @@ uses
   PluginMP4Box in 'plugin\PluginMP4Box.pas',
   FileTagger in 'audio\FileTagger.pas',
   PluginAudioGenie in 'plugin\PluginAudioGenie.pas',
-  AudioGenie in 'audio\AudioGenie.pas';
+  AudioGenie in 'audio\AudioGenie.pas',
+  SavedTabEditTags in 'controls\SavedTabEditTags.pas' {frmEditTags};
 
 {$SetPEOptFlags $0140}
 

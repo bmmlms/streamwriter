@@ -1434,16 +1434,10 @@ var
 begin
   FResult := crSave;
 
-  case AudioType of
-    atNone:
-      raise Exception.Create('');
-    atMPEG:
-      Ext := '.mp3';
-    atAAC:
-      Ext := '.aac';
-    atOGG:
-      Ext := '.ogg';
-  end;
+  if AppGlobals.OutputFormat <> atNone then
+    Ext := FormatToFiletype(AppGlobals.OutputFormat)
+  else
+    Ext := FormatToFiletype(AudioType);
 
   case TitleState of
     tsAuto:

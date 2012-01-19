@@ -331,7 +331,7 @@ type
     // Bitrate of the stream
     FBitrate: Cardinal;
     // Audiotype ('mpg', 'aac', 'ogg', ...)
-    FAudioType: string;
+    FAudioType: TAudioTypes;
     // Genre ('punk   , rock, speedmetal')
     FGenre: string;
     // The stream's index on the list
@@ -377,7 +377,7 @@ type
     property StartURL: string read FStartURL write FStartURL;
     property URLs: TStringList read FURLs;
     property Bitrate: Cardinal read FBitrate write FBitrate;
-    property AudioType: string read FAudioType write FAudioType;
+    property AudioType: TAudioTypes read FAudioType write FAudioType;
     property Genre: string read FGenre write FSetGenre;
     property Index: Integer read FIndex write FIndex;
     property CategoryIndex: Integer read FCategoryIndex write FCategoryIndex;
@@ -534,7 +534,7 @@ type
   end;
 
 const
-  DATAVERSION = 39;
+  DATAVERSION = 40;
 
 implementation
 
@@ -736,7 +736,8 @@ var
   BTmp: Boolean;
   i: Integer;
   Count: Cardinal;
-  URL: string;
+  EnumTmp: Byte;
+  STmp, URL: string;
 begin
   Result := TStreamEntry.Create;
 
@@ -777,8 +778,19 @@ begin
 
   Stream.Read(Result.FBitrate);
 
-  if Version > 10 then
-    Stream.Read(Result.FAudioType);
+  if Version < 40 then
+  begin
+    Stream.Read(STmp);
+    Result.FAudioType := atNone;
+    if STmp = 'MP3' then
+      Result.FAudioType := atMPEG
+    else if STmp = 'AAC' then
+      Result.FAudioType := atAAC;
+  end else
+  begin
+    Stream.Read(EnumTmp);
+    Result.FAudioType := TAudioTypes(EnumTmp);
+  end;
 
   Stream.Read(Result.FGenre);
 
@@ -838,7 +850,7 @@ begin
     Stream.Write(FURLs[i]);
   end;
   Stream.Write(FBitRate);
-  Stream.Write(FAudioType);
+  Stream.Write(Byte(FAudioType));
   Stream.Write(FGenre);
 
   Stream.Write(FIndex);

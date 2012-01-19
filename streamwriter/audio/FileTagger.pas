@@ -27,6 +27,7 @@ uses
 type
   TFileTagger = class
   private
+    FFilename: string;
     FArtist, FTitle, FAlbum, FComment, FTrackNumber: string;
   public
     constructor Create;
@@ -34,6 +35,13 @@ type
 
     function Read(Filename: string): Boolean;
     function Write(Filename: string): Boolean;
+
+    property Filename: string read FFilename;
+    property Artist: string read FArtist write FArtist;
+    property Title: string read FTitle write FTitle;
+    property Album: string read FAlbum write FAlbum;
+    property Comment: string read FComment write FComment;
+    property TrackNumber: string read FTrackNumber write FTrackNumber;
   end;
 
 implementation
@@ -59,10 +67,13 @@ var
   AG: TAudioGenie3;
 begin
   Result := False;
+  FFilename := '';
 
+  // TODO: Wenn er hier mit false rausgeht, wird das beachtet beim CutView? nicht dass dann am ende gesaved wird!
   if not TPluginAudioGenie(AppGlobals.PluginManager.Find(TPluginAudioGenie)).FilesExtracted then
     Exit;
 
+  FFilename := Filename;
   FArtist := '';
   FTitle := '';
   FAlbum := '';

@@ -87,11 +87,14 @@ procedure TPostProcessManager.BuildProcessingList(Entry: TProcessingEntry);
 var
   i, n: Integer;
 
-  function PostProcessingNeedsWave: Boolean;
+  function PostProcessingNeedsWave(Entry: TProcessingEntry): Boolean;
   var
     i: Integer;
+    FormatChanged: Boolean;
   begin
-    if (Entry.Data.OutputFormat <> atNone) and (Entry.Data.OutputFormat <> FiletypeToFormat(Entry.Data.Filename)) then
+    FormatChanged := Entry.Data.OutputFormat <> TICEClient(Entry.Owner).Entry.AudioType;
+
+    if FormatChanged then
       Exit(True);
 
     for i := 0 to FPostProcessors.Count - 1 do
@@ -101,7 +104,7 @@ var
     Exit(False);
   end;
 begin
-  Entry.NeedsWave := PostProcessingNeedsWave;
+  Entry.NeedsWave := PostProcessingNeedsWave(Entry);
 
   if Entry.NeedsWave then
   begin
@@ -143,20 +146,6 @@ var
   i, n, Order, SmallestActive: Integer;
   NextIdx: Integer;
   Output: string;
-
-  function PostProcessingNeedsWave: Boolean;
-  var
-    i: Integer;
-  begin
-    if Entry.Data.OutputFormat <> FiletypeToFormat(Entry.Data.Filename) then
-      Exit(True);
-
-    for i := 0 to FPostProcessors.Count - 1 do
-      if FPostProcessors[i].CanProcess(Entry.Data) and FPostProcessors[i].Active and FPostProcessors[i].NeedsWave then
-        Exit(True);
-
-    Exit(False);
-  end;
 begin
   Result := False;
 

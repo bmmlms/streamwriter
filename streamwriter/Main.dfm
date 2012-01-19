@@ -87,13 +87,18 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       ImageIndex = 7
       Style = tbsSeparator
     end
-    object cmdRemove: TToolButton
+    object cmdRename: TToolButton
       Left = 164
+      Top = 0
+      Action = actRename
+    end
+    object cmdRemove: TToolButton
+      Left = 187
       Top = 0
       Action = actRemove
     end
     object ToolButton2: TToolButton
-      Left = 187
+      Left = 210
       Top = 0
       Width = 8
       Caption = '-'
@@ -101,28 +106,28 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsSeparator
     end
     object cmdSetupTimers: TToolButton
-      Left = 195
+      Left = 218
       Top = 0
       Action = actTimers
     end
     object cmdStopAfterSong: TToolButton
-      Left = 218
+      Left = 241
       Top = 0
       Action = actStopAfterSong
       ImageIndex = 52
     end
     object cmdOpenWebsite: TToolButton
-      Left = 241
+      Left = 264
       Top = 0
       Action = actOpenWebsite
     end
     object cmdCopyTitle: TToolButton
-      Left = 264
+      Left = 287
       Top = 0
       Action = actCopyTitle
     end
     object ToolButton8: TToolButton
-      Left = 287
+      Left = 310
       Top = 0
       Width = 8
       Caption = 'ToolButton8'
@@ -130,17 +135,17 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsSeparator
     end
     object cmdStreamSettings: TToolButton
-      Left = 295
+      Left = 318
       Top = 0
       Action = actStreamSettings
     end
     object ToolButton6: TToolButton
-      Left = 318
+      Left = 341
       Top = 0
       Action = actResetData
     end
     object ToolButton4: TToolButton
-      Left = 341
+      Left = 364
       Top = 0
       Width = 8
       Caption = '-'
@@ -149,7 +154,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Visible = False
     end
     object cmdShowStreamBrowser: TToolButton
-      Left = 349
+      Left = 372
       Top = 0
       Action = actShowSideBar
       Visible = False
@@ -474,6 +479,11 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       ImageIndex = 1
       OnExecute = actPlayerStopExecute
     end
+    object actRename: TAction
+      Caption = 'Ren&ame'
+      Hint = 'Rename'
+      ImageIndex = 74
+    end
   end
   object mnuStreamPopup: TPopupMenu
     AutoHotkeys = maManual
@@ -504,6 +514,9 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object N4: TMenuItem
       Caption = '-'
+    end
+    object mnuRename1: TMenuItem
+      Action = actRename
     end
     object mnuRemove1: TMenuItem
       Action = actRemove
@@ -2849,6 +2862,50 @@ object frmStreamWriterMain: TfrmStreamWriterMain
           E4F78304BD192001806E0023D47010E604620E20E60206AE0930997301D99F81
           F808103F463704D90066286641C34C50B5DF80F823CCE6646403063C37020076
           F6AC2E0AEC46140000000049454E44AE426082}
+      end
+      item
+        Background = clWindow
+        Name = 'textfield_rename'
+        PngImage.Data = {
+          89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+          610000001974455874536F6674776172650041646F626520496D616765526561
+          647971C9653C000000C04944415478DA63FCFFFF3F03258071181870F2E449BC
+          262C5AB48841595999E1F9F3E70C212121D80D303636C66B4B414101C3840913
+          30C4DFBC798330207FF271064646460606A097401403231831F4655B32A4A5A5
+          31CC9A358BB001EC9C62A050616062FAC7C0CAC2C8F0EDF36B86DE2C2BE20DE0
+          E0011AC0F09781998901680003C3D74F6F187A328934A000E4052688B3191921
+          DE6064F8CFD09D694D9C01F8005E035EBC7881371AABAAAA184016DCBC7913CC
+          C688C6814F89036E000006C97E54CED2BCAD0000000049454E44AE426082}
+      end
+      item
+        Background = clWindow
+        Name = 'tag_blue_edit'
+        PngImage.Data = {
+          89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+          610000001974455874536F6674776172650041646F626520496D616765526561
+          647971C9653C000002BB4944415478DA7D934B4C13511885CF9D96B10D94625B
+          86042C8F41427834858680A4419460DC283129D58531249A98E0DAB870EDCAA5
+          1B5D40A2AC48DC1016245A5263D562A94502828021A52595B41468AD4267DA99
+          716616C44AF56CFEFB3A5FCE7F6F2E595959916441144528F5CFB15C99AEAEAE
+          5DFC47647979596A6D6D3DB1B1B3B383783C8E5C2EC7F4F4F4FC1342969696A4
+          B6B636C46231249349984C2658AD5675535953201CC7314EA7B328842C2E2E4A
+          369B0D7285C3E120C16030D4D2D2E2D0E974A0280ADBDBDB6A1A05D2DFDF7F02
+          4216161624BBDDAE1E4C2412BCDC775C9E5BD3792D5652142E54039148444DC3
+          F33C333030500021A15048EAE8E85027CAC5C93D2323D278BE41C00904BD8C88
+          8B3540381CC67E7806E5093F346536FC4ABE05C9C64694C887F5F5F57AA57741
+          10B0C7114C7CD3C04013680990E6814EB38873D434321B1FA1B7F4C1D8D08954
+          780E6BAFC7E2241008F4C9B15FB12CABB7582C58DD173115D1A25207D01A4090
+          00436A06978C9F5056DE89FDCD7518CD8DA00D0CBEBE99C81225B6DFEF77CA10
+          4F535393BEB2B212EB0722A623142A7414AA391F9CF42C2AD8CBE0762671B447
+          90583F04C713A4C5D25E15A0C8E7F339E5B1A7B9B959CF308C0A995F7B8721A3
+          07C6B343C8C69E81A2F3C8FDAC4332F0059B152EA485D2FA638022AFD7AB42E4
+          67D4E32008EA680E4CFB35D9FC1454491E7CA601BBEF3F23CAB8B02F1A5997CB
+          152E0028F2783C4E2119F0D699337473DF15F0F117201A1ED9F419D5BC553382
+          14A765878787C3EA33FE0D18BF577BA7F7EAADB13C6160367DC0698696CD56EC
+          CDAF22527503299E3E361705BC7C3C28B947C7B13E791FDFB7FC38556B8798C9
+          23DB781329A1B4C05C14F0E86E7BEEC1ED512D28018BB3538844A3300C3E4446
+          32B06EB7BBC05C1470FDBCE9C8C15669BB5B1A209570FE1FFAEE27798B23289B
+          A3C53ED36F63386A66A18D673F0000000049454E44AE426082}
       end>
     PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     Left = 32

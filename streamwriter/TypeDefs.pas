@@ -38,6 +38,7 @@ type
 
 function FiletypeToFormat(Filename: string): TAudioTypes;
 function FormatToFiletype(Format: TAudioTypes): string;
+function FormatToDesc(Format: TAudioTypes): string;
 
 implementation
 
@@ -66,6 +67,17 @@ begin
     atAAC: Result := '.aac';
     atOGG: Result := '.ogg';
     atM4A: Result := '.m4a';
+  end;
+end;
+
+function FormatToDesc(Format: TAudioTypes): string;
+begin
+  Result := '';
+  case Format of
+    atNone: ;
+    atMPEG: Result := 'MP3';
+    atAAC: Result := 'AAC';
+    atOGG: Result := 'OGG';
   end;
 end;
 

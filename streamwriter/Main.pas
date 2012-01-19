@@ -185,6 +185,9 @@ type
     actPlayerStop: TAction;
     actPlayerMuteVolume: TAction;
     mnuPlayerMuteVolume: TMenuItem;
+    mnuRename1: TMenuItem;
+    actRename: TAction;
+    cmdRename: TToolButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -274,7 +277,6 @@ type
     procedure PostTranslate;
 
     procedure tabClientsUpdateButtons(Sender: TObject);
-    procedure tabClientsCut(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsTrackAdded(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsAddTitleToList(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string);
@@ -284,6 +286,7 @@ type
     procedure tabClientsClientAdded(Sender: TObject);
     procedure tabClientsClientRemoved(Sender: TObject);
 
+    procedure tabSavedCut(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedRefresh(Sender: TObject);
 
@@ -678,7 +681,7 @@ begin
   begin
     if MsgBox(0, _('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
     begin
-      try
+      try                           // TODO: Das M4A-postprocessing kann man noch configuren... das ist fail. und damit brauche ich auch keine SHARED_ plugin einträge mehr :D
         S := TExtendedStream.Create;
         try
           S.LoadFromFile(AppGlobals.RecoveryFile);
@@ -734,7 +737,6 @@ begin
   tabClients.AddressBar.Stations.Images := imgImages;
   tabClients.SideBar.DebugView.DebugView.DebugView.Images := imgLog;
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
-  tabClients.OnCut := tabClientsCut;
   tabClients.OnTrackAdded := tabClientsTrackAdded;
   tabClients.OnTrackRemoved := tabClientsTrackRemoved;
   tabClients.OnAddTitleToList := tabClientsAddTitleToList;
@@ -752,7 +754,7 @@ begin
 
   tabSaved := TSavedTab.Create(pagMain);
   tabSaved.PageControl := pagMain;
-  tabSaved.OnCut := tabClientsCut;
+  tabSaved.OnCut := tabSavedCut;
   tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
   tabSaved.OnRefresh := tabSavedRefresh;
   tabSaved.OnPlayStarted := tabPlayStarted;
@@ -1420,7 +1422,7 @@ begin
   tabLists.RemoveClient(Client);
 end;
 
-procedure TfrmStreamWriterMain.tabClientsCut(Entry: TStreamEntry;
+procedure TfrmStreamWriterMain.tabSavedCut(Entry: TStreamEntry;
   Track: TTrackInfo);
 var
   tabCut: TCutTab;
@@ -1906,7 +1908,7 @@ begin
       OnePlaying := True;
       Break;
     end;
-
+            // TODO: reporten die neuen versionen auch die stats von wegen aufgenommen/auto aufgenommen?
   AnyClientHasTitle := False;
   for Client in Clients do
     if Client.Title <> '' then
@@ -1930,6 +1932,9 @@ begin
     actStop.Enabled := (B and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected));
   mnuStartStreaming1.Default := False;
   mnuStopStreaming1.Default := False;
+
+  if actRename.Enabled <> (((Length(Clients) = 1) and not OnlyAutomatedSelected) or ((Length(CatNodes) = 1) and (not OnlyAutomatedCatsSelected))) then
+    actRename.Enabled := ((Length(Clients) = 1) and not OnlyAutomatedSelected) or ((Length(CatNodes) = 1) and (not OnlyAutomatedCatsSelected));
 
   if actRemove.Enabled <> (B or (Length(CatNodes) > 0)) and not OnlyAutomatedCatsSelected then
     actRemove.Enabled := (B or (Length(CatNodes) > 0)) and not OnlyAutomatedCatsSelected;

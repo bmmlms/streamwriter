@@ -27,7 +27,7 @@ uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
   DataManager, VirtualTrees, LanguageObjects, GUIFunctions,
   Generics.Collections, Graphics, Forms, Menus, Messages, DragDrop,
-  DragDropFile, Functions, Logging;
+  DragDropFile, Functions, Logging, TypeDefs;
 
 type
   TMStreamInfoViewPanel = class(TPanel)
@@ -174,8 +174,8 @@ begin
         Info := Info + Entries[0].StreamURL + #13#10;
       if Genres <> '' then
         Info := Info + Genres + #13#10;
-      if Entries[0].AudioType <> '' then
-        Info := Info + Entries[0].AudioType + #13#10;
+      if Entries[0].AudioType <> atNone then
+        Info := Info + FormatToDesc(Entries[0].AudioType) + #13#10;
       if BitRates <> '' then
         Info := Info + Bitrates + 'kbps' + #13#10;
     end;

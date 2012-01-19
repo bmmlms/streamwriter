@@ -96,6 +96,7 @@ type
     FReceived: UInt64;
     FRefreshInfo: Boolean;
 
+    FActionRename: TAction;
     FActionRemove: TAction;
     FActionShowSideBar: TAction;
     FActionStopAfterSong: TAction;
@@ -106,10 +107,8 @@ type
     FActionTuneInStream: TAction;
 
     FOnUpdateButtons: TNotifyEvent;
-    FOnCut: TTrackEvent;
     FOnTrackAdded: TTrackEvent;
     FOnTrackRemoved: TTrackEvent;
-    //FOnVolumeChanged: TSeekChangeEvent;
     FOnPlayStarted: TNotifyEvent;
     FOnAuthRequired: TNotifyEvent;
     FOnShowErrorMessage: TShowErrorMessageEvent;
@@ -124,6 +123,7 @@ type
     procedure ActionStartExecute(Sender: TObject);
     procedure ActionStopExecute(Sender: TObject);
     procedure ActionOpenWebsiteExecute(Sender: TObject);
+    procedure ActionRenameExecute(Sender: TObject);
     procedure ActionRemoveExecute(Sender: TObject);
     procedure ActionPlayExecute(Sender: TObject);
     procedure ActionPauseExecute(Sender: TObject);
@@ -190,10 +190,8 @@ type
     property Received: UInt64 read FReceived;
 
     property OnUpdateButtons: TNotifyEvent read FOnUpdateButtons write FOnUpdateButtons;
-    property OnCut: TTrackEvent read FOnCut write FOnCut;
     property OnTrackAdded: TTrackEvent read FOnTrackAdded write FOnTrackAdded;
     property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
-    //property OnVolumeChanged: TSeekChangeEvent read FOnVolumeChanged write FOnVolumeChanged;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
     property OnAuthRequired: TNotifyEvent read FOnAuthRequired write FOnAuthRequired;
     property OnShowErrorMessage: TShowErrorMessageEvent read FOnShowErrorMessage write FOnShowErrorMessage;
@@ -515,6 +513,11 @@ begin
   end;
 end;
 
+procedure TClientTab.ActionRenameExecute(Sender: TObject);
+begin
+  FClientView.EditNode(FClientView.GetFirstSelected, 0);
+end;
+
 procedure TClientTab.ActionPlayExecute(Sender: TObject);
 var
   Clients: TNodeDataArray;
@@ -758,6 +761,7 @@ begin
   FActionStopPlay := GetAction('actStopPlay');
   FActionTuneInStream := GetAction('actTuneInStream');
   FActionTuneInFile := GetAction('actTuneInFile');
+  FActionRename := GetAction('actRename');
   FActionRemove := GetAction('actRemove');
   FActionShowSideBar := GetAction('actShowSideBar');
   FActionStopAfterSong := GetAction('actStopAfterSong');
@@ -767,6 +771,7 @@ begin
   FActionStopPlay.OnExecute := ActionPlayStopExecute;
   FActionTuneInStream.OnExecute := ActionTuneInStreamExecute;
   FActionTuneInFile.OnExecute := ActionTuneInFileExecute;
+  FActionRename.OnExecute := ActionRenameExecute;
   FActionRemove.OnExecute := ActionRemoveExecute;
   FActionShowSideBar.OnExecute := ActionShowSideBarExecute;
   FActionStopAfterSong.OnExecute := ActionStopAfterSongExecute;

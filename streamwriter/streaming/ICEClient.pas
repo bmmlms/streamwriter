@@ -282,8 +282,11 @@ begin
   if Assigned(FOnRefresh) then
     FOnRefresh(Self);
 
-  if Assigned(FOnDisconnected) and (FICEThread = nil) and (not AppGlobals.PostProcessManager.WorkingForClient(Self)) then
+  if FAutoRemove and Assigned(FOnDisconnected) and (FICEThread = nil) then
+  begin
+    Kill;
     FOnDisconnected(Self);
+  end;
 end;
 
 procedure TICEClient.StopPlay;
@@ -596,16 +599,7 @@ begin
   if FICEThread.RecvStream.Genre <> '' then
     FEntry.Genre := FICEThread.RecvStream.Genre;
 
-  case FICEThread.RecvStream.AudioType of
-    atMPEG:
-      FEntry.AudioType := 'MP3';
-    atAAC:
-      FEntry.AudioType := 'AAC';
-    atOGG:
-      FEntry.AudioType := 'OGG'
-    else
-      FEntry.AudioType := '';
-  end;
+  FEntry.AudioType := FICEThread.RecvStream.AudioType;
 end;
 
 procedure TICEClient.ThreadSongSaved(Sender: TSocketThread);
@@ -629,7 +623,10 @@ begin
     Data.FullTitle := FICEThread.RecvStream.SavedFullTitle;
     Data.StreamTitle := FICEThread.RecvStream.SavedStreamTitle;
     Data.Bitrate := FICEThread.RecvStream.BitRate;
-    Data.OutputFormat := AppGlobals.OutputFormat;
+    if AppGlobals.OutputFormat = atNone then
+      Data.OutputFormat := FICEThread.RecvStream.AudioType
+    else
+      Data.OutputFormat := AppGlobals.OutputFormat;
 
     if not FKilled then
       if not AppGlobals.PostProcessManager.ProcessFile(Self, Data) then
