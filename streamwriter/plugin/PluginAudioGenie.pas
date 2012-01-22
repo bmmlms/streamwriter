@@ -51,10 +51,10 @@ begin
 
   FName := _('Support setting of tags using AudioGenie');
   FHelp := _('This plugin sets tags to saved songs using AudioGenie.');
-  FDownloadName := 'plugin_audiogenie';
-  FDownloadPackage := 'plugin_audiogenie.dll';
+  FDownloadName := 'addon_audiogenie';
+  FDownloadPackage := 'addon_audiogenie.dll';
 
-  FFilesDir := AppGlobals.TempDir + 'plugin_audiogenie\';
+  FFilesDir := AppGlobals.TempDir + 'addon_audiogenie\';
   FDLLPath := FFilesDir + 'audiogenie3.dll';
 
   FFilenames.Add('audiogenie3.dll');

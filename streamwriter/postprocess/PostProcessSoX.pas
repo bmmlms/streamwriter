@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects,
-  Functions, Logging, Math, PluginBase, TypeDefs;
+  Functions, Logging, Math, AddonBase, TypeDefs;
 
 type
   TPostProcessSoxThread = class(TPostProcessThreadBase)
@@ -32,7 +32,7 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
+    constructor Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
   end;
 
   TPostProcessSoX = class(TInternalPostProcess)
@@ -51,8 +51,8 @@ type
     constructor Create;
     destructor Destroy; override;
     function ShowInitMessage(Handle: THandle): Boolean; override;
-    function CanProcess(Data: PPluginProcessInformation): Boolean; override;
-    function ProcessFile(Data: PPluginProcessInformation): TPostProcessThreadBase; override;
+    function CanProcess(Data: PPostProcessInformation): Boolean; override;
+    function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
     procedure Initialize; override;
@@ -64,15 +64,15 @@ type
 implementation
 
 uses
-  AppData, ConfigureSoX, PluginManager, PluginLAME, PluginSoX;
+  AppData, ConfigureSoX, AddonManager, AddonLAME, AddonSoX;
 
 { TPostProcessSoxThread }
 
-constructor TPostProcessSoxThread.Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
+constructor TPostProcessSoxThread.Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
 begin
-  inherited Create(Data, Plugin);
+  inherited Create(Data, Addon);
 
-  FSoxPath := TPluginSoX(AppGlobals.PluginManager.Find(TPluginSoX)).EXEPath;
+  FSoxPath := TAddonSoX(AppGlobals.AddonManager.Find(TAddonSoX)).EXEPath;
 end;
 
 procedure TPostProcessSoxThread.Execute;
@@ -91,7 +91,7 @@ begin
 
   SoxOutFile := RemoveFileExt(FData.WorkFilename) + '_sox.wav';
 
-  P := TPostProcessSoX(Plugin);
+  P := TPostProcessSoX(PostProcessor);
 
   CmdLine := '"' + FSoxPath + '" --norm "' + FData.WorkFilename + '" "' + SoxOutFile + '" ';
 
@@ -116,66 +116,53 @@ begin
 
   if Params <> '' then
   begin
-
-    try
-
-
-        if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120000, Output, EC, @Terminated) = 2 then
+      if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120000, Output, EC, @Terminated) = 2 then
+      begin
+        FResult := arTimeout;
+      end else
+      begin
+        Failed := True;
+        if FileExists(SoxOutFile) and (EC = 0) then
         begin
-          FResult := arTimeout;
-        end else
-        begin
-          Failed := True;
-          if FileExists(SoxOutFile) and (EC = 0) then
+          LoopStarted := GetTickCount;
+          while Failed do
           begin
-            LoopStarted := GetTickCount;
-            while Failed do
-            begin
+            try
+              FS := TFileStream.Create(SoxOutFile, fmOpenRead or fmShareExclusive);
               try
-                FS := TFileStream.Create(SoxOutFile, fmOpenRead or fmShareExclusive);
-                try
-                  Failed := False;
-                  Break;
-                finally
-                  FS.Free;
-                end;
-              except
-                Sleep(50);
-                if GetTickCount > LoopStarted + 5000 then
-                begin
-                  Break;
-                end;
+                Failed := False;
+                Break;
+              finally
+                FS.Free;
+              end;
+            except
+              Sleep(50);
+              if GetTickCount > LoopStarted + 5000 then
+              begin
+                Break;
               end;
             end;
-        end;
-
-
-
-
-        if not Failed then
-        begin
-
-          if not Failed then
-            if not MoveFileEx(PChar(SoXOutFile), PChar(FData.WorkFilename), MOVEFILE_REPLACE_EXISTING) then
-              Failed := True;
-
-          if not Failed then
-          begin
-            //FData.Filesize := GetFileSize(FData.Filename);
-
-            // Okay, das hier ist nicht ordentlich, aber sollte passen...
-            if P.FSilenceStart then
-              FData.Length := FData.Length + P.FSilenceStartLength;
-            if P.FSilenceEnd then
-              FData.Length := FData.Length + P.FSilenceEndLength;
-
-            FResult := arWin;
           end;
-        end;
       end;
 
-    finally
+      if not Failed then
+      begin
+        if not Failed then
+          if not MoveFileEx(PChar(SoXOutFile), PChar(FData.WorkFilename), MOVEFILE_REPLACE_EXISTING) then
+            Failed := True;
+        if not Failed then
+        begin
+          //FData.Filesize := GetFileSize(FData.Filename);
 
+          // Okay, das hier ist nicht ordentlich, aber sollte passen...
+          if P.FSilenceStart then
+            FData.Length := FData.Length + P.FSilenceStartLength;
+          if P.FSilenceEnd then
+            FData.Length := FData.Length + P.FSilenceEndLength;
+
+          FResult := arWin;
+        end;
+      end;
     end;
   end;
 end;
@@ -197,7 +184,7 @@ begin
   FSilenceEndLength := TPostProcessSoX(Source).FSilenceEndLength;
 end;
 
-function TPostProcessSoX.CanProcess(Data: PPluginProcessInformation): Boolean;
+function TPostProcessSoX.CanProcess(Data: PPostProcessInformation): Boolean;
 var
   OutputFormat: TAudioTypes;
 begin
@@ -205,7 +192,7 @@ begin
   if OutputFormat = atNone then
     OutputFormat := FiletypeToFormat(Data.Filename);
 
-  Result := (AppGlobals.PluginManager.CanEncode(OutputFormat) = ceOkay) and FGetDependenciesMet and (FNormalize or FFadeoutStart or
+  Result := (AppGlobals.AddonManager.CanEncode(OutputFormat) = ceOkay) and FGetDependenciesMet and (FNormalize or FFadeoutStart or
     FFadeoutEnd or FSilenceStart or FSilenceEnd);
 end;
 
@@ -256,12 +243,10 @@ constructor TPostProcessSoX.Create;
 begin
   inherited;
 
-  FNeededPlugins.Add(TPluginSoX);
+  FNeededAddons.Add(TAddonSoX);
 
   FNeedsWave := True;
 
-  FActive := False;
-  FOrder := 100;
   FCanConfigure := True;
 
   FName := _('Apply effects using SoX');
@@ -269,7 +254,7 @@ begin
 
   try
     AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
-    AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 90, 'Plugins');
+    AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 100, 'Plugins');
     AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
 
     AppGlobals.Storage.Read('Normalize_' + ClassName, FNormalize, False, 'Plugins');
@@ -356,8 +341,7 @@ begin
   FHelp := _('This postprocessor applies effects to recorded songs using Sound eXchange (SoX).');
 end;
 
-function TPostProcessSoX.ProcessFile(
-  Data: PPluginProcessInformation): TPostProcessThreadBase;
+function TPostProcessSoX.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
   Result := nil;
   if not CanProcess(Data) then
@@ -387,7 +371,7 @@ function TPostProcessSoX.ShowInitMessage(Handle: THandle): Boolean;
 begin
   Result := inherited;
 
-  MsgBox(Handle, _('Additional encoding-plugins might be needed to have this postprocessor working, that is an encoder for the desired output format if set or an encoder for the format of the stream itself.'),
+  MsgBox(Handle, _('Additional encoding-addons might be needed to have this postprocessor working, that is an encoder for the desired output format or an encoder for the format of the stream itself.'),
     _('Info'), MB_ICONINFORMATION);
 end;
 

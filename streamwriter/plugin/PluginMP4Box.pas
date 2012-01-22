@@ -82,10 +82,10 @@ begin
 
   FName := _('Support conversion of AAC files to M4A container');
   FHelp := _('This plugin adds support for converting AAC files to M4A files to the application which is useful for postprocessing of recorded songs.');
-  FDownloadName := 'plugin_mp4box';
-  FDownloadPackage := 'plugin_mp4box.dll';
+  FDownloadName := 'addon_mp4box';
+  FDownloadPackage := 'addon_mp4box.dll';
 
-  FFilesDir := AppGlobals.TempDir + 'plugin_mp4box\';
+  FFilesDir := AppGlobals.TempDir + 'addon_mp4box\';
   FMP4BoxEXEPath := FFilesDir + 'MP4Box.exe';
 
   FFilenames.Add('js32.dll');

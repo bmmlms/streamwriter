@@ -34,7 +34,7 @@ uses
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   TypeDefs, ExtendedStream, SettingsStorage, ChartsTab, StatusBar,
-  SystemCritical, Intro, PluginManager;
+  SystemCritical, Intro, AddonManager;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -330,6 +330,11 @@ var
 begin
   if FExiting then
     Exit;
+
+  if not Shutdown then
+    for i := 0 to pagMain.PageCount - 1 do
+      if not TMTabSheet(pagMain.Pages[i]).CanClose then
+        Exit;
 
   FExiting := True;
 
@@ -633,14 +638,14 @@ begin
   end;
   AppGlobals.FirstStartShown := True;
 
-  if AppGlobals.PluginManager.ShowVersionWarning then
+  if AppGlobals.AddonManager.ShowVersionWarning then
   begin
-    MsgBox(Handle, _('At least one plugin is outdated and was deleted because it does not work with this version of streamWriter. Please check the plugin page in the settings window.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('At least one addon is outdated and was deleted because it does not work with this version of streamWriter. Please check the addon page in the settings window.'), _('Info'), MB_ICONINFORMATION);
   end;
 
   if AppGlobals.LastUsedVersion.AsString = '3.6.0.0' then
   begin
-    MsgBox(Handle, _('Because many internals of the last version have changed you need to reconfigure options regarding plugins and postprocessing using the settings window.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('Because many internals of the last version have changed you need to reconfigure options regarding addons and postprocessing using the settings window.'), _('Info'), MB_ICONINFORMATION);
   end;
 
   tmrAutoSave.Enabled := True;
@@ -681,7 +686,7 @@ begin
   begin
     if MsgBox(0, _('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
     begin
-      try                           // TODO: Das M4A-postprocessing kann man noch configuren... das ist fail. und damit brauche ich auch keine SHARED_ plugin einträge mehr :D
+      try
         S := TExtendedStream.Create;
         try
           S.LoadFromFile(AppGlobals.RecoveryFile);
@@ -1323,7 +1328,7 @@ begin
   tabSaved.Tree.SetFileWatcher;
 
   Language.Translate(Self, PreTranslate, PostTranslate);
-  AppGlobals.PostProcessManager.ReInitPlugins;
+  AppGlobals.PostProcessManager.ReInitPostProcessors;
 
   TrayIcon1.Visible := AppGlobals.Tray;
   ScreenSnap := AppGlobals.SnapMain;
@@ -1379,17 +1384,17 @@ begin
 
   AudioType := FiletypeToFormat(ExtractFileExt(Filename));
 
-  case AppGlobals.PluginManager.CanEncode(AudioType) of
-    ceNoPlugin:
+  case AppGlobals.AddonManager.CanEncode(AudioType) of
+    ceNoAddon:
       begin
         MsgBox(Handle, _('This filetype is not supported by streamWriter.'), _('Info'), MB_ICONINFORMATION);
         Exit;
       end;
-    cePluginNeeded:
+    ceAddonNeeded:
       begin
-        if MsgBox(Handle, _('To cut the selected file the required encoder-plugin needs to be installed. Do you want to download and install the required plugin now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+        if MsgBox(Handle, _('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
         begin
-          if not AppGlobals.PluginManager.InstallEncoderFor(Self, AudioType) then
+          if not AppGlobals.AddonManager.InstallEncoderFor(Self, AudioType) then
             Exit;
         end else
           Exit;
@@ -1429,11 +1434,11 @@ var
   AudioType: TAudioTypes;
 begin
   AudioType := FiletypeToFormat(ExtractFileExt(Track.Filename));
-  if AppGlobals.PluginManager.CanEncode(AudioType) <> ceOkay then
+  if AppGlobals.AddonManager.CanEncode(AudioType) <> ceOkay then
   begin
-    if MsgBox(Handle, _('To cut the selected file the required encoder-plugin needs to be installed. Do you want to download and install the required plugin now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+    if MsgBox(Handle, _('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
     begin
-      if not AppGlobals.PluginManager.InstallEncoderFor(Self, AudioType) then
+      if not AppGlobals.AddonManager.InstallEncoderFor(Self, AudioType) then
         Exit;
     end else
       Exit;
@@ -1657,6 +1662,9 @@ begin
       FDataLists.TrackList[i].Finalized := True;
 
       tabSaved.Tree.UpdateTrack(FDataLists.TrackList[i]);
+
+      // Macht den Finalized-Button passig (Down/nicht Down)
+      tabSaved.UpdateButtons;
 
       Exit;
     end;
@@ -1908,7 +1916,7 @@ begin
       OnePlaying := True;
       Break;
     end;
-            // TODO: reporten die neuen versionen auch die stats von wegen aufgenommen/auto aufgenommen?
+
   AnyClientHasTitle := False;
   for Client in Clients do
     if Client.Title <> '' then

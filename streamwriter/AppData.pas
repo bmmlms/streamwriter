@@ -30,7 +30,7 @@ interface
 uses
   Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
   LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions, PostProcess,
-  PluginManager, PostProcessManager, Logging, Base64, TypeDefs;
+  AddonManager, PostProcessManager, Logging, Base64, TypeDefs;
 
 type
   // Actions that can be executed in the stream-view
@@ -227,7 +227,7 @@ type
     FLastUsedDataVersion: Integer;
     FRecoveryFile: string;
 
-    FPluginManager: TPluginManager;
+    FAddonManager: TAddonManager;
     FPostProcessManager: TPostProcessManager;
     FLanguageIcons: TLanguageIcons;
 
@@ -340,8 +340,8 @@ type
     // Path to streamWriter's data-file
     property DataFile: string read FGetDataFile;
 
-    // The manager for plugins
-    property PluginManager: TPluginManager read FPluginManager;
+    // The manager for addons
+    property AddonManager: TAddonManager read FAddonManager;
 
     // The manager for postprocessing
     property PostProcessManager: TPostProcessManager read FPostProcessManager;
@@ -424,7 +424,7 @@ end;
 destructor TAppData.Destroy;
 begin
   FLanguageIcons.Free;
-  FPluginManager.Free;
+  FAddonManager.Free;
   FPostProcessManager.Free;
   FStreamSettings.Free;
 
@@ -731,7 +731,7 @@ begin
     // If FPass was empty when reading it, this leads to an exception!
     // We NEED to catch it here so that the startup process does not get interrupted..
     try
-      FPass := CryptStr(Decode(RawByteString(FPass)));
+      FPass := CryptStr(UTF8ToUnicodeString(Decode(RawByteString(FPass))));
     except
       FPass := '';
     end;
@@ -1214,12 +1214,12 @@ initialization
       raise Exception.Create('Language is not initialized');
     AppGlobals := TAppData.Create('streamWriter');
 
-    // PluginManager wird hier erstellt, da erstellte Plugin-Items Zugriff
+    // AddonManager wird hier erstellt, da erstellte Addon-Items Zugriff
     // auf ein bereits zugewiesenes AppGlobals brauchen.
-    AppGlobals.FPluginManager := TPluginManager.Create;
+    AppGlobals.FAddonManager := TAddonManager.Create;
     AppGlobals.FPostProcessManager := TPostProcessManager.Create;
 
-    if AppGlobals.PluginManager.CanEncode(AppGlobals.OutputFormat) <> ceOkay then
+    if AppGlobals.AddonManager.CanEncode(AppGlobals.OutputFormat) <> ceOkay then
       AppGlobals.OutputFormat := atNone;
   except
     on E: Exception do

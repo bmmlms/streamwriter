@@ -24,7 +24,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, LanguageObjects, StdCtrls, Buttons, ExtCtrls, AppData, AudioGenie,
-  PluginAudioGenie, FileTagger, Functions;
+  AddonAudioGenie, FileTagger, Functions;
 
 type
   TfrmEditTags = class(TForm)
@@ -40,7 +40,7 @@ type
       Shift: TShiftState);
     procedure btnCloseClick(Sender: TObject);
   private
-    FPlugin: TPluginAudioGenie;
+    FAddon: TAddonAudioGenie;
     FTagger: TFileTagger;
   public
     constructor Create(AOwner: TComponent);
@@ -86,11 +86,11 @@ var
   FS: TFileStream;
 begin
   Result := False;
-  FPlugin := AppGlobals.PluginManager.Find(TPluginAudioGenie) as TPluginAudioGenie;
+  FAddon := AppGlobals.AddonManager.Find(TAddonAudioGenie) as TAddonAudioGenie;
 
-  if not FPlugin.FilesExtracted then
+  if not FAddon.FilesExtracted then
   begin
-    if not AppGlobals.PluginManager.EnablePlugin(Owner as TCustomForm, FPlugin, True) then
+    if not AppGlobals.AddonManager.EnableAddon(Owner as TCustomForm, FAddon, True) then
       Exit;
   end;
 

@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects,
-  Functions, Logging, Math, PluginBase, StrUtils;
+  Functions, Logging, Math, AddonBase, StrUtils;
 
 type
   TPostProcessConvertThread = class(TPostProcessThreadBase)
@@ -41,7 +41,7 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
+    constructor Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
 
     procedure Convert(FromFile, ToFile: string; BitRate: Cardinal);
 
@@ -58,7 +58,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    function ProcessFile(Data: PPluginProcessInformation): TPostProcessThreadBase; override;
+    function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
   end;
 
 implementation
@@ -77,9 +77,9 @@ begin
   FBitRate := BitRate;
 end;
 
-constructor TPostProcessConvertThread.Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
+constructor TPostProcessConvertThread.Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
 begin
-  inherited Create(Data, Plugin);
+  inherited Create(Data, Addon);
 end;
 
 procedure TPostProcessConvertThread.Execute;
@@ -157,8 +157,7 @@ begin
   inherited;
 end;
 
-function TPostProcessConvert.ProcessFile(
-  Data: PPluginProcessInformation): TPostProcessThreadBase;
+function TPostProcessConvert.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
   Result := nil;
   if not CanProcess(Data) then

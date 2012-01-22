@@ -69,15 +69,15 @@ type
     FSilenceEndLength: Integer;
 
     FOnlySetup: Boolean;
-    FPlugin: TPostProcessSoX;
+    FPostProcessor: TPostProcessSoX;
     FTitleLength: Cardinal;
 
     FSaveData: Boolean;
 
     procedure InitForm;
   public
-    constructor Create(AOwner: TComponent; Plugin: TPostProcessSoX; TitleLength: Cardinal); overload;
-    constructor Create(AOwner: TComponent; Plugin: TPostProcessSoX; Normalize, FadeoutStart, FadeoutEnd: Boolean;
+    constructor Create(AOwner: TComponent; PostProcessor: TPostProcessSoX; TitleLength: Cardinal); overload;
+    constructor Create(AOwner: TComponent; PostProcessor: TPostProcessSoX; Normalize, FadeoutStart, FadeoutEnd: Boolean;
       FadeoutStartLength, FadeoutEndLength: Integer; SilenceStart, SilenceEnd: Boolean; SilenceStartLength,
       SilenceEndLength: Integer; TitleLength: Cardinal); reintroduce; overload;
 
@@ -144,7 +144,7 @@ begin
         Exit;
     end;
 
-    if FPlugin.EatFiles(txtLameDLL.Text, txtMadDLL.Text) then
+    if FPostProcessor.EatFiles(txtLameDLL.Text, txtMadDLL.Text) then
     begin
       if FOnlySetup then
       begin
@@ -246,13 +246,13 @@ begin
   txtSilenceEnd.Enabled := chkSilenceEnd.Checked;
 end;
 
-constructor TfrmConfigureSoX.Create(AOwner: TComponent; Plugin: TPostProcessSoX; TitleLength: Cardinal);
+constructor TfrmConfigureSoX.Create(AOwner: TComponent; PostProcessor: TPostProcessSoX; TitleLength: Cardinal);
 begin
   inherited Create(AOwner);
 
   InitForm;
 
-  FPlugin := Plugin;
+  FPostProcessor := PostProcessor;
   FTitleLength := TitleLength;
 
   pnlSetup.Show;
@@ -262,7 +262,7 @@ begin
   Language.Translate(Self);
 end;
 
-constructor TfrmConfigureSoX.Create(AOwner: TComponent; Plugin: TPostProcessSoX; Normalize, FadeoutStart,
+constructor TfrmConfigureSoX.Create(AOwner: TComponent; PostProcessor: TPostProcessSoX; Normalize, FadeoutStart,
   FadeoutEnd: Boolean; FadeoutStartLength, FadeoutEndLength: Integer; SilenceStart, SilenceEnd: Boolean;
   SilenceStartLength, SilenceEndLength: Integer; TitleLength: Cardinal);
 begin
@@ -270,7 +270,7 @@ begin
 
   InitForm;
 
-  FPlugin := Plugin;
+  FPostProcessor := PostProcessor;
   FTitleLength := TitleLength;
 
   pnlConfigure.Show;
@@ -303,7 +303,7 @@ end;
 
 procedure TfrmConfigureSoX.FormShow(Sender: TObject);
 begin
-  Caption := Format(_('Configure "%s"'), [FPlugin.Name]);
+  Caption := Format(_('Configure "%s"'), [FPostProcessor.Name]);
 end;
 
 procedure TfrmConfigureSoX.InitForm;

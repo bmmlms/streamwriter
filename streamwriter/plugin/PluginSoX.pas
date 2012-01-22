@@ -51,10 +51,10 @@ begin
 
   FName := _('Support applying of effects to recorded songs using SoX');
   FHelp := _('This plugin adds support for applying effects to recorded songs using Sound eXchange (SoX).');
-  FDownloadName := 'plugin_sox';
-  FDownloadPackage := 'plugin_sox.dll';
+  FDownloadName := 'addon_sox';
+  FDownloadPackage := 'addon_sox.dll';
 
-  FFilesDir := AppGlobals.TempDir + 'plugin_sox\';
+  FFilesDir := AppGlobals.TempDir + 'addon_sox\';
   FEXEPath := FFilesDir + 'sox.exe';
 
   FFilenames.Add('libgomp-1.dll');

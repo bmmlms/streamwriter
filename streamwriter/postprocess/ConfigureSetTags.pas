@@ -30,10 +30,10 @@ type
   private
     FSaveData: Boolean;
 
-    FPlugin: TPostProcessBase;
+    FPostProcessor: TPostProcessBase;
     FArtist, FTitle, FAlbum, FComment: string;
   public
-    constructor Create(AOwner: TComponent; Plugin: TPostProcessBase; Artist, Title, Album, Comment: string); overload;
+    constructor Create(AOwner: TComponent; PostProcessor: TPostProcessBase; Artist, Title, Album, Comment: string); overload;
 
     property Artist: string read FArtist;
     property Title: string read FTitle;
@@ -82,11 +82,11 @@ begin
 end;
 
 constructor TfrmConfigureSetTags.Create(AOwner: TComponent;
-  Plugin: TPostProcessBase; Artist, Title, Album, Comment: string);
+  PostProcessor: TPostProcessBase; Artist, Title, Album, Comment: string);
 begin
   inherited Create(AOwner);
 
-  FPlugin := Plugin;
+  FPostProcessor := PostProcessor;
 
   FArtist := Artist;
   FTitle := Title;
@@ -113,7 +113,7 @@ end;
 
 procedure TfrmConfigureSetTags.FormShow(Sender: TObject);
 begin
-  Caption := Format(_('Configure "%s"'), [FPlugin.Name]);
+  Caption := Format(_('Configure "%s"'), [FPostProcessor.Name]);
 end;
 
 end.

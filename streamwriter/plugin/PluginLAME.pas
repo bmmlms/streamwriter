@@ -59,10 +59,10 @@ begin
 
   FName := _('Support encoding of MP3 using LAME');
   FHelp := _('This plugin adds support for encoding of MP3 files to the application which is useful for postprocessing of recorded songs.');
-  FDownloadName := 'plugin_lame';
-  FDownloadPackage := 'plugin_lame.dll';
+  FDownloadName := 'addon_lame';
+  FDownloadPackage := 'addon_lame.dll';
 
-  FFilesDir := AppGlobals.TempDir + 'plugin_lame\';
+  FFilesDir := AppGlobals.TempDir + 'addon_lame\';
   FDLLPath := FFilesDir + 'lame-enc.dll';
 
   FFilenames.Add('lame-enc.dll');

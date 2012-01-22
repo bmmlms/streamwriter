@@ -506,7 +506,7 @@ begin
 
     NodeData := GetNodeData(Node);
 
-    TextWidth := Canvas.TextWidth(IntToStr(NodeData.Chart.Chance) + '%');
+    TextWidth := Canvas.TextWidth('100%');
     MaxWidth := CellRect.Right - CellRect.Left - 8 - TextWidth;
     DrawWidth := Trunc((NodeData.Chart.Chance / 100) * MaxWidth) - 2;
 

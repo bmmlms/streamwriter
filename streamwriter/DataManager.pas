@@ -1220,7 +1220,7 @@ procedure TDataLists.Save;
 var
   S: TExtendedStream;
 begin
-  DeleteFile(AppGlobals.RecoveryFile); // TODO: Sollte das nicht ganz am ende bei erfolgreichem speichern erst passieren???
+  DeleteFile(AppGlobals.RecoveryFile);
 
   if (AppGlobals.SkipSave) or (AppGlobals.DataFile = '') then
   begin

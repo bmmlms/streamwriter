@@ -19,14 +19,13 @@
 }
 unit PostProcessManager;
 
-// TODO: Immer wenn ich convertiere sollte ich die UR-BITRATE beibehalten und so.
 // TODO: ein aac stream hat 48 bitrate. man encoded zu mp3. dann hat der auch nur 48, das ist doch mist!
 
 interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, PostProcess, PostProcessSetTags,
-  PostProcessSoX, Logging, PostProcessMP4Box, PluginBase, Forms, Functions,
+  PostProcessSoX, Logging, PostProcessMP4Box, AddonBase, Forms, Functions,
   LanguageObjects, TypeDefs, PostProcessConvert, Generics.Defaults;
 
 type
@@ -46,10 +45,10 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function ProcessFile(Owner: TObject; Data: TPluginProcessInformation): Boolean; overload;
+    function ProcessFile(Owner: TObject; Data: TPostProcessInformation): Boolean; overload;
     function ProcessFile(Entry: TProcessingEntry): Boolean; overload;
-    procedure ReInitPlugins;
-    function Find(Plugin: TPostProcessBase): TPostProcessBase; overload;
+    procedure ReInitPostProcessors;
+    function Find(PostProcessor: TPostProcessBase): TPostProcessBase; overload;
     function Find(ClassType: TClass): TPostProcessBase; overload;
     function EnablePostProcess(Owner: TCustomForm; Enable: Boolean; PostProcess: TInternalPostProcess): Boolean;
     function WorkingForClient(Client: TObject): Boolean;
@@ -62,9 +61,9 @@ implementation
 uses
   AppData, DownloadAddons, FileConvertor, ICEClient;
 
-{ TPluginManager }
+{ TPostProcessManager }
 
-function TPostProcessManager.ProcessFile(Owner: TObject; Data: TPluginProcessInformation): Boolean;
+function TPostProcessManager.ProcessFile(Owner: TObject; Data: TPostProcessInformation): Boolean;
 var
   Entry: TProcessingEntry;
 begin
@@ -77,7 +76,7 @@ begin
   begin
     Result := True;
 
-    WriteDebug(Entry.Owner, Format('Plugin "%s" starting.', [Entry.ActiveThread.Plugin.Name]), dtMessage, dlDebug);
+    WriteDebug(Entry.Owner, Format('Postprocessor "%s" starting.', [Entry.ActiveThread.PostProcessor.Name]), dtMessage, dlDebug);
 
     FProcessingList.Add(Entry);
   end;
@@ -98,8 +97,11 @@ var
       Exit(True);
 
     for i := 0 to FPostProcessors.Count - 1 do
-      if FPostProcessors[i].CanProcess(Entry.Data) and FPostProcessors[i].Active and FPostProcessors[i].NeedsWave then
+      if (FPostProcessors[i].CanProcess(Entry.Data) and FPostProcessors[i].Active and FPostProcessors[i].NeedsWave) or
+         ((FPostProcessors[i] is TExternalPostProcess) and (TExternalPostProcess(FPostProcessors[i]).GroupID = 0)) then
+      begin
         Exit(True);
+      end;
 
     Exit(False);
   end;
@@ -108,14 +110,14 @@ begin
 
   if Entry.NeedsWave then
   begin
-    Entry.PluginList.Add(FPostProcessors[0]);
+    Entry.PostProcessList.Add(FPostProcessors[0]);
   end;
 
   // Nach Order sortieren
   FPostProcessors.Sort(TComparer<TPostProcessBase>.Construct(
     function (const L, R: TPostProcessBase): integer
     begin
-      Result := CmpInt(L.Order, R.Order);;
+      Result := CmpInt(L.Order, R.Order);
     end
   ));
 
@@ -124,12 +126,12 @@ begin
     if FPostProcessors[i].Active and (FPostProcessors[i].CanProcess(Entry.Data)) and (not FPostProcessors[i].Hidden) and
        (FPostProcessors[i].GroupID = 0) and ((FPostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not FPostProcessors[i].OnlyIfCut)) then
     begin
-      Entry.PluginList.Add(FPostProcessors[i].Copy);
+      Entry.PostProcessList.Add(FPostProcessors[i].Copy);
     end;
 
   if Entry.NeedsWave then
   begin
-    Entry.PluginList.Add(FPostProcessors[0]);
+    Entry.PostProcessList.Add(FPostProcessors[0]);
   end;
 
   // Jetzt GroupID 1 (Nach WAVE-Phase)
@@ -137,7 +139,7 @@ begin
     if FPostProcessors[i].Active and (FPostProcessors[i].CanProcess(Entry.Data)) and (not FPostProcessors[i].Hidden) and
        (FPostProcessors[i].GroupID = 1) and ((FPostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not FPostProcessors[i].OnlyIfCut)) then
     begin
-      Entry.PluginList.Add(FPostProcessors[i].Copy);
+      Entry.PostProcessList.Add(FPostProcessors[i].Copy);
     end;
 end;
 
@@ -149,10 +151,10 @@ var
 begin
   Result := False;
 
-  if Entry.PluginList.Count = 0 then
+  if Entry.PostProcessList.Count = 0 then
     BuildProcessingList(Entry);
 
-  if Entry.PluginList.Count = 0 then
+  if Entry.PostProcessList.Count = 0 then
     Exit(False);
 
   NextIdx := FindNextIdx(Entry, 0);
@@ -177,7 +179,7 @@ begin
     Exit(True);
 end;
 
-procedure TPostProcessManager.ReInitPlugins;
+procedure TPostProcessManager.ReInitPostProcessors;
 var
   i: Integer;
 begin
@@ -198,11 +200,11 @@ begin
 
       case Entry.ActiveThread.Result of
         arWin:
-          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" successfully finished.'), [Entry.ActiveThread.Plugin.Name]), dtPlugin, dlNormal);
+          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" successfully finished.'), [Entry.ActiveThread.PostProcessor.Name]), dtPostProcess, dlNormal);
         arTimeout:
-          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" timed out.'), [Entry.ActiveThread.Plugin.Name]), dtError, dlNormal);
+          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" timed out.'), [Entry.ActiveThread.PostProcessor.Name]), dtError, dlNormal);
         arFail:
-          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" failed.'), [Entry.ActiveThread.Plugin.Name]), dtError, dlNormal);
+          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" failed.'), [Entry.ActiveThread.PostProcessor.Name]), dtError, dlNormal);
       end;
 
 
@@ -231,7 +233,7 @@ begin
       begin
         if ProcessFile(Entry) then
         begin
-          WriteDebug(Entry.Owner, Format('Postprocessor "%s" starting.', [Entry.ActiveThread.Plugin.Name]), dtMessage, dlDebug);
+          WriteDebug(Entry.Owner, Format('Postprocessor "%s" starting.', [Entry.ActiveThread.PostProcessor.Name]), dtMessage, dlDebug);
 
         end else
         begin
@@ -357,10 +359,10 @@ begin
       Exit(False);
     end;
 
-    if MsgBox(Owner.Handle, _('This postprocessor needs additional plugins. Do you want to download these plugins now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
+    if MsgBox(Owner.Handle, _('This postprocessor needs additional addons. Do you want to download these addons now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
     begin
-      for i := 0 to PostProcess.NeededPlugins.Count - 1 do
-        if not AppGlobals.PluginManager.EnablePlugin(Owner, AppGlobals.PluginManager.Find(PostProcess.NeededPlugins[i]), False) then
+      for i := 0 to PostProcess.NeededAddons.Count - 1 do
+        if not AppGlobals.AddonManager.EnableAddon(Owner, AppGlobals.AddonManager.Find(PostProcess.NeededAddons[i]), False) then
           Exit(False);
     end else
       Exit(False);
@@ -368,7 +370,7 @@ begin
 
   if Enable and (not PostProcess.DependenciesMet) then
   begin
-    MsgBox(Owner.Handle, _('The postprocessor is not ready for use. This might happen when required plugins'' files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
+    MsgBox(Owner.Handle, _('The postprocessor is not ready for use. This might happen when required addons'' files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
     Exit(False);
   end;
 
@@ -396,29 +398,29 @@ var
 begin
   Result := -1;
 
-  if Entry.ActivePluginIndex > -1 then
-    NextIdx := Entry.ActivePluginIndex + 1
+  if Entry.ActivePostProcessIndex > -1 then
+    NextIdx := Entry.ActivePostProcessIndex + 1
   else
     NextIdx := 0;
 
-  for i := NextIdx to Entry.PluginList.Count - 1 do
+  for i := NextIdx to Entry.PostProcessList.Count - 1 do
   begin
-    if Entry.PluginList[i].CanProcess(Entry.Data) and (Group = Entry.PluginList[i].GroupID) then
+    if Entry.PostProcessList[i].CanProcess(Entry.Data) and (Group = Entry.PostProcessList[i].GroupID) then
     begin
-      Entry.ActiveThread := Entry.PluginList[i].ProcessFile(Entry.Data);
+      Entry.ActiveThread := Entry.PostProcessList[i].ProcessFile(Entry.Data);
       if Entry.ActiveThread <> nil then
       begin
-        Entry.ActivePluginIndex := i;
+        Entry.ActivePostProcessIndex := i;
 
-        if Entry.PluginList[i] is TPostProcessConvert then
+        if Entry.PostProcessList[i] is TPostProcessConvert then
         begin
           if Entry.Data.WorkFilename = '' then
           begin
-            Entry.Data.WorkFilename := RemoveFileExt(Entry.Data.Filename) + '_convert.wav';
+            Entry.Data.WorkFilename := RemoveFileExt(Entry.Data.Filename) + '_temp.wav';
             TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.Filename, Entry.Data.WorkFilename, Entry.Data.BitRate);
           end else if Entry.Data.ReEncodedFilename = '' then
           begin
-            Entry.Data.ReEncodedFilename := RemoveFileExt(Entry.Data.Filename) + '_convert' + FormatToFiletype(Entry.Data.OutputFormat);
+            Entry.Data.ReEncodedFilename := RemoveFileExt(Entry.Data.Filename) + '_temp' + FormatToFiletype(Entry.Data.OutputFormat);
             TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.WorkFilename, Entry.Data.ReEncodedFilename, Entry.Data.BitRate);
           end;
         end;
@@ -432,23 +434,23 @@ begin
   end;
 end;
 
-function TPostProcessManager.Find(Plugin: TPostProcessBase): TPostProcessBase;
+function TPostProcessManager.Find(PostProcessor: TPostProcessBase): TPostProcessBase;
 var
   i: Integer;
 begin
   Result := nil;
 
   for i := 0 to FPostProcessors.Count - 1 do
-    if (Plugin is TExternalPostProcess) and (FPostProcessors[i] is TExternalPostProcess) then
+    if (PostProcessor is TExternalPostProcess) and (FPostProcessors[i] is TExternalPostProcess) then
     begin
-      if TExternalPostProcess(Plugin).Identifier = TExternalPostProcess(FPostProcessors[i]).Identifier then
+      if TExternalPostProcess(PostProcessor).Identifier = TExternalPostProcess(FPostProcessors[i]).Identifier then
       begin
         Result := FPostProcessors[i];
         Break;
       end;
-    end else if Plugin.ClassType.InheritsFrom(TInternalPostProcess) and FPostProcessors[i].ClassType.InheritsFrom(TInternalPostProcess) then
+    end else if PostProcessor.ClassType.InheritsFrom(TInternalPostProcess) and FPostProcessors[i].ClassType.InheritsFrom(TInternalPostProcess) then
     begin
-      if Plugin.ClassType = FPostProcessors[i].ClassType then
+      if PostProcessor.ClassType = FPostProcessors[i].ClassType then
       begin
         Result := FPostProcessors[i];
         Break;

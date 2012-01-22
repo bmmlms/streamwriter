@@ -23,14 +23,14 @@ interface
 
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects, AudioGenie,
-  PluginAudioGenie, Functions, Logging, ConfigureSetTags, TypeDefs;
+  AddonAudioGenie, Functions, Logging, ConfigureSetTags, TypeDefs;
 
 type
   TPostProcessSetTagsThread = class(TPostProcessThreadBase)
   protected
     procedure Execute; override;
   public
-    constructor Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
+    constructor Create(Data: PPostProcessInformation; PostProcessor: TPostProcessBase);
   end;
 
   TPostProcessSetTags = class(TInternalPostProcess)
@@ -43,14 +43,13 @@ type
   public
     constructor Create;
 
-    function CanProcess(Data: PPluginProcessInformation): Boolean; virtual;
-    function ProcessFile(Data: PPluginProcessInformation): TPostProcessThreadBase; override;
+    function CanProcess(Data: PPostProcessInformation): Boolean; virtual;
+    function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
     procedure Initialize; override;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
     procedure Save; override;
-    procedure LoadSharedSettings; override;
   end;
 
 implementation
@@ -60,10 +59,10 @@ uses
 
 { TPostProcessSetTagsThread }
 
-constructor TPostProcessSetTagsThread.Create(Data: PPluginProcessInformation;
-  Plugin: TPostProcessBase);
+constructor TPostProcessSetTagsThread.Create(Data: PPostProcessInformation;
+  PostProcessor: TPostProcessBase);
 begin
-  inherited Create(Data, Plugin);
+  inherited Create(Data, PostProcessor);
 end;
 
 procedure TPostProcessSetTagsThread.Execute;
@@ -76,10 +75,10 @@ begin
 
   FResult := arFail;
 
-  AppGlobals.Storage.Read('Shared_Tags_Artist', Artist, '%a', 'Plugins');
-  AppGlobals.Storage.Read('Shared_Tags_Title', Title, '%t', 'Plugins');
-  AppGlobals.Storage.Read('Shared_Tags_Album', Album, '%l', 'Plugins');
-  AppGlobals.Storage.Read('Shared_Tags_Comment', Comment, '%s / %u / Recorded using streamWriter', 'Plugins');
+  AppGlobals.Storage.Read('Artist_' + PostProcessor.ClassName, Artist, '%a', 'Plugins');
+  AppGlobals.Storage.Read('Title_' + PostProcessor.ClassName, Title, '%t', 'Plugins');
+  AppGlobals.Storage.Read('Album_' + PostProcessor.ClassName, Album, '%l', 'Plugins');
+  AppGlobals.Storage.Read('Comment_' + PostProcessor.ClassName, Comment, '%s / %u / Recorded using streamWriter', 'Plugins');
 
   SetLength(Arr, 7);
   Arr[0].C := 'a';
@@ -97,7 +96,7 @@ begin
   Arr[6].C := 'i';
   Arr[6].Replace := FormatDateTime('hh.nn.ss', Now);
 
-  AG := TAudioGenie3.Create(TPluginAudioGenie(AppGlobals.PluginManager.Find(TPluginAudioGenie)).DLLPath);
+  AG := TAudioGenie3.Create(TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).DLLPath);
   try
     try
       if AG.AUDIOAnalyzeFileW(FData.Filename) <> UNKNOWN then
@@ -125,7 +124,7 @@ begin
     AG.Free;
   end;
 end;
-                     // TODO: passen die standard plugin reihenfolgen? das mp4box sollte z.b. immer vor tags setzen sein. evtl sonst warnen oder so?
+
 { TPostProcessSetTags }
 
 procedure TPostProcessSetTags.Assign(Source: TPostProcessBase);
@@ -138,8 +137,7 @@ begin
   FComment := TPostProcessSetTags(Source).FComment;
 end;
 
-function TPostProcessSetTags.CanProcess(
-  Data: PPluginProcessInformation): Boolean;
+function TPostProcessSetTags.CanProcess(Data: PPostProcessInformation): Boolean;
 begin
   Result := (FiletypeToFormat(Data.Filename) <> atNone) and FGetDependenciesMet;
 end;
@@ -184,10 +182,8 @@ constructor TPostProcessSetTags.Create;
 begin
   inherited;
 
-  FNeededPlugins.Add(TPluginAudioGenie);
+  FNeededAddons.Add(TAddonAudioGenie);
 
-  FActive := True;
-  FOrder := 100;
   FCanConfigure := True;
   FGroupID := 1;
 
@@ -196,10 +192,13 @@ begin
 
   try
     AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
-    AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 100, 'Plugins');
+    AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 1010, 'Plugins');
     AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
 
-    LoadSharedSettings;
+    AppGlobals.Storage.Read('Artist_' + ClassName, FArtist, '%a', 'Plugins');
+    AppGlobals.Storage.Read('Album_' + ClassName, FAlbum, '%l', 'Plugins');
+    AppGlobals.Storage.Read('Title_' + ClassName, FTitle, '%t', 'Plugins');
+    AppGlobals.Storage.Read('Comment_' + ClassName, FComment, '%s / %u / Recorded using streamWriter', 'Plugins');
 
     if not FGetDependenciesMet then
       FActive := False;
@@ -214,35 +213,7 @@ begin
   FHelp := _('This postprocessor writes tags to recorded songs.');
 end;
 
-procedure TPostProcessSetTags.LoadSharedSettings;
-var
-  Tmp: string;
-begin
-  inherited;
-
-  AppGlobals.Storage.Read('Shared_Tags_Artist', FArtist, '%a', 'Plugins');
-  AppGlobals.Storage.Read('Shared_Tags_Title', FTitle, '%t', 'Plugins');
-  AppGlobals.Storage.Read('Shared_Tags_Album', FAlbum, '%l', 'Plugins');
-  AppGlobals.Storage.Read('Shared_Tags_Comment', FComment, '%s / %u / Recorded using streamWriter', 'Plugins');
-
-  // Wenn die alten Werte noch existieren, einmal einlesen und dann löschen
-  AppGlobals.Storage.Read('Artist_' + ClassName, Tmp, 'dummyasdftest', 'Plugins');
-  if Tmp <> 'dummyasdftest' then
-  begin
-    AppGlobals.Storage.Read('Artist_' + ClassName, FArtist, '%a', 'Plugins');
-    AppGlobals.Storage.Read('Album_' + ClassName, FAlbum, '%l', 'Plugins');
-    AppGlobals.Storage.Read('Title_' + ClassName, FTitle, '%t', 'Plugins');
-    AppGlobals.Storage.Read('Comment_' + ClassName, FComment, '%s / %u / Recorded using streamWriter', 'Plugins');
-
-    AppGlobals.Storage.Delete('Artist_' + ClassName, 'Plugins');
-    AppGlobals.Storage.Delete('Album_' + ClassName, 'Plugins');
-    AppGlobals.Storage.Delete('Title_' + ClassName, 'Plugins');
-    AppGlobals.Storage.Delete('Comment_' + ClassName, 'Plugins');
-  end;
-end;
-
-function TPostProcessSetTags.ProcessFile(
-  Data: PPluginProcessInformation): TPostProcessThreadBase;
+function TPostProcessSetTags.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
   Result := TPostProcessSetTagsThread.Create(Data, Self);
 end;
@@ -251,10 +222,10 @@ procedure TPostProcessSetTags.Save;
 begin
   inherited;
 
-  AppGlobals.Storage.Write('Shared_Tags_Artist', FArtist, 'Plugins');
-  AppGlobals.Storage.Write('Shared_Tags_Title', FTitle, 'Plugins');
-  AppGlobals.Storage.Write('Shared_Tags_Album', FAlbum, 'Plugins');
-  AppGlobals.Storage.Write('Shared_Tags_Comment', FComment, 'Plugins');
+  AppGlobals.Storage.Write('Artist_' + ClassName, FArtist, 'Plugins');
+  AppGlobals.Storage.Write('Title_' + ClassName, FTitle, 'Plugins');
+  AppGlobals.Storage.Write('Album_' + ClassName, FAlbum, 'Plugins');
+  AppGlobals.Storage.Write('Comment_' + ClassName, FComment, 'Plugins');
 end;
 
 end.

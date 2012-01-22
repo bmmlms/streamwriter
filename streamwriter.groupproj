@@ -6,22 +6,22 @@
 			<Projects Include="streamwriter\streamwriter.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="plugins\plugin_lame\plugin_lame.dproj">
+			<Projects Include="addon\addon_audiogenie\addon_audiogenie.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="plugins\plugin_sox\plugin_sox.dproj">
+			<Projects Include="addon\addon_faac\addon_faac.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="plugins\plugin_faac\plugin_faac.dproj">
+			<Projects Include="addon\addon_lame\addon_lame.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="plugins\plugin_oggenc\plugin_oggenc.dproj">
+			<Projects Include="addon\addon_mp4box\addon_mp4box.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="plugins\plugin_audiogenie\plugin_audiogenie.dproj">
+			<Projects Include="addon\addon_oggenc\addon_oggenc.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="plugins\plugin_mp4box\plugin_mp4box.dproj">
+			<Projects Include="addon\addon_sox\addon_sox.dproj">
 				<Dependencies/>
 			</Projects>
 		</ItemGroup>
@@ -41,68 +41,68 @@
 		<Target Name="streamwriter:Make">
 			<MSBuild Projects="streamwriter\streamwriter.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="plugin_lame">
-			<MSBuild Projects="plugins\plugin_lame\plugin_lame.dproj"/>
+		<Target Name="addon_audiogenie">
+			<MSBuild Projects="addon\addon_audiogenie\addon_audiogenie.dproj"/>
 		</Target>
-		<Target Name="plugin_lame:Clean">
-			<MSBuild Projects="plugins\plugin_lame\plugin_lame.dproj" Targets="Clean"/>
+		<Target Name="addon_audiogenie:Clean">
+			<MSBuild Projects="addon\addon_audiogenie\addon_audiogenie.dproj" Targets="Clean"/>
 		</Target>
-		<Target Name="plugin_lame:Make">
-			<MSBuild Projects="plugins\plugin_lame\plugin_lame.dproj" Targets="Make"/>
+		<Target Name="addon_audiogenie:Make">
+			<MSBuild Projects="addon\addon_audiogenie\addon_audiogenie.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="plugin_sox">
-			<MSBuild Projects="plugins\plugin_sox\plugin_sox.dproj"/>
+		<Target Name="addon_faac">
+			<MSBuild Projects="addon\addon_faac\addon_faac.dproj"/>
 		</Target>
-		<Target Name="plugin_sox:Clean">
-			<MSBuild Projects="plugins\plugin_sox\plugin_sox.dproj" Targets="Clean"/>
+		<Target Name="addon_faac:Clean">
+			<MSBuild Projects="addon\addon_faac\addon_faac.dproj" Targets="Clean"/>
 		</Target>
-		<Target Name="plugin_sox:Make">
-			<MSBuild Projects="plugins\plugin_sox\plugin_sox.dproj" Targets="Make"/>
+		<Target Name="addon_faac:Make">
+			<MSBuild Projects="addon\addon_faac\addon_faac.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="plugin_faac">
-			<MSBuild Projects="plugins\plugin_faac\plugin_faac.dproj"/>
+		<Target Name="addon_lame">
+			<MSBuild Projects="addon\addon_lame\addon_lame.dproj"/>
 		</Target>
-		<Target Name="plugin_faac:Clean">
-			<MSBuild Projects="plugins\plugin_faac\plugin_faac.dproj" Targets="Clean"/>
+		<Target Name="addon_lame:Clean">
+			<MSBuild Projects="addon\addon_lame\addon_lame.dproj" Targets="Clean"/>
 		</Target>
-		<Target Name="plugin_faac:Make">
-			<MSBuild Projects="plugins\plugin_faac\plugin_faac.dproj" Targets="Make"/>
+		<Target Name="addon_lame:Make">
+			<MSBuild Projects="addon\addon_lame\addon_lame.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="plugin_oggenc">
-			<MSBuild Projects="plugins\plugin_oggenc\plugin_oggenc.dproj"/>
+		<Target Name="addon_mp4box">
+			<MSBuild Projects="addon\addon_mp4box\addon_mp4box.dproj"/>
 		</Target>
-		<Target Name="plugin_oggenc:Clean">
-			<MSBuild Projects="plugins\plugin_oggenc\plugin_oggenc.dproj" Targets="Clean"/>
+		<Target Name="addon_mp4box:Clean">
+			<MSBuild Projects="addon\addon_mp4box\addon_mp4box.dproj" Targets="Clean"/>
 		</Target>
-		<Target Name="plugin_oggenc:Make">
-			<MSBuild Projects="plugins\plugin_oggenc\plugin_oggenc.dproj" Targets="Make"/>
+		<Target Name="addon_mp4box:Make">
+			<MSBuild Projects="addon\addon_mp4box\addon_mp4box.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="plugin_audiogenie">
-			<MSBuild Projects="plugins\plugin_audiogenie\plugin_audiogenie.dproj"/>
+		<Target Name="addon_oggenc">
+			<MSBuild Projects="addon\addon_oggenc\addon_oggenc.dproj"/>
 		</Target>
-		<Target Name="plugin_audiogenie:Clean">
-			<MSBuild Projects="plugins\plugin_audiogenie\plugin_audiogenie.dproj" Targets="Clean"/>
+		<Target Name="addon_oggenc:Clean">
+			<MSBuild Projects="addon\addon_oggenc\addon_oggenc.dproj" Targets="Clean"/>
 		</Target>
-		<Target Name="plugin_audiogenie:Make">
-			<MSBuild Projects="plugins\plugin_audiogenie\plugin_audiogenie.dproj" Targets="Make"/>
+		<Target Name="addon_oggenc:Make">
+			<MSBuild Projects="addon\addon_oggenc\addon_oggenc.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="plugin_mp4box">
-			<MSBuild Projects="plugins\plugin_mp4box\plugin_mp4box.dproj"/>
+		<Target Name="addon_sox">
+			<MSBuild Projects="addon\addon_sox\addon_sox.dproj"/>
 		</Target>
-		<Target Name="plugin_mp4box:Clean">
-			<MSBuild Projects="plugins\plugin_mp4box\plugin_mp4box.dproj" Targets="Clean"/>
+		<Target Name="addon_sox:Clean">
+			<MSBuild Projects="addon\addon_sox\addon_sox.dproj" Targets="Clean"/>
 		</Target>
-		<Target Name="plugin_mp4box:Make">
-			<MSBuild Projects="plugins\plugin_mp4box\plugin_mp4box.dproj" Targets="Make"/>
+		<Target Name="addon_sox:Make">
+			<MSBuild Projects="addon\addon_sox\addon_sox.dproj" Targets="Make"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="streamwriter;plugin_lame;plugin_sox;plugin_faac;plugin_oggenc;plugin_audiogenie;plugin_mp4box"/>
+			<CallTarget Targets="streamwriter;addon_audiogenie;addon_faac;addon_lame;addon_mp4box;addon_oggenc;addon_sox"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="streamwriter:Clean;plugin_lame:Clean;plugin_sox:Clean;plugin_faac:Clean;plugin_oggenc:Clean;plugin_audiogenie:Clean;plugin_mp4box:Clean"/>
+			<CallTarget Targets="streamwriter:Clean;addon_audiogenie:Clean;addon_faac:Clean;addon_lame:Clean;addon_mp4box:Clean;addon_oggenc:Clean;addon_sox:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="streamwriter:Make;plugin_lame:Make;plugin_sox:Make;plugin_faac:Make;plugin_oggenc:Make;plugin_audiogenie:Make;plugin_mp4box:Make"/>
+			<CallTarget Targets="streamwriter:Make;addon_audiogenie:Make;addon_faac:Make;addon_lame:Make;addon_mp4box:Make;addon_oggenc:Make;addon_sox:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>

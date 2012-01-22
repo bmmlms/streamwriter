@@ -140,7 +140,6 @@ type
     FOnTitleAllowed: TNotifyEvent;
     FOnRefreshInfo: TNotifyEvent;
 
-    function RoundBitrate(Bitrate: Cardinal): Cardinal;
     function GetFileLength(Filename: string; Filesize: Int64; var Length: UInt64): Boolean;
     function CalcAdjustment(Offset: Int64): Int64;
     procedure CalcBytesPerSec;
@@ -1211,30 +1210,6 @@ begin
     RecvStream.RemoveRange(0, Position);
     RecvStream.Seek(0, soFromBeginning);
   end;
-end;
-
-function TICEStream.RoundBitrate(Bitrate: Cardinal): Cardinal;
-begin
-  if Bitrate < 63 then
-    Result := 32
-  else if Bitrate < 95 then
-    Result := 64
-  else if Bitrate < 127 then
-    Result := 96
-  else if Bitrate < 159 then
-    Result := 128
-  else if Bitrate < 191 then
-    Result := 160
-  else if Bitrate < 223 then
-    Result := 192
-  else if Bitrate < 255 then
-    Result := 224
-  else if Bitrate < 319 then
-    Result := 256
-  else if Bitrate < 383 then
-    Result := 320
-  else
-    Result := 384;
 end;
 
 procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Title: string; var Album: string);

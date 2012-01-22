@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, Functions,
-  LanguageObjects, Logging, PluginBase, TypeDefs;
+  LanguageObjects, Logging, AddonBase, TypeDefs;
 
 type
   TPostProcessBase = class;
@@ -37,7 +37,7 @@ type
   TInitialize = procedure(L: PChar; RF, WF: TReadWrite); stdcall;
   TConfigure = function(Handle: Cardinal; ShowMessages: Boolean): Boolean; stdcall;
 
-  TPluginProcessInformation = record
+  TPostProcessInformation = record
     Filename, WorkFilename, ReEncodedFilename, Station, Artist, Album, Title: string;
     TrackNumber: Cardinal;
     Filesize: UInt64;
@@ -48,7 +48,7 @@ type
     BitRate: Cardinal;
     OutputFormat: TAudioTypes;
   end;
-  PPluginProcessInformation = ^TPluginProcessInformation;
+  PPostProcessInformation = ^TPostProcessInformation;
 
   TProcessingEntry = class
   private
@@ -57,20 +57,20 @@ type
     FNeedsWave: Boolean;
 
     FActiveThread: TPostProcessThreadBase;
-    FData: PPluginProcessInformation;
-    FPluginList: TList<TPostProcessBase>;
-    FActivePluginIndex: Integer;
+    FData: PPostProcessInformation;
+    FPostProcessList: TList<TPostProcessBase>;
+    FActivePostProcessIndex: Integer;
   public
     constructor Create(Owner: TObject; ActiveThread: TPostProcessThreadBase;
-      Data: TPluginProcessInformation);
+      Data: TPostProcessInformation);
     destructor Destroy; override;
 
     property Owner: TObject read FOwner write FOwner;
     property NeedsWave: Boolean read FNeedsWave write FNeedsWave;
     property ActiveThread: TPostProcessThreadBase read FActiveThread write FActiveThread;
-    property Data: PPluginProcessInformation read FData;
-    property PluginList: TList<TPostProcessBase> read FPluginList;
-    property ActivePluginIndex: Integer read FActivePluginIndex write FActivePluginIndex;
+    property Data: PPostProcessInformation read FData;
+    property PostProcessList: TList<TPostProcessBase> read FPostProcessList;
+    property ActivePostProcessIndex: Integer read FActivePostProcessIndex write FActivePostProcessIndex;
   end;
 
   TProcessingList = class(TList<TProcessingEntry>)
@@ -79,16 +79,16 @@ type
 
   TPostProcessThreadBase = class(TThread)
   private
-    FPlugin: TPostProcessBase;
+    FPostProcessor: TPostProcessBase;
     FOutput: string;
   protected
     FResult: TActResults;
-    FData: PPluginProcessInformation;
+    FData: PPostProcessInformation;
   public
-    constructor Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
+    constructor Create(Data: PPostProcessInformation; PostProcessor: TPostProcessBase);
     destructor Destroy; override;
 
-    property Plugin: TPostProcessBase read FPlugin;
+    property PostProcessor: TPostProcessBase read FPostProcessor;
     property Result: TActResults read FResult;
     property Output: string read FOutput;
   end;
@@ -110,14 +110,13 @@ type
   public
     constructor Create;
 
-    function CanProcess(Data: PPluginProcessInformation): Boolean; virtual;
-    function ProcessFile(Data: PPluginProcessInformation): TPostProcessThreadBase; virtual; abstract;
+    function CanProcess(Data: PPostProcessInformation): Boolean; virtual;
+    function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; virtual; abstract;
     function Copy: TPostProcessBase; virtual; abstract;
     procedure Assign(Source: TPostProcessBase); virtual;
     procedure Initialize; virtual;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; virtual;
     procedure Save; virtual;
-    procedure LoadSharedSettings; virtual;
     function ShowInitMessage(Handle: THandle): Boolean; virtual;
 
     property NeedsWave: Boolean read FNeedsWave;
@@ -135,7 +134,7 @@ type
   TInternalPostProcess = class(TPostProcessBase)
   private
   protected
-    FNeededPlugins: TList;
+    FNeededAddons: TList;
 
     function FGetDependenciesMet: Boolean; virtual;
   public
@@ -143,7 +142,7 @@ type
     destructor Destroy; override;
     procedure Initialize; override;
 
-    property NeededPlugins: TList read FNeededPlugins;
+    property NeededAddons: TList read FNeededAddons;
     property DependenciesMet: Boolean read FGetDependenciesMet;
   end;
 
@@ -154,7 +153,7 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(Exe, Params: string; Data: PPluginProcessInformation; Plugin: TExternalPostProcess);
+    constructor Create(Exe, Params: string; Data: PPostProcessInformation; PostProcessor: TExternalPostProcess);
     destructor Destroy; override;
   end;
 
@@ -168,7 +167,7 @@ type
   protected
   public
     constructor Create(Exe, Params: string; Active, OnlyIfCut: Boolean; Identifier, Order, GroupID: Integer);
-    function ProcessFile(Data: PPluginProcessInformation): TPostProcessThreadBase; override;
+    function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
 
@@ -185,13 +184,13 @@ uses
 { TProcessingEntry }
 
 constructor TProcessingEntry.Create(Owner: TObject; ActiveThread: TPostProcessThreadBase;
-  Data: TPluginProcessInformation);
+  Data: TPostProcessInformation);
 begin
   inherited Create;
 
   FOwner := Owner;
   FActiveThread := ActiveThread;
-  FActivePluginIndex := -1;
+  FActivePostProcessIndex := -1;
 
   New(FData);
 
@@ -209,12 +208,12 @@ begin
   FData.BitRate := Data.BitRate;
   FData.OutputFormat := Data.OutputFormat;
 
-  FPluginList := TList<TPostProcessBase>.Create;
+  FPostProcessList := TList<TPostProcessBase>.Create;
 end;
 
 destructor TProcessingEntry.Destroy;
 begin
-  FPluginList.Free;
+  FPostProcessList.Free;
   Dispose(FData);
 
   inherited;
@@ -222,13 +221,13 @@ end;
 
 { TProcessThreadBase }
 
-constructor TPostProcessThreadBase.Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
+constructor TPostProcessThreadBase.Create(Data: PPostProcessInformation; PostProcessor: TPostProcessBase);
 begin
   inherited Create(True);
 
   FreeOnTerminate := True;
   FData := Data;
-  FPlugin := Plugin;
+  FPostProcessor := PostProcessor;
   FResult := arFail;
   FOutput := '';
 end;
@@ -241,15 +240,15 @@ end;
 
 { TExternalProcessThread }
 
-constructor TExternalProcessThread.Create(Exe, Params: string; Data: PPluginProcessInformation; Plugin: TExternalPostProcess);
+constructor TExternalProcessThread.Create(Exe, Params: string; Data: PPostProcessInformation; PostProcessor: TExternalPostProcess);
 begin
-  inherited Create(Data, Plugin);
+  inherited Create(Data, PostProcessor);
 
   FreeOnTerminate := True;
   FExe := Exe;
   FParams := Params;
   FData := Data;
-  FPlugin := Plugin;
+  FPostProcessor := PostProcessor;
   FResult := arFail;
 end;
 
@@ -274,7 +273,10 @@ begin
       SetLength(Arr, 9);
 
       Arr[0].C := 'f';
-      Arr[0].Replace := FData.Filename;
+      if PostProcessor.GroupID = 0 then
+        Arr[0].Replace := FData.WorkFilename
+      else
+        Arr[0].Replace := FData.Filename;
       Arr[1].C := 'a';
       Arr[1].Replace := FData.Artist;
       Arr[2].C := 't';
@@ -353,7 +355,7 @@ begin
 end;
 
 function TExternalPostProcess.ProcessFile(
-  Data: PPluginProcessInformation): TPostProcessThreadBase;
+  Data: PPostProcessInformation): TPostProcessThreadBase;
 var
   Thread: TExternalProcessThread;
 begin
@@ -368,7 +370,7 @@ begin
 
 end;
 
-function TPostProcessBase.CanProcess(Data: PPluginProcessInformation): Boolean;
+function TPostProcessBase.CanProcess(Data: PPostProcessInformation): Boolean;
 begin
   Result := True;
 end;
@@ -389,11 +391,6 @@ begin
 
 end;
 
-procedure TPostProcessBase.LoadSharedSettings;
-begin
-
-end;
-
 procedure TPostProcessBase.Save;
 begin
 
@@ -410,12 +407,12 @@ constructor TInternalPostProcess.Create;
 begin
   inherited;
 
-  FNeededPlugins := TList.Create;
+  FNeededAddons := TList.Create;
 end;
 
 destructor TInternalPostProcess.Destroy;
 begin
-  FNeededPlugins.Free;
+  FNeededAddons.Free;
 
   inherited;
 end;
@@ -423,12 +420,12 @@ end;
 function TInternalPostProcess.FGetDependenciesMet: Boolean;
 var
   i: Integer;
-  Plugin: TPluginBase;
+  Addon: TAddonBase;
 begin
-  for i := 0 to FNeededPlugins.Count - 1 do
+  for i := 0 to FNeededAddons.Count - 1 do
   begin
-    Plugin := AppGlobals.PluginManager.Find(FNeededPlugins[i]);
-    if (Plugin = nil) or (not Plugin.FilesExtracted) then
+    Addon := AppGlobals.AddonManager.Find(FNeededAddons[i]);
+    if (Addon = nil) or (not Addon.FilesExtracted) then
       Exit(False);
   end;
   Exit(True);

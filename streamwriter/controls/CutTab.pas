@@ -26,7 +26,8 @@ interface
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
   MControls, LanguageObjects, Tabs, CutView, Functions, AppData, SharedControls,
-  DynBass, Logging, CutTabSearchSilence, MessageBus, AppMessages, PlayerManager;
+  DynBass, Logging, CutTabSearchSilence, MessageBus, AppMessages, PlayerManager,
+  Forms;
 
 type
   TCutToolBar = class(TToolBar)
@@ -85,6 +86,8 @@ type
     procedure VolumeTrackbarChange(Sender: TObject);
 
     procedure MessageReceived(Msg: TMessageBase);
+  protected
+    function CanClose: Boolean; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -102,6 +105,23 @@ type
 implementation
 
 { TCutTab }
+
+function TCutTab.CanClose: Boolean;
+var
+  Res: Integer;
+begin
+  Result := inherited;
+
+  if FCutView.WaveData <> nil then
+    if FCutView.LastCheckSum <> FCutView.WaveData.CheckSum then
+    begin
+      if MsgBox(GetParentForm(Self).Handle, Format(_('The file "%s" has not been saved. Do you really want to close the editor?'), [ExtractFileName(FFilename)]),
+        _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON2) = IDYES then
+        Result := True
+      else
+        Result := False;
+    end;
+end;
 
 constructor TCutTab.Create(AOwner: TComponent);
 begin

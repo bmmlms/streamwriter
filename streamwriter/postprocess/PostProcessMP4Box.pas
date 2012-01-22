@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects, TypeDefs,
-  Functions, Logging, Math, ConfigureSetTags, PluginMP4Box;
+  Functions, Logging, Math, ConfigureSetTags, AddonMP4Box;
 
 type
   TPostProcessMP4BoxThread = class(TPostProcessThreadBase)
@@ -32,31 +32,23 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
+    constructor Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
   end;
 
   TPostProcessMP4Box = class(TInternalPostProcess)
   private
-    FArtist: string;
-    FTitle: string;
-    FAlbum: string;
-    FComment: string;
   protected
   public
     constructor Create;
     destructor Destroy; override;
     function ShowInitMessage(Handle: THandle): Boolean; override;
-    function CanProcess(Data: PPluginProcessInformation): Boolean; override;
-    function ProcessFile(Data: PPluginProcessInformation): TPostProcessThreadBase; override;
+    function CanProcess(Data: PPostProcessInformation): Boolean; override;
+    function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
     procedure Initialize; override;
-    function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
-    procedure Save; override;
-    procedure LoadSharedSettings; override;
 
-    function MP4BoxMux(MP4BoxPath, InFile, OutFile: string; TerminateFlag: PBoolean): TActResults;
-    function MP4BoxDemux(MP4BoxPath, InFile, OutFile: string; TerminateFlag: PBoolean): TActResults;
+    function MP4BoxMux(InFile, OutFile: string; TerminateFlag: PBoolean): TActResults;
   end;
 
 implementation
@@ -66,11 +58,11 @@ uses
 
 { TPostProcessMP4BoxThread }
 
-constructor TPostProcessMP4BoxThread.Create(Data: PPluginProcessInformation; Plugin: TPostProcessBase);
+constructor TPostProcessMP4BoxThread.Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
 begin
-  inherited Create(Data, Plugin);
+  inherited Create(Data, Addon);
 
-  FMP4BoxPath := TPluginMP4Box(AppGlobals.PluginManager.Find(TPluginMP4Box)).MP4BoxEXEPath;
+  FMP4BoxPath := TAddonMP4Box(AppGlobals.AddonManager.Find(TAddonMP4Box)).MP4BoxEXEPath;
 end;
 
 procedure TPostProcessMP4BoxThread.Execute;
@@ -92,7 +84,7 @@ begin
   end;
 
   OutFile := RemoveFileExt(FData.Filename) + '_mux.m4a';
-  FResult := TPostProcessMP4Box(Plugin).MP4BoxMux(FMP4BoxPath, FData.Filename, OutFile, @Terminated);
+  FResult := TPostProcessMP4Box(PostProcessor).MP4BoxMux(FData.Filename, OutFile, @Terminated);
   case FResult of
     arWin:
       begin
@@ -118,39 +110,11 @@ procedure TPostProcessMP4Box.Assign(Source: TPostProcessBase);
 begin
   inherited;
 
-  FArtist := TPostProcessMP4Box(Source).FArtist;
-  FTitle := TPostProcessMP4Box(Source).FTitle;
-  FAlbum := TPostProcessMP4Box(Source).FAlbum;
-  FComment := TPostProcessMP4Box(Source).FComment;
 end;
 
-function TPostProcessMP4Box.CanProcess(Data: PPluginProcessInformation): Boolean;
+function TPostProcessMP4Box.CanProcess(Data: PPostProcessInformation): Boolean;
 begin
   Result := (Data.OutputFormat = atAAC) and FGetDependenciesMet;
-end;
-
-function TPostProcessMP4Box.Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean;
-var
-  F: TfrmConfigureSetTags;
-begin
-  Result := True;
-
-  F := TfrmConfigureSetTags.Create(AOwner, Self, FArtist, FTitle, FAlbum, FComment);
-  try
-    F.ShowModal;
-
-    if F.SaveData then
-    begin
-      FArtist := F.Artist;
-      FTitle := F.Title;
-      FAlbum := F.Album;
-      FComment := F.Comment;
-
-      Save;
-    end;
-  finally
-    F.Free;
-  end;
 end;
 
 function TPostProcessMP4Box.Copy: TPostProcessBase;
@@ -170,11 +134,9 @@ constructor TPostProcessMP4Box.Create;
 begin
   inherited;
 
-  FNeededPlugins.Add(TPluginMP4Box);
+  FNeededAddons.Add(TAddonMP4Box);
 
-  FActive := False;
-  FOrder := 100;
-  FCanConfigure := True;
+  FCanConfigure := False;
   FGroupID := 1;
 
   FName := _('AAC - Convert to M4A');
@@ -182,56 +144,23 @@ begin
 
   try
     AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
-    AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 100, 'Plugins');
+    AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 1001, 'Plugins');
     AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
-
-    LoadSharedSettings;
 
     if not FGetDependenciesMet then
       FActive := False;
   except end;
 end;
 
-function TPostProcessMP4Box.MP4BoxDemux(MP4BoxPath, InFile, OutFile: string; TerminateFlag: PBoolean): TActResults;
+function TPostProcessMP4Box.MP4BoxMux(InFile, OutFile: string; TerminateFlag: PBoolean): TActResults;
 var
-  CmdLine: string;
+  CmdLine, MP4BoxPath: string;
   Output: AnsiString;
   EC: DWORD;
 begin
   Result := arFail;
 
-  // TODO: Unschön. der sollte das nicht selber bestimmen. ist hier drunter nochmal!
-  if MP4BoxPath = '' then
-  begin
-    MP4BoxPath := AppGlobals.TempDir + 'plugin_mp4box\mp4box.exe';
-  end;
-
-  CmdLine := '"' + MP4BoxPath + '" -raw 1 "' + InFile + '" -out "' + OutFile + '"';
-
-  if RunProcess(CmdLine, ExtractFilePath(MP4BoxPath), 120000, Output, EC, TerminateFlag) = 2 then
-  begin
-    Result := arTimeout;
-  end else
-  begin
-    if FileExists(OutFile) and (EC = 0) then
-    begin
-      Result := arWin;
-    end;
-  end;
-end;
-
-function TPostProcessMP4Box.MP4BoxMux(MP4BoxPath, InFile, OutFile: string; TerminateFlag: PBoolean): TActResults;
-var
-  CmdLine: string;
-  Output: AnsiString;
-  EC: DWORD;
-begin
-  Result := arFail;
-
-  if MP4BoxPath = '' then
-  begin
-    MP4BoxPath := AppGlobals.TempDir + 'plugin_mp4box\mp4box.exe';
-  end;
+  MP4BoxPath := (AppGlobals.AddonManager.Find(TAddonMP4Box) as TAddonMP4Box).MP4BoxEXEPath;
 
   CmdLine := '"' + MP4BoxPath + '" -add "' + InFile + '" "' + OutFile + '"';
 
@@ -261,34 +190,13 @@ begin
   FHelp := _('This postprocessor converts recorded songs from AAC to M4A (AAC only).');
 end;
 
-procedure TPostProcessMP4Box.LoadSharedSettings;
-begin
-  inherited;
-
-  AppGlobals.Storage.Read('Shared_Tags_Artist', FArtist, '%a', 'Plugins');
-  AppGlobals.Storage.Read('Shared_Tags_Title', FTitle, '%t', 'Plugins');
-  AppGlobals.Storage.Read('Shared_Tags_Album', FAlbum, '%l', 'Plugins');
-  AppGlobals.Storage.Read('Shared_Tags_Comment', FComment, '%s / %u / Recorded using streamWriter', 'Plugins');
-end;
-
-function TPostProcessMP4Box.ProcessFile(
-  Data: PPluginProcessInformation): TPostProcessThreadBase;
+function TPostProcessMP4Box.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
   Result := nil;
   if not CanProcess(Data) then
     Exit;
 
   Result := TPostProcessMP4BoxThread.Create(Data, Self);
-end;
-
-procedure TPostProcessMP4Box.Save;
-begin
-  inherited;
-
-  AppGlobals.Storage.Write('Shared_Tags_Artist', FArtist, 'Plugins');
-  AppGlobals.Storage.Write('Shared_Tags_Title', FTitle, 'Plugins');
-  AppGlobals.Storage.Write('Shared_Tags_Album', FAlbum, 'Plugins');
-  AppGlobals.Storage.Write('Shared_Tags_Comment', FComment, 'Plugins');
 end;
 
 function TPostProcessMP4Box.ShowInitMessage(Handle: THandle): Boolean;

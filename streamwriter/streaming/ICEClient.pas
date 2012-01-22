@@ -604,7 +604,7 @@ end;
 
 procedure TICEClient.ThreadSongSaved(Sender: TSocketThread);
 var
-  Data: TPluginProcessInformation;
+  Data: TPostProcessInformation;
 begin
   if not FICEThread.RecvStream.SavedIsStreamFile then
   begin

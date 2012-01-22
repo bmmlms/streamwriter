@@ -3,8 +3,8 @@ unit FileConvertor;
 interface
 
 uses
-  SysUtils, Windows, Classes, DynBASS, ExtendedStream, PluginLAME, AppData,
-  PluginOGGEnc, PluginFAAC, Functions, PerlRegEx;
+  SysUtils, Windows, Classes, DynBASS, ExtendedStream, AddonLAME, AppData,
+  AddonOGGEnc, AddonFAAC, Functions, PerlRegEx;
 
 const
   BE_CONFIG_MP3 = 0;
@@ -287,24 +287,29 @@ end;
 function TFileConvertor.ConvertWAV2AAC(FromFile, ToFile: string;
   TerminateFlag: PBoolean): Boolean;
 var
-  CmdLine: string;
+  CmdLine, ToFileTemp: string;
   Output: AnsiString;
-  Plugin: TPluginFAAC;
+  Addon: TAddonFAAC;
   EC: Cardinal;
 begin
-  Plugin := AppGlobals.PluginManager.Find(TPluginFAAC) as TPluginFAAC;
+  Addon := AppGlobals.AddonManager.Find(TAddonFAAC) as TAddonFAAC;
 
-  if not Plugin.FilesExtracted then
+  if not Addon.FilesExtracted then
     Exit(False);
 
-  CmdLine := Plugin.EXEPath + ' -o "' + ToFile + '" "' + FromFile + '"';
-  if RunProcess(CmdLine, ExtractFilePath(Plugin.EXEPath), 300000, Output, EC, TerminateFlag, ReadCallbackAAC) = 2 then
+  ToFileTemp := RemoveFileExt(ToFile) + '_convert.aac';
+
+  CmdLine := Addon.EXEPath + ' -o "' + ToFileTemp + '" "' + FromFile + '"';
+  if RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), 300000, Output, EC, TerminateFlag, ReadCallbackAAC) = 2 then
   begin
     Result := False;
   end else
   begin
-    Result := FileExists(ToFile);
+    Result := FileExists(ToFileTemp);
   end;
+
+  if Result then
+    Result := MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);
 end;
 
 function TFileConvertor.ConvertWAV2M4A(FromFile, ToFile: string;
@@ -314,17 +319,16 @@ var
 begin
   ToFileTemp := RemoveFileExt(ToFile) + '_temp.aac';
   ToFileTemp2 := '';
-
+                      // TODO: M4A im cutview bearbeiten -> speichern. dann nochmal bearbeiten -> fail... winamp kanns auch nich abspielen!
   Result := ConvertWAV2AAC(FromFile, ToFileTemp, TerminateFlag);
 
   if Result then
   begin
-    // TODO: Was wenn es nicht da ist? was bei fehlern? das hier wird nur vom cutview genutzt!
-    ToFileTemp2 := RemoveFileExt(ToFile) + '_temp.m4a';
-    Result := TPostProcessMP4Box(AppGlobals.PostProcessManager.Find(TPostProcessMP4Box)).MP4BoxMux('', ToFileTemp, ToFileTemp2, TerminateFlag) = arWin;
+    ToFileTemp2 := RemoveFileExt(ToFile) + '_convert.m4a';
+    Result := TPostProcessMP4Box(AppGlobals.PostProcessManager.Find(TPostProcessMP4Box)).MP4BoxMux(ToFileTemp, ToFileTemp2, TerminateFlag) = arWin;
 
     if Result then
-      MoveFileEx(PChar(ToFileTemp2), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);
+      Result := MoveFileEx(PChar(ToFileTemp2), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);
   end;
 
   DeleteFile(PChar(ToFileTemp));
@@ -356,7 +360,7 @@ var
   Buffer: PSmallInt;
   Len, Write, ToRead, ToWrite: LongWord;
 
-  Plugin: TPluginLAME;
+  Addon: TAddonLAME;
 begin
   Result := False;
 
@@ -364,11 +368,11 @@ begin
   PercentDone := 0;
   PrevPercentDone := 0;
 
-  Plugin := AppGlobals.PluginManager.Find(TPluginLAME) as TPluginLAME;
-  if not Plugin.FilesExtracted then
+  Addon := AppGlobals.AddonManager.Find(TAddonLAME) as TAddonLAME;
+  if not Addon.FilesExtracted then
     Exit(False);
 
-  DLLHandle := LoadLibrary(PChar(Plugin.DLLPath));
+  DLLHandle := LoadLibrary(PChar(Addon.DLLPath));
   if DLLHandle <= 32 then
   begin
     raise Exception.Create('Could not load lame-enc.dll');
@@ -380,9 +384,11 @@ begin
     DeInitStream := GetProcAddress(DLLHandle,'beDeinitStream');
     CloseStream := GetProcAddress(DLLHandle,'beCloseStream');
 
+// TODO: Hierdrin mal überall ERR := 1 setzen. manchmal crashed es dann. und die funktion testen, ob bei fehlern auch immer das file gelöscht wird (tempfile) - habe einiges umgebaut!!!
+
     InStream := TFileStream.Create(FromFile, fmOpenRead);
     try
-      ToFileTemp := RemoveFileExt(ToFile) + '_save.mp3';    // TODO: Die anderen encoder bräuchten auch so ein _save oder???
+      ToFileTemp := RemoveFileExt(ToFile) + '_convert.mp3';
       OutStream := TFileStream.Create(ToFileTemp, fmCreate);
 
       if FBitRate = 0 then
@@ -396,7 +402,7 @@ begin
       Config.Format.lhv1.nMode := BE_MP3_MODE_STEREO;
       Config.Format.lhv1.dwBitrate := FBitRate;
       Config.Format.lhv1.dwMaxBitrate := FBitRate;
-      Config.Format.lhv1.nQuality := HIGH_QUALITY;
+      Config.Format.lhv1.nQuality := NORMAL_QUALITY;
       Config.Format.lhv1.dwMPegVersion := 1;
       Config.Format.lhv1.dwPsyModel := 0;
       Config.Format.lhv1.dwEmphasis := 0;
@@ -452,12 +458,15 @@ begin
           end;
 
           if (TerminateFlag <> nil) and (TerminateFlag^) then
-            Break;
+          begin
+            CloseStream(HBEStream);
+            Exit;
+          end;
         end;
 
         Err := DeInitStream(HBEStream, PMP3Buffer, @Write);
 
-        if (err <> BE_ERR_SUCCESSFUL) then
+        if (Err <> BE_ERR_SUCCESSFUL) then
         begin
           CloseStream(HBEStream);
           Exit;
@@ -470,10 +479,7 @@ begin
 
         CloseStream(HBEStream);
 
-        if (TerminateFlag <> nil) and (TerminateFlag^) then
-          DeleteFile(PChar(ToFileTemp))
-        else
-          Result := True;
+        Result := True;
       finally
         OutStream.Free;
 
@@ -485,33 +491,44 @@ begin
     end;
   finally
     FreeLibrary(DLLHandle);
+
+    if (not Result) or (TerminateFlag <> nil) and (TerminateFlag^) then
+    begin
+      Result := False;
+      DeleteFile(PChar(ToFileTemp))
+    end;
   end;
 
   if Result then
-    MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);
+    Result := MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);
 end;
 
 function TFileConvertor.ConvertWAV2OGG(FromFile, ToFile: string;
   TerminateFlag: PBoolean): Boolean;
 var
-  CmdLine: string;
+  CmdLine, ToFileTemp: string;
   Output: AnsiString;
-  Plugin: TPluginOGGEnc;
+  Addon: TAddonOGGEnc;
   EC: Cardinal;
 begin
-  Plugin := AppGlobals.PluginManager.Find(TPluginOggEnc) as TPluginOGGEnc;
+  Addon := AppGlobals.AddonManager.Find(TAddonOGGEnc) as TAddonOGGEnc;
 
-  if not Plugin.FilesExtracted then
+  if not Addon.FilesExtracted then
     Exit(False);
 
-  CmdLine := Plugin.EXEPath + ' "' + FromFile + '" -o "' + ToFile + '"';
-  if RunProcess(CmdLine, ExtractFilePath(Plugin.EXEPath), 300000, Output, EC, TerminateFlag, ReadCallbackOGG) = 2 then
+  ToFileTemp := RemoveFileExt(ToFile) + '_convert.ogg';
+
+  CmdLine := Addon.EXEPath + ' "' + FromFile + '" -o "' + ToFileTemp + '"';
+  if RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), 300000, Output, EC, TerminateFlag, ReadCallbackOGG) = 2 then
   begin
     Result := False;
   end else
   begin
-    Result := FileExists(ToFile);
+    Result := FileExists(ToFileTemp);
   end;
+
+  if Result then
+    Result := MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);
 end;
 
 procedure TFileConvertor.ReadCallbackAAC(Data: AnsiString);

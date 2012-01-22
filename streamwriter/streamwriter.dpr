@@ -112,19 +112,20 @@ uses
   PostProcessMP4Box in 'postprocess\PostProcessMP4Box.pas',
   SystemCritical in '..\..\common\SystemCritical.pas',
   FileConvertor in 'audio\FileConvertor.pas',
-  PluginManager in 'plugin\PluginManager.pas',
-  PluginLAME in 'plugin\PluginLAME.pas',
-  PluginBase in 'plugin\PluginBase.pas',
-  PluginFAAC in 'plugin\PluginFAAC.pas',
-  PluginSoX in 'plugin\PluginSoX.pas',
   Intro in 'Intro.pas' {frmIntro},
   PostProcessConvert in 'postprocess\PostProcessConvert.pas',
-  PluginOGGEnc in 'plugin\PluginOGGEnc.pas',
-  PluginMP4Box in 'plugin\PluginMP4Box.pas',
   FileTagger in 'audio\FileTagger.pas',
-  PluginAudioGenie in 'plugin\PluginAudioGenie.pas',
   AudioGenie in 'audio\AudioGenie.pas',
-  SavedTabEditTags in 'controls\SavedTabEditTags.pas' {frmEditTags};
+  SavedTabEditTags in 'controls\SavedTabEditTags.pas' {frmEditTags},
+  SettingsAddPostProcessor in 'SettingsAddPostProcessor.pas' {frmSettingsAddPostProcessor},
+  AddonAudioGenie in 'addon\AddonAudioGenie.pas',
+  AddonBase in 'addon\AddonBase.pas',
+  AddonFAAC in 'addon\AddonFAAC.pas',
+  AddonLAME in 'addon\AddonLAME.pas',
+  AddonManager in 'addon\AddonManager.pas',
+  AddonMP4Box in 'addon\AddonMP4Box.pas',
+  AddonOGGEnc in 'addon\AddonOGGEnc.pas',
+  AddonSoX in 'addon\AddonSoX.pas';
 
 {$SetPEOptFlags $0140}
 

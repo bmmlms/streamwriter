@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, ComCtrls, PostProcess, DownloadClient,
-  Functions, LanguageObjects, AppData, Logging, PluginBase;
+  Functions, LanguageObjects, AppData, Logging, AddonBase;
 
 type
   TfrmDownloadAddons = class(TForm)
@@ -24,7 +24,7 @@ type
     procedure DownloaderDownloaded(Sender: TObject);
     procedure DownloaderError(Sender: TObject);
   public
-    constructor Create(AOwner: TComponent; Plugin: TPluginBase); overload;
+    constructor Create(AOwner: TComponent; Addon: TAddonBase); overload;
     property Downloaded: Boolean read FDownloaded;
     property Error: Boolean read FError;
   end;
@@ -33,12 +33,12 @@ implementation
 
 {$R *.dfm}
 
-constructor TfrmDownloadAddons.Create(AOwner: TComponent; Plugin: TPluginBase);
+constructor TfrmDownloadAddons.Create(AOwner: TComponent; Addon: TAddonBase);
 begin
   inherited Create(AOwner);
 
-  FDownloadName := Plugin.DownloadName;
-  FDownloadPackage := Plugin.DownloadPackage;
+  FDownloadName := Addon.DownloadName;
+  FDownloadPackage := Addon.DownloadPackage;
 
   Language.Translate(Self);
 end;

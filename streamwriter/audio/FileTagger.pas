@@ -22,7 +22,7 @@ unit FileTagger;
 interface
 
 uses
-  Windows, SysUtils, AudioGenie, PluginAudioGenie;
+  Windows, SysUtils, AudioGenie, AddonAudioGenie;
 
 type
   TFileTagger = class
@@ -69,8 +69,7 @@ begin
   Result := False;
   FFilename := '';
 
-  // TODO: Wenn er hier mit false rausgeht, wird das beachtet beim CutView? nicht dass dann am ende gesaved wird!
-  if not TPluginAudioGenie(AppGlobals.PluginManager.Find(TPluginAudioGenie)).FilesExtracted then
+  if not TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).FilesExtracted then
     Exit;
 
   FFilename := Filename;
@@ -80,7 +79,7 @@ begin
   FComment := '';
   FTrackNumber := '';
 
-  AG := TAudioGenie3.Create(TPluginAudioGenie(AppGlobals.PluginManager.Find(TPluginAudioGenie)).DLLPath);
+  AG := TAudioGenie3.Create(TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).DLLPath);
   try
     if AG.AUDIOAnalyzeFileW(Filename) <> UNKNOWN then
     begin
@@ -103,10 +102,10 @@ var
 begin
   Result := False;
 
-  if not TPluginAudioGenie(AppGlobals.PluginManager.Find(TPluginAudioGenie)).FilesExtracted then
+  if not TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).FilesExtracted then
     Exit;
 
-  AG := TAudioGenie3.Create(TPluginAudioGenie(AppGlobals.PluginManager.Find(TPluginAudioGenie)).DLLPath);
+  AG := TAudioGenie3.Create(TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).DLLPath);
   try
     if AG.AUDIOAnalyzeFileW(Filename) <> UNKNOWN then
     begin

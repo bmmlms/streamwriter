@@ -59,10 +59,10 @@ begin
 
   FName := _('Support encoding of OGG using OggEnc');
   FHelp := _('This plugin adds support for encoding of OGG files to the application which is useful for postprocessing of recorded songs.');
-  FDownloadName := 'plugin_oggenc';
-  FDownloadPackage := 'plugin_oggenc.dll';
+  FDownloadName := 'addon_oggenc';
+  FDownloadPackage := 'addon_oggenc.dll';
 
-  FFilesDir := AppGlobals.TempDir + 'plugin_oggenc\';
+  FFilesDir := AppGlobals.TempDir + 'addon_oggenc\';
   FEXEPath := FFilesDir + 'oggenc2.exe';
 
   FFilenames.Add('oggenc2.exe');

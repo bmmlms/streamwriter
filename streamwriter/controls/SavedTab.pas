@@ -54,6 +54,7 @@ type
     FItemCut: TMenuItem;
     FItemEditTags: TMenuItem;
     FItemFinalized: TMenuItem;
+    FItemRename: TMenuItem;
     FItemRemove: TMenuItem;
     FItemRecycle: TMenuItem;
     FItemDelete: TMenuItem;
@@ -72,6 +73,7 @@ type
     property ItemCut: TMenuItem read FItemCut;
     property ItemEditTags: TMenuItem read FItemEditTags;
     property ItemFinalized: TMenuItem read FItemFinalized;
+    property ItemRename: TMenuItem read FItemRename;
     property ItemRemove: TMenuItem read FItemRemove;
     property ItemRecycle: TMenuItem read FItemRecycle;
     property ItemDelete: TMenuItem read FItemDelete;
@@ -91,6 +93,7 @@ type
     FEditTags: TToolButton;
     FFinalized: TToolButton;
     FSep3: TToolButton;
+    FRename: TToolButton;
     FRemove: TToolButton;
     FRecycle: TToolButton;
     FDelete: TToolButton;
@@ -146,8 +149,6 @@ type
     procedure SeekChange(Sender: TObject);
     procedure PositionTimer(Sender: TObject);
 
-    procedure UpdateButtons;
-
     procedure MessageReceived(Msg: TMessageBase);
   public
     constructor Create(AOwner: TComponent); override;
@@ -155,6 +156,8 @@ type
 
     procedure Setup(Streams: TDataLists; Images: TImageList);
     procedure PausePlay;
+
+    procedure UpdateButtons;
 
     property Tree: TSavedTree read FSavedTree;
 
@@ -304,6 +307,11 @@ begin
   ItemTmp.Caption := '-';
   Items.Add(ItemTmp);
 
+  FItemRename := CreateMenuItem;
+  FItemRename.Caption := 'Ren&ame';
+  FItemRename.ImageIndex := 74;
+  Items.Add(FItemRename);
+
   FItemRemove := CreateMenuItem;
   FItemRemove.Caption := '&Remove from list';
   FItemRemove.ImageIndex := 21;
@@ -342,6 +350,7 @@ begin
   FItemCut.Enabled := Enable;
   FItemEditTags.Enabled := Enable;
   FItemFinalized.Enabled := Enable;
+  FItemRename.Enabled := Enable;
   FItemRemove.Enabled := Enable;
   FItemRecycle.Enabled := Enable;
   FItemDelete.Enabled := Enable;
@@ -406,6 +415,11 @@ begin
   FRemove.Hint := 'Remove from list';
   FRemove.ImageIndex := 21;
 
+  FRename := TToolButton.Create(Self);
+  FRename.Parent := Self;
+  FRename.Hint := 'Rename';
+  FRename.ImageIndex := 74;
+
   FSep3 := TToolButton.Create(Self);
   FSep3.Parent := Self;
   FSep3.Style := tbsSeparator;
@@ -416,7 +430,6 @@ begin
   FFinalized.Hint := 'Finalized';
   FFinalized.ImageIndex := 58;
 
-  // TODO: Rename-Button fehlt noch. wollen ja einheitlich bleiben
   FEditTags := TToolButton.Create(Self);
   FEditTags.Parent := Self;
   FEditTags.Hint := 'Edit tags';
@@ -579,16 +592,11 @@ begin
     taEditTags:
       begin
         try
-          // TODO: Das Edit-View merkt sich Tags in einer Variable.. das ist nicht gut, wenn es auf ist, und dann Tags hier bearbeitet werden!
-          //       Der Cutter sollte sich vorm speichern die dinger laden und danach applien.
-
-
-
           EditTags := TfrmEditTags.Create(GetParentForm(Self));
           if EditTags.EditFile(Tracks[0].Filename) then
             EditTags.ShowModal
           else
-            MsgBox(GetPArentForm(Self).Handle, _('The file cannot be edited because it is in use or a needed plugin has not been installed.'), _('Info'), MB_ICONINFORMATION);
+            MsgBox(GetPArentForm(Self).Handle, _('The file cannot be edited because it is in use or a needed addon has not been installed.'), _('Info'), MB_ICONINFORMATION);
         finally
           EditTags.Free;
         end;
@@ -694,6 +702,8 @@ begin
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemEditTags);
   if Sender = FToolbar.FFinalized then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemFinalized);
+  if Sender = FToolbar.FRename then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemRename);
   if Sender = FToolbar.FRemove then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemRemove);
   if Sender = FToolbar.FRecycle then
@@ -707,7 +717,46 @@ begin
 end;
 
 procedure TSavedTab.UpdateButtons;
+var
+  i: Integer;
+  AllFinalized: Boolean;
+  Tracks: TTrackInfoArray;
 begin
+  inherited;
+
+  Tracks := Tree.GetSelected;
+  Tree.FPopupMenu.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing);
+  FToolbar.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing or Tree.FPlayer.Paused);
+
+  Tree.FPopupMenu.ItemPlay.Enabled := Bass.DeviceAvailable and (Length(Tracks) = 1);
+  FToolbar.FPlay.Enabled := Bass.DeviceAvailable and (Length(Tracks) = 1);
+
+  Tree.FPopupMenu.ItemShowFile.Enabled := Length(Tracks) = 1;
+  FToolbar.FShowFile.Enabled := Length(Tracks) = 1;
+  Tree.FPopupMenu.ItemProperties.Enabled := Length(Tracks) = 1;
+  FToolbar.FProperties.Enabled := Length(Tracks) = 1;
+
+  Tree.FPopupMenu.ItemCut.Enabled := Length(Tracks) > 0;
+  FToolbar.FCut.Enabled := Length(Tracks) > 0;
+
+  Tree.FPopupMenu.ItemEditTags.Enabled := Length(Tracks) = 1;
+  FToolbar.FEditTags.Enabled := Length(Tracks) = 1;
+
+  Tree.FPopupMenu.ItemRename.Enabled := Length(Tracks) = 1;
+  FToolbar.FRename.Enabled := Length(Tracks) = 1;
+
+  AllFinalized := True;
+  for i := 0 to High(Tracks) do
+    if not Tracks[i].Finalized then
+    begin
+      AllFinalized := False;
+      Break;
+    end;
+  // Das muss so, sonst klappt das .Down := AllFinalized nicht, wenn sie
+  // vorher Disabled waren, vor dem Enable da oben...
+  FToolbar.FFinalized.Down := False;
+  FToolbar.FFinalized.Down := AllFinalized;
+
   FToolbar.FPause.Enabled := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
   FToolbar.FStop.Enabled := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
   FSeek.GripperVisible := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
@@ -833,6 +882,7 @@ begin
   FToolBar.FCut.OnClick := ToolBarClick;
   FToolBar.FEditTags.OnClick := ToolBarClick;
   FToolBar.FFinalized.OnClick := ToolBarClick;
+  FToolBar.FRename.OnClick := ToolBarClick;
   FToolBar.FRemove.OnClick := ToolBarClick;
   FToolBar.FRecycle.OnClick := ToolBarClick;
   FToolBar.FDelete.OnClick := ToolBarClick;
@@ -885,6 +935,7 @@ begin
   FPopupMenu.ItemCut.OnClick := PopupMenuClick;
   FPopupMenu.ItemEditTags.OnClick := PopupMenuClick;
   FPopupMenu.ItemFinalized.OnClick := PopupMenuClick;
+  FPopupMenu.ItemRename.OnClick := PopupMenuClick;
   FPopupMenu.ItemRemove.OnClick := PopupMenuClick;
   FPopupMenu.ItemRecycle.OnClick := PopupMenuClick;
   FPopupMenu.ItemDelete.OnClick := PopupMenuClick;
@@ -1226,6 +1277,8 @@ begin
     Action := taEditTags;
   end else if Sender = FPopupMenu.ItemFinalized then
     Action := taFinalized
+  else if Sender = FPopupMenu.ItemRename then
+    EditNode(GetNode(Tracks[0]), 0)
   else if Sender = FPopupMenu.ItemRemove then
   begin
     Action := taRemove;
@@ -1598,38 +1651,6 @@ var
   Tracks: TTrackInfoArray;
 begin
   inherited;
-
-  Tracks := GetSelected;
-  FPopupMenu.EnableItems(Length(Tracks) > 0, FPlayer.Playing);
-  FTab.FToolbar.EnableItems(Length(Tracks) > 0, FPlayer.Playing or FPlayer.Paused);
-
-  FPopupMenu.ItemPlay.Enabled := Bass.DeviceAvailable and (Length(Tracks) = 1);
-  FTab.FToolbar.FPlay.Enabled := Bass.DeviceAvailable and (Length(Tracks) = 1);
-
-  FPopupMenu.ItemShowFile.Enabled := Length(Tracks) = 1;
-  FTab.FToolbar.FShowFile.Enabled := Length(Tracks) = 1;
-  FPopupMenu.ItemProperties.Enabled := Length(Tracks) = 1;
-  FTab.FToolbar.FProperties.Enabled := Length(Tracks) = 1;
-
-  FPopupMenu.ItemCut.Enabled := Length(Tracks) > 0;
-  FTab.FToolbar.FCut.Enabled := Length(Tracks) > 0;
-
-  FPopupMenu.ItemEditTags.Enabled := Length(Tracks) = 1;
-  FTab.FToolbar.FEditTags.Enabled := Length(Tracks) = 1;
-
-  AllFinalized := True;
-  for i := 0 to High(Tracks) do
-    if not Tracks[i].Finalized then
-    begin
-      AllFinalized := False;
-      Break;
-    end;
-  // Das muss so, sonst klappt das .Down := AllFinalized nicht, wenn sie
-  // vorher Disabled waren, vor dem Enable da oben...
-  FTab.FToolbar.FFinalized.Down := False;
-  FTab.FToolbar.FFinalized.Down := AllFinalized;
-
-  Invalidate;
 
   FTab.UpdateButtons;
 end;

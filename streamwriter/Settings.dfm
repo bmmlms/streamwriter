@@ -477,7 +477,7 @@ object frmSettings: TfrmSettings
         end>
       Groups = <
         item
-          Header = 'Bearbeitung auf WAVE-Ebene'
+          Header = 'Processing when in WAVE-format'
           GroupID = 0
           State = [lgsNormal]
           HeaderAlign = taLeftJustify
@@ -485,7 +485,7 @@ object frmSettings: TfrmSettings
           TitleImage = -1
         end
         item
-          Header = 'Bearbeitung nach R'#252'ckkonvertierung'
+          Header = 'Processing after converting to destination format'
           GroupID = 1
           State = [lgsNormal]
           HeaderAlign = taLeftJustify
@@ -511,7 +511,6 @@ object frmSettings: TfrmSettings
       Height = 25
       Anchors = [akRight, akBottom]
       Caption = '&Add...'
-      Enabled = False
       TabOrder = 1
       OnClick = btnAddClick
     end
@@ -1510,7 +1509,7 @@ object frmSettings: TfrmSettings
       OnClick = chkNormalizeVariablesClick
     end
   end
-  object pnlPlugins: TPanel
+  object pnlAddons: TPanel
     Left = 4
     Top = 416
     Width = 293
@@ -1520,7 +1519,7 @@ object frmSettings: TfrmSettings
     DesignSize = (
       293
       189)
-    object btnHelpPlugin: TPngSpeedButton
+    object btnHelpAddon: TPngSpeedButton
       Left = 266
       Top = 88
       Width = 24
@@ -1544,7 +1543,7 @@ object frmSettings: TfrmSettings
       Caption = 'Label20'
       ExplicitTop = 160
     end
-    object lstPlugins: TListView
+    object lstAddons: TListView
       Left = 4
       Top = 1
       Width = 257
@@ -1562,9 +1561,9 @@ object frmSettings: TfrmSettings
       SmallImages = PngImageList1
       TabOrder = 0
       ViewStyle = vsReport
-      OnResize = lstPluginsResize
-      OnSelectItem = lstPluginsSelectItem
-      OnItemChecked = lstPluginsItemChecked
+      OnResize = lstAddonsResize
+      OnSelectItem = lstAddonsSelectItem
+      OnItemChecked = lstAddonsItemChecked
     end
   end
   object dlgOpen: TOpenDialog

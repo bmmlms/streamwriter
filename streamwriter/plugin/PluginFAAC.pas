@@ -78,10 +78,10 @@ begin
 
   FName := _('Support encoding of AAC using FAAC');
   FHelp := _('This plugin adds support for encoding of AAC files to the application which is useful for postprocessing of recorded songs.');
-  FDownloadName := 'plugin_faac';
-  FDownloadPackage := 'plugin_faac.dll';
+  FDownloadName := 'addon_faac';
+  FDownloadPackage := 'addon_faac.dll';
 
-  FFilesDir := AppGlobals.TempDir + 'plugin_faac\';
+  FFilesDir := AppGlobals.TempDir + 'addon_faac\';
   FEXEPath := FFilesDir + 'faac.exe';
 
   FFilenames.Add('faac.exe');

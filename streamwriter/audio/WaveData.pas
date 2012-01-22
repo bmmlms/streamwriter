@@ -59,6 +59,7 @@ type
     FFilename: string;
     FWavesize, FFilesize: Int64;
     FAudioStart, FAudioEnd: Cardinal;
+    FCheckSum: Cardinal;
     FProgress: Cardinal;
 
     FOnProgress: TNotifyEvent;
@@ -101,6 +102,7 @@ type
     property Filesize: Int64 read FFilesize;
     property AudioStart: Cardinal read FAudioStart;
     property AudioEnd: Cardinal read FAudioEnd;
+    property CheckSum: Cardinal read FCheckSum;
     property Progress: Cardinal read FProgress;
 
     property OnProgress: TNotifyEvent read FOnProgress write FOnProgress;
@@ -260,6 +262,7 @@ var
 begin
   Counter := 0;
   OldPercent := 0;
+  FCheckSum := 0;
 
   SetLength(FWaveArray, 1000);
 
@@ -290,6 +293,9 @@ begin
     FWaveArray[Counter].R := HIWORD(Level);
     FWaveArray[Counter].Avg := (LOWORD(Level) + HIWORD(Level)) div 2;
     FWaveArray[Counter].Pos := Position;
+
+    FCheckSum := FCheckSum + FWaveArray[Counter].Avg;
+
     if Counter > 0 then
       FWaveArray[Counter - 1].Len := FWaveArray[Counter].Pos - FWaveArray[Counter - 1].Pos;
     FWaveArray[Counter].Sec := BASSChannelBytes2Seconds(FDecoder, Position);

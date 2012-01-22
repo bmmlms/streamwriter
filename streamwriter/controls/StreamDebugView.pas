@@ -270,7 +270,7 @@ begin
         Index := 1;
       dtSaved:
         Index := 2;
-      dtPlugin:
+      dtPostProcess:
         Index := 3;
     end;
   end;

@@ -515,7 +515,7 @@ var
   Client: TICEClient;
 begin
   // Die Funktion hier wird nich nur aufgerufen, wenn der ICE-Thread stirbt, sondern auch,
-  // wenn alle Plugins abgearbeitet wurden und es keinen ICE-Thread gibt.
+  // wenn alle PostProcessors abgearbeitet wurden und es keinen ICE-Thread gibt.
   if Assigned(FOnClientRefresh) then
     FOnClientRefresh(Sender);
   Client := Sender as TICEClient;
