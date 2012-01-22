@@ -36,8 +36,6 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitTop = 73
-    ExplicitWidth = 297
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -61,13 +59,12 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 196
     end
   end
   object optWAVE: TRadioButton
-    Left = 16
+    Left = 8
     Top = 28
-    Width = 289
+    Width = 297
     Height = 21
     Caption = '...processing when in WAVE-format'
     Checked = True
@@ -75,11 +72,11 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
     TabStop = True
   end
   object optDestinationFormat: TRadioButton
-    Left = 16
+    Left = 8
     Top = 48
-    Width = 289
+    Width = 297
     Height = 21
-    Caption = '...processing after converting to destination format'
+    Caption = '...processing after conversion to destination format'
     TabOrder = 2
   end
 end

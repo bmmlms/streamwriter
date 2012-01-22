@@ -28,8 +28,8 @@ uses
   Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, DataManager,
   ImgList, Functions, DragDropFile, GUIFunctions, StreamInfoView, DynBASS,
   Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
-  PlayerManager, Logging, FileWatcher, MessageBus, AppMessages,
-  SavedTabEditTags;
+  PlayerManager, Logging, FileWatcher, MessageBus, AppMessages, ShlObj,
+  SavedTabEditTags, Generics.Collections, TypeDefs, AudioFunctions;
 
 type
   TSavedTree = class;
@@ -39,11 +39,29 @@ type
   end;
   PSavedNodeData = ^TSavedNodeData;
 
-  TTrackActions = (taUndefined, taRefresh, taCut, taEditTags, taFinalized, taRemove, taRecycle, taDelete, taShowFile, taProperties);
+  TTrackActions = (taUndefined, taRefresh, taCut, taEditTags, taFinalized, taRemove, taRecycle, taDelete, taShowFile, taProperties, taImport);
 
   TTrackInfoArray = array of TTrackInfo;
 
   TTrackActionEvent = procedure(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray) of object;
+
+  TImportFilesThread = class(TThread)
+  private
+    FDir: string;
+    FFiles: TList<TTrackInfo>;
+    FKnownFiles: TStringList;
+    FProgress: Integer;
+    FCurrentFilename: string;
+
+    FOnProgress: TNotifyEvent;
+  protected
+    procedure Execute; override;
+  public
+    constructor Create(Dir: string; KnownFiles: TStringList);
+    destructor Destroy; override;
+
+    property OnProgress: TNotifyEvent read FOnProgress write FOnProgress;
+  end;
 
   TSavedTracksPopup = class(TPopupMenu)
   private
@@ -60,6 +78,7 @@ type
     FItemDelete: TMenuItem;
     FItemShowFile: TMenuItem;
     FItemProperties: TMenuItem;
+    FItemImport: TMenuItem;
   protected
   public
     constructor Create(AOwner: TComponent); override;
@@ -79,6 +98,7 @@ type
     property ItemDelete: TMenuItem read FItemDelete;
     property ItemShowFile: TMenuItem read FItemShowFile;
     property ItemProperties: TMenuItem read FItemProperties;
+    property ItemImport: TMenuItem read FItemImport;
   end;
 
   TSavedToolBar = class(TToolBar)
@@ -100,6 +120,7 @@ type
     FSep4: TToolButton;
     FShowFile: TToolButton;
     FProperties: TToolButton;
+    FImport: TToolButton;
   public
     constructor Create(AOwner: TComponent); override;
 
@@ -119,6 +140,19 @@ type
     procedure Setup;
   end;
 
+  TImportPanel = class(TPanel)
+  private
+    LabelFilename: TLabel;
+    ProgressBar: TProgressBar;
+    Button: TButton;
+  protected
+    procedure Resize; override;
+  public
+    constructor Create(AOwner: TComponent);
+
+    procedure SetData(Progress: Integer; CurrentFilename: string);
+  end;
+
   TSavedTab = class(TMainTabSheet)
   private
     FPositionTimer: TTimer;
@@ -136,6 +170,9 @@ type
     FSavedTree: TSavedTree;
     FStreams: TDataLists;
 
+    FImportPanel: TImportPanel;
+    FImportThread: TImportFilesThread;
+
     FOnCut: TTrackEvent;
     FOnTrackRemoved: TTrackEvent;
     FOnRefresh: TNotifyEvent;
@@ -150,6 +187,13 @@ type
     procedure PositionTimer(Sender: TObject);
 
     procedure MessageReceived(Msg: TMessageBase);
+
+    procedure ImportThreadProgress(Sender: TObject);
+    procedure ImportThreadTerminate(Sender: TObject);
+
+    procedure ImportPanelCancelClick(Sender: TObject);
+  protected
+    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -239,7 +283,7 @@ type
     procedure UpdateTrack(Track: TTrackInfo);
     procedure Filter(S: string);
     procedure Sort(Node: PVirtualNode; Column: TColumnIndex;
-      Direction: TSortDirection; DoInit: Boolean = True); override;
+      Direction: VirtualTrees.TSortDirection; DoInit: Boolean = True); override;
     procedure SetFileWatcher;
     procedure UpdateList;
 
@@ -340,6 +384,15 @@ begin
   FItemProperties.Caption := 'Proper&ties';
   FItemProperties.ImageIndex := 22;
   Items.Add(FItemProperties);
+
+  ItemTmp := CreateMenuItem;
+  ItemTmp.Caption := '-';
+  Items.Add(ItemTmp);
+
+  FItemImport := CreateMenuItem;
+  FItemImport.Caption := '&Import files...';
+  FItemImport.ImageIndex := 36;
+  Items.Add(FItemImport);
 end;
 
 procedure TSavedTracksPopup.EnableItems(Enable, Playing: Boolean);
@@ -385,6 +438,16 @@ end;
 
 procedure TSavedToolBar.Setup;
 begin
+  FImport := TToolButton.Create(Self);
+  FImport.Parent := Self;
+  FImport.Hint := _('Import files...');
+  FImport.ImageIndex := 36;
+
+  FSep4 := TToolButton.Create(Self);
+  FSep4.Parent := Self;
+  FSep4.Style := tbsSeparator;
+  FSep4.Width := 8;
+
   FProperties := TToolButton.Create(Self);
   FProperties.Parent := Self;
   FProperties.Hint := _('Properties');
@@ -501,6 +564,34 @@ begin
   inherited;
 end;
 
+procedure TSavedTab.ImportPanelCancelClick(Sender: TObject);
+begin
+  if FImportThread <> nil then
+    FImportThread.Terminate;
+end;
+
+procedure TSavedTab.ImportThreadProgress(Sender: TObject);
+begin
+  FImportPanel.SetData(FImportThread.FProgress, FImportThread.FCurrentFilename);
+end;
+
+procedure TSavedTab.ImportThreadTerminate(Sender: TObject);
+var
+  i: Integer;
+begin
+  for i := 0 to FImportThread.FFiles.Count - 1 do
+  begin
+    FStreams.TrackList.Add(FImportThread.FFiles[i]);
+    FSavedTree.AddTrack(FImportThread.FFiles[i], False);
+  end;
+  FImportThread := nil;
+
+  FImportPanel.Free;
+  FSavedTree.Enabled := True;
+
+  UpdateButtons;
+end;
+
 procedure TSavedTab.MessageReceived(Msg: TMessageBase);
 var
   VolMsg: TVolumeChangedMsg;
@@ -551,6 +642,17 @@ begin
   end;
 end;
 
+procedure TSavedTab.Resize;
+begin
+  inherited;
+
+  if FImportPanel <> nil then
+  begin
+    FImportPanel.Left := FSavedTree.ClientWidth div 2 - FImportPanel.Width div 2;
+    FImportPanel.Top := FSavedTree.Top + (FSavedTree.Height - FSavedTree.ClientHeight) + FSavedTree.ClientHeight div 2 - FImportPanel.Height div 2;
+  end;
+end;
+
 procedure TSavedTab.BuildTree;
 var
   i: Integer;
@@ -574,8 +676,9 @@ procedure TSavedTab.SavedTreeAction(Sender: TObject; Action: TTrackActions;
 var
   i: Integer;
   Error, AllFinalized: Boolean;
-  LowerDir: string;
+  LowerDir, Dir: string;
   EditTags: TfrmEditTags;
+  KnownFiles: TStringList;
 begin
   case Action of
     taRefresh:
@@ -679,6 +782,34 @@ begin
       RunProcess('explorer.exe /select,"' + Tracks[0].Filename + '"');
     taProperties:
       PropertiesDialog(Tracks[0].Filename);
+    taImport:
+      begin
+        Dir := BrowseDialog(GetParentForm(Self).Handle, 'Select folder with files to import:', BIF_RETURNONLYFSDIRS);
+        if Dir <> '' then
+        begin
+          KnownFiles := TStringList.Create;
+          for i := 0 to FStreams.TrackList.Count - 1 do
+            KnownFiles.Add(FStreams.TrackList[i].Filename);
+
+          // TODO: Programmende und thread rennt noch, was ist dann? er muss auf terminated reagieren.
+
+          FImportPanel := TImportPanel.Create(Self);
+          FImportPanel.Width := 250;
+          FImportPanel.Height := 80;
+          FImportPanel.Parent := Self;
+          FImportPanel.Button.OnClick := ImportPanelCancelClick;
+          Resize;
+
+          FImportThread := TImportFilesThread.Create(Dir, KnownFiles);
+          FImportThread.OnTerminate := ImportThreadTerminate;
+          FImportThread.OnProgress := ImportThreadProgress;
+          FImportThread.Resume;
+
+          FSavedTree.Enabled := False;
+
+          UpdateButtons;
+        end;
+      end;
   end;
 
   FSavedTree.Change(nil);
@@ -714,6 +845,8 @@ begin
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemShowFile);
   if Sender = FToolbar.FProperties then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemProperties);
+  if Sender = FToolbar.FImport then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemImport);
 end;
 
 procedure TSavedTab.UpdateButtons;
@@ -723,6 +856,25 @@ var
   Tracks: TTrackInfoArray;
 begin
   inherited;
+
+  if FImportThread <> nil then
+  begin
+    for i := 0 to FToolbar.ButtonCount - 1 do
+      FToolbar.Buttons[i].Enabled := False;
+    for i := 0 to Tree.FPopupMenu.Items.Count - 1 do
+      Tree.FPopupMenu.Items[i].Enabled := False;
+
+    if Tree.FPlayer.Playing then
+    begin
+      Tree.FPopupMenu.ItemPause.Enabled := True;
+      FToolbar.FPause.Enabled := True;
+
+      Tree.FPopupMenu.ItemStop.Enabled := True;
+      FToolbar.FStop.Enabled := True;
+    end;
+
+    Exit;
+  end;
 
   Tracks := Tree.GetSelected;
   Tree.FPopupMenu.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing);
@@ -744,6 +896,9 @@ begin
 
   Tree.FPopupMenu.ItemRename.Enabled := Length(Tracks) = 1;
   FToolbar.FRename.Enabled := Length(Tracks) = 1;
+
+  Tree.FPopupMenu.ItemImport.Enabled := True;
+  FToolbar.FImport.Enabled := True;
 
   AllFinalized := True;
   for i := 0 to High(Tracks) do
@@ -888,6 +1043,7 @@ begin
   FToolBar.FDelete.OnClick := ToolBarClick;
   FToolBar.FShowFile.OnClick := ToolBarClick;
   FToolBar.FProperties.OnClick := ToolBarClick;
+  FToolbar.FImport.OnClick := ToolBarClick;
 
   BuildTree;
 
@@ -941,6 +1097,7 @@ begin
   FPopupMenu.ItemDelete.OnClick := PopupMenuClick;
   FPopupMenu.ItemShowFile.OnClick := PopupMenuClick;
   FPopupMenu.ItemProperties.OnClick := PopupMenuClick;
+  FPopupMenu.ItemImport.OnClick := PopupMenuClick;
   FPopupMenu.OnPopup := PopupMenuPopUp;
 
   PopupMenu := FPopupMenu;
@@ -1242,7 +1399,7 @@ begin
     Exit;
   end;
 
-  if Length(Tracks) = 0 then
+  if (Length(Tracks) = 0) and (Sender <> FPopupMenu.ItemImport) then
     Exit;
 
   if Sender = FPopupMenu.ItemPlay then
@@ -1292,10 +1449,12 @@ begin
     Action := taShowFile
   else if Sender = FPopupMenu.ItemProperties then
     Action := taProperties
+  else if Sender = FPopupMenu.ItemImport then
+    Action := taImport
   else
     raise Exception.Create('');
 
-  if (Length(Tracks) > 0) and (Action <> taUndefined) then
+  if Action <> taUndefined then
     if Assigned(FOnAction) then
       FOnAction(Self, Action, Tracks);
 end;
@@ -1378,7 +1537,7 @@ begin
 end;
 
 procedure TSavedTree.Sort(Node: PVirtualNode; Column: TColumnIndex;
-  Direction: TSortDirection; DoInit: Boolean);
+  Direction: VirtualTrees.TSortDirection; DoInit: Boolean);
 begin
   inherited;
 
@@ -1882,6 +2041,157 @@ begin
   Height := FSearch.Top + FSearch.Height + FSearch.Top + 3;
 
   BevelOuter := bvNone;
+end;
+
+{ TImportFilesThread }
+
+constructor TImportFilesThread.Create(Dir: string; KnownFiles: TStringList);
+begin
+  inherited Create(True);
+
+  FreeOnTerminate := True;
+
+  FDir := IncludeTrailingBackslash(Dir);
+  FFiles := TList<TTrackInfo>.Create;
+  FKnownFiles := KnownFiles;
+end;
+
+destructor TImportFilesThread.Destroy;
+begin
+  FFiles.Free;
+  FKnownFiles.Free;
+
+  inherited;
+end;
+
+procedure TImportFilesThread.Execute;
+var
+  i, n: Integer;
+  Add: Boolean;
+  FoundFiles, FoundAudioFiles: TStringList;
+  Track: TTrackInfo;
+  Info: TAudioFileInfo;
+begin
+  inherited;
+
+  FoundFiles := TStringList.Create;
+  FoundAudioFiles := TStringList.Create;
+  try
+    FindFiles(FDir + '*.*', FoundFiles, True);
+
+    for i := 0 to FoundFiles.Count - 1 do
+    begin
+      if Terminated then
+        Exit;
+
+      if FiletypeToFormat(FoundFiles[i]) <> atNone then
+      begin
+        Add := True;
+        for n := 0 to FKnownFiles.Count - 1 do
+          if LowerCase(FKnownFiles[n]) = LowerCase(FoundFiles[i]) then
+          begin
+            Add := False;
+            Break;
+          end;
+
+        if Add then
+          FoundAudioFiles.Add(FoundFiles[i]);
+      end;
+    end;
+
+    for i := 0 to FoundAudioFiles.Count - 1 do
+    begin
+      if Terminated then
+        Exit;
+
+      FCurrentFilename := ExtractFileName(FoundAudioFiles[i]);
+      if Assigned(FOnProgress) then
+        Synchronize(
+          procedure
+          begin
+            if Assigned(FOnProgress) then
+              FOnProgress(Self);
+          end);
+
+      Info := GetFileInfo(FoundAudioFiles[i]);; // TODO: ... und was ist bei vbr???
+                          sleep(500); // TODO: !!!
+      if Info.Success then
+      begin
+        Track := TTrackInfo.Create;
+        Track.Time := Now;
+        Track.BitRate := Info.Bitrate;
+        Track.Length := Trunc(Info.Length);
+        Track.Filename := FoundAudioFiles[i];
+        Track.Filesize := GetFileSize(FoundAudioFiles[i]);
+        FFiles.Add(Track);
+
+        FProgress := Trunc((i / FoundAudioFiles.Count) * 100);
+        FCurrentFilename := ExtractFileName(FoundAudioFiles[i]);
+
+        if Assigned(FOnProgress) then
+          Synchronize(
+            procedure
+            begin
+              if Assigned(FOnProgress) then
+                FOnProgress(Self);
+            end);
+      end;
+    end;
+  finally
+    FoundFiles.Free;
+    FoundAudioFiles.Free;
+  end;
+end;
+
+{ TImportPanel }
+
+constructor TImportPanel.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  LabelFilename := TLabel.Create(Self);
+  LabelFilename.Parent := Self;
+  LabelFilename.AutoSize := False;
+  LabelFilename.Alignment := taCenter;
+
+  ProgressBar := TProgressBar.Create(Self);
+  ProgressBar.Parent := Self;
+
+  Button := TButton.Create(Self);
+  Button.Parent := Self;
+  Button.Caption := _('Cancel');
+end;
+
+procedure TImportPanel.Resize;
+begin
+  inherited;
+
+  LabelFilename.Width := ClientWidth - 8;
+  LabelFilename.Top := 4;
+  LabelFilename.Left := 4;
+
+  Button.Width := 93;
+  Button.Height := 25;
+  Button.Top := ClientHeight - 4 - Button.Height;
+  Button.Left := ClientWidth - 4 - Button.Width;
+
+  ProgressBar.Width := ClientWidth - 8;
+  ProgressBar.Top := Button.Top - 4 - ProgressBar.Height;
+  ProgressBar.Left := 4;
+end;
+
+procedure TImportPanel.SetData(Progress: Integer; CurrentFilename: string);
+var
+  W: Integer;
+begin
+  W := GetTextSize('Importing ""', LabelFilename.Font).cx;
+  LabelFilename.Caption := Format(_('Importing "%s"'), [TruncateText(CurrentFilename, LabelFilename.Width - W - 20, LabelFilename.Font)]);
+  if ProgressBar.Position <> Progress then
+  begin
+    if Progress < 100 then
+      ProgressBar.Position := Progress + 1;
+    ProgressBar.Position := Progress;
+  end;
 end;
 
 end.

@@ -125,7 +125,8 @@ uses
   AddonManager in 'addon\AddonManager.pas',
   AddonMP4Box in 'addon\AddonMP4Box.pas',
   AddonOGGEnc in 'addon\AddonOGGEnc.pas',
-  AddonSoX in 'addon\AddonSoX.pas';
+  AddonSoX in 'addon\AddonSoX.pas',
+  AudioFunctions in 'audio\AudioFunctions.pas';
 
 {$SetPEOptFlags $0140}
 

@@ -27,7 +27,7 @@ interface
 uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
   AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
-  Math, PerlRegEx, Logging, WideStrUtils, TypeDefs;
+  Math, PerlRegEx, Logging, WideStrUtils, TypeDefs, AudioFunctions;
 
 type
   TDebugEvent = procedure(Text, Data: string) of object;

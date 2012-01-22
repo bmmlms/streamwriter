@@ -30,7 +30,7 @@ uses
   Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
   PlayerManager, PostProcess, PostProcessSoX, DownloadAddons, ConfigureSoX, Logging,
-  MsgDlg, DragDrop, DropTarget, DropComboTarget, TypeDefs,
+  MsgDlg, DragDrop, DropTarget, DropComboTarget, TypeDefs, AudioFunctions,
   MessageBus, AppMessages, AddonSoX, PostProcessConvert, FileTagger;
 
 type
@@ -511,41 +511,6 @@ begin
 end;
 
 procedure TCutView.LoadFile(Filename: string; IsConverted: Boolean);
-  function CalcBytesPerSec: Integer;
-  var
-    TempPlayer: Cardinal;
-    Time: Double;
-    BufLen: Int64;
-    FS: TFileStream;
-    BytesPerSec: Integer;
-    BitRate: Cardinal;
-  begin
-    Result := 0;
-
-    TempPlayer := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE or BASS_STREAM_PRESCAN or BASS_UNICODE);
-
-    if TempPlayer = 0 then
-      Exit(0);
-
-    try
-      BASSChannelSetPosition(TempPlayer, GetFileSize(Filename), BASS_POS_BYTE);
-      Time := BASSChannelBytes2Seconds(TempPlayer, BASSChannelGetLength(TempPlayer, BASS_POS_BYTE));
-      BufLen := BASSStreamGetFilePosition(TempPlayer, BASS_FILEPOS_END);
-      if BufLen = -1 then
-        raise Exception.Create('');
-      BytesPerSec := Trunc((BufLen / (125 * Time) + 0.5) * 125);
-      BitRate := Trunc(BufLen / Floor(((125 * Time)) + 0.5));
-
-      BitRate := RoundBitrate(BitRate);
-
-      if BytesPerSec <= 10 then
-        Exit(0);
-    finally
-      BASSStreamFree(TempPlayer);
-    end;
-
-    Exit(BitRate);
-  end;
 var
   FileExt: string;
 begin
@@ -606,7 +571,7 @@ begin
 
     FProgressBarLoad.Visible := True;
 
-    FBitRate := CalcBytesPerSec;
+    FBitRate := GetFileInfo(Filename).Bitrate;
     if FBitRate = 0 then
       FBitRate := 128;
 

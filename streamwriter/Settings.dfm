@@ -485,7 +485,7 @@ object frmSettings: TfrmSettings
           TitleImage = -1
         end
         item
-          Header = 'Processing after converting to destination format'
+          Header = 'Processing after conversion to destination format'
           GroupID = 1
           State = [lgsNormal]
           HeaderAlign = taLeftJustify
