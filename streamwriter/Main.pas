@@ -246,6 +246,7 @@ type
 
     procedure OneInstanceMessage(var Msg: TMessage); message WM_USER + 1234;
     procedure AfterShown(var Msg: TMessage); message WM_AFTERSHOWN;
+    procedure ReceivedData(var Msg: TWMCopyData); message WM_COPYDATA;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
     procedure EndSession(var Msg: TMessage); message WM_ENDSESSION;
     procedure SysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
@@ -266,6 +267,7 @@ type
     procedure RegisterHotkeys(Reg: Boolean);
     procedure ShowCommunityLogin;
     procedure OpenCut(Filename: string);
+    procedure ProcessCommandLine(Data: string);
 
     procedure CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
 
@@ -649,6 +651,8 @@ begin
   end;
 
   tmrAutoSave.Enabled := True;
+
+  ProcessCommandLine(GetCommandLineW);
 
   if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
     FUpdater.Start(uaVersion);
@@ -1136,6 +1140,84 @@ begin
 
 end;
 
+procedure TfrmStreamWriterMain.ProcessCommandLine(Data: string);
+var
+  i, ParsedCount: Integer;
+  P: PChar;
+  InDingens, InPlay, InRecord: Boolean;
+  Args: array of string;
+  Arg: string;
+begin
+  ParsedCount := 0;
+  SetLength(Args, 0);
+  Arg := '';
+
+  InDingens := False;
+  for i := 1 to Length(Data) do
+  begin
+    if Data[i] = '"' then
+    begin
+      if InDingens then
+      begin
+        if ParsedCount > 0 then
+        begin
+          SetLength(Args, Length(Args) + 1);
+          Args[High(Args)] := Arg;
+        end;
+        Inc(ParsedCount);
+        Arg := '';
+      end;
+      InDingens := not InDingens;
+    end else if Data[i] = ' ' then
+    begin
+      if (not InDingens) and (Arg <> '') then
+      begin
+        if ParsedCount > 0 then
+        begin
+          SetLength(Args, Length(Args) + 1);
+          Args[High(Args)] := Arg;
+        end;
+        Inc(ParsedCount);
+        Arg := '';
+      end else if Arg <> '' then
+        Arg := Arg + Data[i];
+    end else
+    begin
+      Arg := Arg + Data[i];
+    end;
+  end;
+
+  if Arg <> '' then
+  begin
+    SetLength(Args, Length(Args) + 1);
+    Args[High(Args)] := Arg;
+  end;
+               // TODO: SavedTab - externe files importieren?
+  InPlay := False;
+  InRecord := False;
+  for i := 0 to High(Args) do
+  begin
+    if LowerCase(Args[i]) = '-p' then
+    begin
+      InPlay := True;
+      InRecord := False;
+    end else if LowerCase(Args[i]) = '-r' then
+    begin
+      InRecord := True;
+      InPlay := False;
+    end else
+    begin
+      if InRecord then
+      begin
+        tabClients.StartStreaming(0, 0, '', Args[i], '', nil, False, nil, amNoWhere);
+      end else if InPlay then
+      begin
+        tabClients.StartStreaming(0, 0, '', Args[i], '', nil, True, nil, amNoWhere);
+      end;
+    end;
+  end;
+end;
+
 procedure TfrmStreamWriterMain.PostTranslate;
 var
   NodeData: PClientNodeData;
@@ -1209,6 +1291,11 @@ begin
     Modifiers := Modifiers or MOD_ALT;
   if (ssCtrl in Shift) then
     Modifiers := Modifiers or MOD_CONTROL;
+end;
+
+procedure TfrmStreamWriterMain.ReceivedData(var Msg: TWMCopyData);
+begin
+  ProcessCommandLine(PChar(Msg.CopyDataStruct.lpData));
 end;
 
 procedure TfrmStreamWriterMain.RegisterHotkeys(Reg: Boolean);
