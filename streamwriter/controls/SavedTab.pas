@@ -586,7 +586,7 @@ begin
   end;
   FImportThread := nil;
 
-  FImportPanel.Free;
+  FreeAndNil(FImportPanel);
   FSavedTree.Enabled := True;
 
   UpdateButtons;
