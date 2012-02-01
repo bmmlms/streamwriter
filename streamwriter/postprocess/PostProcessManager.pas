@@ -19,8 +19,6 @@
 }
 unit PostProcessManager;
 
-// TODO: ein aac stream hat 48 bitrate. man encoded zu mp3. dann hat der auch nur 48, das ist doch mist!
-
 interface
 
 uses
@@ -31,7 +29,6 @@ uses
 type
   TPostProcessManager = class
   private
-    FPostProcessors: TList<TPostProcessBase>;
     FProcessingList: TProcessingList;
 
     procedure WriteDebug(Sender: TObject; Text, Data: string; T: TDebugTypes; Level: TDebugLevels); overload;
@@ -48,12 +45,8 @@ type
     function ProcessFile(Owner: TObject; Data: TPostProcessInformation): Boolean; overload;
     function ProcessFile(Entry: TProcessingEntry): Boolean; overload;
     procedure ReInitPostProcessors;
-    function Find(PostProcessor: TPostProcessBase): TPostProcessBase; overload;
-    function Find(ClassType: TClass): TPostProcessBase; overload;
     function EnablePostProcess(Owner: TCustomForm; Enable: Boolean; PostProcess: TInternalPostProcess): Boolean;
     function WorkingForClient(Client: TObject): Boolean;
-
-    property PostProcessors: TList<TPostProcessBase> read FPostProcessors;
   end;
 
 implementation
@@ -69,6 +62,9 @@ var
 begin
   Result := False;
   Entry := TProcessingEntry.Create(Owner, nil, Data);
+
+  BuildProcessingList(Entry);
+
   if not ProcessFile(Entry) then
   begin
     Entry.Free;
@@ -85,20 +81,25 @@ end;
 procedure TPostProcessManager.BuildProcessingList(Entry: TProcessingEntry);
 var
   i, n: Integer;
+  Client: TICEClient;
 
   function PostProcessingNeedsWave(Entry: TProcessingEntry): Boolean;
   var
     i: Integer;
     FormatChanged: Boolean;
+    Client: TICEClient;
   begin
-    FormatChanged := Entry.Data.OutputFormat <> TICEClient(Entry.Owner).Entry.AudioType;
+    Client := TICEClient(Entry.Owner);
+
+    FormatChanged := TEncoderSettings(Entry.Data.EncoderSettings).AudioType <> atNone; //TEncoderSettings(Entry.Data.EncoderSettings).AudioType <> TICEClient(Entry.Owner).Entry.AudioType;
 
     if FormatChanged then
       Exit(True);
 
-    for i := 0 to FPostProcessors.Count - 1 do
-      if (FPostProcessors[i].CanProcess(Entry.Data) and FPostProcessors[i].Active and FPostProcessors[i].NeedsWave) or
-         ((FPostProcessors[i] is TExternalPostProcess) and (TExternalPostProcess(FPostProcessors[i]).GroupID = 0)) then
+    for i := 0 to Client.Entry.Settings.PostProcessors.Count - 1 do
+      if (Client.Entry.Settings.PostProcessors[i].Active) and
+         ((Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data) and Client.Entry.Settings.PostProcessors[i].NeedsWave) or
+         ((Client.Entry.Settings.PostProcessors[i] is TExternalPostProcess) and (TExternalPostProcess(Client.Entry.Settings.PostProcessors[i]).GroupID = 0))) then
       begin
         Exit(True);
       end;
@@ -106,15 +107,17 @@ var
     Exit(False);
   end;
 begin
+  Client := TICEClient(Entry.Owner);
+
   Entry.NeedsWave := PostProcessingNeedsWave(Entry);
 
   if Entry.NeedsWave then
   begin
-    Entry.PostProcessList.Add(FPostProcessors[0]);
+    Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0]);
   end;
 
   // Nach Order sortieren
-  FPostProcessors.Sort(TComparer<TPostProcessBase>.Construct(
+  Client.Entry.Settings.PostProcessors.Sort(TComparer<TPostProcessBase>.Construct(
     function (const L, R: TPostProcessBase): integer
     begin
       Result := CmpInt(L.Order, R.Order);
@@ -122,24 +125,24 @@ begin
   ));
 
   // Erst die mit GroupID 0 fitmachen (WAVE-Phase)
-  for i := 0 to FPostProcessors.Count - 1 do
-    if FPostProcessors[i].Active and (FPostProcessors[i].CanProcess(Entry.Data)) and (not FPostProcessors[i].Hidden) and
-       (FPostProcessors[i].GroupID = 0) and ((FPostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not FPostProcessors[i].OnlyIfCut)) then
+  for i := 0 to Client.Entry.Settings.PostProcessors.Count - 1 do
+    if Client.Entry.Settings.PostProcessors[i].Active and (Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data)) and (not Client.Entry.Settings.PostProcessors[i].Hidden) and
+       (Client.Entry.Settings.PostProcessors[i].GroupID = 0) and ((Client.Entry.Settings.PostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not Client.Entry.Settings.PostProcessors[i].OnlyIfCut)) then
     begin
-      Entry.PostProcessList.Add(FPostProcessors[i].Copy);
+      Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[i].Copy);
     end;
 
   if Entry.NeedsWave then
   begin
-    Entry.PostProcessList.Add(FPostProcessors[0]);
+    Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0]);
   end;
 
   // Jetzt GroupID 1 (Nach WAVE-Phase)
-  for i := 0 to FPostProcessors.Count - 1 do
-    if FPostProcessors[i].Active and (FPostProcessors[i].CanProcess(Entry.Data)) and (not FPostProcessors[i].Hidden) and
-       (FPostProcessors[i].GroupID = 1) and ((FPostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not FPostProcessors[i].OnlyIfCut)) then
+  for i := 0 to Client.Entry.Settings.PostProcessors.Count - 1 do
+    if Client.Entry.Settings.PostProcessors[i].Active and (Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data)) and (not Client.Entry.Settings.PostProcessors[i].Hidden) and
+       (Client.Entry.Settings.PostProcessors[i].GroupID = 1) and ((Client.Entry.Settings.PostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not Client.Entry.Settings.PostProcessors[i].OnlyIfCut)) then
     begin
-      Entry.PostProcessList.Add(FPostProcessors[i].Copy);
+      Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[i].Copy);
     end;
 end;
 
@@ -150,9 +153,6 @@ var
   Output: string;
 begin
   Result := False;
-
-  if Entry.PostProcessList.Count = 0 then
-    BuildProcessingList(Entry);
 
   if Entry.PostProcessList.Count = 0 then
     Exit(False);
@@ -167,7 +167,7 @@ begin
   if Entry.Data.ReEncodedFilename <> '' then
   begin
     DeleteFile(PChar(Entry.Data.Filename));
-    Entry.Data.Filename := RemoveFileExt(Entry.Data.Filename) + FormatToFiletype(Entry.Data.OutputFormat);
+    Entry.Data.Filename := RemoveFileExt(Entry.Data.Filename) + FormatToFiletype(TEncoderSettings(Entry.Data.EncoderSettings).AudioType);
     MoveFileEx(PChar(Entry.Data.ReEncodedFilename), PChar(Entry.Data.Filename), MOVEFILE_REPLACE_EXISTING);
 
     Entry.Data.WorkFilename := '';
@@ -183,8 +183,8 @@ procedure TPostProcessManager.ReInitPostProcessors;
 var
   i: Integer;
 begin
-  for i := 0 to FPostProcessors.Count - 1 do
-    FPostProcessors[i].Initialize;
+  for i := 0 to AppGlobals.StreamSettings.PostProcessors.Count - 1 do
+    AppGlobals.StreamSettings.PostProcessors[i].Initialize;
 end;
 
 procedure TPostProcessManager.ThreadTerminate(Sender: TObject);
@@ -293,19 +293,12 @@ var
   Active, OnlyIfCut: Boolean;
   Order, GroupID: Integer;
 begin
-  FPostProcessors := TList<TPostProcessBase>.Create;
   FProcessingList := TProcessingList.Create;
 
-  // Der Convert muss der erste sein! Greife auf die Liste mal mit [0] zu!
-  PostProcessors.Add(TPostProcessConvert.Create);
-  PostProcessors.Add(TPostProcessSetTags.Create);
-  PostProcessors.Add(TPostProcessSoX.Create);
-  PostProcessors.Add(TPostProcessMP4Box.Create);
-
-  for i := 0 to PostProcessors.Count - 1 do
-    if PostProcessors[i].ClassType.InheritsFrom(TInternalPostProcess) then
+  for i := 0 to AppGlobals.StreamSettings.PostProcessors.Count - 1 do
+    if AppGlobals.StreamSettings.PostProcessors[i].ClassType.InheritsFrom(TInternalPostProcess) then
     begin
-      IP := TInternalPostProcess(PostProcessors[i]);
+      IP := TInternalPostProcess(AppGlobals.StreamSettings.PostProcessors[i]);
       if (IP.Active) and (not IP.DependenciesMet) then
         IP.Active := False;
     end;
@@ -315,30 +308,29 @@ begin
     AppGlobals.Storage.Read('Exe_' + IntToStr(i), App, '', 'Plugins');
     AppGlobals.Storage.Read('Params_' + IntToStr(i), Params, '', 'Plugins');
     AppGlobals.Storage.Read('OrderExe_' + IntToStr(i), Order, 0, 'Plugins');
-    AppGlobals.Storage.Read('Active_' + IntToStr(i), Active, True, 'Plugins');
+    AppGlobals.Storage.Read('Active_' + IntToStr(i), Active, False, 'Plugins');
     AppGlobals.Storage.Read('OnlyIfCut_' + IntToStr(i), OnlyIfCut, False, 'Plugins');
     AppGlobals.Storage.Read('Group_' + IntToStr(i), GroupID, 1, 'Plugins');
     if App <> '' then
     begin
       EP := TExternalPostProcess.Create(App, Params, Active, OnlyIfCut, i, Order, GroupID);
       try
-        PostProcessors.Add(EP);
+        AppGlobals.StreamSettings.PostProcessors.Add(EP);
       except
 
       end;
     end;
     Inc(i);
   until (App = '');
+
+  for i := 0 to AppGlobals.StreamSettings.EncoderSettings.Count - 1 do
+    AppGlobals.StreamSettings.EncoderSettings[i].Load;
 end;
 
 destructor TPostProcessManager.Destroy;
-var
-  i: Integer;
 begin
-  for i := 0 to FPostProcessors.Count - 1 do
-    FPostProcessors[i].Free;
-  FPostProcessors.Free;
   FreeAndNil(FProcessingList);
+
   inherited;
 end;
 
@@ -377,20 +369,6 @@ begin
   Exit(True);
 end;
 
-function TPostProcessManager.Find(ClassType: TClass): TPostProcessBase;
-var
-  i: Integer;
-begin
-  Result := nil;
-
-  for i := 0 to FPostProcessors.Count - 1 do
-    if FPostProcessors[i].ClassType = ClassType then
-    begin
-      Result := FPostProcessors[i];
-      Break;
-    end;
-end;
-
 function TPostProcessManager.FindNextIdx(Entry: TProcessingEntry;
   Group: Integer): Integer;
 var
@@ -417,11 +395,11 @@ begin
           if Entry.Data.WorkFilename = '' then
           begin
             Entry.Data.WorkFilename := RemoveFileExt(Entry.Data.Filename) + '_temp.wav';
-            TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.Filename, Entry.Data.WorkFilename, Entry.Data.BitRate);
+            TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.Filename, Entry.Data.WorkFilename, nil);
           end else if Entry.Data.ReEncodedFilename = '' then
           begin
-            Entry.Data.ReEncodedFilename := RemoveFileExt(Entry.Data.Filename) + '_temp' + FormatToFiletype(Entry.Data.OutputFormat);
-            TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.WorkFilename, Entry.Data.ReEncodedFilename, Entry.Data.BitRate);
+            Entry.Data.ReEncodedFilename := RemoveFileExt(Entry.Data.Filename) + '_temp' + FormatToFiletype(TEncoderSettings(Entry.Data.EncoderSettings).AudioType);
+            TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.WorkFilename, Entry.Data.ReEncodedFilename, Entry.Data.EncoderSettings);
           end;
         end;
 
@@ -434,28 +412,5 @@ begin
   end;
 end;
 
-function TPostProcessManager.Find(PostProcessor: TPostProcessBase): TPostProcessBase;
-var
-  i: Integer;
-begin
-  Result := nil;
-
-  for i := 0 to FPostProcessors.Count - 1 do
-    if (PostProcessor is TExternalPostProcess) and (FPostProcessors[i] is TExternalPostProcess) then
-    begin
-      if TExternalPostProcess(PostProcessor).Identifier = TExternalPostProcess(FPostProcessors[i]).Identifier then
-      begin
-        Result := FPostProcessors[i];
-        Break;
-      end;
-    end else if PostProcessor.ClassType.InheritsFrom(TInternalPostProcess) and FPostProcessors[i].ClassType.InheritsFrom(TInternalPostProcess) then
-    begin
-      if PostProcessor.ClassType = FPostProcessors[i].ClassType then
-      begin
-        Result := FPostProcessors[i];
-        Break;
-      end;
-    end;
-end;
-
 end.
+

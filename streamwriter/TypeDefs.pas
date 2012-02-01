@@ -27,11 +27,28 @@ uses
   Windows, SysUtils;
 
 type
+  TAudioFileInfo = record
+    Length: Double;
+    Bitrate: Integer;
+    FileSize: Int64;
+    VBR: Boolean;
+    Success: Boolean;
+  end;
+
+  TBitrateInfo = record
+    Pos: Int64;
+    Time: Double;
+  end;
+
   TDebugTypes = (dtSocket, dtMessage, dtSong, dtError, dtSaved, dtPostProcess);
   TDebugLevels = (dlNormal, dlDebug);
 
-  // Defines all possible types of audio-data
+  // Defines all possible types of audio-data - DO NOT change orders. Make sure atM4A is always the last one!
+  // That is because the settings window and stream load/saving uses this.
+  // It generally makes sense not to alter these enums because they are used in binary streams..
   TAudioTypes = (atNone, atMPEG, atAAC, atOGG, atM4A);
+  TBitRates = (brCBR, brVBR);
+  TVBRQualities = (vqHigh, vqMedium, vqLow);
   // Defines all possible types of lists
   TListType = (ltSave, ltIgnore);
 

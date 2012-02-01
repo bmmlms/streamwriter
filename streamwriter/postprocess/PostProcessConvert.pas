@@ -23,15 +23,17 @@ interface
 
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects,
-  Functions, Logging, Math, AddonBase, StrUtils;
+  Functions, Logging, Math, AddonBase, StrUtils, ExtendedStream,
+  TypeDefs;
 
 type
   TPostProcessConvertThread = class(TPostProcessThreadBase)
   private
     FFromFile: string;
     FToFile: string;
-    FBitRate: Cardinal;
+    FEncoderSettings: TObject;
     FProgress: Integer;
+    FFileInfo: TAudioFileInfo;
 
     FOnProgress: TNotifyEvent;
     FOnFinish: TNotifyEvent;
@@ -42,10 +44,11 @@ type
     procedure Execute; override;
   public
     constructor Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
-
-    procedure Convert(FromFile, ToFile: string; BitRate: Cardinal);
+    procedure Convert(FromFile, ToFile: string; EncoderSettings: TObject);
+    destructor Destroy; override;
 
     property Progress: Integer read FProgress;
+    property FileInfo: TAudioFileInfo read FFileInfo;
 
     property OnProgress: TNotifyEvent read FOnProgress write FOnProgress;
     property OnFinish: TNotifyEvent read FOnFinish write FOnFinish;
@@ -58,28 +61,45 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+    procedure Load(Stream: TExtendedStream; Version: Integer); override;
+    procedure Save(Stream: TExtendedStream); override;
+    function Copy: TPostProcessBase; override;
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
   end;
 
 implementation
 
 uses
-  AppData, FileConvertor;
+  AppData, AudioFunctions, FileConvertor;
 
 { TPostProcessConvertThread }
 
-procedure TPostProcessConvertThread.Convert(FromFile, ToFile: string; BitRate: Cardinal);
+procedure TPostProcessConvertThread.Convert(FromFile, ToFile: string; EncoderSettings: TObject);
 var
   ToExt: string;
 begin
   FFromFile := FromFile;
   FToFile := ToFile;
-  FBitRate := BitRate;
+  if EncoderSettings <> nil then
+    FEncoderSettings := TEncoderSettings(EncoderSettings).Copy;
 end;
 
 constructor TPostProcessConvertThread.Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
 begin
   inherited Create(Data, Addon);
+
+  FFileInfo.Success := False;
+
+  if Data <> nil then
+    FEncoderSettings := TEncoderSettings(Data.EncoderSettings).Copy;
+end;
+
+destructor TPostProcessConvertThread.Destroy;
+begin
+  if FEncoderSettings <> nil then
+    FEncoderSettings.Free;
+
+  inherited;
 end;
 
 procedure TPostProcessConvertThread.Execute;
@@ -91,7 +111,13 @@ begin
   FResult := arFail;
 
   FC := TFileConvertor.Create;
-  FC.BitRate := FBitRate;
+  if FEncoderSettings <> nil then // Bei "nach WAV" sind die über.
+  begin
+    FC.CBRBitRate := TEncoderSettings(FEncoderSettings).CBRBitrate;
+    FC.BitRateType := TEncoderSettings(FEncoderSettings).BitrateType;
+    FC.VBRQuality := TEncoderSettings(FEncoderSettings).VBRQuality;
+  end;
+
   try
     FC.OnProgress := FileConvertorProgress;
 
@@ -99,6 +125,8 @@ begin
       if FC.Convert(FFromFile, FToFile, @Terminated) then
       begin
         FResult := arWin;
+
+        FFileInfo := GetFileInfo(FToFile);
 
         Synchronize(
           procedure
@@ -149,12 +177,34 @@ begin
   FOrder := -100; // Das muss, weil die Liste manchmal nach Order sortiert wird und er immer Position 0 haben muss.
   FHidden := True;
   FName := 'Convert file';
+
+  FPostProcessType := ptConvert;
 end;
 
 destructor TPostProcessConvert.Destroy;
 begin
 
   inherited;
+end;
+
+procedure TPostProcessConvert.Load(Stream: TExtendedStream;
+  Version: Integer);
+begin
+  //inherited;
+
+end;
+
+function TPostProcessConvert.Copy: TPostProcessBase;
+begin
+  Result := TPostProcessConvert.Create;
+
+  TPostProcessConvert(Result).FCopied := True;
+
+  Result.Active := FActive;
+  Result.Order := FOrder;
+  Result.OnlyIfCut := FOnlyIfCut;
+
+  Result.Assign(Self);
 end;
 
 function TPostProcessConvert.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
@@ -164,6 +214,12 @@ begin
     Exit;
 
   Result := TPostProcessConvertThread.Create(Data, Self);
+end;
+
+procedure TPostProcessConvert.Save(Stream: TExtendedStream);
+begin
+  //inherited;
+
 end;
 
 end.

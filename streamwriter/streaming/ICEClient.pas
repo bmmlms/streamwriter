@@ -623,10 +623,13 @@ begin
     Data.FullTitle := FICEThread.RecvStream.SavedFullTitle;
     Data.StreamTitle := FICEThread.RecvStream.SavedStreamTitle;
     Data.Bitrate := FICEThread.RecvStream.BitRate;
-    if AppGlobals.OutputFormat = atNone then
-      Data.OutputFormat := FICEThread.RecvStream.AudioType
-    else
-      Data.OutputFormat := AppGlobals.OutputFormat;
+
+    if Entry.Settings.OutputFormat = atNone then
+    begin
+      Data.EncoderSettings := Entry.Settings.EncoderSettings.Find(FICEThread.RecvStream.AudioType).Copy;
+      TEncoderSettings(Data.EncoderSettings).AudioType := atNone;
+    end else
+      Data.EncoderSettings := Entry.Settings.EncoderSettings.Find(Entry.Settings.OutputFormat).Copy;
 
     if not FKilled then
       if not AppGlobals.PostProcessManager.ProcessFile(Self, Data) then

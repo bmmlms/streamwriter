@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, Functions,
-  LanguageObjects, Logging, AddonBase, TypeDefs;
+  LanguageObjects, Logging, AddonBase, TypeDefs, ExtendedStream;
 
 type
   TPostProcessBase = class;
@@ -32,6 +32,10 @@ type
   TFilenameArray = array of string;
 
   TActResults = (arWin, arTimeout, arFail, arImpossible);
+
+  // Nicht Reihenfolge ändern. Wird im Binärstream genutzt!
+  TPostProcessTypes = (ptConvert, ptMP4Box, ptSetTags, ptSoX, ptExternal);
+
   TReadWrite = procedure(Name, Value: PChar);
 
   TInitialize = procedure(L: PChar; RF, WF: TReadWrite); stdcall;
@@ -46,7 +50,7 @@ type
     FullTitle: Boolean;
     StreamTitle: string;
     BitRate: Cardinal;
-    OutputFormat: TAudioTypes;
+    EncoderSettings: TObject;
   end;
   PPostProcessInformation = ^TPostProcessInformation;
 
@@ -74,7 +78,7 @@ type
   end;
 
   TProcessingList = class(TList<TProcessingEntry>)
-
+  public
   end;
 
   TPostProcessThreadBase = class(TThread)
@@ -107,6 +111,8 @@ type
     FOrder: Integer;
     FOnlyIfCut: Boolean;
     FGroupID: Integer;
+    FPostProcessType: TPostProcessTypes;
+    FIsNew: Boolean;
   public
     constructor Create;
 
@@ -116,7 +122,9 @@ type
     procedure Assign(Source: TPostProcessBase); virtual;
     procedure Initialize; virtual;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; virtual;
-    procedure Save; virtual;
+    procedure Load(Stream: TExtendedStream; Version: Integer); virtual;
+    procedure Save; overload; virtual;
+    procedure Save(Stream: TExtendedStream); overload; virtual;
     function ShowInitMessage(Handle: THandle): Boolean; virtual;
 
     property NeedsWave: Boolean read FNeedsWave;
@@ -129,6 +137,8 @@ type
     property OnlyIfCut: Boolean read FOnlyIfCut write FOnlyIfCut;
     property GroupID: Integer read FGroupID;
     property Copied: Boolean read FCopied;
+    property PostProcessType: TPostProcessTypes read FPostProcessType;
+    property IsNew: Boolean read FIsNew write FIsNew;
   end;
 
   TInternalPostProcess = class(TPostProcessBase)
@@ -166,10 +176,13 @@ type
     procedure FSetExe(Value: string);
   protected
   public
-    constructor Create(Exe, Params: string; Active, OnlyIfCut: Boolean; Identifier, Order, GroupID: Integer);
+    constructor Create; overload;
+    constructor Create(Exe, Params: string; Active, OnlyIfCut: Boolean; Identifier, Order, GroupID: Integer); overload;
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
+    procedure Load(Stream: TExtendedStream; Version: Integer); override;
+    procedure Save(Stream: TExtendedStream); overload; override;
 
     property Exe: string read FExe write FSetExe;
     property Params: string read FParams write FParams;
@@ -206,14 +219,14 @@ begin
   FData.FullTitle := Data.FullTitle;
   FData.StreamTitle := Data.StreamTitle;
   FData.BitRate := Data.BitRate;
-  FData.OutputFormat := Data.OutputFormat;
+  FData.EncoderSettings := TEncoderSettings(Data.EncoderSettings).Copy;
 
   FPostProcessList := TList<TPostProcessBase>.Create;
 end;
 
 destructor TProcessingEntry.Destroy;
 begin
-  FPostProcessList.Free;
+  TEncoderSettings(FData.EncoderSettings).Free;
   Dispose(FData);
 
   inherited;
@@ -324,6 +337,7 @@ end;
 
 procedure TExternalPostProcess.Assign(Source: TPostProcessBase);
 begin
+  FIdentifier := TExternalPostProcess(Source).FIdentifier;
   FExe := TExternalPostProcess(Source).FExe;
   FParams := TExternalPostProcess(Source).FParams;
 end;
@@ -331,6 +345,14 @@ end;
 function TExternalPostProcess.Copy: TPostProcessBase;
 begin
   Result := TExternalPostProcess.Create(FExe, FParams, FActive, FOnlyIfCut, FIdentifier, FOrder, FGroupID);
+  Result.IsNew := Self.IsNew;
+end;
+
+constructor TExternalPostProcess.Create;
+begin
+  inherited;
+
+  FPostProcessType := ptExternal;
 end;
 
 constructor TExternalPostProcess.Create(Exe, Params: string; Active, OnlyIfCut: Boolean; Identifier, Order, GroupID: Integer);
@@ -338,12 +360,15 @@ begin
   inherited Create;
 
   FActive := Active;
+  FOrder := Order;
   FOnlyIfCut := OnlyIfCut;
+
   FExe := Exe;
   FParams := Params;
   FIdentifier := Identifier;
-  FOrder := Order;
   FGroupID := GroupID;
+
+  FPostProcessType := ptExternal;
 
   FName := ExtractFileName(FExe);
 end;
@@ -354,6 +379,18 @@ begin
   FName := ExtractFileName(FExe);
 end;
 
+procedure TExternalPostProcess.Load(Stream: TExtendedStream;
+  Version: Integer);
+begin
+  inherited;
+
+  Stream.Read(FIdentifier);
+  Stream.Read(FExe);
+  Stream.Read(FParams);
+  Stream.Read(FGroupID);
+  Stream.Read(FName);
+end;
+
 function TExternalPostProcess.ProcessFile(
   Data: PPostProcessInformation): TPostProcessThreadBase;
 var
@@ -361,6 +398,17 @@ var
 begin
   Thread := TExternalProcessThread.Create(FExe, FParams, Data, Self);
   Result := Thread;
+end;
+
+procedure TExternalPostProcess.Save(Stream: TExtendedStream);
+begin
+  inherited;
+
+  Stream.Write(FIdentifier);
+  Stream.Write(FExe);
+  Stream.Write(FParams);
+  Stream.Write(FGroupID);
+  Stream.Write(FName);
 end;
 
 { TPostProcessBase }
@@ -391,9 +439,23 @@ begin
 
 end;
 
+procedure TPostProcessBase.Load(Stream: TExtendedStream; Version: Integer);
+begin
+  Stream.Read(FActive);
+  Stream.Read(FOrder);
+  Stream.Read(FOnlyIfCut);
+end;
+
 procedure TPostProcessBase.Save;
 begin
 
+end;
+
+procedure TPostProcessBase.Save(Stream: TExtendedStream);
+begin
+  Stream.Write(FActive);
+  Stream.Write(FOrder);
+  Stream.Write(FOnlyIfCut);
 end;
 
 function TPostProcessBase.ShowInitMessage(Handle: THandle): Boolean;

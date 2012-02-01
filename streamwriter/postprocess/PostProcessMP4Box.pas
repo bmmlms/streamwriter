@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects, TypeDefs,
-  Functions, Logging, Math, ConfigureSetTags, AddonMP4Box;
+  Functions, Logging, Math, ConfigureSetTags, AddonMP4Box, ExtendedStream;
 
 type
   TPostProcessMP4BoxThread = class(TPostProcessThreadBase)
@@ -46,6 +46,8 @@ type
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
+    procedure Load(Stream: TExtendedStream; Version: Integer); override;
+    procedure Save(Stream: TExtendedStream); override;
     procedure Initialize; override;
 
     function MP4BoxMux(InFile, OutFile: string; TerminateFlag: PBoolean): TActResults;
@@ -114,7 +116,7 @@ end;
 
 function TPostProcessMP4Box.CanProcess(Data: PPostProcessInformation): Boolean;
 begin
-  Result := (Data.OutputFormat = atAAC) and FGetDependenciesMet;
+  Result := (TEncoderSettings(Data.EncoderSettings).AudioType = atAAC) and FGetDependenciesMet;
 end;
 
 function TPostProcessMP4Box.Copy: TPostProcessBase;
@@ -141,6 +143,8 @@ begin
 
   FName := _('AAC - Convert to M4A');
   FHelp := _('This postprocessor converts recorded songs from AAC to M4A (AAC only).');
+
+  FPostProcessType := ptMP4Box;
 
   try
     AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
@@ -190,6 +194,13 @@ begin
   FHelp := _('This postprocessor converts recorded songs from AAC to M4A (AAC only).');
 end;
 
+procedure TPostProcessMP4Box.Load(Stream: TExtendedStream;
+  Version: Integer);
+begin
+  inherited;
+
+end;
+
 function TPostProcessMP4Box.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
   Result := nil;
@@ -197,6 +208,12 @@ begin
     Exit;
 
   Result := TPostProcessMP4BoxThread.Create(Data, Self);
+end;
+
+procedure TPostProcessMP4Box.Save(Stream: TExtendedStream);
+begin
+  inherited;
+
 end;
 
 function TPostProcessMP4Box.ShowInitMessage(Handle: THandle): Boolean;

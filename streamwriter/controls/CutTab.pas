@@ -27,7 +27,7 @@ uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
   MControls, LanguageObjects, Tabs, CutView, Functions, AppData, SharedControls,
   DynBass, Logging, CutTabSearchSilence, MessageBus, AppMessages, PlayerManager,
-  Forms;
+  Forms, DataManager, TypeDefs;
 
 type
   TCutToolBar = class(TToolBar)
@@ -53,7 +53,7 @@ type
     procedure Setup;
   end;
 
-  TFileSavedEvent = procedure(Sender: TObject; Filesize, Length: UInt64) of object;
+  TFileSavedEvent = procedure(Sender: TObject; AudioInfo: TAudioFileInfo) of object;
 
   TCutTab = class(TMainTabSheet)
   private
@@ -92,7 +92,9 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    procedure Setup(Filename: string; ToolBarImages: TImageList);
+    procedure Setup(Track: TTrackInfo; ToolBarImages: TImageList); overload;
+    procedure Setup(Filename: string; ToolBarImages: TImageList); overload;
+    procedure Setup(ToolBarImages: TImageList); overload;
     procedure PausePlay;
 
     property Filename: string read FFilename;
@@ -317,11 +319,9 @@ begin
   FCutView.Save;
 end;
 
-procedure TCutTab.Setup(Filename: string; ToolBarImages: TImageList);
+procedure TCutTab.Setup(ToolBarImages: TImageList);
 begin
   MaxWidth := 120;
-  Caption := ExtractFileName(StringReplace(Filename, '&', '&&', [rfReplaceAll]));
-  FFilename := Filename;
 
   FToolbarPanel := TPanel.Create(Self);
   FToolbarPanel.Align := alTop;
@@ -373,7 +373,26 @@ begin
 
   UpdateButtons;
   Language.Translate(Self);
-  FCutView.LoadFile(Filename, False);
+end;
+
+procedure TCutTab.Setup(Track: TTrackInfo; ToolBarImages: TImageList);
+begin
+  Setup(ToolBarImages);
+
+  Caption := ExtractFileName(StringReplace(Track.Filename, '&', '&&', [rfReplaceAll]));
+  FFilename := Track.Filename;
+
+  FCutView.LoadFile(Track);
+end;
+
+procedure TCutTab.Setup(Filename: string; ToolBarImages: TImageList);
+begin
+  Setup(ToolBarImages);
+
+  Caption := ExtractFileName(StringReplace(Filename, '&', '&&', [rfReplaceAll]));
+  FFilename := Filename;
+
+  FCutView.LoadFile(Filename, False, True);
 end;
 
 { TCutToolbar }

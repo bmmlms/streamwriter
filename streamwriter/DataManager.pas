@@ -144,6 +144,7 @@ type
     FIsAuto: Boolean;
     FIsStreamFile: Boolean;
     FFinalized: Boolean;
+    FVBR: Boolean;
     FIndex: Cardinal;
   public
     constructor Create; overload;
@@ -173,6 +174,7 @@ type
     // When set the file was post-processed by the user
     property Finalized: Boolean read FFinalized write FFinalized;
     property Index: Cardinal read FIndex write FIndex;
+    property VBR: Boolean read FVBR write FVBR;
   end;
 
   TListCategoryList = TList<TListCategory>;
@@ -534,7 +536,7 @@ type
   end;
 
 const
-  DATAVERSION = 40;
+  DATAVERSION = 41;
 
 implementation
 
@@ -1297,6 +1299,9 @@ begin
     Stream.Read(Result.FIndex)
   else
     Result.FIndex := High(Cardinal);
+
+  if Version >= 41 then
+    Stream.Read(Result.FVBR);
 end;
 
 procedure TTrackInfo.Save(Stream: TExtendedStream);
@@ -1313,6 +1318,7 @@ begin
   Stream.Write(FIsStreamFile);
   Stream.Write(FFinalized);
   Stream.Write(FIndex);
+  Stream.Write(FVBR);
 end;
 
 { TStreamList }

@@ -31,7 +31,8 @@ uses
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
   PlayerManager, PostProcess, PostProcessSoX, DownloadAddons, ConfigureSoX, Logging,
   MsgDlg, DragDrop, DropTarget, DropComboTarget, TypeDefs, AudioFunctions,
-  MessageBus, AppMessages, AddonSoX, PostProcessConvert, FileTagger;
+  MessageBus, AppMessages, AddonSoX, PostProcessConvert, FileTagger,
+  DataManager;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -187,6 +188,9 @@ type
     FWorkingFilename: string;
     FFilesize: UInt64;
     FSaveSecs: UInt64;
+
+    FBitRateType: TBitRates;
+    FQuality: TVBRQualities;
     FBitRate: Cardinal;
 
     FDropTarget: TDropComboTarget;
@@ -234,7 +238,8 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    procedure LoadFile(Filename: string; IsConverted: Boolean);
+    procedure LoadFile(Filename: string; IsConverted, LoadTrackData: Boolean); overload;
+    procedure LoadFile(Track: TTrackInfo); overload;
 
     function CheckSoX: Boolean;
 
@@ -374,7 +379,7 @@ end;
 
 procedure TCutView.CreateConvertor;
 begin
-  FFileConvertorThread := TPostProcessConvertThread.Create(nil, AppGlobals.PostProcessManager.PostProcessors[0]);
+  FFileConvertorThread := TPostProcessConvertThread.Create(nil, AppGlobals.StreamSettings.PostProcessors[0]);
   FFileConvertorThread.OnProgress := FileConvertorProgress;
   FFileConvertorThread.OnFinish := FileConvertorFinish;
   FFileConvertorThread.OnError := FileConvertorError;
@@ -485,10 +490,11 @@ begin
     FUndoList.Clear;
 
     if Assigned(TCutTab(Owner).OnSaved) then
-      TCutTab(Owner).OnSaved(Owner, GetFileSize(FOriginalFilename), FSaveSecs);
+      if FFileConvertorThread.FileInfo.Success then
+        TCutTab(Owner).OnSaved(Owner, FFileConvertorThread.FileInfo);
   end;
 
-  LoadFile(FWorkingFilename, True);
+  LoadFile(FWorkingFilename, True, False);
 end;
 
 procedure TCutView.FileConvertorProgress(Sender: TObject);
@@ -510,9 +516,25 @@ begin
   until not FileExists(Result);
 end;
 
-procedure TCutView.LoadFile(Filename: string; IsConverted: Boolean);
+procedure TCutView.LoadFile(Track: TTrackInfo);
+begin
+  if Track.VBR then
+  begin
+    FBitRateType := brVBR;
+    FQuality := GuessVBRQuality(Track.BitRate, FiletypeToFormat(Track.Filename));
+  end else
+  begin
+    FBitRateType := brCBR;
+    FBitRate := Track.BitRate;
+  end;
+
+  LoadFile(Track.Filename, False, False);
+end;
+
+procedure TCutView.LoadFile(Filename: string; IsConverted, LoadTrackData: Boolean);
 var
   FileExt: string;
+  Info: TAudioFileInfo;
 begin
   if (FScanThread <> nil) or (FProcessThread <> nil) then
     Exit;
@@ -571,11 +593,22 @@ begin
 
     FProgressBarLoad.Visible := True;
 
-    FBitRate := GetFileInfo(Filename).Bitrate;
-    if FBitRate = 0 then
-      FBitRate := 128;
+    if LoadTrackData then
+    begin
+      Info := GetFileInfo(Filename);
 
-    FFileConvertorThread.Convert(FOriginalFilename, FWorkingFilename, FBitRate);
+      if Info.VBR then
+      begin
+        FBitRateType := brVBR;
+        FQuality := GuessVBRQuality(Info.BitRate, FiletypeToFormat(Filename));
+      end else
+      begin
+        FBitRateType := brCBR;
+        FBitRate := Info.BitRate;
+      end;
+    end;
+
+    FFileConvertorThread.Convert(FOriginalFilename, FWorkingFilename, nil);
     FFileConvertorThread.Resume;
 
     FPB.BuildBuffer;
@@ -651,7 +684,7 @@ begin
     FWaveData.Free;
     FWaveData := nil;
 
-    LoadFile(FWorkingFilename, True);
+    LoadFile(FWorkingFilename, True, False);
 
     DeleteFile(PChar(UndoStep.Filename));
 
@@ -714,6 +747,8 @@ begin
 end;
 
 procedure TCutView.Save;
+var
+  EncoderSettings: TEncoderSettings;
 begin
   FSaving := True;
 
@@ -726,7 +761,14 @@ begin
   FFileTagger.Read(FOriginalFilename);
 
   CreateConvertor;
-  FFileConvertorThread.Convert(FWorkingFilename, FOriginalFilename, FBitRate);
+
+  EncoderSettings := TEncoderSettings.Create(FiletypeToFormat(FOriginalFilename), FBitRateType, FQuality);
+  EncoderSettings.CBRBitrate := FBitRate;
+  try
+    FFileConvertorThread.Convert(FWorkingFilename, FOriginalFilename, EncoderSettings);
+  finally
+    EncoderSettings.Free;
+  end;
   FFileConvertorThread.Resume;
 
   FState := csEncoding;
@@ -754,7 +796,7 @@ begin
     if FWaveData.Save(OutFile, StartPos, EndPos) then
     begin
       FreeAndNil(FWaveData);
-      LoadFile(OutFile, True);
+      LoadFile(OutFile, True, False);
 
       Result := True;
 
@@ -843,7 +885,7 @@ begin
   FProcessThread := nil;
   MsgBox(GetParentForm(Self).Handle, Format(_('An error occured while processing the file:'#13#10'%s'), [Msg]) , _('Error'), MB_ICONERROR);
 
-  LoadFile(FWorkingFilename, True);
+  LoadFile(FWorkingFilename, True, False);
 end;
 
 procedure TCutView.ProcessThreadSuccess(Sender: TObject);
@@ -853,7 +895,7 @@ begin
   FProcessThread := nil;
   FState := csReady;
 
-  LoadFile(FWorkingFilename, True);
+  LoadFile(FWorkingFilename, True, False);
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
@@ -992,7 +1034,7 @@ begin
   if not CheckSoX then
     Exit;
 
-  F := TfrmConfigureSox.Create(Self, (AppGlobals.PostProcessManager.Find(TPostProcessSoX) as TPostProcessSoX), False, False, False, 5, 5, False, False, 3, 3,
+  F := TfrmConfigureSox.Create(Self, (AppGlobals.StreamSettings.PostProcessors.Find(TPostProcessSoX) as TPostProcessSoX), False, False, False, 5, 5, False, False, 3, 3,
     Trunc(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec));
   try
     F.ShowModal;
@@ -1133,7 +1175,7 @@ var
   CS: TfrmConfigureSoX;
   PostProcessor: TPostProcessSoX;
 begin
-  PostProcessor := AppGlobals.PostProcessManager.Find(TPostProcessSoX) as TPostProcessSoX;
+  PostProcessor := AppGlobals.StreamSettings.PostProcessors.Find(TPostProcessSoX) as TPostProcessSoX;
 
   if not PostProcessor.DependenciesMet then
     Result := AppGlobals.PostProcessManager.EnablePostProcess(GetParentForm(Self), True, PostProcessor)

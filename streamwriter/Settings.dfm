@@ -463,6 +463,17 @@ object frmSettings: TfrmSettings
       Height = 13
       Caption = 'Format to convert recorded files to:'
     end
+    object btnConfigureEncoder: TPngSpeedButton
+      Left = 266
+      Top = 20
+      Width = 24
+      Height = 21
+      Hint = 'Configure encoder...'
+      Anchors = [akTop, akRight]
+      Layout = blGlyphRight
+      OnClick = btnConfigureEncoderClick
+      PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
+    end
     object lstPostProcess: TListView
       Left = 4
       Top = 52
@@ -1521,7 +1532,7 @@ object frmSettings: TfrmSettings
       189)
     object btnHelpAddon: TPngSpeedButton
       Left = 266
-      Top = 88
+      Top = 160
       Width = 24
       Height = 25
       Hint = 'Info...'
@@ -1531,23 +1542,12 @@ object frmSettings: TfrmSettings
       ShowHint = True
       OnClick = btnHelpClick
       PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
-      ExplicitTop = 132
-    end
-    object Label20: TLabel
-      Left = 4
-      Top = 120
-      Width = 285
-      Height = 65
-      Anchors = [akLeft, akRight, akBottom]
-      AutoSize = False
-      Caption = 'Label20'
-      ExplicitTop = 160
     end
     object lstAddons: TListView
       Left = 4
       Top = 1
       Width = 257
-      Height = 112
+      Height = 184
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
       Checkboxes = True

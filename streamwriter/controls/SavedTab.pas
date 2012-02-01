@@ -202,6 +202,7 @@ type
     procedure PausePlay;
 
     procedure UpdateButtons;
+    procedure StopThreads;
 
     property Tree: TSavedTree read FSavedTree;
 
@@ -791,8 +792,6 @@ begin
           for i := 0 to FStreams.TrackList.Count - 1 do
             KnownFiles.Add(FStreams.TrackList[i].Filename);
 
-          // TODO: Programmende und thread rennt noch, was ist dann? er muss auf terminated reagieren.
-
           FImportPanel := TImportPanel.Create(Self);
           FImportPanel.Width := 250;
           FImportPanel.Height := 80;
@@ -1048,6 +1047,16 @@ begin
   BuildTree;
 
   FPositionTimer.Enabled := True;
+end;
+
+procedure TSavedTab.StopThreads;
+begin
+  while FImportThread <> nil do
+  begin
+    FImportThread.Terminate;
+    Application.ProcessMessages;
+    Sleep(100);
+  end;
 end;
 
 { TSavedTree }
@@ -1631,7 +1640,12 @@ begin
           Text := BuildTime(NodeData.Track.Length);
         4:
           if NodeData.Track.BitRate > 0 then
+          begin
             Text := IntToStr(NodeData.Track.BitRate);
+
+            if NodeData.Track.VBR then
+              Text := Text + ' VBR';
+          end;
         5:
           Text := NodeData.Track.Streamname;
         6:
@@ -2077,7 +2091,7 @@ begin
   FoundFiles := TStringList.Create;
   FoundAudioFiles := TStringList.Create;
   try
-    FindFiles(FDir + '*.*', FoundFiles, True);
+    FindFiles(FDir + '*.*', FoundFiles, True, @Terminated);
 
     for i := 0 to FoundFiles.Count - 1 do
     begin
@@ -2113,8 +2127,8 @@ begin
               FOnProgress(Self);
           end);
 
-      Info := GetFileInfo(FoundAudioFiles[i]);; // TODO: ... und was ist bei vbr???
-                          sleep(500); // TODO: !!!
+      Info := GetFileInfo(FoundAudioFiles[i]);
+
       if Info.Success then
       begin
         Track := TTrackInfo.Create;
@@ -2123,6 +2137,7 @@ begin
         Track.Length := Trunc(Info.Length);
         Track.Filename := FoundAudioFiles[i];
         Track.Filesize := GetFileSize(FoundAudioFiles[i]);
+        Track.VBR := Info.VBR;
         FFiles.Add(Track);
 
         FProgress := Trunc((i / FoundAudioFiles.Count) * 100);
@@ -2153,6 +2168,7 @@ begin
   LabelFilename.Parent := Self;
   LabelFilename.AutoSize := False;
   LabelFilename.Alignment := taCenter;
+  LabelFilename.Caption := _('Searching files...');
 
   ProgressBar := TProgressBar.Create(Self);
   ProgressBar.Parent := Self;

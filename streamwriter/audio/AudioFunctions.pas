@@ -3,17 +3,11 @@ unit AudioFunctions;
 interface
 
 uses
-  Windows, SysUtils, Math, Classes, DynBASS, Functions;
-
-type
-  TAudioFileInfo = record
-    Length: Double;
-    Bitrate: Integer;
-    Success: Boolean;
-  end;
+  Windows, SysUtils, Math, Classes, DynBASS, Functions, TypeDefs;
 
 function RoundBitrate(Bitrate: Cardinal): Cardinal;
 function GetFileInfo(Filename: string): TAudioFileInfo;
+function GuessVBRQuality(BitRate: Integer; AudioType: TAudioTypes): TVBRQualities;
 
 implementation
 
@@ -43,15 +37,21 @@ end;
 
 function GetFileInfo(Filename: string): TAudioFileInfo;
 var
+  i, n: Integer;
   TempPlayer: Cardinal;
   Time: Double;
   BufLen: Int64;
   FS: TFileStream;
   BytesPerSec: Integer;
-  BitRate: Cardinal;
+  BitRate, LastBitRate: Cardinal;
+  FileSize: Int64;
+  Positions: array of Int64;
+  P, LastP, ElapsedP, LastElapsedP: QWORD;
+  StepSize: Int64;
 begin
   Result.Length := 0;
   Result.Bitrate := 0;
+  Result.VBR := False;
   Result.Success := False;
 
   TempPlayer := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE or BASS_STREAM_PRESCAN or BASS_UNICODE);
@@ -60,14 +60,17 @@ begin
     Exit;
 
   try
-    BASSChannelSetPosition(TempPlayer, GetFileSize(Filename), BASS_POS_BYTE);
+    FileSize := GetFileSize(Filename);
+
+    Result.FileSize := Filesize;
+
+    BASSChannelSetPosition(TempPlayer, BASSStreamGetFilePosition(TempPlayer, BASS_FILEPOS_END), BASS_POS_BYTE);
     Time := BASSChannelBytes2Seconds(TempPlayer, BASSChannelGetLength(TempPlayer, BASS_POS_BYTE));
     BufLen := BASSStreamGetFilePosition(TempPlayer, BASS_FILEPOS_END);
     if BufLen = -1 then
       raise Exception.Create('');
     BytesPerSec := Trunc((BufLen / (125 * Time) + 0.5) * 125);
     BitRate := Trunc(BufLen / Floor(((125 * Time)) + 0.5));
-
     BitRate := RoundBitrate(BitRate);
 
     if BytesPerSec <= 10 then
@@ -76,8 +79,44 @@ begin
     Result.Length := Time;
     Result.Bitrate := BitRate;
     Result.Success := True;
+
+    P := 0;
+    LastP := 0;
+    LastElapsedP := 0;
+    BassChannelSetPosition(TempPlayer, 0, BASS_POS_BYTE);
+    while BASSChannelIsActive(TempPlayer) = BASS_ACTIVE_PLAYING do
+    begin
+      BASSChannelGetLevel(TempPlayer);
+
+      ElapsedP := BASSStreamGetFilePosition(TempPlayer, BASS_FILEPOS_CURRENT);
+
+      P := ElapsedP - LastElapsedP;
+      if (P > 0) and (LastP > 0) and ((P > LastP + 10) or (P < LastP - 10)) then
+      begin
+        Result.VBR := True;
+        Break;
+      end;
+
+      LastP := P;
+      LastElapsedP := ElapsedP;
+    end;
   finally
     BASSStreamFree(TempPlayer);
+  end;
+end;
+
+function GuessVBRQuality(BitRate: Integer; AudioType: TAudioTypes): TVBRQualities;
+begin
+  Result := vqMedium;
+  case AudioType of
+    atMPEG, atOGG:
+      if BitRate >= 210 then
+        Result := vqHigh
+      else if BitRate >= 110 then
+        Result := vqMedium
+      else
+        Result := vqLow;
+    atAAC, atM4A: Result := vqMedium; // TODO: !!!
   end;
 end;
 

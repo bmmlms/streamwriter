@@ -1409,8 +1409,8 @@ var
 begin
   FResult := crSave;
 
-  if AppGlobals.OutputFormat <> atNone then
-    Ext := FormatToFiletype(AppGlobals.OutputFormat)
+  if FSettings.OutputFormat <> atNone then
+    Ext := FormatToFiletype(FSettings.OutputFormat)
   else
     Ext := FormatToFiletype(AudioType);
 

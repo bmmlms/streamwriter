@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects,
-  Functions, Logging, Math, AddonBase, TypeDefs;
+  Functions, Logging, Math, AddonBase, TypeDefs, ExtendedStream;
 
 type
   TPostProcessSoxThread = class(TPostProcessThreadBase)
@@ -55,6 +55,8 @@ type
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
+    procedure Load(Stream: TExtendedStream; Version: Integer); override;
+    procedure Save(Stream: TExtendedStream); override;
     procedure Initialize; override;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
     procedure Save; override;
@@ -188,7 +190,7 @@ function TPostProcessSoX.CanProcess(Data: PPostProcessInformation): Boolean;
 var
   OutputFormat: TAudioTypes;
 begin
-  OutputFormat := Data.OutputFormat;
+  OutputFormat := TEncoderSettings(Data.EncoderSettings).AudioType;
   if OutputFormat = atNone then
     OutputFormat := FiletypeToFormat(Data.Filename);
 
@@ -251,6 +253,8 @@ begin
 
   FName := _('Apply effects using SoX');
   FHelp := _('This postprocessor applies effects to recorded songs using Sound eXchange (SoX).');
+
+  FPostProcessType := ptSoX;
 
   try
     AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
@@ -341,6 +345,23 @@ begin
   FHelp := _('This postprocessor applies effects to recorded songs using Sound eXchange (SoX).');
 end;
 
+procedure TPostProcessSoX.Load(Stream: TExtendedStream; Version: Integer);
+begin
+  inherited;
+
+  Stream.Read(FNormalize);
+
+  Stream.Read(FFadeoutStart);
+  Stream.Read(FFadeoutEnd);
+  Stream.Read(FFadeoutStartLength);
+  Stream.Read(FFadeoutEndLength);
+
+  Stream.Read(FSilenceStart);
+  Stream.Read(FSilenceEnd);
+  Stream.Read(FSilenceStartLength);
+  Stream.Read(FSilenceEndLength);
+end;
+
 function TPostProcessSoX.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
   Result := nil;
@@ -365,6 +386,23 @@ begin
   AppGlobals.Storage.Write('SilenceEnd_' + ClassName, FSilenceEnd, 'Plugins');
   AppGlobals.Storage.Write('SilenceStartLength_' + ClassName, FSilenceStartLength, 'Plugins');
   AppGlobals.Storage.Write('SilenceEndLength_' + ClassName, FSilenceEndLength, 'Plugins');
+end;
+
+procedure TPostProcessSoX.Save(Stream: TExtendedStream);
+begin
+  inherited;
+
+  Stream.Write(FNormalize);
+
+  Stream.Write(FFadeoutStart);
+  Stream.Write(FFadeoutEnd);
+  Stream.Write(FFadeoutStartLength);
+  Stream.Write(FFadeoutEndLength);
+
+  Stream.Write(FSilenceStart);
+  Stream.Write(FSilenceEnd);
+  Stream.Write(FSilenceStartLength);
+  Stream.Write(FSilenceEndLength);
 end;
 
 function TPostProcessSoX.ShowInitMessage(Handle: THandle): Boolean;

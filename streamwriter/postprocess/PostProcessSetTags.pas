@@ -23,7 +23,8 @@ interface
 
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects, AudioGenie,
-  AddonAudioGenie, Functions, Logging, ConfigureSetTags, TypeDefs;
+  AddonAudioGenie, Functions, Logging, ConfigureSetTags, TypeDefs,
+  ExtendedStream;
 
 type
   TPostProcessSetTagsThread = class(TPostProcessThreadBase)
@@ -47,6 +48,8 @@ type
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
+    procedure Load(Stream: TExtendedStream; Version: Integer); override;
+    procedure Save(Stream: TExtendedStream); override;
     procedure Initialize; override;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
     procedure Save; override;
@@ -190,6 +193,8 @@ begin
   FName := _('Write tags to recorded songs');
   FHelp := _('This postprocessor writes tags to recorded songs.');
 
+  FPostProcessType := ptSetTags;
+
   try
     AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
     AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 1010, 'Plugins');
@@ -213,9 +218,30 @@ begin
   FHelp := _('This postprocessor writes tags to recorded songs.');
 end;
 
+procedure TPostProcessSetTags.Load(Stream: TExtendedStream;
+  Version: Integer);
+begin
+  inherited;
+
+  Stream.Read(FArtist);
+  Stream.Read(FAlbum);
+  Stream.Read(FTitle);
+  Stream.Read(FComment);
+end;
+
 function TPostProcessSetTags.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
   Result := TPostProcessSetTagsThread.Create(Data, Self);
+end;
+
+procedure TPostProcessSetTags.Save(Stream: TExtendedStream);
+begin
+  inherited;
+
+  Stream.Write(FArtist);
+  Stream.Write(FAlbum);
+  Stream.Write(FTitle);
+  Stream.Write(FComment);
 end;
 
 procedure TPostProcessSetTags.Save;

@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Windows, Classes, DynBASS, ExtendedStream, AddonLAME, AppData,
-  AddonOGGEnc, AddonFAAC, Functions, PerlRegEx;
+  AddonOGGEnc, AddonFAAC, Functions, PerlRegEx, TypeDefs;
 
 const
   BE_CONFIG_MP3 = 0;
@@ -129,7 +129,9 @@ type
 
   TFileConvertor = class
   private
-    FBitRate: Cardinal;
+    FCBRBitRate: Integer;
+    FBitRateType: TBitRates;
+    FVBRQuality: TVBRQualities;
     FOnProgress: TFileConvertorProgressEvent;
 
     procedure ReadCallbackOGG(Data: AnsiString);
@@ -143,7 +145,9 @@ type
   public
     function Convert(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
 
-    property BitRate: Cardinal read FBitRate write FBitRate;
+    property CBRBitRate: Integer read FCBRBitRate write FCBRBitRate;
+    property BitRateType: TBitRates read FBitRateType write FBitRateType;
+    property VBRQuality: TVBRQualities read FVBRQuality write FVBRQuality;
     property OnProgress: TFileConvertorProgressEvent read FOnProgress write FOnProgress;
   end;
 
@@ -287,7 +291,7 @@ end;
 function TFileConvertor.ConvertWAV2AAC(FromFile, ToFile: string;
   TerminateFlag: PBoolean): Boolean;
 var
-  CmdLine, ToFileTemp: string;
+  CmdLine, ToFileTemp, Opts: string;
   Output: AnsiString;
   Addon: TAddonFAAC;
   EC: Cardinal;
@@ -299,7 +303,22 @@ begin
 
   ToFileTemp := RemoveFileExt(ToFile) + '_convert.aac';
 
-  CmdLine := Addon.EXEPath + ' -o "' + ToFileTemp + '" "' + FromFile + '"';
+  case FBitRateType of
+    brCBR:
+      begin
+        Opts := '-b ' + IntToStr(FCBRBitRate);
+      end;
+    brVBR:
+      begin
+        case FVBRQuality of
+          vqHigh: Opts := '-q 150';
+          vqMedium: Opts := '-q 100';
+          vqLow: Opts := '-q 50';
+        end;
+      end;
+  end;
+
+  CmdLine := Addon.EXEPath + ' ' + Opts + ' -o "' + ToFileTemp + '" "' + FromFile + '"';
   if RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), 300000, Output, EC, TerminateFlag, ReadCallbackAAC) = 2 then
   begin
     Result := False;
@@ -319,13 +338,13 @@ var
 begin
   ToFileTemp := RemoveFileExt(ToFile) + '_temp.aac';
   ToFileTemp2 := '';
-                      // TODO: M4A im cutview bearbeiten -> speichern. dann nochmal bearbeiten -> fail... winamp kanns auch nich abspielen!
+
   Result := ConvertWAV2AAC(FromFile, ToFileTemp, TerminateFlag);
 
   if Result then
   begin
     ToFileTemp2 := RemoveFileExt(ToFile) + '_convert.m4a';
-    Result := TPostProcessMP4Box(AppGlobals.PostProcessManager.Find(TPostProcessMP4Box)).MP4BoxMux(ToFileTemp, ToFileTemp2, TerminateFlag) = arWin;
+    Result := TPostProcessMP4Box(AppGlobals.StreamSettings.PostProcessors.Find(TPostProcessMP4Box)).MP4BoxMux(ToFileTemp, ToFileTemp2, TerminateFlag) = arWin;
 
     if Result then
       Result := MoveFileEx(PChar(ToFileTemp2), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);
@@ -391,17 +410,36 @@ begin
       ToFileTemp := RemoveFileExt(ToFile) + '_convert.mp3';
       OutStream := TFileStream.Create(ToFileTemp, fmCreate);
 
-      if FBitRate = 0 then
-        FBitRate := 128;
-
       Config.dwConfig := BE_CONFIG_LAME;
       Config.Format.lhv1.dwStructVersion := 1;
       Config.Format.lhv1.dwStructSize := SizeOf(Config);
       Config.Format.lhv1.dwSampleRate := 44100;
       Config.Format.lhv1.dwReSampleRate := 44100;
       Config.Format.lhv1.nMode := BE_MP3_MODE_STEREO;
-      Config.Format.lhv1.dwBitrate := FBitRate;
-      Config.Format.lhv1.dwMaxBitrate := FBitRate;
+      if (FCBRBitRate > 0) and (FBitRateType = brCBR) then
+      begin
+        Config.Format.lhv1.dwBitrate := FCBRBitRate;
+        Config.Format.lhv1.dwMaxBitrate := FCBRBitRate;
+      end else if (FBitRateType = brVBR) then
+      begin
+        case FVBRQuality of
+          vqHigh:
+            begin
+              Config.Format.lhv1.dwBitrate := 224;
+              Config.Format.lhv1.dwMaxBitrate := 320;
+            end;
+          vqMedium:
+            begin
+              Config.Format.lhv1.dwBitrate := 128;
+              Config.Format.lhv1.dwMaxBitrate := 192;
+            end;
+          vqLow:
+            begin
+              Config.Format.lhv1.dwBitrate := 32;
+              Config.Format.lhv1.dwMaxBitrate := 96;
+            end;
+        end;
+      end;
       Config.Format.lhv1.nQuality := NORMAL_QUALITY;
       Config.Format.lhv1.dwMPegVersion := 1;
       Config.Format.lhv1.dwPsyModel := 0;
@@ -410,9 +448,21 @@ begin
       Config.format.lhv1.bCRC := False;
       Config.Format.lhv1.bCopyright := True;
       Config.Format.lhv1.bOriginal := True;
-      Config.Format.lhv1.bWriteVBRHeader := False;
-      Config.Format.lhv1.bEnableVBR := False;
-      Config.Format.lhv1.nVBRQuality := 0;
+      if FBitRateType = brVBR then
+      begin
+        Config.Format.lhv1.bWriteVBRHeader := True;
+        Config.Format.lhv1.bEnableVBR := True;
+        case FVBRQuality of
+          vqHigh: Config.Format.lhv1.nVBRQuality := 0;
+          vqMedium: Config.Format.lhv1.nVBRQuality := 3;
+          vqLow: Config.Format.lhv1.nVBRQuality := 5;
+        end;
+      end else
+      begin
+        Config.Format.lhv1.bWriteVBRHeader := False;
+        Config.Format.lhv1.bEnableVBR := False;
+        Config.Format.lhv1.nVBRQuality := -1;
+      end;
 
       try
         Err := InitStream(@Config, @Samples, @MP3Buffer, @HBEStream);
@@ -506,7 +556,7 @@ end;
 function TFileConvertor.ConvertWAV2OGG(FromFile, ToFile: string;
   TerminateFlag: PBoolean): Boolean;
 var
-  CmdLine, ToFileTemp: string;
+  CmdLine, ToFileTemp, Opts: string;
   Output: AnsiString;
   Addon: TAddonOGGEnc;
   EC: Cardinal;
@@ -518,7 +568,22 @@ begin
 
   ToFileTemp := RemoveFileExt(ToFile) + '_convert.ogg';
 
-  CmdLine := Addon.EXEPath + ' "' + FromFile + '" -o "' + ToFileTemp + '"';
+  case FBitRateType of
+    brCBR:
+      begin
+        Opts := '-m ' + IntToStr(FCBRBitRate) + ' -M ' + IntToStr(FCBRBitRate);
+      end;
+    brVBR:
+      begin
+        case FVBRQuality of
+          vqHigh: Opts := '-m 224 -M 320';
+          vqMedium: Opts := '-m 128 -M 192';
+          vqLow: Opts := '-m 32 -M 96';
+        end;
+      end;
+  end;
+
+  CmdLine := Addon.EXEPath + ' ' + Opts + ' "' + FromFile + '" -o "' + ToFileTemp + '"';
   if RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), 300000, Output, EC, TerminateFlag, ReadCallbackOGG) = 2 then
   begin
     Result := False;

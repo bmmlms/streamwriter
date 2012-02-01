@@ -48,6 +48,33 @@ type
   // An array of integer... what you say??
   TIntArray = array of Integer;
 
+  TPostProcessorList = class(TList<TPostProcessBase>)
+  public
+    function Find(PostProcessor: TPostProcessBase): TPostProcessBase; overload;
+    function Find(ClassType: TClass): TPostProcessBase; overload;
+    function Find(PostProcessType: TPostProcessTypes): TPostProcessBase; overload;
+  end;
+
+  TEncoderSettings = class
+  public
+    AudioType: TAudioTypes;
+    BitrateType: TBitRates;
+    CBRBitrate: Integer;
+    VBRQuality: TVBRQualities;
+
+    constructor Create(AudioType: TAudioTypes; BitrateType: TBitRates; VBRQuality: TVBRQualities);
+    procedure Load(Stream: TExtendedStream; Version: Integer); overload;
+    procedure Save(Stream: TExtendedStream); overload;
+    procedure Load; overload;
+    procedure Save; overload;
+    function Copy: TEncoderSettings;
+  end;
+
+  TEncoderSettingsList = class(TList<TEncoderSettings>)
+  public
+    function Find(AudioType: TAudioTypes): TEncoderSettings;
+  end;
+
   { This class defines stream-specific settings. It is used in the settings (AppData) for general
     settings, it is also used in every TStreamEntry which defines configuration of a specific stream }
   TStreamSettings = class
@@ -83,14 +110,19 @@ type
     FOnlySaveFull: Boolean;
     FOverwriteSmaller: Boolean;
     FDiscardSmaller: Boolean;
+    FOutputFormat: TAudioTypes;
     FIgnoreTrackChangePattern: TStringList;
+    FPostProcessors: TPostProcessorList;
+    FEncoderSettings: TEncoderSettingsList;
 
     procedure FSetSaveToMemory(Value: Boolean);
   public
     // Creates a new instance of TStreamSettings class
-    constructor Create;
+    constructor Create(InitStuff: Boolean = True);
     // Destroys this instance of TStreamSettings
     destructor Destroy; override;
+
+    procedure InitStuff;
 
     // Loads an instance of TStreamSettings from a stream
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamSettings;
@@ -164,12 +196,15 @@ type
     property OverwriteSmaller: Boolean read FOverwriteSmaller write FOverwriteSmaller;
     // When set a file will not be saved if it is smaller than an existing same-named song
     property DiscardSmaller: Boolean read FDiscardSmaller write FDiscardSmaller;
+    property OutputFormat: TAudioTypes read FOutputFormat write FOutputFormat;
     { This list defines when to ignore track changes.
       If if contains "Radio XYZ - Greatest Hits!!" the following will happen:
       Artist A - Title A              <- Okay
       Radio XYZ - Greatest Hits!!     <- No track change detection
       Artist B -> Title B             <- Okay, track change is detected here, so Radio XYZ... will not be saved }
     property IgnoreTrackChangePattern: TStringList read FIgnoreTrackChangePattern write FIgnoreTrackChangePattern;
+    property PostProcessors: TPostProcessorList read FPostProcessors;
+    property EncoderSettings: TEncoderSettingsList read FEncoderSettings;
   end;
 
   // An array of TStreamSettings
@@ -211,7 +246,7 @@ type
     FMaxSpeed: Cardinal;
     FLastBrowserUpdate: Cardinal;
     FAutomaticFilePattern: string;
-    FOutputFormat: TAudioTypes;
+    //FOutputFormat: TAudioTypes;
 
     FShortcutPlay: Cardinal;
     FShortcutPause: Cardinal;
@@ -326,7 +361,7 @@ type
     property LastBrowserUpdate: Cardinal read FLastBrowserUpdate write FLastBrowserUpdate;
     // The pattern for automatically recorded files
     property AutomaticFilePattern: string read FAutomaticFilePattern write FAutomaticFilePattern;
-    property OutputFormat: TAudioTypes read FOutputFormat write FOutputFormat;
+    //property OutputFormat: TAudioTypes read FOutputFormat write FOutputFormat;
 
     // Widths of column headers of the mainview
     property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
@@ -355,6 +390,9 @@ var
 
 implementation
 
+uses
+  PostProcessSetTags, PostProcessSoX, PostProcessMP4Box, PostProcessConvert, AudioFunctions;
+
 { TAppData }
 
 constructor TAppData.Create(AppName: string);
@@ -364,7 +402,7 @@ var
 begin
   // Create an instance for global stream-settings
   // (these are used for new streams that do not have user-specified settings)
-  FStreamSettings := TStreamSettings.Create;
+  FStreamSettings := TStreamSettings.Create(False);
 
   // Adjust dimensions of the main-form
   W := 900;
@@ -698,9 +736,9 @@ begin
   FStorage.Read('OutputFormat', OutputFormatTmp, 0);
   if (OutputFormatTmp > Ord(High(TAudioTypes))) or
      (OutputFormatTmp < Ord(Low(TAudioTypes))) then
-    FOutputFormat := atNone
+    FStreamSettings.OutputFormat := atNone
   else
-    FOutputFormat := TAudioTypes(OutputFormatTmp);
+    FStreamSettings.OutputFormat := TAudioTypes(OutputFormatTmp);
 
   FStorage.Read('AutoTuneInMinKbps', FAutoTuneInMinKbps, 3);
   FStorage.Read('AutoTuneInFormat', FAutoTuneInFormat, 0);
@@ -851,6 +889,7 @@ begin
   FStorage.Write('SeparateTracks', FStreamSettings.FSeparateTracks);
   FStorage.Write('OverwriteSmaller', FStreamSettings.FOverwriteSmaller);
   FStorage.Write('DiscardSmaller', FStreamSettings.FDiscardSmaller);
+  FStorage.Write('OutputFormat', Integer(FStreamSettings.FOutputFormat));
 
   FStorage.Write('TrayClose', FTray);
   FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
@@ -870,7 +909,6 @@ begin
   FStorage.Write('MaxSpeed', FMaxSpeed);
   FStorage.Write('LastBrowserUpdate', FLastBrowserUpdate);
   FStorage.Write('AutomaticFilePattern', FAutomaticFilePattern);
-  FStorage.Write('OutputFormat', Integer(FOutputFormat));
 
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
@@ -900,27 +938,30 @@ begin
   FStorage.DeleteKey('Plugins');
 
   n := 0;
-  for i := 0 to FPostProcessManager.PostProcessors.Count - 1 do
-    if not FPostProcessManager.PostProcessors[i].Hidden then
-    if (FPostProcessManager.PostProcessors[i] is TExternalPostProcess) then
+  for i := 0 to FStreamSettings.PostProcessors.Count - 1 do
+    if not FStreamSettings.PostProcessors[i].Hidden then
+    if (FStreamSettings.PostProcessors[i] is TExternalPostProcess) then
     begin
-      FStorage.Write('Active_' + IntToStr(n), TExternalPostProcess(FPostProcessManager.PostProcessors[i]).Active, 'Plugins');
-      FStorage.Write('Exe_' + IntToStr(n), TExternalPostProcess(FPostProcessManager.PostProcessors[i]).Exe, 'Plugins');
-      FStorage.Write('Params_' + IntToStr(n), TExternalPostProcess(FPostProcessManager.PostProcessors[i]).Params, 'Plugins');
-      FStorage.Write('OrderExe_' + IntToStr(n), FPostProcessManager.PostProcessors[i].Order, 'Plugins');
-      FStorage.Write('OnlyIfCut_' + IntToStr(n), FPostProcessManager.PostProcessors[i].OnlyIfCut, 'Plugins');
-      FStorage.Write('Group_' + IntToStr(n), FPostProcessManager.PostProcessors[i].GroupID, 'Plugins');
+      FStorage.Write('Active_' + IntToStr(n), TExternalPostProcess(FStreamSettings.PostProcessors[i]).Active, 'Plugins');
+      FStorage.Write('Exe_' + IntToStr(n), TExternalPostProcess(FStreamSettings.PostProcessors[i]).Exe, 'Plugins');
+      FStorage.Write('Params_' + IntToStr(n), TExternalPostProcess(FStreamSettings.PostProcessors[i]).Params, 'Plugins');
+      FStorage.Write('OrderExe_' + IntToStr(n), FStreamSettings.PostProcessors[i].Order, 'Plugins');
+      FStorage.Write('OnlyIfCut_' + IntToStr(n), FStreamSettings.PostProcessors[i].OnlyIfCut, 'Plugins');
+      FStorage.Write('Group_' + IntToStr(n), FStreamSettings.PostProcessors[i].GroupID, 'Plugins');
       Inc(n);
-    end else if (FPostProcessManager.PostProcessors[i] is TInternalPostProcess) then
+    end else if (FStreamSettings.PostProcessors[i] is TInternalPostProcess) then
     begin
-      FStorage.Write('Active_' + FPostProcessManager.PostProcessors[i].ClassName, FPostProcessManager.PostProcessors[i].Active, 'Plugins');
-      if FPostProcessManager.PostProcessors[i].GroupID = 1 then
-        FStorage.Write('Order_' + FPostProcessManager.PostProcessors[i].ClassName, FPostProcessManager.PostProcessors[i].Order + 1000, 'Plugins')
+      FStorage.Write('Active_' + FStreamSettings.PostProcessors[i].ClassName, FStreamSettings.PostProcessors[i].Active, 'Plugins');
+      if FStreamSettings.PostProcessors[i].GroupID = 1 then
+        FStorage.Write('Order_' + FStreamSettings.PostProcessors[i].ClassName, FStreamSettings.PostProcessors[i].Order, 'Plugins')
       else
-        FStorage.Write('Order_' + FPostProcessManager.PostProcessors[i].ClassName, FPostProcessManager.PostProcessors[i].Order, 'Plugins');
-      FStorage.Write('OnlyIfCut_' + FPostProcessManager.PostProcessors[i].ClassName, FPostProcessManager.PostProcessors[i].OnlyIfCut, 'Plugins');
-      FPostProcessManager.PostProcessors[i].Save;
+        FStorage.Write('Order_' + FStreamSettings.PostProcessors[i].ClassName, FStreamSettings.PostProcessors[i].Order, 'Plugins');
+      FStorage.Write('OnlyIfCut_' + FStreamSettings.PostProcessors[i].ClassName, FStreamSettings.PostProcessors[i].OnlyIfCut, 'Plugins');
+      FStreamSettings.PostProcessors[i].Save;
     end;
+
+  for i := 0 to FStreamSettings.EncoderSettings.Count - 1 do
+    FStreamSettings.EncoderSettings[i].Save;
 end;
 
 { TStreamSettings }
@@ -931,16 +972,33 @@ begin
   Result.Assign(Self);
 end;
 
-constructor TStreamSettings.Create;
+constructor TStreamSettings.Create(InitStuff: Boolean = True);
+var
+  i: Integer;
 begin
-  inherited;
+  inherited Create;
 
   FIgnoreTrackChangePattern := TStringList.Create;
+  FPostProcessors := TPostProcessorList.Create;
+  FEncoderSettings := TEncoderSettingsList.Create;
+
+  if InitStuff then
+    Self.InitStuff;
 end;
 
 destructor TStreamSettings.Destroy;
+var
+  i: Integer;
 begin
   FIgnoreTrackChangePattern.Free;
+
+  for i := 0 to FPostProcessors.Count - 1 do
+    FPostProcessors[i].Free;
+  FPostProcessors.Free;
+
+  for i := 0 to FEncoderSettings.Count - 1 do
+    FEncoderSettings[i].Free;
+  FEncoderSettings.Free;
 
   inherited;
 end;
@@ -952,12 +1010,29 @@ begin
     FSeparateTracks := True;
 end;
 
+procedure TStreamSettings.InitStuff;
+begin
+  FEncoderSettings.Add(TEncoderSettings.Create(atMPEG, brVBR, vqMedium));
+  FEncoderSettings.Add(TEncoderSettings.Create(atAAC, brVBR, vqMedium));
+  FEncoderSettings.Add(TEncoderSettings.Create(atOGG, brVBR, vqMedium));
+
+  // Der Convert muss der erste sein! Greife auf die Liste mal mit [0] zu!
+  PostProcessors.Add(TPostProcessConvert.Create);
+  PostProcessors.Add(TPostProcessSetTags.Create);
+  PostProcessors.Add(TPostProcessSoX.Create);
+  PostProcessors.Add(TPostProcessMP4Box.Create);
+end;
+
 class function TStreamSettings.Load(Stream: TExtendedStream;
   Version: Integer): TStreamSettings;
 var
   B: Byte;
-  i, Count, FilterTmp: Integer;
+  i, Count, FilterTmp, TypeTmp, ID: Integer;
+  T: TPostProcessTypes;
+  AT: TAudioTypes;
   IgnoreTmp: string;
+  PP: TPostProcessBase;
+  ES: TEncoderSettings;
 begin
   Result := TStreamSettings.Create;
 
@@ -1128,11 +1203,57 @@ begin
       Result.FIgnoreTrackChangePattern.Add(IgnoreTmp);
     end;
   end;
+
+  // Einstellungen laden...
+  if Version >= 41 then
+  begin
+    Stream.Read(TypeTmp);
+    Result.FOutputFormat := TAudioTypes(TypeTmp);
+
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+    begin
+      PP := nil;
+
+      Stream.Read(TypeTmp);
+
+      T := TPostProcessTypes(TypeTmp);
+
+      if T <> ptExternal then
+      begin
+        PP := Result.PostProcessors.Find(T);
+        PP.Load(Stream, Version);
+      end else
+      begin
+        PP := TExternalPostProcess.Create;
+        PP.Load(Stream, Version);
+        Result.PostProcessors.Add(PP);
+      end;
+    end;
+
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+    begin
+      ES := nil;
+
+      Stream.Read(TypeTmp);
+
+      AT := TAudioTypes(TypeTmp);
+
+      ES := Result.EncoderSettings.Find(AT);
+
+      if ES <> nil then
+      begin
+        ES.Load(Stream, Version);
+      end;
+    end;
+  end;
 end;
 
 procedure TStreamSettings.Save(Stream: TExtendedStream);
 var
   i: Integer;
+  Count: Integer;
 begin
   Stream.Write(FTitlePattern);
   Stream.Write(FFilePattern);
@@ -1170,9 +1291,33 @@ begin
   Stream.Write(FIgnoreTrackChangePattern.Count);
   for i := 0 to FIgnoreTrackChangePattern.Count - 1 do
     Stream.Write(FIgnoreTrackChangePattern[i]);
+
+  Stream.Write(Integer(FOutputFormat));
+
+  Count := 0;
+  for i := 0 to FPostProcessors.Count - 1 do
+    if (not FPostProcessors[i].Hidden) and (FPostProcessors[i].PostProcessType <> ptConvert) then
+      Inc(Count);
+  Stream.Write(Count);
+  for i := 0 to FPostProcessors.Count - 1 do
+  begin
+    if FPostProcessors[i].Hidden or (FPostProcessors[i].PostProcessType = ptConvert) then
+      Continue;
+    Stream.Write(Integer(FPostProcessors[i].PostProcessType));
+    FPostProcessors[i].Save(Stream);
+  end;
+
+  Stream.Write(FEncoderSettings.Count);
+  for i := 0 to FEncoderSettings.Count - 1 do
+  begin
+    Stream.Write(Integer(FEncoderSettings[i].AudioType));
+    FEncoderSettings[i].Save(Stream);
+  end;
 end;
 
 procedure TStreamSettings.Assign(From: TStreamSettings);
+var
+  i: Integer;
 begin
   FTitlePattern := From.FTitlePattern;
   FFilePattern := From.FFilePattern;
@@ -1206,6 +1351,148 @@ begin
   FAdjustTrackOffsetMS := From.FAdjustTrackOffsetMS;
   FAdjustTrackOffsetDirection := From.FAdjustTrackOffsetDirection;
   FIgnoreTrackChangePattern.Assign(From.FIgnoreTrackChangePattern);
+
+  FOutputFormat := From.FOutputFormat;
+  for i := 0 to FPostProcessors.Count - 1 do
+    FPostProcessors[i].Free;
+  FPostProcessors.Clear;
+  for i := 0 to From.PostProcessors.Count - 1 do
+    FPostProcessors.Add(From.PostProcessors[i].Copy);
+
+  for i := 0 to FEncoderSettings.Count - 1 do
+    FEncoderSettings[i].Free;
+  FEncoderSettings.Clear;
+  for i := 0 to From.EncoderSettings.Count - 1 do
+    FEncoderSettings.Add(From.EncoderSettings[i].Copy);
+end;
+
+{ TPostProcessorList }
+
+function TPostProcessorList.Find(PostProcessor: TPostProcessBase): TPostProcessBase;
+var
+  i: Integer;
+begin
+  Result := nil;
+
+  for i := 0 to Count - 1 do
+    if (PostProcessor is TExternalPostProcess) and (Self[i] is TExternalPostProcess) then
+    begin
+      if TExternalPostProcess(PostProcessor).Identifier = TExternalPostProcess(Self[i]).Identifier then
+      begin
+        Result := Self[i];
+        Break;
+      end;
+    end else if PostProcessor.ClassType.InheritsFrom(TInternalPostProcess) and Self[i].ClassType.InheritsFrom(TInternalPostProcess) then
+    begin
+      if PostProcessor.ClassType = Self[i].ClassType then
+      begin
+        Result := Self[i];
+        Break;
+      end;
+    end;
+end;
+
+function TPostProcessorList.Find(ClassType: TClass): TPostProcessBase;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+    if Self[i].ClassType = ClassType then
+    begin
+      Result := Self[i];
+      Break;
+    end;
+end;
+
+function TPostProcessorList.Find(PostProcessType: TPostProcessTypes): TPostProcessBase;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+    if Items[i].PostProcessType = PostProcessType then
+      Exit(Items[i]);
+  Exit(nil);
+end;
+
+{ TEncoderSettingsList }
+
+function TEncoderSettingsList.Find(AudioType: TAudioTypes): TEncoderSettings;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+    if Items[i].AudioType = AudioType then
+      Exit(Items[i]);
+  Exit(nil);
+end;
+
+{ TEncoderSettings }
+
+function TEncoderSettings.Copy: TEncoderSettings;
+begin
+  Result := TEncoderSettings.Create(AudioType, BitrateType, VBRQuality);
+  Result.CBRBitrate := CBRBitrate;
+end;
+
+constructor TEncoderSettings.Create(AudioType: TAudioTypes;
+  BitrateType: TBitRates; VBRQuality: TVBRQualities);
+begin
+  inherited Create;
+
+  Self.AudioType := AudioType;
+  Self.BitrateType := BitrateType;
+  Self.CBRBitrate := 128;
+  Self.VBRQuality := VBRQuality;
+end;
+
+procedure TEncoderSettings.Load;
+var
+  Tmp: Integer;
+begin
+  AppGlobals.Storage.Read('CBRBitRate_' + IntToStr(Integer(AudioType)), CBRBitrate, 128, 'Encoders');
+  CBRBitRate := RoundBitrate(CBRBitrate);
+
+  AppGlobals.Storage.Read('BitRateType_' + IntToStr(Integer(AudioType)), Tmp, Integer(brVBR), 'Encoders');
+  if (Tmp > Ord(High(TBitRates))) or
+     (Tmp < Ord(Low(TBitRates))) then
+    BitrateType := brVBR
+  else
+    BitrateType := TBitRates(Tmp);
+
+  AppGlobals.Storage.Read('VBRQuality_' + IntToStr(Integer(AudioType)), Tmp, Integer(vqMedium), 'Encoders');
+  if (Tmp > Ord(High(TVBRQualities))) or
+     (Tmp < Ord(Low(TVBRQualities))) then
+    VBRQuality := vqMedium
+  else
+    VBRQuality := TVBRQualities(Tmp);
+end;
+
+procedure TEncoderSettings.Load(Stream: TExtendedStream; Version: Integer);
+var
+  Tmp: Integer;
+begin
+  Stream.Read(Tmp);
+  BitrateType := TBitRates(Tmp);
+
+  Stream.Read(CBRBitrate);
+
+  Stream.Read(Tmp);
+  VBRQuality := TVBRQualities(Tmp);
+end;
+
+procedure TEncoderSettings.Save(Stream: TExtendedStream);
+begin
+  Stream.Write(Integer(BitrateType));
+  Stream.Write(CBRBitrate);
+  Stream.Write(Integer(VBRQuality));
+end;
+
+procedure TEncoderSettings.Save;
+begin
+  AppGlobals.Storage.Write('CBRBitRate_' + IntToStr(Integer(AudioType)), CBRBitrate, 'Encoders');
+  AppGlobals.Storage.Write('BitRateType_' + IntToStr(Integer(AudioType)), Integer(BitrateType), 'Encoders');
+  AppGlobals.Storage.Write('VBRQuality_' + IntToStr(Integer(AudioType)), Integer(VBRQuality), 'Encoders');
 end;
 
 initialization
@@ -1214,13 +1501,16 @@ initialization
       raise Exception.Create('Language is not initialized');
     AppGlobals := TAppData.Create('streamWriter');
 
+    // PostProcessors etc. laden
+    AppGlobals.StreamSettings.InitStuff;
+
     // AddonManager wird hier erstellt, da erstellte Addon-Items Zugriff
     // auf ein bereits zugewiesenes AppGlobals brauchen.
     AppGlobals.FAddonManager := TAddonManager.Create;
     AppGlobals.FPostProcessManager := TPostProcessManager.Create;
 
-    if AppGlobals.AddonManager.CanEncode(AppGlobals.OutputFormat) <> ceOkay then
-      AppGlobals.OutputFormat := atNone;
+    if AppGlobals.AddonManager.CanEncode(AppGlobals.StreamSettings.OutputFormat) <> ceOkay then
+      AppGlobals.StreamSettings.OutputFormat := atNone;
   except
     on E: Exception do
     begin

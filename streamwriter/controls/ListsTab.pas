@@ -39,9 +39,22 @@ type
   end;
   PTitleNodeData = ^TTitleNodeData;
 
+  TTitlePopup = class(TPopupMenu)
+  private
+    FRemove: TMenuItem;
+    FRename: TMenuItem;
+  protected
+  public
+    constructor Create(AOwner: TComponent); override;
+
+    property Remove: TMenuItem read FRemove;
+    property Rename: TMenuItem read FRename;
+  end;
+
   TTitleToolbar = class(TToolbar)
   private
     FAdd: TToolButton;
+    FRename: TToolButton;
     FRemove: TToolButton;
     FSep: TToolButton;
     FExport: TToolButton;
@@ -78,6 +91,7 @@ type
     procedure ExportClick(Sender: TObject);
     procedure ImportClick(Sender: TObject);
     procedure SelectSavedClick(Sender: TObject);
+    procedure RenameClick(Sender: TObject);
     procedure AddEditKeyPress(Sender: TObject; var Key: Char);
     procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -117,11 +131,14 @@ type
     FLists: TDataLists;
     FListType: TListType;
     FDropTarget: TDropComboTarget;
+    FPopupMenu: TTitlePopup;
 
     function GetNode(Stream: TICEClient): PVirtualNode;
 
     procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
       APoint: TPoint; var Effect: Integer);
+
+    procedure PopupMenuClick(Sender: TObject);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -131,8 +148,10 @@ type
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     function DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
+    procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; Text: UnicodeString); override;
+    procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
   public
-    constructor Create(AOwner: TComponent; Lists: TDataLists; T: TListType);
+    constructor Create(AOwner: TComponent; Lists: TDataLists; T: TListType; Images: TImageList);
     destructor Destroy; override;
 
     procedure AddTitle(Title: TTitleInfo; Parent: PVirtualNode; ParentData: PTitleNodeData);
@@ -354,6 +373,11 @@ begin
   HomeComm.SetTitleNotifications((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 
   FTree.EndUpdate;
+end;
+
+procedure TTitlePanel.RenameClick(Sender: TObject);
+begin
+  FTree.EditNode(FTree.GetFirstSelected, 0);
 end;
 
 procedure TTitlePanel.Resize;
@@ -712,12 +736,12 @@ begin
   FToolbar.FExport.OnClick := ExportClick;
   FToolbar.FImport.OnClick := ImportClick;
   FToolbar.FSelectSaved.OnClick := SelectSavedClick;
+  FToolbar.FRename.OnClick := RenameClick;
 
   FTopPanel.Height := FLabel.Height + FToolbarPanel.Height + 2;
 
-  FTree := TTitleTree.Create(Self, Lists, T);
+  FTree := TTitleTree.Create(Self, Lists, T, Images);
   FTree.Parent := Self;
-  FTree.Images := Images;
   FTree.Align := alClient;
   FTree.OnChange := TreeChange;
   FTree.OnKeyDown := TreeKeyDown;
@@ -806,8 +830,14 @@ begin
 end;
 
 procedure TTitlePanel.UpdateButtons;
+var
+  NodeData: PTitleNodeData;
 begin
   FToolbar.FRemove.Enabled := FTree.GetFirstSelected <> nil;
+  FToolbar.FRename.Enabled := (FTree.SelectedCount = 1) and (FTree.GetFirstSelected <> nil) and (PTitleNodeData(FTree.GetNodeData(FTree.GetFirstSelected)).Title <> nil);
+
+  FTree.FPopupMenu.FRemove.Enabled := FTree.GetFirstSelected <> nil;
+  FTree.FPopupMenu.FRename.Enabled := (FTree.SelectedCount = 1) and (FTree.GetFirstSelected <> nil) and (PTitleNodeData(FTree.GetNodeData(FTree.GetFirstSelected)).Title <> nil);
 end;
 
 procedure TTitlePanel.UpdateList;
@@ -876,6 +906,16 @@ begin
   FRemove.Hint := 'Remove';
   FRemove.ImageIndex := 2;
 
+  FRename := TToolButton.Create(Self);
+  FRename.Parent := Self;
+  FRename.Hint := 'Rename';
+  FRename.ImageIndex := 74;
+
+  FSep := TToolButton.Create(Self);
+  FSep.Parent := Self;
+  FSep.Style := tbsSeparator;
+  FSep.Width := 8;
+
   FAdd := TToolButton.Create(Self);
   FAdd.Parent := Self;
   FAdd.Hint := 'Add';
@@ -902,7 +942,7 @@ begin
   end;
 end;
 
-constructor TTitleTree.Create(AOwner: TComponent; Lists: TDataLists; T: TListType);
+constructor TTitleTree.Create(AOwner: TComponent; Lists: TDataLists; T: TListType; Images: TImageList);
 begin
   inherited Create(AOwner);
 
@@ -923,6 +963,8 @@ begin
   ShowHint := True;
   HintMode := hmTooltip;
 
+  Self.Images := Images;
+
   FColTitle := Header.Columns.Add;
   FColTitle.Text := _('Title');
 
@@ -934,6 +976,13 @@ begin
   FDropTarget.Formats := [mfFile];
   FDropTarget.OnDrop := DropTargetDrop;
   FDropTarget.Register(Self);
+
+  FPopupMenu := TTitlePopup.Create(Self);
+  FPopupMenu.Images := Images;
+  FPopupMenu.FRemove.OnClick := PopupMenuClick;
+  FPopupMenu.FRename.OnClick := PopupMenuClick;
+
+  PopupMenu := FPopupMenu;
 end;
 
 destructor TTitleTree.Destroy;
@@ -1023,6 +1072,14 @@ begin
     NodeData.Title := nil;
   end else
     Result := nil;
+end;
+
+procedure TTitleTree.PopupMenuClick(Sender: TObject);
+begin
+  if Sender = FPopupMenu.FRemove then
+    TTitlePanel(Owner).FToolbar.FRemove.Click
+  else
+    TTitlePanel(Owner).FToolbar.FRename.Click;
 end;
 
 procedure TTitleTree.RemoveClient(Client: TICEClient);
@@ -1175,6 +1232,34 @@ begin
       Result := StrLIComp(PChar(s), PChar(_('Global')), Min(Length(s), Length(_('Global'))));
 end;
 
+procedure TTitleTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex;
+  Text: UnicodeString);
+var
+  NodeData: PTitleNodeData;
+begin
+  inherited;
+
+  if Trim(Text) = '' then
+    Exit;
+
+  NodeData := GetNodeData(Node);
+
+  NodeData.Title.Free;
+  NodeData.Title := TTitleInfo.Create(Text);
+end;
+
+procedure TTitleTree.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;
+  var Allowed: Boolean);
+var
+  NodeData: PTitleNodeData;
+begin
+  inherited;
+
+  NodeData := GetNodeData(Node);
+
+  Allowed := NodeData.Title <> nil;
+end;
+
 function TTitleTree.DoCompare(Node1, Node2: PVirtualNode;
   Column: TColumnIndex): Integer;
   function CmpTime(a, b: TDateTime): Integer;
@@ -1235,6 +1320,23 @@ procedure TTitleTree.DoFreeNode(Node: PVirtualNode);
 begin
 
   inherited;
+end;
+
+{ TTitlePopup }
+
+constructor TTitlePopup.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  FRename := CreateMenuItem;
+  FRename.Caption := 'Ren&ame';
+  FRename.ImageIndex := 74;
+  Items.Add(FRename);
+
+  FRemove := CreateMenuItem;
+  FRemove.Caption := '&Remove';
+  FRemove.ImageIndex := 2;
+  Items.Add(FRemove);
 end;
 
 end.

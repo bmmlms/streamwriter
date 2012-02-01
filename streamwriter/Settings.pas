@@ -29,7 +29,7 @@ uses
   MsgDlg, PngImageList, PngSpeedButton, pngimage, VirtualTrees, Math,
   DataManager, PngBitBtn, Logging, ToolWin, ListsTab, DownloadAddons,
   ExtendedStream, AddonManager, AddonBase, TypeDefs, Generics.Defaults,
-  SettingsAddPostProcessor;
+  SettingsAddPostProcessor, ConfigureEncoder;
 
 type
   TBlacklistNodeData = record
@@ -183,8 +183,8 @@ type
     lstAddons: TListView;
     btnHelpAddon: TPngSpeedButton;
     lblOutputFormat: TLabel;
-    Label20: TLabel;
     lstOutputFormat: TComboBox;
+    btnConfigureEncoder: TPngSpeedButton;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -257,6 +257,7 @@ type
       Selected: Boolean);
     procedure lstAddonsItemChecked(Sender: TObject; Item: TListItem);
     procedure lstOutputFormatSelect(Sender: TObject);
+    procedure btnConfigureEncoderClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -264,7 +265,7 @@ type
     FDefaultActionIdx: Integer;
     FDefaultActionBrowserIdx: Integer;
     FDefaultFilterIdx: Integer;
-    FTemporaryPostProcesses: TList<TPostProcessBase>;
+    FTemporaryPostProcesses: TPostProcessorList;
     FStreamSettings: TStreamSettingsArray;
     FIgnoreFieldList: TList;
     FLists: TDataLists;
@@ -283,6 +284,7 @@ type
     procedure FillFields(Settings: TStreamSettings);
     procedure SetGray;
     procedure RebuildPostProcessingList;
+    procedure UpdatePostProcessUpDown;
 
     procedure BlacklistTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure BlacklistTreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -805,33 +807,6 @@ begin
 
     FillFields(Settings);
 
-    FTemporaryPostProcesses := TList<TPostProcessBase>.Create;
-
-    lstOutputFormat.ItemIndex := Integer(AppGlobals.OutputFormat);
-    OutputFormatLastIndex := lstOutputFormat.ItemIndex;
-
-    for i := 0 to AppGlobals.PostProcessManager.PostProcessors.Count - 1 do
-    begin
-      if AppGlobals.PostProcessManager.PostProcessors[i].Hidden then
-        Continue;
-
-      FTemporaryPostProcesses.Add(AppGlobals.PostProcessManager.PostProcessors[i].Copy);
-    end;
-
-    FTemporaryPostProcesses.Sort(TComparer<TPostProcessBase>.Construct(
-      function (const L, R: TPostProcessBase): integer
-      begin
-        if L.GroupID <> R.GroupID then
-          Result := CmpInt(L.GroupID, R.GroupID)
-        else
-          Result := CmpInt(L.Order, R.Order);;
-      end
-    ));
-
-    RebuildPostProcessingList;
-    if lstPostProcess.Items.Count > 0 then
-      lstPostProcess.Items[0].Selected := True;
-
     B := TBitmap.Create;
     P := TPngImage.Create;
     try
@@ -841,6 +816,9 @@ begin
       btnMoveDown.PngImage := P;
       P.LoadFromResourceName(HInstance, 'QUESTION');
       btnHelpPostProcess.PngImage := P;
+      P.LoadFromResourceName(HInstance, 'CONFIGURE');
+      btnConfigureEncoder.PngImage := P;
+
       btnHelpAddon.PngImage := P;
       GetBitmap('BROWSE', 2, B);
       btnBrowse.Glyph := B;
@@ -906,6 +884,8 @@ begin
       optAdjustBackward.Visible := False;
       optAdjustForward.Visible := False;
     end;
+
+    btnConfigureEncoder.Enabled := lstOutputFormat.ItemIndex > 0;
 
     FInitialized := True;
   finally
@@ -978,6 +958,8 @@ begin
 end;
 
 procedure TfrmSettings.FillFields(Settings: TStreamSettings);
+var
+  i: Integer;
 begin
   lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
   lstDefaultActionBrowser.ItemIndex := Integer(AppGlobals.DefaultActionBrowser);
@@ -1100,13 +1082,48 @@ begin
     chkOnlySaveFull.Enabled := False;
   end;
 
+  // -----------------------------------
+  if FTemporaryPostProcesses <> nil then
+  begin
+    for i := 0 to FTemporaryPostProcesses.Count - 1 do
+      FTemporaryPostProcesses[i].Free;
+    FTemporaryPostProcesses.Free;
+  end;
+  FTemporaryPostProcesses := TPostProcessorList.Create;
+
+  lstOutputFormat.ItemIndex := Integer(Settings.OutputFormat);
+  OutputFormatLastIndex := lstOutputFormat.ItemIndex;
+
+  for i := 0 to Settings.PostProcessors.Count - 1 do
+  begin
+    if Settings.PostProcessors[i].Hidden then
+      Continue;
+
+    FTemporaryPostProcesses.Add(Settings.PostProcessors[i].Copy);
+  end;
+
+  FTemporaryPostProcesses.Sort(TComparer<TPostProcessBase>.Construct(
+    function (const L, R: TPostProcessBase): integer
+    begin
+      if L.GroupID <> R.GroupID then
+        Result := CmpInt(L.GroupID, R.GroupID)
+      else
+        Result := CmpInt(L.Order, R.Order);
+    end
+  ));
+
+  RebuildPostProcessingList;
+  if lstPostProcess.Items.Count > 0 then
+    lstPostProcess.Items[0].Selected := True;
+  // -----------------------------------
+
   txtShortLengthSeconds.Enabled := chkSkipShort.State <> cbUnchecked;
   EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
 end;
 
 procedure TfrmSettings.Finish;
 var
-  i, n: Integer;
+  i, k, n: Integer;
   AdvancedDiffers: Boolean;
   PostProcessor: TPostProcessBase;
   EP: TExternalPostProcess;
@@ -1235,6 +1252,59 @@ begin
           FStreamSettings[i].IgnoreTrackChangePattern.Add(lstIgnoreTitles.Items[n].Caption);
       end;
 
+      // -----------------------------------------------------------
+      FStreamSettings[i].OutputFormat := TAudioTypes(lstOutputFormat.ItemIndex);
+      for k := 0 to FTemporaryPostProcesses.Count - 1 do
+      begin
+        PostProcessor := FStreamSettings[i].PostProcessors.Find(FTemporaryPostProcesses[k]);
+
+        if (PostProcessor = nil) or (FTemporaryPostProcesses[k].IsNew) then
+        begin
+          // Ein neuer PostProcessor kann nur TExternalPostProcessor sein.
+          PostProcessor := FTemporaryPostProcesses[k].Copy;
+          FStreamSettings[i].PostProcessors.Add(PostProcessor);
+        end;
+
+        Item := nil;
+        for n := 0 to lstPostProcess.Items.Count - 1 do
+          if lstPostProcess.Items[n].Data = FTemporaryPostProcesses[k] then
+          begin
+            Item := lstPostProcess.Items[n];
+            Break;
+          end;
+
+        PostProcessor.OnlyIfCut := FTemporaryPostProcesses[k].OnlyIfCut;
+        PostProcessor.Order := Item.Index;
+        PostProcessor.Active := Item.Checked;
+
+        PostProcessor.Assign(FTemporaryPostProcesses[k]);
+      end;
+
+      // Vom Benutzer entfernte PostProcessors aus den echten PostProcessors entfernen..
+      for k := FStreamSettings[i].PostProcessors.Count - 1 downto 0 do
+      begin
+        if FStreamSettings[i].PostProcessors[k] is TExternalPostProcess then
+        begin
+          EP := nil;
+          for n := 0 to FTemporaryPostProcesses.Count - 1 do
+            if FTemporaryPostProcesses[n] is TExternalPostProcess then
+              if TExternalPostProcess(FTemporaryPostProcesses[n]).Identifier = TExternalPostProcess(FStreamSettings[i].PostProcessors[k]).Identifier then
+                begin
+                  EP := TExternalPostProcess(FStreamSettings[i].PostProcessors[k]);
+                  Break;
+                end;
+          if EP = nil then
+          begin
+            FStreamSettings[i].PostProcessors[k].Free;
+            FStreamSettings[i].PostProcessors.Delete(k);
+            Continue;
+          end;
+        end;
+        FStreamSettings[i].PostProcessors[k].IsNew := False;
+      end;
+      // -----------------------------------------------------------
+
+
       if (FIgnoreFieldList.IndexOf(txtTitlePattern) = -1) and (OldTitlePattern <> FStreamSettings[i].TitlePattern) then
         AdvancedDiffers := True;
       if (FIgnoreFieldList.IndexOf(lstIgnoreTitles) = -1) and (GetStringListHash(FStreamSettings[i].IgnoreTrackChangePattern) <> OldIgnoreTitles) then
@@ -1348,16 +1418,18 @@ begin
     else
       AppGlobals.ShortcutMute := 0;
 
-    AppGlobals.OutputFormat := TAudioTypes(lstOutputFormat.ItemIndex);
+
+    // -----------------------------------------------------------
+    AppGlobals.StreamSettings.OutputFormat := TAudioTypes(lstOutputFormat.ItemIndex);
     for i := 0 to FTemporaryPostProcesses.Count - 1 do
     begin
-      PostProcessor := AppGlobals.PostProcessManager.Find(FTemporaryPostProcesses[i]);
+      PostProcessor := AppGlobals.StreamSettings.PostProcessors.Find(FTemporaryPostProcesses[i]);
 
-      if PostProcessor = nil then
+      if (PostProcessor = nil) or (FTemporaryPostProcesses[i].IsNew) then
       begin
         // Ein neuer PostProcessor kann nur TExternalPostProcessor sein.
         PostProcessor := FTemporaryPostProcesses[i].Copy;
-        AppGlobals.PostProcessManager.PostProcessors.Add(PostProcessor);
+        AppGlobals.StreamSettings.PostProcessors.Add(PostProcessor);
       end;
 
       Item := nil;
@@ -1376,26 +1448,29 @@ begin
     end;
 
     // Vom Benutzer entfernte PostProcessors aus den echten PostProcessors entfernen..
-    for i := AppGlobals.PostProcessManager.PostProcessors.Count - 1 downto 0 do
+    for i := AppGlobals.StreamSettings.PostProcessors.Count - 1 downto 0 do
     begin
-      if AppGlobals.PostProcessManager.PostProcessors[i] is TExternalPostProcess then
+      if AppGlobals.StreamSettings.PostProcessors[i] is TExternalPostProcess then
       begin
         EP := nil;
         for n := 0 to FTemporaryPostProcesses.Count - 1 do
           if FTemporaryPostProcesses[n] is TExternalPostProcess then
-            if TExternalPostProcess(FTemporaryPostProcesses[n]).Identifier = TExternalPostProcess(AppGlobals.PostProcessManager.PostProcessors[i]).Identifier then
+            if TExternalPostProcess(FTemporaryPostProcesses[n]).Identifier = TExternalPostProcess(AppGlobals.StreamSettings.PostProcessors[i]).Identifier then
               begin
-                EP := TExternalPostProcess(AppGlobals.PostProcessManager.PostProcessors[i]);
+                EP := TExternalPostProcess(AppGlobals.StreamSettings.PostProcessors[i]);
                 Break;
               end;
         if EP = nil then
         begin
-          AppGlobals.PostProcessManager.PostProcessors[i].Free;
-          AppGlobals.PostProcessManager.PostProcessors.Delete(i);
+          AppGlobals.StreamSettings.PostProcessors[i].Free;
+          AppGlobals.StreamSettings.PostProcessors.Delete(i);
           Continue;
         end;
       end;
+      AppGlobals.StreamSettings.PostProcessors[i].IsNew := False;
     end;
+    // -----------------------------------------------------------
+
 
     lstBlacklist.UpdateList(FLists.StreamBlacklist);
 
@@ -1455,20 +1530,15 @@ function TfrmSettings.GetNewID: Integer;
 var
   i: Integer;
 begin
-  Result := 0;
+  Result := GetTickCount;
+
+  if Result < 0 then
+    Result := Result * -1;
+
   for i := 0 to lstPostProcess.Items.Count - 1 do
   begin
     if TPostProcessBase(lstPostProcess.Items[i].Data) is TExternalPostProcess then
       if TExternalPostProcess(lstPostProcess.Items[i].Data).Identifier = Result then
-      begin
-        Inc(Result);
-        Continue;
-      end;
-  end;
-  for i := 0 to AppGlobals.PostProcessManager.PostProcessors.Count - 1 do
-  begin
-    if TPostProcessBase(AppGlobals.PostProcessManager.PostProcessors[i]) is TExternalPostProcess then
-      if TExternalPostProcess(AppGlobals.PostProcessManager.PostProcessors[i]).Identifier = Result then
       begin
         Inc(Result);
         Continue;
@@ -1555,6 +1625,7 @@ begin
 
   if lstOutputFormat.ItemIndex = 0 then
   begin
+    btnConfigureEncoder.Enabled := False;
     OutputFormatLastIndex := lstOutputFormat.ItemIndex;
     Exit;
   end;
@@ -1572,6 +1643,8 @@ begin
   for i := 0 to lstAddons.Items.Count - 1 do
     lstAddons.Items[i].Checked := TAddonBase(lstAddons.Items[i].Data).PackageDownloaded;
   lstAddons.OnItemChecked := lstAddonsItemChecked;
+
+  btnConfigureEncoder.Enabled := lstOutputFormat.ItemIndex > 0;
 end;
 
 procedure TfrmSettings.lstAddonsItemChecked(Sender: TObject;
@@ -1633,6 +1706,9 @@ begin
     lstPostProcess.OnItemChecked := lstPostProcessItemChecked;
 
     btnConfigure.Enabled := Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
+  end else if TObject(Item.Data) is TExternalPostProcess then
+  begin
+    FTemporaryPostProcesses.Find(TExternalPostProcess(Item.Data)).Active := Item.Checked;
   end;
 
   lstAddons.OnItemChecked := nil;
@@ -1661,8 +1737,7 @@ begin
   btnHelpPostProcess.Enabled := (Item <> nil) and Selected and (TPostProcessBase(Item.Data).Help <> '');
   btnRemove.Enabled := (Item <> nil) and Selected and (TPostProcessBase(Item.Data) is TExternalPostProcess);
 
-  btnMoveUp.Enabled := (lstPostProcess.Selected <> nil) and (not (lstPostProcess.Selected.Index = 0)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index - 1].GroupID <> lstPostProcess.Selected.GroupID));
-  btnMoveDown.Enabled := (lstPostProcess.Selected <> nil) and (not (lstPostProcess.Selected.Index = lstPostProcess.Items.Count - 1)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index + 1].GroupID <> lstPostProcess.Selected.GroupID));
+  UpdatePostProcessUpDown;
 
   chkOnlyIfCut.Checked := (Item <> nil) and Selected and TPostProcessBase(Item.Data).OnlyIfCut;
   chkOnlyIfCut.Enabled := (Item <> nil) and Selected;
@@ -1880,6 +1955,8 @@ begin
     FPageList.Add(TPage.Create('Advanced', pnlStreamsAdvanced, 'MISC', FPageList.Find(pnlStreams)));
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
+    if Length(FStreamSettings) = 1 then
+      FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
     FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
   end;
@@ -2109,6 +2186,12 @@ begin
     RemoveGray(txtTitlePattern);
 end;
 
+procedure TfrmSettings.UpdatePostProcessUpDown;
+begin
+  btnMoveUp.Enabled := (lstPostProcess.Selected <> nil) and (TObject(lstPostProcess.Selected.Data) is TExternalPostProcess) and (not (lstPostProcess.Selected.Index = 0)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index - 1].GroupID <> lstPostProcess.Selected.GroupID));
+  btnMoveDown.Enabled := (lstPostProcess.Selected <> nil) and (TObject(lstPostProcess.Selected.Data) is TExternalPostProcess) and (not (lstPostProcess.Selected.Index = lstPostProcess.Items.Count - 1)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index + 1].GroupID <> lstPostProcess.Selected.GroupID));
+end;
+
 procedure TfrmSettings.BlacklistTreeChange(Sender: TBaseVirtualTree;
   Node: PVirtualNode);
 begin
@@ -2171,6 +2254,7 @@ begin
           Item := lstPostProcess.Items.Insert(HighestGroupIndex(AddPostProcessorForm.Result) + 1);
           Item.Caption := ExtractFileName(dlgOpen.FileName);
           PostProcessor := TExternalPostProcess.Create(dlgOpen.FileName, '"%f"', True, False, GetNewID, 100000, AddPostProcessorForm.Result);
+          PostProcessor.IsNew := True;
           FTemporaryPostProcesses.Insert(HighestGroupIndex(AddPostProcessorForm.Result) + 1, PostProcessor);
           Item.GroupID := PostProcessor.GroupID;
           Item.Checked := PostProcessor.Active;
@@ -2239,6 +2323,26 @@ begin
     TPostProcessBase(lstPostProcess.Selected.Data).Configure(Self, 0, True);
 end;
 
+procedure TfrmSettings.btnConfigureEncoderClick(Sender: TObject);
+var
+  F: TfrmConfigureEncoder;
+  EncoderSettings: TEncoderSettings;
+begin
+  inherited;
+
+  if Length(FStreamSettings) = 0 then
+    EncoderSettings := AppGlobals.StreamSettings.EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex))
+  else
+    EncoderSettings := FStreamSettings[0].EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex));
+
+  F := TfrmConfigureEncoder.Create(Self, EncoderSettings);
+  try
+    F.ShowModal;
+  finally
+    F.Free;
+  end;
+end;
+
 procedure TfrmSettings.btnHelpClick(Sender: TObject);
 var
   Addon: TAddonBase;
@@ -2294,8 +2398,7 @@ begin
       Break;
     end;
 
-  btnMoveUp.Enabled := (lstPostProcess.Selected <> nil) and (not (lstPostProcess.Selected.Index = 0)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index - 1].GroupID <> lstPostProcess.Selected.GroupID));
-  btnMoveDown.Enabled := (lstPostProcess.Selected <> nil) and (not (lstPostProcess.Selected.Index = lstPostProcess.Items.Count - 1)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index + 1].GroupID <> lstPostProcess.Selected.GroupID));
+  UpdatePostProcessUpDown;
 end;
 
 procedure TfrmSettings.btnRemoveClick(Sender: TObject);
@@ -2304,7 +2407,9 @@ begin
   begin
     FTemporaryPostProcesses.Remove(TExternalPostProcess(lstPostProcess.Selected.Data));
     TExternalPostProcess(lstPostProcess.Selected.Data).Free;
-    lstPostProcess.Selected.Delete;
+    //lstPostProcess.Selected.Delete;
+
+    RebuildPostProcessingList;
   end;
 end;
 

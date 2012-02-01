@@ -34,7 +34,7 @@ uses
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   TypeDefs, ExtendedStream, SettingsStorage, ChartsTab, StatusBar,
-  SystemCritical, Intro, AddonManager;
+  SystemCritical, Intro, AddonManager, AudioFunctions;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -266,7 +266,8 @@ type
     procedure CheckFilesTerminate(Sender: TObject);
     procedure RegisterHotkeys(Reg: Boolean);
     procedure ShowCommunityLogin;
-    procedure OpenCut(Filename: string);
+    procedure OpenCut(Filename: string); overload;
+    procedure OpenCut(Track: TTrackInfo); overload;
     procedure ProcessCommandLine(Data: string);
 
     procedure CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
@@ -293,7 +294,7 @@ type
     procedure tabSavedRefresh(Sender: TObject);
 
     procedure tabCutCutFile(Sender: TObject; Filename: string);
-    procedure tabCutSaved(Sender: TObject; Filesize, Length: UInt64);
+    procedure tabCutSaved(Sender: TObject; AudioInfo: TAudioFileInfo);
 
     procedure tabPlayStarted(Sender: TObject);
 
@@ -377,6 +378,8 @@ begin
     Sleep(100);
     Application.ProcessMessages;
   end;
+
+  tabSaved.StopThreads;
 
   FUpdater.Kill;
 
@@ -1129,6 +1132,22 @@ begin
   tabCut.CutView.OnCutFile := tabCutCutFile;
 end;
 
+procedure TfrmStreamWriterMain.OpenCut(Track: TTrackInfo);
+var
+  tabCut: TCutTab;
+begin
+  tabCut := TCutTab.Create(pagMain);
+  tabCut.PageControl := pagMain;
+  tabCut.OnSaved := tabCutSaved;
+  tabCut.OnPlayStarted := tabPlayStarted;
+
+  pagMain.ActivePage := tabCut;
+
+  tabCut.Setup(Track, imgImages);
+
+  tabCut.CutView.OnCutFile := tabCutCutFile;
+end;
+
 procedure TfrmStreamWriterMain.pagSidebarChange(Sender: TObject);
 begin
   // Damit Child-Controls passende Dimensionen in ShowInfo haben
@@ -1192,7 +1211,7 @@ begin
     SetLength(Args, Length(Args) + 1);
     Args[High(Args)] := Arg;
   end;
-               // TODO: SavedTab - externe files importieren?
+
   InPlay := False;
   InRecord := False;
   for i := 0 to High(Args) do
@@ -1534,7 +1553,7 @@ begin
   tabCut := TCutTab(pagMain.FindCut(Track.Filename));
   if tabCut = nil then
   begin
-    OpenCut(Track.Filename);
+    OpenCut(Track);
   end else
   begin
     pagMain.ActivePage := tabCut;
@@ -1734,19 +1753,23 @@ begin
 
 end;
 
-procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject; Filesize, Length: UInt64);
+procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject; AudioInfo: TAudioFileInfo);
 var
   i: Integer;
+  Info: TAudioFileInfo;
 begin
   for i := 0 to FDataLists.TrackList.Count - 1 do
     if LowerCase(FDataLists.TrackList[i].Filename) = LowerCase(TCutTab(Sender).Filename) then
     begin
-      FDataLists.TrackList[i].Filesize := Filesize;
-      FDataLists.TrackList[i].Length := Length;
+      FDataLists.TrackList[i].Filesize := AudioInfo.Filesize;
+      FDataLists.TrackList[i].Length := Trunc(AudioInfo.Length);
       FDataLists.TrackList[i].WasCut := True;
       FDataLists.TrackList[i].Time := Now;
 
       FDataLists.TrackList[i].Finalized := True;
+
+      FDataLists.TrackList[i].BitRate := AudioInfo.Bitrate;
+      FDataLists.TrackList[i].VBR := AudioInfo.VBR;
 
       tabSaved.Tree.UpdateTrack(FDataLists.TrackList[i]);
 

@@ -23,11 +23,6 @@ program streamwriter;
 
 uses
   MM in '..\..\common\MM.pas',
-  madExcept,
-  madLinkDisAsm,
-  madListHardware,
-  madListProcesses,
-  madListModules,
   Windows,
   SysUtils,
   Forms,
@@ -126,7 +121,8 @@ uses
   AddonMP4Box in 'addon\AddonMP4Box.pas',
   AddonOGGEnc in 'addon\AddonOGGEnc.pas',
   AddonSoX in 'addon\AddonSoX.pas',
-  AudioFunctions in 'audio\AudioFunctions.pas';
+  AudioFunctions in 'audio\AudioFunctions.pas',
+  ConfigureEncoder in 'ConfigureEncoder.pas' {frmConfigureEncoder};
 
 {$SetPEOptFlags $0140}
 
