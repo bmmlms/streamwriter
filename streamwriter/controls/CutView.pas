@@ -1469,17 +1469,6 @@ procedure TCutPaintBox.BuildDrawBuffer;
 
     FDrawBuf.Canvas.Brush.Color := clBlack;
   end;
-  function BuildTime(T: Double): string;
-  var
-    Min, Sec, MSec: Word;
-  begin
-    Min := Trunc(T / 60);
-    T := T - Trunc(T / 60) * 60;
-    Sec := Trunc(T);
-    T := T - Trunc(T);
-    MSec := (Trunc(T * 1000) div 10) * 10;
-    Result := Format('%0.2d:%0.2d.%0.3d', [Min, Sec, MSec]) + ' ' + _('minutes');
-  end;
   procedure DrawLineText(ArrayIdx, X: Cardinal);
   var
     L: Integer;
@@ -1487,7 +1476,7 @@ procedure TCutPaintBox.BuildDrawBuffer;
     SecText: string;
   begin
     L := Trunc(((ArrayIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FDrawBuf.Width);
-    SecText := BuildTime(FCutView.FWaveData.WaveArray[ArrayIdx].Sec);
+    SecText := BuildTime(FCutView.FWaveData.WaveArray[ArrayIdx].Sec, True);
     FDrawBuf.Canvas.Font.Color := clWhite;
     SetBkMode(FDrawBuf.Canvas.Handle, TRANSPARENT);
     TS := GetTextSize(SecText, Canvas.Font);
@@ -1517,7 +1506,7 @@ begin
 
     FDrawBuf.Canvas.Font.Color := clWhite;
 
-    FDrawBuf.Canvas.TextOut(4, 4, BuildTime(FCutView.FWaveData.Secs) + ' - ' + RemoveFileExt(ExtractFileName(FCutView.FOriginalFilename)));
+    FDrawBuf.Canvas.TextOut(4, 4, BuildTime(FCutView.FWaveData.Secs, True) + ' - ' + RemoveFileExt(ExtractFileName(FCutView.FOriginalFilename)));
   end;
 end;
 

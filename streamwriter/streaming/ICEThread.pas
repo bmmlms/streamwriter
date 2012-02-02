@@ -53,10 +53,13 @@ type
     FOnTitleAllowed: TSocketEvent;
     FOnRefreshInfo: TSocketEvent;
     FOnRecordingStopped: TSocketEvent;
+    FOnPlaybackStarted: TSocketEvent;
 
     FTypedStream: TICEStream;
     FPlayBufferLock: TCriticalSection;
     FPlayBuffer: TAudioStreamMemory;
+
+    FPlaybackStarted: Boolean;
 
     function FGetPaused: Boolean;
 
@@ -118,6 +121,7 @@ type
     property OnTitleAllowed: TSocketEvent read FOnTitleAllowed write FOnTitleAllowed;
     property OnRefreshInfo: TSocketEvent read FOnRefreshInfo write FOnRefreshInfo;
     property OnRecordingStopped: TSocketEvent read FOnRecordingStopped write FOnRecordingStopped;
+    property OnPlaybackStarted: TSocketEvent read FOnPlaybackStarted write FOnPlaybackStarted;
   end;
 
 implementation
@@ -165,6 +169,11 @@ begin
         P.DataEnd := FPlayBuffer.Size;
       FPlayBuffer.Seek(P.DataStart, soFromBeginning);
       try
+        if not FPlaybackStarted then
+        begin
+          FPlaybackStarted := True;
+          Sync(FOnPlaybackStarted);
+        end;
         FPlayer.PushData(Pointer(Integer(FPlayBuffer.Memory) + P.DataStart), FPlayBuffer.Size - P.DataStart);
       except
         // Unbekannte Daten (kein MP3/AAC) - ende.
@@ -248,6 +257,12 @@ begin
   if FPlaying then
   begin
     try
+      if not FPlaybackStarted then
+      begin
+        Sync(FOnPlaybackStarted);
+        FPlaybackStarted := True;
+      end;
+
       FPlayer.PushData(Buf, Len);
 
       if (not FPaused) and (FPlaying and (not FPlayer.Playing)) then

@@ -27,6 +27,8 @@ uses
   Windows, SysUtils;
 
 type
+  TStringEvent = procedure(Sender: TObject; Data: string) of object;
+
   TAudioFileInfo = record
     Length: Double;
     Bitrate: Integer;
@@ -51,6 +53,8 @@ type
   TVBRQualities = (vqHigh, vqMedium, vqLow);
   // Defines all possible types of lists
   TListType = (ltSave, ltIgnore);
+
+  TPlaylistTypes = (ptM3U, ptPLS);
 
 function FiletypeToFormat(Filename: string): TAudioTypes;
 function FormatToFiletype(Format: TAudioTypes): string;

@@ -62,6 +62,7 @@ type
     FOnClientICYReceived: TICYReceivedEvent;
     FOnClientTitleAllowed: TTitleAllowedEvent;
     FOnShowErrorMessage: TShowErrorMessageEvent;
+    FOnPlaybackStarted: TNotifyEvent;
 
     function FGetItem(Index: Integer): TICEClient;
     function FGetCount: Integer;
@@ -77,6 +78,7 @@ type
     procedure ClientICYReceived(Sender: TObject; Bytes: Integer);
     procedure ClientURLsReceived(Sender: TObject);
     procedure ClientTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer);
+    procedure ClientPlaybackStarted(Sender: TObject);
 
     procedure ClientPlay(Sender: TObject);
     procedure ClientPause(Sender: TObject);
@@ -118,6 +120,7 @@ type
     property OnClientICYReceived: TICYReceivedEvent read FOnClientICYReceived write FOnClientICYReceived;
     property OnClientTitleAllowed: TTitleAllowedEvent read FOnClientTitleAllowed write FOnClientTitleAllowed;
     property OnShowErrorMessage: TShowErrorMessageEvent read FOnShowErrorMessage write FOnShowErrorMessage;
+    property OnPlaybackStarted: TNotifyEvent read FOnPlaybackStarted write FOnPlaybackStarted;
   end;
 
 implementation
@@ -219,6 +222,7 @@ begin
   Client.OnICYReceived := ClientICYReceived;
   Client.OnURLsReceived := ClientURLsReceived;
   Client.OnTitleAllowed := ClientTitleAllowed;
+  Client.OnPlaybackStarted := ClientPlaybackStarted;
   Client.OnPlay := ClientPlay;
   Client.OnPause := ClientPause;
   Client.OnStop := ClientStop;
@@ -548,6 +552,12 @@ procedure TClientManager.ClientPlay(Sender: TObject);
 begin
   if Assigned(FOnClientRefresh) then
     FOnClientRefresh(Sender);
+end;
+
+procedure TClientManager.ClientPlaybackStarted(Sender: TObject);
+begin
+  if Assigned(FOnPlaybackStarted) then
+    FOnPlaybackStarted(Sender);
 end;
 
 { TClientEnum }

@@ -1286,6 +1286,7 @@ begin
   begin
     if (HeaderRemoved) and (Size > 8192) then
     begin
+      // TODO: Muss ich das wirklich IMMER ausführen? evtl besser alle xxx empfangenen bytes ausführen.
       GetSettings;
 
       if FRecordingStarted and (not FRecording) then

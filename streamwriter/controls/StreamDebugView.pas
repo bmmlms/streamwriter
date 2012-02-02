@@ -196,11 +196,14 @@ begin
     Node := GetFirst;
     while Node <> nil do
     begin
-      if GetNodeLevel(Node) = 1 then
-        s := s + '    ' + StringReplace(FClient.DebugLog[Node.Parent.Index].Data, #13#10, #13#10'    ', [rfReplaceAll])
-      else
-        s := s + TimeToStr(FClient.DebugLog[Node.Index].Time) + ' - ' + FClient.DebugLog[Node.Index].Text;
-      s := s + #13#10;
+      if Selected[Node] or (SelectedCount = 0) then
+      begin
+        if GetNodeLevel(Node) = 1 then
+          s := s + '    ' + StringReplace(FClient.DebugLog[Node.Parent.Index].Data, #13#10, #13#10'    ', [rfReplaceAll])
+        else
+          s := s + TimeToStr(FClient.DebugLog[Node.Index].Time) + ' - ' + FClient.DebugLog[Node.Index].Text;
+        s := s + #13#10;
+      end;
       Node := GetNext(Node);
     end;
 
@@ -216,7 +219,7 @@ begin
   NodeDataSize := SizeOf(Integer);
   TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toVariableNodeHeight];
   TreeOptions.PaintOptions := TreeOptions.PaintOptions - [toShowTreeLines] + [toHideFocusRect];
-  TreeOptions.SelectionOptions := TreeOptions.SelectionOptions + [toFullRowSelect];
+  TreeOptions.SelectionOptions := TreeOptions.SelectionOptions + [toFullRowSelect, toMultiSelect];
   ScrollBarOptions.ScrollBars := ssVertical;
 
   Indent := 0;

@@ -39,7 +39,8 @@ type
   end;
   PSavedNodeData = ^TSavedNodeData;
 
-  TTrackActions = (taUndefined, taRefresh, taCut, taEditTags, taFinalized, taRemove, taRecycle, taDelete, taShowFile, taProperties, taImport);
+  TTrackActions = (taUndefined, taRefresh, taCut, taEditTags, taFinalized, taAddToWishlist, taRemove,
+                   taRecycle, taDelete, taShowFile, taProperties, taImport);
 
   TTrackInfoArray = array of TTrackInfo;
 
@@ -72,6 +73,7 @@ type
     FItemCut: TMenuItem;
     FItemEditTags: TMenuItem;
     FItemFinalized: TMenuItem;
+    FItemAddToWishlist: TMenuItem;
     FItemRename: TMenuItem;
     FItemRemove: TMenuItem;
     FItemRecycle: TMenuItem;
@@ -92,6 +94,7 @@ type
     property ItemCut: TMenuItem read FItemCut;
     property ItemEditTags: TMenuItem read FItemEditTags;
     property ItemFinalized: TMenuItem read FItemFinalized;
+    property ItemAddToWishlist: TMenuItem read FItemAddToWishlist;
     property ItemRename: TMenuItem read FItemRename;
     property ItemRemove: TMenuItem read FItemRemove;
     property ItemRecycle: TMenuItem read FItemRecycle;
@@ -112,6 +115,7 @@ type
     FCut: TToolButton;
     FEditTags: TToolButton;
     FFinalized: TToolButton;
+    FAddToWishlist: TToolButton;
     FSep3: TToolButton;
     FRename: TToolButton;
     FRemove: TToolButton;
@@ -177,6 +181,7 @@ type
     FOnTrackRemoved: TTrackEvent;
     FOnRefresh: TNotifyEvent;
     FOnPlayStarted: TNotifyEvent;
+    FOnAddTitleToWishlist: TStringEvent;
 
     procedure BuildTree;
     procedure SavedTreeAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
@@ -210,6 +215,7 @@ type
     property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
     property OnRefresh: TNotifyEvent read FOnRefresh write FOnRefresh;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
+    property OnAddTitleToWishlist: TStringEvent read FOnAddTitleToWishlist write FOnAddTitleToWishlist;
   end;
 
   TSavedTree = class(TVirtualStringTree)
@@ -348,6 +354,11 @@ begin
   FItemFinalized.ImageIndex := 58;
   Items.Add(FItemFinalized);
 
+  FItemAddToWishlist := CreateMenuItem;
+  FItemAddToWishlist.Caption := 'Add to &wishlist';
+  FItemAddToWishlist.ImageIndex := 11;
+  Items.Add(FItemAddToWishlist);
+
   ItemTmp := CreateMenuItem;
   ItemTmp.Caption := '-';
   Items.Add(ItemTmp);
@@ -404,6 +415,7 @@ begin
   FItemCut.Enabled := Enable;
   FItemEditTags.Enabled := Enable;
   FItemFinalized.Enabled := Enable;
+  FItemAddToWishlist.Enabled := Enable;
   FItemRename.Enabled := Enable;
   FItemRemove.Enabled := Enable;
   FItemRecycle.Enabled := Enable;
@@ -430,6 +442,7 @@ begin
   FCut.Enabled := Enable;
   FEditTags.Enabled := Enable;
   FFinalized.Enabled := Enable;
+  FAddToWishlist.Enabled := Enable;
   FRemove.Enabled := Enable;
   FRecycle.Enabled := Enable;
   FDelete.Enabled := Enable;
@@ -488,6 +501,11 @@ begin
   FSep3.Parent := Self;
   FSep3.Style := tbsSeparator;
   FSep3.Width := 8;
+
+  FAddToWishlist := TToolButton.Create(Self);
+  FAddToWishlist.Parent := Self;
+  FAddToWishlist.Hint := 'Add to wishlist';
+  FAddToWishlist.ImageIndex := 11;
 
   FFinalized := TToolButton.Create(Self);
   FFinalized.Parent := Self;
@@ -614,6 +632,7 @@ begin
 end;
 
 procedure TSavedTab.PositionTimer(Sender: TObject);
+{
   function BuildTime(T: Double): string;
   var
     Min, Sec: Word;
@@ -623,6 +642,7 @@ procedure TSavedTab.PositionTimer(Sender: TObject);
     Sec := Trunc(T);
     Result := Format('%0.2d:%0.2d', [Min, Sec]);
   end;
+}
 begin
   if FSavedTree.Player.Playing or FSavedTree.Player.Paused then
   begin
@@ -632,7 +652,7 @@ begin
     // kann, die dank des Timers jede Sekunde ein paar MsgBox() macht, deshalb so komisch hier.
     try
       FSeek.Position := Tree.Player.PositionByte;
-      FPosLabel.Caption := BuildTime(Tree.Player.PositionTime);
+      FPosLabel.Caption := BuildTime(Tree.Player.PositionTime, False);
     except
       FPosLabel.Caption := '';
     end;
@@ -716,6 +736,11 @@ begin
           end;
         for i := 0 to Length(Tracks) - 1 do
           Tracks[i].Finalized := not AllFinalized;
+      end;
+    taAddToWishlist:
+      begin
+        for i := 0 to Length(Tracks) do
+          FOnAddTitleToWishlist(Self, ExtractFileName(RemoveFileExt(Tracks[i].Filename)));
       end;
     taRemove:
       begin
@@ -832,6 +857,8 @@ begin
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemEditTags);
   if Sender = FToolbar.FFinalized then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemFinalized);
+  if Sender = FToolbar.FAddToWishlist then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemAddToWishlist);
   if Sender = FToolbar.FRename then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemRename);
   if Sender = FToolbar.FRemove then
@@ -1036,6 +1063,7 @@ begin
   FToolBar.FCut.OnClick := ToolBarClick;
   FToolBar.FEditTags.OnClick := ToolBarClick;
   FToolBar.FFinalized.OnClick := ToolBarClick;
+  FToolBar.FAddToWishlist.OnClick := ToolBarClick;
   FToolBar.FRename.OnClick := ToolBarClick;
   FToolBar.FRemove.OnClick := ToolBarClick;
   FToolBar.FRecycle.OnClick := ToolBarClick;
@@ -1100,6 +1128,7 @@ begin
   FPopupMenu.ItemCut.OnClick := PopupMenuClick;
   FPopupMenu.ItemEditTags.OnClick := PopupMenuClick;
   FPopupMenu.ItemFinalized.OnClick := PopupMenuClick;
+  FPopupMenu.ItemAddToWishlist.OnClick := PopupMenuClick;
   FPopupMenu.ItemRename.OnClick := PopupMenuClick;
   FPopupMenu.ItemRemove.OnClick := PopupMenuClick;
   FPopupMenu.ItemRecycle.OnClick := PopupMenuClick;
@@ -1386,9 +1415,6 @@ begin
   Action := taUndefined;
   Tracks := GetSelected;
 
-  if Sender = FPopupMenu.ItemRefresh then
-    Exit;
-
   if Sender = FPopupMenu.ItemPause then
   begin
     if FPlayer.Paused then
@@ -1408,10 +1434,12 @@ begin
     Exit;
   end;
 
-  if (Length(Tracks) = 0) and (Sender <> FPopupMenu.ItemImport) then
+  if (Length(Tracks) = 0) and (Sender <> FPopupMenu.ItemImport) and (Sender <> FPopupMenu.ItemRefresh) then
     Exit;
 
-  if Sender = FPopupMenu.ItemPlay then
+  if Sender = FPopupMenu.ItemRefresh then
+    Action := taRefresh
+  else if Sender = FPopupMenu.ItemPlay then
   begin
     try
       FPlayer.Volume := Players.Volume;
@@ -1443,6 +1471,8 @@ begin
     Action := taEditTags;
   end else if Sender = FPopupMenu.ItemFinalized then
     Action := taFinalized
+  else if Sender = FPopupMenu.ItemAddToWishlist then
+    Action := taAddToWishlist
   else if Sender = FPopupMenu.ItemRename then
     EditNode(GetNode(Tracks[0]), 0)
   else if Sender = FPopupMenu.ItemRemove then
@@ -1607,6 +1637,7 @@ end;
 
 procedure TSavedTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
   TextType: TVSTTextType; var Text: UnicodeString);
+{
   function BuildTime(T: UInt64): string;
   var
     Min, Sec: Word;
@@ -1616,6 +1647,7 @@ procedure TSavedTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
     Sec := T;
     Result := Format('%0.2d:%0.2d', [Min, Sec]);
   end;
+}
 var
   NodeData: PSavedNodeData;
 begin
@@ -1637,7 +1669,7 @@ begin
         2:
           Text := MakeSize(NodeData.Track.Filesize);
         3:
-          Text := BuildTime(NodeData.Track.Length);
+          Text := BuildTime(NodeData.Track.Length, False);
         4:
           if NodeData.Track.BitRate > 0 then
           begin

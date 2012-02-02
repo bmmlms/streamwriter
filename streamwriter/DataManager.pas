@@ -1325,13 +1325,20 @@ end;
 
 function TStreamList.Add(Entry: TStreamEntry): TStreamEntry;
 begin
-  Result := Get(Entry.Name, Entry.StartURL, Entry.URLs);
+  // Der Name ist hier leer, da es Streams mit selben Namen
+  // aber anderen URLs gibt (z.B. "Die Neue 107.7")...
+
+  // Ausserdem glaube ich, dass das hier über ist. Doppelte Streams
+  // lassen sich nämlich nicht der Liste hinzufügen, deshalb
+  // dürfte das heir nichts bringen...
+  {
+  Result := Get('', Entry.StartURL, Entry.URLs);
 
   if Result <> nil then
   begin
     Exit;
   end;
-
+  }
   Result := Entry;
   inherited Add(Result);
 end;

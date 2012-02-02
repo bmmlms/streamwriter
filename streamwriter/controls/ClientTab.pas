@@ -29,7 +29,7 @@ uses
   GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs,
   Graphics, SharedControls, Generics.Collections, Generics.Defaults,
   Logging, DynBass, StreamData, Forms, MsgDlg, TypeDefs, MessageBus,
-  AppMessages, PlayerManager;
+  AppMessages, PlayerManager, PlaylistHandler, AudioFunctions;
 
 type
   TSidebar = class(TPageControl)
@@ -82,6 +82,7 @@ type
   TClientTab = class(TMainTabSheet)
   private
     FToolbarPanel: TPanel;
+    FTimeLabel: TLabel;
     FVolume: TVolumePanel;
     FToolbar: TToolBar;
     FAddressBar: TClientAddressBar;
@@ -95,6 +96,9 @@ type
 
     FReceived: UInt64;
     FRefreshInfo: Boolean;
+
+    FPlaybackSeconds: Cardinal;
+    FPlaybackTimer: TTimer;
 
     FActionRename: TAction;
     FActionRemove: TAction;
@@ -151,6 +155,8 @@ type
     procedure ClientManagerTitleAllowed(Sender: TObject; Title: string;
       var Allowed: Boolean; var Match: string; var Filter: Integer);
     procedure ClientManagerShowErrorMessage(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
+    procedure ClientManagerPlaybackStarted(Sender: TObject);
+    procedure ClientManagerPlaybackStopped(Sender: TObject);
 
     procedure FClientViewChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure FClientViewDblClick(Sender: TObject);
@@ -169,6 +175,10 @@ type
     procedure DebugClear(Sender: TObject);
 
     procedure MessageReceived(Msg: TMessageBase);
+
+    procedure PlaybackTimerTimer(Sender: TObject);
+  protected
+    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -652,6 +662,11 @@ begin
 
   ShowCloseButton := False;
   ImageIndex := 16;
+
+  FPlaybackTimer := TTimer.Create(Self);
+  FPlaybackTimer.Interval := 1000;
+  FPlaybackTimer.Enabled := False;
+  FPlaybackTimer.OnTimer := PlaybackTimerTimer;
 end;
 
 procedure TClientTab.AddressBarStart(Sender: TObject);
@@ -685,6 +700,8 @@ end;
 destructor TClientTab.Destroy;
 begin
   MsgBus.RemoveSubscriber(MessageReceived);
+
+  FreeAndNil(FPlaybackTimer);
 
   inherited;
 end;
@@ -721,6 +738,7 @@ begin
   FClients.OnClientICYReceived := ClientManagerICYReceived;
   FClients.OnClientTitleAllowed := ClientManagerTitleAllowed;
   FClients.OnShowErrorMessage := ClientManagerShowErrorMessage;
+  FClients.OnPlaybackStarted := ClientManagerPlaybackStarted;
 
   FStreams := Streams;
 
@@ -745,7 +763,7 @@ begin
   FToolbar.Align := alLeft;
   FToolbar.Indent := 0;
   FToolbar.Top := 0;
-  FToolbar.Width := FToolbarPanel.ClientWidth - 130;
+  FToolbar.Width := FToolbarPanel.ClientWidth - 250;
   FToolbar.Height := 25;
   FToolbar.Parent := FToolbarPanel;
 
@@ -755,6 +773,13 @@ begin
   FVolume.Setup;
   FVolume.Width := 140;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
+
+  FTimeLabel := TLabel.Create(Self);
+  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
+  FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
+  FTimeLabel.Anchors := [akRight, akTop];
+  FTimeLabel.Alignment := taCenter;
+  FTimeLabel.Parent := FToolbarPanel;
 
   FActionPlay := GetAction('actPlay');
   FActionPause := GetAction('actPause');
@@ -907,6 +932,22 @@ begin
   FRefreshInfo := True;
 end;
 
+procedure TClientTab.ClientManagerPlaybackStarted(Sender: TObject);
+begin
+  FPlaybackSeconds := 0;
+  if FPlaybackTimer <> nil then
+  begin
+    FPlaybackTimer.Enabled := False;
+    FPlaybackTimer.Enabled := True;
+  end;
+end;
+
+procedure TClientTab.ClientManagerPlaybackStopped(Sender: TObject);
+begin
+  FPlaybackTimer.Enabled := False;
+  FTimeLabel.Caption := '';
+end;
+
 procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string;
   var Allowed: Boolean; var Match: string; var Filter: Integer);
   function ContainsTitle(List: TTitleList; Title: string; var Match: string): Boolean;
@@ -986,8 +1027,29 @@ begin
 end;
 
 procedure TClientTab.ClientManagerRefresh(Sender: TObject);
+var
+  i: Integer;
+  OnePlaying: Boolean;
 begin
   FClientView.RefreshClient(Sender as TICEClient);
+
+  OnePlaying := False;
+  for i := 0 to FClients.Count - 1 do
+  begin
+    if FClients[i].Playing then
+    begin
+      OnePlaying := True;
+      Break;
+    end;
+  end;
+  if OnePlaying then
+  begin
+    FPlaybackTimer.Enabled := True;
+  end else
+  begin
+    FPlaybackTimer.Enabled := False;
+    FTimeLabel.Caption := '';
+  end;
 
   if Assigned(FOnUpdateButtons) then
     FOnUpdateButtons(Sender);
@@ -1178,6 +1240,26 @@ begin
   end;
 end;
 
+procedure TClientTab.PlaybackTimerTimer(Sender: TObject);
+begin
+  Inc(FPlaybackSeconds);
+
+  FTimeLabel.Caption := BuildTime(FPlaybackSeconds, False);
+  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx - 8;
+end;
+
+procedure TClientTab.Resize;
+begin
+  inherited;
+
+{
+  if FToolbarPanel <> nil then
+    FToolbarPanel.Width := FToolbar.Width + 10;
+  if FTimeLabel <> nil then
+    FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx - 8;
+}
+end;
+
 procedure TClientTab.FClientViewKeyPress(Sender: TObject;
   var Key: Char);
 begin
@@ -1273,15 +1355,31 @@ function TClientTab.StartStreaming(ID, Bitrate: Cardinal; Name, URL, TitlePatter
       FOnPlayStarted(Self);
   end;
 var
+  i: Integer;
   Client: TICEClient;
   Node: PVirtualNode;
   Res: TMayConnectResults;
+  PH: TPlaylistHandler;
 begin
   Result := True;
 
   URL := Trim(URL);
   if URL <> '' then
   begin
+    // Falls eine Datei gemeint ist...
+    if FileExists(URL) then
+    begin
+      PH := TPlaylistHandler.Create;
+      try
+        PH.ParsePlaylist(URL);
+        for i := 0 to PH.URLs.Count - 1 do
+          StartStreaming(ID, Bitrate, Name, PH.URLs[i], TitlePattern, IgnoreTitles, StartPlay, HitNode, Mode);
+      finally
+        PH.Free;
+      end;
+      Exit;
+    end;
+
     // Ist der Client schon in der Liste?
     Client := FClients.GetClient(ID, '', URL, '', nil);
     if (Client <> nil) and (not Client.AutoRemove) then

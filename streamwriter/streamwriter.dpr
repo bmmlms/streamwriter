@@ -22,6 +22,11 @@ program streamwriter;
 {$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
 
 uses
+  madExcept,
+  madLinkDisAsm,
+  madListHardware,
+  madListProcesses,
+  madListModules,
   MM in '..\..\common\MM.pas',
   Windows,
   SysUtils,
@@ -122,7 +127,8 @@ uses
   AddonOGGEnc in 'addon\AddonOGGEnc.pas',
   AddonSoX in 'addon\AddonSoX.pas',
   AudioFunctions in 'audio\AudioFunctions.pas',
-  ConfigureEncoder in 'ConfigureEncoder.pas' {frmConfigureEncoder};
+  ConfigureEncoder in 'ConfigureEncoder.pas' {frmConfigureEncoder},
+  PlaylistHandler in 'audio\PlaylistHandler.pas';
 
 {$SetPEOptFlags $0140}
 

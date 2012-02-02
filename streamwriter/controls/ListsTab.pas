@@ -98,6 +98,7 @@ type
   protected
     procedure Resize; override;
   public
+    function AddEntry(Text: string; ShowMessages: Boolean): Boolean;
     procedure ClientAdded(Client: TICEClient);
     procedure ClientRemoved(Client: TICEClient);
     procedure Setup(Clients: TClientManager; Lists: TDataLists; T: TListType; Images: TImageList; Title: string);
@@ -120,6 +121,8 @@ type
     procedure RemoveClient(Client: TICEClient);
 
     procedure UpdateLists;
+
+    property WishPanel: TTitlePanel read FWishPanel;
   end;
 
   TTitleTree = class(TVirtualStringTree)
@@ -246,61 +249,9 @@ end;
 { TTitlePanel }
 
 procedure TTitlePanel.AddClick(Sender: TObject);
-var
-  i, NumChars: Integer;
-  Pattern: string;
-  Node: PVirtualNode;
-  NodeData: PTitleNodeData;
-  Title: TTitleInfo;
-  Hash: Cardinal;
-  List: TTitleList;
 begin
-  if Trim(FAddEdit.Text) <> '' then
-  begin
-    Pattern := BuildPattern(FAddEdit.Text, Hash, NumChars, False);
-
-    List := nil;
-    if FListType = ltSave then
-    begin
-      if FAddCombo.Items.Objects[FAddCombo.ItemIndex] <> nil then
-        List := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]).Entry.SaveList;
-    end else
-    begin
-      if FAddCombo.Items.Objects[FAddCombo.ItemIndex] <> nil then
-        List := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]).Entry.IgnoreList;
-    end;
-
-    if List = nil then
-      List := FList;
-
-    if NumChars <= 3 then
-    begin
-      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('A short pattern may produce many matches, i.e. using ''a'' records/ignores every song containing an ''a''.'), 6, btOK);
-    end;
-
-    for i := 0 to List.Count - 1 do
-      if List[i].Hash = Hash then
-      begin
-        MsgBox(GetParentForm(Self).Handle, Format(_('The list already contains an entry matching the pattern "%s".'), [Pattern]), _('Info'), MB_ICONINFORMATION);
-        Exit;
-      end;
-
-    Node := FTree.AddChild(FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex])));
-    NodeData := FTree.GetNodeData(Node);
-    Title := TTitleInfo.Create(Trim(FAddEdit.Text));
-    NodeData.Title := Title;
-    NodeData.Stream := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]);
-    List.Add(Title);
+  if AddEntry(FAddEdit.Text, True) then
     FAddEdit.Text := '';
-
-    if Node.Parent.ChildCount = 1 then
-      FTree.Expanded[Node.Parent] := True;
-
-    //FTree.SortItems;
-
-    HomeComm.SetTitleNotifications((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
-  end else
-    MsgBox(GetParentForm(Self).Handle, _('Please enter a pattern to add to list.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TTitlePanel.RemoveClick(Sender: TObject);
@@ -785,6 +736,67 @@ begin
     FToolbar.FAdd.Click;
     Key := #0;
   end;
+end;
+
+function TTitlePanel.AddEntry(Text: string; ShowMessages: Boolean): Boolean;
+var
+  i, NumChars: Integer;
+  Pattern: string;
+  Node: PVirtualNode;
+  NodeData: PTitleNodeData;
+  Title: TTitleInfo;
+  Hash: Cardinal;
+  List: TTitleList;
+begin
+  Result := False;
+
+  if Trim(Text) <> '' then
+  begin
+    Pattern := BuildPattern(Trim(Text), Hash, NumChars, False);
+
+    List := nil;
+    if FListType = ltSave then
+    begin
+      if FAddCombo.Items.Objects[FAddCombo.ItemIndex] <> nil then
+        List := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]).Entry.SaveList;
+    end else
+    begin
+      if FAddCombo.Items.Objects[FAddCombo.ItemIndex] <> nil then
+        List := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]).Entry.IgnoreList;
+    end;
+
+    if List = nil then
+      List := FList;
+
+    if (NumChars <= 3) and ShowMessages then
+    begin
+      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('A short pattern may produce many matches, i.e. using ''a'' records/ignores every song containing an ''a''.'), 6, btOK);
+    end;
+
+    for i := 0 to List.Count - 1 do
+      if List[i].Hash = Hash then
+      begin
+        if ShowMessages then
+          MsgBox(GetParentForm(Self).Handle, Format(_('The list already contains an entry matching the pattern "%s".'), [Pattern]), _('Info'), MB_ICONINFORMATION);
+        Exit;
+      end;
+
+    Node := FTree.AddChild(FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex])));
+    NodeData := FTree.GetNodeData(Node);
+    Title := TTitleInfo.Create(Trim(Text));
+    NodeData.Title := Title;
+    NodeData.Stream := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]);
+    List.Add(Title);
+
+    if Node.Parent.ChildCount = 1 then
+      FTree.Expanded[Node.Parent] := True;
+
+    HomeComm.SetTitleNotifications((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+
+    Result := True;
+  end else
+    if ShowMessages then
+      MsgBox(GetParentForm(Self).Handle, _('Please enter a pattern to add to list.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree;

@@ -292,6 +292,7 @@ type
     procedure tabSavedCut(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedRefresh(Sender: TObject);
+    procedure tabSavedAddTitleToWishlist(Sender: TObject; Data: string);
 
     procedure tabCutCutFile(Sender: TObject; Filename: string);
     procedure tabCutSaved(Sender: TObject; AudioInfo: TAudioFileInfo);
@@ -770,6 +771,7 @@ begin
   tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
   tabSaved.OnRefresh := tabSavedRefresh;
   tabSaved.OnPlayStarted := tabPlayStarted;
+  tabSaved.OnAddTitleToWishlist := tabSavedAddTitleToWishlist;
 
   FWasActivated := False;
   FWasShown := False;
@@ -1533,6 +1535,12 @@ begin
   tabLists.RemoveClient(Client);
 end;
 
+procedure TfrmStreamWriterMain.tabSavedAddTitleToWishlist(Sender: TObject;
+  Data: string);
+begin
+  tabLists.WishPanel.AddEntry(Data, False);
+end;
+
 procedure TfrmStreamWriterMain.tabSavedCut(Entry: TStreamEntry;
   Track: TTrackInfo);
 var
@@ -1764,8 +1772,6 @@ begin
       FDataLists.TrackList[i].Filesize := AudioInfo.Filesize;
       FDataLists.TrackList[i].Length := Trunc(AudioInfo.Length);
       FDataLists.TrackList[i].WasCut := True;
-      FDataLists.TrackList[i].Time := Now;
-
       FDataLists.TrackList[i].Finalized := True;
 
       FDataLists.TrackList[i].BitRate := AudioInfo.Bitrate;

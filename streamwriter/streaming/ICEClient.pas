@@ -28,7 +28,7 @@ uses
   SysUtils, Windows, StrUtils, Classes, ICEThread, ICEStream, AppData,
   Generics.Collections, Functions, Sockets, LanguageObjects,
   DataManager, HomeCommunication, PlayerManager, Notifications,
-  Logging, TypeDefs;
+  Logging, PlaylistHandler, TypeDefs;
 
 type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
@@ -40,7 +40,6 @@ type
 
   TShowErrorMessageEvent = procedure(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean) of object;
   TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
-  TStringEvent = procedure(Sender: TObject; Data: string) of object;
   TSongSavedEvent = procedure(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
     Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean) of object;
   TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer) of object;
@@ -98,6 +97,7 @@ type
     FOnICYReceived: TIntegerEvent;
     FOnURLsReceived: TNotifyEvent;
     FOnTitleAllowed: TTitleAllowedEvent;
+    FOnPlaybackStarted: TNotifyEvent;
 
     FOnPlay: TNotifyEvent;
     FOnPause: TNotifyEvent;
@@ -125,6 +125,7 @@ type
     procedure ThreadTitleAllowed(Sender: TSocketThread);
     procedure ThreadRefreshInfo(Sender: TSocketThread);
     procedure ThreadRecordingStopped(Sender: TSocketThread);
+    procedure ThreadPlaybackStarted(Sender: TSocketThread);
     procedure ThreadBeforeEnded(Sender: TSocketThread);
     procedure ThreadTerminated(Sender: TObject);
   public
@@ -176,6 +177,7 @@ type
     property OnICYReceived: TIntegerEvent read FOnICYReceived write FOnICYReceived;
     property OnURLsReceived: TNotifyEvent read FOnURLsReceived write FOnURLsReceived;
     property OnTitleAllowed: TTitleAllowedEvent read FOnTitleAllowed write FOnTitleAllowed;
+    property OnPlaybackStarted: TNotifyEvent read FOnPlaybackStarted write FOnPlaybackStarted;
 
     property OnPlay: TNotifyEvent read FOnPlay write FOnPlay;
     property OnPause: TNotifyEvent read FOnPause write FOnPause;
@@ -384,6 +386,7 @@ begin
   FICEThread.OnTitleAllowed := ThreadTitleAllowed;
   FICEThread.OnRefreshInfo := ThreadRefreshInfo;
   FICEThread.OnRecordingStopped := ThreadRecordingStopped;
+  FICEThread.OnPlaybackStarted := ThreadPlaybackStarted;
 
   // Das muss hier so früh sein, wegen z.B. RetryDelay - das hat der Stream nämlich nicht,
   // wenn z.B. beim Verbinden was daneben geht.
@@ -563,6 +566,12 @@ procedure TICEClient.ThreadNeedSettings(Sender: TSocketThread);
 begin
   // Ignore list etc werden immer kopiert, das kann zeit kosten.
   FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FStopAfterSong, FRecordTitle);
+end;
+
+procedure TICEClient.ThreadPlaybackStarted(Sender: TSocketThread);
+begin
+  if Assigned(FOnPlaybackStarted) then
+    FOnPlaybackStarted(Self);
 end;
 
 procedure TICEClient.ThreadRecordingStopped(Sender: TSocketThread);
@@ -865,9 +874,13 @@ function TICEClient.ParsePlaylist: Boolean;
 var
   Offset, Offset2, Offset3: Integer;
   Line, Data: string;
-  URLs: TStringList;
+  PH: TPlaylistHandler;
 begin
-  URLs := TStringList.Create;
+  Result := False;
+
+  Data := string(FICEThread.RecvStream.RecvStream.ToString);
+
+  PH := TPlaylistHandler.Create;
   try
     Offset := 1;
     Data := string(FICEThread.RecvStream.RecvStream.ToString);
@@ -875,60 +888,21 @@ begin
        (Pos('audio/x-scpls', FICEThread.RecvStream.ContentType) > 0) or
        (Pos('application/pls+xml', FICEThread.RecvStream.ContentType) > 0) then // .pls
     begin
-      while True do
-      begin
-        Offset2 := PosEx(#10, Data, Offset);
-        if Offset2 > 0 then
-          Line := Trim(Copy(Data, Offset, Offset2 - Offset))
-        else
-          Line := Trim(Copy(Data, Offset, Length(Data)));
-
-        Offset := Offset2 + 1;
-
-        if Copy(LowerCase(Line), 1, 4) = 'file' then
-        begin
-          Offset3 := Pos('=', Line);
-          if Offset3 > 0 then
-          begin
-            Line := Trim(Copy(Line, Offset3 + 1, Length(Line) - Offset3));
-            if (Line <> '') then
-              ParseLine(Line, URLs);
-          end;
-        end;
-
-        if Offset2 = 0 then
-          Break;
-      end;
+      Result := PH.ParsePlaylist(Data, ptPLS);
     end else if (LowerCase(Copy(Data, 1, 7)) = '#extm3u') or
                 (Pos('audio/x-mpegurl', FICEThread.RecvStream.ContentType) > 0) or
                 (Pos('audio/mpegurl', FICEThread.RecvStream.ContentType) > 0) then // .m3u
     begin
-      while True do
-      begin
-        Offset2 := PosEx(#10, Data, Offset);
-        if Offset2 > 0 then
-          Line := Trim(Copy(Data, Offset, Offset2 - Offset))
-        else
-          Line := Trim(Copy(Data, Offset, Length(Data)));
-
-        Offset := Offset2 + 1;
-
-        if (Length(Line) >= 1) and (Line[1] <> '#') then
-          ParseLine(Line, URLs);
-
-        if Offset2 = 0 then
-          Break;
-      end;
+      Result := PH.ParsePlaylist(Data, ptM3U);
     end;
 
-    Result := URLs.Count > 0;
     if Result then
     begin
-      Entry.URLs.Assign(URLs);
+      Entry.URLs.Assign(PH.URLs);
       FURLsIndex := 0;
     end;
   finally
-    URLs.Free;
+    PH.Free;
   end;
 end;
 

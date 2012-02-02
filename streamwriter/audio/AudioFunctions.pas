@@ -8,6 +8,7 @@ uses
 function RoundBitrate(Bitrate: Cardinal): Cardinal;
 function GetFileInfo(Filename: string): TAudioFileInfo;
 function GuessVBRQuality(BitRate: Integer; AudioType: TAudioTypes): TVBRQualities;
+function BuildTime(T: Double; MSecs: Boolean): string;
 
 implementation
 
@@ -118,6 +119,21 @@ begin
         Result := vqLow;
     atAAC, atM4A: Result := vqMedium; // TODO: !!!
   end;
+end;
+
+function BuildTime(T: Double; MSecs: Boolean): string;
+var
+  Min, Sec, MSec: Word;
+begin
+  Min := Trunc(T / 60);
+  T := T - Trunc(T / 60) * 60;
+  Sec := Trunc(T);
+  T := T - Trunc(T);
+  MSec := (Trunc(T * 1000) div 10) * 10;
+  if MSecs then
+    Result := Format('%0.2d:%0.2d.%0.3d', [Min, Sec, MSec])
+  else
+    Result := Format('%0.2d:%0.2d', [Min, Sec])
 end;
 
 end.
