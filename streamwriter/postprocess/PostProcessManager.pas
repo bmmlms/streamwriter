@@ -98,7 +98,7 @@ var
 
     for i := 0 to Client.Entry.Settings.PostProcessors.Count - 1 do
       if (Client.Entry.Settings.PostProcessors[i].Active) and
-         ((Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data) and Client.Entry.Settings.PostProcessors[i].NeedsWave) or
+         ((Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data, nil) and Client.Entry.Settings.PostProcessors[i].NeedsWave) or
          ((Client.Entry.Settings.PostProcessors[i] is TExternalPostProcess) and (TExternalPostProcess(Client.Entry.Settings.PostProcessors[i]).GroupID = 0))) then
       begin
         Exit(True);
@@ -126,7 +126,7 @@ begin
 
   // Erst die mit GroupID 0 fitmachen (WAVE-Phase)
   for i := 0 to Client.Entry.Settings.PostProcessors.Count - 1 do
-    if Client.Entry.Settings.PostProcessors[i].Active and (Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data)) and (not Client.Entry.Settings.PostProcessors[i].Hidden) and
+    if Client.Entry.Settings.PostProcessors[i].Active and (Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data, Client.Entry.Settings.PostProcessors)) and (not Client.Entry.Settings.PostProcessors[i].Hidden) and
        (Client.Entry.Settings.PostProcessors[i].GroupID = 0) and ((Client.Entry.Settings.PostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not Client.Entry.Settings.PostProcessors[i].OnlyIfCut)) then
     begin
       Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[i].Copy);
@@ -139,9 +139,10 @@ begin
 
   // Jetzt GroupID 1 (Nach WAVE-Phase)
   for i := 0 to Client.Entry.Settings.PostProcessors.Count - 1 do
-    if Client.Entry.Settings.PostProcessors[i].Active and (Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data)) and (not Client.Entry.Settings.PostProcessors[i].Hidden) and
+    if Client.Entry.Settings.PostProcessors[i].Active and (Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data, Client.Entry.Settings.PostProcessors)) and (not Client.Entry.Settings.PostProcessors[i].Hidden) and
        (Client.Entry.Settings.PostProcessors[i].GroupID = 1) and ((Client.Entry.Settings.PostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not Client.Entry.Settings.PostProcessors[i].OnlyIfCut)) then
     begin
+      Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data, Entry.PostProcessList);
       Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[i].Copy);
     end;
 end;
@@ -167,7 +168,13 @@ begin
   if Entry.Data.ReEncodedFilename <> '' then
   begin
     DeleteFile(PChar(Entry.Data.Filename));
-    Entry.Data.Filename := RemoveFileExt(Entry.Data.Filename) + FormatToFiletype(TEncoderSettings(Entry.Data.EncoderSettings).AudioType);
+
+    if TEncoderSettings(Entry.Data.EncoderSettings).AudioType = atNone then
+      Output := ExtractFileExt(Entry.Data.Filename)
+     else
+      Output := FormatToFiletype(TEncoderSettings(Entry.Data.EncoderSettings).AudioType);
+
+    Entry.Data.Filename := RemoveFileExt(Entry.Data.Filename) + Output;
     MoveFileEx(PChar(Entry.Data.ReEncodedFilename), PChar(Entry.Data.Filename), MOVEFILE_REPLACE_EXISTING);
 
     Entry.Data.WorkFilename := '';
@@ -373,6 +380,7 @@ function TPostProcessManager.FindNextIdx(Entry: TProcessingEntry;
   Group: Integer): Integer;
 var
   i, NextIdx: Integer;
+  Output: string;
 begin
   Result := -1;
 
@@ -383,7 +391,7 @@ begin
 
   for i := NextIdx to Entry.PostProcessList.Count - 1 do
   begin
-    if Entry.PostProcessList[i].CanProcess(Entry.Data) and (Group = Entry.PostProcessList[i].GroupID) then
+    if Entry.PostProcessList[i].CanProcess(Entry.Data, Entry.PostProcessList) and (Group = Entry.PostProcessList[i].GroupID) then
     begin
       Entry.ActiveThread := Entry.PostProcessList[i].ProcessFile(Entry.Data);
       if Entry.ActiveThread <> nil then
@@ -398,7 +406,12 @@ begin
             TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.Filename, Entry.Data.WorkFilename, nil);
           end else if Entry.Data.ReEncodedFilename = '' then
           begin
-            Entry.Data.ReEncodedFilename := RemoveFileExt(Entry.Data.Filename) + '_temp' + FormatToFiletype(TEncoderSettings(Entry.Data.EncoderSettings).AudioType);
+            if TEncoderSettings(Entry.Data.EncoderSettings).AudioType = atNone then
+              Output := ExtractFileExt(Entry.Data.Filename)
+            else
+              Output := FormatToFiletype(TEncoderSettings(Entry.Data.EncoderSettings).AudioType);
+
+            Entry.Data.ReEncodedFilename := RemoveFileExt(Entry.Data.Filename) + '_temp' + Output;
             TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.WorkFilename, Entry.Data.ReEncodedFilename, Entry.Data.EncoderSettings);
           end;
         end;

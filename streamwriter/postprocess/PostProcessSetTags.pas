@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects, AudioGenie,
   AddonAudioGenie, Functions, Logging, ConfigureSetTags, TypeDefs,
-  ExtendedStream;
+  ExtendedStream, Generics.Collections;
 
 type
   TPostProcessSetTagsThread = class(TPostProcessThreadBase)
@@ -44,7 +44,7 @@ type
   public
     constructor Create;
 
-    function CanProcess(Data: PPostProcessInformation): Boolean; virtual;
+    function CanProcess(Data: PPostProcessInformation; ProcessingList: TList<TPostprocessBase>): Boolean; override;
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
@@ -140,9 +140,21 @@ begin
   FComment := TPostProcessSetTags(Source).FComment;
 end;
 
-function TPostProcessSetTags.CanProcess(Data: PPostProcessInformation): Boolean;
+function TPostProcessSetTags.CanProcess(Data: PPostProcessInformation; ProcessingList: TList<TPostProcessBase>): Boolean;
+var
+  i: Integer;
+  M4AActive: Boolean;
 begin
-  Result := (FiletypeToFormat(Data.Filename) <> atNone) and FGetDependenciesMet;
+  M4AActive := False;
+  if ProcessingList <> nil then
+    for i := 0 to ProcessingList.Count - 1 do
+      if (ProcessingList[i].PostProcessType = ptMP4Box) and (ProcessingList[i].Active) then
+      begin
+        M4AActive := True;
+        Break;
+      end;
+
+  Result := ((FiletypeToFormat(Data.Filename) in [atMPEG, atOGG, atM4A]) or (M4AActive)) and FGetDependenciesMet;
 end;
 
 function TPostProcessSetTags.Configure(AOwner: TComponent; Handle: Cardinal;

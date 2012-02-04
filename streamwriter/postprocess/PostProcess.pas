@@ -117,7 +117,7 @@ type
   public
     constructor Create;
 
-    function CanProcess(Data: PPostProcessInformation): Boolean; virtual;
+    function CanProcess(Data: PPostProcessInformation; ProcessingList: TList<TPostprocessBase>): Boolean; virtual;
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; virtual; abstract;
     function Copy: TPostProcessBase; virtual; abstract;
     procedure Assign(Source: TPostProcessBase); virtual;
@@ -419,7 +419,7 @@ begin
 
 end;
 
-function TPostProcessBase.CanProcess(Data: PPostProcessInformation): Boolean;
+function TPostProcessBase.CanProcess(Data: PPostProcessInformation; ProcessingList: TList<TPostprocessBase>): Boolean;
 begin
   Result := True;
 end;

@@ -24,7 +24,7 @@ type
     procedure FormCreate(Sender: TObject);
   private
   public
-  end;       // TODO: zu nem stream verbinden. und es klappt nicht (timeout) - die log message ist englisch....
+  end;
 
 implementation
 

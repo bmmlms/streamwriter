@@ -22,7 +22,7 @@ unit PostProcessSoX;
 interface
 
 uses
-  Windows, SysUtils, Classes, PostProcess, LanguageObjects,
+  Windows, SysUtils, Classes, PostProcess, LanguageObjects, Generics.Collections,
   Functions, Logging, Math, AddonBase, TypeDefs, ExtendedStream;
 
 type
@@ -51,7 +51,7 @@ type
     constructor Create;
     destructor Destroy; override;
     function ShowInitMessage(Handle: THandle): Boolean; override;
-    function CanProcess(Data: PPostProcessInformation): Boolean; override;
+    function CanProcess(Data: PPostProcessInformation; ProcessingList: TList<TPostprocessBase>): Boolean; override;
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
@@ -186,7 +186,7 @@ begin
   FSilenceEndLength := TPostProcessSoX(Source).FSilenceEndLength;
 end;
 
-function TPostProcessSoX.CanProcess(Data: PPostProcessInformation): Boolean;
+function TPostProcessSoX.CanProcess(Data: PPostProcessInformation; ProcessingList: TList<TPostprocessBase>): Boolean;
 var
   OutputFormat: TAudioTypes;
 begin
@@ -365,8 +365,8 @@ end;
 function TPostProcessSoX.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
   Result := nil;
-  if not CanProcess(Data) then
-    Exit;
+  //if not CanProcess(Data) then
+  //  Exit;
 
   Result := TPostProcessSoxThread.Create(Data, Self);
 end;

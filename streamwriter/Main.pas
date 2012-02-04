@@ -655,6 +655,7 @@ begin
   end;
 
   tmrAutoSave.Enabled := True;
+  tmrRecordings.Enabled := True;
 
   ProcessCommandLine(GetCommandLineW);
 

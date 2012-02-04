@@ -23,7 +23,8 @@ interface
 
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects, TypeDefs,
-  Functions, Logging, Math, ConfigureSetTags, AddonMP4Box, ExtendedStream;
+  Functions, Logging, Math, ConfigureSetTags, AddonMP4Box, ExtendedStream,
+  Generics.Collections;
 
 type
   TPostProcessMP4BoxThread = class(TPostProcessThreadBase)
@@ -42,7 +43,7 @@ type
     constructor Create;
     destructor Destroy; override;
     function ShowInitMessage(Handle: THandle): Boolean; override;
-    function CanProcess(Data: PPostProcessInformation): Boolean; override;
+    function CanProcess(Data: PPostProcessInformation; ProcessingList: TList<TPostprocessBase>): Boolean; override;
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
@@ -114,9 +115,15 @@ begin
 
 end;
 
-function TPostProcessMP4Box.CanProcess(Data: PPostProcessInformation): Boolean;
+function TPostProcessMP4Box.CanProcess(Data: PPostProcessInformation; ProcessingList: TList<TPostprocessBase>): Boolean;
+var
+  OutputFormat: TAudioTypes;
 begin
-  Result := (TEncoderSettings(Data.EncoderSettings).AudioType = atAAC) and FGetDependenciesMet;
+  OutputFormat := TEncoderSettings(Data.EncoderSettings).AudioType;
+  if OutputFormat = atNone then
+    OutputFormat := FiletypeToFormat(Data.Filename);
+
+  Result := (OutputFormat = atAAC) and FGetDependenciesMet;
 end;
 
 function TPostProcessMP4Box.Copy: TPostProcessBase;
@@ -204,8 +211,8 @@ end;
 function TPostProcessMP4Box.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
   Result := nil;
-  if not CanProcess(Data) then
-    Exit;
+  //if not CanProcess(Data) then
+  //  Exit;
 
   Result := TPostProcessMP4BoxThread.Create(Data, Self);
 end;

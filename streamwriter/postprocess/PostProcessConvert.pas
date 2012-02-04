@@ -218,8 +218,6 @@ end;
 function TPostProcessConvert.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
   Result := nil;
-  if not CanProcess(Data) then
-    Exit;
 
   Result := TPostProcessConvertThread.Create(Data, Self);
 end;

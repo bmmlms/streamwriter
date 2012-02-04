@@ -1629,17 +1629,6 @@ end;
 
 procedure TSavedTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
   TextType: TVSTTextType; var Text: UnicodeString);
-{
-  function BuildTime(T: UInt64): string;
-  var
-    Min, Sec: Word;
-  begin
-    Min := Trunc(T / 60);
-    T := T - Trunc(T / 60) * 60;
-    Sec := T;
-    Result := Format('%0.2d:%0.2d', [Min, Sec]);
-  end;
-}
 var
   NodeData: PSavedNodeData;
 begin
@@ -1655,7 +1644,7 @@ begin
     begin
       if Column = 1 then
         Text := _(STREAMNODETEXT);
-    end else         // TODO: Jedes menü checken, wegen den shortcuts auf deutsch!!!
+    end else
       case Column of
         1: Text := ExtractFileName(NodeData.Track.Filename);
         2:

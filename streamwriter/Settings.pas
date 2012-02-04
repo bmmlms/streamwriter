@@ -20,7 +20,7 @@
 unit Settings;
 
 interface
-                // TODO: Die Groups bei den postprocessors ändern ihre caption nicht. sind englisch. bleiben english.
+
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
@@ -1806,6 +1806,9 @@ begin
     TPostProcessBase(lstPostProcess.Items[i].Data).Initialize;
     lstPostProcess.Items[i].Caption := TPostProcessBase(lstPostProcess.Items[i].Data).Name;
   end;
+
+  lstPostProcess.Groups[0].Header := _('Processing when in WAVE-format');
+  lstPostProcess.Groups[1].Header := _('Processing after conversion to destination format');
 
   BuildHotkeys;
 

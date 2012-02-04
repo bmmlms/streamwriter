@@ -378,8 +378,8 @@ begin
   FPlaying := False;
   FPlayer.Stop;
 
-  if E.ClassType = ENoDataReceivedSentException then
-    WriteDebug(Format(_('No data received/sent for more than %d seconds'), [ENoDataReceivedSentException(E).Timeout]), '', 3, 0)
+  if E.ClassType = EExceptionParams then
+    WriteDebug(Format(_(E.Message), EExceptionParams(E).Args), '', 3, 0)
   else
     WriteDebug(Format(_('%s'), [_(E.Message)]), '', 3, 0);
 
