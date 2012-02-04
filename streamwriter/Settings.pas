@@ -20,7 +20,7 @@
 unit Settings;
 
 interface
-
+                // TODO: Die Groups bei den postprocessors ändern ihre caption nicht. sind englisch. bleiben english.
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,

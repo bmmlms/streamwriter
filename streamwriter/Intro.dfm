@@ -153,7 +153,7 @@ object frmIntro: TfrmIntro
     AutoSize = False
     Caption = 
       'Since this is the first time you start up streamWriter, here is ' +
-      'some basic  information on how to record songs.'
+      'some basic information on how to record songs.'
     WordWrap = True
   end
   object lblManual: TLabel
@@ -212,9 +212,9 @@ object frmIntro: TfrmIntro
       'st records every title containing "fun" in it'#39's name when it is ' +
       'played on any observed station. Adding "fun*" to the list record' +
       's every title starting with "fun". You can also use the "Charts"' +
-      '-tab to see what is mainly playing on streams and add titles to ' +
-      'the wishlist from there by doubleclicking or using the contextme' +
-      'nu.'
+      '-tab to see what is being played on streams and add titles to th' +
+      'e wishlist from there by doubleclicking or using the contextmenu' +
+      '.'
     WordWrap = True
   end
   object pnlNav: TPanel

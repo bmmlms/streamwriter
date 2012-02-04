@@ -1655,7 +1655,7 @@ begin
     begin
       if Column = 1 then
         Text := _(STREAMNODETEXT);
-    end else
+    end else         // TODO: Jedes menü checken, wegen den shortcuts auf deutsch!!!
       case Column of
         1: Text := ExtractFileName(NodeData.Track.Filename);
         2:
@@ -1668,7 +1668,7 @@ begin
             Text := IntToStr(NodeData.Track.BitRate);
 
             if NodeData.Track.VBR then
-              Text := Text + ' VBR';
+              Text := Text + ' ' + 'VBR';
           end;
         5:
           Text := NodeData.Track.Streamname;
