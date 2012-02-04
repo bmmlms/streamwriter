@@ -747,7 +747,7 @@ begin
 
     // Wir geben AOwner mit, so dass das MsgDlg zentriert angezeigt wird.
     // Self ist nämlich noch nicht Visible, haben kein Handle, etc..
-    TfrmMsgDlg.ShowMsg(TForm(AOwner), _('Settings from the categories "Streams", "Filenames", "Cut" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
+    TfrmMsgDlg.ShowMsg(TForm(AOwner), _('Settings from the categories "Streams", "Filenames", "Cut", "Postprocessing" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
                                         'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), 4, btOK);
   end else
   begin
