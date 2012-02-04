@@ -632,18 +632,10 @@ begin
 end;
 
 procedure TSavedTab.PositionTimer(Sender: TObject);
-{
-  function BuildTime(T: Double): string;
-  var
-    Min, Sec: Word;
-  begin
-    Min := Trunc(T / 60);
-    T := T - Trunc(T / 60) * 60;
-    Sec := Trunc(T);
-    Result := Format('%0.2d:%0.2d', [Min, Sec]);
-  end;
-}
 begin
+  if csDestroying in ComponentState then
+    Exit;
+
   if FSavedTree.Player.Playing or FSavedTree.Player.Paused then
   begin
     FSeek.GripperVisible := True;

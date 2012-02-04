@@ -1810,7 +1810,7 @@ end;
 
 procedure TfrmStreamWriterMain.tmrAutoSaveTimer(Sender: TObject);
 begin
-  if AppGlobals.SkipSave or FDataLists.LoadError then
+  if Application.Terminated or AppGlobals.SkipSave or FDataLists.LoadError then
     Exit;
 
   try
@@ -1830,6 +1830,9 @@ var
   C: Cardinal;
   L: TList<Cardinal>;
 begin
+  if Application.Terminated then
+    Exit;
+
   C := 0;
 
   L := TList<Cardinal>.Create;

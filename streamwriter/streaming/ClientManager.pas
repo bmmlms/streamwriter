@@ -72,7 +72,7 @@ type
     procedure ClientDebug(Sender: TObject);
     procedure ClientRefresh(Sender: TObject);
     procedure ClientAddRecent(Sender: TObject);
-    procedure ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string; Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
+    procedure ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean);
     procedure ClientTitleChanged(Sender: TObject; Title: string);
     procedure ClientDisconnected(Sender: TObject);
     procedure ClientICYReceived(Sender: TObject; Bytes: Integer);
@@ -457,11 +457,11 @@ begin
 end;
 
 procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
-  Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
+  Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean);
 begin
   Inc(FSongsSaved);
   if Assigned(FOnClientSongSaved) then
-    FOnClientSongSaved(Sender, Filename, Title, SongArtist, SongTitle, Filesize, Length, WasCut, FullTitle, IsStreamFile);
+    FOnClientSongSaved(Sender, Filename, Title, SongArtist, SongTitle, Filesize, Length, Bitrate, VBR, WasCut, FullTitle, IsStreamFile);
 end;
 
 procedure TClientManager.ClientStop(Sender: TObject);

@@ -8,7 +8,8 @@ uses
 type
   TAddonLAME = class(TAddonBase)
   private
-    FDLLPath: string;
+    FEXEPath: string;
+    //FDLLPath: string;
   protected
   public
     constructor Create;
@@ -21,7 +22,8 @@ type
 
     function CanEncode(AudioType: TAudioTypes): Boolean; override;
 
-    property DLLPath: string read FDLLPath;
+    property EXEPath: string read FEXEPath;
+    //property DLLPath: string read FDLLPath;
   end;
 
 implementation
@@ -63,9 +65,10 @@ begin
   FDownloadPackage := 'addon_lame.dll';
 
   FFilesDir := AppGlobals.TempDir + 'addon_lame\';
-  FDLLPath := FFilesDir + 'lame-enc.dll';
+  FEXEPath := FFilesDir + 'lame.exe';
+  //FDLLPath := FFilesDir + 'lame-enc.dll';
 
-  FFilenames.Add('lame-enc.dll');
+  FFilenames.Add('lame.exe');
 end;
 
 procedure TAddonLAME.Initialize;
@@ -78,7 +81,7 @@ end;
 
 function TAddonLAME.ShowInitMessage(Handle: THandle): Boolean;
 begin
-  Result := MsgBox(Handle, _('WARNING:'#13#10'It is not be allowed in some contries to use this addon because it contains lame-enc.dll ' +
+  Result := MsgBox(Handle, _('WARNING:'#13#10'It is not be allowed in some contries to use this addon because it contains lame.exe ' +
                              'that makes use of some patented technologies. Please make sure you may use these files in your country. ' +
                              'If you are sure you may use these files, press "Yes" to continue.'), _('Warning'), MB_ICONWARNING or MB_YESNO or MB_DEFBUTTON2) = IDYES;
 end;

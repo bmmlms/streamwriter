@@ -220,7 +220,7 @@ begin
         FProcessingList.Remove(Entry);
 
         TICEClient(Entry.Owner).PostProcessingFinished(Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Artist, Entry.Data.Title,
-          Entry.Data.Filesize, Entry.Data.Length, Entry.Data.WasCut, Entry.Data.FullTitle, False);
+          Entry.Data.Filesize, Entry.Data.Length, 0, False, Entry.Data.WasCut, Entry.Data.FullTitle, False);
 
         Entry.Free;
 
@@ -243,7 +243,7 @@ begin
           FProcessingList.Delete(i);
 
           TICEClient(Entry.Owner).PostProcessingFinished(Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Artist, Entry.Data.Title,
-            Entry.Data.Filesize, Entry.Data.Length, Entry.Data.WasCut, Entry.Data.FullTitle, False);
+            Entry.Data.Filesize, Entry.Data.Length, Entry.Data.BitRate, Entry.Data.VBR, Entry.Data.WasCut, Entry.Data.FullTitle, False);
 
           Entry.Free;
         end;

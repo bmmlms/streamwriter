@@ -50,6 +50,7 @@ type
     FullTitle: Boolean;
     StreamTitle: string;
     BitRate: Cardinal;
+    VBR: Boolean;
     EncoderSettings: TObject;
   end;
   PPostProcessInformation = ^TPostProcessInformation;

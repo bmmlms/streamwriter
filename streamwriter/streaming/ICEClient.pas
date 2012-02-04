@@ -41,7 +41,7 @@ type
   TShowErrorMessageEvent = procedure(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean) of object;
   TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
   TSongSavedEvent = procedure(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
-    Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean) of object;
+    Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean) of object;
   TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer) of object;
 
   TDebugEntry = class
@@ -145,7 +145,7 @@ type
     procedure StopRecording;
     procedure SetVolume(Vol: Integer);
     procedure PostProcessingFinished(Filename, Title, SongArtist, SongTitle: string;
-      Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
+      Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean);
 
     procedure Kill;
 
@@ -276,11 +276,11 @@ begin
 end;
 
 procedure TICEClient.PostProcessingFinished(Filename, Title, SongArtist,
-  SongTitle: string; Filesize, Length: UInt64; WasCut, FullTitle,
+  SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle,
   IsStreamFile: Boolean);
 begin
   if Assigned(FOnSongSaved) then
-    FOnSongSaved(Self, Filename, Title, SongArtist, SongTitle, Filesize, Length, WasCut, FullTitle, IsStreamFile);
+    FOnSongSaved(Self, Filename, Title, SongArtist, SongTitle, Filesize, Length, Bitrate, VBR, WasCut, FullTitle, IsStreamFile);
   if Assigned(FOnRefresh) then
     FOnRefresh(Self);
 
@@ -632,6 +632,7 @@ begin
     Data.FullTitle := FICEThread.RecvStream.SavedFullTitle;
     Data.StreamTitle := FICEThread.RecvStream.SavedStreamTitle;
     Data.Bitrate := FICEThread.RecvStream.BitRate;
+    Data.VBR := False;
 
     if Entry.Settings.OutputFormat = atNone then
     begin
@@ -646,7 +647,7 @@ begin
         if Assigned(FOnSongSaved) then
           FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
             FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
-            FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut,
+            FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.BitRate, False, FICEThread.RecvStream.SavedWasCut,
             FICEThread.RecvStream.SavedFullTitle, False);
         if Assigned(FOnRefresh) then
           FOnRefresh(Self);
@@ -665,7 +666,7 @@ begin
     if Assigned(FOnSongSaved) then
       FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
         FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
-        FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.SavedWasCut,
+        FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.BitRate, False, FICEThread.RecvStream.SavedWasCut,
         FICEThread.RecvStream.SavedFullTitle, True);
     if Assigned(FOnRefresh) then
       FOnRefresh(Self);

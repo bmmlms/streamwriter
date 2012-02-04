@@ -117,7 +117,13 @@ begin
         Result := vqMedium
       else
         Result := vqLow;
-    atAAC, atM4A: Result := vqMedium; // TODO: !!!
+    atAAC, atM4A:
+      if BitRate >= 150 then
+        Result := vqHigh
+      else if BitRate >= 128 then
+        Result := vqMedium
+      else
+        Result := vqLow;
   end;
 end;
 

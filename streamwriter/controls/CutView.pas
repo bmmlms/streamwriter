@@ -394,7 +394,6 @@ begin
 
   if FFileConvertorThread <> nil then
   begin
-    FFileConvertorThread.OnTerminate := nil;
     FFileConvertorThread.OnProgress := nil;
     FFileConvertorThread.OnFinish := nil;
     FFileConvertorThread.OnError := nil;
@@ -405,7 +404,6 @@ begin
 
   if FScanThread <> nil then
   begin
-    FScanThread.OnTerminate := nil;
     FScanThread.OnScanProgress := nil;
     FScanThread.OnEndScan := nil;
     FScanThread.OnScanError := nil;
@@ -414,10 +412,15 @@ begin
 
   if FProcessThread <> nil then
   begin
-    FProcessThread.OnTerminate := nil;
     FProcessThread.OnSuccess := nil;
     FProcessThread.OnError := nil;
     FProcessThread.Terminate;
+  end;
+
+  while (FFileConvertorThread <> nil) or (FScanThread <> nil) or (FProcessThread <> nil) do
+  begin
+    Sleep(100);
+    Application.ProcessMessages;
   end;
 
   if FWaveData <> nil then
@@ -425,7 +428,7 @@ begin
 
   if FPlayer <> nil then
   begin
-    // Das hier gibt gerne Exceptions. Aber nur, wenn ein CutView auf ist, und mann das Programm beendet.
+    // Das hier gibt gerne Exceptions. Aber nur, wenn ein CutView auf ist, und man das Programm beendet.
     // Schieß mich tot... das hier hilft, keine Ahnung woher der Fehler kommt.
     // Das hat dann auch zur Folge, dass UndoSteps und WorkingFilename nicht gelöscht werden können.
     try
@@ -473,7 +476,7 @@ begin
   FPB.BuildDrawBuffer;
   FPB.Repaint;
 end;
-
+                           // NAch schneiden wird titellänge nicht übernommen. mindestens bei mp3 ist das so!
 procedure TCutView.FileConvertorFinish(Sender: TObject);
 var
   i: Integer;
@@ -1243,11 +1246,16 @@ end;
 
 procedure TCutView.ThreadTerminate(Sender: TObject);
 begin
-  if FProgressBarLoad.Visible then
-    FProgressBarLoad.Visible := False;
   FScanThread := nil;
-  if FUndoStep <> nil then
-    FreeAndNil(FUndoStep);
+
+  if not Application.Terminated then
+  begin
+    if FProgressBarLoad.Visible then
+      FProgressBarLoad.Visible := False;
+
+    if FUndoStep <> nil then
+      FreeAndNil(FUndoStep);
+  end;
 end;
 
 { TCutPaintBox }

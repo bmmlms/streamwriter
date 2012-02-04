@@ -126,7 +126,15 @@ begin
       begin
         FResult := arWin;
 
-        FFileInfo := GetFileInfo(FToFile);
+        if LowerCase(ExtractFileExt(FToFile)) <> '.wav' then
+        begin
+          FFileInfo := GetFileInfo(FToFile);
+          if FFileInfo.Success and (FData <> nil) then
+          begin
+            FData.BitRate := FFileInfo.Bitrate;
+            FData.VBR := FFileInfo.VBR;
+          end;
+        end;
 
         Synchronize(
           procedure

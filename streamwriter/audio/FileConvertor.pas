@@ -134,6 +134,7 @@ type
     FVBRQuality: TVBRQualities;
     FOnProgress: TFileConvertorProgressEvent;
 
+    procedure ReadCallbackMP3(Data: AnsiString);
     procedure ReadCallbackOGG(Data: AnsiString);
     procedure ReadCallbackAAC(Data: AnsiString);
 
@@ -380,173 +381,42 @@ var
   Len, Write, ToRead, ToWrite: LongWord;
 
   Addon: TAddonLAME;
+
+  CmdLine, Opts: string;
+  Output: AnsiString;
+  EC: Cardinal;
 begin
   Result := False;
 
-  Done := 0;
-  PercentDone := 0;
-  PrevPercentDone := 0;
-
   Addon := AppGlobals.AddonManager.Find(TAddonLAME) as TAddonLAME;
+
   if not Addon.FilesExtracted then
     Exit(False);
 
-  DLLHandle := LoadLibrary(PChar(Addon.DLLPath));
-  if DLLHandle <= 32 then
-  begin
-    raise Exception.Create('Could not load lame-enc.dll');
+  ToFileTemp := RemoveFileExt(ToFile) + '_convert.mp3';
+
+  case FBitRateType of
+    brCBR:
+      begin
+        Opts := '-b ' + IntToStr(FCBRBitRate);
+      end;
+    brVBR:
+      begin
+        case FVBRQuality of
+          vqHigh: Opts := '-V 0';
+          vqMedium: Opts := '-V 4';
+          vqLow: Opts := '-V 8';
+        end;
+      end;
   end;
 
-  try
-    InitStream := GetProcAddress(DLLHandle,'beInitStream');
-    EncodeChunk := GetProcAddress(DLLHandle,'beEncodeChunk');
-    DeInitStream := GetProcAddress(DLLHandle,'beDeinitStream');
-    CloseStream := GetProcAddress(DLLHandle,'beCloseStream');
-
-// TODO: Hierdrin mal überall ERR := 1 setzen. manchmal crashed es dann. und die funktion testen, ob bei fehlern auch immer das file gelöscht wird (tempfile) - habe einiges umgebaut!!!
-
-    InStream := TFileStream.Create(FromFile, fmOpenRead);
-    try
-      ToFileTemp := RemoveFileExt(ToFile) + '_convert.mp3';
-      OutStream := TFileStream.Create(ToFileTemp, fmCreate);
-
-      Config.dwConfig := BE_CONFIG_LAME;
-      Config.Format.lhv1.dwStructVersion := 1;
-      Config.Format.lhv1.dwStructSize := SizeOf(Config);
-      Config.Format.lhv1.dwSampleRate := 44100;
-      Config.Format.lhv1.dwReSampleRate := 44100;
-      Config.Format.lhv1.nMode := BE_MP3_MODE_STEREO;
-      if (FCBRBitRate > 0) and (FBitRateType = brCBR) then
-      begin
-        Config.Format.lhv1.dwBitrate := FCBRBitRate;
-        Config.Format.lhv1.dwMaxBitrate := FCBRBitRate;
-      end else if (FBitRateType = brVBR) then
-      begin
-        case FVBRQuality of
-          vqHigh:
-            begin
-              Config.Format.lhv1.dwBitrate := 224;
-              Config.Format.lhv1.dwMaxBitrate := 320;
-            end;
-          vqMedium:
-            begin
-              Config.Format.lhv1.dwBitrate := 128;
-              Config.Format.lhv1.dwMaxBitrate := 192;
-            end;
-          vqLow:
-            begin
-              Config.Format.lhv1.dwBitrate := 32;
-              Config.Format.lhv1.dwMaxBitrate := 96;
-            end;
-        end;
-      end;
-      Config.Format.lhv1.nQuality := NORMAL_QUALITY;
-      Config.Format.lhv1.dwMPegVersion := 1;
-      Config.Format.lhv1.dwPsyModel := 0;
-      Config.Format.lhv1.dwEmphasis := 0;
-      Config.Format.lhv1.bPrivate := False;
-      Config.format.lhv1.bCRC := False;
-      Config.Format.lhv1.bCopyright := True;
-      Config.Format.lhv1.bOriginal := True;
-      if FBitRateType = brVBR then
-      begin
-        Config.Format.lhv1.bWriteVBRHeader := True;
-        Config.Format.lhv1.bEnableVBR := True;
-        case FVBRQuality of
-          vqHigh: Config.Format.lhv1.nVBRQuality := 0;
-          vqMedium: Config.Format.lhv1.nVBRQuality := 3;
-          vqLow: Config.Format.lhv1.nVBRQuality := 5;
-        end;
-      end else
-      begin
-        Config.Format.lhv1.bWriteVBRHeader := False;
-        Config.Format.lhv1.bEnableVBR := False;
-        Config.Format.lhv1.nVBRQuality := -1;
-      end;
-
-      try
-        Err := InitStream(@Config, @Samples, @MP3Buffer, @HBEStream);
-
-        GetMem(PMP3Buffer, MP3Buffer);
-        GetMem(Buffer, Samples * SizeOf(SmallInt));
-
-        if (Err <> BE_ERR_SUCCESSFUL) then
-        begin
-          Exit;
-        end;
-
-        Len := InStream.Size;
-
-        while (Done < Len) do
-        begin
-          if (Done + Samples * 2 < Len) then
-          begin
-            ToRead := Samples * 2;
-          end else
-          begin
-            ToRead := Len - Done;
-          end;
-
-          InStream.ReadBuffer(Buffer^, ToRead);
-
-          Err := EncodeChunk(HBEStream, ToRead div 2, Buffer, PMP3Buffer, @ToWrite);
-
-          if (Err <> BE_ERR_SUCCESSFUL) then
-          begin
-            CloseStream(HBEStream);
-            Exit;
-          end;
-
-          OutStream.WriteBuffer(PMP3Buffer^, ToWrite);
-
-          Inc(Done, ToRead);
-
-          if Assigned(FOnProgress) then
-          begin
-            PercentDone := Round(100.0 * Done / Len);
-            FOnProgress(Self, PercentDone);
-          end;
-
-          if (TerminateFlag <> nil) and (TerminateFlag^) then
-          begin
-            CloseStream(HBEStream);
-            Exit;
-          end;
-        end;
-
-        Err := DeInitStream(HBEStream, PMP3Buffer, @Write);
-
-        if (Err <> BE_ERR_SUCCESSFUL) then
-        begin
-          CloseStream(HBEStream);
-          Exit;
-        end;
-
-        if (Write <> 0) then
-        begin
-          OutStream.WriteBuffer(PMP3Buffer^, Write);
-        end;
-
-        CloseStream(HBEStream);
-
-        Result := True;
-      finally
-        OutStream.Free;
-
-        FreeMem(PMP3Buffer);
-        FreeMem(Buffer);
-      end;
-    finally
-      InStream.Free;
-    end;
-  finally
-    FreeLibrary(DLLHandle);
-
-    if (not Result) or (TerminateFlag <> nil) and (TerminateFlag^) then
-    begin
-      Result := False;
-      DeleteFile(PChar(ToFileTemp))
-    end;
+  CmdLine := Addon.EXEPath + ' ' + Opts + ' "' + FromFile + '" "' + ToFileTemp + '"';
+  if RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), 300000, Output, EC, TerminateFlag, ReadCallbackMP3) = 2 then
+  begin
+    Result := False;
+  end else
+  begin
+    Result := FileExists(ToFileTemp);
   end;
 
   if Result then
@@ -615,6 +485,34 @@ begin
           M := R.MatchedText;
           M := Copy(M, 1, Length(M) - 2);
           FOnProgress(Self, StrToInt(M));
+        until not R.MatchAgain;
+      end;
+    except
+    end;
+  finally
+    R.Free;
+  end;
+end;
+
+procedure TFileConvertor.ReadCallbackMP3(Data: AnsiString);
+var
+  R: TPerlRegEx;
+  M: string;
+begin
+  if not Assigned(FOnProgress) then
+   Exit;
+
+  R := TPerlRegEx.Create;
+  try
+    R.Subject := Data;
+    R.RegEx := '(\d+)%\)';
+    try
+      if R.Match then
+      begin
+        repeat
+          M := R.MatchedText;
+          M := Copy(M, 1, Length(M) - 2);
+          FOnProgress(Self, Trunc(StrToFloat(M)));
         until not R.MatchAgain;
       end;
     except

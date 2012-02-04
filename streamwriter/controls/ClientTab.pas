@@ -149,7 +149,8 @@ type
     procedure ClientManagerAddRecent(Sender: TObject);
     procedure ClientManagerClientAdded(Sender: TObject);
     procedure ClientManagerClientRemoved(Sender: TObject);
-    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string; Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
+    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
+      Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean);
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
     procedure ClientManagerTitleAllowed(Sender: TObject; Title: string;
@@ -1036,7 +1037,7 @@ begin
   OnePlaying := False;
   for i := 0 to FClients.Count - 1 do
   begin
-    if FClients[i].Playing then
+    if FClients[i].Playing and (FClients[i].State = csConnected) then
     begin
       OnePlaying := True;
       Break;
@@ -1125,7 +1126,8 @@ begin
 end;
 
 procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
-  Filename, Title, SongArtist, SongTitle: string; Filesize, Length: UInt64; WasCut, FullTitle, IsStreamFile: Boolean);
+  Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64;
+  VBR, WasCut, FullTitle, IsStreamFile: Boolean);
 var
   Client: TICEClient;
   Track: TTrackInfo;
@@ -1156,9 +1158,10 @@ begin
   Track.Filesize := Filesize;
   Track.Length := Length;
   Track.WasCut := WasCut;
-  Track.BitRate := Client.Entry.Bitrate;
+  Track.BitRate := Bitrate;
   Track.IsAuto := Client.AutoRemove;
   Track.IsStreamFile := IsStreamFile;
+  Track.VBR := VBR;
 
   if Added then
   begin
@@ -1196,6 +1199,8 @@ begin
   // Relativ unschön so, aber Hauptsache es tut..
   if Assigned(FOnUpdateButtons) then
     FOnUpdateButtons(Sender);
+
+  FPlaybackSeconds := 0;
 end;
 
 procedure TClientTab.FClientViewKeyDown(Sender: TObject;

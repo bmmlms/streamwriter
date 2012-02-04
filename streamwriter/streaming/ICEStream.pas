@@ -27,7 +27,8 @@ interface
 uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
   AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
-  Math, PerlRegEx, Logging, WideStrUtils, TypeDefs, AudioFunctions;
+  Math, PerlRegEx, Logging, WideStrUtils, TypeDefs, AudioFunctions,
+  PostProcessMP4Box, AddonMP4Box;
 
 type
   TDebugEvent = procedure(Text, Data: string) of object;
@@ -69,7 +70,7 @@ type
     FSongsSaved: Cardinal;
 
     function GetValidFilename(Name: string): string;
-    function GetAppendNumber(Dir, Filename, Extension: string): Integer;
+    function GetAppendNumber(Dir, Filename: string): Integer;
     function InfoToFilename(Artist, Title, Album, StreamTitle: string; TitleState: TTitleStates; Patterns: string): string;
   public
     constructor Create(Streamname, Dir: string; SongsSaved: Cardinal; Settings: TStreamSettings);
@@ -126,6 +127,7 @@ type
     FRecordingTitleFound: Boolean;
     FRemoveClient: Boolean;
     FClientStopRecording: Boolean;
+    FLastGetSettings: Cardinal;
 
     FStreamTracks: TStreamTracks;
 
@@ -1286,8 +1288,11 @@ begin
   begin
     if (HeaderRemoved) and (Size > 8192) then
     begin
-      // TODO: Muss ich das wirklich IMMER ausführen? evtl besser alle xxx empfangenen bytes ausführen.
-      GetSettings;
+      if Cardinal(FLastGetSettings + 2000) < GetTickCount then
+      begin
+        GetSettings;
+        FLastGetSettings := GetTickCount;
+      end;
 
       if FRecordingStarted and (not FRecording) then
       begin
@@ -1384,7 +1389,17 @@ begin
   FSettings := Settings;
 end;
 
-function TFileChecker.GetAppendNumber(Dir, Filename, Extension: string): Integer;
+function TFileChecker.GetAppendNumber(Dir, Filename: string): Integer;
+  function AnyFileExists(Filename: string): Boolean;
+  var
+    i: Integer;
+  begin
+    Result := False;
+    for i := 0 to Ord(High(TAudioTypes)) do
+      if TAudioTypes(i) <> atNone then
+        if FileExists(Filename + FormatToFiletype(TAudioTypes(i))) then
+          Exit(True);
+  end;
 var
   Append: Integer;
   FilenameTmp: string;
@@ -1394,7 +1409,7 @@ begin
   Append := 0;
   FilenameTmp := Filename;
 
-  while FileExists(Dir + FilenameTmp + Extension) do
+  while AnyFileExists(Dir + FilenameTmp) do
   begin
     Inc(Append);
     FilenameTmp := Filename + ' (' + IntToStr(Append) + ')';
@@ -1405,6 +1420,16 @@ begin
 end;
 
 procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title, Album, StreamTitle: string; AudioType: TAudioTypes; TitleState: TTitleStates);
+  function AnyFileExists(Filename: string): Boolean;
+  var
+    i: Integer;
+  begin
+    Result := False;
+    for i := 0 to Ord(High(TAudioTypes)) do
+      if TAudioTypes(i) <> atNone then
+        if FileExists(Filename + FormatToFiletype(TAudioTypes(i))) then
+          Exit(True);
+  end;
 var
   Filename, Ext, Patterns: string;
 begin
@@ -1427,7 +1452,7 @@ begin
   Filename := InfoToFilename(Artist, Title, Album, StreamTitle, TitleState, Patterns);
   Filename := GetValidFilename(Filename);
 
-  if FileExists(FSaveDir + Filename + Ext) then
+  if AnyFileExists(FSaveDir + Filename) then
   begin
     if FSettings.OverwriteSmaller and (GetFileSize(FSaveDir + Filename + Ext) < Filesize) then
     begin
@@ -1440,7 +1465,7 @@ begin
       Exit;
     end else
     begin
-      FFilename := Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename, Ext)) + ')' + Ext;
+      FFilename := Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext;
     end;
   end else
   begin
@@ -1481,7 +1506,7 @@ begin
 
     if FileExists(FSaveDir + Filename + Ext) then
     begin
-      FFilename := Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename, Ext)) + ')' + Ext;
+      FFilename := Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext;
     end else
       FFilename := Filename + Ext;
 
