@@ -184,7 +184,7 @@ begin
 
   FOrder := -100; // Das muss, weil die Liste manchmal nach Order sortiert wird und er immer Position 0 haben muss.
   FHidden := True;
-  FName := 'Convert file';
+  FName := _('Convert file');
 
   FPostProcessType := ptConvert;
 end;

@@ -181,7 +181,6 @@ type
     chkManualSilenceLevel: TCheckBox;
     pnlAddons: TPanel;
     lstAddons: TListView;
-    btnHelpAddon: TPngSpeedButton;
     lblOutputFormat: TLabel;
     lstOutputFormat: TComboBox;
     btnConfigureEncoder: TPngSpeedButton;
@@ -253,8 +252,6 @@ type
     procedure chkManualSilenceLevelClick(Sender: TObject);
     procedure txtFilePatternEnter(Sender: TObject);
     procedure lstAddonsResize(Sender: TObject);
-    procedure lstAddonsSelectItem(Sender: TObject; Item: TListItem;
-      Selected: Boolean);
     procedure lstAddonsItemChecked(Sender: TObject; Item: TListItem);
     procedure lstOutputFormatSelect(Sender: TObject);
     procedure btnConfigureEncoderClick(Sender: TObject);
@@ -819,7 +816,6 @@ begin
       P.LoadFromResourceName(HInstance, 'CONFIGURE');
       btnConfigureEncoder.PngImage := P;
 
-      btnHelpAddon.PngImage := P;
       GetBitmap('BROWSE', 2, B);
       btnBrowse.Glyph := B;
       btnBrowseAuto.Glyph := B;
@@ -1670,12 +1666,6 @@ begin
   lstAddons.Columns[0].Width := lstAddons.ClientWidth - 25;
 end;
 
-procedure TfrmSettings.lstAddonsSelectItem(Sender: TObject;
-  Item: TListItem; Selected: Boolean);
-begin
-  btnHelpAddon.Enabled := (Item <> nil) and Selected and (TAddonBase(Item.Data).Help <> '');
-end;
-
 procedure TfrmSettings.lstPostProcessCompare(Sender: TObject; Item1,
   Item2: TListItem; Data: Integer; var Compare: Integer);
 var
@@ -2351,19 +2341,10 @@ var
   Addon: TAddonBase;
   PostProcess: TPostProcessBase;
 begin
-  if Sender = btnHelpAddon then
-  begin
-    if lstAddons.Selected = nil then
-      Exit;
-    Addon := lstAddons.Selected.Data;
-    MessageBox(Handle, PChar(Addon.Help), 'Info', MB_ICONINFORMATION)
-  end else
-  begin
-    if lstPostProcess.Selected = nil then
-      Exit;
-    PostProcess := lstPostProcess.Selected.Data;
-    MessageBox(Handle, PChar(PostProcess.Help), 'Info', MB_ICONINFORMATION);
-  end;
+  if lstPostProcess.Selected = nil then
+    Exit;
+  PostProcess := lstPostProcess.Selected.Data;
+  MessageBox(Handle, PChar(PostProcess.Help), 'Info', MB_ICONINFORMATION);
 end;
 
 procedure TfrmSettings.btnMoveClick(Sender: TObject);

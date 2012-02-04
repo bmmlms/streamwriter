@@ -1535,26 +1535,10 @@ object frmSettings: TfrmSettings
     Height = 189
     TabOrder = 12
     Visible = False
-    DesignSize = (
-      293
-      189)
-    object btnHelpAddon: TPngSpeedButton
-      Left = 266
-      Top = 160
-      Width = 24
-      Height = 25
-      Hint = 'Info...'
-      Anchors = [akRight, akBottom]
-      Layout = blGlyphRight
-      ParentShowHint = False
-      ShowHint = True
-      OnClick = btnHelpClick
-      PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
-    end
     object lstAddons: TListView
       Left = 4
       Top = 1
-      Width = 257
+      Width = 285
       Height = 184
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
@@ -1570,7 +1554,6 @@ object frmSettings: TfrmSettings
       TabOrder = 0
       ViewStyle = vsReport
       OnResize = lstAddonsResize
-      OnSelectItem = lstAddonsSelectItem
       OnItemChecked = lstAddonsItemChecked
     end
   end
