@@ -441,8 +441,11 @@ object frmSettings: TfrmSettings
       Top = 80
       Width = 24
       Height = 25
+      Hint = 'Move down'
       Anchors = [akTop, akRight]
       Layout = blGlyphRight
+      ParentShowHint = False
+      ShowHint = True
       OnClick = btnMoveClick
       PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     end
@@ -451,8 +454,11 @@ object frmSettings: TfrmSettings
       Top = 52
       Width = 24
       Height = 25
+      Hint = 'Move up'
       Anchors = [akTop, akRight]
       Layout = blGlyphRight
+      ParentShowHint = False
+      ShowHint = True
       OnClick = btnMoveClick
       PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     end
@@ -471,6 +477,8 @@ object frmSettings: TfrmSettings
       Hint = 'Configure encoder...'
       Anchors = [akTop, akRight]
       Layout = blGlyphRight
+      ParentShowHint = False
+      ShowHint = True
       OnClick = btnConfigureEncoderClick
       PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     end
