@@ -284,13 +284,13 @@ begin
   if Assigned(FOnRefresh) then
     FOnRefresh(Self);
 
-  if FAutoRemove and Assigned(FOnDisconnected) and (FICEThread = nil) then
+  if (FAutoRemove or FKilled) and Assigned(FOnDisconnected) and (FICEThread = nil) then
   begin
     Kill;
     FOnDisconnected(Self);
   end;
 end;
-
+                   // TODO: MemoryLeaks... :)
 procedure TICEClient.StopPlay;
 begin
   if FICEThread <> nil then
@@ -565,7 +565,7 @@ end;
 procedure TICEClient.ThreadNeedSettings(Sender: TSocketThread);
 begin
   // Ignore list etc werden immer kopiert, das kann zeit kosten.
-  FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FStopAfterSong, FRecordTitle);
+  FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FStopAfterSong, FKilled, FRecordTitle);
 end;
 
 procedure TICEClient.ThreadPlaybackStarted(Sender: TSocketThread);
@@ -641,7 +641,15 @@ begin
     end else
       Data.EncoderSettings := Entry.Settings.EncoderSettings.Find(Entry.Settings.OutputFormat).Copy;
 
-    if not FKilled then
+    if FKilled then
+    begin
+      if Assigned(FOnSongSaved) then
+        FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
+          FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
+          FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.BitRate, False, FICEThread.RecvStream.SavedWasCut,
+          FICEThread.RecvStream.SavedFullTitle, False);
+    end else
+    begin
       if not AppGlobals.PostProcessManager.ProcessFile(Self, Data) then
       begin
         if Assigned(FOnSongSaved) then
@@ -652,6 +660,7 @@ begin
         if Assigned(FOnRefresh) then
           FOnRefresh(Self);
       end;
+    end;
 
     if FAutoRemove then
     begin

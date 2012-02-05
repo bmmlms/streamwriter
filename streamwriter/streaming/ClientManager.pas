@@ -524,7 +524,7 @@ begin
     FOnClientRefresh(Sender);
   Client := Sender as TICEClient;
 
-  if Client.Killed then
+  if Client.Killed and (not AppGlobals.PostProcessManager.WorkingForClient(Sender)) then
   begin
     if Assigned(FOnClientRemoved) then
       FOnClientRemoved(Sender);

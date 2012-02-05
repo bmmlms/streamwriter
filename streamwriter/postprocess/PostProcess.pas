@@ -230,6 +230,8 @@ begin
   TEncoderSettings(FData.EncoderSettings).Free;
   Dispose(FData);
 
+  // TODO: FPostProcessList freigeben??
+
   inherited;
 end;
 

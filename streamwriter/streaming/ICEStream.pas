@@ -76,7 +76,8 @@ type
     constructor Create(Streamname, Dir: string; SongsSaved: Cardinal; Settings: TStreamSettings);
 
     procedure GetStreamFilename(Name: string; AudioType: TAudioTypes);
-    procedure GetFilename(Filesize: UInt64; Artist, Title, Album, StreamTitle: string; AudioType: TAudioTypes; TitleState: TTitleStates);
+    procedure GetFilename(Filesize: UInt64; Artist, Title, Album, StreamTitle: string; AudioType: TAudioTypes;
+      TitleState: TTitleStates; Killed: Boolean);
 
     property Result: TCheckResults read FResult;
     property SaveDir: string read FSaveDir;
@@ -88,6 +89,7 @@ type
     FSettings: TStreamSettings;
     FRecordTitle: string;
     FStopAfterSong: Boolean;
+    FKilled: Boolean;
 
     FMetaInt: Integer;
     FNextMetaInt: Integer;
@@ -173,6 +175,7 @@ type
     property Settings: TStreamSettings read FSettings;
     property RecordTitle: string read FRecordTitle write FSetRecordTitle;
     property StopAfterSong: Boolean read FStopAfterSong write FStopAfterSong;
+    property Killed: Boolean read FKilled write FKilled;
 
     property MetaCounter: Integer read FMetaCounter;
 
@@ -627,7 +630,11 @@ begin
             TitleState := tsIncomplete;
         end;
 
-        FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FSavedAlbum, Title, FAudioType, TitleState);
+        // GetSettings ist hier, um FKilled zu bekommen. Wenn es True ist, findet keine Nachbearbeitung
+        // statt, und FileCheck.GetFileName liefert die Original-Dateierweiterung zurück.
+        GetSettings;
+
+        FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FSavedAlbum, Title, FAudioType, TitleState, FKilled);
         if (FileCheck.Result in [crSave, crOverwrite]) and (FileCheck.FFilename <> '') then
         begin
           Dir := FileCheck.SaveDir;
@@ -1419,7 +1426,9 @@ begin
     Result := Append;
 end;
 
-procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title, Album, StreamTitle: string; AudioType: TAudioTypes; TitleState: TTitleStates);
+procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title, Album, StreamTitle: string; AudioType: TAudioTypes;
+  TitleState: TTitleStates; Killed: Boolean);
+
   function AnyFileExists(Filename: string): Boolean;
   var
     i: Integer;
@@ -1435,10 +1444,15 @@ var
 begin
   FResult := crSave;
 
-  if FSettings.OutputFormat <> atNone then
-    Ext := FormatToFiletype(FSettings.OutputFormat)
+  if Killed then
+    Ext := FormatToFiletype(AudioType)
   else
-    Ext := FormatToFiletype(AudioType);
+  begin
+    if FSettings.OutputFormat <> atNone then
+      Ext := FormatToFiletype(FSettings.OutputFormat)
+    else
+      Ext := FormatToFiletype(AudioType);
+  end;
 
   case TitleState of
     tsAuto:

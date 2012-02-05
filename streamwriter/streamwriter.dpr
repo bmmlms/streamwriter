@@ -22,12 +22,12 @@ program streamwriter;
 {$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
 
 uses
+  MM in '..\..\common\MM.pas',
   madExcept,
   madLinkDisAsm,
   madListHardware,
   madListProcesses,
   madListModules,
-  MM in '..\..\common\MM.pas',
   Windows,
   SysUtils,
   Forms,

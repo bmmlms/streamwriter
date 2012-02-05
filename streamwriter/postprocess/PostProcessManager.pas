@@ -42,6 +42,7 @@ type
     constructor Create;
     destructor Destroy; override;
 
+    //function WouldProcessFile(Owner: TObject; Data: TPostProcessInformation): Boolean;
     function ProcessFile(Owner: TObject; Data: TPostProcessInformation): Boolean; overload;
     function ProcessFile(Entry: TProcessingEntry): Boolean; overload;
     procedure ReInitPostProcessors;
@@ -55,6 +56,24 @@ uses
   AppData, DownloadAddons, FileConvertor, ICEClient;
 
 { TPostProcessManager }
+
+{
+function TPostProcessManager.WouldProcessFile(Owner: TObject; Data: TPostProcessInformation): Boolean;
+var
+  Entry: TProcessingEntry;
+begin
+  Result := False;
+  Entry := TProcessingEntry.Create(Owner, nil, Data);
+
+  try
+    BuildProcessingList(Entry);
+
+    Result := Entry.PostProcessList.Count > 0;
+  finally
+    Entry.Free;
+  end;
+end;
+}
 
 function TPostProcessManager.ProcessFile(Owner: TObject; Data: TPostProcessInformation): Boolean;
 var

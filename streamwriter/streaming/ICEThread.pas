@@ -91,7 +91,7 @@ type
     constructor Create(URL: string); reintroduce;
     destructor Destroy; override;
 
-    procedure SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong: Boolean; RecordTitle: string);
+    procedure SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean; RecordTitle: string);
 
     procedure StartPlay;
     procedure PausePlay;
@@ -128,12 +128,13 @@ implementation
 
 { TICEThread }
 
-procedure TICEThread.SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong: Boolean; RecordTitle: string);
+procedure TICEThread.SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean; RecordTitle: string);
 begin
   // Das hier wird nur gesynct aus dem Mainthread heraus aufgerufen.
   FTypedStream.Settings.Assign(Settings);
   FTypedStream.RecordTitle := RecordTitle;
   FTypedStream.StopAfterSong := StopAfterSong;
+  FTypedStream.Killed := Killed;
 end;
 
 procedure TICEThread.SetVolume(Vol: Integer);
