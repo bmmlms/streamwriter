@@ -49,13 +49,19 @@ type
   TIntArray = array of Integer;
 
   TPostProcessorList = class(TList<TPostProcessBase>)
+  private
+    function FGetHash: Cardinal;
   public
     function Find(PostProcessor: TPostProcessBase): TPostProcessBase; overload;
     function Find(ClassType: TClass): TPostProcessBase; overload;
     function Find(PostProcessType: TPostProcessTypes): TPostProcessBase; overload;
+
+    property Hash: Cardinal read FGetHash;
   end;
 
   TEncoderSettings = class
+  private
+    function FGetHash: Cardinal;
   public
     AudioType: TAudioTypes;
     BitrateType: TBitRates;
@@ -67,12 +73,19 @@ type
     procedure Save(Stream: TExtendedStream); overload;
     procedure Load; overload;
     procedure Save; overload;
+    procedure Assign(From: TEncoderSettings);
     function Copy: TEncoderSettings;
+
+    property Hash: Cardinal read FGetHash;
   end;
 
   TEncoderSettingsList = class(TList<TEncoderSettings>)
+  private
+    function FGetHash: Cardinal;
   public
     function Find(AudioType: TAudioTypes): TEncoderSettings;
+
+    property Hash: Cardinal read FGetHash;
   end;
 
   { This class defines stream-specific settings. It is used in the settings (AppData) for general
@@ -1405,6 +1418,15 @@ begin
     end;
 end;
 
+function TPostProcessorList.FGetHash: Cardinal;
+var
+  i: Integer;
+begin
+  Result := 0;
+  for i := 0 to Count - 1 do
+    Result := Result + Items[i].Hash;
+end;
+
 function TPostProcessorList.Find(PostProcessType: TPostProcessTypes): TPostProcessBase;
 var
   i: Integer;
@@ -1416,6 +1438,15 @@ begin
 end;
 
 { TEncoderSettingsList }
+
+function TEncoderSettingsList.FGetHash: Cardinal;
+var
+  i: Integer;
+begin
+  Result := 0;
+  for i := 0 to Count - 1 do
+    Result := Result + Items[i].Hash;
+end;
 
 function TEncoderSettingsList.Find(AudioType: TAudioTypes): TEncoderSettings;
 var
@@ -1429,10 +1460,18 @@ end;
 
 { TEncoderSettings }
 
+procedure TEncoderSettings.Assign(From: TEncoderSettings);
+begin
+  AudioType := From.AudioType;
+  BitrateType := From.BitrateType;
+  CBRBitrate := From.CBRBitrate;
+  VBRQuality := From.VBRQuality;
+end;
+
 function TEncoderSettings.Copy: TEncoderSettings;
 begin
-  Result := TEncoderSettings.Create(AudioType, BitrateType, VBRQuality);
-  Result.CBRBitrate := CBRBitrate;
+  Result := TEncoderSettings.Create(atNone, brVBR, vqMedium);
+  Result.Assign(Self);
 end;
 
 constructor TEncoderSettings.Create(AudioType: TAudioTypes;
@@ -1444,6 +1483,11 @@ begin
   Self.BitrateType := BitrateType;
   Self.CBRBitrate := 128;
   Self.VBRQuality := VBRQuality;
+end;
+
+function TEncoderSettings.FGetHash: Cardinal;
+begin
+  Result := HashString(IntToStr(Integer(AudioType)) + IntToStr(Integer(BitrateType)) + IntToStr(CBRBitrate) + IntToStr(Integer(VBRQuality)));
 end;
 
 procedure TEncoderSettings.Load;

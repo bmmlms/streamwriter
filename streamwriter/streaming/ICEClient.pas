@@ -634,13 +634,6 @@ begin
     Data.Bitrate := FICEThread.RecvStream.BitRate;
     Data.VBR := False;
 
-    if Entry.Settings.OutputFormat = atNone then
-    begin
-      Data.EncoderSettings := Entry.Settings.EncoderSettings.Find(FICEThread.RecvStream.AudioType).Copy;
-      TEncoderSettings(Data.EncoderSettings).AudioType := atNone;
-    end else
-      Data.EncoderSettings := Entry.Settings.EncoderSettings.Find(Entry.Settings.OutputFormat).Copy;
-
     if FKilled then
     begin
       if Assigned(FOnSongSaved) then
@@ -650,6 +643,13 @@ begin
           FICEThread.RecvStream.SavedFullTitle, False);
     end else
     begin
+      if Entry.Settings.OutputFormat = atNone then
+      begin
+        Data.EncoderSettings := Entry.Settings.EncoderSettings.Find(FICEThread.RecvStream.AudioType).Copy;
+        TEncoderSettings(Data.EncoderSettings).AudioType := atNone;
+      end else
+        Data.EncoderSettings := Entry.Settings.EncoderSettings.Find(Entry.Settings.OutputFormat).Copy;
+
       if not AppGlobals.PostProcessManager.ProcessFile(Self, Data) then
       begin
         if Assigned(FOnSongSaved) then

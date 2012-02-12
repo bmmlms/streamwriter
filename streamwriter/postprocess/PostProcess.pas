@@ -114,6 +114,8 @@ type
     FGroupID: Integer;
     FPostProcessType: TPostProcessTypes;
     FIsNew: Boolean;
+
+    function FGetHash: Cardinal; virtual;
   public
     constructor Create;
 
@@ -140,6 +142,7 @@ type
     property Copied: Boolean read FCopied;
     property PostProcessType: TPostProcessTypes read FPostProcessType;
     property IsNew: Boolean read FIsNew write FIsNew;
+    property Hash: Cardinal read FGetHash;
   end;
 
   TInternalPostProcess = class(TPostProcessBase)
@@ -176,6 +179,7 @@ type
 
     procedure FSetExe(Value: string);
   protected
+    function FGetHash: Cardinal; override;
   public
     constructor Create; overload;
     constructor Create(Exe, Params: string; Active, OnlyIfCut: Boolean; Identifier, Order, GroupID: Integer); overload;
@@ -220,17 +224,21 @@ begin
   FData.FullTitle := Data.FullTitle;
   FData.StreamTitle := Data.StreamTitle;
   FData.BitRate := Data.BitRate;
-  FData.EncoderSettings := TEncoderSettings(Data.EncoderSettings).Copy;
+  FData.EncoderSettings := TEncoderSettings(Data.EncoderSettings);
 
   FPostProcessList := TList<TPostProcessBase>.Create;
 end;
 
 destructor TProcessingEntry.Destroy;
+var
+  i: Integer;
 begin
   TEncoderSettings(FData.EncoderSettings).Free;
   Dispose(FData);
 
-  // TODO: FPostProcessList freigeben??
+  for i := 0 to FPostProcessList.Count - 1 do
+    FPostProcessList[i].Free;
+  FPostProcessList.Free;
 
   inherited;
 end;
@@ -376,6 +384,11 @@ begin
   FName := ExtractFileName(FExe);
 end;
 
+function TExternalPostProcess.FGetHash: Cardinal;
+begin
+  Result := inherited + HashString(FExe + FParams);
+end;
+
 procedure TExternalPostProcess.FSetExe(Value: string);
 begin
   FExe := Value;
@@ -435,6 +448,11 @@ constructor TPostProcessBase.Create;
 begin
   inherited;
 
+end;
+
+function TPostProcessBase.FGetHash: Cardinal;
+begin
+  Result := HashString(BoolToStr(FActive) + IntToStr(FOrder) + BoolToStr(FOnlyIfCut));
 end;
 
 procedure TPostProcessBase.Initialize;

@@ -132,7 +132,7 @@ begin
 
   if Entry.NeedsWave then
   begin
-    Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0]);
+    Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0].Copy);  // TODO: Das hier war mal ohne copy. wg. mem leaks testweise reingemacht.
   end;
 
   // Nach Order sortieren
@@ -153,7 +153,7 @@ begin
 
   if Entry.NeedsWave then
   begin
-    Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0]);
+    Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0].Copy); // TODO: Das hier war mal ohne copy. wg. mem leaks testweise reingemacht.
   end;
 
   // Jetzt GroupID 1 (Nach WAVE-Phase)
@@ -190,7 +190,7 @@ begin
 
     if TEncoderSettings(Entry.Data.EncoderSettings).AudioType = atNone then
       Output := ExtractFileExt(Entry.Data.Filename)
-     else
+    else
       Output := FormatToFiletype(TEncoderSettings(Entry.Data.EncoderSettings).AudioType);
 
     Entry.Data.Filename := RemoveFileExt(Entry.Data.Filename) + Output;
@@ -242,7 +242,7 @@ begin
         if Entry.Data.ReEncodedFilename <> '' then
           DeleteFile(PChar(Entry.Data.ReEncodedFilename));
 
-        // Wird hier gemacht, damit WorkingForClient() false zurückliefert. Wichtig!
+        // Wird hier gemacht, damit WorkingForClient() False zurückliefert. Wichtig!
         FProcessingList.Remove(Entry);
 
         TICEClient(Entry.Owner).PostProcessingFinished(Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Artist, Entry.Data.Title,
@@ -265,7 +265,7 @@ begin
         begin
           WriteDebug(Entry.Owner, 'All postprocessors done', dtMessage, dlDebug);
 
-          // Wird hier gemacht, damit WorkingForClient() false zurückliefert. Wichtig!
+          // Wird hier gemacht, damit WorkingForClient() False zurückliefert. Wichtig!
           FProcessingList.Delete(i);
 
           TICEClient(Entry.Owner).PostProcessingFinished(Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Artist, Entry.Data.Title,
@@ -445,4 +445,5 @@ begin
 end;
 
 end.
+
 

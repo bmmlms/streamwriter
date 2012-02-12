@@ -41,6 +41,7 @@ type
     FAlbum: string;
     FComment: string;
   protected
+    function FGetHash: Cardinal; virtual;
   public
     constructor Create;
 
@@ -220,6 +221,11 @@ begin
     if not FGetDependenciesMet then
       FActive := False;
   except end;
+end;
+
+function TPostProcessSetTags.FGetHash: Cardinal;
+begin
+  Result := inherited + HashString(FArtist + FAlbum + FTitle + FComment);
 end;
 
 procedure TPostProcessSetTags.Initialize;

@@ -29,6 +29,7 @@ uses
 type
   TPostProcessConvertThread = class(TPostProcessThreadBase)
   private
+    FFromCutView: Boolean;
     FFromFile: string;
     FToFile: string;
     FEncoderSettings: TObject;
@@ -74,14 +75,17 @@ uses
 
 { TPostProcessConvertThread }
 
+// TODO: Enkodieren/dekodieren geht daneben!!! im cutview von filez!
+
 procedure TPostProcessConvertThread.Convert(FromFile, ToFile: string; EncoderSettings: TObject);
 var
   ToExt: string;
 begin
+  FFromCutView := True;
   FFromFile := FromFile;
   FToFile := ToFile;
   if EncoderSettings <> nil then
-    FEncoderSettings := TEncoderSettings(EncoderSettings).Copy;
+    FEncoderSettings := TEncoderSettings(EncoderSettings);
 end;
 
 constructor TPostProcessConvertThread.Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
@@ -91,13 +95,11 @@ begin
   FFileInfo.Success := False;
 
   if Data <> nil then
-    FEncoderSettings := TEncoderSettings(Data.EncoderSettings).Copy;
+    FEncoderSettings := TEncoderSettings(Data.EncoderSettings);
 end;
 
 destructor TPostProcessConvertThread.Destroy;
 begin
-  if FEncoderSettings <> nil then
-    FEncoderSettings.Free;
 
   inherited;
 end;

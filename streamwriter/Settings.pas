@@ -275,8 +275,9 @@ type
     function GetNewID: Integer;
 
     function GetStringListHash(Lst: TStringList): Cardinal;
+    function GetPostProcessingHash(Settings: TStreamSettings): Cardinal;
     procedure BuildHotkeys;
-    procedure RemoveGray(C: TControl);
+    function RemoveGray(C: TControl; ShowMessage: Boolean = True): Boolean;
     procedure EnablePanel(Panel: TPanel; Enable: Boolean);
     procedure FillFields(Settings: TStreamSettings);
     procedure SetGray;
@@ -723,6 +724,45 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
       AddField(optAdjustForward);
     end;
 
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
+      if S.OutputFormat <> FStreamSettings[i].OutputFormat then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(lstOutputFormat);
+
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
+      if S.PostProcessors.Hash <> FStreamSettings[i].PostProcessors.Hash then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(lstPostProcess);
+
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
+      if S.EncoderSettings.Hash <> FStreamSettings[i].EncoderSettings.Hash then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(btnConfigureEncoder);
+
     // Gegen die Warnung..
     if ShowDialog then
     begin
@@ -825,17 +865,20 @@ begin
       P.Free;
     end;
 
-    for i := 0 to AppGlobals.AddonManager.Addons.Count - 1 do
+    if Length(FStreamSettings) = 0 then
     begin
-      Item := lstAddons.Items.Add;
-      Item.Caption := AppGlobals.AddonManager.Addons[i].Name;
-      Item.Checked := AppGlobals.AddonManager.Addons[i].FilesExtracted;
-      Item.Data := AppGlobals.AddonManager.Addons[i].Copy;
+      for i := 0 to AppGlobals.AddonManager.Addons.Count - 1 do
+      begin
+        Item := lstAddons.Items.Add;
+        Item.Caption := AppGlobals.AddonManager.Addons[i].Name;
+        Item.Checked := AppGlobals.AddonManager.Addons[i].FilesExtracted;
+        Item.Data := AppGlobals.AddonManager.Addons[i].Copy;
 
-      Item.ImageIndex := 6;
+        Item.ImageIndex := 6;
+      end;
+      if lstAddons.Items.Count > 0 then
+        lstAddons.Items[0].Selected := True;
     end;
-    if lstAddons.Items.Count > 0 then
-      lstAddons.Items[0].Selected := True;
 
     BuildHotkeys;
 
@@ -924,6 +967,9 @@ var
   i: Integer;
 begin
   FIgnoreFieldList.Free;
+
+  for i := 0 to lstAddons.Items.Count - 1 do
+    TAddonBase(lstAddons.Items[i].Data).Free;
 
   for i := 0 to FTemporaryPostProcesses.Count - 1 do
     FTemporaryPostProcesses[i].Free;
@@ -1078,6 +1124,7 @@ begin
     chkOnlySaveFull.Enabled := False;
   end;
 
+
   // -----------------------------------
   if FTemporaryPostProcesses <> nil then
   begin
@@ -1112,6 +1159,7 @@ begin
   if lstPostProcess.Items.Count > 0 then
     lstPostProcess.Items[0].Selected := True;
   // -----------------------------------
+
 
   txtShortLengthSeconds.Enabled := chkSkipShort.State <> cbUnchecked;
   EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
@@ -1248,57 +1296,62 @@ begin
           FStreamSettings[i].IgnoreTrackChangePattern.Add(lstIgnoreTitles.Items[n].Caption);
       end;
 
-      // -----------------------------------------------------------
-      FStreamSettings[i].OutputFormat := TAudioTypes(lstOutputFormat.ItemIndex);
-      for k := 0 to FTemporaryPostProcesses.Count - 1 do
+      if FIgnoreFieldList.IndexOf(lstOutputFormat) = -1 then
+        FStreamSettings[i].OutputFormat := TAudioTypes(lstOutputFormat.ItemIndex);
+
+      if FIgnoreFieldList.IndexOf(lstPostProcess) = -1 then
       begin
-        PostProcessor := FStreamSettings[i].PostProcessors.Find(FTemporaryPostProcesses[k]);
-
-        if (PostProcessor = nil) or (FTemporaryPostProcesses[k].IsNew) then
+        // -----------------------------------------------------------
+        for k := 0 to FTemporaryPostProcesses.Count - 1 do
         begin
-          // Ein neuer PostProcessor kann nur TExternalPostProcessor sein.
-          PostProcessor := FTemporaryPostProcesses[k].Copy;
-          FStreamSettings[i].PostProcessors.Add(PostProcessor);
-        end;
+          PostProcessor := FStreamSettings[i].PostProcessors.Find(FTemporaryPostProcesses[k]);
 
-        Item := nil;
-        for n := 0 to lstPostProcess.Items.Count - 1 do
-          if lstPostProcess.Items[n].Data = FTemporaryPostProcesses[k] then
+          if (PostProcessor = nil) or (FTemporaryPostProcesses[k].IsNew) then
           begin
-            Item := lstPostProcess.Items[n];
-            Break;
+            // Ein neuer PostProcessor kann nur TExternalPostProcessor sein.
+            PostProcessor := FTemporaryPostProcesses[k].Copy;
+            FStreamSettings[i].PostProcessors.Add(PostProcessor);
           end;
 
-        PostProcessor.OnlyIfCut := FTemporaryPostProcesses[k].OnlyIfCut;
-        PostProcessor.Order := Item.Index;
-        PostProcessor.Active := Item.Checked;
+          Item := nil;
+          for n := 0 to lstPostProcess.Items.Count - 1 do
+            if lstPostProcess.Items[n].Data = FTemporaryPostProcesses[k] then
+            begin
+              Item := lstPostProcess.Items[n];
+              Break;
+            end;
 
-        PostProcessor.Assign(FTemporaryPostProcesses[k]);
-      end;
+          PostProcessor.OnlyIfCut := FTemporaryPostProcesses[k].OnlyIfCut;
+          PostProcessor.Order := Item.Index;
+          PostProcessor.Active := Item.Checked;
 
-      // Vom Benutzer entfernte PostProcessors aus den echten PostProcessors entfernen..
-      for k := FStreamSettings[i].PostProcessors.Count - 1 downto 0 do
-      begin
-        if FStreamSettings[i].PostProcessors[k] is TExternalPostProcess then
-        begin
-          EP := nil;
-          for n := 0 to FTemporaryPostProcesses.Count - 1 do
-            if FTemporaryPostProcesses[n] is TExternalPostProcess then
-              if TExternalPostProcess(FTemporaryPostProcesses[n]).Identifier = TExternalPostProcess(FStreamSettings[i].PostProcessors[k]).Identifier then
-                begin
-                  EP := TExternalPostProcess(FStreamSettings[i].PostProcessors[k]);
-                  Break;
-                end;
-          if EP = nil then
-          begin
-            FStreamSettings[i].PostProcessors[k].Free;
-            FStreamSettings[i].PostProcessors.Delete(k);
-            Continue;
-          end;
+          PostProcessor.Assign(FTemporaryPostProcesses[k]);
         end;
-        FStreamSettings[i].PostProcessors[k].IsNew := False;
+
+        // Vom Benutzer entfernte PostProcessors aus den echten PostProcessors entfernen..
+        for k := FStreamSettings[i].PostProcessors.Count - 1 downto 0 do
+        begin
+          if FStreamSettings[i].PostProcessors[k] is TExternalPostProcess then
+          begin
+            EP := nil;
+            for n := 0 to FTemporaryPostProcesses.Count - 1 do
+              if FTemporaryPostProcesses[n] is TExternalPostProcess then
+                if TExternalPostProcess(FTemporaryPostProcesses[n]).Identifier = TExternalPostProcess(FStreamSettings[i].PostProcessors[k]).Identifier then
+                  begin
+                    EP := TExternalPostProcess(FStreamSettings[i].PostProcessors[k]);
+                    Break;
+                  end;
+            if EP = nil then
+            begin
+              FStreamSettings[i].PostProcessors[k].Free;
+              FStreamSettings[i].PostProcessors.Delete(k);
+              Continue;
+            end;
+          end;
+          FStreamSettings[i].PostProcessors[k].IsNew := False;
+        end;
+        // -----------------------------------------------------------
       end;
-      // -----------------------------------------------------------
 
 
       if (FIgnoreFieldList.IndexOf(txtTitlePattern) = -1) and (OldTitlePattern <> FStreamSettings[i].TitlePattern) then
@@ -1542,6 +1595,18 @@ begin
   end;
 end;
 
+function TfrmSettings.GetPostProcessingHash(
+  Settings: TStreamSettings): Cardinal;
+var
+  i: Integer;
+begin
+  Result := HashString(IntToStr(Settings.PostProcessors.Count));
+  for i := 0 to Settings.PostProcessors.Count - 1 do
+  begin
+    Result := Result + Settings.PostProcessors[i].Hash;
+  end;
+end;
+
 function TfrmSettings.GetStringListHash(Lst: TStringList): Cardinal;
 var
   i: Integer;
@@ -1619,6 +1684,8 @@ begin
   if not FInitialized then
     Exit;
 
+  RemoveGray(lstOutputFormat);
+
   if lstOutputFormat.ItemIndex = 0 then
   begin
     btnConfigureEncoder.Enabled := False;
@@ -1685,6 +1752,8 @@ var
 begin
   if not FInitialized then
     Exit;
+
+  RemoveGray(lstPostProcess);
 
   if Item.Data = nil then
     Exit;
@@ -1948,18 +2017,22 @@ begin
     FPageList.Add(TPage.Create('Advanced', pnlStreamsAdvanced, 'MISC', FPageList.Find(pnlStreams)));
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
-    if Length(FStreamSettings) = 1 then
-      FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
+    FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
     FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
   end;
   inherited;
 end;
 
-procedure TfrmSettings.RemoveGray(C: TControl);
+function TfrmSettings.RemoveGray(C: TControl; ShowMessage: Boolean = True): Boolean;
 begin
   if FIgnoreFieldList = nil then
     Exit;
+
+  if ShowMessage and (FIgnoreFieldList.IndexOf(C) > -1) then
+  begin
+    TfrmMsgDlg.ShowMsg(Self, _('The setting''s configuration you are about to change differs for the selected streams. The new setting will be applied to every selected stream when saving settings using "OK".'), 13, btOK);
+  end;
 
   FIgnoreFieldList.Remove(C);
 
@@ -1976,6 +2049,8 @@ begin
   begin
     TListView(C).Color := clWindow;
   end;
+
+  Exit(True);
 end;
 
 procedure TfrmSettings.SetGray;
@@ -2235,6 +2310,11 @@ var
 begin
   inherited;
 
+  if not FInitialized then
+    Exit;
+
+  RemoveGray(lstPostProcess);
+
   AddPostProcessorForm := TfrmSettingsAddPostProcessor.Create(Self);
   try
     AddPostProcessorForm.ShowModal;
@@ -2312,26 +2392,52 @@ procedure TfrmSettings.btnConfigureClick(Sender: TObject);
 begin
   inherited;
 
+  if not FInitialized then
+    Exit;
+
   if lstPostProcess.Selected <> nil then
+  begin
+    RemoveGray(lstPostProcess);
+
     TPostProcessBase(lstPostProcess.Selected.Data).Configure(Self, 0, True);
+  end;
 end;
 
 procedure TfrmSettings.btnConfigureEncoderClick(Sender: TObject);
 var
+  i: Integer;
   F: TfrmConfigureEncoder;
   EncoderSettings: TEncoderSettings;
 begin
   inherited;
 
+  if not FInitialized then
+    Exit;
+
+  RemoveGray(btnConfigureEncoder);
+
   if Length(FStreamSettings) = 0 then
-    EncoderSettings := AppGlobals.StreamSettings.EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex))
+    EncoderSettings := AppGlobals.StreamSettings.EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)).Copy
   else
-    EncoderSettings := FStreamSettings[0].EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex));
+    EncoderSettings := FStreamSettings[0].EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)).Copy;
 
   F := TfrmConfigureEncoder.Create(Self, EncoderSettings);
   try
     F.ShowModal;
+
+    if F.Save then
+    begin
+      if Length(FStreamSettings) = 0 then
+      begin
+        AppGlobals.StreamSettings.EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)).Assign(F.EncoderSettings);
+      end else
+        for i := 0 to High(FStreamSettings) do
+        begin
+          FStreamSettings[i].EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)).Assign(F.EncoderSettings);
+        end;
+    end;
   finally
+    EncoderSettings.Free;
     F.Free;
   end;
 end;
@@ -2387,8 +2493,13 @@ end;
 
 procedure TfrmSettings.btnRemoveClick(Sender: TObject);
 begin
+  if not FInitialized then
+    Exit;
+
   if lstPostProcess.Selected <> nil then
   begin
+    RemoveGray(lstPostProcess);
+
     FTemporaryPostProcesses.Remove(TExternalPostProcess(lstPostProcess.Selected.Data));
     TExternalPostProcess(lstPostProcess.Selected.Data).Free;
     //lstPostProcess.Selected.Delete;
@@ -2405,14 +2516,23 @@ begin
 end;
 
 procedure TfrmSettings.btnResetClick(Sender: TObject);
+var
+  i: Integer;
 begin
   FInitialized := False;
   if FIgnoreFieldList <> nil then
   begin
     while FIgnoreFieldList.Count > 0 do
-      RemoveGray(TControl(FIgnoreFieldList[0]));
+      RemoveGray(TControl(FIgnoreFieldList[0]), False);
   end;
   FillFields(AppGlobals.StreamSettings);
+
+  if TAudioTypes(lstOutputFormat.ItemIndex) <> atNone then
+    for i := 0 to High(FStreamSettings) do
+    begin
+      FStreamSettings[i].EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)).Assign(AppGlobals.StreamSettings.EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)));
+    end;
+
   FInitialized := True;
 end;
 

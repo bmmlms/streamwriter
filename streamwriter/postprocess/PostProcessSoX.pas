@@ -47,6 +47,7 @@ type
     FSilenceStartLength: Integer;
     FSilenceEndLength: Integer;
   protected
+    function FGetHash: Cardinal; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -282,6 +283,13 @@ destructor TPostProcessSoX.Destroy;
 begin
 
   inherited;
+end;
+
+function TPostProcessSoX.FGetHash: Cardinal;
+begin
+  Result := inherited + HashString(BoolToStr(FNormalize) + BoolToStr(FFadeoutStart) + BoolToStr(FFadeoutEnd) +
+    BoolToStr(FSilenceStart) + BoolToStr(FSilenceEnd) + IntToStr(FFadeoutStartLength) +
+    IntToStr(FFadeoutEndLength) + IntToStr(FSilenceStartLength) + IntToStr(FSilenceEndLength));
 end;
 
 {
