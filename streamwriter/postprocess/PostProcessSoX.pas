@@ -233,8 +233,6 @@ function TPostProcessSoX.Copy: TPostProcessBase;
 begin
   Result := TPostProcessSoX.Create;
 
-  TPostProcessSoX(Result).FCopied := True;
-
   Result.Active := FActive;
   Result.Order := FOrder;
   Result.OnlyIfCut := FOnlyIfCut;

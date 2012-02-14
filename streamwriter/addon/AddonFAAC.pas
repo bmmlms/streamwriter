@@ -69,6 +69,7 @@ function TAddonFAAC.Copy: TAddonBase;
 begin
   Result := TAddonFAAC.Create;
 
+  Result.Copied := True;
   Result.Assign(Self);
 end;
 

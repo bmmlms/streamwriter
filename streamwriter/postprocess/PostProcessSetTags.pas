@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects, AudioGenie,
   AddonAudioGenie, Functions, Logging, ConfigureSetTags, TypeDefs,
-  ExtendedStream, Generics.Collections;
+  ExtendedStream, Generics.Collections, FileTagger;
 
 type
   TPostProcessSetTagsThread = class(TPostProcessThreadBase)
@@ -73,7 +73,7 @@ procedure TPostProcessSetTagsThread.Execute;
 var
   Artist, Title, Album, Comment: string;
   Arr: TPatternReplaceArray;
-  AG: TAudioGenie3;
+  FileTagger: TFileTagger;
 begin
   inherited;
 
@@ -100,23 +100,23 @@ begin
   Arr[6].C := 'i';
   Arr[6].Replace := FormatDateTime('hh.nn.ss', Now);
 
-  AG := TAudioGenie3.Create(TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).DLLPath);
+  FileTagger := TFileTagger.Create;
   try
     try
-      if AG.AUDIOAnalyzeFileW(FData.Filename) <> UNKNOWN then
+      if FileTagger.Read(FData.Filename) then
       begin
         Artist := PatternReplace(Artist, Arr);
         Title := PatternReplace(Title, Arr);
         Album := PatternReplace(Album, Arr);
         Comment := PatternReplace(Comment, Arr);
 
-        AG.AUDIOArtistW := Artist;
-        AG.AUDIOTitleW := Title;
-        AG.AUDIOAlbumW := Album;
-        AG.AUDIOTrackW := IntToStr(FData.TrackNumber);
-        AG.AUDIOCommentW := Comment;
+        FileTagger.Artist := Artist;
+        FileTagger.Title := Title;
+        FileTagger.Album := Album;
+        FileTagger.TrackNumber := IntToStr(FData.TrackNumber);
+        FileTagger.Comment := Comment;
 
-        if AG.AUDIOSaveChangesW then
+        if FileTagger.Write(FData.Filename) then
         begin
           FData.Filesize := GetFileSize(FData.Filename);
           FResult := arWin;
@@ -125,7 +125,7 @@ begin
     except
     end;
   finally
-    AG.Free;
+    FileTagger.Free;
   end;
 end;
 

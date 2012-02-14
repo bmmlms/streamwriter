@@ -22,7 +22,7 @@ unit FileTagger;
 interface
 
 uses
-  Windows, SysUtils, AudioGenie, AddonAudioGenie;
+  Windows, SysUtils, AudioGenie, AddonAudioGenie, SyncObjs;
 
 type
   TFileTagger = class
@@ -49,10 +49,14 @@ implementation
 uses
   AppData;
 
+var
+  FileTaggerLock: TCriticalSection;
+
 { TFileTagger }
 
 constructor TFileTagger.Create;
 begin
+  inherited;
 
 end;
 
@@ -79,20 +83,25 @@ begin
   FComment := '';
   FTrackNumber := '';
 
-  AG := TAudioGenie3.Create(TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).DLLPath);
+  FileTaggerLock.Enter;
   try
-    if AG.AUDIOAnalyzeFileW(Filename) <> UNKNOWN then
-    begin
-      FArtist := AG.AUDIOArtistW;
-      FTitle := AG.AUDIOTitleW;
-      FAlbum := AG.AUDIOAlbumW;
-      FComment := AG.AUDIOCommentW;
-      FTrackNumber := AG.AUDIOTrackW;
+    AG := TAudioGenie3.Create(TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).DLLPath);
+    try
+      if AG.AUDIOAnalyzeFileW(Filename) <> UNKNOWN then
+      begin
+        FArtist := AG.AUDIOArtistW;
+        FTitle := AG.AUDIOTitleW;
+        FAlbum := AG.AUDIOAlbumW;
+        FComment := AG.AUDIOCommentW;
+        FTrackNumber := AG.AUDIOTrackW;
 
-      Result := True;
+        Result := True;
+      end;
+    finally
+      AG.Free;
     end;
   finally
-    AG.Free;
+    FileTaggerLock.Leave;
   end;
 end;
 
@@ -105,22 +114,33 @@ begin
   if not TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).FilesExtracted then
     Exit;
 
-  AG := TAudioGenie3.Create(TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).DLLPath);
+  FileTaggerLock.Enter;
   try
-    if AG.AUDIOAnalyzeFileW(Filename) <> UNKNOWN then
-    begin
-      AG.AUDIOArtistW := FArtist;
-      AG.AUDIOTitleW := FTitle;
-      AG.AUDIOAlbumW := FAlbum;
-      AG.AUDIOCommentW := FComment;
-      AG.AUDIOTrackW := FTrackNumber;
+    AG := TAudioGenie3.Create(TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).DLLPath);
+    try
+      if AG.AUDIOAnalyzeFileW(Filename) <> UNKNOWN then
+      begin
+        AG.AUDIOArtistW := FArtist;
+        AG.AUDIOTitleW := FTitle;
+        AG.AUDIOAlbumW := FAlbum;
+        AG.AUDIOCommentW := FComment;
+        AG.AUDIOTrackW := FTrackNumber;
 
-      if AG.AUDIOSaveChangesW then
-        Result := True;
+        if AG.AUDIOSaveChangesW then
+          Result := True;
+      end;
+    finally
+      AG.Free;
     end;
   finally
-    AG.Free;
+    FileTaggerLock.Leave;
   end;
 end;
+
+initialization
+  FileTaggerLock := TCriticalSection.Create;
+
+finalization
+  FileTaggerLock.Free;
 
 end.

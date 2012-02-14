@@ -42,6 +42,7 @@ function TAddonAudioGenie.Copy: TAddonBase;
 begin
   Result := TAddonAudioGenie.Create;
 
+  Result.Copied := True;
   Result.Assign(Self);
 end;
 

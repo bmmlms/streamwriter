@@ -75,8 +75,6 @@ uses
 
 { TPostProcessConvertThread }
 
-// TODO: Enkodieren/dekodieren geht daneben!!! im cutview von filez!
-
 procedure TPostProcessConvertThread.Convert(FromFile, ToFile: string; EncoderSettings: TObject);
 var
   ToExt: string;
@@ -207,8 +205,6 @@ end;
 function TPostProcessConvert.Copy: TPostProcessBase;
 begin
   Result := TPostProcessConvert.Create;
-
-  TPostProcessConvert(Result).FCopied := True;
 
   Result.Active := FActive;
   Result.Order := FOrder;

@@ -77,9 +77,6 @@ object frmEditTags: TfrmEditTags
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitLeft = -113
-    ExplicitTop = 162
-    ExplicitWidth = 439
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -103,7 +100,6 @@ object frmEditTags: TfrmEditTags
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnCloseClick
-      ExplicitLeft = 338
     end
   end
   object txtArtist: TLabeledEdit
@@ -116,7 +112,6 @@ object frmEditTags: TfrmEditTags
     EditLabel.Height = 13
     EditLabel.Caption = 'Artist:'
     TabOrder = 1
-    ExplicitWidth = 425
   end
   object txtTitle: TLabeledEdit
     Left = 4
@@ -128,7 +123,6 @@ object frmEditTags: TfrmEditTags
     EditLabel.Height = 13
     EditLabel.Caption = 'Title:'
     TabOrder = 2
-    ExplicitWidth = 425
   end
   object txtComment: TMemo
     Left = 4
@@ -137,7 +131,6 @@ object frmEditTags: TfrmEditTags
     Height = 72
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 3
-    ExplicitWidth = 425
   end
   object txtAlbum: TLabeledEdit
     Left = 4
@@ -149,6 +142,5 @@ object frmEditTags: TfrmEditTags
     EditLabel.Height = 13
     EditLabel.Caption = 'Album:'
     TabOrder = 4
-    ExplicitWidth = 425
   end
 end

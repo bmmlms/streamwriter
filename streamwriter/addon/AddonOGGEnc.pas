@@ -50,6 +50,7 @@ function TAddonOGGEnc.Copy: TAddonBase;
 begin
   Result := TAddonOGGEnc.Create;
 
+  Result.Copied := True;
   Result.Assign(Self);
 end;
 

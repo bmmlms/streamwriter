@@ -101,8 +101,6 @@ type
   TPostProcessBase = class
   private
   protected
-    FCopied: Boolean;
-
     FNeedsWave: Boolean;
     FHidden: Boolean;
     FCanConfigure: Boolean;
@@ -139,7 +137,6 @@ type
     property Order: Integer read FOrder write FOrder;
     property OnlyIfCut: Boolean read FOnlyIfCut write FOnlyIfCut;
     property GroupID: Integer read FGroupID;
-    property Copied: Boolean read FCopied;
     property PostProcessType: TPostProcessTypes read FPostProcessType;
     property IsNew: Boolean read FIsNew write FIsNew;
     property Hash: Cardinal read FGetHash;

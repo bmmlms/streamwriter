@@ -41,7 +41,7 @@ type
     procedure btnCloseClick(Sender: TObject);
   private
     FAddon: TAddonAudioGenie;
-    FTagger: TFileTagger;
+    FFilename: string;
   public
     constructor Create(AOwner: TComponent);
     destructor Destroy; override;
@@ -54,16 +54,25 @@ implementation
 {$R *.dfm}
 
 procedure TfrmEditTags.btnCloseClick(Sender: TObject);
+var
+  FileTagger: TFileTagger;
+  ShowMsg: Boolean;
 begin
-  FTagger.Artist := Trim(txtArtist.Text);
-  FTagger.Title := Trim(txtTitle.Text);
-  FTagger.Album := Trim(txtAlbum.Text);
-  FTagger.Comment := Trim(txtComment.Text);
+  ShowMsg := False;
+  FileTagger := TFileTagger.Create;
+  try
+    FileTagger.Artist := Trim(txtArtist.Text);
+    FileTagger.Title := Trim(txtTitle.Text);
+    FileTagger.Album := Trim(txtAlbum.Text);
+    FileTagger.Comment := Trim(txtComment.Text);
 
-  if FTagger.Write(FTagger.Filename) then
-    Close
-  else
-    MsgBox(Self.Handle, _('The file could not be saved. Please make sure it is not in use and try saving again.'), _('Error'), MB_ICONERROR);
+    if FileTagger.Write(FFilename) then
+      Close
+    else
+      MsgBox(Self.Handle, _('The file could not be saved. Please make sure it is not in use and try saving again.'), _('Error'), MB_ICONERROR);
+  finally
+    FileTagger.Free;
+  end;
 end;
 
 constructor TfrmEditTags.Create(AOwner: TComponent);
@@ -75,8 +84,6 @@ end;
 
 destructor TfrmEditTags.Destroy;
 begin
-  if Assigned(FTagger) then
-    FTagger.Free;
 
   inherited;
 end;
@@ -84,7 +91,9 @@ end;
 function TfrmEditTags.EditFile(Filename: string): Boolean;
 var
   FS: TFileStream;
+  FileTagger: TFileTagger;
 begin
+  FFilename := Filename;
   Result := False;
   FAddon := AppGlobals.AddonManager.Find(TAddonAudioGenie) as TAddonAudioGenie;
 
@@ -96,20 +105,25 @@ begin
 
   try
     FS := TFileStream.Create(Filename, fmOpenRead or fmShareExclusive);
-    Result := True;
   except
     Exit;
   end;
   FS.Free;
 
-  FTagger := TFileTagger.Create;
-  if not FTagger.Read(Filename) then
-    Exit(False);
+  FileTagger := TFileTagger.Create;
+  try
+    if not FileTagger.Read(Filename) then
+      Exit;
 
-  txtArtist.Text := FTagger.Artist;
-  txtTitle.Text := FTagger.Title;
-  txtAlbum.Text := FTagger.Album;
-  txtComment.Text := FTagger.Comment;
+    txtArtist.Text := FileTagger.Artist;
+    txtTitle.Text := FileTagger.Title;
+    txtAlbum.Text := FileTagger.Album;
+    txtComment.Text := FileTagger.Comment;
+  finally
+    FileTagger.Free;
+  end;
+
+  Result := True;
 end;
 
 procedure TfrmEditTags.FormKeyDown(Sender: TObject; var Key: Word;

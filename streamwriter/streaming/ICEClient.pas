@@ -290,7 +290,7 @@ begin
     FOnDisconnected(Self);
   end;
 end;
-                   // TODO: MemoryLeaks... :)
+
 procedure TICEClient.StopPlay;
 begin
   if FICEThread <> nil then

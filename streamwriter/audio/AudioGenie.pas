@@ -1440,12 +1440,12 @@ implementation
 uses
   sysutils, windows, activex;
 
-const
-  AudioGenie3DLL = 'AudioGenie3.dll';
+//const
+//  AudioGenie3DLL = 'AudioGenie3.dll';
 
-resourcestring
-  MSG_LoadLibraryFailed = '%s could not be loaded. Error-Code: %d. Error-Message: %s';
-  MSG_GetProcAddressFailed = 'GetProcAddress for %s failed. Error-Code: %d. Error-Message: %s';
+//resourcestring
+//  MSG_LoadLibraryFailed = '%s could not be loaded. Error-Code: %d. Error-Message: %s';
+//  MSG_GetProcAddressFailed = 'GetProcAddress for %s failed. Error-Code: %d. Error-Message: %s';
 
 type
   TAG3AACGetBitRateTypeW = function: PWideChar; stdcall;
@@ -3661,9 +3661,7 @@ begin
   result := GetProcAddress(handle, PansiChar(procName));
 
   if (result = NIL) then
-    raise exception.create(
-      Format(MSG_GetProcAddressFailed, [procName, GetLastError, SysErrorMessage(GetLastError)])
-      );
+    raise exception.create('Error in IntGetProcAddress()'); //(Format(MSG_GetProcAddressFailed, [procName, GetLastError, SysErrorMessage(GetLastError)]));
 end;
 
 function TAudioGenie3.ID3V2GetSignatureFrameDataW(const arr: Pointer; const maxLen: LongInt; const index: SmallInt): LongInt;

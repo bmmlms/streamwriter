@@ -1772,7 +1772,10 @@ begin
     begin
       FDataLists.TrackList[i].Filesize := AudioInfo.Filesize;
       FDataLists.TrackList[i].Length := Trunc(AudioInfo.Length);
-      FDataLists.TrackList[i].WasCut := True;
+
+      // Ist mal raus, damit das "geschnitten"-Symbol nur bei automatischen Aufnahmen kommt
+      //FDataLists.TrackList[i].WasCut := True;
+
       FDataLists.TrackList[i].Finalized := True;
 
       FDataLists.TrackList[i].BitRate := AudioInfo.Bitrate;

@@ -42,6 +42,7 @@ function TAddonSoX.Copy: TAddonBase;
 begin
   Result := TAddonSoX.Create;
 
+  Result.Copied := True;
   Result.Assign(Self);
 end;
 

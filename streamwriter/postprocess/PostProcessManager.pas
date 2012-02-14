@@ -132,7 +132,7 @@ begin
 
   if Entry.NeedsWave then
   begin
-    Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0].Copy);  // TODO: Das hier war mal ohne copy. wg. mem leaks testweise reingemacht.
+    Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0].Copy);
   end;
 
   // Nach Order sortieren
@@ -153,7 +153,7 @@ begin
 
   if Entry.NeedsWave then
   begin
-    Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0].Copy); // TODO: Das hier war mal ohne copy. wg. mem leaks testweise reingemacht.
+    Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0].Copy);
   end;
 
   // Jetzt GroupID 1 (Nach WAVE-Phase)

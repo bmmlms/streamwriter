@@ -71,6 +71,7 @@ function TAddonMP4Box.Copy: TAddonBase;
 begin
   Result := TAddonMP4Box.Create;
 
+  Result.Copied := True;
   Result.Assign(Self);
 end;
 

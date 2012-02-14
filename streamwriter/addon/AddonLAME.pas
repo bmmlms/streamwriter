@@ -52,6 +52,7 @@ function TAddonLAME.Copy: TAddonBase;
 begin
   Result := TAddonLAME.Create;
 
+  Result.Copied := True;
   Result.Assign(Self);
 end;
 

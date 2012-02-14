@@ -1868,7 +1868,7 @@ begin
   Result := 0;
   Data1 := GetNodeData(Node1);
   Data2 := GetNodeData(Node2);
-
+           // TODO: 2 streams aufnehmen. ersten abspielen. warten. zweiten abspielen - timer oben rechts wird nicht resetted.
   if Data1.Track = nil then
     Exit(-1);
   if Data2.Track = nil then

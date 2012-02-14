@@ -130,8 +130,6 @@ function TPostProcessMP4Box.Copy: TPostProcessBase;
 begin
   Result := TPostProcessMP4Box.Create;
 
-  TPostProcessMP4Box(Result).FCopied := True;
-
   Result.Active := FActive;
   Result.Order := FOrder;
   Result.OnlyIfCut := FOnlyIfCut;

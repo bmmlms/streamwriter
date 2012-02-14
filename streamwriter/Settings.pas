@@ -1730,7 +1730,7 @@ procedure TfrmSettings.lstAddonsResize(Sender: TObject);
 begin
   inherited;
 
-  lstAddons.Columns[0].Width := lstAddons.ClientWidth - 25;
+  lstAddons.Columns[0].Width := lstAddons.ClientWidth;
 end;
 
 procedure TfrmSettings.lstPostProcessCompare(Sender: TObject; Item1,

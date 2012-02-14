@@ -43,6 +43,8 @@ type
 
     function CanEncode(AudioType: TAudioTypes): Boolean; virtual;
 
+    property Copied: Boolean read FCopied write FCopied;
+
     property Name: string read FName;
     property Help: string read FHelp;
 
