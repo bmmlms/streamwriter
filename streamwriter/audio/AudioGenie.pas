@@ -762,7 +762,7 @@ type
     function WAVGetFormatIDW: SmallInt;
     function WAVGetFormatW: WideString;
     function WAVGetHeaderSizeW: LongInt;
-    function WAVGetInfoChunkIDsW: WideString;
+    //function WAVGetInfoChunkIDsW: WideString;
     function WAVGetDisplayText: WideString;
     function WMAGetAlbumArtistW: WideString;
     function WMAGetAlbumW: WideString;
@@ -4279,10 +4279,12 @@ begin
   result := AG3WAVGetHeaderSizeW();
 end;
 
+{
 function TAudioGenie3.WAVGetInfoChunkIDsW: WideString;
 begin
   result := ConvertString(AG3WAVGetInfoChunkIDsW);
 end;
+}
 
 function TAudioGenie3.WAVGetTextFrameW(const FrameID: TWAVFrameID): WideString;
 begin

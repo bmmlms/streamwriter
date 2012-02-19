@@ -358,31 +358,9 @@ end;
 
 function TFileConvertor.ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
 var
-  DLLHandle: THandle;
-  ToFileTemp: string;
-  InStream, OutStream: TFileStream;
-
-  InitStream: LameInitStream;
-  EncodeChunk: LameEncodeChunk;
-  DeInitStream: LameDeInitStream;
-  CloseStream: LameCloseStream;
-
-  Done: LongWord;
-  PercentDone: LongWord;
-  PrevPercentDone: LongWord;
-
-  Config: TBE_CONFIG;
-  Samples, MP3Buffer: LongWord;
-
-  HBEStream: THBE_STREAM;
-  Err: BE_ERR;
-  PMP3Buffer: PByte;
-  Buffer: PSmallInt;
-  Len, Write, ToRead, ToWrite: LongWord;
-
   Addon: TAddonLAME;
 
-  CmdLine, Opts: string;
+  CmdLine, Opts, ToFileTemp: string;
   Output: AnsiString;
   EC: Cardinal;
 begin
@@ -391,7 +369,7 @@ begin
   Addon := AppGlobals.AddonManager.Find(TAddonLAME) as TAddonLAME;
 
   if not Addon.FilesExtracted then
-    Exit(False);
+    Exit;
 
   ToFileTemp := RemoveFileExt(ToFile) + '_convert.mp3';
 

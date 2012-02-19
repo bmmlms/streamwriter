@@ -370,10 +370,6 @@ end;
 
 function TPostProcessSoX.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
-  Result := nil;
-  //if not CanProcess(Data) then
-  //  Exit;
-
   Result := TPostProcessSoxThread.Create(Data, Self);
 end;
 

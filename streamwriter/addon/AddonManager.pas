@@ -36,8 +36,6 @@ uses
 { TAddonManager }
 
 function TAddonManager.CanEncode(FileExtension: string): TCanEncodeResults;
-var
-  i: Integer;
 begin
   Result := CanEncode(FiletypeToFormat(FileExtension));
 end;

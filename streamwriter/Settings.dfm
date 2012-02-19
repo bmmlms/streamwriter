@@ -518,7 +518,6 @@ object frmSettings: TfrmSettings
       SmallImages = PngImageList1
       TabOrder = 0
       ViewStyle = vsReport
-      OnCompare = lstPostProcessCompare
       OnResize = lstPostProcessResize
       OnSelectItem = lstPostProcessSelectItem
       OnItemChecked = lstPostProcessItemChecked

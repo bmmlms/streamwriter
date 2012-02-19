@@ -3,10 +3,10 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Top = 450
   Caption = 'streamWriter'
   ClientHeight = 321
-  ClientWidth = 689
+  ClientWidth = 714
   Color = clBtnFace
   Constraints.MinHeight = 350
-  Constraints.MinWidth = 630
+  Constraints.MinWidth = 730
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -26,7 +26,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   object tbClients: TToolBar
     Left = 0
     Top = 0
-    Width = 689
+    Width = 714
     Height = 25
     Images = imgImages
     Indent = 2
@@ -276,6 +276,12 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       object mnuPlayerMuteVolume: TMenuItem
         Action = actPlayerMuteVolume
       end
+      object N14: TMenuItem
+        Caption = '-'
+      end
+      object mnuEqualizer: TMenuItem
+        Action = actEqualizer
+      end
     end
     object View1: TMenuItem
       Caption = '&View'
@@ -483,6 +489,12 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Caption = 'Ren&ame'
       Hint = 'Rename'
       ImageIndex = 74
+    end
+    object actEqualizer: TAction
+      Caption = '&Equalizer...'
+      Hint = 'Equalizer...'
+      ImageIndex = 76
+      OnExecute = actEqualizerExecute
     end
   end
   object mnuStreamPopup: TPopupMenu
@@ -2907,6 +2919,29 @@ object frmStreamWriterMain: TfrmStreamWriterMain
           23DB781329A1B4C05C14F0E86E7BEEC1ED512D28018BB3538844A3300C3E4446
           32B06EB7BBC05C1470FDBCE9C8C15669BB5B1A209570FE1FFAEE27798B23289B
           A3C53ED36F63386A66A18D673F0000000049454E44AE426082}
+      end
+      item
+        Background = clWindow
+        Name = 'equalizer'
+        PngImage.Data = {
+          89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+          610000001974455874536F6674776172650041646F626520496D616765526561
+          647971C9653C000001DC4944415478DAA5933B885A511086FF0B82A2AE8F420B
+          9155B7938020128816E2031F58D8292E0B92CACA909040DE6C581231290281F4
+          B285B02262212862A12288828D08AB62E303D1E27606D4CE9CB110021B12F1C0
+          CFFD9973E69B399CB9DC6EB7C3298B3B19C074C1F484E9ECC8DC5F4C6D025C65
+          3299775AADF6D1FF76C3711CE6F3F97D2412491220DE68347EAED76BA45229C4
+          E371FCCD2F160B54AB55F87C3EA8542AD8EDF6670478CE823F369B0DD2E93462
+          B11896CB2518146EB71B62B1F8101F0E87F07ABDA8542A301A8D70381C2F08F0
+          9205BE132097CB211A8D62341AC1EFF7A35C2E432693A1D56A5135AC562BD4EB
+          75783C1EE8F57A389DCE5704785D2A95BE11A0582C22140A613299A0D96C5205
+          503C1008809D8146A3399C110A8570B95C6F08F0BE502824789E47AFD783C562
+          D96FD66AB57DE26C3643A7D381CD668342A138C4A55229013E10E03A9FCFDF4C
+          A7530483413018D46A35DAED36B5B8EFE021AF542AE9FB89009FB3D9EC47F62C
+          E8F7FB30994C90CBE5E876BBB05AADFBA4873C156157FC4280249B83B7F45C83
+          C10066B319DBEDF69FDE603010E82B9B09EE2691483CD5E974E7229108344C24
+          8944F287A7459E9E552010603C1ECFC2E1F02D011EB3BD4B26D591A3CC33DD9D
+          FE339D0AF80DEA3E02128DBE5A020000000049454E44AE426082}
       end>
     PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     Left = 32

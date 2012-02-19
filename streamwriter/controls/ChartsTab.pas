@@ -68,7 +68,7 @@ type
   protected
     procedure Resize; override;
   public
-    constructor Create(AOwner: TComponent);
+    constructor Create(AOwner: TComponent); reintroduce;
 
     procedure Setup(Images: TImageList);
   end;
@@ -121,7 +121,7 @@ type
       const Text: string): Integer; override;
     procedure Resize; override;
   public
-    constructor Create(AOwner: TComponent; Lists: TDataLists);
+    constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
     destructor Destroy; override;
 
     procedure BuildTree(List: TList<TChartEntry>);
@@ -151,7 +151,7 @@ type
     procedure CategoriesChange(Sender: TObject);
     procedure ButtonReloadClick(Sender: TObject);
   public
-    constructor Create(AOwner: TComponent; Lists: TDataLists);
+    constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
     destructor Destroy; override;
 
     procedure Setup(Images: TImageList);

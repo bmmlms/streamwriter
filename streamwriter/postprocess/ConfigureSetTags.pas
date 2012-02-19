@@ -33,7 +33,7 @@ type
     FPostProcessor: TPostProcessBase;
     FArtist, FTitle, FAlbum, FComment: string;
   public
-    constructor Create(AOwner: TComponent; PostProcessor: TPostProcessBase; Artist, Title, Album, Comment: string); overload;
+    constructor Create(AOwner: TComponent; PostProcessor: TPostProcessBase; Artist, Title, Album, Comment: string); reintroduce;
 
     property Artist: string read FArtist;
     property Title: string read FTitle;

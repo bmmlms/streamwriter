@@ -100,6 +100,8 @@ type
     procedure StopRecording;
     procedure Pause;
     procedure SetVolume(Vol: Integer);
+    procedure SetEQ(Value, Freq: Integer);
+    procedure SetEQEnabled(Value: Boolean);
 
     procedure LockRelay;
     procedure UnlockRelay;
@@ -127,6 +129,16 @@ type
 implementation
 
 { TICEThread }
+
+procedure TICEThread.SetEQ(Value, Freq: Integer);
+begin
+ FPlayer.SetEQ(Value, Freq);
+end;
+
+procedure TICEThread.SetEQEnabled(Value: Boolean);
+begin
+  FPlayer.EQEnabled := Value;
+end;
 
 procedure TICEThread.SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean; RecordTitle: string);
 begin
@@ -201,6 +213,7 @@ end;
 procedure TICEThread.StopPlay;
 begin
   FPlayingStarted := False;
+  FPlaybackStarted := False;
 end;
 
 procedure TICEThread.StopPlayInternal;

@@ -76,7 +76,7 @@ type
 
     procedure InitForm;
   public
-    constructor Create(AOwner: TComponent; PostProcessor: TPostProcessSoX; TitleLength: Cardinal); overload;
+    constructor Create(AOwner: TComponent; PostProcessor: TPostProcessSoX; TitleLength: Cardinal); reintroduce; overload;
     constructor Create(AOwner: TComponent; PostProcessor: TPostProcessSoX; Normalize, FadeoutStart, FadeoutEnd: Boolean;
       FadeoutStartLength, FadeoutEndLength: Integer; SilenceStart, SilenceEnd: Boolean; SilenceStartLength,
       SilenceEndLength: Integer; TitleLength: Cardinal); reintroduce; overload;
@@ -118,8 +118,6 @@ begin
 end;
 
 procedure TfrmConfigureSoX.btnOKClick(Sender: TObject);
-var
-  Res: Integer;
 begin
   {
   if pnlSetup.Visible then
@@ -163,79 +161,79 @@ begin
   end else
   begin
   }
-    if chkFadeoutStart.Checked and (StrToIntDef(txtFadeoutStart.Text, 0) = 0) then
+
+  if chkFadeoutStart.Checked and (StrToIntDef(txtFadeoutStart.Text, 0) = 0) then
+  begin
+    MsgBox(Handle, _('Please enter the length of the fadein in seconds.'), _('Info'), MB_ICONINFORMATION);
+    Exit;
+  end else if (StrToIntDef(txtFadeoutStart.Text, 0) = 0) then
+    txtFadeoutStart.Text := '5';
+
+  if chkFadeoutEnd.Checked and (StrToIntDef(txtFadeoutEnd.Text, 0) = 0) then
+  begin
+    MsgBox(Handle, _('Please enter the length of the fadeout in seconds.'), _('Info'), MB_ICONINFORMATION);
+    Exit;
+  end else if (StrToIntDef(txtFadeoutEnd.Text, 0) = 0) then
+    txtFadeoutEnd.Text := '5';
+
+  if chkSilenceStart.Checked and (StrToIntDef(txtSilenceStart.Text, 0) = 0) then
+  begin
+    MsgBox(Handle, _('Please enter the length of silence at the beginning in seconds.'), _('Info'), MB_ICONINFORMATION);
+    Exit;
+  end else if (StrToIntDef(txtSilenceStart.Text, 0) = 0) then
+    txtSilenceStart.Text := '5';
+
+  if chkSilenceEnd.Checked and (StrToIntDef(txtSilenceEnd.Text, 0) = 0) then
+  begin
+    MsgBox(Handle, _('Please enter the length of silence at the end in seconds.'), _('Info'), MB_ICONINFORMATION);
+    Exit;
+  end else if (StrToIntDef(txtSilenceEnd.Text, 0) = 0) then
+    txtSilenceEnd.Text := '5';
+
+
+  if FTitleLength > 0 then
+  begin
+    if chkFadeoutStart.Checked and (StrToInt(txtFadeoutStart.Text) > FTitleLength) then
     begin
-      MsgBox(Handle, _('Please enter the length of the fadein in seconds.'), _('Info'), MB_ICONINFORMATION);
+      MsgBox(Handle, Format(_('The length for fadeout cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
       Exit;
-    end else if (StrToIntDef(txtFadeoutStart.Text, 0) = 0) then
-      txtFadeoutStart.Text := '5';
-
-    if chkFadeoutEnd.Checked and (StrToIntDef(txtFadeoutEnd.Text, 0) = 0) then
-    begin
-      MsgBox(Handle, _('Please enter the length of the fadeout in seconds.'), _('Info'), MB_ICONINFORMATION);
-      Exit;
-    end else if (StrToIntDef(txtFadeoutEnd.Text, 0) = 0) then
-      txtFadeoutEnd.Text := '5';
-
-    if chkSilenceStart.Checked and (StrToIntDef(txtSilenceStart.Text, 0) = 0) then
-    begin
-      MsgBox(Handle, _('Please enter the length of silence at the beginning in seconds.'), _('Info'), MB_ICONINFORMATION);
-      Exit;
-    end else if (StrToIntDef(txtSilenceStart.Text, 0) = 0) then
-      txtSilenceStart.Text := '5';
-
-    if chkSilenceEnd.Checked and (StrToIntDef(txtSilenceEnd.Text, 0) = 0) then
-    begin
-      MsgBox(Handle, _('Please enter the length of silence at the end in seconds.'), _('Info'), MB_ICONINFORMATION);
-      Exit;
-    end else if (StrToIntDef(txtSilenceEnd.Text, 0) = 0) then
-      txtSilenceEnd.Text := '5';
-
-
-    if FTitleLength > 0 then
-    begin
-      if chkFadeoutStart.Checked and (StrToInt(txtFadeoutStart.Text) > FTitleLength) then
-      begin
-        MsgBox(Handle, Format(_('The length for fadeout cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
-        Exit;
-      end;
-
-      if chkFadeoutEnd.Checked and (StrToInt(txtFadeoutEnd.Text) > FTitleLength) then
-      begin
-        MsgBox(Handle, Format(_('The length for fadein cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
-        Exit;
-      end;
-
-      if chkSilenceStart.Checked and (StrToInt(txtSilenceStart.Text) > FTitleLength) then
-      begin
-        MsgBox(Handle, Format(_('The length for silence at the beginning cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
-        Exit;
-      end;
-
-      if chkFadeoutEnd.Checked and (StrToInt(txtFadeoutEnd.Text) > FTitleLength) then
-      begin
-        MsgBox(Handle, Format(_('The length for silence at the end cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
-        Exit;
-      end;
     end;
 
+    if chkFadeoutEnd.Checked and (StrToInt(txtFadeoutEnd.Text) > FTitleLength) then
+    begin
+      MsgBox(Handle, Format(_('The length for fadein cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
+      Exit;
+    end;
 
-    FNormalize := chkNormalize.Checked;
+    if chkSilenceStart.Checked and (StrToInt(txtSilenceStart.Text) > FTitleLength) then
+    begin
+      MsgBox(Handle, Format(_('The length for silence at the beginning cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
+      Exit;
+    end;
 
-    FFadeoutStart := chkFadeoutStart.Checked;
-    FFadeoutEnd := chkFadeoutEnd.Checked;
-    FFadeoutStartLength := StrToInt(txtFadeoutStart.Text);
-    FFadeoutEndLength := StrToInt(txtFadeoutEnd.Text);
+    if chkFadeoutEnd.Checked and (StrToInt(txtFadeoutEnd.Text) > FTitleLength) then
+    begin
+      MsgBox(Handle, Format(_('The length for silence at the end cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
+      Exit;
+    end;
+  end;
 
-    FSilenceStart := chkSilenceStart.Checked;
-    FSilenceEnd := chkSilenceEnd.Checked;
-    FSilenceStartLength := StrToInt(txtSilenceStart.Text);
-    FSilenceEndLength := StrToInt(txtSilenceEnd.Text);
 
-    FSaveData := True;
+  FNormalize := chkNormalize.Checked;
 
-    Close;
-  //end;
+  FFadeoutStart := chkFadeoutStart.Checked;
+  FFadeoutEnd := chkFadeoutEnd.Checked;
+  FFadeoutStartLength := StrToInt(txtFadeoutStart.Text);
+  FFadeoutEndLength := StrToInt(txtFadeoutEnd.Text);
+
+  FSilenceStart := chkSilenceStart.Checked;
+  FSilenceEnd := chkSilenceEnd.Checked;
+  FSilenceStartLength := StrToInt(txtSilenceStart.Text);
+  FSilenceEndLength := StrToInt(txtSilenceEnd.Text);
+
+  FSaveData := True;
+
+  Close;
 end;
 
 procedure TfrmConfigureSoX.chkClick(Sender: TObject);

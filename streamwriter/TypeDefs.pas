@@ -29,6 +29,11 @@ uses
 type
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
 
+  TBandData = record
+    Handle: DWORD;
+    Gain: Single;
+  end;
+
   TAudioFileInfo = record
     Length: Double;
     Bitrate: Integer;
@@ -59,6 +64,7 @@ type
 function FiletypeToFormat(Filename: string): TAudioTypes;
 function FormatToFiletype(Format: TAudioTypes): string;
 function FormatToDesc(Format: TAudioTypes): string;
+function BandToFreq(Idx: Integer): Integer;
 
 implementation
 
@@ -98,6 +104,24 @@ begin
     atMPEG: Result := 'MP3';
     atAAC: Result := 'AAC';
     atOGG: Result := 'OGG';
+  end;
+end;
+
+function BandToFreq(Idx: Integer): Integer;
+begin
+  case Idx of
+    0: Result := 60;
+    1: Result := 170;
+    2: Result := 310;
+    3: Result := 600;
+    4: Result := 1000;
+    5: Result := 3000;
+    6: Result := 6000;
+    7: Result := 12000;
+    8: Result := 14000;
+    9: Result := 16000;
+    else
+      raise Exception.Create('');
   end;
 end;
 

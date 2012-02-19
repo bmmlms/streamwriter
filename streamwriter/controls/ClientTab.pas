@@ -169,7 +169,8 @@ type
     procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
     function StreamBrowserIsInClientList(Sender: TObject; ID: Cardinal): Boolean;
 
-    procedure VolumeTrackbarChange(Sender: TObject);
+    procedure VolumeVolumeChange(Sender: TObject);
+    function VolumeGetVolumeBeforeMute(Sender: TObject): Integer;
 
     procedure AddressBarStart(Sender: TObject);
 
@@ -773,7 +774,9 @@ begin
   FVolume.Align := alRight;
   FVolume.Setup;
   FVolume.Width := 140;
-  FVolume.OnVolumeChange := VolumeTrackbarChange;
+  FVolume.Volume := AppGlobals.PlayerVolume;
+  FVolume.OnVolumeChange := VolumeVolumeChange;
+  FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
 
   FTimeLabel := TLabel.Create(Self);
   FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
@@ -891,8 +894,9 @@ begin
     FClientView.FocusedNode := FClientView.GetFirst;
   end;
 
-  for i := 0 to FClientView.Header.Columns.Count - 1 do
-    FClientView.Header.Columns[i].Width := AppGlobals.HeaderWidth[i];
+  if AppGlobals.ClientHeadersLoaded then
+    for i := 0 to FClientView.Header.Columns.Count - 1 do
+      FClientView.Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
 end;
 
 procedure TClientTab.ClientManagerAddRecent(Sender: TObject);
@@ -1577,7 +1581,12 @@ begin
   Exit(False);
 end;
 
-procedure TClientTab.VolumeTrackbarChange(Sender: TObject);
+function TClientTab.VolumeGetVolumeBeforeMute(Sender: TObject): Integer;
+begin
+  Result := Players.VolumeBeforeMute;
+end;
+
+procedure TClientTab.VolumeVolumeChange(Sender: TObject);
 begin
   Players.Volume := FVolume.Volume;
   if FVolume.VolumeBeforeDrag > -1 then

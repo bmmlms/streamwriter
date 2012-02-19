@@ -38,17 +38,13 @@ end;
 
 function GetFileInfo(Filename: string): TAudioFileInfo;
 var
-  i, n: Integer;
   TempPlayer: Cardinal;
   Time: Double;
   BufLen: Int64;
-  FS: TFileStream;
   BytesPerSec: Integer;
-  BitRate, LastBitRate: Cardinal;
+  BitRate: Cardinal;
   FileSize: Int64;
-  Positions: array of Int64;
   P, LastP, ElapsedP, LastElapsedP: QWORD;
-  StepSize: Int64;
 begin
   Result.Length := 0;
   Result.Bitrate := 0;
@@ -81,7 +77,6 @@ begin
     Result.Bitrate := BitRate;
     Result.Success := True;
 
-    P := 0;
     LastP := 0;
     LastElapsedP := 0;
     BassChannelSetPosition(TempPlayer, 0, BASS_POS_BYTE);

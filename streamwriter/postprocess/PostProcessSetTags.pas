@@ -41,7 +41,7 @@ type
     FAlbum: string;
     FComment: string;
   protected
-    function FGetHash: Cardinal; virtual;
+    function FGetHash: Cardinal; override;
   public
     constructor Create;
 

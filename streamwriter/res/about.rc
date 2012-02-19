@@ -1,0 +1,5 @@
+THANKSTEXT_EN RCDATA ".\\about\\text_en.txt"
+THANKSTEXT_DE RCDATA ".\\about\\text_de.txt"
+THANKSIMAGE0 RCDATA ".\\about\\thanksimg0.jpg"
+THANKSIMAGE1 RCDATA ".\\about\\thanksimg1.jpg"
+THANKSIMAGE2 RCDATA ".\\about\\thanksimg2.jpg"

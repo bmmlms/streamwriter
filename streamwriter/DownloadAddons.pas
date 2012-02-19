@@ -24,7 +24,7 @@ type
     procedure DownloaderDownloaded(Sender: TObject);
     procedure DownloaderError(Sender: TObject);
   public
-    constructor Create(AOwner: TComponent; Addon: TAddonBase); overload;
+    constructor Create(AOwner: TComponent; Addon: TAddonBase); reintroduce;
     property Downloaded: Boolean read FDownloaded;
     property Error: Boolean read FError;
   end;

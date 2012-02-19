@@ -76,8 +76,6 @@ uses
 { TPostProcessConvertThread }
 
 procedure TPostProcessConvertThread.Convert(FromFile, ToFile: string; EncoderSettings: TObject);
-var
-  ToExt: string;
 begin
   FFromCutView := True;
   FFromFile := FromFile;
@@ -198,7 +196,6 @@ end;
 procedure TPostProcessConvert.Load(Stream: TExtendedStream;
   Version: Integer);
 begin
-  //inherited;
 
 end;
 
@@ -215,14 +212,11 @@ end;
 
 function TPostProcessConvert.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
-  Result := nil;
-
   Result := TPostProcessConvertThread.Create(Data, Self);
 end;
 
 procedure TPostProcessConvert.Save(Stream: TExtendedStream);
 begin
-  //inherited;
 
 end;
 

@@ -70,14 +70,8 @@ end;
 
 procedure TPostProcessMP4BoxThread.Execute;
 var
-  TempFile, CmdLine, Params, OutFile, MovedFileName: string;
-  Output: AnsiString;
-  P: TPostProcessMP4Box;
-  LoopStarted: Cardinal;
-  Failed: Boolean;
-  FS: TFileStream;
-  EC: DWORD;
-begin
+  OutFile, MovedFileName: string;
+begin // TODO: Die encoder testen. werden die nach timeout beendet? was ist dann? beendet bei app-ende? sterben die wirklich nach enkodierung?
   inherited;
 
   if LowerCase(ExtractFileExt(FData.Filename)) <> '.aac' then
@@ -208,10 +202,6 @@ end;
 
 function TPostProcessMP4Box.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
-  Result := nil;
-  //if not CanProcess(Data) then
-  //  Exit;
-
   Result := TPostProcessMP4BoxThread.Create(Data, Self);
 end;
 

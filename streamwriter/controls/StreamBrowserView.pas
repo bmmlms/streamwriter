@@ -28,7 +28,7 @@ uses
   StdCtrls, Menus, ImgList, Math, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls,
   HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging,
-  DataManager, TypeDefs, DropSource;
+  DataManager, TypeDefs, DropSource, Types;
 
 type
   TModes = (moShow, moLoading);
@@ -79,8 +79,8 @@ type
 
   TMStreamSearchPanel = class(TPanel)
   private
-    FExpandLabel: TLabel;
-    FExpandButton: TSpeedButton;
+    //FExpandLabel: TLabel;
+    //FExpandButton: TSpeedButton;
 
     FSearchLabel: TLabel;
     FGenreLabel: TLabel;
@@ -90,7 +90,6 @@ type
     FGenreList: TComboBox;
     FKbpsList: TComboBox;
     FTypeList: TComboBox;
-    //FSearchButton: TSpeedButton;
 
     //procedure SetVisible(Value: Boolean);
 
@@ -201,7 +200,6 @@ type
     FOnAction: TActionEvent;
     FOnIsInClientList: TIsInClientListEvent;
 
-    procedure FSetMode(Value: TModes);
     function CreateItem(Caption: string; ImageIndex: Integer; Parent: TMenuItem): TMenuItem;
 
     procedure FitColumns;
@@ -223,7 +221,6 @@ type
     procedure HandleMouseDblClick(var Message: TWMMouse; const HitInfo: THitInfo); override;
     procedure Resize; override;
     procedure Paint; override;
-    //procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure KeyPress(var Key: Char); override;
     function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
@@ -483,11 +480,6 @@ procedure TMStreamTree.FitColumns;
 begin
   Header.AutoSizeIndex := 1;
   Header.Options := Header.Options + [hoAutoResize];
-end;
-
-procedure TMStreamTree.FSetMode(Value: TModes);
-begin
-
 end;
 
 function TMStreamTree.GetNodes(SelectedOnly: Boolean): TNodeArray;
@@ -1018,22 +1010,6 @@ begin
 
   Invalidate;
 end;
-
-{
-procedure TMStreamTree.MouseUp(Button: TMouseButton; Shift: TShiftState;
-  X, Y: Integer);
-var
-  P: TPoint;
-begin
-  inherited;
-  if Button = mbRight then
-  begin
-    P.X := X;
-    P.Y := Y;
-    FPopupMenu.Popup(ClientToScreen(P).X, ClientToScreen(P).Y);
-  end;
-end;
-}
 
 function TMStreamTree.DoGetNodeTooltip(Node: PVirtualNode;
   Column: TColumnIndex;

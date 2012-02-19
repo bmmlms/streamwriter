@@ -261,6 +261,9 @@ type
     FAutomaticFilePattern: string;
     //FOutputFormat: TAudioTypes;
 
+    FProjectHelpLinkMain: string;
+    FProjectHelpLinkSettings: string;
+
     FShortcutPlay: Cardinal;
     FShortcutPause: Cardinal;
     FShortcutStop: Cardinal;
@@ -270,16 +273,26 @@ type
     FShortcutVolUp: Cardinal;
     FShortcutMute: Cardinal;
 
-    FHeaderWidth: TIntArray;
+    FClientHeadersLoaded: Boolean;
+    FSavedHeadersLoaded: Boolean;
+    FClientHeaderWidth: TIntArray;
+    FSavedHeaderWidth: TIntArray;
     FClientCols: Integer;
+    FSavedCols: Integer;
     FLastUsedDataVersion: Integer;
     FRecoveryFile: string;
+
+    FEQEnabled: Boolean;
+    FEQGain: array[0..9] of Integer;
 
     FAddonManager: TAddonManager;
     FPostProcessManager: TPostProcessManager;
     FLanguageIcons: TLanguageIcons;
 
     function FGetDataFile: string;
+
+    function FGetEQGain(Idx: Integer): Integer;
+    procedure FSetEQGain(Idx: Integer; Value: Integer);
   protected
     // Save ALL the things!
     procedure DoSave; override;
@@ -376,14 +389,21 @@ type
     property AutomaticFilePattern: string read FAutomaticFilePattern write FAutomaticFilePattern;
     //property OutputFormat: TAudioTypes read FOutputFormat write FOutputFormat;
 
+    property ClientHeadersLoaded: Boolean read FClientHeadersLoaded;
+    property SavedHeadersLoaded: Boolean read FSavedHeadersLoaded;
     // Widths of column headers of the mainview
-    property HeaderWidth: TIntArray read FHeaderWidth write FHeaderWidth;
+    property ClientHeaderWidth: TIntArray read FClientHeaderWidth write FClientHeaderWidth;
+    property SavedHeaderWidth: TIntArray read FSavedHeaderWidth write FSavedHeaderWidth;
     // Widths of column headers. Yes, they are stored in a single integer
     property ClientCols: Integer read FClientCols write FClientCols;
+    property SavedCols: Integer read FSavedCols write FSavedCols;
     // Last used version of the data-file format
     property LastUsedDataVersion: Integer read FLastUsedDataVersion write FLastUsedDataVersion;
     // Path to the recovery-file (this is set if streamWriter crashed or something)
     property RecoveryFile: string read FRecoveryFile;
+
+    property EQEnabled: Boolean read FEQEnabled write FEQEnabled;
+    property EQGain[Idx: Integer]: Integer read FGetEQGain write FSetEQGain;
 
     // Path to streamWriter's data-file
     property DataFile: string read FGetDataFile;
@@ -396,6 +416,9 @@ type
 
     // Icons for languages
     property LanguageIcons: TLanguageIcons read FLanguageIcons;
+
+    property ProjectHelpLinkMain: string read FProjectHelpLinkMain;
+    property ProjectHelpLinkSettings: string read FProjectHelpLinkSettings;
   end;
 
 var
@@ -411,7 +434,6 @@ uses
 constructor TAppData.Create(AppName: string);
 var
   W, H: Integer;
-  SR: TSearchRec;
 begin
   // Create an instance for global stream-settings
   // (these are used for new streams that do not have user-specified settings)
@@ -426,7 +448,8 @@ begin
     H := Screen.WorkAreaHeight - 20;
 
   // Adjust amount of column headers
-  SetLength(FHeaderWidth, 6);
+  SetLength(FClientHeaderWidth, 6);
+  SetLength(FSavedHeaderWidth, 7);
 
   // Set some application-specific settings
   {$IFDEF DEBUG}
@@ -436,7 +459,11 @@ begin
   {$ENDIF}
   FProjectHomepageLink := 'http://streamwriter.org/';
   FProjectLink := 'http://streamwriter.org/';
+
   FProjectHelpLink := 'http://streamwriter.org/wiki/artikel/help/';
+  FProjectHelpLinkMain := 'http://streamwriter.org/wiki/artikel/mainwindow/';
+  FProjectHelpLinkSettings := 'http://streamwriter.org/wiki/artikel/settings/';
+
   FProjectForumLink := 'http://streamwriter.org/forum/';
   FProjectDonateLink := 'http://streamwriter.org/inhalt/donate/';
 
@@ -491,141 +518,33 @@ begin
   Result := FStorage.GetFilePath('data.dat');
 end;
 
-// Builds a large string stored into FProjectThanksText
+function TAppData.FGetEQGain(Idx: Integer): Integer;
+begin
+  Result := FEQGain[Idx];
+end;
+
+procedure TAppData.FSetEQGain(Idx, Value: Integer);
+begin
+  FEQGain[Idx] := Value;
+end;
+
 procedure TAppData.BuildThanksText;
-  procedure ShuffleFisherYates(var A: TArray);
-  var
-    i, j: Integer;
-    Tmp: TArrayElement;
-  begin
-    for i := Low(A) to High(A) do
-    begin
-      j := i + Random(Length(A) - i + Low(A));
-      Tmp := A[j];
-      A[j] := A[i];
-      A[i] := Tmp;
-    end;
-  end;
 var
-  i: Integer;
-  FHelpers: TArray;
-  Text: TStringList;
+  Res: TResourceStream;
+  Data: RawByteString;
 begin
   inherited;
 
-  Text := TStringList.Create;
+  Res := TResourceStream.Create(HInstance, 'THANKSTEXT_' + UpperCase(LanguageObjects.Language.CurrentLanguage.ID), RT_RCDATA);
   try
-    Text.Add(_('&U&12Thanks go out to...'));
+    // 3 wegen UTF-8 Marker
+    Res.Position := 3;
+    SetLength(Data, Res.Size - 3);
+    Res.Read(Data[1], Res.Size - 3);
 
-    Text.Add('');
-    Text.Add('');
-
-    Text.Add(_('&U&10...everybody who donated something'));
-    Text.Add('');
-
-    Text.Add(_('&U&10...people who contributed code, documentation,'));
-    Text.Add(_('&U&10images or translations'));
-    Text.Add('');
-    SetLength(FHelpers, 3);
-    FHelpers[0] := '''HostedDinner''';
-    FHelpers[1] := '''bastik''';
-    FHelpers[2] := 'Ralf';
-    ShuffleFisherYates(FHelpers);
-    for i := 0 to Length(FHelpers) - 1 do
-      Text.Add(FHelpers[i]);
-
-    Text.Add('');
-
-    Text.Add(_('&U&10...everyone supporting streamWriter at the board'));
-    Text.Add('');
-
-    Text.Add(_('&U&10...and all other nice people I know!'));
-
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-
-    Text.Add(_('&U&10Also thanks to some other projects I make use of'#13#10'&U&10to develop streamWriter and it''s website'));
-    Text.Add('');
-    Text.Add('Apache HTTP Server');
-    Text.Add('Bass');
-    Text.Add('Delphi-Praxis');
-    Text.Add('Django');
-    Text.Add('Drag and Drop Component Suite');
-    Text.Add('Embarcadero');
-    Text.Add('famfamfam');
-    Text.Add('FastMM');
-    Text.Add('freecsstemplates.org');
-    Text.Add('Fugue Icons');
-    Text.Add('Gimp');
-    Text.Add('Inno Setup');
-    Text.Add('jQuery');
-    Text.Add('LED icons');
-    Text.Add('MySQL');
-    Text.Add('Notepad++');
-    Text.Add('Python');
-    Text.Add('Tango Desktop Project');
-    Text.Add('Virtual Treeview');
-    Text.Add('XMLLib');
-
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-
-    Text.Add('&IMG0');
-    Text.Add('&IMG1');
-    Text.Add('&IMG2');
-
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-
-    Text.Add('D1734FA178BF7D5AE50CB1AD54442494');
-
-    Text.Add('');
-    Text.Add('');
-    Text.Add('Korrekt Banze!');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-    Text.Add('');
-
-    Text.Add(_('Thanks for reading everything...'));
-
-    FProjectThanksText := Text.Text;
+    FProjectThanksText := UTF8ToString(Data);
   finally
-    Text.Free;
+    Res.Free;
   end;
 end;
 
@@ -800,24 +719,50 @@ begin
   FStorage.Read('ShortcutVolUp', FShortcutVolUp, 0);
   FStorage.Read('ShortcutMute', FShortcutMute, 0);
 
+  // Header of ClientView
   FStorage.Read('HeaderWidth0', i, -1, 'Cols');
   if i = -1 then
   begin
-    for i := 0 to High(FHeaderWidth) do
-      FHeaderWidth[i] := 100;
-    FStorage.Read('HeaderWidth0', FHeaderWidth[0], 150, 'Cols');
-    FStorage.Read('HeaderWidth2', FHeaderWidth[2], 70, 'Cols');
-    FStorage.Read('HeaderWidth3', FHeaderWidth[3], 60, 'Cols');
-    FStorage.Read('HeaderWidth4', FHeaderWidth[4], 90, 'Cols');
-    FStorage.Read('HeaderWidth5', FHeaderWidth[5], 85, 'Cols');
+    { REMARK: Kann evtl. bald raus. Läuft jetzt über FitColumns().
+    for i := 0 to High(FClientHeaderWidth) do
+      FClientHeaderWidth[i] := 100;
+    FStorage.Read('HeaderWidth0', FClientHeaderWidth[0], 150, 'Cols');
+    FStorage.Read('HeaderWidth2', FClientHeaderWidth[2], 70, 'Cols');
+    FStorage.Read('HeaderWidth3', FClientHeaderWidth[3], 60, 'Cols');
+    FStorage.Read('HeaderWidth4', FClientHeaderWidth[4], 90, 'Cols');
+    FStorage.Read('HeaderWidth5', FClientHeaderWidth[5], 85, 'Cols');
+    }
   end else
   begin
-    for i := 0 to High(FHeaderWidth) do
+    FClientHeadersLoaded := True;
+    for i := 0 to High(FClientHeaderWidth) do
       if i <> 1 then
-        FStorage.Read('HeaderWidth' + IntToStr(i), FHeaderWidth[i], 130, 'Cols');
+        FStorage.Read('HeaderWidth' + IntToStr(i), FClientHeaderWidth[i], 130, 'Cols');
   end;
   FStorage.Read('ClientCols', FClientCols, 255, 'Cols');
   FClientCols := FClientCols or (1 shl 0);
+
+  // Header of SavedView
+  FStorage.Read('SavedHeaderWidth0', i, -1, 'Cols');
+  if i = -1 then
+  begin
+    { REMARK: Kann evtl. bald raus. Läuft jetzt über FitColumns().
+    for i := 0 to High(FSavedHeaderWidth) do
+      FSavedHeaderWidth[i] := 100;
+    FStorage.Read('SavedHeaderWidth2', FSavedHeaderWidth[2], 70, 'Cols');
+    FStorage.Read('SavedHeaderWidth3', FSavedHeaderWidth[3], 60, 'Cols');
+    FStorage.Read('SavedHeaderWidth4', FSavedHeaderWidth[4], 90, 'Cols');
+    FStorage.Read('SavedHeaderWidth5', FSavedHeaderWidth[5], 150, 'Cols');
+    }
+  end else
+  begin
+    FSavedHeadersLoaded := True;
+    for i := 0 to High(FSavedHeaderWidth) do
+      if i <> 1 then
+        FStorage.Read('SavedHeaderWidth' + IntToStr(i), FSavedHeaderWidth[i], 130, 'Cols');
+  end;
+  FStorage.Read('SavedCols', FSavedCols, 255, 'Cols');
+  FSavedCols := FSavedCols or (1 shl 0);
 
   if (DefaultActionTmp > Ord(High(TClientActions))) or
      (DefaultActionTmp < Ord(Low(TClientActions))) then
@@ -857,12 +802,20 @@ begin
 
   if not FStreamSettings.FSeparateTracks then
     FStreamSettings.FDeleteStreams := False;
+
+  FStorage.Read('EQEnabled', FEQEnabled, False, 'Equalizer');
+  for i := 0 to High(FEQGain) do
+  begin
+    FStorage.Read('EQBand' + IntToStr(i), FEQGain[i], 15, 'Equalizer');
+    FEQGain[i] := FEQGain[i] - 15;
+    if (FEQGain[i] > 15) or (FEQGain[i] < -15) then
+      FEQGain[i] := 0;
+  end;
 end;
 
 procedure TAppData.DoSave;
 var
   i, n: Integer;
-  Lst: TStringList;
 begin
   inherited;
 
@@ -943,10 +896,15 @@ begin
   FStorage.Write('ShortcutVolUp', FShortcutVolUp);
   FStorage.Write('ShortcutMute', FShortcutMute);
 
-  for i := 0 to High(FHeaderWidth) do
+  for i := 0 to High(FClientHeaderWidth) do
     if i <> 1 then
-      FStorage.Write('HeaderWidth' + IntToStr(i), HeaderWidth[i], 'Cols');
+      FStorage.Write('HeaderWidth' + IntToStr(i), FClientHeaderWidth[i], 'Cols');
   FStorage.Write('ClientCols', FClientCols, 'Cols');
+
+  for i := 0 to High(FSavedHeaderWidth) do
+    if i <> 1 then
+      FStorage.Write('SavedHeaderWidth' + IntToStr(i), FSavedHeaderWidth[i], 'Cols');
+  FStorage.Write('SavedCols', FSavedCols, 'Cols');
 
   FStorage.DeleteKey('Plugins');
 
@@ -975,6 +933,10 @@ begin
 
   for i := 0 to FStreamSettings.EncoderSettings.Count - 1 do
     FStreamSettings.EncoderSettings[i].Save;
+
+  FStorage.Write('EQEnabled', FEQEnabled, 'Equalizer');
+  for i := 0 to High(FEQGain) do
+    FStorage.Write('EQBand' + IntToStr(i), FEQGain[i] + 15, 'Equalizer');
 end;
 
 { TStreamSettings }
@@ -986,8 +948,6 @@ begin
 end;
 
 constructor TStreamSettings.Create(InitStuff: Boolean = True);
-var
-  i: Integer;
 begin
   inherited Create;
 
@@ -1040,7 +1000,7 @@ class function TStreamSettings.Load(Stream: TExtendedStream;
   Version: Integer): TStreamSettings;
 var
   B: Byte;
-  i, Count, FilterTmp, TypeTmp, ID: Integer;
+  i, Count, FilterTmp, TypeTmp: Integer;
   T: TPostProcessTypes;
   AT: TAudioTypes;
   IgnoreTmp: string;
@@ -1226,8 +1186,6 @@ begin
     Stream.Read(Count);
     for i := 0 to Count - 1 do
     begin
-      PP := nil;
-
       Stream.Read(TypeTmp);
 
       T := TPostProcessTypes(TypeTmp);
@@ -1247,8 +1205,6 @@ begin
     Stream.Read(Count);
     for i := 0 to Count - 1 do
     begin
-      ES := nil;
-
       Stream.Read(TypeTmp);
 
       AT := TAudioTypes(TypeTmp);

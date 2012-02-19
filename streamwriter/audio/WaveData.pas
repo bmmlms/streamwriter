@@ -176,18 +176,11 @@ end;
 
 function TWaveData.Save(OutFile: string; StartPos, EndPos: Cardinal): Boolean;
 var
-  S, E, Sx, FoundS, FoundE ,R: Cardinal;
-  FS, StartTagBytes, EndTagBytes: Int64;
+  S, E, FoundS, FoundE ,R: Cardinal;
   FIn: TAudioStreamFile;
   FOut: TFileStream;
-  P: TPosRect;
-  OutFilename: string;
-
   BitsPerSample: Word;
-  BytesPerSample: Integer;
   Channels: Word;
-  SampleDW: DWORD;
-  SampleW: Word;
 begin
   Result := False;
 
@@ -207,8 +200,6 @@ begin
         // Jump to BitsPerSample
         FIn.Seek(34, soFromBeginning);
         FIn.ReadBuffer(BitsPerSample, 2);
-
-        BytesPerSample := BitsPerSample div 8;
 
         // Now we can calculate the offsets from where and to where to save the new file
         // while keeping channels and stuff right

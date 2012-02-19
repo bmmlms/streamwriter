@@ -39,7 +39,6 @@ type
     FPosEdit: TToolButton;
     FPosPlay: TToolButton;
     FAutoCut: TToolButton;
-    FAutoCutAutoDetect: TToolButton;
     FCut: TToolButton;
     FUndo: TToolButton;
     FPosEffectsMarker: TToolButton;
@@ -71,7 +70,6 @@ type
     procedure SaveClick(Sender: TObject);
     procedure PosClick(Sender: TObject);
     procedure AutoCutClick(Sender: TObject);
-    procedure AutoCutAutoDetectClick(Sender: TObject);
     procedure CutClick(Sender: TObject);
     procedure UndoClick(Sender: TObject);
     procedure PlayClick(Sender: TObject);
@@ -84,10 +82,11 @@ type
 
     procedure CutViewStateChanged(Sender: TObject);
     procedure VolumeTrackbarChange(Sender: TObject);
+    function VolumeGetVolumeBeforeMute(Sender: TObject): Integer;
 
     procedure MessageReceived(Msg: TMessageBase);
   protected
-    function CanClose: Boolean; override;
+
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -96,6 +95,8 @@ type
     procedure Setup(Filename: string; ToolBarImages: TImageList); overload;
     procedure Setup(ToolBarImages: TImageList); overload;
     procedure PausePlay;
+
+    function CanClose: Boolean; override;
 
     property Filename: string read FFilename;
 
@@ -109,8 +110,6 @@ implementation
 { TCutTab }
 
 function TCutTab.CanClose: Boolean;
-var
-  Res: Integer;
 begin
   Result := inherited;
 
@@ -167,6 +166,11 @@ begin
     lmEffectsMarker:
       FToolBar.FPosEffectsMarker.Down := True;
   end;
+end;
+
+function TCutTab.VolumeGetVolumeBeforeMute(Sender: TObject): Integer;
+begin
+  Result := Players.VolumeBeforeMute;
 end;
 
 procedure TCutTab.VolumeTrackbarChange(Sender: TObject);
@@ -238,23 +242,6 @@ begin
     if F.Okay then
     begin
       FCutView.AutoCut(F.SilenceLevel, F.SilenceLength);
-    end;
-  finally
-    F.Free;
-  end;
-end;
-
-procedure TCutTab.AutoCutAutoDetectClick(Sender: TObject);
-var
-  F: TfrmCutTabSearchSilence;
-begin
-  F := TfrmCutTabSearchSilence.Create(Self, True);
-  try
-    F.ShowModal;
-
-    if F.Okay then
-    begin
-      FCutView.AutoCut(-1, F.SilenceLength);
     end;
   finally
     F.Free;
@@ -363,7 +350,9 @@ begin
   FVolume.Align := alRight;
   FVolume.Setup;
   FVolume.Width := 140;
+  FVolume.Volume := AppGlobals.PlayerVolume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
+  FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
 
   FCutView := TCutView.Create(Self);
   FCutView.Parent := Self;

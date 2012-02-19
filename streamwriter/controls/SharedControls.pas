@@ -25,8 +25,8 @@ interface
 
 uses
   Windows, SysUtils, Classes, ComCtrls, ExtCtrls, Controls, Graphics,
-  Functions, AppData, PngSpeedButton, PngImage, LanguageObjects,
-  Themes, Messages, Math, Buttons, Logging, PlayerManager;
+  Functions, PngSpeedButton, PngImage, LanguageObjects, Menus,
+  Themes, Messages, Math, Buttons, Logging, Forms, VirtualTrees;
 
 type
   TGripperStates = (gsUnknown, gsNormal, gsHot, gsDown);
@@ -35,6 +35,7 @@ type
   private
     FMax: Int64;
     FPosition: Int64;
+    FOrientation: TScrollBarKind;
 
     FPositionBeforeDrag: Int64;
 
@@ -73,11 +74,14 @@ type
     property Max: Int64 read FMax write FMax;
     property Position: Int64 read FPosition write FSetPosition;
     property PositionBeforeDrag: Int64 read FPositionBeforeDrag;
+    property Orientation: TScrollBarKind read FOrientation write FOrientation;
     property GripperVisible: Boolean read FGripperDown write FSetGripperVisible;
     property NotifyOnMove: Boolean read FNotifyOnMove write FNotifyOnMove;
     property NotifyOnDown: Boolean read FNotifyOnDown write FNotifyOnDown;
     property OnPositionChanged: TNotifyEvent read FOnPositionChanged write FOnPositionChanged;
   end;
+
+  TOnGetVolumeBeforeMute = function(Sender: TObject): Integer of object;
 
   TVolumePanel = class(TPanel)
   private
@@ -89,6 +93,8 @@ type
     FVolumeChange: TNotifyEvent;
     FVolumePng: TPngImage;
     FVolumeMutedPng: TPngImage;
+
+    FOnGetVolumeBeforeMute: TOnGetVolumeBeforeMute;
 
     procedure MuteClick(Sender: TObject);
     procedure VolumeChange(Sender: TObject);
@@ -103,8 +109,25 @@ type
     property Volume: Integer read FGetVolume write FSetVolume;
     property VolumeBeforeDrag: Integer read FVolumeBeforeDrag;
     property NotifyOnMove: Boolean write FSetNotifyOnMove;
+    property OnGetVolumeBeforeMute: TOnGetVolumeBeforeMute read FOnGetVolumeBeforeMute write FOnGetVolumeBeforeMute;
 
     destructor Destroy; override;
+  end;
+
+  TMenuColEvent = procedure(Sender: TVirtualStringTree; Index: Integer; Checken: Boolean) of object;
+
+  TMTreeColumnPopup = class(TPopupMenu)
+  private
+    FFileView: TVirtualStringTree;
+    FOnAction: TMenuColEvent;
+    FHideIdx: Integer;
+
+    procedure ColItemsClick(Sender: TObject);
+  protected
+    procedure DoPopup(Sender: TObject); override;
+  public
+    property OnAction: TMenuColEvent read FOnAction write FOnAction;
+    property HideIdx: Integer read FHideIdx write FHideIdx;
   end;
 
 implementation
@@ -161,12 +184,12 @@ begin
   FTrackBar.NotifyOnMove := True;
   FTrackBar.NotifyOnDown := True;
 
-  Volume := Players.Volume;
-
   RefreshButtonState(True);
 end;
 
 procedure TVolumePanel.MuteClick(Sender: TObject);
+var
+  P: Integer;
 begin
   if FMute.Down then
   begin
@@ -178,7 +201,8 @@ begin
       FMute.Down := True;
   end else
   begin
-    FTrackBar.Position := Players.VolumeBeforeMute;
+    P := FOnGetVolumeBeforeMute(Self);
+    FTrackBar.Position := P;
     FMute.PngImage := FVolumePng;
   end;
 end;
@@ -246,6 +270,9 @@ var
 begin
   inherited;
 
+  if not HandleAllocated then
+    Exit;
+
   Bmp := TBitmap.Create;
   try
     Bmp.Width := ClientWidth;
@@ -281,19 +308,41 @@ var
 begin
   Bmp.Canvas.Brush.Color := clBlack;
   Bmp.Canvas.Pen.Color := clBlack;
-  // Rand links und oben
-  Bmp.Canvas.MoveTo(0, Bmp.Height div 2 + 3);
-  Bmp.Canvas.LineTo(0, Bmp.Height div 2 - 3);
-  Bmp.Canvas.LineTo(Bmp.Width - Bmp.Canvas.Pen.Width, Bmp.Height div 2 - 3);
-  // Rand rechts und unten
-  Bmp.Canvas.Pen.Color := clGray;
-  Bmp.Canvas.LineTo(Bmp.Width - Bmp.Canvas.Pen.Width, Bmp.Height div 2 + 3);
-  Bmp.Canvas.LineTo(0, Bmp.Height div 2 + 3);
 
-  R.Left := Canvas.Pen.Width;
-  R.Top := Bmp.Height div 2 - 3 + Bmp.Canvas.Pen.Width;
-  R.Bottom := Bmp.Height div 2 + 3;
-  R.Right := Bmp.Width - Bmp.Canvas.Pen.Width;
+  case FOrientation of
+    sbHorizontal:
+      begin
+        // Rand links und oben
+        Bmp.Canvas.MoveTo(0, Bmp.Height div 2 + 3); // Unten links
+        Bmp.Canvas.LineTo(0, Bmp.Height div 2 - 3); // Nach oben malen
+        Bmp.Canvas.LineTo(Bmp.Width - Bmp.Canvas.Pen.Width, Bmp.Height div 2 - 3); // Nach rechts malen
+        // Rand rechts und unten
+        Bmp.Canvas.Pen.Color := clGray;
+        Bmp.Canvas.LineTo(Bmp.Width - Bmp.Canvas.Pen.Width, Bmp.Height div 2 + 3);
+        Bmp.Canvas.LineTo(0, Bmp.Height div 2 + 3);
+
+        R.Left := Canvas.Pen.Width;
+        R.Top := Bmp.Height div 2 - 3 + Bmp.Canvas.Pen.Width;
+        R.Bottom := Bmp.Height div 2 + 3;
+        R.Right := Bmp.Width - Bmp.Canvas.Pen.Width;
+      end;
+    sbVertical:
+      begin
+        // Rand links und oben
+        Bmp.Canvas.MoveTo(Bmp.Width div 2 - 3, Bmp.Height - Bmp.Canvas.Pen.Width);
+        Bmp.Canvas.LineTo(Bmp.Width div 2 - 3, 0);
+        Bmp.Canvas.LineTo(Bmp.Width div 2 + 3, 0);
+        // Rand rechts und unten
+        Bmp.Canvas.Pen.Color := clGray;
+        Bmp.Canvas.LineTo(Bmp.Width div 2 + 3, Bmp.Height - Bmp.Canvas.Pen.Width);
+        Bmp.Canvas.LineTo(Bmp.Width div 2 - 3, Bmp.Height - Bmp.Canvas.Pen.Width);
+
+        R.Left := Bmp.Width div 2 - 3 + Canvas.Pen.Width;
+        R.Top := Bmp.Canvas.Pen.Width;
+        R.Bottom := Bmp.Height - Bmp.Canvas.Pen.Width;
+        R.Right := Bmp.Width div 2 + 3 - Bmp.Canvas.Pen.Width;
+      end;
+  end;
   Bmp.Canvas.Brush.Color := clBtnFace;
   Bmp.Canvas.FillRect(R);
 end;
@@ -309,30 +358,62 @@ begin
 
   if FMax > 0 then
   begin
-    P := Trunc((FPosition / FMax) * (ClientWidth - 20));
+    if FOrientation = sbHorizontal then
+    begin
+      P := Trunc((FPosition / FMax) * (ClientWidth - 20));
 
-    R.Top := 2;
-    R.Left := P;
-    R.Bottom := Bmp.Height - 2;
-    R.Right := 20 + R.Left;
+      R.Top := 2;
+      R.Left := P;
+      R.Bottom := Bmp.Height - 2;
+      R.Right := 20 + R.Left;
+    end else
+    begin
+      P := Trunc((FPosition / FMax) * (ClientHeight - 20));
+
+      R.Top := P;
+      R.Left := 2;
+      R.Bottom := P + 20;;
+      R.Right := Bmp.Width;
+    end;
 
     if ThemeServices.ThemesEnabled then
     begin
       case GetGripperState of
         gsNormal:
           begin
-            D := ThemeServices.GetElementDetails(tsThumbBtnHorzNormal);
-            D2 := ThemeServices.GetElementDetails(tsGripperHorzNormal);
+            if FOrientation = sbHorizontal then
+            begin
+              D := ThemeServices.GetElementDetails(tsThumbBtnHorzNormal);
+              D2 := ThemeServices.GetElementDetails(tsGripperHorzNormal);
+            end else
+            begin
+              D := ThemeServices.GetElementDetails(tsThumbBtnVertNormal);
+              D2 := ThemeServices.GetElementDetails(tsGripperVertNormal);
+            end;
           end;
         gsHot:
           begin
-            D := ThemeServices.GetElementDetails(tsThumbBtnHorzHot);
-            D2 := ThemeServices.GetElementDetails(tsGripperHorzHot);
+            if FOrientation = sbHorizontal then
+            begin
+              D := ThemeServices.GetElementDetails(tsThumbBtnHorzHot);
+              D2 := ThemeServices.GetElementDetails(tsGripperHorzHot);
+            end else
+            begin
+              D := ThemeServices.GetElementDetails(tsThumbBtnVertHot);
+              D2 := ThemeServices.GetElementDetails(tsGripperVertHot);
+            end;
           end;
         gsDown:
           begin
-            D := ThemeServices.GetElementDetails(tsThumbBtnHorzPressed);
-            D2 := ThemeServices.GetElementDetails(tsGripperHorzPressed);
+            if FOrientation = sbHorizontal then
+            begin
+              D := ThemeServices.GetElementDetails(tsThumbBtnHorzPressed);
+              D2 := ThemeServices.GetElementDetails(tsGripperHorzPressed);
+            end else
+            begin
+              D := ThemeServices.GetElementDetails(tsThumbBtnVertPressed);
+              D2 := ThemeServices.GetElementDetails(tsGripperVertPressed);
+            end;
           end;
       end;
 
@@ -343,15 +424,21 @@ begin
       case GetGripperState of
         gsNormal:
           begin
-            DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, False);
+            if FOrientation = sbHorizontal then
+              DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, False)
+            else ;
           end;
         gsHot:
           begin
-            DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, True);
+            if FOrientation = sbHorizontal then
+              DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, True)
+            else ;
           end;
         gsDown:
           begin
-            DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, True, True);
+            if FOrientation = sbHorizontal then
+              DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, True, True)
+            else ;
           end;
       end;
     end;
@@ -384,12 +471,23 @@ begin
   if not FGripperVisible then
     Exit;
 
-  P := Trunc((FPosition / FMax) * (ClientWidth - 20));
+  if FOrientation = sbHorizontal then
+  begin
+    P := Trunc((FPosition / FMax) * (ClientWidth - 20));
 
-  R.Top := 2;
-  R.Left := P;
-  R.Bottom := ClientHeight - 2;
-  R.Right := 20 + R.Left;
+    R.Top := 2;
+    R.Left := P;
+    R.Bottom := ClientHeight;
+    R.Right := 20 + R.Left;
+  end else
+  begin
+    P := Trunc((FPosition / FMax) * (ClientHeight - 20));
+
+    R.Top := P;
+    R.Left := 2;
+    R.Bottom := P + 20;;
+    R.Right := ClientWidth;
+  end;
 
   if not FGripperDown and PtInRect(R, ScreenToClient(Mouse.CursorPos)) then
   begin
@@ -410,6 +508,7 @@ begin
 
   FMax := 0;
   FPositionBeforeDrag := -1;
+  FOrientation := sbHorizontal;
 end;
 
 procedure TSeekBar.FSetGripperVisible(Value: Boolean);
@@ -427,7 +526,10 @@ begin
   if FMax = 0 then
     FGripperPos := 0
   else
-    FGripperPos := Trunc((FPosition / FMax) * (ClientWidth - 20));
+    if FOrientation = sbHorizontal then
+      FGripperPos := Trunc((FPosition / FMax) * (ClientWidth - 20))
+    else
+      FGripperPos := Trunc((FPosition / FMax) * (ClientHeight - 20));
 
   if FNotifyOnMove then
     if Assigned(FOnPositionChanged) then
@@ -439,6 +541,8 @@ end;
 
 procedure TSeekBar.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Integer);
+var
+  V: Integer;
 begin
   inherited;
 
@@ -449,11 +553,19 @@ begin
   begin
     FGripperDown := True;
 
-    FGripperPos := Trunc((FPosition / FMax) * (ClientWidth - 20));
-
-    if (X > FGripperPos) and (X < FGripperPos + 20) then
+    if FOrientation = sbHorizontal then
     begin
-      FDragFrom := Min(Abs(X - FGripperPos), Abs(FGripperPos - X));
+      V := X;
+      FGripperPos := Trunc((FPosition / FMax) * (ClientWidth - 20))
+    end else
+    begin
+      V := Y;
+      FGripperPos := Trunc((FPosition / FMax) * (ClientHeight - 20));
+    end;
+
+    if (V > FGripperPos) and (V < FGripperPos + 20) then
+    begin
+      FDragFrom := Min(Abs(V - FGripperPos), Abs(FGripperPos - V));
     end else
     begin
       FDragFrom := 10;
@@ -461,8 +573,11 @@ begin
       if FPositionBeforeDrag = -1 then
         FPositionBeforeDrag := FPosition;
 
-      FPosition := Trunc(((X - FDragFrom) / (ClientWidth - 20)) * Max);
-      FGripperPos := X - FDragFrom;
+      if FOrientation = sbHorizontal then
+        FPosition := Trunc(((V - FDragFrom) / (ClientWidth - 20)) * Max)
+      else
+        FPosition := Trunc(((V - FDragFrom) / (ClientHeight - 20)) * Max);
+      FGripperPos := V - FDragFrom;
 
       if FPosition < 0 then
         FPosition := 0;
@@ -489,8 +604,15 @@ begin
     if FPositionBeforeDrag = -1 then
       FPositionBeforeDrag := FPosition;
 
-    FPosition := Trunc(((X - FDragFrom) / (ClientWidth - 20)) * Max);
-    FGripperPos := X - FDragFrom;
+    if FOrientation = sbHorizontal then
+    begin
+      FPosition := Trunc(((X - FDragFrom) / (ClientWidth - 20)) * Max);
+      FGripperPos := X - FDragFrom;
+    end else
+    begin
+      FPosition := Trunc(((Y - FDragFrom) / (ClientHeight - 20)) * Max);
+      FGripperPos := Y - FDragFrom;
+    end;
 
     if FPosition < 0 then
       FPosition := 0;
@@ -524,6 +646,44 @@ begin
     FGripperDown := False;
 
     Paint;
+  end;
+end;
+
+{ TMTreeColumnPopup }
+
+procedure TMTreeColumnPopup.ColItemsClick(Sender: TObject);
+begin
+  if Assigned(FOnAction) then
+    FOnAction(nil, TVirtualTreeColumn(TMenuItem(Sender).Tag).Index, True);
+end;
+
+procedure TMTreeColumnPopup.DoPopup(Sender: TObject);
+var
+  i: Integer;
+  Tree: TVirtualStringTree;
+  Item: TMenuItem;
+begin
+  inherited;
+
+  if Items.Count = 0 then
+  begin
+    Tree := TVirtualStringTree(Owner);
+    FFileView := Tree;
+    for i := 1 to Tree.Header.Columns.Count - 1 do
+    begin
+      if i = FHideIdx then
+        Continue;
+      Item := CreateMenuItem;
+      Item.Caption := Tree.Header.Columns[i].Text;
+      Item.OnClick := ColItemsClick;
+      Item.Tag := Integer(Tree.Header.Columns[i]);
+      Items.Add(Item);
+    end;
+  end;
+
+  for i := 0 to Items.Count - 1 do
+  begin
+    Items[i].Checked := coVisible in TVirtualTreeColumn(Items[i].Tag).Options;
   end;
 end;
 

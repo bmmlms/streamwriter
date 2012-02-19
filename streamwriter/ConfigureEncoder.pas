@@ -43,7 +43,7 @@ type
     FEncoderSettings: TEncoderSettings;
     FSave: Boolean;
   public
-    constructor Create(AOwner: TComponent; EncoderSettings: TEncoderSettings);
+    constructor Create(AOwner: TComponent; EncoderSettings: TEncoderSettings); reintroduce;
 
     property EncoderSettings: TEncoderSettings read FEncoderSettings;
     property Save: Boolean read FSave;

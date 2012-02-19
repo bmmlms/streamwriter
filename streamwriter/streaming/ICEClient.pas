@@ -88,6 +88,8 @@ type
     FKilled: Boolean;
     FRetries: Integer;
 
+    FEQEnabled: Boolean;
+
     FOnDebug: TNotifyEvent;
     FOnRefresh: TNotifyEvent;
     FOnSongSaved: TSongSavedEvent;
@@ -112,6 +114,7 @@ type
     function FGetRecording: Boolean;
     function FGetPaused: Boolean;
     function FGetPlaying: Boolean;
+    procedure FSetEQEnabled(Value: Boolean);
     function ParsePlaylist: Boolean;
     function GetURL: string;
 
@@ -144,6 +147,7 @@ type
     function StartRecording(CheckConditions: Boolean): TMayConnectResults;
     procedure StopRecording;
     procedure SetVolume(Vol: Integer);
+    procedure SetEQ(Value, Freq: Integer);
     procedure PostProcessingFinished(Filename, Title, SongArtist, SongTitle: string;
       Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean);
 
@@ -167,6 +171,8 @@ type
     property Speed: Integer read FSpeed;
     property ContentType: string read FContentType;
     property Filename: string read FFilename;
+
+    property EQEnabled: Boolean read FEQEnabled write FSetEQEnabled;
 
     property OnDebug: TNotifyEvent read FOnDebug write FOnDebug;
     property OnRefresh: TNotifyEvent read FOnRefresh write FOnRefresh;
@@ -430,6 +436,16 @@ begin
     Exit;
 
   Result := ((FState <> csStopped) and (FState <> csIOError)) and FICEThread.Recording;
+end;
+
+procedure TICEClient.FSetEQEnabled(Value: Boolean);
+begin
+  FEQEnabled := Value;
+
+  if FICEThread <> nil then
+  begin
+    FICEThread.SetEQEnabled(Value);
+  end;
 end;
 
 function TICEClient.FGetPaused: Boolean;
@@ -882,8 +898,7 @@ function TICEClient.ParsePlaylist: Boolean;
     end;
   end;
 var
-  Offset, Offset2, Offset3: Integer;
-  Line, Data: string;
+  Data: string;
   PH: TPlaylistHandler;
 begin
   Result := False;
@@ -892,7 +907,6 @@ begin
 
   PH := TPlaylistHandler.Create;
   try
-    Offset := 1;
     Data := string(FICEThread.RecvStream.RecvStream.ToString);
     if (Copy(LowerCase(Data), 1, 10) = '[playlist]') or
        (Pos('audio/x-scpls', FICEThread.RecvStream.ContentType) > 0) or
@@ -914,6 +928,12 @@ begin
   finally
     PH.Free;
   end;
+end;
+
+procedure TICEClient.SetEQ(Value, Freq: Integer);
+begin
+  if FICEThread <> nil then
+    FICEThread.SetEQ(Value, Freq);
 end;
 
 procedure TICEClient.SetVolume(Vol: Integer);

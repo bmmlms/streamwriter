@@ -536,7 +536,6 @@ end;
 
 procedure TCutView.LoadFile(Filename: string; IsConverted, LoadTrackData: Boolean);
 var
-  FileExt: string;
   Info: TAudioFileInfo;
 begin
   if (FScanThread <> nil) or (FProcessThread <> nil) then
@@ -1011,11 +1010,7 @@ begin
 end;
 
 function TCutView.AddUndo: Boolean;
-var
-  FN, Dest: string;
 begin
-  Result := False;
-
   FUndoList.Add(TUndoStep.Create(FWorkingFilename, FPB.FStartLine, FPB.FEndLine,
     FPB.FEffectStartLine, FPB.FEffectEndLine, FPB.FPlayLine));
   Result := True;
@@ -1173,9 +1168,6 @@ end;
 
 function TCutView.CheckSoX: Boolean;
 var
-  Res: Integer;
-  DA: TfrmDownloadAddons;
-  CS: TfrmConfigureSoX;
   PostProcessor: TPostProcessSoX;
 begin
   PostProcessor := AppGlobals.StreamSettings.PostProcessors.Find(TPostProcessSoX) as TPostProcessSoX;

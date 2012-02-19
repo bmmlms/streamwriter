@@ -154,7 +154,7 @@ type
     procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; Text: UnicodeString); override;
     procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
   public
-    constructor Create(AOwner: TComponent; Lists: TDataLists; T: TListType; Images: TImageList);
+    constructor Create(AOwner: TComponent; Lists: TDataLists; T: TListType; Images: TImageList); reintroduce;
     destructor Destroy; override;
 
     procedure AddTitle(Title: TTitleInfo; Parent: PVirtualNode; ParentData: PTitleNodeData);
@@ -842,8 +842,6 @@ begin
 end;
 
 procedure TTitlePanel.UpdateButtons;
-var
-  NodeData: PTitleNodeData;
 begin
   FToolbar.FRemove.Enabled := FTree.GetFirstSelected <> nil;
   FToolbar.FRename.Enabled := (FTree.SelectedCount = 1) and (FTree.GetFirstSelected <> nil) and (PTitleNodeData(FTree.GetNodeData(FTree.GetFirstSelected)).Title <> nil);

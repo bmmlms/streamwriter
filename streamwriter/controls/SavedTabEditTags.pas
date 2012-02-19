@@ -43,7 +43,7 @@ type
     FAddon: TAddonAudioGenie;
     FFilename: string;
   public
-    constructor Create(AOwner: TComponent);
+    constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
 
     function EditFile(Filename: string): Boolean;
@@ -56,9 +56,7 @@ implementation
 procedure TfrmEditTags.btnCloseClick(Sender: TObject);
 var
   FileTagger: TFileTagger;
-  ShowMsg: Boolean;
 begin
-  ShowMsg := False;
   FileTagger := TFileTagger.Create;
   try
     FileTagger.Artist := Trim(txtArtist.Text);

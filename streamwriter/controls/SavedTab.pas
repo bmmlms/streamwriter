@@ -152,7 +152,7 @@ type
   protected
     procedure Resize; override;
   public
-    constructor Create(AOwner: TComponent);
+    constructor Create(AOwner: TComponent); reintroduce;
 
     procedure SetData(Progress: Integer; CurrentFilename: string);
   end;
@@ -188,6 +188,7 @@ type
     procedure ToolBarClick(Sender: TObject);
     procedure SearchTextChange(Sender: TObject);
     procedure VolumeTrackbarChange(Sender: TObject);
+    function VolumeGetVolumeBeforeMute(Sender: TObject): Integer;
     procedure SeekChange(Sender: TObject);
     procedure PositionTimer(Sender: TObject);
 
@@ -204,6 +205,7 @@ type
     destructor Destroy; override;
 
     procedure Setup(Streams: TDataLists; Images: TImageList);
+    procedure Shown;
     procedure PausePlay;
 
     procedure UpdateButtons;
@@ -239,6 +241,8 @@ type
     FColSaved: TVirtualTreeColumn;
     FColBitRate: TVirtualTreeColumn;
 
+    procedure FitColumns;
+
     function GetNode(Filename: string): PVirtualNode; overload;
     function GetNode(Track: TTrackInfo): PVirtualNode; overload;
     function GetNodes(SelectedOnly: Boolean): TNodeArray;
@@ -252,6 +256,8 @@ type
     procedure PlayerPlay(Sender: TObject);
     procedure PlayerPause(Sender: TObject);
     procedure PlayerStop(Sender: TObject);
+
+    procedure MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
 
     procedure FileWatcherEvent(Sender: TObject; Action: DWORD; OldName, NewName: string);
     procedure FileWatcherTerminate(Sender: TObject);
@@ -707,8 +713,8 @@ begin
       end;
     taEditTags:
       begin
+        EditTags := TfrmEditTags.Create(GetParentForm(Self));
         try
-          EditTags := TfrmEditTags.Create(GetParentForm(Self));
           if EditTags.EditFile(Tracks[0].Filename) then
             EditTags.ShowModal
           else
@@ -769,8 +775,16 @@ begin
       end;
     taDelete:
       begin
-        if MsgBox(GetParentForm(Self).Handle, _('Do you really want to delete all selected files?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
-          Exit;
+        if Length(Tracks) = 1 then
+        begin
+          if MsgBox(GetParentForm(Self).Handle, Format(_('Do you really want to delete "%s"?'), [ExtractFileName(Tracks[0].Filename)]), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
+            Exit;
+        end else
+        begin
+          if MsgBox(GetParentForm(Self).Handle, _('Do you really want to delete all selected files?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
+            Exit;
+        end;
+
         Error := False;
         FSavedTree.BeginUpdate;
         try
@@ -936,6 +950,11 @@ begin
   FSavedTree.Invalidate;
 end;
 
+function TSavedTab.VolumeGetVolumeBeforeMute(Sender: TObject): Integer;
+begin
+  Result := Players.VolumeBeforeMute;
+end;
+
 procedure TSavedTab.VolumeTrackbarChange(Sender: TObject);
 begin
   Players.Volume := FVolume.Volume;
@@ -1040,9 +1059,10 @@ begin
   FVolume.Align := alRight;
   FVolume.Setup;
   FVolume.Width := 150;
+  FVolume.Volume := AppGlobals.PlayerVolume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
+  FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
   FVolume.Padding.Left := 10;
-
   FVolume.Left := High(Integer);
 
   FToolbar.Top := 0;
@@ -1069,6 +1089,21 @@ begin
   FPositionTimer.Enabled := True;
 end;
 
+procedure TSavedTab.Shown;
+var
+  i: Integer;
+begin
+  if FSavedTree.RootNodeCount > 0 then
+  begin
+    FSavedTree.Selected[FSavedTree.GetFirst] := True;
+    FSavedTree.FocusedNode := FSavedTree.GetFirst;
+  end;
+
+  if AppGlobals.SavedHeadersLoaded then
+    for i := 2 to FSavedTree.Header.Columns.Count - 1 do
+      FSavedTree.Header.Columns[i].Width := AppGlobals.SavedHeaderWidth[i];
+end;
+
 procedure TSavedTab.StopThreads;
 begin
   while FImportThread <> nil do
@@ -1082,6 +1117,8 @@ end;
 { TSavedTree }
 
 constructor TSavedTree.Create(AOwner: TComponent);
+var
+  i: Integer;
 begin
   inherited Create(AOwner);
 
@@ -1134,25 +1171,19 @@ begin
 
   FColImages := Header.Columns.Add;
   FColImages.Text := _('State');
-  FColImages.Width := 72;
   FColImages.Options := FColImages.Options - [coResizable];
   FColFilename := Header.Columns.Add;
   FColFilename.Text := _('Filename');
   FColSize := Header.Columns.Add;
   FColSize.Text := _('Size');
-  FColSize.Width := 70;
   FColLength := Header.Columns.Add;
   FColLength.Text := _('Length');
-  FColLength.Width := 60;
   FColBitRate := Header.Columns.Add;
   FColBitRate.Text := _('Bitrate');
-  FColBitRate.Width := 60;
   FColStream := Header.Columns.Add;
   FColStream.Text := _('Stream');
-  FColStream.Width := 200;
   FColSaved := Header.Columns.Add;
   FColSaved.Text := _('Time');
-  FColSaved.Width := 130;
 
   Header.Options := Header.Options + [hoAutoResize];
 
@@ -1161,6 +1192,18 @@ begin
   SetFileWatcher;
 
   MsgBus.AddSubscriber(MessageReceived);
+
+  Header.PopupMenu := TMTreeColumnPopup.Create(Self);
+  TMTreeColumnPopup(Header.PopupMenu).HideIdx := 1;
+  TMTreeColumnPopup(Header.PopupMenu).OnAction := MenuColsAction;
+
+  for i := 1 to Header.Columns.Count - 1 do
+  begin
+    if not ((AppGlobals.SavedCols and (1 shl i)) <> 0) then
+      Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
+  end;
+
+  FitColumns;
 end;
 
 destructor TSavedTree.Destroy;
@@ -1822,6 +1865,30 @@ begin
   Change(nil);
 end;
 
+procedure TSavedTree.FitColumns;
+  function GetTextWidth(Text: string): Integer;
+  var
+    Canvas: TAccessCanvas;
+  begin
+    Canvas := TAccessCanvas.Create;
+    try
+      Canvas.Handle := GetDC(GetDesktopWindow);
+      SelectObject(Canvas.Handle, Header.Font.Handle);
+      Result := Canvas.TextWidth(Text) + 20;
+      ReleaseDC(GetDesktopWindow, Canvas.Handle);
+    finally
+      Canvas.Free;
+    end;
+  end;
+begin
+  FColImages.Width := 72;
+  FColSize.Width := GetTextWidth('111,11 KB');
+  FColLength.Width := GetTextWidth('00:00');
+  FColBitRate.Width := GetTextWidth('320 VBR');
+  FColStream.Width := 200;
+  FColSaved.Width := 130;
+end;
+
 procedure TSavedTree.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;
   var Allowed: Boolean);
 begin
@@ -1831,10 +1898,6 @@ begin
 end;
 
 procedure TSavedTree.Change(Node: PVirtualNode);
-var
-  i: Integer;
-  AllFinalized: Boolean;
-  Tracks: TTrackInfoArray;
 begin
   inherited;
 
@@ -1868,7 +1931,7 @@ begin
   Result := 0;
   Data1 := GetNodeData(Node1);
   Data2 := GetNodeData(Node2);
-           // TODO: 2 streams aufnehmen. ersten abspielen. warten. zweiten abspielen - timer oben rechts wird nicht resetted.
+
   if Data1.Track = nil then
     Exit(-1);
   if Data2.Track = nil then
@@ -1999,6 +2062,26 @@ begin
       FPopupMenu.FItemPlay.Click;
     end;
   end;
+end;
+
+procedure TSavedTree.MenuColsAction(Sender: TVirtualStringTree;
+  Index: Integer; Checked: Boolean);
+var
+  Show: Boolean;
+begin
+  Show := True;
+  if coVisible in Header.Columns[Index].Options then
+    Show := False;
+
+  if Show then
+  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible];
+  end else
+  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options - [coVisible];
+  end;
+
+  AppGlobals.SavedCols := AppGlobals.SavedCols xor (1 shl Index);
 end;
 
 procedure TSavedTree.MessageReceived(Msg: TMessageBase);

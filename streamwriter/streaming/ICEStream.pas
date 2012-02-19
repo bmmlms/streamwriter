@@ -851,10 +851,6 @@ begin
       FStreamTracks.FoundTitle(0, Title, FBytesPerSec, False);
     end;
 
-    // Damit Der ICEStream sich FFilename wieder setzt, so dass aussen das Menü-Item fürs Play an ist.
-    if Assigned(FOnTitleChanged) then
-      FOnTitleChanged(Self);
-
     Result := True;
   end;
 end;

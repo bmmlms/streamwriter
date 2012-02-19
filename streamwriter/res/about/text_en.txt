@@ -1,0 +1,96 @@
+﻿&U&12Thanks go out to...
+
+
+&U&10...everybody who donated something
+
+&U&10...people who contributed code, documentation,
+&U&10images or translations
+
+'bastik'
+'HostedDinner'
+Ralf
+
+&U&10...everyone supporting streamWriter at the board
+
+&U&10...and all other nice people I know!
+
+
+
+
+&U&10Also thanks to some other projects I make use of
+&U&10to develop streamWriter and it's website
+
+Apache HTTP Server
+AudioGenie
+BASS
+Delphi-Praxis
+Django
+Drag and Drop Component Suite
+Embarcadero
+FAAC
+famfamfam
+FastMM
+freecsstemplates.org
+Fugue Icons
+Gimp
+Inno Setup
+jQuery
+LAME
+LED icons
+MP4Box
+MySQL
+OggEnc
+Programmer's Notepad
+Python
+SoX
+Tango Desktop Project
+Virtual Treeview
+XMLLib
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&IMG0
+&IMG1
+&IMG2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+D1734FA178BF7D5AE50CB1AD54442494
+
+
+Korrekt Banze!
+
+
+
+
+
+Thanks for reading everything...

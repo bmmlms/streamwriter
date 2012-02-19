@@ -128,7 +128,8 @@ uses
   AddonSoX in 'addon\AddonSoX.pas',
   AudioFunctions in 'audio\AudioFunctions.pas',
   ConfigureEncoder in 'ConfigureEncoder.pas' {frmConfigureEncoder},
-  PlaylistHandler in 'audio\PlaylistHandler.pas';
+  PlaylistHandler in 'audio\PlaylistHandler.pas',
+  Equalizer in 'Equalizer.pas' {frmEqualizer};
 
 {$SetPEOptFlags $0140}
 
@@ -136,6 +137,7 @@ uses
 {$R res\language.res}
 {$R res\icons.res}
 {$R res\bass.res}
+{$R res\about.res}
 {$R ..\..\common\res\language.res}
 {$R ..\..\common\res\lang_icons.res}
 {$R ..\..\common\res\icons.res}

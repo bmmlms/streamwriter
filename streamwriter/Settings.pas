@@ -198,8 +198,6 @@ type
     procedure btnRemoveClick(Sender: TObject);
     procedure btnHelpClick(Sender: TObject);
     procedure btnMoveClick(Sender: TObject);
-    procedure lstPostProcessCompare(Sender: TObject; Item1, Item2: TListItem;
-      Data: Integer; var Compare: Integer);
     procedure btnBrowseClick(Sender: TObject);
     procedure txtHotkeyChange(Sender: TObject);
     procedure lstHotkeysChange(Sender: TObject; Item: TListItem;
@@ -275,7 +273,6 @@ type
     function GetNewID: Integer;
 
     function GetStringListHash(Lst: TStringList): Cardinal;
-    function GetPostProcessingHash(Settings: TStreamSettings): Cardinal;
     procedure BuildHotkeys;
     function RemoveGray(C: TControl; ShowMessage: Boolean = True): Boolean;
     procedure EnablePanel(Panel: TPanel; Enable: Boolean);
@@ -1595,18 +1592,6 @@ begin
   end;
 end;
 
-function TfrmSettings.GetPostProcessingHash(
-  Settings: TStreamSettings): Cardinal;
-var
-  i: Integer;
-begin
-  Result := HashString(IntToStr(Settings.PostProcessors.Count));
-  for i := 0 to Settings.PostProcessors.Count - 1 do
-  begin
-    Result := Result + Settings.PostProcessors[i].Hash;
-  end;
-end;
-
 function TfrmSettings.GetStringListHash(Lst: TStringList): Cardinal;
 var
   i: Integer;
@@ -1620,7 +1605,7 @@ procedure TfrmSettings.KeyDown(var Key: Word; Shift: TShiftState);
 begin
   inherited;
   if Key = VK_F1 then
-    ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLink), '', '', 1);
+    ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLinkSettings), '', '', 1);
 end;
 
 procedure TfrmSettings.lstDefaultFilterChange(Sender: TObject);
@@ -1712,9 +1697,6 @@ end;
 
 procedure TfrmSettings.lstAddonsItemChecked(Sender: TObject;
   Item: TListItem);
-var
-  Res: Integer;
-  DA: TfrmDownloadAddons;
 begin
   if not FInitialized then
     Exit;
@@ -1731,19 +1713,6 @@ begin
   inherited;
 
   lstAddons.Columns[0].Width := lstAddons.ClientWidth;
-end;
-
-procedure TfrmSettings.lstPostProcessCompare(Sender: TObject; Item1,
-  Item2: TListItem; Data: Integer; var Compare: Integer);
-var
-  P1, P2: TPostProcessBase;
-begin
-  inherited;
-{
-  P1 := TPostProcessBase(Item1.Data);
-  P2 := TPostProcessBase(Item2.Data);
-  Compare := CmpInt(P1.Order, P2.Order);
-}
 end;
 
 procedure TfrmSettings.lstPostProcessItemChecked(Sender: TObject; Item: TListItem);
@@ -2026,6 +1995,7 @@ end;
 
 function TfrmSettings.RemoveGray(C: TControl; ShowMessage: Boolean = True): Boolean;
 begin
+  Result := False;
   if FIgnoreFieldList = nil then
     Exit;
 
@@ -2050,7 +2020,7 @@ begin
     TListView(C).Color := clWindow;
   end;
 
-  Exit(True);
+  Result := True;
 end;
 
 procedure TfrmSettings.SetGray;
@@ -2444,7 +2414,6 @@ end;
 
 procedure TfrmSettings.btnHelpClick(Sender: TObject);
 var
-  Addon: TAddonBase;
   PostProcess: TPostProcessBase;
 begin
   if lstPostProcess.Selected = nil then
@@ -2455,10 +2424,7 @@ end;
 
 procedure TfrmSettings.btnMoveClick(Sender: TObject);
 var
-  TmpItem: TListItem;
-  i, j: integer;
-  Done: Boolean;
-  Tmp: TPostProcessBase;
+  i: integer;
   Selected: TPostProcessBase;
 begin
   if lstPostProcess.Selected = nil then
@@ -2527,11 +2493,15 @@ begin
   end;
   FillFields(AppGlobals.StreamSettings);
 
+  btnConfigureEncoder.Enabled := TAudioTypes(lstOutputFormat.ItemIndex) <> atNone;
+
   if TAudioTypes(lstOutputFormat.ItemIndex) <> atNone then
+  begin
     for i := 0 to High(FStreamSettings) do
     begin
       FStreamSettings[i].EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)).Assign(AppGlobals.StreamSettings.EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)));
     end;
+  end;
 
   FInitialized := True;
 end;

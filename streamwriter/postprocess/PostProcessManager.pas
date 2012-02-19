@@ -99,7 +99,7 @@ end;
 
 procedure TPostProcessManager.BuildProcessingList(Entry: TProcessingEntry);
 var
-  i, n: Integer;
+  i: Integer;
   Client: TICEClient;
 
   function PostProcessingNeedsWave(Entry: TProcessingEntry): Boolean;
@@ -168,7 +168,6 @@ end;
 
 function TPostProcessManager.ProcessFile(Entry: TProcessingEntry): Boolean;
 var
-  i, n, Order, SmallestActive: Integer;
   NextIdx: Integer;
   Output: string;
 begin
@@ -364,8 +363,6 @@ function TPostProcessManager.EnablePostProcess(Owner: TCustomForm;
   Enable: Boolean; PostProcess: TInternalPostProcess): Boolean;
 var
   i: Integer;
-  Res: Integer;
-  DA: TfrmDownloadAddons;
 begin
   if not Enable then
     Exit(False);

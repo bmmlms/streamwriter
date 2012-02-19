@@ -24,7 +24,7 @@ unit Player;
 interface
 
 uses
-  Windows, SysUtils, Classes, DynBass, Math, Logging, AppData;
+  Windows, SysUtils, Classes, DynBass, Math, Logging, AppData, TypeDefs;
 
 type
   TPlayer = class
@@ -39,6 +39,9 @@ type
     FPosToReach: Cardinal;
     FEndPos: Cardinal;
 
+    FEQEnabled: Boolean;
+    FBandData: array[0..9] of TBandData;
+
     FOnPosReached: TNotifyEvent;
     FOnEndReached: TNotifyEvent;
     FOnPlay: TNotifyEvent;
@@ -46,7 +49,9 @@ type
     FOnStop: TNotifyEvent;
 
     procedure CreatePlayer;
+    procedure FreeStream(Player: Cardinal);
 
+    procedure FSetEQEnabled(Value: Boolean);
     function FGetPaused: Boolean;
     function FGetStopped: Boolean;
     function FGetPlaying: Boolean;
@@ -66,7 +71,9 @@ type
     procedure Play;
     procedure Pause;
     procedure Stop(Free: Boolean; NoFadeOut: Boolean = False);
+    procedure SetEQ(Value, Freq: Integer);
 
+    property EQEnabled: Boolean read FEQEnabled write FSetEQEnabled;
     property Paused: Boolean read FGetPaused;
     property Stopped: Boolean read FGetStopped;
     property Playing: Boolean read FGetPlaying;
@@ -105,7 +112,7 @@ begin
   begin
     BASSChannelStop(channel);
     if P.FFree then
-      BASSStreamFree(channel);
+      P.FreeStream(channel);
   end;
 
   P.FPaused := False;
@@ -138,9 +145,15 @@ end;
 { TPlayer }
 
 constructor TPlayer.Create;
+var
+  i: Integer;
 begin
   inherited;
 
+  for i := 0 to High(FBandData) do
+  begin
+    FBandData[i].Handle := 0;
+  end;
 end;
 
 procedure TPlayer.CreatePlayer;
@@ -150,6 +163,8 @@ begin
   if FPlayer = 0 then
     raise Exception.Create('');
   FSyncEnd := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, EndSyncProc, Self);
+
+  EQEnabled := Players.EQEnabled;
 end;
 
 destructor TPlayer.Destroy;
@@ -158,7 +173,7 @@ begin
   // wenn man hier nicht freigibt, kann er nicht speichern.
   Players.RemovePlayer(Self);
   try
-    BASSStreamFree(FPlayer);
+    FreeStream(FPlayer);
   except end;
 
   inherited;
@@ -211,12 +226,51 @@ begin
   Result := FPlayer = 0;
 end;
 
+procedure TPlayer.FreeStream(Player: Cardinal);
+var
+  i: Integer;
+begin
+  for i := 0 to High(FBandData) do
+  begin
+    BASSChannelRemoveFX(Player, FBandData[i].Handle);
+    FBandData[i].Handle := 0;
+  end;
+  BASSStreamFree(Player);
+end;
+
 procedure TPlayer.FSetEndPos(Value: Cardinal);
 begin
   if FSyncPos > 0 then
     BASSChannelRemoveSync(FPlayer, FSyncEnd);
   if Value > 0 then
     FSyncEnd := BASSChannelSetSync(FPlayer, BASS_SYNC_POS, Value, EndSyncProc, Self);
+end;
+
+procedure TPlayer.FSetEQEnabled(Value: Boolean);
+var
+  i: Integer;
+begin
+  FEQEnabled := Value;
+
+  if Value then
+  begin
+    for i := 0 to High(FBandData) do
+    begin
+      if FPlayer > 0 then
+      begin
+        FBandData[i].Handle := BASSChannelSetFX(FPlayer, 7, 0);
+      end;
+      SetEQ(AppGlobals.EQGain[i], i);
+    end;
+  end else
+  begin
+    for i := 0 to High(FBandData) do
+    begin
+      if FBandData[i].Handle > 0 then
+        BASSChannelRemoveFX(FPlayer, FBandData[i].Handle);
+      FBandData[i].Handle := 0;
+    end;
+  end;
 end;
 
 procedure TPlayer.FSetFilename(Value: string);
@@ -307,6 +361,22 @@ begin
     FOnPlay(Self);
 end;
 
+procedure TPlayer.SetEQ(Value, Freq: Integer);
+var
+  S: BASS_DX8_PARAMEQ;
+begin
+  FBandData[Freq].Gain := Value;
+
+  if FEQEnabled and (FPlayer > 0) and (FBandData[Freq].Handle > 0) then
+  begin
+    S.fCenter := BandToFreq(Freq);
+    S.fBandwidth := 12;
+    S.fGain := Value;
+
+    BASSFXSetParameters(FBandData[Freq].Handle, @S);
+  end;
+end;
+
 procedure TPlayer.Stop(Free: Boolean; NoFadeOut: Boolean = False);
 var
   Pos, Len: Double;
@@ -325,7 +395,7 @@ begin
       begin
         BASSChannelStop(FPlayer);
         if Free then
-          BASSStreamFree(FPlayer);
+          FreeStream(FPlayer);
       end else
       begin
         FSyncSlide := BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, SlideEndSyncProc, Self);
@@ -333,7 +403,7 @@ begin
         while BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING do
           Sleep(50);
         if Free then
-          BASSStreamFree(FPlayer);
+          FreeStream(FPlayer);
       end;
       if Free then
         FPlayer := 0;
@@ -342,7 +412,7 @@ begin
       BASSChannelStop(FPlayer);
       if Free then
       begin
-        BASSStreamFree(FPlayer);
+        FreeStream(FPlayer);
         FPlayer := 0;
       end;
     end;

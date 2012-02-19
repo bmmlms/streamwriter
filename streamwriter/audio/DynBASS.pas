@@ -68,6 +68,22 @@ type
     driver: PAnsiChar;
     flags: DWORD;
   end;
+  BASS_INFO = record
+    flags: DWORD;       // device capabilities (DSCAPS_xxx flags)
+    hwsize: DWORD;      // size of total device hardware memory
+    hwfree: DWORD;      // size of free device hardware memory
+    freesam: DWORD;     // number of free sample slots in the hardware
+    free3d: DWORD;      // number of free 3D sample slots in the hardware
+    minrate: DWORD;     // min sample rate supported by the hardware
+    maxrate: DWORD;     // max sample rate supported by the hardware
+    eax: BOOL;          // device supports EAX? (always FALSE if BASS_DEVICE_3D was not used)
+    minbuf: DWORD;      // recommended minimum buffer length in ms (requires BASS_DEVICE_LATENCY)
+    dsver: DWORD;       // DirectSound version
+    latency: DWORD;     // delay (in ms) before start of playback (requires BASS_DEVICE_LATENCY)
+    initflags: DWORD;   // BASS_Init "flags" parameter
+    speakers: DWORD;    // number of speakers available
+    freq: DWORD;        // current output rate (OSX only)
+  end;
   BASS_CHANNELINFO = record
     freq: DWORD;        // default playback rate
     chans: DWORD;       // channels
@@ -77,6 +93,11 @@ type
     plugin: DWORD;    // plugin
     sample: DWORD;    // sample
     filename: PChar;    // filename
+  end;
+  BASS_DX8_PARAMEQ = record
+    fCenter: Single;
+    fBandwidth: Single;
+    fGain: Single;
   end;
 
   TBassDevice = class
@@ -94,10 +115,11 @@ type
 
   TBassLoader = class
   private
-    BassDLLPath: string;
-    BassAACDLLPath: string;
-    DLLHandle: Cardinal;
-    AACDLLHandle: Cardinal;
+    FBassDLLPath: string;
+    FBassAACDLLPath: string;
+    FDLLHandle: Cardinal;
+    FAACDLLHandle: Cardinal;
+    FEffectsAvailable: Boolean;
 
     FDevices: TList<TBassDevice>;
 
@@ -111,11 +133,13 @@ type
     destructor Destroy; override;
     function InitializeBass(Handle: THandle): Boolean;
 
+    property EffectsAvailable: Boolean read FEffectsAvailable;
     property Devices: TList<TBassDevice> read FDevices;
   end;
 
 var
   BASSInit: function(device: LongInt; freq, flags: DWORD; win: HWND; clsid: PGUID): BOOL; stdcall;
+  BASSGetInfo: function(var info: BASS_INFO): BOOL; stdcall;
   BASSGetDeviceInfo: function(device: DWORD; var info: BASS_DEVICEINFO): BOOL; stdcall;
   BASSSetDevice: function(device: DWORD): BOOL; stdcall;
   BASSStreamCreateFile: function(mem: BOOL; f: Pointer; offset, length: QWORD; flags: DWORD): HSTREAM; stdcall;
@@ -144,6 +168,9 @@ var
   BASSChannelGetInfo: function(handle: DWORD; var info: BASS_CHANNELINFO):BOOL; stdcall;
   BASSChannelGetAttribute: function(handle, attrib: DWORD; var value: Single): BOOL; stdcall;
   BASSChannelGetData: function(handle: DWORD; buffer: Pointer; length: DWORD): DWORD; stdcall;
+  BASSFXSetParameters: function(handle: DWORD; par: Pointer): BOOL; stdcall;
+  BASSChannelSetFX: function(handle, type_: DWORD; priority: LongInt): DWORD; stdcall;
+  BASSChannelRemoveFX: function(handle: DWORD; fx: DWORD): BOOL; stdcall;
 
 var
   Bass: TBassLoader;
@@ -192,16 +219,17 @@ var
   i: Integer;
   Found: Boolean;
   Res: TResourceStream;
+  BassInfo: BASS_INFO;
 begin
   Result := False;
 
-  BassDLLPath := AppGlobals.TempDir + 'bass.dll';
-  BassAACDLLPath := AppGlobals.TempDir + 'bass_aac.dll';
+  FBassDLLPath := AppGlobals.TempDir + 'bass.dll';
+  FBassAACDLLPath := AppGlobals.TempDir + 'bass_aac.dll';
 
   Res := TResourceStream.Create(0, 'BASS', MakeIntResource(RT_RCDATA));
   try
     try
-      Res.SaveToFile(BassDLLPath);
+      Res.SaveToFile(FBassDLLPath);
     except end;
   finally
     Res.Free;
@@ -210,44 +238,48 @@ begin
   Res := TResourceStream.Create(0, 'BASS_AAC', MakeIntResource(RT_RCDATA));
   try
     try
-      Res.SaveToFile(BassAACDLLPath);
+      Res.SaveToFile(FBassAACDLLPath);
     except end;
   finally
     Res.Free;
   end;
 
-  DLLHandle := LoadLibrary(PChar(BassDLLPath));
-  if DLLHandle <> 0 then
+  FDLLHandle := LoadLibrary(PChar(FBassDLLPath));
+  if FDLLHandle <> 0 then
   begin
-    BASSInit := GetProcAddress(DLLHandle, 'BASS_Init');
-    BASSGetDeviceInfo := GetProcAddress(DLLHandle, 'BASS_GetDeviceInfo');
-    BASSSetDevice := GetProcAddress(DLLHandle, 'BASS_SetDevice');
-    BASSStreamCreateFile := GetProcAddress(DLLHandle, 'BASS_StreamCreateFile');
-    BASSStreamCreateFileUser := GetProcAddress(DLLHandle, 'BASS_StreamCreateFileUser');
-    BASSChannelIsActive := GetProcAddress(DLLHandle, 'BASS_ChannelIsActive');
-    BASSStreamGetFilePosition := GetProcAddress(DLLHandle, 'BASS_StreamGetFilePosition');
-    BASSChannelGetPosition := GetProcAddress(DLLHandle, 'BASS_ChannelGetPosition');
-    BASSChannelGetLength := GetProcAddress(DLLHandle, 'BASS_ChannelGetLength');
-    BASSChannelBytes2Seconds := GetProcAddress(DLLHandle, 'BASS_ChannelBytes2Seconds');
-    BASSChannelSeconds2Bytes := GetProcAddress(DLLHandle, 'BASS_ChannelSeconds2Bytes');
-    BASSChannelGetLevel := GetProcAddress(DLLHandle, 'BASS_ChannelGetLevel');
-    BASSChannelPlay := GetProcAddress(DLLHandle, 'BASS_ChannelPlay');
-    BASSChannelPause := GetProcAddress(DLLHandle, 'BASS_ChannelPause');
-    BASSChannelStop := GetProcAddress(DLLHandle, 'BASS_ChannelStop');
-    BASSChannelSetPosition := GetProcAddress(DLLHandle, 'BASS_ChannelSetPosition');
-    BASSChannelSetSync := GetProcAddress(DLLHandle, 'BASS_ChannelSetSync');
-    BASSChannelRemoveSync := GetProcAddress(DLLHandle, 'BASS_ChannelRemoveSync');
-    BASSChannelSetAttribute := GetProcAddress(DLLHandle, 'BASS_ChannelSetAttribute');
-    BASSChannelSlideAttribute := GetProcAddress(DLLHandle, 'BASS_ChannelSlideAttribute');
-    BASSStreamFree := GetProcAddress(DLLHandle, 'BASS_StreamFree');
-    BASSStreamPutFileData := GetProcAddress(DLLHandle, 'BASS_StreamPutFileData');
-    BASSErrorGetCode := GetProcAddress(DLLHandle, 'BASS_ErrorGetCode');
-    BASSSetConfig := GetProcAddress(DLLHandle, 'BASS_SetConfig');
-    BASSPluginLoad := GetProcAddress(DLLHandle, 'BASS_PluginLoad');
-    BASSPluginFree := GetProcAddress(DLLHandle, 'BASS_PluginFree');
-    BASSChannelGetInfo := GetProcAddress(DLLHandle, 'BASS_ChannelGetInfo');
-    BASSChannelGetAttribute := GetProcAddress(DLLHandle, 'BASS_ChannelGetAttribute');
-    BASSChannelGetData := GetProcAddress(DLLHandle, 'BASS_ChannelGetData');
+    BASSInit := GetProcAddress(FDLLHandle, 'BASS_Init');
+    BASSGetInfo := GetProcAddress(FDLLHandle, 'BASS_GetInfo');
+    BASSGetDeviceInfo := GetProcAddress(FDLLHandle, 'BASS_GetDeviceInfo');
+    BASSSetDevice := GetProcAddress(FDLLHandle, 'BASS_SetDevice');
+    BASSStreamCreateFile := GetProcAddress(FDLLHandle, 'BASS_StreamCreateFile');
+    BASSStreamCreateFileUser := GetProcAddress(FDLLHandle, 'BASS_StreamCreateFileUser');
+    BASSChannelIsActive := GetProcAddress(FDLLHandle, 'BASS_ChannelIsActive');
+    BASSStreamGetFilePosition := GetProcAddress(FDLLHandle, 'BASS_StreamGetFilePosition');
+    BASSChannelGetPosition := GetProcAddress(FDLLHandle, 'BASS_ChannelGetPosition');
+    BASSChannelGetLength := GetProcAddress(FDLLHandle, 'BASS_ChannelGetLength');
+    BASSChannelBytes2Seconds := GetProcAddress(FDLLHandle, 'BASS_ChannelBytes2Seconds');
+    BASSChannelSeconds2Bytes := GetProcAddress(FDLLHandle, 'BASS_ChannelSeconds2Bytes');
+    BASSChannelGetLevel := GetProcAddress(FDLLHandle, 'BASS_ChannelGetLevel');
+    BASSChannelPlay := GetProcAddress(FDLLHandle, 'BASS_ChannelPlay');
+    BASSChannelPause := GetProcAddress(FDLLHandle, 'BASS_ChannelPause');
+    BASSChannelStop := GetProcAddress(FDLLHandle, 'BASS_ChannelStop');
+    BASSChannelSetPosition := GetProcAddress(FDLLHandle, 'BASS_ChannelSetPosition');
+    BASSChannelSetSync := GetProcAddress(FDLLHandle, 'BASS_ChannelSetSync');
+    BASSChannelRemoveSync := GetProcAddress(FDLLHandle, 'BASS_ChannelRemoveSync');
+    BASSChannelSetAttribute := GetProcAddress(FDLLHandle, 'BASS_ChannelSetAttribute');
+    BASSChannelSlideAttribute := GetProcAddress(FDLLHandle, 'BASS_ChannelSlideAttribute');
+    BASSStreamFree := GetProcAddress(FDLLHandle, 'BASS_StreamFree');
+    BASSStreamPutFileData := GetProcAddress(FDLLHandle, 'BASS_StreamPutFileData');
+    BASSErrorGetCode := GetProcAddress(FDLLHandle, 'BASS_ErrorGetCode');
+    BASSSetConfig := GetProcAddress(FDLLHandle, 'BASS_SetConfig');
+    BASSPluginLoad := GetProcAddress(FDLLHandle, 'BASS_PluginLoad');
+    BASSPluginFree := GetProcAddress(FDLLHandle, 'BASS_PluginFree');
+    BASSChannelGetInfo := GetProcAddress(FDLLHandle, 'BASS_ChannelGetInfo');
+    BASSChannelGetAttribute := GetProcAddress(FDLLHandle, 'BASS_ChannelGetAttribute');
+    BASSChannelGetData := GetProcAddress(FDLLHandle, 'BASS_ChannelGetData');
+    BASSFXSetParameters := GetProcAddress(FDLLHandle, 'BASS_FXSetParameters');
+    BASSChannelSetFX := GetProcAddress(FDLLHandle, 'BASS_ChannelSetFX');
+    BASSChannelRemoveFX := GetProcAddress(FDLLHandle, 'BASS_ChannelRemoveFX');
 
     BassLoaded := False;
     DeviceAvailable := False;
@@ -283,16 +315,22 @@ begin
 
     if not BassLoaded then
     begin
-      FreeLibrary(DLLHandle);
+      FreeLibrary(FDLLHandle);
       Exit;
     end;
 
-    AACDLLHandle := BASSPluginLoad(PChar(BassAACDLLPath), BASS_UNICODE);
-    if AACDLLHandle = 0 then
+    FAACDLLHandle := BASSPluginLoad(PChar(FBassAACDLLPath), BASS_UNICODE);
+    if FAACDLLHandle = 0 then
     begin
       BassLoaded := False;
-      FreeLibrary(DLLHandle);
-      DLLHandle := 0;
+      FreeLibrary(FDLLHandle);
+      FDLLHandle := 0;
+    end;
+
+    if BassLoaded then
+    begin
+       BASSGetInfo(BassInfo);
+       FEffectsAvailable := BassInfo.dsver >= 8;
     end;
 
     Result := BassLoaded;
@@ -302,16 +340,16 @@ end;
 procedure TBassLoader.UninitializeBass;
 begin
   try
-    if AACDLLHandle <> 0 then
-      BASSPluginFree(AACDLLHandle);
-    if DLLHandle <> 0 then
+    if FAACDLLHandle <> 0 then
+      BASSPluginFree(FAACDLLHandle);
+    if FDLLHandle <> 0 then
     begin
-      FreeLibrary(DLLHandle);
+      FreeLibrary(FDLLHandle);
     end;
-    if BassDLLPath <> '' then
-      DeleteFile(BassDLLPath);
-    if BassAACDLLPath <> '' then
-      DeleteFile(BassAACDLLPath);
+    if FBassDLLPath <> '' then
+      DeleteFile(FBassDLLPath);
+    if FBassAACDLLPath <> '' then
+      DeleteFile(FBassAACDLLPath);
   except
   end;
 end;

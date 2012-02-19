@@ -29,7 +29,7 @@ uses
   StdCtrls, Menus, ImgList, Math, ICEClient, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, Tabs, DropComboTarget,
   DropSource, ShlObj, ComObj, ShellAPI, DataManager, StreamBrowserView,
-  Logging, PngImage;
+  Logging, PngImage, SharedControls;
 
 type
   TAccessCanvas = class(TCanvas);
@@ -53,21 +53,6 @@ type
   TStartStreamingEvent = procedure(Sender: TObject; ID, Bitrate: Cardinal; Name, URL, TitlePattern: string;
     IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode) of object;
 
-  TMenuColEvent = procedure(Sender: TMClientView; Index: Integer; Checken: Boolean) of object;
-
-  TMFilesColPopupMenu = class(TPopupMenu)
-  private
-    FFileView: TMClientView;
-    FOnAction: TMenuColEvent;
-
-    procedure ColItemsClick(Sender: TObject);
-  protected
-    procedure DoPopup(Sender: TObject); override;
-  public
-    constructor Create(AOwner: TComponent); override;
-    property OnAction: TMenuColEvent read FOnAction write FOnAction;
-  end;
-
   TMClientView = class(TVirtualStringTree)
   private
     FBrowser: TMStreamTree;
@@ -90,7 +75,7 @@ type
     FOnStartStreaming: TStartStreamingEvent;
 
     procedure FitColumns;
-    procedure MenuColsAction(Sender: TMClientView; Index: Integer; Checked: Boolean);
+    procedure MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -234,8 +219,8 @@ begin
   FColStatus := Header.Columns.Add;
   FColStatus.Text := _('State');
 
-  Header.PopupMenu := TMFilesColPopupMenu.Create(Self);
-  TMFilesColPopupMenu(Header.PopupMenu).OnAction := MenuColsAction;
+  Header.PopupMenu := TMTreeColumnPopup.Create(Self);
+  TMTreeColumnPopup(Header.PopupMenu).OnAction := MenuColsAction;
 
   for i := 1 to Header.Columns.Count - 1 do
   begin
@@ -640,7 +625,7 @@ begin
   end;
 end;
 
-procedure TMClientView.MenuColsAction(Sender: TMClientView; Index: Integer;
+procedure TMClientView.MenuColsAction(Sender: TVirtualStringTree; Index: Integer;
   Checked: Boolean);
 var
   Show: Boolean;
@@ -1181,53 +1166,6 @@ begin
       Result[High(Result)].URL := URL;
       Result[High(Result)].Name := Name;
     end;
-  end;
-end;
-
-{ TMFilesColPopupMenu }
-
-procedure TMFilesColPopupMenu.ColItemsClick(Sender: TObject);
-var
-  Index: Integer;
-  Item: TMenuItem;
-begin
-  Item := TMenuItem(Sender);
-  Index := Items.IndexOf(Item) + 1;
-  if Assigned(FOnAction) then
-    FOnAction(nil, Index, True);
-end;
-
-constructor TMFilesColPopupMenu.Create(AOwner: TComponent);
-var
-  i: Integer;
-  Tree: TMClientView;
-  Item: TMenuItem;
-begin
-  inherited;
-
-  if AOwner is TMClientView then
-  begin
-    Tree := TMClientView(AOwner);
-    FFileView := Tree;
-    for i := 1 to Tree.Header.Columns.Count - 1 do
-    begin
-      Item := CreateMenuItem;
-      Item.Caption := Tree.Header.Columns[i].Text;
-      Item.OnClick := ColItemsClick;
-      Items.Add(Item);
-    end;
-  end;
-end;
-
-procedure TMFilesColPopupMenu.DoPopup(Sender: TObject);
-var
-  i: Integer;
-begin
-  inherited;
-
-  for i := 1 to FFileView.Header.Columns.Count - 1 do
-  begin
-    Items[i - 1].Checked := coVisible in FFileView.Header.Columns[i].Options;
   end;
 end;
 

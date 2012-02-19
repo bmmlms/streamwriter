@@ -34,7 +34,7 @@ uses
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   TypeDefs, ExtendedStream, SettingsStorage, ChartsTab, StatusBar,
-  SystemCritical, Intro, AddonManager, AudioFunctions;
+  SystemCritical, Intro, AddonManager, AudioFunctions, Equalizer;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -188,6 +188,9 @@ type
     mnuRename1: TMenuItem;
     actRename: TAction;
     cmdRename: TToolButton;
+    N14: TMenuItem;
+    mnuEqualizer: TMenuItem;
+    actEqualizer: TAction;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -219,6 +222,7 @@ type
     procedure actPlayerPlayPauseExecute(Sender: TObject);
     procedure actPlayerMuteVolumeExecute(Sender: TObject);
     procedure mnuPlayerClick(Sender: TObject);
+    procedure actEqualizerExecute(Sender: TObject);
   private
     FCommunityLogin: TfrmCommunityLogin;
 
@@ -241,6 +245,8 @@ type
     tabLists: TListsTab;
     tabSaved: TSavedTab;
     addStatus: TSWStatusBar;
+
+    FEqualizer: TfrmEqualizer;
 
     FExiting: Boolean;
 
@@ -358,7 +364,9 @@ begin
   AppGlobals.SidebarWidth := tabClients.SideBar.Width;
 
   for i := 0 to tabClients.ClientView.Header.Columns.Count - 1 do
-    AppGlobals.HeaderWidth[i] := tabClients.ClientView.Header.Columns[i].Width;
+    AppGlobals.ClientHeaderWidth[i] := tabClients.ClientView.Header.Columns[i].Width;
+  for i := 0 to tabSaved.Tree.Header.Columns.Count - 1 do
+    AppGlobals.SavedHeaderWidth[i] := tabSaved.Tree.Header.Columns[i].Width;
 
   TrayIcon1.Visible := False;
   tmrSpeed.Enabled := False;
@@ -371,6 +379,7 @@ begin
   AppGlobals.PlayerVolume := Players.Volume;
   AppGlobals.PlayerVolumeBeforeMute := Players.VolumeBeforeMute;
 
+  FEqualizer.Hide;
   Hide;
 
   HomeComm.Terminate;
@@ -491,6 +500,16 @@ begin
   end;
 end;
 
+procedure TfrmStreamWriterMain.actEqualizerExecute(Sender: TObject);
+begin
+  if not FEqualizer.Visible then
+  begin
+    FEqualizer.Left := Left + 20;
+    FEqualizer.Top := Top + Height - 40 - FEqualizer.Height;
+  end;
+  FEqualizer.Show;
+end;
+
 procedure TfrmStreamWriterMain.actExitExecute(Sender: TObject);
 begin
   if CanExitApp then
@@ -499,7 +518,7 @@ end;
 
 procedure TfrmStreamWriterMain.actHelpExecute(Sender: TObject);
 begin
-  ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLink), '', '', 1);
+  ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLinkMain), '', '', 1);
 end;
 
 procedure TfrmStreamWriterMain.actPlayerIncreaseVolumeExecute(Sender: TObject);
@@ -687,6 +706,13 @@ var
   Recovered: Boolean;
   S: TExtendedStream;
 begin
+  if not Bass.EffectsAvailable then
+  begin
+    actEqualizer.Enabled := False;
+    Players.EQEnabled := False;
+    AppGlobals.EQEnabled := False;
+  end;
+
   FDataLists := TDataLists.Create;
 
   {$IFNDEF DEBUG}
@@ -816,6 +842,8 @@ begin
   if AppGlobals.MainMaximized then
     WindowState := wsMaximized;
   FWasMaximized := WindowState = wsMaximized;
+
+  FEqualizer := TfrmEqualizer.Create(Self);
 end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
@@ -846,6 +874,7 @@ begin
   AppGlobals.WindowHandle := Handle;
 
   tabClients.Shown;
+  tabSaved.Shown;
 
   tabCharts.Setup(imgImages);
   tabLists.Setup(FClients, FDataLists, imgImages);
@@ -1165,7 +1194,6 @@ end;
 procedure TfrmStreamWriterMain.ProcessCommandLine(Data: string);
 var
   i, ParsedCount: Integer;
-  P: PChar;
   InDingens, InPlay, InRecord: Boolean;
   Args: array of string;
   Arg: string;
@@ -1765,7 +1793,6 @@ end;
 procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject; AudioInfo: TAudioFileInfo);
 var
   i: Integer;
-  Info: TAudioFileInfo;
 begin
   for i := 0 to FDataLists.TrackList.Count - 1 do
     if LowerCase(FDataLists.TrackList[i].Filename) = LowerCase(TCutTab(Sender).Filename) then
@@ -1930,6 +1957,7 @@ begin
 
   RecordingActive := False;
   PlayingActive := False;
+  ScheduleActive := False;
   for i := 0 to FClients.Count - 1 do
   begin
     if FClients[i].Recording then

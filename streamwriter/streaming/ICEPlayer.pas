@@ -25,7 +25,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, DynBASS, ExtendedStream, SyncObjs, AppData,
-  AudioStream, Logging, PlayerManager;
+  AudioStream, Logging, PlayerManager, TypeDefs;
 
 type
   TICEPlayer = class
@@ -36,8 +36,14 @@ type
     FPausing, FStopping: Boolean;
     FPlayStartBuffer: Cardinal;
 
+    FEQEnabled: Boolean;
+    FBandData: array[0..9] of TBandData;
+
+    procedure FreeStream(Player: Cardinal);
+
     function FGetPlaying: Boolean;
     function FGetPaused: Boolean;
+    procedure FSetEQEnabled(Value: Boolean);
   public
     constructor Create;
     destructor Destroy; override;
@@ -46,9 +52,11 @@ type
     procedure Pause;
     procedure Stop;
     procedure SetVolume(Vol: Integer);
+    procedure SetEQ(Value, Freq: Integer);
 
     procedure PushData(Buf: Pointer; Len: Integer);
 
+    property EQEnabled: Boolean read FEQEnabled write FSetEQEnabled;
     property Playing: Boolean read FGetPlaying;
     property Paused: Boolean read FGetPaused;
     property Pausing: Boolean read FPausing;
@@ -66,7 +74,7 @@ begin
   if P.FPausing then
     BASSChannelPause(channel)
   else if P.Stopping then       
-    BASSStreamFree(channel);
+    P.FreeStream(channel);
   TICEPlayer(user).FPausing := False;
   TICEPlayer(user).FStopping := False;
 end;
@@ -146,7 +154,7 @@ destructor TICEPlayer.Destroy;
 begin
   if FPlayer > 0 then
   begin
-    BASSStreamFree(FPlayer);
+    FreeStream(FPlayer);
     FPlayer := 0;
   end;
   FMem.Free;
@@ -183,8 +191,9 @@ begin
     Funcs.read := BASSRead;
 
     if FPlayer > 0 then
-      BASSStreamFree(FPlayer);
+      FreeStream(FPlayer);
     FPlayer := BASSStreamCreateFileUser(STREAMFILE_BUFFER, 0, Funcs, Self);
+    EQEnabled := Players.EQEnabled;
 
     SetVolume(Players.Volume);
 
@@ -194,7 +203,7 @@ begin
 
     if R <> 0 then
     begin
-      BASSStreamFree(FPlayer);
+      FreeStream(FPlayer);
       FPlayer := 0;
     end;
   end;
@@ -230,7 +239,7 @@ begin
       BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, EndSyncProc, Self);
     end else
     begin
-      BASSStreamFree(FPlayer);
+      FreeStream(FPlayer);
     end;
   end;
   FPlayer := 0;
@@ -284,6 +293,61 @@ begin
     end;
   finally
     FLock.Leave;
+  end;
+end;
+
+procedure TICEPlayer.FreeStream(Player: Cardinal);
+var
+  i: Integer;
+begin
+  for i := 0 to High(FBandData) do
+  begin
+    BASSChannelRemoveFX(Player, FBandData[i].Handle);
+    FBandData[i].Handle := 0;
+  end;
+  BASSStreamFree(Player);
+end;
+
+procedure TICEPlayer.FSetEQEnabled(Value: Boolean);
+var
+  i: Integer;
+begin
+  FEQEnabled := Value;
+
+  if Value then
+  begin
+    for i := 0 to High(FBandData) do
+    begin
+      if FPlayer > 0 then
+      begin
+        FBandData[i].Handle := BASSChannelSetFX(FPlayer, 7, 0);
+      end;
+      SetEQ(AppGlobals.EQGain[i], i);
+    end;
+  end else
+  begin
+    for i := 0 to High(FBandData) do
+    begin
+      if FBandData[i].Handle > 0 then
+        BASSChannelRemoveFX(FPlayer, FBandData[i].Handle);
+      FBandData[i].Handle := 0;
+    end;
+  end;
+end;
+
+procedure TICEPlayer.SetEQ(Value, Freq: Integer);
+var
+  S: BASS_DX8_PARAMEQ;
+begin
+  FBandData[Freq].Gain := Value;
+
+  if FEQEnabled and (FPlayer > 0) and (FBandData[Freq].Handle > 0) then
+  begin
+    S.fCenter := BandToFreq(Freq);
+    S.fBandwidth := 12;
+    S.fGain := Value;
+
+    BASSFXSetParameters(FBandData[Freq].Handle, @S);
   end;
 end;
 

@@ -42,7 +42,7 @@ type
     TitleName: string;
     Okay: Boolean;
 
-    constructor Create(AOwner: TComponent; Title: string);
+    constructor Create(AOwner: TComponent; Title: string); reintroduce;
   end;
 
 implementation

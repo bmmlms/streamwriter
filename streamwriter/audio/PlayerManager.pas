@@ -35,12 +35,14 @@ type
     FVolume: Integer;
     FVolumeBeforeMute: Integer;
     FLastPlayer: TObject;
+    FEQEnabled: Boolean;
 
     procedure Play(Player: TObject);
 
     procedure FSetVolume(Value: Integer);
     function FGetAllStoppedOrPaused: Boolean;
     function FGetAnyPlayingOrPaused: Boolean;
+    procedure FSetEQEnabled(Value: Boolean);
   public
     constructor Create;
     destructor Destroy; override;
@@ -54,12 +56,14 @@ type
     procedure IncreaseVolume;
     procedure DecreaseVolume;
     procedure Mute;
+    procedure SetEQ(Value, Freq: Integer);
 
     property Volume: Integer read FVolume write FSetVolume;
     property VolumeBeforeMute: Integer read FVolumeBeforeMute write FVolumeBeforeMute;
     property AllStoppedOrPaused: Boolean read FGetAllStoppedOrPaused;
     property AnyPlayingOrPaused: Boolean read FGetAnyPlayingOrPaused;
     property LastPlayer: TObject read FLastPlayer write FLastPlayer;
+    property EQEnabled: Boolean read FEQEnabled write FSetEQEnabled;
   end;
 
 var
@@ -165,6 +169,31 @@ begin
     end;
 end;
 
+procedure TPlayerManager.FSetEQEnabled(Value: Boolean);
+var
+  i: Integer;
+  P: TPlayer;
+  IP: TICEClient;
+begin
+  if Value = FEQEnabled then
+    Exit;
+
+  FEQEnabled := Value;
+
+  for i := 0 to FPlayers.Count - 1 do
+  begin
+    if TObject(FPlayers[i]).ClassType = TPlayer then
+    begin
+      P := TPlayer(FPlayers[i]);
+      P.EQEnabled := Value;
+    end else if TObject(FPlayers[i]).ClassType = TICEClient then
+    begin
+      IP := TICEClient(FPlayers[i]);
+      IP.EQEnabled := Value;
+    end;
+  end;
+end;
+
 procedure TPlayerManager.FSetVolume(Value: Integer);
 var
   i: Integer;
@@ -250,6 +279,27 @@ begin
   if FLastPlayer = Player then
     FLastPlayer := nil;
   FPlayers.Remove(Player);
+end;
+
+procedure TPlayerManager.SetEQ(Value, Freq: Integer);
+var
+  i: Integer;
+  P: TPlayer;
+  IP: TICEClient;
+begin
+  // Wenn alles pausiert ist, den letzten pausierten wieder starten,
+  // ansonsten eben alle pausieren.
+  for i := 0 to FPlayers.Count - 1 do
+    if TObject(FPlayers[i]) is TPlayer then
+    begin
+      P := TPlayer(FPlayers[i]);
+      P.SetEQ(Value, Freq);
+    end else if TObject(FPlayers[i]) is TICEClient then
+    begin
+      IP := TICEClient(FPlayers[i]);
+      IP.SetEQ(Value, Freq);
+    end;
+  FLastPlayer := nil;
 end;
 
 procedure TPlayerManager.StopAll;
