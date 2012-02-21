@@ -426,19 +426,22 @@ begin
           begin
             if FOrientation = sbHorizontal then
               DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, False)
-            else ;
+            else
+              DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, False);
           end;
         gsHot:
           begin
             if FOrientation = sbHorizontal then
               DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, True)
-            else ;
+            else
+              DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, True);
           end;
         gsDown:
           begin
             if FOrientation = sbHorizontal then
               DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, True, True)
-            else ;
+            else
+              DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, True, True);
           end;
       end;
     end;
