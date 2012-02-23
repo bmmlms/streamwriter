@@ -22,6 +22,7 @@ type
 
     FFilenames: TStringList;
     FNeededAddons: TList;
+    FNeededVersion: TAppVersion;
 
     function FGetFilesExtracted: Boolean; virtual;
     function FGetPackageDownloaded: Boolean; virtual;
@@ -81,6 +82,7 @@ begin
 
   FFilenames := TStringList.Create;
   FNeededAddons := TList.Create;
+  FNeededVersion := ParseVersion('1.0.0.0');
 end;
 
 procedure TAddonBase.DeleteFiles;
@@ -176,13 +178,22 @@ begin
 end;
 
 function TAddonBase.FGetVersionOkay: Boolean;
+var
+  Ver: TAppVersion;
 begin
   Result := True;
   try
-    GetFileVersion(AppGlobals.Storage.DataDir + FDownloadPackage);
+    Ver := GetFileVersion(AppGlobals.Storage.DataDir + FDownloadPackage);
+    if IsVersionNewer(Ver, FNeededVersion) then
+      Result := False;
   except
+    Result := False;
+  end;
+
+  if not Result then
+  begin
     DeleteFile(PChar(AppGlobals.Storage.DataDir + FDownloadPackage));
-    Exit(False);
+    Result := False;
   end;
 end;
 

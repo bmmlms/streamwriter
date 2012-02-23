@@ -665,7 +665,7 @@ begin
 
   if AppGlobals.AddonManager.ShowVersionWarning then
   begin
-    MsgBox(Handle, _('At least one addon is outdated and was deleted because it does not work with this version of streamWriter. Please check the addon page in the settings window.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('At least one addon is outdated and was deleted because it does not work with this version of streamWriter. Please check the addon/postprocessing pages in the settings window.'), _('Info'), MB_ICONINFORMATION);
   end;
 
   if AppGlobals.LastUsedVersion.AsString = '3.6.0.0' then

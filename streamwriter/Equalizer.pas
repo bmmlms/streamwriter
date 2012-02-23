@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, SharedControls, StdCtrls, PlayerManager, LanguageObjects,
-  ExtCtrls, AppData, GUIFunctions;
+  ExtCtrls, AppData, GUIFunctions, Buttons, PngBitBtn;
 
 type
   TEqualizer = class(TWinControl)
@@ -19,15 +19,19 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+
+    procedure Reset;
   end;
 
   TfrmEqualizer = class(TForm)
     pnlEqualizer: TPanel;
-    CheckBox1: TCheckBox;
+    chkEqualizer: TCheckBox;
+    btnReset: TPngBitBtn;
     procedure FormCreate(Sender: TObject);
-    procedure CheckBox1Click(Sender: TObject);
+    procedure chkEqualizerClick(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
+    procedure btnResetClick(Sender: TObject);
   private
     FEqualizer: TEqualizer;
   public
@@ -94,6 +98,17 @@ begin
     end;
 end;
 
+procedure TEqualizer.Reset;
+var
+  i: Integer;
+begin
+  for i := 0 to High(FEqualizers) do
+  begin
+    FEqualizers[i].Position := 15;
+    EQPositionChanged(FEqualizers[i]);
+  end;
+end;
+
 procedure TEqualizer.Resize;
 var
   i, WidthPerBar: Integer;
@@ -120,10 +135,15 @@ end;
 
 { TfrmEqualizer }
 
-procedure TfrmEqualizer.CheckBox1Click(Sender: TObject);
+procedure TfrmEqualizer.btnResetClick(Sender: TObject);
 begin
-  Players.EQEnabled := CheckBox1.Checked;
-  AppGlobals.EQEnabled := CheckBox1.Checked;
+  FEqualizer.Reset;
+end;
+
+procedure TfrmEqualizer.chkEqualizerClick(Sender: TObject);
+begin
+  Players.EQEnabled := chkEqualizer.Checked;
+  AppGlobals.EQEnabled := chkEqualizer.Checked;
 end;
 
 constructor TfrmEqualizer.Create(AOwner: TComponent);
@@ -139,7 +159,7 @@ procedure TfrmEqualizer.FormCreate(Sender: TObject);
 begin
   Language.Translate(Self);
 
-  CheckBox1.Checked := AppGlobals.EQEnabled;
+  chkEqualizer.Checked := AppGlobals.EQEnabled;
 end;
 
 procedure TfrmEqualizer.FormKeyDown(Sender: TObject; var Key: Word;

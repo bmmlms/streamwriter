@@ -91,6 +91,9 @@ begin
 
   FFilenames.Add('js32.dll');
   FFilenames.Add('MP4Box.exe');
+  FFilenames.Add('msvcr100.dll');
+
+  FNeededVersion := ParseVersion('1.0.0.1');
 end;
 
 procedure TAddonMP4Box.Initialize;

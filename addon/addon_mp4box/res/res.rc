@@ -1,2 +1,3 @@
 js32_dll RCDATA ".\js32.dll"
 mp4box_exe RCDATA ".\MP4Box.exe"
+msvcr100_dll RCDATA ".\msvcr100.dll"
