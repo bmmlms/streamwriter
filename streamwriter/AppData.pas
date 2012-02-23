@@ -1522,6 +1522,7 @@ initialization
 finalization
   FreeAndNil(AppGlobals);
 
+
 end.
 
 
