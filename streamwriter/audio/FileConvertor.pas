@@ -138,13 +138,13 @@ type
     procedure ReadCallbackOGG(Data: AnsiString);
     procedure ReadCallbackAAC(Data: AnsiString);
 
-    function Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
     function ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
     function ConvertWAV2OGG(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
     function ConvertWAV2AAC(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
     function ConvertWAV2M4A(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
   public
     function Convert(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
+    function Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil; F: Integer = 0; T: Integer = 0): Boolean;
 
     property CBRBitRate: Integer read FCBRBitRate write FCBRBitRate;
     property BitRateType: TBitRates read FBitRateType write FBitRateType;
@@ -181,7 +181,7 @@ begin
     Result := ConvertWAV2M4A(FromFile, ToFile, TerminateFlag);
 end;
 
-function TFileConvertor.Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
+function TFileConvertor.Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil; F: Integer = 0; T: Integer = 0): Boolean;
 var
   Channel: DWORD;
   Freq: Single;
@@ -254,6 +254,9 @@ begin
     Tmp := #0#0#0#0;
     OutStream.Write(Tmp[1], Length(Tmp));
 
+    if F > 0 then
+      BASSChannelSetPosition(Channel, F, BASS_POS_BYTE);
+
     while (BASSChannelIsActive(Channel) > 0) do
     begin
       BytesRead := BASSChannelGetData(Channel, @Buf, 10000);
@@ -264,6 +267,10 @@ begin
         PercentDone := Trunc(100 * (BASSChannelGetPosition(Channel, BASS_POS_BYTE) / BASSChannelGetLength(Channel, BASS_POS_BYTE)));
         FOnProgress(Self, PercentDone);
       end;
+
+      if T > 0 then
+        if BASSChannelGetPosition(Channel, BASS_POS_BYTE) > T then
+          Break;
 
       if (TerminateFlag <> nil) and (TerminateFlag^) then
         Break;

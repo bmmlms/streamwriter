@@ -26,7 +26,7 @@ interface
 
 uses
   SysUtils, Windows, Classes, DynBass, Math, Generics.Collections,
-  Functions, AudioStream;
+  Functions, AudioStream, FileConvertor;
 
 type
   TMinSilence = record
@@ -176,71 +176,13 @@ end;
 
 function TWaveData.Save(OutFile: string; StartPos, EndPos: Cardinal): Boolean;
 var
-  S, E, FoundS, FoundE ,R: Cardinal;
-  FIn: TAudioStreamFile;
-  FOut: TFileStream;
-  BitsPerSample: Word;
-  Channels: Word;
+  C: TFileConvertor;
 begin
-  Result := False;
-
+  C := TFileConvertor.Create;
   try
-    S := WaveArray[StartPos].Pos + 44;
-    E := WaveArray[EndPos].Pos + WaveArray[EndPos].Len + 44;
-
-    FIn := TAudioStreamFile.Create(FFilename, fmOpenRead);
-    try
-      FOut := TFileStream.Create(OutFile, fmCreate);
-
-      try
-        // Jump to Channels
-        // (see https://ccrma.stanford.edu/courses/422/projects/WaveFormat/)
-        FIn.Seek(22, soFromBeginning);
-        FIn.ReadBuffer(Channels, 2);
-        // Jump to BitsPerSample
-        FIn.Seek(34, soFromBeginning);
-        FIn.ReadBuffer(BitsPerSample, 2);
-
-        // Now we can calculate the offsets from where and to where to save the new file
-        // while keeping channels and stuff right
-        FoundS := 0;
-        FoundE := 0;
-        FIn.Seek(44, soFromBeginning);
-        repeat
-          R := S mod (Channels * BitsPerSample);
-          if R <> 0 then
-            Dec(S)
-          else
-            FoundS := S;
-        until R = 0;
-        repeat
-          R := E mod (Channels * BitsPerSample);
-          if R <> 0 then
-            Dec(E)
-          else
-            FoundE := E;
-        until R = 0;
-
-        if (FoundS > 0) and (FoundE > 0) then
-        begin
-          // Copy header
-          FIn.Seek(0, soFromBeginning);
-          FOut.CopyFrom(FIn, 44);
-
-          // Copy stuff between FoundS and FoundE
-          FIn.Seek(FoundS, soFromBeginning);
-          FOut.CopyFrom(FIn, FoundE - FoundS);
-
-          Result := True;
-        end;
-      finally
-        FOut.Free;
-      end;
-    finally
-      FIn.Free;
-    end;
-  except
-
+    Result := C.Convert2WAV(FFilename, OutFile, nil, FWaveArray[StartPos].Pos, FWaveArray[EndPos].Pos);
+  finally
+    C.Free;
   end;
 end;
 

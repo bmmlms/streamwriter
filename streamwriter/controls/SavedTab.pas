@@ -737,7 +737,7 @@ begin
       end;
     taAddToWishlist:
       begin
-        for i := 0 to Length(Tracks) do
+        for i := 0 to Length(Tracks) - 1 do
           FOnAddTitleToWishlist(Self, ExtractFileName(RemoveFileExt(Tracks[i].Filename)));
       end;
     taRemove:
