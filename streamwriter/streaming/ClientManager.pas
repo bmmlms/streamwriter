@@ -24,7 +24,7 @@ interface
 uses
   SysUtils, Windows, Classes, Generics.Collections, ICEClient, Logging,
   Functions, AppData, DataManager, HomeCommunication, PlayerManager,
-  TypeDefs;
+  AudioFunctions, SWFunctions;
 
 type
   TClientManager = class;
@@ -95,6 +95,7 @@ type
     function AddClient(ID, Bitrate: Cardinal; Name, StartURL: string; IsAuto: Boolean = False): TICEClient; overload;
     function AddClient(Entry: TStreamEntry): TICEClient; overload;
     procedure RemoveClient(Client: TICEClient);
+    procedure Stop;
     procedure Terminate;
 
     procedure SetupClient(Client: TICEClient);
@@ -230,6 +231,14 @@ begin
     FOnClientAdded(Client);
 end;
 
+procedure TClientManager.Stop;
+var
+  i: Integer;
+begin
+  for i := Count - 1 downto 0 do
+    FClients[i].Stop;
+end;
+
 procedure TClientManager.Terminate;
 var
   i: Integer;
@@ -290,20 +299,7 @@ var
   Res: TMayConnectResults;
   Found: Boolean;
 begin
-  // REMARK: Das case hier ist auch im ICEStream nochmal.
-  AutoTuneInMinKbps := 0;
-  case AppGlobals.AutoTuneInMinKbps of
-    0: AutoTuneInMinKbps := 0;
-    1: AutoTuneInMinKbps := 64;
-    2: AutoTuneInMinKbps := 96;
-    3: AutoTuneInMinKbps := 128;
-    4: AutoTuneInMinKbps := 160;
-    5: AutoTuneInMinKbps := 192;
-    6: AutoTuneInMinKbps := 224;
-    7: AutoTuneInMinKbps := 256;
-    8: AutoTuneInMinKbps := 320;
-    9: AutoTuneInMinKbps := 384;
-  end;
+  AutoTuneInMinKbps := GetAutoTuneInMinKbps(AppGlobals.AutoTuneInMinKbps);
 
   if Kbps < AutoTuneInMinKbps then
     Exit;
@@ -582,5 +578,6 @@ begin
 end;
 
 end.
+
 
 

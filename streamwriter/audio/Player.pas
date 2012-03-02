@@ -24,7 +24,7 @@ unit Player;
 interface
 
 uses
-  Windows, SysUtils, Classes, DynBass, Math, Logging, AppData, TypeDefs;
+  Windows, SysUtils, Classes, DynBass, Math, Logging, AppData, AudioFunctions;
 
 type
   TPlayer = class

@@ -23,7 +23,8 @@ unit PlaylistHandler;
 interface
 
 uses
-  Windows, SysUtils, StrUtils, Classes, TypeDefs, Functions, ExtendedStream;
+  Windows, SysUtils, StrUtils, Classes, Functions, ExtendedStream,
+  AudioFunctions;
 
 type
   TPlaylistHandler = class

@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects, AudioGenie,
-  AddonAudioGenie, Functions, Logging, ConfigureSetTags, TypeDefs,
+  AddonAudioGenie, Functions, Logging, ConfigureSetTags, AudioFunctions,
   ExtendedStream, Generics.Collections, FileTagger;
 
 type

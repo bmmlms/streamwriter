@@ -465,7 +465,6 @@ end;
 
 function TWaveData.TimeBetween(F, T: Cardinal): Double;
 begin
-  // REMARK: Falsch wegen letztem element etc..
   Result := Max(FWaveArray[F].Sec, FWaveArray[T].Sec) - Min(FWaveArray[F].Sec, FWaveArray[T].Sec);
 end;
 

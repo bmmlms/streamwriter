@@ -28,8 +28,9 @@ uses
   PostProcess, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus,
   MsgDlg, PngImageList, PngSpeedButton, pngimage, VirtualTrees, Math,
   DataManager, PngBitBtn, Logging, ToolWin, ListsTab, DownloadAddons,
-  ExtendedStream, AddonManager, AddonBase, TypeDefs, Generics.Defaults,
-  SettingsAddPostProcessor, ConfigureEncoder;
+  ExtendedStream, AddonManager, AddonBase, Generics.Defaults,
+  SettingsAddPostProcessor, ConfigureEncoder, AudioFunctions,
+  SWFunctions;
 
 type
   TBlacklistNodeData = record
@@ -1879,59 +1880,10 @@ begin
     end;
   end;
 
-  {
-  SetLength(Arr, 7);
-  Arr[0].C := 'a';
-  Arr[0].Replace := _('Artist');
-  Arr[1].C := 't';
-  Arr[1].Replace := _('Title');
-  Arr[2].C := 'l';
-  Arr[2].Replace := _('Album');
-  Arr[3].C := 's';
-  Arr[3].Replace := _('Streamname');
-  Arr[4].C := 'n';
-  Arr[4].Replace := Format('%.*d', [StrToIntDef(txtFilePatternDecimals.Text, 3), 78]);
-  Arr[5].C := 'd';
-  Arr[5].Replace := FormatDateTime('dd.mm.yy', Now);
-  Arr[6].C := 'i';
-  Arr[6].Replace := FormatDateTime('hh.nn.ss', Now);
-  }
-
   Result := PatternReplace(Text, Arr);
 
-  // Aneinandergereihte \ entfernen
-  i := 1;
-  if Length(Result) > 0 then
-    while True do
-    begin
-      if i = Length(Result) then
-        Break;
-      if Result[i] = '\' then
-        if Result[i + 1] = '\' then
-        begin
-          Result := Copy(Result, 1, i) + Copy(Result, i + 2, Length(Result) - i);
-          Continue;
-        end;
-      Inc(i);
-    end;
+  Result := FixPatternFilename(Result);
 
-  // Ungültige Zeichen entfernen
-  Result := StringReplace(Result, '/', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, ':', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '*', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '"', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '?', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '<', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '>', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '|', '_', [rfReplaceAll]);
-
-  // Sicherstellen, dass am Anfang/Ende kein \ steht
-  if Length(Result) > 0 then
-    if Result[1] = '\' then
-      Result := Copy(Result, 2, Length(Result) - 1);
-  if Length(Result) > 0 then
-    if Result[Length(Result)] = '\' then
-      Result := Copy(Result, 1, Length(Result) - 1);
   Result := FixPathName(Result + '.mp3');
 end;
 
@@ -2937,13 +2889,6 @@ begin
     if (not chkSeparateTracks.Checked) or (chkSaveStreamsToMemory.Checked) then
       chkDeleteStreams.Checked := False;
 
-    // REMARK: Auskommentiert. Ich weiß nicht, welchen Sinn die Meldung macht...
-    {
-    if (not chkSeparateTracks.Checked) then
-      TfrmMsgDlg.ShowMsg(Self, _('When saving streams without saving separate tracks, keep in mind to change the pattern ' +
-                                 'for names of saved files, because the variables for artist, title and tracknumber ' +
-                                 '(%a, %t, %n) will only be filled with default values.'), 2, btOK);
-    }
     Application.ProcessMessages;
 
     EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));

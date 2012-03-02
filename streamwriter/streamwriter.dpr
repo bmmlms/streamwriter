@@ -129,7 +129,8 @@ uses
   AudioFunctions in 'audio\AudioFunctions.pas',
   ConfigureEncoder in 'ConfigureEncoder.pas' {frmConfigureEncoder},
   PlaylistHandler in 'audio\PlaylistHandler.pas',
-  Equalizer in 'Equalizer.pas' {frmEqualizer};
+  Equalizer in 'Equalizer.pas' {frmEqualizer},
+  SWFunctions in 'SWFunctions.pas';
 
 {$SetPEOptFlags $0140}
 

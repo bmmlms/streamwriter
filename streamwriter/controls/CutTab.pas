@@ -27,7 +27,7 @@ uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
   MControls, LanguageObjects, Tabs, CutView, Functions, AppData, SharedControls,
   DynBass, Logging, CutTabSearchSilence, MessageBus, AppMessages, PlayerManager,
-  Forms, DataManager, TypeDefs;
+  Forms, DataManager, AudioFunctions;
 
 type
   TCutToolBar = class(TToolBar)
@@ -350,7 +350,7 @@ begin
   FVolume.Align := alRight;
   FVolume.Setup;
   FVolume.Width := 140;
-  FVolume.Volume := AppGlobals.PlayerVolume;
+  FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
 

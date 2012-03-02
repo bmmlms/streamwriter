@@ -23,7 +23,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, ExtCtrls, AppData, TypeDefs;
+  Dialogs, StdCtrls, Buttons, ExtCtrls, AppData, LanguageObjects,
+  AudioFunctions;
 
 type
   TfrmConfigureEncoder = class(TForm)
@@ -83,9 +84,9 @@ begin
   lstCBR.Items.Add('64');
   lstCBR.Items.Add('32');
 
-  lstVBR.Items.Add('High quality');
-  lstVBR.Items.Add('Medium quality');
-  lstVBR.Items.Add('Low quality');
+  lstVBR.Items.Add(_('High quality'));
+  lstVBR.Items.Add(_('Medium quality'));
+  lstVBR.Items.Add(_('Low quality'));
 
   optCBR.Checked := FEncoderSettings.BitrateType = brCBR;
   optVBR.Checked := FEncoderSettings.BitrateType = brVBR;
@@ -95,6 +96,8 @@ begin
 
   lstCBR.Enabled := optCBR.Checked;
   lstVBR.Enabled := optVBR.Checked;
+
+  Language.Translate(Self);
 end;
 
 procedure TfrmConfigureEncoder.FormKeyDown(Sender: TObject; var Key: Word;

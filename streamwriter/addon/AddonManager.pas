@@ -4,8 +4,8 @@ interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, AddonBase, AddonLAME,
-  Forms, Functions, LanguageObjects, AddonSoX, TypeDefs, AddonFAAC, AddonOggEnc,
-  AddonMP4Box, AddonAudioGenie;
+  Forms, Functions, LanguageObjects, AddonSoX, AddonFAAC, AddonOggEnc,
+  AddonMP4Box, AddonAudioGenie, AudioFunctions;
 
 type
   TCanEncodeResults = (ceNoAddon, ceAddonNeeded, ceOkay);

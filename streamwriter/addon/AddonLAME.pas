@@ -3,7 +3,8 @@ unit AddonLAME;
 interface
 
 uses
-  SysUtils, Windows, Classes, AddonBase, LanguageObjects, Functions, TypeDefs;
+  SysUtils, Windows, Classes, AddonBase, LanguageObjects, Functions,
+  AudioFunctions;
 
 type
   TAddonLAME = class(TAddonBase)

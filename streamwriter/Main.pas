@@ -33,8 +33,8 @@ uses
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
-  TypeDefs, ExtendedStream, SettingsStorage, ChartsTab, StatusBar,
-  SystemCritical, Intro, AddonManager, AudioFunctions, Equalizer;
+  ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
+  SystemCritical, Intro, AddonManager, Equalizer, TypeDefs;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -360,7 +360,6 @@ begin
     AppGlobals.MainHeight := Height;
   end;
 
-  AppGlobals.ShowSidebar := tabClients.SideBar.Visible;
   AppGlobals.SidebarWidth := tabClients.SideBar.Width;
 
   for i := 0 to tabClients.ClientView.Header.Columns.Count - 1 do
@@ -369,8 +368,11 @@ begin
     AppGlobals.SavedHeaderWidth[i] := tabSaved.Tree.Header.Columns[i].Width;
 
   TrayIcon1.Visible := False;
+
   tmrSpeed.Enabled := False;
   tmrSchedule.Enabled := False;
+  tmrAutoSave.Enabled := False;
+  tmrRecordings.Enabled := False;
 
   TfrmNotification.Stop;
 
@@ -405,6 +407,28 @@ begin
   // in die SaveList das OnChange aufgerufen und es crashed. Also hier lassen.
   FDataLists.SaveList.OnChange.Clear;
 
+  // Shutdown all postprocessors. Since they get terminated, all postprocessing chains get terminated.
+  AppGlobals.PostProcessManager.Terminate;
+  // Disconnect all clients. They will save their recordings and will not postprocess any file.
+  FClients.Stop;
+
+  if FCheckFiles <> nil then
+    FCheckFiles.Terminate;
+
+  Hard := False;
+  StartTime := GetTickCount;
+  while (HomeComm.Connected) or (FClients.Active) or (FCheckFiles <> nil) or (FUpdater.Active) do
+  begin
+    // Wait 30 seconds for threads to finish
+    if StartTime < GetTickCount - 30000 then
+    begin
+      Hard := True;
+      Break;
+    end;
+    Sleep(100);
+    Application.ProcessMessages;
+  end;
+
   Saved := False;
   while not Saved do
   begin
@@ -426,26 +450,10 @@ begin
     end;
   end;
 
-  tabClients.ClientView.Clear;
-
+  // Remove all clients from list - then wait and process their last messages
   FClients.Terminate;
 
-  if FCheckFiles <> nil then
-    FCheckFiles.Terminate;
-
-  Hard := False;
-  StartTime := GetTickCount;
-  while (FClients.Count > 0) or (HomeComm.Connected) or (FClients.Active) or (FCheckFiles <> nil) or (FUpdater.Active) do
-  begin
-    // 30 Sekunden warten, für sauberes beenden
-    if StartTime < GetTickCount - 30000 then
-    begin
-      Hard := True;
-      Break;
-    end;
-    Sleep(100);
-    Application.ProcessMessages;
-  end;
+  tabClients.ClientView.Clear;
 
   if FUpdateOnExit then
     FUpdater.RunUpdate(Handle);
@@ -476,6 +484,12 @@ begin
     end;
     RunProcess('"' + Application.ExeName + '" /profileupdate', False);
   end;
+
+  // We have to close all cut-tabs here because otherwise FreeAndNil(FPlayer) in CutTab.Free()
+  // throws an exception which causes that the temporary WAVE-file cannot be deleted...
+  for i := pagMain.PageCount - 1 downto 0 do
+    if pagMain.Pages[i].ClassType = TCutTab then
+      pagMain.Pages[i].Free;
 
   if Hard then
     Halt

@@ -23,7 +23,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, Functions,
-  LanguageObjects, Logging, AddonBase, TypeDefs, ExtendedStream;
+  LanguageObjects, Logging, AddonBase, ExtendedStream;
 
 type
   TPostProcessBase = class;
@@ -42,7 +42,7 @@ type
   TConfigure = function(Handle: Cardinal; ShowMessages: Boolean): Boolean; stdcall;
 
   TPostProcessInformation = record
-    Filename, WorkFilename, ReEncodedFilename, Station, Artist, Album, Title: string;
+    Filename, FilenameConverted, WorkFilename, ReEncodedFilename, Station, Artist, Album, Title: string;
     TrackNumber: Cardinal;
     Filesize: UInt64;
     Length: UInt64;
@@ -96,6 +96,7 @@ type
     property PostProcessor: TPostProcessBase read FPostProcessor;
     property Result: TActResults read FResult;
     property Output: string read FOutput;
+    property Terminated;
   end;
 
   TPostProcessBase = class
@@ -210,6 +211,7 @@ begin
   New(FData);
 
   FData.Filename := Data.Filename;
+  FData.FilenameConverted := Data.FilenameConverted;
   FData.Station := Data.Station;
   FData.Artist := Data.Artist;
   FData.Title := Data.Title;
@@ -281,7 +283,7 @@ end;
 
 procedure TExternalProcessThread.Execute;
 var
-  Res: Integer;
+  Res: TRunProcessResults;
   CmdLine, Replaced: string;
   Output: AnsiString;
   Arr: TPatternReplaceArray;
@@ -326,15 +328,15 @@ begin
         CmdLine := '"' + FExe + '" ' + Replaced;
       end else
         CmdLine := FExe;
-      Res := RunProcess(CmdLine, ExtractFilePath(FExe), 120000, Output, EC, @Terminated);
+      Res := RunProcess(CmdLine, ExtractFilePath(FExe), 12000, Output, EC, @Terminated, False);
       FData.Filesize := GetFileSize(FData.Filename);
       FOutput := Output;
       case Res of
-        0:
+        rpWin:
           FResult := arWin;
-        1:
+        rpFail, rpTerminated:
           FResult := arFail;
-        2:
+        rpTimeout:
           FResult := arTimeout;
       end;
     end;

@@ -27,8 +27,8 @@ interface
 uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
   AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
-  Math, PerlRegEx, Logging, WideStrUtils, TypeDefs, AudioFunctions,
-  PostProcessMP4Box, AddonMP4Box;
+  Math, PerlRegEx, Logging, WideStrUtils, AudioFunctions, PostProcessMP4Box,
+  AddonMP4Box, SWFunctions;
 
 type
   TDebugEvent = procedure(Text, Data: string) of object;
@@ -67,6 +67,7 @@ type
     FStreamname: string;
     FSaveDir: string;
     FFilename: string;
+    FFilenameConverted: string;
     FSongsSaved: Cardinal;
 
     function GetValidFilename(Name: string): string;
@@ -82,6 +83,7 @@ type
     property Result: TCheckResults read FResult;
     property SaveDir: string read FSaveDir;
     property Filename: string read FFilename;
+    property FilenameConverted: string read FFilenameConverted;
   end;
 
   TICEStream = class(THTTPStream)
@@ -107,6 +109,7 @@ type
 
     FTitle: string;
     FSavedFilename: string;
+    FSavedFilenameConverted: string;
     FSavedArtist: string;
     FSavedTitle: string;
     FSavedAlbum: string;
@@ -185,6 +188,7 @@ type
     property Genre: string read FGenre;
     property Title: string read FTitle;
     property SavedFilename: string read FSavedFilename;
+    property SavedFilenameConverted: string read FSavedFilenameConverted;
     property SavedArtist: string read FSavedArtist;
     property SavedTitle: string read FSavedTitle;
     property SavedAlbum: string read FSavedAlbum;
@@ -562,7 +566,7 @@ procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
   end;
 var
   Saved: Boolean;
-  Dir, Filename: string;
+  Dir, Filename, FilenameConverted: string;
   FileCheck: TFileChecker;
   P: TPosRect;
   Error: Cardinal;
@@ -639,6 +643,7 @@ begin
         begin
           Dir := FileCheck.SaveDir;
           Filename := FileCheck.Filename;
+          FilenameConverted := FileCheck.FilenameConverted;
         end else if FileCheck.Result <> crDiscard then
           raise Exception.Create(_('Could not determine filename for title'));
 
@@ -703,6 +708,7 @@ begin
 
       try
         FSavedFilename := Dir + Filename;
+        FSavedFilenameConverted := Dir + FilenameConverted;
         FSavedSize := P.DataEnd - P.DataStart;
         FSavedFullTitle := FullTitle;
         FSavedStreamTitle := Title;
@@ -1034,20 +1040,7 @@ begin
       try
         CalcBytesPerSec;
 
-        // REMARK: Das case hier ist auch im ClientManager nochmal.
-        AutoTuneInMinKbps := 0;
-        case AppGlobals.AutoTuneInMinKbps of
-          0: AutoTuneInMinKbps := 0;
-          1: AutoTuneInMinKbps := 64;
-          2: AutoTuneInMinKbps := 96;
-          3: AutoTuneInMinKbps := 128;
-          4: AutoTuneInMinKbps := 160;
-          5: AutoTuneInMinKbps := 192;
-          6: AutoTuneInMinKbps := 224;
-          7: AutoTuneInMinKbps := 256;
-          8: AutoTuneInMinKbps := 320;
-          9: AutoTuneInMinKbps := 384;
-        end;
+        AutoTuneInMinKbps := GetAutoTuneInMinKbps(AppGlobals.AutoTuneInMinKbps);
 
         if (FRecordTitle <> '') and (FBitRate < AutoTuneInMinKbps) then
           FRemoveClient := True;
@@ -1440,15 +1433,7 @@ var
 begin
   FResult := crSave;
 
-  if Killed then
-    Ext := FormatToFiletype(AudioType)
-  else
-  begin
-    if FSettings.OutputFormat <> atNone then
-      Ext := FormatToFiletype(FSettings.OutputFormat)
-    else
-      Ext := FormatToFiletype(AudioType);
-  end;
+  Ext := FormatToFiletype(AudioType);
 
   case TitleState of
     tsAuto:
@@ -1468,22 +1453,23 @@ begin
     begin
       FResult := crOverwrite;
       FFilename := Filename + Ext;
-      Exit;
     end else if FSettings.DiscardSmaller and (GetFileSize(FSaveDir + Filename + Ext) >= Filesize) then
     begin
       FResult := crDiscard;
-      Exit;
     end else
     begin
-      FFilename := Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext;
+      FFilename := FixPathName(Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext);
     end;
   end else
   begin
     FResult := crSave;
-    FFilename := Filename + Ext;
+    FFilename := FixPathName(Filename + Ext);
   end;
 
-  FFilename := FixPathName(FFilename);
+  if FSettings.OutputFormat <> atNone then
+    FFilenameConverted := RemoveFileExt(FFilename) + FormatToFiletype(FSettings.OutputFormat)
+  else
+    FFilenameConverted := FFilename;
 end;
 
 procedure TFileChecker.GetStreamFilename(Name: string; AudioType: TAudioTypes);
@@ -1612,40 +1598,7 @@ begin
       Replaced := PatternReplace(FSettings.StreamFilePattern, Arr);
   end;
 
-  // REMARK: Das folgende ist so genau gleich auch im Settings-Fenster.. wegen DRY..
-  // Aneinandergereihte \ entfernen
-  i := 1;
-  if Length(Replaced) > 0 then
-    while True do
-    begin
-      if i = Length(Replaced) then
-        Break;
-      if Replaced[i] = '\' then
-        if Replaced[i + 1] = '\' then
-        begin
-          Replaced := Copy(Replaced, 1, i) + Copy(Replaced, i + 2, Length(Replaced) - i);
-          Continue;
-        end;
-      Inc(i);
-    end;
-
-  // Ungültige Zeichen entfernen
-  Replaced := StringReplace(Replaced, '/', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, ':', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, '*', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, '"', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, '?', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, '<', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, '>', '_', [rfReplaceAll]);
-  Replaced := StringReplace(Replaced, '|', '_', [rfReplaceAll]);
-
-  // Sicherstellen, dass am Anfang/Ende kein \ steht
-  if Length(Replaced) > 0 then
-    if Replaced[1] = '\' then
-      Replaced := Copy(Replaced, 2, Length(Replaced) - 1);
-  if Length(Replaced) > 0 then
-    if Replaced[Length(Replaced)] = '\' then
-      Replaced := Copy(Replaced, 1, Length(Replaced) - 1);
+  Replaced := FixPatternFilename(Replaced);
 
   FSaveDir := FixPathName(IncludeTrailingBackslash(ExtractFilePath(FSaveDir + Replaced)));
   Result := ExtractFileName(Replaced);

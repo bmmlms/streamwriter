@@ -22,7 +22,8 @@ unit AddonFAAC;
 interface
 
 uses
-  SysUtils, Windows, Classes, AddonBase, LanguageObjects, Functions, TypeDefs;
+  SysUtils, Windows, Classes, AddonBase, LanguageObjects, Functions,
+  AudioFunctions;
 
 type
   TAddonFAAC = class(TAddonBase)

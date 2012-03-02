@@ -3,14 +3,49 @@ unit AudioFunctions;
 interface
 
 uses
-  Windows, SysUtils, Math, Classes, DynBASS, Functions, TypeDefs;
+  Windows, SysUtils, Math, Classes;
+
+type
+  TBandData = record
+    Handle: DWORD;
+    Gain: Single;
+  end;
+
+  TAudioFileInfo = record
+    Length: Double;
+    Bitrate: Integer;
+    FileSize: Int64;
+    VBR: Boolean;
+    Success: Boolean;
+  end;
+
+  TBitrateInfo = record
+    Pos: Int64;
+    Time: Double;
+  end;
+
+  // Defines all possible types of audio-data - DO NOT change orders. Make sure atM4A is always the last one!
+  // That is because the settings window and stream load/saving uses this.
+  // It generally makes sense not to alter these enums because they are used in binary streams..
+  TAudioTypes = (atNone, atMPEG, atAAC, atOGG, atM4A);
+  TBitRates = (brCBR, brVBR);
+  TVBRQualities = (vqHigh, vqMedium, vqLow);
+
+  TPlaylistTypes = (ptM3U, ptPLS);
 
 function RoundBitrate(Bitrate: Cardinal): Cardinal;
 function GetFileInfo(Filename: string): TAudioFileInfo;
 function GuessVBRQuality(BitRate: Integer; AudioType: TAudioTypes): TVBRQualities;
 function BuildTime(T: Double; MSecs: Boolean): string;
+function FiletypeToFormat(Filename: string): TAudioTypes;
+function FormatToFiletype(Format: TAudioTypes): string;
+function FormatToDesc(Format: TAudioTypes): string;
+function BandToFreq(Idx: Integer): Integer;
 
 implementation
+
+uses
+  DynBASS, Functions;
 
 function RoundBitrate(Bitrate: Cardinal): Cardinal;
 begin
@@ -135,6 +170,63 @@ begin
     Result := Format('%0.2d:%0.2d.%0.3d', [Min, Sec, MSec])
   else
     Result := Format('%0.2d:%0.2d', [Min, Sec])
+end;
+
+function FiletypeToFormat(Filename: string): TAudioTypes;
+begin
+  Result := atNone;
+
+  Filename := LowerCase(ExtractFileExt(Filename));
+
+  if Filename = '.mp3' then
+    Exit(atMPEG)
+  else if Filename = '.aac' then
+    Exit(atAAC)
+  else if Filename = '.ogg' then
+    Exit(atOGG)
+  else if Filename = '.m4a' then
+    Exit(atM4A);
+end;
+
+function FormatToFiletype(Format: TAudioTypes): string;
+begin
+  Result := '';
+  case Format of
+    atNone: ;
+    atMPEG: Result := '.mp3';
+    atAAC: Result := '.aac';
+    atOGG: Result := '.ogg';
+    atM4A: Result := '.m4a';
+  end;
+end;
+
+function FormatToDesc(Format: TAudioTypes): string;
+begin
+  Result := '';
+  case Format of
+    atNone: ;
+    atMPEG: Result := 'MP3';
+    atAAC: Result := 'AAC';
+    atOGG: Result := 'OGG';
+  end;
+end;
+
+function BandToFreq(Idx: Integer): Integer;
+begin
+  case Idx of
+    0: Result := 60;
+    1: Result := 170;
+    2: Result := 310;
+    3: Result := 600;
+    4: Result := 1000;
+    5: Result := 3000;
+    6: Result := 6000;
+    7: Result := 12000;
+    8: Result := 14000;
+    9: Result := 16000;
+    else
+      raise Exception.Create('');
+  end;
 end;
 
 end.

@@ -22,7 +22,8 @@ unit AddonMP4Box;
 interface
 
 uses
-  SysUtils, Windows, Classes, AddonBase, LanguageObjects, Functions, TypeDefs;
+  SysUtils, Windows, Classes, AddonBase, LanguageObjects, Functions,
+  AudioFunctions;
 
 type
   TAddonMP4Box = class(TAddonBase)

@@ -22,9 +22,8 @@ unit PostProcessConvert;
 interface
 
 uses
-  Windows, SysUtils, Classes, PostProcess, LanguageObjects,
-  Functions, Logging, Math, AddonBase, StrUtils, ExtendedStream,
-  TypeDefs;
+  Windows, SysUtils, Classes, PostProcess, LanguageObjects, AudioFunctions,
+  Functions, Logging, Math, AddonBase, StrUtils, ExtendedStream;
 
 type
   TPostProcessConvertThread = class(TPostProcessThreadBase)
@@ -71,7 +70,7 @@ type
 implementation
 
 uses
-  AppData, AudioFunctions, FileConvertor;
+  AppData, FileConvertor;
 
 { TPostProcessConvertThread }
 

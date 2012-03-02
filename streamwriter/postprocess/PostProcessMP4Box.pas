@@ -22,9 +22,9 @@ unit PostProcessMP4Box;
 interface
 
 uses
-  Windows, SysUtils, Classes, PostProcess, LanguageObjects, TypeDefs,
+  SysUtils, Windows, Classes, PostProcess, LanguageObjects, TypeDefs,
   Functions, Logging, Math, ConfigureSetTags, AddonMP4Box, ExtendedStream,
-  Generics.Collections;
+  Generics.Collections, AudioFunctions;
 
 type
   TPostProcessMP4BoxThread = class(TPostProcessThreadBase)
@@ -71,7 +71,7 @@ end;
 procedure TPostProcessMP4BoxThread.Execute;
 var
   OutFile, MovedFileName: string;
-begin // TODO: Die encoder testen. werden die nach timeout beendet? was ist dann? beendet bei app-ende? sterben die wirklich nach enkodierung?
+begin
   inherited;
 
   if LowerCase(ExtractFileExt(FData.Filename)) <> '.aac' then
@@ -88,7 +88,7 @@ begin // TODO: Die encoder testen. werden die nach timeout beendet? was ist dann
         MovedFileName := RemoveFileExt(FData.Filename) + '.m4a';
         if MoveFile(PChar(OutFile), PChar(MovedFileName)) then
         begin
-          DeleteFile(FData.Filename);
+          DeleteFile(PChar(FData.Filename));
           FData.Filename := MovedFileName;
           FData.Filesize := GetFileSize(MovedFileName);
         end;
@@ -98,7 +98,7 @@ begin // TODO: Die encoder testen. werden die nach timeout beendet? was ist dann
     arImpossible:;
   end;
 
-  DeleteFile(OutFile);
+  DeleteFile(PChar(OutFile));
 end;
 
 { TPostProcessMP4Box }
@@ -167,16 +167,18 @@ begin
 
   CmdLine := '"' + MP4BoxPath + '" -add "' + InFile + '" "' + OutFile + '"';
 
-  if RunProcess(CmdLine, ExtractFilePath(MP4BoxPath), 120000, Output, EC, TerminateFlag) = 2 then
-  begin
-    Result := arTimeout;
-  end else
-  begin
-    if FileExists(OutFile) and (EC = 0) then
-    begin
-      Result := arWin;
-    end;
+  case RunProcess(CmdLine, ExtractFilePath(MP4BoxPath), 300000, Output, EC, TerminateFlag, True) of
+    rpWin:
+      if FileExists(OutFile) and (EC = 0) then
+      begin
+        Result := arWin;
+      end;
+    rpTimeout:
+      Result := arTimeout;
   end;
+
+  if Result <> arWin then
+    DeleteFile(PChar(OutFile));
 end;
 
 destructor TPostProcessMP4Box.Destroy;

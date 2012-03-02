@@ -1059,7 +1059,7 @@ begin
   FVolume.Align := alRight;
   FVolume.Setup;
   FVolume.Width := 150;
-  FVolume.Volume := AppGlobals.PlayerVolume;
+  FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
   FVolume.Padding.Left := 10;

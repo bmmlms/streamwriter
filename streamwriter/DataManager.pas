@@ -26,7 +26,7 @@ interface
 
 uses
   Windows, Classes, SysUtils, ExtendedStream, Generics.Collections,
-  ComCtrls, AppData, Functions, Logging, DateUtils, TypeDefs;
+  ComCtrls, AppData, Functions, Logging, DateUtils, AudioFunctions;
 
 type
   TStreamList = class;

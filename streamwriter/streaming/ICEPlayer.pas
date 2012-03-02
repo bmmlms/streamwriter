@@ -25,7 +25,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, DynBASS, ExtendedStream, SyncObjs, AppData,
-  AudioStream, Logging, PlayerManager, TypeDefs;
+  AudioStream, Logging, PlayerManager, AudioFunctions;
 
 type
   TICEPlayer = class

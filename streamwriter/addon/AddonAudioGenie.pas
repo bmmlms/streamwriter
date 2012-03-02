@@ -3,7 +3,7 @@ unit AddonAudioGenie;
 interface
 
 uses
-  SysUtils, Windows, Classes, AddonBase, LanguageObjects, Functions, TypeDefs;
+  SysUtils, Windows, Classes, AddonBase, LanguageObjects, Functions;
 
 type
   TAddonAudioGenie = class(TAddonBase)

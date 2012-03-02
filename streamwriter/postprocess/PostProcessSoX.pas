@@ -22,8 +22,8 @@ unit PostProcessSoX;
 interface
 
 uses
-  Windows, SysUtils, Classes, PostProcess, LanguageObjects, Generics.Collections,
-  Functions, Logging, Math, AddonBase, TypeDefs, ExtendedStream;
+  SysUtils, Windows, Classes, PostProcess, LanguageObjects, Generics.Collections,
+  Functions, Logging, Math, AddonBase, ExtendedStream, AudioFunctions;
 
 type
   TPostProcessSoxThread = class(TPostProcessThreadBase)
@@ -119,55 +119,53 @@ begin
 
   if Params <> '' then
   begin
-      if RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 120000, Output, EC, @Terminated) = 2 then
-      begin
-        FResult := arTimeout;
-      end else
-      begin
-        Failed := True;
-        if FileExists(SoxOutFile) and (EC = 0) then
+    case RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 300000, Output, EC, @Terminated, True) of
+      rpWin:
         begin
-          LoopStarted := GetTickCount;
-          while Failed do
+          Failed := True;
+          if FileExists(SoxOutFile) and (EC = 0) then
           begin
-            try
-              FS := TFileStream.Create(SoxOutFile, fmOpenRead or fmShareExclusive);
+            LoopStarted := GetTickCount;
+            while Failed do
+            begin
               try
-                Failed := False;
-                Break;
-              finally
-                FS.Free;
-              end;
-            except
-              Sleep(50);
-              if GetTickCount > LoopStarted + 5000 then
-              begin
-                Break;
+                FS := TFileStream.Create(SoxOutFile, fmOpenRead or fmShareExclusive);
+                try
+                  Failed := False;
+                  Break;
+                finally
+                  FS.Free;
+                end;
+              except
+                Sleep(50);
+                if GetTickCount > LoopStarted + 5000 then
+                begin
+                  Break;
+                end;
               end;
             end;
+
+            if not Failed then
+              if not MoveFileEx(PChar(SoXOutFile), PChar(FData.WorkFilename), MOVEFILE_REPLACE_EXISTING) then
+                Failed := True;
+            if not Failed then
+            begin
+              if P.FSilenceStart then
+                FData.Length := FData.Length + P.FSilenceStartLength;
+              if P.FSilenceEnd then
+                FData.Length := FData.Length + P.FSilenceEndLength;
+
+              FResult := arWin;
+            end;
           end;
-      end;
-
-      if not Failed then
-      begin
-        if not Failed then
-          if not MoveFileEx(PChar(SoXOutFile), PChar(FData.WorkFilename), MOVEFILE_REPLACE_EXISTING) then
-            Failed := True;
-        if not Failed then
-        begin
-          //FData.Filesize := GetFileSize(FData.Filename);
-
-          // Okay, das hier ist nicht ordentlich, aber sollte passen...
-          if P.FSilenceStart then
-            FData.Length := FData.Length + P.FSilenceStartLength;
-          if P.FSilenceEnd then
-            FData.Length := FData.Length + P.FSilenceEndLength;
-
-          FResult := arWin;
         end;
-      end;
+      rpTimeout:
+        FResult := arTimeout;
     end;
   end;
+
+  if FResult <> arWin then
+    DeleteFile(PChar(SoXOutFile));
 end;
 
 { TPostProcessSoX }

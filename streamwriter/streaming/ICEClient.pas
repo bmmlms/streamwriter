@@ -28,7 +28,7 @@ uses
   SysUtils, Windows, StrUtils, Classes, ICEThread, ICEStream, AppData,
   Generics.Collections, Functions, Sockets, LanguageObjects,
   DataManager, HomeCommunication, PlayerManager, Notifications,
-  Logging, PlaylistHandler, TypeDefs;
+  Logging, PlaylistHandler, AudioFunctions, TypeDefs;
 
 type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
@@ -85,6 +85,7 @@ type
     FAutoRemove: Boolean;
     FRecordTitle: string;
     FStopAfterSong: Boolean;
+    FStopped: Boolean;
     FKilled: Boolean;
     FRetries: Integer;
 
@@ -151,6 +152,7 @@ type
     procedure PostProcessingFinished(Filename, Title, SongArtist, SongTitle: string;
       Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean);
 
+    procedure Stop;
     procedure Kill;
 
     property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
@@ -232,6 +234,7 @@ begin
   FEntry := TStreamEntry.Create;
   FEntry.Settings.Assign(AppGlobals.StreamSettings);
 
+  FStopped := False;
   FKilled := False;
   FState := csStopped;
   FTitle := '';
@@ -295,6 +298,12 @@ begin
     Kill;
     FOnDisconnected(Self);
   end;
+end;
+
+procedure TICEClient.Stop;
+begin
+  FStopped := True;
+  Disconnect;
 end;
 
 procedure TICEClient.StopPlay;
@@ -412,10 +421,10 @@ end;
 
 procedure TICEClient.Disconnect;
 begin
-  FState := csStopping;
-
   if FICEThread = nil then
     Exit;
+
+  FState := csStopping;
 
   FRetries := 0;
   FICEThread.StopPlay;
@@ -636,6 +645,7 @@ begin
     FEntry.SongsSaved := FEntry.SongsSaved + 1;
 
     Data.Filename := FICEThread.RecvStream.SavedFilename;
+    Data.FilenameConverted := FICEThread.RecvStream.SavedFilenameConverted;
     Data.WorkFilename := '';
     Data.Station := FEntry.Name;
     Data.Artist := FICEThread.RecvStream.SavedArtist;
@@ -650,7 +660,7 @@ begin
     Data.Bitrate := FICEThread.RecvStream.BitRate;
     Data.VBR := False;
 
-    if FKilled then
+    if FKilled or FStopped then
     begin
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,

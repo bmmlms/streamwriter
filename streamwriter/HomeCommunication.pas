@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Classes, Functions, HTTPThread, Base64, XMLLib,
   StrUtils, Generics.Collections, Sockets, WinSock, Int32Protocol,
-  Logging, ZLib, DataManager, TypeDefs;
+  Logging, ZLib, DataManager, AudioFunctions;
 
 type
   TStreamInfo = record
@@ -72,7 +72,6 @@ type
 
     FOnLoggedOn: TSocketEvent;
     FOnLoggedOff: TSocketEvent;
-    FOnGenresReceived: TSocketEvent;
     FOnStreamsReceived: TSocketEvent;
     FOnChartsReceived: TSocketEvent;
     FOnChartGenresReceived: TSocketEvent;
@@ -1008,18 +1007,6 @@ begin
     // Der Liste alle Sachen wieder hinzufügen
     for Entry in NewList do
       FDataLists.BrowserList.Add(Entry);
-
-    // REMARK: Update von Version 22 auf 23 - den Streams die RatingList beibringen. Kann irgendwann raus. Version 22 war keine Rlsd version.
-    for i := 0 to FDataLists.RatingList.Count - 1 do
-    begin
-      for n := 0 to FDataLists.BrowserList.Count - 1 do
-        if (LowerCase(FDataLists.RatingList[i].Name) = LowerCase(FDataLists.BrowserList[n].Name)) or
-           (LowerCase(FDataLists.RatingList[i].URL) = LowerCase(FDataLists.BrowserList[n].URL)) then
-          FDataLists.BrowserList[n].OwnRating := FDataLists.RatingList[i].Rating;
-    end;
-    for i := 0 to FDataLists.RatingList.Count - 1 do
-      FDataLists.RatingList[i].Free;
-    FDataLists.RatingList.Clear;
   finally
     NewList.Free;
   end;

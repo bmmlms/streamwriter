@@ -3,7 +3,7 @@ unit AddonBase;
 interface
 
 uses
-  SysUtils, Windows, Classes, Functions, TypeDefs;
+  SysUtils, Windows, Classes, Functions, AudioFunctions;
 
 type
   TAddonBase = class
@@ -138,7 +138,7 @@ begin
           end;
         except end;
       end;
-      Result := True;
+      Result := FilesExtracted;
       FreeLibrary(H);
     end else
       Windows.DeleteFile(PChar(AppGlobals.Storage.DataDir + FDownloadPackage));

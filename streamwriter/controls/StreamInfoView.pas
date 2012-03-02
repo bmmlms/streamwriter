@@ -27,7 +27,7 @@ uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
   DataManager, VirtualTrees, LanguageObjects, GUIFunctions,
   Generics.Collections, Graphics, Forms, Menus, Messages, DragDrop,
-  DragDropFile, Functions, Logging, TypeDefs;
+  DragDropFile, Functions, Logging, AudioFunctions;
 
 type
   TMStreamInfoViewPanel = class(TPanel)

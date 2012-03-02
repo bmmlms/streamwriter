@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Windows, Classes, DynBASS, ExtendedStream, AddonLAME, AppData,
-  AddonOGGEnc, AddonFAAC, Functions, PerlRegEx, TypeDefs;
+  AddonOGGEnc, AddonFAAC, Functions, PerlRegEx, AudioFunctions;
 
 const
   BE_CONFIG_MP3 = 0;
@@ -144,7 +144,7 @@ type
     function ConvertWAV2M4A(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
   public
     function Convert(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
-    function Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil; F: Integer = 0; T: Integer = 0): Boolean;
+    function Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil; F: Int64 = -1; T: Int64 = -1): Boolean;
 
     property CBRBitRate: Integer read FCBRBitRate write FCBRBitRate;
     property BitRateType: TBitRates read FBitRateType write FBitRateType;
@@ -156,6 +156,9 @@ implementation
 
 uses
   PostProcess, PostProcessMP4Box;
+
+const
+  CONVERT_TIMEOUT = 60000;
 
 { TFileConvertor }
 
@@ -181,7 +184,7 @@ begin
     Result := ConvertWAV2M4A(FromFile, ToFile, TerminateFlag);
 end;
 
-function TFileConvertor.Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil; F: Integer = 0; T: Integer = 0): Boolean;
+function TFileConvertor.Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil; F: Int64 = -1; T: Int64 = -1): Boolean;
 var
   Channel: DWORD;
   Freq: Single;
@@ -254,7 +257,7 @@ begin
     Tmp := #0#0#0#0;
     OutStream.Write(Tmp[1], Length(Tmp));
 
-    if F > 0 then
+    if F > -1 then
       BASSChannelSetPosition(Channel, F, BASS_POS_BYTE);
 
     while (BASSChannelIsActive(Channel) > 0) do
@@ -268,7 +271,7 @@ begin
         FOnProgress(Self, PercentDone);
       end;
 
-      if T > 0 then
+      if T > -1 then
         if BASSChannelGetPosition(Channel, BASS_POS_BYTE) > T then
           Break;
 
@@ -327,16 +330,17 @@ begin
   end;
 
   CmdLine := Addon.EXEPath + ' ' + Opts + ' -o "' + ToFileTemp + '" "' + FromFile + '"';
-  if RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), 300000, Output, EC, TerminateFlag, ReadCallbackAAC) = 2 then
-  begin
-    Result := False;
-  end else
-  begin
-    Result := FileExists(ToFileTemp);
+  case RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackAAC) of
+    rpWin:
+      Result := FileExists(ToFileTemp);
+    rpFail, rpTerminated, rpTimeout:
+      Result := False;
   end;
 
   if Result then
-    Result := MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);
+    Result := MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING)
+  else
+    DeleteFile(PChar(ToFileTemp));
 end;
 
 function TFileConvertor.ConvertWAV2M4A(FromFile, ToFile: string;
@@ -396,16 +400,17 @@ begin
   end;
 
   CmdLine := Addon.EXEPath + ' ' + Opts + ' "' + FromFile + '" "' + ToFileTemp + '"';
-  if RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), 300000, Output, EC, TerminateFlag, ReadCallbackMP3) = 2 then
-  begin
-    Result := False;
-  end else
-  begin
-    Result := FileExists(ToFileTemp);
+  case RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackMP3) of
+    rpWin:
+      Result := FileExists(ToFileTemp);
+    rpFail, rpTerminated, rpTimeout:
+      Result := False;
   end;
 
   if Result then
-    Result := MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);
+    Result := MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING)
+  else
+    DeleteFile(PChar(ToFileTemp));
 end;
 
 function TFileConvertor.ConvertWAV2OGG(FromFile, ToFile: string;
@@ -439,16 +444,17 @@ begin
   end;
 
   CmdLine := Addon.EXEPath + ' ' + Opts + ' "' + FromFile + '" -o "' + ToFileTemp + '"';
-  if RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), 300000, Output, EC, TerminateFlag, ReadCallbackOGG) = 2 then
-  begin
-    Result := False;
-  end else
-  begin
-    Result := FileExists(ToFileTemp);
+  case RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackOGG) of
+    rpWin:
+      Result := FileExists(ToFileTemp);
+    rpFail, rpTerminated, rpTimeout:
+      Result := False;
   end;
 
   if Result then
-    Result := MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);
+    Result := MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING)
+  else
+    DeleteFile(PChar(ToFileTemp));
 end;
 
 procedure TFileConvertor.ReadCallbackAAC(Data: AnsiString);

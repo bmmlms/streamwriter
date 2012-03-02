@@ -24,7 +24,7 @@ interface
 uses
   Windows, SysUtils, Classes, Generics.Collections, PostProcess, PostProcessSetTags,
   PostProcessSoX, Logging, PostProcessMP4Box, AddonBase, Forms, Functions,
-  LanguageObjects, TypeDefs, PostProcessConvert, Generics.Defaults;
+  LanguageObjects, PostProcessConvert, Generics.Defaults, AudioFunctions, TypeDefs;
 
 type
   TPostProcessManager = class
@@ -42,7 +42,8 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    //function WouldProcessFile(Owner: TObject; Data: TPostProcessInformation): Boolean;
+    procedure Terminate;
+
     function ProcessFile(Owner: TObject; Data: TPostProcessInformation): Boolean; overload;
     function ProcessFile(Entry: TProcessingEntry): Boolean; overload;
     procedure ReInitPostProcessors;
@@ -56,24 +57,6 @@ uses
   AppData, DownloadAddons, FileConvertor, ICEClient;
 
 { TPostProcessManager }
-
-{
-function TPostProcessManager.WouldProcessFile(Owner: TObject; Data: TPostProcessInformation): Boolean;
-var
-  Entry: TProcessingEntry;
-begin
-  Result := False;
-  Entry := TProcessingEntry.Create(Owner, nil, Data);
-
-  try
-    BuildProcessingList(Entry);
-
-    Result := Entry.PostProcessList.Count > 0;
-  finally
-    Entry.Free;
-  end;
-end;
-}
 
 function TPostProcessManager.ProcessFile(Owner: TObject; Data: TPostProcessInformation): Boolean;
 var
@@ -128,6 +111,9 @@ var
 begin
   Client := TICEClient(Entry.Owner);
 
+  if Client.Entry.Settings.PostProcessors.Count = 0 then
+    Exit;
+
   Entry.NeedsWave := PostProcessingNeedsWave(Entry);
 
   if Entry.NeedsWave then
@@ -169,7 +155,6 @@ end;
 function TPostProcessManager.ProcessFile(Entry: TProcessingEntry): Boolean;
 var
   NextIdx: Integer;
-  Output: string;
 begin
   Result := False;
 
@@ -187,13 +172,8 @@ begin
   begin
     DeleteFile(PChar(Entry.Data.Filename));
 
-    if TEncoderSettings(Entry.Data.EncoderSettings).AudioType = atNone then
-      Output := ExtractFileExt(Entry.Data.Filename)
-    else
-      Output := FormatToFiletype(TEncoderSettings(Entry.Data.EncoderSettings).AudioType);
-
-    Entry.Data.Filename := RemoveFileExt(Entry.Data.Filename) + Output;
-    MoveFileEx(PChar(Entry.Data.ReEncodedFilename), PChar(Entry.Data.Filename), MOVEFILE_REPLACE_EXISTING);
+    Entry.Data.Filename := Entry.Data.FilenameConverted;
+    MoveFileEx(PChar(Entry.Data.ReEncodedFilename), PChar(Entry.Data.FilenameConverted), MOVEFILE_REPLACE_EXISTING);
 
     Entry.Data.WorkFilename := '';
     Entry.Data.ReEncodedFilename := '';
@@ -210,6 +190,15 @@ var
 begin
   for i := 0 to AppGlobals.StreamSettings.PostProcessors.Count - 1 do
     AppGlobals.StreamSettings.PostProcessors[i].Initialize;
+end;
+
+procedure TPostProcessManager.Terminate;
+var
+  i: Integer;
+begin
+  for i := 0 to FProcessingList.Count - 1 do
+    if FProcessingList[i].ActiveThread <> nil then
+      FProcessingList[i].ActiveThread.Terminate;
 end;
 
 procedure TPostProcessManager.ThreadTerminate(Sender: TObject);
@@ -232,9 +221,8 @@ begin
           WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" failed.'), [Entry.ActiveThread.PostProcessor.Name]), dtError, dlNormal);
       end;
 
-
       // Wenn das Result nicht gut ist, dann wird die Chain hier beendet und der Song gilt als gespeichert.
-      if (Entry.ActiveThread.Result <> arWin) and (Entry.ActiveThread.Result <> arImpossible) then
+      if Entry.ActiveThread.Terminated or ((Entry.ActiveThread.Result <> arWin) and (Entry.ActiveThread.Result <> arImpossible)) then
       begin
         if Entry.Data.WorkFilename <> '' then
           DeleteFile(PChar(Entry.Data.WorkFilename));

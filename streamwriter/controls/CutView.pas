@@ -1,4 +1,4 @@
-{
+ï»¿{
     ------------------------------------------------------------------------
     streamWriter
     Copyright (c) 2010-2012 Alexander Nottelmann
@@ -29,10 +29,10 @@ uses
   SysUtils, Windows, Classes, Controls, StdCtrls, ExtCtrls, Functions,
   Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
   LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
-  PlayerManager, PostProcess, PostProcessSoX, DownloadAddons, ConfigureSoX, Logging,
-  MsgDlg, DragDrop, DropTarget, DropComboTarget, TypeDefs, AudioFunctions,
+  PlayerManager, PostProcess, PostProcessSoX, DownloadAddons, ConfigureSoX,
+  MsgDlg, DragDrop, DropTarget, DropComboTarget, AudioFunctions,
   MessageBus, AppMessages, AddonSoX, PostProcessConvert, FileTagger,
-  DataManager;
+  DataManager, PerlRegEx, Logging;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -54,6 +54,8 @@ type
 
     procedure SyncSuccess;
     procedure SyncError;
+
+    procedure ReadCallbackSoX(Data: AnsiString);
   protected
     procedure Execute; override;
   public
@@ -211,6 +213,7 @@ type
 
     procedure ProcessThreadSuccess(Sender: TObject);
     procedure ProcessThreadError(Sender: TObject);
+    procedure ProcessThreadTerminate(Sender: TObject);
 
     procedure PlayerEndReached(Sender: TObject);
     procedure PlayerPlay(Sender: TObject);
@@ -428,12 +431,7 @@ begin
 
   if FPlayer <> nil then
   begin
-    // Das hier gibt gerne Exceptions. Aber nur, wenn ein CutView auf ist, und man das Programm beendet.
-    // Schieß mich tot... das hier hilft, keine Ahnung woher der Fehler kommt.
-    // Das hat dann auch zur Folge, dass UndoSteps und WorkingFilename nicht gelöscht werden können.
-    try
-      FreeAndNil(FPlayer);
-    except end;
+    FreeAndNil(FPlayer);
   end;
 
   for i := 0 to FUndoList.Count - 1 do
@@ -454,11 +452,7 @@ var
 begin
   for i := 0 to FDropTarget.Files.Count - 1 do
   begin
-    // REMARK: Bei neuen Formaten brauche ich dafür vielleicht ein Array!
-    if (LowerCase(ExtractFileExt(FDropTarget.Files[i])) = '.mp3') or
-       (LowerCase(ExtractFileExt(FDropTarget.Files[i])) = '.m4a') or
-       (LowerCase(ExtractFileExt(FDropTarget.Files[i])) = '.ogg') or
-       (LowerCase(ExtractFileExt(FDropTarget.Files[i])) = '.aac') then
+    if FiletypeToFormat(LowerCase(ExtractFileExt(FDropTarget.Files[i]))) <> atNone then
     begin
       if Assigned(FOnCutFile) then
         FOnCutFile(TCutTab(Self.Parent), FDropTarget.Files[i]);
@@ -476,7 +470,7 @@ begin
   FPB.BuildDrawBuffer;
   FPB.Repaint;
 end;
-                           // NAch schneiden wird titellänge nicht übernommen. mindestens bei mp3 ist das so!
+                           // NAch schneiden wird titellÃ¤nge nicht Ã¼bernommen. mindestens bei mp3 ist das so!
 procedure TCutView.FileConvertorFinish(Sender: TObject);
 var
   i: Integer;
@@ -885,7 +879,7 @@ var
 begin
   Msg := FProcessThread.ProcessOutput;
   FProcessThread := nil;
-  MsgBox(GetParentForm(Self).Handle, Format(_('An error occured while processing the file:'#13#10'%s'), [Msg]) , _('Error'), MB_ICONERROR);
+  MsgBox(GetParentForm(Self).Handle, _('An error occured while processing the file.'), _('Error'), MB_ICONERROR);
 
   LoadFile(FWorkingFilename, True, False);
 end;
@@ -901,6 +895,11 @@ begin
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
+end;
+
+procedure TCutView.ProcessThreadTerminate(Sender: TObject);
+begin
+  FProcessThread := nil;
 end;
 
 procedure TCutView.Resize;
@@ -942,6 +941,7 @@ begin
     FWorkingFilename, TempFile);
   FProcessThread.OnSuccess := ProcessThreadSuccess;
   FProcessThread.OnError := ProcessThreadError;
+  FProcessThread.OnTerminate := ProcessThreadTerminate;
   FProcessThread.Resume;
 
   if Assigned(FOnStateChanged) then
@@ -975,7 +975,7 @@ begin
   if not CheckSoX then
     Exit;
 
-  CmdLine := '"' + (AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath + '" --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ';
+  CmdLine := '"' + (AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath + '" --show-progress --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ';
 
   if Fadein then
   begin
@@ -1060,7 +1060,7 @@ begin
 
       if CmdLine <> '' then
       begin
-        CmdLine := '"' + (AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath + '" --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ' + CmdLine;
+        CmdLine := '"' + (AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath + '" --show-progress --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ' + CmdLine;
 
         StartProcessing(CmdLine);
       end;
@@ -1259,8 +1259,8 @@ procedure TCutPaintBox.BuildBuffer;
     OriginalMode: TPenMode;
   begin
     // Die Konvertierung nach Int64 ist wichtig. Sonst gibt es Darstellungsfehler:
-    // Wenn man im Zoom-Modus was markiert und nach rechts scrollt, über den Anfang des markierten,
-    // wird alles als ausgewählt angezeigt. Darum bloß nicht entfernen :)
+    // Wenn man im Zoom-Modus was markiert und nach rechts scrollt, Ã¼ber den Anfang des markierten,
+    // wird alles als ausgewÃ¤hlt angezeigt. Darum bloÃŸ nicht entfernen :)
     RectStart := Trunc(((Int64(StartIdx) - Int64(FCutView.FWaveData.ZoomStart)) / Int64(FCutView.FWaveData.ZoomSize)) * FWaveBuf.Width);
     RectEnd := Trunc(((Int64(EndIdx) - Int64(FCutView.FWaveData.ZoomStart)) / Int64(FCutView.FWaveData.ZoomSize)) * FWaveBuf.Width);
 
@@ -1836,7 +1836,6 @@ end;
 
 procedure TProcessThread.Execute;
 var
-  Res: Integer;
   LoopStarted: Cardinal;
   FS: TFileStream;
   Failed: Boolean;
@@ -1844,37 +1843,33 @@ var
 begin
   inherited;
 
-  Res := RunProcess(FCommandLine, FWorkingDir, 120000, FProcessOutput, EC, @Self.Terminated);
-
-  if Terminated then
-  begin
-    DeleteFile(PChar(TempFile));
-    Exit;
-  end;
-
   Failed := True;
 
-  if FileExists(TempFile) and (Res = 0) and (EC = 0) then
-  begin
-    LoopStarted := GetTickCount;
-    while Failed do
-    begin
-      try
-        FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
-        try
-          Failed := False;
-          Break;
-        finally
-          FS.Free;
-        end;
-      except
-        Sleep(50);
-        if GetTickCount > LoopStarted + 5000 then
+  case RunProcess(FCommandLine, FWorkingDir, 300000, FProcessOutput, EC, @Self.Terminated, True, ReadCallbackSoX) of
+    rpWin:
+      if FileExists(TempFile) and (EC = 0) then
+      begin
+        LoopStarted := GetTickCount;
+        while Failed do
         begin
-          Break;
+          try
+            FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
+            try
+              Failed := False;
+              Break;
+            finally
+              FS.Free;
+            end;
+          except
+            Sleep(50);
+            if GetTickCount > LoopStarted + 5000 then
+            begin
+              Break;
+            end;
+          end;
         end;
       end;
-    end;
+    rpFail, rpTerminated, rpTimeout:;
   end;
 
   if Failed then
@@ -1884,6 +1879,11 @@ begin
     SyncError
   else
     SyncSuccess;
+end;
+
+procedure TProcessThread.ReadCallbackSoX(Data: AnsiString);
+begin
+
 end;
 
 procedure TProcessThread.SyncError;

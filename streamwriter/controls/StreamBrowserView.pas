@@ -28,7 +28,7 @@ uses
   StdCtrls, Menus, ImgList, Math, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls,
   HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging,
-  DataManager, TypeDefs, DropSource, Types;
+  DataManager, DropSource, Types, AudioFunctions;
 
 type
   TModes = (moShow, moLoading);

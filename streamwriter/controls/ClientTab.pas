@@ -157,7 +157,6 @@ type
       var Allowed: Boolean; var Match: string; var Filter: Integer);
     procedure ClientManagerShowErrorMessage(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
     procedure ClientManagerPlaybackStarted(Sender: TObject);
-    procedure ClientManagerPlaybackStopped(Sender: TObject);
 
     procedure FClientViewChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure FClientViewDblClick(Sender: TObject);
@@ -774,7 +773,7 @@ begin
   FVolume.Align := alRight;
   FVolume.Setup;
   FVolume.Width := 140;
-  FVolume.Volume := AppGlobals.PlayerVolume;
+  FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeVolumeChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
 
@@ -853,8 +852,8 @@ begin
 
   FSplitter.Left := FSideBar.Left - 5;
 
-  FSideBar.Visible := AppGlobals.ShowSidebar;
-  FSplitter.Visible := AppGlobals.ShowSidebar;
+  FSideBar.Visible := True;
+  FSplitter.Visible := True;
   FSideBar.Width := AppGlobals.SidebarWidth;
 
   MsgBus.AddSubscriber(MessageReceived);
@@ -945,12 +944,6 @@ begin
     FPlaybackTimer.Enabled := False;
     FPlaybackTimer.Enabled := True;
   end;
-end;
-
-procedure TClientTab.ClientManagerPlaybackStopped(Sender: TObject);
-begin
-  FPlaybackTimer.Enabled := False;
-  FTimeLabel.Caption := '';
 end;
 
 procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string;

@@ -30,7 +30,7 @@ interface
 uses
   Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
   LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions, PostProcess,
-  AddonManager, PostProcessManager, Logging, Base64, TypeDefs;
+  AddonManager, PostProcessManager, Logging, Base64, AudioFunctions;
 
 type
   // Actions that can be executed in the stream-view
@@ -236,7 +236,6 @@ type
     FSnapMain: Boolean;
     FRememberRecordings: Boolean;
     FDisplayPlayNotifications: Boolean;
-    FShowSidebar: Boolean;
     FSidebarWidth: Integer;
     FAutoTuneIn: Boolean;
     FAutoTuneInConsiderIgnore: Boolean;
@@ -323,8 +322,6 @@ type
     property RememberRecordings: Boolean read FRememberRecordings write FRememberRecordings;
     // When set notifications on the lower right of the screen will be displayed when a title on a stream changes
     property DisplayPlayNotifications: Boolean read FDisplayPlayNotifications write FDisplayPlayNotifications;
-    // REMARK: No used ATM
-    property ShowSidebar: Boolean read FShowSidebar write FShowSidebar;
     // Defines the width of the sidebar (streams/info/log)
     property SidebarWidth: Integer read FSidebarWidth write FSidebarWidth;
     // When set streamWriter automatically records songs from the wishlist
@@ -427,7 +424,7 @@ var
 implementation
 
 uses
-  PostProcessSetTags, PostProcessSoX, PostProcessMP4Box, PostProcessConvert, AudioFunctions;
+  PostProcessSetTags, PostProcessSoX, PostProcessMP4Box, PostProcessConvert;
 
 { TAppData }
 
@@ -645,7 +642,6 @@ begin
   FStorage.Read('MaxRetries', FStreamSettings.FMaxRetries, 100);
   FStorage.Read('RetryDelay', FStreamSettings.FRetryDelay, 5);
 
-  FShowSidebar := True;
   FStorage.Read('TrayClose', FTray, False);
   FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);
   FStorage.Read('SnapMain', FSnapMain, False);
@@ -721,18 +717,7 @@ begin
 
   // Header of ClientView
   FStorage.Read('HeaderWidth0', i, -1, 'Cols');
-  if i = -1 then
-  begin
-    { REMARK: Kann evtl. bald raus. Läuft jetzt über FitColumns().
-    for i := 0 to High(FClientHeaderWidth) do
-      FClientHeaderWidth[i] := 100;
-    FStorage.Read('HeaderWidth0', FClientHeaderWidth[0], 150, 'Cols');
-    FStorage.Read('HeaderWidth2', FClientHeaderWidth[2], 70, 'Cols');
-    FStorage.Read('HeaderWidth3', FClientHeaderWidth[3], 60, 'Cols');
-    FStorage.Read('HeaderWidth4', FClientHeaderWidth[4], 90, 'Cols');
-    FStorage.Read('HeaderWidth5', FClientHeaderWidth[5], 85, 'Cols');
-    }
-  end else
+  if i > -1 then
   begin
     FClientHeadersLoaded := True;
     for i := 0 to High(FClientHeaderWidth) do
@@ -744,17 +729,7 @@ begin
 
   // Header of SavedView
   FStorage.Read('SavedHeaderWidth0', i, -1, 'Cols');
-  if i = -1 then
-  begin
-    { REMARK: Kann evtl. bald raus. Läuft jetzt über FitColumns().
-    for i := 0 to High(FSavedHeaderWidth) do
-      FSavedHeaderWidth[i] := 100;
-    FStorage.Read('SavedHeaderWidth2', FSavedHeaderWidth[2], 70, 'Cols');
-    FStorage.Read('SavedHeaderWidth3', FSavedHeaderWidth[3], 60, 'Cols');
-    FStorage.Read('SavedHeaderWidth4', FSavedHeaderWidth[4], 90, 'Cols');
-    FStorage.Read('SavedHeaderWidth5', FSavedHeaderWidth[5], 150, 'Cols');
-    }
-  end else
+  if i > -1 then
   begin
     FSavedHeadersLoaded := True;
     for i := 0 to High(FSavedHeaderWidth) do
@@ -1523,5 +1498,4 @@ finalization
   FreeAndNil(AppGlobals);
 
 end.
-
 
