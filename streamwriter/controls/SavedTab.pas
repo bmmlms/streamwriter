@@ -1772,6 +1772,10 @@ begin
   inherited;
 
   NodeData := GetNodeData(Node);
+
+  if FiletypeToFormat(LowerCase(ExtractFileExt(Text))) = atNone then
+    Text := RemoveFileExt(Text) + ExtractFileExt(NodeData.Track.Filename);
+
   if RenameFile(IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + ExtractFileName(NodeData.Track.Filename),
     IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + Text) then
   begin
@@ -1827,6 +1831,13 @@ begin
       end;
     FILE_ACTION_RENAMED_NEW_NAME:
       begin
+        if FiletypeToFormat(LowerCase(ExtractFileExt(NewName))) = atNone then
+        begin
+          RemoveTrack(Track);
+          FTab.FStreams.TrackList.RemoveTrack(Track);
+          Exit;
+        end;
+
         if Sender = FFileWatcher then
           Track.Filename := AppGlobals.Dir + NewName
         else
@@ -2114,10 +2125,19 @@ begin
 end;
 
 procedure TSavedTree.DoEdit;
+var
+  Edit: TVTEdit;
 begin
   EditColumn := 1;
 
   inherited;
+
+  if (EditLink <> nil) and (EditLink is TStringEditLink) then
+  begin
+    Edit := TStringEditLink(EditLink).Edit;
+    Edit.SelStart := 0;
+    Edit.SelLength := Length(Edit.Text) - Length(ExtractFileExt(Edit.Text));
+  end;
 end;
 
 { TSearchBar }
