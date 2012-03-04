@@ -334,7 +334,7 @@ begin
   FToolBar.FAutoCut.OnClick := AutoCutClick;
 
   {$IFDEF DEBUG}
-  FToolBar.FAutoCutAutoDetect.OnClick := AutoCutAutoDetectClick;
+  //FToolBar.FAutoCutAutoDetect.OnClick := AutoCutAutoDetectClick;
   {$ENDIF}
 
   FToolBar.FCut.OnClick := CutClick;
@@ -422,10 +422,10 @@ begin
   FAutoCut.ImageIndex := 19;
 
   {$IFDEF DEBUG}
-  FAutoCutAutoDetect := TToolButton.Create(Self);
-  FAutoCutAutoDetect.Parent := Self;
-  FAutoCutAutoDetect.Hint := 'Show silence...';
-  FAutoCutAutoDetect.ImageIndex := 19;
+  //FAutoCutAutoDetect := TToolButton.Create(Self);
+  //FAutoCutAutoDetect.Parent := Self;
+  //FAutoCutAutoDetect.Hint := 'Show silence...';
+  //FAutoCutAutoDetect.ImageIndex := 19;
   {$ENDIF}
 
   FSep := TToolButton.Create(Self);

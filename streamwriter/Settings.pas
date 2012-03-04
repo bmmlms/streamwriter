@@ -281,6 +281,7 @@ type
     procedure SetGray;
     procedure RebuildPostProcessingList;
     procedure UpdatePostProcessUpDown;
+    procedure ShowEncoderNeededMessage;
 
     procedure BlacklistTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure BlacklistTreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -1735,10 +1736,12 @@ begin
     lstPostProcess.OnItemChecked := lstPostProcessItemChecked;
 
     btnConfigure.Enabled := Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
-  end else if TObject(Item.Data) is TExternalPostProcess then
-  begin
-    FTemporaryPostProcesses.Find(TExternalPostProcess(Item.Data)).Active := Item.Checked;
   end;
+
+  FTemporaryPostProcesses.Find(TPostProcessBase(Item.Data)).Active := Item.Checked;
+
+  if TPostProcessBase(Item.Data).NeedsWave and Item.Checked then
+    ShowEncoderNeededMessage;
 
   lstAddons.OnItemChecked := nil;
   for i := 0 to lstAddons.Items.Count - 1 do
@@ -1901,6 +1904,7 @@ begin
       Item.GroupID := FTemporaryPostProcesses[i].GroupID;
       Item.Caption := FTemporaryPostProcesses[i].Name;
       Item.Checked := FTemporaryPostProcesses[i].Active;
+      // Data must be set at last that events (i.e. lstPostProcessItemChecked) do not fire
       Item.Data := FTemporaryPostProcesses[i];
 
       if FTemporaryPostProcesses[i] is TInternalPostProcess then
@@ -2002,6 +2006,13 @@ begin
 
   if Page = FPageList.Find(pnlFilenames) then
     txtPreview.Text := '';
+end;
+
+procedure TfrmSettings.ShowEncoderNeededMessage;
+begin
+  TfrmMsgDlg.ShowMsg(Self, _('You enabled a postprocessor that needs a WAVE-file which will be reencoded after processing. ' +
+                             'Make sure an encoder for the stream''s format is installed if you did not select another encoder by checking the "Addons" page. ' +
+                             'To configure the encoder, select it at the top of the "Postprocessing" page and click the button next to it.'), 14, btOK);
 end;
 
 procedure TfrmSettings.txtAdjustTrackOffsetChange(Sender: TObject);
@@ -2257,6 +2268,11 @@ begin
           Item.ImageIndex := 5;
           Item.Selected := True;
 
+          if TPostProcessBase(Item.Data).NeedsWave then
+          begin
+            ShowEncoderNeededMessage;
+          end;
+
           RebuildPostProcessingList;
 
           for i := 0 to lstPostProcess.Items.Count - 1 do
@@ -2303,8 +2319,11 @@ begin
 
   if DirectoryExists(Dir) then
     if Sender = btnBrowse then
-      txtDir.Text := IncludeTrailingBackslash(Dir)
-    else
+    begin
+      txtDir.Text := IncludeTrailingBackslash(Dir);
+      if FBrowseDir and (txtDirAuto.Text = '') then
+        txtDirAuto.Text := txtDir.Text;
+    end else
       txtDirAuto.Text := IncludeTrailingBackslash(Dir)
   else
     MsgBox(Self.Handle, _('The selected folder does not exist. Please choose another one.'), _('Info'), MB_ICONINFORMATION);
@@ -2854,6 +2873,10 @@ end;
 procedure TfrmSettings.chkOnlyIfCutClick(Sender: TObject);
 begin
   inherited;
+
+  if FInitialized then
+    RemoveGray(lstPostProcess);
+
   if (lstPostProcess.Selected <> nil) and chkOnlyIfCut.Focused then
     TPostProcessBase(lstPostProcess.Selected.Data).OnlyIfCut := chkOnlyIfCut.Checked;
 end;

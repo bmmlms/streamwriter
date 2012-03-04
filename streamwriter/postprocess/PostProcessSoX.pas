@@ -96,12 +96,12 @@ begin
 
   P := TPostProcessSoX(PostProcessor);
 
-  CmdLine := '"' + FSoxPath + '" --norm "' + FData.WorkFilename + '" "' + SoxOutFile + '" ';
+  if P.FNormalize then
+    CmdLine := '"' + FSoxPath + '" --norm "' + FData.WorkFilename + '" "' + SoxOutFile + '" '
+  else
+    CmdLine := '"' + FSoxPath + '" "' + FData.WorkFilename + '" "' + SoxOutFile + '" ';
 
   Params := '';
-
-  if P.FNormalize then
-    Params := Params + 'gain -b -n';
 
   if P.FFadeoutStart and P.FFadeoutEnd then
     Params := ' fade p ' + IntToStr(P.FFadeoutStartLength) + ' ' + IntToStr(FData.Length) + ' ' + IntToStr(P.FFadeoutEndLength)
@@ -117,7 +117,7 @@ begin
   else if P.FSilenceEnd then
     Params := Params + ' pad 0 ' + IntToStr(P.FSilenceEndLength);
 
-  if Params <> '' then
+  if (Params <> '') or P.FNormalize then
   begin
     case RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 300000, Output, EC, @Terminated, True) of
       rpWin:
@@ -243,8 +243,6 @@ begin
   inherited;
 
   FNeededAddons.Add(TAddonSoX);
-
-  FNeedsWave := True;
 
   FCanConfigure := True;
 
@@ -409,8 +407,8 @@ function TPostProcessSoX.ShowInitMessage(Handle: THandle): Boolean;
 begin
   Result := inherited;
 
-  MsgBox(Handle, _('Additional encoding-addons might be needed to have this postprocessor working, that is an encoder for the desired output format or an encoder for the format of the stream itself.'),
-    _('Info'), MB_ICONINFORMATION);
+  //MsgBox(Handle, _('Additional encoding-addons might be needed to have this postprocessor working, that is an encoder for the desired output format or an encoder for the format of the stream itself.'),
+  //  _('Info'), MB_ICONINFORMATION);
 end;
 
 end.

@@ -97,7 +97,7 @@ object frmConfigureSoX: TfrmConfigureSoX
     Left = 4
     Top = 176
     Width = 409
-    Height = 165
+    Height = 221
     TabOrder = 1
     Visible = False
     object GroupBox1: TGroupBox
@@ -205,13 +205,12 @@ object frmConfigureSoX: TfrmConfigureSoX
       end
     end
     object GroupBox3: TGroupBox
-      Left = 136
-      Top = 96
+      Left = 4
+      Top = 168
       Width = 401
       Height = 49
       Caption = ' Misc '
       TabOrder = 2
-      Visible = False
       object chkNormalize: TCheckBox
         Left = 8
         Top = 20

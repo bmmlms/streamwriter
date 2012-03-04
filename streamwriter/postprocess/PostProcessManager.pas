@@ -93,14 +93,15 @@ var
   begin
     Client := TICEClient(Entry.Owner);
 
-    FormatChanged := TEncoderSettings(Entry.Data.EncoderSettings).AudioType <> atNone; //TEncoderSettings(Entry.Data.EncoderSettings).AudioType <> TICEClient(Entry.Owner).Entry.AudioType;
+    FormatChanged := TEncoderSettings(Entry.Data.EncoderSettings).AudioType <> atNone;
 
     if FormatChanged then
       Exit(True);
 
     for i := 0 to Client.Entry.Settings.PostProcessors.Count - 1 do
       if (Client.Entry.Settings.PostProcessors[i].Active) and
-         ((Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data, nil) and Client.Entry.Settings.PostProcessors[i].NeedsWave) or
+         ((Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data, nil) and Client.Entry.Settings.PostProcessors[i].NeedsWave and
+         ((Client.Entry.Settings.PostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not Client.Entry.Settings.PostProcessors[i].OnlyIfCut))) or
          ((Client.Entry.Settings.PostProcessors[i] is TExternalPostProcess) and (TExternalPostProcess(Client.Entry.Settings.PostProcessors[i]).GroupID = 0))) then
       begin
         Exit(True);

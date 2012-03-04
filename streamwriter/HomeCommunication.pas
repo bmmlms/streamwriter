@@ -944,7 +944,7 @@ end;
 
 procedure THomeThread.DoStreamsReceived(Version: Integer; Header, Data: TXMLNode);
 var
-  i, n: Integer;
+  i: Integer;
   T: string;
   Node: TXMLNode;
   NewList: TList<TStreamBrowserEntry>;

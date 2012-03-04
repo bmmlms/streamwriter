@@ -658,42 +658,47 @@ begin
     ShowSettings(False, True);
   end;
 
-  // Wird hier gemacht, weil der Browser dann sicher da ist, wenn die
-  // Streams empfangen werden (wg. DisplayCount)
-  HomeComm.OnStateChanged := HomeCommStateChanged;
-  HomeComm.OnServerInfo := HomeCommServerInfo;
-  HomeComm.OnError := HomeCommError;
-  HomeComm.DataLists := FDataLists;
-  HomeComm.Connect;
-
-  if not AppGlobals.FirstStartShown then
+  // If a profile import is active from a call to ShowSettings() above,
+  // we must skip this stuff.
+  if not FExiting then
   begin
-    FormIntro := TfrmIntro.Create(Self);
-    try
-      FormIntro.ShowModal;
-    finally
-      FormIntro.Free;
+    // Wird hier gemacht, weil der Browser dann sicher da ist, wenn die
+    // Streams empfangen werden (wg. DisplayCount)
+    HomeComm.OnStateChanged := HomeCommStateChanged;
+    HomeComm.OnServerInfo := HomeCommServerInfo;
+    HomeComm.OnError := HomeCommError;
+    HomeComm.DataLists := FDataLists;
+    HomeComm.Connect;
+
+    if not AppGlobals.FirstStartShown then
+    begin
+      FormIntro := TfrmIntro.Create(Self);
+      try
+        FormIntro.ShowModal;
+      finally
+        FormIntro.Free;
+      end;
     end;
+    AppGlobals.FirstStartShown := True;
+
+    if AppGlobals.AddonManager.ShowVersionWarning then
+    begin
+      MsgBox(Handle, _('At least one addon is outdated and was deleted because it does not work with this version of streamWriter. Please check the addon/postprocessing pages in the settings window.'), _('Info'), MB_ICONINFORMATION);
+    end;
+
+    if AppGlobals.LastUsedVersion.AsString = '3.6.0.0' then
+    begin
+      MsgBox(Handle, _('Because many internals of the last version have changed you need to reconfigure options regarding addons and postprocessing using the settings window.'), _('Info'), MB_ICONINFORMATION);
+    end;
+
+    tmrAutoSave.Enabled := True;
+    tmrRecordings.Enabled := True;
+
+    ProcessCommandLine(GetCommandLineW);
+
+    if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
+      FUpdater.Start(uaVersion);
   end;
-  AppGlobals.FirstStartShown := True;
-
-  if AppGlobals.AddonManager.ShowVersionWarning then
-  begin
-    MsgBox(Handle, _('At least one addon is outdated and was deleted because it does not work with this version of streamWriter. Please check the addon/postprocessing pages in the settings window.'), _('Info'), MB_ICONINFORMATION);
-  end;
-
-  if AppGlobals.LastUsedVersion.AsString = '3.6.0.0' then
-  begin
-    MsgBox(Handle, _('Because many internals of the last version have changed you need to reconfigure options regarding addons and postprocessing using the settings window.'), _('Info'), MB_ICONINFORMATION);
-  end;
-
-  tmrAutoSave.Enabled := True;
-  tmrRecordings.Enabled := True;
-
-  ProcessCommandLine(GetCommandLineW);
-
-  if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
-    FUpdater.Start(uaVersion);
 end;
 
 procedure TfrmStreamWriterMain.FormClose(Sender: TObject;

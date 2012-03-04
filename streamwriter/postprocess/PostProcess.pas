@@ -102,7 +102,6 @@ type
   TPostProcessBase = class
   private
   protected
-    FNeedsWave: Boolean;
     FHidden: Boolean;
     FCanConfigure: Boolean;
     FName: string;
@@ -114,6 +113,7 @@ type
     FPostProcessType: TPostProcessTypes;
     FIsNew: Boolean;
 
+    function FGetNeedsWave: Boolean; virtual;
     function FGetHash: Cardinal; virtual;
   public
     constructor Create;
@@ -129,7 +129,7 @@ type
     procedure Save(Stream: TExtendedStream); overload; virtual;
     function ShowInitMessage(Handle: THandle): Boolean; virtual;
 
-    property NeedsWave: Boolean read FNeedsWave;
+    property NeedsWave: Boolean read FGetNeedsWave;
     property Hidden: Boolean read FHidden;
     property CanConfigure: Boolean read FCanConfigure;
     property Name: string read FName;
@@ -224,6 +224,7 @@ begin
   FData.StreamTitle := Data.StreamTitle;
   FData.BitRate := Data.BitRate;
   FData.EncoderSettings := TEncoderSettings(Data.EncoderSettings);
+  FData.VBR := Data.VBR;
 
   FPostProcessList := TList<TPostProcessBase>.Create;
 end;
@@ -452,6 +453,11 @@ end;
 function TPostProcessBase.FGetHash: Cardinal;
 begin
   Result := HashString(BoolToStr(FActive) + IntToStr(FOrder) + BoolToStr(FOnlyIfCut));
+end;
+
+function TPostProcessBase.FGetNeedsWave: Boolean;
+begin
+  Result := GroupID = 0;
 end;
 
 procedure TPostProcessBase.Initialize;

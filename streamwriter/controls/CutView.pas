@@ -975,7 +975,7 @@ begin
   if not CheckSoX then
     Exit;
 
-  CmdLine := '"' + (AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath + '" --show-progress --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ';
+  CmdLine := '"' + (AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath + '" --show-progress "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ';
 
   if Fadein then
   begin
@@ -1041,9 +1041,6 @@ begin
     begin
       CmdLine := '';
 
-      if F.Normalize then
-        CmdLine := CmdLine + 'gain -b -n';
-
       if F.FadeoutStart and F.FadeoutEnd then
         CmdLine := CmdLine + ' fade p ' + IntToStr(F.FadeoutStartLength) + ' ' + IntToStr(Round(FWaveData.Secs)) + ' ' + IntToStr(F.FadeoutEndLength)
       else if F.FadeoutStart then
@@ -1058,9 +1055,12 @@ begin
       else if F.SilenceEnd then
         CmdLine := CmdLine + ' pad 0 ' + IntToStr(F.SilenceEndLength);
 
-      if CmdLine <> '' then
+      if (CmdLine <> '') or F.Normalize then
       begin
-        CmdLine := '"' + (AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath + '" --show-progress --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ' + CmdLine;
+        if F.Normalize then
+          CmdLine := '"' + (AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath + '" --show-progress --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ' + CmdLine
+        else
+          CmdLine := '"' + (AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath + '" --show-progress "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ' + CmdLine;
 
         StartProcessing(CmdLine);
       end;
