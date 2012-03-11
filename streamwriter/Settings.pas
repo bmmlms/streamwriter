@@ -112,12 +112,8 @@ type
     txtSilenceBufferSeconds: TEdit;
     Label15: TLabel;
     PngImageList1: TPngImageList;
-    pnlCommunity: TPanel;
+    pnlAutoRecord: TPanel;
     chkAutoTuneIn: TCheckBox;
-    chkSubmitStreamInfo: TCheckBox;
-    Label2: TLabel;
-    chkSubmitStats: TCheckBox;
-    Label8: TLabel;
     lstSoundDevice: TComboBox;
     lblSoundDevice: TLabel;
     Label16: TLabel;
@@ -185,6 +181,11 @@ type
     lblOutputFormat: TLabel;
     lstOutputFormat: TComboBox;
     btnConfigureEncoder: TPngSpeedButton;
+    pnlCommunity: TPanel;
+    Label2: TLabel;
+    chkSubmitStreamInfo: TCheckBox;
+    Label8: TLabel;
+    chkSubmitStats: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -261,6 +262,7 @@ type
     FDefaultActionIdx: Integer;
     FDefaultActionBrowserIdx: Integer;
     FDefaultFilterIdx: Integer;
+    FOutputFormatIdx: Integer;
     FTemporaryPostProcesses: TPostProcessorList;
     FStreamSettings: TStreamSettingsArray;
     FIgnoreFieldList: TList;
@@ -826,7 +828,7 @@ begin
 
     SetFields;
 
-    ClientWidth := 590;
+    ClientWidth := 610;
     ClientHeight := 480;
 
     for i := 0 to Self.ControlCount - 1 do
@@ -1814,6 +1816,7 @@ begin
   FDefaultActionIdx := lstDefaultAction.ItemIndex;
   FDefaultActionBrowserIdx := lstDefaultActionBrowser.ItemIndex;
   FDefaultFilterIdx := lstDefaultFilter.ItemIndex;
+  FOutputFormatIdx := lstOutputFormat.ItemIndex;
 end;
 
 procedure TfrmSettings.PostTranslate;
@@ -1848,6 +1851,7 @@ begin
   lstDefaultAction.ItemIndex := FDefaultActionIdx;
   lstDefaultActionBrowser.ItemIndex := FDefaultActionBrowserIdx;
   lstDefaultFilter.ItemIndex := FDefaultFilterIdx;
+  lstOutputFormat.ItemIndex := FOutputFormatIdx;
 
   FormResize(Self);
 end;
@@ -1926,6 +1930,8 @@ begin
   begin
     FPageList.Add(TPage.Create('Settings', pnlMain, 'PROPERTIES'));
     FPageList.Add(TPage.Create('Streams', pnlStreams, 'APPICON'));
+    FPageList.Add(TPage.Create('Automatic recordings', pnlAutoRecord, 'AUTORECORD'));
+    FPageList.Add(TPage.Create('Blacklist', pnlCommunityBlacklist, 'BLACKLIST', FPageList.Find(pnlAutoRecord)));
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
     FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
@@ -1933,7 +1939,6 @@ begin
     FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
     FPageList.Add(TPage.Create('Bandwidth', pnlBandwidth, 'BANDWIDTH'));
     FPageList.Add(TPage.Create('Community', pnlCommunity, 'GROUP_PNG'));
-    FPageList.Add(TPage.Create('Blacklist', pnlCommunityBlacklist, 'BLACKLIST', FPageList.Find(pnlCommunity)));
     FPageList.Add(TPage.Create('Hotkeys', pnlHotkeys, 'KEYBOARD'));
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
   end else

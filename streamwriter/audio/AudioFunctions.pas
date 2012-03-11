@@ -80,6 +80,7 @@ var
   BitRate: Cardinal;
   FileSize: Int64;
   P, LastP, ElapsedP, LastElapsedP: QWORD;
+  Counter: Integer;
 begin
   Result.Length := 0;
   Result.Bitrate := 0;
@@ -112,6 +113,7 @@ begin
     Result.Bitrate := BitRate;
     Result.Success := True;
 
+    Counter := 0;
     LastP := 0;
     LastElapsedP := 0;
     BassChannelSetPosition(TempPlayer, 0, BASS_POS_BYTE);
@@ -121,8 +123,16 @@ begin
 
       ElapsedP := BASSStreamGetFilePosition(TempPlayer, BASS_FILEPOS_CURRENT);
 
+      if ElapsedP > 5000000 then
+        Break;
+
       P := ElapsedP - LastElapsedP;
       if (P > 0) and (LastP > 0) and ((P > LastP + 10) or (P < LastP - 10)) then
+      begin
+        Inc(Counter);
+      end;
+
+      if Counter = 5 then
       begin
         Result.VBR := True;
         Break;

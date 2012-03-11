@@ -13,7 +13,7 @@ Name: English; MessagesFile: compiler:Default.isl
 
 [CustomMessages]
 Deutsch.Launch=streamWriter starten
-Deutsch.Running=streamWriter läuft gerade und muss geschlossen werden, damit Setup fortgesetzt werden kann.\nDrücken Sie "Ja" zum wiederholen, "Nein" zum Beenden des Setups.
+Deutsch.Running=streamWriter läuft gerade und muss geschlossen werden, damit das Setup fortgesetzt werden kann.\nDrücken Sie "Ja" zum wiederholen, "Nein" zum Beenden des Setups.
 Deutsch.PleaseRestart=Das Update wurde abgeschlossen. Bitte starte streamWriter neu.
 
 English.Launch=Launch streamWriter
@@ -41,7 +41,7 @@ WizardImageFile=compiler:wizmodernimage-is.bmp
 WizardSmallImageFile=wizmodernsmallimage-is.bmp
 Compression=lzma/ultra
 LicenseFile=license.txt
-VersionInfoVersion=3.6.0.0
+VersionInfoVersion=3.7.0.0
 
 [Run]
 Filename: {app}\streamwriter.exe; WorkingDir: {app}; Flags: waituntilidle postinstall skipifsilent; Description: "{cm:Launch}"
@@ -74,8 +74,7 @@ begin
   Handle := 1;
   while Handle <> 0 do
   begin
-    Handle := FindWindowByClassName('TfrmStreamWriterMain');
-    if Handle <> 0 then
+    if CheckForMutexes('streamWriterMutex') then
     begin
       if MsgBox(TranslateNewline(ExpandConstant('{cm:Running}')), mbConfirmation, MB_YESNO) = IDNO then
       begin
@@ -111,6 +110,7 @@ begin
     //RegDeleteKeyIncludingSubkeys(HKCU, 'Software\mistake.ws\streamWriter');
   end;
 end;
+
 
 
 

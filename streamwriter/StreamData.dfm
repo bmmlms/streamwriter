@@ -117,11 +117,11 @@ object frmStreamData: TfrmStreamData
     Width = 409
     Height = 21
     Anchors = [akLeft, akTop, akRight]
-    EditLabel.Width = 307
+    EditLabel.Width = 339
     EditLabel.Height = 13
     EditLabel.Caption = 
-      'Regular expression to detect artist/title from broadcasted title' +
-      's:'
+      'Regular expression to detect artist/title/album from broadcasted' +
+      ' titles:'
     TabOrder = 0
     OnChange = txtTitlePatternChange
   end

@@ -236,6 +236,9 @@ begin
     Inc(Counter);
   end;
 
+  // Das ist wichtig - wenn man Stille hinzufügt, ändert sich oben Avg nicht, Checksum bleibt gleich..
+  FCheckSum := FCheckSum + Position;
+
   SetLength(FWaveArray, Counter);
 
   // Bei weniger als 2 = Crash später

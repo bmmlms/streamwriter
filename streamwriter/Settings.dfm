@@ -4,7 +4,7 @@ object frmSettings: TfrmSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Settings'
-  ClientHeight = 773
+  ClientHeight = 761
   ClientWidth = 1201
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -863,41 +863,16 @@ object frmSettings: TfrmSettings
       OnChange = txtHotkeyChange
     end
   end
-  object pnlCommunity: TPanel
+  object pnlAutoRecord: TPanel
     Left = 904
     Top = 4
     Width = 293
-    Height = 337
+    Height = 189
     TabOrder = 6
     Visible = False
     DesignSize = (
       293
-      337)
-    object Label2: TLabel
-      Left = 20
-      Top = 220
-      Width = 268
-      Height = 29
-      Anchors = [akLeft, akTop, akRight]
-      AutoSize = False
-      Caption = 
-        'Streams unknown to streamWriter will be submitted to the server ' +
-        'so they can appear in the browser.'
-      WordWrap = True
-    end
-    object Label8: TLabel
-      Left = 20
-      Top = 276
-      Width = 268
-      Height = 65
-      Anchors = [akLeft, akTop, akRight]
-      AutoSize = False
-      Caption = 
-        'Information about Track changes will be sent to the server and b' +
-        'roadcasted to other users. This is important for the automatic r' +
-        'ecording of songs on the wishlist.'
-      WordWrap = True
-    end
+      189)
     object Label16: TLabel
       Left = 20
       Top = 100
@@ -922,31 +897,13 @@ object frmSettings: TfrmSettings
       TabOrder = 0
       OnClick = chkAutoTuneInClick
     end
-    object chkSubmitStreamInfo: TCheckBox
-      Left = 4
-      Top = 196
-      Width = 284
-      Height = 21
-      Anchors = [akLeft, akTop, akRight]
-      Caption = 'Submit information about streams to the server'
-      TabOrder = 1
-    end
-    object chkSubmitStats: TCheckBox
-      Left = 4
-      Top = 252
-      Width = 284
-      Height = 21
-      Anchors = [akLeft, akTop, akRight]
-      Caption = 'Submit statistics/track changes to the server'
-      TabOrder = 2
-    end
     object lstMinBitrate: TComboBox
       Left = 20
       Top = 116
       Width = 129
       Height = 21
       Style = csDropDownList
-      TabOrder = 3
+      TabOrder = 1
       Items.Strings = (
         '32'
         '64'
@@ -965,7 +922,7 @@ object frmSettings: TfrmSettings
       Width = 129
       Height = 21
       Style = csDropDownList
-      TabOrder = 4
+      TabOrder = 2
       Items.Strings = (
         'MP3/AAC'
         'MP3'
@@ -978,7 +935,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Do not tune in if song is on global ignorelist'
-      TabOrder = 5
+      TabOrder = 3
       OnClick = chkAutoTuneInClick
     end
     object chkAutoTuneInAddToIgnore: TCheckBox
@@ -987,7 +944,7 @@ object frmSettings: TfrmSettings
       Width = 269
       Height = 21
       Caption = 'Add saved titles to global ignorelist'
-      TabOrder = 6
+      TabOrder = 4
     end
     object chkAutoRemoveSavedFromWishlist: TCheckBox
       Left = 20
@@ -995,12 +952,12 @@ object frmSettings: TfrmSettings
       Width = 269
       Height = 21
       Caption = 'Remove saved titles from wishlist'
-      TabOrder = 7
+      TabOrder = 5
     end
   end
   object pnlFilenames: TPanel
     Left = 904
-    Top = 348
+    Top = 352
     Width = 293
     Height = 285
     TabOrder = 7
@@ -1340,13 +1297,12 @@ object frmSettings: TfrmSettings
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 276
-      EditLabel.Height = 26
+      EditLabel.Width = 434
+      EditLabel.Height = 13
       EditLabel.Caption = 
-        'Regular expression to detect artist/title (only change if you kn' +
-        'ow what you are doing):'
+        'Regular expression to detect artist/title/album (only change if ' +
+        'you know what you are doing):'
       EditLabel.Layout = tlBottom
-      EditLabel.WordWrap = True
       TabOrder = 0
       OnChange = txtTitlePatternChange
     end
@@ -1446,8 +1402,8 @@ object frmSettings: TfrmSettings
     end
   end
   object pnlFilenamesExt: TPanel
-    Left = 904
-    Top = 640
+    Left = 4
+    Top = 460
     Width = 293
     Height = 129
     TabOrder = 11
@@ -1522,7 +1478,7 @@ object frmSettings: TfrmSettings
       Width = 284
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Adjust upper-/lowercase of artist/title'
+      Caption = 'Adjust upper-/lowercase of artist/title/album'
       TabOrder = 2
       OnClick = chkNormalizeVariablesClick
     end
@@ -1531,14 +1487,14 @@ object frmSettings: TfrmSettings
     Left = 4
     Top = 416
     Width = 293
-    Height = 189
+    Height = 37
     TabOrder = 12
     Visible = False
     object lstAddons: TListView
       Left = 4
       Top = 1
       Width = 285
-      Height = 184
+      Height = 32
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
       Checkboxes = True
@@ -1554,6 +1510,60 @@ object frmSettings: TfrmSettings
       ViewStyle = vsReport
       OnResize = lstAddonsResize
       OnItemChecked = lstAddonsItemChecked
+    end
+  end
+  object pnlCommunity: TPanel
+    Left = 904
+    Top = 200
+    Width = 293
+    Height = 145
+    TabOrder = 13
+    Visible = False
+    DesignSize = (
+      293
+      145)
+    object Label2: TLabel
+      Left = 20
+      Top = 24
+      Width = 268
+      Height = 29
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      Caption = 
+        'Streams unknown to streamWriter will be submitted to the server ' +
+        'so they can appear in the browser.'
+      WordWrap = True
+    end
+    object Label8: TLabel
+      Left = 20
+      Top = 84
+      Width = 268
+      Height = 65
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      Caption = 
+        'Information about Track changes will be sent to the server and b' +
+        'roadcasted to other users. This is important for the automatic r' +
+        'ecording of songs on the wishlist.'
+      WordWrap = True
+    end
+    object chkSubmitStreamInfo: TCheckBox
+      Left = 4
+      Top = 0
+      Width = 284
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Submit information about streams to the server'
+      TabOrder = 0
+    end
+    object chkSubmitStats: TCheckBox
+      Left = 4
+      Top = 60
+      Width = 284
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Submit statistics/track changes to the server'
+      TabOrder = 1
     end
   end
   object dlgOpen: TOpenDialog

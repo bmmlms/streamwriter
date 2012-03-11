@@ -116,18 +116,26 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Action = actStopAfterSong
       ImageIndex = 52
     end
-    object cmdOpenWebsite: TToolButton
+    object ToolButton9: TToolButton
       Left = 264
+      Top = 0
+      Width = 8
+      Caption = '-'
+      ImageIndex = 13
+      Style = tbsSeparator
+    end
+    object cmdOpenWebsite: TToolButton
+      Left = 272
       Top = 0
       Action = actOpenWebsite
     end
     object cmdCopyTitle: TToolButton
-      Left = 287
+      Left = 295
       Top = 0
       Action = actCopyTitle
     end
     object ToolButton8: TToolButton
-      Left = 310
+      Left = 318
       Top = 0
       Width = 8
       Caption = 'ToolButton8'
@@ -135,17 +143,17 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsSeparator
     end
     object cmdStreamSettings: TToolButton
-      Left = 318
+      Left = 326
       Top = 0
       Action = actStreamSettings
     end
     object ToolButton6: TToolButton
-      Left = 341
+      Left = 349
       Top = 0
       Action = actResetData
     end
     object ToolButton4: TToolButton
-      Left = 364
+      Left = 372
       Top = 0
       Width = 8
       Caption = '-'
@@ -154,7 +162,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Visible = False
     end
     object cmdShowStreamBrowser: TToolButton
-      Left = 372
+      Left = 380
       Top = 0
       Action = actShowSideBar
       Visible = False
@@ -546,24 +554,8 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object N9: TMenuItem
       Caption = '-'
     end
-    object mnuTuneIn1: TMenuItem
-      Caption = 'Open'
-      object mnuListenToStream1: TMenuItem
-        Action = actTuneInStream
-      end
-      object mnuListenToFile1: TMenuItem
-        Action = actTuneInFile
-      end
-    end
-    object mnuSavePlaylist1: TMenuItem
-      Caption = 'Save playlist'
-      Hint = 'Save as playlist...'
-      object Stream1: TMenuItem
-        Action = actSavePlaylistStream
-      end
-      object Stream2: TMenuItem
-        Action = actSavePlaylistFile
-      end
+    object mnuOpenWebsite1: TMenuItem
+      Action = actOpenWebsite
     end
     object mnuCurrentTitle1: TMenuItem
       Caption = 'Current tit&le'
@@ -583,11 +575,30 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         Action = actAddToStreamIgnoreList
       end
     end
-    object mnuOpenWebsite1: TMenuItem
-      Action = actOpenWebsite
+    object mnuTuneIn1: TMenuItem
+      Caption = 'Open'
+      object mnuListenToStream1: TMenuItem
+        Action = actTuneInStream
+      end
+      object mnuListenToFile1: TMenuItem
+        Action = actTuneInFile
+      end
+    end
+    object mnuSavePlaylist1: TMenuItem
+      Caption = 'Save playlist'
+      Hint = 'Save as playlist...'
+      object Stream1: TMenuItem
+        Action = actSavePlaylistStream
+      end
+      object Stream2: TMenuItem
+        Action = actSavePlaylistFile
+      end
     end
     object mnuMoveToCategory1: TMenuItem
       Caption = 'Move to &category'
+    end
+    object N15: TMenuItem
+      Caption = '-'
     end
     object mnuStreamSettings1: TMenuItem
       Action = actStreamSettings
@@ -2942,6 +2953,33 @@ object frmStreamWriterMain: TfrmStreamWriterMain
           C10066B319DBEDF69FDE603010E82B9B09EE2691483CD5E974E7229108344C24
           8944F287A7459E9E552010603C1ECFC2E1F02D011EB3BD4B26D591A3CC33DD9D
           FE339D0AF80DEA3E02128DBE5A020000000049454E44AE426082}
+      end
+      item
+        Background = clWindow
+        Name = 'block'
+        PngImage.Data = {
+          89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+          610000001974455874536F6674776172650041646F626520496D616765526561
+          647971C9653C000002584944415478DA6364744E6060704D62800346463F2039
+          8101131430FCFFBF09CEDB3D8FE1DF9EF940E52DFBD115EE31D5D330979314E7
+          81093C7AFEF2CBE94B374E02992EC80AFF553B30302638C4322CB48B4116BFE3
+          6065A4FCE9D327B8001F1F1FC38163E7EE02992A280634BA313082ECBF28A7CB
+          5018D10213BF6D6367A6F2F9F367B8425E5E5E8623874EDD01325561625AD22B
+          19AEE42D851800021765B4190A83EA40CC9BE60E166A5FBE7E851BC0C3CDCD70
+          F2C0895B40A63A886FAFD7C420CA77956155E87F84016043A434190ABD2BAE1B
+          BA586B7C4532801B68C0F93D476F00999AF6A61D0CA202D7C1E26003F6313078
+          00D970F7CF310890BA51D923F9FBF76FB801ACACAC0CE737EEBE666F3B415B54
+          F8265C1C6CC02E0686753ADE3EF6125A5A4220C1A56F991936BD63022BB8FCF5
+          DE878F1210C542E2CFBE699A1E7C8EE4E09AD561FF77306E6160386367EA66FC
+          FDF42D8C889F19F4E02C5B958BB1A2A2228AF8836777DE1DBFB8FFE0FAE8FF41
+          8CEB4006E8DA197FBF7C0FD300BF2767B96A9C8CF9F9F9193E7EFC081707F1B7
+          1E5E7F766BF27F13C665200354CD8CBFDF7E8C61C02CAFE767796BECB01AB079
+          FFE6B3BBB38106CC031AE020A36BFCFDC90B0C0366B8BD3E2B546B6DCCCBC3CB
+          F0F90B52BA00F237ECD971F67009D080A94003DCE5F48DFF7CFD866140AFDEED
+          B36275E6C6A068448FD675DBF79D3D5D0734208E8161AE0C03833E031670D39A
+          8141ADC9D4189494D1A375C9AABD67AF74010D00F2B940AE02626634FDBC7C4E
+          0CF54CC20C6AD80CFFF796E1E2C7BDFF931919F003291CE27F81F8F3FFFFFFBF
+          010087ADDCE1FA3A45D00000000049454E44AE426082}
       end>
     PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     Left = 32

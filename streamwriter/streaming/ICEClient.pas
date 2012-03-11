@@ -690,11 +690,7 @@ begin
 
     if FAutoRemove then
     begin
-      if Assigned(FOnDisconnected) and (FICEThread = nil) then
-      begin
-        Kill;
-        FOnDisconnected(Self);
-      end;
+      Kill;
     end;
   end else
   begin

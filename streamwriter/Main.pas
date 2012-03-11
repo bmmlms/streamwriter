@@ -191,6 +191,8 @@ type
     N14: TMenuItem;
     mnuEqualizer: TMenuItem;
     actEqualizer: TAction;
+    ToolButton9: TToolButton;
+    N15: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -697,7 +699,7 @@ begin
     ProcessCommandLine(GetCommandLineW);
 
     if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
-      FUpdater.Start(uaVersion);
+      FUpdater.Start(uaVersion, True);
   end;
 end;
 
@@ -2149,8 +2151,8 @@ begin
   if actPause.Enabled <> OnePlaying and Bass.DeviceAvailable then
     actPause.Enabled := OnePlaying and Bass.DeviceAvailable;
 
-  if actPlay.Enabled <> (Length(Clients) = 1) and Bass.DeviceAvailable then
-    actPlay.Enabled := (Length(Clients) = 1) and Bass.DeviceAvailable;
+  if actPlay.Enabled <> (Length(Clients) = 1) and (not (Clients[0].AutoRemove and (Clients[0].State <> csConnected))) and Bass.DeviceAvailable then
+    actPlay.Enabled := (Length(Clients) = 1) and (not (Clients[0].AutoRemove and (Clients[0].State <> csConnected))) and Bass.DeviceAvailable;
 
   if actStopAfterSong.Enabled <> (Length(Clients) = 1) and (Clients[0].Title <> '') and (Clients[0].Recording) and (not OnlyAutomatedSelected) then
     actStopAfterSong.Enabled := (Length(Clients) = 1) and (Clients[0].Title <> '') and (Clients[0].Recording) and (not OnlyAutomatedSelected);

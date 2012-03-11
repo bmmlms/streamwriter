@@ -449,10 +449,13 @@ begin
   SetLength(FSavedHeaderWidth, 7);
 
   // Set some application-specific settings
+  SetLength(FProjectUpdateLinks, 2);
   {$IFDEF DEBUG}
-  FProjectUpdateLink := 'http://streamwriter.gaia/';
+  FProjectUpdateLinks[0] := 'http://streamwriter.gaia/';
+  FProjectUpdateLinks[1] := 'http://streamwriter.gaia/';
   {$ELSE}
-  FProjectUpdateLink := 'http://streamwriter.org/';
+  FProjectUpdateLinks[0] := 'http://streamwriter.org/';
+  FProjectUpdateLinks[1] := 'http://streamwriter.de/';
   {$ENDIF}
   FProjectHomepageLink := 'http://streamwriter.org/';
   FProjectLink := 'http://streamwriter.org/';

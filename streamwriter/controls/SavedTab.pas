@@ -351,7 +351,7 @@ begin
   Items.Add(FItemCut);
 
   FItemEditTags := CreateMenuItem;
-  FItemEditTags.Caption := '&Edit tags';
+  FItemEditTags.Caption := '&Edit tags...';
   FItemEditTags.ImageIndex := 75;
   Items.Add(FItemEditTags);
 
@@ -520,7 +520,7 @@ begin
 
   FEditTags := TToolButton.Create(Self);
   FEditTags.Parent := Self;
-  FEditTags.Hint := 'Edit tags';
+  FEditTags.Hint := 'Edit tags...';
   FEditTags.ImageIndex := 75;
 
   FCut := TToolButton.Create(Self);
@@ -816,7 +816,7 @@ begin
       PropertiesDialog(Tracks[0].Filename);
     taImport:
       begin
-        Dir := BrowseDialog(GetParentForm(Self).Handle, 'Select folder with files to import:', BIF_RETURNONLYFSDIRS);
+        Dir := BrowseDialog(GetParentForm(Self).Handle, _('Select folder with files to import:'), BIF_RETURNONLYFSDIRS);
         if Dir <> '' then
         begin
           KnownFiles := TStringList.Create;
@@ -1376,7 +1376,7 @@ begin
       if NodeData.Track.WasCut then
         Images.Draw(PaintInfo.Canvas, L + 32, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 17);
       if NodeData.Track.IsAuto then
-        Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 49);
+        Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 77);
       if NodeData.Track.Finalized then
         Images.Draw(PaintInfo.Canvas, L + 48, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 58);
     end;
