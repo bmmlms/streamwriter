@@ -41,7 +41,7 @@ WizardImageFile=compiler:wizmodernimage-is.bmp
 WizardSmallImageFile=wizmodernsmallimage-is.bmp
 Compression=lzma/ultra
 LicenseFile=license.txt
-VersionInfoVersion=3.7.0.0
+VersionInfoVersion=4.0.0.0
 
 [Run]
 Filename: {app}\streamwriter.exe; WorkingDir: {app}; Flags: waituntilidle postinstall skipifsilent; Description: "{cm:Launch}"
@@ -72,15 +72,12 @@ begin
     
   Result := True;
   Handle := 1;
-  while Handle <> 0 do
+  while CheckForMutexes('streamWriterMutex') do
   begin
-    if CheckForMutexes('streamWriterMutex') then
+    if MsgBox(TranslateNewline(ExpandConstant('{cm:Running}')), mbConfirmation, MB_YESNO) = IDNO then
     begin
-      if MsgBox(TranslateNewline(ExpandConstant('{cm:Running}')), mbConfirmation, MB_YESNO) = IDNO then
-      begin
-        Result := False;
-        Break;
-      end;
+      Result := False;
+      Break;
     end;
   end;
 end;
@@ -110,6 +107,7 @@ begin
     //RegDeleteKeyIncludingSubkeys(HKCU, 'Software\mistake.ws\streamWriter');
   end;
 end;
+
 
 
 
