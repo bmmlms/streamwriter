@@ -307,10 +307,12 @@ var
   Addon: TAddonFAAC;
   EC: Cardinal;
 begin
+  Result := False;
+
   Addon := AppGlobals.AddonManager.Find(TAddonFAAC) as TAddonFAAC;
 
   if not Addon.FilesExtracted then
-    Exit(False);
+    Exit;
 
   ToFileTemp := RemoveFileExt(ToFile) + '_convert.aac';
 
@@ -421,10 +423,12 @@ var
   Addon: TAddonOGGEnc;
   EC: Cardinal;
 begin
+  Result := False;
+
   Addon := AppGlobals.AddonManager.Find(TAddonOGGEnc) as TAddonOGGEnc;
 
   if not Addon.FilesExtracted then
-    Exit(False);
+    Exit;
 
   ToFileTemp := RemoveFileExt(ToFile) + '_convert.ogg';
 

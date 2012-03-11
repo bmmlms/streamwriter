@@ -196,6 +196,7 @@ begin
   Counter := 0;
   OldPercent := 0;
   FCheckSum := 0;
+  Position := 0;
 
   SetLength(FWaveArray, 1000);
 
