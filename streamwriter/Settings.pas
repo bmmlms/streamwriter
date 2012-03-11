@@ -957,7 +957,7 @@ begin
   for i := 0 to pnlStreams.ControlCount - 1 do
   begin
     if pnlStreams.Controls[i].ClassType = TCheckBox then
-      pnlStreams.Controls[i].Top := pnlStreams.Controls[i].Top - Substract - 1;
+      pnlStreams.Controls[i].Top := pnlStreams.Controls[i].Top - Substract;
   end;
 
   lblTop.Caption := _('Stream settings');
