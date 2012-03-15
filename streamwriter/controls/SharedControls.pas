@@ -423,26 +423,11 @@ begin
     begin
       case GetGripperState of
         gsNormal:
-          begin
-            if FOrientation = sbHorizontal then
-              DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, False)
-            else
-              DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, False);
-          end;
+          DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, False);
         gsHot:
-          begin
-            if FOrientation = sbHorizontal then
-              DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, True)
-            else
-              DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, True);
-          end;
+          DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, True);
         gsDown:
-          begin
-            if FOrientation = sbHorizontal then
-              DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, True, True)
-            else
-              DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, True, True);
-          end;
+          DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, True, True);
       end;
     end;
 
