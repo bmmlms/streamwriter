@@ -606,7 +606,7 @@ begin
   FDirAuto := TryUnRelativePath(FDirAuto, False);
 
   FStorage.Read('DeleteStreams', FStreamSettings.FDeleteStreams, False);
-  FStorage.Read('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore, True);
+  FStorage.Read('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore, False);
   FStorage.Read('AddSavedToStreamIgnore', FStreamSettings.FAddSavedToStreamIgnore, False);
   FStorage.Read('RemoveSavedFromWishlist', FStreamSettings.FRemoveSavedFromWishlist, False);
   FStorage.Read('SkipShort', FStreamSettings.FSkipShort, True);
@@ -653,7 +653,7 @@ begin
   FStorage.Read('SidebarWidth', FSidebarWidth, 250);
   FStorage.Read('AutoTuneIn', FAutoTuneIn, True);
   FStorage.Read('AutoTuneInConsiderIgnore', FAutoTuneInConsiderIgnore, False);
-  FStorage.Read('AutoTuneInAddToIgnore', FAutoTuneInAddToIgnore, True);
+  FStorage.Read('AutoTuneInAddToIgnore', FAutoTuneInAddToIgnore, False);
   FStorage.Read('AutoRemoveSavedFromWishlist', FAutoRemoveSavedFromWishlist, False);
   FStorage.Read('SubmitStreamInfo', FSubmitStreamInfo, True);
   FStorage.Read('SubmitStats', FSubmitStats, True);

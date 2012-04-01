@@ -188,7 +188,7 @@ function TFileConvertor.Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBo
 var
   Channel: DWORD;
   Freq: Single;
-  Buf: array[0..10000] of Byte;
+  Buf: array of Byte;
   BytesRead: Integer;
   i: UInt64;
   Tmp: AnsiString;
@@ -200,8 +200,12 @@ var
   BitsPerSample: Word;
   ChanInfo: BASS_CHANNELINFO;
   PercentDone: Integer;
+  BytesToRead: Integer;
 begin
   Result := False;
+
+  BytesToRead := 16384;
+  SetLength(Buf, BytesToRead);
 
   Channel := BASSStreamCreateFile(False, PChar(FromFile), 0, 0, BASS_STREAM_DECODE {$IFDEF UNICODE}or BASS_UNICODE{$ENDIF});
 
@@ -262,8 +266,13 @@ begin
 
     while (BASSChannelIsActive(Channel) > 0) do
     begin
-      BytesRead := BASSChannelGetData(Channel, @Buf, 10000);
-      OutStream.Write(buf, BytesRead);
+      if (T > -1) and (BASSChannelGetPosition(Channel, BASS_POS_BYTE) + BytesToRead > T) then
+      begin
+        BytesToRead := T - BASSChannelGetPosition(Channel, BASS_POS_BYTE);
+      end;
+
+      BytesRead := BASSChannelGetData(Channel, @Buf[0], BytesToRead);
+      OutStream.Write(Buf[0], BytesRead);
 
       if Assigned(FOnProgress) then
       begin
@@ -272,7 +281,7 @@ begin
       end;
 
       if T > -1 then
-        if BASSChannelGetPosition(Channel, BASS_POS_BYTE) > T then
+        if BASSChannelGetPosition(Channel, BASS_POS_BYTE) >= T then
           Break;
 
       if (TerminateFlag <> nil) and (TerminateFlag^) then
