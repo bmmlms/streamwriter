@@ -1686,7 +1686,7 @@ begin
     if NodeData.Track = nil then
     begin
       if Column = 1 then
-        Text := _(STREAMNODETEXT);
+        Text := _(STREAMNODETEXT) + ' (' + IntToStr(Node.ChildCount) + ')';
     end else
       case Column of
         1: Text := ExtractFileName(NodeData.Track.Filename);

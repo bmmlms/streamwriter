@@ -680,8 +680,8 @@ begin
 
   // If the delay is too high the thread will block too long so that the user
   // cannot remove clients from the list (if the delay has not yet expired)...
-  if FStreamSettings.FRetryDelay > 10 then
-    FStreamSettings.RetryDelay := 10;
+  if FStreamSettings.FRetryDelay > 9 then
+    FStreamSettings.RetryDelay := 9;
 
   FStorage.Read('SeparateTracks', FStreamSettings.FSeparateTracks, True);
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);

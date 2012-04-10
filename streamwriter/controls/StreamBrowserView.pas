@@ -1079,6 +1079,8 @@ begin
     1: Bitrate := 64;
     2: Bitrate := 128;
     3: Bitrate := 192;
+    4: Bitrate := 256;
+    5: Bitrate := 320;
     else
       raise Exception.Create('');
   end;
@@ -1450,6 +1452,8 @@ begin
   FKbpsList.Items.Add('>= 64');
   FKbpsList.Items.Add('>= 128');
   FKbpsList.Items.Add('>= 192');
+  FKbpsList.Items.Add('>= 256');
+  FKbpsList.Items.Add('= 320');
   FKbpsList.ItemIndex := 0;
 
   FTypeList.Items.Add(_('- No type -'));
