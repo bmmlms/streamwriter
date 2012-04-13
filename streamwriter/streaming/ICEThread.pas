@@ -360,6 +360,8 @@ begin
 end;
 
 procedure TICEThread.DoEnded;
+var
+  StartTime: Cardinal;
 begin
   inherited;
 
@@ -378,8 +380,14 @@ begin
       Sync(FOnRecordingStopped);
   end;
 
-  // Das hier ist die Schlaf-Zeit, die von aussen festgelegt wird. Nicht Retry-Delay!
-  Sleep(FSleepTime * 1000);
+  // FSleepTime ist die Schlaf-Zeit, die von aussen festgelegt wird. Nicht Retry-Delay!
+  StartTime := GetTickCount;
+  while StartTime > GetTickCount - FSleepTime do
+  begin
+    Sleep(100);
+    if Terminated then
+      Exit;
+  end;
 end;
 
 procedure TICEThread.DoException(E: Exception);
@@ -405,7 +413,7 @@ begin
     StartTime := GetTickCount;
     while StartTime > GetTickCount - Delay do
     begin
-      Sleep(500);
+      Sleep(100);
       if Terminated then
         Exit;
     end;

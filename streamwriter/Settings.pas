@@ -2755,8 +2755,8 @@ begin
 
   // Sonst wird kann es zu lange dauern, Clients zu entfernen, wenn der Thread gerade noch schläft.
   // Deshalb Limit auf 10..
-  if StrToIntDef(txtRetryDelay.Text, 5) > 10 then
-    txtRetryDelay.Text := '5';
+  if StrToIntDef(txtRetryDelay.Text, 5) > 999 then
+    txtRetryDelay.Text := '999';
 
   for i := 0 to lstHotkeys.Items.Count - 1 do
     for n := 0 to lstHotkeys.Items.Count - 1 do

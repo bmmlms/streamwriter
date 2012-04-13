@@ -573,13 +573,8 @@ begin
     begin
       WriteDebug(Format(_('Error: %s'), [E.Message]), '', dtError, dlNormal);
 
-      // REMARK: Das hier ist Mist.
-      // Sollte alles in den Thread, diese ganze Procedure in der dieser Kommentar steht.
-      // Mit diesem Schmiermerker 'SleepTime' sage ich dem Thread jetzt 'Warte, bitte.' - aber das ist
-      // irgendwie unschön so. Eigentlich darf nichtmal der Thread schlafen, weil man dann den
-      // Client nicht entfernen kann. SleepTime muss weg!
       if (FRetries < FEntry.Settings.MaxRetries) and (FEntry.Settings.MaxRetries > 0) then
-        FICEThread.SleepTime := FICEThread.RecvStream.Settings.RetryDelay;
+        FICEThread.SleepTime := FICEThread.RecvStream.Settings.RetryDelay * 1000;
 
       FState := csRetrying;
       if Assigned(FOnRefresh) then

@@ -372,7 +372,7 @@ object frmSettings: TfrmSettings
       EditLabel.Width = 101
       EditLabel.Height = 13
       EditLabel.Caption = 'Time between retries:'
-      MaxLength = 1
+      MaxLength = 3
       NumbersOnly = True
       TabOrder = 1
       OnChange = txtRetryDelayChange
