@@ -92,6 +92,7 @@ type
       var Effect: Integer; Mode: TDropMode); override;
     function DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; Pt: TPoint; Mode: TDropMode;
       var Effect: Integer): Boolean; override;
+    procedure DoEdit; override;
     procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
     function DoEndEdit: Boolean; override;
     procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; Text: UnicodeString); override;
@@ -511,6 +512,25 @@ begin
     begin
       // Drag von wo anders (Browser, Streambrowser)
 
+    end;
+  end;
+end;
+
+procedure TMClientView.DoEdit;
+var
+  P: Integer;
+  Edit: TVTEdit;
+begin
+  inherited;
+
+  if (EditLink <> nil) and (EditLink is TStringEditLink) then
+  begin
+    Edit := TStringEditLink(EditLink).Edit;
+    P := Pos('(', Edit.Text);
+    if P > 0 then
+    begin
+      Edit.Text := Copy(Edit.Text, 1, P - 2);
+      Edit.SelectAll;
     end;
   end;
 end;
