@@ -91,7 +91,8 @@ type
     constructor Create(URL: string); reintroduce;
     destructor Destroy; override;
 
-    procedure SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean; RecordTitle: string);
+    procedure SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean;
+      RecordTitle: string; SongsSaved: Cardinal);
 
     procedure StartPlay;
     procedure PausePlay;
@@ -140,13 +141,15 @@ begin
   FPlayer.EQEnabled := Value;
 end;
 
-procedure TICEThread.SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean; RecordTitle: string);
+procedure TICEThread.SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean;
+  RecordTitle: string; SongsSaved: Cardinal);
 begin
   // Das hier wird nur gesynct aus dem Mainthread heraus aufgerufen.
   FTypedStream.Settings.Assign(Settings);
   FTypedStream.RecordTitle := RecordTitle;
   FTypedStream.StopAfterSong := StopAfterSong;
   FTypedStream.Killed := Killed;
+  FTypedStream.SongsSaved := SongsSaved;
 end;
 
 procedure TICEThread.SetVolume(Vol: Integer);

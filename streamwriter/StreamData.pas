@@ -134,6 +134,7 @@ var
   i: Integer;
   R: TPerlRegEx;
   RValid: Boolean;
+  ArtistFound, TitleFound: Boolean;
 begin
   if not HomeComm.Connected then
   begin
@@ -153,10 +154,12 @@ begin
     R.Free;
   end;
 
-  if (Trim(txtTitlePattern.Text) = '') or (Pos('(?P<a>.*)', txtTitlePattern.Text) = 0) or
-    (Pos('(?P<t>.*)', txtTitlePattern.Text) = 0) or not RValid then
+  ArtistFound := (Pos('(?P<a>.*)', txtTitlePattern.Text) > 0) or (Pos('(?P<a>.*?)', txtTitlePattern.Text) > 0);
+  TitleFound := (Pos('(?P<t>.*)', txtTitlePattern.Text) > 0) or (Pos('(?P<t>.*?)', txtTitlePattern.Text) > 0);
+
+  if (Trim(txtTitlePattern.Text) = '') or (not RValid) or (not ArtistFound) or (not TitleFound) then
   begin
-    MsgBox(Handle, _('Please supply a valid regular expression containing the groups (?P<a>.*) and (?P<t>.*). If you don''t have a clue about regular expressions, click the button next to the text field to reset the pattern.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(Handle, _('Please supply a valid regular expression containing the groups (?P<a>.*)/(?P<a>.*?) and (?P<t>.*)/(?P<t>.*?). If you don''t have a clue about regular expressions, click the button next to the text field to reset the pattern.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 

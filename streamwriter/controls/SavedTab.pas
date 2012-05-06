@@ -1008,13 +1008,13 @@ begin
   FTopRightPanel.ClientWidth := 300;
   FTopRightPanel.BevelOuter := bvNone;
 
-  // Panel rechts unten für Position
+  // Panel rechts unten für Positionslabel
   FTopRightBottomPanel := TPanel.Create(Self);
   FTopRightBottomPanel.Parent := FTopRightPanel;
   FTopRightBottomPanel.Align := alTop;
   FTopRightBottomPanel.BevelOuter := bvNone;
 
-  // Panel rechts für Position suchen und Lautstärke
+  // Panel rechts oben für Position suchen und Lautstärke
   FTopRightTopPanel := TPanel.Create(Self);
   FTopRightTopPanel.Parent := FTopRightPanel;
   FTopRightTopPanel.Align := alTop;

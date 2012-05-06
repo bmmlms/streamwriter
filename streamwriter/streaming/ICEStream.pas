@@ -601,6 +601,13 @@ begin
       Exit;
     end;
 
+    // GetSettings ist hier, um FKilled zu bekommen. Wenn es True ist, findet keine Nachbearbeitung
+    // statt, und FileCheck.GetFileName liefert die Original-Dateierweiterung zurück.
+    // Ausserdem muss es FSongsSaved aktualisieren.
+    GetSettings;
+
+    // Wird hier temporär nur für das Speichern hier erhöht. Wird später vom ICEClient
+    // wieder über GetSettings() geholt.
     Inc(FSongsSaved);
     try
       FSaveAllowedTitle := Title;
@@ -634,10 +641,6 @@ begin
             TitleState := tsIncomplete;
         end;
 
-        // GetSettings ist hier, um FKilled zu bekommen. Wenn es True ist, findet keine Nachbearbeitung
-        // statt, und FileCheck.GetFileName liefert die Original-Dateierweiterung zurück.
-        GetSettings;
-
         FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FSavedAlbum, Title, FAudioType, TitleState, FKilled);
         if (FileCheck.Result in [crSave, crOverwrite]) and (FileCheck.FFilename <> '') then
         begin
@@ -664,7 +667,7 @@ begin
               WriteDebug(Format(_('Skipping "%s" - on global ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), 1, 0)
             else
               WriteDebug(Format(_('Skipping "%s" - on stream ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), 1, 0);
-            Dec(FSongsSaved);
+            //Dec(FSongsSaved);
             RemoveData;
             Exit;
           end;
@@ -740,8 +743,8 @@ begin
     except
       on E: Exception do
       begin
-        if not Saved then
-          Dec(FSongsSaved);
+        //if not Saved then
+        //  Dec(FSongsSaved);
         WriteDebug(Format(_('Error while saving "%s": %s'), [ExtractFilename(Filename), E.Message]), 3, 0);
       end;
     end;

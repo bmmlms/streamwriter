@@ -586,7 +586,7 @@ end;
 procedure TICEClient.ThreadNeedSettings(Sender: TSocketThread);
 begin
   // Ignore list etc werden immer kopiert, das kann zeit kosten.
-  FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FStopAfterSong, FKilled, FRecordTitle);
+  FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FStopAfterSong, FKilled, FRecordTitle, FEntry.SongsSaved);
 end;
 
 procedure TICEClient.ThreadPlaybackStarted(Sender: TSocketThread);
