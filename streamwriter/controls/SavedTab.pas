@@ -67,9 +67,11 @@ type
   TSavedTracksPopup = class(TPopupMenu)
   private
     FItemRefresh: TMenuItem;
+    FItemPrev: TMenuItem;
     FItemPlay: TMenuItem;
     FItemPause: TMenuItem;
     FItemStop: TMenuItem;
+    FItemNext: TMenuItem;
     FItemCut: TMenuItem;
     FItemEditTags: TMenuItem;
     FItemFinalized: TMenuItem;
@@ -85,12 +87,14 @@ type
   public
     constructor Create(AOwner: TComponent); override;
 
-    procedure EnableItems(Enable, Playing: Boolean);
+    procedure EnableItems(Enable, Playing, IsFirst, IsLast: Boolean);
 
     property ItemRefresh: TMenuItem read FItemRefresh;
+    property ItemPrev: TMenuItem read FItemPrev;
     property ItemPlay: TMenuItem read FItemPlay;
     property ItemPause: TMenuItem read FItemPause;
     property ItemStop: TMenuItem read FItemStop;
+    property ItemNext: TMenuItem read FItemNext;
     property ItemCut: TMenuItem read FItemCut;
     property ItemEditTags: TMenuItem read FItemEditTags;
     property ItemFinalized: TMenuItem read FItemFinalized;
@@ -108,27 +112,38 @@ type
   private
     FRefresh: TToolButton;
     FSep1: TToolButton;
-    FPlay: TToolButton;
-    FPause: TToolButton;
-    FStop: TToolButton;
-    FSep2: TToolButton;
     FCut: TToolButton;
     FEditTags: TToolButton;
     FFinalized: TToolButton;
     FAddToWishlist: TToolButton;
-    FSep3: TToolButton;
+    FSep2: TToolButton;
     FRename: TToolButton;
     FRemove: TToolButton;
     FRecycle: TToolButton;
     FDelete: TToolButton;
-    FSep4: TToolButton;
+    FSep3: TToolButton;
     FShowFile: TToolButton;
     FProperties: TToolButton;
     FImport: TToolButton;
   public
     constructor Create(AOwner: TComponent); override;
 
-    procedure EnableItems(Enable, Playing: Boolean);
+    procedure EnableItems(Enable: Boolean);
+
+    procedure Setup;
+  end;
+
+  TPlayToolBar = class(TToolBar)
+  private
+    FPrev: TToolButton;
+    FPlay: TToolButton;
+    FPause: TToolButton;
+    FStop: TToolButton;
+    FNext: TToolButton;
+  public
+    constructor Create(AOwner: TComponent); override;
+
+    procedure EnableItems(Enable, Playing, IsFirst, IsLast: Boolean);
 
     procedure Setup;
   end;
@@ -166,8 +181,10 @@ type
     FTopRightPanel: TPanel;
     FTopRightTopPanel: TPanel;
     FTopRightBottomPanel: TPanel;
+    FSeekPosPanel: TPanel;
     FPosLabel: TLabel;
     FToolbar: TSavedToolBar;
+    FPlayToolbar: TPlayToolBar;
     FVolume: TVolumePanel;
     FSeek: TSeekBar;
     FSearchBar: TSearchBar;
@@ -290,6 +307,8 @@ type
 
     procedure Translate;
 
+    function PrevPlayingTrack: TTrackInfo;
+    function NextPlayingTrack: TTrackInfo;
     procedure AddTrack(Track: TTrackInfo; FromFilter: Boolean);
     procedure RemoveTrack(Track: TTrackInfo); overload;
     procedure DeleteTrack(Track: TTrackInfo);
@@ -326,6 +345,11 @@ begin
   ItemTmp.Caption := '-';
   Items.Add(ItemTmp);
 
+  FItemPrev := CreateMenuItem;
+  FItemPrev.Caption := 'Pre&vious';
+  FItemPrev.ImageIndex := 79;
+  Items.Add(FItemPrev);
+
   FItemPlay := CreateMenuItem;
   FItemPlay.Caption := '&Play';
   FItemPlay.ImageIndex := 33;
@@ -340,6 +364,11 @@ begin
   FItemStop.Caption := 'St&op';
   FItemStop.ImageIndex := 1;
   Items.Add(FItemStop);
+
+  FItemNext := CreateMenuItem;
+  FItemNext.Caption := '&Next';
+  FItemNext.ImageIndex := 78;
+  Items.Add(FItemNext);
 
   ItemTmp := CreateMenuItem;
   ItemTmp.Caption := '-';
@@ -356,7 +385,7 @@ begin
   Items.Add(FItemEditTags);
 
   FItemFinalized := CreateMenuItem;
-  FItemFinalized.Caption := '&Finalized';
+  FItemFinalized.Caption := 'Finali&zed';
   FItemFinalized.ImageIndex := 58;
   Items.Add(FItemFinalized);
 
@@ -380,7 +409,7 @@ begin
   Items.Add(FItemRemove);
 
   FItemRecycle := CreateMenuItem;
-  FItemRecycle.Caption := 'R&ecycle files';
+  FItemRecycle.Caption := 'Rec&ycle files';
   FItemRecycle.ImageIndex := 24;
   Items.Add(FItemRecycle);
 
@@ -394,7 +423,7 @@ begin
   Items.Add(ItemTmp);
 
   FItemShowFile := CreateMenuItem;
-  FItemShowFile.Caption := '&Show in explorer';
+  FItemShowFile.Caption := 'Show in e&xplorer';
   FItemShowFile.ImageIndex := 28;
   Items.Add(FItemShowFile);
 
@@ -413,11 +442,13 @@ begin
   Items.Add(FItemImport);
 end;
 
-procedure TSavedTracksPopup.EnableItems(Enable, Playing: Boolean);
+procedure TSavedTracksPopup.EnableItems(Enable, Playing, IsFirst, IsLast: Boolean);
 begin
+  FItemPrev.Enabled := (not IsFirst) and Playing;
   FItemPlay.Enabled := Enable;
   FItemPause.Enabled := Playing;
   FItemStop.Enabled := Playing;
+  FItemNext.Enabled := (not IsLast) and Playing;
   FItemCut.Enabled := Enable;
   FItemEditTags.Enabled := Enable;
   FItemFinalized.Enabled := Enable;
@@ -440,11 +471,8 @@ begin
   Transparent := True;
 end;
 
-procedure TSavedToolBar.EnableItems(Enable, Playing: Boolean);
+procedure TSavedToolBar.EnableItems(Enable: Boolean);
 begin
-  FPlay.Enabled := Enable and Bass.DeviceAvailable;
-  FPause.Enabled := Playing and Bass.DeviceAvailable;
-  FStop.Enabled := Playing and Bass.DeviceAvailable;
   FCut.Enabled := Enable;
   FEditTags.Enabled := Enable;
   FFinalized.Enabled := Enable;
@@ -463,10 +491,10 @@ begin
   FImport.Hint := _('Import files...');
   FImport.ImageIndex := 36;
 
-  FSep4 := TToolButton.Create(Self);
-  FSep4.Parent := Self;
-  FSep4.Style := tbsSeparator;
-  FSep4.Width := 8;
+  FSep3 := TToolButton.Create(Self);
+  FSep3.Parent := Self;
+  FSep3.Style := tbsSeparator;
+  FSep3.Width := 8;
 
   FProperties := TToolButton.Create(Self);
   FProperties.Parent := Self;
@@ -478,10 +506,10 @@ begin
   FShowFile.Hint := _('Show in explorer');
   FShowFile.ImageIndex := 28;
 
-  FSep4 := TToolButton.Create(Self);
-  FSep4.Parent := Self;
-  FSep4.Style := tbsSeparator;
-  FSep4.Width := 8;
+  FSep2 := TToolButton.Create(Self);
+  FSep2.Parent := Self;
+  FSep2.Style := tbsSeparator;
+  FSep2.Width := 8;
 
   FDelete := TToolButton.Create(Self);
   FDelete.Parent := Self;
@@ -503,10 +531,10 @@ begin
   FRename.Hint := 'Rename';
   FRename.ImageIndex := 74;
 
-  FSep3 := TToolButton.Create(Self);
-  FSep3.Parent := Self;
-  FSep3.Style := tbsSeparator;
-  FSep3.Width := 8;
+  FSep2 := TToolButton.Create(Self);
+  FSep2.Parent := Self;
+  FSep2.Style := tbsSeparator;
+  FSep2.Width := 8;
 
   FAddToWishlist := TToolButton.Create(Self);
   FAddToWishlist.Parent := Self;
@@ -527,26 +555,6 @@ begin
   FCut.Parent := Self;
   FCut.Hint := 'Cut';
   FCut.ImageIndex := 17;
-
-  FSep2 := TToolButton.Create(Self);
-  FSep2.Parent := Self;
-  FSep2.Style := tbsSeparator;
-  FSep2.Width := 8;
-
-  FStop := TToolButton.Create(Self);
-  FStop.Parent := Self;
-  FStop.Hint := 'Stop';
-  FStop.ImageIndex := 1;
-
-  FPause := TToolButton.Create(Self);
-  FPause.Parent := Self;
-  FPause.Hint := 'Pause';
-  FPause.ImageIndex := 39;
-
-  FPlay := TToolButton.Create(Self);
-  FPlay.Parent := Self;
-  FPlay.Hint := 'Play';
-  FPlay.ImageIndex := 33;
 
   FSep1 := TToolButton.Create(Self);
   FSep1.Parent := Self;
@@ -652,12 +660,12 @@ begin
       FSeek.Position := Tree.Player.PositionByte;
       FPosLabel.Caption := BuildTime(Tree.Player.PositionTime, False);
     except
-      FPosLabel.Caption := '';
+      FPosLabel.Caption := '00:00';
     end;
   end else
   begin
     FSeek.GripperVisible := False;
-    FPosLabel.Caption := '';
+    FPosLabel.Caption := '00:00';
   end;
 end;
 
@@ -835,6 +843,9 @@ begin
           FImportThread.OnProgress := ImportThreadProgress;
           FImportThread.Resume;
 
+          if FSavedTree.Player.Playing then
+            FSavedTree.FPlayer.Pause;
+
           FSavedTree.Enabled := False;
 
           UpdateButtons;
@@ -851,12 +862,18 @@ begin
     if Assigned(FOnRefresh) then
       FOnRefresh(Self);
 
-  if Sender = FToolbar.FPlay then
+
+  if Sender = FPlayToolbar.FPrev then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemPrev);
+  if Sender = FPlayToolbar.FPlay then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemPlay);
-  if Sender = FToolbar.FPause then
+  if Sender = FPlayToolbar.FPause then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemPause);
-  if Sender = FToolbar.FStop then
+  if Sender = FPlayToolbar.FStop then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemStop);
+  if Sender = FPlayToolbar.FNext then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemNext);
+
   if Sender = FToolbar.FCut then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemCut);
   if Sender = FToolbar.FEditTags then
@@ -884,7 +901,7 @@ end;
 procedure TSavedTab.UpdateButtons;
 var
   i: Integer;
-  AllFinalized: Boolean;
+  AllFinalized, IsFirst, IsLast: Boolean;
   Tracks: TTrackInfoArray;
 begin
   inherited;
@@ -896,24 +913,30 @@ begin
     for i := 0 to Tree.FPopupMenu.Items.Count - 1 do
       Tree.FPopupMenu.Items[i].Enabled := False;
 
-    if Tree.FPlayer.Playing then
-    begin
-      Tree.FPopupMenu.ItemPause.Enabled := True;
-      FToolbar.FPause.Enabled := True;
-
-      Tree.FPopupMenu.ItemStop.Enabled := True;
-      FToolbar.FStop.Enabled := True;
-    end;
+    FPlayToolbar.EnableItems(False, False, True, True);
+    FSavedTree.FPopupMenu.EnableItems(False, False, True, True);
 
     Exit;
   end;
 
   Tracks := Tree.GetSelected;
-  Tree.FPopupMenu.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing);
-  FToolbar.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing or Tree.FPlayer.Paused);
+
+  if Tree.Player.Playing or Tree.Player.Paused then
+  begin
+    IsFirst := FSavedTree.PrevPlayingTrack = nil;
+    IsLast := FSavedTree.NextPlayingTrack = nil;
+  end else
+  begin
+    IsFirst := True;
+    IsLast := True;
+  end;
+
+  Tree.FPopupMenu.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing or Tree.FPlayer.Paused, IsFirst, IsLast);
+  FToolbar.EnableItems(Length(Tracks) > 0);
+  FPlayToolbar.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing or Tree.FPlayer.Paused, IsFirst, IsLast);
 
   Tree.FPopupMenu.ItemPlay.Enabled := Bass.DeviceAvailable and (Length(Tracks) = 1);
-  FToolbar.FPlay.Enabled := Bass.DeviceAvailable and (Length(Tracks) = 1);
+  FPlayToolbar.FPlay.Enabled := Bass.DeviceAvailable and (Length(Tracks) = 1);
 
   Tree.FPopupMenu.ItemShowFile.Enabled := Length(Tracks) = 1;
   FToolbar.FShowFile.Enabled := Length(Tracks) = 1;
@@ -944,8 +967,9 @@ begin
   FToolbar.FFinalized.Down := False;
   FToolbar.FFinalized.Down := AllFinalized;
 
-  FToolbar.FPause.Enabled := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
-  FToolbar.FStop.Enabled := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
+  FPlayToolbar.FPause.Enabled := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
+  FPlayToolbar.FStop.Enabled := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
+
   FSeek.GripperVisible := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
   FSavedTree.Invalidate;
 end;
@@ -1005,10 +1029,10 @@ begin
   FTopRightPanel.Parent := FTopPanel;
   FTopRightPanel.Align := alRight;
   FTopRightPanel.ClientHeight := 52;
-  FTopRightPanel.ClientWidth := 300;
+  FTopRightPanel.ClientWidth := 310;
   FTopRightPanel.BevelOuter := bvNone;
 
-  // Panel rechts unten für Positionslabel
+  // Panel rechts unten für Positionslabel/Playercontrols
   FTopRightBottomPanel := TPanel.Create(Self);
   FTopRightBottomPanel.Parent := FTopRightPanel;
   FTopRightBottomPanel.Align := alTop;
@@ -1021,10 +1045,25 @@ begin
   FTopRightTopPanel.ClientHeight := 24;
   FTopRightTopPanel.BevelOuter := bvNone;
 
+  // Panel für Zeitanzeigen und Playercontrols
+  FSeekPosPanel := TPanel.Create(Self);
+  FSeekPosPanel.Parent := FTopRightBottomPanel;
+  FSeekPosPanel.Align := alClient;
+  FSeekPosPanel.BevelOuter := bvNone;
+
+  FPlayToolbar := TPlayToolBar.Create(Self);
+  FPlayToolbar.Parent := FSeekPosPanel;
+  FPlayToolbar.Align := alLeft;
+  FPlayToolbar.Images := Images;
+  FPlayToolbar.Width := 120;
+  FPlayToolbar.Setup;
+  FPlayToolbar.Left := 0;
+
   FPosLabel := TLabel.Create(Self);
-  FPosLabel.Parent := FTopRightBottomPanel;
-  FPosLabel.Align := alLeft;
-  FPosLabel.Caption := '';
+  FPosLabel.Caption := '00:00';
+  FPosLabel.Parent := FSeekPosPanel;
+  FPosLabel.Left := FPlayToolbar.Left + FPlayToolbar.Width + 4;
+  FPosLabel.Top := FPlayToolbar.Top + 4;
 
   FSearchBar := TSearchBar.Create(Self);
   FSearchBar.Parent := FTopLeftPanel;
@@ -1051,7 +1090,7 @@ begin
   FSeek.Parent := FTopRightTopPanel;
   FSeek.Align := alRight;
   FSeek.Left := FToolbar.Left + FToolbar.Width + 10;
-  FSeek.Width := 150;
+  FSeek.Width := 160;
   FSeek.OnPositionChanged := SeekChange;
 
   FVolume := TVolumePanel.Create(Self);
@@ -1069,9 +1108,13 @@ begin
   FSearchBar.Top := FToolBar.Height + 20;
 
   FToolBar.FRefresh.OnClick := ToolBarClick;
-  FToolBar.FPlay.OnClick := ToolBarClick;
-  FToolBar.FPause.OnClick := ToolBarClick;
-  FToolBar.FStop.OnClick := ToolBarClick;
+
+  FPlayToolBar.FPrev.OnClick := ToolBarClick;
+  FPlayToolBar.FPlay.OnClick := ToolBarClick;
+  FPlayToolBar.FPause.OnClick := ToolBarClick;
+  FPlayToolBar.FStop.OnClick := ToolBarClick;
+  FPlayToolBar.FNext.OnClick := ToolBarClick;
+
   FToolBar.FCut.OnClick := ToolBarClick;
   FToolBar.FEditTags.OnClick := ToolBarClick;
   FToolBar.FFinalized.OnClick := ToolBarClick;
@@ -1151,9 +1194,11 @@ begin
 
   FPopupMenu := TSavedTracksPopup.Create(Self);
   FPopupMenu.ItemRefresh.OnClick := PopupMenuClick;
+  FPopupMenu.ItemPrev.OnClick := PopupMenuClick;
   FPopupMenu.ItemPlay.OnClick := PopupMenuClick;
   FPopupMenu.ItemPause.OnClick := PopupMenuClick;
   FPopupMenu.ItemStop.OnClick := PopupMenuClick;
+  FPopupMenu.ItemNext.OnClick := PopupMenuClick;
   FPopupMenu.ItemCut.OnClick := PopupMenuClick;
   FPopupMenu.ItemEditTags.OnClick := PopupMenuClick;
   FPopupMenu.ItemFinalized.OnClick := PopupMenuClick;
@@ -1442,6 +1487,52 @@ begin
   Invalidate;
 end;
 
+function TSavedTree.PrevPlayingTrack: TTrackInfo;
+var
+  i: Integer;
+  Nodes: TNodeArray;
+  NodeData, NodeDataPrev: PSavedNodeData;
+begin
+  Result := nil;
+  Nodes := GetNodes(False);
+  for i := 0 to Length(Nodes) - 1 do
+  begin
+    NodeData := GetNodeData(Nodes[i]);
+    if LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename) then
+    begin
+      if i > 0 then
+      begin
+        NodeDataPrev := GetNodeData(Nodes[i - 1]);
+        Result := NodeDataPrev.Track;
+      end;
+      Break;
+    end;
+  end;
+end;
+
+function TSavedTree.NextPlayingTrack: TTrackInfo;
+var
+  i: Integer;
+  Nodes: TNodeArray;
+  NodeData, NodeDataNext: PSavedNodeData;
+begin
+  Result := nil;
+  Nodes := GetNodes(False);
+  for i := 0 to Length(Nodes) - 1 do
+  begin
+    NodeData := GetNodeData(Nodes[i]);
+    if LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename) then
+    begin
+      if i < Length(Nodes) - 1 then
+      begin
+        NodeDataNext := GetNodeData(Nodes[i + 1]);
+        Result := NodeDataNext.Track;
+      end;
+      Break;
+    end;
+  end;
+end;
+
 procedure TSavedTree.PopupMenuClick(Sender: TObject);
 var
   Action: TTrackActions;
@@ -1450,7 +1541,15 @@ begin
   Action := taUndefined;
   Tracks := GetSelected;
 
-  if Sender = FPopupMenu.ItemPause then
+  if Sender = FPopupMenu.ItemPrev then
+  begin
+    FPlayer.Stop(False);
+    FPlayer.Filename := PrevPlayingTrack.Filename;
+    FTab.FSeek.Max := FPlayer.MaxByte;
+    FTab.FSeek.Position := 0;
+    FPlayer.Play;
+    Exit;
+  end else if Sender = FPopupMenu.ItemPause then
   begin
     if FPlayer.Paused then
     begin
@@ -1461,11 +1560,18 @@ begin
       FPlayer.Pause;
     FTab.UpdateButtons;
     Exit;
-  end
-  else if Sender = FPopupMenu.ItemStop then
+  end else if Sender = FPopupMenu.ItemStop then
   begin
     FPlayer.Stop(True);
     FTab.UpdateButtons;
+    Exit;
+  end else if Sender = FPopupMenu.ItemNext then
+  begin
+    FPlayer.Stop(False);
+    FPlayer.Filename := NextPlayingTrack.Filename;
+    FTab.FSeek.Max := FPlayer.MaxByte;
+    FTab.FSeek.Position := 0;
+    FPlayer.Play;
     Exit;
   end;
 
@@ -1535,8 +1641,8 @@ end;
 
 procedure TSavedTree.PopupMenuPopup(Sender: TObject);
 begin
-  FPopupMenu.FItemPause.Enabled := FPlayer.Playing;
-  FPopupMenu.FItemStop.Enabled := FPlayer.Playing;
+  FPopupMenu.FItemPause.Enabled := FPlayer.Playing or FPlayer.Paused;
+  FPopupMenu.FItemStop.Enabled := FPlayer.Playing or FPlayer.Paused;
 end;
 
 procedure TSavedTree.AddTrack(Track: TTrackInfo; FromFilter: Boolean);
@@ -2288,6 +2394,7 @@ begin
 
   ProgressBar := TProgressBar.Create(Self);
   ProgressBar.Parent := Self;
+  ProgressBar.Style := pbstMarquee;
 
   Button := TButton.Create(Self);
   Button.Parent := Self;
@@ -2316,6 +2423,9 @@ procedure TImportPanel.SetData(Progress: Integer; CurrentFilename: string);
 var
   W: Integer;
 begin
+  if ProgressBar.Style <> pbstNormal then
+    ProgressBar.Style := pbstNormal;
+
   W := GetTextSize('Importing ""', LabelFilename.Font).cx;
   LabelFilename.Caption := Format(_('Importing "%s"'), [TruncateText(CurrentFilename, LabelFilename.Width - W - 20, LabelFilename.Font)]);
   if ProgressBar.Position <> Progress then
@@ -2324,6 +2434,53 @@ begin
       ProgressBar.Position := Progress + 1;
     ProgressBar.Position := Progress;
   end;
+end;
+
+{ TPlayToolBar }
+
+constructor TPlayToolBar.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  ShowHint := True;
+  Transparent := True;
+end;
+
+procedure TPlayToolBar.EnableItems(Enable, Playing, IsFirst, IsLast: Boolean);
+begin
+  FPrev.Enabled := (not IsFirst) and Playing;
+  FPlay.Enabled := Enable and Bass.DeviceAvailable;
+  FPause.Enabled := Playing and Bass.DeviceAvailable;
+  FStop.Enabled := Playing and Bass.DeviceAvailable;
+  FNext.Enabled := (not IsLast) and Playing;
+end;
+
+procedure TPlayToolBar.Setup;
+begin
+  FNext := TToolButton.Create(Self);
+  FNext.Parent := Self;
+  FNext.Hint := 'Next';
+  FNext.ImageIndex := 78;
+
+  FStop := TToolButton.Create(Self);
+  FStop.Parent := Self;
+  FStop.Hint := 'Stop';
+  FStop.ImageIndex := 1;
+
+  FPause := TToolButton.Create(Self);
+  FPause.Parent := Self;
+  FPause.Hint := 'Pause';
+  FPause.ImageIndex := 39;
+
+  FPlay := TToolButton.Create(Self);
+  FPlay.Parent := Self;
+  FPlay.Hint := 'Play';
+  FPlay.ImageIndex := 33;
+
+  FPrev := TToolButton.Create(Self);
+  FPrev.Parent := Self;
+  FPrev.Hint := 'Previous';
+  FPrev.ImageIndex := 79;
 end;
 
 end.
