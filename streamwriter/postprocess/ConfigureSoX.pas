@@ -193,15 +193,15 @@ begin
 
   if FTitleLength > 0 then
   begin
-    if chkFadeoutStart.Checked and (StrToInt(txtFadeoutStart.Text) > FTitleLength) then
+    if chkFadeoutStart.Checked and (StrToInt(txtFadeoutStart.Text) > FTitleLength / 2) then
     begin
-      MsgBox(Handle, Format(_('The length for fadeout cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
+      MsgBox(Handle, Format(_('The length for fadeout cannot be greater than half the length of the song (%d seconds).'), [FTitleLength div 2]), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
 
-    if chkFadeoutEnd.Checked and (StrToInt(txtFadeoutEnd.Text) > FTitleLength) then
+    if chkFadeoutEnd.Checked and (StrToInt(txtFadeoutEnd.Text) > FTitleLength / 2) then
     begin
-      MsgBox(Handle, Format(_('The length for fadein cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
+      MsgBox(Handle, Format(_('The length for fadein cannot be greater than half the length of the song (%d seconds).'), [FTitleLength div 2]), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
 
