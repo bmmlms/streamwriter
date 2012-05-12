@@ -862,7 +862,6 @@ begin
     if Assigned(FOnRefresh) then
       FOnRefresh(Self);
 
-
   if Sender = FPlayToolbar.FPrev then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemPrev);
   if Sender = FPlayToolbar.FPlay then
@@ -930,6 +929,8 @@ begin
     IsFirst := True;
     IsLast := True;
   end;
+
+  FPlayToolbar.FPause.Down := Tree.Player.Paused;
 
   Tree.FPopupMenu.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing or Tree.FPlayer.Paused, IsFirst, IsLast);
   FToolbar.EnableItems(Length(Tracks) > 0);
@@ -1557,7 +1558,9 @@ begin
         FTab.FOnPlayStarted(FTab);
       FPlayer.Play;
     end else
+    begin
       FPlayer.Pause;
+    end;
     FTab.UpdateButtons;
     Exit;
   end else if Sender = FPopupMenu.ItemStop then
@@ -1582,21 +1585,31 @@ begin
     Action := taRefresh
   else if Sender = FPopupMenu.ItemPlay then
   begin
-    try
-      FPlayer.Volume := Players.Volume;
-      FPlayer.Filename := Tracks[0].Filename;
-    except
-      MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
-      Exit;
-    end;
+    FPlayer.Volume := Players.Volume;
 
-    FTab.FSeek.Max := FPlayer.MaxByte;
-    if not FPlayer.Paused then
+    if FPlayer.Paused then
     begin
-      FTab.FSeek.Position := 0;
-      FPlayer.PositionByte := 0;
+      FPlayer.Play;
+    end else
+    begin
+      if not FPlayer.Paused then
+      begin
+        try
+          FPlayer.Filename := Tracks[0].Filename;
+        except
+          MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
+          Exit;
+        end;
+      end;
+
+      FTab.FSeek.Max := FPlayer.MaxByte;
+      if not FPlayer.Paused then
+      begin
+        FTab.FSeek.Position := 0;
+        FPlayer.PositionByte := 0;
+      end;
+      FPlayer.Play;
     end;
-    FPlayer.Play;
 
     if Assigned(FTab.FOnPlayStarted) then
       FTab.FOnPlayStarted(FTab);

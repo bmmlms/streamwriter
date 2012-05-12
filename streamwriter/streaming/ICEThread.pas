@@ -62,6 +62,7 @@ type
     FPlaybackStarted: Boolean;
 
     function FGetPaused: Boolean;
+    function FGetPlayingPaused: Boolean;
 
     procedure StartRecordingInternal;
     procedure StopRecordingInternal;
@@ -115,6 +116,7 @@ type
     property Playing: Boolean read FPlayingStarted;
     property Paused: Boolean read FGetPaused;
     property SleepTime: Integer read FSleepTime write FSleepTime;
+    property PlayingPaused: Boolean read FGetPlayingPaused;
 
     property OnTitleChanged: TSocketEvent read FOnTitleChanged write FOnTitleChanged;
     property OnSongSaved: TSocketEvent read FOnSongSaved write FOnSongSaved;
@@ -464,6 +466,9 @@ begin
   begin
     StartPlayInternal;
     FPaused := False;
+
+    // Damit Pause-Button .Down := True wird
+    Sync(FOnStateChanged);
   end;
 
   if (not FRecordingStarted) and FRecording then
@@ -524,6 +529,11 @@ end;
 function TICEThread.FGetPaused: Boolean;
 begin
   Result := FPaused or FPlayingPaused;
+end;
+
+function TICEThread.FGetPlayingPaused: Boolean;
+begin
+  Result := FPlayingPaused;
 end;
 
 procedure TICEThread.LockRelay;

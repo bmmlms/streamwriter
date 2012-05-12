@@ -2055,7 +2055,7 @@ procedure TfrmStreamWriterMain.UpdateButtons;
 var
   i: Integer;
   B, OnlyAutomatedSelected, OnlyAutomatedCatsSelected: Boolean;
-  URLFound, FilenameFound, OnePlaying, AnyClientHasTitle: Boolean;
+  URLFound, FilenameFound, OnePlaying, OnePaused, AnyClientHasTitle: Boolean;
   Clients, AllClients: TClientArray;
   Client: TICEClient;
   CatNodes: TNodeArray;
@@ -2072,6 +2072,7 @@ begin
   FilenameFound := False;
   OnlyAutomatedSelected := True;
   OnePlaying := False;
+  OnePaused := False;
   OnlyAutomatedCatsSelected := Length(Clients) = 0;
 
   for Client in Clients do
@@ -2086,6 +2087,13 @@ begin
     if Client.Playing then
     begin
       OnePlaying := True;
+      Break;
+    end;
+
+  for Client in AllClients do
+    if Client.Paused then
+    begin
+      OnePaused := True;
       Break;
     end;
 
@@ -2166,6 +2174,8 @@ begin
   if mnuCurrentTitle1.Enabled <> (Length(Clients) > 0) and AnyClientHasTitle then
     mnuCurrentTitle1.Enabled := (Length(Clients) > 0) and AnyClientHasTitle;
 
+  cmdPause.Down := OnePaused;
+  
   actCopyTitle.Enabled := (Length(Clients) > 0) and AnyClientHasTitle;
 end;
 

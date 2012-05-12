@@ -550,6 +550,9 @@ begin
   else
     if Assigned(FOnPlayStarted) then
       FOnPlayStarted(Self);
+
+  if Assigned(FOnUpdateButtons) then
+    FOnUpdateButtons(Sender);
 end;
 
 procedure TClientTab.ActionPauseExecute(Sender: TObject);
@@ -560,11 +563,14 @@ begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
   for Client in Clients do
   begin
+    Client.PausePlay;
     if Client.Paused then
       if Assigned(FOnPlayStarted) then
         FOnPlayStarted(Self);
-    Client.PausePlay;
   end;
+
+  if Assigned(FOnUpdateButtons) then
+    FOnUpdateButtons(Sender);
 end;
 
 procedure TClientTab.ActionPlayStopExecute(Sender: TObject);
