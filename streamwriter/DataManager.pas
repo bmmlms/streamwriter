@@ -536,7 +536,7 @@ type
   end;
 
 const
-  DATAVERSION = 41;
+  DATAVERSION = 42;
 
 implementation
 
@@ -750,8 +750,8 @@ begin
 
     // Das hier sollte eigentlich in TStreamSettings.Load. Der Compiler scheint kaputt zu sein und meint
     // in .Load, dass es kein Result.FRetryDelay gibt... Ich versuche das mal, hier zu machen...
-    if Result.FSettings.RetryDelay > 10 then
-      Result.FSettings.RetryDelay := 10;
+    if Result.FSettings.RetryDelay > 999 then
+      Result.FSettings.RetryDelay := 999;
   end else
   begin
     // Defaults benutzen..

@@ -121,6 +121,7 @@ type
     FSavedWasCut: Boolean;
     FSavedFullTitle: Boolean;
     FBytesPerSec: Integer;
+    FBytesPerMSec: Extended;
 
     FSaveAllowedTitle: string;
     FSaveAllowed: Boolean;
@@ -229,12 +230,12 @@ implementation
 function TICEStream.CalcAdjustment(Offset: Int64): Int64;
 begin
   Result := Offset;
-  if (FBytesPerSec > 0) and (FSettings.AdjustTrackOffset) and (FSettings.AdjustTrackOffsetMS > 0) then
+  if (FBytesPerMSec > 0) and (FSettings.AdjustTrackOffset) and (FSettings.AdjustTrackOffsetMS > 0) then
   begin
     if FSettings.AdjustTrackOffsetDirection = toForward then
-      Result := Result + Trunc(FSettings.AdjustTrackOffsetMS * (FBytesPerSec / 1000))
+      Result := Result + Trunc(FSettings.AdjustTrackOffsetMS * FBytesPerMSec)
     else
-      Result := Result - Trunc(FSettings.AdjustTrackOffsetMS * (FBytesPerSec / 1000));
+      Result := Result - Trunc(FSettings.AdjustTrackOffsetMS * FBytesPerMSec);
 
     if Result < 0 then
       Result := 0;
@@ -271,6 +272,7 @@ begin
     if BufLen = -1 then
       raise Exception.Create('');
     FBytesPerSec := Trunc((BufLen / (125 * Time) + 0.5) * 125);
+    FBytesPerMSec := FBytesPerSec / 1000;
     FBitRate := Trunc(BufLen / Floor(((125 * Time)) + 0.5));
 
     FBitrate := RoundBitrate(FBitrate);
@@ -339,8 +341,8 @@ begin
   begin
     Track := FStreamTracks[0];
     Track.E := FAudioStream.Size;
-    if Track.S - FSettings.SongBufferSeconds * FBytesPerSec >= 0 then
-      Track.S := Track.S - FSettings.SongBufferSeconds * FBytesPerSec;
+    if Track.S - FSettings.SongBuffer * FBytesPerMSec >= 0 then
+      Track.S := Track.S - Trunc(FSettings.SongBuffer * FBytesPerMSec);
     SaveData(Track.S, Track.E, Track.Title, False);
     FStreamTracks.Clear;
   end;
@@ -504,6 +506,7 @@ begin
     // Wir setzen auch diese beiden Stream-Eigenschaften, weil die Datei ja aussagekräftiger
     // ist, als die paar Bytes aus CalcBytesPerSec()
     FBytesPerSec := Trunc((BufLen / (125 * Time) + 0.5) * 125);
+    FBytesPerMSec := FBytesPerSec / 1000;
 
     OldBitrate := FBitRate;
     FBitrate := Bitrate;
@@ -539,10 +542,10 @@ procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
     // oder der normale Puffer genutzt wird.
     if FAudioStream.ClassType.InheritsFrom(TAudioStreamMemory) then
     begin
-      BufLen := Max(FBytesPerSec * FSettings.SilenceBufferSecondsStart, FBytesPerSec * FSettings.SongBufferSeconds);
+      BufLen := Max(FBytesPerSec * FSettings.SilenceBufferSecondsStart, Trunc(FBytesPerMSec * FSettings.SongBuffer));
 
       if FSettings.AdjustTrackOffset and (FSettings.AdjustTrackOffsetDirection = toBackward) then
-        BufLen := BufLen + Trunc(FSettings.AdjustTrackOffsetMS * (FBytesPerSec / 1000));
+        BufLen := BufLen + Trunc(FSettings.AdjustTrackOffsetMS * FBytesPerMSec);
 
       if FStreamTracks.Count > 0 then
       begin
@@ -565,15 +568,12 @@ procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
     end;
   end;
 var
-  Saved: Boolean;
   Dir, Filename, FilenameConverted: string;
   FileCheck: TFileChecker;
   P: TPosRect;
   Error: Cardinal;
   TitleState: TTitleStates;
 begin
-  Saved := False;
-
   try
     if FClientStopRecording then
       Exit;
@@ -707,8 +707,6 @@ begin
 
       RemoveData;
 
-      Saved := True;
-
       try
         FSavedFilename := Dir + Filename;
         FSavedFilenameConverted := Dir + FilenameConverted;
@@ -743,8 +741,6 @@ begin
     except
       on E: Exception do
       begin
-        //if not Saved then
-        //  Dec(FSongsSaved);
         WriteDebug(Format(_('Error while saving "%s": %s'), [ExtractFilename(Filename), E.Message]), 3, 0);
       end;
     end;
@@ -924,7 +920,7 @@ begin
             if R.DataStart = -1 then
             begin
               WriteDebug('No silence at SongStart could be found, using configured buffer', 1, 1);
-              R.DataStart := TrackStart - FSettings.SongBufferSeconds * FBytesPerSec;
+              R.DataStart := TrackStart - Trunc(FSettings.SongBuffer * FBytesPerMSec);
               if R.DataStart < FAudioStream.Size then
                 R.DataStart := TrackStart;
             end else
@@ -933,7 +929,7 @@ begin
             if R.DataEnd = -1 then
             begin
               WriteDebug('No silence at SongEnd could be found', 1, 1);
-              R.DataEnd := TrackEnd + FSettings.SongBufferSeconds * FBytesPerSec;
+              R.DataEnd := TrackEnd + Trunc(FSettings.SongBuffer * FBytesPerMSec);
               if R.DataEnd > FAudioStream.Size then
               begin
                 WriteDebug('Stream is too small, waiting for more data...', 1, 1);
@@ -961,17 +957,17 @@ begin
             WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]), 1, 1);
           end else
           begin
-            if (FAudioStream.Size >= TrackStart + (TrackEnd - TrackStart) + ((FSettings.SongBufferSeconds * FBytesPerSec) * 2)) and
-               (FAudioStream.Size > TrackEnd + (FSettings.SongBufferSeconds * FBytesPerSec) * 2) then
+            if (FAudioStream.Size >= TrackStart + (TrackEnd - TrackStart) + ((FSettings.SongBuffer * FBytesPerMSec) * 2)) and
+               (FAudioStream.Size > TrackEnd + (FSettings.SongBuffer * FBytesPerMSec) * 2) then
             begin
-              WriteDebug(Format('No silence found, saving using buffer of %d bytes...', [FSettings.SongBufferSeconds * FBytesPerSec]), 1, 1);
+              WriteDebug(Format('No silence found, saving using buffer of %d bytes...', [Trunc(FSettings.SongBuffer * FBytesPerMSec)]), 1, 1);
 
               if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
               begin
                 if FRecordTitle <> '' then
-                  SaveData(TrackStart - FSettings.SongBufferSeconds * FBytesPerSec, TrackEnd + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title, True)
+                  SaveData(TrackStart - Trunc(FSettings.SongBuffer * FBytesPerMSec), TrackEnd + Trunc(FSettings.SongBuffer * FBytesPerMSec), Track.Title, True)
                 else
-                  SaveData(TrackStart - FSettings.SongBufferSeconds * FBytesPerSec, TrackEnd + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title, Track.FullTitle);
+                  SaveData(TrackStart - Trunc(FSettings.SongBuffer * FBytesPerMSec), TrackEnd + Trunc(FSettings.SongBuffer * FBytesPerMSec), Track.Title, Track.FullTitle);
               end else
                 WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
 
@@ -989,17 +985,17 @@ begin
         end;
       end else
       begin
-        if (FAudioStream.Size >= TrackStart + (TrackEnd - TrackStart) + ((FSettings.SongBufferSeconds * FBytesPerSec) * 2)) and
-           (FAudioStream.Size > TrackEnd + FSettings.SongBufferSeconds * FBytesPerSec) then
+        if (FAudioStream.Size >= TrackStart + (TrackEnd - TrackStart) + ((FSettings.SongBuffer * FBytesPerMSec) * 2)) and
+           (FAudioStream.Size > TrackEnd + FSettings.SongBuffer * FBytesPerMSec) then
         begin
-          WriteDebug(Format('Saving using buffer of %d bytes...', [FSettings.SongBufferSeconds * FBytesPerSec]), 1, 1);
+          WriteDebug(Format('Saving using buffer of %d bytes...', [Trunc(FSettings.SongBuffer * FBytesPerMSec)]), 1, 1);
 
           if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
           begin
             if FRecordTitle <> '' then
-              SaveData(TrackStart - FSettings.SongBufferSeconds * FBytesPerSec, TrackEnd + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title, True)
+              SaveData(TrackStart - Trunc(FSettings.SongBuffer * FBytesPerMSec), TrackEnd + Trunc(FSettings.SongBuffer * FBytesPerMSec), Track.Title, True)
             else
-              SaveData(TrackStart - FSettings.SongBufferSeconds * FBytesPerSec, TrackEnd + FSettings.SongBufferSeconds * FBytesPerSec, Track.Title, Track.FullTitle);
+              SaveData(TrackStart - Trunc(FSettings.SongBuffer * FBytesPerMSec), TrackEnd + Trunc(FSettings.SongBuffer * FBytesPerMSec), Track.Title, Track.FullTitle);
           end else
             WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
 
@@ -1080,33 +1076,6 @@ begin
       begin
         FRemoveClient := True;
       end;
-
-    {
-    if (RecordTitle <> '') and (FBytesPerSec > 0) and (FTitle <> FRecordTitle) and (not FStreamTracks.Find(FRecordTitle)) then
-    begin
-      if FStreamTracks.Count > 0 then
-      begin
-        Track := FStreamTracks[FStreamTracks.Count - 1];
-
-        if (FMetaCounter > 2) and (Track.E > -1) and (FAudioStream.Size > Track.E +
-          Max(FBytesPerSec * (FSettings.SilenceBufferSecondsEnd + 10), FBytesPerSec * (FSettings.SongBufferSeconds + 10))) then
-        begin
-          // Zuviel empfangen und Titel war nicht dabei
-          FRemoveClient := True;
-        end;
-      end;
-
-      if (FAudioStream.Size > FBytesPerSec * 30) and (FMetaCounter <= 1) then
-      begin
-        // Titel scheint nicht zu kommen..
-        FRemoveClient := True;
-      end;
-
-      // Paranoid, I is it.
-      if FMetaCounter > 4 then
-        FRemoveClient := True;
-    end;
-    }
 
     while RecvStream.Size > 0 do
     begin

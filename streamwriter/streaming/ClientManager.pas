@@ -370,7 +370,7 @@ begin
 
         Client.Entry.Settings.SilenceLevel := 5;
         Client.Entry.Settings.SilenceLength := 100;
-        Client.Entry.Settings.SongBufferSeconds := 10;
+        Client.Entry.Settings.SongBuffer := 10000;
         Client.Entry.Settings.SilenceBufferSecondsStart := 15;
         Client.Entry.Settings.SilenceBufferSecondsEnd := 15;
         Client.Entry.Settings.AutoDetectSilenceLevel := True;

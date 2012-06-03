@@ -111,7 +111,7 @@ type
     FSilenceBufferSecondsStart: Integer;
     FSilenceBufferSecondsEnd: Integer;
     FShortLengthSeconds: Integer;
-    FSongBufferSeconds: Integer;
+    FSongBuffer: Integer;
     FAdjustTrackOffset: Boolean;
     FAdjustTrackOffsetMS: Cardinal;
     FAdjustTrackOffsetDirection: TTrackOffsetDirection;
@@ -186,7 +186,7 @@ type
     // When a recorded song is shorter than the defined length it is discarded if SkipShort is set
     property ShortLengthSeconds: Integer read FShortLengthSeconds write FShortLengthSeconds;
     // Use this area of audio data if no silence could be found. It will be appended to the start/end of the song
-    property SongBufferSeconds: Integer read FSongBufferSeconds write FSongBufferSeconds;
+    property SongBuffer: Integer read FSongBuffer write FSongBuffer;
     // When set the detected track offset will be moved
     property AdjustTrackOffset: Boolean read FAdjustTrackOffset write FAdjustTrackOffset;
     // Milliseconds to move the detected track offset
@@ -641,7 +641,15 @@ begin
     FStreamSettings.FSilenceLength := 20;
 
   FStorage.Read('ShortLengthSeconds', FStreamSettings.FShortLengthSeconds, 45);
-  FStorage.Read('SongBufferSeconds', FStreamSettings.FSongBufferSeconds, 0);
+
+  // REMARK: Field was renamed, so load it this way... Can be changed later.
+  FStorage.Read('SongBuffer', FStreamSettings.FSongBuffer, -1234);
+  if FStreamSettings.FSongBuffer = -1234 then
+  begin
+    FStorage.Read('SongBufferSeconds', FStreamSettings.FSongBuffer, 0);
+    FStreamSettings.FSongBuffer := FStreamSettings.FSongBuffer * 1000;
+  end;
+
   FStorage.Read('MaxRetries', FStreamSettings.FMaxRetries, 100);
   FStorage.Read('RetryDelay', FStreamSettings.FRetryDelay, 5);
 
@@ -678,8 +686,6 @@ begin
   if FAutoTuneInFormat > 2 then
     FAutoTuneInFormat := 0;
 
-  // If the delay is too high the thread will block too long so that the user
-  // cannot remove clients from the list (if the delay has not yet expired)...
   if FStreamSettings.FRetryDelay > 999 then
     FStreamSettings.RetryDelay := 999;
 
@@ -826,7 +832,9 @@ begin
   FStorage.Write('SaveToMemory', FStreamSettings.FSaveToMemory);
   FStorage.Write('OnlySaveFull', FStreamSettings.FOnlySaveFull);
   FStorage.Write('ShortLengthSeconds', FStreamSettings.FShortLengthSeconds);
-  FStorage.Write('SongBufferSeconds', FStreamSettings.FSongBufferSeconds);
+  FStorage.Write('SongBuffer', FStreamSettings.FSongBuffer);
+  // REMARK: Das .Delete() kann irgendwann raus.
+  FStorage.Delete('SongBufferSeconds');
   FStorage.Write('MaxRetries', FStreamSettings.FMaxRetries);
   FStorage.Write('RetryDelay', FStreamSettings.FRetryDelay);
   FStorage.Write('DefaultFilter', Integer(FStreamSettings.Filter));
@@ -1073,11 +1081,14 @@ begin
   end;
 
   if Version >= 9 then
-    Stream.Read(Result.FSongBufferSeconds)
-  else
+  begin
+    Stream.Read(Result.FSongBuffer);
+    if Version < 42 then
+      Result.FSongBuffer := Result.FSongBuffer * 1000;
+  end else
   begin
     Stream.Read(FilterTmp);
-    Result.FSongBufferSeconds := 0;
+    Result.FSongBuffer := 0;
   end;
 
   Stream.Read(Result.FMaxRetries);
@@ -1221,7 +1232,7 @@ begin
   Stream.Write(FSilenceBufferSecondsStart);
   Stream.Write(FSilenceBufferSecondsEnd);
   Stream.Write(FShortLengthSeconds);
-  Stream.Write(FSongBufferSeconds);
+  Stream.Write(FSongBuffer);
   Stream.Write(FMaxRetries);
   Stream.Write(FRetryDelay);
   Stream.Write(Integer(FFilter));
@@ -1285,7 +1296,7 @@ begin
   FSilenceBufferSecondsStart := From.FSilenceBufferSecondsStart;
   FSilenceBufferSecondsEnd := From.FSilenceBufferSecondsEnd;
   FShortLengthSeconds := From.FShortLengthSeconds;
-  FSongBufferSeconds := From.FSongBufferSeconds;
+  FSongBuffer := From.FSongBuffer;
   FMaxRetries := From.FMaxRetries;
   FRetryDelay := From.FRetryDelay;
   FFilter := From.FFilter;

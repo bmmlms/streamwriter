@@ -595,7 +595,7 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
     begin
-      if S.SongBufferSeconds <> FStreamSettings[i].SongBufferSeconds then
+      if S.SongBuffer <> FStreamSettings[i].SongBuffer then
       begin
         F := True;
         ShowDialog := True;
@@ -1064,7 +1064,7 @@ begin
     txtMaxSpeed.Text := IntToStr(AppGlobals.MaxSpeed);
 
   txtShortLengthSeconds.Text := IntToStr(Settings.ShortLengthSeconds);
-  txtSongBuffer.Text := IntToStr(Settings.SongBufferSeconds);
+  txtSongBuffer.Text := IntToStr(Settings.SongBuffer);
   txtMaxRetries.Text := IntToStr(Settings.MaxRetries);
   txtRetryDelay.Text := IntToStr(Settings.RetryDelay);
   txtMinDiskSpace.Text := IntToStr(AppGlobals.MinDiskSpace);
@@ -1231,7 +1231,7 @@ begin
           FStreamSettings[i].SkipShort := chkSkipShort.Checked;
 
         if FIgnoreFieldList.IndexOf(txtSongBuffer) = -1 then
-          FStreamSettings[i].SongBufferSeconds := StrToIntDef(txtSongBuffer.Text, 0);
+          FStreamSettings[i].SongBuffer := StrToIntDef(txtSongBuffer.Text, 0);
 
         if FIgnoreFieldList.IndexOf(txtShortLengthSeconds) = -1 then
           FStreamSettings[i].ShortLengthSeconds := StrToIntDef(txtShortLengthSeconds.Text, 45);
@@ -1383,7 +1383,7 @@ begin
     if pnlCut.Tag = 0 then
     begin
       AppGlobals.StreamSettings.SkipShort := chkSkipShort.Checked;
-      AppGlobals.StreamSettings.SongBufferSeconds := StrToIntDef(txtSongBuffer.Text, 0);
+      AppGlobals.StreamSettings.SongBuffer := StrToIntDef(txtSongBuffer.Text, 0);
       AppGlobals.StreamSettings.ShortLengthSeconds := StrToIntDef(txtShortLengthSeconds.Text, 45);
       AppGlobals.StreamSettings.SearchSilence := chkSearchSilence.Checked;
       AppGlobals.StreamSettings.AutoDetectSilenceLevel := not chkManualSilenceLevel.Checked;
@@ -2753,8 +2753,6 @@ begin
       Exit;
     end;
 
-  // Sonst wird kann es zu lange dauern, Clients zu entfernen, wenn der Thread gerade noch schläft.
-  // Deshalb Limit auf 10..
   if StrToIntDef(txtRetryDelay.Text, 5) > 999 then
     txtRetryDelay.Text := '999';
 

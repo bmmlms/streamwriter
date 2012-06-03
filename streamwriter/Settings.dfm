@@ -627,9 +627,9 @@ object frmSettings: TfrmSettings
     object Label5: TLabel
       Left = 56
       Top = 240
-      Width = 40
+      Width = 56
       Height = 13
-      Caption = 'seconds'
+      Caption = 'milliseconds'
     end
     object Label10: TLabel
       Left = 36
@@ -689,7 +689,7 @@ object frmSettings: TfrmSettings
       EditLabel.Width = 242
       EditLabel.Height = 13
       EditLabel.Caption = 'If no silence was found, append buffer to start/end:'
-      MaxLength = 2
+      MaxLength = 5
       NumbersOnly = True
       TabOrder = 0
       OnChange = txtSongBufferChange
