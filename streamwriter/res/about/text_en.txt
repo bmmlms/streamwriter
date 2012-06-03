@@ -32,7 +32,7 @@ famfamfam
 FastMM
 freecsstemplates.org
 Fugue Icons
-Gimp
+GIMP
 Inno Setup
 jQuery
 LAME
