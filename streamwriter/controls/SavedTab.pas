@@ -1223,12 +1223,15 @@ begin
   FColSize := Header.Columns.Add;
   FColSize.Text := _('Size');
   FColLength := Header.Columns.Add;
+  FColLength.Alignment := taRightJustify;
   FColLength.Text := _('Length');
   FColBitRate := Header.Columns.Add;
+  FColBitRate.Alignment := taRightJustify;
   FColBitRate.Text := _('Bitrate');
   FColStream := Header.Columns.Add;
   FColStream.Text := _('Stream');
   FColSaved := Header.Columns.Add;
+  FColSaved.Alignment := taRightJustify;
   FColSaved.Text := _('Time');
 
   Header.Options := Header.Options + [hoAutoResize];

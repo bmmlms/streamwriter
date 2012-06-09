@@ -212,10 +212,13 @@ begin
   FColTitle := Header.Columns.Add;
   FColTitle.Text := _('Title');
   FColRcvd := Header.Columns.Add;
+  FColRcvd.Alignment := taRightJustify;
   FColRcvd.Text := _('Received');
   FColSongs := Header.Columns.Add;
+  FColSongs.Alignment := taRightJustify;
   FColSongs.Text := _('Songs');
   FColSpeed := Header.Columns.Add;
+  FColSpeed.Alignment := taRightJustify;
   FColSpeed.Text := _('Speed');
   FColStatus := Header.Columns.Add;
   FColStatus.Text := _('State');

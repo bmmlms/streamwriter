@@ -296,6 +296,7 @@ type
     procedure tabClientsShowErrorMessage(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
     procedure tabClientsClientAdded(Sender: TObject);
     procedure tabClientsClientRemoved(Sender: TObject);
+    procedure tabClientsPlayingStreamChanged(Sender: TObject; Data: string);
 
     procedure tabSavedCut(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
@@ -323,6 +324,9 @@ type
     procedure SetHintSize(HintWindow: TCustomHintWindow); override;
     procedure PaintHint(HintWindow: TCustomHintWindow); override;
   end;
+
+const
+  MAIN_CAPTION = 'streamWriter';
 
 implementation
 
@@ -832,6 +836,7 @@ begin
   tabSaved.Setup(FDataLists, imgImages);
   tabClients.AddressBar.Stations.Sort;
 
+  Caption := MAIN_CAPTION;
   {$IFDEF DEBUG}Caption := Caption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
 
   UpdateButtons;
@@ -858,6 +863,7 @@ begin
 
   tabClients.OnClientAdded := tabClientsClientAdded;
   tabClients.OnClientRemoved := tabClientsClientRemoved;
+  tabClients.OnPlayingStreamChanged := tabClientsPlayingStreamChanged;
 
   // Ist nun hier, damit man nicht sieht, wie sich alle Controls resizen.
   if AppGlobals.MainMaximized then
@@ -1583,6 +1589,15 @@ var
 begin
   Client := Sender as TICEClient;
   tabLists.RemoveClient(Client);
+end;
+
+procedure TfrmStreamWriterMain.tabClientsPlayingStreamChanged(
+  Sender: TObject; Data: string);
+begin
+  if Data <> '' then
+    Caption := MAIN_CAPTION + ' - ' + Data
+  else if (Data = '') and (Caption <> MAIN_CAPTION) then
+    Caption := MAIN_CAPTION;
 end;
 
 procedure TfrmStreamWriterMain.tabSavedAddTitleToWishlist(Sender: TObject;

@@ -120,6 +120,7 @@ type
     FOnClientRemoved: TNotifyEvent;
     FOnAddTitleToList: TAddTitleEvent;
     FOnRemoveTitleFromList: TAddTitleEvent;
+    FOnPlayingStreamChanged: TStringEvent;
 
     procedure ShowInfo;
 
@@ -210,6 +211,7 @@ type
     property OnClientRemoved: TNotifyEvent read FOnClientRemoved write FOnClientRemoved;
     property OnAddTitleToList: TAddTitleEvent read FOnAddTitleToList write FOnAddTitleToList;
     property OnRemoveTitleFromList: TAddTitleEvent read FOnRemoveTitleFromList write FOnRemoveTitleFromList;
+    property OnPlayingStreamChanged: TStringEvent read FOnPlayingStreamChanged write FOnPlayingStreamChanged;
   end;
 
 implementation
@@ -950,6 +952,8 @@ begin
     FPlaybackTimer.Enabled := False;
     FPlaybackTimer.Enabled := True;
   end;
+  if Assigned(FOnPlayingStreamChanged) then
+    FOnPlayingStreamChanged(Self, TICEClient(Sender).Entry.Name);
 end;
 
 procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string;
@@ -1034,6 +1038,7 @@ procedure TClientTab.ClientManagerRefresh(Sender: TObject);
 var
   i: Integer;
   OnePlaying: Boolean;
+  OnePlayingName: string;
 begin
   FClientView.RefreshClient(Sender as TICEClient);
 
@@ -1043,16 +1048,22 @@ begin
     if FClients[i].Playing and (FClients[i].State = csConnected) then
     begin
       OnePlaying := True;
+      OnePlayingName := FClients[i].Entry.Name;
       Break;
     end;
   end;
+
   if OnePlaying then
   begin
     FPlaybackTimer.Enabled := True;
+    if Assigned(FOnPlayingStreamChanged) then
+      FOnPlayingStreamChanged(Self, OnePlayingName);
   end else
   begin
     FPlaybackTimer.Enabled := False;
     FTimeLabel.Caption := '';
+    if Assigned(FOnPlayingStreamChanged) then
+      FOnPlayingStreamChanged(Self, '');
   end;
 
   if Assigned(FOnUpdateButtons) then
@@ -1645,7 +1656,6 @@ begin
         E := NodeData.Client.Entry.Copy;
         E.Index := Nodes[i].Index;
         E.CategoryIndex := 0;
-        E.WasRecording := NodeData.Client.Recording and AppGlobals.RememberRecordings;
         if Nodes[i].Parent <> FClientView.RootNode then
         begin
           E.CategoryIndex := CatIdx;
@@ -1700,6 +1710,7 @@ begin
       end;
       if Streams.StreamList[i].WasRecording and AppGlobals.RememberRecordings then
         Client.StartRecording(True);
+      Client.Entry.WasRecording := False;
     end;
   end;
 

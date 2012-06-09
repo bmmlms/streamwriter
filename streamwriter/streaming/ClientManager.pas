@@ -236,7 +236,10 @@ var
   i: Integer;
 begin
   for i := Count - 1 downto 0 do
+  begin
+    FClients[i].Entry.WasRecording := FClients[i].Recording;
     FClients[i].Stop;
+  end;
 end;
 
 procedure TClientManager.Terminate;

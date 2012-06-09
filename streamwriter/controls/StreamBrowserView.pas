@@ -1493,19 +1493,23 @@ begin
 
   FItemName := CreateMenuItem;
   FItemName.Caption := _('Name');
+  FItemName.RadioItem := True;
   Items.Add(FItemName);
 
   FItemKbps := CreateMenuItem;
   FItemKbps.Caption := _('Kbps');
+  FItemKbps.RadioItem := True;
   Items.Add(FItemKbps);
 
   FItemType := CreateMenuItem;
   FItemType.Caption := _('Type');
+  FItemType.RadioItem := True;
   Items.Add(FItemType);
 
   FItemRating := CreateMenuItem;
   FItemRating.Caption := _('Rating');
   FItemRating.Checked := True;
+  FItemRating.RadioItem := True;
   Items.Add(FItemRating);
 end;
 
