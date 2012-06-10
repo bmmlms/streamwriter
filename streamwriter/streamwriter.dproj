@@ -208,6 +208,7 @@
 				<Form>frmEqualizer</Form>
 			</DCCReference>
 			<DCCReference Include="SWFunctions.pas"/>
+			<DCCReference Include="..\..\common\SplashThread.pas"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

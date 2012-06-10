@@ -34,7 +34,7 @@ uses
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
-  SystemCritical, Intro, AddonManager, Equalizer, TypeDefs;
+  SystemCritical, Intro, AddonManager, Equalizer, TypeDefs, SplashThread;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -731,6 +731,8 @@ var
   Recovered: Boolean;
   S: TExtendedStream;
 begin
+
+
   if not Bass.EffectsAvailable then
   begin
     actEqualizer.Enabled := False;

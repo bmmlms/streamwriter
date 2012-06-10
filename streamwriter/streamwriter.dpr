@@ -130,7 +130,8 @@ uses
   ConfigureEncoder in 'ConfigureEncoder.pas' {frmConfigureEncoder},
   PlaylistHandler in 'audio\PlaylistHandler.pas',
   Equalizer in 'Equalizer.pas' {frmEqualizer},
-  SWFunctions in 'SWFunctions.pas';
+  SWFunctions in 'SWFunctions.pas',
+  SplashThread in '..\..\common\SplashThread.pas';
 
 {$SetPEOptFlags $0140}
 
@@ -149,6 +150,9 @@ begin
   {$IFDEF madExcept}
   MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
   {$ENDIF}
+
+  // TODO: sehr gefährlich. hiernach kommen noch nachfragen evtl etc bei fehlern... wegen recoveryfile z.b. ....
+  TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE');
 
   Application.Title := AppGlobals.AppName;
   Application.Icon.Handle := LoadIcon(HInstance, 'A');
