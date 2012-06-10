@@ -103,7 +103,7 @@ type
     txtHotkey: THotKey;
     Label9: TLabel;
     chkSeparateTracks: TCheckBox;
-    chkSaveStreamsToMemory: TCheckBox;
+    chkSaveStreamsToDisk: TCheckBox;
     chkOnlyIfCut: TCheckBox;
     chkOnlySaveFull: TCheckBox;
     lblPanelCut: TLabel;
@@ -214,7 +214,7 @@ type
     procedure chkAddSavedToIgnoreClick(Sender: TObject);
     procedure lstDefaultFilterChange(Sender: TObject);
     procedure chkSeparateTracksClick(Sender: TObject);
-    procedure chkSaveStreamsToMemoryClick(Sender: TObject);
+    procedure chkSaveStreamsToDiskClick(Sender: TObject);
     procedure chkOnlyIfCutClick(Sender: TObject);
     procedure chkOnlySaveFullClick(Sender: TObject);
     procedure chkOverwriteSmallerClick(Sender: TObject);
@@ -668,7 +668,7 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
       end;
     end;
     if F then
-      AddField(chkSaveStreamsToMemory);
+      AddField(chkSaveStreamsToDisk);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -953,7 +953,7 @@ begin
   btnBrowse.Visible := False;
   btnBrowseAuto.Visible := False;
 
-  Substract := chkSaveStreamsToMemory.Top;
+  Substract := chkSaveStreamsToDisk.Top;
   for i := 0 to pnlStreams.ControlCount - 1 do
   begin
     if pnlStreams.Controls[i].ClassType = TCheckBox then
@@ -1008,7 +1008,7 @@ begin
   lstDefaultActionBrowser.ItemIndex := Integer(AppGlobals.DefaultActionBrowser);
   lstDefaultFilter.ItemIndex := Integer(Settings.Filter);
   chkSeparateTracks.Checked := Settings.SeparateTracks;
-  chkSaveStreamsToMemory.Checked := Settings.SaveToMemory;
+  chkSaveStreamsToDisk.Checked := not Settings.SaveToMemory;
   chkOnlySaveFull.Checked := Settings.OnlySaveFull;
 
   Language.Translate(Self, PreTranslate, PostTranslate);
@@ -1109,7 +1109,7 @@ begin
 
   SetGray;
 
-  if chkSaveStreamsToMemory.Checked then
+  if not chkSaveStreamsToDisk.Checked then
   begin
     chkSeparateTracks.Enabled := False;
     chkSeparateTracks.Checked := True;
@@ -1163,7 +1163,7 @@ begin
 
 
   txtShortLengthSeconds.Enabled := chkSkipShort.State <> cbUnchecked;
-  EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
+  EnablePanel(pnlCut, not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
 end;
 
 procedure TfrmSettings.Finish;
@@ -1284,8 +1284,8 @@ begin
       if FIgnoreFieldList.IndexOf(chkSeparateTracks) = -1 then
         FStreamSettings[i].SeparateTracks := chkSeparateTracks.Checked and chkSeparateTracks.Enabled;
 
-      if FIgnoreFieldList.IndexOf(chkSaveStreamsToMemory) = -1 then
-        FStreamSettings[i].SaveToMemory := chkSaveStreamsToMemory.Checked;
+      if FIgnoreFieldList.IndexOf(chkSaveStreamsToDisk) = -1 then
+        FStreamSettings[i].SaveToMemory := not chkSaveStreamsToDisk.Checked;
 
       if FIgnoreFieldList.IndexOf(chkOnlySaveFull) = -1 then
         FStreamSettings[i].OnlySaveFull := chkOnlySaveFull.Checked;
@@ -1398,7 +1398,7 @@ begin
     AppGlobals.StreamSettings.Filter := TUseFilters(lstDefaultFilter.ItemIndex);
 
     AppGlobals.StreamSettings.SeparateTracks := chkSeparateTracks.Checked and chkSeparateTracks.Enabled;
-    AppGlobals.StreamSettings.SaveToMemory := chkSaveStreamsToMemory.Checked;
+    AppGlobals.StreamSettings.SaveToMemory := not chkSaveStreamsToDisk.Checked;
     AppGlobals.StreamSettings.OnlySaveFull := chkOnlySaveFull.Checked;
 
     if lstSoundDevice.ItemIndex > -1 then
@@ -2906,35 +2906,35 @@ begin
     RemoveGray(chkSeparateTracks);
 
     chkDeleteStreams.Enabled := chkSeparateTracks.Checked;
-    chkDeleteStreams.Checked := (not chkSaveStreamsToMemory.Checked) and AppGlobals.StreamSettings.DeleteStreams;
+    chkDeleteStreams.Checked := chkSaveStreamsToDisk.Checked and AppGlobals.StreamSettings.DeleteStreams;
 
     chkOnlySaveFull.Enabled := chkSeparateTracks.Checked;
     chkOnlySaveFull.Checked := (not chkSeparateTracks.Checked) and chkSeparateTracks.Checked;
 
     pnlCut.Enabled := False;
-    if (not chkSeparateTracks.Checked) or (chkSaveStreamsToMemory.Checked) then
+    if (not chkSeparateTracks.Checked) or (not chkSaveStreamsToDisk.Checked) then
       chkDeleteStreams.Checked := False;
 
     Application.ProcessMessages;
 
-    EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
+    EnablePanel(pnlCut, not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
   end;
 end;
 
-procedure TfrmSettings.chkSaveStreamsToMemoryClick(Sender: TObject);
+procedure TfrmSettings.chkSaveStreamsToDiskClick(Sender: TObject);
 begin
   inherited;
 
   if FInitialized then
   begin
-    RemoveGray(chkSaveStreamsToMemory);
+    RemoveGray(chkSaveStreamsToDisk);
 
-    chkSeparateTracks.Enabled := not chkSaveStreamsToMemory.Checked;
+    chkSeparateTracks.Enabled := chkSaveStreamsToDisk.Checked;
     chkSeparateTracks.Checked := True;
 
     // Weil das hier drüber die Seite abschaltet, schalten wir sie wieder an..
-    EnablePanel(pnlCut, chkSaveStreamsToMemory.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
-    chkDeleteStreams.Enabled := (not chkSeparateTracks.Checked) or (not chkSaveStreamsToMemory.Checked);
+    EnablePanel(pnlCut, not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
+    chkDeleteStreams.Enabled := (not chkSeparateTracks.Checked) or (chkSaveStreamsToDisk.Checked);
     chkDeleteStreams.Checked := chkDeleteStreams.Enabled and AppGlobals.StreamSettings.DeleteStreams;
 
     if Length(FStreamSettings) > 0 then

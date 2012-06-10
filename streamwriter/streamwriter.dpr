@@ -152,7 +152,7 @@ begin
   {$ENDIF}
 
   // TODO: sehr gefährlich. hiernach kommen noch nachfragen evtl etc bei fehlern... wegen recoveryfile z.b. ....
-  TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE');
+  TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
 
   Application.Title := AppGlobals.AppName;
   Application.Icon.Handle := LoadIcon(HInstance, 'A');

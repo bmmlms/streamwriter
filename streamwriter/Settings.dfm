@@ -113,15 +113,15 @@ object frmSettings: TfrmSettings
       TabOrder = 3
       OnClick = chkSeparateTracksClick
     end
-    object chkSaveStreamsToMemory: TCheckBox
+    object chkSaveStreamsToDisk: TCheckBox
       Left = 4
       Top = 96
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Save received data to memory instead of disk'
+      Caption = 'Save stream files to hard disk drive'
       TabOrder = 4
-      OnClick = chkSaveStreamsToMemoryClick
+      OnClick = chkSaveStreamsToDiskClick
     end
     object chkOnlySaveFull: TCheckBox
       Left = 20
