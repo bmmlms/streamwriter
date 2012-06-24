@@ -236,6 +236,7 @@ type
     FSnapMain: Boolean;
     FRememberRecordings: Boolean;
     FDisplayPlayNotifications: Boolean;
+    FShowSplashScreen: Boolean;
     FSidebarWidth: Integer;
     FAutoTuneIn: Boolean;
     FAutoTuneInConsiderIgnore: Boolean;
@@ -322,6 +323,7 @@ type
     property RememberRecordings: Boolean read FRememberRecordings write FRememberRecordings;
     // When set notifications on the lower right of the screen will be displayed when a title on a stream changes
     property DisplayPlayNotifications: Boolean read FDisplayPlayNotifications write FDisplayPlayNotifications;
+    property ShowSplashScreen: Boolean read FShowSplashScreen write FShowSplashScreen;
     // Defines the width of the sidebar (streams/info/log)
     property SidebarWidth: Integer read FSidebarWidth write FSidebarWidth;
     // When set streamWriter automatically records songs from the wishlist
@@ -658,6 +660,7 @@ begin
   FStorage.Read('SnapMain', FSnapMain, False);
   FStorage.Read('RememberRecordings', FRememberRecordings, False);
   FStorage.Read('DisplayPlayNotifications', FDisplayPlayNotifications, True);
+  FStorage.Read('ShowSplashScreen', FShowSplashScreen, True);
   FStorage.Read('SidebarWidth', FSidebarWidth, 250);
   FStorage.Read('AutoTuneIn', FAutoTuneIn, True);
   FStorage.Read('AutoTuneInConsiderIgnore', FAutoTuneInConsiderIgnore, False);
@@ -848,6 +851,7 @@ begin
   FStorage.Write('SnapMain', FSnapMain);
   FStorage.Write('RememberRecordings', FRememberRecordings);
   FStorage.Write('DisplayPlayNotifications', FDisplayPlayNotifications);
+  FStorage.Write('ShowSplashScreen', FShowSplashScreen);
   FStorage.Write('SidebarWidth', FSidebarWidth);
   FStorage.Write('AutoTuneIn', FAutoTuneIn);
   FStorage.Write('AutoTuneInConsiderIgnore', FAutoTuneInConsiderIgnore);

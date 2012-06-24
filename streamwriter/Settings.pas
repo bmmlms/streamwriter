@@ -186,6 +186,7 @@ type
     chkSubmitStreamInfo: TCheckBox;
     Label8: TLabel;
     chkSubmitStats: TCheckBox;
+    chkShowSplashScreen: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -1046,6 +1047,7 @@ begin
   chkSnapMain.Checked := AppGlobals.SnapMain;
   chkRememberRecordings.Checked := AppGlobals.RememberRecordings;
   chkDisplayPlayNotifications.Checked := AppGlobals.DisplayPlayNotifications;
+  chkShowSplashScreen.Checked := AppGlobals.ShowSplashScreen;
   optClose.Checked := not AppGlobals.TrayOnMinimize;
   optMinimize.Checked := AppGlobals.TrayOnMinimize;
 
@@ -1410,6 +1412,7 @@ begin
     AppGlobals.SnapMain := chkSnapMain.Checked;
     AppGlobals.RememberRecordings := chkRememberRecordings.Checked;
     AppGlobals.DisplayPlayNotifications := chkDisplayPlayNotifications.Checked;
+    AppGlobals.ShowSplashScreen := chkShowSplashScreen.Checked;
     AppGlobals.TrayOnMinimize := optMinimize.Checked;
 
     AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;

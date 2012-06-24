@@ -151,7 +151,8 @@ begin
   MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
   {$ENDIF}
 
-  TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
+  if AppGlobals.ShowSplashScreen then
+    TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
 
   Application.Title := AppGlobals.AppName;
   Application.Icon.Handle := LoadIcon(HInstance, 'A');

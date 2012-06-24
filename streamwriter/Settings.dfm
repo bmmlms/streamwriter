@@ -206,22 +206,22 @@ object frmSettings: TfrmSettings
     Left = 4
     Top = 4
     Width = 293
-    Height = 289
+    Height = 314
     TabOrder = 1
     Visible = False
     DesignSize = (
       293
-      289)
+      314)
     object Label7: TLabel
       Left = 56
-      Top = 172
+      Top = 192
       Width = 15
       Height = 13
       Caption = 'GB'
     end
     object Label3: TLabel
       Left = 4
-      Top = 200
+      Top = 225
       Width = 190
       Height = 13
       Anchors = [akLeft, akBottom]
@@ -230,7 +230,7 @@ object frmSettings: TfrmSettings
     end
     object Label18: TLabel
       Left = 4
-      Top = 248
+      Top = 273
       Width = 192
       Height = 13
       Anchors = [akLeft, akBottom]
@@ -249,7 +249,7 @@ object frmSettings: TfrmSettings
     end
     object txtMinDiskSpace: TLabeledEdit
       Left = 4
-      Top = 168
+      Top = 188
       Width = 49
       Height = 21
       EditLabel.Width = 205
@@ -261,7 +261,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultAction: TComboBox
       Left = 4
-      Top = 216
+      Top = 241
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -272,6 +272,7 @@ object frmSettings: TfrmSettings
         'Listen to stream'
         'Listen to stream (external player)'
         'Listen to recorded file')
+      ExplicitTop = 216
     end
     object optClose: TRadioButton
       Left = 20
@@ -291,7 +292,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultActionBrowser: TComboBox
       Left = 4
-      Top = 264
+      Top = 289
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -301,6 +302,7 @@ object frmSettings: TfrmSettings
         'Start recording'
         'Listen to stream'
         'Listen to stream (external player)')
+      ExplicitTop = 264
     end
     object chkSnapMain: TCheckBox
       Left = 4
@@ -328,6 +330,14 @@ object frmSettings: TfrmSettings
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Display notifications on trackchange when playing'
       TabOrder = 8
+    end
+    object chkShowSplashScreen: TCheckBox
+      Left = 4
+      Top = 144
+      Width = 281
+      Height = 21
+      Caption = 'Show splash screen on startup'
+      TabOrder = 9
     end
   end
   object pnlAdvanced: TPanel
@@ -814,17 +824,17 @@ object frmSettings: TfrmSettings
   end
   object pnlHotkeys: TPanel
     Left = 4
-    Top = 300
+    Top = 324
     Width = 293
-    Height = 109
+    Height = 85
     TabOrder = 5
     Visible = False
     DesignSize = (
       293
-      109)
+      85)
     object Label9: TLabel
       Left = 4
-      Top = 72
+      Top = 48
       Width = 37
       Height = 13
       Anchors = [akLeft, akBottom]
@@ -835,7 +845,7 @@ object frmSettings: TfrmSettings
       Left = 4
       Top = 0
       Width = 285
-      Height = 61
+      Height = 37
       Anchors = [akLeft, akTop, akRight, akBottom]
       Columns = <
         item
@@ -850,10 +860,11 @@ object frmSettings: TfrmSettings
       ViewStyle = vsReport
       OnChange = lstHotkeysChange
       OnResize = lstHotkeysResize
+      ExplicitHeight = 61
     end
     object txtHotkey: THotKey
       Left = 4
-      Top = 88
+      Top = 64
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -861,6 +872,7 @@ object frmSettings: TfrmSettings
       HotKey = 32833
       TabOrder = 1
       OnChange = txtHotkeyChange
+      ExplicitTop = 88
     end
   end
   object pnlAutoRecord: TPanel
