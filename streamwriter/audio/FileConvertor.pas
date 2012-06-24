@@ -132,6 +132,7 @@ type
     FCBRBitRate: Integer;
     FBitRateType: TBitRates;
     FVBRQuality: TVBRQualities;
+    FLastProgress: Integer;
     FOnProgress: TFileConvertorProgressEvent;
 
     procedure ReadCallbackMP3(Data: AnsiString);
@@ -168,6 +169,7 @@ var
   ExtTo: string;
 begin
   Result := False;
+  FLastProgress := -1;
 
   ExtFrom := LowerCase(ExtractFileExt(FromFile));
   ExtTo := LowerCase(ExtractFileExt(ToFile));
@@ -199,11 +201,12 @@ var
   BlockAlign: Word;
   BitsPerSample: Word;
   ChanInfo: BASS_CHANNELINFO;
-  PercentDone: Integer;
+  PercentDone, LastPercentDone: Integer;
   BytesToRead: Integer;
 begin
   Result := False;
 
+  LastPercentDone := -1;
   BytesToRead := 16384;
   SetLength(Buf, BytesToRead);
 
@@ -277,7 +280,11 @@ begin
       if Assigned(FOnProgress) then
       begin
         PercentDone := Trunc(100 * (BASSChannelGetPosition(Channel, BASS_POS_BYTE) / BASSChannelGetLength(Channel, BASS_POS_BYTE)));
-        FOnProgress(Self, PercentDone);
+        if PercentDone <> LastPercentDone then
+        begin
+          FOnProgress(Self, PercentDone);
+          LastPercentDone := PercentDone;
+        end;
       end;
 
       if T > -1 then
@@ -473,7 +480,7 @@ end;
 procedure TFileConvertor.ReadCallbackAAC(Data: AnsiString);
 var
   R: TPerlRegEx;
-  M: string;
+  Progress: Integer;
 begin
   if not Assigned(FOnProgress) then
    Exit;
@@ -486,9 +493,12 @@ begin
       if R.Match then
       begin
         repeat
-          M := R.MatchedText;
-          M := Copy(M, 1, Length(M) - 2);
-          FOnProgress(Self, StrToInt(M));
+          Progress := StrToInt(Copy(R.MatchedText, 1, Length(R.MatchedText) - 2));
+          if Progress <> FLastProgress then
+          begin
+            FOnProgress(Self, Progress);
+            FLastProgress := Progress;
+          end;
         until not R.MatchAgain;
       end;
     except
@@ -501,7 +511,7 @@ end;
 procedure TFileConvertor.ReadCallbackMP3(Data: AnsiString);
 var
   R: TPerlRegEx;
-  M: string;
+  Progress: Integer;
 begin
   if not Assigned(FOnProgress) then
    Exit;
@@ -514,9 +524,12 @@ begin
       if R.Match then
       begin
         repeat
-          M := R.MatchedText;
-          M := Copy(M, 1, Length(M) - 2);
-          FOnProgress(Self, Trunc(StrToFloat(M)));
+          Progress := Trunc(StrToFloat(Copy(R.MatchedText, 1, Length(R.MatchedText) - 2)));
+          if Progress <> FLastProgress then
+          begin
+            FOnProgress(Self, Progress);
+            FLastProgress := Progress;
+          end;
         until not R.MatchAgain;
       end;
     except
@@ -529,7 +542,7 @@ end;
 procedure TFileConvertor.ReadCallbackOGG(Data: AnsiString);
 var
   R: TPerlRegEx;
-  M: string;
+  Progress: Integer;
 begin
   if not Assigned(FOnProgress) then
    Exit;
@@ -542,9 +555,12 @@ begin
       if R.Match then
       begin
         repeat
-          M := R.MatchedText;
-          M := Copy(M, 1, Length(M) - 1);
-          FOnProgress(Self, Trunc(StrToFloat(M)));
+          Progress := Trunc(StrToFloat(Copy(R.MatchedText, 1, Length(R.MatchedText) - 1)));
+          if Progress <> FLastProgress then
+          begin
+            FOnProgress(Self, Progress);
+            FLastProgress := Progress;
+          end;
         until not R.MatchAgain;
       end;
     except

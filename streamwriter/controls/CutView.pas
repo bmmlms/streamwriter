@@ -32,12 +32,13 @@ uses
   PlayerManager, PostProcess, PostProcessSoX, DownloadAddons, ConfigureSoX,
   MsgDlg, DragDrop, DropTarget, DropComboTarget, AudioFunctions,
   MessageBus, AppMessages, AddonSoX, PostProcessConvert, FileTagger,
-  DataManager, PerlRegEx, Logging;
+  DataManager, PerlRegEx, Logging, FileConvertor;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
   TWavBufArray = array of SmallInt;
-  TCutStates = (csReady, csLoading, csWorking, csDecoding, csEncoding, csConvertorError, csError);
+  TCutStates = (csReady, csLoading, csWorking, csDecoding, csEncoding, csConvertorError,
+    csLoadError, csCutError);
 
   TCutView = class;
 
@@ -92,6 +93,35 @@ type
     property OnScanProgress: TNotifyEvent read FOnScanProgress write FOnScanProgress;
     property OnEndScan: TNotifyEvent read FOnEndScan write FOnEndScan;
     property OnScanError: TNotifyEvent read FOnScanError write FOnScanError;
+  end;
+
+  TSaveCutThread = class(TThread)
+  private
+    FInFilename, FOutFilename: string;
+    FS, FE: Cardinal;
+    FProgress: Integer;
+
+    FOnSaveProgress: TNotifyEvent;
+    FOnEndSave: TNotifyEvent;
+    FOnSaveError: TNotifyEvent;
+
+    procedure SyncSaveCutProgress;
+    procedure SyncSaveCutEnd;
+    procedure SyncSaveCutError;
+
+    procedure FileConvertorProgress(Sender: TObject; Percent: Integer);
+  protected
+    procedure Execute; override;
+  public
+    constructor Create(InFilename, OutFilename: string; S, E: Cardinal);
+    destructor Destroy; override;
+
+    property OutFilename: string read FOutFilename;
+    property Progress: Integer read FProgress;
+
+    property OnSaveProgress: TNotifyEvent read FOnSaveProgress write FOnSaveProgress;
+    property OnEndSave: TNotifyEvent read FOnEndSave write FOnEndSave;
+    property OnSaveError: TNotifyEvent read FOnSaveError write FOnSaveError;
   end;
 
   TMouseMode = (mmDown, mmMove, mmUp);
@@ -174,6 +204,7 @@ type
   private
     FScanThread: TScanThread;
     FProcessThread: TProcessThread;
+    FSaveCutThread: TSaveCutThread;
     FPB: TCutPaintBox;
     FWaveData: TWaveData;
     FState: TCutStates;
@@ -204,7 +235,7 @@ type
     FFileConvertorThread: TPostProcessConvertThread;
 
     procedure StartProcessing(CmdLine: string);
-    function AddUndo: Boolean;
+    procedure AddUndo;
 
     procedure ThreadScanProgress(Sender: TObject);
     procedure ThreadEndScan(Sender: TObject);
@@ -214,6 +245,11 @@ type
     procedure ProcessThreadSuccess(Sender: TObject);
     procedure ProcessThreadError(Sender: TObject);
     procedure ProcessThreadTerminate(Sender: TObject);
+
+    procedure SaveCutThreadProgress(Sender: TObject);
+    procedure SaveCutThreadEndSave(Sender: TObject);
+    procedure SaveCutThreadError(Sender: TObject);
+    procedure SaveCutThreadTerminate(Sender: TObject);
 
     procedure PlayerEndReached(Sender: TObject);
     procedure PlayerPlay(Sender: TObject);
@@ -249,7 +285,6 @@ type
     procedure Save;
     procedure Cut;
     procedure Undo;
-    function SaveCut(OutFile: string; StartPos, EndPos: Cardinal): Boolean;
     procedure Play;
     procedure Stop;
     procedure AutoCut(MaxPeaks: Integer; MinDuration: Cardinal);
@@ -420,6 +455,14 @@ begin
     FProcessThread.Terminate;
   end;
 
+  if FSaveCutThread <> nil then
+  begin
+    FSaveCutThread.OnSaveProgress := nil;
+    FSaveCutThread.OnEndSave := nil;
+    FSaveCutThread.OnSaveError := nil;
+    FSaveCutThread.Terminate;
+  end;
+
   while (FFileConvertorThread <> nil) or (FScanThread <> nil) or (FProcessThread <> nil) do
   begin
     Sleep(100);
@@ -470,7 +513,7 @@ begin
   FPB.BuildDrawBuffer;
   FPB.Repaint;
 end;
-                           // NAch schneiden wird titellänge nicht übernommen. mindestens bei mp3 ist das so!
+
 procedure TCutView.FileConvertorFinish(Sender: TObject);
 var
   i: Integer;
@@ -556,6 +599,7 @@ begin
       Exit;
     end;
 
+    FProgressBarLoad.Position := 0;
     FProgressBarLoad.Visible := True;
 
     FState := csLoading;
@@ -587,6 +631,7 @@ begin
 
     CreateConvertor;
 
+    FProgressBarLoad.Position := 0;
     FProgressBarLoad.Visible := True;
 
     if LoadTrackData then
@@ -636,29 +681,35 @@ begin
 end;
 
 procedure TCutView.Cut;
+var
+  S, E: Cardinal;
 begin
   if not CanCut then
     Exit;
 
-  if not AddUndo then
-    Exit;
+  AddUndo;
 
-  if not SaveCut(GetUndoFilename, FPB.FStartLine, FPB.FEndLine) then
-    Exit;
+  S := FWaveData.WaveArray[FPB.FStartLine].Pos;
+  E := FWaveData.WaveArray[FPB.FEndLine].Pos;
 
-  if FPlayer <> nil then
-  begin
-    FPlayer.Stop(False);
-    FPB.FPlayLine := 0;
-  end;
+  FreeAndNil(FPlayer);
+  FreeAndNil(FWaveData);
 
-  FPB.FZoomStartLine := High(Cardinal);
-  FPB.FZoomEndLine := High(Cardinal);
-  FPB.FDoZoom := False;
+  FProgressBarLoad.Position := 0;
+  FProgressBarLoad.Visible := True;
 
+  FState := csWorking;
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
   FPB.Paint;
+
+  FSaveCutThread := TSaveCutThread.Create(FWorkingFilename, GetUndoFilename, S, E);
+  FSaveCutThread.OnSaveProgress := SaveCutThreadProgress;
+  FSaveCutThread.OnEndSave := SaveCutThreadEndSave;
+  FSaveCutThread.OnSaveError := SaveCutThreadError;
+  FSaveCutThread.OnTerminate := SaveCutThreadTerminate;
+
+  FSaveCutThread.Resume;
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
@@ -675,14 +726,12 @@ begin
 
   UndoStep := FUndoList[FUndoList.Count - 1];
 
-  if CopyFile(PChar(UndoStep.Filename), PChar(FWorkingFilename), False) then
+  if MoveFileEx(PChar(UndoStep.Filename), PChar(FWorkingFilename), MOVEFILE_REPLACE_EXISTING) then
   begin
     FWaveData.Free;
     FWaveData := nil;
 
     LoadFile(FWorkingFilename, True, False);
-
-    DeleteFile(PChar(UndoStep.Filename));
 
     FPB.BuildBuffer;
     FPB.BuildDrawBuffer;
@@ -754,6 +803,9 @@ begin
   FSaveSecs := Trunc(FWaveData.Secs);
   FreeAndNil(FWaveData);
 
+  // Wiedergabe ggf. anhalten
+  MsgBus.SendMessage(TFileModifyMsg.Create(FOriginalFilename));
+
   FFileTagger.Read(FOriginalFilename);
 
   CreateConvertor;
@@ -779,49 +831,52 @@ begin
     FOnStateChanged(Self);
 end;
 
-function TCutView.SaveCut(OutFile: string; StartPos, EndPos: Cardinal): Boolean;
+procedure TCutView.SaveCutThreadEndSave(Sender: TObject);
 begin
-  Result := False;
+  LoadFile(FSaveCutThread.FOutFilename, True, False);
 
-  if FPlayer <> nil then
-  begin
-    FreeAndNil(FPlayer);
-  end;
-
-  try
-    if FWaveData.Save(OutFile, StartPos, EndPos) then
-    begin
-      FreeAndNil(FWaveData);
-      LoadFile(OutFile, True, False);
-
-      Result := True;
-
-      FWorkingFilename := OutFile;
-    end else
-    begin
-      MsgBox(GetParentForm(Self).Handle, _('The file could not be saved.'#13#10'Please make sure there is enough free space/the file is not in use by another application.'), _('Info'), MB_ICONINFORMATION);
-    end;
-  finally
-    // Wenn Result = True wird FPlayer in LoadFile() neu erstellt
-    if not Result then
-    begin
-      FPlayer := TPlayer.Create;
-      try
-        FPlayer.Filename := FWorkingFilename;
-
-        FPlayer.OnEndReached := PlayerEndReached;
-        FPlayer.OnPlay := PlayerPlay;
-        FPlayer.OnPause := PlayerPause;
-        FPlayer.OnStop := PlayerStop;
-        Players.AddPlayer(FPlayer);
-      except
-        ThreadScanError(Self);
-      end;
-    end;
-  end;
+  FWorkingFilename := FSaveCutThread.FOutFilename;
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
+end;
+
+procedure TCutView.SaveCutThreadError(Sender: TObject);
+var
+  DriveLetter: string;
+begin
+  FSaving := False;
+
+  FProgressBarLoad.Visible := False;
+  FState := csCutError;
+
+  FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
+  FPB.Repaint;
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
+
+  DriveLetter := '';
+  if Length(GetTempDir) > 3 then
+  begin
+    DriveLetter := Copy(GetTempDir, 0, 2);
+    MsgBox(GetParentForm(Self).Handle, Format(_('The temporary cut-file could not be saved. Make sure there is enough free diskspace on drive %s.'), [DriveLetter]), _('Error'), MB_ICONERROR)
+  end;
+end;
+
+procedure TCutView.SaveCutThreadProgress(Sender: TObject);
+begin
+  if FSaveCutThread.Progress < 100 then
+    FProgressBarLoad.Position := FSaveCutThread.Progress + 1;
+  FProgressBarLoad.Position := FSaveCutThread.Progress;
+end;
+
+procedure TCutView.SaveCutThreadTerminate(Sender: TObject);
+begin
+  FProgressBarLoad.Visible := False;
+
+  FSaveCutThread := nil;
 end;
 
 procedure TCutView.Play;
@@ -916,8 +971,7 @@ procedure TCutView.StartProcessing(CmdLine: string);
 var
   TempFile: string;
 begin
-  if not AddUndo then
-    Exit;
+  AddUndo;
 
   if FPlayer <> nil then
   begin
@@ -927,7 +981,7 @@ begin
   if FWaveData <> nil then
     FreeAndNil(FWaveData);
 
-  TempFile := GetUndoFilename; // RemoveFileExt(FWorkingFilename) + '_sox' + ExtractFileExt(FWorkingFilename);
+  TempFile := GetUndoFilename;
 
   CmdLine := StringReplace(CmdLine, '[[TEMPFILE]]', TempFile, [rfReplaceAll]);
 
@@ -1009,19 +1063,10 @@ begin
   ApplyFade(False);
 end;
 
-function TCutView.AddUndo: Boolean;
+procedure TCutView.AddUndo;
 begin
   FUndoList.Add(TUndoStep.Create(FWorkingFilename, FPB.FStartLine, FPB.FEndLine,
     FPB.FEffectStartLine, FPB.FEffectEndLine, FPB.FPlayLine));
-  Result := True;
-
-  if not Result then
-  begin
-    if TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('The temporary file for making the undo functionality work could not be created.'#13#10 +
-                                                 'Do you want to continue with undo disabled?'), 9, btOKCancel) <> mtCancel
-    then
-      Result := True;
-  end;
 end;
 
 procedure TCutView.ApplyEffects;
@@ -1207,7 +1252,6 @@ begin
   FScanThread := nil;
 
   FState := csReady;
-  FSaving := False;
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
@@ -1222,7 +1266,7 @@ begin
   FSaving := False;
 
   FProgressBarLoad.Visible := False;
-  FState := csError;
+  FState := csLoadError;
 
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
@@ -1325,8 +1369,10 @@ begin
 
   TextWrite := '';
   case FCutView.FState of
-    csError:
+    csLoadError:
       TextWrite := _('Error loading file');
+    csCutError:
+      TextWrite := _('Error cutting file');
     csConvertorError:
       TextWrite := _('Error decoding/encoding file');
     csWorking:
@@ -1912,6 +1958,76 @@ begin
   FEffectStartLine := EffectStartLine;
   FEffectEndLine := EffectEndLine;
   FPlayLine := PlayLine;
+end;
+
+{ TSaveCutThread }
+
+constructor TSaveCutThread.Create(InFilename, OutFilename: string; S, E: Cardinal);
+begin
+  inherited Create(True);
+
+  FInFilename := InFilename;
+  FOutFilename := OutFilename;
+  FS := S;
+  FE := E;
+end;
+
+destructor TSaveCutThread.Destroy;
+begin
+
+  inherited;
+end;
+
+procedure TSaveCutThread.Execute;
+var
+  C: TFileConvertor;
+begin
+  inherited;
+
+  C := TFileConvertor.Create;
+  C.OnProgress := FileConvertorProgress;
+  try
+    if C.Convert2WAV(FInFilename, FOutFilename, @Terminated, FS, FE) then
+    begin
+      Synchronize(SyncSaveCutEnd);
+    end else
+    begin
+      Synchronize(SyncSaveCutError);
+    end;
+  finally
+    C.Free;
+  end;
+end;
+
+procedure TSaveCutThread.FileConvertorProgress(Sender: TObject;
+  Percent: Integer);
+begin
+  FProgress := Percent;
+  Synchronize(SyncSaveCutProgress);
+end;
+
+procedure TSaveCutThread.SyncSaveCutEnd;
+begin
+  if Terminated then
+    Exit;
+  if Assigned(FOnEndSave) then
+    FOnEndSave(Self);
+end;
+
+procedure TSaveCutThread.SyncSaveCutError;
+begin
+  if Terminated then
+    Exit;
+  if Assigned(FOnSaveError) then
+    FOnSaveError(Self);
+end;
+
+procedure TSaveCutThread.SyncSaveCutProgress;
+begin
+  if Terminated then
+    Exit;
+  if Assigned(FOnSaveProgress) then
+    FOnSaveProgress(Self);
 end;
 
 end.

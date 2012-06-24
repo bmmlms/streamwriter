@@ -648,11 +648,13 @@ begin
 
   if not Bass.DeviceAvailable then
   begin
+    FadeOutSplash(False);
     TfrmMsgDlg.ShowMsg(Self, _('No sound devices could be detected so playback of streams and files will not be possible.'), 7, btOk);
   end;
 
   if not DirectoryExists(AppGlobals.Dir) then
   begin
+    FadeOutSplash(False);
     MsgBox(Handle, _('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
     ShowSettings(True, DirectoryExists(AppGlobals.DirAuto));
   end;
@@ -660,6 +662,7 @@ begin
   // Das erste DirectoryExists() ist da, damit der Settings-Dialog nicht doppelt kommt.
   if DirectoryExists(AppGlobals.Dir) and (not DirectoryExists(AppGlobals.DirAuto)) then
   begin
+    FadeOutSplash(False);
     MsgBox(Handle, _('The folder for automatically saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
     ShowSettings(False, True);
   end;
@@ -678,6 +681,7 @@ begin
 
     if not AppGlobals.FirstStartShown then
     begin
+      FadeOutSplash(False);
       FormIntro := TfrmIntro.Create(Self);
       try
         FormIntro.ShowModal;
@@ -689,11 +693,13 @@ begin
 
     if AppGlobals.AddonManager.ShowVersionWarning then
     begin
+      FadeOutSplash(False);
       MsgBox(Handle, _('At least one addon is outdated and was deleted because it does not work with this version of streamWriter. Please check the addon/postprocessing pages in the settings window.'), _('Info'), MB_ICONINFORMATION);
     end;
 
     if AppGlobals.LastUsedVersion.AsString = '3.6.0.0' then
     begin
+      FadeOutSplash(False);
       MsgBox(Handle, _('Because many internals of the last version have changed you need to reconfigure options regarding addons and postprocessing using the settings window.'), _('Info'), MB_ICONINFORMATION);
     end;
 
@@ -705,6 +711,8 @@ begin
     if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
       FUpdater.Start(uaVersion, True);
   end;
+
+  FadeOutSplash(True);
 end;
 
 procedure TfrmStreamWriterMain.FormClose(Sender: TObject;
@@ -731,8 +739,6 @@ var
   Recovered: Boolean;
   S: TExtendedStream;
 begin
-
-
   if not Bass.EffectsAvailable then
   begin
     actEqualizer.Enabled := False;
@@ -746,6 +752,7 @@ begin
   Recovered := False;
   if FileExists(AppGlobals.RecoveryFile) then
   begin
+    FadeOutSplash(False);
     if MsgBox(0, _('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
     begin
       try
@@ -2108,7 +2115,7 @@ begin
     end;
 
   for Client in AllClients do
-    if Client.Paused then
+    if Client.Paused and Client.Playing then
     begin
       OnePaused := True;
       Break;

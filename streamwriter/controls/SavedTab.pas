@@ -1429,9 +1429,6 @@ begin
       if NodeData.Track.Finalized then
         Images.Draw(PaintInfo.Canvas, L + 48, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 58);
     end;
-
-    //else
-    //  Images.Draw(PaintInfo.Canvas, L + 48, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 59);
   end;
 end;
 

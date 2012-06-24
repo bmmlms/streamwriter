@@ -151,7 +151,6 @@ begin
   MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
   {$ENDIF}
 
-  // TODO: sehr gefährlich. hiernach kommen noch nachfragen evtl etc bei fehlern... wegen recoveryfile z.b. ....
   TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
 
   Application.Title := AppGlobals.AppName;
@@ -166,7 +165,7 @@ begin
     Exit;
   end;
 
-  // Create the main form if everything was setup
+  // Create the main form if everything is setup
   if InitApp and AppGlobals.WasSetup then
   begin
     Application.CreateForm(TfrmStreamWriterMain, frmStreamWriterMain);
