@@ -806,7 +806,7 @@ begin
   // Wiedergabe ggf. anhalten
   MsgBus.SendMessage(TFileModifyMsg.Create(FOriginalFilename));
 
-  FFileTagger.Read(FOriginalFilename);
+  FFileTagger.Read(FOriginalFilename, 0);
 
   CreateConvertor;
 

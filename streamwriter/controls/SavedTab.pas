@@ -29,7 +29,7 @@ uses
   ImgList, Functions, DragDropFile, GUIFunctions, StreamInfoView, DynBASS,
   Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
   PlayerManager, Logging, FileWatcher, MessageBus, AppMessages, ShlObj,
-  SavedTabEditTags, Generics.Collections, TypeDefs, AudioFunctions;
+  SavedTabEditTags, Generics.Collections, TypeDefs, AudioFunctions, FileTagger;
 
 type
   TSavedTree = class;
@@ -181,6 +181,9 @@ type
     FTopRightPanel: TPanel;
     FTopRightTopPanel: TPanel;
     FTopRightBottomPanel: TPanel;
+    FCoverPanel: TPanel;
+    FCoverBorderPanel: TPanel;
+    FCoverImage: TImage;
     FSeekPosPanel: TPanel;
     FPosLabel: TLabel;
     FToolbar: TSavedToolBar;
@@ -1033,6 +1036,27 @@ begin
   FTopRightPanel.ClientWidth := 310;
   FTopRightPanel.BevelOuter := bvNone;
 
+  FCoverPanel := TPanel.Create(Self);
+  FCoverPanel.Parent := FTopPanel;
+  FCoverPanel.Align := alRight;
+  FCoverPanel.BevelOuter := bvNone;
+  FCoverPanel.Padding.Bottom := 4;
+  FCoverPanel.Padding.Right := 8;
+  FCoverPanel.Width := FCoverPanel.Height + 8;
+  FCoverPanel.Visible := False;
+
+  FCoverBorderPanel := TPanel.Create(FCoverPanel);
+  FCoverBorderPanel.Parent := FCoverPanel;
+  FCoverBorderPanel.BevelKind := bkFlat;
+  FCoverBorderPanel.BevelOuter := bvNone;
+  FCoverBorderPanel.Align := alClient;
+
+  FCoverImage := TImage.Create(Self);
+  FCoverImage.Parent := FCoverBorderPanel;
+  FCoverImage.Align := alClient;
+  FCoverImage.Stretch := False;
+  FCoverImage.Center := True;
+
   // Panel rechts unten für Positionslabel/Playercontrols
   FTopRightBottomPanel := TPanel.Create(Self);
   FTopRightBottomPanel.Parent := FTopRightPanel;
@@ -1475,9 +1499,27 @@ begin
 end;
 
 procedure TSavedTree.PlayerPlay(Sender: TObject);
+var
+  FT: TFileTagger;
 begin
   FTab.UpdateButtons;
   Invalidate;
+
+  FT := TFileTagger.Create;
+  try
+    // Das .Show() und so muss hierhin, damit gleich die ClientWidth/ClientHeight passen.
+    FTab.FCoverBorderPanel.BevelKind := bkNone;
+    FTab.FCoverPanel.Show;
+    FT.Read(FPlayer.Filename, Min(FTab.FCoverImage.Width, FTab.FCoverImage.Height));
+    if FT.CoverImage <> nil then
+    begin
+      FTab.FCoverBorderPanel.BevelKind := bkFlat;
+      FTab.FCoverImage.Picture.Assign(FT.CoverImage);
+    end else
+      FTab.FCoverPanel.Hide;
+  finally
+    FT.Free;
+  end;
 end;
 
 procedure TSavedTree.PlayerStop(Sender: TObject);
@@ -1486,6 +1528,8 @@ begin
     Players.LastPlayer := nil;
   FTab.UpdateButtons;
   Invalidate;
+
+  FTab.FCoverPanel.Hide;
 end;
 
 function TSavedTree.PrevPlayingTrack: TTrackInfo;

@@ -714,8 +714,6 @@ begin
   FAddCombo.Items.InsertObject(0, _('Global'), nil);
   FAddCombo.ItemIndex := 0;
 
-  FToolbar.FRemove.Enabled := FTree.SelectedCount > 0;
-
   BevelOuter := bvNone;
 
   if FListType = ltSave then
@@ -725,6 +723,8 @@ begin
   begin
     FToolbar.FSelectSaved.Visible := False;
   end;
+
+  UpdateButtons;
 
   Resize;
 end;

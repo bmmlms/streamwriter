@@ -50,8 +50,8 @@ constructor TAddonAudioGenie.Create;
 begin
   inherited;
 
-  FName := _('Support setting of tags using AudioGenie');
-  FHelp := _('This addon sets tags to saved songs using AudioGenie.');
+  FName := _('Support reading/writing of tags using AudioGenie');
+  FHelp := _('This addon adds support for reading/writing tags to/from saved songs using AudioGenie.');
   FDownloadName := 'addon_audiogenie';
   FDownloadPackage := 'addon_audiogenie.dll';
 
@@ -65,8 +65,8 @@ procedure TAddonAudioGenie.Initialize;
 begin
   inherited;
 
-  FName := _('Support setting of tags using AudioGenie');
-  FHelp := _('This addon sets tags to saved songs using AudioGenie.');
+  FName := _('Support reading/writing of tags using AudioGenie');
+  FHelp := _('This addon adds support for reading/writing tags to/from saved songs using AudioGenie.');
 end;
 
 end.

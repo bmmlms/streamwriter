@@ -382,13 +382,13 @@ begin
 
   TfrmNotification.Stop;
 
+  FEqualizer.Hide;
+  Hide;
+
   Players.StopAll;
 
   AppGlobals.PlayerVolume := Players.Volume;
   AppGlobals.PlayerVolumeBeforeMute := Players.VolumeBeforeMute;
-
-  FEqualizer.Hide;
-  Hide;
 
   HomeComm.Terminate;
   while HomeComm.Connected do

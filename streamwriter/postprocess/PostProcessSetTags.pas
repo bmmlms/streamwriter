@@ -103,7 +103,7 @@ begin
   FileTagger := TFileTagger.Create;
   try
     try
-      if FileTagger.Read(FData.Filename) then
+      if FileTagger.Read(FData.Filename, 0) then
       begin
         Artist := PatternReplace(Artist, Arr);
         Title := PatternReplace(Title, Arr);

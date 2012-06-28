@@ -110,7 +110,7 @@ begin
 
   FileTagger := TFileTagger.Create;
   try
-    if not FileTagger.Read(Filename) then
+    if not FileTagger.Read(Filename, 0) then
       Exit;
 
     txtArtist.Text := FileTagger.Artist;
