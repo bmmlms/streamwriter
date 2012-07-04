@@ -28,7 +28,8 @@ uses
   SysUtils, Windows, StrUtils, Classes, ICEThread, ICEStream, AppData,
   Generics.Collections, Functions, Sockets, LanguageObjects,
   DataManager, HomeCommunication, PlayerManager, Notifications,
-  Logging, PlaylistHandler, AudioFunctions, TypeDefs;
+  Logging, PlaylistHandler, AudioFunctions, TypeDefs, MessageBus,
+  AppMessages;
 
 type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
@@ -269,8 +270,11 @@ begin
   if FICEThread <> nil then
   begin
     FICEThread.StartPlay;
+
     if Assigned(FOnPlay) then
       FOnPlay(Self);
+
+    MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, '', FTitle, FEntry.Name, ''));
   end;
 end;
 
@@ -279,8 +283,14 @@ begin
   if FICEThread <> nil then
   begin
     FICEThread.PausePlay;
+
     if Assigned(FOnPause) then
       FOnPause(Self);
+
+    if FICEThread.PlayingPaused then
+      MsgBus.SendMessage(TPlayingObjectStopped.Create(Self))
+    else
+      MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, '', FTitle, FEntry.Name, ''));
   end;
 end;
 
@@ -311,6 +321,8 @@ begin
   if FICEThread <> nil then
   begin
     FICEThread.StopPlay;
+
+    MsgBus.SendMessage(TPlayingObjectStopped.Create(Self));
 
     if Assigned(FOnStop) then
       FOnStop(Self);
@@ -735,12 +747,16 @@ procedure TICEClient.ThreadTitleChanged(Sender: TSocketThread);
 var
   Format: string;
 begin
-  if (FICEThread.RecvStream.Title <> '') and Playing and (not Paused) and AppGlobals.DisplayPlayNotifications then
+  FTitle := FICEThread.RecvStream.Title;
+
+  if (FTitle <> '') and Playing and (not Paused) then
   begin
-    TfrmNotification.Act(FICEThread.RecvStream.Title, FEntry.Name);
+    if AppGlobals.DisplayPlayNotifications then
+      TfrmNotification.Act(FICEThread.RecvStream.Title, FEntry.Name);
+
+    MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, '', FTitle, FEntry.Name, ''));
   end;
 
-  FTitle := FICEThread.RecvStream.Title;
   if Assigned(FOnTitleChanged) then
     FOnTitleChanged(Self, FICEThread.RecvStream.Title);
   if Assigned(FOnRefresh) then

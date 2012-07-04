@@ -120,7 +120,6 @@ type
     FOnClientRemoved: TNotifyEvent;
     FOnAddTitleToList: TAddTitleEvent;
     FOnRemoveTitleFromList: TAddTitleEvent;
-    FOnPlayingStreamChanged: TStringEvent;
 
     procedure ShowInfo;
 
@@ -211,7 +210,6 @@ type
     property OnClientRemoved: TNotifyEvent read FOnClientRemoved write FOnClientRemoved;
     property OnAddTitleToList: TAddTitleEvent read FOnAddTitleToList write FOnAddTitleToList;
     property OnRemoveTitleFromList: TAddTitleEvent read FOnRemoveTitleFromList write FOnRemoveTitleFromList;
-    property OnPlayingStreamChanged: TStringEvent read FOnPlayingStreamChanged write FOnPlayingStreamChanged;
   end;
 
 implementation
@@ -563,12 +561,25 @@ var
   Client: TICEClient;
 begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
+
   for Client in Clients do
   begin
-    Client.PausePlay;
-    if Client.Paused then
+    if Client.Playing and (Client.Paused) then
+    begin
+      Client.PausePlay;
       if Assigned(FOnPlayStarted) then
         FOnPlayStarted(Self);
+    end;
+  end;
+
+  for Client in Clients do
+  begin
+    if (Client.Playing) and (not Client.Paused) then
+    begin
+      Client.PausePlay;
+      if Assigned(FOnPlayStarted) then
+        FOnPlayStarted(Self);
+    end;
   end;
 
   if Assigned(FOnUpdateButtons) then
@@ -952,8 +963,6 @@ begin
     FPlaybackTimer.Enabled := False;
     FPlaybackTimer.Enabled := True;
   end;
-  if Assigned(FOnPlayingStreamChanged) then
-    FOnPlayingStreamChanged(Self, TICEClient(Sender).Entry.Name);
 end;
 
 procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string;
@@ -1056,14 +1065,10 @@ begin
   if OnePlaying then
   begin
     FPlaybackTimer.Enabled := True;
-    if Assigned(FOnPlayingStreamChanged) then
-      FOnPlayingStreamChanged(Self, OnePlayingName);
   end else
   begin
     FPlaybackTimer.Enabled := False;
     FTimeLabel.Caption := '';
-    if Assigned(FOnPlayingStreamChanged) then
-      FOnPlayingStreamChanged(Self, '');
   end;
 
   if Assigned(FOnUpdateButtons) then

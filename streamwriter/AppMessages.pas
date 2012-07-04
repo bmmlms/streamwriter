@@ -42,6 +42,28 @@ type
     property Volume: Integer read FVolume;
   end;
 
+  TPlayingObjectChangedMsg = class(TMessageBase)
+  private
+    FSender: TObject;
+    FArtist, FTitle, FStream, FFilename: string;
+  public
+    constructor Create(Sender: TObject; Artist, Title, Stream, Filename: string);
+
+    property Sender: TObject read FSender;
+    property Artist: string read FArtist;
+    property Title: string read FTitle;
+    property Stream: string read FStream;
+    property Filename: string read FFilename;
+  end;
+
+  TPlayingObjectStopped = class(TMessageBase)
+  private
+    FSender: TObject;
+  public
+    constructor Create(Sender: TObject);
+    property Sender: TObject read FSender;
+  end;
+
 implementation
 
 { TDeleteFileMessage }
@@ -58,6 +80,26 @@ constructor TVolumeChangedMsg.Create(Volume: Integer);
 begin
   inherited Create;
   FVolume := Volume;
+end;
+
+{ TPlayingObjectChangedMsg }
+
+constructor TPlayingObjectChangedMsg.Create(Sender: TObject; Artist, Title, Stream, Filename: string);
+begin
+  inherited Create;
+  FSender := Sender;
+  FArtist := Artist;
+  FTitle := Title;
+  FStream := Stream;
+  FFilename := Filename;
+end;
+
+{ TPlayingObjectStopped }
+
+constructor TPlayingObjectStopped.Create(Sender: TObject);
+begin
+  inherited Create;
+  FSender := Sender;
 end;
 
 end.

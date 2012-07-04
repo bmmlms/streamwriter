@@ -222,7 +222,7 @@ type
 
   // An array of TStreamSettings
   TStreamSettingsArray = array of TStreamSettings;
-
+            // TODO: auch wenn ne gespeicherte datei gespielt wird, das popup anzeigen neben der uhr!!
   // Application-specific settings
   TAppData = class(TAppDataBase)
   private
@@ -235,6 +235,7 @@ type
     FTrayOnMinimize: Boolean;
     FSnapMain: Boolean;
     FRememberRecordings: Boolean;
+    FDisplayPlayedSong: Boolean;
     FDisplayPlayNotifications: Boolean;
     FShowSplashScreen: Boolean;
     FSidebarWidth: Integer;
@@ -321,6 +322,7 @@ type
     property SnapMain: Boolean read FSnapMain write FSnapMain;
     // When set streamWriter will resume recordings on startup if it is closed while recording streams
     property RememberRecordings: Boolean read FRememberRecordings write FRememberRecordings;
+    property DisplayPlayedSong: Boolean read FDisplayPlayedSong write FDisplayPlayedSong;
     // When set notifications on the lower right of the screen will be displayed when a title on a stream changes
     property DisplayPlayNotifications: Boolean read FDisplayPlayNotifications write FDisplayPlayNotifications;
     property ShowSplashScreen: Boolean read FShowSplashScreen write FShowSplashScreen;
@@ -598,14 +600,14 @@ begin
   FStorage.Read('Dir', FDir, '');
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
-  FDir := TryUnRelativePath(FDir, False);
+  FDir := TryUnRelativePath(FDir);
 
   FStorage.Read('DirAuto', FDirAuto, '');
   if FDirAuto = '' then
     FDirAuto := FDir;
   if FDirAuto <> '' then
     FDirAuto := IncludeTrailingBackslash(FDirAuto);
-  FDirAuto := TryUnRelativePath(FDirAuto, False);
+  FDirAuto := TryUnRelativePath(FDirAuto);
 
   FStorage.Read('DeleteStreams', FStreamSettings.FDeleteStreams, False);
   FStorage.Read('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore, False);
@@ -659,6 +661,7 @@ begin
   FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);
   FStorage.Read('SnapMain', FSnapMain, False);
   FStorage.Read('RememberRecordings', FRememberRecordings, False);
+  FStorage.Read('DisplayPlayedSong', FDisplayPlayedSong, True);
   FStorage.Read('DisplayPlayNotifications', FDisplayPlayNotifications, True);
   FStorage.Read('ShowSplashScreen', FShowSplashScreen, True);
   FStorage.Read('SidebarWidth', FSidebarWidth, 250);
@@ -850,6 +853,7 @@ begin
   FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
   FStorage.Write('SnapMain', FSnapMain);
   FStorage.Write('RememberRecordings', FRememberRecordings);
+  FStorage.Write('DisplayPlayedSong', FDisplayPlayedSong);
   FStorage.Write('DisplayPlayNotifications', FDisplayPlayNotifications);
   FStorage.Write('ShowSplashScreen', FShowSplashScreen);
   FStorage.Write('SidebarWidth', FSidebarWidth);

@@ -103,18 +103,18 @@ begin
   FileTagger := TFileTagger.Create;
   try
     try
-      if FileTagger.Read(FData.Filename, 0) then
+      if FileTagger.Read(FData.Filename) then
       begin
         Artist := PatternReplace(Artist, Arr);
         Title := PatternReplace(Title, Arr);
         Album := PatternReplace(Album, Arr);
         Comment := PatternReplace(Comment, Arr);
 
-        FileTagger.Artist := Artist;
-        FileTagger.Title := Title;
-        FileTagger.Album := Album;
-        FileTagger.TrackNumber := IntToStr(FData.TrackNumber);
-        FileTagger.Comment := Comment;
+        FileTagger.Tag.Artist := Artist;
+        FileTagger.Tag.Title := Title;
+        FileTagger.Tag.Album := Album;
+        FileTagger.Tag.TrackNumber := IntToStr(FData.TrackNumber);
+        FileTagger.Tag.Comment := Comment;
 
         if FileTagger.Write(FData.Filename) then
         begin

@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, SysUtils, Messages, Classes, Controls, Forms, StdCtrls,
-  Graphics, UxTheme, DWMAPI, PngImageList, ImgList, Math,
+  Graphics, UxTheme, PngImageList, ImgList, Math,
   GUIFunctions, LanguageObjects, Logging;
 
 type

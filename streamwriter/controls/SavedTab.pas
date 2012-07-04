@@ -1504,22 +1504,6 @@ var
 begin
   FTab.UpdateButtons;
   Invalidate;
-
-  FT := TFileTagger.Create;
-  try
-    // Das .Show() und so muss hierhin, damit gleich die ClientWidth/ClientHeight passen.
-    FTab.FCoverBorderPanel.BevelKind := bkNone;
-    FTab.FCoverPanel.Show;
-    FT.Read(FPlayer.Filename, Min(FTab.FCoverImage.Width, FTab.FCoverImage.Height));
-    if FT.CoverImage <> nil then
-    begin
-      FTab.FCoverBorderPanel.BevelKind := bkFlat;
-      FTab.FCoverImage.Picture.Assign(FT.CoverImage);
-    end else
-      FTab.FCoverPanel.Hide;
-  finally
-    FT.Free;
-  end;
 end;
 
 procedure TSavedTree.PlayerStop(Sender: TObject);
@@ -1636,6 +1620,9 @@ begin
       FPlayer.Play;
     end else
     begin
+      if Assigned(FTab.FOnPlayStarted) then
+        FTab.FOnPlayStarted(FTab);
+
       if not FPlayer.Paused then
       begin
         try
@@ -1654,9 +1641,6 @@ begin
       end;
       FPlayer.Play;
     end;
-
-    if Assigned(FTab.FOnPlayStarted) then
-      FTab.FOnPlayStarted(FTab);
 
     FTab.UpdateButtons;
     Invalidate;

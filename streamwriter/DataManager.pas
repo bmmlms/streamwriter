@@ -1273,7 +1273,7 @@ begin
 
   Stream.Read(Result.FFilename);
 
-  Result.FFilename := TryUnRelativePath(Result.FFilename, True);
+  Result.FFilename := TryUnRelativePath(Result.FFilename);
 
   Stream.Read(Result.FStreamname);
   Stream.Read(Result.FFilesize);

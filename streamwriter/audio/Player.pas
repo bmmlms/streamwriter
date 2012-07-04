@@ -24,7 +24,8 @@ unit Player;
 interface
 
 uses
-  Windows, SysUtils, Classes, DynBass, Math, Logging, AppData, AudioFunctions;
+  Windows, SysUtils, Classes, DynBass, Math, Logging, AppData, AudioFunctions,
+  FileTagger, MessageBus, AppMessages;
 
 type
   TPlayer = class
@@ -41,6 +42,7 @@ type
 
     FEQEnabled: Boolean;
     FBandData: array[0..9] of TBandData;
+    FTag: TTagData;
 
     FOnPosReached: TNotifyEvent;
     FOnEndReached: TNotifyEvent;
@@ -85,6 +87,7 @@ type
     property PositionTime: Double read FGetPositionTime;
     property PosToReach: Cardinal read FPosToReach write FSetPosToReach;
     property EndPos: Cardinal read FEndPos write FSetEndPos;
+    property Tag: TTagData read FTag;
 
     property OnPosReached: TNotifyEvent read FOnPosReached write FOnPosReached;
     property OnEndReached: TNotifyEvent read FOnEndReached write FOnEndReached;
@@ -157,6 +160,8 @@ begin
 end;
 
 procedure TPlayer.CreatePlayer;
+var
+  FT: TFileTagger;
 begin
   BASSSetDevice(AppGlobals.SoundDevice);
   FPlayer := BASSStreamCreateFile(False, PChar(FFilename), 0, 0, {$IFDEF UNICODE}BASS_UNICODE{$ENDIF});
@@ -165,6 +170,19 @@ begin
   FSyncEnd := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, EndSyncProc, Self);
 
   EQEnabled := Players.EQEnabled;
+
+  FT := TFileTagger.Create;
+  try
+    if FT.Read(FFilename) then
+    begin
+      FTag := FT.Tag.Copy;
+    end else
+    begin
+      // TODO: filename nehmen...
+    end;
+  finally
+    FT.Free;
+  end;
 end;
 
 destructor TPlayer.Destroy;
@@ -175,6 +193,8 @@ begin
   try
     FreeStream(FPlayer);
   except end;
+
+  FreeAndNil(FTag);
 
   inherited;
 end;
@@ -343,7 +363,9 @@ begin
     end;
 
     if Assigned(FOnPause) then
-      FOnPause(Self)
+      FOnPause(Self);
+
+    MsgBus.SendMessage(TPlayingObjectStopped.Create(Self));
   end;
 end;
 
@@ -356,6 +378,11 @@ begin
 
   BASSChannelSetAttribute(FPlayer, 2, FVolume / 100);
   BASSChannelPlay(FPlayer, False);
+
+  if FTag <> nil then
+    MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, FTag.Artist, FTag.Title, '', FFilename))
+  else
+    MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, '', '', '', FFilename));
 
   if Assigned(FOnPlay) then
     FOnPlay(Self);
@@ -419,6 +446,8 @@ begin
 
     if Assigned(FOnStop) then
       FOnStop(Self);
+
+    MsgBus.SendMessage(TPlayingObjectStopped.Create(Self));
   end;
 end;
 

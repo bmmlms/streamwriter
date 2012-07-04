@@ -59,10 +59,10 @@ var
 begin
   FileTagger := TFileTagger.Create;
   try
-    FileTagger.Artist := Trim(txtArtist.Text);
-    FileTagger.Title := Trim(txtTitle.Text);
-    FileTagger.Album := Trim(txtAlbum.Text);
-    FileTagger.Comment := Trim(txtComment.Text);
+    FileTagger.Tag.Artist := Trim(txtArtist.Text);
+    FileTagger.Tag.Title := Trim(txtTitle.Text);
+    FileTagger.Tag.Album := Trim(txtAlbum.Text);
+    FileTagger.Tag.Comment := Trim(txtComment.Text);
 
     if FileTagger.Write(FFilename) then
       Close
@@ -110,13 +110,13 @@ begin
 
   FileTagger := TFileTagger.Create;
   try
-    if not FileTagger.Read(Filename, 0) then
+    if not FileTagger.Read(Filename) then
       Exit;
 
-    txtArtist.Text := FileTagger.Artist;
-    txtTitle.Text := FileTagger.Title;
-    txtAlbum.Text := FileTagger.Album;
-    txtComment.Text := FileTagger.Comment;
+    txtArtist.Text := FileTagger.Tag.Artist;
+    txtTitle.Text := FileTagger.Tag.Title;
+    txtAlbum.Text := FileTagger.Tag.Album;
+    txtComment.Text := FileTagger.Tag.Comment;
   finally
     FileTagger.Free;
   end;

@@ -42,6 +42,7 @@ type
     procedure FSetVolume(Value: Integer);
     function FGetAllStoppedOrPaused: Boolean;
     function FGetAnyPlayingOrPaused: Boolean;
+    function FGetAnyPlaying: Boolean;
     procedure FSetEQEnabled(Value: Boolean);
   public
     constructor Create;
@@ -62,6 +63,7 @@ type
     property VolumeBeforeMute: Integer read FVolumeBeforeMute write FVolumeBeforeMute;
     property AllStoppedOrPaused: Boolean read FGetAllStoppedOrPaused;
     property AnyPlayingOrPaused: Boolean read FGetAnyPlayingOrPaused;
+    property AnyPlaying: Boolean read FGetAnyPlaying;
     property LastPlayer: TObject read FLastPlayer write FLastPlayer;
     property EQEnabled: Boolean read FEQEnabled write FSetEQEnabled;
   end;
@@ -137,6 +139,33 @@ begin
       if IP.Playing and not IP.Paused then
       begin
         Result := False;
+        Exit;
+      end;
+    end;
+end;
+
+function TPlayerManager.FGetAnyPlaying: Boolean;
+var
+  i: Integer;
+  P: TPlayer;
+  IP: TICEClient;
+begin
+  Result := False;
+  for i := 0 to FPlayers.Count - 1 do
+    if TObject(FPlayers[i]) is TPlayer then
+    begin
+      P := TPlayer(FPlayers[i]);
+      if P.Playing and (not P.Paused) then
+      begin
+        Result := True;
+        Exit;
+      end;
+    end else if TObject(FPlayers[i]) is TICEClient then
+    begin
+      IP := TICEClient(FPlayers[i]);
+      if IP.Playing and (not IP.Paused) then
+      begin
+        Result := True;
         Exit;
       end;
     end;
@@ -287,8 +316,6 @@ var
   P: TPlayer;
   IP: TICEClient;
 begin
-  // Wenn alles pausiert ist, den letzten pausierten wieder starten,
-  // ansonsten eben alle pausieren.
   for i := 0 to FPlayers.Count - 1 do
     if TObject(FPlayers[i]) is TPlayer then
     begin
@@ -308,8 +335,6 @@ var
   P: TPlayer;
   IP: TICEClient;
 begin
-  // Wenn alles pausiert ist, den letzten pausierten wieder starten,
-  // ansonsten eben alle pausieren.
   for i := 0 to FPlayers.Count - 1 do
     if TObject(FPlayers[i]) is TPlayer then
     begin

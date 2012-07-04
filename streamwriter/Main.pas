@@ -29,12 +29,13 @@ uses
   DragDropInternet, DragDropText, DragDropFile, Update, UpdateClient,
   LanguageObjects, AppDataBase, Functions, ClientManager, ShellAPI, DropSource,
   About, MsgDlg, HomeCommunication, StreamBrowserView, Clipbrd,
-  StationCombo, GUIFunctions, StreamInfoView, StreamDebugView,
+  StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, MessageBus,
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
-  SystemCritical, Intro, AddonManager, Equalizer, TypeDefs, SplashThread;
+  SystemCritical, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
+  AppMessages;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -226,6 +227,8 @@ type
     procedure mnuPlayerClick(Sender: TObject);
     procedure actEqualizerExecute(Sender: TObject);
   private
+    FMainCaption: string;
+
     FCommunityLogin: TfrmCommunityLogin;
 
     FDataLists: TDataLists;
@@ -251,6 +254,8 @@ type
     FEqualizer: TfrmEqualizer;
 
     FExiting: Boolean;
+
+    FLastPlaying: TObject;
 
     procedure OneInstanceMessage(var Msg: TMessage); message WM_USER + 1234;
     procedure AfterShown(var Msg: TMessage); message WM_AFTERSHOWN;
@@ -296,7 +301,6 @@ type
     procedure tabClientsShowErrorMessage(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
     procedure tabClientsClientAdded(Sender: TObject);
     procedure tabClientsClientRemoved(Sender: TObject);
-    procedure tabClientsPlayingStreamChanged(Sender: TObject; Data: string);
 
     procedure tabSavedCut(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
@@ -311,6 +315,8 @@ type
     procedure tabChartsAddToWishlist(Sender: TObject; List: TStringList);
 
     procedure mnuMoveToCategory(Sender: TObject);
+
+    procedure MessageReceived(Msg: TMessageBase);
   protected
 
   public
@@ -324,9 +330,6 @@ type
     procedure SetHintSize(HintWindow: TCustomHintWindow); override;
     procedure PaintHint(HintWindow: TCustomHintWindow); override;
   end;
-
-const
-  MAIN_CAPTION = 'streamWriter';
 
 implementation
 
@@ -656,7 +659,7 @@ begin
   begin
     FadeOutSplash(False);
     MsgBox(Handle, _('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
-    ShowSettings(True, DirectoryExists(AppGlobals.DirAuto));
+    ShowSettings(True, not DirectoryExists(AppGlobals.DirAuto));
   end;
 
   // Das erste DirectoryExists() ist da, damit der Settings-Dialog nicht doppelt kommt.
@@ -739,6 +742,10 @@ var
   Recovered: Boolean;
   S: TExtendedStream;
 begin
+  FMainCaption := 'streamWriter';
+  {$IFDEF DEBUG}FMainCaption := FMainCaption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
+  Caption := FMainCaption;
+
   if not Bass.EffectsAvailable then
   begin
     actEqualizer.Enabled := False;
@@ -845,9 +852,6 @@ begin
   tabSaved.Setup(FDataLists, imgImages);
   tabClients.AddressBar.Stations.Sort;
 
-  Caption := MAIN_CAPTION;
-  {$IFDEF DEBUG}Caption := Caption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
-
   UpdateButtons;
   UpdateStatus;
   tmrSpeed.Enabled := True;
@@ -872,7 +876,6 @@ begin
 
   tabClients.OnClientAdded := tabClientsClientAdded;
   tabClients.OnClientRemoved := tabClientsClientRemoved;
-  tabClients.OnPlayingStreamChanged := tabClientsPlayingStreamChanged;
 
   // Ist nun hier, damit man nicht sieht, wie sich alle Controls resizen.
   if AppGlobals.MainMaximized then
@@ -918,6 +921,7 @@ begin
   actShowSideBar.Checked := tabClients.SideBar.Visible;
 
   Language.Translate(Self);
+  MsgBus.AddSubscriber(MessageReceived);
 
   Application.ProcessMessages;
 
@@ -1126,6 +1130,53 @@ begin
       begin
         Players.Mute;
       end;
+  end;
+end;
+
+procedure TfrmStreamWriterMain.MessageReceived(Msg: TMessageBase);
+var
+  PlayMsg: TPlayingObjectChangedMsg;
+  StopMsg: TPlayingObjectStopped;
+  NewCaption: string;
+begin
+  if not AppGlobals.DisplayPlayedSong then
+    Exit;
+
+  if Msg is TPlayingObjectChangedMsg then
+  begin
+    PlayMsg := TPlayingObjectChangedMsg(Msg);
+
+    // todo: was ist mit stream wiedergabe, wo er keinen titel mitschickt? evtl nochn neues feld in die playingmsg packen.
+
+    // TODO: stream abspielen. gespeicherten track abspielen. pause drücken bei streams. der titel ändert sich nicht.
+
+    if (PlayMsg.Title <> '') and (PlayMsg.Artist <> '') then
+    begin
+      // Eine gespeicherte Datei mit Tags wird wiedergegeben
+      NewCaption := FMainCaption + ' - ' + ShortenString(PlayMsg.Artist, 30) + ' - ' + ShortenString(PlayMsg.Title, 30);
+    end else if PlayMsg.Filename <> '' then
+    begin
+      // Eine gespeicherte Datei ohne Tags wird wiedergegeben
+      NewCaption := FMainCaption + ' - ' + ShortenString(RemoveFileExt(ExtractFileName(PlayMsg.Filename)), 30);
+    end else if (PlayMsg.Title <> '') and (PlayMsg.Stream <> '') then
+    begin
+      // Ein Stream mit Titel wird wiedergegeben
+      NewCaption := FMainCaption + ' - ' + ShortenString(PlayMsg.Title, 30) + ' - ' + ShortenString(PlayMsg.Stream, 30);
+    end else if PlayMsg.Stream <> '' then
+    begin
+      // Ein Stream ohne Titel wird wiedergegeben
+      NewCaption := FMainCaption + ' - ' + ShortenString(PlayMsg.Stream, 30);
+    end;
+
+    Caption := NewCaption;
+  end else if Msg is TPlayingObjectStopped then
+  begin
+    StopMsg := TPlayingObjectStopped(Msg);
+
+    if Players.AnyPlaying then
+      Exit;
+
+    Caption := FMainCaption;
   end;
 end;
 
@@ -1496,6 +1547,9 @@ begin
     S.Free;
   end;
 
+  if not AppGlobals.DisplayPlayedSong then
+    Caption := FMainCaption;
+
   HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 
   tabSaved.Tree.SetFileWatcher;
@@ -1598,15 +1652,6 @@ var
 begin
   Client := Sender as TICEClient;
   tabLists.RemoveClient(Client);
-end;
-
-procedure TfrmStreamWriterMain.tabClientsPlayingStreamChanged(
-  Sender: TObject; Data: string);
-begin
-  if Data <> '' then
-    Caption := MAIN_CAPTION + ' - ' + Data
-  else if (Data = '') and (Caption <> MAIN_CAPTION) then
-    Caption := MAIN_CAPTION;
 end;
 
 procedure TfrmStreamWriterMain.tabSavedAddTitleToWishlist(Sender: TObject;

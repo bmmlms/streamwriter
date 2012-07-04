@@ -187,6 +187,7 @@ type
     Label8: TLabel;
     chkSubmitStats: TCheckBox;
     chkShowSplashScreen: TCheckBox;
+    chkDisplayPlayedSong: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -1046,6 +1047,7 @@ begin
   chkTray.Checked := AppGlobals.Tray;
   chkSnapMain.Checked := AppGlobals.SnapMain;
   chkRememberRecordings.Checked := AppGlobals.RememberRecordings;
+  chkDisplayPlayedSong.Checked := AppGlobals.DisplayPlayedSong;
   chkDisplayPlayNotifications.Checked := AppGlobals.DisplayPlayNotifications;
   chkShowSplashScreen.Checked := AppGlobals.ShowSplashScreen;
   optClose.Checked := not AppGlobals.TrayOnMinimize;
@@ -1411,6 +1413,7 @@ begin
     AppGlobals.Tray := chkTray.Checked;
     AppGlobals.SnapMain := chkSnapMain.Checked;
     AppGlobals.RememberRecordings := chkRememberRecordings.Checked;
+    AppGlobals.DisplayPlayedSong := chkDisplayPlayedSong.Checked;
     AppGlobals.DisplayPlayNotifications := chkDisplayPlayNotifications.Checked;
     AppGlobals.ShowSplashScreen := chkShowSplashScreen.Checked;
     AppGlobals.TrayOnMinimize := optMinimize.Checked;
@@ -1540,6 +1543,12 @@ begin
     SetPage(FPageList.Find(TPanel(txtDir.Parent)));
     btnBrowse.Click;
     FBrowseDir := False;
+
+    if FBrowseAutoDir then
+    begin
+      btnBrowseAuto.Click;
+      FBrowseAutoDir := False;
+    end;
   end;
 
   if FBrowseAutoDir then
@@ -2329,8 +2338,11 @@ begin
     if Sender = btnBrowse then
     begin
       txtDir.Text := IncludeTrailingBackslash(Dir);
-      if FBrowseDir and (txtDirAuto.Text = '') then
+      if FBrowseDir and (txtDirAuto.Text = '') and (FBrowseAutoDir) then
+      begin
         txtDirAuto.Text := txtDir.Text;
+        FBrowseAutoDir := False;
+      end;
     end else
       txtDirAuto.Text := IncludeTrailingBackslash(Dir)
   else

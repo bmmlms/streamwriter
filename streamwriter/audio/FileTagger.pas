@@ -23,35 +23,54 @@ interface
 
 uses
   Windows, SysUtils, Classes, AudioGenie, AddonAudioGenie, SyncObjs, Graphics,
-  JPEG, PngImage, Math;
+  JPEG, PngImage, Math, Base64;
 
 type
-  TFileTagger = class
+  TTagData = class
   private
-    FAG: TAudioGenie3;
-    FFilename: string;
     FArtist, FTitle, FAlbum, FComment, FTrackNumber: string;
     FCoverImage: TBitmap;
-    FAudioType: TAudioFormatID;
-
-    function FindGraphicClass(const Buffer; const BufferSize: Int64;
-      out GraphicClass: TGraphicClass): Boolean;
-    procedure ResizeBitmap(var Bitmap: TBitmap; MaxSize: Integer);
-    procedure ReadCover(AG: TAudioGenie3; MaxCoverWidth: Integer);
   public
     constructor Create;
     destructor Destroy; override;
+    function Copy: TTagData;
 
-    function Read(Filename: string; MaxCoverWidth: Integer): Boolean;
-    function Write(Filename: string): Boolean;
-
-    property Filename: string read FFilename;
     property Artist: string read FArtist write FArtist;
     property Title: string read FTitle write FTitle;
     property Album: string read FAlbum write FAlbum;
     property Comment: string read FComment write FComment;
     property TrackNumber: string read FTrackNumber write FTrackNumber;
     property CoverImage: TBitmap read FCoverImage;
+  end;
+
+  TFileTagger = class
+  private
+    FAG: TAudioGenie3;
+    FFilename: string;
+    FAudioType: TAudioFormatID;
+    FTag: TTagData;
+
+    function FindGraphicClass(const Buffer; const BufferSize: Int64;
+      out GraphicClass: TGraphicClass): Boolean;
+    procedure ResizeBitmap(var Bitmap: TBitmap; MaxSize: Integer);
+    procedure ReadCover(AG: TAudioGenie3);
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    function Read(Filename: string): Boolean;
+    function Write(Filename: string): Boolean;
+
+    property Filename: string read FFilename;
+    property Tag: TTagData read FTag;
+    {
+    property Artist: string read FArtist write FArtist;
+    property Title: string read FTitle write FTitle;
+    property Album: string read FAlbum write FAlbum;
+    property Comment: string read FComment write FComment;
+    property TrackNumber: string read FTrackNumber write FTrackNumber;
+    property CoverImage: TBitmap read FCoverImage;
+    }
   end;
 
 implementation
@@ -68,12 +87,12 @@ constructor TFileTagger.Create;
 begin
   inherited;
 
+  FTag := TTagData.Create;
 end;
 
 destructor TFileTagger.Destroy;
 begin
-  if FCoverImage <> nil then
-    FCoverImage.Free;
+  FTag.Free;
 
   inherited;
 end;
@@ -85,10 +104,9 @@ var
   Words: array[Byte] of Word absolute Buffer;
 begin
   GraphicClass := nil;
-  Result := False;
 
   if BufferSize < 44 then
-    Exit;
+    Exit(False);
 
   if Words[0] = $D8FF then
     GraphicClass := TJPEGImage
@@ -124,18 +142,26 @@ begin
   end;
 end;
 
-procedure TFileTagger.ReadCover(AG: TAudioGenie3; MaxCoverWidth: Integer);
+function Swap32(Data: Integer): Integer; assembler;
+asm
+  BSWAP eax
+end;
+
+procedure TFileTagger.ReadCover(AG: TAudioGenie3);
 var
   PicFrameCount: SmallInt;
   Mem: Pointer;
-  PicSize: Integer;
+  PicSize, Len: Integer;
   MS: TMemoryStream;
   GraphicClass: TGraphicClass;
   Graphic: TGraphic;
+  Keys: string;
+  ImageData: AnsiString;
+  x: Cardinal;
+  b: byte;
 begin
   Graphic := nil;
 
-  // TODO: geht natürlich nur für mp3s...
   case FAudioType of
     MPEG:
       begin
@@ -169,24 +195,65 @@ begin
           end;
         end;
       end;
-    OGGVORBIS: ;
-    MP4M4A: ;
+    OGGVORBIS:
+      begin
+        Keys := AG.OGGGetItemKeysW;
+        if Pos('METADATA_BLOCK_PICTURE', Keys) > 0 then
+        begin
+          ImageData := AG.OGGUserItemW['METADATA_BLOCK_PICTURE'];
+          if (Length(ImageData) > 0) and (Length(ImageData) < 1000000) then
+          begin
+            ImageData := Base64.Decode(ImageData);
+
+            MS := TMemoryStream.Create;
+            try
+              MS.Write(ImageData[1], Length(ImageData));
+
+              // Siehe http://flac.sourceforge.net/format.html#metadata_block_picture
+              MS.Seek(4, soFromBeginning);
+
+              MS.Read(Len, SizeOf(Len));
+              Len := Swap32(Len);
+              MS.Seek(Len, soFromCurrent);
+
+              MS.Read(Len, SizeOf(Len));
+              Len := Swap32(Len);
+              MS.Seek(Len, soFromCurrent);
+
+              MS.Seek(20, soFromCurrent);
+
+              if FindGraphicClass(Pointer(Int64(MS.Memory) + MS.Position)^, MS.Size, GraphicClass) then
+              begin
+                Graphic := GraphicClass.Create;
+                Graphic.LoadFromStream(MS);
+              end;
+            finally
+              MS.Free;
+            end;
+          end;
+        end;
+      end;
+    MP4M4A:
+      begin
+        // ...
+      end;
   end;
 
   if Graphic <> nil then
   begin
     try
-      FCoverImage := TBitmap.Create;
-      FCoverImage.Assign(Graphic);
+      FTag.FCoverImage := TBitmap.Create;
+      FTag.FCoverImage.Assign(Graphic);
 
-      ResizeBitmap(FCoverImage, MaxCoverWidth);
+      // TODO: das gehört in gui, nicht hier hin.
+      //ResizeBitmap(FCoverImage, MaxCoverWidth);
     finally
       Graphic.Free;
     end;
   end;
 end;
 
-function TFileTagger.Read(Filename: string; MaxCoverWidth: Integer): Boolean;
+function TFileTagger.Read(Filename: string): Boolean;
 var
   AG: TAudioGenie3;
 begin
@@ -197,11 +264,6 @@ begin
     Exit;
 
   FFilename := Filename;
-  FArtist := '';
-  FTitle := '';
-  FAlbum := '';
-  FComment := '';
-  FTrackNumber := '';
 
   FileTaggerLock.Enter;
   try
@@ -210,14 +272,13 @@ begin
       FAudioType := AG.AUDIOAnalyzeFileW(Filename);
       if FAudioType <> UNKNOWN then
       begin
-        FArtist := AG.AUDIOArtistW;
-        FTitle := AG.AUDIOTitleW;
-        FAlbum := AG.AUDIOAlbumW;
-        FComment := AG.AUDIOCommentW;
-        FTrackNumber := AG.AUDIOTrackW;
+        FTag.FArtist := AG.AUDIOArtistW;
+        FTag.FTitle := AG.AUDIOTitleW;
+        FTag.FAlbum := AG.AUDIOAlbumW;
+        FTag.FComment := AG.AUDIOCommentW;
+        FTag.FTrackNumber := AG.AUDIOTrackW;
 
-        if MaxCoverWidth > 0 then
-          ReadCover(AG, MaxCoverWidth);
+        ReadCover(AG);
 
         Result := True;
       end;
@@ -244,11 +305,11 @@ begin
     try
       if AG.AUDIOAnalyzeFileW(Filename) <> UNKNOWN then
       begin
-        AG.AUDIOArtistW := FArtist;
-        AG.AUDIOTitleW := FTitle;
-        AG.AUDIOAlbumW := FAlbum;
-        AG.AUDIOCommentW := FComment;
-        AG.AUDIOTrackW := FTrackNumber;
+        AG.AUDIOArtistW := FTag.FArtist;
+        AG.AUDIOTitleW := FTag.FTitle;
+        AG.AUDIOAlbumW := FTag.FAlbum;
+        AG.AUDIOCommentW := FTag.FComment;
+        AG.AUDIOTrackW := FTag.FTrackNumber;
 
         if AG.AUDIOSaveChangesW then
           Result := True;
@@ -259,6 +320,38 @@ begin
   finally
     FileTaggerLock.Leave;
   end;
+end;
+
+{ TTagData }
+
+function TTagData.Copy: TTagData;
+begin
+  Result := TTagData.Create;
+  Result.FArtist := FArtist;
+  Result.FTitle := FTitle;
+  Result.FAlbum := FAlbum;
+  Result.FComment := FComment;
+  Result.FTrackNumber := FTrackNumber;
+
+  if FCoverImage <> nil then
+  begin
+    Result.FCoverImage := TBitmap.Create;
+    Result.FCoverImage.Assign(FCoverImage);
+  end;
+end;
+
+constructor TTagData.Create;
+begin
+  inherited;
+
+end;
+
+destructor TTagData.Destroy;
+begin
+  if FCoverImage <> nil then
+    FCoverImage.Free;
+
+  inherited;
 end;
 
 initialization
