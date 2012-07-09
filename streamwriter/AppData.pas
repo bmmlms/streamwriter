@@ -33,10 +33,12 @@ uses
   AddonManager, PostProcessManager, Logging, Base64, AudioFunctions;
 
 type
-  // Actions that can be executed in the stream-view
+  // Do not change the order of items in the following enums!
+
+  // Actions that can be executed in the stream-view.
   TClientActions = (caStartStop, caStreamIntegrated, caStream, caFile);
-  // Actions that can be exucuted using the stream-browser
-  TBrowserActions = (baStart, baListen, baListenExternal);
+  // Actions that can be exucuted using the stream-browser.
+  TBrowserActions = (baStart, baListen, baListenExternal, baAddOnly);
   // Set for definition of filters to use
   TUseFilters = (ufNone, ufWish, ufIgnoreGlobal, ufIgnoreLocal, ufIgnoreBoth, ufBoth);
   // Definitions for directions for where to adjust the track-offset
@@ -222,7 +224,7 @@ type
 
   // An array of TStreamSettings
   TStreamSettingsArray = array of TStreamSettings;
-            // TODO: auch wenn ne gespeicherte datei gespielt wird, das popup anzeigen neben der uhr!!
+
   // Application-specific settings
   TAppData = class(TAppDataBase)
   private

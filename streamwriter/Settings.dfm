@@ -300,7 +300,8 @@ object frmSettings: TfrmSettings
       Items.Strings = (
         'Start recording'
         'Listen to stream'
-        'Listen to stream (external player)')
+        'Listen to stream (external player)'
+        'Only add to list')
     end
     object chkSnapMain: TCheckBox
       Left = 4

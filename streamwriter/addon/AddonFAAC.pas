@@ -82,6 +82,7 @@ begin
   FHelp := _('This addon adds support for encoding of AAC files to the application which is useful for postprocessing of recorded songs.');
   FDownloadName := 'addon_faac';
   FDownloadPackage := 'addon_faac.dll';
+  FHasInitMessage := True;
 
   FFilesDir := AppGlobals.TempDir + 'addon_faac\';
   FEXEPath := FFilesDir + 'faac.exe';
@@ -99,7 +100,7 @@ end;
 
 function TAddonFAAC.ShowInitMessage(Handle: THandle): Boolean;
 begin
-  Result := MsgBox(Handle, _('WARNING:'#13#10'It is not be allowed in some contries to use this addon because it contains faac.exe ' +
+  Result := MsgBox(Handle, _('WARNING:'#13#10'It may not be allowed in some contries to use the FAAC-addon because it contains faac.exe ' +
                              'that makes use of some patented technologies. Please make sure you may use these files in your country. ' +
                              'If you are sure you may use these files, press "Yes" to continue.'), _('Warning'), MB_ICONWARNING or MB_YESNO or MB_DEFBUTTON2) = IDYES;
 end;

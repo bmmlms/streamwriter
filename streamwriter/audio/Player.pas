@@ -171,15 +171,12 @@ begin
 
   EQEnabled := Players.EQEnabled;
 
+  if FTag <> nil then
+    FTag.Free;
   FT := TFileTagger.Create;
   try
     if FT.Read(FFilename) then
-    begin
       FTag := FT.Tag.Copy;
-    end else
-    begin
-      // TODO: filename nehmen...
-    end;
   finally
     FT.Free;
   end;

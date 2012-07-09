@@ -78,6 +78,17 @@ end;
 
 procedure TMainTabSheet.SavePlaylist(Entries: TPlaylistEntryArray;
   Open: Boolean);
+ function GetURLString(URL: string): string;
+ var
+  H, D: string;
+  P: Integer;
+ begin
+   if ParseURL(URL, H, P, D) then
+   begin
+     Result := 'http://' + H + ':' + IntToStr(P) + D;
+   end else
+    Result := URL;
+ end;
  procedure BuildPLS(Entries: TPlaylistEntryArray; List: TStringList);
   var
     i: Integer;
@@ -87,7 +98,7 @@ procedure TMainTabSheet.SavePlaylist(Entries: TPlaylistEntryArray;
     List.Add('numberofentries=' + IntToStr(Length(Entries)));
     for i := 0 to Length(Entries) - 1 do
     begin
-      List.Add('File' + IntToStr(i + 1) + '=' + Entries[i].URL);
+      List.Add('File' + IntToStr(i + 1) + '=' + GetURLString(Entries[i].URL));
       List.Add('Title' + IntToStr(i + 1) + '=' + Entries[i].Name);
       List.Add('Length' + IntToStr(i + 1) + '=-1');
     end;
@@ -101,7 +112,7 @@ procedure TMainTabSheet.SavePlaylist(Entries: TPlaylistEntryArray;
     for i := 0 to Length(Entries) - 1 do
     begin
       List.Add('#EXTINF:-1,' + Entries[i].Name);
-      List.Add(Entries[i].URL);
+      List.Add(GetURLString(Entries[i].URL));
     end;
   end;
 var

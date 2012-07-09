@@ -52,7 +52,7 @@ type
 
     function FindGraphicClass(const Buffer; const BufferSize: Int64;
       out GraphicClass: TGraphicClass): Boolean;
-    procedure ResizeBitmap(var Bitmap: TBitmap; MaxSize: Integer);
+    //procedure ResizeBitmap(var Bitmap: TBitmap; MaxSize: Integer);
     procedure ReadCover(AG: TAudioGenie3);
   public
     constructor Create;
@@ -114,32 +114,6 @@ begin
     GraphicClass := TPNGImage;
 
   Result := (GraphicClass <> nil);
-end;
-
-procedure TFileTagger.ResizeBitmap(var Bitmap: TBitmap; MaxSize: Integer);
-var
-  MinSize, FW, FH: Integer;
-  Res: TBitmap;
-begin
-  begin
-    if Bitmap.Width >= Bitmap.Height then
-    begin
-      FW := MaxSize;
-      FH := Trunc((Bitmap.Height / Bitmap.Width) * MaxSize);
-    end else
-    begin
-      FH := MaxSize;
-      FW := Trunc((Bitmap.Width / Bitmap.Height) * MaxSize);
-    end;
-
-    Res := TBitmap.Create;
-    Res.Width := FW;
-    Res.Height := FH;
-    Res.Canvas.StretchDraw(Rect(0, 0, FW, FH), Bitmap);
-
-    Bitmap.Free;
-    Bitmap := Res;
-  end;
 end;
 
 function Swap32(Data: Integer): Integer; assembler;
@@ -241,11 +215,12 @@ begin
 
   if Graphic <> nil then
   begin
+    FTag.FCoverImage.Free;
+
     try
       FTag.FCoverImage := TBitmap.Create;
       FTag.FCoverImage.Assign(Graphic);
 
-      // TODO: das gehört in gui, nicht hier hin.
       //ResizeBitmap(FCoverImage, MaxCoverWidth);
     finally
       Graphic.Free;

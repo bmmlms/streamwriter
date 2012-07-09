@@ -1713,6 +1713,8 @@ end;
 
 procedure TfrmSettings.lstAddonsItemChecked(Sender: TObject;
   Item: TListItem);
+var
+  i: Integer;
 begin
   if not FInitialized then
     Exit;
@@ -1721,6 +1723,12 @@ begin
 
   lstAddons.OnItemChecked := nil;
   Item.Checked := AppGlobals.AddonManager.EnableAddon(Self, TAddonBase(Item.Data), True);
+  lstAddons.OnItemChecked := lstAddonsItemChecked;
+
+  // Eventuell wurden Abhängigkeiten mitinstalliert. Also alles mal aktualisieren.
+  lstAddons.OnItemChecked := nil;
+  for i := 0 to lstAddons.Items.Count - 1 do
+    lstAddons.Items[i].Checked := TAddonBase(lstAddons.Items[i].Data).FilesExtracted;
   lstAddons.OnItemChecked := lstAddonsItemChecked;
 end;
 
@@ -1845,6 +1853,13 @@ begin
   begin
     AppGlobals.PostProcessManager.ReInitPostProcessors;
     lstPostProcessSelectItem(lstPostProcess, lstPostProcess.Selected, True);
+  end;
+
+  for i := 0 to lstAddons.Items.Count - 1 do
+  begin
+    // Damit Sprache neu gesetzt wird und so..
+    TAddonBase(lstAddons.Items[i].Data).Initialize;
+    lstAddons.Items[i].Caption := TAddonBase(lstAddons.Items[i].Data).Name;
   end;
 
   for i := 0 to lstPostProcess.Items.Count - 1 do

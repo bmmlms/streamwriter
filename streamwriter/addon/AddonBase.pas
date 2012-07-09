@@ -19,6 +19,7 @@ type
 
     FDownloadPackage: string;
     FDownloadName: string;
+    FHasInitMessage: Boolean;
 
     FFilenames: TStringList;
     FNeededAddons: TList;
@@ -57,6 +58,7 @@ type
     property PackageDownloaded: Boolean read FGetPackageDownloaded;
     property VersionOkay: Boolean read FGetVersionOkay;
     property DependenciesMet: Boolean read FGetDependenciesMet;
+    property HasInitMessage: Boolean read FHasInitMessage;
   end;
 
 implementation

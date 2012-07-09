@@ -97,7 +97,10 @@ begin
 
         DoShow;
         lblTitle.Caption := TruncateText(Title, lblTitle.Width, lblTitle.Font);
-        lblStream.Caption := TruncateText(Format(_('on %s'), [Stream]), lblStream.Width, lblStream.Font);
+        if Stream <> '' then
+          lblStream.Caption := TruncateText(Format(_('on %s'), [Stream]), lblStream.Width, lblStream.Font)
+        else
+          lblStream.Caption := '';
 
         ShowWindow(Handle, SW_HIDE);
         ShowWindow(Handle, SW_SHOWNOACTIVATE);

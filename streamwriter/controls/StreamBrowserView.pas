@@ -53,7 +53,7 @@ type
   end;
   PStreamNodeData = ^TStreamNodeData;
 
-  TOpenActions = (oaStart, oaPlay, oaOpen, oaOpenWebsite, oaBlacklist, oaCopy, oaSave, oaSetData,
+  TOpenActions = (oaStart, oaPlay, oaAdd, oaOpen, oaOpenWebsite, oaBlacklist, oaCopy, oaSave, oaSetData,
     oaRefresh, oaRate1, oaRate2, oaRate3, oaRate4, oaRate5, oaNone);
 
   TNeedDataEvent = procedure(Sender: TObject; Offset, Count: Integer) of object;
@@ -173,6 +173,7 @@ type
     FItemStart: TMenuItem;
     FItemPlay: TMenuItem;
     FItemOpen: TMenuItem;
+    FItemAdd: TMenuItem;
     FItemRate: TMenuItem;
     FItemRate1: TMenuItem;
     FItemRate2: TMenuItem;
@@ -325,6 +326,12 @@ begin
   FItemOpen.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemOpen);
 
+  FItemAdd := FPopupMenu.CreateMenuItem;
+  FItemAdd.Caption := '&Add stream';
+  FItemAdd.ImageIndex := 80;
+  FItemAdd.OnClick := PopupMenuClick;
+  FPopupMenu.Items.Add(FItemAdd);
+
   FItemRate := CreateItem('&Rate', 64, nil);
 
   FItemRate5 := CreateItem('&5', 64, FItemRate);
@@ -346,7 +353,7 @@ begin
   FItemRefresh := CreateItem('Re&fresh', 23, nil);
   FItemRefresh.OnClick := PopupMenuClick;
 
-  FItemAdministration := CreateItem('&Administration', -1, nil);
+  FItemAdministration := CreateItem('A&dministration', -1, nil);
 
   FItemSetData := CreateItem('S&et data...', -1, FItemAdministration);
   FItemSetData.OnClick := PopupMenuClick;
@@ -548,6 +555,8 @@ begin
           FOnAction(Self, oaPlay, Entries);
         baListenExternal:
           FOnAction(Self, oaOpen, Entries);
+        baAddOnly:
+          FOnAction(Self, oaAdd, Entries);
       end;
   end;
 end;
@@ -692,6 +701,8 @@ begin
       Action := oaPlay;
   end else if Sender = FItemOpen then
     Action := oaOpen
+  else if Sender = FItemAdd then
+    Action := oaAdd
   else if Sender = FItemOpenWebsite then
     Action := oaOpenWebsite
   else if Sender = FItemBlacklist then

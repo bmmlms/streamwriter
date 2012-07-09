@@ -1346,10 +1346,10 @@ begin
     begin
       if InRecord then
       begin
-        tabClients.StartStreaming(0, 0, '', Args[i], '', nil, False, nil, amNoWhere);
+        tabClients.StartStreaming(0, 0, '', Args[i], '', nil, baStart, nil, amNoWhere);
       end else if InPlay then
       begin
-        tabClients.StartStreaming(0, 0, '', Args[i], '', nil, True, nil, amNoWhere);
+        tabClients.StartStreaming(0, 0, '', Args[i], '', nil, baListen, nil, amNoWhere);
       end;
     end;
   end;

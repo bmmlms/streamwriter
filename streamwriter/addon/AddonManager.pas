@@ -108,19 +108,33 @@ function TAddonManager.EnableAddon(Owner: TCustomForm; Addon: TAddonBase; ShowMe
 var
   i: Integer;
   Res: Integer;
+  MsgShown: Boolean;
   DA: TfrmDownloadAddons;
 begin
   if not Addon.DependenciesMet then
   begin
+    MsgShown := False;
+
     for i := 0 to Addon.NeededAddons.Count - 1 do
-      if not EnableAddon(Owner, Find(Addon.NeededAddons[i]), False) then
-        Exit(False);
+      if not Addon.FilesExtracted then
+      begin
+        if not MsgShown then
+        begin
+          if MsgBox(Owner.Handle, _('The selected addon has some unmet dependencies.'#13#10'Do you want do download the required addons now?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
+          begin
+            Exit(False);
+          end;
+          MsgShown := True;
+        end;
+        if not EnableAddon(Owner, Find(Addon.NeededAddons[i]), False) then
+          Exit(False);
+      end;
   end;
 
   if not Addon.PackageDownloaded then
   begin
     if ShowMessage then
-      Res := MsgBox(Owner.Handle, _('The addon cannot be activated because needed files have not been downloaded.'#13#10'Do you want to download these files now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1)
+      Res := MsgBox(Owner.Handle, Format(_('The addon "%s" cannot be activated because needed files have not been downloaded.'#13#10'Do you want to download these files now?'), [Addon.Name]), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1)
     else
       Res := IDYES;
 

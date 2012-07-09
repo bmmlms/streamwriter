@@ -29,7 +29,8 @@ uses
   ImgList, Functions, DragDropFile, GUIFunctions, StreamInfoView, DynBASS,
   Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
   PlayerManager, Logging, FileWatcher, MessageBus, AppMessages, ShlObj,
-  SavedTabEditTags, Generics.Collections, TypeDefs, AudioFunctions, FileTagger;
+  SavedTabEditTags, Generics.Collections, TypeDefs, AudioFunctions, FileTagger,
+  Notifications;
 
 type
   TSavedTree = class;
@@ -1500,8 +1501,23 @@ end;
 
 procedure TSavedTree.PlayerPlay(Sender: TObject);
 var
-  FT: TFileTagger;
+  B: TBitmap;
 begin
+  if AppGlobals.DisplayPlayNotifications then
+    if (FPlayer.Tag <> nil) and (FPlayer.Tag.Artist <> '') and (FPlayer.Tag.Title <> '') then
+      TfrmNotification.Act(FPlayer.Tag.Artist + ' - ' + FPlayer.Tag.Title, '')
+    else
+      TfrmNotification.Act(RemoveFileExt(ExtractFileName(FPlayer.Filename)), '');
+
+  if (FPlayer.Tag <> nil) and (FPlayer.Tag.CoverImage <> nil) then
+  begin
+    FTab.FCoverBorderPanel.BevelKind := bkNone;
+    FTab.FCoverPanel.Show;
+    FTab.FCoverBorderPanel.BevelKind := bkFlat;
+    FTab.FCoverImage.Picture.Assign(ResizeBitmap(FPlayer.Tag.CoverImage, Min(FTab.FCoverImage.Height, FTab.FCoverImage.Width)));
+  end else
+    FTab.FCoverPanel.Hide;
+
   FTab.UpdateButtons;
   Invalidate;
 end;
