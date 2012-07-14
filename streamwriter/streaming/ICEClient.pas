@@ -115,6 +115,8 @@ type
     function FGetActive: Boolean;
     function FGetRecording: Boolean;
     function FGetPaused: Boolean;
+    function FGetPlayingPaused: Boolean;
+    function FGetPlayingStarted: Boolean;
     function FGetPlaying: Boolean;
     procedure FSetEQEnabled(Value: Boolean);
     function ParsePlaylist: Boolean;
@@ -167,6 +169,8 @@ type
     property Recording: Boolean read FGetRecording;
     property Playing: Boolean read FGetPlaying;
     property Paused: Boolean read FGetPaused;
+    property PlayingPaused: Boolean read FGetPlayingPaused;
+    property PlayingStarted: Boolean read FGetPlayingStarted;
     property Killed: Boolean read FKilled;
     property State: TICEClientStates read FState;
     property Genre: string read FGenre;
@@ -485,6 +489,24 @@ begin
     Exit;
 
   Result := ((FState <> csStopped) and (FState <> csIOError)) and FICEThread.Playing;
+end;
+
+function TICEClient.FGetPlayingPaused: Boolean;
+begin
+  Result := False;
+  if FICEThread = nil then
+    Exit;
+
+  Result := FICEThread.PlayingPaused;
+end;
+
+function TICEClient.FGetPlayingStarted: Boolean;
+begin
+  Result := False;
+  if FICEThread = nil then
+    Exit;
+
+  Result := FICEThread.PlayingStarted;
 end;
 
 function TICEClient.GetURL: string;

@@ -1137,47 +1137,31 @@ procedure TfrmStreamWriterMain.MessageReceived(Msg: TMessageBase);
 var
   PlayMsg: TPlayingObjectChangedMsg;
   StopMsg: TPlayingObjectStopped;
+  Artist, Title, Stream, Filename: string;
   NewCaption: string;
 begin
   if not AppGlobals.DisplayPlayedSong then
     Exit;
 
-  if Msg is TPlayingObjectChangedMsg then
+  NewCaption := FMainCaption;
+
+  PlayerManager.Players.GetPlayingInfo(Artist, Title, Stream, Filename);
+
+  if Filename <> '' then
   begin
-    PlayMsg := TPlayingObjectChangedMsg(Msg);
-
-    // todo: was ist mit stream wiedergabe, wo er keinen titel mitschickt? evtl nochn neues feld in die playingmsg packen.
-
-    // TODO: stream abspielen. gespeicherten track abspielen. pause drücken bei streams. der titel ändert sich nicht.
-
-    if (PlayMsg.Title <> '') and (PlayMsg.Artist <> '') then
-    begin
-      // Eine gespeicherte Datei mit Tags wird wiedergegeben
-      NewCaption := FMainCaption + ' - ' + ShortenString(PlayMsg.Artist, 30) + ' - ' + ShortenString(PlayMsg.Title, 30);
-    end else if PlayMsg.Filename <> '' then
-    begin
-      // Eine gespeicherte Datei ohne Tags wird wiedergegeben
-      NewCaption := FMainCaption + ' - ' + ShortenString(RemoveFileExt(ExtractFileName(PlayMsg.Filename)), 30);
-    end else if (PlayMsg.Title <> '') and (PlayMsg.Stream <> '') then
-    begin
-      // Ein Stream mit Titel wird wiedergegeben
-      NewCaption := FMainCaption + ' - ' + ShortenString(PlayMsg.Title, 30) + ' - ' + ShortenString(PlayMsg.Stream, 30);
-    end else if PlayMsg.Stream <> '' then
-    begin
-      // Ein Stream ohne Titel wird wiedergegeben
-      NewCaption := FMainCaption + ' - ' + ShortenString(PlayMsg.Stream, 30);
-    end;
-
-    Caption := NewCaption;
-  end else if Msg is TPlayingObjectStopped then
+    if (Artist <> '') and (Title <> '') then
+      NewCaption := FMainCaption + ' - ' + ShortenString(Artist, 30) + ' - ' + ShortenString(Title, 30)
+    else
+      NewCaption := FMainCaption + ' - ' + ShortenString(RemoveFileExt(ExtractFileName(Filename)), 30);
+  end else if Stream <> '' then
   begin
-    StopMsg := TPlayingObjectStopped(Msg);
-
-    if Players.AnyPlaying then
-      Exit;
-
-    Caption := FMainCaption;
+    if Title <> '' then
+      NewCaption := FMainCaption + ' - ' + ShortenString(Title, 30) + ' - ' + ShortenString(Stream, 30)
+    else
+      NewCaption := FMainCaption + ' - ' + ShortenString(Stream, 30);
   end;
+
+  Caption := NewCaption;
 end;
 
 procedure TfrmStreamWriterMain.mnuCheckUpdateClick(Sender: TObject);

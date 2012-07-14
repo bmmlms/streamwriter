@@ -58,6 +58,7 @@ type
     procedure DecreaseVolume;
     procedure Mute;
     procedure SetEQ(Value, Freq: Integer);
+    procedure GetPlayingInfo(var Artist, Title, Stream, Filename: string);
 
     property Volume: Integer read FVolume write FSetVolume;
     property VolumeBeforeMute: Integer read FVolumeBeforeMute write FVolumeBeforeMute;
@@ -253,6 +254,43 @@ begin
   end;
 
   MsgBus.SendMessage(TVolumeChangedMsg.Create(Value));
+end;
+
+procedure TPlayerManager.GetPlayingInfo(var Artist, Title, Stream,
+  Filename: string);
+var
+  i: Integer;
+  P: TPlayer;
+  IP: TICEClient;
+begin
+  Artist := '';
+  Title := '';
+  Stream := '';
+  Filename := '';
+
+  for i := 0 to FPlayers.Count - 1 do
+  begin
+    if TObject(FPlayers[i]) is TPlayer then
+    begin
+      P := TPlayer(FPlayers[i]);
+      if P.Playing and P.ShowTitle then
+      begin
+        Artist := P.Tag.Artist;
+        Title := P.Tag.Title;
+        Filename := P.Filename;
+        Exit;
+      end;
+    end else if TObject(FPlayers[i]) is TICEClient then
+    begin
+      IP := TICEClient(FPlayers[i]);
+      if IP.Playing and (not IP.Paused or IP.PlayingStarted) and (not IP.PlayingPaused) then
+      begin
+        Stream := IP.Entry.Name;
+        Title := IP.Title;
+        Exit;
+      end;
+    end;
+  end;
 end;
 
 procedure TPlayerManager.PauseAll;

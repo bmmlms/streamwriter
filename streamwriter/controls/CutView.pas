@@ -585,6 +585,7 @@ begin
       FreeAndNil(FPlayer);
     end;
     FPlayer := TPlayer.Create;
+    FPlayer.ShowTitle := False;
     FPlayer.OnEndReached := PlayerEndReached;
     FPlayer.OnPlay := PlayerPlay;
     FPlayer.OnPause := PlayerPause;

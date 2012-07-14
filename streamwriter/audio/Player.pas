@@ -39,6 +39,7 @@ type
     FVolume: Integer;
     FPosToReach: Cardinal;
     FEndPos: Cardinal;
+    FShowTitle: Boolean;
 
     FEQEnabled: Boolean;
     FBandData: array[0..9] of TBandData;
@@ -88,6 +89,7 @@ type
     property PosToReach: Cardinal read FPosToReach write FSetPosToReach;
     property EndPos: Cardinal read FEndPos write FSetEndPos;
     property Tag: TTagData read FTag;
+    property ShowTitle: Boolean read FShowTitle write FShowTitle;
 
     property OnPosReached: TNotifyEvent read FOnPosReached write FOnPosReached;
     property OnEndReached: TNotifyEvent read FOnEndReached write FOnEndReached;
@@ -152,6 +154,8 @@ var
   i: Integer;
 begin
   inherited;
+
+  FShowTitle := True;
 
   for i := 0 to High(FBandData) do
   begin

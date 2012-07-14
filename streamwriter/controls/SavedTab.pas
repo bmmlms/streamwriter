@@ -1592,6 +1592,10 @@ begin
     FPlayer.Filename := PrevPlayingTrack.Filename;
     FTab.FSeek.Max := FPlayer.MaxByte;
     FTab.FSeek.Position := 0;
+
+    if Assigned(FTab.FOnPlayStarted) then
+      FTab.FOnPlayStarted(FTab);
+
     FPlayer.Play;
     Exit;
   end else if Sender = FPopupMenu.ItemPause then
@@ -1618,6 +1622,10 @@ begin
     FPlayer.Filename := NextPlayingTrack.Filename;
     FTab.FSeek.Max := FPlayer.MaxByte;
     FTab.FSeek.Position := 0;
+
+    if Assigned(FTab.FOnPlayStarted) then
+      FTab.FOnPlayStarted(FTab);
+
     FPlayer.Play;
     Exit;
   end;
