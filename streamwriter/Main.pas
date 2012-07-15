@@ -1132,6 +1132,9 @@ begin
   if not AppGlobals.DisplayPlayedSong then
     Exit;
 
+  if (not (Msg is TPlayingObjectChangedMsg)) and (not (Msg is TPlayingObjectStopped)) then
+    Exit;
+
   NewCaption := FMainCaption;
 
   PlayerManager.Players.GetPlayingInfo(Artist, Title, Stream, Filename);

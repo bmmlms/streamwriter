@@ -1639,12 +1639,12 @@ begin
 
     if FPlayer.Paused then
     begin
-      FPlayer.Play;
-    end else
-    begin
       if Assigned(FTab.FOnPlayStarted) then
         FTab.FOnPlayStarted(FTab);
 
+      FPlayer.Play;
+    end else
+    begin
       if not FPlayer.Paused then
       begin
         try
@@ -1661,6 +1661,10 @@ begin
         FTab.FSeek.Position := 0;
         FPlayer.PositionByte := 0;
       end;
+
+      if Assigned(FTab.FOnPlayStarted) then
+        FTab.FOnPlayStarted(FTab);
+
       FPlayer.Play;
     end;
 
