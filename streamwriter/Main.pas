@@ -255,8 +255,6 @@ type
 
     FExiting: Boolean;
 
-    FLastPlaying: TObject;
-
     procedure OneInstanceMessage(var Msg: TMessage); message WM_USER + 1234;
     procedure AfterShown(var Msg: TMessage); message WM_AFTERSHOWN;
     procedure ReceivedData(var Msg: TWMCopyData); message WM_COPYDATA;
@@ -389,6 +387,8 @@ begin
   Hide;
 
   Players.StopAll;
+
+  MsgBus.RemoveSubscriber(MessageReceived);
 
   AppGlobals.PlayerVolume := Players.Volume;
   AppGlobals.PlayerVolumeBeforeMute := Players.VolumeBeforeMute;
@@ -651,13 +651,11 @@ begin
 
   if not Bass.DeviceAvailable then
   begin
-    FadeOutSplash(False);
     TfrmMsgDlg.ShowMsg(Self, _('No sound devices could be detected so playback of streams and files will not be possible.'), 7, btOk);
   end;
 
   if not DirectoryExists(AppGlobals.Dir) then
   begin
-    FadeOutSplash(False);
     MsgBox(Handle, _('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
     ShowSettings(True, not DirectoryExists(AppGlobals.DirAuto));
   end;
@@ -665,7 +663,6 @@ begin
   // Das erste DirectoryExists() ist da, damit der Settings-Dialog nicht doppelt kommt.
   if DirectoryExists(AppGlobals.Dir) and (not DirectoryExists(AppGlobals.DirAuto)) then
   begin
-    FadeOutSplash(False);
     MsgBox(Handle, _('The folder for automatically saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
     ShowSettings(False, True);
   end;
@@ -684,7 +681,6 @@ begin
 
     if not AppGlobals.FirstStartShown then
     begin
-      FadeOutSplash(False);
       FormIntro := TfrmIntro.Create(Self);
       try
         FormIntro.ShowModal;
@@ -696,13 +692,11 @@ begin
 
     if AppGlobals.AddonManager.ShowVersionWarning then
     begin
-      FadeOutSplash(False);
       MsgBox(Handle, _('At least one addon is outdated and was deleted because it does not work with this version of streamWriter. Please check the addon/postprocessing pages in the settings window.'), _('Info'), MB_ICONINFORMATION);
     end;
 
     if AppGlobals.LastUsedVersion.AsString = '3.6.0.0' then
     begin
-      FadeOutSplash(False);
       MsgBox(Handle, _('Because many internals of the last version have changed you need to reconfigure options regarding addons and postprocessing using the settings window.'), _('Info'), MB_ICONINFORMATION);
     end;
 
@@ -714,8 +708,6 @@ begin
     if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
       FUpdater.Start(uaVersion, True);
   end;
-
-  FadeOutSplash(True);
 end;
 
 procedure TfrmStreamWriterMain.FormClose(Sender: TObject;
@@ -759,7 +751,6 @@ begin
   Recovered := False;
   if FileExists(AppGlobals.RecoveryFile) then
   begin
-    FadeOutSplash(False);
     if MsgBox(0, _('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
     begin
       try
@@ -1135,8 +1126,6 @@ end;
 
 procedure TfrmStreamWriterMain.MessageReceived(Msg: TMessageBase);
 var
-  PlayMsg: TPlayingObjectChangedMsg;
-  StopMsg: TPlayingObjectStopped;
   Artist, Title, Stream, Filename: string;
   NewCaption: string;
 begin
@@ -1264,78 +1253,39 @@ end;
 
 procedure TfrmStreamWriterMain.ProcessCommandLine(Data: string);
 var
-  i, ParsedCount: Integer;
-  InDingens, InPlay, InRecord: Boolean;
-  Args: array of string;
-  Arg: string;
+  i: Integer;
+  InPlay, InRecord: Boolean;
+  SL: TStringList;
 begin
-  ParsedCount := 0;
-  SetLength(Args, 0);
-  Arg := '';
+  SL := TStringList.Create;
+  try
+    ParseCommandLine(Data, SL);
 
-  InDingens := False;
-  for i := 1 to Length(Data) do
-  begin
-    if Data[i] = '"' then
+    InPlay := False;
+    InRecord := False;
+    for i := 0 to SL.Count - 1 do
     begin
-      if InDingens then
+      if LowerCase(SL[i]) = '-p' then
       begin
-        if ParsedCount > 0 then
+        InPlay := True;
+        InRecord := False;
+      end else if LowerCase(SL[i]) = '-r' then
+      begin
+        InRecord := True;
+        InPlay := False;
+      end else
+      begin
+        if InRecord then
         begin
-          SetLength(Args, Length(Args) + 1);
-          Args[High(Args)] := Arg;
-        end;
-        Inc(ParsedCount);
-        Arg := '';
-      end;
-      InDingens := not InDingens;
-    end else if Data[i] = ' ' then
-    begin
-      if (not InDingens) and (Arg <> '') then
-      begin
-        if ParsedCount > 0 then
+          tabClients.StartStreaming(0, 0, '', SL[i], '', nil, baStart, nil, amNoWhere);
+        end else if InPlay then
         begin
-          SetLength(Args, Length(Args) + 1);
-          Args[High(Args)] := Arg;
+          tabClients.StartStreaming(0, 0, '', SL[i], '', nil, baListen, nil, amNoWhere);
         end;
-        Inc(ParsedCount);
-        Arg := '';
-      end else if Arg <> '' then
-        Arg := Arg + Data[i];
-    end else
-    begin
-      Arg := Arg + Data[i];
-    end;
-  end;
-
-  if Arg <> '' then
-  begin
-    SetLength(Args, Length(Args) + 1);
-    Args[High(Args)] := Arg;
-  end;
-
-  InPlay := False;
-  InRecord := False;
-  for i := 0 to High(Args) do
-  begin
-    if LowerCase(Args[i]) = '-p' then
-    begin
-      InPlay := True;
-      InRecord := False;
-    end else if LowerCase(Args[i]) = '-r' then
-    begin
-      InRecord := True;
-      InPlay := False;
-    end else
-    begin
-      if InRecord then
-      begin
-        tabClients.StartStreaming(0, 0, '', Args[i], '', nil, baStart, nil, amNoWhere);
-      end else if InPlay then
-      begin
-        tabClients.StartStreaming(0, 0, '', Args[i], '', nil, baListen, nil, amNoWhere);
       end;
     end;
+  finally
+    SL.Free;
   end;
 end;
 

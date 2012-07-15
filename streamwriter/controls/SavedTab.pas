@@ -1500,8 +1500,6 @@ begin
 end;
 
 procedure TSavedTree.PlayerPlay(Sender: TObject);
-var
-  B: TBitmap;
 begin
   if AppGlobals.DisplayPlayNotifications then
     if (FPlayer.Tag <> nil) and (FPlayer.Tag.Artist <> '') and (FPlayer.Tag.Title <> '') then

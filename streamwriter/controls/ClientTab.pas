@@ -1417,6 +1417,8 @@ begin
             if Res = crOk then
               PlayStarted(Client);
           end;
+        else
+          Res := crOk;
       end;
 
       if Res = crOk then
@@ -1449,6 +1451,8 @@ begin
             end;
           baListen:
             Res := Client.StartRecording(True);
+          else
+            Res := crOk;
         end;
 
         if Res = crOk then

@@ -262,7 +262,6 @@ type
     FMaxSpeed: Cardinal;
     FLastBrowserUpdate: Cardinal;
     FAutomaticFilePattern: string;
-    //FOutputFormat: TAudioTypes;
 
     FProjectHelpLinkMain: string;
     FProjectHelpLinkSettings: string;
@@ -390,7 +389,6 @@ type
     property LastBrowserUpdate: Cardinal read FLastBrowserUpdate write FLastBrowserUpdate;
     // The pattern for automatically recorded files
     property AutomaticFilePattern: string read FAutomaticFilePattern write FAutomaticFilePattern;
-    //property OutputFormat: TAudioTypes read FOutputFormat write FOutputFormat;
 
     property ClientHeadersLoaded: Boolean read FClientHeadersLoaded;
     property SavedHeadersLoaded: Boolean read FSavedHeadersLoaded;
@@ -484,6 +482,8 @@ begin
 
   // This builds a large string used to generate the about-window
   BuildThanksText;
+
+  // TODO: einmal mit alle-exceptions-anhalten starten. dann fällt mir das auf, was ich am laptop für x64 build gefixt habe.
 
   FLanguageIcons := TLanguageIcons.Create;
 
@@ -1500,13 +1500,13 @@ initialization
       raise Exception.Create('Language is not initialized');
     AppGlobals := TAppData.Create('streamWriter');
 
-    // PostProcessors etc. laden
-    AppGlobals.StreamSettings.InitStuff;
-
     // AddonManager wird hier erstellt, da erstellte Addon-Items Zugriff
     // auf ein bereits zugewiesenes AppGlobals brauchen.
     AppGlobals.FAddonManager := TAddonManager.Create;
     AppGlobals.FPostProcessManager := TPostProcessManager.Create;
+
+    // PostProcessors etc. laden
+    AppGlobals.StreamSettings.InitStuff;
 
     if AppGlobals.AddonManager.CanEncode(AppGlobals.StreamSettings.OutputFormat) <> ceOkay then
       AppGlobals.StreamSettings.OutputFormat := atNone;

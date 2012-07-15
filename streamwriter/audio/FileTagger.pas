@@ -45,7 +45,6 @@ type
 
   TFileTagger = class
   private
-    FAG: TAudioGenie3;
     FFilename: string;
     FAudioType: TAudioFormatID;
     FTag: TTagData;
@@ -131,8 +130,6 @@ var
   Graphic: TGraphic;
   Keys: string;
   ImageData: AnsiString;
-  x: Cardinal;
-  b: byte;
 begin
   Graphic := nil;
 
