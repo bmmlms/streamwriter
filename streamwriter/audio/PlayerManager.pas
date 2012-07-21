@@ -275,8 +275,11 @@ begin
       P := TPlayer(FPlayers[i]);
       if P.Playing and P.ShowTitle then
       begin
-        Artist := P.Tag.Artist;
-        Title := P.Tag.Title;
+        if P.Tag <> nil then
+        begin
+          Artist := P.Tag.Artist;
+          Title := P.Tag.Title;
+        end;
         Filename := P.Filename;
         Exit;
       end;

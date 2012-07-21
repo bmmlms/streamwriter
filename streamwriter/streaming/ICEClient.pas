@@ -444,6 +444,10 @@ begin
 
   FRetries := 0;
   FICEThread.StopPlay;
+
+  // Weil das Signal nicht mehr durchkommt, machen wir das hier per Hand.
+  MsgBus.SendMessage(TPlayingObjectStopped.Create(Self));
+
   FICEThread.Terminate;
   if Assigned(FOnRefresh) then
     FOnRefresh(Self);

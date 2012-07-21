@@ -24,8 +24,8 @@ unit Player;
 interface
 
 uses
-  Windows, SysUtils, Classes, DynBass, Math, Logging, AppData, AudioFunctions,
-  FileTagger, MessageBus, AppMessages;
+  Windows, SysUtils, Messages, Classes, DynBass, Math, Logging, AppData,
+  AudioFunctions, FileTagger, MessageBus, AppMessages;
 
 type
   TPlayer = class
@@ -40,6 +40,7 @@ type
     FPosToReach: Cardinal;
     FEndPos: Cardinal;
     FShowTitle: Boolean;
+    FMessageHWnd: HWND;
 
     FEQEnabled: Boolean;
     FBandData: array[0..9] of TBandData;
@@ -53,6 +54,8 @@ type
 
     procedure CreatePlayer;
     procedure FreeStream(Player: Cardinal);
+
+    procedure WndMethod(var Msg: TMessage);
 
     procedure FSetEQEnabled(Value: Boolean);
     function FGetPaused: Boolean;
@@ -130,8 +133,7 @@ var
 begin
   P := TPlayer(user);
 
-  if Assigned(P.FOnPosReached) then
-    P.FOnPosReached(P);
+  PostMessage(P.FMessageHWnd, 1001, 0, 0);
 end;
 
 procedure EndSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
@@ -143,8 +145,7 @@ begin
   P.FPaused := False;
   P.FStopped := False;
 
-  if Assigned(P.OnEndReached) then
-    P.OnEndReached(P);
+  PostMessage(P.FMessageHWnd, 1000, 0, 0);
 end;
 
 { TPlayer }
@@ -156,6 +157,7 @@ begin
   inherited;
 
   FShowTitle := True;
+  FMessageHWnd := AllocateHWnd(WndMethod);
 
   for i := 0 to High(FBandData) do
   begin
@@ -188,6 +190,8 @@ end;
 
 destructor TPlayer.Destroy;
 begin
+  DeallocateHWnd(FMessageHWnd);
+
   // Crashed bei Programmende, deshalb try..except. Ist nötig wegen dem SavedTab,
   // wenn man hier nicht freigibt, kann er nicht speichern.
   Players.RemovePlayer(Self);
@@ -450,6 +454,28 @@ begin
 
     MsgBus.SendMessage(TPlayingObjectStopped.Create(Self));
   end;
+end;
+
+procedure TPlayer.WndMethod(var Msg: TMessage);
+var
+  Handled: Boolean;
+begin
+  Handled := True;
+  case Msg.Msg of
+    1000:
+      if Assigned(OnEndReached) then
+        OnEndReached(Self);
+    1001:
+      if Assigned(OnPosReached) then
+        OnPosReached(Self);
+    else
+      Handled := False;
+  end;
+
+  if Handled then
+    Msg.Result := 0
+  else
+    Msg.Result := DefWindowProc(FMessageHWnd, Msg.Msg, Msg.WParam, Msg.LParam);
 end;
 
 end.

@@ -1444,13 +1444,13 @@ begin
 
         case Action of
           baStart:
+            Res := Client.StartRecording(True);
+          baListen:
             begin
               Res := Client.StartPlay(True);
               if Res = crOk then
                 PlayStarted(Client);
             end;
-          baListen:
-            Res := Client.StartRecording(True);
           else
             Res := crOk;
         end;
