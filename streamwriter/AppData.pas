@@ -483,8 +483,6 @@ begin
   // This builds a large string used to generate the about-window
   BuildThanksText;
 
-  // TODO: einmal mit alle-exceptions-anhalten starten. dann fällt mir das auf, was ich am laptop für x64 build gefixt habe.
-
   FLanguageIcons := TLanguageIcons.Create;
 
   DeleteUndoFiles;

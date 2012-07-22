@@ -35,7 +35,7 @@ uses
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
   SystemCritical, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
-  AppMessages;
+  AppMessages, CommandLine;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -703,7 +703,7 @@ begin
     tmrAutoSave.Enabled := True;
     tmrRecordings.Enabled := True;
 
-    ProcessCommandLine(GetCommandLineW);
+    ProcessCommandLine('');
 
     if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
       FUpdater.Start(uaVersion, True);
@@ -1257,39 +1257,35 @@ end;
 procedure TfrmStreamWriterMain.ProcessCommandLine(Data: string);
 var
   i: Integer;
-  InPlay, InRecord: Boolean;
-  SL: TStringList;
+  FreeCmdLine: Boolean;
+  Param: TCommandLineRecord;
+  CmdLine: TCommandLine;
 begin
-  SL := TStringList.Create;
-  try
-    ParseCommandLine(Data, SL);
+  FreeCmdLine := False;
+  CmdLine := nil;
+  if Data <> '' then
+  begin
+    CmdLine := TCommandLine.Create(Data);
+    FreeCmdLine := True;
+  end else
+    CmdLine := AppGlobals.CommandLine;
 
-    InPlay := False;
-    InRecord := False;
-    for i := 0 to SL.Count - 1 do
-    begin
-      if LowerCase(SL[i]) = '-p' then
-      begin
-        InPlay := True;
-        InRecord := False;
-      end else if LowerCase(SL[i]) = '-r' then
-      begin
-        InRecord := True;
-        InPlay := False;
-      end else
-      begin
-        if InRecord then
-        begin
-          tabClients.StartStreaming(0, 0, '', SL[i], '', nil, baStart, nil, amNoWhere);
-        end else if InPlay then
-        begin
-          tabClients.StartStreaming(0, 0, '', SL[i], '', nil, baListen, nil, amNoWhere);
-        end;
-      end;
-    end;
-  finally
-    SL.Free;
+  Param := CmdLine.GetParam('-r');
+  if Param <> nil then
+  begin
+    for i := 0 to Param.Values.Count - 1 do
+      tabClients.StartStreaming(0, 0, '', Param.Values[i], '', nil, baStart, nil, amNoWhere);
   end;
+
+  Param := CmdLine.GetParam('-p');
+  if Param <> nil then
+  begin
+    for i := 0 to Param.Values.Count - 1 do
+      tabClients.StartStreaming(0, 0, '', Param.Values[i], '', nil, baListen, nil, amNoWhere);
+  end;
+
+  if FreeCmdLine then
+    CmdLine.Free;
 end;
 
 procedure TfrmStreamWriterMain.PostTranslate;

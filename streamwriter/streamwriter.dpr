@@ -131,7 +131,8 @@ uses
   PlaylistHandler in 'audio\PlaylistHandler.pas',
   Equalizer in 'Equalizer.pas' {frmEqualizer},
   SWFunctions in 'SWFunctions.pas',
-  SplashThread in '..\..\common\SplashThread.pas';
+  SplashThread in '..\..\common\SplashThread.pas',
+  CommandLine in '..\..\common\CommandLine.pas';
 
 {$SetPEOptFlags $0140}
 
