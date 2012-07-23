@@ -121,6 +121,7 @@ type
     procedure SwitchMode(Mode: TModes);
     procedure BuildTree(AlwaysBuild: Boolean);
     procedure BuildGenres;
+    procedure SortTree;
 
     procedure StreamBrowserHeaderClick(Sender: TVTHeader; HitInfo: TVTHeaderHitInfo);
 
@@ -254,6 +255,7 @@ type
     property OnNeedData: TNeedDataEvent read FOnNeedData write FOnNeedData;
     property OnAction: TActionEvent read FOnAction write FOnAction;
     property OnIsInClientList: TIsInClientListEvent read FOnIsInClientList write FOnIsInClientList;
+    property SelectedSortType: TSortTypes read FSelectedSortType write FSelectedSortType;
   end;
 
 implementation
@@ -1141,12 +1143,11 @@ begin
   FStreamTree.FSortPopupMenu.FItemKbps.OnClick := SortItemClick;
   FStreamTree.FSortPopupMenu.FItemType.OnClick := SortItemClick;
   FStreamTree.FSortPopupMenu.FItemRating.OnClick := SortItemClick;
-
-  FStreamTree.FSortPopupMenu.FItemRating.Checked := True;
 end;
 
 destructor TMStreamBrowserView.Destroy;
 begin
+
   inherited;
 end;
 
@@ -1198,6 +1199,46 @@ begin
   BuildTree(False);
 end;
 
+procedure TMStreamBrowserView.SortTree;
+var
+  i: Integer;
+  SortDir: TSortDirection;
+begin
+  SortDir := sdAscending;
+
+  case FSelectedSortType of
+    stName:
+      begin
+        FStreamTree.Header.Columns[0].Text := _('Name');
+      end;
+    stBitrate:
+      begin
+        FStreamTree.Header.Columns[0].Text := _('Kbps');
+        SortDir := sdDescending;
+      end;
+    stType:
+      begin
+        FStreamTree.Header.Columns[0].Text := _('Type');
+      end;
+    stRating:
+      begin
+        FStreamTree.Header.Columns[0].Text := _('Rating');
+        SortDir := sdDescending;
+      end
+    else
+      raise Exception.Create('');
+  end;
+
+  for i := 0 to FStreamTree.FSortPopupMenu.Items.Count - 1 do
+    if FStreamTree.FSortPopupMenu.Items[i].Tag = Integer(FSelectedSortType) then
+    begin
+      FStreamTree.FSortPopupMenu.Items[i].Checked := True; // TODO: Testen!!!
+      Break;
+    end;
+
+  FStreamTree.Sort(nil, 0, FSelectedSortType, SortDir);
+end;
+
 procedure TMStreamBrowserView.Setup;
 begin
   SwitchMode(moLoading);
@@ -1219,6 +1260,9 @@ begin
     BuildTree(True);
     SwitchMode(moShow);
   end;
+
+  FSelectedSortType := TSortTypes(AppGlobals.BrowserSortType);
+  SortTree;
 end;
 
 procedure TMStreamBrowserView.SortItemClick(Sender: TObject);
@@ -1240,32 +1284,22 @@ begin
   if LastItem = TMenuItem(Sender) then
     Exit;
 
-  SortDir := sdAscending;
-
   if Sender = FStreamTree.FSortPopupMenu.FItemName then
   begin
     FSelectedSortType := stName;
-    FStreamTree.Header.Columns[0].Text := _('Name');
   end else if Sender = FStreamTree.FSortPopupMenu.FItemKbps then
   begin
     FSelectedSortType := stBitrate;
-    FStreamTree.Header.Columns[0].Text := _('Kbps');
-    SortDir := sdDescending;
   end else if Sender = FStreamTree.FSortPopupMenu.FItemType then
   begin
     FSelectedSortType := stType;
-    FStreamTree.Header.Columns[0].Text := _('Type');
   end else if Sender = FStreamTree.FSortPopupMenu.FItemRating then
   begin
     FSelectedSortType := stRating;
-    FStreamTree.Header.Columns[0].Text := _('Rating');
-    SortDir := sdDescending;
   end else
     raise Exception.Create('');
 
-  FStreamTree.Header.SortDirection := SortDir;
-
-  FStreamTree.Sort(nil, 0, FSelectedSortType, FStreamTree.Header.SortDirection);
+  SortTree;
 end;
 
 procedure TMStreamBrowserView.StreamBrowserHeaderClick(Sender: TVTHeader;
@@ -1505,22 +1539,25 @@ begin
   FItemName := CreateMenuItem;
   FItemName.Caption := _('Name');
   FItemName.RadioItem := True;
+  FItemName.Tag := Integer(stName);
   Items.Add(FItemName);
 
   FItemKbps := CreateMenuItem;
   FItemKbps.Caption := _('Kbps');
   FItemKbps.RadioItem := True;
+  FItemKbps.Tag := Integer(stBitrate);
   Items.Add(FItemKbps);
 
   FItemType := CreateMenuItem;
   FItemType.Caption := _('Type');
   FItemType.RadioItem := True;
+  FItemType.Tag := Integer(stType);
   Items.Add(FItemType);
 
   FItemRating := CreateMenuItem;
   FItemRating.Caption := _('Rating');
-  FItemRating.Checked := True;
   FItemRating.RadioItem := True;
+  FItemRating.Tag := Integer(stRating);
   Items.Add(FItemRating);
 end;
 

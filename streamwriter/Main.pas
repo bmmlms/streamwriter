@@ -368,6 +368,7 @@ begin
   end;
 
   AppGlobals.SidebarWidth := tabClients.SideBar.Width;
+  AppGlobals.BrowserSortType := Integer(tabClients.SideBar.BrowserView.StreamTree.SelectedSortType);
 
   for i := 0 to tabClients.ClientView.Header.Columns.Count - 1 do
     AppGlobals.ClientHeaderWidth[i] := tabClients.ClientView.Header.Columns[i].Width;
@@ -1488,6 +1489,7 @@ begin
   tabSaved.Tree.SetFileWatcher;
 
   Language.Translate(Self, PreTranslate, PostTranslate);
+  tabClients.ShowInfo;
   AppGlobals.PostProcessManager.ReInitPostProcessors;
 
   TrayIcon1.Visible := AppGlobals.Tray;

@@ -625,6 +625,7 @@ begin
 
   FreeAndNil(FImportPanel);
   FSavedTree.Enabled := True;
+  FSearchBar.FSearch.Enabled := True;
 
   UpdateButtons;
 end;
@@ -851,6 +852,7 @@ begin
             FSavedTree.FPlayer.Pause;
 
           FSavedTree.Enabled := False;
+          FSearchBar.FSearch.Enabled := False;
 
           UpdateButtons;
         end;

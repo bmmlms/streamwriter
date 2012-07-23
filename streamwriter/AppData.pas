@@ -281,6 +281,7 @@ type
     FSavedHeaderWidth: TIntArray;
     FClientCols: Integer;
     FSavedCols: Integer;
+    FBrowserSortType: Integer;
     FLastUsedDataVersion: Integer;
     FRecoveryFile: string;
 
@@ -398,6 +399,7 @@ type
     // Widths of column headers. Yes, they are stored in a single integer
     property ClientCols: Integer read FClientCols write FClientCols;
     property SavedCols: Integer read FSavedCols write FSavedCols;
+    property BrowserSortType: Integer read FBrowserSortType write FBrowserSortType;
     // Last used version of the data-file format
     property LastUsedDataVersion: Integer read FLastUsedDataVersion write FLastUsedDataVersion;
     // Path to the recovery-file (this is set if streamWriter crashed or something)
@@ -754,6 +756,8 @@ begin
   FStorage.Read('SavedCols', FSavedCols, 255, 'Cols');
   FSavedCols := FSavedCols or (1 shl 0);
 
+  FStorage.Read('BrowserSortType', FBrowserSortType, 3);
+
   if (DefaultActionTmp > Ord(High(TClientActions))) or
      (DefaultActionTmp < Ord(Low(TClientActions))) then
     FDefaultAction := caStartStop
@@ -899,6 +903,8 @@ begin
     if i <> 1 then
       FStorage.Write('SavedHeaderWidth' + IntToStr(i), FSavedHeaderWidth[i], 'Cols');
   FStorage.Write('SavedCols', FSavedCols, 'Cols');
+
+  FStorage.Write('BrowserSortType', FBrowserSortType);
 
   FStorage.DeleteKey('Plugins');
 

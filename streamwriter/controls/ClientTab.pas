@@ -121,8 +121,6 @@ type
     FOnAddTitleToList: TAddTitleEvent;
     FOnRemoveTitleFromList: TAddTitleEvent;
 
-    procedure ShowInfo;
-
     procedure ActionNewCategoryExecute(Sender: TObject);
     procedure ActionStartExecute(Sender: TObject);
     procedure ActionStopExecute(Sender: TObject);
@@ -194,6 +192,7 @@ type
     procedure UpdateStreams(Streams: TDataLists);
     procedure BuildTree(Streams: TDataLists);
     procedure PausePlay;
+    procedure ShowInfo;
 
     property AddressBar: TClientAddressBar read FAddressBar;
     property ClientView: TMClientView read FClientView;
