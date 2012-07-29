@@ -30,7 +30,7 @@ uses
   Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
   PlayerManager, Logging, FileWatcher, MessageBus, AppMessages, ShlObj,
   SavedTabEditTags, Generics.Collections, TypeDefs, AudioFunctions, FileTagger,
-  Notifications;
+  Notifications, Dialogs;
 
 type
   TSavedTree = class;
@@ -41,7 +41,7 @@ type
   PSavedNodeData = ^TSavedNodeData;
 
   TTrackActions = (taUndefined, taRefresh, taCut, taEditTags, taFinalized, taAddToWishlist, taRemove,
-                   taRecycle, taDelete, taShowFile, taProperties, taImport);
+                   taRecycle, taDelete, taShowFile, taProperties, taImportFiles, taImportFolder);
 
   TTrackInfoArray = array of TTrackInfo;
 
@@ -52,6 +52,7 @@ type
     FDir: string;
     FFiles: TList<TTrackInfo>;
     FKnownFiles: TStringList;
+    FFoundAudioFiles: TStringList;
     FProgress: Integer;
     FCurrentFilename: string;
 
@@ -59,7 +60,8 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(Dir: string; KnownFiles: TStringList);
+    constructor Create(Files: TStrings; KnownFiles: TStringList); overload;
+    constructor Create(Dir: string; KnownFiles: TStringList); overload;
     destructor Destroy; override;
 
     property OnProgress: TNotifyEvent read FOnProgress write FOnProgress;
@@ -83,7 +85,8 @@ type
     FItemDelete: TMenuItem;
     FItemShowFile: TMenuItem;
     FItemProperties: TMenuItem;
-    FItemImport: TMenuItem;
+    FItemImportFiles: TMenuItem;
+    FItemImportFolder: TMenuItem;
   protected
   public
     constructor Create(AOwner: TComponent); override;
@@ -106,7 +109,8 @@ type
     property ItemDelete: TMenuItem read FItemDelete;
     property ItemShowFile: TMenuItem read FItemShowFile;
     property ItemProperties: TMenuItem read FItemProperties;
-    property ItemImport: TMenuItem read FItemImport;
+    property ItemImportFiles: TMenuItem read FItemImportFiles;
+    property ItemImportFolder: TMenuItem read FItemImportFolder;
   end;
 
   TSavedToolBar = class(TToolBar)
@@ -125,7 +129,8 @@ type
     FSep3: TToolButton;
     FShowFile: TToolButton;
     FProperties: TToolButton;
-    FImport: TToolButton;
+    FImportFiles: TToolButton;
+    FImportFolder: TToolButton;
   public
     constructor Create(AOwner: TComponent); override;
 
@@ -440,10 +445,15 @@ begin
   ItemTmp.Caption := '-';
   Items.Add(ItemTmp);
 
-  FItemImport := CreateMenuItem;
-  FItemImport.Caption := '&Import files...';
-  FItemImport.ImageIndex := 36;
-  Items.Add(FItemImport);
+  FItemImportFiles := CreateMenuItem;
+  FItemImportFiles.Caption := '&Import files...';
+  FItemImportFiles.ImageIndex := 36;
+  Items.Add(FItemImportFiles);
+
+  FItemImportFolder := CreateMenuItem;
+  FItemImportFolder.Caption := 'Import folder...'; // TODO: Translation und shortcut!
+  FItemImportFolder.ImageIndex := 81;
+  Items.Add(FItemImportFolder);
 end;
 
 procedure TSavedTracksPopup.EnableItems(Enable, Playing, IsFirst, IsLast: Boolean);
@@ -490,10 +500,15 @@ end;
 
 procedure TSavedToolBar.Setup;
 begin
-  FImport := TToolButton.Create(Self);
-  FImport.Parent := Self;
-  FImport.Hint := _('Import files...');
-  FImport.ImageIndex := 36;
+  FImportFolder := TToolButton.Create(Self);
+  FImportFolder.Parent := Self;
+  FImportFolder.Hint := _('Import folder...');
+  FImportFolder.ImageIndex := 81;
+
+  FImportFiles := TToolButton.Create(Self);
+  FImportFiles.Parent := Self;
+  FImportFiles.Hint := _('Import files...');
+  FImportFiles.ImageIndex := 36;
 
   FSep3 := TToolButton.Create(Self);
   FSep3.Parent := Self;
@@ -711,6 +726,8 @@ var
   LowerDir, Dir: string;
   EditTags: TfrmEditTags;
   KnownFiles: TStringList;
+  Dlg: TOpenDialog;
+  Files: TStringList;
 begin
   case Action of
     taRefresh:
@@ -827,7 +844,46 @@ begin
       RunProcess('explorer.exe /select,"' + Tracks[0].Filename + '"');
     taProperties:
       PropertiesDialog(Tracks[0].Filename);
-    taImport:
+    taImportFiles:
+      begin
+        Dlg := TOpenDialog.Create(GetParentForm(Self));
+        try
+          Dlg.Options := [ofAllowMultiSelect, ofFileMustExist];
+          Dlg.Filter := 'Audio files|*.mp3;*.ogg;*.aac;*.mp4'; // TODO: ist mp4 richtig??
+          if Dlg.Execute and (Dlg.Files.Count > 0) then // TODO: was wenn ein spassvogel nur eine einzige .txt datei wählt oder so?
+          begin
+            KnownFiles := TStringList.Create;
+            for i := 0 to FStreams.TrackList.Count - 1 do
+              KnownFiles.Add(FStreams.TrackList[i].Filename);
+
+            FImportPanel := TImportPanel.Create(Self);
+            FImportPanel.Width := 250;
+            FImportPanel.Height := 80;
+            FImportPanel.Parent := Self;
+            FImportPanel.Button.OnClick := ImportPanelCancelClick;
+            Resize;
+
+            //Files := TStringList.Create;
+            //Files.Assign(Dlg.Files); // TODO: Files freigeben!!!
+
+            FImportThread := TImportFilesThread.Create(Dlg.Files, KnownFiles);
+            FImportThread.OnTerminate := ImportThreadTerminate;
+            FImportThread.OnProgress := ImportThreadProgress;
+            FImportThread.Resume;
+
+            if FSavedTree.Player.Playing then
+              FSavedTree.FPlayer.Pause;
+
+            FSavedTree.Enabled := False;
+            FSearchBar.FSearch.Enabled := False;
+
+            UpdateButtons;
+          end;
+        finally
+          Dlg.Free;
+        end;
+      end;
+    taImportFolder:
       begin
         Dir := BrowseDialog(GetParentForm(Self).Handle, _('Select folder with files to import:'), BIF_RETURNONLYFSDIRS);
         if Dir <> '' then
@@ -899,8 +955,10 @@ begin
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemShowFile);
   if Sender = FToolbar.FProperties then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemProperties);
-  if Sender = FToolbar.FImport then
-    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemImport);
+  if Sender = FToolbar.FImportFiles then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemImportFiles);
+  if Sender = FToolbar.FImportFolder then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemImportFolder);
 end;
 
 procedure TSavedTab.UpdateButtons;
@@ -959,8 +1017,11 @@ begin
   Tree.FPopupMenu.ItemRename.Enabled := Length(Tracks) = 1;
   FToolbar.FRename.Enabled := Length(Tracks) = 1;
 
-  Tree.FPopupMenu.ItemImport.Enabled := True;
-  FToolbar.FImport.Enabled := True;
+  Tree.FPopupMenu.ItemImportFiles.Enabled := True;
+  FToolbar.FImportFiles.Enabled := True;
+
+  Tree.FPopupMenu.ItemImportFolder.Enabled := True;
+  FToolbar.FImportFolder.Enabled := True;
 
   AllFinalized := True;
   for i := 0 to High(Tracks) do
@@ -1153,7 +1214,8 @@ begin
   FToolBar.FDelete.OnClick := ToolBarClick;
   FToolBar.FShowFile.OnClick := ToolBarClick;
   FToolBar.FProperties.OnClick := ToolBarClick;
-  FToolbar.FImport.OnClick := ToolBarClick;
+  FToolbar.FImportFiles.OnClick := ToolBarClick;
+  FToolbar.FImportFolder.OnClick := ToolBarClick;
 
   BuildTree;
 
@@ -1237,7 +1299,8 @@ begin
   FPopupMenu.ItemDelete.OnClick := PopupMenuClick;
   FPopupMenu.ItemShowFile.OnClick := PopupMenuClick;
   FPopupMenu.ItemProperties.OnClick := PopupMenuClick;
-  FPopupMenu.ItemImport.OnClick := PopupMenuClick;
+  FPopupMenu.ItemImportFiles.OnClick := PopupMenuClick;
+  FPopupMenu.ItemImportFolder.OnClick := PopupMenuClick;
   FPopupMenu.OnPopup := PopupMenuPopUp;
 
   PopupMenu := FPopupMenu;
@@ -1630,7 +1693,9 @@ begin
     Exit;
   end;
 
-  if (Length(Tracks) = 0) and (Sender <> FPopupMenu.ItemImport) and (Sender <> FPopupMenu.ItemRefresh) then
+  if (Length(Tracks) = 0) and (Sender <> FPopupMenu.ItemImportFiles) and
+     (Sender <> FPopupMenu.ItemImportFolder) and (Sender <> FPopupMenu.ItemRefresh)
+  then
     Exit;
 
   if Sender = FPopupMenu.ItemRefresh then
@@ -1698,8 +1763,10 @@ begin
     Action := taShowFile
   else if Sender = FPopupMenu.ItemProperties then
     Action := taProperties
-  else if Sender = FPopupMenu.ItemImport then
-    Action := taImport
+  else if Sender = FPopupMenu.ItemImportFolder then
+    Action := taImportFolder
+  else if Sender = FPopupMenu.ItemImportFiles then
+    Action := taImportFiles
   else
     raise Exception.Create('');
 
@@ -2357,6 +2424,20 @@ begin
   FreeOnTerminate := True;
 
   FDir := IncludeTrailingBackslash(Dir);
+  FFoundAudioFiles := TStringList.Create;
+  FFiles := TList<TTrackInfo>.Create;
+  FKnownFiles := KnownFiles;
+end;
+
+constructor TImportFilesThread.Create(Files: TStrings; KnownFiles: TStringList);
+begin
+  inherited Create(True);   // TODO: FLoadFiles freigeben am ende!!1
+
+  FreeOnTerminate := True;
+
+  FDir := '';
+  FFoundAudioFiles := TStringList.Create;
+  FFoundAudioFiles.Assign(Files);
   FFiles := TList<TTrackInfo>.Create;
   FKnownFiles := KnownFiles;
 end;
@@ -2365,6 +2446,7 @@ destructor TImportFilesThread.Destroy;
 begin
   FFiles.Free;
   FKnownFiles.Free;
+  FFoundAudioFiles.Free;
 
   inherited;
 end;
@@ -2373,43 +2455,44 @@ procedure TImportFilesThread.Execute;
 var
   i, n: Integer;
   Add: Boolean;
-  FoundFiles, FoundAudioFiles: TStringList;
+  FoundFiles: TStringList;
   Track: TTrackInfo;
   Info: TAudioFileInfo;
 begin
   inherited;
 
   FoundFiles := TStringList.Create;
-  FoundAudioFiles := TStringList.Create;
   try
-    FindFiles(FDir + '*.*', FoundFiles, True, @Terminated);
-
-    for i := 0 to FoundFiles.Count - 1 do
+    if (FDir <> '') and (FFoundAudioFiles.Count = 0) then
     begin
-      if Terminated then
-        Exit;
-
-      if FiletypeToFormat(FoundFiles[i]) <> atNone then
+      FindFiles(FDir + '*.*', FoundFiles, True, @Terminated);
+      for i := 0 to FoundFiles.Count - 1 do
       begin
-        Add := True;
-        for n := 0 to FKnownFiles.Count - 1 do
-          if LowerCase(FKnownFiles[n]) = LowerCase(FoundFiles[i]) then
-          begin
-            Add := False;
-            Break;
-          end;
+        if Terminated then
+          Exit;
 
-        if Add then
-          FoundAudioFiles.Add(FoundFiles[i]);
+        if FiletypeToFormat(FoundFiles[i]) <> atNone then
+        begin
+          Add := True;
+          for n := 0 to FKnownFiles.Count - 1 do
+            if LowerCase(FKnownFiles[n]) = LowerCase(FoundFiles[i]) then
+            begin
+              Add := False;
+              Break;
+            end;
+
+          if Add then
+            FFoundAudioFiles.Add(FoundFiles[i]);
+        end;
       end;
     end;
 
-    for i := 0 to FoundAudioFiles.Count - 1 do
+    for i := 0 to FFoundAudioFiles.Count - 1 do
     begin
       if Terminated then
         Exit;
 
-      FCurrentFilename := ExtractFileName(FoundAudioFiles[i]);
+      FCurrentFilename := ExtractFileName(FFoundAudioFiles[i]);
       if Assigned(FOnProgress) then
         Synchronize(
           procedure
@@ -2418,7 +2501,7 @@ begin
               FOnProgress(Self);
           end);
 
-      Info := GetFileInfo(FoundAudioFiles[i]);
+      Info := GetFileInfo(FFoundAudioFiles[i]);
 
       if Info.Success then
       begin
@@ -2426,13 +2509,13 @@ begin
         Track.Time := Now;
         Track.BitRate := Info.Bitrate;
         Track.Length := Trunc(Info.Length);
-        Track.Filename := FoundAudioFiles[i];
-        Track.Filesize := GetFileSize(FoundAudioFiles[i]);
+        Track.Filename := FFoundAudioFiles[i];
+        Track.Filesize := GetFileSize(FFoundAudioFiles[i]);
         Track.VBR := Info.VBR;
         FFiles.Add(Track);
 
-        FProgress := Trunc((i / FoundAudioFiles.Count) * 100);
-        FCurrentFilename := ExtractFileName(FoundAudioFiles[i]);
+        FProgress := Trunc((i / FFoundAudioFiles.Count) * 100);
+        FCurrentFilename := ExtractFileName(FFoundAudioFiles[i]);
 
         if Assigned(FOnProgress) then
           Synchronize(
@@ -2445,7 +2528,6 @@ begin
     end;
   finally
     FoundFiles.Free;
-    FoundAudioFiles.Free;
   end;
 end;
 

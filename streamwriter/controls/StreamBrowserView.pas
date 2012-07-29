@@ -79,8 +79,8 @@ type
 
   TMStreamSearchPanel = class(TPanel)
   private
-    //FExpandLabel: TLabel;
-    //FExpandButton: TSpeedButton;
+    FExpandLabel: TLabel;
+    FExpandButton: TSpeedButton;
 
     FSearchLabel: TLabel;
     FGenreLabel: TLabel;
@@ -91,9 +91,9 @@ type
     FKbpsList: TComboBox;
     FTypeList: TComboBox;
 
-    //procedure SetVisible(Value: Boolean);
+    procedure SetVisible(Value: Boolean);
 
-    //procedure ExpandButtonClick(Sender: TObject);
+    procedure ExpandButtonClick(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
     procedure Setup;
@@ -1378,12 +1378,10 @@ begin
   FTypeList := TComboBox.Create(Self);
 end;
 
-{
 procedure TMStreamSearchPanel.ExpandButtonClick(Sender: TObject);
 begin
   SetVisible(not FTypeList.Visible);
 end;
-}
 
 procedure TMStreamSearchPanel.Setup;
 var
@@ -1395,6 +1393,7 @@ begin
   FSearchEdit.Left := 50;
   FSearchEdit.Top := TopCnt;
   FSearchEdit.Anchors := [akLeft, akRight, akTop];
+
 
   {
   FSearchButton.Parent := Self;
@@ -1408,6 +1407,7 @@ begin
   FSearchButton.ShowHint := True;
   }
 
+
   FSearchLabel.Parent := Self;
   FSearchLabel.Left := 4;
   FSearchLabel.Caption := 'Search:';
@@ -1415,7 +1415,7 @@ begin
 
   TopCnt := TopCnt + 26;
 
-  {
+
   FExpandButton := TSpeedButton.Create(Self);
   FExpandButton.Parent := Self;
   FExpandButton.Top := TopCnt;
@@ -1429,7 +1429,7 @@ begin
   FExpandLabel.Top := FExpandButton.Top + FExpandButton.Height div 2 - FExpandLabel.Height div 2;
 
   TopCnt := TopCnt + 26;
-  }
+
 
   FGenreList.Parent := Self;
   FGenreList.Style := csDropDownList;
@@ -1472,6 +1472,7 @@ begin
   FTypeLabel.Caption := _('Type') + ':';
   FTypeLabel.Top := FTypeList.Top + FTypeList.Height div 2 - FTypeLabel.Height div 2;
 
+
   {
   I := TIcon.Create;
   I.LoadFromResourceName(HInstance, 'SEARCH');
@@ -1487,6 +1488,7 @@ begin
   B.Free;
   I.Free;
   }
+
 
   FSearchEdit.Width := ClientWidth - FSearchEdit.Left - 8;
   FGenreList.Width := ClientWidth - FGenreList.Left - 8;
@@ -1508,18 +1510,16 @@ begin
 
   ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4;
 
-  //SetVisible(False);
+  SetVisible(False);
 end;
 
-{
 procedure TMStreamSearchPanel.SetVisible(Value: Boolean);
 var
   i: Integer;
 begin
   for i := 0 to ControlCount - 1 do
     if (Controls[i] <> FExpandLabel) and (Controls[i] <> FExpandButton) and
-       (Controls[i] <> FSearchLabel) and (Controls[i] <> FSearchButton) and
-       (Controls[i] <> FSearchEdit) then
+       (Controls[i] <> FSearchLabel) and (Controls[i] <> FSearchEdit) then
     begin
       Controls[i].Visible := Value;
     end;
@@ -1528,7 +1528,6 @@ begin
   else
     ClientHeight := FExpandButton.Top + FExpandButton.Height + FSearchEdit.Top + 4;
 end;
-}
 
 { TMStreamTreeHeaderPopup }
 
