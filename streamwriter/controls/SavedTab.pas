@@ -451,7 +451,7 @@ begin
   Items.Add(FItemImportFiles);
 
   FItemImportFolder := CreateMenuItem;
-  FItemImportFolder.Caption := 'Import folder...'; // TODO: Translation und shortcut!
+  FItemImportFolder.Caption := 'I&mport folder...';
   FItemImportFolder.ImageIndex := 81;
   Items.Add(FItemImportFolder);
 end;
@@ -849,35 +849,40 @@ begin
         Dlg := TOpenDialog.Create(GetParentForm(Self));
         try
           Dlg.Options := [ofAllowMultiSelect, ofFileMustExist];
-          Dlg.Filter := 'Audio files|*.mp3;*.ogg;*.aac;*.mp4'; // TODO: ist mp4 richtig??
-          if Dlg.Execute and (Dlg.Files.Count > 0) then // TODO: was wenn ein spassvogel nur eine einzige .txt datei wählt oder so?
+          Dlg.Filter := _('Audio files|*.mp3;*.ogg;*.aac;*.m4a');
+          if Dlg.Execute and (Dlg.Files.Count > 0) then
           begin
-            KnownFiles := TStringList.Create;
-            for i := 0 to FStreams.TrackList.Count - 1 do
-              KnownFiles.Add(FStreams.TrackList[i].Filename);
+            for i := Dlg.Files.Count - 1 downto 0 do
+            begin
+              if FiletypeToFormat(Dlg.Files[i]) = atNone then
+                Dlg.Files.Delete(i);
+            end;
+            if Dlg.Files.Count > 0 then
+            begin
+              KnownFiles := TStringList.Create;
+              for i := 0 to FStreams.TrackList.Count - 1 do
+                KnownFiles.Add(FStreams.TrackList[i].Filename);
 
-            FImportPanel := TImportPanel.Create(Self);
-            FImportPanel.Width := 250;
-            FImportPanel.Height := 80;
-            FImportPanel.Parent := Self;
-            FImportPanel.Button.OnClick := ImportPanelCancelClick;
-            Resize;
+              FImportPanel := TImportPanel.Create(Self);
+              FImportPanel.Width := 250;
+              FImportPanel.Height := 80;
+              FImportPanel.Parent := Self;
+              FImportPanel.Button.OnClick := ImportPanelCancelClick;
+              Resize;
 
-            //Files := TStringList.Create;
-            //Files.Assign(Dlg.Files); // TODO: Files freigeben!!!
+              FImportThread := TImportFilesThread.Create(Dlg.Files, KnownFiles);
+              FImportThread.OnTerminate := ImportThreadTerminate;
+              FImportThread.OnProgress := ImportThreadProgress;
+              FImportThread.Resume;
 
-            FImportThread := TImportFilesThread.Create(Dlg.Files, KnownFiles);
-            FImportThread.OnTerminate := ImportThreadTerminate;
-            FImportThread.OnProgress := ImportThreadProgress;
-            FImportThread.Resume;
+              if FSavedTree.Player.Playing then
+                FSavedTree.FPlayer.Pause;
 
-            if FSavedTree.Player.Playing then
-              FSavedTree.FPlayer.Pause;
+              FSavedTree.Enabled := False;
+              FSearchBar.FSearch.Enabled := False;
 
-            FSavedTree.Enabled := False;
-            FSearchBar.FSearch.Enabled := False;
-
-            UpdateButtons;
+              UpdateButtons;
+            end;
           end;
         finally
           Dlg.Free;
@@ -2430,8 +2435,10 @@ begin
 end;
 
 constructor TImportFilesThread.Create(Files: TStrings; KnownFiles: TStringList);
+var
+  i: Integer;
 begin
-  inherited Create(True);   // TODO: FLoadFiles freigeben am ende!!1
+  inherited Create(True);
 
   FreeOnTerminate := True;
 
