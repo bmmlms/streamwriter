@@ -117,7 +117,7 @@ type
     lstSoundDevice: TComboBox;
     lblSoundDevice: TLabel;
     Label16: TLabel;
-    lstMinBitrate: TComboBox;
+    lstMinQuality: TComboBox;
     Label17: TLabel;
     lstFormat: TComboBox;
     btnHelpPostProcess: TPngSpeedButton;
@@ -1059,7 +1059,7 @@ begin
   chkAutoTuneInConsiderIgnore.Checked := AppGlobals.AutoTuneInConsiderIgnore;
   chkAutoTuneInAddToIgnore.Checked := AppGlobals.AutoTuneInAddToIgnore;
   chkAutoRemoveSavedFromWishlist.Checked := AppGlobals.AutoRemoveSavedFromWishlist;
-  lstMinBitrate.ItemIndex := AppGlobals.AutoTuneInMinKbps;
+  lstMinQuality.ItemIndex := AppGlobals.AutoTuneInMinQuality;
   lstFormat.ItemIndex := AppGlobals.AutoTuneInFormat;
   chkSubmitStreamInfo.Checked := AppGlobals.SubmitStreamInfo;
   chkSubmitStats.Checked := AppGlobals.SubmitStats;
@@ -1422,7 +1422,7 @@ begin
     AppGlobals.AutoTuneInConsiderIgnore := chkAutoTuneInConsiderIgnore.Checked;
     AppGlobals.AutoTuneInAddToIgnore := chkAutoTuneInAddToIgnore.Checked;
     AppGlobals.AutoRemoveSavedFromWishlist := chkAutoRemoveSavedFromWishlist.Checked;
-    AppGlobals.AutoTuneInMinKbps := lstMinBitrate.ItemIndex;
+    AppGlobals.AutoTuneInMinQuality := lstMinQuality.ItemIndex;
     AppGlobals.AutoTuneInFormat := lstFormat.ItemIndex;
     AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
     AppGlobals.SubmitStats := chkSubmitStats.Checked;
@@ -2849,7 +2849,7 @@ procedure TfrmSettings.chkAutoTuneInClick(Sender: TObject);
 begin
   inherited;
 
-  lstMinBitrate.Enabled := chkAutoTuneIn.Checked;
+  lstMinQuality.Enabled := chkAutoTuneIn.Checked;
   lstFormat.Enabled := chkAutoTuneIn.Checked;
   chkAutoTuneInConsiderIgnore.Enabled := chkAutoTuneIn.Checked;
   chkAutoTuneInAddToIgnore.Enabled := chkAutoTuneIn.Checked;

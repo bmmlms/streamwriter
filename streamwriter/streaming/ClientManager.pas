@@ -302,7 +302,7 @@ var
   Res: TMayConnectResults;
   Found: Boolean;
 begin
-  AutoTuneInMinKbps := GetAutoTuneInMinKbps(AppGlobals.AutoTuneInMinKbps);
+  AutoTuneInMinKbps := GetAutoTuneInMinKbps(FiletypeToFormat('.' + Format), AppGlobals.AutoTuneInMinQuality);
 
   if Kbps < AutoTuneInMinKbps then
     Exit;

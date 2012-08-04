@@ -24,25 +24,29 @@ interface
 uses
   Windows, SysUtils, AudioFunctions;
 
-function GetAutoTuneInMinKbps(Idx: Integer): Cardinal;
+function GetAutoTuneInMinKbps(AudioType: TAudioTypes; Idx: Integer): Cardinal;
 function FixPatternFilename(Filename: string): string;
 
 implementation
 
-function GetAutoTuneInMinKbps(Idx: Integer): Cardinal;
+function GetAutoTuneInMinKbps(AudioType: TAudioTypes; Idx: Integer): Cardinal;
 begin
   Result := 0;
-  case Idx of
-    0: Result := 0;
-    1: Result := 64;
-    2: Result := 96;
-    3: Result := 128;
-    4: Result := 160;
-    5: Result := 192;
-    6: Result := 224;
-    7: Result := 256;
-    8: Result := 320;
-    9: Result := 384;
+  case AudioType of
+    atMPEG:
+      begin
+        case Idx of
+          0: Result := 192;
+          1: Result := 128;
+        end;
+      end;
+    atAAC:
+      begin
+        case Idx of
+          0: Result := 96;
+          1: Result := 48;
+        end;
+      end;
   end;
 end;
 

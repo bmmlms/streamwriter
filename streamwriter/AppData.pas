@@ -256,7 +256,7 @@ type
     FUserWasSetup: Boolean;
     FUser, FPass: string;
     FSoundDevice: Cardinal;
-    FAutoTuneInMinKbps: Cardinal;
+    FAutoTuneInMinQuality: Integer;
     FAutoTuneInFormat: Cardinal;
     FLimitSpeed: Boolean;
     FMaxSpeed: Cardinal;
@@ -378,8 +378,8 @@ type
     property ShortcutVolUp: Cardinal read FShortcutVolUp write FShortcutVolUp;
     // The hotkey to trigger "Mute"
     property ShortcutMute: Cardinal read FShortcutMute write FShortcutMute;
-    // Minimum Kbps needed for automatic recording of a stream
-    property AutoTuneInMinKbps: Cardinal read FAutoTuneInMinKbps write FAutoTuneInMinKbps;
+    // Minimum quality needed for automatic recording of a stream
+    property AutoTuneInMinQuality: Integer read FAutoTuneInMinQuality write FAutoTuneInMinQuality;
     // Desired format of streams to tune in automatically
     property AutoTuneInFormat: Cardinal read FAutoTuneInFormat write FAutoTuneInFormat;
     // When set the overall speedlimit is active
@@ -579,6 +579,7 @@ procedure TAppData.Load;
   end;
 var
   i, DefaultActionTmp, DefaultActionBrowser, DefaultFilterTmp, SilenceBuffer, OutputFormatTmp: Integer;
+  KbpsTmp: Cardinal;
 begin
   inherited;
 
@@ -687,10 +688,21 @@ begin
   else
     FStreamSettings.OutputFormat := TAudioTypes(OutputFormatTmp);
 
-  FStorage.Read('AutoTuneInMinKbps', FAutoTuneInMinKbps, 3);
+  FStorage.Read('AutoTuneInMinKbps', KbpsTmp, High(Cardinal));
+  if KbpsTmp < High(Cardinal) then
+  begin
+    FAutoTuneInMinQuality := 2;
+    if KbpsTmp >= 3 then
+      FAutoTuneInMinQuality := 1;
+    if KbpsTmp >= 5 then
+      FAutoTuneInMinQuality := 0;
+  end else
+    FStorage.Read('AutoTuneInMinQuality', FAutoTuneInMinQuality, 2);
+
+  if (FAutoTuneInMinQuality > 2) then
+    FAutoTuneInMinQuality := 2;
+
   FStorage.Read('AutoTuneInFormat', FAutoTuneInFormat, 0);
-  if (FAutoTuneInMinKbps > 9) then
-    FAutoTuneInMinKbps := 3;
   if FAutoTuneInFormat > 2 then
     FAutoTuneInFormat := 0;
 
@@ -843,7 +855,7 @@ begin
   FStorage.Write('OnlySaveFull', FStreamSettings.FOnlySaveFull);
   FStorage.Write('ShortLengthSeconds', FStreamSettings.FShortLengthSeconds);
   FStorage.Write('SongBuffer', FStreamSettings.FSongBuffer);
-  // REMARK: Das .Delete() kann irgendwann raus.
+  // REMARK: Das .Delete() kann irgendwann raus. Dann aber auch der Check, der die alte Variable berücksichtigt.
   FStorage.Delete('SongBufferSeconds');
   FStorage.Write('MaxRetries', FStreamSettings.FMaxRetries);
   FStorage.Write('RetryDelay', FStreamSettings.FRetryDelay);
@@ -867,7 +879,9 @@ begin
   FStorage.Write('AutoRemoveSavedFromWishlist', FAutoRemoveSavedFromWishlist);
   FStorage.Write('SubmitStats', FSubmitStats);
   FStorage.Write('SubmitStreamInfo', FSubmitStreamInfo);
-  FStorage.Write('AutoTuneInMinKbps', FAutoTuneInMinKbps);
+  FStorage.Write('AutoTuneInMinQuality', FAutoTuneInMinQuality);
+  // REMARK: Das .Delete() kann irgendwann raus. Dann aber auch der Check, der die alte Variable berücksichtigt.
+  FStorage.Delete('AutoTuneInMinKbps');
   FStorage.Write('AutoTuneInFormat', FAutoTuneInFormat);
   FStorage.Write('LimitSpeed', FLimitSpeed);
   FStorage.Write('MaxSpeed', FMaxSpeed);

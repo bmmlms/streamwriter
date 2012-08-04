@@ -1231,7 +1231,7 @@ begin
   for i := 0 to FStreamTree.FSortPopupMenu.Items.Count - 1 do
     if FStreamTree.FSortPopupMenu.Items[i].Tag = Integer(FSelectedSortType) then
     begin
-      FStreamTree.FSortPopupMenu.Items[i].Checked := True; // TODO: Testen!!!
+      FStreamTree.FSortPopupMenu.Items[i].Checked := True;
       Break;
     end;
 

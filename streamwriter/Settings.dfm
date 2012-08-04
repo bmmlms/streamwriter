@@ -893,9 +893,9 @@ object frmSettings: TfrmSettings
     object Label16: TLabel
       Left = 20
       Top = 100
-      Width = 76
+      Width = 77
       Height = 13
-      Caption = 'Minimum bitrate:'
+      Caption = 'Minimum quality:'
     end
     object Label17: TLabel
       Left = 20
@@ -914,7 +914,7 @@ object frmSettings: TfrmSettings
       TabOrder = 0
       OnClick = chkAutoTuneInClick
     end
-    object lstMinBitrate: TComboBox
+    object lstMinQuality: TComboBox
       Left = 20
       Top = 116
       Width = 129
@@ -922,16 +922,9 @@ object frmSettings: TfrmSettings
       Style = csDropDownList
       TabOrder = 1
       Items.Strings = (
-        '32'
-        '64'
-        '96'
-        '128'
-        '160'
-        '192'
-        '224'
-        '256'
-        '320'
-        '384')
+        'High'
+        'Medium'
+        'Low')
     end
     object lstFormat: TComboBox
       Left = 20

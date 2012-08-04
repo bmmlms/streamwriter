@@ -1039,7 +1039,7 @@ begin
       try
         CalcBytesPerSec;
 
-        AutoTuneInMinKbps := GetAutoTuneInMinKbps(AppGlobals.AutoTuneInMinKbps);
+        AutoTuneInMinKbps := GetAutoTuneInMinKbps(Self.FAudioType, AppGlobals.AutoTuneInMinQuality);
 
         if (FRecordTitle <> '') and (FBitRate < AutoTuneInMinKbps) then
           FRemoveClient := True;

@@ -264,7 +264,7 @@ type
     FInterval: TScheduleInterval;
     FDay: TScheduleDay;
     FDate: TDateTime;
-    FAutoRemove: Boolean; // TODO: aufwach zeiten auch neu setzen, wenn FAutoRemove einen entfernt hat. und nach jeder abgeschlossenen aufnahme. immer wenn durch scheduler gestoppt halt.
+    FAutoRemove: Boolean;
     FStartHour, FStartMinute, FEndHour, FEndMinute: Integer;
 
     FTriedStart: Boolean;
