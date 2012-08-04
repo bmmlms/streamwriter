@@ -25,10 +25,10 @@ interface
 
 uses
   Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
-  StdCtrls, Menus, ImgList, Math, VirtualTrees, LanguageObjects,
+  StdCtrls, Menus, ImgList, Math, VirtualTrees, LanguageObjects, MControls,
   Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls,
   HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging,
-  DataManager, DropSource, Types, AudioFunctions;
+  DataManager, DropSource, Types, AudioFunctions, PngSpeedButton;
 
 type
   TModes = (moShow, moLoading);
@@ -79,8 +79,7 @@ type
 
   TMStreamSearchPanel = class(TPanel)
   private
-    FExpandLabel: TLabel;
-    FExpandButton: TSpeedButton;
+    //FShowHideFilters: TMShowHidePanel;
 
     FSearchLabel: TLabel;
     FGenreLabel: TLabel;
@@ -1365,13 +1364,14 @@ end;
 { TMStreamSearch }
 
 constructor TMStreamSearchPanel.Create(AOwner: TComponent);
+var
+  Res: TResourceStream;
 begin
   inherited;
 
   BevelOuter := bvNone;
 
   FSearchEdit := TEdit.Create(Self);
-  //FSearchButton := TSpeedButton.Create(Self);
   FSearchLabel := TLabel.Create(Self);
   FGenreList := TComboBox.Create(Self);
   FKbpsList := TComboBox.Create(Self);
@@ -1415,21 +1415,17 @@ begin
 
   TopCnt := TopCnt + 26;
 
-
-  FExpandButton := TSpeedButton.Create(Self);
-  FExpandButton.Parent := Self;
-  FExpandButton.Top := TopCnt;
-  FExpandButton.Caption := 'E';
-  FExpandButton.OnClick := ExpandButtonClick;
-
-  FExpandLabel := TLabel.Create(Self);
-  FExpandLabel.Parent := Self;
-  FExpandLabel.Left := FExpandButton.Left + FExpandButton.Width + 20;
-  FExpandLabel.Caption := _('More options...');
-  FExpandLabel.Top := FExpandButton.Top + FExpandButton.Height div 2 - FExpandLabel.Height div 2;
+  {
+  FShowHideFilters := TMShowHidePanel.Create(Self);
+  FShowHideFilters.ShowCaption := _('Show filters');
+  FShowHideFilters.HideCaption := _('Hide filters');
+  FShowHideFilters.Parent := Self;
+  FShowHideFilters.Top := TopCnt;
+  FShowHideFilters.Height := 30;
+  FShowHideFilters.Width := 100;
 
   TopCnt := TopCnt + 26;
-
+  }
 
   FGenreList.Parent := Self;
   FGenreList.Style := csDropDownList;
@@ -1510,23 +1506,33 @@ begin
 
   ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4;
 
-  SetVisible(False);
+  SetVisible(True);
 end;
 
 procedure TMStreamSearchPanel.SetVisible(Value: Boolean);
 var
   i: Integer;
 begin
+  if Value then
+  begin
+    //FExpandButton.Caption := _('Hide filters');
+    //FExpandButton.PngImage := FImageHideFilter;
+  end else
+  begin
+    //FExpandButton.Caption := _('Show filters');
+    //FExpandButton.PngImage := FImageShowFilter;
+  end;
+
   for i := 0 to ControlCount - 1 do
-    if (Controls[i] <> FExpandLabel) and (Controls[i] <> FExpandButton) and
+    if {(Controls[i] <> FExpandLabel) and (Controls[i] <> FShowHideFilters) and}
        (Controls[i] <> FSearchLabel) and (Controls[i] <> FSearchEdit) then
     begin
       Controls[i].Visible := Value;
     end;
-  if Value then
+  //if Value then
     ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4
-  else
-    ClientHeight := FExpandButton.Top + FExpandButton.Height + FSearchEdit.Top + 4;
+  //else
+  //  ClientHeight := FShowHideFilters.Top + FShowHideFilters.Height + FSearchEdit.Top + 4;
 end;
 
 { TMStreamTreeHeaderPopup }

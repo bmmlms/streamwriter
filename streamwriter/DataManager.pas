@@ -26,7 +26,8 @@ interface
 
 uses
   Windows, Classes, SysUtils, ExtendedStream, Generics.Collections,
-  ComCtrls, AppData, Functions, Logging, DateUtils, AudioFunctions;
+  ComCtrls, AppData, Functions, Logging, DateUtils, AudioFunctions,
+  PowerManagement;
 
 type
   TStreamList = class;
@@ -263,12 +264,19 @@ type
     FInterval: TScheduleInterval;
     FDay: TScheduleDay;
     FDate: TDateTime;
-    FAutoRemove: Boolean;
+    FAutoRemove: Boolean; // TODO: aufwach zeiten auch neu setzen, wenn FAutoRemove einen entfernt hat. und nach jeder abgeschlossenen aufnahme. immer wenn durch scheduler gestoppt halt.
     FStartHour, FStartMinute, FEndHour, FEndMinute: Integer;
+
     FTriedStart: Boolean;
     FTriedStop: Boolean;
+    FWakeupHandle: Integer;
+    FScheduleStarted: TDateTime;
 
-    class function MatchesDay(S: TSchedule; NextDay: Boolean): Boolean;
+    function GetStartTime: TDateTime;
+    function GetEndTime(ScheduleStarted: TDateTime): TDateTime;
+    function GetWakeupTime: TDateTime;
+
+    //class function MatchesDay(S: TSchedule; NextDay: Boolean): Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -278,10 +286,13 @@ type
     class function Load(Stream: TExtendedStream; Version: Integer): TSchedule;
     procedure Save(Stream: TExtendedStream);
 
+    procedure RemoveWakeup;
+    procedure SetWakeup;
+
     // Does the current time meet the scheduled start-time?
-    class function MatchesStart(S: TSchedule): Boolean;
+    function MatchesStart: Boolean;
     // Does the current time meet the scheduled end-time?
-    class function MatchesEnd(S: TSchedule): Boolean;
+    function MatchesEnd: Boolean;
 
     // When set this schedule is active
     property Active: Boolean read FActive write FActive;
@@ -306,6 +317,7 @@ type
 
     property TriedStart: Boolean read FTriedStart write FTriedStart;
     property TriedStop: Boolean read FTriedStop write FTriedStop;
+    property ScheduleStarted: TDateTime read FScheduleStarted write FScheduleStarted;
   end;
 
   // A list of items of TSchedule
@@ -1513,8 +1525,77 @@ end;
 
 destructor TSchedule.Destroy;
 begin
+  RemoveWakeup;
 
   inherited;
+end;
+
+function TSchedule.GetEndTime(ScheduleStarted: TDateTime): TDateTime;
+var
+  NextDay: Boolean;
+begin
+  Result := 0;
+  if FActive then
+  begin
+    Result := ScheduleStarted;
+    if ((FEndHour < FStartHour) or ((FEndHour = FStartHour) and (FEndMinute < FStartMinute))) then
+      Result := IncDay(Result);
+
+    Result := RecodeHour(Result, FEndHour);
+    Result := RecodeMinute(Result, FEndMinute);
+
+    if (Result > 0) and (Now > Result) then
+      Result := 0;
+  end;
+end;
+
+function TSchedule.GetStartTime: TDateTime;
+var
+  N: TDateTime;
+begin
+  Result := 0;
+  if FActive then
+  begin
+    N := Now;
+    case FInterval of
+      siDaily:
+        begin
+          if ((FStartHour = HourOf(N)) and (FStartMinute > MinuteOf(N)) or
+              (FStartHour > HourOf(N)))
+          then
+            Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(N), FStartHour, FStartMinute, 0, 0)
+          else
+          begin
+            Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(IncDay(N)), FStartHour, FStartMinute, 0, 0);
+          end;
+        end;
+      siWeekly:
+        begin
+          Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(N), FStartHour, FStartMinute, 0, 0);
+          if DayOfTheWeek(N) <= Integer(FDay) + 1 then
+          begin
+            Result := IncDay(Result, (Integer(FDay) + 1 - DayOfTheWeek(N)));
+            if Result < N then
+              Result := IncWeek(Result);
+          end else
+          begin
+            Result := IncDay(Result, 7 - DayOfTheWeek(N) + Integer(FDay) + 1);
+          end;
+        end;
+      siNone:
+        Result := EncodeDateTime(YearOf(FDate), MonthOf(FDate), DayOf(FDate), FStartHour, FStartMinute, 0, 0)
+    end;
+
+    if (Result > 0) and (N > Result) then
+      Result := 0;
+  end;
+end;
+
+function TSchedule.GetWakeupTime: TDateTime;
+begin
+  Result := GetStartTime;
+  if (Result > 0) and (Now < IncMinute(Result, -2)) then
+    Result := IncMinute(Result, -2)
 end;
 
 class function TSchedule.Load(Stream: TExtendedStream;
@@ -1538,81 +1619,24 @@ begin
   Stream.Read(Result.FEndMinute);
 end;
 
-class function TSchedule.MatchesDay(S: TSchedule; NextDay: Boolean): Boolean;
-var
-  DOW: Word;
-  SDate: TDateTime;
+function TSchedule.MatchesEnd: Boolean;
 begin
   Result := False;
-  if S.FRecurring then
-  begin
-    Result := True;
-    if S.FInterval = siWeekly then
-    begin
-      DOW := DayOfWeek(Now);
-
-      // Weil Sonntag bei DayOfWeek() der erste ist...
-      if DOW = 1 then
-        DOW := 7
-      else
-        Dec(DOW);
-
-      if NextDay then
-        Inc(DOW);
-
-      if not (DOW = Word(S.FDay) + 1) then
-        Result := False;
-    end;
-  end else
-  begin
-    SDate := S.Date;
-
-    if NextDay then
-      SDate := SDate + 1;
-
-    if Trunc(SDate) = Trunc(Now) then
-      Result := True;
-  end;
+  if ScheduleStarted > 0 then
+    Result := WithinPastSeconds(Now, IncSecond(GetEndTime(ScheduleStarted), -30), 30);
 end;
 
-class function TSchedule.MatchesStart(S: TSchedule): Boolean;
+function TSchedule.MatchesStart: Boolean;
 begin
-  Result := False;
-  if not MatchesDay(S, False) then
-    Exit;
-
-  if (S.StartHour = HourOf(Now)) and (S.StartMinute = MinuteOf(Now)) and
-     (SecondOf(Now) = 1) then
-  begin
-    Result := True;
-  end;
+  Result := WithinPastSeconds(Now, IncSecond(GetStartTime, 30), 30);
 end;
 
-class function TSchedule.MatchesEnd(S: TSchedule): Boolean;
-var
-  NextDay: Boolean;
-  StartTime, EndTime: TDateTime;
+procedure TSchedule.RemoveWakeup;
 begin
-  Result := False;
-
-  StartTime := EncodeTime(S.StartHour, S.StartMinute, 0, 0);
-  EndTime := EncodeTime(S.EndHour, S.EndMinute, 0, 0);
-
-  NextDay := False;
-  if EndTime <= StartTime then
+  if FWakeupHandle > 0 then
   begin
-    // Das hier geht von z.B. 23:00 bis 01:00, also über 24 Uhr hinaus.
-    // Für MatchesDay muss dann ein Tag drauf gepackt werden.
-    NextDay := True;
-  end;
-
-  if not MatchesDay(S, NextDay) then
-    Exit;
-
-  if (S.EndHour = HourOf(Now)) and (S.EndMinute = MinuteOf(Now)) and
-     (SecondOf(Now) = 0) then
-  begin
-    Result := True;
+    Power.RemoveWakeup(FWakeupHandle);
+    FWakeupHandle := 0;
   end;
 end;
 
@@ -1628,6 +1652,26 @@ begin
   Stream.Write(FStartMinute);
   Stream.Write(FEndHour);
   Stream.Write(FEndMinute);
+end;
+
+procedure TSchedule.SetWakeup;
+var
+  WT: TDateTime;
+begin
+  if FWakeupHandle > 0 then
+  begin
+    Power.RemoveWakeup(FWakeupHandle);
+    FWakeupHandle := 0;
+  end;
+
+  WT := GetWakeupTime;
+  if WT > 0 then
+  begin
+    try
+      FWakeupHandle := Power.AddWakeup(WT);
+    except
+    end;
+  end;
 end;
 
 { TRatingEntry }

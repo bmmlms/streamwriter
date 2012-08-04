@@ -34,7 +34,7 @@ uses
   CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
-  SystemCritical, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
+  PowerManagement, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
   AppMessages, CommandLine;
 
 const
@@ -280,6 +280,7 @@ type
     procedure OpenCut(Filename: string); overload;
     procedure OpenCut(Track: TTrackInfo); overload;
     procedure ProcessCommandLine(Data: string);
+    procedure SetWakeups;
 
     procedure CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
 
@@ -705,6 +706,8 @@ begin
     tmrRecordings.Enabled := True;
 
     ProcessCommandLine('');
+
+    SetWakeups;
 
     if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
       FUpdater.Start(uaVersion, True);
@@ -1444,6 +1447,15 @@ begin
   end;
 end;
 
+procedure TfrmStreamWriterMain.SetWakeups;
+var
+  i, n: Integer;
+begin
+  for i := 0 to FClients.Count - 1 do
+    for n := 0 to FClients[i].Entry.Schedules.Count - 1 do
+      FClients[i].Entry.Schedules[n].SetWakeup;
+end;
+
 procedure TfrmStreamWriterMain.ShowCommunityLogin;
 begin
   if FCommunityLogin <> nil then
@@ -1924,19 +1936,21 @@ begin
       Schedule := Client.Entry.Schedules[i];
       if Schedule.Active then
       begin
-        if TSchedule.MatchesStart(Schedule) and (not Schedule.TriedStart) then
+        if Schedule.MatchesStart and (not Schedule.TriedStart) then
         begin
           Schedule.TriedStart := True;
+          Schedule.ScheduleStarted := Now;
           Res := Client.StartRecording(True);
           if Res <> crOk then
             tabClientsShowErrorMessage(Client, Res, False, True);
-        end else if not TSchedule.MatchesStart(Schedule) then
+        end else if not Schedule.MatchesStart then
           Schedule.TriedStart := False;
 
-        if TSchedule.MatchesEnd(Schedule) and (not Schedule.TriedStop) then
+        if Schedule.MatchesEnd and (not Schedule.TriedStop) then
         begin
           Client.StopRecording;
           Schedule.TriedStop := True;
+          Schedule.ScheduleStarted := 0;
           if Schedule.AutoRemove then
           begin
             Client.Entry.Schedules.Remove(Schedule);
@@ -1945,7 +1959,9 @@ begin
 
             Schedule.Free;
           end;
-        end else if not TSchedule.MatchesEnd(Schedule) then
+
+          SetWakeups;
+        end else if not Schedule.MatchesEnd then
           Schedule.TriedStop := False;
       end;
     end;
@@ -2021,7 +2037,7 @@ begin
     end;
   end;
 
-  Critical.Critical := (PlayingActive or RecordingActive or ScheduleActive) or ((FDataLists.SaveList.Count > 0) and (AppGlobals.AutoTuneIn));
+  Power.Critical := (PlayingActive or RecordingActive or ScheduleActive) or ((FDataLists.SaveList.Count > 0) and (AppGlobals.AutoTuneIn));
 end;
 
 procedure TfrmStreamWriterMain.ToggleWindow(AlwaysShow: Boolean);

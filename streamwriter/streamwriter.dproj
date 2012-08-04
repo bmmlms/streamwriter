@@ -177,7 +177,7 @@
 			<DCCReference Include="AppMessages.pas"/>
 			<DCCReference Include="controls\StatusBar.pas"/>
 			<DCCReference Include="postprocess\PostProcessMP4Box.pas"/>
-			<DCCReference Include="..\..\common\SystemCritical.pas"/>
+			<DCCReference Include="..\..\common\PowerManagement.pas"/>
 			<DCCReference Include="audio\FileConvertor.pas"/>
 			<DCCReference Include="Intro.pas">
 				<Form>frmIntro</Form>

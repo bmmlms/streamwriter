@@ -1071,7 +1071,7 @@ begin
       TrySave;
 
     if RecordTitle <> '' then
-      if ((FBytesPerSec > 0) and (FAudioStream.Size > FBytesPerSec * 40) and (FTitle <> FRecordTitle) and (FStreamTracks.Find(FRecordTitle) = nil)) or
+      if ((FBytesPerSec > 0) and (FAudioStream.Size > FBytesPerSec * 60) and (FTitle <> FRecordTitle) and (FStreamTracks.Find(FRecordTitle) = nil)) or
          (FMetaCounter > 5) then
       begin
         FRemoveClient := True;

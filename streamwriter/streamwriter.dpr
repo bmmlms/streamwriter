@@ -110,7 +110,7 @@ uses
   AppMessages in 'AppMessages.pas',
   StatusBar in 'controls\StatusBar.pas',
   PostProcessMP4Box in 'postprocess\PostProcessMP4Box.pas',
-  SystemCritical in '..\..\common\SystemCritical.pas',
+  PowerManagement in '..\..\common\PowerManagement.pas',
   FileConvertor in 'audio\FileConvertor.pas',
   Intro in 'Intro.pas' {frmIntro},
   PostProcessConvert in 'postprocess\PostProcessConvert.pas',

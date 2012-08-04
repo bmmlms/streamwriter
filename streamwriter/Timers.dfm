@@ -66,7 +66,6 @@ object frmTimers: TfrmTimers
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitHeight = 313
     object Panel1: TPanel
       Left = 0
       Top = 0
@@ -75,7 +74,6 @@ object frmTimers: TfrmTimers
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitHeight = 313
       object pnlConfig: TPanel
         Left = 0
         Top = 0
@@ -251,7 +249,6 @@ object frmTimers: TfrmTimers
         Padding.Top = 4
         Padding.Right = 4
         TabOrder = 1
-        ExplicitHeight = 116
         object Panel3: TPanel
           Left = 4
           Top = 149
@@ -263,7 +260,6 @@ object frmTimers: TfrmTimers
           Padding.Top = 4
           Padding.Bottom = 4
           TabOrder = 0
-          ExplicitTop = 81
           object btnRemove: TButton
             Left = 286
             Top = 4
@@ -292,7 +288,6 @@ object frmTimers: TfrmTimers
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitTop = 313
     object Bevel2: TBevel
       Left = 4
       Top = 4

@@ -24,7 +24,8 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ComCtrls, StdCtrls, Mask, Buttons, ExtCtrls, LanguageObjects,
-  VirtualTrees, AppData, Functions, DateUtils, Logging, DataManager;
+  VirtualTrees, AppData, Functions, DateUtils, Logging, DataManager,
+  PowerManagement;
 
 type
   TScheduleTreeNodeData = record
@@ -110,7 +111,10 @@ var
   NodeData: PScheduleTreeNodeData;
 begin
   for i := 0 to FEntry.Schedules.Count - 1 do
+  begin
+    FEntry.Schedules[i].RemoveWakeup;
     FEntry.Schedules[i].Free;
+  end;
   FEntry.Schedules.Clear;
 
   Node := Tree.GetFirst;
@@ -118,6 +122,7 @@ begin
   begin
     NodeData := Tree.GetNodeData(Node);
     FEntry.Schedules.Add(NodeData.Schedule.Copy);
+    FEntry.Schedules[FEntry.Schedules.Count - 1].SetWakeup;
     Node := Tree.GetNext(Node);
   end;
 

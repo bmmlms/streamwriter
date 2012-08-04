@@ -34,7 +34,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     ShowHint = True
     TabOrder = 0
     Transparent = True
-    ExplicitWidth = 714
     object ToolButton5: TToolButton
       Left = 2
       Top = 0
