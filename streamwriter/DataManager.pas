@@ -1594,8 +1594,8 @@ end;
 function TSchedule.GetWakeupTime: TDateTime;
 begin
   Result := GetStartTime;
-  if (Result > 0) and (Now < IncMinute(Result, -2)) then
-    Result := IncMinute(Result, -2)
+  if (Result > 0) and (Now < IncMinute(Result, -1)) then
+    Result := IncMinute(Result, -1)
 end;
 
 class function TSchedule.Load(Stream: TExtendedStream;

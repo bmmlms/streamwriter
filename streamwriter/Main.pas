@@ -2075,7 +2075,7 @@ procedure TfrmStreamWriterMain.UpdateButtons;
 var
   i: Integer;
   B, OnlyAutomatedSelected, OnlyAutomatedCatsSelected: Boolean;
-  URLFound, FilenameFound, OnePlaying, OnePaused, AnyClientHasTitle: Boolean;
+  URLFound, FilenameFound, OnePlaying, OnePaused, AnyClientHasTitle, ClientSchedulesActive: Boolean;
   Clients, AllClients: TClientArray;
   Client: TICEClient;
   CatNodes: TNodeArray;
@@ -2124,6 +2124,15 @@ begin
       AnyClientHasTitle := True;
       Break;
     end;
+
+  ClientSchedulesActive := False;
+  if Length(Clients) = 1 then
+    for i := 0 to Clients[0].Entry.Schedules.Count - 1 do
+      if Clients[0].Entry.Schedules[i].ScheduleStarted > 0 then
+      begin
+        ClientSchedulesActive := True;
+        Break;
+      end;
 
   for i := 0 to Length(CatNodes) - 1 do
     if not PClientNodeData(tabClients.ClientView.GetNodeData(CatNodes[i])).Category.IsAuto then
@@ -2188,8 +2197,8 @@ begin
   if actStopAfterSong.Checked <> (Length(Clients) = 1) and (Clients[0].StopAfterSong) and (not OnlyAutomatedSelected) then
     actStopAfterSong.Checked := (Length(Clients) = 1) and (Clients[0].StopAfterSong) and (not OnlyAutomatedSelected);
 
-  if actTimers.Enabled <> (Length(Clients) = 1) and (not Clients[0].AutoRemove) then
-    actTimers.Enabled := (Length(Clients) = 1) and (not Clients[0].AutoRemove);
+  if actTimers.Enabled <> (Length(Clients) = 1) and (not Clients[0].AutoRemove) and (not ClientSchedulesActive) then
+    actTimers.Enabled := (Length(Clients) = 1) and (not Clients[0].AutoRemove) and (not ClientSchedulesActive);
 
   if mnuCurrentTitle1.Enabled <> (Length(Clients) > 0) and AnyClientHasTitle then
     mnuCurrentTitle1.Enabled := (Length(Clients) > 0) and AnyClientHasTitle;
