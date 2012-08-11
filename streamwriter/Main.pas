@@ -1288,6 +1288,21 @@ begin
       tabClients.StartStreaming(0, 0, '', Param.Values[i], '', nil, baListen, nil, amNoWhere);
   end;
 
+  Param := CmdLine.GetParam('-wishadd');
+  if Param <> nil then
+  begin
+    tabChartsAddToWishlist(nil, Param.Values);
+  end;
+
+  Param := CmdLine.GetParam('-wishremove');
+  if Param <> nil then
+  begin
+    for i := 0 to Param.Values.Count - 1 do
+    begin
+      tabClientsRemoveTitleFromList(nil, nil, ltSave, Param.Values[i]);
+    end;
+  end;
+
   if FreeCmdLine then
     CmdLine.Free;
 end;
