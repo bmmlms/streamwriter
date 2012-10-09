@@ -10,13 +10,13 @@ type
   private
     FDLLPath: string;
   protected
+    function FGetName: string; override;
+    function FGetHelp: string; override;
   public
     constructor Create;
 
     function Copy: TAddonBase; override;
     procedure Assign(Source: TAddonBase); override;
-
-    procedure Initialize; override;
 
     property DLLPath: string read FDLLPath;
   end;
@@ -32,8 +32,6 @@ procedure TAddonAudioGenie.Assign(Source: TAddonBase);
 begin
   inherited;
 
-  FName := Source.Name;
-  FHelp := Source.Help;
   FDownloadName := Source.DownloadName;
   FDownloadPackage := Source.DownloadPackage;
 end;
@@ -50,8 +48,6 @@ constructor TAddonAudioGenie.Create;
 begin
   inherited;
 
-  FName := _('Support reading/writing of tags using AudioGenie');
-  FHelp := _('This addon adds support for reading/writing tags to/from saved songs using AudioGenie.');
   FDownloadName := 'addon_audiogenie';
   FDownloadPackage := 'addon_audiogenie.dll';
 
@@ -61,12 +57,14 @@ begin
   FFilenames.Add('audiogenie3.dll');
 end;
 
-procedure TAddonAudioGenie.Initialize;
+function TAddonAudioGenie.FGetHelp: string;
 begin
-  inherited;
+  Result := _('Support reading/writing of tags using AudioGenie');
+end;
 
-  FName := _('Support reading/writing of tags using AudioGenie');
-  FHelp := _('This addon adds support for reading/writing tags to/from saved songs using AudioGenie.');
+function TAddonAudioGenie.FGetName: string;
+begin
+  Result := _('This addon adds support for reading/writing tags to/from saved songs using AudioGenie.');
 end;
 
 end.

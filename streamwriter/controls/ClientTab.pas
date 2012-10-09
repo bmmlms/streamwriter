@@ -194,6 +194,8 @@ type
     procedure PausePlay;
     procedure ShowInfo;
 
+    procedure AdjustTextSizeDirtyHack;
+
     property AddressBar: TClientAddressBar read FAddressBar;
     property ClientView: TMClientView read FClientView;
     property SideBar: TSideBar read FSideBar;
@@ -700,6 +702,12 @@ begin
     Entry := TRecentEntry(FAddressBar.FStations.ItemsEx[FAddressBar.FStations.ItemIndex].Data);
     StartStreaming(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, '', nil, AppGlobals.DefaultActionBrowser, nil, amNoWhere);
   end;
+end;
+
+procedure TClientTab.AdjustTextSizeDirtyHack;
+begin
+  FAddressBar.FStations.Left := FAddressBar.FLabel.Left + FAddressBar.FLabel.Width + 8;
+  FAddressBar.FStations.Width := FAddressBar.ClientWidth - FAddressBar.FStations.Left - FAddressBar.FStart.Width - 8;
 end;
 
 procedure TClientTab.DebugClear(Sender: TObject);

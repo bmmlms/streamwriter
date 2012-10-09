@@ -40,7 +40,7 @@ type
   end;
   PSavedNodeData = ^TSavedNodeData;
 
-  TTrackActions = (taUndefined, taRefresh, taCut, taEditTags, taFinalized, taAddToWishlist, taRemove,
+  TTrackActions = (taUndefined, taRefresh, taCut, taEditTags, taFinalized, taAddToWishlist, taAddToIgnorelist, taRemove,
                    taRecycle, taDelete, taShowFile, taProperties, taImportFiles, taImportFolder);
 
   TTrackInfoArray = array of TTrackInfo;
@@ -79,6 +79,7 @@ type
     FItemEditTags: TMenuItem;
     FItemFinalized: TMenuItem;
     FItemAddToWishlist: TMenuItem;
+    FItemAddToIgnorelist: TMenuItem;
     FItemRename: TMenuItem;
     FItemRemove: TMenuItem;
     FItemRecycle: TMenuItem;
@@ -103,6 +104,7 @@ type
     property ItemEditTags: TMenuItem read FItemEditTags;
     property ItemFinalized: TMenuItem read FItemFinalized;
     property ItemAddToWishlist: TMenuItem read FItemAddToWishlist;
+    property ItemAddToIgnorelist: TMenuItem read FItemAddToIgnorelist;
     property ItemRename: TMenuItem read FItemRename;
     property ItemRemove: TMenuItem read FItemRemove;
     property ItemRecycle: TMenuItem read FItemRecycle;
@@ -121,6 +123,7 @@ type
     FEditTags: TToolButton;
     FFinalized: TToolButton;
     FAddToWishlist: TToolButton;
+    FAddToIgnorelist: TToolButton;
     FSep2: TToolButton;
     FRename: TToolButton;
     FRemove: TToolButton;
@@ -208,6 +211,7 @@ type
     FOnRefresh: TNotifyEvent;
     FOnPlayStarted: TNotifyEvent;
     FOnAddTitleToWishlist: TStringEvent;
+    FOnAddTitleToIgnorelist: TStringEvent;
 
     procedure BuildTree;
     procedure SavedTreeAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
@@ -244,6 +248,7 @@ type
     property OnRefresh: TNotifyEvent read FOnRefresh write FOnRefresh;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
     property OnAddTitleToWishlist: TStringEvent read FOnAddTitleToWishlist write FOnAddTitleToWishlist;
+    property OnAddTitleToIgnorelist: TStringEvent read FOnAddTitleToIgnorelist write FOnAddTitleToIgnorelist;
   end;
 
   TSavedTree = class(TVirtualStringTree)
@@ -345,6 +350,8 @@ var
 begin
   inherited;
 
+  AutoHotkeys := maManual;
+
   FItemRefresh := CreateMenuItem;
   FItemRefresh.Caption := 'Re&fresh';
   FItemRefresh.ImageIndex := 23;
@@ -398,10 +405,19 @@ begin
   FItemFinalized.ImageIndex := 58;
   Items.Add(FItemFinalized);
 
+  ItemTmp := CreateMenuItem;
+  ItemTmp.Caption := '-';
+  Items.Add(ItemTmp);
+
   FItemAddToWishlist := CreateMenuItem;
   FItemAddToWishlist.Caption := 'Add to &wishlist';
-  FItemAddToWishlist.ImageIndex := 11;
+  FItemAddToWishlist.ImageIndex := 31;
   Items.Add(FItemAddToWishlist);
+
+  FItemAddToIgnorelist := CreateMenuItem;
+  FItemAddToIgnorelist.Caption := 'Add to i&gnorelist';
+  FItemAddToIgnorelist.ImageIndex := 65;
+  Items.Add(FItemAddToIgnorelist);
 
   ItemTmp := CreateMenuItem;
   ItemTmp.Caption := '-';
@@ -491,6 +507,7 @@ begin
   FEditTags.Enabled := Enable;
   FFinalized.Enabled := Enable;
   FAddToWishlist.Enabled := Enable;
+  FAddToIgnorelist.Enabled := Enable;
   FRemove.Enabled := Enable;
   FRecycle.Enabled := Enable;
   FDelete.Enabled := Enable;
@@ -555,10 +572,20 @@ begin
   FSep2.Style := tbsSeparator;
   FSep2.Width := 8;
 
+  FAddToIgnoreList := TToolButton.Create(Self);
+  FAddToIgnoreList.Parent := Self;
+  FAddToIgnoreList.Hint := 'Add to ignorelist';
+  FAddToIgnoreList.ImageIndex := 65;
+
   FAddToWishlist := TToolButton.Create(Self);
   FAddToWishlist.Parent := Self;
   FAddToWishlist.Hint := 'Add to wishlist';
-  FAddToWishlist.ImageIndex := 11;
+  FAddToWishlist.ImageIndex := 31;
+
+  FSep2 := TToolButton.Create(Self);
+  FSep2.Parent := Self;
+  FSep2.Style := tbsSeparator;
+  FSep2.Width := 8;
 
   FFinalized := TToolButton.Create(Self);
   FFinalized.Parent := Self;
@@ -770,6 +797,11 @@ begin
         for i := 0 to Length(Tracks) - 1 do
           FOnAddTitleToWishlist(Self, ExtractFileName(RemoveFileExt(Tracks[i].Filename)));
       end;
+    taAddToIgnorelist:
+      begin
+        for i := 0 to Length(Tracks) - 1 do
+          FOnAddTitleToIgnorelist(Self, ExtractFileName(RemoveFileExt(Tracks[i].Filename)));
+      end;
     taRemove:
       begin
         FSavedTree.BeginUpdate;
@@ -948,6 +980,8 @@ begin
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemFinalized);
   if Sender = FToolbar.FAddToWishlist then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemAddToWishlist);
+  if Sender = FToolbar.FAddToIgnorelist then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemAddToIgnorelist);
   if Sender = FToolbar.FRename then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemRename);
   if Sender = FToolbar.FRemove then
@@ -1213,6 +1247,7 @@ begin
   FToolBar.FEditTags.OnClick := ToolBarClick;
   FToolBar.FFinalized.OnClick := ToolBarClick;
   FToolBar.FAddToWishlist.OnClick := ToolBarClick;
+  FToolbar.FAddToIgnorelist.OnClick := ToolBarClick;
   FToolBar.FRename.OnClick := ToolBarClick;
   FToolBar.FRemove.OnClick := ToolBarClick;
   FToolBar.FRecycle.OnClick := ToolBarClick;
@@ -1298,6 +1333,7 @@ begin
   FPopupMenu.ItemEditTags.OnClick := PopupMenuClick;
   FPopupMenu.ItemFinalized.OnClick := PopupMenuClick;
   FPopupMenu.ItemAddToWishlist.OnClick := PopupMenuClick;
+  FPopupMenu.ItemAddToIgnorelist.OnClick := PopupMenuClick;
   FPopupMenu.ItemRename.OnClick := PopupMenuClick;
   FPopupMenu.ItemRemove.OnClick := PopupMenuClick;
   FPopupMenu.ItemRecycle.OnClick := PopupMenuClick;
@@ -1753,6 +1789,8 @@ begin
     Action := taFinalized
   else if Sender = FPopupMenu.ItemAddToWishlist then
     Action := taAddToWishlist
+  else if Sender = FPopupMenu.ItemAddToIgnorelist then
+    Action := taAddToIgnorelist
   else if Sender = FPopupMenu.ItemRename then
     EditNode(GetNode(Tracks[0]), 0)
   else if Sender = FPopupMenu.ItemRemove then

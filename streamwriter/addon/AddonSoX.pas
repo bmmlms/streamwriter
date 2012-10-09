@@ -10,13 +10,13 @@ type
   private
     FEXEPath: string;
   protected
+    function FGetName: string; override;
+    function FGetHelp: string; override;
   public
     constructor Create;
 
     function Copy: TAddonBase; override;
     procedure Assign(Source: TAddonBase); override;
-
-    procedure Initialize; override;
 
     property EXEPath: string read FEXEPath;
   end;
@@ -32,8 +32,6 @@ procedure TAddonSoX.Assign(Source: TAddonBase);
 begin
   inherited;
 
-  FName := Source.Name;
-  FHelp := Source.Help;
   FDownloadName := Source.DownloadName;
   FDownloadPackage := Source.DownloadPackage;
 end;
@@ -50,8 +48,6 @@ constructor TAddonSoX.Create;
 begin
   inherited;
 
-  FName := _('Support applying of effects to recorded songs using SoX');
-  FHelp := _('This addon adds support for applying effects to recorded songs using Sound eXchange (SoX).');
   FDownloadName := 'addon_sox';
   FDownloadPackage := 'addon_sox.dll';
 
@@ -64,12 +60,14 @@ begin
   FFilenames.Add('sox.exe');
 end;
 
-procedure TAddonSoX.Initialize;
+function TAddonSoX.FGetHelp: string;
 begin
-  inherited;
+  Result := _('This addon adds support for applying effects to recorded songs using Sound eXchange (SoX).');
+end;
 
-  FName := _('Support applying of effects to recorded songs using SoX');
-  FHelp := _('This addon adds support for applying effects to recorded songs using Sound eXchange (SoX).');
+function TAddonSoX.FGetName: string;
+begin
+  Result := _('Support applying of effects to recorded songs using SoX');
 end;
 
 end.

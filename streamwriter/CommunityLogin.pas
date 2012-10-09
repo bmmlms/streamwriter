@@ -151,7 +151,7 @@ end;
 
 procedure TfrmCommunityLogin.lblSignupClick(Sender: TObject);
 begin
-  ShellExecute(0, 'open', PChar('http://streamwriter.org/' + Language.CurrentLanguage.ID + '/benutzer/anmelden/'), '', '', 1);
+  ShellExecute(0, 'open', PChar('http://streamwriter.org/benutzer/anmelden/'), '', '', 1);
 end;
 
 procedure TfrmCommunityLogin.ShowConnecting(Show: Boolean);

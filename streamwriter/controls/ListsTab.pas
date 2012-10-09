@@ -123,6 +123,7 @@ type
     procedure UpdateLists;
 
     property WishPanel: TTitlePanel read FWishPanel;
+    property IgnorePanel: TTitlePanel read FIgnorePanel;
   end;
 
   TTitleTree = class(TVirtualStringTree)
@@ -570,7 +571,7 @@ var
   i: Integer;
   O: TObject;
 begin
-  if Client.AutoRemove then
+  if (Client.AutoRemove) or (Client.Entry.Name = '') then
     Exit;
 
   for i := 0 to FAddCombo.Items.Count - 1 do
@@ -709,7 +710,8 @@ begin
   BuildTree;
 
   for i := 0 to FClients.Count - 1 do
-    FAddCombo.AddItem(FClients[i].Entry.Name, FClients[i]);
+    if FClients[i].Entry.Name <> '' then
+      FAddCombo.AddItem(FClients[i].Entry.Name, FClients[i]);
   FAddCombo.Sorted := True;
   FAddCombo.Items.InsertObject(0, _('Global'), nil);
   FAddCombo.ItemIndex := 0;

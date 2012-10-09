@@ -541,7 +541,12 @@ var
 begin
   inherited;
 
-  Res := TResourceStream.Create(HInstance, 'THANKSTEXT_' + UpperCase(LanguageObjects.Language.CurrentLanguage.ID), RT_RCDATA);
+  try
+    Res := TResourceStream.Create(HInstance, 'THANKSTEXT_' + UpperCase(LanguageObjects.Language.CurrentLanguage.ID), RT_RCDATA);
+  except
+    Res := TResourceStream.Create(HInstance, 'THANKSTEXT_EN', RT_RCDATA);
+  end;
+
   try
     // 3 wegen UTF-8 Marker
     Res.Position := 3;

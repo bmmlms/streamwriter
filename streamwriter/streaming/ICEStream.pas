@@ -411,7 +411,10 @@ begin
 
       Dir := FSaveDir;
 
-      if LowerCase(ContentType) = 'audio/mpeg' then
+      // ((FStreamName <> '') or (FStreamURL <> '')) ist ein Hack für Streams ohne Content-Type...
+      if (LowerCase(ContentType) = 'audio/mpeg') or
+         ((FStreamName <> '') or (FStreamURL <> ''))
+      then
         FAudioType := atMPEG
       else if LowerCase(ContentType) = 'audio/aacp' then
         FAudioType := atAAC

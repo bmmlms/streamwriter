@@ -5,7 +5,7 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
   BorderStyle = bsSingle
   Caption = 'Add postprocessor'
   ClientHeight = 120
-  ClientWidth = 313
+  ClientWidth = 345
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -27,7 +27,7 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
   object pnlNav: TPanel
     Left = 0
     Top = 76
-    Width = 313
+    Width = 345
     Height = 44
     Align = alBottom
     BevelOuter = bvNone
@@ -36,10 +36,11 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
+    ExplicitWidth = 313
     object Bevel2: TBevel
       Left = 4
       Top = 4
-      Width = 305
+      Width = 337
       Height = 5
       Align = alTop
       Shape = bsTopLine
@@ -47,7 +48,7 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
       ExplicitWidth = 396
     end
     object btnOK: TBitBtn
-      Left = 212
+      Left = 244
       Top = 9
       Width = 97
       Height = 31
@@ -59,12 +60,13 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
+      ExplicitLeft = 212
     end
   end
   object optWAVE: TRadioButton
     Left = 8
     Top = 28
-    Width = 297
+    Width = 333
     Height = 21
     Caption = '...processing when in WAVE-format'
     Checked = True
@@ -74,7 +76,7 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
   object optDestinationFormat: TRadioButton
     Left = 8
     Top = 48
-    Width = 297
+    Width = 333
     Height = 21
     Caption = '...processing after conversion to destination format'
     TabOrder = 2

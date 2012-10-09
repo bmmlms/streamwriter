@@ -305,6 +305,7 @@ type
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedRefresh(Sender: TObject);
     procedure tabSavedAddTitleToWishlist(Sender: TObject; Data: string);
+    procedure tabSavedAddTitleToIgnorelist(Sender: TObject; Data: string);
 
     procedure tabCutCutFile(Sender: TObject; Filename: string);
     procedure tabCutSaved(Sender: TObject; AudioInfo: TAudioFileInfo);
@@ -651,6 +652,8 @@ begin
 
   FWasActivated := True;
 
+  tabClients.AdjustTextSizeDirtyHack;
+
   if not Bass.DeviceAvailable then
   begin
     TfrmMsgDlg.ShowMsg(Self, _('No sound devices could be detected so playback of streams and files will not be possible.'), 7, btOk);
@@ -835,6 +838,7 @@ begin
   tabSaved.OnRefresh := tabSavedRefresh;
   tabSaved.OnPlayStarted := tabPlayStarted;
   tabSaved.OnAddTitleToWishlist := tabSavedAddTitleToWishlist;
+  tabSaved.OnAddTitleToIgnorelist := tabSavedAddTitleToIgnorelist;
 
   FWasActivated := False;
   FWasShown := False;
@@ -1327,23 +1331,37 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.mnuStreamPopupPopup(Sender: TObject);
+  function AllClientsInCat(Clients: TNodeArray; Cat: PVirtualNode): Boolean;
+  var
+    i: Integer;
+  begin
+    Result := True;
+    for i := 0 to Length(Clients) - 1 do
+      if Clients[i].Parent <> Cat then
+      begin
+        Result := False;
+        Break;
+      end;
+  end;
 var
   Cats: TNodeArray;
   Cat: PClientNodeData;
   Node: PVirtualNode;
   Item: TMenuItem;
+  ClientNodes: TNodeArray;
   Clients: TClientArray;
 begin
   UpdateButtons;
 
-  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
+  ClientNodes := tabClients.ClientView.GetNodes(ntClientNoAuto, True);
+  Clients := tabClients.ClientView.NodesToClients(ClientNodes);
 
   mnuMoveToCategory1.Clear;
   Cats := tabClients.ClientView.GetNodes(ntCategory, False);
   for Node in Cats do
   begin
     Cat := tabClients.ClientView.GetNodeData(Node);
-    if not Cat.Category.IsAuto then
+    if (not Cat.Category.IsAuto) and (not AllClientsInCat(ClientNodes, Node)) then
     begin
       Item := mnuStreamPopup.CreateMenuItem;
       Item.Caption := Cat.Category.Name;
@@ -1516,6 +1534,7 @@ begin
   tabSaved.Tree.SetFileWatcher;
 
   Language.Translate(Self, PreTranslate, PostTranslate);
+  tabClients.AdjustTextSizeDirtyHack;
   tabClients.ShowInfo;
   AppGlobals.PostProcessManager.ReInitPostProcessors;
 
@@ -1620,6 +1639,12 @@ procedure TfrmStreamWriterMain.tabSavedAddTitleToWishlist(Sender: TObject;
   Data: string);
 begin
   tabLists.WishPanel.AddEntry(Data, False);
+end;
+
+procedure TfrmStreamWriterMain.tabSavedAddTitleToIgnorelist(Sender: TObject;
+  Data: string);
+begin
+  tabLists.IgnorePanel.AddEntry(Data, False);
 end;
 
 procedure TfrmStreamWriterMain.tabSavedCut(Entry: TStreamEntry;

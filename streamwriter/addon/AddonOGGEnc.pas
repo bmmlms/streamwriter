@@ -11,13 +11,14 @@ type
   private
     FEXEPath: string;
   protected
+    function FGetName: string; override;
+    function FGetHelp: string; override;
   public
     constructor Create;
 
     function Copy: TAddonBase; override;
     procedure Assign(Source: TAddonBase); override;
 
-    procedure Initialize; override;
     function ShowInitMessage(Handle: THandle): Boolean; override;
 
     function CanEncode(AudioType: TAudioTypes): Boolean; override;
@@ -36,8 +37,6 @@ procedure TAddonOGGEnc.Assign(Source: TAddonBase);
 begin
   inherited;
 
-  FName := Source.Name;
-  FHelp := Source.Help;
   FDownloadName := Source.DownloadName;
   FDownloadPackage := Source.DownloadPackage;
 end;
@@ -59,8 +58,6 @@ constructor TAddonOGGEnc.Create;
 begin
   inherited;
 
-  FName := _('Support encoding of OGG using OggEnc');
-  FHelp := _('This addon adds support for encoding of OGG files to the application which is useful for postprocessing of recorded songs.');
   FDownloadName := 'addon_oggenc';
   FDownloadPackage := 'addon_oggenc.dll';
 
@@ -70,12 +67,14 @@ begin
   FFilenames.Add('oggenc2.exe');
 end;
 
-procedure TAddonOGGEnc.Initialize;
+function TAddonOGGEnc.FGetHelp: string;
 begin
-  inherited;
+  Result := _('This addon adds support for encoding of OGG files to the application which is useful for postprocessing of recorded songs.');
+end;
 
-  FName := _('Support encoding of OGG using OggEnc');
-  FHelp := _('This addon adds support for encoding of OGG files to the application which is useful for postprocessing of recorded songs.');
+function TAddonOGGEnc.FGetName: string;
+begin
+  Result := _('Support encoding of OGG using OggEnc');
 end;
 
 function TAddonOGGEnc.ShowInitMessage(Handle: THandle): Boolean;

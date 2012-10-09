@@ -10,21 +10,20 @@ type
   TAddonLAME = class(TAddonBase)
   private
     FEXEPath: string;
-    //FDLLPath: string;
   protected
+    function FGetName: string; override;
+    function FGetHelp: string; override;
   public
     constructor Create;
 
     function Copy: TAddonBase; override;
     procedure Assign(Source: TAddonBase); override;
 
-    procedure Initialize; override;
     function ShowInitMessage(Handle: THandle): Boolean; override;
 
     function CanEncode(AudioType: TAudioTypes): Boolean; override;
 
     property EXEPath: string read FEXEPath;
-    //property DLLPath: string read FDLLPath;
   end;
 
 implementation
@@ -38,8 +37,6 @@ procedure TAddonLAME.Assign(Source: TAddonBase);
 begin
   inherited;
 
-  FName := Source.Name;
-  FHelp := Source.Help;
   FDownloadName := Source.DownloadName;
   FDownloadPackage := Source.DownloadPackage;
 end;
@@ -61,25 +58,24 @@ constructor TAddonLAME.Create;
 begin
   inherited;
 
-  FName := _('Support encoding of MP3 using LAME');
-  FHelp := _('This addon adds support for encoding of MP3 files to the application which is useful for postprocessing of recorded songs.');
   FDownloadName := 'addon_lame';
   FDownloadPackage := 'addon_lame.dll';
   FHasInitMessage := True;
 
   FFilesDir := AppGlobals.TempDir + 'addon_lame\';
   FEXEPath := FFilesDir + 'lame.exe';
-  //FDLLPath := FFilesDir + 'lame-enc.dll';
 
   FFilenames.Add('lame.exe');
 end;
 
-procedure TAddonLAME.Initialize;
+function TAddonLAME.FGetHelp: string;
 begin
-  inherited;
+  Result := _('This addon adds support for encoding of MP3 files to the application which is useful for postprocessing of recorded songs.');
+end;
 
-  FName := _('Support encoding of MP3 using LAME');
-  FHelp := _('This addon adds support for encoding of MP3 files to the application which is useful for postprocessing of recorded songs.');
+function TAddonLAME.FGetName: string;
+begin
+  Result := _('Support encoding of MP3 using LAME');
 end;
 
 function TAddonLAME.ShowInitMessage(Handle: THandle): Boolean;

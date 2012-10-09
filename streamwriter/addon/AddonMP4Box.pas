@@ -30,13 +30,14 @@ type
   private
     FMP4BoxEXEPath: string;
   protected
+    function FGetName: string; override;
+    function FGetHelp: string; override;
   public
     constructor Create;
 
     function Copy: TAddonBase; override;
     procedure Assign(Source: TAddonBase); override;
 
-    procedure Initialize; override;
     function ShowInitMessage(Handle: THandle): Boolean; override;
 
     function CanEncode(AudioType: TAudioTypes): Boolean; override;
@@ -55,8 +56,6 @@ procedure TAddonMP4Box.Assign(Source: TAddonBase);
 begin
   inherited;
 
-  FName := Source.Name;
-  FHelp := Source.Help;
   FDownloadName := Source.DownloadName;
   FDownloadPackage := Source.DownloadPackage;
 
@@ -82,8 +81,6 @@ begin
 
   FNeededAddons.Add(TAddonFAAC);
 
-  FName := _('Support conversion of AAC files to M4A container');
-  FHelp := _('This addon adds support for converting AAC files to M4A files to the application which is useful for postprocessing of recorded songs.');
   FDownloadName := 'addon_mp4box';
   FDownloadPackage := 'addon_mp4box.dll';
 
@@ -97,12 +94,14 @@ begin
   FNeededVersion := ParseVersion('1.0.0.1');
 end;
 
-procedure TAddonMP4Box.Initialize;
+function TAddonMP4Box.FGetHelp: string;
 begin
-  inherited;
+  Result := _('This addon adds support for converting AAC files to M4A files to the application which is useful for postprocessing of recorded songs.');
+end;
 
-  FName := _('Support conversion of AAC files to M4A container');
-  FHelp := _('This addon adds support for converting AAC files to M4A files to the application which is useful for postprocessing of recorded songs.');
+function TAddonMP4Box.FGetName: string;
+begin
+  Result := _('Support conversion of AAC files to M4A container');
 end;
 
 function TAddonMP4Box.ShowInitMessage(Handle: THandle): Boolean;

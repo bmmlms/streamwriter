@@ -830,7 +830,7 @@ begin
 
     SetFields;
 
-    ClientWidth := 610;
+    ClientWidth := 630;
     ClientHeight := 480;
 
     for i := 0 to Self.ControlCount - 1 do
@@ -1844,10 +1844,11 @@ var
   i: Integer;
 begin
   inherited;
-  lblFilePattern.Caption := _('%a = artist, %t = title, %l = album, %u = title on stream, %s = streamname,'#13#10'%n = tracknumber, %d = date song was saved, %i = time song was saved'#13#10 +
+  lblFilePattern.Caption := _('%a = artist, %t = title, %l = album, %u = title on stream, %s = streamname %n = tracknumber, %d = date song was saved, %i = time song was saved'#13#10 +
                               'Backslashes can be used to seperate directories.');
 
-  lblAppParams.Caption := _('%f = filename, %a = artist, %t = title, %l = album, %u = title on stream, %s = streamname, %n = tracknumber, %d = date song was saved, %i = time song was saved (everything should be quoted using ")');
+  lblAppParams.Caption := _('%f = filename, %a = artist, %t = title, %l = album, %u = title on stream, %s = streamname, %n = tracknumber, %d = date song was saved, %i = time song was saved'#13#10 +
+                            '(everything should be quoted using ")');
 
   if lstPostProcess.Selected <> nil then
   begin
@@ -1856,11 +1857,7 @@ begin
   end;
 
   for i := 0 to lstAddons.Items.Count - 1 do
-  begin
-    // Damit Sprache neu gesetzt wird und so..
-    TAddonBase(lstAddons.Items[i].Data).Initialize;
     lstAddons.Items[i].Caption := TAddonBase(lstAddons.Items[i].Data).Name;
-  end;
 
   for i := 0 to lstPostProcess.Items.Count - 1 do
   begin

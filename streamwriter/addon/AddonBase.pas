@@ -12,8 +12,6 @@ type
     FCopied: Boolean;
     FFilesDir: string;
     FCanConfigure: Boolean;
-    FName: string;
-    FHelp: string;
     FOrder: Integer;
     FOnlyIfCut: Boolean;
 
@@ -30,6 +28,9 @@ type
     function FGetVersionOkay: Boolean;
     function FGetDependenciesMet: Boolean; virtual;
 
+    function FGetName: string; virtual;
+    function FGetHelp: string; virtual;
+
     procedure DeleteFiles; virtual;
   public
     constructor Create;
@@ -38,7 +39,6 @@ type
     function Copy: TAddonBase; virtual; abstract;
     procedure Assign(Source: TAddonBase); virtual;
 
-    procedure Initialize; virtual;
     function ExtractFiles: Boolean; virtual;
 
     function ShowInitMessage(Handle: THandle): Boolean; virtual;
@@ -47,8 +47,8 @@ type
 
     property Copied: Boolean read FCopied write FCopied;
 
-    property Name: string read FName;
-    property Help: string read FHelp;
+    property Name: string read FGetName;
+    property Help: string read FGetHelp;
 
     property DownloadPackage: string read FDownloadPackage;
     property DownloadName: string read FDownloadName;
@@ -174,6 +174,16 @@ begin
     end;
 end;
 
+function TAddonBase.FGetHelp: string;
+begin
+  Result := '';
+end;
+
+function TAddonBase.FGetName: string;
+begin
+  Result := '';
+end;
+
 function TAddonBase.FGetPackageDownloaded: Boolean;
 begin
   Result := FileExists(AppGlobals.Storage.DataDir + FDownloadPackage);
@@ -197,12 +207,6 @@ begin
     DeleteFile(PChar(AppGlobals.Storage.DataDir + FDownloadPackage));
     Result := False;
   end;
-end;
-
-procedure TAddonBase.Initialize;
-begin
-  inherited;
-
 end;
 
 function TAddonBase.ShowInitMessage(Handle: THandle): Boolean;

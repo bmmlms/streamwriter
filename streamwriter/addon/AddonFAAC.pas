@@ -30,13 +30,14 @@ type
   private
     FEXEPath: string;
   protected
+    function FGetName: string; override;
+    function FGetHelp: string; override;
   public
     constructor Create;
 
     function Copy: TAddonBase; override;
     procedure Assign(Source: TAddonBase); override;
 
-    procedure Initialize; override;
     function ShowInitMessage(Handle: THandle): Boolean; override;
 
     function CanEncode(AudioType: TAudioTypes): Boolean; override;
@@ -55,8 +56,6 @@ procedure TAddonFAAC.Assign(Source: TAddonBase);
 begin
   inherited;
 
-  FName := Source.Name;
-  FHelp := Source.Help;
   FDownloadName := Source.DownloadName;
   FDownloadPackage := Source.DownloadPackage;
 end;
@@ -78,8 +77,6 @@ constructor TAddonFAAC.Create;
 begin
   inherited;
 
-  FName := _('Support encoding of AAC using FAAC');
-  FHelp := _('This addon adds support for encoding of AAC files to the application which is useful for postprocessing of recorded songs.');
   FDownloadName := 'addon_faac';
   FDownloadPackage := 'addon_faac.dll';
   FHasInitMessage := True;
@@ -90,12 +87,14 @@ begin
   FFilenames.Add('faac.exe');
 end;
 
-procedure TAddonFAAC.Initialize;
+function TAddonFAAC.FGetHelp: string;
 begin
-  inherited;
+  Result := _('This addon adds support for encoding of AAC files to the application which is useful for postprocessing of recorded songs.');
+end;
 
-  FName := _('Support encoding of AAC using FAAC');
-  FHelp := _('This addon adds support for encoding of AAC files to the application which is useful for postprocessing of recorded songs.');
+function TAddonFAAC.FGetName: string;
+begin
+  Result := _('Support encoding of AAC using FAAC');
 end;
 
 function TAddonFAAC.ShowInitMessage(Handle: THandle): Boolean;

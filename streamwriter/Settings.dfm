@@ -4,7 +4,7 @@ object frmSettings: TfrmSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Settings'
-  ClientHeight = 761
+  ClientHeight = 748
   ClientWidth = 1201
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -69,7 +69,7 @@ object frmSettings: TfrmSettings
     object chkDeleteStreams: TCheckBox
       Left = 4
       Top = 168
-      Width = 265
+      Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Delete stream files when recording stops'
@@ -276,16 +276,18 @@ object frmSettings: TfrmSettings
     object optClose: TRadioButton
       Left = 20
       Top = 20
-      Width = 165
+      Width = 265
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       Caption = '...on close'
       TabOrder = 3
     end
     object optMinimize: TRadioButton
       Left = 20
       Top = 40
-      Width = 165
+      Width = 265
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       Caption = '...on minimize'
       TabOrder = 4
     end
@@ -335,6 +337,7 @@ object frmSettings: TfrmSettings
       Top = 168
       Width = 281
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Show splash screen on startup'
       TabOrder = 9
     end
@@ -343,6 +346,7 @@ object frmSettings: TfrmSettings
       Top = 120
       Width = 281
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Display played song in titlebar'
       TabOrder = 10
     end
@@ -727,7 +731,7 @@ object frmSettings: TfrmSettings
     object chkSkipShort: TCheckBox
       Left = 4
       Top = 0
-      Width = 225
+      Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Skip ads (short songs)'
@@ -737,8 +741,9 @@ object frmSettings: TfrmSettings
     object chkSearchSilence: TCheckBox
       Left = 4
       Top = 72
-      Width = 225
+      Width = 285
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Search for silence before saving tracks'
       TabOrder = 3
       OnClick = chkSearchSilenceClick
@@ -778,6 +783,7 @@ object frmSettings: TfrmSettings
       Top = 268
       Width = 281
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Adjust offset of detected track changes'
       TabOrder = 7
       OnClick = chkAdjustTrackOffsetClick
@@ -800,8 +806,9 @@ object frmSettings: TfrmSettings
     object optAdjustBackward: TRadioButton
       Left = 20
       Top = 316
-      Width = 189
+      Width = 265
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Before detected change'
       Checked = True
       Enabled = False
@@ -812,8 +819,9 @@ object frmSettings: TfrmSettings
     object optAdjustForward: TRadioButton
       Left = 20
       Top = 336
-      Width = 189
+      Width = 265
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'After detected change'
       Enabled = False
       TabOrder = 10
@@ -824,6 +832,7 @@ object frmSettings: TfrmSettings
       Top = 120
       Width = 265
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Use manual silence detection settings:'
       TabOrder = 11
       OnClick = chkManualSilenceLevelClick
@@ -953,6 +962,7 @@ object frmSettings: TfrmSettings
       Top = 48
       Width = 269
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Add saved titles to global ignorelist'
       TabOrder = 4
     end
@@ -961,6 +971,7 @@ object frmSettings: TfrmSettings
       Top = 72
       Width = 269
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       Caption = 'Remove saved titles from wishlist'
       TabOrder = 5
     end
