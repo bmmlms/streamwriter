@@ -265,6 +265,8 @@ type
     FDefaultActionBrowserIdx: Integer;
     FDefaultFilterIdx: Integer;
     FOutputFormatIdx: Integer;
+    FMinQualityIdx: Integer;
+    FFormatIdx: Integer;
     FTemporaryPostProcesses: TPostProcessorList;
     FStreamSettings: TStreamSettingsArray;
     FIgnoreFieldList: TList;
@@ -1837,6 +1839,8 @@ begin
   FDefaultActionBrowserIdx := lstDefaultActionBrowser.ItemIndex;
   FDefaultFilterIdx := lstDefaultFilter.ItemIndex;
   FOutputFormatIdx := lstOutputFormat.ItemIndex;
+  FMinQualityIdx := lstMinQuality.ItemIndex;
+  FFormatIdx := lstFormat.ItemIndex;
 end;
 
 procedure TfrmSettings.PostTranslate;
@@ -1876,6 +1880,8 @@ begin
   lstDefaultActionBrowser.ItemIndex := FDefaultActionBrowserIdx;
   lstDefaultFilter.ItemIndex := FDefaultFilterIdx;
   lstOutputFormat.ItemIndex := FOutputFormatIdx;
+  lstMinQuality.ItemIndex := FMinQualityIdx;
+  lstFormat.ItemIndex := FFormatIdx;
 
   FormResize(Self);
 end;

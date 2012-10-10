@@ -450,7 +450,7 @@ begin
   if Screen.WorkAreaHeight < H then
     H := Screen.WorkAreaHeight - 20;
 
-  // Adjust amount of column headers
+  // Adjust count of column headers
   SetLength(FClientHeaderWidth, 6);
   SetLength(FSavedHeaderWidth, 7);
 
@@ -704,8 +704,8 @@ begin
   end else
     FStorage.Read('AutoTuneInMinQuality', FAutoTuneInMinQuality, 2);
 
-  if (FAutoTuneInMinQuality > 2) then
-    FAutoTuneInMinQuality := 2;
+  if (FAutoTuneInMinQuality > 2) or (FAutoTuneInMinQuality < 0) then
+    FAutoTuneInMinQuality := 1;
 
   FStorage.Read('AutoTuneInFormat', FAutoTuneInFormat, 0);
   if FAutoTuneInFormat > 2 then
