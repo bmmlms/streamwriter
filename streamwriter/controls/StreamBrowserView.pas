@@ -28,7 +28,8 @@ uses
   StdCtrls, Menus, ImgList, Math, VirtualTrees, LanguageObjects, MControls,
   Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls,
   HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging,
-  DataManager, DropSource, Types, AudioFunctions, PngSpeedButton;
+  DataManager, DropSource, Types, AudioFunctions, PngSpeedButton,
+  Generics.Collections;
 
 type
   TModes = (moShow, moLoading);
@@ -124,7 +125,7 @@ type
 
     procedure StreamBrowserHeaderClick(Sender: TVTHeader; HitInfo: TVTHeaderHitInfo);
 
-    procedure HomeCommunicationStreamsReceived(Sender: TObject);
+    procedure HomeCommunicationStreamsReceived(Sender: TObject; Genres: TList<TGenre>; Streams: TList<TStreamBrowserEntry>);
   protected
   public
     constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
@@ -461,7 +462,7 @@ begin
   NodeData := PStreamNodeData(GetNodeData(Node));
   case Column of
     0:
-      Text := StringReplace(NodeData.Data.Name, '&', '&&', [rfReplaceall]) // Wegen & und dem Shortcut..
+      Text := StringReplace(NodeData.Data.Name, '&', '&&', [rfReplaceAll]) // Wegen & und dem Shortcut..
   end;
 end;
 
@@ -1172,8 +1173,42 @@ begin
   end;
 end;
 
-procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject);
+procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject;
+  Genres: TList<TGenre>; Streams: TList<TStreamBrowserEntry>);
+var
+  i: Integer;
+  Genre: TGenre;
+  Entry, Entry2: TStreamBrowserEntry;
 begin
+  // Jetzt schon leer machen, damit er nicht ins GetText oder so reinläuft
+  FSearch.FGenreList.Clear;
+  FStreamTree.Clear;
+
+  // Genres...
+  for Genre in FDataLists.GenreList do
+    Genre.Free;
+  FDataLists.GenreList.Clear;
+  for Genre in Genres do
+    FDataLists.GenreList.Add(TGenre.Create(Genre.Name, Genre.ID, Genre.ChartCount));
+
+  // Streams synchronisieren
+  for Entry in FDataLists.BrowserList do
+    for Entry2 in Streams do
+      if (Entry.ID = Entry2.ID) then
+      begin
+        Entry2.OwnRating := Entry.OwnRating;
+      end;
+
+  // Alte Liste leeren
+  for Entry in FDataLists.BrowserList do
+    Entry.Free;
+  FDataLists.BrowserList.Clear;
+
+  // Der Liste alle Sachen wieder hinzufügen
+  for Entry in Streams do
+    FDataLists.BrowserList.Add(Entry.Copy);
+
+  // Kram neu bauen!
   BuildGenres;
   BuildTree(True);
 

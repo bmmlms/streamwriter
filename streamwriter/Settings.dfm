@@ -160,11 +160,9 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
-      Color = 15790320
       EditLabel.Width = 110
       EditLabel.Height = 13
       EditLabel.Caption = 'Folder for saved songs:'
-      ReadOnly = True
       TabOrder = 8
     end
     object txtDirAuto: TLabeledEdit
@@ -174,11 +172,9 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
-      Color = 15790320
       EditLabel.Width = 174
       EditLabel.Height = 13
       EditLabel.Caption = 'Folder for automatically saved songs:'
-      ReadOnly = True
       TabOrder = 9
     end
     object chkAddSavedToStreamIgnore: TCheckBox

@@ -55,6 +55,8 @@ type
     FCharts: TList<TChartEntry>;
     FChartCategories: TList<TChartCategory>;
     FChartGenres: TList<TGenre>;
+    FStreams: TList<TStreamBrowserEntry>;
+    FGenres: TList<TGenre>;
 
     FChangedStreamID: Cardinal;
     FChangedStreamName: string;
@@ -111,7 +113,8 @@ type
   TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, Format, TitlePattern: string; Kbps: Cardinal) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
-  TChartsReceivedEvent = procedure(Sender: TObject; Categories: TList<TChartCategory>; Genres: TList<TGenre>; Charts: TList<TChartEntry>) of object;
+  TStreamsReceivedEvent = procedure(Sender: TObject; Genres: TList<TGenre>; Streams: TList<TStreamBrowserEntry>) of object;
+  TChartsReceivedEvent = procedure(Sender: TObject; Categories: TList<TChartCategory>; Charts: TList<TChartEntry>) of object;
   TChartGenresReceivedEvent = procedure(Sender: TObject; List: TList<TGenre>) of object;
 
   THomeCommunication = class
@@ -124,9 +127,8 @@ type
     FTitleNotificationsEnabled: Boolean;
     FTitleNotificationsSet: Boolean;
     FIsAdmin: Boolean;
-    FDataLists: TDataLists;
 
-    FOnStreamsReceived: TNotifyEvent;
+    FOnStreamsReceived: TStreamsReceivedEvent;
     FOnChartsReceived: TChartsReceivedEvent;
     FOnChartGenresReceived: TChartGenresReceivedEvent;
     FOnTitleChanged: TTitleChangedEvent;
@@ -170,12 +172,11 @@ type
 
     procedure Terminate;
 
-    property DataLists: TDataLists read FDataLists write FDataLists;
     property Connected: Boolean read FConnected;
     property WasConnected: Boolean read FWasConnected;
     property Authenticated: Boolean read FAuthenticated;
     property IsAdmin: Boolean read FIsAdmin;
-    property OnStreamsReceived: TNotifyEvent read FOnStreamsReceived write FOnStreamsReceived;
+    property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
     property OnChartsReceived: TChartsReceivedEvent read FOnChartsReceived write FOnChartsReceived;
     property OnChartGenresReceived: TChartGenresReceivedEvent read FOnChartGenresReceived write FOnChartGenresReceived;
     property OnTitleChanged: TTitleChangedEvent read FOnTitleChanged write FOnTitleChanged;
@@ -206,7 +207,7 @@ end;
 procedure THomeCommunication.ClientStreamsReceived(Sender: TSocketThread);
 begin
   if Assigned(FOnStreamsReceived) then
-    FOnStreamsReceived(Self);
+    FOnStreamsReceived(Self, THomeThread(Sender).FGenres, THomeThread(Sender).FStreams);
 end;
 
 procedure THomeCommunication.ClientTitleChanged(Sender: TSocketThread);
@@ -610,7 +611,7 @@ end;
 procedure THomeCommunication.ClientChartsReceived(Sender: TSocketThread);
 begin
   if Assigned(FOnChartsReceived) then
-    FOnChartsReceived(Self, FClient.FChartCategories, FClient.FChartGenres, FClient.FCharts);
+    FOnChartsReceived(Self, FClient.FChartCategories, FClient.FCharts);
 end;
 
 procedure THomeCommunication.ClientConnected(Sender: TSocketThread);
@@ -788,8 +789,8 @@ end;
 constructor THomeThread.Create(DataLists: TDataLists);
 begin
   {$IFDEF DEBUG}
-  inherited Create('gaia', 8007);
-  //inherited Create('streamwriter.org', 8007);
+  //inherited Create('gaia', 8007);
+  inherited Create('streamwriter.org', 8007);
   {$ELSE}
   inherited Create('streamwriter.org', 8007);
   {$ENDIF}
@@ -799,13 +800,29 @@ begin
   FCharts := TList<TChartEntry>.Create;
   FChartGenres := TList<TGenre>.Create;
   FChartCategories := TList<TChartCategory>.Create;
+  FStreams := TList<TStreamBrowserEntry>.Create;
+  FGenres := TList<TGenre>.Create;
 end;
 
 destructor THomeThread.Destroy;
+var
+  i: Integer;
 begin
   FCharts.Free;
   FChartGenres.Free;
+
+  for i := 0 to FChartCategories.Count - 1 do
+    FChartCategories[i].Free;
   FChartCategories.Free;
+
+  for i := 0 to FStreams.Count - 1 do
+    FStreams[i].Free;
+  FStreams.Free;
+
+  for i := 0 to FGenres.Count - 1 do
+    FGenres[i].Free;
+  FGenres.Free;
+
   inherited;
 end;
 
@@ -820,14 +837,13 @@ end;
 procedure THomeThread.DoChartsReceived(Version: Integer; Header,
   Data: TXMLNode);
 var
+  i: Integer;
   Node, Node2: TXMLNode;
   Categories: TIntArray;
 begin
-  FChartCategories.Clear;
   for Node in Data.Nodes.GetNode('categories').Nodes do
     FChartCategories.Add(TChartCategory.Create(Node.Attributes.AttributeByName['id'].Value.AsLongWord, Node.Value.AsString));
 
-  FCharts.Clear;
   for Node in Data.Nodes.GetNode('charts').Nodes do
   begin
     SetLength(Categories, 0);
@@ -845,6 +861,13 @@ begin
 
   if Assigned(FOnChartsReceived) then
     Sync(FOnChartsReceived);
+
+  for i := 0 to FChartCategories.Count - 1 do
+    FChartCategories[i].Free;
+  for i := 0 to FCharts.Count - 1 do
+    FCharts[i].Free;
+  FChartCategories.Clear;
+  FCharts.Clear;
 end;
 
 procedure THomeThread.DoConnected;
@@ -947,72 +970,52 @@ var
   i: Integer;
   T: string;
   Node: TXMLNode;
-  NewList: TList<TStreamBrowserEntry>;
   Genre: TGenre;
-  Entry, Entry2: TStreamBrowserEntry;
+  Entry: TStreamBrowserEntry;
 begin
-  for i := 0 to FDataLists.GenreList.Count - 1 do
-    FDataLists.GenreList[i].Free;
-  FDataLists.GenreList.Clear;
-
   for Node in Data.Nodes.GetNode('genres').Nodes do
   begin
     Genre := TGenre.Create;
     Genre.ID := Node.Attributes.AttributeByName['id'].Value.AsLongWord;
     Genre.Name := Node.Value.AsString;
     Genre.ChartCount := Node.Attributes.AttributeByName['chartcount'].Value.AsLongWord;
-    FDataLists.GenreList.Add(Genre);
+    FGenres.Add(Genre);
   end;
 
-  NewList := TList<TStreamBrowserEntry>.Create;
-  try
-    for Node in Data.Nodes.GetNode('streams').Nodes do
-    begin
-      Entry := TStreamBrowserEntry.Create;
-      NewList.Add(Entry);
-      Entry.ID := Node.Attributes.AttributeByName['id'].Value.AsInteger;
-      Entry.Name := Node.Attributes.AttributeByName['name'].Value.AsString;
-      Entry.Genre := Node.Attributes.AttributeByName['genre'].Value.AsString;
-      Entry.URL := Node.Value.AsString;
-      Entry.Website := Node.Attributes.AttributeByName['website'].Value.AsString;
-      Entry.BitRate := Node.Attributes.AttributeByName['bitrate'].Value.AsInteger;
-      T := Node.Attributes.AttributeByName['type'].Value.AsString;
-      if T = 'mpeg' then
-        Entry.AudioType := atMPEG
-      else if T = 'aacp' then
-        Entry.AudioType := atAAC
-      else
-        Entry.AudioType := atNone;
-      Entry.MetaData := Node.Attributes.AttributeByName['metadata'].Value.AsBoolean;
-      Entry.ChangesTitleInSong := Node.Attributes.AttributeByName['changestitleinsong'].Value.AsBoolean;
-      Entry.Rating := Node.Attributes.AttributeByName['rating'].Value.AsInteger;
-      Entry.RecordingOkay := Node.Attributes.AttributeByName['recordingokay'].Value.AsBoolean;
-      Entry.RegEx := Node.Attributes.AttributeByName['regex'].Value.AsString;
-      Entry.IgnoreTitles.Text := Node.GetNode('ignoretitles').Value.AsString;
-    end;
-
-    // Synchronisieren
-    for Entry in FDataLists.BrowserList do
-      for Entry2 in NewList do
-        if (Entry.ID = Entry2.ID) then
-        begin
-          Entry2.OwnRating := Entry.OwnRating;
-        end;
-
-    // Alte Liste leeren
-    for i := 0 to FDataLists.BrowserList.Count - 1 do
-      FDataLists.BrowserList[i].Free;
-    FDataLists.BrowserList.Clear;
-
-    // Der Liste alle Sachen wieder hinzufügen
-    for Entry in NewList do
-      FDataLists.BrowserList.Add(Entry);
-  finally
-    NewList.Free;
+  for Node in Data.Nodes.GetNode('streams').Nodes do
+  begin
+    Entry := TStreamBrowserEntry.Create;
+    FStreams.Add(Entry);
+    Entry.ID := Node.Attributes.AttributeByName['id'].Value.AsInteger;
+    Entry.Name := Node.Attributes.AttributeByName['name'].Value.AsString;
+    Entry.Genre := Node.Attributes.AttributeByName['genre'].Value.AsString;
+    Entry.URL := Node.Value.AsString;
+    Entry.Website := Node.Attributes.AttributeByName['website'].Value.AsString;
+    Entry.BitRate := Node.Attributes.AttributeByName['bitrate'].Value.AsInteger;
+    T := Node.Attributes.AttributeByName['type'].Value.AsString;
+    if T = 'mpeg' then
+      Entry.AudioType := atMPEG
+    else if T = 'aacp' then
+      Entry.AudioType := atAAC
+    else
+      Entry.AudioType := atNone;
+    Entry.MetaData := Node.Attributes.AttributeByName['metadata'].Value.AsBoolean;
+    Entry.ChangesTitleInSong := Node.Attributes.AttributeByName['changestitleinsong'].Value.AsBoolean;
+    Entry.Rating := Node.Attributes.AttributeByName['rating'].Value.AsInteger;
+    Entry.RecordingOkay := Node.Attributes.AttributeByName['recordingokay'].Value.AsBoolean;
+    Entry.RegEx := Node.Attributes.AttributeByName['regex'].Value.AsString;
+    Entry.IgnoreTitles.Text := Node.GetNode('ignoretitles').Value.AsString;
   end;
 
   if Assigned(FOnStreamsReceived) then
     Sync(FOnStreamsReceived);
+
+  for i := 0 to FGenres.Count - 1 do
+    FGenres[i].Free;
+  for i := 0 to FStreams.Count - 1 do
+    FStreams[i].Free;
+  FGenres.Clear;
+  FStreams.Clear;
 end;
 
 procedure THomeThread.DoStuff;

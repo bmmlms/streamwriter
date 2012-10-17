@@ -317,6 +317,8 @@ type
     procedure mnuMoveToCategory(Sender: TObject);
 
     procedure MessageReceived(Msg: TMessageBase);
+
+    procedure SettingsSaveForExport(Sender: TObject);
   protected
 
   public
@@ -681,7 +683,6 @@ begin
     HomeComm.OnStateChanged := HomeCommStateChanged;
     HomeComm.OnServerInfo := HomeCommServerInfo;
     HomeComm.OnError := HomeCommError;
-    HomeComm.DataLists := FDataLists;
     HomeComm.Connect;
 
     if not AppGlobals.FirstStartShown then
@@ -1480,6 +1481,15 @@ begin
   end;
 end;
 
+procedure TfrmStreamWriterMain.SettingsSaveForExport(Sender: TObject);
+begin
+  // Ist hier, damit der Profilexport korrekt funktioniert
+  // Erst Lists updaten, dann Streams! Muss so!
+  tabSaved.Tree.UpdateList;
+  tabLists.UpdateLists;
+  tabClients.UpdateStreams(FDataLists);
+end;
+
 procedure TfrmStreamWriterMain.SetWakeups;
 var
   i, n: Integer;
@@ -1506,15 +1516,11 @@ procedure TfrmStreamWriterMain.ShowSettings(BrowseDir, BrowseAutoDir: Boolean);
 var
   S: TfrmSettings;
 begin
-  // Ist hier, damit der Profilexport korrekt funktioniert
-  // Erst Lists updaten, dann Streams!
-  tabSaved.Tree.UpdateList;
-  tabLists.UpdateLists;
-  tabClients.UpdateStreams(FDataLists);
-
   RegisterHotkeys(False);
+
   S := TfrmSettings.Create(Self, FDataLists, BrowseDir, BrowseAutoDir);
   try
+    S.OnSaveForExport := SettingsSaveForExport;
     S.ShowModal;
 
     if S.ImportFilename <> '' then
@@ -1534,12 +1540,17 @@ begin
   tabSaved.Tree.SetFileWatcher;
 
   Language.Translate(Self, PreTranslate, PostTranslate);
+
   tabClients.AdjustTextSizeDirtyHack;
+
   tabClients.ShowInfo;
+
   AppGlobals.PostProcessManager.ReInitPostProcessors;
 
   TrayIcon1.Visible := AppGlobals.Tray;
+
   ScreenSnap := AppGlobals.SnapMain;
+
   RegisterHotkeys(True);
 end;
 

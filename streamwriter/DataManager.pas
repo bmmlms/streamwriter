@@ -97,6 +97,8 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+    procedure Assign(Source: TStreamBrowserEntry);
+    function Copy: TStreamBrowserEntry;
 
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamBrowserEntry;
     procedure Save(Stream: TExtendedStream);
@@ -430,6 +432,8 @@ type
   public
     constructor Create; overload;
     constructor Create(ID: Cardinal; Name: string); overload;
+    procedure Assign(Source: TChartCategory);
+    function Copy: TChartCategory;
 
     class function Load(Stream: TExtendedStream; Version: Integer): TChartCategory;
     procedure Save(Stream: TExtendedStream);
@@ -447,6 +451,8 @@ type
   public
     constructor Create; overload;
     constructor Create(Name: string; Chance: Integer; Categories: TIntArray); overload;
+    procedure Assign(Source: TChartEntry);
+    function Copy: TChartEntry;
 
     class function Load(Stream: TExtendedStream; Version: Integer): TChartEntry;
     procedure Save(Stream: TExtendedStream);
@@ -1751,6 +1757,30 @@ begin
   inherited;
 end;
 
+procedure TStreamBrowserEntry.Assign(Source: TStreamBrowserEntry);
+begin
+  FID := Source.FID;
+  FName := Source.FName;
+  FGenre := Source.FGenre;
+  FURL := Source.FURL;
+  FWebsite := Source.FWebsite;
+  FBitRate := Source.FBitRate;
+  FAudioType := Source.FAudioType;
+  FMetaData := Source.FMetaData;
+  FChangesTitleInSong := Source.FChangesTitleInSong;
+  FOwnRating := Source.FOwnRating;
+  FRating := Source.FRating;
+  FRecordingOkay := Source.FRecordingOkay;
+  FRegEx := Source.FRegEx;
+  FIgnoreTitles.Assign(Source.FIgnoreTitles);
+end;
+
+function TStreamBrowserEntry.Copy: TStreamBrowserEntry;
+begin
+  Result := TStreamBrowserEntry.Create;
+  Result.Assign(Self);
+end;
+
 class function TStreamBrowserEntry.Load(Stream: TExtendedStream;
   Version: Integer): TStreamBrowserEntry;
 var
@@ -1810,6 +1840,19 @@ begin
 end;
 
 { TChartEntry }
+
+procedure TChartEntry.Assign(Source: TChartEntry);
+begin
+  FName := Source.Name;
+  FChance := Source.Chance;
+  FCategories := Source.Categories;
+end;
+
+function TChartEntry.Copy: TChartEntry;
+begin
+  Result := TChartEntry.Create;
+  Result.Assign(Self);
+end;
 
 constructor TChartEntry.Create(Name: string; Chance: Integer; Categories: TIntArray);
 begin
@@ -1899,6 +1942,18 @@ begin
 end;
 
 { TChartCategory }
+
+procedure TChartCategory.Assign(Source: TChartCategory);
+begin
+  FID := Source.ID;
+  FName := Source.Name;
+end;
+
+function TChartCategory.Copy: TChartCategory;
+begin
+  Result := TChartCategory.Create;
+  Result.Assign(Self);
+end;
 
 constructor TChartCategory.Create(ID: Cardinal; Name: string);
 begin

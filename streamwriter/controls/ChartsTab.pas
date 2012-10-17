@@ -147,7 +147,7 @@ type
     procedure SearchChange(Sender: TObject);
 
     procedure HomeCommChartsReceived(Sender: TObject; CategoryList: TList<TChartCategory>;
-      Genres: TList<TGenre>; ChartList: TList<TChartEntry>);
+      ChartList: TList<TChartEntry>);
     procedure CategoriesChange(Sender: TObject);
     procedure ButtonReloadClick(Sender: TObject);
   public
@@ -224,12 +224,10 @@ begin
 end;
 
 procedure TChartsTab.HomeCommChartsReceived(Sender: TObject; CategoryList: TList<TChartCategory>;
-  Genres: TList<TGenre>; ChartList: TList<TChartEntry>);
+  ChartList: TList<TChartEntry>);
 var
   i: Integer;
 begin
-  SetState(csNormal);
-
   FChartsTree.Clear;
 
   for i := 0 to FLists.ChartCategoryList.Count - 1 do
@@ -237,14 +235,16 @@ begin
   FLists.ChartCategoryList.Clear;
 
   for i := 0 to CategoryList.Count - 1 do
-    FLists.ChartCategoryList.Add(CategoryList[i]);
+    FLists.ChartCategoryList.Add(CategoryList[i].Copy);
 
   for i := 0 to FLists.ChartList.Count - 1 do
     FLists.ChartList[i].Free;
   FLists.ChartList.Clear;
 
   for i := 0 to ChartList.Count - 1 do
-    FLists.ChartList.Add(ChartList[i]);
+    FLists.ChartList.Add(ChartList[i].Copy);
+
+  SetState(csNormal);
 
   FSearchPanel.FCategories.LoadCategories(FLists.ChartCategoryList);
 
