@@ -1395,13 +1395,18 @@ begin
   if FFileWatcher <> nil then
   begin
     FFileWatcher.OnEvent := nil;
+    FFileWatcher.OnTerminate := nil;
     FFileWatcher.Terminate;
   end;
   if FFileWatcherAuto <> nil then
   begin
     FFileWatcherAuto.OnEvent := nil;
+    FFileWatcherAuto.OnTerminate := nil;
     FFileWatcherAuto.Terminate;
   end;
+
+  FFileWatcher := nil;
+  FFileWatcherAuto := nil;
 
   inherited;
 end;
@@ -1875,12 +1880,10 @@ procedure TSavedTree.SetFileWatcher;
 begin
   if FFileWatcher <> nil then
   begin
-    FFileWatcher.OnEvent := nil;
     FFileWatcher.Terminate;
   end;
   if FFileWatcherAuto <> nil then
   begin
-    FFileWatcherAuto.OnEvent := nil;
     FFileWatcherAuto.Terminate;
   end;
 

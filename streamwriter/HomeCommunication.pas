@@ -96,7 +96,7 @@ type
     procedure DoError(Version: Integer; Header, Data: TXMLNode);
     procedure DoEnded; override;
   public
-    constructor Create(DataLists: TDataLists);
+    constructor Create;
     destructor Destroy; override;
 
     property OnLoggedOn: TSocketEvent read FOnLoggedOn write FOnLoggedOn;
@@ -240,7 +240,7 @@ begin
   if FClient <> nil then
     Exit;
 
-  FClient := THomeThread.Create(FDataLists);
+  FClient := THomeThread.Create;
   FClient.OnConnected := ClientConnected;
   FClient.OnLoggedOn := ClientLoggedOn;
   FClient.OnLoggedOff := ClientLoggedOff;
@@ -786,7 +786,7 @@ end;
 
 { THomeThread }
 
-constructor THomeThread.Create(DataLists: TDataLists);
+constructor THomeThread.Create;
 begin
   {$IFDEF DEBUG}
   //inherited Create('gaia', 8007);
@@ -796,7 +796,6 @@ begin
   {$ENDIF}
 
   UseSynchronize := True;
-  FDataLists := DataLists;
   FCharts := TList<TChartEntry>.Create;
   FChartGenres := TList<TGenre>.Create;
   FChartCategories := TList<TChartCategory>.Create;
