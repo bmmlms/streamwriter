@@ -29,10 +29,10 @@ uses
   Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls,
   HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging,
   DataManager, DropSource, Types, AudioFunctions, PngSpeedButton,
-  Generics.Collections;
+  Generics.Collections, TypeDefs, MessageBus, AppMessages;
 
 type
-  TModes = (moShow, moLoading);
+  TModes = (moShow, moLoading);  // TODO: nen moError wie bei den charts wär cool.
 
   TMStreamTree = class;
 
@@ -54,12 +54,9 @@ type
   end;
   PStreamNodeData = ^TStreamNodeData;
 
-  TOpenActions = (oaStart, oaPlay, oaAdd, oaOpen, oaOpenWebsite, oaBlacklist, oaCopy, oaSave, oaSetData,
-    oaRefresh, oaRate1, oaRate2, oaRate3, oaRate4, oaRate5, oaNone);
-
   TNeedDataEvent = procedure(Sender: TObject; Offset, Count: Integer) of object;
   TAddStreamEvent = procedure(Sender: TObject; URL, Name: string) of object;
-  TActionEvent = procedure(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray) of object;
+  TActionEvent = procedure(Sender: TObject; Action: TStreamOpenActions; Streams: TStreamDataArray) of object;
   TIsInClientListEvent = function(Sender: TObject; ID: Cardinal): Boolean of object;
 
   TScrollDirection = (sdUp, sdDown);
@@ -134,7 +131,6 @@ type
     procedure Setup;
     procedure Translate;
     procedure RefreshStreams;
-    procedure HomeCommStateChanged(Sender: TObject);
 
     property StreamTree: TMStreamTree read FStreamTree;
   end;
@@ -551,13 +547,13 @@ begin
     Entries := GetSelected;
     if (Length(Entries) > 0) and Assigned(FOnAction) then
       case AppGlobals.DefaultActionBrowser of
-        baStart:
+        oaStart:
           FOnAction(Self, oaStart, Entries);
-        baListen:
+        oaPlay:
           FOnAction(Self, oaPlay, Entries);
-        baListenExternal:
-          FOnAction(Self, oaOpen, Entries);
-        baAddOnly:
+        oaPlayExternal:
+          FOnAction(Self, oaPlayExternal, Entries);
+        oaAdd:
           FOnAction(Self, oaAdd, Entries);
       end;
   end;
@@ -601,11 +597,11 @@ begin
   if Key = #13 then
   begin
     case AppGlobals.DefaultActionBrowser of
-      baStart:
+      oaStart:
         FItemStart.Click;
-      baListen:
+      oaPlay:
         FItemPlay.Click;
-      baListenExternal:
+      oaPlayExternal:
         FItemOpen.Click;
     end;
     Key := #0;
@@ -689,7 +685,7 @@ end;
 
 procedure TMStreamTree.PopupMenuClick(Sender: TObject);
 var
-  Action: TOpenActions;
+  Action: TStreamOpenActions;
   Streams: TStreamDataArray;
 begin
   Action := oaNone;
@@ -702,7 +698,7 @@ begin
     if Bass.DeviceAvailable then
       Action := oaPlay;
   end else if Sender = FItemOpen then
-    Action := oaOpen
+    Action := oaPlayExternal
   else if Sender = FItemAdd then
     Action := oaAdd
   else if Sender = FItemOpenWebsite then
@@ -1151,28 +1147,6 @@ begin
   inherited;
 end;
 
-procedure TMStreamBrowserView.HomeCommStateChanged(Sender: TObject);
-var
-  Found: Boolean;
-  i: Integer;
-begin
-  Found := False;
-  for i := 0 to FDataLists.GenreList.Count - 1 do
-    if FDataLists.GenreList[i].ID = 0 then
-    begin
-      Found := True;
-      Break;
-    end;
-
-  if HomeComm.Connected and
-     (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or
-      (AppGlobals.LastBrowserUpdate < Now - 15) or Found or (FStreamTree.FMode = moLoading)) then
-  begin
-    if FHomeCommunication.GetStreams then
-      SwitchMode(moLoading);
-  end;
-end;
-
 procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject;
   Genres: TList<TGenre>; Streams: TList<TStreamBrowserEntry>);
 var
@@ -1224,8 +1198,7 @@ end;
 
 procedure TMStreamBrowserView.RefreshStreams;
 begin
-  SwitchMode(moLoading);
-  FHomeCommunication.GetStreams;
+  MsgBus.SendMessage(TRefreshServerData.Create);
 end;
 
 procedure TMStreamBrowserView.SearchEditChange(Sender: TObject);

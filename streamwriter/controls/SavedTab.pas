@@ -36,6 +36,8 @@ type
   TSavedTree = class;
 
   TSavedNodeData = record
+    IsStreamParent: Boolean;
+    IsFileParent: Boolean;
     Track: TTrackInfo;
   end;
   PSavedNodeData = ^TSavedNodeData;
@@ -259,6 +261,7 @@ type
     FTrackList: TTrackList;
     FFileWatcher, FFileWatcherAuto: TFileWatcher;
     FStreamNode: PVirtualNode;
+    FFileNode: PVirtualNode;
 
     FOnAction: TTrackActionEvent;
 
@@ -339,6 +342,7 @@ type
 
 const
   STREAMNODETEXT = 'Stream files';
+  FILENODETEXT = 'Recorded files';
 
 implementation
 
@@ -1266,6 +1270,9 @@ procedure TSavedTab.Shown;
 var
   i: Integer;
 begin
+  FSavedTree.Expanded[FSavedTree.FStreamNode] := True;
+  FSavedTree.Expanded[FSavedTree.FFileNode] := True;
+
   if FSavedTree.RootNodeCount > 0 then
   begin
     FSavedTree.Selected[FSavedTree.GetFirst] := True;
@@ -1292,6 +1299,7 @@ end;
 constructor TSavedTree.Create(AOwner: TComponent);
 var
   i: Integer;
+  NodeData: PSavedNodeData;
 begin
   inherited Create(AOwner);
 
@@ -1311,7 +1319,7 @@ begin
   Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
   TreeOptions.AutoOptions := [toAutoScrollOnExpand];
-  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
+  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
   Header.Options := Header.Options - [hoAutoResize];
   Header.Options := Header.Options - [hoDrag];
@@ -1368,6 +1376,12 @@ begin
   Header.Options := Header.Options + [hoAutoResize];
 
   FStreamNode := AddChild(nil);
+  NodeData := GetNodeData(FStreamNode);
+  NodeData.IsStreamParent := True;
+
+  FFileNode := AddChild(nil);
+  NodeData := GetNodeData(FFileNode);
+  NodeData.IsFileParent := True;
 
   SetFileWatcher;
 
@@ -1843,10 +1857,14 @@ begin
   if Track.IsStreamFile then
   begin
     Node := AddChild(FStreamNode);
-    if FStreamNode.ChildCount = 1 then
+    if (FStreamNode.ChildCount = 1) and (not FromFilter) then
       Expanded[FStreamNode] := True;
   end else
-    Node := AddChild(nil);
+  begin
+    Node := AddChild(FFileNode);
+    if (FFileNode.ChildCount = 1) and (not FromFilter) then
+      Expanded[FFileNode] := True;
+  end;
   NodeData := GetNodeData(Node);
   NodeData.Track := Track;
 end;
@@ -1939,9 +1957,10 @@ begin
   Node := GetFirst;
   while Node <> nil do
   begin
-    if Node <> FStreamNode then
+    NodeData := GetNodeData(Node);
+
+    if NodeData.Track <> nil then
     begin
-      NodeData := GetNodeData(Node);
       NodeData.Track.Index := Node.Index;
     end;
 
@@ -1971,10 +1990,15 @@ begin
   begin
     NodeData := GetNodeData(Node);
 
-    if NodeData.Track = nil then
+    if (NodeData.IsStreamParent) or (NodeData.IsFileParent) then
     begin
       if Column = 1 then
-        Text := _(STREAMNODETEXT) + ' (' + IntToStr(Node.ChildCount) + ')';
+      begin
+        if NodeData.IsStreamParent then
+          Text := _(STREAMNODETEXT) + ' (' + IntToStr(Node.ChildCount) + ')'
+        else
+          Text := _(FILENODETEXT) + ' (' + IntToStr(Node.ChildCount) + ')';
+      end;
     end else
       case Column of
         1: Text := ExtractFileName(NodeData.Track.Filename);
@@ -2148,14 +2172,29 @@ end;
 procedure TSavedTree.Filter(S: string);
 var
   i: Integer;
+  StreamsExpanded, FilesExpanded: Boolean;
+  NodeData: PSavedNodeData;
 begin
   BeginUpdate;
+
+  StreamsExpanded := Expanded[FStreamNode];
+  FilesExpanded := Expanded[FFileNode];
+
   Clear;
 
   FStreamNode := AddChild(nil);
+  NodeData := GetNodeData(FStreamNode);
+  NodeData.IsStreamParent := True;
+
+  FFileNode := AddChild(nil);
+  NodeData := GetNodeData(FFileNode);
+  NodeData.IsFileParent := True;
 
   for i := 0 to FTrackList.Count - 1 do
     AddTrack(FTrackList[i], True);
+
+  Expanded[FStreamNode] := StreamsExpanded;
+  Expanded[FFileNode] := FilesExpanded;
 
   Sort(nil, Header.SortColumn, Header.SortDirection);
 
@@ -2180,7 +2219,7 @@ procedure TSavedTree.FitColumns;
     end;
   end;
 begin
-  FColImages.Width := 72;
+  FColImages.Width := 104;
   FColSize.Width := GetTextWidth('111,11 KB');
   FColLength.Width := GetTextWidth('00:00');
   FColBitRate.Width := GetTextWidth('320 VBR');

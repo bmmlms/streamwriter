@@ -64,6 +64,9 @@ type
     property Sender: TObject read FSender;
   end;
 
+  TRefreshServerData = class(TMessageBase)
+  end;
+
 implementation
 
 { TDeleteFileMessage }

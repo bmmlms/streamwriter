@@ -195,7 +195,7 @@ begin
   Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
   TreeOptions.AutoOptions := [toAutoScrollOnExpand];
-  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowDropmark];
+  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowDropmark, toShowRoot, toShowButtons];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toAcceptOLEDrop, toEditable];
   Header.Options := Header.Options + [hoAutoResize];
   Header.Options := Header.Options - [hoDrag];
@@ -324,7 +324,10 @@ begin
       2:
         Text := MakeSize(NodeData.Client.Entry.BytesReceived);
       3:
-        Text := IntToStr(NodeData.Client.Entry.SongsSaved);
+        if NodeData.Client.AutoRemove then
+          Text := ''
+        else
+          Text := IntToStr(NodeData.Client.Entry.SongsSaved);
       4:
         Text := MakeSize(NodeData.Client.Speed) + '/s';
       5:
@@ -1193,3 +1196,4 @@ begin
 end;
 
 end.
+

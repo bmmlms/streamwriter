@@ -30,15 +30,14 @@ interface
 uses
   Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
   LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions, PostProcess,
-  AddonManager, PostProcessManager, Logging, Base64, AudioFunctions;
+  AddonManager, PostProcessManager, Logging, Base64, AudioFunctions, TypeDefs;
 
 type
   // Do not change the order of items in the following enums!
 
   // Actions that can be executed in the stream-view.
   TClientActions = (caStartStop, caStreamIntegrated, caStream, caFile);
-  // Actions that can be exucuted using the stream-browser.
-  TBrowserActions = (baStart, baListen, baListenExternal, baAddOnly);
+
   // Set for definition of filters to use
   TUseFilters = (ufNone, ufWish, ufIgnoreGlobal, ufIgnoreLocal, ufIgnoreBoth, ufBoth);
   // Definitions for directions for where to adjust the track-offset
@@ -47,7 +46,7 @@ type
   TScheduleInterval = (siDaily, siWeekly, siNone);
   // A specific day for a schedule. sdNone has to be the last element!
   TScheduleDay = (sdMonday, sdTuesday, sdWednesday, sdThursday, sdFriday, sdSaturday, sdSunday, sdNone);
-  // An array of integer... what you say??
+  // An array of integer.........
   TIntArray = array of Integer;
 
   TPostProcessorList = class(TList<TPostProcessBase>)
@@ -249,7 +248,7 @@ type
     FSubmitStats: Boolean;
     FMinDiskSpace: Integer;
     FDefaultAction: TClientActions;
-    FDefaultActionBrowser: TBrowserActions;
+    FDefaultActionBrowser: TStreamOpenActions;
     FPlayerVolume: Integer;
     FPlayerVolumeBeforeMute: Integer;
     FAutoScrollLog: Boolean;
@@ -347,7 +346,7 @@ type
     // The default action to execute when double-clicking a stream in the mainview
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
     // The default action to execute when double-clicking a stream in the streamview
-    property DefaultActionBrowser: TBrowserActions read FDefaultActionBrowser write FDefaultActionBrowser;
+    property DefaultActionBrowser: TStreamOpenActions read FDefaultActionBrowser write FDefaultActionBrowser;
     // The volume of the player
     property PlayerVolume: Integer read FPlayerVolume write FPlayerVolume;
     // The volume of the player before muting the volume
@@ -717,7 +716,7 @@ begin
   FStorage.Read('SeparateTracks', FStreamSettings.FSeparateTracks, True);
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
   FStorage.Read('DefaultAction', DefaultActionTmp, Integer(caStartStop));
-  FStorage.Read('DefaultActionBrowser', DefaultActionBrowser, Integer(baStart));
+  FStorage.Read('DefaultActionBrowser', DefaultActionBrowser, Integer(oaStart));
   FStorage.Read('DefaultFilter', DefaultFilterTmp, Integer(ufNone));
   FStorage.Read('PlayerVolume', FPlayerVolume, 50);
   FStorage.Read('PlayerVolumeBeforeMute', FPlayerVolumeBeforeMute, 50);
@@ -781,11 +780,11 @@ begin
   else
     FDefaultAction := TClientActions(DefaultActionTmp);
 
-  if (DefaultActionBrowser > Ord(High(TBrowserActions))) or
-     (DefaultActionBrowser < Ord(Low(TBrowserActions))) then
-    FDefaultActionBrowser := baStart
+  if (DefaultActionBrowser > Ord(High(TStreamOpenActions))) or
+     (DefaultActionBrowser < Ord(Low(TStreamOpenActions))) then
+    FDefaultActionBrowser := oaStart
   else
-    FDefaultActionBrowser := TBrowserActions(DefaultActionBrowser);
+    FDefaultActionBrowser := TStreamOpenActions(DefaultActionBrowser);
 
   if IsVersionNewer(LastUsedVersion, AppVersion) and (IsVersionNewer(LastUsedVersion, ParseVersion('2.1.0.9'))) then
   begin

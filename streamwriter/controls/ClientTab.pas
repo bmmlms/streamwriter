@@ -163,7 +163,7 @@ type
     procedure FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL, TitlePattern: string;
       IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 
-    procedure StreamBrowserAction(Sender: TObject; Action: TOpenActions; Streams: TStreamDataArray);
+    procedure StreamBrowserAction(Sender: TObject; Action: TStreamOpenActions; Streams: TStreamDataArray);
     function StreamBrowserIsInClientList(Sender: TObject; ID: Cardinal): Boolean;
 
     procedure VolumeVolumeChange(Sender: TObject);
@@ -186,8 +186,8 @@ type
       ClientImages: TImageList; Clients: TClientManager;
       Streams: TDataLists);
     procedure Shown;
-    function StartStreaming(ID, Bitrate: Cardinal; Name, URL, TitlePattern: string;
-      IgnoreTitles: TStringList; Action: TBrowserActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
+    function StartStreaming(Streams: TStartStreamingInfoArray; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean; overload;
+    function StartStreaming(Stream: TStartStreamingInfo; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean; overload;
     procedure TimerTick;
     procedure UpdateStreams(Streams: TDataLists);
     procedure BuildTree(Streams: TDataLists);
@@ -696,11 +696,11 @@ var
 begin
   if FAddressBar.FStations.ItemIndex = -1 then
   begin
-    StartStreaming(0, 0, '', FAddressBar.FStations.Text, '', nil, AppGlobals.DefaultActionBrowser, nil, amNoWhere)
+    StartStreaming(TStartStreamingInfo.Create(0, 0, '', FAddressBar.FStations.Text, '', nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere)
   end else
   begin
     Entry := TRecentEntry(FAddressBar.FStations.ItemsEx[FAddressBar.FStations.ItemIndex].Data);
-    StartStreaming(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, '', nil, AppGlobals.DefaultActionBrowser, nil, amNoWhere);
+    StartStreaming(TStartStreamingInfo.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, '', nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere);
   end;
 end;
 
@@ -1242,7 +1242,7 @@ procedure TClientTab.FClientViewStartStreaming(Sender: TObject;
   ID, Bitrate: Cardinal; Name, URL, TitlePattern: string; IgnoreTitles: TStringList;
   Node: PVirtualNode; Mode: TVTNodeAttachMode);
 begin
-  StartStreaming(ID, Bitrate, Name, URL, TitlePattern, IgnoreTitles, AppGlobals.DefaultActionBrowser, Node, Mode);
+  StartStreaming(TStartStreamingInfo.Create(ID, Bitrate, Name, URL, TitlePattern, IgnoreTitles), AppGlobals.DefaultActionBrowser, Node, Mode);
 end;
 
 procedure TClientTab.MessageReceived(Msg: TMessageBase);
@@ -1358,8 +1358,8 @@ begin
   end;
 end;
 
-function TClientTab.StartStreaming(ID, Bitrate: Cardinal; Name, URL, TitlePattern: string;
-  IgnoreTitles: TStringList; Action: TBrowserActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
+function TClientTab.StartStreaming(Streams: TStartStreamingInfoArray; Action: TStreamOpenActions; HitNode: PVirtualNode;
+  Mode: TVTNodeAttachMode): Boolean;
   procedure UnkillCategory;
   var
     NodeData: PClientNodeData;
@@ -1391,68 +1391,59 @@ var
   Node: PVirtualNode;
   Res: TMayConnectResults;
   PH: TPlaylistHandler;
+  Entries: TPlaylistEntryArray;
+  Info: TStartStreamingInfo;
 begin
   Result := True;
 
-  URL := Trim(URL);
-  if URL <> '' then
+  // TODO: hier jedes if und so weiter testen. stark umgebaut alles...
+
+  // Sonderbehandlung fürs Extern abspielen...
+  if Action = oaPlayExternal then
   begin
-    // Falls eine Datei gemeint ist...
-    if FileExists(URL) then
+    SetLength(Entries, 0);
+    for Info in Streams do
     begin
-      PH := TPlaylistHandler.Create;
-      try
-        PH.ParsePlaylist(URL);
-        for i := 0 to PH.URLs.Count - 1 do
-          StartStreaming(ID, Bitrate, Name, PH.URLs[i], TitlePattern, IgnoreTitles, baAddOnly, HitNode, Mode);
-      finally
-        PH.Free;
-      end;
-      Exit;
-    end;
-
-    // Ist der Client schon in der Liste?
-    Client := FClients.GetClient(ID, '', URL, '', nil);
-    if (Client <> nil) and (not Client.AutoRemove) then
-    begin
-      case Action of
-        baStart:
-          Res := Client.StartRecording(True);
-        baListen:
-          begin
-            Res := Client.StartPlay(True);
-            if Res = crOk then
-              PlayStarted(Client);
-          end;
-        else
-          Res := crOk;
-      end;
-
-      if Res = crOk then
-        UnkillCategory
+      SetLength(Entries, Length(Entries) + 1);
+      Entries[High(Entries)].URL := Info.URL;
+      if Info.Name <> '' then
+        Entries[High(Entries)].Name := Info.Name
       else
-        OnShowErrorMessage(Client, Res, False, False);
-    end else
+        Entries[High(Entries)].Name := Info.URL;
+    end;
+    SavePlaylist(Entries, True);
+    Exit;
+  end;
+
+  // TODO: sobald es fehler (kein speicher, bandbreite) beim adden (aufnahmen) eines streams gibt, den rest nur noch mit oaAdd hinzufügen
+  //       und die messagebox genau einmal zeigen.
+  for Info in Streams do
+  begin
+    if Info.URL <> '' then
     begin
-      if ValidURL(URL) then
+      // Falls eine Datei gemeint ist...
+      if FileExists(Info.URL) then
       begin
-        Client := FClients.AddClient(ID, Bitrate, Name, URL);
-        if Trim(TitlePattern) <> '' then
-          Client.Entry.Settings.TitlePattern := TitlePattern;
-
-        if IgnoreTitles <> nil then
-          Client.Entry.Settings.IgnoreTrackChangePattern.Assign(IgnoreTitles);
-
-        if HitNode <> nil then
-        begin
-          Node := FClientView.GetClientNode(Client);
-          FClientView.MoveTo(Node, HitNode, Mode, False);
+        PH := TPlaylistHandler.Create;
+        try
+          PH.ParsePlaylist(Info.URL);
+          for i := 0 to PH.URLs.Count - 1 do
+            StartStreaming(TStartStreamingInfo.Create(Info.ID, Info.Bitrate, Info.Name, PH.URLs[i], Info.TitlePattern, Info.IgnoreTitles),
+              oaAdd, HitNode, Mode);
+        finally
+          PH.Free;
         end;
+        Exit;
+      end;
 
+      // Ist der Client schon in der Liste?
+      Client := FClients.GetClient(Info.ID, '', Info.URL, '', nil);
+      if (Client <> nil) and (not Client.AutoRemove) then
+      begin
         case Action of
-          baStart:
+          oaStart:
             Res := Client.StartRecording(True);
-          baListen:
+          oaPlay:
             begin
               Res := Client.StartPlay(True);
               if Res = crOk then
@@ -1468,14 +1459,60 @@ begin
           OnShowErrorMessage(Client, Res, False, False);
       end else
       begin
-        Result := False;
-        MsgBox(GetParentForm(Self).Handle, _('The stream could not be added to the list because the URL is invalid.'), _('Info'), MB_ICONINFORMATION);
+        if ValidURL(Info.URL) then
+        begin
+          Client := FClients.AddClient(Info.ID, Info.Bitrate, Info.Name, Info.URL);
+          if Trim(Info.TitlePattern) <> '' then
+            Client.Entry.Settings.TitlePattern := Info.TitlePattern;
+
+          if Info.IgnoreTitles <> nil then
+            Client.Entry.Settings.IgnoreTrackChangePattern.Assign(Info.IgnoreTitles);
+
+          if HitNode <> nil then
+          begin
+            Node := FClientView.GetClientNode(Client);
+            FClientView.MoveTo(Node, HitNode, Mode, False);
+          end;
+
+          case Action of
+            oaStart:
+              Res := Client.StartRecording(True);
+            oaPlay:
+              begin
+                Res := Client.StartPlay(True);
+                if Res = crOk then
+                  PlayStarted(Client);
+              end;
+            else
+              Res := crOk;
+          end;
+
+          if Res = crOk then
+            UnkillCategory
+          else
+            OnShowErrorMessage(Client, Res, False, False);
+        end else
+        begin
+          Result := False;
+          MsgBox(GetParentForm(Self).Handle, _('The stream could not be added to the list because the URL is invalid.'), _('Info'), MB_ICONINFORMATION);
+        end;
       end;
     end;
   end;
 end;
 
-procedure TClientTab.StreamBrowserAction(Sender: TObject; Action: TOpenActions;
+function TClientTab.StartStreaming(Stream: TStartStreamingInfo;
+  Action: TStreamOpenActions; HitNode: PVirtualNode;
+  Mode: TVTNodeAttachMode): Boolean;
+var
+  Arr: TStartStreamingInfoArray;
+begin
+  SetLength(Arr, 1);
+  Arr[0] := Stream;
+  Result := StartStreaming(Arr, Action, HitNode, Mode);
+end;
+
+procedure TClientTab.StreamBrowserAction(Sender: TObject; Action: TStreamOpenActions;
   Streams: TStreamDataArray);
   procedure Rate(R: Integer);
   var
@@ -1505,8 +1542,10 @@ var
   ND: PStreamNodeData;
   Settings: TStreamSettings;
   Client: TICEClient;
+  Arr: TStartStreamingInfoArray;
 begin
-  if Action in [oaOpen, oaSave] then
+  // TODO: hier alles durchtesten. funzt das noch???
+  if Action in [oaPlayExternal, oaSave] then
   begin
     SetLength(Entries, 0);
     for i := 0 to Length(Streams) - 1 do
@@ -1517,20 +1556,20 @@ begin
     end;
   end;
 
+  if Action in [oaStart, oaPlay, oaAdd] then
+  begin
+    SetLength(Arr, 0);
+    for i := 0 to Length(Streams) - 1 do
+    begin
+      SetLength(Arr, Length(Arr) + 1);
+      Arr[High(Arr)] := TStartStreamingInfo.Create(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].RegEx, Streams[i].IgnoreTitles);
+    end;
+    StartStreaming(Arr, Action, nil, amNoWhere);
+    Exit;
+  end;
+
   case Action of
-    oaStart:
-      for i := 0 to Length(Streams) - 1 do
-        if not StartStreaming(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].RegEx, Streams[i].IgnoreTitles, baStart, nil, amNoWhere) then
-          Break;
-    oaPlay:
-      if Bass.DeviceAvailable then
-        for i := 0 to Length(Streams) - 1 do
-          StartStreaming(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].RegEx, Streams[i].IgnoreTitles, baListen, nil, amNoWhere);
-    oaAdd:
-      for i := 0 to Length(Streams) - 1 do
-        if not StartStreaming(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].RegEx, Streams[i].IgnoreTitles, baAddOnly, nil, amNoWhere) then
-          Break;
-    oaOpen:
+    oaPlayExternal:
       SavePlaylist(Entries, True);
     oaOpenWebsite:
       for i := 0 to Length(Streams) - 1 do

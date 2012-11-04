@@ -154,8 +154,8 @@ type
 
     procedure Connect;
     procedure SubmitStream(Stream: string);
-    function GetStreams: Boolean;
-    function GetCharts: Boolean;
+
+    function GetServerData: Boolean;
 
     procedure LogOn(User, Pass: string);
     procedure LogOff;
@@ -266,30 +266,12 @@ begin
   inherited;
 end;
 
-function THomeCommunication.GetCharts: Boolean;
+function THomeCommunication.GetServerData: Boolean;
 var
   XMLDocument: TXMLLib;
   XML: AnsiString;
 begin
-  Result := False;
-  if not FConnected then
-    Exit;
-
-  XMLDocument := FClient.XMLGet('getcharts');
-  try
-    XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
-    Result := True;
-  finally
-    XMLDocument.Free;
-  end;
-end;
-
-function THomeCommunication.GetStreams;
-var
-  XMLDocument: TXMLLib;
-  XML: AnsiString;
-begin
+  // TODO: was passiert, wenn das hier aktiv ist und der server flöten geht???
   Result := False;
   if not FConnected then
     Exit;
@@ -298,6 +280,19 @@ begin
   try
     XMLDocument.SaveToString(XML);
 
+    FClient.Write(ZCompressStr(XML));
+    Result := True;
+  finally
+    XMLDocument.Free;
+  end;
+
+  Result := False;
+  if not FConnected then
+    Exit;
+
+  XMLDocument := FClient.XMLGet('getcharts');
+  try
+    XMLDocument.SaveToString(XML);
     FClient.Write(ZCompressStr(XML));
     Result := True;
   finally
@@ -586,12 +581,10 @@ begin
 
     Node := TXMLNode.Create(Data);
     Node.Name := 'user';
-    //Node.Value.UseCDATA := False;
     Node.Value.AsString := User;
 
     Node := TXMLNode.Create(Data);
     Node.Name := 'pass';
-    //Node.Value.UseCDATA := False;
     Node.Value.AsString := Pass;
 
     XMLDocument.SaveToString(XML);
@@ -789,8 +782,7 @@ end;
 constructor THomeThread.Create;
 begin
   {$IFDEF DEBUG}
-  //inherited Create('gaia', 8007);
-  inherited Create('streamwriter.org', 8007);
+  inherited Create('gaia', 8007);
   {$ELSE}
   inherited Create('streamwriter.org', 8007);
   {$ENDIF}
@@ -839,23 +831,39 @@ var
   i: Integer;
   Node, Node2: TXMLNode;
   Categories: TIntArray;
+  Streams: TList<TChartStream>;
 begin
   for Node in Data.Nodes.GetNode('categories').Nodes do
     FChartCategories.Add(TChartCategory.Create(Node.Attributes.AttributeByName['id'].Value.AsLongWord, Node.Value.AsString));
 
   for Node in Data.Nodes.GetNode('charts').Nodes do
   begin
-    SetLength(Categories, 0);
-    for Node2 in Node.Nodes do
-    begin
-      if Node2.Name = 'cat' then
+    Streams := TList<TChartStream>.Create;
+    try
+      SetLength(Categories, 0);
+      for Node2 in Node.Nodes do
       begin
-        SetLength(Categories, Length(Categories) + 1);
-        Categories[High(Categories)] := Node2.Value.AsInteger;
+        if Node2.Name = 'cat' then
+        begin
+          SetLength(Categories, Length(Categories) + 1);
+          Categories[High(Categories)] := Node2.Value.AsInteger;
+        end;
+        if Node2.Name = 'stream' then
+        begin
+          Streams.Add(TChartStream.Create(Node2.Attributes.AttributeByName['id'].Value.AsLongWord,
+            Node2.Attributes.AttributeByName['lastday'].Value.AsLongWord,
+            Node2.Attributes.AttributeByName['lastweek'].Value.AsLongWord));
+        end;
       end;
-    end;
 
-    FCharts.Add(TChartEntry.Create(Node.Value.AsString, Node.Attributes.AttributeByName['chance'].Value.AsInteger, Categories));
+      FCharts.Add(TChartEntry.Create(Node.Value.AsString, Node.Attributes.AttributeByName['playedlastday'].Value.AsLongWord,
+        Node.Attributes.AttributeByName['playedlastweek'].Value.AsLongWord, Categories, Streams));
+    finally
+      // TOOD: den try..finally block rausmachen!!
+      //for i := 0 to Streams.Count - 1 do
+      //  Streams[i].Free;
+      //Streams.Free;
+    end;
   end;
 
   if Assigned(FOnChartsReceived) then

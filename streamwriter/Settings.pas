@@ -30,7 +30,7 @@ uses
   DataManager, PngBitBtn, Logging, ToolWin, ListsTab, DownloadAddons,
   ExtendedStream, AddonManager, AddonBase, Generics.Defaults,
   SettingsAddPostProcessor, ConfigureEncoder, AudioFunctions,
-  SWFunctions;
+  SWFunctions, TypeDefs;
 
 type
   TBlacklistNodeData = record
@@ -1434,7 +1434,7 @@ begin
 
     AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
     AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
-    AppGlobals.DefaultActionBrowser := TBrowserActions(lstDefaultActionBrowser.ItemIndex);
+    AppGlobals.DefaultActionBrowser := TStreamOpenActions(lstDefaultActionBrowser.ItemIndex);
 
     if lstHotkeys.Items[0].SubItems[0] <> '' then
       AppGlobals.ShortcutPlay := TextToShortCut(lstHotkeys.Items[0].SubItems[0])

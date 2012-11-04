@@ -27,7 +27,7 @@ interface
 uses
   Windows, Classes, SysUtils, ExtendedStream, Generics.Collections,
   ComCtrls, AppData, Functions, Logging, DateUtils, AudioFunctions,
-  PowerManagement;
+  PowerManagement, Generics.Defaults;
 
 type
   TStreamList = class;
@@ -442,27 +442,68 @@ type
     property Name: string read FName;
   end;
 
+  // An entry within TChartEntry.Streams
+  TChartStream = class
+  private
+    FID: Cardinal;
+    FStream: TStreamBrowserEntry;
+    FPlayedLastDay: Cardinal;
+    FPlayedLastWeek: Cardinal;
+  public
+    constructor Create(ID: Cardinal; PlayedLastDay, PlayedLastWeek: Cardinal);
+    function Copy: TChartStream;
+
+    class function Load(Stream: TExtendedStream; Version: Integer): TChartStream;
+    procedure Save(Stream: TExtendedStream);
+
+    property ID: Cardinal read FID;
+    property Stream: TStreamBrowserEntry read FStream write FStream;
+    property PlayedLastDay: Cardinal read FPlayedLastDay;
+    property PlayedLastWeek: Cardinal read FPlayedLastWeek;
+  end;
+
+  TStreamBrowserList = class(TList<TStreamBrowserEntry>)
+  private
+    FDict: TDictionary<Cardinal, TStreamBrowserEntry>;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    procedure CreateDict;
+    procedure ClearDict;
+    function GetStream(ID: Cardinal): TStreamBrowserEntry;
+  end;
+
   // An entry within the "Charts"-window
   TChartEntry = class
   private
     FName: string;
-    FChance: Integer;
+    FPlayedLastDay: Cardinal;
+    FPlayedLastWeek: Cardinal;
     FCategories: TIntArray;
+    FStreams: TList<TChartStream>;
   public
     constructor Create; overload;
-    constructor Create(Name: string; Chance: Integer; Categories: TIntArray); overload;
+    constructor Create(Name: string; PlayedLastDay, PlayedLastWeek: Cardinal; Categories: TIntArray; Streams: TList<TChartStream>); overload;
+    destructor Destroy; override;
+
     procedure Assign(Source: TChartEntry);
     function Copy: TChartEntry;
 
-    class function Load(Stream: TExtendedStream; Version: Integer): TChartEntry;
+    class function Load(Stream: TExtendedStream; Lists: TDataLists; Version: Integer): TChartEntry;
     procedure Save(Stream: TExtendedStream);
+
+    procedure LoadStreams(StreamList: TStreamBrowserList);
 
     // The name
     property Name: string read FName;
-    // The chance of the title to get played
-    property Chance: Integer read FChance;
+
+    property PlayedLastDay: Cardinal read FPlayedLastDay;
+    property PlayedLastWeek: Cardinal read FPlayedLastWeek;
+
     // Categories this title is included (i.e. "Top 100")
     property Categories: TIntArray read FCategories;
+    property Streams: TList<TChartStream> read FStreams;
   end;
 
   TChartList = class(TList<TChartEntry>)
@@ -506,10 +547,11 @@ type
     FRatingList: TRatingList;
     FChartList: TChartList;
     FChartCategoryList: TChartCategoryList;
-    FBrowserList: TList<TStreamBrowserEntry>;
+    FBrowserList: TStreamBrowserList;
     FGenreList: TGenreList;
     FLoadError: Boolean;
     FReceived: UInt64;
+    FReloadServerData: Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -543,7 +585,7 @@ type
     // List that contains categories for charts
     property ChartCategoryList: TChartCategoryList read FChartCategoryList;
     // List that contains all TStreamBrowserEntries
-    property BrowserList: TList<TStreamBrowserEntry> read FBrowserList write FBrowserList;
+    property BrowserList: TStreamBrowserList read FBrowserList write FBrowserList;
     // List that contains all genres
     property GenreList: TGenreList read FGenreList write FGenreList;
 
@@ -551,10 +593,12 @@ type
     property LoadError: Boolean read FLoadError write FLoadError;
     // Overall amount of data received
     property Received: UInt64 read FReceived write FReceived;
+
+    property ReloadServerData: Boolean read FReloadServerData;
   end;
 
 const
-  DATAVERSION = 42;
+  DATAVERSION = 43;
 
 implementation
 
@@ -970,7 +1014,7 @@ begin
   FRecentList := TRecentList.Create;
   FStreamBlacklist := TStringList.Create;
   FRatingList := TRatingList.Create;
-  FBrowserList := TList<TStreamBrowserEntry>.Create;
+  FBrowserList := TStreamBrowserList.Create;
   FGenreList := TGenreList.Create;
   FChartList := TChartList.Create;
   FChartCategoryList := TChartCategoryList.Create;
@@ -1013,6 +1057,9 @@ begin
     raise EVersionException.Create(AppGlobals.DataFile);
 
   S.Read(FReceived);
+
+  if Version <= 42 then // Muss so. Damit die Charts neu befüllt werden mit PlayedLastDay/PlayledLastWeek.
+    FReloadServerData := True;
 
   if Version <= 2 then
   begin
@@ -1121,9 +1168,13 @@ begin
     for i := 0 to CatCount - 1 do
       FChartCategoryList.Add(TChartCategory.Load(S, Version));
 
+    FBrowserList.CreateDict;
+
     S.Read(CatCount);
     for i := 0 to CatCount - 1 do
-      FChartList.Add(TChartEntry.Load(S, Version));
+      FChartList.Add(TChartEntry.Load(S, Self, Version));
+
+    FBrowserList.ClearDict;
   end;
 
 end;
@@ -1842,10 +1893,23 @@ end;
 { TChartEntry }
 
 procedure TChartEntry.Assign(Source: TChartEntry);
+var
+  i: Integer;
 begin
   FName := Source.Name;
-  FChance := Source.Chance;
+  FPlayedLastDay := Source.PlayedLastDay;
+  FPlayedLastWeek := Source.PlayedLastWeek;
   FCategories := Source.Categories;
+
+  if FStreams <> nil then
+  begin
+    for i := 0 to FStreams.Count - 1 do
+      FStreams[i].Free;
+    FStreams.Clear;
+  end else
+    FStreams := TList<TChartStream>.Create;
+  for i := 0 to Source.Streams.Count - 1 do
+    FStreams.Add(Source.Streams[i].Copy);
 end;
 
 function TChartEntry.Copy: TChartEntry;
@@ -1854,13 +1918,30 @@ begin
   Result.Assign(Self);
 end;
 
-constructor TChartEntry.Create(Name: string; Chance: Integer; Categories: TIntArray);
+constructor TChartEntry.Create(Name: string; PlayedLastDay, PlayedLastWeek: Cardinal; Categories: TIntArray; Streams: TList<TChartStream>);
+var
+  C: Extended;
 begin
   inherited Create;
 
   FName := Name;
-  FChance := Chance;
+  FPlayedLastDay := PlayedLastDay;
+  FPlayedLastWeek := PlayedLastWeek;
   FCategories := Categories;
+
+  // Hier wird direkt zugewiesen - keine Kopie oder so!
+  FStreams := Streams;
+end;
+
+destructor TChartEntry.Destroy;
+var
+  i: Integer;
+begin
+  for i := 0 to FStreams.Count - 1 do
+    FStreams[i].Free;
+  FStreams.Free;
+
+  inherited;
 end;
 
 constructor TChartEntry.Create;
@@ -1868,23 +1949,60 @@ begin
   inherited;
 
   SetLength(FCategories, 0);
+  FStreams := TList<TChartStream>.Create;
 end;
 
 class function TChartEntry.Load(Stream: TExtendedStream;
-  Version: Integer): TChartEntry;
+  Lists: TDataLists; Version: Integer): TChartEntry;
 var
-  i: Integer;
+  i, n, Dummy: Integer;
   C: Cardinal;
 begin
   Result := TChartEntry.Create;
   Stream.Read(Result.FName);
-  Stream.Read(Result.FChance);
+
+  if Version <= 42 then
+  begin
+    Stream.Read(Dummy);
+  end else
+  begin
+    Stream.Read(Result.FPlayedLastDay);
+    Stream.Read(Result.FPlayedLastWeek);
+  end;
 
   Stream.Read(C);
   for i := 0 to C - 1 do
   begin
     SetLength(Result.FCategories, Length(Result.FCategories) + 1);
     Stream.Read(Result.FCategories[High(Result.FCategories)]);
+  end;
+
+  if Version > 42 then
+  begin
+    Stream.Read(C);
+    for i := 0 to C - 1 do
+    begin
+      Result.Streams.Add(TChartStream.Load(Stream, Version));
+      Result.LoadStreams(Lists.BrowserList);
+    end;
+  end;
+end;
+
+procedure TChartEntry.LoadStreams(StreamList: TStreamBrowserList);
+var
+  i: Integer;
+  Stream: TStreamBrowserEntry;
+begin
+  for i := Streams.Count - 1 downto 0 do
+  begin
+    Stream := StreamList.GetStream(Streams[i].FID);
+    if Stream <> nil then
+      Streams[i].Stream := Stream
+    else
+    begin
+      Streams[i].Free;
+      Streams.Delete(i);
+    end;
   end;
 end;
 
@@ -1893,10 +2011,14 @@ var
   i: Integer;
 begin
   Stream.Write(FName);
-  Stream.Write(FChance);
+  Stream.Write(FPlayedLastDay);
+  Stream.Write(FPlayedLastWeek);
   Stream.Write(Length(FCategories));
   for i := 0 to High(FCategories) do
     Stream.Write(FCategories[i]);
+  Stream.Write(Cardinal(FStreams.Count));
+  for i := 0 to FStreams.Count - 1 do
+    FStreams[i].Save(Stream);
 end;
 
 { TGenre }
@@ -1980,6 +2102,79 @@ procedure TChartCategory.Save(Stream: TExtendedStream);
 begin
   Stream.Write(FID);
   Stream.Write(FName);
+end;
+
+{ TChartStream }
+
+function TChartStream.Copy: TChartStream;
+begin
+  Result := TChartStream.Create(FID, PlayedLastDay, PlayedLastWeek);
+end;
+
+constructor TChartStream.Create(ID: Cardinal; PlayedLastDay, PlayedLastWeek: Cardinal);
+begin
+  FID := ID;
+  FPlayedLastDay := PlayedLastDay;
+  FPlayedLastWeek := PlayedLastWeek;
+end;
+
+class function TChartStream.Load(Stream: TExtendedStream;
+  Version: Integer): TChartStream;
+begin
+  Result := TChartStream.Create(0, 0, 0);
+  Stream.Read(Result.FID);
+  Stream.Read(Result.FPlayedLastDay);
+  Stream.Read(Result.FPlayedLastWeek);
+end;
+
+procedure TChartStream.Save(Stream: TExtendedStream);
+begin
+  Stream.Write(FID);
+  Stream.Write(FPlayedLastDay);
+  Stream.Write(FPlayedLastWeek);
+end;
+
+{ TStreamBrowserList }
+
+procedure TStreamBrowserList.ClearDict;
+begin
+  FDict.Clear;
+end;
+
+constructor TStreamBrowserList.Create;
+begin
+  inherited;
+
+  FDict := TDictionary<Cardinal, TStreamBrowserEntry>.Create;
+end;
+
+procedure TStreamBrowserList.CreateDict;
+var
+  i: Integer;
+begin
+  FDict.Clear;
+  for i := 0 to Count - 1 do
+    FDict.Add(Items[i].FID, Items[i]);
+end;
+
+destructor TStreamBrowserList.Destroy;
+var
+  i: Integer;
+begin
+  FDict.Free;
+
+  inherited;
+end;
+
+function TStreamBrowserList.GetStream(ID: Cardinal): TStreamBrowserEntry;
+var
+  i: Integer;
+  StartIdx: Integer;
+begin
+  Result := nil;
+
+  if FDict.ContainsKey(ID) then
+    Result := FDict[ID];
 end;
 
 end.

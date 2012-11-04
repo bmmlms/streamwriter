@@ -24,7 +24,7 @@ unit TypeDefs;
 interface
 
 uses
-  Windows, SysUtils;
+  Windows, SysUtils, Classes;
 
 type
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
@@ -35,6 +35,33 @@ type
   // Defines all possible types of lists
   TListType = (ltSave, ltIgnore);
 
+  // Do not change the values' order since the enum is used when saving settings
+  TStreamOpenActions = (oaStart, oaPlay, oaPlayExternal, oaAdd, oaOpenWebsite, oaBlacklist,
+    oaCopy, oaSave, oaSetData, oaRefresh, oaRate1, oaRate2, oaRate3, oaRate4,
+    oaRate5, oaNone);
+
+  TStartStreamingInfo = record
+  public
+    ID, Bitrate: Cardinal;
+    Name, URL, TitlePattern: string;
+    IgnoreTitles: TStringList;
+    constructor Create(ID, Bitrate: Cardinal; Name, URL, TitlePattern: string; IgnoreTitles: TStringList);
+  end;
+  TStartStreamingInfoArray = array of TStartStreamingInfo;
+
 implementation
+
+{ TStartStreamingInfo }
+
+constructor TStartStreamingInfo.Create(ID, Bitrate: Cardinal; Name, URL,
+  TitlePattern: string; IgnoreTitles: TStringList);
+begin
+  Self.ID := ID;
+  Self.Bitrate := Bitrate;
+  Self.Name := Name;
+  Self.URL := Trim(URL);
+  Self.TitlePattern := TitlePattern;
+  Self.IgnoreTitles := IgnoreTitles;
+end;
 
 end.

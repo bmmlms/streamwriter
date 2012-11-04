@@ -313,6 +313,8 @@ type
     procedure tabPlayStarted(Sender: TObject);
 
     procedure tabChartsAddToWishlist(Sender: TObject; List: TStringList);
+    procedure tabChartsAddStreams(Sender: TObject; Info: TStartStreamingInfoArray; Action: TStreamOpenActions);
+    function tabChartsGetIsStreamOnListEvent(Sender: TObject; Stream: TStreamBrowserEntry): Boolean;
 
     procedure mnuMoveToCategory(Sender: TObject);
 
@@ -828,6 +830,8 @@ begin
   tabCharts := TChartsTab.Create(pagMain, FDataLists);
   tabCharts.PageControl := pagMain;
   tabCharts.OnAddToWishlist := tabChartsAddToWishlist;
+  tabCharts.OnAddStreams := tabChartsAddStreams;
+  tabCharts.OnGetIsStreamOnListEvent := tabChartsGetIsStreamOnListEvent;
 
   tabLists := TListsTab.Create(pagMain);
   tabLists.PageControl := pagMain;
@@ -998,13 +1002,24 @@ end;
 procedure TfrmStreamWriterMain.HomeCommStateChanged(Sender: TObject);
 begin
   UpdateStatus;
-  tabClients.SideBar.BrowserView.HomeCommStateChanged(Sender);
   tabCharts.HomeCommStateChanged(Sender);
   if FCommunityLogin <> nil then
     FCommunityLogin.HomeCommStateChanged(Sender);
 
   if (not HomeComm.WasConnected) and HomeComm.Connected then
+  begin
     tmrRecordingsTimer(tmrRecordings);
+
+    if (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or
+        (AppGlobals.LastBrowserUpdate < Now - 15)) or (FDataLists.ReloadServerData) then
+    begin
+      if HomeComm.GetServerData then
+      begin
+         tabCharts.SetState(csLoading); // TODO: was bei error? zeigt das chartstab das an??
+        tabClients.SideBar.BrowserView.StreamTree.SwitchMode(moLoading); // TODO: was bei error? zeigt das chartstab das an?? wird bei error die ansicht wieder aktiv für streams und charts?
+      end;
+    end;
+  end;
 
   HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 end;
@@ -1138,31 +1153,39 @@ var
   Artist, Title, Stream, Filename: string;
   NewCaption: string;
 begin
-  if not AppGlobals.DisplayPlayedSong then
-    Exit;
-
-  if (not (Msg is TPlayingObjectChangedMsg)) and (not (Msg is TPlayingObjectStopped)) then
-    Exit;
-
-  NewCaption := FMainCaption;
-
-  PlayerManager.Players.GetPlayingInfo(Artist, Title, Stream, Filename);
-
-  if Filename <> '' then
+  if (Msg is TPlayingObjectChangedMsg) or (Msg is TPlayingObjectStopped) then
   begin
-    if (Artist <> '') and (Title <> '') then
-      NewCaption := FMainCaption + ' - ' + ShortenString(Artist, 30) + ' - ' + ShortenString(Title, 30)
-    else
-      NewCaption := FMainCaption + ' - ' + ShortenString(RemoveFileExt(ExtractFileName(Filename)), 30);
-  end else if Stream <> '' then
+    if not AppGlobals.DisplayPlayedSong then
+      Exit;
+
+    NewCaption := FMainCaption;
+
+    PlayerManager.Players.GetPlayingInfo(Artist, Title, Stream, Filename);
+
+    if Filename <> '' then
+    begin
+      if (Artist <> '') and (Title <> '') then
+        NewCaption := FMainCaption + ' - ' + ShortenString(Artist, 30) + ' - ' + ShortenString(Title, 30)
+      else
+        NewCaption := FMainCaption + ' - ' + ShortenString(RemoveFileExt(ExtractFileName(Filename)), 30);
+    end else if Stream <> '' then
+    begin
+      if Title <> '' then
+        NewCaption := FMainCaption + ' - ' + ShortenString(Title, 30) + ' - ' + ShortenString(Stream, 30)
+      else
+        NewCaption := FMainCaption + ' - ' + ShortenString(Stream, 30);
+    end;
+
+    Caption := NewCaption;
+  end
+  else if Msg is TRefreshServerData then
   begin
-    if Title <> '' then
-      NewCaption := FMainCaption + ' - ' + ShortenString(Title, 30) + ' - ' + ShortenString(Stream, 30)
-    else
-      NewCaption := FMainCaption + ' - ' + ShortenString(Stream, 30);
+    if HomeComm.GetServerData then
+    begin
+      tabCharts.SetState(csLoading); // TODO: was bei error? zeigt das chartstab das an??
+      tabClients.SideBar.BrowserView.StreamTree.SwitchMode(moLoading); // TODO: was bei error? zeigt das chartstab das an?? wird bei error die ansicht wieder aktiv für streams und charts?
+    end;
   end;
-
-  Caption := NewCaption;
 end;
 
 procedure TfrmStreamWriterMain.mnuCheckUpdateClick(Sender: TObject);
@@ -1283,14 +1306,14 @@ begin
   if Param <> nil then
   begin
     for i := 0 to Param.Values.Count - 1 do
-      tabClients.StartStreaming(0, 0, '', Param.Values[i], '', nil, baStart, nil, amNoWhere);
+      tabClients.StartStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], '', nil), oaStart, nil, amNoWhere);
   end;
 
   Param := CmdLine.GetParam('-p');
   if Param <> nil then
   begin
     for i := 0 to Param.Values.Count - 1 do
-      tabClients.StartStreaming(0, 0, '', Param.Values[i], '', nil, baListen, nil, amNoWhere);
+      tabClients.StartStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], '', nil), oaPlay, nil, amNoWhere);
   end;
 
   Param := CmdLine.GetParam('-wishadd');
@@ -1743,13 +1766,18 @@ procedure TfrmStreamWriterMain.tabClientsTrackAdded(Entry: TStreamEntry;
   Track: TTrackInfo);
 begin
   tabSaved.Tree.AddTrack(Track, False);
-  //tabSaved.Tree.Sort(nil, tabSaved.Tree.Header.SortColumn, tabSaved.Tree.Header.SortDirection);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsTrackRemoved(Entry: TStreamEntry;
   Track: TTrackInfo);
 begin
   tabSaved.Tree.RemoveTrack(Track);
+end;
+
+procedure TfrmStreamWriterMain.tabChartsAddStreams(Sender: TObject;
+  Info: TStartStreamingInfoArray; Action: TStreamOpenActions);
+begin
+  tabClients.StartStreaming(Info, Action, nil, amAddChildLast);
 end;
 
 procedure TfrmStreamWriterMain.tabChartsAddToWishlist(Sender: TObject;
@@ -1782,6 +1810,19 @@ begin
       HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
     end;
   end;
+end;
+
+function TfrmStreamWriterMain.tabChartsGetIsStreamOnListEvent(
+  Sender: TObject; Stream: TStreamBrowserEntry): Boolean;
+var
+  Clients: TClientArray;
+  Client: TICEClient;
+begin
+  Result := False;
+  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, False));
+  for Client in Clients do
+    if (Client.Entry.ID = Stream.ID) or (Client.Entry.Name = Stream.Name) then
+      Exit(True);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsAddTitleToList(Sender: TObject; Client: TICEClient;

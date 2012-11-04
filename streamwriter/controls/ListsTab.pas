@@ -202,7 +202,9 @@ begin
   Caption := 'Lists';
 
   FWishPanel.Setup(Clients, Streams, ltSave, Images, 'Wishlist');
+
   FIgnorePanel.Setup(Clients, Streams, ltIgnore, Images, 'Ignorelist');
+  FIgnorePanel.FTree.TreeOptions.PaintOptions := FIgnorePanel.FTree.TreeOptions.PaintOptions + [toShowRoot, toShowButtons];
 end;
 
 procedure TListsTab.UpdateLists;
