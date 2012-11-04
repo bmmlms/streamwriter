@@ -49,11 +49,12 @@ type
     FItemPlayStream: TMenuItem;
     FItemPlayStreamExternal: TMenuItem;
     FItemAddStream: TMenuItem;
+  protected
+
   public
     constructor Create(AOwner: TComponent); override;
 
     procedure EnableItems(SelectedCount: Integer; AllOnList: Boolean);
-
     property ItemAddToWishlist: TMenuItem read FItemAddToWishlist;
     property ItemEditAndAddToWishlist: TMenuItem read FItemEditAndAddToWishlist;
     property ItemStartStreaming: TMenuItem read FItemStartStreaming;
@@ -293,7 +294,7 @@ procedure TChartsTab.PostTranslate;
 begin
   FChartsTree.FColImages.Text := _('State');
   FChartsTree.FColTitle.Text := _('Name');
-  FChartsTree.FColChance.Text := _('Chance');
+  FChartsTree.FColChance.Text := _('Played last day/week');
 
   FSearchPanel.FLabel.Caption := _('Search:');
   FSearchPanel.FCategories.PostTranslate;
@@ -672,7 +673,10 @@ var
   NodeData: PChartNodeData;
 begin
   NodeData := GetNodeData(Node);
-  Result := StrLIComp(PChar(Text), PChar(NodeData.Chart.Name), Min(Length(Text), Length(NodeData.Chart.Name)));
+  if NodeData.Chart <> nil then
+    Result := StrLIComp(PChar(Text), PChar(NodeData.Chart.Name), Min(Length(Text), Length(NodeData.Chart.Name)))
+  else
+    Result := StrLIComp(PChar(Text), PChar(NodeData.Stream.Stream.Name), Min(Length(Text), Length(NodeData.Stream.Stream.Name)))
 end;
 
 procedure TChartsTree.ExecDefaultAction;
@@ -1048,7 +1052,6 @@ begin
   FItemAddToWishlist := CreateMenuItem;
   FItemAddToWishlist.Caption := '&Add to wishlist';
   FItemAddToWishlist.ImageIndex := 31;
-  FItemAddToWishlist.Default := True;
   Items.Add(FItemAddToWishlist);
 
   FItemEditAndAddToWishlist := CreateMenuItem;

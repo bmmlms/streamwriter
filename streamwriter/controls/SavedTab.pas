@@ -2056,8 +2056,8 @@ begin
       else
         Header.SortDirection := sdAscending;
     end;
-    Sort(nil, HitInfo.Column, Header.SortDirection);
     Sort(FStreamNode, HitInfo.Column, Header.SortDirection);
+    Sort(FFileNode, HitInfo.Column, Header.SortDirection);
   end;
 end;
 
