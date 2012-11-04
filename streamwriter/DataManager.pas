@@ -1588,8 +1588,6 @@ begin
 end;
 
 function TSchedule.GetEndTime(ScheduleStarted: TDateTime): TDateTime;
-var
-  NextDay: Boolean;
 begin
   Result := 0;
   if FActive then
@@ -1919,8 +1917,6 @@ begin
 end;
 
 constructor TChartEntry.Create(Name: string; PlayedLastDay, PlayedLastWeek: Cardinal; Categories: TIntArray; Streams: TList<TChartStream>);
-var
-  C: Extended;
 begin
   inherited Create;
 
@@ -1955,7 +1951,7 @@ end;
 class function TChartEntry.Load(Stream: TExtendedStream;
   Lists: TDataLists; Version: Integer): TChartEntry;
 var
-  i, n, Dummy: Integer;
+  i, Dummy: Integer;
   C: Cardinal;
 begin
   Result := TChartEntry.Create;
@@ -2158,8 +2154,6 @@ begin
 end;
 
 destructor TStreamBrowserList.Destroy;
-var
-  i: Integer;
 begin
   FDict.Free;
 
@@ -2167,9 +2161,6 @@ begin
 end;
 
 function TStreamBrowserList.GetStream(ID: Cardinal): TStreamBrowserEntry;
-var
-  i: Integer;
-  StartIdx: Integer;
 begin
   Result := nil;
 

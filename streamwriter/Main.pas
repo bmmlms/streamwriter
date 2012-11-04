@@ -1294,7 +1294,6 @@ var
   CmdLine: TCommandLine;
 begin
   FreeCmdLine := False;
-  CmdLine := nil;
   if Data <> '' then
   begin
     CmdLine := TCommandLine.Create(Data);

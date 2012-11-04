@@ -245,7 +245,7 @@ end;
 procedure TChartsTab.HomeCommChartsReceived(Sender: TObject; CategoryList: TList<TChartCategory>;
   ChartList: TList<TChartEntry>);
 var
-  i, j, n: Integer;
+  i: Integer;
   Chart: TChartEntry;
 begin
   FChartsTree.Clear;
@@ -463,7 +463,7 @@ begin
   FColImages.Options := FColImages.Options - [coResizable];
 
   FColChance := Header.Columns.Add;
-  FColChance.Text := _('Played last day/last week');
+  FColChance.Text := _('Played last day/week');
   FColChance.Width := 200;
   FColChance.Alignment := taRightJustify;
 
@@ -505,7 +505,6 @@ var
   Chance: Integer;
   R: TRect;
   DrawWidth, MaxWidth, TextWidth: Integer;
-  Text: string;
   NodeData: PChartNodeData;
 begin
   inherited;

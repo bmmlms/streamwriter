@@ -342,7 +342,7 @@ type
 
 const
   STREAMNODETEXT = 'Stream files';
-  FILENODETEXT = 'Recorded files';
+  FILENODETEXT = 'Recorded songs';
 
 implementation
 
@@ -758,7 +758,6 @@ var
   EditTags: TfrmEditTags;
   KnownFiles: TStringList;
   Dlg: TOpenDialog;
-  Files: TStringList;
 begin
   case Action of
     taRefresh:

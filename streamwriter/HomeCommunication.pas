@@ -48,8 +48,6 @@ type
 
   THomeThread = class(TInt32SocketThread)
   private
-    FDataLists: TDataLists;
-
     FAuthAuthenticated: Boolean;
     FIsAdmin: Boolean;
     FCharts: TList<TChartEntry>;

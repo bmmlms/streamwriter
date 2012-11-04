@@ -1150,7 +1150,6 @@ end;
 procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject;
   Genres: TList<TGenre>; Streams: TList<TStreamBrowserEntry>);
 var
-  i: Integer;
   Genre: TGenre;
   Entry, Entry2: TStreamBrowserEntry;
 begin
@@ -1275,7 +1274,6 @@ end;
 procedure TMStreamBrowserView.SortItemClick(Sender: TObject);
 var
   i: Integer;
-  SortDir: TSortDirection;
   LastItem: TMenuItem;
 begin
   LastItem := nil;
@@ -1372,8 +1370,6 @@ end;
 { TMStreamSearch }
 
 constructor TMStreamSearchPanel.Create(AOwner: TComponent);
-var
-  Res: TResourceStream;
 begin
   inherited;
 
