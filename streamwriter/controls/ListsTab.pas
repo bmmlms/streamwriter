@@ -72,6 +72,9 @@ type
   private
     FLabel: TLabel;
     FTopPanel: TPanel;
+    FSearchPanel: TPanel;
+    FSearchLabel: TLabel;
+    FSearchText: TEdit;
     FToolbarPanel: TPanel;
     FAddEdit: TEdit;
     FAddCombo: TComboBox;
@@ -83,7 +86,7 @@ type
     FClients: TClientManager;
     FLists: TDataLists;
 
-    procedure BuildTree;
+    procedure BuildTree(FromFilter: Boolean);
     procedure UpdateButtons;
 
     procedure AddClick(Sender: TObject);
@@ -95,6 +98,7 @@ type
     procedure AddEditKeyPress(Sender: TObject; var Key: Char);
     procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure SearchTextChange(Sender: TObject);
   protected
     procedure Resize; override;
   public
@@ -158,7 +162,7 @@ type
     constructor Create(AOwner: TComponent; Lists: TDataLists; T: TListType; Images: TImageList); reintroduce;
     destructor Destroy; override;
 
-    procedure AddTitle(Title: TTitleInfo; Parent: PVirtualNode; ParentData: PTitleNodeData);
+    procedure AddTitle(Title: TTitleInfo; Parent: PVirtualNode; ParentData: PTitleNodeData; FilterText: string; FromFilter: Boolean);
     procedure RemoveTitle(Title: TTitleInfo);
     procedure RemoveClient(Client: TICEClient);
     procedure SortItems;
@@ -235,17 +239,22 @@ begin
 end;
 
 procedure TListsTab.AddTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
+var
+  FilterText: string;
 begin
   if ListType = ltSave then
   begin
+    // todo: das kommt woanders hier auch nochmal vor. DRY...
+    FilterText := '*' + Trim(LowerCase(FWishPanel.FSearchText.Text)) + '*';
+
     FWishPanel.FTree.AddTitle(Title, FWishPanel.FTree.GetNode(Client),
-      FWishPanel.FTree.GetNodeData(FWishPanel.FTree.GetNode(Client)));
-    //FWishPanel.FTree.SortItems;
+      FWishPanel.FTree.GetNodeData(FWishPanel.FTree.GetNode(Client)), FilterText, True);
   end else
   begin
+    FilterText := '*' + Trim(LowerCase(FIgnorePanel.FSearchText.Text)) + '*';
+
     FIgnorePanel.FTree.AddTitle(Title, FIgnorePanel.FTree.GetNode(Client),
-      FIgnorePanel.FTree.GetNodeData(FIgnorePanel.FTree.GetNode(Client)));
-    //FIgnorePanel.FTree.SortItems;
+      FIgnorePanel.FTree.GetNodeData(FIgnorePanel.FTree.GetNode(Client)), FilterText, True);
   end;
 end;
 
@@ -343,10 +352,14 @@ begin
     FAddEdit.Width := (FToolbarPanel.ClientWidth - FToolbar.Width) div 2 - 4;
     FAddCombo.Width := (FToolbarPanel.ClientWidth - FToolbar.Width) div 2;
   end else
+  begin
     FAddEdit.Width := FToolbarPanel.ClientWidth - FToolbar.Width;
+  end;
 
   FAddCombo.Left := 10;
   FToolbar.Left := ClientWidth + 100;
+
+  FSearchText.Width := FToolbar.Left - FSearchLabel.Width - 6;
 end;
 
 procedure TTitlePanel.ExportClick(Sender: TObject);
@@ -499,7 +512,7 @@ begin
             Title := TTitleInfo.Create(Lst[i]);
             List.Add(Title);
             FTree.AddTitle(Title, FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex])),
-              FTree.GetNodeData(FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]))));
+              FTree.GetNodeData(FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]))), '', False); // TODO: FILTER BERÜCKSICHTIGEN!
           end;
         except
           MsgBox(GetParentForm(Self).Handle, _('The file could not be loaded.'), _('Error'), MB_ICONEXCLAMATION);
@@ -517,20 +530,24 @@ begin
   HomeComm.SetTitleNotifications((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 end;
 
-procedure TTitlePanel.BuildTree;
+procedure TTitlePanel.BuildTree(FromFilter: Boolean);
 var
   Ok: Boolean;
   i, n: Integer;
   Node, ClientNode: PVirtualNode;
   ClientNodeData: PTitleNodeData;
+  FilterText: string;
 begin
+  FilterText := '*' + Trim(LowerCase(FSearchText.Text)) + '*';
+
   FTree.BeginUpdate;
+  FTree.Clear;
   try
     if FList.Count > 0 then
     begin
       ClientNode := FTree.GetNode(nil);
       for i := 0 to FList.Count - 1 do
-        FTree.AddTitle(FList[i], ClientNode, nil);
+        FTree.AddTitle(FList[i], ClientNode, nil, FilterText, FromFilter)
     end;
 
     for i := 0 to FClients.Count - 1 do
@@ -546,10 +563,10 @@ begin
         ClientNodeData := FTree.GetNodeData(ClientNode);
         if FListType = ltSave then
           for n := 0 to FClients[i].Entry.SaveList.Count - 1 do
-            FTree.AddTitle(FClients[i].Entry.SaveList[n], ClientNode, ClientNodeData)
+            FTree.AddTitle(FClients[i].Entry.SaveList[n], ClientNode, ClientNodeData, FilterText, FromFilter)
         else
           for n := 0 to FClients[i].Entry.IgnoreList.Count - 1 do
-            FTree.AddTitle(FClients[i].Entry.IgnoreList[n], ClientNode, ClientNodeData);
+            FTree.AddTitle(FClients[i].Entry.IgnoreList[n], ClientNode, ClientNodeData, FilterText, FromFilter);
       end;
     end;
 
@@ -618,6 +635,11 @@ begin
     end;
 end;
 
+procedure TTitlePanel.SearchTextChange(Sender: TObject);
+begin
+  BuildTree(True);
+end;
+
 procedure TTitlePanel.SelectSavedClick(Sender: TObject);
 var
   i: Integer;
@@ -653,6 +675,28 @@ begin
   FTopPanel.Align := alTop;
   FTopPanel.Padding.Top := 0;
   FTopPanel.Padding.Left := 0;
+
+  FSearchPanel := TPanel.Create(Self);
+  FSearchPanel.Parent := Self;
+  FSearchPanel.BevelOuter := bvNone;
+  FSearchPanel.Align := alTop;
+  FSearchPanel.Padding.Top := 0;
+  FSearchPanel.Padding.Left := 0;
+  FSearchPanel.Height := 24;
+
+  FSearchLabel := TLabel.Create(Self);    // TODO: passt das searchlabel/textfeld breite/position an wenn ich sprache ändere? nein.
+  FSearchLabel.Parent := FSearchPanel;
+  FSearchLabel.Caption := 'Search:';
+  FSearchLabel.Left := 0;
+  FSearchLabel.Top := 0;
+
+  FSearchText := TEdit.Create(Self);
+  FSearchText.Parent := FSearchPanel;
+  FSearchText.Left := FSearchLabel.Left + FSearchLabel.Width + 6;
+  FSearchText.Top := 0;
+  FSearchText.OnChange := SearchTextChange;
+
+  FSearchLabel.Top := (FSearchText.Height div 2) - FSearchLabel.Height div 2;
 
   FLabel := TLabel.Create(Self);
   FLabel.Parent := FTopPanel;
@@ -709,7 +753,7 @@ begin
   FClients := Clients;
   FLists := Lists;
 
-  BuildTree;
+  BuildTree(False);
 
   for i := 0 to FClients.Count - 1 do
     if FClients[i].Entry.Name <> '' then
@@ -938,11 +982,14 @@ end;
 
 { TTitleTree }
 
-procedure TTitleTree.AddTitle(Title: TTitleInfo; Parent: PVirtualNode; ParentData: PTitleNodeData);
+procedure TTitleTree.AddTitle(Title: TTitleInfo; Parent: PVirtualNode; ParentData: PTitleNodeData; FilterText: string; FromFilter: Boolean);
 var
   Node: PVirtualNode;
   NodeData: PTitleNodeData;
 begin
+  if FromFilter and (not Like(LowerCase(Title.Title), FilterText)) then
+    Exit;
+
   Node := AddChild(Parent);
   NodeData := GetNodeData(Node);
   NodeData.Title := Title;
@@ -1060,7 +1107,7 @@ begin
       end;
 
     if not Found then
-      AddTitle(Title, GetNode(Stream), GetNodeData(GetNode(Stream)));
+      AddTitle(Title, GetNode(Stream), GetNodeData(GetNode(Stream)), '', False); // TODO: filter berücksichtigen!
   end;
 end;
 
