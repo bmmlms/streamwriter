@@ -245,13 +245,13 @@ begin
   if ListType = ltSave then
   begin
     // todo: das kommt woanders hier auch nochmal vor. DRY...
-    FilterText := '*' + Trim(LowerCase(FWishPanel.FSearchText.Text)) + '*';
+    FilterText := '*' + StringReplace(Trim(LowerCase(FWishPanel.FSearchText.Text)), ' ', '*', [rfReplaceAll]) + '*';
 
     FWishPanel.FTree.AddTitle(Title, FWishPanel.FTree.GetNode(Client),
       FWishPanel.FTree.GetNodeData(FWishPanel.FTree.GetNode(Client)), FilterText, True);
   end else
   begin
-    FilterText := '*' + Trim(LowerCase(FIgnorePanel.FSearchText.Text)) + '*';
+    FilterText := '*' + StringReplace(Trim(LowerCase(FIgnorePanel.FSearchText.Text)), ' ', '*', [rfReplaceAll]) + '*';
 
     FIgnorePanel.FTree.AddTitle(Title, FIgnorePanel.FTree.GetNode(Client),
       FIgnorePanel.FTree.GetNodeData(FIgnorePanel.FTree.GetNode(Client)), FilterText, True);
@@ -538,7 +538,7 @@ var
   ClientNodeData: PTitleNodeData;
   FilterText: string;
 begin
-  FilterText := '*' + Trim(LowerCase(FSearchText.Text)) + '*';
+  FilterText := '*' + StringReplace(Trim(LowerCase(FSearchText.Text)), ' ', '*', [rfReplaceAll]) + '*';
 
   FTree.BeginUpdate;
   FTree.Clear;
