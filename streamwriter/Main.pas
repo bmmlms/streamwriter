@@ -1671,13 +1671,13 @@ end;
 procedure TfrmStreamWriterMain.tabSavedAddTitleToWishlist(Sender: TObject;
   Data: string);
 begin
-  tabLists.WishPanel.AddEntry(Data, False);
+  tabLists.ListsPanel.AddEntry(Data, False, ltSave);
 end;
 
 procedure TfrmStreamWriterMain.tabSavedAddTitleToIgnorelist(Sender: TObject;
   Data: string);
 begin
-  tabLists.IgnorePanel.AddEntry(Data, False);
+  tabLists.ListsPanel.AddEntry(Data, False, ltIgnore);
 end;
 
 procedure TfrmStreamWriterMain.tabSavedCut(Entry: TStreamEntry;

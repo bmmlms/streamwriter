@@ -33,7 +33,7 @@ type
   TDebugLevels = (dlNormal, dlDebug);
 
   // Defines all possible types of lists
-  TListType = (ltSave, ltIgnore);
+  TListType = (ltSave, ltIgnore, ltAutoDetermine);
 
   // Do not change the values' order since the enum is used when saving settings
   TStreamOpenActions = (oaStart, oaPlay, oaPlayExternal, oaAdd, oaOpenWebsite, oaBlacklist,
