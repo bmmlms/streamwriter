@@ -487,6 +487,7 @@ begin
   FItemEditTags.Enabled := Enable;
   FItemFinalized.Enabled := Enable;
   FItemAddToWishlist.Enabled := Enable;
+  FItemAddToIgnorelist.Enabled := Enable;
   FItemRename.Enabled := Enable;
   FItemRemove.Enabled := Enable;
   FItemRecycle.Enabled := Enable;

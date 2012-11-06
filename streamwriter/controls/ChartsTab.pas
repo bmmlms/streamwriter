@@ -63,18 +63,20 @@ type
     property ItemAddStream: TMenuItem read FItemAddStream;
   end;
 
+  {
   TCategoryCombo = class(TComboBox)
   private
   public
     procedure LoadCategories(Categories: TList<TChartCategory>);
     procedure PostTranslate;
   end;
+  }
 
   TSearchPanel = class(TPanel)
   private
     FLabel: TLabel;
     FSearch: TEdit;
-    FCategories: TCategoryCombo;
+    //FCategories: TCategoryCombo;
     FToolbar: TToolBar;
 
     FButtonReload: TToolButton;
@@ -163,7 +165,7 @@ type
 
     procedure HomeCommChartsReceived(Sender: TObject; CategoryList: TList<TChartCategory>;
       ChartList: TList<TChartEntry>);
-    procedure CategoriesChange(Sender: TObject);
+    //procedure CategoriesChange(Sender: TObject);
     procedure ButtonReloadClick(Sender: TObject);
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
@@ -195,10 +197,12 @@ begin
   MsgBus.SendMessage(TRefreshServerData.Create);
 end;
 
+{
 procedure TChartsTab.CategoriesChange(Sender: TObject);
 begin
   ShowCharts;
 end;
+}
 
 constructor TChartsTab.Create(AOwner: TComponent; Lists: TDataLists);
 begin
@@ -224,7 +228,7 @@ begin
   ShowCloseButton := False;
 
   FSearchPanel.FSearch.OnChange := SearchChange;
-  FSearchPanel.FCategories.OnChange := CategoriesChange;
+  //FSearchPanel.FCategories.OnChange := CategoriesChange;
 end;
 
 destructor TChartsTab.Destroy;
@@ -277,7 +281,7 @@ begin
 
   SetState(csNormal);
 
-  FSearchPanel.FCategories.LoadCategories(FLists.ChartCategoryList);
+  //FSearchPanel.FCategories.LoadCategories(FLists.ChartCategoryList);
 
   ShowCharts;
 end;
@@ -297,7 +301,7 @@ begin
   FChartsTree.FColChance.Text := _('Played last day/week');
 
   FSearchPanel.FLabel.Caption := _('Search:');
-  FSearchPanel.FCategories.PostTranslate;
+  //FSearchPanel.FCategories.PostTranslate;
 
   FResultLabel.Caption := Format(_(TEXT_RESULTS), [FChartsTree.RootNodeCount]);
 end;
@@ -321,7 +325,7 @@ begin
     FChartsTree.Invalidate;
 
     FSearchPanel.FSearch.Enabled := State = csNormal;
-    FSearchPanel.FCategories.Enabled := State = csNormal;
+    //FSearchPanel.FCategories.Enabled := State = csNormal;
     FSearchPanel.FToolbar.Enabled := State = csNormal;
 
     FSearchPanel.FButtonReload.Enabled := State = csNormal;
@@ -347,8 +351,8 @@ begin
 
   if (FChartsTree.FState = csNormal) and (FLists.ChartList.Count > 0) and (FLists.CategoryList.Count > 0) then
   begin
-    FSearchPanel.FCategories.LoadCategories(FLists.ChartCategoryList);
-    FSearchPanel.FCategories.ItemIndex := 0;
+    //FSearchPanel.FCategories.LoadCategories(FLists.ChartCategoryList);
+    //FSearchPanel.FCategories.ItemIndex := 0;
     ShowCharts;
   end;
 end;
@@ -364,11 +368,11 @@ var
   Hash: Cardinal;
   Chars: Integer;
 
-  CatMatch: Boolean;
+  //CatMatch: Boolean;
   SearchMatch: Boolean;
 begin
-  if FSearchPanel.FCategories.ItemIndex = -1 then
-    Exit;
+  //if FSearchPanel.FCategories.ItemIndex = -1 then
+  //  Exit;
 
   P := BuildPattern(FSearchPanel.FSearch.Text, Hash, Chars, False);
 
@@ -376,10 +380,11 @@ begin
     FChartsTree.BeginUpdate;
     FChartsTree.Clear;
 
-    CatData := TChartCategory(FSearchPanel.FCategories.Items.Objects[FSearchPanel.FCategories.ItemIndex]);
+    //CatData := TChartCategory(FSearchPanel.FCategories.Items.Objects[FSearchPanel.FCategories.ItemIndex]);
 
     for i := 0 to FLists.ChartList.Count - 1 do
     begin
+      {
       CatMatch := False;
 
       if CatData = nil then
@@ -394,10 +399,11 @@ begin
             Break;
           end;
       end;
+      }
 
       SearchMatch := Like(FLists.ChartList[i].Name, P);
 
-      if CatMatch and SearchMatch then
+      if {CatMatch and} SearchMatch then
       begin
         Node := FChartsTree.AddChild(nil);
         NodeData := FChartsTree.GetNodeData(Node);
@@ -997,9 +1003,9 @@ begin
   FSearch := TEdit.Create(Self);
   FSearch.Parent := Self;
 
-  FCategories := TCategoryCombo.Create(Self);
-  FCategories.Style := csDropDownList;
-  FCategories.Parent := Self;
+  //FCategories := TCategoryCombo.Create(Self);
+  //FCategories.Style := csDropDownList;
+  //FCategories.Parent := Self;
 
   FToolbar := TToolBar.Create(Self);
   FToolbar.Parent := Self;
@@ -1015,15 +1021,18 @@ end;
 
 procedure TSearchPanel.Setup(Images: TImageList);
 begin
-  FCategories.Left := 0;
-  FCategories.Top := 2;
+  //FCategories.Left := 0;
+  //FCategories.Top := 2;
 
-  FLabel.Top := 7;
-  FLabel.Left := FCategories.Left + FCategories.Width + 8;
+  //FLabel.Top := 7;
+  FLabel.Left := 0; //FCategories.Left + FCategories.Width + 8;
 
   FSearch.Width := 200;
-  FSearch.Top := FCategories.Top;
+  FSearch.Top := 2; // FCategories.Top;
   FSearch.Left := FLabel.Left + FLabel.Width + 4;
+
+  FLabel.Top := FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2;
+
 
   ClientHeight := FSearch.Top + 6 + FSearch.Height;
 
@@ -1105,6 +1114,7 @@ end;
 
 { TCategoryCombo }
 
+{
 procedure TCategoryCombo.LoadCategories(Categories: TList<TChartCategory>);
 var
   i: Integer;
@@ -1138,6 +1148,7 @@ begin
     Application.ProcessMessages;
   end;
 end;
+}
 
 end.
 

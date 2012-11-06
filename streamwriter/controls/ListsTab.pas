@@ -75,7 +75,6 @@ type
 
   TTitlePanel = class(TPanel)
   private
-    FLabel: TLabel;
     FTopPanel: TPanel;
     FSearchPanel: TPanel;
     FSearchLabel: TLabel;
@@ -92,6 +91,7 @@ type
     function CreateFilterText: string;
     procedure BuildTree(FromFilter: Boolean);
     procedure UpdateButtons;
+    procedure FillClientCombo;
 
     procedure AddClick(Sender: TObject);
     procedure RemoveClick(Sender: TObject);
@@ -109,7 +109,7 @@ type
     function AddEntry(Text: string; ShowMessages: Boolean; ListType: TListType): Boolean;
     procedure ClientAdded(Client: TICEClient);
     procedure ClientRemoved(Client: TICEClient);
-    procedure Setup(Clients: TClientManager; Lists: TDataLists; Images: TImageList; Title: string);
+    procedure Setup(Clients: TClientManager; Lists: TDataLists; Images: TImageList);
     procedure UpdateList;
   end;
 
@@ -174,6 +174,10 @@ type
     function NodesToData(Nodes: TNodeArray): TTitleDataArray;
   end;
 
+const
+  WISHTEXT = 'Wishlist';
+  IGNORETEXT = 'Ignorelist';
+  
 implementation
 
 { TListsTab }
@@ -200,7 +204,7 @@ procedure TListsTab.Setup(Clients: TClientManager; Streams: TDataLists; Images: 
 begin
   Caption := 'Lists';
 
-  FListsPanel.Setup(Clients, Streams, Images, 'Wishlist/Ignorelist');
+  FListsPanel.Setup(Clients, Streams, Images);
 end;
 
 procedure TListsTab.UpdateLists;
@@ -221,7 +225,6 @@ end;
 procedure TListsTab.RemoveTitle(Client: TICEClient; ListType: TListType;
   Title: TTitleInfo);
 begin
-  // TODO: testen.
   FListsPanel.FTree.RemoveTitle(Title);
 end;
 
@@ -229,8 +232,12 @@ procedure TListsTab.AddTitle(Client: TICEClient; ListType: TListType; Title: TTi
 var
   FilterText: string;
 begin
-  // TODO: testen.
-  FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.GetNode(Client), FListsPanel.CreateFilterText, True);
+  if ListType = ltSave then
+    FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.FWishNode, FListsPanel.CreateFilterText, True)
+  else if Client <> nil then
+    FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.GetNode(Client), FListsPanel.CreateFilterText, True)
+  else
+    FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.FIgnoreNode, FListsPanel.CreateFilterText, True);
 end;
 
 { TTitlePanel }
@@ -255,7 +262,6 @@ begin
     Node := FTree.GetFirst;
     while Node <> nil do
     begin
-      // TODO: Hier brauche ich was ordentliches. Das hier wird stream-ignore-titel nicht finden denke ich.
       if FTree.Selected[Node] then
       begin
         SubNode := FTree.GetFirstChild(Node);
@@ -299,7 +305,7 @@ begin
     begin
       DeleteNode := nil;
       NodeData := FTree.GetNodeData(Node);
-      if (FTree.GetFirstChild(Node) = nil) and (NodeData.Title = nil) then
+      if (FTree.GetFirstChild(Node) = nil) and (NodeData.Title = nil) and (Node <> FTree.FWishNode) and (Node <> FTree.FIgnoreNode) then
         DeleteNode := Node;
       Node := FTree.GetPrevious(Node);
       if DeleteNode <> nil then
@@ -394,6 +400,36 @@ begin
   finally
     Dlg.Free;
   end;
+end;
+
+procedure TTitlePanel.FillClientCombo;
+var
+  i: Integer;
+  O: TObject;
+begin
+  O := nil;
+  if FAddCombo.ItemIndex > -1 then
+    O := FAddCombo.Items.Objects[FAddCombo.ItemIndex];
+
+  FAddCombo.Clear;
+
+  for i := 0 to FClients.Count - 1 do
+    if FClients[i].Entry.Name <> '' then
+      FAddCombo.AddItem('  ' + FClients[i].Entry.Name, FClients[i]);
+  FAddCombo.Sorted := True;
+  FAddCombo.Items.InsertObject(0, _('Ignorelist'), FLists.IgnoreList);
+  FAddCombo.Items.InsertObject(0, _('Wishlist'), FLists.SaveList);
+
+  if O <> nil then
+  begin
+    for i := 0 to FAddCombo.Items.Count - 1 do
+      if FAddCombo.Items.Objects[i] = O then
+      begin
+        FAddCombo.ItemIndex := i;
+        Break;
+      end;
+  end else
+    FAddCombo.ItemIndex := 0;
 end;
 
 procedure TTitlePanel.ImportClick(Sender: TObject);
@@ -569,29 +605,7 @@ begin
     if FAddCombo.Items.Objects[i] = Client then
       Exit;
 
-  O := FAddCombo.Items.Objects[FAddCombo.ItemIndex];
-
-  // Unbedingt mit InsertObject. Das normale Add hat das neue Teil teilweise mit Index 0 geadded.
-  FAddCombo.Items.InsertObject(FAddCombo.Items.Count, Client.Entry.Name, Client);
-      // todo: prüfen ob das hier so noch funzt. der code ist auch im konstruktor, also evtl auslagern in methode oder so.
-  FAddCombo.Items.Delete(0);
-  FAddCombo.Sorted := False;
-  FAddCombo.Sorted := True;
-  FAddCombo.Items.InsertObject(0, _('Global'), nil);
-
-  for i := 0 to FAddCombo.Items.Count - 1 do
-    if FAddCombo.Items.Objects[i] = O then
-    begin
-      FAddCombo.ItemIndex := i;
-      Break;
-    end;
-
-  { TODO
-  if not (((FListType = ltSave) and (Client.Entry.SaveList.Count = 0)) or
-         ((FListType = ltIgnore) and (Client.Entry.IgnoreList.Count = 0)))
-  then
-    FTree.GetNode(Client);
-    }
+  FillClientCombo;
 end;
 
 procedure TTitlePanel.ClientRemoved(Client: TICEClient);
@@ -647,7 +661,7 @@ begin
   FTree.SetFocus;
 end;
 
-procedure TTitlePanel.Setup(Clients: TClientManager; Lists: TDataLists; Images: TImageList; Title: string);
+procedure TTitlePanel.Setup(Clients: TClientManager; Lists: TDataLists; Images: TImageList);
 var
   i: Integer;
 begin
@@ -679,11 +693,6 @@ begin
   FSearchText.OnChange := SearchTextChange;
 
   FSearchLabel.Top := (FSearchText.Height div 2) - FSearchLabel.Height div 2;
-
-  FLabel := TLabel.Create(Self);
-  FLabel.Parent := FTopPanel;
-  FLabel.Caption := Title;
-  FLabel.Align := alTop;
 
   FToolbarPanel := TPanel.Create(Self);
   FToolbarPanel.Parent := FTopPanel;
@@ -718,7 +727,7 @@ begin
   FToolbar.FSelectSaved.OnClick := SelectSavedClick;
   FToolbar.FRename.OnClick := RenameClick;
 
-  FTopPanel.Height := FLabel.Height + FToolbarPanel.Height + 2;
+  FTopPanel.Height := FToolbarPanel.Height + 2;
 
   FTree := TTitleTree.Create(Self, Lists, Images);
   FTree.Parent := Self;
@@ -730,14 +739,7 @@ begin
   FLists := Lists;
 
   BuildTree(False);
-
-  for i := 0 to FClients.Count - 1 do
-    if FClients[i].Entry.Name <> '' then
-      FAddCombo.AddItem('  ' + FClients[i].Entry.Name, FClients[i]);
-  FAddCombo.Sorted := True;
-  FAddCombo.Items.InsertObject(0, _('Ignorelist'), Lists.IgnoreList);
-  FAddCombo.Items.InsertObject(0, _('Wishlist'), Lists.SaveList);
-  FAddCombo.ItemIndex := 0;
+  FillClientCombo;
 
   BevelOuter := bvNone;
 
@@ -811,7 +813,10 @@ begin
     begin
       NodeData := FTree.GetNodeData(Node);
       NodeData.Title := Title;
-      NodeData.Stream := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]);
+
+      if (List <> FLists.SaveList) and (List <> FLists.IgnoreList) then
+        NodeData.Stream := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]);
+
       if Node.Parent.ChildCount = 1 then
         FTree.Expanded[Node.Parent] := True;
     end;
@@ -833,28 +838,6 @@ var
   NodeData: PTitleNodeData;
 begin
   FToolbar.FRemove.Enabled := FTree.SelectedCount > 0;
-
-  Node := FTree.GetFirstSelected;
-  if Node <> nil then
-  begin
-    NodeData := FTree.GetNodeData(Node);
-
-    if NodeData.Stream = nil then
-    begin
-      FAddCombo.ItemIndex := 0;
-    end else
-    begin
-      for i := 0 to FAddCombo.Items.Count - 1 do
-        if FAddCombo.Items.Objects[i] = NodeData.Stream then
-        begin
-          FAddCombo.ItemIndex := i;  // TODO: das muss auch für die anderen kategorien funzen. wish, ignore, einzelne streams.
-          Break;
-        end;
-    end;
-  end else
-  begin
-    FAddCombo.ItemIndex := 0;
-  end;
 
   UpdateButtons;
 end;
@@ -920,7 +903,7 @@ end;
 
 procedure TTitleToolbar.EnableItems(Enable: Boolean);
 begin
-
+  // TODO: leer???
 end;
 
 procedure TTitleToolbar.Setup;
@@ -970,8 +953,9 @@ end;
 
 function TTitleTree.AddTitle(Title: TTitleInfo; Parent: PVirtualNode; FilterText: string; FromFilter: Boolean): PVirtualNode;
 var
-  Node: PVirtualNode;
-  NodeData, ParentData: PTitleNodeData;
+  AttachMode: TVTNodeAttachMode;
+  Node, SearchNode, LastFoundChild: PVirtualNode;
+  NodeData, SearchNodeData, ParentData: PTitleNodeData;
 begin
   Result := nil;
 
@@ -988,6 +972,16 @@ begin
   if Parent <> nil then
   begin
     ParentData := GetNodeData(Parent);
+
+    // Parents für ein neues Kind aufklappen.
+    if ((Parent = FWishNode) or (Parent = FIgnoreNode)) and (Parent.ChildCount = 1) then
+      Expanded[Parent] := True;
+    if (ParentData.Stream <> nil) and (Parent.ChildCount = 1) and (Parent.Parent.ChildCount = 1) then
+    begin
+      Expanded[Parent.Parent] := True;
+    end;  
+
+    
     NodeData.Stream := ParentData.Stream;
 
     case ParentData.NodeType of
@@ -997,7 +991,37 @@ begin
         if NodeData.Stream <> nil then
           NodeData.NodeType := ntStream
         else
+        begin
+          // Die Node ans Ende schieben, aber vor den ersten Stream
+
+          AttachMode := amInsertAfter;
+          LastFoundChild := nil;
+          
+          SearchNode := GetLastChild(Parent);
+          while SearchNode <> nil do
+          begin         
+            if SearchNode = Node then
+            begin
+              SearchNode := GetPreviousSibling(SearchNode);
+              Continue;
+            end;
+            
+            SearchNodeData := GetNodeData(SearchNode);
+            if SearchNodeData.Stream = nil then
+            begin
+              LastFoundChild := SearchNode;
+              AttachMode := amInsertAfter;
+              Break;
+            end else
+              AttachMode := amInsertBefore;
+            LastFoundChild := SearchNode;
+            SearchNode := GetPreviousSibling(SearchNode);
+          end;
+          if LastFoundChild <> nil then
+            MoveTo(Node, LastFoundChild, AttachMode, False);
+          
           NodeData.NodeType := ntIgnore;
+        end;
       ntStream:
         NodeData.NodeType := ntIgnore;
     end;
@@ -1123,6 +1147,9 @@ var
   Node: PVirtualNode;
   NodeData: PTitleNodeData;
 begin
+  if Stream = nil then
+    Exit(nil);
+
   Node := GetFirst;
   while Node <> nil do
   begin
@@ -1157,7 +1184,7 @@ begin
       Continue;
     end;
 
-    if ((NodeTypes = ntStream) and ((NodeData.Stream = nil) or (NodeData.Title = nil))) or
+    if ((NodeTypes = ntStream) and ((NodeData.Stream = nil) and (NodeData.Title <> nil))) or
        ((NodeTypes = ntWish) and (NodeData.NodeType <> ntWish)) or
        ((NodeTypes = ntIgnore) and (NodeData.NodeType <> ntIgnore)) then
     begin
@@ -1255,9 +1282,9 @@ begin
         begin
           case NodeData.NodeType of
             ntWishParent:
-              Text := _('Wishlist');
+              Text := _(WISHTEXT);
             ntIgnoreParent:
-              Text := _('Ignorelist');
+              Text := _(IGNORETEXT);
             ntStream:
               Text := NodeData.Stream.Entry.Name;
             ntWish, ntIgnore:
@@ -1327,7 +1354,11 @@ var
   s: string;
   NodeData: PTitleNodeData;
 begin
-  // TODO: alle überschriebenen sachen prüfen. das hier wird z.b. crashen denke ich.
+  if Node = FWishNode then
+    Exit(StrLIComp(PChar(s), PChar(_(WISHTEXT)), Min(Length(s), Length(_(WISHTEXT)))));
+  if Node = FIgnoreNode then
+    Exit(StrLIComp(PChar(s), PChar(_(IGNORETEXT)), Min(Length(s), Length(_(IGNORETEXT)))));  
+
   Result := 0;
   S := Text;
   NodeData := GetNodeData(Node);
@@ -1336,10 +1367,7 @@ begin
   if NodeData.Title <> nil then
     Result := StrLIComp(PChar(s), PChar(NodeData.Title.Title), Min(Length(s), Length(NodeData.Title.Title)))
   else
-    if NodeData.Stream <> nil then
-      Result := StrLIComp(PChar(s), PChar(NodeData.Stream.Entry.Name), Min(Length(s), Length(NodeData.Stream.Entry.Name)))
-    else
-      Result := StrLIComp(PChar(s), PChar(_('Global')), Min(Length(s), Length(_('Global'))));
+    Result := StrLIComp(PChar(s), PChar(NodeData.Stream.Entry.Name), Min(Length(s), Length(NodeData.Stream.Entry.Name)))
 end;
 
 procedure TTitleTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex;
@@ -1395,6 +1423,16 @@ var
 begin
   Result := 0;
 
+{
+  if Node1 = FWishNode then
+    Exit(-1)
+  else if Node1 = FIgnoreNode then
+    Exit(1);
+}
+  
+  if (Node1 = FWishNode) or (Node2 = FIgnoreNode) then
+    Exit(0);
+
   Data1 := GetNodeData(Node1);
   Data2 := GetNodeData(Node2);
 
@@ -1414,12 +1452,22 @@ begin
         Result := CmpC(Data1.Title.Index, Data2.Title.Index);
       end;
     0:
-      if (Data1.Title <> nil) and (Data2.Title <> nil) then
-        Result := CompareText(Data1.Title.Title, Data2.Title.Title)
-      else
-        Result := CompareText(Data1.Stream.Entry.Name, Data2.Stream.Entry.Name);
+      begin
+        if (Data1.Title <> nil) and (Data2.Title <> nil) then
+          Result := CompareText(Data1.Title.Title, Data2.Title.Title)
+        else if (Data1.NodeType = ntStream) and (Data2.NodeType = ntStream) then
+          Result := CompareText(Data1.Stream.Entry.Name, Data2.Stream.Entry.Name)
+        else if (Data1.Title <> nil) and (Data2.Stream = nil) then
+          Exit(1)
+        else if (Data1.Title = nil) and (Data2.Stream <> nil) then
+          Exit(-1);
+      end;
     1:
-      if (Data1.Title <> nil) and (Data2.Title <> nil) then
+      if Node1 = FWishNode then                                
+        Result := 1
+      else if Node1 = FIgnoreNode then
+        Result := -1    
+      else if (Data1.Title <> nil) and (Data2.Title <> nil) then
         Result := CmpTime(Data1.Title.Added, Data2.Title.Added)
       else
         Result := 0;

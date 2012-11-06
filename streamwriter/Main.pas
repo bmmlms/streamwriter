@@ -1845,7 +1845,6 @@ begin
     else
       List := Client.Entry.IgnoreList;
 
-
   Pattern := BuildPattern(Title, Hash, NumChars, True);
   if NumChars > 3 then
   begin
