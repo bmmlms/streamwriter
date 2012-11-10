@@ -91,7 +91,6 @@ type
     FLists: TDataLists;
     FFilterText: string;
 
-//    function CreateFilterText: string;
     procedure BuildTree(FromFilter: Boolean);
     procedure UpdateButtons;
     procedure FillClientCombo;
