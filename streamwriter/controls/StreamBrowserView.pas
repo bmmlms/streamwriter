@@ -32,7 +32,7 @@ uses
   Generics.Collections, TypeDefs, MessageBus, AppMessages;
 
 type
-  TModes = (moShow, moLoading);  // TODO: nen moError wie bei den charts wär cool.
+  TModes = (moShow, moLoading, moError);
 
   TMStreamTree = class;
 
@@ -104,6 +104,7 @@ type
     FStreamTree: TMStreamTree;
     FCountLabel: TLabel;
     FDataLists: TDataLists;
+    FMode: TModes;
 
     FSelectedSortType: TSortTypes;
 
@@ -115,7 +116,6 @@ type
     procedure SearchEditChange(Sender: TObject);
     procedure SortItemClick(Sender: TObject);
 
-    procedure SwitchMode(Mode: TModes);
     procedure BuildTree(AlwaysBuild: Boolean);
     procedure BuildGenres;
     procedure SortTree;
@@ -131,7 +131,9 @@ type
     procedure Setup;
     procedure Translate;
     procedure RefreshStreams;
+    procedure SwitchMode(Mode: TModes);
 
+    property Mode: TModes read FMode;
     property StreamTree: TMStreamTree read FStreamTree;
   end;
 
@@ -321,6 +323,7 @@ begin
 
   FItemOpen := FPopupMenu.CreateMenuItem;
   FItemOpen.Caption := 'P&lay stream (external player)';
+  FItemOpen.ImageIndex := 82;
   FItemOpen.OnClick := PopupMenuClick;
   FPopupMenu.Items.Add(FItemOpen);
 
@@ -662,6 +665,19 @@ var
   R: TRect;
 begin
   inherited;
+
+  if FMode = moError then
+  begin
+    TmpText := _('No connection to server.');
+    GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
+
+    R := ClientRect;
+    R.Left := (R.Right div 2) - (Size.cx div 2) - 4;
+    R.Top := (R.Bottom div 2) - (Size.cy div 2);
+
+    DrawText(Canvas.Handle, PChar(TmpText), Length(TmpText), R, 0);
+  end;
+
   if (FMode = moLoading) and (RootNodeCount = 0) then
   begin
     TmpText := _('Loading streams');
@@ -1006,12 +1022,12 @@ procedure TMStreamTree.SwitchMode(Mode: TModes);
 begin
   Enabled := Mode = moShow;
 
+  FTimer.Enabled := False;
   if Mode = moLoading then
   begin
     Clear;
 
     FDots := '';
-    FTimer.Enabled := False;
     FTimer.Enabled := True;
   end;
 
@@ -1330,6 +1346,8 @@ begin
   //FSearch.FSearchButton.Enabled := Mode = moShow;
 
   FCountLabel.Enabled := Mode = moShow;
+
+  FMode := Mode;
 
   FStreamTree.SwitchMode(Mode);
 end;

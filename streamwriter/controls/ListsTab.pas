@@ -48,6 +48,9 @@ type
   private
     FRemove: TMenuItem;
     FRename: TMenuItem;
+    FSelectSaved: TMenuItem;
+    FExport: TMenuItem;
+    FImport: TMenuItem;
   protected
   public
     constructor Create(AOwner: TComponent); override;
@@ -68,8 +71,6 @@ type
   public
     constructor Create(AOwner: TComponent); override;
 
-    procedure EnableItems(Enable: Boolean);
-
     procedure Setup;
   end;
 
@@ -80,6 +81,7 @@ type
     FSearchLabel: TLabel;
     FSearchText: TEdit;
     FToolbarPanel: TPanel;
+    FAddLabel: TLabel;
     FAddEdit: TEdit;
     FAddCombo: TComboBox;
     FToolbar: TTitleToolbar;
@@ -87,8 +89,9 @@ type
 
     FClients: TClientManager;
     FLists: TDataLists;
+    FFilterText: string;
 
-    function CreateFilterText: string;
+//    function CreateFilterText: string;
     procedure BuildTree(FromFilter: Boolean);
     procedure UpdateButtons;
     procedure FillClientCombo;
@@ -106,6 +109,7 @@ type
   protected
     procedure Resize; override;
   public
+    procedure PostTranslate;
     function AddEntry(Text: string; ShowMessages: Boolean; ListType: TListType): Boolean;
     procedure ClientAdded(Client: TICEClient);
     procedure ClientRemoved(Client: TICEClient);
@@ -129,6 +133,7 @@ type
     procedure RemoveClient(Client: TICEClient);
 
     procedure UpdateLists;
+    procedure PostTranslate;
 
     property ListsPanel: TTitlePanel read FListsPanel;
   end;
@@ -194,6 +199,11 @@ begin
   FListsPanel.Align := alClient;
 end;
 
+procedure TListsTab.PostTranslate;
+begin
+  FListsPanel.PostTranslate;
+end;
+
 procedure TListsTab.Resize;
 begin
   inherited;
@@ -229,15 +239,13 @@ begin
 end;
 
 procedure TListsTab.AddTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
-var
-  FilterText: string;
 begin
   if ListType = ltSave then
-    FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.FWishNode, FListsPanel.CreateFilterText, True)
+    FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.FWishNode, FListsPanel.FFilterText, True)
   else if Client <> nil then
-    FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.GetNode(Client), FListsPanel.CreateFilterText, True)
+    FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.GetNode(Client), FListsPanel.FFilterText, True)
   else
-    FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.FIgnoreNode, FListsPanel.CreateFilterText, True);
+    FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.FIgnoreNode, FListsPanel.FFilterText, True);
 end;
 
 { TTitlePanel }
@@ -329,19 +337,9 @@ procedure TTitlePanel.Resize;
 begin
   inherited;
 
-  if FAddCombo.Visible then
-  begin
-    FAddEdit.Width := (FToolbarPanel.ClientWidth - FToolbar.Width) div 2 - 4;
-    FAddCombo.Width := (FToolbarPanel.ClientWidth - FToolbar.Width) div 2;
-  end else
-  begin
-    FAddEdit.Width := FToolbarPanel.ClientWidth - FToolbar.Width;
-  end;
+  FAddCombo.Width := (FToolbarPanel.ClientWidth - FToolbar.Width - FAddEdit.Width - FAddEdit.Left) - 6;
 
-  FAddCombo.Left := 10;
   FToolbar.Left := ClientWidth + 100;
-
-  FSearchText.Width := FToolbar.Left - FSearchLabel.Width - 6;
 end;
 
 procedure TTitlePanel.ExportClick(Sender: TObject);
@@ -443,8 +441,19 @@ var
   Lst: TStringList;
   Title: TTitleInfo;
   List: TTitleList;
+  ParentNode: PVirtualNode;
 begin
-  { // TODO
+  if Length(FTree.GetNodes(ntWishParent, True)) = 1 then
+  begin
+    ParentNode := FTree.FWishNode;
+    List := FLists.SaveList;
+  end else if Length(FTree.GetNodes(ntIgnoreParent, True)) = 1 then
+  begin
+    ParentNode := FTree.FIgnoreNode;
+    List := FLists.IgnoreList;
+  end else
+    Exit;
+
   Dlg := TOpenDialog.Create(Self);
   try
     Dlg.Filter := _('All supported types') + ' (*.txt, *.m3u, *.pls)|*.txt;*.m3u;*.pls|' +  _('Text files') + ' (*.txt)|*.txt|' + _('M3U playlists') + ' (*.m3u)|*.m3u|' + _('PLS playlists') + ' (*.pls)|*.pls';
@@ -500,17 +509,6 @@ begin
             if NumChars <= 3 then
               Continue;
 
-            if FAddCombo.Items.Objects[FAddCombo.ItemIndex] = nil then
-              if FListType = ltSave then
-                List := FLists.SaveList
-              else
-                List := FLists.IgnoreList
-            else
-              if FListType = ltSave then
-                List := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]).Entry.SaveList
-              else
-                List := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]).Entry.IgnoreList;
-
             Exists := False;
             for n := 0 to List.Count - 1 do
               if List[n].Hash = Hash then
@@ -524,8 +522,7 @@ begin
 
             Title := TTitleInfo.Create(Lst[i]);
             List.Add(Title);
-            FTree.AddTitle(Title, FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex])),
-              FTree.GetNodeData(FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]))), '', False); // TODO: FILTER BERÜCKSICHTIGEN!
+            FTree.AddTitle(Title, ParentNode, FFilterText, True);
           end;
         except
           MsgBox(GetParentForm(Self).Handle, _('The file could not be loaded.'), _('Error'), MB_ICONEXCLAMATION);
@@ -539,10 +536,19 @@ begin
   end;
 
   HomeComm.SetTitleNotifications((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
-  }
 end;
 
-// TODO: von ner alten version updaten die auch stream-ignore-lists hat einige. wird passig angezeigt?
+procedure TTitlePanel.PostTranslate;
+begin
+  FSearchText.Left := Max(FAddLabel.Width, FSearchLabel.Width) + 4;
+  FAddEdit.Left := Max(FAddLabel.Width, FSearchLabel.Width) + 4;
+  FAddCombo.Left := FAddEdit.Left + FAddEdit.Width + 4;
+  FSearchText.Width := FAddEdit.Width;
+
+  // Damit die ComboBox auch wieder passig wird von der Breite her
+  Resize;
+end;
+
 procedure TTitlePanel.BuildTree(FromFilter: Boolean);
 var
   Ok: Boolean;
@@ -563,10 +569,10 @@ begin
     NodeData.NodeType := ntIgnoreParent;
 
     for i := 0 to FLists.SaveList.Count - 1 do
-      FTree.AddTitle(FLists.SaveList[i], FTree.FWishNode, CreateFilterText, FromFilter);
+      FTree.AddTitle(FLists.SaveList[i], FTree.FWishNode, FFilterText, FromFilter);
 
     for i := 0 to FLists.IgnoreList.Count - 1 do
-      FTree.AddTitle(FLists.IgnoreList[i], FTree.FIgnoreNode, CreateFilterText, FromFilter);
+      FTree.AddTitle(FLists.IgnoreList[i], FTree.FIgnoreNode, FFilterText, FromFilter);
 
     for i := 0 to FClients.Count - 1 do
     begin
@@ -574,7 +580,7 @@ begin
       begin
         ClientNode := FTree.GetNode(FClients[i]);
         for n := 0 to FClients[i].Entry.IgnoreList.Count - 1 do
-          FTree.AddTitle(FClients[i].Entry.IgnoreList[n], ClientNode, CreateFilterText, FromFilter);
+          FTree.AddTitle(FClients[i].Entry.IgnoreList[n], ClientNode, FFilterText, FromFilter);
       end;
     end;
 
@@ -588,7 +594,8 @@ begin
     FTree.EndUpdate;
   end;
 
-  FTree.Header.SortColumn := -1;
+  if not FromFilter then
+    FTree.Header.SortColumn := -1;
 
   FTree.SortItems;
 end;
@@ -623,16 +630,13 @@ begin
     end;
 end;
 
-function TTitlePanel.CreateFilterText: string;
-begin
-  if Trim(LowerCase(FSearchText.Text)) <> '' then
-    Result := '*' + StringReplace(Trim(LowerCase(FSearchText.Text)), ' ', '*', [rfReplaceAll]) + '*'
-  else
-    Result := '';
-end;
-
 procedure TTitlePanel.SearchTextChange(Sender: TObject);
+var
+  Hash: Cardinal;
+  NumChars: Integer;
+  FilterText: string;
 begin
+  FFilterText := BuildPattern(FSearchText.Text, Hash, NumChars, False);
   BuildTree(True);
 end;
 
@@ -647,6 +651,12 @@ begin
   begin
     FTree.Selected[Node] := False;
     NodeData := FTree.GetNodeData(Node);
+
+    if NodeData.NodeType <> ntWish then
+    begin
+      Node := FTree.GetNext(Node);
+      Continue;
+    end;
 
     for i := 0 to FLists.TrackList.Count - 1 do
     begin
@@ -669,18 +679,14 @@ begin
   FTopPanel.Parent := Self;
   FTopPanel.BevelOuter := bvNone;
   FTopPanel.Align := alTop;
-  FTopPanel.Padding.Top := 0;
-  FTopPanel.Padding.Left := 0;
 
   FSearchPanel := TPanel.Create(Self);
   FSearchPanel.Parent := Self;
   FSearchPanel.BevelOuter := bvNone;
   FSearchPanel.Align := alTop;
-  FSearchPanel.Padding.Top := 0;
-  FSearchPanel.Padding.Left := 0;
   FSearchPanel.Height := 24;
 
-  FSearchLabel := TLabel.Create(Self);    // TODO: passt das searchlabel/textfeld breite/position an wenn ich sprache ändere? nein.
+  FSearchLabel := TLabel.Create(Self);
   FSearchLabel.Parent := FSearchPanel;
   FSearchLabel.Caption := 'Search:';
   FSearchLabel.Left := 0;
@@ -688,35 +694,39 @@ begin
 
   FSearchText := TEdit.Create(Self);
   FSearchText.Parent := FSearchPanel;
-  FSearchText.Left := FSearchLabel.Left + FSearchLabel.Width + 6;
-  FSearchText.Top := 0;
+  FSearchText.Top := 2;
   FSearchText.OnChange := SearchTextChange;
 
-  FSearchLabel.Top := (FSearchText.Height div 2) - FSearchLabel.Height div 2;
+  FSearchLabel.Top := FSearchText.Top + FSearchText.Height div 2 - FSearchLabel.Height div 2;
 
   FToolbarPanel := TPanel.Create(Self);
   FToolbarPanel.Parent := FTopPanel;
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Align := alTop;
-  FToolbarPanel.Height := 26;
-  FToolbarPanel.Padding.Top := 2;
+  FToolbarPanel.Height := 25;
+
+  FAddLabel := TLabel.Create(Self);
+  FAddLabel.Parent := FToolbarPanel;
+  FAddLabel.Left := 0;
+  FAddLabel.Caption := _('Add entry:');
 
   FAddEdit := TEdit.Create(Self);
   FAddEdit.Parent := FToolbarPanel;
   FAddEdit.OnKeyPress := AddEditKeyPress;
-  FAddEdit.Left := 0;
-  FAddEdit.Top := 2;
+  FAddEdit.Top := 1;
+  FAddEdit.Width := 250;
+
+  FAddLabel.Top := FAddEdit.Top + FAddEdit.Height div 2 - FAddLabel.Height div 2;
 
   FAddCombo := TComboBox.Create(Self);
   FAddCombo.Parent := FToolbarPanel;
   FAddCombo.Style := csDropDownList;
-  FAddCombo.Align := alRight;
+  FAddCombo.Top := 1;
 
   FToolbar := TTitleToolbar.Create(Self);
   FToolbar.Parent := FToolbarPanel;
   FToolbar.Images := Images;
   FToolbar.Align := alRight;
-  FToolbar.Height := 24;
   FToolbar.AutoSize := True;
   FToolbar.Indent := 4;
   FToolbar.Setup;
@@ -727,7 +737,11 @@ begin
   FToolbar.FSelectSaved.OnClick := SelectSavedClick;
   FToolbar.FRename.OnClick := RenameClick;
 
-  FTopPanel.Height := FToolbarPanel.Height + 2;
+  FTopPanel.ClientHeight := FToolbarPanel.Height;
+
+  // Das macht Höhen/Breiten von manchen Controls passig
+  PostTranslate;
+  FSearchPanel.ClientHeight := FSearchText.Top + 5 + FSearchText.Height;
 
   FTree := TTitleTree.Create(Self, Lists, Images);
   FTree.Parent := Self;
@@ -808,7 +822,7 @@ begin
       Parent := FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]));
 
     Title := TTitleInfo.Create(Trim(Text));
-    Node := FTree.AddTitle(Title, Parent, CreateFilterText, True);
+    Node := FTree.AddTitle(Title, Parent, FFilterText, True);
     if Node <> nil then
     begin
       NodeData := FTree.GetNodeData(Node);
@@ -853,18 +867,24 @@ end;
 
 procedure TTitlePanel.UpdateButtons;
 var
-  TitlesSelected, CanRemove, CanRename: Boolean;
+  TitlesSelected, CanRemove, CanRename, CanImport: Boolean;
 begin
   TitlesSelected := (Length(FTree.GetNodes(ntWish, True)) > 0) or
     (Length(FTree.GetNodes(ntIgnore, True)) > 0);
   CanRemove := TitlesSelected or (Length(FTree.GetNodes(ntStream, True)) > 0);
   CanRename := (FTree.SelectedCount = 1) and TitlesSelected;
+  CanImport := (FTree.SelectedCount = 1) and ((Length(FTree.GetNodes(ntWishParent, True)) = 1) or
+    (Length(FTree.GetNodes(ntIgnoreParent, True)) = 1));
 
   FToolbar.FRemove.Enabled := CanRemove;
   FToolbar.FRename.Enabled := CanRename;
+  FToolbar.FExport.Enabled := TitlesSelected;
+  FToolbar.FImport.Enabled := CanImport;
 
   FTree.FPopupMenu.FRemove.Enabled := CanRemove;
   FTree.FPopupMenu.FRename.Enabled := CanRename;
+  FTree.FPopupMenu.FExport.Enabled := TitlesSelected;
+  FTree.FPopupMenu.FImport.Enabled := CanImport;
 end;
 
 procedure TTitlePanel.UpdateList;
@@ -899,11 +919,6 @@ begin
 
   ShowHint := True;
   Transparent := True;
-end;
-
-procedure TTitleToolbar.EnableItems(Enable: Boolean);
-begin
-  // TODO: leer???
 end;
 
 procedure TTitleToolbar.Setup;
@@ -979,8 +994,7 @@ begin
     if (ParentData.Stream <> nil) and (Parent.ChildCount = 1) and (Parent.Parent.ChildCount = 1) then
     begin
       Expanded[Parent.Parent] := True;
-    end;  
-
+    end;
     
     NodeData.Stream := ParentData.Stream;
 
@@ -1071,6 +1085,9 @@ begin
   FPopupMenu.Images := Images;
   FPopupMenu.FRemove.OnClick := PopupMenuClick;
   FPopupMenu.FRename.OnClick := PopupMenuClick;
+  FPopupMenu.FSelectSaved.OnClick := PopupMenuClick;
+  FPopupMenu.FExport.OnClick := PopupMenuClick;
+  FPopupMenu.FImport.OnClick := PopupMenuClick;
 
   PopupMenu := FPopupMenu;
 end;
@@ -1137,7 +1154,7 @@ begin
       end;
 
     if not Found then
-      AddTitle(Title, GetNode(Stream), '', False); // TODO: filter berücksichtigen!
+      AddTitle(Title, GetNode(Stream), FFilterText, True);
   end;
 }
 end;
@@ -1184,9 +1201,7 @@ begin
       Continue;
     end;
 
-    if ((NodeTypes = ntStream) and ((NodeData.Stream = nil) and (NodeData.Title <> nil))) or
-       ((NodeTypes = ntWish) and (NodeData.NodeType <> ntWish)) or
-       ((NodeTypes = ntIgnore) and (NodeData.NodeType <> ntIgnore)) then
+    if NodeTypes <> NodeData.NodeType then
     begin
       Node := GetNext(Node);
       Continue;
@@ -1215,8 +1230,14 @@ procedure TTitleTree.PopupMenuClick(Sender: TObject);
 begin
   if Sender = FPopupMenu.FRemove then
     TTitlePanel(Owner).FToolbar.FRemove.Click
-  else
-    TTitlePanel(Owner).FToolbar.FRename.Click;
+  else if Sender = FPopupMenu.FRename then
+    TTitlePanel(Owner).FToolbar.FRename.Click
+  else if Sender = FPopupMenu.FSelectSaved then
+    TTitlePanel(Owner).FToolbar.FSelectSaved.Click
+  else if Sender = FPopupMenu.FExport then
+    TTitlePanel(Owner).FToolbar.FExport.Click
+  else if Sender = FPopupMenu.FImport then
+    TTitlePanel(Owner).FToolbar.FImport.Click;
 end;
 
 procedure TTitleTree.RemoveClient(Client: TICEClient);
@@ -1423,13 +1444,6 @@ var
 begin
   Result := 0;
 
-{
-  if Node1 = FWishNode then
-    Exit(-1)
-  else if Node1 = FIgnoreNode then
-    Exit(1);
-}
-  
   if (Node1 = FWishNode) or (Node2 = FIgnoreNode) then
     Exit(0);
 
@@ -1483,6 +1497,8 @@ end;
 { TTitlePopup }
 
 constructor TTitlePopup.Create(AOwner: TComponent);
+var
+  Sep: TMenuItem;
 begin
   inherited;
 
@@ -1495,6 +1511,25 @@ begin
   FRemove.Caption := '&Remove';
   FRemove.ImageIndex := 2;
   Items.Add(FRemove);
+
+  FSelectSaved := CreateMenuItem;
+  FSelectSaved.Caption := 'Select saved (by pattern)';
+  FSelectSaved.ImageIndex := 70;
+  Items.Add(FSelectSaved);
+
+  Sep := CreateMenuItem;
+  Sep.Caption := '-';
+  Items.Add(Sep);
+
+  FExport := CreateMenuItem;
+  FExport.Caption := '&Export...';
+  FExport.ImageIndex := 35;
+  Items.Add(FExport);
+
+  FImport := CreateMenuItem;
+  FImport.Caption := '&Import...';
+  FImport.ImageIndex := 36;
+  Items.Add(FImport);
 end;
 
 end.

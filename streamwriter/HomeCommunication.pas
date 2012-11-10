@@ -269,7 +269,6 @@ var
   XMLDocument: TXMLLib;
   XML: AnsiString;
 begin
-  // TODO: was passiert, wenn das hier aktiv ist und der server flöten geht???
   Result := False;
   if not FConnected then
     Exit;
@@ -778,9 +777,11 @@ end;
 { THomeThread }
 
 constructor THomeThread.Create;
+var m: TMemoryStream;
 begin
   {$IFDEF DEBUG}
-  inherited Create('gaia', 8007);
+  //inherited Create('gaia', 8007);
+  inherited Create('streamwriter.org', 8007);
   {$ELSE}
   inherited Create('streamwriter.org', 8007);
   {$ENDIF}
@@ -823,6 +824,9 @@ begin
     Sync(FOnLoggedOn);
 end;
 
+// TODO: ich refreshe charts und streams. streams zuerst fertig, charts noch nicht - bei streams kann man wieder
+//       "refresh" klicken. dann ist das chart-refresh noch im gange und ein nächstes enqueued. unschön.
+
 procedure THomeThread.DoChartsReceived(Version: Integer; Header,
   Data: TXMLNode);
 var
@@ -837,31 +841,24 @@ begin
   for Node in Data.Nodes.GetNode('charts').Nodes do
   begin
     Streams := TList<TChartStream>.Create;
-    try
-      SetLength(Categories, 0);
-      for Node2 in Node.Nodes do
+    SetLength(Categories, 0);
+    for Node2 in Node.Nodes do
+    begin
+      if Node2.Name = 'cat' then
       begin
-        if Node2.Name = 'cat' then
-        begin
-          SetLength(Categories, Length(Categories) + 1);
-          Categories[High(Categories)] := Node2.Value.AsInteger;
-        end;
-        if Node2.Name = 'stream' then
-        begin
-          Streams.Add(TChartStream.Create(Node2.Attributes.AttributeByName['id'].Value.AsLongWord,
-            Node2.Attributes.AttributeByName['lastday'].Value.AsLongWord,
-            Node2.Attributes.AttributeByName['lastweek'].Value.AsLongWord));
-        end;
+        SetLength(Categories, Length(Categories) + 1);
+        Categories[High(Categories)] := Node2.Value.AsInteger;
       end;
-
-      FCharts.Add(TChartEntry.Create(Node.Value.AsString, Node.Attributes.AttributeByName['playedlastday'].Value.AsLongWord,
-        Node.Attributes.AttributeByName['playedlastweek'].Value.AsLongWord, Categories, Streams));
-    finally
-      // TOOD: den try..finally block rausmachen!!
-      //for i := 0 to Streams.Count - 1 do
-      //  Streams[i].Free;
-      //Streams.Free;
+      if Node2.Name = 'stream' then
+      begin
+        Streams.Add(TChartStream.Create(Node2.Attributes.AttributeByName['id'].Value.AsLongWord,
+          Node2.Attributes.AttributeByName['lastday'].Value.AsLongWord,
+          Node2.Attributes.AttributeByName['lastweek'].Value.AsLongWord));
+      end;
     end;
+
+    FCharts.Add(TChartEntry.Create(Node.Value.AsString, Node.Attributes.AttributeByName['playedlastday'].Value.AsLongWord,
+      Node.Attributes.AttributeByName['playedlastweek'].Value.AsLongWord, Categories, Streams));
   end;
 
   if Assigned(FOnChartsReceived) then

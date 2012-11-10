@@ -245,13 +245,12 @@ procedure TClientAddressBar.Setup;
 begin
   FLabel := TLabel.Create(Self);
   FLabel.Parent := Self;
-  FLabel.Left := 4;
-  FLabel.Top := 6;
+  FLabel.Left := 0;
   FLabel.Caption := 'Playlist/Stream-URL:';
 
   FStart := TSpeedButton.Create(Self);
   FStart.Parent := Self;
-  FStart.Width := 24;
+  FStart.Width := 24;       // TODO: alle control-abstände mal passig machen und vergleichen von allen tabs!!!
   FStart.Height := 24;
   FStart.Top := 6;
   FStart.Left := ClientWidth - 4 - FStart.Width;
@@ -267,14 +266,15 @@ begin
   FStations := TMStationCombo.Create(Self);
   FStations.Parent := Self;
   FStations.DropDownCount := 15;
-  FStations.Left := FLabel.Left + FLabel.Width + 8;
-
-  FStations.Top := 2;
-  FStations.Width := ClientWidth - FStations.Left - FStart.Width - 8;
+  FStations.Left := FLabel.Left + FLabel.Width + 6;
+  FStations.Top := 3;
+  FStations.Width := ClientWidth - FStations.Left - FStart.Width - 6;
   FStations.Anchors := [akLeft, akTop, akRight];
   FStations.OnKeyPress := FStationsKeyPress;
   FStations.OnChange := FStationsChange;
   Height := FStations.Top + FStations.Height + FStations.Top;
+
+  FLabel.Top := FStations.Top + FStations.Height div 2 - FLabel.Height div 2;
 
   FDropTarget := TDropComboTarget.Create(Self);
   FDropTarget.Formats := [mfText, mfURL, mfFile];
@@ -706,8 +706,8 @@ end;
 
 procedure TClientTab.AdjustTextSizeDirtyHack;
 begin
-  FAddressBar.FStations.Left := FAddressBar.FLabel.Left + FAddressBar.FLabel.Width + 8;
-  FAddressBar.FStations.Width := FAddressBar.ClientWidth - FAddressBar.FStations.Left - FAddressBar.FStart.Width - 8;
+  FAddressBar.FStations.Left := FAddressBar.FLabel.Left + FAddressBar.FLabel.Width + 6;
+  FAddressBar.FStations.Width := FAddressBar.ClientWidth - FAddressBar.FStations.Left - FAddressBar.FStart.Width - 6;
 end;
 
 procedure TClientTab.DebugClear(Sender: TObject);
@@ -1276,7 +1276,7 @@ begin
   Inc(FPlaybackSeconds);
 
   FTimeLabel.Caption := BuildTime(FPlaybackSeconds, False);
-  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx - 8;
+  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx - 6;
 end;
 
 procedure TClientTab.Resize;
@@ -1393,10 +1393,9 @@ var
   PH: TPlaylistHandler;
   Entries: TPlaylistEntryArray;
   Info: TStartStreamingInfo;
+  MessagesShown: TMayConnectResultsSet;
 begin
   Result := True;
-
-  // TODO: hier jedes if und so weiter testen. stark umgebaut alles...
 
   // Sonderbehandlung fürs Extern abspielen...
   if Action = oaPlayExternal then
@@ -1415,8 +1414,6 @@ begin
     Exit;
   end;
 
-  // TODO: sobald es fehler (kein speicher, bandbreite) beim adden (aufnahmen) eines streams gibt, den rest nur noch mit oaAdd hinzufügen
-  //       und die messagebox genau einmal zeigen.
   for Info in Streams do
   begin
     if Info.URL <> '' then
@@ -1456,7 +1453,13 @@ begin
         if Res = crOk then
           UnkillCategory
         else
-          OnShowErrorMessage(Client, Res, False, False);
+        begin
+          if not (Res in MessagesShown) then
+          begin
+            MessagesShown := MessagesShown + [Res];
+            OnShowErrorMessage(Client, Res, False, False);
+          end;
+        end;
       end else
       begin
         if ValidURL(Info.URL) then
@@ -1490,7 +1493,13 @@ begin
           if Res = crOk then
             UnkillCategory
           else
-            OnShowErrorMessage(Client, Res, False, False);
+          begin
+            if not (Res in MessagesShown) then
+            begin
+              MessagesShown := MessagesShown + [Res];
+              OnShowErrorMessage(Client, Res, False, False);
+            end;
+          end;
         end else
         begin
           Result := False;
@@ -1544,7 +1553,6 @@ var
   Client: TICEClient;
   Arr: TStartStreamingInfoArray;
 begin
-  // TODO: hier alles durchtesten. funzt das noch???
   if Action in [oaPlayExternal, oaSave] then
   begin
     SetLength(Entries, 0);

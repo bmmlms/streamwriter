@@ -168,6 +168,7 @@ type
     destructor Destroy; override;
 
     procedure Setup;
+    procedure PostTranslate;
   end;
 
   TImportPanel = class(TPanel)
@@ -239,6 +240,7 @@ type
     procedure Setup(Streams: TDataLists; Images: TImageList);
     procedure Shown;
     procedure PausePlay;
+    procedure PostTranslate;
 
     procedure UpdateButtons;
     procedure StopThreads;
@@ -262,6 +264,8 @@ type
     FFileWatcher, FFileWatcherAuto: TFileWatcher;
     FStreamNode: PVirtualNode;
     FFileNode: PVirtualNode;
+    FPattern: string;
+
 
     FOnAction: TTrackActionEvent;
 
@@ -281,7 +285,6 @@ type
     function GetNode(Track: TTrackInfo): PVirtualNode; overload;
     function GetNodes(SelectedOnly: Boolean): TNodeArray;
     function GetSelected: TTrackInfoArray;
-    function TrackMatchesPattern(Track: TTrackInfo): Boolean;
 
     procedure PopupMenuPopup(Sender: TObject);
     procedure PopupMenuClick(Sender: TObject);
@@ -326,7 +329,7 @@ type
 
     function PrevPlayingTrack: TTrackInfo;
     function NextPlayingTrack: TTrackInfo;
-    procedure AddTrack(Track: TTrackInfo; FromFilter: Boolean);
+    procedure AddTrack(Track: TTrackInfo; AddToInternalList: Boolean);
     procedure RemoveTrack(Track: TTrackInfo); overload;
     procedure DeleteTrack(Track: TTrackInfo);
     procedure UpdateTrack(Track: TTrackInfo);
@@ -666,7 +669,7 @@ begin
   for i := 0 to FImportThread.FFiles.Count - 1 do
   begin
     FStreams.TrackList.Add(FImportThread.FFiles[i]);
-    FSavedTree.AddTrack(FImportThread.FFiles[i], False);
+    FSavedTree.AddTrack(FImportThread.FFiles[i], True);
   end;
   FImportThread := nil;
 
@@ -721,6 +724,11 @@ begin
   end;
 end;
 
+procedure TSavedTab.PostTranslate;
+begin
+  FSearchBar.PostTranslate;
+end;
+
 procedure TSavedTab.Resize;
 begin
   inherited;
@@ -738,7 +746,7 @@ var
 begin
   for i := 0 to FStreams.TrackList.Count - 1 do
   begin
-    FSavedTree.AddTrack(FStreams.TrackList[i], False);
+    FSavedTree.AddTrack(FStreams.TrackList[i], True);
   end;
 
   FSavedTree.Expanded[FSavedTree.FStreamNode] := False;
@@ -1303,6 +1311,8 @@ var
 begin
   inherited Create(AOwner);
 
+  FPattern := '*';
+
   FPlayer := TPlayer.Create;
   FPlayer.OnEndReached := PlayerEndReached;
   FPlayer.OnPlay := PlayerPlay;
@@ -1843,30 +1853,30 @@ begin
   FPopupMenu.FItemStop.Enabled := FPlayer.Playing or FPlayer.Paused;
 end;
 
-procedure TSavedTree.AddTrack(Track: TTrackInfo; FromFilter: Boolean);
+procedure TSavedTree.AddTrack(Track: TTrackInfo; AddToInternalList: Boolean);
 var
   Node: PVirtualNode;
   NodeData: PSavedNodeData;
 begin
-  if not FromFilter then
-    FTrackList.Add(Track)
-  else
-    if not TrackMatchesPattern(Track) then
-      Exit;
+  if AddToInternalList then
+    FTrackList.Add(Track);
 
-  if Track.IsStreamFile then
+  if (FPattern = '*') or (Like(LowerCase(Track.Filename), FPattern)) or (Like(LowerCase(Track.Streamname), FPattern)) then
   begin
-    Node := AddChild(FStreamNode);
-    if (FStreamNode.ChildCount = 1) and (not FromFilter) then
-      Expanded[FStreamNode] := True;
-  end else
-  begin
-    Node := AddChild(FFileNode);
-    if (FFileNode.ChildCount = 1) and (not FromFilter) then
-      Expanded[FFileNode] := True;
+    if Track.IsStreamFile then
+    begin
+      Node := AddChild(FStreamNode);
+      if (FStreamNode.ChildCount = 1) then // and (not FromFilter) then
+        Expanded[FStreamNode] := True;
+    end else
+    begin
+      Node := AddChild(FFileNode);
+      if (FFileNode.ChildCount = 1) then // and (not FromFilter) then
+        Expanded[FFileNode] := True;
+    end;
+    NodeData := GetNodeData(Node);
+    NodeData.Track := Track;
   end;
-  NodeData := GetNodeData(Node);
-  NodeData.Track := Track;
 end;
 
 procedure TSavedTree.RemoveTrack(Track: TTrackInfo);
@@ -1922,20 +1932,6 @@ begin
   inherited;
 
   MoveTo(FStreamNode, nil, amAddChildFirst, False);
-end;
-
-function TSavedTree.TrackMatchesPattern(Track: TTrackInfo): Boolean;
-var
-  Hash: Cardinal;
-  Chars: Integer;
-  P: string;
-begin
-  Result := True;
-  P := BuildPattern(FTab.FSearchBar.FSearch.Text, Hash, Chars, True);
-  if P = '' then
-    Exit;
-  if (not Like(LowerCase(Track.Filename), LowerCase(P))) and (not Like(LowerCase(Track.Streamname), LowerCase(P))) then
-    Result := False;
 end;
 
 procedure TSavedTree.Translate;
@@ -2174,7 +2170,12 @@ var
   i: Integer;
   StreamsExpanded, FilesExpanded: Boolean;
   NodeData: PSavedNodeData;
+  Hash: Cardinal;
+  Chars: Integer;
+  P: string;
 begin
+  FPattern := BuildPattern(S, Hash, Chars, True);
+
   BeginUpdate;
 
   StreamsExpanded := Expanded[FStreamNode];
@@ -2191,7 +2192,7 @@ begin
   NodeData.IsFileParent := True;
 
   for i := 0 to FTrackList.Count - 1 do
-    AddTrack(FTrackList[i], True);
+    AddTrack(FTrackList[i], False);
 
   Expanded[FStreamNode] := StreamsExpanded;
   Expanded[FFileNode] := FilesExpanded;
@@ -2481,23 +2482,31 @@ begin
   inherited;
 end;
 
+procedure TSearchBar.PostTranslate;
+begin
+  FLabel.Caption := _('Search:');
+  FSearch.Left := FLabel.Left + FLabel.Width + 6;
+end;
+
 procedure TSearchBar.Setup;
 begin
   FLabel := TLabel.Create(Self);
   FLabel.Parent := Self;
   FLabel.Left := 0;
-  FLabel.Top := 6;
-  FLabel.Caption := _('Search:');
 
   FSearch := TEdit.Create(Self);
   FSearch.Parent := Self;
-  FSearch.Left := FLabel.Left + FLabel.Width + 8;
 
-  FSearch.Top := 3;
+  FSearch.Top := 2;
   FSearch.Width := 200;
+
+  FLabel.Top := FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2;;
+
   Height := FSearch.Top + FSearch.Height + FSearch.Top + 3;
 
   BevelOuter := bvNone;
+
+  PostTranslate;
 end;
 
 { TImportFilesThread }

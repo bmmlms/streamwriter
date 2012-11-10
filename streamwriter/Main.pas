@@ -1011,14 +1011,21 @@ begin
     tmrRecordingsTimer(tmrRecordings);
 
     if (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or
-        (AppGlobals.LastBrowserUpdate < Now - 15)) or (FDataLists.ReloadServerData) then
+        (AppGlobals.LastBrowserUpdate < Now - 15)) or (FDataLists.ReloadServerData) or
+        (tabCharts.State = csError) or (tabClients.SideBar.BrowserView.Mode = moError) then
     begin
       if HomeComm.GetServerData then
       begin
-         tabCharts.SetState(csLoading); // TODO: was bei error? zeigt das chartstab das an??
-        tabClients.SideBar.BrowserView.StreamTree.SwitchMode(moLoading); // TODO: was bei error? zeigt das chartstab das an?? wird bei error die ansicht wieder aktiv für streams und charts?
+        tabCharts.SetState(csLoading);
+        tabClients.SideBar.BrowserView.SwitchMode(moLoading);
       end;
     end;
+  end else if (HomeComm.WasConnected) and (not HomeComm.Connected) then
+  begin
+    if tabCharts.State = csLoading then
+      tabCharts.SetState(csError);
+    if tabClients.SideBar.BrowserView.Mode = moLoading then
+      tabClients.SideBar.BrowserView.SwitchMode(moError);
   end;
 
   HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
@@ -1182,8 +1189,8 @@ begin
   begin
     if HomeComm.GetServerData then
     begin
-      tabCharts.SetState(csLoading); // TODO: was bei error? zeigt das chartstab das an??
-      tabClients.SideBar.BrowserView.StreamTree.SwitchMode(moLoading); // TODO: was bei error? zeigt das chartstab das an?? wird bei error die ansicht wieder aktiv für streams und charts?
+      tabCharts.SetState(csLoading);
+      tabClients.SideBar.BrowserView.SwitchMode(moLoading);
     end;
   end;
 end;
@@ -1348,7 +1355,9 @@ begin
   NodeData.Category.Name := _('Automatic recordings');
   tabClients.ClientView.Invalidate;
 
+  tabLists.PostTranslate;
   tabCharts.PostTranslate;
+  tabSaved.PostTranslate;
 
   addStatus.Invalidate;
 end;
@@ -1764,7 +1773,7 @@ end;
 procedure TfrmStreamWriterMain.tabClientsTrackAdded(Entry: TStreamEntry;
   Track: TTrackInfo);
 begin
-  tabSaved.Tree.AddTrack(Track, False);
+  tabSaved.Tree.AddTrack(Track, True);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsTrackRemoved(Entry: TStreamEntry;

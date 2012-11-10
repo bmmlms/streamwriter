@@ -36,6 +36,7 @@ type
   TICEClientStates = (csConnecting, csConnected, csStopping, csStopped, csRetrying, csIOError);
 
   TMayConnectResults = (crOk, crNoFreeSpace, crNoBandwidth);
+  TMayConnectResultsSet = set of TMayConnectResults;
 
   TICEClient = class;
 
