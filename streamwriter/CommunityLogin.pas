@@ -36,7 +36,7 @@ type
   protected
     procedure DoClose(var Action: TCloseAction); override;
   public
-    procedure HomeCommStateChanged(Sender: TObject);
+    procedure HomeCommLogIn(Sender: TObject; Success: Boolean);
   end;
 
 implementation
@@ -68,7 +68,7 @@ begin
 
   ShowConnecting(True);
 
-  HomeComm.LogOn(Trim(txtUsername.Text), Trim(txtPassword.Text));
+  HomeComm.SendLogIn(Trim(txtUsername.Text), Trim(txtPassword.Text));
 end;
 
 procedure TfrmCommunityLogin.DoClose(var Action: TCloseAction);
@@ -119,7 +119,7 @@ begin
   ShowConnecting(False);
 end;
 
-procedure TfrmCommunityLogin.HomeCommStateChanged(Sender: TObject);
+procedure TfrmCommunityLogin.HomeCommLogIn(Sender: TObject; Success: Boolean);
 begin
   if (not HomeComm.Connected) and (pnlConnecting.Visible) then
   begin
@@ -128,7 +128,10 @@ begin
   end;
 
   if HomeComm.Connected and pnlConnecting.Visible then
-    if HomeComm.Authenticated then
+  begin
+    ShowConnecting(False);
+
+    if Success then
     begin
       if not AppGlobals.UserWasSetup then
         MsgBox(Handle, _('You are now logged in.'#13#10'Your credentials will be saved and streamWriter will try to login automatically next time. You can logoff by using the corresponding item in the main menu.'), _('Info'), MB_ICONINFORMATION);
@@ -140,13 +143,12 @@ begin
       Close;
     end else
     begin
-      ShowConnecting(False);
-
       AppGlobals.User := '';
       AppGlobals.Pass := '';
 
       MsgBox(Handle, _('You have entered an unknown username or a wrong password.'#13#10'Please try again.'), _('Error'), MB_ICONERROR);
     end;
+  end;
 end;
 
 procedure TfrmCommunityLogin.lblSignupClick(Sender: TObject);
@@ -156,6 +158,14 @@ end;
 
 procedure TfrmCommunityLogin.ShowConnecting(Show: Boolean);
 begin
+  if Show then
+    prgConnecting.Style := pbstMarquee
+  else
+  begin
+    prgConnecting.Style := pbstNormal;
+    prgConnecting.Position := 0;
+  end;
+
   pnlConnect.Visible := not Show;
   pnlConnecting.Visible := Show;
 

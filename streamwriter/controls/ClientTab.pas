@@ -934,7 +934,7 @@ begin
   begin
     FAddressBar.Stations.AddItem(Client.Entry.ID, Client.Entry.Bitrate, Client.Entry.Name, Client.Entry.StartURL);
 
-    FHomeCommunication.SubmitStream(Client.Entry.StartURL);
+    // FHomeCommunication.SubmitStream(Client.Entry.StartURL); TODO: !!!
   end;
 
   ShowInfo;
@@ -1528,6 +1528,7 @@ procedure TClientTab.StreamBrowserAction(Sender: TObject; Action: TStreamOpenAct
     Node: PVirtualNode;
     ND: PStreamNodeData;
   begin
+    { TODO: !!!
     if not HomeComm.Authenticated then
       FOnAuthRequired(Self)
     else
@@ -1542,6 +1543,7 @@ procedure TClientTab.StreamBrowserAction(Sender: TObject; Action: TStreamOpenAct
         FSideBar.FBrowserView.StreamTree.InvalidateNode(Node);
       end;
     end;
+    }
   end;
 var
   i: Integer;
@@ -1602,8 +1604,9 @@ begin
       FSideBar.FBrowserView.RefreshStreams;
     oaSetData:
       begin
+        {
         if not HomeComm.Authenticated then
-          FOnAuthRequired(Self)
+          FOnAuthRequired(Self)   TODO: !!!
         else
         begin
           Client := FClients.GetClient(Streams[0].ID, Streams[0].Name, Streams[0].URL, '', nil);
@@ -1636,6 +1639,7 @@ begin
             SD.Free;
           end;
         end;
+        }
       end;
     oaRate1:
       Rate(1);

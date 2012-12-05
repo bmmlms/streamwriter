@@ -132,7 +132,10 @@ uses
   Equalizer in 'Equalizer.pas' {frmEqualizer},
   SWFunctions in 'SWFunctions.pas',
   SplashThread in '..\..\common\SplashThread.pas',
-  CommandLine in '..\..\common\CommandLine.pas';
+  CommandLine in '..\..\common\CommandLine.pas',
+  HomeTest in 'HomeTest.pas' {frmHomeTest},
+  HomeCommands in 'HomeCommands.pas',
+  HomeCommunication2 in 'HomeCommunication2.pas';
 
 {$SetPEOptFlags $0140}
 
@@ -147,6 +150,7 @@ uses
 
 var
   frmStreamWriterMain: TfrmStreamWriterMain;
+  frmHomeTest: TfrmHomeTest;
 begin
   {$IFDEF madExcept}
   MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
@@ -171,6 +175,7 @@ begin
   if InitApp and AppGlobals.WasSetup then
   begin
     Application.CreateForm(TfrmStreamWriterMain, frmStreamWriterMain);
+    //Application.CreateForm(TfrmHomeTest, frmHomeTest);
   end;
 
   Application.Run;

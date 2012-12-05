@@ -84,7 +84,7 @@ type
     procedure ClientPause(Sender: TObject);
     procedure ClientStop(Sender: TObject);
 
-    procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; StreamName, Title, CurrentURL, Format, TitlePattern: string; Kbps: Cardinal);
+    procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, TitleRegEx: string; Format: TAudioTypes; Kbps: Cardinal);
   public
     constructor Create(Lists: TDataLists);
     destructor Destroy; override;
@@ -256,7 +256,7 @@ begin
   FSongsSaved := 0;
   FClients := TClientList.Create;
   FLists := Lists;
-  HomeComm.OnTitleChanged := HomeCommTitleChanged;
+  HomeComm.OnNetworkTitleChangedReceived := HomeCommTitleChanged;
 end;
 
 destructor TClientManager.Destroy;
@@ -294,7 +294,7 @@ begin
 end;
 
 procedure TClientManager.HomeCommTitleChanged(Sender: TObject; ID: Cardinal;
-  StreamName, Title, CurrentURL, Format, TitlePattern: string; Kbps: Cardinal);
+  Name, Title, CurrentURL, TitleRegEx: string; Format: TAudioTypes; Kbps: Cardinal);
 var
   i, n: Integer;
   AutoTuneInMinKbps: Cardinal;
@@ -302,19 +302,16 @@ var
   Res: TMayConnectResults;
   Found: Boolean;
 begin
-  AutoTuneInMinKbps := GetAutoTuneInMinKbps(FiletypeToFormat('.' + Format), AppGlobals.AutoTuneInMinQuality);
+  AutoTuneInMinKbps := GetAutoTuneInMinKbps(TAudioTypes(Format), AppGlobals.AutoTuneInMinQuality); // TODO: ist TAudioTypes(Format) okay???
 
   if Kbps < AutoTuneInMinKbps then
     Exit;
-  if (Format = 'mp3') and (AppGlobals.AutoTuneInFormat = 2) then
-    Exit;
-  if (Format = 'aac') and (AppGlobals.AutoTuneInFormat = 1) then
-    Exit;
-  if (Format = '') and (AppGlobals.AutoTuneInFormat > 0) then
+
+  if (AppGlobals.AutoTuneInFormat > 0) and (TAudioTypes(AppGlobals.AutoTuneInFormat) <> Format) then
     Exit;
 
   for i := 0 to FLists.StreamBlacklist.Count - 1 do
-    if FLists.StreamBlacklist[i] = StreamName then
+    if FLists.StreamBlacklist[i] = Name then
       Exit;
 
   for i := 0 to FLists.SaveList.Count - 1 do
@@ -347,7 +344,7 @@ begin
       Found := False;
       for Client in Self.FClients do
       begin
-        if MatchesClient(Client, ID, StreamName, CurrentURL, Title, nil) then
+        if MatchesClient(Client, ID, Name, CurrentURL, Title, nil) then
         begin
           if (Client.AutoRemove and (Client.RecordTitle = Title)) or (Client.Recording) then
           begin
@@ -359,7 +356,7 @@ begin
 
       if not Found then
       begin
-        Client := AddClient(0, 0, StreamName, CurrentURL, True);
+        Client := AddClient(0, 0, Name, CurrentURL, True);
         Client.Entry.Settings.Filter := ufNone;
         Client.Entry.Settings.SaveToMemory := True;
         Client.Entry.Settings.SeparateTracks := True;
@@ -379,8 +376,8 @@ begin
         Client.Entry.Settings.AutoDetectSilenceLevel := True;
 
         Client.Entry.Bitrate := Kbps;
-        if Trim(TitlePattern) <> '' then
-          Client.Entry.Settings.TitlePattern := TitlePattern;
+        if Trim(TitleRegEx) <> '' then
+          Client.Entry.Settings.TitlePattern := TitleRegEx;
         Client.RecordTitle := Title;
         Client.StartRecording(False);
       end;

@@ -22,47 +22,24 @@ unit HomeCommunication;
 interface
 
 uses
-  Windows, SysUtils, Classes, Functions, HTTPThread, Base64, XMLLib,
-  StrUtils, Generics.Collections, Sockets, WinSock, Int32Protocol,
-  Logging, ZLib, DataManager, AudioFunctions;
+  Windows, SysUtils, Classes, HTTPThread, StrUtils, Generics.Collections,
+  Sockets, WinSock, ZLib, Communication, Protocol, Commands, ExtendedStream,
+  HomeCommands, DataManager, AppData, AudioFunctions;
 
 type
-  TStreamInfo = record
-    ID: Integer;
-    Name: string;
-    Genre: string;
-    URL: string;
-    Website: string;
-    BitRate: Integer;
-    StreamType: string;
-    Downloads: Integer;
-    MetaData: Boolean;
-    ChangesTitleInSong: Boolean;
-    Rating: Integer;
-    RecordingOkay: Boolean;
-    RegEx: string;
-  end;
-  TStreamInfoArray = array of TStreamInfo;
-
   TCommErrors = (ceUnknown, ceAuthRequired, ceNotification, ceOneTimeNotification);
 
-  THomeThread = class(TInt32SocketThread)
+  THomeThread = class(TCommandThreadBase)
   private
-    FAuthAuthenticated: Boolean;
-    FIsAdmin: Boolean;
-    FCharts: TList<TChartEntry>;
-    FChartCategories: TList<TChartCategory>;
-    FChartGenres: TList<TGenre>;
-    FStreams: TList<TStreamBrowserEntry>;
-    FGenres: TList<TGenre>;
+    FC: Cardinal;
 
-    FChangedStreamID: Cardinal;
-    FChangedStreamName: string;
-    FChangedTitle: string;
-    FChangedCurrentURL: string;
-    FChangedKbps: Cardinal;
-    FChangedFormat: string;
-    FChangedTitlePattern: string;
+    FAuthenticated: Boolean;
+    FIsAdmin: Boolean;
+    FGenres: TList<TGenre>;
+    FCharts: TList<TChartEntry>;
+    FStreams: TStreamBrowserList;
+
+    FNetworkTitleChanged: TCommandNetworkTitleChangedResponse;
 
     FServerInfoClientCount: Cardinal;
     FServerInfoRecordingCount: Cardinal;
@@ -70,117 +47,110 @@ type
     FErrorID: TCommErrors;
     FErrorMsg: string;
 
-    FOnLoggedOn: TSocketEvent;
-    FOnLoggedOff: TSocketEvent;
-    FOnStreamsReceived: TSocketEvent;
-    FOnChartsReceived: TSocketEvent;
-    FOnChartGenresReceived: TSocketEvent;
-    FOnTitleChanged: TSocketEvent;
-    FOnServerInfo: TSocketEvent;
-    FOnError: TSocketEvent;
+    {
+    FChangedStreamID: Cardinal;
+    FChangedStreamName: string;
+    FChangedTitle: string;
+    FChangedCurrentURL: string;
+    FChangedKbps: Cardinal;
+    FChangedFormat: string;
+    FChangedTitlePattern: string;
+    }
+    //FLogInReceived: TCommandLogInResponse;
+    //FLogOutReceived: TCommandLogOutResponse;
 
-    function XMLGet(T: string): TXMLLib;
-    function ZDecompressStr(const s: AnsiString): AnsiString;
+    FOnLogInReceived: TSocketEvent;
+    FOnLogOutReceived: TSocketEvent;
+    FOnServerDataReceived: TSocketEvent;
+    FOnNetworkTitleChangedReceived: TSocketEvent;
+    FOnServerInfoReceived: TSocketEvent;
+    FOnErrorReceived: TSocketEvent;
+
+    procedure DoLogInReceived(CommandHeader: TCommandHeader; Command: TCommandLogInResponse);
+    procedure DoLogOutReceived(CommandHeader: TCommandHeader; Command: TCommandLogOutResponse);
+    procedure DoServerDataReceived(CommandHeader: TCommandHeader; Command: TCommandGetServerDataResponse);
+    procedure DoNetworkTitleChanged(CommandHeader: TCommandHeader; Command: TCommandNetworkTitleChangedResponse);
+    procedure DoServerInfoReceived(CommandHeader: TCommandHeader; Command: TCommandServerInfoResponse);
+    procedure DoErrorReceived(CommandHeader: TCommandHeader; Command: TCommandErrorResponse);
   protected
-    procedure DoStuff; override;
-    procedure DoConnected; override;
-    procedure DoReceivedString(D: AnsiString); override;
-    procedure DoLoggedOn(Version: Integer; Header, Data: TXMLNode);
-    procedure DoLoggedOff(Version: Integer; Header, Data: TXMLNode);
-    procedure DoStreamsReceived(Version: Integer; Header, Data: TXMLNode);
-    procedure DoChartsReceived(Version: Integer; Header, Data: TXMLNode);
-    procedure DoTitleChanged(Version: Integer; Header, Data: TXMLNode);
-    procedure DoServerInfo(Version: Integer; Header, Data: TXMLNode);
-    procedure DoError(Version: Integer; Header, Data: TXMLNode);
+    procedure DoReceivedCommand(ID: Cardinal; CommandHeader: TCommandHeader; Command: TCommand); override;
+    procedure DoException(E: Exception); override;
     procedure DoEnded; override;
   public
     constructor Create;
     destructor Destroy; override;
 
-    property OnLoggedOn: TSocketEvent read FOnLoggedOn write FOnLoggedOn;
-    property OnLoggedOff: TSocketEvent read FOnLoggedOff write FOnLoggedOff;
-    property OnStreamsReceived: TSocketEvent read FOnStreamsReceived write FOnStreamsReceived;
-    property OnChartsReceived: TSocketEvent read FOnChartsReceived write FOnChartsReceived;
-    property OnChartGenresReceived: TSocketEvent read FOnChartGenresReceived write FOnChartGenresReceived;
-    property OnTitleChanged: TSocketEvent read FOnTitleChanged write FOnTitleChanged;
-    property OnServerInfo: TSocketEvent read FOnServerInfo write FOnServerInfo;
-    property OnError: TSocketEvent read FOnError write FOnError;
+    property OnLogInReceived: TSocketEvent read FOnLogInReceived write FOnLogInReceived;
+    property OnLogOutReceived: TSocketEvent read FOnLogOutReceived write FOnLogOutReceived;
+    property OnServerDataReceived: TSocketEvent read FOnServerDataReceived write FOnServerDataReceived;
+    property OnNetworkTitleChangedReceived: TSocketEvent read FOnNetworkTitleChangedReceived write FOnNetworkTitleChangedReceived;
+    property OnServerInfoReceived: TSocketEvent read FOnServerInfoReceived write FOnServerInfoReceived;
+    property OnErrorReceived: TSocketEvent read FOnErrorReceived write FOnErrorReceived;
   end;
 
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
-  TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, Format, TitlePattern: string; Kbps: Cardinal) of object;
+  TStreamsReceivedEvent = procedure(Sender: TObject; Genres: TList<TGenre>; Streams: TList<TStreamBrowserEntry>) of object;
+  TChartsReceivedEvent = procedure(Sender: TObject; Charts: TList<TChartEntry>) of object;
+  TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, TitlePattern: string; Format: TAudioTypes; Kbps: Cardinal) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
-  TStreamsReceivedEvent = procedure(Sender: TObject; Genres: TList<TGenre>; Streams: TList<TStreamBrowserEntry>) of object;
-  TChartsReceivedEvent = procedure(Sender: TObject; Categories: TList<TChartCategory>; Charts: TList<TChartEntry>) of object;
-  TChartGenresReceivedEvent = procedure(Sender: TObject; List: TList<TGenre>) of object;
 
   THomeCommunication = class
   private
-    FLastUpdateXML: string;
-    FClient: THomeThread;
-    FConnected: Boolean;
-    FWasConnected: Boolean;
-    FAuthenticated: Boolean;
-    FTitleNotificationsEnabled: Boolean;
-    FTitleNotificationsSet: Boolean;
-    FIsAdmin: Boolean;
+    FThread: THomeThread;
 
+    FAuthenticated, FIsAdmin, FWasConnected, FConnected: Boolean;
+    FTitleNotificationsSet: Boolean;
+
+    FOnStateChanged: TNotifyEvent;
+    FOnBytesTransferred: TTransferProgressEvent;
+
+    FOnLogInReceived: TBooleanEvent;
+    FOnLogOutReceived: TNotifyEvent;
     FOnStreamsReceived: TStreamsReceivedEvent;
     FOnChartsReceived: TChartsReceivedEvent;
-    FOnChartGenresReceived: TChartGenresReceivedEvent;
-    FOnTitleChanged: TTitleChangedEvent;
-    FOnServerInfo: TServerInfoEvent;
-    FOnError: TErrorEvent;
-    FOnStateChanged: TNotifyEvent;
+    FOnNetworkTitleChangedReceived: TTitleChangedEvent;
+    FOnServerInfoReceived: TServerInfoEvent;
+    FOnErrorReceived: TErrorEvent;
 
-    procedure ClientConnected(Sender: TSocketThread);
-    procedure ClientEnded(Sender: TSocketThread);
-    procedure ClientLoggedOn(Sender: TSocketThread);
-    procedure ClientLoggedOff(Sender: TSocketThread);
-    procedure ClientStreamsReceived(Sender: TSocketThread);
-    procedure ClientChartsReceived(Sender: TSocketThread);
-    procedure ClientChartGenresReceived(Sender: TSocketThread);
-    procedure ClientTitleChanged(Sender: TSocketThread);
-    procedure ClientServerInfo(Sender: TSocketThread);
-    procedure ClientError(Sender: TSocketThread);
+    procedure HomeThreadConnected(Sender: TSocketThread);
+    procedure HomeThreadEnded(Sender: TSocketThread);
+    procedure HomeThreadBytesTransferred(Sender: TObject; Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader; Transferred: UInt64);
 
-    function ZCompressStr(const s: AnsiString): AnsiString;
+    procedure HomeThreadLogInReceived(Sender: TSocketThread);
+    procedure HomeThreadLogOutReceived(Sender: TSocketThread);
+    procedure HomeThreadServerDataReceived(Sender: TSocketThread);
+    procedure HomeThreadNetworkTitleChangedReceived(Sender: TSocketThread);
+    procedure HomeThreadServerInfoReceived(Sender: TSocketThread);
+    procedure HomeThreadErrorReceived(Sender: TSocketThread);
   public
     constructor Create;
     destructor Destroy; override;
 
     procedure Connect;
-    procedure SubmitStream(Stream: string);
-
-    function GetServerData: Boolean;
-
-    procedure LogOn(User, Pass: string);
-    procedure LogOff;
-    procedure TitleChanged(ID: Cardinal; StreamName, Title, CurrentURL, URL, Format: string; Kbps: Cardinal; URLs: TStringList);
-    procedure SendClientInfo;
-    procedure UpdateStats(List: TList<Cardinal>; RecordingCount: Cardinal);
-    procedure RateStream(ID, Rating: Integer);
-    procedure SetDataOkay(ID: Integer; RecordingOkay: Boolean); overload;
-    procedure SetDataTitlePattern(ID: Integer; RegEx: string); overload;
-    procedure SetDataIgnoreTracks(ID: Integer; Lst: TStringList); overload;
-    procedure SetTitleNotifications(Enable: Boolean);
-    procedure RebuildIndex;
-    procedure SendClientStats(Auto: Boolean);
-
     procedure Terminate;
+    procedure SendHandshake;
+    procedure SendLogIn(User, Pass: string);
+    procedure SendLogOut;
+    function SendGetServerData: Boolean;
+    procedure SendUpdateStats(List: TList<Cardinal>; RecordingCount: Cardinal);
+    procedure SendSetSettings(TitleNotifications: Boolean);
 
-    property Connected: Boolean read FConnected;
     property WasConnected: Boolean read FWasConnected;
+    property Connected: Boolean read FConnected;
     property Authenticated: Boolean read FAuthenticated;
     property IsAdmin: Boolean read FIsAdmin;
+
+    property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
+    property OnBytesTransferred: TTransferProgressEvent read FOnBytesTransferred write FOnBytesTransferred;
+
+    property OnLogInReceived: TBooleanEvent read FOnLogInReceived write FOnLogInReceived;
+    property OnLogOutReceived: TNotifyEvent read FOnLogOutReceived write FOnLogOutReceived;
     property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
     property OnChartsReceived: TChartsReceivedEvent read FOnChartsReceived write FOnChartsReceived;
-    property OnChartGenresReceived: TChartGenresReceivedEvent read FOnChartGenresReceived write FOnChartGenresReceived;
-    property OnTitleChanged: TTitleChangedEvent read FOnTitleChanged write FOnTitleChanged;
-    property OnServerInfo: TServerInfoEvent read FOnServerInfo write FOnServerInfo;
-    property OnError: TErrorEvent read FOnError write FOnError;
-    property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
+    property OnNetworkTitleChangedReceived: TTitleChangedEvent read FOnNetworkTitleChangedReceived write FOnNetworkTitleChangedReceived;
+    property OnServerInfoReceived: TServerInfoEvent read FOnServerInfoReceived write FOnServerInfoReceived;
+    property OnErrorReceived: TErrorEvent read FOnErrorReceived write FOnErrorReceived;
   end;
 
 var
@@ -188,431 +158,263 @@ var
 
 implementation
 
-uses
-  AppData;
+{ THomeThread }
+
+constructor THomeThread.Create;
+begin
+  inherited Create('mistake.ws', 7085, TSocketStream.Create);
+
+  UseSynchronize := True;
+  FGenres := TList<TGenre>.Create;
+  FCharts := TList<TChartEntry>.Create;
+  FStreams := TStreamBrowserList.Create;
+end;
+
+destructor THomeThread.Destroy;
+begin
+  FGenres.Free;
+  FCharts.Free;
+  FStreams.Free;
+
+  inherited;
+end;
+
+procedure THomeThread.DoEnded;
+begin
+  inherited;
+
+end;
+
+procedure THomeThread.DoErrorReceived(CommandHeader: TCommandHeader;
+  Command: TCommandErrorResponse);
+begin
+  FErrorID := TCommErrors(Command.ErrorID);
+  FErrorMsg := Command.ErrorMsg;
+
+  if Assigned(FOnErrorReceived) then
+    Sync(FOnErrorReceived);
+end;
+
+procedure THomeThread.DoException(E: Exception);
+begin
+  inherited;
+
+  // TODO: bei ner exception hammert der client massiv auf den server. der muss immer etwas warten. gleichzeitig muss in statusleiste stehen "Verbinde..."
+end;
+
+procedure THomeThread.DoLogInReceived(CommandHeader: TCommandHeader;
+  Command: TCommandLogInResponse);
+begin
+  FAuthenticated := Command.Success;
+  FIsAdmin := Command.IsAdmin;
+
+  if Assigned(FOnLogInReceived) then
+    Sync(FOnLogInReceived);
+end;
+
+procedure THomeThread.DoLogOutReceived(CommandHeader: TCommandHeader;
+  Command: TCommandLogOutResponse);
+begin
+  FAuthenticated := False;
+
+  if Assigned(FOnLogOutReceived) then
+    Sync(FOnLogOutReceived);
+end;
+
+procedure THomeThread.DoNetworkTitleChanged(CommandHeader: TCommandHeader;
+  Command: TCommandNetworkTitleChangedResponse);
+begin
+  if not AppGlobals.AutoTuneIn then
+    Exit;
+
+  FNetworkTitleChanged := Command;
+
+  if (FNetworkTitleChanged.StreamName <> '') and (FNetworkTitleChanged.Title <> '') and (FNetworkTitleChanged.CurrentURL <> '') then
+    if Assigned(FOnNetworkTitleChangedReceived) then
+      Sync(FOnNetworkTitleChangedReceived);
+end;
+
+procedure THomeThread.DoReceivedCommand(ID: Cardinal; CommandHeader: TCommandHeader; Command: TCommand);
+var
+  LogIn: TCommandLogInResponse absolute Command;
+  LogOut: TCommandLogOutResponse absolute Command;
+  GetServerData: TCommandGetServerDataResponse absolute Command;
+  NetworkTitleChanged: TCommandNetworkTitleChangedResponse absolute Command;
+  ServerInfo: TCommandServerInfoResponse absolute Command;
+  Error: TCommandErrorResponse absolute Command;
+  MS: TExtendedStream;
+  Count: Cardinal;
+  i: Integer;
+begin
+  inherited;
+
+  case CommandHeader.CommandType of
+    ctHandshakeResponse: ;
+    ctLoginResponse:
+      DoLogInReceived(CommandHeader, LogIn);
+    ctLogout: ;
+    ctLogoutResponse:
+      DoLogOutReceived(CommandHeader, LogOut);
+    ctGetServerDataResponse:
+      DoServerDataReceived(CommandHeader, GetServerData);
+    ctNetworkTitleChangedResponse:
+      DoNetworkTitleChanged(CommandHeader, NetworkTitleChanged);
+    ctServerInfoResponse:
+      DoServerInfoReceived(CommandHeader, ServerInfo);
+    ctErrorResponse:
+      DoErrorReceived(CommandHeader, Error);
+  end;
+end;
+
+procedure THomeThread.DoServerDataReceived(CommandHeader: TCommandHeader;
+  Command: TCommandGetServerDataResponse);
+var
+  i: Integer;
+  Count: Cardinal;
+  Stream: TExtendedStream;
+begin
+  try
+    Stream := TExtendedStream(Command.Stream);
+
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+      FGenres.Add(TGenre.LoadFromHome(Stream, CommandHeader.Version));
+
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+      FStreams.Add(TStreamBrowserEntry.LoadFromHome(Stream, CommandHeader.Version));
+    FStreams.CreateDict;
+
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+      FCharts.Add(TChartEntry.LoadFromHome(Stream, nil, CommandHeader.Version, FStreams));
+
+    if Assigned(FOnServerDataReceived) then
+      Sync(FOnServerDataReceived);
+  finally
+    FStreams.ClearDict;
+    FGenres.Clear;
+    FCharts.Clear;
+    FStreams.Clear;
+  end;
+end;
+
+procedure THomeThread.DoServerInfoReceived(CommandHeader: TCommandHeader;
+  Command: TCommandServerInfoResponse);
+begin
+  FServerInfoClientCount := Command.ClientCount;
+  FServerInfoRecordingCount := Command.RecordingCount;
+
+  if Assigned(FOnServerInfoReceived) then
+    Sync(FOnServerInfoReceived);
+end;
 
 { THomeCommunication }
 
-procedure THomeCommunication.ClientServerInfo(Sender: TSocketThread);
+procedure THomeCommunication.HomeThreadBytesTransferred(Sender: TObject;
+  Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader;
+  Transferred: UInt64);
 begin
-  if Assigned(FOnServerInfo) then
-    FOnServerInfo(Self, THomeThread(Sender).FServerInfoClientCount, THomeThread(Sender).FServerInfoRecordingCount);
-
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
-end;
-
-procedure THomeCommunication.ClientStreamsReceived(Sender: TSocketThread);
-begin
-  if Assigned(FOnStreamsReceived) then
-    FOnStreamsReceived(Self, THomeThread(Sender).FGenres, THomeThread(Sender).FStreams);
-end;
-
-procedure THomeCommunication.ClientTitleChanged(Sender: TSocketThread);
-begin
-  if Assigned(FOnTitleChanged) then
-    FOnTitleChanged(Self, THomeThread(Sender).FChangedStreamID, THomeThread(Sender).FChangedStreamName,
-      THomeThread(Sender).FChangedTitle, THomeThread(Sender).FChangedCurrentURL,
-      THomeThread(Sender).FChangedFormat, THomeThread(Sender).FChangedTitlePattern,
-      THomeThread(Sender).FChangedKbps);
-end;
-
-procedure THomeCommunication.ClientLoggedOn(Sender: TSocketThread);
-begin
-  FAuthenticated := THomeThread(Sender).FAuthAuthenticated;
-  FIsAdmin := THomeThread(Sender).FIsAdmin;
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
-end;
-
-procedure THomeCommunication.ClientLoggedOff(Sender: TSocketThread);
-begin
-  FAuthenticated := THomeThread(Sender).FAuthAuthenticated;
-  FIsAdmin := THomeThread(Sender).FIsAdmin;
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
-end;
-
-procedure THomeCommunication.Connect;
-begin
-  if FClient <> nil then
-    Exit;
-
-  FClient := THomeThread.Create;
-  FClient.OnConnected := ClientConnected;
-  FClient.OnLoggedOn := ClientLoggedOn;
-  FClient.OnLoggedOff := ClientLoggedOff;
-  FClient.OnStreamsReceived := ClientStreamsReceived;
-  FClient.OnChartsReceived := ClientChartsReceived;
-  FClient.OnChartGenresReceived := ClientChartGenresReceived;
-  FClient.OnTitleChanged := ClientTitleChanged;
-  FClient.OnServerInfo := ClientServerInfo;
-  FClient.OnError := ClientError;
-  FClient.OnEnded := ClientEnded;
-  FClient.Resume;
+  if Assigned(FOnBytesTransferred) then
+    FOnBytesTransferred(Sender, Direction, CommandID, CommandHeader, Transferred);
 end;
 
 constructor THomeCommunication.Create;
 begin
-  FLastUpdateXML := '';
-  FTitleNotificationsEnabled := False;
+  inherited;
+
+  //FTitleNotificationsEnabled := False; todo
 end;
 
 destructor THomeCommunication.Destroy;
 begin
-  Terminate;
+
   inherited;
 end;
 
-function THomeCommunication.GetServerData: Boolean;
-var
-  XMLDocument: TXMLLib;
-  XML: AnsiString;
-begin
-  Result := False;
-  if not FConnected then
-    Exit;
-
-  XMLDocument := FClient.XMLGet('getstreams');
-  try
-    XMLDocument.SaveToString(XML);
-
-    FClient.Write(ZCompressStr(XML));
-    Result := True;
-  finally
-    XMLDocument.Free;
-  end;
-
-  Result := False;
-  if not FConnected then
-    Exit;
-
-  XMLDocument := FClient.XMLGet('getcharts');
-  try
-    XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
-    Result := True;
-  finally
-    XMLDocument.Free;
-  end;
-end;
-
-procedure THomeCommunication.RateStream(ID, Rating: Integer);
-var
-  XMLDocument: TXMLLib;
-  Data, Node: TXMLNode;
-  XML: AnsiString;
+procedure THomeCommunication.SendLogIn(User, Pass: string);
 begin
   if not FConnected then
     Exit;
 
-  XMLDocument := FClient.XMLGet('ratestream');
-  try
-    Data := XMLDocument.Root.GetNode('data');
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'id';
-    Node.Value.AsInteger := ID;
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'rating';
-    Node.Value.AsInteger := Rating;
-
-    XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
-  finally
-    XMLDocument.Free;
-  end;
+  FThread.SendCommand(TCommandLogIn.Create(User, Pass));
 end;
 
-procedure THomeCommunication.RebuildIndex;
-var
-  XMLDocument: TXMLLib;
-  XML: AnsiString;
+procedure THomeCommunication.SendLogOut;
 begin
   if not FConnected then
     Exit;
 
-  XMLDocument := FClient.XMLGet('rebuildindex');
-  try
-    XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
-  finally
-    XMLDocument.Free;
-  end;
+  FThread.SendCommand(TCommandLogOut.Create)
 end;
 
-procedure THomeCommunication.SendClientInfo;
-var
-  XMLDocument: TXMLLib;
-  Data, Node: TXMLNode;
-  XML: AnsiString;
-begin
-  if not Connected then
-    Exit;
-
-  XMLDocument := FClient.XMLGet('clientinfo');
-  try
-    Data := XMLDocument.Root.GetNode('data');
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'id';
-    Node.Value.AsInteger := AppGlobals.ID;
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'version';
-    Node.Value.AsString := AppGlobals.AppVersion.AsString;
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'build';
-    Node.Value.AsInteger := AppGlobals.BuildNumber;
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'language';
-    Node.Value.AsString := AppGlobals.Language;
-
-    Node := TXmlNode.Create(Data);
-    Node.Name := 'compression';
-    Node.Value.AsBoolean := True;
-
-    Node := TXmlNode.Create(Data);
-    Node.Name := 'protoversion';
-    Node.Value.AsInteger := 2;
-
-    XMLDocument.SaveToString(XML);
-    FClient.Write(XML);
-  finally
-    XMLDocument.Free;
-  end;
-end;
-
-procedure THomeCommunication.SendClientStats(Auto: Boolean);
-var
-  XMLDocument: TXMLLib;
-  Data, Node: TXMLNode;
-  XML: AnsiString;
-begin
-  if not Connected then
-    Exit;
-
-  XMLDocument := FClient.XMLGet('clientstats');
-  try
-    Data := XMLDocument.Root.GetNode('data');
-
-    Node := TXMLNode.Create(Data);
-    if Auto then
-      Node.Name := 'autosaved'
-    else
-      Node.Name := 'saved';
-    Node.Value.AsInteger := 1;
-
-    XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
-  finally
-    XMLDocument.Free;
-  end;
-end;
-
-procedure THomeCommunication.SetDataOkay(ID: Integer; RecordingOkay: Boolean);
-var
-  XMLDocument: TXMLLib;
-  Data, Node: TXMLNode;
-  XML: AnsiString;
+procedure THomeCommunication.SendSetSettings(TitleNotifications: Boolean);
 begin
   if not FConnected then
     Exit;
 
-  XMLDocument := FClient.XMLGet('setdata');
-  try
-    Data := XMLDocument.Root.GetNode('data');
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'id';
-    Node.Value.AsInteger := ID;
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'recordingokay';
-    Node.Value.AsBoolean := RecordingOkay;
-
-    XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
-  finally
-    XMLDocument.Free;
-  end;
+  FThread.SendCommand(TCommandSetSettings.Create(TitleNotifications));
 end;
 
-procedure THomeCommunication.SetDataTitlePattern(ID: Integer; RegEx: string);
+procedure THomeCommunication.SendUpdateStats(List: TList<Cardinal>;
+  RecordingCount: Cardinal);
 var
-  XMLDocument: TXMLLib;
-  Data, Node: TXMLNode;
-  XML: AnsiString;
+  i: Integer;
+  Cmd: TCommandUpdateStats;
+  Stream: TExtendedStream;
 begin
   if not FConnected then
     Exit;
 
-  XMLDocument := FClient.XMLGet('setdata');
-  try
-    Data := XMLDocument.Root.GetNode('data');
+  Cmd := TCommandUpdateStats.Create;
+  Stream := TExtendedStream(Cmd.Stream);
 
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'id';
-    Node.Value.AsInteger := ID;
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'regex';
-    Node.Value.AsString := RegEx;
-
-    XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
-  finally
-    XMLDocument.Free;
+  Stream.Write(Cardinal(List.Count));
+  for i := 0 to List.Count - 1 do
+  begin
+    Stream.Write(List[i]);
   end;
-end;
 
-procedure THomeCommunication.SetDataIgnoreTracks(ID: Integer; Lst: TStringList);
-var
-  XMLDocument: TXMLLib;
-  Data, Node: TXMLNode;
-  XML: AnsiString;
-begin
-  if not FConnected then
-    Exit;
+  Stream.Write(RecordingCount);
 
-  XMLDocument := FClient.XMLGet('setdata');
-  try
-    Data := XMLDocument.Root.GetNode('data');
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'id';
-    Node.Value.AsInteger := ID;
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'ignoretitles';
-    Node.Value.AsString := Lst.Text;
-
-    XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
-  finally
-    XMLDocument.Free;
-  end;
-end;
-
-procedure THomeCommunication.SetTitleNotifications(Enable: Boolean);
-var
-  XMLDocument: TXMLLib;
-  Data: TXMLNode;
-  Attr: TXMLAttribute;
-  XML: AnsiString;
-begin
-  if not FConnected then
-    Exit;
-
-  if (Enable = FTitleNotificationsEnabled) and FTitleNotificationsSet then
-    Exit;
-
-  FTitleNotificationsEnabled := Enable;
-  FTitleNotificationsSet := True;
-
-  XMLDocument := FClient.XMLGet('settitlenotifications');
-  try
-    Data := XMLDocument.Root.GetNode('data');
-
-    Attr := Data.Attributes.Add;
-    Attr.Name := 'enable';
-    Attr.Value.AsBoolean := Enable;
-
-    XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
-  finally
-    XMLDocument.Free;
-  end;
-end;
-
-procedure THomeCommunication.SubmitStream(Stream: string);
-var
-  XMLDocument: TXMLLib;
-  Data: TXMLNode;
-  XML: AnsiString;
-begin
-  if not FConnected then
-    Exit;
-
-  XMLDocument := FClient.XMLGet('submitstream');
-  try
-    if Stream[Length(Stream)] = '/' then
-      Stream := Copy(Stream, 1, Length(Stream) - 1);
-
-    Data := XMLDocument.Root.GetNode('data');
-    Data.Value.AsString := Stream;
-
-    XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
-  finally
-    XMLDocument.Free;
-  end;
+  FThread.SendCommand(Cmd);
 end;
 
 procedure THomeCommunication.Terminate;
 begin
-  FOnStreamsReceived := nil;
-  FOnTitleChanged := nil;
-  FOnServerInfo := nil;
-  FOnError := nil;
+  // TODO: bei bedarf erweitern!
   FOnStateChanged := nil;
+  FOnBytesTransferred := nil;
+  FOnLogInReceived := nil;
+  FOnLogOutReceived := nil;
+  FOnStreamsReceived := nil;
+  FOnChartsReceived := nil;
+  FOnNetworkTitleChangedReceived := nil;
+  FOnErrorReceived := nil;
 
-  if FClient <> nil then
-    FClient.Terminate;
+  if FThread <> nil then
+    FThread.Terminate;
 end;
 
-procedure THomeCommunication.LogOn(User, Pass: string);
-var
-  XMLDocument: TXMLLib;
-  Data, Node: TXMLNode;
-  XML: AnsiString;
+function THomeCommunication.SendGetServerData: Boolean;
 begin
+  Result := True;
   if not FConnected then
-    Exit;
+    Exit(False);
 
-  XMLDocument := FClient.XMLGet('logon');
-  try
-    Data := XMLDocument.Root.GetNode('data');
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'user';
-    Node.Value.AsString := User;
-
-    Node := TXMLNode.Create(Data);
-    Node.Name := 'pass';
-    Node.Value.AsString := Pass;
-
-    XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
-  finally
-    XMLDocument.Free;
-  end;
+  FThread.SendCommand(TCommandGetServerData.Create)
 end;
 
-procedure THomeCommunication.ClientChartGenresReceived(
-  Sender: TSocketThread);
+procedure THomeCommunication.HomeThreadConnected(Sender: TSocketThread);
 begin
-  if Assigned(FOnChartGenresReceived) then
-    FOnChartGenresReceived(Self, FClient.FChartGenres);
-end;
+  inherited;
 
-procedure THomeCommunication.ClientChartsReceived(Sender: TSocketThread);
-begin
-  if Assigned(FOnChartsReceived) then
-    FOnChartsReceived(Self, FClient.FChartCategories, FClient.FCharts);
-end;
-
-procedure THomeCommunication.ClientConnected(Sender: TSocketThread);
-begin
   FConnected := True;
-  FLastUpdateXML := '';
 
-  SendClientInfo;
+  SendHandshake;
 
   if AppGlobals.UserWasSetup and (AppGlobals.User <> '') and (AppGlobals.Pass <> '') then
-    LogOn(AppGlobals.User, AppGlobals.Pass);
+    SendLogIn(AppGlobals.User, AppGlobals.Pass);
 
   FWasConnected := False;
   if Assigned(FOnStateChanged) then
@@ -620,474 +422,124 @@ begin
   FWasConnected := True;
 end;
 
-procedure THomeCommunication.ClientEnded(Sender: TSocketThread);
-var
-  Thread: THomeThread;
+procedure THomeCommunication.HomeThreadEnded(Sender: TSocketThread);
 begin
   FConnected := False;
   FAuthenticated := False;
   FIsAdmin := False;
   FTitleNotificationsSet := False;
-  FClient := nil;
-  Thread := THomeThread(Sender);
+  FThread := nil;
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 
-  if Thread.Terminated then
+  if THomeThread(Sender).Terminated then
     Exit;
 
   Connect;
 end;
 
-procedure THomeCommunication.ClientError(Sender: TSocketThread);
+procedure THomeCommunication.HomeThreadErrorReceived(
+  Sender: TSocketThread);
 begin
-  if Assigned(FOnError) then
-    FOnError(Self, FClient.FErrorID, FClient.FErrorMsg);
+  if Assigned(FOnErrorReceived) then
+    FOnErrorReceived(Self, FThread.FErrorID, FThread.FErrorMsg);
 end;
 
-procedure THomeCommunication.TitleChanged(ID: Cardinal; StreamName, Title, CurrentURL, URL, Format: string;
-  Kbps: Cardinal; URLs: TStringList);
-var
-  i: Integer;
-  XMLDocument: TXMLLib;
-  N, N2, N3: TXMLNode;
-  XML: AnsiString;
-  TmpURL: AnsiString;
+procedure THomeCommunication.HomeThreadLogInReceived(Sender: TSocketThread);
 begin
-  if not FConnected then
-    Exit;
+  FAuthenticated := THomeThread(Sender).FAuthenticated;
+  FIsAdmin := THomeThread(Sender).FIsAdmin;
 
-  if Trim(Title) = '' then
-    Exit;
-
-  XMLDocument := FClient.XMLGet('fulltitlechange');
-  try
-    N := XMLDocument.Root.Nodes.GetNode('data');
-
-    N2 := TXMLNode.Create(N);
-    N2.Name := 'id';
-    N2.Value.AsLongWord := ID;
-    N2 := TXMLNode.Create(N);
-    N2.Name := 'streamname';
-    N2.Value.AsString := StreamName;
-    N2 := TXMLNode.Create(N);
-    N2.Name := 'title';
-    N2.Value.AsString := Title;
-    N2 := TXMLNode.Create(N);
-    N2.Name := 'currenturl';
-    N2.Value.AsString := CurrentURL;
-    N2 := TXMLNode.Create(N);
-    N2.Name := 'url';
-    N2.Value.AsString := URL;
-
-    N2 := TXMLNode.Create(N);
-    N2.Name := 'format';
-    N2.Value.AsString := Format;
-    N2 := TXMLNode.Create(N);
-    N2.Name := 'kbps';
-    N2.Value.AsLongWord := Kbps;
-
-    if URLs <> nil then
-    begin
-      N3 := TXMLNode.Create(N);
-      N3.Name := 'urls';
-      for i := 0 to URLs.Count - 1 do
-      begin
-        N2 := TXMLNode.Create(N3);
-        N2.Name := 'url';
-        TmpURL := AnsiString(URLs[i]);
-        if TmpURL[Length(TmpURL)] = '/' then
-          TmpURL := Copy(TmpURL, 1, Length(TmpURL) - 1);
-        N2.Value.AsString := TmpURL;
-      end;
-    end;
-
-    XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
-  finally
-    XMLDocument.Free;
-  end;
+  if Assigned(FOnLogInReceived) then
+    FOnLogInReceived(Self, FAuthenticated);
 end;
 
-procedure THomeCommunication.LogOff;
-var
-  XMLDocument: TXMLLib;
-  XML: AnsiString;
+procedure THomeCommunication.HomeThreadLogOutReceived(Sender: TSocketThread);
 begin
-  if not FConnected then
-    Exit;
+  FAuthenticated := THomeThread(Sender).FAuthenticated;
+  FIsAdmin := THomeThread(Sender).FIsAdmin;
 
-  XMLDocument := FClient.XMLGet('logoff');
-  try
-    XMLDocument.SaveToString(XML);
-    FClient.Write(ZCompressStr(XML));
-  finally
-    XMLDocument.Free;
-  end;
+  if Assigned(FOnLogOutReceived) then
+    FOnLogOutReceived(Self);
 end;
 
-procedure THomeCommunication.UpdateStats(List: TList<Cardinal>; RecordingCount: Cardinal);
-var
-  i: Integer;
-  XMLDocument: TXMLLib;
-  Data, Data2: TXMLNode;
-  XML: AnsiString;
+procedure THomeCommunication.HomeThreadServerDataReceived(Sender: TSocketThread);
 begin
-  if not FConnected then
-    Exit;
-
-  XMLDocument := FClient.XMLGet('updatestats');
-  try
-    XMLDocument.Root.GetNode('header').Attributes.AttributeByName['version'].Value.AsString := '2';
-
-    Data := XMLDocument.Root.GetNode('data');
-
-    for i := 0 to List.Count - 1 do
-    begin
-      Data2 := TXMLNode.Create(Data);
-      Data2.Name := 'stream';
-      Data2.Value.AsLongWord := List[i];
-    end;
-
-    Data2 := TXMLNode.Create(Data);
-    Data2.Name := 'unknowncount';
-    Data2.Value.AsLongWord := RecordingCount;
-
-    XMLDocument.SaveToString(XML);
-    if FLastUpdateXML <> XML then
-      FClient.Write(ZCompressStr(XML));
-    FLastUpdateXML := XML;
-  finally
-    XMLDocument.Free;
-  end;
-end;
-
-function THomeCommunication.ZCompressStr(const s: AnsiString): AnsiString;
-var
-  buffer: Pointer;
-  size: Integer;
-begin
-  ZCompress(PAnsiChar(s), Length(s), buffer, size, zcMax);
-  SetLength(result, size);
-  Move(buffer^, pointer(result)^, size);
-  FreeMem(buffer);
-end;
-
-{ THomeThread }
-
-constructor THomeThread.Create;
-var m: TMemoryStream;
-begin
-  {$IFDEF DEBUG}
-  //inherited Create('gaia', 8007);
-  inherited Create('streamwriter.org', 8007);
-  {$ELSE}
-  inherited Create('streamwriter.org', 8007);
-  {$ENDIF}
-
-  UseSynchronize := True;
-  FCharts := TList<TChartEntry>.Create;
-  FChartGenres := TList<TGenre>.Create;
-  FChartCategories := TList<TChartCategory>.Create;
-  FStreams := TList<TStreamBrowserEntry>.Create;
-  FGenres := TList<TGenre>.Create;
-end;
-
-destructor THomeThread.Destroy;
-var
-  i: Integer;
-begin
-  FCharts.Free;
-  FChartGenres.Free;
-
-  for i := 0 to FChartCategories.Count - 1 do
-    FChartCategories[i].Free;
-  FChartCategories.Free;
-
-  for i := 0 to FStreams.Count - 1 do
-    FStreams[i].Free;
-  FStreams.Free;
-
-  for i := 0 to FGenres.Count - 1 do
-    FGenres[i].Free;
-  FGenres.Free;
-
-  inherited;
-end;
-
-procedure THomeThread.DoLoggedOn(Version: Integer; Header, Data: TXMLNode);
-begin
-  FAuthAuthenticated := Data.Nodes.GetNode('success').Value.AsBoolean;
-  FIsAdmin := Data.Nodes.GetNode('isadmin').Value.AsBoolean;
-  if Assigned(FOnLoggedOn) then
-    Sync(FOnLoggedOn);
-end;
-
-// TODO: ich refreshe charts und streams. streams zuerst fertig, charts noch nicht - bei streams kann man wieder
-//       "refresh" klicken. dann ist das chart-refresh noch im gange und ein nächstes enqueued. unschön.
-
-procedure THomeThread.DoChartsReceived(Version: Integer; Header,
-  Data: TXMLNode);
-var
-  i: Integer;
-  Node, Node2: TXMLNode;
-  Categories: TIntArray;
-  Streams: TList<TChartStream>;
-begin
-  for Node in Data.Nodes.GetNode('categories').Nodes do
-    FChartCategories.Add(TChartCategory.Create(Node.Attributes.AttributeByName['id'].Value.AsLongWord, Node.Value.AsString));
-
-  for Node in Data.Nodes.GetNode('charts').Nodes do
-  begin
-    Streams := TList<TChartStream>.Create;
-    SetLength(Categories, 0);
-    for Node2 in Node.Nodes do
-    begin
-      if Node2.Name = 'cat' then
-      begin
-        SetLength(Categories, Length(Categories) + 1);
-        Categories[High(Categories)] := Node2.Value.AsInteger;
-      end;
-      if Node2.Name = 'stream' then
-      begin
-        Streams.Add(TChartStream.Create(Node2.Attributes.AttributeByName['id'].Value.AsLongWord,
-          Node2.Attributes.AttributeByName['lastday'].Value.AsLongWord,
-          Node2.Attributes.AttributeByName['lastweek'].Value.AsLongWord));
-      end;
-    end;
-
-    FCharts.Add(TChartEntry.Create(Node.Value.AsString, Node.Attributes.AttributeByName['playedlastday'].Value.AsLongWord,
-      Node.Attributes.AttributeByName['playedlastweek'].Value.AsLongWord, Categories, Streams));
-  end;
+  if Assigned(FOnStreamsReceived) then
+    FOnStreamsReceived(Self, FThread.FGenres, FThread.FStreams);
 
   if Assigned(FOnChartsReceived) then
-    Sync(FOnChartsReceived);
-
-  for i := 0 to FChartCategories.Count - 1 do
-    FChartCategories[i].Free;
-  for i := 0 to FCharts.Count - 1 do
-    FCharts[i].Free;
-  FChartCategories.Clear;
-  FCharts.Clear;
+    FOnChartsReceived(Self, FThread.FCharts);
 end;
 
-procedure THomeThread.DoConnected;
+procedure THomeCommunication.HomeThreadServerInfoReceived(
+  Sender: TSocketThread);
 begin
-  inherited;
-
+  if Assigned(FOnServerInfoReceived) then
+    FOnServerInfoReceived(Self, THomeThread(Sender).FServerInfoClientCount, THomeThread(Sender).FServerInfoRecordingCount);
 end;
 
-procedure THomeThread.DoEnded;
+procedure THomeCommunication.HomeThreadNetworkTitleChangedReceived(
+  Sender: TSocketThread);
 begin
-  inherited;
-
-  Sleep(1000);
+  if Assigned(FOnNetworkTitleChangedReceived) then
+    FOnNetworkTitleChangedReceived(Self,  THomeThread(Sender).FNetworkTitleChanged.StreamID, THomeThread(Sender).FNetworkTitleChanged.StreamName,
+      THomeThread(Sender).FNetworkTitleChanged.Title, THomeThread(Sender).FNetworkTitleChanged.CurrentURL,
+      THomeThread(Sender).FNetworkTitleChanged.TitleRegEx, THomeThread(Sender).FNetworkTitleChanged.Format,
+      THomeThread(Sender).FNetworkTitleChanged.Bitrate);
 end;
 
-procedure THomeThread.DoError(Version: Integer; Header, Data: TXMLNode);
-begin
-  FErrorID := TCommErrors(Data.Nodes.GetNode('id').Value.AsInteger);
-  FErrorMsg := Data.Nodes.GetNode('message').Value.AsString;
-  if Assigned(FOnError) then
-    Sync(FOnError);
-end;
-
-procedure THomeThread.DoReceivedString(D: AnsiString);
+procedure THomeCommunication.SendHandshake;
 var
-  Version: Integer;
-  XMLDocument: TXMLLib;
-  Header, Data: TXMLNode;
-  T: string;
+  Cmd: TCommandHandshake;
 begin
-  inherited;
-
-  D := ZDecompressStr(D);
-
-  try
-    XMLDocument := TXMLLib.Create;
-    try
-      XMLDocument.LoadFromString(D);
-
-      Header := XMLDocument.Root.Nodes.GetNode('header');
-      Data := XMLDocument.Root.Nodes.GetNode('data');
-
-      Version := Header.Attributes.AttributeByName['version'].Value.AsInteger;
-      T := Header.Attributes.AttributeByName['type'].Value.AsString;
-
-      if Header.Attributes.AttributeByName['type'].Value.AsString = 'logon' then
-      begin
-        DoLoggedOn(Version, Header, Data);
-      end;
-
-      if Header.Attributes.AttributeByName['type'].Value.AsString = 'logoff' then
-      begin
-        DoLoggedOff(Version, Header, Data);
-      end;
-
-      if Header.Attributes.AttributeByName['type'].Value.AsString = 'getstreams' then
-      begin
-        DoStreamsReceived(Version, Header, Data);
-      end;
-
-      if Header.Attributes.AttributeByName['type'].Value.AsString = 'getcharts' then
-      begin
-        DoChartsReceived(Version, Header, Data);
-      end;
-
-      if Header.Attributes.AttributeByName['type'].Value.AsString = 'fulltitlechange' then
-      begin
-        DoTitleChanged(Version, Header, Data);
-      end;
-
-      if Header.Attributes.AttributeByName['type'].Value.AsString = 'serverinfo' then
-      begin
-        DoServerInfo(Version, Header, Data);
-      end;
-
-      if Header.Attributes.AttributeByName['type'].Value.AsString = 'error' then
-      begin
-        DoError(Version, Header, Data);
-      end;
-    finally
-      XMLDocument.Free;
-    end;
-  except
-    raise Exception.Create('Invalid data received');
-  end;
-end;
-
-procedure THomeThread.DoServerInfo(Version: Integer; Header,
-  Data: TXMLNode);
-begin
-  FServerInfoClientCount := Data.Nodes.GetNode('clientcount').Value.AsLongWord;
-  FServerInfoRecordingCount := Data.Nodes.GetNode('recordingcount').Value.AsLongWord;
-
-  if Assigned(FOnServerInfo) then
-    Sync(FOnServerInfo);
-end;
-
-procedure THomeThread.DoStreamsReceived(Version: Integer; Header, Data: TXMLNode);
-var
-  i: Integer;
-  T: string;
-  Node: TXMLNode;
-  Genre: TGenre;
-  Entry: TStreamBrowserEntry;
-begin
-  for Node in Data.Nodes.GetNode('genres').Nodes do
-  begin
-    Genre := TGenre.Create;
-    Genre.ID := Node.Attributes.AttributeByName['id'].Value.AsLongWord;
-    Genre.Name := Node.Value.AsString;
-    Genre.ChartCount := Node.Attributes.AttributeByName['chartcount'].Value.AsLongWord;
-    FGenres.Add(Genre);
-  end;
-
-  for Node in Data.Nodes.GetNode('streams').Nodes do
-  begin
-    Entry := TStreamBrowserEntry.Create;
-    FStreams.Add(Entry);
-    Entry.ID := Node.Attributes.AttributeByName['id'].Value.AsInteger;
-    Entry.Name := Node.Attributes.AttributeByName['name'].Value.AsString;
-    Entry.Genre := Node.Attributes.AttributeByName['genre'].Value.AsString;
-    Entry.URL := Node.Value.AsString;
-    Entry.Website := Node.Attributes.AttributeByName['website'].Value.AsString;
-    Entry.BitRate := Node.Attributes.AttributeByName['bitrate'].Value.AsInteger;
-    T := Node.Attributes.AttributeByName['type'].Value.AsString;
-    if T = 'mpeg' then
-      Entry.AudioType := atMPEG
-    else if T = 'aacp' then
-      Entry.AudioType := atAAC
-    else
-      Entry.AudioType := atNone;
-    Entry.MetaData := Node.Attributes.AttributeByName['metadata'].Value.AsBoolean;
-    Entry.ChangesTitleInSong := Node.Attributes.AttributeByName['changestitleinsong'].Value.AsBoolean;
-    Entry.Rating := Node.Attributes.AttributeByName['rating'].Value.AsInteger;
-    Entry.RecordingOkay := Node.Attributes.AttributeByName['recordingokay'].Value.AsBoolean;
-    Entry.RegEx := Node.Attributes.AttributeByName['regex'].Value.AsString;
-    Entry.IgnoreTitles.Text := Node.GetNode('ignoretitles').Value.AsString;
-  end;
-
-  if Assigned(FOnStreamsReceived) then
-    Sync(FOnStreamsReceived);
-
-  for i := 0 to FGenres.Count - 1 do
-    FGenres[i].Free;
-  for i := 0 to FStreams.Count - 1 do
-    FStreams[i].Free;
-  FGenres.Clear;
-  FStreams.Clear;
-end;
-
-procedure THomeThread.DoStuff;
-begin
-  inherited;
-
-  if (FLastTimeReceived > 0) and (FLastTimeReceived < GetTickCount - 40000) then
-    raise Exception.Create('No data/ping received');
-end;
-
-procedure THomeThread.DoTitleChanged(Version: Integer; Header, Data: TXMLNode);
-begin
-  if not AppGlobals.AutoTuneIn then
+  if not Connected then
     Exit;
 
-  FChangedStreamID := Data.Nodes.GetNode('id').Value.AsLongWord;
-  FChangedStreamName := Trim(Data.Nodes.GetNode('streamname').Value.AsString);
-  FChangedTitle := Data.Nodes.GetNode('title').Value.AsString;
-  FChangedCurrentURL := Data.Nodes.GetNode('currenturl').Value.AsString;
-  FChangedKbps := Data.Nodes.GetNode('kbps').Value.AsLongWord;
-  FChangedFormat := Data.Nodes.GetNode('format').Value.AsString;
-  FChangedTitlePattern := Data.Nodes.GetNode('regex').Value.AsString;
+  Cmd := TCommandHandshake.Create;
+  Cmd.VersionMajor := AppGlobals.AppVersion.Major;
+  Cmd.VersionMinor := AppGlobals.AppVersion.Minor;
+  Cmd.VersionRevision := AppGlobals.AppVersion.Revision;
+  Cmd.VersionBuild := AppGlobals.AppVersion.Build;
+  Cmd.Build := AppGlobals.BuildNumber;
+  Cmd.Language := AppGlobals.Language;
+  Cmd.ProtoVersion := 1;
 
-  if (FChangedStreamName <> '') and (FChangedTitle <> '') and (FChangedCurrentURL <> '') then
-    if Assigned(FOnTitleChanged) then
-      Sync(FOnTitleChanged);
+  FThread.SendCommand(Cmd);
 end;
 
-procedure THomeThread.DoLoggedOff(Version: Integer; Header,
-  Data: TXMLNode);
+procedure THomeCommunication.Connect;
 begin
-  FAuthAuthenticated := False;
-  FIsAdmin := False;
-  if Assigned(FOnLoggedOff) then
-    Sync(FOnLoggedOff);
-end;
+  if FThread <> nil then
+    Exit;
 
-function THomeThread.XMLGet(T: string): TXMLLib;
-var
-  Root, Header, Data: TXMLNode;
-begin
-  Result := TXMLLib.Create;
-  Result.Options.WriteStandardEOL := True;
-  Result.Options.OutputLevelCharIndent := 0;
+  FThread := THomeThread.Create;
+  FThread.OnConnected := HomeThreadConnected;
+  FThread.OnEnded := HomeThreadEnded;
+  FThread.OnBytesTransferred := HomeThreadBytesTransferred;
 
-  Root := TXMLNode.Create();
-  Root.Name := 'request';
-  Result.Root := Root;
+  FThread.OnLogInReceived := HomeThreadLogInReceived;
+  FThread.OnLogOutReceived := HomeThreadLogOutReceived;
+  FThread.OnServerDataReceived := HomeThreadServerDataReceived;
 
-  Header := TXMLNode.Create(Root);
-  Header.Name := 'header';
-  Header.Attributes.SimpleAdd('version', '1');
-  Header.Attributes.SimpleAdd('type', T);
+  FThread.OnServerInfoReceived := HomeThreadServerInfoReceived;
+  FThread.OnErrorReceived := HomeThreadErrorReceived;
 
-  Data := TXMLNode.Create(Root);
-  Data.Name := 'data';
-end;
+  FThread.OnNetworkTitleChangedReceived := HomeThreadNetworkTitleChangedReceived;
 
-function THomeThread.ZDecompressStr(const s: AnsiString): AnsiString;
-var
-  buffer: Pointer;
-  size: Integer;
-begin
-  ZDecompress(Pointer(s), Length(s), buffer, size);
-  SetLength(result, size);
-  Move(buffer^, pointer(result)^, size);
-  FreeMem(buffer);
+  FThread.Start;
 end;
 
 initialization
+  TCommand.RegisterCommand(ctHandshakeResponse, TCommandHandshakeResponse);
+  TCommand.RegisterCommand(ctLogInResponse, TCommandLogInResponse);
+  TCommand.RegisterCommand(ctLogOutResponse, TCommandLogOutResponse);
+  TCommand.RegisterCommand(ctGetServerDataResponse, TCommandGetServerDataResponse);
+  TCommand.RegisterCommand(ctServerInfoResponse, TCommandServerInfoResponse);
+  TCommand.RegisterCommand(ctErrorResponse, TCommandErrorResponse);
+  TCommand.RegisterCommand(ctNetworkTitleChangedResponse, TCommandNetworkTitleChangedResponse);
+
   HomeComm := THomeCommunication.Create;
 
 finalization

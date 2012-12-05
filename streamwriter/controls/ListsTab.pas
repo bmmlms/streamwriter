@@ -322,7 +322,7 @@ begin
     DeleteList.Free;
   end;
 
-  HomeComm.SetTitleNotifications((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  HomeComm.SendSetSettings((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 
   FTree.EndUpdate;
 end;
@@ -534,7 +534,7 @@ begin
     Dlg.Free;
   end;
 
-  HomeComm.SetTitleNotifications((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  HomeComm.SendSetSettings((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 end;
 
 procedure TTitlePanel.PostTranslate;
@@ -836,7 +836,7 @@ begin
 
     List.Add(Title);
 
-    HomeComm.SetTitleNotifications((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+    HomeComm.SendSetSettings((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 
     Result := True;
   end else

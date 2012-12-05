@@ -162,8 +162,7 @@ type
 
     procedure SearchChange(Sender: TObject);
 
-    procedure HomeCommChartsReceived(Sender: TObject; CategoryList: TList<TChartCategory>;
-      ChartList: TList<TChartEntry>);
+    procedure HomeCommChartsReceived(Sender: TObject; ChartList: TList<TChartEntry>);
     //procedure CategoriesChange(Sender: TObject);
     procedure ButtonClick(Sender: TObject);
     procedure ChartsTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
@@ -249,37 +248,21 @@ begin
   inherited;
 end;
 
-procedure TChartsTab.HomeCommChartsReceived(Sender: TObject; CategoryList: TList<TChartCategory>;
-  ChartList: TList<TChartEntry>);
+procedure TChartsTab.HomeCommChartsReceived(Sender: TObject; ChartList: TList<TChartEntry>);
 var
   i: Integer;
   Chart: TChartEntry;
 begin
   FChartsTree.Clear;
 
-  for i := 0 to FLists.ChartCategoryList.Count - 1 do
-    FLists.ChartCategoryList[i].Free;
-  FLists.ChartCategoryList.Clear;
-
-  for i := 0 to CategoryList.Count - 1 do
-    FLists.ChartCategoryList.Add(CategoryList[i].Copy);
-
   for i := 0 to FLists.ChartList.Count - 1 do
     FLists.ChartList[i].Free;
   FLists.ChartList.Clear;
 
-  FLists.BrowserList.CreateDict;
-
   for i := 0 to ChartList.Count - 1 do
   begin
-    Chart := ChartList[i].Copy;
-
-    Chart.LoadStreams(FLists.BrowserList);
-
-    FLists.ChartList.Add(Chart);
+    FLists.ChartList.Add(ChartList[i]);
   end;
-
-  FLists.BrowserList.ClearDict;
 
   SetState(csNormal);
 
@@ -325,7 +308,8 @@ begin
     FSearchPanel.FSearch.Enabled := State = csNormal;
     FSearchPanel.FToolbar.Enabled := State = csNormal;
 
-    FSearchPanel.FButtonReload.Enabled := State = csNormal;
+    UpdateButtons;
+    //FSearchPanel.FButtonReload.Enabled := State = csNormal;
   end;
 end;
 
@@ -347,7 +331,7 @@ begin
 
   Caption := _('Charts');
 
-  if ((FLists.ChartCategoryList.Count = 0) or (FLists.ChartList.Count = 0)) and (not HomeComm.Connected) then
+  if (FLists.ChartList.Count = 0) and (not HomeComm.Connected) then
   begin
     SetState(csError);
   end;
@@ -462,7 +446,7 @@ begin
     end;
     N := FChartsTree.GetNext(N);
   end;
-
+  // TODO: in die charts klicken ist super lahm. ich darf höchstens einmal über alle nodes loopen und muss mir alles merken!
   SelectedCharts := FChartsTree.GetNodes(ntChart, True);
   SelectedStreams := FChartsTree.GetNodes(ntStream, True);
 

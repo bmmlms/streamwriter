@@ -729,8 +729,8 @@ begin
     Action := oaSetData
   else if Sender = FItemRefresh then
     Action := oaRefresh
-  else if Sender = FItemRebuildIndex then
-    HomeComm.RebuildIndex
+  //else if Sender = FItemRebuildIndex then
+  //  HomeComm.RebuildIndex TODO: !!!
   else if (Sender = FItemRate1) or (Sender = FItemRate2) or (Sender = FItemRate3) or
           (Sender = FItemRate4) or (Sender = FItemRate5) then
     if Length(Streams) = 1 then
@@ -772,7 +772,7 @@ begin
   FItemRate.Enabled := HomeComm.Connected and (Length(Streams) = 1);
   FItemRefresh.Enabled := HomeComm.Connected;
 
-  FItemRebuildIndex.Enabled := HomeComm.IsAdmin;
+  // FItemRebuildIndex.Enabled := HomeComm.IsAdmin; TODO: !!!
   FItemSetData.Enabled := HomeComm.Connected and (Length(Streams) = 1);
 
   FItemCopy.Enabled := Length(Streams) > 0;
@@ -1020,6 +1020,9 @@ end;
 
 procedure TMStreamTree.SwitchMode(Mode: TModes);
 begin
+  if Mode = FMode then
+    Exit;
+
   Enabled := Mode = moShow;
 
   FTimer.Enabled := False;
@@ -1163,8 +1166,7 @@ begin
   inherited;
 end;
 
-procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject;
-  Genres: TList<TGenre>; Streams: TList<TStreamBrowserEntry>);
+procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject; Genres: TList<TGenre>; Streams: TList<TStreamBrowserEntry>);
 var
   Genre: TGenre;
   Entry, Entry2: TStreamBrowserEntry;
@@ -1178,7 +1180,7 @@ begin
     Genre.Free;
   FDataLists.GenreList.Clear;
   for Genre in Genres do
-    FDataLists.GenreList.Add(TGenre.Create(Genre.Name, Genre.ID, Genre.ChartCount));
+    FDataLists.GenreList.Add(Genre);
 
   // Streams synchronisieren
   for Entry in FDataLists.BrowserList do
@@ -1186,6 +1188,7 @@ begin
       if (Entry.ID = Entry2.ID) then
       begin
         Entry2.OwnRating := Entry.OwnRating;
+        Continue;
       end;
 
   // Alte Liste leeren

@@ -170,7 +170,7 @@ begin
 
   if (optGood.Checked <> FIsOkay) and FIsOkayChanged then
   begin
-    HomeComm.SetDataOkay(FID, optGood.Checked);
+    // HomeComm.SetDataOkay(FID, optGood.Checked); TODO: !!!
     FIsOkay := optGood.Checked;
     FSaveSettings := True;
   end else
@@ -178,7 +178,7 @@ begin
 
   if (FRegEx <> txtTitlePattern.Text) and (FRegExChanged) then
   begin
-    HomeComm.SetDataTitlePattern(FID, txtTitlePattern.Text);
+    // HomeComm.SetDataTitlePattern(FID, txtTitlePattern.Text); TODO: !!!
     FRegEx := txtTitlePattern.Text;
     FSaveSettings := True;
   end else
@@ -190,7 +190,7 @@ begin
     for i := 0 to lstIgnoreTitles.Items.Count - 1 do
       if Trim(lstIgnoreTitles.Items[i].Caption) <> '' then
         FIgnoreList.Add(Trim(lstIgnoreTitles.Items[i].Caption));
-    HomeComm.SetDataIgnoreTracks(FID, FIgnoreList);
+    // HomeComm.SetDataIgnoreTracks(FID, FIgnoreList); TODO: !!!
     FSaveSettings := True;
   end;
 

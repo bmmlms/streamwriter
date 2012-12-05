@@ -101,6 +101,7 @@ type
     function Copy: TStreamBrowserEntry;
 
     class function Load(Stream: TExtendedStream; Version: Integer): TStreamBrowserEntry;
+    class function LoadFromHome(Stream: TExtendedStream; Version: Integer): TStreamBrowserEntry;
     procedure Save(Stream: TExtendedStream);
 
     // The unique ID of the stream
@@ -491,6 +492,7 @@ type
     function Copy: TChartEntry;
 
     class function Load(Stream: TExtendedStream; Lists: TDataLists; Version: Integer): TChartEntry;
+    class function LoadFromHome(Stream: TExtendedStream; Lists: TDataLists; Version: Integer; Streams: TStreamBrowserList): TChartEntry;
     procedure Save(Stream: TExtendedStream);
 
     procedure LoadStreams(StreamList: TStreamBrowserList);
@@ -513,17 +515,16 @@ type
   private
     FID: Cardinal;
     FName: string;
-    FChartCount: Cardinal;
   public
     constructor Create; overload;
-    constructor Create(Name: string; ID, ChartCount: Cardinal); overload;
+    constructor Create(Name: string; ID: Cardinal); overload;
 
     class function Load(Stream: TExtendedStream; Version: Integer): TGenre;
+    class function LoadFromHome(Stream: TExtendedStream; Version: Integer): TGenre;
     procedure Save(Stream: TExtendedStream);
 
     property ID: Cardinal read FID write FID;
     property Name: string read FName write FName;
-    property ChartCount: Cardinal read FChartCount write FChartCount;
   end;
 
   TGenreList = class(TList<TGenre>)
@@ -1865,6 +1866,37 @@ begin
   end;
 end;
 
+class function TStreamBrowserEntry.LoadFromHome(Stream: TExtendedStream;
+  Version: Integer): TStreamBrowserEntry;
+var
+  i: Integer;
+  B: Byte;
+  Count: Cardinal;
+  E: string;
+begin
+  Result := TStreamBrowserEntry.Create;
+  Stream.Read(Result.FID);
+  Stream.Read(Result.FName);
+  Stream.Read(Result.FGenre);
+  Stream.Read(Result.FURL);
+  Stream.Read(Result.FWebsite);
+  Stream.Read(Result.FBitRate);
+  Stream.Read(B);
+  Result.FAudioType := TAudioTypes(B);
+  Stream.Read(Result.FMetaData);
+  Stream.Read(Result.FChangesTitleInSong);
+  Stream.Read(Result.FRating);
+  Stream.Read(Result.FRecordingOkay);
+  Stream.Read(Result.FRegEx);
+
+  Stream.Read(Count);
+  for i := 0 to Count - 1 do
+  begin
+    Stream.Read(E);
+    Result.FIgnoreTitles.Add(E);
+  end;
+end;
+
 procedure TStreamBrowserEntry.Save(Stream: TExtendedStream);
 var
   i: Integer;
@@ -1984,6 +2016,26 @@ begin
   end;
 end;
 
+class function TChartEntry.LoadFromHome(Stream: TExtendedStream;
+  Lists: TDataLists; Version: Integer; Streams: TStreamBrowserList): TChartEntry;
+var
+  i, Dummy: Integer;
+  C: Cardinal;
+begin
+  Result := TChartEntry.Create;
+  Stream.Read(Result.FName);
+
+  Stream.Read(Result.FPlayedLastDay);
+  Stream.Read(Result.FPlayedLastWeek);
+
+  Stream.Read(C);
+  for i := 0 to C - 1 do
+  begin
+    Result.Streams.Add(TChartStream.Load(Stream, Version));
+  end;
+  Result.LoadStreams(Streams);
+end;
+
 procedure TChartEntry.LoadStreams(StreamList: TStreamBrowserList);
 var
   i: Integer;
@@ -2019,13 +2071,12 @@ end;
 
 { TGenre }
 
-constructor TGenre.Create(Name: string; ID, ChartCount: Cardinal);
+constructor TGenre.Create(Name: string; ID: Cardinal);
 begin
   inherited Create;
 
   FName := Name;
   FID := ID;
-  FChartCount := ChartCount;
 end;
 
 constructor TGenre.Create;
@@ -2036,6 +2087,8 @@ end;
 
 class function TGenre.Load(Stream: TExtendedStream;
   Version: Integer): TGenre;
+var
+  Dummy: Cardinal;
 begin
   Result := TGenre.Create;
 
@@ -2043,20 +2096,28 @@ begin
   begin
     Stream.Read(Result.FID);
     Stream.Read(Result.FName);
-    Stream.Read(Result.FChartCount);
+    Stream.Read(Dummy); // Das war mal ChartCount. Ich sollte Data version irgendwann erhöhen und das kicken.
   end else
   begin
     Result.FID := 0;
     Stream.Read(Result.FName);
-    Result.FChartCount := 1;
   end;
+end;
+
+class function TGenre.LoadFromHome(Stream: TExtendedStream;
+  Version: Integer): TGenre;
+begin
+  Result := TGenre.Create;
+
+  Stream.Read(Result.FID);
+  Stream.Read(Result.FName);
 end;
 
 procedure TGenre.Save(Stream: TExtendedStream);
 begin
   Stream.Write(FID);
   Stream.Write(FName);
-  Stream.Write(FChartCount);
+  Stream.Write(Cardinal(0));
 end;
 
 { TChartCategory }

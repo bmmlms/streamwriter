@@ -25,7 +25,7 @@ type
   end;
 
   // Defines all possible types of audio-data - DO NOT change orders. Make sure atM4A is always the last one!
-  // That is because the settings window and stream load/saving uses this.
+  // That is because the settings window and stream loading/saving uses this.
   // It generally makes sense not to alter these enums because they are used in binary streams..
   TAudioTypes = (atNone, atMPEG, atAAC, atOGG, atM4A);
   TBitRates = (brCBR, brVBR);

@@ -743,8 +743,8 @@ begin
       FOnRefresh(Self);
   end;
 
-  if FICEThread.RecvStream.SavedFullTitle then
-    HomeComm.SendClientStats(AutoRemove);
+  //if FICEThread.RecvStream.SavedFullTitle then
+  //  HomeComm.SendClientStats(AutoRemove); TODO: !!!
 end;
 
 procedure TICEClient.ThreadSpeedChanged(Sender: TSocketThread);
@@ -808,8 +808,8 @@ begin
           raise Exception.Create('');
       end;
 
-      HomeComm.TitleChanged(Entry.ID, Entry.Name, FTitle, FCurrentURL, Entry.StartURL, Format,
-        Entry.BitRate, Entry.URLs);
+      //HomeComm.TitleChanged(Entry.ID, Entry.Name, FTitle, FCurrentURL, Entry.StartURL, Format,
+      //  Entry.BitRate, Entry.URLs); TODO: !!!
     end;
 end;
 

@@ -285,6 +285,8 @@ type
     procedure CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
 
     procedure HomeCommStateChanged(Sender: TObject);
+    procedure HomeCommLogIn(Sender: TObject; Success: Boolean);
+    procedure HomeCommLogOut(Sender: TObject);
     procedure HomeCommServerInfo(Sender: TObject; ClientCount, RecordingCount: Cardinal);
     procedure HomeCommError(Sender: TObject; ID: TCommErrors; Msg: string);
 
@@ -590,7 +592,7 @@ end;
 
 procedure TfrmStreamWriterMain.actLogOffExecute(Sender: TObject);
 begin
-  HomeComm.Logoff;
+  HomeComm.SendLogOut;
 end;
 
 procedure TfrmStreamWriterMain.actStreamSettingsExecute(Sender: TObject);
@@ -683,8 +685,10 @@ begin
     // Wird hier gemacht, weil der Browser dann sicher da ist, wenn die
     // Streams empfangen werden (wg. DisplayCount)
     HomeComm.OnStateChanged := HomeCommStateChanged;
-    HomeComm.OnServerInfo := HomeCommServerInfo;
-    HomeComm.OnError := HomeCommError;
+    HomeComm.OnLogInReceived := HomeCommLogIn;
+    HomeComm.OnLogOutReceived := HomeCommLogOut;
+    HomeComm.OnServerInfoReceived := HomeCommServerInfo;
+    HomeComm.OnErrorReceived := HomeCommError;
     HomeComm.Connect;
 
     if not AppGlobals.FirstStartShown then
@@ -991,6 +995,19 @@ begin
   end;
 end;
 
+procedure TfrmStreamWriterMain.HomeCommLogIn(Sender: TObject;
+  Success: Boolean);
+begin
+  UpdateStatus;
+  if FCommunityLogin <> nil then
+    FCommunityLogin.HomeCommLogIn(Sender, Success);
+end;
+
+procedure TfrmStreamWriterMain.HomeCommLogOut(Sender: TObject);
+begin
+  UpdateStatus;
+end;
+
 procedure TfrmStreamWriterMain.HomeCommServerInfo(Sender: TObject;
   ClientCount, RecordingCount: Cardinal);
 begin
@@ -1003,8 +1020,6 @@ procedure TfrmStreamWriterMain.HomeCommStateChanged(Sender: TObject);
 begin
   UpdateStatus;
   tabCharts.HomeCommStateChanged(Sender);
-  if FCommunityLogin <> nil then
-    FCommunityLogin.HomeCommStateChanged(Sender);
 
   if (not HomeComm.WasConnected) and HomeComm.Connected then
   begin
@@ -1014,7 +1029,7 @@ begin
         (AppGlobals.LastBrowserUpdate < Now - 15)) or (FDataLists.ReloadServerData) or
         (tabCharts.State = csError) or (tabClients.SideBar.BrowserView.Mode = moError) then
     begin
-      if HomeComm.GetServerData then
+      if HomeComm.SendGetServerData then
       begin
         tabCharts.SetState(csLoading);
         tabClients.SideBar.BrowserView.SwitchMode(moLoading);
@@ -1028,7 +1043,7 @@ begin
       tabClients.SideBar.BrowserView.SwitchMode(moError);
   end;
 
-  HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 end;
 
 procedure TfrmStreamWriterMain.Hotkey(var Msg: TWMHotKey);
@@ -1187,7 +1202,7 @@ begin
   end
   else if Msg is TRefreshServerData then
   begin
-    if HomeComm.GetServerData then
+    if HomeComm.SendGetServerData then
     begin
       tabCharts.SetState(csLoading);
       tabClients.SideBar.BrowserView.SwitchMode(moLoading);
@@ -1566,7 +1581,7 @@ begin
   if not AppGlobals.DisplayPlayedSong then
     Caption := FMainCaption;
 
-  HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 
   tabSaved.Tree.SetFileWatcher;
 
@@ -1815,7 +1830,7 @@ begin
       FDataLists.SaveList.Add(T);
       tabLists.AddTitle(nil, ltSave, T);
 
-      HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+      HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
     end;
   end;
 end;
@@ -1872,7 +1887,7 @@ begin
       List.Add(T);
       tabLists.AddTitle(Client, ListType, T);
 
-      HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+      HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
     end;
   end;
 end;
@@ -1907,7 +1922,7 @@ begin
     end;
   end;
 
-  HomeComm.SetTitleNotifications((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsAuthRequired(Sender: TObject);
@@ -2013,7 +2028,7 @@ begin
           Inc(C);
       end;
     if AppGlobals.SubmitStats then
-      HomeComm.UpdateStats(L, C);
+      HomeComm.SendUpdateStats(L, C);
   finally
     L.Free;
   end;
@@ -2411,8 +2426,8 @@ end;
 
 procedure TfrmStreamWriterMain.Community1Click(Sender: TObject);
 begin
- actLogOn.Enabled := not HomeComm.Authenticated and HomeComm.Connected;
- actLogOff.Enabled := HomeComm.Authenticated and HomeComm.Connected;
+  actLogOn.Enabled := not HomeComm.Authenticated and HomeComm.Connected;
+  actLogOff.Enabled := HomeComm.Authenticated and HomeComm.Connected;
 end;
 
 procedure TfrmStreamWriterMain.CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
