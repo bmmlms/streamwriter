@@ -302,7 +302,7 @@ var
   Res: TMayConnectResults;
   Found: Boolean;
 begin
-  AutoTuneInMinKbps := GetAutoTuneInMinKbps(TAudioTypes(Format), AppGlobals.AutoTuneInMinQuality); // TODO: ist TAudioTypes(Format) okay???
+  AutoTuneInMinKbps := GetAutoTuneInMinKbps(TAudioTypes(Format), AppGlobals.AutoTuneInMinQuality);
 
   if Kbps < AutoTuneInMinKbps then
     Exit;

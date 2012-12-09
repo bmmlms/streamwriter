@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Commands, HomeCommands, HomeCommunication2, ComCtrls, StdCtrls,
+  Dialogs, Commands, HomeCommunication, HomeCommands, ComCtrls, StdCtrls,
   Protocol, Generics.Collections, DataManager;
 
 type
@@ -36,12 +36,12 @@ implementation
 
 procedure TfrmHomeTest.Button1Click(Sender: TObject);
 begin
-  HC.GetServerData;
+  //HC.GetServerData;
 end;
 
 procedure TfrmHomeTest.Button2Click(Sender: TObject);
 begin
-  HC.LogOn('user', 'pass');
+  //HC.LogOn('user', 'pass');
 end;
 
 procedure TfrmHomeTest.FormCreate(Sender: TObject);

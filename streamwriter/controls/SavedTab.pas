@@ -2172,7 +2172,6 @@ var
   NodeData: PSavedNodeData;
   Hash: Cardinal;
   Chars: Integer;
-  P: string;
 begin
   FPattern := BuildPattern(S, Hash, Chars, True);
 
@@ -2497,7 +2496,7 @@ begin
   FSearch := TEdit.Create(Self);
   FSearch.Parent := Self;
 
-  FSearch.Top := 2;
+  FSearch.Top := 3;
   FSearch.Width := 200;
 
   FLabel.Top := FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2;;
@@ -2524,8 +2523,6 @@ begin
 end;
 
 constructor TImportFilesThread.Create(Files: TStrings; KnownFiles: TStringList);
-var
-  i: Integer;
 begin
   inherited Create(True);
 

@@ -28,9 +28,11 @@ uses
   Functions, LanguageObjects, CommCtrl;
 
 type
+  THomeConnectionState = (cshUndefined, cshConnected, cshDisconnected, cshFail);
+
   TSWStatusBar = class(TStatusBar)
   private
-    FConnected: Boolean;
+    FConnectionState: THomeConnectionState;
     FLoggedIn: Boolean;
     FClients: Integer;
     FRecordings: Integer;
@@ -58,7 +60,7 @@ type
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
 
-    procedure SetState(Connected, LoggedIn: Boolean; Clients, Recordings: Integer; SongsSaved: Cardinal);
+    procedure SetState(ConnectionState: THomeConnectionState; LoggedIn: Boolean; Clients, Recordings: Integer; SongsSaved: Cardinal);
     procedure BuildSpeedBmp;
     property Speed: UInt64 read FSpeed write FSetSpeed;
     property CurrentReceived: UInt64 read FCurrentReceived write FSetCurrentReceived;
@@ -208,14 +210,22 @@ begin
   case Panel.Index of
     0:
       begin
-        if FConnected then
-        begin
-          Canvas.Draw(R.Left, R.Top, IconConnected);
-          Canvas.TextOut(R.Left + 38, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connected')) div 2, _('Connected'));
-        end else
-        begin
-          Canvas.Draw(R.Left, R.Top, IconDisconnected);
-          Canvas.TextOut(R.Left + 38, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connecting...')) div 2, _('Connecting...'));
+        case FConnectionState of
+          cshConnected:
+            begin
+              Canvas.Draw(R.Left, R.Top, IconConnected);
+              Canvas.TextOut(R.Left + 38, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connected')) div 2, _('Connected'));
+            end;
+          cshDisconnected:
+            begin
+              Canvas.Draw(R.Left, R.Top, IconDisconnected);
+              Canvas.TextOut(R.Left + 38, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connecting...')) div 2, _('Connecting...'));
+            end;
+          cshFail:
+            begin
+              Canvas.Draw(R.Left, R.Top, IconDisconnected);
+              Canvas.TextOut(R.Left + 38, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Error')) div 2, _('Error'));
+            end;
         end;
 
         if FLoggedIn then
@@ -294,21 +304,22 @@ begin
   BuildSpeedBmp;
 end;
 
-procedure TSWStatusBar.SetState(Connected, LoggedIn: Boolean; Clients, Recordings: Integer; SongsSaved: Cardinal);
+procedure TSWStatusBar.SetState(ConnectionState: THomeConnectionState; LoggedIn: Boolean; Clients, Recordings: Integer; SongsSaved: Cardinal);
 var
-  OldConnected, OldLoggedIn: Boolean;
+  OldConnectionState: THomeConnectionState;
+  OldLoggedIn: Boolean;
   OldClients, OldRecordings: Integer;
   OldSongsSaved: Cardinal;
 begin
-  OldConnected := FConnected;
+  OldConnectionState := FConnectionState;
   OldLoggedIn := FLoggedIn;
   OldClients := FClients;
   OldRecordings := FRecordings;
   OldSongsSaved := FSongsSaved;
 
-  FConnected := Connected;
+  FConnectionState := ConnectionState;
   FLoggedIn := LoggedIn;
-  if Connected then
+  if ConnectionState = cshConnected then
   begin
     FClients := Clients;
     FRecordings := Recordings;
@@ -320,7 +331,7 @@ begin
 
   FSongsSaved := SongsSaved;
 
-  if (OldConnected <> FConnected) or (OldLoggedIn <> FLoggedIn) then
+  if (OldConnectionState <> FConnectionState) or (OldLoggedIn <> FLoggedIn) then
     PaintPanel(0);
   if (OldClients <> FClients) or (OldRecordings <> FRecordings) then
     PaintPanel(1);

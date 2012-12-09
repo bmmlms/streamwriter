@@ -285,6 +285,7 @@ type
     procedure CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
 
     procedure HomeCommStateChanged(Sender: TObject);
+    procedure HomeCommHandshake(Sender: TObject; Success: Boolean);
     procedure HomeCommLogIn(Sender: TObject; Success: Boolean);
     procedure HomeCommLogOut(Sender: TObject);
     procedure HomeCommServerInfo(Sender: TObject; ClientCount, RecordingCount: Cardinal);
@@ -685,6 +686,7 @@ begin
     // Wird hier gemacht, weil der Browser dann sicher da ist, wenn die
     // Streams empfangen werden (wg. DisplayCount)
     HomeComm.OnStateChanged := HomeCommStateChanged;
+    HomeComm.OnHandshakeReceived := HomeCommHandshake;
     HomeComm.OnLogInReceived := HomeCommLogIn;
     HomeComm.OnLogOutReceived := HomeCommLogOut;
     HomeComm.OnServerInfoReceived := HomeCommServerInfo;
@@ -760,6 +762,8 @@ begin
   end;
 
   FDataLists := TDataLists.Create;
+
+  HomeComm := THomeCommunication.Create(FDataLists);
 
   {$IFNDEF DEBUG}
   Recovered := False;
@@ -993,6 +997,15 @@ begin
         TfrmMsgDlg.ShowMsg(Self, Format(_(Notification), [Msg]), MsgHash, btOK);
       end;
   end;
+end;
+
+procedure TfrmStreamWriterMain.HomeCommHandshake(Sender: TObject;
+  Success: Boolean);
+begin
+  UpdateStatus;
+
+  if not Success then
+    MsgBox(Handle, _('The server did not accept the handshake. Please update streamWriter.'), _('Error'), MB_ICONERROR);
 end;
 
 procedure TfrmStreamWriterMain.HomeCommLogIn(Sender: TObject;
@@ -2353,8 +2366,17 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.UpdateStatus;
+var
+  CS: THomeConnectionState;
 begin
-  addStatus.SetState(HomeComm.Connected, HomeComm.Authenticated, FClientCount, FRecordingCount, FClients.SongsSaved);
+  if HomeComm.Disabled then
+    CS := cshFail
+  else if HomeComm.Connected then
+    CS := cshConnected
+  else
+    CS := cshDisconnected;
+
+  addStatus.SetState(CS, HomeComm.Authenticated, FClientCount, FRecordingCount, FClients.SongsSaved);
 end;
 
 function TfrmStreamWriterMain.CanExitApp: Boolean;

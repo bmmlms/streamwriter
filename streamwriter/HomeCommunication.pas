@@ -31,13 +31,12 @@ type
 
   THomeThread = class(TCommandThreadBase)
   private
-    FC: Cardinal;
+    FLists: TDataLists;
 
     FAuthenticated: Boolean;
     FIsAdmin: Boolean;
-    FGenres: TList<TGenre>;
-    FCharts: TList<TChartEntry>;
-    FStreams: TStreamBrowserList;
+
+    FHandshakeSuccess: Boolean;
 
     FNetworkTitleChanged: TCommandNetworkTitleChangedResponse;
 
@@ -47,18 +46,7 @@ type
     FErrorID: TCommErrors;
     FErrorMsg: string;
 
-    {
-    FChangedStreamID: Cardinal;
-    FChangedStreamName: string;
-    FChangedTitle: string;
-    FChangedCurrentURL: string;
-    FChangedKbps: Cardinal;
-    FChangedFormat: string;
-    FChangedTitlePattern: string;
-    }
-    //FLogInReceived: TCommandLogInResponse;
-    //FLogOutReceived: TCommandLogOutResponse;
-
+    FOnHandshakeReceived: TSocketEvent;
     FOnLogInReceived: TSocketEvent;
     FOnLogOutReceived: TSocketEvent;
     FOnServerDataReceived: TSocketEvent;
@@ -66,20 +54,22 @@ type
     FOnServerInfoReceived: TSocketEvent;
     FOnErrorReceived: TSocketEvent;
 
+    procedure DoHandshakeReceived(CommandHeader: TCommandHeader; Command: TCommandHandshakeResponse);
     procedure DoLogInReceived(CommandHeader: TCommandHeader; Command: TCommandLogInResponse);
     procedure DoLogOutReceived(CommandHeader: TCommandHeader; Command: TCommandLogOutResponse);
     procedure DoServerDataReceived(CommandHeader: TCommandHeader; Command: TCommandGetServerDataResponse);
     procedure DoNetworkTitleChanged(CommandHeader: TCommandHeader; Command: TCommandNetworkTitleChangedResponse);
     procedure DoServerInfoReceived(CommandHeader: TCommandHeader; Command: TCommandServerInfoResponse);
-    procedure DoErrorReceived(CommandHeader: TCommandHeader; Command: TCommandErrorResponse);
+    procedure DoMessageReceived(CommandHeader: TCommandHeader; Command: TCommandMessageResponse);
   protected
     procedure DoReceivedCommand(ID: Cardinal; CommandHeader: TCommandHeader; Command: TCommand); override;
     procedure DoException(E: Exception); override;
     procedure DoEnded; override;
   public
-    constructor Create;
+    constructor Create(Lists: TDataLists);
     destructor Destroy; override;
 
+    property OnHandshakeReceived: TSocketEvent read FOnHandshakeReceived write FOnHandshakeReceived;
     property OnLogInReceived: TSocketEvent read FOnLogInReceived write FOnLogInReceived;
     property OnLogOutReceived: TSocketEvent read FOnLogOutReceived write FOnLogOutReceived;
     property OnServerDataReceived: TSocketEvent read FOnServerDataReceived write FOnServerDataReceived;
@@ -89,15 +79,18 @@ type
   end;
 
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
-  TStreamsReceivedEvent = procedure(Sender: TObject; Genres: TList<TGenre>; Streams: TList<TStreamBrowserEntry>) of object;
-  TChartsReceivedEvent = procedure(Sender: TObject; Charts: TList<TChartEntry>) of object;
+  TStreamsReceivedEvent = procedure(Sender: TObject) of object;
+  TChartsReceivedEvent = procedure(Sender: TObject) of object;
   TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, TitlePattern: string; Format: TAudioTypes; Kbps: Cardinal) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
 
   THomeCommunication = class
   private
+    FDisabled: Boolean;
     FThread: THomeThread;
+
+    FLists: TDataLists;
 
     FAuthenticated, FIsAdmin, FWasConnected, FConnected: Boolean;
     FTitleNotificationsSet: Boolean;
@@ -105,6 +98,7 @@ type
     FOnStateChanged: TNotifyEvent;
     FOnBytesTransferred: TTransferProgressEvent;
 
+    FOnHandshakeReceived: TBooleanEvent;
     FOnLogInReceived: TBooleanEvent;
     FOnLogOutReceived: TNotifyEvent;
     FOnStreamsReceived: TStreamsReceivedEvent;
@@ -114,9 +108,11 @@ type
     FOnErrorReceived: TErrorEvent;
 
     procedure HomeThreadConnected(Sender: TSocketThread);
+    procedure HomeThreadBeforeEnded(Sender: TSocketThread);
     procedure HomeThreadEnded(Sender: TSocketThread);
     procedure HomeThreadBytesTransferred(Sender: TObject; Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader; Transferred: UInt64);
 
+    procedure HomeThreadHandshakeReceived(Sender: TSocketThread);
     procedure HomeThreadLogInReceived(Sender: TSocketThread);
     procedure HomeThreadLogOutReceived(Sender: TSocketThread);
     procedure HomeThreadServerDataReceived(Sender: TSocketThread);
@@ -124,18 +120,25 @@ type
     procedure HomeThreadServerInfoReceived(Sender: TSocketThread);
     procedure HomeThreadErrorReceived(Sender: TSocketThread);
   public
-    constructor Create;
+    constructor Create(Lists: TDataLists);
     destructor Destroy; override;
 
     procedure Connect;
     procedure Terminate;
+    function SendCommand(Cmd: TCommand): Boolean;
     procedure SendHandshake;
     procedure SendLogIn(User, Pass: string);
     procedure SendLogOut;
     function SendGetServerData: Boolean;
     procedure SendUpdateStats(List: TList<Cardinal>; RecordingCount: Cardinal);
     procedure SendSetSettings(TitleNotifications: Boolean);
+    procedure SendClientStats(Auto: Boolean);
+    procedure SendSubmitStream(URL: string);
+    procedure SendSetStreamData(StreamID: Cardinal; Rating: Byte);
+    procedure SendTitleChanged(StreamID: Cardinal; StreamName, Title, CurrentURL, URL: string; Format: TAudioTypes;
+      Kbps: Cardinal; URLs: TStringList);
 
+    property Disabled: Boolean read FDisabled;
     property WasConnected: Boolean read FWasConnected;
     property Connected: Boolean read FConnected;
     property Authenticated: Boolean read FAuthenticated;
@@ -144,6 +147,7 @@ type
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
     property OnBytesTransferred: TTransferProgressEvent read FOnBytesTransferred write FOnBytesTransferred;
 
+    property OnHandshakeReceived: TBooleanEvent read FOnHandshakeReceived write FOnHandshakeReceived;
     property OnLogInReceived: TBooleanEvent read FOnLogInReceived write FOnLogInReceived;
     property OnLogOutReceived: TNotifyEvent read FOnLogOutReceived write FOnLogOutReceived;
     property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
@@ -160,21 +164,19 @@ implementation
 
 { THomeThread }
 
-constructor THomeThread.Create;
+constructor THomeThread.Create(Lists: TDataLists);
 begin
+  FLists := Lists; // TODO: Lists im Thread. Betrifft Streams und Charts. ÜBERALL im programm muss dann geprüft werden,
+                   // ob der thread gerade aktiv ist und was macht, bevor drauf zu gegriffen wird.
+
   inherited Create('mistake.ws', 7085, TSocketStream.Create);
+  //inherited Create('gaia', 7085, TSocketStream.Create);
 
   UseSynchronize := True;
-  FGenres := TList<TGenre>.Create;
-  FCharts := TList<TChartEntry>.Create;
-  FStreams := TStreamBrowserList.Create;
 end;
 
 destructor THomeThread.Destroy;
 begin
-  FGenres.Free;
-  FCharts.Free;
-  FStreams.Free;
 
   inherited;
 end;
@@ -183,13 +185,14 @@ procedure THomeThread.DoEnded;
 begin
   inherited;
 
+  Sleep(3000);
 end;
 
-procedure THomeThread.DoErrorReceived(CommandHeader: TCommandHeader;
-  Command: TCommandErrorResponse);
+procedure THomeThread.DoMessageReceived(CommandHeader: TCommandHeader;
+  Command: TCommandMessageResponse);
 begin
-  FErrorID := TCommErrors(Command.ErrorID);
-  FErrorMsg := Command.ErrorMsg;
+  FErrorID := TCommErrors(Command.MessageID);
+  FErrorMsg := Command.MessageMsg;
 
   if Assigned(FOnErrorReceived) then
     Sync(FOnErrorReceived);
@@ -199,7 +202,15 @@ procedure THomeThread.DoException(E: Exception);
 begin
   inherited;
 
-  // TODO: bei ner exception hammert der client massiv auf den server. der muss immer etwas warten. gleichzeitig muss in statusleiste stehen "Verbinde..."
+end;
+
+procedure THomeThread.DoHandshakeReceived(CommandHeader: TCommandHeader;
+  Command: TCommandHandshakeResponse);
+begin
+  FHandshakeSuccess := Command.Success;
+
+  if Assigned(FOnHandshakeReceived) then
+    Sync(FOnHandshakeReceived);
 end;
 
 procedure THomeThread.DoLogInReceived(CommandHeader: TCommandHeader;
@@ -236,20 +247,19 @@ end;
 
 procedure THomeThread.DoReceivedCommand(ID: Cardinal; CommandHeader: TCommandHeader; Command: TCommand);
 var
+  HandShake: TCommandHandshakeResponse absolute Command;
   LogIn: TCommandLogInResponse absolute Command;
   LogOut: TCommandLogOutResponse absolute Command;
   GetServerData: TCommandGetServerDataResponse absolute Command;
   NetworkTitleChanged: TCommandNetworkTitleChangedResponse absolute Command;
   ServerInfo: TCommandServerInfoResponse absolute Command;
-  Error: TCommandErrorResponse absolute Command;
-  MS: TExtendedStream;
-  Count: Cardinal;
-  i: Integer;
+  Error: TCommandMessageResponse absolute Command;
 begin
   inherited;
 
   case CommandHeader.CommandType of
-    ctHandshakeResponse: ;
+    ctHandshakeResponse:
+      DoHandshakeReceived(CommandHeader, HandShake);
     ctLoginResponse:
       DoLogInReceived(CommandHeader, LogIn);
     ctLogout: ;
@@ -261,8 +271,8 @@ begin
       DoNetworkTitleChanged(CommandHeader, NetworkTitleChanged);
     ctServerInfoResponse:
       DoServerInfoReceived(CommandHeader, ServerInfo);
-    ctErrorResponse:
-      DoErrorReceived(CommandHeader, Error);
+    ctMessageResponse:
+      DoMessageReceived(CommandHeader, Error);
   end;
 end;
 
@@ -272,31 +282,78 @@ var
   i: Integer;
   Count: Cardinal;
   Stream: TExtendedStream;
+  StreamEntry, StreamEntry2: TStreamBrowserEntry;
+  Genre: TGenre;
+
+  Genres: TGenreList;
+  Charts: TChartList;
+  Streams: TStreamBrowserList;
 begin
+  Stream := TExtendedStream(Command.Stream);
+
+  Genres := TGenreList.Create;
+  Charts := TChartList.Create;
+  Streams := TStreamBrowserList.Create;
   try
-    Stream := TExtendedStream(Command.Stream);
-
+    // Genres laden
     Stream.Read(Count);
     for i := 0 to Count - 1 do
-      FGenres.Add(TGenre.LoadFromHome(Stream, CommandHeader.Version));
+      Genres.Add(TGenre.LoadFromHome(Stream, CommandHeader.Version));
 
+    // Streams laden und OwnRating synchronisieren
     Stream.Read(Count);
     for i := 0 to Count - 1 do
-      FStreams.Add(TStreamBrowserEntry.LoadFromHome(Stream, CommandHeader.Version));
-    FStreams.CreateDict;
+    begin
+      StreamEntry := TStreamBrowserEntry.LoadFromHome(Stream, CommandHeader.Version);
+      for StreamEntry2 in FLists.BrowserList do
+        if StreamEntry.ID = StreamEntry2.ID then
+        begin
+          StreamEntry.OwnRating := StreamEntry2.OwnRating;
+          Break;
+        end;
+      Streams.Add(StreamEntry);
+    end;
+    Streams.CreateDict;
 
+    // Charts laden
     Stream.Read(Count);
     for i := 0 to Count - 1 do
-      FCharts.Add(TChartEntry.LoadFromHome(Stream, nil, CommandHeader.Version, FStreams));
+      Charts.Add(TChartEntry.LoadFromHome(Stream, nil, CommandHeader.Version, Streams));
 
-    if Assigned(FOnServerDataReceived) then
-      Sync(FOnServerDataReceived);
-  finally
-    FStreams.ClearDict;
-    FGenres.Clear;
-    FCharts.Clear;
-    FStreams.Clear;
+    // Wenn alles erfolgreich geladen wurde alte Listen leeren.
+    // Falls hier jetzt eine Exception kommt wird es bitter...
+    for Genre in FLists.GenreList do
+      Genre.Free;
+    FLists.GenreList.Clear;
+    for StreamEntry in FLists.BrowserList do
+      StreamEntry.Free;
+    FLists.BrowserList.Clear;
+    for i := 0 to FLists.ChartList.Count - 1 do
+      FLists.ChartList[i].Free;
+    FLists.ChartList.Clear;
+
+    // Der Liste alle Sachen wieder hinzufügen
+    for Genre in Genres do
+      FLists.GenreList.Add(Genre);
+    for StreamEntry in Streams do
+      FLists.BrowserList.Add(StreamEntry);
+    for i := 0 to Charts.Count - 1 do
+      FLists.ChartList.Add(Charts[i]);
+  except
+    for i := 0 to Genres.Count - 1 do
+      Genres[i].Free;
+    for i := 0 to Charts.Count - 1 do
+      Charts[i].Free;
+    for i := 0 to Streams.Count - 1 do
+      Streams[i].Free;
+
+    Genres.Free;
+    Charts.Free;
+    Streams.Free;
   end;
+
+  if Assigned(FOnServerDataReceived) then
+    Sync(FOnServerDataReceived);
 end;
 
 procedure THomeThread.DoServerInfoReceived(CommandHeader: TCommandHeader;
@@ -319,11 +376,12 @@ begin
     FOnBytesTransferred(Sender, Direction, CommandID, CommandHeader, Transferred);
 end;
 
-constructor THomeCommunication.Create;
+constructor THomeCommunication.Create(Lists: TDataLists);
 begin
-  inherited;
+  inherited Create;
 
-  //FTitleNotificationsEnabled := False; todo
+  FLists := Lists;
+  FTitleNotificationsSet := False;
 end;
 
 destructor THomeCommunication.Destroy;
@@ -356,6 +414,40 @@ begin
   FThread.SendCommand(TCommandSetSettings.Create(TitleNotifications));
 end;
 
+procedure THomeCommunication.SendSetStreamData(StreamID: Cardinal;
+  Rating: Byte);
+var
+  Cmd: TCommandSetStreamData;
+begin
+  if not FConnected then
+    Exit;
+
+  Cmd := TCommandSetStreamData.Create;
+  Cmd.StreamID := StreamID;
+  Cmd.Rating := Rating;
+
+  FThread.SendCommand(Cmd);
+end;
+
+procedure THomeCommunication.SendSubmitStream(URL: string);
+begin
+  if not FConnected then
+    Exit;
+
+  FThread.SendCommand(TCommandSubmitStream.Create(URL));
+end;
+
+procedure THomeCommunication.SendTitleChanged(StreamID: Cardinal;
+  StreamName, Title, CurrentURL, URL: string; Format: TAudioTypes; Kbps: Cardinal;
+  URLs: TStringList);
+begin
+  if not FConnected then
+    Exit;
+
+  FThread.SendCommand(TCommandTitleChanged.Create(StreamID, StreamName, Title,
+    CurrentURL, URL, Format, Kbps, URLs.Text));
+end;
+
 procedure THomeCommunication.SendUpdateStats(List: TList<Cardinal>;
   RecordingCount: Cardinal);
 var
@@ -382,9 +474,9 @@ end;
 
 procedure THomeCommunication.Terminate;
 begin
-  // TODO: bei bedarf erweitern!
   FOnStateChanged := nil;
   FOnBytesTransferred := nil;
+  FOnHandshakeReceived := nil;
   FOnLogInReceived := nil;
   FOnLogOutReceived := nil;
   FOnStreamsReceived := nil;
@@ -394,6 +486,26 @@ begin
 
   if FThread <> nil then
     FThread.Terminate;
+end;
+
+procedure THomeCommunication.SendClientStats(Auto: Boolean);
+begin
+  if not FConnected then
+    Exit;
+
+  if Auto then
+    FThread.SendCommand(TCommandClientStats.Create(csAutoSave))
+  else
+    FThread.SendCommand(TCommandClientStats.Create(csSave));
+end;
+
+function THomeCommunication.SendCommand(Cmd: TCommand): Boolean;
+begin
+  Result := True;
+  if not FConnected then
+    Exit(False);
+
+  FThread.SendCommand(Cmd);
 end;
 
 function THomeCommunication.SendGetServerData: Boolean;
@@ -412,17 +524,9 @@ begin
   FConnected := True;
 
   SendHandshake;
-
-  if AppGlobals.UserWasSetup and (AppGlobals.User <> '') and (AppGlobals.Pass <> '') then
-    SendLogIn(AppGlobals.User, AppGlobals.Pass);
-
-  FWasConnected := False;
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
-  FWasConnected := True;
 end;
 
-procedure THomeCommunication.HomeThreadEnded(Sender: TSocketThread);
+procedure THomeCommunication.HomeThreadBeforeEnded(Sender: TSocketThread);
 begin
   FConnected := False;
   FAuthenticated := False;
@@ -432,7 +536,10 @@ begin
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
+end;
 
+procedure THomeCommunication.HomeThreadEnded(Sender: TSocketThread);
+begin
   if THomeThread(Sender).Terminated then
     Exit;
 
@@ -444,6 +551,29 @@ procedure THomeCommunication.HomeThreadErrorReceived(
 begin
   if Assigned(FOnErrorReceived) then
     FOnErrorReceived(Self, FThread.FErrorID, FThread.FErrorMsg);
+end;
+
+procedure THomeCommunication.HomeThreadHandshakeReceived(
+  Sender: TSocketThread);
+begin
+  FDisabled := not THomeThread(Sender).FHandshakeSuccess;
+
+  if not FDisabled then
+  begin
+    if AppGlobals.UserWasSetup and (AppGlobals.User <> '') and (AppGlobals.Pass <> '') then
+      SendLogIn(AppGlobals.User, AppGlobals.Pass);
+
+    FWasConnected := False;
+    if Assigned(FOnStateChanged) then
+      FOnStateChanged(Self);
+    FWasConnected := True;
+  end;
+
+  if FDisabled then
+    Sender.Terminate;
+
+  if Assigned(FOnHandshakeReceived) then
+    FOnHandshakeReceived(Self, THomeThread(Sender).FHandshakeSuccess);
 end;
 
 procedure THomeCommunication.HomeThreadLogInReceived(Sender: TSocketThread);
@@ -467,10 +597,10 @@ end;
 procedure THomeCommunication.HomeThreadServerDataReceived(Sender: TSocketThread);
 begin
   if Assigned(FOnStreamsReceived) then
-    FOnStreamsReceived(Self, FThread.FGenres, FThread.FStreams);
+    FOnStreamsReceived(Self);
 
   if Assigned(FOnChartsReceived) then
-    FOnChartsReceived(Self, FThread.FCharts);
+    FOnChartsReceived(Self);
 end;
 
 procedure THomeCommunication.HomeThreadServerInfoReceived(
@@ -511,14 +641,19 @@ end;
 
 procedure THomeCommunication.Connect;
 begin
+  if FDisabled then
+    Exit;
+
   if FThread <> nil then
     Exit;
 
-  FThread := THomeThread.Create;
+  FThread := THomeThread.Create(FLists);
   FThread.OnConnected := HomeThreadConnected;
   FThread.OnEnded := HomeThreadEnded;
+  FThread.OnBeforeEnded := HomeThreadBeforeEnded;
   FThread.OnBytesTransferred := HomeThreadBytesTransferred;
 
+  FThread.OnHandshakeReceived := HomeThreadHandshakeReceived;
   FThread.OnLogInReceived := HomeThreadLogInReceived;
   FThread.OnLogOutReceived := HomeThreadLogOutReceived;
   FThread.OnServerDataReceived := HomeThreadServerDataReceived;
@@ -537,10 +672,10 @@ initialization
   TCommand.RegisterCommand(ctLogOutResponse, TCommandLogOutResponse);
   TCommand.RegisterCommand(ctGetServerDataResponse, TCommandGetServerDataResponse);
   TCommand.RegisterCommand(ctServerInfoResponse, TCommandServerInfoResponse);
-  TCommand.RegisterCommand(ctErrorResponse, TCommandErrorResponse);
+  TCommand.RegisterCommand(ctMessageResponse, TCommandMessageResponse);
   TCommand.RegisterCommand(ctNetworkTitleChangedResponse, TCommandNetworkTitleChangedResponse);
 
-  HomeComm := THomeCommunication.Create;
+  HomeComm := nil;
 
 finalization
   HomeComm.Free;

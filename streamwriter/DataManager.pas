@@ -27,7 +27,7 @@ interface
 uses
   Windows, Classes, SysUtils, ExtendedStream, Generics.Collections,
   ComCtrls, AppData, Functions, Logging, DateUtils, AudioFunctions,
-  PowerManagement, Generics.Defaults;
+  PowerManagement, Generics.Defaults, ZLib;
 
 type
   TStreamList = class;
@@ -560,7 +560,7 @@ type
     // Cleans all lists and frees all their items
     procedure CleanLists;
     procedure Load; overload;
-    procedure Load(S: TExtendedStream); overload;
+    procedure Load(var S: TExtendedStream); overload;
     procedure Save; overload;
     procedure Save(S: TExtendedStream); overload;
     procedure SaveRecover;
@@ -599,7 +599,7 @@ type
   end;
 
 const
-  DATAVERSION = 43;
+  DATAVERSION = 44;
 
 implementation
 
@@ -1041,7 +1041,7 @@ begin
   inherited;
 end;
 
-procedure TDataLists.Load(S: TExtendedStream);
+procedure TDataLists.Load(var S: TExtendedStream);
 var
   Entry: TStreamEntry;
   TitleInfo: TTitleInfo;
@@ -1049,6 +1049,7 @@ var
   Str: string;
   Version, CatCount, EntryCount: Integer;
   i: Integer;
+  CompressedStream: TExtendedStream;
 begin
   CleanLists;
 
@@ -1057,9 +1058,24 @@ begin
   if Version > DATAVERSION then
     raise EVersionException.Create(AppGlobals.DataFile);
 
+  if Version >= 44 then
+  begin
+    CompressedStream := TExtendedStream.Create;
+    try
+      ZDecompressStream(S, CompressedStream);
+
+      S.Size := 0;
+      CompressedStream.Seek(0, soFromBeginning);
+      S.CopyFrom(CompressedStream, CompressedStream.Size);
+      S.Seek(0, soFromBeginning);
+    finally
+      CompressedStream.Free;
+    end;
+  end;
+
   S.Read(FReceived);
 
-  if Version <= 42 then // Muss so. Damit die Charts neu befüllt werden mit PlayedLastDay/PlayledLastWeek.
+  if Version <= 42 then // Muss so. Damit die Charts neu befüllt werden mit PlayedLastDay/PlayedLastWeek.
     FReloadServerData := True;
 
   if Version <= 2 then
@@ -1124,7 +1140,6 @@ begin
           for i := 0 to EntryCount - 1 do
           begin
             S.Read(Str);
-            //FSubmittedStreamList.Add(Str);
           end;
         end;
 
@@ -1219,60 +1234,74 @@ end;
 procedure TDataLists.Save(S: TExtendedStream);
 var
   i: Integer;
+  CompressedStream: TExtendedStream;
 begin
   S.Write(Integer(DATAVERSION));
 
-  S.Write(FReceived);
+  CompressedStream := TExtendedStream.Create;
+  try
+    CompressedStream.Write(FReceived);
 
-  S.Write(FCategoryList.Count);
-  for i := 0 to FCategoryList.Count - 1 do
-    FCategoryList[i].Save(S);
+    CompressedStream.Write(FCategoryList.Count);
+    for i := 0 to FCategoryList.Count - 1 do
+      FCategoryList[i].Save(CompressedStream);
 
-  S.Write(FStreamList.Count);
-  for i := 0 to FStreamList.Count - 1 do
-  begin
-    FStreamList[i].Save(S);
+    CompressedStream.Write(FStreamList.Count);
+    for i := 0 to FStreamList.Count - 1 do
+    begin
+      FStreamList[i].Save(CompressedStream);
+    end;
+
+    CompressedStream.Write(FTrackList.Count);
+    for i := 0 to FTrackList.Count - 1 do
+      FTrackList[i].Save(CompressedStream);
+
+    CompressedStream.Write(FSaveList.Count);
+    for i := 0 to FSaveList.Count - 1 do
+    begin
+      FSaveList[i].Save(CompressedStream);
+    end;
+
+    CompressedStream.Write(FIgnoreList.Count);
+    for i := 0 to FIgnoreList.Count - 1 do
+    begin
+      FIgnoreList[i].Save(CompressedStream);
+    end;
+
+    CompressedStream.Write(FRecentList.Count);
+    for i := 0 to FRecentList.Count - 1 do
+      FRecentList[i].Save(CompressedStream);
+
+    CompressedStream.Write(FStreamBlacklist.Count);
+    for i := 0 to FStreamBlacklist.Count - 1 do
+      CompressedStream.Write(FStreamBlacklist[i]);
+
+    CompressedStream.Write(FBrowserList.Count);
+    for i := 0 to FBrowserList.Count - 1 do
+      FBrowserList[i].Save(CompressedStream);
+
+    CompressedStream.Write(FGenreList.Count);
+    for i := 0 to FGenreList.Count - 1 do
+      FGenreList[i].Save(CompressedStream);
+
+    CompressedStream.Write(FChartCategoryList.Count);
+    for i := 0 to FChartCategoryList.Count - 1 do
+      FChartCategoryList[i].Save(CompressedStream);
+
+    CompressedStream.Write(FChartList.Count);
+    for i := 0 to FChartList.Count - 1 do
+      FChartList[i].Save(CompressedStream);
+
+    CompressedStream.Seek(0, soFromBeginning);
+
+    {$IFDEF DEBUG}
+    ZCompressStream(CompressedStream, S, zcNone);
+    {$ELSE}
+    ZCompressStream(CompressedStream, S, zcDefault);
+    {$ENDIF}
+  finally
+    CompressedStream.Free;
   end;
-
-  S.Write(FTrackList.Count);
-  for i := 0 to FTrackList.Count - 1 do
-    FTrackList[i].Save(S);
-
-  S.Write(FSaveList.Count);
-  for i := 0 to FSaveList.Count - 1 do
-  begin
-    FSaveList[i].Save(S);
-  end;
-
-  S.Write(FIgnoreList.Count);
-  for i := 0 to FIgnoreList.Count - 1 do
-  begin
-    FIgnoreList[i].Save(S);
-  end;
-
-  S.Write(FRecentList.Count);
-  for i := 0 to FRecentList.Count - 1 do
-    FRecentList[i].Save(S);
-
-  S.Write(FStreamBlacklist.Count);
-  for i := 0 to FStreamBlacklist.Count - 1 do
-    S.Write(FStreamBlacklist[i]);
-
-  S.Write(FBrowserList.Count);
-  for i := 0 to FBrowserList.Count - 1 do
-    FBrowserList[i].Save(S);
-
-  S.Write(FGenreList.Count);
-  for i := 0 to FGenreList.Count - 1 do
-    FGenreList[i].Save(S);
-
-  S.Write(FChartCategoryList.Count);
-  for i := 0 to FChartCategoryList.Count - 1 do
-    FChartCategoryList[i].Save(S);
-
-  S.Write(FChartList.Count);
-  for i := 0 to FChartList.Count - 1 do
-    FChartList[i].Save(S);
 end;
 
 procedure TDataLists.SaveRecover;
@@ -2019,7 +2048,7 @@ end;
 class function TChartEntry.LoadFromHome(Stream: TExtendedStream;
   Lists: TDataLists; Version: Integer; Streams: TStreamBrowserList): TChartEntry;
 var
-  i, Dummy: Integer;
+  i: Integer;
   C: Cardinal;
 begin
   Result := TChartEntry.Create;

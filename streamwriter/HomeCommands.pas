@@ -6,6 +6,8 @@ uses
   Windows, SysUtils, ExtendedStream, Commands, AudioFunctions;
 
 type
+  TSendClientStatTypes = (csSave, csAutoSave);
+
   TCommandHandshake = class(TCommand)
   private
     FID: Cardinal;
@@ -14,14 +16,9 @@ type
     FBuild: Cardinal;
     FLanguage: string;
   protected
-    function DoGet: TBytes; override;
+    procedure DoGet(S: TExtendedStream); override;
   public
     constructor Create;
-
-    function Copy: TCommand; override;
-    procedure Assign(Source: TCommand); override;
-
-    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
     property ID: Cardinal read FID write FID;
     property ProtoVersion: Cardinal read FProtoVersion write FProtoVersion;
@@ -35,13 +32,10 @@ type
 
   TCommandHandshakeResponse = class(TCommand)
   private
-    FSuccess: Boolean; // TODO: das feld muss vom client ausgewertet werden! und falls es false ist, nicht bei reconnecten hammern!!!
+    FSuccess: Boolean;
   protected
   public
     constructor Create;
-
-    function Copy: TCommand; override;
-    procedure Assign(Source: TCommand); override;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
@@ -53,9 +47,6 @@ type
   protected
   public
     constructor Create;
-
-    function Copy: TCommand; override;
-    procedure Assign(Source: TCommand); override;
   end;
 
   TCommandLogIn = class(TCommand)
@@ -63,13 +54,10 @@ type
     FUser: string;
     FPass: string;
   protected
-    function DoGet: TBytes; override;
+    procedure DoGet(S: TExtendedStream); override;
   public
     constructor Create; overload;
     constructor Create(User, Pass: string); overload;
-
-    function Copy: TCommand; override;
-    procedure Assign(Source: TCommand); override;
 
     property User: string read FUser write FUser;
     property Pass: string read FPass write FPass;
@@ -83,9 +71,6 @@ type
     constructor Create; overload;
     constructor Create(User, Pass: string); overload;
 
-    function Copy: TCommand; override;   // TODO: wo werden copy und assign von aussen aufgerufen??? ist das über?????
-    procedure Assign(Source: TCommand); override;
-
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
     property Success: Boolean read FSuccess;
@@ -97,9 +82,6 @@ type
   protected
   public
     constructor Create; overload;
-
-    function Copy: TCommand; override;
-    procedure Assign(Source: TCommand); override;
   end;
 
   TCommandLogOutResponse = class(TCommand)
@@ -107,9 +89,6 @@ type
   protected
   public
     constructor Create; overload;
-
-    function Copy: TCommand; override;
-    procedure Assign(Source: TCommand); override;
   end;
 
   TCommandNetworkTitleChangedResponse = class(TCommand)
@@ -124,9 +103,6 @@ type
   protected
   public
     constructor Create; overload;
-
-    function Copy: TCommand; override;
-    procedure Assign(Source: TCommand); override;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
@@ -144,9 +120,6 @@ type
   protected
   public
     constructor Create;
-
-    function Copy: TCommand; override;
-    procedure Assign(Source: TCommand); override;
   end;
 
   TCommandGetServerDataResponse = class(TCommand)
@@ -154,9 +127,6 @@ type
   protected
   public
     constructor Create;
-
-    function Copy: TCommand; override;
-    procedure Assign(Source: TCommand); override;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
   end;
@@ -169,71 +139,107 @@ type
   public
     constructor Create; overload;
 
-    function Copy: TCommand; override;
-    procedure Assign(Source: TCommand); override;
-
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
     property ClientCount: Cardinal read FClientCount;
     property RecordingCount: Cardinal read FRecordingCount;
   end;
 
-  TCommandErrorResponse = class(TCommand)
+  TCommandMessageResponse = class(TCommand)
   private
-    FErrorID: Cardinal;
-    FErrorMsg: string;
+    FMessageID: Cardinal;
+    FMessageMsg: string;
   protected
   public
     constructor Create; overload;
 
-    function Copy: TCommand; override;
-    procedure Assign(Source: TCommand); override;
-
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
-    property ErrorID: Cardinal read FErrorID;
-    property ErrorMsg: string read FErrorMsg;
+    property MessageID: Cardinal read FMessageID;
+    property MessageMsg: string read FMessageMsg;
   end;
 
   TCommandSetSettings = class(TCommand)
   private
     FTitleNotifications: Boolean;
   protected
-    function DoGet: TBytes; override;
+    procedure DoGet(S: TExtendedStream); override;
   public
     constructor Create; overload;
     constructor Create(TitleNotifications: Boolean); overload;
 
-    function Copy: TCommand; override;
-    procedure Assign(Source: TCommand); override;
-
     property TitleNotifications: Boolean read FTitleNotifications write FTitleNotifications;
+  end;
+
+  TCommandClientStats = class(TCommand)
+  private
+    FStatType: TSendClientStatTypes;
+  protected
+    procedure DoGet(S: TExtendedStream); override;
+  public
+    constructor Create; overload;
+    constructor Create(StatType: TSendClientStatTypes); overload;
+
+    property StatType: TSendClientStatTypes read FStatType write FStatType;
+  end;
+
+  TCommandSubmitStream = class(TCommand)
+  private
+    FURL: string;
+  protected
+    procedure DoGet(S: TExtendedStream); override;
+  public
+    constructor Create; overload;
+    constructor Create(URL: string); overload;
+
+    property URL: string read FURL write FURL;
+  end;
+
+  TCommandSetStreamData = class(TCommand)
+  private
+    FStreamID: Cardinal;
+    FRating: Byte;
+    FHasRecordingOkay: Boolean;
+    FRecordingOkay: Boolean;
+    FTitleRegEx: string;
+    FHasIgnoreTitles: Boolean;
+    FIgnoreTitles: string;
+  protected
+    procedure DoGet(S: TExtendedStream); override;
+  public
+    constructor Create; overload;
+
+    property StreamID: Cardinal read FStreamID write FStreamID;
+    property Rating: Byte read FRating write FRating;
+    property HasRecordingOkay: Boolean read FHasRecordingOkay write FHasRecordingOkay;
+    property RecordingOkay: Boolean read FRecordingOkay write FRecordingOkay;
+    property TitleRegEx: string read FTitleRegEx write FTitleRegEx;
+    property HasIgnoreTitles: Boolean read FHasIgnoreTitles write FHasIgnoreTitles;
+    property IgnoreTitles: string read FIgnoreTitles write FIgnoreTitles;
+  end;
+
+  TCommandTitleChanged = class(TCommand)
+  private
+    FStreamID: Cardinal;
+    FStreamName: string;
+    FTitle: string;
+    FCurrentURL: string;
+    FURL: string;
+    FFormat: TAudioTypes;
+    FKbps: Cardinal;
+    FURLs: string;
+  protected
+    procedure DoGet(S: TExtendedStream); override;
+  public
+    constructor Create; overload;
+    constructor Create(StreamID: Cardinal; StreamName, Title, CurrentURL, URL: string;
+      Format: TAudioTypes; Kbps: Cardinal; URLs: string); overload;
   end;
 
 implementation
 
 
 { TCommandHandshake }
-
-procedure TCommandHandshake.Assign(Source: TCommand);
-var
-  Cmd: TCommandHandshake absolute Source;
-begin
-  FID := Cmd.ID;
-  FProtoVersion := Cmd.ProtoVersion;
-  FVersionMajor := Cmd.VersionMajor;
-  FVersionMinor := Cmd.VersionMinor;
-  FVersionRevision := Cmd.VersionRevision;
-  FVersionBuild := Cmd.VersionBuild;
-  FBuild := Cmd.Build;
-  FLanguage := Cmd.Language;
-end;
-
-function TCommandHandshake.Copy: TCommand;
-begin
-  Result := TCommandHandshake.Create;
-  Result.Assign(Self);
-end;
 
 constructor TCommandHandshake.Create;
 begin
@@ -242,57 +248,19 @@ begin
   FCommandType := ctHandshake;
 end;
 
-function TCommandHandshake.DoGet: TBytes;
-var
-  S: TExtendedStream;
+procedure TCommandHandshake.DoGet(S: TExtendedStream);
 begin
-  S := TExtendedStream.Create;
-  try
-    S.Write(FID);
-    S.Write(FProtoVersion);
-    S.Write(FVersionMajor);
-    S.Write(FVersionMinor);
-    S.Write(FVersionRevision);
-    S.Write(FVersionBuild);
-    S.Write(FBuild);
-    S.Write(FLanguage);
-
-    SetLength(Result, S.Size);
-    CopyMemory(@Result[0], S.Memory, S.Size);
-  finally
-    S.Free;
-  end;
+  S.Write(FID);
+  S.Write(FProtoVersion);
+  S.Write(FVersionMajor);
+  S.Write(FVersionMinor);
+  S.Write(FVersionRevision);
+  S.Write(FVersionBuild);
+  S.Write(FBuild);
+  S.Write(FLanguage);
 end;
-
-procedure TCommandHandshake.Load(CommandHeader: TCommandHeader;
-  Stream: TExtendedStream);
-begin
-  // TODO: load ist über bei allen was keine response ist. oder?
-  Stream.Read(FID);
-  Stream.Read(FProtoVersion);
-  Stream.Read(FVersionMajor);
-  Stream.Read(FVersionMinor);
-  Stream.Read(FVersionRevision);
-  Stream.Read(FVersionBuild);
-  Stream.Read(FBuild);
-  Stream.Read(FLanguage);
-end;
-
 
 { TCommandHandshakeResponse }
-
-procedure TCommandHandshakeResponse.Assign(Source: TCommand);
-var
-  Cmd: TCommandHandshakeResponse absolute Source;
-begin
-  FSuccess := Cmd.Success;
-end;
-
-function TCommandHandshakeResponse.Copy: TCommand;
-begin
-  Result := TCommandHandshakeResponse.Create;
-  Result.Assign(Self);
-end;
 
 constructor TCommandHandshakeResponse.Create;
 begin
@@ -308,22 +276,9 @@ begin
   inherited;
 
   Stream.Read(FSuccess);
-
-  if not fsuccess then
-    raise Exception.Create('Fehlermeldung');
 end;
 
 { TCommandGetServerData }
-
-procedure TCommandGetServerData.Assign(Source: TCommand);
-begin
-
-end;
-
-function TCommandGetServerData.Copy: TCommand;
-begin
-  Result := TCommandGetServerData.Create;
-end;
 
 constructor TCommandGetServerData.Create;
 begin
@@ -333,16 +288,6 @@ begin
 end;
 
 { TCommandGetServerDataResponse }
-
-procedure TCommandGetServerDataResponse.Assign(Source: TCommand);
-begin
-
-end;
-
-function TCommandGetServerDataResponse.Copy: TCommand;
-begin
-  Result := TCommandGetServerDataResponse.Create;
-end;
 
 constructor TCommandGetServerDataResponse.Create;
 begin
@@ -360,22 +305,6 @@ end;
 
 { TCommandLogIn }
 
-procedure TCommandLogIn.Assign(Source: TCommand);
-var
-  Cmd: TCommandLogIn absolute Source;
-begin
-  inherited;
-
-  User := Cmd.FUser;
-  Pass := Cmd.FPass;
-end;
-
-function TCommandLogIn.Copy: TCommand;
-begin
-//  Result := TCommandLogIn.Create;
-//  Result.Assign(Self);
-end;
-
 constructor TCommandLogIn.Create(User, Pass: string);
 begin
   Create;
@@ -384,20 +313,10 @@ begin
   FPass := Pass;
 end;
 
-function TCommandLogIn.DoGet: TBytes;
-var
-  S: TExtendedStream;
+procedure TCommandLogIn.DoGet(S: TExtendedStream);
 begin
-  S := TExtendedStream.Create;
-  try
-    S.Write(FUser);
-    S.Write(FPass);
-
-    SetLength(Result, S.Size);
-    CopyMemory(@Result[0], S.Memory, S.Size);
-  finally
-    S.Free;
-  end;
+  S.Write(FUser);
+  S.Write(FPass);
 end;
 
 constructor TCommandLogIn.Create;
@@ -408,21 +327,6 @@ begin
 end;
 
 { TCommandLogInResponse }
-
-procedure TCommandLogInResponse.Assign(Source: TCommand);
-var
-  Cmd: TCommandLogInResponse absolute Source;
-begin
-  inherited;
-
-  FSuccess := Cmd.Success;
-end;
-
-function TCommandLogInResponse.Copy: TCommand;
-begin
-  Result := TCommandLogInResponse.Create;
-  Result.Assign(Self);
-end;
 
 constructor TCommandLogInResponse.Create(User, Pass: string);
 begin
@@ -446,27 +350,6 @@ begin
 end;
 
 { TCommandNetworkTitleChangedResponse }
-
-procedure TCommandNetworkTitleChangedResponse.Assign(Source: TCommand);
-var
-  Cmd: TCommandNetworkTitleChangedResponse absolute Source;
-begin
-  inherited;
-                              // TODO: WO NUTZE ICH ASSIGN??? UND COPY???
-  FStreamID := Cmd.FStreamID;
-  FStreamName := Cmd.FStreamName;
-  FTitle := Cmd.FTitle;
-  FCurrentURL := Cmd.FCurrentURL;
-  FBitrate := Cmd.FBitrate;
-  FFormat := Cmd.FFormat;
-  FTitleRegEx := Cmd.FTitleRegEx;
-end;
-
-function TCommandNetworkTitleChangedResponse.Copy: TCommand;
-begin
-  Result := TCommandNetworkTitleChangedResponse.Create;
-  Result.Assign(Self);
-end;
 
 constructor TCommandNetworkTitleChangedResponse.Create;
 begin
@@ -494,24 +377,6 @@ end;
 
 { TCommandUpdateStats }
 
-procedure TCommandUpdateStats.Assign(Source: TCommand);
-var
-  Cmd: TCommandUpdateStats absolute Source;
-begin
-  inherited;
-
-  if Stream <> nil then
-    Stream.Free;
-
-  FStream := Cmd.Stream;
-end;
-
-function TCommandUpdateStats.Copy: TCommand;
-begin
-  Result := TCommandUpdateStats.Create;
-  Result.Assign(Self);
-end;
-
 constructor TCommandUpdateStats.Create;
 begin
   inherited;
@@ -521,22 +386,6 @@ begin
 end;
 
 { TCommandServerInfoResponse }
-
-procedure TCommandServerInfoResponse.Assign(Source: TCommand);
-var
-  Cmd: TCommandServerInfoResponse absolute Source;
-begin
-  inherited;
-
-  FClientCount := Cmd.ClientCount;
-  FRecordingCount := Cmd.RecordingCount;
-end;
-
-function TCommandServerInfoResponse.Copy: TCommand;
-begin
-  Result := TCommandServerInfoResponse.Create;
-  Result.Assign(Self);
-end;
 
 constructor TCommandServerInfoResponse.Create;
 begin
@@ -554,54 +403,25 @@ begin
   Stream.Read(FRecordingCount);
 end;
 
-{ TCommandErrorResponse }
+{ TCommandMessageResponse }
 
-procedure TCommandErrorResponse.Assign(Source: TCommand);
-var
-  Cmd: TCommandErrorResponse absolute Source;
-begin
-  FErrorID := Cmd.ErrorID;
-  FErrorMsg := Cmd.ErrorMsg;
-end;
-
-function TCommandErrorResponse.Copy: TCommand;
-begin
-  Result := TCommandErrorResponse.Create;
-  Result.Assign(Self);
-end;
-
-constructor TCommandErrorResponse.Create;
+constructor TCommandMessageResponse.Create;
 begin
   inherited;
 
-  FCommandType := ctErrorResponse;
+  FCommandType := ctMessageResponse;
 end;
 
-procedure TCommandErrorResponse.Load(CommandHeader: TCommandHeader;
+procedure TCommandMessageResponse.Load(CommandHeader: TCommandHeader;
   Stream: TExtendedStream);
 begin
   inherited;
 
-  Stream.Read(FErrorID);
-  Stream.Read(FErrorMsg);
+  Stream.Read(FMessageID);
+  Stream.Read(FMessageMsg);
 end;
 
 { TCommandSetSettings }
-
-procedure TCommandSetSettings.Assign(Source: TCommand);
-var
-  Cmd: TCommandSetSettings absolute Source;
-begin
-  inherited;
-
-  TitleNotifications := Cmd.TitleNotifications;
-end;
-
-function TCommandSetSettings.Copy: TCommand;
-begin
-  Result := TCommandSetSettings.Create;
-  Result.Assign(Self);
-end;
 
 constructor TCommandSetSettings.Create(TitleNotifications: Boolean);
 begin
@@ -610,19 +430,9 @@ begin
   FTitleNotifications := TitleNotifications;
 end;
 
-function TCommandSetSettings.DoGet: TBytes;
-var
-  S: TExtendedStream;
+procedure TCommandSetSettings.DoGet(S: TExtendedStream);
 begin
-  S := TExtendedStream.Create;
-  try
-    S.Write(FTitleNotifications);  // TODO: Warum gibt DoGet nicht direkt den stream zurück und bekommt per parameter einen mit reingereicht zum beschreiben?
-
-    SetLength(Result, S.Size);
-    CopyMemory(@Result[0], S.Memory, S.Size);
-  finally
-    S.Free;
-  end;
+  S.Write(FTitleNotifications);
 end;
 
 constructor TCommandSetSettings.Create;
@@ -634,17 +444,6 @@ end;
 
 { TCommandLogOut }
 
-procedure TCommandLogOut.Assign(Source: TCommand);
-begin
-  inherited;
-
-end;
-
-function TCommandLogOut.Copy: TCommand;
-begin
-  Result := TCommandLogOut.Create;
-end;
-
 constructor TCommandLogOut.Create;
 begin
   inherited;
@@ -654,22 +453,112 @@ end;
 
 { TCommandLogOutResponse }
 
-procedure TCommandLogOutResponse.Assign(Source: TCommand);
-begin
-  inherited;
-
-end;
-
-function TCommandLogOutResponse.Copy: TCommand;
-begin
-  Result := TCommandLogOutResponse.Create;
-end;
-
 constructor TCommandLogOutResponse.Create;
 begin
   inherited;
 
   FCommandType := ctLogOutResponse;
+end;
+
+{ TCommandClientStats }
+
+constructor TCommandClientStats.Create(StatType: TSendClientStatTypes);
+begin
+  Create;
+
+  FStatType := StatType;
+end;
+
+constructor TCommandClientStats.Create;
+begin
+  inherited;
+
+  FCommandType := ctClientStats;
+end;
+
+procedure TCommandClientStats.DoGet(S: TExtendedStream);
+begin
+  S.Write(Byte(FStatType));
+end;
+
+{ TCommandSubmitStream }
+
+constructor TCommandSubmitStream.Create(URL: string);
+begin
+  Create;
+
+  FURL := URL;
+end;
+
+constructor TCommandSubmitStream.Create;
+begin
+  inherited;
+
+  FCommandType := ctSubmitStream;
+end;
+
+procedure TCommandSubmitStream.DoGet(S: TExtendedStream);
+begin
+  S.Write(FURL);
+end;
+
+{ TCommandSetStreamData }
+
+constructor TCommandSetStreamData.Create;
+begin
+  inherited;
+
+  FCommandType := ctSetStreamData;
+end;
+
+procedure TCommandSetStreamData.DoGet(S: TExtendedStream);
+begin
+  S.Write(FStreamID);
+  S.Write(FRating);
+  S.Write(FHasRecordingOkay);
+  S.Write(FRecordingOkay);
+  S.Write(FTitleRegEx);
+  S.Write(FHasIgnoreTitles);
+  S.Write(FIgnoreTitles);
+end;
+
+{ TCommandTitleChanged }
+
+constructor TCommandTitleChanged.Create;
+begin
+  inherited;
+
+  FCommandType := ctTitleChanged;
+end;
+
+constructor TCommandTitleChanged.Create(StreamID: Cardinal; StreamName,
+  Title, CurrentURL, URL: string; Format: TAudioTypes; Kbps: Cardinal;
+  URLs: string);
+begin
+  Create;
+
+  FStreamID := StreamID;
+  FStreamName := StreamName;
+  FTitle := Title;
+  FCurrentURL := CurrentURL;
+  FURL := URL;
+  FFormat := Format;
+  FKbps := Kbps;
+  FURLs := URLs;
+end;
+
+procedure TCommandTitleChanged.DoGet(S: TExtendedStream);
+begin
+  inherited;
+
+  S.Write(FStreamID);
+  S.Write(FStreamName);
+  S.Write(FTitle);
+  S.Write(FCurrentURL);
+  S.Write(FURL);
+  S.Write(Byte(FFormat));
+  S.Write(FKbps);
+  S.Write(FURLs);
 end;
 
 end.

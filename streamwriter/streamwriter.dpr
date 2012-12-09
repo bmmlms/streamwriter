@@ -134,8 +134,7 @@ uses
   SplashThread in '..\..\common\SplashThread.pas',
   CommandLine in '..\..\common\CommandLine.pas',
   HomeTest in 'HomeTest.pas' {frmHomeTest},
-  HomeCommands in 'HomeCommands.pas',
-  HomeCommunication2 in 'HomeCommunication2.pas';
+  HomeCommands in 'HomeCommands.pas';
 
 {$SetPEOptFlags $0140}
 
@@ -175,7 +174,7 @@ begin
   if InitApp and AppGlobals.WasSetup then
   begin
     Application.CreateForm(TfrmStreamWriterMain, frmStreamWriterMain);
-    //Application.CreateForm(TfrmHomeTest, frmHomeTest);
+  //Application.CreateForm(TfrmHomeTest, frmHomeTest);
   end;
 
   Application.Run;

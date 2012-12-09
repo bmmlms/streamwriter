@@ -142,6 +142,8 @@ type
     FColTitle: TVirtualTreeColumn;
     FColAdded: TVirtualTreeColumn;
 
+    FPanel: TTitlePanel;
+
     FLists: TDataLists;
     FDropTarget: TDropComboTarget;
     FPopupMenu: TTitlePopup;
@@ -550,7 +552,6 @@ end;
 
 procedure TTitlePanel.BuildTree(FromFilter: Boolean);
 var
-  Ok: Boolean;
   i, n: Integer;
   Node, ClientNode: PVirtualNode;
   NodeData: PTitleNodeData;
@@ -602,7 +603,6 @@ end;
 procedure TTitlePanel.ClientAdded(Client: TICEClient);
 var
   i: Integer;
-  O: TObject;
 begin
   if (Client.AutoRemove) or (Client.Entry.Name = '') then
     Exit;
@@ -633,7 +633,6 @@ procedure TTitlePanel.SearchTextChange(Sender: TObject);
 var
   Hash: Cardinal;
   NumChars: Integer;
-  FilterText: string;
 begin
   FFilterText := BuildPattern(FSearchText.Text, Hash, NumChars, False);
   BuildTree(True);
@@ -671,8 +670,6 @@ begin
 end;
 
 procedure TTitlePanel.Setup(Clients: TClientManager; Lists: TDataLists; Images: TImageList);
-var
-  i: Integer;
 begin
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := Self;
@@ -784,7 +781,6 @@ begin
 
   if Trim(Text) <> '' then
   begin
-    List := nil;
     Parent := nil;
 
     if (ListType = ltSave) or
@@ -846,9 +842,6 @@ end;
 
 procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree;
   Node: PVirtualNode);
-var
-  i: Integer;
-  NodeData: PTitleNodeData;
 begin
   FToolbar.FRemove.Enabled := FTree.SelectedCount > 0;
 
@@ -976,8 +969,6 @@ begin
   if FromFilter and ((FilterText <> '') and (not Like(LowerCase(Title.Title), FilterText))) then
     Exit;
 
-  ParentData := nil;
-
   Node := AddChild(Parent);
   Result := Node;
   NodeData := GetNodeData(Node);
@@ -1050,6 +1041,7 @@ constructor TTitleTree.Create(AOwner: TComponent; Lists: TDataLists; Images: TIm
 begin
   inherited Create(AOwner);
 
+  FPanel := TTitlePanel(AOwner);
   FLists := Lists;
 
   NodeDataSize := SizeOf(TTitleNodeData);
@@ -1104,41 +1096,77 @@ var
   Found: Boolean;
   HI: THitInfo;
   Node: PVirtualNode;
-  NodeData: PTitleNodeData;
+  NodeData, ParentNodeData: PTitleNodeData;
   Title: TTitleInfo;
   List: TTitleList;
-  Stream: TICEClient;
 begin
-{ TODO
-  Stream := nil;
+  List := nil;
 
   GetHitTestInfoAt(APoint.X, APoint.Y, True, HI);
   if Hi.HitNode <> nil then
   begin
-    if HI.HitNode.Parent <> RootNode then
-    begin
-      Node := HI.HitNode.Parent;
-    end else
-      Node := HI.HitNode;
+    NodeData := GetNodeData(Hi.HitNode);
 
-    NodeData := GetNodeData(Node);
+    Node := Hi.HitNode;
 
-    if (NodeData.Stream <> nil) or ((NodeData.Stream = nil) and (NodeData.Title = nil)) then
-    begin
-      Stream := NodeData.Stream;
+    case NodeData.NodeType of
+      ntWishParent:
+        begin
+          List := FLists.SaveList;
+        end;
+      ntIgnoreParent:
+        begin
+          List := FLists.IgnoreList;
+        end;
+      ntStream:
+        begin
+          ParentNodeData := GetNodeData(Hi.HitNode.Parent);
+          if ParentNodeData.NodeType = ntWishParent then
+            List := NodeData.Stream.Entry.SaveList
+          else
+            List := NodeData.Stream.Entry.IgnoreList;
+        end;
+      ntWish:
+        begin
+          ParentNodeData := GetNodeData(Hi.HitNode.Parent);
+          case ParentNodeData.NodeType of
+            ntWishParent:
+              begin
+                Node := FWishNode;
+                List := FLists.SaveList;
+              end;
+            ntStream:
+              begin
+                Node := Hi.HitNode.Parent;
+                ParentNodeData := GetNodeData(Hi.HitNode.Parent);
+                List := ParentNodeData.Stream.Entry.SaveList
+              end;
+          end;
+        end;
+      ntIgnore:
+        begin
+          ParentNodeData := GetNodeData(Hi.HitNode.Parent);
+
+          case ParentNodeData.NodeType of
+            ntIgnoreParent:
+              begin
+                Node := FIgnoreNode;
+                List := FLists.IgnoreList;
+              end;
+            ntStream:
+              begin
+                Node := Hi.HitNode.Parent;
+                ParentNodeData := GetNodeData(Hi.HitNode.Parent);
+                List := ParentNodeData.Stream.Entry.IgnoreList;
+              end;
+          end;
+        end;
     end;
-  end;
+  end else
+    Exit;
 
-  if FType = ltSave then
-    if Stream = nil then
-      List := FLists.SaveList
-    else
-      List := Stream.Entry.SaveList
-  else
-    if Stream = nil then
-      List := FLists.IgnoreList
-    else
-      List := Stream.Entry.IgnoreList;
+  if List = nil then
+    Exit;
 
   for i := 0 to FDropTarget.Files.Count - 1 do
   begin
@@ -1153,9 +1181,14 @@ begin
       end;
 
     if not Found then
-      AddTitle(Title, GetNode(Stream), FFilterText, True);
+    begin
+      List.Add(Title);
+      AddTitle(Title, Node, FPanel.FFilterText, True);
+
+      if List = FLists.SaveList then
+        HomeComm.SendSetSettings(True);
+    end;
   end;
-}
 end;
 
 function TTitleTree.GetNode(Stream: TICEClient): PVirtualNode;

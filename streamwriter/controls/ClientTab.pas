@@ -250,7 +250,7 @@ begin
 
   FStart := TSpeedButton.Create(Self);
   FStart.Parent := Self;
-  FStart.Width := 24;       // TODO: alle control-abstände mal passig machen und vergleichen von allen tabs!!!
+  FStart.Width := 24;
   FStart.Height := 24;
   FStart.Top := 6;
   FStart.Left := ClientWidth - 4 - FStart.Width;
@@ -272,7 +272,7 @@ begin
   FStations.Anchors := [akLeft, akTop, akRight];
   FStations.OnKeyPress := FStationsKeyPress;
   FStations.OnChange := FStationsChange;
-  Height := FStations.Top + FStations.Height + FStations.Top;
+  Height := FStations.Top + FStations.Height + FStations.Top - 2;
 
   FLabel.Top := FStations.Top + FStations.Height div 2 - FLabel.Height div 2;
 
@@ -934,7 +934,8 @@ begin
   begin
     FAddressBar.Stations.AddItem(Client.Entry.ID, Client.Entry.Bitrate, Client.Entry.Name, Client.Entry.StartURL);
 
-    // FHomeCommunication.SubmitStream(Client.Entry.StartURL); TODO: !!!
+    if Client.Entry.ID = 0 then
+      FHomeCommunication.SendSubmitStream(Client.Entry.StartURL);
   end;
 
   ShowInfo;
@@ -1528,12 +1529,11 @@ procedure TClientTab.StreamBrowserAction(Sender: TObject; Action: TStreamOpenAct
     Node: PVirtualNode;
     ND: PStreamNodeData;
   begin
-    { TODO: !!!
     if not HomeComm.Authenticated then
       FOnAuthRequired(Self)
     else
     begin
-      HomeComm.RateStream(Streams[0].ID, R);
+      HomeComm.SendSetStreamData(Streams[0].ID, R);
 
       Node := FSideBar.FBrowserView.StreamTree.GetNodes(True)[0];
       ND := FSideBar.FBrowserView.StreamTree.GetNodeData(Node);
@@ -1543,7 +1543,6 @@ procedure TClientTab.StreamBrowserAction(Sender: TObject; Action: TStreamOpenAct
         FSideBar.FBrowserView.StreamTree.InvalidateNode(Node);
       end;
     end;
-    }
   end;
 var
   i: Integer;
@@ -1604,9 +1603,8 @@ begin
       FSideBar.FBrowserView.RefreshStreams;
     oaSetData:
       begin
-        {
         if not HomeComm.Authenticated then
-          FOnAuthRequired(Self)   TODO: !!!
+          FOnAuthRequired(Self)
         else
         begin
           Client := FClients.GetClient(Streams[0].ID, Streams[0].Name, Streams[0].URL, '', nil);
@@ -1639,7 +1637,6 @@ begin
             SD.Free;
           end;
         end;
-        }
       end;
     oaRate1:
       Rate(1);

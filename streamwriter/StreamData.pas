@@ -27,7 +27,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, PngSpeedButton, GUIFunctions,
   HomeCommunication, Functions, LanguageObjects, PerlRegEx, Logging,
-  ComCtrls, AppData, ImgList, PngImageList;
+  ComCtrls, AppData, ImgList, PngImageList, HomeCommands;
 
 type
   TfrmStreamData = class(TForm)
@@ -135,6 +135,8 @@ var
   R: TPerlRegEx;
   RValid: Boolean;
   ArtistFound, TitleFound: Boolean;
+  Send: Boolean;
+  Cmd: TCommandSetStreamData;
 begin
   if not HomeComm.Connected then
   begin
@@ -163,6 +165,10 @@ begin
     Exit;
   end;
 
+  Send := False;
+  Cmd := TCommandSetStreamData.Create;
+  Cmd.StreamID := FID;
+
   // Das mit das ListView bei "Enter" das bearbeiten aufhört, dass der Wert
   // uns hier zur Verfügung steht.
   btnOK.SetFocus;
@@ -170,7 +176,10 @@ begin
 
   if (optGood.Checked <> FIsOkay) and FIsOkayChanged then
   begin
-    // HomeComm.SetDataOkay(FID, optGood.Checked); TODO: !!!
+    Cmd.HasRecordingOkay := True;
+    Cmd.RecordingOkay := optGood.Checked;
+    Send := True;
+
     FIsOkay := optGood.Checked;
     FSaveSettings := True;
   end else
@@ -178,7 +187,9 @@ begin
 
   if (FRegEx <> txtTitlePattern.Text) and (FRegExChanged) then
   begin
-    // HomeComm.SetDataTitlePattern(FID, txtTitlePattern.Text); TODO: !!!
+    Cmd.TitleRegEx := txtTitlePattern.Text;
+    Send := True;
+
     FRegEx := txtTitlePattern.Text;
     FSaveSettings := True;
   end else
@@ -190,9 +201,20 @@ begin
     for i := 0 to lstIgnoreTitles.Items.Count - 1 do
       if Trim(lstIgnoreTitles.Items[i].Caption) <> '' then
         FIgnoreList.Add(Trim(lstIgnoreTitles.Items[i].Caption));
-    // HomeComm.SetDataIgnoreTracks(FID, FIgnoreList); TODO: !!!
+
+    Cmd.HasIgnoreTitles := True;
+    Cmd.IgnoreTitles := FIgnoreList.Text;
+    Send := True;
+
     FSaveSettings := True;
   end;
+
+  if Send then
+  begin
+    if not HomeComm.SendCommand(Cmd) then
+      Cmd.Free;
+  end else
+    Cmd.Free;
 
   Close;
 end;

@@ -162,8 +162,8 @@ type
 
     procedure SearchChange(Sender: TObject);
 
-    procedure HomeCommChartsReceived(Sender: TObject; ChartList: TList<TChartEntry>);
-    //procedure CategoriesChange(Sender: TObject);
+    procedure HomeCommChartsReceived(Sender: TObject);
+
     procedure ButtonClick(Sender: TObject);
     procedure ChartsTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
   public
@@ -248,21 +248,9 @@ begin
   inherited;
 end;
 
-procedure TChartsTab.HomeCommChartsReceived(Sender: TObject; ChartList: TList<TChartEntry>);
-var
-  i: Integer;
-  Chart: TChartEntry;
+procedure TChartsTab.HomeCommChartsReceived(Sender: TObject);
 begin
   FChartsTree.Clear;
-
-  for i := 0 to FLists.ChartList.Count - 1 do
-    FLists.ChartList[i].Free;
-  FLists.ChartList.Clear;
-
-  for i := 0 to ChartList.Count - 1 do
-  begin
-    FLists.ChartList.Add(ChartList[i]);
-  end;
 
   SetState(csNormal);
 
@@ -309,7 +297,6 @@ begin
     FSearchPanel.FToolbar.Enabled := State = csNormal;
 
     UpdateButtons;
-    //FSearchPanel.FButtonReload.Enabled := State = csNormal;
   end;
 end;
 
@@ -338,8 +325,6 @@ begin
 
   if (FChartsTree.FState = csNormal) and (FLists.ChartList.Count > 0) and (FLists.CategoryList.Count > 0) then
   begin
-    //FSearchPanel.FCategories.LoadCategories(FLists.ChartCategoryList);
-    //FSearchPanel.FCategories.ItemIndex := 0;
     ShowCharts;
   end;
 end;
@@ -349,48 +334,24 @@ var
   i, n: Integer;
   Node, NodeStream: PVirtualNode;
   NodeData, NodeDataStream: PChartNodeData;
-  CatData: TChartCategory;
 
   P: string;
   Hash: Cardinal;
   Chars: Integer;
 
-  //CatMatch: Boolean;
   SearchMatch: Boolean;
 begin
-  //if FSearchPanel.FCategories.ItemIndex = -1 then
-  //  Exit;
-
   P := BuildPattern(FSearchPanel.FSearch.Text, Hash, Chars, False);
 
   try
     FChartsTree.BeginUpdate;
     FChartsTree.Clear;
 
-    //CatData := TChartCategory(FSearchPanel.FCategories.Items.Objects[FSearchPanel.FCategories.ItemIndex]);
-
     for i := 0 to FLists.ChartList.Count - 1 do
     begin
-      {
-      CatMatch := False;
-
-      if CatData = nil then
-      begin
-        CatMatch := True
-      end else
-      begin
-        for n := 0 to High(FLists.ChartList[i].Categories) do
-          if FLists.ChartList[i].Categories[n] = CatData.ID then
-          begin
-            CatMatch := True;
-            Break;
-          end;
-      end;
-      }
-
       SearchMatch := Like(FLists.ChartList[i].Name, P);
 
-      if {CatMatch and} SearchMatch then
+      if SearchMatch then
       begin
         Node := FChartsTree.AddChild(nil);
         NodeData := FChartsTree.GetNodeData(Node);
@@ -423,14 +384,18 @@ end;
 procedure TChartsTab.UpdateButtons;
 var
   AllOnList: Boolean;
+  OneSelectedChart, ManySelectedCharts: Boolean;
+  OneSelectedStream, ManySelectedStreams: Boolean;
   N: PVirtualNode;
   NodeData: PChartNodeData;
-  SelectedCharts: TNodeArray;
-  SelectedStreams: TNodeArray;
 begin
   inherited;
 
   AllOnList := True;
+  OneSelectedChart := False;
+  ManySelectedCharts := False;
+  OneSelectedStream := False;
+  ManySelectedStreams := False;
 
   N := FChartsTree.GetFirst;
   while N <> nil do
@@ -441,22 +406,38 @@ begin
       if not NodeData.IsOnWishlist then
       begin
         AllOnList := False;
-        Break;
+      end;
+
+      if NodeData.Chart <> nil then
+      begin
+        if OneSelectedChart then
+        begin
+          ManySelectedCharts := True;
+          OneSelectedChart := False;
+        end else if (not OneSelectedChart) and (not ManySelectedCharts) then
+          OneSelectedChart := True;
+      end;
+
+      if NodeData.Stream <> nil then
+      begin
+        if OneSelectedStream then
+        begin
+          ManySelectedStreams := True;
+          OneSelectedStream := False;
+        end else if (not OneSelectedStream) and (not ManySelectedStreams) then
+          OneSelectedStream := True;
       end;
     end;
     N := FChartsTree.GetNext(N);
   end;
-  // TODO: in die charts klicken ist super lahm. ich darf höchstens einmal über alle nodes loopen und muss mir alles merken!
-  SelectedCharts := FChartsTree.GetNodes(ntChart, True);
-  SelectedStreams := FChartsTree.GetNodes(ntStream, True);
 
   FChartsTree.FPopupMenu.FItemReload.Enabled := HomeComm.Connected and (State = csNormal);
-  FChartsTree.FPopupMenu.FItemAddToWishlist.Enabled := (not AllOnList) and (Length(SelectedCharts) > 0) and (State = csNormal);
-  FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Enabled := (Length(SelectedCharts) = 1) and (State = csNormal);
-  FChartsTree.FPopupMenu.FItemStartStreaming.Enabled := (Length(SelectedStreams) > 0) and (State = csNormal);
-  FChartsTree.FPopupMenu.FItemPlayStream.Enabled := (Length(SelectedStreams) = 1) and (State = csNormal);
-  FChartsTree.FPopupMenu.FItemPlayStreamExternal.Enabled := (Length(SelectedStreams) = 1) and (State = csNormal);
-  FChartsTree.FPopupMenu.FItemAddStream.Enabled := (Length(SelectedStreams) > 0) and (State = csNormal);
+  FChartsTree.FPopupMenu.FItemAddToWishlist.Enabled := (not AllOnList) and (OneSelectedChart or ManySelectedCharts) and (State = csNormal);
+  FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Enabled := (OneSelectedChart) and (State = csNormal);
+  FChartsTree.FPopupMenu.FItemStartStreaming.Enabled := (OneSelectedStream or ManySelectedStreams) and (State = csNormal);
+  FChartsTree.FPopupMenu.FItemPlayStream.Enabled := (OneSelectedStream) and (State = csNormal);
+  FChartsTree.FPopupMenu.FItemPlayStreamExternal.Enabled := (OneSelectedStream) and (State = csNormal);
+  FChartsTree.FPopupMenu.FItemAddStream.Enabled := (OneSelectedStream or ManySelectedStreams) and (State = csNormal);
 
   FSearchPanel.FButtonReload.Enabled := FChartsTree.FPopupMenu.FItemReload.Enabled;
   FSearchPanel.FButtonAddToWishlist.Enabled := FChartsTree.FPopupMenu.FItemAddToWishlist.Enabled;
@@ -1015,10 +996,6 @@ begin
   FSearch := TEdit.Create(Self);
   FSearch.Parent := Self;
 
-  //FCategories := TCategoryCombo.Create(Self);
-  //FCategories.Style := csDropDownList;
-  //FCategories.Parent := Self;
-
   FToolbar := TToolBar.Create(Self);
   FToolbar.Parent := Self;
   FToolbar.ShowHint := True;
@@ -1027,7 +1004,7 @@ end;
 procedure TSearchPanel.PostTranslate;
 begin
   FLabel.Caption := _('Search:');
-  FSearch.Left := FLabel.Left + FLabel.Width + 4;
+  FSearch.Left := FLabel.Left + FLabel.Width + 6;
 end;
 
 procedure TSearchPanel.Resize;
@@ -1047,8 +1024,7 @@ begin
 
   FLabel.Top := FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2;
 
-
-  ClientHeight := FSearch.Top + 4 + FSearch.Height;
+  ClientHeight := FSearch.Top + 5 + FSearch.Height;
 
   FToolbar.Images := Images;
 

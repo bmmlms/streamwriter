@@ -743,8 +743,8 @@ begin
       FOnRefresh(Self);
   end;
 
-  //if FICEThread.RecvStream.SavedFullTitle then
-  //  HomeComm.SendClientStats(AutoRemove); TODO: !!!
+  if FICEThread.RecvStream.SavedFullTitle then
+    HomeComm.SendClientStats(AutoRemove);
 end;
 
 procedure TICEClient.ThreadSpeedChanged(Sender: TSocketThread);
@@ -776,8 +776,6 @@ begin
 end;
 
 procedure TICEClient.ThreadTitleChanged(Sender: TSocketThread);
-var
-  Format: string;
 begin
   FTitle := FICEThread.RecvStream.Title;
 
@@ -797,19 +795,8 @@ begin
   if (FICEThread.RecvStream.FullTitleFound) and (not FAutoRemove) and (FRecordTitle = '') then
     if AppGlobals.SubmitStreamInfo then
     begin
-      case FICEThread.RecvStream.AudioType of
-        atMPEG:
-          Format := 'mp3';
-        atAAC:
-          Format := 'aac';
-        atOGG:
-          Format := 'ogg';
-        else
-          raise Exception.Create('');
-      end;
-
-      //HomeComm.TitleChanged(Entry.ID, Entry.Name, FTitle, FCurrentURL, Entry.StartURL, Format,
-      //  Entry.BitRate, Entry.URLs); TODO: !!!
+      HomeComm.SendTitleChanged(Entry.ID, Entry.Name, FTitle, FCurrentURL, Entry.StartURL, FICEThread.RecvStream.AudioType,
+        Entry.BitRate, Entry.URLs);
     end;
 end;
 

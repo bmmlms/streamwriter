@@ -61,20 +61,6 @@ type
 
   TScrollDirection = (sdUp, sdDown);
 
-  {
-  TMLoadingPanel = class(TPanel)
-  private
-    FLabel: TLabel;
-    FDots: string;
-    FTimer: TTimer;
-    procedure TimerOnTimer(Sender: TObject);
-  protected
-    procedure Resize; override;
-  public
-    constructor Create(AOwner: TComponent); override;
-  end;
-  }
-
   TMStreamSearchPanel = class(TPanel)
   private
     //FShowHideFilters: TMShowHidePanel;
@@ -122,7 +108,7 @@ type
 
     procedure StreamBrowserHeaderClick(Sender: TVTHeader; HitInfo: TVTHeaderHitInfo);
 
-    procedure HomeCommunicationStreamsReceived(Sender: TObject; Genres: TList<TGenre>; Streams: TList<TStreamBrowserEntry>);
+    procedure HomeCommunicationStreamsReceived(Sender: TObject);
   protected
   public
     constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
@@ -180,9 +166,7 @@ type
     FItemRate4: TMenuItem;
     FItemRate5: TMenuItem;
     FItemRefresh: TMenuItem;
-    FItemAdministration: TMenuItem;
     FItemSetData: TMenuItem;
-    FItemRebuildIndex: TMenuItem;
     FItemOpenWebsite: TMenuItem;
     FItemBlacklist: TMenuItem;
     FItemCopy: TMenuItem;
@@ -309,29 +293,25 @@ begin
   FPopupMenu.AutoHotkeys := maManual;
   FPopupMenu.OnPopup := PopupMenuPopup;
 
-  FItemStart := FPopupMenu.CreateMenuItem;
-  FItemStart.Caption := '&Start recording';
-  FItemStart.ImageIndex := 0;
+  FItemRefresh := CreateItem('Re&fresh', 23, nil);
+  FItemRefresh.OnClick := PopupMenuClick;
+
+  CreateItem('-', -1, nil);
+
+  FItemStart := CreateItem('&Start recording', 0, nil);
   FItemStart.OnClick := PopupMenuClick;
-  FPopupMenu.Items.Add(FItemStart);
 
-  FItemPlay := FPopupMenu.CreateMenuItem;
-  FItemPlay.Caption := '&Play stream';
-  FItemPlay.ImageIndex := 33;
+  FItemPlay := CreateItem('&Play stream', 33, nil);
   FItemPlay.OnClick := PopupMenuClick;
-  FPopupMenu.Items.Add(FItemPlay);
 
-  FItemOpen := FPopupMenu.CreateMenuItem;
-  FItemOpen.Caption := 'P&lay stream (external player)';
-  FItemOpen.ImageIndex := 82;
+  FItemOpen := CreateItem('P&lay stream (external player)', 82, nil);
   FItemOpen.OnClick := PopupMenuClick;
-  FPopupMenu.Items.Add(FItemOpen);
 
-  FItemAdd := FPopupMenu.CreateMenuItem;
-  FItemAdd.Caption := '&Add stream';
-  FItemAdd.ImageIndex := 80;
+  FItemAdd := CreateItem('&Add stream', 80, nil);
   FItemAdd.OnClick := PopupMenuClick;
-  FPopupMenu.Items.Add(FItemAdd);
+
+  FItemSetData := CreateItem('S&et data...', -1, nil);
+  FItemSetData.OnClick := PopupMenuClick;
 
   FItemRate := CreateItem('&Rate', 64, nil);
 
@@ -351,40 +331,19 @@ begin
   FItemRate1.OnClick := PopupMenuClick;
   FItemRate1.Tag := 1;
 
-  FItemRefresh := CreateItem('Re&fresh', 23, nil);
-  FItemRefresh.OnClick := PopupMenuClick;
-
-  FItemAdministration := CreateItem('A&dministration', -1, nil);
-
-  FItemSetData := CreateItem('S&et data...', -1, FItemAdministration);
-  FItemSetData.OnClick := PopupMenuClick;
-
-  FItemRebuildIndex := CreateItem('&Rebuild index', -1, FItemAdministration);
-  FItemRebuildIndex.OnClick := PopupMenuClick;
-
   CreateItem('-', -1, nil);
 
-  FItemOpenWebsite := FPopupMenu.CreateMenuItem;
-  FItemOpenWebsite.Caption := 'Open &website...';
-  FItemOpenWebsite.ImageIndex := 38;
+  FItemOpenWebsite := CreateItem('Open &website...', 38, nil);
   FItemOpenWebsite.OnClick := PopupMenuClick;
-  FPopupMenu.Items.Add(FItemOpenWebsite);
 
-  FItemBlacklist := FPopupMenu.CreateMenuItem;
-  FItemBlacklist.Caption := 'Add to &blacklist';
-  FItemBlacklist.ImageIndex := 51;
+  FItemBlacklist := CreateItem('Add to &blacklist', 51, nil);
   FItemBlacklist.OnClick := PopupMenuClick;
-  FPopupMenu.Items.Add(FItemBlacklist);
 
-  FItemCopy := FPopupMenu.CreateMenuItem;
-  FItemCopy.Caption := '&Copy URL';
+  FItemCopy := CreateItem('&Copy URL', -1, nil);
   FItemCopy.OnClick := PopupMenuClick;
-  FPopupMenu.Items.Add(FItemCopy);
 
-  FItemSave := FPopupMenu.CreateMenuItem;
-  FItemSave.Caption := '&Save as playlist...';
+  FItemSave := CreateItem('&Save as playlist...', -1, nil);
   FItemSave.OnClick := PopupMenuClick;
-  FPopupMenu.Items.Add(FItemSave);
 
   PopupMenu := FPopupMenu;
 
@@ -729,8 +688,6 @@ begin
     Action := oaSetData
   else if Sender = FItemRefresh then
     Action := oaRefresh
-  //else if Sender = FItemRebuildIndex then
-  //  HomeComm.RebuildIndex TODO: !!!
   else if (Sender = FItemRate1) or (Sender = FItemRate2) or (Sender = FItemRate3) or
           (Sender = FItemRate4) or (Sender = FItemRate5) then
     if Length(Streams) = 1 then
@@ -772,7 +729,6 @@ begin
   FItemRate.Enabled := HomeComm.Connected and (Length(Streams) = 1);
   FItemRefresh.Enabled := HomeComm.Connected;
 
-  // FItemRebuildIndex.Enabled := HomeComm.IsAdmin; TODO: !!!
   FItemSetData.Enabled := HomeComm.Connected and (Length(Streams) = 1);
 
   FItemCopy.Enabled := Length(Streams) > 0;
@@ -1166,41 +1122,11 @@ begin
   inherited;
 end;
 
-procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject; Genres: TList<TGenre>; Streams: TList<TStreamBrowserEntry>);
-var
-  Genre: TGenre;
-  Entry, Entry2: TStreamBrowserEntry;
+procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject);
 begin
-  // Jetzt schon leer machen, damit er nicht ins GetText oder so reinläuft
   FSearch.FGenreList.Clear;
   FStreamTree.Clear;
 
-  // Genres...
-  for Genre in FDataLists.GenreList do
-    Genre.Free;
-  FDataLists.GenreList.Clear;
-  for Genre in Genres do
-    FDataLists.GenreList.Add(Genre);
-
-  // Streams synchronisieren
-  for Entry in FDataLists.BrowserList do
-    for Entry2 in Streams do
-      if (Entry.ID = Entry2.ID) then
-      begin
-        Entry2.OwnRating := Entry.OwnRating;
-        Continue;
-      end;
-
-  // Alte Liste leeren
-  for Entry in FDataLists.BrowserList do
-    Entry.Free;
-  FDataLists.BrowserList.Clear;
-
-  // Der Liste alle Sachen wieder hinzufügen
-  for Entry in Streams do
-    FDataLists.BrowserList.Add(Entry.Copy);
-
-  // Kram neu bauen!
   BuildGenres;
   BuildTree(True);
 
