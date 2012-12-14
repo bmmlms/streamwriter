@@ -57,14 +57,7 @@ end;
 
 procedure TfrmHomeTest.Start;
 begin
-  { TODO: !!!
-  HC := THomeCommunication.Create;
-  HC.OnStateChanged := HomeCommunicationStateChanged;
-  HC.OnBytesTransferred := HomeCommunicationBytesTransferred;
 
-  HC.OnLogInReceived := HomeCommunicationLogInReceived;
-  HC.OnServerDataReceived := HomeCommunicationServerDataReceived;
-  }
 end;
 
 procedure TfrmHomeTest.HomeCommunicationBytesTransferred(Sender: TObject;

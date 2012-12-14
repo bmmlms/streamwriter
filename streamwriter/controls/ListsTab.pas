@@ -33,12 +33,13 @@ uses
 type
   TTitleTree = class;
 
-  TNodeTypes = (ntWishParent, ntIgnoreParent, ntStream, ntWish, ntIgnore);
+  TNodeType = (ntWishParent, ntIgnoreParent, ntStream, ntWish, ntIgnore);
+  TNodeTypes = set of TNodeType;
 
   TTitleNodeData = record
     Title: TTitleInfo;
     Stream: TICEClient;
-    NodeType: TNodeTypes;
+    NodeType: TNodeType;
   end;
   PTitleNodeData = ^TTitleNodeData;
 
@@ -273,15 +274,20 @@ begin
     begin
       if FTree.Selected[Node] then
       begin
-        SubNode := FTree.GetFirstChild(Node);
-        while SubNode <> nil do
+        NodeData := FTree.GetNodeData(Node);
+
+        if not (NodeData.NodeType in [ntWishParent, ntIgnoreParent])  then
         begin
-          if not DeleteList.Contains(SubNode) then
-            DeleteList.Add(SubNode);
-          SubNode := FTree.GetNextSibling(SubNode);
+          SubNode := FTree.GetFirstChild(Node);
+          while SubNode <> nil do
+          begin
+            if not DeleteList.Contains(SubNode) then
+              DeleteList.Add(SubNode);
+            SubNode := FTree.GetNextSibling(SubNode);
+          end;
         end;
 
-        if not DeleteList.Contains(Node) then
+        if (not DeleteList.Contains(Node)) and (NodeData.NodeType <> ntWishParent) and (NodeData.NodeType <> ntIgnoreParent) then
           DeleteList.Add(Node);
       end;
       Node := FTree.GetNext(Node);
@@ -442,16 +448,40 @@ var
   Lst: TStringList;
   Title: TTitleInfo;
   List: TTitleList;
+  Node: PVirtualNode;
+  NodeData: PTitleNodeData;
   ParentNode: PVirtualNode;
+  ParentNodeData: PTitleNodeData;
 begin
-  if Length(FTree.GetNodes(ntWishParent, True)) = 1 then
+  if FTree.SelectedCount <> 1 then
+    Exit;
+
+  Node := FTree.GetNodes([ntWishParent, ntIgnoreParent, ntStream, ntWish, ntIgnore], True)[0];
+  NodeData := FTree.GetNodeData(Node);
+
+  if (NodeData.NodeType in [ntWishParent, ntWish]) then
   begin
     ParentNode := FTree.FWishNode;
     List := FLists.SaveList;
-  end else if Length(FTree.GetNodes(ntIgnoreParent, True)) = 1 then
+  end else if NodeData.NodeType = ntIgnoreParent then
   begin
     ParentNode := FTree.FIgnoreNode;
     List := FLists.IgnoreList;
+  end else if NodeData.NodeType = ntIgnore then
+  begin
+    ParentNode := Node.Parent;
+    ParentNodeData := FTree.GetNodeData(ParentNode);
+    if ParentNodeData.NodeType = ntIgnoreParent then
+      List := FLists.IgnoreList
+    else if ParentNodeData.NodeType = ntStream then
+      List := ParentNodeData.Stream.Entry.IgnoreList
+    else
+      Exit;
+  end else if NodeData.NodeType = ntStream then
+  begin
+    ParentNode := Node;
+    ParentNodeData := FTree.GetNodeData(ParentNode);
+    List := ParentNodeData.Stream.Entry.IgnoreList;
   end else
     Exit;
 
@@ -860,13 +890,28 @@ end;
 procedure TTitlePanel.UpdateButtons;
 var
   TitlesSelected, CanRemove, CanRename, CanImport: Boolean;
+  SelectedNodes: TNodeArray;
+
+  function TypeCount(NodeType: TNodeType): Integer;
+  var
+    i: Integer;
+    NodeData: PTitleNodeData;
+  begin
+    Result := 0;
+    for i := 0 to Length(SelectedNodes) - 1 do
+    begin
+      NodeData := FTree.GetNodeData(SelectedNodes[i]);
+      if NodeData.NodeType = NodeType then
+        Inc(Result);
+    end;
+  end;
 begin
-  TitlesSelected := (Length(FTree.GetNodes(ntWish, True)) > 0) or
-    (Length(FTree.GetNodes(ntIgnore, True)) > 0);
-  CanRemove := TitlesSelected or (Length(FTree.GetNodes(ntStream, True)) > 0);
+  SelectedNodes := FTree.GetNodes([ntStream, ntWish, ntIgnore], True);
+
+  TitlesSelected := (TypeCount(ntWish) > 0) or (TypeCount(ntIgnore) > 0);
+  CanRemove := TitlesSelected or (TypeCount(ntStream) > 0);
   CanRename := (FTree.SelectedCount = 1) and TitlesSelected;
-  CanImport := (FTree.SelectedCount = 1) and ((Length(FTree.GetNodes(ntWishParent, True)) = 1) or
-    (Length(FTree.GetNodes(ntIgnoreParent, True)) = 1));
+  CanImport := FTree.SelectedCount = 1;
 
   FToolbar.FRemove.Enabled := CanRemove;
   FToolbar.FRename.Enabled := CanRename;
@@ -1233,7 +1278,7 @@ begin
       Continue;
     end;
 
-    if NodeTypes <> NodeData.NodeType then
+    if not (NodeData.NodeType in NodeTypes) then
     begin
       Node := GetNext(Node);
       Continue;

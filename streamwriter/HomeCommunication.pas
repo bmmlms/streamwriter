@@ -92,10 +92,11 @@ type
 
     FLists: TDataLists;
 
-    FAuthenticated, FIsAdmin, FWasConnected, FConnected: Boolean;
+    FAuthenticated, FIsAdmin, FWasConnected, FConnected, FNotifyTitleChanges: Boolean;
     FTitleNotificationsSet: Boolean;
 
     FOnStateChanged: TNotifyEvent;
+    FOnTitleNotificationsChanged: TNotifyEvent;
     FOnBytesTransferred: TTransferProgressEvent;
 
     FOnHandshakeReceived: TBooleanEvent;
@@ -142,9 +143,11 @@ type
     property WasConnected: Boolean read FWasConnected;
     property Connected: Boolean read FConnected;
     property Authenticated: Boolean read FAuthenticated;
+    property NotifyTitleChanges: Boolean read FNotifyTitleChanges;
     property IsAdmin: Boolean read FIsAdmin;
 
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
+    property OnTitleNotificationsChanged: TNotifyEvent read FOnTitleNotificationsChanged write FOnTitleNotificationsChanged;
     property OnBytesTransferred: TTransferProgressEvent read FOnBytesTransferred write FOnBytesTransferred;
 
     property OnHandshakeReceived: TBooleanEvent read FOnHandshakeReceived write FOnHandshakeReceived;
@@ -411,7 +414,12 @@ begin
   if not FConnected then
     Exit;
 
+  FNotifyTitleChanges := TitleNotifications;
+
   FThread.SendCommand(TCommandSetSettings.Create(TitleNotifications));
+
+  if Assigned(FOnTitleNotificationsChanged) then
+    FOnTitleNotificationsChanged(Self);
 end;
 
 procedure THomeCommunication.SendSetStreamData(StreamID: Cardinal;
@@ -475,6 +483,7 @@ end;
 procedure THomeCommunication.Terminate;
 begin
   FOnStateChanged := nil;
+  FOnTitleNotificationsChanged := nil;
   FOnBytesTransferred := nil;
   FOnHandshakeReceived := nil;
   FOnLogInReceived := nil;

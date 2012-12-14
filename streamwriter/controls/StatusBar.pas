@@ -34,6 +34,7 @@ type
   private
     FConnectionState: THomeConnectionState;
     FLoggedIn: Boolean;
+    FNotifyTitleChanges: Boolean;
     FClients: Integer;
     FRecordings: Integer;
     FSpeed: UInt64;
@@ -45,7 +46,8 @@ type
     FSpeedBmp: TBitmap;
     IconConnected, IconDisconnected: TIcon;
     IconLoggedIn, IconLoggedOff: TIcon;
-    IconGroup: TIcon;
+    IconGroupAutoEnabled: TIcon;
+    IconGroupAutoDisabled: TIcon;
 
     procedure PaintPanel(Index: Integer);
     procedure FSetSpeed(Value: UInt64);
@@ -60,11 +62,13 @@ type
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
 
-    procedure SetState(ConnectionState: THomeConnectionState; LoggedIn: Boolean; Clients, Recordings: Integer; SongsSaved: Cardinal);
+    procedure SetState(ConnectionState: THomeConnectionState; LoggedIn, NotifyTitleChanges: Boolean; Clients, Recordings: Integer;
+      SongsSaved: Cardinal);
     procedure BuildSpeedBmp;
     property Speed: UInt64 read FSpeed write FSetSpeed;
     property CurrentReceived: UInt64 read FCurrentReceived write FSetCurrentReceived;
     property OverallReceived: UInt64 read FOverallReceived write FSetOverallReceived;
+  published
   end;
 
 implementation
@@ -149,7 +153,6 @@ var
 begin
   inherited;
 
-  Hint := 'Users/active streams';
   ShowHint := True;
   Height := 19;
 
@@ -161,8 +164,10 @@ begin
   IconLoggedIn.Handle := LoadImage(HInstance, 'USER_GO', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
   IconLoggedOff := TIcon.Create;
   IconLoggedOff.Handle := LoadImage(HInstance, 'USER_DELETE', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
-  IconGroup := TIcon.Create;
-  IconGroup.Handle := LoadImage(HInstance, 'GROUP', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
+  IconGroupAutoEnabled := TIcon.Create;
+  IconGroupAutoEnabled.Handle := LoadImage(HInstance, 'GROUP_GO', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
+  IconGroupAutoDisabled := TIcon.Create;
+  IconGroupAutoDisabled.Handle := LoadImage(HInstance, 'GROUP_DELETE', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
 
   P := Panels.Add;
   P.Width := 120;
@@ -194,7 +199,8 @@ begin
   IconDisconnected.Free;
   IconLoggedIn.Free;
   IconLoggedOff.Free;
-  IconGroup.Free;
+  IconGroupAutoEnabled.Free;
+  IconGroupAutoDisabled.Free;
   FSpeedBmp.Free;
 
   inherited;
@@ -203,6 +209,12 @@ end;
 procedure TSWStatusBar.DrawPanel(Panel: TStatusPanel; const R: TRect);
 begin
   inherited;
+
+  Hint := _('Users/active streams');
+  if (FConnectionState = cshConnected) and FNotifyTitleChanges then
+    Hint := Hint + _(' (automatic recordings enabled)')
+  else
+    Hint := Hint + _(' (automatic recordings disabled)');
 
   Canvas.Brush.Color := clBtnFace;
   Canvas.FillRect(R);
@@ -228,14 +240,18 @@ begin
             end;
         end;
 
-        if FLoggedIn then
+        if (FConnectionState = cshConnected) and FLoggedIn then
           Canvas.Draw(R.Left + 18, R.Top, IconLoggedIn)
         else
           Canvas.Draw(R.Left + 18, R.Top, IconLoggedOff);
       end;
     1:
       begin
-        Canvas.Draw(R.Left, R.Top, IconGroup);
+        if (FConnectionState = cshConnected) and FNotifyTitleChanges then
+          Canvas.Draw(R.Left, R.Top, IconGroupAutoEnabled)
+        else
+          Canvas.Draw(R.Left, R.Top, IconGroupAutoDisabled);
+
         Canvas.TextOut(R.Left + 20, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FClients) + '/' + IntToStr(FRecordings)) div 2, IntToStr(FClients) + '/' + IntToStr(FRecordings));
       end;
     2:
@@ -304,21 +320,24 @@ begin
   BuildSpeedBmp;
 end;
 
-procedure TSWStatusBar.SetState(ConnectionState: THomeConnectionState; LoggedIn: Boolean; Clients, Recordings: Integer; SongsSaved: Cardinal);
+procedure TSWStatusBar.SetState(ConnectionState: THomeConnectionState; LoggedIn, NotifyTitleChanges: Boolean; Clients, Recordings: Integer;
+  SongsSaved: Cardinal);
 var
   OldConnectionState: THomeConnectionState;
-  OldLoggedIn: Boolean;
+  OldLoggedIn, OldNotifyTitleChanges: Boolean;
   OldClients, OldRecordings: Integer;
   OldSongsSaved: Cardinal;
 begin
   OldConnectionState := FConnectionState;
   OldLoggedIn := FLoggedIn;
+  OldNotifyTitleChanges := FNotifyTitleChanges;
   OldClients := FClients;
   OldRecordings := FRecordings;
   OldSongsSaved := FSongsSaved;
 
   FConnectionState := ConnectionState;
   FLoggedIn := LoggedIn;
+  FNotifyTitleChanges := NotifyTitleChanges;
   if ConnectionState = cshConnected then
   begin
     FClients := Clients;
@@ -333,7 +352,7 @@ begin
 
   if (OldConnectionState <> FConnectionState) or (OldLoggedIn <> FLoggedIn) then
     PaintPanel(0);
-  if (OldClients <> FClients) or (OldRecordings <> FRecordings) then
+  if (OldClients <> FClients) or (OldRecordings <> FRecordings) or (OldNotifyTitleChanges <> FNotifyTitleChanges) then
     PaintPanel(1);
 
   if OldSongsSaved <> FSongsSaved then

@@ -285,6 +285,7 @@ type
     procedure CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
 
     procedure HomeCommStateChanged(Sender: TObject);
+    procedure HomeCommTitleNotificationsChanged(Sender: TObject);
     procedure HomeCommHandshake(Sender: TObject; Success: Boolean);
     procedure HomeCommLogIn(Sender: TObject; Success: Boolean);
     procedure HomeCommLogOut(Sender: TObject);
@@ -686,6 +687,7 @@ begin
     // Wird hier gemacht, weil der Browser dann sicher da ist, wenn die
     // Streams empfangen werden (wg. DisplayCount)
     HomeComm.OnStateChanged := HomeCommStateChanged;
+    HomeComm.OnTitleNotificationsChanged := HomeCommTitleNotificationsChanged;
     HomeComm.OnHandshakeReceived := HomeCommHandshake;
     HomeComm.OnLogInReceived := HomeCommLogIn;
     HomeComm.OnLogOutReceived := HomeCommLogOut;
@@ -1057,6 +1059,12 @@ begin
   end;
 
   HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+end;
+
+procedure TfrmStreamWriterMain.HomeCommTitleNotificationsChanged(
+  Sender: TObject);
+begin
+  UpdateStatus;
 end;
 
 procedure TfrmStreamWriterMain.Hotkey(var Msg: TWMHotKey);
@@ -2376,7 +2384,7 @@ begin
   else
     CS := cshDisconnected;
 
-  addStatus.SetState(CS, HomeComm.Authenticated, FClientCount, FRecordingCount, FClients.SongsSaved);
+  addStatus.SetState(CS, HomeComm.Authenticated, HomeComm.NotifyTitleChanges, FClientCount, FRecordingCount, FClients.SongsSaved);
 end;
 
 function TfrmStreamWriterMain.CanExitApp: Boolean;
