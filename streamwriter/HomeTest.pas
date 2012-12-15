@@ -10,12 +10,10 @@ uses
 type
   TfrmHomeTest = class(TForm)
     lstEvents: TListBox;
-    Button1: TButton;
     prgTransfer: TProgressBar;
-    Button2: TButton;
+    Button1: TButton;
     procedure FormCreate(Sender: TObject);
     procedure Button1Click(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
   private
     HC: THomeCommunication;
 
@@ -35,13 +33,32 @@ implementation
 {$R *.dfm}
 
 procedure TfrmHomeTest.Button1Click(Sender: TObject);
+var
+  Cmd: TCommandSubmitStream;
+  Cmd2: TCommandSetStreamData;
+  Cmd3: TCommandClientStats;
 begin
-  //HC.GetServerData;
-end;
+  {
+  Cmd := TCommandSubmitStream.Create;
+  Cmd.URL := 'http://abc:123/test778.m3u';
+  HC.SendCommand(Cmd);
+  }
 
-procedure TfrmHomeTest.Button2Click(Sender: TObject);
-begin
-  //HC.LogOn('user', 'pass');
+  {
+  Cmd2 := TCommandSetStreamData.Create;
+  Cmd2.StreamID := 188090;
+  Cmd2.Rating := 2;
+  Cmd2.HasRecordingOkay := False;
+  Cmd2.RecordingOkay := False;
+  Cmd2.TitleRegEx := '111';
+  Cmd2.HasIgnoreTitles := False;
+  Cmd2.IgnoreTitles := 'asdf';
+  HC.SendCommand(Cmd2);
+  }
+
+  Cmd3 := TCommandClientStats.Create;
+  Cmd3.StatType := csAutoSave;
+  HC.SendCommand(Cmd3);
 end;
 
 procedure TfrmHomeTest.FormCreate(Sender: TObject);
@@ -51,24 +68,29 @@ begin
   TCommand.RegisterCommand(ctLogOutResponse, TCommandLogOutResponse);
   TCommand.RegisterCommand(ctGetServerDataResponse, TCommandGetServerDataResponse);
 
-
   Start;
 end;
 
 procedure TfrmHomeTest.Start;
 begin
-
+  HC := THomeCommunication.Create(nil);
+  HC.OnStateChanged := HomeCommunicationStateChanged;
+  HC.OnLogInReceived := HomeCommunicationLogInReceived;
+  HC.OnBytesTransferred := HomeCommunicationBytesTransferred;
+  HC.Connect;
 end;
 
 procedure TfrmHomeTest.HomeCommunicationBytesTransferred(Sender: TObject;
   Direction: TTransferDirection; CommandID: Cardinal;
   CommandHeader: TCommandHeader; Transferred: UInt64);
 begin
+  {
   prgTransfer.Min := 0;
   prgTransfer.Max := CommandHeader.CommandLength;
   if Transferred > 1 then
     prgTransfer.Position := Transferred - 1;
   prgTransfer.Position := Transferred;
+  }
 end;
 
 procedure TfrmHomeTest.HomeCommunicationLogInReceived(Sender: TObject;
@@ -88,8 +110,6 @@ end;
 
 procedure TfrmHomeTest.HomeCommunicationStateChanged(Sender: TObject);
 begin
-  Button1.Enabled := HC.Connected;
-
   if HC.Connected then
     lstEvents.Items.Add('Connected')
   else

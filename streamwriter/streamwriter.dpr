@@ -174,7 +174,7 @@ begin
   if InitApp and AppGlobals.WasSetup then
   begin
     Application.CreateForm(TfrmStreamWriterMain, frmStreamWriterMain);
-  //Application.CreateForm(TfrmHomeTest, frmHomeTest);
+    //Application.CreateForm(TfrmHomeTest, frmHomeTest);
   end;
 
   Application.Run;

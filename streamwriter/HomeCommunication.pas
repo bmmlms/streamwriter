@@ -637,6 +637,7 @@ begin
     Exit;
 
   Cmd := TCommandHandshake.Create;
+  Cmd.ID := AppGlobals.ID;
   Cmd.VersionMajor := AppGlobals.AppVersion.Major;
   Cmd.VersionMinor := AppGlobals.AppVersion.Minor;
   Cmd.VersionRevision := AppGlobals.AppVersion.Revision;

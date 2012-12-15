@@ -2,8 +2,8 @@ object frmHomeTest: TfrmHomeTest
   Left = 0
   Top = 0
   Caption = 'frmHomeTest'
-  ClientHeight = 241
-  ClientWidth = 529
+  ClientHeight = 261
+  ClientWidth = 421
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -23,30 +23,20 @@ object frmHomeTest: TfrmHomeTest
     ItemHeight = 13
     TabOrder = 0
   end
+  object prgTransfer: TProgressBar
+    Left = 4
+    Top = 240
+    Width = 309
+    Height = 17
+    TabOrder = 1
+  end
   object Button1: TButton
-    Left = 416
-    Top = 80
-    Width = 109
+    Left = 320
+    Top = 4
+    Width = 97
     Height = 29
     Caption = 'Button1'
-    Enabled = False
-    TabOrder = 1
-    OnClick = Button1Click
-  end
-  object prgTransfer: TProgressBar
-    Left = 332
-    Top = 132
-    Width = 165
-    Height = 17
     TabOrder = 2
-  end
-  object Button2: TButton
-    Left = 416
-    Top = 4
-    Width = 109
-    Height = 29
-    Caption = 'LogIn'
-    TabOrder = 3
-    OnClick = Button2Click
+    OnClick = Button1Click
   end
 end
