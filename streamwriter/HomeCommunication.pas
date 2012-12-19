@@ -452,6 +452,9 @@ begin
   if not FConnected then
     Exit;
 
+  if StreamID = 0 then
+    Exit;
+
   FThread.SendCommand(TCommandTitleChanged.Create(StreamID, StreamName, Title,
     CurrentURL, URL, Format, Kbps, URLs.Text));
 end;

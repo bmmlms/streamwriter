@@ -2036,6 +2036,9 @@ begin
   if Application.Terminated then
     Exit;
 
+  if not AppGlobals.SubmitStats then
+    Exit;
+
   C := 0;
 
   L := TList<Cardinal>.Create;
@@ -2048,8 +2051,7 @@ begin
         else
           Inc(C);
       end;
-    if AppGlobals.SubmitStats then
-      HomeComm.SendUpdateStats(L, C);
+    HomeComm.SendUpdateStats(L, C);
   finally
     L.Free;
   end;

@@ -47,6 +47,8 @@ type
   protected
   public
     constructor Create;
+
+    function Process(ToStream: TExtendedStream): Boolean; override;
   end;
 
   TCommandLogIn = class(TCommand)
@@ -383,6 +385,13 @@ begin
 
   FCommandType := ctUpdateStats;
   FStream := TExtendedStream.Create;
+end;
+
+function TCommandUpdateStats.Process(ToStream: TExtendedStream): Boolean;
+begin
+  if FStream.Position = FStream.Size then
+    Exit(False);
+  ToStream.CopyFrom(FStream, FStream.Size);
 end;
 
 { TCommandServerInfoResponse }
