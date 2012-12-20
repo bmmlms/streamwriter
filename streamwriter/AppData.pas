@@ -1526,6 +1526,8 @@ initialization
       raise Exception.Create('Language is not initialized');
     AppGlobals := TAppData.Create('streamWriter');
 
+    TLogger.SetFilename(AppGlobals.LogFile);
+
     // AddonManager wird hier erstellt, da erstellte Addon-Items Zugriff
     // auf ein bereits zugewiesenes AppGlobals brauchen.
     AppGlobals.FAddonManager := TAddonManager.Create;

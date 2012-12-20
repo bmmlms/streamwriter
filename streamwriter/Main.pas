@@ -1619,6 +1619,8 @@ begin
   ScreenSnap := AppGlobals.SnapMain;
 
   RegisterHotkeys(True);
+
+  TLogger.SetFilename(AppGlobals.LogFile);
 end;
 
 procedure TfrmStreamWriterMain.ShowUpdate(Version: string = '';
