@@ -4,7 +4,7 @@ object frmSettings: TfrmSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Settings'
-  ClientHeight = 748
+  ClientHeight = 765
   ClientWidth = 1201
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -202,12 +202,12 @@ object frmSettings: TfrmSettings
     Left = 4
     Top = 4
     Width = 293
-    Height = 329
+    Height = 421
     TabOrder = 1
     Visible = False
     DesignSize = (
       293
-      329)
+      421)
     object Label7: TLabel
       Left = 56
       Top = 216
@@ -217,7 +217,7 @@ object frmSettings: TfrmSettings
     end
     object Label3: TLabel
       Left = 4
-      Top = 240
+      Top = 332
       Width = 190
       Height = 13
       Anchors = [akLeft, akBottom]
@@ -226,12 +226,51 @@ object frmSettings: TfrmSettings
     end
     object Label18: TLabel
       Left = 4
-      Top = 288
+      Top = 380
       Width = 192
       Height = 13
       Anchors = [akLeft, akBottom]
       Caption = 'Default action on doubleclick in browser:'
       ExplicitTop = 300
+    end
+    object btnBrowseLogFile: TSpeedButton
+      Left = 264
+      Top = 256
+      Width = 25
+      Height = 21
+      Hint = 'Browse...'
+      Anchors = [akTop, akRight]
+      Flat = True
+      Glyph.Data = {
+        06030000424D06030000000000003600000028000000100000000F0000000100
+        180000000000D002000000000000000000000000000000000000FFFFFFFFFFFF
+        FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+        FFFFFFFFFFFFFFFFFFFFFFFFFF9598985C5E5E50525250525250525250525250
+        52525052525052526D63628E80A06183A9505252FFFFFFFFFFFF80B0C71D82B5
+        1B81B3187EB0167CAE1379AB1076A80D73A50B71A33B799E8E81A04A8DDC359C
+        DE464A4BFFFFFFFFFFFF1F84B745AADDD5F8FF7AD7FF6FD4FF6FD4FF6FD4FF6F
+        D4FF7FC9ED9488A84C8CD852BBFF0B71A6284F62717373FFFFFF2489BC2A8FC2
+        D9FCFFAFECFF96C8D8CACCC1C5C7B6ADB9B893A5B25E93D054BDFF75DAFF147A
+        AC0F5E86555757FFFFFF288DC02E93C686CFF3CCC7C9F4EEE5FFFFEAFFFFD9FF
+        F5C3DCB59990C5DA7FE6FF85EBFF379CCF1B81AB4A4C4CFFFFFF2A8FC24CB1E4
+        3C9FD1DAC8B2FFFFFCFFFFF9FFFFE0FFF4C0FFE9B7B0CECD91F7FF91F7FF57BC
+        EF157BA7304D5B6A6C6C2D92C56CD1FC2489BCE3D2B2FFFFE6FFFFE8FFFFD9FF
+        EDB8FFEDBED9D2BB99FFFF99FFFF60C5F847ACC8135D814648482F94C77BE0FF
+        46ABD5DEC5A5FFFFD0FFF9C9FFF4C2FFE9C2FFF7D1E8CFC3FFFFFFFFFFFF81E6
+        FF79DEE90666975153533196C985EBFF6FD4F2828B94FCE8B6FFEDB6FFF0C0FF
+        FFF7EBDCD1518FB42489BC2085B81C81B41B81B3056B9DFFFFFF3398CB91F7FF
+        8EF4FF90EAF4B9BFB8EBCDADE6CCA9DDC5B8E8D9D9FFFFFFFFFFFFFFFFFF167C
+        AE666868FFFFFFFFFFFF3499CCFFFFFF99FFFF99FFFF99FFFF99FFFFFFFFFF25
+        8ABD2287BA1F84B71D82B51B81B3187EB0FFFFFFFFFFFFFFFFFFFFFFFF3499CC
+        FFFFFFFFFFFFFFFFFFFFFFFF2A8FC2FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+        FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF3499CC3398CB3196C92F94C7FFFFFFFF
+        FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+        FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+        FFFFFFFFFFFFFFFFFFFF}
+      Layout = blGlyphRight
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = btnBrowseLogFileClick
     end
     object chkTray: TCheckBox
       Left = 4
@@ -257,7 +296,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultAction: TComboBox
       Left = 4
-      Top = 256
+      Top = 348
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -289,7 +328,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultActionBrowser: TComboBox
       Left = 4
-      Top = 304
+      Top = 396
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -345,6 +384,18 @@ object frmSettings: TfrmSettings
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Display played song in titlebar'
       TabOrder = 10
+    end
+    object txtLogFile: TLabeledEdit
+      Left = 4
+      Top = 256
+      Width = 257
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      EditLabel.Width = 34
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Logfile:'
+      TabOrder = 11
     end
   end
   object pnlAdvanced: TPanel
@@ -835,18 +886,18 @@ object frmSettings: TfrmSettings
     end
   end
   object pnlHotkeys: TPanel
-    Left = 4
-    Top = 340
+    Left = 904
+    Top = 644
     Width = 293
-    Height = 85
+    Height = 77
     TabOrder = 5
     Visible = False
     DesignSize = (
       293
-      85)
+      77)
     object Label9: TLabel
       Left = 4
-      Top = 48
+      Top = 40
       Width = 37
       Height = 13
       Anchors = [akLeft, akBottom]
@@ -857,7 +908,7 @@ object frmSettings: TfrmSettings
       Left = 4
       Top = 0
       Width = 285
-      Height = 37
+      Height = 29
       Anchors = [akLeft, akTop, akRight, akBottom]
       Columns = <
         item
@@ -875,7 +926,7 @@ object frmSettings: TfrmSettings
     end
     object txtHotkey: THotKey
       Left = 4
-      Top = 64
+      Top = 56
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -1585,6 +1636,7 @@ object frmSettings: TfrmSettings
   end
   object dlgOpen: TOpenDialog
     Filter = 'Executable files (*.exe, *.bat)|*.exe;*.bat'
+    Options = [ofHideReadOnly, ofEnableSizing, ofDontAddToRecent]
     Left = 548
     Top = 272
   end
@@ -1792,5 +1844,11 @@ object frmSettings: TfrmSettings
     Left = 232
     Top = 160
     Bitmap = {}
+  end
+  object dlgSave: TSaveDialog
+    Filter = 'Text files (*.txt)|*.txt'
+    Options = [ofOverwritePrompt, ofHideReadOnly, ofPathMustExist, ofEnableSizing, ofDontAddToRecent]
+    Left = 548
+    Top = 320
   end
 end

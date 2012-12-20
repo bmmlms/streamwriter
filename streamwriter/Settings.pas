@@ -188,6 +188,9 @@ type
     chkSubmitStats: TCheckBox;
     chkShowSplashScreen: TCheckBox;
     chkDisplayPlayedSong: TCheckBox;
+    txtLogFile: TLabeledEdit;
+    btnBrowseLogFile: TSpeedButton;
+    dlgSave: TSaveDialog;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -257,6 +260,7 @@ type
     procedure lstAddonsItemChecked(Sender: TObject; Item: TListItem);
     procedure lstOutputFormatSelect(Sender: TObject);
     procedure btnConfigureEncoderClick(Sender: TObject);
+    procedure btnBrowseLogFileClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -1074,6 +1078,7 @@ begin
   txtMaxRetries.Text := IntToStr(Settings.MaxRetries);
   txtRetryDelay.Text := IntToStr(Settings.RetryDelay);
   txtMinDiskSpace.Text := IntToStr(AppGlobals.MinDiskSpace);
+  txtLogFile.Text := AppGlobals.LogFile;
 
   txtSilenceLevel.Text := IntToStr(Settings.SilenceLevel);
   txtSilenceLength.Text := IntToStr(Settings.SilenceLength);
@@ -1433,6 +1438,7 @@ begin
       AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);
 
     AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
+    AppGlobals.LogFile := txtLogFile.Text;
     AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
     AppGlobals.DefaultActionBrowser := TStreamOpenActions(lstDefaultActionBrowser.ItemIndex);
 
@@ -2365,6 +2371,21 @@ begin
       txtDirAuto.Text := IncludeTrailingBackslash(Dir)
   else
     MsgBox(Self.Handle, _('The selected folder does not exist. Please choose another one.'), _('Info'), MB_ICONINFORMATION);
+end;
+
+procedure TfrmSettings.btnBrowseLogFileClick(Sender: TObject);
+begin
+  inherited;
+
+  if dlgSave.Execute then
+  begin
+    if dlgSave.FileName <> '' then
+    begin
+      if ExtractFileExt(LowerCase(dlgSave.FileName)) = '' then
+        dlgSave.FileName := dlgSave.FileName + '.txt';
+      txtLogFile.Text := dlgSave.FileName;
+    end;
+  end;
 end;
 
 procedure TfrmSettings.btnConfigureClick(Sender: TObject);

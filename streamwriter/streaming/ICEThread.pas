@@ -87,6 +87,7 @@ type
     procedure DoEnded; override;
     procedure DoSpeedChange; override;
     procedure DoException(E: Exception); override;
+    procedure DoDebug(Text, Data: string; T, Level: Integer); override;
   public
     constructor Create(URL: string); reintroduce;
     destructor Destroy; override;
@@ -350,6 +351,14 @@ end;
 procedure TICEThread.DoConnected;
 begin
   WriteDebug(_('Connected'), 0, 0);
+  inherited;
+end;
+
+procedure TICEThread.DoDebug(Text, Data: string; T, Level: Integer);
+begin
+  if Level = 0 then
+    TLogger.Write(Text);
+
   inherited;
 end;
 

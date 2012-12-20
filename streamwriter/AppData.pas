@@ -247,6 +247,7 @@ type
     FSubmitStreamInfo: Boolean;
     FSubmitStats: Boolean;
     FMinDiskSpace: Integer;
+    FLogFile: string;
     FDefaultAction: TClientActions;
     FDefaultActionBrowser: TStreamOpenActions;
     FPlayerVolume: Integer;
@@ -343,6 +344,7 @@ type
     property SubmitStats: Boolean read FSubmitStats write FSubmitStats;
     // The minimum amount of free disk space that has to be available in order to record streams
     property MinDiskSpace: Integer read FMinDiskSpace write FMinDiskSpace;
+    property LogFile: string read FLogFile write FLogFile;
     // The default action to execute when double-clicking a stream in the mainview
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
     // The default action to execute when double-clicking a stream in the streamview
@@ -715,6 +717,7 @@ begin
 
   FStorage.Read('SeparateTracks', FStreamSettings.FSeparateTracks, True);
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
+  FStorage.Read('LogFile', FLogFile, '');
   FStorage.Read('DefaultAction', DefaultActionTmp, Integer(caStartStop));
   FStorage.Read('DefaultActionBrowser', DefaultActionBrowser, Integer(oaStart));
   FStorage.Read('DefaultFilter', DefaultFilterTmp, Integer(ufNone));
@@ -893,6 +896,7 @@ begin
   FStorage.Write('AutomaticFilePattern', FAutomaticFilePattern);
 
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
+  FStorage.Write('LogFile', FLogFile);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
   FStorage.Write('DefaultActionBrowser', Integer(FDefaultActionBrowser));
   FStorage.Write('PlayerVolume', FPlayerVolume);

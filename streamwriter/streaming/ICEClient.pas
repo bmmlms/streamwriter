@@ -792,7 +792,7 @@ begin
   if Assigned(FOnRefresh) then
     FOnRefresh(Self);
 
-  if (FICEThread.RecvStream.FullTitleFound) and (not FAutoRemove) and (FRecordTitle = '') then
+  if (FEntry.ID > 0) and (FICEThread.RecvStream.FullTitleFound) and (not FAutoRemove) and (FRecordTitle = '') then
     if AppGlobals.SubmitStreamInfo then
     begin
       HomeComm.SendTitleChanged(Entry.ID, Entry.Name, FTitle, FCurrentURL, Entry.StartURL, FICEThread.RecvStream.AudioType,

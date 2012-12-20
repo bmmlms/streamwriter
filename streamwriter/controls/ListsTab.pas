@@ -351,59 +351,80 @@ end;
 
 procedure TTitlePanel.ExportClick(Sender: TObject);
 var
+  i: Integer;
   Node: PVirtualNode;
   NodeData: PTitleNodeData;
   Dlg: TSaveDialog;
   Lst: TStringList;
-  Ok: Boolean;
+  ExportList: TList<TTitleInfo>;
 begin
-  Ok := False;
-  Node := FTree.GetFirst;
-  while Node <> nil do
-  begin
-    NodeData := FTree.GetNodeData(Node);
-    if FTree.Selected[Node] and (NodeData.Title <> nil) then
-    begin
-      Ok := True;
-      Break;
-    end;
-    Node := FTree.GetNext(Node);
-  end;
+  Node := FTree.GetFirstSelected;
 
-  if not Ok then
-  begin
-    MsgBox(GetParentForm(Self).Handle, _('Please select at least one title to export.'), _('Info'), MB_ICONINFORMATION);
-    Exit;
-  end;
-
-  Dlg := TSaveDialog.Create(Self);
+  ExportList := TList<TTitleInfo>.Create;
   try
-    Dlg.Filter := _('Text files') + ' (*.txt)|*.txt';
-    Dlg.Options := Dlg.Options + [ofOverwritePrompt];
-    Dlg.DefaultExt := '.txt';
-    if Dlg.Execute(Handle) then
+    if (Node <> nil) then
     begin
-      Lst := TStringList.Create;
-      try
-        Node := FTree.GetFirst;
+      NodeData := FTree.GetNodeData(Node);
+      if NodeData.NodeType in [ntWishParent, ntIgnoreParent, ntStream] then
+      begin
+        // Alle Untereinträge der Kategorie exportieren
+        Node := FTree.GetFirstChild(Node);
+        while Node <> nil do
+        begin
+          NodeData := FTree.GetNodeData(Node);
+          if NodeData.Title <> nil then
+          begin
+            ExportList.Add(NodeData.Title);
+          end;
+          Node := FTree.GetNextSibling(Node);
+        end;
+      end else
+      begin
         while Node <> nil do
         begin
           NodeData := FTree.GetNodeData(Node);
           if FTree.Selected[Node] and (NodeData.Title <> nil) then
-            Lst.Add(NodeData.Title.Title);
+          begin
+            ExportList.Add(NodeData.Title);
+          end;
           Node := FTree.GetNext(Node);
         end;
-        try
-          Lst.SaveToFile(Dlg.FileName);
-        except
-          MsgBox(GetParentForm(Self).Handle, _('The file could not be saved.'), _('Error'), MB_ICONEXCLAMATION);
-        end;
-      finally
-        Lst.Free;
       end;
     end;
+
+    if ExportList.Count = 0 then
+    begin
+      MsgBox(GetParentForm(Self).Handle, _('Please select at least one title or a single category containing titles to export.'), _('Info'), MB_ICONINFORMATION);
+      Exit;
+    end;
+
+    Dlg := TSaveDialog.Create(Self);
+    try
+      Dlg.Filter := _('Text files') + ' (*.txt)|*.txt';
+      Dlg.Options := Dlg.Options + [ofOverwritePrompt];
+      Dlg.DefaultExt := '.txt';
+      if Dlg.Execute(Handle) then
+      begin
+        Lst := TStringList.Create;
+        try
+          for i := 0 to ExportList.Count - 1 do
+          begin
+            Lst.Add(ExportList[i].Title);
+          end;
+          try
+            Lst.SaveToFile(Dlg.FileName);
+          except
+            MsgBox(GetParentForm(Self).Handle, _('The file could not be saved.'), _('Error'), MB_ICONEXCLAMATION);
+          end;
+        finally
+          Lst.Free;
+        end;
+      end;
+    finally
+      Dlg.Free;
+    end;
   finally
-    Dlg.Free;
+    ExportList.Free;
   end;
 end;
 
@@ -889,8 +910,9 @@ end;
 
 procedure TTitlePanel.UpdateButtons;
 var
-  TitlesSelected, CanRemove, CanRename, CanImport: Boolean;
-  SelectedNodes: TNodeArray;
+  SingleParentSelected, TitlesSelected, CanRemove, CanRename, CanImport: Boolean;
+  SelectedNodes, SelectedParents: TNodeArray;
+  ChildNodeData: PTitleNodeData;
 
   function TypeCount(NodeType: TNodeType): Integer;
   var
@@ -907,6 +929,19 @@ var
   end;
 begin
   SelectedNodes := FTree.GetNodes([ntStream, ntWish, ntIgnore], True);
+  SelectedParents := FTree.GetNodes([ntWishParent, ntIgnoreParent, ntStream], True);
+
+  SingleParentSelected := (FTree.SelectedCount = 1) and (Length(SelectedParents) = 1);
+  if SingleParentSelected then
+  begin
+    // Es muss zum Parent mindestens ein Child geben was drunter liegt und ein Titel ist.
+    if SelectedParents[0].ChildCount > 0 then
+    begin
+      ChildNodeData := FTree.GetNodeData(FTree.GetFirstChild(SelectedParents[0]));
+      SingleParentSelected := (ChildNodeData.NodeType = ntWish) or (ChildNodeData.NodeType = ntIgnore);
+    end else
+      SingleParentSelected := False;
+  end;
 
   TitlesSelected := (TypeCount(ntWish) > 0) or (TypeCount(ntIgnore) > 0);
   CanRemove := TitlesSelected or (TypeCount(ntStream) > 0);
@@ -915,7 +950,8 @@ begin
 
   FToolbar.FRemove.Enabled := CanRemove;
   FToolbar.FRename.Enabled := CanRename;
-  FToolbar.FExport.Enabled := TitlesSelected;
+  FToolbar.FExport.Enabled := (TitlesSelected and (not SingleParentSelected) and (Length(SelectedParents) = 0)) or
+                              (SingleParentSelected and (not TitlesSelected));
   FToolbar.FImport.Enabled := CanImport;
 
   FTree.FPopupMenu.FRemove.Enabled := CanRemove;
