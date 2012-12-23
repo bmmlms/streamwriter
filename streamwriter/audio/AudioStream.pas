@@ -253,7 +253,12 @@ begin
       if (Result.DataStart <> -1) and (Result.DataEnd <> -1) then
         Break;
     end else
+    begin
       Inc(i);
+
+      if (Result.DataStart = -1) and (i - F > 4096) then // So lang darf ein Frame nie sein.
+        raise Exception.Create('Error in audio data');
+    end;
   end;
   Position := OldPos;
 
@@ -331,7 +336,12 @@ begin
       if (Result.DataStart <> -1) and (Result.DataEnd <> -1) then
         Break;
     end else
+    begin
       Inc(i);
+
+      if (Result.DataStart = -1) and (i - F > 4096) then // So lang darf ein Frame nie sein.
+        raise Exception.Create('Error in audio data');
+    end;
   end;
   Position := OldPos;
 

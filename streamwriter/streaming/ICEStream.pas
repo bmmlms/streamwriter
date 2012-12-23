@@ -70,6 +70,7 @@ type
     FFilenameConverted: string;
     FSongsSaved: Cardinal;
 
+    function LimitToMaxPath(Filename: string): string;
     function GetValidFilename(Name: string): string;
     function GetAppendNumber(Dir, Filename: string): Integer;
     function InfoToFilename(Artist, Title, Album, StreamTitle: string; TitleState: TTitleStates; Patterns: string): string;
@@ -411,9 +412,9 @@ begin
 
       Dir := FSaveDir;
 
-      // ((FStreamName <> '') or (FStreamURL <> '')) ist ein Hack für Streams ohne Content-Type...
+      // ((ContentType = '') and ((FStreamName <> '') or (FStreamURL <> ''))) ist ein Hack für Streams ohne Content-Type...
       if (LowerCase(ContentType) = 'audio/mpeg') or
-         ((FStreamName <> '') or (FStreamURL <> ''))
+         ((ContentType = '') and ((FStreamName <> '') or (FStreamURL <> '')))
       then
         FAudioType := atMPEG
       else if LowerCase(ContentType) = 'audio/aacp' then
@@ -670,7 +671,7 @@ begin
               WriteDebug(Format(_('Skipping "%s" - on global ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), 1, 0)
             else
               WriteDebug(Format(_('Skipping "%s" - on stream ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), 1, 0);
-            //Dec(FSongsSaved);
+
             RemoveData;
             Exit;
           end;
@@ -702,8 +703,8 @@ begin
         end;
       except
         Error := GetLastError;
-        if (Error = 3) and (Length(Dir + Filename) > MAX_PATH - 1) then
-          raise Exception.Create('Could not save file because it exceeds the maximum path length (259)')
+        if (Error = 3) and (Length(Dir + Filename) > MAX_PATH - 2) then
+          raise Exception.Create(_('Could not save file because it exceeds the maximum path length'))
         else
           raise Exception.Create(_('Could not save file'));
       end;
@@ -737,7 +738,7 @@ begin
       except
         on E: Exception do
         begin
-          WriteDebug(Format('Error after successful save: %s', [E.Message]), 3, 0);
+          WriteDebug(Format(_('Error after successful save: %s'), [E.Message]), 3, 0);
           raise;
         end;
       end;
@@ -1445,6 +1446,9 @@ begin
     FFilenameConverted := RemoveFileExt(FFilename) + FormatToFiletype(FSettings.OutputFormat)
   else
     FFilenameConverted := FFilename;
+
+  FFilename := LimitToMaxPath(FFilename);
+  FFilenameConverted := LimitToMaxPath(FFilenameConverted);
 end;
 
 procedure TFileChecker.GetStreamFilename(Name: string; AudioType: TAudioTypes);
@@ -1481,13 +1485,13 @@ begin
     end else
       FFilename := Filename + Ext;
 
-    if Length(FSaveDir + FFilename) > MAX_PATH - 1 then
+    if Length(FSaveDir + FFilename) > MAX_PATH - 2 then
       if Length(Name) = 1 then
-        raise Exception.Create('Could not save file because it exceeds the maximum path length (259)')
+        raise Exception.Create(_('Could not save file because it exceeds the maximum path length'))
       else
         Name := Copy(Name, 1, Length(Name) - 1);
 
-  until Length(FSaveDir + FFilename) <= MAX_PATH - 1;
+  until Length(FSaveDir + FFilename) <= MAX_PATH - 2;
 
   FFilename := FixPathName(FFilename);
 end;
@@ -1577,6 +1581,26 @@ begin
 
   FSaveDir := FixPathName(IncludeTrailingBackslash(ExtractFilePath(FSaveDir + Replaced)));
   Result := ExtractFileName(Replaced);
+end;
+
+function TFileChecker.LimitToMaxPath(Filename: string): string;
+var
+  L: Integer;
+  D, F, E: string;
+begin
+  Result := Filename;
+  // Überall MAX_PATH-2.... -1 funzt nicht immer. Ich bin angetrunken und habe keine Lust das zu untersuchen!
+  if (Length(Filename) > 0) and (Length(IncludeTrailingPathDelimiter(FSaveDir) + Filename) > MAX_PATH - 2) then
+  begin
+    D := IncludeTrailingPathDelimiter(FSaveDir);
+    E := ExtractFileExt(Filename);
+    F := RemoveFileExt(Filename);
+
+    if Length(D + E) < MAX_PATH - 2 then
+    begin
+      Result := Copy(F, 1, MAX_PATH - 2 - Length(D + E)) + E;
+    end;
+  end;
 end;
 
 end.
