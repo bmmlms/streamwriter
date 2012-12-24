@@ -362,6 +362,8 @@ type
     FSongsSaved: Cardinal;
     // Amount of bytes received
     FBytesReceived: UInt64;
+    // Number of seconds the stream was played/recorded
+    FSecondsReceived: UInt64;
 
     // List of configured schedules for this stream
     FSchedules: TScheduleList;
@@ -402,6 +404,7 @@ type
 
     property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
     property BytesReceived: UInt64 read FBytesReceived write FBytesReceived;
+    property SecondsReceived: UInt64 read FSecondsReceived write FSecondsReceived;
 
     property Schedules: TScheduleList read FSchedules;
 
@@ -599,7 +602,7 @@ type
   end;
 
 const
-  DATAVERSION = 45;
+  DATAVERSION = 46;
 
 implementation
 
@@ -716,6 +719,7 @@ begin
   FStartURL := From.FStartURL;
   FSongsSaved := From.FSongsSaved;
   FBytesReceived := From.FBytesReceived;
+  FSecondsReceived := From.FSecondsReceived;
   FIndex := From.FIndex;
   FCategoryIndex := From.CategoryIndex;
   FBitRate := From.BitRate;
@@ -870,6 +874,9 @@ begin
   Stream.Read(Result.FSongsSaved);
   Stream.Read(Result.FBytesReceived);
 
+  if Version >= 46 then
+    Stream.Read(Result.FSecondsReceived);
+
   if Version >= 17 then
   begin
     Stream.Read(Result.FWasRecording);
@@ -923,6 +930,7 @@ begin
 
   Stream.Write(FSongsSaved);
   Stream.Write(FBytesReceived);
+  Stream.Write(FSecondsReceived);
 
   Stream.Write(FWasRecording);
 

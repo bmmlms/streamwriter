@@ -38,6 +38,8 @@ type
     FName: TLabel;
     FInfo: TMemo;
 
+    function MakeDuration(Seconds: UInt64): string;
+
     procedure ShowInfo(Entries: TStreamList; ChangedOverride: Boolean = False);
   protected
     procedure Resize; override;
@@ -105,6 +107,17 @@ begin
   inherited;
 end;
 
+function TMStreamInfoViewPanel.MakeDuration(Seconds: UInt64): string;
+var
+  H, M, S: Integer;
+begin
+  H := Seconds div 60 div 60;
+  M := (Seconds - (H * 60 * 60)) div 60;
+  S := (Seconds - (H * 60 * 60) - (M * 60));
+
+  Result := Format('%dh %dm %ds', [H, M, S]);
+end;
+
 procedure TMStreamInfoViewPanel.Resize;
 begin
   inherited;
@@ -115,7 +128,7 @@ procedure TMStreamInfoViewPanel.ShowInfo(Entries: TStreamList; ChangedOverride: 
 var
   i: Integer;
   SongsSaved: Cardinal;
-  Received: UInt64;
+  Received, SecondsReceived: UInt64;
   Title, Info, Genres, BitRates, NextTitle: string;
   Entry: TStreamEntry;
   EntriesNew: TStreamList;
@@ -132,6 +145,7 @@ begin
     BitRates := '';
     SongsSaved := 0;
     Received := 0;
+    SecondsReceived := 0;
     for Entry in Entries do
     begin
       EntriesNew.Add(Entry);
@@ -158,6 +172,7 @@ begin
       end;
       SongsSaved := SongsSaved + Entry.SongsSaved;
       Received := Received + Entry.BytesReceived;
+      SecondsReceived := SecondsReceived + Entry.SecondsReceived;
     end;
 
     // StringReplace, damit aus einem '&' kein Shortcut auf dem Label wird..
@@ -181,6 +196,8 @@ begin
     end;
     Info := Info + Format(_('%d songs saved'), [SongsSaved]) + #13#10;
     Info := Info + Format(_('%s received'), [MakeSize(Received)]);
+    if Entries.Count = 1 then
+      Info := Info + #13#10 + Format(_('%s connected'), [MakeDuration(SecondsReceived)]);
     if Entries.Count = 1 then
     begin
       Info := Info + #13#10#13#10;

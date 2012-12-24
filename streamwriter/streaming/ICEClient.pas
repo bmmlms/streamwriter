@@ -103,6 +103,7 @@ type
     FOnURLsReceived: TNotifyEvent;
     FOnTitleAllowed: TTitleAllowedEvent;
     FOnPlaybackStarted: TNotifyEvent;
+    FOnSecondsReceived: TNotifyEvent;
 
     FOnPlay: TNotifyEvent;
     FOnPause: TNotifyEvent;
@@ -134,6 +135,7 @@ type
     procedure ThreadRefreshInfo(Sender: TSocketThread);
     procedure ThreadRecordingStopped(Sender: TSocketThread);
     procedure ThreadPlaybackStarted(Sender: TSocketThread);
+    procedure ThreadMilliSecondsReceived(Sender: TSocketThread);
     procedure ThreadBeforeEnded(Sender: TSocketThread);
     procedure ThreadTerminated(Sender: TObject);
   public
@@ -192,6 +194,7 @@ type
     property OnURLsReceived: TNotifyEvent read FOnURLsReceived write FOnURLsReceived;
     property OnTitleAllowed: TTitleAllowedEvent read FOnTitleAllowed write FOnTitleAllowed;
     property OnPlaybackStarted: TNotifyEvent read FOnPlaybackStarted write FOnPlaybackStarted;
+    property OnSecondsReceived: TNotifyEvent read FOnSecondsReceived write FOnSecondsReceived;
 
     property OnPlay: TNotifyEvent read FOnPlay write FOnPlay;
     property OnPause: TNotifyEvent read FOnPause write FOnPause;
@@ -424,6 +427,7 @@ begin
   FICEThread.OnRefreshInfo := ThreadRefreshInfo;
   FICEThread.OnRecordingStopped := ThreadRecordingStopped;
   FICEThread.OnPlaybackStarted := ThreadPlaybackStarted;
+  FICEThread.OnMilliSecondsReceived := ThreadMilliSecondsReceived;
 
   // Das muss hier so früh sein, wegen z.B. RetryDelay - das hat der Stream nämlich nicht,
   // wenn z.B. beim Verbinden was daneben geht.
@@ -570,6 +574,14 @@ begin
   Level := TDebugLevels(FICEThread.DebugLevel);
 
   WriteDebug(FICEThread.DebugMsg, FICEThread.DebugData, T, Level);
+end;
+
+procedure TICEClient.ThreadMilliSecondsReceived(Sender: TSocketThread);
+begin
+  Entry.SecondsReceived := Entry.SecondsReceived + 1;
+
+  if Assigned(FOnSecondsReceived) then
+    FOnSecondsReceived(Self);
 end;
 
 procedure TICEClient.ThreadBeforeEnded(Sender: TSocketThread);

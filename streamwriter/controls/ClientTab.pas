@@ -155,6 +155,7 @@ type
       var Allowed: Boolean; var Match: string; var Filter: Integer);
     procedure ClientManagerShowErrorMessage(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
     procedure ClientManagerPlaybackStarted(Sender: TObject);
+    procedure ClientManagerSecondsReceived(Sender: TObject);
 
     procedure FClientViewChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure FClientViewDblClick(Sender: TObject);
@@ -628,6 +629,7 @@ begin
         Continue;
       Client.Client.Entry.SongsSaved := 0;
       Client.Client.Entry.BytesReceived := 0;
+      Client.Client.Entry.SecondsReceived := 0;
 
       FClientView.RefreshClient(Client.Client);
     end;
@@ -766,6 +768,7 @@ begin
   FClients.OnClientTitleAllowed := ClientManagerTitleAllowed;
   FClients.OnShowErrorMessage := ClientManagerShowErrorMessage;
   FClients.OnPlaybackStarted := ClientManagerPlaybackStarted;
+  FClients.OnClientSecondsReceived := ClientManagerSecondsReceived;
 
   FStreams := Streams;
 
@@ -960,7 +963,8 @@ begin
   FStreams.Received := FStreams.Received + Received;
   Client.Entry.BytesReceived := Client.Entry.BytesReceived + Received;
 
-  FRefreshInfo := True;
+  // Das ist raus, weil sowieso jede Sekunde das Event für MilliSecondsReceived kommt
+  // FRefreshInfo := True;
 end;
 
 procedure TClientTab.ClientManagerPlaybackStarted(Sender: TObject);
@@ -1143,6 +1147,17 @@ begin
 
   if Assigned(FOnClientRemoved) then
     FOnClientRemoved(Client);
+end;
+
+procedure TClientTab.ClientManagerSecondsReceived(Sender: TObject);
+var
+  Clients: TNodeDataArray;
+begin
+  FRefreshInfo := True;
+
+  Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
+  if Length(Clients) = 1 then
+    ShowInfo;
 end;
 
 procedure TClientTab.ClientManagerShowErrorMessage(Sender: TICEClient;

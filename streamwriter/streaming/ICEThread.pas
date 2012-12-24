@@ -45,6 +45,10 @@ type
     FPaused: Boolean;
     FSleepTime: Integer;
 
+    FLastEventMilliSecondsConnected: Cardinal;
+    FLastMilliSecondsConnected: Cardinal;
+    FMilliSecondsConnected: Cardinal;
+
     FOnTitleChanged: TSocketEvent;
     FOnSongSaved: TSocketEvent;
     FOnNeedSettings: TSocketEvent;
@@ -54,6 +58,7 @@ type
     FOnRefreshInfo: TSocketEvent;
     FOnRecordingStopped: TSocketEvent;
     FOnPlaybackStarted: TSocketEvent;
+    FOnMilliSecondsReceived: TSocketEvent;
 
     FTypedStream: TICEStream;
     FPlayBufferLock: TCriticalSection;
@@ -112,6 +117,8 @@ type
     property Title: string read FTitle;
     property State: TICEThreadStates read FState;
 
+    property MilliSecondsReceived: Cardinal read FMilliSecondsConnected;
+
     property Recording: Boolean read FRecordingStarted;
     property Playing: Boolean read FPlayingStarted;
     property Paused: Boolean read FGetPaused;
@@ -128,6 +135,7 @@ type
     property OnRefreshInfo: TSocketEvent read FOnRefreshInfo write FOnRefreshInfo;
     property OnRecordingStopped: TSocketEvent read FOnRecordingStopped write FOnRecordingStopped;
     property OnPlaybackStarted: TSocketEvent read FOnPlaybackStarted write FOnPlaybackStarted;
+    property OnMilliSecondsReceived: TSocketEvent read FOnMilliSecondsReceived write FOnMilliSecondsReceived;
   end;
 
 implementation
@@ -444,6 +452,19 @@ begin
     Terminate;
   end;
 
+  if FTypedStream.HeaderRemoved then
+  begin
+    FMilliSecondsConnected := (FMilliSecondsConnected + (GetTickCount - FLastMilliSecondsConnected));
+    FLastMilliSecondsConnected := GetTickCount;
+
+    if FMilliSecondsConnected div 1000 <> FLastEventMilliSecondsConnected div 1000 then
+    begin
+      FLastEventMilliSecondsConnected := FMilliSecondsConnected;
+
+      Sync(FOnMilliSecondsReceived);
+    end;
+  end;
+
   if FTypedStream.ClientStopRecording then
   begin
     StopRecordingInternal;
@@ -508,6 +529,10 @@ begin
     atOGG:
       FPlayBuffer := TOGGStreamMemory.Create;
   end;
+
+  FLastEventMilliSecondsConnected := 0;
+  FLastMilliSecondsConnected := GetTickCount;
+  FMilliSecondsConnected := 0;
 
   if (FTypedStream.HeaderType = 'icy') and
      (FTypedStream.StreamName <> '') then

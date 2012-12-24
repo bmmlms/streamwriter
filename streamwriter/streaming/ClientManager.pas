@@ -63,6 +63,7 @@ type
     FOnClientTitleAllowed: TTitleAllowedEvent;
     FOnShowErrorMessage: TShowErrorMessageEvent;
     FOnPlaybackStarted: TNotifyEvent;
+    FOnClientSecondsReceived: TNotifyEvent;
 
     function FGetItem(Index: Integer): TICEClient;
     function FGetCount: Integer;
@@ -79,6 +80,7 @@ type
     procedure ClientURLsReceived(Sender: TObject);
     procedure ClientTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer);
     procedure ClientPlaybackStarted(Sender: TObject);
+    procedure ClientSecondsReceived(Sender: TObject);
 
     procedure ClientPlay(Sender: TObject);
     procedure ClientPause(Sender: TObject);
@@ -122,6 +124,7 @@ type
     property OnClientTitleAllowed: TTitleAllowedEvent read FOnClientTitleAllowed write FOnClientTitleAllowed;
     property OnShowErrorMessage: TShowErrorMessageEvent read FOnShowErrorMessage write FOnShowErrorMessage;
     property OnPlaybackStarted: TNotifyEvent read FOnPlaybackStarted write FOnPlaybackStarted;
+    property OnClientSecondsReceived: TNotifyEvent read FOnClientSecondsReceived write FOnClientSecondsReceived;
   end;
 
 implementation
@@ -224,6 +227,7 @@ begin
   Client.OnURLsReceived := ClientURLsReceived;
   Client.OnTitleAllowed := ClientTitleAllowed;
   Client.OnPlaybackStarted := ClientPlaybackStarted;
+  Client.OnSecondsReceived := ClientSecondsReceived;
   Client.OnPlay := ClientPlay;
   Client.OnPause := ClientPause;
   Client.OnStop := ClientStop;
@@ -450,6 +454,12 @@ begin
     if MatchesClient(Client, ID, Name, URL, Title, URLs) then
       Exit(Client);
   end;
+end;
+
+procedure TClientManager.ClientSecondsReceived(Sender: TObject);
+begin
+  if Assigned(FOnClientSecondsReceived) then
+    FOnClientSecondsReceived(Sender);
 end;
 
 procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
