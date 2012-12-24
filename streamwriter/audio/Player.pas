@@ -178,7 +178,7 @@ begin
   EQEnabled := Players.EQEnabled;
 
   if FTag <> nil then
-    FTag.Free;
+    FreeAndNil(FTag);
   FT := TFileTagger.Create;
   try
     if FT.Read(FFilename) then
