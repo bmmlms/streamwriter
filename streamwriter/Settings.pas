@@ -1593,7 +1593,7 @@ procedure TfrmSettings.GetExportData(Stream: TExtendedStream);
 begin
   inherited;
 
-  FLists.Save(Stream);
+  FLists.Save(Stream, True);
 end;
 
 function TfrmSettings.GetNewID: Integer;

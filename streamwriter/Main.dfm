@@ -3,7 +3,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Top = 450
   Caption = 'streamWriter'
   ClientHeight = 321
-  ClientWidth = 713
+  ClientWidth = 721
   Color = clBtnFace
   Constraints.MinHeight = 350
   Constraints.MinWidth = 729
@@ -26,7 +26,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   object tbClients: TToolBar
     Left = 0
     Top = 0
-    Width = 713
+    Width = 721
     Height = 25
     Images = imgImages
     Indent = 2
@@ -3282,7 +3282,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   end
   object tmrAutoSave: TTimer
     Enabled = False
-    Interval = 120000
+    Interval = 600000
     OnTimer = tmrAutoSaveTimer
     Left = 288
     Top = 200

@@ -562,7 +562,7 @@ type
     procedure Load; overload;
     procedure Load(var S: TExtendedStream); overload;
     procedure Save; overload;
-    procedure Save(S: TExtendedStream); overload;
+    procedure Save(S: TExtendedStream; UseCompression: Boolean); overload;
     procedure SaveRecover;
 
     // List that contains all categories
@@ -599,7 +599,7 @@ type
   end;
 
 const
-  DATAVERSION = 44;
+  DATAVERSION = 45;
 
 implementation
 
@@ -1050,15 +1050,28 @@ var
   Version, CatCount, EntryCount: Integer;
   i: Integer;
   CompressedStream: TExtendedStream;
+  Compressed: Boolean;
 begin
   CleanLists;
 
   S.Read(Version);
 
+  // TODO: testen ob ich noch alle alten daten laden kann
+
+  // Bei 44 war Kompression immer aktiv
+  if Version >= 44 then
+    Compressed := True
+  else
+    Compressed := False;
+
+  // Ab 45 für Recoveryfile abgeschaltet
+  if Version >= 45 then
+    S.Read(Compressed);
+
   if Version > DATAVERSION then
     raise EVersionException.Create(AppGlobals.DataFile);
 
-  if Version >= 44 then
+  if Compressed then
   begin
     CompressedStream := TExtendedStream.Create;
     try
@@ -1231,12 +1244,14 @@ begin
   end;
 end;
 
-procedure TDataLists.Save(S: TExtendedStream);
+procedure TDataLists.Save(S: TExtendedStream; UseCompression: Boolean);
 var
   i: Integer;
   CompressedStream: TExtendedStream;
 begin
   S.Write(Integer(DATAVERSION));
+
+  S.Write(UseCompression);
 
   CompressedStream := TExtendedStream.Create;
   try
@@ -1294,11 +1309,15 @@ begin
 
     CompressedStream.Seek(0, soFromBeginning);
 
-    {$IFDEF DEBUG}
-    ZCompressStream(CompressedStream, S, zcNone);
-    {$ELSE}
-    ZCompressStream(CompressedStream, S, zcDefault);
-    {$ENDIF}
+    if UseCompression then
+    begin
+      {$IFDEF DEBUG}
+      ZCompressStream(CompressedStream, S, zcNone);
+      {$ELSE}
+      ZCompressStream(CompressedStream, S, zcDefault);
+      {$ENDIF}
+    end else
+      S.CopyFrom(CompressedStream, CompressedStream.Size);
   finally
     CompressedStream.Free;
   end;
@@ -1310,7 +1329,7 @@ var
 begin
   S := TExtendedStream.Create;
   try
-    Save(S);
+    Save(S, False);
     S.SaveToFile(AppGlobals.RecoveryFile);
   finally
     S.Free;
@@ -1339,7 +1358,7 @@ begin
   begin
     S := TExtendedStream.Create;
     try
-      Save(S);
+      Save(S, True);
       S.SaveToFile(AppGlobals.DataFile);
     finally
       S.Free;
