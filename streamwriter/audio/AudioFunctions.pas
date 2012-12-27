@@ -160,10 +160,12 @@ begin
     atAAC, atM4A:
       if BitRate >= 150 then
         Result := vqHigh
-      else if BitRate >= 128 then
-        Result := vqMedium
+      //else if BitRate >= 128 then  // Das löst das Problem von "Rix". Ist vllt. nicht optimal, aber besser als nichts..
+                                     // Am besten wäre es wohl, den Encoder präziser zu füttern was Bitraten angeht => Enum vergrößern..
+                                     // Nicht 3 Stufen, sondern 6 oder so! Oder Bitrate durchschleifen und jeder Encoder denkt selber nach?
+      //  Result := vqMedium
       else
-        Result := vqLow;
+        Result := vqMedium;
   end;
 end;
 

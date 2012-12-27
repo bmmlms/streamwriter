@@ -1064,20 +1064,18 @@ begin
 
   S.Read(Version);
 
-  // TODO: testen ob ich noch alle alten daten laden kann
+  if Version > DATAVERSION then
+    raise EVersionException.Create(AppGlobals.DataFile);
 
-  // Bei 44 war Kompression immer aktiv
+  // Bei 44 war Kompression immer aktiv, danach optional
   if Version >= 44 then
     Compressed := True
   else
     Compressed := False;
 
-  // Ab 45 für Recoveryfile abgeschaltet
+  // Ab 45 für Recoveryfile abgeschaltet, darum als Feld gespeichert
   if Version >= 45 then
     S.Read(Compressed);
-
-  if Version > DATAVERSION then
-    raise EVersionException.Create(AppGlobals.DataFile);
 
   if Compressed then
   begin
@@ -1213,7 +1211,6 @@ begin
 
     FBrowserList.ClearDict;
   end;
-
 end;
 
 procedure TDataLists.Load;
