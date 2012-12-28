@@ -1585,7 +1585,6 @@ end;
 
 function TFileChecker.LimitToMaxPath(Filename: string): string;
 var
-  L: Integer;
   D, F, E: string;
 begin
   Result := Filename;

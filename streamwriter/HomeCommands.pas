@@ -392,6 +392,7 @@ begin
   if FStream.Position = FStream.Size then
     Exit(False);
   ToStream.CopyFrom(FStream, FStream.Size);
+  Result := True;
 end;
 
 { TCommandServerInfoResponse }

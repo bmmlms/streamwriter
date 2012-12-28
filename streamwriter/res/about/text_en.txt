@@ -46,7 +46,6 @@ Python
 SoX
 Tango Desktop Project
 Virtual Treeview
-XMLLib
 
 
 

@@ -169,8 +169,7 @@ implementation
 
 constructor THomeThread.Create(Lists: TDataLists);
 begin
-  FLists := Lists; // TODO: Lists im Thread. Betrifft Streams und Charts. ÜBERALL im programm muss dann geprüft werden,
-                   // ob der thread gerade aktiv ist und was macht, bevor drauf zu gegriffen wird.
+  FLists := Lists;
 
   inherited Create('streamwriter.org', 7085, TSocketStream.Create);
   //inherited Create('gaia', 7085, TSocketStream.Create);

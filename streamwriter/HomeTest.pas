@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Commands, HomeCommunication, HomeCommands, ComCtrls, StdCtrls,
-  Protocol, Generics.Collections, DataManager;
+  Protocol, Generics.Collections, DataManager, TypeDefs, AudioFunctions;
 
 type
   TfrmHomeTest = class(TForm)
@@ -37,6 +37,7 @@ var
   Cmd: TCommandSubmitStream;
   Cmd2: TCommandSetStreamData;
   Cmd3: TCommandClientStats;
+  Cmd4: TCommandTitleChanged;
 begin
   {
   Cmd := TCommandSubmitStream.Create;
@@ -56,9 +57,15 @@ begin
   HC.SendCommand(Cmd2);
   }
 
+  {
   Cmd3 := TCommandClientStats.Create;
   Cmd3.StatType := csAutoSave;
   HC.SendCommand(Cmd3);
+  }
+
+
+  Cmd4 := TCommandTitleChanged.Create(5, 'dfasdfsa', 'reklama ', 'fsdfsdfas', 'fsdfasdfas', atMPEG, 128, '');
+  HC.SendCommand(Cmd4);
 end;
 
 procedure TfrmHomeTest.FormCreate(Sender: TObject);
