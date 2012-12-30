@@ -238,8 +238,6 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitLeft = -8
-    ExplicitTop = 257
     object Bevel2: TBevel
       Left = 4
       Top = 4

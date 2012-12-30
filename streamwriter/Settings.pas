@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2012 Alexander Nottelmann
+    Copyright (c) 2010-2013 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -17,6 +17,7 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
 unit Settings;
 
 interface
@@ -1858,7 +1859,7 @@ begin
                               'Backslashes can be used to seperate directories.');
 
   lblAppParams.Caption := _('%f = filename, %a = artist, %t = title, %l = album, %u = title on stream, %s = streamname, %n = tracknumber, %d = date song was saved, %i = time song was saved'#13#10 +
-                            '(everything should be quoted using ")');
+                            'Every parameter should be quoted using ".');
 
   if lstPostProcess.Selected <> nil then
   begin

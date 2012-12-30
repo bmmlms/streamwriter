@@ -66,8 +66,6 @@ object frmTimers: TfrmTimers
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitWidth = 387
-    ExplicitHeight = 381
     object Panel1: TPanel
       Left = 0
       Top = 0
@@ -76,8 +74,6 @@ object frmTimers: TfrmTimers
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitWidth = 387
-      ExplicitHeight = 381
       object pnlConfig: TPanel
         Left = 0
         Top = 0
@@ -86,7 +82,6 @@ object frmTimers: TfrmTimers
         Align = alTop
         BevelOuter = bvNone
         TabOrder = 0
-        ExplicitWidth = 387
         DesignSize = (
           477
           197)
@@ -154,7 +149,6 @@ object frmTimers: TfrmTimers
           Items.Strings = (
             'Daily'
             'Weekly')
-          ExplicitWidth = 362
         end
         object lstDay: TComboBox
           Left = 20
@@ -176,7 +170,6 @@ object frmTimers: TfrmTimers
             'Friday'
             'Saturday'
             'Sunday')
-          ExplicitWidth = 362
         end
         object dtpDate: TDateTimePicker
           Left = 20
@@ -188,7 +181,6 @@ object frmTimers: TfrmTimers
           Time = 40674.868549270830000000
           TabOrder = 4
           OnChange = dtpDateChange
-          ExplicitWidth = 362
         end
         object txtStartHour: TEdit
           Left = 4
@@ -235,7 +227,6 @@ object frmTimers: TfrmTimers
           Caption = '&Add'
           TabOrder = 9
           OnClick = btnAddClick
-          ExplicitLeft = 289
         end
         object chkAutoRemove: TCheckBox
           Left = 20
@@ -245,7 +236,6 @@ object frmTimers: TfrmTimers
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Remove schedule when recording finished'
           TabOrder = 10
-          ExplicitWidth = 362
         end
       end
       object pnlTree: TPanel
@@ -259,8 +249,6 @@ object frmTimers: TfrmTimers
         Padding.Top = 4
         Padding.Right = 4
         TabOrder = 1
-        ExplicitWidth = 387
-        ExplicitHeight = 184
         object Panel3: TPanel
           Left = 4
           Top = 131
@@ -272,8 +260,6 @@ object frmTimers: TfrmTimers
           Padding.Top = 4
           Padding.Bottom = 4
           TabOrder = 0
-          ExplicitTop = 149
-          ExplicitWidth = 379
           object btnRemove: TButton
             Left = 376
             Top = 4
@@ -285,7 +271,6 @@ object frmTimers: TfrmTimers
             Enabled = False
             TabOrder = 0
             OnClick = btnRemoveClick
-            ExplicitLeft = 286
           end
         end
       end
@@ -303,8 +288,6 @@ object frmTimers: TfrmTimers
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitTop = 381
-    ExplicitWidth = 387
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -328,7 +311,6 @@ object frmTimers: TfrmTimers
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 286
     end
   end
 end

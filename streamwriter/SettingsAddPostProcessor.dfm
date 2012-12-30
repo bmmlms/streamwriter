@@ -36,7 +36,6 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitWidth = 313
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -60,7 +59,6 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 212
     end
   end
   object optWAVE: TRadioButton
