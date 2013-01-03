@@ -856,6 +856,7 @@ begin
   tabSaved.OnAddTitleToWishlist := tabSavedAddTitleToWishlist;
   tabSaved.OnAddTitleToIgnorelist := tabSavedAddTitleToIgnorelist;
 
+
   FWasActivated := False;
   FWasShown := False;
   FUpdateOnExit := False;
