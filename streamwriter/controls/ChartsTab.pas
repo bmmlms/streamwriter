@@ -105,9 +105,11 @@ type
 
     FLists: TDataLists;
 
+    procedure MessageReceived(Msg: TMessageBase);
+
     procedure PopupMenuClick(Sender: TObject);
 
-    procedure OnSaveListNotify(Sender: TObject; const Item: TTitleInfo; Action: TCollectionNotification);
+    //procedure OnSaveListNotify(Sender: TObject; const Item: TTitleInfo; Action: TCollectionNotification);
 
     procedure TimerOnTimer(Sender: TObject);
 
@@ -454,9 +456,11 @@ constructor TChartsTree.Create(AOwner: TComponent; Lists: TDataLists);
 begin
   inherited Create(AOwner);
 
+  MsgBus.AddSubscriber(MessageReceived);
+
   FLists := Lists;
 
-  FLists.SaveList.OnChange.Add(OnSaveListNotify);
+  //FLists.SaveList.OnChange.Add(OnSaveListNotify);
 
   FTimer := TTimer.Create(Self);
   FTimer.Interval := 1000;
@@ -835,6 +839,53 @@ begin
   end;
 end;
 
+procedure TChartsTree.MessageReceived(Msg: TMessageBase);
+var
+  i: Integer;
+  Node: PVirtualNode;
+  NodeData: PChartNodeData;
+begin
+  // TODO: Das hier muss bei jedem add/remove der wishlist aufgerufen werden. import, cmd-line args...
+  if Msg is TListsChangedMsg then
+  begin
+    Node := GetFirst;
+    while Node <> nil do
+    begin
+      NodeData := GetNodeData(Node);
+      if NodeData.Chart <> nil then
+        NodeData.IsOnWishlist := False;
+      Node := GetNext(Node);
+    end;
+
+    Node := GetFirst;
+    while Node <> nil do
+    begin
+      NodeData := GetNodeData(Node);
+
+      for i := 0 to FLists.SaveList.Count - 1 do
+      begin
+        if (NodeData.Chart <> nil) and (LowerCase(NodeData.Chart.Name) = LowerCase(FLists.SaveList.Items[i].Title)) then
+          NodeData.IsOnWishlist := True;
+      end;
+
+      Node := GetNext(Node);
+    end;
+
+    Invalidate;
+
+    { Dauert zu lange, deshalb raus. Ist auch nur interessant, wenn man sW über
+      Cmd-Line-Args bedient... und evtl. durch das Invalidate() hier drüber eh erledigt!
+    Node := GetFirst;
+    while Node <> nil do
+    begin
+      InvalidateNode(Node);
+      Node := GetNext(Node);
+    end;
+    }
+  end;
+end;
+
+{     TODO: Wenn das hier wegfällt kann das ne normale TList<> werden.
 procedure TChartsTree.OnSaveListNotify(Sender: TObject;
   const Item: TTitleInfo; Action: TCollectionNotification);
 var
@@ -860,6 +911,7 @@ begin
     end;
   end;
 end;
+}
 
 procedure TChartsTree.Paint;
 var
@@ -900,7 +952,7 @@ begin
 
   if Sender = FPopupMenu.ItemReload then
   begin
-    MsgBus.SendMessage(TRefreshServerData.Create);
+    MsgBus.SendMessage(TRefreshServerDataMsg.Create);
     Exit;
   end;
 

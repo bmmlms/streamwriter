@@ -38,6 +38,7 @@ var
   Cmd2: TCommandSetStreamData;
   Cmd3: TCommandClientStats;
   Cmd4: TCommandTitleChanged;
+  Cmd5: TCommandGetServerData;
 begin
   {
   Cmd := TCommandSubmitStream.Create;
@@ -63,9 +64,11 @@ begin
   HC.SendCommand(Cmd3);
   }
 
+  //Cmd4 := TCommandTitleChanged.Create(5, 'dfasdfsa', 'reklama ', 'fsdfsdfas', 'fsdfasdfas', atMPEG, 128, '');
+  //HC.SendCommand(Cmd4);
 
-  Cmd4 := TCommandTitleChanged.Create(5, 'dfasdfsa', 'reklama ', 'fsdfsdfas', 'fsdfasdfas', atMPEG, 128, '');
-  HC.SendCommand(Cmd4);
+  Cmd5 := TCommandGetServerData.Create;
+  HC.SendCommand(Cmd5);
 end;
 
 procedure TfrmHomeTest.FormCreate(Sender: TObject);

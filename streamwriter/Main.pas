@@ -426,7 +426,7 @@ begin
 
   // Das muss so, damit der Import von Profilen klappt. Sonst wird beim Hinzufügen
   // in die SaveList das OnChange aufgerufen und es crashed. Also hier lassen.
-  FDataLists.SaveList.OnChange.Clear;
+  //FDataLists.SaveList.OnChange.Clear;
 
   // Shutdown all postprocessors. Since they get terminated, all postprocessing chains get terminated.
   AppGlobals.PostProcessManager.Terminate;
@@ -1222,7 +1222,7 @@ begin
 
     Caption := NewCaption;
   end
-  else if Msg is TRefreshServerData then
+  else if Msg is TRefreshServerDataMsg then
   begin
     if HomeComm.SendGetServerData then
     begin
@@ -1857,6 +1857,8 @@ begin
       HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
     end;
   end;
+
+  MsgBus.SendMessage(TListsChangedMsg.Create);
 end;
 
 function TfrmStreamWriterMain.tabChartsGetIsStreamOnListEvent(
@@ -1945,6 +1947,8 @@ begin
       T.Free;
     end;
   end;
+
+  MsgBus.SendMessage(TListsChangedMsg.Create);
 
   HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 end;

@@ -64,7 +64,10 @@ type
     property Sender: TObject read FSender;
   end;
 
-  TRefreshServerData = class(TMessageBase)
+  TRefreshServerDataMsg = class(TMessageBase)
+  end;
+
+  TListsChangedMsg = class(TMessageBase)
   end;
 
 implementation

@@ -28,7 +28,7 @@ uses
   Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, DataManager,
   ImgList, Functions, GUIFunctions, Menus, Math, DragDrop, DropComboTarget,
   Dialogs, MsgDlg, Forms, Logging, AppData, HomeCommunication, ICEClient,
-  ClientManager, Generics.Collections, TypeDefs;
+  ClientManager, Generics.Collections, TypeDefs, MessageBus, AppMessages;
 
 type
   TTitleTree = class;
@@ -255,7 +255,11 @@ end;
 procedure TTitlePanel.AddClick(Sender: TObject);
 begin
   if AddEntry(FAddEdit.Text, True, ltAutoDetermine) then
+  begin
     FAddEdit.Text := '';
+
+    MsgBus.SendMessage(TListsChangedMsg.Create);
+  end;
 end;
 
 procedure TTitlePanel.RemoveClick(Sender: TObject);
@@ -329,6 +333,8 @@ begin
   finally
     DeleteList.Free;
   end;
+
+  MsgBus.SendMessage(TListsChangedMsg.Create);
 
   HomeComm.SendSetSettings((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 
@@ -469,42 +475,27 @@ var
   Lst: TStringList;
   Title: TTitleInfo;
   List: TTitleList;
-  Node: PVirtualNode;
-  NodeData: PTitleNodeData;
   ParentNode: PVirtualNode;
   ParentNodeData: PTitleNodeData;
 begin
-  if FTree.SelectedCount <> 1 then
-    Exit;
+  // TODO: Crashed beim schließen des programms unter manchen (simplen) konstellationen!
 
-  Node := FTree.GetNodes([ntWishParent, ntIgnoreParent, ntStream, ntWish, ntIgnore], True)[0];
-  NodeData := FTree.GetNodeData(Node);
-
-  if (NodeData.NodeType in [ntWishParent, ntWish]) then
+  if FAddCombo.ItemIndex = 0 then
   begin
-    ParentNode := FTree.FWishNode;
     List := FLists.SaveList;
-  end else if NodeData.NodeType = ntIgnoreParent then
+    ParentNode := FTree.FWishNode;
+    ParentNodeData := FTree.GetNodeData(ParentNode);
+  end else if FAddCombo.ItemIndex = 1 then
   begin
-    ParentNode := FTree.FIgnoreNode;
     List := FLists.IgnoreList;
-  end else if NodeData.NodeType = ntIgnore then
-  begin
-    ParentNode := Node.Parent;
+    ParentNode := FTree.FIgnoreNode;
     ParentNodeData := FTree.GetNodeData(ParentNode);
-    if ParentNodeData.NodeType = ntIgnoreParent then
-      List := FLists.IgnoreList
-    else if ParentNodeData.NodeType = ntStream then
-      List := ParentNodeData.Stream.Entry.IgnoreList
-    else
-      Exit;
-  end else if NodeData.NodeType = ntStream then
-  begin
-    ParentNode := Node;
-    ParentNodeData := FTree.GetNodeData(ParentNode);
-    List := ParentNodeData.Stream.Entry.IgnoreList;
   end else
-    Exit;
+  begin
+    List := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]).Entry.IgnoreList;
+    ParentNode := nil;
+    ParentNodeData := nil;
+  end;
 
   Dlg := TOpenDialog.Create(Self);
   try
@@ -526,6 +517,12 @@ begin
 
           for i := 0 to Lst.Count - 1 do
           begin
+            if ParentNode = nil then
+            begin
+              ParentNode := FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]));
+              ParentNodeData := FTree.GetNodeData(ParentNode);
+            end;
+
             Lst[i] := Trim(Lst[i]);
 
             if Lst[i] = '' then
@@ -579,6 +576,8 @@ begin
         except
           MsgBox(GetParentForm(Self).Handle, _('The file could not be loaded.'), _('Error'), MB_ICONEXCLAMATION);
         end;
+
+        MsgBus.SendMessage(TListsChangedMsg.Create);
       finally
         Lst.Free;
       end;
@@ -946,7 +945,7 @@ begin
   TitlesSelected := (TypeCount(ntWish) > 0) or (TypeCount(ntIgnore) > 0);
   CanRemove := TitlesSelected or (TypeCount(ntStream) > 0);
   CanRename := (FTree.SelectedCount = 1) and TitlesSelected;
-  CanImport := FTree.SelectedCount = 1;
+  CanImport := True; // FTree.SelectedCount = 1;
 
   FToolbar.FRemove.Enabled := CanRemove;
   FToolbar.FRename.Enabled := CanRename;

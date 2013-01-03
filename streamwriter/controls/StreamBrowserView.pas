@@ -1142,7 +1142,7 @@ end;
 
 procedure TMStreamBrowserView.RefreshStreams;
 begin
-  MsgBus.SendMessage(TRefreshServerData.Create);
+  MsgBus.SendMessage(TRefreshServerDataMsg.Create);
 end;
 
 procedure TMStreamBrowserView.SearchEditChange(Sender: TObject);

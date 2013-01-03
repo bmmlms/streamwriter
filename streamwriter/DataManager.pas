@@ -66,14 +66,14 @@ type
   TTitleList = class(TList<TTitleInfo>)
   private
     FNotifications: Boolean;
-    FOnChange: TList<TN>;
+    //FOnChange: TList<TN>;
   protected
-    procedure Notify(const Item: TTitleInfo; Action: TCollectionNotification); override;
+    //procedure Notify(const Item: TTitleInfo; Action: TCollectionNotification); override;
   public
     constructor Create;
     destructor Destroy; override;
 
-    property OnChange: TList<TN> read FOnChange;
+    //property OnChange: TList<TN> read FOnChange;
     property Notifications: Boolean read FNotifications write FNotifications;
   end;
 
@@ -682,17 +682,18 @@ begin
   inherited;
 
   FNotifications := True;
-  FOnChange := TList<TN>.Create;
+  //FOnChange := TList<TN>.Create;
 end;
 
 destructor TTitleList.Destroy;
 begin
-  FOnChange.Free;
-  FOnChange := nil;
+  //FOnChange.Free;
+  //FOnChange := nil;
 
   inherited;
 end;
 
+{
 procedure TTitleList.Notify(const Item: TTitleInfo;
   Action: TCollectionNotification);
 var
@@ -704,6 +705,7 @@ begin
 
   inherited;
 end;
+}
 
 { TStreamEntry }
 
