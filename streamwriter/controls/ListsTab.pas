@@ -892,8 +892,39 @@ end;
 
 procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree;
   Node: PVirtualNode);
+var
+  List: TTitleList;
+  NodeData: PTitleNodeData;
+  i: Integer;
 begin
-  FToolbar.FRemove.Enabled := FTree.SelectedCount > 0;
+  if Node <> nil then
+  begin
+    List := nil;
+    NodeData := FTree.GetNodeData(Node);
+
+    case NodeData.NodeType of
+      ntWishParent, ntWish:
+        FAddCombo.ItemIndex := 0;
+      ntIgnoreParent:
+        FAddCombo.ItemIndex := 1;
+      ntIgnore:
+        if NodeData.Stream <> nil then
+          List := NodeData.Stream.Entry.IgnoreList
+        else
+          FAddCombo.ItemIndex := 1;
+      ntStream:
+        List := NodeData.Stream.Entry.IgnoreList;
+    end;
+
+    if List <> nil then
+      for i := 0 to FAddCombo.Items.Count - 1 do
+        if (FAddCombo.Items.Objects[i] is TICEClient) and
+           (TICEClient(FAddCombo.Items.Objects[i]).Entry.IgnoreList = List) then
+        begin
+          FAddCombo.ItemIndex := i;
+          Break;
+        end;
+  end;
 
   UpdateButtons;
 end;
