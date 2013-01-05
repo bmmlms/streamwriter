@@ -476,25 +476,19 @@ var
   Title: TTitleInfo;
   List: TTitleList;
   ParentNode: PVirtualNode;
-  ParentNodeData: PTitleNodeData;
 begin
-  // TODO: Crashed beim schlieﬂen des programms unter manchen (simplen) konstellationen!
-
   if FAddCombo.ItemIndex = 0 then
   begin
     List := FLists.SaveList;
     ParentNode := FTree.FWishNode;
-    ParentNodeData := FTree.GetNodeData(ParentNode);
   end else if FAddCombo.ItemIndex = 1 then
   begin
     List := FLists.IgnoreList;
     ParentNode := FTree.FIgnoreNode;
-    ParentNodeData := FTree.GetNodeData(ParentNode);
   end else
   begin
     List := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]).Entry.IgnoreList;
     ParentNode := nil;
-    ParentNodeData := nil;
   end;
 
   Dlg := TOpenDialog.Create(Self);
@@ -520,7 +514,6 @@ begin
             if ParentNode = nil then
             begin
               ParentNode := FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]));
-              ParentNodeData := FTree.GetNodeData(ParentNode);
             end;
 
             Lst[i] := Trim(Lst[i]);

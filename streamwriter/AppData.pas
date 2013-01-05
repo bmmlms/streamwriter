@@ -481,7 +481,7 @@ begin
   FRecoveryFile := FStorage.DataDir + 'streamwriter_data_recovery.dat';
 
   // The number of the current build
-  FBuildNumber := 444;
+  FBuildNumber := 452;
 
   // This builds a large string used to generate the about-window
   BuildThanksText;

@@ -845,7 +845,6 @@ var
   Node: PVirtualNode;
   NodeData: PChartNodeData;
 begin
-  // TODO: Das hier muss bei jedem add/remove der wishlist aufgerufen werden. import, cmd-line args...
   if Msg is TListsChangedMsg then
   begin
     Node := GetFirst;
