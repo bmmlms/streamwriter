@@ -36,7 +36,7 @@ uses
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
   PowerManagement, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
-  AppMessages, CommandLine;
+  AppMessages, CommandLine, Protocol, Commands, HomeCommands;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -286,6 +286,9 @@ type
     procedure CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
 
     procedure HomeCommStateChanged(Sender: TObject);
+    procedure HomeCommBytesTransferred(Sender: TObject;
+      Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader;
+      Transferred: UInt64);
     procedure HomeCommTitleNotificationsChanged(Sender: TObject);
     procedure HomeCommHandshake(Sender: TObject; Success: Boolean);
     procedure HomeCommLogIn(Sender: TObject; Success: Boolean);
@@ -688,6 +691,7 @@ begin
     // Wird hier gemacht, weil der Browser dann sicher da ist, wenn die
     // Streams empfangen werden (wg. DisplayCount)
     HomeComm.OnStateChanged := HomeCommStateChanged;
+    HomeComm.OnBytesTransferred := HomeCommBytesTransferred;
     HomeComm.OnTitleNotificationsChanged := HomeCommTitleNotificationsChanged;
     HomeComm.OnHandshakeReceived := HomeCommHandshake;
     HomeComm.OnLogInReceived := HomeCommLogIn;
@@ -752,7 +756,18 @@ procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
 var
   Recovered: Boolean;
   S: TExtendedStream;
+  ss: tstringlist;
+  i: Integer;
 begin
+  ss := tstringlist.create;
+
+  for i := 0 to 1000 do
+    ss.add(inttostr(i +5454) + ' - ' + inttostr(i + 654));
+  ss.savetofile('d:\xxx.txt');
+
+  ss.free;
+
+
   FMainCaption := 'streamWriter';
   {$IFDEF DEBUG}FMainCaption := FMainCaption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
   Caption := FMainCaption;
@@ -964,6 +979,16 @@ begin
                                  [E.Message]),
                                  _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
     end;
+end;
+
+procedure TfrmStreamWriterMain.HomeCommBytesTransferred(Sender: TObject;
+  Direction: TTransferDirection; CommandID: Cardinal;
+  CommandHeader: TCommandHeader; Transferred: UInt64);
+begin
+  if CommandHeader.CommandType = ctGetServerDataResponse then
+  begin
+    tabCharts.HomeCommBytesTransferred(CommandHeader, Transferred);
+  end;
 end;
 
 procedure TfrmStreamWriterMain.HomeCommError(Sender: TObject; ID: TCommErrors; Msg: string);

@@ -27,7 +27,8 @@ uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
   MControls, LanguageObjects, Tabs, Functions, AppData, Logging, VirtualTrees,
   HomeCommunication, DataManager, ImgList, Graphics, Math, Generics.Collections,
-  Menus, ChartsTabAdjustTitleName, Forms, TypeDefs, MessageBus, AppMessages;
+  Menus, ChartsTabAdjustTitleName, Forms, TypeDefs, MessageBus, AppMessages,
+  HomeCommands, Commands;
 
 type
   TNodeTypes = (ntChart, ntStream, ntAll);
@@ -94,6 +95,7 @@ type
     FTimer: TTimer;
     FDots: string;
     FTextLeft: Integer;
+    FProgressBar: TProgressBar;
 
     FPopupMenu: TChartsPopup;
 
@@ -140,6 +142,8 @@ type
     function GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
     function NodesToData(Nodes: TNodeArray): TChartDataArray;
 
+    procedure HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
+
     property State: TChartStates read FState write FSetState;
   end;
 
@@ -177,6 +181,7 @@ type
     procedure SetState(State: TChartStates);
 
     procedure HomeCommStateChanged(Sender: TObject);
+    procedure HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
 
     property State: TChartStates read FState;
     property OnAddToWishlist: TAddToWishlistEvent read FOnAddToWishlist write FOnAddToWishlist;
@@ -248,6 +253,12 @@ destructor TChartsTab.Destroy;
 begin
 
   inherited;
+end;
+
+procedure TChartsTab.HomeCommBytesTransferred(CommandHeader: TCommandHeader;
+  Transferred: UInt64);
+begin
+  FChartsTree.HomeCommBytesTransferred(CommandHeader, Transferred);
 end;
 
 procedure TChartsTab.HomeCommChartsReceived(Sender: TObject);
@@ -505,6 +516,12 @@ begin
   FPopupMenu.ItemAddStream.OnClick := PopupMenuClick;
 
   PopupMenu := FPopupMenu;
+
+  FProgressBar := TProgressBar.Create(Self);
+  FProgressBar.Parent := Self;
+  FProgressBar.Width := 200;
+  FProgressBar.Height := 20;
+  FProgressBar.Visible := False;
 
   Header.SortColumn := 2;
   Header.SortDirection := sdDescending;
@@ -765,9 +782,14 @@ begin
 
   case Value of
     csNormal:
-      Enabled := True;
+      begin
+        FProgressBar.Visible := False;
+        Enabled := True;
+      end;
     csLoading:
       begin
+        FProgressBar.Position := 0;
+        FProgressBar.Visible := True;
         Enabled := False;
         FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_LOADING) + '..') div 2;
         FTimer.Enabled := True;
@@ -775,6 +797,7 @@ begin
       end;
     csError:
       begin
+        FProgressBar.Visible := False;
         Enabled := False;
         FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_ERROR)) div 2;
         Invalidate;
@@ -813,6 +836,12 @@ begin
     Result[Length(Result) - 1] := Node;
     Node := GetNext(Node);
   end;
+end;
+
+procedure TChartsTree.HomeCommBytesTransferred(CommandHeader: TCommandHeader;
+  Transferred: UInt64);
+begin
+ FProgressBar.Position := Trunc((Transferred / CommandHeader.CommandLength) * 100);
 end;
 
 function TChartsTree.NodesToData(Nodes: TNodeArray): TChartDataArray;
@@ -1013,6 +1042,11 @@ end;
 procedure TChartsTree.Resize;
 begin
   inherited;
+
+  FProgressBar.Left := Trunc(ClientWidth / 2 - 100);
+  FProgressBar.Top := ClientHeight div 2 - Canvas.TextHeight('Wy') + 15;
+  FProgressBar.Width := 200;
+  FProgressBar.Height := 20;
 
   case FState of
     csLoading:
