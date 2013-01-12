@@ -520,7 +520,7 @@ var
 begin
   if FState = csEncoding then
   begin
-    FFileTagger.Write(FOriginalFilename);
+    FFileTagger.Write(Language.CurrentLanguage.LCID, FOriginalFilename);
 
     for i := 0 to FUndoList.Count - 1 do
     begin

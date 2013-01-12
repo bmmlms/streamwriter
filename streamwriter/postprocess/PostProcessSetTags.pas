@@ -117,7 +117,7 @@ begin
         FileTagger.Tag.TrackNumber := IntToStr(FData.TrackNumber);
         FileTagger.Tag.Comment := Comment;
 
-        if FileTagger.Write(FData.Filename) then
+        if FileTagger.Write(Language.CurrentLanguage.LCID, FData.Filename) then
         begin
           FData.Filesize := GetFileSize(FData.Filename);
           FResult := arWin;

@@ -756,18 +756,8 @@ procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
 var
   Recovered: Boolean;
   S: TExtendedStream;
-  ss: tstringlist;
   i: Integer;
 begin
-  ss := tstringlist.create;
-
-  for i := 0 to 1000 do
-    ss.add(inttostr(i +5454) + ' - ' + inttostr(i + 654));
-  ss.savetofile('d:\xxx.txt');
-
-  ss.free;
-
-
   FMainCaption := 'streamWriter';
   {$IFDEF DEBUG}FMainCaption := FMainCaption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
   Caption := FMainCaption;
@@ -987,6 +977,7 @@ procedure TfrmStreamWriterMain.HomeCommBytesTransferred(Sender: TObject;
 begin
   if CommandHeader.CommandType = ctGetServerDataResponse then
   begin
+    tabClients.SideBar.BrowserView.HomeCommBytesTransferred(CommandHeader, Transferred);
     tabCharts.HomeCommBytesTransferred(CommandHeader, Transferred);
   end;
 end;

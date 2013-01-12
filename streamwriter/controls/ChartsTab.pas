@@ -841,7 +841,9 @@ end;
 procedure TChartsTree.HomeCommBytesTransferred(CommandHeader: TCommandHeader;
   Transferred: UInt64);
 begin
- FProgressBar.Position := Trunc((Transferred / CommandHeader.CommandLength) * 100);
+  if FProgressBar.Position < 100 then
+    FProgressBar.Position := FProgressBar.Position + 1;
+  FProgressBar.Position := Trunc((Transferred / CommandHeader.CommandLength) * 100);
 end;
 
 function TChartsTree.NodesToData(Nodes: TNodeArray): TChartDataArray;
@@ -1043,10 +1045,8 @@ procedure TChartsTree.Resize;
 begin
   inherited;
 
-  FProgressBar.Left := Trunc(ClientWidth / 2 - 100);
+  FProgressBar.Left := Trunc(ClientWidth / 2 - FProgressBar.Width / 2);
   FProgressBar.Top := ClientHeight div 2 - Canvas.TextHeight('Wy') + 15;
-  FProgressBar.Width := 200;
-  FProgressBar.Height := 20;
 
   case FState of
     csLoading:

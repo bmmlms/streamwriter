@@ -2,10 +2,10 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Left = 549
   Top = 450
   Caption = 'streamWriter'
-  ClientHeight = 321
+  ClientHeight = 332
   ClientWidth = 721
   Color = clBtnFace
-  Constraints.MinHeight = 350
+  Constraints.MinHeight = 390
   Constraints.MinWidth = 729
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText

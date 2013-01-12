@@ -65,7 +65,7 @@ begin
     FileTagger.Tag.Album := Trim(txtAlbum.Text);
     FileTagger.Tag.Comment := Trim(txtComment.Text);
 
-    if FileTagger.Write(FFilename) then
+    if FileTagger.Write(Language.CurrentLanguage.LCID, FFilename) then
       Close
     else
       MsgBox(Self.Handle, _('The file could not be saved. Please make sure it is not in use and try saving again.'), _('Error'), MB_ICONERROR);

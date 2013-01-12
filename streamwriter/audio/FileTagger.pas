@@ -59,7 +59,7 @@ type
     destructor Destroy; override;
 
     function Read(Filename: string): Boolean;
-    function Write(Filename: string): Boolean;
+    function Write(LCID: Cardinal; Filename: string): Boolean;
 
     property Filename: string read FFilename;
     property Tag: TTagData read FTag;
@@ -263,9 +263,13 @@ begin
   end;
 end;
 
-function TFileTagger.Write(Filename: string): Boolean;
+function TFileTagger.Write(LCID: Cardinal; Filename: string): Boolean;
 var
+  LangCode: array[0..8] of AnsiChar;
+  L: Integer;
+  S: string;
   AG: TAudioGenie3;
+  Ver: TOSVersionInfo;
 begin
   Result := False;
 
@@ -282,6 +286,24 @@ begin
         AG.AUDIOTitleW := FTag.FTitle;
         AG.AUDIOAlbumW := FTag.FAlbum;
         AG.AUDIOCommentW := FTag.FComment;
+
+        // Der Abschnitt hier fügt einen lokalisierten Kommentar hinzu, so dass der Windows-Explorer
+        // ihn in der Eigenschaften-Seite anzeigt ($0067 geht ab Windows Vista).
+        Ver.dwOSVersionInfoSize := SizeOf(Ver);
+        if GetVersionEx(Ver) then
+        begin
+          if Ver.dwMajorVersion = 6 then
+          begin
+            ZeroMemory(@LangCode[0], 9);
+            L := GetLocaleInfoA(LCID, $0067, @LangCode[0], 9);
+            if L > 0 then
+            begin
+              S := LowerCase(LangCode);
+              AG.ID3V2AddCommentW(S, '', FTag.FComment);
+            end;
+          end;
+        end;
+
         AG.AUDIOTrackW := FTag.FTrackNumber;
 
         if AG.AUDIOSaveChangesW then

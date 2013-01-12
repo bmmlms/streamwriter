@@ -29,7 +29,7 @@ uses
   Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls,
   HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging,
   DataManager, DropSource, Types, AudioFunctions, PngSpeedButton,
-  Generics.Collections, TypeDefs, MessageBus, AppMessages;
+  Generics.Collections, TypeDefs, MessageBus, AppMessages, Commands;
 
 type
   TModes = (moShow, moLoading, moError);
@@ -119,6 +119,8 @@ type
     procedure RefreshStreams;
     procedure SwitchMode(Mode: TModes);
 
+    procedure HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
+
     property Mode: TModes read FMode;
     property StreamTree: TMStreamTree read FStreamTree;
   end;
@@ -171,6 +173,8 @@ type
     FItemBlacklist: TMenuItem;
     FItemCopy: TMenuItem;
     FItemSave: TMenuItem;
+
+    FProgressBar: TProgressBar;
 
     FSortPopupMenu: TMStreamTreeHeaderPopup;
     FMode: TModes;
@@ -229,6 +233,7 @@ type
     function GetNodes(SelectedOnly: Boolean): TNodeArray;
     function Build(AlwaysBuild: Boolean; Search, Genre: string; AudioType: TAudioTypes; Bitrate: Cardinal): Boolean;
     procedure ReceiveError;
+    procedure HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
 
     property PopupMenu2: TPopupMenu read FPopupMenu;
     property DraggedStreams: TStreamDataArray read FDraggedStreams;
@@ -358,6 +363,15 @@ begin
 
   FSortPopupMenu := TMStreamTreeHeaderPopup.Create(Self);
   Header.PopupMenu := FSortPopupMenu;
+
+
+  FProgressBar := TProgressBar.Create(Self);
+  FProgressBar.Parent := Self;
+  FProgressBar.Width := 150;
+  FProgressBar.Height := 20;
+  FProgressBar.Visible := False;
+  FProgressBar.Max := 100;
+  FProgressBar.Min := 0;
 end;
 
 function TMStreamTree.CreateItem(Caption: string; ImageIndex: Integer;
@@ -521,6 +535,14 @@ begin
   end;
 end;
 
+procedure TMStreamTree.HomeCommBytesTransferred(
+  CommandHeader: TCommandHeader; Transferred: UInt64);
+begin
+  if FProgressBar.Position < 100 then
+    FProgressBar.Position := FProgressBar.Position + 1;
+  FProgressBar.Position := Trunc((Transferred / CommandHeader.CommandLength) * 100);
+end;
+
 procedure TMStreamTree.InvalidateVisible;
 var
   Node: PVirtualNode;
@@ -632,7 +654,7 @@ begin
 
     R := ClientRect;
     R.Left := (R.Right div 2) - (Size.cx div 2) - 4;
-    R.Top := (R.Bottom div 2) - (Size.cy div 2);
+    R.Top := ClientHeight div 2 - Canvas.TextHeight('Wy');
 
     DrawText(Canvas.Handle, PChar(TmpText), Length(TmpText), R, 0);
   end;
@@ -644,7 +666,7 @@ begin
 
     R := ClientRect;
     R.Left := (R.Right div 2) - (Size.cx div 2) - 4;
-    R.Top := (R.Bottom div 2) - (Size.cy div 2);
+    R.Top := ClientHeight div 2 - Canvas.TextHeight('Wy');
 
     DrawText(Canvas.Handle, PChar(TmpText + FDots), Length(TmpText) + Length(FDots), R, 0);
   end;
@@ -954,7 +976,11 @@ end;
 procedure TMStreamTree.Resize;
 begin
   inherited;
+
   Setup;
+
+  FProgressBar.Left := Trunc(ClientWidth / 2 - FProgressBar.Width / 2);
+  FProgressBar.Top := ClientHeight div 2 - Canvas.TextHeight('Wy') + 15;
 end;
 
 procedure TMStreamTree.Setup;
@@ -986,9 +1012,15 @@ begin
   begin
     Clear;
 
+    FProgressBar.Position := 0;
+    if not FProgressBar.Visible then
+      FProgressBar.Visible := True;
+
     FDots := '';
     FTimer.Enabled := True;
-  end;
+  end else
+    if FProgressBar.Visible then
+      FProgressBar.Visible := False;
 
   FMode := Mode;
 
@@ -1120,6 +1152,12 @@ destructor TMStreamBrowserView.Destroy;
 begin
 
   inherited;
+end;
+
+procedure TMStreamBrowserView.HomeCommBytesTransferred(
+  CommandHeader: TCommandHeader; Transferred: UInt64);
+begin
+  FStreamTree.HomeCommBytesTransferred(CommandHeader, Transferred);
 end;
 
 procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject);
