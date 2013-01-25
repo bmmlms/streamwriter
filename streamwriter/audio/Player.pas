@@ -70,6 +70,7 @@ type
     procedure FSetPosToReach(Value: Cardinal);
     procedure FSetEndPos(Value: Cardinal);
     procedure FSetPositionByte(Value: Cardinal);
+    procedure FSetPositionTime(Value: Double);
   public
     constructor Create;
     destructor Destroy; override;
@@ -88,7 +89,7 @@ type
     property MaxByte: Cardinal read FGetMaxByte;
     property MaxTime: Double read FGetMaxTime;
     property PositionByte: Cardinal read FGetPositionByte write FSetPositionByte;
-    property PositionTime: Double read FGetPositionTime;
+    property PositionTime: Double read FGetPositionTime write FSetPositionTime;
     property PosToReach: Cardinal read FPosToReach write FSetPosToReach;
     property EndPos: Cardinal read FEndPos write FSetEndPos;
     property Tag: TTagData read FTag;
@@ -326,6 +327,14 @@ begin
         FOnEndReached(Self);
     end else
       BASSChannelSetPosition(FPlayer, Value, BASS_POS_BYTE);
+  end;
+end;
+
+procedure TPlayer.FSetPositionTime(Value: Double);
+begin
+  if FPlayer > 0 then
+  begin
+    FSetPositionByte(BASSChannelSeconds2Bytes(FPlayer, FGetMaxTime - 5));
   end;
 end;
 

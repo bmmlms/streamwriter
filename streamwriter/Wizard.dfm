@@ -4,8 +4,8 @@ object frmWizard: TfrmWizard
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Setup wizard'
-  ClientHeight = 569
-  ClientWidth = 547
+  ClientHeight = 365
+  ClientWidth = 401
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText

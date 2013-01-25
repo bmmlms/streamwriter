@@ -394,8 +394,12 @@ begin
   inherited;
   GetSettings;
 
-  if HeaderType = 'icy' then
+  if (HeaderType = 'icy') or (ContentType = 'audio/mpeg') or (ContentType = 'audio/aacp') or
+     (Pos(#10'icy-metaint:', LowerCase(FHeader)) > 0) or (Pos(#10'icy-name:', LowerCase(FHeader)) > 0) then
   begin
+    WriteDebug(_('Audio-data response detected'), 1, 1);
+    FHeaderType := 'icy';
+
     if ResponseCode = 200 then
     begin
       try
@@ -412,7 +416,6 @@ begin
 
       Dir := FSaveDir;
 
-      // ((ContentType = '') and ((FStreamName <> '') or (FStreamURL <> ''))) ist ein Hack für Streams ohne Content-Type...
       if (LowerCase(ContentType) = 'audio/mpeg') or
          ((ContentType = '') and ((FStreamName <> '') or (FStreamURL <> '')))
       then
@@ -433,15 +436,7 @@ begin
       raise Exception.Create(Format(_('Invalid responsecode (%d)'), [ResponseCode]));
   end else if HeaderType = 'http' then
   begin
-    // Wenn wir hier drin sind, müsste es eigentlich eine Playlist sein.
-    // Es gibt aber Stationen (z.B. http://stream.laut.fm/disco), die
-    // bei einem ICY-Stream einen HTTP-Header liefern...
-    if (Pos(#10'icy-metaint:', LowerCase(FHeader)) > 0) or (Pos(#10'icy-name:', LowerCase(FHeader)) > 0) then
-    begin
-      WriteDebug(_('HTTP header detected but icy fields found - treating as icy header'), 1, 1);
-      FHeaderType := 'icy';
-      DoHeaderRemoved;
-    end;
+    WriteDebug(_('HTTP response detected'), 1, 1);
   end else
     raise Exception.Create(_('Unknown header-type'));
 end;

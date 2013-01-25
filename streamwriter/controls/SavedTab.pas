@@ -77,6 +77,7 @@ type
     FItemPause: TMenuItem;
     FItemStop: TMenuItem;
     FItemNext: TMenuItem;
+    FItemPlayLastSecs: TMenuItem;
     FItemCut: TMenuItem;
     FItemEditTags: TMenuItem;
     FItemFinalized: TMenuItem;
@@ -102,6 +103,7 @@ type
     property ItemPause: TMenuItem read FItemPause;
     property ItemStop: TMenuItem read FItemStop;
     property ItemNext: TMenuItem read FItemNext;
+    property ItemPlayLastSecs: TMenuItem read FItemPlayLastSecs;
     property ItemCut: TMenuItem read FItemCut;
     property ItemEditTags: TMenuItem read FItemEditTags;
     property ItemFinalized: TMenuItem read FItemFinalized;
@@ -151,6 +153,7 @@ type
     FPause: TToolButton;
     FStop: TToolButton;
     FNext: TToolButton;
+    FPlayLastSecs: TToolButton;
   public
     constructor Create(AOwner: TComponent); override;
 
@@ -265,7 +268,7 @@ type
     FStreamNode: PVirtualNode;
     FFileNode: PVirtualNode;
     FPattern: string;
-
+    FPlayNext: Boolean;
 
     FOnAction: TTrackActionEvent;
 
@@ -368,7 +371,7 @@ begin
   ItemTmp.Caption := '-';
   Items.Add(ItemTmp);
 
-  FItemPrev := CreateMenuItem;
+  FItemPrev := CreateMenuItem;        // TODO: das hier wird nach sprachwechsel nicht übersetzt. geht nicht clear.
   FItemPrev.Caption := 'Pre&vious';
   FItemPrev.ImageIndex := 79;
   Items.Add(FItemPrev);
@@ -392,6 +395,11 @@ begin
   FItemNext.Caption := '&Next';
   FItemNext.ImageIndex := 78;
   Items.Add(FItemNext);
+
+  FItemPlayLastSecs := CreateMenuItem;
+  FItemPlayLastSecs.Caption := 'P&lay end';
+  FItemPlayLastSecs.ImageIndex := 83;
+  Items.Add(FItemPlayLastSecs);
 
   ItemTmp := CreateMenuItem;
   ItemTmp.Caption := '-';
@@ -973,6 +981,8 @@ begin
     if Assigned(FOnRefresh) then
       FOnRefresh(Self);
 
+  if Sender = FPlayToolbar.FPlayLastSecs then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemPlayLastSecs);
   if Sender = FPlayToolbar.FPrev then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemPrev);
   if Sender = FPlayToolbar.FPlay then
@@ -1050,6 +1060,9 @@ begin
   Tree.FPopupMenu.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing or Tree.FPlayer.Paused, IsFirst, IsLast);
   FToolbar.EnableItems(Length(Tracks) > 0);
   FPlayToolbar.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing or Tree.FPlayer.Paused, IsFirst, IsLast);
+
+  Tree.FPopupMenu.ItemPlayLastSecs.Enabled := Bass.DeviceAvailable and ((Length(Tracks) = 1) or Tree.FPlayer.Playing or Tree.Player.Paused);
+  FPlayToolbar.FPlayLastSecs.Enabled := Bass.DeviceAvailable and ((Length(Tracks) = 1) or Tree.FPlayer.Playing or Tree.Player.Paused);
 
   Tree.FPopupMenu.ItemPlay.Enabled := Bass.DeviceAvailable and (Length(Tracks) = 1);
   FPlayToolbar.FPlay.Enabled := Bass.DeviceAvailable and (Length(Tracks) = 1);
@@ -1195,11 +1208,13 @@ begin
   FPlayToolbar.Parent := FSeekPosPanel;
   FPlayToolbar.Align := alLeft;
   FPlayToolbar.Images := Images;
-  FPlayToolbar.Width := 120;
+  FPlayToolbar.Width := 150;
   FPlayToolbar.Setup;
   FPlayToolbar.Left := 0;
 
   FPosLabel := TLabel.Create(Self);
+  FPosLabel.AutoSize := True;
+  FPosLabel.Alignment := taRightJustify;
   FPosLabel.Caption := '00:00';
   FPosLabel.Parent := FSeekPosPanel;
   FPosLabel.Left := FPlayToolbar.Left + FPlayToolbar.Width + 4;
@@ -1254,6 +1269,7 @@ begin
   FPlayToolBar.FPause.OnClick := ToolBarClick;
   FPlayToolBar.FStop.OnClick := ToolBarClick;
   FPlayToolBar.FNext.OnClick := ToolBarClick;
+  FPlayToolbar.FPlayLastSecs.OnClick := ToolBarClick;
 
   FToolBar.FCut.OnClick := ToolBarClick;
   FToolBar.FEditTags.OnClick := ToolBarClick;
@@ -1280,6 +1296,8 @@ var
 begin
   FSavedTree.Expanded[FSavedTree.FStreamNode] := True;
   FSavedTree.Expanded[FSavedTree.FFileNode] := True;
+
+  FPosLabel.Left := FSeekPosPanel.ClientWidth - FPosLabel.Width - 4;
 
   if FSavedTree.RootNodeCount > 0 then
   begin
@@ -1342,6 +1360,7 @@ begin
 
   FPopupMenu := TSavedTracksPopup.Create(Self);
   FPopupMenu.ItemRefresh.OnClick := PopupMenuClick;
+  FPopupMenu.ItemPlayLastSecs.OnClick := PopupMenuClick;
   FPopupMenu.ItemPrev.OnClick := PopupMenuClick;
   FPopupMenu.ItemPlay.OnClick := PopupMenuClick;
   FPopupMenu.ItemPause.OnClick := PopupMenuClick;
@@ -1599,27 +1618,30 @@ var
 begin
   FPlayer.Stop(True);
 
-  // Nächsten Track in der Liste suchen, der auch in der Ansicht
-  // angezeigt wird. Wenn gefunden, abspielen.
-  PlayedNode := GetNode(Player.Filename);
-  if PlayedNode <> nil then
+  if FPlayNext then
   begin
-    NextNode := GetNext(PlayedNode);
-    if NextNode <> nil then
+    // Nächsten Track in der Liste suchen, der auch in der Ansicht
+    // angezeigt wird. Wenn gefunden, abspielen.
+    PlayedNode := GetNode(Player.Filename);
+    if PlayedNode <> nil then
     begin
-      NodeData := GetNodeData(NextNode);
-      if NodeData.Track <> nil then
+      NextNode := GetNext(PlayedNode);
+      if NextNode <> nil then
       begin
-        try
-          FPlayer.Filename := NodeData.Track.Filename;
-        except
-          Exit;
+        NodeData := GetNodeData(NextNode);
+        if NodeData.Track <> nil then
+        begin
+          try
+            FPlayer.Filename := NodeData.Track.Filename;
+          except
+            Exit;
+          end;
+
+          FPlayer.Play;
+
+          FTab.FSeek.Max := Player.MaxByte;
+          FTab.FSeek.Position := Player.PositionByte;
         end;
-
-        FPlayer.Play;
-
-        FTab.FSeek.Max := Player.MaxByte;
-        FTab.FSeek.Position := Player.PositionByte;
       end;
     end;
   end;
@@ -1721,8 +1743,14 @@ begin
 
   if Sender = FPopupMenu.ItemPrev then
   begin
-    FPlayer.Stop(False);
-    FPlayer.Filename := PrevPlayingTrack.Filename;
+    try
+      FPlayer.Filename := PrevPlayingTrack.Filename;
+    except
+      MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
+      Exit;
+    end;
+
+    FPlayNext := True;
     FTab.FSeek.Max := FPlayer.MaxByte;
     FTab.FSeek.Position := 0;
 
@@ -1751,10 +1779,39 @@ begin
     Exit;
   end else if Sender = FPopupMenu.ItemNext then
   begin
-    FPlayer.Stop(False);
-    FPlayer.Filename := NextPlayingTrack.Filename;
+    try
+      FPlayer.Filename := NextPlayingTrack.Filename;
+    except
+      MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
+      Exit;
+    end;
+
+    FPlayNext := True;
     FTab.FSeek.Max := FPlayer.MaxByte;
     FTab.FSeek.Position := 0;
+
+    if Assigned(FTab.FOnPlayStarted) then
+      FTab.FOnPlayStarted(FTab);
+
+    FPlayer.Play;
+    Exit;
+  end else if Sender = FPopupMenu.ItemPlayLastSecs then
+  begin
+    if (not FPlayer.Paused) and (not FPlayer.Playing) then
+    begin
+      try
+        FPlayer.Filename := Tracks[0].Filename;
+      except
+        MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
+        Exit;
+      end;
+      FPlayer.Volume := Players.Volume;
+      FTab.FSeek.Max := FPlayer.MaxByte;
+    end;
+
+    FPlayNext := False;
+    FPlayer.PositionTime := FPlayer.MaxTime - 5;
+    FTab.FSeek.Position := FPlayer.PositionByte;
 
     if Assigned(FTab.FOnPlayStarted) then
       FTab.FOnPlayStarted(FTab);
@@ -1772,6 +1829,7 @@ begin
     Action := taRefresh
   else if Sender = FPopupMenu.ItemPlay then
   begin
+    FPlayNext := True;
     FPlayer.Volume := Players.Volume;
 
     if FPlayer.Paused then
@@ -1782,14 +1840,11 @@ begin
       FPlayer.Play;
     end else
     begin
-      if not FPlayer.Paused then
-      begin
-        try
-          FPlayer.Filename := Tracks[0].Filename;
-        except
-          MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
-          Exit;
-        end;
+      try
+        FPlayer.Filename := Tracks[0].Filename;
+      except
+        MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
+        Exit;
       end;
 
       FTab.FSeek.Max := FPlayer.MaxByte;
@@ -2700,7 +2755,19 @@ begin
 end;
 
 procedure TPlayToolBar.Setup;
+var
+  Sep: TToolButton;
 begin
+  FPlayLastSecs := TToolButton.Create(Self);
+  FPlayLastSecs.Parent := Self;
+  FPlayLastSecs.Hint := 'Play end';
+  FPlayLastSecs.ImageIndex := 83;
+
+  Sep := TToolButton.Create(Self);
+  Sep.Style := tbsSeparator;
+  Sep.Parent := Self;
+  Sep.Width := 8;
+
   FNext := TToolButton.Create(Self);
   FNext.Parent := Self;
   FNext.Hint := 'Next';

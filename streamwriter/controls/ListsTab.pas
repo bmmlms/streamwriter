@@ -50,6 +50,7 @@ type
     FRemove: TMenuItem;
     FRename: TMenuItem;
     FSelectSaved: TMenuItem;
+    FSelectIgnored: TMenuItem;
     FExport: TMenuItem;
     FImport: TMenuItem;
   protected
@@ -65,10 +66,10 @@ type
     FAdd: TToolButton;
     FRename: TToolButton;
     FRemove: TToolButton;
-    FSep: TToolButton;
+    FSelectSaved: TToolButton;
+    FSelectIgnored: TToolButton;
     FExport: TToolButton;
     FImport: TToolButton;
-    FSelectSaved: TToolButton;
   public
     constructor Create(AOwner: TComponent); override;
 
@@ -101,6 +102,7 @@ type
     procedure ExportClick(Sender: TObject);
     procedure ImportClick(Sender: TObject);
     procedure SelectSavedClick(Sender: TObject);
+    procedure SelectIgnoredClick(Sender: TObject);
     procedure RenameClick(Sender: TObject);
     procedure AddEditKeyPress(Sender: TObject; var Key: Char);
     procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
@@ -681,6 +683,51 @@ begin
   BuildTree(True);
 end;
 
+procedure TTitlePanel.SelectIgnoredClick(Sender: TObject);
+var
+  i: Integer;
+  WishNode, IgnoreNode: PVirtualNode;
+  WishNodeData, IgnoreNodeData: PTitleNodeData;
+begin
+  WishNode := FTree.GetFirst;
+  while WishNode <> nil do
+  begin
+    FTree.Selected[WishNode] := False;
+    WishNode := FTree.GetNext(WishNode);
+  end;
+
+  WishNode := FTree.GetFirstChild(FTree.FWishNode);
+  while WishNode <> nil do
+  begin
+    WishNodeData := FTree.GetNodeData(WishNode);
+    if WishNodeData.NodeType <> ntWish then
+      Break;
+
+    FTree.Selected[WishNode] := False;
+
+    if WishNodeData.NodeType = ntWish then
+    begin
+      IgnoreNode := FTree.GetFirstChild(FTree.FIgnoreNode);
+      while IgnoreNode <> nil do
+      begin
+        IgnoreNodeData := FTree.GetNodeData(IgnoreNode);
+
+        if IgnoreNodeData.NodeType = ntIgnore then
+        begin
+          if Like(IgnoreNodeData.Title.Title, WishNodeData.Title.Pattern) then
+            FTree.Selected[WishNode] := True;
+        end;
+
+        IgnoreNode := FTree.GetNext(IgnoreNode);
+      end;
+    end;
+
+    FTree.SetFocus;
+
+    WishNode := FTree.GetNext(WishNode);
+  end;
+end;
+
 procedure TTitlePanel.SelectSavedClick(Sender: TObject);
 var
   i: Integer;
@@ -774,6 +821,7 @@ begin
   FToolbar.FExport.OnClick := ExportClick;
   FToolbar.FImport.OnClick := ImportClick;
   FToolbar.FSelectSaved.OnClick := SelectSavedClick;
+  FToolbar.FSelectIgnored.OnClick := SelectIgnoredClick;
   FToolbar.FRename.OnClick := RenameClick;
 
   FTopPanel.ClientHeight := FToolbarPanel.Height;
@@ -1018,6 +1066,8 @@ begin
 end;
 
 procedure TTitleToolbar.Setup;
+var
+  Sep: TToolButton;
 begin
   FImport := TToolButton.Create(Self);
   FImport.Parent := Self;
@@ -1029,15 +1079,25 @@ begin
   FExport.Hint := 'Export...';
   FExport.ImageIndex := 35;
 
-  FSep := TToolButton.Create(Self);
-  FSep.Parent := Self;
-  FSep.Style := tbsSeparator;
-  FSep.Width := 8;
+  Sep := TToolButton.Create(Self);
+  Sep.Parent := Self;
+  Sep.Style := tbsSeparator;
+  Sep.Width := 8;
+
+  FSelectIgnored := TToolButton.Create(Self);
+  FSelectIgnored.Parent := Self;
+  FSelectIgnored.Hint := 'Select ignored titles';
+  FSelectIgnored.ImageIndex := 84;
 
   FSelectSaved := TToolButton.Create(Self);
   FSelectSaved.Parent := Self;
-  FSelectSaved.Hint := 'Select saved (by pattern)';
+  FSelectSaved.Hint := 'Select saved titles (by pattern)';
   FSelectSaved.ImageIndex := 70;
+
+  Sep := TToolButton.Create(Self);
+  Sep.Parent := Self;
+  Sep.Style := tbsSeparator;
+  Sep.Width := 8;
 
   FRemove := TToolButton.Create(Self);
   FRemove.Parent := Self;
@@ -1049,10 +1109,10 @@ begin
   FRename.Hint := 'Rename';
   FRename.ImageIndex := 74;
 
-  FSep := TToolButton.Create(Self);
-  FSep.Parent := Self;
-  FSep.Style := tbsSeparator;
-  FSep.Width := 8;
+  Sep := TToolButton.Create(Self);
+  Sep.Parent := Self;
+  Sep.Style := tbsSeparator;
+  Sep.Width := 8;
 
   FAdd := TToolButton.Create(Self);
   FAdd.Parent := Self;
@@ -1181,6 +1241,7 @@ begin
   FPopupMenu.FRemove.OnClick := PopupMenuClick;
   FPopupMenu.FRename.OnClick := PopupMenuClick;
   FPopupMenu.FSelectSaved.OnClick := PopupMenuClick;
+  FPopupMenu.FSelectIgnored.OnClick := PopupMenuClick;
   FPopupMenu.FExport.OnClick := PopupMenuClick;
   FPopupMenu.FImport.OnClick := PopupMenuClick;
 
@@ -1370,6 +1431,8 @@ begin
     TTitlePanel(Owner).FToolbar.FRename.Click
   else if Sender = FPopupMenu.FSelectSaved then
     TTitlePanel(Owner).FToolbar.FSelectSaved.Click
+  else if Sender = FPopupMenu.FSelectIgnored then
+    TTitlePanel(Owner).FToolbar.FSelectIgnored.Click
   else if Sender = FPopupMenu.FExport then
     TTitlePanel(Owner).FToolbar.FExport.Click
   else if Sender = FPopupMenu.FImport then
@@ -1648,10 +1711,19 @@ begin
   FRemove.ImageIndex := 2;
   Items.Add(FRemove);
 
+  Sep := CreateMenuItem;
+  Sep.Caption := '-';
+  Items.Add(Sep);
+
   FSelectSaved := CreateMenuItem;
-  FSelectSaved.Caption := 'Select saved (by pattern)';
+  FSelectSaved.Caption := '&Select saved titles (by pattern)';
   FSelectSaved.ImageIndex := 70;
   Items.Add(FSelectSaved);
+
+  FSelectIgnored := CreateMenuItem;
+  FSelectIgnored.Caption := 'Se&lect ignored titles';
+  FSelectIgnored.ImageIndex := 84;
+  Items.Add(FSelectIgnored);
 
   Sep := CreateMenuItem;
   Sep.Caption := '-';
