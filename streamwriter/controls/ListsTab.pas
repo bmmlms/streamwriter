@@ -714,8 +714,8 @@ begin
 
         if IgnoreNodeData.NodeType = ntIgnore then
         begin
-          if Like(IgnoreNodeData.Title.Title, WishNodeData.Title.Pattern) then
-            FTree.Selected[WishNode] := True;
+          if Like(WishNodeData.Title.Title, IgnoreNodeData.Title.Pattern) then
+            FTree.Selected[WishNode] := True
         end;
 
         IgnoreNode := FTree.GetNext(IgnoreNode);
