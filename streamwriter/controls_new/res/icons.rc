@@ -1,0 +1,2 @@
+VOLUME RCDATA ".\\png\\speaker-volume.png"
+VOLUME_MUTED RCDATA ".\\png\\speaker-volume-control-mute.png"

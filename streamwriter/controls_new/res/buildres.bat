@@ -1,0 +1,1 @@
+rc.exe icons.rc
