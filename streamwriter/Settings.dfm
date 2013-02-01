@@ -4,15 +4,14 @@ object frmSettings: TfrmSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Settings'
-  ClientHeight = 765
-  ClientWidth = 1201
+  ClientHeight = 470
+  ClientWidth = 620
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
-  Font.Name = 'MS Sans Serif'
+  Font.Name = 'Tahoma'
   Font.Style = []
-  FormStyle = fsStayOnTop
   KeyPreview = True
   OldCreateOrder = False
   Position = poOwnerFormCenter
@@ -25,20 +24,20 @@ object frmSettings: TfrmSettings
     Left = 304
     Top = 4
     Width = 293
-    Height = 361
+    Height = 325
     TabOrder = 0
     Visible = False
     DesignSize = (
       293
-      361)
+      325)
     object lblDefaultFilter: TLabel
       Left = 4
-      Top = 320
-      Width = 24
+      Top = 284
+      Width = 25
       Height = 13
       Anchors = [akLeft, akRight, akBottom]
       Caption = 'Lists:'
-      ExplicitTop = 336
+      ExplicitTop = 288
     end
     object btnBrowse: TSpeedButton
       Left = 264
@@ -68,7 +67,7 @@ object frmSettings: TfrmSettings
     end
     object chkDeleteStreams: TCheckBox
       Left = 4
-      Top = 168
+      Top = 156
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -78,7 +77,7 @@ object frmSettings: TfrmSettings
     end
     object chkAddSavedToIgnore: TCheckBox
       Left = 4
-      Top = 192
+      Top = 176
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -88,7 +87,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultFilter: TComboBox
       Left = 4
-      Top = 336
+      Top = 300
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -105,7 +104,7 @@ object frmSettings: TfrmSettings
     end
     object chkSeparateTracks: TCheckBox
       Left = 4
-      Top = 120
+      Top = 116
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -125,7 +124,7 @@ object frmSettings: TfrmSettings
     end
     object chkOnlySaveFull: TCheckBox
       Left = 20
-      Top = 144
+      Top = 136
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -135,7 +134,7 @@ object frmSettings: TfrmSettings
     end
     object chkOverwriteSmaller: TCheckBox
       Left = 4
-      Top = 264
+      Top = 236
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -145,7 +144,7 @@ object frmSettings: TfrmSettings
     end
     object chkDiscardSmaller: TCheckBox
       Left = 4
-      Top = 288
+      Top = 256
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -160,7 +159,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
-      EditLabel.Width = 110
+      EditLabel.Width = 114
       EditLabel.Height = 13
       EditLabel.Caption = 'Folder for saved songs:'
       TabOrder = 8
@@ -172,14 +171,14 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
-      EditLabel.Width = 174
+      EditLabel.Width = 180
       EditLabel.Height = 13
       EditLabel.Caption = 'Folder for automatically saved songs:'
       TabOrder = 9
     end
     object chkAddSavedToStreamIgnore: TCheckBox
       Left = 4
-      Top = 216
+      Top = 196
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -189,7 +188,7 @@ object frmSettings: TfrmSettings
     end
     object chkRemoveSavedFromWishlist: TCheckBox
       Left = 4
-      Top = 240
+      Top = 216
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -202,40 +201,38 @@ object frmSettings: TfrmSettings
     Left = 4
     Top = 4
     Width = 293
-    Height = 421
+    Height = 353
     TabOrder = 1
     Visible = False
     DesignSize = (
       293
-      421)
+      353)
     object Label7: TLabel
       Left = 56
-      Top = 216
-      Width = 15
+      Top = 196
+      Width = 13
       Height = 13
       Caption = 'GB'
     end
     object Label3: TLabel
       Left = 4
-      Top = 332
-      Width = 190
+      Top = 268
+      Width = 191
       Height = 13
       Anchors = [akLeft, akBottom]
       Caption = 'Default action on doubleclick on stream:'
-      ExplicitTop = 252
     end
     object Label18: TLabel
       Left = 4
-      Top = 380
-      Width = 192
+      Top = 312
+      Width = 193
       Height = 13
       Anchors = [akLeft, akBottom]
       Caption = 'Default action on doubleclick in browser:'
-      ExplicitTop = 300
     end
     object btnBrowseLogFile: TSpeedButton
       Left = 264
-      Top = 256
+      Top = 236
       Width = 25
       Height = 21
       Hint = 'Browse...'
@@ -276,7 +273,7 @@ object frmSettings: TfrmSettings
       Left = 4
       Top = 0
       Width = 281
-      Height = 22
+      Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Move to notification area...'
       TabOrder = 0
@@ -284,10 +281,10 @@ object frmSettings: TfrmSettings
     end
     object txtMinDiskSpace: TLabeledEdit
       Left = 4
-      Top = 212
+      Top = 192
       Width = 49
       Height = 21
-      EditLabel.Width = 205
+      EditLabel.Width = 208
       EditLabel.Height = 13
       EditLabel.Caption = 'Stop recording when free space gets below'
       MaxLength = 3
@@ -296,7 +293,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultAction: TComboBox
       Left = 4
-      Top = 348
+      Top = 284
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -328,7 +325,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultActionBrowser: TComboBox
       Left = 4
-      Top = 396
+      Top = 328
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -342,7 +339,7 @@ object frmSettings: TfrmSettings
     end
     object chkSnapMain: TCheckBox
       Left = 4
-      Top = 72
+      Top = 68
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -351,7 +348,7 @@ object frmSettings: TfrmSettings
     end
     object chkRememberRecordings: TCheckBox
       Left = 4
-      Top = 96
+      Top = 88
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -360,7 +357,7 @@ object frmSettings: TfrmSettings
     end
     object chkDisplayPlayNotifications: TCheckBox
       Left = 4
-      Top = 144
+      Top = 128
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -369,7 +366,7 @@ object frmSettings: TfrmSettings
     end
     object chkShowSplashScreen: TCheckBox
       Left = 4
-      Top = 168
+      Top = 148
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -378,7 +375,7 @@ object frmSettings: TfrmSettings
     end
     object chkDisplayPlayedSong: TCheckBox
       Left = 4
-      Top = 120
+      Top = 108
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -387,12 +384,12 @@ object frmSettings: TfrmSettings
     end
     object txtLogFile: TLabeledEdit
       Left = 4
-      Top = 256
+      Top = 236
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
-      EditLabel.Width = 34
+      EditLabel.Width = 35
       EditLabel.Height = 13
       EditLabel.Caption = 'Logfile:'
       TabOrder = 11
@@ -408,14 +405,14 @@ object frmSettings: TfrmSettings
     object Label1: TLabel
       Left = 56
       Top = 68
-      Width = 40
+      Width = 39
       Height = 13
       Caption = 'seconds'
     end
     object lblSoundDevice: TLabel
       Left = 4
       Top = 92
-      Width = 69
+      Width = 68
       Height = 13
       Caption = 'Sound device:'
     end
@@ -424,7 +421,7 @@ object frmSettings: TfrmSettings
       Top = 20
       Width = 49
       Height = 21
-      EditLabel.Width = 210
+      EditLabel.Width = 222
       EditLabel.Height = 13
       EditLabel.Caption = 'Max. connect retries on error (zero is infinite):'
       MaxLength = 3
@@ -437,7 +434,7 @@ object frmSettings: TfrmSettings
       Top = 64
       Width = 49
       Height = 21
-      EditLabel.Width = 101
+      EditLabel.Width = 105
       EditLabel.Height = 13
       EditLabel.Caption = 'Time between retries:'
       MaxLength = 3
@@ -456,7 +453,7 @@ object frmSettings: TfrmSettings
   end
   object pnlPostProcess: TPanel
     Left = 304
-    Top = 372
+    Top = 336
     Width = 294
     Height = 349
     TabOrder = 3
@@ -533,7 +530,7 @@ object frmSettings: TfrmSettings
     object lblOutputFormat: TLabel
       Left = 4
       Top = 4
-      Width = 164
+      Width = 172
       Height = 13
       Caption = 'Format to convert recorded files to:'
     end
@@ -594,7 +591,7 @@ object frmSettings: TfrmSettings
       Left = 96
       Top = 160
       Width = 93
-      Height = 25
+      Height = 27
       Anchors = [akRight, akBottom]
       Caption = '&Add...'
       TabOrder = 1
@@ -604,7 +601,7 @@ object frmSettings: TfrmSettings
       Left = 196
       Top = 160
       Width = 93
-      Height = 25
+      Height = 27
       Anchors = [akRight, akBottom]
       Caption = '&Remove'
       Enabled = False
@@ -619,7 +616,7 @@ object frmSettings: TfrmSettings
       Anchors = [akLeft, akRight, akBottom]
       AutoSize = False
       Color = 15790320
-      EditLabel.Width = 91
+      EditLabel.Width = 93
       EditLabel.Height = 13
       EditLabel.Caption = 'Path to application:'
       Enabled = False
@@ -632,7 +629,7 @@ object frmSettings: TfrmSettings
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
-      EditLabel.Width = 56
+      EditLabel.Width = 59
       EditLabel.Height = 13
       EditLabel.Caption = 'Parameters:'
       Enabled = False
@@ -653,7 +650,7 @@ object frmSettings: TfrmSettings
       Left = 4
       Top = 160
       Width = 93
-      Height = 25
+      Height = 27
       Anchors = [akLeft, akBottom]
       Caption = '&Configure...'
       TabOrder = 6
@@ -688,42 +685,42 @@ object frmSettings: TfrmSettings
     object Label4: TLabel
       Left = 56
       Top = 48
-      Width = 40
+      Width = 39
       Height = 13
       Caption = 'seconds'
     end
     object Label5: TLabel
       Left = 56
       Top = 240
-      Width = 56
+      Width = 55
       Height = 13
       Caption = 'milliseconds'
     end
     object Label10: TLabel
       Left = 36
       Top = 148
-      Width = 186
+      Width = 188
       Height = 13
       Caption = 'Silence is defined by volume lower than'
     end
     object Label12: TLabel
       Left = 36
       Top = 192
-      Width = 30
+      Width = 31
       Height = 13
       Caption = 'lasting'
     end
     object Label13: TLabel
-      Left = 164
+      Left = 160
       Top = 192
-      Width = 56
+      Width = 59
       Height = 13
       Caption = 'ms (min. 20)'
     end
     object Label14: TLabel
-      Left = 124
+      Left = 120
       Top = 168
-      Width = 33
+      Width = 36
       Height = 13
       Caption = '(1-100)'
     end
@@ -738,14 +735,14 @@ object frmSettings: TfrmSettings
     object Label6: TLabel
       Left = 20
       Top = 100
-      Width = 59
+      Width = 61
       Height = 13
       Caption = 'in a range of'
     end
     object Label15: TLabel
       Left = 164
       Top = 100
-      Width = 40
+      Width = 39
       Height = 13
       Caption = 'seconds'
     end
@@ -754,7 +751,7 @@ object frmSettings: TfrmSettings
       Top = 236
       Width = 49
       Height = 21
-      EditLabel.Width = 242
+      EditLabel.Width = 252
       EditLabel.Height = 13
       EditLabel.Caption = 'If no silence was found, append buffer to start/end:'
       MaxLength = 5
@@ -767,7 +764,7 @@ object frmSettings: TfrmSettings
       Top = 44
       Width = 49
       Height = 21
-      EditLabel.Width = 129
+      EditLabel.Width = 134
       EditLabel.Height = 13
       EditLabel.Caption = 'Ads to skip are shorter than'
       MaxLength = 3
@@ -816,7 +813,7 @@ object frmSettings: TfrmSettings
       OnChange = txtSilenceLengthChange
     end
     object txtSilenceBufferSeconds: TEdit
-      Left = 88
+      Left = 92
       Top = 96
       Width = 69
       Height = 21
@@ -840,7 +837,7 @@ object frmSettings: TfrmSettings
       Top = 292
       Width = 61
       Height = 21
-      EditLabel.Width = 56
+      EditLabel.Width = 55
       EditLabel.Height = 13
       EditLabel.Caption = 'milliseconds'
       Enabled = False
@@ -898,11 +895,10 @@ object frmSettings: TfrmSettings
     object Label9: TLabel
       Left = 4
       Top = 40
-      Width = 37
+      Width = 38
       Height = 13
       Anchors = [akLeft, akBottom]
       Caption = 'Hotkey:'
-      ExplicitTop = 104
     end
     object lstHotkeys: TListView
       Left = 4
@@ -940,23 +936,23 @@ object frmSettings: TfrmSettings
     Left = 904
     Top = 4
     Width = 293
-    Height = 189
+    Height = 181
     TabOrder = 6
     Visible = False
     DesignSize = (
       293
-      189)
+      181)
     object Label16: TLabel
       Left = 20
-      Top = 100
-      Width = 77
+      Top = 88
+      Width = 79
       Height = 13
       Caption = 'Minimum quality:'
     end
     object Label17: TLabel
       Left = 20
-      Top = 144
-      Width = 35
+      Top = 136
+      Width = 38
       Height = 13
       Caption = 'Format:'
     end
@@ -972,7 +968,7 @@ object frmSettings: TfrmSettings
     end
     object lstMinQuality: TComboBox
       Left = 20
-      Top = 116
+      Top = 104
       Width = 129
       Height = 21
       Style = csDropDownList
@@ -984,7 +980,7 @@ object frmSettings: TfrmSettings
     end
     object lstFormat: TComboBox
       Left = 20
-      Top = 160
+      Top = 152
       Width = 129
       Height = 21
       Style = csDropDownList
@@ -996,7 +992,7 @@ object frmSettings: TfrmSettings
     end
     object chkAutoTuneInConsiderIgnore: TCheckBox
       Left = 20
-      Top = 24
+      Top = 20
       Width = 268
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1006,7 +1002,7 @@ object frmSettings: TfrmSettings
     end
     object chkAutoTuneInAddToIgnore: TCheckBox
       Left = 20
-      Top = 48
+      Top = 40
       Width = 269
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1015,7 +1011,7 @@ object frmSettings: TfrmSettings
     end
     object chkAutoRemoveSavedFromWishlist: TCheckBox
       Left = 20
-      Top = 72
+      Top = 60
       Width = 269
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1198,7 +1194,7 @@ object frmSettings: TfrmSettings
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 241
+      EditLabel.Width = 250
       EditLabel.Height = 13
       EditLabel.Caption = 'Pattern for filenames of completely recorded tracks:'
       TabOrder = 0
@@ -1212,7 +1208,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Color = 15790320
-      EditLabel.Width = 135
+      EditLabel.Width = 141
       EditLabel.Height = 13
       EditLabel.Caption = 'Preview for selected pattern:'
       ReadOnly = True
@@ -1224,7 +1220,7 @@ object frmSettings: TfrmSettings
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 249
+      EditLabel.Width = 258
       EditLabel.Height = 13
       EditLabel.Caption = 'Pattern for filenames of incompletely recorded tracks:'
       TabOrder = 2
@@ -1237,7 +1233,7 @@ object frmSettings: TfrmSettings
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 318
+      EditLabel.Width = 333
       EditLabel.Height = 13
       EditLabel.Caption = 
         'Pattern for filenames of automatically recorded tracks (%n is in' +
@@ -1252,7 +1248,7 @@ object frmSettings: TfrmSettings
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 331
+      EditLabel.Width = 363
       EditLabel.Height = 13
       EditLabel.Caption = 
         'Pattern for filenames of stream files (%a, %t, %l, %u and %n are' +
@@ -1265,7 +1261,7 @@ object frmSettings: TfrmSettings
   end
   object pnlCommunityBlacklist: TPanel
     Left = 4
-    Top = 612
+    Top = 544
     Width = 293
     Height = 69
     TabOrder = 8
@@ -1276,7 +1272,7 @@ object frmSettings: TfrmSettings
     object Label19: TLabel
       Left = 4
       Top = 4
-      Width = 256
+      Width = 266
       Height = 13
       Caption = 'Do not automatically record from the following streams:'
     end
@@ -1291,9 +1287,9 @@ object frmSettings: TfrmSettings
     end
     object btnBlacklistRemove: TButton
       Left = 196
-      Top = 44
+      Top = 40
       Width = 93
-      Height = 25
+      Height = 27
       Anchors = [akRight, akBottom]
       Caption = '&Remove'
       Enabled = False
@@ -1365,7 +1361,7 @@ object frmSettings: TfrmSettings
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 434
+      EditLabel.Width = 448
       EditLabel.Height = 13
       EditLabel.Caption = 
         'Regular expression to detect artist/title/album (only change if ' +
@@ -1395,9 +1391,9 @@ object frmSettings: TfrmSettings
     end
     object btnRemoveIgnoreTitlePattern: TButton
       Left = 196
-      Top = 180
+      Top = 176
       Width = 93
-      Height = 25
+      Height = 27
       Anchors = [akRight, akBottom]
       Caption = '&Remove'
       Enabled = False
@@ -1406,9 +1402,9 @@ object frmSettings: TfrmSettings
     end
     object btnAddIgnoreTitlePattern: TButton
       Left = 100
-      Top = 180
+      Top = 176
       Width = 93
-      Height = 25
+      Height = 27
       Anchors = [akRight, akBottom]
       Caption = '&Add'
       Enabled = False
@@ -1421,7 +1417,7 @@ object frmSettings: TfrmSettings
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
-      EditLabel.Width = 174
+      EditLabel.Width = 183
       EditLabel.Height = 13
       EditLabel.Caption = 'Pattern to ignore (use '#39'*'#39' as wildcard):'
       TabOrder = 4
@@ -1430,7 +1426,7 @@ object frmSettings: TfrmSettings
   end
   object pnlBandwidth: TPanel
     Left = 4
-    Top = 688
+    Top = 620
     Width = 293
     Height = 69
     TabOrder = 10
@@ -1441,7 +1437,7 @@ object frmSettings: TfrmSettings
     object Label11: TLabel
       Left = 76
       Top = 44
-      Width = 24
+      Width = 21
       Height = 13
       Caption = 'KB/s'
     end
@@ -1450,7 +1446,7 @@ object frmSettings: TfrmSettings
       Top = 40
       Width = 53
       Height = 21
-      EditLabel.Width = 218
+      EditLabel.Width = 225
       EditLabel.Height = 13
       EditLabel.Caption = 'Maximum bandwidth available to streamWriter:'
       Enabled = False
@@ -1471,7 +1467,7 @@ object frmSettings: TfrmSettings
   end
   object pnlFilenamesExt: TPanel
     Left = 4
-    Top = 476
+    Top = 408
     Width = 293
     Height = 129
     TabOrder = 11
@@ -1521,7 +1517,7 @@ object frmSettings: TfrmSettings
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 228
+      EditLabel.Width = 234
       EditLabel.Height = 13
       EditLabel.Caption = 'Remove the following characters from filenames:'
       TabOrder = 0
@@ -1532,7 +1528,7 @@ object frmSettings: TfrmSettings
       Top = 20
       Width = 41
       Height = 21
-      EditLabel.Width = 212
+      EditLabel.Width = 215
       EditLabel.Height = 13
       EditLabel.Caption = 'Minimum count of decimals for tracknumbers:'
       MaxLength = 1
@@ -1553,7 +1549,7 @@ object frmSettings: TfrmSettings
   end
   object pnlAddons: TPanel
     Left = 4
-    Top = 432
+    Top = 364
     Width = 293
     Height = 37
     TabOrder = 12

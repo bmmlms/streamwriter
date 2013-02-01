@@ -28,7 +28,8 @@ uses
   Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, DataManager,
   ImgList, Functions, GUIFunctions, Menus, Math, DragDrop, DropComboTarget,
   Dialogs, MsgDlg, Forms, Logging, AppData, HomeCommunication, ICEClient,
-  ClientManager, Generics.Collections, TypeDefs, MessageBus, AppMessages;
+  ClientManager, Generics.Collections, TypeDefs, MessageBus, AppMessages,
+  Graphics, MistakeRun1;
 
 type
   TTitleTree = class;
@@ -45,7 +46,7 @@ type
 
   TTitleDataArray = array of PTitleNodeData;
 
-  TTitlePopup = class(TPopupMenu)
+  TTitlePopup = class(TMPopupMenu)
   private
     FRemove: TMenuItem;
     FRename: TMenuItem;
@@ -170,6 +171,8 @@ type
     procedure DoFreeNode(Node: PVirtualNode); override;
     procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; Text: UnicodeString); override;
     procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
+    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
+      var NodeHeight: Integer); override;
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists; Images: TImageList); reintroduce;
     destructor Destroy; override;
@@ -1208,6 +1211,8 @@ begin
   FPanel := TTitlePanel(AOwner);
   FLists := Lists;
 
+  Header.Height := GetTextSize('Wyg', Font).cy + 5;
+
   NodeDataSize := SizeOf(TTitleNodeData);
   IncrementalSearch := isVisibleOnly;
   Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
@@ -1588,6 +1593,14 @@ begin
     Result := StrLIComp(PChar(s), PChar(NodeData.Title.Title), Min(Length(s), Length(NodeData.Title.Title)))
   else
     Result := StrLIComp(PChar(s), PChar(NodeData.Stream.Entry.Name), Min(Length(s), Length(NodeData.Stream.Entry.Name)))
+end;
+
+procedure TTitleTree.DoMeasureItem(TargetCanvas: TCanvas;
+  Node: PVirtualNode; var NodeHeight: Integer);
+begin
+  inherited;
+
+  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
 end;
 
 procedure TTitleTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex;

@@ -26,7 +26,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ComCtrls, StdCtrls, Mask, Buttons, ExtCtrls, LanguageObjects,
   VirtualTrees, AppData, Functions, DateUtils, Logging, DataManager,
-  PowerManagement;
+  PowerManagement, GUIFunctions;
 
 type
   TScheduleTreeNodeData = record
@@ -41,6 +41,8 @@ type
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: string); override;
     procedure DoChecked(Node: PVirtualNode); override;
+    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
+      var NodeHeight: Integer); override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
 
@@ -378,6 +380,8 @@ begin
 
   NodeDataSize := SizeOf(TScheduleTreeNodeData);
 
+  Header.Height := GetTextSize('Wyg', Font).cy + 5;
+
   TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toCheckSupport];
   TreeOptions.SelectionOptions := [toMultiSelect, toFullRowSelect];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect] - [toShowTreeLines];
@@ -455,6 +459,14 @@ begin
         else
           Text := _('No');
     end;
+end;
+
+procedure TScheduleTree.DoMeasureItem(TargetCanvas: TCanvas;
+  Node: PVirtualNode; var NodeHeight: Integer);
+begin
+  inherited;
+
+  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
 end;
 
 procedure TScheduleTree.Resize;

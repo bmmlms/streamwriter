@@ -24,6 +24,12 @@
 			<Projects Include="addon\addon_sox\addon_sox.dproj">
 				<Dependencies/>
 			</Projects>
+			<Projects Include="streamwriter\controls_new\MistakeDesign.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="streamwriter\controls_new\MistakeRun.dproj">
+				<Dependencies/>
+			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -95,14 +101,32 @@
 		<Target Name="addon_sox:Make">
 			<MSBuild Projects="addon\addon_sox\addon_sox.dproj" Targets="Make"/>
 		</Target>
+		<Target Name="MistakeDesign">
+			<MSBuild Projects="streamwriter\controls_new\MistakeDesign.dproj"/>
+		</Target>
+		<Target Name="MistakeDesign:Clean">
+			<MSBuild Projects="streamwriter\controls_new\MistakeDesign.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="MistakeDesign:Make">
+			<MSBuild Projects="streamwriter\controls_new\MistakeDesign.dproj" Targets="Make"/>
+		</Target>
+		<Target Name="MistakeRun">
+			<MSBuild Projects="streamwriter\controls_new\MistakeRun.dproj"/>
+		</Target>
+		<Target Name="MistakeRun:Clean">
+			<MSBuild Projects="streamwriter\controls_new\MistakeRun.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="MistakeRun:Make">
+			<MSBuild Projects="streamwriter\controls_new\MistakeRun.dproj" Targets="Make"/>
+		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="streamwriter;addon_audiogenie;addon_faac;addon_lame;addon_mp4box;addon_oggenc;addon_sox"/>
+			<CallTarget Targets="streamwriter;addon_audiogenie;addon_faac;addon_lame;addon_mp4box;addon_oggenc;addon_sox;MistakeDesign;MistakeRun"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="streamwriter:Clean;addon_audiogenie:Clean;addon_faac:Clean;addon_lame:Clean;addon_mp4box:Clean;addon_oggenc:Clean;addon_sox:Clean"/>
+			<CallTarget Targets="streamwriter:Clean;addon_audiogenie:Clean;addon_faac:Clean;addon_lame:Clean;addon_mp4box:Clean;addon_oggenc:Clean;addon_sox:Clean;MistakeDesign:Clean;MistakeRun:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="streamwriter:Make;addon_audiogenie:Make;addon_faac:Make;addon_lame:Make;addon_mp4box:Make;addon_oggenc:Make;addon_sox:Make"/>
+			<CallTarget Targets="streamwriter:Make;addon_audiogenie:Make;addon_faac:Make;addon_lame:Make;addon_mp4box:Make;addon_oggenc:Make;addon_sox:Make;MistakeDesign:Make;MistakeRun:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>

@@ -25,7 +25,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, ComCtrls, AppData,
-  Functions, LanguageObjects, CommCtrl;
+  Functions, LanguageObjects, CommCtrl, GUIFunctions, Forms;
 
 type
   THomeConnectionState = (cshUndefined, cshConnected, cshDisconnected, cshFail);
@@ -42,6 +42,7 @@ type
     FCurrentReceived: UInt64;
     FOverallReceived: UInt64;
     FLastPos: Integer;
+    FSpace: Integer;
 
     FSpeedBmp: TBitmap;
     IconConnected, IconDisconnected: TIcon;
@@ -82,9 +83,10 @@ var
 begin
   NewBmp := TBitmap.Create;
   NewBmp.Width := 35;
-  NewBmp.Height := 15;
+  NewBmp.Height := ClientHeight - 4;
   NewBmp.Canvas.Pen.Width := 1;
   NewBmp.Canvas.Brush.Color := clBtnFace;
+  NewBmp.Canvas.Pen.Color := clBlack;
   NewBmp.Canvas.FillRect(Rect(0, 0, NewBmp.Width, NewBmp.Height));
 
   if FSpeedBmp <> nil then
@@ -110,32 +112,40 @@ begin
   FSpeedBmp.Canvas.MoveTo(FSpeedBmp.Width - 1, FSpeedBmp.Height - P);
   FSpeedBmp.Canvas.LineTo(FSpeedBmp.Width - 1, FSpeedBmp.Height);
 
-
-  if P > 9 then
+  if MulDiv(P, 100, FSpeedBmp.Height) >= 65 then
   begin
-    FSpeedBmp.Canvas.Pixels[FSpeedBmp.Width - 1, FSpeedBmp.Height - 11] := HTML2Color('4b1616');
+    FSpeedBmp.Canvas.Brush.Color := HTML2Color('4b1616');
+    FSpeedBmp.Canvas.Pen.Color := HTML2Color('4b1616');
+    FSpeedBmp.Canvas.FillRect(Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(75, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(65, FSpeedBmp.Height, 100)));
   end;
 
-  if P > 10 then
+  if MulDiv(P, 100, FSpeedBmp.Height) >= 75 then
   begin
-    FSpeedBmp.Canvas.Pixels[FSpeedBmp.Width - 1, FSpeedBmp.Height - 12] := HTML2Color('722222');
+    FSpeedBmp.Canvas.Brush.Color := HTML2Color('722222');
+    FSpeedBmp.Canvas.Pen.Color := HTML2Color('722222');
+    FSpeedBmp.Canvas.FillRect(Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(85, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(75, FSpeedBmp.Height, 100)));
   end;
 
-  if P > 11 then
+  if MulDiv(P, 100, FSpeedBmp.Height) >= 85 then
   begin
-    FSpeedBmp.Canvas.Pixels[FSpeedBmp.Width - 1, FSpeedBmp.Height - 13] := HTML2Color('9d2626');
+    FSpeedBmp.Canvas.Brush.Color := HTML2Color('9d2626');
+    FSpeedBmp.Canvas.Pen.Color := HTML2Color('9d2626');
+    FSpeedBmp.Canvas.FillRect(Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(90, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(85, FSpeedBmp.Height, 100)));
   end;
 
-  if P > 12 then
+  if MulDiv(P, 100, FSpeedBmp.Height) >= 90 then
   begin
-    FSpeedBmp.Canvas.Pixels[FSpeedBmp.Width - 1, FSpeedBmp.Height - 14] := HTML2Color('c42c2c');
+    FSpeedBmp.Canvas.Brush.Color := HTML2Color('c42c2c');
+    FSpeedBmp.Canvas.Pen.Color := HTML2Color('c42c2c');
+    FSpeedBmp.Canvas.FillRect(Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(95, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(90, FSpeedBmp.Height, 100)));
   end;
 
-  if P > 13 then
+  if MulDiv(P, 100, FSpeedBmp.Height) >= 95 then
   begin
-    FSpeedBmp.Canvas.Pixels[FSpeedBmp.Width - 1, FSpeedBmp.Height - 15] := HTML2Color('d71717');
+    FSpeedBmp.Canvas.Brush.Color := HTML2Color('d71717');
+    FSpeedBmp.Canvas.Pen.Color := HTML2Color('d71717');
+    FSpeedBmp.Canvas.FillRect(Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(100, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(95, FSpeedBmp.Height, 100)));
   end;
-
 
   FLastPos := P;
 end;
@@ -150,11 +160,13 @@ end;
 constructor TSWStatusBar.Create(AOwner: TComponent);
 var
   P: TStatusPanel;
+  C: TAccessCanvas;
 begin
   inherited;
 
+  Height := GetTextSize('Wyg', Font).cy + 4;
+
   ShowHint := True;
-  Height := 19;
 
   IconConnected := TIcon.Create;
   IconConnected.Handle := LoadImage(HInstance, 'CONNECT', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
@@ -169,27 +181,25 @@ begin
   IconGroupAutoDisabled := TIcon.Create;
   IconGroupAutoDisabled.Handle := LoadImage(HInstance, 'GROUP_DELETE', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
 
+  FSpace := MulDiv(GetTextSize('WWW', Font).cx, Screen.PixelsPerInch, 96);
+
   P := Panels.Add;
-  P.Width := 120;
+  P.Width := 2 + 38 + GetTextSize(_('Connecting...'), Font).cx + FSpace;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
   P.Width := 90;
+  P.Width := 2 + 20 + GetTextSize('0000/0000', Font).cx + MulDiv(GetTextSize('W', Font).cx, Screen.PixelsPerInch, 96);
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
-  if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
-    P.Width := 115
-  else
-    P.Width := 75;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
-  P.Width := 190;
+  P.Width := 2 + GetTextSize(Format(_('%s/%s received'), ['000,00 kb', '000, 00 kb']), Font).cx + FSpace;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
-  P.Width := 100;
   P.Style := psOwnerDraw;
 end;
 
@@ -225,32 +235,32 @@ begin
         case FConnectionState of
           cshConnected:
             begin
-              Canvas.Draw(R.Left, R.Top, IconConnected);
+              Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconConnected);
               Canvas.TextOut(R.Left + 38, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connected')) div 2, _('Connected'));
             end;
           cshDisconnected:
             begin
-              Canvas.Draw(R.Left, R.Top, IconDisconnected);
+              Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconDisconnected);
               Canvas.TextOut(R.Left + 38, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connecting...')) div 2, _('Connecting...'));
             end;
           cshFail:
             begin
-              Canvas.Draw(R.Left, R.Top, IconDisconnected);
+              Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconDisconnected);
               Canvas.TextOut(R.Left + 38, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Error')) div 2, _('Error'));
             end;
         end;
 
         if (FConnectionState = cshConnected) and FLoggedIn then
-          Canvas.Draw(R.Left + 18, R.Top, IconLoggedIn)
+          Canvas.Draw(R.Left + 18, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconLoggedIn)
         else
-          Canvas.Draw(R.Left + 18, R.Top, IconLoggedOff);
+          Canvas.Draw(R.Left + 18, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconLoggedOff);
       end;
     1:
       begin
         if (FConnectionState = cshConnected) and FNotifyTitleChanges then
-          Canvas.Draw(R.Left, R.Top, IconGroupAutoEnabled)
+          Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconGroupAutoEnabled)
         else
-          Canvas.Draw(R.Left, R.Top, IconGroupAutoDisabled);
+          Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconGroupAutoDisabled);
 
         Canvas.TextOut(R.Left + 20, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FClients) + '/' + IntToStr(FRecordings)) div 2, IntToStr(FClients) + '/' + IntToStr(FRecordings));
       end;
@@ -259,11 +269,11 @@ begin
         Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(MakeSize(FSpeed) + '/s') div 2, MakeSize(FSpeed) + '/s');
         if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
         begin
-          Panels[2].Width := 115;
+          Panels[2].Width := 2 + 35 + GetTextSize(_('0000/KBs'), Font).cx + FSpace;
           if FSpeedBmp <> nil then
-            Canvas.Draw(R.Right - FSpeedBmp.Width - 2, R.Top, FSpeedBmp);
+            Canvas.Draw(R.Right - FSpeedBmp.Width - 2, R.Bottom - FSpeedBmp.Height, FSpeedBmp);
         end else
-          Panels[2].Width := 75;
+          Panels[2].Width := 2 + GetTextSize(_('0000/KBs'), Font).cx + FSpace;
       end;
     3:
       Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(Format(_('%s/%s received'), [MakeSize(FCurrentReceived), MakeSize(FOverallReceived)])) div 2, Format(_('%s/%s received'), [MakeSize(FCurrentReceived), MakeSize(FOverallReceived)]));

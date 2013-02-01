@@ -29,7 +29,8 @@ uses
   Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls,
   HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging,
   DataManager, DropSource, Types, AudioFunctions, PngSpeedButton,
-  Generics.Collections, TypeDefs, MessageBus, AppMessages, Commands;
+  Generics.Collections, TypeDefs, MessageBus, AppMessages, Commands,
+  GUIFunctions, MistakeRun1;
 
 type
   TModes = (moShow, moLoading, moError);
@@ -125,7 +126,7 @@ type
     property StreamTree: TMStreamTree read FStreamTree;
   end;
 
-  TMStreamTreeHeaderPopup = class(TPopupMenu)
+  TMStreamTreeHeaderPopup = class(TMPopupMenu)
   private
     FItemName: TMenuItem;
     FItemKbps: TMenuItem;
@@ -145,7 +146,6 @@ type
     FDataLists: TDataLists;
 
     FColName: TVirtualTreeColumn;
-    FDisplayCount: Integer;
 
     FLastSearch: string;
     FLastGenre: string;
@@ -156,7 +156,7 @@ type
     FImageMetaData: TPngImage;
     FImageChangesTitle: TPngImage;
 
-    FPopupMenu: TPopupMenu;
+    FPopupMenu: TMPopupMenu;
     FItemStart: TMenuItem;
     FItemPlay: TMenuItem;
     FItemOpen: TMenuItem;
@@ -212,6 +212,7 @@ type
     procedure KeyPress(var Key: Char); override;
     function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
+    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
 
     procedure WndProc(var Message: TMessage); override;
 
@@ -235,10 +236,9 @@ type
     procedure ReceiveError;
     procedure HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
 
-    property PopupMenu2: TPopupMenu read FPopupMenu;
+    property PopupMenu2: TMPopupMenu read FPopupMenu;
     property DraggedStreams: TStreamDataArray read FDraggedStreams;
 
-    property DisplayCount: Integer read FDisplayCount;
     property OnNeedData: TNeedDataEvent read FOnNeedData write FOnNeedData;
     property OnAction: TActionEvent read FOnAction write FOnAction;
     property OnIsInClientList: TIsInClientListEvent read FOnIsInClientList write FOnIsInClientList;
@@ -261,6 +261,8 @@ begin
 
   NodeDataSize := SizeOf(TStreamNodeData);
   IncrementalSearch := isVisibleOnly;
+
+  Header.Height := GetTextSize('Wyg', Font).cy + 5;
 
   TreeOptions.SelectionOptions := [toDisableDrawSelection, toRightClickSelect, toFullRowSelect, toMultiSelect];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
@@ -294,7 +296,7 @@ begin
   FColName.Text := _('Rating');
   FitColumns;
 
-  FPopupMenu := TPopupMenu.Create(Self);
+  FPopupMenu := TMPopupMenu.Create(Self);
   FPopupMenu.AutoHotkeys := maManual;
   FPopupMenu.OnPopup := PopupMenuPopup;
 
@@ -436,6 +438,14 @@ begin
     0:
       Text := StringReplace(NodeData.Data.Name, '&', '&&', [rfReplaceAll]) // Wegen & und dem Shortcut..
   end;
+end;
+
+procedure TMStreamTree.DoMeasureItem(TargetCanvas: TCanvas;
+  Node: PVirtualNode; var NodeHeight: Integer);
+begin
+  inherited;
+
+  NodeHeight := GetTextSize('Wyg', Font).cy + 6 + GetTextSize('Wyg', Font).cy;
 end;
 
 procedure TMStreamTree.DoPaintNode(var PaintInfo: TVTPaintInfo);
@@ -988,9 +998,6 @@ var
   Size: TSize;
 begin
   FColName.Width := ClientWidth;
-  GetTextExtentPoint32W(Canvas.Handle, 'Wl0', 3, Size);
-  DefaultNodeHeight := Size.cy * 2 + 6;
-  FDisplayCount := Ceil(ClientHeight / DefaultNodeHeight);
 end;
 
 procedure TMStreamTree.Sort(Node: PVirtualNode; Column: TColumnIndex;

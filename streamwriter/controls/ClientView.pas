@@ -29,7 +29,7 @@ uses
   StdCtrls, Menus, ImgList, Math, ICEClient, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, Tabs, DropComboTarget,
   DropSource, ShlObj, ComObj, ShellAPI, DataManager, StreamBrowserView,
-  Logging, PngImage, SharedControls;
+  Logging, PngImage, SharedControls, GUIFunctions, MistakeRun1;
 
 type
   TAccessCanvas = class(TCanvas);
@@ -57,7 +57,7 @@ type
   private
     FBrowser: TMStreamTree;
 
-    FPopupMenu: TPopupMenu;
+    FPopupMenu: TMPopupMenu;
     FDragSource: TDropFileSource;
     FDragNodes: TNodeArray;
     FAutoNode: PVirtualNode;
@@ -98,8 +98,10 @@ type
     procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; Text: UnicodeString); override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo;
       ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
+    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
+      var NodeHeight: Integer); override;
   public
-    constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree); reintroduce;
+    constructor Create(AOwner: TComponent; PopupMenu: TMPopupMenu; Browser: TMStreamTree); reintroduce;
     destructor Destroy; override;
 
     function AddClient(Client: TICEClient): PVirtualNode;
@@ -180,7 +182,7 @@ begin
   Result := Node;
 end;
 
-constructor TMClientView.Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree);
+constructor TMClientView.Create(AOwner: TComponent; PopupMenu: TMPopupMenu; Browser: TMStreamTree);
 var
   i: Integer;
 begin
@@ -189,6 +191,10 @@ begin
   FBrowser := Browser;
 
   FDragTreshold := 6;
+
+  // TODO: wenn keine settings gespeichert sind und man mit hohen dpi startet sollte auch alles cool aussehen, die standardsettings halt.
+
+  Header.Height := GetTextSize('Wyg', Font).cy + 5;
 
   NodeDataSize := SizeOf(TClientNodeData);
   IncrementalSearch := isVisibleOnly;
@@ -393,6 +399,14 @@ begin
     Exit;
   DoGetText(Node, 0, ttNormal, NodeText);
   Result := StrLIComp(PChar(s), PChar(NodeText), Min(Length(s), Length(NodeText)));
+end;
+
+procedure TMClientView.DoMeasureItem(TargetCanvas: TCanvas;
+  Node: PVirtualNode; var NodeHeight: Integer);
+begin
+  inherited;
+
+  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
 end;
 
 procedure TMClientView.DoNewText(Node: PVirtualNode; Column: TColumnIndex;

@@ -1,38 +1,15 @@
-{
-    ------------------------------------------------------------------------
-    streamWriter
-    Copyright (c) 2010-2013 Alexander Nottelmann
-
-    This program is free software; you can redistribute it and/or
-    modify it under the terms of the GNU General Public License
-    as published by the Free Software Foundation; either version 3
-    of the License, or (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
-    ------------------------------------------------------------------------
-}
-
-{ This unit contains controls used in this applications, TSeekBar and TVolumePanel }
-unit SharedControls;
+unit SeekBar;
 
 interface
 
 uses
   Windows, SysUtils, Classes, ComCtrls, ExtCtrls, Controls, Graphics,
-  Functions, PngSpeedButton, PngImage, LanguageObjects, Menus,
-  Themes, Messages, Math, Buttons, Logging, Forms, VirtualTrees,
-  MistakeRun1;
+  Menus, Themes, Messages, Math, Buttons, Forms;
 
 type
   TGripperStates = (gsUnknown, gsNormal, gsHot, gsDown);
 
-  TSeekBar = class(TCustomControl)
+  TMSeekBar = class(TCustomControl)
   private
     FMax: Int64;
     FPosition: Int64;
@@ -72,199 +49,24 @@ type
     procedure WndProc(var Message: TMessage); override;
   public
     constructor Create(AOwner: TComponent); override;
-    property Max: Int64 read FMax write FMax;
-    property Position: Int64 read FPosition write FSetPosition;
-    property PositionBeforeDrag: Int64 read FPositionBeforeDrag;
-    property Orientation: TScrollBarKind read FOrientation write FOrientation;
+    property PositionBeforeDrag: Int64 read FPositionBeforeDrag write FPositionBeforeDrag;
+  published
+    property Align;
     property GripperVisible: Boolean read FGripperDown write FSetGripperVisible;
     property NotifyOnMove: Boolean read FNotifyOnMove write FNotifyOnMove;
     property NotifyOnDown: Boolean read FNotifyOnDown write FNotifyOnDown;
+    property Orientation: TScrollBarKind read FOrientation write FOrientation;
+    property Position: Int64 read FPosition write FSetPosition;
+    property Max: Int64 read FMax write FMax;
+
     property OnPositionChanged: TNotifyEvent read FOnPositionChanged write FOnPositionChanged;
-  end;
-
-  TOnGetVolumeBeforeMute = function(Sender: TObject): Integer of object;
-
-  TVolumePanel = class(TPanel)
-  private
-    FTrackBarPanel: TPanel;
-    FTrackBar: TSeekBar;
-    FMute: TPngSpeedButton;
-    FVolume: Integer;
-    FVolumeBeforeDrag: Integer;
-    FVolumeChange: TNotifyEvent;
-    FVolumePng: TPngImage;
-    FVolumeMutedPng: TPngImage;
-
-    FOnGetVolumeBeforeMute: TOnGetVolumeBeforeMute;
-
-    procedure MuteClick(Sender: TObject);
-    procedure VolumeChange(Sender: TObject);
-    procedure RefreshButtonState(DoIt: Boolean);
-    procedure FSetVolume(Volume: Integer);
-    procedure FSetNotifyOnMove(Value: Boolean);
-    function FGetVolume: Integer;
-  public
-    procedure Setup;
-
-    property OnVolumeChange: TNotifyEvent read FVolumeChange write FVolumeChange;
-    property Volume: Integer read FGetVolume write FSetVolume;
-    property VolumeBeforeDrag: Integer read FVolumeBeforeDrag;
-    property NotifyOnMove: Boolean write FSetNotifyOnMove;
-    property OnGetVolumeBeforeMute: TOnGetVolumeBeforeMute read FOnGetVolumeBeforeMute write FOnGetVolumeBeforeMute;
-
-    destructor Destroy; override;
-  end;
-
-  TMenuColEvent = procedure(Sender: TVirtualStringTree; Index: Integer; Checken: Boolean) of object;
-
-  TMTreeColumnPopup = class(TMPopupMenu)
-  private
-    FFileView: TVirtualStringTree;
-    FOnAction: TMenuColEvent;
-    FHideIdx: Integer;
-
-    procedure ColItemsClick(Sender: TObject);
-  protected
-    procedure DoPopup(Sender: TObject); override;
-  public
-    property OnAction: TMenuColEvent read FOnAction write FOnAction;
-    property HideIdx: Integer read FHideIdx write FHideIdx;
   end;
 
 implementation
 
-{ TVolumePanel }
-
-procedure TVolumePanel.Setup;
-var
-  ResStream: TResourceStream;
-begin
-  BevelOuter := bvNone;
-
-  FMute := TPngSpeedButton.Create(Self);
-  FMute.Hint := 'Mute';
-  FMute.ShowHint := True;
-  FMute.Flat := True;
-  FMute.Align := alLeft;
-  FMute.Width := 25;
-  FMute.GroupIndex := 1;
-  FMute.AllowAllUp := True;
-  FMute.Down := True;
-  FMute.OnClick := MuteClick;
-  FMute.Parent := Self;
-
-  ResStream := TResourceStream.Create(HInstance, 'VOLUME', RT_RCDATA);
-  try
-    FVolumePng := TPngImage.Create;
-    FVolumePng.LoadFromStream(ResStream);
-  finally
-    ResStream.Free;
-  end;
-
-  ResStream := TResourceStream.Create(HInstance, 'VOLUME_MUTED', RT_RCDATA);
-  try
-    FVolumeMutedPng := TPngImage.Create;
-    FVolumeMutedPng.LoadFromStream(ResStream);
-  finally
-    ResStream.Free;
-  end;
-
-  FTrackBarPanel := TPanel.Create(Self);
-  FTrackBarPanel.Align := alClient;
-  FTrackBarPanel.BevelOuter := bvNone;
-  FTrackBarPanel.Padding.Left := 4;
-  FTrackBarPanel.Padding.Right := 2;
-  FTrackBarPanel.Parent := Self;
-
-  FTrackBar := TSeekBar.Create(Self);
-  FTrackBar.Max := 100;
-  FTrackBar.Align := alClient;
-  FTrackBar.OnPositionChanged := VolumeChange;
-  FTrackBar.Parent := FTrackBarPanel;
-  FTrackBar.GripperVisible := True;
-  FTrackBar.NotifyOnMove := True;
-  FTrackBar.NotifyOnDown := True;
-
-  RefreshButtonState(True);
-end;
-
-procedure TVolumePanel.MuteClick(Sender: TObject);
-var
-  P: Integer;
-begin
-  if FMute.Down then
-  begin
-    FTrackBar.FPositionBeforeDrag := FTrackBar.Position;
-    FTrackBar.Position := 0;
-
-    FMute.PngImage := FVolumeMutedPng;
-    if not FMute.Down then
-      FMute.Down := True;
-  end else
-  begin
-    P := FOnGetVolumeBeforeMute(Self);
-    FTrackBar.Position := P;
-    FMute.PngImage := FVolumePng;
-  end;
-end;
-
-procedure TVolumePanel.VolumeChange(Sender: TObject);
-begin
-  RefreshButtonState(False);
-
-  FVolume := FTrackBar.Position;
-  FVolumeBeforeDrag := FTrackBar.PositionBeforeDrag;
-
-  if Assigned(OnVolumeChange) then
-    OnVolumeChange(Self);
-end;
-
-procedure TVolumePanel.RefreshButtonState(DoIt: Boolean);
-begin
-  if Volume = 0 then
-  begin
-    if not FMute.Down or DoIt then
-    begin
-      FMute.Down := True;
-      FMute.PngImage := FVolumeMutedPng;
-    end;
-  end else
-  begin
-    if FMute.Down or DoIt then
-    begin
-      FMute.Down := False;
-      FMute.PngImage := FVolumePng;
-    end;
-  end;
-end;
-
-procedure TVolumePanel.FSetVolume(Volume: Integer);
-begin
-  FTrackBar.Position := Volume;
-  RefreshButtonState(False);
-end;
-
-function TVolumePanel.FGetVolume: Integer;
-begin
-  Result := FTrackBar.Position;
-end;
-
-procedure TVolumePanel.FSetNotifyOnMove(Value: Boolean);
-begin
-  FTrackBar.NotifyOnMove := Value;
-end;
-
-destructor TVolumePanel.Destroy;
-begin
-  inherited;
-
-  FVolumePng.Destroy;
-  FVolumeMutedPng.Destroy;
-end;
-
 { TSeekBar }
 
-procedure TSeekBar.Paint;
+procedure TMSeekBar.Paint;
 var
   Bmp: TBitmap;
   R: TRect;
@@ -303,7 +105,7 @@ begin
   end;
 end;
 
-procedure TSeekBar.PaintBackground(Bmp: TBitmap);
+procedure TMSeekBar.PaintBackground(Bmp: TBitmap);
 var
   R: TRect;
 begin
@@ -348,7 +150,7 @@ begin
   Bmp.Canvas.FillRect(R);
 end;
 
-procedure TSeekBar.PaintGripper(Bmp: TBitmap);
+procedure TMSeekBar.PaintGripper(Bmp: TBitmap);
 var
   P: Cardinal;
   R: TRect;
@@ -437,12 +239,12 @@ begin
   end;
 end;
 
-procedure TSeekBar.WMEraseBkgnd(var Msg: TWMEraseBkgnd);
+procedure TMSeekBar.WMEraseBkgnd(var Msg: TWMEraseBkgnd);
 begin
   Msg.Result := 1;
 end;
 
-procedure TSeekBar.WndProc(var Message: TMessage);
+procedure TMSeekBar.WndProc(var Message: TMessage);
 begin
   inherited;
 
@@ -450,7 +252,7 @@ begin
     Paint;
 end;
 
-function TSeekBar.GetGripperState: TGripperStates;
+function TMSeekBar.GetGripperState: TGripperStates;
 var
   P: Cardinal;
   R: TRect;
@@ -491,22 +293,23 @@ begin
   end;
 end;
 
-constructor TSeekBar.Create(AOwner: TComponent);
+constructor TMSeekBar.Create(AOwner: TComponent);
 begin
   inherited;
 
   FMax := 0;
   FPositionBeforeDrag := -1;
   FOrientation := sbHorizontal;
+  FGripperVisible := True;
 end;
 
-procedure TSeekBar.FSetGripperVisible(Value: Boolean);
+procedure TMSeekBar.FSetGripperVisible(Value: Boolean);
 begin
   FGripperVisible := Value;
   Paint;
 end;
 
-procedure TSeekBar.FSetPosition(Value: Int64);
+procedure TMSeekBar.FSetPosition(Value: Int64);
 begin
   if FSetting then
     Exit;
@@ -528,7 +331,7 @@ begin
     Paint;
 end;
 
-procedure TSeekBar.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
+procedure TMSeekBar.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Integer);
 var
   V: Integer;
@@ -584,7 +387,7 @@ begin
   end;
 end;
 
-procedure TSeekBar.MouseMove(Shift: TShiftState; X, Y: Integer);
+procedure TMSeekBar.MouseMove(Shift: TShiftState; X, Y: Integer);
 begin
   inherited;
 
@@ -619,7 +422,7 @@ begin
     Paint;
 end;
 
-procedure TSeekBar.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
+procedure TMSeekBar.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
   Y: Integer);
 begin
   inherited;
@@ -638,43 +441,4 @@ begin
   end;
 end;
 
-{ TMTreeColumnPopup }
-
-procedure TMTreeColumnPopup.ColItemsClick(Sender: TObject);
-begin
-  if Assigned(FOnAction) then
-    FOnAction(nil, TVirtualTreeColumn(TMenuItem(Sender).Tag).Index, True);
-end;
-
-procedure TMTreeColumnPopup.DoPopup(Sender: TObject);
-var
-  i: Integer;
-  Tree: TVirtualStringTree;
-  Item: TMenuItem;
-begin
-  inherited;
-
-  if Items.Count = 0 then
-  begin
-    Tree := TVirtualStringTree(Owner);
-    FFileView := Tree;
-    for i := 1 to Tree.Header.Columns.Count - 1 do
-    begin
-      if i = FHideIdx then
-        Continue;
-      Item := CreateMenuItem;
-      Item.Caption := Tree.Header.Columns[i].Text;
-      Item.OnClick := ColItemsClick;
-      Item.Tag := Integer(Tree.Header.Columns[i]);
-      Items.Add(Item);
-    end;
-  end;
-
-  for i := 0 to Items.Count - 1 do
-  begin
-    Items[i].Checked := coVisible in TVirtualTreeColumn(Items[i].Tag).Options;
-  end;
-end;
-
 end.
-

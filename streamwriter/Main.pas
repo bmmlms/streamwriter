@@ -36,7 +36,7 @@ uses
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
   PowerManagement, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
-  AppMessages, CommandLine, Protocol, Commands, HomeCommands;
+  AppMessages, CommandLine, Protocol, Commands, HomeCommands, MistakeRun1;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -45,7 +45,7 @@ const
 type
   TfrmStreamWriterMain = class(TForm)
     addXP: TXPManifest;
-    mnuMain: TMainMenu;
+    mnuMain: TMMainMenu;
     mnuFile: TMenuItem;
     mnuSettings: TMenuItem;
     N3: TMenuItem;
@@ -60,7 +60,7 @@ type
     actStart: TAction;
     actStop: TAction;
     actRemove: TAction;
-    mnuStreamPopup: TPopupMenu;
+    mnuStreamPopup: TMPopupMenu;
     mnuStartStreaming1: TMenuItem;
     mnuStopStreaming1: TMenuItem;
     mnuRemove1: TMenuItem;
@@ -68,7 +68,7 @@ type
     mnuStreamSettings1: TMenuItem;
     mnuStreamSettings2: TMenuItem;
     TrayIcon1: TTrayIcon;
-    mnuTray: TPopupMenu;
+    mnuTray: TMPopupMenu;
     mnuShow: TMenuItem;
     N2: TMenuItem;
     Beenden1: TMenuItem;
@@ -761,7 +761,8 @@ begin
   FMainCaption := 'streamWriter';
   {$IFDEF DEBUG}FMainCaption := FMainCaption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
   Caption := FMainCaption;
-
+                            // TODO: menüs und popupmenüs, die items sehen auf hohen DPI doof aus.
+                            // TODO: items von menüs werden ohne themes grau bleiben.. ohne inhalt!
   if not Bass.EffectsAvailable then
   begin
     actEqualizer.Enabled := False;

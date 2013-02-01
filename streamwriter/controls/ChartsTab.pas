@@ -28,7 +28,7 @@ uses
   MControls, LanguageObjects, Tabs, Functions, AppData, Logging, VirtualTrees,
   HomeCommunication, DataManager, ImgList, Graphics, Math, Generics.Collections,
   Menus, ChartsTabAdjustTitleName, Forms, TypeDefs, MessageBus, AppMessages,
-  HomeCommands, Commands;
+  HomeCommands, Commands, GUIFunctions, MistakeRun1;
 
 type
   TNodeTypes = (ntChart, ntStream, ntAll);
@@ -42,7 +42,7 @@ type
 
   TChartDataArray = array of PChartNodeData;
 
-  TChartsPopup = class(TPopupMenu)
+  TChartsPopup = class(TMPopupMenu)
   private
     FItemReload: TMenuItem;
     FItemAddToWishlist: TMenuItem;
@@ -135,6 +135,8 @@ type
     procedure Resize; override;
     procedure DoAfterCellPaint(Canvas: TCanvas; Node: PVirtualNode;
       Column: TColumnIndex; CellRect: TRect); override;
+    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
+      var NodeHeight: Integer); override;
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
     destructor Destroy; override;
@@ -482,6 +484,8 @@ begin
 
   IncrementalSearch := isVisibleOnly;
 
+  Header.Height := GetTextSize('Wyg', Font).cy + 5;
+
   Header.Options := [hoColumnResize, hoShowSortGlyphs, hoVisible];
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
   TreeOptions.AutoOptions := [toAutoScrollOnExpand];
@@ -719,6 +723,14 @@ begin
     Result := StrLIComp(PChar(Text), PChar(NodeData.Chart.Name), Min(Length(Text), Length(NodeData.Chart.Name)))
   else
     Result := StrLIComp(PChar(Text), PChar(NodeData.Stream.Stream.Name), Min(Length(Text), Length(NodeData.Stream.Stream.Name)))
+end;
+
+procedure TChartsTree.DoMeasureItem(TargetCanvas: TCanvas;
+  Node: PVirtualNode; var NodeHeight: Integer);
+begin
+  inherited;
+
+  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
 end;
 
 procedure TChartsTree.ExecDefaultAction;

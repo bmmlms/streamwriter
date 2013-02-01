@@ -30,7 +30,7 @@ uses
   Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
   PlayerManager, Logging, FileWatcher, MessageBus, AppMessages, ShlObj,
   SavedTabEditTags, Generics.Collections, TypeDefs, AudioFunctions, FileTagger,
-  Notifications, Dialogs;
+  Notifications, Dialogs, MistakeRun1;
 
 type
   TSavedTree = class;
@@ -69,7 +69,7 @@ type
     property OnProgress: TNotifyEvent read FOnProgress write FOnProgress;
   end;
 
-  TSavedTracksPopup = class(TPopupMenu)
+  TSavedTracksPopup = class(TMPopupMenu)
   private
     FItemRefresh: TMenuItem;
     FItemPrev: TMenuItem;
@@ -324,6 +324,8 @@ type
       CellRect: TRect; DrawFormat: Cardinal); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure KeyPress(var Key: Char); override;
+    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
+      var NodeHeight: Integer); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1342,6 +1344,8 @@ begin
 
   FTab := TSavedTab(AOwner);
 
+  Header.Height := GetTextSize('Wyg', Font).cy + 5;
+
   NodeDataSize := SizeOf(TSavedNodeData);
   IncrementalSearch := isVisibleOnly;
   Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
@@ -2125,6 +2129,14 @@ begin
   else
     CmpTxt := ExtractFileName(NodeData.Track.Filename);
   Result := StrLIComp(PChar(Text), PChar(CmpTxt), Min(Length(Text), Length(CmpTxt)));
+end;
+
+procedure TSavedTree.DoMeasureItem(TargetCanvas: TCanvas;
+  Node: PVirtualNode; var NodeHeight: Integer);
+begin
+  inherited;
+
+  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
 end;
 
 procedure TSavedTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex;

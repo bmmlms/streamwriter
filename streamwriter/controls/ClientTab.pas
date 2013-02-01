@@ -30,7 +30,7 @@ uses
   GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs,
   Graphics, SharedControls, Generics.Collections, Generics.Defaults,
   Logging, DynBass, StreamData, Forms, MsgDlg, TypeDefs, MessageBus,
-  AppMessages, PlayerManager, PlaylistHandler, AudioFunctions;
+  AppMessages, PlayerManager, PlaylistHandler, AudioFunctions, MistakeRun1;
 
 type
   TSidebar = class(TPageControl)
@@ -184,7 +184,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    procedure Setup(Toolbar: TToolbar; Actions: TActionList; Popup: TPopupMenu; MenuImages,
+    procedure Setup(Toolbar: TToolbar; Actions: TActionList; Popup: TMPopupMenu; MenuImages,
       ClientImages: TImageList; Clients: TClientManager;
       Streams: TDataLists);
     procedure Shown;
@@ -737,7 +737,7 @@ begin
 end;
 
 procedure TClientTab.Setup(Toolbar: TToolbar; Actions: TActionList;
-  Popup: TPopupMenu; MenuImages,
+  Popup: TMPopupMenu; MenuImages,
   ClientImages: TImageList; Clients: TClientManager; Streams: TDataLists);
   function GetAction(Name: string): TAction;
   var

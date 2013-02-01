@@ -238,7 +238,8 @@ procedure TDebugView.DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
   var NodeHeight: Integer);
 begin
   inherited;
-  NodeHeight := Max(ComputeNodeHeight(Canvas, Node, 0), 18);
+
+  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
 end;
 
 procedure TDebugView.FSetClient(Value: TICEClient);

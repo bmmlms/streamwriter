@@ -52,6 +52,9 @@ type
     function DoIncrementalSearch(Node: PVirtualNode;
       const Text: string): Integer; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
+    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
+      var NodeHeight: Integer); override;
+
   public
     constructor Create(AOwner: TComponent; Streams: TStringList); reintroduce;
     destructor Destroy; override;
@@ -837,8 +840,8 @@ begin
 
     SetFields;
 
-    ClientWidth := 630;
-    ClientHeight := 480;
+    //ClientWidth := MulDiv(630, Screen.PixelsPerInch, 96);
+    //ClientHeight := MulDiv(480, Screen.PixelsPerInch, 96);
 
     for i := 0 to Self.ControlCount - 1 do
     begin
@@ -3134,6 +3137,14 @@ begin
   NodeData := GetNodeData(Node);
   Result := StrLIComp(PChar(S), PChar(NodeData.Name),
     Min(Length(S), Length(NodeData.Name)));
+end;
+
+procedure TBlacklistTree.DoMeasureItem(TargetCanvas: TCanvas;
+  Node: PVirtualNode; var NodeHeight: Integer);
+begin
+  inherited;
+
+  NodeHeight := GetTextSize('Wyg', Font).cy + 5; // TODO: sieht das ok aus?
 end;
 
 procedure TBlacklistTree.RemoveSelected;
