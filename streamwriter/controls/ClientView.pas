@@ -22,6 +22,8 @@
   in a separated tab }
 unit ClientView;
 
+// TODO: Diese "Header"-Controls von mir passen sich nirgens auf DPI an. und buttons in eltern-klassen auch nicht (settings, der ok button z.b.)
+
 interface
 
 uses
@@ -29,7 +31,7 @@ uses
   StdCtrls, Menus, ImgList, Math, ICEClient, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, Tabs, DropComboTarget,
   DropSource, ShlObj, ComObj, ShellAPI, DataManager, StreamBrowserView,
-  Logging, PngImage, SharedControls, GUIFunctions, MistakeRun1;
+  Logging, PngImage, SharedControls, GUIFunctions;
 
 type
   TAccessCanvas = class(TCanvas);
@@ -57,7 +59,7 @@ type
   private
     FBrowser: TMStreamTree;
 
-    FPopupMenu: TMPopupMenu;
+    FPopupMenu: TPopupMenu;
     FDragSource: TDropFileSource;
     FDragNodes: TNodeArray;
     FAutoNode: PVirtualNode;
@@ -101,7 +103,7 @@ type
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
   public
-    constructor Create(AOwner: TComponent; PopupMenu: TMPopupMenu; Browser: TMStreamTree); reintroduce;
+    constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree); reintroduce;
     destructor Destroy; override;
 
     function AddClient(Client: TICEClient): PVirtualNode;
@@ -182,7 +184,7 @@ begin
   Result := Node;
 end;
 
-constructor TMClientView.Create(AOwner: TComponent; PopupMenu: TMPopupMenu; Browser: TMStreamTree);
+constructor TMClientView.Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree);
 var
   i: Integer;
 begin
@@ -428,26 +430,13 @@ begin
 end;
 
 procedure TMClientView.FitColumns;
-  function GetTextWidth(Text: string): Integer;
-  var
-    Canvas: TAccessCanvas;
-  begin
-    Canvas := TAccessCanvas.Create;
-    try
-      Canvas.Handle := GetDC(GetDesktopWindow);
-      SelectObject(Canvas.Handle, Header.Font.Handle);
-      Result := Canvas.TextWidth(Text) + 20;
-      ReleaseDC(GetDesktopWindow, Canvas.Handle);
-    finally
-      Canvas.Free;
-    end;
-  end;
 begin
-  FColName.Width := 120;
-  FColStatus.Width := 100;
-  FColRcvd.Width := GetTextWidth(FColRcvd.Text);
-  FColSpeed.Width := Max(GetTextWidth('11,11KB/s'), GetTextWidth(FColSpeed.Text));
-  FColSongs.Width := GetTextWidth(FColSongs.Text);
+  // TODO: das hier muss auch dann aufgerufen werden, wenn Shown() läuft. zur Zeit Konstruktor...
+  FColRcvd.Width := GetTextSize(FColRcvd.Text, Font).cx + 4;
+  FColSpeed.Width := Max(GetTextSize('11,11KB/s', Font).cx, GetTextSize(FColSpeed.Text, Font).cx) + 4;
+  FColSongs.Width := GetTextSize(FColSongs.Text, Font).cx + 4;
+  FColStatus.Width := GetTextSize('            ', Font).cx + 4;
+  FColName.Width := FColRcvd.Width - FColSpeed.Width - FColSongs.Width - FColStatus.Width - 30;
 end;
 
 function TMClientView.DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; Pt: TPoint; Mode: TDropMode;

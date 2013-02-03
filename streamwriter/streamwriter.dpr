@@ -134,8 +134,7 @@ uses
   SplashThread in '..\..\common\SplashThread.pas',
   CommandLine in '..\..\common\CommandLine.pas',
   HomeTest in 'HomeTest.pas' {frmHomeTest},
-  HomeCommands in 'HomeCommands.pas',
-  MistakeRun1 in 'controls_new\MistakeRun1.pas';
+  HomeCommands in 'HomeCommands.pas';
 
 {$SetPEOptFlags $0140}
 

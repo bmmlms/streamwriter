@@ -29,7 +29,7 @@ uses
   ImgList, Functions, GUIFunctions, Menus, Math, DragDrop, DropComboTarget,
   Dialogs, MsgDlg, Forms, Logging, AppData, HomeCommunication, ICEClient,
   ClientManager, Generics.Collections, TypeDefs, MessageBus, AppMessages,
-  Graphics, MistakeRun1;
+  Graphics;
 
 type
   TTitleTree = class;
@@ -46,7 +46,7 @@ type
 
   TTitleDataArray = array of PTitleNodeData;
 
-  TTitlePopup = class(TMPopupMenu)
+  TTitlePopup = class(TPopupMenu)
   private
     FRemove: TMenuItem;
     FRename: TMenuItem;
@@ -792,7 +792,6 @@ begin
   FToolbarPanel.Parent := FTopPanel;
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Align := alTop;
-  FToolbarPanel.Height := 25;
 
   FAddLabel := TLabel.Create(Self);
   FAddLabel.Parent := FToolbarPanel;
@@ -827,17 +826,18 @@ begin
   FToolbar.FSelectIgnored.OnClick := SelectIgnoredClick;
   FToolbar.FRename.OnClick := RenameClick;
 
-  FTopPanel.ClientHeight := FToolbarPanel.Height;
-
   // Das macht Höhen/Breiten von manchen Controls passig
   PostTranslate;
   FSearchPanel.ClientHeight := FSearchText.Top + 5 + FSearchText.Height;
+  FTopPanel.ClientHeight := FAddLabel.Height + FAddLabel.Top * 2;
 
   FTree := TTitleTree.Create(Self, Lists, Images);
   FTree.Parent := Self;
   FTree.Align := alClient;
   FTree.OnChange := TreeChange;
   FTree.OnKeyDown := TreeKeyDown;
+
+  FTree.FColAdded.Width := Max(GetTextSize(FTree.FColAdded.Text, Font).cx, GetTextSize(DateToStr(Now), Font).cx) + MulDiv(50, Screen.PixelsPerInch, 96);
 
   FClients := Clients;
   FLists := Lists;
@@ -1234,7 +1234,6 @@ begin
 
   FColAdded := Header.Columns.Add;
   FColAdded.Text := _('Date');
-  FColAdded.Width := 90;
 
   FDropTarget := TDropComboTarget.Create(Self);
   FDropTarget.Formats := [mfFile];
@@ -1242,7 +1241,8 @@ begin
   FDropTarget.Register(Self);
 
   FPopupMenu := TTitlePopup.Create(Self);
-  FPopupMenu.Images := Images;
+  if Screen.PixelsPerInch = 96 then
+    FPopupMenu.Images := Images;
   FPopupMenu.FRemove.OnClick := PopupMenuClick;
   FPopupMenu.FRename.OnClick := PopupMenuClick;
   FPopupMenu.FSelectSaved.OnClick := PopupMenuClick;

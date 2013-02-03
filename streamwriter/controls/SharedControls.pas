@@ -26,8 +26,7 @@ interface
 uses
   Windows, SysUtils, Classes, ComCtrls, ExtCtrls, Controls, Graphics,
   Functions, PngSpeedButton, PngImage, LanguageObjects, Menus,
-  Themes, Messages, Math, Buttons, Logging, Forms, VirtualTrees,
-  MistakeRun1;
+  Themes, Messages, Math, Buttons, Logging, Forms, VirtualTrees;
 
 type
   TGripperStates = (gsUnknown, gsNormal, gsHot, gsDown);
@@ -117,7 +116,7 @@ type
 
   TMenuColEvent = procedure(Sender: TVirtualStringTree; Index: Integer; Checken: Boolean) of object;
 
-  TMTreeColumnPopup = class(TMPopupMenu)
+  TMTreeColumnPopup = class(TPopupMenu)
   private
     FFileView: TVirtualStringTree;
     FOnAction: TMenuColEvent;

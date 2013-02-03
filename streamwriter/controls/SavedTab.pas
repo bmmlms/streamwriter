@@ -30,7 +30,7 @@ uses
   Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
   PlayerManager, Logging, FileWatcher, MessageBus, AppMessages, ShlObj,
   SavedTabEditTags, Generics.Collections, TypeDefs, AudioFunctions, FileTagger,
-  Notifications, Dialogs, MistakeRun1;
+  Notifications, Dialogs;
 
 type
   TSavedTree = class;
@@ -69,7 +69,7 @@ type
     property OnProgress: TNotifyEvent read FOnProgress write FOnProgress;
   end;
 
-  TSavedTracksPopup = class(TMPopupMenu)
+  TSavedTracksPopup = class(TPopupMenu)
   private
     FItemRefresh: TMenuItem;
     FItemPrev: TMenuItem;
@@ -1142,13 +1142,13 @@ begin
 
   FSavedTree.Images := Images;
   FSavedTree.StateImages := Images;
-  FSavedTree.FPopupMenu.Images := Images;
+  if Screen.PixelsPerInch = 96 then
+    FSavedTree.FPopupMenu.Images := Images;
 
   // Panel oben komplett
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := Self;
   FTopPanel.Align := alTop;
-  FTopPanel.ClientHeight := 53;
   FTopPanel.BevelOuter := bvNone;
 
   // Panel links
@@ -1242,6 +1242,8 @@ begin
   FToolbar.Indent := 0;
   FToolBar.Images := Images;
   FToolBar.Setup;
+
+  FTopPanel.ClientHeight := FTopLeftPanel.Height + FSearchBar.FLabel.Height;
 
   FSeek := TSeekBar.Create(Self);
   FSeek.Parent := FTopRightTopPanel;
@@ -1387,6 +1389,7 @@ begin
 
   PopupMenu := FPopupMenu;
 
+  // TODO: Die Breiten müssen an DPI angepasst werden beim ersten start. deshalb gehört das nicht in Konstruktor.
   FColImages := Header.Columns.Add;
   FColImages.Text := _('State');
   FColImages.Options := FColImages.Options - [coResizable];

@@ -4,13 +4,13 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Change title name'
-  ClientHeight = 117
+  ClientHeight = 94
   ClientWidth = 297
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
-  
+  Font.Name = 'Tahoma'
   Font.Style = []
   Icon.Data = {
     0000010001001010000001002000680400001600000028000000100000002000
@@ -57,14 +57,14 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
   OnShow = FormShow
   DesignSize = (
     297
-    117)
+    94)
   PixelsPerInch = 96
   TextHeight = 13
   object pnlNav: TPanel
     Left = 0
-    Top = 73
+    Top = 54
     Width = 297
-    Height = 44
+    Height = 40
     Align = alBottom
     BevelOuter = bvNone
     Padding.Left = 4
@@ -72,6 +72,7 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
+    ExplicitTop = 77
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -86,7 +87,7 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
       Left = 196
       Top = 9
       Width = 97
-      Height = 31
+      Height = 27
       Align = alRight
       Caption = '&OK'
       Default = True
@@ -95,6 +96,7 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
+      ExplicitHeight = 31
     end
   end
   object txtTitle: TLabeledEdit

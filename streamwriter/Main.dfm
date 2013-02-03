@@ -172,10 +172,9 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 276
     Top = 64
   end
-  object mnuMain: TMMainMenu
+  object mnuMain: TMainMenu
     AutoHotkeys = maManual
     Images = imgImages
-    OwnerDraw = True
     Left = 32
     Top = 32
     object mnuFile: TMenuItem
@@ -507,7 +506,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       OnExecute = actEqualizerExecute
     end
   end
-  object mnuStreamPopup: TMPopupMenu
+  object mnuStreamPopup: TPopupMenu
     AutoHotkeys = maManual
     Images = imgImages
     OnPopup = mnuStreamPopupPopup
@@ -659,7 +658,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 328
     Top = 64
   end
-  object mnuTray: TMPopupMenu
+  object mnuTray: TPopupMenu
     Left = 108
     Top = 88
     object mnuShow: TMenuItem

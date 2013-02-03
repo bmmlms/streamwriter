@@ -30,7 +30,7 @@ uses
   HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging,
   DataManager, DropSource, Types, AudioFunctions, PngSpeedButton,
   Generics.Collections, TypeDefs, MessageBus, AppMessages, Commands,
-  GUIFunctions, MistakeRun1;
+  GUIFunctions;
 
 type
   TModes = (moShow, moLoading, moError);
@@ -126,7 +126,7 @@ type
     property StreamTree: TMStreamTree read FStreamTree;
   end;
 
-  TMStreamTreeHeaderPopup = class(TMPopupMenu)
+  TMStreamTreeHeaderPopup = class(TPopupMenu)
   private
     FItemName: TMenuItem;
     FItemKbps: TMenuItem;
@@ -156,7 +156,7 @@ type
     FImageMetaData: TPngImage;
     FImageChangesTitle: TPngImage;
 
-    FPopupMenu: TMPopupMenu;
+    FPopupMenu: TPopupMenu;
     FItemStart: TMenuItem;
     FItemPlay: TMenuItem;
     FItemOpen: TMenuItem;
@@ -236,7 +236,7 @@ type
     procedure ReceiveError;
     procedure HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
 
-    property PopupMenu2: TMPopupMenu read FPopupMenu;
+    property PopupMenu2: TPopupMenu read FPopupMenu;
     property DraggedStreams: TStreamDataArray read FDraggedStreams;
 
     property OnNeedData: TNeedDataEvent read FOnNeedData write FOnNeedData;
@@ -296,7 +296,7 @@ begin
   FColName.Text := _('Rating');
   FitColumns;
 
-  FPopupMenu := TMPopupMenu.Create(Self);
+  FPopupMenu := TPopupMenu.Create(Self);
   FPopupMenu.AutoHotkeys := maManual;
   FPopupMenu.OnPopup := PopupMenuPopup;
 
@@ -390,7 +390,6 @@ end;
 
 destructor TMStreamTree.Destroy;
 begin
-  //FPopupMenu.Free;
   FDragSource.Free;
   FTimer.Free;
 
@@ -1367,10 +1366,13 @@ begin
 
   BevelOuter := bvNone;
 
-  FSearchEdit := TEdit.Create(Self);
   FSearchLabel := TLabel.Create(Self);
+  FSearchEdit := TEdit.Create(Self);
+  FGenreLabel := TLabel.Create(Self);
   FGenreList := TComboBox.Create(Self);
+  FKbpsLabel := TLabel.Create(Self);
   FKbpsList := TComboBox.Create(Self);
+  FTypeLabel := TLabel.Create(Self);
   FTypeList := TComboBox.Create(Self);
 end;
 
@@ -1381,15 +1383,22 @@ end;
 
 procedure TMStreamSearchPanel.Setup;
 var
-  TopCnt: Integer;
+  TopCnt, MaxW: Integer;
 begin
   TopCnt := 4;
+  MaxW := 0;
+
+  FSearchLabel.Parent := Self;
+  FSearchLabel.Left := 4;
+  FSearchLabel.Caption := 'Search:';
+  if MaxW < FSearchLabel.Width then
+    MaxW := FSearchLabel.Width;
 
   FSearchEdit.Parent := Self;
-  FSearchEdit.Left := 50;
   FSearchEdit.Top := TopCnt;
   FSearchEdit.Anchors := [akLeft, akRight, akTop];
 
+  FSearchLabel.Top := FSearchEdit.Top + FSearchEdit.Height div 2 - FSearchLabel.Height div 2;
 
   {
   FSearchButton.Parent := Self;
@@ -1403,13 +1412,7 @@ begin
   FSearchButton.ShowHint := True;
   }
 
-
-  FSearchLabel.Parent := Self;
-  FSearchLabel.Left := 4;
-  FSearchLabel.Caption := 'Search:';
-  FSearchLabel.Top := FSearchEdit.Top + FSearchEdit.Height div 2 - FSearchLabel.Height div 2;
-
-  TopCnt := TopCnt + 26;
+  TopCnt := TopCnt + FSearchEdit.Height + 4;
 
   {
   FShowHideFilters := TMShowHidePanel.Create(Self);
@@ -1423,45 +1426,48 @@ begin
   TopCnt := TopCnt + 26;
   }
 
+  FGenreLabel.Parent := Self;
+  FGenreLabel.Left := 4;
+  FGenreLabel.Caption := _('Genre') + ':';
+  if MaxW < FGenreLabel.Width then
+    MaxW := FGenreLabel.Width;
+
   FGenreList.Parent := Self;
   FGenreList.Style := csDropDownList;
-  FGenreList.Left := 50;
   FGenreList.Top := TopCnt;
   FGenreList.Anchors := [akLeft, akRight, akTop];
   FGenreList.DropDownCount := 16;
 
-  TopCnt := TopCnt + 26;
-
-  FKbpsList.Parent := Self;
-  FKbpsList.Style := csDropDownList;
-  FKbpsList.Left := 50;
-  FKbpsList.Top := TopCnt;
-  FKbpsList.Anchors := [akLeft, akRight, akTop];
-
-  TopCnt := TopCnt + 26;
-
-  FTypeList.Parent := Self;
-  FTypeList.Style := csDropDownList;
-  FTypeList.Left := 50;
-  FTypeList.Top := TopCnt;
-  FTypeList.Anchors := [akLeft, akRight, akTop];
-
-  FGenreLabel := TLabel.Create(Self);
-  FGenreLabel.Parent := Self;
-  FGenreLabel.Left := 4;
-  FGenreLabel.Caption := _('Genre') + ':';
   FGenreLabel.Top := FGenreList.Top + FGenreList.Height div 2 - FGenreLabel.Height div 2;
 
-  FKbpsLabel := TLabel.Create(Self);
+  TopCnt := TopCnt + FGenreList.Height + 4;
+
   FKbpsLabel.Parent := Self;
   FKbpsLabel.Left := 4;
   FKbpsLabel.Caption := _('Kbps') + ':';
+  if MaxW < FKbpsLabel.Width then
+    MaxW := FKbpsLabel.Width;
+
+  FKbpsList.Parent := Self;
+  FKbpsList.Style := csDropDownList;
+  FKbpsList.Top := TopCnt;
+  FKbpsList.Anchors := [akLeft, akRight, akTop];
+
   FKbpsLabel.Top := FKbpsList.Top + FKbpsList.Height div 2 - FKbpsLabel.Height div 2;
 
-  FTypeLabel := TLabel.Create(Self);
+  TopCnt := TopCnt + FKbpsList.Height + 4;
+
   FTypeLabel.Parent := Self;
   FTypeLabel.Left := 4;
   FTypeLabel.Caption := _('Type') + ':';
+  if MaxW < FTypeLabel.Width then
+    MaxW := FTypeLabel.Width;
+
+  FTypeList.Parent := Self;
+  FTypeList.Style := csDropDownList;
+  FTypeList.Top := TopCnt;
+  FTypeList.Anchors := [akLeft, akRight, akTop];
+
   FTypeLabel.Top := FTypeList.Top + FTypeList.Height div 2 - FTypeLabel.Height div 2;
 
 
@@ -1481,11 +1487,16 @@ begin
   I.Free;
   }
 
+  FSearchEdit.Left := MaxW + 12;
+  FGenreList.Left := MaxW + 12;
+  FKbpsList.Left := MaxW + 12;
+  FTypeList.Left := MaxW + 12;
 
-  FSearchEdit.Width := ClientWidth - FSearchEdit.Left - 8;
-  FGenreList.Width := ClientWidth - FGenreList.Left - 8;
-  FKbpsList.Width := ClientWidth - FKbpsList.Left - 8;
-  FTypeList.Width := ClientWidth - FTypeList.Left - 8;
+
+  FSearchEdit.Width := ClientWidth - FSearchEdit.Left - FSearchLabel.Left;
+  FGenreList.Width := ClientWidth - FGenreList.Left - FGenreLabel.Left;
+  FKbpsList.Width := ClientWidth - FKbpsList.Left - FKbpsLabel.Left;
+  FTypeList.Width := ClientWidth - FTypeList.Left - FTypeLabel.Left;
 
   FKbpsList.Items.Add(_('- No kbps -'));
   FKbpsList.Items.Add('>= 64');

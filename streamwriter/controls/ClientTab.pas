@@ -28,9 +28,9 @@ uses
   LanguageObjects, HomeCommunication, StationCombo, Menus, ActnList, ImgList,
   DataManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
   GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs,
-  Graphics, SharedControls, Generics.Collections, Generics.Defaults,
+  Graphics, SharedControls, Generics.Collections, Generics.Defaults, Math,
   Logging, DynBass, StreamData, Forms, MsgDlg, TypeDefs, MessageBus,
-  AppMessages, PlayerManager, PlaylistHandler, AudioFunctions, MistakeRun1;
+  AppMessages, PlayerManager, PlaylistHandler, AudioFunctions;
 
 type
   TSidebar = class(TPageControl)
@@ -184,7 +184,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    procedure Setup(Toolbar: TToolbar; Actions: TActionList; Popup: TMPopupMenu; MenuImages,
+    procedure Setup(Toolbar: TToolbar; Actions: TActionList; Popup: TPopupMenu; MenuImages,
       ClientImages: TImageList; Clients: TClientManager;
       Streams: TDataLists);
     procedure Shown;
@@ -737,7 +737,7 @@ begin
 end;
 
 procedure TClientTab.Setup(Toolbar: TToolbar; Actions: TActionList;
-  Popup: TMPopupMenu; MenuImages,
+  Popup: TPopupMenu; MenuImages,
   ClientImages: TImageList; Clients: TClientManager; Streams: TDataLists);
   function GetAction(Name: string): TAction;
   var
@@ -782,6 +782,7 @@ begin
   FAddressBar.Align := alTop;
   FAddressBar.Visible := True;
   FAddressBar.Setup;
+  FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2);
   FAddressBar.OnStart := AddressBarStart;
 
   FToolbarPanel := TPanel.Create(Self);
@@ -864,7 +865,8 @@ begin
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
   FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
-  FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := MenuImages;
+  if Screen.PixelsPerInch = 96 then
+    FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := MenuImages;
 
   // Das ClientView wird erst hier erzeugt, weil es eine Referenz auf FSideBar.FBrowserView.StreamTree braucht!
   FClientView := TMClientView.Create(Self, Popup, FSideBar.FBrowserView.StreamTree);

@@ -28,7 +28,7 @@ uses
   MControls, LanguageObjects, Tabs, Functions, AppData, Logging, VirtualTrees,
   HomeCommunication, DataManager, ImgList, Graphics, Math, Generics.Collections,
   Menus, ChartsTabAdjustTitleName, Forms, TypeDefs, MessageBus, AppMessages,
-  HomeCommands, Commands, GUIFunctions, MistakeRun1;
+  HomeCommands, Commands, GUIFunctions;
 
 type
   TNodeTypes = (ntChart, ntStream, ntAll);
@@ -42,7 +42,7 @@ type
 
   TChartDataArray = array of PChartNodeData;
 
-  TChartsPopup = class(TMPopupMenu)
+  TChartsPopup = class(TPopupMenu)
   private
     FItemReload: TMenuItem;
     FItemAddToWishlist: TMenuItem;
@@ -145,6 +145,8 @@ type
     function NodesToData(Nodes: TNodeArray): TChartDataArray;
 
     procedure HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
+
+    procedure Setup;
 
     property State: TChartStates read FState write FSetState;
   end;
@@ -318,10 +320,12 @@ end;
 procedure TChartsTab.Setup(Images: TImageList);
 begin
   FSearchPanel.Setup(Images);
+  FChartsTree.Setup;
 
   FChartsTree.Images := Images;
 
-  FChartsTree.PopupMenu.Images := Images;
+  if Screen.PixelsPerInch = 96 then
+    FChartsTree.PopupMenu.Images := Images;
 
   FSearchPanel.FButtonReload.OnClick := ButtonClick;
   FSearchPanel.FButtonAddToWishlist.OnClick := ButtonClick;
@@ -500,12 +504,10 @@ begin
 
   FColImages := Header.Columns.Add;
   FColImages.Text := _('State');
-  FColImages.Width := 50;
   FColImages.Options := FColImages.Options - [coResizable];
 
   FColChance := Header.Columns.Add;
   FColChance.Text := _('Played last day/week');
-  FColChance.Width := 200;
   FColChance.Alignment := taRightJustify;
 
   Header.Options := Header.Options + [hoAutoResize];
@@ -1066,6 +1068,14 @@ begin
     csError:
       FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_ERROR)) div 2;
   end;
+end;
+
+// TODO: in der win7vm dauert der Fertigstellen-klick im wizard lange. warum? fixen!
+
+procedure TChartsTree.Setup;
+begin
+  FColImages.Width := GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+  FColChance.Width := GetTextSize(FColChance.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
 end;
 
 procedure TChartsTree.TimerOnTimer(Sender: TObject);

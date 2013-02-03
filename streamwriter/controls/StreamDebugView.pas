@@ -120,6 +120,7 @@ begin
   FChkAutoScroll.Visible := True;
   FChkAutoScroll.Checked := AppGlobals.AutoScrollLog;
   FChkAutoScroll.OnClick := ChkAutoScrollClick;
+  FChkAutoScroll.Height := MulDiv(17, Screen.PixelsPerInch, 96) + 2;
 
   FDebug := TDebugView.Create(Self);
   FDebug.Parent := Self;
@@ -131,7 +132,7 @@ begin
   FPanelBottom.Align := alBottom;
   FPanelBottom.BevelOuter := bvNone;
   FPanelBottom.Visible := True;
-  FPanelBottom.Height := 30;
+  FPanelBottom.Height := MulDiv(27, Screen.PixelsPerInch, 96) + 4;
   FPanelBottom.Padding.Top := 4;
 
   FBtnCopy := TButton.Create(Self);
@@ -140,6 +141,7 @@ begin
   FBtnCopy.Parent := FPanelBottom;
   FBtnCopy.Visible := True;
   FBtnCopy.OnClick := BtnCopyClick;
+  FBtnCopy.Width := MulDiv(60, Screen.PixelsPerInch, 96);
 
   FBtnClear := TButton.Create(Self);
   FBtnClear.Caption := _('C&lear');
@@ -147,6 +149,7 @@ begin
   FBtnClear.Parent := FPanelBottom;
   FBtnClear.Visible := True;
   FBtnClear.OnClick := BtnClearClick;
+  FBtnClear.Width := MulDiv(60, Screen.PixelsPerInch, 96);
 end;
 
 destructor TMStreamDebugPanel.Destroy;

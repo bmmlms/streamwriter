@@ -36,7 +36,7 @@ uses
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
   PowerManagement, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
-  AppMessages, CommandLine, Protocol, Commands, HomeCommands, MistakeRun1;
+  AppMessages, CommandLine, Protocol, Commands, HomeCommands;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -45,7 +45,7 @@ const
 type
   TfrmStreamWriterMain = class(TForm)
     addXP: TXPManifest;
-    mnuMain: TMMainMenu;
+    mnuMain: TMainMenu;
     mnuFile: TMenuItem;
     mnuSettings: TMenuItem;
     N3: TMenuItem;
@@ -60,7 +60,7 @@ type
     actStart: TAction;
     actStop: TAction;
     actRemove: TAction;
-    mnuStreamPopup: TMPopupMenu;
+    mnuStreamPopup: TPopupMenu;
     mnuStartStreaming1: TMenuItem;
     mnuStopStreaming1: TMenuItem;
     mnuRemove1: TMenuItem;
@@ -68,7 +68,7 @@ type
     mnuStreamSettings1: TMenuItem;
     mnuStreamSettings2: TMenuItem;
     TrayIcon1: TTrayIcon;
-    mnuTray: TMPopupMenu;
+    mnuTray: TPopupMenu;
     mnuShow: TMenuItem;
     N2: TMenuItem;
     Beenden1: TMenuItem;
@@ -332,6 +332,7 @@ type
   protected
 
   public
+    constructor Create(AOwner: TComponent); override;
 
   end;
 
@@ -761,8 +762,7 @@ begin
   FMainCaption := 'streamWriter';
   {$IFDEF DEBUG}FMainCaption := FMainCaption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
   Caption := FMainCaption;
-                            // TODO: menüs und popupmenüs, die items sehen auf hohen DPI doof aus.
-                            // TODO: items von menüs werden ohne themes grau bleiben.. ohne inhalt!
+
   if not Bass.EffectsAvailable then
   begin
     actEqualizer.Enabled := False;
@@ -830,8 +830,13 @@ begin
 
   tabClients := TClientTab.Create(pagMain);
   tabClients.PageControl := pagMain;
+
+  // TODO: Setup() wird hier im Konstruktor aufgerufen. Das ist schlecht, weil dann die Höhen/etc.
+  // dort nicht zugreifbar sind. Bei hohen DPI kann ich die Elemente im AddressBar-Panel oben
+  // nicht ausrichten. Das MUSS geändert werden!
   tabClients.Setup(tbClients, ActionList1, mnuStreamPopup, imgImages, imgClients,
     FClients, FDataLists);
+
   tabClients.SideBar.BrowserView.StreamTree.Images := imgImages;
   tabClients.AddressBar.Stations.Images := imgImages;
   tabClients.SideBar.DebugView.DebugView.DebugView.Images := imgLog;
@@ -2491,6 +2496,18 @@ end;
 procedure TfrmStreamWriterMain.CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
 begin
   FCommunityLogin := nil;
+end;
+
+constructor TfrmStreamWriterMain.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  if Screen.PixelsPerInch <> 96 then
+  begin
+    mnuMain.Images := nil;
+    mnuStreamPopup.Images := nil;
+    mnuTray.Images := nil;
+  end;
 end;
 
 { TStatusHint }
