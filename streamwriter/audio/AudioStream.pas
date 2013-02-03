@@ -208,6 +208,11 @@ begin
   LastFrame := -1;
   OldPos := Position;
 
+  if F < 0 then
+    F := 0;
+  if T > Size then
+    T := Size;
+
   i := F;
   while i <= T - 4 do
   begin
@@ -241,7 +246,7 @@ begin
 
       Inc(i, FL);
 
-      if (Result.DataStart = -1) and (i + FL >= T) then
+      if (Result.DataEnd = -1) and (i + FL >= T) then
       begin
         if LastFrame > -1 then
           Result.DataEnd := LastFrame;
@@ -290,6 +295,11 @@ begin
 
   LastFrame := -1;
   OldPos := Position;
+
+  if F < 0 then
+    F := 0;
+  if T > Size then
+    T := Size;
 
   i := F;
   while i <= T - 4 do
