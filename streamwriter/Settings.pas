@@ -31,7 +31,7 @@ uses
   DataManager, PngBitBtn, Logging, ToolWin, ListsTab, DownloadAddons,
   ExtendedStream, AddonManager, AddonBase, Generics.Defaults,
   SettingsAddPostProcessor, ConfigureEncoder, AudioFunctions,
-  SWFunctions, TypeDefs;
+  SWFunctions, TypeDefs, SharedData;
 
 type
   TBlacklistNodeData = record
@@ -101,7 +101,7 @@ type
     txtApp: TLabeledEdit;
     txtAppParams: TLabeledEdit;
     lblAppParams: TLabel;
-    btnBrowseApp: TSpeedButton;
+    btnBrowseApp: TPngSpeedButton;
     pnlHotkeys: TPanel;
     lstHotkeys: TListView;
     txtHotkey: THotKey;
@@ -149,9 +149,9 @@ type
     txtMaxSpeed: TLabeledEdit;
     chkLimit: TCheckBox;
     txtDir: TLabeledEdit;
-    btnBrowse: TSpeedButton;
+    btnBrowse: TPngSpeedButton;
     txtDirAuto: TLabeledEdit;
-    btnBrowseAuto: TSpeedButton;
+    btnBrowseAuto: TPngSpeedButton;
     lblIgnoreTitles: TLabel;
     lstIgnoreTitles: TListView;
     btnRemoveIgnoreTitlePattern: TButton;
@@ -193,7 +193,7 @@ type
     chkShowSplashScreen: TCheckBox;
     chkDisplayPlayedSong: TCheckBox;
     txtLogFile: TLabeledEdit;
-    btnBrowseLogFile: TSpeedButton;
+    btnBrowseLogFile: TPngSpeedButton;
     dlgSave: TSaveDialog;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -869,10 +869,10 @@ begin
       P.LoadFromResourceName(HInstance, 'CONFIGURE');
       btnConfigureEncoder.PngImage := P;
 
-      GetBitmap('BROWSE', 2, B);
-      btnBrowse.Glyph := B;
-      btnBrowseAuto.Glyph := B;
-      btnBrowseApp.Glyph := B;
+      btnBrowse.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
+      btnBrowseAuto.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
+      btnBrowseApp.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
+      btnBrowseLogFile.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
     finally
       B.Free;
       P.Free;
@@ -3144,7 +3144,7 @@ procedure TBlacklistTree.DoMeasureItem(TargetCanvas: TCanvas;
 begin
   inherited;
 
-  NodeHeight := GetTextSize('Wyg', Font).cy + 5; // TODO: sieht das ok aus?
+  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
 end;
 
 procedure TBlacklistTree.RemoveSelected;

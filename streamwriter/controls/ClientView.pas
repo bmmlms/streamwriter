@@ -31,7 +31,7 @@ uses
   StdCtrls, Menus, ImgList, Math, ICEClient, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, Tabs, DropComboTarget,
   DropSource, ShlObj, ComObj, ShellAPI, DataManager, StreamBrowserView,
-  Logging, PngImage, SharedControls, GUIFunctions;
+  Logging, PngImage, SharedControls, GUIFunctions, Forms;
 
 type
   TAccessCanvas = class(TCanvas);
@@ -105,6 +105,8 @@ type
   public
     constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree); reintroduce;
     destructor Destroy; override;
+
+    procedure Shown;
 
     function AddClient(Client: TICEClient): PVirtualNode;
     function RefreshClient(Client: TICEClient): Boolean;
@@ -194,8 +196,6 @@ begin
 
   FDragTreshold := 6;
 
-  // TODO: wenn keine settings gespeichert sind und man mit hohen dpi startet sollte auch alles cool aussehen, die standardsettings halt.
-
   Header.Height := GetTextSize('Wyg', Font).cy + 5;
 
   NodeDataSize := SizeOf(TClientNodeData);
@@ -239,8 +239,6 @@ begin
     if not ((AppGlobals.ClientCols and (1 shl i)) <> 0) then
       Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
   end;
-
-  FitColumns;
 end;
 
 destructor TMClientView.Destroy;
@@ -431,12 +429,11 @@ end;
 
 procedure TMClientView.FitColumns;
 begin
-  // TODO: das hier muss auch dann aufgerufen werden, wenn Shown() läuft. zur Zeit Konstruktor...
-  FColRcvd.Width := GetTextSize(FColRcvd.Text, Font).cx + 4;
-  FColSpeed.Width := Max(GetTextSize('11,11KB/s', Font).cx, GetTextSize(FColSpeed.Text, Font).cx) + 4;
-  FColSongs.Width := GetTextSize(FColSongs.Text, Font).cx + 4;
-  FColStatus.Width := GetTextSize('            ', Font).cx + 4;
-  FColName.Width := FColRcvd.Width - FColSpeed.Width - FColSongs.Width - FColStatus.Width - 30;
+  FColRcvd.Width := Max(GetTextSize(FColRcvd.Text, Font).cx, GetTextSize('111,11 KB', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
+  FColSpeed.Width := Max(GetTextSize(FColSpeed.Text, Font).cx, GetTextSize('11,11 KB/s', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
+  FColSongs.Width := GetTextSize(FColSongs.Text, Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+  FColStatus.Width := Max(GetTextSize(FColStatus.Text, Font).cx, MulDiv(80, Screen.PixelsPerInch, 96)) + MulDiv(20, Screen.PixelsPerInch, 96);
+  FColName.Width := MulDiv(150, Screen.PixelsPerInch, 96);
 end;
 
 function TMClientView.DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; Pt: TPoint; Mode: TDropMode;
@@ -726,6 +723,11 @@ begin
       Break;
     end;
   end;
+end;
+
+procedure TMClientView.Shown;
+begin
+  FitColumns;
 end;
 
 procedure TMClientView.SortItems;

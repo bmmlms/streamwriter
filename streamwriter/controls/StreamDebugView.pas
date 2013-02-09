@@ -27,7 +27,7 @@ uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
   DataManager, VirtualTrees, LanguageObjects, GUIFunctions,
   Generics.Collections, Graphics, Forms, ICEClient, Clipbrd, AppData,
-  Logging, Math, TypeDefs;
+  Logging, Math, TypeDefs, SharedData;
 
 type
   TDebugView = class(TVirtualStringTree)
@@ -224,6 +224,8 @@ begin
   TreeOptions.PaintOptions := TreeOptions.PaintOptions - [toShowTreeLines] + [toHideFocusRect];
   TreeOptions.SelectionOptions := TreeOptions.SelectionOptions + [toFullRowSelect, toMultiSelect];
   ScrollBarOptions.ScrollBars := ssVertical;
+
+  Images := modSharedData.imgLog;
 
   Indent := 0;
   ShowHint := True;

@@ -36,7 +36,7 @@ uses
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
   PowerManagement, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
-  AppMessages, CommandLine, Protocol, Commands, HomeCommands;
+  AppMessages, CommandLine, Protocol, Commands, HomeCommands, SharedData;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -145,9 +145,6 @@ type
     Pause1: TMenuItem;
     mnuPause1: TMenuItem;
     tmrRecordings: TTimer;
-    imgClients: TPngImageList;
-    imgImages: TPngImageList;
-    imgLog: TPngImageList;
     Community1: TMenuItem;
     actLogOn: TAction;
     Login1: TMenuItem;
@@ -757,7 +754,6 @@ procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
 var
   Recovered: Boolean;
   S: TExtendedStream;
-  i: Integer;
 begin
   FMainCaption := 'streamWriter';
   {$IFDEF DEBUG}FMainCaption := FMainCaption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
@@ -826,28 +822,12 @@ begin
   pagMain.Parent := Self;
   pagMain.Visible := True;
   pagMain.Align := alClient;
-  pagMain.Images := imgImages;
+  pagMain.Images := modSharedData.imgImages;
 
-  tabClients := TClientTab.Create(pagMain);
+  tabClients := TClientTab.Create(pagMain, tbClients, ActionList1, FClients, FDataLists);
   tabClients.PageControl := pagMain;
 
-  // TODO: Setup() wird hier im Konstruktor aufgerufen. Das ist schlecht, weil dann die Höhen/etc.
-  // dort nicht zugreifbar sind. Bei hohen DPI kann ich die Elemente im AddressBar-Panel oben
-  // nicht ausrichten. Das MUSS geändert werden!
-  tabClients.Setup(tbClients, ActionList1, mnuStreamPopup, imgImages, imgClients,
-    FClients, FDataLists);
 
-  tabClients.SideBar.BrowserView.StreamTree.Images := imgImages;
-  tabClients.AddressBar.Stations.Images := imgImages;
-  tabClients.SideBar.DebugView.DebugView.DebugView.Images := imgLog;
-  tabClients.OnUpdateButtons := tabClientsUpdateButtons;
-  tabClients.OnTrackAdded := tabClientsTrackAdded;
-  tabClients.OnTrackRemoved := tabClientsTrackRemoved;
-  tabClients.OnAddTitleToList := tabClientsAddTitleToList;
-  tabClients.OnRemoveTitleFromList := tabClientsRemoveTitleFromList;
-  tabClients.OnPlayStarted := tabPlayStarted;
-  tabClients.OnAuthRequired := tabClientsAuthRequired;
-  tabClients.OnShowErrorMessage := tabClientsShowErrorMessage;
 
   tabCharts := TChartsTab.Create(pagMain, FDataLists);
   tabCharts.PageControl := pagMain;
@@ -872,14 +852,6 @@ begin
   FWasShown := False;
   FUpdateOnExit := False;
 
-  tabClients.AddressBar.Stations.BuildList(FDataLists.RecentList);
-  tabClients.BuildTree(FDataLists);
-
-  // Ist hier unten, weil hier erst Tracks geladen wurden
-  tabSaved.Setup(FDataLists, imgImages);
-  tabClients.AddressBar.Stations.Sort;
-
-  UpdateButtons;
   UpdateStatus;
   tmrSpeed.Enabled := True;
   tmrSchedule.Enabled := True;
@@ -900,9 +872,6 @@ begin
   ScreenSnap := AppGlobals.SnapMain;
 
   addStatus.CustomHint := TStatusHint.Create(Self);
-
-  tabClients.OnClientAdded := tabClientsClientAdded;
-  tabClients.OnClientRemoved := tabClientsClientRemoved;
 
   // Ist nun hier, damit man nicht sieht, wie sich alle Controls resizen.
   if AppGlobals.MainMaximized then
@@ -939,11 +908,32 @@ begin
 
   AppGlobals.WindowHandle := Handle;
 
-  tabClients.Shown;
-  tabSaved.Shown;
+  tabClients.Shown(mnuStreamPopup);
+  tabSaved.Setup(FDataLists);
+  tabCharts.Setup;
+  tabLists.Setup(FClients, FDataLists);
 
-  tabCharts.Setup(imgImages);
-  tabLists.Setup(FClients, FDataLists, imgImages);
+  tabClients.OnUpdateButtons := tabClientsUpdateButtons;
+  tabClients.OnTrackAdded := tabClientsTrackAdded;
+  tabClients.OnTrackRemoved := tabClientsTrackRemoved;
+  tabClients.OnAddTitleToList := tabClientsAddTitleToList;
+  tabClients.OnRemoveTitleFromList := tabClientsRemoveTitleFromList;
+  tabClients.OnPlayStarted := tabPlayStarted;
+  tabClients.OnAuthRequired := tabClientsAuthRequired;
+  tabClients.OnShowErrorMessage := tabClientsShowErrorMessage;
+
+  tabClients.AddressBar.Stations.BuildList(FDataLists.RecentList);
+  tabClients.BuildTree(FDataLists);
+
+  // Ist hier unten, weil hier erst Tracks geladen wurden
+  tabClients.AddressBar.Stations.Sort;
+
+  tabClients.OnClientAdded := tabClientsClientAdded;
+  tabClients.OnClientRemoved := tabClientsClientRemoved;
+
+
+  UpdateButtons;
+
 
   actShowSideBar.Checked := tabClients.SideBar.Visible;
 
@@ -1321,7 +1311,7 @@ begin
 
   pagMain.ActivePage := tabCut;
 
-  tabCut.Setup(Filename, imgImages);
+  tabCut.Setup(Filename);
 
   tabCut.CutView.OnCutFile := tabCutCutFile;
 end;
@@ -1337,7 +1327,7 @@ begin
 
   pagMain.ActivePage := tabCut;
 
-  tabCut.Setup(Track, imgImages);
+  tabCut.Setup(Track);
 
   tabCut.CutView.OnCutFile := tabCutCutFile;
 end;
@@ -1906,7 +1896,7 @@ var
   Found: Boolean;
   Pattern: string;
   T: TTitleInfo;
-  List: TTitleList;
+  List: TList<TTitleInfo>;
 begin
   if Client = nil then
     if ListType = ltSave then
@@ -1946,7 +1936,7 @@ procedure TfrmStreamWriterMain.tabClientsRemoveTitleFromList(
   Sender: TObject; Client: TICEClient; ListType: TListType; Title: string);
 var
   i: Integer;
-  List: TTitleList;
+  List: TList<TTitleInfo>;
   T: TTitleInfo;
 begin
   if Client = nil then
@@ -2053,6 +2043,11 @@ begin
     tabLists.UpdateLists;
     tabClients.UpdateStreams(FDataLists);
     FDataLists.SaveRecover;
+
+    try
+      AppGlobals.Save(0);
+    except
+    end;
   except
     tmrAutoSave.Enabled := False;
   end;

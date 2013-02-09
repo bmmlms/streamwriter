@@ -10,7 +10,7 @@ object frmConfigureSoX: TfrmConfigureSoX
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
-  
+  Font.Name = 'Tahoma'
   Font.Style = []
   Icon.Data = {
     0000010001001010000001002000680400001600000028000000100000002000
@@ -229,7 +229,7 @@ object frmConfigureSoX: TfrmConfigureSoX
     Height = 161
     TabOrder = 2
     Visible = False
-    object btnBrowse1: TSpeedButton
+    object btnBrowse1: TPngSpeedButton
       Left = 308
       Top = 84
       Width = 25
@@ -241,7 +241,7 @@ object frmConfigureSoX: TfrmConfigureSoX
       ShowHint = True
       OnClick = btnBrowseClick
     end
-    object btnBrowse2: TSpeedButton
+    object btnBrowse2: TPngSpeedButton
       Left = 308
       Top = 132
       Width = 25

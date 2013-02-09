@@ -30,7 +30,8 @@ uses
   GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs,
   Graphics, SharedControls, Generics.Collections, Generics.Defaults, Math,
   Logging, DynBass, StreamData, Forms, MsgDlg, TypeDefs, MessageBus,
-  AppMessages, PlayerManager, PlaylistHandler, AudioFunctions;
+  AppMessages, PlayerManager, PlaylistHandler, AudioFunctions, SharedData,
+  PngSpeedButton;
 
 type
   TSidebar = class(TPageControl)
@@ -57,7 +58,7 @@ type
   private
     FLabel: TLabel;
     FStations: TMStationCombo;
-    FStart: TSpeedButton;
+    FStart: TPngSpeedButton;
     FDropTarget: TDropComboTarget;
 
     FOnStart: TNotifyEvent;
@@ -181,13 +182,11 @@ type
   protected
     procedure Resize; override;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList;
+      Clients: TClientManager; Streams: TDataLists);
     destructor Destroy; override;
 
-    procedure Setup(Toolbar: TToolbar; Actions: TActionList; Popup: TPopupMenu; MenuImages,
-      ClientImages: TImageList; Clients: TClientManager;
-      Streams: TDataLists);
-    procedure Shown;
+    procedure Shown(Popup: TPopupMenu);
     function StartStreaming(Streams: TStartStreamingInfoArray; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean; overload;
     function StartStreaming(Stream: TStartStreamingInfo; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean; overload;
     procedure TimerTick;
@@ -250,7 +249,7 @@ begin
   FLabel.Left := 0;
   FLabel.Caption := 'Playlist/Stream-URL:';
 
-  FStart := TSpeedButton.Create(Self);
+  FStart := TPngSpeedButton.Create(Self);
   FStart.Parent := Self;
   FStart.Width := 24;
   FStart.Height := 24;
@@ -260,10 +259,9 @@ begin
   FStart.Flat := True;
   FStart.Hint := 'Add and start recording';
   FStart.ShowHint := True;
-  FStart.NumGlyphs := 2;
+  FStart.NumGlyphs := 1;
   FStart.OnClick := FStartClick;
-
-  GetBitmap('ADD', 2, FStart.Glyph);
+  FStart.PngImage := modSharedData.imgImages.PngImages[11].PngImage;
 
   FStations := TMStationCombo.Create(Self);
   FStations.Parent := Self;
@@ -274,6 +272,7 @@ begin
   FStations.Anchors := [akLeft, akTop, akRight];
   FStations.OnKeyPress := FStationsKeyPress;
   FStations.OnChange := FStationsChange;
+  FStations.Images := modSharedData.imgImages;
   Height := FStations.Top + FStations.Height + FStations.Top - 2;
 
   FLabel.Top := FStations.Top + FStations.Height div 2 - FLabel.Height div 2;
@@ -680,9 +679,24 @@ begin
   end;
 end;
 
-constructor TClientTab.Create(AOwner: TComponent);
+constructor TClientTab.Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList; Clients: TClientManager;
+  Streams: TDataLists);
+  function GetAction(Name: string): TAction;
+  var
+    i: Integer;
+  begin
+    Result := nil;
+    for i := 0 to Actions.ActionCount - 1 do
+      if Actions[i].Name = Name then
+      begin
+        Result := Actions[i] as TAction;
+        Break;
+      end;
+    if Result = nil then
+      raise Exception.Create('');
+  end;
 begin
-  inherited;
+  inherited Create(AOwner);
 
   ShowCloseButton := False;
   ImageIndex := 16;
@@ -691,6 +705,110 @@ begin
   FPlaybackTimer.Interval := 1000;
   FPlaybackTimer.Enabled := False;
   FPlaybackTimer.OnTimer := PlaybackTimerTimer;
+
+  FRefreshInfo := False;
+  FReceived := 0;
+
+  FClients := Clients;
+  FClients.OnClientDebug := ClientManagerDebug;
+  FClients.OnClientRefresh := ClientManagerRefresh;
+  FClients.OnClientAddRecent := ClientManagerAddRecent;
+  FClients.OnClientAdded := ClientManagerClientAdded;
+  FClients.OnClientRemoved := ClientManagerClientRemoved;
+  FClients.OnClientSongSaved := ClientManagerSongSaved;
+  FClients.OnClientTitleChanged := ClientManagerTitleChanged;
+  FClients.OnClientICYReceived := ClientManagerICYReceived;
+  FClients.OnClientTitleAllowed := ClientManagerTitleAllowed;
+  FClients.OnShowErrorMessage := ClientManagerShowErrorMessage;
+  FClients.OnPlaybackStarted := ClientManagerPlaybackStarted;
+  FClients.OnClientSecondsReceived := ClientManagerSecondsReceived;
+
+  FStreams := Streams;
+
+  FHomeCommunication := HomeComm;
+
+  Caption := 'Streams';
+
+  FAddressBar := TClientAddressBar.Create(Self);
+  FAddressBar.Parent := Self;
+  FAddressBar.Align := alTop;
+  FAddressBar.Visible := True;
+  FAddressBar.OnStart := AddressBarStart;
+
+  FToolbarPanel := TPanel.Create(Self);
+  FToolbarPanel.Align := alTop;
+  FToolbarPanel.BevelOuter := bvNone;
+  FToolbarPanel.Parent := Self;
+
+  FToolbar := Toolbar;
+  FToolbar.Align := alLeft;
+  FToolbar.Indent := 0;
+  FToolbar.Top := 0;
+  FToolbar.Parent := FToolbarPanel;
+
+  FVolume := TVolumePanel.Create(Self);
+  FVolume.Parent := FToolbarPanel;
+  FVolume.Align := alRight;
+  FVolume.OnVolumeChange := VolumeVolumeChange;
+  FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
+
+  FTimeLabel := TLabel.Create(Self);
+  FTimeLabel.Anchors := [akRight, akTop];
+  FTimeLabel.Alignment := taCenter;
+  FTimeLabel.Parent := FToolbarPanel;
+
+  FActionPlay := GetAction('actPlay');
+  FActionPause := GetAction('actPause');
+  FActionStopPlay := GetAction('actStopPlay');
+  FActionTuneInStream := GetAction('actTuneInStream');
+  FActionTuneInFile := GetAction('actTuneInFile');
+  FActionRename := GetAction('actRename');
+  FActionRemove := GetAction('actRemove');
+  FActionShowSideBar := GetAction('actShowSideBar');
+  FActionStopAfterSong := GetAction('actStopAfterSong');
+
+  FActionPlay.OnExecute := ActionPlayExecute;
+  FActionPause.OnExecute := ActionPauseExecute;
+  FActionStopPlay.OnExecute := ActionPlayStopExecute;
+  FActionTuneInStream.OnExecute := ActionTuneInStreamExecute;
+  FActionTuneInFile.OnExecute := ActionTuneInFileExecute;
+  FActionRename.OnExecute := ActionRenameExecute;
+  FActionRemove.OnExecute := ActionRemoveExecute;
+  FActionShowSideBar.OnExecute := ActionShowSideBarExecute;
+  FActionStopAfterSong.OnExecute := ActionStopAfterSongExecute;
+
+  GetAction('actNewCategory').OnExecute := ActionNewCategoryExecute;
+  GetAction('actStart').OnExecute := ActionStartExecute;
+  GetAction('actStop').OnExecute := ActionStopExecute;
+  GetAction('actOpenWebsite').OnExecute := ActionOpenWebsiteExecute;
+  GetAction('actResetData').OnExecute := ActionResetDataExecute;
+  GetAction('actSavePlaylistStream').OnExecute := ActionSavePlaylistStreamExecute;
+  GetAction('actSavePlaylistFile').OnExecute := ActionSavePlaylistFileExecute;
+  GetAction('actCopyTitle').OnExecute := ActionCopyTitleExecute;
+  GetAction('actAddToSaveList').OnExecute := ActionAddToSaveListExecute;
+  GetAction('actAddToGlobalIgnoreList').OnExecute := ActionAddToGlobalIgnoreList;
+  GetAction('actAddToStreamIgnoreList').OnExecute := ActionAddToStreamIgnoreList;
+
+  FSplitter := TSplitter.Create(Self);
+  FSplitter.Parent := Self;
+  FSplitter.Align := alRight;
+  FSplitter.Visible := True;
+  FSplitter.AutoSnap := False;
+  FSplitter.ResizeStyle := rsUpdate;
+
+  FSideBar := TSidebar.Create(Self, FStreams);
+  FSideBar.Parent := Self;
+  FSideBar.Align := alRight;
+  FSideBar.Visible := True;
+
+
+  FSideBar.Visible := True;
+  FSplitter.Visible := True;
+
+  FToolbarPanel.Top := 0;
+  FAddressBar.Top := 100;
+
+  MsgBus.AddSubscriber(MessageReceived);
 end;
 
 procedure TClientTab.AddressBarStart(Sender: TObject);
@@ -736,161 +854,6 @@ begin
   inherited;
 end;
 
-procedure TClientTab.Setup(Toolbar: TToolbar; Actions: TActionList;
-  Popup: TPopupMenu; MenuImages,
-  ClientImages: TImageList; Clients: TClientManager; Streams: TDataLists);
-  function GetAction(Name: string): TAction;
-  var
-    i: Integer;
-  begin
-    Result := nil;
-    for i := 0 to Actions.ActionCount - 1 do
-      if Actions[i].Name = Name then
-      begin
-        Result := Actions[i] as TAction;
-        Break;
-      end;
-    if Result = nil then
-      raise Exception.Create('');
-  end;
-begin
-  FRefreshInfo := False;
-  FReceived := 0;
-
-  FClients := Clients;
-  FClients.OnClientDebug := ClientManagerDebug;
-  FClients.OnClientRefresh := ClientManagerRefresh;
-  FClients.OnClientAddRecent := ClientManagerAddRecent;
-  FClients.OnClientAdded := ClientManagerClientAdded;
-  FClients.OnClientRemoved := ClientManagerClientRemoved;
-  FClients.OnClientSongSaved := ClientManagerSongSaved;
-  FClients.OnClientTitleChanged := ClientManagerTitleChanged;
-  FClients.OnClientICYReceived := ClientManagerICYReceived;
-  FClients.OnClientTitleAllowed := ClientManagerTitleAllowed;
-  FClients.OnShowErrorMessage := ClientManagerShowErrorMessage;
-  FClients.OnPlaybackStarted := ClientManagerPlaybackStarted;
-  FClients.OnClientSecondsReceived := ClientManagerSecondsReceived;
-
-  FStreams := Streams;
-
-  FHomeCommunication := HomeComm;
-
-  Caption := 'Streams';
-
-  FAddressBar := TClientAddressBar.Create(Self);
-  FAddressBar.Parent := Self;
-  FAddressBar.Align := alTop;
-  FAddressBar.Visible := True;
-  FAddressBar.Setup;
-  FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2);
-  FAddressBar.OnStart := AddressBarStart;
-
-  FToolbarPanel := TPanel.Create(Self);
-  FToolbarPanel.Align := alTop;
-  FToolbarPanel.BevelOuter := bvNone;
-  FToolbarPanel.Parent := Self;
-  FToolbarPanel.ClientHeight := 24;
-
-  FToolbar := Toolbar;
-  FToolbar.Align := alLeft;
-  FToolbar.Indent := 0;
-  FToolbar.Top := 0;
-  FToolbar.Width := FToolbarPanel.ClientWidth - 250;
-  FToolbar.Height := 25;
-  FToolbar.Parent := FToolbarPanel;
-
-  FVolume := TVolumePanel.Create(Self);
-  FVolume.Parent := FToolbarPanel;
-  FVolume.Align := alRight;
-  FVolume.Setup;
-  FVolume.Width := 140;
-  FVolume.Volume := Players.Volume;
-  FVolume.OnVolumeChange := VolumeVolumeChange;
-  FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
-
-  FTimeLabel := TLabel.Create(Self);
-  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
-  FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
-  FTimeLabel.Anchors := [akRight, akTop];
-  FTimeLabel.Alignment := taCenter;
-  FTimeLabel.Parent := FToolbarPanel;
-
-  FActionPlay := GetAction('actPlay');
-  FActionPause := GetAction('actPause');
-  FActionStopPlay := GetAction('actStopPlay');
-  FActionTuneInStream := GetAction('actTuneInStream');
-  FActionTuneInFile := GetAction('actTuneInFile');
-  FActionRename := GetAction('actRename');
-  FActionRemove := GetAction('actRemove');
-  FActionShowSideBar := GetAction('actShowSideBar');
-  FActionStopAfterSong := GetAction('actStopAfterSong');
-
-  FActionPlay.OnExecute := ActionPlayExecute;
-  FActionPause.OnExecute := ActionPauseExecute;
-  FActionStopPlay.OnExecute := ActionPlayStopExecute;
-  FActionTuneInStream.OnExecute := ActionTuneInStreamExecute;
-  FActionTuneInFile.OnExecute := ActionTuneInFileExecute;
-  FActionRename.OnExecute := ActionRenameExecute;
-  FActionRemove.OnExecute := ActionRemoveExecute;
-  FActionShowSideBar.OnExecute := ActionShowSideBarExecute;
-  FActionStopAfterSong.OnExecute := ActionStopAfterSongExecute;
-
-  GetAction('actNewCategory').OnExecute := ActionNewCategoryExecute;
-  GetAction('actStart').OnExecute := ActionStartExecute;
-  GetAction('actStop').OnExecute := ActionStopExecute;
-  GetAction('actOpenWebsite').OnExecute := ActionOpenWebsiteExecute;
-  GetAction('actResetData').OnExecute := ActionResetDataExecute;
-  GetAction('actSavePlaylistStream').OnExecute := ActionSavePlaylistStreamExecute;
-  GetAction('actSavePlaylistFile').OnExecute := ActionSavePlaylistFileExecute;
-  GetAction('actCopyTitle').OnExecute := ActionCopyTitleExecute;
-  GetAction('actAddToSaveList').OnExecute := ActionAddToSaveListExecute;
-  GetAction('actAddToGlobalIgnoreList').OnExecute := ActionAddToGlobalIgnoreList;
-  GetAction('actAddToStreamIgnoreList').OnExecute := ActionAddToStreamIgnoreList;
-
-  FSplitter := TSplitter.Create(Self);
-  FSplitter.Parent := Self;
-  FSplitter.Align := alRight;
-  FSplitter.Visible := True;
-  FSplitter.Width := 4;
-  FSplitter.MinSize := 220;
-  FSplitter.AutoSnap := False;
-  FSplitter.ResizeStyle := rsUpdate;
-
-  FSideBar := TSidebar.Create(Self, FStreams);
-  FSideBar.Parent := Self;
-  FSideBar.Align := alRight;
-  FSideBar.Visible := True;
-  FSideBar.Init;
-
-  FSideBar.FDebugView.DebugView.OnClear := DebugClear;
-  FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
-  FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
-  if Screen.PixelsPerInch = 96 then
-    FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := MenuImages;
-
-  // Das ClientView wird erst hier erzeugt, weil es eine Referenz auf FSideBar.FBrowserView.StreamTree braucht!
-  FClientView := TMClientView.Create(Self, Popup, FSideBar.FBrowserView.StreamTree);
-  FClientView.Parent := Self;
-  FClientView.Align := alClient;
-  FClientView.Visible := True;
-  FClientView.PopupMenu := Popup;
-  FClientView.Images := ClientImages;
-  FClientView.OnChange := FClientViewChange;
-  FClientView.OnDblClick := FClientViewDblClick;
-  FClientView.OnKeyPress := FClientViewKeyPress;
-  FClientView.OnKeyDown := FClientViewKeyDown;
-  FClientView.OnStartStreaming := FClientViewStartStreaming;
-  FClientView.Show;
-
-  FSplitter.Left := FSideBar.Left - 5;
-
-  FSideBar.Visible := True;
-  FSplitter.Visible := True;
-  FSideBar.Width := AppGlobals.SidebarWidth;
-
-  MsgBus.AddSubscriber(MessageReceived);
-end;
-
 procedure TClientTab.ShowInfo;
 var
   Clients: TNodeDataArray;
@@ -913,11 +876,57 @@ begin
   end;
 end;
 
-procedure TClientTab.Shown;
+procedure TClientTab.Shown(Popup: TPopupMenu);
 var
   i: Integer;
 begin
+  FAddressBar.Setup;
+  FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2);
+
+  FToolbarPanel.ClientHeight := 24;
+
+  FToolbar.Width := FToolbarPanel.ClientWidth - 250;
+  FToolbar.Height := 25;
+
+  FVolume.Setup;
+  FVolume.Width := 140;
+  FVolume.Volume := Players.Volume;
+
+  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
+  FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
+
+  FSplitter.Width := MulDiv(4, Screen.PixelsPerInch, 96);
+  FSplitter.MinSize := MulDiv(200, Screen.PixelsPerInch, 96);
+  FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
+
+  FSideBar.Width := AppGlobals.SidebarWidth;
+
+  FSideBar.Init;
   FSideBar.FBrowserView.Setup;
+  FSideBar.FDebugView.DebugView.OnClear := DebugClear;
+  FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
+  FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
+  if Screen.PixelsPerInch = 96 then
+    FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := modSharedData.imgImages;
+
+
+
+  // Das ClientView wird erst hier erzeugt, weil es eine Referenz auf FSideBar.FBrowserView.StreamTree braucht!
+  FClientView := TMClientView.Create(Self, Popup, FSideBar.FBrowserView.StreamTree);
+  FClientView.Parent := Self;
+  FClientView.Align := alClient;
+  FClientView.Visible := True;
+  FClientView.PopupMenu := Popup;
+  FClientView.Images := modSharedData.imgClients;
+  FClientView.OnChange := FClientViewChange;
+  FClientView.OnDblClick := FClientViewDblClick;
+  FClientView.OnKeyPress := FClientViewKeyPress;
+  FClientView.OnKeyDown := FClientViewKeyDown;
+  FClientView.OnStartStreaming := FClientViewStartStreaming;
+
+  FClientView.Shown;
+
+
 
   if FClientView.RootNodeCount > 0 then
   begin
@@ -928,6 +937,7 @@ begin
   if AppGlobals.ClientHeadersLoaded then
     for i := 0 to FClientView.Header.Columns.Count - 1 do
       FClientView.Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
+  FClientView.Show;
 end;
 
 procedure TClientTab.ClientManagerAddRecent(Sender: TObject);
@@ -982,7 +992,7 @@ end;
 
 procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string;
   var Allowed: Boolean; var Match: string; var Filter: Integer);
-  function ContainsTitle(List: TTitleList; Title: string; var Match: string): Boolean;
+  function ContainsTitle(List: TList<TTitleInfo>; Title: string; var Match: string): Boolean;
   var
     i: Integer;
   begin

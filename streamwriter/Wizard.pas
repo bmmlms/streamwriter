@@ -25,7 +25,8 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ComCtrls, ExtCtrls, Buttons, StdCtrls, ShellAPI, ShlObj, AppData,
-  ImgList, LanguageObjects, Functions, WizardBase, GUIFunctions, Logging;
+  ImgList, LanguageObjects, Functions, WizardBase, GUIFunctions, Logging,
+  PngSpeedButton, SharedData;
 
 type
   TStepDir = class(TStep)
@@ -34,7 +35,7 @@ type
 
   TfrmWizard = class(TfrmWizardBase)
     pnlDir: TPanel;
-    cmdBrowse: TSpeedButton;
+    cmdBrowse: TPngSpeedButton;
     txtDir: TLabeledEdit;
     pnlBandwidth: TPanel;
     chkLimit: TCheckBox;
@@ -48,7 +49,8 @@ type
     function IsValid(Step: TStep): Boolean; override;
     procedure InitStep(Step: TStep); override;
   published
-
+  public
+    constructor Create(AOwner: TComponent); override;
   end;
 
 implementation
@@ -146,6 +148,13 @@ begin
     Dir := IncludeTrailingBackslash(Dir);
     txtDir.Text := Dir;
   end;
+end;
+
+constructor TfrmWizard.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  cmdBrowse.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
 end;
 
 end.

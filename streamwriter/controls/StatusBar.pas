@@ -160,7 +160,6 @@ end;
 constructor TSWStatusBar.Create(AOwner: TComponent);
 var
   P: TStatusPanel;
-  C: TAccessCanvas;
 begin
   inherited;
 

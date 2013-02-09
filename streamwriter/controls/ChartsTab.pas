@@ -28,7 +28,7 @@ uses
   MControls, LanguageObjects, Tabs, Functions, AppData, Logging, VirtualTrees,
   HomeCommunication, DataManager, ImgList, Graphics, Math, Generics.Collections,
   Menus, ChartsTabAdjustTitleName, Forms, TypeDefs, MessageBus, AppMessages,
-  HomeCommands, Commands, GUIFunctions;
+  HomeCommands, Commands, GUIFunctions, SharedData;
 
 type
   TNodeTypes = (ntChart, ntStream, ntAll);
@@ -83,7 +83,7 @@ type
   public
     constructor Create(AOwner: TComponent); reintroduce;
 
-    procedure Setup(Images: TImageList);
+    procedure Setup;
     procedure PostTranslate;
   end;
 
@@ -110,8 +110,6 @@ type
     procedure MessageReceived(Msg: TMessageBase);
 
     procedure PopupMenuClick(Sender: TObject);
-
-    //procedure OnSaveListNotify(Sender: TObject; const Item: TTitleInfo; Action: TCollectionNotification);
 
     procedure TimerOnTimer(Sender: TObject);
 
@@ -180,7 +178,7 @@ type
     constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
     destructor Destroy; override;
 
-    procedure Setup(Images: TImageList);
+    procedure Setup;
     procedure PostTranslate;
     procedure SetState(State: TChartStates);
 
@@ -317,15 +315,15 @@ begin
   end;
 end;
 
-procedure TChartsTab.Setup(Images: TImageList);
+procedure TChartsTab.Setup;
 begin
-  FSearchPanel.Setup(Images);
+  FSearchPanel.Setup;
   FChartsTree.Setup;
 
-  FChartsTree.Images := Images;
+  FChartsTree.Images := modSharedData.imgImages;
 
   if Screen.PixelsPerInch = 96 then
-    FChartsTree.PopupMenu.Images := Images;
+    FChartsTree.PopupMenu.Images := modSharedData.imgImages;
 
   FSearchPanel.FButtonReload.OnClick := ButtonClick;
   FSearchPanel.FButtonAddToWishlist.OnClick := ButtonClick;
@@ -504,7 +502,6 @@ begin
 
   FColImages := Header.Columns.Add;
   FColImages.Text := _('State');
-  FColImages.Options := FColImages.Options - [coResizable];
 
   FColChance := Header.Columns.Add;
   FColChance.Text := _('Played last day/week');
@@ -916,46 +913,8 @@ begin
     end;
 
     Invalidate;
-
-    { Dauert zu lange, deshalb raus. Ist auch nur interessant, wenn man sW über
-      Cmd-Line-Args bedient... und evtl. durch das Invalidate() hier drüber eh erledigt!
-    Node := GetFirst;
-    while Node <> nil do
-    begin
-      InvalidateNode(Node);
-      Node := GetNext(Node);
-    end;
-    }
   end;
 end;
-
-{     TODO: Wenn das hier wegfällt kann das ne normale TList<> werden.
-procedure TChartsTree.OnSaveListNotify(Sender: TObject;
-  const Item: TTitleInfo; Action: TCollectionNotification);
-var
-  Node: PVirtualNode;
-  NodeData: PChartNodeData;
-begin
-  if Sender = FLists.SaveList then
-  begin
-    if (Action = cnAdded) or (Action = cnRemoved) then
-    begin
-      Node := GetFirst;
-      while Node <> nil do
-      begin
-        NodeData := GetNodeData(Node);
-        if (NodeData.Chart <> nil) and (LowerCase(NodeData.Chart.Name) = LowerCase(Item.Title)) then
-        begin
-          NodeData.IsOnWishlist := Action = cnAdded;
-          InvalidateNode(Node);
-          Break;
-        end;
-        Node := GetNext(Node);
-      end;
-    end;
-  end;
-end;
-}
 
 procedure TChartsTree.Paint;
 var
@@ -971,7 +930,7 @@ begin
       csLoading:
         begin
           Msg := _(TEXT_LOADING) + FDots;
-          Canvas.TextOut(FTextLeft, ClientHeight div 2 - Canvas.TextHeight(Msg), Msg);
+          Canvas.TextOut(FTextLeft, FProgressBar.Top - GetTextSize('Wyg', Font).cy - MulDiv(2, Screen.PixelsPerInch, 96), Msg);
         end;
       csError:
         begin
@@ -1070,8 +1029,6 @@ begin
   end;
 end;
 
-// TODO: in der win7vm dauert der Fertigstellen-klick im wizard lange. warum? fixen!
-
 procedure TChartsTree.Setup;
 begin
   FColImages.Width := GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
@@ -1120,7 +1077,7 @@ begin
 
 end;
 
-procedure TSearchPanel.Setup(Images: TImageList);
+procedure TSearchPanel.Setup;
 var
   Sep: TToolButton;
 begin
@@ -1133,7 +1090,7 @@ begin
 
   ClientHeight := FSearch.Top + 5 + FSearch.Height;
 
-  FToolbar.Images := Images;
+  FToolbar.Images := modSharedData.imgImages;
 
   FButtonAddStream := TToolButton.Create(FToolbar);
   FButtonAddStream.Parent := FToolbar;

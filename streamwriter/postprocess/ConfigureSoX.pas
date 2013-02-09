@@ -25,7 +25,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, Functions,
-  Logging, PostProcessSoX, ComCtrls;
+  Logging, PostProcessSoX, ComCtrls, PngSpeedButton, SharedData;
 
 type
   TfrmConfigureSoX = class(TForm)
@@ -34,8 +34,8 @@ type
     btnOK: TBitBtn;
     pnlConfigure: TPanel;
     pnlSetup: TPanel;
-    btnBrowse1: TSpeedButton;
-    btnBrowse2: TSpeedButton;
+    btnBrowse1: TPngSpeedButton;
+    btnBrowse2: TPngSpeedButton;
     txtLameDLL: TLabeledEdit;
     txtMadDLL: TLabeledEdit;
     lblInfo: TLabel;
@@ -321,14 +321,8 @@ begin
     end;
   end;
 
-  B := TBitmap.Create;
-  try
-    GetBitmap('BROWSE', 2, B);
-    btnBrowse1.Glyph := B;
-    btnBrowse2.Glyph := B;
-  finally
-    B.Free;
-  end;
+  btnBrowse1.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
+  btnBrowse2.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
 end;
 
 end.

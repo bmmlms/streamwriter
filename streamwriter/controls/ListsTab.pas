@@ -29,7 +29,7 @@ uses
   ImgList, Functions, GUIFunctions, Menus, Math, DragDrop, DropComboTarget,
   Dialogs, MsgDlg, Forms, Logging, AppData, HomeCommunication, ICEClient,
   ClientManager, Generics.Collections, TypeDefs, MessageBus, AppMessages,
-  Graphics;
+  Graphics, SharedData;
 
 type
   TTitleTree = class;
@@ -116,7 +116,7 @@ type
     function AddEntry(Text: string; ShowMessages: Boolean; ListType: TListType): Boolean;
     procedure ClientAdded(Client: TICEClient);
     procedure ClientRemoved(Client: TICEClient);
-    procedure Setup(Clients: TClientManager; Lists: TDataLists; Images: TImageList);
+    procedure Setup(Clients: TClientManager; Lists: TDataLists);
     procedure UpdateList;
   end;
 
@@ -128,7 +128,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
 
-    procedure Setup(Clients: TClientManager; Streams: TDataLists; Images: TImageList);
+    procedure Setup(Clients: TClientManager; Streams: TDataLists);
     procedure AddTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
     procedure RemoveTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
 
@@ -174,7 +174,7 @@ type
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
   public
-    constructor Create(AOwner: TComponent; Lists: TDataLists; Images: TImageList); reintroduce;
+    constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
     destructor Destroy; override;
 
     function AddTitle(Title: TTitleInfo; Parent: PVirtualNode; FilterText: string; FromFilter: Boolean): PVirtualNode;
@@ -217,11 +217,11 @@ begin
 
 end;
 
-procedure TListsTab.Setup(Clients: TClientManager; Streams: TDataLists; Images: TImageList);
+procedure TListsTab.Setup(Clients: TClientManager; Streams: TDataLists);
 begin
   Caption := 'Lists';
 
-  FListsPanel.Setup(Clients, Streams, Images);
+  FListsPanel.Setup(Clients, Streams);
 end;
 
 procedure TListsTab.UpdateLists;
@@ -479,7 +479,7 @@ var
   Dlg: TOpenDialog;
   Lst: TStringList;
   Title: TTitleInfo;
-  List: TTitleList;
+  List: TList<TTitleInfo>;
   ParentNode: PVirtualNode;
 begin
   if FAddCombo.ItemIndex = 0 then
@@ -762,7 +762,7 @@ begin
   FTree.SetFocus;
 end;
 
-procedure TTitlePanel.Setup(Clients: TClientManager; Lists: TDataLists; Images: TImageList);
+procedure TTitlePanel.Setup(Clients: TClientManager; Lists: TDataLists);
 begin
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := Self;
@@ -813,7 +813,7 @@ begin
 
   FToolbar := TTitleToolbar.Create(Self);
   FToolbar.Parent := FToolbarPanel;
-  FToolbar.Images := Images;
+  FToolbar.Images := modSharedData.imgImages;
   FToolbar.Align := alRight;
   FToolbar.AutoSize := True;
   FToolbar.Indent := 4;
@@ -831,13 +831,13 @@ begin
   FSearchPanel.ClientHeight := FSearchText.Top + 5 + FSearchText.Height;
   FTopPanel.ClientHeight := FAddLabel.Height + FAddLabel.Top * 2;
 
-  FTree := TTitleTree.Create(Self, Lists, Images);
+  FTree := TTitleTree.Create(Self, Lists);
   FTree.Parent := Self;
   FTree.Align := alClient;
   FTree.OnChange := TreeChange;
   FTree.OnKeyDown := TreeKeyDown;
 
-  FTree.FColAdded.Width := Max(GetTextSize(FTree.FColAdded.Text, Font).cx, GetTextSize(DateToStr(Now), Font).cx) + MulDiv(50, Screen.PixelsPerInch, 96);
+  FTree.FColAdded.Width := MulDiv(130, Screen.PixelsPerInch, 96);
 
   FClients := Clients;
   FLists := Lists;
@@ -869,7 +869,7 @@ var
   NodeData: PTitleNodeData;
   Title: TTitleInfo;
   Hash: Cardinal;
-  List: TTitleList;
+  List: TList<TTitleInfo>;
 begin
   Result := False;
 
@@ -937,7 +937,7 @@ end;
 procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree;
   Node: PVirtualNode);
 var
-  List: TTitleList;
+  List: TList<TTitleInfo>;
   NodeData: PTitleNodeData;
   i: Integer;
 begin
@@ -1204,7 +1204,7 @@ begin
   end;
 end;
 
-constructor TTitleTree.Create(AOwner: TComponent; Lists: TDataLists; Images: TImageList);
+constructor TTitleTree.Create(AOwner: TComponent; Lists: TDataLists);
 begin
   inherited Create(AOwner);
 
@@ -1227,13 +1227,14 @@ begin
   ShowHint := True;
   HintMode := hmTooltip;
 
-  Self.Images := Images;
+  Self.Images := modSharedData.imgImages;
 
   FColTitle := Header.Columns.Add;
   FColTitle.Text := _('Title');
 
   FColAdded := Header.Columns.Add;
   FColAdded.Text := _('Date');
+  FColAdded.Alignment := taRightJustify;
 
   FDropTarget := TDropComboTarget.Create(Self);
   FDropTarget.Formats := [mfFile];
@@ -1242,7 +1243,7 @@ begin
 
   FPopupMenu := TTitlePopup.Create(Self);
   if Screen.PixelsPerInch = 96 then
-    FPopupMenu.Images := Images;
+    FPopupMenu.Images := modSharedData.imgImages;
   FPopupMenu.FRemove.OnClick := PopupMenuClick;
   FPopupMenu.FRename.OnClick := PopupMenuClick;
   FPopupMenu.FSelectSaved.OnClick := PopupMenuClick;
@@ -1268,7 +1269,7 @@ var
   Node: PVirtualNode;
   NodeData, ParentNodeData: PTitleNodeData;
   Title: TTitleInfo;
-  List: TTitleList;
+  List: TList<TTitleInfo>;
 begin
   List := nil;
 

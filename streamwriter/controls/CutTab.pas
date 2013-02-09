@@ -27,7 +27,7 @@ uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
   MControls, LanguageObjects, Tabs, CutView, Functions, AppData, SharedControls,
   DynBass, Logging, CutTabSearchSilence, MessageBus, AppMessages, PlayerManager,
-  Forms, DataManager, AudioFunctions;
+  Forms, DataManager, AudioFunctions, SharedData;
 
 type
   TCutToolBar = class(TToolBar)
@@ -91,9 +91,9 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    procedure Setup(Track: TTrackInfo; ToolBarImages: TImageList); overload;
-    procedure Setup(Filename: string; ToolBarImages: TImageList); overload;
-    procedure Setup(ToolBarImages: TImageList); overload;
+    procedure Setup(Track: TTrackInfo); overload;
+    procedure Setup(Filename: string); overload;
+    procedure Setup; overload;
     procedure PausePlay;
 
     function CanClose: Boolean; override;
@@ -306,7 +306,7 @@ begin
   FCutView.Save;
 end;
 
-procedure TCutTab.Setup(ToolBarImages: TImageList);
+procedure TCutTab.Setup;
 begin
   MaxWidth := 120;
 
@@ -318,7 +318,7 @@ begin
 
   FToolBar := TCutToolBar.Create(Self);
   FToolBar.Parent := FToolbarPanel;
-  FToolBar.Images := ToolBarImages;
+  FToolBar.Images := modSharedData.imgImages;
   FToolBar.Align := alLeft;
   FToolBar.Width := Self.ClientWidth - 130;
   FToolBar.Height := 24;
@@ -364,9 +364,9 @@ begin
   Language.Translate(Self);
 end;
 
-procedure TCutTab.Setup(Track: TTrackInfo; ToolBarImages: TImageList);
+procedure TCutTab.Setup(Track: TTrackInfo);
 begin
-  Setup(ToolBarImages);
+  Setup;
 
   Caption := ExtractFileName(StringReplace(Track.Filename, '&', '&&', [rfReplaceAll]));
   FFilename := Track.Filename;
@@ -374,9 +374,9 @@ begin
   FCutView.LoadFile(Track);
 end;
 
-procedure TCutTab.Setup(Filename: string; ToolBarImages: TImageList);
+procedure TCutTab.Setup(Filename: string);
 begin
-  Setup(ToolBarImages);
+  Setup;
 
   Caption := ExtractFileName(StringReplace(Filename, '&', '&&', [rfReplaceAll]));
   FFilename := Filename;

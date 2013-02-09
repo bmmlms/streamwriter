@@ -30,7 +30,7 @@ uses
   HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging,
   DataManager, DropSource, Types, AudioFunctions, PngSpeedButton,
   Generics.Collections, TypeDefs, MessageBus, AppMessages, Commands,
-  GUIFunctions;
+  GUIFunctions, SharedData;
 
 type
   TModes = (moShow, moLoading, moError);
@@ -374,6 +374,8 @@ begin
   FProgressBar.Visible := False;
   FProgressBar.Max := 100;
   FProgressBar.Min := 0;
+
+  Images := modSharedData.imgImages;
 end;
 
 function TMStreamTree.CreateItem(Caption: string; ImageIndex: Integer;
@@ -627,6 +629,9 @@ begin
       Text := 'AAC';
   end;
 
+  // TODO: auf großen DPI ist die sidebar klein, wenn SideBarWidth in registry nicht gesetzt ist.
+  //       wenn man dann den splitter zieht greif MinWidth und es springt rum!
+
   if NodeData.Data.BitRate > 0 then
   begin
     if Text <> '' then
@@ -675,7 +680,7 @@ begin
 
     R := ClientRect;
     R.Left := (R.Right div 2) - (Size.cx div 2) - 4;
-    R.Top := ClientHeight div 2 - Canvas.TextHeight('Wy');
+    R.Top := FProgressBar.Top - GetTextSize('Wyg', Font).cy - MulDiv(2, Screen.PixelsPerInch, 96);
 
     DrawText(Canvas.Handle, PChar(TmpText + FDots), Length(TmpText) + Length(FDots), R, 0);
   end;
@@ -993,8 +998,6 @@ begin
 end;
 
 procedure TMStreamTree.Setup;
-var
-  Size: TSize;
 begin
   FColName.Width := ClientWidth;
 end;

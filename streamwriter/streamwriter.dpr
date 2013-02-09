@@ -134,7 +134,8 @@ uses
   SplashThread in '..\..\common\SplashThread.pas',
   CommandLine in '..\..\common\CommandLine.pas',
   HomeTest in 'HomeTest.pas' {frmHomeTest},
-  HomeCommands in 'HomeCommands.pas';
+  HomeCommands in 'HomeCommands.pas',
+  SharedData in 'SharedData.pas' {modSharedData: TDataModule};
 
 {$SetPEOptFlags $0140}
 
@@ -160,8 +161,8 @@ begin
 
   Application.Title := AppGlobals.AppName;
   Application.Icon.Handle := LoadIcon(HInstance, 'A');
-  Application.DefaultFont.Name := 'Segoe UI';
-  Screen.MenuFont.Name := 'Segoe UI';
+  //Application.DefaultFont.Name := 'Segoe UI';
+  //Screen.MenuFont.Name := 'Segoe UI';
 
   // Initialize BASS, quit application on error
   Bass := TBassLoader.Create;
@@ -172,11 +173,13 @@ begin
     Exit;
   end;
 
+  Application.CreateForm(TmodSharedData, modSharedData);
+
   // Create the main form if everything is setup
   if InitApp and AppGlobals.WasSetup then
   begin
     Application.CreateForm(TfrmStreamWriterMain, frmStreamWriterMain);
-  //Application.CreateForm(TfrmHomeTest, frmHomeTest);
+    //Application.CreateForm(TfrmHomeTest, frmHomeTest);
   end;
 
   Application.Run;

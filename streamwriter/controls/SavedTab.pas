@@ -30,7 +30,7 @@ uses
   Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
   PlayerManager, Logging, FileWatcher, MessageBus, AppMessages, ShlObj,
   SavedTabEditTags, Generics.Collections, TypeDefs, AudioFunctions, FileTagger,
-  Notifications, Dialogs;
+  Notifications, Dialogs, SharedData;
 
 type
   TSavedTree = class;
@@ -240,7 +240,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    procedure Setup(Streams: TDataLists; Images: TImageList);
+    procedure Setup(Streams: TDataLists);
     procedure Shown;
     procedure PausePlay;
     procedure PostTranslate;
@@ -329,6 +329,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+
+    procedure Setup;
 
     procedure Translate;
 
@@ -694,7 +696,7 @@ procedure TSavedTab.MessageReceived(Msg: TMessageBase);
 var
   VolMsg: TVolumeChangedMsg;
 begin
-  if Msg is TVolumeChangedMsg then
+  if (Msg is TVolumeChangedMsg) and (FVolume <> nil) then
   begin
     VolMsg := TVolumeChangedMsg(Msg);
 
@@ -1132,7 +1134,7 @@ begin
   UpdateButtons;
 end;
 
-procedure TSavedTab.Setup(Streams: TDataLists; Images: TImageList);
+procedure TSavedTab.Setup(Streams: TDataLists);
 var
   DummyPanel: TPanel;
 begin
@@ -1140,10 +1142,10 @@ begin
 
   FStreams := Streams;
 
-  FSavedTree.Images := Images;
-  FSavedTree.StateImages := Images;
+  FSavedTree.Images := modSharedData.imgImages;
+  FSavedTree.StateImages := modSharedData.imgImages;
   if Screen.PixelsPerInch = 96 then
-    FSavedTree.FPopupMenu.Images := Images;
+    FSavedTree.FPopupMenu.Images := modSharedData.imgImages;
 
   // Panel oben komplett
   FTopPanel := TPanel.Create(Self);
@@ -1209,7 +1211,7 @@ begin
   FPlayToolbar := TPlayToolBar.Create(Self);
   FPlayToolbar.Parent := FSeekPosPanel;
   FPlayToolbar.Align := alLeft;
-  FPlayToolbar.Images := Images;
+  FPlayToolbar.Images := modSharedData.imgImages;
   FPlayToolbar.Width := 150;
   FPlayToolbar.Setup;
   FPlayToolbar.Left := 0;
@@ -1240,7 +1242,7 @@ begin
   FToolBar.AutoSize := True;
   FToolBar.Height := 25;
   FToolbar.Indent := 0;
-  FToolBar.Images := Images;
+  FToolBar.Images := modSharedData.imgImages;
   FToolBar.Setup;
 
   FTopPanel.ClientHeight := FTopLeftPanel.Height + FSearchBar.FLabel.Height;
@@ -1292,12 +1294,16 @@ begin
   BuildTree;
 
   FPositionTimer.Enabled := True;
+
+  Shown;
 end;
 
 procedure TSavedTab.Shown;
 var
   i: Integer;
 begin
+  FSavedTree.Setup;
+
   FSavedTree.Expanded[FSavedTree.FStreamNode] := True;
   FSavedTree.Expanded[FSavedTree.FFileNode] := True;
 
@@ -1389,26 +1395,6 @@ begin
 
   PopupMenu := FPopupMenu;
 
-  // TODO: Die Breiten müssen an DPI angepasst werden beim ersten start. deshalb gehört das nicht in Konstruktor.
-  FColImages := Header.Columns.Add;
-  FColImages.Text := _('State');
-  FColImages.Options := FColImages.Options - [coResizable];
-  FColFilename := Header.Columns.Add;
-  FColFilename.Text := _('Filename');
-  FColSize := Header.Columns.Add;
-  FColSize.Text := _('Size');
-  FColLength := Header.Columns.Add;
-  FColLength.Alignment := taRightJustify;
-  FColLength.Text := _('Length');
-  FColBitRate := Header.Columns.Add;
-  FColBitRate.Alignment := taRightJustify;
-  FColBitRate.Text := _('Bitrate');
-  FColStream := Header.Columns.Add;
-  FColStream.Text := _('Stream');
-  FColSaved := Header.Columns.Add;
-  FColSaved.Alignment := taRightJustify;
-  FColSaved.Text := _('Time');
-
   Header.Options := Header.Options + [hoAutoResize];
 
   FStreamNode := AddChild(nil);
@@ -1432,8 +1418,6 @@ begin
     if not ((AppGlobals.SavedCols and (1 shl i)) <> 0) then
       Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
   end;
-
-  FitColumns;
 end;
 
 destructor TSavedTree.Destroy;
@@ -1988,6 +1972,30 @@ begin
   FFileWatcherAuto.Start;
 end;
 
+procedure TSavedTree.Setup;
+begin
+  FColImages := Header.Columns.Add;
+  FColImages.Text := _('State');
+  FColImages.Options := FColImages.Options - [coResizable];
+  FColFilename := Header.Columns.Add;
+  FColFilename.Text := _('Filename');
+  FColSize := Header.Columns.Add;
+  FColSize.Text := _('Size');
+  FColLength := Header.Columns.Add;
+  FColLength.Alignment := taRightJustify;
+  FColLength.Text := _('Length');
+  FColBitRate := Header.Columns.Add;
+  FColBitRate.Alignment := taRightJustify;
+  FColBitRate.Text := _('Bitrate');
+  FColStream := Header.Columns.Add;
+  FColStream.Text := _('Stream');
+  FColSaved := Header.Columns.Add;
+  FColSaved.Alignment := taRightJustify;
+  FColSaved.Text := _('Date');
+
+  FitColumns;
+end;
+
 procedure TSavedTree.Sort(Node: PVirtualNode; Column: TColumnIndex;
   Direction: VirtualTrees.TSortDirection; DoInit: Boolean);
 begin
@@ -2003,7 +2011,7 @@ begin
   FColSize.Text := _('Size');
   FColLength.Text := _('Length');
   FColStream.Text := _('Stream');
-  FColSaved.Text := _('Time');
+  FColSaved.Text := _('Date');
   FColBitRate.Text := _('Bitrate');
 end;
 
@@ -2274,27 +2282,13 @@ begin
 end;
 
 procedure TSavedTree.FitColumns;
-  function GetTextWidth(Text: string): Integer;
-  var
-    Canvas: TAccessCanvas;
-  begin
-    Canvas := TAccessCanvas.Create;
-    try
-      Canvas.Handle := GetDC(GetDesktopWindow);
-      SelectObject(Canvas.Handle, Header.Font.Handle);
-      Result := Canvas.TextWidth(Text) + 20;
-      ReleaseDC(GetDesktopWindow, Canvas.Handle);
-    finally
-      Canvas.Free;
-    end;
-  end;
 begin
   FColImages.Width := 104;
-  FColSize.Width := GetTextWidth('111,11 KB');
-  FColLength.Width := GetTextWidth('00:00');
-  FColBitRate.Width := GetTextWidth('320 VBR');
-  FColStream.Width := 200;
-  FColSaved.Width := 130;
+  FColSize.Width := GetTextSize('111,11 KB', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+  FColLength.Width := GetTextSize('00:00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+  FColBitRate.Width := GetTextSize('320 VBR', font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+  FColStream.Width := MulDiv(200, Screen.PixelsPerInch, 96);
+  FColSaved.Width := MulDiv(130, Screen.PixelsPerInch, 96);
 end;
 
 procedure TSavedTree.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;

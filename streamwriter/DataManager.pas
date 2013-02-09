@@ -62,21 +62,6 @@ type
 
   TN = procedure(Sender: TObject; const Item: TTitleInfo; Action: TCollectionNotification) of object;
 
-  // A list that might be used as wishlist/ignorelist
-  TTitleList = class(TList<TTitleInfo>)
-  private
-    FNotifications: Boolean;
-    //FOnChange: TList<TN>;
-  protected
-    //procedure Notify(const Item: TTitleInfo; Action: TCollectionNotification); override;
-  public
-    constructor Create;
-    destructor Destroy; override;
-
-    //property OnChange: TList<TN> read FOnChange;
-    property Notifications: Boolean read FNotifications write FNotifications;
-  end;
-
   // An entry in the stream-browser
   TStreamBrowserEntry = class
   private
@@ -369,9 +354,9 @@ type
     FSchedules: TScheduleList;
 
     // List of titles to save for this stream
-    FSaveList: TTitleList;
+    FSaveList: TList<TTitleInfo>;
     // List of titles to ignore for this stream
-    FIgnoreList: TTitleList;
+    FIgnoreList: TList<TTitleInfo>;
     FIgnoreListIndex: Cardinal;
 
     procedure FSetName(Value: string);
@@ -408,8 +393,8 @@ type
 
     property Schedules: TScheduleList read FSchedules;
 
-    property SaveList: TTitleList read FSaveList;
-    property IgnoreList: TTitleList read FIgnoreList;
+    property SaveList: TList<TTitleInfo> read FSaveList;
+    property IgnoreList: TList<TTitleInfo> read FIgnoreList;
     property IgnoreListIndex: Cardinal read FIgnoreListIndex write FIgnoreListIndex;
   end;
 
@@ -544,8 +529,8 @@ type
     FCategoryList: TListCategoryList;
     FStreamList: TStreamList;
     FTrackList: TTrackList;
-    FSaveList: TTitleList;
-    FIgnoreList: TTitleList;
+    FSaveList: TList<TTitleInfo>;
+    FIgnoreList: TList<TTitleInfo>;
     FRecentList: TRecentList;
     FStreamBlacklist: TStringList;
     FRatingList: TRatingList;
@@ -575,9 +560,9 @@ type
     // List that contains all saved tracks
     property TrackList: TTrackList read FTrackList;
     // List that contains all titles to be saved
-    property SaveList: TTitleList read FSaveList;
+    property SaveList: TList<TTitleInfo> read FSaveList;
     // List that contains all titles to be ignored
-    property IgnoreList: TTitleList read FIgnoreList;
+    property IgnoreList: TList<TTitleInfo> read FIgnoreList;
     // List that contains all recently used streams
     property RecentList: TRecentList read FRecentList;
     // List that contains all streams to blacklist for automatic recordings
@@ -675,38 +660,6 @@ begin
   Result.FHash := FHash;
 end;
 
-{ TTitleList }
-
-constructor TTitleList.Create;
-begin
-  inherited;
-
-  FNotifications := True;
-  //FOnChange := TList<TN>.Create;
-end;
-
-destructor TTitleList.Destroy;
-begin
-  //FOnChange.Free;
-  //FOnChange := nil;
-
-  inherited;
-end;
-
-{
-procedure TTitleList.Notify(const Item: TTitleInfo;
-  Action: TCollectionNotification);
-var
-  T: TN;
-begin
-  if FNotifications and (FOnChange <> nil) then
-    for T in FOnChange do
-      T(Self, Item, Action);
-
-  inherited;
-end;
-}
-
 { TStreamEntry }
 
 procedure TStreamEntry.Assign(From: TStreamEntry);
@@ -773,8 +726,8 @@ begin
 
   FSchedules := TScheduleList.Create;
 
-  FSaveList := TTitleList.Create;
-  FIgnoreList := TTitleList.Create;
+  FSaveList := TList<TTitleInfo>.Create;
+  FIgnoreList := TList<TTitleInfo>.Create;
 end;
 
 destructor TStreamEntry.Destroy;
@@ -974,11 +927,9 @@ begin
     FStreamList[i].Free;
   FStreamList.Clear;
 
-  FSaveList.Notifications := False;
   for i := 0 to FSaveList.Count - 1 do
     FSaveList[i].Free;
   FSaveList.Clear;
-  FSaveList.Notifications := True;
 
   for i := 0 to FIgnoreList.Count - 1 do
     FIgnoreList[i].Free;
@@ -1020,8 +971,8 @@ begin
   FCategoryList := TListCategoryList.Create;
   FStreamList := TStreamList.Create;
   FTrackList := TTrackList.Create;
-  FSaveList := TTitleList.Create;
-  FIgnoreList := TTitleList.Create;
+  FSaveList := TList<TTitleInfo>.Create;
+  FIgnoreList := TList<TTitleInfo>.Create;
   FRecentList := TRecentList.Create;
   FStreamBlacklist := TStringList.Create;
   FRatingList := TRatingList.Create;
