@@ -102,6 +102,8 @@ type
       ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
+    procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; Text: string;
+      CellRect: TRect; DrawFormat: Cardinal); override;
   public
     constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree); reintroduce;
     destructor Destroy; override;
@@ -257,6 +259,7 @@ function TMClientView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
   var Index: Integer): TCustomImageList;
 var
   NodeData: PClientNodeData;
+  AnyPlaying, AnyRecording, AnyPlayingRecording: Boolean;
 begin
   Result := inherited;
 
@@ -283,10 +286,41 @@ begin
         end;
     end
   else if Column = 0 then
+  begin
     if NodeData.Category.IsAuto then
       Index := 7
     else
-      Index := 6;
+    begin
+      AnyPlaying := False;
+      AnyRecording := False;
+      AnyPlayingRecording := False;
+
+      Node := GetFirstChild(Node);
+      while Node <> nil do
+      begin
+        NodeData := GetNodeData(Node);
+
+        if NodeData.Client.Playing or NodeData.Client.Paused then
+          AnyPlaying := True;
+        if NodeData.Client.Recording then
+          AnyRecording := True;
+
+        Node := GetNextSibling(Node);
+      end;
+
+      if AnyPlaying and AnyRecording then
+        AnyPlayingRecording := True;
+
+      if AnyPlayingRecording then
+        Index := 11
+      else if AnyRecording then
+        Index := 9
+      else if AnyPlaying then
+        Index := 10
+      else
+        Index := 6;
+    end;
+  end;
 end;
 
 function TMClientView.DoGetNodeTooltip(Node: PVirtualNode;
@@ -425,6 +459,39 @@ begin
     else if NodeData.Client <> nil then
       NodeData.Client.Entry.CustomName := Text;
   end;
+end;
+
+procedure TMClientView.DoTextDrawing(var PaintInfo: TVTPaintInfo;
+  Text: string; CellRect: TRect; DrawFormat: Cardinal);
+var
+  Node: PVirtualNode;
+  NodeData: PClientNodeData;
+begin
+  NodeData := GetNodeData(PaintInfo.Node);
+
+  if not Selected[PaintInfo.Node] then
+    if NodeData.Client <> nil then
+    begin
+      if NodeData.Client.Playing or NodeData.Client.Paused then
+        PaintInfo.Canvas.Font.Color := HTML2Color('#0078ff');
+    end else if NodeData.Category <> nil then
+    begin
+      Node := GetFirstChild(PaintInfo.Node);
+      while Node <> nil do
+      begin
+        NodeData := GetNodeData(Node);
+
+        if NodeData.Client.Playing or NodeData.Client.Paused then
+        begin
+          PaintInfo.Canvas.Font.Color := HTML2Color('#0078ff');
+          Break;
+        end;
+
+        Node := GetNextSibling(Node);
+      end;
+    end;
+
+  inherited;
 end;
 
 procedure TMClientView.FitColumns;
@@ -702,6 +769,8 @@ begin
     begin
       Result := True;
       InvalidateNode(Nodes[i]);
+      if (Nodes[i].Parent <> nil) and (Nodes[i].Parent <> RootNode) then
+        InvalidateNode(Nodes[i].Parent);
       Break;
     end;
   end;

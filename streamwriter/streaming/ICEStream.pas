@@ -1041,7 +1041,10 @@ begin
         AutoTuneInMinKbps := GetAutoTuneInMinKbps(Self.FAudioType, AppGlobals.AutoTuneInMinQuality);
 
         if (FRecordTitle <> '') and (FBitRate < AutoTuneInMinKbps) then
+        begin
+          WriteDebug(_('Stream will be removed because bitrate does not match.'), 2, 0);
           FRemoveClient := True;
+        end;
 
         FOnRefreshInfo(Self);
       except
@@ -1073,6 +1076,7 @@ begin
       if ((FBytesPerSec > 0) and (FAudioStream.Size > FBytesPerSec * 60) and (FTitle <> FRecordTitle) and (FStreamTracks.Find(FRecordTitle) = nil)) or
          (FMetaCounter > 5) then
       begin
+        WriteDebug(_('Stream will be removed because wished title was not found.'), 2, 0);
         FRemoveClient := True;
       end;
 

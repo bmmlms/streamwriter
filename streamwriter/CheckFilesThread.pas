@@ -18,7 +18,7 @@
     ------------------------------------------------------------------------
 }
 
-{ This unit contains mechanisms to look for files that get modified }
+{ This unit contains mechanisms to look for files that got modified }
 unit CheckFilesThread;
 
 interface

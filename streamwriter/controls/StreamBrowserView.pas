@@ -911,6 +911,12 @@ begin
     stType: Result := CompareText(S1, S2);
     stRating: Result := CmpInt(Data1.Data.Rating, Data2.Data.Rating)
   end;
+
+  if (Result = 0) and (FSelectedSortType <> stName) then
+    Result := CompareText(Data2.Data.Name, Data1.Data.Name);
+
+  if (Result = 0) and (FSelectedSortType <> stRating) then
+    Result := CmpInt(Data1.Data.Rating, Data2.Data.Rating)
 end;
 
 procedure TMStreamTree.DoDragging(P: TPoint);

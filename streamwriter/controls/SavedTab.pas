@@ -375,7 +375,7 @@ begin
   ItemTmp.Caption := '-';
   Items.Add(ItemTmp);
 
-  FItemPrev := CreateMenuItem;        // TODO: das hier wird nach sprachwechsel nicht übersetzt. geht nicht clear.
+  FItemPrev := CreateMenuItem;
   FItemPrev.Caption := 'Pre&vious';
   FItemPrev.ImageIndex := 79;
   Items.Add(FItemPrev);
@@ -2181,14 +2181,14 @@ begin
     if FPlayer.Playing or FPlayer.Paused then
       if not Selected[PaintInfo.Node] then
         if (FPlayer.Playing or FPlayer.Paused) and (LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename)) then
-        begin
+        //begin
           PaintInfo.Canvas.Font.Color := HTML2Color('#0078ff');
-        end
-      else
+        //end
+      {else   Auskommentiert, weil das keine wirkung zeigt und wir "normal" bleiben möchten.
         if (FPlayer.Playing or FPlayer.Paused) and (LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename)) then
         begin
           PaintInfo.Canvas.Font.Color := PaintInfo.Canvas.Font.Color - 100;
-        end;
+        end;}
 
   inherited;
 end;

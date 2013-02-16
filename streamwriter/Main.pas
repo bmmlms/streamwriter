@@ -911,7 +911,6 @@ begin
   tabClients.Shown(mnuStreamPopup);
   tabSaved.Setup(FDataLists);
   tabCharts.Setup;
-  tabLists.Setup(FClients, FDataLists);
 
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
   tabClients.OnTrackAdded := tabClientsTrackAdded;
@@ -924,6 +923,9 @@ begin
 
   tabClients.AddressBar.Stations.BuildList(FDataLists.RecentList);
   tabClients.BuildTree(FDataLists);
+
+  // Muss unter BuildTree(), weil hier erst FClients befüllt ist...
+  tabLists.Setup(FClients, FDataLists);
 
   // Ist hier unten, weil hier erst Tracks geladen wurden
   tabClients.AddressBar.Stations.Sort;
@@ -1618,8 +1620,7 @@ begin
 
   HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 
-  // TODO: Das hier war in Kaefers-Spezial-Build auskommentiert! Muss irgendwann wieder rein!
-  // tabSaved.Tree.SetFileWatcher;
+  tabSaved.Tree.SetFileWatcher;
 
   Language.Translate(Self, PreTranslate, PostTranslate);
 
