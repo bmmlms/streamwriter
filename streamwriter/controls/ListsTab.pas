@@ -1496,6 +1496,7 @@ end;
 procedure TTitleTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
   TextType: TVSTTextType; var Text: UnicodeString);
 var
+  ChildCount: Integer;
   NodeData: PTitleNodeData;
 begin
   inherited;
@@ -1518,7 +1519,18 @@ begin
           end;
 
           if NodeData.NodeType in [ntWishParent, ntIgnoreParent, ntStream] then
-            Text := Text + ' (' + IntToStr(ChildCount[Node]) + ')';
+          begin
+            ChildCount := 0;
+            Node := GetFirstChild(Node);
+            while Node <> nil do
+            begin
+              NodeData := GetNodeData(Node);
+              if (NodeData.NodeType = ntWish) or (NodeData.NodeType = ntIgnore) then
+                Inc(ChildCount);
+              Node := GetNextSibling(Node);
+            end;
+            Text := Text + ' (' + IntToStr(ChildCount) + ')';
+          end;
         end;
       1:
         begin

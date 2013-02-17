@@ -25,7 +25,7 @@ interface
 uses
   Windows, SysUtils, Classes, HTTPThread, StrUtils, Generics.Collections,
   Sockets, WinSock, ZLib, Communication, Protocol, Commands, ExtendedStream,
-  HomeCommands, DataManager, AppData, AudioFunctions;
+  HomeCommands, DataManager, AppData, AudioFunctions, LanguageObjects;
 
 type
   TCommErrors = (ceUnknown, ceAuthRequired, ceNotification, ceOneTimeNotification);
@@ -646,7 +646,7 @@ begin
   Cmd.VersionRevision := AppGlobals.AppVersion.Revision;
   Cmd.VersionBuild := AppGlobals.AppVersion.Build;
   Cmd.Build := AppGlobals.BuildNumber;
-  Cmd.Language := AppGlobals.Language;
+  Cmd.Language := Language.CurrentUserLanguage.ID;
   Cmd.ProtoVersion := 1;
 
   FThread.SendCommand(Cmd);

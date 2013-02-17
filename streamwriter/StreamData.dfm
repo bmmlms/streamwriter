@@ -10,7 +10,7 @@ object frmStreamData: TfrmStreamData
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
-  
+  Font.Name = 'Tahoma'
   Font.Style = []
   KeyPreview = True
   OldCreateOrder = False
@@ -117,7 +117,7 @@ object frmStreamData: TfrmStreamData
     Width = 409
     Height = 21
     Anchors = [akLeft, akTop, akRight]
-    EditLabel.Width = 361
+    EditLabel.Width = 339
     EditLabel.Height = 13
     EditLabel.Caption = 
       'Regular expression to detect artist/title/album from broadcasted' +
@@ -198,34 +198,32 @@ object frmStreamData: TfrmStreamData
     Left = 0
     Top = 0
     Width = 457
-    Height = 41
+    Height = 33
     Align = alTop
     BevelOuter = bvNone
-    Padding.Left = 4
-    Padding.Top = 4
-    Padding.Right = 4
-    Padding.Bottom = 4
+    Padding.Left = 2
+    Padding.Top = 2
+    Padding.Right = 2
+    Padding.Bottom = 2
     TabOrder = 4
     object Shape1: TShape
-      Left = 4
-      Top = 4
-      Width = 449
-      Height = 33
+      Left = 2
+      Top = 2
+      Width = 453
+      Height = 29
       Align = alClient
       Brush.Color = clActiveCaption
       Pen.Color = clActiveBorder
       ExplicitLeft = -276
+      ExplicitTop = 4
       ExplicitWidth = 801
-      ExplicitHeight = 29
     end
     object lblTop: TLabel
       AlignWithMargins = True
-      Left = 10
-      Top = 9
-      Width = 440
-      Height = 25
-      Margins.Left = 6
-      Margins.Top = 5
+      Left = 5
+      Top = 5
+      Width = 447
+      Height = 23
       Align = alClient
       AutoSize = False
       Caption = 'Data for'
@@ -233,7 +231,7 @@ object frmStreamData: TfrmStreamData
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWhite
       Font.Height = -16
-      
+      Font.Name = 'Tahoma'
       Font.Style = [fsBold]
       GlowSize = 1
       ParentColor = False
