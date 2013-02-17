@@ -646,7 +646,10 @@ begin
   Cmd.VersionRevision := AppGlobals.AppVersion.Revision;
   Cmd.VersionBuild := AppGlobals.AppVersion.Build;
   Cmd.Build := AppGlobals.BuildNumber;
-  Cmd.Language := Language.CurrentUserLanguage.ID;
+  if Language.CurrentUserLanguage <> nil then
+    Cmd.Language := Language.CurrentUserLanguage.ID
+  else
+    Cmd.Language := Language.CurrentLanguage.ID;
   Cmd.ProtoVersion := 1;
 
   FThread.SendCommand(Cmd);
