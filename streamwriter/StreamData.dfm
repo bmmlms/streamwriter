@@ -201,15 +201,15 @@ object frmStreamData: TfrmStreamData
     Height = 33
     Align = alTop
     BevelOuter = bvNone
-    Padding.Left = 2
+    Padding.Left = 4
     Padding.Top = 2
-    Padding.Right = 2
+    Padding.Right = 4
     Padding.Bottom = 2
     TabOrder = 4
     object Shape1: TShape
-      Left = 2
+      Left = 4
       Top = 2
-      Width = 453
+      Width = 449
       Height = 29
       Align = alClient
       Brush.Color = clActiveCaption
@@ -220,9 +220,9 @@ object frmStreamData: TfrmStreamData
     end
     object lblTop: TLabel
       AlignWithMargins = True
-      Left = 5
+      Left = 7
       Top = 5
-      Width = 447
+      Width = 443
       Height = 23
       Align = alClient
       AutoSize = False
