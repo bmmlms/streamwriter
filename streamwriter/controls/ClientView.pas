@@ -1146,7 +1146,8 @@ begin
         for i := 0 to Files.Count - 1 do
           if (Files[i] <> '') then
             // Das selbe wie im Kommentar oben beschrieben...
-            if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere) then
+            if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or
+               ((Attachmode = amNoWhere) and (HI.HitNode <> nil) and (HitNodeData.Client = nil)) then
               OnStartStreaming(Self, 0, 0, '', Files[i], '', nil, HI.HitNode, amAddChildLast)
             else
             begin
