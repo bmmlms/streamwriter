@@ -25,7 +25,7 @@ interface
 uses
   SysUtils, Windows, Classes, Generics.Collections, ICEClient, Logging,
   Functions, AppData, DataManager, HomeCommunication, PlayerManager,
-  AudioFunctions, SWFunctions;
+  AudioFunctions, SWFunctions, TypeDefs;
 
 type
   TClientManager = class;
@@ -49,6 +49,7 @@ type
   TClientManager = class
   private
     FClients: TClientList;
+    FMonitorClients: TClientList;
     FSongsSaved: Integer;
     FLists: TDataLists;
     FErrorShown: Boolean;
@@ -88,6 +89,7 @@ type
     procedure ClientStop(Sender: TObject);
 
     procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, TitleRegEx: string; Format: TAudioTypes; Kbps: Cardinal);
+    procedure HomeCommMonitorStreamsReceived(Sender: TObject; StreamIDs: TIntArray);
   public
     constructor Create(Lists: TDataLists);
     destructor Destroy; override;
@@ -245,6 +247,12 @@ begin
     FClients[i].Entry.WasRecording := FClients[i].Recording;
     FClients[i].Stop;
   end;
+
+  // TODO: Funzt das?
+  for i := 0 to FMonitorClients.Count - 1 do
+  begin
+    FMonitorClients[i].Stop;
+  end;
 end;
 
 procedure TClientManager.Terminate;
@@ -253,6 +261,8 @@ var
 begin
   for i := Count - 1 downto 0 do
     RemoveClient(FClients[i]);
+  for i := FMonitorClients.Count - 1 downto 0 do
+    RemoveClient(FMonitorClients[i]); // TODO: Doof. das sollte ne seperate methode sein weil die GUI davon nix mitbekommen muss!
 end;
 
 constructor TClientManager.Create(Lists: TDataLists);
@@ -260,13 +270,18 @@ begin
   inherited Create;
   FSongsSaved := 0;
   FClients := TClientList.Create;
+  FMonitorClients := TClientList.Create;
   FLists := Lists;
   HomeComm.OnNetworkTitleChangedReceived := HomeCommTitleChanged;
+  HomeComm.OnMonitorStreamsReceived := HomeCommMonitorStreamsReceived;
 end;
 
 destructor TClientManager.Destroy;
 begin
   FClients.Free;
+
+  // TODO: Was ist mit den Monitors? einfach freigeben weil die liste leer ist wenn wir hier sind? checken!!!
+
   inherited;
 end;
 
@@ -277,6 +292,14 @@ begin
   Result := False;
   for i := 0 to FClients.Count - 1 do
     if FClients[i].Active then
+    begin
+      Result := True;
+      Exit;
+    end;
+
+  // TODO: klappt das? wird es nur bei ExitApp() aufgerufen? wenn ja ist alles cool! falls das hier klappt ;)
+  for i := 0 to FMonitorClients.Count - 1 do
+    if FMonitorClients[i].Active then
     begin
       Result := True;
       Exit;
@@ -296,6 +319,37 @@ end;
 function TClientManager.GetEnumerator: TClientEnum;
 begin
   Result := TClientEnum.Create(Self);
+end;
+
+procedure TClientManager.HomeCommMonitorStreamsReceived(Sender: TObject;
+  StreamIDs: TIntArray);
+var
+  i, n: Integer;
+  AutoTuneInMinKbps: Cardinal;
+  Client: TICEClient;
+  Res: TMayConnectResults;
+  Found: Boolean;
+  ID: Cardinal;
+  URL: string;
+begin
+  for i := 0 to FMonitorClients.Count - 1 do
+    RemoveClient(FMonitorClients[i]);
+
+  // TODO: wenn das hier aufgerufen wird muss ich alle, die zur Zeit aktiv sind anhalten und entfernen aus der liste!!!
+
+  for i := 0 to High(StreamIDs) do
+  begin
+    // TODO: Die URL hier ist etwas zu statisch!!! wie ist das an anderen orten verdrahtet?
+    Client := TICEClient.Create(Self, StreamIDs[i], 128, 'Monitor', 'http://streamwriter.org/streamdb/getplaylist/list.m3u?id=' + IntToStr(StreamIDs[i]));
+    Client.Entry.Settings.MaxRetries := 0;
+    Client.Entry.Settings.RetryDelay := 10;
+    Client.Entry.Settings.SaveToMemory := True;
+    // TODO: hier fehlen bestimmt EINIGE settings!!! titlechanged event zum weiterleiten???
+    //       UND: er darf NIX aufnehmen! nur beobachten!!!
+    Client.StartMonitoring;
+
+    FMonitorClients.Add(Client);
+  end;
 end;
 
 procedure TClientManager.HomeCommTitleChanged(Sender: TObject; ID: Cardinal;

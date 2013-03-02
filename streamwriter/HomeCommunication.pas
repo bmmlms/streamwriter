@@ -25,7 +25,8 @@ interface
 uses
   Windows, SysUtils, Classes, HTTPThread, StrUtils, Generics.Collections,
   Sockets, WinSock, ZLib, Communication, Protocol, Commands, ExtendedStream,
-  HomeCommands, DataManager, AppData, AudioFunctions, LanguageObjects;
+  HomeCommands, DataManager, AppData, AudioFunctions, LanguageObjects,
+  TypeDefs;
 
 type
   TCommErrors = (ceUnknown, ceAuthRequired, ceNotification, ceOneTimeNotification);
@@ -47,6 +48,8 @@ type
     FErrorID: TCommErrors;
     FErrorMsg: string;
 
+    FStreamIDs: TIntArray;
+
     FOnHandshakeReceived: TSocketEvent;
     FOnLogInReceived: TSocketEvent;
     FOnLogOutReceived: TSocketEvent;
@@ -54,6 +57,7 @@ type
     FOnNetworkTitleChangedReceived: TSocketEvent;
     FOnServerInfoReceived: TSocketEvent;
     FOnErrorReceived: TSocketEvent;
+    FOnMonitorStreamsReceived: TSocketEvent;
 
     procedure DoHandshakeReceived(CommandHeader: TCommandHeader; Command: TCommandHandshakeResponse);
     procedure DoLogInReceived(CommandHeader: TCommandHeader; Command: TCommandLogInResponse);
@@ -62,6 +66,7 @@ type
     procedure DoNetworkTitleChanged(CommandHeader: TCommandHeader; Command: TCommandNetworkTitleChangedResponse);
     procedure DoServerInfoReceived(CommandHeader: TCommandHeader; Command: TCommandServerInfoResponse);
     procedure DoMessageReceived(CommandHeader: TCommandHeader; Command: TCommandMessageResponse);
+    procedure DoMonitorStreamsReceived(CommandHeader: TCommandHeader; Command: TCommandGetMonitorStreamsResponse);
   protected
     procedure DoReceivedCommand(ID: Cardinal; CommandHeader: TCommandHeader; Command: TCommand); override;
     procedure DoException(E: Exception); override;
@@ -77,6 +82,7 @@ type
     property OnNetworkTitleChangedReceived: TSocketEvent read FOnNetworkTitleChangedReceived write FOnNetworkTitleChangedReceived;
     property OnServerInfoReceived: TSocketEvent read FOnServerInfoReceived write FOnServerInfoReceived;
     property OnErrorReceived: TSocketEvent read FOnErrorReceived write FOnErrorReceived;
+    property OnMonitorStreamsReceived: TSocketEvent read FOnMonitorStreamsReceived write FOnMonitorStreamsReceived;
   end;
 
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
@@ -85,6 +91,7 @@ type
   TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, TitlePattern: string; Format: TAudioTypes; Kbps: Cardinal) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
+  TIntArrayEvent = procedure(Sender: TObject; IntArr: TIntArray) of object;
 
   THomeCommunication = class
   private
@@ -108,6 +115,7 @@ type
     FOnNetworkTitleChangedReceived: TTitleChangedEvent;
     FOnServerInfoReceived: TServerInfoEvent;
     FOnErrorReceived: TErrorEvent;
+    FOnMonitorStreamsReceived: TIntArrayEvent;
 
     procedure HomeThreadConnected(Sender: TSocketThread);
     procedure HomeThreadBeforeEnded(Sender: TSocketThread);
@@ -121,6 +129,7 @@ type
     procedure HomeThreadNetworkTitleChangedReceived(Sender: TSocketThread);
     procedure HomeThreadServerInfoReceived(Sender: TSocketThread);
     procedure HomeThreadErrorReceived(Sender: TSocketThread);
+    procedure HomeThreadMonitorStreamsReceived(Sender: TSocketThread);
   public
     constructor Create(Lists: TDataLists);
     destructor Destroy; override;
@@ -159,6 +168,7 @@ type
     property OnNetworkTitleChangedReceived: TTitleChangedEvent read FOnNetworkTitleChangedReceived write FOnNetworkTitleChangedReceived;
     property OnServerInfoReceived: TServerInfoEvent read FOnServerInfoReceived write FOnServerInfoReceived;
     property OnErrorReceived: TErrorEvent read FOnErrorReceived write FOnErrorReceived;
+    property OnMonitorStreamsReceived: TIntArrayEvent read FOnMonitorStreamsReceived write FOnMonitorStreamsReceived;
   end;
 
 var
@@ -199,6 +209,15 @@ begin
 
   if Assigned(FOnErrorReceived) then
     Sync(FOnErrorReceived);
+end;
+
+procedure THomeThread.DoMonitorStreamsReceived(
+  CommandHeader: TCommandHeader; Command: TCommandGetMonitorStreamsResponse);
+begin
+  FStreamIDs := Command.StreamIDs;
+
+  if Assigned(FOnMonitorStreamsReceived) then
+    Sync(FOnMonitorStreamsReceived);
 end;
 
 procedure THomeThread.DoException(E: Exception);
@@ -257,6 +276,7 @@ var
   NetworkTitleChanged: TCommandNetworkTitleChangedResponse absolute Command;
   ServerInfo: TCommandServerInfoResponse absolute Command;
   Error: TCommandMessageResponse absolute Command;
+  MonitorStreams: TCommandGetMonitorStreamsResponse absolute Command;
 begin
   inherited;
 
@@ -276,6 +296,8 @@ begin
       DoServerInfoReceived(CommandHeader, ServerInfo);
     ctMessageResponse:
       DoMessageReceived(CommandHeader, Error);
+    ctGetMonitorStreamsResponse:
+      DoMonitorStreamsReceived(CommandHeader, MonitorStreams);
   end;
 end;
 
@@ -495,6 +517,7 @@ begin
   FOnChartsReceived := nil;
   FOnNetworkTitleChangedReceived := nil;
   FOnErrorReceived := nil;
+  FOnMonitorStreamsReceived := nil;
 
   if FThread <> nil then
     FThread.Terminate;
@@ -606,6 +629,13 @@ begin
     FOnLogOutReceived(Self);
 end;
 
+procedure THomeCommunication.HomeThreadMonitorStreamsReceived(
+  Sender: TSocketThread);
+begin
+  if Assigned(FOnMonitorStreamsReceived) then
+    FOnMonitorStreamsReceived(Self, THomeThread(Sender).FStreamIDs);
+end;
+
 procedure THomeCommunication.HomeThreadServerDataReceived(Sender: TSocketThread);
 begin
   if Assigned(FOnStreamsReceived) then
@@ -678,6 +708,7 @@ begin
   FThread.OnErrorReceived := HomeThreadErrorReceived;
 
   FThread.OnNetworkTitleChangedReceived := HomeThreadNetworkTitleChangedReceived;
+  FThread.OnMonitorStreamsReceived := HomeThreadMonitorStreamsReceived;
 
   FThread.Start;
 end;
@@ -690,6 +721,7 @@ initialization
   TCommand.RegisterCommand(ctServerInfoResponse, TCommandServerInfoResponse);
   TCommand.RegisterCommand(ctMessageResponse, TCommandMessageResponse);
   TCommand.RegisterCommand(ctNetworkTitleChangedResponse, TCommandNetworkTitleChangedResponse);
+  TCommand.RegisterCommand(ctGetMonitorStreamsResponse, TCommandGetMonitorStreamsResponse);
 
   HomeComm := nil;
 

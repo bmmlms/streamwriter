@@ -44,6 +44,7 @@ type
     FPlayingPaused: Boolean;
     FPaused: Boolean;
     FSleepTime: Integer;
+    FMonitoringStarted: Boolean;
 
     FLastEventMilliSecondsConnected: Cardinal;
     FLastMilliSecondsConnected: Cardinal;
@@ -72,6 +73,7 @@ type
     procedure StopRecordingInternal;
     procedure StartPlayInternal;
     procedure StopPlayInternal;
+    procedure StartMonitoringInternal;
 
     procedure StreamTitleChanged(Sender: TObject);
     procedure StreamSongSaved(Sender: TObject);
@@ -105,6 +107,7 @@ type
     procedure StopPlay;
     procedure StartRecording;
     procedure StopRecording;
+    procedure StartMonitoring;
     procedure Pause;
     procedure SetVolume(Vol: Integer);
     procedure SetEQ(Value, Freq: Integer);
@@ -122,6 +125,7 @@ type
     property Recording: Boolean read FRecordingStarted;
     property Playing: Boolean read FPlayingStarted;
     property Paused: Boolean read FGetPaused;
+    property Monitoring: Boolean read FMonitoringStarted;
     property SleepTime: Integer read FSleepTime write FSleepTime;
     property PlayingPaused: Boolean read FPlayingPaused;
     property PlayingStarted: Boolean read FPlayingStarted;
@@ -166,6 +170,16 @@ end;
 procedure TICEThread.SetVolume(Vol: Integer);
 begin
   FPlayer.SetVolume(Vol);
+end;
+
+procedure TICEThread.StartMonitoring;
+begin
+  FMonitoringStarted := True;
+end;
+
+procedure TICEThread.StartMonitoringInternal;
+begin
+  FTypedStream.StartMonitoring;
 end;
 
 procedure TICEThread.StartPlay;
@@ -484,6 +498,11 @@ begin
   begin
     StartRecordingInternal;
     FRecording := True;
+  end;
+
+  if FMonitoringStarted then
+  begin
+    StartMonitoringInternal;
   end;
 
   if FPlayingPaused and (not FPaused) then

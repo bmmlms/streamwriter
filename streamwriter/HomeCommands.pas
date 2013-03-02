@@ -23,7 +23,7 @@ unit HomeCommands;
 interface
 
 uses
-  Windows, SysUtils, ExtendedStream, Commands, AudioFunctions;
+  Windows, SysUtils, ExtendedStream, Commands, AudioFunctions, TypeDefs;
 
 type
   TSendClientStatTypes = (csSave, csAutoSave);
@@ -256,6 +256,18 @@ type
     constructor Create; overload;
     constructor Create(StreamID: Cardinal; StreamName, Title, CurrentURL, URL: string;
       Format: TAudioTypes; Kbps: Cardinal; URLs: string); overload;
+  end;
+
+  TCommandGetMonitorStreamsResponse = class(TCommand)
+  private
+    FStreamIDs: TIntArray;
+  protected
+  public
+    constructor Create; overload;
+
+    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+
+    property StreamIDs: TIntArray read FStreamIDs;
   end;
 
 implementation
@@ -589,6 +601,29 @@ begin
   S.Write(Byte(FFormat));
   S.Write(FKbps);
   S.Write(FURLs);
+end;
+
+{ TCommandGetMonitorStreamsResponse }
+
+constructor TCommandGetMonitorStreamsResponse.Create;
+begin
+  inherited;
+
+  FCommandType := ctGetMonitorStreamsResponse;
+end;
+
+procedure TCommandGetMonitorStreamsResponse.Load(CommandHeader: TCommandHeader;
+  Stream: TExtendedStream);
+var
+  Count, StreamID: Cardinal;
+  i: Integer;
+begin
+  inherited;
+
+  Stream.Read(Count);
+  SetLength(FStreamIDs, Count);
+  for i := 0 to High(FStreamIDs) do
+    Stream.Read(FStreamIDs[i]);
 end;
 
 end.

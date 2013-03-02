@@ -46,8 +46,6 @@ type
   TScheduleInterval = (siDaily, siWeekly, siNone);
   // A specific day for a schedule. sdNone has to be the last element!
   TScheduleDay = (sdMonday, sdTuesday, sdWednesday, sdThursday, sdFriday, sdSaturday, sdSunday, sdNone);
-  // An array of integer.........
-  TIntArray = array of Integer;
 
   TPostProcessorList = class(TList<TPostProcessBase>)
   private
@@ -481,7 +479,7 @@ begin
   FRecoveryFile := FStorage.DataDir + 'streamwriter_data_recovery.dat';
 
   // The number of the current build
-  FBuildNumber := 476;
+  FBuildNumber := 478;
 
   // This builds a large string used to generate the about-window
   BuildThanksText;

@@ -109,7 +109,7 @@ type
 
     procedure StreamBrowserHeaderClick(Sender: TVTHeader; HitInfo: TVTHeaderHitInfo);
 
-    procedure HomeCommunicationStreamsReceived(Sender: TObject);
+    procedure HomeCommStreamsReceived(Sender: TObject);
   protected
   public
     constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
@@ -1175,7 +1175,7 @@ begin
   FStreamTree.HomeCommBytesTransferred(CommandHeader, Transferred);
 end;
 
-procedure TMStreamBrowserView.HomeCommunicationStreamsReceived(Sender: TObject);
+procedure TMStreamBrowserView.HomeCommStreamsReceived(Sender: TObject);
 begin
   FSearch.FGenreList.Clear;
   FStreamTree.Clear;
@@ -1256,7 +1256,7 @@ begin
   FSearch.FKbpsList.OnChange := ListsChange;
   FSearch.FTypeList.OnChange := ListsChange;
 
-  FHomeCommunication.OnStreamsReceived := HomeCommunicationStreamsReceived;
+  FHomeCommunication.OnStreamsReceived := HomeCommStreamsReceived;
 
   if (FDataLists.BrowserList.Count > 0) and (FDataLists.GenreList.Count > 0) then
   begin

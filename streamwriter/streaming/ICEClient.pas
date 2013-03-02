@@ -152,6 +152,7 @@ type
     procedure StopPlay;
     class function MayConnect(PlayOnly: Boolean; UsedBandwidth: Integer): TMayConnectResults;
     function StartRecording(CheckConditions: Boolean): TMayConnectResults;
+    procedure StartMonitoring;
     procedure StopRecording;
     procedure SetVolume(Vol: Integer);
     procedure SetEQ(Value, Freq: Integer);
@@ -434,6 +435,15 @@ begin
   ThreadNeedSettings(FICEThread);
 
   FICEThread.Start;
+end;
+
+// TODO: Bandbreite wird nicht berücksichtigt. soll sie das? oder wird das separiert von normalen streams/bandbreitenlimit??
+procedure TICEClient.StartMonitoring;
+begin
+  Connect;
+
+  if FICEThread <> nil then
+    FICEThread.StartMonitoring;
 end;
 
 destructor TICEClient.Destroy;
@@ -838,7 +848,7 @@ begin
 
   // Das muss, damit bei Fehlern mit Daten, die BASS nicht parsen kann, beendet wird.
   // Der ICEPlayer wirft bei PushData() eine Exception wenn das so ist.
-  if (not FICEThread.Recording) and (not FICEThread.Playing) then
+  if (not FICEThread.Recording) and (not FICEThread.Playing) and (not FICEThread.Monitoring) then
   begin
     Disconnect;
   end;
@@ -897,6 +907,8 @@ begin
         FICEThread.PausePlay;
       if DiedThread.Recording then
         FICEThread.StartRecording;
+      if DiedThread.Monitoring then
+        FICEThread.StartMonitoring;
     end;
     if FRedirectedURL = '' then
       Inc(FRetries);

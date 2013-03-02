@@ -132,6 +132,8 @@ type
     FRecordingStarted: Boolean;
     FFullTitleFound: Boolean;
     FRecordingTitleFound: Boolean;
+    FMonitoring: Boolean;
+    FMonitoringStarted: Boolean;
     FRemoveClient: Boolean;
     FClientStopRecording: Boolean;
     FLastGetSettings: Cardinal;
@@ -175,6 +177,7 @@ type
 
     procedure StartRecording;
     procedure StopRecording;
+    procedure StartMonitoring;
     procedure Disconnected; override;
 
     property Settings: TStreamSettings read FSettings;
@@ -429,6 +432,9 @@ begin
 
       if FRecording then
         StartRecording;
+
+      if FMonitoring then
+        StartMonitoring;
 
       if Assigned(FOnTitleChanged) then
         FOnTitleChanged(Self);
@@ -752,6 +758,11 @@ begin
   end;
 end;
 
+procedure TICEStream.StartMonitoring;
+begin
+  FMonitoringStarted := True;
+end;
+
 procedure TICEStream.StartRecording;
 begin
   FRecordingStarted := True;
@@ -1021,6 +1032,8 @@ var
 begin
   RecvStream.Seek(0, soFromBeginning);
 
+  // TODO: Werden im MonitorMode nur full title changes gesendet? ich denke ja, aber bitte prüfen!!!
+
   // Falls Einstellungen vom User geändert wurde, die nicht zu unserem Stream-Typ passen, müssen
   // diese rückgängig gemacht werden. Beim nächsten Aufnahmestart müsstes dann passen.
   if FAudioStream <> nil then
@@ -1063,13 +1076,17 @@ begin
 
   if FMetaInt = -1 then
   begin
+    // TODO: Wenn Monitoring, aber kein MetaInt, dann isses FAIL!!!
+
+    // TODO: Monitoring wird ATM in memory aufgenommen. fail...
+
     DataReceived(RecvStream.Size);
     RecvStream.Clear;
   end else
   begin
     TitleChanged := False;
 
-    if FSettings.SeparateTracks then
+    if (not FMonitoring) and (FSettings.SeparateTracks) then
       TrySave;
 
     if RecordTitle <> '' then
@@ -1090,7 +1107,7 @@ begin
         DataCopied := Min(FNextMetaInt, RecvStream.Size - RecvStream.Position);
         if DataCopied = 0 then
           Break;
-        DataReceived(DataCopied);
+        DataReceived(DataCopied);   // TODO: was bei monitoring? üüüberall checken. es sollte GAR NIX irgendwo hin gespeichert werden...
         FNextMetaInt := FNextMetaInt - DataCopied;
       end;
 
@@ -1263,6 +1280,11 @@ begin
       begin
         GetSettings;
         FLastGetSettings := GetTickCount;
+      end;
+
+      if FMonitoringStarted then
+      begin
+        FMonitoring := True;
       end;
 
       if FRecordingStarted and (not FRecording) then

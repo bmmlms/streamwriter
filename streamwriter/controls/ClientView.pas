@@ -22,8 +22,6 @@
   in a separated tab }
 unit ClientView;
 
-// TODO: Diese "Header"-Controls von mir passen sich nirgens auf DPI an. und buttons in eltern-klassen auch nicht (settings, der ok button z.b.)
-
 interface
 
 uses

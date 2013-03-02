@@ -27,6 +27,9 @@ uses
   Windows, SysUtils, Classes;
 
 type
+  // An array of integer.........
+  TIntArray = array of Integer;
+
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
 
   TDebugTypes = (dtSocket, dtMessage, dtSong, dtError, dtSaved, dtPostProcess);
