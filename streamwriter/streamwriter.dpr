@@ -139,6 +139,7 @@ uses
 
 {$SetPEOptFlags $0140}
 
+
 {$R *.res}
 {$R res\language.res}
 {$R res\icons.res}
