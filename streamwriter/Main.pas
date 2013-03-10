@@ -2112,6 +2112,13 @@ begin
         else
           Inc(C);
       end;
+
+    for i := 0 to FClients.Monitors.Count - 1 do
+      if FClients.Monitors[i].Entry.ID > 0 then
+        L.Add(FClients.Monitors[i].Entry.ID)
+      else
+        Inc(C);
+
     HomeComm.SendUpdateStats(L, C);
   finally
     L.Free;

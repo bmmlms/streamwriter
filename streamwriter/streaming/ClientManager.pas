@@ -104,6 +104,7 @@ type
     procedure Stop;
     procedure Terminate;
 
+    property Monitors: TClientList read FMonitorClients;
     procedure StopMonitors;
 
     procedure SetupClient(Client: TICEClient);
