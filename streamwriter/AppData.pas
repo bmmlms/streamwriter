@@ -683,7 +683,11 @@ begin
   FStorage.Read('SubmitStreamInfo', FSubmitStreamInfo, True);
   FStorage.Read('SubmitStats', FSubmitStats, True);
   FStorage.Read('MonitorMode', FMonitorMode, True);
+
   FStorage.Read('MonitorCount', FMonitorCount, 3);
+  if FMonitorCount > 99 then
+    FMonitorCount := 99;
+
   FStorage.Read('LimitSpeed', FLimitSpeed, False);
   FStorage.Read('MaxSpeed', FMaxSpeed, 0);
   if FMaxSpeed <= 0 then

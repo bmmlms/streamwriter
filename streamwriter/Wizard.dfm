@@ -128,7 +128,7 @@ object frmWizard: TfrmWizard
       EditLabel.Width = 173
       EditLabel.Height = 13
       EditLabel.Caption = 'Max. number of streams to monitor:'
-      MaxLength = 3
+      MaxLength = 2
       NumbersOnly = True
       TabOrder = 3
     end
