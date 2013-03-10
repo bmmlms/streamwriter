@@ -4,7 +4,7 @@ object frmWizard: TfrmWizard
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Setup wizard'
-  ClientHeight = 300
+  ClientHeight = 325
   ClientWidth = 430
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -20,15 +20,15 @@ object frmWizard: TfrmWizard
   object pnlDir: TPanel
     Left = 8
     Top = 8
-    Width = 389
+    Width = 413
     Height = 233
     BevelOuter = bvNone
     TabOrder = 0
     DesignSize = (
-      389
+      413
       233)
     object cmdBrowse: TPngSpeedButton
-      Left = 364
+      Left = 388
       Top = 16
       Width = 21
       Height = 21
@@ -39,11 +39,12 @@ object frmWizard: TfrmWizard
       ParentShowHint = False
       ShowHint = True
       OnClick = cmdBrowseClick
+      ExplicitLeft = 364
     end
     object txtDir: TLabeledEdit
       Left = 8
       Top = 16
-      Width = 349
+      Width = 373
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
@@ -55,13 +56,16 @@ object frmWizard: TfrmWizard
       TabOrder = 0
     end
   end
-  object pnlBandwidth: TPanel
+  object pnlMisc: TPanel
     Left = 8
     Top = 260
-    Width = 389
+    Width = 413
     Height = 233
     BevelOuter = bvNone
     TabOrder = 1
+    DesignSize = (
+      413
+      233)
     object Label2: TLabel
       Left = 80
       Top = 44
@@ -69,10 +73,24 @@ object frmWizard: TfrmWizard
       Height = 13
       Caption = 'KB/s'
     end
+    object Label20: TLabel
+      Left = 24
+      Top = 100
+      Width = 389
+      Height = 61
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      Caption = 
+        'Server-assigned streams will be monitored for title changes in t' +
+        'he background. Do not disable this option if you have a fast int' +
+        'ernet connection (DSL or faster). Monitored streams will not be ' +
+        'covered by the bandwidth limit.'
+      WordWrap = True
+    end
     object chkLimit: TCheckBox
       Left = 8
       Top = 0
-      Width = 281
+      Width = 369
       Height = 21
       Caption = 'Limit bandwidth for recordings'
       TabOrder = 0
@@ -83,13 +101,36 @@ object frmWizard: TfrmWizard
       Top = 40
       Width = 53
       Height = 21
-      EditLabel.Width = 225
+      EditLabel.Width = 205
       EditLabel.Height = 13
-      EditLabel.Caption = 'Maximum bandwidth available to streamWriter:'
+      EditLabel.Caption = 'Max. bandwidth available to streamWriter:'
       Enabled = False
       MaxLength = 5
       NumbersOnly = True
       TabOrder = 1
+    end
+    object chkMonitorMode: TCheckBox
+      Left = 8
+      Top = 76
+      Width = 369
+      Height = 21
+      Caption = 
+        'Monitor server-assigned streams for title changes in the backgro' +
+        'und'
+      TabOrder = 2
+      OnClick = chkMonitorModeClick
+    end
+    object txtMonitorCount: TLabeledEdit
+      Left = 24
+      Top = 176
+      Width = 53
+      Height = 21
+      EditLabel.Width = 173
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Max. number of streams to monitor:'
+      MaxLength = 3
+      NumbersOnly = True
+      TabOrder = 3
     end
   end
 end

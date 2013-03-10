@@ -258,6 +258,18 @@ type
       Format: TAudioTypes; Kbps: Cardinal; URLs: string); overload;
   end;
 
+  TCommandGetMonitorStreams = class(TCommand)
+  private
+    FCount: Cardinal;
+  protected
+    procedure DoGet(S: TExtendedStream); override;
+  public
+    constructor Create; overload;
+    constructor Create(Count: Cardinal); overload;
+
+    property Count: Cardinal read FCount write FCount;
+  end;
+
   TCommandGetMonitorStreamsResponse = class(TCommand)
   private
     FStreamIDs: TIntArray;
@@ -615,7 +627,7 @@ end;
 procedure TCommandGetMonitorStreamsResponse.Load(CommandHeader: TCommandHeader;
   Stream: TExtendedStream);
 var
-  Count, StreamID: Cardinal;
+  Count: Cardinal;
   i: Integer;
 begin
   inherited;
@@ -624,6 +636,27 @@ begin
   SetLength(FStreamIDs, Count);
   for i := 0 to High(FStreamIDs) do
     Stream.Read(FStreamIDs[i]);
+end;
+
+{ TCommandGetMonitorStreams }
+
+constructor TCommandGetMonitorStreams.Create(Count: Cardinal);
+begin
+  Create;
+
+  FCount := Count;
+end;
+
+constructor TCommandGetMonitorStreams.Create;
+begin
+  inherited;
+
+  FCommandType := ctGetMonitorStreams;
+end;
+
+procedure TCommandGetMonitorStreams.DoGet(S: TExtendedStream);
+begin
+  S.Write(FCount);
 end;
 
 end.

@@ -341,7 +341,8 @@ var
   Track: TStreamTrack;
 begin
   // Falls erlaubt, versuchen, das Empfangene wegzuspeichern..
-  if (FAudioStream <> nil) and (FStreamTracks.Count > 0) and (not FSettings.OnlySaveFull) and (FRecordTitle = '') then
+  if (not FMonitoring) and (FAudioStream <> nil) and (FStreamTracks.Count > 0) and
+     (not FSettings.OnlySaveFull) and (FRecordTitle = '') then
   begin
     Track := FStreamTracks[0];
     Track.E := FAudioStream.Size;
@@ -352,9 +353,9 @@ begin
   end;
 
   // Und noch die dicke Stream-Datei melden
-  if (FAudioStream <> nil) and FAudioStream.InheritsFrom(TAudioStreamFile) and
-    not (FSettings.SeparateTracks and FSettings.DeleteStreams) and (FRecordTitle = '') and
-    (FAudioStream.Size > 0) then
+  if (not FMonitoring) and (FAudioStream <> nil) and FAudioStream.InheritsFrom(TAudioStreamFile) and
+      not (FSettings.SeparateTracks and FSettings.DeleteStreams) and (FRecordTitle = '') and
+     (FAudioStream.Size > 0) then
   begin
     FSavedFilename := TAudioStreamFile(FAudioStream).FileName;
     FSavedSize := TAudioStreamFile(FAudioStream).Size;
@@ -374,14 +375,14 @@ procedure TICEStream.DataReceived(CopySize: Integer);
 var
   Buf: Pointer;
 begin
-  if FAudioStream <> nil then
+  if (FAudioStream <> nil) and (not FMonitoring) then
   begin
     FAudioStream.Seek(0, soFromEnd);
     FAudioStream.CopyFrom(RecvStream, CopySize);
   end else
     Seek(CopySize, soFromCurrent);
 
-  if Assigned(FOnChunkReceived) then
+  if Assigned(FOnChunkReceived) and (not FMonitoring) then
   begin
     GetMem(Buf, CopySize);
     CopyMemory(Buf, Pointer(Integer(RecvStream.Memory) + (RecvStream.Position - CopySize)), CopySize);
@@ -1032,8 +1033,6 @@ var
 begin
   RecvStream.Seek(0, soFromBeginning);
 
-  // TODO: Werden im MonitorMode nur full title changes gesendet? ich denke ja, aber bitte prüfen!!!
-
   // Falls Einstellungen vom User geändert wurde, die nicht zu unserem Stream-Typ passen, müssen
   // diese rückgängig gemacht werden. Beim nächsten Aufnahmestart müsstes dann passen.
   if FAudioStream <> nil then
@@ -1076,9 +1075,9 @@ begin
 
   if FMetaInt = -1 then
   begin
-    // TODO: Wenn Monitoring, aber kein MetaInt, dann isses FAIL!!!
-
-    // TODO: Monitoring wird ATM in memory aufgenommen. fail...
+    // Wenn MonitorMode aber keine Meta-Daten, dann Ende
+    if FMonitoring then
+      FKilled := True;
 
     DataReceived(RecvStream.Size);
     RecvStream.Clear;
@@ -1107,7 +1106,7 @@ begin
         DataCopied := Min(FNextMetaInt, RecvStream.Size - RecvStream.Position);
         if DataCopied = 0 then
           Break;
-        DataReceived(DataCopied);   // TODO: was bei monitoring? üüüberall checken. es sollte GAR NIX irgendwo hin gespeichert werden...
+        DataReceived(DataCopied);
         FNextMetaInt := FNextMetaInt - DataCopied;
       end;
 
@@ -1160,7 +1159,7 @@ begin
                 end;
               end;
 
-              if FSettings.SeparateTracks then
+              if (not FMonitoring) and FSettings.SeparateTracks then
                 if (Title <> FTitle) and (FRecordingTitleFound) then
                 begin
                   if FAudioStream <> nil then

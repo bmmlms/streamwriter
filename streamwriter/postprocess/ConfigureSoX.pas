@@ -308,7 +308,6 @@ end;
 procedure TfrmConfigureSoX.InitForm;
 var
   i: Integer;
-  B: TBitmap;
 begin
   ClientHeight := pnlNav.Height + pnlConfigure.Height + 4;
   for i := 0 to Self.ControlCount - 1 do

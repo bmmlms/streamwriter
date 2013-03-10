@@ -390,7 +390,7 @@ begin
 
   if FClosed then
     if (FTypedStream.AudioType <> atNone) then
-      raise Exception.Create(_('Connection closed'));
+      raise Exception.Create(_(''));
 
   Sleep(100);
 end;
@@ -400,6 +400,8 @@ var
   StartTime: Cardinal;
 begin
   inherited;
+
+  WriteDebug(_('Connection closed'), 3, 0);
 
   FPlaying := False;
   FPlayer.Stop;
@@ -437,9 +439,10 @@ begin
   FPlayer.Stop;
 
   if E.ClassType = EExceptionParams then
-    WriteDebug(Format(_(E.Message), EExceptionParams(E).Args), '', 3, 0)
+    WriteDebug(Format(_(E.Message), EExceptionParams(E).Args), 3, 0)
   else
-    WriteDebug(Format(_('%s'), [_(E.Message)]), '', 3, 0);
+    if E.Message <> '' then
+      WriteDebug(Format(_('%s'), [_(E.Message)]), 3, 0);
 
   Delay := FTypedStream.Settings.RetryDelay * 1000;
   if FState <> tsIOError then

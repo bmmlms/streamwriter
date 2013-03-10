@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010 Alexander Nottelmann
+    Copyright (c) 2010-2013 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -17,6 +17,7 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
     ------------------------------------------------------------------------
 }
+
 program streamwriter;
 
 {$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
@@ -139,7 +140,6 @@ uses
 
 {$SetPEOptFlags $0140}
 
-
 {$R *.res}
 {$R res\language.res}
 {$R res\icons.res}
@@ -157,7 +157,9 @@ begin
   MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
   {$ENDIF}
 
-  if AppGlobals.ShowSplashScreen then
+  if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and
+     (not IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion))
+  then
     TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
 
   Application.Title := AppGlobals.AppName;

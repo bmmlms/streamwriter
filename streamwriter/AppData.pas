@@ -244,6 +244,8 @@ type
     FAutoRemoveSavedFromWishlist: Boolean;
     FSubmitStreamInfo: Boolean;
     FSubmitStats: Boolean;
+    FMonitorMode: Boolean;
+    FMonitorCount: Cardinal;
     FMinDiskSpace: Integer;
     FLogFile: string;
     FDefaultAction: TClientActions;
@@ -340,6 +342,8 @@ type
     property SubmitStreamInfo: Boolean read FSubmitStreamInfo write FSubmitStreamInfo;
     // When set some statistics will be sent to the server (number of recoring streams/automatically recording streams)
     property SubmitStats: Boolean read FSubmitStats write FSubmitStats;
+    property MonitorMode: Boolean read FMonitorMode write FMonitorMode;
+    property MonitorCount: Cardinal read FMonitorCount write FMonitorCount;
     // The minimum amount of free disk space that has to be available in order to record streams
     property MinDiskSpace: Integer read FMinDiskSpace write FMinDiskSpace;
     property LogFile: string read FLogFile write FLogFile;
@@ -441,6 +445,9 @@ begin
   // (these are used for new streams that do not have user-specified settings)
   FStreamSettings := TStreamSettings.Create(False);
 
+  // The number of the current build
+  FBuildNumber := 478;
+
   // Adjust dimensions of the main-form
   W := 900;
   H := 630;
@@ -477,9 +484,6 @@ begin
 
   // Set the name for the recovery-file
   FRecoveryFile := FStorage.DataDir + 'streamwriter_data_recovery.dat';
-
-  // The number of the current build
-  FBuildNumber := 478;
 
   // This builds a large string used to generate the about-window
   BuildThanksText;
@@ -678,6 +682,8 @@ begin
   FStorage.Read('AutoRemoveSavedFromWishlist', FAutoRemoveSavedFromWishlist, False);
   FStorage.Read('SubmitStreamInfo', FSubmitStreamInfo, True);
   FStorage.Read('SubmitStats', FSubmitStats, True);
+  FStorage.Read('MonitorMode', FMonitorMode, True);
+  FStorage.Read('MonitorCount', FMonitorCount, 3);
   FStorage.Read('LimitSpeed', FLimitSpeed, False);
   FStorage.Read('MaxSpeed', FMaxSpeed, 0);
   if FMaxSpeed <= 0 then
@@ -883,6 +889,8 @@ begin
   FStorage.Write('AutoTuneInAddToIgnore', FAutoTuneInAddToIgnore);
   FStorage.Write('AutoRemoveSavedFromWishlist', FAutoRemoveSavedFromWishlist);
   FStorage.Write('SubmitStats', FSubmitStats);
+  FStorage.Write('MonitorMode', FMonitorMode);
+  FStorage.Write('MonitorCount', FMonitorCount);
   FStorage.Write('SubmitStreamInfo', FSubmitStreamInfo);
   FStorage.Write('AutoTuneInMinQuality', FAutoTuneInMinQuality);
   // REMARK: Das .Delete() kann irgendwann raus. Dann aber auch der Check, der die alte Variable berücksichtigt.

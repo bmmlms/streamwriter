@@ -37,12 +37,16 @@ type
     pnlDir: TPanel;
     cmdBrowse: TPngSpeedButton;
     txtDir: TLabeledEdit;
-    pnlBandwidth: TPanel;
+    pnlMisc: TPanel;
     chkLimit: TCheckBox;
     txtMaxSpeed: TLabeledEdit;
     Label2: TLabel;
+    chkMonitorMode: TCheckBox;
+    txtMonitorCount: TLabeledEdit;
+    Label20: TLabel;
     procedure cmdBrowseClick(Sender: TObject);
     procedure chkLimitClick(Sender: TObject);
+    procedure chkMonitorModeClick(Sender: TObject);
   protected
     procedure RegisterSteps; override;
     procedure Finish; override;
@@ -64,6 +68,9 @@ begin
   AppGlobals.LimitSpeed := chkLimit.Checked;
   if StrToIntDef(txtMaxSpeed.Text, -1) > 0 then
     AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);
+  AppGlobals.MonitorMode := chkMonitorMode.Checked;
+  if StrToIntDef(txtMonitorCount.Text, -1) > 0 then
+    AppGlobals.MonitorCount := StrToInt(txtMonitorCount.Text);
   inherited;
 end;
 
@@ -91,6 +98,9 @@ begin
     chkLimit.Checked := AppGlobals.LimitSpeed;
     if AppGlobals.MaxSpeed > 0 then
       txtMaxSpeed.Text := IntToStr(AppGlobals.MaxSpeed);
+    chkMonitorMode.Checked := AppGlobals.MonitorMode;
+    if AppGlobals.MonitorCount > 0 then
+      txtMonitorCount.Text := IntToStr(AppGlobals.MonitorCount);
   end;
 end;
 
@@ -113,12 +123,18 @@ begin
       MsgBox(Handle, _('The selected folder does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
       Result := False;
     end;
-  end else if Step.Panel = pnlBandwidth then
+  end else if Step.Panel = pnlMisc then
   begin
     if chkLimit.Checked then
       if StrToIntDef(txtMaxSpeed.Text, -1) <= 0 then
       begin
         MsgBox(Handle, _('Please enter the maximum bandwidth in KB/s available to streamWriter.'), _('Info'), MB_ICONINFORMATION);
+        Result := False;
+      end;
+    if chkMonitorMode.Checked then
+      if StrToIntDef(txtMonitorCount.Text, -1) <= 0 then
+      begin
+        MsgBox(Handle, _('Please enter the maximum number of streams to monitor.'), _('Info'), MB_ICONINFORMATION);
         Result := False;
       end;
   end;
@@ -129,13 +145,18 @@ begin
   inherited;
   FStepList.Add(TStepDir.Create('Select folder', pnlDir));
   FStepList[FStepList.Count - 1].Description := 'Please select a folder where recorded songs will be saved.';
-  FStepList.Add(TStepDir.Create('Limit bandwidth', pnlBandwidth));
-  FStepList[FStepList.Count - 1].Description := 'Please choose whether to limit bandwidth used by streamWriter.';
+  FStepList.Add(TStepDir.Create('Miscellaneous settings', pnlMisc));
+  FStepList[FStepList.Count - 1].Description := 'Miscellaneous settings can be configured here.';
 end;
 
 procedure TfrmWizard.chkLimitClick(Sender: TObject);
 begin
   txtMaxSpeed.Enabled := chkLimit.Checked;
+end;
+
+procedure TfrmWizard.chkMonitorModeClick(Sender: TObject);
+begin
+  txtMonitorCount.Enabled := chkMonitorMode.Checked;
 end;
 
 procedure TfrmWizard.cmdBrowseClick(Sender: TObject);

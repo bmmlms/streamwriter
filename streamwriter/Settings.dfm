@@ -858,7 +858,7 @@ object frmSettings: TfrmSettings
   end
   object pnlHotkeys: TPanel
     Left = 904
-    Top = 644
+    Top = 484
     Width = 293
     Height = 77
     TabOrder = 5
@@ -995,7 +995,7 @@ object frmSettings: TfrmSettings
   end
   object pnlFilenames: TPanel
     Left = 904
-    Top = 352
+    Top = 192
     Width = 293
     Height = 285
     TabOrder = 7
@@ -1005,14 +1005,13 @@ object frmSettings: TfrmSettings
       285)
     object lblFilePattern: TLabel
       Left = 4
-      Top = 4
+      Top = 0
       Width = 284
       Height = 49
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
       Caption = '-'
       WordWrap = True
-      ExplicitWidth = 285
     end
     object btnResetFilePattern: TPngSpeedButton
       Left = 264
@@ -1222,11 +1221,11 @@ object frmSettings: TfrmSettings
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 363
+      EditLabel.Width = 331
       EditLabel.Height = 13
       EditLabel.Caption = 
-        'Pattern for filenames of stream files (%a, %t, %l, %u and %n are' +
-        ' invalid):'
+        'Pattern for filenames of stream files (only %s, %d and %i are va' +
+        'lid):'
       TabOrder = 4
       OnChange = txtStreamFilePatternChange
       OnClick = txtStreamFilePatternClick
@@ -1420,9 +1419,9 @@ object frmSettings: TfrmSettings
       Top = 40
       Width = 53
       Height = 21
-      EditLabel.Width = 225
+      EditLabel.Width = 205
       EditLabel.Height = 13
-      EditLabel.Caption = 'Maximum bandwidth available to streamWriter:'
+      EditLabel.Caption = 'Max. bandwidth available to streamWriter:'
       Enabled = False
       MaxLength = 5
       NumbersOnly = True
@@ -1552,19 +1551,19 @@ object frmSettings: TfrmSettings
   end
   object pnlCommunity: TPanel
     Left = 904
-    Top = 200
+    Top = 568
     Width = 293
-    Height = 145
+    Height = 261
     TabOrder = 13
     Visible = False
     DesignSize = (
       293
-      145)
+      261)
     object Label2: TLabel
       Left = 20
       Top = 24
       Width = 268
-      Height = 29
+      Height = 33
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
       Caption = 
@@ -1576,13 +1575,27 @@ object frmSettings: TfrmSettings
       Left = 20
       Top = 84
       Width = 268
-      Height = 65
+      Height = 57
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
       Caption = 
-        'Information about Track changes will be sent to the server and b' +
+        'Information about track changes will be sent to the server and b' +
         'roadcasted to other users. This is important for the automatic r' +
         'ecording of songs on the wishlist.'
+      WordWrap = True
+    end
+    object Label20: TLabel
+      Left = 20
+      Top = 152
+      Width = 268
+      Height = 53
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      Caption = 
+        'Server-assigned streams will be monitored for title changes in t' +
+        'he background. Do not disable this option if you have a fast int' +
+        'ernet connection (DSL or faster). Monitored streams will not be ' +
+        'covered by the bandwidth limit.'
       WordWrap = True
     end
     object chkSubmitStreamInfo: TCheckBox
@@ -1602,6 +1615,29 @@ object frmSettings: TfrmSettings
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Submit statistics/track changes to the server'
       TabOrder = 1
+      OnClick = chkSubmitStatsClick
+    end
+    object chkMonitorMode: TCheckBox
+      Left = 4
+      Top = 128
+      Width = 284
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Enable monitor mode'
+      TabOrder = 2
+      OnClick = chkMonitorModeClick
+    end
+    object txtMonitorCount: TLabeledEdit
+      Left = 20
+      Top = 228
+      Width = 53
+      Height = 21
+      EditLabel.Width = 173
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Max. number of streams to monitor:'
+      MaxLength = 3
+      NumbersOnly = True
+      TabOrder = 3
     end
   end
   object dlgOpen: TOpenDialog

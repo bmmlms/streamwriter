@@ -407,7 +407,7 @@ begin
   AppGlobals.PlayerVolumeBeforeMute := Players.VolumeBeforeMute;
 
   HomeComm.Terminate;
-  while HomeComm.Connected do
+  while (HomeComm.ThreadAlive) and HomeComm.Connected do
   begin
     Sleep(100);
     Application.ProcessMessages;
@@ -439,7 +439,7 @@ begin
 
   Hard := False;
   StartTime := GetTickCount;
-  while (HomeComm.Connected) or (FClients.Active) or (FCheckFiles <> nil) or (FUpdater.Active) do
+  while (HomeComm.ThreadAlive or HomeComm.Connected) or FClients.Active or (FCheckFiles <> nil) or FUpdater.Active do
   begin
     // Wait 30 seconds for threads to finish
     if StartTime < GetTickCount - 30000 then
@@ -719,6 +719,14 @@ begin
       MsgBox(Handle, _('Because many internals of the last version have changed you need to reconfigure options regarding addons and postprocessing using the settings window.'), _('Info'), MB_ICONINFORMATION);
     end;
 
+    if IsVersionNewer(ParseVersion('4.4.0.0'), AppGlobals.AppVersion) and
+       (not IsVersionNewer(ParseVersion('4.4.0.0'), AppGlobals.LastUsedVersion)) then
+    begin
+      MsgBox(Handle, Format(_('You upgraded streamWriter from version 4.4.0.0.'#13#10'The new version monitors %d streams assigned by the server for title changes ' +
+                              'in the background, this makes more titles available in the streamWriter network and improves chances titles from the wishlist are recorded. ' +
+                              'If you do not want to contribute (i.e. because of low bandwidth) disable this option using "File->Settings...->Community" in the menu.'), [AppGlobals.MonitorCount]), _('Info'), MB_ICONINFORMATION);
+    end;
+
     tmrAutoSave.Enabled := True;
     tmrRecordings.Enabled := True;
 
@@ -770,8 +778,8 @@ begin
 
   HomeComm := THomeCommunication.Create(FDataLists);
 
-  {$IFNDEF DEBUG}
   Recovered := False;
+  {$IFNDEF DEBUG}
   if FileExists(AppGlobals.RecoveryFile) then
   begin
     if MsgBox(0, _('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
@@ -1056,6 +1064,12 @@ begin
   begin
     tmrRecordingsTimer(tmrRecordings);
 
+    FClients.StopMonitors;
+    if AppGlobals.SubmitStats and AppGlobals.MonitorMode and (AppGlobals.MonitorCount > 0) then
+      HomeComm.SendGetMonitorStreams(AppGlobals.MonitorCount)
+    else
+      HomeComm.SendGetMonitorStreams(0);
+
     if (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or
         (AppGlobals.LastBrowserUpdate < Now - 15)) or (FDataLists.ReloadServerData) or
         (tabCharts.State = csError) or (tabClients.SideBar.BrowserView.Mode = moError) then
@@ -1068,6 +1082,8 @@ begin
     end;
   end else if (HomeComm.WasConnected) and (not HomeComm.Connected) then
   begin
+    FClients.StopMonitors;
+
     if tabCharts.State = csLoading then
       tabCharts.SetState(csError);
     if tabClients.SideBar.BrowserView.Mode = moLoading then
@@ -1598,8 +1614,14 @@ end;
 procedure TfrmStreamWriterMain.ShowSettings(BrowseDir, BrowseAutoDir: Boolean);
 var
   S: TfrmSettings;
+  OldMonitorCount, NewMonitorCount: Cardinal;
 begin
   RegisterHotkeys(False);
+
+  if AppGlobals.SubmitStats and AppGlobals.MonitorMode then
+    OldMonitorCount := AppGlobals.MonitorCount
+  else
+    OldMonitorCount := 0;
 
   S := TfrmSettings.Create(Self, FDataLists, BrowseDir, BrowseAutoDir);
   try
@@ -1619,6 +1641,18 @@ begin
     Caption := FMainCaption;
 
   HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+
+
+  if AppGlobals.SubmitStats and AppGlobals.MonitorMode then
+    NewMonitorCount := AppGlobals.MonitorCount
+  else
+    NewMonitorCount := 0;
+  if NewMonitorCount <> OldMonitorCount then
+  begin
+    FClients.StopMonitors;
+    HomeComm.SendGetMonitorStreams(NewMonitorCount);
+  end;
+
 
   tabSaved.Tree.SetFileWatcher;
 
@@ -2238,8 +2272,11 @@ end;
 procedure TfrmStreamWriterMain.UpdateButtons;
 var
   i: Integer;
-  B, OnlyAutomatedSelected, OnlyAutomatedCatsSelected: Boolean;
-  URLFound, FilenameFound, OnePlaying, OnePaused, AnyClientHasTitle, ClientSchedulesActive: Boolean;
+
+  OneNormalRecordingWithTitle, OneNormalStopsAfterSong, AllNormalStopsAfterSong: Boolean;
+  B, OnlyAutomatedSelected, OnlyAutomatedCatsSelected, OnlyAutomaticRecording: Boolean;
+  URLFound, FilenameFound, OneRecording, OneNotRecording, OnePlaying, OnePaused: Boolean;
+  OneHasTitle, ClientSchedulesActive: Boolean;
   Clients, AllClients: TClientArray;
   Client: TICEClient;
   CatNodes: TNodeArray;
@@ -2253,41 +2290,60 @@ begin
   AllClients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
   CatNodes := tabClients.ClientView.GetNodes(ntCategory, True);
 
+  OnlyAutomaticRecording := True;
+  OneNormalRecordingWithTitle := False;
+  AllNormalStopsAfterSong := True;
   FilenameFound := False;
   OnlyAutomatedSelected := True;
+  OneRecording := False;
+  OneNotRecording := False;
   OnePlaying := False;
   OnePaused := False;
-  OnlyAutomatedCatsSelected := Length(Clients) = 0;
+  OnlyAutomatedCatsSelected := Length(CatNodes) > 0;
+  OneHasTitle := False;
+
+  for i := 0 to High(CatNodes) do
+  begin
+    if not PClientNodeData(tabClients.ClientView.GetNodeData(CatNodes[i])).Category.IsAuto then
+    begin
+      OnlyAutomatedCatsSelected := False;
+      Break;
+    end;
+  end;
 
   for Client in Clients do
   begin
     if not Client.AutoRemove then
+    begin
       OnlyAutomatedSelected := False;
+      if Client.Recording then
+        OnlyAutomaticRecording := False;
+      if Client.Recording and (Client.Title <> '') then
+      begin
+        OneNormalRecordingWithTitle := True;
+        if Client.StopAfterSong then
+          OneNormalStopsAfterSong := True
+        else
+          AllNormalStopsAfterSong := False;
+      end;
+    end;
     if Client.Filename <> '' then
       FilenameFound := True;
+    if Client.Title <> '' then
+      OneHasTitle := True;
+    if Client.Recording then
+      OneRecording := True
+    else
+      OneNotRecording := True;
   end;
 
   for Client in AllClients do
+  begin
     if Client.Playing then
-    begin
       OnePlaying := True;
-      Break;
-    end;
-
-  for Client in AllClients do
     if Client.Paused and Client.Playing then
-    begin
       OnePaused := True;
-      Break;
-    end;
-
-  AnyClientHasTitle := False;
-  for Client in Clients do
-    if Client.Title <> '' then
-    begin
-      AnyClientHasTitle := True;
-      Break;
-    end;
+  end;
 
   ClientSchedulesActive := False;
   if Length(Clients) = 1 then
@@ -2302,20 +2358,19 @@ begin
     if not PClientNodeData(tabClients.ClientView.GetNodeData(CatNodes[i])).Category.IsAuto then
     begin
       OnlyAutomatedSelected := False;
-      if Length(Clients) = 0 then
-        OnlyAutomatedCatsSelected := False;
+      Break;
     end;
 
   B := Length(Clients) > 0;
-  if actStart.Enabled <> (B and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected)) then
-    actStart.Enabled := (B and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected));
-  if actStop.Enabled <> (B and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected)) then
-    actStop.Enabled := (B and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected));
+  if actStart.Enabled <> (B and OneNotRecording and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected)) then
+    actStart.Enabled := (B and OneNotRecording and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected));
+  if actStop.Enabled <> (B and OneRecording and (not OnlyAutomaticRecording) and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected)) then
+    actStop.Enabled := (B and OneRecording and (not OnlyAutomaticRecording) and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected));
   mnuStartStreaming1.Default := False;
   mnuStopStreaming1.Default := False;
 
-  if actRename.Enabled <> (((Length(Clients) = 1) and not OnlyAutomatedSelected) or ((Length(CatNodes) = 1) and (not OnlyAutomatedCatsSelected))) then
-    actRename.Enabled := ((Length(Clients) = 1) and not OnlyAutomatedSelected) or ((Length(CatNodes) = 1) and (not OnlyAutomatedCatsSelected));
+  if actRename.Enabled <> (tabClients.ClientView.SelectedCount = 1) and (not OnlyAutomatedSelected) and (not OnlyAutomatedCatsSelected) then
+    actRename.Enabled := (tabClients.ClientView.SelectedCount = 1) and (not OnlyAutomatedSelected) and (not OnlyAutomatedCatsSelected);
 
   if actRemove.Enabled <> (B or (Length(CatNodes) > 0)) and not OnlyAutomatedCatsSelected then
     actRemove.Enabled := (B or (Length(CatNodes) > 0)) and not OnlyAutomatedCatsSelected;
@@ -2355,21 +2410,21 @@ begin
   if actPlay.Enabled <> (Length(Clients) = 1) and (not (Clients[0].AutoRemove and (Clients[0].State <> csConnected))) and Bass.DeviceAvailable then
     actPlay.Enabled := (Length(Clients) = 1) and (not (Clients[0].AutoRemove and (Clients[0].State <> csConnected))) and Bass.DeviceAvailable;
 
-  if actStopAfterSong.Enabled <> (Length(Clients) = 1) and (Clients[0].Title <> '') and (Clients[0].Recording) and (not OnlyAutomatedSelected) then
-    actStopAfterSong.Enabled := (Length(Clients) = 1) and (Clients[0].Title <> '') and (Clients[0].Recording) and (not OnlyAutomatedSelected);
+  if actStopAfterSong.Enabled <> OneNormalRecordingWithTitle then
+    actStopAfterSong.Enabled := OneNormalRecordingWithTitle;
 
-  if actStopAfterSong.Checked <> (Length(Clients) = 1) and (Clients[0].StopAfterSong) and (not OnlyAutomatedSelected) then
-    actStopAfterSong.Checked := (Length(Clients) = 1) and (Clients[0].StopAfterSong) and (not OnlyAutomatedSelected);
+  if actStopAfterSong.Checked <> OneNormalRecordingWithTitle and AllNormalStopsAfterSong then
+    actStopAfterSong.Checked := OneNormalRecordingWithTitle and AllNormalStopsAfterSong;
 
   if actTimers.Enabled <> (Length(Clients) = 1) and (not Clients[0].AutoRemove) and (not ClientSchedulesActive) then
     actTimers.Enabled := (Length(Clients) = 1) and (not Clients[0].AutoRemove) and (not ClientSchedulesActive);
 
-  if mnuCurrentTitle1.Enabled <> (Length(Clients) > 0) and AnyClientHasTitle then
-    mnuCurrentTitle1.Enabled := (Length(Clients) > 0) and AnyClientHasTitle;
+  if mnuCurrentTitle1.Enabled <> (Length(Clients) > 0) and OneHasTitle then
+    mnuCurrentTitle1.Enabled := (Length(Clients) > 0) and OneHasTitle;
 
   cmdPause.Down := OnePaused;
   
-  actCopyTitle.Enabled := (Length(Clients) > 0) and AnyClientHasTitle;
+  actCopyTitle.Enabled := (Length(Clients) > 0) and OneHasTitle;
 end;
 
 procedure TfrmStreamWriterMain.UpdateFound(var Msg: TMessage);

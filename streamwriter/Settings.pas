@@ -195,6 +195,9 @@ type
     txtLogFile: TLabeledEdit;
     btnBrowseLogFile: TPngSpeedButton;
     dlgSave: TSaveDialog;
+    chkMonitorMode: TCheckBox;
+    Label20: TLabel;
+    txtMonitorCount: TLabeledEdit;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -265,6 +268,8 @@ type
     procedure lstOutputFormatSelect(Sender: TObject);
     procedure btnConfigureEncoderClick(Sender: TObject);
     procedure btnBrowseLogFileClick(Sender: TObject);
+    procedure chkMonitorModeClick(Sender: TObject);
+    procedure chkSubmitStatsClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -1073,9 +1078,14 @@ begin
   lstFormat.ItemIndex := AppGlobals.AutoTuneInFormat;
   chkSubmitStreamInfo.Checked := AppGlobals.SubmitStreamInfo;
   chkSubmitStats.Checked := AppGlobals.SubmitStats;
+  chkMonitorMode.Checked := AppGlobals.MonitorMode;
+  txtMonitorCount.Text := IntToStr(AppGlobals.MonitorCount);
   chkLimit.Checked := AppGlobals.LimitSpeed;
   if AppGlobals.MaxSpeed > 0 then
     txtMaxSpeed.Text := IntToStr(AppGlobals.MaxSpeed);
+
+  chkSubmitStatsClick(nil);
+  chkMonitorModeClick(nil);
 
   txtShortLengthSeconds.Text := IntToStr(Settings.ShortLengthSeconds);
   txtSongBuffer.Text := IntToStr(Settings.SongBuffer);
@@ -1102,25 +1112,6 @@ begin
 
   if not DirectoryExists(txtDirAuto.Text) then
     txtDirAuto.Text := '';
-
-  if not Bass.BassLoaded then
-  begin
-    chkSearchSilence.Enabled := False;
-    chkSearchSilence.Checked := False;
-    chkManualSilenceLevel.Enabled := False;
-    chkManualSilenceLevel.Checked := False;
-    txtSilenceLevel.Enabled := False;
-    txtSilenceLength.Enabled := False;
-    txtSilenceBufferSeconds.Enabled := False;
-    Label10.Enabled := False;
-    Label12.Enabled := False;
-    Label13.Enabled := False;
-
-    chkAdjustTrackOffset.Enabled := False;
-    txtAdjustTrackOffset.Enabled := False;
-    optAdjustBackward.Enabled := False;
-    optAdjustForward.Enabled := False;
-  end;
 
   SetGray;
 
@@ -1437,6 +1428,8 @@ begin
     AppGlobals.AutoTuneInFormat := lstFormat.ItemIndex;
     AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
     AppGlobals.SubmitStats := chkSubmitStats.Checked;
+    AppGlobals.MonitorMode := chkMonitorMode.Checked;
+    AppGlobals.MonitorCount := StrToIntDef(txtMonitorCount.Text, 3);
     AppGlobals.LimitSpeed := chkLimit.Checked;
     if StrToIntDef(txtMaxSpeed.Text, -1) > 0 then
       AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);
@@ -2794,6 +2787,15 @@ begin
     Exit;
   end;
 
+  if chkMonitorMode.Checked then
+    if StrToIntDef(txtMonitorCount.Text, -1) <= 0 then
+    begin
+      MsgBox(Handle, _('Please enter the maximum number of streams to monitor.'), _('Info'), MB_ICONINFORMATION);
+      SetPage(FPageList.Find(TPanel(txtMonitorCount.Parent)));
+      txtMonitorCount.SetFocus;
+      Exit;
+    end;
+
   if Trim(txtRetryDelay.Text) = '' then
   begin
     MsgBox(Handle, _('Please enter the delay between connect retries.'), _('Info'), MB_ICONINFORMATION);
@@ -2871,6 +2873,13 @@ begin
 
   if FInitialized then
     RemoveGray(chkManualSilenceLevel);
+end;
+
+procedure TfrmSettings.chkMonitorModeClick(Sender: TObject);
+begin
+  inherited;
+
+  txtMonitorCount.Enabled := chkMonitorMode.State <> cbUnchecked;
 end;
 
 procedure TfrmSettings.chkAutoTuneInClick(Sender: TObject);
@@ -3025,6 +3034,13 @@ begin
 
   if FInitialized then
     RemoveGray(chkSkipShort);
+end;
+
+procedure TfrmSettings.chkSubmitStatsClick(Sender: TObject);
+begin
+  inherited;
+
+  chkMonitorMode.Enabled := chkSubmitStats.State <> cbUnchecked;
 end;
 
 procedure TfrmSettings.chkTrayClick(Sender: TObject);

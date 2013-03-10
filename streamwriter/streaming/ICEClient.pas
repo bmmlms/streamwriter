@@ -437,7 +437,6 @@ begin
   FICEThread.Start;
 end;
 
-// TODO: Bandbreite wird nicht berücksichtigt. soll sie das? oder wird das separiert von normalen streams/bandbreitenlimit??
 procedure TICEClient.StartMonitoring;
 begin
   Connect;
@@ -639,7 +638,8 @@ begin
     begin
       WriteDebug(Format(_('Error: %s'), [E.Message]), '', dtError, dlNormal);
 
-      if (FRetries < FEntry.Settings.MaxRetries) and (FEntry.Settings.MaxRetries > 0) then
+      // Schlafen, wenn die Maximalen Wiederholungsversuche noch nicht erreicht sind oder unendlich sind.
+      if ((FRetries < FEntry.Settings.MaxRetries) and (FEntry.Settings.MaxRetries > 0)) or (FEntry.Settings.MaxRetries = 0) then
         FICEThread.SleepTime := FICEThread.RecvStream.Settings.RetryDelay * 1000;
 
       FState := csRetrying;
@@ -915,7 +915,7 @@ begin
   end else
     FState := csStopped;
 
-  if Assigned(FOnRefresh) then
+  if Assigned(FOnRefresh) and (FICEThread <> nil) then
     FOnRefresh(Self);
 
   if Assigned(FOnDisconnected) and (FICEThread = nil) then

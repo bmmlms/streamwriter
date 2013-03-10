@@ -24,7 +24,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, HTTPThread, StrUtils, Generics.Collections,
-  Sockets, WinSock, ZLib, Communication, Protocol, Commands, ExtendedStream,
+  Sockets, WinSock, Communication, Protocol, Commands, ExtendedStream,
   HomeCommands, DataManager, AppData, AudioFunctions, LanguageObjects,
   TypeDefs;
 
@@ -117,6 +117,8 @@ type
     FOnErrorReceived: TErrorEvent;
     FOnMonitorStreamsReceived: TIntArrayEvent;
 
+    function FGetThreadAlive: Boolean;
+
     procedure HomeThreadConnected(Sender: TSocketThread);
     procedure HomeThreadBeforeEnded(Sender: TSocketThread);
     procedure HomeThreadEnded(Sender: TSocketThread);
@@ -130,6 +132,8 @@ type
     procedure HomeThreadServerInfoReceived(Sender: TSocketThread);
     procedure HomeThreadErrorReceived(Sender: TSocketThread);
     procedure HomeThreadMonitorStreamsReceived(Sender: TSocketThread);
+
+    procedure HomeThreadTerminate(Sender: TObject);
   public
     constructor Create(Lists: TDataLists);
     destructor Destroy; override;
@@ -148,6 +152,7 @@ type
     procedure SendSetStreamData(StreamID: Cardinal; Rating: Byte);
     procedure SendTitleChanged(StreamID: Cardinal; StreamName, Title, CurrentURL, URL: string; Format: TAudioTypes;
       Kbps: Cardinal; URLs: TStringList);
+    procedure SendGetMonitorStreams(Count: Cardinal);
 
     property Disabled: Boolean read FDisabled;
     property WasConnected: Boolean read FWasConnected;
@@ -155,6 +160,7 @@ type
     property Authenticated: Boolean read FAuthenticated;
     property NotifyTitleChanges: Boolean read FNotifyTitleChanges;
     property IsAdmin: Boolean read FIsAdmin;
+    property ThreadAlive: Boolean read FGetThreadAlive;
 
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
     property OnTitleNotificationsChanged: TNotifyEvent read FOnTitleNotificationsChanged write FOnTitleNotificationsChanged;
@@ -182,6 +188,8 @@ constructor THomeThread.Create(Lists: TDataLists);
 begin
   FLists := Lists;
 
+  // TODO: Hat der HomeThread fallback urls???
+
   inherited Create('streamwriter.org', 7085, TSocketStream.Create);
   //inherited Create('gaia', 7085, TSocketStream.Create);
 
@@ -198,7 +206,8 @@ procedure THomeThread.DoEnded;
 begin
   inherited;
 
-  Sleep(3000);
+  if not Terminated then
+    Sleep(3000);
 end;
 
 procedure THomeThread.DoMessageReceived(CommandHeader: TCommandHeader;
@@ -415,6 +424,11 @@ begin
   inherited;
 end;
 
+function THomeCommunication.FGetThreadAlive: Boolean;
+begin
+  Result := FThread <> nil;
+end;
+
 procedure THomeCommunication.SendLogIn(User, Pass: string);
 begin
   if not FConnected then
@@ -543,6 +557,14 @@ begin
   FThread.SendCommand(Cmd);
 end;
 
+procedure THomeCommunication.SendGetMonitorStreams(Count: Cardinal);
+begin
+  if not FConnected then
+    Exit;
+
+  FThread.SendCommand(TCommandGetMonitorStreams.Create(Count))
+end;
+
 function THomeCommunication.SendGetServerData: Boolean;
 begin
   Result := True;
@@ -567,7 +589,7 @@ begin
   FAuthenticated := False;
   FIsAdmin := False;
   FTitleNotificationsSet := False;
-  FThread := nil;
+  //FThread := nil;
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
@@ -652,6 +674,12 @@ begin
     FOnServerInfoReceived(Self, THomeThread(Sender).FServerInfoClientCount, THomeThread(Sender).FServerInfoRecordingCount);
 end;
 
+procedure THomeCommunication.HomeThreadTerminate(Sender: TObject);
+begin
+  if (FThread <> nil) and (Sender = FThread) then
+    FThread := nil;
+end;
+
 procedure THomeCommunication.HomeThreadNetworkTitleChangedReceived(
   Sender: TSocketThread);
 begin
@@ -690,9 +718,6 @@ begin
   if FDisabled then
     Exit;
 
-  if FThread <> nil then
-    Exit;
-
   FThread := THomeThread.Create(FLists);
   FThread.OnConnected := HomeThreadConnected;
   FThread.OnEnded := HomeThreadEnded;
@@ -710,6 +735,8 @@ begin
   FThread.OnNetworkTitleChangedReceived := HomeThreadNetworkTitleChangedReceived;
   FThread.OnMonitorStreamsReceived := HomeThreadMonitorStreamsReceived;
 
+  FThread.OnTerminate := HomeThreadTerminate;
+
   FThread.Start;
 end;
 
@@ -726,6 +753,7 @@ initialization
   HomeComm := nil;
 
 finalization
+  TCommand.UnregisterCommands;
   HomeComm.Free;
 
 end.

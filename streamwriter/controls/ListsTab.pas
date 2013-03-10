@@ -688,7 +688,6 @@ end;
 
 procedure TTitlePanel.SelectIgnoredClick(Sender: TObject);
 var
-  i: Integer;
   WishNode, IgnoreNode: PVirtualNode;
   WishNodeData, IgnoreNodeData: PTitleNodeData;
 begin
