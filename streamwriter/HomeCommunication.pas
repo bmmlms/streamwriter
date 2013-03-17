@@ -188,8 +188,6 @@ constructor THomeThread.Create(Lists: TDataLists);
 begin
   FLists := Lists;
 
-  // TODO: Hat der HomeThread fallback urls???
-
   inherited Create('streamwriter.org', 7085, TSocketStream.Create);
   //inherited Create('gaia', 7085, TSocketStream.Create);
 

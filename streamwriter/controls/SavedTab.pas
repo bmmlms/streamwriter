@@ -30,7 +30,7 @@ uses
   Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
   PlayerManager, Logging, FileWatcher, MessageBus, AppMessages, ShlObj,
   SavedTabEditTags, Generics.Collections, TypeDefs, AudioFunctions, FileTagger,
-  Notifications, Dialogs, SharedData;
+  Notifications, Dialogs, SharedData, DragDrop;
 
 type
   TSavedTree = class;
@@ -208,6 +208,7 @@ type
     FSearchBar: TSearchBar;
     FSavedTree: TSavedTree;
     FStreams: TDataLists;
+    FCoverDrag: TDropFileSource;
 
     FImportPanel: TImportPanel;
     FImportThread: TImportFilesThread;
@@ -234,6 +235,9 @@ type
     procedure ImportThreadTerminate(Sender: TObject);
 
     procedure ImportPanelCancelClick(Sender: TObject);
+
+    procedure CoverImageMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
   protected
     procedure Resize; override;
   public
@@ -635,6 +639,20 @@ end;
 
 { TSavedTab }
 
+procedure TSavedTab.CoverImageMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  if DragDetectPlus(FCoverPanel.Handle) and (FSavedTree.Player.Playing or FSavedTree.Player.Paused) then
+  begin
+    FCoverDrag.Files.Clear;
+    FCoverDrag.Files.Add(FSavedTree.Player.Filename);
+
+    FCoverDrag.Execute;
+  end;
+end;
+
+// TODO: die cover anzeige sollte abschaltbar sein. und da muss nen default image rein. warum kann man covers nicht per audiogenie setzen?
+
 constructor TSavedTab.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -653,10 +671,13 @@ begin
   FSavedTree.Parent := Self;
   FSavedTree.Align := alClient;
   FSavedTree.OnAction := SavedTreeAction;
+
+  FCoverDrag := TDropFileSource.Create(Self);
 end;
 
 destructor TSavedTab.Destroy;
 begin
+  FCoverDrag.Free;
   MsgBus.RemoveSubscriber(MessageReceived);
   FPositionTimer.Enabled := False;
 
@@ -1175,7 +1196,7 @@ begin
   FCoverPanel.Padding.Bottom := 4;
   FCoverPanel.Padding.Right := 8;
   FCoverPanel.Width := FCoverPanel.Height + 8;
-  FCoverPanel.Visible := False;
+  //FCoverPanel.Visible := False;
 
   FCoverBorderPanel := TPanel.Create(FCoverPanel);
   FCoverBorderPanel.Parent := FCoverPanel;
@@ -1188,6 +1209,7 @@ begin
   FCoverImage.Align := alClient;
   FCoverImage.Stretch := False;
   FCoverImage.Center := True;
+  FCoverImage.OnMouseDown := CoverImageMouseDown;
 
   // Panel rechts unten für Positionslabel/Playercontrols
   FTopRightBottomPanel := TPanel.Create(Self);
@@ -1661,8 +1683,8 @@ begin
     FTab.FCoverPanel.Show;
     FTab.FCoverBorderPanel.BevelKind := bkFlat;
     FTab.FCoverImage.Picture.Assign(ResizeBitmap(FPlayer.Tag.CoverImage, Min(FTab.FCoverImage.Height, FTab.FCoverImage.Width)));
-  end else
-    FTab.FCoverPanel.Hide;
+  end; // else
+    //FTab.FCoverPanel.Hide;
 
   FTab.UpdateButtons;
   Invalidate;
@@ -1675,7 +1697,7 @@ begin
   FTab.UpdateButtons;
   Invalidate;
 
-  FTab.FCoverPanel.Hide;
+  //FTab.FCoverPanel.Hide;
 end;
 
 function TSavedTree.PrevPlayingTrack: TTrackInfo;

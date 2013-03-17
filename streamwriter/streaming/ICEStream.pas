@@ -398,6 +398,15 @@ begin
   inherited;
   GetSettings;
 
+  // Wenn es ein Redirect ist dann die Standard-HTTP-Ausgabe nehmen.
+  // Ein paar Streams haben als Header ICY mit Code 302.. das würde sonst im Block
+  // hier drunter zur Exception führen.
+  if RedirURL <> '' then
+  begin
+    WriteDebug(_('HTTP response detected'), 1, 1);
+    Exit;
+  end;
+
   if (HeaderType = 'icy') or (ContentType = 'audio/mpeg') or (ContentType = 'audio/aacp') or
      (Pos(#10'icy-metaint:', LowerCase(FHeader)) > 0) or (Pos(#10'icy-name:', LowerCase(FHeader)) > 0) then
   begin
@@ -1160,7 +1169,7 @@ begin
               end;
 
               if (not FMonitoring) and FSettings.SeparateTracks then
-                if (Title <> FTitle) and (FRecordingTitleFound) then
+                if (AnsiLowerCase(Title) <> AnsiLowerCase(FTitle)) and (FRecordingTitleFound) then
                 begin
                   if FAudioStream <> nil then
                     FStreamTracks.FoundTitle(FAudioStream.Size, Title, FBytesPerSec, True);

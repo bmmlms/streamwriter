@@ -598,12 +598,17 @@ begin
   inherited;
 
   try
+    // Das hier kann bei HTTP und bei ICY kommen.
+    if FICEThread.RecvStream.RedirURL <> '' then
+    begin
+      WriteDebug(_('Redirection found'), dtMessage, dlNormal);
+      FRedirectedURL := FICEThread.RecvStream.RedirURL;
+      Exit;
+    end;
+
     if FICEThread.RecvStream.HeaderType = 'http' then
     begin
-      if FICEThread.RecvStream.RedirURL <> '' then
-      begin
-        FRedirectedURL := FICEThread.RecvStream.RedirURL;
-      end else if ParsePlaylist then
+      if ParsePlaylist then
       begin
         {$IFDEF DEBUG}
         WriteDebug(_('Playlist parsed'), FEntry.URLs.Text, dtMessage, dlNormal);

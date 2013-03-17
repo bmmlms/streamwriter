@@ -22,6 +22,8 @@ program streamwriter;
 
 {$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
 
+// TODO: auf root startet sW nicht. WARUM???
+
 uses
   MM in '..\..\common\MM.pas',
   madExcept,
