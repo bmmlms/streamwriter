@@ -24,9 +24,6 @@
 			<Projects Include="addon\addon_sox\addon_sox.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="..\..\Lib\DragDrop\Demos\SourceDemo\SimpleSourceDemo.dproj">
-				<Dependencies/>
-			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -98,23 +95,14 @@
 		<Target Name="addon_sox:Make">
 			<MSBuild Projects="addon\addon_sox\addon_sox.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="SimpleSourceDemo">
-			<MSBuild Projects="..\..\Lib\DragDrop\Demos\SourceDemo\SimpleSourceDemo.dproj"/>
-		</Target>
-		<Target Name="SimpleSourceDemo:Clean">
-			<MSBuild Projects="..\..\Lib\DragDrop\Demos\SourceDemo\SimpleSourceDemo.dproj" Targets="Clean"/>
-		</Target>
-		<Target Name="SimpleSourceDemo:Make">
-			<MSBuild Projects="..\..\Lib\DragDrop\Demos\SourceDemo\SimpleSourceDemo.dproj" Targets="Make"/>
-		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="streamwriter;addon_audiogenie;addon_faac;addon_lame;addon_mp4box;addon_oggenc;addon_sox;SimpleSourceDemo"/>
+			<CallTarget Targets="streamwriter;addon_audiogenie;addon_faac;addon_lame;addon_mp4box;addon_oggenc;addon_sox"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="streamwriter:Clean;addon_audiogenie:Clean;addon_faac:Clean;addon_lame:Clean;addon_mp4box:Clean;addon_oggenc:Clean;addon_sox:Clean;SimpleSourceDemo:Clean"/>
+			<CallTarget Targets="streamwriter:Clean;addon_audiogenie:Clean;addon_faac:Clean;addon_lame:Clean;addon_mp4box:Clean;addon_oggenc:Clean;addon_sox:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="streamwriter:Make;addon_audiogenie:Make;addon_faac:Make;addon_lame:Make;addon_mp4box:Make;addon_oggenc:Make;addon_sox:Make;SimpleSourceDemo:Make"/>
+			<CallTarget Targets="streamwriter:Make;addon_audiogenie:Make;addon_faac:Make;addon_lame:Make;addon_mp4box:Make;addon_oggenc:Make;addon_sox:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>
