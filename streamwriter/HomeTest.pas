@@ -12,8 +12,10 @@ type
     lstEvents: TListBox;
     prgTransfer: TProgressBar;
     Button1: TButton;
+    Button2: TButton;
     procedure FormCreate(Sender: TObject);
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
   private
     HC: THomeCommunication;
 
@@ -69,6 +71,12 @@ begin
 
   Cmd5 := TCommandGetServerData.Create;
   HC.SendCommand(Cmd5);
+end;
+
+procedure TfrmHomeTest.Button2Click(Sender: TObject);
+begin
+  HC.SendTitleChanged(12, '#MUSIK.ROCK (EXTREME) - WWW.RAUTEMUSIK.FM - 24H ROCK ALTERNATIVE METAL AND MORE', 'Def Leppard - Armageddon It',
+    'http://87.230.100.94:10000/', 'http://87.230.100.94:10000/', atMPEG, 128, TStringList.Create);
 end;
 
 procedure TfrmHomeTest.FormCreate(Sender: TObject);

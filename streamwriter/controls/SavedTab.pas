@@ -30,7 +30,7 @@ uses
   Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
   PlayerManager, Logging, FileWatcher, MessageBus, AppMessages, ShlObj,
   SavedTabEditTags, Generics.Collections, TypeDefs, AudioFunctions, FileTagger,
-  Notifications, Dialogs, SharedData, DragDrop;
+  Notifications, Dialogs, SharedData, DragDrop, pngimage;
 
 type
   TSavedTree = class;
@@ -220,6 +220,8 @@ type
     FOnAddTitleToWishlist: TStringEvent;
     FOnAddTitleToIgnorelist: TStringEvent;
 
+    FNoCoverPNG: TBitmap;
+
     procedure BuildTree;
     procedure SavedTreeAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
     procedure ToolBarClick(Sender: TObject);
@@ -248,6 +250,7 @@ type
     procedure Shown;
     procedure PausePlay;
     procedure PostTranslate;
+    procedure ShowCover(Img: TBitmap);
 
     procedure UpdateButtons;
     procedure StopThreads;
@@ -654,6 +657,8 @@ end;
 // TODO: die cover anzeige sollte abschaltbar sein. und da muss nen default image rein. warum kann man covers nicht per audiogenie setzen?
 
 constructor TSavedTab.Create(AOwner: TComponent);
+var
+  Png: TPngImage;
 begin
   inherited Create(AOwner);
 
@@ -673,6 +678,15 @@ begin
   FSavedTree.OnAction := SavedTreeAction;
 
   FCoverDrag := TDropFileSource.Create(Self);
+
+  Png := TPngImage.Create;
+  try
+    Png.LoadFromResourceName(HInstance, 'COVER_EMPTY');
+    FNoCoverPNG := TBitmap.Create;
+    FNoCoverPNG.Assign(Png);
+  finally
+    Png.Free;
+  end;
 end;
 
 destructor TSavedTab.Destroy;
@@ -680,6 +694,7 @@ begin
   FCoverDrag.Free;
   MsgBus.RemoveSubscriber(MessageReceived);
   FPositionTimer.Enabled := False;
+  FNoCoverPNG.Free;
 
   inherited;
 end;
@@ -1189,6 +1204,7 @@ begin
   FTopRightPanel.ClientWidth := 310;
   FTopRightPanel.BevelOuter := bvNone;
 
+  // TODO: Das Cover sollte Breite>Höhe haben. Hat es aber nicht. Warum?? Fixen!
   FCoverPanel := TPanel.Create(Self);
   FCoverPanel.Parent := FTopPanel;
   FCoverPanel.Align := alRight;
@@ -1318,6 +1334,31 @@ begin
   FPositionTimer.Enabled := True;
 
   Shown;
+end;
+
+procedure TSavedTab.ShowCover(Img: TBitmap);
+begin
+  if Img <> nil then  // TODO: wenn FCoverPanelAlwaysVisible bei den settings geändert wird muss das hier getiggert werden. und auch bei app start auswerten.
+  begin
+    // TODO: Sind diese 3 zeilen nötig?? warum und wozu?
+    FCoverBorderPanel.BevelKind := bkNone;
+    FCoverPanel.Show;
+    FCoverBorderPanel.BevelKind := bkFlat;
+
+    FCoverImage.Picture.Assign(ResizeBitmap(Img as TBitmap, Min(Min(FCoverImage.Height, FCoverImage.Width), Min(Img.Height, Img.Width))))
+  end else
+  begin
+    if (not FSavedTree.Player.Playing) and (not FSavedTree.Player.Paused) then
+      FCoverImage.Picture := nil
+    else
+    begin
+      if AppGlobals.CoverPanelAlwaysVisible then
+      begin
+        ShowCover(FNoCoverPNG);
+      end else
+        FCoverPanel.Hide;
+    end;
+  end;
 end;
 
 procedure TSavedTab.Shown;
@@ -1678,13 +1719,9 @@ begin
       TfrmNotification.Act(RemoveFileExt(ExtractFileName(FPlayer.Filename)), '');
 
   if (FPlayer.Tag <> nil) and (FPlayer.Tag.CoverImage <> nil) then
-  begin
-    FTab.FCoverBorderPanel.BevelKind := bkNone;
-    FTab.FCoverPanel.Show;
-    FTab.FCoverBorderPanel.BevelKind := bkFlat;
-    FTab.FCoverImage.Picture.Assign(ResizeBitmap(FPlayer.Tag.CoverImage, Min(FTab.FCoverImage.Height, FTab.FCoverImage.Width)));
-  end; // else
-    //FTab.FCoverPanel.Hide;
+    FTab.ShowCover(FPlayer.Tag.CoverImage)
+  else
+    FTab.ShowCover(nil);
 
   FTab.UpdateButtons;
   Invalidate;
@@ -1697,7 +1734,7 @@ begin
   FTab.UpdateButtons;
   Invalidate;
 
-  //FTab.FCoverPanel.Hide;
+  FTab.ShowCover(nil);
 end;
 
 function TSavedTree.PrevPlayingTrack: TTrackInfo;

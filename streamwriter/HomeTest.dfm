@@ -8,10 +8,11 @@ object frmHomeTest: TfrmHomeTest
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
-  
+  Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
   Position = poScreenCenter
+  Visible = True
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 13
@@ -38,5 +39,14 @@ object frmHomeTest: TfrmHomeTest
     Caption = 'Button1'
     TabOrder = 2
     OnClick = Button1Click
+  end
+  object Button2: TButton
+    Left = 328
+    Top = 40
+    Width = 81
+    Height = 29
+    Caption = 'Button2'
+    TabOrder = 3
+    OnClick = Button2Click
   end
 end

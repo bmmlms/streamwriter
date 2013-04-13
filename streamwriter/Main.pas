@@ -232,6 +232,7 @@ type
     FDataLists: TDataLists;
     FUpdater: TUpdateClient;
     FUpdateOnExit: Boolean;
+    FSaveListUpdateDone: Boolean;
 
     FClientCount: Cardinal;
     FRecordingCount: Cardinal;
@@ -292,6 +293,7 @@ type
     procedure HomeCommLogOut(Sender: TObject);
     procedure HomeCommServerInfo(Sender: TObject; ClientCount, RecordingCount: Cardinal);
     procedure HomeCommError(Sender: TObject; ID: TCommErrors; Msg: string);
+    procedure HomeCommServerDataReceived(Sender: TObject);
 
     procedure PreTranslate;
     procedure PostTranslate;
@@ -317,7 +319,7 @@ type
 
     procedure tabPlayStarted(Sender: TObject);
 
-    procedure tabChartsAddToWishlist(Sender: TObject; List: TStringList);
+    procedure tabChartsAddToWishlist(Sender: TObject; Arr: TWishlistTitleInfoArray);
     procedure tabChartsAddStreams(Sender: TObject; Info: TStartStreamingInfoArray; Action: TStreamOpenActions);
     function tabChartsGetIsStreamOnListEvent(Sender: TObject; Stream: TStreamBrowserEntry): Boolean;
 
@@ -696,6 +698,7 @@ begin
     HomeComm.OnLogOutReceived := HomeCommLogOut;
     HomeComm.OnServerInfoReceived := HomeCommServerInfo;
     HomeComm.OnErrorReceived := HomeCommError;
+    HomeComm.OnServerDataReceived := HomeCommServerDataReceived;
     HomeComm.Connect;
 
     if not AppGlobals.FirstStartShown then
@@ -1046,6 +1049,36 @@ procedure TfrmStreamWriterMain.HomeCommLogOut(Sender: TObject);
 begin
   UpdateStatus;
 end;
+             // TODO: charts adden daaaauuuueeert lange wenn mehr als ein paar wenige :(
+procedure TfrmStreamWriterMain.HomeCommServerDataReceived(Sender: TObject);
+var
+  i: Integer;
+  n: Integer;
+  TitleInfo: TTitleInfo;
+begin
+  if FSaveListUpdateDone then
+    Exit;
+
+  // TODO: Testen wie lange das mit 200 einträgen in der wunschliste dauert bei echten charts vom server.
+  if AppGlobals.LastUsedDataVersion = 46 then
+  begin
+    for i := 0 to FDataLists.ChartList.Count - 1 do
+    begin
+      for n := 0 to FDataLists.SaveList.Count - 1 do
+      begin
+        if (FDataLists.SaveList[n].ServerHash = 0) and Like(FDataLists.ChartList[i].Name, FDataLists.SaveList[n].Pattern) then
+        begin
+          TitleInfo := TTitleInfo.Create(FDataLists.ChartList[i].ServerHash, FDataLists.ChartList[i].Name);
+          FDataLists.SaveList.Add(TitleInfo);
+
+          tabLists.AddTitle(nil, ltSave, TitleInfo);
+        end;
+      end;
+    end;
+    HomeComm.SendSyncWishlist;
+    FSaveListUpdateDone := True;
+  end;
+end;
 
 procedure TfrmStreamWriterMain.HomeCommServerInfo(Sender: TObject;
   ClientCount, RecordingCount: Cardinal);
@@ -1056,6 +1089,9 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.HomeCommStateChanged(Sender: TObject);
+var
+  Hashes: TCardinalArray;
+  i: Integer;
 begin
   UpdateStatus;
   tabCharts.HomeCommStateChanged(Sender);
@@ -1064,15 +1100,41 @@ begin
   begin
     tmrRecordingsTimer(tmrRecordings);
 
+    // TODO: das ganze system mit den hashes muss ich checken. der hash wird aus lower(title) generiert,
+    // der titel wird nachbearbeitet und der hash passt nicht dazu (der python-kram AdjustTitle() etc...)
+    // ich sollte das aufschreiben, wie es laufen sollte, und das dann in der implementation prüfen,
+    // ob alles so läuft, wie in der doku (=> nach aufschreiben).... und zwar SEHR PENIBEL!
+
+    // TODO: wenn ich sage "automatische aufnahmen nach aufnahme aus wunschliste entfernen" das am besten
+    //       per hash machen!
+
+    // TODO: ich muss den user nach update fragen ob die wunschliste aufs neue format für auto-aufnahmen
+    //       konvertiert werden soll. ich würde dann einfach die charts nach den mustern der wunschliste absuchen
+    //       und neue einträge mit hash erstellen. das darf erst passieren, wenn charts aktualisiert wurden
+    //       sonst feht viel!!
+
     FClients.StopMonitors;
     if AppGlobals.SubmitStats and AppGlobals.MonitorMode and (AppGlobals.MonitorCount > 0) then
       HomeComm.SendGetMonitorStreams(AppGlobals.MonitorCount)
     else
       HomeComm.SendGetMonitorStreams(0);
 
-    if (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or
-        (AppGlobals.LastBrowserUpdate < Now - 15)) or (FDataLists.ReloadServerData) or
-        (tabCharts.State = csError) or (tabClients.SideBar.BrowserView.Mode = moError) then
+    HomeComm.SendSyncWishlist;
+    {
+    if FDataLists.SaveList.Count > 0 then
+    begin
+      SetLength(Hashes, FDataLists.SaveList.Count);
+      for i := 0 to FDataLists.SaveList.Count - 1 do
+        Hashes[i] := FDataLists.SaveList[i].ServerHash;
+        // TODO: Add und Remove bei der liste auch senden!!!
+      HomeComm.SendSyncWishlist(swSync, Hashes);
+    end;
+    }
+
+    if (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or (AppGlobals.LastBrowserUpdate < Now - 15)) or
+       (FDataLists.ReloadServerData) or
+       (tabCharts.State = csError) or
+       (tabClients.SideBar.BrowserView.Mode = moError) then
     begin
       if HomeComm.SendGetServerData then
       begin
@@ -1393,7 +1455,7 @@ begin
   Param := CmdLine.GetParam('-wishadd');
   if Param <> nil then
   begin
-    tabChartsAddToWishlist(nil, Param.Values);
+    // tabChartsAddToWishlist(nil, Param.Values); TODO: wieder fitmachen!
   end;
 
   Param := CmdLine.GetParam('-wishremove');
@@ -1877,20 +1939,23 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.tabChartsAddToWishlist(Sender: TObject;
-  List: TStringList);
+  Arr: TWishlistTitleInfoArray);
 var
   i, n, NumChars: Integer;
   Hash: Cardinal;
+  Hashes: TCardinalArray;
   Found: Boolean;
   Pattern: string;
   T: TTitleInfo;
 begin
-  for i := 0 to List.Count - 1 do
+  SetLength(Hashes, 0);
+
+  for i := 0 to High(Arr) do
   begin
-    Pattern := BuildPattern(List[i], Hash, NumChars, True);
+    Pattern := BuildPattern(Arr[i].Title, Hash, NumChars, True);
     Found := False;
     for n := 0 to FDataLists.SaveList.Count - 1 do
-      if FDataLists.SaveList[n].Hash = Hash then
+      if (FDataLists.SaveList[n].Hash = Hash) or ((Arr[i].Hash > 0) and (FDataLists.SaveList[n].ServerHash = Arr[i].Hash)) then
       begin
         Found := True;
         Break;
@@ -1898,15 +1963,21 @@ begin
 
     if not Found then
     begin
-      T := TTitleInfo.Create(List[i]);
+      T := TTitleInfo.Create(Arr[i].Hash, Arr[i].Title);
 
       FDataLists.SaveList.Add(T);
       tabLists.AddTitle(nil, ltSave, T);
 
-      HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+      if Arr[i].Hash > 0 then
+      begin
+        SetLength(Hashes, Length(Hashes) + 1);
+        Hashes[High(Hashes)] := Arr[i].Hash;
+      end;
     end;
   end;
 
+  HomeComm.SendSyncWishlist(swAdd, Hashes);
+  HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
   MsgBus.SendMessage(TListsChangedMsg.Create);
 end;
 
@@ -1957,7 +2028,7 @@ begin
 
     if not Found then
     begin
-      T := TTitleInfo.Create(Title);
+      T := TTitleInfo.Create(0, Title); // TODO: 0..
 
       List.Add(T);
       tabLists.AddTitle(Client, ListType, T);
@@ -2181,6 +2252,7 @@ var
   i: Integer;
   Clients: TNodeDataArray;
   Client: PClientNodeData;
+  Client2: TICEClient;
   Speed: UInt64;
   OnlyAuto: Boolean;
 begin
@@ -2191,6 +2263,12 @@ begin
     Speed := Speed + Client.Client.Speed;
     tabClients.ClientView.RefreshClient(Client.Client);
   end;
+
+  for Client2 in FClients.Monitors do
+  begin
+    Speed := Speed + Client2.Speed;
+  end;
+
 
   addStatus.Speed := Speed;
   addStatus.BuildSpeedBmp;

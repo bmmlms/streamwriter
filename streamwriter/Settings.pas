@@ -198,6 +198,7 @@ type
     chkMonitorMode: TCheckBox;
     Label20: TLabel;
     txtMonitorCount: TLabeledEdit;
+    chkCoverPanelAlwaysVisible: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -1065,6 +1066,7 @@ begin
   chkDisplayPlayedSong.Checked := AppGlobals.DisplayPlayedSong;
   chkDisplayPlayNotifications.Checked := AppGlobals.DisplayPlayNotifications;
   chkShowSplashScreen.Checked := AppGlobals.ShowSplashScreen;
+  chkCoverPanelAlwaysVisible.Checked := AppGlobals.CoverPanelAlwaysVisible;
   optClose.Checked := not AppGlobals.TrayOnMinimize;
   optMinimize.Checked := AppGlobals.TrayOnMinimize;
 
@@ -1418,6 +1420,7 @@ begin
     AppGlobals.DisplayPlayedSong := chkDisplayPlayedSong.Checked;
     AppGlobals.DisplayPlayNotifications := chkDisplayPlayNotifications.Checked;
     AppGlobals.ShowSplashScreen := chkShowSplashScreen.Checked;
+    AppGlobals.CoverPanelAlwaysVisible := chkCoverPanelAlwaysVisible.Checked;
     AppGlobals.TrayOnMinimize := optMinimize.Checked;
 
     AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;

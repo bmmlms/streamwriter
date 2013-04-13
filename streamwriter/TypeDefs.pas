@@ -29,6 +29,7 @@ uses
 type
   // An array of integer.........
   TIntArray = array of Integer;
+  TCardinalArray = array of Cardinal;
 
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
 
@@ -52,6 +53,14 @@ type
   end;
   TStartStreamingInfoArray = array of TStartStreamingInfo;
 
+  TWishlistTitleInfo = record
+  public
+    Hash: Cardinal;
+    Title: string;
+    constructor Create(Hash: Cardinal; Title: string);
+  end;
+  TWishlistTitleInfoArray = array of TWishlistTitleInfo;
+
 implementation
 
 { TStartStreamingInfo }
@@ -65,6 +74,14 @@ begin
   Self.URL := Trim(URL);
   Self.TitlePattern := TitlePattern;
   Self.IgnoreTitles := IgnoreTitles;
+end;
+
+{ TWishlistTitleInfo }
+
+constructor TWishlistTitleInfo.Create(Hash: Cardinal; Title: string);
+begin
+  Self.Hash := Hash;
+  Self.Title := Title;
 end;
 
 end.

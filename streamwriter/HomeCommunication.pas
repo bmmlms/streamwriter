@@ -88,7 +88,8 @@ type
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
   TStreamsReceivedEvent = procedure(Sender: TObject) of object;
   TChartsReceivedEvent = procedure(Sender: TObject) of object;
-  TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, TitlePattern: string; Format: TAudioTypes; Kbps: Cardinal) of object;
+  TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, TitlePattern: string;
+    Format: TAudioTypes; Kbps: Cardinal; ServerHash: Cardinal) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
   TIntArrayEvent = procedure(Sender: TObject; IntArr: TIntArray) of object;
@@ -112,6 +113,7 @@ type
     FOnLogOutReceived: TNotifyEvent;
     FOnStreamsReceived: TStreamsReceivedEvent;
     FOnChartsReceived: TChartsReceivedEvent;
+    FOnServerDataReceived: TNotifyEvent;
     FOnNetworkTitleChangedReceived: TTitleChangedEvent;
     FOnServerInfoReceived: TServerInfoEvent;
     FOnErrorReceived: TErrorEvent;
@@ -153,6 +155,9 @@ type
     procedure SendTitleChanged(StreamID: Cardinal; StreamName, Title, CurrentURL, URL: string; Format: TAudioTypes;
       Kbps: Cardinal; URLs: TStringList);
     procedure SendGetMonitorStreams(Count: Cardinal);
+    procedure SendSyncWishlist; overload;
+    procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hashes: TCardinalArray); overload;
+    procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hash: Cardinal); overload;
 
     property Disabled: Boolean read FDisabled;
     property WasConnected: Boolean read FWasConnected;
@@ -171,6 +176,7 @@ type
     property OnLogOutReceived: TNotifyEvent read FOnLogOutReceived write FOnLogOutReceived;
     property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
     property OnChartsReceived: TChartsReceivedEvent read FOnChartsReceived write FOnChartsReceived;
+    property OnServerDataReceived: TNotifyEvent read FOnServerDataReceived write FOnServerDataReceived;
     property OnNetworkTitleChangedReceived: TTitleChangedEvent read FOnNetworkTitleChangedReceived write FOnNetworkTitleChangedReceived;
     property OnServerInfoReceived: TServerInfoEvent read FOnServerInfoReceived write FOnServerInfoReceived;
     property OnErrorReceived: TErrorEvent read FOnErrorReceived write FOnErrorReceived;
@@ -292,7 +298,6 @@ begin
       DoHandshakeReceived(CommandHeader, HandShake);
     ctLoginResponse:
       DoLogInReceived(CommandHeader, LogIn);
-    ctLogout: ;
     ctLogoutResponse:
       DoLogOutReceived(CommandHeader, LogOut);
     ctGetServerDataResponse:
@@ -479,6 +484,54 @@ begin
   FThread.SendCommand(TCommandSubmitStream.Create(URL));
 end;
 
+procedure THomeCommunication.SendSyncWishlist;
+var
+  i: Integer;
+  ItemsFound: Integer;
+  Hashes: TCardinalArray;
+begin
+  if not FConnected then
+    Exit;
+
+  SetLength(Hashes, FLists.SaveList.Count);
+  ItemsFound := 0;
+  for i := 0 to FLists.SaveList.Count - 1 do
+    if FLists.SaveList[i].ServerHash > 0 then
+    begin
+      Hashes[ItemsFound] := FLists.SaveList[i].ServerHash;
+      Inc(ItemsFound);
+    end;
+  SetLength(Hashes, ItemsFound);
+
+  SendSyncWishlist(swSync, Hashes);
+end;
+
+procedure THomeCommunication.SendSyncWishlist(SyncType: TSyncWishlistTypes;
+  Hashes: TCardinalArray);
+begin
+  if not FConnected then
+    Exit;
+
+  if Length(Hashes) = 0 then
+    Exit;
+
+  FThread.SendCommand(TCommandSyncWishlist.Create(SyncType, Hashes));
+end;
+
+procedure THomeCommunication.SendSyncWishlist(SyncType: TSyncWishlistTypes;
+  Hash: Cardinal);
+var
+  Hashes: TCardinalArray;
+begin
+  if (not Connected) or (Hash = 0) or (SyncType = swSync) then
+    Exit;
+
+  SetLength(Hashes, 1);
+  Hashes[0] := Hash;
+
+  SendSyncWishlist(SyncType, Hashes);
+end;
+
 procedure THomeCommunication.SendTitleChanged(StreamID: Cardinal;
   StreamName, Title, CurrentURL, URL: string; Format: TAudioTypes; Kbps: Cardinal;
   URLs: TStringList);
@@ -663,6 +716,9 @@ begin
 
   if Assigned(FOnChartsReceived) then
     FOnChartsReceived(Self);
+
+  if Assigned(FOnServerDataReceived) then
+    FOnServerDataReceived(Self);
 end;
 
 procedure THomeCommunication.HomeThreadServerInfoReceived(
@@ -685,7 +741,7 @@ begin
     FOnNetworkTitleChangedReceived(Self,  THomeThread(Sender).FNetworkTitleChanged.StreamID, THomeThread(Sender).FNetworkTitleChanged.StreamName,
       THomeThread(Sender).FNetworkTitleChanged.Title, THomeThread(Sender).FNetworkTitleChanged.CurrentURL,
       THomeThread(Sender).FNetworkTitleChanged.TitleRegEx, THomeThread(Sender).FNetworkTitleChanged.Format,
-      THomeThread(Sender).FNetworkTitleChanged.Bitrate);
+      THomeThread(Sender).FNetworkTitleChanged.Bitrate, THomeThread(Sender).FNetworkTitleChanged.ServerHash);
 end;
 
 procedure THomeCommunication.SendHandshake;
@@ -706,7 +762,7 @@ begin
     Cmd.Language := Language.CurrentUserLanguage.ID
   else
     Cmd.Language := Language.CurrentLanguage.ID;
-  Cmd.ProtoVersion := 1;
+  Cmd.ProtoVersion := 2;
 
   FThread.SendCommand(Cmd);
 end;

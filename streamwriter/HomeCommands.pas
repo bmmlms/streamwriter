@@ -27,6 +27,7 @@ uses
 
 type
   TSendClientStatTypes = (csSave, csAutoSave);
+  TSyncWishlistTypes = (swSync, swAdd, swRemove);
 
   TCommandHandshake = class(TCommand)
   private
@@ -122,6 +123,7 @@ type
     FBitrate: Cardinal;
     FFormat: TAudioTypes;
     FTitleRegEx: string;
+    FServerHash: Cardinal;
   protected
   public
     constructor Create; overload;
@@ -135,6 +137,7 @@ type
     property Bitrate: Cardinal read FBitrate;
     property Format: TAudioTypes read FFormat;
     property TitleRegEx: string read FTitleRegEx;
+    property ServerHash: Cardinal read FServerHash;
   end;
 
   TCommandGetServerData = class(TCommand)
@@ -282,6 +285,19 @@ type
     property StreamIDs: TIntArray read FStreamIDs;
   end;
 
+  TCommandSyncWishlist = class(TCommand)
+  private
+    FSyncType: TSyncWishlistTypes;
+    FHashes: TCardinalArray;
+  protected
+    procedure DoGet(S: TExtendedStream); override;
+  public
+    constructor Create; overload;
+    constructor Create(SyncType: TSyncWishlistTypes; Hashes: TCardinalArray); overload;
+
+    property Hashes: TCardinalArray read FHashes write FHashes;
+  end;
+
 implementation
 
 
@@ -419,6 +435,7 @@ begin
   Stream.Read(B);
   FFormat := TAudioTypes(B);
   Stream.Read(FTitleRegEx);
+  Stream.Read(FServerHash);
 end;
 
 { TCommandUpdateStats }
@@ -657,6 +674,35 @@ end;
 procedure TCommandGetMonitorStreams.DoGet(S: TExtendedStream);
 begin
   S.Write(FCount);
+end;
+
+{ TCommandSyncWishlist }
+
+constructor TCommandSyncWishlist.Create;
+begin
+  inherited;
+
+  FCommandType := ctSyncWishlist;
+end;
+
+constructor TCommandSyncWishlist.Create(SyncType: TSyncWishlistTypes; Hashes: TCardinalArray);
+begin
+  Create;
+
+  FSyncType := SyncType;
+  FHashes := Hashes;
+end;
+
+procedure TCommandSyncWishlist.DoGet(S: TExtendedStream);
+var
+  i: Integer;
+begin
+  inherited;
+
+  S.Write(Byte(FSyncType));
+  S.Write(Cardinal(Length(FHashes)));
+  for i := 0 to High(FHashes) do
+    S.Write(FHashes[i]);
 end;
 
 end.

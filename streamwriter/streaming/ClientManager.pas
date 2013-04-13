@@ -88,7 +88,8 @@ type
     procedure ClientPause(Sender: TObject);
     procedure ClientStop(Sender: TObject);
 
-    procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, TitleRegEx: string; Format: TAudioTypes; Kbps: Cardinal);
+    procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, TitleRegEx: string;
+      Format: TAudioTypes; Kbps: Cardinal; ServerHash: Cardinal);
     procedure HomeCommMonitorStreamsReceived(Sender: TObject; StreamIDs: TIntArray);
   public
     constructor Create(Lists: TDataLists);
@@ -366,7 +367,8 @@ begin
 end;
 
 procedure TClientManager.HomeCommTitleChanged(Sender: TObject; ID: Cardinal;
-  Name, Title, CurrentURL, TitleRegEx: string; Format: TAudioTypes; Kbps: Cardinal);
+  Name, Title, CurrentURL, TitleRegEx: string; Format: TAudioTypes; Kbps: Cardinal;
+  ServerHash: Cardinal);
 var
   i, n: Integer;
   AutoTuneInMinKbps: Cardinal;
@@ -388,7 +390,7 @@ begin
 
   for i := 0 to FLists.SaveList.Count - 1 do
   begin
-    if Like(Title, FLists.SaveList[i].Pattern) then
+    if (FLists.SaveList[i].ServerHash > 0) and (ServerHash = FLists.SaveList[i].ServerHash) then
     begin
       if AppGlobals.AutoTuneInConsiderIgnore then
       begin

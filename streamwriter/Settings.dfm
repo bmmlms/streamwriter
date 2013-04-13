@@ -201,34 +201,36 @@ object frmSettings: TfrmSettings
     Left = 4
     Top = 4
     Width = 293
-    Height = 353
+    Height = 385
     TabOrder = 1
     Visible = False
     DesignSize = (
       293
-      353)
+      385)
     object Label7: TLabel
       Left = 56
-      Top = 196
+      Top = 216
       Width = 13
       Height = 13
       Caption = 'GB'
     end
     object Label3: TLabel
       Left = 4
-      Top = 268
+      Top = 300
       Width = 191
       Height = 13
       Anchors = [akLeft, akBottom]
       Caption = 'Default action on doubleclick on stream:'
+      ExplicitTop = 268
     end
     object Label18: TLabel
       Left = 4
-      Top = 312
+      Top = 344
       Width = 193
       Height = 13
       Anchors = [akLeft, akBottom]
       Caption = 'Default action on doubleclick in browser:'
+      ExplicitTop = 312
     end
     object btnBrowseLogFile: TPngSpeedButton
       Left = 264
@@ -255,7 +257,7 @@ object frmSettings: TfrmSettings
     end
     object txtMinDiskSpace: TLabeledEdit
       Left = 4
-      Top = 192
+      Top = 212
       Width = 49
       Height = 21
       EditLabel.Width = 208
@@ -267,7 +269,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultAction: TComboBox
       Left = 4
-      Top = 284
+      Top = 316
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -278,6 +280,7 @@ object frmSettings: TfrmSettings
         'Listen to stream'
         'Listen to stream (external player)'
         'Listen to recorded file')
+      ExplicitTop = 284
     end
     object optClose: TRadioButton
       Left = 20
@@ -299,7 +302,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultActionBrowser: TComboBox
       Left = 4
-      Top = 328
+      Top = 360
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -310,6 +313,7 @@ object frmSettings: TfrmSettings
         'Listen to stream'
         'Listen to stream (external player)'
         'Only add to list')
+      ExplicitTop = 328
     end
     object chkSnapMain: TCheckBox
       Left = 4
@@ -358,7 +362,7 @@ object frmSettings: TfrmSettings
     end
     object txtLogFile: TLabeledEdit
       Left = 4
-      Top = 236
+      Top = 256
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -367,6 +371,15 @@ object frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Caption = 'Logfile:'
       TabOrder = 11
+    end
+    object chkCoverPanelAlwaysVisible: TCheckBox
+      Left = 4
+      Top = 168
+      Width = 281
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Always show cover in "Saved songs"'
+      TabOrder = 12
     end
   end
   object pnlAdvanced: TPanel

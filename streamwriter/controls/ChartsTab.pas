@@ -149,7 +149,7 @@ type
     property State: TChartStates read FState write FSetState;
   end;
 
-  TAddToWishlistEvent = procedure(Sender: TObject; List: TStringList) of object;
+  TAddToWishlistEvent = procedure(Sender: TObject; Arr: TWishlistTitleInfoArray) of object;
   TAddStreamsEvent = procedure(Sender: TObject; Info: TStartStreamingInfoArray; Action: TStreamOpenActions) of object;
   TGetIsStreamOnListEvent = function(Sender: TObject; Stream: TStreamBrowserEntry): Boolean of object;
 
@@ -567,7 +567,7 @@ begin
     if Selected[Node] and Focused then
       Canvas.Brush.Color := HTML2Color('#d2d2d2');
 
-    TextWidth := Canvas.TextWidth('100 / 1000');
+    TextWidth := Canvas.TextWidth('1000 / 1000');
     MaxWidth := CellRect.Right - CellRect.Left - 8 - TextWidth;
     DrawWidth := Trunc((Chance / 100) * MaxWidth) - 2;
 
@@ -738,7 +738,7 @@ var
   P: TControl;
   Nodes: TNodeArray;
   NodesData: TChartDataArray;
-  Titles: TStringList;
+  Titles: TWishlistTitleInfoArray;
   Info: TStartStreamingInfoArray;
 begin
   P := Parent;
@@ -748,14 +748,16 @@ begin
   Nodes := GetNodes(ntAll, True);
   NodesData := NodesToData(Nodes);
 
-  Titles := TStringList.Create;
+  SetLength(Titles, 0);
   SetLength(Info, 0);
   try
     for i := 0 to Length(NodesData) - 1 do
     begin
       if NodesData[i].Chart <> nil then
-        Titles.Add(NodesData[i].Chart.Name)
-      else
+      begin
+        SetLength(Titles, Length(Titles) + 1);
+        Titles[High(Titles)] := TWishlistTitleInfo.Create(NodesData[i].Chart.ServerHash, NodesData[i].Chart.Name);
+      end else
       begin
         SetLength(Info, Length(Info) + 1);
         Info[High(Info)] := TStartStreamingInfo.Create(NodesData[i].Stream.ID, NodesData[i].Stream.Stream.Bitrate,
@@ -775,13 +777,13 @@ begin
         TChartsTab(P).FOnAddStreams(Self, Info, oaAdd)
     end;
 
-    if Titles.Count > 0 then
+    if Length(Titles) > 0 then
       TChartsTab(P).FOnAddToWishlist(Self, Titles);
 
     for i := 0 to Length(Nodes) - 1 do
       InvalidateNode(Nodes[i]);
   finally
-    Titles.Free;
+
   end;
 end;
 
@@ -944,7 +946,7 @@ procedure TChartsTree.PopupMenuClick(Sender: TObject);
 var
   i: Integer;
   Nodes: TChartDataArray;
-  Titles: TStringList;
+  Titles: TWishlistTitleInfoArray;
   P: TControl;
   F: TfrmChartsTabAdjustTitleName;
   Info: TStartStreamingInfoArray;
@@ -961,7 +963,7 @@ begin
 
   Nodes := NodesToData(GetNodes(ntAll, True));
 
-  Titles := TStringList.Create;
+  SetLength(Titles, 0);
   SetLength(Info, 0);
   try
     for i := 0 to Length(Nodes) - 1 do
@@ -970,7 +972,8 @@ begin
       begin
         if Sender = FPopupMenu.ItemAddToWishlist then
         begin
-          Titles.Add(Nodes[i].Chart.Name);
+          SetLength(Titles, Length(Titles) + 1);
+          Titles[High(Titles)] := TWishlistTitleInfo.Create(Nodes[i].Chart.ServerHash, Nodes[i].Chart.Name);
         end else if Sender = FPopupMenu.ItemEditAndAddToWishlist then
         begin
           F := TfrmChartsTabAdjustTitleName.Create(GetParentForm(Self), Nodes[i].Chart.Name);
@@ -979,7 +982,8 @@ begin
 
             if F.Okay then
             begin
-              Titles.Add(F.TitleName);
+              SetLength(Titles, Length(Titles) + 1);
+              Titles[High(Titles)] := TWishlistTitleInfo.Create(0, F.TitleName);
             end;
           finally
             F.Free;
@@ -1003,10 +1007,10 @@ begin
     else if Sender = FPopupMenu.ItemAddStream then
       TChartsTab(P).FOnAddStreams(Self, Info, oaAdd);
 
-    if Titles.Count > 0 then
+    if Length(Titles) > 0 then
       TChartsTab(P).FOnAddToWishlist(Self, Titles)
   finally
-    Titles.Free;
+
   end;
 
   TChartsTab(P).UpdateButtons;

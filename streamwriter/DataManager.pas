@@ -46,8 +46,9 @@ type
     FIndex: Cardinal;
     FPattern: string;
     FHash: Cardinal;
+    FServerHash: Cardinal;
   public
-    constructor Create(Title: string); overload;
+    constructor Create(ServerHash: Cardinal; Title: string); overload;
     function Copy: TTitleInfo;
 
     class function Load(Stream: TExtendedStream; Version: Integer): TTitleInfo;
@@ -58,6 +59,7 @@ type
     property Index: Cardinal read FIndex write FIndex;
     property Pattern: string read FPattern;
     property Hash: Cardinal read FHash;
+    property ServerHash: Cardinal read FServerHash;
   end;
 
   TN = procedure(Sender: TObject; const Item: TTitleInfo; Action: TCollectionNotification) of object;
@@ -467,6 +469,7 @@ type
   TChartEntry = class
   private
     FName: string;
+    FServerHash: Cardinal;
     FPlayedLastDay: Cardinal;
     FPlayedLastWeek: Cardinal;
     FCategories: TIntArray;
@@ -487,6 +490,7 @@ type
 
     // The name
     property Name: string read FName;
+    property ServerHash: Cardinal read FServerHash;
 
     property PlayedLastDay: Cardinal read FPlayedLastDay;
     property PlayedLastWeek: Cardinal read FPlayedLastWeek;
@@ -587,13 +591,13 @@ type
   end;
 
 const
-  DATAVERSION = 46;
+  DATAVERSION = 47;
 
 implementation
 
 { TTitleInfo }
 
-constructor TTitleInfo.Create(Title: string);
+constructor TTitleInfo.Create(ServerHash: Cardinal; Title: string);
 var
   NumChars: Integer;
   Hash: Cardinal;
@@ -601,6 +605,7 @@ var
 begin
   inherited Create;
 
+  FServerHash := ServerHash;
   FTitle := Title;
   FAdded := Now;
 
@@ -639,6 +644,9 @@ begin
     Result.FPattern := Pattern;
     Result.FHash := Hash;
   end;
+
+  if Version > 46 then
+    Stream.Read(Result.FServerHash);
 end;
 
 procedure TTitleInfo.Save(Stream: TExtendedStream);
@@ -648,6 +656,7 @@ begin
   Stream.Write(FIndex);
   Stream.Write(FPattern);
   Stream.Write(FHash);
+  Stream.Write(FServerHash);
 end;
 
 function TTitleInfo.Copy: TTitleInfo;
@@ -658,6 +667,7 @@ begin
   Result.FIndex := FIndex;
   Result.FPattern := FPattern;
   Result.FHash := FHash;
+  Result.FServerHash := FServerHash;
 end;
 
 { TStreamEntry }
@@ -1164,6 +1174,9 @@ begin
 
     FBrowserList.ClearDict;
   end;
+
+  if not FReloadServerData then
+    FReloadServerData := (FChartList.Count > 0) and (FChartList[0].ServerHash = 0);
 end;
 
 procedure TDataLists.Load;
@@ -1933,6 +1946,7 @@ var
   i: Integer;
 begin
   FName := Source.Name;
+  FServerHash := Source.ServerHash;
   FPlayedLastDay := Source.PlayedLastDay;
   FPlayedLastWeek := Source.PlayedLastWeek;
   FCategories := Source.Categories;
@@ -1995,6 +2009,9 @@ begin
   Result := TChartEntry.Create;
   Stream.Read(Result.FName);
 
+  if Version > 46 then
+    Stream.Read(Result.FServerHash);
+
   if Version <= 42 then
   begin
     Stream.Read(Dummy);
@@ -2030,6 +2047,7 @@ var
 begin
   Result := TChartEntry.Create;
   Stream.Read(Result.FName);
+  Stream.Read(Result.FServerHash);
 
   Stream.Read(Result.FPlayedLastDay);
   Stream.Read(Result.FPlayedLastWeek);
@@ -2065,6 +2083,7 @@ var
   i: Integer;
 begin
   Stream.Write(FName);
+  Stream.Write(FServerHash);
   Stream.Write(FPlayedLastDay);
   Stream.Write(FPlayedLastWeek);
   Stream.Write(Length(FCategories));

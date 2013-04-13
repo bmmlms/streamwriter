@@ -29,7 +29,7 @@ uses
   ImgList, Functions, GUIFunctions, Menus, Math, DragDrop, DropComboTarget,
   Dialogs, MsgDlg, Forms, Logging, AppData, HomeCommunication, ICEClient,
   ClientManager, Generics.Collections, TypeDefs, MessageBus, AppMessages,
-  Graphics, SharedData;
+  Graphics, SharedData, HomeCommands;
 
 type
   TTitleTree = class;
@@ -270,11 +270,14 @@ end;
 procedure TTitlePanel.RemoveClick(Sender: TObject);
 var
   i: Integer;
+  Hashes: TCardinalArray;
   Node, SubNode, DeleteNode: PVirtualNode;
   NodeData: PTitleNodeData;
   DeleteList: TList<PVirtualNode>;
 begin
   FTree.BeginUpdate;
+
+  SetLength(Hashes, 0);
 
   DeleteList := TList<PVirtualNode>.Create;
   try
@@ -309,7 +312,14 @@ begin
       begin
         case NodeData.NodeType of
           ntWish:
-            FLists.SaveList.Remove(NodeData.Title);
+            begin
+              FLists.SaveList.Remove(NodeData.Title);
+              if NodeData.Title.ServerHash > 0 then
+              begin
+                SetLength(Hashes, Length(Hashes) + 1);
+                Hashes[High(Hashes)] := NodeData.Title.ServerHash;
+              end;
+            end;
           ntIgnore:
             if NodeData.Stream = nil then
               FLists.IgnoreList.Remove(NodeData.Title)
@@ -341,6 +351,7 @@ begin
 
   MsgBus.SendMessage(TListsChangedMsg.Create);
 
+  HomeComm.SendSyncWishlist(swRemove, Hashes);
   HomeComm.SendSetSettings((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 
   FTree.EndUpdate;
@@ -420,7 +431,10 @@ begin
         try
           for i := 0 to ExportList.Count - 1 do
           begin
-            Lst.Add(ExportList[i].Title);
+            if ExportList[i].ServerHash = 0 then
+              Lst.Add(ExportList[i].Title)
+            else
+              Lst.Add(ExportList[i].Title + '|' + IntToStr(ExportList[i].ServerHash));
           end;
           try
             Lst.SaveToFile(Dlg.FileName);
@@ -471,9 +485,9 @@ end;
 
 procedure TTitlePanel.ImportClick(Sender: TObject);
 var
-  i, n: Integer;
+  i, n, P: Integer;
   NumChars: Integer;
-  Hash: Cardinal;
+  Hash, ServerHash: Cardinal;
   Exists, UseTitleInfo: Boolean;
   Pattern, Ext: string;
   Dlg: TOpenDialog;
@@ -481,6 +495,7 @@ var
   Title: TTitleInfo;
   List: TList<TTitleInfo>;
   ParentNode: PVirtualNode;
+  Hashes: TCardinalArray;
 begin
   if FAddCombo.ItemIndex = 0 then
   begin
@@ -505,6 +520,8 @@ begin
       try
         try
           Lst.LoadFromFile(Dlg.FileName);
+
+          SetLength(Hashes, 0);
 
           UseTitleInfo := False;
           for i := 0 to Lst.Count - 1 do
@@ -552,6 +569,19 @@ begin
                 Lst[i] := RemoveFileExt(Lst[i]);
               end;
 
+            // Wenn ein Hash hinten dran ist auswerten
+            ServerHash := 0;
+            P := RPos('|', Lst[i]);
+            if P > -1 then
+            begin
+              if Length(Lst[i]) > P then
+              begin
+                ServerHash := StrToIntDef(Copy(Lst[i], P + 1, Length(Lst[i]) - P), 0);
+                if ServerHash > 0 then
+                  Lst[i] := Copy(Lst[i], 1, P - 1);
+              end;
+            end;
+
             Pattern := BuildPattern(Lst[i], Hash, NumChars, False);
             if NumChars <= 3 then
               Continue;
@@ -567,9 +597,15 @@ begin
             if Exists then
               Continue;
 
-            Title := TTitleInfo.Create(Lst[i]);
+            Title := TTitleInfo.Create(ServerHash, Lst[i]);
             List.Add(Title);
             FTree.AddTitle(Title, ParentNode, FFilterText, True);
+
+            if (List = FLists.SaveList) and (ServerHash > 0) then
+            begin
+              SetLength(Hashes, Length(Hashes) + 1);
+              Hashes[High(Hashes)] := ServerHash;
+            end;
           end;
         except
           MsgBox(GetParentForm(Self).Handle, _('The file could not be loaded.'), _('Error'), MB_ICONEXCLAMATION);
@@ -585,6 +621,8 @@ begin
   end;
 
   HomeComm.SendSetSettings((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  if List = FLists.SaveList then
+    HomeComm.SendSyncWishlist(swAdd, Hashes);
 end;
 
 procedure TTitlePanel.PostTranslate;
@@ -906,10 +944,13 @@ begin
       TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('A short pattern may produce many matches, i.e. using ''a'' records/ignores every song containing an ''a''.'), 6, btOK);
     end;
 
+    if ShowMessages and (List = FLists.SaveList) then
+      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('Titles manually entered into the wishlist (without using the chart-view) will not be considered for automatic recordings. Use the chart-view for titles to record automatically.'), 15, btOK);
+
     if Parent = nil then
       Parent := FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]));
 
-    Title := TTitleInfo.Create(Trim(Text));
+    Title := TTitleInfo.Create(0, Trim(Text));
     Node := FTree.AddTitle(Title, Parent, FFilterText, True);
     if Node <> nil then
     begin
@@ -1018,8 +1059,8 @@ begin
 
   TitlesSelected := (TypeCount(ntWish) > 0) or (TypeCount(ntIgnore) > 0);
   CanRemove := TitlesSelected or (TypeCount(ntStream) > 0);
-  CanRename := (FTree.SelectedCount = 1) and TitlesSelected;
-  CanImport := True; // FTree.SelectedCount = 1;
+  CanRename := (FTree.SelectedCount = 1) and TitlesSelected and (PTitleNodeData(FTree.GetNodeData(SelectedNodes[0])).Title.ServerHash = 0);
+  CanImport := True;
 
   FToolbar.FRemove.Enabled := CanRemove;
   FToolbar.FRename.Enabled := CanRename;
@@ -1340,7 +1381,7 @@ begin
 
   for i := 0 to FDropTarget.Files.Count - 1 do
   begin
-    Title := TTitleInfo.Create(RemoveFileExt(ExtractFileName(FDropTarget.Files[i])));
+    Title := TTitleInfo.Create(0, RemoveFileExt(ExtractFileName(FDropTarget.Files[i])));
 
     Found := False;
     for n := 0 to List.Count - 1 do
@@ -1356,7 +1397,7 @@ begin
       AddTitle(Title, Node, FPanel.FFilterText, True);
 
       if List = FLists.SaveList then
-        HomeComm.SendSetSettings(True);
+        HomeComm.SendSetSettings(AppGlobals.AutoTuneIn);
     end;
   end;
 end;
@@ -1555,8 +1596,13 @@ begin
 
   if Column = 0 then
     case NodeData.NodeType of
-      ntWishParent, ntWish:
+      ntWishParent:
         Index := 31;
+      ntWish:
+        if NodeData.Title.ServerHash = 0 then
+          Index := 31
+        else
+          Index := 77;
       ntIgnoreParent, ntIgnore:
         Index := 65;
       ntStream:
@@ -1628,7 +1674,7 @@ begin
   NodeData := GetNodeData(Node);
 
   NodeData.Title.Free;
-  NodeData.Title := TTitleInfo.Create(Text);
+  NodeData.Title := TTitleInfo.Create(0, Text);
 end;
 
 procedure TTitleTree.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;
@@ -1640,7 +1686,7 @@ begin
 
   NodeData := GetNodeData(Node);
 
-  Allowed := NodeData.Title <> nil;
+  Allowed := (NodeData.Title <> nil) and (NodeData.Title.ServerHash = 0);
 end;
 
 function TTitleTree.DoCompare(Node1, Node2: PVirtualNode;
