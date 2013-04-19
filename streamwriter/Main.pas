@@ -1108,28 +1108,14 @@ begin
     // TODO: wenn ich sage "automatische aufnahmen nach aufnahme aus wunschliste entfernen" das am besten
     //       per hash machen!
 
-    // TODO: ich muss den user nach update fragen ob die wunschliste aufs neue format für auto-aufnahmen
-    //       konvertiert werden soll. ich würde dann einfach die charts nach den mustern der wunschliste absuchen
-    //       und neue einträge mit hash erstellen. das darf erst passieren, wenn charts aktualisiert wurden
-    //       sonst feht viel!!
-
     FClients.StopMonitors;
     if AppGlobals.SubmitStats and AppGlobals.MonitorMode and (AppGlobals.MonitorCount > 0) then
       HomeComm.SendGetMonitorStreams(AppGlobals.MonitorCount)
     else
       HomeComm.SendGetMonitorStreams(0);
 
+    // TODO: wird Add und Remove bei der liste immer gesendet??
     HomeComm.SendSyncWishlist;
-    {
-    if FDataLists.SaveList.Count > 0 then
-    begin
-      SetLength(Hashes, FDataLists.SaveList.Count);
-      for i := 0 to FDataLists.SaveList.Count - 1 do
-        Hashes[i] := FDataLists.SaveList[i].ServerHash;
-        // TODO: Add und Remove bei der liste auch senden!!!
-      HomeComm.SendSyncWishlist(swSync, Hashes);
-    end;
-    }
 
     if (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or (AppGlobals.LastBrowserUpdate < Now - 15)) or
        (FDataLists.ReloadServerData) or
@@ -2028,7 +2014,9 @@ begin
 
     if not Found then
     begin
-      T := TTitleInfo.Create(0, Title); // TODO: 0..
+      // TODO: 0.. evtl kann die methode hier ganz fliegen. ohne hash = lame und verwirrend für naps.
+      //       oder ich suche den chart noch vorher raus und weise den zu, falls der titel in wunschliste soll?
+      T := TTitleInfo.Create(0, Title);
 
       List.Add(T);
       tabLists.AddTitle(Client, ListType, T);

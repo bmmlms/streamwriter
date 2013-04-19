@@ -28,7 +28,7 @@ uses
   MControls, LanguageObjects, Tabs, Functions, AppData, Logging, VirtualTrees,
   HomeCommunication, DataManager, ImgList, Graphics, Math, Generics.Collections,
   Menus, ChartsTabAdjustTitleName, Forms, TypeDefs, MessageBus, AppMessages,
-  HomeCommands, Commands, GUIFunctions, SharedData;
+  HomeCommands, Commands, GUIFunctions, SharedData, PerlRegEx;
 
 type
   TNodeTypes = (ntChart, ntStream, ntAll);
@@ -135,6 +135,7 @@ type
       Column: TColumnIndex; CellRect: TRect); override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
+    procedure InitNode(Node: PVirtualNode); override;
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
     destructor Destroy; override;
@@ -160,6 +161,7 @@ type
     FChartsTree: TChartsTree;
     FResultLabel: TLabel;
     FState: TChartStates;
+    FSearchTimer: TTimer;
 
     FOnAddToWishlist: TAddToWishlistEvent;
     FOnAddStreams: TAddStreamsEvent;
@@ -169,6 +171,9 @@ type
     procedure UpdateButtons;
 
     procedure SearchChange(Sender: TObject);
+    procedure SearchKeyPress(Sender: TObject; var Key: Char);
+
+    procedure SearchTimerTimer(Sender: TObject);
 
     procedure HomeCommChartsReceived(Sender: TObject);
 
@@ -249,6 +254,12 @@ begin
   ShowCloseButton := False;
 
   FSearchPanel.FSearch.OnChange := SearchChange;
+  FSearchPanel.FSearch.OnKeyPress := SearchKeyPress;
+
+  FSearchTimer := TTimer.Create(Self);
+  FSearchTimer.Interval := 2000;
+  FSearchTimer.Enabled := False;
+  FSearchTimer.OnTimer := SearchTimerTimer;
 end;
 
 destructor TChartsTab.Destroy;
@@ -291,6 +302,22 @@ end;
 
 procedure TChartsTab.SearchChange(Sender: TObject);
 begin
+  FSearchTimer.Enabled := True;
+end;
+
+procedure TChartsTab.SearchKeyPress(Sender: TObject; var Key: Char);
+begin
+  if Key = #13 then
+  begin
+    FSearchTimer.Enabled := False;
+    ShowCharts;
+    Key := #0;
+  end;
+end;
+
+procedure TChartsTab.SearchTimerTimer(Sender: TObject);
+begin
+  FSearchTimer.Enabled := False;
   ShowCharts;
 end;
 
@@ -353,12 +380,31 @@ var
   NodeData, NodeDataStream: PChartNodeData;
 
   P: string;
-  Hash: Cardinal;
-  Chars: Integer;
+  //Hash: Cardinal;
+  //Chars: Integer;
 
   SearchMatch: Boolean;
+
+
+  R: TPerlRegEx;
 begin
-  P := BuildPattern(FSearchPanel.FSearch.Text, Hash, Chars, False);
+  //P := BuildPattern(FSearchPanel.FSearch.Text, Hash, Chars, False);
+
+  R := nil;
+
+  P := Trim(FSearchPanel.FSearch.Text);
+
+  if P <> '' then
+  begin
+    P := FSearchPanel.FSearch.Text;
+    P := StringReplace(P, '*', '(.*)', [rfReplaceAll]);
+    P := StringReplace(P, ' ', '(.*)', [rfReplaceAll]);
+    P := '(?i)(.*)' + P + '(.*)';
+
+    R := TPerlRegEx.Create;
+    R.RegEx := P;
+    R.Compile;
+  end;
 
   try
     FChartsTree.BeginUpdate;
@@ -366,7 +412,12 @@ begin
 
     for i := 0 to FLists.ChartList.Count - 1 do
     begin
-      SearchMatch := Like(FLists.ChartList[i].Name, P);
+      if R <> nil then
+      begin
+        R.Subject := FLists.ChartList[i].Name;
+        SearchMatch := R.Match; //Like(FLists.ChartList[i].Name, P);
+      end else
+        SearchMatch := True;
 
       if SearchMatch then
       begin
@@ -374,6 +425,7 @@ begin
         NodeData := FChartsTree.GetNodeData(Node);
         NodeData.Chart := FLists.ChartList[i];
 
+{
         for n := 0 to NodeData.Chart.Streams.Count - 1 do
         begin
           NodeStream := FChartsTree.AddChild(Node);
@@ -381,17 +433,20 @@ begin
           NodeDataStream.Stream := NodeData.Chart.Streams[n];
         end;
 
+        {
         for n := 0 to FLists.SaveList.Count - 1 do
           if LowerCase(FLists.SaveList[n].Title) = LowerCase(NodeData.Chart.Name) then
           begin
             NodeData.IsOnWishlist := True;
             Break;
           end;
+        }
       end;
     end;
 
     FChartsTree.SortTree(FChartsTree.Header.SortColumn, FChartsTree.Header.SortDirection);
   finally
+    R.Free;
     FChartsTree.EndUpdate;
   end;
 
@@ -859,6 +914,35 @@ begin
   FProgressBar.Position := Trunc((Transferred / CommandHeader.CommandLength) * 100);
 end;
 
+procedure TChartsTree.InitNode(Node: PVirtualNode);
+var
+  n: Integer;
+  NodeStream: PVirtualNode;
+  NodeData: PChartNodeData;
+  NodeDataStream: PChartNodeData;
+begin
+  inherited;
+
+  if Node.Parent <> RootNode then
+    Exit;
+
+  NodeData := GetNodeData(Node);
+
+  for n := 0 to NodeData.Chart.Streams.Count - 1 do
+  begin
+    NodeStream := AddChild(Node);
+    NodeDataStream := GetNodeData(NodeStream);
+    NodeDataStream.Stream := NodeData.Chart.Streams[n];
+  end;
+
+  for n := 0 to FLists.SaveList.Count - 1 do
+    if FLists.SaveList[n].ServerHash = NodeData.Chart.ServerHash then
+    begin
+      NodeData.IsOnWishlist := True;
+      Break;
+    end;
+end;
+
 function TChartsTree.NodesToData(Nodes: TNodeArray): TChartDataArray;
 var
   i: Integer;
@@ -889,32 +973,31 @@ var
   Node: PVirtualNode;
   NodeData: PChartNodeData;
 begin
-  if Msg is TListsChangedMsg then
-  begin
-    Node := GetFirst;
-    while Node <> nil do
-    begin
-      NodeData := GetNodeData(Node);
-      if NodeData.Chart <> nil then
-        NodeData.IsOnWishlist := False;
-      Node := GetNext(Node);
-    end;
+  BeginUpdate;
 
-    Node := GetFirst;
-    while Node <> nil do
+  try
+    if Msg is TListsChangedMsg then
     begin
-      NodeData := GetNodeData(Node);
-
-      for i := 0 to FLists.SaveList.Count - 1 do
+      Node := GetFirst;
+      while Node <> nil do
       begin
-        if (NodeData.Chart <> nil) and (LowerCase(NodeData.Chart.Name) = LowerCase(FLists.SaveList.Items[i].Title)) then
-          NodeData.IsOnWishlist := True;
+        NodeData := GetNodeData(Node);
+
+        NodeData.IsOnWishlist := False;
+        for i := 0 to FLists.SaveList.Count - 1 do
+        begin
+          NodeData.IsOnWishlist := (NodeData.Chart <> nil) and (NodeData.Chart.ServerHash = FLists.SaveList.Items[i].ServerHash);
+          if NodeData.IsOnWishlist then
+            Break;
+        end;
+
+        Node := GetNext(Node);
       end;
 
-      Node := GetNext(Node);
+      Invalidate;
     end;
-
-    Invalidate;
+  finally
+    EndUpdate;
   end;
 end;
 
