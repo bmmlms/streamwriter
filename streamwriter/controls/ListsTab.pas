@@ -123,6 +123,8 @@ type
   TListsTab = class(TMainTabSheet)
   private
     FListsPanel: TTitlePanel;
+
+    procedure HomeCommWishlistUpgradeReceived(Sender: TObject; WishlistUpgrade: TWishlistUpgradeList);
   protected
     procedure Resize; override;
   public
@@ -204,6 +206,28 @@ begin
   FListsPanel := TTitlePanel.Create(Self);
   FListsPanel.Parent := Self;
   FListsPanel.Align := alClient;
+
+  HomeComm.OnWishlistUpgradeReceived := HomeCommWishlistUpgradeReceived;
+end;
+
+procedure TListsTab.HomeCommWishlistUpgradeReceived(Sender: TObject;
+  WishlistUpgrade: TWishlistUpgradeList);
+var
+  i: Integer;
+  Title: TTitleInfo;
+begin
+  // TODO: TESTEN TESTEN TESTEN!!! wenn jemand updated, dann verbindung weg ist, dann wieder da etc.. wird das hier dann geregelt?
+  // UND: wenn er, wenn verbindung weg ist, SW beendet und alles gespeichert wird, wird das hier nie wieder gemacht, wegen
+  // der erhöhten versionsnummer.. FIAL!
+  //      ===> ich brauchn feld in den settings. wenn setting=False oder Version=ALT dann UPDATE ANFORDERN.
+  for i := 0 to WishlistUpgrade.Count - 1 do
+  begin
+    Title := TTitleInfo.Create(WishlistUpgrade[i].Hash, WishlistUpgrade[i].Title);
+    FListsPanel.FLists.SaveList.Add(Title);
+    AddTitle(nil, ltSave, Title);
+  end;
+
+  // TODO: dem server schicken "habe titel auf wunschliste!!" damit title changes hier ankommen!!!
 end;
 
 procedure TListsTab.PostTranslate;

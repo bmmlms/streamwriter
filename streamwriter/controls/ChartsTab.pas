@@ -44,7 +44,7 @@ type
 
   TChartsPopup = class(TPopupMenu)
   private
-    FItemReload: TMenuItem;
+    //FItemReload: TMenuItem;
     FItemAddToWishlist: TMenuItem;
     FItemEditAndAddToWishlist: TMenuItem;
     FItemStartStreaming: TMenuItem;
@@ -56,7 +56,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
 
-    property ItemReload: TMenuItem read FItemReload;
+    //property ItemReload: TMenuItem read FItemReload;
     property ItemAddToWishlist: TMenuItem read FItemAddToWishlist;
     property ItemEditAndAddToWishlist: TMenuItem read FItemEditAndAddToWishlist;
     property ItemStartStreaming: TMenuItem read FItemStartStreaming;
@@ -71,7 +71,7 @@ type
     FSearch: TEdit;
     FToolbar: TToolBar;
 
-    FButtonReload: TToolButton;
+    //FButtonReload: TToolButton;
     FButtonAddToWishlist: TToolButton;
     FButtonEditAndAddToWishlist: TToolButton;
     FButtonStartStreaming: TToolButton;
@@ -161,7 +161,8 @@ type
     FChartsTree: TChartsTree;
     FResultLabel: TLabel;
     FState: TChartStates;
-    FSearchTimer: TTimer;
+
+    FCharts: TChartList;
 
     FOnAddToWishlist: TAddToWishlistEvent;
     FOnAddStreams: TAddStreamsEvent;
@@ -170,12 +171,9 @@ type
     procedure ShowCharts;
     procedure UpdateButtons;
 
-    procedure SearchChange(Sender: TObject);
     procedure SearchKeyPress(Sender: TObject; var Key: Char);
 
-    procedure SearchTimerTimer(Sender: TObject);
-
-    procedure HomeCommChartsReceived(Sender: TObject);
+    procedure HomeCommSearchChartsReceived(Sender: TObject; Charts: TChartList);
 
     procedure ButtonClick(Sender: TObject);
     procedure ChartsTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
@@ -207,9 +205,9 @@ implementation
 
 procedure TChartsTab.ButtonClick(Sender: TObject);
 begin
-  if Sender = FSearchPanel.FButtonReload then
-    FChartsTree.FPopupMenu.FItemReload.Click
-  else if Sender = FSearchPanel.FButtonAddToWishlist then
+  //if Sender = FSearchPanel.FButtonReload then
+  //  FChartsTree.FPopupMenu.FItemReload.Click
+  if Sender = FSearchPanel.FButtonAddToWishlist then
     FChartsTree.FPopupMenu.FItemAddToWishlist.Click
   else if Sender = FSearchPanel.FButtonEditAndAddToWishlist then
     FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Click
@@ -248,22 +246,31 @@ begin
   FResultLabel.Parent := Self;
   FResultLabel.Align := alBottom;
 
-  HomeComm.OnChartsReceived := HomeCommChartsReceived;
+  //HomeComm.OnChartsReceived := HomeCommChartsReceived;
+  HomeComm.OnSearchChartsReceived := HomeCommSearchChartsReceived;
 
   ImageIndex := 68;
   ShowCloseButton := False;
 
-  FSearchPanel.FSearch.OnChange := SearchChange;
-  FSearchPanel.FSearch.OnKeyPress := SearchKeyPress;
+  // TODO: in den chartstree nen text: "bitte suchbegriff eingeben und enter drücken" wenn noch nix passiert ist.
 
-  FSearchTimer := TTimer.Create(Self);
-  FSearchTimer.Interval := 2000;
-  FSearchTimer.Enabled := False;
-  FSearchTimer.OnTimer := SearchTimerTimer;
+  FSearchPanel.FSearch.OnKeyPress := SearchKeyPress;
 end;
 
+// TODO: nen toolbar button zum suchen hinzufügen. und suchen nur erlauben, wenn connected, sonst fehlermeldung!!!
+
 destructor TChartsTab.Destroy;
+var
+  i: Integer;
 begin
+  if FCharts <> nil then
+  begin
+    for i := 0 to FCharts.Count - 1 do
+    begin
+      FCharts[i].Free;
+    end;
+    FCharts.Free;
+  end;
 
   inherited;
 end;
@@ -274,9 +281,28 @@ begin
   FChartsTree.HomeCommBytesTransferred(CommandHeader, Transferred);
 end;
 
-procedure TChartsTab.HomeCommChartsReceived(Sender: TObject);
+procedure TChartsTab.HomeCommSearchChartsReceived(Sender: TObject;
+  Charts: TChartList);
+var
+  i: Integer;
 begin
-  FChartsTree.Clear;
+  if FCharts <> nil then
+  begin
+    for i := 0 to FCharts.Count - 1 do
+    begin
+      FCharts[i].Free;
+    end;
+    FCharts.Free;
+  end;
+
+  FCharts := Charts;
+
+  FChartsTree.BeginUpdate;
+  try
+    FChartsTree.Clear;
+  finally
+    FChartsTree.EndUpdate;
+  end;
 
   SetState(csNormal);
 
@@ -285,8 +311,8 @@ end;
 
 procedure TChartsTab.HomeCommStateChanged(Sender: TObject);
 begin
-  FChartsTree.FPopupMenu.FItemReload.Enabled := HomeComm.Connected and (FState = csNormal);
-  FSearchPanel.FButtonReload.Enabled := HomeComm.Connected and (FState = csNormal)
+  //FChartsTree.FPopupMenu.FItemReload.Enabled := HomeComm.Connected and (FState = csNormal);
+  //FSearchPanel.FButtonReload.Enabled := HomeComm.Connected and (FState = csNormal)
 end;
 
 procedure TChartsTab.PostTranslate;
@@ -300,25 +326,14 @@ begin
   FResultLabel.Caption := Format(_(TEXT_RESULTS), [FChartsTree.RootNodeCount]);
 end;
 
-procedure TChartsTab.SearchChange(Sender: TObject);
-begin
-  FSearchTimer.Enabled := True;
-end;
-
 procedure TChartsTab.SearchKeyPress(Sender: TObject; var Key: Char);
 begin
   if Key = #13 then
   begin
-    FSearchTimer.Enabled := False;
-    ShowCharts;
+    // TODO: nicht suchen wenn leer etc...
+    HomeComm.SendSearchCharts(FSearchPanel.FSearch.Text);
     Key := #0;
   end;
-end;
-
-procedure TChartsTab.SearchTimerTimer(Sender: TObject);
-begin
-  FSearchTimer.Enabled := False;
-  ShowCharts;
 end;
 
 procedure TChartsTab.SetState(State: TChartStates);
@@ -352,7 +367,7 @@ begin
   if Screen.PixelsPerInch = 96 then
     FChartsTree.PopupMenu.Images := modSharedData.imgImages;
 
-  FSearchPanel.FButtonReload.OnClick := ButtonClick;
+  //FSearchPanel.FButtonReload.OnClick := ButtonClick;
   FSearchPanel.FButtonAddToWishlist.OnClick := ButtonClick;
   FSearchPanel.FButtonEditAndAddToWishlist.OnClick := ButtonClick;
   FSearchPanel.FButtonStartStreaming.OnClick := ButtonClick;
@@ -362,15 +377,7 @@ begin
 
   Caption := _('Charts');
 
-  if (FLists.ChartList.Count = 0) and (not HomeComm.Connected) then
-  begin
-    SetState(csError);
-  end;
-
-  if (FChartsTree.FState = csNormal) and (FLists.ChartList.Count > 0) and (FLists.CategoryList.Count > 0) then
-  begin
-    ShowCharts;
-  end;
+  // TODO: bei fehlern status csError machen!
 end;
 
 procedure TChartsTab.ShowCharts;
@@ -388,69 +395,24 @@ var
 
   R: TPerlRegEx;
 begin
-  //P := BuildPattern(FSearchPanel.FSearch.Text, Hash, Chars, False);
-
-  R := nil;
-
-  P := Trim(FSearchPanel.FSearch.Text);
-
-  if P <> '' then
+  if FCharts <> nil then
   begin
-    P := FSearchPanel.FSearch.Text;
-    P := StringReplace(P, '*', '(.*)', [rfReplaceAll]);
-    P := StringReplace(P, ' ', '(.*)', [rfReplaceAll]);
-    P := '(?i)(.*)' + P + '(.*)';
-
-    R := TPerlRegEx.Create;
-    R.RegEx := P;
-    R.Compile;
-  end;
-
-  try
     FChartsTree.BeginUpdate;
-    FChartsTree.Clear;
-
-    for i := 0 to FLists.ChartList.Count - 1 do
-    begin
-      if R <> nil then
-      begin
-        R.Subject := FLists.ChartList[i].Name;
-        SearchMatch := R.Match; //Like(FLists.ChartList[i].Name, P);
-      end else
-        SearchMatch := True;
-
-      if SearchMatch then
+    try
+      for i := 0 to FCharts.Count - 1 do
       begin
         Node := FChartsTree.AddChild(nil);
         NodeData := FChartsTree.GetNodeData(Node);
-        NodeData.Chart := FLists.ChartList[i];
-
-{
-        for n := 0 to NodeData.Chart.Streams.Count - 1 do
-        begin
-          NodeStream := FChartsTree.AddChild(Node);
-          NodeDataStream := FChartsTree.GetNodeData(NodeStream);
-          NodeDataStream.Stream := NodeData.Chart.Streams[n];
-        end;
-
-        {
-        for n := 0 to FLists.SaveList.Count - 1 do
-          if LowerCase(FLists.SaveList[n].Title) = LowerCase(NodeData.Chart.Name) then
-          begin
-            NodeData.IsOnWishlist := True;
-            Break;
-          end;
-        }
+        NodeData.Chart := FCharts[i];
       end;
+
+      FChartsTree.SortTree(FChartsTree.Header.SortColumn, FChartsTree.Header.SortDirection);
+    finally
+      FChartsTree.EndUpdate;
     end;
 
-    FChartsTree.SortTree(FChartsTree.Header.SortColumn, FChartsTree.Header.SortDirection);
-  finally
-    R.Free;
-    FChartsTree.EndUpdate;
+    FResultLabel.Caption := Format(_(TEXT_RESULTS), [FChartsTree.RootNodeCount]);
   end;
-
-  FResultLabel.Caption := Format(_(TEXT_RESULTS), [FChartsTree.RootNodeCount]);
 end;
 
 procedure TChartsTab.UpdateButtons;
@@ -503,7 +465,7 @@ begin
     N := FChartsTree.GetNext(N);
   end;
 
-  FChartsTree.FPopupMenu.FItemReload.Enabled := HomeComm.Connected and (State = csNormal);
+  //FChartsTree.FPopupMenu.FItemReload.Enabled := HomeComm.Connected and (State = csNormal);
   FChartsTree.FPopupMenu.FItemAddToWishlist.Enabled := (not AllOnList) and (OneSelectedChart or ManySelectedCharts) and (State = csNormal);
   FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Enabled := (OneSelectedChart) and (State = csNormal);
   FChartsTree.FPopupMenu.FItemStartStreaming.Enabled := (OneSelectedStream or ManySelectedStreams) and (State = csNormal);
@@ -511,7 +473,7 @@ begin
   FChartsTree.FPopupMenu.FItemPlayStreamExternal.Enabled := (OneSelectedStream) and (State = csNormal);
   FChartsTree.FPopupMenu.FItemAddStream.Enabled := (OneSelectedStream or ManySelectedStreams) and (State = csNormal);
 
-  FSearchPanel.FButtonReload.Enabled := FChartsTree.FPopupMenu.FItemReload.Enabled;
+  //FSearchPanel.FButtonReload.Enabled := FChartsTree.FPopupMenu.FItemReload.Enabled;
   FSearchPanel.FButtonAddToWishlist.Enabled := FChartsTree.FPopupMenu.FItemAddToWishlist.Enabled;
   FSearchPanel.FButtonEditAndAddToWishlist.Enabled := FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Enabled;
   FSearchPanel.FButtonStartStreaming.Enabled := FChartsTree.FPopupMenu.FItemStartStreaming.Enabled;
@@ -565,7 +527,7 @@ begin
   Header.Options := Header.Options + [hoAutoResize];
 
   FPopupMenu := TChartsPopup.Create(Self);
-  FPopupMenu.ItemReload.OnClick := PopupMenuClick;
+  //FPopupMenu.ItemReload.OnClick := PopupMenuClick;
   FPopupMenu.ItemAddToWishlist.OnClick := PopupMenuClick;
   FPopupMenu.ItemEditAndAddToWishlist.OnClick := PopupMenuClick;
   FPopupMenu.ItemStartStreaming.OnClick := PopupMenuClick;
@@ -1038,11 +1000,13 @@ begin
   while not (P.ClassType = TChartsTab) do
     P := P.Parent;
 
+  {
   if Sender = FPopupMenu.ItemReload then
   begin
     MsgBus.SendMessage(TRefreshServerDataMsg.Create);
     Exit;
   end;
+  }
 
   Nodes := NodesToData(GetNodes(ntAll, True));
 
@@ -1214,6 +1178,7 @@ begin
   FButtonAddToWishlist.Hint := _('Add to wishlist');
   FButtonAddToWishlist.ImageIndex := 31;
 
+  {
   Sep := TToolButton.Create(FToolbar);
   Sep.Parent := FToolbar;
   Sep.Style := tbsSeparator;
@@ -1223,6 +1188,7 @@ begin
   FButtonReload.Parent := FToolbar;
   FButtonReload.Hint := _('Refresh');
   FButtonReload.ImageIndex := 23;
+  }
 
   FToolbar.Padding.Top := 2;
   FToolbar.Align := alRight;
@@ -1239,11 +1205,11 @@ var
 begin
   inherited;
 
-  FItemReload := CreateMenuItem;
-  FItemReload := CreateMenuItem;
-  FItemReload.Caption := '&Refresh';
-  FItemReload.ImageIndex := 23;
-  Items.Add(FItemReload);
+  //FItemReload := CreateMenuItem;
+  //FItemReload := CreateMenuItem;
+  //FItemReload.Caption := '&Refresh';
+  //FItemReload.ImageIndex := 23;
+  //Items.Add(FItemReload);
 
   Sep := CreateMenuItem;
   Sep.Caption := '-';

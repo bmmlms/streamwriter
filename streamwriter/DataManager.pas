@@ -483,7 +483,7 @@ type
     function Copy: TChartEntry;
 
     class function Load(Stream: TExtendedStream; Lists: TDataLists; Version: Integer): TChartEntry;
-    class function LoadFromHome(Stream: TExtendedStream; Lists: TDataLists; Version: Integer; Streams: TStreamBrowserList): TChartEntry;
+    class function LoadFromHome(Stream: TExtendedStream; Version: Integer): TChartEntry;
     procedure Save(Stream: TExtendedStream);
 
     procedure LoadStreams(StreamList: TStreamBrowserList);
@@ -538,8 +538,8 @@ type
     FRecentList: TRecentList;
     FStreamBlacklist: TStringList;
     FRatingList: TRatingList;
-    FChartList: TChartList;
-    FChartCategoryList: TChartCategoryList;
+    //FChartList: TChartList;
+    //FChartCategoryList: TChartCategoryList;
     FBrowserList: TStreamBrowserList;
     FGenreList: TGenreList;
     FLoadError: Boolean;
@@ -574,9 +574,9 @@ type
     // List that contains all ratings for streams
     property RatingList: TRatingList read FRatingList;
     // List that contains charts
-    property ChartList: TChartList read FChartList;
+    //property ChartList: TChartList read FChartList;
     // List that contains categories for charts
-    property ChartCategoryList: TChartCategoryList read FChartCategoryList;
+    //property ChartCategoryList: TChartCategoryList read FChartCategoryList;
     // List that contains all TStreamBrowserEntries
     property BrowserList: TStreamBrowserList read FBrowserList write FBrowserList;
     // List that contains all genres
@@ -591,7 +591,7 @@ type
   end;
 
 const
-  DATAVERSION = 47;
+  DATAVERSION = 48;
 
 implementation
 
@@ -959,6 +959,7 @@ begin
     FBrowserList[i].Free;
   FBrowserList.Clear;
 
+  {
   for i := 0 to FChartList.Count - 1 do
     FChartList[i].Free;
   FChartList.Clear;
@@ -966,6 +967,7 @@ begin
   for i := 0 to FChartCategoryList.Count - 1 do
     FChartCategoryList[i].Free;
   FChartCategoryList.Clear;
+  }
 
   for i := 0 to FGenreList.Count - 1 do
     FGenreList[i].Free;
@@ -988,8 +990,8 @@ begin
   FRatingList := TRatingList.Create;
   FBrowserList := TStreamBrowserList.Create;
   FGenreList := TGenreList.Create;
-  FChartList := TChartList.Create;
-  FChartCategoryList := TChartCategoryList.Create;
+  //FChartList := TChartList.Create;
+  //FChartCategoryList := TChartCategoryList.Create;
 end;
 
 destructor TDataLists.Destroy;
@@ -1006,8 +1008,8 @@ begin
   FRatingList.Free;
   FBrowserList.Free;
   FGenreList.Free;
-  FChartList.Free;
-  FChartCategoryList.Free;
+  //FChartList.Free;
+  //FChartCategoryList.Free;
 
   inherited;
 end;
@@ -1022,6 +1024,8 @@ var
   i: Integer;
   CompressedStream: TExtendedStream;
   Compressed: Boolean;
+  Chart: TChartEntry;
+  ChartCategory: TChartCategory;
 begin
   CleanLists;
 
@@ -1162,21 +1166,35 @@ begin
 
   if Version >= 35 then
   begin
-    S.Read(CatCount);
-    for i := 0 to CatCount - 1 do
-      FChartCategoryList.Add(TChartCategory.Load(S, Version));
+    if Version < 48 then
+    begin
+      S.Read(CatCount);
+      for i := 0 to CatCount - 1 do
+      begin
+        ChartCategory := TChartCategory.Load(S, Version);
+        ChartCategory.Free;
+      end;
+    end;
 
+    // TODO: was macht createdict??
     FBrowserList.CreateDict;
 
-    S.Read(CatCount);
-    for i := 0 to CatCount - 1 do
-      FChartList.Add(TChartEntry.Load(S, Self, Version));
+    if Version < 48 then
+    begin
+      S.Read(CatCount);
+      for i := 0 to CatCount - 1 do
+      begin
+        Chart := TChartEntry.Load(S, Self, Version);
+        Chart.Free;
+      end;
+    end;
 
     FBrowserList.ClearDict;
   end;
 
-  if not FReloadServerData then
-    FReloadServerData := (FChartList.Count > 0) and (FChartList[0].ServerHash = 0);
+  // TODO: !!!
+  //if not FReloadServerData then
+  //  FReloadServerData := (FChartList.Count > 0) and (FChartList[0].ServerHash = 0);
 end;
 
 procedure TDataLists.Load;
@@ -1269,14 +1287,6 @@ begin
     CompressedStream.Write(FGenreList.Count);
     for i := 0 to FGenreList.Count - 1 do
       FGenreList[i].Save(CompressedStream);
-
-    CompressedStream.Write(FChartCategoryList.Count);
-    for i := 0 to FChartCategoryList.Count - 1 do
-      FChartCategoryList[i].Save(CompressedStream);
-
-    CompressedStream.Write(FChartList.Count);
-    for i := 0 to FChartList.Count - 1 do
-      FChartList[i].Save(CompressedStream);
 
     CompressedStream.Seek(0, soFromBeginning);
 
@@ -2039,25 +2049,27 @@ begin
   end;
 end;
 
-class function TChartEntry.LoadFromHome(Stream: TExtendedStream;
-  Lists: TDataLists; Version: Integer; Streams: TStreamBrowserList): TChartEntry;
+class function TChartEntry.LoadFromHome(Stream: TExtendedStream; Version: Integer): TChartEntry;
 var
   i: Integer;
   C: Cardinal;
+  x: Cardinal;
 begin
   Result := TChartEntry.Create;
-  Stream.Read(Result.FName);
   Stream.Read(Result.FServerHash);
+  Stream.Read(Result.FName);
 
   Stream.Read(Result.FPlayedLastDay);
   Stream.Read(Result.FPlayedLastWeek);
 
+  {
   Stream.Read(C);
   for i := 0 to C - 1 do
   begin
-    Result.Streams.Add(TChartStream.Load(Stream, Version));
+    Stream.Read(x);
+    //Result.Streams.Add(TChartStream.Load(Stream, Version));
   end;
-  Result.LoadStreams(Streams);
+  }
 end;
 
 procedure TChartEntry.LoadStreams(StreamList: TStreamBrowserList);

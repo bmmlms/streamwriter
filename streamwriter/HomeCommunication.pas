@@ -50,6 +50,10 @@ type
 
     FStreamIDs: TIntArray;
 
+    FSearchReceivedCharts: TChartList;
+
+    FWishlistUpgradeTitles: TWishlistUpgradeList;
+
     FOnHandshakeReceived: TSocketEvent;
     FOnLogInReceived: TSocketEvent;
     FOnLogOutReceived: TSocketEvent;
@@ -58,6 +62,8 @@ type
     FOnServerInfoReceived: TSocketEvent;
     FOnErrorReceived: TSocketEvent;
     FOnMonitorStreamsReceived: TSocketEvent;
+    FOnSearchChartsReceived: TSocketEvent;
+    FOnWishlistUpgradeReceived: TSocketEvent;
 
     procedure DoHandshakeReceived(CommandHeader: TCommandHeader; Command: TCommandHandshakeResponse);
     procedure DoLogInReceived(CommandHeader: TCommandHeader; Command: TCommandLogInResponse);
@@ -67,6 +73,8 @@ type
     procedure DoServerInfoReceived(CommandHeader: TCommandHeader; Command: TCommandServerInfoResponse);
     procedure DoMessageReceived(CommandHeader: TCommandHeader; Command: TCommandMessageResponse);
     procedure DoMonitorStreamsReceived(CommandHeader: TCommandHeader; Command: TCommandGetMonitorStreamsResponse);
+    procedure DoSearchChartsReceived(CommandHeader: TCommandHeader; Command: TCommandSearchChartsResponse);
+    procedure DoWishlistUpgradeReceived(CommandHeader: TCommandHeader; Command: TCommandGetWishlistUpgradeResponse);
   protected
     procedure DoReceivedCommand(ID: Cardinal; CommandHeader: TCommandHeader; Command: TCommand); override;
     procedure DoException(E: Exception); override;
@@ -83,16 +91,19 @@ type
     property OnServerInfoReceived: TSocketEvent read FOnServerInfoReceived write FOnServerInfoReceived;
     property OnErrorReceived: TSocketEvent read FOnErrorReceived write FOnErrorReceived;
     property OnMonitorStreamsReceived: TSocketEvent read FOnMonitorStreamsReceived write FOnMonitorStreamsReceived;
+    property OnSearchChartsReceived: TSocketEvent read FOnSearchChartsReceived write FOnSearchChartsReceived;
+    property OnWishlistUpgradeReceived: TSocketEvent read FOnWishlistUpgradeReceived write FOnWishlistUpgradeReceived;
   end;
 
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
   TStreamsReceivedEvent = procedure(Sender: TObject) of object;
-  TChartsReceivedEvent = procedure(Sender: TObject) of object;
+  TChartsReceivedEvent = procedure(Sender: TObject; Charts: TChartList) of object;
   TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, TitlePattern: string;
     Format: TAudioTypes; Kbps: Cardinal; ServerHash: Cardinal) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
   TIntArrayEvent = procedure(Sender: TObject; IntArr: TIntArray) of object;
+  TWishlistUpgradeEvent = procedure(Sender: TObject; WishlistUpgrade: TWishlistUpgradeList) of object;
 
   THomeCommunication = class
   private
@@ -112,12 +123,14 @@ type
     FOnLogInReceived: TBooleanEvent;
     FOnLogOutReceived: TNotifyEvent;
     FOnStreamsReceived: TStreamsReceivedEvent;
-    FOnChartsReceived: TChartsReceivedEvent;
+    //FOnChartsReceived: TChartsReceivedEvent;
     FOnServerDataReceived: TNotifyEvent;
     FOnNetworkTitleChangedReceived: TTitleChangedEvent;
     FOnServerInfoReceived: TServerInfoEvent;
     FOnErrorReceived: TErrorEvent;
     FOnMonitorStreamsReceived: TIntArrayEvent;
+    FOnSearchChartsReceived: TChartsReceivedEvent;
+    FOnWishlistUpgradeReceived: TWishlistUpgradeEvent;
 
     function FGetThreadAlive: Boolean;
 
@@ -134,6 +147,8 @@ type
     procedure HomeThreadServerInfoReceived(Sender: TSocketThread);
     procedure HomeThreadErrorReceived(Sender: TSocketThread);
     procedure HomeThreadMonitorStreamsReceived(Sender: TSocketThread);
+    procedure HomeThreadSearchChartsReceived(Sender: TSocketThread);
+    procedure HomeThreadWishlistUpgradeReceived(Sender: TSocketThread);
 
     procedure HomeThreadTerminate(Sender: TObject);
   public
@@ -158,6 +173,8 @@ type
     procedure SendSyncWishlist; overload;
     procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hashes: TCardinalArray); overload;
     procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hash: Cardinal); overload;
+    procedure SendSearchCharts(Term: string);
+    procedure SendGetWishlistUpgrade(Titles: TStringList);
 
     property Disabled: Boolean read FDisabled;
     property WasConnected: Boolean read FWasConnected;
@@ -175,12 +192,14 @@ type
     property OnLogInReceived: TBooleanEvent read FOnLogInReceived write FOnLogInReceived;
     property OnLogOutReceived: TNotifyEvent read FOnLogOutReceived write FOnLogOutReceived;
     property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
-    property OnChartsReceived: TChartsReceivedEvent read FOnChartsReceived write FOnChartsReceived;
+    //property OnChartsReceived: TChartsReceivedEvent read FOnChartsReceived write FOnChartsReceived;
     property OnServerDataReceived: TNotifyEvent read FOnServerDataReceived write FOnServerDataReceived;
     property OnNetworkTitleChangedReceived: TTitleChangedEvent read FOnNetworkTitleChangedReceived write FOnNetworkTitleChangedReceived;
     property OnServerInfoReceived: TServerInfoEvent read FOnServerInfoReceived write FOnServerInfoReceived;
     property OnErrorReceived: TErrorEvent read FOnErrorReceived write FOnErrorReceived;
     property OnMonitorStreamsReceived: TIntArrayEvent read FOnMonitorStreamsReceived write FOnMonitorStreamsReceived;
+    property OnSearchChartsReceived: TChartsReceivedEvent read FOnSearchChartsReceived write FOnSearchChartsReceived;
+    property OnWishlistUpgradeReceived: TWishlistUpgradeEvent read FOnWishlistUpgradeReceived write FOnWishlistUpgradeReceived;
   end;
 
 var
@@ -290,6 +309,8 @@ var
   ServerInfo: TCommandServerInfoResponse absolute Command;
   Error: TCommandMessageResponse absolute Command;
   MonitorStreams: TCommandGetMonitorStreamsResponse absolute Command;
+  SearchCharts: TCommandSearchChartsResponse absolute Command;
+  WishlistUpgrade: TCommandGetWishlistUpgradeResponse absolute Command;
 begin
   inherited;
 
@@ -310,7 +331,36 @@ begin
       DoMessageReceived(CommandHeader, Error);
     ctGetMonitorStreamsResponse:
       DoMonitorStreamsReceived(CommandHeader, MonitorStreams);
+    ctSearchChartsResponse:
+      DoSearchChartsReceived(CommandHeader, SearchCharts);
+    ctGetWishlistUpgradeResponse:
+      DoWishlistUpgradeReceived(CommandHeader, WishlistUpgrade);
   end;
+end;
+
+procedure THomeThread.DoSearchChartsReceived(CommandHeader: TCommandHeader;
+  Command: TCommandSearchChartsResponse);
+var
+  i: Integer;
+  Count: Cardinal;
+  Stream: TExtendedStream;
+begin
+  Stream := TExtendedStream(Command.Stream);
+
+  FSearchReceivedCharts := TChartList.Create;
+  try
+    // Charts laden
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+      FSearchReceivedCharts.Add(TChartEntry.LoadFromHome(Stream, CommandHeader.Version));
+  except
+    for i := 0 to FSearchReceivedCharts.Count - 1 do
+      FSearchReceivedCharts[i].Free;
+    FSearchReceivedCharts.Free;
+  end;
+
+  if Assigned(FOnSearchChartsReceived) then
+    Sync(FOnSearchChartsReceived)
 end;
 
 procedure THomeThread.DoServerDataReceived(CommandHeader: TCommandHeader;
@@ -321,15 +371,15 @@ var
   Stream: TExtendedStream;
   StreamEntry, StreamEntry2: TStreamBrowserEntry;
   Genre: TGenre;
-
+     // TODO: 'SWR' als string ist auf titleblacklist. aber ist immer noch sichtbar???
   Genres: TGenreList;
-  Charts: TChartList;
+  //Charts: TChartList;
   Streams: TStreamBrowserList;
 begin
   Stream := TExtendedStream(Command.Stream);
 
   Genres := TGenreList.Create;
-  Charts := TChartList.Create;
+  //Charts := TChartList.Create;
   Streams := TStreamBrowserList.Create;
   try
     // Genres laden
@@ -350,12 +400,12 @@ begin
         end;
       Streams.Add(StreamEntry);
     end;
-    Streams.CreateDict;
+    Streams.CreateDict;    // TODO: wozu war das nochmal da??
 
     // Charts laden
-    Stream.Read(Count);
-    for i := 0 to Count - 1 do
-      Charts.Add(TChartEntry.LoadFromHome(Stream, nil, CommandHeader.Version, Streams));
+    //Stream.Read(Count);
+    //for i := 0 to Count - 1 do
+    //  Charts.Add(TChartEntry.LoadFromHome(Stream, nil, CommandHeader.Version, Streams));
 
     // Wenn alles erfolgreich geladen wurde alte Listen leeren.
     // Falls hier jetzt eine Exception kommt wird es bitter...
@@ -365,27 +415,30 @@ begin
     for StreamEntry in FLists.BrowserList do
       StreamEntry.Free;
     FLists.BrowserList.Clear;
+
+    {
     for i := 0 to FLists.ChartList.Count - 1 do
       FLists.ChartList[i].Free;
     FLists.ChartList.Clear;
+    }
 
     // Der Liste alle Sachen wieder hinzufügen
     for Genre in Genres do
       FLists.GenreList.Add(Genre);
     for StreamEntry in Streams do
       FLists.BrowserList.Add(StreamEntry);
-    for i := 0 to Charts.Count - 1 do
-      FLists.ChartList.Add(Charts[i]);
+    //for i := 0 to Charts.Count - 1 do
+    //  FLists.ChartList.Add(Charts[i]);
   except
     for i := 0 to Genres.Count - 1 do
       Genres[i].Free;
-    for i := 0 to Charts.Count - 1 do
-      Charts[i].Free;
+    //for i := 0 to Charts.Count - 1 do
+    //  Charts[i].Free;
     for i := 0 to Streams.Count - 1 do
       Streams[i].Free;
 
     Genres.Free;
-    Charts.Free;
+    //Charts.Free;
     Streams.Free;
   end;
 
@@ -401,6 +454,16 @@ begin
 
   if Assigned(FOnServerInfoReceived) then
     Sync(FOnServerInfoReceived);
+end;
+
+procedure THomeThread.DoWishlistUpgradeReceived(
+  CommandHeader: TCommandHeader;
+  Command: TCommandGetWishlistUpgradeResponse);
+begin
+  FWishlistUpgradeTitles := Command.Titles;
+
+  if Assigned(FOnWishlistUpgradeReceived) then
+    Sync(FOnWishlistUpgradeReceived)
 end;
 
 { THomeCommunication }
@@ -446,6 +509,14 @@ begin
     Exit;
 
   FThread.SendCommand(TCommandLogOut.Create)
+end;
+
+procedure THomeCommunication.SendSearchCharts(Term: string);
+begin
+  if not FConnected then
+    Exit;
+
+  FThread.SendCommand(TCommandSearchCharts.Create(Term));
 end;
 
 procedure THomeCommunication.SendSetSettings(TitleNotifications: Boolean);
@@ -579,10 +650,10 @@ begin
   FOnLogInReceived := nil;
   FOnLogOutReceived := nil;
   FOnStreamsReceived := nil;
-  FOnChartsReceived := nil;
   FOnNetworkTitleChangedReceived := nil;
   FOnErrorReceived := nil;
   FOnMonitorStreamsReceived := nil;
+  FOnSearchChartsReceived := nil;
 
   if FThread <> nil then
     FThread.Terminate;
@@ -623,6 +694,14 @@ begin
     Exit(False);
 
   FThread.SendCommand(TCommandGetServerData.Create)
+end;
+
+procedure THomeCommunication.SendGetWishlistUpgrade(Titles: TStringList);
+begin
+  if not FConnected then
+    Exit;
+
+  FThread.SendCommand(TCommandGetWishlistUpgrade.Create(Titles));
 end;
 
 procedure THomeCommunication.HomeThreadConnected(Sender: TSocketThread);
@@ -709,13 +788,20 @@ begin
     FOnMonitorStreamsReceived(Self, THomeThread(Sender).FStreamIDs);
 end;
 
+procedure THomeCommunication.HomeThreadSearchChartsReceived(
+  Sender: TSocketThread);
+begin
+  if Assigned(FOnSearchChartsReceived) then
+    FOnSearchChartsReceived(Self, THomeThread(Sender).FSearchReceivedCharts);
+end;
+
 procedure THomeCommunication.HomeThreadServerDataReceived(Sender: TSocketThread);
 begin
   if Assigned(FOnStreamsReceived) then
     FOnStreamsReceived(Self);
 
-  if Assigned(FOnChartsReceived) then
-    FOnChartsReceived(Self);
+  //if Assigned(FOnChartsReceived) then
+  //  FOnChartsReceived(Self);
 
   if Assigned(FOnServerDataReceived) then
     FOnServerDataReceived(Self);
@@ -732,6 +818,13 @@ procedure THomeCommunication.HomeThreadTerminate(Sender: TObject);
 begin
   if (FThread <> nil) and (Sender = FThread) then
     FThread := nil;
+end;
+
+procedure THomeCommunication.HomeThreadWishlistUpgradeReceived(
+  Sender: TSocketThread);
+begin
+  if Assigned(FOnWishlistUpgradeReceived) then
+    FOnWishlistUpgradeReceived(Self, THomeThread(Sender).FWishlistUpgradeTitles);
 end;
 
 procedure THomeCommunication.HomeThreadNetworkTitleChangedReceived(
@@ -788,6 +881,8 @@ begin
 
   FThread.OnNetworkTitleChangedReceived := HomeThreadNetworkTitleChangedReceived;
   FThread.OnMonitorStreamsReceived := HomeThreadMonitorStreamsReceived;
+  FThread.OnSearchChartsReceived := HomeThreadSearchChartsReceived;
+  FThread.OnWishlistUpgradeReceived := HomeThreadWishlistUpgradeReceived;
 
   FThread.OnTerminate := HomeThreadTerminate;
 
@@ -803,6 +898,8 @@ initialization
   TCommand.RegisterCommand(ctMessageResponse, TCommandMessageResponse);
   TCommand.RegisterCommand(ctNetworkTitleChangedResponse, TCommandNetworkTitleChangedResponse);
   TCommand.RegisterCommand(ctGetMonitorStreamsResponse, TCommandGetMonitorStreamsResponse);
+  TCommand.RegisterCommand(ctSearchChartsResponse, TCommandSearchChartsResponse);
+  TCommand.RegisterCommand(ctGetWishlistUpgradeResponse, TCommandGetWishlistUpgradeResponse);
 
   HomeComm := nil;
 

@@ -1045,6 +1045,9 @@ begin
     FCommunityLogin.HomeCommLogIn(Sender, Success);
 end;
 
+// TODO: das update der wunschliste muss nachvollziehbar sein. flag haben, wenn erfolg => flag löschen.
+//       damit jeder user der geupdated hat nur genau einmal charts neu bekommt. if lastversion < asdf && !flag then update   !
+
 procedure TfrmStreamWriterMain.HomeCommLogOut(Sender: TObject);
 begin
   UpdateStatus;
@@ -1056,10 +1059,12 @@ var
   n: Integer;
   TitleInfo: TTitleInfo;
 begin
+  // TODO: die variable muss ich im neuen ablauf benutzen - aber nicht hier!!
   if FSaveListUpdateDone then
     Exit;
 
-  // TODO: Testen wie lange das mit 200 einträgen in der wunschliste dauert bei echten charts vom server.
+  // TODO: Hier geht gaaaaaaaaaaaa nix mehr!!! passiq machen!
+  {
   if AppGlobals.LastUsedDataVersion = 46 then
   begin
     for i := 0 to FDataLists.ChartList.Count - 1 do
@@ -1078,6 +1083,7 @@ begin
     HomeComm.SendSyncWishlist;
     FSaveListUpdateDone := True;
   end;
+  }
 end;
 
 procedure TfrmStreamWriterMain.HomeCommServerInfo(Sender: TObject;
@@ -1090,7 +1096,7 @@ end;
 
 procedure TfrmStreamWriterMain.HomeCommStateChanged(Sender: TObject);
 var
-  Hashes: TCardinalArray;
+  Titles: TStringList;
   i: Integer;
 begin
   UpdateStatus;
@@ -1117,14 +1123,39 @@ begin
     // TODO: wird Add und Remove bei der liste immer gesendet??
     HomeComm.SendSyncWishlist;
 
+    // TODO: Generell: TESTEN TESTEN TESTEN!!! was passiert bei 10000 wünschen in der liste bei dem command???
+    // TODO: das update darf nur EINMAL passieren. wenn verbindung danach geht und wieder kommt nicht nochmal!
+    if (AppGlobals.LastUsedDataVersion < 47) and (FDataLists.SaveList.Count > 0) then
+    begin
+      Titles := TStringList.Create;
+      try
+        for i := 0 to FDataLists.SaveList.Count - 1 do
+        begin
+          if FDataLists.SaveList[i].ServerHash = 0 then
+          begin
+            Titles.Add(FDataLists.SaveList[i].Title)
+          end;
+        end;
+
+        if Titles.Count > 0 then
+          HomeComm.SendGetWishlistUpgrade(Titles);
+      finally
+        Titles.Free;
+      end;
+    end;
+
+    // TODO: die charts brauchen eine "Lade..."-Ansicht wenn gerade gesucht wird. halt nen text...
+
+    // TODO: brauche ich das feld ReloadServerData noch an FDataLists???
+
     if (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or (AppGlobals.LastBrowserUpdate < Now - 15)) or
        (FDataLists.ReloadServerData) or
-       (tabCharts.State = csError) or
+       //(tabCharts.State = csError) or
        (tabClients.SideBar.BrowserView.Mode = moError) then
     begin
       if HomeComm.SendGetServerData then
       begin
-        tabCharts.SetState(csLoading);
+        //tabCharts.SetState(csLoading);
         tabClients.SideBar.BrowserView.SwitchMode(moLoading);
       end;
     end;
@@ -1305,7 +1336,7 @@ begin
   begin
     if HomeComm.SendGetServerData then
     begin
-      tabCharts.SetState(csLoading);
+      //tabCharts.SetState(csLoading);
       tabClients.SideBar.BrowserView.SwitchMode(moLoading);
     end;
   end;
@@ -2016,6 +2047,8 @@ begin
     begin
       // TODO: 0.. evtl kann die methode hier ganz fliegen. ohne hash = lame und verwirrend für naps.
       //       oder ich suche den chart noch vorher raus und weise den zu, falls der titel in wunschliste soll?
+      //       vllt sollte das menü item heißen "in charts suchen", dann könnte man schnell zur wunschliste hinzufügen
+      //       wenn gleich zu den charts gejumped wird. oder das muss iwie anders laufen hier...
       T := TTitleInfo.Create(0, Title);
 
       List.Add(T);

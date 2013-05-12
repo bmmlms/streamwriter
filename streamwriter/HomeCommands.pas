@@ -23,11 +23,19 @@ unit HomeCommands;
 interface
 
 uses
-  Windows, SysUtils, ExtendedStream, Commands, AudioFunctions, TypeDefs;
+  Windows, SysUtils, Classes, ExtendedStream, Commands, AudioFunctions,
+  TypeDefs, Generics.Collections;
 
 type
   TSendClientStatTypes = (csSave, csAutoSave);
   TSyncWishlistTypes = (swSync, swAdd, swRemove);
+
+  TWishlistUpgrade = class
+  public
+    Title: string;
+    Hash: Cardinal;
+  end;
+  TWishlistUpgradeList = TList<TWishlistUpgrade>;
 
   TCommandHandshake = class(TCommand)
   private
@@ -104,14 +112,14 @@ type
   private
   protected
   public
-    constructor Create; overload;
+    constructor Create;
   end;
 
   TCommandLogOutResponse = class(TCommand)
   private
   protected
   public
-    constructor Create; overload;
+    constructor Create;
   end;
 
   TCommandNetworkTitleChangedResponse = class(TCommand)
@@ -126,7 +134,7 @@ type
     FServerHash: Cardinal;
   protected
   public
-    constructor Create; overload;
+    constructor Create;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
@@ -162,7 +170,7 @@ type
     FRecordingCount: Cardinal;
   protected
   public
-    constructor Create; overload;
+    constructor Create;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
@@ -176,7 +184,7 @@ type
     FMessageMsg: string;
   protected
   public
-    constructor Create; overload;
+    constructor Create;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
@@ -232,7 +240,7 @@ type
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
-    constructor Create; overload;
+    constructor Create;
 
     property StreamID: Cardinal read FStreamID write FStreamID;
     property Rating: Byte read FRating write FRating;
@@ -278,7 +286,7 @@ type
     FStreamIDs: TIntArray;
   protected
   public
-    constructor Create; overload;
+    constructor Create;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
@@ -296,6 +304,49 @@ type
     constructor Create(SyncType: TSyncWishlistTypes; Hashes: TCardinalArray); overload;
 
     property Hashes: TCardinalArray read FHashes write FHashes;
+  end;
+
+  TCommandSearchCharts = class(TCommand)
+  private
+    FTerm: string;
+  protected
+    procedure DoGet(S: TExtendedStream); override;
+  public
+    constructor Create; overload;
+    constructor Create(Term: string); overload;
+  end;
+
+  TCommandSearchChartsResponse = class(TCommand)
+  private
+  protected
+  public
+    constructor Create;
+
+    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+  end;
+
+  TCommandGetWishlistUpgrade = class(TCommand)
+  private
+    FTitles: TStringList;
+  protected
+    procedure DoGet(S: TExtendedStream); override;
+  public
+    constructor Create; overload;
+    constructor Create(Titles: TStringList); overload;
+    destructor Destroy; override;
+  end;
+
+  TCommandGetWishlistUpgradeResponse = class(TCommand)
+  private
+    FTitles: TWishlistUpgradeList;
+  protected
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+
+    property Titles: TWishlistUpgradeList read FTitles;
   end;
 
 implementation
@@ -703,6 +754,120 @@ begin
   S.Write(Cardinal(Length(FHashes)));
   for i := 0 to High(FHashes) do
     S.Write(FHashes[i]);
+end;
+
+{ TCommandSearchCharts }
+
+constructor TCommandSearchCharts.Create;
+begin
+  inherited;
+
+  FCommandType := ctSearchCharts;
+end;
+
+constructor TCommandSearchCharts.Create(Term: string);
+begin
+  Create;
+
+  FTerm := Term;
+end;
+
+procedure TCommandSearchCharts.DoGet(S: TExtendedStream);
+begin
+  inherited;
+
+  S.Write(FTerm);
+end;
+
+{ TCommandSearchChartsResponse }
+
+constructor TCommandSearchChartsResponse.Create;
+begin
+  inherited;
+
+  FCommandType := ctSearchChartsResponse;
+end;
+
+procedure TCommandSearchChartsResponse.Load(CommandHeader: TCommandHeader;
+  Stream: TExtendedStream);
+begin
+  LoadStream(Stream); // TODO: mal zusehen was hier ist... immer komprimieren aufm server dauert auchn bisschen! JA DAS DAUERT. evtl iwann raus!
+                      //       oder nen flag ans command, COMPRESSED. dann kann mans on demand im server ändern!
+end;
+
+{ TCommandGetWishlistUpgrade }
+
+constructor TCommandGetWishlistUpgrade.Create;
+begin
+  inherited;
+
+  FCommandType := ctGetWishlistUpgrade;
+  FTitles := TStringList.Create;
+end;
+
+constructor TCommandGetWishlistUpgrade.Create(Titles: TStringList);
+begin
+  Create;
+
+  FTitles.Assign(Titles);
+end;
+
+destructor TCommandGetWishlistUpgrade.Destroy;
+begin
+  FTitles.Free;
+
+  inherited;
+end;
+
+procedure TCommandGetWishlistUpgrade.DoGet(S: TExtendedStream);
+var
+  i: Integer;
+begin
+  inherited;
+
+  S.Write(Cardinal(FTitles.Count));
+  for i := 0 to FTitles.Count - 1 do
+    S.Write(FTitles[i]);
+end;
+
+{ TCommandGetWishlistUpgradeResponse }
+
+constructor TCommandGetWishlistUpgradeResponse.Create;
+begin
+  inherited;
+
+  FCommandType := ctGetWishlistUpgradeResponse;
+  FTitles := TWishlistUpgradeList.Create;
+end;
+
+destructor TCommandGetWishlistUpgradeResponse.Destroy;
+var
+  i: Integer;
+begin
+  for i := 0 to FTitles.Count - 1 do
+    FTitles[i].Free;
+  FTitles.Free;
+
+  inherited;
+end;
+
+procedure TCommandGetWishlistUpgradeResponse.Load(
+  CommandHeader: TCommandHeader; Stream: TExtendedStream);
+var
+  Count: Cardinal;
+  i: Integer;
+  WU: TWishlistUpgrade;
+begin
+  inherited;
+
+  Stream.Read(Count);
+  for i := 0 to Count - 1 do
+  begin
+    WU := TWishlistUpgrade.Create;
+    Stream.Read(WU.Hash);
+    Stream.Read(WU.Title);
+    FTitles.Add(WU);
+  end;
 end;
 
 end.

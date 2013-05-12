@@ -990,8 +990,6 @@ begin
   end;
 end;
 
-// TODO: den search-timer hier anschalten und gleichzeitig charts refreshen ist NICHT COOL. dagegen was machen!
-
 procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string;
   var Allowed: Boolean; var Match: string; var Filter: Integer);
   function ContainsTitle(List: TList<TTitleInfo>; Title: string; var Match: string): Boolean;
