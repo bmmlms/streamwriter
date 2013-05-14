@@ -320,7 +320,7 @@ type
     procedure tabPlayStarted(Sender: TObject);
 
     procedure tabChartsAddToWishlist(Sender: TObject; Arr: TWishlistTitleInfoArray);
-    procedure tabChartsAddStreams(Sender: TObject; Info: TStartStreamingInfoArray; Action: TStreamOpenActions);
+    //procedure tabChartsAddStreams(Sender: TObject; Info: TStartStreamingInfoArray; Action: TStreamOpenActions);
     function tabChartsGetIsStreamOnListEvent(Sender: TObject; Stream: TStreamBrowserEntry): Boolean;
 
     procedure mnuMoveToCategory(Sender: TObject);
@@ -843,7 +843,7 @@ begin
   tabCharts := TChartsTab.Create(pagMain, FDataLists);
   tabCharts.PageControl := pagMain;
   tabCharts.OnAddToWishlist := tabChartsAddToWishlist;
-  tabCharts.OnAddStreams := tabChartsAddStreams;
+  //tabCharts.OnAddStreams := tabChartsAddStreams;
   tabCharts.OnGetIsStreamOnListEvent := tabChartsGetIsStreamOnListEvent;
 
   tabLists := TListsTab.Create(pagMain);
@@ -987,7 +987,7 @@ begin
   if CommandHeader.CommandType = ctGetServerDataResponse then
   begin
     tabClients.SideBar.BrowserView.HomeCommBytesTransferred(CommandHeader, Transferred);
-    tabCharts.HomeCommBytesTransferred(CommandHeader, Transferred);
+    //tabCharts.HomeCommBytesTransferred(CommandHeader, Transferred);
   end;
 end;
 
@@ -1124,6 +1124,7 @@ begin
     HomeComm.SendSyncWishlist;
 
     // TODO: Generell: TESTEN TESTEN TESTEN!!! was passiert bei 10000 wünschen in der liste bei dem command???
+    //       Raucht die DB ab? TEEEEEESTEN!!11111
     // TODO: das update darf nur EINMAL passieren. wenn verbindung danach geht und wieder kommt nicht nochmal!
     if (AppGlobals.LastUsedDataVersion < 47) and (FDataLists.SaveList.Count > 0) then
     begin
@@ -1163,7 +1164,7 @@ begin
   begin
     FClients.StopMonitors;
 
-    if tabCharts.State = csLoading then
+    if tabCharts.State = csSearching then
       tabCharts.SetState(csError);
     if tabClients.SideBar.BrowserView.Mode = moLoading then
       tabClients.SideBar.BrowserView.SwitchMode(moError);
@@ -1949,11 +1950,13 @@ begin
   tabSaved.Tree.RemoveTrack(Track);
 end;
 
+{
 procedure TfrmStreamWriterMain.tabChartsAddStreams(Sender: TObject;
   Info: TStartStreamingInfoArray; Action: TStreamOpenActions);
 begin
   tabClients.StartStreaming(Info, Action, nil, amAddChildLast);
 end;
+}
 
 procedure TfrmStreamWriterMain.tabChartsAddToWishlist(Sender: TObject;
   Arr: TWishlistTitleInfoArray);

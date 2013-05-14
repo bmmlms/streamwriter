@@ -20,7 +20,8 @@
 
 program streamwriter;
 
-{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
+// vcPublic, damit TCommand-Nachfahren erzeugt werden können.
+{$RTTI EXPLICIT METHODS([vcPublic]) PROPERTIES([]) FIELDS([])}
 
 // TODO: auf root startet sW nicht. WARUM???
 

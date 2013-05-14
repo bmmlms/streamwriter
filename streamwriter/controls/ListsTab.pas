@@ -170,14 +170,12 @@ type
     procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     function DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer; override;
-    procedure DoFreeNode(Node: PVirtualNode); override;
     procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; Text: UnicodeString); override;
     procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
-    destructor Destroy; override;
 
     function AddTitle(Title: TTitleInfo; Parent: PVirtualNode; FilterText: string; FromFilter: Boolean): PVirtualNode;
     procedure RemoveTitle(Title: TTitleInfo);
@@ -1318,12 +1316,6 @@ begin
   PopupMenu := FPopupMenu;
 end;
 
-destructor TTitleTree.Destroy;
-begin
-
-  inherited;
-end;
-
 procedure TTitleTree.DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
   APoint: TPoint; var Effect: Integer);
 var
@@ -1664,7 +1656,7 @@ begin
   if Node = FWishNode then
     Exit(StrLIComp(PChar(s), PChar(_(WISHTEXT)), Min(Length(s), Length(_(WISHTEXT)))));
   if Node = FIgnoreNode then
-    Exit(StrLIComp(PChar(s), PChar(_(IGNORETEXT)), Min(Length(s), Length(_(IGNORETEXT)))));  
+    Exit(StrLIComp(PChar(s), PChar(_(IGNORETEXT)), Min(Length(s), Length(_(IGNORETEXT)))));
 
   Result := 0;
   S := Text;
@@ -1780,12 +1772,6 @@ begin
       else
         Result := 0;
   end;
-end;
-
-procedure TTitleTree.DoFreeNode(Node: PVirtualNode);
-begin
-
-  inherited;
 end;
 
 { TTitlePopup }
