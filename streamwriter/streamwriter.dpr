@@ -25,6 +25,8 @@ program streamwriter;
 
 // TODO: auf root startet sW nicht. WARUM???
 
+// TODO: das icon für automatische aufnahmen aktiv in das linke panel, nach rechts von den beiden anderen icons
+
 uses
   MM in '..\..\common\MM.pas',
   madExcept,

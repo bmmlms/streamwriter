@@ -203,6 +203,8 @@ const
 
 implementation
 
+// TODO: auch artists hinzufügen muss möglich sein zur wunschliste.
+
 { TChartsTab }
 
 procedure TChartsTab.ButtonClick(Sender: TObject);
@@ -261,7 +263,7 @@ begin
   FSearchPanel.FSearch.OnKeyPress := SearchKeyPress;
 end;
 
-// TODO: nen toolbar button zum suchen hinzufügen. und suchen nur erlauben, wenn connected, sonst fehlermeldung!!!
+// TODO: nen toolbar button zum suchen hinzufügen.
 
 destructor TChartsTab.Destroy;
 var
@@ -346,7 +348,7 @@ begin
   if not HomeComm.Connected then
   begin
     // TODO: Translate!
-    MsgBox(GetParentForm(Self).Handle, 'Info', 'Keine Verbindung zum Server.', MB_ICONINFORMATION);
+    MsgBox(GetParentForm(Self).Handle, 'Keine Verbindung zum Server.', 'Info', MB_ICONINFORMATION);
     Exit;
   end;
 
@@ -387,7 +389,7 @@ begin
   if Abort then
   begin
     // TODO: Translaten!
-    MsgBox(GetParentForm(Self).Handle, 'Info', 'Jedes Wort muss mindestens vier Zeichen lang sein. Sonderzeichen (+-*()<>~"'') sind nicht erlaubt.', MB_ICONINFORMATION);
+    MsgBox(GetParentForm(Self).Handle, 'Jedes Wort muss mindestens vier Zeichen lang sein. Sonderzeichen (+-*()<>~"'') sind nicht erlaubt.', 'Info', MB_ICONINFORMATION);
   end else
   begin
     HomeComm.SendSearchCharts(Tmp);
