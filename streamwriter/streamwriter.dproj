@@ -136,7 +136,6 @@
 			<DCCReference Include="..\..\common\sockets\HTTPStream.pas"/>
 			<DCCReference Include="..\..\common\sockets\HTTPThread.pas"/>
 			<DCCReference Include="..\..\common\sockets\Sockets.pas"/>
-			<DCCReference Include="..\..\common\sockets\Int32Protocol.pas"/>
 			<DCCReference Include="HomeCommunication.pas"/>
 			<DCCReference Include="audio\Player.pas"/>
 			<DCCReference Include="audio\PlayerManager.pas"/>

@@ -91,7 +91,6 @@ uses
   HTTPStream in '..\..\common\sockets\HTTPStream.pas',
   HTTPThread in '..\..\common\sockets\HTTPThread.pas',
   Sockets in '..\..\common\sockets\Sockets.pas',
-  Int32Protocol in '..\..\common\sockets\Int32Protocol.pas',
   HomeCommunication in 'HomeCommunication.pas',
   Player in 'audio\Player.pas',
   PlayerManager in 'audio\PlayerManager.pas',
@@ -182,7 +181,6 @@ begin
   end;
 
   Application.CreateForm(TmodSharedData, modSharedData);
-
   // Create the main form if everything is setup
   if InitApp and AppGlobals.WasSetup then
   begin
