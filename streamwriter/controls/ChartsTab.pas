@@ -376,7 +376,7 @@ begin
 
     for i := 0 to SL.Count - 1 do
     begin
-      if Length(SL[i]) < 4 then
+      if Length(SL[i]) < 3 then
       begin
         Abort := True;
         Break;

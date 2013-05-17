@@ -231,7 +231,7 @@ begin
 
   if not Terminated then
     Sleep(3000);
-end;
+end;                    // charts suchen. ist im status "suche". verbindung geht, kommt wieder. alles bleibt disabled in chartsansicht.
 
 procedure THomeThread.DoMessageReceived(CommandHeader: TCommandHeader;
   Command: TCommandMessageResponse);
