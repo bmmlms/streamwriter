@@ -379,14 +379,12 @@ var
   Stream: TExtendedStream;
   StreamEntry, StreamEntry2: TStreamBrowserEntry;
   Genre: TGenre;
-     // TODO: 'SWR' als string ist auf titleblacklist. aber ist immer noch sichtbar???
   Genres: TGenreList;
   Streams: TStreamBrowserList;
 begin
   Stream := TExtendedStream(Command.Stream);
 
   Genres := TGenreList.Create;
-  //Charts := TChartList.Create;
   Streams := TStreamBrowserList.Create;
   try
     // Genres laden

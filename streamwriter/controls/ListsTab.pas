@@ -216,7 +216,10 @@ var
   i, n: Integer;
   Found: Boolean;
   Title: TTitleInfo;
+  Hashes: TCardinalArray;
 begin
+  SetLength(Hashes, 0);
+
   for i := 0 to WishlistUpgrade.Count - 1 do
   begin
     Found := False;
@@ -233,11 +236,14 @@ begin
     Title := TTitleInfo.Create(WishlistUpgrade[i].Hash, WishlistUpgrade[i].Title);
     FListsPanel.FLists.SaveList.Add(Title);
     AddTitle(nil, ltSave, Title);
+
+    SetLength(Hashes, Length(Hashes) + 1);
+    Hashes[High(Hashes)] := Title.ServerHash;
   end;
 
-  SendWishListUpdateBatch;
+  HomeComm.SendSyncWishlist(swAdd, Hashes);
 
-  // TODO: dem server schicken "habe titel auf wunschliste!!" damit title changes hier ankommen!!!
+  SendWishListUpdateBatch;
 end;
 
 procedure TListsTab.PostTranslate;

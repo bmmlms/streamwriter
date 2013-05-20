@@ -240,6 +240,8 @@ type
 
     procedure CoverImageMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+
+    procedure TopPanelResize(Sender: TObject);
   protected
     procedure Resize; override;
   public
@@ -654,8 +656,6 @@ begin
   end;
 end;
 
-// TODO: die cover anzeige sollte abschaltbar sein. und da muss nen default image rein.
-
 constructor TSavedTab.Create(AOwner: TComponent);
 var
   Png: TPngImage;
@@ -1062,6 +1062,14 @@ begin
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemImportFolder);
 end;
 
+procedure TSavedTab.TopPanelResize(Sender: TObject);
+begin
+  if FCoverPanel <> nil then
+  begin
+    FCoverPanel.Width := FCoverPanel.Height + 8;
+  end;
+end;
+
 procedure TSavedTab.UpdateButtons;
 var
   i: Integer;
@@ -1188,6 +1196,7 @@ begin
   FTopPanel.Parent := Self;
   FTopPanel.Align := alTop;
   FTopPanel.BevelOuter := bvNone;
+  FTopPanel.OnResize := TopPanelResize;
 
   // Panel links
   FTopLeftPanel := TPanel.Create(Self);
@@ -1204,19 +1213,17 @@ begin
   FTopRightPanel.ClientWidth := 310;
   FTopRightPanel.BevelOuter := bvNone;
 
-  // TODO: Das Cover sollte Breite>Höhe haben. Hat es aber nicht. Warum?? Fixen!
   FCoverPanel := TPanel.Create(Self);
   FCoverPanel.Parent := FTopPanel;
   FCoverPanel.Align := alRight;
   FCoverPanel.BevelOuter := bvNone;
   FCoverPanel.Padding.Bottom := 4;
   FCoverPanel.Padding.Right := 8;
-  FCoverPanel.Width := FCoverPanel.Height + 8;
-  //FCoverPanel.Visible := False;
+  FCoverPanel.Visible := True;
 
   FCoverBorderPanel := TPanel.Create(FCoverPanel);
   FCoverBorderPanel.Parent := FCoverPanel;
-  FCoverBorderPanel.BevelKind := bkFlat;
+  FCoverBorderPanel.BevelKind := bkNone;
   FCoverBorderPanel.BevelOuter := bvNone;
   FCoverBorderPanel.Align := alClient;
 
@@ -1338,27 +1345,31 @@ end;
 
 procedure TSavedTab.ShowCover(Img: TBitmap);
 begin
-  if Img <> nil then  // TODO: wenn FCoverPanelAlwaysVisible bei den settings geändert wird muss das hier getiggert werden. und auch bei app start auswerten.
-  begin
-    // TODO: Sind diese 3 zeilen nötig?? warum und wozu?
-    FCoverBorderPanel.BevelKind := bkNone;
-    FCoverPanel.Show;
-    FCoverBorderPanel.BevelKind := bkFlat;
+  TopPanelResize(FTopPanel);
 
-    FCoverImage.Picture.Assign(ResizeBitmap(Img as TBitmap, Min(Min(FCoverImage.Height, FCoverImage.Width), Min(Img.Height, Img.Width))))
-  end else
+  if (not FSavedTree.Player.Playing) and (not FSavedTree.Player.Paused) then
   begin
-    if (not FSavedTree.Player.Playing) and (not FSavedTree.Player.Paused) then
-      FCoverImage.Picture := nil
-    else
+    FCoverImage.Picture := nil;
+    FCoverPanel.Hide;
+    FCoverBorderPanel.BevelKind := bkNone;
+  end else
+    if Img <> nil then
+    begin
+      FCoverPanel.Show;
+      FCoverBorderPanel.BevelKind := bkFlat;
+
+      FCoverImage.Picture.Assign(ResizeBitmap(Img as TBitmap, Min(Min(FCoverImage.Height, FCoverImage.Width), Min(Img.Height, Img.Width))))
+    end else
     begin
       if AppGlobals.CoverPanelAlwaysVisible then
       begin
         ShowCover(FNoCoverPNG);
       end else
+      begin
         FCoverPanel.Hide;
+        FCoverBorderPanel.BevelKind := bkNone;
+      end;
     end;
-  end;
 end;
 
 procedure TSavedTab.Shown;

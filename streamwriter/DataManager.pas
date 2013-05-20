@@ -45,7 +45,6 @@ type
     FAdded: TDateTime;
     FIndex: Cardinal;
     FPattern: string;
-    // TODO: wo wird hash benutzt? alles sollte irgendwann serverhash sein.
     FHash: Cardinal;
     FServerHash: Cardinal;
     FUpdatedToHash: Boolean;
@@ -2236,9 +2235,6 @@ procedure TStreamBrowserList.ClearDict;
 begin
   FDict.Clear;
 end;
-
-// TODO: Problem! ich habe charts in der ansicht, refreshe streams. dann geht ein stream flöten, der zu einem chart gehört. was dann???
-//       alles würde crash0rn...
 
 constructor TStreamBrowserList.Create;
 begin

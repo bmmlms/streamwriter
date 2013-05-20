@@ -1045,9 +1045,6 @@ begin
     FCommunityLogin.HomeCommLogIn(Sender, Success);
 end;
 
-// TODO: das update der wunschliste muss nachvollziehbar sein. flag haben, wenn erfolg => flag löschen.
-//       damit jeder user der geupdated hat nur genau einmal charts neu bekommt. if lastversion < asdf && !flag then update   !
-
 procedure TfrmStreamWriterMain.HomeCommLogOut(Sender: TObject);
 begin
   UpdateStatus;
@@ -1087,11 +1084,9 @@ begin
     else
       HomeComm.SendGetMonitorStreams(0);
 
-    // TODO: wird Add und Remove bei der liste immer gesendet??
     HomeComm.SendSyncWishlist;
 
-    // TODO: Wenn das hier passiert, dort auch die controls abschalten!!!
-    if not tabCharts.Searched then // TODO: hier nicht searched, eher "war-jemals-mit-irgendwas-befüllt" merker machen.
+    if not tabCharts.Searched then
       tabCharts.SearchCharts(True);
 
     if tabLists.SendWishListUpdateBatch then
@@ -1109,8 +1104,6 @@ begin
         tabClients.SideBar.BrowserView.SwitchMode(moLoading);
       end;
     end;
-
-    tabCharts.SetState(csNormal);
   end else if (HomeComm.WasConnected) and (not HomeComm.Connected) then
   begin
     FClients.StopMonitors;
@@ -1423,7 +1416,7 @@ begin
   Param := CmdLine.GetParam('-wishadd');
   if Param <> nil then
   begin
-    // tabChartsAddToWishlist(nil, Param.Values); TODO: wieder fitmachen!
+    // tabChartsAddToWishlist(nil, Param.Values); TODO: !
   end;
 
   Param := CmdLine.GetParam('-wishremove');

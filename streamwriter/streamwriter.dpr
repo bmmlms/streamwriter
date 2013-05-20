@@ -23,10 +23,6 @@ program streamwriter;
 // vcPublic, damit TCommand-Nachfahren erzeugt werden können.
 {$RTTI EXPLICIT METHODS([vcPublic]) PROPERTIES([]) FIELDS([])}
 
-// TODO: auf root startet sW nicht. WARUM???
-
-// TODO: das icon für automatische aufnahmen aktiv in das linke panel, nach rechts von den beiden anderen icons
-
 uses
   MM in '..\..\common\MM.pas',
   madExcept,

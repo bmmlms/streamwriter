@@ -47,8 +47,10 @@ type
     FSpeedBmp: TBitmap;
     IconConnected, IconDisconnected: TIcon;
     IconLoggedIn, IconLoggedOff: TIcon;
-    IconGroupAutoEnabled: TIcon;
-    IconGroupAutoDisabled: TIcon;
+    IconAutoRecordEnabled: TIcon;
+    IconAutoRecordDisabled: TIcon;
+    IconGroup: TIcon;
+    IconRecord: TIcon;
 
     procedure PaintPanel(Index: Integer);
     procedure FSetSpeed(Value: UInt64);
@@ -168,27 +170,30 @@ begin
   ShowHint := True;
 
   IconConnected := TIcon.Create;
-  IconConnected.Handle := LoadImage(HInstance, 'CONNECT', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
+  IconConnected.Handle := LoadImage(HInstance, 'CONNECT_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
   IconDisconnected := TIcon.Create;
-  IconDisconnected.Handle := LoadImage(HInstance, 'DISCONNECT', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
+  IconDisconnected.Handle := LoadImage(HInstance, 'DISCONNECT_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
   IconLoggedIn := TIcon.Create;
-  IconLoggedIn.Handle := LoadImage(HInstance, 'USER_GO', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
+  IconLoggedIn.Handle := LoadImage(HInstance, 'USER_GO_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
   IconLoggedOff := TIcon.Create;
-  IconLoggedOff.Handle := LoadImage(HInstance, 'USER_DELETE', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
-  IconGroupAutoEnabled := TIcon.Create;
-  IconGroupAutoEnabled.Handle := LoadImage(HInstance, 'GROUP_GO', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
-  IconGroupAutoDisabled := TIcon.Create;
-  IconGroupAutoDisabled.Handle := LoadImage(HInstance, 'GROUP_DELETE', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
+  IconLoggedOff.Handle := LoadImage(HInstance, 'USER_DELETE_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
+  IconAutoRecordEnabled := TIcon.Create;
+  IconAutoRecordEnabled.Handle := LoadImage(HInstance, 'AUTO_ENABLED_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
+  IconAutoRecordDisabled := TIcon.Create;
+  IconAutoRecordDisabled.Handle := LoadImage(HInstance, 'AUTO_DISABLED_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
+  IconGroup := TIcon.Create;
+  IconGroup.Handle := LoadImage(HInstance, 'GROUP_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
+  IconRecord := TIcon.Create;
+  IconRecord.Handle := LoadImage(HInstance, 'RECORD_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
 
   FSpace := MulDiv(GetTextSize('WWW', Font).cx, Screen.PixelsPerInch, 96);
 
   P := Panels.Add;
-  P.Width := 2 + 38 + GetTextSize(_('Connecting...'), Font).cx + FSpace;
+  P.Width := 2 + 56 + GetTextSize(_('Connecting...'), Font).cx + FSpace;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
-  P.Width := 90;
-  P.Width := 2 + 20 + GetTextSize('0000/0000', Font).cx + MulDiv(GetTextSize('W', Font).cx, Screen.PixelsPerInch, 96);
+  P.Width := 18 + 4 + 18 + GetTextSize('00000000', Font).cx + MulDiv(GetTextSize('W', Font).cx, Screen.PixelsPerInch, 96) + 10;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
@@ -208,8 +213,8 @@ begin
   IconDisconnected.Free;
   IconLoggedIn.Free;
   IconLoggedOff.Free;
-  IconGroupAutoEnabled.Free;
-  IconGroupAutoDisabled.Free;
+  IconAutoRecordEnabled.Free;
+  IconAutoRecordDisabled.Free;
   FSpeedBmp.Free;
 
   inherited;
@@ -219,11 +224,13 @@ procedure TSWStatusBar.DrawPanel(Panel: TStatusPanel; const R: TRect);
 begin
   inherited;
 
+  {
   Hint := _('Users/active streams');
   if (FConnectionState = cshConnected) and FNotifyTitleChanges then
     Hint := Hint + _(' (automatic recordings enabled)')
   else
     Hint := Hint + _(' (automatic recordings disabled)');
+  }
 
   Canvas.Brush.Color := clBtnFace;
   Canvas.FillRect(R);
@@ -235,33 +242,37 @@ begin
           cshConnected:
             begin
               Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconConnected);
-              Canvas.TextOut(R.Left + 38, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connected')) div 2, _('Connected'));
+              Canvas.TextOut(R.Left + 56, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connected')) div 2, _('Connected'));
             end;
           cshDisconnected:
             begin
-              Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconDisconnected);
-              Canvas.TextOut(R.Left + 38, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connecting...')) div 2, _('Connecting...'));
+              Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconDisconnected.Height div 2, IconDisconnected);
+              Canvas.TextOut(R.Left + 56, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connecting...')) div 2, _('Connecting...'));
             end;
           cshFail:
             begin
-              Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconDisconnected);
-              Canvas.TextOut(R.Left + 38, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Error')) div 2, _('Error'));
+              Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconDisconnected.Height div 2, IconDisconnected);
+              Canvas.TextOut(R.Left + 56, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Error')) div 2, _('Error'));
             end;
         end;
 
         if (FConnectionState = cshConnected) and FLoggedIn then
-          Canvas.Draw(R.Left + 18, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconLoggedIn)
+          Canvas.Draw(R.Left + 18, R.Top + (R.Bottom - R.Top) div 2 - IconLoggedIn.Height div 2, IconLoggedIn)
         else
-          Canvas.Draw(R.Left + 18, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconLoggedOff);
+          Canvas.Draw(R.Left + 18, R.Top + (R.Bottom - R.Top) div 2 - IconLoggedOff.Height div 2, IconLoggedOff);
+
+        if (FConnectionState = cshConnected) and FNotifyTitleChanges then
+          Canvas.Draw(R.Left + 36, R.Top + (R.Bottom - R.Top) div 2 - IconAutoRecordEnabled.Height div 2, IconAutoRecordEnabled)
+        else
+          Canvas.Draw(R.Left + 36, R.Top + (R.Bottom - R.Top) div 2 - IconAutoRecordDisabled.Height div 2, IconAutoRecordDisabled);
       end;
     1:
       begin
-        if (FConnectionState = cshConnected) and FNotifyTitleChanges then
-          Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconGroupAutoEnabled)
-        else
-          Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconGroupAutoDisabled);
+        Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconGroup.Height div 2, IconGroup);
+        Canvas.TextOut(R.Left + 18, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FClients)) div 2, IntToStr(FClients));
 
-        Canvas.TextOut(R.Left + 20, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FClients) + '/' + IntToStr(FRecordings)) div 2, IntToStr(FClients) + '/' + IntToStr(FRecordings));
+        Canvas.Draw(R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4, R.Top + (R.Bottom - R.Top) div 2 - IconRecord.Height div 2, IconRecord);
+        Canvas.TextOut(R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4 + 18, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FClients)) div 2, IntToStr(FClients));
       end;
     2:
       begin
@@ -362,7 +373,10 @@ begin
   if (OldConnectionState <> FConnectionState) or (OldLoggedIn <> FLoggedIn) then
     PaintPanel(0);
   if (OldClients <> FClients) or (OldRecordings <> FRecordings) or (OldNotifyTitleChanges <> FNotifyTitleChanges) then
+  begin
+    PaintPanel(0);
     PaintPanel(1);
+  end;
 
   if OldSongsSaved <> FSongsSaved then
     PaintPanel(4);

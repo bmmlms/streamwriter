@@ -66,7 +66,7 @@ type
   TSearchPanel = class(TPanel)
   private
     FLabel: TLabel;
-    FSearch: TEdit;
+    FSearch: TComboBox;
     FToolbar: TToolBar;
 
     FButtonAddToWishlist: TToolButton;
@@ -79,6 +79,8 @@ type
     procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
+
+    procedure RebuildSearchItems(NewEntry: string);
 
     procedure Setup;
     procedure PostTranslate;
@@ -166,6 +168,7 @@ type
     procedure UpdateButtons;
 
     procedure SearchKeyPress(Sender: TObject; var Key: Char);
+    procedure SearchSelect(Sender: TObject);
 
     procedure HomeCommSearchChartsReceived(Sender: TObject; Success: Boolean; Charts: TChartList);
 
@@ -195,6 +198,7 @@ const
   TEXT_NO_CONNECTION = 'No connection to server.';
   TEXT_SEARCH_ERROR = 'Error searching titles.';
   TEXT_RESULTS = '%d songs found';
+  SEARCH_TOP = 'Top 2000';
 
 implementation
 
@@ -246,13 +250,9 @@ begin
   ImageIndex := 68;
   ShowCloseButton := False;
 
-  // TODO: in den chartstree nen text: "bitte suchbegriff eingeben und enter drücken" wenn noch nix passiert ist.
-  //       und ggf. top 100 anzeigen oder so.
-
   FSearchPanel.FSearch.OnKeyPress := SearchKeyPress;
+  FSearchPanel.FSearch.OnSelect := SearchSelect;
 end;
-
-// TODO: nen toolbar button zum suchen hinzufügen.
 
 destructor TChartsTab.Destroy;
 var
@@ -301,6 +301,10 @@ begin
     SetState(csSearchError);
 
   ShowCharts;
+
+  FSearchPanel.FSearch.SelectAll;
+  if FSearchPanel.FSearch.CanFocus then
+    FSearchPanel.FSearch.SetFocus;
 end;
 
 procedure TChartsTab.HomeCommStateChanged(Sender: TObject);
@@ -318,8 +322,6 @@ begin
 
   FResultLabel.Caption := Format(_(TEXT_RESULTS), [FChartsTree.RootNodeCount]);
 end;
-
-// TODO: vom server (streamwriter.org) wird kein UpdateWishList empfangen. bei gaia schon. wieso?
 
 procedure TChartsTab.SearchCharts(Top: Boolean);
 var
@@ -340,8 +342,6 @@ begin
       MsgBox(GetParentForm(Self).Handle, 'Keine Verbindung zum Server.', 'Info', MB_ICONINFORMATION);
       Exit;
     end;
-
-    // TODO: ein client darf nur x mal alle y sekunden suchen dürfen.
 
     Abort := False;
 
@@ -384,6 +384,8 @@ begin
       MsgBox(GetParentForm(Self).Handle, 'Jedes Wort muss mindestens drei Zeichen lang sein. Sonderzeichen (+-*()<>~"'') sind nicht erlaubt.', 'Info', MB_ICONINFORMATION);
     end else
     begin
+      FSearchPanel.RebuildSearchItems(Tmp);
+
       HomeComm.SendSearchCharts(False, Tmp);
       SetState(csSearching);
     end;
@@ -394,8 +396,24 @@ procedure TChartsTab.SearchKeyPress(Sender: TObject; var Key: Char);
 begin
   if Key = #13 then
   begin
-    SearchCharts(False);
+    if AnsiLowerCase(Trim(FSearchPanel.FSearch.Text)) = AnsiLowerCase(SEARCH_TOP) then
+    begin
+      SearchCharts(True);
+      FSearchPanel.FSearch.ItemIndex := 0;
+    end else
+      SearchCharts(False);
     Key := #0;
+  end;
+end;
+
+procedure TChartsTab.SearchSelect(Sender: TObject);
+begin
+  if FSearchPanel.FSearch.Items.Objects[FSearchPanel.FSearch.ItemIndex] <> nil then
+    SearchCharts(True)
+  else
+  begin
+    FSearchPanel.RebuildSearchItems(FSearchPanel.FSearch.Text);
+    SearchCharts(False);
   end;
 end;
 
@@ -449,16 +467,9 @@ var
   i, n: Integer;
   Node, NodeStream: PVirtualNode;
   NodeData, NodeDataStream: PChartNodeData;
-
   P: string;
-  //Hash: Cardinal;
-  //Chars: Integer;
-
   SearchMatch: Boolean;
-
   S: TChartStream;
-
-
   R: TPerlRegEx;
 begin
   if FCharts <> nil then
@@ -486,7 +497,6 @@ begin
             NodeData.IsOnWishlist := True;
             Break;
           end;
-
       end;
 
       FChartsTree.SortTree(FChartsTree.Header.SortColumn, FChartsTree.Header.SortDirection);
@@ -1166,8 +1176,9 @@ begin
   FLabel.Parent := Self;
   FLabel.Caption := _('Search:');
 
-  FSearch := TEdit.Create(Self);
+  FSearch := TComboBox.Create(Self);
   FSearch.Parent := Self;
+  FSearch.AutoComplete := False;
 
   FToolbar := TToolBar.Create(Self);
   FToolbar.Parent := Self;
@@ -1178,6 +1189,50 @@ procedure TSearchPanel.PostTranslate;
 begin
   FLabel.Caption := _('Search:');
   FSearch.Left := FLabel.Left + FLabel.Width + 6;
+
+  RebuildSearchItems('');
+end;
+
+procedure TSearchPanel.RebuildSearchItems(NewEntry: string);
+var
+  SL: TStringList;
+  i, OldIndex: Integer;
+begin
+  OldIndex := FSearch.ItemIndex;
+  SL := TStringList.Create;
+  try
+    SL.Assign(FSearch.Items);
+
+    for i := SL.Count - 1 downto 0 do
+      if (AnsiLowerCase(SL[i]) = AnsiLowerCase(NewEntry)) or (SL.Objects[i] <> nil) then
+        SL.Delete(i);
+    while SL.Count > 9 do
+      SL.Delete(SL.Count - 1);
+
+    FSearch.Items.Clear;
+    FSearch.AddItem(_(SEARCH_TOP), FSearch);
+    if Trim(NewEntry) <> '' then
+      FSearch.Items.Add(NewEntry);
+
+    for i := 0 to SL.Count - 1 do
+      FSearch.Items.Add(SL[i]);
+
+    if NewEntry <> '' then
+    begin
+      for i := 0 to FSearch.Items.Count - 1 do
+        if FSearch.Items[i] = NewEntry then
+        begin
+          FSearch.ItemIndex := i;
+          Break;
+        end;
+    end else
+      if (OldIndex = -1) and (FSearch.Items.Count > 0) then
+        FSearch.ItemIndex := 0
+      else
+        FSearch.ItemIndex := OldIndex;
+  finally
+    SL.Free;
+  end;
 end;
 
 procedure TSearchPanel.Resize;
@@ -1185,6 +1240,8 @@ begin
   inherited;
 
 end;
+
+// TODO: am ende auf hohen dpi testen.
 
 procedure TSearchPanel.Setup;
 var
@@ -1195,9 +1252,9 @@ begin
   FSearch.Width := 200;
   FSearch.Top := 1;
 
-  FLabel.Top := FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2;
+  FLabel.Top := (FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2) - 2;
 
-  ClientHeight := FSearch.Top + 5 + FSearch.Height;
+  ClientHeight := FSearch.Top + 1 + FSearch.Height;
 
   FToolbar.Images := modSharedData.imgImages;
 
@@ -1236,21 +1293,11 @@ begin
   FButtonAddToWishlist.Hint := _('Add to wishlist');
   FButtonAddToWishlist.ImageIndex := 31;
 
-  {
-  Sep := TToolButton.Create(FToolbar);
-  Sep.Parent := FToolbar;
-  Sep.Style := tbsSeparator;
-  Sep.Width := 8;
-
-  FButtonReload := TToolButton.Create(FToolbar);
-  FButtonReload.Parent := FToolbar;
-  FButtonReload.Hint := _('Refresh');
-  FButtonReload.ImageIndex := 23;
-  }
-
   FToolbar.Padding.Top := 2;
   FToolbar.Align := alRight;
   FToolbar.AutoSize := True;
+
+  RebuildSearchItems('');
 
   PostTranslate;
 end;
