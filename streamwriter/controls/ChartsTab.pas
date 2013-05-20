@@ -339,7 +339,7 @@ begin
     if not HomeComm.Connected then
     begin
       // TODO: Translate!
-      MsgBox(GetParentForm(Self).Handle, 'Keine Verbindung zum Server.', 'Info', MB_ICONINFORMATION);
+      MsgBox(GetParentForm(Self).Handle, _('streamWriter needs to be connected to the server in order to search.'), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
 
@@ -381,7 +381,7 @@ begin
     if Abort then
     begin
       // TODO: Translaten!
-      MsgBox(GetParentForm(Self).Handle, 'Jedes Wort muss mindestens drei Zeichen lang sein. Sonderzeichen (+-*()<>~"'') sind nicht erlaubt.', 'Info', MB_ICONINFORMATION);
+      MsgBox(GetParentForm(Self).Handle, _('You need to specify at least one word to search for. Special chars (+-*()<>~"'') are not allowed.'), _('Info'), MB_ICONINFORMATION);
     end else
     begin
       FSearchPanel.RebuildSearchItems(Tmp);
