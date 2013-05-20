@@ -654,7 +654,7 @@ begin
   end;
 end;
 
-// TODO: die cover anzeige sollte abschaltbar sein. und da muss nen default image rein. warum kann man covers nicht per audiogenie setzen?
+// TODO: die cover anzeige sollte abschaltbar sein. und da muss nen default image rein.
 
 constructor TSavedTab.Create(AOwner: TComponent);
 var

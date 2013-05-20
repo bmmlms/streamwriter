@@ -308,21 +308,25 @@ type
 
   TCommandSearchCharts = class(TCommand)
   private
+    FTop: Boolean;
     FTerm: string;
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
     constructor Create; overload;
-    constructor Create(Term: string); overload;
+    constructor Create(Top: Boolean; Term: string); overload;
   end;
 
   TCommandSearchChartsResponse = class(TCommand)
   private
+    FSuccess: Boolean;
   protected
   public
     constructor Create;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+
+    property Success: Boolean read FSuccess;
   end;
 
   TCommandGetWishlistUpgrade = class(TCommand)
@@ -765,10 +769,11 @@ begin
   FCommandType := ctSearchCharts;
 end;
 
-constructor TCommandSearchCharts.Create(Term: string);
+constructor TCommandSearchCharts.Create(Top: Boolean; Term: string);
 begin
   Create;
 
+  FTop := Top;
   FTerm := Term;
 end;
 
@@ -776,6 +781,7 @@ procedure TCommandSearchCharts.DoGet(S: TExtendedStream);
 begin
   inherited;
 
+  S.Write(FTop);
   S.Write(FTerm);
 end;
 
@@ -791,8 +797,9 @@ end;
 procedure TCommandSearchChartsResponse.Load(CommandHeader: TCommandHeader;
   Stream: TExtendedStream);
 begin
-  LoadStream(Stream); // TODO: mal zusehen was hier ist... immer komprimieren aufm server dauert auchn bisschen! JA DAS DAUERT. evtl iwann raus!
-                      //       oder nen flag ans command, COMPRESSED. dann kann mans on demand im server ändern!
+  LoadStream(Stream);
+
+  TExtendedStream(FStream).Read(FSuccess);
 end;
 
 { TCommandGetWishlistUpgrade }

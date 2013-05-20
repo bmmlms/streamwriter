@@ -130,6 +130,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
 
+    function SendWishListUpdateBatch: Boolean;
+
     procedure Setup(Clients: TClientManager; Streams: TDataLists);
     procedure AddTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
     procedure RemoveTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
@@ -214,16 +216,14 @@ var
   i: Integer;
   Title: TTitleInfo;
 begin
-  // TODO: TESTEN TESTEN TESTEN!!! wenn jemand updated, dann verbindung weg ist, dann wieder da etc.. wird das hier dann geregelt?
-  // UND: wenn er, wenn verbindung weg ist, SW beendet und alles gespeichert wird, wird das hier nie wieder gemacht, wegen
-  // der erhöhten versionsnummer.. FIAL!
-  //      ===> ich brauchn feld in den settings. wenn setting=False oder Version=ALT dann UPDATE ANFORDERN.
   for i := 0 to WishlistUpgrade.Count - 1 do
   begin
     Title := TTitleInfo.Create(WishlistUpgrade[i].Hash, WishlistUpgrade[i].Title);
     FListsPanel.FLists.SaveList.Add(Title);
     AddTitle(nil, ltSave, Title);
   end;
+
+  SendWishListUpdateBatch;
 
   // TODO: dem server schicken "habe titel auf wunschliste!!" damit title changes hier ankommen!!!
 end;
@@ -237,6 +237,41 @@ procedure TListsTab.Resize;
 begin
   inherited;
 
+end;
+
+function TListsTab.SendWishListUpdateBatch: Boolean;
+var
+  Titles: TStringList;
+  i: Integer;
+begin
+  Result := False;
+
+  // Wir suchen uns X Einträge, die schicken wir dann wegen Hash-Update an den Server.
+  // Wenn diese erledigt sind kommen die nächsten 10 dran, und so weiter...
+  if FListsPanel.FLists.SaveList.Count > 0 then
+  begin
+    Titles := TStringList.Create;
+    try
+      for i := 0 to FListsPanel.FLists.SaveList.Count - 1 do
+      begin
+        if not FListsPanel.FLists.SaveList[i].UpdatedToHash then
+        begin
+          Titles.Add(FListsPanel.FLists.SaveList[i].Title);
+          FListsPanel.FLists.SaveList[i].UpdatedToHash := True;
+          if Titles.Count > 1 then
+            Break;
+        end;
+      end;
+
+      if Titles.Count > 0 then
+      begin
+        HomeComm.SendGetWishlistUpgrade(Titles);
+        Result := True;
+      end;
+    finally
+      Titles.Free;
+    end;
+  end;
 end;
 
 procedure TListsTab.Setup(Clients: TClientManager; Streams: TDataLists);

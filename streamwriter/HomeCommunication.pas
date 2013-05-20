@@ -50,6 +50,7 @@ type
 
     FStreamIDs: TIntArray;
 
+    FSearchReceivedChartsSuccess: Boolean;
     FSearchReceivedCharts: TChartList;
 
     FWishlistUpgradeTitles: TWishlistUpgradeList;
@@ -97,7 +98,7 @@ type
 
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
   TStreamsReceivedEvent = procedure(Sender: TObject) of object;
-  TChartsReceivedEvent = procedure(Sender: TObject; Charts: TChartList) of object;
+  TChartsReceivedEvent = procedure(Sender: TObject; Success: Boolean; Charts: TChartList) of object;
   TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, TitlePattern: string;
     Format: TAudioTypes; Kbps: Cardinal; ServerHash: Cardinal) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
@@ -123,7 +124,6 @@ type
     FOnLogInReceived: TBooleanEvent;
     FOnLogOutReceived: TNotifyEvent;
     FOnStreamsReceived: TStreamsReceivedEvent;
-    //FOnChartsReceived: TChartsReceivedEvent;
     FOnServerDataReceived: TNotifyEvent;
     FOnNetworkTitleChangedReceived: TTitleChangedEvent;
     FOnServerInfoReceived: TServerInfoEvent;
@@ -173,7 +173,7 @@ type
     procedure SendSyncWishlist; overload;
     procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hashes: TCardinalArray); overload;
     procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hash: Cardinal); overload;
-    procedure SendSearchCharts(Term: string);
+    procedure SendSearchCharts(Top: Boolean; Term: string);
     procedure SendGetWishlistUpgrade(Titles: TStringList);
 
     property Disabled: Boolean read FDisabled;
@@ -192,7 +192,6 @@ type
     property OnLogInReceived: TBooleanEvent read FOnLogInReceived write FOnLogInReceived;
     property OnLogOutReceived: TNotifyEvent read FOnLogOutReceived write FOnLogOutReceived;
     property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
-    //property OnChartsReceived: TChartsReceivedEvent read FOnChartsReceived write FOnChartsReceived;
     property OnServerDataReceived: TNotifyEvent read FOnServerDataReceived write FOnServerDataReceived;
     property OnNetworkTitleChangedReceived: TTitleChangedEvent read FOnNetworkTitleChangedReceived write FOnNetworkTitleChangedReceived;
     property OnServerInfoReceived: TServerInfoEvent read FOnServerInfoReceived write FOnServerInfoReceived;
@@ -347,16 +346,30 @@ var
 begin
   Stream := TExtendedStream(Command.Stream);
 
-  FSearchReceivedCharts := TChartList.Create;
-  try
-    // Charts laden
-    Stream.Read(Count);
-    for i := 0 to Count - 1 do
-      FSearchReceivedCharts.Add(TChartEntry.LoadFromHome(Stream, CommandHeader.Version));
-  except
-    for i := 0 to FSearchReceivedCharts.Count - 1 do
-      FSearchReceivedCharts[i].Free;
-    FSearchReceivedCharts.Free;
+  FSearchReceivedChartsSuccess := Command.Success;
+  FSearchReceivedCharts := nil;
+
+  if Command.Success then
+  begin
+    FSearchReceivedCharts := TChartList.Create;
+    try
+      // Charts laden
+      Stream.Read(Count);
+      for i := 0 to Count - 1 do
+      begin
+        outputdebugstring(pchar(inttostr(i)));
+        FSearchReceivedCharts.Add(TChartEntry.LoadFromHome(Stream, CommandHeader.Version));
+      end;
+    except
+      for i := 0 to FSearchReceivedCharts.Count - 1 do
+        FSearchReceivedCharts[i].Free;
+      FSearchReceivedCharts.Free;
+      FSearchReceivedCharts := nil;
+
+      // TODO: die start-streams laden klappt manchmal nicht!!!
+
+      FSearchReceivedChartsSuccess := False;
+    end;
   end;
 
   if Assigned(FOnSearchChartsReceived) then
@@ -373,7 +386,6 @@ var
   Genre: TGenre;
      // TODO: 'SWR' als string ist auf titleblacklist. aber ist immer noch sichtbar???
   Genres: TGenreList;
-  //Charts: TChartList;
   Streams: TStreamBrowserList;
 begin
   Stream := TExtendedStream(Command.Stream);
@@ -400,12 +412,6 @@ begin
         end;
       Streams.Add(StreamEntry);
     end;
-    Streams.CreateDict;    // TODO: wozu war das nochmal da??
-
-    // Charts laden
-    //Stream.Read(Count);
-    //for i := 0 to Count - 1 do
-    //  Charts.Add(TChartEntry.LoadFromHome(Stream, nil, CommandHeader.Version, Streams));
 
     // Wenn alles erfolgreich geladen wurde alte Listen leeren.
     // Falls hier jetzt eine Exception kommt wird es bitter...
@@ -416,29 +422,18 @@ begin
       StreamEntry.Free;
     FLists.BrowserList.Clear;
 
-    {
-    for i := 0 to FLists.ChartList.Count - 1 do
-      FLists.ChartList[i].Free;
-    FLists.ChartList.Clear;
-    }
-
     // Der Liste alle Sachen wieder hinzufügen
     for Genre in Genres do
       FLists.GenreList.Add(Genre);
     for StreamEntry in Streams do
       FLists.BrowserList.Add(StreamEntry);
-    //for i := 0 to Charts.Count - 1 do
-    //  FLists.ChartList.Add(Charts[i]);
   except
     for i := 0 to Genres.Count - 1 do
       Genres[i].Free;
-    //for i := 0 to Charts.Count - 1 do
-    //  Charts[i].Free;
     for i := 0 to Streams.Count - 1 do
       Streams[i].Free;
 
     Genres.Free;
-    //Charts.Free;
     Streams.Free;
   end;
 
@@ -511,12 +506,12 @@ begin
   FThread.SendCommand(TCommandLogOut.Create)
 end;
 
-procedure THomeCommunication.SendSearchCharts(Term: string);
+procedure THomeCommunication.SendSearchCharts(Top: Boolean; Term: string);
 begin
   if not FConnected then
     Exit;
 
-  FThread.SendCommand(TCommandSearchCharts.Create(Term));
+  FThread.SendCommand(TCommandSearchCharts.Create(Top, Term));
 end;
 
 procedure THomeCommunication.SendSetSettings(TitleNotifications: Boolean);
@@ -792,16 +787,13 @@ procedure THomeCommunication.HomeThreadSearchChartsReceived(
   Sender: TSocketThread);
 begin
   if Assigned(FOnSearchChartsReceived) then
-    FOnSearchChartsReceived(Self, THomeThread(Sender).FSearchReceivedCharts);
+    FOnSearchChartsReceived(Self, THomeThread(Sender).FSearchReceivedChartsSuccess, THomeThread(Sender).FSearchReceivedCharts);
 end;
 
 procedure THomeCommunication.HomeThreadServerDataReceived(Sender: TSocketThread);
 begin
   if Assigned(FOnStreamsReceived) then
     FOnStreamsReceived(Self);
-
-  //if Assigned(FOnChartsReceived) then
-  //  FOnChartsReceived(Self);
 
   if Assigned(FOnServerDataReceived) then
     FOnServerDataReceived(Self);

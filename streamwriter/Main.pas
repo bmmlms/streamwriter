@@ -232,7 +232,7 @@ type
     FDataLists: TDataLists;
     FUpdater: TUpdateClient;
     FUpdateOnExit: Boolean;
-    FSaveListUpdateDone: Boolean;
+    //SaveListUpdateDone: Boolean;
 
     FClientCount: Cardinal;
     FRecordingCount: Cardinal;
@@ -293,7 +293,7 @@ type
     procedure HomeCommLogOut(Sender: TObject);
     procedure HomeCommServerInfo(Sender: TObject; ClientCount, RecordingCount: Cardinal);
     procedure HomeCommError(Sender: TObject; ID: TCommErrors; Msg: string);
-    procedure HomeCommServerDataReceived(Sender: TObject);
+    //procedure HomeCommServerDataReceived(Sender: TObject);
 
     procedure PreTranslate;
     procedure PostTranslate;
@@ -320,7 +320,7 @@ type
     procedure tabPlayStarted(Sender: TObject);
 
     procedure tabChartsAddToWishlist(Sender: TObject; Arr: TWishlistTitleInfoArray);
-    //procedure tabChartsAddStreams(Sender: TObject; Info: TStartStreamingInfoArray; Action: TStreamOpenActions);
+    procedure tabChartsAddStreams(Sender: TObject; Info: TStartStreamingInfoArray; Action: TStreamOpenActions);
     function tabChartsGetIsStreamOnListEvent(Sender: TObject; Stream: TStreamBrowserEntry): Boolean;
 
     procedure mnuMoveToCategory(Sender: TObject);
@@ -698,7 +698,7 @@ begin
     HomeComm.OnLogOutReceived := HomeCommLogOut;
     HomeComm.OnServerInfoReceived := HomeCommServerInfo;
     HomeComm.OnErrorReceived := HomeCommError;
-    HomeComm.OnServerDataReceived := HomeCommServerDataReceived;
+    //HomeComm.OnServerDataReceived := HomeCommServerDataReceived;
     HomeComm.Connect;
 
     if not AppGlobals.FirstStartShown then
@@ -843,7 +843,7 @@ begin
   tabCharts := TChartsTab.Create(pagMain, FDataLists);
   tabCharts.PageControl := pagMain;
   tabCharts.OnAddToWishlist := tabChartsAddToWishlist;
-  //tabCharts.OnAddStreams := tabChartsAddStreams;
+  tabCharts.OnAddStreams := tabChartsAddStreams;
   tabCharts.OnGetIsStreamOnListEvent := tabChartsGetIsStreamOnListEvent;
 
   tabLists := TListsTab.Create(pagMain);
@@ -1052,39 +1052,6 @@ procedure TfrmStreamWriterMain.HomeCommLogOut(Sender: TObject);
 begin
   UpdateStatus;
 end;
-             // TODO: charts adden daaaauuuueeert lange wenn mehr als ein paar wenige :(
-procedure TfrmStreamWriterMain.HomeCommServerDataReceived(Sender: TObject);
-var
-  i: Integer;
-  n: Integer;
-  TitleInfo: TTitleInfo;
-begin
-  // TODO: die variable muss ich im neuen ablauf benutzen - aber nicht hier!!
-  if FSaveListUpdateDone then
-    Exit;
-
-  // TODO: Hier geht gaaaaaaaaaaaa nix mehr!!! passiq machen!
-  {
-  if AppGlobals.LastUsedDataVersion = 46 then
-  begin
-    for i := 0 to FDataLists.ChartList.Count - 1 do
-    begin
-      for n := 0 to FDataLists.SaveList.Count - 1 do
-      begin
-        if (FDataLists.SaveList[n].ServerHash = 0) and Like(FDataLists.ChartList[i].Name, FDataLists.SaveList[n].Pattern) then
-        begin
-          TitleInfo := TTitleInfo.Create(FDataLists.ChartList[i].ServerHash, FDataLists.ChartList[i].Name);
-          FDataLists.SaveList.Add(TitleInfo);
-
-          tabLists.AddTitle(nil, ltSave, TitleInfo);
-        end;
-      end;
-    end;
-    HomeComm.SendSyncWishlist;
-    FSaveListUpdateDone := True;
-  end;
-  }
-end;
 
 procedure TfrmStreamWriterMain.HomeCommServerInfo(Sender: TObject;
   ClientCount, RecordingCount: Cardinal);
@@ -1123,49 +1090,32 @@ begin
     // TODO: wird Add und Remove bei der liste immer gesendet??
     HomeComm.SendSyncWishlist;
 
-    // TODO: Generell: TESTEN TESTEN TESTEN!!! was passiert bei 10000 wünschen in der liste bei dem command???
-    //       Raucht die DB ab? TEEEEEESTEN!!11111
-    // TODO: das update darf nur EINMAL passieren. wenn verbindung danach geht und wieder kommt nicht nochmal!
-    if (AppGlobals.LastUsedDataVersion < 47) and (FDataLists.SaveList.Count > 0) then
-    begin
-      Titles := TStringList.Create;
-      try
-        for i := 0 to FDataLists.SaveList.Count - 1 do
-        begin
-          if FDataLists.SaveList[i].ServerHash = 0 then
-          begin
-            Titles.Add(FDataLists.SaveList[i].Title)
-          end;
-        end;
+    // TODO: Wenn das hier passiert, dort auch die controls abschalten!!!
+    if not tabCharts.Searched then // TODO: hier nicht searched, eher "war-jemals-mit-irgendwas-befüllt" merker machen.
+      tabCharts.SearchCharts(True);
 
-        if Titles.Count > 0 then
-          HomeComm.SendGetWishlistUpgrade(Titles);
-      finally
-        Titles.Free;
-      end;
+    if tabLists.SendWishListUpdateBatch then
+    begin
+      // TODO: Translation ist kacke.
+      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('The system for automatic recordings has been reworked. Titles for automatic recordings can only be added using the chart-view. ' +
+                                                'The existing titles from the old method are now enqueued to be updated for the new system. This might take some time, just watch your wishlist grow...'), 16, btOK);
     end;
 
-    // TODO: die charts brauchen eine "Lade..."-Ansicht wenn gerade gesucht wird. halt nen text...
-
-    // TODO: brauche ich das feld ReloadServerData noch an FDataLists???
-
     if (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or (AppGlobals.LastBrowserUpdate < Now - 15)) or
-       (FDataLists.ReloadServerData) or
-       //(tabCharts.State = csError) or
        (tabClients.SideBar.BrowserView.Mode = moError) then
     begin
       if HomeComm.SendGetServerData then
       begin
-        //tabCharts.SetState(csLoading);
         tabClients.SideBar.BrowserView.SwitchMode(moLoading);
       end;
     end;
+
+    tabCharts.SetState(csNormal);
   end else if (HomeComm.WasConnected) and (not HomeComm.Connected) then
   begin
     FClients.StopMonitors;
 
-    if tabCharts.State = csSearching then
-      tabCharts.SetState(csError);
+    tabCharts.SetState(csNoConnection);
     if tabClients.SideBar.BrowserView.Mode = moLoading then
       tabClients.SideBar.BrowserView.SwitchMode(moError);
   end;
@@ -1950,13 +1900,11 @@ begin
   tabSaved.Tree.RemoveTrack(Track);
 end;
 
-{
 procedure TfrmStreamWriterMain.tabChartsAddStreams(Sender: TObject;
   Info: TStartStreamingInfoArray; Action: TStreamOpenActions);
 begin
   tabClients.StartStreaming(Info, Action, nil, amAddChildLast);
 end;
-}
 
 procedure TfrmStreamWriterMain.tabChartsAddToWishlist(Sender: TObject;
   Arr: TWishlistTitleInfoArray);

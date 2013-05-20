@@ -1183,6 +1183,8 @@ begin
   BuildGenres;
   BuildTree(True);
 
+  FDataLists.BrowserList.CreateDict;
+
   SwitchMode(moShow);
 
   AppGlobals.LastBrowserUpdate := Trunc(Now);

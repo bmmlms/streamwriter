@@ -27,7 +27,7 @@ interface
 uses
   Windows, Classes, SysUtils, ExtendedStream, Generics.Collections,
   ComCtrls, AppData, Functions, Logging, DateUtils, AudioFunctions,
-  PowerManagement, Generics.Defaults, ZLib, TypeDefs;
+  PowerManagement, Generics.Defaults, ZLib, TypeDefs, winsock;
 
 type
   TStreamList = class;
@@ -45,8 +45,10 @@ type
     FAdded: TDateTime;
     FIndex: Cardinal;
     FPattern: string;
+    // TODO: wo wird hash benutzt? alles sollte irgendwann serverhash sein.
     FHash: Cardinal;
     FServerHash: Cardinal;
+    FUpdatedToHash: Boolean;
   public
     constructor Create(ServerHash: Cardinal; Title: string); overload;
     function Copy: TTitleInfo;
@@ -60,6 +62,7 @@ type
     property Pattern: string read FPattern;
     property Hash: Cardinal read FHash;
     property ServerHash: Cardinal read FServerHash;
+    property UpdatedToHash: Boolean read FUpdatedToHash write FUpdatedToHash;
   end;
 
   TN = procedure(Sender: TObject; const Item: TTitleInfo; Action: TCollectionNotification) of object;
@@ -544,7 +547,6 @@ type
     FGenreList: TGenreList;
     FLoadError: Boolean;
     FReceived: UInt64;
-    FReloadServerData: Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -586,12 +588,10 @@ type
     property LoadError: Boolean read FLoadError write FLoadError;
     // Overall amount of data received
     property Received: UInt64 read FReceived write FReceived;
-
-    property ReloadServerData: Boolean read FReloadServerData;
   end;
 
 const
-  DATAVERSION = 48;
+  DATAVERSION = 49;
 
 implementation
 
@@ -612,6 +612,9 @@ begin
   Pattern := BuildPattern(Title, Hash, NumChars, False);
   FPattern := Pattern;
   FHash := Hash;
+
+  // Default True. Im Load() wird es ggf. auf False gesetzt.
+  FUpdatedToHash := True;
 end;
 
 class function TTitleInfo.Load(Stream: TExtendedStream;
@@ -647,6 +650,11 @@ begin
 
   if Version > 46 then
     Stream.Read(Result.FServerHash);
+
+  if Version > 48 then
+    Stream.Read(Result.FUpdatedToHash)
+  else
+    Result.FUpdatedToHash := False;
 end;
 
 procedure TTitleInfo.Save(Stream: TExtendedStream);
@@ -657,6 +665,7 @@ begin
   Stream.Write(FPattern);
   Stream.Write(FHash);
   Stream.Write(FServerHash);
+  Stream.Write(FUpdatedToHash);
 end;
 
 function TTitleInfo.Copy: TTitleInfo;
@@ -668,6 +677,7 @@ begin
   Result.FPattern := FPattern;
   Result.FHash := FHash;
   Result.FServerHash := FServerHash;
+  Result.FUpdatedToHash := FUpdatedToHash;
 end;
 
 { TStreamEntry }
@@ -1061,9 +1071,6 @@ begin
 
   S.Read(FReceived);
 
-  if Version <= 42 then // Muss so. Damit die Charts neu befüllt werden mit PlayedLastDay/PlayedLastWeek.
-    FReloadServerData := True;
-
   if Version <= 2 then
   begin
     while S.Position < S.Size do
@@ -1176,7 +1183,6 @@ begin
       end;
     end;
 
-    // TODO: was macht createdict??
     FBrowserList.CreateDict;
 
     if Version < 48 then
@@ -1188,13 +1194,7 @@ begin
         Chart.Free;
       end;
     end;
-
-    FBrowserList.ClearDict;
   end;
-
-  // TODO: !!!
-  //if not FReloadServerData then
-  //  FReloadServerData := (FChartList.Count > 0) and (FChartList[0].ServerHash = 0);
 end;
 
 procedure TDataLists.Load;
@@ -2062,14 +2062,10 @@ begin
   Stream.Read(Result.FPlayedLastDay);
   Stream.Read(Result.FPlayedLastWeek);
 
-  {
   Stream.Read(C);
+
   for i := 0 to C - 1 do
-  begin
-    Stream.Read(x);
-    //Result.Streams.Add(TChartStream.Load(Stream, Version));
-  end;
-  }
+    Result.Streams.Add(TChartStream.Load(Stream, Version));
 end;
 
 procedure TChartEntry.LoadStreams(StreamList: TStreamBrowserList);
@@ -2234,6 +2230,9 @@ procedure TStreamBrowserList.ClearDict;
 begin
   FDict.Clear;
 end;
+
+// TODO: Problem! ich habe charts in der ansicht, refreshe streams. dann geht ein stream flöten, der zu einem chart gehört. was dann???
+//       alles würde crash0rn...
 
 constructor TStreamBrowserList.Create;
 begin
