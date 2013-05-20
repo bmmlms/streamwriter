@@ -362,6 +362,7 @@ begin
         if SL.Count = 0 then
           Abort := True;
 
+        {
         if not Abort then
           for i := 0 to SL.Count - 1 do
           begin
@@ -371,6 +372,7 @@ begin
               Break;
             end;
           end;
+        }
       finally
         SL.Free;
       end;
