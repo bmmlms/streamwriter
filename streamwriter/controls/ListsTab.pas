@@ -213,11 +213,23 @@ end;
 procedure TListsTab.HomeCommWishlistUpgradeReceived(Sender: TObject;
   WishlistUpgrade: TWishlistUpgradeList);
 var
-  i: Integer;
+  i, n: Integer;
+  Found: Boolean;
   Title: TTitleInfo;
 begin
   for i := 0 to WishlistUpgrade.Count - 1 do
   begin
+    Found := False;
+    for n := 0 to FListsPanel.FLists.SaveList.Count - 1 do
+      if FListsPanel.FLists.SaveList[n].ServerHash = WishlistUpgrade[i].Hash then
+      begin
+        Found := True;
+        Break;
+      end;
+
+    if Found then
+      Continue;
+
     Title := TTitleInfo.Create(WishlistUpgrade[i].Hash, WishlistUpgrade[i].Title);
     FListsPanel.FLists.SaveList.Add(Title);
     AddTitle(nil, ltSave, Title);
