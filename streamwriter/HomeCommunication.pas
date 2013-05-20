@@ -356,17 +356,12 @@ begin
       // Charts laden
       Stream.Read(Count);
       for i := 0 to Count - 1 do
-      begin
-        outputdebugstring(pchar(inttostr(i)));
         FSearchReceivedCharts.Add(TChartEntry.LoadFromHome(Stream, CommandHeader.Version));
-      end;
     except
       for i := 0 to FSearchReceivedCharts.Count - 1 do
         FSearchReceivedCharts[i].Free;
       FSearchReceivedCharts.Free;
       FSearchReceivedCharts := nil;
-
-      // TODO: die start-streams laden klappt manchmal nicht!!!
 
       FSearchReceivedChartsSuccess := False;
     end;

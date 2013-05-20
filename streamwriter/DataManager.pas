@@ -485,7 +485,7 @@ type
     procedure Assign(Source: TChartEntry);
     function Copy: TChartEntry;
 
-    class function Load(Stream: TExtendedStream; Lists: TDataLists; Version: Integer): TChartEntry;
+    //class function Load(Stream: TExtendedStream; Lists: TDataLists; Version: Integer): TChartEntry;
     class function LoadFromHome(Stream: TExtendedStream; Version: Integer): TChartEntry;
     procedure Save(Stream: TExtendedStream);
 
@@ -654,7 +654,7 @@ begin
   if Version > 48 then
     Stream.Read(Result.FUpdatedToHash)
   else
-    Result.FUpdatedToHash := False;
+    Result.FUpdatedToHash := Result.ServerHash > 0;
 end;
 
 procedure TTitleInfo.Save(Stream: TExtendedStream);
@@ -1185,6 +1185,7 @@ begin
 
     FBrowserList.CreateDict;
 
+    {
     if Version < 48 then
     begin
       S.Read(CatCount);
@@ -1194,6 +1195,7 @@ begin
         Chart.Free;
       end;
     end;
+    }
   end;
 end;
 
@@ -1996,7 +1998,10 @@ var
   i: Integer;
 begin
   for i := 0 to FStreams.Count - 1 do
+  begin
+    FStreams[i].Stream.Free;
     FStreams[i].Free;
+  end;
   FStreams.Free;
 
   inherited;
@@ -2010,6 +2015,7 @@ begin
   FStreams := TList<TChartStream>.Create;
 end;
 
+{
 class function TChartEntry.Load(Stream: TExtendedStream;
   Lists: TDataLists; Version: Integer): TChartEntry;
 var
@@ -2048,6 +2054,7 @@ begin
     end;
   end;
 end;
+}
 
 class function TChartEntry.LoadFromHome(Stream: TExtendedStream; Version: Integer): TChartEntry;
 var
@@ -2063,7 +2070,6 @@ begin
   Stream.Read(Result.FPlayedLastWeek);
 
   Stream.Read(C);
-
   for i := 0 to C - 1 do
     Result.Streams.Add(TChartStream.Load(Stream, Version));
 end;
@@ -2077,7 +2083,7 @@ begin
   begin
     Stream := StreamList.GetStream(Streams[i].FID);
     if Stream <> nil then
-      Streams[i].Stream := Stream
+      Streams[i].Stream := Stream.Copy
     else
     begin
       Streams[i].Free;
