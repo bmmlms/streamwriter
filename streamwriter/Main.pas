@@ -1087,7 +1087,9 @@ begin
     HomeComm.SendSyncWishlist;
 
     if not tabCharts.Searched then
-      tabCharts.SearchCharts(True);
+      tabCharts.SearchCharts(True)
+    else
+      tabCharts.SetState(csNormal);
 
     if tabLists.SendWishListUpdateBatch then
     begin
