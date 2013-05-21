@@ -87,7 +87,7 @@ type
   end;
 
   TChartArray = array of TChartEntry;
-  TChartStates = (csNormal, csSearching, csNoConnection, csSearchError);
+  TChartStates = (csNormal, csSearching, csSearchError);
 
   TChartsTree = class(TVirtualStringTree)
   private
@@ -244,6 +244,7 @@ begin
   FResultLabel := TLabel.Create(Self);
   FResultLabel.Parent := Self;
   FResultLabel.Align := alBottom;
+  FResultLabel.Caption := Format(_(TEXT_RESULTS), [0]);
 
   HomeComm.OnSearchChartsReceived := HomeCommSearchChartsReceived;
 
@@ -422,7 +423,7 @@ begin
   FState := State;
   if FChartsTree.FState <> State then
   begin
-    FResultLabel.Enabled := (State = csNormal) or (State = csSearchError);
+    //FResultLabel.Enabled := (State = csNormal) or (State = csSearchError);
 
     FChartsTree.BeginUpdate;
     FChartsTree.Clear;
@@ -431,8 +432,10 @@ begin
     FChartsTree.State := State;
     FChartsTree.Invalidate;
 
-    FSearchPanel.FSearch.Enabled := (State = csNormal) or (State = csSearchError);
-    FSearchPanel.FToolbar.Enabled := (State = csNormal) or (State = csSearchError);
+    //FSearchPanel.FSearch.Enabled := (State = csNormal) or (State = csSearchError);
+    //FSearchPanel.FToolbar.Enabled := (State = csNormal) or (State = csSearchError);
+    if State = csSearching then
+      FResultLabel.Caption := Format(_(TEXT_RESULTS), [0]);
 
     UpdateButtons;
   end;
@@ -458,8 +461,6 @@ begin
   Caption := _('Charts');
 
   UpdateButtons;
-
-  // TODO: bei fehlern status csError machen!
 end;
 
 procedure TChartsTab.ShowCharts;
@@ -583,10 +584,7 @@ begin
 
   FLists := Lists;
 
-  FState := csNoConnection;
-
-  // TODO: WAS IST DAS???ßßß     EINE NULL!!!!!!!!!!
-  //FLists.SaveList.OnChange.Add(OnSaveListNotify);
+  FState := csNormal;
 
   FTimer := TTimer.Create(Self);
   FTimer.Interval := 1000;
@@ -898,8 +896,6 @@ begin
   end;
 end;
 
-// TODO: wenn während suche netzwerk weggeht oder so, geht es in error-state?
-
 procedure TChartsTree.FSetState(Value: TChartStates);
 begin
   FDots := '';
@@ -910,7 +906,7 @@ begin
     csNormal:
       begin
         FProgressBar.Visible := False;
-        Enabled := True;
+        //Enabled := True;
       end;
     csSearching:
       begin
@@ -919,22 +915,15 @@ begin
         FProgressBar.Style := pbstMarquee;
 
         FProgressBar.Visible := True;
-        Enabled := False;
+        //Enabled := False;
         FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_SEARCHING) + '..') div 2;
         FTimer.Enabled := True;
-        Invalidate;
-      end;
-    csNoConnection:
-      begin
-        FProgressBar.Visible := False;
-        Enabled := False;
-        FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_NO_CONNECTION)) div 2;
         Invalidate;
       end;
     csSearchError:
       begin
         FProgressBar.Visible := False;
-        Enabled := False;
+        //Enabled := False;
         FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_SEARCH_ERROR)) div 2;
         Invalidate;
       end;
@@ -1048,11 +1037,6 @@ begin
           Msg := _(TEXT_SEARCHING) + FDots;
           Canvas.TextOut(FTextLeft, FProgressBar.Top - GetTextSize('Wyg', Font).cy - MulDiv(2, Screen.PixelsPerInch, 96), Msg);
         end;
-      csNoConnection:
-        begin
-          Msg := _(TEXT_NO_CONNECTION);
-          Canvas.TextOut(FTextLeft, ClientHeight div 2 - Canvas.TextHeight(Msg), Msg);
-        end;
       csSearchError:
         begin
           Msg := _(TEXT_SEARCH_ERROR);
@@ -1141,8 +1125,6 @@ begin
   case FState of
     csSearching:
       FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_SEARCHING) + '..') div 2;
-    csNoConnection:
-      FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_NO_CONNECTION)) div 2;
     csSearchError:
       FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_SEARCH_ERROR)) div 2;
   end;

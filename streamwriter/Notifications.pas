@@ -104,6 +104,9 @@ procedure TfrmNotification.Display(Title, Stream: string);
 var
   TextWidth: Integer;
 begin
+  Title := StringReplace(Title, '&', '&&', [rfReplaceAll]);
+  Stream := StringReplace(Stream, '&', '&&', [rfReplaceAll]);
+
   case FState of
     nsFadingIn:
       begin

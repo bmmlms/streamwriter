@@ -1087,9 +1087,7 @@ begin
     HomeComm.SendSyncWishlist;
 
     if not tabCharts.Searched then
-      tabCharts.SearchCharts(True)
-    else
-      tabCharts.SetState(csNormal);
+      tabCharts.SearchCharts(True);
 
     if tabLists.SendWishListUpdateBatch then
     begin
@@ -1110,7 +1108,9 @@ begin
   begin
     FClients.StopMonitors;
 
-    tabCharts.SetState(csNoConnection);
+    if tabCharts.State = csSearching then
+      tabCharts.SetState(csSearchError);
+
     if tabClients.SideBar.BrowserView.Mode = moLoading then
       tabClients.SideBar.BrowserView.SwitchMode(moError);
   end;
