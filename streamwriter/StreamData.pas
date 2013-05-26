@@ -157,6 +157,9 @@ begin
     R.Free;
   end;
 
+  // TODO: hier kann man doch gar nicht das album setzen. aber es steht in dem fenster im text. was ist die variable dafür??
+  //       die sollte auch im node server ausgewertet werden. wird sie aber nicht!!! PRÜFEN!
+
   ArtistFound := (Pos('(?P<a>.*)', txtTitlePattern.Text) > 0) or (Pos('(?P<a>.*?)', txtTitlePattern.Text) > 0);
   TitleFound := (Pos('(?P<t>.*)', txtTitlePattern.Text) > 0) or (Pos('(?P<t>.*?)', txtTitlePattern.Text) > 0);
 

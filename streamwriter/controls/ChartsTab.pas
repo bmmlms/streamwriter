@@ -45,6 +45,7 @@ type
   TChartsPopup = class(TPopupMenu)
   private
     FItemAddToWishlist: TMenuItem;
+    FItemAddArtistToWishlist: TMenuItem;
     FItemEditAndAddToWishlist: TMenuItem;
     FItemStartStreaming: TMenuItem;
     FItemPlayStream: TMenuItem;
@@ -70,6 +71,7 @@ type
     FToolbar: TToolBar;
 
     FButtonAddToWishlist: TToolButton;
+    FButtonAddArtistToWishlist: TToolButton;
     FButtonEditAndAddToWishlist: TToolButton;
     FButtonStartStreaming: TToolButton;
     FButtonPlayStream: TToolButton;
@@ -339,7 +341,6 @@ begin
   begin
     if not HomeComm.Connected then
     begin
-      // TODO: Translate!
       MsgBox(GetParentForm(Self).Handle, _('streamWriter needs to be connected to the server in order to search.'), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
@@ -362,18 +363,6 @@ begin
 
         if SL.Count = 0 then
           Abort := True;
-
-        {
-        if not Abort then
-          for i := 0 to SL.Count - 1 do
-          begin
-            if Length(SL[i]) < 3 then
-            begin
-              Abort := True;
-              Break;
-            end;
-          end;
-        }
       finally
         SL.Free;
       end;
@@ -381,7 +370,6 @@ begin
 
     if Abort then
     begin
-      // TODO: Translaten!
       MsgBox(GetParentForm(Self).Handle, _('You need to specify at least one word to search for. Special chars (+-*()<>~"'') are not allowed.'), _('Info'), MB_ICONINFORMATION);
     end else
     begin
@@ -435,7 +423,11 @@ begin
     //FSearchPanel.FSearch.Enabled := (State = csNormal) or (State = csSearchError);
     //FSearchPanel.FToolbar.Enabled := (State = csNormal) or (State = csSearchError);
     if State = csSearching then
+    begin
       FResultLabel.Caption := Format(_(TEXT_RESULTS), [0]);
+      FSearchPanel.FSearch.Enabled := False;
+    end else
+      FSearchPanel.FSearch.Enabled := True;
 
     UpdateButtons;
   end;
@@ -511,8 +503,9 @@ end;
 
 procedure TChartsTab.UpdateButtons;
 var
-  AllOnList: Boolean;
+  AllOnList, AllArtistsOnList: Boolean;
   OneSelectedChart, ManySelectedCharts: Boolean;
+  OneSelectedArtist: Boolean;
   OneSelectedStream, ManySelectedStreams: Boolean;
   N: PVirtualNode;
   NodeData: PChartNodeData;
@@ -520,7 +513,9 @@ begin
   inherited;
 
   AllOnList := True;
+  AllArtistsOnList := True;
   OneSelectedChart := False;
+  OneSelectedArtist := False;
   ManySelectedCharts := False;
   OneSelectedStream := False;
   ManySelectedStreams := False;
@@ -535,6 +530,11 @@ begin
       begin
         AllOnList := False;
       end;
+
+      // TODO: prüfen dass items angehen!!!
+      AllArtistsOnList := True;
+      // TODO: prüfen dass items angehen!!!
+      OneSelectedArtist := False;
 
       if NodeData.Chart <> nil then
       begin
@@ -560,6 +560,7 @@ begin
   end;
 
   FChartsTree.FPopupMenu.FItemAddToWishlist.Enabled := (not AllOnList) and (OneSelectedChart or ManySelectedCharts) and (State = csNormal);
+  FChartsTree.FPopupMenu.FItemAddArtistToWishlist.Enabled := (not AllArtistsOnList) and (OneSelectedChart or ManySelectedCharts) and (OneSelectedArtist) and (State = csNormal);
   FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Enabled := (OneSelectedChart) and (State = csNormal);
   FChartsTree.FPopupMenu.FItemStartStreaming.Enabled := (OneSelectedStream or ManySelectedStreams) and (State = csNormal);
   FChartsTree.FPopupMenu.FItemPlayStream.Enabled := (OneSelectedStream) and (State = csNormal);
@@ -567,6 +568,7 @@ begin
   FChartsTree.FPopupMenu.FItemAddStream.Enabled := (OneSelectedStream or ManySelectedStreams) and (State = csNormal);
 
   FSearchPanel.FButtonAddToWishlist.Enabled := FChartsTree.FPopupMenu.FItemAddToWishlist.Enabled;
+  FSearchPanel.FButtonAddArtistToWishlist.Enabled := (not AllArtistsOnList) and (OneSelectedChart or ManySelectedCharts) and (OneSelectedArtist) and (State = csNormal);
   FSearchPanel.FButtonEditAndAddToWishlist.Enabled := FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Enabled;
   FSearchPanel.FButtonStartStreaming.Enabled := FChartsTree.FPopupMenu.FItemStartStreaming.Enabled;
   FSearchPanel.FButtonPlayStream.Enabled := FChartsTree.FPopupMenu.FItemPlayStream.Enabled;
@@ -1270,9 +1272,19 @@ begin
   FButtonEditAndAddToWishlist.Hint := _('Edit and add to wishlist');
   FButtonEditAndAddToWishlist.ImageIndex := 30;
 
+  Sep := TToolButton.Create(FToolbar);
+  Sep.Parent := FToolbar;
+  Sep.Style := tbsSeparator;
+  Sep.Width := 8;
+
+  FButtonAddArtistToWishlist := TToolButton.Create(FToolbar);
+  FButtonAddArtistToWishlist.Parent := FToolbar;
+  FButtonAddArtistToWishlist.Hint := _('Add artist to automatic wishlist');
+  FButtonAddArtistToWishlist.ImageIndex := 86;
+
   FButtonAddToWishlist := TToolButton.Create(FToolbar);
   FButtonAddToWishlist.Parent := FToolbar;
-  FButtonAddToWishlist.Hint := _('Add to wishlist');
+  FButtonAddToWishlist.Hint := _('Add title to automatic wishlist');
   FButtonAddToWishlist.ImageIndex := 31;
 
   FToolbar.Padding.Top := 2;
@@ -1297,9 +1309,18 @@ begin
   Items.Add(Sep);
 
   FItemAddToWishlist := CreateMenuItem;
-  FItemAddToWishlist.Caption := '&Add to wishlist';
+  FItemAddToWishlist.Caption := '&Add title to automatic wishlist';
   FItemAddToWishlist.ImageIndex := 31;
   Items.Add(FItemAddToWishlist);
+
+  FItemAddArtistToWishlist := CreateMenuItem;
+  FItemAddArtistToWishlist.Caption := '&Add artist to automatic wishlist';
+  FItemAddArtistToWishlist.ImageIndex := 86;
+  Items.Add(FItemAddArtistToWishlist);
+
+  Sep := CreateMenuItem;
+  Sep.Caption := '-';
+  Items.Add(Sep);
 
   FItemEditAndAddToWishlist := CreateMenuItem;
   FItemEditAndAddToWishlist.Caption := '&Edit and add to wishlist';

@@ -5,7 +5,8 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Commands, HomeCommunication, HomeCommands, ComCtrls, StdCtrls,
-  Protocol, Generics.Collections, DataManager, TypeDefs, AudioFunctions;
+  Protocol, Generics.Collections, DataManager, TypeDefs, AudioFunctions,
+  ExtCtrls;
 
 type
   TfrmHomeTest = class(TForm)
@@ -13,9 +14,11 @@ type
     prgTransfer: TProgressBar;
     Button1: TButton;
     Button2: TButton;
+    Timer1: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure Timer1Timer(Sender: TObject);
   private
     HC: THomeCommunication;
 
@@ -66,11 +69,11 @@ begin
   HC.SendCommand(Cmd3);
   }
 
-  //Cmd4 := TCommandTitleChanged.Create(5, 'dfasdfsa', 'reklama ', 'fsdfsdfas', 'fsdfasdfas', atMPEG, 128, '');
-  //HC.SendCommand(Cmd4);
+  Cmd4 := TCommandTitleChanged.Create(120, 'dfasdfsa', 'Sie hören "!!!!!! LOL X" mit "!!!!!!! LOL Y"', 'fsdfsdfas', 'fsdfasdfas', atMPEG, 128, '');
+  HC.SendCommand(Cmd4);
 
-  Cmd5 := TCommandGetServerData.Create;
-  HC.SendCommand(Cmd5);
+  //Cmd5 := TCommandGetServerData.Create;
+  //HC.SendCommand(Cmd5);
 end;
 
 procedure TfrmHomeTest.Button2Click(Sender: TObject);
@@ -96,6 +99,14 @@ begin
   HC.OnLogInReceived := HomeCommunicationLogInReceived;
   HC.OnBytesTransferred := HomeCommunicationBytesTransferred;
   HC.Connect;
+end;
+
+procedure TfrmHomeTest.Timer1Timer(Sender: TObject);
+var
+  Cmd4: TCommandTitleChanged;
+begin
+  Cmd4 := TCommandTitleChanged.Create(120, 'dfasdfsa', 'Sie hören "!!!!!! LOL X" mit "!!!!!!! LOL Y"', 'fsdfsdfas', 'fsdfasdfas', atMPEG, 128, '');
+  HC.SendCommand(Cmd4);
 end;
 
 procedure TfrmHomeTest.HomeCommunicationBytesTransferred(Sender: TObject;

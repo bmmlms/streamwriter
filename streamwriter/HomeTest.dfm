@@ -49,4 +49,10 @@ object frmHomeTest: TfrmHomeTest
     TabOrder = 3
     OnClick = Button2Click
   end
+  object Timer1: TTimer
+    Interval = 100000
+    OnTimer = Timer1Timer
+    Left = 336
+    Top = 156
+  end
 end

@@ -233,7 +233,7 @@ begin
     if Found then
       Continue;
 
-    Title := TTitleInfo.Create(WishlistUpgrade[i].Hash, WishlistUpgrade[i].Title);
+    Title := TTitleInfo.Create(WishlistUpgrade[i].Hash, 0, WishlistUpgrade[i].Title);
     FListsPanel.FLists.SaveList.Add(Title);
     AddTitle(nil, ltSave, Title);
 
@@ -672,7 +672,8 @@ begin
             if Exists then
               Continue;
 
-            Title := TTitleInfo.Create(ServerHash, Lst[i]);
+            // TODO: artisthash berücksichtigen!
+            Title := TTitleInfo.Create(ServerHash, 0, Lst[i]);
             List.Add(Title);
             FTree.AddTitle(Title, ParentNode, FFilterText, True);
 
@@ -1025,7 +1026,8 @@ begin
     if Parent = nil then
       Parent := FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]));
 
-    Title := TTitleInfo.Create(0, Trim(Text));
+    // TODO: artisthash berücksichtigen!
+    Title := TTitleInfo.Create(0, 0, Trim(Text));
     Node := FTree.AddTitle(Title, Parent, FFilterText, True);
     if Node <> nil then
     begin
@@ -1450,7 +1452,8 @@ begin
 
   for i := 0 to FDropTarget.Files.Count - 1 do
   begin
-    Title := TTitleInfo.Create(0, RemoveFileExt(ExtractFileName(FDropTarget.Files[i])));
+            // TODO: artisthash berücksichtigen!
+    Title := TTitleInfo.Create(0, 0, RemoveFileExt(ExtractFileName(FDropTarget.Files[i])));
 
     Found := False;
     for n := 0 to List.Count - 1 do
@@ -1743,7 +1746,8 @@ begin
   NodeData := GetNodeData(Node);
 
   NodeData.Title.Free;
-  NodeData.Title := TTitleInfo.Create(0, Text);
+              // TODO: artisthash berücksichtigen!
+  NodeData.Title := TTitleInfo.Create(0, 0, Text);
 end;
 
 procedure TTitleTree.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;

@@ -1070,14 +1070,6 @@ begin
   begin
     tmrRecordingsTimer(tmrRecordings);
 
-    // TODO: das ganze system mit den hashes muss ich checken. der hash wird aus lower(title) generiert,
-    // der titel wird nachbearbeitet und der hash passt nicht dazu (der python-kram AdjustTitle() etc...)
-    // ich sollte das aufschreiben, wie es laufen sollte, und das dann in der implementation prüfen,
-    // ob alles so läuft, wie in der doku (=> nach aufschreiben).... und zwar SEHR PENIBEL!
-
-    // TODO: wenn ich sage "automatische aufnahmen nach aufnahme aus wunschliste entfernen" das am besten
-    //       per hash machen!
-
     FClients.StopMonitors;
     if AppGlobals.SubmitStats and AppGlobals.MonitorMode and (AppGlobals.MonitorCount > 0) then
       HomeComm.SendGetMonitorStreams(AppGlobals.MonitorCount)
@@ -1926,7 +1918,8 @@ begin
 
     if not Found then
     begin
-      T := TTitleInfo.Create(Arr[i].Hash, Arr[i].Title);
+            // TODO: artisthash berücksichtigen!
+      T := TTitleInfo.Create(Arr[i].Hash, 0, Arr[i].Title);
 
       FDataLists.SaveList.Add(T);
       tabLists.AddTitle(nil, ltSave, T);
@@ -1995,7 +1988,7 @@ begin
       //       oder ich suche den chart noch vorher raus und weise den zu, falls der titel in wunschliste soll?
       //       vllt sollte das menü item heißen "in charts suchen", dann könnte man schnell zur wunschliste hinzufügen
       //       wenn gleich zu den charts gejumped wird. oder das muss iwie anders laufen hier...
-      T := TTitleInfo.Create(0, Title);
+      T := TTitleInfo.Create(0, 0, Title);
 
       List.Add(T);
       tabLists.AddTitle(Client, ListType, T);

@@ -47,9 +47,10 @@ type
     FPattern: string;
     FHash: Cardinal;
     FServerHash: Cardinal;
+    FServerArtistHash: Cardinal;
     FUpdatedToHash: Boolean;
   public
-    constructor Create(ServerHash: Cardinal; Title: string); overload;
+    constructor Create(ServerHash, ServerArtistHash: Cardinal; Title: string); overload;
     function Copy: TTitleInfo;
 
     class function Load(Stream: TExtendedStream; Version: Integer): TTitleInfo;
@@ -61,6 +62,7 @@ type
     property Pattern: string read FPattern;
     property Hash: Cardinal read FHash;
     property ServerHash: Cardinal read FServerHash;
+    property ServerArtistHash: Cardinal read FServerArtistHash;
     property UpdatedToHash: Boolean read FUpdatedToHash write FUpdatedToHash;
   end;
 
@@ -472,6 +474,7 @@ type
   private
     FName: string;
     FServerHash: Cardinal;
+    FServerArtistHash: Cardinal;
     FPlayedLastDay: Cardinal;
     FPlayedLastWeek: Cardinal;
     FCategories: TIntArray;
@@ -493,6 +496,7 @@ type
     // The name
     property Name: string read FName;
     property ServerHash: Cardinal read FServerHash;
+    property ServerArtistHash: Cardinal read FServerArtistHash;
 
     property PlayedLastDay: Cardinal read FPlayedLastDay;
     property PlayedLastWeek: Cardinal read FPlayedLastWeek;
@@ -590,13 +594,13 @@ type
   end;
 
 const
-  DATAVERSION = 49;
+  DATAVERSION = 50; // TODO: testen ob er die letzte build und offizielle letzte frisst und so!!!
 
 implementation
 
 { TTitleInfo }
 
-constructor TTitleInfo.Create(ServerHash: Cardinal; Title: string);
+constructor TTitleInfo.Create(ServerHash, ServerArtistHash: Cardinal; Title: string);
 var
   NumChars: Integer;
   Hash: Cardinal;
@@ -605,6 +609,7 @@ begin
   inherited Create;
 
   FServerHash := ServerHash;
+  FServerArtistHash := ServerArtistHash;
   FTitle := Title;
   FAdded := Now;
 
@@ -649,6 +654,8 @@ begin
 
   if Version > 46 then
     Stream.Read(Result.FServerHash);
+  if Version > 49 then
+    Stream.Read(Result.FServerArtistHash);
 
   if Version > 48 then
     Stream.Read(Result.FUpdatedToHash)
@@ -664,6 +671,7 @@ begin
   Stream.Write(FPattern);
   Stream.Write(FHash);
   Stream.Write(FServerHash);
+  Stream.Write(FServerArtistHash);
   Stream.Write(FUpdatedToHash);
 end;
 
@@ -676,6 +684,7 @@ begin
   Result.FPattern := FPattern;
   Result.FHash := FHash;
   Result.FServerHash := FServerHash;
+  Result.FServerArtistHash := FServerArtistHash;
   Result.FUpdatedToHash := FUpdatedToHash;
 end;
 
@@ -1958,6 +1967,7 @@ var
 begin
   FName := Source.Name;
   FServerHash := Source.ServerHash;
+  FServerArtistHash := Source.FServerArtistHash;
   FPlayedLastDay := Source.PlayedLastDay;
   FPlayedLastWeek := Source.PlayedLastWeek;
   FCategories := Source.Categories;
@@ -2063,6 +2073,7 @@ var
 begin
   Result := TChartEntry.Create;
   Stream.Read(Result.FServerHash);
+  Stream.Read(Result.FServerArtistHash);
   Stream.Read(Result.FName);
 
   Stream.Read(Result.FPlayedLastDay);
@@ -2091,12 +2102,14 @@ begin
   end;
 end;
 
+// TODO: Wird das noch gebraucht??? und das normale laden?? nein oder!!
 procedure TChartEntry.Save(Stream: TExtendedStream);
 var
   i: Integer;
 begin
   Stream.Write(FName);
   Stream.Write(FServerHash);
+  Stream.Write(FServerArtistHash);
   Stream.Write(FPlayedLastDay);
   Stream.Write(FPlayedLastWeek);
   Stream.Write(Length(FCategories));

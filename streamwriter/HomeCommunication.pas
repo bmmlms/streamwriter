@@ -549,6 +549,8 @@ var
   ItemsFound: Integer;
   Hashes: TCardinalArray;
 begin
+  // TODO: artist-hashes!
+
   if not FConnected then
     Exit;
 
@@ -568,6 +570,8 @@ end;
 procedure THomeCommunication.SendSyncWishlist(SyncType: TSyncWishlistTypes;
   Hashes: TCardinalArray);
 begin
+  // TODO: artist-hashes!
+
   if not FConnected then
     Exit;
 
@@ -582,6 +586,8 @@ procedure THomeCommunication.SendSyncWishlist(SyncType: TSyncWishlistTypes;
 var
   Hashes: TCardinalArray;
 begin
+  // TODO: artist-hashes!
+
   if (not Connected) or (Hash = 0) or (SyncType = swSync) then
     Exit;
 
