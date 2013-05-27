@@ -57,7 +57,8 @@ type
   public
     Hash: Cardinal;
     Title: string;
-    constructor Create(Hash: Cardinal; Title: string);
+    IsArtist: Boolean;
+    constructor Create(Hash: Cardinal; Title: string; IsArtist: Boolean);
   end;
   TWishlistTitleInfoArray = array of TWishlistTitleInfo;
 
@@ -78,10 +79,11 @@ end;
 
 { TWishlistTitleInfo }
 
-constructor TWishlistTitleInfo.Create(Hash: Cardinal; Title: string);
+constructor TWishlistTitleInfo.Create(Hash: Cardinal; Title: string; IsArtist: Boolean);
 begin
   Self.Hash := Hash;
   Self.Title := Title;
+  Self.IsArtist := IsArtist;
 end;
 
 end.

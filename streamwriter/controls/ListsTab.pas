@@ -216,7 +216,7 @@ var
   i, n: Integer;
   Found: Boolean;
   Title: TTitleInfo;
-  Hashes: TCardinalArray;
+  Hashes: TSyncWishlistRecordArray;
 begin
   SetLength(Hashes, 0);
 
@@ -238,7 +238,7 @@ begin
     AddTitle(nil, ltSave, Title);
 
     SetLength(Hashes, Length(Hashes) + 1);
-    Hashes[High(Hashes)] := Title.ServerHash;
+    Hashes[High(Hashes)] := TSyncWishlistRecord.Create(Title.ServerHash, False);
   end;
 
   HomeComm.SendSyncWishlist(swAdd, Hashes);
@@ -345,7 +345,7 @@ end;
 procedure TTitlePanel.RemoveClick(Sender: TObject);
 var
   i: Integer;
-  Hashes: TCardinalArray;
+  Hashes: TSyncWishlistRecordArray;
   Node, SubNode, DeleteNode: PVirtualNode;
   NodeData: PTitleNodeData;
   DeleteList: TList<PVirtualNode>;
@@ -392,7 +392,11 @@ begin
               if NodeData.Title.ServerHash > 0 then
               begin
                 SetLength(Hashes, Length(Hashes) + 1);
-                Hashes[High(Hashes)] := NodeData.Title.ServerHash;
+                Hashes[High(Hashes)] := TSyncWishlistRecord.Create(NodeData.Title.ServerHash, False);
+              end else if NodeData.Title.ServerArtistHash > 0 then
+              begin
+                SetLength(Hashes, Length(Hashes) + 1);
+                Hashes[High(Hashes)] := TSyncWishlistRecord.Create(NodeData.Title.ServerArtistHash, True);
               end;
             end;
           ntIgnore:
@@ -570,8 +574,10 @@ var
   Title: TTitleInfo;
   List: TList<TTitleInfo>;
   ParentNode: PVirtualNode;
-  Hashes: TCardinalArray;
+  Hashes: TSyncWishlistRecordArray;
 begin
+  // TODO: artist-hashes... die muss man auch exportieren können!
+  {
   if FAddCombo.ItemIndex = 0 then
   begin
     List := FLists.SaveList;
@@ -699,6 +705,7 @@ begin
   HomeComm.SendSetSettings((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
   if List = FLists.SaveList then
     HomeComm.SendSyncWishlist(swAdd, Hashes);
+  }
 end;
 
 procedure TTitlePanel.PostTranslate;
@@ -1021,7 +1028,7 @@ begin
     end;
 
     if ShowMessages and (List = FLists.SaveList) then
-      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('Titles manually entered into the wishlist (without using the chart-view) will not be considered for automatic recordings. Use the chart-view for titles to record automatically.'), 15, btOK);
+      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('Titles manually entered into the wishlist (without using the chart-view) will not be considered for automatic recordings. Use the chart-view to add titles for automatic recordings.'), 15, btOK);
 
     if Parent = nil then
       Parent := FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]));
@@ -1136,7 +1143,8 @@ begin
 
   TitlesSelected := (TypeCount(ntWish) > 0) or (TypeCount(ntIgnore) > 0);
   CanRemove := TitlesSelected or (TypeCount(ntStream) > 0);
-  CanRename := (FTree.SelectedCount = 1) and TitlesSelected and (PTitleNodeData(FTree.GetNodeData(SelectedNodes[0])).Title.ServerHash = 0);
+  CanRename := (FTree.SelectedCount = 1) and TitlesSelected and (PTitleNodeData(FTree.GetNodeData(SelectedNodes[0])).Title.ServerHash = 0) and
+    (PTitleNodeData(FTree.GetNodeData(SelectedNodes[0])).Title.ServerArtistHash = 0);
   CanImport := True;
 
   FToolbar.FRemove.Enabled := CanRemove;
@@ -1671,10 +1679,12 @@ begin
       ntWishParent:
         Index := 31;
       ntWish:
-        if NodeData.Title.ServerHash = 0 then
-          Index := 31
+        if NodeData.Title.ServerHash > 0 then
+          Index := 77
+        else if NodeData.Title.ServerArtistHash > 0 then
+          Index := 86
         else
-          Index := 77;
+          Index := 31;
       ntIgnoreParent, ntIgnore:
         Index := 65;
       ntStream:

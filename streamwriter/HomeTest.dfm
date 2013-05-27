@@ -50,6 +50,7 @@ object frmHomeTest: TfrmHomeTest
     OnClick = Button2Click
   end
   object Timer1: TTimer
+    Enabled = False
     Interval = 100000
     OnTimer = Timer1Timer
     Left = 336

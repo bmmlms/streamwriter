@@ -37,6 +37,7 @@ type
     Chart: TChartEntry;
     Stream: TChartStream;
     IsOnWishlist: Boolean;
+    IsArtistOnWishlist: Boolean;
   end;
   PChartNodeData = ^TChartNodeData;
 
@@ -57,6 +58,7 @@ type
     constructor Create(AOwner: TComponent); override;
 
     property ItemAddToWishlist: TMenuItem read FItemAddToWishlist;
+    property ItemAddArtistToWishlist: TMenuItem read FItemAddArtistToWishlist;
     property ItemEditAndAddToWishlist: TMenuItem read FItemEditAndAddToWishlist;
     property ItemStartStreaming: TMenuItem read FItemStartStreaming;
     property ItemPlayStream: TMenuItem read FItemPlayStream;
@@ -136,6 +138,8 @@ type
       Column: TColumnIndex; CellRect: TRect); override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
+    procedure PaintImage(var PaintInfo: TVTPaintInfo;
+      ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
     destructor Destroy; override;
@@ -444,6 +448,7 @@ begin
     FChartsTree.PopupMenu.Images := modSharedData.imgImages;
 
   FSearchPanel.FButtonAddToWishlist.OnClick := ButtonClick;
+  FSearchPanel.FButtonAddArtistToWishlist.OnClick := ButtonClick;
   FSearchPanel.FButtonEditAndAddToWishlist.OnClick := ButtonClick;
   FSearchPanel.FButtonStartStreaming.OnClick := ButtonClick;
   FSearchPanel.FButtonPlayStream.OnClick := ButtonClick;
@@ -475,6 +480,9 @@ begin
         NodeData := FChartsTree.GetNodeData(Node);
         NodeData.Chart := FCharts[i];
 
+        NodeData.IsOnWishlist := False;
+        NodeData.IsArtistOnWishlist := False;
+
         NodeData.Chart.LoadStreams(FLists.BrowserList);
 
         for n := 0 to NodeData.Chart.Streams.Count - 1 do
@@ -485,11 +493,15 @@ begin
         end;
 
         for n := 0 to FLists.SaveList.Count - 1 do
-          if FLists.SaveList[n].ServerHash = NodeData.Chart.ServerHash then
-          begin
+        begin
+          if (FLists.SaveList[n].ServerHash > 0) and (FLists.SaveList[n].ServerHash = NodeData.Chart.ServerHash) then
             NodeData.IsOnWishlist := True;
+          if (FLists.SaveList[n].ServerArtistHash > 0) and (FLists.SaveList[n].ServerArtistHash = NodeData.Chart.ServerArtistHash) then
+            NodeData.IsArtistOnWishlist := True;
+
+          if NodeData.IsOnWishlist and NodeData.IsArtistOnWishlist then
             Break;
-          end;
+        end;
       end;
 
       FChartsTree.SortTree(FChartsTree.Header.SortColumn, FChartsTree.Header.SortDirection);
@@ -505,8 +517,8 @@ procedure TChartsTab.UpdateButtons;
 var
   AllOnList, AllArtistsOnList: Boolean;
   OneSelectedChart, ManySelectedCharts: Boolean;
-  OneSelectedArtist: Boolean;
   OneSelectedStream, ManySelectedStreams: Boolean;
+  AtLeastOneArtistSelected: Boolean;
   N: PVirtualNode;
   NodeData: PChartNodeData;
 begin
@@ -515,10 +527,10 @@ begin
   AllOnList := True;
   AllArtistsOnList := True;
   OneSelectedChart := False;
-  OneSelectedArtist := False;
   ManySelectedCharts := False;
   OneSelectedStream := False;
   ManySelectedStreams := False;
+  AtLeastOneArtistSelected := False;
 
   N := FChartsTree.GetFirst;
   while N <> nil do
@@ -527,14 +539,9 @@ begin
     begin
       NodeData := FChartsTree.GetNodeData(N);
       if not NodeData.IsOnWishlist then
-      begin
         AllOnList := False;
-      end;
-
-      // TODO: prüfen dass items angehen!!!
-      AllArtistsOnList := True;
-      // TODO: prüfen dass items angehen!!!
-      OneSelectedArtist := False;
+      if not NodeData.IsArtistOnWishlist then
+        AllArtistsOnList := False;
 
       if NodeData.Chart <> nil then
       begin
@@ -544,6 +551,9 @@ begin
           OneSelectedChart := False;
         end else if (not OneSelectedChart) and (not ManySelectedCharts) then
           OneSelectedChart := True;
+
+        if NodeData.Chart.ServerArtistHash > 0 then
+          AtLeastOneArtistSelected := True;
       end;
 
       if NodeData.Stream <> nil then
@@ -560,7 +570,7 @@ begin
   end;
 
   FChartsTree.FPopupMenu.FItemAddToWishlist.Enabled := (not AllOnList) and (OneSelectedChart or ManySelectedCharts) and (State = csNormal);
-  FChartsTree.FPopupMenu.FItemAddArtistToWishlist.Enabled := (not AllArtistsOnList) and (OneSelectedChart or ManySelectedCharts) and (OneSelectedArtist) and (State = csNormal);
+  FChartsTree.FPopupMenu.FItemAddArtistToWishlist.Enabled := (not AllArtistsOnList) and (AtLeastOneArtistSelected or ManySelectedCharts) and (State = csNormal);
   FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Enabled := (OneSelectedChart) and (State = csNormal);
   FChartsTree.FPopupMenu.FItemStartStreaming.Enabled := (OneSelectedStream or ManySelectedStreams) and (State = csNormal);
   FChartsTree.FPopupMenu.FItemPlayStream.Enabled := (OneSelectedStream) and (State = csNormal);
@@ -568,7 +578,7 @@ begin
   FChartsTree.FPopupMenu.FItemAddStream.Enabled := (OneSelectedStream or ManySelectedStreams) and (State = csNormal);
 
   FSearchPanel.FButtonAddToWishlist.Enabled := FChartsTree.FPopupMenu.FItemAddToWishlist.Enabled;
-  FSearchPanel.FButtonAddArtistToWishlist.Enabled := (not AllArtistsOnList) and (OneSelectedChart or ManySelectedCharts) and (OneSelectedArtist) and (State = csNormal);
+  FSearchPanel.FButtonAddArtistToWishlist.Enabled := (not AllArtistsOnList) and (AtLeastOneArtistSelected or ManySelectedCharts) and (State = csNormal);
   FSearchPanel.FButtonEditAndAddToWishlist.Enabled := FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Enabled;
   FSearchPanel.FButtonStartStreaming.Enabled := FChartsTree.FPopupMenu.FItemStartStreaming.Enabled;
   FSearchPanel.FButtonPlayStream.Enabled := FChartsTree.FPopupMenu.FItemPlayStream.Enabled;
@@ -622,6 +632,7 @@ begin
 
   FPopupMenu := TChartsPopup.Create(Self);
   FPopupMenu.ItemAddToWishlist.OnClick := PopupMenuClick;
+  FPopupMenu.ItemAddArtistToWishlist.OnClick := PopupMenuClick;
   FPopupMenu.ItemEditAndAddToWishlist.OnClick := PopupMenuClick;
   FPopupMenu.ItemStartStreaming.OnClick := PopupMenuClick;
   FPopupMenu.ItemPlayStream.OnClick := PopupMenuClick;
@@ -744,35 +755,12 @@ end;
 function TChartsTree.DoGetImageIndex(Node: PVirtualNode;
   Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean;
   var Index: Integer): TCustomImageList;
-var
-  NodeData: PChartNodeData;
-  P: TControl;
 begin
   Result := inherited;
 
-  P := Parent;
-  while not (P.ClassType = TChartsTab) do
-    P := P.Parent;
-
-  NodeData := GetNodeData(Node);
-  if (Kind = ikNormal) or (Kind = ikSelected) then
-    case Column of
-      0:
-        if NodeData.Chart <> nil then
-          Index := 20
-        else
-          Index := 16;
-      1:
-        if NodeData.Chart <> nil then
-        begin
-          if NodeData.IsOnWishlist then
-            Index := 31;
-        end else
-        begin
-          if TChartsTab(P).FOnGetIsStreamOnListEvent(Self, NodeData.Stream.Stream) then
-            Index := 80;
-        end;
-    end;
+  // Wir müssen irgendeinen Index setzen, damit PaintImage() getriggert wird
+  if ((Column = 0) or (Column = 1)) and ((Kind = ikNormal) or (Kind = ikSelected)) then
+    Index := 0;
 end;
 
 procedure TChartsTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
@@ -867,7 +855,7 @@ begin
       if NodesData[i].Chart <> nil then
       begin
         SetLength(Titles, Length(Titles) + 1);
-        Titles[High(Titles)] := TWishlistTitleInfo.Create(NodesData[i].Chart.ServerHash, NodesData[i].Chart.Name);
+        Titles[High(Titles)] := TWishlistTitleInfo.Create(NodesData[i].Chart.ServerHash, NodesData[i].Chart.Name, False);
       end else
       begin
         SetLength(Info, Length(Info) + 1);
@@ -1006,10 +994,14 @@ begin
         NodeData := GetNodeData(Node);
 
         NodeData.IsOnWishlist := False;
+        NodeData.IsArtistOnWishlist := False;
         for i := 0 to FLists.SaveList.Count - 1 do
         begin
-          NodeData.IsOnWishlist := (NodeData.Chart <> nil) and (NodeData.Chart.ServerHash = FLists.SaveList.Items[i].ServerHash);
-          if NodeData.IsOnWishlist then
+          if not NodeData.IsOnWishlist then
+            NodeData.IsOnWishlist := (NodeData.Chart <> nil) and (FLists.SaveList.Items[i].ServerHash > 0) and (NodeData.Chart.ServerHash = FLists.SaveList.Items[i].ServerHash);
+          if not NodeData.IsArtistOnWishlist then
+            NodeData.IsArtistOnWishlist := (NodeData.Chart <> nil) and (FLists.SaveList.Items[i].ServerArtistHash > 0) and (NodeData.Chart.ServerArtistHash = FLists.SaveList.Items[i].ServerArtistHash);
+          if NodeData.IsOnWishlist and NodeData.IsArtistOnWishlist then
             Break;
         end;
 
@@ -1047,6 +1039,50 @@ begin
     end;
 end;
 
+procedure TChartsTree.PaintImage(var PaintInfo: TVTPaintInfo;
+  ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
+var
+  L: Integer;
+  NodeData: PChartNodeData;
+  P: TControl;
+begin
+  NodeData := GetNodeData(PaintInfo.Node);
+
+  L := PaintInfo.ImageInfo[ImageInfoIndex].XPos;
+
+  case PaintInfo.Column of
+    0:
+      begin
+        if NodeData.Chart <> nil then
+          Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20)
+        else
+          Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 16);
+      end;
+    1:
+      begin
+        if NodeData.Chart <> nil then
+        begin
+          if NodeData.IsOnWishlist then
+          begin
+            Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 77);
+            L := L + 16
+          end;
+          if NodeData.IsArtistOnWishlist then
+          begin
+            Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 86);
+          end;
+        end else
+        begin
+          P := Parent;
+          while not (P.ClassType = TChartsTab) do
+            P := P.Parent;
+          if TChartsTab(P).FOnGetIsStreamOnListEvent(Self, NodeData.Stream.Stream) then
+            Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 80);
+        end;
+      end;
+  end;
+end;
+
 procedure TChartsTree.PopupMenuClick(Sender: TObject);
 var
   i: Integer;
@@ -1072,7 +1108,14 @@ begin
         if Sender = FPopupMenu.ItemAddToWishlist then
         begin
           SetLength(Titles, Length(Titles) + 1);
-          Titles[High(Titles)] := TWishlistTitleInfo.Create(Nodes[i].Chart.ServerHash, Nodes[i].Chart.Name);
+          Titles[High(Titles)] := TWishlistTitleInfo.Create(Nodes[i].Chart.ServerHash, Nodes[i].Chart.Name, False);
+        end else if Sender = FPopupMenu.ItemAddArtistToWishlist then
+        begin
+          if Nodes[i].Chart.ServerArtistHash > 0 then
+          begin
+            SetLength(Titles, Length(Titles) + 1);
+            Titles[High(Titles)] := TWishlistTitleInfo.Create(Nodes[i].Chart.ServerArtistHash, Nodes[i].Chart.Artist, True);
+          end;
         end else if Sender = FPopupMenu.ItemEditAndAddToWishlist then
         begin
           F := TfrmChartsTabAdjustTitleName.Create(GetParentForm(Self), Nodes[i].Chart.Name);
@@ -1082,7 +1125,7 @@ begin
             if F.Okay then
             begin
               SetLength(Titles, Length(Titles) + 1);
-              Titles[High(Titles)] := TWishlistTitleInfo.Create(0, F.TitleName);
+              Titles[High(Titles)] := TWishlistTitleInfo.Create(0, F.TitleName, False);
             end;
           finally
             F.Free;
@@ -1285,7 +1328,7 @@ begin
   FButtonAddToWishlist := TToolButton.Create(FToolbar);
   FButtonAddToWishlist.Parent := FToolbar;
   FButtonAddToWishlist.Hint := _('Add title to automatic wishlist');
-  FButtonAddToWishlist.ImageIndex := 31;
+  FButtonAddToWishlist.ImageIndex := 77;
 
   FToolbar.Padding.Top := 2;
   FToolbar.Align := alRight;
@@ -1310,7 +1353,7 @@ begin
 
   FItemAddToWishlist := CreateMenuItem;
   FItemAddToWishlist.Caption := '&Add title to automatic wishlist';
-  FItemAddToWishlist.ImageIndex := 31;
+  FItemAddToWishlist.ImageIndex := 77;
   Items.Add(FItemAddToWishlist);
 
   FItemAddArtistToWishlist := CreateMenuItem;

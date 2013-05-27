@@ -473,6 +473,7 @@ type
   TChartEntry = class
   private
     FName: string;
+    FArtist: string;
     FServerHash: Cardinal;
     FServerArtistHash: Cardinal;
     FPlayedLastDay: Cardinal;
@@ -487,14 +488,15 @@ type
     procedure Assign(Source: TChartEntry);
     function Copy: TChartEntry;
 
-    //class function Load(Stream: TExtendedStream; Lists: TDataLists; Version: Integer): TChartEntry;
+    class function Load(Stream: TExtendedStream; Lists: TDataLists; Version: Integer): TChartEntry;
     class function LoadFromHome(Stream: TExtendedStream; Version: Integer): TChartEntry;
-    procedure Save(Stream: TExtendedStream);
+    //procedure Save(Stream: TExtendedStream);
 
     procedure LoadStreams(StreamList: TStreamBrowserList);
 
     // The name
     property Name: string read FName;
+    property Artist: string read FArtist;
     property ServerHash: Cardinal read FServerHash;
     property ServerArtistHash: Cardinal read FServerArtistHash;
 
@@ -594,7 +596,7 @@ type
   end;
 
 const
-  DATAVERSION = 50; // TODO: testen ob er die letzte build und offizielle letzte frisst und so!!!
+  DATAVERSION = 50;
 
 implementation
 
@@ -1193,7 +1195,6 @@ begin
 
     FBrowserList.CreateDict;
 
-    {
     if Version < 48 then
     begin
       S.Read(CatCount);
@@ -1203,7 +1204,6 @@ begin
         Chart.Free;
       end;
     end;
-    }
   end;
 end;
 
@@ -1966,6 +1966,7 @@ var
   i: Integer;
 begin
   FName := Source.Name;
+  FArtist := Source.Artist;
   FServerHash := Source.ServerHash;
   FServerArtistHash := Source.FServerArtistHash;
   FPlayedLastDay := Source.PlayedLastDay;
@@ -2024,7 +2025,8 @@ begin
   FStreams := TList<TChartStream>.Create;
 end;
 
-{
+// Diese Methode ist ALT! Wird nur noch verwendet, dass der Lesevorgang von alten Daten-Dateien
+// ordentlich abläuft!! Iiiiiiiirgendwann kann das wohl raus.
 class function TChartEntry.Load(Stream: TExtendedStream;
   Lists: TDataLists; Version: Integer): TChartEntry;
 var
@@ -2063,18 +2065,17 @@ begin
     end;
   end;
 end;
-}
 
 class function TChartEntry.LoadFromHome(Stream: TExtendedStream; Version: Integer): TChartEntry;
 var
   i: Integer;
   C: Cardinal;
-  x: Cardinal;
 begin
   Result := TChartEntry.Create;
   Stream.Read(Result.FServerHash);
   Stream.Read(Result.FServerArtistHash);
   Stream.Read(Result.FName);
+  Stream.Read(Result.FArtist);
 
   Stream.Read(Result.FPlayedLastDay);
   Stream.Read(Result.FPlayedLastWeek);
@@ -2100,24 +2101,6 @@ begin
       Streams.Delete(i);
     end;
   end;
-end;
-
-// TODO: Wird das noch gebraucht??? und das normale laden?? nein oder!!
-procedure TChartEntry.Save(Stream: TExtendedStream);
-var
-  i: Integer;
-begin
-  Stream.Write(FName);
-  Stream.Write(FServerHash);
-  Stream.Write(FServerArtistHash);
-  Stream.Write(FPlayedLastDay);
-  Stream.Write(FPlayedLastWeek);
-  Stream.Write(Length(FCategories));
-  for i := 0 to High(FCategories) do
-    Stream.Write(FCategories[i]);
-  Stream.Write(Cardinal(FStreams.Count));
-  for i := 0 to FStreams.Count - 1 do
-    FStreams[i].Save(Stream);
 end;
 
 { TGenre }

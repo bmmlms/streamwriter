@@ -272,7 +272,7 @@ begin
         Canvas.TextOut(R.Left + 18, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FClients)) div 2, IntToStr(FClients));
 
         Canvas.Draw(R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4, R.Top + (R.Bottom - R.Top) div 2 - IconRecord.Height div 2, IconRecord);
-        Canvas.TextOut(R.Left + 18 + Canvas.TextWidth(IntToStr(FRecordings)) + 4 + 18, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FRecordings)) div 2, IntToStr(FRecordings));
+        Canvas.TextOut(R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4 + 18, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FRecordings)) div 2, IntToStr(FRecordings));
       end;
     2:
       begin

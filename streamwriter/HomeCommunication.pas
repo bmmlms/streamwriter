@@ -100,7 +100,7 @@ type
   TStreamsReceivedEvent = procedure(Sender: TObject) of object;
   TChartsReceivedEvent = procedure(Sender: TObject; Success: Boolean; Charts: TChartList) of object;
   TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, TitlePattern: string;
-    Format: TAudioTypes; Kbps: Cardinal; ServerHash: Cardinal) of object;
+    Format: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
   TIntArrayEvent = procedure(Sender: TObject; IntArr: TIntArray) of object;
@@ -171,8 +171,8 @@ type
       Kbps: Cardinal; URLs: TStringList);
     procedure SendGetMonitorStreams(Count: Cardinal);
     procedure SendSyncWishlist; overload;
-    procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hashes: TCardinalArray); overload;
-    procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hash: Cardinal); overload;
+    procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hashes: TSyncWishlistRecordArray); overload;
+    procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hash: Cardinal; IsArtist: Boolean); overload;
     procedure SendSearchCharts(Top: Boolean; Term: string);
     procedure SendGetWishlistUpgrade(Titles: TStringList);
 
@@ -547,10 +547,8 @@ procedure THomeCommunication.SendSyncWishlist;
 var
   i: Integer;
   ItemsFound: Integer;
-  Hashes: TCardinalArray;
+  Hashes: TSyncWishlistRecordArray;
 begin
-  // TODO: artist-hashes!
-
   if not FConnected then
     Exit;
 
@@ -559,7 +557,11 @@ begin
   for i := 0 to FLists.SaveList.Count - 1 do
     if FLists.SaveList[i].ServerHash > 0 then
     begin
-      Hashes[ItemsFound] := FLists.SaveList[i].ServerHash;
+      Hashes[ItemsFound] := TSyncWishlistRecord.Create(FLists.SaveList[i].ServerHash, False);
+      Inc(ItemsFound);
+    end else if FLists.SaveList[i].ServerArtistHash > 0 then
+    begin
+      Hashes[ItemsFound] := TSyncWishlistRecord.Create(FLists.SaveList[i].ServerArtistHash, True);
       Inc(ItemsFound);
     end;
   SetLength(Hashes, ItemsFound);
@@ -568,10 +570,8 @@ begin
 end;
 
 procedure THomeCommunication.SendSyncWishlist(SyncType: TSyncWishlistTypes;
-  Hashes: TCardinalArray);
+  Hashes: TSyncWishlistRecordArray);
 begin
-  // TODO: artist-hashes!
-
   if not FConnected then
     Exit;
 
@@ -582,17 +582,15 @@ begin
 end;
 
 procedure THomeCommunication.SendSyncWishlist(SyncType: TSyncWishlistTypes;
-  Hash: Cardinal);
+  Hash: Cardinal; IsArtist: Boolean);
 var
-  Hashes: TCardinalArray;
+  Hashes: TSyncWishlistRecordArray;
 begin
-  // TODO: artist-hashes!
-
   if (not Connected) or (Hash = 0) or (SyncType = swSync) then
     Exit;
 
   SetLength(Hashes, 1);
-  Hashes[0] := Hash;
+  Hashes[0] := TSyncWishlistRecord.Create(Hash, IsArtist);
 
   SendSyncWishlist(SyncType, Hashes);
 end;
@@ -825,7 +823,8 @@ begin
     FOnNetworkTitleChangedReceived(Self,  THomeThread(Sender).FNetworkTitleChanged.StreamID, THomeThread(Sender).FNetworkTitleChanged.StreamName,
       THomeThread(Sender).FNetworkTitleChanged.Title, THomeThread(Sender).FNetworkTitleChanged.CurrentURL,
       THomeThread(Sender).FNetworkTitleChanged.TitleRegEx, THomeThread(Sender).FNetworkTitleChanged.Format,
-      THomeThread(Sender).FNetworkTitleChanged.Bitrate, THomeThread(Sender).FNetworkTitleChanged.ServerHash);
+      THomeThread(Sender).FNetworkTitleChanged.Bitrate, THomeThread(Sender).FNetworkTitleChanged.ServerHash,
+      THomeThread(Sender).FNetworkTitleChanged.ServerArtistHash);
 end;
 
 procedure THomeCommunication.SendHandshake;

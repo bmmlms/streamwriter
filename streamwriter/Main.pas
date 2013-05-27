@@ -1083,9 +1083,9 @@ begin
 
     if tabLists.SendWishListUpdateBatch then
     begin
-      // TODO: Translation ist kacke.
-      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('The system for automatic recordings has been reworked. Titles for automatic recordings can only be added using the chart-view. ' +
-                                                'The existing titles from the old method are now enqueued to be updated for the new system. This might take some time, just watch your wishlist grow...'), 16, btOK);
+      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('The system for automatic recordings has been reworked. Titles for automatic recordings now can only be added using the chart-view. ' +
+                                                'The existing titles from the old method are now enqueued to be updated for the new system. This might take some time, just watch your wishlist grow ' +
+                                                'when connected to the server.'), 16, btOK);
     end;
 
     if (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or (AppGlobals.LastBrowserUpdate < Now - 15)) or
@@ -1898,7 +1898,7 @@ procedure TfrmStreamWriterMain.tabChartsAddToWishlist(Sender: TObject;
 var
   i, n, NumChars: Integer;
   Hash: Cardinal;
-  Hashes: TCardinalArray;
+  Hashes: TSyncWishlistRecordArray;
   Found: Boolean;
   Pattern: string;
   T: TTitleInfo;
@@ -1910,7 +1910,9 @@ begin
     Pattern := BuildPattern(Arr[i].Title, Hash, NumChars, True);
     Found := False;
     for n := 0 to FDataLists.SaveList.Count - 1 do
-      if (FDataLists.SaveList[n].Hash = Hash) or ((Arr[i].Hash > 0) and (FDataLists.SaveList[n].ServerHash = Arr[i].Hash)) then
+      if ((Arr[i].Hash = 0) and (FDataLists.SaveList[n].Hash = Hash)) or
+         ((Arr[i].Hash > 0) and Arr[i].IsArtist and (FDataLists.SaveList[n].ServerArtistHash = Arr[i].Hash)) or
+         ((Arr[i].Hash > 0) and (not Arr[i].IsArtist) and (FDataLists.SaveList[n].ServerHash = Arr[i].Hash)) then
       begin
         Found := True;
         Break;
@@ -1918,8 +1920,14 @@ begin
 
     if not Found then
     begin
-            // TODO: artisthash berücksichtigen!
-      T := TTitleInfo.Create(Arr[i].Hash, 0, Arr[i].Title);
+      if Arr[i].Hash > 0 then
+      begin
+        if Arr[i].IsArtist then
+          T := TTitleInfo.Create(0, Arr[i].Hash, Arr[i].Title)
+        else
+          T := TTitleInfo.Create(Arr[i].Hash, 0, Arr[i].Title);
+      end else
+        T := TTitleInfo.Create(0, 0, Arr[i].Title);
 
       FDataLists.SaveList.Add(T);
       tabLists.AddTitle(nil, ltSave, T);
@@ -1927,7 +1935,7 @@ begin
       if Arr[i].Hash > 0 then
       begin
         SetLength(Hashes, Length(Hashes) + 1);
-        Hashes[High(Hashes)] := Arr[i].Hash;
+        Hashes[High(Hashes)] := TSyncWishlistRecord.Create(Arr[i].Hash, Arr[i].IsArtist);
       end;
     end;
   end;
@@ -2417,11 +2425,11 @@ begin
   if actRename.Enabled <> (tabClients.ClientView.SelectedCount = 1) and (not OnlyAutomatedSelected) and (not OnlyAutomatedCatsSelected) then
     actRename.Enabled := (tabClients.ClientView.SelectedCount = 1) and (not OnlyAutomatedSelected) and (not OnlyAutomatedCatsSelected);
 
-  if actRemove.Enabled <> (B or (Length(CatNodes) > 0)) and not OnlyAutomatedCatsSelected then
-    actRemove.Enabled := (B or (Length(CatNodes) > 0)) and not OnlyAutomatedCatsSelected;
+  if actRemove.Enabled <> B or ((Length(CatNodes) > 0) and not OnlyAutomatedCatsSelected) then
+    actRemove.Enabled := B or ((Length(CatNodes) > 0) and not OnlyAutomatedCatsSelected);
 
-  if actStreamSettings.Enabled <> ((Length(Clients) > 0) and not OnlyAutomatedSelected) then
-    actStreamSettings.Enabled := (Length(Clients) > 0) and not OnlyAutomatedSelected;
+  if actStreamSettings.Enabled <> B and (not OnlyAutomatedSelected) then
+    actStreamSettings.Enabled := B and (not OnlyAutomatedSelected);
 
   URLFound := False;
   if Length(Clients) > 0 then

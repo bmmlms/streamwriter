@@ -30,6 +30,14 @@ type
   TSendClientStatTypes = (csSave, csAutoSave);
   TSyncWishlistTypes = (swSync, swAdd, swRemove);
 
+  TSyncWishlistRecord = record
+    Hash: Cardinal;
+    IsArtist: Boolean;
+
+    constructor Create(Hash: Cardinal; IsArtist: Boolean);
+  end;
+  TSyncWishlistRecordArray = array of TSyncWishlistRecord;
+
   TWishlistUpgrade = class
   public
     Title: string;
@@ -132,6 +140,7 @@ type
     FFormat: TAudioTypes;
     FTitleRegEx: string;
     FServerHash: Cardinal;
+    FServerArtistHash: Cardinal;
   protected
   public
     constructor Create;
@@ -146,6 +155,7 @@ type
     property Format: TAudioTypes read FFormat;
     property TitleRegEx: string read FTitleRegEx;
     property ServerHash: Cardinal read FServerHash;
+    property ServerArtistHash: Cardinal read FServerArtistHash;
   end;
 
   TCommandGetServerData = class(TCommand)
@@ -296,14 +306,14 @@ type
   TCommandSyncWishlist = class(TCommand)
   private
     FSyncType: TSyncWishlistTypes;
-    FHashes: TCardinalArray;
+    FHashes: TSyncWishlistRecordArray;
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
     constructor Create; overload;
-    constructor Create(SyncType: TSyncWishlistTypes; Hashes: TCardinalArray); overload;
+    constructor Create(SyncType: TSyncWishlistTypes; Hashes: TSyncWishlistRecordArray); overload;
 
-    property Hashes: TCardinalArray read FHashes write FHashes;
+    property Hashes: TSyncWishlistRecordArray read FHashes write FHashes;
   end;
 
   TCommandSearchCharts = class(TCommand)
@@ -491,8 +501,9 @@ begin
   FFormat := TAudioTypes(B);
   Stream.Read(FTitleRegEx);
   Stream.Read(FServerHash);
+  Stream.Read(FServerArtistHash);
 end;
-
+         // TODO: bei automatischen aufnahmen den kram prüfen: entferne von wunschliste, adde zu ignorierliste, etc... ob das noch sinn macht und funzt.
 { TCommandUpdateStats }
 
 constructor TCommandUpdateStats.Create;
@@ -740,7 +751,7 @@ begin
   FCommandType := ctSyncWishlist;
 end;
 
-constructor TCommandSyncWishlist.Create(SyncType: TSyncWishlistTypes; Hashes: TCardinalArray);
+constructor TCommandSyncWishlist.Create(SyncType: TSyncWishlistTypes; Hashes: TSyncWishlistRecordArray);
 begin
   Create;
 
@@ -757,7 +768,10 @@ begin
   S.Write(Byte(FSyncType));
   S.Write(Cardinal(Length(FHashes)));
   for i := 0 to High(FHashes) do
-    S.Write(FHashes[i]);
+  begin
+    S.Write(FHashes[i].Hash);
+    S.Write(FHashes[i].IsArtist);
+  end;
 end;
 
 { TCommandSearchCharts }
@@ -875,6 +889,14 @@ begin
     Stream.Read(WU.Title);
     FTitles.Add(WU);
   end;
+end;
+
+{ TSyncWishlistRecord }
+
+constructor TSyncWishlistRecord.Create(Hash: Cardinal; IsArtist: Boolean);
+begin
+  Self.Hash := Hash;
+  Self.IsArtist := IsArtist;
 end;
 
 end.
