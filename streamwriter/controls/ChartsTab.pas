@@ -199,12 +199,11 @@ type
   end;
 
 const
-  // TODO: Die texte übersetzen. der erste hat sich geändert.
   TEXT_SEARCHING = 'Searching titles';
   TEXT_NO_CONNECTION = 'No connection to server.';
   TEXT_SEARCH_ERROR = 'Error searching titles.';
   TEXT_RESULTS = '%d songs found';
-  SEARCH_TOP = 'Top 2000';
+  SEARCH_TOP = '[Most played]';
 
 implementation
 
