@@ -510,10 +510,12 @@ begin
         try
           for i := 0 to ExportList.Count - 1 do
           begin
-            if ExportList[i].ServerHash = 0 then
-              Lst.Add(ExportList[i].Title)
+            if ExportList[i].ServerHash > 0 then
+              Lst.Add(ExportList[i].Title + '|' + IntToStr(ExportList[i].ServerHash))
+            else if ExportList[i].ServerArtistHash > 0 then
+              Lst.Add(ExportList[i].Title + '|A' + IntToStr(ExportList[i].ServerArtistHash))
             else
-              Lst.Add(ExportList[i].Title + '|' + IntToStr(ExportList[i].ServerHash));
+              Lst.Add(ExportList[i].Title);
           end;
           try
             Lst.SaveToFile(Dlg.FileName);
@@ -566,7 +568,7 @@ procedure TTitlePanel.ImportClick(Sender: TObject);
 var
   i, n, P: Integer;
   NumChars: Integer;
-  Hash, ServerHash: Cardinal;
+  Hash, ServerHash, ServerArtistHash: Cardinal;
   Exists, UseTitleInfo: Boolean;
   Pattern, Ext: string;
   Dlg: TOpenDialog;
@@ -576,8 +578,6 @@ var
   ParentNode: PVirtualNode;
   Hashes: TSyncWishlistRecordArray;
 begin
-  // TODO: artist-hashes... die muss man auch exportieren können!
-  {
   if FAddCombo.ItemIndex = 0 then
   begin
     List := FLists.SaveList;
@@ -650,16 +650,39 @@ begin
                 Lst[i] := RemoveFileExt(Lst[i]);
               end;
 
-            // Wenn ein Hash hinten dran ist auswerten
-            ServerHash := 0;
-            P := RPos('|', Lst[i]);
-            if P > -1 then
+            if List = FLists.SaveList then
             begin
-              if Length(Lst[i]) > P then
+              // Wenn ein Hash hinten dran ist auswerten
+              ServerHash := 0;
+              P := RPos('|', Lst[i]);
+              if P > -1 then
               begin
-                ServerHash := StrToIntDef(Copy(Lst[i], P + 1, Length(Lst[i]) - P), 0);
-                if ServerHash > 0 then
-                  Lst[i] := Copy(Lst[i], 1, P - 1);
+                if Length(Lst[i]) > P then
+                begin
+                  ServerHash := StrToIntDef(Copy(Lst[i], P + 1, Length(Lst[i]) - P), 0);
+                  if ServerHash > 0 then
+                    Lst[i] := Copy(Lst[i], 1, P - 1);
+                end;
+              end;
+
+              // Vielleicht ist es auch ein Künstler-Hash
+              ServerArtistHash := 0;
+              P := RPos('|A', Lst[i]);
+              if P > -1 then
+              begin
+                if Length(Lst[i]) > P + 1 then
+                begin
+                  ServerArtistHash := StrToIntDef(Copy(Lst[i], P + 2, Length(Lst[i]) - P), 0);
+                  if ServerArtistHash > 0 then
+                    Lst[i] := Copy(Lst[i], 1, P - 1);
+                end;
+              end;
+
+              // Das hier darf nicht sein, könnte aber passieren
+              if (ServerHash > 0) and (ServerArtistHash > 0) then
+              begin
+                ServerHash := 0;
+                ServerArtistHash := 0;
               end;
             end;
 
@@ -669,24 +692,47 @@ begin
 
             Exists := False;
             for n := 0 to List.Count - 1 do
-              if List[n].Hash = Hash then
+              if List = FLists.SaveList then
               begin
-                Exists := True;
-                Break;
-              end;
+                if (ServerHash > 0) and (List[n].ServerHash = ServerHash) then
+                begin
+                  Exists := True;
+                  Break;
+                end;
+
+                if (ServerArtistHash > 0) and (List[n].ServerArtistHash = ServerArtistHash) then
+                begin
+                  Exists := True;
+                  Break;
+                end;
+
+                if (ServerHash = 0) and (ServerArtistHash = 0) and (List[n].Hash = Hash) then
+                begin
+                  Exists := True;
+                  Break;
+                end;
+              end else
+                if List[n].Hash = Hash then
+                begin
+                  Exists := True;
+                  Break;
+                end;
 
             if Exists then
               Continue;
 
-            // TODO: artisthash berücksichtigen!
-            Title := TTitleInfo.Create(ServerHash, 0, Lst[i]);
+            Title := TTitleInfo.Create(ServerHash, ServerArtistHash, Lst[i]);
             List.Add(Title);
             FTree.AddTitle(Title, ParentNode, FFilterText, True);
 
-            if (List = FLists.SaveList) and (ServerHash > 0) then
+            if (List = FLists.SaveList) and ((ServerHash > 0) or (ServerArtistHash > 0)) then
             begin
               SetLength(Hashes, Length(Hashes) + 1);
-              Hashes[High(Hashes)] := ServerHash;
+
+              if ServerHash > 0 then
+                Hashes[High(Hashes)] := TSyncWishlistRecord.Create(ServerHash, False)
+              else
+                Hashes[High(Hashes)] := TSyncWishlistRecord.Create(ServerArtistHash, True);
             end;
           end;
         except
@@ -705,7 +751,6 @@ begin
   HomeComm.SendSetSettings((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
   if List = FLists.SaveList then
     HomeComm.SendSyncWishlist(swAdd, Hashes);
-  }
 end;
 
 procedure TTitlePanel.PostTranslate;
@@ -1033,7 +1078,6 @@ begin
     if Parent = nil then
       Parent := FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]));
 
-    // TODO: artisthash berücksichtigen!
     Title := TTitleInfo.Create(0, 0, Trim(Text));
     Node := FTree.AddTitle(Title, Parent, FFilterText, True);
     if Node <> nil then
@@ -1460,7 +1504,6 @@ begin
 
   for i := 0 to FDropTarget.Files.Count - 1 do
   begin
-            // TODO: artisthash berücksichtigen!
     Title := TTitleInfo.Create(0, 0, RemoveFileExt(ExtractFileName(FDropTarget.Files[i])));
 
     Found := False;
@@ -1756,7 +1799,6 @@ begin
   NodeData := GetNodeData(Node);
 
   NodeData.Title.Free;
-              // TODO: artisthash berücksichtigen!
   NodeData.Title := TTitleInfo.Create(0, 0, Text);
 end;
 

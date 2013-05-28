@@ -144,7 +144,7 @@ begin
     MsgBox(Handle, _('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
-
+   // TODO: im clientview titel in wunschliste hinzufügen, ausm popup... macht das sinn? doch eher hash versuchen zu bekommen und hinzufügen?
   RValid := False;
   R := TPerlRegEx.Create;
   try

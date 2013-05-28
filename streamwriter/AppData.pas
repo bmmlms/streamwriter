@@ -448,7 +448,7 @@ begin
   FStreamSettings := TStreamSettings.Create(False);
 
   // The number of the current build
-  FBuildNumber := 478;
+  FBuildNumber := 503;
 
   // Adjust dimensions of the main-form
   W := 900;
