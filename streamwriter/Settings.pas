@@ -1970,7 +1970,7 @@ begin
     FPageList.Add(TPage.Create('Blacklist', pnlCommunityBlacklist, 'BLACKLIST', FPageList.Find(pnlAutoRecord)));
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
-    FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
+    FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Addons', pnlAddons, 'ADDONS_PNG'));
     FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
     FPageList.Add(TPage.Create('Bandwidth', pnlBandwidth, 'BANDWIDTH'));
@@ -1984,7 +1984,7 @@ begin
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
     FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
-    FPageList.Add(TPage.Create('Cut', pnlCut, 'CUT'));
+    FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
   end;
   inherited;

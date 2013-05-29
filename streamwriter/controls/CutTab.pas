@@ -455,7 +455,7 @@ begin
 
   FCut := TToolButton.Create(Self);
   FCut.Parent := Self;
-  FCut.Hint := 'Cut';
+  FCut.Hint := 'Cut song';
   FCut.ImageIndex := 17;
 
   FPosEdit := TToolButton.Create(Self);

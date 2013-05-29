@@ -662,7 +662,7 @@ begin
   if Version > 48 then
     Stream.Read(Result.FUpdatedToHash)
   else
-    Result.FUpdatedToHash := Result.ServerHash > 0;
+    Result.FUpdatedToHash := (Result.ServerHash > 0) or (Result.ServerArtistHash > 0);
 end;
 
 procedure TTitleInfo.Save(Stream: TExtendedStream);

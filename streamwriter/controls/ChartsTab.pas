@@ -388,7 +388,7 @@ procedure TChartsTab.SearchKeyPress(Sender: TObject; var Key: Char);
 begin
   if Key = #13 then
   begin
-    if AnsiLowerCase(Trim(FSearchPanel.FSearch.Text)) = AnsiLowerCase(SEARCH_TOP) then
+    if FSearchPanel.FSearch.ItemIndex = 0 then
     begin
       SearchCharts(True);
       FSearchPanel.FSearch.ItemIndex := 0;

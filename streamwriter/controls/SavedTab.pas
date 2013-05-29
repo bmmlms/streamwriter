@@ -78,12 +78,14 @@ type
     FItemStop: TMenuItem;
     FItemNext: TMenuItem;
     FItemPlayLastSecs: TMenuItem;
-    FItemCut: TMenuItem;
+    FItemCutSong: TMenuItem;
     FItemEditTags: TMenuItem;
     FItemFinalized: TMenuItem;
     FItemAddToWishlist: TMenuItem;
     FItemAddToIgnorelist: TMenuItem;
     FItemRename: TMenuItem;
+    FItemCut: TMenuItem;
+    FItemCopy: TMenuItem;
     FItemRemove: TMenuItem;
     FItemRecycle: TMenuItem;
     FItemDelete: TMenuItem;
@@ -104,12 +106,14 @@ type
     property ItemStop: TMenuItem read FItemStop;
     property ItemNext: TMenuItem read FItemNext;
     property ItemPlayLastSecs: TMenuItem read FItemPlayLastSecs;
-    property ItemCut: TMenuItem read FItemCut;
+    property ItemCutSong: TMenuItem read FItemCutSong;
     property ItemEditTags: TMenuItem read FItemEditTags;
     property ItemFinalized: TMenuItem read FItemFinalized;
     property ItemAddToWishlist: TMenuItem read FItemAddToWishlist;
     property ItemAddToIgnorelist: TMenuItem read FItemAddToIgnorelist;
     property ItemRename: TMenuItem read FItemRename;
+    property ItemCut: TMenuItem read FItemCut;
+    property ItemCopy: TMenuItem read FItemCopy;
     property ItemRemove: TMenuItem read FItemRemove;
     property ItemRecycle: TMenuItem read FItemRecycle;
     property ItemDelete: TMenuItem read FItemDelete;
@@ -123,12 +127,14 @@ type
   private
     FRefresh: TToolButton;
     FSep1: TToolButton;
-    FCut: TToolButton;
+    FCutSong: TToolButton;
     FEditTags: TToolButton;
     FFinalized: TToolButton;
     FAddToWishlist: TToolButton;
     FAddToIgnorelist: TToolButton;
     FSep2: TToolButton;
+    FCut: TToolButton;
+    FCopy: TToolButton;
     FRename: TToolButton;
     FRemove: TToolButton;
     FRecycle: TToolButton;
@@ -414,14 +420,17 @@ begin
   FItemPlayLastSecs.ImageIndex := 83;
   Items.Add(FItemPlayLastSecs);
 
+  // TODO: player controls aus dem popup rausmachen. das ist zu groß und die sind über.
+
+
   ItemTmp := CreateMenuItem;
   ItemTmp.Caption := '-';
   Items.Add(ItemTmp);
 
-  FItemCut := CreateMenuItem;
-  FItemCut.Caption := '&Cut';
-  FItemCut.ImageIndex := 17;
-  Items.Add(FItemCut);
+  FItemCutSong := CreateMenuItem;
+  FItemCutSong.Caption := '&Cut song';
+  FItemCutSong.ImageIndex := 17;
+  Items.Add(FItemCutSong);
 
   FItemEditTags := CreateMenuItem;
   FItemEditTags.Caption := '&Edit tags...';
@@ -450,6 +459,16 @@ begin
   ItemTmp := CreateMenuItem;
   ItemTmp.Caption := '-';
   Items.Add(ItemTmp);
+
+  FItemCut := CreateMenuItem;
+  FItemCut.Caption := 'Cut'; // TODO: shortcut. und translaten. die übersetzung beißt sich mit dem alten "Schneiden". das muss geändert werden.
+  FItemCut.ImageIndex := 87;
+  Items.Add(FItemCut);
+
+  FItemCopy := CreateMenuItem;
+  FItemCopy.Caption := 'Copy'; // TODO: shortcut.
+  FItemCopy.ImageIndex := 57;
+  Items.Add(FItemCopy);
 
   FItemRename := CreateMenuItem;
   FItemRename.Caption := 'Ren&ame';
@@ -507,11 +526,13 @@ begin
   FItemPause.Enabled := Playing;
   FItemStop.Enabled := Playing;
   FItemNext.Enabled := (not IsLast) and Playing;
-  FItemCut.Enabled := Enable;
+  FItemCutSong.Enabled := Enable;
   FItemEditTags.Enabled := Enable;
   FItemFinalized.Enabled := Enable;
   FItemAddToWishlist.Enabled := Enable;
   FItemAddToIgnorelist.Enabled := Enable;
+  FItemCut.Enabled := Enable;
+  FItemCopy.Enabled := Enable;
   FItemRename.Enabled := Enable;
   FItemRemove.Enabled := Enable;
   FItemRecycle.Enabled := Enable;
@@ -532,11 +553,13 @@ end;
 
 procedure TSavedToolBar.EnableItems(Enable: Boolean);
 begin
-  FCut.Enabled := Enable;
+  FCutSong.Enabled := Enable;
   FEditTags.Enabled := Enable;
   FFinalized.Enabled := Enable;
   FAddToWishlist.Enabled := Enable;
   FAddToIgnorelist.Enabled := Enable;
+  FCut.Enabled := Enable;
+  FCopy.Enabled := Enable;
   FRemove.Enabled := Enable;
   FRecycle.Enabled := Enable;
   FDelete.Enabled := Enable;
@@ -596,6 +619,16 @@ begin
   FRename.Hint := 'Rename';
   FRename.ImageIndex := 74;
 
+  FCopy := TToolButton.Create(Self);
+  FCopy.Parent := Self;
+  FCopy.Hint := 'Copy'; // TODO: translate
+  FCopy.ImageIndex := 57;
+
+  FCut := TToolButton.Create(Self);
+  FCut.Parent := Self;
+  FCut.Hint := 'Cut'; // TODO: translate die übersetzung beißt sich mit dem alten "Schneiden". das muss geändert werden.
+  FCut.ImageIndex := 87;
+
   FSep2 := TToolButton.Create(Self);
   FSep2.Parent := Self;
   FSep2.Style := tbsSeparator;
@@ -626,10 +659,10 @@ begin
   FEditTags.Hint := 'Edit tags...';
   FEditTags.ImageIndex := 75;
 
-  FCut := TToolButton.Create(Self);
-  FCut.Parent := Self;
-  FCut.Hint := 'Cut';
-  FCut.ImageIndex := 17;
+  FCutSong := TToolButton.Create(Self);
+  FCutSong.Parent := Self;
+  FCutSong.Hint := 'Cut song';
+  FCutSong.ImageIndex := 17;
 
   FSep1 := TToolButton.Create(Self);
   FSep1.Parent := Self;
@@ -678,6 +711,7 @@ begin
   FSavedTree.OnAction := SavedTreeAction;
 
   FCoverDrag := TDropFileSource.Create(Self);
+  FCoverDrag.DragTypes := [dtCopy, dtMove];
 
   Png := TPngImage.Create;
   try
@@ -1033,9 +1067,8 @@ begin
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemStop);
   if Sender = FPlayToolbar.FNext then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemNext);
-
-  if Sender = FToolbar.FCut then
-    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemCut);
+  if Sender = FToolbar.FCutSong then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemCutSong);
   if Sender = FToolbar.FEditTags then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemEditTags);
   if Sender = FToolbar.FFinalized then
@@ -1044,6 +1077,10 @@ begin
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemAddToWishlist);
   if Sender = FToolbar.FAddToIgnorelist then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemAddToIgnorelist);
+  if Sender = FToolbar.FCut then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemCut);
+  if Sender = FToolbar.FCopy then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemCopy);
   if Sender = FToolbar.FRename then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemRename);
   if Sender = FToolbar.FRemove then
@@ -1120,8 +1157,8 @@ begin
   Tree.FPopupMenu.ItemProperties.Enabled := Length(Tracks) = 1;
   FToolbar.FProperties.Enabled := Length(Tracks) = 1;
 
-  Tree.FPopupMenu.ItemCut.Enabled := Length(Tracks) > 0;
-  FToolbar.FCut.Enabled := Length(Tracks) > 0;
+  Tree.FPopupMenu.ItemCutSong.Enabled := Length(Tracks) > 0;
+  FToolbar.FCutSong.Enabled := Length(Tracks) > 0;
 
   Tree.FPopupMenu.ItemEditTags.Enabled := Length(Tracks) = 1;
   FToolbar.FEditTags.Enabled := Length(Tracks) = 1;
@@ -1320,21 +1357,23 @@ begin
   FPlayToolBar.FPause.OnClick := ToolBarClick;
   FPlayToolBar.FStop.OnClick := ToolBarClick;
   FPlayToolBar.FNext.OnClick := ToolBarClick;
-  FPlayToolbar.FPlayLastSecs.OnClick := ToolBarClick;
+  FPlayToolBar.FPlayLastSecs.OnClick := ToolBarClick;
 
-  FToolBar.FCut.OnClick := ToolBarClick;
+  FToolBar.FCutSong.OnClick := ToolBarClick;
   FToolBar.FEditTags.OnClick := ToolBarClick;
   FToolBar.FFinalized.OnClick := ToolBarClick;
   FToolBar.FAddToWishlist.OnClick := ToolBarClick;
-  FToolbar.FAddToIgnorelist.OnClick := ToolBarClick;
+  FToolBar.FAddToIgnorelist.OnClick := ToolBarClick;
+  FToolBar.FCut.OnClick := ToolBarClick;
+  FToolBar.FCopy.OnClick := ToolBarClick;
   FToolBar.FRename.OnClick := ToolBarClick;
   FToolBar.FRemove.OnClick := ToolBarClick;
   FToolBar.FRecycle.OnClick := ToolBarClick;
   FToolBar.FDelete.OnClick := ToolBarClick;
   FToolBar.FShowFile.OnClick := ToolBarClick;
   FToolBar.FProperties.OnClick := ToolBarClick;
-  FToolbar.FImportFiles.OnClick := ToolBarClick;
-  FToolbar.FImportFolder.OnClick := ToolBarClick;
+  FToolBar.FImportFiles.OnClick := ToolBarClick;
+  FToolBar.FImportFolder.OnClick := ToolBarClick;
 
   BuildTree;
 
@@ -1443,20 +1482,23 @@ begin
   HintMode := hmTooltip;
 
   FDragSource := TDropFileSource.Create(Self);
+  FDragSource.DragTypes := [dtCopy, dtMove];
 
   FPopupMenu := TSavedTracksPopup.Create(Self);
   FPopupMenu.ItemRefresh.OnClick := PopupMenuClick;
-  FPopupMenu.ItemPlayLastSecs.OnClick := PopupMenuClick;
-  FPopupMenu.ItemPrev.OnClick := PopupMenuClick;
+  //FPopupMenu.ItemPlayLastSecs.OnClick := PopupMenuClick;
+  //FPopupMenu.ItemPrev.OnClick := PopupMenuClick;
   FPopupMenu.ItemPlay.OnClick := PopupMenuClick;
-  FPopupMenu.ItemPause.OnClick := PopupMenuClick;
-  FPopupMenu.ItemStop.OnClick := PopupMenuClick;
-  FPopupMenu.ItemNext.OnClick := PopupMenuClick;
-  FPopupMenu.ItemCut.OnClick := PopupMenuClick;
+  //FPopupMenu.ItemPause.OnClick := PopupMenuClick;
+  //FPopupMenu.ItemStop.OnClick := PopupMenuClick;
+  //FPopupMenu.ItemNext.OnClick := PopupMenuClick;
+  FPopupMenu.ItemCutSong.OnClick := PopupMenuClick;
   FPopupMenu.ItemEditTags.OnClick := PopupMenuClick;
   FPopupMenu.ItemFinalized.OnClick := PopupMenuClick;
   FPopupMenu.ItemAddToWishlist.OnClick := PopupMenuClick;
   FPopupMenu.ItemAddToIgnorelist.OnClick := PopupMenuClick;
+  FPopupMenu.ItemCut.OnClick := PopupMenuClick;
+  FPopupMenu.ItemCopy.OnClick := PopupMenuClick;
   FPopupMenu.ItemRename.OnClick := PopupMenuClick;
   FPopupMenu.ItemRemove.OnClick := PopupMenuClick;
   FPopupMenu.ItemRecycle.OnClick := PopupMenuClick;
@@ -1925,7 +1967,7 @@ begin
     Invalidate;
 
     Exit;
-  end else if Sender = FPopupMenu.ItemCut then
+  end else if Sender = FPopupMenu.ItemCutSong then
     Action := taCut
   else if Sender = FPopupMenu.ItemEditTags then
   begin
@@ -2510,12 +2552,31 @@ begin
 end;
 
 procedure TSavedTree.KeyDown(var Key: Word; Shift: TShiftState);
+var
+  i: Integer;
+  Tracks: TTrackInfoArray;
 begin
   inherited;
 
   if Key = VK_DELETE then
   begin
     FPopupMenu.FItemDelete.Click;
+  end else if (((Key = Ord('C')) or (Key = Ord('X'))) and (ssCtrl in Shift)) then
+  begin
+    // Die Bedingung hier für ist dreckig. In China ist das bestimmt kein 'C' und eigentlich
+    // sollte das über einen Menü-Shortcut laufen. Naja.... hauptsache funzt,
+    // dann ich geb kein Fick drauf.
+
+    FDragSource.Files.Clear;
+    Tracks := GetSelected;
+    for i := 0 to Length(Tracks) - 1 do
+      FDragSource.Files.Add(Tracks[i].Filename);
+
+    if FDragSource.Files.Count > 0 then
+      if Key = Ord('C') then
+        FDragSource.CopyToClipboard
+      else
+        FDragSource.CutToClipboard;
   end;
 end;
 
