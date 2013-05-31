@@ -42,7 +42,7 @@ type
   end;
   PSavedNodeData = ^TSavedNodeData;
 
-  TTrackActions = (taUndefined, taRefresh, taCut, taEditTags, taFinalized, taAddToWishlist, taAddToIgnorelist, taRemove,
+  TTrackActions = (taUndefined, taRefresh, taCutSong, taEditTags, taFinalized, taAddToWishlist, taAddToIgnorelist, taRemove,
                    taRecycle, taDelete, taShowFile, taProperties, taImportFiles, taImportFolder);
 
   TTrackInfoArray = array of TTrackInfo;
@@ -313,6 +313,8 @@ type
     procedure PlayerStop(Sender: TObject);
 
     procedure MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
+
+    procedure CutCopy(Cut: Boolean);
 
     procedure FileWatcherEvent(Sender: TObject; Action: DWORD; OldName, NewName: string);
     procedure FileWatcherTerminate(Sender: TObject);
@@ -856,7 +858,7 @@ begin
         if Assigned(FOnRefresh) then
           FOnRefresh(Self);
       end;
-    taCut:
+    taCutSong:
       begin
         if Assigned(FOnCut) then
           for i := 0 to Length(Tracks) - 1 do
@@ -1486,12 +1488,12 @@ begin
 
   FPopupMenu := TSavedTracksPopup.Create(Self);
   FPopupMenu.ItemRefresh.OnClick := PopupMenuClick;
-  //FPopupMenu.ItemPlayLastSecs.OnClick := PopupMenuClick;
-  //FPopupMenu.ItemPrev.OnClick := PopupMenuClick;
+  FPopupMenu.ItemPlayLastSecs.OnClick := PopupMenuClick;
+  FPopupMenu.ItemPrev.OnClick := PopupMenuClick;
   FPopupMenu.ItemPlay.OnClick := PopupMenuClick;
-  //FPopupMenu.ItemPause.OnClick := PopupMenuClick;
-  //FPopupMenu.ItemStop.OnClick := PopupMenuClick;
-  //FPopupMenu.ItemNext.OnClick := PopupMenuClick;
+  FPopupMenu.ItemPause.OnClick := PopupMenuClick;
+  FPopupMenu.ItemStop.OnClick := PopupMenuClick;
+  FPopupMenu.ItemNext.OnClick := PopupMenuClick;
   FPopupMenu.ItemCutSong.OnClick := PopupMenuClick;
   FPopupMenu.ItemEditTags.OnClick := PopupMenuClick;
   FPopupMenu.ItemFinalized.OnClick := PopupMenuClick;
@@ -1534,6 +1536,23 @@ begin
     if not ((AppGlobals.SavedCols and (1 shl i)) <> 0) then
       Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
   end;
+end;
+
+procedure TSavedTree.CutCopy(Cut: Boolean);
+var
+  i: Integer;
+  Tracks: TTrackInfoArray;
+begin
+  FDragSource.Files.Clear;
+  Tracks := GetSelected;
+  for i := 0 to Length(Tracks) - 1 do
+    FDragSource.Files.Add(Tracks[i].Filename);
+
+  if FDragSource.Files.Count > 0 then
+    if Cut then
+      FDragSource.CutToClipboard
+    else
+      FDragSource.CopyToClipboard;
 end;
 
 destructor TSavedTree.Destroy;
@@ -1968,7 +1987,7 @@ begin
 
     Exit;
   end else if Sender = FPopupMenu.ItemCutSong then
-    Action := taCut
+    Action := taCutSong
   else if Sender = FPopupMenu.ItemEditTags then
   begin
     Action := taEditTags;
@@ -1978,6 +1997,10 @@ begin
     Action := taAddToWishlist
   else if Sender = FPopupMenu.ItemAddToIgnorelist then
     Action := taAddToIgnorelist
+  else if Sender = FPopupMenu.ItemCut then
+    CutCopy(True)
+  else if Sender = FPopupMenu.ItemCopy then
+    CutCopy(False)
   else if Sender = FPopupMenu.ItemRename then
     EditNode(GetNode(Tracks[0]), 0)
   else if Sender = FPopupMenu.ItemRemove then
@@ -2561,23 +2584,14 @@ begin
   if Key = VK_DELETE then
   begin
     FPopupMenu.FItemDelete.Click;
-  end else if (((Key = Ord('C')) or (Key = Ord('X'))) and (ssCtrl in Shift)) then
-  begin
+  end else if ssCtrl in Shift then
     // Die Bedingung hier für ist dreckig. In China ist das bestimmt kein 'C' und eigentlich
     // sollte das über einen Menü-Shortcut laufen. Naja.... hauptsache funzt,
     // dann ich geb kein Fick drauf.
-
-    FDragSource.Files.Clear;
-    Tracks := GetSelected;
-    for i := 0 to Length(Tracks) - 1 do
-      FDragSource.Files.Add(Tracks[i].Filename);
-
-    if FDragSource.Files.Count > 0 then
-      if Key = Ord('C') then
-        FDragSource.CopyToClipboard
-      else
-        FDragSource.CutToClipboard;
-  end;
+    if Key = Ord('C') then
+      CutCopy(False)
+    else if Key = Ord('X') then
+      CutCopy(True);
 end;
 
 procedure TSavedTree.KeyPress(var Key: Char);

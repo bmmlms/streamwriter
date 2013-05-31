@@ -213,6 +213,8 @@ procedure TChartsTab.ButtonClick(Sender: TObject);
 begin
   if Sender = FSearchPanel.FButtonAddToWishlist then
     FChartsTree.FPopupMenu.FItemAddToWishlist.Click
+  else if Sender = FSearchPanel.FButtonAddArtistToWishlist then
+    FChartsTree.FPopupMenu.FItemAddArtistToWishlist.Click
   else if Sender = FSearchPanel.FButtonEditAndAddToWishlist then
     FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Click
   else if Sender = FSearchPanel.FButtonStartStreaming then
@@ -725,9 +727,15 @@ begin
       begin
         C1 := 0;
         C2 := 0;
+
         if Data1.IsOnWishlist then
-          C1 := C1 + 1;
+          C1 := C1 + 2;
         if Data2.IsOnWishlist then
+          C2 := C2 + 2;
+
+        if Data1.IsArtistOnWishlist then
+          C1 := C1 + 1;
+        if Data2.IsArtistOnWishlist then
           C2 := C2 + 1;
 
         Result := CmpInt(C1, C2);
