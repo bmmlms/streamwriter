@@ -102,6 +102,8 @@ type
     procedure FSetVolume(Volume: Integer);
     procedure FSetNotifyOnMove(Value: Boolean);
     function FGetVolume: Integer;
+  protected
+    procedure SetEnabled(Value: Boolean); override;
   public
     procedure Setup;
 
@@ -133,6 +135,14 @@ type
 implementation
 
 { TVolumePanel }
+
+procedure TVolumePanel.SetEnabled(Value: Boolean);
+begin
+  inherited;
+
+  FMute.Enabled := Value;
+  FTrackBar.GripperVisible := Value;
+end;
 
 procedure TVolumePanel.Setup;
 var

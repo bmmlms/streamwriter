@@ -3,14 +3,14 @@ object frmEditTags: TfrmEditTags
   Top = 0
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
-  Caption = 'Edit tags'
-  ClientHeight = 277
-  ClientWidth = 277
+  Caption = 'Edit tags and data'
+  ClientHeight = 355
+  ClientWidth = 273
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
-  
+  Font.Name = 'Tahoma'
   Font.Style = []
   Icon.Data = {
     0000010001001010000001002000680400001600000028000000100000002000
@@ -53,23 +53,14 @@ object frmEditTags: TfrmEditTags
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnKeyDown = FormKeyDown
-  DesignSize = (
-    277
-    277)
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
-  object Label1: TLabel
-    Left = 4
-    Top = 136
-    Width = 49
-    Height = 13
-    Caption = 'Comment:'
-  end
   object pnlNav: TPanel
     Left = 0
-    Top = 228
-    Width = 277
-    Height = 49
+    Top = 315
+    Width = 273
+    Height = 40
     Align = alBottom
     BevelOuter = bvNone
     Padding.Left = 4
@@ -77,10 +68,12 @@ object frmEditTags: TfrmEditTags
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
+    ExplicitTop = 114
+    ExplicitWidth = 213
     object Bevel2: TBevel
       Left = 4
       Top = 4
-      Width = 269
+      Width = 265
       Height = 5
       Align = alTop
       Shape = bsTopLine
@@ -88,59 +81,105 @@ object frmEditTags: TfrmEditTags
       ExplicitWidth = 396
     end
     object btnClose: TBitBtn
-      Left = 176
+      Left = 172
       Top = 9
       Width = 97
-      Height = 36
+      Height = 27
       Align = alRight
       Caption = '&Save'
       Default = True
-      DoubleBuffered = True
+      DoubleBuffered = False
       Layout = blGlyphRight
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnCloseClick
+      ExplicitLeft = 112
     end
   end
-  object txtArtist: TLabeledEdit
+  object grpTags: TGroupBox
     Left = 4
-    Top = 20
-    Width = 269
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    EditLabel.Width = 30
-    EditLabel.Height = 13
-    EditLabel.Caption = 'Artist:'
+    Top = 4
+    Width = 265
+    Height = 229
+    Caption = ' Tags '
     TabOrder = 1
+    DesignSize = (
+      265
+      229)
+    object Label1: TLabel
+      Left = 8
+      Top = 152
+      Width = 49
+      Height = 13
+      Caption = 'Comment:'
+    end
+    object txtArtist: TLabeledEdit
+      Left = 8
+      Top = 36
+      Width = 249
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      EditLabel.Width = 30
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Artist:'
+      TabOrder = 0
+      ExplicitWidth = 349
+    end
+    object txtTitle: TLabeledEdit
+      Left = 8
+      Top = 80
+      Width = 249
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      EditLabel.Width = 24
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Title:'
+      TabOrder = 1
+      ExplicitWidth = 349
+    end
+    object txtComment: TMemo
+      Left = 8
+      Top = 168
+      Width = 249
+      Height = 53
+      Anchors = [akLeft, akTop, akRight, akBottom]
+      TabOrder = 2
+      ExplicitHeight = 93
+    end
+    object txtAlbum: TLabeledEdit
+      Left = 8
+      Top = 124
+      Width = 249
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      EditLabel.Width = 33
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Album:'
+      TabOrder = 3
+      ExplicitWidth = 349
+    end
   end
-  object txtTitle: TLabeledEdit
+  object grpData: TGroupBox
     Left = 4
-    Top = 64
-    Width = 269
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    EditLabel.Width = 24
-    EditLabel.Height = 13
-    EditLabel.Caption = 'Title:'
+    Top = 244
+    Width = 265
+    Height = 65
+    Caption = ' Data '
     TabOrder = 2
-  end
-  object txtComment: TMemo
-    Left = 4
-    Top = 152
-    Width = 269
-    Height = 72
-    Anchors = [akLeft, akTop, akRight, akBottom]
-    TabOrder = 3
-  end
-  object txtAlbum: TLabeledEdit
-    Left = 4
-    Top = 108
-    Width = 269
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    EditLabel.Width = 33
-    EditLabel.Height = 13
-    EditLabel.Caption = 'Album:'
-    TabOrder = 4
+    DesignSize = (
+      265
+      65)
+    object txtStreamname: TLabeledEdit
+      Left = 8
+      Top = 36
+      Width = 249
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      EditLabel.Width = 64
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Streamname:'
+      TabOrder = 0
+      ExplicitWidth = 349
+    end
   end
 end

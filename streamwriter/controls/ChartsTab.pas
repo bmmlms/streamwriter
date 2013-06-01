@@ -355,9 +355,15 @@ begin
     Tmp := Trim(FSearchPanel.FSearch.Text);
 
     if (Pos('+', Tmp) > 0) or (Pos('-', Tmp) > 0) or (Pos('*', Tmp) > 0) or (Pos('(', Tmp) > 0) or (Pos(')', Tmp) > 0) or
-       (Pos('<', Tmp) > 0) or (Pos('>', Tmp) > 0) or (Pos('~', Tmp) > 0) or (Pos('"', Tmp) > 0) or (Pos('''', Tmp) > 0) then
+       (Pos('<', Tmp) > 0) or (Pos('>', Tmp) > 0) or (Pos('~', Tmp) > 0) {or (Pos('"', Tmp) > 0)} or (Pos('''', Tmp) > 0) then
     begin
       Abort := True;
+    end;
+
+    if (Pos('"', Tmp) > 0) and (OccurenceCount('"', Tmp) mod 2 <> 0) then
+    begin
+      MsgBox(GetParentForm(Self).Handle, _('When using quotes every opening quote needs a closing quote.'), _('Info'), MB_ICONINFORMATION);
+      Exit;
     end;
 
     if not Abort then
@@ -375,7 +381,7 @@ begin
 
     if Abort then
     begin
-      MsgBox(GetParentForm(Self).Handle, _('You need to specify at least one word to search for. Special chars (+-*()<>~"'') are not allowed.'), _('Info'), MB_ICONINFORMATION);
+      MsgBox(GetParentForm(Self).Handle, _('You need to specify at least one word to search for. Special chars (+-*()<>~'') are not allowed.'), _('Info'), MB_ICONINFORMATION);
     end else
     begin
       FSearchPanel.RebuildSearchItems(Tmp);
@@ -609,10 +615,11 @@ begin
   IncrementalSearch := isVisibleOnly;
 
   Header.Height := GetTextSize('Wyg', Font).cy + 5;
-
+  AutoScrollDelay := 50;
+  AutoScrollInterval := 400;
   Header.Options := [hoColumnResize, hoShowSortGlyphs, hoVisible];
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
-  TreeOptions.AutoOptions := [toAutoScrollOnExpand];
+  TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
   Header.Options := Header.Options - [hoAutoResize];
   Header.Options := Header.Options - [hoDrag];

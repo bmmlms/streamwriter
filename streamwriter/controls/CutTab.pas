@@ -349,6 +349,7 @@ begin
   FVolume.Parent := FToolbarPanel;
   FVolume.Align := alRight;
   FVolume.Setup;
+  FVolume.Enabled := Bass.DeviceAvailable;
   FVolume.Width := 140;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;

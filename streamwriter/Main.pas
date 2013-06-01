@@ -890,6 +890,11 @@ begin
   FWasMaximized := WindowState = wsMaximized;
 
   FEqualizer := TfrmEqualizer.Create(Self);
+
+  actPlayerIncreaseVolume.Enabled := Bass.DeviceAvailable;
+  actPlayerDecreaseVolume.Enabled := Bass.DeviceAvailable;
+  actPlayerMuteVolume.Enabled := Bass.DeviceAvailable;
+  actEqualizer.Enabled := Bass.DeviceAvailable;
 end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
@@ -1380,7 +1385,7 @@ end;
 
 procedure TfrmStreamWriterMain.ProcessCommandLine(Data: string);
 var
-  i: Integer;
+  i, Prio: Integer;
   FreeCmdLine: Boolean;
   Param: TCommandLineRecord;
   CmdLine: TCommandLine;
@@ -1419,6 +1424,19 @@ begin
     for i := 0 to Param.Values.Count - 1 do
     begin
       tabClientsRemoveTitleFromList(nil, nil, ltSave, Param.Values[i]);
+    end;
+  end;
+
+  Param := CmdLine.GetParam('-priority');
+  if Param <> nil then
+  begin
+    Prio := StrToIntDef(Param.Values[0], -1);
+    case Prio of
+      0: SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
+      1: SetPriorityClass(GetCurrentProcess(), $00004000); // BELOW_...
+      2: SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
+      3: SetPriorityClass(GetCurrentProcess(), $00008000); // ABOVE_...
+      4: SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
     end;
   end;
 

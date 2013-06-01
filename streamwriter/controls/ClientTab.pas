@@ -889,6 +889,7 @@ begin
   FToolbar.Height := 25;
 
   FVolume.Setup;
+  FVolume.Enabled := Bass.DeviceAvailable;
   FVolume.Width := 140;
   FVolume.Volume := Players.Volume;
 

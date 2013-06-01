@@ -45,8 +45,6 @@ type
   TTrackActions = (taUndefined, taRefresh, taCutSong, taEditTags, taFinalized, taAddToWishlist, taAddToIgnorelist, taRemove,
                    taRecycle, taDelete, taShowFile, taProperties, taImportFiles, taImportFolder);
 
-  TTrackInfoArray = array of TTrackInfo;
-
   TTrackActionEvent = procedure(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray) of object;
 
   TImportFilesThread = class(TThread)
@@ -72,12 +70,12 @@ type
   TSavedTracksPopup = class(TPopupMenu)
   private
     FItemRefresh: TMenuItem;
-    FItemPrev: TMenuItem;
+    //FItemPrev: TMenuItem;
     FItemPlay: TMenuItem;
-    FItemPause: TMenuItem;
-    FItemStop: TMenuItem;
-    FItemNext: TMenuItem;
-    FItemPlayLastSecs: TMenuItem;
+    //FItemPause: TMenuItem;
+    //FItemStop: TMenuItem;
+    //FItemNext: TMenuItem;
+    //FItemPlayLastSecs: TMenuItem;
     FItemCutSong: TMenuItem;
     FItemEditTags: TMenuItem;
     FItemFinalized: TMenuItem;
@@ -100,12 +98,12 @@ type
     procedure EnableItems(Enable, Playing, IsFirst, IsLast: Boolean);
 
     property ItemRefresh: TMenuItem read FItemRefresh;
-    property ItemPrev: TMenuItem read FItemPrev;
+    //property ItemPrev: TMenuItem read FItemPrev;
     property ItemPlay: TMenuItem read FItemPlay;
-    property ItemPause: TMenuItem read FItemPause;
-    property ItemStop: TMenuItem read FItemStop;
-    property ItemNext: TMenuItem read FItemNext;
-    property ItemPlayLastSecs: TMenuItem read FItemPlayLastSecs;
+    //property ItemPause: TMenuItem read FItemPause;
+    //property ItemStop: TMenuItem read FItemStop;
+    //property ItemNext: TMenuItem read FItemNext;
+    //property ItemPlayLastSecs: TMenuItem read FItemPlayLastSecs;
     property ItemCutSong: TMenuItem read FItemCutSong;
     property ItemEditTags: TMenuItem read FItemEditTags;
     property ItemFinalized: TMenuItem read FItemFinalized;
@@ -392,16 +390,19 @@ begin
   ItemTmp.Caption := '-';
   Items.Add(ItemTmp);
 
+  {
   FItemPrev := CreateMenuItem;
   FItemPrev.Caption := 'Pre&vious';
   FItemPrev.ImageIndex := 79;
   Items.Add(FItemPrev);
+  }
 
   FItemPlay := CreateMenuItem;
   FItemPlay.Caption := '&Play';
   FItemPlay.ImageIndex := 33;
   Items.Add(FItemPlay);
 
+  {
   FItemPause := CreateMenuItem;
   FItemPause.Caption := 'Pa&use';
   FItemPause.ImageIndex := 39;
@@ -421,9 +422,7 @@ begin
   FItemPlayLastSecs.Caption := 'P&lay end';
   FItemPlayLastSecs.ImageIndex := 83;
   Items.Add(FItemPlayLastSecs);
-
-  // TODO: player controls aus dem popup rausmachen. das ist zu groß und die sind über.
-
+  }
 
   ItemTmp := CreateMenuItem;
   ItemTmp.Caption := '-';
@@ -435,7 +434,7 @@ begin
   Items.Add(FItemCutSong);
 
   FItemEditTags := CreateMenuItem;
-  FItemEditTags.Caption := '&Edit tags...';
+  FItemEditTags.Caption := '&Edit tags and data...';
   FItemEditTags.ImageIndex := 75;
   Items.Add(FItemEditTags);
 
@@ -463,7 +462,7 @@ begin
   Items.Add(ItemTmp);
 
   FItemCut := CreateMenuItem;
-  FItemCut.Caption := 'Cut'; // TODO: shortcut. und translaten. die übersetzung beißt sich mit dem alten "Schneiden". das muss geändert werden.
+  FItemCut.Caption := 'Cut'; // TODO: shortcut.
   FItemCut.ImageIndex := 87;
   Items.Add(FItemCut);
 
@@ -523,11 +522,11 @@ end;
 
 procedure TSavedTracksPopup.EnableItems(Enable, Playing, IsFirst, IsLast: Boolean);
 begin
-  FItemPrev.Enabled := (not IsFirst) and Playing;
+  //FItemPrev.Enabled := (not IsFirst) and Playing;
   FItemPlay.Enabled := Enable;
-  FItemPause.Enabled := Playing;
-  FItemStop.Enabled := Playing;
-  FItemNext.Enabled := (not IsLast) and Playing;
+  //FItemPause.Enabled := Playing;
+  //FItemStop.Enabled := Playing;
+  //FItemNext.Enabled := (not IsLast) and Playing;
   FItemCutSong.Enabled := Enable;
   FItemEditTags.Enabled := Enable;
   FItemFinalized.Enabled := Enable;
@@ -623,12 +622,12 @@ begin
 
   FCopy := TToolButton.Create(Self);
   FCopy.Parent := Self;
-  FCopy.Hint := 'Copy'; // TODO: translate
+  FCopy.Hint := 'Copy';
   FCopy.ImageIndex := 57;
 
   FCut := TToolButton.Create(Self);
   FCut.Parent := Self;
-  FCut.Hint := 'Cut'; // TODO: translate die übersetzung beißt sich mit dem alten "Schneiden". das muss geändert werden.
+  FCut.Hint := 'Cut';
   FCut.ImageIndex := 87;
 
   FSep2 := TToolButton.Create(Self);
@@ -658,7 +657,7 @@ begin
 
   FEditTags := TToolButton.Create(Self);
   FEditTags.Parent := Self;
-  FEditTags.Hint := 'Edit tags...';
+  FEditTags.Hint := 'Edit tags and data...';
   FEditTags.ImageIndex := 75;
 
   FCutSong := TToolButton.Create(Self);
@@ -845,12 +844,13 @@ end;
 procedure TSavedTab.SavedTreeAction(Sender: TObject; Action: TTrackActions;
   Tracks: TTrackInfoArray);
 var
-  i: Integer;
+  i, n: Integer;
   Error, AllFinalized: Boolean;
   LowerDir, Dir: string;
   EditTags: TfrmEditTags;
   KnownFiles: TStringList;
   Dlg: TOpenDialog;
+  Tracks2: TTrackInfoArray;
 begin
   case Action of
     taRefresh:
@@ -868,10 +868,15 @@ begin
       begin
         EditTags := TfrmEditTags.Create(GetParentForm(Self));
         try
-          if EditTags.EditFile(Tracks[0].Filename) then
-            EditTags.ShowModal
-          else
-            MsgBox(GetPArentForm(Self).Handle, _('The file cannot be edited because it is in use or a needed addon has not been installed.'), _('Info'), MB_ICONINFORMATION);
+          EditTags.ShowModal(Tracks);
+
+          // Es könnte sein, dass inzwischen Files gelöscht wurden oder so. Also nochmal Nodes
+          // holen und Änderungen aus Formular anwenden.
+          Tracks2 := FSavedTree.GetSelected;
+          for i := 0 to High(EditTags.Tracks) do
+            for n := 0 to High(Tracks2) do
+              if EditTags.Tracks[i].Filename = Tracks2[n].Filename then
+                Tracks2[n].Streamname := EditTags.Tracks[i].Streamname;
         finally
           EditTags.Free;
         end;
@@ -1057,18 +1062,22 @@ begin
     if Assigned(FOnRefresh) then
       FOnRefresh(Self);
 
+  {
   if Sender = FPlayToolbar.FPlayLastSecs then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemPlayLastSecs);
   if Sender = FPlayToolbar.FPrev then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemPrev);
+  }
   if Sender = FPlayToolbar.FPlay then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemPlay);
+  {
   if Sender = FPlayToolbar.FPause then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemPause);
   if Sender = FPlayToolbar.FStop then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemStop);
   if Sender = FPlayToolbar.FNext then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemNext);
+  }
   if Sender = FToolbar.FCutSong then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemCutSong);
   if Sender = FToolbar.FEditTags then
@@ -1148,7 +1157,7 @@ begin
   FToolbar.EnableItems(Length(Tracks) > 0);
   FPlayToolbar.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing or Tree.FPlayer.Paused, IsFirst, IsLast);
 
-  Tree.FPopupMenu.ItemPlayLastSecs.Enabled := Bass.DeviceAvailable and ((Length(Tracks) = 1) or Tree.FPlayer.Playing or Tree.Player.Paused);
+  //Tree.FPopupMenu.ItemPlayLastSecs.Enabled := Bass.DeviceAvailable and ((Length(Tracks) = 1) or Tree.FPlayer.Playing or Tree.Player.Paused);
   FPlayToolbar.FPlayLastSecs.Enabled := Bass.DeviceAvailable and ((Length(Tracks) = 1) or Tree.FPlayer.Playing or Tree.Player.Paused);
 
   Tree.FPopupMenu.ItemPlay.Enabled := Bass.DeviceAvailable and (Length(Tracks) = 1);
@@ -1162,8 +1171,8 @@ begin
   Tree.FPopupMenu.ItemCutSong.Enabled := Length(Tracks) > 0;
   FToolbar.FCutSong.Enabled := Length(Tracks) > 0;
 
-  Tree.FPopupMenu.ItemEditTags.Enabled := Length(Tracks) = 1;
-  FToolbar.FEditTags.Enabled := Length(Tracks) = 1;
+  Tree.FPopupMenu.ItemEditTags.Enabled := Length(Tracks) > 0;
+  FToolbar.FEditTags.Enabled := Length(Tracks) > 0;
 
   Tree.FPopupMenu.ItemRename.Enabled := Length(Tracks) = 1;
   FToolbar.FRename.Enabled := Length(Tracks) = 1;
@@ -1342,6 +1351,7 @@ begin
   FVolume.Parent := FTopRightTopPanel;
   FVolume.Align := alRight;
   FVolume.Setup;
+  FVolume.Enabled := Bass.DeviceAvailable;
   FVolume.Width := 150;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
@@ -1354,12 +1364,12 @@ begin
 
   FToolBar.FRefresh.OnClick := ToolBarClick;
 
-  FPlayToolBar.FPrev.OnClick := ToolBarClick;
+  FPlayToolBar.FPrev.OnClick := FSavedTree.PopupMenuClick;
   FPlayToolBar.FPlay.OnClick := ToolBarClick;
-  FPlayToolBar.FPause.OnClick := ToolBarClick;
-  FPlayToolBar.FStop.OnClick := ToolBarClick;
-  FPlayToolBar.FNext.OnClick := ToolBarClick;
-  FPlayToolBar.FPlayLastSecs.OnClick := ToolBarClick;
+  FPlayToolBar.FPause.OnClick := FSavedTree.PopupMenuClick;
+  FPlayToolBar.FStop.OnClick := FSavedTree.PopupMenuClick;
+  FPlayToolBar.FNext.OnClick := FSavedTree.PopupMenuClick;
+  FPlayToolBar.FPlayLastSecs.OnClick := FSavedTree.PopupMenuClick;
 
   FToolBar.FCutSong.OnClick := ToolBarClick;
   FToolBar.FEditTags.OnClick := ToolBarClick;
@@ -1471,9 +1481,11 @@ begin
 
   NodeDataSize := SizeOf(TSavedNodeData);
   IncrementalSearch := isVisibleOnly;
+  AutoScrollDelay := 50;
+  AutoScrollInterval := 400;
   Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
-  TreeOptions.AutoOptions := [toAutoScrollOnExpand];
+  TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
   Header.Options := Header.Options - [hoAutoResize];
@@ -1488,12 +1500,12 @@ begin
 
   FPopupMenu := TSavedTracksPopup.Create(Self);
   FPopupMenu.ItemRefresh.OnClick := PopupMenuClick;
-  FPopupMenu.ItemPlayLastSecs.OnClick := PopupMenuClick;
-  FPopupMenu.ItemPrev.OnClick := PopupMenuClick;
+  //FPopupMenu.ItemPlayLastSecs.OnClick := PopupMenuClick;
+  //FPopupMenu.ItemPrev.OnClick := PopupMenuClick;
   FPopupMenu.ItemPlay.OnClick := PopupMenuClick;
-  FPopupMenu.ItemPause.OnClick := PopupMenuClick;
-  FPopupMenu.ItemStop.OnClick := PopupMenuClick;
-  FPopupMenu.ItemNext.OnClick := PopupMenuClick;
+  //FPopupMenu.ItemPause.OnClick := PopupMenuClick;
+  //FPopupMenu.ItemStop.OnClick := PopupMenuClick;
+  //FPopupMenu.ItemNext.OnClick := PopupMenuClick;
   FPopupMenu.ItemCutSong.OnClick := PopupMenuClick;
   FPopupMenu.ItemEditTags.OnClick := PopupMenuClick;
   FPopupMenu.ItemFinalized.OnClick := PopupMenuClick;
@@ -1863,7 +1875,8 @@ begin
   Action := taUndefined;
   Tracks := GetSelected;
 
-  if Sender = FPopupMenu.ItemPrev then
+  //if Sender = FPopupMenu.ItemPrev then
+  if Sender = FTab.FPlayToolbar.FPrev then
   begin
     try
       FPlayer.Filename := PrevPlayingTrack.Filename;
@@ -1881,7 +1894,8 @@ begin
 
     FPlayer.Play;
     Exit;
-  end else if Sender = FPopupMenu.ItemPause then
+  //end else if Sender = FPopupMenu.ItemPause then
+  end else if Sender = FTab.FPlayToolbar.FPause then           
   begin
     if FPlayer.Paused then
     begin
@@ -1894,12 +1908,14 @@ begin
     end;
     FTab.UpdateButtons;
     Exit;
-  end else if Sender = FPopupMenu.ItemStop then
+  //end else if Sender = FPopupMenu.ItemStop then
+  end else if Sender = FTab.FPlayToolbar.FStop then           
   begin
     FPlayer.Stop(True);
     FTab.UpdateButtons;
     Exit;
-  end else if Sender = FPopupMenu.ItemNext then
+  //end else if Sender = FPopupMenu.ItemNext then
+  end else if Sender = FTab.FPlayToolbar.FNext then           
   begin
     try
       FPlayer.Filename := NextPlayingTrack.Filename;
@@ -1917,7 +1933,8 @@ begin
 
     FPlayer.Play;
     Exit;
-  end else if Sender = FPopupMenu.ItemPlayLastSecs then
+  //end else if Sender = FPopupMenu.ItemPlayLastSecs then
+  end else if Sender = FTab.FPlayToolbar.FPlayLastSecs then           
   begin
     if (not FPlayer.Paused) and (not FPlayer.Playing) then
     begin
@@ -2030,8 +2047,8 @@ end;
 
 procedure TSavedTree.PopupMenuPopup(Sender: TObject);
 begin
-  FPopupMenu.FItemPause.Enabled := FPlayer.Playing or FPlayer.Paused;
-  FPopupMenu.FItemStop.Enabled := FPlayer.Playing or FPlayer.Paused;
+  //FPopupMenu.FItemPause.Enabled := FPlayer.Playing or FPlayer.Paused;
+  //FPopupMenu.FItemStop.Enabled := FPlayer.Playing or FPlayer.Paused;
 end;
 
 procedure TSavedTree.AddTrack(Track: TTrackInfo; AddToInternalList: Boolean);

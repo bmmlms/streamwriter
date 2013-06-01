@@ -1384,9 +1384,12 @@ begin
 
   NodeDataSize := SizeOf(TTitleNodeData);
   IncrementalSearch := isVisibleOnly;
+
   Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
+  AutoScrollDelay := 50;
+  AutoScrollInterval := 400;
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
-  TreeOptions.AutoOptions := [toAutoScrollOnExpand];
+  TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
   Header.Options := Header.Options + [hoAutoResize];

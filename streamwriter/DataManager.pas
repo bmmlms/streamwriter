@@ -144,6 +144,8 @@ type
   public
     constructor Create; overload;
     constructor Create(Time: TDateTime; Filename, Streamname: string); overload;
+    procedure Assign(Source: TTrackInfo);
+    function Copy: TTrackInfo;
 
     class function Load(Stream: TExtendedStream; Version: Integer): TTrackInfo;
     procedure Save(Stream: TExtendedStream);
@@ -171,6 +173,8 @@ type
     property Index: Cardinal read FIndex write FIndex;
     property VBR: Boolean read FVBR write FVBR;
   end;
+
+  TTrackInfoArray = array of TTrackInfo;
 
   TListCategoryList = TList<TListCategory>;
 
@@ -1364,6 +1368,29 @@ begin
   inherited;
 
 end;
+
+procedure TTrackInfo.Assign(Source: TTrackInfo);
+begin
+  FTime := Source.Time;
+  FFilename := Source.Filename;
+  FStreamname := Source.Streamname;
+  FFilesize := Source.Filesize;
+  FLength := Source.Length;
+  FWasCut := Source.WasCut;
+  FBitRate := Source.BitRate;
+  FIsAuto := Source.IsAuto;
+  FIsStreamFile := Source.IsStreamFile;
+  FFinalized := Source.Finalized;
+  FVBR := Source.VBR;
+  FIndex := Source.Index;
+end;
+
+function TTrackInfo.Copy: TTrackInfo;
+begin
+  Result := TTrackInfo.Create;
+  Result.Assign(Self);
+end;
+
 constructor TTrackInfo.Create(Time: TDateTime; Filename, Streamname: string);
 begin
   inherited Create;
