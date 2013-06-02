@@ -2831,6 +2831,8 @@ begin
         Track.Filename := FFoundAudioFiles[i];
         Track.Filesize := GetFileSize(FFoundAudioFiles[i]);
         Track.VBR := Info.VBR;
+        if OccurenceCount('\', FFoundAudioFiles[i]) > 1 then
+          Track.Streamname := ExtractLastDirName(ExtractFilePath(FFoundAudioFiles[i]));
         FFiles.Add(Track);
 
         FProgress := Trunc((i / FFoundAudioFiles.Count) * 100);
