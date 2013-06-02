@@ -2249,7 +2249,7 @@ begin
   Stream.Read(Result.FID);
   Stream.Read(Result.FPlayedLastDay);
   Stream.Read(Result.FPlayedLastWeek);
-  if Version >= 50 then
+  if (Version >= 50) or (Version = 1) then
     Stream.Read(Result.FPlayedLast);
 end;
 
