@@ -806,13 +806,30 @@ begin
         Val := NodeData.Chart.PlayedLast;
 
         if Val > 86400 then
-          Text := Format(_('%d days ago'), [Val div 86400])
-        else if Val > 3600 then
-          Text := Format(_('%d hours ago'), [Val div 3600])
-        else if Val > 60 then
-          Text := Format(_('%d minutes ago'), [Val div 60])
-        else
-          Text := Format(_('%d seconds ago'), [Val])
+        begin
+          if Val div 86400 = 1 then
+            Text := Format(_('%d day ago'), [Val div 86400])
+          else
+            Text := Format(_('%d days ago'), [Val div 86400]);
+        end else if Val > 3600 then
+        begin
+          if Val div 3600 = 1 then
+            Text := Format(_('%d hour ago'), [Val div 3600])
+          else
+            Text := Format(_('%d hours ago'), [Val div 3600]);
+        end else if Val > 60 then
+        begin
+          if Val div 60 = 1 then
+            Text := Format(_('%d minute ago'), [Val div 60])
+          else
+            Text := Format(_('%d minutes ago'), [Val div 60]);
+        end else
+        begin
+          if Val = 1 then
+            Text := Format(_('%d second ago'), [Val])
+          else
+            Text := Format(_('%d seconds ago'), [Val]);
+        end;
       end else
         Text := '';
     3:

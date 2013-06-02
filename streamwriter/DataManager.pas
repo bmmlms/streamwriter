@@ -2249,7 +2249,8 @@ begin
   Stream.Read(Result.FID);
   Stream.Read(Result.FPlayedLastDay);
   Stream.Read(Result.FPlayedLastWeek);
-  Stream.Read(Result.FPlayedLast);
+  if Version >= 50 then
+    Stream.Read(Result.FPlayedLast);
 end;
 
 { TStreamBrowserList }
