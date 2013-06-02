@@ -104,6 +104,7 @@ type
 
     FColImages: TVirtualTreeColumn;
     FColTitle: TVirtualTreeColumn;
+    FColLastPlayed: TVirtualTreeColumn;
     FColChance: TVirtualTreeColumn;
 
     FState: TChartStates;
@@ -632,6 +633,9 @@ begin
   FColImages := Header.Columns.Add;
   FColImages.Text := _('State');
 
+  FColLastPlayed := Header.Columns.Add;
+  FColLastPlayed.Text := _('Last played');
+
   FColChance := Header.Columns.Add;
   FColChance.Text := _('Played last day/week');
   FColChance.Alignment := taRightJustify;
@@ -656,7 +660,7 @@ begin
   FProgressBar.Style := pbstMarquee;
   FProgressBar.Visible := False;
 
-  Header.SortColumn := 2;
+  Header.SortColumn := 3;
   Header.SortDirection := sdDescending;
 end;
 
@@ -686,7 +690,7 @@ begin
   inherited;
 
   NodeData := GetNodeData(Node);
-  if (Column = 2) and (NodeData.Chart <> nil) then
+  if (Column = 3) and (NodeData.Chart <> nil) then
   begin
     C := (NodeData.Chart.PlayedLastWeek / 7) / 12;
     if C > 1 then
@@ -754,6 +758,8 @@ begin
         end;
       end;
     2:
+      Result := CmpInt(Data1.Chart.PlayedLast, Data2.Chart.PlayedLast);
+    3:
       begin
         Result := CmpInt(Data1.Chart.PlayedLastWeek, Data2.Chart.PlayedLastWeek);
         if Result = 0 then
@@ -795,6 +801,22 @@ begin
         Text := NodeData.Stream.Stream.Name;
     2:
       if NodeData.Chart <> nil then
+      begin
+        // TODO: diese erste bedingung kann bald fliegen.
+        if NodeData.Chart.PlayedLast = 1370135367 then
+          Text := ''
+        else if NodeData.Chart.PlayedLast > 86400 then
+          Text := Format(_('%d days ago'), [NodeData.Chart.PlayedLast div 86400])
+        else if NodeData.Chart.PlayedLast > 3600 then
+          Text := Format(_('%d hours ago'), [NodeData.Chart.PlayedLast div 3600])
+        else if NodeData.Chart.PlayedLast > 60 then
+          Text := Format(_('%d minutes ago'), [NodeData.Chart.PlayedLast div 60])
+        else
+          Text := Format(_('%d seconds ago'), [NodeData.Chart.PlayedLast])
+      end else
+        Text := '';
+    3:
+      if NodeData.Chart <> nil then
         Text := Format('%d / %d', [NodeData.Chart.PlayedLastDay, NodeData.Chart.PlayedLastWeek])
       else
         Text := Format('%d / %d', [NodeData.Stream.PlayedLastDay, NodeData.Stream.PlayedLastWeek]);
@@ -810,9 +832,10 @@ begin
     begin
       Header.SortColumn := HitInfo.Column;
       case HitInfo.Column of
-        1: Header.SortDirection := sdDescending;
         0: Header.SortDirection := sdAscending;
-        2: Header.SortDirection := sdDescending;
+        1: Header.SortDirection := sdDescending;
+        2: Header.SortDirection := sdAscending;
+        3: Header.SortDirection := sdDescending;
       end;
     end else
     begin
@@ -1192,6 +1215,7 @@ end;
 procedure TChartsTree.Setup;
 begin
   FColImages.Width := GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+  FColLastPlayed.Width := GetTextSize(FColLastPlayed.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
   FColChance.Width := GetTextSize(FColChance.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
 end;
 

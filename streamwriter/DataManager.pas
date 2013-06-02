@@ -482,6 +482,7 @@ type
     FServerArtistHash: Cardinal;
     FPlayedLastDay: Cardinal;
     FPlayedLastWeek: Cardinal;
+    FPlayedLast: Cardinal;
     FCategories: TIntArray;
     FStreams: TList<TChartStream>;
   public
@@ -506,6 +507,7 @@ type
 
     property PlayedLastDay: Cardinal read FPlayedLastDay;
     property PlayedLastWeek: Cardinal read FPlayedLastWeek;
+    property PlayedLast: Cardinal read FPlayedLast;
 
     // Categories this title is included (i.e. "Top 100")
     property Categories: TIntArray read FCategories;
@@ -1998,6 +2000,7 @@ begin
   FServerArtistHash := Source.FServerArtistHash;
   FPlayedLastDay := Source.PlayedLastDay;
   FPlayedLastWeek := Source.PlayedLastWeek;
+  FPlayedLast := Source.FPlayedLast;
   FCategories := Source.Categories;
 
   if FStreams <> nil then
@@ -2106,6 +2109,7 @@ begin
 
   Stream.Read(Result.FPlayedLastDay);
   Stream.Read(Result.FPlayedLastWeek);
+  Stream.Read(Result.FPlayedLast);
 
   Stream.Read(C);
   for i := 0 to C - 1 do
