@@ -786,6 +786,7 @@ end;
 procedure TChartsTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
   TextType: TVSTTextType; var Text: string);
 var
+  Val: Cardinal;
   NodeData: PChartNodeData;
 begin
   inherited;
@@ -802,17 +803,16 @@ begin
     2:
       if NodeData.Chart <> nil then
       begin
-        // TODO: diese erste bedingung kann bald fliegen.
-        if NodeData.Chart.PlayedLast = 1370135367 then
-          Text := ''
-        else if NodeData.Chart.PlayedLast > 86400 then
-          Text := Format(_('%d days ago'), [NodeData.Chart.PlayedLast div 86400])
-        else if NodeData.Chart.PlayedLast > 3600 then
-          Text := Format(_('%d hours ago'), [NodeData.Chart.PlayedLast div 3600])
-        else if NodeData.Chart.PlayedLast > 60 then
-          Text := Format(_('%d minutes ago'), [NodeData.Chart.PlayedLast div 60])
+        Val := NodeData.Chart.PlayedLast;
+
+        if Val > 86400 then
+          Text := Format(_('%d days ago'), [Val div 86400])
+        else if Val > 3600 then
+          Text := Format(_('%d hours ago'), [Val div 3600])
+        else if Val > 60 then
+          Text := Format(_('%d minutes ago'), [Val div 60])
         else
-          Text := Format(_('%d seconds ago'), [NodeData.Chart.PlayedLast])
+          Text := Format(_('%d seconds ago'), [Val])
       end else
         Text := '';
     3:

@@ -448,17 +448,18 @@ type
     FStream: TStreamBrowserEntry;
     FPlayedLastDay: Cardinal;
     FPlayedLastWeek: Cardinal;
+    FPlayedLast: Cardinal;
   public
-    constructor Create(ID: Cardinal; PlayedLastDay, PlayedLastWeek: Cardinal);
+    constructor Create(ID, PlayedLastDay, PlayedLastWeek, PlayedLast: Cardinal);
     function Copy: TChartStream;
 
     class function Load(Stream: TExtendedStream; Version: Integer): TChartStream;
-    procedure Save(Stream: TExtendedStream);
 
     property ID: Cardinal read FID;
     property Stream: TStreamBrowserEntry read FStream write FStream;
     property PlayedLastDay: Cardinal read FPlayedLastDay;
     property PlayedLastWeek: Cardinal read FPlayedLastWeek;
+    property PlayedLast: Cardinal read FPlayedLast;
   end;
 
   TStreamBrowserList = class(TList<TStreamBrowserEntry>)
@@ -2230,30 +2231,25 @@ end;
 
 function TChartStream.Copy: TChartStream;
 begin
-  Result := TChartStream.Create(FID, PlayedLastDay, PlayedLastWeek);
+  Result := TChartStream.Create(FID, PlayedLastDay, PlayedLastWeek, PlayedLast);
 end;
 
-constructor TChartStream.Create(ID: Cardinal; PlayedLastDay, PlayedLastWeek: Cardinal);
+constructor TChartStream.Create(ID, PlayedLastDay, PlayedLastWeek, PlayedLast: Cardinal);
 begin
   FID := ID;
   FPlayedLastDay := PlayedLastDay;
   FPlayedLastWeek := PlayedLastWeek;
+  FPlayedLast := PlayedLast;
 end;
 
 class function TChartStream.Load(Stream: TExtendedStream;
   Version: Integer): TChartStream;
 begin
-  Result := TChartStream.Create(0, 0, 0);
+  Result := TChartStream.Create(0, 0, 0, 0);
   Stream.Read(Result.FID);
   Stream.Read(Result.FPlayedLastDay);
   Stream.Read(Result.FPlayedLastWeek);
-end;
-
-procedure TChartStream.Save(Stream: TExtendedStream);
-begin
-  Stream.Write(FID);
-  Stream.Write(FPlayedLastDay);
-  Stream.Write(FPlayedLastWeek);
+  Stream.Read(Result.FPlayedLast);
 end;
 
 { TStreamBrowserList }
