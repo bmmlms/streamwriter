@@ -58,7 +58,7 @@ object frmWizard: TfrmWizard
   end
   object pnlMisc: TPanel
     Left = 8
-    Top = 260
+    Top = 248
     Width = 413
     Height = 233
     BevelOuter = bvNone
@@ -131,6 +131,34 @@ object frmWizard: TfrmWizard
       MaxLength = 2
       NumbersOnly = True
       TabOrder = 3
+    end
+  end
+  object pnlSelectMode: TPanel
+    Left = 8
+    Top = 8
+    Width = 417
+    Height = 233
+    BevelOuter = bvNone
+    Ctl3D = True
+    ParentCtl3D = False
+    TabOrder = 2
+    object optModeEasy: TRadioButton
+      Left = 8
+      Top = 0
+      Width = 197
+      Height = 21
+      Caption = 'Easy mode'
+      Checked = True
+      TabOrder = 0
+      TabStop = True
+    end
+    object optModeAdvanced: TRadioButton
+      Left = 8
+      Top = 24
+      Width = 197
+      Height = 21
+      Caption = 'Advanced mode'
+      TabOrder = 1
     end
   end
 end

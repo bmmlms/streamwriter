@@ -4,13 +4,13 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'frmConfigureSetTags'
-  ClientHeight = 310
+  ClientHeight = 307
   ClientWidth = 329
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
-  
+  Font.Name = 'Tahoma'
   Font.Style = []
   Icon.Data = {
     0000010001001010000001002000680400001600000028000000100000002000
@@ -56,7 +56,7 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   OnShow = FormShow
   DesignSize = (
     329
-    310)
+    307)
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
@@ -226,18 +226,62 @@ object frmConfigureSetTags: TfrmConfigureSetTags
       D31C60289BED2D3FA2C740006035C0B1DD8A191870A5C08CD341C80000DC1D99
       CCC6DEEDD30000000049454E44AE426082}
   end
+  object txtArtist: TLabeledEdit
+    Left = 4
+    Top = 72
+    Width = 293
+    Height = 21
+    Anchors = [akLeft, akTop, akRight]
+    EditLabel.Width = 30
+    EditLabel.Height = 13
+    EditLabel.Caption = 'Artist:'
+    TabOrder = 0
+  end
+  object txtTitle: TLabeledEdit
+    Left = 4
+    Top = 116
+    Width = 293
+    Height = 21
+    Anchors = [akLeft, akTop, akRight]
+    EditLabel.Width = 24
+    EditLabel.Height = 13
+    EditLabel.Caption = 'Title:'
+    TabOrder = 1
+  end
+  object txtComment: TMemo
+    Left = 4
+    Top = 204
+    Width = 293
+    Height = 57
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    TabOrder = 2
+    OnKeyPress = txtCommentKeyPress
+  end
+  object txtAlbum: TLabeledEdit
+    Left = 4
+    Top = 160
+    Width = 293
+    Height = 21
+    Anchors = [akLeft, akTop, akRight]
+    EditLabel.Width = 33
+    EditLabel.Height = 13
+    EditLabel.Caption = 'Album:'
+    TabOrder = 3
+  end
   object pnlNav: TPanel
     Left = 0
-    Top = 261
+    Top = 267
     Width = 329
-    Height = 49
+    Height = 40
     Align = alBottom
     BevelOuter = bvNone
     Padding.Left = 4
     Padding.Top = 4
     Padding.Right = 4
     Padding.Bottom = 4
-    TabOrder = 0
+    TabOrder = 4
+    ExplicitTop = 270
+    ExplicitWidth = 273
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -252,56 +296,16 @@ object frmConfigureSetTags: TfrmConfigureSetTags
       Left = 228
       Top = 9
       Width = 97
-      Height = 36
+      Height = 27
       Align = alRight
       Caption = '&OK'
       Default = True
-      DoubleBuffered = True
+      DoubleBuffered = False
       Layout = blGlyphRight
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
+      ExplicitLeft = 172
     end
-  end
-  object txtArtist: TLabeledEdit
-    Left = 4
-    Top = 72
-    Width = 293
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    EditLabel.Width = 30
-    EditLabel.Height = 13
-    EditLabel.Caption = 'Artist:'
-    TabOrder = 1
-  end
-  object txtTitle: TLabeledEdit
-    Left = 4
-    Top = 116
-    Width = 293
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    EditLabel.Width = 24
-    EditLabel.Height = 13
-    EditLabel.Caption = 'Title:'
-    TabOrder = 2
-  end
-  object txtComment: TMemo
-    Left = 4
-    Top = 204
-    Width = 293
-    Height = 56
-    Anchors = [akLeft, akTop, akRight, akBottom]
-    TabOrder = 3
-  end
-  object txtAlbum: TLabeledEdit
-    Left = 4
-    Top = 160
-    Width = 293
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    EditLabel.Width = 33
-    EditLabel.Height = 13
-    EditLabel.Caption = 'Album:'
-    TabOrder = 4
   end
 end

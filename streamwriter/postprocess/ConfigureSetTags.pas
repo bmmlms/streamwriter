@@ -29,9 +29,6 @@ uses
 
 type
   TfrmConfigureSetTags = class(TForm)
-    pnlNav: TPanel;
-    Bevel2: TBevel;
-    btnOK: TBitBtn;
     txtArtist: TLabeledEdit;
     txtTitle: TLabeledEdit;
     Label1: TLabel;
@@ -42,11 +39,15 @@ type
     lblPattern: TLabel;
     txtAlbum: TLabeledEdit;
     btnResetAlbumPattern: TPngSpeedButton;
+    pnlNav: TPanel;
+    Bevel2: TBevel;
+    btnOK: TBitBtn;
     procedure FormShow(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure btnResetPatternClick(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
+    procedure txtCommentKeyPress(Sender: TObject; var Key: Char);
   private
     FSaveData: Boolean;
 
@@ -91,8 +92,8 @@ begin
     txtTitle.SetFocus;
   end else if Sender = btnResetAlbumPattern then
   begin
-    txtTitle.Text := '%l';
-    txtTitle.SetFocus;
+    txtAlbum.Text := '%l';
+    txtAlbum.SetFocus;
   end else if Sender = btnResetCommentPattern then
   begin
     txtComment.Text := '%s / %u / Recorded using streamWriter';
@@ -134,6 +135,13 @@ end;
 procedure TfrmConfigureSetTags.FormShow(Sender: TObject);
 begin
   Caption := Format(_('Configure "%s"'), [FPostProcessor.Name]);
+end;
+
+procedure TfrmConfigureSetTags.txtCommentKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+  if Key = #13 then
+    Key := #0;
 end;
 
 end.

@@ -44,6 +44,9 @@ type
     chkMonitorMode: TCheckBox;
     txtMonitorCount: TLabeledEdit;
     Label20: TLabel;
+    pnlSelectMode: TPanel;
+    optModeEasy: TRadioButton;
+    optModeAdvanced: TRadioButton;
     procedure cmdBrowseClick(Sender: TObject);
     procedure chkLimitClick(Sender: TObject);
     procedure chkMonitorModeClick(Sender: TObject);
@@ -71,6 +74,7 @@ begin
   AppGlobals.MonitorMode := chkMonitorMode.Checked;
   if StrToIntDef(txtMonitorCount.Text, -1) > 0 then
     AppGlobals.MonitorCount := StrToInt(txtMonitorCount.Text);
+  AppGlobals.EasyMode := optModeEasy.Checked;
   inherited;
 end;
 
@@ -93,7 +97,7 @@ begin
         txtDir.Text := s;
       end;
     end;
-  end else
+  end else if Step.Panel = pnlMisc then
   begin
     chkLimit.Checked := AppGlobals.LimitSpeed;
     if AppGlobals.MaxSpeed > 0 then
@@ -101,6 +105,10 @@ begin
     chkMonitorMode.Checked := AppGlobals.MonitorMode;
     if AppGlobals.MonitorCount > 0 then
       txtMonitorCount.Text := IntToStr(AppGlobals.MonitorCount);
+  end else if Step.Panel = pnlSelectMode then
+  begin
+    optModeEasy.Checked := AppGlobals.EasyMode;
+    optModeAdvanced.Checked := not AppGlobals.EasyMode;
   end;
 end;
 
@@ -147,6 +155,8 @@ begin
   FStepList[FStepList.Count - 1].Description := 'Please select a folder where recorded songs will be saved.';
   FStepList.Add(TStepDir.Create('Miscellaneous settings', pnlMisc));
   FStepList[FStepList.Count - 1].Description := 'Miscellaneous settings can be configured here.';
+  FStepList.Add(TStepDir.Create('Select mode', pnlSelectMode));
+  FStepList[FStepList.Count - 1].Description := 'Please specify whether you want to use easy or advanced mode. Advanced mode contains some features not needed by most people - if you want to record songs automatically using a wishlist, easy mode provides everything you need.';
 end;
 
 procedure TfrmWizard.chkLimitClick(Sender: TObject);
