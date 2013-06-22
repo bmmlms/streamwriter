@@ -228,6 +228,7 @@ type
     FStreamSettings: TStreamSettings;
     FUserLoggedIn: Boolean;
     FID: Integer;
+    FEasyMode: Boolean;
     FDir: string;
     FDirAuto: string;
     FTray: Boolean;
@@ -313,6 +314,7 @@ type
 
     // The unique ID generated for this specific client
     property ID: Integer read FID;
+    property EasyMode: Boolean read FEasyMode write FEasyMode;
     // The directory songs get saved to
     property Dir: string read FDir write FDir;
     // The direcroty automatically recorded songs get saved to
@@ -599,6 +601,8 @@ begin
     FID := GetID;
   end;
 
+  FStorage.Read('EasyMode', FEasyMode, True);
+
   FStorage.Read('LastUsedDataVersion', FLastUsedDataVersion, 0);
 
   FStreamSettings.FTitlePattern := '(?P<a>.*) - (?P<t>.*)';
@@ -844,6 +848,7 @@ begin
   inherited;
 
   FStorage.Write('ID', FID);
+  FStorage.Write('EasyMode', FEasyMode);
 
   FStorage.Write('LastUsedDataVersion', FLastUsedDataVersion);
 
@@ -1564,4 +1569,3 @@ finalization
   FreeAndNil(AppGlobals);
 
 end.
-
