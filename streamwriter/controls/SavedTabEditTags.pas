@@ -102,7 +102,8 @@ begin
             txtComment.Text := FileTagger.Tag.Comment;
 
             FTagsRead := True;
-          end;
+          end else
+            DisableTags;
         finally
           FileTagger.Free;
         end;

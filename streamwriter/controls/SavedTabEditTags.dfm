@@ -4,8 +4,8 @@ object frmEditTags: TfrmEditTags
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Edit tags and data'
-  ClientHeight = 355
-  ClientWidth = 273
+  ClientHeight = 375
+  ClientWidth = 285
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -58,8 +58,8 @@ object frmEditTags: TfrmEditTags
   TextHeight = 13
   object pnlNav: TPanel
     Left = 0
-    Top = 315
-    Width = 273
+    Top = 335
+    Width = 285
     Height = 40
     Align = alBottom
     BevelOuter = bvNone
@@ -68,12 +68,12 @@ object frmEditTags: TfrmEditTags
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitTop = 114
-    ExplicitWidth = 213
+    ExplicitTop = 315
+    ExplicitWidth = 273
     object Bevel2: TBevel
       Left = 4
       Top = 4
-      Width = 265
+      Width = 277
       Height = 5
       Align = alTop
       Shape = bsTopLine
@@ -81,7 +81,7 @@ object frmEditTags: TfrmEditTags
       ExplicitWidth = 396
     end
     object btnClose: TBitBtn
-      Left = 172
+      Left = 184
       Top = 9
       Width = 97
       Height = 27
@@ -93,19 +93,19 @@ object frmEditTags: TfrmEditTags
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnCloseClick
-      ExplicitLeft = 112
+      ExplicitLeft = 172
     end
   end
   object grpTags: TGroupBox
     Left = 4
     Top = 4
-    Width = 265
-    Height = 229
+    Width = 277
+    Height = 249
     Caption = ' Tags '
     TabOrder = 1
     DesignSize = (
-      265
-      229)
+      277
+      249)
     object Label1: TLabel
       Left = 8
       Top = 152
@@ -116,70 +116,72 @@ object frmEditTags: TfrmEditTags
     object txtArtist: TLabeledEdit
       Left = 8
       Top = 36
-      Width = 249
+      Width = 261
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       EditLabel.Width = 30
       EditLabel.Height = 13
       EditLabel.Caption = 'Artist:'
       TabOrder = 0
-      ExplicitWidth = 349
+      ExplicitWidth = 249
     end
     object txtTitle: TLabeledEdit
       Left = 8
       Top = 80
-      Width = 249
+      Width = 261
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       EditLabel.Width = 24
       EditLabel.Height = 13
       EditLabel.Caption = 'Title:'
       TabOrder = 1
-      ExplicitWidth = 349
+      ExplicitWidth = 249
     end
     object txtComment: TMemo
       Left = 8
       Top = 168
-      Width = 249
-      Height = 53
+      Width = 261
+      Height = 73
       Anchors = [akLeft, akTop, akRight, akBottom]
+      ScrollBars = ssVertical
       TabOrder = 2
-      ExplicitHeight = 93
+      ExplicitWidth = 249
+      ExplicitHeight = 53
     end
     object txtAlbum: TLabeledEdit
       Left = 8
       Top = 124
-      Width = 249
+      Width = 261
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       EditLabel.Width = 33
       EditLabel.Height = 13
       EditLabel.Caption = 'Album:'
       TabOrder = 3
-      ExplicitWidth = 349
+      ExplicitWidth = 249
     end
   end
   object grpData: TGroupBox
     Left = 4
-    Top = 244
-    Width = 265
+    Top = 264
+    Width = 277
     Height = 65
     Caption = ' Data '
     TabOrder = 2
     DesignSize = (
-      265
+      277
       65)
     object txtStreamname: TLabeledEdit
       Left = 8
       Top = 36
-      Width = 249
+      Width = 261
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       EditLabel.Width = 64
       EditLabel.Height = 13
       EditLabel.Caption = 'Streamname:'
       TabOrder = 0
-      ExplicitWidth = 349
+      ExplicitWidth = 249
     end
   end
 end
