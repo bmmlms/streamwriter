@@ -61,6 +61,7 @@ type
     function Read(Filename: string): Boolean;
     function Write(LCID: Cardinal; Filename: string): Boolean;
 
+    property AudioType: TAudioFormatID read FAudioType;
     property Filename: string read FFilename;
     property Tag: TTagData read FTag;
     {
