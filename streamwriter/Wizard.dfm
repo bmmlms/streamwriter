@@ -142,6 +142,7 @@ object frmWizard: TfrmWizard
     Ctl3D = True
     ParentCtl3D = False
     TabOrder = 2
+    Visible = False
     object optModeEasy: TRadioButton
       Left = 8
       Top = 0

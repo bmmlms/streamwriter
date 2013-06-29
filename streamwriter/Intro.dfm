@@ -4,13 +4,13 @@ object frmIntro: TfrmIntro
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Introduction'
-  ClientHeight = 325
+  ClientHeight = 279
   ClientWidth = 439
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
-  
+  Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
   Position = poOwnerFormCenter
@@ -18,7 +18,7 @@ object frmIntro: TfrmIntro
   OnKeyDown = FormKeyDown
   DesignSize = (
     439
-    325)
+    279)
   PixelsPerInch = 96
   TextHeight = 13
   object imgLogo: TImage
@@ -135,13 +135,13 @@ object frmIntro: TfrmIntro
   object lblTitle: TLabel
     Left = 8
     Top = 8
-    Width = 163
-    Height = 17
+    Width = 173
+    Height = 16
     Caption = 'Welcome to streamWriter!'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -13
-    
+    Font.Name = 'Tahoma'
     Font.Style = [fsBold]
     ParentFont = False
   end
@@ -158,21 +158,21 @@ object frmIntro: TfrmIntro
   end
   object lblManual: TLabel
     Left = 8
-    Top = 66
-    Width = 135
+    Top = 148
+    Width = 149
     Height = 13
     Anchors = [akLeft, akBottom]
     Caption = '- Manually record streams'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -11
-    
+    Font.Name = 'Tahoma'
     Font.Style = [fsBold]
     ParentFont = False
   end
   object lblManualDesc: TLabel
     Left = 16
-    Top = 86
+    Top = 168
     Width = 413
     Height = 67
     Anchors = [akLeft, akRight, akBottom]
@@ -187,39 +187,35 @@ object frmIntro: TfrmIntro
   end
   object lblAutomatic: TLabel
     Left = 8
-    Top = 158
-    Width = 190
+    Top = 68
+    Width = 208
     Height = 13
     Anchors = [akLeft, akBottom]
     Caption = '- Automatically record specific songs'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -11
-    
+    Font.Name = 'Tahoma'
     Font.Style = [fsBold]
     ParentFont = False
   end
   object lblAutomaticDesc: TLabel
     Left = 16
-    Top = 178
+    Top = 88
     Width = 413
-    Height = 103
+    Height = 55
     Anchors = [akLeft, akRight, akBottom]
     AutoSize = False
     Caption = 
       'To record specific songs automatically you have to add titles to' +
-      ' your wishlist using the "Lists"-tab. Adding "fun" to the wishli' +
-      'st records every title containing "fun" in it'#39's name when it is ' +
-      'played on any observed station. Adding "fun*" to the list record' +
-      's every title starting with "fun". You can also use the "Charts"' +
-      '-tab to see what is being played on streams and add titles to th' +
-      'e wishlist from there by doubleclicking or using the contextmenu' +
-      '.'
+      ' your wishlist using the "Title search"-tab. When streamWriter d' +
+      'etects that a title on your wishlist is played on an observed st' +
+      'ream, this title will be recorded automatically.'
     WordWrap = True
   end
   object pnlNav: TPanel
     Left = 0
-    Top = 285
+    Top = 239
     Width = 439
     Height = 40
     Align = alBottom
@@ -229,7 +225,7 @@ object frmIntro: TfrmIntro
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitTop = 277
+    ExplicitTop = 285
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -253,7 +249,6 @@ object frmIntro: TfrmIntro
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnCloseClick
-      ExplicitHeight = 36
     end
   end
 end

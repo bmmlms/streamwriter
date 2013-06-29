@@ -116,7 +116,8 @@ type
     procedure Resize; override;
   public
     procedure PostTranslate;
-    function AddEntry(Text: string; ShowMessages: Boolean; ListType: TListType): Boolean;
+    function AddEntry(Text: string; TitleHash: Cardinal; ShowMessages: Boolean; ListType: TListType): Boolean;
+    procedure RemoveEntry(Text: string; ServerTitleHash: Cardinal; ListType: TListType);
     procedure ClientAdded(Client: TICEClient);
     procedure ClientRemoved(Client: TICEClient);
     procedure Setup(Clients: TClientManager; Lists: TDataLists);
@@ -261,7 +262,6 @@ var
   SongSavedMsg: TSongSavedMsg absolute Msg;
   i: Integer;
 begin
-  // TODO: timessaved sollte evtl auch für normale titel funktionieren?
   if Msg is TSongSavedMsg then
   begin
     Nodes := FListsPanel.FTree.GetNodes([ntWish], False);
@@ -277,7 +277,7 @@ begin
     end;
   end;
 end;
-   // TODO: die seitenleiste ist zu schmal. "bitte wähle mindestens einen stream aus" für INFO wird abgeschnitten, der text.
+
 procedure TListsTab.PostTranslate;
 begin
   FListsPanel.PostTranslate;
@@ -366,7 +366,7 @@ end;
 
 procedure TTitlePanel.AddClick(Sender: TObject);
 begin
-  if AddEntry(FAddEdit.Text, True, ltAutoDetermine) then
+  if AddEntry(FAddEdit.Text, 0, True, ltAutoDetermine) then
   begin
     FAddEdit.Text := '';
 
@@ -466,6 +466,35 @@ begin
   HomeComm.SendSetSettings((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 
   FTree.EndUpdate;
+end;
+
+procedure TTitlePanel.RemoveEntry(Text: string; ServerTitleHash: Cardinal;
+  ListType: TListType);
+var
+  i: Integer;
+  Title: TTitleInfo;
+begin
+  if ServerTitleHash = 0 then
+    Exit;
+
+  Title := nil;
+
+  for i := 0 to FLists.SaveList.Count - 1 do
+  begin
+    if FLists.SaveList[i].ServerHash = ServerTitleHash then
+    begin
+      Title := FLists.SaveList[i];
+      Break;
+    end;
+  end;
+
+  if Title <> nil then
+  begin
+    FTree.RemoveTitle(Title);
+    FLists.SaveList.Remove(Title);
+    if Title.ServerHash > 0 then
+      HomeComm.SendSyncWishlist(swRemove, Title.ServerHash, False);
+  end;
 end;
 
 procedure TTitlePanel.RenameClick(Sender: TObject);
@@ -681,6 +710,9 @@ begin
                 Lst[i] := ExtractFileName(Lst[i]);
                 Lst[i] := RemoveFileExt(Lst[i]);
               end;
+
+            ServerHash := 0;
+            ServerArtistHash := 0;
 
             if List = FLists.SaveList then
             begin
@@ -1035,7 +1067,7 @@ begin
   FTree.OnChange := TreeChange;
   FTree.OnKeyDown := TreeKeyDown;
 
-  FTree.FColSaved.Width := MulDiv(110, Screen.PixelsPerInch, 96);
+  FTree.FColSaved.Width := MulDiv(120, Screen.PixelsPerInch, 96);
   FTree.FColAdded.Width := MulDiv(130, Screen.PixelsPerInch, 96);
 
   FClients := Clients;
@@ -1051,20 +1083,14 @@ begin
   Resize;
 end;
 
-// TODO: showsaved in toolbar und menü immer passig en- und disablen!!!
 procedure TTitlePanel.ShowSavedClick(Sender: TObject);
 var
   i: Integer;
   Nodes: TNodeArray;
-  Node: PVirtualNode;
   NodeData: PTitleNodeData;
-  Dlg: TSaveDialog;
-  Lst: TStringList;
-  ExportList: TList<TTitleInfo>;
   TitleHashes: TCardinalArray;
   ArtistHashes: TCardinalArray;
   SearchString: string;
-  Msg: TSelectSavedSongsMsg;
 begin
   SearchString := '';
   SetLength(TitleHashes, 0);
@@ -1090,9 +1116,7 @@ begin
   end;
 
   if (Length(TitleHashes) > 0) or (Length(ArtistHashes) > 0) then
-  begin
     MsgBus.SendMessage(TSelectSavedSongsMsg.Create(Self, TitleHashes, ArtistHashes));
-  end;
 end;
 
 procedure TTitlePanel.AddEditKeyPress(Sender: TObject; var Key: Char);
@@ -1104,7 +1128,7 @@ begin
   end;
 end;
 
-function TTitlePanel.AddEntry(Text: string; ShowMessages: Boolean; ListType: TListType): Boolean;
+function TTitlePanel.AddEntry(Text: string; TitleHash: Cardinal; ShowMessages: Boolean; ListType: TListType): Boolean;
 var
   i, NumChars: Integer;
   Pattern: string;
@@ -1135,6 +1159,13 @@ begin
       List := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]).Entry.IgnoreList;
     end;
 
+    if (TitleHash > 0) and (List = FLists.SaveList) then
+      for i := 0 to List.Count - 1 do
+        if (List[i].ServerHash > 0) and (List[i].ServerHash = TitleHash) then
+        begin
+          Exit;
+        end;
+
     Pattern := BuildPattern(Trim(Text), Hash, NumChars, False);
 
     for i := 0 to List.Count - 1 do
@@ -1156,7 +1187,7 @@ begin
     if Parent = nil then
       Parent := FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]));
 
-    Title := TTitleInfo.Create(0, 0, Trim(Text));
+    Title := TTitleInfo.Create(TitleHash, 0, Trim(Text));
     Node := FTree.AddTitle(Title, Parent, FFilterText, True);
     if Node <> nil then
     begin
@@ -1173,6 +1204,9 @@ begin
     List.Add(Title);
 
     HomeComm.SendSetSettings((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+
+    if TitleHash > 0 then
+      HomeComm.SendSyncWishlist(swAdd, TitleHash, False);
 
     Result := True;
   end else
@@ -1377,7 +1411,7 @@ begin
   FRemove := TToolButton.Create(Self);
   FRemove.Parent := Self;
   FRemove.Hint := 'Remove';
-  FRemove.ImageIndex := 2;
+  FRemove.ImageIndex := 21;
 
   FRename := TToolButton.Create(Self);
   FRename.Parent := Self;
@@ -1525,7 +1559,7 @@ begin
     FPopupMenu.Images := modSharedData.imgImages;
   FPopupMenu.FRemove.OnClick := PopupMenuClick;
   FPopupMenu.FRename.OnClick := PopupMenuClick;
-  FPopupMenu.FShowSaved.OnClick := PopupMenuClick; // TODO: klick im popupmenü muss aktion auslösen!!
+  FPopupMenu.FShowSaved.OnClick := PopupMenuClick;
   FPopupMenu.FSelectSaved.OnClick := PopupMenuClick;
   FPopupMenu.FSelectIgnored.OnClick := PopupMenuClick;
   FPopupMenu.FExport.OnClick := PopupMenuClick;
@@ -1866,6 +1900,9 @@ begin
     begin
       Header.SortColumn := HitInfo.Column;
       Header.SortDirection := sdAscending;
+
+      if (HitInfo.Column = 1) or (HitInfo.Column = 2) then
+        Header.SortDirection := sdDescending;
     end else
     begin
       if Header.SortDirection = sdAscending then
@@ -1993,7 +2030,10 @@ begin
         else if (Data1.Title = nil) and (Data2.Stream <> nil) then
           Exit(-1);
       end;
-    1:; // TODO: !
+    1:
+      begin
+        Result := CmpInt(Data1.Title.Saved, Data2.Title.Saved);
+      end;
     2:
       if Node1 = FWishNode then                                
         Result := 1
@@ -2021,7 +2061,7 @@ begin
 
   FRemove := CreateMenuItem;
   FRemove.Caption := '&Remove';
-  FRemove.ImageIndex := 2;
+  FRemove.ImageIndex := 21;
   Items.Add(FRemove);
 
   Sep := CreateMenuItem;

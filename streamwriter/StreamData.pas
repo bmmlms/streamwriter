@@ -144,7 +144,7 @@ begin
     MsgBox(Handle, _('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
-   // TODO: im clientview titel in wunschliste hinzufügen, ausm popup... macht das sinn? doch eher hash versuchen zu bekommen und hinzufügen?
+
   RValid := False;
   R := TPerlRegEx.Create;
   try
@@ -156,9 +156,6 @@ begin
   finally
     R.Free;
   end;
-
-  // TODO: hier kann man doch gar nicht das album setzen. aber es steht in dem fenster im text. was ist die variable dafür??
-  //       die sollte auch im node server ausgewertet werden. wird sie aber nicht!!! PRÜFEN!
 
   ArtistFound := (Pos('(?P<a>.*)', txtTitlePattern.Text) > 0) or (Pos('(?P<a>.*?)', txtTitlePattern.Text) > 0);
   TitleFound := (Pos('(?P<t>.*)', txtTitlePattern.Text) > 0) or (Pos('(?P<t>.*?)', txtTitlePattern.Text) > 0);

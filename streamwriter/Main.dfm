@@ -337,7 +337,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object actRemove: TAction
       Caption = '&Remove'
       Hint = 'Remove'
-      ImageIndex = 2
+      ImageIndex = 21
     end
     object actExit: TAction
       Caption = '&Exit'
@@ -458,6 +458,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Caption = 'Add to &wishlist'
       Hint = 'Add to wishlist'
       ImageIndex = 31
+      Visible = False
     end
     object actAddToGlobalIgnoreList: TAction
       Caption = 'Add to &global ignorelist'

@@ -53,6 +53,7 @@ type
     BitRate: Cardinal;
     VBR: Boolean;
     EncoderSettings: TObject;
+    ServerTitle: string;
     ServerTitleHash: Cardinal;
     ServerArtistHash: Cardinal;
   end;
@@ -228,6 +229,7 @@ begin
   FData.BitRate := Data.BitRate;
   FData.EncoderSettings := TEncoderSettings(Data.EncoderSettings);
   FData.VBR := Data.VBR;
+  FData.ServerTitle := Data.ServerTitle;
   FData.ServerTitleHash := Data.ServerTitleHash;
   FData.ServerArtistHash := Data.ServerArtistHash;
 

@@ -149,7 +149,7 @@ type
     procedure ClientManagerAddRecent(Sender: TObject);
     procedure ClientManagerClientAdded(Sender: TObject);
     procedure ClientManagerClientRemoved(Sender: TObject);
-    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
+    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle, ServerTitle: string;
       Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean;
       ServerTitleHash, ServerArtistHash: Cardinal);
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
@@ -184,7 +184,7 @@ type
     procedure Resize; override;
   public
     constructor Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList;
-      Clients: TClientManager; Streams: TDataLists);
+      Clients: TClientManager; Streams: TDataLists); reintroduce;
     destructor Destroy; override;
 
     procedure Shown(Popup: TPopupMenu);
@@ -898,7 +898,7 @@ begin
   FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
 
   FSplitter.Width := MulDiv(4, Screen.PixelsPerInch, 96);
-  FSplitter.MinSize := MulDiv(200, Screen.PixelsPerInch, 96);
+  FSplitter.MinSize := MulDiv(220, Screen.PixelsPerInch, 96);
   FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
 
   FSideBar.Width := AppGlobals.SidebarWidth;
@@ -1183,7 +1183,7 @@ begin
 end;
 
 procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
-  Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64;
+  Filename, Title, SongArtist, SongTitle, ServerTitle: string; Filesize, Length, Bitrate: UInt64;
   VBR, WasCut, FullTitle, IsStreamFile: Boolean; ServerTitleHash, ServerArtistHash: Cardinal);
 var
   Client: TICEClient;
@@ -1207,7 +1207,7 @@ begin
 
   if Track = nil then
   begin
-    Track := TTrackInfo.Create(Now, Filename, Client.Entry.Name, ServerTitleHash, ServerArtistHash);
+    Track := TTrackInfo.Create(Now, Filename, Client.Entry.Name, ServerTitle, ServerTitleHash, ServerArtistHash);
     FStreams.TrackList.Add(Track);
   end;
 

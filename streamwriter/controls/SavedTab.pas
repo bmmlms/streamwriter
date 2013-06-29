@@ -42,10 +42,11 @@ type
   end;
   PSavedNodeData = ^TSavedNodeData;
 
-  TTrackActions = (taUndefined, taRefresh, taCutSong, taEditTags, taFinalized, taAddToWishlist, taAddToIgnorelist, taRemove,
-                   taRecycle, taDelete, taShowFile, taProperties, taImportFiles, taImportFolder);
+  TTrackActions = (taUndefined, taRefresh, taCutSong, taEditTags, taFinalized, taAddToWishlist, taRemoveFromWishlist,
+                   taAddToIgnorelist, taRemove, taRecycle, taDelete, taShowFile, taProperties, taImportFiles, taImportFolder);
 
   TTrackActionEvent = procedure(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray) of object;
+  TAddTitleEvent = procedure(Sender: TObject; Title: string; TitleHash: Cardinal) of object;
 
   TImportFilesThread = class(TThread)
   private
@@ -80,6 +81,7 @@ type
     FItemEditTags: TMenuItem;
     FItemFinalized: TMenuItem;
     FItemAddToWishlist: TMenuItem;
+    FItemRemoveFromWishList: TMenuItem;
     FItemAddToIgnorelist: TMenuItem;
     FItemRename: TMenuItem;
     FItemCut: TMenuItem;
@@ -108,6 +110,7 @@ type
     property ItemEditTags: TMenuItem read FItemEditTags;
     property ItemFinalized: TMenuItem read FItemFinalized;
     property ItemAddToWishlist: TMenuItem read FItemAddToWishlist;
+    property ItemRemoveFromWishlist: TMenuItem read FItemRemoveFromWishList;
     property ItemAddToIgnorelist: TMenuItem read FItemAddToIgnorelist;
     property ItemRename: TMenuItem read FItemRename;
     property ItemCut: TMenuItem read FItemCut;
@@ -129,6 +132,7 @@ type
     FEditTags: TToolButton;
     FFinalized: TToolButton;
     FAddToWishlist: TToolButton;
+    FRemoveFromWishlist: TToolButton;
     FAddToIgnorelist: TToolButton;
     FSep2: TToolButton;
     FCut: TToolButton;
@@ -227,8 +231,9 @@ type
     FOnTrackRemoved: TTrackEvent;
     FOnRefresh: TNotifyEvent;
     FOnPlayStarted: TNotifyEvent;
-    FOnAddTitleToWishlist: TStringEvent;
-    FOnAddTitleToIgnorelist: TStringEvent;
+    FOnAddTitleToWishlist: TAddTitleEvent;
+    FOnRemoveTitleFromWishlist: TAddTitleEvent;
+    FOnAddTitleToIgnorelist: TAddTitleEvent;
 
     FNoCoverPNG: TBitmap;
 
@@ -274,8 +279,9 @@ type
     property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
     property OnRefresh: TNotifyEvent read FOnRefresh write FOnRefresh;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
-    property OnAddTitleToWishlist: TStringEvent read FOnAddTitleToWishlist write FOnAddTitleToWishlist;
-    property OnAddTitleToIgnorelist: TStringEvent read FOnAddTitleToIgnorelist write FOnAddTitleToIgnorelist;
+    property OnAddTitleToWishlist: TAddTitleEvent read FOnAddTitleToWishlist write FOnAddTitleToWishlist;
+    property OnRemoveTitleFromWishlist: TAddTitleEvent read FOnRemoveTitleFromWishlist write FOnRemoveTitleFromWishlist;
+    property OnAddTitleToIgnorelist: TAddTitleEvent read FOnAddTitleToIgnorelist write FOnAddTitleToIgnorelist;
   end;
 
   TSavedTree = class(TVirtualStringTree)
@@ -460,6 +466,11 @@ begin
   FItemAddToWishlist.ImageIndex := 31;
   Items.Add(FItemAddToWishlist);
 
+  FItemRemoveFromWishlist := CreateMenuItem;
+  FItemRemoveFromWishlist.Caption := 'Remove from wishlist'; // TODO: Shortcut!!!
+  FItemRemoveFromWishlist.ImageIndex := 88;
+  Items.Add(FItemRemoveFromWishlist);
+
   FItemAddToIgnorelist := CreateMenuItem;
   FItemAddToIgnorelist.Caption := 'Add to i&gnorelist';
   FItemAddToIgnorelist.ImageIndex := 65;
@@ -539,6 +550,7 @@ begin
   FItemEditTags.Enabled := Enable;
   FItemFinalized.Enabled := Enable;
   FItemAddToWishlist.Enabled := Enable;
+  FItemRemoveFromWishList.Enabled := Enable;
   FItemAddToIgnorelist.Enabled := Enable;
   FItemCut.Enabled := Enable;
   FItemCopy.Enabled := Enable;
@@ -566,6 +578,7 @@ begin
   FEditTags.Enabled := Enable;
   FFinalized.Enabled := Enable;
   FAddToWishlist.Enabled := Enable;
+  FRemoveFromWishlist.Enabled := Enable;
   FAddToIgnorelist.Enabled := Enable;
   FCut.Enabled := Enable;
   FCopy.Enabled := Enable;
@@ -647,6 +660,11 @@ begin
   FAddToIgnoreList.Parent := Self;
   FAddToIgnoreList.Hint := 'Add to ignorelist';
   FAddToIgnoreList.ImageIndex := 65;
+
+  FRemoveFromWishlist := TToolButton.Create(Self);
+  FRemoveFromWishlist.Parent := Self;
+  FRemoveFromWishlist.Hint := 'Remove from wishlist';
+  FRemoveFromWishlist.ImageIndex := 88;
 
   FAddToWishlist := TToolButton.Create(Self);
   FAddToWishlist.Parent := Self;
@@ -773,14 +791,8 @@ end;
 
 procedure TSavedTab.MessageReceived(Msg: TMessageBase);
 var
-  i: Integer;
-  Nodes: TNodeArray;
-  NodeData: PSavedNodeData;
-
   VolMsg: TVolumeChangedMsg absolute Msg;
   SelectSavedSongsMsg: TSelectSavedSongsMsg absolute Msg;
-  n: Integer;
-
   Tmp: TNotifyEvent;
 begin
   if (Msg is TVolumeChangedMsg) and (FVolume <> nil) then
@@ -789,7 +801,6 @@ begin
       FVolume.Volume := TVolumeChangedMsg(Msg).Volume;
   end else if Msg is TSelectSavedSongsMsg then
   begin
-    // TODO: checken ob was in den arrays drin ist, sonst doof.
     FSearchBar.HashFilterSet := True;
 
     Tmp := FSearchBar.FSearch.OnChange;
@@ -920,12 +931,23 @@ begin
     taAddToWishlist:
       begin
         for i := 0 to Length(Tracks) - 1 do
-          FOnAddTitleToWishlist(Self, ExtractFileName(RemoveFileExt(Tracks[i].Filename)));
+          if Tracks[i].ServerTitleHash > 0 then
+            FOnAddTitleToWishlist(Self, Tracks[i].ServerTitle, Tracks[i].ServerTitleHash)
+          else
+            FOnAddTitleToWishlist(Self, ExtractFileName(RemoveFileExt(Tracks[i].Filename)), 0);
+      end;
+    taRemoveFromWishlist:
+      begin
+        for i := 0 to Length(Tracks) - 1 do
+          if Tracks[i].ServerTitleHash > 0 then
+            FOnRemoveTitleFromWishlist(Self, Tracks[i].ServerTitle, Tracks[i].ServerTitleHash)
+          else
+            FOnRemoveTitleFromWishlist(Self, ExtractFileName(RemoveFileExt(Tracks[i].Filename)), 0);
       end;
     taAddToIgnorelist:
       begin
         for i := 0 to Length(Tracks) - 1 do
-          FOnAddTitleToIgnorelist(Self, ExtractFileName(RemoveFileExt(Tracks[i].Filename)));
+          FOnAddTitleToIgnorelist(Self, ExtractFileName(RemoveFileExt(Tracks[i].Filename)), 0);
       end;
     taRemove:
       begin
@@ -1110,6 +1132,8 @@ begin
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemFinalized);
   if Sender = FToolbar.FAddToWishlist then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemAddToWishlist);
+  if Sender = FToolbar.FRemoveFromWishlist then
+    FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemRemoveFromWishlist);
   if Sender = FToolbar.FAddToIgnorelist then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemAddToIgnorelist);
   if Sender = FToolbar.FCut then
@@ -1245,8 +1269,6 @@ begin
 end;
 
 procedure TSavedTab.SearchTextClick(Sender: TObject);
-var
-  Tmp: TNotifyEvent;
 begin
   if FSearchBar.HashFilterSet then
   begin
@@ -1411,6 +1433,7 @@ begin
   FToolBar.FEditTags.OnClick := ToolBarClick;
   FToolBar.FFinalized.OnClick := ToolBarClick;
   FToolBar.FAddToWishlist.OnClick := ToolBarClick;
+  FToolbar.FRemoveFromWishlist.OnClick := ToolBarClick;
   FToolBar.FAddToIgnorelist.OnClick := ToolBarClick;
   FToolBar.FCut.OnClick := ToolBarClick;
   FToolBar.FCopy.OnClick := ToolBarClick;
@@ -1546,6 +1569,7 @@ begin
   FPopupMenu.ItemEditTags.OnClick := PopupMenuClick;
   FPopupMenu.ItemFinalized.OnClick := PopupMenuClick;
   FPopupMenu.ItemAddToWishlist.OnClick := PopupMenuClick;
+  FPopupMenu.ItemRemoveFromWishlist.OnClick := PopupMenuClick;
   FPopupMenu.ItemAddToIgnorelist.OnClick := PopupMenuClick;
   FPopupMenu.ItemCut.OnClick := PopupMenuClick;
   FPopupMenu.ItemCopy.OnClick := PopupMenuClick;
@@ -2048,6 +2072,8 @@ begin
     Action := taFinalized
   else if Sender = FPopupMenu.ItemAddToWishlist then
     Action := taAddToWishlist
+  else if Sender = FPopupMenu.ItemRemoveFromWishlist then
+    Action := taRemoveFromWishlist
   else if Sender = FPopupMenu.ItemAddToIgnorelist then
     Action := taAddToIgnorelist
   else if Sender = FPopupMenu.ItemCut then
@@ -2307,7 +2333,8 @@ begin
     if Header.SortColumn <> HitInfo.Column then
     begin
       Header.SortColumn := HitInfo.Column;
-      if (HitInfo.Column = 0) or (HitInfo.Column = 2) or (HitInfo.Column = 3) or (HitInfo.Column = 5) then
+      if (HitInfo.Column = 0) or (HitInfo.Column = 2) or (HitInfo.Column = 3) or (HitInfo.Column = 4) or
+         (HitInfo.Column = 5) or (HitInfo.Column = 6) then
         Header.SortDirection := sdDescending
       else
         Header.SortDirection := sdAscending;
@@ -2698,9 +2725,6 @@ begin
 end;
 
 procedure TSavedTree.KeyDown(var Key: Word; Shift: TShiftState);
-var
-  i: Integer;
-  Tracks: TTrackInfoArray;
 begin
   inherited;
 
@@ -2823,7 +2847,7 @@ begin
     Tmp := FSearch.OnChange;
     FSearch.OnChange := nil;
     FSearch.Text := _('');
-    FSearch.Color := clBtnFace; // TODO: COLOR prüfen. passt das?
+    FSearch.Color := clBtnFace;
     FSearch.OnChange := Tmp;
   end else
   begin

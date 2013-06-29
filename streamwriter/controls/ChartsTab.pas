@@ -334,7 +334,6 @@ end;
 
 procedure TChartsTab.SearchCharts(Top: Boolean);
 var
-  i: Integer;
   Tmp: string;
   Abort: Boolean;
   SL: TStringList;
@@ -463,7 +462,7 @@ begin
   FSearchPanel.FButtonPlayStreamExternal.OnClick := ButtonClick;
   FSearchPanel.FButtonAddStream.OnClick := ButtonClick;
 
-  Caption := _('Title search');
+  Caption := 'Title search';
 
   UpdateButtons;
 end;
@@ -473,10 +472,6 @@ var
   i, n: Integer;
   Node, NodeStream: PVirtualNode;
   NodeData, NodeDataStream: PChartNodeData;
-  P: string;
-  SearchMatch: Boolean;
-  S: TChartStream;
-  R: TPerlRegEx;
 begin
   if FCharts <> nil then
   begin
@@ -740,23 +735,23 @@ begin
         C1 := 0;
         C2 := 0;
 
-        for i := 0 to High(FLists.SavedTitleHashes) do
+        for i := 0 to FLists.SavedTitleHashes.Count - 1 do
         begin
           if (Data1.Chart <> nil) and (Data1.Chart.ServerHash = FLists.SavedTitleHashes[i]) then
-            C1 := C1 + 3;
+            C1 := C1 + 1;
           if (Data2.Chart <> nil) and (Data2.Chart.ServerHash = FLists.SavedTitleHashes[i]) then
-            C2 := C2 + 3;
+            C2 := C2 + 1;
         end;
 
-        if Data1.IsOnWishlist then
+        if Data1.IsArtistOnWishlist then
           C1 := C1 + 2;
-        if Data2.IsOnWishlist then
+        if Data2.IsArtistOnWishlist then
           C2 := C2 + 2;
 
-        if Data1.IsArtistOnWishlist then
-          C1 := C1 + 1;
-        if Data2.IsArtistOnWishlist then
-          C2 := C2 + 1;
+        if Data1.IsOnWishlist then
+          C1 := C1 + 3;
+        if Data2.IsOnWishlist then
+          C2 := C2 + 3;
 
         Result := CmpInt(C1, C2);
         if Result = 0 then
@@ -1075,8 +1070,8 @@ begin
       Invalidate;
     end else if Msg is TSongSavedMsg then
     begin
-      SetLength(FLists.SavedTitleHashes, Length(FLists.SavedTitleHashes) + 1);
-      FLists.SavedTitleHashes[High(FLists.SavedTitleHashes)] := SongSavedMsg.ServerTitleHash;
+      if not FLists.SavedTitleHashes.Contains(SongSavedMsg.ServerTitleHash) then
+        FLists.SavedTitleHashes.Add(SongSavedMsg.ServerTitleHash);
 
       Node := GetFirst;
       while Node <> nil do
@@ -1124,21 +1119,19 @@ end;
 procedure TChartsTree.PaintImage(var PaintInfo: TVTPaintInfo;
   ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
 var
-  L, i: Integer;
+  i: Integer;
   NodeData: PChartNodeData;
   P: TControl;
 begin
   NodeData := GetNodeData(PaintInfo.Node);
 
-  L := PaintInfo.ImageInfo[ImageInfoIndex].XPos;
-
   case PaintInfo.Column of
     0:
       begin
         if NodeData.Chart <> nil then
-          Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20)
+          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20)
         else
-          Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 16);
+          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 16);
       end;
     1:
       begin
@@ -1146,20 +1139,18 @@ begin
         begin
           if NodeData.IsOnWishlist then
           begin
-            Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 77);
-            L := L + 16
+            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 77);
           end;
           if NodeData.IsArtistOnWishlist then
           begin
-            Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 86);
-            L := L + 16
+            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 86);
           end;
 
-          for i := 0 to High(FLists.SavedTitleHashes) do
+          for i := 0 to FLists.SavedTitleHashes.Count - 1 do
           begin
             if FLists.SavedTitleHashes[i] = NodeData.Chart.ServerHash then
             begin
-              Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 14);
+              Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 32, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 14);
             end;
           end;
         end else
@@ -1168,7 +1159,7 @@ begin
           while not (P.ClassType = TChartsTab) do
             P := P.Parent;
           if TChartsTab(P).FOnGetIsStreamOnListEvent(Self, NodeData.Stream.Stream) then
-            Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 80);
+            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 80);
         end;
       end;
   end;

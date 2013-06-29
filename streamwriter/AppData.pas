@@ -682,7 +682,7 @@ begin
   FStorage.Read('DisplayPlayNotifications', FDisplayPlayNotifications, True);
   FStorage.Read('ShowSplashScreen', FShowSplashScreen, True);
   FStorage.Read('CoverPanelAlwaysVisible', FCoverPanelAlwaysVisible, False);
-  FStorage.Read('SidebarWidth', FSidebarWidth, 250);
+  FStorage.Read('SidebarWidth', FSidebarWidth, MulDiv(220, Screen.PixelsPerInch, 96));
   FStorage.Read('AutoTuneIn', FAutoTuneIn, True);
   FStorage.Read('AutoTuneInConsiderIgnore', FAutoTuneInConsiderIgnore, False);
   FStorage.Read('AutoTuneInAddToIgnore', FAutoTuneInAddToIgnore, False);

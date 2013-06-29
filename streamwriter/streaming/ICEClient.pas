@@ -42,7 +42,7 @@ type
 
   TShowErrorMessageEvent = procedure(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean) of object;
   TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
-  TSongSavedEvent = procedure(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
+  TSongSavedEvent = procedure(Sender: TObject; Filename, Title, SongArtist, SongTitle, ServerTitle: string;
     Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean;
     ServerTitleHash, ServerArtistHash: Cardinal) of object;
   TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer) of object;
@@ -87,6 +87,7 @@ type
 
     FAutoRemove: Boolean;
     FRecordTitle: string;
+    FRecordServerTitle: string;
     FRecordTitleHash: Cardinal;
     FRecordArtistHash: Cardinal;
     FStopAfterSong: Boolean;
@@ -159,7 +160,7 @@ type
     procedure StopRecording;
     procedure SetVolume(Vol: Integer);
     procedure SetEQ(Value, Freq: Integer);
-    procedure PostProcessingFinished(Filename, Title, SongArtist, SongTitle: string;
+    procedure PostProcessingFinished(Filename, Title, SongArtist, SongTitle, ServerTitle: string;
       Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean;
       ServerTitleHash, ServerArtistHash: Cardinal);
 
@@ -168,6 +169,7 @@ type
 
     property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
     property RecordTitle: string read FRecordTitle write FRecordTitle;
+    property RecordServerTitle: string read FRecordServerTitle write FRecordServerTitle;
     property RecordTitleHash: Cardinal read FRecordTitleHash write FRecordTitleHash;
     property RecordArtistHash: Cardinal read FRecordArtistHash write FRecordArtistHash;
     property StopAfterSong: Boolean read FStopAfterSong write FStopAfterSong;
@@ -310,12 +312,12 @@ begin
 end;
 
 procedure TICEClient.PostProcessingFinished(Filename, Title, SongArtist,
-  SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle,
+  SongTitle, ServerTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle,
   IsStreamFile: Boolean; ServerTitleHash, ServerArtistHash: Cardinal);
 begin
   if Assigned(FOnSongSaved) then
-    FOnSongSaved(Self, Filename, Title, SongArtist, SongTitle, Filesize, Length, Bitrate, VBR, WasCut, FullTitle, IsStreamFile,
-      ServerTitleHash, ServerArtistHash);
+    FOnSongSaved(Self, Filename, Title, SongArtist, SongTitle, ServerTitle, Filesize, Length, Bitrate,
+      VBR, WasCut, FullTitle, IsStreamFile, ServerTitleHash, ServerArtistHash);
   if Assigned(FOnRefresh) then
     FOnRefresh(Self);
 
@@ -732,6 +734,7 @@ begin
     Data.FullTitle := FICEThread.RecvStream.SavedFullTitle;
     Data.StreamTitle := FICEThread.RecvStream.SavedStreamTitle;
     Data.Bitrate := FICEThread.RecvStream.BitRate;
+    Data.ServerTitle := FRecordServerTitle;
     Data.ServerTitleHash := FRecordTitleHash;
     Data.ServerArtistHash := FRecordArtistHash;
     Data.VBR := False;
@@ -740,7 +743,7 @@ begin
     begin
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
-          FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
+          FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle, FRecordServerTitle,
           FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.BitRate, False, FICEThread.RecvStream.SavedWasCut,
           FICEThread.RecvStream.SavedFullTitle, False, FRecordTitleHash, FRecordArtistHash);
     end else
@@ -756,7 +759,7 @@ begin
       begin
         if Assigned(FOnSongSaved) then
           FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
-            FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
+            FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle, FRecordServerTitle,
             FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.BitRate, False, FICEThread.RecvStream.SavedWasCut,
             FICEThread.RecvStream.SavedFullTitle, False, FRecordTitleHash, FRecordArtistHash);
         if Assigned(FOnRefresh) then
@@ -772,7 +775,7 @@ begin
   begin
     if Assigned(FOnSongSaved) then
       FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
-        FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
+        FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle, FRecordServerTitle,
         FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.BitRate, False, FICEThread.RecvStream.SavedWasCut,
         FICEThread.RecvStream.SavedFullTitle, True, 0, 0);
     if Assigned(FOnRefresh) then

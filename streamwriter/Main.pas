@@ -311,8 +311,9 @@ type
     procedure tabSavedCut(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedRefresh(Sender: TObject);
-    procedure tabSavedAddTitleToWishlist(Sender: TObject; Data: string);
-    procedure tabSavedAddTitleToIgnorelist(Sender: TObject; Data: string);
+    procedure tabSavedAddTitleToWishlist(Sender: TObject; Title: string; TitleHash: Cardinal);
+    procedure tabSavedRemoveTitleFromWishlist(Sender: TObject; Title: string; TitleHash: Cardinal);
+    procedure tabSavedAddTitleToIgnorelist(Sender: TObject; Title: string; TitleHash: Cardinal);
 
     procedure tabCutCutFile(Sender: TObject; Filename: string);
     procedure tabCutSaved(Sender: TObject; AudioInfo: TAudioFileInfo);
@@ -856,8 +857,8 @@ begin
   tabSaved.OnRefresh := tabSavedRefresh;
   tabSaved.OnPlayStarted := tabPlayStarted;
   tabSaved.OnAddTitleToWishlist := tabSavedAddTitleToWishlist;
+  tabSaved.OnRemoveTitleFromWishlist := tabSavedRemoveTitleFromWishlist;
   tabSaved.OnAddTitleToIgnorelist := tabSavedAddTitleToIgnorelist;
-
 
   FWasActivated := False;
   FWasShown := False;
@@ -1064,9 +1065,6 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.HomeCommStateChanged(Sender: TObject);
-var
-  Titles: TStringList;
-  i: Integer;
 begin
   UpdateStatus;
   tabCharts.HomeCommStateChanged(Sender);
@@ -1394,6 +1392,7 @@ var
   FreeCmdLine: Boolean;
   Param: TCommandLineRecord;
   CmdLine: TCommandLine;
+  Titles: TWishlistTitleInfoArray;
 begin
   FreeCmdLine := False;
   if Data <> '' then
@@ -1420,7 +1419,14 @@ begin
   Param := CmdLine.GetParam('-wishadd');
   if Param <> nil then
   begin
-    // tabChartsAddToWishlist(nil, Param.Values); TODO: !
+    SetLength(Titles, Param.Values.Count);
+    for i := 0 to Param.Values.Count - 1 do
+    begin
+      Titles[i].Hash := 0;
+      Titles[i].Title := Param.Values[i];
+      Titles[i].IsArtist := False;
+    end;
+    tabChartsAddToWishlist(nil, Titles);
   end;
 
   Param := CmdLine.GetParam('-wishremove');
@@ -1806,15 +1812,21 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.tabSavedAddTitleToWishlist(Sender: TObject;
-  Data: string);
+  Title: string; TitleHash: Cardinal);
 begin
-  tabLists.ListsPanel.AddEntry(Data, False, ltSave);
+  tabLists.ListsPanel.AddEntry(Title, TitleHash, False, ltSave);
+end;
+
+procedure TfrmStreamWriterMain.tabSavedRemoveTitleFromWishlist(
+  Sender: TObject; Title: string; TitleHash: Cardinal);
+begin
+  tabLists.ListsPanel.RemoveEntry(Title, TitleHash, ltSave);
 end;
 
 procedure TfrmStreamWriterMain.tabSavedAddTitleToIgnorelist(Sender: TObject;
-  Data: string);
+  Title: string; TitleHash: Cardinal);
 begin
-  tabLists.ListsPanel.AddEntry(Data, False, ltIgnore);
+  tabLists.ListsPanel.AddEntry(Title, TitleHash, False, ltIgnore);
 end;
 
 procedure TfrmStreamWriterMain.tabSavedCut(Entry: TStreamEntry;
@@ -1981,8 +1993,12 @@ begin
       Exit(True);
 end;
 
+// Diese Methode wird nicht mehr benutzt. Sie wurde mal benutzt, um aus dem ClientView einen gerade
+// gespielten Titel der Wunschliste hinzuzufügen. Ist rausgenommen, weil das nur für Manuelle Wünsche
+// gehen würde und das vllt. Verwirrung stiften würde.
 procedure TfrmStreamWriterMain.tabClientsAddTitleToList(Sender: TObject; Client: TICEClient;
   ListType: TListType; Title: string);
+{
 var
   i, NumChars: Integer;
   Hash: Cardinal;
@@ -1990,7 +2006,9 @@ var
   Pattern: string;
   T: TTitleInfo;
   List: TList<TTitleInfo>;
+}
 begin
+{
   if Client = nil then
     if ListType = ltSave then
       List := FDataLists.SaveList
@@ -2015,10 +2033,6 @@ begin
 
     if not Found then
     begin
-      // TODO: 0.. evtl kann die methode hier ganz fliegen. ohne hash = lame und verwirrend für naps.
-      //       oder ich suche den chart noch vorher raus und weise den zu, falls der titel in wunschliste soll?
-      //       vllt sollte das menü item heißen "in charts suchen", dann könnte man schnell zur wunschliste hinzufügen
-      //       wenn gleich zu den charts gejumped wird. oder das muss iwie anders laufen hier...
       T := TTitleInfo.Create(0, 0, Title);
 
       List.Add(T);
@@ -2027,6 +2041,7 @@ begin
       HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
     end;
   end;
+}
 end;
 
 procedure TfrmStreamWriterMain.tabClientsRemoveTitleFromList(

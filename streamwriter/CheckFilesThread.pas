@@ -23,7 +23,6 @@ unit CheckFilesThread;
 
 interface
 
-
 uses
   Windows, SysUtils, Classes, Functions, Logging;
 

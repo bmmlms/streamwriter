@@ -629,9 +629,6 @@ begin
       Text := 'AAC';
   end;
 
-  // TODO: auf großen DPI ist die sidebar klein, wenn SideBarWidth in registry nicht gesetzt ist.
-  //       wenn man dann den splitter zieht greif MinWidth und es springt rum!
-
   if NodeData.Data.BitRate > 0 then
   begin
     if Text <> '' then

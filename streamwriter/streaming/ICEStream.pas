@@ -1211,6 +1211,20 @@ begin
 end;
 
 procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Title: string; var Album: string);
+  function MyUpperCase(C: Char): Char;
+  begin
+    if CharInSet(C, ['ä', 'Ä', 'ö', 'Ö', 'ü', 'Ü']) then
+      Result := AnsiUpperCase(C)[1]
+    else
+      Result := UpperCase(C)[1];
+  end;
+  function MyLowerCase(C: Char): Char;
+  begin
+    if CharInSet(C, ['ä', 'Ä', 'ö', 'Ö', 'ü', 'Ü']) then
+      Result := AnsiLowerCase(C)[1]
+    else
+      Result := LowerCase(C)[1];
+  end;
   function NormalizeText(Text: string): string;
   var
     i: Integer;
@@ -1223,9 +1237,9 @@ procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Titl
     for i := 1 to Length(Text) do
     begin
       if (LastChar = #0) or (LastChar = ' ') or (LastChar = '.') or (LastChar = '-') or (LastChar = '/') or (LastChar = '(') then
-        Result := Result + UpperCase(Text[i])
+        Result := Result + MyUpperCase(Text[i])
       else
-        Result := Result + LowerCase(Text[i]);
+        Result := Result + MyLowerCase(Text[i]);
       LastChar := Text[i];
     end;
   end;

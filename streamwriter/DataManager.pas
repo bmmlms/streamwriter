@@ -143,11 +143,12 @@ type
     FFinalized: Boolean;
     FVBR: Boolean;
     FIndex: Cardinal;
-    FServerTitleHash: Cardinal; // TODO: der muss immer gesetzt sein. wird er bei auto-aufnahme über artist gesetzt? sollte so sein, checken!
-    FServerArtistHash: Cardinal; // TODO: das selbe gilt hier wie im todo hier drüber, nur umgekehrt.
+    FServerTitle: string;
+    FServerTitleHash: Cardinal;
+    FServerArtistHash: Cardinal;
   public
     constructor Create; overload;
-    constructor Create(Time: TDateTime; Filename, Streamname: string; ServerTitleHash, ServerArtistHash: Cardinal); overload;
+    constructor Create(Time: TDateTime; Filename, Streamname, ServerTitle: string; ServerTitleHash, ServerArtistHash: Cardinal); overload;
     procedure Assign(Source: TTrackInfo);
     function Copy: TTrackInfo;
 
@@ -176,6 +177,7 @@ type
     property Finalized: Boolean read FFinalized write FFinalized;
     property Index: Cardinal read FIndex write FIndex;
     property VBR: Boolean read FVBR write FVBR;
+    property ServerTitle: string read FServerTitle write FServerTitle;
     property ServerTitleHash: Cardinal read FServerTitleHash write FServerTitleHash;
     property ServerArtistHash: Cardinal read FServerArtistHash write FServerArtistHash;
   end;
@@ -565,10 +567,8 @@ type
     FGenreList: TGenreList;
     FLoadError: Boolean;
     FReceived: UInt64;
+    FSavedTitleHashes: TList<Cardinal>;
   public
-    // TODO: irgendwann sollte das eine property werden...
-    SavedTitleHashes: TCardinalArray;
-
     constructor Create;
     destructor Destroy; override;
 
@@ -609,10 +609,12 @@ type
     property LoadError: Boolean read FLoadError write FLoadError;
     // Overall amount of data received
     property Received: UInt64 read FReceived write FReceived;
+
+    property SavedTitleHashes: TList<Cardinal> read FSavedTitleHashes write FSavedTitleHashes;
   end;
 
 const
-  DATAVERSION = 51;
+  DATAVERSION = 52;
 
 implementation
 
@@ -1019,8 +1021,6 @@ constructor TDataLists.Create;
 begin
   inherited;
 
-  SetLength(SavedTitleHashes, 0);
-
   FLoadError := False;
   FReceived := 0;
   FCategoryList := TListCategoryList.Create;
@@ -1033,6 +1033,7 @@ begin
   FRatingList := TRatingList.Create;
   FBrowserList := TStreamBrowserList.Create;
   FGenreList := TGenreList.Create;
+  FSavedTitleHashes := TList<Cardinal>.Create;
   //FChartList := TChartList.Create;
   //FChartCategoryList := TChartCategoryList.Create;
 end;
@@ -1051,6 +1052,7 @@ begin
   FRatingList.Free;
   FBrowserList.Free;
   FGenreList.Free;
+  FSavedTitleHashes.Free;
   //FChartList.Free;
   //FChartCategoryList.Free;
 
@@ -1069,7 +1071,7 @@ var
   Compressed: Boolean;
   Chart: TChartEntry;
   ChartCategory: TChartCategory;
-  TitleCount: Cardinal;
+  TitleCount, Hash: Cardinal;
 begin
   CleanLists;
 
@@ -1233,11 +1235,15 @@ begin
   if Version >= 51 then
   begin
     S.Read(TitleCount);
-    SetLength(SavedTitleHashes, TitleCount);
     for i := 0 to TitleCount - 1 do
     begin
-      S.Read(SavedTitleHashes[i]);
+      S.Read(Hash);
+      SavedTitleHashes.Add(Hash);
     end;
+
+    // Aufräumen...
+    while SavedTitleHashes.Count > 5000 do
+      SavedTitleHashes.Delete(0);
   end;
 end;
 
@@ -1332,8 +1338,8 @@ begin
     for i := 0 to FGenreList.Count - 1 do
       FGenreList[i].Save(CompressedStream);
 
-    CompressedStream.Write(Cardinal(Length(SavedTitleHashes)));
-    for i := 0 to High(SavedTitleHashes) do
+    CompressedStream.Write(Cardinal(SavedTitleHashes.Count));
+    for i := 0 to SavedTitleHashes.Count - 1 do
       CompressedStream.Write(SavedTitleHashes[i]);
 
     CompressedStream.Seek(0, soFromBeginning);
@@ -1417,6 +1423,7 @@ begin
   FFinalized := Source.Finalized;
   FVBR := Source.VBR;
   FIndex := Source.Index;
+  FServerTitle := Source.ServerTitle;
   FServerTitleHash := Source.ServerTitleHash;
   FServerArtistHash := Source.ServerArtistHash;
 end;
@@ -1427,7 +1434,7 @@ begin
   Result.Assign(Self);
 end;
 
-constructor TTrackInfo.Create(Time: TDateTime; Filename, Streamname: string; ServerTitleHash, ServerArtistHash: Cardinal);
+constructor TTrackInfo.Create(Time: TDateTime; Filename, Streamname, ServerTitle: string; ServerTitleHash, ServerArtistHash: Cardinal);
 begin
   inherited Create;
 
@@ -1436,6 +1443,7 @@ begin
   FStreamname := Streamname;
   FWasCut := False;
   FIsStreamFile := False;
+  FServerTitle := ServerTitle;
   FServerTitleHash := ServerTitleHash;
   FServerArtistHash := ServerArtistHash;
 end;
@@ -1477,6 +1485,11 @@ begin
   if Version >= 41 then
     Stream.Read(Result.FVBR);
 
+  if Version > 51 then
+  begin
+    Stream.Read(Result.FServerTitle);
+  end;
+
   if Version > 50 then
   begin
     Stream.Read(Result.FServerTitleHash);
@@ -1499,6 +1512,7 @@ begin
   Stream.Write(FFinalized);
   Stream.Write(FIndex);
   Stream.Write(FVBR);
+  Stream.Write(FServerTitle);
   Stream.Write(FServerTitleHash);
   Stream.Write(FServerArtistHash);
 end;
