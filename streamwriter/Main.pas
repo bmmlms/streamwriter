@@ -1249,6 +1249,8 @@ procedure TfrmStreamWriterMain.MessageReceived(Msg: TMessageBase);
 var
   Artist, Title, Stream, Filename: string;
   NewCaption: string;
+
+  SelectSavedSongsMsg: TSelectSavedSongsMsg absolute Msg;
 begin
   if (Msg is TPlayingObjectChangedMsg) or (Msg is TPlayingObjectStopped) then
   begin
@@ -1282,6 +1284,9 @@ begin
       //tabCharts.SetState(csLoading);
       tabClients.SideBar.BrowserView.SwitchMode(moLoading);
     end;
+  end else if Msg is TSelectSavedSongsMsg then
+  begin
+    pagMain.ActivePage := tabSaved;
   end;
 end;
 

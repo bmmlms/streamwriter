@@ -280,7 +280,6 @@ object frmSettings: TfrmSettings
         'Listen to stream'
         'Listen to stream (external player)'
         'Listen to recorded file')
-      ExplicitTop = 284
     end
     object optClose: TRadioButton
       Left = 20
@@ -313,7 +312,6 @@ object frmSettings: TfrmSettings
         'Listen to stream'
         'Listen to stream (external player)'
         'Only add to list')
-      ExplicitTop = 328
     end
     object chkSnapMain: TCheckBox
       Left = 4

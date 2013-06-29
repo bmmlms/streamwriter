@@ -23,7 +23,7 @@ unit AppMessages;
 interface
 
 uses
-  Windows, SysUtils, MessageBus;
+  Windows, SysUtils, MessageBus, TypeDefs;
 
 type
   TFileModifyMsg = class(TMessageBase)
@@ -70,6 +70,28 @@ type
   TListsChangedMsg = class(TMessageBase)
   end;
 
+  TSongSavedMsg = class(TMessageBase)
+  private
+    FServerTitleHash: Cardinal;
+    FServerArtistHash: Cardinal;
+  public
+    constructor Create(Sender: TObject; ServerTitleHash, ServerArtistHash: Cardinal);
+
+    property ServerTitleHash: Cardinal read FServerTitleHash;
+    property ServerArtistHash: Cardinal read FServerArtistHash;
+  end;
+
+  TSelectSavedSongsMsg = class(TMessageBase)
+  private
+    FTitleHashes: TCardinalArray;
+    FArtistHashes: TCardinalArray;
+  public
+    constructor Create(Sender: TObject; TitleHashes, ArtistHashes: TCardinalArray);
+
+    property TitleHashes: TCardinalArray read FTitleHashes;
+    property ArtistHashes: TCardinalArray read FArtistHashes;
+  end;
+
 implementation
 
 { TDeleteFileMessage }
@@ -106,6 +128,25 @@ constructor TPlayingObjectStopped.Create(Sender: TObject);
 begin
   inherited Create;
   FSender := Sender;
+end;
+
+{ TSongSavedMsg }
+
+constructor TSongSavedMsg.Create(Sender: TObject; ServerTitleHash, ServerArtistHash: Cardinal);
+begin
+  inherited Create;
+  FServerTitleHash := ServerTitleHash;
+  FServerArtistHash := ServerArtistHash;
+end;
+
+{ TSelectSavedSongs }
+
+constructor TSelectSavedSongsMsg.Create(Sender: TObject; TitleHashes,
+  ArtistHashes: TCardinalArray);
+begin
+  inherited Create;
+  FTitleHashes := TitleHashes;
+  FArtistHashes := ArtistHashes;
 end;
 
 end.

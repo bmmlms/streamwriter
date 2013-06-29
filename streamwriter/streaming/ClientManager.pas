@@ -25,7 +25,7 @@ interface
 uses
   SysUtils, Windows, Classes, Generics.Collections, ICEClient, Logging,
   Functions, AppData, DataManager, HomeCommunication, PlayerManager,
-  AudioFunctions, SWFunctions, TypeDefs;
+  AudioFunctions, SWFunctions, TypeDefs, MessageBus, AppMessages;
 
 type
   TClientManager = class;
@@ -75,7 +75,8 @@ type
     procedure ClientDebug(Sender: TObject);
     procedure ClientRefresh(Sender: TObject);
     procedure ClientAddRecent(Sender: TObject);
-    procedure ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean);
+    procedure ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64;
+      VBR, WasCut, FullTitle, IsStreamFile: Boolean; ServerTitleHash, ServerArtistHash: Cardinal);
     procedure ClientTitleChanged(Sender: TObject; Title: string);
     procedure ClientDisconnected(Sender: TObject);
     procedure ClientICYReceived(Sender: TObject; Bytes: Integer);
@@ -454,6 +455,8 @@ begin
         if Trim(TitleRegEx) <> '' then
           Client.Entry.Settings.TitlePattern := TitleRegEx;
         Client.RecordTitle := Title;
+        Client.RecordTitleHash := ServerHash;
+        Client.RecordArtistHash := ServerArtistHash;
         Client.StartRecording(False);
       end;
       Break;
@@ -534,11 +537,15 @@ begin
 end;
 
 procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
-  Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean);
+  Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean;
+  ServerTitleHash, ServerArtistHash: Cardinal);
 begin
   Inc(FSongsSaved);
+  if not IsStreamFile then
+    MsgBus.SendMessage(TSongSavedMsg.Create(Sender, ServerTitleHash, ServerArtistHash));
   if Assigned(FOnClientSongSaved) then
-    FOnClientSongSaved(Sender, Filename, Title, SongArtist, SongTitle, Filesize, Length, Bitrate, VBR, WasCut, FullTitle, IsStreamFile);
+    FOnClientSongSaved(Sender, Filename, Title, SongArtist, SongTitle, Filesize, Length, Bitrate, VBR, WasCut, FullTitle,
+      IsStreamFile, ServerTitleHash, ServerArtistHash);
 end;
 
 procedure TClientManager.ClientStop(Sender: TObject);

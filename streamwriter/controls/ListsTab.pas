@@ -50,6 +50,7 @@ type
   private
     FRemove: TMenuItem;
     FRename: TMenuItem;
+    FShowSaved: TMenuItem;
     FSelectSaved: TMenuItem;
     FSelectIgnored: TMenuItem;
     FExport: TMenuItem;
@@ -65,8 +66,9 @@ type
   TTitleToolbar = class(TToolbar)
   private
     FAdd: TToolButton;
-    FRename: TToolButton;
     FRemove: TToolButton;
+    FRename: TToolButton;
+    FShowSaved: TToolButton;
     FSelectSaved: TToolButton;
     FSelectIgnored: TToolButton;
     FExport: TToolButton;
@@ -100,11 +102,12 @@ type
 
     procedure AddClick(Sender: TObject);
     procedure RemoveClick(Sender: TObject);
+    procedure RenameClick(Sender: TObject);
+    procedure ShowSavedClick(Sender: TObject);
     procedure ExportClick(Sender: TObject);
     procedure ImportClick(Sender: TObject);
     procedure SelectSavedClick(Sender: TObject);
     procedure SelectIgnoredClick(Sender: TObject);
-    procedure RenameClick(Sender: TObject);
     procedure AddEditKeyPress(Sender: TObject; var Key: Char);
     procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -123,6 +126,8 @@ type
   TListsTab = class(TMainTabSheet)
   private
     FListsPanel: TTitlePanel;
+
+    procedure MessageReceived(Msg: TMessageBase);
 
     procedure HomeCommWishlistUpgradeReceived(Sender: TObject; WishlistUpgrade: TWishlistUpgradeList);
   protected
@@ -148,6 +153,7 @@ type
   TTitleTree = class(TVirtualStringTree)
   private
     FColTitle: TVirtualTreeColumn;
+    FColSaved: TVirtualTreeColumn;
     FColAdded: TVirtualTreeColumn;
 
     FPanel: TTitlePanel;
@@ -207,6 +213,8 @@ begin
   FListsPanel.Parent := Self;
   FListsPanel.Align := alClient;
 
+  MsgBus.AddSubscriber(MessageReceived);
+
   HomeComm.OnWishlistUpgradeReceived := HomeCommWishlistUpgradeReceived;
 end;
 
@@ -246,6 +254,30 @@ begin
   SendWishListUpdateBatch;
 end;
 
+procedure TListsTab.MessageReceived(Msg: TMessageBase);
+var
+  Nodes: TNodeArray;
+  NodeData: PTitleNodeData;
+  SongSavedMsg: TSongSavedMsg absolute Msg;
+  i: Integer;
+begin
+  // TODO: timessaved sollte evtl auch für normale titel funktionieren?
+  if Msg is TSongSavedMsg then
+  begin
+    Nodes := FListsPanel.FTree.GetNodes([ntWish], False);
+    for i := 0 to High(Nodes) do
+    begin
+      NodeData := FListsPanel.FTree.GetNodeData(Nodes[i]);
+      if (NodeData.Title <> nil) and
+         ((NodeData.Title.ServerHash = SongSavedMsg.ServerTitleHash) or (NodeData.Title.ServerArtistHash = SongSavedMsg.ServerArtistHash)) then
+      begin
+        NodeData.Title.Saved := NodeData.Title.Saved + 1;
+        FListsPanel.FTree.InvalidateNode(Nodes[i]);
+      end;
+    end;
+  end;
+end;
+   // TODO: die seitenleiste ist zu schmal. "bitte wähle mindestens einen stream aus" für INFO wird abgeschnitten, der text.
 procedure TListsTab.PostTranslate;
 begin
   FListsPanel.PostTranslate;
@@ -986,6 +1018,7 @@ begin
   FToolbar.FAdd.OnClick := AddClick;
   FToolbar.FRemove.OnClick := RemoveClick;
   FToolbar.FExport.OnClick := ExportClick;
+  FToolbar.FShowSaved.OnClick := ShowSavedClick;
   FToolbar.FImport.OnClick := ImportClick;
   FToolbar.FSelectSaved.OnClick := SelectSavedClick;
   FToolbar.FSelectIgnored.OnClick := SelectIgnoredClick;
@@ -1002,6 +1035,7 @@ begin
   FTree.OnChange := TreeChange;
   FTree.OnKeyDown := TreeKeyDown;
 
+  FTree.FColSaved.Width := MulDiv(110, Screen.PixelsPerInch, 96);
   FTree.FColAdded.Width := MulDiv(130, Screen.PixelsPerInch, 96);
 
   FClients := Clients;
@@ -1015,6 +1049,50 @@ begin
   UpdateButtons;
 
   Resize;
+end;
+
+// TODO: showsaved in toolbar und menü immer passig en- und disablen!!!
+procedure TTitlePanel.ShowSavedClick(Sender: TObject);
+var
+  i: Integer;
+  Nodes: TNodeArray;
+  Node: PVirtualNode;
+  NodeData: PTitleNodeData;
+  Dlg: TSaveDialog;
+  Lst: TStringList;
+  ExportList: TList<TTitleInfo>;
+  TitleHashes: TCardinalArray;
+  ArtistHashes: TCardinalArray;
+  SearchString: string;
+  Msg: TSelectSavedSongsMsg;
+begin
+  SearchString := '';
+  SetLength(TitleHashes, 0);
+  SetLength(ArtistHashes, 0);
+
+  Nodes := FTree.GetNodes([ntWish], True);
+  for i := 0 to High(Nodes) do
+  begin
+    NodeData := FTree.GetNodeData(Nodes[i]);
+
+    if NodeData.Title <> nil then
+    begin
+      if NodeData.Title.ServerHash = 0 then
+      begin
+        SetLength(ArtistHashes, Length(ArtistHashes) + 1);
+        ArtistHashes[High(ArtistHashes)] := NodeData.Title.ServerArtistHash;
+      end else
+      begin
+        SetLength(TitleHashes, Length(TitleHashes) + 1);
+        TitleHashes[High(TitleHashes)] := NodeData.Title.ServerHash;
+      end;
+    end;
+  end;
+
+  if (Length(TitleHashes) > 0) or (Length(ArtistHashes) > 0) then
+  begin
+    MsgBus.SendMessage(TSelectSavedSongsMsg.Create(Self, TitleHashes, ArtistHashes));
+  end;
 end;
 
 procedure TTitlePanel.AddEditKeyPress(Sender: TObject; var Key: Char);
@@ -1152,7 +1230,8 @@ end;
 
 procedure TTitlePanel.UpdateButtons;
 var
-  SingleParentSelected, TitlesSelected, CanRemove, CanRename, CanImport: Boolean;
+  i, n: Integer;
+  SingleParentSelected, TitlesSelected, CanRemove, CanRename, CanImport, CanShowSaved: Boolean;
   SelectedNodes, SelectedParents: TNodeArray;
   ChildNodeData: PTitleNodeData;
 
@@ -1172,6 +1251,7 @@ var
 begin
   SelectedNodes := FTree.GetNodes([ntStream, ntWish, ntIgnore], True);
   SelectedParents := FTree.GetNodes([ntWishParent, ntIgnoreParent, ntStream], True);
+  CanShowSaved := False;
 
   SingleParentSelected := (FTree.SelectedCount = 1) and (Length(SelectedParents) = 1);
   if SingleParentSelected then
@@ -1185,6 +1265,17 @@ begin
       SingleParentSelected := False;
   end;
 
+  for i := 0 to High(SelectedNodes) do
+  begin
+    ChildNodeData := FTree.GetNodeData(SelectedNodes[i]);
+    for n := 0 to FLists.TrackList.Count - 1 do
+      if (ChildNodeData.Title <> nil) and (ChildNodeData.Title.ServerHash = FLists.TrackList[n].ServerTitleHash) then
+      begin
+        CanShowSaved := True;
+        Break;
+      end;
+  end;
+
   TitlesSelected := (TypeCount(ntWish) > 0) or (TypeCount(ntIgnore) > 0);
   CanRemove := TitlesSelected or (TypeCount(ntStream) > 0);
   CanRename := (FTree.SelectedCount = 1) and TitlesSelected and (PTitleNodeData(FTree.GetNodeData(SelectedNodes[0])).Title.ServerHash = 0) and
@@ -1193,12 +1284,14 @@ begin
 
   FToolbar.FRemove.Enabled := CanRemove;
   FToolbar.FRename.Enabled := CanRename;
+  FToolbar.FShowSaved.Enabled := CanShowSaved;
   FToolbar.FExport.Enabled := (TitlesSelected and (not SingleParentSelected) and (Length(SelectedParents) = 0)) or
                               (SingleParentSelected and (not TitlesSelected));
   FToolbar.FImport.Enabled := CanImport;
 
   FTree.FPopupMenu.FRemove.Enabled := CanRemove;
   FTree.FPopupMenu.FRename.Enabled := CanRename;
+  FTree.FPopupMenu.FShowSaved.Enabled := CanShowSaved;
   FTree.FPopupMenu.FExport.Enabled := TitlesSelected;
   FTree.FPopupMenu.FImport.Enabled := CanImport;
 end;
@@ -1265,6 +1358,16 @@ begin
   FSelectSaved.Parent := Self;
   FSelectSaved.Hint := 'Select saved titles (by pattern)';
   FSelectSaved.ImageIndex := 70;
+
+  Sep := TToolButton.Create(Self);
+  Sep.Parent := Self;
+  Sep.Style := tbsSeparator;
+  Sep.Width := 8;
+
+  FShowSaved := TToolButton.Create(Self);
+  FShowSaved.Parent := Self;
+  FShowSaved.Hint := 'Show in saved tracks';
+  FShowSaved.ImageIndex := 14;
 
   Sep := TToolButton.Create(Self);
   Sep.Parent := Self;
@@ -1404,6 +1507,10 @@ begin
   FColTitle := Header.Columns.Add;
   FColTitle.Text := _('Title');
 
+  FColSaved := Header.Columns.Add;
+  FColSaved.Text := _('Times saved');
+  FColSaved.Alignment := taRightJustify;
+
   FColAdded := Header.Columns.Add;
   FColAdded.Text := _('Date');
   FColAdded.Alignment := taRightJustify;
@@ -1418,6 +1525,7 @@ begin
     FPopupMenu.Images := modSharedData.imgImages;
   FPopupMenu.FRemove.OnClick := PopupMenuClick;
   FPopupMenu.FRename.OnClick := PopupMenuClick;
+  FPopupMenu.FShowSaved.OnClick := PopupMenuClick; // TODO: klick im popupmenü muss aktion auslösen!!
   FPopupMenu.FSelectSaved.OnClick := PopupMenuClick;
   FPopupMenu.FSelectIgnored.OnClick := PopupMenuClick;
   FPopupMenu.FExport.OnClick := PopupMenuClick;
@@ -1601,6 +1709,8 @@ begin
     TTitlePanel(Owner).FToolbar.FRemove.Click
   else if Sender = FPopupMenu.FRename then
     TTitlePanel(Owner).FToolbar.FRename.Click
+  else if Sender = FPopupMenu.FShowSaved then
+    TTitlePanel(Owner).FToolbar.FShowSaved.Click
   else if Sender = FPopupMenu.FSelectSaved then
     TTitlePanel(Owner).FToolbar.FSelectSaved.Click
   else if Sender = FPopupMenu.FSelectIgnored then
@@ -1699,6 +1809,15 @@ begin
           end;
         end;
       1:
+        begin
+          if (NodeData.NodeType = ntWish) and (NodeData.Title <> nil) and
+             ((NodeData.Title.ServerHash > 0) or (NodeData.Title.ServerArtistHash > 0)) then
+          begin
+            Text := IntToStr(NodeData.Title.Saved);
+          end else
+            Text := '';
+        end;
+      2:
         begin
           if NodeData.Title <> nil then
           begin
@@ -1874,7 +1993,8 @@ begin
         else if (Data1.Title = nil) and (Data2.Stream <> nil) then
           Exit(-1);
       end;
-    1:
+    1:; // TODO: !
+    2:
       if Node1 = FWishNode then                                
         Result := 1
       else if Node1 = FIgnoreNode then
@@ -1903,6 +2023,15 @@ begin
   FRemove.Caption := '&Remove';
   FRemove.ImageIndex := 2;
   Items.Add(FRemove);
+
+  Sep := CreateMenuItem;
+  Sep.Caption := '-';
+  Items.Add(Sep);
+
+  FShowSaved := CreateMenuItem;
+  FShowSaved.Caption := 'Show in saved tracks'; // TODO: shortcut!!!
+  FShowSaved.ImageIndex := 14;
+  Items.Add(FShowSaved);
 
   Sep := CreateMenuItem;
   Sep.Caption := '-';

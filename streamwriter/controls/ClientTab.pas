@@ -150,7 +150,8 @@ type
     procedure ClientManagerClientAdded(Sender: TObject);
     procedure ClientManagerClientRemoved(Sender: TObject);
     procedure ClientManagerSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
-      Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean);
+      Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean;
+      ServerTitleHash, ServerArtistHash: Cardinal);
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
     procedure ClientManagerTitleAllowed(Sender: TObject; Title: string;
@@ -1183,7 +1184,7 @@ end;
 
 procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
   Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64;
-  VBR, WasCut, FullTitle, IsStreamFile: Boolean);
+  VBR, WasCut, FullTitle, IsStreamFile: Boolean; ServerTitleHash, ServerArtistHash: Cardinal);
 var
   Client: TICEClient;
   Track: TTrackInfo;
@@ -1206,7 +1207,7 @@ begin
 
   if Track = nil then
   begin
-    Track := TTrackInfo.Create(Now, Filename, Client.Entry.Name);
+    Track := TTrackInfo.Create(Now, Filename, Client.Entry.Name, ServerTitleHash, ServerArtistHash);
     FStreams.TrackList.Add(Track);
   end;
 

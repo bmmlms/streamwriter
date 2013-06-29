@@ -49,6 +49,7 @@ type
     FServerHash: Cardinal;
     FServerArtistHash: Cardinal;
     FUpdatedToHash: Boolean;
+    FSaved: Cardinal;
   public
     constructor Create(ServerHash, ServerArtistHash: Cardinal; Title: string); overload;
     function Copy: TTitleInfo;
@@ -64,6 +65,7 @@ type
     property ServerHash: Cardinal read FServerHash;
     property ServerArtistHash: Cardinal read FServerArtistHash;
     property UpdatedToHash: Boolean read FUpdatedToHash write FUpdatedToHash;
+    property Saved: Cardinal read FSaved write FSaved;
   end;
 
   TN = procedure(Sender: TObject; const Item: TTitleInfo; Action: TCollectionNotification) of object;
@@ -141,9 +143,11 @@ type
     FFinalized: Boolean;
     FVBR: Boolean;
     FIndex: Cardinal;
+    FServerTitleHash: Cardinal; // TODO: der muss immer gesetzt sein. wird er bei auto-aufnahme über artist gesetzt? sollte so sein, checken!
+    FServerArtistHash: Cardinal; // TODO: das selbe gilt hier wie im todo hier drüber, nur umgekehrt.
   public
     constructor Create; overload;
-    constructor Create(Time: TDateTime; Filename, Streamname: string); overload;
+    constructor Create(Time: TDateTime; Filename, Streamname: string; ServerTitleHash, ServerArtistHash: Cardinal); overload;
     procedure Assign(Source: TTrackInfo);
     function Copy: TTrackInfo;
 
@@ -172,6 +176,8 @@ type
     property Finalized: Boolean read FFinalized write FFinalized;
     property Index: Cardinal read FIndex write FIndex;
     property VBR: Boolean read FVBR write FVBR;
+    property ServerTitleHash: Cardinal read FServerTitleHash write FServerTitleHash;
+    property ServerArtistHash: Cardinal read FServerArtistHash write FServerArtistHash;
   end;
 
   TTrackInfoArray = array of TTrackInfo;
@@ -560,6 +566,9 @@ type
     FLoadError: Boolean;
     FReceived: UInt64;
   public
+    // TODO: irgendwann sollte das eine property werden...
+    SavedTitleHashes: TCardinalArray;
+
     constructor Create;
     destructor Destroy; override;
 
@@ -603,7 +612,7 @@ type
   end;
 
 const
-  DATAVERSION = 50;
+  DATAVERSION = 51;
 
 implementation
 
@@ -666,6 +675,9 @@ begin
   if Version > 49 then
     Stream.Read(Result.FServerArtistHash);
 
+  if Version > 50 then
+    Stream.Read(Result.FSaved);
+
   if Version > 48 then
     Stream.Read(Result.FUpdatedToHash)
   else
@@ -681,6 +693,7 @@ begin
   Stream.Write(FHash);
   Stream.Write(FServerHash);
   Stream.Write(FServerArtistHash);
+  Stream.Write(FSaved);
   Stream.Write(FUpdatedToHash);
 end;
 
@@ -695,6 +708,7 @@ begin
   Result.FServerHash := FServerHash;
   Result.FServerArtistHash := FServerArtistHash;
   Result.FUpdatedToHash := FUpdatedToHash;
+  Result.Saved := FSaved;
 end;
 
 { TStreamEntry }
@@ -1005,6 +1019,8 @@ constructor TDataLists.Create;
 begin
   inherited;
 
+  SetLength(SavedTitleHashes, 0);
+
   FLoadError := False;
   FReceived := 0;
   FCategoryList := TListCategoryList.Create;
@@ -1053,6 +1069,7 @@ var
   Compressed: Boolean;
   Chart: TChartEntry;
   ChartCategory: TChartCategory;
+  TitleCount: Cardinal;
 begin
   CleanLists;
 
@@ -1212,6 +1229,16 @@ begin
       end;
     end;
   end;
+
+  if Version >= 51 then
+  begin
+    S.Read(TitleCount);
+    SetLength(SavedTitleHashes, TitleCount);
+    for i := 0 to TitleCount - 1 do
+    begin
+      S.Read(SavedTitleHashes[i]);
+    end;
+  end;
 end;
 
 procedure TDataLists.Load;
@@ -1305,6 +1332,10 @@ begin
     for i := 0 to FGenreList.Count - 1 do
       FGenreList[i].Save(CompressedStream);
 
+    CompressedStream.Write(Cardinal(Length(SavedTitleHashes)));
+    for i := 0 to High(SavedTitleHashes) do
+      CompressedStream.Write(SavedTitleHashes[i]);
+
     CompressedStream.Seek(0, soFromBeginning);
 
     if UseCompression then
@@ -1386,6 +1417,8 @@ begin
   FFinalized := Source.Finalized;
   FVBR := Source.VBR;
   FIndex := Source.Index;
+  FServerTitleHash := Source.ServerTitleHash;
+  FServerArtistHash := Source.ServerArtistHash;
 end;
 
 function TTrackInfo.Copy: TTrackInfo;
@@ -1394,7 +1427,7 @@ begin
   Result.Assign(Self);
 end;
 
-constructor TTrackInfo.Create(Time: TDateTime; Filename, Streamname: string);
+constructor TTrackInfo.Create(Time: TDateTime; Filename, Streamname: string; ServerTitleHash, ServerArtistHash: Cardinal);
 begin
   inherited Create;
 
@@ -1403,6 +1436,8 @@ begin
   FStreamname := Streamname;
   FWasCut := False;
   FIsStreamFile := False;
+  FServerTitleHash := ServerTitleHash;
+  FServerArtistHash := ServerArtistHash;
 end;
 
 class function TTrackInfo.Load(Stream: TExtendedStream;
@@ -1441,6 +1476,12 @@ begin
 
   if Version >= 41 then
     Stream.Read(Result.FVBR);
+
+  if Version > 50 then
+  begin
+    Stream.Read(Result.FServerTitleHash);
+    Stream.Read(Result.FServerArtistHash);
+  end;
 end;
 
 procedure TTrackInfo.Save(Stream: TExtendedStream);
@@ -1458,6 +1499,8 @@ begin
   Stream.Write(FFinalized);
   Stream.Write(FIndex);
   Stream.Write(FVBR);
+  Stream.Write(FServerTitleHash);
+  Stream.Write(FServerArtistHash);
 end;
 
 { TStreamList }

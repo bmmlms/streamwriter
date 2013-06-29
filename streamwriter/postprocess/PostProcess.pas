@@ -53,6 +53,8 @@ type
     BitRate: Cardinal;
     VBR: Boolean;
     EncoderSettings: TObject;
+    ServerTitleHash: Cardinal;
+    ServerArtistHash: Cardinal;
   end;
   PPostProcessInformation = ^TPostProcessInformation;
 
@@ -226,6 +228,8 @@ begin
   FData.BitRate := Data.BitRate;
   FData.EncoderSettings := TEncoderSettings(Data.EncoderSettings);
   FData.VBR := Data.VBR;
+  FData.ServerTitleHash := Data.ServerTitleHash;
+  FData.ServerArtistHash := Data.ServerArtistHash;
 
   FPostProcessList := TList<TPostProcessBase>.Create;
 end;

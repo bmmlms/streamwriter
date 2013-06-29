@@ -102,8 +102,8 @@ type
 
     FPopupMenu: TChartsPopup;
 
-    FColImages: TVirtualTreeColumn;
     FColTitle: TVirtualTreeColumn;
+    FColImages: TVirtualTreeColumn;
     FColLastPlayed: TVirtualTreeColumn;
     FColChance: TVirtualTreeColumn;
 
@@ -463,7 +463,7 @@ begin
   FSearchPanel.FButtonPlayStreamExternal.OnClick := ButtonClick;
   FSearchPanel.FButtonAddStream.OnClick := ButtonClick;
 
-  Caption := _('Charts');
+  Caption := _('Title search');
 
   UpdateButtons;
 end;
@@ -720,6 +720,7 @@ end;
 function TChartsTree.DoCompare(Node1, Node2: PVirtualNode;
   Column: TColumnIndex): Integer;
 var
+  i: Integer;
   C1, C2: Integer;
   Data1, Data2: PChartNodeData;
 begin
@@ -738,6 +739,14 @@ begin
       begin
         C1 := 0;
         C2 := 0;
+
+        for i := 0 to High(FLists.SavedTitleHashes) do
+        begin
+          if (Data1.Chart <> nil) and (Data1.Chart.ServerHash = FLists.SavedTitleHashes[i]) then
+            C1 := C1 + 3;
+          if (Data2.Chart <> nil) and (Data2.Chart.ServerHash = FLists.SavedTitleHashes[i]) then
+            C2 := C2 + 3;
+        end;
 
         if Data1.IsOnWishlist then
           C1 := C1 + 2;
@@ -805,19 +814,19 @@ begin
       begin
         Val := NodeData.Chart.PlayedLast;
 
-        if Val > 86400 then
+        if Val >= 86400 then
         begin
           if Val div 86400 = 1 then
             Text := Format(_('%d day ago'), [Val div 86400])
           else
             Text := Format(_('%d days ago'), [Val div 86400]);
-        end else if Val > 3600 then
+        end else if Val >= 3600 then
         begin
           if Val div 3600 = 1 then
             Text := Format(_('%d hour ago'), [Val div 3600])
           else
             Text := Format(_('%d hours ago'), [Val div 3600]);
-        end else if Val > 60 then
+        end else if Val >= 60 then
         begin
           if Val div 60 = 1 then
             Text := Format(_('%d minute ago'), [Val div 60])
@@ -1036,6 +1045,7 @@ var
   i: Integer;
   Node: PVirtualNode;
   NodeData: PChartNodeData;
+  SongSavedMsg: TSongSavedMsg absolute Msg;
 begin
   BeginUpdate;
 
@@ -1063,6 +1073,24 @@ begin
       end;
 
       Invalidate;
+    end else if Msg is TSongSavedMsg then
+    begin
+      SetLength(FLists.SavedTitleHashes, Length(FLists.SavedTitleHashes) + 1);
+      FLists.SavedTitleHashes[High(FLists.SavedTitleHashes)] := SongSavedMsg.ServerTitleHash;
+
+      Node := GetFirst;
+      while Node <> nil do
+      begin
+        NodeData := GetNodeData(Node);
+
+        if (NodeData.Chart <> nil) and (NodeData.Chart.ServerHash = SongSavedMsg.ServerTitleHash) then
+        begin
+          InvalidateNode(Node);
+          Break;
+        end;
+
+        Node := GetNext(Node);
+      end;
     end;
   finally
     EndUpdate;
@@ -1096,7 +1124,7 @@ end;
 procedure TChartsTree.PaintImage(var PaintInfo: TVTPaintInfo;
   ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
 var
-  L: Integer;
+  L, i: Integer;
   NodeData: PChartNodeData;
   P: TControl;
 begin
@@ -1124,6 +1152,15 @@ begin
           if NodeData.IsArtistOnWishlist then
           begin
             Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 86);
+            L := L + 16
+          end;
+
+          for i := 0 to High(FLists.SavedTitleHashes) do
+          begin
+            if FLists.SavedTitleHashes[i] = NodeData.Chart.ServerHash then
+            begin
+              Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 14);
+            end;
           end;
         end else
         begin

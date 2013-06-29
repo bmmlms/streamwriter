@@ -170,12 +170,18 @@ type
   private
     FLabel: TLabel;
     FSearch: TEdit;
+
+    FHashFilterSet: Boolean;
+
+    procedure FSetHashFilterSet(Value: Boolean);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
     procedure Setup;
     procedure PostTranslate;
+
+    property HashFilterSet: Boolean read FHashFilterSet write FSetHashFilterSet;
   end;
 
   TImportPanel = class(TPanel)
@@ -229,6 +235,7 @@ type
     procedure BuildTree;
     procedure SavedTreeAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
     procedure ToolBarClick(Sender: TObject);
+    procedure SearchTextClick(Sender: TObject);
     procedure SearchTextChange(Sender: TObject);
     procedure VolumeTrackbarChange(Sender: TObject);
     function VolumeGetVolumeBeforeMute(Sender: TObject): Integer;
@@ -351,11 +358,12 @@ type
 
     function PrevPlayingTrack: TTrackInfo;
     function NextPlayingTrack: TTrackInfo;
-    procedure AddTrack(Track: TTrackInfo; AddToInternalList: Boolean);
+    procedure AddTrack(Track: TTrackInfo; AddToInternalList: Boolean; IgnorePattern: Boolean = False);
     procedure RemoveTrack(Track: TTrackInfo); overload;
     procedure DeleteTrack(Track: TTrackInfo);
     procedure UpdateTrack(Track: TTrackInfo);
-    procedure Filter(S: string);
+    procedure Filter(S: string); overload;
+    procedure Filter(S: string; ServerTitleHashes, ServerArtistHashes: TCardinalArray); overload;
     procedure Sort(Node: PVirtualNode; Column: TColumnIndex;
       Direction: VirtualTrees.TSortDirection; DoInit: Boolean = True); override;
     procedure SetFileWatcher;
@@ -765,14 +773,30 @@ end;
 
 procedure TSavedTab.MessageReceived(Msg: TMessageBase);
 var
-  VolMsg: TVolumeChangedMsg;
+  i: Integer;
+  Nodes: TNodeArray;
+  NodeData: PSavedNodeData;
+
+  VolMsg: TVolumeChangedMsg absolute Msg;
+  SelectSavedSongsMsg: TSelectSavedSongsMsg absolute Msg;
+  n: Integer;
+
+  Tmp: TNotifyEvent;
 begin
   if (Msg is TVolumeChangedMsg) and (FVolume <> nil) then
   begin
-    VolMsg := TVolumeChangedMsg(Msg);
-
     if VolMsg.Volume <> FVolume.Volume then
       FVolume.Volume := TVolumeChangedMsg(Msg).Volume;
+  end else if Msg is TSelectSavedSongsMsg then
+  begin
+    // TODO: checken ob was in den arrays drin ist, sonst doof.
+    FSearchBar.HashFilterSet := True;
+
+    Tmp := FSearchBar.FSearch.OnChange;
+    FSearchBar.FSearch.OnChange := nil;
+    FSearchBar.FSearch.Text := _('[Selected titles]');
+    FSearchBar.FSearch.OnChange := Tmp;
+    FSavedTree.Filter('', SelectSavedSongsMsg.TitleHashes, SelectSavedSongsMsg.ArtistHashes);
   end;
 end;
 
@@ -1216,7 +1240,18 @@ end;
 
 procedure TSavedTab.SearchTextChange(Sender: TObject);
 begin
+  FSearchBar.HashFilterSet := False;
   FSavedTree.Filter(FSearchBar.FSearch.Text);
+end;
+
+procedure TSavedTab.SearchTextClick(Sender: TObject);
+var
+  Tmp: TNotifyEvent;
+begin
+  if FSearchBar.HashFilterSet then
+  begin
+    FSearchBar.FSearch.SelectAll;
+  end;
 end;
 
 procedure TSavedTab.SeekChange(Sender: TObject);
@@ -1321,6 +1356,7 @@ begin
   FSearchBar.Parent := FTopLeftPanel;
   FSearchBar.Align := alTop;
   FSearchBar.Setup;
+  FSearchBar.FSearch.OnClick := SearchTextClick;
   FSearchBar.FSearch.OnChange := SearchTextChange;
 
   DummyPanel := TPanel.Create(Self);
@@ -2051,7 +2087,7 @@ begin
   //FPopupMenu.FItemStop.Enabled := FPlayer.Playing or FPlayer.Paused;
 end;
 
-procedure TSavedTree.AddTrack(Track: TTrackInfo; AddToInternalList: Boolean);
+procedure TSavedTree.AddTrack(Track: TTrackInfo; AddToInternalList: Boolean; IgnorePattern: Boolean);
 var
   Node: PVirtualNode;
   NodeData: PSavedNodeData;
@@ -2059,7 +2095,14 @@ begin
   if AddToInternalList then
     FTrackList.Add(Track);
 
-  if (FPattern = '*') or (Like(LowerCase(Track.Filename), FPattern)) or (Like(LowerCase(Track.Streamname), FPattern)) then
+  if IgnorePattern then
+  begin
+    Node := AddChild(FFileNode);
+    if (FFileNode.ChildCount = 1) then // and (not FromFilter) then
+      Expanded[FFileNode] := True;
+    NodeData := GetNodeData(Node);
+    NodeData.Track := Track;
+  end else if (FPattern = '*') or (Like(LowerCase(Track.Filename), FPattern)) or (Like(LowerCase(Track.Streamname), FPattern)) then
   begin
     if Track.IsStreamFile then
     begin
@@ -2397,37 +2440,100 @@ end;
 
 procedure TSavedTree.Filter(S: string);
 var
-  i: Integer;
+  Tmp: TCardinalArray;
+begin
+  SetLength(Tmp, 0);
+  Filter(S, Tmp, Tmp);
+end;
+
+procedure TSavedTree.Filter(S: string; ServerTitleHashes, ServerArtistHashes: TCardinalArray);
+var
+  i, n, k: Integer;
   StreamsExpanded, FilesExpanded: Boolean;
   NodeData: PSavedNodeData;
   Hash: Cardinal;
   Chars: Integer;
+  TitleHashesAdded: TCardinalArray;
+  AddedTitles: TList;
+  Found: Boolean;
 begin
-  FPattern := BuildPattern(S, Hash, Chars, True);
-
   BeginUpdate;
 
   StreamsExpanded := Expanded[FStreamNode];
   FilesExpanded := Expanded[FFileNode];
-
   Clear;
 
-  FStreamNode := AddChild(nil);
-  NodeData := GetNodeData(FStreamNode);
-  NodeData.IsStreamParent := True;
+  AddedTitles := TList.Create;
+  try
+    if (Length(ServerTitleHashes) = 0) and (Length(ServerArtistHashes) = 0) then
+    begin
+      FPattern := BuildPattern(S, Hash, Chars, True);
 
-  FFileNode := AddChild(nil);
-  NodeData := GetNodeData(FFileNode);
-  NodeData.IsFileParent := True;
+      FStreamNode := AddChild(nil);
+      NodeData := GetNodeData(FStreamNode);
+      NodeData.IsStreamParent := True;
+      FFileNode := AddChild(nil);
+      NodeData := GetNodeData(FFileNode);
+      NodeData.IsFileParent := True;
 
-  for i := 0 to FTrackList.Count - 1 do
-    AddTrack(FTrackList[i], False);
+      for i := 0 to FTrackList.Count - 1 do
+        AddTrack(FTrackList[i], False);
+    end else
+    begin
+      StreamsExpanded := False;
+      FilesExpanded := True;
+
+      FStreamNode := AddChild(nil);
+      NodeData := GetNodeData(FStreamNode);
+      NodeData.IsStreamParent := True;
+      FFileNode := AddChild(nil);
+      NodeData := GetNodeData(FFileNode);
+      NodeData.IsFileParent := True;
+
+      SetLength(TitleHashesAdded, 0);
+
+      // Erstmal alles basierend auf Title-Hashes einfügen
+      for i := 0 to FTrackList.Count - 1 do
+        for n := 0 to High(ServerTitleHashes) do
+          if FTrackList[i].ServerTitleHash = ServerTitleHashes[n] then
+          begin
+            AddTrack(FTrackList[i], False, True);
+
+            SetLength(TitleHashesAdded, Length(TitleHashesAdded) + 1);
+            TitleHashesAdded[High(TitleHashesAdded)] := ServerTitleHashes[n];
+
+            AddedTitles.Add(FTrackList[i]);
+          end;
+
+      // Jetzt alles basierend auf Artist-Hashes einfügen, wenn noch nicht vorhanden
+      for i := 0 to FTrackList.Count - 1 do
+      begin
+        for n := 0 to High(ServerArtistHashes) do
+          if FTrackList[i].ServerArtistHash = ServerArtistHashes[n] then
+          begin
+            Found := False;
+            for k := 0 to AddedTitles.Count - 1 do
+            begin
+              if AddedTitles[k] = FTrackList[i] then
+              begin
+                Found := True;
+                Break;
+              end;
+            end;
+
+            if not Found then
+              AddTrack(FTrackList[i], False, True);
+          end;
+      end;
+    end;
+  finally
+    AddedTitles.Free;
+  end;
 
   Expanded[FStreamNode] := StreamsExpanded;
   Expanded[FFileNode] := FilesExpanded;
 
   Sort(nil, Header.SortColumn, Header.SortDirection);
-
   EndUpdate;
 
   Change(nil);
@@ -2705,6 +2811,24 @@ destructor TSearchBar.Destroy;
 begin
 
   inherited;
+end;
+
+procedure TSearchBar.FSetHashFilterSet(Value: Boolean);
+var
+  Tmp: TNotifyEvent;
+begin
+  FHashFilterSet := Value;
+  if Value then
+  begin
+    Tmp := FSearch.OnChange;
+    FSearch.OnChange := nil;
+    FSearch.Text := _('');
+    FSearch.Color := clBtnFace; // TODO: COLOR prüfen. passt das?
+    FSearch.OnChange := Tmp;
+  end else
+  begin
+    FSearch.Color := clWindow;
+  end;
 end;
 
 procedure TSearchBar.PostTranslate;
