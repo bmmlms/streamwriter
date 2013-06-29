@@ -456,7 +456,7 @@ begin
         if Trim(TitleRegEx) <> '' then
           Client.Entry.Settings.TitlePattern := TitleRegEx;
         Client.RecordTitle := Title;
-        Client.RecordServerTitle := FLists.SaveList[i].Title;
+        Client.RecordServerTitle := Title;
         Client.RecordTitleHash := ServerHash;
         Client.RecordArtistHash := ServerArtistHash;
         Client.StartRecording(False);
