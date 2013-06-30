@@ -29,10 +29,13 @@ uses
 
 type
   TPostProcessSetTagsThread = class(TPostProcessThreadBase)
+  private
+    FArtist, FTitle, FAlbum, FComment: string;
   protected
     procedure Execute; override;
   public
-    constructor Create(Data: PPostProcessInformation; PostProcessor: TPostProcessBase);
+    constructor Create(Data: PPostProcessInformation; PostProcessor: TPostProcessBase;
+      Artist, Title, Album, Comment: string);
   end;
 
   TPostProcessSetTags = class(TInternalPostProcess)
@@ -65,9 +68,14 @@ uses
 { TPostProcessSetTagsThread }
 
 constructor TPostProcessSetTagsThread.Create(Data: PPostProcessInformation;
-  PostProcessor: TPostProcessBase);
+  PostProcessor: TPostProcessBase; Artist, Title, Album, Comment: string);
 begin
   inherited Create(Data, PostProcessor);
+
+  FArtist := Artist;
+  FTitle := Title;
+  FAlbum := Album;
+  FComment := Comment;
 end;
 
 procedure TPostProcessSetTagsThread.Execute;
@@ -80,10 +88,10 @@ begin
 
   FResult := arFail;
 
-  AppGlobals.Storage.Read('Artist_' + PostProcessor.ClassName, Artist, '%a', 'Plugins');
-  AppGlobals.Storage.Read('Title_' + PostProcessor.ClassName, Title, '%t', 'Plugins');
-  AppGlobals.Storage.Read('Album_' + PostProcessor.ClassName, Album, '%l', 'Plugins');
-  AppGlobals.Storage.Read('Comment_' + PostProcessor.ClassName, Comment, '%s / %u / Recorded using streamWriter', 'Plugins');
+  //AppGlobals.Storage.Read('Artist_' + PostProcessor.ClassName, Artist, '%a', 'Plugins');
+  //AppGlobals.Storage.Read('Title_' + PostProcessor.ClassName, Title, '%t', 'Plugins');
+  //AppGlobals.Storage.Read('Album_' + PostProcessor.ClassName, Album, '%l', 'Plugins');
+  //AppGlobals.Storage.Read('Comment_' + PostProcessor.ClassName, Comment, '%s / %u / Recorded using streamWriter', 'Plugins');
 
   SetLength(Arr, 7);
   Arr[0].C := 'a';
@@ -106,10 +114,10 @@ begin
     try
       if FileTagger.Read(FData.Filename) then
       begin
-        Artist := PatternReplace(Artist, Arr);
-        Title := PatternReplace(Title, Arr);
-        Album := PatternReplace(Album, Arr);
-        Comment := PatternReplace(Comment, Arr);
+        Artist := PatternReplace(FArtist, Arr);
+        Title := PatternReplace(FTitle, Arr);
+        Album := PatternReplace(FAlbum, Arr);
+        Comment := PatternReplace(FComment, Arr);
 
         FileTagger.Tag.Artist := Artist;
         FileTagger.Tag.Title := Title;
@@ -250,7 +258,7 @@ end;
 
 function TPostProcessSetTags.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
-  Result := TPostProcessSetTagsThread.Create(Data, Self);
+  Result := TPostProcessSetTagsThread.Create(Data, Self, FArtist, FTitle, FAlbum, FComment);
 end;
 
 procedure TPostProcessSetTags.Save(Stream: TExtendedStream);

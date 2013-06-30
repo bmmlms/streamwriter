@@ -1260,13 +1260,16 @@ begin
         if R.Match then
         begin
           try
-            Artist := Trim(R.Groups[R.NamedGroup('a')]);
+            if R.NamedGroup('a') > 0 then
+              Artist := Trim(R.Groups[R.NamedGroup('a')]);
           except end;
           try
-            Title := Trim(R.Groups[R.NamedGroup('t')]);
+            if R.NamedGroup('t') > 0 then
+              Title := Trim(R.Groups[R.NamedGroup('t')]);
           except end;
           try
-            Album := Trim(R.Groups[R.NamedGroup('l')]);
+            if R.NamedGroup('l') > 0 then
+              Album := Trim(R.Groups[R.NamedGroup('l')]);
           except end;
         end;
       except end;
