@@ -2069,7 +2069,7 @@ begin
   Items.Add(Sep);
 
   FShowSaved := CreateMenuItem;
-  FShowSaved.Caption := 'Show in saved tracks'; // TODO: shortcut!!!
+  FShowSaved.Caption := 'S&how in saved tracks';
   FShowSaved.ImageIndex := 14;
   Items.Add(FShowSaved);
 

@@ -168,6 +168,7 @@ type
     FSearched: Boolean;
 
     FOnAddToWishlist: TAddToWishlistEvent;
+    FOnRemoveTitleFromWishlist: TAddToWishlistEvent;
     FOnAddStreams: TAddStreamsEvent;
     FOnGetIsStreamOnListEvent: TGetIsStreamOnListEvent;
 
@@ -195,6 +196,7 @@ type
     property State: TChartStates read FState;
     property Searched: Boolean read FSearched;
     property OnAddToWishlist: TAddToWishlistEvent read FOnAddToWishlist write FOnAddToWishlist;
+    property OnRemoveTitleFromWishlist: TAddToWishlistEvent read FOnRemoveTitleFromWishlist write FOnRemoveTitleFromWishlist;
     property OnAddStreams: TAddStreamsEvent read FOnAddStreams write FOnAddStreams;
     property OnGetIsStreamOnListEvent: TGetIsStreamOnListEvent read FOnGetIsStreamOnListEvent write FOnGetIsStreamOnListEvent;
   end;
@@ -617,6 +619,7 @@ begin
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
   TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
+  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toToggleOnDblClick];
   Header.Options := Header.Options - [hoAutoResize];
   Header.Options := Header.Options - [hoDrag];
 
@@ -663,7 +666,7 @@ procedure TChartsTree.DblClick;
 begin
   inherited;
 
-  if (SelectedCount = 1) and (FocusedNode <> nil) and (GetNodeLevel(GetNodes(ntAll, True)[0]) = 1) then
+  if (SelectedCount = 1) and (FocusedNode <> nil) then
     ExecDefaultAction;
 end;
 
@@ -892,6 +895,7 @@ end;
 procedure TChartsTree.ExecDefaultAction;
 var
   i: Integer;
+  AllOnWishlist: Boolean;
   P: TControl;
   Nodes: TNodeArray;
   NodesData: TChartDataArray;
@@ -902,6 +906,7 @@ begin
   while not (P.ClassType = TChartsTab) do
     P := P.Parent;
 
+  AllOnWishlist := True;
   Nodes := GetNodes(ntAll, True);
   NodesData := NodesToData(Nodes);
 
@@ -912,9 +917,12 @@ begin
     begin
       if NodesData[i].Chart <> nil then
       begin
+        if not NodesData[i].IsOnWishlist then
+          AllOnWishlist := False;
+
         SetLength(Titles, Length(Titles) + 1);
         Titles[High(Titles)] := TWishlistTitleInfo.Create(NodesData[i].Chart.ServerHash, NodesData[i].Chart.Name, False);
-      end else
+      end else if NodesData[i].Stream <> nil then
       begin
         SetLength(Info, Length(Info) + 1);
         Info[High(Info)] := TStartStreamingInfo.Create(NodesData[i].Stream.ID, NodesData[i].Stream.Stream.Bitrate,
@@ -935,7 +943,10 @@ begin
     end;
 
     if Length(Titles) > 0 then
-      TChartsTab(P).FOnAddToWishlist(Self, Titles);
+      if AllOnWishlist then
+        TChartsTab(P).FOnRemoveTitleFromWishlist(Self, Titles)
+      else
+        TChartsTab(P).FOnAddToWishlist(Self, Titles);
 
     for i := 0 to Length(Nodes) - 1 do
       InvalidateNode(Nodes[i]);
@@ -1028,10 +1039,10 @@ procedure TChartsTree.KeyPress(var Key: Char);
 begin
   inherited;
 
-  if (Key = #13) or (Key = #32) then
+  if (SelectedCount > 0) and ((Key = #13) or (Key = #32)) then
   begin
-    Key := #0;
     ExecDefaultAction;
+    Key := #0;
   end;
 end;
 

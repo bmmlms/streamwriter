@@ -321,6 +321,7 @@ type
     procedure tabPlayStarted(Sender: TObject);
 
     procedure tabChartsAddToWishlist(Sender: TObject; Arr: TWishlistTitleInfoArray);
+    procedure tabChartsRemoveFromWishlist(Sender: TObject; Arr: TWishlistTitleInfoArray);
     procedure tabChartsAddStreams(Sender: TObject; Info: TStartStreamingInfoArray; Action: TStreamOpenActions);
     function tabChartsGetIsStreamOnListEvent(Sender: TObject; Stream: TStreamBrowserEntry): Boolean;
 
@@ -844,6 +845,7 @@ begin
   tabCharts := TChartsTab.Create(pagMain, FDataLists);
   tabCharts.PageControl := pagMain;
   tabCharts.OnAddToWishlist := tabChartsAddToWishlist;
+  tabCharts.OnRemoveTitleFromWishlist := tabChartsRemoveFromWishlist;
   tabCharts.OnAddStreams := tabChartsAddStreams;
   tabCharts.OnGetIsStreamOnListEvent := tabChartsGetIsStreamOnListEvent;
 
@@ -1991,6 +1993,35 @@ begin
   for Client in Clients do
     if (Client.Entry.ID = Stream.ID) or (Client.Entry.Name = Stream.Name) then
       Exit(True);
+end;
+
+procedure TfrmStreamWriterMain.tabChartsRemoveFromWishlist(Sender: TObject;
+  Arr: TWishlistTitleInfoArray);
+var
+  i, n, NumChars: Integer;
+  Hash: Cardinal;
+  Hashes: TSyncWishlistRecordArray;
+  Found: Boolean;
+  Pattern: string;
+  T: TTitleInfo;
+begin
+  SetLength(Hashes, 0);
+
+  for n := 0 to High(Arr) do
+    for i := FDataLists.SaveList.Count - 1 downto 0 do
+      if (FDataLists.SaveList[i].ServerHash > 0) and (Arr[n].Hash > 0) and (not Arr[n].IsArtist) and
+         (FDataLists.SaveList[i].ServerHash = Arr[n].Hash) then
+      begin
+        tabLists.RemoveTitle(nil, ltSave, FDataLists.SaveList[i]);
+        FDataLists.SaveList.Delete(i);
+
+        SetLength(Hashes, Length(Hashes) + 1);
+        Hashes[High(Hashes)] := TSyncWishlistRecord.Create(Arr[n].Hash, False);
+      end;
+
+  HomeComm.SendSyncWishlist(swRemove, Hashes);
+  HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  MsgBus.SendMessage(TListsChangedMsg.Create);
 end;
 
 // Diese Methode wird nicht mehr benutzt. Sie wurde mal benutzt, um aus dem ClientView einen gerade

@@ -467,7 +467,7 @@ begin
   Items.Add(FItemAddToWishlist);
 
   FItemRemoveFromWishlist := CreateMenuItem;
-  FItemRemoveFromWishlist.Caption := 'Remove from wishlist'; // TODO: Shortcut!!!
+  FItemRemoveFromWishlist.Caption := 'Remo&ve from wishlist';
   FItemRemoveFromWishlist.ImageIndex := 88;
   Items.Add(FItemRemoveFromWishlist);
 
@@ -481,12 +481,12 @@ begin
   Items.Add(ItemTmp);
 
   FItemCut := CreateMenuItem;
-  FItemCut.Caption := 'Cut'; // TODO: shortcut.
+  FItemCut.Caption := 'C&ut';
   FItemCut.ImageIndex := 87;
   Items.Add(FItemCut);
 
   FItemCopy := CreateMenuItem;
-  FItemCopy.Caption := 'Copy'; // TODO: shortcut.
+  FItemCopy.Caption := 'C&opy';
   FItemCopy.ImageIndex := 57;
   Items.Add(FItemCopy);
 
