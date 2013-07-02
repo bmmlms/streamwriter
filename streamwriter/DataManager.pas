@@ -614,7 +614,7 @@ type
   end;
 
 const
-  DATAVERSION = 52;
+  DATAVERSION = 53;
 
 implementation
 

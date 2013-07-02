@@ -199,6 +199,7 @@ type
     Label20: TLabel;
     txtMonitorCount: TLabeledEdit;
     chkCoverPanelAlwaysVisible: TCheckBox;
+    chkDiscardAlways: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -271,6 +272,7 @@ type
     procedure btnBrowseLogFileClick(Sender: TObject);
     procedure chkMonitorModeClick(Sender: TObject);
     procedure chkSubmitStatsClick(Sender: TObject);
+    procedure chkDiscardAlwaysClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FBrowseDir: Boolean;
@@ -505,6 +507,19 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
     end;
     if F then
       AddField(chkDiscardSmaller);
+
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+    begin
+      if S.DiscardAlways <> FStreamSettings[i].DiscardAlways then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    end;
+    if F then
+      AddField(chkDiscardAlways);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -1051,6 +1066,7 @@ begin
   chkRemoveSavedFromWishlist.Checked := Settings.RemoveSavedFromWishlist;
   chkOverwriteSmaller.Checked := Settings.OverwriteSmaller;
   chkDiscardSmaller.Checked := Settings.DiscardSmaller;
+  chkDiscardAlways.Checked := Settings.DiscardAlways;
   txtTitlePattern.Text := Settings.TitlePattern;
 
   chkSkipShort.Checked := Settings.SkipShort;
@@ -1133,6 +1149,13 @@ begin
     chkOnlySaveFull.Enabled := False;
   end;
 
+  if chkDiscardAlways.Checked then
+  begin
+    chkDiscardSmaller.Enabled := False;
+    chkDiscardSmaller.Checked := False;
+    chkOverwriteSmaller.Enabled := False;
+    chkOverwriteSmaller.Checked := False;
+  end;
 
   // -----------------------------------
   if FTemporaryPostProcesses <> nil then
@@ -1228,6 +1251,9 @@ begin
 
       if FIgnoreFieldList.IndexOf(chkDiscardSmaller) = -1 then
         FStreamSettings[i].DiscardSmaller := chkDiscardSmaller.Checked;
+
+      if FIgnoreFieldList.IndexOf(chkDiscardAlways) = -1 then
+        FStreamSettings[i].DiscardAlways := chkDiscardAlways.Checked;
 
       if Length(FStreamSettings) > 0 then
         if FIgnoreFieldList.IndexOf(txtTitlePattern) = -1 then
@@ -1387,6 +1413,7 @@ begin
     AppGlobals.StreamSettings.RemoveSavedFromWishlist := chkRemoveSavedFromWishlist.Checked;
     AppGlobals.StreamSettings.OverwriteSmaller := chkOverwriteSmaller.Checked;
     AppGlobals.StreamSettings.DiscardSmaller := chkDiscardSmaller.Checked;
+    AppGlobals.StreamSettings.DiscardAlways := chkDiscardAlways.Checked;
 
     if pnlCut.Tag = 0 then
     begin
@@ -2918,6 +2945,28 @@ begin
 
   if FInitialized then
     RemoveGray(chkDeleteStreams);
+end;
+
+procedure TfrmSettings.chkDiscardAlwaysClick(Sender: TObject);
+begin
+  inherited;
+
+  if FInitialized then
+  begin
+    RemoveGray(chkDiscardAlways);
+
+    if chkDiscardAlways.Checked then
+    begin
+      chkDiscardSmaller.Enabled := False;
+      chkDiscardSmaller.Checked := False;
+      chkOverwriteSmaller.Enabled := False;
+      chkOverwriteSmaller.Checked := False;
+    end else
+    begin
+      chkDiscardSmaller.Enabled := True;
+      chkOverwriteSmaller.Enabled := True;
+    end;
+  end;
 end;
 
 procedure TfrmSettings.chkDiscardSmallerClick(Sender: TObject);

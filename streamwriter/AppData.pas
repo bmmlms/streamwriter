@@ -122,6 +122,7 @@ type
     FOnlySaveFull: Boolean;
     FOverwriteSmaller: Boolean;
     FDiscardSmaller: Boolean;
+    FDiscardAlways: Boolean;
     FOutputFormat: TAudioTypes;
     FIgnoreTrackChangePattern: TStringList;
     FPostProcessors: TPostProcessorList;
@@ -208,6 +209,7 @@ type
     property OverwriteSmaller: Boolean read FOverwriteSmaller write FOverwriteSmaller;
     // When set a file will not be saved if it is smaller than an existing same-named song
     property DiscardSmaller: Boolean read FDiscardSmaller write FDiscardSmaller;
+    property DiscardAlways: Boolean read FDiscardAlways write FDiscardAlways;
     property OutputFormat: TAudioTypes read FOutputFormat write FOutputFormat;
     { This list defines when to ignore track changes.
       If if contains "Radio XYZ - Greatest Hits!!" the following will happen:
@@ -655,6 +657,7 @@ begin
   FStorage.Read('OnlySaveFull', FStreamSettings.FOnlySaveFull, True);
   FStorage.Read('OverwriteSmaller', FStreamSettings.FOverwriteSmaller, True);
   FStorage.Read('DiscardSmaller', FStreamSettings.FDiscardSmaller, False);
+  FStorage.Read('DiscardAlways', FStreamSettings.FDiscardAlways, False);
 
   if (FStreamSettings.FSilenceLevel < 1) or (FStreamSettings.FSilenceLevel > 100) then
     FStreamSettings.FSilenceLevel := 5;
@@ -886,6 +889,7 @@ begin
   FStorage.Write('SeparateTracks', FStreamSettings.FSeparateTracks);
   FStorage.Write('OverwriteSmaller', FStreamSettings.FOverwriteSmaller);
   FStorage.Write('DiscardSmaller', FStreamSettings.FDiscardSmaller);
+  FStorage.Write('DiscardAlways', FStreamSettings.FDiscardAlways);
   FStorage.Write('OutputFormat', Integer(FStreamSettings.FOutputFormat));
 
   FStorage.Write('TrayClose', FTray);
@@ -1177,6 +1181,11 @@ begin
   else
     Result.FDiscardSmaller := False;
 
+  if Version >= 53 then
+    Stream.Read(Result.FDiscardAlways)
+  else
+    Result.FDiscardAlways := False;
+
   if not Result.FSeparateTracks then
     Result.FDeleteStreams := False;
 
@@ -1296,6 +1305,7 @@ begin
   Stream.Write(FOnlySaveFull);
   Stream.Write(FOverwriteSmaller);
   Stream.Write(FDiscardSmaller);
+  Stream.Write(FDiscardAlways);
 
   Stream.Write(FAdjustTrackOffset);
   Stream.Write(FAdjustTrackOffsetMS);
@@ -1360,6 +1370,7 @@ begin
   FOnlySaveFull := From.FOnlySaveFull;
   FOverwriteSmaller := From.FOverwriteSmaller;
   FDiscardSmaller := From.FDiscardSmaller;
+  FDiscardAlways := From.FDiscardAlways;
   FAdjustTrackOffset := From.FAdjustTrackOffset;
   FAdjustTrackOffsetMS := From.FAdjustTrackOffsetMS;
   FAdjustTrackOffsetDirection := From.FAdjustTrackOffsetDirection;

@@ -56,7 +56,7 @@ type
     property RecordTitle: string read FRecordTitle write FRecordTitle;
   end;
 
-  TCheckResults = (crSave, crDiscard, crOverwrite);
+  TCheckResults = (crSave, crDiscard, crDiscardExistingIsLarger, crOverwrite);
 
   TTitleStates = (tsFull, tsIncomplete, tsAuto, tsStream);
 
@@ -662,10 +662,15 @@ begin
           Dir := FileCheck.SaveDir;
           Filename := FileCheck.Filename;
           FilenameConverted := FileCheck.FilenameConverted;
-        end else if FileCheck.Result <> crDiscard then
+        end else if (FileCheck.Result <> crDiscard) and (FileCheck.Result <> crDiscardExistingIsLarger) then
           raise Exception.Create(_('Could not determine filename for title'));
 
         if FileCheck.Result = crDiscard then
+        begin
+          WriteDebug(Format(_('Skipping "%s" - file already exists'), [Title]), 1, 0);
+          RemoveData;
+          Exit;
+        end else if FileCheck.Result = crDiscardExistingIsLarger then
         begin
           WriteDebug(Format(_('Skipping "%s" - existing file is larger'), [Title]), 1, 0);
           RemoveData;
@@ -1471,13 +1476,16 @@ begin
 
   if AnyFileExists(FSaveDir + Filename) then
   begin
-    if FSettings.OverwriteSmaller and (GetFileSize(FSaveDir + Filename + Ext) < Filesize) then
+    if FSettings.DiscardAlways then
+    begin
+      FResult := crDiscard;
+    end else if FSettings.OverwriteSmaller and (GetFileSize(FSaveDir + Filename + Ext) < Filesize) then
     begin
       FResult := crOverwrite;
       FFilename := Filename + Ext;
     end else if FSettings.DiscardSmaller and (GetFileSize(FSaveDir + Filename + Ext) >= Filesize) then
     begin
-      FResult := crDiscard;
+      FResult := crDiscardExistingIsLarger;
     end else
     begin
       FFilename := FixPathName(Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext);

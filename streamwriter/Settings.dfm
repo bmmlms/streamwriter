@@ -133,9 +133,9 @@ object frmSettings: TfrmSettings
       OnClick = chkOnlySaveFullClick
     end
     object chkOverwriteSmaller: TCheckBox
-      Left = 4
-      Top = 236
-      Width = 281
+      Left = 20
+      Top = 256
+      Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Overwrite existing file if newer file is larger'
@@ -143,9 +143,9 @@ object frmSettings: TfrmSettings
       OnClick = chkOverwriteSmallerClick
     end
     object chkDiscardSmaller: TCheckBox
-      Left = 4
-      Top = 256
-      Width = 281
+      Left = 20
+      Top = 276
+      Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Discard new file if existing one is lager'
@@ -195,6 +195,16 @@ object frmSettings: TfrmSettings
       Caption = 'Remove saved titles from wishlist'
       TabOrder = 11
       OnClick = chkRemoveSavedFromWishlistClick
+    end
+    object chkDiscardAlways: TCheckBox
+      Left = 4
+      Top = 236
+      Width = 281
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Always discard new file if it already exists'
+      TabOrder = 12
+      OnClick = chkDiscardAlwaysClick
     end
   end
   object pnlMain: TPanel
