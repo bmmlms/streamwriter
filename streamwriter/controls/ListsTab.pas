@@ -1182,7 +1182,7 @@ begin
     end;
 
     if ShowMessages and (List = FLists.SaveList) then
-      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('Titles manually entered into the wishlist (without using the chart-view) will not be considered for automatic recordings. Use the chart-view to add titles for automatic recordings.'), 15, btOK);
+      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('Titles manually entered into the wishlist (without using the "Title search" tab) will not be considered for automatic recordings. Use the "Title search" tab to add titles for automatic recordings.'), 15, btOK);
 
     if Parent = nil then
       Parent := FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]));

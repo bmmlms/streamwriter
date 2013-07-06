@@ -302,7 +302,7 @@ type
     procedure tabClientsTrackAdded(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsAddTitleToList(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string);
-    procedure tabClientsRemoveTitleFromList(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string);
+    procedure tabClientsRemoveTitleFromList(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string; ServerTitleHash: Cardinal);
     procedure tabClientsAuthRequired(Sender: TObject);
     procedure tabClientsShowErrorMessage(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
     procedure tabClientsClientAdded(Sender: TObject);
@@ -1088,7 +1088,7 @@ begin
 
     if tabLists.SendWishListUpdateBatch then
     begin
-      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('The system for automatic recordings has been reworked. Titles for automatic recordings now can only be added using the chart-view. ' +
+      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('The system for automatic recordings has been reworked. Titles for automatic recordings now can only be added using the "Title search" tab. ' +
                                                 'The existing titles from the old method are now enqueued to be updated for the new system. This might take some time, just watch your wishlist grow ' +
                                                 'when connected to the server.'), 16, btOK);
     end;
@@ -1436,7 +1436,7 @@ begin
   begin
     for i := 0 to Param.Values.Count - 1 do
     begin
-      tabClientsRemoveTitleFromList(nil, nil, ltSave, Param.Values[i]);
+      tabClientsRemoveTitleFromList(nil, nil, ltSave, Param.Values[i], 0);
     end;
   end;
 
@@ -2024,12 +2024,8 @@ begin
   MsgBus.SendMessage(TListsChangedMsg.Create);
 end;
 
-// Diese Methode wird nicht mehr benutzt. Sie wurde mal benutzt, um aus dem ClientView einen gerade
-// gespielten Titel der Wunschliste hinzuzufügen. Ist rausgenommen, weil das nur für Manuelle Wünsche
-// gehen würde und das vllt. Verwirrung stiften würde.
 procedure TfrmStreamWriterMain.tabClientsAddTitleToList(Sender: TObject; Client: TICEClient;
   ListType: TListType; Title: string);
-{
 var
   i, NumChars: Integer;
   Hash: Cardinal;
@@ -2037,9 +2033,7 @@ var
   Pattern: string;
   T: TTitleInfo;
   List: TList<TTitleInfo>;
-}
 begin
-{
   if Client = nil then
     if ListType = ltSave then
       List := FDataLists.SaveList
@@ -2072,11 +2066,10 @@ begin
       HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
     end;
   end;
-}
 end;
 
 procedure TfrmStreamWriterMain.tabClientsRemoveTitleFromList(
-  Sender: TObject; Client: TICEClient; ListType: TListType; Title: string);
+  Sender: TObject; Client: TICEClient; ListType: TListType; Title: string; ServerTitleHash: Cardinal);
 var
   i: Integer;
   List: TList<TTitleInfo>;
@@ -2095,7 +2088,7 @@ begin
 
   for i := List.Count - 1 downto 0 do
   begin
-    if Like(Title, List[i].Pattern) then
+    if ((List[i].ServerHash > 0) and (List[i].ServerHash = ServerTitleHash)) or Like(Title, List[i].Pattern) then
     begin
       tabLists.RemoveTitle(Client, ListType, List[i]);
 

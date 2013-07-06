@@ -1406,7 +1406,7 @@ begin
 
   FButtonEditAndAddToWishlist := TToolButton.Create(FToolbar);
   FButtonEditAndAddToWishlist.Parent := FToolbar;
-  FButtonEditAndAddToWishlist.Hint := _('Edit and add to wishlist');
+  FButtonEditAndAddToWishlist.Hint := _('Edit and add to manual wishlist');
   FButtonEditAndAddToWishlist.ImageIndex := 30;
 
   Sep := TToolButton.Create(FToolbar);
@@ -1460,7 +1460,7 @@ begin
   Items.Add(Sep);
 
   FItemEditAndAddToWishlist := CreateMenuItem;
-  FItemEditAndAddToWishlist.Caption := '&Edit and add to wishlist';
+  FItemEditAndAddToWishlist.Caption := '&Edit and add to manual wishlist';
   FItemEditAndAddToWishlist.ImageIndex := 30;
   Items.Add(FItemEditAndAddToWishlist);
 

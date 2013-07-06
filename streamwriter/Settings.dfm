@@ -66,9 +66,9 @@ object frmSettings: TfrmSettings
       OnClick = btnBrowseClick
     end
     object chkDeleteStreams: TCheckBox
-      Left = 4
+      Left = 20
       Top = 156
-      Width = 281
+      Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Delete stream files when recording stops'

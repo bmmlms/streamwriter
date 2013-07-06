@@ -97,7 +97,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
 
-    procedure EnableItems(Enable, Playing, IsFirst, IsLast: Boolean);
+    procedure EnableItems(Enable, Playing, IsFirst, IsLast, HashesSelected: Boolean);
 
     property ItemRefresh: TMenuItem read FItemRefresh;
     //property ItemPrev: TMenuItem read FItemPrev;
@@ -149,7 +149,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
 
-    procedure EnableItems(Enable: Boolean);
+    procedure EnableItems(Enable, HashesSelected: Boolean);
 
     procedure Setup;
   end;
@@ -539,7 +539,7 @@ begin
   Items.Add(FItemImportFolder);
 end;
 
-procedure TSavedTracksPopup.EnableItems(Enable, Playing, IsFirst, IsLast: Boolean);
+procedure TSavedTracksPopup.EnableItems(Enable, Playing, IsFirst, IsLast, HashesSelected: Boolean);
 begin
   //FItemPrev.Enabled := (not IsFirst) and Playing;
   FItemPlay.Enabled := Enable;
@@ -550,7 +550,7 @@ begin
   FItemEditTags.Enabled := Enable;
   FItemFinalized.Enabled := Enable;
   FItemAddToWishlist.Enabled := Enable;
-  FItemRemoveFromWishList.Enabled := Enable;
+  FItemRemoveFromWishList.Enabled := HashesSelected;
   FItemAddToIgnorelist.Enabled := Enable;
   FItemCut.Enabled := Enable;
   FItemCopy.Enabled := Enable;
@@ -572,13 +572,13 @@ begin
   Transparent := True;
 end;
 
-procedure TSavedToolBar.EnableItems(Enable: Boolean);
+procedure TSavedToolBar.EnableItems(Enable, HashesSelected: Boolean);
 begin
   FCutSong.Enabled := Enable;
   FEditTags.Enabled := Enable;
   FFinalized.Enabled := Enable;
   FAddToWishlist.Enabled := Enable;
-  FRemoveFromWishlist.Enabled := Enable;
+  FRemoveFromWishlist.Enabled := HashesSelected;
   FAddToIgnorelist.Enabled := Enable;
   FCut.Enabled := Enable;
   FCopy.Enabled := Enable;
@@ -1169,7 +1169,7 @@ end;
 procedure TSavedTab.UpdateButtons;
 var
   i: Integer;
-  AllFinalized, IsFirst, IsLast: Boolean;
+  AllFinalized, IsFirst, IsLast, HashesSelected: Boolean;
   Tracks: TTrackInfoArray;
 begin
   inherited;
@@ -1182,7 +1182,7 @@ begin
       Tree.FPopupMenu.Items[i].Enabled := False;
 
     FPlayToolbar.EnableItems(False, False, True, True);
-    FSavedTree.FPopupMenu.EnableItems(False, False, True, True);
+    FSavedTree.FPopupMenu.EnableItems(False, False, True, True, False);
 
     Exit;
   end;
@@ -1199,10 +1199,20 @@ begin
     IsLast := True;
   end;
 
+  HashesSelected := False;
+  for i := 0 to High(Tracks) do
+  begin
+    if Tracks[i].ServerTitleHash > 0 then
+    begin
+      HashesSelected := True;
+      Break;
+    end;
+  end;
+
   FPlayToolbar.FPause.Down := Tree.Player.Paused;
 
-  Tree.FPopupMenu.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing or Tree.FPlayer.Paused, IsFirst, IsLast);
-  FToolbar.EnableItems(Length(Tracks) > 0);
+  Tree.FPopupMenu.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing or Tree.FPlayer.Paused, IsFirst, IsLast, HashesSelected);
+  FToolbar.EnableItems(Length(Tracks) > 0, HashesSelected);
   FPlayToolbar.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing or Tree.FPlayer.Paused, IsFirst, IsLast);
 
   //Tree.FPopupMenu.ItemPlayLastSecs.Enabled := Bass.DeviceAvailable and ((Length(Tracks) = 1) or Tree.FPlayer.Playing or Tree.Player.Paused);

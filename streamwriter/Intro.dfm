@@ -208,7 +208,7 @@ object frmIntro: TfrmIntro
     AutoSize = False
     Caption = 
       'To record specific songs automatically you have to add titles to' +
-      ' your wishlist using the "Title search"-tab. When streamWriter d' +
+      ' your wishlist using the "Title search" tab. When streamWriter d' +
       'etects that a title on your wishlist is played on an observed st' +
       'ream, this title will be recorded automatically.'
     WordWrap = True
@@ -225,7 +225,6 @@ object frmIntro: TfrmIntro
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitTop = 285
     object Bevel2: TBevel
       Left = 4
       Top = 4

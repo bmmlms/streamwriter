@@ -275,6 +275,7 @@ type
     procedure chkDiscardAlwaysClick(Sender: TObject);
   private
     FInitialized: Boolean;
+    FOptionChanging: Boolean;
     FBrowseDir: Boolean;
     FBrowseAutoDir: Boolean;
     FDefaultActionIdx: Integer;
@@ -2023,7 +2024,7 @@ begin
   if FIgnoreFieldList = nil then
     Exit;
 
-  if ShowMessage and (FIgnoreFieldList.IndexOf(C) > -1) then
+  if ShowMessage and (FIgnoreFieldList.IndexOf(C) > -1) and (not FOptionChanging) then
   begin
     TfrmMsgDlg.ShowMsg(Self, _('The setting''s configuration you are about to change differs for the selected streams. The new setting will be applied to every selected stream when saving settings using "OK".'), 13, btOK);
   end;
@@ -2955,6 +2956,8 @@ begin
   begin
     RemoveGray(chkDiscardAlways);
 
+    FOptionChanging := True;
+
     if chkDiscardAlways.Checked then
     begin
       chkDiscardSmaller.Enabled := False;
@@ -2966,6 +2969,8 @@ begin
       chkDiscardSmaller.Enabled := True;
       chkOverwriteSmaller.Enabled := True;
     end;
+
+    FOptionChanging := False;
   end;
 end;
 
@@ -3011,7 +3016,7 @@ begin
   begin
     RemoveGray(chkOnlySaveFull);
 
-    if Length(FStreamSettings) > 0 then
+    if (Length(FStreamSettings) > 0) and (not FOptionChanging) then
       TfrmMsgDlg.ShowMsg(Self, _('When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.'), 5, btOK);
   end;
 end;
@@ -3024,6 +3029,8 @@ begin
   begin
     RemoveGray(chkSeparateTracks);
 
+    FOptionChanging := True;
+
     chkDeleteStreams.Enabled := chkSeparateTracks.Checked;
     chkDeleteStreams.Checked := chkSaveStreamsToDisk.Checked and AppGlobals.StreamSettings.DeleteStreams;
 
@@ -3033,6 +3040,8 @@ begin
     pnlCut.Enabled := False;
     if (not chkSeparateTracks.Checked) or (not chkSaveStreamsToDisk.Checked) then
       chkDeleteStreams.Checked := False;
+
+    FOptionChanging := False;
 
     Application.ProcessMessages;
 

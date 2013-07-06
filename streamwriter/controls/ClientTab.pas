@@ -80,6 +80,8 @@ type
   end;
 
   TAddTitleEvent = procedure(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string) of object;
+  TAddTitleEventWithServerHash = procedure(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string;
+    ServerTitleHash: Cardinal) of object;
 
   TClientTab = class(TMainTabSheet)
   private
@@ -121,7 +123,7 @@ type
     FOnClientAdded: TNotifyEvent;
     FOnClientRemoved: TNotifyEvent;
     FOnAddTitleToList: TAddTitleEvent;
-    FOnRemoveTitleFromList: TAddTitleEvent;
+    FOnRemoveTitleFromList: TAddTitleEventWithServerHash;
 
     procedure ActionNewCategoryExecute(Sender: TObject);
     procedure ActionStartExecute(Sender: TObject);
@@ -212,7 +214,7 @@ type
     property OnClientAdded: TNotifyEvent read FOnClientAdded write FOnClientAdded;
     property OnClientRemoved: TNotifyEvent read FOnClientRemoved write FOnClientRemoved;
     property OnAddTitleToList: TAddTitleEvent read FOnAddTitleToList write FOnAddTitleToList;
-    property OnRemoveTitleFromList: TAddTitleEvent read FOnRemoveTitleFromList write FOnRemoveTitleFromList;
+    property OnRemoveTitleFromList: TAddTitleEventWithServerHash read FOnRemoveTitleFromList write FOnRemoveTitleFromList;
   end;
 
 implementation
@@ -1190,13 +1192,14 @@ var
   Track: TTrackInfo;
   i: Integer;
   LowerFilename: string;
-  Added: Boolean;
+  //Added: Boolean;
 begin
   Client := Sender as TICEClient;
 
-  Added := True;
+  //Added := True;
   Track := nil;
   LowerFilename := LowerCase(Filename);
+  {
   for i := 0 to FStreams.TrackList.Count - 1 do
     if LowerCase(FStreams.TrackList[i].Filename) = LowerFilename then
     begin
@@ -1204,6 +1207,7 @@ begin
       Added := False;
       Break;
     end;
+  }
 
   if Track = nil then
   begin
@@ -1220,31 +1224,31 @@ begin
   Track.IsStreamFile := IsStreamFile;
   Track.VBR := VBR;
 
-  if Added then
+  //if Added then
+  //begin
+  if Assigned(FOnTrackAdded) then
+    FOnTrackAdded(Client.Entry, Track);
+
+  if (SongArtist <> '') and (SongTitle <> '') then
+    Title := SongArtist + ' - ' + SongTitle;
+
+  if FullTitle then
   begin
-    if Assigned(FOnTrackAdded) then
-      FOnTrackAdded(Client.Entry, Track);
+    if Client.Entry.Settings.AddSavedToIgnore then
+      if Assigned(FOnAddTitleToList) then
+        FOnAddTitleToList(Self, nil, ltIgnore, Title);
 
-    if (SongArtist <> '') and (SongTitle <> '') then
-      Title := SongArtist + ' - ' + SongTitle;
+    if Client.Entry.Settings.AddSavedToStreamIgnore then
+      if Assigned(FOnAddTitleToList) then
+        FOnAddTitleToList(Self, Client, ltIgnore, Title);
 
-    if FullTitle then
+    if Client.Entry.Settings.RemoveSavedFromWishlist then
     begin
-      if Client.Entry.Settings.AddSavedToIgnore then
-        if Assigned(FOnAddTitleToList) then
-          FOnAddTitleToList(Self, nil, ltIgnore, Title);
-
-      if Client.Entry.Settings.AddSavedToStreamIgnore then
-        if Assigned(FOnAddTitleToList) then
-          FOnAddTitleToList(Self, Client, ltIgnore, Title);
-
-      if Client.Entry.Settings.RemoveSavedFromWishlist then
-      begin
-        if Assigned(FOnRemoveTitleFromList) then
-          FOnRemoveTitleFromList(Self, nil, ltSave, Title);
-      end;
+      if Assigned(FOnRemoveTitleFromList) then
+        FOnRemoveTitleFromList(Self, nil, ltSave, Title, ServerTitleHash);
     end;
   end;
+  //end;
 
   ShowInfo;
 end;
