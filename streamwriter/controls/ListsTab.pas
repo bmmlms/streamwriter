@@ -1303,7 +1303,8 @@ begin
   begin
     ChildNodeData := FTree.GetNodeData(SelectedNodes[i]);
     for n := 0 to FLists.TrackList.Count - 1 do
-      if (ChildNodeData.Title <> nil) and (ChildNodeData.Title.ServerHash = FLists.TrackList[n].ServerTitleHash) then
+      if ((ChildNodeData.Title <> nil) and (ChildNodeData.Title.ServerHash = FLists.TrackList[n].ServerTitleHash) and (ChildNodeData.Title.ServerHash > 0))
+         or ((ChildNodeData.Title <> nil) and (ChildNodeData.Title.ServerArtistHash = FLists.TrackList[n].ServerArtistHash) and (ChildNodeData.Title.ServerArtistHash > 0)) then
       begin
         CanShowSaved := True;
         Break;

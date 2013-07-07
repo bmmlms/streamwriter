@@ -503,7 +503,7 @@ begin
   Stream.Read(FServerHash);
   Stream.Read(FServerArtistHash);
 end;
-         // TODO: bei automatischen aufnahmen die optionen prüfen: entferne von wunschliste, adde zu ignorierliste, etc... ob das noch sinn macht und funzt.
+
 { TCommandUpdateStats }
 
 constructor TCommandUpdateStats.Create;
