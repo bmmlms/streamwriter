@@ -257,24 +257,45 @@ end;
 
 procedure TListsTab.MessageReceived(Msg: TMessageBase);
 var
+  i: Integer;
+  TitleUpdated, ArtistUpdated: Boolean;
   Nodes: TNodeArray;
   NodeData: PTitleNodeData;
   SongSavedMsg: TSongSavedMsg absolute Msg;
-  i: Integer;
 begin
   if Msg is TSongSavedMsg then
   begin
+    // Der Saved-Counter ist nur für Wunschlisteneinträge mit Hash vorhanden, ansonsten raus hier.
+    if SongSavedMsg.ServerTitleHash = 0 then
+      Exit;
+
+    TitleUpdated := False;
+    ArtistUpdated := False;
+
+    for i := 0 to FListsPanel.FLists.SaveList.Count - 1 do
+    begin
+      if (FListsPanel.FLists.SaveList[i].ServerHash > 0) and
+         (FListsPanel.FLists.SaveList[i].ServerHash = SongSavedMsg.ServerTitleHash) then
+      begin
+        FListsPanel.FLists.SaveList[i].Saved := FListsPanel.FLists.SaveList[i].Saved + 1;
+        TitleUpdated := True;
+      end;
+
+      if (FListsPanel.FLists.SaveList[i].ServerArtistHash > 0) and
+         (FListsPanel.FLists.SaveList[i].ServerHash = 0) and
+         (FListsPanel.FLists.SaveList[i].ServerArtistHash = SongSavedMsg.ServerArtistHash) then
+      begin
+        FListsPanel.FLists.SaveList[i].Saved := FListsPanel.FLists.SaveList[i].Saved + 1;
+        ArtistUpdated := True;
+      end;
+
+      if TitleUpdated and ArtistUpdated then
+        Break;
+    end;
+
     Nodes := FListsPanel.FTree.GetNodes([ntWish], False);
     for i := 0 to High(Nodes) do
-    begin
-      NodeData := FListsPanel.FTree.GetNodeData(Nodes[i]);
-      if (NodeData.Title <> nil) and
-         ((NodeData.Title.ServerHash = SongSavedMsg.ServerTitleHash) or (NodeData.Title.ServerArtistHash = SongSavedMsg.ServerArtistHash)) then
-      begin
-        NodeData.Title.Saved := NodeData.Title.Saved + 1;
-        FListsPanel.FTree.InvalidateNode(Nodes[i]);
-      end;
-    end;
+      FListsPanel.FTree.InvalidateNode(Nodes[i]);
   end;
 end;
 
@@ -365,7 +386,12 @@ end;
 { TTitlePanel }
 
 procedure TTitlePanel.AddClick(Sender: TObject);
+var
+  i: Integer;
 begin
+  for i := 0 to FLists.SaveList.Count - 1 do
+    FLists.SaveList[i].Saved := 0;
+
   if AddEntry(FAddEdit.Text, 0, True, ltAutoDetermine) then
   begin
     FAddEdit.Text := '';
