@@ -386,12 +386,7 @@ end;
 { TTitlePanel }
 
 procedure TTitlePanel.AddClick(Sender: TObject);
-var
-  i: Integer;
 begin
-  for i := 0 to FLists.SaveList.Count - 1 do
-    FLists.SaveList[i].Saved := 0;
-
   if AddEntry(FAddEdit.Text, 0, True, ltAutoDetermine) then
   begin
     FAddEdit.Text := '';
