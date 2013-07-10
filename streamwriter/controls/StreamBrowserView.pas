@@ -871,15 +871,6 @@ end;
 
 function TMStreamTree.DoCompare(Node1, Node2: PVirtualNode;
   Column: TColumnIndex): Integer;
-  function CmpInt(a, b: Integer): Integer;
-  begin
-    if a > b then
-      Result := 1
-    else if a < b then
-      Result := -1
-    else
-      Result := 0;
-  end;
 var
   Data1, Data2: PStreamNodeData;
   S1, S2: string;

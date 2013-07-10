@@ -873,24 +873,6 @@ end;
 
 function TMClientView.DoCompare(Node1, Node2: PVirtualNode;
   Column: TColumnIndex): Integer;
-  function CmpInt(a, b: Integer): Integer;
-  begin
-    if a > b then
-      Result := 1
-    else if a < b then
-      Result := -1
-    else
-      Result := 0;
-  end;
-  function CmpIntR(a, b: Integer): Integer;
-  begin
-    if a < b then
-      Result := 1
-    else if a > b then
-      Result := -1
-    else
-      Result := 0;
-  end;
 var
   Data1, Data2: PClientNodeData;
   I1, I2: Integer;
@@ -920,10 +902,10 @@ begin
     case Column of
       0: Result := CompareText(Data1.Client.Entry.Name, Data2.Client.Entry.Name);
       1: Result := CompareText(Data1.Client.Title, Data2.Client.Title);
-      2: Result := CmpInt(Data1.Client.Entry.BytesReceived, Data2.Client.Entry.BytesReceived);
+      2: Result := CmpUInt64(Data1.Client.Entry.BytesReceived, Data2.Client.Entry.BytesReceived);
       3: Result := CmpInt(Data1.Client.Entry.SongsSaved, Data2.Client.Entry.SongsSaved);
       4: Result := CmpInt(Data1.Client.Speed, Data2.Client.Speed);
-      5: Result := CmpIntR(Integer(Data1.Client.State), Integer(Data2.Client.State));
+      5: Result := CmpInt(Integer(Data1.Client.State), Integer(Data2.Client.State), True);
     end
   else if (Data1.Category <> nil) and (Data2.Category <> nil) then
     if Column = 0 then
