@@ -947,7 +947,10 @@ begin
     taAddToIgnorelist:
       begin
         for i := 0 to Length(Tracks) - 1 do
-          FOnAddTitleToIgnorelist(Self, ExtractFileName(RemoveFileExt(Tracks[i].Filename)), 0);
+          if Tracks[i].ServerTitle <> '' then
+            FOnAddTitleToIgnorelist(Self, Tracks[i].ServerTitle, 0)
+          else
+            FOnAddTitleToIgnorelist(Self, ExtractFileName(RemoveFileExt(Tracks[i].Filename)), 0);
       end;
     taRemove:
       begin
