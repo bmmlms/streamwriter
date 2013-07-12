@@ -2651,19 +2651,29 @@ begin
         I2 := 0;
 
         if Data1.Track.Finalized then
-          I1 := I1 + 3;
+          I1 := I1 + 4;
         if Data2.Track.Finalized then
-          I2 := I2 + 3;
+          I2 := I2 + 4;
 
         if Data1.Track.WasCut then
-          I1 := I1 + 2;
+          I1 := I1 + 3;
         if Data2.Track.WasCut then
-          I2 := I2 + 2;
+          I2 := I2 + 3;
 
         if Data1.Track.IsAuto then
-          I1 := I1 + 1;
+        begin
+          if Data1.Track.RecordBecauseArtist then
+            I1 := I1 + 1
+          else
+            I1 := I1 + 2;
+        end;
         if Data2.Track.IsAuto then
-          I2 := I2 + 1;
+        begin
+          if Data2.Track.RecordBecauseArtist then
+            I2 := I2 + 1
+          else
+            I2 := I2 + 2;
+        end;
 
         Result := CmpInt(I1, I2);
 
