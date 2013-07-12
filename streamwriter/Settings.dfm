@@ -1591,6 +1591,7 @@ object frmSettings: TfrmSettings
         'Streams unknown to streamWriter will be submitted to the server ' +
         'so they can appear in the browser.'
       WordWrap = True
+      OnClick = Label2Click
     end
     object Label8: TLabel
       Left = 20
@@ -1604,6 +1605,7 @@ object frmSettings: TfrmSettings
         'roadcasted to other users. This is important for the automatic r' +
         'ecording of songs on the wishlist.'
       WordWrap = True
+      OnClick = Label8Click
     end
     object Label20: TLabel
       Left = 20
@@ -1618,6 +1620,7 @@ object frmSettings: TfrmSettings
         'ernet connection (DSL or faster). Monitored streams will not be ' +
         'covered by the bandwidth limit.'
       WordWrap = True
+      OnClick = Label20Click
     end
     object chkSubmitStreamInfo: TCheckBox
       Left = 4

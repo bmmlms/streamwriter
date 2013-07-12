@@ -273,6 +273,9 @@ type
     procedure chkMonitorModeClick(Sender: TObject);
     procedure chkSubmitStatsClick(Sender: TObject);
     procedure chkDiscardAlwaysClick(Sender: TObject);
+    procedure Label2Click(Sender: TObject);
+    procedure Label8Click(Sender: TObject);
+    procedure Label20Click(Sender: TObject);
   private
     FInitialized: Boolean;
     FOptionChanging: Boolean;
@@ -1658,6 +1661,27 @@ begin
   inherited;
   if Key = VK_F1 then
     ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLinkSettings), '', '', 1);
+end;
+
+procedure TfrmSettings.Label20Click(Sender: TObject);
+begin
+  inherited;
+
+  chkMonitorMode.Checked := not chkMonitorMode.Checked;
+end;
+
+procedure TfrmSettings.Label2Click(Sender: TObject);
+begin
+  inherited;
+
+  chkSubmitStreamInfo.Checked := not chkSubmitStreamInfo.Checked;
+end;
+
+procedure TfrmSettings.Label8Click(Sender: TObject);
+begin
+  inherited;
+
+  chkSubmitStats.Checked := not chkSubmitStats.Checked;
 end;
 
 procedure TfrmSettings.lstDefaultFilterChange(Sender: TObject);

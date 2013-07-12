@@ -391,7 +391,12 @@ begin
   for i := 0 to tabSaved.Tree.Header.Columns.Count - 1 do
     AppGlobals.SavedHeaderWidth[i] := tabSaved.Tree.Header.Columns[i].Width;
 
-  TrayIcon1.Visible := False;
+  try
+    // Es ist mir beim Theme-Wechsel passiert, dass der Tray komplett verschwunden ist.
+    // Beim Beenden von sW gab es eine Exception. Das hier sollte helfen.
+    TrayIcon1.Visible := False;
+  except
+  end;
 
   tmrSpeed.Enabled := False;
   tmrSchedule.Enabled := False;
