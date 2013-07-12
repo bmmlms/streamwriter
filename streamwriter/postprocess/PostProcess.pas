@@ -56,6 +56,7 @@ type
     ServerTitle: string;
     ServerTitleHash: Cardinal;
     ServerArtistHash: Cardinal;
+    RecordBecauseArtist: Boolean;
   end;
   PPostProcessInformation = ^TPostProcessInformation;
 
@@ -232,6 +233,7 @@ begin
   FData.ServerTitle := Data.ServerTitle;
   FData.ServerTitleHash := Data.ServerTitleHash;
   FData.ServerArtistHash := Data.ServerArtistHash;
+  FData.RecordBecauseArtist := Data.RecordBecauseArtist;
 
   FPostProcessList := TList<TPostProcessBase>.Create;
 end;

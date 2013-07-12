@@ -236,7 +236,7 @@ begin
 
         TICEClient(Entry.Owner).PostProcessingFinished(Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Artist, Entry.Data.Title,
           Entry.Data.ServerTitle, Entry.Data.Filesize, Entry.Data.Length, 0, False, Entry.Data.WasCut, Entry.Data.FullTitle, False,
-          Entry.Data.ServerTitleHash, Entry.Data.ServerArtistHash);
+          Entry.Data.RecordBecauseArtist, Entry.Data.ServerTitleHash, Entry.Data.ServerArtistHash);
 
         Entry.Free;
 
@@ -260,7 +260,7 @@ begin
 
           TICEClient(Entry.Owner).PostProcessingFinished(Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Artist, Entry.Data.Title,
           Entry.Data.ServerTitle, Entry.Data.Filesize, Entry.Data.Length, Entry.Data.BitRate, Entry.Data.VBR, Entry.Data.WasCut,
-            Entry.Data.FullTitle, False, Entry.Data.ServerTitleHash, Entry.Data.ServerArtistHash);
+            Entry.Data.FullTitle, False, Entry.Data.RecordBecauseArtist, Entry.Data.ServerTitleHash, Entry.Data.ServerArtistHash);
 
           Entry.Free;
         end;

@@ -4,7 +4,7 @@ object frmConfigureSoX: TfrmConfigureSoX
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Configure SoX'
-  ClientHeight = 511
+  ClientHeight = 455
   ClientWidth = 417
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -58,9 +58,9 @@ object frmConfigureSoX: TfrmConfigureSoX
   TextHeight = 13
   object pnlNav: TPanel
     Left = 0
-    Top = 462
+    Top = 415
     Width = 417
-    Height = 49
+    Height = 40
     Align = alBottom
     BevelOuter = bvNone
     Padding.Left = 4
@@ -68,6 +68,7 @@ object frmConfigureSoX: TfrmConfigureSoX
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
+    ExplicitTop = 471
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -82,7 +83,7 @@ object frmConfigureSoX: TfrmConfigureSoX
       Left = 316
       Top = 9
       Width = 97
-      Height = 36
+      Height = 27
       Align = alRight
       Caption = '&OK'
       Default = True
@@ -91,6 +92,7 @@ object frmConfigureSoX: TfrmConfigureSoX
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
+      ExplicitHeight = 36
     end
   end
   object pnlConfigure: TPanel

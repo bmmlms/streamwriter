@@ -455,10 +455,9 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       ImageIndex = 57
     end
     object actAddToSaveList: TAction
-      Caption = 'Add to &wishlist'
-      Hint = 'Add to wishlist'
+      Caption = 'Add to manual &wishlist'
+      Hint = 'Add to manual wishlist'
       ImageIndex = 31
-      Visible = False
     end
     object actAddToGlobalIgnoreList: TAction
       Caption = 'Add to &global ignorelist'

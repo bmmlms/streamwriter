@@ -152,7 +152,7 @@ type
     procedure ClientManagerClientAdded(Sender: TObject);
     procedure ClientManagerClientRemoved(Sender: TObject);
     procedure ClientManagerSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle, ServerTitle: string;
-      Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean;
+      Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
       ServerTitleHash, ServerArtistHash: Cardinal);
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
@@ -702,7 +702,7 @@ begin
   inherited Create(AOwner);
 
   ShowCloseButton := False;
-  ImageIndex := 16;
+  ImageIndex := 68;
 
   FPlaybackTimer := TTimer.Create(Self);
   FPlaybackTimer.Interval := 1000;
@@ -1186,7 +1186,8 @@ end;
 
 procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
   Filename, Title, SongArtist, SongTitle, ServerTitle: string; Filesize, Length, Bitrate: UInt64;
-  VBR, WasCut, FullTitle, IsStreamFile: Boolean; ServerTitleHash, ServerArtistHash: Cardinal);
+  VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
+  ServerTitleHash, ServerArtistHash: Cardinal);
 var
   Client: TICEClient;
   Track: TTrackInfo;
@@ -1221,6 +1222,7 @@ begin
   Track.WasCut := WasCut;
   Track.BitRate := Bitrate;
   Track.IsAuto := Client.AutoRemove;
+  Track.RecordBecauseArtist := Client.RecordBecauseArtist;
   Track.IsStreamFile := IsStreamFile;
   Track.VBR := VBR;
 

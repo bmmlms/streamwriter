@@ -1811,8 +1811,15 @@ begin
     begin
       if NodeData.Track.WasCut then
         Images.Draw(PaintInfo.Canvas, L + 32, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 17);
+
       if NodeData.Track.IsAuto then
-        Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 77);
+      begin
+        if NodeData.Track.RecordBecauseArtist then
+          Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 86)
+        else
+          Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 77);
+      end;
+
       if NodeData.Track.Finalized then
         Images.Draw(PaintInfo.Canvas, L + 48, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 58);
     end;
@@ -2399,7 +2406,7 @@ begin
   begin
     NodeData.Track.Filename := IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + Text;
   end else
-    MsgBox(GetParentForm(Self).Handle, _('The file could not be renamed. Make sure that it is not in use.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(GetParentForm(Self).Handle, _('The file could not be renamed. Make sure that it is not in use and that no other file with the same name already exists.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TSavedTree.DoTextDrawing(var PaintInfo: TVTPaintInfo;
@@ -2570,7 +2577,8 @@ begin
   Expanded[FStreamNode] := StreamsExpanded;
   Expanded[FFileNode] := FilesExpanded;
 
-  Sort(nil, Header.SortColumn, Header.SortDirection);
+  Sort(FStreamNode, Header.SortColumn, Header.SortDirection);
+  Sort(FFileNode, Header.SortColumn, Header.SortDirection);
   EndUpdate;
 
   Change(nil);

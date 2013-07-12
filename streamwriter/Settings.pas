@@ -1993,7 +1993,7 @@ begin
   if FStreamSettings = nil then
   begin
     FPageList.Add(TPage.Create('Settings', pnlMain, 'PROPERTIES'));
-    FPageList.Add(TPage.Create('Streams', pnlStreams, 'APPICON'));
+    FPageList.Add(TPage.Create('Streams', pnlStreams, 'STREAM'));
     FPageList.Add(TPage.Create('Automatic recordings', pnlAutoRecord, 'AUTORECORD'));
     FPageList.Add(TPage.Create('Blacklist', pnlCommunityBlacklist, 'BLACKLIST', FPageList.Find(pnlAutoRecord)));
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));

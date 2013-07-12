@@ -76,7 +76,7 @@ type
     procedure ClientRefresh(Sender: TObject);
     procedure ClientAddRecent(Sender: TObject);
     procedure ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle, ServerTitle: string;
-      Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean;
+      Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
       ServerTitleHash, ServerArtistHash: Cardinal);
     procedure ClientTitleChanged(Sender: TObject; Title: string);
     procedure ClientDisconnected(Sender: TObject);
@@ -377,7 +377,11 @@ var
   Client: TICEClient;
   Res: TMayConnectResults;
   Found: Boolean;
+  SaveListTitle: TTitleInfo;
+  SaveListArtist: TTitleInfo;
 begin
+  SaveListTitle := nil;
+  SaveListArtist := nil;
   AutoTuneInMinKbps := GetAutoTuneInMinKbps(TAudioTypes(Format), AppGlobals.AutoTuneInMinQuality);
 
   if Kbps < AutoTuneInMinKbps then
@@ -392,78 +396,69 @@ begin
 
   for i := 0 to FLists.SaveList.Count - 1 do
   begin
-    if ((FLists.SaveList[i].ServerHash > 0) and (ServerHash = FLists.SaveList[i].ServerHash)) or
-       ((FLists.SaveList[i].ServerArtistHash > 0) and (ServerArtistHash = FLists.SaveList[i].ServerArtistHash)) then
-    begin
-      if AppGlobals.AutoTuneInConsiderIgnore then
-      begin
-        for n := 0 to FLists.IgnoreList.Count - 1 do
-        begin
-          if Like(Title, FLists.IgnoreList[n].Pattern) then
-          begin
-            Exit;
-          end;
-        end;
-      end;
+    if (FLists.SaveList[i].ServerHash > 0) and (ServerHash = FLists.SaveList[i].ServerHash) then
+      SaveListTitle := FLists.SaveList[i];
+    if (FLists.SaveList[i].ServerHash = 0) and (FLists.SaveList[i].ServerArtistHash > 0) and (ServerArtistHash = FLists.SaveList[i].ServerArtistHash) then
+      SaveListArtist := FLists.SaveList[i];
+  end;
 
-      Res := TICEClient.MayConnect(False, GetUsedBandwidth(Kbps, 0));
-      if Res <> crOk then
+  if (not Assigned(SaveListTitle)) and (not Assigned(SaveListArtist)) then
+    Exit;
+
+  if (SaveListTitle <> nil) and AppGlobals.AutoTuneInConsiderIgnore then
+    for n := 0 to FLists.IgnoreList.Count - 1 do
+    begin
+      if Like(Title, FLists.IgnoreList[n].Pattern) then
       begin
-        if (not FErrorShown) and (Res = crNoFreeSpace) then
-        begin
-          OnShowErrorMessage(nil, Res, True, False);
-          FErrorShown := True;
-        end;
         Exit;
       end;
-      FErrorShown := False;
-
-      Found := False;
-      for Client in Self.FClients do
-      begin
-        if MatchesClient(Client, ID, Name, CurrentURL, Title, nil) then
-        begin
-          if (Client.AutoRemove and (Client.RecordTitle = Title)) or (Client.Recording) then
-          begin
-            Found := True;
-            Break;
-          end;
-        end;
-      end;
-
-      if not Found then
-      begin
-        Client := AddClient(0, 0, Name, CurrentURL, True);
-        Client.Entry.Settings.Filter := ufNone;
-        Client.Entry.Settings.SaveToMemory := True;
-        Client.Entry.Settings.SeparateTracks := True;
-        Client.Entry.Settings.OnlySaveFull := False;
-        Client.Entry.Settings.DeleteStreams := False;
-        Client.Entry.Settings.MaxRetries := 0;
-        Client.Entry.Settings.RetryDelay := 0;
-        Client.Entry.Settings.AddSavedToIgnore := AppGlobals.AutoTuneInAddToIgnore;
-        Client.Entry.Settings.RemoveSavedFromWishlist := AppGlobals.AutoRemoveSavedFromWishlist;
-        Client.Entry.Settings.AddSavedToStreamIgnore := False;
-
-        Client.Entry.Settings.SilenceLevel := 5;
-        Client.Entry.Settings.SilenceLength := 100;
-        Client.Entry.Settings.SongBuffer := 10000;
-        Client.Entry.Settings.SilenceBufferSecondsStart := 15;
-        Client.Entry.Settings.SilenceBufferSecondsEnd := 15;
-        Client.Entry.Settings.AutoDetectSilenceLevel := True;
-
-        Client.Entry.Bitrate := Kbps;
-        if Trim(TitleRegEx) <> '' then
-          Client.Entry.Settings.TitlePattern := TitleRegEx;
-        Client.RecordTitle := Title;
-        Client.RecordServerTitle := Title;
-        Client.RecordTitleHash := ServerHash;
-        Client.RecordArtistHash := ServerArtistHash;
-        Client.StartRecording(False);
-      end;
-      Break;
     end;
-  end;
+
+  Res := TICEClient.MayConnect(False, GetUsedBandwidth(Kbps, 0));
+    if Res <> crOk then
+    begin
+      if (not FErrorShown) and (Res = crNoFreeSpace) then
+      begin
+        OnShowErrorMessage(nil, Res, True, False);
+        FErrorShown := True;
+      end;
+      Exit;
+    end;
+    FErrorShown := False;
+
+  for Client in Self.FClients do
+    if MatchesClient(Client, ID, Name, CurrentURL, Title, nil) then
+      if (Client.AutoRemove and (Client.RecordTitle = Title)) or (Client.Recording) then
+        Exit;
+
+  Client := AddClient(0, 0, Name, CurrentURL, True);
+  Client.Entry.Settings.Filter := ufNone;
+  Client.Entry.Settings.SaveToMemory := True;
+  Client.Entry.Settings.SeparateTracks := True;
+  Client.Entry.Settings.OnlySaveFull := False;
+  Client.Entry.Settings.DeleteStreams := False;
+  Client.Entry.Settings.MaxRetries := 0;
+  Client.Entry.Settings.RetryDelay := 0;
+  Client.Entry.Settings.AddSavedToIgnore := AppGlobals.AutoTuneInAddToIgnore;
+  Client.Entry.Settings.RemoveSavedFromWishlist := AppGlobals.AutoRemoveSavedFromWishlist;
+  Client.Entry.Settings.AddSavedToStreamIgnore := False;
+
+  Client.Entry.Settings.SilenceLevel := 5;
+  Client.Entry.Settings.SilenceLength := 100;
+  Client.Entry.Settings.SongBuffer := 10000;
+  Client.Entry.Settings.SilenceBufferSecondsStart := 15;
+  Client.Entry.Settings.SilenceBufferSecondsEnd := 15;
+  Client.Entry.Settings.AutoDetectSilenceLevel := True;
+
+  Client.Entry.Bitrate := Kbps;
+  if Trim(TitleRegEx) <> '' then
+    Client.Entry.Settings.TitlePattern := TitleRegEx;
+  Client.RecordTitle := Title;
+  Client.RecordServerTitle := Title;
+  Client.RecordTitleHash := ServerHash;
+  Client.RecordArtistHash := ServerArtistHash;
+  Client.RecordBecauseArtist := SaveListArtist <> nil;
+  Client.StartRecording(False);
 end;
 
 procedure TClientManager.ClientDebug(Sender: TObject);
@@ -539,15 +534,15 @@ begin
 end;
 
 procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle,
-  ServerTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile: Boolean;
-  ServerTitleHash, ServerArtistHash: Cardinal);
+  ServerTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile,
+  RecordBecauseArtist: Boolean; ServerTitleHash, ServerArtistHash: Cardinal);
 begin
   Inc(FSongsSaved);
   if not IsStreamFile then
     MsgBus.SendMessage(TSongSavedMsg.Create(Sender, ServerTitleHash, ServerArtistHash));
   if Assigned(FOnClientSongSaved) then
     FOnClientSongSaved(Sender, Filename, Title, SongArtist, SongTitle, ServerTitle, Filesize, Length, Bitrate,
-      VBR, WasCut, FullTitle, IsStreamFile, ServerTitleHash, ServerArtistHash);
+      VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist, ServerTitleHash, ServerArtistHash);
 end;
 
 procedure TClientManager.ClientStop(Sender: TObject);

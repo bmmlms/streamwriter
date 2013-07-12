@@ -258,7 +258,7 @@ begin
 
   HomeComm.OnSearchChartsReceived := HomeCommSearchChartsReceived;
 
-  ImageIndex := 68;
+  ImageIndex := 89;
   ShowCloseButton := False;
 
   FSearchPanel.FSearch.OnKeyPress := SearchKeyPress;
@@ -1142,7 +1142,7 @@ begin
         if NodeData.Chart <> nil then
           Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20)
         else
-          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 16);
+          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 68);
       end;
     1:
       begin

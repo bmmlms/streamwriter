@@ -146,6 +146,7 @@ type
     FServerTitle: string;
     FServerTitleHash: Cardinal;
     FServerArtistHash: Cardinal;
+    FRecordBecauseArtist: Boolean;
   public
     constructor Create; overload;
     constructor Create(Time: TDateTime; Filename, Streamname, ServerTitle: string; ServerTitleHash, ServerArtistHash: Cardinal); overload;
@@ -180,6 +181,7 @@ type
     property ServerTitle: string read FServerTitle write FServerTitle;
     property ServerTitleHash: Cardinal read FServerTitleHash write FServerTitleHash;
     property ServerArtistHash: Cardinal read FServerArtistHash write FServerArtistHash;
+    property RecordBecauseArtist: Boolean read FRecordBecauseArtist write FRecordBecauseArtist;
   end;
 
   TTrackInfoArray = array of TTrackInfo;
@@ -614,7 +616,7 @@ type
   end;
 
 const
-  DATAVERSION = 53;
+  DATAVERSION = 54;
 
 implementation
 
@@ -1426,6 +1428,7 @@ begin
   FServerTitle := Source.ServerTitle;
   FServerTitleHash := Source.ServerTitleHash;
   FServerArtistHash := Source.ServerArtistHash;
+  FRecordBecauseArtist := Source.RecordBecauseArtist;
 end;
 
 function TTrackInfo.Copy: TTrackInfo;
@@ -1495,6 +1498,9 @@ begin
     Stream.Read(Result.FServerTitleHash);
     Stream.Read(Result.FServerArtistHash);
   end;
+
+  if Version > 53 then
+    Stream.Read(Result.FRecordBecauseArtist);
 end;
 
 procedure TTrackInfo.Save(Stream: TExtendedStream);
@@ -1515,6 +1521,7 @@ begin
   Stream.Write(FServerTitle);
   Stream.Write(FServerTitleHash);
   Stream.Write(FServerArtistHash);
+  Stream.Write(FRecordBecauseArtist);
 end;
 
 { TStreamList }
