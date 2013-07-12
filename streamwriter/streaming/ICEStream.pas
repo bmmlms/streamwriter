@@ -123,6 +123,7 @@ type
     FSavedFullTitle: Boolean;
     FBytesPerSec: Integer;
     FBytesPerMSec: Extended;
+    FOriginalStreamTitle: string;
 
     FSaveAllowedTitle: string;
     FSaveAllowed: Boolean;
@@ -205,6 +206,7 @@ type
     property Filename: string read FFilename;
     property SavedWasCut: Boolean read FSavedWasCut;
     property SavedFullTitle: Boolean read FSavedFullTitle;
+    property OriginalStreamTitle: string read FOriginalStreamTitle;
 
     property FullTitleFound: Boolean read FFullTitleFound write FFullTitleFound;
     property RecordingTitleFound: Boolean read FRecordingTitleFound write FRecordingTitleFound;
@@ -319,6 +321,7 @@ begin
   FSavedArtist := '';
   FSavedTitle := '';
   FSavedAlbum := '';
+  FOriginalStreamTitle := '';
   FRecording := False;
   FRecordingStarted := False;
   FAudioType := atNone;
@@ -743,6 +746,8 @@ begin
           else
             FSavedLength := 0;
         end;
+
+        FOriginalStreamTitle := Title;
 
         if Assigned(FOnSongSaved) then
           FOnSongSaved(Self);

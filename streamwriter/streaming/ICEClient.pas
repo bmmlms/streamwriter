@@ -722,6 +722,9 @@ begin
   begin
     FEntry.SongsSaved := FEntry.SongsSaved + 1;
 
+    if not FAutoRemove then
+      FRecordServerTitle := FICEThread.RecvStream.OriginalStreamTitle;
+
     Data.Filename := FICEThread.RecvStream.SavedFilename;
     Data.FilenameConverted := FICEThread.RecvStream.SavedFilenameConverted;
     Data.WorkFilename := '';

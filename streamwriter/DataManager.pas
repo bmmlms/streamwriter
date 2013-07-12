@@ -1491,7 +1491,8 @@ begin
   if Version > 51 then
   begin
     Stream.Read(Result.FServerTitle);
-  end;
+  end else
+    Result.FServerTitle := RemoveFileExt(ExtractFileName(Result.FFilename));
 
   if Version > 50 then
   begin
