@@ -639,8 +639,7 @@ begin
       if (FSavedArtist = '') or (FSavedTitle = '') then
       begin
         FSavedArtist := _('Unknown artist');
-        if FSavedTitle = '' then
-          FSavedTitle := _('Unknown title');
+        FSavedTitle := _('Unknown title');
       end;
 
       if FRecordTitle <> '' then

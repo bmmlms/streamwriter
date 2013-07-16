@@ -144,12 +144,16 @@ type
     FVBR: Boolean;
     FIndex: Cardinal;
     FServerTitle: string;
+    FSongArtist: string;
+    FSongTitle: string;
     FServerTitleHash: Cardinal;
     FServerArtistHash: Cardinal;
     FRecordBecauseArtist: Boolean;
+
+    function FGetParsedTitle: string;
   public
     constructor Create; overload;
-    constructor Create(Time: TDateTime; Filename, Streamname, ServerTitle: string; ServerTitleHash, ServerArtistHash: Cardinal); overload;
+    constructor Create(Time: TDateTime; Filename, Streamname, ServerTitle, Artist, Title: string; ServerTitleHash, ServerArtistHash: Cardinal); overload;
     procedure Assign(Source: TTrackInfo);
     function Copy: TTrackInfo;
 
@@ -178,10 +182,13 @@ type
     property Finalized: Boolean read FFinalized write FFinalized;
     property Index: Cardinal read FIndex write FIndex;
     property VBR: Boolean read FVBR write FVBR;
+    property SongArtist: string read FSongArtist write FSongArtist;
+    property SongTitle: string read FSongTitle write FSongTitle;
     property ServerTitle: string read FServerTitle write FServerTitle;
     property ServerTitleHash: Cardinal read FServerTitleHash write FServerTitleHash;
     property ServerArtistHash: Cardinal read FServerArtistHash write FServerArtistHash;
     property RecordBecauseArtist: Boolean read FRecordBecauseArtist write FRecordBecauseArtist;
+    property ParsedTitle: string read FGetParsedTitle;
   end;
 
   TTrackInfoArray = array of TTrackInfo;
@@ -616,7 +623,7 @@ type
   end;
 
 const
-  DATAVERSION = 54;
+  DATAVERSION = 55;
 
 implementation
 
@@ -1426,6 +1433,8 @@ begin
   FVBR := Source.VBR;
   FIndex := Source.Index;
   FServerTitle := Source.ServerTitle;
+  FSongArtist := Source.SongArtist;
+  FsongTitle := Source.SongTitle;
   FServerTitleHash := Source.ServerTitleHash;
   FServerArtistHash := Source.ServerArtistHash;
   FRecordBecauseArtist := Source.RecordBecauseArtist;
@@ -1437,7 +1446,7 @@ begin
   Result.Assign(Self);
 end;
 
-constructor TTrackInfo.Create(Time: TDateTime; Filename, Streamname, ServerTitle: string; ServerTitleHash, ServerArtistHash: Cardinal);
+constructor TTrackInfo.Create(Time: TDateTime; Filename, Streamname, ServerTitle, Artist, Title: string; ServerTitleHash, ServerArtistHash: Cardinal);
 begin
   inherited Create;
 
@@ -1447,8 +1456,20 @@ begin
   FWasCut := False;
   FIsStreamFile := False;
   FServerTitle := ServerTitle;
+  FSongArtist := Artist;
+  FSongTitle := Title;
   FServerTitleHash := ServerTitleHash;
   FServerArtistHash := ServerArtistHash;
+end;
+
+function TTrackInfo.FGetParsedTitle: string;
+begin
+  if FIsStreamFile then
+    Result := RemoveFileExt(ExtractFileName(FFilename))
+  else if (FSongArtist <> '') and (FSongTitle <> '') then
+    Result := FSongArtist + ' - ' + FSongTitle
+  else
+    Result := FServerTitle;
 end;
 
 class function TTrackInfo.Load(Stream: TExtendedStream;
@@ -1494,6 +1515,16 @@ begin
   end else
     Result.FServerTitle := RemoveFileExt(ExtractFileName(Result.FFilename));
 
+  //REMARK: Das hier ist ein Hack. Nur für Migration zwischen einer Build zur nächsten. Kann bald raus!
+  if Result.FServerTitle = '' then
+    Result.FServerTitle := RemoveFileExt(ExtractFileName(Result.FFilename));
+
+  if Version > 54 then
+  begin
+    Stream.Read(Result.FSongArtist);
+    Stream.Read(Result.FSongTitle);
+  end;
+
   if Version > 50 then
   begin
     Stream.Read(Result.FServerTitleHash);
@@ -1520,6 +1551,8 @@ begin
   Stream.Write(FIndex);
   Stream.Write(FVBR);
   Stream.Write(FServerTitle);
+  Stream.Write(FSongArtist);
+  Stream.Write(FSongTitle);
   Stream.Write(FServerTitleHash);
   Stream.Write(FServerArtistHash);
   Stream.Write(FRecordBecauseArtist);

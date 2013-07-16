@@ -75,7 +75,7 @@ type
     procedure ClientDebug(Sender: TObject);
     procedure ClientRefresh(Sender: TObject);
     procedure ClientAddRecent(Sender: TObject);
-    procedure ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle, ServerTitle: string;
+    procedure ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
       Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
       ServerTitleHash, ServerArtistHash: Cardinal);
     procedure ClientTitleChanged(Sender: TObject; Title: string);
@@ -533,15 +533,15 @@ begin
     FOnClientSecondsReceived(Sender);
 end;
 
-procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle,
-  ServerTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile,
+procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
+  Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile,
   RecordBecauseArtist: Boolean; ServerTitleHash, ServerArtistHash: Cardinal);
 begin
   Inc(FSongsSaved);
   if not IsStreamFile then
     MsgBus.SendMessage(TSongSavedMsg.Create(Sender, ServerTitleHash, ServerArtistHash));
   if Assigned(FOnClientSongSaved) then
-    FOnClientSongSaved(Sender, Filename, Title, SongArtist, SongTitle, ServerTitle, Filesize, Length, Bitrate,
+    FOnClientSongSaved(Sender, Filename, Title, SongArtist, SongTitle, Filesize, Length, Bitrate,
       VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist, ServerTitleHash, ServerArtistHash);
 end;
 

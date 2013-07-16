@@ -87,6 +87,7 @@ type
     procedure RebuildSearchItems(NewEntry: string);
 
     procedure Setup;
+    procedure AfterShown;
     procedure PostTranslate;
   end;
 
@@ -148,7 +149,7 @@ type
     function GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
     function NodesToData(Nodes: TNodeArray): TChartDataArray;
 
-    procedure Setup;
+    procedure AfterShown;
 
     property State: TChartStates read FState write FSetState;
   end;
@@ -187,6 +188,7 @@ type
     destructor Destroy; override;
 
     procedure Setup;
+    procedure AfterShown;
     procedure PostTranslate;
     procedure SetState(State: TChartStates);
     procedure SearchCharts(Top: Boolean);
@@ -211,6 +213,12 @@ const
 implementation
 
 { TChartsTab }
+
+procedure TChartsTab.AfterShown;
+begin
+  FSearchPanel.AfterShown;
+  FChartsTree.AfterShown;
+end;
 
 procedure TChartsTab.ButtonClick(Sender: TObject);
 begin
@@ -449,7 +457,6 @@ end;
 procedure TChartsTab.Setup;
 begin
   FSearchPanel.Setup;
-  FChartsTree.Setup;
 
   FChartsTree.Images := modSharedData.imgImages;
 
@@ -592,6 +599,13 @@ begin
 end;
 
 { TChartsTree }
+
+procedure TChartsTree.AfterShown;
+begin
+  FColImages.Width := GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+  FColLastPlayed.Width := GetTextSize(FColLastPlayed.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+  FColChance.Width := GetTextSize(FColChance.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+end;
 
 constructor TChartsTree.Create(AOwner: TComponent; Lists: TDataLists);
 begin
@@ -1268,13 +1282,6 @@ begin
   end;
 end;
 
-procedure TChartsTree.Setup;
-begin
-  FColImages.Width := GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
-  FColLastPlayed.Width := GetTextSize(FColLastPlayed.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
-  FColChance.Width := GetTextSize(FColChance.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
-end;
-
 procedure TChartsTree.TimerOnTimer(Sender: TObject);
 begin
   FDots := FDots + '.';
@@ -1286,6 +1293,18 @@ begin
 end;
 
 { TSearchPanel }
+
+procedure TSearchPanel.AfterShown;
+begin
+  FLabel.Left := 0;
+
+  FSearch.Width := 200;
+  FSearch.Top := 1;
+
+  FLabel.Top := (FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2) - 2;
+
+  ClientHeight := FSearch.Top * 2 + FSearch.Height + MulDiv(1, Screen.PixelsPerInch, 96);
+end;
 
 constructor TSearchPanel.Create(AOwner: TComponent);
 begin
@@ -1368,15 +1387,6 @@ procedure TSearchPanel.Setup;
 var
   Sep: TToolButton;
 begin
-  FLabel.Left := 0;
-
-  FSearch.Width := 200;
-  FSearch.Top := 1;
-
-  FLabel.Top := (FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2) - 2;
-
-  ClientHeight := FSearch.Top + 1 + FSearch.Height;
-
   FToolbar.Images := modSharedData.imgImages;
 
   FButtonAddStream := TToolButton.Create(FToolbar);
@@ -1431,6 +1441,8 @@ begin
   RebuildSearchItems('');
 
   PostTranslate;
+
+  AfterShown;
 end;
 
 { TChartsPopup }

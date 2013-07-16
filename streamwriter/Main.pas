@@ -672,6 +672,11 @@ begin
   FWasActivated := True;
 
   tabClients.AdjustTextSizeDirtyHack;
+  tabCharts.AfterShown;
+  // TODO: tabLists.AfterShown;
+
+  // TODO: ich muss in allen tabs ein SETUP haben und ein AFTERSHOWN. erst da sind die echten abmessungen bekannt.
+  //und dann kann ich auch auf hohen DPI passig anzeigen von den abständen her!!!
 
   if not Bass.DeviceAvailable then
   begin

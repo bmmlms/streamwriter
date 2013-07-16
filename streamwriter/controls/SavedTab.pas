@@ -931,31 +931,17 @@ begin
     taAddToWishlist:
       begin
         for i := 0 to Length(Tracks) - 1 do
-          FOnAddTitleToWishlist(Self, Tracks[i].ServerTitle, Tracks[i].ServerTitleHash)
-          //if Tracks[i].ServerTitleHash > 0 then
-          //  FOnAddTitleToWishlist(Self, Tracks[i].ServerTitle, Tracks[i].ServerTitleHash)
-          //else
-          //  if Tracks[i].ServerTitle <> '' then
-          //    FOnAddTitleToWishlist(Self, Tracks[i].ServerTitle, 0)
-          //  else
-          //    FOnAddTitleToWishlist(Self, ExtractFileName(RemoveFileExt(Tracks[i].Filename)), 0);
+          FOnAddTitleToWishlist(Self, Tracks[i].ParsedTitle, Tracks[i].ServerTitleHash)
       end;
     taRemoveFromWishlist:
       begin
         for i := 0 to Length(Tracks) - 1 do
-          // Das passt so, weil es am Ende genau das selbe ist...
-          //if Tracks[i].ServerTitleHash > 0 then
-            FOnRemoveTitleFromWishlist(Self, Tracks[i].ServerTitle, Tracks[i].ServerTitleHash)
-          //else
-          //  FOnRemoveTitleFromWishlist(Self, ExtractFileName(RemoveFileExt(Tracks[i].Filename)), 0);
+          FOnRemoveTitleFromWishlist(Self, Tracks[i].ParsedTitle, Tracks[i].ServerTitleHash)
       end;
     taAddToIgnorelist:
       begin
         for i := 0 to Length(Tracks) - 1 do
-          //if Tracks[i].ServerTitle <> '' then
-            FOnAddTitleToIgnorelist(Self, Tracks[i].ServerTitle, 0)
-          //else
-          //  FOnAddTitleToIgnorelist(Self, ExtractFileName(RemoveFileExt(Tracks[i].Filename)), 0);
+          FOnAddTitleToIgnorelist(Self, Tracks[i].ParsedTitle, 0)
       end;
     taRemove:
       begin

@@ -151,7 +151,7 @@ type
     procedure ClientManagerAddRecent(Sender: TObject);
     procedure ClientManagerClientAdded(Sender: TObject);
     procedure ClientManagerClientRemoved(Sender: TObject);
-    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle, ServerTitle: string;
+    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
       Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
       ServerTitleHash, ServerArtistHash: Cardinal);
     procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
@@ -884,7 +884,7 @@ var
   i: Integer;
 begin
   FAddressBar.Setup;
-  FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2);
+  FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2) + 1;
 
   FToolbarPanel.ClientHeight := 24;
 
@@ -1185,7 +1185,7 @@ begin
 end;
 
 procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
-  Filename, Title, SongArtist, SongTitle, ServerTitle: string; Filesize, Length, Bitrate: UInt64;
+  Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64;
   VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
   ServerTitleHash, ServerArtistHash: Cardinal);
 var
@@ -1193,27 +1193,32 @@ var
   Track: TTrackInfo;
   i: Integer;
   LowerFilename: string;
-  //Added: Boolean;
+  Added: Boolean;
 begin
   Client := Sender as TICEClient;
 
-  //Added := True;
+  // Das hier ist NICHT cool, aber alles andere wäre Wahnsinn!
+  if SongArtist = _('Unknown artist') then
+    SongArtist := '';
+  if SongTitle = _('Unknown title') then
+    SongTitle := '';
+
+  Added := False;
   Track := nil;
   LowerFilename := LowerCase(Filename);
-  {
   for i := 0 to FStreams.TrackList.Count - 1 do
     if LowerCase(FStreams.TrackList[i].Filename) = LowerFilename then
     begin
       Track := FStreams.TrackList[i];
-      Added := False;
+      Track.Time := Now;
       Break;
     end;
-  }
 
   if Track = nil then
   begin
-    Track := TTrackInfo.Create(Now, Filename, Client.Entry.Name, ServerTitle, ServerTitleHash, ServerArtistHash);
+    Track := TTrackInfo.Create(Now, Filename, Client.Entry.Name, Title, SongArtist, SongTitle, ServerTitleHash, ServerArtistHash);
     FStreams.TrackList.Add(Track);
+    Added := True;
   end;
 
   Track.Streamname := Client.Entry.Name;
@@ -1226,31 +1231,28 @@ begin
   Track.IsStreamFile := IsStreamFile;
   Track.VBR := VBR;
 
-  //if Added then
-  //begin
-  if Assigned(FOnTrackAdded) then
-    FOnTrackAdded(Client.Entry, Track);
+  if Added then
+  begin
+    if Assigned(FOnTrackAdded) then
+      FOnTrackAdded(Client.Entry, Track);
+  end;
 
-  if (SongArtist <> '') and (SongTitle <> '') then
-    Title := SongArtist + ' - ' + SongTitle;
-
-  if FullTitle then
+  if FullTitle and (not IsStreamFile) then
   begin
     if Client.Entry.Settings.AddSavedToIgnore then
       if Assigned(FOnAddTitleToList) then
-        FOnAddTitleToList(Self, nil, ltIgnore, Title);
+        FOnAddTitleToList(Self, nil, ltIgnore, Track.ParsedTitle);
 
     if Client.Entry.Settings.AddSavedToStreamIgnore then
       if Assigned(FOnAddTitleToList) then
-        FOnAddTitleToList(Self, Client, ltIgnore, Title);
+        FOnAddTitleToList(Self, Client, ltIgnore, Track.ParsedTitle);
 
     if Client.Entry.Settings.RemoveSavedFromWishlist then
     begin
       if Assigned(FOnRemoveTitleFromList) then
-        FOnRemoveTitleFromList(Self, nil, ltSave, Title, ServerTitleHash);
+        FOnRemoveTitleFromList(Self, nil, ltSave, Track.ParsedTitle, ServerTitleHash);
     end;
   end;
-  //end;
 
   ShowInfo;
 end;
