@@ -436,7 +436,7 @@ begin
          ((ContentType = '') and ((FStreamName <> '') or (FStreamURL <> '')))
       then
         FAudioType := atMPEG
-      else if LowerCase(ContentType) = 'audio/aacp' then
+      else if (LowerCase(ContentType) = 'audio/aacp') or (LowerCase(ContentType) = 'audio/aac') then
         FAudioType := atAAC
       //else if LowerCase(ContentType) = 'application/ogg' then
       //  FAudioType := atOGG
