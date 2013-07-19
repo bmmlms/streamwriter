@@ -2216,7 +2216,7 @@ begin
   L := TList<Cardinal>.Create;
   try
     for i := 0 to FClients.Count - 1 do
-      if FClients[i].Recording and not FClients[i].AutoRemove then
+      if FClients[i].Recording or FClients[i].Playing and not FClients[i].AutoRemove then
       begin
         if FClients[i].Entry.ID > 0 then
           L.Add(FClients[i].Entry.ID)
@@ -2226,9 +2226,7 @@ begin
 
     for i := 0 to FClients.Monitors.Count - 1 do
       if FClients.Monitors[i].Entry.ID > 0 then
-        L.Add(FClients.Monitors[i].Entry.ID)
-      else
-        Inc(C);
+        L.Add(FClients.Monitors[i].Entry.ID);
 
     HomeComm.SendUpdateStats(L, C);
   finally
