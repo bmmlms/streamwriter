@@ -183,6 +183,9 @@ type
 
     procedure ButtonClick(Sender: TObject);
     procedure ChartsTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+  protected
+    procedure DoEnter; override;
+
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
     destructor Destroy; override;
@@ -287,6 +290,14 @@ begin
   end;
 
   inherited;
+end;
+
+procedure TChartsTab.DoEnter;
+begin
+  inherited;
+
+  if FSearchPanel.Enabled and FSearchPanel.FSearch.Enabled then
+    FSearchPanel.FSearch.SetFocus;
 end;
 
 procedure TChartsTab.HomeCommSearchChartsReceived(Sender: TObject;
