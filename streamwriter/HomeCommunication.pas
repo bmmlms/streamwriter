@@ -602,7 +602,7 @@ begin
   if not FConnected then
     Exit;
 
-  if StreamID = 0 then
+  if (StreamID = 0) or (Trim(StreamName) = '') or (Trim(URL) = '') or (Length(Title) <= 3) then
     Exit;
 
   FThread.SendCommand(TCommandTitleChanged.Create(StreamID, StreamName, Title,
