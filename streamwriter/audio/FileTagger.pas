@@ -31,6 +31,9 @@ type
   private
     FArtist, FTitle, FAlbum, FComment, FTrackNumber: string;
     FCoverImage: TBitmap;
+    FPopulariMeterEmail: WideString;
+    FPopulariMeterRating: SmallInt;
+    FPopulariMeterCounter: LongInt;
   public
     constructor Create;
     destructor Destroy; override;
@@ -41,6 +44,7 @@ type
     property Album: string read FAlbum write FAlbum;
     property Comment: string read FComment write FComment;
     property TrackNumber: string read FTrackNumber write FTrackNumber;
+    //property PopularityMeter: SmallInt read FPopulatityMeter write FPopulatityMeter;
     property CoverImage: TBitmap read FCoverImage;
   end;
 
@@ -242,6 +246,7 @@ begin
   FileTaggerLock.Enter;
   try
     AG := TAudioGenie3.Create(TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).DLLPath);
+
     try
       FAudioType := AG.AUDIOAnalyzeFileW(Filename);
       if FAudioType <> UNKNOWN then
@@ -251,6 +256,15 @@ begin
         FTag.FAlbum := AG.AUDIOAlbumW;
         FTag.FComment := AG.AUDIOCommentW;
         FTag.FTrackNumber := AG.AUDIOTrackW;
+
+        case FAudioType of
+          MPEG:
+            begin
+              FTag.FPopulariMeterEmail := AG.ID3V2GetPopularimeterEmailW(1);
+              FTag.FPopulariMeterRating := AG.ID3V2GetPopularimeterRatingW(1);
+              FTag.FPopulariMeterCounter := AG.ID3V2GetPopularimeterCounterW(1);
+            end;
+        end;
 
         ReadCover(AG);
 
@@ -306,6 +320,15 @@ begin
         end;
 
         AG.AUDIOTrackW := FTag.FTrackNumber;
+        case FAudioType of
+          MPEG:
+            begin
+              if (FTag.FPopulariMeterRating > 0) or (FTag.FPopulariMeterCounter > 0) then
+              begin
+                AG.ID3V2AddPopularimeterW(FTag.FPopulariMeterEmail, FTag.FPopulariMeterRating, FTag.FPopulariMeterCounter);
+              end;
+            end;
+        end;
 
         if AG.AUDIOSaveChangesW then
           Result := True;

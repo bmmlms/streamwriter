@@ -405,7 +405,7 @@ begin
   if (not Assigned(SaveListTitle)) and (not Assigned(SaveListArtist)) then
     Exit;
 
-  if (SaveListTitle <> nil) and AppGlobals.AutoTuneInConsiderIgnore then
+  if AppGlobals.AutoTuneInConsiderIgnore then
     for n := 0 to FLists.IgnoreList.Count - 1 do
     begin
       if Like(Title, FLists.IgnoreList[n].Pattern) then
@@ -415,16 +415,16 @@ begin
     end;
 
   Res := TICEClient.MayConnect(False, GetUsedBandwidth(Kbps, 0));
-    if Res <> crOk then
+  if Res <> crOk then
+  begin
+    if (not FErrorShown) and (Res = crNoFreeSpace) then
     begin
-      if (not FErrorShown) and (Res = crNoFreeSpace) then
-      begin
-        OnShowErrorMessage(nil, Res, True, False);
-        FErrorShown := True;
-      end;
-      Exit;
+      OnShowErrorMessage(nil, Res, True, False);
+      FErrorShown := True;
     end;
-    FErrorShown := False;
+    Exit;
+  end;
+  FErrorShown := False;
 
   for Client in Self.FClients do
     if MatchesClient(Client, ID, Name, CurrentURL, Title, nil) then
