@@ -537,10 +537,12 @@ procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title, SongA
   Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile,
   RecordBecauseArtist: Boolean; ServerTitleHash, ServerArtistHash: Cardinal);
 begin
-  Inc(FSongsSaved);
-  FLists.SongsSaved := FLists.SongsSaved + 1;
   if not IsStreamFile then
+  begin
     MsgBus.SendMessage(TSongSavedMsg.Create(Sender, ServerTitleHash, ServerArtistHash));
+    Inc(FSongsSaved);
+    FLists.SongsSaved := FLists.SongsSaved + 1;
+  end;
   if Assigned(FOnClientSongSaved) then
     FOnClientSongSaved(Sender, Filename, Title, SongArtist, SongTitle, Filesize, Length, Bitrate,
       VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist, ServerTitleHash, ServerArtistHash);

@@ -687,6 +687,8 @@ begin
   tabSaved.Setup(FDataLists);
   tabSaved.AfterShown;
 
+  Language.Translate(Self);
+
   // TODO: ich muss in allen tabs ein SETUP haben und ein AFTERSHOWN. erst da sind die echten abmessungen bekannt.
   //und dann kann ich auch auf hohen DPI passig anzeigen von den abständen her!!!
 
@@ -979,7 +981,6 @@ begin
 
   actShowSideBar.Checked := tabClients.SideBar.Visible;
 
-  Language.Translate(Self);
   MsgBus.AddSubscriber(MessageReceived);
 
   Application.ProcessMessages;
