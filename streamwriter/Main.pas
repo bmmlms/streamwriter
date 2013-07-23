@@ -687,6 +687,8 @@ begin
   tabSaved.Setup(FDataLists);
   tabSaved.AfterShown;
 
+  tabSavedRefresh(nil);
+
   Language.Translate(Self);
 
   // TODO: ich muss in allen tabs ein SETUP haben und ein AFTERSHOWN. erst da sind die echten abmessungen bekannt.
@@ -762,6 +764,12 @@ begin
     ProcessCommandLine('');
 
     SetWakeups;
+
+    tmrSpeed.Enabled := True;
+    tmrSchedule.Enabled := True;
+    FUpdater := TUpdateClient.Create;
+    FUpdater.OnNoUpdateFound := UpdaterNoUpdateFound;
+    FUpdater.OnUpdateFound := UpdaterUpdateFound;
 
     if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
       FUpdater.Start(uaVersion, True);
@@ -891,12 +899,7 @@ begin
   FUpdateOnExit := False;
 
   UpdateStatus;
-  tmrSpeed.Enabled := True;
-  tmrSchedule.Enabled := True;
   TrayIcon1.Visible := AppGlobals.Tray;
-  FUpdater := TUpdateClient.Create;
-  FUpdater.OnNoUpdateFound := UpdaterNoUpdateFound;
-  FUpdater.OnUpdateFound := UpdaterUpdateFound;
 
   Width := AppGlobals.MainWidth;
   Height := AppGlobals.MainHeight;
@@ -944,8 +947,6 @@ begin
     Exit;
 
   FWasShown := True;
-
-  tabSavedRefresh(nil);
 
   RegisterHotkeys(True);
 
