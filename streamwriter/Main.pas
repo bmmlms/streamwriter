@@ -665,6 +665,7 @@ end;
 procedure TfrmStreamWriterMain.AfterShown(var Msg: TMessage);
 var
   FormIntro: TfrmIntro;
+  i: Integer;
 begin
   if FWasActivated then
     Exit;
@@ -672,8 +673,19 @@ begin
   FWasActivated := True;
 
   tabClients.AdjustTextSizeDirtyHack;
+
+  // ----------------------------------
+  // Das hier kann irgendwann raus.
+  if (AppGlobals.LastUsedDataVersion < 56) and (FDataLists.SongsSaved = 0) then
+    for i := 0 to FClients.Count - 1 do
+      FDataLists.SongsSaved := FDataLists.SongsSaved + FClients[i].Entry.SongsSaved;
+  // ----------------------------------
+
+  tabClients.AfterShown;
   tabCharts.AfterShown;
-  // TODO: tabLists.AfterShown;
+  tabLists.AfterShown;
+  tabSaved.Setup(FDataLists);
+  tabSaved.AfterShown;
 
   // TODO: ich muss in allen tabs ein SETUP haben und ein AFTERSHOWN. erst da sind die echten abmessungen bekannt.
   //und dann kann ich auch auf hohen DPI passig anzeigen von den abständen her!!!
@@ -938,7 +950,6 @@ begin
   AppGlobals.WindowHandle := Handle;
 
   tabClients.Shown(mnuStreamPopup);
-  tabSaved.Setup(FDataLists);
   tabCharts.Setup;
 
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
@@ -2591,7 +2602,8 @@ begin
   else
     CS := cshDisconnected;
 
-  addStatus.SetState(CS, HomeComm.Authenticated, HomeComm.NotifyTitleChanges, FClientCount, FRecordingCount, FClients.SongsSaved);
+  addStatus.SetState(CS, HomeComm.Authenticated, HomeComm.NotifyTitleChanges, FClientCount, FRecordingCount,
+    FClients.SongsSaved, FDataLists.SongsSaved);
 end;
 
 function TfrmStreamWriterMain.CanExitApp: Boolean;

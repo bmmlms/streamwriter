@@ -155,7 +155,7 @@ begin
   FMute.ShowHint := True;
   FMute.Flat := True;
   FMute.Align := alLeft;
-  FMute.Width := 25;
+  FMute.ClientWidth := 22;
   FMute.GroupIndex := 1;
   FMute.AllowAllUp := True;
   FMute.Down := True;

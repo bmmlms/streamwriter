@@ -116,6 +116,7 @@ type
     procedure Resize; override;
   public
     procedure PostTranslate;
+    procedure AfterShown;
     function AddEntry(Text: string; TitleHash: Cardinal; ShowMessages: Boolean; ListType: TListType): Boolean;
     procedure RemoveEntry(Text: string; ServerTitleHash: Cardinal; ListType: TListType);
     procedure ClientAdded(Client: TICEClient);
@@ -138,6 +139,7 @@ type
 
     function SendWishListUpdateBatch: Boolean;
 
+    procedure AfterShown; override;
     procedure Setup(Clients: TClientManager; Streams: TDataLists);
     procedure AddTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
     procedure RemoveTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
@@ -381,6 +383,13 @@ begin
     FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.GetNode(Client), FListsPanel.FFilterText, True)
   else
     FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.FIgnoreNode, FListsPanel.FFilterText, True);
+end;
+
+procedure TListsTab.AfterShown;
+begin
+  inherited;
+
+  FListsPanel.AfterShown;
 end;
 
 { TTitlePanel }
@@ -1028,38 +1037,28 @@ begin
   FSearchLabel := TLabel.Create(Self);
   FSearchLabel.Parent := FSearchPanel;
   FSearchLabel.Caption := 'Search:';
-  FSearchLabel.Left := 0;
-  FSearchLabel.Top := 0;
 
   FSearchText := TEdit.Create(Self);
   FSearchText.Parent := FSearchPanel;
-  FSearchText.Top := 2;
   FSearchText.OnChange := SearchTextChange;
-
-  FSearchLabel.Top := FSearchText.Top + FSearchText.Height div 2 - FSearchLabel.Height div 2;
 
   FToolbarPanel := TPanel.Create(Self);
   FToolbarPanel.Parent := FTopPanel;
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Align := alTop;
+  FToolbarPanel.Padding.Top := 1;
 
   FAddLabel := TLabel.Create(Self);
   FAddLabel.Parent := FToolbarPanel;
-  FAddLabel.Left := 0;
   FAddLabel.Caption := _('Add entry:');
 
   FAddEdit := TEdit.Create(Self);
   FAddEdit.Parent := FToolbarPanel;
   FAddEdit.OnKeyPress := AddEditKeyPress;
-  FAddEdit.Top := 1;
-  FAddEdit.Width := 250;
-
-  FAddLabel.Top := FAddEdit.Top + FAddEdit.Height div 2 - FAddLabel.Height div 2;
 
   FAddCombo := TComboBox.Create(Self);
   FAddCombo.Parent := FToolbarPanel;
   FAddCombo.Style := csDropDownList;
-  FAddCombo.Top := 1;
 
   FToolbar := TTitleToolbar.Create(Self);
   FToolbar.Parent := FToolbarPanel;
@@ -1080,7 +1079,6 @@ begin
   // Das macht Höhen/Breiten von manchen Controls passig
   PostTranslate;
   FSearchPanel.ClientHeight := FSearchText.Top + 5 + FSearchText.Height;
-  FTopPanel.ClientHeight := FAddLabel.Height + FAddLabel.Top * 2;
 
   FTree := TTitleTree.Create(Self, Lists);
   FTree.Parent := Self;
@@ -1233,6 +1231,31 @@ begin
   end else
     if ShowMessages then
       MsgBox(GetParentForm(Self).Handle, _('Please enter a pattern to add to the list.'), _('Info'), MB_ICONINFORMATION);
+end;
+
+procedure TTitlePanel.AfterShown;
+begin
+  FSearchPanel.Height := 24;
+  FSearchLabel.Left := 0;
+  FSearchLabel.Top := 0;
+  FSearchText.Top := 2;
+  FSearchLabel.Top := FSearchText.Top + FSearchText.Height div 2 - FSearchLabel.Height div 2;
+  FAddLabel.Left := 0;
+  FAddEdit.Top := 1;
+  FAddEdit.Width := 250;
+
+  FAddLabel.Top := FAddEdit.Top + FAddEdit.Height div 2 - FAddLabel.Height div 2;
+
+  FAddCombo.Top := 1;
+
+
+  // Das macht Höhen/Breiten von manchen Controls passig
+  PostTranslate;
+  FSearchPanel.ClientHeight := FSearchText.Top + FSearchText.Height + 4;
+  FTopPanel.ClientHeight := FAddLabel.Height + FAddLabel.Top * 2 + 1;
+
+  FTree.FColSaved.Width := MulDiv(120, Screen.PixelsPerInch, 96);
+  FTree.FColAdded.Width := MulDiv(130, Screen.PixelsPerInch, 96);
 end;
 
 procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree;

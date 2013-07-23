@@ -39,6 +39,7 @@ type
     FRecordings: Integer;
     FSpeed: UInt64;
     FSongsSaved: Cardinal;
+    FOverallSongsSaved: Cardinal;
     FCurrentReceived: UInt64;
     FOverallReceived: UInt64;
     FLastPos: Integer;
@@ -66,7 +67,7 @@ type
     destructor Destroy; override;
 
     procedure SetState(ConnectionState: THomeConnectionState; LoggedIn, NotifyTitleChanges: Boolean; Clients, Recordings: Integer;
-      SongsSaved: Cardinal);
+      SongsSaved, OverallSongsSaved: Cardinal);
     procedure BuildSpeedBmp;
     property Speed: UInt64 read FSpeed write FSetSpeed;
     property CurrentReceived: UInt64 read FCurrentReceived write FSetCurrentReceived;
@@ -288,7 +289,7 @@ begin
     3:
       Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(Format(_('%s/%s received'), [MakeSize(FCurrentReceived), MakeSize(FOverallReceived)])) div 2, Format(_('%s/%s received'), [MakeSize(FCurrentReceived), MakeSize(FOverallReceived)]));
     4:
-      Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(Format(_('%d songs saved'), [FSongsSaved])) div 2, Format(_('%d songs saved'), [FSongsSaved]));
+      Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(Format(_('%d/%d songs saved'), [FSongsSaved, FOverallSongsSaved])) div 2, Format(_('%d/%d songs saved'), [FSongsSaved, FOverallSongsSaved]));
   end;
 end;
 
@@ -341,12 +342,12 @@ begin
 end;
 
 procedure TSWStatusBar.SetState(ConnectionState: THomeConnectionState; LoggedIn, NotifyTitleChanges: Boolean; Clients, Recordings: Integer;
-  SongsSaved: Cardinal);
+  SongsSaved, OverallSongsSaved: Cardinal);
 var
   OldConnectionState: THomeConnectionState;
   OldLoggedIn, OldNotifyTitleChanges: Boolean;
   OldClients, OldRecordings: Integer;
-  OldSongsSaved: Cardinal;
+  OldSongsSaved, OldOverallSongsSaved: Cardinal;
 begin
   OldConnectionState := FConnectionState;
   OldLoggedIn := FLoggedIn;
@@ -354,6 +355,7 @@ begin
   OldClients := FClients;
   OldRecordings := FRecordings;
   OldSongsSaved := FSongsSaved;
+  OldOverallSongsSaved := FOverallSongsSaved;
 
   FConnectionState := ConnectionState;
   FLoggedIn := LoggedIn;
@@ -369,6 +371,7 @@ begin
   end;
 
   FSongsSaved := SongsSaved;
+  FOverallSongsSaved := OverallSongsSaved;
 
   if (OldConnectionState <> FConnectionState) or (OldLoggedIn <> FLoggedIn) then
     PaintPanel(0);
@@ -378,7 +381,7 @@ begin
     PaintPanel(1);
   end;
 
-  if OldSongsSaved <> FSongsSaved then
+  if (OldSongsSaved <> FSongsSaved) or (OldOverallSongsSaved <> FOverallSongsSaved) then
     PaintPanel(4);
 end;
 

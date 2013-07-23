@@ -198,6 +198,7 @@ type
     procedure PausePlay;
     procedure ShowInfo;
 
+    procedure AfterShown; override;
     procedure AdjustTextSizeDirtyHack;
 
     property AddressBar: TClientAddressBar read FAddressBar;
@@ -255,9 +256,9 @@ begin
   FStart := TPngSpeedButton.Create(Self);
   FStart.Parent := Self;
   FStart.Width := 24;
-  FStart.Height := 24;
-  FStart.Top := 6;
-  FStart.Left := ClientWidth - 4 - FStart.Width;
+  FStart.Height := 22;
+  FStart.Top := 9;
+  FStart.Left := ClientWidth - 1 - FStart.Width;
   FStart.Anchors := [akRight];
   FStart.Flat := True;
   FStart.Hint := 'Add and start recording';
@@ -742,6 +743,7 @@ begin
   FToolbarPanel.Align := alTop;
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Parent := Self;
+  FToolbarPanel.Padding.Top := 1;
 
   FToolbar := Toolbar;
   FToolbar.Align := alLeft;
@@ -752,6 +754,7 @@ begin
   FVolume := TVolumePanel.Create(Self);
   FVolume.Parent := FToolbarPanel;
   FVolume.Align := alRight;
+  FVolume.Padding.Bottom := 1;
   FVolume.OnVolumeChange := VolumeVolumeChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
 
@@ -832,6 +835,29 @@ procedure TClientTab.AdjustTextSizeDirtyHack;
 begin
   FAddressBar.FStations.Left := FAddressBar.FLabel.Left + FAddressBar.FLabel.Width + 6;
   FAddressBar.FStations.Width := FAddressBar.ClientWidth - FAddressBar.FStations.Left - FAddressBar.FStart.Width - 6;
+end;
+
+procedure TClientTab.AfterShown;
+begin
+  inherited;
+
+  FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2);
+
+  FToolbarPanel.ClientHeight := 24;
+
+  FToolbar.Width := FToolbarPanel.ClientWidth - 250;
+  //FToolbar.Height := 23;
+
+  FVolume.Width := 140;
+
+  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
+  FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
+
+  FSplitter.Width := MulDiv(4, Screen.PixelsPerInch, 96);
+  FSplitter.MinSize := MulDiv(220, Screen.PixelsPerInch, 96);
+  FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
+
+  FSideBar.Width := AppGlobals.SidebarWidth;
 end;
 
 procedure TClientTab.DebugClear(Sender: TObject);

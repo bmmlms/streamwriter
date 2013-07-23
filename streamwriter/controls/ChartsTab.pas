@@ -191,7 +191,7 @@ type
     destructor Destroy; override;
 
     procedure Setup;
-    procedure AfterShown;
+    procedure AfterShown; override;
     procedure PostTranslate;
     procedure SetState(State: TChartStates);
     procedure SearchCharts(Top: Boolean);
@@ -219,6 +219,8 @@ implementation
 
 procedure TChartsTab.AfterShown;
 begin
+  inherited;
+
   FSearchPanel.AfterShown;
   FChartsTree.AfterShown;
 end;
@@ -256,6 +258,7 @@ begin
   FSearchPanel := TSearchPanel.Create(Self);
   FSearchPanel.Parent := Self;
   FSearchPanel.Align := alTop;
+  FSearchPanel.Padding.Top := 1;
 
   FChartsTree := TChartsTree.Create(Self, FLists);
   FChartsTree.Parent := Self;
@@ -1312,9 +1315,9 @@ begin
   FSearch.Width := 200;
   FSearch.Top := 1;
 
-  FLabel.Top := (FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2) - 2;
+  FLabel.Top := (FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2);
 
-  ClientHeight := FSearch.Top * 2 + FSearch.Height + MulDiv(1, Screen.PixelsPerInch, 96);
+  ClientHeight := FSearch.Top * 2 + FSearch.Height + MulDiv(4, Screen.PixelsPerInch, 96);
 end;
 
 constructor TSearchPanel.Create(AOwner: TComponent);
@@ -1445,7 +1448,7 @@ begin
   FButtonAddToWishlist.Hint := _('Add title to automatic wishlist');
   FButtonAddToWishlist.ImageIndex := 77;
 
-  FToolbar.Padding.Top := 2;
+  //FToolbar.Padding.Top := 6;
   FToolbar.Align := alRight;
   FToolbar.AutoSize := True;
 

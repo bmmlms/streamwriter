@@ -576,6 +576,7 @@ type
     FGenreList: TGenreList;
     FLoadError: Boolean;
     FReceived: UInt64;
+    FSongsSaved: UInt64;
     FSavedTitleHashes: TList<Cardinal>;
   public
     constructor Create;
@@ -618,12 +619,13 @@ type
     property LoadError: Boolean read FLoadError write FLoadError;
     // Overall amount of data received
     property Received: UInt64 read FReceived write FReceived;
+    property SongsSaved: UInt64 read FSongsSaved write FSongsSaved;
 
     property SavedTitleHashes: TList<Cardinal> read FSavedTitleHashes write FSavedTitleHashes;
   end;
 
 const
-  DATAVERSION = 55;
+  DATAVERSION = 56;
 
 implementation
 
@@ -1115,6 +1117,8 @@ begin
   end;
 
   S.Read(FReceived);
+  if Version >= 56 then
+    S.Read(FSongsSaved);
 
   if Version <= 2 then
   begin
@@ -1304,6 +1308,7 @@ begin
   CompressedStream := TExtendedStream.Create;
   try
     CompressedStream.Write(FReceived);
+    CompressedStream.Write(FSongsSaved);
 
     CompressedStream.Write(FCategoryList.Count);
     for i := 0 to FCategoryList.Count - 1 do

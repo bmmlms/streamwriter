@@ -266,6 +266,7 @@ type
 
     procedure Setup(Streams: TDataLists);
     procedure Shown;
+    procedure AfterShown; override;
     procedure PausePlay;
     procedure PostTranslate;
     procedure ShowCover(Img: TBitmap);
@@ -858,6 +859,13 @@ begin
   end;
 end;
 
+procedure TSavedTab.AfterShown;
+begin
+  inherited;
+
+  FTopPanel.ClientHeight := FTopLeftPanel.Height + FSearchBar.FLabel.Height - 2;
+end;
+
 procedure TSavedTab.BuildTree;
 var
   i: Integer;
@@ -1288,8 +1296,6 @@ begin
 end;
 
 procedure TSavedTab.Setup(Streams: TDataLists);
-var
-  DummyPanel: TPanel;
 begin
   Caption := 'Saved songs';
 
@@ -1311,7 +1317,8 @@ begin
   FTopLeftPanel := TPanel.Create(Self);
   FTopLeftPanel.Parent := FTopPanel;
   FTopLeftPanel.Align := alClient;
-  FTopLeftPanel.ClientHeight := 52;
+  //FTopLeftPanel.ClientHeight := 40;
+  FTopLeftPanel.Padding.Top := 1;
   FTopLeftPanel.BevelOuter := bvNone;
 
   // Panel rechts
@@ -1319,7 +1326,7 @@ begin
   FTopRightPanel.Parent := FTopPanel;
   FTopRightPanel.Align := alRight;
   FTopRightPanel.ClientHeight := 52;
-  FTopRightPanel.ClientWidth := 310;
+  FTopRightPanel.ClientWidth := 300;
   FTopRightPanel.BevelOuter := bvNone;
 
   FCoverPanel := TPanel.Create(Self);
@@ -1354,6 +1361,7 @@ begin
   FTopRightTopPanel.Parent := FTopRightPanel;
   FTopRightTopPanel.Align := alTop;
   FTopRightTopPanel.ClientHeight := 24;
+  FTopRightTopPanel.Padding.Top := 1;
   FTopRightTopPanel.BevelOuter := bvNone;
 
   // Panel für Zeitanzeigen und Playercontrols
@@ -1385,28 +1393,19 @@ begin
   FSearchBar.FSearch.OnClick := SearchTextClick;
   FSearchBar.FSearch.OnChange := SearchTextChange;
 
-  DummyPanel := TPanel.Create(Self);
-  DummyPanel.Parent := FTopLeftPanel;
-  DummyPanel.Align := alTop;
-  DummyPanel.ClientHeight := 2;
-  DummyPanel.BevelOuter := bvNone;
-
   FToolBar := TSavedToolBar.Create(Self);
   FToolBar.Parent := FTopLeftPanel;
   FToolBar.Align := alTop;
   FToolBar.AutoSize := True;
-  FToolBar.Height := 25;
   FToolbar.Indent := 0;
   FToolBar.Images := modSharedData.imgImages;
   FToolBar.Setup;
 
-  FTopPanel.ClientHeight := FTopLeftPanel.Height + FSearchBar.FLabel.Height;
-
   FSeek := TSeekBar.Create(Self);
   FSeek.Parent := FTopRightTopPanel;
-  FSeek.Align := alRight;
+  FSeek.Align := alLeft;
   FSeek.Left := FToolbar.Left + FToolbar.Width + 10;
-  FSeek.Width := 160;
+  FSeek.Width := 145;
   FSeek.OnPositionChanged := SeekChange;
 
   FVolume := TVolumePanel.Create(Self);
@@ -1419,6 +1418,7 @@ begin
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
   FVolume.Padding.Left := 10;
+  FVolume.Padding.Bottom := 1;
   FVolume.Left := High(Integer);
 
   FToolbar.Top := 0;
@@ -2892,12 +2892,12 @@ begin
   FSearch := TEdit.Create(Self);
   FSearch.Parent := Self;
 
-  FSearch.Top := 3;
+  FSearch.Top := 4;
   FSearch.Width := 200;
 
   FLabel.Top := FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2;;
 
-  Height := FSearch.Top + FSearch.Height + FSearch.Top + 3;
+  //Height := FSearch.Top + FSearch.Height + FSearch.Top + 40;
 
   BevelOuter := bvNone;
 

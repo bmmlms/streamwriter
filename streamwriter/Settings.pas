@@ -3156,6 +3156,7 @@ begin
   Header.Options := Header.Options + [hoAutoResize];
   Header.Options := Header.Options - [hoDrag];
   Header.AutoSizeIndex := 0;
+  Header.Height := GetTextSize('Wyg', Font).cy + 5;
   DragMode := dmManual;
   ShowHint := True;
   HintMode := hmTooltip;

@@ -5,24 +5,27 @@ object frmEqualizer: TfrmEqualizer
   BorderStyle = bsToolWindow
   Caption = 'Equalizer'
   ClientHeight = 145
-  ClientWidth = 269
+  ClientWidth = 217
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
-  
+  Font.Name = 'Tahoma'
   Font.Style = []
   FormStyle = fsStayOnTop
   KeyPreview = True
   OldCreateOrder = False
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
+  DesignSize = (
+    217
+    145)
   PixelsPerInch = 96
   TextHeight = 13
   object pnlEqualizer: TPanel
     Left = 0
     Top = 36
-    Width = 269
+    Width = 217
     Height = 109
     Align = alBottom
     BevelOuter = bvNone
@@ -31,6 +34,7 @@ object frmEqualizer: TfrmEqualizer
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
+    ExplicitWidth = 269
   end
   object chkEqualizer: TCheckBox
     Left = 8
@@ -42,11 +46,12 @@ object frmEqualizer: TfrmEqualizer
     OnClick = chkEqualizerClick
   end
   object btnReset: TPngBitBtn
-    Left = 240
+    Left = 188
     Top = 4
     Width = 25
     Height = 25
     Hint = 'Reset'
+    Anchors = [akTop, akRight]
     DoubleBuffered = True
     ParentDoubleBuffered = False
     ParentShowHint = False
@@ -74,5 +79,6 @@ object frmEqualizer: TfrmEqualizer
       B16D86E449B57B90CAAEA3BFF2302E2BD1C247026CD66EB30C8761A593CC7310
       67827B118AF78FF28E590F68569333E03631A79F492D4F07BC6267BA6528FF66
       AE803FE5B32DF0F03636220000000049454E44AE426082}
+    ExplicitLeft = 240
   end
 end

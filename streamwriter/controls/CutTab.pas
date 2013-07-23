@@ -314,7 +314,8 @@ begin
   FToolbarPanel.Align := alTop;
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Parent := Self;
-  FToolbarPanel.ClientHeight := 24;
+  FToolbarPanel.ClientHeight := 26;
+  FToolbarPanel.Padding.Top := 1;
 
   FToolBar := TCutToolBar.Create(Self);
   FToolBar.Parent := FToolbarPanel;
@@ -351,6 +352,7 @@ begin
   FVolume.Setup;
   FVolume.Enabled := Bass.DeviceAvailable;
   FVolume.Width := 140;
+  FVolume.Padding.Bottom := 3;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
