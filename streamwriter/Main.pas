@@ -796,6 +796,8 @@ procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
 var
   Recovered: Boolean;
   S: TExtendedStream;
+  i: Integer;
+  n: Integer;
 begin
   FMainCaption := 'streamWriter';
   {$IFDEF DEBUG}FMainCaption := FMainCaption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
@@ -854,6 +856,32 @@ begin
       end;
     end;
   end;
+
+  // --------------------------------------------------------------------------------------------------
+  // REMARK:
+  // Große Scheiße gebaut! In DataManager wurde Saved von Titeln auf der Wunschliste
+  // mit "Random()" gesetzt beim Laden! Wir checken hier auf die zuletzt benutzte Programmversion.
+  // Wenn die 4.9.0.0 ist, dann setzen wir überall Saved zurück und versuchen das, über die
+  // gespeicherten Tracks richtig zu rücken...
+  // IRGENDWANN FLIEGT DAS RAUS!!!
+  if AppGlobals.LastUsedDataVersion < 57 then
+  begin
+    for i := 0 to FDataLists.SaveList.Count - 1 do
+    begin
+      FDataLists.SaveList[i].Saved := 0;
+      for n := 0 to FDataLists.TrackList.Count - 1 do
+      begin
+        if (FDataLists.TrackList[n].ServerTitleHash > 0) and (FDataLists.TrackList[n].ServerTitleHash = FDataLists.SaveList[i].ServerHash) then
+          FDataLists.SaveList[i].Saved := FDataLists.SaveList[i].Saved + 1;
+        if (FDataLists.TrackList[n].ServerArtistHash > 0) and
+           (FDataLists.TrackList[n].ServerArtistHash = FDataLists.SaveList[i].ServerArtistHash) and
+           (FDataLists.SaveList[i].ServerHash = 0)
+        then
+          FDataLists.SaveList[i].Saved := FDataLists.SaveList[i].Saved + 1;
+      end;
+    end;
+  end;
+  // --------------------------------------------------------------------------------------------------
 
   addStatus := TSWStatusBar.Create(Self);
   addStatus.Parent := Self;
@@ -1966,8 +1994,9 @@ begin
   begin
     Pattern := BuildPattern(Arr[i].Title, Hash, NumChars, True);
     Found := False;
+
     for n := 0 to FDataLists.SaveList.Count - 1 do
-      if ((Arr[i].Hash = 0) and (FDataLists.SaveList[n].Hash = Hash)) or
+      if ((Arr[i].Hash = 0) and (FDataLists.SaveList[n].ServerHash = 0) and (FDataLists.SaveList[n].Hash = Hash)) or
          ((Arr[i].Hash > 0) and Arr[i].IsArtist and (FDataLists.SaveList[n].ServerArtistHash = Arr[i].Hash)) or
          ((Arr[i].Hash > 0) and (not Arr[i].IsArtist) and (FDataLists.SaveList[n].ServerHash = Arr[i].Hash)) then
       begin
@@ -2070,7 +2099,7 @@ begin
   begin
     Found := False;
     for i := 0 to List.Count - 1 do
-      if List[i].Hash = Hash then
+      if (List[i].ServerHash = 0) and (List[i].Hash = Hash) then
       begin
         Found := True;
         Break;

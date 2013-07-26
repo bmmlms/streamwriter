@@ -625,7 +625,7 @@ type
   end;
 
 const
-  DATAVERSION = 56;
+  DATAVERSION = 57;
 
 implementation
 
@@ -690,8 +690,6 @@ begin
 
   if Version > 50 then
     Stream.Read(Result.FSaved);
-
-  Result.FSaved := Result.FSaved + Random(5) + 1;
 
   if Version > 48 then
     Stream.Read(Result.FUpdatedToHash)

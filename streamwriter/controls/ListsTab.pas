@@ -788,19 +788,9 @@ begin
             for n := 0 to List.Count - 1 do
               if List = FLists.SaveList then
               begin
-                if (ServerHash > 0) and (List[n].ServerHash = ServerHash) then
-                begin
-                  Exists := True;
-                  Break;
-                end;
-
-                if (ServerArtistHash > 0) and (List[n].ServerArtistHash = ServerArtistHash) then
-                begin
-                  Exists := True;
-                  Break;
-                end;
-
-                if (ServerHash = 0) and (ServerArtistHash = 0) and (List[n].Hash = Hash) then
+                if ((ServerHash > 0) and (List[n].ServerHash = ServerHash)) or
+                   ((ServerArtistHash > 0) and (List[n].ServerArtistHash = ServerArtistHash)) or
+                   ((ServerHash = 0) and (List[n].ServerHash = 0) and (List[n].Hash = Hash)) then
                 begin
                   Exists := True;
                   Break;
@@ -1010,7 +1000,8 @@ begin
 
     for i := 0 to FLists.TrackList.Count - 1 do
     begin
-      if Like(RemoveFileExt(ExtractFileName(FLists.TrackList[i].Filename)), NodeData.Title.Pattern) then
+      if ((NodeData.Title.ServerHash = 0) and (NodeData.Title.ServerArtistHash = 0) and (Like(RemoveFileExt(ExtractFileName(FLists.TrackList[i].Filename)), NodeData.Title.Pattern))) or
+         ((NodeData.Title.ServerHash > 0) and (FLists.TrackList[i].ServerTitleHash = NodeData.Title.ServerHash)) then
       begin
         FTree.Selected[Node] := True;
       end;
@@ -1178,6 +1169,7 @@ begin
       List := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]).Entry.IgnoreList;
     end;
 
+    // Keine doppelten Auto-Einträge erlauben
     if (TitleHash > 0) and (List = FLists.SaveList) then
       for i := 0 to List.Count - 1 do
         if (List[i].ServerHash > 0) and (List[i].ServerHash = TitleHash) then
@@ -1187,13 +1179,15 @@ begin
 
     Pattern := BuildPattern(Trim(Text), Hash, NumChars, False);
 
-    for i := 0 to List.Count - 1 do
-      if List[i].Hash = Hash then
-      begin
-        if ShowMessages then
-          MsgBox(GetParentForm(Self).Handle, Format(_('The list already contains an entry matching the pattern "%s".'), [Pattern]), _('Info'), MB_ICONINFORMATION);
-        Exit;
-      end;
+    // Keine doppelten manuellen Einträge erlauben
+    if TitleHash = 0 then
+      for i := 0 to List.Count - 1 do
+        if (List[i].ServerHash = 0) and (List[i].Hash = Hash) then
+        begin
+          if ShowMessages then
+            MsgBox(GetParentForm(Self).Handle, Format(_('The list already contains an entry matching the pattern "%s".'), [Pattern]), _('Info'), MB_ICONINFORMATION);
+          Exit;
+        end;
 
     if (NumChars <= 3) and ShowMessages then
     begin
@@ -1435,7 +1429,7 @@ begin
 
   FSelectSaved := TToolButton.Create(Self);
   FSelectSaved.Parent := Self;
-  FSelectSaved.Hint := 'Select saved titles (by pattern)';
+  FSelectSaved.Hint := 'Select saved titles';
   FSelectSaved.ImageIndex := 70;
 
   Sep := TToolButton.Create(Self);
@@ -2099,6 +2093,8 @@ var
 begin
   inherited;
 
+  Self.AutoHotkeys := maManual;
+
   FRename := CreateMenuItem;
   FRename.Caption := 'Ren&ame';
   FRename.ImageIndex := 74;
@@ -2123,7 +2119,7 @@ begin
   Items.Add(Sep);
 
   FSelectSaved := CreateMenuItem;
-  FSelectSaved.Caption := '&Select saved titles (by pattern)';
+  FSelectSaved.Caption := '&Select saved titles';
   FSelectSaved.ImageIndex := 70;
   Items.Add(FSelectSaved);
 

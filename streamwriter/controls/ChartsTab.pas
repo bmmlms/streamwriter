@@ -446,8 +446,6 @@ begin
   FState := State;
   if FChartsTree.FState <> State then
   begin
-    //FResultLabel.Enabled := (State = csNormal) or (State = csSearchError);
-
     FChartsTree.BeginUpdate;
     FChartsTree.Clear;
     FChartsTree.EndUpdate;
@@ -455,14 +453,16 @@ begin
     FChartsTree.State := State;
     FChartsTree.Invalidate;
 
-    //FSearchPanel.FSearch.Enabled := (State = csNormal) or (State = csSearchError);
-    //FSearchPanel.FToolbar.Enabled := (State = csNormal) or (State = csSearchError);
+    FChartsTree.Enabled := not (State = csSearching);
+    FSearchPanel.Enabled := not (State = csSearching);
+    FSearchPanel.FLabel.Enabled := not (State = csSearching);
+    FSearchPanel.FSearch.Enabled := not (State = csSearching);
+    FResultLabel.Enabled := not (State = csSearching);
+
     if State = csSearching then
     begin
       FResultLabel.Caption := Format(_(TEXT_RESULTS), [0]);
-      FSearchPanel.FSearch.Enabled := False;
-    end else
-      FSearchPanel.FSearch.Enabled := True;
+    end;
 
     UpdateButtons;
   end;
@@ -1394,8 +1394,6 @@ begin
   inherited;
 
 end;
-
-// TODO: am ende auf hohen dpi testen.
 
 procedure TSearchPanel.Setup;
 var
