@@ -1311,6 +1311,11 @@ end;
 
 procedure TMStreamBrowserView.SwitchMode(Mode: TModes);
 begin
+  FSearch.FSearchLabel.Enabled := Mode = moShow;
+  FSearch.FGenreLabel.Enabled := Mode = moShow;
+  FSearch.FKbpsLabel.Enabled := Mode = moShow;
+  FSearch.FTypeLabel.Enabled := Mode = moShow;
+
   FSearch.FSearchEdit.Enabled := Mode = moShow;
   FSearch.FGenreList.Enabled := Mode = moShow;
   FSearch.FKbpsList.Enabled := Mode = moShow;

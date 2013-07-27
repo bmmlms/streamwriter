@@ -861,7 +861,7 @@ begin
   // REMARK:
   // Große Scheiße gebaut! In DataManager wurde Saved von Titeln auf der Wunschliste
   // mit "Random()" gesetzt beim Laden! Wir checken hier auf die zuletzt benutzte Programmversion.
-  // Wenn die 4.9.0.0 ist, dann setzen wir überall Saved zurück und versuchen das, über die
+  // Wenn die 4.9.0.0 ist, dann setzen wir überall Saved zurück und versuchen das über die
   // gespeicherten Tracks richtig zu rücken...
   // IRGENDWANN FLIEGT DAS RAUS!!!
   if AppGlobals.LastUsedDataVersion < 57 then
