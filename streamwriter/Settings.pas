@@ -276,6 +276,7 @@ type
     procedure Label2Click(Sender: TObject);
     procedure Label8Click(Sender: TObject);
     procedure Label20Click(Sender: TObject);
+    procedure chkSubmitStreamInfoClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FOptionChanging: Boolean;
@@ -1106,6 +1107,7 @@ begin
   if AppGlobals.MaxSpeed > 0 then
     txtMaxSpeed.Text := IntToStr(AppGlobals.MaxSpeed);
 
+  chkSubmitStreamInfoClick(nil);
   chkSubmitStatsClick(nil);
   chkMonitorModeClick(nil);
 
@@ -2935,6 +2937,7 @@ begin
   inherited;
 
   txtMonitorCount.Enabled := chkMonitorMode.State <> cbUnchecked;
+  Label20.Enabled := chkMonitorMode.State <> cbUnchecked;
 end;
 
 procedure TfrmSettings.chkAutoTuneInClick(Sender: TObject);
@@ -3125,7 +3128,15 @@ procedure TfrmSettings.chkSubmitStatsClick(Sender: TObject);
 begin
   inherited;
 
+  Label8.Enabled := chkSubmitStats.State <> cbUnchecked;
   chkMonitorMode.Enabled := chkSubmitStats.State <> cbUnchecked;
+end;
+
+procedure TfrmSettings.chkSubmitStreamInfoClick(Sender: TObject);
+begin
+  inherited;
+
+  Label2.Enabled := chkSubmitStreamInfo.State <> cbUnchecked;
 end;
 
 procedure TfrmSettings.chkTrayClick(Sender: TObject);

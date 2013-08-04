@@ -28,7 +28,7 @@ uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
   AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
   Math, PerlRegEx, Logging, WideStrUtils, AudioFunctions, PostProcessMP4Box,
-  AddonMP4Box, SWFunctions;
+  AddonMP4Box, SWFunctions, MonitorAnalyzer;
 
 type
   TDebugEvent = procedure(Text, Data: string) of object;
@@ -140,6 +140,7 @@ type
     FLastGetSettings: Cardinal;
 
     FStreamTracks: TStreamTracks;
+    FMonitorAnalyzer: TMonitorAnalyzer;
 
     FAudioStream: TStream;
     FAudioType: TAudioTypes;
@@ -151,6 +152,7 @@ type
     FOnIOError: TNotifyEvent;
     FOnTitleAllowed: TNotifyEvent;
     FOnRefreshInfo: TNotifyEvent;
+    FOnMonitorAnalyzerAnalyzed: TNotifyEvent;
 
     function GetFileLength(Filename: string; Filesize: Int64; var Length: UInt64): Boolean;
     function CalcAdjustment(Offset: Int64): Int64;
@@ -164,6 +166,8 @@ type
     procedure FreeAudioStream;
     function StartRecordingInternal: Boolean;
     procedure StopRecordingInternal;
+
+    procedure MonitorAnalyzerAnalyzed(Sender: TObject);
 
     function CleanTitle(Title: string): string;
     procedure ParseTitle(S, Pattern: string; var Artist: string; var Title: string; var Album: string);
@@ -187,6 +191,7 @@ type
     property Killed: Boolean read FKilled write FKilled;
 
     property MetaCounter: Integer read FMetaCounter;
+    property MonitorAnalyzer: TMonitorAnalyzer read FMonitorAnalyzer;
 
     property StreamName: string read FStreamName;
     property StreamURL: string read FStreamURL;
@@ -227,6 +232,7 @@ type
     property OnIOError: TNotifyEvent read FOnIOError write FOnIOError;
     property OnTitleAllowed: TNotifyEvent read FOnTitleAllowed write FOnTitleAllowed;
     property OnRefreshInfo: TNotifyEvent read FOnRefreshInfo write FOnRefreshInfo;
+    property OnMonitorAnalyzerAnalyzed: TNotifyEvent read FOnMonitorAnalyzerAnalyzed write FOnMonitorAnalyzerAnalyzed;
   end;
 
 implementation
@@ -336,6 +342,8 @@ begin
   FreeAndNil(FStreamTracks);
   FSettings.Free;
 
+  FreeAndNil(FMonitorAnalyzer);
+
   inherited;
 end;
 
@@ -378,6 +386,12 @@ procedure TICEStream.DataReceived(CopySize: Integer);
 var
   Buf: Pointer;
 begin
+  if FMonitoring and (FMonitorAnalyzer <> nil) and (FMetaInt > 0) and (FMonitorAnalyzer.Active) then
+  begin
+    FMonitorAnalyzer.Append(RecvStream, CopySize);
+    RecvStream.Position := RecvStream.Position - CopySize;
+  end;
+
   if (FAudioStream <> nil) and (not FMonitoring) then
   begin
     FAudioStream.Seek(0, soFromEnd);
@@ -547,6 +561,12 @@ begin
   FSaveDir := AppGlobals.Dir;
   FSaveDirAuto := AppGlobals.DirAuto;
   AppGlobals.Unlock;
+end;
+
+procedure TICEStream.MonitorAnalyzerAnalyzed(Sender: TObject);
+begin
+  if Assigned(FOnMonitorAnalyzerAnalyzed) then
+    FOnMonitorAnalyzerAnalyzed(Self);
 end;
 
 procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
@@ -779,6 +799,11 @@ end;
 
 procedure TICEStream.StartMonitoring;
 begin
+  if FMonitorAnalyzer = nil then
+  begin
+    FMonitorAnalyzer := TMonitorAnalyzer.Create;
+    FMonitorAnalyzer.OnAnalyzed := MonitorAnalyzerAnalyzed;
+  end;
   FMonitoringStarted := True;
 end;
 
@@ -1125,6 +1150,7 @@ begin
         if DataCopied = 0 then
           Break;
         DataReceived(DataCopied);
+
         FNextMetaInt := FNextMetaInt - DataCopied;
       end;
 
@@ -1148,6 +1174,14 @@ begin
               Title := CleanTitle(MetaData);
 
             IgnoreTitle := Title = '';
+
+            if FMonitoring and (FMonitorAnalyzer <> nil) then
+            begin
+              FMonitorAnalyzer.TitleChanged;
+
+              if not FMonitorAnalyzer.Active then
+                FreeAndNil(FMonitorAnalyzer);
+            end;
 
             for i := 0 to FSettings.IgnoreTrackChangePattern.Count - 1 do
               if Like(Title, FSettings.IgnoreTrackChangePattern[i]) then

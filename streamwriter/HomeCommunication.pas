@@ -175,6 +175,7 @@ type
     procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hash: Cardinal; IsArtist: Boolean); overload;
     procedure SendSearchCharts(Top: Boolean; Term: string);
     procedure SendGetWishlistUpgrade(Titles: TStringList);
+    procedure SendStreamAnalyzationData(StreamID: Cardinal; Data: TExtendedStream);
 
     property Disabled: Boolean read FDisabled;
     property WasConnected: Boolean read FWasConnected;
@@ -230,7 +231,7 @@ begin
 
   if not Terminated then
     Sleep(3000);
-end;                    // charts suchen. ist im status "suche". verbindung geht, kommt wieder. alles bleibt disabled in chartsansicht.
+end;                    // TODO: charts suchen. ist im status "suche". verbindung geht, kommt wieder. alles bleibt disabled in chartsansicht.
 
 procedure THomeThread.DoMessageReceived(CommandHeader: TCommandHeader;
   Command: TCommandMessageResponse);
@@ -533,6 +534,15 @@ begin
   Cmd.Rating := Rating;
 
   FThread.SendCommand(Cmd);
+end;
+
+procedure THomeCommunication.SendStreamAnalyzationData(
+  StreamID: Cardinal; Data: TExtendedStream);
+begin
+  if not FConnected then
+    Exit;
+
+  FThread.SendCommand(TCommandStreamAnalyzationData.Create(StreamID, Data));
 end;
 
 procedure THomeCommunication.SendSubmitStream(URL: string);
@@ -841,10 +851,7 @@ begin
   Cmd.VersionRevision := AppGlobals.AppVersion.Revision;
   Cmd.VersionBuild := AppGlobals.AppVersion.Build;
   Cmd.Build := AppGlobals.BuildNumber;
-  if Language.CurrentUserLanguage <> nil then
-    Cmd.Language := Language.CurrentUserLanguage.ID
-  else
-    Cmd.Language := Language.CurrentLanguage.ID;
+  Cmd.Language := Language.CurrentLanguage.ID;
   Cmd.ProtoVersion := 2;
 
   FThread.SendCommand(Cmd);

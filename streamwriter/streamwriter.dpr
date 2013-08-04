@@ -136,7 +136,8 @@ uses
   CommandLine in '..\..\common\CommandLine.pas',
   HomeTest in 'HomeTest.pas' {frmHomeTest},
   HomeCommands in 'HomeCommands.pas',
-  SharedData in 'SharedData.pas' {modSharedData: TDataModule};
+  SharedData in 'SharedData.pas' {modSharedData: TDataModule},
+  MonitorAnalyzer in 'streaming\MonitorAnalyzer.pas';
 
 {$SetPEOptFlags $0140}
 

@@ -60,6 +60,7 @@ type
     FOnRecordingStopped: TSocketEvent;
     FOnPlaybackStarted: TSocketEvent;
     FOnMilliSecondsReceived: TSocketEvent;
+    FOnMonitorAnalyzerAnalyzed: TSocketEvent;
 
     FTypedStream: TICEStream;
     FPlayBufferLock: TCriticalSection;
@@ -82,6 +83,7 @@ type
     procedure StreamIOError(Sender: TObject);
     procedure StreamTitleAllowed(Sender: TObject);
     procedure StreamRefreshInfo(Sender: TObject);
+    procedure StreamMonitorAnalyzerAnalyzed(Sender: TObject);
   protected
     procedure Execute; override;
 
@@ -140,6 +142,7 @@ type
     property OnRecordingStopped: TSocketEvent read FOnRecordingStopped write FOnRecordingStopped;
     property OnPlaybackStarted: TSocketEvent read FOnPlaybackStarted write FOnPlaybackStarted;
     property OnMilliSecondsReceived: TSocketEvent read FOnMilliSecondsReceived write FOnMilliSecondsReceived;
+    property OnMonitorAnalyzerAnalyzed: TSocketEvent read FOnMonitorAnalyzerAnalyzed write FOnMonitorAnalyzerAnalyzed;
   end;
 
 implementation
@@ -345,6 +348,11 @@ procedure TICEThread.StreamIOError(Sender: TObject);
 begin
   FState := tsIOError;
   Sync(FOnStateChanged);
+end;
+
+procedure TICEThread.StreamMonitorAnalyzerAnalyzed(Sender: TObject);
+begin
+  Sync(FOnMonitorAnalyzerAnalyzed);
 end;
 
 procedure TICEThread.StreamTitleAllowed(Sender: TObject);
@@ -639,6 +647,7 @@ begin
   FTypedStream.OnIOError := StreamIOError;
   FTypedStream.OnTitleAllowed := StreamTitleAllowed;
   FTypedStream.OnRefreshInfo := StreamRefreshInfo;
+  FTypedStream.OnMonitorAnalyzerAnalyzed := StreamMonitorAnalyzerAnalyzed;
 
   if ProxyEnabled then
     SendData := 'GET ' + AnsiString(URL) + ' HTTP/1.1'#13#10

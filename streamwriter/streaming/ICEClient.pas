@@ -143,6 +143,7 @@ type
     procedure ThreadMilliSecondsReceived(Sender: TSocketThread);
     procedure ThreadBeforeEnded(Sender: TSocketThread);
     procedure ThreadTerminated(Sender: TObject);
+    procedure ThreadMonitorAnalyzerAnalyzed(Sender: TSocketThread);
   public
     constructor Create(Manager: TObject; StartURL: string); overload;
     constructor Create(Manager: TObject; ID, Bitrate: Cardinal; Name, StartURL: string); overload;
@@ -440,6 +441,7 @@ begin
   FICEThread.OnRecordingStopped := ThreadRecordingStopped;
   FICEThread.OnPlaybackStarted := ThreadPlaybackStarted;
   FICEThread.OnMilliSecondsReceived := ThreadMilliSecondsReceived;
+  FICEThread.OnMonitorAnalyzerAnalyzed := ThreadMonitorAnalyzerAnalyzed;
 
   // Das muss hier so früh sein, wegen z.B. RetryDelay - das hat der Stream nämlich nicht,
   // wenn z.B. beim Verbinden was daneben geht.
@@ -602,6 +604,11 @@ begin
 
   if Assigned(FOnSecondsReceived) then
     FOnSecondsReceived(Self);
+end;
+
+procedure TICEClient.ThreadMonitorAnalyzerAnalyzed(Sender: TSocketThread);
+begin
+  HomeComm.SendStreamAnalyzationData(FEntry.ID, TICEThread(Sender).RecvStream.MonitorAnalyzer.WaveDataStream);
 end;
 
 procedure TICEClient.ThreadBeforeEnded(Sender: TSocketThread);

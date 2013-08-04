@@ -24,7 +24,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, ExtendedStream, Commands, AudioFunctions,
-  TypeDefs, Generics.Collections;
+  TypeDefs, Generics.Collections, ZLib;
 
 type
   TSendClientStatTypes = (csSave, csAutoSave);
@@ -361,6 +361,18 @@ type
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
     property Titles: TWishlistUpgradeList read FTitles;
+  end;
+
+  TCommandStreamAnalyzationData = class(TCommand)
+  private
+    FStreamID: Cardinal;
+    FData: TExtendedStream;
+  protected
+    procedure DoGet(S: TExtendedStream); override;
+  public
+    constructor Create; overload;
+    constructor Create(StreamID: Cardinal; Data: TExtendedStream); overload;
+    destructor Destroy; override;
   end;
 
 implementation
@@ -897,6 +909,50 @@ constructor TSyncWishlistRecord.Create(Hash: Cardinal; IsArtist: Boolean);
 begin
   Self.Hash := Hash;
   Self.IsArtist := IsArtist;
+end;
+
+{ TCommandStreamAnalyzationData }
+
+constructor TCommandStreamAnalyzationData.Create;
+begin
+  inherited;
+
+  FData := TExtendedStream.Create;
+  FCommandType := ctStreamAnalyzationData;
+end;
+
+constructor TCommandStreamAnalyzationData.Create(StreamID: Cardinal; Data: TExtendedStream);
+begin
+  Create;
+
+  FStreamID := StreamID;
+  Data.Seek(0, soFromBeginning);
+  FData.CopyFrom(Data, Data.Size);
+end;
+
+destructor TCommandStreamAnalyzationData.Destroy;
+begin
+  FData.Free;
+
+  inherited;
+end;
+
+procedure TCommandStreamAnalyzationData.DoGet(S: TExtendedStream);
+var
+  CompressedData: TExtendedStream;
+begin
+  inherited;
+
+  S.Write(FStreamID);
+
+  FData.Seek(0, soFromBeginning);
+  CompressedData := TExtendedStream.Create;
+  ZLib.ZCompressStream(FData, CompressedData, zcDefault);
+  FData.Free;
+  FData := CompressedData;
+
+  FData.Seek(0, soFromBeginning);
+  S.CopyFrom(FData, FData.Size);
 end;
 
 end.

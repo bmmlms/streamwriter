@@ -154,7 +154,7 @@ object frmSettings: TfrmSettings
     end
     object txtDir: TLabeledEdit
       Left = 4
-      Top = 20
+      Top = 16
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -166,7 +166,7 @@ object frmSettings: TfrmSettings
     end
     object txtDirAuto: TLabeledEdit
       Left = 4
-      Top = 64
+      Top = 60
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -413,7 +413,7 @@ object frmSettings: TfrmSettings
     end
     object txtMaxRetries: TLabeledEdit
       Left = 4
-      Top = 20
+      Top = 16
       Width = 49
       Height = 21
       EditLabel.Width = 222
@@ -524,14 +524,14 @@ object frmSettings: TfrmSettings
     end
     object lblOutputFormat: TLabel
       Left = 4
-      Top = 4
+      Top = 0
       Width = 172
       Height = 13
       Caption = 'Format to convert recorded files to:'
     end
     object btnConfigureEncoder: TPngSpeedButton
       Left = 266
-      Top = 20
+      Top = 16
       Width = 24
       Height = 21
       Hint = 'Configure encoder...'
@@ -544,9 +544,9 @@ object frmSettings: TfrmSettings
     end
     object lstPostProcess: TListView
       Left = 4
-      Top = 52
+      Top = 44
       Width = 257
-      Height = 101
+      Height = 109
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
       Checkboxes = True
@@ -653,7 +653,7 @@ object frmSettings: TfrmSettings
     end
     object lstOutputFormat: TComboBox
       Left = 4
-      Top = 20
+      Top = 16
       Width = 257
       Height = 21
       Style = csDropDownList
@@ -899,7 +899,7 @@ object frmSettings: TfrmSettings
       Left = 4
       Top = 0
       Width = 285
-      Height = 29
+      Height = 33
       Anchors = [akLeft, akTop, akRight, akBottom]
       Columns = <
         item
@@ -1265,16 +1265,16 @@ object frmSettings: TfrmSettings
       69)
     object Label19: TLabel
       Left = 4
-      Top = 4
+      Top = 0
       Width = 266
       Height = 13
       Caption = 'Do not automatically record from the following streams:'
     end
     object pnlBlacklist: TPanel
       Left = 4
-      Top = 20
+      Top = 16
       Width = 285
-      Height = 13
+      Height = 17
       Anchors = [akLeft, akTop, akRight, akBottom]
       BevelOuter = bvNone
       TabOrder = 0
@@ -1470,7 +1470,7 @@ object frmSettings: TfrmSettings
       129)
     object btnResetRemoveChars: TPngSpeedButton
       Left = 264
-      Top = 64
+      Top = 60
       Width = 25
       Height = 21
       Hint = 'Reset pattern to default'
@@ -1507,7 +1507,7 @@ object frmSettings: TfrmSettings
     end
     object txtRemoveChars: TLabeledEdit
       Left = 4
-      Top = 64
+      Top = 60
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1519,7 +1519,7 @@ object frmSettings: TfrmSettings
     end
     object txtFilePatternDecimals: TLabeledEdit
       Left = 4
-      Top = 20
+      Top = 16
       Width = 41
       Height = 21
       EditLabel.Width = 215
@@ -1532,7 +1532,7 @@ object frmSettings: TfrmSettings
     end
     object chkNormalizeVariables: TCheckBox
       Left = 4
-      Top = 96
+      Top = 92
       Width = 284
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1550,9 +1550,9 @@ object frmSettings: TfrmSettings
     Visible = False
     object lstAddons: TListView
       Left = 4
-      Top = 1
+      Top = 0
       Width = 285
-      Height = 32
+      Height = 33
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
       Checkboxes = True
@@ -1630,6 +1630,7 @@ object frmSettings: TfrmSettings
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Submit information about streams to the server'
       TabOrder = 0
+      OnClick = chkSubmitStreamInfoClick
     end
     object chkSubmitStats: TCheckBox
       Left = 4

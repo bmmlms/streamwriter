@@ -188,7 +188,7 @@ end;
 
 procedure TWaveData.AnalyzeData;
 var
-  Level: DWord;
+  Level: DWORD;
   Position: QWORD;
   Counter, OldPercent: Cardinal;
   Len: Extended;
@@ -249,7 +249,6 @@ begin
   end;
 
   FWaveArray[High(FWaveArray)].Len := BASSChannelGetLength(FDecoder, BASS_POS_BYTE) - FWaveArray[High(FWaveArray)].Pos;
-
   FWavesize := FWaveArray[High(FWaveArray)].Pos + FWaveArray[High(FWaveArray)].Len;
 
   FAudioStart := BASSStreamGetFilePosition(FDecoder, BASS_FILEPOS_START);
@@ -483,3 +482,4 @@ begin
 end;
 
 end.
+
