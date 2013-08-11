@@ -693,7 +693,8 @@ begin
 
   if not Bass.DeviceAvailable then
   begin
-    TfrmMsgDlg.ShowMsg(Self, _('No sound devices could be detected so playback of streams and files will not be possible.'), 7, btOk);
+    TfrmMsgDlg.ShowMsg(Self, _('No sound devices could be detected so playback of streams and files will not be possible.'),
+                       mtWarning, [mbOK], mbOK, 7);
   end;
 
   if not DirectoryExists(AppGlobals.Dir) then
@@ -1064,7 +1065,7 @@ begin
       end;
     ceNotification:
       begin
-        TfrmMsgDlg.ShowMsg(Self, Format(_(Notification), [Msg]), btOK);
+        TfrmMsgDlg.ShowMsg(Self, Format(_(Notification), [Msg]), mtInformation, [mbOK], mbOK);
       end;
     ceOneTimeNotification:
       begin
@@ -1079,7 +1080,7 @@ begin
         if MsgHash < 100 then
           MsgHash := MsgHash + 100;
 
-        TfrmMsgDlg.ShowMsg(Self, Format(_(Notification), [Msg]), MsgHash, btOK);
+        TfrmMsgDlg.ShowMsg(Self, Format(_(Notification), [Msg]), mtInformation, [mbOK], mbOK, MsgHash);
       end;
   end;
 end;
@@ -1138,7 +1139,7 @@ begin
     begin
       TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('The system for automatic recordings has been reworked. Titles for automatic recordings now can only be added using the "Title search" tab. ' +
                                                 'The existing titles from the old method are now enqueued to be updated for the new system. This might take some time, just watch your wishlist grow ' +
-                                                'when connected to the server.'), 16, btOK);
+                                                'when connected to the server.'), mtInformation, [mbOK], mbOK, 16);
     end;
 
     if (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or (AppGlobals.LastBrowserUpdate < Now - 15)) or
@@ -1936,7 +1937,7 @@ begin
     end;
 
   if Txt <> '' then
-    TfrmMsgDlg.ShowMsg(Self, Txt, -1, btOK);
+    TfrmMsgDlg.ShowMsg(Self, Txt, mtInformation, [mbOK], mbOK);
 end;
 
 procedure TfrmStreamWriterMain.tabSavedRefresh(Sender: TObject);
@@ -2047,12 +2048,8 @@ end;
 procedure TfrmStreamWriterMain.tabChartsRemoveFromWishlist(Sender: TObject;
   Arr: TWishlistTitleInfoArray);
 var
-  i, n, NumChars: Integer;
-  Hash: Cardinal;
+  i, n: Integer;
   Hashes: TSyncWishlistRecordArray;
-  Found: Boolean;
-  Pattern: string;
-  T: TTitleInfo;
 begin
   SetLength(Hashes, 0);
 
@@ -2654,7 +2651,8 @@ begin
 
   if Rec then
   begin
-    if TfrmMsgDlg.ShowMsg(Self, _('You are recording at least one stream at the moment. Exiting the application will abort streaming.'#13#10'Do you really want to quit?'), 1, btOKCancel) = mtCancel then
+    if TfrmMsgDlg.ShowMsg(Self, _('You are recording at least one stream at the moment. Exiting the application will abort streaming.'#13#10'Do you really want to quit?'),
+                          mtConfirmation, mbYesNo, mbNo, 1) = mrNo then
     begin
       Result := False;
     end;

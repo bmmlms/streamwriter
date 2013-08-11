@@ -388,8 +388,12 @@ var
 begin
   if FMonitoring and (FMonitorAnalyzer <> nil) and (FMetaInt > 0) and (FMonitorAnalyzer.Active) then
   begin
-    FMonitorAnalyzer.Append(RecvStream, CopySize);
-    RecvStream.Position := RecvStream.Position - CopySize;
+    try
+      FMonitorAnalyzer.Append(RecvStream, CopySize);
+      RecvStream.Position := RecvStream.Position - CopySize;
+    except
+      FreeAndNil(FMonitorAnalyzer);
+    end;
   end;
 
   if (FAudioStream <> nil) and (not FMonitoring) then
@@ -1177,10 +1181,13 @@ begin
 
             if FMonitoring and (FMonitorAnalyzer <> nil) then
             begin
-              FMonitorAnalyzer.TitleChanged;
-
-              if not FMonitorAnalyzer.Active then
+              try
+                FMonitorAnalyzer.TitleChanged;
+                if not FMonitorAnalyzer.Active then
+                  FreeAndNil(FMonitorAnalyzer);
+              except
                 FreeAndNil(FMonitorAnalyzer);
+              end;
             end;
 
             for i := 0 to FSettings.IgnoreTrackChangePattern.Count - 1 do

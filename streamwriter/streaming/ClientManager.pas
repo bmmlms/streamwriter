@@ -376,7 +376,6 @@ var
   AutoTuneInMinKbps: Cardinal;
   Client: TICEClient;
   Res: TMayConnectResults;
-  Found: Boolean;
   SaveListTitle: TTitleInfo;
   SaveListArtist: TTitleInfo;
 begin

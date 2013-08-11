@@ -262,7 +262,6 @@ var
   i: Integer;
   TitleUpdated, ArtistUpdated: Boolean;
   Nodes: TNodeArray;
-  NodeData: PTitleNodeData;
   SongSavedMsg: TSongSavedMsg absolute Msg;
 begin
   if Msg is TSongSavedMsg then
@@ -1191,11 +1190,11 @@ begin
 
     if (NumChars <= 3) and ShowMessages then
     begin
-      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('A short pattern may produce many matches, i.e. using ''a'' records/ignores every song containing an ''a''.'), 6, btOK);
+      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('A short pattern may produce many matches, i.e. using ''a'' records/ignores every song containing an ''a''.'), mtInformation, [mbOK], mbOK, 6);
     end;
 
     if ShowMessages and (List = FLists.SaveList) then
-      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('Titles manually entered into the wishlist (without using the "Title search" tab) will not be considered for automatic recordings. Use the "Title search" tab to add titles for automatic recordings.'), 15, btOK);
+      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('Titles manually entered into the wishlist (without using the "Title search" tab) will not be considered for automatic recordings. Use the "Title search" tab to add titles for automatic recordings.'), mtInformation, [mbOK], mbOK, 15);
 
     if Parent = nil then
       Parent := FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]));

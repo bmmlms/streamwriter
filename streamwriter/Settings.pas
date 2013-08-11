@@ -824,7 +824,7 @@ begin
     // Wir geben AOwner mit, so dass das MsgDlg zentriert angezeigt wird.
     // Self ist nämlich noch nicht Visible, haben kein Handle, etc..
     TfrmMsgDlg.ShowMsg(TForm(AOwner), _('Settings from the categories "Streams", "Filenames", "Cut", "Postprocessing" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
-                                        'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), 4, btOK);
+                                        'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), mtInformation, [mbOK], mbOK, 4);
   end else
   begin
     Settings := FStreamSettings[0].Copy;
@@ -1402,7 +1402,7 @@ begin
     end;
 
     if AdvancedDiffers then
-      TfrmMsgDlg.ShowMsg(Self, _('You changed some advanced stream specific settings. If they work, please contribute them to the community by selecting ''Set data...'' using the ''Administration'' menu from the stream browser popup menu.'), 10, btOK);
+      TfrmMsgDlg.ShowMsg(Self, _('You changed some advanced stream specific settings. If they work, please contribute them to the community by selecting ''Set data...'' using the ''Administration'' menu from the stream browser popup menu.'), mtInformation, [mbOK], mbOK, 10);
   end else
   begin
     AppGlobals.Lock;
@@ -2052,7 +2052,7 @@ begin
 
   if ShowMessage and (FIgnoreFieldList.IndexOf(C) > -1) and (not FOptionChanging) then
   begin
-    TfrmMsgDlg.ShowMsg(Self, _('The setting''s configuration you are about to change differs for the selected streams. The new setting will be applied to every selected stream when saving settings using "OK".'), 13, btOK);
+    TfrmMsgDlg.ShowMsg(Self, _('The setting''s configuration you are about to change differs for the selected streams. The new setting will be applied to every selected stream when saving settings using "OK".'), mtInformation, [mbOK], mbOK, 13);
   end;
 
   FIgnoreFieldList.Remove(C);
@@ -2107,7 +2107,8 @@ procedure TfrmSettings.ShowEncoderNeededMessage;
 begin
   TfrmMsgDlg.ShowMsg(Self, _('You enabled a postprocessor that needs a WAVE-file which will be reencoded after processing. ' +
                              'Make sure an encoder for the stream''s format is installed if you did not select another encoder by checking the "Addons" page. ' +
-                             'To configure the encoder, select it at the top of the "Postprocessing" page and click the button next to it.'), 14, btOK);
+                             'To configure the encoder, select it at the top of the "Postprocessing" page and click the button next to it.'),
+                             mtInformation, [mbOK], mbOK, 14);
 end;
 
 procedure TfrmSettings.txtAdjustTrackOffsetChange(Sender: TObject);
@@ -2844,15 +2845,6 @@ begin
     Exit;
   end;
 
-  if chkMonitorMode.Checked then
-    if StrToIntDef(txtMonitorCount.Text, -1) <= 0 then
-    begin
-      MsgBox(Handle, _('Please enter the maximum number of streams to monitor.'), _('Info'), MB_ICONINFORMATION);
-      SetPage(FPageList.Find(TPanel(txtMonitorCount.Parent)));
-      txtMonitorCount.SetFocus;
-      Exit;
-    end;
-
   if Trim(txtRetryDelay.Text) = '' then
   begin
     MsgBox(Handle, _('Please enter the delay between connect retries.'), _('Info'), MB_ICONINFORMATION);
@@ -2870,8 +2862,15 @@ begin
       Exit;
     end;
 
-  if StrToIntDef(txtRetryDelay.Text, 5) > 999 then
-    txtRetryDelay.Text := '999';
+  if chkMonitorMode.Checked then
+  begin
+    if StrToIntDef(txtMonitorCount.Text, -1) <= 0 then
+    begin
+      MsgBox(Handle, _('Please enter the maximum number of streams to monitor.'), _('Info'), MB_ICONINFORMATION);
+      SetPage(FPageList.Find(TPanel(txtMonitorCount.Parent)));
+      txtMonitorCount.SetFocus;
+      Exit;
+    end;
 
   for i := 0 to lstHotkeys.Items.Count - 1 do
     for n := 0 to lstHotkeys.Items.Count - 1 do
@@ -2885,6 +2884,21 @@ begin
         Exit;
       end;
     end;
+
+    if StrToIntDef(txtMonitorCount.Text, -1) > 50 then
+    begin
+      if TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('You entered a high number for streams to monitor. This affects your bandwidth and resources in general. streamWriter might become slow and unresponsible depending on your system. Are you sure you want to do this?'),
+                                                   mtConfirmation, mbOKCancel, mbCancel, 17) = mrCancel then
+      begin
+        SetPage(FPageList.Find(TPanel(txtMonitorCount.Parent)));
+        txtMonitorCount.SetFocus;
+        Exit;
+      end;
+    end;
+  end;
+
+  if StrToIntDef(txtRetryDelay.Text, 5) > 999 then
+    txtRetryDelay.Text := '999';
 
   Result := True;
 end;
@@ -3044,7 +3058,8 @@ begin
     RemoveGray(chkOnlySaveFull);
 
     if (Length(FStreamSettings) > 0) and (not FOptionChanging) then
-      TfrmMsgDlg.ShowMsg(Self, _('When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.'), 5, btOK);
+      TfrmMsgDlg.ShowMsg(Self, _('When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.'),
+                         mtInformation, [mbOK], mbOK, 5);
   end;
 end;
 
@@ -3093,7 +3108,8 @@ begin
     chkDeleteStreams.Checked := chkDeleteStreams.Enabled and AppGlobals.StreamSettings.DeleteStreams;
 
     if Length(FStreamSettings) > 0 then
-      TfrmMsgDlg.ShowMsg(Self, _('When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.'), 3, btOK);
+      TfrmMsgDlg.ShowMsg(Self, _('When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.'),
+                         mtInformation, [mbOK], mbOK, 3);
   end;
 end;
 

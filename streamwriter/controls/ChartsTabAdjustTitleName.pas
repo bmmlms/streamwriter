@@ -66,7 +66,7 @@ begin
 
   if NumChars <= 3 then
   begin
-    TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('A short pattern may produce many matches, i.e. using ''a'' records/ignores every song containing an ''a''.'), 6, btOK);
+    TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('A short pattern may produce many matches, i.e. using ''a'' records/ignores every song containing an ''a''.'), mtInformation, [mbOK], mbOK, 6);
   end;
 
   TitleName := Trim(txtTitle.Text);

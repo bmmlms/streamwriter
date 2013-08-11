@@ -31,7 +31,7 @@ uses
   Graphics, SharedControls, Generics.Collections, Generics.Defaults, Math,
   Logging, DynBass, StreamData, Forms, MsgDlg, TypeDefs, MessageBus,
   AppMessages, PlayerManager, PlaylistHandler, AudioFunctions, SharedData,
-  PngSpeedButton;
+  PngSpeedButton, Dialogs;
 
 type
   TSidebar = class(TPageControl)
@@ -481,7 +481,7 @@ begin
   if not OnlyAutomatic then
     if TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('All selected streams will be removed from the list. This also means that their ' +
                                                  'settings and ignorelists get deleted.'#13#10'Are you sure you want to continue?'),
-                                                 8, btOKCancel) = mtCancel
+                                                 mtConfirmation, [mbOK, mbCancel], mbCancel, 8) = mrCancel
     then
       Exit;
 

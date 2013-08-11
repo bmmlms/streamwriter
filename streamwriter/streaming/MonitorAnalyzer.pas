@@ -69,15 +69,11 @@ function BASSRead(buffer: Pointer; length: DWORD; user: Pointer): DWORD; stdcall
 var
   Mem: TExtendedStream;
   CopyLen: Cardinal;
-  Tries: Integer;
 begin
-  Tries := 0;
   Result := 0;
-
 
   Mem := TMonitorAnalyzer(user).FStream;
 
-  Tries := 0;
   if Mem.Size = 0 then
     Exit;
 
@@ -97,8 +93,6 @@ begin
 end;
 
 constructor TMonitorAnalyzer.Create;
-var
-  Funcs: BASS_FILEPROCS;
 begin
   FActive := True;
   FStream := TExtendedStream.Create;
@@ -118,32 +112,26 @@ begin
   inherited;
 end;
 
-  // TODO: eine minute musik sind ca. 12kb daten-datei. wenn jetzt ein stream nie den titel wechselt und so muss ich das hier abbrechen,
-  //       sonst wird das zu viel im schlimmsten fall.
-
 procedure TMonitorAnalyzer.Append(Source: TExtendedStream; Count: Integer);
 var
-  TmpStream: TExtendedStream;
-  Start: UInt64;
-  i: Integer;
   Funcs: BASS_FILEPROCS;
   BC: Cardinal;
-  P: QWORD;
   Level: DWORD;
 begin
   if not FActive then
     Exit;
-
-  // TODO: überall exceptions irgendwie abfangen und so! aber erstmal schön ein paar tage für mich selber laufen lassen.
-  //       und streams zuweisen lassen zum testen!
-  //       generell auch auf fehler prüfen beim stream interpretieren. wenn nie daten gelesen wurden brauche ich auch
-  //       nichts abschicken, wenn genug title-changes da waren. schön stabil machen hier.
 
   FStream.Seek(0, soFromEnd);
   FStream.CopyFrom(Source, Count);
 
   if FStream.Size < 32768 then
     Exit;
+
+  if FStream.Size > 1048576 then
+  begin
+    FActive := False;
+    Exit;
+  end;
 
   // Der Player darf erst hier erstellen. Es müssen beim erstellen Daten da sein, deshalb geht es
   // im Konstruktor nicht (es wird direkt BASSRead aufgerufen, wenn da nichts rauskommt ist ende!)
@@ -184,15 +172,13 @@ end;
 procedure TMonitorAnalyzer.TitleChanged;
 var
   i: Integer;
-  WaveData: TWaveData;
 begin
   if not FActive then
     Exit;
 
   FTitleChanges.Add(FWaveDataStream.Size);
 
-  // TODO: Count auf > 6 oder so abfragen.
-  if FTitleChanges.Count > 2 then
+  if FTitleChanges.Count > 6 then
   begin
     FActive := False;
 
@@ -201,7 +187,7 @@ begin
     FWaveDataStream.Write(Byte(FTitleChanges.Count));
 
     if (FWaveDataStream.Size > 4096) and (Assigned(FOnAnalyzed)) then
-      FOnAnalyzed(Self);
+       FOnAnalyzed(Self);
   end;
 end;
 
