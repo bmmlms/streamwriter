@@ -70,6 +70,7 @@ type
   TCommandHandshakeResponse = class(TCommand)
   private
     FSuccess: Boolean;
+    FServerTime: Cardinal;
   protected
   public
     constructor Create;
@@ -77,6 +78,7 @@ type
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
     property Success: Boolean read FSuccess;
+    property ServerTime: Cardinal read FServerTime;
   end;
 
   TCommandUpdateStats = class(TCommand)
@@ -134,11 +136,11 @@ type
   private
     FStreamID: Cardinal;
     FStreamName: string;
-    FTitle: string;
+    FStreamTitle: string;
     FCurrentURL: string;
     FBitrate: Cardinal;
     FFormat: TAudioTypes;
-    FTitleRegEx: string;
+    FRegExes: TStringList;
     FServerHash: Cardinal;
     FServerArtistHash: Cardinal;
   protected
@@ -149,11 +151,11 @@ type
 
     property StreamID: Cardinal read FStreamID;
     property StreamName: string read FStreamName;
-    property Title: string read FTitle;
+    property StreamTitle: string read FStreamTitle;
     property CurrentURL: string read FCurrentURL;
     property Bitrate: Cardinal read FBitrate;
     property Format: TAudioTypes read FFormat;
-    property TitleRegEx: string read FTitleRegEx;
+    property RegExes: TStringList read FRegExes;
     property ServerHash: Cardinal read FServerHash;
     property ServerArtistHash: Cardinal read FServerArtistHash;
   end;
@@ -265,7 +267,7 @@ type
   private
     FStreamID: Cardinal;
     FStreamName: string;
-    FTitle: string;
+    FStreamTitle: string;
     FCurrentURL: string;
     FURL: string;
     FFormat: TAudioTypes;
@@ -275,7 +277,7 @@ type
     procedure DoGet(S: TExtendedStream); override;
   public
     constructor Create; overload;
-    constructor Create(StreamID: Cardinal; StreamName, Title, CurrentURL, URL: string;
+    constructor Create(StreamID: Cardinal; StreamName, StreamTitle, CurrentURL, URL: string;
       Format: TAudioTypes; Kbps: Cardinal; URLs: string); overload;
   end;
 
@@ -415,6 +417,7 @@ begin
   inherited;
 
   Stream.Read(FSuccess);
+  Stream.Read(FServerTime);
 end;
 
 { TCommandGetServerData }
@@ -501,17 +504,27 @@ procedure TCommandNetworkTitleChangedResponse.Load(CommandHeader: TCommandHeader
   Stream: TExtendedStream);
 var
   B: Byte;
+  i: Integer;
+  C: Cardinal;
+  Tmp: string;
 begin
   inherited;
 
   Stream.Read(FStreamID);
   Stream.Read(FStreamName);
-  Stream.Read(FTitle);
+  Stream.Read(FStreamTitle);
   Stream.Read(FCurrentURL);
   Stream.Read(FBitrate);
   Stream.Read(B);
   FFormat := TAudioTypes(B);
-  Stream.Read(FTitleRegEx);
+
+  Stream.Read(C);
+  for i := 0 to C - 1 do
+  begin
+    Stream.Read(Tmp);
+    FRegExes.Add(Tmp);
+  end;
+
   Stream.Read(FServerHash);
   Stream.Read(FServerArtistHash);
 end;
@@ -681,14 +694,14 @@ begin
 end;
 
 constructor TCommandTitleChanged.Create(StreamID: Cardinal; StreamName,
-  Title, CurrentURL, URL: string; Format: TAudioTypes; Kbps: Cardinal;
+  StreamTitle, CurrentURL, URL: string; Format: TAudioTypes; Kbps: Cardinal;
   URLs: string);
 begin
   Create;
 
   FStreamID := StreamID;
   FStreamName := StreamName;
-  FTitle := Title;
+  FStreamTitle := StreamTitle;
   FCurrentURL := CurrentURL;
   FURL := URL;
   FFormat := Format;
@@ -702,7 +715,7 @@ begin
 
   S.Write(FStreamID);
   S.Write(FStreamName);
-  S.Write(FTitle);
+  S.Write(FStreamTitle);
   S.Write(FCurrentURL);
   S.Write(FURL);
   S.Write(Byte(FFormat));

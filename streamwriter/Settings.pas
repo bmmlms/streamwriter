@@ -138,7 +138,7 @@ type
     Label19: TLabel;
     chkSnapMain: TCheckBox;
     pnlStreamsAdvanced: TPanel;
-    txtTitlePattern: TLabeledEdit;
+    txtRegEx: TLabeledEdit;
     btnResetTitlePattern: TPngSpeedButton;
     btnConfigure: TButton;
     chkRememberRecordings: TCheckBox;
@@ -200,6 +200,11 @@ type
     txtMonitorCount: TLabeledEdit;
     chkCoverPanelAlwaysVisible: TCheckBox;
     chkDiscardAlways: TCheckBox;
+    chkAutostart: TCheckBox;
+    Label21: TLabel;
+    lstRegExes: TListView;
+    btnAddRegEx: TButton;
+    btnRemoveRegEx: TButton;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -239,7 +244,7 @@ type
     procedure lstHotkeysResize(Sender: TObject);
     procedure txtFilePatternDecimalsChange(Sender: TObject);
     procedure btnBlacklistRemoveClick(Sender: TObject);
-    procedure txtTitlePatternChange(Sender: TObject);
+    procedure txtRegExChange(Sender: TObject);
     procedure btnResetTitlePatternClick(Sender: TObject);
     procedure btnResetFilePatternClick(Sender: TObject);
     procedure lstPostProcessItemChecked(Sender: TObject; Item: TListItem);
@@ -277,6 +282,13 @@ type
     procedure Label8Click(Sender: TObject);
     procedure Label20Click(Sender: TObject);
     procedure chkSubmitStreamInfoClick(Sender: TObject);
+    procedure lstRegExesChange(Sender: TObject; Item: TListItem;
+      Change: TItemChange);
+    procedure lstRegExesEdited(Sender: TObject; Item: TListItem;
+      var S: string);
+    procedure lstRegExesResize(Sender: TObject);
+    procedure btnAddRegExClick(Sender: TObject);
+    procedure btnRemoveRegExClick(Sender: TObject);
   private
     FInitialized: Boolean;
     FOptionChanging: Boolean;
@@ -352,10 +364,16 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
     ShowDialog := False;
     S := FStreamSettings[0];
 
-    if Length(FStreamSettings) > 1 then
-      for i := 1 to Length(FStreamSettings) - 1 do
-        if GetStringListHash(S.IgnoreTrackChangePattern) <> GetStringListHash(FStreamSettings[i].IgnoreTrackChangePattern) then
-          AddField(lstIgnoreTitles);
+    F := False;
+    for i := 1 to Length(FStreamSettings) - 1 do
+      if GetStringListHash(S.IgnoreTrackChangePattern) <> GetStringListHash(FStreamSettings[i].IgnoreTrackChangePattern) then
+      begin
+        F := True;
+        ShowDialog := True;
+        Break;
+      end;
+    if F then
+      AddField(lstIgnoreTitles);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -541,16 +559,14 @@ constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.TitlePattern <> FStreamSettings[i].TitlePattern then
+      if GetStringListHash(S.RegExes) <> GetStringListHash(FStreamSettings[i].RegExes) then
       begin
         F := True;
         ShowDialog := True;
         Break;
       end;
-    end;
     if F then
-      AddField(txtTitlePattern);
+      AddField(lstRegExes);
 
     F := False;
     for i := 1 to Length(FStreamSettings) - 1 do
@@ -843,6 +859,13 @@ begin
       btnReset.Caption := '&Apply general settings';
       btnReset.OnClick := btnResetClick;
 
+      for i := 0 to Settings.RegExes.Count - 1 do
+      begin
+        Item := lstRegExes.Items.Add;
+        Item.Caption := Settings.RegExes[i];
+        Item.ImageIndex := 7;
+      end;
+
       for i := 0 to Settings.IgnoreTrackChangePattern.Count - 1 do
       begin
         Item := lstIgnoreTitles.Items.Add;
@@ -1072,7 +1095,6 @@ begin
   chkOverwriteSmaller.Checked := Settings.OverwriteSmaller;
   chkDiscardSmaller.Checked := Settings.DiscardSmaller;
   chkDiscardAlways.Checked := Settings.DiscardAlways;
-  txtTitlePattern.Text := Settings.TitlePattern;
 
   chkSkipShort.Checked := Settings.SkipShort;
   chkSearchSilence.Checked := Settings.SearchSilence;
@@ -1081,6 +1103,7 @@ begin
   chkSearchSilenceClick(nil);
   chkManualSilenceLevelClick(nil);
 
+  chkAutostart.Checked := FileExists(IncludeTrailingPathDelimiter(GetShellFolder(CSIDL_STARTUP)) + AppGlobals.AppName + '.lnk');
   chkTray.Checked := AppGlobals.Tray;
   chkSnapMain.Checked := AppGlobals.SnapMain;
   chkRememberRecordings.Checked := AppGlobals.RememberRecordings;
@@ -1210,14 +1233,13 @@ var
   PostProcessor: TPostProcessBase;
   EP: TExternalPostProcess;
   Item: TListItem;
-  OldTitlePattern: string;
-  OldIgnoreTitles: Cardinal;
+  OldRegExes, OldIgnoreTitles: Cardinal;
 begin
   AdvancedDiffers := False;
 
   if Length(FStreamSettings) > 0 then
   begin
-    OldTitlePattern := FStreamSettings[0].TitlePattern;
+    OldRegExes := GetStringListHash(FStreamSettings[0].RegExes);
     OldIgnoreTitles := GetStringListHash(FStreamSettings[0].IgnoreTrackChangePattern);
 
     for i := 0 to Length(FStreamSettings) - 1 do
@@ -1260,10 +1282,6 @@ begin
 
       if FIgnoreFieldList.IndexOf(chkDiscardAlways) = -1 then
         FStreamSettings[i].DiscardAlways := chkDiscardAlways.Checked;
-
-      if Length(FStreamSettings) > 0 then
-        if FIgnoreFieldList.IndexOf(txtTitlePattern) = -1 then
-          FStreamSettings[i].TitlePattern := txtTitlePattern.Text;
 
       if pnlCut.Tag = 0 then
       begin
@@ -1330,6 +1348,13 @@ begin
       if FIgnoreFieldList.IndexOf(chkOnlySaveFull) = -1 then
         FStreamSettings[i].OnlySaveFull := chkOnlySaveFull.Checked;
 
+      if (FIgnoreFieldList.IndexOf(lstRegExes) = -1) and (Length(FStreamSettings) > 0) then
+      begin
+        FStreamSettings[i].RegExes.Clear;
+        for n := 0 to lstRegExes.Items.Count - 1 do
+          FStreamSettings[i].RegExes.Add(lstRegExes.Items[n].Caption);
+      end;
+
       if (FIgnoreFieldList.IndexOf(lstIgnoreTitles) = -1) and (Length(FStreamSettings) > 0) then
       begin
         FStreamSettings[i].IgnoreTrackChangePattern.Clear;
@@ -1394,8 +1419,7 @@ begin
         // -----------------------------------------------------------
       end;
 
-
-      if (FIgnoreFieldList.IndexOf(txtTitlePattern) = -1) and (OldTitlePattern <> FStreamSettings[i].TitlePattern) then
+      if (FIgnoreFieldList.IndexOf(lstRegExes) = -1) and (GetStringListHash(FStreamSettings[i].RegExes) <> OldRegExes) then
         AdvancedDiffers := True;
       if (FIgnoreFieldList.IndexOf(lstIgnoreTitles) = -1) and (GetStringListHash(FStreamSettings[i].IgnoreTrackChangePattern) <> OldIgnoreTitles) then
         AdvancedDiffers := True;
@@ -1444,6 +1468,16 @@ begin
 
     if lstSoundDevice.ItemIndex > -1 then
       AppGlobals.SoundDevice := TBassDevice(lstSoundDevice.Items.Objects[lstSoundDevice.ItemIndex]).ID;
+
+    // TODO: minimiert starten!
+    // TODO: testen auf 2k und xp.
+    if chkAutostart.Checked then
+    begin
+      CreateLink(Application.ExeName, PChar(GetShellFolder(CSIDL_STARTUP)), AppGlobals.AppName, '-minimize', False);
+    end else
+    begin
+      CreateLink(Application.ExeName, PChar(GetShellFolder(CSIDL_STARTUP)), AppGlobals.AppName, '', True);
+    end;
 
     AppGlobals.Dir := txtDir.Text;
     AppGlobals.DirAuto := txtDirAuto.Text;
@@ -1881,6 +1915,30 @@ begin
   btnConfigure.Enabled := (Item <> nil) and Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
 end;
 
+procedure TfrmSettings.lstRegExesChange(Sender: TObject; Item: TListItem;
+  Change: TItemChange);
+begin
+  btnRemoveRegEx.Enabled := lstRegExes.Selected <> nil;
+end;
+
+procedure TfrmSettings.lstRegExesEdited(Sender: TObject; Item: TListItem;
+  var S: string);
+begin
+  inherited;
+
+  if Trim(S) = '' then
+    S := Item.Caption
+  else
+    RemoveGray(lstRegExes);
+end;
+
+procedure TfrmSettings.lstRegExesResize(Sender: TObject);
+begin
+  inherited;
+
+  lstRegExes.Columns[0].Width := lstRegExes.ClientWidth - 25;
+end;
+
 procedure TfrmSettings.optAdjustClick(Sender: TObject);
 begin
   inherited;
@@ -2275,12 +2333,11 @@ begin
     txtPreview.Text := '';
 end;
 
-procedure TfrmSettings.txtTitlePatternChange(Sender: TObject);
+procedure TfrmSettings.txtRegExChange(Sender: TObject);
 begin
   inherited;
 
-  if FInitialized then
-    RemoveGray(txtTitlePattern);
+  btnAddRegEx.Enabled := Length(Trim(txtRegEx.Text)) >= 1;
 end;
 
 procedure TfrmSettings.UpdatePostProcessUpDown;
@@ -2315,6 +2372,20 @@ begin
   txtIgnoreTitlePattern.SetFocus;
 
   RemoveGray(lstIgnoreTitles);
+end;
+
+procedure TfrmSettings.btnAddRegExClick(Sender: TObject);
+var
+  Item: TListItem;
+begin
+  // TODO: regex validieren!!! mindestens "a" und "t" müssen drin sein und es muss parsebar sein!
+  Item := lstRegExes.Items.Add;
+  Item.Caption := txtRegEx.Text;
+  Item.ImageIndex := 7;
+  txtRegEx.Text := '';
+  txtRegEx.SetFocus;
+
+  RemoveGray(lstRegExes);
 end;
 
 procedure TfrmSettings.btnAddClick(Sender: TObject);
@@ -2566,6 +2637,13 @@ begin
   RemoveGray(lstIgnoreTitles);
 end;
 
+procedure TfrmSettings.btnRemoveRegExClick(Sender: TObject);
+begin
+  lstRegExes.Items.Delete(lstRegExes.Selected.Index);
+
+  RemoveGray(lstRegExes);
+end;
+
 procedure TfrmSettings.btnResetClick(Sender: TObject);
 var
   i: Integer;
@@ -2630,8 +2708,8 @@ procedure TfrmSettings.btnResetTitlePatternClick(Sender: TObject);
 begin
   inherited;
 
-  txtTitlePattern.Text := '(?P<a>.*) - (?P<t>.*)';
-  RemoveGray(txtTitlePattern);
+  txtRegEx.Text := '(?P<a>.*) - (?P<t>.*)';
+  txtRegEx.SetFocus;
 end;
 
 procedure TfrmSettings.BuildHotkeys;
@@ -2730,14 +2808,6 @@ begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of stream files so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtStreamFilePattern.Parent)));
     txtStreamFilePattern.SetFocus;
-    Exit;
-  end;
-
-  if Trim(txtTitlePattern.Text) = '' then
-  begin
-    MsgBox(Handle, _('Please enter a regular expression to retrieve artist and title from broadcasted track information.'), _('Info'), MB_ICONINFORMATION);
-    SetPage(FPageList.Find(TPanel(txtTitlePattern.Parent)));
-    txtTitlePattern.SetFocus;
     Exit;
   end;
 

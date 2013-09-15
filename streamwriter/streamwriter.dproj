@@ -146,9 +146,6 @@
 			<DCCReference Include="Timers.pas">
 				<Form>frmTimers</Form>
 			</DCCReference>
-			<DCCReference Include="StreamData.pas">
-				<Form>frmStreamData</Form>
-			</DCCReference>
 			<DCCReference Include="postprocess\PostProcessSoX.pas"/>
 			<DCCReference Include="DownloadAddons.pas">
 				<Form>frmDownloadAddons</Form>

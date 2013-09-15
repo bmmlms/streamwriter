@@ -47,9 +47,10 @@ type
   TStartStreamingInfo = record
   public
     ID, Bitrate: Cardinal;
-    Name, URL, TitlePattern: string;
+    Name, URL: string;
+    RegExes: TStringList;
     IgnoreTitles: TStringList;
-    constructor Create(ID, Bitrate: Cardinal; Name, URL, TitlePattern: string; IgnoreTitles: TStringList);
+    constructor Create(ID, Bitrate: Cardinal; Name, URL: string; RegExes, IgnoreTitles: TStringList);
   end;
   TStartStreamingInfoArray = array of TStartStreamingInfo;
 
@@ -66,14 +67,14 @@ implementation
 
 { TStartStreamingInfo }
 
-constructor TStartStreamingInfo.Create(ID, Bitrate: Cardinal; Name, URL,
-  TitlePattern: string; IgnoreTitles: TStringList);
+constructor TStartStreamingInfo.Create(ID, Bitrate: Cardinal; Name, URL: string;
+  RegExes, IgnoreTitles: TStringList);
 begin
   Self.ID := ID;
   Self.Bitrate := Bitrate;
   Self.Name := Name;
   Self.URL := Trim(URL);
-  Self.TitlePattern := TitlePattern;
+  Self.RegExes := RegExes;
   Self.IgnoreTitles := IgnoreTitles;
 end;
 

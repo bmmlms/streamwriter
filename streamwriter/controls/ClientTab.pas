@@ -29,9 +29,9 @@ uses
   DataManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
   GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs,
   Graphics, SharedControls, Generics.Collections, Generics.Defaults, Math,
-  Logging, DynBass, StreamData, Forms, MsgDlg, TypeDefs, MessageBus,
-  AppMessages, PlayerManager, PlaylistHandler, AudioFunctions, SharedData,
-  PngSpeedButton, Dialogs;
+  Logging, DynBass, Forms, MsgDlg, TypeDefs, MessageBus, AppMessages,
+  PlayerManager, PlaylistHandler, AudioFunctions, SharedData, PngSpeedButton,
+  Dialogs;
 
 type
   TSidebar = class(TPageControl)
@@ -166,7 +166,7 @@ type
     procedure FClientViewDblClick(Sender: TObject);
     procedure FClientViewKeyPress(Sender: TObject; var Key: Char);
     procedure FClientViewKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL, TitlePattern: string;
+    procedure FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string; RegExes,
       IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 
     procedure StreamBrowserAction(Sender: TObject; Action: TStreamOpenActions; Streams: TStreamDataArray);
@@ -823,11 +823,11 @@ var
 begin
   if FAddressBar.FStations.ItemIndex = -1 then
   begin
-    StartStreaming(TStartStreamingInfo.Create(0, 0, '', FAddressBar.FStations.Text, '', nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere)
+    StartStreaming(TStartStreamingInfo.Create(0, 0, '', FAddressBar.FStations.Text, nil, nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere)
   end else
   begin
     Entry := TRecentEntry(FAddressBar.FStations.ItemsEx[FAddressBar.FStations.ItemIndex].Data);
-    StartStreaming(TStartStreamingInfo.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, '', nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere);
+    StartStreaming(TStartStreamingInfo.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, nil, nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere);
   end;
 end;
 
@@ -1304,10 +1304,10 @@ begin
 end;
 
 procedure TClientTab.FClientViewStartStreaming(Sender: TObject;
-  ID, Bitrate: Cardinal; Name, URL, TitlePattern: string; IgnoreTitles: TStringList;
+  ID, Bitrate: Cardinal; Name, URL: string; RegExes, IgnoreTitles: TStringList;
   Node: PVirtualNode; Mode: TVTNodeAttachMode);
 begin
-  StartStreaming(TStartStreamingInfo.Create(ID, Bitrate, Name, URL, TitlePattern, IgnoreTitles), AppGlobals.DefaultActionBrowser, Node, Mode);
+  StartStreaming(TStartStreamingInfo.Create(ID, Bitrate, Name, URL, RegExes, IgnoreTitles), AppGlobals.DefaultActionBrowser, Node, Mode);
 end;
 
 procedure TClientTab.MessageReceived(Msg: TMessageBase);
@@ -1490,7 +1490,7 @@ begin
         try
           PH.ParsePlaylist(Info.URL);
           for i := 0 to PH.URLs.Count - 1 do
-            StartStreaming(TStartStreamingInfo.Create(Info.ID, Info.Bitrate, Info.Name, PH.URLs[i], Info.TitlePattern, Info.IgnoreTitles),
+            StartStreaming(TStartStreamingInfo.Create(Info.ID, Info.Bitrate, Info.Name, PH.URLs[i], Info.RegExes, Info.IgnoreTitles),
               oaAdd, HitNode, Mode);
         finally
           PH.Free;
@@ -1530,8 +1530,8 @@ begin
         if ValidURL(Info.URL) then
         begin
           Client := FClients.AddClient(Info.ID, Info.Bitrate, Info.Name, Info.URL);
-          if Trim(Info.TitlePattern) <> '' then
-            Client.Entry.Settings.TitlePattern := Info.TitlePattern;
+          if Info.RegExes <> nil then
+            Client.Entry.Settings.RegExes.Assign(Info.RegExes);
 
           if Info.IgnoreTitles <> nil then
             Client.Entry.Settings.IgnoreTrackChangePattern.Assign(Info.IgnoreTitles);
@@ -1612,7 +1612,6 @@ var
   i: Integer;
   s: string;
   Entries: TPlaylistEntryArray;
-  SD: TfrmStreamData;
   ND: PStreamNodeData;
   Settings: TStreamSettings;
   Client: TICEClient;
@@ -1635,7 +1634,7 @@ begin
     for i := 0 to Length(Streams) - 1 do
     begin
       SetLength(Arr, Length(Arr) + 1);
-      Arr[High(Arr)] := TStartStreamingInfo.Create(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].RegEx, Streams[i].IgnoreTitles);
+      Arr[High(Arr)] := TStartStreamingInfo.Create(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].RegExes, Streams[i].IgnoreTitles);
     end;
     StartStreaming(Arr, Action, nil, amNoWhere);
     Exit;
@@ -1667,6 +1666,11 @@ begin
       FSideBar.FBrowserView.RefreshStreams;
     oaSetData:
       begin
+        // TODO: wenn ein stream in den letzten 100 titeln öfter mal hintereinander den SELBEN titel meta mäßig spielt => kicken!
+        // TODO: das darf nur mit auth klappen alles!
+        ShellExecute(Handle, 'open', 'http://streamdata.streamwriter.org', '', '', 1)
+
+        {
         if not HomeComm.Authenticated then
           FOnAuthRequired(Self)
         else
@@ -1701,6 +1705,7 @@ begin
             SD.Free;
           end;
         end;
+        }
       end;
     oaRate1:
       Rate(1);

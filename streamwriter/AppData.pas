@@ -91,7 +91,6 @@ type
     settings, it is also used in every TStreamEntry which defines configuration of a specific stream }
   TStreamSettings = class
   private
-    FTitlePattern: string;
     FFilePattern: string;
     FIncompleteFilePattern: string;
     FStreamFilePattern: string;
@@ -124,6 +123,7 @@ type
     FDiscardSmaller: Boolean;
     FDiscardAlways: Boolean;
     FOutputFormat: TAudioTypes;
+    FRegExes: TStringList;
     FIgnoreTrackChangePattern: TStringList;
     FPostProcessors: TPostProcessorList;
     FEncoderSettings: TEncoderSettingsList;
@@ -146,8 +146,8 @@ type
     // Copies this instance of TStreamSettings
     function Copy: TStreamSettings;
 
-    // The pattern (Regex) to detect artist/title/album from broadcasted titles
-    property TitlePattern: string read FTitlePattern write FTitlePattern;
+    // The patterns (Regexes) to detect artist/title/album from broadcasted titles
+    property RegExes: TStringList read FRegExes write FRegExes;
     // The pattern for recorded files
     property FilePattern: string read FFilePattern write FFilePattern;
     // The pattern for incompletely recorded files
@@ -607,7 +607,7 @@ begin
 
   //FStorage.Read('EasyMode', FEasyMode, FLastUsedDataVersion = 0);
 
-  FStreamSettings.FTitlePattern := '(?P<a>.*) - (?P<t>.*)';
+  FStreamSettings.RegExes.Add('(?P<a>.*) - (?P<t>.*)');
 
   FStorage.Read('FilePattern', FStreamSettings.FFilePattern, '%s\%a - %t');
   FStorage.Read('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern, '%s\%a - %t');
@@ -996,6 +996,7 @@ constructor TStreamSettings.Create(InitStuff: Boolean = True);
 begin
   inherited Create;
 
+  FRegExes := TStringList.Create;
   FIgnoreTrackChangePattern := TStringList.Create;
   FPostProcessors := TPostProcessorList.Create;
   FEncoderSettings := TEncoderSettingsList.Create;
@@ -1008,6 +1009,7 @@ destructor TStreamSettings.Destroy;
 var
   i: Integer;
 begin
+  FRegExes.Free;
   FIgnoreTrackChangePattern.Free;
 
   for i := 0 to FPostProcessors.Count - 1 do
@@ -1046,9 +1048,10 @@ class function TStreamSettings.Load(Stream: TExtendedStream;
 var
   B: Byte;
   i, Count, FilterTmp, TypeTmp: Integer;
+  C: Cardinal;
   T: TPostProcessTypes;
   AT: TAudioTypes;
-  IgnoreTmp: string;
+  Tmp: string;
   PP: TPostProcessBase;
   ES: TEncoderSettings;
 begin
@@ -1056,13 +1059,23 @@ begin
 
   if Version < 15 then
   begin
-    Result.FTitlePattern := '(?P<a>.*) - (?P<t>.*)';
+    Result.FRegExes.Add('(?P<a>.*) - (?P<t>.*)');
     Stream.Read(Result.FFilePattern);
+  end else if Version < 58 then
+  begin
+    Stream.Read(Tmp);
+    Result.FRegExes.Add(Tmp);
   end else
   begin
-    Stream.Read(Result.FTitlePattern);
-    Stream.Read(Result.FFilePattern);
+    Stream.Read(C);
+    for i := 0 to C - 1 do
+    begin
+      Stream.Read(Tmp);
+      Result.FRegExes.Add(Tmp);
+    end;
   end;
+
+  Stream.Read(Result.FFilePattern);
 
   if Version >= 17 then
   begin
@@ -1225,8 +1238,8 @@ begin
     Stream.Read(Count);
     for i := 0 to Count - 1 do
     begin
-      Stream.Read(IgnoreTmp);
-      Result.FIgnoreTrackChangePattern.Add(IgnoreTmp);
+      Stream.Read(Tmp);
+      Result.FIgnoreTrackChangePattern.Add(Tmp);
     end;
   end;
 
@@ -1276,8 +1289,12 @@ procedure TStreamSettings.Save(Stream: TExtendedStream);
 var
   i: Integer;
   Count: Integer;
+  C: Cardinal;
 begin
-  Stream.Write(FTitlePattern);
+  Stream.Write(FRegExes.Count);
+  for i := 0 to FRegExes.Count - 1 do
+    Stream.Write(FRegExes[i]);
+
   Stream.Write(FFilePattern);
   Stream.Write(FIncompleteFilePattern);
   Stream.Write(FStreamFilePattern);
@@ -1342,7 +1359,8 @@ procedure TStreamSettings.Assign(From: TStreamSettings);
 var
   i: Integer;
 begin
-  FTitlePattern := From.FTitlePattern;
+  FRegExes.Assign(From.FRegExes);
+
   FFilePattern := From.FFilePattern;
   FIncompleteFilePattern := From.FIncompleteFilePattern;
   FStreamFilePattern := From.FStreamFilePattern;

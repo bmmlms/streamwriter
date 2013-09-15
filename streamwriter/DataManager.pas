@@ -85,7 +85,7 @@ type
     FOwnRating: Byte;
     FRating: Byte;
     FRecordingOkay: Boolean;
-    FRegEx: string;
+    FRegExes: TStringList;
     FIgnoreTitles: TStringList;
   public
     constructor Create;
@@ -123,7 +123,7 @@ type
     // When set recording from this stream is okay (user rated it this way and it does not change titles in songs (see (ChangesTitleInSong))
     property RecordingOkay: Boolean read FRecordingOkay write FRecordingOkay;
     // The regular expression to extract artist/title/album from stream titles
-    property RegEx: string read FRegEx write FRegEx;
+    property RegExes: TStringList read FRegExes write FRegExes;
     // A list containing titles to ignore for track changes
     property IgnoreTitles: TStringList read FIgnoreTitles;
   end;
@@ -625,7 +625,7 @@ type
   end;
 
 const
-  DATAVERSION = 57;
+  DATAVERSION = 58;
 
 implementation
 
@@ -1970,11 +1970,13 @@ begin
   inherited;
 
   FIgnoreTitles := TStringList.Create;
+  FRegExes := TStringList.Create;
 end;
 
 destructor TStreamBrowserEntry.Destroy;
 begin
   FIgnoreTitles.Free;
+  FRegExes.Free;
 
   inherited;
 end;
@@ -1993,7 +1995,7 @@ begin
   FOwnRating := Source.FOwnRating;
   FRating := Source.FRating;
   FRecordingOkay := Source.FRecordingOkay;
-  FRegEx := Source.FRegEx;
+  FRegExes.Assign(Source.FRegExes);
   FIgnoreTitles.Assign(Source.FIgnoreTitles);
 end;
 
@@ -2025,7 +2027,18 @@ begin
   Stream.Read(Result.FOwnRating);
   Stream.Read(Result.FRating);
   Stream.Read(Result.FRecordingOkay);
-  Stream.Read(Result.FRegEx);
+  if Version < 58 then
+  begin
+    Stream.Read(E);
+    Result.FRegExes.Add(E);
+  end else begin
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+    begin
+      Stream.Read(E);
+      Result.FRegExes.Add(E);
+    end;
+  end;
 
   if Version >= 29 then
   begin
@@ -2059,7 +2072,13 @@ begin
   Stream.Read(Result.FChangesTitleInSong);
   Stream.Read(Result.FRating);
   Stream.Read(Result.FRecordingOkay);
-  Stream.Read(Result.FRegEx);
+
+  Stream.Read(Count);
+  for i := 0 to Count - 1 do
+  begin
+    Stream.Read(E);
+    Result.FRegExes.Add(E);
+  end;
 
   Stream.Read(Count);
   for i := 0 to Count - 1 do
@@ -2085,7 +2104,10 @@ begin
   Stream.Write(FOwnRating);
   Stream.Write(FRating);
   Stream.Write(FRecordingOkay);
-  Stream.Write(FRegEx);
+
+  Stream.Write(Cardinal(FRegExes.Count));
+  for i := 0 to FRegExes.Count - 1 do
+    Stream.Write(FRegExes[i]);
 
   Stream.Write(Cardinal(FIgnoreTitles.Count));
   for i := 0 to FIgnoreTitles.Count - 1 do
@@ -2159,7 +2181,7 @@ begin
   FStreams := TList<TChartStream>.Create;
 end;
 
-// Diese Methode ist ALT! Wird nur noch verwendet, dass der Lesevorgang von alten Daten-Dateien
+// REMARK: Diese Methode ist ALT! Wird nur noch verwendet, dass der Lesevorgang von alten Daten-Dateien
 // ordentlich abläuft!! Iiiiiiiirgendwann kann das wohl raus.
 class function TChartEntry.Load(Stream: TExtendedStream;
   Lists: TDataLists; Version: Integer): TChartEntry;
@@ -2216,6 +2238,7 @@ begin
   Stream.Read(Result.FPlayedLast);
 
   Stream.Read(C);
+
   for i := 0 to C - 1 do
     Result.Streams.Add(TChartStream.Load(Stream, Version));
 end;

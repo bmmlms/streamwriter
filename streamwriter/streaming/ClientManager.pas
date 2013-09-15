@@ -90,7 +90,7 @@ type
     procedure ClientPause(Sender: TObject);
     procedure ClientStop(Sender: TObject);
 
-    procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, TitleRegEx: string;
+    procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL: string; RegExes: TStringList;
       Format: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal);
     procedure HomeCommMonitorStreamsReceived(Sender: TObject; StreamIDs: TIntArray);
   public
@@ -369,7 +369,7 @@ begin
 end;
 
 procedure TClientManager.HomeCommTitleChanged(Sender: TObject; ID: Cardinal;
-  Name, Title, CurrentURL, TitleRegEx: string; Format: TAudioTypes; Kbps: Cardinal;
+  Name, Title, CurrentURL: string; RegExes: TStringList; Format: TAudioTypes; Kbps: Cardinal;
   ServerHash, ServerArtistHash: Cardinal);
 var
   i, n: Integer;
@@ -430,6 +430,22 @@ begin
       if (Client.AutoRemove and (Client.RecordTitle = Title)) or (Client.Recording) then
         Exit;
 
+  // TODO: wie ich schonmal sagte! überdenke folgendes. ein stream spielt:
+  //  "hasi - putz 1995"
+  //  "richard - nils"
+  //  alternierend. es gilt immer eine andere regex, aber nur eine ist für den bestimmten titel optimal.
+  //  die regex mit dezimal-abschneiden matched nicht gegen "richard - nils" - da muss intelligenz in den server...
+  //  und in sW evtl. auch....
+  //  --> das gilt auch für den server, beispiel stream "Radio Caroline 259 Gold - Live from Breskens - Holland server 2"
+  //      dort gibt es diese konstellation, der server setzt für den stream allerdings den regex, wo das jahr
+  //      NICHT abgeschnitten wird nach regex-eingabe im webif.
+  //      wenn der server regex sortiert muss sW es am ende mit der selben logik machen bevor er speichert.
+
+  // TODO: in sW Client sollte ein feld FDisplayTitle am stream. wo der titel "in schön" zur anzeige drinsteht.
+  //       dabei selbe "interpolation" wie im server verwenden :-)
+  // TODO: evtl auch direkt bei titelempfang nach regex parsen und dass dann interpoliert anzeigen? wie es der server auch macht:
+  //       erst titel parsen, bestandteile schön machen, in charts-db einfügen.
+
   Client := AddClient(0, 0, Name, CurrentURL, True);
   Client.Entry.Settings.Filter := ufNone;
   Client.Entry.Settings.SaveToMemory := True;
@@ -450,8 +466,8 @@ begin
   Client.Entry.Settings.AutoDetectSilenceLevel := True;
 
   Client.Entry.Bitrate := Kbps;
-  if Trim(TitleRegEx) <> '' then
-    Client.Entry.Settings.TitlePattern := TitleRegEx;
+  if RegExes <> nil then
+    Client.Entry.Settings.RegExes.Assign(RegExes);
   Client.RecordTitle := Title;
   Client.RecordServerTitle := Title;
   Client.RecordTitleHash := ServerHash;

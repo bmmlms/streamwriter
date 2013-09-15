@@ -41,6 +41,7 @@ LAME
 LED icons
 MP4Box
 MySQL
+node.js
 OggEnc
 Programmer's Notepad
 Python
@@ -88,7 +89,7 @@ Virtual Treeview
 D1734FA178BF7D5AE50CB1AD54442494
 
 
-Korrekt Banze!
+"bin enger natürlich nur versteht sich doch."
 
 
 

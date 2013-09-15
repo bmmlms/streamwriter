@@ -44,8 +44,8 @@ type
     URL: string;
     Website: string;
     Rating: Integer;
-    RegEx: string;
     RecordingOkay: Boolean;
+    RegExes: TStringList;
     IgnoreTitles: TStringList;
   end;
   TStreamDataArray = array of TStreamData;
@@ -517,7 +517,7 @@ begin
     Result[High(Result)].URL := NodeData.Data.URL;
     Result[High(Result)].Website := NodeData.Data.Website;
     Result[High(Result)].Rating := NodeData.Data.Rating;
-    Result[High(Result)].RegEx := NodeData.Data.RegEx;
+    Result[High(Result)].RegExes := NodeData.Data.RegExes;
     Result[High(Result)].RecordingOkay := NodeData.Data.RecordingOkay;
     Result[High(Result)].IgnoreTitles := NodeData.Data.IgnoreTitles;
   end;
@@ -690,6 +690,9 @@ begin
   PaintInfo.ImageInfo[ImageInfoIndex].YPos := 4;
   inherited;
 end;
+
+// TODO: wie wird recordingokay benutzt? sollte für auto-aufnahmen egal sein. und wird ab jetzt nur noch vom server gesetzt.
+// TODO: was ist diese titleblackliste die man in SetData setzen konnte fürn stream??? wo relevant?
 
 procedure TMStreamTree.PopupMenuClick(Sender: TObject);
 var

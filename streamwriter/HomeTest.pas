@@ -69,7 +69,7 @@ begin
   HC.SendCommand(Cmd3);
   }
 
-  Cmd4 := TCommandTitleChanged.Create(176143, 'dfasdfsa', 'Announcement - Calm Radio''s New Multimix Player', 'fsdfsdfas', 'fsdfasdfas', atMPEG, 128, '');
+  Cmd4 := TCommandTitleChanged.Create(176143, 'dfasdfsa', 'test - test123', 'fsdfsdfas', 'fsdfasdfas', atMPEG, 128, '');
   HC.SendCommand(Cmd4);
 
   //Cmd5 := TCommandGetServerData.Create;

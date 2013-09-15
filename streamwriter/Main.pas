@@ -393,7 +393,7 @@ begin
 
   try
     // Es ist mir beim Theme-Wechsel passiert, dass der Tray komplett verschwunden ist.
-    // Beim Beenden von sW gab es eine Exception. Das hier sollte helfen.
+    // Beim Beenden von sW gab es eine Exception. Das hier sollte helfen ;-) ...
     TrayIcon1.Visible := False;
   except
   end;
@@ -1446,6 +1446,7 @@ var
   Titles: TWishlistTitleInfoArray;
 begin
   FreeCmdLine := False;
+
   if Data <> '' then
   begin
     CmdLine := TCommandLine.Create(Data);
@@ -1457,14 +1458,14 @@ begin
   if Param <> nil then
   begin
     for i := 0 to Param.Values.Count - 1 do
-      tabClients.StartStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], '', nil), oaStart, nil, amNoWhere);
+      tabClients.StartStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil), oaStart, nil, amNoWhere);
   end;
 
   Param := CmdLine.GetParam('-p');
   if Param <> nil then
   begin
     for i := 0 to Param.Values.Count - 1 do
-      tabClients.StartStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], '', nil), oaPlay, nil, amNoWhere);
+      tabClients.StartStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil), oaPlay, nil, amNoWhere);
   end;
 
   Param := CmdLine.GetParam('-wishadd');

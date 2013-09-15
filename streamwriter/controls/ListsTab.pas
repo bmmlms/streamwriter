@@ -382,6 +382,8 @@ begin
     FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.GetNode(Client), FListsPanel.FFilterText, True)
   else
     FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.FIgnoreNode, FListsPanel.FFilterText, True);
+
+  FListsPanel.UpdateButtons;
 end;
 
 procedure TListsTab.AfterShown;
@@ -1220,6 +1222,8 @@ begin
     if TitleHash > 0 then
       HomeComm.SendSyncWishlist(swAdd, TitleHash, False);
 
+    UpdateButtons;
+
     Result := True;
   end else
     if ShowMessages then
@@ -1357,6 +1361,8 @@ begin
   FToolbar.FRemove.Enabled := CanRemove;
   FToolbar.FRename.Enabled := CanRename;
   FToolbar.FShowSaved.Enabled := CanShowSaved;
+  FToolbar.FSelectSaved.Enabled := FTree.FWishNode.ChildCount > 0;
+  FToolbar.FSelectIgnored.Enabled := FTree.FWishNode.ChildCount > 0;
   FToolbar.FExport.Enabled := (TitlesSelected and (not SingleParentSelected) and (Length(SelectedParents) = 0)) or
                               (SingleParentSelected and (not TitlesSelected));
   FToolbar.FImport.Enabled := CanImport;
@@ -1364,6 +1370,8 @@ begin
   FTree.FPopupMenu.FRemove.Enabled := CanRemove;
   FTree.FPopupMenu.FRename.Enabled := CanRename;
   FTree.FPopupMenu.FShowSaved.Enabled := CanShowSaved;
+  FTree.FPopupMenu.FSelectSaved.Enabled := FTree.FWishNode.ChildCount > 0;
+  FTree.FPopupMenu.FSelectIgnored.Enabled := FTree.FWishNode.ChildCount > 0;
   FTree.FPopupMenu.FExport.Enabled := TitlesSelected;
   FTree.FPopupMenu.FImport.Enabled := CanImport;
 end;

@@ -219,7 +219,7 @@ object frmSettings: TfrmSettings
       385)
     object Label7: TLabel
       Left = 56
-      Top = 216
+      Top = 232
       Width = 13
       Height = 13
       Caption = 'GB'
@@ -257,7 +257,7 @@ object frmSettings: TfrmSettings
     end
     object chkTray: TCheckBox
       Left = 4
-      Top = 0
+      Top = 20
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -267,7 +267,7 @@ object frmSettings: TfrmSettings
     end
     object txtMinDiskSpace: TLabeledEdit
       Left = 4
-      Top = 212
+      Top = 228
       Width = 49
       Height = 21
       EditLabel.Width = 208
@@ -293,7 +293,7 @@ object frmSettings: TfrmSettings
     end
     object optClose: TRadioButton
       Left = 20
-      Top = 20
+      Top = 40
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -302,7 +302,7 @@ object frmSettings: TfrmSettings
     end
     object optMinimize: TRadioButton
       Left = 20
-      Top = 40
+      Top = 60
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -325,7 +325,7 @@ object frmSettings: TfrmSettings
     end
     object chkSnapMain: TCheckBox
       Left = 4
-      Top = 68
+      Top = 84
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -334,7 +334,7 @@ object frmSettings: TfrmSettings
     end
     object chkRememberRecordings: TCheckBox
       Left = 4
-      Top = 88
+      Top = 104
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -343,7 +343,7 @@ object frmSettings: TfrmSettings
     end
     object chkDisplayPlayNotifications: TCheckBox
       Left = 4
-      Top = 128
+      Top = 144
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -352,7 +352,7 @@ object frmSettings: TfrmSettings
     end
     object chkShowSplashScreen: TCheckBox
       Left = 4
-      Top = 148
+      Top = 164
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -361,7 +361,7 @@ object frmSettings: TfrmSettings
     end
     object chkDisplayPlayedSong: TCheckBox
       Left = 4
-      Top = 108
+      Top = 124
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -370,7 +370,7 @@ object frmSettings: TfrmSettings
     end
     object txtLogFile: TLabeledEdit
       Left = 4
-      Top = 256
+      Top = 272
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -382,12 +382,21 @@ object frmSettings: TfrmSettings
     end
     object chkCoverPanelAlwaysVisible: TCheckBox
       Left = 4
-      Top = 168
+      Top = 184
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Always show cover in "Saved songs"'
       TabOrder = 12
+    end
+    object chkAutostart: TCheckBox
+      Left = 4
+      Top = 0
+      Width = 281
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Start streamWriter on windows logon'
+      TabOrder = 13
     end
   end
   object pnlAdvanced: TPanel
@@ -1295,18 +1304,18 @@ object frmSettings: TfrmSettings
     Left = 604
     Top = 516
     Width = 293
-    Height = 205
+    Height = 369
     TabOrder = 9
     Visible = False
     DesignSize = (
       293
-      205)
+      369)
     object btnResetTitlePattern: TPngSpeedButton
       Left = 264
-      Top = 32
+      Top = 116
       Width = 25
       Height = 21
-      Hint = 'Reset pattern to default'
+      Hint = 'Reset Regular expression to default'
       Anchors = [akTop, akRight]
       Flat = True
       ParentShowHint = False
@@ -1339,36 +1348,44 @@ object frmSettings: TfrmSettings
     end
     object lblIgnoreTitles: TLabel
       Left = 4
-      Top = 64
-      Width = 285
-      Height = 29
+      Top = 184
+      Width = 271
+      Height = 26
       Anchors = [akLeft, akTop, akRight]
-      AutoSize = False
       Caption = 
         'Ignore the following stream title changes (i.e. announcements li' +
         'ke '#39'Next playing: ...'#39') to disable saving:'
       WordWrap = True
     end
-    object txtTitlePattern: TLabeledEdit
+    object Label21: TLabel
       Left = 4
-      Top = 32
+      Top = 0
+      Width = 255
+      Height = 26
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 
+        'Use the following regular expressions for this stream (groups: a' +
+        ' = artist, t = title, l = album):'
+      WordWrap = True
+    end
+    object txtRegEx: TLabeledEdit
+      Left = 4
+      Top = 116
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 448
+      EditLabel.Width = 130
       EditLabel.Height = 13
-      EditLabel.Caption = 
-        'Regular expression to detect artist/title/album (only change if ' +
-        'you know what you are doing):'
+      EditLabel.Caption = 'Regular expression to add:'
       EditLabel.Layout = tlBottom
       TabOrder = 0
-      OnChange = txtTitlePatternChange
+      OnChange = txtRegExChange
     end
     object lstIgnoreTitles: TListView
       Left = 4
-      Top = 95
+      Top = 212
       Width = 285
-      Height = 30
+      Height = 85
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
       Columns = <
@@ -1385,7 +1402,7 @@ object frmSettings: TfrmSettings
     end
     object btnRemoveIgnoreTitlePattern: TButton
       Left = 196
-      Top = 176
+      Top = 340
       Width = 93
       Height = 27
       Anchors = [akRight, akBottom]
@@ -1393,10 +1410,11 @@ object frmSettings: TfrmSettings
       Enabled = False
       TabOrder = 2
       OnClick = btnRemoveIgnoreTitlePatternClick
+      ExplicitTop = 284
     end
     object btnAddIgnoreTitlePattern: TButton
       Left = 100
-      Top = 176
+      Top = 340
       Width = 93
       Height = 27
       Anchors = [akRight, akBottom]
@@ -1404,18 +1422,61 @@ object frmSettings: TfrmSettings
       Enabled = False
       TabOrder = 3
       OnClick = btnAddIgnoreTitlePatternClick
+      ExplicitTop = 284
     end
     object txtIgnoreTitlePattern: TLabeledEdit
       Left = 4
-      Top = 152
+      Top = 316
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
-      EditLabel.Width = 183
+      EditLabel.Width = 171
       EditLabel.Height = 13
-      EditLabel.Caption = 'Pattern to ignore (use '#39'*'#39' as wildcard):'
+      EditLabel.Caption = 'Pattern to add (use '#39'*'#39' as wildcard):'
       TabOrder = 4
       OnChange = txtIgnoreTitlePatternChange
+      ExplicitTop = 260
+    end
+    object lstRegExes: TListView
+      Left = 4
+      Top = 28
+      Width = 285
+      Height = 69
+      Align = alCustom
+      Anchors = [akLeft, akTop, akRight]
+      Columns = <
+        item
+        end>
+      RowSelect = True
+      ShowColumnHeaders = False
+      SmallImages = PngImageList1
+      TabOrder = 5
+      ViewStyle = vsReport
+      OnChange = lstRegExesChange
+      OnEdited = lstRegExesEdited
+      OnResize = lstRegExesResize
+    end
+    object btnAddRegEx: TButton
+      Left = 100
+      Top = 140
+      Width = 93
+      Height = 27
+      Anchors = [akTop, akRight]
+      Caption = 'A&dd'
+      Enabled = False
+      TabOrder = 6
+      OnClick = btnAddRegExClick
+    end
+    object btnRemoveRegEx: TButton
+      Left = 196
+      Top = 140
+      Width = 93
+      Height = 27
+      Anchors = [akTop, akRight]
+      Caption = 'R&emove'
+      Enabled = False
+      TabOrder = 7
+      OnClick = btnRemoveRegExClick
     end
   end
   object pnlBandwidth: TPanel
@@ -1871,6 +1932,40 @@ object frmSettings: TfrmSettings
           5347AC9B8F15984E8DA3F062C80DE83C3D4CD25E55FB92B078656335F7E49CCF
           6968EFBD2B480A76230CBE2D17C6AEB5FCF55BD848FD02C9156CF0B43B4FAC00
           00000049454E44AE426082}
+      end
+      item
+        Background = clWindow
+        Name = 'page_edit'
+        PngImage.Data = {
+          89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+          610000001974455874536F6674776172650041646F626520496D616765526561
+          647971C9653C0000032F4944415478DA55936B4814511886DF33DBAEB36EBAA5
+          B17431C352D24A4C360DAB2DA552298B0A8220A1CB8FA0EC7EA5E88A586950D1
+          8F2C4AA48BAB3FFA114145A268AE97522913ADACB4C84CDDD4D6DCCBB83B3BA7
+          3333ABD181731986EFF9DEF39DF7239452AC3E5BB35D1F1AB495233003E0D924
+          4060A56CA1124449EA740CD24AF2E7F7315B619617814164C09A8B75B607FBCC
+          711C47265140038AF1419533C52FA70FD66607FABE8FBADFB77D0CAB2DCC1A1D
+          0764E5D7DB4BF72785B5DBA1E1085132B3A4F0CB99450A8F4F446A8C018D2DCF
+          61FA741F9A89F1700DBC04117AB6298075050DEE92BD66FD97210D8BA58A0089
+          2D7E4982970104AF1F8B43CAE1FEFC0AFA291618A312E1F8DA808FE577FB5505
+          050D1EEB5E33DF2503880C20FF01B48E6788E15B61084DC45067078CE173A00B
+          31E143D57D611C509263E6BBFF68027563003F85C8FE69866D8844158CB33330
+          DA5B06CF2081BDC38D6137A1DCE860AC02589BCF004C41DF8856B9000D148F38
+          AA31CD5F0163F47A083DB7C0E944F89CB330D4F401E77F647B8B4F6D0A525F81
+          011E32C02FA756AD3C9BAEAE2798A16D8069C106165C084E2BC23B12057B5D0B
+          42D32F21FB8153283F93A2570099794CC101336F7769952BB8BA9E2278C486B9
+          962C78FBEF8168BC10862394E021CB6DCC9E39155BAE360B95E70280F4DC7A8F
+          F52053E0D2A1FF6D194C6883484C080FABC364938E05CFC44053079C4BAF4334
+          4C479C095897D72854E72E51012B2F30C021333FE8D4A1FDE16A6CDE5D848EB2
+          A3F8F9AD1E419109F03B290CE93720864629C64C98C661D5E95AA1367FB90A48
+          3B53E7B11E35F3076A09E29F24E3C48E5D00E7474BC5637476F7A02AF5110682
+          632005DC69CDD022EDB84D787D3D5505584ED6784A8F25F357DAD915CECFC0C2
+          59E1488A8D82C7148DDE7947E00B89505E459EAD7611D75200CBC16AE1CDAD55
+          2A20E570B5ABF454B23EBF8D279439480A98090147CAEE9477CABA8D63326EAE
+          2052D2EE0A77EB9DF41005B0684F65D7F3CBCBA6B87CD4C0BE39F91DC7E41AF5
+          13C69B4AAFE5207B4CAFE346E277BEE8692FCE9CAF0092722A72441FDD480849
+          64B983FFB5A2EA093AD69EEA264892F48663A578579459F4178E39AC10220115
+          C20000000049454E44AE426082}
       end>
     Left = 232
     Top = 160

@@ -22,6 +22,7 @@ program streamwriter;
 
 // vcPublic, damit TCommand-Nachfahren erzeugt werden können.
 {$RTTI EXPLICIT METHODS([vcPublic]) PROPERTIES([]) FIELDS([])}
+              // TODO: ich sollte die datenauswertung in clients nur machen, wenn das "scheduled" war... bringt mir selber doch gar nix.
 
 uses
   MM in '..\..\common\MM.pas',
@@ -31,6 +32,7 @@ uses
   madListProcesses,
   madListModules,
   Windows,
+  Messages,
   SysUtils,
   Forms,
   ShlObj,
@@ -95,7 +97,6 @@ uses
   PostProcessManager in 'postprocess\PostProcessManager.pas',
   Logging in '..\..\common\Logging.pas',
   Timers in 'Timers.pas' {frmTimers},
-  StreamData in 'StreamData.pas' {frmStreamData},
   PostProcessSoX in 'postprocess\PostProcessSoX.pas',
   DownloadAddons in 'DownloadAddons.pas' {frmDownloadAddons},
   DownloadClient in '..\..\common\DownloadClient.pas',
@@ -151,6 +152,8 @@ uses
 {$R ..\..\common\res\icons.res}
 
 var
+  i: Integer;
+  HideMain: Boolean;
   frmStreamWriterMain: TfrmStreamWriterMain;
   frmHomeTest: TfrmHomeTest;
 begin
@@ -163,10 +166,22 @@ begin
   then
     TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
 
+  // TODO: das funzt noch nicht. alle kombinationen testen!!!
+  //       und genau das gibt ein neues problem! ich muss im create alles erstellen. auch listen mit items füllen etc...
+  //       im aftershown darf ich NUR größen anpassen!!!
+  //       weil problem: minimiert im tray starten, kein aftershown, über trayicon programm beenden nach start direkt => crash!!!
+  HideMain := False;
+  for i := 0 to ParamCount do
+  begin
+    if ParamStr(i) = '-minimize' then
+    begin
+      HideMain := True;
+      Break;
+    end;
+  end;
+
   Application.Title := AppGlobals.AppName;
   Application.Icon.Handle := LoadIcon(HInstance, 'A');
-  //Application.DefaultFont.Name := 'Segoe UI';
-  //Screen.MenuFont.Name := 'Segoe UI';
 
   // Initialize BASS, quit application on error
   Bass := TBassLoader.Create;
@@ -181,7 +196,13 @@ begin
   // Create the main form if everything is setup
   if InitApp and AppGlobals.WasSetup then
   begin
+    if AppGlobals.Tray and HideMain then
+    begin
+      Application.ShowMainForm := False;
+    end;
+
     Application.CreateForm(TfrmStreamWriterMain, frmStreamWriterMain);
+
     //Application.CreateForm(TfrmHomeTest, frmHomeTest);
   end;
 

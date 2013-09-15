@@ -28,7 +28,7 @@ uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
   AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
   Math, PerlRegEx, Logging, WideStrUtils, AudioFunctions, PostProcessMP4Box,
-  AddonMP4Box, SWFunctions, MonitorAnalyzer;
+  AddonMP4Box, SWFunctions, MonitorAnalyzer, Generics.Defaults;
 
 type
   TDebugEvent = procedure(Text, Data: string) of object;
@@ -158,6 +158,7 @@ type
     function CalcAdjustment(Offset: Int64): Int64;
     procedure CalcBytesPerSec;
     procedure DataReceived(CopySize: Integer);
+    function GetBestRegEx(Title: string): string;
     procedure SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
     procedure TrySave;
     procedure ProcessData(Received: Cardinal);
@@ -573,6 +574,98 @@ begin
     FOnMonitorAnalyzerAnalyzed(Self);
 end;
 
+// TODO: Die GetBestRegEx methode MASSIV prüfen!!!!!!!!!!! UNGETESTET!!!
+function TICEStream.GetBestRegEx(Title: string): string;
+type
+  TRegExData = record
+    RegEx: string;
+    BadWeight: Integer;
+  end;
+var
+  i, n: Integer;
+  R: TPerlRegEx;
+  MArtist, MTitle, MAlbum: string; // TODO: Album??? funzt das überall mit "album" in regex? wird passig gesaved? etc... mal testen!
+                                   // gibt ja einige streams die ein album mit ausstrahlen. dass muss natürlich checkregex und streamdata
+                                   // auch berücksichtigen!!!
+  RED: TRegExData;
+  REDs: TList<TRegExData>;
+const
+  BadChars: array[0..2] of string = (':', '-', '(');
+begin
+  Result := '(?P<a>.*) - (?P<t>.*)';
+
+  REDs := TList<TRegExData>.Create;
+  try
+    for i := 0 to FSettings.RegExes.Count - 1 do
+    begin
+      RED.RegEx := FSettings.RegExes[i];
+      RED.BadWeight := 0;
+
+      MArtist := '';
+      MTitle := '';
+      MAlbum := '';
+
+      R := TPerlRegEx.Create;
+      try
+        R.Options := R.Options + [preCaseLess];
+        R.Subject := Title;
+        R.RegEx := RED.RegEx;
+        try
+          if R.Match then
+          begin
+            try
+              if R.NamedGroup('a') > 0 then
+              begin
+                MArtist := Trim(R.Groups[R.NamedGroup('a')]);
+                for n := 0 to High(BadChars) do
+                  if Pos(BadChars[n], MArtist) > 0 then
+                    RED.BadWeight := RED.BadWeight + 1;
+              end;
+            except end;
+            try
+              if R.NamedGroup('t') > 0 then
+              begin
+                MTitle := Trim(R.Groups[R.NamedGroup('t')]);
+                for n := 0 to High(BadChars) do
+                  if Pos(BadChars[n], MTitle) > 0 then
+                    RED.BadWeight := RED.BadWeight + 1;
+              end;
+            except end;
+            try
+              if R.NamedGroup('l') > 0 then
+              begin
+                MAlbum := Trim(R.Groups[R.NamedGroup('l')]);
+                for n := 0 to High(BadChars) do
+                  if Pos(BadChars[n], MAlbum) > 0 then
+                    RED.BadWeight := RED.BadWeight + 1;
+              end;
+            except end;
+
+            if MAlbum <> '' then
+              RED.BadWeight := RED.BadWeight + 10;
+
+            REDs.Add(RED);
+          end;
+        except end;
+      finally
+        R.Free;
+      end;
+    end;
+
+    REDs.Sort(TComparer<TRegExData>.Construct(
+      function (const L, R: TRegExData): integer
+      begin
+        Result := CmpInt(L.BadWeight, R.BadWeight);
+      end
+    ));
+
+    if REDs.Count > 0 then
+      Result := REDs[0].RegEx;
+  finally
+    REDs.Free;
+  end;
+end;
+
 procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
   procedure RemoveData;
   var
@@ -610,7 +703,7 @@ procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
     end;
   end;
 var
-  Dir, Filename, FilenameConverted: string;
+  Dir, Filename, FilenameConverted, RegEx: string;
   FileCheck: TFileChecker;
   P: TPosRect;
   Error: Cardinal;
@@ -655,7 +748,8 @@ begin
       FSaveAllowedTitle := Title;
       FSaveAllowed := True;
 
-      ParseTitle(Title, FSettings.TitlePattern, FSavedArtist, FSavedTitle, FSavedAlbum);
+      RegEx := GetBestRegEx(Title);
+      ParseTitle(Title, RegEx, FSavedArtist, FSavedTitle, FSavedAlbum);
 
       if (FSavedArtist <> '') and (FSavedTitle <> '') then
         FSaveAllowedTitle := FSavedArtist + ' - ' + FSavedTitle;
@@ -1303,6 +1397,7 @@ begin
   if (S <> '') and (Pattern <> '') then
   begin
     R := TPerlRegEx.Create;
+    R.Options := R.Options + [preCaseLess];
     try
       R.Subject := S;
       R.RegEx := Pattern;

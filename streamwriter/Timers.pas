@@ -161,6 +161,24 @@ begin
   while Node <> nil do
   begin
     NodeData := Tree.GetNodeData(Tree.GetFirstSelected);
+
+    rbRecurring.Checked := NodeData.Schedule.Recurring;
+    rbDate.Checked := not NodeData.Schedule.Recurring;
+    if NodeData.Schedule.Recurring then
+    begin
+      lstInterval.ItemIndex := Integer(NodeData.Schedule.Interval);
+      lstDay.ItemIndex := Integer(NodeData.Schedule.Day);
+      lstIntervalChange(lstInterval);
+    end else
+    begin
+      dtpDate.DateTime := NodeData.Schedule.Date;
+      chkAutoRemove.Checked := NodeData.Schedule.AutoRemove;
+    end;
+    txtStartHour.Text := IntToStr(NodeData.Schedule.StartHour);
+    txtStartMinute.Text := IntToStr(NodeData.Schedule.StartMinute);
+    txtEndHour.Text := IntToStr(NodeData.Schedule.EndHour);
+    txtEndMinute.Text := IntToStr(NodeData.Schedule.EndMinute);
+
     NodeData.Schedule.Free;
     FreeNode := Node;
     Node := Tree.GetNextSelected(Node);

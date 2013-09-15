@@ -26,7 +26,7 @@ uses
   Windows, SysUtils, Classes, HTTPThread, StrUtils, Generics.Collections,
   Sockets, WinSock, Communication, Protocol, Commands, ExtendedStream,
   HomeCommands, DataManager, AppData, AudioFunctions, LanguageObjects,
-  TypeDefs;
+  TypeDefs, DateUtils, Math;
 
 type
   TCommErrors = (ceUnknown, ceAuthRequired, ceNotification, ceOneTimeNotification);
@@ -39,6 +39,7 @@ type
     FIsAdmin: Boolean;
 
     FHandshakeSuccess: Boolean;
+    FServerTime: Cardinal;
 
     FNetworkTitleChanged: TCommandNetworkTitleChangedResponse;
 
@@ -99,7 +100,7 @@ type
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
   TStreamsReceivedEvent = procedure(Sender: TObject) of object;
   TChartsReceivedEvent = procedure(Sender: TObject; Success: Boolean; Charts: TChartList) of object;
-  TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL, TitlePattern: string;
+  TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL: string; RegExes: TStringList;
     Format: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
@@ -109,6 +110,7 @@ type
   THomeCommunication = class
   private
     FDisabled: Boolean;
+    FServerTimeDiff: Int64;
     FThread: THomeThread;
 
     FLists: TDataLists;
@@ -178,6 +180,7 @@ type
     procedure SendStreamAnalyzationData(StreamID: Cardinal; Data: TExtendedStream);
 
     property Disabled: Boolean read FDisabled;
+    property ServerTimeDiff: Int64 read FServerTimeDiff;
     property WasConnected: Boolean read FWasConnected;
     property Connected: Boolean read FConnected;
     property Authenticated: Boolean read FAuthenticated;
@@ -262,6 +265,7 @@ procedure THomeThread.DoHandshakeReceived(CommandHeader: TCommandHeader;
   Command: TCommandHandshakeResponse);
 begin
   FHandshakeSuccess := Command.Success;
+  FServerTime := Command.ServerTime;
 
   if Assigned(FOnHandshakeReceived) then
     Sync(FOnHandshakeReceived);
@@ -294,7 +298,7 @@ begin
 
   FNetworkTitleChanged := Command;
 
-  if (FNetworkTitleChanged.StreamName <> '') and (FNetworkTitleChanged.Title <> '') and (FNetworkTitleChanged.CurrentURL <> '') then
+  if (FNetworkTitleChanged.StreamName <> '') and (FNetworkTitleChanged.StreamTitle <> '') and (FNetworkTitleChanged.CurrentURL <> '') then
     if Assigned(FOnNetworkTitleChangedReceived) then
       Sync(FOnNetworkTitleChangedReceived);
 end;
@@ -747,6 +751,8 @@ procedure THomeCommunication.HomeThreadHandshakeReceived(
 begin
   FDisabled := not THomeThread(Sender).FHandshakeSuccess;
 
+  FServerTimeDiff := DateTimeToUnix(TTimeZone.Local.ToUniversalTime(Now)) - THomeThread(Sender).FServerTime;
+
   if not FDisabled then
   begin
     if AppGlobals.UserWasSetup and (AppGlobals.User <> '') and (AppGlobals.Pass <> '') then
@@ -831,8 +837,8 @@ procedure THomeCommunication.HomeThreadNetworkTitleChangedReceived(
 begin
   if Assigned(FOnNetworkTitleChangedReceived) then
     FOnNetworkTitleChangedReceived(Self,  THomeThread(Sender).FNetworkTitleChanged.StreamID, THomeThread(Sender).FNetworkTitleChanged.StreamName,
-      THomeThread(Sender).FNetworkTitleChanged.Title, THomeThread(Sender).FNetworkTitleChanged.CurrentURL,
-      THomeThread(Sender).FNetworkTitleChanged.TitleRegEx, THomeThread(Sender).FNetworkTitleChanged.Format,
+      THomeThread(Sender).FNetworkTitleChanged.StreamTitle, THomeThread(Sender).FNetworkTitleChanged.CurrentURL,
+      THomeThread(Sender).FNetworkTitleChanged.RegExes, THomeThread(Sender).FNetworkTitleChanged.Format,
       THomeThread(Sender).FNetworkTitleChanged.Bitrate, THomeThread(Sender).FNetworkTitleChanged.ServerHash,
       THomeThread(Sender).FNetworkTitleChanged.ServerArtistHash);
 end;
@@ -852,7 +858,7 @@ begin
   Cmd.VersionBuild := AppGlobals.AppVersion.Build;
   Cmd.Build := AppGlobals.BuildNumber;
   Cmd.Language := Language.CurrentLanguage.ID;
-  Cmd.ProtoVersion := 2;
+  Cmd.ProtoVersion := 4;
 
   FThread.SendCommand(Cmd);
 end;

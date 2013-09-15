@@ -28,7 +28,8 @@ uses
   MControls, LanguageObjects, Tabs, Functions, AppData, Logging, VirtualTrees,
   HomeCommunication, DataManager, ImgList, Graphics, Math, Generics.Collections,
   Menus, ChartsTabAdjustTitleName, Forms, TypeDefs, MessageBus, AppMessages,
-  HomeCommands, Commands, GUIFunctions, SharedData, PerlRegEx;
+  HomeCommands, Commands, GUIFunctions, SharedData, PerlRegEx, Messages,
+  DateUtils;
 
 type
   TNodeTypes = (ntChart, ntStream, ntAll);
@@ -66,10 +67,19 @@ type
     property ItemAddStream: TMenuItem read FItemAddStream;
   end;
 
+  TMyComboBox = class(TComboBox)
+  protected
+    function MouseActivate(Button: TMouseButton; Shift: TShiftState;
+      X: Integer; Y: Integer; HitTest: Integer): TMouseActivate; override;
+    procedure SelectAllMessage(var Msg: TMessage); message WM_USER;
+  public
+  published
+  end;
+
   TSearchPanel = class(TPanel)
   private
     FLabel: TLabel;
-    FSearch: TComboBox;
+    FSearch: TMyComboBox;
     FToolbar: TToolBar;
 
     FButtonAddToWishlist: TToolButton;
@@ -378,11 +388,13 @@ begin
 
     Tmp := Trim(FSearchPanel.FSearch.Text);
 
+    {
     if (Pos('+', Tmp) > 0) or (Pos('-', Tmp) > 0) or (Pos('*', Tmp) > 0) or (Pos('(', Tmp) > 0) or (Pos(')', Tmp) > 0) or
-       (Pos('<', Tmp) > 0) or (Pos('>', Tmp) > 0) or (Pos('~', Tmp) > 0) {or (Pos('"', Tmp) > 0)} or (Pos('''', Tmp) > 0) then
+       (Pos('<', Tmp) > 0) or (Pos('>', Tmp) > 0) or (Pos('~', Tmp) > 0) or (Pos('''', Tmp) > 0) then
     begin
       Abort := True;
     end;
+    }
 
     if (Pos('"', Tmp) > 0) and (OccurenceCount('"', Tmp) mod 2 <> 0) then
     begin
@@ -718,10 +730,10 @@ begin
   NodeData := GetNodeData(Node);
   if (Column = 3) and (NodeData.Chart <> nil) then
   begin
-    C := (NodeData.Chart.PlayedLastWeek / 7) / 12;
-    if C > 1 then
-      C := 1;
-    Chance := Trunc(C * 100);
+    C := ((NodeData.Chart.PlayedLastWeek) / 7) * 24;
+    if C > 100 then
+      C := 100;
+    Chance := Trunc(C);
 
     Canvas.Brush.Color := HTML2Color('#005fb0');
     if Selected[Node] and Focused then
@@ -755,55 +767,77 @@ begin
   Data1 := GetNodeData(Node1);
   Data2 := GetNodeData(Node2);
 
-  if (Data1.Chart = nil) or (Data2.Chart = nil) then
-    Exit;
-
-  case Column of
-    0:
-      Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
-    1:
-      begin
-        C1 := 0;
-        C2 := 0;
-
-        for i := 0 to FLists.SavedTitleHashes.Count - 1 do
+  if (Data1.Chart <> nil) and (Data2.Chart <> nil) then
+  begin
+    case Column of
+      0:
+        Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
+      1:
         begin
-          if (Data1.Chart <> nil) and (Data1.Chart.ServerHash = FLists.SavedTitleHashes[i]) then
-            C1 := C1 + 1;
-          if (Data2.Chart <> nil) and (Data2.Chart.ServerHash = FLists.SavedTitleHashes[i]) then
-            C2 := C2 + 1;
+          C1 := 0;
+          C2 := 0;
+
+          for i := 0 to FLists.SavedTitleHashes.Count - 1 do
+          begin
+            if (Data1.Chart <> nil) and (Data1.Chart.ServerHash = FLists.SavedTitleHashes[i]) then
+              C1 := C1 + 1;
+            if (Data2.Chart <> nil) and (Data2.Chart.ServerHash = FLists.SavedTitleHashes[i]) then
+              C2 := C2 + 1;
+          end;
+
+          if Data1.IsArtistOnWishlist then
+            C1 := C1 + 2;
+          if Data2.IsArtistOnWishlist then
+            C2 := C2 + 2;
+
+          if Data1.IsOnWishlist then
+            C1 := C1 + 3;
+          if Data2.IsOnWishlist then
+            C2 := C2 + 3;
+
+          Result := CmpInt(C1, C2);
+          if Result = 0 then
+          begin
+            Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
+            if Header.SortDirection = sdDescending then
+              Result := Result * -1;
+          end;
         end;
-
-        if Data1.IsArtistOnWishlist then
-          C1 := C1 + 2;
-        if Data2.IsArtistOnWishlist then
-          C2 := C2 + 2;
-
-        if Data1.IsOnWishlist then
-          C1 := C1 + 3;
-        if Data2.IsOnWishlist then
-          C2 := C2 + 3;
-
-        Result := CmpInt(C1, C2);
-        if Result = 0 then
+      2:
+        Result := CmpInt(Data1.Chart.PlayedLast, Data2.Chart.PlayedLast);
+      3:
         begin
-          Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
-          if Header.SortDirection = sdDescending then
+          Result := CmpInt(Data1.Chart.PlayedLastWeek, Data2.Chart.PlayedLastWeek);
+          if Result = 0 then
+          begin
+            Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
+            if Header.SortDirection = sdDescending then
+              Result := Result * -1;
+          end;
+        end;
+    end;
+  end else if (Data1.Stream <> nil) and (Data2.Stream <> nil) then
+  begin
+    case Column of
+      0, 1:
+        begin
+          Result := CompareText(Data1.Stream.Stream.Name, Data2.Stream.Stream.Name);
+          if (Header.SortDirection = sdDescending) then
             Result := Result * -1;
         end;
-      end;
-    2:
-      Result := CmpInt(Data1.Chart.PlayedLast, Data2.Chart.PlayedLast);
-    3:
-      begin
-        Result := CmpInt(Data1.Chart.PlayedLastWeek, Data2.Chart.PlayedLastWeek);
-        if Result = 0 then
+      2:
         begin
-          Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
-          if Header.SortDirection = sdDescending then
+          Result := CmpInt(Data1.Stream.PlayedLast, Data2.Stream.PlayedLast);
+          if (Header.SortDirection = sdAscending) then
             Result := Result * -1;
         end;
-      end;
+      3:
+        begin
+          Result := CmpInt(Data1.Stream.PlayedLastWeek, Data2.Stream.PlayedLastWeek);
+          if (Header.SortDirection = sdAscending) then
+            Result := Result * -1;
+        end;
+    end;
   end;
 end;
 
@@ -821,8 +855,8 @@ end;
 procedure TChartsTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
   TextType: TVSTTextType; var Text: string);
 var
-  Val: Cardinal;
-  NodeData: PChartNodeData;
+  Val: Int64;
+  NodeData, ParentNodeData: PChartNodeData;
 begin
   inherited;
 
@@ -836,9 +870,23 @@ begin
       else
         Text := NodeData.Stream.Stream.Name;
     2:
-      if NodeData.Chart <> nil then
       begin
-        Val := NodeData.Chart.PlayedLast;
+        if NodeData.Chart <> nil then
+          Val := NodeData.Chart.PlayedLast
+        else if NodeData.Stream <> nil then
+        begin
+          if Node.PrevSibling = nil then
+          begin
+            // REMARK: Das hier ist ein Hack. Die Berechnung hier drunter ergibt nicht das,
+            //         was im PlayedLast des Charts steht.. sieht doof aus. Darum das hier!
+            ParentNodeData := GetNodeData(Node.Parent);
+            Val := ParentNodeData.Chart.PlayedLast;
+          end else
+            Val := DateTimeToUnix(TTimeZone.Local.ToUniversalTime(Now)) - NodeData.Stream.PlayedLast + HomeComm.ServerTimeDiff;
+        end;
+
+        if Val < 1 then
+          Val := 1;
 
         if Val >= 86400 then
         begin
@@ -865,8 +913,7 @@ begin
           else
             Text := Format(_('%d seconds ago'), [Val]);
         end;
-      end else
-        Text := '';
+      end;
     3:
       if NodeData.Chart <> nil then
         Text := Format('%d / %d', [NodeData.Chart.PlayedLastDay, NodeData.Chart.PlayedLastWeek])
@@ -954,7 +1001,7 @@ begin
       begin
         SetLength(Info, Length(Info) + 1);
         Info[High(Info)] := TStartStreamingInfo.Create(NodesData[i].Stream.ID, NodesData[i].Stream.Stream.Bitrate,
-          NodesData[i].Stream.Stream.Name, NodesData[i].Stream.Stream.URL, NodesData[i].Stream.Stream.RegEx,
+          NodesData[i].Stream.Stream.Name, NodesData[i].Stream.Stream.URL, NodesData[i].Stream.Stream.RegExes,
           NodesData[i].Stream.Stream.IgnoreTitles);
       end;
     end;
@@ -1256,7 +1303,7 @@ begin
       begin
         SetLength(Info, Length(Info) + 1);
         Info[High(Info)] := TStartStreamingInfo.Create(Nodes[i].Stream.ID, Nodes[i].Stream.Stream.Bitrate,
-          Nodes[i].Stream.Stream.Name, Nodes[i].Stream.Stream.URL, Nodes[i].Stream.Stream.RegEx,
+          Nodes[i].Stream.Stream.Name, Nodes[i].Stream.Stream.URL, Nodes[i].Stream.Stream.RegExes,
           Nodes[i].Stream.Stream.IgnoreTitles);
       end;
     end;
@@ -1330,7 +1377,7 @@ begin
   FLabel.Parent := Self;
   FLabel.Caption := _('Search:');
 
-  FSearch := TComboBox.Create(Self);
+  FSearch := TMyComboBox.Create(Self);
   FSearch.Parent := Self;
   FSearch.AutoComplete := False;
 
@@ -1511,6 +1558,22 @@ begin
   FItemAddStream.Caption := '&Add stream';
   FItemAddStream.ImageIndex := 80;
   Items.Add(FItemAddStream);
+end;
+
+{ TMyComboBox }
+
+function TMyComboBox.MouseActivate(Button: TMouseButton;
+  Shift: TShiftState; X, Y, HitTest: Integer): TMouseActivate;
+begin
+  Result := inherited;
+
+  if GetParentForm(Self).Handle <> GetForegroundWindow then
+    PostMessage(Handle, WM_USER, 0, 0);
+end;
+
+procedure TMyComboBox.SelectAllMessage(var Msg: TMessage);
+begin
+  SelectAll;
 end;
 
 end.
