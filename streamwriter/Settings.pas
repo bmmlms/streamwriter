@@ -31,7 +31,7 @@ uses
   DataManager, PngBitBtn, Logging, ToolWin, ListsTab, DownloadAddons,
   ExtendedStream, AddonManager, AddonBase, Generics.Defaults,
   SettingsAddPostProcessor, ConfigureEncoder, AudioFunctions,
-  SWFunctions, TypeDefs, SharedData;
+  SWFunctions, TypeDefs, SharedData, PerlRegEx;
 
 type
   TBlacklistNodeData = record
@@ -2377,8 +2377,30 @@ end;
 procedure TfrmSettings.btnAddRegExClick(Sender: TObject);
 var
   Item: TListItem;
+  RValid, ArtistFound, TitleFound: Boolean;
+  R: TPerlRegEx;
 begin
-  // TODO: regex validieren!!! mindestens "a" und "t" müssen drin sein und es muss parsebar sein!
+  RValid := False;
+  R := TPerlRegEx.Create;
+  try
+    R.RegEx := txtRegEx.Text;
+    try
+      R.Compile;
+      RValid := True;
+    except end;
+  finally
+    R.Free;
+  end;
+
+  ArtistFound := (Pos('(?P<a>.*)', txtRegEx.Text) > 0) or (Pos('(?P<a>.*?)', txtRegEx.Text) > 0);
+  TitleFound := (Pos('(?P<t>.*)', txtRegEx.Text) > 0) or (Pos('(?P<t>.*?)', txtRegEx.Text) > 0);
+
+  if (Trim(txtRegEx.Text) = '') or (not RValid) or (not ArtistFound) or (not TitleFound) then
+  begin
+    MsgBox(Handle, _('Please supply a valid regular expression containing the groups (?P<a>.*)/(?P<a>.*?) and (?P<t>.*)/(?P<t>.*?).'), _('Info'), MB_ICONINFORMATION);
+    Exit;
+  end;
+
   Item := lstRegExes.Items.Add;
   Item.Caption := txtRegEx.Text;
   Item.ImageIndex := 7;
@@ -3020,8 +3042,8 @@ procedure TfrmSettings.chkMonitorModeClick(Sender: TObject);
 begin
   inherited;
 
-  txtMonitorCount.Enabled := chkMonitorMode.State <> cbUnchecked;
-  Label20.Enabled := chkMonitorMode.State <> cbUnchecked;
+  Label20.Enabled := (chkMonitorMode.State <> cbUnchecked) or (chkSubmitStats.State <> cbUnchecked);
+  txtMonitorCount.Enabled := (chkMonitorMode.State <> cbUnchecked) and (chkSubmitStats.State <> cbUnchecked);
 end;
 
 procedure TfrmSettings.chkAutoTuneInClick(Sender: TObject);
@@ -3214,15 +3236,18 @@ procedure TfrmSettings.chkSubmitStatsClick(Sender: TObject);
 begin
   inherited;
 
-  Label8.Enabled := chkSubmitStats.State <> cbUnchecked;
+  //Label8.Enabled := chkSubmitStats.State <> cbUnchecked;
   chkMonitorMode.Enabled := chkSubmitStats.State <> cbUnchecked;
+
+  Label20.Enabled := chkMonitorMode.Enabled;
+  txtMonitorCount.Enabled := (chkMonitorMode.State <> cbUnchecked) and (chkSubmitStats.State <> cbUnchecked);
 end;
 
 procedure TfrmSettings.chkSubmitStreamInfoClick(Sender: TObject);
 begin
   inherited;
 
-  Label2.Enabled := chkSubmitStreamInfo.State <> cbUnchecked;
+  //Label2.Enabled := chkSubmitStreamInfo.State <> cbUnchecked;
 end;
 
 procedure TfrmSettings.chkTrayClick(Sender: TObject);

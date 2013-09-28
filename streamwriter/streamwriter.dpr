@@ -22,8 +22,6 @@ program streamwriter;
 
 // vcPublic, damit TCommand-Nachfahren erzeugt werden können.
 {$RTTI EXPLICIT METHODS([vcPublic]) PROPERTIES([]) FIELDS([])}
-              // TODO: ich sollte die datenauswertung in clients nur machen, wenn das "scheduled" war... bringt mir selber doch gar nix.
-
 
 uses
   MM in '..\..\common\MM.pas',

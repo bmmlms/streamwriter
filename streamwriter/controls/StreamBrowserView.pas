@@ -691,8 +691,7 @@ begin
   inherited;
 end;
 
-// TODO: wie wird recordingokay benutzt? sollte für auto-aufnahmen egal sein. und wird ab jetzt nur noch vom server gesetzt.
-// TODO: was ist diese titleblackliste die man in SetData setzen konnte fürn stream??? wo relevant?
+// TODO: das webif muss ignoretitles setzen können. und der background job muss es dann an den stream packen.
 
 procedure TMStreamTree.PopupMenuClick(Sender: TObject);
 var

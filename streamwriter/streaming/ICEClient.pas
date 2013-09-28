@@ -81,6 +81,7 @@ type
     FRedirectedURL: string;
     FGenre: string;
     FTitle: string;
+    FDisplayTitle: string;
     FSpeed: Integer;
     FContentType: string;
     FFilename: string;
@@ -190,6 +191,7 @@ type
     property State: TICEClientStates read FState;
     property Genre: string read FGenre;
     property Title: string read FTitle;
+    property DisplayTitle: string read FDisplayTitle;
     property Speed: Integer read FSpeed;
     property ContentType: string read FContentType;
     property Filename: string read FFilename;
@@ -829,17 +831,18 @@ end;
 procedure TICEClient.ThreadTitleChanged(Sender: TSocketThread);
 begin
   FTitle := FICEThread.RecvStream.Title;
+  FDisplayTitle := FICEThread.RecvStream.DisplayTitle;
 
-  if (FTitle <> '') and Playing and (not Paused) then
+  if (FDisplayTitle <> '') and Playing and (not Paused) then
   begin
     if AppGlobals.DisplayPlayNotifications then
-      TfrmNotification.Act(FICEThread.RecvStream.Title, FEntry.Name);
+      TfrmNotification.Act(FDisplayTitle, FEntry.Name);
 
-    MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, '', FTitle, FEntry.Name, ''));
+    MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, '', FICEThread.RecvStream.DisplayTitle, FEntry.Name, ''));
   end;
 
   if Assigned(FOnTitleChanged) then
-    FOnTitleChanged(Self, FICEThread.RecvStream.Title);
+    FOnTitleChanged(Self, FDisplayTitle);
   if Assigned(FOnRefresh) then
     FOnRefresh(Self);
 

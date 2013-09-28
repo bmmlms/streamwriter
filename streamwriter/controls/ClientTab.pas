@@ -1666,46 +1666,13 @@ begin
       FSideBar.FBrowserView.RefreshStreams;
     oaSetData:
       begin
-        // TODO: wenn ein stream in den letzten 100 titeln öfter mal hintereinander den SELBEN titel meta mäßig spielt => kicken!
         // TODO: das darf nur mit auth klappen alles!
-        ShellExecute(Handle, 'open', 'http://streamdata.streamwriter.org', '', '', 1)
-
-        {
-        if not HomeComm.Authenticated then
-          FOnAuthRequired(Self)
-        else
-        begin
-          Client := FClients.GetClient(Streams[0].ID, Streams[0].Name, Streams[0].URL, '', nil);
-
-          if Client <> nil then
-            Settings := Client.Entry.Settings
-          else
-            Settings := nil;
-
-          SD := TfrmStreamData.Create(GetParentForm(Self), Settings, Streams[0].ID, Streams[0].Name, Streams[0].RegEx,
-            Streams[0].RecordingOkay, Streams[0].IgnoreTitles);
-          try
-            SD.ShowModal;
-
-            try
-              if SD.SaveSettings then
-              begin
-                ND := FSideBar.FBrowserView.StreamTree.GetNodeData(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
-                if SD.IsOkayChanged then
-                  ND.Data.RecordingOkay := SD.RecordingOkay;
-                if SD.RegExChanged then
-                  ND.Data.RegEx := SD.RegEx;
-                if SD.IgnoreTracksChanged then
-                  ND.Data.IgnoreTitles.Assign(SD.IgnoreTracks);
-                FSideBar.FBrowserView.StreamTree.InvalidateNode(FSideBar.FBrowserView.StreamTree.GetNodes(True)[0]);
-              end;
-            except end;
-
-          finally
-            SD.Free;
-          end;
-        end;
-        }
+        {$IFDEF DEBUG}
+        //ShellExecute(Handle, 'open', PChar('http://gaia:3000/streams#' + IntToStr(Streams[0].ID)), '', '', 1)
+        ShellExecute(Handle, 'open', PChar('http://streamdata.streamwriter.org/streams#' + IntToStr(Streams[0].ID)), '', '', 1)
+        {$ELSE}
+        ShellExecute(Handle, 'open', PChar('http://streamdata.streamwriter.org/streams#' + IntToStr(Streams[0].ID)), '', '', 1)
+        {$ENDIF}
       end;
     oaRate1:
       Rate(1);

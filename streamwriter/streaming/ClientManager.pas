@@ -434,17 +434,12 @@ begin
   //  "hasi - putz 1995"
   //  "richard - nils"
   //  alternierend. es gilt immer eine andere regex, aber nur eine ist für den bestimmten titel optimal.
-  //  die regex mit dezimal-abschneiden matched nicht gegen "richard - nils" - da muss intelligenz in den server...
-  //  und in sW evtl. auch....
+  //  die regex mit dezimal-abschneiden matched nicht gegen "richard - nils", die andere aber auf beides
+  //  -> da muss intelligenz in den server... und in sW evtl. auch....
   //  --> das gilt auch für den server, beispiel stream "Radio Caroline 259 Gold - Live from Breskens - Holland server 2"
   //      dort gibt es diese konstellation, der server setzt für den stream allerdings den regex, wo das jahr
   //      NICHT abgeschnitten wird nach regex-eingabe im webif.
   //      wenn der server regex sortiert muss sW es am ende mit der selben logik machen bevor er speichert.
-
-  // TODO: in sW Client sollte ein feld FDisplayTitle am stream. wo der titel "in schön" zur anzeige drinsteht.
-  //       dabei selbe "interpolation" wie im server verwenden :-)
-  // TODO: evtl auch direkt bei titelempfang nach regex parsen und dass dann interpoliert anzeigen? wie es der server auch macht:
-  //       erst titel parsen, bestandteile schön machen, in charts-db einfügen.
 
   Client := AddClient(0, 0, Name, CurrentURL, True);
   Client.Entry.Settings.Filter := ufNone;

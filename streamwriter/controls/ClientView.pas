@@ -354,13 +354,13 @@ begin
         else
           Text := NodeData.Client.Entry.CustomName;
       1:
-        if NodeData.Client.Title = '' then
+        if NodeData.Client.DisplayTitle = '' then
           if (NodeData.Client.State = csConnected) or (NodeData.Client.State = csConnecting) then
             Text := _('Unknown')
           else
             Text := ''
         else
-          Text := NodeData.Client.Title;
+          Text := NodeData.Client.DisplayTitle;
       2:
         Text := MakeSize(NodeData.Client.Entry.BytesReceived);
       3:

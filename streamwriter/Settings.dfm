@@ -1410,7 +1410,6 @@ object frmSettings: TfrmSettings
       Enabled = False
       TabOrder = 2
       OnClick = btnRemoveIgnoreTitlePatternClick
-      ExplicitTop = 284
     end
     object btnAddIgnoreTitlePattern: TButton
       Left = 100
@@ -1422,7 +1421,6 @@ object frmSettings: TfrmSettings
       Enabled = False
       TabOrder = 3
       OnClick = btnAddIgnoreTitlePatternClick
-      ExplicitTop = 284
     end
     object txtIgnoreTitlePattern: TLabeledEdit
       Left = 4
@@ -1435,7 +1433,6 @@ object frmSettings: TfrmSettings
       EditLabel.Caption = 'Pattern to add (use '#39'*'#39' as wildcard):'
       TabOrder = 4
       OnChange = txtIgnoreTitlePatternChange
-      ExplicitTop = 260
     end
     object lstRegExes: TListView
       Left = 4

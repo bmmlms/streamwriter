@@ -109,6 +109,7 @@ type
     FRecordingSessionMetaCounter: Integer;
 
     FTitle: string;
+    FDisplayTitle: string;
     FSavedFilename: string;
     FSavedFilenameConverted: string;
     FSavedArtist: string;
@@ -154,6 +155,7 @@ type
     FOnRefreshInfo: TNotifyEvent;
     FOnMonitorAnalyzerAnalyzed: TNotifyEvent;
 
+    function AdjustDisplayTitle(Title: string): string;
     function GetFileLength(Filename: string; Filesize: Int64; var Length: UInt64): Boolean;
     function CalcAdjustment(Offset: Int64): Int64;
     procedure CalcBytesPerSec;
@@ -199,6 +201,7 @@ type
     property BitRate: Cardinal read FBitRate;
     property Genre: string read FGenre;
     property Title: string read FTitle;
+    property DisplayTitle: string read FDisplayTitle;
     property SavedFilename: string read FSavedFilename;
     property SavedFilenameConverted: string read FSavedFilenameConverted;
     property SavedArtist: string read FSavedArtist;
@@ -239,6 +242,47 @@ type
 implementation
 
 { TICEStream }
+
+function TICEStream.AdjustDisplayTitle(Title: string): string;
+var
+  i: Integer;
+  C: Char;
+  NextUpper: Boolean;
+begin
+  // Das hier ist genau so im Server. Ändert man an einem Programm was
+  // muss es im anderen Programm nachgezogen werden!
+  // ´ durch ' ersetzen
+  Title := Functions.RegExReplace('´', '''', Title);
+  // _ durch ' ' ersetzen
+  Title := Functions.RegExReplace('_', ' ', Title);
+  // Featuring-dinge fitmachen
+  Title := Functions.RegExReplace(' ft ', ' Feat. ', Title);
+  Title := Functions.RegExReplace(' ft\. ', ' Feat. ', Title);
+  Title := Functions.RegExReplace(' feat ', ' Feat. ', Title);
+  // Mehrere ' zu einem machen
+  Title := Functions.RegExReplace('''+(?='')', '', Title);
+  // Mehrere leertasten hintereinander zu einer machen
+  Title := Functions.RegExReplace(' +(?= )', '', Title);
+  // Leertasten nach Klammer auf bzw. vor Klammer zu entfernen
+  Title := Functions.RegExReplace('\( ', '(', Title);
+  Title := Functions.RegExReplace(' \)', ')', Title);
+
+  Result := '';
+  NextUpper := True;
+  for i := 1 to Length(Title) do
+  begin
+    if NextUpper then
+    begin
+      C := UpperCase(Title[i])[1];
+      NextUpper := False;
+    end else
+      C := LowerCase(Title[i])[1];
+
+    if (c = ' ') or (c = '-') or (c = '_') or (c = ':') or (c = '(') or (c = '\') or (c = '/') then
+      NextUpper := True;
+    Result := Result + C;
+  end;
+end;
 
 function TICEStream.CalcAdjustment(Offset: Int64): Int64;
 begin
@@ -574,7 +618,6 @@ begin
     FOnMonitorAnalyzerAnalyzed(Self);
 end;
 
-// TODO: Die GetBestRegEx methode MASSIV prüfen!!!!!!!!!!! UNGETESTET!!!
 function TICEStream.GetBestRegEx(Title: string): string;
 type
   TRegExData = record
@@ -584,9 +627,7 @@ type
 var
   i, n: Integer;
   R: TPerlRegEx;
-  MArtist, MTitle, MAlbum: string; // TODO: Album??? funzt das überall mit "album" in regex? wird passig gesaved? etc... mal testen!
-                                   // gibt ja einige streams die ein album mit ausstrahlen. dass muss natürlich checkregex und streamdata
-                                   // auch berücksichtigen!!!
+  MArtist, MTitle, MAlbum: string;
   RED: TRegExData;
   REDs: TList<TRegExData>;
 const
@@ -655,7 +696,7 @@ begin
     REDs.Sort(TComparer<TRegExData>.Construct(
       function (const L, R: TRegExData): integer
       begin
-        Result := CmpInt(L.BadWeight, R.BadWeight);
+        Result := CmpInt(R.BadWeight, L.BadWeight);
       end
     ));
 
@@ -1002,10 +1043,10 @@ begin
     // Falls schon abgespielt wurde, jetzt aufgenommen wird und 'nur ganze Lieder' speichern aus ist,
     // können wir hier direkt mit der Aufnahme anfangen.
     // Achtung: Der Block hier ist so ähnlich in ProcessData() nochmal!
-    if (not FSettings.OnlySaveFull) and (FAudioStream <> nil) and (FMetaCounter >= 1) and (Title <> '') then
+    if (not FSettings.OnlySaveFull) and (FAudioStream <> nil) and (FMetaCounter >= 1) and (FTitle <> '') then
     begin
       FRecordingTitleFound := True;
-      FStreamTracks.FoundTitle(0, Title, FBytesPerSec, False);
+      FStreamTracks.FoundTitle(0, FTitle, FBytesPerSec, False);
     end;
 
     Result := True;
@@ -1169,6 +1210,7 @@ var
   i, MetaLen, P, DataCopied: Integer;
   AutoTuneInMinKbps: Cardinal;
   Title: string;
+  ParsedArtist, ParsedTitle, ParsedAlbum: string;
   MetaData: AnsiString;
   Buf: Byte;
 begin
@@ -1339,6 +1381,14 @@ begin
                 end;
 
               FTitle := Title;
+              FDisplayTitle := FTitle;
+
+              ParseTitle(FTitle, GetBestRegEx(FTitle), ParsedArtist, ParsedTitle, ParsedAlbum);
+              if (ParsedArtist <> '') and (ParsedTitle <> '') and (ParsedAlbum <> '') then
+                FDisplayTitle := ParsedArtist + ' - ' + ParsedTitle + ' - ' + ParsedAlbum
+              else if (ParsedArtist <> '') and (ParsedTitle <> '') then
+                FDisplayTitle := ParsedArtist + ' - ' + ParsedTitle;
+              FDisplayTitle := AdjustDisplayTitle(FDisplayTitle);
 
               if TitleChanged then
                 if Assigned(FOnTitleChanged) then
