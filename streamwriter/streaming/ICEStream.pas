@@ -1381,6 +1381,8 @@ begin
                 end;
 
 
+
+
               FTitle := Title;
               FDisplayTitle := FTitle;
 
