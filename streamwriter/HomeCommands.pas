@@ -377,6 +377,26 @@ type
     destructor Destroy; override;
   end;
 
+  TCommandGenerateAuthToken = class(TCommand)
+  private
+  protected
+  public
+    constructor Create;
+    destructor Destroy; override;
+  end;
+
+  TCommandGenerateAuthTokenResponse = class(TCommand)
+  private
+    FToken: Cardinal;
+  protected
+  public
+    constructor Create;
+
+    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+
+    property Token: Cardinal read FToken;
+  end;
+
 implementation
 
 
@@ -966,6 +986,34 @@ begin
 
   FData.Seek(0, soFromBeginning);
   S.CopyFrom(FData, FData.Size);
+end;
+
+{ TCommandGenerateAuthToken }
+
+constructor TCommandGenerateAuthToken.Create;
+begin
+  FCommandType := ctGenerateAuthToken;
+end;
+
+destructor TCommandGenerateAuthToken.Destroy;
+begin
+
+  inherited;
+end;
+
+{ TCommandGenerateAuthTokenResponse }
+
+constructor TCommandGenerateAuthTokenResponse.Create;
+begin
+  FCommandType := ctGenerateAuthTokenResponse;
+end;
+
+procedure TCommandGenerateAuthTokenResponse.Load(
+  CommandHeader: TCommandHeader; Stream: TExtendedStream);
+begin
+  inherited;
+
+  Stream.Read(FToken);
 end;
 
 end.

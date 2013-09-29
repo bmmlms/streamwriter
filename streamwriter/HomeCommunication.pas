@@ -56,6 +56,8 @@ type
 
     FWishlistUpgradeTitles: TWishlistUpgradeList;
 
+    FAuthToken: Cardinal;
+
     FOnHandshakeReceived: TSocketEvent;
     FOnLogInReceived: TSocketEvent;
     FOnLogOutReceived: TSocketEvent;
@@ -66,6 +68,7 @@ type
     FOnMonitorStreamsReceived: TSocketEvent;
     FOnSearchChartsReceived: TSocketEvent;
     FOnWishlistUpgradeReceived: TSocketEvent;
+    FOnAuthTokenReceived: TSocketEvent;
 
     procedure DoHandshakeReceived(CommandHeader: TCommandHeader; Command: TCommandHandshakeResponse);
     procedure DoLogInReceived(CommandHeader: TCommandHeader; Command: TCommandLogInResponse);
@@ -77,6 +80,7 @@ type
     procedure DoMonitorStreamsReceived(CommandHeader: TCommandHeader; Command: TCommandGetMonitorStreamsResponse);
     procedure DoSearchChartsReceived(CommandHeader: TCommandHeader; Command: TCommandSearchChartsResponse);
     procedure DoWishlistUpgradeReceived(CommandHeader: TCommandHeader; Command: TCommandGetWishlistUpgradeResponse);
+    procedure DoGenerateAuthTokenReceived(CommandHeader: TCommandHeader; Command: TCommandGenerateAuthTokenResponse);
   protected
     procedure DoReceivedCommand(ID: Cardinal; CommandHeader: TCommandHeader; Command: TCommand); override;
     procedure DoException(E: Exception); override;
@@ -95,6 +99,7 @@ type
     property OnMonitorStreamsReceived: TSocketEvent read FOnMonitorStreamsReceived write FOnMonitorStreamsReceived;
     property OnSearchChartsReceived: TSocketEvent read FOnSearchChartsReceived write FOnSearchChartsReceived;
     property OnWishlistUpgradeReceived: TSocketEvent read FOnWishlistUpgradeReceived write FOnWishlistUpgradeReceived;
+    property OnAuthTokenReceived: TSocketEvent read FOnAuthTokenReceived write FOnAuthTokenReceived;
   end;
 
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
@@ -106,6 +111,7 @@ type
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
   TIntArrayEvent = procedure(Sender: TObject; IntArr: TIntArray) of object;
   TWishlistUpgradeEvent = procedure(Sender: TObject; WishlistUpgrade: TWishlistUpgradeList) of object;
+  TCardinalEvent = procedure(Sender: TObject; Data: Cardinal) of object;
 
   THomeCommunication = class
   private
@@ -133,6 +139,7 @@ type
     FOnMonitorStreamsReceived: TIntArrayEvent;
     FOnSearchChartsReceived: TChartsReceivedEvent;
     FOnWishlistUpgradeReceived: TWishlistUpgradeEvent;
+    FOnAuthTokenReceived: TCardinalEvent;
 
     function FGetThreadAlive: Boolean;
 
@@ -151,6 +158,7 @@ type
     procedure HomeThreadMonitorStreamsReceived(Sender: TSocketThread);
     procedure HomeThreadSearchChartsReceived(Sender: TSocketThread);
     procedure HomeThreadWishlistUpgradeReceived(Sender: TSocketThread);
+    procedure HomeThreadAuthTokenReceived(Sender: TSocketThread);
 
     procedure HomeThreadTerminate(Sender: TObject);
   public
@@ -178,6 +186,7 @@ type
     procedure SendSearchCharts(Top: Boolean; Term: string);
     procedure SendGetWishlistUpgrade(Titles: TStringList);
     procedure SendStreamAnalyzationData(StreamID: Cardinal; Data: TExtendedStream);
+    procedure SendGenerateAuthToken;
 
     property Disabled: Boolean read FDisabled;
     property ServerTimeDiff: Int64 read FServerTimeDiff;
@@ -203,6 +212,7 @@ type
     property OnMonitorStreamsReceived: TIntArrayEvent read FOnMonitorStreamsReceived write FOnMonitorStreamsReceived;
     property OnSearchChartsReceived: TChartsReceivedEvent read FOnSearchChartsReceived write FOnSearchChartsReceived;
     property OnWishlistUpgradeReceived: TWishlistUpgradeEvent read FOnWishlistUpgradeReceived write FOnWishlistUpgradeReceived;
+    property OnAuthTokenReceived: TCardinalEvent read FOnAuthTokenReceived write FOnAuthTokenReceived;
   end;
 
 var
@@ -261,6 +271,15 @@ begin
 
 end;
 
+procedure THomeThread.DoGenerateAuthTokenReceived(CommandHeader: TCommandHeader;
+  Command: TCommandGenerateAuthTokenResponse);
+begin
+  FAuthToken := Command.Token;
+
+  if Assigned(FOnAuthTokenReceived) then
+    Sync(FOnAuthTokenReceived);
+end;
+
 procedure THomeThread.DoHandshakeReceived(CommandHeader: TCommandHeader;
   Command: TCommandHandshakeResponse);
 begin
@@ -315,6 +334,7 @@ var
   MonitorStreams: TCommandGetMonitorStreamsResponse absolute Command;
   SearchCharts: TCommandSearchChartsResponse absolute Command;
   WishlistUpgrade: TCommandGetWishlistUpgradeResponse absolute Command;
+  GenerateAuthToken: TCommandGenerateAuthTokenResponse absolute Command;
 begin
   inherited;
 
@@ -339,6 +359,8 @@ begin
       DoSearchChartsReceived(CommandHeader, SearchCharts);
     ctGetWishlistUpgradeResponse:
       DoWishlistUpgradeReceived(CommandHeader, WishlistUpgrade);
+    ctGenerateAuthTokenResponse:
+      DoGenerateAuthTokenReceived(CommandHeader, GenerateAuthToken);
   end;
 end;
 
@@ -685,6 +707,15 @@ begin
   FThread.SendCommand(Cmd);
 end;
 
+procedure THomeCommunication.SendGenerateAuthToken;
+begin
+  // TODO: das muss abgefangen werden für ne msg an den user
+  if not FConnected then
+    Exit;
+
+  FThread.SendCommand(TCommandGenerateAuthToken.Create)
+end;
+
 procedure THomeCommunication.SendGetMonitorStreams(Count: Cardinal);
 begin
   if not FConnected then
@@ -717,6 +748,12 @@ begin
   FConnected := True;
 
   SendHandshake;
+end;
+
+procedure THomeCommunication.HomeThreadAuthTokenReceived(Sender: TSocketThread);
+begin
+  if Assigned(FOnAuthTokenReceived) then
+    FOnAuthTokenReceived(Self, THomeThread(Sender).FAuthToken);
 end;
 
 procedure THomeCommunication.HomeThreadBeforeEnded(Sender: TSocketThread);
@@ -886,6 +923,7 @@ begin
   FThread.OnMonitorStreamsReceived := HomeThreadMonitorStreamsReceived;
   FThread.OnSearchChartsReceived := HomeThreadSearchChartsReceived;
   FThread.OnWishlistUpgradeReceived := HomeThreadWishlistUpgradeReceived;
+  FThread.OnAuthTokenReceived := HomeThreadAuthTokenReceived;
 
   FThread.OnTerminate := HomeThreadTerminate;
 
@@ -903,6 +941,7 @@ initialization
   TCommand.RegisterCommand(ctGetMonitorStreamsResponse, TCommandGetMonitorStreamsResponse);
   TCommand.RegisterCommand(ctSearchChartsResponse, TCommandSearchChartsResponse);
   TCommand.RegisterCommand(ctGetWishlistUpgradeResponse, TCommandGetWishlistUpgradeResponse);
+  TCommand.RegisterCommand(ctGenerateAuthTokenResponse, TCommandGenerateAuthTokenResponse);
 
   HomeComm := nil;
 

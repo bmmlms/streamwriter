@@ -27,11 +27,11 @@ uses
   MControls, ClientView, StreamBrowserView, StreamDebugView, StreamInfoView,
   LanguageObjects, HomeCommunication, StationCombo, Menus, ActnList, ImgList,
   DataManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
-  GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, ShellAPI, Tabs,
+  GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, Tabs,
   Graphics, SharedControls, Generics.Collections, Generics.Defaults, Math,
   Logging, DynBass, Forms, MsgDlg, TypeDefs, MessageBus, AppMessages,
   PlayerManager, PlaylistHandler, AudioFunctions, SharedData, PngSpeedButton,
-  Dialogs;
+  Dialogs, ShellAPI;
 
 type
   TSidebar = class(TPageControl)
@@ -1666,13 +1666,9 @@ begin
       FSideBar.FBrowserView.RefreshStreams;
     oaSetData:
       begin
-        // TODO: das darf nur mit auth klappen alles!
-        {$IFDEF DEBUG}
-        //ShellExecute(Handle, 'open', PChar('http://gaia:3000/streams#' + IntToStr(Streams[0].ID)), '', '', 1)
-        ShellExecute(Handle, 'open', PChar('http://streamdata.streamwriter.org/streams#' + IntToStr(Streams[0].ID)), '', '', 1)
-        {$ELSE}
-        ShellExecute(Handle, 'open', PChar('http://streamdata.streamwriter.org/streams#' + IntToStr(Streams[0].ID)), '', '', 1)
-        {$ENDIF}
+        FSideBar.BrowserView.SetStreamDataID := Streams[0].ID;
+        // TODO: if not loggedin then message!
+        HomeComm.SendGenerateAuthToken;
       end;
     oaRate1:
       Rate(1);

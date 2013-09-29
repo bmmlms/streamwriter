@@ -30,7 +30,7 @@ uses
   HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging,
   DataManager, DropSource, Types, AudioFunctions, PngSpeedButton,
   Generics.Collections, TypeDefs, MessageBus, AppMessages, Commands,
-  GUIFunctions, SharedData;
+  GUIFunctions, SharedData, ShellAPI;
 
 type
   TModes = (moShow, moLoading, moError);
@@ -97,7 +97,7 @@ type
 
     FLoading: Boolean;
 
-    FHomeCommunication: THomeCommunication;
+    FSetStreamDataID: Cardinal;
 
     procedure ListsChange(Sender: TObject);
     procedure SearchEditChange(Sender: TObject);
@@ -110,6 +110,7 @@ type
     procedure StreamBrowserHeaderClick(Sender: TVTHeader; HitInfo: TVTHeaderHitInfo);
 
     procedure HomeCommStreamsReceived(Sender: TObject);
+    procedure HomeCommAuthTokenReceived(Sender: TObject; Token: Cardinal);
   protected
   public
     constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
@@ -124,6 +125,7 @@ type
 
     property Mode: TModes read FMode;
     property StreamTree: TMStreamTree read FStreamTree;
+    property SetStreamDataID: Cardinal read FSetStreamDataID write FSetStreamDataID;
   end;
 
   TMStreamTreeHeaderPopup = class(TPopupMenu)
@@ -1128,7 +1130,6 @@ begin
   BevelOuter := bvNone;
 
   FLoading := False;
-  FHomeCommunication := HomeComm;
   FSelectedSortType := stRating;
 
   FSearch := TMStreamSearchPanel.Create(Self);
@@ -1159,8 +1160,19 @@ begin
   inherited;
 end;
 
-procedure TMStreamBrowserView.HomeCommBytesTransferred(
-  CommandHeader: TCommandHeader; Transferred: UInt64);
+procedure TMStreamBrowserView.HomeCommAuthTokenReceived(Sender: TObject; Token: Cardinal);
+begin
+  if FSetStreamDataID > 0 then
+  begin
+    {$IFDEF DEBUG}
+    ShellExecute(Handle, 'open', PChar('http://gaia:3000/streams#stream=' + IntToStr(FSetStreamDataID) + ',token=' + IntToStr(Token)), '', '', 1);
+    {$ELSE}
+    ShellExecute(Handle, 'open', PChar('http://streamdata.streamwriter.org/streams#stream=' + IntToStr(FSetStreamDataID) + ',token=' + IntToStr(Token)), '', '', 1);
+    {$ENDIF}
+  end;
+end;
+
+procedure TMStreamBrowserView.HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
 begin
   FStreamTree.HomeCommBytesTransferred(CommandHeader, Transferred);
 end;
@@ -1248,7 +1260,8 @@ begin
   FSearch.FKbpsList.OnChange := ListsChange;
   FSearch.FTypeList.OnChange := ListsChange;
 
-  FHomeCommunication.OnStreamsReceived := HomeCommStreamsReceived;
+  HomeComm.OnStreamsReceived := HomeCommStreamsReceived;
+  HomeComm.OnAuthTokenReceived := HomeCommAuthTokenReceived;
 
   if (FDataLists.BrowserList.Count > 0) and (FDataLists.GenreList.Count > 0) then
   begin
