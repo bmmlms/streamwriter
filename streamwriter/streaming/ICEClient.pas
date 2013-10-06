@@ -144,7 +144,7 @@ type
     procedure ThreadMilliSecondsReceived(Sender: TSocketThread);
     procedure ThreadBeforeEnded(Sender: TSocketThread);
     procedure ThreadTerminated(Sender: TObject);
-    procedure ThreadMonitorAnalyzerAnalyzed(Sender: TSocketThread);
+    //procedure ThreadMonitorAnalyzerAnalyzed(Sender: TSocketThread);
   public
     constructor Create(Manager: TObject; StartURL: string); overload;
     constructor Create(Manager: TObject; ID, Bitrate: Cardinal; Name, StartURL: string); overload;
@@ -261,6 +261,7 @@ begin
   FKilled := False;
   FState := csStopped;
   FTitle := '';
+  FDisplayTitle := '';
   FSpeed := 0;
   FContentType := '';
   FFilename := '';
@@ -443,7 +444,7 @@ begin
   FICEThread.OnRecordingStopped := ThreadRecordingStopped;
   FICEThread.OnPlaybackStarted := ThreadPlaybackStarted;
   FICEThread.OnMilliSecondsReceived := ThreadMilliSecondsReceived;
-  FICEThread.OnMonitorAnalyzerAnalyzed := ThreadMonitorAnalyzerAnalyzed;
+  //FICEThread.OnMonitorAnalyzerAnalyzed := ThreadMonitorAnalyzerAnalyzed;
 
   // Das muss hier so früh sein, wegen z.B. RetryDelay - das hat der Stream nämlich nicht,
   // wenn z.B. beim Verbinden was daneben geht.
@@ -608,10 +609,10 @@ begin
     FOnSecondsReceived(Self);
 end;
 
-procedure TICEClient.ThreadMonitorAnalyzerAnalyzed(Sender: TSocketThread);
-begin
-  HomeComm.SendStreamAnalyzationData(FEntry.ID, TICEThread(Sender).RecvStream.MonitorAnalyzer.WaveDataStream);
-end;
+//procedure TICEClient.ThreadMonitorAnalyzerAnalyzed(Sender: TSocketThread);
+//begin
+//  HomeComm.SendStreamAnalyzationData(FEntry.ID, TICEThread(Sender).RecvStream.MonitorAnalyzer.WaveDataStream);
+//end;
 
 procedure TICEClient.ThreadBeforeEnded(Sender: TSocketThread);
 begin
@@ -867,6 +868,7 @@ begin
       tsRetrying:
         begin
           FTitle := '';
+          FDisplayTitle := '';
           FState := csRetrying;
         end;
       tsIOError:
@@ -898,6 +900,7 @@ begin
 
   FICEThread := nil;
   FTitle := '';
+  FDisplayTitle := '';
   FSpeed := 0;
   FFilename := '';
   MaxRetries := FEntry.Settings.MaxRetries;

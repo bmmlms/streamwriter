@@ -430,17 +430,6 @@ begin
       if (Client.AutoRemove and (Client.RecordTitle = Title)) or (Client.Recording) then
         Exit;
 
-  // TODO: wie ich schonmal sagte! überdenke folgendes. ein stream spielt:
-  //  "hasi - putz 1995"
-  //  "richard - nils"
-  //  alternierend. es gilt immer eine andere regex, aber nur eine ist für den bestimmten titel optimal.
-  //  die regex mit dezimal-abschneiden matched nicht gegen "richard - nils", die andere aber auf beides
-  //  -> da muss intelligenz in den server... und in sW evtl. auch....
-  //  --> das gilt auch für den server, beispiel stream "Radio Caroline 259 Gold - Live from Breskens - Holland server 2"
-  //      dort gibt es diese konstellation, der server setzt für den stream allerdings den regex, wo das jahr
-  //      NICHT abgeschnitten wird nach regex-eingabe im webif.
-  //      wenn der server regex sortiert muss sW es am ende mit der selben logik machen bevor er speichert.
-
   Client := AddClient(0, 0, Name, CurrentURL, True);
   Client.Entry.Settings.Filter := ufNone;
   Client.Entry.Settings.SaveToMemory := True;

@@ -709,7 +709,6 @@ end;
 
 procedure THomeCommunication.SendGenerateAuthToken;
 begin
-  // TODO: das muss abgefangen werden für ne msg an den user
   if not FConnected then
     Exit;
 

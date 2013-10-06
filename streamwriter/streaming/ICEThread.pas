@@ -647,7 +647,7 @@ begin
   FTypedStream.OnIOError := StreamIOError;
   FTypedStream.OnTitleAllowed := StreamTitleAllowed;
   FTypedStream.OnRefreshInfo := StreamRefreshInfo;
-  FTypedStream.OnMonitorAnalyzerAnalyzed := StreamMonitorAnalyzerAnalyzed;
+  //FTypedStream.OnMonitorAnalyzerAnalyzed := StreamMonitorAnalyzerAnalyzed;
 
   if ProxyEnabled then
     SendData := 'GET ' + AnsiString(URL) + ' HTTP/1.1'#13#10

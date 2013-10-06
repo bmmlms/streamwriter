@@ -141,7 +141,7 @@ type
     FLastGetSettings: Cardinal;
 
     FStreamTracks: TStreamTracks;
-    FMonitorAnalyzer: TMonitorAnalyzer;
+    //FMonitorAnalyzer: TMonitorAnalyzer;
 
     FAudioStream: TStream;
     FAudioType: TAudioTypes;
@@ -153,7 +153,7 @@ type
     FOnIOError: TNotifyEvent;
     FOnTitleAllowed: TNotifyEvent;
     FOnRefreshInfo: TNotifyEvent;
-    FOnMonitorAnalyzerAnalyzed: TNotifyEvent;
+    //FOnMonitorAnalyzerAnalyzed: TNotifyEvent;
 
     function AdjustDisplayTitle(Title: string): string;
     function GetFileLength(Filename: string; Filesize: Int64; var Length: UInt64): Boolean;
@@ -170,7 +170,7 @@ type
     function StartRecordingInternal: Boolean;
     procedure StopRecordingInternal;
 
-    procedure MonitorAnalyzerAnalyzed(Sender: TObject);
+    //procedure MonitorAnalyzerAnalyzed(Sender: TObject);
 
     function CleanTitle(Title: string): string;
     procedure ParseTitle(S, Pattern: string; var Artist: string; var Title: string; var Album: string);
@@ -194,7 +194,7 @@ type
     property Killed: Boolean read FKilled write FKilled;
 
     property MetaCounter: Integer read FMetaCounter;
-    property MonitorAnalyzer: TMonitorAnalyzer read FMonitorAnalyzer;
+    //property MonitorAnalyzer: TMonitorAnalyzer read FMonitorAnalyzer;
 
     property StreamName: string read FStreamName;
     property StreamURL: string read FStreamURL;
@@ -236,7 +236,7 @@ type
     property OnIOError: TNotifyEvent read FOnIOError write FOnIOError;
     property OnTitleAllowed: TNotifyEvent read FOnTitleAllowed write FOnTitleAllowed;
     property OnRefreshInfo: TNotifyEvent read FOnRefreshInfo write FOnRefreshInfo;
-    property OnMonitorAnalyzerAnalyzed: TNotifyEvent read FOnMonitorAnalyzerAnalyzed write FOnMonitorAnalyzerAnalyzed;
+    //property OnMonitorAnalyzerAnalyzed: TNotifyEvent read FOnMonitorAnalyzerAnalyzed write FOnMonitorAnalyzerAnalyzed;
   end;
 
 implementation
@@ -387,7 +387,7 @@ begin
   FreeAndNil(FStreamTracks);
   FSettings.Free;
 
-  FreeAndNil(FMonitorAnalyzer);
+  //FreeAndNil(FMonitorAnalyzer);
 
   inherited;
 end;
@@ -431,15 +431,15 @@ procedure TICEStream.DataReceived(CopySize: Integer);
 var
   Buf: Pointer;
 begin
-  if FMonitoring and (FMonitorAnalyzer <> nil) and (FMetaInt > 0) and (FMonitorAnalyzer.Active) then
-  begin
-    try
-      FMonitorAnalyzer.Append(RecvStream, CopySize);
-      RecvStream.Position := RecvStream.Position - CopySize;
-    except
-      FreeAndNil(FMonitorAnalyzer);
-    end;
-  end;
+  //if FMonitoring and (FMonitorAnalyzer <> nil) and (FMetaInt > 0) and (FMonitorAnalyzer.Active) then
+  //begin
+  //  try
+  //    FMonitorAnalyzer.Append(RecvStream, CopySize);
+  //    RecvStream.Position := RecvStream.Position - CopySize;
+  //  except
+  //    FreeAndNil(FMonitorAnalyzer);
+  //  end;
+  //end;
 
   if (FAudioStream <> nil) and (not FMonitoring) then
   begin
@@ -612,11 +612,11 @@ begin
   AppGlobals.Unlock;
 end;
 
-procedure TICEStream.MonitorAnalyzerAnalyzed(Sender: TObject);
-begin
-  if Assigned(FOnMonitorAnalyzerAnalyzed) then
-    FOnMonitorAnalyzerAnalyzed(Self);
-end;
+//procedure TICEStream.MonitorAnalyzerAnalyzed(Sender: TObject);
+//begin
+//  if Assigned(FOnMonitorAnalyzerAnalyzed) then
+//    FOnMonitorAnalyzerAnalyzed(Self);
+//end;
 
 function TICEStream.GetBestRegEx(Title: string): string;
 type
@@ -631,7 +631,7 @@ var
   RED: TRegExData;
   REDs: TList<TRegExData>;
 const
-  BadChars: array[0..2] of string = (':', '-', '(');
+  BadChars: array[0..2] of string = (':', '-', '|');
 begin
   Result := '(?P<a>.*) - (?P<t>.*)';
 
@@ -661,7 +661,10 @@ begin
                 for n := 0 to High(BadChars) do
                   if Pos(BadChars[n], MArtist) > 0 then
                     RED.BadWeight := RED.BadWeight + 1;
-              end;
+                if ContainsRegEx('(\d{2})', MArtist) then
+                  RED.BadWeight := RED.BadWeight + 1;
+              end
+                else RED.BadWeight := RED.BadWeight + 2;
             except end;
             try
               if R.NamedGroup('t') > 0 then
@@ -670,7 +673,10 @@ begin
                 for n := 0 to High(BadChars) do
                   if Pos(BadChars[n], MTitle) > 0 then
                     RED.BadWeight := RED.BadWeight + 1;
-              end;
+                if ContainsRegEx('(\d{2})', MTitle) then
+                  RED.BadWeight := RED.BadWeight + 1;
+              end
+                else RED.BadWeight := RED.BadWeight + 2;
             except end;
             try
               if R.NamedGroup('l') > 0 then
@@ -682,11 +688,12 @@ begin
               end;
             except end;
 
-            if MAlbum <> '' then
+            if MAlbum = '' then
               RED.BadWeight := RED.BadWeight + 10;
 
             REDs.Add(RED);
-          end;
+          end else
+            RED.BadWeight := RED.BadWeight + 50;
         except end;
       finally
         R.Free;
@@ -696,7 +703,7 @@ begin
     REDs.Sort(TComparer<TRegExData>.Construct(
       function (const L, R: TRegExData): integer
       begin
-        Result := CmpInt(R.BadWeight, L.BadWeight);
+        Result := CmpInt(L.BadWeight, R.BadWeight);
       end
     ));
 
@@ -938,11 +945,11 @@ end;
 
 procedure TICEStream.StartMonitoring;
 begin
-  if FMonitorAnalyzer = nil then
-  begin
-    FMonitorAnalyzer := TMonitorAnalyzer.Create;
-    FMonitorAnalyzer.OnAnalyzed := MonitorAnalyzerAnalyzed;
-  end;
+  //if FMonitorAnalyzer = nil then
+  //begin
+  //  FMonitorAnalyzer := TMonitorAnalyzer.Create;
+  //  FMonitorAnalyzer.OnAnalyzed := MonitorAnalyzerAnalyzed;
+  //end;
   FMonitoringStarted := True;
 end;
 
@@ -1315,16 +1322,16 @@ begin
 
             IgnoreTitle := Title = '';
 
-            if FMonitoring and (FMonitorAnalyzer <> nil) then
-            begin
-              try
-                FMonitorAnalyzer.TitleChanged;
-                if not FMonitorAnalyzer.Active then
-                  FreeAndNil(FMonitorAnalyzer);
-              except
-                FreeAndNil(FMonitorAnalyzer);
-              end;
-            end;
+            //if FMonitoring and (FMonitorAnalyzer <> nil) then
+            //begin
+            //  try
+            //    FMonitorAnalyzer.TitleChanged;
+            //    if not FMonitorAnalyzer.Active then
+            //      FreeAndNil(FMonitorAnalyzer);
+            //  except
+            //    FreeAndNil(FMonitorAnalyzer);
+            //  end;
+            //end;
 
             for i := 0 to FSettings.IgnoreTrackChangePattern.Count - 1 do
               if Like(Title, FSettings.IgnoreTrackChangePattern[i]) then
@@ -1379,9 +1386,6 @@ begin
                       end;
                     end;
                 end;
-
-
-
 
               FTitle := Title;
               FDisplayTitle := FTitle;

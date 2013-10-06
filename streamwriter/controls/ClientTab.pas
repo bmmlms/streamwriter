@@ -1666,9 +1666,12 @@ begin
       FSideBar.FBrowserView.RefreshStreams;
     oaSetData:
       begin
-        FSideBar.BrowserView.SetStreamDataID := Streams[0].ID;
-        // TODO: if not loggedin then message!
-        HomeComm.SendGenerateAuthToken;
+        if HomeComm.Connected then
+        begin
+          FSideBar.BrowserView.SetStreamDataID := Streams[0].ID;
+          HomeComm.SendGenerateAuthToken;
+        end else
+          MsgBox(Handle, _('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION);
       end;
     oaRate1:
       Rate(1);
