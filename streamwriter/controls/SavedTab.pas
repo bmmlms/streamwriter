@@ -1469,7 +1469,7 @@ begin
   end else
     if Img <> nil then
     begin
-      FCoverPanel.Show;
+      FCoverPanel.Visible := True;
       FCoverBorderPanel.BevelKind := bkFlat;
 
       FCoverImage.Picture.Assign(ResizeBitmap(Img as TBitmap, Min(Min(FCoverImage.Height, FCoverImage.Width), Min(Img.Height, Img.Width))))
