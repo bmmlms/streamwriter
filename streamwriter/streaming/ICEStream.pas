@@ -681,6 +681,7 @@ begin
             try
               if R.NamedGroup('l') > 0 then
               begin
+                RED.BadWeight := RED.BadWeight - 3;
                 MAlbum := Trim(R.Groups[R.NamedGroup('l')]);
                 for n := 0 to High(BadChars) do
                   if Pos(BadChars[n], MAlbum) > 0 then
