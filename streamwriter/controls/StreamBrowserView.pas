@@ -693,8 +693,6 @@ begin
   inherited;
 end;
 
-// TODO: das webif muss ignoretitles setzen können. und der background job muss es dann an den stream packen.
-
 procedure TMStreamTree.PopupMenuClick(Sender: TObject);
 var
   Action: TStreamOpenActions;

@@ -103,6 +103,7 @@ type
     FOnRefresh: TNotifyEvent;
     FOnSongSaved: TSongSavedEvent;
     FOnTitleChanged: TStringEvent;
+    FOnDisplayTitleChanged: TStringEvent;
     FOnDisconnected: TNotifyEvent;
     FOnAddRecent: TNotifyEvent;
     FOnICYReceived: TIntegerEvent;
@@ -134,6 +135,7 @@ type
     procedure ThreadAddRecent(Sender: TSocketThread);
     procedure ThreadSpeedChanged(Sender: TSocketThread);
     procedure ThreadTitleChanged(Sender: TSocketThread);
+    procedure ThreadDisplayTitleChanged(Sender: TSocketThread);
     procedure ThreadSongSaved(Sender: TSocketThread);
     procedure ThreadStateChanged(Sender: TSocketThread);
     procedure ThreadNeedSettings(Sender: TSocketThread);
@@ -203,6 +205,7 @@ type
     property OnAddRecent: TNotifyEvent read FOnAddRecent write FOnAddRecent;
     property OnSongSaved: TSongSavedEvent read FOnSongSaved write FOnSongSaved;
     property OnTitleChanged: TStringEvent read FOnTitleChanged write FOnTitleChanged;
+    property OnDisplayTitleChanged: TStringEvent read FOnDisplayTitleChanged write FOnDisplayTitleChanged;
     property OnDisconnected: TNotifyEvent read FOnDisconnected write FOnDisconnected;
     property OnICYReceived: TIntegerEvent read FOnICYReceived write FOnICYReceived;
     property OnURLsReceived: TNotifyEvent read FOnURLsReceived write FOnURLsReceived;
@@ -432,6 +435,7 @@ begin
   FICEThread := TICEThread.Create(FCurrentURL);
   FICEThread.OnDebug := ThreadDebug;
   FICEThread.OnTitleChanged := ThreadTitleChanged;
+  FICEThread.OnDisplayTitleChanged := ThreadDisplayTitleChanged;
   FICEThread.OnSongSaved := ThreadSongSaved;
   FICEThread.OnNeedSettings := ThreadNeedSettings;
   FICEThread.OnStateChanged := ThreadStateChanged;
@@ -832,6 +836,17 @@ end;
 procedure TICEClient.ThreadTitleChanged(Sender: TSocketThread);
 begin
   FTitle := FICEThread.RecvStream.Title;
+
+  if (FEntry.ID > 0) and (FICEThread.RecvStream.FullTitleFound) and (not FAutoRemove) and (FRecordTitle = '') then
+    if AppGlobals.SubmitStreamInfo then
+    begin
+      HomeComm.SendTitleChanged(Entry.ID, Entry.Name, FTitle, FCurrentURL, Entry.StartURL, FICEThread.RecvStream.AudioType,
+        Entry.BitRate, Entry.URLs);
+    end;
+end;
+
+procedure TICEClient.ThreadDisplayTitleChanged(Sender: TSocketThread);
+begin
   FDisplayTitle := FICEThread.RecvStream.DisplayTitle;
 
   if (FDisplayTitle <> '') and Playing and (not Paused) then
@@ -846,13 +861,6 @@ begin
     FOnTitleChanged(Self, FDisplayTitle);
   if Assigned(FOnRefresh) then
     FOnRefresh(Self);
-
-  if (FEntry.ID > 0) and (FICEThread.RecvStream.FullTitleFound) and (not FAutoRemove) and (FRecordTitle = '') then
-    if AppGlobals.SubmitStreamInfo then
-    begin
-      HomeComm.SendTitleChanged(Entry.ID, Entry.Name, FTitle, FCurrentURL, Entry.StartURL, FICEThread.RecvStream.AudioType,
-        Entry.BitRate, Entry.URLs);
-    end;
 end;
 
 procedure TICEClient.ThreadStateChanged(Sender: TSocketThread);

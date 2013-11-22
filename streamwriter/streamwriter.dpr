@@ -163,7 +163,8 @@ begin
   if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and
      (not IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion))
   then
-    TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
+    TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.AppVersion.AsString, AppGlobals.BuildNumber,
+      AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
 
   // TODO: das funzt noch nicht. alle kombinationen testen!!!
   //       und genau das gibt ein neues problem! ich muss im create alles erstellen. auch listen mit items füllen etc...

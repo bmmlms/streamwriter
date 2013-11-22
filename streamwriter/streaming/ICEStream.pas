@@ -147,6 +147,7 @@ type
     FAudioType: TAudioTypes;
 
     FOnTitleChanged: TNotifyEvent;
+    FOnDisplayTitleChanged: TNotifyEvent;
     FOnSongSaved: TNotifyEvent;
     FOnNeedSettings: TNotifyEvent;
     FOnChunkReceived: TChunkReceivedEvent;
@@ -230,6 +231,7 @@ type
     property AudioType: TAudioTypes read FAudioType;
 
     property OnTitleChanged: TNotifyEvent read FOnTitleChanged write FOnTitleChanged;
+    property OnDisplayTitleChanged: TNotifyEvent read FOnDisplayTitleChanged write FOnDisplayTitleChanged;
     property OnSongSaved: TNotifyEvent read FOnSongSaved write FOnSongSaved;
     property OnNeedSettings: TNotifyEvent read FOnNeedSettings write FOnNeedSettings;
     property OnChunkReceived: TChunkReceivedEvent read FOnChunkReceived write FOnChunkReceived;
@@ -514,6 +516,8 @@ begin
 
       if Assigned(FOnTitleChanged) then
         FOnTitleChanged(Self);
+      if Assigned(FOnDisplayTitleChanged) then
+        FOnDisplayTitleChanged(Self);
     end else
       raise Exception.Create(Format(_('Invalid responsecode (%d)'), [ResponseCode]));
   end else if HeaderType = 'http' then
@@ -631,7 +635,7 @@ var
   RED: TRegExData;
   REDs: TList<TRegExData>;
 const
-  BadChars: array[0..2] of string = (':', '-', '|');
+  BadChars: array[0..3] of string = (':', '-', '|', '*');
 begin
   Result := '(?P<a>.*) - (?P<t>.*)';
 
@@ -1214,10 +1218,10 @@ end;
 
 procedure TICEStream.ProcessData(Received: Cardinal);
 var
-  TitleChanged, IgnoreTitle: Boolean;
+  TitleChanged, DisplayTitleChanged, IgnoreTitle: Boolean;
   i, MetaLen, P, DataCopied: Integer;
   AutoTuneInMinKbps: Cardinal;
-  Title: string;
+  Title, NewDisplayTitle: string;
   ParsedArtist, ParsedTitle, ParsedAlbum: string;
   MetaData: AnsiString;
   Buf: Byte;
@@ -1275,6 +1279,7 @@ begin
   end else
   begin
     TitleChanged := False;
+    DisplayTitleChanged := False;
 
     if (not FMonitoring) and (FSettings.SeparateTracks) then
       TrySave;
@@ -1341,12 +1346,27 @@ begin
                 Break;
               end;
 
+            // TODO: TESTEN TESTEN TESTEN IN ALLEN KONSTELLATIONEN!!!!!!!!
+
             if not IgnoreTitle then
             begin
+              NewDisplayTitle := Title;
+
+              ParseTitle(Title, GetBestRegEx(Title), ParsedArtist, ParsedTitle, ParsedAlbum);
+              if (ParsedArtist <> '') and (ParsedTitle <> '') and (ParsedAlbum <> '') then
+                NewDisplayTitle := ParsedArtist + ' - ' + ParsedTitle + ' - ' + ParsedAlbum
+              else if (ParsedArtist <> '') and (ParsedTitle <> '') then
+                NewDisplayTitle := ParsedArtist + ' - ' + ParsedTitle;
+              NewDisplayTitle := AdjustDisplayTitle(NewDisplayTitle);
+
               if Title <> FTitle then
-              begin
-                WriteDebug(Format(_('"%s" now playing'), [Title]), 2, 0);
                 TitleChanged := True;
+
+              if NewDisplayTitle <> FDisplayTitle then
+              begin
+                WriteDebug(Format(_('"%s" now playing'), [NewDisplayTitle]), 2, 0);
+                DisplayTitleChanged := True;
+
                 Inc(FMetaCounter);
                 Inc(FRecordingSessionMetaCounter);
 
@@ -1362,45 +1382,37 @@ begin
                 end;
               end;
 
-              if (not FMonitoring) and FSettings.SeparateTracks then
-                if (AnsiLowerCase(Title) <> AnsiLowerCase(FTitle)) and (FRecordingTitleFound) then
+              if (not FMonitoring) and FSettings.SeparateTracks and DisplayTitleChanged then
+                if FRecordingTitleFound then
                 begin
                   if FAudioStream <> nil then
                     FStreamTracks.FoundTitle(FAudioStream.Size, Title, FBytesPerSec, True);
-                end else if Title = FTitle then
-                begin
-
                 end else
                 begin
                   // Achtung: Der Block hier ist so ähnlich in StartRecordingInternal() nochmal!
-                  if not FRecordingTitleFound then
-                    if (FMetaCounter >= 2) or ((FMetaCounter = 1) and (not FSettings.OnlySaveFull)) then
+                  if (FMetaCounter >= 2) or ((FMetaCounter = 1) and (not FSettings.OnlySaveFull)) then
+                  begin
+                    if FAudioStream <> nil then
                     begin
-                      if FAudioStream <> nil then
-                      begin
-                        FRecordingTitleFound := True;
+                      FRecordingTitleFound := True;
 
-                        if FMetaCounter >= 2 then
-                          FStreamTracks.FoundTitle(FAudioStream.Size, Title, FBytesPerSec, True)
-                        else
-                          FStreamTracks.FoundTitle(FAudioStream.Size, Title, FBytesPerSec, False);
-                      end;
+                      if FMetaCounter >= 2 then
+                        FStreamTracks.FoundTitle(FAudioStream.Size, Title, FBytesPerSec, True)
+                      else
+                        FStreamTracks.FoundTitle(FAudioStream.Size, Title, FBytesPerSec, False);
                     end;
+                  end;
                 end;
 
               FTitle := Title;
-              FDisplayTitle := FTitle;
-
-              ParseTitle(FTitle, GetBestRegEx(FTitle), ParsedArtist, ParsedTitle, ParsedAlbum);
-              if (ParsedArtist <> '') and (ParsedTitle <> '') and (ParsedAlbum <> '') then
-                FDisplayTitle := ParsedArtist + ' - ' + ParsedTitle + ' - ' + ParsedAlbum
-              else if (ParsedArtist <> '') and (ParsedTitle <> '') then
-                FDisplayTitle := ParsedArtist + ' - ' + ParsedTitle;
-              FDisplayTitle := AdjustDisplayTitle(FDisplayTitle);
+              FDisplayTitle := NewDisplayTitle;
 
               if TitleChanged then
                 if Assigned(FOnTitleChanged) then
                   FOnTitleChanged(Self);
+              if DisplayTitleChanged then
+                if Assigned(FOnDisplayTitleChanged) then
+                  FOnDisplayTitleChanged(Self);
             end;
           end;
         end else

@@ -730,7 +730,7 @@ begin
   NodeData := GetNodeData(Node);
   if (Column = 3) and (NodeData.Chart <> nil) then
   begin
-    C := ((NodeData.Chart.PlayedLastWeek) / 7) * 24;
+    C := ((NodeData.Chart.PlayedLastWeek) / 14) * 24;
     if C > 100 then
       C := 100;
     Chance := Trunc(C);

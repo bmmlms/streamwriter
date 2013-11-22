@@ -51,6 +51,7 @@ type
     FMilliSecondsConnected: Cardinal;
 
     FOnTitleChanged: TSocketEvent;
+    FOnDisplayTitleChanged: TSocketEvent;
     FOnSongSaved: TSocketEvent;
     FOnNeedSettings: TSocketEvent;
     FOnStateChanged: TSocketEvent;
@@ -77,6 +78,7 @@ type
     procedure StartMonitoringInternal;
 
     procedure StreamTitleChanged(Sender: TObject);
+    procedure StreamDisplayTitleChanged(Sender: TObject);
     procedure StreamSongSaved(Sender: TObject);
     procedure StreamNeedSettings(Sender: TObject);
     procedure StreamChunkReceived(Buf: Pointer; Len: Integer);
@@ -133,6 +135,7 @@ type
     property PlayingStarted: Boolean read FPlayingStarted;
 
     property OnTitleChanged: TSocketEvent read FOnTitleChanged write FOnTitleChanged;
+    property OnDisplayTitleChanged: TSocketEvent read FOnDisplayTitleChanged write FOnDisplayTitleChanged;
     property OnSongSaved: TSocketEvent read FOnSongSaved write FOnSongSaved;
     property OnNeedSettings: TSocketEvent read FOnNeedSettings write FOnNeedSettings;
     property OnStateChanged: TSocketEvent read FOnStateChanged write FOnStateChanged;
@@ -370,6 +373,11 @@ begin
   Sync(FOnTitleChanged);
   FState := tsRecording;
   Sync(FOnStateChanged);
+end;
+
+procedure TICEThread.StreamDisplayTitleChanged(Sender: TObject);
+begin
+  Sync(FOnDisplayTitleChanged);
 end;
 
 procedure TICEThread.DoConnecting;
@@ -641,6 +649,7 @@ begin
 
   FTypedStream := TICEStream(FRecvStream);
   FTypedStream.OnTitleChanged := StreamTitleChanged;
+  FTypedStream.OnDisplayTitleChanged := StreamDisplayTitleChanged;
   FTypedStream.OnSongSaved := StreamSongSaved;
   FTypedStream.OnNeedSettings := StreamNeedSettings;
   FTypedStream.OnChunkReceived := StreamChunkReceived;

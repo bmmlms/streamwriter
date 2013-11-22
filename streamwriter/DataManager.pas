@@ -2237,6 +2237,11 @@ begin
   Stream.Read(Result.FPlayedLastWeek);
   Stream.Read(Result.FPlayedLast);
 
+  if Result.FPlayedLast > 86400 then
+    Result.FPlayedLastDay := 0;
+  if Result.FPlayedLast > 604800 then
+    Result.FPlayedLastWeek := 0;
+
   Stream.Read(C);
 
   for i := 0 to C - 1 do
@@ -2375,8 +2380,16 @@ begin
   Stream.Read(Result.FID);
   Stream.Read(Result.FPlayedLastDay);
   Stream.Read(Result.FPlayedLastWeek);
+
   if (Version >= 50) or (Version = 1) then
+  begin
     Stream.Read(Result.FPlayedLast);
+
+    if Result.FPlayedLast > 86400 then
+      Result.FPlayedLastDay := 0;
+    if Result.FPlayedLast > 604800 then
+      Result.FPlayedLastWeek := 0;
+  end;
 end;
 
 { TStreamBrowserList }

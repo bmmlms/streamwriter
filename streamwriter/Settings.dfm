@@ -41,7 +41,7 @@ object frmSettings: TfrmSettings
     end
     object btnBrowse: TPngSpeedButton
       Left = 264
-      Top = 20
+      Top = 16
       Width = 25
       Height = 21
       Hint = 'Browse...'
@@ -54,7 +54,7 @@ object frmSettings: TfrmSettings
     end
     object btnBrowseAuto: TPngSpeedButton
       Left = 264
-      Top = 64
+      Top = 60
       Width = 25
       Height = 21
       Hint = 'Browse...'
@@ -244,7 +244,7 @@ object frmSettings: TfrmSettings
     end
     object btnBrowseLogFile: TPngSpeedButton
       Left = 264
-      Top = 256
+      Top = 272
       Width = 25
       Height = 21
       Hint = 'Browse...'
