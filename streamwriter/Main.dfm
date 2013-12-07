@@ -182,6 +182,11 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       object mnuSettings: TMenuItem
         Action = actSettings
       end
+      object Settingsforautomaticrecordings1: TMenuItem
+        Caption = 'Settings for &automatic recordings...'
+        Hint = 'Settings for automatic recordings...'
+        ImageIndex = 90
+      end
       object N3: TMenuItem
         Caption = '-'
       end

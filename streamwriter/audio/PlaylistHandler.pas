@@ -156,6 +156,23 @@ begin
         if Offset2 = 0 then
           Break;
       end;
+    ptUnknown:
+      while True do
+      begin
+        Offset2 := PosEx(#10, Data, Offset);
+        if Offset2 > 0 then
+          Line := Trim(Copy(Data, Offset, Offset2 - Offset))
+        else
+          Line := Trim(Copy(Data, Offset, Length(Data)));
+
+        Offset := Offset2 + 1;
+
+        if (Line <> '') then
+          ParseLine(Line);
+
+        if Offset2 = 0 then
+          Break;
+      end;
   end;
 
   Result := FURLs.Count > 0;

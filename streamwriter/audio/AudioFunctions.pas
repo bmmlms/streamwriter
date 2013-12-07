@@ -51,7 +51,7 @@ type
   TBitRates = (brCBR, brVBR);
   TVBRQualities = (vqHigh, vqMedium, vqLow);
 
-  TPlaylistTypes = (ptM3U, ptPLS);
+  TPlaylistTypes = (ptM3U, ptPLS, ptUnknown);
 
 function RoundBitrate(Bitrate: Cardinal): Cardinal;
 function GetFileInfo(Filename: string): TAudioFileInfo;

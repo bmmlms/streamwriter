@@ -982,26 +982,7 @@ begin
 end;
 
 function TICEClient.ParsePlaylist: Boolean;
-  procedure ParseLine(Line: string; URLs: TStringList);
-  var
-    Host, URLData: string;
-    Port: Integer;
-    PortDetected: Boolean;
-  begin
-    if ParseURL(Line, Host, Port, URLData, PortDetected) then
-    begin
-      if not PortDetected then
-      begin
-        // Es gibt keinen Standard scheinbar - beide nehmen.
-        URLs.Add('http://' + Host + ':80' + URLData);
-        URLs.Add('http://' + Host + ':6666' + URLData);
-      end else
-      begin
-        URLs.Add('http://' + Host + ':' + IntToStr(Port) + URLData);
-      end;
-    end;
-  end;
-var
+ var
   Data: string;
   PH: TPlaylistHandler;
 begin
@@ -1022,7 +1003,8 @@ begin
                 (Pos('audio/mpegurl', FICEThread.RecvStream.ContentType) > 0) then // .m3u
     begin
       Result := PH.ParsePlaylist(Data, ptM3U);
-    end;
+    end else
+      Result := PH.ParsePlaylist(Data, ptUnknown);
 
     if Result then
     begin

@@ -1499,6 +1499,12 @@ begin
     ParseTitle(S, '(?P<a>.*) - (?P<t>.*)', Artist, Title, Album);
   end;
 
+  if (Artist = '') and (Title = '') then
+  begin
+    // Wenn immer noch nichts gefunden wurde, ist das einfach der Titel..
+    Title := S;
+  end;
+
   if FSettings.NormalizeVariables then
   begin
     Artist := NormalizeText(Artist);

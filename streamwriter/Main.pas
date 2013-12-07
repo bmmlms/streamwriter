@@ -192,6 +192,7 @@ type
     actEqualizer: TAction;
     ToolButton9: TToolButton;
     N15: TMenuItem;
+    Settingsforautomaticrecordings1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
