@@ -807,11 +807,10 @@ begin
       if (FSavedArtist <> '') and (FSavedTitle <> '') then
         FSaveAllowedTitle := FSavedArtist + ' - ' + FSavedTitle;
 
-      if (FSavedArtist = '') or (FSavedTitle = '') then
-      begin
+      if FSavedArtist = '' then
         FSavedArtist := _('Unknown artist');
+      if FSavedTitle = '' then
         FSavedTitle := _('Unknown title');
-      end;
 
       if FRecordTitle <> '' then
         FileCheck := TFileChecker.Create(FStreamName, FSaveDirAuto, FSongsSaved, FSettings)
@@ -1328,6 +1327,18 @@ begin
 
             IgnoreTitle := Title = '';
 
+            {
+            case FMetaCounter of
+              0: Title := 'A';
+              1: Title := 'B';
+              2: Title := 'C';
+              3: Title := 'D';
+              4: Title := 'E';
+              5: Title := 'F';
+              6: Title := 'G';
+            end;
+            }
+
             //if FMonitoring and (FMonitorAnalyzer <> nil) then
             //begin
             //  try
@@ -1364,7 +1375,7 @@ begin
 
               if NewDisplayTitle <> FDisplayTitle then
               begin
-                WriteDebug(Format(_('"%s" now playing'), [NewDisplayTitle]), 2, 0);
+                WriteDebug(Format(_('"%s" now playing'), [Title]), 2, 0);
                 DisplayTitleChanged := True;
 
                 Inc(FMetaCounter);

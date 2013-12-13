@@ -1078,7 +1078,7 @@ var
   Str: string;
   Version, CatCount, EntryCount: Integer;
   i: Integer;
-  CompressedStream: TExtendedStream;
+  DecompressedStream: TExtendedStream;
   Compressed: Boolean;
   Chart: TChartEntry;
   ChartCategory: TChartCategory;
@@ -1103,16 +1103,16 @@ begin
 
   if Compressed then
   begin
-    CompressedStream := TExtendedStream.Create;
+    DecompressedStream := TExtendedStream.Create;
     try
-      ZDecompressStream(S, CompressedStream);
+      ZDecompressStream(S, DecompressedStream);
 
       S.Size := 0;
-      CompressedStream.Seek(0, soFromBeginning);
-      S.CopyFrom(CompressedStream, CompressedStream.Size);
+      DecompressedStream.Seek(0, soFromBeginning);
+      S.CopyFrom(DecompressedStream, DecompressedStream.Size);
       S.Seek(0, soFromBeginning);
     finally
-      CompressedStream.Free;
+      DecompressedStream.Free;
     end;
   end;
 
@@ -1389,6 +1389,8 @@ procedure TDataLists.Save;
 var
   S: TExtendedStream;
 begin
+  // TODO: Man sollte das Recovery vllt erst löschen, nachdem das echte hier gespeichert wurde.
+  //       Das würde z.B. helfen gegen Fälle wie von Alexander Kroth beschrieben!
   DeleteFile(AppGlobals.RecoveryFile);
 
   if (AppGlobals.SkipSave) or (AppGlobals.DataFile = '') then
