@@ -1606,12 +1606,6 @@ begin
   Header.PopupMenu := TMTreeColumnPopup.Create(Self);
   TMTreeColumnPopup(Header.PopupMenu).HideIdx := 1;
   TMTreeColumnPopup(Header.PopupMenu).OnAction := MenuColsAction;
-
-  for i := 1 to Header.Columns.Count - 1 do
-  begin
-    if not ((AppGlobals.SavedCols and (1 shl i)) <> 0) then
-      Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
-  end;
 end;
 
 procedure TSavedTree.CutCopy(Cut: Boolean);
@@ -2205,6 +2199,8 @@ begin
 end;
 
 procedure TSavedTree.Setup;
+var
+  i: Integer;
 begin
   FColImages := Header.Columns.Add;
   FColImages.Text := _('State');
@@ -2224,6 +2220,12 @@ begin
   FColSaved := Header.Columns.Add;
   FColSaved.Alignment := taRightJustify;
   FColSaved.Text := _('Date');
+
+  for i := 1 to Header.Columns.Count - 1 do
+  begin
+    if not ((AppGlobals.SavedCols and (1 shl i)) <> 0) then
+      Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
+  end;
 
   FitColumns;
 end;

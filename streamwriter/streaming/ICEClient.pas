@@ -1003,7 +1003,7 @@ begin
                 (Pos('audio/mpegurl', FICEThread.RecvStream.ContentType) > 0) then // .m3u
     begin
       Result := PH.ParsePlaylist(Data, ptM3U);
-    end else
+    end else if Pos('application/octet-stream', FICEThread.RecvStream.ContentType) > 0 then
       Result := PH.ParsePlaylist(Data, ptUnknown);
 
     if Result then
