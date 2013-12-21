@@ -216,6 +216,8 @@ begin
   IconLoggedOff.Free;
   IconAutoRecordEnabled.Free;
   IconAutoRecordDisabled.Free;
+  IconGroup.Free;
+  IconRecord.Free;
   FSpeedBmp.Free;
 
   inherited;

@@ -1357,8 +1357,6 @@ begin
                 Break;
               end;
 
-            // TODO: TESTEN TESTEN TESTEN IN ALLEN KONSTELLATIONEN!!!!!!!!
-
             if not IgnoreTitle then
             begin
               NewDisplayTitle := Title;
