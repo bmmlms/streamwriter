@@ -677,15 +677,7 @@ begin
 
   tabClients.AdjustTextSizeDirtyHack;
 
-  tabClients.AfterShown;
-  tabCharts.AfterShown;
-  tabLists.AfterShown;
-  tabSaved.Setup(FDataLists);
-  tabSaved.AfterShown;
-
   tabSavedRefresh(nil);
-
-  Language.Translate(Self);
 
   // TODO: diese meldungen sollten im konstruktor kommen oder? wegen tray-startup...
   if not Bass.DeviceAvailable then
@@ -883,11 +875,11 @@ begin
 
   tabClients := TClientTab.Create(pagMain, tbClients, ActionList1, FClients, FDataLists, mnuStreamPopup);
   tabClients.PageControl := pagMain;
-
-
+  tabClients.AfterCreate;
 
   tabCharts := TChartsTab.Create(pagMain, FDataLists);
   tabCharts.PageControl := pagMain;
+  tabCharts.AfterCreate;
   tabCharts.OnAddToWishlist := tabChartsAddToWishlist;
   tabCharts.OnRemoveTitleFromWishlist := tabChartsRemoveFromWishlist;
   tabCharts.OnAddStreams := tabChartsAddStreams;
@@ -895,9 +887,12 @@ begin
 
   tabLists := TListsTab.Create(pagMain, FClients, FDataLists);
   tabLists.PageControl := pagMain;
+  tabLists.AfterCreate;
 
-  tabSaved := TSavedTab.Create(pagMain);
+  tabSaved := TSavedTab.Create(pagMain, FDataLists);
   tabSaved.PageControl := pagMain;
+  tabSaved.AfterCreate;
+
   tabSaved.OnCut := tabSavedCut;
   tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
   tabSaved.OnRefresh := tabSavedRefresh;
@@ -953,6 +948,8 @@ begin
   actPlayerDecreaseVolume.Enabled := Bass.DeviceAvailable;
   actPlayerMuteVolume.Enabled := Bass.DeviceAvailable;
   actEqualizer.Enabled := Bass.DeviceAvailable;
+
+  Language.Translate(Self);
 end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
@@ -977,9 +974,6 @@ begin
   FWasShown := True;
 
   RegisterHotkeys(True);
-
-  tabClients.Shown(mnuStreamPopup);
-  tabCharts.Setup;  // TODO: hier drin werden konstruktoren aufgerufen!
 
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
   tabClients.OnTrackAdded := tabClientsTrackAdded;

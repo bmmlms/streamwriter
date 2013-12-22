@@ -46,8 +46,7 @@ type
   public
     constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
     destructor Destroy; override;
-
-    procedure Init;
+    procedure AfterCreate;
 
     property BrowserView: TMStreamBrowserView read FBrowserView;
     property InfoView: TMStreamInfoView read FInfoView;
@@ -188,8 +187,8 @@ type
     constructor Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList;
       Clients: TClientManager; Streams: TDataLists; Popup: TPopupMenu); reintroduce;
     destructor Destroy; override;
+    procedure AfterCreate; override;
 
-    procedure Shown(Popup: TPopupMenu);
     function StartStreaming(Streams: TStartStreamingInfoArray; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean; overload;
     function StartStreaming(Stream: TStartStreamingInfo; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean; overload;
     procedure TimerTick;
@@ -198,7 +197,9 @@ type
     procedure PausePlay;
     procedure ShowInfo;
 
-    procedure AfterShown; override;
+    // TODO: WEG DAMIT!!!!! das ist aftercreate!!!!!!
+    procedure AfterShown;
+
     procedure AdjustTextSizeDirtyHack;
 
     property AddressBar: TClientAddressBar read FAddressBar;
@@ -842,6 +843,78 @@ begin
   FAddressBar.FStations.Width := FAddressBar.ClientWidth - FAddressBar.FStations.Left - FAddressBar.FStart.Width - 6;
 end;
 
+procedure TClientTab.AfterCreate;
+var
+  i: Integer;
+begin
+  inherited; // TODO: ist in jedem nachfahren von TTabPage inherited???
+
+  FAddressBar.Setup;
+  FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2) + 1;
+
+  FToolbarPanel.ClientHeight := 24;
+
+  FToolbar.Width := FToolbarPanel.ClientWidth - 250;
+  FToolbar.Height := 25;
+
+  FVolume.Setup;
+  FVolume.Enabled := Bass.DeviceAvailable;
+  FVolume.Width := 140;
+  FVolume.Volume := Players.Volume;
+
+  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
+  FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
+
+  FSplitter.Width := MulDiv(4, Screen.PixelsPerInch, 96);
+  FSplitter.MinSize := MulDiv(220, Screen.PixelsPerInch, 96);
+  FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
+
+  FSideBar.Width := AppGlobals.SidebarWidth;
+
+  // TODO: setup?? WEG DAMIT!!! AfterCreate!
+  FSideBar.FBrowserView.Setup;
+
+  FSideBar.FDebugView.DebugView.OnClear := DebugClear;
+  FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
+  FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
+  if Screen.PixelsPerInch = 96 then
+    FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := modSharedData.imgImages;
+
+
+
+  // Das ClientView wird erst hier erzeugt, weil es eine Referenz auf FSideBar.FBrowserView.StreamTree braucht!
+  FClientView.Parent := Self;
+  FClientView.Align := alClient;
+  FClientView.Visible := True;
+  // TODO: ??? das ist evtl wichtig gewesen ;)
+  //FClientView.PopupMenu := Popup;
+  FClientView.Images := modSharedData.imgClients;
+  FClientView.OnChange := FClientViewChange;
+  FClientView.OnDblClick := FClientViewDblClick;
+  FClientView.OnKeyPress := FClientViewKeyPress;
+  FClientView.OnKeyDown := FClientViewKeyDown;
+  FClientView.OnStartStreaming := FClientViewStartStreaming;
+
+  // TODO: shown??? wir sind heir im AfterCreate. umbenennen oder so!!!
+  FClientView.Shown;
+
+  // TODO: der RootNodeCount ist hier immer 0. das if..then..end; sollte erst aufgerufen werden, wenn der Tree befüllt wurde.
+  if FClientView.RootNodeCount > 0 then
+  begin
+    FClientView.Selected[FClientView.GetFirst] := True;
+    FClientView.FocusedNode := FClientView.GetFirst;
+  end;
+
+  if AppGlobals.ClientHeadersLoaded then
+    for i := 0 to FClientView.Header.Columns.Count - 1 do
+      FClientView.Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
+
+  // TODO: ???
+  FClientView.Show;
+
+  FSideBar.AfterCreate;
+end;
+
 procedure TClientTab.AfterShown;
 begin
   inherited;
@@ -916,70 +989,6 @@ end;
 //  - Notification von HomeComm
 //  - Ordner für SavedSongs existiert nicht
 //
-
-procedure TClientTab.Shown(Popup: TPopupMenu);
-var
-  i: Integer;
-begin
-  FAddressBar.Setup;
-  FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2) + 1;
-
-  FToolbarPanel.ClientHeight := 24;
-
-  FToolbar.Width := FToolbarPanel.ClientWidth - 250;
-  FToolbar.Height := 25;
-
-  FVolume.Setup;
-  FVolume.Enabled := Bass.DeviceAvailable;
-  FVolume.Width := 140;
-  FVolume.Volume := Players.Volume;
-
-  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
-  FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
-
-  FSplitter.Width := MulDiv(4, Screen.PixelsPerInch, 96);
-  FSplitter.MinSize := MulDiv(220, Screen.PixelsPerInch, 96);
-  FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
-
-  FSideBar.Width := AppGlobals.SidebarWidth;
-
-  FSideBar.Init;
-  FSideBar.FBrowserView.Setup;
-  FSideBar.FDebugView.DebugView.OnClear := DebugClear;
-  FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
-  FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
-  if Screen.PixelsPerInch = 96 then
-    FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := modSharedData.imgImages;
-
-
-
-  // Das ClientView wird erst hier erzeugt, weil es eine Referenz auf FSideBar.FBrowserView.StreamTree braucht!
-  FClientView.Parent := Self;
-  FClientView.Align := alClient;
-  FClientView.Visible := True;
-  FClientView.PopupMenu := Popup;
-  FClientView.Images := modSharedData.imgClients;
-  FClientView.OnChange := FClientViewChange;
-  FClientView.OnDblClick := FClientViewDblClick;
-  FClientView.OnKeyPress := FClientViewKeyPress;
-  FClientView.OnKeyDown := FClientViewKeyDown;
-  FClientView.OnStartStreaming := FClientViewStartStreaming;
-
-  FClientView.Shown;
-
-
-
-  if FClientView.RootNodeCount > 0 then
-  begin
-    FClientView.Selected[FClientView.GetFirst] := True;
-    FClientView.FocusedNode := FClientView.GetFirst;
-  end;
-
-  if AppGlobals.ClientHeadersLoaded then
-    for i := 0 to FClientView.Header.Columns.Count - 1 do
-      FClientView.Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
-  FClientView.Show;
-end;
 
 procedure TClientTab.ClientManagerAddRecent(Sender: TObject);
 var
@@ -1857,6 +1866,18 @@ end;
 
 { TSidebar }
 
+procedure TSidebar.AfterCreate;
+begin
+  FPage1.PageControl := Self;
+  FPage2.PageControl := Self;
+  FPage3.PageControl := Self;
+
+  FInfoView.Parent := FPage2;
+  FDebugView.Parent := FPage3;
+
+  FBrowserView.AfterCreate;
+end;
+
 constructor TSidebar.Create(AOwner: TComponent; DataLists: TDataLists);
 begin
   inherited Create(AOwner);
@@ -1864,10 +1885,17 @@ begin
   FDataLists := DataLists;
 
   FPage1 := TTabSheet.Create(Self);
+  FPage1.Caption := 'Browser';
+
   FPage2 := TTabSheet.Create(Self);
+  FPage2.Caption := 'Info';
+
   FPage3 := TTabSheet.Create(Self);
+  FPage3.Caption := 'Log';
 
   FBrowserView := TMStreamBrowserView.Create(Self, FDataLists);
+  FBrowserView.Parent := FPage1;
+
   FInfoView := TMStreamInfoView.Create(Self);
   FDebugView := TMStreamDebugView.Create(Self);
 end;
@@ -1876,22 +1904,6 @@ destructor TSidebar.Destroy;
 begin
 
   inherited;
-end;
-
-procedure TSidebar.Init;
-begin
-  FPage1.PageControl := Self;
-  FPage1.Caption := 'Browser';
-
-  FPage2.PageControl := Self;
-  FPage2.Caption := 'Info';
-
-  FPage3.PageControl := Self;
-  FPage3.Caption := 'Log';
-
-  FBrowserView.Parent := FPage1;
-  FInfoView.Parent := FPage2;
-  FDebugView.Parent := FPage3;
 end;
 
 end.

@@ -93,11 +93,10 @@ type
     procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
+    procedure AfterCreate;
 
     procedure RebuildSearchItems(NewEntry: string);
 
-    procedure Setup;
-    procedure AfterShown;
     procedure PostTranslate;
   end;
 
@@ -155,11 +154,10 @@ type
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
     destructor Destroy; override;
+    procedure AfterCreate;
 
     function GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
     function NodesToData(Nodes: TNodeArray): TChartDataArray;
-
-    procedure AfterShown;
 
     property State: TChartStates read FState write FSetState;
   end;
@@ -199,9 +197,8 @@ type
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
     destructor Destroy; override;
+    procedure AfterCreate;
 
-    procedure Setup;
-    procedure AfterShown; override;
     procedure PostTranslate;
     procedure SetState(State: TChartStates);
     procedure SearchCharts(Top: Boolean);
@@ -227,12 +224,29 @@ implementation
 
 { TChartsTab }
 
-procedure TChartsTab.AfterShown;
+procedure TChartsTab.AfterCreate;
 begin
   inherited;
 
-  FSearchPanel.AfterShown;
-  FChartsTree.AfterShown;
+  FChartsTree.AfterCreate;
+  FSearchPanel.AfterCreate;
+
+  FChartsTree.Images := modSharedData.imgImages;
+
+  if Screen.PixelsPerInch = 96 then
+    FChartsTree.PopupMenu.Images := modSharedData.imgImages;
+
+  FSearchPanel.FButtonAddToWishlist.OnClick := ButtonClick;
+  FSearchPanel.FButtonAddArtistToWishlist.OnClick := ButtonClick;
+  FSearchPanel.FButtonEditAndAddToWishlist.OnClick := ButtonClick;
+  FSearchPanel.FButtonStartStreaming.OnClick := ButtonClick;
+  FSearchPanel.FButtonPlayStream.OnClick := ButtonClick;
+  FSearchPanel.FButtonPlayStreamExternal.OnClick := ButtonClick;
+  FSearchPanel.FButtonAddStream.OnClick := ButtonClick;
+
+  Caption := 'Title search';
+
+  UpdateButtons;
 end;
 
 procedure TChartsTab.ButtonClick(Sender: TObject);
@@ -480,28 +494,6 @@ begin
   end;
 end;
 
-procedure TChartsTab.Setup;
-begin
-  FSearchPanel.Setup;
-
-  FChartsTree.Images := modSharedData.imgImages;
-
-  if Screen.PixelsPerInch = 96 then
-    FChartsTree.PopupMenu.Images := modSharedData.imgImages;
-
-  FSearchPanel.FButtonAddToWishlist.OnClick := ButtonClick;
-  FSearchPanel.FButtonAddArtistToWishlist.OnClick := ButtonClick;
-  FSearchPanel.FButtonEditAndAddToWishlist.OnClick := ButtonClick;
-  FSearchPanel.FButtonStartStreaming.OnClick := ButtonClick;
-  FSearchPanel.FButtonPlayStream.OnClick := ButtonClick;
-  FSearchPanel.FButtonPlayStreamExternal.OnClick := ButtonClick;
-  FSearchPanel.FButtonAddStream.OnClick := ButtonClick;
-
-  Caption := 'Title search';
-
-  UpdateButtons;
-end;
-
 procedure TChartsTab.ShowCharts;
 var
   i, n: Integer;
@@ -632,7 +624,7 @@ end;
 
 { TChartsTree }
 
-procedure TChartsTree.AfterShown;
+procedure TChartsTree.AfterCreate;
 begin
   FColImages.Width := GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
   FColLastPlayed.Width := GetTextSize(FColLastPlayed.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
@@ -1361,18 +1353,6 @@ end;
 
 { TSearchPanel }
 
-procedure TSearchPanel.AfterShown;
-begin
-  FLabel.Left := 0;
-
-  FSearch.Width := 200;
-  FSearch.Top := 1;
-
-  FLabel.Top := (FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2);
-
-  ClientHeight := FSearch.Top * 2 + FSearch.Height + MulDiv(4, Screen.PixelsPerInch, 96);
-end;
-
 constructor TSearchPanel.Create(AOwner: TComponent);
 begin
   inherited;
@@ -1448,7 +1428,7 @@ begin
 
 end;
 
-procedure TSearchPanel.Setup;
+procedure TSearchPanel.AfterCreate;
 var
   Sep: TToolButton;
 begin
@@ -1507,7 +1487,20 @@ begin
 
   PostTranslate;
 
-  AfterShown;
+
+
+
+
+
+
+  FLabel.Left := 0;
+
+  FSearch.Width := 200;
+  FSearch.Top := 1;
+
+  FLabel.Top := (FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2);
+
+  ClientHeight := FSearch.Top * 2 + FSearch.Height + MulDiv(4, Screen.PixelsPerInch, 96);
 end;
 
 { TChartsPopup }

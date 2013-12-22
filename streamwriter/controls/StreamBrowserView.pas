@@ -81,6 +81,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     procedure Setup;
+    procedure AfterCreate;
   end;
 
   TSortTypes = (stName, stBitrate, stType, stRating);
@@ -115,6 +116,8 @@ type
   public
     constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
     destructor Destroy; override;
+
+    procedure AfterCreate;
 
     procedure Setup;
     procedure Translate;
@@ -1001,7 +1004,8 @@ end;
 
 procedure TMStreamTree.Setup;
 begin
-  FColName.Width := ClientWidth;
+  // TODO: IM AFTERSHOWN AUFRUFEN!
+  //FColName.Width := ClientWidth;
 end;
 
 procedure TMStreamTree.Sort(Node: PVirtualNode; Column: TColumnIndex;
@@ -1056,6 +1060,11 @@ begin
 end;
 
 { TMStreamView }
+
+procedure TMStreamBrowserView.AfterCreate;
+begin
+  FSearch.AfterCreate;
+end;
 
 procedure TMStreamBrowserView.BuildGenres;
 var
@@ -1136,9 +1145,9 @@ begin
   FSelectedSortType := stRating;
 
   FSearch := TMStreamSearchPanel.Create(Self);
+  FSearch.Parent := Self;
   FSearch.Align := alTop;
   FSearch.Height := 100;
-  FSearch.Parent := Self;
   FSearch.Visible := True;
 
   FCountLabel := TLabel.Create(Self);
@@ -1155,6 +1164,36 @@ begin
   FStreamTree.FSortPopupMenu.FItemKbps.OnClick := SortItemClick;
   FStreamTree.FSortPopupMenu.FItemType.OnClick := SortItemClick;
   FStreamTree.FSortPopupMenu.FItemRating.OnClick := SortItemClick;
+
+
+
+  SwitchMode(moLoading);
+
+  FSearch.Setup;
+  FStreamTree.Setup;
+
+  FSearch.FSearchEdit.OnChange := SearchEditChange;
+  //FSearch.FSearchButton.OnClick := SearchButtonClick;
+  FSearch.FGenreList.OnChange := ListsChange;
+  FSearch.FKbpsList.OnChange := ListsChange;
+  FSearch.FTypeList.OnChange := ListsChange;
+
+  HomeComm.OnStreamsReceived := HomeCommStreamsReceived;
+  HomeComm.OnAuthTokenReceived := HomeCommAuthTokenReceived;
+
+  if (FDataLists.BrowserList.Count > 0) and (FDataLists.GenreList.Count > 0) then
+  begin
+    // TODO: WIEDER REIN!!!
+    //BuildGenres;
+    //BuildTree(True);
+    SwitchMode(moShow);
+  end;
+
+  FSelectedSortType := TSortTypes(AppGlobals.BrowserSortType);
+
+  // TODO: WIEDER REIN!!!
+  //SortTree;
+
 end;
 
 destructor TMStreamBrowserView.Destroy;
@@ -1250,8 +1289,10 @@ begin
   FStreamTree.Sort(nil, 0, FSelectedSortType, SortDir);
 end;
 
+// TODO: jedes Setup nach AfterShown/Shown umbenennen oder so...
 procedure TMStreamBrowserView.Setup;
 begin
+{
   SwitchMode(moLoading);
 
   FSearch.Setup;
@@ -1275,6 +1316,7 @@ begin
 
   FSelectedSortType := TSortTypes(AppGlobals.BrowserSortType);
   SortTree;
+}
 end;
 
 procedure TMStreamBrowserView.SortItemClick(Sender: TObject);
@@ -1382,7 +1424,27 @@ end;
 
 { TMStreamSearch }
 
+procedure TMStreamSearchPanel.AfterCreate;
+begin
+  FKbpsList.Items.Add(_('- No kbps -'));
+  FKbpsList.Items.Add('>= 64');
+  FKbpsList.Items.Add('>= 128');
+  FKbpsList.Items.Add('>= 192');
+  FKbpsList.Items.Add('>= 256');
+  FKbpsList.Items.Add('= 320');
+  FKbpsList.ItemIndex := 0;
+
+  FTypeList.Items.Add(_('- No type -'));
+  FTypeList.Items.Add(_('MP3'));
+  FTypeList.Items.Add(_('AAC'));
+  FTypeList.ItemIndex := 0;
+
+  SetVisible(True);
+end;
+
 constructor TMStreamSearchPanel.Create(AOwner: TComponent);
+var
+  TopCnt, MaxW: Integer;
 begin
   inherited;
 
@@ -1396,17 +1458,9 @@ begin
   FKbpsList := TComboBox.Create(Self);
   FTypeLabel := TLabel.Create(Self);
   FTypeList := TComboBox.Create(Self);
-end;
 
-procedure TMStreamSearchPanel.ExpandButtonClick(Sender: TObject);
-begin
-  SetVisible(not FTypeList.Visible);
-end;
 
-procedure TMStreamSearchPanel.Setup;
-var
-  TopCnt, MaxW: Integer;
-begin
+
   TopCnt := 4;
   MaxW := 0;
 
@@ -1515,27 +1569,25 @@ begin
   FTypeList.Left := MaxW + 12;
 
 
+end;
+
+procedure TMStreamSearchPanel.ExpandButtonClick(Sender: TObject);
+begin
+  SetVisible(not FTypeList.Visible);
+end;
+
+procedure TMStreamSearchPanel.Setup;
+var
+  TopCnt, MaxW: Integer;
+begin
+  { TODO: WIEDER REIN!!!
   FSearchEdit.Width := ClientWidth - FSearchEdit.Left - FSearchLabel.Left;
   FGenreList.Width := ClientWidth - FGenreList.Left - FGenreLabel.Left;
   FKbpsList.Width := ClientWidth - FKbpsList.Left - FKbpsLabel.Left;
   FTypeList.Width := ClientWidth - FTypeList.Left - FTypeLabel.Left;
 
-  FKbpsList.Items.Add(_('- No kbps -'));
-  FKbpsList.Items.Add('>= 64');
-  FKbpsList.Items.Add('>= 128');
-  FKbpsList.Items.Add('>= 192');
-  FKbpsList.Items.Add('>= 256');
-  FKbpsList.Items.Add('= 320');
-  FKbpsList.ItemIndex := 0;
-
-  FTypeList.Items.Add(_('- No type -'));
-  FTypeList.Items.Add(_('MP3'));
-  FTypeList.Items.Add(_('AAC'));
-  FTypeList.ItemIndex := 0;
-
   ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4;
-
-  SetVisible(True);
+  }
 end;
 
 procedure TMStreamSearchPanel.SetVisible(Value: Boolean);
