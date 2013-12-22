@@ -750,11 +750,7 @@ begin
     begin
       NodeData := GetNodeData(Source);
       if NodeData.Client <> nil then
-        try
-          Expanded[Target] := True;
-        except
-          // Wegen "Element '' hat kein übergeordnetes Fenster" bei Tray-Programmstart
-        end;
+        Expanded[Target] := True;
     end;
 end;
 

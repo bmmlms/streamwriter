@@ -984,9 +984,6 @@ begin
   tabClients.OnAuthRequired := tabClientsAuthRequired;
   tabClients.OnShowErrorMessage := tabClientsShowErrorMessage;
 
-  // Muss unter BuildTree(), weil hier erst FClients befüllt ist...
-  tabLists.Setup(FClients, FDataLists);
-
   // Ist hier unten, weil hier erst Tracks geladen wurden
   tabClients.AddressBar.Stations.Sort;
 
@@ -1125,13 +1122,6 @@ begin
 
     if not tabCharts.Searched then
       tabCharts.SearchCharts(True);
-
-    if tabLists.SendWishListUpdateBatch then
-    begin
-      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('The system for automatic recordings has been reworked. Titles for automatic recordings now can only be added using the "Title search" tab. ' +
-                                                'The existing titles from the old method are now enqueued to be updated for the new system. This might take some time, just watch your wishlist grow ' +
-                                                'when connected to the server.'), mtInformation, [mbOK], mbOK, 16);
-    end;
 
     if (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or (AppGlobals.LastBrowserUpdate < Now - 15)) or
        (tabClients.SideBar.BrowserView.Mode = moError) then

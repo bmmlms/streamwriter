@@ -123,7 +123,6 @@ type
     procedure RemoveEntry(Text: string; ServerTitleHash: Cardinal; ListType: TListType);
     procedure ClientAdded(Client: TICEClient);
     procedure ClientRemoved(Client: TICEClient);
-//    procedure Setup(Clients: TClientManager; Lists: TDataLists);
     procedure UpdateList;
   end;
 
@@ -140,9 +139,6 @@ type
     constructor Create(AOwner: TComponent; Clients: TClientManager; Streams: TDataLists);
     procedure AfterCreate; override;
 
-    function SendWishListUpdateBatch: Boolean;
-
-    procedure Setup(Clients: TClientManager; Streams: TDataLists);
     procedure AddTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
     procedure RemoveTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
 
@@ -255,8 +251,6 @@ begin
   end;
 
   HomeComm.SendSyncWishlist(swAdd, Hashes);
-
-  SendWishListUpdateBatch;
 end;
 
 procedure TListsTab.MessageReceived(Msg: TMessageBase);
@@ -313,50 +307,6 @@ begin
 
 end;
 
-function TListsTab.SendWishListUpdateBatch: Boolean;
-var
-  Titles: TStringList;
-  i: Integer;
-begin
-  Result := False;
-
-  // TODO: Das hier kann ich evtl. bald rausnehmen. oder ich muss es testen wegen neuem programmstart-ablauf...
-
-  // Wir suchen uns X Einträge, die schicken wir dann wegen Hash-Update an den Server.
-  // Wenn diese erledigt sind kommen die nächsten 10 dran, und so weiter...
-  if FListsPanel.FLists.SaveList.Count > 0 then
-  begin
-    Titles := TStringList.Create;
-    try
-      for i := 0 to FListsPanel.FLists.SaveList.Count - 1 do
-      begin
-        if not FListsPanel.FLists.SaveList[i].UpdatedToHash then
-        begin
-          Titles.Add(FListsPanel.FLists.SaveList[i].Title);
-          FListsPanel.FLists.SaveList[i].UpdatedToHash := True;
-          if Titles.Count > 1 then
-            Break;
-        end;
-      end;
-
-      if Titles.Count > 0 then
-      begin
-        HomeComm.SendGetWishlistUpgrade(Titles);
-        Result := True;
-      end;
-    finally
-      Titles.Free;
-    end;
-  end;
-end;
-
-procedure TListsTab.Setup(Clients: TClientManager; Streams: TDataLists);
-begin
-  Caption := 'Lists';
-
-//  FListsPanel.Setup(Clients, Streams);
-end;
-
 procedure TListsTab.UpdateLists;
 begin
   FListsPanel.UpdateList;
@@ -393,6 +343,8 @@ end;
 procedure TListsTab.AfterCreate;
 begin
   inherited;
+
+  Caption := 'Lists';
 
   FListsPanel.AfterCreate;
 end;

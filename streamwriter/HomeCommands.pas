@@ -341,30 +341,6 @@ type
     property Success: Boolean read FSuccess;
   end;
 
-  TCommandGetWishlistUpgrade = class(TCommand)
-  private
-    FTitles: TStringList;
-  protected
-    procedure DoGet(S: TExtendedStream); override;
-  public
-    constructor Create; overload;
-    constructor Create(Titles: TStringList); overload;
-    destructor Destroy; override;
-  end;
-
-  TCommandGetWishlistUpgradeResponse = class(TCommand)
-  private
-    FTitles: TWishlistUpgradeList;
-  protected
-  public
-    constructor Create;
-    destructor Destroy; override;
-
-    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
-
-    property Titles: TWishlistUpgradeList read FTitles;
-  end;
-
   TCommandStreamAnalyzationData = class(TCommand)
   private
     FStreamID: Cardinal;
@@ -859,81 +835,6 @@ begin
   LoadStream(Stream);
 
   TExtendedStream(FStream).Read(FSuccess);
-end;
-
-{ TCommandGetWishlistUpgrade }
-
-constructor TCommandGetWishlistUpgrade.Create;
-begin
-  inherited;
-
-  FCommandType := ctGetWishlistUpgrade;
-  FTitles := TStringList.Create;
-end;
-
-constructor TCommandGetWishlistUpgrade.Create(Titles: TStringList);
-begin
-  Create;
-
-  FTitles.Assign(Titles);
-end;
-
-destructor TCommandGetWishlistUpgrade.Destroy;
-begin
-  FTitles.Free;
-
-  inherited;
-end;
-
-procedure TCommandGetWishlistUpgrade.DoGet(S: TExtendedStream);
-var
-  i: Integer;
-begin
-  inherited;
-
-  S.Write(Cardinal(FTitles.Count));
-  for i := 0 to FTitles.Count - 1 do
-    S.Write(FTitles[i]);
-end;
-
-{ TCommandGetWishlistUpgradeResponse }
-
-constructor TCommandGetWishlistUpgradeResponse.Create;
-begin
-  inherited;
-
-  FCommandType := ctGetWishlistUpgradeResponse;
-  FTitles := TWishlistUpgradeList.Create;
-end;
-
-destructor TCommandGetWishlistUpgradeResponse.Destroy;
-var
-  i: Integer;
-begin
-  for i := 0 to FTitles.Count - 1 do
-    FTitles[i].Free;
-  FTitles.Free;
-
-  inherited;
-end;
-
-procedure TCommandGetWishlistUpgradeResponse.Load(
-  CommandHeader: TCommandHeader; Stream: TExtendedStream);
-var
-  Count: Cardinal;
-  i: Integer;
-  WU: TWishlistUpgrade;
-begin
-  inherited;
-
-  Stream.Read(Count);
-  for i := 0 to Count - 1 do
-  begin
-    WU := TWishlistUpgrade.Create;
-    Stream.Read(WU.Hash);
-    Stream.Read(WU.Title);
-    FTitles.Add(WU);
-  end;
 end;
 
 { TSyncWishlistRecord }

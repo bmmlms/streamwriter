@@ -229,7 +229,7 @@ type
   public
     constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
     destructor Destroy; override;
-    procedure Setup;
+
     procedure InvalidateVisible;
 
     procedure SwitchMode(Mode: TModes);
@@ -996,16 +996,10 @@ procedure TMStreamTree.Resize;
 begin
   inherited;
 
-  Setup;
+  FColName.Width := ClientWidth;
 
   FProgressBar.Left := Trunc(ClientWidth / 2 - FProgressBar.Width / 2);
   FProgressBar.Top := ClientHeight div 2 - Canvas.TextHeight('Wy') + 15;
-end;
-
-procedure TMStreamTree.Setup;
-begin
-  // TODO: IM AFTERSHOWN AUFRUFEN!
-  //FColName.Width := ClientWidth;
 end;
 
 procedure TMStreamTree.Sort(Node: PVirtualNode; Column: TColumnIndex;
@@ -1170,7 +1164,6 @@ begin
   SwitchMode(moLoading);
 
   FSearch.Setup;
-  FStreamTree.Setup;
 
   FSearch.FSearchEdit.OnChange := SearchEditChange;
   //FSearch.FSearchButton.OnClick := SearchButtonClick;

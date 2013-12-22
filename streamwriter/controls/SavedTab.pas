@@ -1019,7 +1019,6 @@ begin
 
   FPositionTimer.Enabled := True;
 
-  // TODO: ??
   FSavedTree.AfterCreate;
 
   FSavedTree.Expanded[FSavedTree.FStreamNode] := True;
@@ -1036,10 +1035,6 @@ begin
   if AppGlobals.SavedHeadersLoaded then
     for i := 2 to FSavedTree.Header.Columns.Count - 1 do
       FSavedTree.Header.Columns[i].Width := AppGlobals.SavedHeaderWidth[i];
-
-  // TODO: irgendwo habe ich ein Nodes.Expanded[Node] in ein try..except gesetzt. Das muss aber nicht so!
-  //       Wenn Parent gesetzt ist funzt das! an anderer Stelle ist irgendwo ein:
-  //          if FButtonHASI <> nil then....    - das kann auch weg! der code müsste jetzt funktionieren, mit parent!!!
 
   FTopPanel.ClientHeight := FTopLeftPanel.Height + FSearchBar.FLabel.Height - 2;
 end;

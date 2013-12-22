@@ -197,9 +197,6 @@ type
     procedure PausePlay;
     procedure ShowInfo;
 
-    // TODO: WEG DAMIT!!!!! das ist aftercreate!!!!!!
-    procedure AfterShown;
-
     procedure AdjustTextSizeDirtyHack;
 
     property AddressBar: TClientAddressBar read FAddressBar;
@@ -909,15 +906,9 @@ begin
     for i := 0 to FClientView.Header.Columns.Count - 1 do
       FClientView.Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
 
-  // TODO: ???
-  FClientView.Show;
 
-  FSideBar.AfterCreate;
-end;
 
-procedure TClientTab.AfterShown;
-begin
-  inherited;
+
 
   FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2);
 
@@ -936,6 +927,15 @@ begin
   FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
 
   FSideBar.Width := AppGlobals.SidebarWidth;
+
+
+
+
+
+  // TODO: ???
+  FClientView.Show;
+
+  FSideBar.AfterCreate;
 end;
 
 procedure TClientTab.DebugClear(Sender: TObject);

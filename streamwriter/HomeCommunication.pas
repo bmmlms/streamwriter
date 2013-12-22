@@ -79,7 +79,6 @@ type
     procedure DoMessageReceived(CommandHeader: TCommandHeader; Command: TCommandMessageResponse);
     procedure DoMonitorStreamsReceived(CommandHeader: TCommandHeader; Command: TCommandGetMonitorStreamsResponse);
     procedure DoSearchChartsReceived(CommandHeader: TCommandHeader; Command: TCommandSearchChartsResponse);
-    procedure DoWishlistUpgradeReceived(CommandHeader: TCommandHeader; Command: TCommandGetWishlistUpgradeResponse);
     procedure DoGenerateAuthTokenReceived(CommandHeader: TCommandHeader; Command: TCommandGenerateAuthTokenResponse);
   protected
     procedure DoReceivedCommand(ID: Cardinal; CommandHeader: TCommandHeader; Command: TCommand); override;
@@ -184,7 +183,6 @@ type
     procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hashes: TSyncWishlistRecordArray); overload;
     procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hash: Cardinal; IsArtist: Boolean); overload;
     procedure SendSearchCharts(Top: Boolean; Term: string);
-    procedure SendGetWishlistUpgrade(Titles: TStringList);
     procedure SendStreamAnalyzationData(StreamID: Cardinal; Data: TExtendedStream);
     procedure SendGenerateAuthToken;
 
@@ -333,7 +331,6 @@ var
   Error: TCommandMessageResponse absolute Command;
   MonitorStreams: TCommandGetMonitorStreamsResponse absolute Command;
   SearchCharts: TCommandSearchChartsResponse absolute Command;
-  WishlistUpgrade: TCommandGetWishlistUpgradeResponse absolute Command;
   GenerateAuthToken: TCommandGenerateAuthTokenResponse absolute Command;
 begin
   inherited;
@@ -357,8 +354,6 @@ begin
       DoMonitorStreamsReceived(CommandHeader, MonitorStreams);
     ctSearchChartsResponse:
       DoSearchChartsReceived(CommandHeader, SearchCharts);
-    ctGetWishlistUpgradeResponse:
-      DoWishlistUpgradeReceived(CommandHeader, WishlistUpgrade);
     ctGenerateAuthTokenResponse:
       DoGenerateAuthTokenReceived(CommandHeader, GenerateAuthToken);
   end;
@@ -469,16 +464,6 @@ begin
 
   if Assigned(FOnServerInfoReceived) then
     Sync(FOnServerInfoReceived);
-end;
-
-procedure THomeThread.DoWishlistUpgradeReceived(
-  CommandHeader: TCommandHeader;
-  Command: TCommandGetWishlistUpgradeResponse);
-begin
-  FWishlistUpgradeTitles := Command.Titles;
-
-  if Assigned(FOnWishlistUpgradeReceived) then
-    Sync(FOnWishlistUpgradeReceived)
 end;
 
 { THomeCommunication }
@@ -732,14 +717,6 @@ begin
   FThread.SendCommand(TCommandGetServerData.Create)
 end;
 
-procedure THomeCommunication.SendGetWishlistUpgrade(Titles: TStringList);
-begin
-  if not FConnected then
-    Exit;
-
-  FThread.SendCommand(TCommandGetWishlistUpgrade.Create(Titles));
-end;
-
 procedure THomeCommunication.HomeThreadConnected(Sender: TSocketThread);
 begin
   inherited;
@@ -939,7 +916,6 @@ initialization
   TCommand.RegisterCommand(ctNetworkTitleChangedResponse, TCommandNetworkTitleChangedResponse);
   TCommand.RegisterCommand(ctGetMonitorStreamsResponse, TCommandGetMonitorStreamsResponse);
   TCommand.RegisterCommand(ctSearchChartsResponse, TCommandSearchChartsResponse);
-  TCommand.RegisterCommand(ctGetWishlistUpgradeResponse, TCommandGetWishlistUpgradeResponse);
   TCommand.RegisterCommand(ctGenerateAuthTokenResponse, TCommandGenerateAuthTokenResponse);
 
   HomeComm := nil;
