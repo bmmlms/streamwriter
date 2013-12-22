@@ -80,7 +80,6 @@ type
     procedure ExpandButtonClick(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
-    procedure Setup;
     procedure AfterCreate;
   end;
 
@@ -116,10 +115,8 @@ type
   public
     constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
     destructor Destroy; override;
-
     procedure AfterCreate;
 
-    procedure Setup;
     procedure Translate;
     procedure RefreshStreams;
     procedure SwitchMode(Mode: TModes);
@@ -567,13 +564,7 @@ var
 begin
   FoundStart := False;
 
-  try
-    // Falls das Programm bisher nur im Tray war, wird hier eine Exception geworfen,
-    // die wir ignorieren können.
-    R2 := Self.ClientRect;
-  except
-    Exit;
-  end;
+  R2 := Self.ClientRect;
 
   Node := GetFirst;
   while Node <> nil do
@@ -1058,6 +1049,17 @@ end;
 procedure TMStreamBrowserView.AfterCreate;
 begin
   FSearch.AfterCreate;
+
+  if (FDataLists.BrowserList.Count > 0) and (FDataLists.GenreList.Count > 0) then
+  begin
+    BuildGenres;
+    BuildTree(True);
+    SwitchMode(moShow);
+  end;
+
+  FSelectedSortType := TSortTypes(AppGlobals.BrowserSortType);
+
+  SortTree;
 end;
 
 procedure TMStreamBrowserView.BuildGenres;
@@ -1131,7 +1133,7 @@ begin
   inherited Create(AOwner);
 
   FDataLists := DataLists;
-       // TODO: Tray-Menü ist nicht lokalisiert wenn man minimiert startet? ist es lokalisiert wenn man normal startet?
+
   Align := alClient;
   BevelOuter := bvNone;
 
@@ -1163,8 +1165,6 @@ begin
 
   SwitchMode(moLoading);
 
-  FSearch.Setup;
-
   FSearch.FSearchEdit.OnChange := SearchEditChange;
   //FSearch.FSearchButton.OnClick := SearchButtonClick;
   FSearch.FGenreList.OnChange := ListsChange;
@@ -1173,20 +1173,6 @@ begin
 
   HomeComm.OnStreamsReceived := HomeCommStreamsReceived;
   HomeComm.OnAuthTokenReceived := HomeCommAuthTokenReceived;
-
-  if (FDataLists.BrowserList.Count > 0) and (FDataLists.GenreList.Count > 0) then
-  begin
-    // TODO: WIEDER REIN!!!
-    //BuildGenres;
-    //BuildTree(True);
-    SwitchMode(moShow);
-  end;
-
-  FSelectedSortType := TSortTypes(AppGlobals.BrowserSortType);
-
-  // TODO: WIEDER REIN!!!
-  //SortTree;
-
 end;
 
 destructor TMStreamBrowserView.Destroy;
@@ -1280,36 +1266,6 @@ begin
     end;
 
   FStreamTree.Sort(nil, 0, FSelectedSortType, SortDir);
-end;
-
-// TODO: jedes Setup nach AfterShown/Shown umbenennen oder so...
-procedure TMStreamBrowserView.Setup;
-begin
-{
-  SwitchMode(moLoading);
-
-  FSearch.Setup;
-  FStreamTree.Setup;
-
-  FSearch.FSearchEdit.OnChange := SearchEditChange;
-  //FSearch.FSearchButton.OnClick := SearchButtonClick;
-  FSearch.FGenreList.OnChange := ListsChange;
-  FSearch.FKbpsList.OnChange := ListsChange;
-  FSearch.FTypeList.OnChange := ListsChange;
-
-  HomeComm.OnStreamsReceived := HomeCommStreamsReceived;
-  HomeComm.OnAuthTokenReceived := HomeCommAuthTokenReceived;
-
-  if (FDataLists.BrowserList.Count > 0) and (FDataLists.GenreList.Count > 0) then
-  begin
-    BuildGenres;
-    BuildTree(True);
-    SwitchMode(moShow);
-  end;
-
-  FSelectedSortType := TSortTypes(AppGlobals.BrowserSortType);
-  SortTree;
-}
 end;
 
 procedure TMStreamBrowserView.SortItemClick(Sender: TObject);
@@ -1418,6 +1374,8 @@ end;
 { TMStreamSearch }
 
 procedure TMStreamSearchPanel.AfterCreate;
+var
+  TopCnt, MaxW: Integer;
 begin
   FKbpsList.Items.Add(_('- No kbps -'));
   FKbpsList.Items.Add('>= 64');
@@ -1431,6 +1389,13 @@ begin
   FTypeList.Items.Add(_('MP3'));
   FTypeList.Items.Add(_('AAC'));
   FTypeList.ItemIndex := 0;
+
+  FSearchEdit.Width := ClientWidth - FSearchEdit.Left - FSearchLabel.Left;
+  FGenreList.Width := ClientWidth - FGenreList.Left - FGenreLabel.Left;
+  FKbpsList.Width := ClientWidth - FKbpsList.Left - FKbpsLabel.Left;
+  FTypeList.Width := ClientWidth - FTypeList.Left - FTypeLabel.Left;
+
+  ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4;
 
   SetVisible(True);
 end;
@@ -1539,7 +1504,6 @@ begin
 
   FTypeLabel.Top := FTypeList.Top + FTypeList.Height div 2 - FTypeLabel.Height div 2;
 
-
   {
   I := TIcon.Create;
   I.LoadFromResourceName(HInstance, 'SEARCH');
@@ -1560,27 +1524,11 @@ begin
   FGenreList.Left := MaxW + 12;
   FKbpsList.Left := MaxW + 12;
   FTypeList.Left := MaxW + 12;
-
-
 end;
 
 procedure TMStreamSearchPanel.ExpandButtonClick(Sender: TObject);
 begin
   SetVisible(not FTypeList.Visible);
-end;
-
-procedure TMStreamSearchPanel.Setup;
-var
-  TopCnt, MaxW: Integer;
-begin
-  { TODO: WIEDER REIN!!!
-  FSearchEdit.Width := ClientWidth - FSearchEdit.Left - FSearchLabel.Left;
-  FGenreList.Width := ClientWidth - FGenreList.Left - FGenreLabel.Left;
-  FKbpsList.Width := ClientWidth - FKbpsList.Left - FKbpsLabel.Left;
-  FTypeList.Width := ClientWidth - FTypeList.Left - FTypeLabel.Left;
-
-  ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4;
-  }
 end;
 
 procedure TMStreamSearchPanel.SetVisible(Value: Boolean);

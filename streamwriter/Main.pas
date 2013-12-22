@@ -876,6 +876,14 @@ begin
   tabClients := TClientTab.Create(pagMain, tbClients, ActionList1, FClients, FDataLists, mnuStreamPopup);
   tabClients.PageControl := pagMain;
   tabClients.AfterCreate;
+  tabClients.OnUpdateButtons := tabClientsUpdateButtons;
+  tabClients.OnTrackAdded := tabClientsTrackAdded;
+  tabClients.OnTrackRemoved := tabClientsTrackRemoved;
+  tabClients.OnAddTitleToList := tabClientsAddTitleToList;
+  tabClients.OnRemoveTitleFromList := tabClientsRemoveTitleFromList;
+  tabClients.OnPlayStarted := tabPlayStarted;
+  tabClients.OnAuthRequired := tabClientsAuthRequired;
+  tabClients.OnShowErrorMessage := tabClientsShowErrorMessage;
 
   tabCharts := TChartsTab.Create(pagMain, FDataLists);
   tabCharts.PageControl := pagMain;
@@ -930,7 +938,7 @@ begin
 
 
   tabClients.AddressBar.Stations.BuildList(FDataLists.RecentList);
-  tabClients.BuildTree(FDataLists);
+  //tabClients.BuildTree(FDataLists);
 
   FUpdater := TUpdateClient.Create;
 
@@ -975,15 +983,6 @@ begin
 
   RegisterHotkeys(True);
 
-  tabClients.OnUpdateButtons := tabClientsUpdateButtons;
-  tabClients.OnTrackAdded := tabClientsTrackAdded;
-  tabClients.OnTrackRemoved := tabClientsTrackRemoved;
-  tabClients.OnAddTitleToList := tabClientsAddTitleToList;
-  tabClients.OnRemoveTitleFromList := tabClientsRemoveTitleFromList;
-  tabClients.OnPlayStarted := tabPlayStarted;
-  tabClients.OnAuthRequired := tabClientsAuthRequired;
-  tabClients.OnShowErrorMessage := tabClientsShowErrorMessage;
-
   // Ist hier unten, weil hier erst Tracks geladen wurden
   tabClients.AddressBar.Stations.Sort;
 
@@ -997,6 +996,8 @@ begin
   actShowSideBar.Checked := tabClients.SideBar.Visible;
 
   MsgBus.AddSubscriber(MessageReceived);
+
+  tabClients.ClientView.SetFocus;
 
   Application.ProcessMessages;
 
@@ -1379,14 +1380,13 @@ procedure TfrmStreamWriterMain.OpenCut(Filename: string);
 var
   tabCut: TCutTab;
 begin
-  tabCut := TCutTab.Create(pagMain);
+  tabCut := TCutTab.Create(pagMain, nil, Filename);
   tabCut.PageControl := pagMain;
+  tabCut.AfterCreate;
   tabCut.OnSaved := tabCutSaved;
   tabCut.OnPlayStarted := tabPlayStarted;
 
   pagMain.ActivePage := tabCut;
-
-  tabCut.Setup(Filename);
 
   tabCut.CutView.OnCutFile := tabCutCutFile;
 end;
@@ -1395,14 +1395,13 @@ procedure TfrmStreamWriterMain.OpenCut(Track: TTrackInfo);
 var
   tabCut: TCutTab;
 begin
-  tabCut := TCutTab.Create(pagMain);
+  tabCut := TCutTab.Create(pagMain, Track);
   tabCut.PageControl := pagMain;
+  tabCut.AfterCreate;
   tabCut.OnSaved := tabCutSaved;
   tabCut.OnPlayStarted := tabPlayStarted;
 
   pagMain.ActivePage := tabCut;
-
-  tabCut.Setup(Track);
 
   tabCut.CutView.OnCutFile := tabCutCutFile;
 end;

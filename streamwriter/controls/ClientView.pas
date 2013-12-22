@@ -57,7 +57,6 @@ type
   private
     FBrowser: TMStreamTree;
 
-    FPopupMenu: TPopupMenu;
     FDragSource: TDropFileSource;
     FDragNodes: TNodeArray;
     FAutoNode: PVirtualNode;
@@ -105,8 +104,7 @@ type
   public
     constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree); reintroduce;
     destructor Destroy; override;
-
-    procedure Shown;
+    procedure AfterCreate;
 
     function AddClient(Client: TICEClient): PVirtualNode;
     function RefreshClient(Client: TICEClient): Boolean;
@@ -214,7 +212,7 @@ begin
   ShowHint := True;
   HintMode := hmTooltip;
 
-  FPopupMenu := PopupMenu;
+  Self.PopupMenu := PopupMenu;
   FDragSource := TDropFileSource.Create(Self);
 
   FColName := Header.Columns.Add;
@@ -794,7 +792,7 @@ begin
   end;
 end;
 
-procedure TMClientView.Shown;
+procedure TMClientView.AfterCreate;
 begin
   FitColumns;
 end;

@@ -71,8 +71,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-
-    procedure Setup;
+    procedure AfterCreate;
 
     property Stations: TMStationCombo read FStations;
     property OnStart: TNotifyEvent read FOnStart write FOnStart;
@@ -254,7 +253,7 @@ begin
     FStations.Text := string(FDropTarget.Files[0]);
 end;
 
-procedure TClientAddressBar.Setup;
+procedure TClientAddressBar.AfterCreate;
 begin
   FLabel.Left := 0;
   FLabel.Caption := 'Playlist/Stream-URL:';
@@ -289,7 +288,9 @@ begin
 
   BevelOuter := bvNone;
 
-  FStationsChange(FStations);      // TODO: das in konstruktor tun hier!
+  ClientHeight := Max(FLabel.Height + FLabel.Top * 2, FStations.Height + FStations.Top * 2);
+
+  FStart.Enabled := False;
 end;
 
 procedure TClientAddressBar.FStationsChange(Sender: TObject);
@@ -844,9 +845,10 @@ procedure TClientTab.AfterCreate;
 var
   i: Integer;
 begin
-  inherited; // TODO: ist in jedem nachfahren von TTabPage inherited???
+  inherited;
 
-  FAddressBar.Setup;
+  BuildTree(FStreams);
+
   FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2) + 1;
 
   FToolbarPanel.ClientHeight := 24;
@@ -868,8 +870,6 @@ begin
 
   FSideBar.Width := AppGlobals.SidebarWidth;
 
-  // TODO: setup?? WEG DAMIT!!! AfterCreate!
-  FSideBar.FBrowserView.Setup;
 
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
@@ -883,8 +883,6 @@ begin
   FClientView.Parent := Self;
   FClientView.Align := alClient;
   FClientView.Visible := True;
-  // TODO: ??? das ist evtl wichtig gewesen ;)
-  //FClientView.PopupMenu := Popup;
   FClientView.Images := modSharedData.imgClients;
   FClientView.OnChange := FClientViewChange;
   FClientView.OnDblClick := FClientViewDblClick;
@@ -892,10 +890,6 @@ begin
   FClientView.OnKeyDown := FClientViewKeyDown;
   FClientView.OnStartStreaming := FClientViewStartStreaming;
 
-  // TODO: shown??? wir sind heir im AfterCreate. umbenennen oder so!!!
-  FClientView.Shown;
-
-  // TODO: der RootNodeCount ist hier immer 0. das if..then..end; sollte erst aufgerufen werden, wenn der Tree befüllt wurde.
   if FClientView.RootNodeCount > 0 then
   begin
     FClientView.Selected[FClientView.GetFirst] := True;
@@ -907,15 +901,9 @@ begin
       FClientView.Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
 
 
-
-
-
-  FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2);
-
   FToolbarPanel.ClientHeight := 24;
 
   FToolbar.Width := FToolbarPanel.ClientWidth - 250;
-  //FToolbar.Height := 23;
 
   FVolume.Width := 140;
 
@@ -928,13 +916,8 @@ begin
 
   FSideBar.Width := AppGlobals.SidebarWidth;
 
-
-
-
-
-  // TODO: ???
-  FClientView.Show;
-
+  FAddressBar.AfterCreate;
+  FClientView.AfterCreate;
   FSideBar.AfterCreate;
 end;
 

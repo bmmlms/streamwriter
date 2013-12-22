@@ -61,6 +61,7 @@ type
     FVolume: TVolumePanel;
     FCutView: TCutView;
     FFilename: string;
+    FTrack: TTrackInfo;
 
     FOnSaved: TFileSavedEvent;
     FOnPlayStarted: TNotifyEvent;
@@ -88,12 +89,10 @@ type
   protected
 
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent; Track: TTrackInfo; Filename: string = '');
     destructor Destroy; override;
+    procedure AfterCreate; override;
 
-    procedure Setup(Track: TTrackInfo); overload;
-    procedure Setup(Filename: string); overload;
-    procedure Setup; overload;
     procedure PausePlay;
 
     function CanClose: Boolean; override;
@@ -124,9 +123,27 @@ begin
     end;
 end;
 
-constructor TCutTab.Create(AOwner: TComponent);
+constructor TCutTab.Create(AOwner: TComponent; Track: TTrackInfo; Filename: string = '');
 begin
-  inherited;
+  inherited Create(AOwner);
+
+  FTrack := Track;
+  if Track <> nil then
+    FFilename := Track.Filename
+  else
+    FFilename := Filename;
+
+  FToolbarPanel := TPanel.Create(Self);
+  FToolbarPanel.Parent := Self;
+
+  FToolBar := TCutToolBar.Create(Self);
+  FToolBar.Parent := FToolbarPanel;
+
+  FVolume := TVolumePanel.Create(Self);
+  FVolume.Parent := FToolbarPanel;
+
+  FCutView := TCutView.Create(Self);
+  FCutView.Parent := Self;
 
   MsgBus.AddSubscriber(MessageReceived);
 
@@ -306,19 +323,27 @@ begin
   FCutView.Save;
 end;
 
-procedure TCutTab.Setup;
+procedure TCutTab.AfterCreate;
 begin
+  inherited;
+
+  if FTrack <> nil then
+  begin
+    Caption := ExtractFileName(StringReplace(FTrack.Filename, '&', '&&', [rfReplaceAll]));
+    FCutView.LoadFile(FTrack);
+  end else
+  begin
+    Caption := ExtractFileName(StringReplace(Filename, '&', '&&', [rfReplaceAll]));
+    FCutView.LoadFile(Filename, False, True);
+  end;
+
   MaxWidth := 120;
 
-  FToolbarPanel := TPanel.Create(Self);
   FToolbarPanel.Align := alTop;
   FToolbarPanel.BevelOuter := bvNone;
-  FToolbarPanel.Parent := Self;
   FToolbarPanel.ClientHeight := 26;
   FToolbarPanel.Padding.Top := 1;
 
-  FToolBar := TCutToolBar.Create(Self);
-  FToolBar.Parent := FToolbarPanel;
   FToolBar.Images := modSharedData.imgImages;
   FToolBar.Align := alLeft;
   FToolBar.Width := Self.ClientWidth - 130;
@@ -346,8 +371,6 @@ begin
   FToolBar.FPlay.OnClick := PlayClick;
   FToolBar.FStop.OnClick := StopClick;
 
-  FVolume := TVolumePanel.Create(Self);
-  FVolume.Parent := FToolbarPanel;
   FVolume.Align := alRight;
   FVolume.Setup;
   FVolume.Enabled := Bass.DeviceAvailable;
@@ -357,34 +380,12 @@ begin
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
 
-  FCutView := TCutView.Create(Self);
-  FCutView.Parent := Self;
   FCutView.Padding.Top := 2;
   FCutView.Align := alClient;
   FCutView.OnStateChanged := CutViewStateChanged;
 
   UpdateButtons;
   Language.Translate(Self);
-end;
-
-procedure TCutTab.Setup(Track: TTrackInfo);
-begin
-  Setup;
-
-  Caption := ExtractFileName(StringReplace(Track.Filename, '&', '&&', [rfReplaceAll]));
-  FFilename := Track.Filename;
-
-  FCutView.LoadFile(Track);
-end;
-
-procedure TCutTab.Setup(Filename: string);
-begin
-  Setup;
-
-  Caption := ExtractFileName(StringReplace(Filename, '&', '&&', [rfReplaceAll]));
-  FFilename := Filename;
-
-  FCutView.LoadFile(Filename, False, True);
 end;
 
 { TCutToolbar }
