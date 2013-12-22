@@ -122,7 +122,6 @@ end;
 function TMStationCombo.AddItem(Entry: TRecentEntry): TListControlItem;
 begin
   Result := ItemsEx.Add;
-
   Result.Caption := Entry.Name;
   Result.Data := Entry.Copy;
   Result.ImageIndex := 16;

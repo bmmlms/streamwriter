@@ -186,7 +186,7 @@ type
     procedure Resize; override;
   public
     constructor Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList;
-      Clients: TClientManager; Streams: TDataLists); reintroduce;
+      Clients: TClientManager; Streams: TDataLists; Popup: TPopupMenu); reintroduce;
     destructor Destroy; override;
 
     procedure Shown(Popup: TPopupMenu);
@@ -226,6 +226,16 @@ constructor TClientAddressBar.Create(AOwner: TComponent);
 begin
   inherited;
 
+  FLabel := TLabel.Create(Self);
+  FLabel.Parent := Self;
+
+  FStart := TPngSpeedButton.Create(Self);
+  FStart.Parent := Self;
+
+  FStations := TMStationCombo.Create(Self);
+  FStations.Parent := Self;
+
+  FDropTarget := TDropComboTarget.Create(Self);
 end;
 
 destructor TClientAddressBar.Destroy;
@@ -248,13 +258,9 @@ end;
 
 procedure TClientAddressBar.Setup;
 begin
-  FLabel := TLabel.Create(Self);
-  FLabel.Parent := Self;
   FLabel.Left := 0;
   FLabel.Caption := 'Playlist/Stream-URL:';
 
-  FStart := TPngSpeedButton.Create(Self);
-  FStart.Parent := Self;
   FStart.Width := 24;
   FStart.Height := 22;
   FStart.Top := 9;
@@ -267,8 +273,6 @@ begin
   FStart.OnClick := FStartClick;
   FStart.PngImage := modSharedData.imgImages.PngImages[11].PngImage;
 
-  FStations := TMStationCombo.Create(Self);
-  FStations.Parent := Self;
   FStations.DropDownCount := 15;
   FStations.Left := FLabel.Left + FLabel.Width + 6;
   FStations.Top := 3;
@@ -281,14 +285,13 @@ begin
 
   FLabel.Top := FStations.Top + FStations.Height div 2 - FLabel.Height div 2;
 
-  FDropTarget := TDropComboTarget.Create(Self);
   FDropTarget.Formats := [mfText, mfURL, mfFile];
   FDropTarget.Register(FStations);
   FDropTarget.OnDrop := DropTargetDrop;
 
   BevelOuter := bvNone;
 
-  FStationsChange(FStations);
+  FStationsChange(FStations);      // TODO: das in konstruktor tun hier!
 end;
 
 procedure TClientAddressBar.FStationsChange(Sender: TObject);
@@ -684,7 +687,7 @@ begin
 end;
 
 constructor TClientTab.Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList; Clients: TClientManager;
-  Streams: TDataLists);
+  Streams: TDataLists; Popup: TPopupMenu);
   function GetAction(Name: string): TAction;
   var
     i: Integer;
@@ -814,6 +817,8 @@ begin
   FToolbarPanel.Top := 0;
   FAddressBar.Top := 100;
 
+  FClientView := TMClientView.Create(Self, Popup, FSideBar.FBrowserView.StreamTree);
+
   MsgBus.AddSubscriber(MessageReceived);
 end;
 
@@ -905,6 +910,13 @@ begin
   end;
 end;
 
+// TODO: Testen, wenn im Tray gestartet wurde, ohne dass das Fenster je sichtbar war:
+//  - Auto-Aufnahmen
+//  - Speicherplatz gering (kommt die message?)
+//  - Notification von HomeComm
+//  - Ordner für SavedSongs existiert nicht
+//
+
 procedure TClientTab.Shown(Popup: TPopupMenu);
 var
   i: Integer;
@@ -942,7 +954,6 @@ begin
 
 
   // Das ClientView wird erst hier erzeugt, weil es eine Referenz auf FSideBar.FBrowserView.StreamTree braucht!
-  FClientView := TMClientView.Create(Self, Popup, FSideBar.FBrowserView.StreamTree);
   FClientView.Parent := Self;
   FClientView.Align := alClient;
   FClientView.Visible := True;
@@ -1851,6 +1862,14 @@ begin
   inherited Create(AOwner);
 
   FDataLists := DataLists;
+
+  FPage1 := TTabSheet.Create(Self);
+  FPage2 := TTabSheet.Create(Self);
+  FPage3 := TTabSheet.Create(Self);
+
+  FBrowserView := TMStreamBrowserView.Create(Self, FDataLists);
+  FInfoView := TMStreamInfoView.Create(Self);
+  FDebugView := TMStreamDebugView.Create(Self);
 end;
 
 destructor TSidebar.Destroy;
@@ -1861,21 +1880,14 @@ end;
 
 procedure TSidebar.Init;
 begin
-  FPage1 := TTabSheet.Create(Self);
   FPage1.PageControl := Self;
   FPage1.Caption := 'Browser';
 
-  FPage2 := TTabSheet.Create(Self);
   FPage2.PageControl := Self;
   FPage2.Caption := 'Info';
 
-  FPage3 := TTabSheet.Create(Self);
   FPage3.PageControl := Self;
   FPage3.Caption := 'Log';
-
-  FBrowserView := TMStreamBrowserView.Create(Self, FDataLists);
-  FInfoView := TMStreamInfoView.Create(Self);
-  FDebugView := TMStreamDebugView.Create(Self);
 
   FBrowserView.Parent := FPage1;
   FInfoView.Parent := FPage2;

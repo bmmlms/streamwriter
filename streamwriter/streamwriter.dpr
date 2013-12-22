@@ -160,12 +160,6 @@ begin
   MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
   {$ENDIF}
 
-  if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and
-     (not IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion))
-  then
-    TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.AppVersion.AsString, AppGlobals.BuildNumber,
-      AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
-
   // TODO: das funzt noch nicht. alle kombinationen testen!!!
   //       und genau das gibt ein neues problem! ich muss im create alles erstellen. auch listen mit items füllen etc...
   //       im aftershown darf ich NUR größen anpassen!!!
@@ -179,6 +173,12 @@ begin
       Break;
     end;
   end;
+
+  if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and
+     (not IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion)) and (not HideMain)
+  then
+    TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.AppVersion.AsString, AppGlobals.BuildNumber,
+      AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
 
   Application.Title := AppGlobals.AppName;
   Application.Icon.Handle := LoadIcon(HInstance, 'A');

@@ -105,6 +105,9 @@ type
   protected
     procedure SetEnabled(Value: Boolean); override;
   public
+    constructor Create(AOwner: TComponent);
+    destructor Destroy; override;
+
     procedure Setup;
 
     property OnVolumeChange: TNotifyEvent read FVolumeChange write FVolumeChange;
@@ -112,8 +115,6 @@ type
     property VolumeBeforeDrag: Integer read FVolumeBeforeDrag;
     property NotifyOnMove: Boolean write FSetNotifyOnMove;
     property OnGetVolumeBeforeMute: TOnGetVolumeBeforeMute read FOnGetVolumeBeforeMute write FOnGetVolumeBeforeMute;
-
-    destructor Destroy; override;
   end;
 
   TMenuColEvent = procedure(Sender: TVirtualStringTree; Index: Integer; Checken: Boolean) of object;
@@ -150,7 +151,6 @@ var
 begin
   BevelOuter := bvNone;
 
-  FMute := TPngSpeedButton.Create(Self);
   FMute.Hint := 'Mute';
   FMute.ShowHint := True;
   FMute.Flat := True;
@@ -162,30 +162,12 @@ begin
   FMute.OnClick := MuteClick;
   FMute.Parent := Self;
 
-  ResStream := TResourceStream.Create(HInstance, 'VOLUME', RT_RCDATA);
-  try
-    FVolumePng := TPngImage.Create;
-    FVolumePng.LoadFromStream(ResStream);
-  finally
-    ResStream.Free;
-  end;
-
-  ResStream := TResourceStream.Create(HInstance, 'VOLUME_MUTED', RT_RCDATA);
-  try
-    FVolumeMutedPng := TPngImage.Create;
-    FVolumeMutedPng.LoadFromStream(ResStream);
-  finally
-    ResStream.Free;
-  end;
-
-  FTrackBarPanel := TPanel.Create(Self);
   FTrackBarPanel.Align := alClient;
   FTrackBarPanel.BevelOuter := bvNone;
   FTrackBarPanel.Padding.Left := 4;
   FTrackBarPanel.Padding.Right := 2;
   FTrackBarPanel.Parent := Self;
 
-  FTrackBar := TSeekBar.Create(Self);
   FTrackBar.Max := 100;
   FTrackBar.Align := alClient;
   FTrackBar.OnPositionChanged := VolumeChange;
@@ -261,6 +243,33 @@ end;
 procedure TVolumePanel.FSetNotifyOnMove(Value: Boolean);
 begin
   FTrackBar.NotifyOnMove := Value;
+end;
+
+constructor TVolumePanel.Create(AOwner: TComponent);
+var
+  ResStream: TResourceStream;
+begin
+  inherited;
+
+  FMute := TPngSpeedButton.Create(Self);
+  FTrackBar := TSeekBar.Create(Self);
+  FTrackBarPanel := TPanel.Create(Self);
+
+  ResStream := TResourceStream.Create(HInstance, 'VOLUME', RT_RCDATA);
+  try
+    FVolumePng := TPngImage.Create;
+    FVolumePng.LoadFromStream(ResStream);
+  finally
+    ResStream.Free;
+  end;
+
+  ResStream := TResourceStream.Create(HInstance, 'VOLUME_MUTED', RT_RCDATA);
+  try
+    FVolumeMutedPng := TPngImage.Create;
+    FVolumeMutedPng.LoadFromStream(ResStream);
+  finally
+    ResStream.Free;
+  end;
 end;
 
 destructor TVolumePanel.Destroy;

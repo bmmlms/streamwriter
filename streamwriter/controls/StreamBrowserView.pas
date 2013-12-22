@@ -564,7 +564,13 @@ var
 begin
   FoundStart := False;
 
-  R2 := Self.ClientRect;
+  try
+    // Falls das Programm bisher nur im Tray war, wird hier eine Exception geworfen,
+    // die wir ignorieren können.
+    R2 := Self.ClientRect;
+  except
+    Exit;
+  end;
 
   Node := GetFirst;
   while Node <> nil do
@@ -1106,7 +1112,6 @@ begin
       raise Exception.Create('');
   end;
 
-
   if FStreamTree.Build(AlwaysBuild, FSearch.FSearchEdit.Text, Genre, AudioType, Bitrate) then
   begin
     FStreamTree.Sort(nil, 0, FSelectedSortType, FStreamTree.Header.SortDirection);
@@ -1123,7 +1128,7 @@ begin
   inherited Create(AOwner);
 
   FDataLists := DataLists;
-
+       // TODO: Tray-Menü ist nicht lokalisiert wenn man minimiert startet? ist es lokalisiert wenn man normal startet?
   Align := alClient;
   BevelOuter := bvNone;
 

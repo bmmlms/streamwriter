@@ -115,6 +115,7 @@ type
   protected
     procedure Resize; override;
   public
+    constructor Create(AOwner: TComponent; Clients: TClientManager; Lists: TDataLists);
     procedure PostTranslate;
     procedure AfterShown;
     function AddEntry(Text: string; TitleHash: Cardinal; ShowMessages: Boolean; ListType: TListType): Boolean;
@@ -135,7 +136,7 @@ type
   protected
     procedure Resize; override;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent; Clients: TClientManager; Streams: TDataLists);
 
     function SendWishListUpdateBatch: Boolean;
 
@@ -205,14 +206,14 @@ implementation
 
 { TListsTab }
 
-constructor TListsTab.Create(AOwner: TComponent);
+constructor TListsTab.Create(AOwner: TComponent; Clients: TClientManager; Streams: TDataLists);
 begin
   inherited Create(AOwner);
 
   ShowCloseButton := False;
   ImageIndex := 30;
 
-  FListsPanel := TTitlePanel.Create(Self);
+  FListsPanel := TTitlePanel.Create(Self, Clients, Streams);
   FListsPanel.Parent := Self;
   FListsPanel.Align := alClient;
 
@@ -317,6 +318,8 @@ var
   i: Integer;
 begin
   Result := False;
+
+  // TODO: Das hier kann ich evtl. bald rausnehmen. oder ich muss es testen wegen neuem programmstart-ablauf...
 
   // Wir suchen uns X Einträge, die schicken wir dann wegen Hash-Update an den Server.
   // Wenn diese erledigt sind kommen die nächsten 10 dran, und so weiter...
@@ -928,6 +931,17 @@ begin
     end;
 end;
 
+constructor TTitlePanel.Create(AOwner: TComponent; Clients: TClientManager; Lists: TDataLists);
+begin
+  inherited Create(AOwner);
+
+  FTree := TTitleTree.Create(Self, Lists);
+  FTree.Parent := Self;
+
+  FLists := Lists;
+  FClients := Clients;
+end;
+
 procedure TTitlePanel.SearchTextChange(Sender: TObject);
 var
   Hash: Cardinal;
@@ -1072,8 +1086,6 @@ begin
   PostTranslate;
   FSearchPanel.ClientHeight := FSearchText.Top + 5 + FSearchText.Height;
 
-  FTree := TTitleTree.Create(Self, Lists);
-  FTree.Parent := Self;
   FTree.Align := alClient;
   FTree.OnChange := TreeChange;
   FTree.OnKeyDown := TreeKeyDown;
@@ -1081,8 +1093,8 @@ begin
   FTree.FColSaved.Width := MulDiv(120, Screen.PixelsPerInch, 96);
   FTree.FColAdded.Width := MulDiv(130, Screen.PixelsPerInch, 96);
 
-  FClients := Clients;
-  FLists := Lists;
+  //FClients := Clients;
+  //FLists := Lists;
 
   BuildTree(False);
   FillClientCombo;

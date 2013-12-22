@@ -233,7 +233,6 @@ type
     FDataLists: TDataLists;
     FUpdater: TUpdateClient;
     FUpdateOnExit: Boolean;
-    //SaveListUpdateDone: Boolean;
 
     FClientCount: Cardinal;
     FRecordingCount: Cardinal;
@@ -435,6 +434,7 @@ begin
       AppGlobals.Save;
     except end;
 
+  // TODO: profilimport testen.
   // Das muss so, damit der Import von Profilen klappt. Sonst wird beim Hinzufügen
   // in die SaveList das OnChange aufgerufen und es crashed. Also hier lassen.
   //FDataLists.SaveList.OnChange.Clear;
@@ -486,7 +486,7 @@ begin
   FClients.Terminate;
 
   tabClients.ClientView.Clear;
-
+         // TODO: mit -minimize starten, fenster aufmachen, sortierung im streambrowser passt nicht.
   if FUpdateOnExit then
     FUpdater.RunUpdate(Handle);
 
@@ -671,16 +671,11 @@ begin
   if FWasActivated then
     Exit;
 
+  // TODO: ganz viel muss hier raus und in den konstruktor...
+
   FWasActivated := True;
 
   tabClients.AdjustTextSizeDirtyHack;
-
-  // ----------------------------------
-  // Das hier kann irgendwann raus.
-  if (AppGlobals.LastUsedDataVersion < 56) and (FDataLists.SongsSaved = 0) then
-    for i := 0 to FClients.Count - 1 do
-      FDataLists.SongsSaved := FDataLists.SongsSaved + FClients[i].Entry.SongsSaved;
-  // ----------------------------------
 
   tabClients.AfterShown;
   tabCharts.AfterShown;
@@ -692,6 +687,7 @@ begin
 
   Language.Translate(Self);
 
+  // TODO: diese meldungen sollten im konstruktor kommen oder? wegen tray-startup...
   if not Bass.DeviceAvailable then
   begin
     TfrmMsgDlg.ShowMsg(Self, _('No sound devices could be detected so playback of streams and files will not be possible.'),
@@ -715,19 +711,6 @@ begin
   // we must skip this stuff.
   if not FExiting then
   begin
-    // Wird hier gemacht, weil der Browser dann sicher da ist, wenn die
-    // Streams empfangen werden (wg. DisplayCount)
-    HomeComm.OnStateChanged := HomeCommStateChanged;
-    HomeComm.OnBytesTransferred := HomeCommBytesTransferred;
-    HomeComm.OnTitleNotificationsChanged := HomeCommTitleNotificationsChanged;
-    HomeComm.OnHandshakeReceived := HomeCommHandshake;
-    HomeComm.OnLogInReceived := HomeCommLogIn;
-    HomeComm.OnLogOutReceived := HomeCommLogOut;
-    HomeComm.OnServerInfoReceived := HomeCommServerInfo;
-    HomeComm.OnErrorReceived := HomeCommError;
-    //HomeComm.OnServerDataReceived := HomeCommServerDataReceived;
-    HomeComm.Connect;
-
     if not AppGlobals.FirstStartShown then
     begin
       FormIntro := TfrmIntro.Create(Self);
@@ -766,7 +749,7 @@ begin
 
     tmrSpeed.Enabled := True;
     tmrSchedule.Enabled := True;
-    FUpdater := TUpdateClient.Create;
+
     FUpdater.OnNoUpdateFound := UpdaterNoUpdateFound;
     FUpdater.OnUpdateFound := UpdaterUpdateFound;
 
@@ -804,6 +787,8 @@ begin
   FMainCaption := 'streamWriter';
   {$IFDEF DEBUG}FMainCaption := FMainCaption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
   Caption := FMainCaption;
+
+  AppGlobals.WindowHandle := Handle;
 
   if not Bass.EffectsAvailable then
   begin
@@ -896,7 +881,7 @@ begin
   pagMain.Align := alClient;
   pagMain.Images := modSharedData.imgImages;
 
-  tabClients := TClientTab.Create(pagMain, tbClients, ActionList1, FClients, FDataLists);
+  tabClients := TClientTab.Create(pagMain, tbClients, ActionList1, FClients, FDataLists, mnuStreamPopup);
   tabClients.PageControl := pagMain;
 
 
@@ -908,7 +893,7 @@ begin
   tabCharts.OnAddStreams := tabChartsAddStreams;
   tabCharts.OnGetIsStreamOnListEvent := tabChartsGetIsStreamOnListEvent;
 
-  tabLists := TListsTab.Create(pagMain);
+  tabLists := TListsTab.Create(pagMain, FClients, FDataLists);
   tabLists.PageControl := pagMain;
 
   tabSaved := TSavedTab.Create(pagMain);
@@ -948,6 +933,22 @@ begin
 
   FEqualizer := TfrmEqualizer.Create(Self);
 
+
+  tabClients.AddressBar.Stations.BuildList(FDataLists.RecentList);
+  tabClients.BuildTree(FDataLists);
+
+  FUpdater := TUpdateClient.Create;
+
+  HomeComm.OnStateChanged := HomeCommStateChanged;
+  HomeComm.OnBytesTransferred := HomeCommBytesTransferred;
+  HomeComm.OnTitleNotificationsChanged := HomeCommTitleNotificationsChanged;
+  HomeComm.OnHandshakeReceived := HomeCommHandshake;
+  HomeComm.OnLogInReceived := HomeCommLogIn;
+  HomeComm.OnLogOutReceived := HomeCommLogOut;
+  HomeComm.OnServerInfoReceived := HomeCommServerInfo;
+  HomeComm.OnErrorReceived := HomeCommError;
+  HomeComm.Connect;
+
   actPlayerIncreaseVolume.Enabled := Bass.DeviceAvailable;
   actPlayerDecreaseVolume.Enabled := Bass.DeviceAvailable;
   actPlayerMuteVolume.Enabled := Bass.DeviceAvailable;
@@ -977,10 +978,8 @@ begin
 
   RegisterHotkeys(True);
 
-  AppGlobals.WindowHandle := Handle;
-
   tabClients.Shown(mnuStreamPopup);
-  tabCharts.Setup;
+  tabCharts.Setup;  // TODO: hier drin werden konstruktoren aufgerufen!
 
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
   tabClients.OnTrackAdded := tabClientsTrackAdded;
@@ -990,9 +989,6 @@ begin
   tabClients.OnPlayStarted := tabPlayStarted;
   tabClients.OnAuthRequired := tabClientsAuthRequired;
   tabClients.OnShowErrorMessage := tabClientsShowErrorMessage;
-
-  tabClients.AddressBar.Stations.BuildList(FDataLists.RecentList);
-  tabClients.BuildTree(FDataLists);
 
   // Muss unter BuildTree(), weil hier erst FClients befüllt ist...
   tabLists.Setup(FClients, FDataLists);
