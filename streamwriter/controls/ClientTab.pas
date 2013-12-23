@@ -705,7 +705,7 @@ constructor TClientTab.Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TA
 begin
   inherited Create(AOwner);
 
-  ClientHeight := 453;
+  //ClientHeight := 453;
 
   ShowCloseButton := False;
   ImageIndex := 68;
