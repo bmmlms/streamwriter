@@ -705,6 +705,8 @@ constructor TClientTab.Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TA
 begin
   inherited Create(AOwner);
 
+  ClientHeight := 453;
+
   ShowCloseButton := False;
   ImageIndex := 68;
 
@@ -984,6 +986,7 @@ end;
 //  - Fernsteuerung per CommandLine im Tray als auch mit Fenster offen
 //  + Fehler in Datendatei
 //  + Eine Message vom Server empfangen wird die angezeigt werden muss
+//  - Start nach frischer Installation
 
 procedure TClientTab.ClientManagerAddRecent(Sender: TObject);
 var
