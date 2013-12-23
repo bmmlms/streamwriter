@@ -930,9 +930,16 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.FormShow(Sender: TObject);
+var
+  i: Integer;
 begin
   if FWasShown then
     Exit;
+
+  if Application.ShowMainForm then
+    for i := 0 to ParamCount do
+      if (ParamStr(i) = '-minimize') then
+        WindowState := wsMinimized;
 
   FWasShown := True;
 
