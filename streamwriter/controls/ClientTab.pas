@@ -691,7 +691,6 @@ constructor TClientTab.Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TA
   function GetAction(Name: string): TAction;
   var
     i: Integer;
-
   begin
     Result := nil;
     for i := 0 to Actions.ActionCount - 1 do
@@ -705,8 +704,6 @@ constructor TClientTab.Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TA
   end;
 begin
   inherited Create(AOwner);
-
-  ClientHeight := 345;
 
   ShowCloseButton := False;
   ImageIndex := 68;
