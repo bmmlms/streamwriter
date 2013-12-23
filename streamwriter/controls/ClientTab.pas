@@ -691,6 +691,7 @@ constructor TClientTab.Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TA
   function GetAction(Name: string): TAction;
   var
     i: Integer;
+
   begin
     Result := nil;
     for i := 0 to Actions.ActionCount - 1 do
