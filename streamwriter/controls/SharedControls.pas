@@ -146,8 +146,6 @@ begin
 end;
 
 procedure TVolumePanel.Setup;
-var
-  ResStream: TResourceStream;
 begin
   BevelOuter := bvNone;
 

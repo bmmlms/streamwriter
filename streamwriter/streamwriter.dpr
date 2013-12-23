@@ -160,10 +160,6 @@ begin
   MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
   {$ENDIF}
 
-  // TODO: das funzt noch nicht. alle kombinationen testen!!!
-  //       und genau das gibt ein neues problem! ich muss im create alles erstellen. auch listen mit items füllen etc...
-  //       im aftershown darf ich NUR größen anpassen!!!
-  //       weil problem: minimiert im tray starten, kein aftershown, über trayicon programm beenden nach start direkt => crash!!!
   HideMain := False;
   for i := 0 to ParamCount do
   begin
@@ -202,7 +198,6 @@ begin
     end;
 
     Application.CreateForm(TfrmStreamWriterMain, frmStreamWriterMain);
-
     //Application.CreateForm(TfrmHomeTest, frmHomeTest);
   end;
 

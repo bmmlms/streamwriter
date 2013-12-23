@@ -1469,8 +1469,7 @@ begin
     if lstSoundDevice.ItemIndex > -1 then
       AppGlobals.SoundDevice := TBassDevice(lstSoundDevice.Items.Objects[lstSoundDevice.ItemIndex]).ID;
 
-    // TODO: minimiert starten!
-    // TODO: testen auf 2k und xp.
+    // TODO: testen auf 2k und xp den minimierten start!
     if chkAutostart.Checked then
     begin
       CreateLink(Application.ExeName, PChar(GetShellFolder(CSIDL_STARTUP)), AppGlobals.AppName, '-minimize', False);
@@ -2499,9 +2498,15 @@ end;
 
 procedure TfrmSettings.btnBrowseClick(Sender: TObject);
 var
-  Dir: String;
+  Msg: string;
+  Dir: string;
 begin
-  Dir := BrowseDialog(Handle, _('Select folder for saved songs'), BIF_RETURNONLYFSDIRS);
+  if Sender = btnBrowseAuto then
+    Msg := 'Select folder for automatically saved songs'
+  else
+    Msg := 'Select folder for saved songs';
+
+  Dir := BrowseDialog(Handle, _(Msg), BIF_RETURNONLYFSDIRS);
 
   if Dir = '' then
     Exit;

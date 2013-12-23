@@ -1289,7 +1289,6 @@ procedure TStreamSettings.Save(Stream: TExtendedStream);
 var
   i: Integer;
   Count: Integer;
-  C: Cardinal;
 begin
   Stream.Write(FRegExes.Count);
   for i := 0 to FRegExes.Count - 1 do

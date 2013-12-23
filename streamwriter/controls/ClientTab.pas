@@ -260,7 +260,6 @@ begin
 
   FStart.Width := 24;
   FStart.Height := 22;
-  FStart.Top := 9;
   FStart.Left := ClientWidth - 1 - FStart.Width;
   FStart.Anchors := [akRight];
   FStart.Flat := True;
@@ -278,7 +277,6 @@ begin
   FStations.OnKeyPress := FStationsKeyPress;
   FStations.OnChange := FStationsChange;
   FStations.Images := modSharedData.imgImages;
-  Height := FStations.Top + FStations.Height + FStations.Top - 2;
 
   FLabel.Top := FStations.Top + FStations.Height div 2 - FLabel.Height div 2;
 
@@ -288,7 +286,10 @@ begin
 
   BevelOuter := bvNone;
 
-  ClientHeight := Max(FLabel.Height + FLabel.Top * 2, FStations.Height + FStations.Top * 2);
+  ClientHeight := Max(FLabel.Height + FLabel.Top * 2, FStations.Height + FStations.Top * 2) - 2;
+
+  // Das muss nach dem Setzen der ClientHeight. KA warum, aber die ClientHeight ändert FStart.Top!
+  FStart.Top := 3;
 
   FStart.Enabled := False;
 end;
@@ -916,6 +917,8 @@ begin
 
   FSideBar.Width := AppGlobals.SidebarWidth;
 
+  //AdjustTextSizeDirtyHack;
+
   FAddressBar.AfterCreate;
   FClientView.AfterCreate;
   FSideBar.AfterCreate;
@@ -966,12 +969,21 @@ begin
   end;
 end;
 
+// TODO: Speicherlöcher jagen ;-) .. mal im DebugMode laufen lassen und dann zusehen.
+
 // TODO: Testen, wenn im Tray gestartet wurde, ohne dass das Fenster je sichtbar war:
-//  - Auto-Aufnahmen
-//  - Speicherplatz gering (kommt die message?)
-//  - Notification von HomeComm
-//  - Ordner für SavedSongs existiert nicht
-//
+//  + Auto-Aufnahmen
+//  + Speicherplatz gering (kommt die message?)
+//  + Notification von HomeComm
+//  + Ordner für SavedSongs existiert nicht
+//  - Update gefunden (alle Kombinationen Update-Verlauf!)
+//  - Update bereit zum Installieren
+//  + Alle Meldungen aus Shown/AfterShown
+//  + Profilimport testen.
+//  - Auf hohen DPI testen.
+//  - Fernsteuerung per CommandLine im Tray als auch mit Fenster offen
+//  + Fehler in Datendatei
+//  + Eine Message vom Server empfangen wird die angezeigt werden muss
 
 procedure TClientTab.ClientManagerAddRecent(Sender: TObject);
 var
@@ -1615,9 +1627,6 @@ var
   i: Integer;
   s: string;
   Entries: TPlaylistEntryArray;
-  ND: PStreamNodeData;
-  Settings: TStreamSettings;
-  Client: TICEClient;
   Arr: TStartStreamingInfoArray;
 begin
   if Action in [oaPlayExternal, oaSave] then

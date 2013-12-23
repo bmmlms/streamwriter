@@ -197,7 +197,7 @@ type
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
     destructor Destroy; override;
-    procedure AfterCreate;
+    procedure AfterCreate; override;
 
     procedure PostTranslate;
     procedure SetState(State: TChartStates);
@@ -1481,20 +1481,13 @@ begin
 
   PostTranslate;
 
-
-
-
-
-
-
   FLabel.Left := 0;
-
   FSearch.Width := 200;
   FSearch.Top := 1;
 
   FLabel.Top := (FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2);
 
-  ClientHeight := FSearch.Top * 2 + FSearch.Height + MulDiv(4, Screen.PixelsPerInch, 96);
+  ClientHeight := FSearch.Top * 2 + FSearch.Height + MulDiv(3, Screen.PixelsPerInch, 96);
 end;
 
 { TChartsPopup }

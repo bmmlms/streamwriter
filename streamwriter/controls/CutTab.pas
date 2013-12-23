@@ -341,7 +341,7 @@ begin
 
   FToolbarPanel.Align := alTop;
   FToolbarPanel.BevelOuter := bvNone;
-  FToolbarPanel.ClientHeight := 26;
+  FToolbarPanel.ClientHeight := 25;
   FToolbarPanel.Padding.Top := 1;
 
   FToolBar.Images := modSharedData.imgImages;

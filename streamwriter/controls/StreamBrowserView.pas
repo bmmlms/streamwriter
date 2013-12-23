@@ -1374,8 +1374,6 @@ end;
 { TMStreamSearch }
 
 procedure TMStreamSearchPanel.AfterCreate;
-var
-  TopCnt, MaxW: Integer;
 begin
   FKbpsList.Items.Add(_('- No kbps -'));
   FKbpsList.Items.Add('>= 64');

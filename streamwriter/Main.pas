@@ -233,11 +233,11 @@ type
     FDataLists: TDataLists;
     FUpdater: TUpdateClient;
     FUpdateOnExit: Boolean;
+    FSkipAfterShown: Boolean;
 
     FClientCount: Cardinal;
     FRecordingCount: Cardinal;
 
-    FWasActivated: Boolean;
     FWasShown: Boolean;
     FWasMaximized: Boolean;
 
@@ -280,6 +280,9 @@ type
     procedure OpenCut(Track: TTrackInfo); overload;
     procedure ProcessCommandLine(Data: string);
     procedure SetWakeups;
+
+    function StartupMessagesNeeded: Boolean;
+    procedure ShowStartupMessages;
 
     procedure CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
 
@@ -434,7 +437,6 @@ begin
       AppGlobals.Save;
     except end;
 
-  // TODO: profilimport testen.
   // Das muss so, damit der Import von Profilen klappt. Sonst wird beim Hinzufügen
   // in die SaveList das OnChange aufgerufen und es crashed. Also hier lassen.
   //FDataLists.SaveList.OnChange.Clear;
@@ -486,7 +488,7 @@ begin
   FClients.Terminate;
 
   tabClients.ClientView.Clear;
-         // TODO: mit -minimize starten, fenster aufmachen, sortierung im streambrowser passt nicht.
+
   if FUpdateOnExit then
     FUpdater.RunUpdate(Handle);
 
@@ -666,41 +668,14 @@ end;
 procedure TfrmStreamWriterMain.AfterShown(var Msg: TMessage);
 var
   FormIntro: TfrmIntro;
-  i: Integer;
 begin
-  if FWasActivated then
+  if FSkipAfterShown then
     Exit;
 
-  // TODO: ganz viel muss hier raus und in den konstruktor...
+  ShowStartupMessages;
 
-  FWasActivated := True;
-
-  tabClients.AdjustTextSizeDirtyHack;
-
-  tabSavedRefresh(nil);
-
-  // TODO: diese meldungen sollten im konstruktor kommen oder? wegen tray-startup...
-  if not Bass.DeviceAvailable then
-  begin
-    TfrmMsgDlg.ShowMsg(Self, _('No sound devices could be detected so playback of streams and files will not be possible.'),
-                       mtWarning, [mbOK], mbOK, 7);
-  end;
-
-  if not DirectoryExists(AppGlobals.Dir) then
-  begin
-    MsgBox(Handle, _('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
-    ShowSettings(True, not DirectoryExists(AppGlobals.DirAuto));
-  end;
-
-  // Das erste DirectoryExists() ist da, damit der Settings-Dialog nicht doppelt kommt.
-  if DirectoryExists(AppGlobals.Dir) and (not DirectoryExists(AppGlobals.DirAuto)) then
-  begin
-    MsgBox(Handle, _('The folder for automatically saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
-    ShowSettings(False, True);
-  end;
-
-  // If a profile import is active from a call to ShowSettings() above,
-  // we must skip this stuff.
+  // If a profile import is active from a call to ShowSettings() in ShowStartupMessages,
+  // we need to skip this stuff.
   if not FExiting then
   begin
     if not AppGlobals.FirstStartShown then
@@ -714,39 +689,9 @@ begin
     end;
     AppGlobals.FirstStartShown := True;
 
-    if AppGlobals.AddonManager.ShowVersionWarning then
-    begin
-      MsgBox(Handle, _('At least one addon is outdated and was deleted because it does not work with this version of streamWriter. Please check the addon/postprocessing pages in the settings window.'), _('Info'), MB_ICONINFORMATION);
-    end;
-
-    if AppGlobals.LastUsedVersion.AsString = '3.6.0.0' then
-    begin
-      MsgBox(Handle, _('Because many internals of the last version have changed you need to reconfigure options regarding addons and postprocessing using the settings window.'), _('Info'), MB_ICONINFORMATION);
-    end;
-
-    if IsVersionNewer(ParseVersion('4.4.0.0'), AppGlobals.AppVersion) and
-       (not IsVersionNewer(ParseVersion('4.4.0.0'), AppGlobals.LastUsedVersion)) then
-    begin
-      MsgBox(Handle, Format(_('You upgraded streamWriter from version 4.4.0.0.'#13#10'The new version monitors %d streams assigned by the server for title changes ' +
-                              'in the background, this makes more titles available in the streamWriter network and improves chances titles from the wishlist are recorded. ' +
-                              'If you do not want to contribute (i.e. because of low bandwidth) disable this option using "File->Settings...->Community" in the menu.'), [AppGlobals.MonitorCount]), _('Info'), MB_ICONINFORMATION);
-    end;
-
-    tmrAutoSave.Enabled := True;
-    tmrRecordings.Enabled := True;
-
-    ProcessCommandLine('');
-
-    SetWakeups;
-
-    tmrSpeed.Enabled := True;
-    tmrSchedule.Enabled := True;
-
-    FUpdater.OnNoUpdateFound := UpdaterNoUpdateFound;
-    FUpdater.OnUpdateFound := UpdaterUpdateFound;
-
-    if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
-      FUpdater.Start(uaVersion, True);
+    if StartupMessagesNeeded then
+      if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
+        FUpdater.Start(uaVersion, True);
   end;
 end;
 
@@ -773,8 +718,6 @@ procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
 var
   Recovered: Boolean;
   S: TExtendedStream;
-  i: Integer;
-  n: Integer;
 begin
   FMainCaption := 'streamWriter';
   {$IFDEF DEBUG}FMainCaption := FMainCaption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
@@ -836,32 +779,6 @@ begin
     end;
   end;
 
-  // --------------------------------------------------------------------------------------------------
-  // REMARK:
-  // Große Scheiße gebaut! In DataManager wurde Saved von Titeln auf der Wunschliste
-  // mit "Random()" gesetzt beim Laden! Wir checken hier auf die zuletzt benutzte Programmversion.
-  // Wenn die 4.9.0.0 ist, dann setzen wir überall Saved zurück und versuchen das über die
-  // gespeicherten Tracks richtig zu rücken...
-  // IRGENDWANN FLIEGT DAS RAUS!!!
-  if AppGlobals.LastUsedDataVersion < 57 then
-  begin
-    for i := 0 to FDataLists.SaveList.Count - 1 do
-    begin
-      FDataLists.SaveList[i].Saved := 0;
-      for n := 0 to FDataLists.TrackList.Count - 1 do
-      begin
-        if (FDataLists.TrackList[n].ServerTitleHash > 0) and (FDataLists.TrackList[n].ServerTitleHash = FDataLists.SaveList[i].ServerHash) then
-          FDataLists.SaveList[i].Saved := FDataLists.SaveList[i].Saved + 1;
-        if (FDataLists.TrackList[n].ServerArtistHash > 0) and
-           (FDataLists.TrackList[n].ServerArtistHash = FDataLists.SaveList[i].ServerArtistHash) and
-           (FDataLists.SaveList[i].ServerHash = 0)
-        then
-          FDataLists.SaveList[i].Saved := FDataLists.SaveList[i].Saved + 1;
-      end;
-    end;
-  end;
-  // --------------------------------------------------------------------------------------------------
-
   addStatus := TSWStatusBar.Create(Self);
   addStatus.Parent := Self;
 
@@ -876,6 +793,8 @@ begin
   tabClients := TClientTab.Create(pagMain, tbClients, ActionList1, FClients, FDataLists, mnuStreamPopup);
   tabClients.PageControl := pagMain;
   tabClients.AfterCreate;
+  tabClients.AddressBar.Stations.Sort;
+  tabClients.AddressBar.Stations.BuildList(FDataLists.RecentList);
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
   tabClients.OnTrackAdded := tabClientsTrackAdded;
   tabClients.OnTrackRemoved := tabClientsTrackRemoved;
@@ -884,6 +803,8 @@ begin
   tabClients.OnPlayStarted := tabPlayStarted;
   tabClients.OnAuthRequired := tabClientsAuthRequired;
   tabClients.OnShowErrorMessage := tabClientsShowErrorMessage;
+  tabClients.OnClientAdded := tabClientsClientAdded;
+  tabClients.OnClientRemoved := tabClientsClientRemoved;
 
   tabCharts := TChartsTab.Create(pagMain, FDataLists);
   tabCharts.PageControl := pagMain;
@@ -909,7 +830,6 @@ begin
   tabSaved.OnRemoveTitleFromWishlist := tabSavedRemoveTitleFromWishlist;
   tabSaved.OnAddTitleToIgnorelist := tabSavedAddTitleToIgnorelist;
 
-  FWasActivated := False;
   FWasShown := False;
   FUpdateOnExit := False;
 
@@ -936,11 +856,9 @@ begin
 
   FEqualizer := TfrmEqualizer.Create(Self);
 
-
-  tabClients.AddressBar.Stations.BuildList(FDataLists.RecentList);
-  //tabClients.BuildTree(FDataLists);
-
   FUpdater := TUpdateClient.Create;
+  FUpdater.OnNoUpdateFound := UpdaterNoUpdateFound;
+  FUpdater.OnUpdateFound := UpdaterUpdateFound;
 
   HomeComm.OnStateChanged := HomeCommStateChanged;
   HomeComm.OnBytesTransferred := HomeCommBytesTransferred;
@@ -957,7 +875,44 @@ begin
   actPlayerMuteVolume.Enabled := Bass.DeviceAvailable;
   actEqualizer.Enabled := Bass.DeviceAvailable;
 
+  tabSavedRefresh(nil);
+
+  tmrAutoSave.Enabled := True;
+  tmrRecordings.Enabled := True;
+
+  ProcessCommandLine('');
+
+  SetWakeups;
+
+  tmrSpeed.Enabled := True;
+  tmrSchedule.Enabled := True;
+
+  RegisterHotkeys(True);
+
+  UpdateButtons;
+
+  actShowSideBar.Checked := tabClients.SideBar.Visible;
+
+  MsgBus.AddSubscriber(MessageReceived);
+
   Language.Translate(Self);
+
+  if not Application.ShowMainForm then
+  begin
+    if StartupMessagesNeeded then
+    begin
+      Show;
+    end else
+    begin
+      FSkipAfterShown := True;
+    end;
+  end;
+
+  if not StartupMessagesNeeded then
+  begin
+    if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
+      FUpdater.Start(uaVersion, True);
+  end;
 end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
@@ -981,25 +936,7 @@ begin
 
   FWasShown := True;
 
-  RegisterHotkeys(True);
-
-  // Ist hier unten, weil hier erst Tracks geladen wurden
-  tabClients.AddressBar.Stations.Sort;
-
-  tabClients.OnClientAdded := tabClientsClientAdded;
-  tabClients.OnClientRemoved := tabClientsClientRemoved;
-
-
-  UpdateButtons;
-
-
-  actShowSideBar.Checked := tabClients.SideBar.Visible;
-
-  MsgBus.AddSubscriber(MessageReceived);
-
   tabClients.ClientView.SetFocus;
-
-  Application.ProcessMessages;
 
   PostMessage(Handle, WM_AFTERSHOWN, 0, 0);
 end;
@@ -1751,6 +1688,28 @@ begin
   TLogger.SetFilename(AppGlobals.LogFile);
 end;
 
+procedure TfrmStreamWriterMain.ShowStartupMessages;
+begin
+  if not Bass.DeviceAvailable then
+  begin
+    TfrmMsgDlg.ShowMsg(Self, _('No sound devices could be detected so playback of streams and files will not be possible.'),
+                       mtWarning, [mbOK], mbOK, 7);
+  end;
+
+  if not DirectoryExists(AppGlobals.Dir) then
+  begin
+    MsgBox(Handle, _('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
+    ShowSettings(True, not DirectoryExists(AppGlobals.DirAuto));
+  end;
+
+  // Das erste DirectoryExists() ist da, damit der Settings-Dialog nicht doppelt kommt.
+  if DirectoryExists(AppGlobals.Dir) and (not DirectoryExists(AppGlobals.DirAuto)) then
+  begin
+    MsgBox(Handle, _('The folder for automatically saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
+    ShowSettings(False, True);
+  end;
+end;
+
 procedure TfrmStreamWriterMain.ShowUpdate(Version: string = '';
   UpdateURL: string = '');
 var
@@ -1772,6 +1731,24 @@ begin
     mnuCheckUpdate.Enabled := False;
     S.Free;
   end;
+end;
+
+function TfrmStreamWriterMain.StartupMessagesNeeded: Boolean;
+begin
+  if not Bass.DeviceAvailable then
+    Exit(True);
+
+  if not DirectoryExists(AppGlobals.Dir) then
+    Exit(True);
+
+  // Das erste DirectoryExists() ist da, damit der Settings-Dialog nicht doppelt kommt.
+  if DirectoryExists(AppGlobals.Dir) and (not DirectoryExists(AppGlobals.DirAuto)) then
+    Exit(True);
+
+  if not AppGlobals.FirstStartShown then
+    Exit(True);
+
+  Exit(False);
 end;
 
 procedure TfrmStreamWriterMain.SysCommand(var Msg: TWMSysCommand);
@@ -1898,7 +1875,7 @@ begin
   if WasAuto then
     case Msg of
       crNoFreeSpace:
-        Txt := 'Automatic recording will be stopped as long as available disk space is below the set limit.';
+        Txt := _('Automatic recording will be stopped as long as available disk space is below the set limit.');
       crNoBandwidth:
         Exit;
     end

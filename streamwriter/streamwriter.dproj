@@ -237,9 +237,7 @@
 					<Source>
 						<Source Name="MainSource">streamwriter.dpr</Source>
 					</Source>
-					<Parameters>
-						<Parameters Name="RunParams">-minimize</Parameters>
-					</Parameters>
+					<Parameters/>
 					<VersionInfo>
 						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
 						<VersionInfo Name="AutoIncBuild">False</VersionInfo>

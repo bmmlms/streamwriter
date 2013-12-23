@@ -1511,7 +1511,6 @@ end;
 
 constructor TSavedTree.Create(AOwner: TComponent);
 var
-  i: Integer;
   NodeData: PSavedNodeData;
 begin
   inherited Create(AOwner);
