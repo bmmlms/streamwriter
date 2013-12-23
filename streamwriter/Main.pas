@@ -1233,21 +1233,32 @@ begin
       Exit;
 
     NewCaption := FMainCaption;
+    TrayIcon1.Hint := 'streamWriter';
 
     PlayerManager.Players.GetPlayingInfo(Artist, Title, Stream, Filename);
 
     if Filename <> '' then
     begin
       if (Artist <> '') and (Title <> '') then
-        NewCaption := FMainCaption + ' - ' + ShortenString(Artist, 30) + ' - ' + ShortenString(Title, 30)
-      else
+      begin
+        NewCaption := FMainCaption + ' - ' + ShortenString(Artist, 30) + ' - ' + ShortenString(Title, 30);
+        TrayIcon1.Hint := 'streamWriter'#13#10 + _('Playing:') + ' ' + Artist + ' - ' + Title;
+      end else
+      begin
         NewCaption := FMainCaption + ' - ' + ShortenString(RemoveFileExt(ExtractFileName(Filename)), 30);
+        TrayIcon1.Hint := 'streamWriter'#13#10 + _('Playing:') + ' ' + RemoveFileExt(ExtractFileName(Filename));
+      end;
     end else if Stream <> '' then
     begin
       if Title <> '' then
-        NewCaption := FMainCaption + ' - ' + ShortenString(Title, 30) + ' - ' + ShortenString(Stream, 30)
-      else
+      begin
+        NewCaption := FMainCaption + ' - ' + ShortenString(Title, 30) + ' - ' + ShortenString(Stream, 30);
+        TrayIcon1.Hint := 'streamWriter'#13#10 + _('Playing:') + ' ' + Title;
+      end else
+      begin
         NewCaption := FMainCaption + ' - ' + ShortenString(Stream, 30);
+        TrayIcon1.Hint := 'streamWriter'#13#10 + _('Playing:') + ' ' + Stream;
+      end;
     end;
 
     Caption := NewCaption;
