@@ -23,7 +23,6 @@ program streamwriter;
 // vcPublic, damit TCommand-Nachfahren erzeugt werden können.
 {$RTTI EXPLICIT METHODS([vcPublic]) PROPERTIES([]) FIELDS([])}
 
-
 uses
   MM in '..\..\common\MM.pas',
   madExcept,
