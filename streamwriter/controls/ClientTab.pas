@@ -705,8 +705,6 @@ constructor TClientTab.Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TA
 begin
   inherited Create(AOwner);
 
-  ClientHeight := 123;
-
   ShowCloseButton := False;
   ImageIndex := 68;
 
@@ -820,6 +818,15 @@ begin
   FAddressBar.Top := 100;
 
   FClientView := TMClientView.Create(Self, Popup, FSideBar.FBrowserView.StreamTree);
+  FClientView.Parent := Self;
+  FClientView.Align := alClient;
+  FClientView.Visible := True;
+  FClientView.Images := modSharedData.imgClients;
+  FClientView.OnChange := FClientViewChange;
+  FClientView.OnDblClick := FClientViewDblClick;
+  FClientView.OnKeyPress := FClientViewKeyPress;
+  FClientView.OnKeyDown := FClientViewKeyDown;
+  FClientView.OnStartStreaming := FClientViewStartStreaming;
 
   MsgBus.AddSubscriber(MessageReceived);
 end;
@@ -880,19 +887,6 @@ begin
   if Screen.PixelsPerInch = 96 then
     FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := modSharedData.imgImages;
 
-
-
-  // Das ClientView wird erst hier erzeugt, weil es eine Referenz auf FSideBar.FBrowserView.StreamTree braucht!
-  FClientView.Parent := Self;
-  FClientView.Align := alClient;
-  FClientView.Visible := True;
-  FClientView.Images := modSharedData.imgClients;
-  FClientView.OnChange := FClientViewChange;
-  FClientView.OnDblClick := FClientViewDblClick;
-  FClientView.OnKeyPress := FClientViewKeyPress;
-  FClientView.OnKeyDown := FClientViewKeyDown;
-  FClientView.OnStartStreaming := FClientViewStartStreaming;
-
   if FClientView.RootNodeCount > 0 then
   begin
     FClientView.Selected[FClientView.GetFirst] := True;
@@ -902,7 +896,6 @@ begin
   if AppGlobals.ClientHeadersLoaded then
     for i := 0 to FClientView.Header.Columns.Count - 1 do
       FClientView.Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
-
 
   FToolbarPanel.ClientHeight := 24;
 
