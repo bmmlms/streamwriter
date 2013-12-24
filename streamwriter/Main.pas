@@ -1620,6 +1620,9 @@ begin
   tabSaved.Tree.UpdateList;
   tabLists.UpdateLists;
   tabClients.UpdateStreams(FDataLists);
+
+  // TODO: "Normale" Optionen sollten hier aber auch gespeichert werden? Kompliziert! Letzte Änderungen fehlen evtl hier noch oder?
+  //       Also, um es klarzustellen: Änderungen von DIESER SESSION, die NICHT in INI/REGISTRY sind, werden nicht exportiert, oder???
 end;
 
 procedure TfrmStreamWriterMain.SetWakeups;
