@@ -706,6 +706,7 @@ begin
   inherited Create(AOwner);
 
   ClientHeight := 123;
+  ClientHeight := 123;
 
   ShowCloseButton := False;
   ImageIndex := 68;
