@@ -281,6 +281,8 @@ begin
         Index := 2;
       dtPostProcess:
         Index := 3;
+      dtSchedule:
+        Index := 5;
     end;
   end;
 end;

@@ -1066,7 +1066,7 @@ begin
     HomeComm.SendSyncWishlist;
 
     if not tabCharts.Searched then
-      tabCharts.SearchCharts(True);
+      tabCharts.SearchCharts(True, False);
 
     if (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or (AppGlobals.LastBrowserUpdate < Now - 15)) or
        (tabClients.SideBar.BrowserView.Mode = moError) then
@@ -2267,8 +2267,12 @@ begin
       begin
         if Schedule.MatchesStart and (not Schedule.TriedStart) then
         begin
+          // TODO: Übersetzen
+          Client.WriteDebug(_('Starting scheduled recording'), dtSchedule, dlNormal);
+          Client.WriteDebug(_('Scheduled recording ends at') + ' ' + DateTimeToStr(Schedule.GetEndTime(Schedule.GetStartTime)), dtSchedule, dlNormal);
+
           Schedule.TriedStart := True;
-          Schedule.ScheduleStarted := Now;
+          Schedule.ScheduleStarted := Schedule.GetStartTime;
           Res := Client.StartRecording(True);
           if Res <> crOk then
             tabClientsShowErrorMessage(Client, Res, False, True);
@@ -2277,6 +2281,8 @@ begin
 
         if Schedule.MatchesEnd and (not Schedule.TriedStop) then
         begin
+          Client.WriteDebug(_('Stopping scheduled recording'), dtSchedule, dlNormal);
+
           Client.StopRecording;
           Schedule.TriedStop := True;
           Schedule.ScheduleStarted := 0;

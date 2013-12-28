@@ -68,10 +68,12 @@ type
   end;
 
   TMyComboBox = class(TComboBox)
+  private
+    FShouldSelect: Boolean;
   protected
     function MouseActivate(Button: TMouseButton; Shift: TShiftState;
       X: Integer; Y: Integer; HitTest: Integer): TMouseActivate; override;
-    procedure SelectAllMessage(var Msg: TMessage); message WM_USER;
+    procedure WndProc(var Message: TMessage); override;
   public
   published
   end;
@@ -201,7 +203,7 @@ type
 
     procedure PostTranslate;
     procedure SetState(State: TChartStates);
-    procedure SearchCharts(Top: Boolean);
+    procedure SearchCharts(Top, ShowMessages: Boolean);
 
     procedure HomeCommStateChanged(Sender: TObject);
 
@@ -215,7 +217,6 @@ type
 
 const
   TEXT_SEARCHING = 'Searching titles';
-  TEXT_NO_CONNECTION = 'No connection to server.';
   TEXT_SEARCH_ERROR = 'Error searching titles.';
   TEXT_RESULTS = '%d songs found';
   SEARCH_TOP = '[Most played]';
@@ -380,24 +381,25 @@ begin
   FResultLabel.Caption := Format(_(TEXT_RESULTS), [FChartsTree.RootNodeCount]);
 end;
 
-procedure TChartsTab.SearchCharts(Top: Boolean);
+procedure TChartsTab.SearchCharts(Top, ShowMessages: Boolean);
 var
   Tmp: string;
   Abort: Boolean;
   SL: TStringList;
 begin
+  if not HomeComm.Connected then
+  begin
+    if ShowMessages then
+      MsgBox(GetParentForm(Self).Handle, _('streamWriter needs to be connected to the server in order to search.'), _('Info'), MB_ICONINFORMATION);
+    Exit;
+  end;
+
   if Top then
   begin
     HomeComm.SendSearchCharts(True, '');
     SetState(csSearching);
   end else
   begin
-    if not HomeComm.Connected then
-    begin
-      MsgBox(GetParentForm(Self).Handle, _('streamWriter needs to be connected to the server in order to search.'), _('Info'), MB_ICONINFORMATION);
-      Exit;
-    end;
-
     Abort := False;
 
     Tmp := Trim(FSearchPanel.FSearch.Text);
@@ -448,10 +450,10 @@ begin
   begin
     if FSearchPanel.FSearch.ItemIndex = 0 then
     begin
-      SearchCharts(True);
+      SearchCharts(True, True);
       FSearchPanel.FSearch.ItemIndex := 0;
     end else
-      SearchCharts(False);
+      SearchCharts(False, True);
     Key := #0;
   end;
 end;
@@ -459,11 +461,11 @@ end;
 procedure TChartsTab.SearchSelect(Sender: TObject);
 begin
   if FSearchPanel.FSearch.Items.Objects[FSearchPanel.FSearch.ItemIndex] <> nil then
-    SearchCharts(True)
+    SearchCharts(True, True)
   else
   begin
     FSearchPanel.RebuildSearchItems(FSearchPanel.FSearch.Text);
-    SearchCharts(False);
+    SearchCharts(False, True);
   end;
 end;
 
@@ -1554,12 +1556,18 @@ begin
   Result := inherited;
 
   if GetParentForm(Self).Handle <> GetForegroundWindow then
-    PostMessage(Handle, WM_USER, 0, 0);
+    SetTimer(Handle, 0, 10, nil);
 end;
 
-procedure TMyComboBox.SelectAllMessage(var Msg: TMessage);
+procedure TMyComboBox.WndProc(var Message: TMessage);
 begin
-  SelectAll;
+  inherited;
+
+  if Message.Msg = WM_TIMER then
+  begin
+    KillTimer(Handle, 0);
+    SelectAll;
+  end;
 end;
 
 end.

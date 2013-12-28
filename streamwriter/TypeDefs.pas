@@ -33,7 +33,7 @@ type
 
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
 
-  TDebugTypes = (dtSocket, dtMessage, dtSong, dtError, dtSaved, dtPostProcess);
+  TDebugTypes = (dtSocket, dtMessage, dtSong, dtError, dtSaved, dtPostProcess, dtSchedule);
   TDebugLevels = (dlNormal, dlDebug);
 
   // Defines all possible types of lists

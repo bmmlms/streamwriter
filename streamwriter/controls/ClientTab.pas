@@ -893,10 +893,6 @@ begin
     FClientView.FocusedNode := FClientView.GetFirst;
   end;
 
-  if AppGlobals.ClientHeadersLoaded then
-    for i := 0 to FClientView.Header.Columns.Count - 1 do
-      FClientView.Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
-
   FToolbarPanel.ClientHeight := 24;
 
   FToolbar.Width := FToolbarPanel.ClientWidth - 250;
@@ -980,6 +976,7 @@ end;
 //  + Fehler in Datendatei
 //  + Eine Message vom Server empfangen wird die angezeigt werden muss
 //  - Start nach frischer Installation
+//  - Scheduled Recordings testen!
 
 procedure TClientTab.ClientManagerAddRecent(Sender: TObject);
 var

@@ -287,11 +287,7 @@ type
     FWakeupHandle: Integer;
     FScheduleStarted: TDateTime;
 
-    function GetStartTime: TDateTime;
-    function GetEndTime(ScheduleStarted: TDateTime): TDateTime;
     function GetWakeupTime: TDateTime;
-
-    //class function MatchesDay(S: TSchedule; NextDay: Boolean): Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -303,6 +299,9 @@ type
 
     procedure RemoveWakeup;
     procedure SetWakeup;
+
+    function GetStartTime: TDateTime;
+    function GetEndTime(ScheduleStarted: TDateTime): TDateTime;
 
     // Does the current time meet the scheduled start-time?
     function MatchesStart: Boolean;
@@ -1768,7 +1767,7 @@ begin
   if FActive then
   begin
     Result := ScheduleStarted;
-    if ((FEndHour < FStartHour) or ((FEndHour = FStartHour) and (FEndMinute < FStartMinute))) then
+    if ((FEndHour < HourOf(Result)) or ((FEndHour = HourOf(Result)) and (FEndMinute <= MinuteOf(Result)))) then
       Result := IncDay(Result);
 
     Result := RecodeHour(Result, FEndHour);
@@ -1853,7 +1852,7 @@ function TSchedule.MatchesEnd: Boolean;
 begin
   Result := False;
   if ScheduleStarted > 0 then
-    Result := WithinPastSeconds(Now, IncSecond(GetEndTime(ScheduleStarted), -30), 30);
+    Result := WithinPastSeconds(Now, IncSecond(GetEndTime(ScheduleStarted), 30), 30);
 end;
 
 function TSchedule.MatchesStart: Boolean;

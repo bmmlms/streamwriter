@@ -493,12 +493,21 @@ begin
 end;
 
 procedure TMClientView.FitColumns;
+var
+  i: Integer;
 begin
-  FColRcvd.Width := Max(GetTextSize(FColRcvd.Text, Font).cx, GetTextSize('111,11 KB', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
-  FColSpeed.Width := Max(GetTextSize(FColSpeed.Text, Font).cx, GetTextSize('11,11 KB/s', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
-  FColSongs.Width := GetTextSize(FColSongs.Text, Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-  FColStatus.Width := Max(GetTextSize(FColStatus.Text, Font).cx, MulDiv(80, Screen.PixelsPerInch, 96)) + MulDiv(20, Screen.PixelsPerInch, 96);
-  FColName.Width := MulDiv(150, Screen.PixelsPerInch, 96);
+  if AppGlobals.ClientHeadersLoaded then
+  begin
+    for i := 0 to Header.Columns.Count - 1 do
+      Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
+  end else
+  begin
+    FColRcvd.Width := Max(GetTextSize(FColRcvd.Text, Font).cx, GetTextSize('111,11 KB', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColSpeed.Width := Max(GetTextSize(FColSpeed.Text, Font).cx, GetTextSize('11,11 KB/s', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColSongs.Width := GetTextSize(FColSongs.Text, Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColStatus.Width := Max(GetTextSize(FColStatus.Text, Font).cx, MulDiv(80, Screen.PixelsPerInch, 96)) + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColName.Width := MulDiv(150, Screen.PixelsPerInch, 96);
+  end;
 end;
 
 function TMClientView.DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; Pt: TPoint; Mode: TDropMode;
