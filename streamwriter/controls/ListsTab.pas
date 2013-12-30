@@ -2045,7 +2045,10 @@ begin
       end;
     1:
       begin
-        Result := CmpInt(Data1.Title.Saved, Data2.Title.Saved);
+        if (Data1.Title <> nil) and (Data2.Title <> nil) then
+          Result := CmpInt(Data1.Title.Saved, Data2.Title.Saved)
+        else
+          Result := 0;
       end;
     2:
       if Node1 = FWishNode then                                
