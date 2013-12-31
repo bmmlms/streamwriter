@@ -360,7 +360,7 @@ var
   i: Integer;
   Res: Integer;
   StartTime, Version: Cardinal;
-  Saved, Hard: Boolean;
+  Hard: Boolean;
   S: TExtendedStream;
   Lst: TSettingsList;
 begin
@@ -463,14 +463,14 @@ begin
     Application.ProcessMessages;
   end;
 
-  Saved := False;
-  while not Saved do
+  // Erst Lists updaten, dann Streams!
+  tabSaved.Tree.UpdateList;
+  tabLists.UpdateLists;
+  tabClients.UpdateStreams(FDataLists);
+
+  while True do
   begin
     try
-      // Erst Lists updaten, dann Streams!
-      tabSaved.Tree.UpdateList;
-      tabLists.UpdateLists;
-      tabClients.UpdateStreams(FDataLists);
       FDataLists.Save;
       Break;
     except
