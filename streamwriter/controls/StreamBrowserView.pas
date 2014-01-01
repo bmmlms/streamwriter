@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2013 Alexander Nottelmann
+    Copyright (c) 2010-2014 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -1161,8 +1161,6 @@ begin
   FStreamTree.FSortPopupMenu.FItemType.OnClick := SortItemClick;
   FStreamTree.FSortPopupMenu.FItemRating.OnClick := SortItemClick;
 
-
-
   SwitchMode(moLoading);
 
   FSearch.FSearchEdit.OnChange := SearchEditChange;
@@ -1393,14 +1391,31 @@ begin
   FKbpsList.Width := ClientWidth - FKbpsList.Left - FKbpsLabel.Left;
   FTypeList.Width := ClientWidth - FTypeList.Left - FTypeLabel.Left;
 
-  ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4;
+  FSearchEdit.Top := 4;
+  FSearchLabel.Top := FSearchEdit.Top + FSearchEdit.Height div 2 - FSearchLabel.Height div 2;
+
+  FGenreList.Top := FSearchEdit.Top + FSearchEdit.Height + 4;
+  FGenreLabel.Top := FGenreList.Top + FGenreList.Height div 2 - FGenreLabel.Height div 2;
+
+  FKbpsList.Top := FGenreList.Top + FGenreList.Height;
+  FKbpsLabel.Top := FKbpsList.Top + FKbpsList.Height div 2 - FKbpsLabel.Height div 2;
+
+  FTypeList.Top := FKbpsList.Top + FKbpsList.Height + 4;
+  FTypeLabel.Top := FTypeList.Top + FTypeList.Height div 2 - FTypeLabel.Height div 2;
+
+  ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top;
+
+  FSearchEdit.Anchors := [akLeft, akRight, akTop];
+  FGenreList.Anchors := [akLeft, akRight, akTop];
+  FKbpsList.Anchors := [akLeft, akRight, akTop];
+  FTypeList.Anchors := [akLeft, akRight, akTop];
 
   SetVisible(True);
 end;
 
 constructor TMStreamSearchPanel.Create(AOwner: TComponent);
 var
-  TopCnt, MaxW: Integer;
+  MaxW: Integer;
 begin
   inherited;
 
@@ -1415,9 +1430,6 @@ begin
   FTypeLabel := TLabel.Create(Self);
   FTypeList := TComboBox.Create(Self);
 
-
-
-  TopCnt := 4;
   MaxW := 0;
 
   FSearchLabel.Parent := Self;
@@ -1427,36 +1439,6 @@ begin
     MaxW := FSearchLabel.Width;
 
   FSearchEdit.Parent := Self;
-  FSearchEdit.Top := TopCnt;
-  FSearchEdit.Anchors := [akLeft, akRight, akTop];
-
-  FSearchLabel.Top := FSearchEdit.Top + FSearchEdit.Height div 2 - FSearchLabel.Height div 2;
-
-  {
-  FSearchButton.Parent := Self;
-  FSearchButton.Width := 24;
-  FSearchButton.Height := 24;
-  FSearchButton.Top := TopCnt - 1;
-  FSearchButton.Left := ClientWidth - 8 - FSearchButton.Width;
-  FSearchButton.Anchors := [akRight, akTop];
-  FSearchButton.Flat := True;
-  FSearchButton.Hint := 'Search';
-  FSearchButton.ShowHint := True;
-  }
-
-  TopCnt := TopCnt + FSearchEdit.Height + 4;
-
-  {
-  FShowHideFilters := TMShowHidePanel.Create(Self);
-  FShowHideFilters.ShowCaption := _('Show filters');
-  FShowHideFilters.HideCaption := _('Hide filters');
-  FShowHideFilters.Parent := Self;
-  FShowHideFilters.Top := TopCnt;
-  FShowHideFilters.Height := 30;
-  FShowHideFilters.Width := 100;
-
-  TopCnt := TopCnt + 26;
-  }
 
   FGenreLabel.Parent := Self;
   FGenreLabel.Left := 4;
@@ -1466,13 +1448,7 @@ begin
 
   FGenreList.Parent := Self;
   FGenreList.Style := csDropDownList;
-  FGenreList.Top := TopCnt;
-  FGenreList.Anchors := [akLeft, akRight, akTop];
   FGenreList.DropDownCount := 16;
-
-  FGenreLabel.Top := FGenreList.Top + FGenreList.Height div 2 - FGenreLabel.Height div 2;
-
-  TopCnt := TopCnt + FGenreList.Height + 4;
 
   FKbpsLabel.Parent := Self;
   FKbpsLabel.Left := 4;
@@ -1482,12 +1458,6 @@ begin
 
   FKbpsList.Parent := Self;
   FKbpsList.Style := csDropDownList;
-  FKbpsList.Top := TopCnt;
-  FKbpsList.Anchors := [akLeft, akRight, akTop];
-
-  FKbpsLabel.Top := FKbpsList.Top + FKbpsList.Height div 2 - FKbpsLabel.Height div 2;
-
-  TopCnt := TopCnt + FKbpsList.Height + 4;
 
   FTypeLabel.Parent := Self;
   FTypeLabel.Left := 4;
@@ -1497,32 +1467,14 @@ begin
 
   FTypeList.Parent := Self;
   FTypeList.Style := csDropDownList;
-  FTypeList.Top := TopCnt;
-  FTypeList.Anchors := [akLeft, akRight, akTop];
-
-  FTypeLabel.Top := FTypeList.Top + FTypeList.Height div 2 - FTypeLabel.Height div 2;
-
-  {
-  I := TIcon.Create;
-  I.LoadFromResourceName(HInstance, 'SEARCH');
-  B := TBitmap.Create;
-  B.Width := 32;
-  B.Height := 32;
-  B.Canvas.Draw(0, 0, I);
-  B.Canvas.StretchDraw(Rect(0, 0, 16, 16), B);
-  B.Width := 16;
-  B.Height := 16;
-  FSearchButton.Glyph := B;
-  FSearchButton.Glyph.PixelFormat := pf24bit;
-  B.Free;
-  I.Free;
-  }
 
   FSearchEdit.Left := MaxW + 12;
   FGenreList.Left := MaxW + 12;
   FKbpsList.Left := MaxW + 12;
   FTypeList.Left := MaxW + 12;
 end;
+
+// TODO: nochmal schön alles auf mehr DPI testen!!!!!!!!!!!!!!!!!!!!!!
 
 procedure TMStreamSearchPanel.ExpandButtonClick(Sender: TObject);
 begin

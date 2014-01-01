@@ -10,7 +10,7 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
-  
+  Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
   Position = poOwnerFormCenter
@@ -20,7 +20,7 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
   object Label1: TLabel
     Left = 8
     Top = 8
-    Width = 162
+    Width = 155
     Height = 13
     Caption = 'This postprocessor is used for...'
   end
