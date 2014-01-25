@@ -464,6 +464,7 @@ var
   Dir: string;
 begin
   inherited;
+
   GetSettings;
 
   // Wenn es ein Redirect ist dann die Standard-HTTP-Ausgabe nehmen.
