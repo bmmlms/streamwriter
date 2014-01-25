@@ -301,6 +301,7 @@ type
     FMinQualityIdx: Integer;
     FFormatIdx: Integer;
     FTemporaryPostProcesses: TPostProcessorList;
+    FIsForAuto: Boolean;
     FStreamSettings: TStreamSettingsArray;
     FIgnoreFieldList: TList;
     FLists: TDataLists;
@@ -335,8 +336,12 @@ type
     procedure GetExportData(Stream: TExtendedStream); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
+    // Construtor for app settings
     constructor Create(AOwner: TComponent; Lists: TDataLists; BrowseDir, BrowseAutoDir: Boolean); reintroduce; overload;
+    // Construtor for stream settings
     constructor Create(AOwner: TComponent; StreamSettings: TStreamSettingsArray); overload;
+    // Construtor for automatic recording settings
+    constructor Create(AOwner: TComponent; StreamSettings: TStreamSettings); overload;
     destructor Destroy; override;
     property StreamSettings: TStreamSettingsArray read FStreamSettings;
   end;
@@ -1050,6 +1055,7 @@ begin
   for i := 0 to Panel.ControlCount - 1 do
     Panel.Controls[i].Visible := Enable;
 
+  // TODO: was sagt ".Tag" hier aus??? Ist das relevant wegen settings für auto recordings?
   if Enable then
     Panel.Tag := 0
   else
@@ -1241,6 +1247,11 @@ begin
   begin
     OldRegExes := GetStringListHash(FStreamSettings[0].RegExes);
     OldIgnoreTitles := GetStringListHash(FStreamSettings[0].IgnoreTrackChangePattern);
+
+    if FIsForAuto then
+    begin
+      // TODO: Auto settings locken. am ende unlocken.
+    end;
 
     for i := 0 to Length(FStreamSettings) - 1 do
     begin
@@ -1601,7 +1612,6 @@ begin
     end;
     // -----------------------------------------------------------
 
-
     lstBlacklist.UpdateList(FLists.StreamBlacklist);
 
     AppGlobals.Unlock;
@@ -1632,6 +1642,8 @@ begin
     FBrowseAutoDir := False;
   end;
 end;
+
+// TODO: im madexcept die CONTINUE option wieder abschalten.
 
 procedure TfrmSettings.FormResize(Sender: TObject);
 begin
@@ -1676,6 +1688,7 @@ begin
     if TPostProcessBase(lstPostProcess.Items[i].Data) is TExternalPostProcess then
       if TExternalPostProcess(lstPostProcess.Items[i].Data).Identifier = Result then
       begin
+        // TODO: das hier ist unsicher :D nach dem Inc() muss der ganze loop wieder von vorne anfangen!!!
         Inc(Result);
         Continue;
       end;
@@ -1952,6 +1965,7 @@ end;
 procedure TfrmSettings.PreTranslate;
 begin
   inherited;
+
   FDefaultActionIdx := lstDefaultAction.ItemIndex;
   FDefaultActionBrowserIdx := lstDefaultActionBrowser.ItemIndex;
   FDefaultFilterIdx := lstDefaultFilter.ItemIndex;
@@ -1965,6 +1979,7 @@ var
   i: Integer;
 begin
   inherited;
+
   lblFilePattern.Caption := _('%a = artist, %t = title, %l = album, %u = title on stream, %s = streamname %n = tracknumber, %d = date song was saved, %i = time song was saved'#13#10 +
                               'Backslashes can be used to seperate directories.');
 
@@ -2088,16 +2103,21 @@ begin
     FPageList.Add(TPage.Create('Community', pnlCommunity, 'GROUP_PNG'));
     FPageList.Add(TPage.Create('Hotkeys', pnlHotkeys, 'KEYBOARD'));
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
+  end else if FIsForAuto then
+  begin
+    FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
+    FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
   end else
   begin
     FPageList.Add(TPage.Create('Streams', pnlStreams, 'APPICON'));
     FPageList.Add(TPage.Create('Advanced', pnlStreamsAdvanced, 'MISC', FPageList.Find(pnlStreams)));
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
-    FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
     FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
+    FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
   end;
+
   inherited;
 end;
 
@@ -2790,6 +2810,26 @@ begin
 end;
 
 function TfrmSettings.CanFinish: Boolean;
+  function PanelVisible(C: TControl): Boolean;
+  var
+    i: Integer;
+    P: TControl;
+  begin
+    for i := 0 to FPageList.Count - 1 do
+    begin
+      P := C.Parent;
+      while not P.InheritsFrom(TForm) do
+      begin
+        if P = FPageList[i].Panel then
+          if P.Visible then
+            Exit(True)
+          else
+            Exit(False);
+        P := P.Parent;
+      end;
+    end;
+    Exit(False);
+  end;
 var
   i, n: Integer;
 begin
@@ -2806,7 +2846,7 @@ begin
     Exit;
   end;
 
-  if Trim(RemoveFileExt(ValidatePattern(txtFilePattern.Text, 'atlusndi'))) = '' then
+  if PanelVisible(txtFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtFilePattern.Text, 'atlusndi'))) = '') then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of completely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePattern.Parent)));
@@ -2814,7 +2854,7 @@ begin
     Exit;
   end;
 
-  if Trim(RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Text, 'atlusndi'))) = '' then
+  if PanelVisible(txtIncompleteFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Text, 'atlusndi'))) = '') then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of incompletely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtIncompleteFilePattern.Parent)));
@@ -2822,7 +2862,7 @@ begin
     Exit;
   end;
 
-  if Trim(RemoveFileExt(ValidatePattern(txtAutomaticFilePattern.Text, 'atlusdi'))) = '' then
+  if PanelVisible(txtAutomaticFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtAutomaticFilePattern.Text, 'atlusdi'))) = '') then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of automatically recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtAutomaticFilePattern.Parent)));
@@ -2830,7 +2870,7 @@ begin
     Exit;
   end;
 
-  if Trim(RemoveFileExt(ValidatePattern(txtStreamFilePattern.Text, 'sdi'))) = '' then
+  if PanelVisible(txtStreamFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtStreamFilePattern.Text, 'sdi'))) = '') then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of stream files so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtStreamFilePattern.Parent)));
@@ -2838,7 +2878,7 @@ begin
     Exit;
   end;
 
-  if (StrToIntDef(txtFilePatternDecimals.Text, -1) > 9) or (StrToIntDef(txtFilePatternDecimals.Text, -1) < 1) then
+  if PanelVisible(txtFilePatternDecimals) and ((StrToIntDef(txtFilePatternDecimals.Text, -1) > 9) or (StrToIntDef(txtFilePatternDecimals.Text, -1) < 1)) then
   begin
     MsgBox(Handle, _('Please enter the minimum count of decimals for tracknumbers in filenames.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePatternDecimals.Parent)));
@@ -2846,7 +2886,7 @@ begin
     Exit;
   end;
 
-  if not DirectoryExists(txtDir.Text) then
+  if PanelVisible(txtDir) and (not DirectoryExists(txtDir.Text)) then
   begin
     MsgBox(Handle, _('The selected folder for saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtDir.Parent)));
@@ -2854,7 +2894,7 @@ begin
     Exit;
   end;
 
-  if not DirectoryExists(txtDirAuto.Text) then
+  if PanelVisible(txtDirAuto) and (not DirectoryExists(txtDirAuto.Text)) then
   begin
     MsgBox(Handle, _('The selected folder for automatically saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtDirAuto.Parent)));
@@ -2934,7 +2974,7 @@ begin
       end;
   end;
 
-  if Trim(txtMaxRetries.Text) = '' then
+  if PanelVisible(txtMaxRetries) and (Trim(txtMaxRetries.Text) = '') then
   begin
     MsgBox(Handle, _('Please enter the number of maximum connect retries.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtMaxRetries.Parent)));
@@ -2942,7 +2982,7 @@ begin
     Exit;
   end;
 
-  if Trim(txtRetryDelay.Text) = '' then
+  if PanelVisible(txtRetryDelay) and (Trim(txtRetryDelay.Text) = '') then
   begin
     MsgBox(Handle, _('Please enter the delay between connect retries.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtRetryDelay.Parent)));
@@ -2951,7 +2991,7 @@ begin
   end;
 
   if chkLimit.Checked then
-    if StrToIntDef(txtMaxSpeed.Text, -1) <= 0 then
+    if PanelVisible(txtMaxSpeed) and (StrToIntDef(txtMaxSpeed.Text, -1) <= 0) then
     begin
       MsgBox(Handle, _('Please enter the maximum bandwidth in KB/s available to streamWriter.'), _('Info'), MB_ICONINFORMATION);
       SetPage(FPageList.Find(TPanel(txtMaxSpeed.Parent)));
@@ -2961,7 +3001,7 @@ begin
 
   if chkMonitorMode.Checked then
   begin
-    if StrToIntDef(txtMonitorCount.Text, -1) <= 0 then
+    if PanelVisible(txtMonitorCount) and (StrToIntDef(txtMonitorCount.Text, -1) <= 0) then
     begin
       MsgBox(Handle, _('Please enter the maximum number of streams to monitor.'), _('Info'), MB_ICONINFORMATION);
       SetPage(FPageList.Find(TPanel(txtMonitorCount.Parent)));
@@ -2969,20 +3009,7 @@ begin
       Exit;
     end;
 
-  for i := 0 to lstHotkeys.Items.Count - 1 do
-    for n := 0 to lstHotkeys.Items.Count - 1 do
-    begin
-      if (lstHotkeys.Items[i] <> lstHotkeys.Items[n]) and
-         (lstHotkeys.Items[i].SubItems[0] <> '') and
-         (lstHotkeys.Items[i].SubItems[0] = lstHotkeys.Items[n].SubItems[0]) then
-      begin
-        MsgBox(Handle, _('A hotkey can be defined only once. Please edit the key mappings.'), _('Info'), MB_ICONINFORMATION);
-        SetPage(FPageList.Find(pnlHotkeys));
-        Exit;
-      end;
-    end;
-
-    if StrToIntDef(txtMonitorCount.Text, -1) > 50 then
+    if PanelVisible(txtMonitorCount) and (StrToIntDef(txtMonitorCount.Text, -1) > 50) then
     begin
       if TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('You entered a high number for streams to monitor. This affects your bandwidth and resources in general. streamWriter might become slow and unresponsible depending on your system. Are you sure you want to do this?'),
                                                    mtConfirmation, mbOKCancel, mbCancel, 17) = mrCancel then
@@ -2994,7 +3021,21 @@ begin
     end;
   end;
 
-  if StrToIntDef(txtRetryDelay.Text, 5) > 999 then
+  if PanelVisible(lstHotkeys) then
+    for i := 0 to lstHotkeys.Items.Count - 1 do
+      for n := 0 to lstHotkeys.Items.Count - 1 do
+      begin
+        if (lstHotkeys.Items[i] <> lstHotkeys.Items[n]) and
+           (lstHotkeys.Items[i].SubItems[0] <> '') and
+           (lstHotkeys.Items[i].SubItems[0] = lstHotkeys.Items[n].SubItems[0]) then
+        begin
+          MsgBox(Handle, _('A hotkey can be defined only once. Please edit the key mappings.'), _('Info'), MB_ICONINFORMATION);
+          SetPage(FPageList.Find(pnlHotkeys));
+          Exit;
+        end;
+      end;
+
+  if PanelVisible(txtRetryDelay) and (StrToIntDef(txtRetryDelay.Text, 5) > 999) then
     txtRetryDelay.Text := '999';
 
   Result := True;
@@ -3261,6 +3302,21 @@ begin
 
   optClose.Enabled := chkTray.Checked;
   optMinimize.Enabled := chkTray.Checked;
+end;
+
+constructor TfrmSettings.Create(AOwner: TComponent;
+  StreamSettings: TStreamSettings);
+begin
+  FIsForAuto := True;
+
+  SetLength(FStreamSettings, 1);
+  FStreamSettings[0] := StreamSettings.Copy;
+
+  FIgnoreFieldList := TList.Create;
+
+  Create(AOwner, nil, False, False);
+
+  EnablePanel(pnlCut, True);
 end;
 
 { TBlacklistTree }

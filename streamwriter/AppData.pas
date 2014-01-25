@@ -956,25 +956,25 @@ begin
   n := 0;
   for i := 0 to FStreamSettings.PostProcessors.Count - 1 do
     if not FStreamSettings.PostProcessors[i].Hidden then
-    if (FStreamSettings.PostProcessors[i] is TExternalPostProcess) then
-    begin
-      FStorage.Write('Active_' + IntToStr(n), TExternalPostProcess(FStreamSettings.PostProcessors[i]).Active, 'Plugins');
-      FStorage.Write('Exe_' + IntToStr(n), TExternalPostProcess(FStreamSettings.PostProcessors[i]).Exe, 'Plugins');
-      FStorage.Write('Params_' + IntToStr(n), TExternalPostProcess(FStreamSettings.PostProcessors[i]).Params, 'Plugins');
-      FStorage.Write('OrderExe_' + IntToStr(n), FStreamSettings.PostProcessors[i].Order, 'Plugins');
-      FStorage.Write('OnlyIfCut_' + IntToStr(n), FStreamSettings.PostProcessors[i].OnlyIfCut, 'Plugins');
-      FStorage.Write('Group_' + IntToStr(n), FStreamSettings.PostProcessors[i].GroupID, 'Plugins');
-      Inc(n);
-    end else if (FStreamSettings.PostProcessors[i] is TInternalPostProcess) then
-    begin
-      FStorage.Write('Active_' + FStreamSettings.PostProcessors[i].ClassName, FStreamSettings.PostProcessors[i].Active, 'Plugins');
-      if FStreamSettings.PostProcessors[i].GroupID = 1 then
-        FStorage.Write('Order_' + FStreamSettings.PostProcessors[i].ClassName, FStreamSettings.PostProcessors[i].Order, 'Plugins')
-      else
-        FStorage.Write('Order_' + FStreamSettings.PostProcessors[i].ClassName, FStreamSettings.PostProcessors[i].Order, 'Plugins');
-      FStorage.Write('OnlyIfCut_' + FStreamSettings.PostProcessors[i].ClassName, FStreamSettings.PostProcessors[i].OnlyIfCut, 'Plugins');
-      FStreamSettings.PostProcessors[i].Save;
-    end;
+      if (FStreamSettings.PostProcessors[i] is TExternalPostProcess) then
+      begin
+        FStorage.Write('Active_' + IntToStr(n), TExternalPostProcess(FStreamSettings.PostProcessors[i]).Active, 'Plugins');
+        FStorage.Write('Exe_' + IntToStr(n), TExternalPostProcess(FStreamSettings.PostProcessors[i]).Exe, 'Plugins');
+        FStorage.Write('Params_' + IntToStr(n), TExternalPostProcess(FStreamSettings.PostProcessors[i]).Params, 'Plugins');
+        FStorage.Write('OrderExe_' + IntToStr(n), FStreamSettings.PostProcessors[i].Order, 'Plugins');
+        FStorage.Write('OnlyIfCut_' + IntToStr(n), FStreamSettings.PostProcessors[i].OnlyIfCut, 'Plugins');
+        FStorage.Write('Group_' + IntToStr(n), FStreamSettings.PostProcessors[i].GroupID, 'Plugins');
+        Inc(n);
+      end else if (FStreamSettings.PostProcessors[i] is TInternalPostProcess) then
+      begin
+        FStorage.Write('Active_' + FStreamSettings.PostProcessors[i].ClassName, FStreamSettings.PostProcessors[i].Active, 'Plugins');
+        if FStreamSettings.PostProcessors[i].GroupID = 1 then
+          FStorage.Write('Order_' + FStreamSettings.PostProcessors[i].ClassName, FStreamSettings.PostProcessors[i].Order, 'Plugins')
+        else
+          FStorage.Write('Order_' + FStreamSettings.PostProcessors[i].ClassName, FStreamSettings.PostProcessors[i].Order, 'Plugins');
+        FStorage.Write('OnlyIfCut_' + FStreamSettings.PostProcessors[i].ClassName, FStreamSettings.PostProcessors[i].OnlyIfCut, 'Plugins');
+        FStreamSettings.PostProcessors[i].Save;
+      end;
 
   for i := 0 to FStreamSettings.EncoderSettings.Count - 1 do
     FStreamSettings.EncoderSettings[i].Save;
@@ -1169,6 +1169,10 @@ begin
     Stream.Read(Result.FRetryDelay)
   else
     Result.FRetryDelay := AppGlobals.StreamSettings.RetryDelay;
+
+  if Result.FRetryDelay > 999 then
+    Result.FRetryDelay := 999;
+
   Stream.Read(FilterTmp);
   Stream.Read(Result.FSeparateTracks);
   Stream.Read(Result.FSaveToMemory);

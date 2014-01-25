@@ -193,6 +193,7 @@ type
     ToolButton9: TToolButton;
     N15: TMenuItem;
     Settingsforautomaticrecordings1: TMenuItem;
+    actAutoSettings: TAction;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -225,6 +226,7 @@ type
     procedure actPlayerMuteVolumeExecute(Sender: TObject);
     procedure mnuPlayerClick(Sender: TObject);
     procedure actEqualizerExecute(Sender: TObject);
+    procedure actAutoSettingsExecute(Sender: TObject);
   private
     FMainCaption: string;
 
@@ -548,6 +550,28 @@ begin
   end;
 end;
 
+procedure TfrmStreamWriterMain.actAutoSettingsExecute(Sender: TObject);
+var
+  S: TfrmSettings;
+  Settings: TStreamSettingsArray;
+  i: Integer;
+begin
+  // TODO: das hier über ShowSettings() abhandeln?
+
+  // TODO: irgendwas geht schief wenn ich für auto settings nen postprocessor disable. der wird dann mit active=false gespeichert und geladen,
+  //       aber in den settings ist er danach wieder aktiv.
+
+  S := TfrmSettings.Create(Self, FDataLists.AutoRecordSettings);
+  try
+    S.ShowModal;
+
+    if S.SaveSettings then
+      FDataLists.AutoRecordSettings.Assign(S.StreamSettings[0]);
+  finally
+    S.Free;
+  end;
+end;
+
 procedure TfrmStreamWriterMain.actEqualizerExecute(Sender: TObject);
 begin
   if not FEqualizer.Visible then
@@ -620,13 +644,13 @@ var
 begin
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
 
-  SetLength(Settings, Length(Clients));
-
-  for i := 0 to Length(Clients) - 1 do
-    Settings[i] := Clients[i].Entry.Settings;
-
   if Length(Clients) > 0 then
   begin
+    SetLength(Settings, Length(Clients));
+
+    for i := 0 to Length(Clients) - 1 do
+      Settings[i] := Clients[i].Entry.Settings;
+
     S := TfrmSettings.Create(Self, Settings);
     S.ShowModal;
 

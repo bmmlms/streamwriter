@@ -430,7 +430,12 @@ begin
       if (Client.AutoRemove and (Client.RecordTitle = Title)) or (Client.Recording) then
         Exit;
 
+  // TODO: "Werbung überspringen" bei settings für auto recordings ist über. ausblenden etc
+
   Client := AddClient(0, 0, Name, CurrentURL, True);
+
+  Client.Entry.Settings.Assign(FLists.AutoRecordSettings);
+
   Client.Entry.Settings.Filter := ufNone;
   Client.Entry.Settings.SaveToMemory := True;
   Client.Entry.Settings.SeparateTracks := True;
@@ -442,16 +447,10 @@ begin
   Client.Entry.Settings.RemoveSavedFromWishlist := AppGlobals.AutoRemoveSavedFromWishlist;
   Client.Entry.Settings.AddSavedToStreamIgnore := False;
 
-  Client.Entry.Settings.SilenceLevel := 5;
-  Client.Entry.Settings.SilenceLength := 100;
-  Client.Entry.Settings.SongBuffer := 10000;
-  Client.Entry.Settings.SilenceBufferSecondsStart := 15;
-  Client.Entry.Settings.SilenceBufferSecondsEnd := 15;
-  Client.Entry.Settings.AutoDetectSilenceLevel := True;
-
   Client.Entry.Bitrate := Kbps;
   if RegExes <> nil then
     Client.Entry.Settings.RegExes.Assign(RegExes);
+
   Client.RecordTitle := Title;
   Client.RecordServerTitle := Title;
   Client.RecordTitleHash := ServerHash;

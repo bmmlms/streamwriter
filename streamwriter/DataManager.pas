@@ -561,6 +561,7 @@ type
     disposed/saved at the end }
   TDataLists = class
   private
+    FAutoRecordSettings: TStreamSettings;
     FCategoryList: TListCategoryList;
     FStreamList: TStreamList;
     FTrackList: TTrackList;
@@ -588,6 +589,8 @@ type
     procedure Save; overload;
     procedure Save(S: TExtendedStream; UseCompression: Boolean); overload;
     procedure SaveRecover;
+
+    property AutoRecordSettings: TStreamSettings read FAutoRecordSettings;
 
     // List that contains all categories
     property CategoryList: TListCategoryList read FCategoryList;
@@ -624,7 +627,7 @@ type
   end;
 
 const
-  DATAVERSION = 58;
+  DATAVERSION = 59;
 
 implementation
 
@@ -832,11 +835,6 @@ begin
   begin
     Result.FSettings.Free;
     Result.FSettings := TStreamSettings.Load(Stream, Version);
-
-    // Das hier sollte eigentlich in TStreamSettings.Load. Der Compiler scheint kaputt zu sein und meint
-    // in .Load, dass es kein Result.FRetryDelay gibt... Ich versuche das mal, hier zu machen...
-    if Result.FSettings.RetryDelay > 999 then
-      Result.FSettings.RetryDelay := 999;
   end else
   begin
     // Defaults benutzen..
@@ -1031,6 +1029,21 @@ constructor TDataLists.Create;
 begin
   inherited;
 
+  FAutoRecordSettings := TStreamSettings.Create(True);
+  FAutoRecordSettings.Assign(AppGlobals.StreamSettings);
+
+  // TODO: JEDE(!!!) einstellung testen, ob sie übernommen wird passig für auto-aufnahmen...
+
+  // Defaults setzen. Werden ggf. Im Load() später überschrieben.
+  FAutoRecordSettings.SearchSilence := True;
+  FAutoRecordSettings.SilenceBufferSecondsStart := 15;
+  FAutoRecordSettings.SilenceBufferSecondsEnd := 15;
+  FAutoRecordSettings.AutoDetectSilenceLevel := True;
+  FAutoRecordSettings.SilenceLevel := 5;
+  FAutoRecordSettings.SilenceLength := 100;
+  FAutoRecordSettings.SongBuffer := 10000;
+
+
   FLoadError := False;
   FReceived := 0;
   FCategoryList := TListCategoryList.Create;
@@ -1044,12 +1057,12 @@ begin
   FBrowserList := TStreamBrowserList.Create;
   FGenreList := TGenreList.Create;
   FSavedTitleHashes := TList<Cardinal>.Create;
-  //FChartList := TChartList.Create;
-  //FChartCategoryList := TChartCategoryList.Create;
 end;
 
 destructor TDataLists.Destroy;
 begin
+  FAutoRecordSettings.Free;
+
   CleanLists;
 
   FCategoryList.Free;
@@ -1129,6 +1142,13 @@ begin
     end;
   end else
   begin
+    if Version > 58 then
+    begin
+      if FAutoRecordSettings <> nil then
+        FAutoRecordSettings.Free;
+      FAutoRecordSettings := TStreamSettings.Load(S, Version);
+    end;
+
     if Version >= 5 then
     begin
       S.Read(CatCount);
@@ -1308,6 +1328,10 @@ begin
   try
     CompressedStream.Write(FReceived);
     CompressedStream.Write(FSongsSaved);
+
+    // TODO: Testen ob settings für auto aufnahmen nach erstem sw start ohne profil und so okay sind.
+
+    FAutoRecordSettings.Save(CompressedStream);
 
     CompressedStream.Write(FCategoryList.Count);
     for i := 0 to FCategoryList.Count - 1 do

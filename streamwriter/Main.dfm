@@ -183,9 +183,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         Action = actSettings
       end
       object Settingsforautomaticrecordings1: TMenuItem
-        Caption = 'Settings for &automatic recordings...'
-        Hint = 'Settings for automatic recordings...'
-        ImageIndex = 90
+        Action = actAutoSettings
       end
       object N3: TMenuItem
         Caption = '-'
@@ -509,6 +507,12 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Hint = 'Equalizer...'
       ImageIndex = 76
       OnExecute = actEqualizerExecute
+    end
+    object actAutoSettings: TAction
+      Caption = 'Settings for &automatic recordings...'
+      Hint = 'Settings for automatic recordings...'
+      ImageIndex = 90
+      OnExecute = actAutoSettingsExecute
     end
   end
   object mnuStreamPopup: TPopupMenu
