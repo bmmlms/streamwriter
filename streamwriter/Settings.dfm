@@ -16,7 +16,6 @@ object frmSettings: TfrmSettings
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnActivate = FormActivate
-  OnCreate = FormCreate
   OnResize = FormResize
   PixelsPerInch = 96
   TextHeight = 13
@@ -52,22 +51,9 @@ object frmSettings: TfrmSettings
       ShowHint = True
       OnClick = btnBrowseClick
     end
-    object btnBrowseAuto: TPngSpeedButton
-      Left = 264
-      Top = 60
-      Width = 25
-      Height = 21
-      Hint = 'Browse...'
-      Anchors = [akTop, akRight]
-      Flat = True
-      Layout = blGlyphRight
-      ParentShowHint = False
-      ShowHint = True
-      OnClick = btnBrowseClick
-    end
     object chkDeleteStreams: TCheckBox
       Left = 20
-      Top = 156
+      Top = 108
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -77,7 +63,7 @@ object frmSettings: TfrmSettings
     end
     object chkAddSavedToIgnore: TCheckBox
       Left = 4
-      Top = 176
+      Top = 128
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -104,7 +90,7 @@ object frmSettings: TfrmSettings
     end
     object chkSeparateTracks: TCheckBox
       Left = 4
-      Top = 116
+      Top = 68
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -114,7 +100,7 @@ object frmSettings: TfrmSettings
     end
     object chkSaveStreamsToDisk: TCheckBox
       Left = 4
-      Top = 96
+      Top = 48
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -124,7 +110,7 @@ object frmSettings: TfrmSettings
     end
     object chkOnlySaveFull: TCheckBox
       Left = 20
-      Top = 136
+      Top = 88
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -134,7 +120,7 @@ object frmSettings: TfrmSettings
     end
     object chkOverwriteSmaller: TCheckBox
       Left = 20
-      Top = 256
+      Top = 208
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -144,7 +130,7 @@ object frmSettings: TfrmSettings
     end
     object chkDiscardSmaller: TCheckBox
       Left = 20
-      Top = 276
+      Top = 228
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -164,46 +150,34 @@ object frmSettings: TfrmSettings
       EditLabel.Caption = 'Folder for saved songs:'
       TabOrder = 8
     end
-    object txtDirAuto: TLabeledEdit
-      Left = 4
-      Top = 60
-      Width = 257
-      Height = 21
-      Anchors = [akLeft, akTop, akRight]
-      AutoSize = False
-      EditLabel.Width = 180
-      EditLabel.Height = 13
-      EditLabel.Caption = 'Folder for automatically saved songs:'
-      TabOrder = 9
-    end
     object chkAddSavedToStreamIgnore: TCheckBox
       Left = 4
-      Top = 196
+      Top = 148
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Add saved titles to stream ignorelist'
-      TabOrder = 10
+      TabOrder = 9
       OnClick = chkAddSavedToStreamIgnoreClick
     end
     object chkRemoveSavedFromWishlist: TCheckBox
       Left = 4
-      Top = 216
+      Top = 168
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Remove saved titles from wishlist'
-      TabOrder = 11
+      TabOrder = 10
       OnClick = chkRemoveSavedFromWishlistClick
     end
     object chkDiscardAlways: TCheckBox
       Left = 4
-      Top = 236
+      Top = 188
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Always discard new file if it already exists'
-      TabOrder = 12
+      TabOrder = 11
       OnClick = chkDiscardAlwaysClick
     end
   end
@@ -940,29 +914,42 @@ object frmSettings: TfrmSettings
     Left = 904
     Top = 4
     Width = 293
-    Height = 181
+    Height = 261
     TabOrder = 6
     Visible = False
     DesignSize = (
       293
-      181)
+      261)
     object Label16: TLabel
       Left = 20
-      Top = 88
+      Top = 136
       Width = 79
       Height = 13
       Caption = 'Minimum quality:'
     end
     object Label17: TLabel
       Left = 20
-      Top = 136
+      Top = 184
       Width = 38
       Height = 13
       Caption = 'Format:'
     end
+    object btnBrowseAuto: TPngSpeedButton
+      Left = 264
+      Top = 16
+      Width = 25
+      Height = 21
+      Hint = 'Browse...'
+      Anchors = [akTop, akRight]
+      Flat = True
+      Layout = blGlyphRight
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = btnBrowseClick
+    end
     object chkAutoTuneIn: TCheckBox
       Left = 4
-      Top = 0
+      Top = 48
       Width = 284
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -972,7 +959,7 @@ object frmSettings: TfrmSettings
     end
     object lstMinQuality: TComboBox
       Left = 20
-      Top = 104
+      Top = 152
       Width = 129
       Height = 21
       Style = csDropDownList
@@ -984,7 +971,7 @@ object frmSettings: TfrmSettings
     end
     object lstFormat: TComboBox
       Left = 20
-      Top = 152
+      Top = 200
       Width = 129
       Height = 21
       Style = csDropDownList
@@ -996,7 +983,7 @@ object frmSettings: TfrmSettings
     end
     object chkAutoTuneInConsiderIgnore: TCheckBox
       Left = 20
-      Top = 20
+      Top = 68
       Width = 268
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1006,7 +993,7 @@ object frmSettings: TfrmSettings
     end
     object chkAutoTuneInAddToIgnore: TCheckBox
       Left = 20
-      Top = 40
+      Top = 88
       Width = 269
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1015,17 +1002,29 @@ object frmSettings: TfrmSettings
     end
     object chkAutoRemoveSavedFromWishlist: TCheckBox
       Left = 20
-      Top = 60
+      Top = 108
       Width = 269
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Remove saved titles from wishlist'
       TabOrder = 5
     end
+    object txtDirAuto: TLabeledEdit
+      Left = 4
+      Top = 16
+      Width = 257
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      EditLabel.Width = 180
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Folder for automatically saved songs:'
+      TabOrder = 6
+    end
   end
   object pnlFilenames: TPanel
-    Left = 904
-    Top = 192
+    Left = 304
+    Top = 692
     Width = 293
     Height = 285
     TabOrder = 7

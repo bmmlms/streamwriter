@@ -34,6 +34,8 @@ uses
   SWFunctions, TypeDefs, SharedData, PerlRegEx;
 
 type
+  TSettingsTypes = (stApp, stAuto, stStream);
+
   TBlacklistNodeData = record
     Name: string;
   end;
@@ -150,8 +152,6 @@ type
     chkLimit: TCheckBox;
     txtDir: TLabeledEdit;
     btnBrowse: TPngSpeedButton;
-    txtDirAuto: TLabeledEdit;
-    btnBrowseAuto: TPngSpeedButton;
     lblIgnoreTitles: TLabel;
     lstIgnoreTitles: TListView;
     btnRemoveIgnoreTitlePattern: TButton;
@@ -205,6 +205,8 @@ type
     lstRegExes: TListView;
     btnAddRegEx: TButton;
     btnRemoveRegEx: TButton;
+    btnBrowseAuto: TPngSpeedButton;
+    txtDirAuto: TLabeledEdit;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -290,10 +292,10 @@ type
     procedure btnAddRegExClick(Sender: TObject);
     procedure btnRemoveRegExClick(Sender: TObject);
   private
+    FSettingsType: TSettingsTypes;
     FInitialized: Boolean;
     FOptionChanging: Boolean;
     FBrowseDir: Boolean;
-    FBrowseAutoDir: Boolean;
     FDefaultActionIdx: Integer;
     FDefaultActionBrowserIdx: Integer;
     FDefaultFilterIdx: Integer;
@@ -309,6 +311,12 @@ type
     btnReset: TBitBtn;
     FActivePreviewField: TLabeledEdit;
     OutputFormatLastIndex: Integer;
+
+    procedure CreateApp(AOwner: TComponent; Lists: TDataLists; BrowseDir: Boolean);
+    procedure CreateAuto(AOwner: TComponent; Lists: TDataLists; BrowseDir: Boolean);
+    procedure CreateStreams(AOwner: TComponent; StreamSettings: TStreamSettingsArray);
+    procedure CreateGeneral;
+    procedure SetFields;
 
     function ValidatePattern(Text, Patterns: string): string;
     function GetNewID: Integer;
@@ -336,12 +344,9 @@ type
     procedure GetExportData(Stream: TExtendedStream); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
-    // Construtor for app settings
-    constructor Create(AOwner: TComponent; Lists: TDataLists; BrowseDir, BrowseAutoDir: Boolean); reintroduce; overload;
-    // Construtor for stream settings
-    constructor Create(AOwner: TComponent; StreamSettings: TStreamSettingsArray); overload;
-    // Construtor for automatic recording settings
-    constructor Create(AOwner: TComponent; StreamSettings: TStreamSettings); overload;
+    constructor Create(AOwner: TComponent; SettingsType: TSettingsTypes; Lists: TDataLists;
+      StreamSettings: TStreamSettingsArray; BrowseDir: Boolean);
+
     destructor Destroy; override;
     property StreamSettings: TStreamSettingsArray read FStreamSettings;
   end;
@@ -350,684 +355,7 @@ implementation
 
 {$R *.dfm}
 
-constructor TfrmSettings.Create(AOwner: TComponent; Lists: TDataLists; BrowseDir, BrowseAutoDir: Boolean);
-  procedure AddField(F: TControl);
-  begin
-    if FIgnoreFieldList.IndexOf(F) = -1 then
-      FIgnoreFieldList.Add(F);
-  end;
-
-  procedure SetFields;
-  var
-    i: Integer;
-    S: TStreamSettings;
-    F, ShowDialog: Boolean;
-  begin
-    if Length(FStreamSettings) <= 1 then
-      Exit;
-
-    ShowDialog := False;
-    S := FStreamSettings[0];
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-      if GetStringListHash(S.IgnoreTrackChangePattern) <> GetStringListHash(FStreamSettings[i].IgnoreTrackChangePattern) then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    if F then
-      AddField(lstIgnoreTitles);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.FilePattern <> FStreamSettings[i].FilePattern then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(txtFilePattern);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.IncompleteFilePattern <> FStreamSettings[i].IncompleteFilePattern then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(txtIncompleteFilePattern);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.StreamFilePattern <> FStreamSettings[i].StreamFilePattern then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(txtStreamFilePattern);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.FilePatternDecimals <> FStreamSettings[i].FilePatternDecimals then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(txtFilePatternDecimals);
-
-    F := False;
-    for i := 0 to Length(FStreamSettings) - 1 do
-    begin
-      if S.RemoveChars <> FStreamSettings[i].RemoveChars then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(txtRemoveChars);
-
-    F := False;
-    for i := 0 to Length(FStreamSettings) - 1 do
-    begin
-      if S.NormalizeVariables <> FStreamSettings[i].NormalizeVariables then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkNormalizeVariables);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.DeleteStreams <> FStreamSettings[i].DeleteStreams then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkDeleteStreams);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.AddSavedToIgnore <> FStreamSettings[i].AddSavedToIgnore then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkAddSavedToIgnore);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.AddSavedToStreamIgnore <> FStreamSettings[i].AddSavedToStreamIgnore then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkAddSavedToStreamIgnore);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.RemoveSavedFromWishlist <> FStreamSettings[i].RemoveSavedFromWishlist then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkRemoveSavedFromWishlist);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.OverwriteSmaller <> FStreamSettings[i].OverwriteSmaller then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkOverwriteSmaller);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.DiscardSmaller <> FStreamSettings[i].DiscardSmaller then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkDiscardSmaller);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.DiscardAlways <> FStreamSettings[i].DiscardAlways then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkDiscardAlways);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.SkipShort <> FStreamSettings[i].SkipShort then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkSkipShort);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-      if GetStringListHash(S.RegExes) <> GetStringListHash(FStreamSettings[i].RegExes) then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    if F then
-      AddField(lstRegExes);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.SearchSilence <> FStreamSettings[i].SearchSilence then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkSearchSilence);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.AutoDetectSilenceLevel <> FStreamSettings[i].AutoDetectSilenceLevel then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkManualSilenceLevel);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.SilenceLevel <> FStreamSettings[i].SilenceLevel then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(txtSilenceLevel);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.SilenceLength <> FStreamSettings[i].SilenceLength then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(txtSilenceLength);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.SilenceBufferSecondsStart <> FStreamSettings[i].SilenceBufferSecondsStart then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(txtSilenceBufferSeconds);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.ShortLengthSeconds <> FStreamSettings[i].ShortLengthSeconds then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(txtShortLengthSeconds);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.SongBuffer <> FStreamSettings[i].SongBuffer then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(txtSongBuffer);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.MaxRetries <> FStreamSettings[i].MaxRetries then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(txtMaxRetries);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.RetryDelay <> FStreamSettings[i].RetryDelay then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(txtRetryDelay);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.Filter <> FStreamSettings[i].Filter then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(lstDefaultFilter);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.SeparateTracks <> FStreamSettings[i].SeparateTracks then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkSeparateTracks);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.SaveToMemory <> FStreamSettings[i].SaveToMemory then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkSaveStreamsToDisk);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.OnlySaveFull <> FStreamSettings[i].OnlySaveFull then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkOnlySaveFull);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.AdjustTrackOffset <> FStreamSettings[i].AdjustTrackOffset then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(chkAdjustTrackOffset);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.AdjustTrackOffsetMS <> FStreamSettings[i].AdjustTrackOffsetMS then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(txtAdjustTrackOffset);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.AdjustTrackOffsetDirection <> FStreamSettings[i].AdjustTrackOffsetDirection then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-    begin
-      AddField(optAdjustBackward);
-      AddField(optAdjustForward);
-    end;
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.OutputFormat <> FStreamSettings[i].OutputFormat then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(lstOutputFormat);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.PostProcessors.Hash <> FStreamSettings[i].PostProcessors.Hash then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(lstPostProcess);
-
-    F := False;
-    for i := 1 to Length(FStreamSettings) - 1 do
-    begin
-      if S.EncoderSettings.Hash <> FStreamSettings[i].EncoderSettings.Hash then
-      begin
-        F := True;
-        ShowDialog := True;
-        Break;
-      end;
-    end;
-    if F then
-      AddField(btnConfigureEncoder);
-
-    // Gegen die Warnung..
-    if ShowDialog then
-    begin
-
-    end;
-  end;
-var
-  i: Integer;
-  Item: TListItem;
-  B: TBitmap;
-  P: TPngImage;
-  Settings: TStreamSettings;
-begin
-  FLists := Lists;
-
-  if Length(FStreamSettings) = 0 then
-  begin
-    Settings := AppGlobals.StreamSettings.Copy;
-
-    // Wir geben AOwner mit, so dass das MsgDlg zentriert angezeigt wird.
-    // Self ist nämlich noch nicht Visible, haben kein Handle, etc..
-    TfrmMsgDlg.ShowMsg(TForm(AOwner), _('Settings from the categories "Streams", "Filenames", "Cut", "Postprocessing" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
-                                        'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), mtInformation, [mbOK], mbOK, 4);
-  end else
-  begin
-    Settings := FStreamSettings[0].Copy;
-  end;
-
-  try
-    inherited Create(AOwner, Length(FStreamSettings) = 0);
-
-    if Length(FStreamSettings) > 0 then
-    begin
-      lstSoundDevice.Visible := False;
-      lblSoundDevice.Visible := False;
-
-      btnReset := TBitBtn.Create(Self);
-      btnReset.Parent := pnlNav;
-      btnReset.Caption := '&Apply general settings';
-      btnReset.OnClick := btnResetClick;
-
-      for i := 0 to Settings.RegExes.Count - 1 do
-      begin
-        Item := lstRegExes.Items.Add;
-        Item.Caption := Settings.RegExes[i];
-        Item.ImageIndex := 7;
-      end;
-
-      for i := 0 to Settings.IgnoreTrackChangePattern.Count - 1 do
-      begin
-        Item := lstIgnoreTitles.Items.Add;
-        Item.Caption := Settings.IgnoreTrackChangePattern[i];
-        Item.ImageIndex := 1;
-      end;
-
-      txtAutomaticFilePattern.Visible := False;
-      btnResetAutomaticFilePattern.Visible := False;
-
-      txtStreamFilePattern.Top := txtIncompleteFilePattern.Top + (txtIncompleteFilePattern.Top - txtFilePattern.Top);
-      btnResetStreamFilePattern.Top := btnResetIncompleteFilePattern.Top + (btnResetIncompleteFilePattern.Top - btnResetFilePattern.Top);
-      txtPreview.Top := txtStreamFilePattern.Top + (txtIncompleteFilePattern.Top - txtFilePattern.Top);
-    end else
-    begin
-      chkAutoTuneInClick(chkAutoTuneIn);
-    end;
-
-    FBrowseDir := BrowseDir;
-    FBrowseAutoDir := BrowseAutoDir;
-
-    SetFields;
-
-    //ClientWidth := MulDiv(630, Screen.PixelsPerInch, 96);
-    //ClientHeight := MulDiv(480, Screen.PixelsPerInch, 96);
-
-    for i := 0 to Self.ControlCount - 1 do
-    begin
-      if Self.Controls[i] is TPanel then
-      begin
-        if TPanel(Self.Controls[i]) = pnlLeft then
-          Continue;
-        Self.Controls[i].Left := 96;
-        Self.Controls[i].Top := 36;
-        TPanel(Self.Controls[i]).BevelOuter := bvNone;
-      end;
-    end;
-
-    FillFields(Settings);
-
-    B := TBitmap.Create;
-    P := TPngImage.Create;
-    try
-      P.LoadFromResourceName(HInstance, 'ARROWUP');
-      btnMoveUp.PngImage := P;
-      P.LoadFromResourceName(HInstance, 'ARROWDOWN');
-      btnMoveDown.PngImage := P;
-      P.LoadFromResourceName(HInstance, 'QUESTION');
-      btnHelpPostProcess.PngImage := P;
-      P.LoadFromResourceName(HInstance, 'CONFIGURE');
-      btnConfigureEncoder.PngImage := P;
-
-      btnBrowse.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
-      btnBrowseAuto.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
-      btnBrowseApp.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
-      btnBrowseLogFile.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
-    finally
-      B.Free;
-      P.Free;
-    end;
-
-    if Length(FStreamSettings) = 0 then
-    begin
-      for i := 0 to AppGlobals.AddonManager.Addons.Count - 1 do
-      begin
-        Item := lstAddons.Items.Add;
-        Item.Caption := AppGlobals.AddonManager.Addons[i].Name;
-        Item.Checked := AppGlobals.AddonManager.Addons[i].FilesExtracted;
-        Item.Data := AppGlobals.AddonManager.Addons[i].Copy;
-
-        Item.ImageIndex := 6;
-      end;
-      if lstAddons.Items.Count > 0 then
-        lstAddons.Items[0].Selected := True;
-    end;
-
-    BuildHotkeys;
-
-    if (Bass.DeviceAvailable) and (Bass.Devices.Count > 0) then
-    begin
-      for i := 0 to Bass.Devices.Count - 1 do
-        lstSoundDevice.Items.AddObject(Bass.Devices[i].Name, Bass.Devices[i]);
-      if lstSoundDevice.Items.Count > 0 then
-        lstSoundDevice.ItemIndex := 0;
-      try
-        for i := 0 to lstSoundDevice.Items.Count - 1 do
-          if TBassDevice(lstSoundDevice.Items.Objects[i]).ID = AppGlobals.SoundDevice then
-          begin
-            lstSoundDevice.ItemIndex := i;
-            Break;
-          end;
-      except end;
-    end else
-    begin
-      lstSoundDevice.Style := csDropDown;
-      lstSoundDevice.ItemIndex := -1;
-      lstSoundDevice.Enabled := False;
-      lstSoundDevice.Text := _('(no devices available)');
-    end;
-
-    if FLists <> nil then
-    begin
-      lstBlacklist := TBlacklistTree.Create(Self, FLists.StreamBlacklist);
-      lstBlacklist.OnChange := BlacklistTreeChange;
-      lstBlacklist.OnKeyDown := BlacklistTreeKeyDown;
-      lstBlacklist.Images := PngImageList1;
-      lstBlacklist.Parent := pnlBlacklist;
-      lstBlacklist.Align := alClient;
-    end;
-
-    lblPanelCut.Caption := _('Settings for cutting are only available'#13#10'if ''Save separated tracks'' is enabled.');
-
-    if Length(FStreamSettings) = 0 then
-    begin
-      chkAdjustTrackOffset.Visible := False;
-      txtAdjustTrackOffset.Visible := False;
-      optAdjustBackward.Visible := False;
-      optAdjustForward.Visible := False;
-    end;
-
-    btnConfigureEncoder.Enabled := lstOutputFormat.ItemIndex > 0;
-
-    FInitialized := True;
-  finally
-    Settings.Free;
-  end;
-end;
-
-constructor TfrmSettings.Create(AOwner: TComponent;
-  StreamSettings: TStreamSettingsArray);
-var
-  i, Substract: Integer;
-begin
-  FIgnoreFieldList := TList.Create;
-
-  SetLength(FStreamSettings, Length(StreamSettings));
-  for i := 0 to Length(StreamSettings) - 1 do
-  begin
-    FStreamSettings[i] := StreamSettings[i].Copy;
-  end;
-
-  Create(AOwner, nil, False, False);
-
-  txtDir.Visible := False;
-  txtDirAuto.Visible := False;
-  btnBrowse.Visible := False;
-  btnBrowseAuto.Visible := False;
-
-  Substract := chkSaveStreamsToDisk.Top;
-  for i := 0 to pnlStreams.ControlCount - 1 do
-  begin
-    if pnlStreams.Controls[i].ClassType = TCheckBox then
-      pnlStreams.Controls[i].Top := pnlStreams.Controls[i].Top - Substract;
-  end;
-
-  lblTop.Caption := _('Stream settings');
-end;
+// TODO: ALLES testen! TESTEN! TESTEN!!!!!!!!
 
 destructor TfrmSettings.Destroy;
 var
@@ -1250,7 +578,19 @@ begin
 
     if FIsForAuto then
     begin
-      // TODO: Auto settings locken. am ende unlocken.
+      AppGlobals.Lock;
+
+      AppGlobals.AutomaticFilePattern := Trim(txtAutomaticFilePattern.Text);
+      AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
+      AppGlobals.AutoTuneInConsiderIgnore := chkAutoTuneInConsiderIgnore.Checked;
+      AppGlobals.AutoTuneInAddToIgnore := chkAutoTuneInAddToIgnore.Checked;
+      AppGlobals.AutoRemoveSavedFromWishlist := chkAutoRemoveSavedFromWishlist.Checked;
+      AppGlobals.AutoTuneInMinQuality := lstMinQuality.ItemIndex;
+      AppGlobals.AutoTuneInFormat := lstFormat.ItemIndex;
+
+      lstBlacklist.UpdateList(FLists.StreamBlacklist);
+
+      AppGlobals.Unlock;
     end;
 
     for i := 0 to Length(FStreamSettings) - 1 do
@@ -1444,7 +784,6 @@ begin
     AppGlobals.StreamSettings.FilePattern := Trim(txtFilePattern.Text);
     AppGlobals.StreamSettings.IncompleteFilePattern := Trim(txtIncompleteFilePattern.Text);
     AppGlobals.StreamSettings.StreamFilePattern := Trim(txtStreamFilePattern.Text);
-    AppGlobals.AutomaticFilePattern := Trim(txtAutomaticFilePattern.Text);
     AppGlobals.StreamSettings.FilePatternDecimals := StrToIntDef(txtFilePatternDecimals.Text, 3);
     AppGlobals.StreamSettings.RemoveChars := txtRemoveChars.Text;
     AppGlobals.StreamSettings.NormalizeVariables := chkNormalizeVariables.Checked;
@@ -1501,11 +840,6 @@ begin
     AppGlobals.TrayOnMinimize := optMinimize.Checked;
 
     AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
-    AppGlobals.AutoTuneInConsiderIgnore := chkAutoTuneInConsiderIgnore.Checked;
-    AppGlobals.AutoTuneInAddToIgnore := chkAutoTuneInAddToIgnore.Checked;
-    AppGlobals.AutoRemoveSavedFromWishlist := chkAutoRemoveSavedFromWishlist.Checked;
-    AppGlobals.AutoTuneInMinQuality := lstMinQuality.ItemIndex;
-    AppGlobals.AutoTuneInFormat := lstFormat.ItemIndex;
     AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
     AppGlobals.SubmitStats := chkSubmitStats.Checked;
     AppGlobals.MonitorMode := chkMonitorMode.Checked;
@@ -1612,8 +946,6 @@ begin
     end;
     // -----------------------------------------------------------
 
-    lstBlacklist.UpdateList(FLists.StreamBlacklist);
-
     AppGlobals.Unlock;
   end;
 
@@ -1624,26 +956,21 @@ procedure TfrmSettings.FormActivate(Sender: TObject);
 begin
   if FBrowseDir then
   begin
-    SetPage(FPageList.Find(TPanel(txtDir.Parent)));
-    btnBrowse.Click;
-    FBrowseDir := False;
-
-    if FBrowseAutoDir then
-    begin
-      btnBrowseAuto.Click;
-      FBrowseAutoDir := False;
+    case FSettingsType of
+      stApp:
+        begin
+          SetPage(FPageList.Find(TPanel(txtDir.Parent)));
+          btnBrowse.Click;
+        end;
+      stAuto:
+        begin
+          SetPage(FPageList.Find(TPanel(txtDirAuto.Parent)));
+          btnBrowseAuto.Click;
+        end;
     end;
   end;
-
-  if FBrowseAutoDir then
-  begin
-    SetPage(FPageList.Find(TPanel(txtDirAuto.Parent)));
-    btnBrowseAuto.Click;
-    FBrowseAutoDir := False;
-  end;
+  FBrowseDir := False;
 end;
-
-// TODO: im madexcept die CONTINUE option wieder abschalten.
 
 procedure TfrmSettings.FormResize(Sender: TObject);
 begin
@@ -1677,21 +1004,26 @@ end;
 function TfrmSettings.GetNewID: Integer;
 var
   i: Integer;
+  Exists: Boolean;
 begin
-  Result := GetTickCount;
+  Result := 1;
 
-  if Result < 0 then
-    Result := Result * -1;
-
-  for i := 0 to lstPostProcess.Items.Count - 1 do
+  while True do
   begin
-    if TPostProcessBase(lstPostProcess.Items[i].Data) is TExternalPostProcess then
-      if TExternalPostProcess(lstPostProcess.Items[i].Data).Identifier = Result then
-      begin
-        // TODO: das hier ist unsicher :D nach dem Inc() muss der ganze loop wieder von vorne anfangen!!!
-        Inc(Result);
-        Continue;
-      end;
+    Exists := False;
+    for i := 0 to lstPostProcess.Items.Count - 1 do
+    begin
+      if TPostProcessBase(lstPostProcess.Items[i].Data) is TExternalPostProcess then
+        if TExternalPostProcess(lstPostProcess.Items[i].Data).Identifier = Result then
+        begin
+          Inc(Result);
+          Exists := True;
+          Break;
+        end;
+    end;
+
+    if not Exists then
+      Break;
   end;
 end;
 
@@ -2091,9 +1423,7 @@ begin
   if FStreamSettings = nil then
   begin
     FPageList.Add(TPage.Create('Settings', pnlMain, 'PROPERTIES'));
-    FPageList.Add(TPage.Create('Streams', pnlStreams, 'STREAM'));
-    FPageList.Add(TPage.Create('Automatic recordings', pnlAutoRecord, 'AUTORECORD'));
-    FPageList.Add(TPage.Create('Blacklist', pnlCommunityBlacklist, 'BLACKLIST', FPageList.Find(pnlAutoRecord)));
+    FPageList.Add(TPage.Create('Recordings', pnlStreams, 'STREAM'));
     FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
     FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
@@ -2105,6 +1435,9 @@ begin
     FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
   end else if FIsForAuto then
   begin
+    FPageList.Add(TPage.Create('Recordings', pnlAutoRecord, 'STREAM'));
+    FPageList.Add(TPage.Create('Blacklist', pnlCommunityBlacklist, 'BLACKLIST', FPageList.Find(pnlAutoRecord)));
+    FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
     FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
     FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
   end else
@@ -2149,6 +1482,485 @@ begin
   end;
 
   Result := True;
+end;
+
+// TODO: testen testen testen...
+procedure TfrmSettings.SetFields;
+  procedure AddField(F: TControl);
+  begin
+    if FIgnoreFieldList.IndexOf(F) = -1 then
+      FIgnoreFieldList.Add(F);
+  end;
+var
+  i: Integer;
+  S: TStreamSettings;
+  F, ShowDialog: Boolean;
+begin
+  if Length(FStreamSettings) <= 1 then
+    Exit;
+
+  ShowDialog := False;
+  S := FStreamSettings[0];
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+    if GetStringListHash(S.IgnoreTrackChangePattern) <> GetStringListHash(FStreamSettings[i].IgnoreTrackChangePattern) then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  if F then
+    AddField(lstIgnoreTitles);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.FilePattern <> FStreamSettings[i].FilePattern then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(txtFilePattern);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.IncompleteFilePattern <> FStreamSettings[i].IncompleteFilePattern then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(txtIncompleteFilePattern);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.StreamFilePattern <> FStreamSettings[i].StreamFilePattern then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(txtStreamFilePattern);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.FilePatternDecimals <> FStreamSettings[i].FilePatternDecimals then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(txtFilePatternDecimals);
+
+  F := False;
+  for i := 0 to Length(FStreamSettings) - 1 do
+  begin
+    if S.RemoveChars <> FStreamSettings[i].RemoveChars then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(txtRemoveChars);
+
+  F := False;
+  for i := 0 to Length(FStreamSettings) - 1 do
+  begin
+    if S.NormalizeVariables <> FStreamSettings[i].NormalizeVariables then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkNormalizeVariables);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.DeleteStreams <> FStreamSettings[i].DeleteStreams then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkDeleteStreams);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.AddSavedToIgnore <> FStreamSettings[i].AddSavedToIgnore then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkAddSavedToIgnore);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.AddSavedToStreamIgnore <> FStreamSettings[i].AddSavedToStreamIgnore then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkAddSavedToStreamIgnore);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.RemoveSavedFromWishlist <> FStreamSettings[i].RemoveSavedFromWishlist then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkRemoveSavedFromWishlist);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.OverwriteSmaller <> FStreamSettings[i].OverwriteSmaller then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkOverwriteSmaller);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.DiscardSmaller <> FStreamSettings[i].DiscardSmaller then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkDiscardSmaller);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.DiscardAlways <> FStreamSettings[i].DiscardAlways then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkDiscardAlways);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.SkipShort <> FStreamSettings[i].SkipShort then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkSkipShort);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+    if GetStringListHash(S.RegExes) <> GetStringListHash(FStreamSettings[i].RegExes) then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  if F then
+    AddField(lstRegExes);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.SearchSilence <> FStreamSettings[i].SearchSilence then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkSearchSilence);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.AutoDetectSilenceLevel <> FStreamSettings[i].AutoDetectSilenceLevel then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkManualSilenceLevel);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.SilenceLevel <> FStreamSettings[i].SilenceLevel then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(txtSilenceLevel);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.SilenceLength <> FStreamSettings[i].SilenceLength then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(txtSilenceLength);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.SilenceBufferSecondsStart <> FStreamSettings[i].SilenceBufferSecondsStart then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(txtSilenceBufferSeconds);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.ShortLengthSeconds <> FStreamSettings[i].ShortLengthSeconds then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(txtShortLengthSeconds);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.SongBuffer <> FStreamSettings[i].SongBuffer then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(txtSongBuffer);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.MaxRetries <> FStreamSettings[i].MaxRetries then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(txtMaxRetries);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.RetryDelay <> FStreamSettings[i].RetryDelay then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(txtRetryDelay);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.Filter <> FStreamSettings[i].Filter then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(lstDefaultFilter);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.SeparateTracks <> FStreamSettings[i].SeparateTracks then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkSeparateTracks);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.SaveToMemory <> FStreamSettings[i].SaveToMemory then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkSaveStreamsToDisk);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.OnlySaveFull <> FStreamSettings[i].OnlySaveFull then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkOnlySaveFull);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.AdjustTrackOffset <> FStreamSettings[i].AdjustTrackOffset then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(chkAdjustTrackOffset);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.AdjustTrackOffsetMS <> FStreamSettings[i].AdjustTrackOffsetMS then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(txtAdjustTrackOffset);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.AdjustTrackOffsetDirection <> FStreamSettings[i].AdjustTrackOffsetDirection then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+  begin
+    AddField(optAdjustBackward);
+    AddField(optAdjustForward);
+  end;
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.OutputFormat <> FStreamSettings[i].OutputFormat then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(lstOutputFormat);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.PostProcessors.Hash <> FStreamSettings[i].PostProcessors.Hash then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(lstPostProcess);
+
+  F := False;
+  for i := 1 to Length(FStreamSettings) - 1 do
+  begin
+    if S.EncoderSettings.Hash <> FStreamSettings[i].EncoderSettings.Hash then
+    begin
+      F := True;
+      ShowDialog := True;
+      Break;
+    end;
+  end;
+  if F then
+    AddField(btnConfigureEncoder);
+
+  // Gegen die Warnung..
+  if ShowDialog then
+  begin
+
+  end;
 end;
 
 procedure TfrmSettings.SetGray;
@@ -2533,14 +2345,8 @@ begin
 
   if DirectoryExists(Dir) then
     if Sender = btnBrowse then
-    begin
-      txtDir.Text := IncludeTrailingBackslash(Dir);
-      if FBrowseDir and (txtDirAuto.Text = '') and (FBrowseAutoDir) then
-      begin
-        txtDirAuto.Text := txtDir.Text;
-        FBrowseAutoDir := False;
-      end;
-    end else
+      txtDir.Text := IncludeTrailingBackslash(Dir)
+    else
       txtDirAuto.Text := IncludeTrailingBackslash(Dir)
   else
     MsgBox(Self.Handle, _('The selected folder does not exist. Please choose another one.'), _('Info'), MB_ICONINFORMATION);
@@ -3305,18 +3111,272 @@ begin
 end;
 
 constructor TfrmSettings.Create(AOwner: TComponent;
-  StreamSettings: TStreamSettings);
+  SettingsType: TSettingsTypes; Lists: TDataLists;
+  StreamSettings: TStreamSettingsArray; BrowseDir: Boolean);
+begin
+  FSettingsType := SettingsType;
+
+  case SettingsType of
+    stApp:
+      CreateApp(AOwner, Lists, BrowseDir);
+    stAuto:
+      CreateAuto(AOwner, Lists, BrowseDir);
+    stStream:
+      CreateStreams(AOwner, StreamSettings);
+  end;
+
+  FInitialized := True;
+end;
+
+procedure TfrmSettings.CreateApp(AOwner: TComponent; Lists: TDataLists;
+  BrowseDir: Boolean);
+var
+  i: Integer;
+  Tmp, Tmp2: Integer;
+  Item: TListItem;
+  B: TBitmap;
+  P: TPngImage;
+  Settings: TStreamSettings;
+begin
+  FLists := Lists;
+  FBrowseDir := BrowseDir;
+
+  // Wir geben AOwner mit, so dass das MsgDlg zentriert angezeigt wird.
+  // Self ist nämlich noch nicht Visible, haben kein Handle, etc..
+  TfrmMsgDlg.ShowMsg(TForm(AOwner), _('Settings from the categories "Streams", "Filenames", "Cut", "Postprocessing" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
+                                      'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), mtInformation, [mbOK], mbOK, 4);
+
+  Settings := AppGlobals.StreamSettings.Copy;
+  try
+    inherited Create(AOwner, True);
+
+    // Dateinamen ordentlich machen
+    Tmp := txtStreamFilePattern.Top;
+    txtAutomaticFilePattern.Visible := False;
+    btnResetAutomaticFilePattern.Visible := False;
+    txtStreamFilePattern.Top := txtAutomaticFilePattern.Top;
+    btnResetStreamFilePattern.Top := btnResetAutomaticFilePattern.Top;
+    txtPreview.Top := Tmp;
+
+    for i := 0 to AppGlobals.AddonManager.Addons.Count - 1 do
+    begin
+      Item := lstAddons.Items.Add;
+      Item.Caption := AppGlobals.AddonManager.Addons[i].Name;
+      Item.Checked := AppGlobals.AddonManager.Addons[i].FilesExtracted;
+      Item.Data := AppGlobals.AddonManager.Addons[i].Copy;
+
+      Item.ImageIndex := 6;
+    end;
+    if lstAddons.Items.Count > 0 then
+      lstAddons.Items[0].Selected := True;
+
+    BuildHotkeys;
+
+    if (Bass.DeviceAvailable) and (Bass.Devices.Count > 0) then
+    begin
+      for i := 0 to Bass.Devices.Count - 1 do
+        lstSoundDevice.Items.AddObject(Bass.Devices[i].Name, Bass.Devices[i]);
+      if lstSoundDevice.Items.Count > 0 then
+        lstSoundDevice.ItemIndex := 0;
+      try
+        for i := 0 to lstSoundDevice.Items.Count - 1 do
+          if TBassDevice(lstSoundDevice.Items.Objects[i]).ID = AppGlobals.SoundDevice then
+          begin
+            lstSoundDevice.ItemIndex := i;
+            Break;
+          end;
+      except end;
+    end else
+    begin
+      lstSoundDevice.Style := csDropDown;
+      lstSoundDevice.ItemIndex := -1;
+      lstSoundDevice.Enabled := False;
+      lstSoundDevice.Text := _('(no devices available)');
+    end;
+
+    // TODO: in allen 3 fenstern testen.
+    lblPanelCut.Caption := _('Settings for cutting are only available'#13#10'if ''Save separated tracks'' is enabled.');
+
+    if Length(FStreamSettings) = 0 then
+    begin
+      chkAdjustTrackOffset.Visible := False;
+      txtAdjustTrackOffset.Visible := False;
+      optAdjustBackward.Visible := False;
+      optAdjustForward.Visible := False;
+    end;
+
+    btnConfigureEncoder.Enabled := lstOutputFormat.ItemIndex > 0;
+
+    CreateGeneral;
+
+    FillFields(Settings);
+  finally
+    Settings.Free;
+  end;
+end;
+
+procedure TfrmSettings.CreateAuto(AOwner: TComponent; Lists: TDataLists;
+  BrowseDir: Boolean);
+var
+  i, Substract: Integer;
 begin
   FIsForAuto := True;
 
+  FLists := Lists;
+  FBrowseDir := BrowseDir;
+
   SetLength(FStreamSettings, 1);
-  FStreamSettings[0] := StreamSettings.Copy;
+  FStreamSettings[0] := FLists.AutoRecordSettings.Copy;
+
+  inherited Create(AOwner, False);
+
+  CreateGeneral;
 
   FIgnoreFieldList := TList.Create;
 
-  Create(AOwner, nil, False, False);
-
   EnablePanel(pnlCut, True);
+
+  lstBlacklist := TBlacklistTree.Create(Self, FLists.StreamBlacklist);
+  lstBlacklist.OnChange := BlacklistTreeChange;
+  lstBlacklist.OnKeyDown := BlacklistTreeKeyDown;
+  lstBlacklist.Images := PngImageList1;
+  lstBlacklist.Parent := pnlBlacklist;
+  lstBlacklist.Align := alClient;
+
+  // Werbung überspringen ausblenden
+  chkSkipShort.Visible := False;
+  txtShortLengthSeconds.Visible := False;
+  Label4.Visible := False;
+
+  // Offset setzen ausblenden
+  chkAdjustTrackOffset.Visible := False;
+  txtAdjustTrackOffset.Visible := False;
+  optAdjustBackward.Visible := False;
+  optAdjustForward.Visible := False;
+
+  // Dateinamen ordentlich machen
+  for i := 0 to pnlFilenames.ControlCount - 1 do
+    if (pnlFilenames.Controls[i].ClassType = TLabeledEdit) or (pnlFilenames.Controls[i].ClassType = TPngSpeedButton) then
+      pnlFilenames.Controls[i].Visible := False;
+  txtAutomaticFilePattern.Top := txtFilePattern.Top;
+  txtAutomaticFilePattern.Visible := True;
+  btnResetAutomaticFilePattern.Top := btnResetFilePattern.Top;
+  btnResetAutomaticFilePattern.Visible := True;
+  txtPreview.Top := txtIncompleteFilePattern.Top;
+  txtPreview.Visible := True;
+
+  Substract := chkSearchSilence.Top - chkSkipShort.Top;
+  for i := 0 to pnlCut.ControlCount - 1 do
+  begin
+    pnlCut.Controls[i].Top := pnlCut.Controls[i].Top - Substract;
+  end;
+
+  Caption := _('Settings for automatic recordings');
+  lblTop.Caption := _('Settings for automatic recordings');
+
+  FillFields(Lists.AutoRecordSettings);
+  chkAutoTuneInClick(chkAutoTuneIn);
+end;
+
+procedure TfrmSettings.CreateStreams(AOwner: TComponent;
+  StreamSettings: TStreamSettingsArray);
+var
+  i, Substract: Integer;
+  Item: TListItem;
+begin
+  // TODO: funzt noch alles so wie es soll, wenn man die settings für mehrere streams öffnet? grau einfärben, msg-box bei ändern und aufmachen, apply general settings?
+  SetLength(FStreamSettings, Length(StreamSettings));
+  for i := 0 to Length(StreamSettings) - 1 do
+  begin
+    FStreamSettings[i] := StreamSettings[i].Copy;
+  end;
+
+  inherited Create(AOwner, False);
+
+  FIgnoreFieldList := TList.Create;
+
+  CreateGeneral;
+  SetFields;
+
+  txtDir.Visible := False;
+  txtDirAuto.Visible := False;
+  btnBrowse.Visible := False;
+  btnBrowseAuto.Visible := False;
+
+  Substract := chkSaveStreamsToDisk.Top;
+  for i := 0 to pnlStreams.ControlCount - 1 do
+  begin
+    if pnlStreams.Controls[i].ClassType = TCheckBox then
+      pnlStreams.Controls[i].Top := pnlStreams.Controls[i].Top - Substract;
+  end;
+
+  // Erweitert ordentlich machen
+  lstSoundDevice.Visible := False;
+  lblSoundDevice.Visible := False;
+
+  btnReset := TBitBtn.Create(Self);
+  btnReset.Parent := pnlNav;
+  btnReset.Caption := '&Apply general settings';
+  btnReset.OnClick := btnResetClick;
+
+  for i := 0 to FStreamSettings[0].RegExes.Count - 1 do
+  begin
+    Item := lstRegExes.Items.Add;
+    Item.Caption := FStreamSettings[0].RegExes[i];
+    Item.ImageIndex := 7;
+  end;
+
+  for i := 0 to FStreamSettings[0].IgnoreTrackChangePattern.Count - 1 do
+  begin
+    Item := lstIgnoreTitles.Items.Add;
+    Item.Caption := FStreamSettings[0].IgnoreTrackChangePattern[i];
+    Item.ImageIndex := 1;
+  end;
+
+  Caption := _('Stream settings');
+  lblTop.Caption := _('Stream settings');
+
+  FillFields(FStreamSettings[0]);
+end;
+
+procedure TfrmSettings.CreateGeneral;
+var
+  i: Integer;
+  B: TBitmap;
+  P: TPngImage;
+begin
+  for i := 0 to Self.ControlCount - 1 do
+  begin
+    if Self.Controls[i] is TPanel then
+    begin
+      if TPanel(Self.Controls[i]) = pnlLeft then
+        Continue;
+      Self.Controls[i].Left := 96;
+      Self.Controls[i].Top := 36;
+      TPanel(Self.Controls[i]).BevelOuter := bvNone;
+    end;
+  end;
+
+  B := TBitmap.Create;
+  P := TPngImage.Create;
+  try
+    P.LoadFromResourceName(HInstance, 'ARROWUP');
+    btnMoveUp.PngImage := P;
+    P.LoadFromResourceName(HInstance, 'ARROWDOWN');
+    btnMoveDown.PngImage := P;
+    P.LoadFromResourceName(HInstance, 'QUESTION');
+    btnHelpPostProcess.PngImage := P;
+    P.LoadFromResourceName(HInstance, 'CONFIGURE');
+    btnConfigureEncoder.PngImage := P;
+
+    btnBrowse.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
+    btnBrowseAuto.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
+    btnBrowseApp.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
+    btnBrowseLogFile.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
+  finally
+    B.Free;
+    P.Free;
+  end;
 end;
 
 { TBlacklistTree }

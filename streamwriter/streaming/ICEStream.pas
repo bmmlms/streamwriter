@@ -398,7 +398,7 @@ procedure TICEStream.Disconnected;
 var
   Track: TStreamTrack;
 begin
-  // Falls erlaubt, versuchen, das Empfangene wegzuspeichern..
+  // Falls erlaubt, versuchen, das Empfangene wegzuspeichern...
   if (not FMonitoring) and (FAudioStream <> nil) and (FStreamTracks.Count > 0) and
      (not FSettings.OnlySaveFull) and (FRecordTitle = '') then
   begin

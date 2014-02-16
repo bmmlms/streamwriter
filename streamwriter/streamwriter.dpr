@@ -23,6 +23,8 @@ program streamwriter;
 // vcPublic, damit TCommand-Nachfahren erzeugt werden können.
 {$RTTI EXPLICIT METHODS([vcPublic]) PROPERTIES([]) FIELDS([])}
 
+// TODO: man kann in settings für auto recordings "Allgemeine Einstellungen übernehmen" - problem evtl?
+
 uses
   MM in '..\..\common\MM.pas',
   madExcept,

@@ -205,6 +205,7 @@ type
     procedure mnuStreamPopupPopup(Sender: TObject);
     procedure actExitExecute(Sender: TObject);
     procedure actSettingsExecute(Sender: TObject);
+    procedure actAutoSettingsExecute(Sender: TObject);
     procedure actAboutExecute(Sender: TObject);
     procedure mnuStreamSettingsToolbarPopup(Sender: TObject);
     procedure pagSidebarChange(Sender: TObject);
@@ -226,7 +227,6 @@ type
     procedure actPlayerMuteVolumeExecute(Sender: TObject);
     procedure mnuPlayerClick(Sender: TObject);
     procedure actEqualizerExecute(Sender: TObject);
-    procedure actAutoSettingsExecute(Sender: TObject);
   private
     FMainCaption: string;
 
@@ -267,7 +267,7 @@ type
 
     function CanExitApp: Boolean;
     procedure ExitApp(Shutdown: Boolean; ImportFilename: string = '');
-    procedure ShowSettings(BrowseDir, BrowseAutoDir: Boolean);
+    procedure ShowSettings(SettingsType: TSettingsTypes; BrowseDir: Boolean);
     procedure ShowUpdate(Version: string = ''; UpdateURL: string = '');
     procedure UpdateButtons;
     procedure UpdateStatus;
@@ -535,7 +535,7 @@ end;
 
 procedure TfrmStreamWriterMain.actSettingsExecute(Sender: TObject);
 begin
-  ShowSettings(False, False);
+  ShowSettings(stApp, False);
 end;
 
 procedure TfrmStreamWriterMain.actAboutExecute(Sender: TObject);
@@ -551,25 +551,8 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.actAutoSettingsExecute(Sender: TObject);
-var
-  S: TfrmSettings;
-  Settings: TStreamSettingsArray;
-  i: Integer;
 begin
-  // TODO: das hier über ShowSettings() abhandeln?
-
-  // TODO: irgendwas geht schief wenn ich für auto settings nen postprocessor disable. der wird dann mit active=false gespeichert und geladen,
-  //       aber in den settings ist er danach wieder aktiv.
-
-  S := TfrmSettings.Create(Self, FDataLists.AutoRecordSettings);
-  try
-    S.ShowModal;
-
-    if S.SaveSettings then
-      FDataLists.AutoRecordSettings.Assign(S.StreamSettings[0]);
-  finally
-    S.Free;
-  end;
+  ShowSettings(stAuto, False);
 end;
 
 procedure TfrmStreamWriterMain.actEqualizerExecute(Sender: TObject);
@@ -651,7 +634,7 @@ begin
     for i := 0 to Length(Clients) - 1 do
       Settings[i] := Clients[i].Entry.Settings;
 
-    S := TfrmSettings.Create(Self, Settings);
+    S := TfrmSettings.Create(Self, stStream, FDataLists, Settings, False);
     S.ShowModal;
 
     if S.SaveSettings then
@@ -1671,7 +1654,8 @@ begin
   FCommunityLogin.Show;
 end;
 
-procedure TfrmStreamWriterMain.ShowSettings(BrowseDir, BrowseAutoDir: Boolean);
+// TODO: könnte das AutoRecordSettings-action-ding nicht auch das hier aufrufen? ist ATM nicht so.
+procedure TfrmStreamWriterMain.ShowSettings(SettingsType: TSettingsTypes; BrowseDir: Boolean);
 var
   S: TfrmSettings;
   OldMonitorCount, NewMonitorCount: Cardinal;
@@ -1683,54 +1667,66 @@ begin
   else
     OldMonitorCount := 0;
 
-  S := TfrmSettings.Create(Self, FDataLists, BrowseDir, BrowseAutoDir);
+  S := TfrmSettings.Create(Self, SettingsType, FDataLists, nil, BrowseDir);
   try
     S.OnSaveForExport := SettingsSaveForExport;
     S.ShowModal;
 
-    if S.ImportFilename <> '' then
-    begin
-      ExitApp(False, S.ImportFilename);
-      Exit;
-    end;
+    // TODO: der Titel des Settings-Fensters sollte sich anpassen je nach aktuellem typ
+
+    if S.SaveSettings then
+      case SettingsType of
+        stApp:
+          begin
+            if S.ImportFilename <> '' then
+            begin
+              ExitApp(False, S.ImportFilename);
+              Exit;
+            end;
+
+            if not AppGlobals.DisplayPlayedSong then
+              Caption := FMainCaption;
+
+            HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+
+
+            if AppGlobals.SubmitStats and AppGlobals.MonitorMode then
+              NewMonitorCount := AppGlobals.MonitorCount
+            else
+              NewMonitorCount := 0;
+            if NewMonitorCount <> OldMonitorCount then
+            begin
+              FClients.StopMonitors;
+              HomeComm.SendGetMonitorStreams(NewMonitorCount);
+            end;
+
+
+            tabSaved.Tree.SetFileWatcher;
+
+            Language.Translate(Self, PreTranslate, PostTranslate);
+
+            tabClients.AdjustTextSizeDirtyHack;
+
+            tabClients.ShowInfo;
+
+            AppGlobals.PostProcessManager.ReInitPostProcessors;
+
+            TrayIcon1.Visible := AppGlobals.Tray;
+
+            ScreenSnap := AppGlobals.SnapMain;
+
+            RegisterHotkeys(True);
+
+            TLogger.SetFilename(AppGlobals.LogFile);
+          end;
+        stAuto:
+          begin
+            FDataLists.AutoRecordSettings.Assign(S.StreamSettings[0]);
+          end;
+      end;
   finally
     S.Free;
   end;
-
-  if not AppGlobals.DisplayPlayedSong then
-    Caption := FMainCaption;
-
-  HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
-
-
-  if AppGlobals.SubmitStats and AppGlobals.MonitorMode then
-    NewMonitorCount := AppGlobals.MonitorCount
-  else
-    NewMonitorCount := 0;
-  if NewMonitorCount <> OldMonitorCount then
-  begin
-    FClients.StopMonitors;
-    HomeComm.SendGetMonitorStreams(NewMonitorCount);
-  end;
-
-
-  tabSaved.Tree.SetFileWatcher;
-
-  Language.Translate(Self, PreTranslate, PostTranslate);
-
-  tabClients.AdjustTextSizeDirtyHack;
-
-  tabClients.ShowInfo;
-
-  AppGlobals.PostProcessManager.ReInitPostProcessors;
-
-  TrayIcon1.Visible := AppGlobals.Tray;
-
-  ScreenSnap := AppGlobals.SnapMain;
-
-  RegisterHotkeys(True);
-
-  TLogger.SetFilename(AppGlobals.LogFile);
 end;
 
 procedure TfrmStreamWriterMain.ShowStartupMessages;
@@ -1744,14 +1740,13 @@ begin
   if not DirectoryExists(AppGlobals.Dir) then
   begin
     MsgBox(Handle, _('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
-    ShowSettings(True, not DirectoryExists(AppGlobals.DirAuto));
+    ShowSettings(stApp, True);
   end;
 
-  // Das erste DirectoryExists() ist da, damit der Settings-Dialog nicht doppelt kommt.
-  if DirectoryExists(AppGlobals.Dir) and (not DirectoryExists(AppGlobals.DirAuto)) then
+  if not DirectoryExists(AppGlobals.DirAuto) then
   begin
     MsgBox(Handle, _('The folder for automatically saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
-    ShowSettings(False, True);
+    ShowSettings(stAuto, True);
   end;
 end;
 
