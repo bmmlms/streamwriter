@@ -303,7 +303,6 @@ type
     FMinQualityIdx: Integer;
     FFormatIdx: Integer;
     FTemporaryPostProcesses: TPostProcessorList;
-    FIsForAuto: Boolean;
     FStreamSettings: TStreamSettingsArray;
     FIgnoreFieldList: TList;
     FLists: TDataLists;
@@ -576,7 +575,7 @@ begin
     OldRegExes := GetStringListHash(FStreamSettings[0].RegExes);
     OldIgnoreTitles := GetStringListHash(FStreamSettings[0].IgnoreTrackChangePattern);
 
-    if FIsForAuto then
+    if FSettingsType = stAuto then
     begin
       AppGlobals.Lock;
 
@@ -1417,38 +1416,43 @@ begin
     lstPostProcess.Items.EndUpdate;
   end;
 end;
-
+            // TODO: in "allgemeine einstellungen" "einzelne titel speichern" checken, dann unchecken => die ollen offset-settings kommen wieder!
+            //       die dürfen da NIEMALS sein!!!
 procedure TfrmSettings.RegisterPages;
 begin
-  if FStreamSettings = nil then
-  begin
-    FPageList.Add(TPage.Create('Settings', pnlMain, 'PROPERTIES'));
-    FPageList.Add(TPage.Create('Recordings', pnlStreams, 'STREAM'));
-    FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
-    FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
-    FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
-    FPageList.Add(TPage.Create('Addons', pnlAddons, 'ADDONS_PNG'));
-    FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
-    FPageList.Add(TPage.Create('Bandwidth', pnlBandwidth, 'BANDWIDTH'));
-    FPageList.Add(TPage.Create('Community', pnlCommunity, 'GROUP_PNG'));
-    FPageList.Add(TPage.Create('Hotkeys', pnlHotkeys, 'KEYBOARD'));
-    FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
-  end else if FIsForAuto then
-  begin
-    FPageList.Add(TPage.Create('Recordings', pnlAutoRecord, 'STREAM'));
-    FPageList.Add(TPage.Create('Blacklist', pnlCommunityBlacklist, 'BLACKLIST', FPageList.Find(pnlAutoRecord)));
-    FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
-    FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
-    FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
-  end else
-  begin
-    FPageList.Add(TPage.Create('Streams', pnlStreams, 'APPICON'));
-    FPageList.Add(TPage.Create('Advanced', pnlStreamsAdvanced, 'MISC', FPageList.Find(pnlStreams)));
-    FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
-    FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
-    FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
-    FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
-    FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
+  case FSettingsType of
+    stApp:
+      begin
+        FPageList.Add(TPage.Create('Settings', pnlMain, 'PROPERTIES'));
+        FPageList.Add(TPage.Create('Recordings', pnlStreams, 'STREAM'));
+        FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
+        FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
+        FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
+        FPageList.Add(TPage.Create('Addons', pnlAddons, 'ADDONS_PNG'));
+        FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
+        FPageList.Add(TPage.Create('Bandwidth', pnlBandwidth, 'BANDWIDTH'));
+        FPageList.Add(TPage.Create('Community', pnlCommunity, 'GROUP_PNG'));
+        FPageList.Add(TPage.Create('Hotkeys', pnlHotkeys, 'KEYBOARD'));
+        FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
+      end;
+    stAuto:
+      begin
+        FPageList.Add(TPage.Create('Recordings', pnlAutoRecord, 'STREAM'));
+        FPageList.Add(TPage.Create('Blacklist', pnlCommunityBlacklist, 'BLACKLIST', FPageList.Find(pnlAutoRecord)));
+        FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
+        FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
+        FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
+      end;
+    stStream:
+      begin
+        FPageList.Add(TPage.Create('Streams', pnlStreams, 'APPICON'));
+        FPageList.Add(TPage.Create('Advanced', pnlStreamsAdvanced, 'MISC', FPageList.Find(pnlStreams)));
+        FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
+        FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
+        FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
+        FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
+        FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
+      end;
   end;
 
   inherited;
@@ -3116,6 +3120,8 @@ constructor TfrmSettings.Create(AOwner: TComponent;
 begin
   FSettingsType := SettingsType;
 
+  FIgnoreFieldList := TList.Create;
+
   case SettingsType of
     stApp:
       CreateApp(AOwner, Lists, BrowseDir);
@@ -3124,6 +3130,8 @@ begin
     stStream:
       CreateStreams(AOwner, StreamSettings);
   end;
+
+  lblPanelCut.Caption := _('Settings for cutting are only available'#13#10'if ''Save separated tracks'' is enabled.');
 
   FInitialized := True;
 end;
@@ -3143,12 +3151,15 @@ begin
 
   // Wir geben AOwner mit, so dass das MsgDlg zentriert angezeigt wird.
   // Self ist nämlich noch nicht Visible, haben kein Handle, etc..
+  // TODO: TESTEN! diese msg hier!!!
   TfrmMsgDlg.ShowMsg(TForm(AOwner), _('Settings from the categories "Streams", "Filenames", "Cut", "Postprocessing" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
                                       'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), mtInformation, [mbOK], mbOK, 4);
 
   Settings := AppGlobals.StreamSettings.Copy;
   try
     inherited Create(AOwner, True);
+
+    FillFields(Settings);
 
     // Dateinamen ordentlich machen
     Tmp := txtStreamFilePattern.Top;
@@ -3157,6 +3168,12 @@ begin
     txtStreamFilePattern.Top := txtAutomaticFilePattern.Top;
     btnResetStreamFilePattern.Top := btnResetAutomaticFilePattern.Top;
     txtPreview.Top := Tmp;
+
+    // Offseteinstellungen verstecken
+    chkAdjustTrackOffset.Visible := False;
+    txtAdjustTrackOffset.Visible := False;
+    optAdjustBackward.Visible := False;
+    optAdjustForward.Visible := False;
 
     for i := 0 to AppGlobals.AddonManager.Addons.Count - 1 do
     begin
@@ -3194,22 +3211,9 @@ begin
       lstSoundDevice.Text := _('(no devices available)');
     end;
 
-    // TODO: in allen 3 fenstern testen.
-    lblPanelCut.Caption := _('Settings for cutting are only available'#13#10'if ''Save separated tracks'' is enabled.');
-
-    if Length(FStreamSettings) = 0 then
-    begin
-      chkAdjustTrackOffset.Visible := False;
-      txtAdjustTrackOffset.Visible := False;
-      optAdjustBackward.Visible := False;
-      optAdjustForward.Visible := False;
-    end;
-
     btnConfigureEncoder.Enabled := lstOutputFormat.ItemIndex > 0;
 
     CreateGeneral;
-
-    FillFields(Settings);
   finally
     Settings.Free;
   end;
@@ -3220,8 +3224,6 @@ procedure TfrmSettings.CreateAuto(AOwner: TComponent; Lists: TDataLists;
 var
   i, Substract: Integer;
 begin
-  FIsForAuto := True;
-
   FLists := Lists;
   FBrowseDir := BrowseDir;
 
@@ -3232,9 +3234,7 @@ begin
 
   CreateGeneral;
 
-  FIgnoreFieldList := TList.Create;
-
-  EnablePanel(pnlCut, True);
+  FillFields(Lists.AutoRecordSettings);
 
   lstBlacklist := TBlacklistTree.Create(Self, FLists.StreamBlacklist);
   lstBlacklist.OnChange := BlacklistTreeChange;
@@ -3249,6 +3249,12 @@ begin
   Label4.Visible := False;
 
   // Offset setzen ausblenden
+  chkAdjustTrackOffset.Visible := False;
+  txtAdjustTrackOffset.Visible := False;
+  optAdjustBackward.Visible := False;
+  optAdjustForward.Visible := False;
+
+  // Offseteinstellungen verstecken
   chkAdjustTrackOffset.Visible := False;
   txtAdjustTrackOffset.Visible := False;
   optAdjustBackward.Visible := False;
@@ -3274,7 +3280,6 @@ begin
   Caption := _('Settings for automatic recordings');
   lblTop.Caption := _('Settings for automatic recordings');
 
-  FillFields(Lists.AutoRecordSettings);
   chkAutoTuneInClick(chkAutoTuneIn);
 end;
 
@@ -3284,6 +3289,8 @@ var
   i, Substract: Integer;
   Item: TListItem;
 begin
+  FIgnoreFieldList := TList.Create;
+
   // TODO: funzt noch alles so wie es soll, wenn man die settings für mehrere streams öffnet? grau einfärben, msg-box bei ändern und aufmachen, apply general settings?
   SetLength(FStreamSettings, Length(StreamSettings));
   for i := 0 to Length(StreamSettings) - 1 do
@@ -3293,10 +3300,10 @@ begin
 
   inherited Create(AOwner, False);
 
-  FIgnoreFieldList := TList.Create;
+  SetFields;
+  FillFields(FStreamSettings[0]);
 
   CreateGeneral;
-  SetFields;
 
   txtDir.Visible := False;
   txtDirAuto.Visible := False;
@@ -3335,8 +3342,6 @@ begin
 
   Caption := _('Stream settings');
   lblTop.Caption := _('Stream settings');
-
-  FillFields(FStreamSettings[0]);
 end;
 
 procedure TfrmSettings.CreateGeneral;

@@ -627,6 +627,8 @@ var
 begin
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
 
+  // TODO: das hier sollte ShowSettings() aufrufen..
+
   if Length(Clients) > 0 then
   begin
     SetLength(Settings, Length(Clients));
@@ -1654,13 +1656,13 @@ begin
   FCommunityLogin.Show;
 end;
 
-// TODO: könnte das AutoRecordSettings-action-ding nicht auch das hier aufrufen? ist ATM nicht so.
 procedure TfrmStreamWriterMain.ShowSettings(SettingsType: TSettingsTypes; BrowseDir: Boolean);
 var
   S: TfrmSettings;
   OldMonitorCount, NewMonitorCount: Cardinal;
 begin
-  RegisterHotkeys(False);
+  if SettingsType = stApp then
+    RegisterHotkeys(False);
 
   if AppGlobals.SubmitStats and AppGlobals.MonitorMode then
     OldMonitorCount := AppGlobals.MonitorCount
@@ -1671,8 +1673,6 @@ begin
   try
     S.OnSaveForExport := SettingsSaveForExport;
     S.ShowModal;
-
-    // TODO: der Titel des Settings-Fensters sollte sich anpassen je nach aktuellem typ
 
     if S.SaveSettings then
       case SettingsType of
