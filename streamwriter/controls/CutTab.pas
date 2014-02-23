@@ -89,7 +89,7 @@ type
   protected
 
   public
-    constructor Create(AOwner: TComponent; Track: TTrackInfo; Filename: string = '');
+    constructor Create(AOwner: TComponent; Track: TTrackInfo; Filename: string = ''); reintroduce;
     destructor Destroy; override;
     procedure AfterCreate; override;
 

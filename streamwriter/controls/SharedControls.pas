@@ -105,7 +105,7 @@ type
   protected
     procedure SetEnabled(Value: Boolean); override;
   public
-    constructor Create(AOwner: TComponent);
+    constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
 
     procedure Setup;

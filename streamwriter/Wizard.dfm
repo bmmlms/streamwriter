@@ -4,7 +4,7 @@ object frmWizard: TfrmWizard
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Setup wizard'
-  ClientHeight = 325
+  ClientHeight = 349
   ClientWidth = 430
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -77,14 +77,16 @@ object frmWizard: TfrmWizard
       Left = 24
       Top = 100
       Width = 389
-      Height = 61
+      Height = 69
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
       Caption = 
         'Server-assigned streams will be monitored for title changes in t' +
         'he background. Do not disable this option if you have a fast int' +
-        'ernet connection (DSL or faster). Monitored streams will not be ' +
-        'covered by the bandwidth limit.'
+        'ernet connection (DSL or faster) and unlimited traffic (flatrate' +
+        '). Monitored streams will not be covered by the bandwidth limit.' +
+        ' One monitored stream consumes between 8 and 40KB/s depending on' +
+        ' the stream'#39's quality.'
       WordWrap = True
     end
     object chkLimit: TCheckBox
@@ -122,7 +124,7 @@ object frmWizard: TfrmWizard
     end
     object txtMonitorCount: TLabeledEdit
       Left = 24
-      Top = 176
+      Top = 188
       Width = 53
       Height = 21
       EditLabel.Width = 173

@@ -29,7 +29,6 @@ type
       CommandHeader: TCommandHeader; Transferred: UInt64);
 
     procedure HomeCommunicationLogInReceived(Sender: TObject; Success: Boolean);
-    procedure HomeCommunicationServerDataReceived(Sender: TObject; Streams: TList<TStreamBrowserEntry>; Charts: TList<TChartEntry>);
   public
   end;
 
@@ -129,12 +128,6 @@ begin
     lstEvents.Items.Add('Eingeloggt!')
   else
     lstEvents.Items.Add('NICHT Eingeloggt!');
-end;
-
-procedure TfrmHomeTest.HomeCommunicationServerDataReceived(Sender: TObject;
-  Streams: TList<TStreamBrowserEntry>; Charts: TList<TChartEntry>);
-begin
-
 end;
 
 procedure TfrmHomeTest.HomeCommunicationStateChanged(Sender: TObject);

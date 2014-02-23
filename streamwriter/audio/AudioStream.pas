@@ -26,7 +26,7 @@ interface
 
 uses
   Windows, SysUtils, StrUtils, Classes, ExtendedStream, MPEG, DynBass,
-  Math;
+  Math, LanguageObjects;
 
 type
   // Defines where data starts/ends
@@ -181,7 +181,7 @@ begin
       end;
     except
       on E: Exception do
-        raise Exception.Create('Error in SearchSilence(): ' + E.Message);
+        raise Exception.Create(Format(_('SearchSilence() returned error: %s') + ' ', [_(E.Message)]));
     end;
   finally
     M1.Free;
@@ -459,7 +459,7 @@ begin
       end;
     except
       on E: Exception do
-        raise Exception.Create('Error in SearchSilence(): ' + E.Message);
+        raise Exception.Create(Format(_('SearchSilence() returned error: %s') + ' ', [_(E.Message)]));
     end;
   finally
     M1.Free;

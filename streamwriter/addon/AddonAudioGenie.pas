@@ -79,12 +79,12 @@ end;
 
 function TAddonAudioGenie.FGetHelp: string;
 begin
-  Result := _('Support reading/writing of tags using AudioGenie');
+  Result := _('This addon adds support for reading/writing tags to/from saved songs using AudioGenie.');
 end;
 
 function TAddonAudioGenie.FGetName: string;
 begin
-  Result := _('This addon adds support for reading/writing tags to/from saved songs using AudioGenie.');
+  Result := _('Support reading/writing of tags using AudioGenie');
 end;
 
 end.

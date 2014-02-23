@@ -42,6 +42,7 @@
 			<DCC_F>false</DCC_F>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<DCC_ExeOutput>D:\streamWriter\</DCC_ExeOutput>
 			<DCC_MapFile>3</DCC_MapFile>
 			<DCC_Define>RELEASE;madExcept;$(DCC_Define)</DCC_Define>
 			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>

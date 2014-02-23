@@ -142,7 +142,7 @@ begin
 
   if FDecoder = 0 then
   begin
-    raise Exception.Create('Error creating decoder');
+    raise Exception.Create('Decoder could not be created');
   end;
 
   try
@@ -158,13 +158,13 @@ begin
   FFilesize := GetFileSize(Filename);
   if FFilesize =  -1 then
   begin
-    raise Exception.Create('Error getting filesize');
+    raise Exception.Create('Filesize could not be determined');
   end;
 
   FDecoder := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE {or BASS_STREAM_PRESCAN} {$IFDEF UNICODE} or BASS_UNICODE{$ENDIF});
   if FDecoder = 0 then
   begin
-    raise Exception.Create('Error creating decoder');
+    raise Exception.Create('Decoder could not be created');
   end;
 
   try

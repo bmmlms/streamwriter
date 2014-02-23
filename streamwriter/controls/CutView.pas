@@ -859,9 +859,9 @@ begin
     FOnStateChanged(Self);
 
   DriveLetter := '';
-  if Length(GetTempDir) > 3 then
+  if Length(AppGlobals.TempDir) > 3 then
   begin
-    DriveLetter := Copy(GetTempDir, 0, 2);
+    DriveLetter := Copy(AppGlobals.TempDir, 0, 2);
     MsgBox(GetParentForm(Self).Handle, Format(_('The temporary cut-file could not be saved. Make sure there is enough free diskspace on drive %s.'), [DriveLetter]), _('Error'), MB_ICONERROR)
   end;
 end;

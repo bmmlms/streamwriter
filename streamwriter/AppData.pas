@@ -30,7 +30,8 @@ interface
 uses
   Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
   LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions, PostProcess,
-  AddonManager, PostProcessManager, Logging, Base64, AudioFunctions, TypeDefs;
+  AddonManager, PostProcessManager, Logging, Base64, AudioFunctions, TypeDefs,
+  Messages;
 
 type
   // Do not change the order of items in the following enums!
@@ -303,6 +304,7 @@ type
   protected
     // Save ALL the things!
     procedure DoSave; override;
+    procedure NotifyRunningInstance(Handle: Cardinal); override;
   public
     constructor Create(AppName: string);
     destructor Destroy; override;
@@ -593,7 +595,6 @@ procedure TAppData.Load;
   end;
 var
   i, DefaultActionTmp, DefaultActionBrowser, DefaultFilterTmp, SilenceBuffer, OutputFormatTmp: Integer;
-  KbpsTmp: Cardinal;
 begin
   inherited;
 
@@ -666,13 +667,7 @@ begin
 
   FStorage.Read('ShortLengthSeconds', FStreamSettings.FShortLengthSeconds, 45);
 
-  // REMARK: Field was renamed, so load it this way... Can be changed later.
-  FStorage.Read('SongBuffer', FStreamSettings.FSongBuffer, -1234);
-  if FStreamSettings.FSongBuffer = -1234 then
-  begin
-    FStorage.Read('SongBufferSeconds', FStreamSettings.FSongBuffer, 0);
-    FStreamSettings.FSongBuffer := FStreamSettings.FSongBuffer * 1000;
-  end;
+  FStorage.Read('SongBuffer', FStreamSettings.FSongBuffer, 0);
 
   FStorage.Read('MaxRetries', FStreamSettings.FMaxRetries, 100);
   FStorage.Read('RetryDelay', FStreamSettings.FRetryDelay, 5);
@@ -712,19 +707,9 @@ begin
   else
     FStreamSettings.OutputFormat := TAudioTypes(OutputFormatTmp);
 
-  FStorage.Read('AutoTuneInMinKbps', KbpsTmp, High(Cardinal));
-  if KbpsTmp < High(Cardinal) then
-  begin
-    FAutoTuneInMinQuality := 2;
-    if KbpsTmp >= 3 then
-      FAutoTuneInMinQuality := 1;
-    if KbpsTmp >= 5 then
-      FAutoTuneInMinQuality := 0;
-  end else
-    FStorage.Read('AutoTuneInMinQuality', FAutoTuneInMinQuality, 2);
-
+  FStorage.Read('AutoTuneInMinQuality', FAutoTuneInMinQuality, 2);
   if (FAutoTuneInMinQuality > 2) or (FAutoTuneInMinQuality < 0) then
-    FAutoTuneInMinQuality := 1;
+    FAutoTuneInMinQuality := 2;
 
   FStorage.Read('AutoTuneInFormat', FAutoTuneInFormat, 0);
   if FAutoTuneInFormat > 2 then
@@ -844,6 +829,18 @@ begin
   end;
 end;
 
+procedure TAppData.NotifyRunningInstance(Handle: Cardinal);
+var
+  s: string;
+  CDS: TCOPYDATASTRUCT;
+begin
+  s := GetCommandLineW;
+  CDS.dwData := 0;
+  CDS.cbData := (Length(s) * SizeOf(Char)) + 2;
+  CDS.lpData := PChar(s);
+  SendMessage(Handle, WM_COPYDATA, 0, LongInt(@CDS));
+end;
+
 procedure TAppData.DoSave;
 var
   i, n: Integer;
@@ -881,8 +878,6 @@ begin
   FStorage.Write('OnlySaveFull', FStreamSettings.FOnlySaveFull);
   FStorage.Write('ShortLengthSeconds', FStreamSettings.FShortLengthSeconds);
   FStorage.Write('SongBuffer', FStreamSettings.FSongBuffer);
-  // REMARK: Das .Delete() kann irgendwann raus. Dann aber auch der Check, der die alte Variable berücksichtigt.
-  FStorage.Delete('SongBufferSeconds');
   FStorage.Write('MaxRetries', FStreamSettings.FMaxRetries);
   FStorage.Write('RetryDelay', FStreamSettings.FRetryDelay);
   FStorage.Write('DefaultFilter', Integer(FStreamSettings.Filter));
@@ -910,8 +905,6 @@ begin
   FStorage.Write('MonitorCount', FMonitorCount);
   FStorage.Write('SubmitStreamInfo', FSubmitStreamInfo);
   FStorage.Write('AutoTuneInMinQuality', FAutoTuneInMinQuality);
-  // REMARK: Das .Delete() kann irgendwann raus. Dann aber auch der Check, der die alte Variable berücksichtigt.
-  FStorage.Delete('AutoTuneInMinKbps');
   FStorage.Write('AutoTuneInFormat', FAutoTuneInFormat);
   FStorage.Write('LimitSpeed', FLimitSpeed);
   FStorage.Write('MaxSpeed', FMaxSpeed);

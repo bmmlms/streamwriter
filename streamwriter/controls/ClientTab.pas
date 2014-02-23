@@ -852,8 +852,6 @@ begin
 end;
 
 procedure TClientTab.AfterCreate;
-var
-  i: Integer;
 begin
   inherited;
 
@@ -961,22 +959,6 @@ begin
 end;
 
 // TODO: Speicherlöcher jagen ;-) .. mal im DebugMode laufen lassen und dann zusehen.
-
-// TODO: Testen, wenn im Tray gestartet wurde, ohne dass das Fenster je sichtbar war:
-//  + Auto-Aufnahmen
-//  + Speicherplatz gering (kommt die message?)
-//  + Notification von HomeComm
-//  + Ordner für SavedSongs existiert nicht
-//  - Update gefunden (alle Kombinationen Update-Verlauf!)
-//  - Update bereit zum Installieren
-//  + Alle Meldungen aus Shown/AfterShown
-//  + Profilimport testen.
-//  - Auf hohen DPI testen.
-//  - Fernsteuerung per CommandLine im Tray als auch mit Fenster offen
-//  + Fehler in Datendatei
-//  + Eine Message vom Server empfangen wird die angezeigt werden muss
-//  - Start nach frischer Installation
-//  - Scheduled Recordings testen!
 
 procedure TClientTab.ClientManagerAddRecent(Sender: TObject);
 var

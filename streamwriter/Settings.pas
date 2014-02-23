@@ -207,6 +207,7 @@ type
     btnRemoveRegEx: TButton;
     btnBrowseAuto: TPngSpeedButton;
     txtDirAuto: TLabeledEdit;
+    Label22: TLabel;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -380,9 +381,18 @@ var
   i: Integer;
 begin
   for i := 0 to Panel.ControlCount - 1 do
+  begin
     Panel.Controls[i].Visible := Enable;
 
-  // TODO: was sagt ".Tag" hier aus??? Ist das relevant wegen settings für auto recordings?
+    if (Panel = pnlCut) and (FSettingsType <> stStream) then
+    begin
+      chkAdjustTrackOffset.Visible := False;
+      txtAdjustTrackOffset.Visible := False;
+      optAdjustBackward.Visible := False;
+      optAdjustForward.Visible := False;
+    end;
+  end;
+
   if Enable then
     Panel.Tag := 0
   else
@@ -774,9 +784,6 @@ begin
       if (FIgnoreFieldList.IndexOf(lstIgnoreTitles) = -1) and (GetStringListHash(FStreamSettings[i].IgnoreTrackChangePattern) <> OldIgnoreTitles) then
         AdvancedDiffers := True;
     end;
-
-    if AdvancedDiffers then
-      TfrmMsgDlg.ShowMsg(Self, _('You changed some advanced stream specific settings. If they work, please contribute them to the community by selecting ''Set data...'' using the ''Administration'' menu from the stream browser popup menu.'), mtInformation, [mbOK], mbOK, 10);
   end else
   begin
     AppGlobals.Lock;
@@ -818,7 +825,6 @@ begin
     if lstSoundDevice.ItemIndex > -1 then
       AppGlobals.SoundDevice := TBassDevice(lstSoundDevice.Items.Objects[lstSoundDevice.ItemIndex]).ID;
 
-    // TODO: testen auf 2k und xp den minimierten start!
     if chkAutostart.Checked then
     begin
       CreateLink(Application.ExeName, PChar(GetShellFolder(CSIDL_STARTUP)), AppGlobals.AppName, '-minimize', False);
@@ -1416,8 +1422,7 @@ begin
     lstPostProcess.Items.EndUpdate;
   end;
 end;
-            // TODO: in "allgemeine einstellungen" "einzelne titel speichern" checken, dann unchecken => die ollen offset-settings kommen wieder!
-            //       die dürfen da NIEMALS sein!!!
+
 procedure TfrmSettings.RegisterPages;
 begin
   case FSettingsType of
@@ -2211,10 +2216,18 @@ end;
 
 procedure TfrmSettings.btnAddRegExClick(Sender: TObject);
 var
+  i: Integer;
   Item: TListItem;
   RValid, ArtistFound, TitleFound: Boolean;
   R: TPerlRegEx;
 begin
+  for i := 0 to lstRegExes.Items.Count - 1 do
+    if Trim(txtRegEx.Text) = Trim(lstRegExes.Items[i].Caption) then
+    begin
+      MsgBox(Handle, _('The specified regular expression is already on the list.'), _('Info'), MB_ICONINFORMATION);
+      Exit;
+    end;
+
   RValid := False;
   R := TPerlRegEx.Create;
   try
@@ -3139,11 +3152,8 @@ end;
 procedure TfrmSettings.CreateApp(AOwner: TComponent; Lists: TDataLists;
   BrowseDir: Boolean);
 var
-  i: Integer;
-  Tmp, Tmp2: Integer;
+  i, Tmp: Integer;
   Item: TListItem;
-  B: TBitmap;
-  P: TPngImage;
   Settings: TStreamSettings;
 begin
   FLists := Lists;
@@ -3151,9 +3161,11 @@ begin
 
   // Wir geben AOwner mit, so dass das MsgDlg zentriert angezeigt wird.
   // Self ist nämlich noch nicht Visible, haben kein Handle, etc..
-  // TODO: TESTEN! diese msg hier!!!
-  TfrmMsgDlg.ShowMsg(TForm(AOwner), _('Settings from the categories "Streams", "Filenames", "Cut", "Postprocessing" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
-                                      'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), mtInformation, [mbOK], mbOK, 4);
+  if not BrowseDir then
+  begin
+    TfrmMsgDlg.ShowMsg(TForm(AOwner), _('Settings from the categories "Streams", "Filenames", "Cut", "Postprocessing" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
+                                        'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), mtInformation, [mbOK], mbOK, 4);
+  end;
 
   Settings := AppGlobals.StreamSettings.Copy;
   try
@@ -3323,7 +3335,8 @@ begin
 
   btnReset := TBitBtn.Create(Self);
   btnReset.Parent := pnlNav;
-  btnReset.Caption := '&Apply general settings';
+  // TODO: wird der übersetzt? translate muss hier nach erst laufen.
+  btnReset.Caption := _('A&pply general settings');
   btnReset.OnClick := btnResetClick;
 
   for i := 0 to FStreamSettings[0].RegExes.Count - 1 do

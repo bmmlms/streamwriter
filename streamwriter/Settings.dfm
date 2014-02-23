@@ -17,6 +17,7 @@ object frmSettings: TfrmSettings
   Position = poOwnerFormCenter
   OnActivate = FormActivate
   OnResize = FormResize
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object pnlStreams: TPanel
@@ -1314,7 +1315,7 @@ object frmSettings: TfrmSettings
       Top = 116
       Width = 25
       Height = 21
-      Hint = 'Reset Regular expression to default'
+      Hint = 'Reset regular expression to default'
       Anchors = [akTop, akRight]
       Flat = True
       ParentShowHint = False
@@ -1405,7 +1406,7 @@ object frmSettings: TfrmSettings
       Width = 93
       Height = 27
       Anchors = [akRight, akBottom]
-      Caption = '&Remove'
+      Caption = 'R&emove'
       Enabled = False
       TabOrder = 2
       OnClick = btnRemoveIgnoreTitlePatternClick
@@ -1416,7 +1417,7 @@ object frmSettings: TfrmSettings
       Width = 93
       Height = 27
       Anchors = [akRight, akBottom]
-      Caption = '&Add'
+      Caption = 'A&dd'
       Enabled = False
       TabOrder = 3
       OnClick = btnAddIgnoreTitlePatternClick
@@ -1458,7 +1459,7 @@ object frmSettings: TfrmSettings
       Width = 93
       Height = 27
       Anchors = [akTop, akRight]
-      Caption = 'A&dd'
+      Caption = '&Add'
       Enabled = False
       TabOrder = 6
       OnClick = btnAddRegExClick
@@ -1469,7 +1470,7 @@ object frmSettings: TfrmSettings
       Width = 93
       Height = 27
       Anchors = [akTop, akRight]
-      Caption = 'R&emove'
+      Caption = '&Remove'
       Enabled = False
       TabOrder = 7
       OnClick = btnRemoveRegExClick
@@ -1479,18 +1480,34 @@ object frmSettings: TfrmSettings
     Left = 4
     Top = 620
     Width = 293
-    Height = 69
+    Height = 157
     TabOrder = 10
     Visible = False
     DesignSize = (
       293
-      69)
+      157)
     object Label11: TLabel
       Left = 76
       Top = 44
       Width = 21
       Height = 13
       Caption = 'KB/s'
+    end
+    object Label22: TLabel
+      Left = 4
+      Top = 72
+      Width = 285
+      Height = 81
+      Anchors = [akLeft, akTop, akRight, akBottom]
+      AutoSize = False
+      Caption = 
+        'Bandwidth is also used for monitoring streams for the community.' +
+        ' If your bandwidth/traffic is limited look at the "Community" se' +
+        'ction on the left and disable the "Enable monitor mode" checkbox' +
+        ' because bandwith used by monitor mode is not considered for the' +
+        ' "Limit bandwidth for recordings" setting.'
+      WordWrap = True
+      ExplicitHeight = 61
     end
     object txtMaxSpeed: TLabeledEdit
       Left = 20
@@ -1631,12 +1648,12 @@ object frmSettings: TfrmSettings
     Left = 904
     Top = 568
     Width = 293
-    Height = 261
+    Height = 297
     TabOrder = 13
     Visible = False
     DesignSize = (
       293
-      261)
+      297)
     object Label2: TLabel
       Left = 20
       Top = 24
@@ -1668,14 +1685,16 @@ object frmSettings: TfrmSettings
       Left = 20
       Top = 152
       Width = 268
-      Height = 53
+      Height = 73
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
       Caption = 
         'Server-assigned streams will be monitored for title changes in t' +
         'he background. Do not disable this option if you have a fast int' +
-        'ernet connection (DSL or faster). Monitored streams will not be ' +
-        'covered by the bandwidth limit.'
+        'ernet connection (DSL or faster) and unlimited traffic (flatrate' +
+        '). Monitored streams will not be covered by the bandwidth limit.' +
+        ' One monitored stream consumes between 8 and 40KB/s depending on' +
+        ' the stream'#39's quality.'
       WordWrap = True
       OnClick = Label20Click
     end
@@ -1711,7 +1730,7 @@ object frmSettings: TfrmSettings
     end
     object txtMonitorCount: TLabeledEdit
       Left = 20
-      Top = 228
+      Top = 244
       Width = 53
       Height = 21
       EditLabel.Width = 173

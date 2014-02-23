@@ -510,9 +510,7 @@ type
     procedure Assign(Source: TChartEntry);
     function Copy: TChartEntry;
 
-    class function Load(Stream: TExtendedStream; Lists: TDataLists; Version: Integer): TChartEntry;
     class function LoadFromHome(Stream: TExtendedStream; Version: Integer): TChartEntry;
-    //procedure Save(Stream: TExtendedStream);
 
     procedure LoadStreams(StreamList: TStreamBrowserList);
 
@@ -1092,7 +1090,6 @@ var
   i: Integer;
   DecompressedStream: TExtendedStream;
   Compressed: Boolean;
-  Chart: TChartEntry;
   ChartCategory: TChartCategory;
   TitleCount, Hash: Cardinal;
 begin
@@ -1252,16 +1249,6 @@ begin
     end;
 
     FBrowserList.CreateDict;
-
-    if Version < 48 then
-    begin
-      S.Read(CatCount);
-      for i := 0 to CatCount - 1 do
-      begin
-        Chart := TChartEntry.Load(S, Self, Version);
-        Chart.Free;
-      end;
-    end;
   end;
 
   if Version >= 51 then
@@ -1412,10 +1399,6 @@ procedure TDataLists.Save;
 var
   S: TExtendedStream;
 begin
-  // TODO: Man sollte das Recovery vllt erst löschen, nachdem das echte hier gespeichert wurde.
-  //       Das würde z.B. helfen gegen Fälle wie von Alexander Kroth beschrieben!
-  DeleteFile(AppGlobals.RecoveryFile);
-
   if (AppGlobals.SkipSave) or (AppGlobals.DataFile = '') then
   begin
     Exit;
@@ -1434,6 +1417,8 @@ begin
     try
       Save(S, True);
       S.SaveToFile(AppGlobals.DataFile);
+
+      DeleteFile(AppGlobals.RecoveryFile);
     finally
       S.Free;
     end;
@@ -1543,10 +1528,6 @@ begin
   begin
     Stream.Read(Result.FServerTitle);
   end else
-    Result.FServerTitle := RemoveFileExt(ExtractFileName(Result.FFilename));
-
-  //REMARK: Das hier ist ein Hack. Nur für Migration zwischen einer Build zur nächsten. Kann bald raus!
-  if Result.FServerTitle = '' then
     Result.FServerTitle := RemoveFileExt(ExtractFileName(Result.FFilename));
 
   if Version > 54 then
@@ -2204,47 +2185,6 @@ begin
 
   SetLength(FCategories, 0);
   FStreams := TList<TChartStream>.Create;
-end;
-
-// REMARK: Diese Methode ist ALT! Wird nur noch verwendet, dass der Lesevorgang von alten Daten-Dateien
-// ordentlich abläuft!! Iiiiiiiirgendwann kann das wohl raus.
-class function TChartEntry.Load(Stream: TExtendedStream;
-  Lists: TDataLists; Version: Integer): TChartEntry;
-var
-  i, Dummy: Integer;
-  C: Cardinal;
-begin
-  Result := TChartEntry.Create;
-  Stream.Read(Result.FName);
-
-  if Version > 46 then
-    Stream.Read(Result.FServerHash);
-
-  if Version <= 42 then
-  begin
-    Stream.Read(Dummy);
-  end else
-  begin
-    Stream.Read(Result.FPlayedLastDay);
-    Stream.Read(Result.FPlayedLastWeek);
-  end;
-
-  Stream.Read(C);
-  for i := 0 to C - 1 do
-  begin
-    SetLength(Result.FCategories, Length(Result.FCategories) + 1);
-    Stream.Read(Result.FCategories[High(Result.FCategories)]);
-  end;
-
-  if Version > 42 then
-  begin
-    Stream.Read(C);
-    for i := 0 to C - 1 do
-    begin
-      Result.Streams.Add(TChartStream.Load(Stream, Version));
-      Result.LoadStreams(Lists.BrowserList);
-    end;
-  end;
 end;
 
 class function TChartEntry.LoadFromHome(Stream: TExtendedStream; Version: Integer): TChartEntry;

@@ -139,6 +139,7 @@ type
 
 var
   BASSInit: function(device: LongInt; freq, flags: DWORD; win: HWND; clsid: PGUID): BOOL; stdcall;
+  BASSFree: procedure; stdcall;
   BASSGetInfo: function(var info: BASS_INFO): BOOL; stdcall;
   BASSGetDeviceInfo: function(device: DWORD; var info: BASS_DEVICEINFO): BOOL; stdcall;
   BASSSetDevice: function(device: DWORD): BOOL; stdcall;
@@ -190,10 +191,11 @@ destructor TBassLoader.Destroy;
 var
   i: Integer;
 begin
+  UninitializeBass;
   for i := 0 to FDevices.Count - 1 do
     FDevices[i].Free;
   FDevices.Free;
-  UninitializeBass;
+
   inherited;
 end;
 
@@ -245,9 +247,11 @@ begin
   end;
 
   FDLLHandle := LoadLibrary(PChar(FBassDLLPath));
+
   if FDLLHandle <> 0 then
   begin
     BASSInit := GetProcAddress(FDLLHandle, 'BASS_Init');
+    BASSFree := GetProcAddress(FDLLHandle, 'BASS_Free');
     BASSGetInfo := GetProcAddress(FDLLHandle, 'BASS_GetInfo');
     BASSGetDeviceInfo := GetProcAddress(FDLLHandle, 'BASS_GetDeviceInfo');
     BASSSetDevice := GetProcAddress(FDLLHandle, 'BASS_SetDevice');
@@ -314,18 +318,11 @@ begin
         BassLoaded := True;
 
     if not BassLoaded then
-    begin
-      FreeLibrary(FDLLHandle);
       Exit;
-    end;
 
     FAACDLLHandle := BASSPluginLoad(PChar(FBassAACDLLPath), BASS_UNICODE);
     if FAACDLLHandle = 0 then
-    begin
       BassLoaded := False;
-      FreeLibrary(FDLLHandle);
-      FDLLHandle := 0;
-    end;
 
     if BassLoaded then
     begin
@@ -338,12 +335,19 @@ begin
 end;
 
 procedure TBassLoader.UninitializeBass;
+var
+  i: Integer;
 begin
   try
     if FAACDLLHandle <> 0 then
       BASSPluginFree(FAACDLLHandle);
     if FDLLHandle <> 0 then
     begin
+      for i := 0 to FDevices.Count - 1 do
+      begin
+        BASSSetDevice(FDevices[i].FID);
+        BASSFree;
+      end;
       FreeLibrary(FDLLHandle);
     end;
     if FBassDLLPath <> '' then

@@ -115,7 +115,7 @@ type
   protected
     procedure Resize; override;
   public
-    constructor Create(AOwner: TComponent; Clients: TClientManager; Lists: TDataLists);
+    constructor Create(AOwner: TComponent; Clients: TClientManager; Lists: TDataLists); reintroduce;
     procedure AfterCreate;
 
     procedure PostTranslate;
@@ -136,7 +136,7 @@ type
   protected
     procedure Resize; override;
   public
-    constructor Create(AOwner: TComponent; Clients: TClientManager; Streams: TDataLists);
+    constructor Create(AOwner: TComponent; Clients: TClientManager; Streams: TDataLists); reintroduce;
     procedure AfterCreate; override;
 
     procedure AddTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);

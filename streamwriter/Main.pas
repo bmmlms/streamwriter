@@ -67,7 +67,7 @@ type
     tmrSpeed: TTimer;
     mnuStreamSettings1: TMenuItem;
     mnuStreamSettings2: TMenuItem;
-    TrayIcon1: TTrayIcon;
+    addTrayIcon: TTrayIcon;
     mnuTray: TPopupMenu;
     mnuShow: TMenuItem;
     N2: TMenuItem;
@@ -228,8 +228,6 @@ type
     procedure mnuPlayerClick(Sender: TObject);
     procedure actEqualizerExecute(Sender: TObject);
   private
-    FMainCaption: string;
-
     FCommunityLogin: TfrmCommunityLogin;
 
     FDataLists: TDataLists;
@@ -237,6 +235,7 @@ type
     FUpdateOnExit: Boolean;
     FSkipAfterShown: Boolean;
 
+    FSpeed: UInt64;
     FClientCount: Cardinal;
     FRecordingCount: Cardinal;
 
@@ -256,7 +255,6 @@ type
 
     FExiting: Boolean;
 
-    procedure OneInstanceMessage(var Msg: TMessage); message WM_USER + 1234;
     procedure AfterShown(var Msg: TMessage); message WM_AFTERSHOWN;
     procedure ReceivedData(var Msg: TWMCopyData); message WM_COPYDATA;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
@@ -282,6 +280,7 @@ type
     procedure OpenCut(Track: TTrackInfo); overload;
     procedure ProcessCommandLine(Data: string);
     procedure SetWakeups;
+    procedure SetCaptionAndTrayHint;
 
     function StartupMessagesNeeded: Boolean;
     procedure ShowStartupMessages;
@@ -298,7 +297,6 @@ type
     procedure HomeCommLogOut(Sender: TObject);
     procedure HomeCommServerInfo(Sender: TObject; ClientCount, RecordingCount: Cardinal);
     procedure HomeCommError(Sender: TObject; ID: TCommErrors; Msg: string);
-    //procedure HomeCommServerDataReceived(Sender: TObject);
 
     procedure PreTranslate;
     procedure PostTranslate;
@@ -399,7 +397,7 @@ begin
   try
     // Es ist mir beim Theme-Wechsel passiert, dass der Tray komplett verschwunden ist.
     // Beim Beenden von sW gab es eine Exception. Das hier sollte helfen ;-) ...
-    TrayIcon1.Visible := False;
+    addTrayIcon.Visible := False;
   except
   end;
 
@@ -627,8 +625,6 @@ var
 begin
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
 
-  // TODO: das hier sollte ShowSettings() aufrufen..
-
   if Length(Clients) > 0 then
   begin
     SetLength(Settings, Length(Clients));
@@ -712,7 +708,7 @@ begin
   begin
     if (Visible) or (IsIconic(Handle)) then
     begin
-      TrayIcon1.Visible := True;
+      addTrayIcon.Visible := True;
       FWasMaximized := WindowState = wsMaximized;
       Hide;
     end;
@@ -728,9 +724,7 @@ var
   Recovered: Boolean;
   S: TExtendedStream;
 begin
-  FMainCaption := 'streamWriter';
-  {$IFDEF DEBUG}FMainCaption := FMainCaption + ' --::: DEBUG BUiLD :::--';{$ENDIF}
-  Caption := FMainCaption;
+  SetCaptionAndTrayHint;
 
   AppGlobals.WindowHandle := Handle;
 
@@ -843,7 +837,7 @@ begin
   FUpdateOnExit := False;
 
   UpdateStatus;
-  TrayIcon1.Visible := AppGlobals.Tray;
+  addTrayIcon.Visible := AppGlobals.Tray;
 
   Width := AppGlobals.MainWidth;
   Height := AppGlobals.MainHeight;
@@ -1231,9 +1225,6 @@ end;
 
 procedure TfrmStreamWriterMain.MessageReceived(Msg: TMessageBase);
 var
-  Artist, Title, Stream, Filename: string;
-  NewCaption: string;
-
   SelectSavedSongsMsg: TSelectSavedSongsMsg absolute Msg;
 begin
   if (Msg is TPlayingObjectChangedMsg) or (Msg is TPlayingObjectStopped) then
@@ -1241,36 +1232,7 @@ begin
     if not AppGlobals.DisplayPlayedSong then
       Exit;
 
-    NewCaption := FMainCaption;
-    TrayIcon1.Hint := 'streamWriter';
-
-    PlayerManager.Players.GetPlayingInfo(Artist, Title, Stream, Filename);
-
-    if Filename <> '' then
-    begin
-      if (Artist <> '') and (Title <> '') then
-      begin
-        NewCaption := FMainCaption + ' - ' + ShortenString(Artist, 30) + ' - ' + ShortenString(Title, 30);
-        TrayIcon1.Hint := 'streamWriter'#13#10 + _('Playing:') + ' ' + Artist + ' - ' + Title;
-      end else
-      begin
-        NewCaption := FMainCaption + ' - ' + ShortenString(RemoveFileExt(ExtractFileName(Filename)), 30);
-        TrayIcon1.Hint := 'streamWriter'#13#10 + _('Playing:') + ' ' + RemoveFileExt(ExtractFileName(Filename));
-      end;
-    end else if Stream <> '' then
-    begin
-      if Title <> '' then
-      begin
-        NewCaption := FMainCaption + ' - ' + ShortenString(Title, 30) + ' - ' + ShortenString(Stream, 30);
-        TrayIcon1.Hint := 'streamWriter'#13#10 + _('Playing:') + ' ' + Title;
-      end else
-      begin
-        NewCaption := FMainCaption + ' - ' + ShortenString(Stream, 30);
-        TrayIcon1.Hint := 'streamWriter'#13#10 + _('Playing:') + ' ' + Stream;
-      end;
-    end;
-
-    Caption := NewCaption;
+    SetCaptionAndTrayHint;
   end
   else if Msg is TRefreshServerDataMsg then
   begin
@@ -1332,12 +1294,6 @@ end;
 procedure TfrmStreamWriterMain.mnuShowClick(Sender: TObject);
 begin
   ToggleWindow(False);
-end;
-
-procedure TfrmStreamWriterMain.OneInstanceMessage(var Msg: TMessage);
-begin
-  if not FExiting then
-    ToggleWindow(True);
 end;
 
 procedure TfrmStreamWriterMain.OpenCut(Filename: string);
@@ -1543,8 +1499,17 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.ReceivedData(var Msg: TWMCopyData);
+var
+  CmdLine: TCommandLine;
 begin
-  ProcessCommandLine(PChar(Msg.CopyDataStruct.lpData));
+  if not FExiting then
+  begin
+    CmdLine := TCommandLine.Create(PChar(Msg.CopyDataStruct.lpData));
+    if CmdLine.Records.Count = 0 then
+      ToggleWindow(True);
+
+    ProcessCommandLine(PChar(Msg.CopyDataStruct.lpData));
+  end;
 end;
 
 procedure TfrmStreamWriterMain.RegisterHotkeys(Reg: Boolean);
@@ -1622,6 +1587,75 @@ begin
   end;
 end;
 
+procedure TfrmStreamWriterMain.SetCaptionAndTrayHint;
+var
+  NewCaption: string;
+  NewHint: string;
+  Artist, Title, Stream, Filename: string;
+  i, Recordings: Integer;
+  Nodes: TNodeArray;
+  NodeData: PClientNodeData;
+begin
+  if tabClients <> nil then
+    Nodes := tabClients.ClientView.GetNodes(ntClient, False);
+
+  NewCaption := 'streamWriter';
+  {$IFDEF DEBUG}NewCaption := NewCaption + ' -: DEBUG BUiLD :- ';{$ENDIF}
+
+  NewHint := 'streamWriter';
+  {$IFDEF DEBUG}NewHint := NewHint + ' -: DEBUG BUiLD :- ';{$ENDIF}
+
+  PlayerManager.Players.GetPlayingInfo(Artist, Title, Stream, Filename);
+
+  if Filename <> '' then
+  begin
+    if (Artist <> '') and (Title <> '') then
+    begin
+      if AppGlobals.DisplayPlayedSong then
+        NewCaption := NewCaption + ' - ' + Artist + ' - ' + Title;
+      NewHint := NewHint + #13#10 + _('Playing:') + ' ' + Artist + ' - ' + Title;
+    end else
+    begin
+      if AppGlobals.DisplayPlayedSong then
+        NewCaption := NewCaption + ' - ' + RemoveFileExt(ExtractFileName(Filename));
+      NewHint := NewHint + #13#10 + _('Playing:') + ' ' + RemoveFileExt(ExtractFileName(Filename));
+    end;
+  end else if Stream <> '' then
+  begin
+    if Title <> '' then
+    begin
+      if AppGlobals.DisplayPlayedSong then
+        NewCaption := NewCaption + ' - ' + Title + ' - ' + Stream;
+      NewHint := NewHint + #13#10 + _('Playing:') + ' ' + Title;
+    end else
+    begin
+      if AppGlobals.DisplayPlayedSong then
+        NewCaption := NewCaption + ' - ' + Stream;
+      NewHint := NewHint + #13#10 + _('Playing:') + ' ' + Stream;
+    end;
+  end;
+
+  Recordings := 0;
+  if tabClients <> nil then
+    for i := 0 to High(Nodes) do
+    begin
+      NodeData := tabClients.ClientView.GetNodeData(Nodes[i]);
+      if NodeData.Client.Recording then
+        Inc(Recordings);
+    end;
+
+  if Recordings = 1 then
+    NewHint := NewHint + #13#10 + Format(_('%d active recording'), [Recordings])
+  else
+    NewHint := NewHint + #13#10 + Format(_('%d active recordings'), [Recordings]);
+  NewHint := NewHint + #13#10 + MakeSize(FSpeed) + '/s';
+
+  if Caption <> NewCaption then
+    Caption := NewCaption;
+  if addTrayIcon.Hint <> NewHint then
+    addTrayIcon.Hint := NewHint;
+end;
+
 procedure TfrmStreamWriterMain.SettingsSaveForExport(Sender: TObject);
 begin
   // Ist hier, damit der Profilexport korrekt funktioniert
@@ -1629,9 +1663,6 @@ begin
   tabSaved.Tree.UpdateList;
   tabLists.UpdateLists;
   tabClients.UpdateStreams(FDataLists);
-
-  // TODO: "Normale" Optionen sollten hier aber auch gespeichert werden? Kompliziert! Letzte Änderungen fehlen evtl hier noch oder?
-  //       Also, um es klarzustellen: Änderungen von DIESER SESSION, die NICHT in INI/REGISTRY sind, werden nicht exportiert, oder???
 end;
 
 procedure TfrmStreamWriterMain.SetWakeups;
@@ -1674,21 +1705,17 @@ begin
     S.OnSaveForExport := SettingsSaveForExport;
     S.ShowModal;
 
+    if S.ImportFilename <> '' then
+    begin
+      ExitApp(False, S.ImportFilename);
+      Exit;
+    end;
+
     if S.SaveSettings then
       case SettingsType of
         stApp:
           begin
-            if S.ImportFilename <> '' then
-            begin
-              ExitApp(False, S.ImportFilename);
-              Exit;
-            end;
-
-            if not AppGlobals.DisplayPlayedSong then
-              Caption := FMainCaption;
-
-            HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
-
+            SetCaptionAndTrayHint;
 
             if AppGlobals.SubmitStats and AppGlobals.MonitorMode then
               NewMonitorCount := AppGlobals.MonitorCount
@@ -1700,7 +1727,6 @@ begin
               HomeComm.SendGetMonitorStreams(NewMonitorCount);
             end;
 
-
             tabSaved.Tree.SetFileWatcher;
 
             Language.Translate(Self, PreTranslate, PostTranslate);
@@ -1711,7 +1737,7 @@ begin
 
             AppGlobals.PostProcessManager.ReInitPostProcessors;
 
-            TrayIcon1.Visible := AppGlobals.Tray;
+            addTrayIcon.Visible := AppGlobals.Tray;
 
             ScreenSnap := AppGlobals.SnapMain;
 
@@ -1722,6 +1748,8 @@ begin
         stAuto:
           begin
             FDataLists.AutoRecordSettings.Assign(S.StreamSettings[0]);
+
+            HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
           end;
       end;
   finally
@@ -1799,7 +1827,7 @@ begin
 
     if (AppGlobals.Tray) and (AppGlobals.TrayOnMinimize) then
     begin
-      TrayIcon1.Visible := True;
+      addTrayIcon.Visible := True;
       Hide;
       Exit;
     end;
@@ -2286,9 +2314,8 @@ begin
       begin
         if Schedule.MatchesStart and (not Schedule.TriedStart) then
         begin
-          // TODO: Übersetzen
           Client.WriteDebug(_('Starting scheduled recording'), dtSchedule, dlNormal);
-          Client.WriteDebug(_('Scheduled recording ends at') + ' ' + DateTimeToStr(Schedule.GetEndTime(Schedule.GetStartTime)), dtSchedule, dlNormal);
+          Client.WriteDebug(Format(_('Scheduled recording ends at %s'), [TimeToStr(Schedule.GetEndTime(Schedule.GetStartTime))]), dtSchedule, dlNormal);
 
           Schedule.TriedStart := True;
           Schedule.ScheduleStarted := Schedule.GetStartTime;
@@ -2347,6 +2374,8 @@ begin
     Speed := Speed + Client2.Speed;
   end;
 
+  FSpeed := Speed;
+  SetCaptionAndTrayHint;
 
   addStatus.Speed := Speed;
   addStatus.BuildSpeedBmp;
@@ -2633,6 +2662,8 @@ begin
 
   addStatus.SetState(CS, HomeComm.Authenticated, HomeComm.NotifyTitleChanges, FClientCount, FRecordingCount,
     FClients.SongsSaved, FDataLists.SongsSaved);
+
+  SetCaptionAndTrayHint;
 end;
 
 function TfrmStreamWriterMain.CanExitApp: Boolean;

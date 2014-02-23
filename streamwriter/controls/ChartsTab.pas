@@ -68,8 +68,6 @@ type
   end;
 
   TMyComboBox = class(TComboBox)
-  private
-    FShouldSelect: Boolean;
   protected
     function MouseActivate(Button: TMouseButton; Shift: TShiftState;
       X: Integer; Y: Integer; HitTest: Integer): TMouseActivate; override;
@@ -195,7 +193,6 @@ type
     procedure ChartsTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
   protected
     procedure DoEnter; override;
-
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
     destructor Destroy; override;
@@ -871,8 +868,8 @@ begin
         begin
           if Node.PrevSibling = nil then
           begin
-            // REMARK: Das hier ist ein Hack. Die Berechnung hier drunter ergibt nicht das,
-            //         was im PlayedLast des Charts steht.. sieht doof aus. Darum das hier!
+            // Das hier ist ein Hack. Die Berechnung hier drunter ergibt nicht das,
+            // was im PlayedLast des Charts steht.. sieht doof aus. Darum das hier!
             ParentNodeData := GetNodeData(Node.Parent);
             Val := ParentNodeData.Chart.PlayedLast;
           end else

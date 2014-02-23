@@ -430,8 +430,6 @@ begin
       if (Client.AutoRemove and (Client.RecordTitle = Title)) or (Client.Recording) then
         Exit;
 
-  // TODO: "Werbung überspringen" bei settings für auto recordings ist über. ausblenden etc
-
   Client := AddClient(0, 0, Name, CurrentURL, True);
 
   Client.Entry.Settings.Assign(FLists.AutoRecordSettings);

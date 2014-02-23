@@ -58,7 +58,7 @@ type
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
 
-    function ShowModal(Tracks: TTrackInfoArray): Integer;
+    function ShowModal(Tracks: TTrackInfoArray): Integer; reintroduce;
 
     property Tracks: TTrackInfoArray read FTracks;
   end;

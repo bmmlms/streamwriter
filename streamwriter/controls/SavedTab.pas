@@ -261,7 +261,7 @@ type
   protected
     procedure Resize; override;
   public
-    constructor Create(AOwner: TComponent; Streams: TDataLists);
+    constructor Create(AOwner: TComponent; Streams: TDataLists); reintroduce;
     destructor Destroy; override;
     procedure AfterCreate; override;
 

@@ -623,7 +623,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Left = 32
     Top = 144
   end
-  object TrayIcon1: TTrayIcon
+  object addTrayIcon: TTrayIcon
     Hint = 'streamWriter'
     Icon.Data = {
       0000010001001010000001002000680400001600000028000000100000002000

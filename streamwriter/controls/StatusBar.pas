@@ -25,7 +25,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, ComCtrls, AppData,
-  Functions, LanguageObjects, CommCtrl, GUIFunctions, Forms;
+  Functions, LanguageObjects, CommCtrl, GUIFunctions, Forms, ExtCtrls;
 
 type
   THomeConnectionState = (cshUndefined, cshConnected, cshDisconnected, cshFail);
@@ -44,7 +44,9 @@ type
     FOverallReceived: UInt64;
     FLastPos: Integer;
     FSpace: Integer;
+    FDots: string;
 
+    FTimer: TTimer;
     FSpeedBmp: TBitmap;
     IconConnected, IconDisconnected: TIcon;
     IconLoggedIn, IconLoggedOff: TIcon;
@@ -53,6 +55,7 @@ type
     IconGroup: TIcon;
     IconRecord: TIcon;
 
+    procedure TimerTimer(Sender: TObject);
     procedure PaintPanel(Index: Integer);
     procedure FSetSpeed(Value: UInt64);
     procedure FSetCurrentReceived(Value: UInt64);
@@ -168,7 +171,12 @@ begin
 
   Height := GetTextSize('Wyg', Font).cy + 4;
 
-  ShowHint := True;
+  ShowHint := False;
+
+  FTimer := TTimer.Create(Self);
+  FTimer.OnTimer := TimerTimer;
+  FTimer.Interval := 1000;
+  FTimer.Enabled := True;
 
   IconConnected := TIcon.Create;
   IconConnected.Handle := LoadImage(HInstance, 'CONNECT_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
@@ -201,7 +209,7 @@ begin
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
-  P.Width := 2 + GetTextSize(Format(_('%s/%s received'), ['000,00 kb', '000, 00 kb']), Font).cx + FSpace;
+  P.Width := 2 + GetTextSize(Format(_('%s/%s received'), ['000,00 kb', '000,00 kb']), Font).cx + FSpace;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
@@ -224,6 +232,8 @@ begin
 end;
 
 procedure TSWStatusBar.DrawPanel(Panel: TStatusPanel; const R: TRect);
+var
+  R2: TRect;
 begin
   inherited;
 
@@ -244,16 +254,24 @@ begin
         case FConnectionState of
           cshConnected:
             begin
+              FTimer.Enabled := False;
+              FDots := '';
+
               Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconConnected);
               Canvas.TextOut(R.Left + 56, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connected')) div 2, _('Connected'));
             end;
           cshDisconnected:
             begin
+              FTimer.Enabled := True;
+
               Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconDisconnected.Height div 2, IconDisconnected);
-              Canvas.TextOut(R.Left + 56, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connecting...')) div 2, _('Connecting...'));
+              Canvas.TextOut(R.Left + 56, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connecting') + FDots) div 2, _('Connecting') + FDots);
             end;
           cshFail:
             begin
+              FTimer.Enabled := False;
+              FDots := '';
+
               Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconDisconnected.Height div 2, IconDisconnected);
               Canvas.TextOut(R.Left + 56, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Error')) div 2, _('Error'));
             end;
@@ -271,11 +289,21 @@ begin
       end;
     1:
       begin
-        Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconGroup.Height div 2, IconGroup);
-        Canvas.TextOut(R.Left + 18, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FClients)) div 2, IntToStr(FClients));
+        if FConnectionState = cshConnected then
+        begin
+          Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconGroup.Height div 2, IconGroup);
+          Canvas.TextOut(R.Left + 18, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FClients)) div 2, IntToStr(FClients));
 
-        Canvas.Draw(R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4, R.Top + (R.Bottom - R.Top) div 2 - IconRecord.Height div 2, IconRecord);
-        Canvas.TextOut(R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4 + 18, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FRecordings)) div 2, IntToStr(FRecordings));
+          Canvas.Draw(R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4, R.Top + (R.Bottom - R.Top) div 2 - IconRecord.Height div 2, IconRecord);
+          Canvas.TextOut(R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4 + 18, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FRecordings)) div 2, IntToStr(FRecordings));
+        end else
+        begin
+          R2 := R;
+          // -2, weil es unten im PaintPanel() so addiert wird.
+          // Und dann noch etwas mehr ins Minus gehen, damit der Rahmen links verschwindet.
+          R2.Left := R2.Left - 6;
+          Canvas.FillRect(R2);
+        end;
       end;
     2:
       begin
@@ -331,6 +359,8 @@ begin
   Perform(SB_GETRECT, Index, Integer(@R));
   R.Right := R.Right - 2;
   R.Top := R.Top + 1;
+  // Achtung: Wenn ich das ändere, muss ich auch DrawPanel() für Panel 1 ändern,
+  // für den Fall, dass keine Verbindung zum Server da ist.
   R.Left := R.Left + 2;
   R.Bottom := R.Bottom - 1;
   DrawPanel(Panels[Index], R);
@@ -376,7 +406,12 @@ begin
   FOverallSongsSaved := OverallSongsSaved;
 
   if (OldConnectionState <> FConnectionState) or (OldLoggedIn <> FLoggedIn) then
+  begin
+    Repaint;
     PaintPanel(0);
+    PaintPanel(1);
+  end;
+
   if (OldClients <> FClients) or (OldRecordings <> FRecordings) or (OldNotifyTitleChanges <> FNotifyTitleChanges) then
   begin
     PaintPanel(0);
@@ -385,6 +420,14 @@ begin
 
   if (OldSongsSaved <> FSongsSaved) or (OldOverallSongsSaved <> FOverallSongsSaved) then
     PaintPanel(4);
+end;
+
+procedure TSWStatusBar.TimerTimer(Sender: TObject);
+begin
+  FDots := FDots + '.';
+  if Length(FDots) = 4 then
+    FDots := '';
+  PaintPanel(0);
 end;
 
 procedure TSWStatusBar.WMPaint(var Message: TWMPaint);

@@ -1474,8 +1474,6 @@ begin
   FTypeList.Left := MaxW + 12;
 end;
 
-// TODO: nochmal schön alles auf mehr DPI testen!!!!!!!!!!!!!!!!!!!!!!
-
 procedure TMStreamSearchPanel.ExpandButtonClick(Sender: TObject);
 begin
   SetVisible(not FTypeList.Visible);
