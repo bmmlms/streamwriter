@@ -68,7 +68,8 @@ begin
   HC.SendCommand(Cmd3);
   }
 
-  Cmd4 := TCommandTitleChanged.Create(5, 'dfasdfsa', 'duffy - mercy', 'fsdfsdfas', 'fsdfasdfas', atMPEG, 128, '');
+  Cmd4 := TCommandTitleChanged.Create(377629, 'CALMRADIO.COM - FOLK - Sampler', 'Calm Radio Promotion - Over 130 New Channels On Calm Radio', 'http://calm1.calmradio.com:11708/', 'http://calm1.calmradio.com:11708/', atMPEG, 128, '');
+  //Cmd4 := TCommandTitleChanged.Create(377629, 'CALMRADIO.COM - FOLK - Sampler', 'miley cyrus - wrecking ball', 'http://calm1.calmradio.com:11708/', 'http://calm1.calmradio.com:11708/', atMPEG, 128, '');
   HC.SendCommand(Cmd4);
 
   //Cmd5 := TCommandGetServerData.Create;

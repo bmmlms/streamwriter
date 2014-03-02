@@ -2623,7 +2623,7 @@ procedure TfrmStreamWriterMain.UpdateFound(var Msg: TMessage);
 var
   Res: Integer;
 begin
-  Res := MsgBox(Handle, _('A new version was found.'#13#10'Do you want to download the update now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
+  Res := MsgBox(Handle, _('A new version of streamWriter was found.'#13#10'Do you want to download the update now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
   if Res = IDYES then
   begin
     if AppGlobals.RunningFromInstalledLocation then

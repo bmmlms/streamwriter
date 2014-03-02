@@ -3223,8 +3223,6 @@ begin
       lstSoundDevice.Text := _('(no devices available)');
     end;
 
-    btnConfigureEncoder.Enabled := lstOutputFormat.ItemIndex > 0;
-
     CreateGeneral;
   finally
     Settings.Free;
@@ -3395,6 +3393,8 @@ begin
     B.Free;
     P.Free;
   end;
+
+  btnConfigureEncoder.Enabled := lstOutputFormat.ItemIndex > 0;
 end;
 
 { TBlacklistTree }
