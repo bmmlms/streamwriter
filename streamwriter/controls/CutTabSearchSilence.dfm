@@ -82,7 +82,7 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
     Top = 8
     Width = 188
     Height = 13
-    Caption = 'Silence is defined by volume lower than'
+    Caption = 'Silence is defined by volume lower than:'
   end
   object txtSilenceLevel: TEdit
     Left = 8

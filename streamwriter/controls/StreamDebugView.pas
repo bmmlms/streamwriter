@@ -141,7 +141,7 @@ begin
   FBtnCopy.Parent := FPanelBottom;
   FBtnCopy.Visible := True;
   FBtnCopy.OnClick := BtnCopyClick;
-  FBtnCopy.Width := MulDiv(60, Screen.PixelsPerInch, 96);
+  FBtnCopy.Width := MulDiv(80, Screen.PixelsPerInch, 96);
 
   FBtnClear := TButton.Create(Self);
   FBtnClear.Caption := _('C&lear');
@@ -149,7 +149,7 @@ begin
   FBtnClear.Parent := FPanelBottom;
   FBtnClear.Visible := True;
   FBtnClear.OnClick := BtnClearClick;
-  FBtnClear.Width := MulDiv(60, Screen.PixelsPerInch, 96);
+  FBtnClear.Width := MulDiv(80, Screen.PixelsPerInch, 96);
 end;
 
 destructor TMStreamDebugPanel.Destroy;

@@ -150,8 +150,6 @@ type
     Label11: TLabel;
     txtMaxSpeed: TLabeledEdit;
     chkLimit: TCheckBox;
-    txtDir: TLabeledEdit;
-    btnBrowse: TPngSpeedButton;
     lblIgnoreTitles: TLabel;
     lstIgnoreTitles: TListView;
     btnRemoveIgnoreTitlePattern: TButton;
@@ -205,9 +203,9 @@ type
     lstRegExes: TListView;
     btnAddRegEx: TButton;
     btnRemoveRegEx: TButton;
-    btnBrowseAuto: TPngSpeedButton;
-    txtDirAuto: TLabeledEdit;
     Label22: TLabel;
+    txtDir: TLabeledEdit;
+    btnBrowse: TPngSpeedButton;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -428,8 +426,17 @@ begin
   txtRemoveChars.Text := Settings.RemoveChars;
   chkNormalizeVariables.Checked := Settings.NormalizeVariables;
 
-  txtDir.Text := AppGlobals.Dir;
-  txtDirAuto.Text := AppGlobals.DirAuto;
+  // TODO: txtDir ist jetzt situationsabhängig für normale und für auto aufnahmen da. checken dass das funzt!!! alle verwendungen von txtDir anschauen!
+
+  if FSettingsType = stAuto then
+  begin
+    txtDir.EditLabel.Caption := _('Folder for automatically saved songs:');
+    txtDir.Text := AppGlobals.DirAuto;
+  end else
+  begin
+    txtDir.EditLabel.Caption := _('Folder for saved songs:');
+    txtDir.Text := AppGlobals.Dir;
+  end;
 
   chkDeleteStreams.Checked := Settings.DeleteStreams;
   chkAddSavedToIgnore.Checked := Settings.AddSavedToIgnore;
@@ -497,11 +504,11 @@ begin
 
   AppGlobals.Unlock;
 
-  if not DirectoryExists(txtDir.Text) then
+  if ((FSettingsType = stAuto) and not DirectoryExists(AppGlobals.DirAuto)) or
+     ((FSettingsType <> stAuto) and not DirectoryExists(AppGlobals.Dir)) then
+  begin
     txtDir.Text := '';
-
-  if not DirectoryExists(txtDirAuto.Text) then
-    txtDirAuto.Text := '';
+  end;
 
   SetGray;
 
@@ -596,6 +603,7 @@ begin
       AppGlobals.AutoRemoveSavedFromWishlist := chkAutoRemoveSavedFromWishlist.Checked;
       AppGlobals.AutoTuneInMinQuality := lstMinQuality.ItemIndex;
       AppGlobals.AutoTuneInFormat := lstFormat.ItemIndex;
+      AppGlobals.DirAuto := txtDir.Text;
 
       lstBlacklist.UpdateList(FLists.StreamBlacklist);
 
@@ -833,8 +841,9 @@ begin
       CreateLink(Application.ExeName, PChar(GetShellFolder(CSIDL_STARTUP)), AppGlobals.AppName, '', True);
     end;
 
-    AppGlobals.Dir := txtDir.Text;
-    AppGlobals.DirAuto := txtDirAuto.Text;
+    if FSettingsType <> stAuto then
+      AppGlobals.Dir := txtDir.Text;
+
     AppGlobals.Tray := chkTray.Checked;
     AppGlobals.SnapMain := chkSnapMain.Checked;
     AppGlobals.RememberRecordings := chkRememberRecordings.Checked;
@@ -961,18 +970,8 @@ procedure TfrmSettings.FormActivate(Sender: TObject);
 begin
   if FBrowseDir then
   begin
-    case FSettingsType of
-      stApp:
-        begin
-          SetPage(FPageList.Find(TPanel(txtDir.Parent)));
-          btnBrowse.Click;
-        end;
-      stAuto:
-        begin
-          SetPage(FPageList.Find(TPanel(txtDirAuto.Parent)));
-          btnBrowseAuto.Click;
-        end;
-    end;
+    SetPage(FPageList.Find(TPanel(txtDir.Parent)));
+    btnBrowse.Click;
   end;
   FBrowseDir := False;
 end;
@@ -2350,7 +2349,7 @@ var
   Msg: string;
   Dir: string;
 begin
-  if Sender = btnBrowseAuto then
+  if FSettingsType = stAuto then
     Msg := 'Select folder for automatically saved songs'
   else
     Msg := 'Select folder for saved songs';
@@ -2361,10 +2360,7 @@ begin
     Exit;
 
   if DirectoryExists(Dir) then
-    if Sender = btnBrowse then
-      txtDir.Text := IncludeTrailingBackslash(Dir)
-    else
-      txtDirAuto.Text := IncludeTrailingBackslash(Dir)
+    txtDir.Text := IncludeTrailingBackslash(Dir)
   else
     MsgBox(Self.Handle, _('The selected folder does not exist. Please choose another one.'), _('Info'), MB_ICONINFORMATION);
 end;
@@ -2711,17 +2707,12 @@ begin
 
   if PanelVisible(txtDir) and (not DirectoryExists(txtDir.Text)) then
   begin
-    MsgBox(Handle, _('The selected folder for saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
+    if FSettingsType = stAuto then
+      MsgBox(Handle, _('The selected folder for automatically saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION)
+    else
+      MsgBox(Handle, _('The selected folder for saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtDir.Parent)));
     btnBrowse.Click;
-    Exit;
-  end;
-
-  if PanelVisible(txtDirAuto) and (not DirectoryExists(txtDirAuto.Text)) then
-  begin
-    MsgBox(Handle, _('The selected folder for automatically saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
-    SetPage(FPageList.Find(TPanel(txtDirAuto.Parent)));
-    btnBrowseAuto.Click;
     Exit;
   end;
 
@@ -3272,8 +3263,11 @@ begin
 
   // Dateinamen ordentlich machen
   for i := 0 to pnlFilenames.ControlCount - 1 do
-    if (pnlFilenames.Controls[i].ClassType = TLabeledEdit) or (pnlFilenames.Controls[i].ClassType = TPngSpeedButton) then
+    if ((pnlFilenames.Controls[i].ClassType = TLabeledEdit) or (pnlFilenames.Controls[i].ClassType = TPngSpeedButton))
+       and (pnlFilenames.Controls[i].Top > txtDir.Top) then
+    begin
       pnlFilenames.Controls[i].Visible := False;
+    end;
   txtAutomaticFilePattern.Top := txtFilePattern.Top;
   txtAutomaticFilePattern.Visible := True;
   btnResetAutomaticFilePattern.Top := btnResetFilePattern.Top;
@@ -3316,15 +3310,19 @@ begin
   CreateGeneral;
 
   txtDir.Visible := False;
-  txtDirAuto.Visible := False;
   btnBrowse.Visible := False;
-  btnBrowseAuto.Visible := False;
 
   Substract := chkSaveStreamsToDisk.Top;
   for i := 0 to pnlStreams.ControlCount - 1 do
   begin
     if pnlStreams.Controls[i].ClassType = TCheckBox then
       pnlStreams.Controls[i].Top := pnlStreams.Controls[i].Top - Substract;
+  end;
+
+  Substract := lblFilePattern.Top;
+  for i := 0 to pnlFilenames.ControlCount - 1 do
+  begin
+    pnlFilenames.Controls[i].Top := pnlFilenames.Controls[i].Top - Substract;
   end;
 
   // Erweitert ordentlich machen
@@ -3386,7 +3384,6 @@ begin
     btnConfigureEncoder.PngImage := P;
 
     btnBrowse.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
-    btnBrowseAuto.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
     btnBrowseApp.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
     btnBrowseLogFile.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
   finally

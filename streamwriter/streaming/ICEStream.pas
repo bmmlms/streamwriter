@@ -460,8 +460,6 @@ begin
 end;
 
 procedure TICEStream.DoHeaderRemoved;
-var
-  Dir: string;
 begin
   inherited;
 
@@ -495,8 +493,6 @@ begin
       FStreamURL := GetHeaderData('icy-url');
       FBitRate := StrToIntDef(GetHeaderData('icy-br'), 0);
       FGenre := GetHeaderData('icy-genre');
-
-      Dir := FSaveDir;
 
       if (LowerCase(ContentType) = 'audio/mpeg') or
          ((ContentType = '') and ((FStreamName <> '') or (FStreamURL <> '')))
@@ -982,18 +978,20 @@ begin
 
   if (FAudioStream = nil) and (FAudioType <> atNone) then
   begin
-    Dir := FSaveDir;
-
-    if not FSettings.SaveToMemory then
-    begin
+    if FRecordTitle <> '' then
+      FileCheck := TFileChecker.Create(FStreamName, FSaveDirAuto, FSongsSaved, FSettings)
+    else
       FileCheck := TFileChecker.Create(FStreamName, FSaveDir, FSongsSaved, FSettings);
-      try
+    Dir := FileCheck.SaveDir;
+
+    try
+      if not FSettings.SaveToMemory then
+      begin
         FileCheck.GetStreamFilename(FStreamName, FAudioType);
-        Dir := FileCheck.SaveDir;
         Filename := FileCheck.Filename;
-      finally
-        FileCheck.Free;
       end;
+    finally
+      FileCheck.Free;
     end;
 
     try
@@ -1633,7 +1631,8 @@ begin
   inherited Create;
 
   FStreamname := Streamname;
-  FSaveDir := IncludeTrailingBackslash(Dir);
+  if Dir <> '' then
+    FSaveDir := IncludeTrailingBackslash(Dir);
   FSongsSaved := SongsSaved;
   FSettings := Settings;
 end;

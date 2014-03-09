@@ -1946,6 +1946,8 @@ begin
         Txt := _('Automatic recording will be stopped as long as available disk space is below the set limit.');
       crNoBandwidth:
         Exit;
+      crDirDoesNotExist:
+        Txt := _('Automatic recording will be stopped as long as the folder for automatically saved songs does not exist.');
     end
   else if WasScheduled then
     case Msg of
@@ -1953,6 +1955,8 @@ begin
         Txt := Format(_('Scheduled recording of "%s" will not start because available disk space is below the set limit.'), [Sender.Entry.Name]);
       crNoBandwidth:
         Txt := Format(_('Scheduled recording of "%s" will not start because it would exceed the maximum available bandwidth.'), [Sender.Entry.Name]);
+      crDirDoesNotExist:
+        Txt := Format(_('Scheduled recording of "%s" will not start because the folder for saved songs does not exist.'), [Sender.Entry.Name]);
     end
   else
     case Msg of
@@ -1960,10 +1964,16 @@ begin
         Txt := _('No connection will be established because available disk space is below the set limit.');
       crNoBandwidth:
         Txt := _('No connection will be established because it would exceed the maximum available bandwidth.');
+      crDirDoesNotExist:
+        Txt := _('No connection will be established because the folder for saved songs does not exist.');
     end;
 
   if Txt <> '' then
+  begin
+    if Sender <> nil then
+      Sender.WriteDebug(Txt, dtError, dlNormal);
     TfrmMsgDlg.ShowMsg(Self, Txt, mtInformation, [mbOK], mbOK);
+  end;
 end;
 
 procedure TfrmStreamWriterMain.tabSavedRefresh(Sender: TObject);
@@ -2315,17 +2325,21 @@ begin
         if Schedule.MatchesStart and (not Schedule.TriedStart) then
         begin
           Client.WriteDebug(_('Starting scheduled recording'), dtSchedule, dlNormal);
-          Client.WriteDebug(Format(_('Scheduled recording ends at %s'), [TimeToStr(Schedule.GetEndTime(Schedule.GetStartTime))]), dtSchedule, dlNormal);
 
           Schedule.TriedStart := True;
           Schedule.ScheduleStarted := Schedule.GetStartTime;
           Res := Client.StartRecording(True);
           if Res <> crOk then
-            tabClientsShowErrorMessage(Client, Res, False, True);
+            tabClientsShowErrorMessage(Client, Res, False, True)
+          else
+          begin
+            Client.ScheduledRecording := True;
+            Client.WriteDebug(Format(_('Scheduled recording ends at %s'), [TimeToStr(Schedule.GetEndTime(Schedule.GetStartTime))]), dtSchedule, dlNormal);
+          end;
         end else if not Schedule.MatchesStart then
           Schedule.TriedStart := False;
 
-        if Schedule.MatchesEnd and (not Schedule.TriedStop) then
+        if Schedule.MatchesEnd and (not Schedule.TriedStop) and Client.ScheduledRecording then
         begin
           Client.WriteDebug(_('Stopping scheduled recording'), dtSchedule, dlNormal);
 
@@ -2540,7 +2554,7 @@ begin
   ClientSchedulesActive := False;
   if Length(Clients) = 1 then
     for i := 0 to Clients[0].Entry.Schedules.Count - 1 do
-      if Clients[0].Entry.Schedules[i].ScheduleStarted > 0 then
+      if (Clients[0].Entry.Schedules[i].ScheduleStarted > 0) and (Clients[0].ScheduledRecording) then
       begin
         ClientSchedulesActive := True;
         Break;

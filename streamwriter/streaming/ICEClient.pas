@@ -35,7 +35,7 @@ type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
   TICEClientStates = (csConnecting, csConnected, csStopping, csStopped, csRetrying, csIOError);
 
-  TMayConnectResults = (crOk, crNoFreeSpace, crNoBandwidth);
+  TMayConnectResults = (crOk, crNoFreeSpace, crNoBandwidth, crDirDoesNotExist);
   TMayConnectResultsSet = set of TMayConnectResults;
 
   TICEClient = class;
@@ -85,6 +85,7 @@ type
     FSpeed: Integer;
     FContentType: string;
     FFilename: string;
+    FScheduledRecording: Boolean;
 
     FAutoRemove: Boolean;
     FRecordTitle: string;
@@ -197,6 +198,7 @@ type
     property Speed: Integer read FSpeed;
     property ContentType: string read FContentType;
     property Filename: string read FFilename;
+    property ScheduledRecording: Boolean read FScheduledRecording write FScheduledRecording;
 
     property EQEnabled: Boolean read FEQEnabled write FSetEQEnabled;
 
@@ -385,6 +387,19 @@ begin
   begin
     Result := MayConnect(False, TClientManager(FManager).GetUsedBandwidth(FEntry.Bitrate, FSpeed, Self));
 
+    if Result = crOk then
+    begin
+      if FRecordTitle = '' then
+      begin
+        if ((AppGlobals.Dir = '') or (not DirectoryExists(AppGlobals.Dir))) then
+          Result := crDirDoesNotExist;
+      end else
+      begin
+        if ((AppGlobals.DirAuto = '') or (not DirectoryExists(AppGlobals.DirAuto))) then
+          Result := crDirDoesNotExist;
+      end;
+    end;
+
     if Result <> crOk then
       Exit;
   end;
@@ -478,6 +493,8 @@ procedure TICEClient.Disconnect;
 begin
   if FICEThread = nil then
     Exit;
+
+  FScheduledRecording := False;
 
   FState := csStopping;
 
@@ -882,6 +899,7 @@ begin
       tsIOError:
         begin
           FState := csIOError;
+          FScheduledRecording := False;
         end;
     end;
     if Assigned(FOnRefresh) then
@@ -957,6 +975,9 @@ begin
       Inc(FRetries);
   end else
     FState := csStopped;
+
+  if (FState = csStopped) or (FState = csIOError) then
+    FScheduledRecording := False;
 
   if Assigned(FOnRefresh) and (FICEThread <> nil) then
     FOnRefresh(Self);

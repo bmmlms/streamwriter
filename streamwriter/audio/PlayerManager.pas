@@ -289,7 +289,7 @@ begin
       if IP.Playing and (not IP.Paused or IP.PlayingStarted) and (not IP.PlayingPaused) then
       begin
         Stream := IP.Entry.Name;
-        Title := IP.Title;
+        Title := IP.DisplayTitle;
         Exit;
       end;
     end;

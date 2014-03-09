@@ -52,7 +52,8 @@ type
     FMonitorClients: TClientList;
     FSongsSaved: Integer;
     FLists: TDataLists;
-    FErrorShown: Boolean;
+    FNoFreeSpaceErrorShown: Boolean;
+    FDirDoesNotExistErrorShown: Boolean;
 
     FOnClientDebug: TNotifyEvent;
     FOnClientRefresh: TNotifyEvent;
@@ -383,6 +384,17 @@ begin
   SaveListArtist := nil;
   AutoTuneInMinKbps := GetAutoTuneInMinKbps(TAudioTypes(Format), AppGlobals.AutoTuneInMinQuality);
 
+  if (AppGlobals.DirAuto = '') or (not DirectoryExists(IncludeTrailingBackslash(AppGlobals.DirAuto))) then
+  begin
+    if not FDirDoesNotExistErrorShown then
+    begin
+      OnShowErrorMessage(nil, crDirDoesNotExist, True, False);
+      FDirDoesNotExistErrorShown := True;
+    end;
+    Exit;
+  end else
+    FDirDoesNotExistErrorShown := False;
+
   if Kbps < AutoTuneInMinKbps then
     Exit;
 
@@ -416,14 +428,14 @@ begin
   Res := TICEClient.MayConnect(False, GetUsedBandwidth(Kbps, 0));
   if Res <> crOk then
   begin
-    if (not FErrorShown) and (Res = crNoFreeSpace) then
+    if (not FNoFreeSpaceErrorShown) and (Res = crNoFreeSpace) then
     begin
       OnShowErrorMessage(nil, Res, True, False);
-      FErrorShown := True;
+      FNoFreeSpaceErrorShown := True;
     end;
     Exit;
   end;
-  FErrorShown := False;
+  FNoFreeSpaceErrorShown := False;
 
   for Client in Self.FClients do
     if MatchesClient(Client, ID, Name, CurrentURL, Title, nil) then

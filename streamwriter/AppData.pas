@@ -621,6 +621,8 @@ begin
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
   FDir := TryUnRelativePath(FDir);
+  if not DirectoryExists(FDir) then
+    FDir := '';
 
   FStorage.Read('DirAuto', FDirAuto, '');
   if FDirAuto = '' then
@@ -628,6 +630,8 @@ begin
   if FDirAuto <> '' then
     FDirAuto := IncludeTrailingBackslash(FDirAuto);
   FDirAuto := TryUnRelativePath(FDirAuto);
+  if not DirectoryExists(FDirAuto) then
+    FDirAuto := '';
 
   FStorage.Read('DeleteStreams', FStreamSettings.FDeleteStreams, False);
   FStorage.Read('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore, False);
