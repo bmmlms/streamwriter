@@ -977,15 +977,15 @@ object frmSettings: TfrmSettings
     Left = 304
     Top = 692
     Width = 293
-    Height = 345
+    Height = 333
     TabOrder = 7
     Visible = False
     DesignSize = (
       293
-      345)
+      333)
     object lblFilePattern: TLabel
       Left = 4
-      Top = 60
+      Top = 280
       Width = 284
       Height = 49
       Anchors = [akLeft, akTop, akRight]
@@ -995,7 +995,7 @@ object frmSettings: TfrmSettings
     end
     object btnResetFilePattern: TPngSpeedButton
       Left = 264
-      Top = 124
+      Top = 72
       Width = 25
       Height = 21
       Hint = 'Reset pattern to default'
@@ -1032,7 +1032,7 @@ object frmSettings: TfrmSettings
     end
     object btnResetIncompleteFilePattern: TPngSpeedButton
       Left = 264
-      Top = 172
+      Top = 116
       Width = 25
       Height = 21
       Hint = 'Reset pattern to default'
@@ -1069,7 +1069,7 @@ object frmSettings: TfrmSettings
     end
     object btnResetAutomaticFilePattern: TPngSpeedButton
       Left = 264
-      Top = 220
+      Top = 160
       Width = 25
       Height = 21
       Hint = 'Reset pattern to default'
@@ -1106,7 +1106,7 @@ object frmSettings: TfrmSettings
     end
     object btnResetStreamFilePattern: TPngSpeedButton
       Left = 264
-      Top = 268
+      Top = 204
       Width = 25
       Height = 21
       Hint = 'Reset pattern to default'
@@ -1154,9 +1154,17 @@ object frmSettings: TfrmSettings
       ShowHint = True
       OnClick = btnBrowseClick
     end
+    object Bevel1: TBevel
+      Left = 4
+      Top = 48
+      Width = 285
+      Height = 9
+      Anchors = [akLeft, akTop, akRight]
+      Shape = bsTopLine
+    end
     object txtFilePattern: TLabeledEdit
       Left = 4
-      Top = 124
+      Top = 72
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1169,7 +1177,7 @@ object frmSettings: TfrmSettings
     end
     object txtPreview: TLabeledEdit
       Left = 4
-      Top = 316
+      Top = 248
       Width = 256
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1182,7 +1190,7 @@ object frmSettings: TfrmSettings
     end
     object txtIncompleteFilePattern: TLabeledEdit
       Left = 4
-      Top = 172
+      Top = 116
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1195,7 +1203,7 @@ object frmSettings: TfrmSettings
     end
     object txtAutomaticFilePattern: TLabeledEdit
       Left = 4
-      Top = 220
+      Top = 160
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1210,7 +1218,7 @@ object frmSettings: TfrmSettings
     end
     object txtStreamFilePattern: TLabeledEdit
       Left = 4
-      Top = 268
+      Top = 204
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1581,7 +1589,7 @@ object frmSettings: TfrmSettings
     end
     object chkNormalizeVariables: TCheckBox
       Left = 4
-      Top = 92
+      Top = 88
       Width = 284
       Height = 21
       Anchors = [akLeft, akTop, akRight]

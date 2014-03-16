@@ -22,6 +22,8 @@ unit Settings;
 
 interface
 
+// TODO: nach remarks suchen. evtl kann man was bereinigen?
+
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
@@ -206,6 +208,7 @@ type
     Label22: TLabel;
     txtDir: TLabeledEdit;
     btnBrowse: TPngSpeedButton;
+    Bevel1: TBevel;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -426,8 +429,6 @@ begin
   txtRemoveChars.Text := Settings.RemoveChars;
   chkNormalizeVariables.Checked := Settings.NormalizeVariables;
 
-  // TODO: txtDir ist jetzt situationsabhängig für normale und für auto aufnahmen da. checken dass das funzt!!! alle verwendungen von txtDir anschauen!
-
   if FSettingsType = stAuto then
   begin
     txtDir.EditLabel.Caption := _('Folder for automatically saved songs:');
@@ -536,7 +537,7 @@ begin
     chkOverwriteSmaller.Checked := False;
   end;
 
-  // -----------------------------------
+  // ---------------------------------------------------------------------------------------------------------
   if FTemporaryPostProcesses <> nil then
   begin
     for i := 0 to FTemporaryPostProcesses.Count - 1 do
@@ -569,11 +570,10 @@ begin
   RebuildPostProcessingList;
   if lstPostProcess.Items.Count > 0 then
     lstPostProcess.Items[0].Selected := True;
-  // -----------------------------------
-
+  // ---------------------------------------------------------------------------------------------------------
 
   txtShortLengthSeconds.Enabled := chkSkipShort.State <> cbUnchecked;
-  EnablePanel(pnlCut, not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
+  EnablePanel(pnlCut, (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto));
 end;
 
 procedure TfrmSettings.Finish;
@@ -841,7 +841,7 @@ begin
       CreateLink(Application.ExeName, PChar(GetShellFolder(CSIDL_STARTUP)), AppGlobals.AppName, '', True);
     end;
 
-    if FSettingsType <> stAuto then
+    if FSettingsType = stApp then
       AppGlobals.Dir := txtDir.Text;
 
     AppGlobals.Tray := chkTray.Checked;
@@ -1492,7 +1492,6 @@ begin
   Result := True;
 end;
 
-// TODO: testen testen testen...
 procedure TfrmSettings.SetFields;
   procedure AddField(F: TControl);
   begin
@@ -2629,11 +2628,14 @@ begin
 end;
 
 function TfrmSettings.CanFinish: Boolean;
-  function PanelVisible(C: TControl): Boolean;
+  function ControlVisible(C: TControl): Boolean;
   var
     i: Integer;
     P: TControl;
   begin
+    if not C.Visible then
+      Exit(False);
+
     for i := 0 to FPageList.Count - 1 do
     begin
       P := C.Parent;
@@ -2665,7 +2667,7 @@ begin
     Exit;
   end;
 
-  if PanelVisible(txtFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtFilePattern.Text, 'atlusndi'))) = '') then
+  if ControlVisible(txtFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtFilePattern.Text, 'atlusndi'))) = '') then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of completely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePattern.Parent)));
@@ -2673,7 +2675,7 @@ begin
     Exit;
   end;
 
-  if PanelVisible(txtIncompleteFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Text, 'atlusndi'))) = '') then
+  if ControlVisible(txtIncompleteFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Text, 'atlusndi'))) = '') then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of incompletely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtIncompleteFilePattern.Parent)));
@@ -2681,7 +2683,7 @@ begin
     Exit;
   end;
 
-  if PanelVisible(txtAutomaticFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtAutomaticFilePattern.Text, 'atlusdi'))) = '') then
+  if ControlVisible(txtAutomaticFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtAutomaticFilePattern.Text, 'atlusdi'))) = '') then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of automatically recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtAutomaticFilePattern.Parent)));
@@ -2689,7 +2691,7 @@ begin
     Exit;
   end;
 
-  if PanelVisible(txtStreamFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtStreamFilePattern.Text, 'sdi'))) = '') then
+  if ControlVisible(txtStreamFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtStreamFilePattern.Text, 'sdi'))) = '') then
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of stream files so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtStreamFilePattern.Parent)));
@@ -2697,7 +2699,7 @@ begin
     Exit;
   end;
 
-  if PanelVisible(txtFilePatternDecimals) and ((StrToIntDef(txtFilePatternDecimals.Text, -1) > 9) or (StrToIntDef(txtFilePatternDecimals.Text, -1) < 1)) then
+  if ControlVisible(txtFilePatternDecimals) and ((StrToIntDef(txtFilePatternDecimals.Text, -1) > 9) or (StrToIntDef(txtFilePatternDecimals.Text, -1) < 1)) then
   begin
     MsgBox(Handle, _('Please enter the minimum count of decimals for tracknumbers in filenames.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePatternDecimals.Parent)));
@@ -2705,7 +2707,7 @@ begin
     Exit;
   end;
 
-  if PanelVisible(txtDir) and (not DirectoryExists(txtDir.Text)) then
+  if ControlVisible(txtDir) and (not DirectoryExists(txtDir.Text)) then
   begin
     if FSettingsType = stAuto then
       MsgBox(Handle, _('The selected folder for automatically saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION)
@@ -2788,7 +2790,7 @@ begin
       end;
   end;
 
-  if PanelVisible(txtMaxRetries) and (Trim(txtMaxRetries.Text) = '') then
+  if ControlVisible(txtMaxRetries) and (Trim(txtMaxRetries.Text) = '') then
   begin
     MsgBox(Handle, _('Please enter the number of maximum connect retries.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtMaxRetries.Parent)));
@@ -2796,7 +2798,7 @@ begin
     Exit;
   end;
 
-  if PanelVisible(txtRetryDelay) and (Trim(txtRetryDelay.Text) = '') then
+  if ControlVisible(txtRetryDelay) and (Trim(txtRetryDelay.Text) = '') then
   begin
     MsgBox(Handle, _('Please enter the delay between connect retries.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtRetryDelay.Parent)));
@@ -2805,7 +2807,7 @@ begin
   end;
 
   if chkLimit.Checked then
-    if PanelVisible(txtMaxSpeed) and (StrToIntDef(txtMaxSpeed.Text, -1) <= 0) then
+    if ControlVisible(txtMaxSpeed) and (StrToIntDef(txtMaxSpeed.Text, -1) <= 0) then
     begin
       MsgBox(Handle, _('Please enter the maximum bandwidth in KB/s available to streamWriter.'), _('Info'), MB_ICONINFORMATION);
       SetPage(FPageList.Find(TPanel(txtMaxSpeed.Parent)));
@@ -2815,7 +2817,7 @@ begin
 
   if chkMonitorMode.Checked then
   begin
-    if PanelVisible(txtMonitorCount) and (StrToIntDef(txtMonitorCount.Text, -1) <= 0) then
+    if ControlVisible(txtMonitorCount) and (StrToIntDef(txtMonitorCount.Text, -1) <= 0) then
     begin
       MsgBox(Handle, _('Please enter the maximum number of streams to monitor.'), _('Info'), MB_ICONINFORMATION);
       SetPage(FPageList.Find(TPanel(txtMonitorCount.Parent)));
@@ -2823,7 +2825,7 @@ begin
       Exit;
     end;
 
-    if PanelVisible(txtMonitorCount) and (StrToIntDef(txtMonitorCount.Text, -1) > 50) then
+    if ControlVisible(txtMonitorCount) and (StrToIntDef(txtMonitorCount.Text, -1) > 50) then
     begin
       if TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('You entered a high number for streams to monitor. This affects your bandwidth and resources in general. streamWriter might become slow and unresponsible depending on your system. Are you sure you want to do this?'),
                                                    mtConfirmation, mbOKCancel, mbCancel, 17) = mrCancel then
@@ -2835,7 +2837,7 @@ begin
     end;
   end;
 
-  if PanelVisible(lstHotkeys) then
+  if ControlVisible(lstHotkeys) then
     for i := 0 to lstHotkeys.Items.Count - 1 do
       for n := 0 to lstHotkeys.Items.Count - 1 do
       begin
@@ -2849,7 +2851,7 @@ begin
         end;
       end;
 
-  if PanelVisible(txtRetryDelay) and (StrToIntDef(txtRetryDelay.Text, 5) > 999) then
+  if ControlVisible(txtRetryDelay) and (StrToIntDef(txtRetryDelay.Text, 5) > 999) then
     txtRetryDelay.Text := '999';
 
   Result := True;
@@ -3039,7 +3041,7 @@ begin
 
     Application.ProcessMessages;
 
-    EnablePanel(pnlCut, not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
+    EnablePanel(pnlCut, (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto));
   end;
 end;
 
@@ -3055,7 +3057,7 @@ begin
     chkSeparateTracks.Checked := True;
 
     // Weil das hier drüber die Seite abschaltet, schalten wir sie wieder an..
-    EnablePanel(pnlCut, not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled));
+    EnablePanel(pnlCut, (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto));
     chkDeleteStreams.Enabled := (not chkSeparateTracks.Checked) or (chkSaveStreamsToDisk.Checked);
     chkDeleteStreams.Checked := chkDeleteStreams.Enabled and AppGlobals.StreamSettings.DeleteStreams;
 
@@ -3171,6 +3173,8 @@ begin
     txtStreamFilePattern.Top := txtAutomaticFilePattern.Top;
     btnResetStreamFilePattern.Top := btnResetAutomaticFilePattern.Top;
     txtPreview.Top := Tmp;
+    // TODO: wegen dem muldiv auf anderen DPI testen!
+    lblFilePattern.Top := txtPreview.Top + txtPreview.Height + MulDiv(8, Screen.PixelsPerInch, 96);
 
     // Offseteinstellungen verstecken
     chkAdjustTrackOffset.Visible := False;
@@ -3233,8 +3237,6 @@ begin
 
   inherited Create(AOwner, False);
 
-  CreateGeneral;
-
   FillFields(Lists.AutoRecordSettings);
 
   lstBlacklist := TBlacklistTree.Create(Self, FLists.StreamBlacklist);
@@ -3274,6 +3276,8 @@ begin
   btnResetAutomaticFilePattern.Visible := True;
   txtPreview.Top := txtIncompleteFilePattern.Top;
   txtPreview.Visible := True;
+  // TODO: wegen dem muldiv auf anderen DPI testen!
+  lblFilePattern.Top := txtPreview.Top + txtPreview.Height + MulDiv(8, Screen.PixelsPerInch, 96);
 
   Substract := chkSearchSilence.Top - chkSkipShort.Top;
   for i := 0 to pnlCut.ControlCount - 1 do
@@ -3285,17 +3289,17 @@ begin
   lblTop.Caption := _('Settings for automatic recordings');
 
   chkAutoTuneInClick(chkAutoTuneIn);
+
+  CreateGeneral;
 end;
 
 procedure TfrmSettings.CreateStreams(AOwner: TComponent;
   StreamSettings: TStreamSettingsArray);
 var
   i, Substract: Integer;
+  Tmp: Integer;
   Item: TListItem;
 begin
-  FIgnoreFieldList := TList.Create;
-
-  // TODO: funzt noch alles so wie es soll, wenn man die settings für mehrere streams öffnet? grau einfärben, msg-box bei ändern und aufmachen, apply general settings?
   SetLength(FStreamSettings, Length(StreamSettings));
   for i := 0 to Length(StreamSettings) - 1 do
   begin
@@ -3319,11 +3323,21 @@ begin
       pnlStreams.Controls[i].Top := pnlStreams.Controls[i].Top - Substract;
   end;
 
-  Substract := lblFilePattern.Top;
+  Substract := txtFilePattern.EditLabel.Top;
   for i := 0 to pnlFilenames.ControlCount - 1 do
   begin
     pnlFilenames.Controls[i].Top := pnlFilenames.Controls[i].Top - Substract;
   end;
+
+  // Dateinamen ordentlich machen
+  Tmp := txtStreamFilePattern.Top;
+  txtAutomaticFilePattern.Visible := False;
+  btnResetAutomaticFilePattern.Visible := False;
+  txtStreamFilePattern.Top := txtAutomaticFilePattern.Top;
+  btnResetStreamFilePattern.Top := btnResetAutomaticFilePattern.Top;
+  txtPreview.Top := Tmp;
+  // TODO: wegen dem muldiv auf anderen DPI testen!
+  lblFilePattern.Top := txtPreview.Top + txtPreview.Height + MulDiv(8, Screen.PixelsPerInch, 96);
 
   // Erweitert ordentlich machen
   lstSoundDevice.Visible := False;
@@ -3331,7 +3345,6 @@ begin
 
   btnReset := TBitBtn.Create(Self);
   btnReset.Parent := pnlNav;
-  // TODO: wird der übersetzt? translate muss hier nach erst laufen.
   btnReset.Caption := _('A&pply general settings');
   btnReset.OnClick := btnResetClick;
 

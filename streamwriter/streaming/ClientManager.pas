@@ -446,17 +446,6 @@ begin
 
   Client.Entry.Settings.Assign(FLists.AutoRecordSettings);
 
-  Client.Entry.Settings.Filter := ufNone;
-  Client.Entry.Settings.SaveToMemory := True;
-  Client.Entry.Settings.SeparateTracks := True;
-  Client.Entry.Settings.OnlySaveFull := False;
-  Client.Entry.Settings.DeleteStreams := False;
-  Client.Entry.Settings.MaxRetries := 0;
-  Client.Entry.Settings.RetryDelay := 0;
-  Client.Entry.Settings.AddSavedToIgnore := AppGlobals.AutoTuneInAddToIgnore;
-  Client.Entry.Settings.RemoveSavedFromWishlist := AppGlobals.AutoRemoveSavedFromWishlist;
-  Client.Entry.Settings.AddSavedToStreamIgnore := False;
-
   Client.Entry.Bitrate := Kbps;
   if RegExes <> nil then
     Client.Entry.Settings.RegExes.Assign(RegExes);

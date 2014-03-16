@@ -141,8 +141,8 @@ begin
   FCanConfigure := False;
   FGroupID := 1;
 
-  FName := _('AAC - Convert to M4A');
-  FHelp := _('This postprocessor converts recorded songs from AAC to M4A (AAC only).');
+  FName := _('Convert AAC to M4A');
+  FHelp := _('This postprocessor converts recorded songs from AAC to M4A.');
 
   FPostProcessType := ptMP4Box;
 
@@ -192,8 +192,8 @@ procedure TPostProcessMP4Box.Initialize;
 begin
   inherited;
 
-  FName := _('AAC - Convert to M4A');
-  FHelp := _('This postprocessor converts recorded songs from AAC to M4A (AAC only).');
+  FName := _('Convert AAC to M4A');
+  FHelp := _('This postprocessor converts recorded songs from AAC to M4A.');
 end;
 
 procedure TPostProcessMP4Box.Load(Stream: TExtendedStream;

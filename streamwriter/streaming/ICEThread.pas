@@ -394,8 +394,6 @@ end;
 
 procedure TICEThread.DoDebug(Text, Data: string; T, Level: Integer);
 begin
-  if Level = 0 then
-    TLogger.Write(Text);
 
   inherited;
 end;

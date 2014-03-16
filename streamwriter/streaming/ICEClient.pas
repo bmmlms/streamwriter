@@ -992,6 +992,9 @@ begin
   if Level <> dlNormal then
     Exit;
   {$ENDIF}
+
+  TLogger.Write(Copy(FEntry.Name, 1, 20), Text);
+
   FDebugLog.Add(TDebugEntry.Create(Text, Data, T, Level));
   if Assigned(FOnDebug) then
     FOnDebug(Self);
@@ -1098,6 +1101,7 @@ begin
 end;
 
 end.
+
 
 
 

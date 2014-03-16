@@ -2672,7 +2672,11 @@ begin
   else if HomeComm.Connected then
     CS := cshConnected
   else
+  begin
     CS := cshDisconnected;
+    FClientCount := 0;
+    FRecordingCount := 0;
+  end;
 
   addStatus.SetState(CS, HomeComm.Authenticated, HomeComm.NotifyTitleChanges, FClientCount, FRecordingCount,
     FClients.SongsSaved, FDataLists.SongsSaved);

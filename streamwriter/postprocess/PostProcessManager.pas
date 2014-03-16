@@ -75,7 +75,7 @@ begin
   begin
     Result := True;
 
-    WriteDebug(Entry.Owner, Format('Postprocessor "%s" starting.', [Entry.ActiveThread.PostProcessor.Name]), dtMessage, dlDebug);
+    WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), dtPostProcess, dlNormal);
 
     FProcessingList.Add(Entry);
   end;
@@ -216,11 +216,11 @@ begin
 
       case Entry.ActiveThread.Result of
         arWin:
-          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" successfully finished.'), [Entry.ActiveThread.PostProcessor.Name]), dtPostProcess, dlNormal);
+          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" successfully finished'), [Entry.ActiveThread.PostProcessor.Name]), dtPostProcess, dlNormal);
         arTimeout:
-          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" timed out.'), [Entry.ActiveThread.PostProcessor.Name]), dtError, dlNormal);
+          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" timed out'), [Entry.ActiveThread.PostProcessor.Name]), dtError, dlNormal);
         arFail:
-          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" failed.'), [Entry.ActiveThread.PostProcessor.Name]), dtError, dlNormal);
+          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" failed'), [Entry.ActiveThread.PostProcessor.Name]), dtError, dlNormal);
       end;
 
       // Wenn das Result nicht gut ist, dann wird die Chain hier beendet und der Song gilt als gespeichert.
@@ -249,8 +249,7 @@ begin
       begin
         if ProcessFile(Entry) then
         begin
-          WriteDebug(Entry.Owner, Format('Postprocessor "%s" starting.', [Entry.ActiveThread.PostProcessor.Name]), dtMessage, dlDebug);
-
+          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), dtPostProcess, dlNormal);
         end else
         begin
           WriteDebug(Entry.Owner, 'All postprocessors done', dtMessage, dlDebug);
@@ -266,7 +265,7 @@ begin
         end;
       end else
       begin
-        WriteDebug(Entry.Owner, _('An external application or postprocessor has deleted the saved file.'), dtError, dlNormal);
+        WriteDebug(Entry.Owner, _('An external application or postprocessor has deleted the saved file'), dtError, dlNormal);
 
         Entry.Free;
         FProcessingList.Delete(i);

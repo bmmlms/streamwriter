@@ -625,7 +625,7 @@ type
   end;
 
 const
-  DATAVERSION = 59;
+  DATAVERSION = 60;
 
 implementation
 
@@ -1008,15 +1008,7 @@ begin
     FBrowserList[i].Free;
   FBrowserList.Clear;
 
-  {
-  for i := 0 to FChartList.Count - 1 do
-    FChartList[i].Free;
-  FChartList.Clear;
-
-  for i := 0 to FChartCategoryList.Count - 1 do
-    FChartCategoryList[i].Free;
-  FChartCategoryList.Clear;
-  }
+  // TODO: nochmal alles nach frischer installation testen.. auch default werte checken in settings!
 
   for i := 0 to FGenreList.Count - 1 do
     FGenreList[i].Free;
@@ -1028,19 +1020,8 @@ begin
   inherited;
 
   FAutoRecordSettings := TStreamSettings.Create(True);
-  FAutoRecordSettings.Assign(AppGlobals.StreamSettings);
-
-  // TODO: JEDE(!!!) einstellung testen, ob sie übernommen wird passig für auto-aufnahmen...
-
-  // Defaults setzen. Werden ggf. Im Load() später überschrieben.
-  FAutoRecordSettings.SearchSilence := True;
-  FAutoRecordSettings.SilenceBufferSecondsStart := 15;
-  FAutoRecordSettings.SilenceBufferSecondsEnd := 15;
-  FAutoRecordSettings.AutoDetectSilenceLevel := True;
-  FAutoRecordSettings.SilenceLevel := 5;
-  FAutoRecordSettings.SilenceLength := 100;
-  FAutoRecordSettings.SongBuffer := 10000;
-
+  FAutoRecordSettings.Assign(AppGlobals.DefaultStreamSettings);
+  TStreamSettings.ApplyAutoDefaults(FAutoRecordSettings);
 
   FLoadError := False;
   FReceived := 0;
@@ -1139,12 +1120,18 @@ begin
     end;
   end else
   begin
-    if Version > 58 then
+    FAutoRecordSettings.Free;
+    if (Version > 58) and (Version < 60) then
     begin
-      if FAutoRecordSettings <> nil then
-        FAutoRecordSettings.Free;
+      // Pfusch für Zwischenversion, damit im File gespult wird... Wird Build 601 von Version 4.9.0.1 später werden!
       FAutoRecordSettings := TStreamSettings.Load(S, Version);
-    end;
+      FAutoRecordSettings.Free;
+
+      FAutoRecordSettings := TStreamSettings.Create(True);
+      FAutoRecordSettings.Assign(AppGlobals.DefaultStreamSettings);
+      TStreamSettings.ApplyAutoDefaults(FAutoRecordSettings);
+    end else if Version >= 60 then
+      FAutoRecordSettings := TStreamSettings.LoadAuto(S, Version);
 
     if Version >= 5 then
     begin
@@ -1318,7 +1305,7 @@ begin
 
     // TODO: Testen ob settings für auto aufnahmen nach erstem sw start ohne profil und so okay sind.
 
-    FAutoRecordSettings.Save(CompressedStream);
+    FAutoRecordSettings.SaveAuto(CompressedStream);
 
     CompressedStream.Write(FCategoryList.Count);
     for i := 0 to FCategoryList.Count - 1 do
