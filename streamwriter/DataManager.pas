@@ -1008,8 +1008,6 @@ begin
     FBrowserList[i].Free;
   FBrowserList.Clear;
 
-  // TODO: nochmal alles nach frischer installation testen.. auch default werte checken in settings!
-
   for i := 0 to FGenreList.Count - 1 do
     FGenreList[i].Free;
   FGenreList.Clear;
@@ -1123,9 +1121,8 @@ begin
     if (Version > 58) and (Version < 60) then
     begin
       FAutoRecordSettings.Free;
-      // TODO: TESTEN!!!!!! die msgbox muss evtl kommen und so.
 
-      // Pfusch für Zwischenversion, damit im File gespult wird... Wird Build 601 von Version 4.9.0.1 später werden!
+      // Pfusch für Zwischenversion, damit im File gespult wird... für Build 601 von Version 4.9.0.1.
       FAutoRecordSettings := TStreamSettings.Load(S, Version);
       FAutoRecordSettings.Free;
 
@@ -1307,8 +1304,6 @@ begin
   try
     CompressedStream.Write(FReceived);
     CompressedStream.Write(FSongsSaved);
-
-    // TODO: Testen ob settings für auto aufnahmen nach erstem sw start ohne profil und so okay sind.
 
     FAutoRecordSettings.SaveAuto(CompressedStream);
 

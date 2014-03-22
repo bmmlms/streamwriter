@@ -109,7 +109,6 @@ type
     FActionPlay: TAction;
     FActionPause: TAction;
     FActionStopPlay: TAction;
-    FActionTuneInFile: TAction;
     FActionTuneInStream: TAction;
 
     FOnUpdateButtons: TNotifyEvent;
@@ -136,9 +135,7 @@ type
     procedure ActionShowSideBarExecute(Sender: TObject);
     procedure ActionStopAfterSongExecute(Sender: TObject);
     procedure ActionSavePlaylistStreamExecute(Sender: TObject);
-    procedure ActionSavePlaylistFileExecute(Sender: TObject);
     procedure ActionTuneInStreamExecute(Sender: TObject);
-    procedure ActionTuneInFileExecute(Sender: TObject);
     procedure ActionCopyTitleExecute(Sender: TObject);
     procedure ActionAddToSaveListExecute(Sender: TObject);
     procedure ActionAddToGlobalIgnoreList(Sender: TObject);
@@ -659,31 +656,12 @@ begin
   SavePlaylist(Entries, False);
 end;
 
-procedure TClientTab.ActionSavePlaylistFileExecute(Sender: TObject);
-var
-  Entries: TPlaylistEntryArray;
-begin
-  Entries := FClientView.GetEntries(etFile);
-  SavePlaylist(Entries, False);
-end;
-
 procedure TClientTab.ActionTuneInStreamExecute(Sender: TObject);
 var
   Entries: TPlaylistEntryArray;
 begin
   Entries := FClientView.GetEntries(etStream);
   SavePlaylist(Entries, True);
-end;
-
-procedure TClientTab.ActionTuneInFileExecute(Sender: TObject);
-var
-  Entries: TPlaylistEntryArray;
-begin
-  if FActionTuneInFile.Enabled then
-  begin
-    Entries := FClientView.GetEntries(etFile);
-    SavePlaylist(Entries, True);
-  end;
 end;
 
 constructor TClientTab.Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList; Clients: TClientManager;
@@ -770,7 +748,6 @@ begin
   FActionPause := GetAction('actPause');
   FActionStopPlay := GetAction('actStopPlay');
   FActionTuneInStream := GetAction('actTuneInStream');
-  FActionTuneInFile := GetAction('actTuneInFile');
   FActionRename := GetAction('actRename');
   FActionRemove := GetAction('actRemove');
   FActionShowSideBar := GetAction('actShowSideBar');
@@ -780,7 +757,6 @@ begin
   FActionPause.OnExecute := ActionPauseExecute;
   FActionStopPlay.OnExecute := ActionPlayStopExecute;
   FActionTuneInStream.OnExecute := ActionTuneInStreamExecute;
-  FActionTuneInFile.OnExecute := ActionTuneInFileExecute;
   FActionRename.OnExecute := ActionRenameExecute;
   FActionRemove.OnExecute := ActionRemoveExecute;
   FActionShowSideBar.OnExecute := ActionShowSideBarExecute;
@@ -792,7 +768,6 @@ begin
   GetAction('actOpenWebsite').OnExecute := ActionOpenWebsiteExecute;
   GetAction('actResetData').OnExecute := ActionResetDataExecute;
   GetAction('actSavePlaylistStream').OnExecute := ActionSavePlaylistStreamExecute;
-  GetAction('actSavePlaylistFile').OnExecute := ActionSavePlaylistFileExecute;
   GetAction('actCopyTitle').OnExecute := ActionCopyTitleExecute;
   GetAction('actAddToSaveList').OnExecute := ActionAddToSaveListExecute;
   GetAction('actAddToGlobalIgnoreList').OnExecute := ActionAddToGlobalIgnoreList;
@@ -1407,8 +1382,6 @@ begin
           FActionPlay.Execute;
       caStream:
         FActionTuneInStream.Execute;
-      caFile:
-        FActionTuneInFile.Execute;
     end;
   end;
 end;

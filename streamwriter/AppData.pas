@@ -37,7 +37,7 @@ type
   // Do not change the order of items in the following enums!
 
   // Actions that can be executed in the stream-view.
-  TClientActions = (caStartStop, caStreamIntegrated, caStream, caFile);
+  TClientActions = (caStartStop, caStreamIntegrated, caStream);
 
   // Set for definition of filters to use
   TUseFilters = (ufNone, ufWish, ufIgnoreGlobal, ufIgnoreLocal, ufIgnoreBoth, ufBoth);

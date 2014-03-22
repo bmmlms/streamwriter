@@ -1197,9 +1197,6 @@ begin
     case AppGlobals.DefaultAction of
       caStream:
         Entries := GetEntries(etStream);
-      caFile:
-        if UseFile then
-          Entries := GetEntries(etFile);
     end;
 
     if Length(Entries) = 0 then

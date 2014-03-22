@@ -74,8 +74,6 @@ type
     Beenden1: TMenuItem;
     mnuTuneIn1: TMenuItem;
     N4: TMenuItem;
-    mnuTuneIn2: TMenuItem;
-    mnuSavePlaylist2: TMenuItem;
     N6: TMenuItem;
     mnuSavePlaylist1: TMenuItem;
     mnuHelp: TMenuItem;
@@ -89,17 +87,9 @@ type
     mnuShowStreamBrowser: TMenuItem;
     actShowSideBar: TAction;
     actTuneInStream: TAction;
-    actTuneInFile: TAction;
     mnuListenToStream2: TMenuItem;
-    mnuListenToFile2: TMenuItem;
-    mnuListenToStream1: TMenuItem;
-    mnuListenToFile1: TMenuItem;
     actSavePlaylistStream: TAction;
-    actSavePlaylistFile: TAction;
     actSavePlaylistStream1: TMenuItem;
-    actSavePlaylistFile1: TMenuItem;
-    Stream1: TMenuItem;
-    Stream2: TMenuItem;
     mnuReset1: TMenuItem;
     mnuReset11: TMenuItem;
     actResetData: TAction;
@@ -125,7 +115,6 @@ type
     mnuStartPlay2: TMenuItem;
     mnuStopPlay2: TMenuItem;
     N10: TMenuItem;
-    N11: TMenuItem;
     mnuStartPlay1: TMenuItem;
     mnuStopPlay1: TMenuItem;
     actNewCategory: TAction;
@@ -190,10 +179,27 @@ type
     N14: TMenuItem;
     mnuEqualizer: TMenuItem;
     actEqualizer: TAction;
-    ToolButton9: TToolButton;
     N15: TMenuItem;
     Settingsforautomaticrecordings1: TMenuItem;
     actAutoSettings: TAction;
+    N16: TMenuItem;
+    ToolButton10: TToolButton;
+    cmdAddToSaveList: TToolButton;
+    cmdAddToGlobalIgnoreList: TToolButton;
+    cmdAddToStreamIgnoreList: TToolButton;
+    cmdTuneInStream: TToolButton;
+    cmdSavePlaylistStream: TToolButton;
+    N11: TMenuItem;
+    Stoprecordingaftercurrenttitle1: TMenuItem;
+    Rename1: TMenuItem;
+    mnuCurrentTitle2: TMenuItem;
+    Addtostreamignorelist2: TMenuItem;
+    Addtoglobalignorelist2: TMenuItem;
+    Addtomanualwishlist1: TMenuItem;
+    N17: TMenuItem;
+    Copytitletoclipboard2: TMenuItem;
+    mnuMoveToCategory2: TMenuItem;
+    Setupscheduledrecordings1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrSpeedTimer(Sender: TObject);
@@ -227,6 +233,7 @@ type
     procedure actPlayerMuteVolumeExecute(Sender: TObject);
     procedure mnuPlayerClick(Sender: TObject);
     procedure actEqualizerExecute(Sender: TObject);
+    procedure mnuStreamsClick(Sender: TObject);
   private
     FCommunityLogin: TfrmCommunityLogin;
 
@@ -281,6 +288,7 @@ type
     procedure ProcessCommandLine(Data: string);
     procedure SetWakeups;
     procedure SetCaptionAndTrayHint;
+    procedure BuildMoveToCategoryMenu;
 
     function StartupMessagesNeeded: Boolean;
     procedure ShowStartupMessages;
@@ -317,6 +325,7 @@ type
     procedure tabSavedAddTitleToWishlist(Sender: TObject; Title: string; TitleHash: Cardinal);
     procedure tabSavedRemoveTitleFromWishlist(Sender: TObject; Title: string; TitleHash: Cardinal);
     procedure tabSavedAddTitleToIgnorelist(Sender: TObject; Title: string; TitleHash: Cardinal);
+    procedure tabSavedRemoveTitleFromIgnorelist(Sender: TObject; Title: string; TitleHash: Cardinal);
 
     procedure tabCutCutFile(Sender: TObject; Filename: string);
     procedure tabCutSaved(Sender: TObject; AudioInfo: TAudioFileInfo);
@@ -666,6 +675,8 @@ begin
   ToggleWindow(False);
 end;
 
+// TODO: actions "actTuneInStream" und "actSavePlaylistStream" haben keine shortcuts. übersetzungen auch nicht!
+
 procedure TfrmStreamWriterMain.AfterShown(var Msg: TMessage);
 var
   FormIntro: TfrmIntro;
@@ -694,6 +705,58 @@ begin
       if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
         FUpdater.Start(uaVersion, True);
   end;
+end;
+
+procedure TfrmStreamWriterMain.BuildMoveToCategoryMenu;
+  function AllClientsInCat(Clients: TNodeArray; Cat: PVirtualNode): Boolean;
+  var
+    i: Integer;
+  begin
+    Result := True;
+    for i := 0 to Length(Clients) - 1 do
+      if Clients[i].Parent <> Cat then
+      begin
+        Result := False;
+        Break;
+      end;
+  end;
+var
+  Cats: TNodeArray;
+  Cat: PClientNodeData;
+  Node: PVirtualNode;
+  Item: TMenuItem;
+  ClientNodes: TNodeArray;
+  Clients: TClientArray;
+begin
+  UpdateButtons;
+
+  ClientNodes := tabClients.ClientView.GetNodes(ntClientNoAuto, True);
+  Clients := tabClients.ClientView.NodesToClients(ClientNodes);
+
+  mnuMoveToCategory1.Clear;
+  mnuMoveToCategory2.Clear;
+  Cats := tabClients.ClientView.GetNodes(ntCategory, False);
+  for Node in Cats do
+  begin
+    Cat := tabClients.ClientView.GetNodeData(Node);
+    if (not Cat.Category.IsAuto) and (not AllClientsInCat(ClientNodes, Node)) then
+    begin
+      Item := mnuStreamPopup.CreateMenuItem;
+      Item.Caption := Cat.Category.Name;
+      Item.Tag := Integer(Cat);
+      Item.OnClick := mnuMoveToCategory;
+      mnuMoveToCategory1.Add(Item);
+
+      Item := mnuMain.CreateMenuItem;
+      Item.Caption := Cat.Category.Name;
+      Item.Tag := Integer(Cat);
+      Item.OnClick := mnuMoveToCategory;
+      mnuMoveToCategory2.Add(Item);
+    end;
+  end;
+
+  mnuMoveToCategory1.Enabled := (Length(Clients) > 0) and (mnuMoveToCategory1.Count > 0);
+  mnuMoveToCategory2.Enabled := (Length(Clients) > 0) and (mnuMoveToCategory2.Count > 0);
 end;
 
 procedure TfrmStreamWriterMain.FormClose(Sender: TObject;
@@ -828,6 +891,7 @@ begin
   tabSaved.OnAddTitleToWishlist := tabSavedAddTitleToWishlist;
   tabSaved.OnRemoveTitleFromWishlist := tabSavedRemoveTitleFromWishlist;
   tabSaved.OnAddTitleToIgnorelist := tabSavedAddTitleToIgnorelist;
+  tabSaved.OnRemoveTitleFromIgnorelist  := tabSavedRemoveTitleFromIgnorelist;
 
   FWasShown := False;
   FUpdateOnExit := False;
@@ -1425,47 +1489,13 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.mnuStreamPopupPopup(Sender: TObject);
-  function AllClientsInCat(Clients: TNodeArray; Cat: PVirtualNode): Boolean;
-  var
-    i: Integer;
-  begin
-    Result := True;
-    for i := 0 to Length(Clients) - 1 do
-      if Clients[i].Parent <> Cat then
-      begin
-        Result := False;
-        Break;
-      end;
-  end;
-var
-  Cats: TNodeArray;
-  Cat: PClientNodeData;
-  Node: PVirtualNode;
-  Item: TMenuItem;
-  ClientNodes: TNodeArray;
-  Clients: TClientArray;
 begin
-  UpdateButtons;
+  BuildMoveToCategoryMenu;
+end;
 
-  ClientNodes := tabClients.ClientView.GetNodes(ntClientNoAuto, True);
-  Clients := tabClients.ClientView.NodesToClients(ClientNodes);
-
-  mnuMoveToCategory1.Clear;
-  Cats := tabClients.ClientView.GetNodes(ntCategory, False);
-  for Node in Cats do
-  begin
-    Cat := tabClients.ClientView.GetNodeData(Node);
-    if (not Cat.Category.IsAuto) and (not AllClientsInCat(ClientNodes, Node)) then
-    begin
-      Item := mnuStreamPopup.CreateMenuItem;
-      Item.Caption := Cat.Category.Name;
-      Item.Tag := Integer(Cat);
-      Item.OnClick := mnuMoveToCategory;
-      mnuMoveToCategory1.Add(Item);
-    end;
-  end;
-
-  mnuMoveToCategory1.Enabled := (Length(Clients) > 0) and (mnuMoveToCategory1.Count > 0);
+procedure TfrmStreamWriterMain.mnuStreamsClick(Sender: TObject);
+begin
+  BuildMoveToCategoryMenu;
 end;
 
 procedure TfrmStreamWriterMain.mnuStreamSettingsToolbarPopup(
@@ -1602,6 +1632,8 @@ begin
   {$IFDEF DEBUG}NewHint := NewHint + ' -: DEBUG BUiLD :- ';{$ENDIF}
 
   PlayerManager.Players.GetPlayingInfo(Artist, Title, Stream, Filename);
+
+  // TODO: string "Remove from ig&norelist" ist ohne shortcut nach DE übersetzt
 
   if Filename <> '' then
   begin
@@ -1808,6 +1840,9 @@ begin
   if not DirectoryExists(AppGlobals.Dir) then
     Exit(True);
 
+  if (AppGlobals.LastUsedDataVersion > 0) and (AppGlobals.LastUsedDataVersion < 60) then
+    Exit(True);
+
   // Das erste DirectoryExists() ist da, damit der Settings-Dialog nicht doppelt kommt.
   if DirectoryExists(AppGlobals.Dir) and (not DirectoryExists(AppGlobals.DirAuto)) then
     Exit(True);
@@ -1903,6 +1938,12 @@ procedure TfrmStreamWriterMain.tabSavedAddTitleToIgnorelist(Sender: TObject;
   Title: string; TitleHash: Cardinal);
 begin
   tabLists.ListsPanel.AddEntry(Title, TitleHash, False, ltIgnore);
+end;
+
+procedure TfrmStreamWriterMain.tabSavedRemoveTitleFromIgnorelist(
+  Sender: TObject; Title: string; TitleHash: Cardinal);
+begin
+  tabLists.ListsPanel.RemoveEntry(Title, TitleHash, ltIgnore);
 end;
 
 procedure TfrmStreamWriterMain.tabSavedCut(Entry: TStreamEntry;
@@ -2590,22 +2631,14 @@ begin
   if actOpenWebsite.Enabled <> URLFound then
     actOpenWebsite.Enabled := URLFound;
 
-  if mnuTuneIn1.Enabled <> B then
-    mnuTuneIn1.Enabled := B;
-  if mnuTuneIn2.Enabled <> B then
-    mnuTuneIn2.Enabled := B;
+  if actTuneInStream.Enabled <> B then
+    actTuneInStream.Enabled := B;
 
-  if mnuSavePlaylist1.Enabled <> B then
-    mnuSavePlaylist1.Enabled := B;
-  if mnuSavePlaylist2.Enabled <> B then
-    mnuSavePlaylist2.Enabled := B;
+  if actSavePlaylistStream.Enabled <> B then
+    actSavePlaylistStream.Enabled := B;
 
   if actResetData.Enabled <> ((Length(Clients) > 0) and not OnlyAutomatedSelected) then
     actResetData.Enabled := ((Length(Clients) > 0) and not OnlyAutomatedSelected);
-  if actTuneInFile.Enabled <> FilenameFound then
-    actTuneInFile.Enabled := FilenameFound;
-  if actSavePlaylistFile.Enabled <> FilenameFound then
-    actSavePlaylistFile.Enabled := FilenameFound;
 
   if actStopPlay.Enabled <> OnePlaying and Bass.DeviceAvailable then
     actStopPlay.Enabled := OnePlaying and Bass.DeviceAvailable;
@@ -2626,6 +2659,18 @@ begin
 
   if mnuCurrentTitle1.Enabled <> (Length(Clients) > 0) and OneHasTitle then
     mnuCurrentTitle1.Enabled := (Length(Clients) > 0) and OneHasTitle;
+
+  if mnuCurrentTitle2.Enabled <> (Length(Clients) > 0) and OneHasTitle then
+    mnuCurrentTitle2.Enabled := (Length(Clients) > 0) and OneHasTitle;
+
+  if actAddToSaveList.Enabled <> (Length(Clients) > 0) and OneHasTitle then
+    actAddToSaveList.Enabled := (Length(Clients) > 0) and OneHasTitle;
+
+  if actAddToGlobalIgnoreList.Enabled <> (Length(Clients) > 0) and OneHasTitle then
+    actAddToGlobalIgnoreList.Enabled := (Length(Clients) > 0) and OneHasTitle;
+
+  if actAddToStreamIgnoreList.Enabled <> (Length(Clients) > 0) and OneHasTitle then
+    actAddToStreamIgnoreList.Enabled := (Length(Clients) > 0) and OneHasTitle;
 
   cmdPause.Down := OnePaused;
   

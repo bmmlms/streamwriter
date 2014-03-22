@@ -354,8 +354,6 @@ implementation
 
 {$R *.dfm}
 
-// TODO: ALLES testen! TESTEN! TESTEN!!!!!!!!
-
 destructor TfrmSettings.Destroy;
 var
   i: Integer;
@@ -990,7 +988,7 @@ begin
 
   if btnReset <> nil then
   begin
-    btnReset.Width := 200;
+    btnReset.Width := MulDiv(210, Screen.PixelsPerInch, 96);
     btnReset.Height := btnOK.Height;
     btnReset.Left := 4;
     btnReset.Top := btnOK.Top;
@@ -3172,7 +3170,6 @@ begin
     txtStreamFilePattern.Top := txtAutomaticFilePattern.Top;
     btnResetStreamFilePattern.Top := btnResetAutomaticFilePattern.Top;
     txtPreview.Top := Tmp;
-    // TODO: wegen dem muldiv auf anderen DPI testen!
     lblFilePattern.Top := txtPreview.Top + txtPreview.Height + MulDiv(8, Screen.PixelsPerInch, 96);
 
     // Offseteinstellungen verstecken
@@ -3275,7 +3272,6 @@ begin
   btnResetAutomaticFilePattern.Visible := True;
   txtPreview.Top := txtIncompleteFilePattern.Top;
   txtPreview.Visible := True;
-  // TODO: wegen dem muldiv auf anderen DPI testen!
   lblFilePattern.Top := txtPreview.Top + txtPreview.Height + MulDiv(8, Screen.PixelsPerInch, 96);
 
   Substract := chkSearchSilence.Top - chkSkipShort.Top;
@@ -3335,7 +3331,6 @@ begin
   txtStreamFilePattern.Top := txtAutomaticFilePattern.Top;
   btnResetStreamFilePattern.Top := btnResetAutomaticFilePattern.Top;
   txtPreview.Top := Tmp;
-  // TODO: wegen dem muldiv auf anderen DPI testen!
   lblFilePattern.Top := txtPreview.Top + txtPreview.Height + MulDiv(8, Screen.PixelsPerInch, 96);
 
   // Erweitert ordentlich machen

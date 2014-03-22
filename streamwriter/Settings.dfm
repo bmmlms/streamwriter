@@ -238,8 +238,7 @@ object frmSettings: TfrmSettings
       Items.Strings = (
         'Start/stop recording'
         'Listen to stream'
-        'Listen to stream (external player)'
-        'Listen to recorded file')
+        'Listen to stream (external player)')
     end
     object optClose: TRadioButton
       Left = 20

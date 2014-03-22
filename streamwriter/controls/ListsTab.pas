@@ -460,26 +460,42 @@ procedure TTitlePanel.RemoveEntry(Text: string; ServerTitleHash: Cardinal;
 var
   i: Integer;
   Title: TTitleInfo;
+  List: TList<TTitleInfo>;
 begin
-  if ServerTitleHash = 0 then
-    Exit;
+  case ListType of
+    ltSave:
+      List := FLists.SaveList;
+    ltIgnore:
+      List := FLists.IgnoreList;
+    ltAutoDetermine:
+      Exit;
+  end;
 
   Title := nil;
+  Text := LowerCase(Text);
 
-  for i := 0 to FLists.SaveList.Count - 1 do
-  begin
-    if FLists.SaveList[i].ServerHash = ServerTitleHash then
-    begin
-      Title := FLists.SaveList[i];
-      Break;
-    end;
-  end;
+  if ServerTitleHash > 0 then
+    for i := 0 to List.Count - 1 do
+      if List[i].ServerHash = ServerTitleHash then
+      begin
+        Title := List[i];
+        Break;
+      end;
+
+  if Title = nil then
+    for i := 0 to List.Count - 1 do
+      if LowerCase(List[i].Title) = Text then
+      begin
+        Title := List[i];
+        Break;
+      end;
 
   if Title <> nil then
   begin
     FTree.RemoveTitle(Title);
-    FLists.SaveList.Remove(Title);
-    if Title.ServerHash > 0 then
+    List.Remove(Title);
+
+    if (Title.ServerHash > 0) and (ListType = ltSave) then
       HomeComm.SendSyncWishlist(swRemove, Title.ServerHash, False);
   end;
 end;
@@ -1060,9 +1076,7 @@ begin
     if (TitleHash > 0) and (List = FLists.SaveList) then
       for i := 0 to List.Count - 1 do
         if (List[i].ServerHash > 0) and (List[i].ServerHash = TitleHash) then
-        begin
           Exit;
-        end;
 
     Pattern := BuildPattern(Trim(Text), Hash, NumChars, False);
 
@@ -1897,8 +1911,13 @@ begin
           Index := 86
         else
           Index := 31;
-      ntIgnoreParent, ntIgnore:
+      ntIgnoreParent:
         Index := 65;
+      ntIgnore:
+        if NodeData.Stream = nil then
+          Index := 65
+        else
+          Index := 93;
       ntStream:
         Index := 16;
     end;

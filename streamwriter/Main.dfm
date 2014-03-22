@@ -2,11 +2,11 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Left = 549
   Top = 450
   Caption = 'streamWriter'
-  ClientHeight = 332
-  ClientWidth = 804
+  ClientHeight = 336
+  ClientWidth = 828
   Color = clBtnFace
   Constraints.MinHeight = 390
-  Constraints.MinWidth = 820
+  Constraints.MinWidth = 840
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -26,7 +26,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   object tbClients: TToolBar
     Left = 0
     Top = 0
-    Width = 804
+    Width = 828
     Height = 25
     Images = modSharedData.imgImages
     Indent = 2
@@ -56,8 +56,13 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Top = 0
       Action = actStop
     end
-    object ToolButton3: TToolButton
+    object cmdStopAfterSong: TToolButton
       Left = 79
+      Top = 0
+      Action = actStopAfterSong
+    end
+    object ToolButton3: TToolButton
+      Left = 102
       Top = 0
       Width = 8
       Caption = '-'
@@ -65,22 +70,22 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsSeparator
     end
     object cmdStartPlay: TToolButton
-      Left = 87
+      Left = 110
       Top = 0
       Action = actPlay
     end
     object cmdPause: TToolButton
-      Left = 110
+      Left = 133
       Top = 0
       Action = actPause
     end
     object cmdStopPlay: TToolButton
-      Left = 133
+      Left = 156
       Top = 0
       Action = actStopPlay
     end
     object ToolButton1: TToolButton
-      Left = 156
+      Left = 179
       Top = 0
       Width = 8
       Caption = '-'
@@ -88,72 +93,91 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Style = tbsSeparator
     end
     object cmdRename: TToolButton
-      Left = 164
+      Left = 187
       Top = 0
       Action = actRename
     end
     object cmdRemove: TToolButton
-      Left = 187
+      Left = 210
       Top = 0
       Action = actRemove
     end
     object ToolButton2: TToolButton
-      Left = 210
+      Left = 233
       Top = 0
       Width = 8
       Caption = '-'
       ImageIndex = 11
       Style = tbsSeparator
     end
-    object cmdSetupTimers: TToolButton
-      Left = 218
-      Top = 0
-      Action = actTimers
-    end
-    object cmdStopAfterSong: TToolButton
+    object cmdCopyTitle: TToolButton
       Left = 241
       Top = 0
-      Action = actStopAfterSong
-      ImageIndex = 52
+      Action = actCopyTitle
     end
-    object ToolButton9: TToolButton
+    object cmdAddToSaveList: TToolButton
       Left = 264
       Top = 0
+      Action = actAddToSaveList
+    end
+    object cmdAddToGlobalIgnoreList: TToolButton
+      Left = 287
+      Top = 0
+      Action = actAddToGlobalIgnoreList
+    end
+    object cmdAddToStreamIgnoreList: TToolButton
+      Left = 310
+      Top = 0
+      Action = actAddToStreamIgnoreList
+    end
+    object ToolButton10: TToolButton
+      Left = 333
+      Top = 0
       Width = 8
-      Caption = '-'
+      Caption = 'ToolButton10'
       ImageIndex = 13
       Style = tbsSeparator
     end
     object cmdOpenWebsite: TToolButton
-      Left = 272
+      Left = 341
       Top = 0
       Action = actOpenWebsite
     end
-    object cmdCopyTitle: TToolButton
-      Left = 295
+    object cmdTuneInStream: TToolButton
+      Left = 364
       Top = 0
-      Action = actCopyTitle
+      Action = actTuneInStream
+    end
+    object cmdSavePlaylistStream: TToolButton
+      Left = 387
+      Top = 0
+      Action = actSavePlaylistStream
     end
     object ToolButton8: TToolButton
-      Left = 318
+      Left = 410
       Top = 0
       Width = 8
       Caption = 'ToolButton8'
       ImageIndex = 13
       Style = tbsSeparator
     end
+    object cmdSetupTimers: TToolButton
+      Left = 418
+      Top = 0
+      Action = actTimers
+    end
     object cmdStreamSettings: TToolButton
-      Left = 326
+      Left = 441
       Top = 0
       Action = actStreamSettings
     end
     object ToolButton6: TToolButton
-      Left = 349
+      Left = 464
       Top = 0
       Action = actResetData
     end
     object ToolButton4: TToolButton
-      Left = 372
+      Left = 487
       Top = 0
       Width = 8
       Caption = '-'
@@ -162,7 +186,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Visible = False
     end
     object cmdShowStreamBrowser: TToolButton
-      Left = 380
+      Left = 495
       Top = 0
       Action = actShowSideBar
       Visible = False
@@ -204,7 +228,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object mnuStreams: TMenuItem
       Caption = '&Stream'
-      Visible = False
+      OnClick = mnuStreamsClick
       object Newcategory1: TMenuItem
         Action = actNewCategory
       end
@@ -217,6 +241,13 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       object mnuStopStreaming2: TMenuItem
         Action = actStop
       end
+      object Stoprecordingaftercurrenttitle1: TMenuItem
+        Action = actStopAfterSong
+        AutoCheck = True
+      end
+      object N11: TMenuItem
+        Caption = '-'
+      end
       object mnuStartPlay2: TMenuItem
         Action = actPlay
       end
@@ -226,39 +257,54 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       object mnuStopPlay2: TMenuItem
         Action = actStopPlay
       end
-      object N8: TMenuItem
-        Caption = '-'
-      end
-      object Openwebsite1: TMenuItem
-        Action = actOpenWebsite
-      end
       object N10: TMenuItem
         Caption = '-'
+      end
+      object Rename1: TMenuItem
+        Action = actRename
       end
       object mnuRemove2: TMenuItem
         Action = actRemove
       end
+      object N8: TMenuItem
+        Caption = '-'
+      end
+      object mnuCurrentTitle2: TMenuItem
+        Caption = 'Current tit&le'
+        object Copytitletoclipboard2: TMenuItem
+          Action = actCopyTitle
+        end
+        object N17: TMenuItem
+          Caption = '-'
+        end
+        object Addtomanualwishlist1: TMenuItem
+          Action = actAddToSaveList
+        end
+        object Addtoglobalignorelist2: TMenuItem
+          Action = actAddToGlobalIgnoreList
+        end
+        object Addtostreamignorelist2: TMenuItem
+          Action = actAddToStreamIgnoreList
+        end
+      end
+      object Openwebsite1: TMenuItem
+        Action = actOpenWebsite
+      end
+      object mnuListenToStream2: TMenuItem
+        Action = actTuneInStream
+      end
+      object actSavePlaylistStream1: TMenuItem
+        Action = actSavePlaylistStream
+      end
+      object mnuMoveToCategory2: TMenuItem
+        Caption = 'Move to &category'
+        ImageIndex = 92
+      end
       object N6: TMenuItem
         Caption = '-'
       end
-      object mnuTuneIn2: TMenuItem
-        Caption = '&Listen'
-        object mnuListenToStream2: TMenuItem
-          Action = actTuneInStream
-        end
-        object mnuListenToFile2: TMenuItem
-          Action = actTuneInFile
-        end
-      end
-      object mnuSavePlaylist2: TMenuItem
-        Caption = 'S&ave playlist'
-        Hint = 'Save as playlist...'
-        object actSavePlaylistStream1: TMenuItem
-          Action = actSavePlaylistStream
-        end
-        object actSavePlaylistFile1: TMenuItem
-          Action = actSavePlaylistFile
-        end
+      object Setupscheduledrecordings1: TMenuItem
+        Action = actTimers
       end
       object mnuStreamSettings2: TMenuItem
         Action = actStreamSettings
@@ -366,16 +412,14 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       ImageIndex = 12
     end
     object actTuneInStream: TAction
-      Caption = '&Stream'
-    end
-    object actTuneInFile: TAction
-      Caption = 'Recorded &file'
+      Caption = 'Open stream'
+      Hint = 'Open stream'
+      ImageIndex = 94
     end
     object actSavePlaylistStream: TAction
-      Caption = '&Stream'
-    end
-    object actSavePlaylistFile: TAction
-      Caption = 'Recorded &file'
+      Caption = 'Save playlist'
+      Hint = 'Save playlist'
+      ImageIndex = 95
     end
     object actResetData: TAction
       Caption = 'Reset &data'
@@ -451,6 +495,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       AutoCheck = True
       Caption = 'Stop recording after &current title'
       Hint = 'Stop recording after current title'
+      ImageIndex = 52
     end
     object actCopyTitle: TAction
       Caption = '&Copy title to clipboard'
@@ -470,7 +515,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object actAddToStreamIgnoreList: TAction
       Caption = 'Add to &stream ignorelist'
       Hint = 'Add to stream ignorelist'
-      ImageIndex = 65
+      ImageIndex = 93
     end
     object actPlayerDecreaseVolume: TAction
       Caption = '&Decrease volume'
@@ -533,6 +578,13 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object mnuStopStreaming1: TMenuItem
       Action = actStop
     end
+    object mnuStopAfterSong1: TMenuItem
+      Action = actStopAfterSong
+      AutoCheck = True
+    end
+    object N16: TMenuItem
+      Caption = '-'
+    end
     object mnuStartPlay1: TMenuItem
       Action = actPlay
     end
@@ -551,21 +603,8 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object mnuRemove1: TMenuItem
       Action = actRemove
     end
-    object N11: TMenuItem
-      Caption = '-'
-    end
-    object mnuSetupTimers1: TMenuItem
-      Action = actTimers
-    end
-    object mnuStopAfterSong1: TMenuItem
-      Action = actStopAfterSong
-      AutoCheck = True
-    end
     object N9: TMenuItem
       Caption = '-'
-    end
-    object mnuOpenWebsite1: TMenuItem
-      Action = actOpenWebsite
     end
     object mnuCurrentTitle1: TMenuItem
       Caption = 'Current tit&le'
@@ -585,30 +624,24 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         Action = actAddToStreamIgnoreList
       end
     end
+    object mnuOpenWebsite1: TMenuItem
+      Action = actOpenWebsite
+    end
     object mnuTuneIn1: TMenuItem
-      Caption = 'Open'
-      object mnuListenToStream1: TMenuItem
-        Action = actTuneInStream
-      end
-      object mnuListenToFile1: TMenuItem
-        Action = actTuneInFile
-      end
+      Action = actTuneInStream
     end
     object mnuSavePlaylist1: TMenuItem
-      Caption = 'Save playlist'
-      Hint = 'Save as playlist...'
-      object Stream1: TMenuItem
-        Action = actSavePlaylistStream
-      end
-      object Stream2: TMenuItem
-        Action = actSavePlaylistFile
-      end
+      Action = actSavePlaylistStream
     end
     object mnuMoveToCategory1: TMenuItem
       Caption = 'Move to &category'
+      ImageIndex = 92
     end
     object N15: TMenuItem
       Caption = '-'
+    end
+    object mnuSetupTimers1: TMenuItem
+      Action = actTimers
     end
     object mnuStreamSettings1: TMenuItem
       Action = actStreamSettings
