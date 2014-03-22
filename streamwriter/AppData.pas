@@ -1535,6 +1535,8 @@ begin
   S.MaxRetries := 0;
   S.RetryDelay := 0;
   S.AddSavedToStreamIgnore := False;
+  S.AddSavedToIgnore := AppGlobals.AutoTuneInAddToIgnore;
+  S.RemoveSavedFromWishlist := AppGlobals.AutoRemoveSavedFromWishlist;
 
   S.RegExes.Assign(AppGlobals.FDefaultStreamSettings.RegExes);
 

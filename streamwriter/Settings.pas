@@ -22,8 +22,6 @@ unit Settings;
 
 interface
 
-// TODO: nach remarks suchen. evtl kann man was bereinigen?
-
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
@@ -601,6 +599,7 @@ begin
       AppGlobals.AutoTuneInConsiderIgnore := chkAutoTuneInConsiderIgnore.Checked;
       AppGlobals.AutoTuneInAddToIgnore := chkAutoTuneInAddToIgnore.Checked;
       AppGlobals.AutoRemoveSavedFromWishlist := chkAutoRemoveSavedFromWishlist.Checked;
+
       AppGlobals.AutoTuneInMinQuality := lstMinQuality.ItemIndex;
       AppGlobals.AutoTuneInFormat := lstFormat.ItemIndex;
       AppGlobals.DirAuto := txtDir.Text;

@@ -437,10 +437,6 @@ begin
       AppGlobals.Save;
     except end;
 
-  // Das muss so, damit der Import von Profilen klappt. Sonst wird beim Hinzufügen
-  // in die SaveList das OnChange aufgerufen und es crashed. Also hier lassen.
-  //FDataLists.SaveList.OnChange.Clear;
-
   // Shutdown all postprocessors. Since they get terminated, all postprocessing chains get terminated.
   AppGlobals.PostProcessManager.Terminate;
   // Disconnect all clients. They will save their recordings and will not postprocess any file.
@@ -1764,6 +1760,9 @@ begin
     TfrmMsgDlg.ShowMsg(Self, _('No sound devices could be detected so playback of streams and files will not be possible.'),
                        mtWarning, [mbOK], mbOK, 7);
   end;
+
+  if (AppGlobals.LastUsedDataVersion > 0) and (AppGlobals.LastUsedDataVersion < 60) then
+    MsgBox(Handle, _('Since handling of settings for automatically saved songs changed, these settings were reset to default values. Please see "Settings"->"Settings for automatic recordings..." in the menu to adjust these settings.'), _('Info'), MB_ICONINFORMATION);
 
   if not DirectoryExists(AppGlobals.Dir) then
   begin

@@ -93,12 +93,17 @@ begin
 end;
 
 procedure TfrmHomeTest.Start;
+var
+  i: Integer;
 begin
-  HC := THomeCommunication.Create(nil);
-  HC.OnStateChanged := HomeCommunicationStateChanged;
-  HC.OnLogInReceived := HomeCommunicationLogInReceived;
-  HC.OnBytesTransferred := HomeCommunicationBytesTransferred;
-  HC.Connect;
+  for i := 0 to 0 do
+  begin
+    HC := THomeCommunication.Create(nil);
+    HC.OnStateChanged := HomeCommunicationStateChanged;
+    HC.OnLogInReceived := HomeCommunicationLogInReceived;
+    HC.OnBytesTransferred := HomeCommunicationBytesTransferred;
+    HC.Connect;
+  end;
 end;
 
 procedure TfrmHomeTest.Timer1Timer(Sender: TObject);

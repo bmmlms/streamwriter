@@ -1120,9 +1120,11 @@ begin
     end;
   end else
   begin
-    FAutoRecordSettings.Free;
     if (Version > 58) and (Version < 60) then
     begin
+      FAutoRecordSettings.Free;
+      // TODO: TESTEN!!!!!! die msgbox muss evtl kommen und so.
+
       // Pfusch für Zwischenversion, damit im File gespult wird... Wird Build 601 von Version 4.9.0.1 später werden!
       FAutoRecordSettings := TStreamSettings.Load(S, Version);
       FAutoRecordSettings.Free;
@@ -1131,7 +1133,10 @@ begin
       FAutoRecordSettings.Assign(AppGlobals.DefaultStreamSettings);
       TStreamSettings.ApplyAutoDefaults(FAutoRecordSettings);
     end else if Version >= 60 then
+    begin
+      FAutoRecordSettings.Free;
       FAutoRecordSettings := TStreamSettings.LoadAuto(S, Version);
+    end;
 
     if Version >= 5 then
     begin
