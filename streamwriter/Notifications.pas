@@ -114,6 +114,7 @@ begin
         if TextWidth > 350 then
           TextWidth := 350;
         ClientWidth := lblTitle.Left * 2 + 52 + Max(200, TextWidth);
+        ClientHeight := lblStream.Top + lblStream.Height + lblTitle.Top;
 
         Left := Screen.PrimaryMonitor.WorkareaRect.Right - ClientWidth - GlassFrame.Right * 2 - 15;
         Top := Screen.PrimaryMonitor.WorkareaRect.Bottom - ClientHeight - GlassFrame.Top * 2 - 15;
@@ -175,18 +176,14 @@ begin
   @GetShellWindow := nil;
   Handle := GetModuleHandle('user32.dll');
   if (Handle > 0) then
-  begin
     @GetShellWindow := GetProcAddress(Handle, 'GetShellWindow');
-  end;
 
   if ((H <> GetDesktopWindow) and ((@GetShellWindow <> nil) and (H <> GetShellWindow))) then
   begin
     GetWindowRect(H, R);
     for i := 0 to Screen.MonitorCount - 1 do
       if RectMatches(Screen.Monitors[i].BoundsRect, R) then
-      begin
         Exit(True);
-      end;
   end;
 
   Exit(False);
