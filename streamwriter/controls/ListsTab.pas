@@ -29,7 +29,7 @@ uses
   ImgList, Functions, GUIFunctions, Menus, Math, DragDrop, DropComboTarget,
   Dialogs, MsgDlg, Forms, Logging, AppData, HomeCommunication, ICEClient,
   ClientManager, Generics.Collections, TypeDefs, MessageBus, AppMessages,
-  Graphics, SharedData, HomeCommands;
+  Graphics, SharedData, HomeCommands, SharedControls;
 
 type
   TTitleTree = class;
@@ -124,6 +124,8 @@ type
     procedure ClientAdded(Client: TICEClient);
     procedure ClientRemoved(Client: TICEClient);
     procedure UpdateList;
+
+    property Tree: TTitleTree read FTree;
   end;
 
   TListsTab = class(TMainTabSheet)
@@ -157,6 +159,8 @@ type
     FColSaved: TVirtualTreeColumn;
     FColAdded: TVirtualTreeColumn;
 
+    FHeaderDragSourcePosition: Cardinal;
+
     FPanel: TTitlePanel;
 
     FLists: TDataLists;
@@ -171,6 +175,9 @@ type
       APoint: TPoint; var Effect: Integer);
 
     procedure PopupMenuClick(Sender: TObject);
+
+    procedure FitColumns;
+    procedure MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: UnicodeString); override;
@@ -183,8 +190,11 @@ type
     procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
+    function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
+    procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
+    procedure AfterCreate;
 
     function AddTitle(Title: TTitleInfo; Parent: PVirtualNode; FilterText: string; FromFilter: Boolean): PVirtualNode;
     procedure RemoveTitle(Title: TTitleInfo);
@@ -1193,12 +1203,6 @@ begin
   FTree.OnChange := TreeChange;
   FTree.OnKeyDown := TreeKeyDown;
 
-  FTree.FColSaved.Width := MulDiv(120, Screen.PixelsPerInch, 96);
-  FTree.FColAdded.Width := MulDiv(130, Screen.PixelsPerInch, 96);
-
-  //FClients := Clients;
-  //FLists := Lists;
-
   BuildTree(False);
   FillClientCombo;
 
@@ -1207,11 +1211,6 @@ begin
   UpdateButtons;
 
   Resize;
-
-
-
-
-
 
   FSearchPanel.Height := 24;
   FSearchLabel.Left := 0;
@@ -1226,14 +1225,12 @@ begin
 
   FAddCombo.Top := 1;
 
-
   // Das macht Höhen/Breiten von manchen Controls passig
   PostTranslate;
   FSearchPanel.ClientHeight := FSearchText.Top + FSearchText.Height + 4;
   FTopPanel.ClientHeight := FAddLabel.Height + FAddLabel.Top * 2 + 1;
 
-  FTree.FColSaved.Width := MulDiv(120, Screen.PixelsPerInch, 96);
-  FTree.FColAdded.Width := MulDiv(130, Screen.PixelsPerInch, 96);
+  FTree.AfterCreate;
 end;
 
 procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree;
@@ -1537,7 +1534,16 @@ begin
   end;
 end;
 
+procedure TTitleTree.AfterCreate;
+begin
+  inherited;
+
+  FitColumns;
+end;
+
 constructor TTitleTree.Create(AOwner: TComponent; Lists: TDataLists);
+var
+  i: Integer;
 begin
   inherited Create(AOwner);
 
@@ -1549,15 +1555,13 @@ begin
   NodeDataSize := SizeOf(TTitleNodeData);
   IncrementalSearch := isVisibleOnly;
 
-  Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
   AutoScrollDelay := 50;
   AutoScrollInterval := 400;
+  Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoShowSortGlyphs, hoVisible];
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
   TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
-  Header.Options := Header.Options + [hoAutoResize];
-  Header.Options := Header.Options - [hoDrag];
   Header.AutoSizeIndex := 0;
   DragMode := dmManual;
   ShowHint := True;
@@ -1567,14 +1571,16 @@ begin
 
   FColTitle := Header.Columns.Add;
   FColTitle.Text := _('Title');
-
+  FColTitle.Options := FColTitle.Options - [coDraggable];
   FColSaved := Header.Columns.Add;
   FColSaved.Text := _('Times saved');
   FColSaved.Alignment := taRightJustify;
-
   FColAdded := Header.Columns.Add;
   FColAdded.Text := _('Date');
   FColAdded.Alignment := taRightJustify;
+
+  Header.PopupMenu := TMTreeColumnPopup.Create(Self);
+  TMTreeColumnPopup(Header.PopupMenu).OnAction := MenuColsAction;
 
   FDropTarget := TDropComboTarget.Create(Self);
   FDropTarget.Formats := [mfFile];
@@ -1593,6 +1599,12 @@ begin
   FPopupMenu.FImport.OnClick := PopupMenuClick;
 
   PopupMenu := FPopupMenu;
+
+  for i := 1 to Header.Columns.Count - 1 do
+  begin
+    if not ((AppGlobals.ListCols and (1 shl i)) <> 0) then
+      Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
+  end;
 end;
 
 procedure TTitleTree.DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
@@ -1697,6 +1709,30 @@ begin
   end;
 end;
 
+procedure TTitleTree.FitColumns;
+var
+  i: Integer;
+begin
+  if (Header.Columns.Count <> Length(AppGlobals.ListHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.ListHeaderPosition)) then
+    raise Exception.Create('(Header.Columns.Count <> Length(AppGlobals.ListHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.ListHeaderPosition))');
+
+  if AppGlobals.ListHeaderWidthLoaded then
+  begin
+    for i := 1 to Header.Columns.Count - 1 do
+      Header.Columns[i].Width := AppGlobals.ListHeaderWidth[i];
+  end else
+  begin
+    FColSaved.Width := MulDiv(120, Screen.PixelsPerInch, 96);
+    FColAdded.Width := MulDiv(130, Screen.PixelsPerInch, 96);
+  end;
+
+  if AppGlobals.ListHeaderPositionLoaded then
+  begin
+    for i := 1 to Header.Columns.Count - 1 do
+      Header.Columns[i].Position := AppGlobals.ListHeaderPosition[i];
+  end;
+end;
+
 function TTitleTree.GetNode(Stream: TICEClient): PVirtualNode;
 var
   Node: PVirtualNode;
@@ -1749,6 +1785,26 @@ begin
     Result[Length(Result) - 1] := Node;
     Node := GetNext(Node);
   end;
+end;
+
+procedure TTitleTree.MenuColsAction(Sender: TVirtualStringTree;
+  Index: Integer; Checked: Boolean);
+var
+  Show: Boolean;
+begin
+  Show := True;
+  if coVisible in Header.Columns[Index].Options then
+    Show := False;
+
+  if Show then
+  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible];
+  end else
+  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options - [coVisible];
+  end;
+
+  AppGlobals.ListCols := AppGlobals.ListCols xor (1 shl Index);
 end;
 
 function TTitleTree.NodesToData(Nodes: TNodeArray): TTitleDataArray;
@@ -1945,6 +2001,22 @@ begin
 
     SortItems;
   end;
+end;
+
+procedure TTitleTree.DoHeaderDragged(Column: TColumnIndex;
+  OldPosition: TColumnPosition);
+begin
+  inherited;
+
+  if Header.Columns[Column].Position = 0 then
+    Header.Columns[Column].Position := FHeaderDragSourcePosition;
+end;
+
+function TTitleTree.DoHeaderDragging(Column: TColumnIndex): Boolean;
+begin
+  Result := inherited;
+
+  FHeaderDragSourcePosition := Header.Columns[Column].Position;
 end;
 
 function TTitleTree.DoIncrementalSearch(Node: PVirtualNode;

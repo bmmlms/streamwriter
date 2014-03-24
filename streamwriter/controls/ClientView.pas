@@ -71,6 +71,8 @@ type
     FColSpeed: TVirtualTreeColumn;
     FColStatus: TVirtualTreeColumn;
 
+    FHeaderDragSourcePosition: Cardinal;
+
     FOnStartStreaming: TStartStreamingEvent;
 
     procedure FitColumns;
@@ -101,6 +103,8 @@ type
       var NodeHeight: Integer); override;
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; Text: string;
       CellRect: TRect; DrawFormat: Cardinal); override;
+    function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
+    procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
   public
     constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree); reintroduce;
     destructor Destroy; override;
@@ -200,13 +204,11 @@ begin
   IncrementalSearch := isVisibleOnly;
   AutoScrollDelay := 50;
   AutoScrollInterval := 400;
-  Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
+  Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoShowSortGlyphs, hoVisible];
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
   TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowDropmark, toShowRoot, toShowButtons];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toAcceptOLEDrop, toEditable];
-  Header.Options := Header.Options + [hoAutoResize];
-  Header.Options := Header.Options - [hoDrag];
   Header.AutoSizeIndex := 1;
   DragMode := dmAutomatic;
   ShowHint := True;
@@ -217,6 +219,7 @@ begin
 
   FColName := Header.Columns.Add;
   FColName.Text := _('Name');
+  FColName.Options := FColName.Options - [coDraggable];
   FColTitle := Header.Columns.Add;
   FColTitle.Text := _('Title');
   FColRcvd := Header.Columns.Add;
@@ -418,6 +421,22 @@ begin
   end;
 end;
 
+procedure TMClientView.DoHeaderDragged(Column: TColumnIndex;
+  OldPosition: TColumnPosition);
+begin
+  inherited;
+
+  if Header.Columns[Column].Position = 0 then
+    Header.Columns[Column].Position := FHeaderDragSourcePosition;
+end;
+
+function TMClientView.DoHeaderDragging(Column: TColumnIndex): Boolean;
+begin
+  Result := inherited;
+
+  FHeaderDragSourcePosition := Header.Columns[Column].Position;
+end;
+
 function TMClientView.DoIncrementalSearch(Node: PVirtualNode;
   const Text: string): Integer;
 var
@@ -496,10 +515,14 @@ procedure TMClientView.FitColumns;
 var
   i: Integer;
 begin
-  if AppGlobals.ClientHeadersLoaded then
+  if (Header.Columns.Count <> Length(AppGlobals.ClientHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.ClientHeaderPosition)) then
+    raise Exception.Create('(Header.Columns.Count <> Length(AppGlobals.ClientHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.ClientHeaderPosition))');
+
+  if AppGlobals.ClientHeaderWidthLoaded then
   begin
     for i := 0 to Header.Columns.Count - 1 do
-      Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
+      if i <> 1 then
+        Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
   end else
   begin
     FColRcvd.Width := Max(GetTextSize(FColRcvd.Text, Font).cx, GetTextSize('111,11 KB', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
@@ -507,6 +530,12 @@ begin
     FColSongs.Width := GetTextSize(FColSongs.Text, Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
     FColStatus.Width := Max(GetTextSize(FColStatus.Text, Font).cx, MulDiv(80, Screen.PixelsPerInch, 96)) + MulDiv(20, Screen.PixelsPerInch, 96);
     FColName.Width := MulDiv(150, Screen.PixelsPerInch, 96);
+  end;
+
+  if AppGlobals.ClientHeaderPositionLoaded then
+  begin
+    for i := 1 to Header.Columns.Count - 1 do
+      Header.Columns[i].Position := AppGlobals.ClientHeaderPosition[i];
   end;
 end;
 

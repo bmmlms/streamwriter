@@ -29,7 +29,7 @@ uses
   HomeCommunication, DataManager, ImgList, Graphics, Math, Generics.Collections,
   Menus, ChartsTabAdjustTitleName, Forms, TypeDefs, MessageBus, AppMessages,
   HomeCommands, Commands, GUIFunctions, SharedData, PerlRegEx, Messages,
-  DateUtils;
+  DateUtils, SharedControls;
 
 type
   TNodeTypes = (ntChart, ntStream, ntAll);
@@ -117,9 +117,14 @@ type
     FColLastPlayed: TVirtualTreeColumn;
     FColChance: TVirtualTreeColumn;
 
+    FHeaderDragSourcePosition: Cardinal;
+
     FState: TChartStates;
 
     FLists: TDataLists;
+
+    procedure FitColumns;
+    procedure MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
 
     procedure MessageReceived(Msg: TMessageBase);
 
@@ -151,6 +156,8 @@ type
       var NodeHeight: Integer); override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo;
       ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
+    function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
+    procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
   public
     constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
     destructor Destroy; override;
@@ -204,6 +211,7 @@ type
 
     procedure HomeCommStateChanged(Sender: TObject);
 
+    property ChartsTree: TChartsTree read FChartsTree;
     property State: TChartStates read FState;
     property Searched: Boolean read FSearched;
     property OnAddToWishlist: TAddToWishlistEvent read FOnAddToWishlist write FOnAddToWishlist;
@@ -619,12 +627,12 @@ end;
 
 procedure TChartsTree.AfterCreate;
 begin
-  FColImages.Width := GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
-  FColLastPlayed.Width := GetTextSize(FColLastPlayed.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
-  FColChance.Width := GetTextSize(FColChance.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+  FitColumns;
 end;
 
 constructor TChartsTree.Create(AOwner: TComponent; Lists: TDataLists);
+var
+  i: Integer;
 begin
   inherited Create(AOwner);
 
@@ -646,30 +654,27 @@ begin
   Header.Height := GetTextSize('Wyg', Font).cy + 5;
   AutoScrollDelay := 50;
   AutoScrollInterval := 400;
-  Header.Options := [hoColumnResize, hoShowSortGlyphs, hoVisible];
+  Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoShowSortGlyphs, hoVisible];
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
   TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toToggleOnDblClick];
-  Header.Options := Header.Options - [hoAutoResize];
-  Header.Options := Header.Options - [hoDrag];
 
   Header.AutoSizeIndex := 0;
 
   FColTitle := Header.Columns.Add;
   FColTitle.Text := _('Name');
-
+  FColTitle.Options := FColTitle.Options - [coDraggable];
   FColImages := Header.Columns.Add;
   FColImages.Text := _('State');
-
   FColLastPlayed := Header.Columns.Add;
   FColLastPlayed.Text := _('Last played');
-
   FColChance := Header.Columns.Add;
   FColChance.Text := _('Played last day/week');
   FColChance.Alignment := taRightJustify;
 
-  Header.Options := Header.Options + [hoAutoResize];
+  Header.PopupMenu := TMTreeColumnPopup.Create(Self);
+  TMTreeColumnPopup(Header.PopupMenu).OnAction := MenuColsAction;
 
   FPopupMenu := TChartsPopup.Create(Self);
   FPopupMenu.ItemAddToWishlist.OnClick := PopupMenuClick;
@@ -691,6 +696,12 @@ begin
 
   Header.SortColumn := 3;
   Header.SortDirection := sdDescending;
+
+  for i := 1 to Header.Columns.Count - 1 do
+  begin
+    if not ((AppGlobals.ChartCols and (1 shl i)) <> 0) then
+      Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
+  end;
 end;
 
 procedure TChartsTree.DblClick;
@@ -938,6 +949,22 @@ begin
   end;
 end;
 
+procedure TChartsTree.DoHeaderDragged(Column: TColumnIndex;
+  OldPosition: TColumnPosition);
+begin
+  inherited;
+
+  if Header.Columns[Column].Position = 0 then
+    Header.Columns[Column].Position := FHeaderDragSourcePosition;
+end;
+
+function TChartsTree.DoHeaderDragging(Column: TColumnIndex): Boolean;
+begin
+  Result := inherited;
+
+  FHeaderDragSourcePosition := Header.Columns[Column].Position;
+end;
+
 function TChartsTree.DoIncrementalSearch(Node: PVirtualNode;
   const Text: string): Integer;
 var
@@ -1018,6 +1045,31 @@ begin
       InvalidateNode(Nodes[i]);
   finally
 
+  end;
+end;
+
+procedure TChartsTree.FitColumns;
+var
+  i: Integer;
+begin
+  if (Header.Columns.Count <> Length(AppGlobals.ChartHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.ChartHeaderPosition)) then
+    raise Exception.Create('(Header.Columns.Count <> Length(AppGlobals.ChartHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.ChartHeaderPosition))');
+
+  if AppGlobals.ChartHeaderWidthLoaded then
+  begin
+    for i := 1 to Header.Columns.Count - 1 do
+      Header.Columns[i].Width := AppGlobals.ChartHeaderWidth[i];
+  end else
+  begin
+    FColImages.Width := GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+    FColLastPlayed.Width := GetTextSize(FColLastPlayed.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+    FColChance.Width := GetTextSize(FColChance.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+  end;
+
+  if AppGlobals.ChartHeaderPositionLoaded then
+  begin
+    for i := 1 to Header.Columns.Count - 1 do
+      Header.Columns[i].Position := AppGlobals.ChartHeaderPosition[i];
   end;
 end;
 
@@ -1110,6 +1162,26 @@ begin
     ExecDefaultAction;
     Key := #0;
   end;
+end;
+
+procedure TChartsTree.MenuColsAction(Sender: TVirtualStringTree;
+  Index: Integer; Checked: Boolean);
+var
+  Show: Boolean;
+begin
+  Show := True;
+  if coVisible in Header.Columns[Index].Options then
+    Show := False;
+
+  if Show then
+  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible];
+  end else
+  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options - [coVisible];
+  end;
+
+  AppGlobals.ChartCols := AppGlobals.ChartCols xor (1 shl Index);
 end;
 
 procedure TChartsTree.MessageReceived(Msg: TMessageBase);

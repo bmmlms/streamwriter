@@ -399,9 +399,28 @@ begin
   AppGlobals.BrowserSortType := Integer(tabClients.SideBar.BrowserView.StreamTree.SelectedSortType);
 
   for i := 0 to tabClients.ClientView.Header.Columns.Count - 1 do
+  begin
     AppGlobals.ClientHeaderWidth[i] := tabClients.ClientView.Header.Columns[i].Width;
+    AppGlobals.ClientHeaderPosition[i] := tabClients.ClientView.Header.Columns[i].Position;
+  end;
+
+  for i := 0 to tabCharts.ChartsTree.Header.Columns.Count - 1 do
+  begin
+    AppGlobals.ChartHeaderWidth[i] := tabCharts.ChartsTree.Header.Columns[i].Width;
+    AppGlobals.ChartHeaderPosition[i] := tabCharts.ChartsTree.Header.Columns[i].Position;
+  end;
+
+  for i := 0 to tabLists.ListsPanel.Tree.Header.Columns.Count - 1 do
+  begin
+    AppGlobals.ListHeaderWidth[i] := tabLists.ListsPanel.Tree.Header.Columns[i].Width;
+    AppGlobals.ListHeaderPosition[i] := tabLists.ListsPanel.Tree.Header.Columns[i].Position;
+  end;
+
   for i := 0 to tabSaved.Tree.Header.Columns.Count - 1 do
+  begin
     AppGlobals.SavedHeaderWidth[i] := tabSaved.Tree.Header.Columns[i].Width;
+    AppGlobals.SavedHeaderPosition[i] := tabSaved.Tree.Header.Columns[i].Position;
+  end;
 
   try
     // Es ist mir beim Theme-Wechsel passiert, dass der Tray komplett verschwunden ist.

@@ -313,6 +313,8 @@ type
     FColSaved: TVirtualTreeColumn;
     FColBitRate: TVirtualTreeColumn;
 
+    FHeaderDragSourcePosition: Cardinal;
+
     procedure FitColumns;
 
     function GetNode(Filename: string): PVirtualNode; overload;
@@ -359,6 +361,8 @@ type
     procedure KeyPress(var Key: Char); override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
+    function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
+    procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1051,10 +1055,6 @@ begin
     FSavedTree.FocusedNode := FSavedTree.GetFirst;
   end;
 
-  if AppGlobals.SavedHeadersLoaded then
-    for i := 2 to FSavedTree.Header.Columns.Count - 1 do
-      FSavedTree.Header.Columns[i].Width := AppGlobals.SavedHeaderWidth[i];
-
   FTopPanel.ClientHeight := FTopLeftPanel.Height + FSearchBar.FLabel.Height - 2;
 end;
 
@@ -1537,6 +1537,7 @@ end;
 
 constructor TSavedTree.Create(AOwner: TComponent);
 var
+  i: Integer;
   NodeData: PSavedNodeData;
 begin
   inherited Create(AOwner);
@@ -1560,13 +1561,11 @@ begin
   IncrementalSearch := isVisibleOnly;
   AutoScrollDelay := 50;
   AutoScrollInterval := 400;
-  Header.Options := [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible];
+  Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoShowSortGlyphs, hoVisible];
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
   TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
-  Header.Options := Header.Options - [hoAutoResize];
-  Header.Options := Header.Options - [hoDrag];
   Header.AutoSizeIndex := 1;
   DragMode := dmAutomatic;
   ShowHint := True;
@@ -1618,9 +1617,34 @@ begin
 
   MsgBus.AddSubscriber(MessageReceived);
 
+  FColImages := Header.Columns.Add;
+  FColImages.Text := _('State');
+  FColImages.Options := FColImages.Options - [coResizable];
+  FColFilename := Header.Columns.Add;
+  FColFilename.Text := _('Filename');
+  FColSize := Header.Columns.Add;
+  FColSize.Text := _('Size');
+  FColLength := Header.Columns.Add;
+  FColLength.Alignment := taRightJustify;
+  FColLength.Text := _('Length');
+  FColBitRate := Header.Columns.Add;
+  FColBitRate.Alignment := taRightJustify;
+  FColBitRate.Text := _('Bitrate');
+  FColStream := Header.Columns.Add;
+  FColStream.Text := _('Stream');
+  FColSaved := Header.Columns.Add;
+  FColSaved.Alignment := taRightJustify;
+  FColSaved.Text := _('Date');
+
   Header.PopupMenu := TMTreeColumnPopup.Create(Self);
   TMTreeColumnPopup(Header.PopupMenu).HideIdx := 1;
   TMTreeColumnPopup(Header.PopupMenu).OnAction := MenuColsAction;
+
+  for i := 1 to Header.Columns.Count - 1 do
+  begin
+    if not ((AppGlobals.SavedCols and (1 shl i)) <> 0) then
+      Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
+  end;
 end;
 
 procedure TSavedTree.CutCopy(Cut: Boolean);
@@ -2213,34 +2237,7 @@ begin
 end;
 
 procedure TSavedTree.AfterCreate;
-var
-  i: Integer;
 begin
-  FColImages := Header.Columns.Add;
-  FColImages.Text := _('State');
-  FColImages.Options := FColImages.Options - [coResizable];
-  FColFilename := Header.Columns.Add;
-  FColFilename.Text := _('Filename');
-  FColSize := Header.Columns.Add;
-  FColSize.Text := _('Size');
-  FColLength := Header.Columns.Add;
-  FColLength.Alignment := taRightJustify;
-  FColLength.Text := _('Length');
-  FColBitRate := Header.Columns.Add;
-  FColBitRate.Alignment := taRightJustify;
-  FColBitRate.Text := _('Bitrate');
-  FColStream := Header.Columns.Add;
-  FColStream.Text := _('Stream');
-  FColSaved := Header.Columns.Add;
-  FColSaved.Alignment := taRightJustify;
-  FColSaved.Text := _('Date');
-
-  for i := 1 to Header.Columns.Count - 1 do
-  begin
-    if not ((AppGlobals.SavedCols and (1 shl i)) <> 0) then
-      Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
-  end;
-
   FitColumns;
 end;
 
@@ -2375,6 +2372,22 @@ begin
     Sort(FStreamNode, HitInfo.Column, Header.SortDirection);
     Sort(FFileNode, HitInfo.Column, Header.SortDirection);
   end;
+end;
+
+procedure TSavedTree.DoHeaderDragged(Column: TColumnIndex;
+  OldPosition: TColumnPosition);
+begin
+  inherited;
+
+  if Header.Columns[Column].Position = 0 then
+    Header.Columns[Column].Position := FHeaderDragSourcePosition;
+end;
+
+function TSavedTree.DoHeaderDragging(Column: TColumnIndex): Boolean;
+begin
+  Result := inherited;
+
+  FHeaderDragSourcePosition := Header.Columns[Column].Position;
 end;
 
 function TSavedTree.DoIncrementalSearch(Node: PVirtualNode;
@@ -2595,13 +2608,32 @@ begin
 end;
 
 procedure TSavedTree.FitColumns;
+var
+  i: Integer;
 begin
-  FColImages.Width := 104;
-  FColSize.Width := GetTextSize('111,11 KB', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-  FColLength.Width := GetTextSize('00:00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-  FColBitRate.Width := GetTextSize('320 VBR', font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-  FColStream.Width := MulDiv(200, Screen.PixelsPerInch, 96);
-  FColSaved.Width := MulDiv(130, Screen.PixelsPerInch, 96);
+  if (Header.Columns.Count <> Length(AppGlobals.SavedHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.SavedHeaderPosition)) then
+    raise Exception.Create('(Header.Columns.Count <> Length(AppGlobals.SavedHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.SavedHeaderPosition))');
+
+  if AppGlobals.SavedHeaderWidthLoaded then
+  begin
+    for i := 1 to Header.Columns.Count - 1 do
+      Header.Columns[i].Width := AppGlobals.SavedHeaderWidth[i];
+    FColImages.Width := 104;
+  end else
+  begin
+    FColImages.Width := 104;
+    FColSize.Width := GetTextSize('111,11 KB', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColLength.Width := GetTextSize('00:00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColBitRate.Width := GetTextSize('320 VBR', font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColStream.Width := MulDiv(200, Screen.PixelsPerInch, 96);
+    FColSaved.Width := MulDiv(130, Screen.PixelsPerInch, 96);
+  end;
+
+  if AppGlobals.SavedHeaderPositionLoaded then
+  begin
+    for i := 1 to Header.Columns.Count - 1 do
+      Header.Columns[i].Position := AppGlobals.SavedHeaderPosition[i];
+  end;
 end;
 
 procedure TSavedTree.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;

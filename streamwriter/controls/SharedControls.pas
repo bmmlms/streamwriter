@@ -670,20 +670,19 @@ var
 begin
   inherited;
 
-  if Items.Count = 0 then
+  Items.Clear;
+
+  Tree := TVirtualStringTree(Owner);
+  FFileView := Tree;
+  for i := 1 to Tree.Header.Columns.Count - 1 do
   begin
-    Tree := TVirtualStringTree(Owner);
-    FFileView := Tree;
-    for i := 1 to Tree.Header.Columns.Count - 1 do
-    begin
-      if i = FHideIdx then
-        Continue;
-      Item := CreateMenuItem;
-      Item.Caption := Tree.Header.Columns[i].Text;
-      Item.OnClick := ColItemsClick;
-      Item.Tag := Integer(Tree.Header.Columns[i]);
-      Items.Add(Item);
-    end;
+    if i = FHideIdx then
+      Continue;
+    Item := CreateMenuItem;
+    Item.Caption := Tree.Header.Columns[i].Text;
+    Item.OnClick := ColItemsClick;
+    Item.Tag := Integer(Tree.Header.Columns[i]);
+    Items.Add(Item);
   end;
 
   for i := 0 to Items.Count - 1 do

@@ -286,12 +286,30 @@ type
     FShortcutVolUp: Cardinal;
     FShortcutMute: Cardinal;
 
-    FClientHeadersLoaded: Boolean;
-    FSavedHeadersLoaded: Boolean;
+    FClientHeaderWidthLoaded: Boolean;
+    FClientHeaderPositionLoaded: Boolean;
     FClientHeaderWidth: TIntArray;
-    FSavedHeaderWidth: TIntArray;
+    FClientHeaderPosition: TIntArray;
     FClientCols: Integer;
+
+    FChartHeaderWidthLoaded: Boolean;
+    FChartHeaderPositionLoaded: Boolean;
+    FChartHeaderWidth: TIntArray;
+    FChartHeaderPosition: TIntArray;
+    FChartCols: Integer;
+
+    FListHeaderWidthLoaded: Boolean;
+    FListHeaderPositionLoaded: Boolean;
+    FListHeaderWidth: TIntArray;
+    FListHeaderPosition: TIntArray;
+    FListCols: Integer;
+
+    FSavedHeaderWidthLoaded: Boolean;
+    FSavedHeaderPositionLoaded: Boolean;
+    FSavedHeaderWidth: TIntArray;
+    FSavedHeaderPosition: TIntArray;
     FSavedCols: Integer;
+
     FBrowserSortType: Integer;
     FLastUsedDataVersion: Integer;
     FRecoveryFile: string;
@@ -409,14 +427,30 @@ type
     // The pattern for automatically recorded files
     property AutomaticFilePattern: string read FAutomaticFilePattern write FAutomaticFilePattern;
 
-    property ClientHeadersLoaded: Boolean read FClientHeadersLoaded;
-    property SavedHeadersLoaded: Boolean read FSavedHeadersLoaded;
-    // Widths of column headers of the mainview
+    property ClientHeaderWidthLoaded: Boolean read FClientHeaderWidthLoaded;
+    property ClientHeaderPositionLoaded: Boolean read FClientHeaderPositionLoaded;
     property ClientHeaderWidth: TIntArray read FClientHeaderWidth write FClientHeaderWidth;
-    property SavedHeaderWidth: TIntArray read FSavedHeaderWidth write FSavedHeaderWidth;
-    // Widths of column headers. Yes, they are stored in a single integer
+    property ClientHeaderPosition: TIntArray read FClientHeaderPosition write FClientHeaderPosition;
     property ClientCols: Integer read FClientCols write FClientCols;
+
+    property ChartHeaderWidthLoaded: Boolean read FChartHeaderWidthLoaded;
+    property ChartHeaderPositionLoaded: Boolean read FChartHeaderPositionLoaded;
+    property ChartHeaderWidth: TIntArray read FChartHeaderWidth write FChartHeaderWidth;
+    property ChartHeaderPosition: TIntArray read FChartHeaderPosition write FChartHeaderPosition;
+    property ChartCols: Integer read FChartCols write FChartCols;
+
+    property ListHeaderWidthLoaded: Boolean read FListHeaderWidthLoaded;
+    property ListHeaderPositionLoaded: Boolean read FListHeaderPositionLoaded;
+    property ListHeaderWidth: TIntArray read FListHeaderWidth write FListHeaderWidth;
+    property ListHeaderPosition: TIntArray read FListHeaderPosition write FListHeaderPosition;
+    property ListCols: Integer read FListCols write FListCols;
+
+    property SavedHeaderWidthLoaded: Boolean read FSavedHeaderWidthLoaded;
+    property SavedHeaderPositionLoaded: Boolean read FSavedHeaderPositionLoaded;
+    property SavedHeaderWidth: TIntArray read FSavedHeaderWidth write FSavedHeaderWidth;
+    property SavedHeaderPosition: TIntArray read FSavedHeaderPosition write FSavedHeaderPosition;
     property SavedCols: Integer read FSavedCols write FSavedCols;
+
     property BrowserSortType: Integer read FBrowserSortType write FBrowserSortType;
     // Last used version of the data-file format
     property LastUsedDataVersion: Integer read FLastUsedDataVersion write FLastUsedDataVersion;
@@ -475,7 +509,13 @@ begin
 
   // Adjust count of column headers
   SetLength(FClientHeaderWidth, 6);
+  SetLength(FClientHeaderPosition, 6);
+  SetLength(FChartHeaderWidth, 4);
+  SetLength(FChartHeaderPosition, 4);
+  SetLength(FListHeaderWidth, 3);
+  SetLength(FListHeaderPosition, 3);
   SetLength(FSavedHeaderWidth, 7);
+  SetLength(FSavedHeaderPosition, 7);
 
   // Set some application-specific settings
   SetLength(FProjectUpdateLinks, 2);
@@ -605,6 +645,7 @@ procedure TAppData.Load;
   end;
 var
   i, DefaultActionTmp, DefaultActionBrowser, DefaultFilterTmp, SilenceBuffer, OutputFormatTmp: Integer;
+  TmpStr: string;
 begin
   inherited;
 
@@ -769,28 +810,92 @@ begin
   FStorage.Read('ShortcutMute', FShortcutMute, 0);
 
   // Header of ClientView
-  FStorage.Read('HeaderWidth0', i, -1, 'Cols');
+  TmpStr := 'ClientHeaderWidth';
+  FStorage.Read(TmpStr + '0', i, -1, 'Cols');
+  if i = -1 then
+  begin
+    TmpStr := 'HeaderWidth';
+    FStorage.Read('HeaderWidth' + '0', i, -1, 'Cols');
+  end;
   if i > -1 then
   begin
-    FClientHeadersLoaded := True;
+    FClientHeaderWidthLoaded := True;
     for i := 0 to High(FClientHeaderWidth) do
       if i <> 1 then
-        FStorage.Read('HeaderWidth' + IntToStr(i), FClientHeaderWidth[i], 130, 'Cols');
+        FStorage.Read(TmpStr + IntToStr(i), FClientHeaderWidth[i], 70, 'Cols');
   end;
+
+  FStorage.Read('ClientHeaderPosition0', i, -1, 'Cols');
+  if i > -1 then
+  begin
+    FClientHeaderPositionLoaded := True;
+    for i := 1 to High(FClientHeaderPosition) do
+      FStorage.Read('ClientHeaderPosition' + IntToStr(i), FClientHeaderPosition[i], 100, 'Cols');
+  end;
+
   FStorage.Read('ClientCols', FClientCols, 255, 'Cols');
   FClientCols := FClientCols or (1 shl 0);
+
+  // Header of ChartsView
+  FStorage.Read('ChartHeaderWidth0', i, -1, 'Cols');
+  if i > -1 then
+  begin
+    FChartHeaderWidthLoaded := True;
+    for i := 0 to High(FChartHeaderWidth) do
+      FStorage.Read('ChartHeaderWidth' + IntToStr(i), FChartHeaderWidth[i], 120, 'Cols');
+  end;
+
+  FStorage.Read('ChartHeaderPosition0', i, -1, 'Cols');
+  if i > -1 then
+  begin
+    FChartHeaderPositionLoaded := True;
+    for i := 0 to High(FChartHeaderPosition) do
+      FStorage.Read('ChartHeaderPosition' + IntToStr(i), FChartHeaderPosition[i], 100, 'Cols');
+  end;
+
+  FStorage.Read('ChartCols', FChartCols, 255, 'Cols');
+  FChartCols := FChartCols or (1 shl 0);
+
+  // Header of ListsView
+  FStorage.Read('ListHeaderWidth0', i, -1, 'Cols');
+  if i > -1 then
+  begin
+    FListHeaderWidthLoaded := True;
+    for i := 0 to High(FListHeaderWidth) do
+      FStorage.Read('ListHeaderWidth' + IntToStr(i), FListHeaderWidth[i], 120, 'Cols');
+  end;
+
+  FStorage.Read('ListHeaderPosition0', i, -1, 'Cols');
+  if i > -1 then
+  begin
+    FListHeaderPositionLoaded := True;
+    for i := 0 to High(FListHeaderWidth) do
+      FStorage.Read('ListHeaderPosition' + IntToStr(i), FListHeaderPosition[i], 100, 'Cols');
+  end;
+
+  FStorage.Read('ListCols', FListCols, 255, 'Cols');
+  FListCols := FListCols or (1 shl 0);
 
   // Header of SavedView
   FStorage.Read('SavedHeaderWidth0', i, -1, 'Cols');
   if i > -1 then
   begin
-    FSavedHeadersLoaded := True;
+    FSavedHeaderWidthLoaded := True;
     for i := 0 to High(FSavedHeaderWidth) do
-      if i <> 1 then
-        FStorage.Read('SavedHeaderWidth' + IntToStr(i), FSavedHeaderWidth[i], 130, 'Cols');
+      FStorage.Read('SavedHeaderWidth' + IntToStr(i), FSavedHeaderWidth[i], 120, 'Cols');
   end;
+
+  FStorage.Read('SavedHeaderPosition0', i, -1, 'Cols');
+  if i > -1 then
+  begin
+    FSavedHeaderPositionLoaded := True;
+    for i := 0 to High(FSavedHeaderPosition) do
+      FStorage.Read('SavedHeaderPosition' + IntToStr(i), FSavedHeaderPosition[i], 100, 'Cols');
+  end;
+
   FStorage.Read('SavedCols', FSavedCols, 255, 'Cols');
-  FSavedCols := FSavedCols or (1 shl 0);
+  FSavedCols := FSavedCols or (2 shl 0);
+
 
   FStorage.Read('BrowserSortType', FBrowserSortType, 3);
 
@@ -946,14 +1051,36 @@ begin
   FStorage.Write('ShortcutVolUp', FShortcutVolUp);
   FStorage.Write('ShortcutMute', FShortcutMute);
 
+  // Sachen löschen, weil ich Dinge umbenannt habe. Kann irgendwann raus... wird für Release von Version 5 "aktiv".
+  FStorage.Delete('HeaderWidth0', 'Cols');
+  FStorage.Delete('HeaderWidth1', 'Cols');
+  FStorage.Delete('HeaderWidth2', 'Cols');
+  FStorage.Delete('HeaderWidth3', 'Cols');
+  FStorage.Delete('HeaderWidth4', 'Cols');
+  FStorage.Delete('HeaderWidth5', 'Cols');
+
   for i := 0 to High(FClientHeaderWidth) do
-    if i <> 1 then
-      FStorage.Write('HeaderWidth' + IntToStr(i), FClientHeaderWidth[i], 'Cols');
+    FStorage.Write('ClientHeaderWidth' + IntToStr(i), FClientHeaderWidth[i], 'Cols');
+  for i := 0 to High(FClientHeaderPosition) do
+    FStorage.Write('ClientHeaderPosition' + IntToStr(i), FClientHeaderPosition[i], 'Cols');
   FStorage.Write('ClientCols', FClientCols, 'Cols');
 
+  for i := 0 to High(FChartHeaderWidth) do
+    FStorage.Write('ChartHeaderWidth' + IntToStr(i), FChartHeaderWidth[i], 'Cols');
+  for i := 0 to High(FChartHeaderPosition) do
+    FStorage.Write('ChartHeaderPosition' + IntToStr(i), FChartHeaderPosition[i], 'Cols');
+  FStorage.Write('ChartCols', FChartCols, 'Cols');
+
+  for i := 0 to High(FListHeaderWidth) do
+    FStorage.Write('ListHeaderWidth' + IntToStr(i), FListHeaderWidth[i], 'Cols');
+  for i := 0 to High(FListHeaderPosition) do
+    FStorage.Write('ListHeaderPosition' + IntToStr(i), FListHeaderPosition[i], 'Cols');
+  FStorage.Write('ListCols', FListCols, 'Cols');
+
   for i := 0 to High(FSavedHeaderWidth) do
-    if i <> 1 then
-      FStorage.Write('SavedHeaderWidth' + IntToStr(i), FSavedHeaderWidth[i], 'Cols');
+    FStorage.Write('SavedHeaderWidth' + IntToStr(i), FSavedHeaderWidth[i], 'Cols');
+  for i := 0 to High(FSavedHeaderPosition) do
+    FStorage.Write('SavedHeaderPosition' + IntToStr(i), FSavedHeaderPosition[i], 'Cols');
   FStorage.Write('SavedCols', FSavedCols, 'Cols');
 
   FStorage.Write('BrowserSortType', FBrowserSortType);
