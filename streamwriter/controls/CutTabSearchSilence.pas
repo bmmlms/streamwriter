@@ -24,7 +24,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, AppData, Functions;
+  Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, AppData, Functions,
+  MControls;
 
 type
   TfrmCutTabSearchSilence = class(TForm)
@@ -60,14 +61,14 @@ begin
   if (not FAutoDetect) and ((StrToIntDef(txtSilenceLevel.Text, -1) > 100) or (StrToIntDef(txtSilenceLevel.Text, -1) < 1)) then
   begin
     MsgBox(Handle, _('Please enter the maximum volume level for silence detection as a value ranging from 1 to 100.'), _('Info'), MB_ICONINFORMATION);
-    txtSilenceLevel.SetFocus;
+    txtSilenceLevel.ApplyFocus;
     Exit;
   end;
 
   if StrToIntDef(txtSilenceLength.Text, -1) < 20 then
   begin
     MsgBox(Handle, _('Please enter the minimum length for silence (at least 20 ms).'), _('Info'), MB_ICONINFORMATION);
-    txtSilenceLength.SetFocus;
+    txtSilenceLength.ApplyFocus;
     Exit;
   end;
 

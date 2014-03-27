@@ -25,7 +25,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, ExtCtrls, Buttons, LanguageObjects, ShellAPI, Functions,
-  AppData, ComCtrls, HomeCommunication, Logging;
+  AppData, ComCtrls, HomeCommunication, Logging, MControls;
 
 type
   TfrmCommunityLogin = class(TForm)
@@ -135,7 +135,7 @@ procedure TfrmCommunityLogin.FormShow(Sender: TObject);
 begin
   Language.Translate(Self);
 
-  txtUsername.SetFocus;
+  txtUsername.ApplyFocus;
   ShowConnecting(False);
 end;
 

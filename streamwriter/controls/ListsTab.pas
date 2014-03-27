@@ -968,7 +968,7 @@ begin
       end;
     end;
 
-    FTree.SetFocus;
+    FTree.ApplyFocus;
 
     WishNode := FTree.GetNext(WishNode);
   end;
@@ -1003,7 +1003,8 @@ begin
 
     Node := FTree.GetNext(Node);
   end;
-  FTree.SetFocus;
+
+  FTree.ApplyFocus;
 end;
 
 procedure TTitlePanel.ShowSavedClick(Sender: TObject);
@@ -1463,6 +1464,12 @@ var
 begin
   Result := nil;
 
+  // Kann eigentlich nicht passieren, Yo24hua hatte aber hier drunter im LowerCase() eine Exception
+  // Zugriffsverletzung bei Adresse 0041E790 in Modul 'streamwriter.exe'. Lesen von Adresse FFFFFFFF.
+  // Vielleicht hilft das, auch wenn ich es mir bis jetzt noch nicht erklären kann.
+  if Title = nil then
+    Exit;
+
   if FromFilter and ((FilterText <> '') and (not Like(LowerCase(Title.Title), FilterText))) then
     Exit;
 
@@ -1705,7 +1712,8 @@ begin
 
       if List = FLists.SaveList then
         HomeComm.SendSetSettings(AppGlobals.AutoTuneIn);
-    end;
+    end else
+      Title.Free;
   end;
 end;
 

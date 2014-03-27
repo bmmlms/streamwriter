@@ -31,7 +31,7 @@ uses
   DataManager, PngBitBtn, Logging, ToolWin, ListsTab, DownloadAddons,
   ExtendedStream, AddonManager, AddonBase, Generics.Defaults,
   SettingsAddPostProcessor, ConfigureEncoder, AudioFunctions,
-  SWFunctions, TypeDefs, SharedData, PerlRegEx;
+  SWFunctions, TypeDefs, SharedData, PerlRegEx, MControls;
 
 type
   TSettingsTypes = (stApp, stAuto, stStream);
@@ -1081,8 +1081,7 @@ begin
   if txtHotkey.Enabled then
   begin
     txtHotkey.HotKey := TextToShortCut(lstHotkeys.Selected.SubItems[0]);
-    if txtHotkey.CanFocus then
-      txtHotkey.SetFocus;
+    txtHotkey.ApplyFocus;
   end else
     txtHotkey.HotKey := 0;
 end;
@@ -2204,7 +2203,7 @@ begin
   Item.Caption := txtIgnoreTitlePattern.Text;
   Item.ImageIndex := 1;
   txtIgnoreTitlePattern.Text := '';
-  txtIgnoreTitlePattern.SetFocus;
+  txtIgnoreTitlePattern.ApplyFocus;
 
   RemoveGray(lstIgnoreTitles);
 end;
@@ -2248,7 +2247,7 @@ begin
   Item.Caption := txtRegEx.Text;
   Item.ImageIndex := 7;
   txtRegEx.Text := '';
-  txtRegEx.SetFocus;
+  txtRegEx.ApplyFocus;
 
   RemoveGray(lstRegExes);
 end;
@@ -2538,22 +2537,22 @@ begin
   if Sender = btnResetFilePattern then
   begin
     txtFilePattern.Text := '%s\%a - %t';
-    txtFilePattern.SetFocus;
+    txtFilePattern.ApplyFocus;
     RemoveGray(txtFilePattern);
   end else if Sender = btnResetIncompleteFilePattern then
   begin
     txtIncompleteFilePattern.Text := '%s\%a - %t';
-    txtIncompleteFilePattern.SetFocus;
+    txtIncompleteFilePattern.ApplyFocus;
     RemoveGray(txtIncompleteFilePattern);
   end else if Sender = btnResetAutomaticFilePattern then
   begin
     txtAutomaticFilePattern.Text := '%s\%a - %t';
-    txtAutomaticFilePattern.SetFocus;
+    txtAutomaticFilePattern.ApplyFocus;
     RemoveGray(txtAutomaticFilePattern);
   end else
   begin
     txtStreamFilePattern.Text := '%s';
-    txtStreamFilePattern.SetFocus;
+    txtStreamFilePattern.ApplyFocus;
   end;
 end;
 
@@ -2562,7 +2561,7 @@ begin
   inherited;
 
   txtRemoveChars.Text := '[]{}#$§%~^';
-  txtRemoveChars.SetFocus;
+  txtRemoveChars.ApplyFocus;
   RemoveGray(txtRemoveChars);
 end;
 
@@ -2571,7 +2570,7 @@ begin
   inherited;
 
   txtRegEx.Text := '(?P<a>.*) - (?P<t>.*)';
-  txtRegEx.SetFocus;
+  txtRegEx.ApplyFocus;
 end;
 
 procedure TfrmSettings.BuildHotkeys;
@@ -2660,7 +2659,7 @@ begin
   begin
     MsgBox(Handle, _('Please enter the minumum free space that must be available for recording.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtMinDiskSpace.Parent)));
-    txtMinDiskSpace.SetFocus;
+    txtMinDiskSpace.ApplyFocus;
     Exit;
   end;
 
@@ -2668,7 +2667,7 @@ begin
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of completely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePattern.Parent)));
-    txtFilePattern.SetFocus;
+    txtFilePattern.ApplyFocus;
     Exit;
   end;
 
@@ -2676,7 +2675,7 @@ begin
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of incompletely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtIncompleteFilePattern.Parent)));
-    txtIncompleteFilePattern.SetFocus;
+    txtIncompleteFilePattern.ApplyFocus;
     Exit;
   end;
 
@@ -2684,7 +2683,7 @@ begin
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of automatically recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtAutomaticFilePattern.Parent)));
-    txtAutomaticFilePattern.SetFocus;
+    txtAutomaticFilePattern.ApplyFocus;
     Exit;
   end;
 
@@ -2692,7 +2691,7 @@ begin
   begin
     MsgBox(Handle, _('Please enter a valid pattern for filenames of stream files so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtStreamFilePattern.Parent)));
-    txtStreamFilePattern.SetFocus;
+    txtStreamFilePattern.ApplyFocus;
     Exit;
   end;
 
@@ -2700,7 +2699,7 @@ begin
   begin
     MsgBox(Handle, _('Please enter the minimum count of decimals for tracknumbers in filenames.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePatternDecimals.Parent)));
-    txtFilePatternDecimals.SetFocus;
+    txtFilePatternDecimals.ApplyFocus;
     Exit;
   end;
 
@@ -2723,7 +2722,7 @@ begin
       begin
         MsgBox(Handle, _('Please enter the maximum length for songs that should be considered as ads.'), _('Info'), MB_ICONINFORMATION);
         SetPage(FPageList.Find(TPanel(txtShortLengthSeconds.Parent)));
-        txtShortLengthSeconds.SetFocus;
+        txtShortLengthSeconds.ApplyFocus;
         Exit;
       end else
         txtShortLengthSeconds.Text := IntToStr(AppGlobals.StreamSettings.ShortLengthSeconds);
@@ -2735,7 +2734,7 @@ begin
       begin
         MsgBox(Handle, _('Please enter the maximum volume level for silence detection as a value ranging from 1 to 100.'), _('Info'), MB_ICONINFORMATION);
         SetPage(FPageList.Find(TPanel(txtSilenceLevel.Parent)));
-        txtSilenceLevel.SetFocus;
+        txtSilenceLevel.ApplyFocus;
         Exit;
       end else
         txtSilenceLevel.Text := IntToStr(AppGlobals.StreamSettings.SilenceLevel);
@@ -2747,7 +2746,7 @@ begin
       begin
         MsgBox(Handle, _('Please enter the minimum length for silence (at least 20 ms).'), _('Info'), MB_ICONINFORMATION);
         SetPage(FPageList.Find(TPanel(txtSilenceLength.Parent)));
-        txtSilenceLength.SetFocus;
+        txtSilenceLength.ApplyFocus;
         Exit;
       end else
         txtSilenceLength.Text := IntToStr(AppGlobals.StreamSettings.SilenceLength);
@@ -2759,7 +2758,7 @@ begin
       begin
         MsgBox(Handle, _('Please enter the length in seconds to search for silence at beginning and end of song as a value ranging from 1 to 15.'), _('Info'), MB_ICONINFORMATION);
         SetPage(FPageList.Find(TPanel(txtSilenceBufferSeconds.Parent)));
-        txtSilenceBufferSeconds.SetFocus;
+        txtSilenceBufferSeconds.ApplyFocus;
         Exit;
       end else
         txtSilenceBufferSeconds.Text := IntToStr(AppGlobals.StreamSettings.SilenceBufferSecondsStart);
@@ -2769,7 +2768,7 @@ begin
     begin
       MsgBox(Handle, _('Please enter the length of the buffer that should be added to every beginning/end of saved titles if no silence could be found.'), _('Info'), MB_ICONINFORMATION);
       SetPage(FPageList.Find(TPanel(txtSongBuffer.Parent)));
-      txtSongBuffer.SetFocus;
+      txtSongBuffer.ApplyFocus;
       Exit;
     end;
 
@@ -2780,7 +2779,7 @@ begin
         begin
           MsgBox(Handle, _('Please enter the length in seconds for track change detection adjustment.'), _('Info'), MB_ICONINFORMATION);
           SetPage(FPageList.Find(TPanel(txtAdjustTrackOffset.Parent)));
-          txtAdjustTrackOffset.SetFocus;
+          txtAdjustTrackOffset.ApplyFocus;
           Exit;
         end else
           txtAdjustTrackOffset.Text := IntToStr(AppGlobals.StreamSettings.AdjustTrackOffsetMS);
@@ -2791,7 +2790,7 @@ begin
   begin
     MsgBox(Handle, _('Please enter the number of maximum connect retries.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtMaxRetries.Parent)));
-    txtMaxRetries.SetFocus;
+    txtMaxRetries.ApplyFocus;
     Exit;
   end;
 
@@ -2799,7 +2798,7 @@ begin
   begin
     MsgBox(Handle, _('Please enter the delay between connect retries.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtRetryDelay.Parent)));
-    txtRetryDelay.SetFocus;
+    txtRetryDelay.ApplyFocus;
     Exit;
   end;
 
@@ -2808,7 +2807,7 @@ begin
     begin
       MsgBox(Handle, _('Please enter the maximum bandwidth in KB/s available to streamWriter.'), _('Info'), MB_ICONINFORMATION);
       SetPage(FPageList.Find(TPanel(txtMaxSpeed.Parent)));
-      txtMaxSpeed.SetFocus;
+      txtMaxSpeed.ApplyFocus;
       Exit;
     end;
 
@@ -2818,7 +2817,7 @@ begin
     begin
       MsgBox(Handle, _('Please enter the maximum number of streams to monitor.'), _('Info'), MB_ICONINFORMATION);
       SetPage(FPageList.Find(TPanel(txtMonitorCount.Parent)));
-      txtMonitorCount.SetFocus;
+      txtMonitorCount.ApplyFocus;
       Exit;
     end;
 
@@ -2828,7 +2827,7 @@ begin
                                                    mtConfirmation, mbOKCancel, mbCancel, 17) = mrCancel then
       begin
         SetPage(FPageList.Find(TPanel(txtMonitorCount.Parent)));
-        txtMonitorCount.SetFocus;
+        txtMonitorCount.ApplyFocus;
         Exit;
       end;
     end;

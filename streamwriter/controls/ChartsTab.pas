@@ -330,7 +330,7 @@ begin
   inherited;
 
   if FSearchPanel.Enabled and FSearchPanel.FSearch.Enabled then
-    FSearchPanel.FSearch.SetFocus;
+    FSearchPanel.FSearch.ApplyFocus;
 end;
 
 procedure TChartsTab.HomeCommSearchChartsReceived(Sender: TObject;
@@ -366,8 +366,7 @@ begin
   ShowCharts;
 
   FSearchPanel.FSearch.SelectAll;
-  if FSearchPanel.FSearch.CanFocus then
-    FSearchPanel.FSearch.SetFocus;
+  FSearchPanel.FSearch.ApplyFocus;
 end;
 
 procedure TChartsTab.HomeCommStateChanged(Sender: TObject);

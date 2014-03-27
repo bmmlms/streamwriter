@@ -25,7 +25,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, DataManager, Functions,
-  MsgDlg;
+  MsgDlg, MControls;
 
 type
   TfrmChartsTabAdjustTitleName = class(TForm)
@@ -94,7 +94,7 @@ end;
 
 procedure TfrmChartsTabAdjustTitleName.FormShow(Sender: TObject);
 begin
-  txtTitle.SetFocus;
+  txtTitle.ApplyFocus;
   txtTitle.SelStart := 0;
   txtTitle.SelLength := 0;
 end;

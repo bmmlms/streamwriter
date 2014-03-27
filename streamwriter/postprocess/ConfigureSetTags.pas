@@ -25,7 +25,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, PostProcess,
-  PngSpeedButton;
+  PngSpeedButton, MControls;
 
 type
   TfrmConfigureSetTags = class(TForm)
@@ -85,20 +85,20 @@ begin
   if Sender = btnResetArtistPattern then
   begin
     txtArtist.Text := '%a';
-    txtArtist.SetFocus;
+    txtArtist.ApplyFocus;
   end else if Sender = btnResetTitlePattern then
   begin
     txtTitle.Text := '%t';
-    txtTitle.SetFocus;
+    txtTitle.ApplyFocus;
   end else if Sender = btnResetAlbumPattern then
   begin
     txtAlbum.Text := '%l';
-    txtAlbum.SetFocus;
+    txtAlbum.ApplyFocus;
   end else if Sender = btnResetCommentPattern then
   begin
     txtComment.Text := '%s / %u / Recorded using streamWriter';
     txtComment.SelectAll;
-    txtComment.SetFocus;
+    txtComment.ApplyFocus;
   end;
 end;
 

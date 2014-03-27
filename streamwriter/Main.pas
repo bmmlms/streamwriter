@@ -1025,7 +1025,7 @@ begin
 
   FWasShown := True;
 
-  tabClients.ClientView.SetFocus;
+  tabClients.ClientView.ApplyFocus;
 
   PostMessage(Handle, WM_AFTERSHOWN, 0, 0);
 end;
@@ -1725,7 +1725,7 @@ procedure TfrmStreamWriterMain.ShowCommunityLogin;
 begin
   if FCommunityLogin <> nil then
   begin
-    FCommunityLogin.SetFocus;
+    FCommunityLogin.ApplyFocus;
     Exit;
   end;
 
