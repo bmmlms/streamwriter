@@ -163,6 +163,8 @@ type
     destructor Destroy; override;
     procedure AfterCreate;
 
+    procedure PostTranslate;
+
     function GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
     function NodesToData(Nodes: TNodeArray): TChartDataArray;
 
@@ -381,6 +383,7 @@ begin
   FChartsTree.FColChance.Text := _('Played last day/week');
 
   FSearchPanel.PostTranslate;
+  FChartsTree.PostTranslate;
 
   FResultLabel.Caption := Format(_(TEXT_RESULTS), [FChartsTree.RootNodeCount]);
 end;
@@ -1413,6 +1416,14 @@ begin
     FDots := '';
 
   Invalidate;
+end;
+
+procedure TChartsTree.PostTranslate;
+begin
+  FColTitle.Text := _('Name');
+  FColImages.Text := _('State');
+  FColLastPlayed.Text := _('Last played');
+  FColChance.Text := _('Played last day/week');
 end;
 
 { TSearchPanel }

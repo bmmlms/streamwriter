@@ -979,6 +979,9 @@ begin
 
   Language.Translate(Self);
 
+  // This needs to be done for the controls (TLabel in the header) to adjust width
+  tabLists.PostTranslate;
+
   if not Application.ShowMainForm then
   begin
     if StartupMessagesNeeded then
@@ -1490,11 +1493,9 @@ procedure TfrmStreamWriterMain.PostTranslate;
 var
   NodeData: PClientNodeData;
 begin
-  tabClients.SideBar.BrowserView.Translate;
-  tabClients.SideBar.InfoView.Translate;
-  tabClients.ClientView.Translate;
-
-  tabSaved.Tree.Translate;
+  tabClients.SideBar.BrowserView.PostTranslate;
+  tabClients.SideBar.InfoView.PostTranslate;
+  tabClients.ClientView.PostTranslate;
 
   NodeData := tabClients.ClientView.GetNodeData(tabClients.ClientView.AutoNode);
   NodeData.Category.Name := _('Automatic recordings');

@@ -126,7 +126,7 @@ type
     function NodesToClients(Nodes: TNodeArray): TClientArray;
     function GetEntries(T: TEntryTypes): TPlaylistEntryArray;
 
-    procedure Translate;
+    procedure PostTranslate;
 
     procedure MoveTo(Source, Target: PVirtualNode; Mode: TVTNodeAttachMode; ChildrenOnly: Boolean); reintroduce;
 
@@ -847,7 +847,7 @@ begin
   FInitialSorted := True;
 end;
 
-procedure TMClientView.Translate;
+procedure TMClientView.PostTranslate;
 begin
   FColName.Text := _('Name');
   FColTitle.Text := _('Title');

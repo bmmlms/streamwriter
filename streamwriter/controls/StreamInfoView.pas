@@ -55,7 +55,7 @@ type
   public
     constructor Create(AOwner: TComponent); reintroduce;
 
-    procedure Translate;
+    procedure PostTranslate;
     procedure ShowInfo(ChangedOverride: Boolean = False); overload;
     procedure ShowInfo(Entries: TStreamList); overload;
 
@@ -243,7 +243,7 @@ begin
   FInfoView.Visible := Entries <> nil;
 end;
 
-procedure TMStreamInfoView.Translate;
+procedure TMStreamInfoView.PostTranslate;
 begin
 
 end;

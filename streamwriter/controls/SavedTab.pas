@@ -368,7 +368,7 @@ type
     destructor Destroy; override;
     procedure AfterCreate;
 
-    procedure Translate;
+    procedure PostTranslate;
 
     function PrevPlayingTrack: TTrackInfo;
     function NextPlayingTrack: TTrackInfo;
@@ -867,6 +867,7 @@ end;
 procedure TSavedTab.PostTranslate;
 begin
   FSearchBar.PostTranslate;
+  FSavedTree.PostTranslate;
 end;
 
 procedure TSavedTab.Resize;
@@ -2249,7 +2250,7 @@ begin
   MoveTo(FStreamNode, nil, amAddChildFirst, False);
 end;
 
-procedure TSavedTree.Translate;
+procedure TSavedTree.PostTranslate;
 begin
   FColImages.Text := _('State');
   FColFilename.Text := _('Filename');

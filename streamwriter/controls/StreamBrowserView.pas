@@ -117,7 +117,7 @@ type
     destructor Destroy; override;
     procedure AfterCreate;
 
-    procedure Translate;
+    procedure PostTranslate;
     procedure RefreshStreams;
     procedure SwitchMode(Mode: TModes);
 
@@ -135,7 +135,7 @@ type
     FItemType: TMenuItem;
     FItemRating: TMenuItem;
 
-    procedure Translate;
+    procedure PostTranslate;
   protected
     procedure DoPopup(Sender: TObject); override;
   public
@@ -1336,7 +1336,7 @@ begin
   FStreamTree.SwitchMode(Mode);
 end;
 
-procedure TMStreamBrowserView.Translate;
+procedure TMStreamBrowserView.PostTranslate;
 var
   Idx: Integer;
 begin
@@ -1366,7 +1366,7 @@ begin
   else
    FCountLabel.Caption := Format(_('%d streams found'), [FStreamTree.RootNodeCount]);
 
-  FStreamTree.FSortPopupMenu.Translate;
+  FStreamTree.FSortPopupMenu.PostTranslate;
 end;
 
 { TMStreamSearch }
@@ -1542,7 +1542,7 @@ begin
 
 end;
 
-procedure TMStreamTreeHeaderPopup.Translate;
+procedure TMStreamTreeHeaderPopup.PostTranslate;
 begin
   FItemName.Caption := _('Name');
   FItemKbps.Caption := _('Kbps');

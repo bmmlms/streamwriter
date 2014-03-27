@@ -201,6 +201,8 @@ type
     procedure RemoveClient(Client: TICEClient);
     procedure SortItems;
 
+    procedure PostTranslate;
+
     function GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
     function NodesToData(Nodes: TNodeArray): TTitleDataArray;
   end;
@@ -827,6 +829,9 @@ begin
   FAddCombo.Left := FAddEdit.Left + FAddEdit.Width + 4;
   FSearchText.Width := FAddEdit.Width;
 
+  FTree.PostTranslate;
+  FillClientCombo;
+
   // Damit die ComboBox auch wieder passig wird von der Breite her
   Resize;
 end;
@@ -1170,7 +1175,7 @@ begin
 
   FAddLabel := TLabel.Create(Self);
   FAddLabel.Parent := FToolbarPanel;
-  FAddLabel.Caption := _('Add entry:');
+  FAddLabel.Caption := 'Add entry:';
 
   FAddEdit := TEdit.Create(Self);
   FAddEdit.Parent := FToolbarPanel;
@@ -1195,10 +1200,6 @@ begin
   FToolbar.FSelectSaved.OnClick := SelectSavedClick;
   FToolbar.FSelectIgnored.OnClick := SelectIgnoredClick;
   FToolbar.FRename.OnClick := RenameClick;
-
-  // Das macht Höhen/Breiten von manchen Controls passig
-  PostTranslate;
-  FSearchPanel.ClientHeight := FSearchText.Top + 5 + FSearchText.Height;
 
   FTree.Align := alClient;
   FTree.OnChange := TreeChange;
@@ -1844,6 +1845,13 @@ begin
     TTitlePanel(Owner).FToolbar.FExport.Click
   else if Sender = FPopupMenu.FImport then
     TTitlePanel(Owner).FToolbar.FImport.Click;
+end;
+
+procedure TTitleTree.PostTranslate;
+begin
+  FColTitle.Text := _('Title');
+  FColSaved.Text := _('Times saved');
+  FColAdded.Text := _('Date');
 end;
 
 procedure TTitleTree.RemoveClient(Client: TICEClient);
