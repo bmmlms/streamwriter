@@ -694,8 +694,6 @@ begin
   ToggleWindow(False);
 end;
 
-// TODO: actions "actTuneInStream" und "actSavePlaylistStream" haben keine shortcuts. übersetzungen auch nicht!
-
 procedure TfrmStreamWriterMain.AfterShown(var Msg: TMessage);
 var
   FormIntro: TfrmIntro;

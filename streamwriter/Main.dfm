@@ -412,13 +412,13 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       ImageIndex = 12
     end
     object actTuneInStream: TAction
-      Caption = 'Open stream'
-      Hint = 'Open stream'
+      Caption = 'Open strea&m...'
+      Hint = 'Open stream...'
       ImageIndex = 94
     end
     object actSavePlaylistStream: TAction
-      Caption = 'Save playlist'
-      Hint = 'Save playlist'
+      Caption = 'Sa&ve playlist...'
+      Hint = 'Save playlist...'
       ImageIndex = 95
     end
     object actResetData: TAction

@@ -528,12 +528,12 @@ begin
   Items.Add(ItemTmp);
 
   FItemShowFile := CreateMenuItem;
-  FItemShowFile.Caption := 'Show in e&xplorer';
+  FItemShowFile.Caption := 'Show in e&xplorer...';
   FItemShowFile.ImageIndex := 28;
   Items.Add(FItemShowFile);
 
   FItemProperties := CreateMenuItem;
-  FItemProperties.Caption := 'Proper&ties';
+  FItemProperties.Caption := 'Proper&ties...';
   FItemProperties.ImageIndex := 22;
   Items.Add(FItemProperties);
 
@@ -623,12 +623,12 @@ begin
 
   FProperties := TToolButton.Create(Self);
   FProperties.Parent := Self;
-  FProperties.Hint := _('Properties');
+  FProperties.Hint := _('Properties...');
   FProperties.ImageIndex := 22;
 
   FShowFile := TToolButton.Create(Self);
   FShowFile.Parent := Self;
-  FShowFile.Hint := _('Show in explorer');
+  FShowFile.Hint := _('Show in explorer...');
   FShowFile.ImageIndex := 28;
 
   FSep2 := TToolButton.Create(Self);
