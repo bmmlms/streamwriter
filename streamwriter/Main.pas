@@ -1651,8 +1651,6 @@ begin
 
   PlayerManager.Players.GetPlayingInfo(Artist, Title, Stream, Filename);
 
-  // TODO: string "Remove from ig&norelist" ist ohne shortcut nach DE übersetzt
-
   if Filename <> '' then
   begin
     if (Artist <> '') and (Title <> '') then
