@@ -933,8 +933,6 @@ begin
   end;
 end;
 
-// TODO: Speicherlöcher jagen ;-) .. mal im DebugMode laufen lassen und dann zusehen.
-
 procedure TClientTab.ClientManagerAddRecent(Sender: TObject);
 var
   Client: TICEClient;

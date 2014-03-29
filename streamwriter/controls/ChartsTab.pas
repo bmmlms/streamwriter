@@ -864,6 +864,7 @@ var
 begin
   inherited;
 
+  Val := 1;
   Text := '';
 
   NodeData := GetNodeData(Node);

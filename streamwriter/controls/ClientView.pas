@@ -1186,7 +1186,6 @@ end;
 procedure TMClientView.DoDragging(P: TPoint);
 var
   i: Integer;
-  UseFile: Boolean;
   Entries: TPlaylistEntryArray;
   Client: TICEClient;
   Clients: TClientArray;
@@ -1203,8 +1202,6 @@ begin
     Exit;
   end;
 
-  UseFile := True;
-
   SetLength(FDragNodes, 0);
   FDragSource.Files.Clear;
 
@@ -1217,8 +1214,6 @@ begin
         Exit;
       SetLength(FDragNodes, Length(FDragNodes) + 1);
       FDragNodes[High(FDragNodes)] := GetClientNode(Client);
-      if not Client.Active then
-        UseFile := False;
     end;
 
     SetLength(Entries, 0);

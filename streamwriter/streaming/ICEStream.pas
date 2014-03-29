@@ -1326,18 +1326,6 @@ begin
 
             IgnoreTitle := Title = '';
 
-            {
-            case FMetaCounter of
-              0: Title := 'A';
-              1: Title := 'B';
-              2: Title := 'C';
-              3: Title := 'D';
-              4: Title := 'E';
-              5: Title := 'F';
-              6: Title := 'G';
-            end;
-            }
-
             //if FMonitoring and (FMonitorAnalyzer <> nil) then
             //begin
             //  try

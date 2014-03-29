@@ -745,8 +745,8 @@ begin
   FStorage.Read('MonitorMode', FMonitorMode, True);
 
   FStorage.Read('MonitorCount', FMonitorCount, 3);
-  if FMonitorCount > 99 then
-    FMonitorCount := 99;
+  if FMonitorCount > 999 then
+    FMonitorCount := 999;
 
   FStorage.Read('LimitSpeed', FLimitSpeed, False);
   FStorage.Read('MaxSpeed', FMaxSpeed, 0);
@@ -1477,12 +1477,9 @@ end;
 class function TStreamSettings.LoadAuto(Stream: TExtendedStream;
   Version: Integer): TStreamSettings;
 var
-  B: Byte;
-  i, Count, FilterTmp, TypeTmp: Integer;
-  C: Cardinal;
+  i, Count, TypeTmp: Integer;
   T: TPostProcessTypes;
   AT: TAudioTypes;
-  Tmp: string;
   PP: TPostProcessBase;
   ES: TEncoderSettings;
 begin

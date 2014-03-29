@@ -2535,9 +2535,9 @@ procedure TfrmStreamWriterMain.UpdateButtons;
 var
   i: Integer;
 
-  OneNormalRecordingWithTitle, OneNormalStopsAfterSong, AllNormalStopsAfterSong: Boolean;
+  OneNormalRecordingWithTitle, AllNormalStopsAfterSong: Boolean;
   B, OnlyAutomatedSelected, OnlyAutomatedCatsSelected, OnlyAutomaticRecording: Boolean;
-  URLFound, FilenameFound, OneRecording, OneNotRecording, OnePlaying, OnePaused: Boolean;
+  URLFound, OneRecording, OneNotRecording, OnePlaying, OnePaused: Boolean;
   OneHasTitle, ClientSchedulesActive: Boolean;
   Clients, AllClients: TClientArray;
   Client: TICEClient;
@@ -2555,7 +2555,6 @@ begin
   OnlyAutomaticRecording := True;
   OneNormalRecordingWithTitle := False;
   AllNormalStopsAfterSong := True;
-  FilenameFound := False;
   OnlyAutomatedSelected := True;
   OneRecording := False;
   OneNotRecording := False;
@@ -2583,14 +2582,10 @@ begin
       if Client.Recording and (Client.Title <> '') then
       begin
         OneNormalRecordingWithTitle := True;
-        if Client.StopAfterSong then
-          OneNormalStopsAfterSong := True
-        else
+        if not Client.StopAfterSong then
           AllNormalStopsAfterSong := False;
       end;
     end;
-    if Client.Filename <> '' then
-      FilenameFound := True;
     if Client.Title <> '' then
       OneHasTitle := True;
     if Client.Recording then

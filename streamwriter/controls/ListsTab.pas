@@ -479,7 +479,7 @@ begin
       List := FLists.SaveList;
     ltIgnore:
       List := FLists.IgnoreList;
-    ltAutoDetermine:
+    else
       Exit;
   end;
 

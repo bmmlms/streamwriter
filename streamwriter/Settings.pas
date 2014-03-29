@@ -575,19 +575,12 @@ end;
 procedure TfrmSettings.Finish;
 var
   i, k, n: Integer;
-  AdvancedDiffers: Boolean;
   PostProcessor: TPostProcessBase;
   EP: TExternalPostProcess;
   Item: TListItem;
-  OldRegExes, OldIgnoreTitles: Cardinal;
 begin
-  AdvancedDiffers := False;
-
   if Length(FStreamSettings) > 0 then
   begin
-    OldRegExes := GetStringListHash(FStreamSettings[0].RegExes);
-    OldIgnoreTitles := GetStringListHash(FStreamSettings[0].IgnoreTrackChangePattern);
-
     if FSettingsType = stAuto then
     begin
       AppGlobals.Lock;
@@ -783,11 +776,6 @@ begin
         end;
         // -----------------------------------------------------------
       end;
-
-      if (FIgnoreFieldList.IndexOf(lstRegExes) = -1) and (GetStringListHash(FStreamSettings[i].RegExes) <> OldRegExes) then
-        AdvancedDiffers := True;
-      if (FIgnoreFieldList.IndexOf(lstIgnoreTitles) = -1) and (GetStringListHash(FStreamSettings[i].IgnoreTrackChangePattern) <> OldIgnoreTitles) then
-        AdvancedDiffers := True;
     end;
   end else
   begin

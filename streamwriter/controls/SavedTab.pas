@@ -882,8 +882,6 @@ begin
 end;
 
 procedure TSavedTab.AfterCreate;
-var
-  i: Integer;
 begin
   inherited;
 

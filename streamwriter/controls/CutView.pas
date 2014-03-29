@@ -1967,6 +1967,8 @@ constructor TSaveCutThread.Create(InFilename, OutFilename: string; S, E: Cardina
 begin
   inherited Create(True);
 
+  FreeOnTerminate := True;
+
   FInFilename := InFilename;
   FOutFilename := OutFilename;
   FS := S;
