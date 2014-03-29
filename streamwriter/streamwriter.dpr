@@ -160,8 +160,6 @@ begin
   MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
   {$ENDIF}
 
-  ExistsIconSize('A', 64);
-
   HideMain := False;
   for i := 0 to ParamCount do
   begin
