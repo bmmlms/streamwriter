@@ -319,7 +319,7 @@ begin
   FItemAdd := CreateItem('&Add stream', 80, nil);
   FItemAdd.OnClick := PopupMenuClick;
 
-  FItemSetData := CreateItem('S&et data...', -1, nil);
+  FItemSetData := CreateItem('S&et data...', 9, nil);
   FItemSetData.OnClick := PopupMenuClick;
 
   FItemRate := CreateItem('&Rate', 64, nil);
@@ -348,10 +348,10 @@ begin
   FItemBlacklist := CreateItem('Add to &blacklist', 51, nil);
   FItemBlacklist.OnClick := PopupMenuClick;
 
-  FItemCopy := CreateItem('&Copy URL', -1, nil);
+  FItemCopy := CreateItem('&Copy URL', 57, nil);
   FItemCopy.OnClick := PopupMenuClick;
 
-  FItemSave := CreateItem('&Save as playlist...', -1, nil);
+  FItemSave := CreateItem('&Save as playlist...', 95, nil);
   FItemSave.OnClick := PopupMenuClick;
 
   PopupMenu := FPopupMenu;
