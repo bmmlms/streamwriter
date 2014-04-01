@@ -1736,9 +1736,6 @@ var
   S: TfrmSettings;
   OldMonitorCount, NewMonitorCount: Cardinal;
 begin
-  if SettingsType = stApp then
-    RegisterHotkeys(False);
-
   if AppGlobals.SubmitStats and AppGlobals.MonitorMode then
     OldMonitorCount := AppGlobals.MonitorCount
   else
@@ -1759,6 +1756,8 @@ begin
       case SettingsType of
         stApp:
           begin
+            RegisterHotkeys(False);
+
             SetCaptionAndTrayHint;
 
             if AppGlobals.SubmitStats and AppGlobals.MonitorMode then
