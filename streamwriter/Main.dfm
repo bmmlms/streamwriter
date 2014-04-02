@@ -3,10 +3,10 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Top = 450
   Caption = 'streamWriter'
   ClientHeight = 336
-  ClientWidth = 828
+  ClientWidth = 868
   Color = clBtnFace
   Constraints.MinHeight = 390
-  Constraints.MinWidth = 840
+  Constraints.MinWidth = 872
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -26,7 +26,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   object tbClients: TToolBar
     Left = 0
     Top = 0
-    Width = 828
+    Width = 868
     Height = 25
     Images = modSharedData.imgImages
     Indent = 2

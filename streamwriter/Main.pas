@@ -281,7 +281,7 @@ type
     procedure UpdaterNoUpdateFound(Sender: TObject);
     function HandleLoadError(E: Exception): Integer;
     procedure CheckFilesTerminate(Sender: TObject);
-    procedure RegisterHotkeys(Reg: Boolean);
+    procedure RegisterHotkeys;
     procedure ShowCommunityLogin;
     procedure OpenCut(Filename: string); overload;
     procedure OpenCut(Track: TTrackInfo); overload;
@@ -967,7 +967,7 @@ begin
   tmrSpeed.Enabled := True;
   tmrSchedule.Enabled := True;
 
-  RegisterHotkeys(True);
+  RegisterHotkeys;
 
   UpdateButtons;
 
@@ -1300,6 +1300,10 @@ begin
       begin
         Players.Mute;
       end;
+    8:
+      begin
+        tabSaved.ToggleShuffle;
+      end;
   end;
 end;
 
@@ -1556,7 +1560,7 @@ begin
   end;
 end;
 
-procedure TfrmStreamWriterMain.RegisterHotkeys(Reg: Boolean);
+procedure TfrmStreamWriterMain.RegisterHotkeys;
 var
   K: Word;
   M: Cardinal;
@@ -1569,9 +1573,7 @@ begin
   UnregisterHotKey(Handle, 5);
   UnregisterHotKey(Handle, 6);
   UnregisterHotKey(Handle, 7);
-
-  if not Reg then
-    Exit;
+  UnregisterHotKey(Handle, 8);
 
   if AppGlobals.ShortcutPlay > 0 then
   begin
@@ -1619,6 +1621,12 @@ begin
   begin
     ShortCutToHotKey(AppGlobals.ShortcutMute, K, M);
     RegisterHotkey(Handle, 7, M, K);
+  end;
+
+  if AppGlobals.ShortcutShuffle > 0 then
+  begin
+    ShortCutToHotKey(AppGlobals.ShortcutShuffle, K, M);
+    RegisterHotKey(Handle, 8, M, K);
   end;
 end;
 
@@ -1756,8 +1764,6 @@ begin
       case SettingsType of
         stApp:
           begin
-            RegisterHotkeys(False);
-
             SetCaptionAndTrayHint;
 
             if AppGlobals.SubmitStats and AppGlobals.MonitorMode then
@@ -1784,7 +1790,7 @@ begin
 
             ScreenSnap := AppGlobals.SnapMain;
 
-            RegisterHotkeys(True);
+            RegisterHotkeys;
 
             TLogger.SetFilename(AppGlobals.LogFile);
           end;

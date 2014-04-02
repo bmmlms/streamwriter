@@ -892,6 +892,11 @@ begin
     else
       AppGlobals.ShortcutMute := 0;
 
+    if lstHotkeys.Items[8].SubItems[0] <> '' then
+      AppGlobals.ShortcutShuffle := TextToShortCut(lstHotkeys.Items[8].SubItems[0])
+    else
+      AppGlobals.ShortcutShuffle := 0;
+
 
     // -----------------------------------------------------------
     AppGlobals.StreamSettings.OutputFormat := TAudioTypes(lstOutputFormat.ItemIndex);
@@ -2575,6 +2580,7 @@ begin
     lstHotkeys.Items[5].Caption := _('Volume up');
     lstHotkeys.Items[6].Caption := _('Volume down');
     lstHotkeys.Items[7].Caption := _('Mute');
+    lstHotkeys.Items[8].Caption := _('Shuffle');
   end else
   begin
     Item := lstHotkeys.Items.Add;
@@ -2608,6 +2614,10 @@ begin
     Item := lstHotkeys.Items.Add;
     Item.Caption := _('Mute');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutMute));
+
+    Item := lstHotkeys.Items.Add;
+    Item.Caption := _('Shuffle');
+    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutShuffle));
   end;
 end;
 

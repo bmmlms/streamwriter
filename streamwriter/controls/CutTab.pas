@@ -375,7 +375,7 @@ begin
   FVolume.Setup;
   FVolume.Enabled := Bass.DeviceAvailable;
   FVolume.Width := 140;
-  FVolume.Padding.Bottom := 3;
+  FVolume.Padding.Bottom := 2;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;

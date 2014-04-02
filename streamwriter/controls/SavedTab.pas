@@ -166,6 +166,7 @@ type
     FStop: TToolButton;
     FNext: TToolButton;
     FPlayLastSecs: TToolButton;
+    FShuffle: TToolButton;
   public
     constructor Create(AOwner: TComponent); override;
 
@@ -277,6 +278,8 @@ type
     procedure UpdateButtons;
     procedure StopThreads;
 
+    procedure ToggleShuffle;
+
     property Tree: TSavedTree read FSavedTree;
 
     property OnCut: TTrackEvent read FOnCut write FOnCut;
@@ -292,6 +295,8 @@ type
   TSavedTree = class(TVirtualStringTree)
   private
     FPlayer: TPlayer;
+    FPlayerList: TStringList;
+    FPlayerIndex: Integer;
     FDragSource: TDropFileSource;
     FTab: TSavedTab;
     FTrackList: TTrackList;
@@ -370,8 +375,8 @@ type
 
     procedure PostTranslate;
 
-    function PrevPlayingTrack: TTrackInfo;
-    function NextPlayingTrack: TTrackInfo;
+    function PrevPlayingTrack(ConsiderRnd: Boolean): TTrackInfo;
+    function NextPlayingTrack(ConsiderRnd: Boolean; AddToPlayerList: Boolean = True): TTrackInfo;
     procedure AddTrack(Track: TTrackInfo; AddToInternalList: Boolean; IgnorePattern: Boolean = False);
     procedure RemoveTrack(Track: TTrackInfo); overload;
     procedure DeleteTrack(Track: TTrackInfo);
@@ -912,7 +917,7 @@ begin
   FTopRightPanel.Parent := FTopPanel;
   FTopRightPanel.Align := alRight;
   FTopRightPanel.ClientHeight := 52;
-  FTopRightPanel.ClientWidth := 300;
+  FTopRightPanel.ClientWidth := 330;
   FTopRightPanel.BevelOuter := bvNone;
 
   FCoverPanel := TPanel.Create(Self);
@@ -960,7 +965,7 @@ begin
   FPlayToolbar.Parent := FSeekPosPanel;
   FPlayToolbar.Align := alLeft;
   FPlayToolbar.Images := modSharedData.imgImages;
-  FPlayToolbar.Width := 150;
+  FPlayToolbar.Width := 190;
   FPlayToolbar.Setup;
   FPlayToolbar.Left := 0;
 
@@ -991,7 +996,7 @@ begin
   FSeek.Parent := FTopRightTopPanel;
   FSeek.Align := alLeft;
   FSeek.Left := FToolbar.Left + FToolbar.Width + 10;
-  FSeek.Width := 145;
+  FSeek.Width := 177;
   FSeek.OnPositionChanged := SeekChange;
 
   FVolume := TVolumePanel.Create(Self);
@@ -1018,6 +1023,7 @@ begin
   FPlayToolBar.FStop.OnClick := FSavedTree.PopupMenuClick;
   FPlayToolBar.FNext.OnClick := FSavedTree.PopupMenuClick;
   FPlayToolBar.FPlayLastSecs.OnClick := FSavedTree.PopupMenuClick;
+  FPlayToolbar.FShuffle.OnClick := ToolBarClick;
 
   FToolBar.FCutSong.OnClick := ToolBarClick;
   FToolBar.FEditTags.OnClick := ToolBarClick;
@@ -1300,7 +1306,17 @@ begin
   FSavedTree.Change(nil);
 end;
 
+procedure TSavedTab.ToggleShuffle;
+begin
+  FPlayToolbar.FShuffle.Down := not FPlayToolbar.FShuffle.Down;
+  FPlayToolbar.FShuffle.Click;
+  UpdateButtons;
+end;
+
 procedure TSavedTab.ToolBarClick(Sender: TObject);
+var
+  Node: PVirtualNode;
+  NodeData: PSavedNodeData;
 begin
   if Sender = FToolbar.FRefresh then
     if Assigned(FOnRefresh) then
@@ -1314,6 +1330,29 @@ begin
   }
   if Sender = FPlayToolbar.FPlay then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemPlay);
+  if Sender = FPlayToolbar.FShuffle then
+  begin
+    if not FPlayToolbar.FShuffle.Down then
+    begin
+      FSavedTree.FPlayerList.Clear;
+      FSavedTree.FPlayerIndex := 0;
+    end else
+    begin
+      if FSavedTree.Player.Playing then
+      begin
+        Node := FSavedTree.GetNode(FSavedTree.Player.Filename);
+        if Node <> nil then
+        begin
+          NodeData := FSavedTree.GetNodeData(Node);
+          FSavedTree.FPlayerList.Add(NodeData.Track.Filename);
+          FSavedTree.FPlayerIndex := FSavedTree.FPlayerList.Count - 1;
+        end;
+      end;
+    end;
+
+    AppGlobals.PlayerShuffle := FPlayToolbar.FShuffle.Down;
+    UpdateButtons;
+  end;
   {
   if Sender = FPlayToolbar.FPause then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemPause);
@@ -1391,8 +1430,12 @@ begin
 
   if Tree.Player.Playing or Tree.Player.Paused then
   begin
-    IsFirst := FSavedTree.PrevPlayingTrack = nil;
-    IsLast := FSavedTree.NextPlayingTrack = nil;
+    IsFirst := FSavedTree.PrevPlayingTrack(False) = nil;
+    IsLast := (FSavedTree.NextPlayingTrack(False) = nil);
+    if IsLast and (FSavedTree.FFileNode.ChildCount > 1) then
+      IsLast := not FPlayToolbar.FShuffle.Down;
+    if IsFirst and (FSavedTree.FFileNode.ChildCount > 1) then
+      IsFirst := not FPlayToolbar.FShuffle.Down;
   end else
   begin
     IsFirst := True;
@@ -1408,6 +1451,8 @@ begin
       Break;
     end;
   end;
+
+  FPlayToolbar.FShuffle.Down := AppGlobals.PlayerShuffle;
 
   FPlayToolbar.FPause.Down := Tree.Player.Paused;
 
@@ -1541,6 +1586,8 @@ var
 begin
   inherited Create(AOwner);
 
+  FPlayerList := TStringList.Create;
+
   FPattern := '*';
 
   FPlayer := TPlayer.Create;
@@ -1665,6 +1712,7 @@ end;
 
 destructor TSavedTree.Destroy;
 begin
+  FPlayerList.Free;
   FPlayer.Free;
   FTrackList.Free;
   FDragSource.Free;
@@ -1854,37 +1902,26 @@ end;
 
 procedure TSavedTree.PlayerEndReached(Sender: TObject);
 var
-  PlayedNode, NextNode: PVirtualNode;
-  NodeData: PSavedNodeData;
+  TrackInfo: TTrackInfo;
 begin
   FPlayer.Stop(True);
 
-  if FPlayNext then
+  if (not FPlayNext) then
+    Exit;
+
+  TrackInfo := NextPlayingTrack(True);
+  if TrackInfo <> nil then
   begin
-    // Nächsten Track in der Liste suchen, der auch in der Ansicht
-    // angezeigt wird. Wenn gefunden, abspielen.
-    PlayedNode := GetNode(Player.Filename);
-    if PlayedNode <> nil then
-    begin
-      NextNode := GetNext(PlayedNode);
-      if NextNode <> nil then
-      begin
-        NodeData := GetNodeData(NextNode);
-        if NodeData.Track <> nil then
-        begin
-          try
-            FPlayer.Filename := NodeData.Track.Filename;
-          except
-            Exit;
-          end;
-
-          FPlayer.Play;
-
-          FTab.FSeek.Max := Player.MaxByte;
-          FTab.FSeek.Position := Player.PositionByte;
-        end;
-      end;
+    try
+      FPlayer.Filename := TrackInfo.Filename;
+    except
+      Exit;
     end;
+
+    FPlayer.Play;
+
+    FTab.FSeek.Max := Player.MaxByte;
+    FTab.FSeek.Position := Player.PositionByte;
   end;
 
   FTab.UpdateButtons;
@@ -1924,48 +1961,162 @@ begin
   FTab.ShowCover(nil);
 end;
 
-function TSavedTree.PrevPlayingTrack: TTrackInfo;
+function TSavedTree.PrevPlayingTrack(ConsiderRnd: Boolean): TTrackInfo;
 var
   i: Integer;
   Nodes: TNodeArray;
+  Node: PVirtualNode;
   NodeData, NodeDataPrev: PSavedNodeData;
 begin
   Result := nil;
-  Nodes := GetNodes(False);
-  for i := 0 to Length(Nodes) - 1 do
+
+  if FTab.FPlayToolbar.FShuffle.Down and ConsiderRnd then
   begin
-    NodeData := GetNodeData(Nodes[i]);
-    if LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename) then
+    for i := FPlayerIndex - 1 downto 0 do
     begin
-      if i > 0 then
+      Node := GetNode(FPlayerList[FPlayerIndex - 1]);
+      if Node <> nil then
       begin
-        NodeDataPrev := GetNodeData(Nodes[i - 1]);
-        Result := NodeDataPrev.Track;
+        NodeData := GetNodeData(Node);
+        Result := NodeData.Track;
+        FPlayerIndex := i;
+        Break;
       end;
-      Break;
+    end;
+
+    if Result = nil then
+    begin
+      Result := NextPlayingTrack(True, False);
+
+      if Result <> nil then
+      begin
+        FPlayerList.Insert(0, Result.Filename);
+        FPlayerIndex := 0;
+      end;
+    end;
+  end else
+  begin
+    Nodes := GetNodes(False);
+    for i := 0 to Length(Nodes) - 1 do
+    begin
+      NodeData := GetNodeData(Nodes[i]);
+      if LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename) then
+      begin
+        if i > 0 then
+        begin
+          NodeDataPrev := GetNodeData(Nodes[i - 1]);
+          Result := NodeDataPrev.Track;
+        end;
+        Break;
+      end;
     end;
   end;
 end;
 
-function TSavedTree.NextPlayingTrack: TTrackInfo;
+function TSavedTree.NextPlayingTrack(ConsiderRnd, AddToPlayerList: Boolean): TTrackInfo;
+  function GetRandom(ExceptFilename: string): TTrackInfo;
+  var
+    R: Integer;
+    Node: PVirtualNode;
+    NodeData: PSavedNodeData;
+    Nodes: TNodeArray;
+  begin
+    Result := nil;
+
+    if FFileNode.ChildCount <= 1 then
+      Exit;
+
+    SetLength(Nodes, 0);
+
+    Node := GetFirstChild(FFileNode);
+
+    if Node = nil then
+      Exit;
+
+    while Node <> nil do
+    begin
+      NodeData := GetNodeData(Node);
+      if (NodeData.Track <> nil) and (NodeData.Track.Filename <> ExceptFilename) then
+      begin
+        SetLength(Nodes, Length(Nodes) + 1);
+        Nodes[High(Nodes)] := Node;
+      end;
+
+      Node := GetNextSibling(Node);
+    end;
+
+    R := Random(Length(Nodes));
+
+    NodeData := GetNodeData(Nodes[R]);
+    if NodeData.Track <> nil then
+      Exit(NodeData.Track);
+  end;
 var
   i: Integer;
   Nodes: TNodeArray;
+  Node: PVirtualNode;
   NodeData, NodeDataNext: PSavedNodeData;
 begin
   Result := nil;
-  Nodes := GetNodes(False);
-  for i := 0 to Length(Nodes) - 1 do
+
+  if not AddToPlayerList then
   begin
-    NodeData := GetNodeData(Nodes[i]);
-    if LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename) then
+    Result := GetRandom(FPlayer.Filename);
+    Exit;
+  end;
+
+  if FTab.FPlayToolbar.FShuffle.Down and ConsiderRnd then
+  begin
+    if FPlayerIndex = FPlayerList.Count - 1 then
     begin
-      if i < Length(Nodes) - 1 then
+      Result := GetRandom(FPlayer.Filename);
+
+      if Result <> nil then
       begin
-        NodeDataNext := GetNodeData(Nodes[i + 1]);
-        Result := NodeDataNext.Track;
+        FPlayerList.Add(Result.Filename);
+        FPlayerIndex := FPlayerList.Count - 1;
       end;
-      Break;
+    end else
+    begin
+      for i := FPlayerIndex + 1 to FPlayerList.Count - 1 do
+      begin
+        Node := GetNode(FPlayerList[i]);
+        if Node <> nil then
+        begin
+          NodeData := GetNodeData(Node);
+          Result := NodeData.Track;
+          FPlayerIndex := i;
+          Break;
+        end;
+      end;
+
+      if Result = nil then
+      begin
+        Result := GetRandom(FPlayer.Filename);
+
+        if Result <> nil then
+        begin
+          FPlayerList.Add(Result.Filename);
+          FPlayerIndex := FPlayerList.Count - 1;
+        end;
+      end;
+    end;
+  end else
+  begin
+    Nodes := GetNodes(False);
+    for i := 0 to Length(Nodes) - 1 do
+    begin
+      NodeData := GetNodeData(Nodes[i]);
+      if LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename) then
+      begin
+        if i < Length(Nodes) - 1 then
+        begin
+          NodeDataNext := GetNodeData(Nodes[i + 1]);
+          if NodeDataNext.Track <> nil then
+            Result := NodeDataNext.Track;
+        end;
+        Break;
+      end;
     end;
   end;
 end;
@@ -1974,6 +2125,7 @@ procedure TSavedTree.PopupMenuClick(Sender: TObject);
 var
   Action: TTrackActions;
   Tracks: TTrackInfoArray;
+  Track: TTrackInfo;
 begin
   Action := taUndefined;
   Tracks := GetSelected;
@@ -1982,7 +2134,7 @@ begin
   if Sender = FTab.FPlayToolbar.FPrev then
   begin
     try
-      FPlayer.Filename := PrevPlayingTrack.Filename;
+      FPlayer.Filename := PrevPlayingTrack(True).Filename;
     except
       MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
       Exit;
@@ -2017,8 +2169,12 @@ begin
     Exit;
   end else if Sender = FTab.FPlayToolbar.FNext then
   begin
+    Track := NextPlayingTrack(True);
+    if Track = nil then
+      Exit;
+
     try
-      FPlayer.Filename := NextPlayingTrack.Filename;
+      FPlayer.Filename := Track.Filename;
     except
       MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
       Exit;
@@ -2081,6 +2237,18 @@ begin
     begin
       try
         FPlayer.Filename := Tracks[0].Filename;
+
+        if AppGlobals.PlayerShuffle then
+        begin
+          while FPlayerList.Count - 1 > FPlayerIndex do
+            FPlayerList.Delete(FPlayerList.Count - 1);
+
+          if (FPlayerList.Count > 0) and (FPlayerList[FPlayerList.Count - 1] = Tracks[0].Filename) then
+            FPlayerList.Delete(FPlayerList.Count - 1);
+
+          FPlayerList.Add(Tracks[0].Filename);
+          FPlayerIndex := FPlayerList.Count - 1;
+        end;
       except
         MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
         Exit;
@@ -2442,14 +2610,7 @@ begin
     if FPlayer.Playing or FPlayer.Paused then
       if not Selected[PaintInfo.Node] then
         if (FPlayer.Playing or FPlayer.Paused) and (LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename)) then
-        //begin
           PaintInfo.Canvas.Font.Color := HTML2Color('#0078ff');
-        //end
-      {else   Auskommentiert, weil das keine wirkung zeigt und wir "normal" bleiben möchten.
-        if (FPlayer.Playing or FPlayer.Paused) and (LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename)) then
-        begin
-          PaintInfo.Canvas.Font.Color := PaintInfo.Canvas.Font.Color - 100;
-        end;}
 
   inherited;
 end;
@@ -3148,6 +3309,18 @@ procedure TPlayToolBar.Setup;
 var
   Sep: TToolButton;
 begin
+  FShuffle := TToolButton.Create(Self);
+  FShuffle.Parent := Self;
+  FShuffle.Hint := 'Shuffle';
+  FShuffle.ImageIndex := 96;
+  FShuffle.Down := AppGlobals.PlayerShuffle;
+  FShuffle.Style := tbsCheck;
+
+  Sep := TToolButton.Create(Self);
+  Sep.Style := tbsSeparator;
+  Sep.Parent := Self;
+  Sep.Width := 8;
+
   FPlayLastSecs := TToolButton.Create(Self);
   FPlayLastSecs.Parent := Self;
   FPlayLastSecs.Hint := 'Play end';

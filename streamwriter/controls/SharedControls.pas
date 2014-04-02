@@ -518,8 +518,11 @@ end;
 
 procedure TSeekBar.FSetGripperVisible(Value: Boolean);
 begin
-  FGripperVisible := Value;
-  Paint;
+  if Value <> FGripperVisible then
+  begin
+    FGripperVisible := Value;
+    Paint;
+  end;
 end;
 
 procedure TSeekBar.FSetPosition(Value: Int64);
