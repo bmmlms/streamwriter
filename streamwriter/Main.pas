@@ -1573,7 +1573,6 @@ begin
   UnregisterHotKey(Handle, 5);
   UnregisterHotKey(Handle, 6);
   UnregisterHotKey(Handle, 7);
-  UnregisterHotKey(Handle, 8);
 
   if AppGlobals.ShortcutPlay > 0 then
   begin
@@ -1621,12 +1620,6 @@ begin
   begin
     ShortCutToHotKey(AppGlobals.ShortcutMute, K, M);
     RegisterHotkey(Handle, 7, M, K);
-  end;
-
-  if AppGlobals.ShortcutShuffle > 0 then
-  begin
-    ShortCutToHotKey(AppGlobals.ShortcutShuffle, K, M);
-    RegisterHotKey(Handle, 8, M, K);
   end;
 end;
 

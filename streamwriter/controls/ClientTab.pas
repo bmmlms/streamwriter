@@ -981,6 +981,12 @@ begin
     FPlaybackTimer.Enabled := False;
     FPlaybackTimer.Enabled := True;
   end;
+
+  // Da man "Play" auch über einen Hotkey (Play, Next track, Prev track) machen kann,
+  // rufen wir das hier auch nochmal auf. Ansonsten regeln das nämlich die Klicks
+  // in der GUI, ganz unschön... könnte man gut über das Messaging-System regeln.
+  if Assigned(FOnPlayStarted) then
+    FOnPlayStarted(Self);
 end;
 
 procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string;

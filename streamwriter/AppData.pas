@@ -286,7 +286,6 @@ type
     FShortcutVolDown: Cardinal;
     FShortcutVolUp: Cardinal;
     FShortcutMute: Cardinal;
-    FShortcutShuffle: Cardinal;
 
     FClientHeaderWidthLoaded: Boolean;
     FClientHeaderPositionLoaded: Boolean;
@@ -417,7 +416,6 @@ type
     property ShortcutVolUp: Cardinal read FShortcutVolUp write FShortcutVolUp;
     // The hotkey to trigger "Mute"
     property ShortcutMute: Cardinal read FShortcutMute write FShortcutMute;
-    property ShortcutShuffle: Cardinal read FShortcutShuffle write FShortcutShuffle;
     // Minimum quality needed for automatic recording of a stream
     property AutoTuneInMinQuality: Integer read FAutoTuneInMinQuality write FAutoTuneInMinQuality;
     // Desired format of streams to tune in automatically
@@ -813,7 +811,6 @@ begin
   FStorage.Read('ShortcutVolDown', FShortcutVolDown, 0);
   FStorage.Read('ShortcutVolUp', FShortcutVolUp, 0);
   FStorage.Read('ShortcutMute', FShortcutMute, 0);
-  FStorage.Read('ShortcutShuffle', FShortcutShuffle, 0);
 
   // Header of ClientView
   TmpStr := 'ClientHeaderWidth';
@@ -1057,7 +1054,6 @@ begin
   FStorage.Write('ShortcutVolDown', FShortcutVolDown);
   FStorage.Write('ShortcutVolUp', FShortcutVolUp);
   FStorage.Write('ShortcutMute', FShortcutMute);
-  FStorage.Write('ShortcutShuffle', FShortcutShuffle);
 
   // Sachen löschen, weil ich Dinge umbenannt habe. Kann irgendwann raus... wird für Release von Version 5 "aktiv".
   FStorage.Delete('HeaderWidth0', 'Cols');
