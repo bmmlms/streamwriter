@@ -1012,6 +1012,9 @@ begin
   begin
     Clear;
 
+    // Damit die Position der ProgressBar passt
+    Resize;
+
     FProgressBar.Position := 0;
     if not FProgressBar.Visible then
       FProgressBar.Visible := True;
@@ -1161,7 +1164,7 @@ begin
   FStreamTree.FSortPopupMenu.FItemType.OnClick := SortItemClick;
   FStreamTree.FSortPopupMenu.FItemRating.OnClick := SortItemClick;
 
-  SwitchMode(moLoading);
+  SwitchMode(moShow);
 
   FSearch.FSearchEdit.OnChange := SearchEditChange;
   //FSearch.FSearchButton.OnClick := SearchButtonClick;

@@ -49,7 +49,7 @@ WizardImageFile=compiler:wizmodernimage-is.bmp
 WizardSmallImageFile=wizmodernsmallimage-is.bmp
 Compression=lzma/ultra
 LicenseFile=license.txt
-VersionInfoVersion=4.9.0.1
+VersionInfoVersion=5.0.0.0
 
 [Run]
 Filename: {app}\streamwriter.exe; WorkingDir: {app}; Flags: waituntilidle postinstall skipifsilent; Description: "{cm:Launch}"
@@ -86,7 +86,15 @@ end;
 
 procedure ButtonOnClick(Sender: TObject);
 begin
-  PostMessage(AppWndHandle(AppName), 16, 0, 0);
+  // Das machen wir hier mehrmals, falls irgendein oller modaler Dialog/MessageBox auf ist
+  PostMessage(AppWndHandle(AppName), 18, 0, 0);
+  Sleep(30);
+  PostMessage(AppWndHandle(AppName), 18, 0, 0);
+  Sleep(30);
+  PostMessage(AppWndHandle(AppName), 18, 0, 0);
+  Sleep(30);
+
+  Text.Caption := TranslateNewline(ExpandConstant('{cm:Running2}'));
 end;
 
 procedure CreatePages;
@@ -170,7 +178,7 @@ end;
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
-  exit;
+  Exit;
 
   if CurPageID = 10 then
   begin

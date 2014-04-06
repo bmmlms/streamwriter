@@ -1028,8 +1028,18 @@ end;
 procedure TfrmSettings.KeyDown(var Key: Word; Shift: TShiftState);
 begin
   inherited;
+
   if Key = VK_F1 then
-    ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLinkSettings), '', '', 1);
+  begin
+    case FSettingsType of
+      stApp:
+        ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLinkSettings), '', '', 1);
+      stAuto:
+        ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLinkAutoSettings), '', '', 1);
+      stStream:
+        ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLinkStreamSettings), '', '', 1);
+    end;
+  end;
 end;
 
 procedure TfrmSettings.Label20Click(Sender: TObject);

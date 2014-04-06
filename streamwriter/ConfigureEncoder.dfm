@@ -4,7 +4,7 @@ object frmConfigureEncoder: TfrmConfigureEncoder
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Configure encoder'
-  ClientHeight = 154
+  ClientHeight = 137
   ClientWidth = 213
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -57,7 +57,7 @@ object frmConfigureEncoder: TfrmConfigureEncoder
   TextHeight = 13
   object optCBR: TRadioButton
     Left = 8
-    Top = 8
+    Top = 4
     Width = 197
     Height = 21
     Caption = 'Use constant bitrate'
@@ -66,7 +66,7 @@ object frmConfigureEncoder: TfrmConfigureEncoder
   end
   object optVBR: TRadioButton
     Left = 8
-    Top = 64
+    Top = 52
     Width = 197
     Height = 21
     Caption = 'Use variable bitrate'
@@ -75,7 +75,7 @@ object frmConfigureEncoder: TfrmConfigureEncoder
   end
   object lstCBR: TComboBox
     Left = 24
-    Top = 32
+    Top = 28
     Width = 185
     Height = 21
     Style = csDropDownList
@@ -83,7 +83,7 @@ object frmConfigureEncoder: TfrmConfigureEncoder
   end
   object lstVBR: TComboBox
     Left = 24
-    Top = 88
+    Top = 76
     Width = 185
     Height = 21
     Style = csDropDownList
@@ -91,7 +91,7 @@ object frmConfigureEncoder: TfrmConfigureEncoder
   end
   object pnlNav: TPanel
     Left = 0
-    Top = 114
+    Top = 97
     Width = 213
     Height = 40
     Align = alBottom
@@ -101,7 +101,7 @@ object frmConfigureEncoder: TfrmConfigureEncoder
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 4
-    ExplicitTop = 118
+    ExplicitTop = 114
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -125,7 +125,6 @@ object frmConfigureEncoder: TfrmConfigureEncoder
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitHeight = 31
     end
   end
 end

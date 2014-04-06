@@ -508,7 +508,7 @@ begin
     end;
   end;
 
-  // Remove all clients from list - then wait and process their last messages
+  // Remove all clients from list
   FClients.Terminate;
 
   tabClients.ClientView.Clear;
@@ -1000,6 +1000,8 @@ end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
 begin
+  inherited;
+
   FreeAndNil(FClients);
   FreeAndNil(FUpdater);
   FreeAndNil(FDataLists);

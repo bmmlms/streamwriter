@@ -4,7 +4,7 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'frmConfigureSetTags'
-  ClientHeight = 307
+  ClientHeight = 305
   ClientWidth = 329
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -56,7 +56,7 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   OnShow = FormShow
   DesignSize = (
     329
-    307)
+    305)
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
@@ -252,7 +252,7 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Left = 4
     Top = 204
     Width = 293
-    Height = 57
+    Height = 61
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 2
     OnKeyPress = txtCommentKeyPress
@@ -270,7 +270,7 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   end
   object pnlNav: TPanel
     Left = 0
-    Top = 267
+    Top = 265
     Width = 329
     Height = 40
     Align = alBottom
@@ -280,8 +280,7 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 4
-    ExplicitTop = 270
-    ExplicitWidth = 273
+    ExplicitTop = 267
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -305,7 +304,6 @@ object frmConfigureSetTags: TfrmConfigureSetTags
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 172
     end
   end
 end

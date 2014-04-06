@@ -904,6 +904,10 @@ end;
 
 destructor TClientTab.Destroy;
 begin
+  // Es gab einmal die Exception, dass es im EventHandler crashte beim Beenden.
+  // Also ist das hier so...
+  FClients.OnClientRefresh := nil;
+
   MsgBus.RemoveSubscriber(MessageReceived);
 
   FreeAndNil(FPlaybackTimer);

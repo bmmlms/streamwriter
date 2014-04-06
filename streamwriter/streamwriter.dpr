@@ -174,7 +174,7 @@ begin
      (not IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion)) and (not HideMain)
      and (not AppGlobals.InstallUpdateOnStart)
   then
-    TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', 'Tuschigen', AppGlobals.AppVersion.AsString, AppGlobals.BuildNumber,
+    TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.BuildNumber,
       AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
 
   Application.Title := AppGlobals.AppName;

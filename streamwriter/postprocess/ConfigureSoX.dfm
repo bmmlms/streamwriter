@@ -4,8 +4,8 @@ object frmConfigureSoX: TfrmConfigureSoX
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Configure SoX'
-  ClientHeight = 455
-  ClientWidth = 417
+  ClientHeight = 253
+  ClientWidth = 409
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -58,8 +58,8 @@ object frmConfigureSoX: TfrmConfigureSoX
   TextHeight = 13
   object pnlNav: TPanel
     Left = 0
-    Top = 415
-    Width = 417
+    Top = 213
+    Width = 409
     Height = 40
     Align = alBottom
     BevelOuter = bvNone
@@ -68,11 +68,12 @@ object frmConfigureSoX: TfrmConfigureSoX
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitTop = 471
+    ExplicitTop = 415
+    ExplicitWidth = 417
     object Bevel2: TBevel
       Left = 4
       Top = 4
-      Width = 409
+      Width = 401
       Height = 5
       Align = alTop
       Shape = bsTopLine
@@ -80,7 +81,7 @@ object frmConfigureSoX: TfrmConfigureSoX
       ExplicitWidth = 396
     end
     object btnOK: TBitBtn
-      Left = 316
+      Left = 308
       Top = 9
       Width = 97
       Height = 27
@@ -92,14 +93,15 @@ object frmConfigureSoX: TfrmConfigureSoX
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitHeight = 36
+      ExplicitLeft = 316
     end
   end
   object pnlConfigure: TPanel
-    Left = 4
-    Top = 176
+    Left = 0
+    Top = 0
     Width = 409
-    Height = 221
+    Height = 213
+    BevelOuter = bvNone
     TabOrder = 1
     Visible = False
     object GroupBox1: TGroupBox
@@ -208,7 +210,7 @@ object frmConfigureSoX: TfrmConfigureSoX
     end
     object GroupBox3: TGroupBox
       Left = 4
-      Top = 168
+      Top = 164
       Width = 401
       Height = 49
       Caption = ' Misc '
@@ -225,8 +227,8 @@ object frmConfigureSoX: TfrmConfigureSoX
     end
   end
   object pnlSetup: TPanel
-    Left = 4
-    Top = 4
+    Left = 376
+    Top = 60
     Width = 397
     Height = 161
     TabOrder = 2

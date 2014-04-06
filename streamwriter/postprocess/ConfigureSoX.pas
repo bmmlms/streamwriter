@@ -306,20 +306,7 @@ begin
 end;
 
 procedure TfrmConfigureSoX.InitForm;
-var
-  i: Integer;
 begin
-  ClientHeight := pnlNav.Height + pnlConfigure.Height + 4;
-  for i := 0 to Self.ControlCount - 1 do
-  begin
-    if Self.Controls[i] is TPanel then
-    begin
-      Self.Controls[i].Left := 4;
-      Self.Controls[i].Top := 4;
-      TPanel(Self.Controls[i]).BevelOuter := bvNone;
-    end;
-  end;
-
   btnBrowse1.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
   btnBrowse2.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
 end;

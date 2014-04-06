@@ -291,6 +291,7 @@ end;
 constructor TClientManager.Create(Lists: TDataLists);
 begin
   inherited Create;
+
   FSongsSaved := 0;
   FClients := TClientList.Create;
   FMonitorClients := TClientList.Create;

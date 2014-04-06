@@ -277,6 +277,8 @@ type
 
     FProjectHelpLinkMain: string;
     FProjectHelpLinkSettings: string;
+    FProjectHelpLinkAutoSettings: string;
+    FProjectHelpLinkStreamSettings: string;
 
     FShortcutPlay: Cardinal;
     FShortcutPause: Cardinal;
@@ -476,6 +478,8 @@ type
 
     property ProjectHelpLinkMain: string read FProjectHelpLinkMain;
     property ProjectHelpLinkSettings: string read FProjectHelpLinkSettings;
+    property ProjectHelpLinkAutoSettings: string read FProjectHelpLinkAutoSettings;
+    property ProjectHelpLinkStreamSettings: string read FProjectHelpLinkStreamSettings;
   end;
 
 var
@@ -499,7 +503,8 @@ begin
   FStreamSettings := TStreamSettings.Create(False);
 
   // The number of the current build
-  FBuildNumber := 549;
+  FBuildNumber := 621;
+  FCodename := 'Cantas';
 
   // Adjust dimensions of the main-form
   W := 900;
@@ -534,6 +539,8 @@ begin
   FProjectHelpLink := 'http://streamwriter.org/wiki/artikel/help/';
   FProjectHelpLinkMain := 'http://streamwriter.org/wiki/artikel/mainwindow/';
   FProjectHelpLinkSettings := 'http://streamwriter.org/wiki/artikel/settings/';
+  FProjectHelpLinkAutoSettings := 'http://streamwriter.org/wiki/artikel/autosettings/';
+  FProjectHelpLinkStreamSettings := 'http://streamwriter.org/wiki/artikel/streamsettings/';
 
   FProjectForumLink := 'http://streamwriter.org/forum/';
   FProjectDonateLink := 'http://streamwriter.org/inhalt/donate/';

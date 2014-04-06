@@ -32,12 +32,11 @@ object frmSettings: TfrmSettings
       325)
     object lblDefaultFilter: TLabel
       Left = 4
-      Top = 284
+      Top = 288
       Width = 25
       Height = 13
       Anchors = [akLeft, akRight, akBottom]
       Caption = 'Lists:'
-      ExplicitTop = 288
     end
     object chkDeleteStreams: TCheckBox
       Left = 20
@@ -61,7 +60,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultFilter: TComboBox
       Left = 4
-      Top = 300
+      Top = 304
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -176,21 +175,19 @@ object frmSettings: TfrmSettings
     end
     object Label3: TLabel
       Left = 4
-      Top = 300
+      Top = 304
       Width = 191
       Height = 13
       Anchors = [akLeft, akBottom]
       Caption = 'Default action on doubleclick on stream:'
-      ExplicitTop = 268
     end
     object Label18: TLabel
       Left = 4
-      Top = 344
+      Top = 348
       Width = 193
       Height = 13
       Anchors = [akLeft, akBottom]
       Caption = 'Default action on doubleclick in browser:'
-      ExplicitTop = 312
     end
     object btnBrowseLogFile: TPngSpeedButton
       Left = 264
@@ -229,7 +226,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultAction: TComboBox
       Left = 4
-      Top = 316
+      Top = 320
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -260,7 +257,7 @@ object frmSettings: TfrmSettings
     end
     object lstDefaultActionBrowser: TComboBox
       Left = 4
-      Top = 360
+      Top = 364
       Width = 213
       Height = 21
       Style = csDropDownList
@@ -1272,7 +1269,7 @@ object frmSettings: TfrmSettings
     end
     object btnBlacklistRemove: TButton
       Left = 196
-      Top = 40
+      Top = 42
       Width = 93
       Height = 27
       Anchors = [akRight, akBottom]
@@ -1384,7 +1381,7 @@ object frmSettings: TfrmSettings
     end
     object btnRemoveIgnoreTitlePattern: TButton
       Left = 196
-      Top = 340
+      Top = 342
       Width = 93
       Height = 27
       Anchors = [akRight, akBottom]
@@ -1395,7 +1392,7 @@ object frmSettings: TfrmSettings
     end
     object btnAddIgnoreTitlePattern: TButton
       Left = 100
-      Top = 340
+      Top = 342
       Width = 93
       Height = 27
       Anchors = [akRight, akBottom]
@@ -1406,7 +1403,7 @@ object frmSettings: TfrmSettings
     end
     object txtIgnoreTitlePattern: TLabeledEdit
       Left = 4
-      Top = 316
+      Top = 318
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -1598,8 +1595,8 @@ object frmSettings: TfrmSettings
     end
   end
   object pnlAddons: TPanel
-    Left = 4
-    Top = 364
+    Left = 32
+    Top = 368
     Width = 293
     Height = 37
     TabOrder = 12
@@ -1608,7 +1605,7 @@ object frmSettings: TfrmSettings
       Left = 4
       Top = 0
       Width = 285
-      Height = 33
+      Height = 37
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
       Checkboxes = True

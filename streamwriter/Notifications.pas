@@ -24,8 +24,8 @@ interface
 
 uses
   Windows, SysUtils, Messages, Classes, Controls, Forms, StdCtrls,
-  Graphics, UxTheme, PngImageList, ImgList, Math,
-  GUIFunctions, LanguageObjects, Logging;
+  Graphics, UxTheme, Math, GUIFunctions, LanguageObjects, Logging,
+  pngimage, PngFunctions, ExtCtrls;
 
 type
   TNotificationStates = (nsFadingIn, nsVisible, nsFadingOut);
@@ -33,7 +33,7 @@ type
   TfrmNotification = class(TForm)
     lblTitle: TLabel;
     lblStream: TLabel;
-    PngImageList1: TPngImageList;
+    imgLogo: TImage;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
     FState: TNotificationStates;
@@ -48,7 +48,6 @@ type
       message WM_MOUSEACTIVATE;
     procedure WMNCHitTest(var Message: TWMNCHitTest); message WM_NCHITTEST;
     procedure WMTimer(var Message: TWMTimer); message WM_TIMER;
-    procedure Paint; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
 
@@ -89,12 +88,12 @@ begin
 
   FState := nsFadingIn;
   Parent := nil;
-  ClientHeight := 55;
 end;
 
 procedure TfrmNotification.CreateParams(var Params: TCreateParams);
 begin
   inherited;
+
   Params.WndParent := 0;
   Params.Style := WS_POPUP or WS_THICKFRAME or WS_EX_TOPMOST;
   Params.ExStyle := Params.ExStyle or WS_EX_NOACTIVATE;
@@ -102,27 +101,41 @@ end;
 
 procedure TfrmNotification.Display(Title, Stream: string);
 var
-  TextWidth: Integer;
+  TitleTextWidth, TitleTextHeight: Integer;
+  StreamTextHeight, StreamTextWidth: Integer;
 begin
-  Title := StringReplace(Title, '&', '&&', [rfReplaceAll]);
-  Stream := StringReplace(Stream, '&', '&&', [rfReplaceAll]);
-
   case FState of
     nsFadingIn:
       begin
-        TextWidth := GetTextSize(Title, lblTitle.Font).cx;
-        if TextWidth > 350 then
-          TextWidth := 350;
-        ClientWidth := lblTitle.Left * 2 + 52 + Max(200, TextWidth);
-        ClientHeight := lblStream.Top + lblStream.Height + lblTitle.Top;
+        Title := StringReplace(Title, '&', '&&', [rfReplaceAll]);
+        if Trim(Stream) <> '' then
+          Stream := Format(_('on %s'), [StringReplace(Stream, '&', '&&', [rfReplaceAll])]);
+
+        TitleTextWidth := GetTextSize(Title, lblTitle.Font).cx;
+        TitleTextHeight := GetTextSize(Title, lblTitle.Font).cy;
+        StreamTextWidth := GetTextSize(Stream, lblStream.Font).cx;
+        StreamTextHeight := GetTextSize(Stream, lblStream.Font).cy;
+
+        if TitleTextWidth > 350 then
+          TitleTextWidth := 350;
+        if StreamTextWidth > 350 then
+          StreamTextWidth := 350;
+
+        lblStream.Top := lblTitle.Top + TitleTextHeight + 8;
+
+        ClientWidth := lblTitle.Left * 2 + imgLogo.Width + 16 + Max(TitleTextWidth, StreamTextWidth);
+        ClientHeight := Max(lblTitle.Top * 2 + TitleTextHeight + StreamTextHeight + 8, imgLogo.Height);
+
+        imgLogo.Left := ClientWidth - imgLogo.Width - lblTitle.Left;
+        imgLogo.Top := ClientHeight div 2 - imgLogo.Height div 2;
 
         Left := Screen.PrimaryMonitor.WorkareaRect.Right - ClientWidth - GlassFrame.Right * 2 - 15;
         Top := Screen.PrimaryMonitor.WorkareaRect.Bottom - ClientHeight - GlassFrame.Top * 2 - 15;
 
         DoShow;
-        lblTitle.Caption := TruncateText(Title, lblTitle.Width, lblTitle.Font);
+        lblTitle.Caption := TruncateText(Title, TitleTextWidth, lblTitle.Font);
         if Stream <> '' then
-          lblStream.Caption := TruncateText(Format(_('on %s'), [Stream]), lblStream.Width, lblStream.Font)
+          lblStream.Caption := TruncateText(Stream, StreamTextWidth, lblStream.Font)
         else
           lblStream.Caption := '';
 
@@ -187,12 +200,6 @@ begin
   end;
 
   Exit(False);
-end;
-
-procedure TfrmNotification.Paint;
-begin
-  inherited;
-  PngImageList1.Draw(Canvas, ClientWidth - 52, 4, 0, True);
 end;
 
 class procedure TfrmNotification.Stop;
