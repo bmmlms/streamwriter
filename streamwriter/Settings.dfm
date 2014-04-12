@@ -151,7 +151,7 @@ object frmSettings: TfrmSettings
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Always discard new file if it already exists'
+      Caption = 'Discard new file if it already exists'
       TabOrder = 10
       OnClick = chkDiscardAlwaysClick
     end
@@ -275,7 +275,7 @@ object frmSettings: TfrmSettings
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Snap mainwindow to screen edges'
+      Caption = 'Snap main window to screen edges'
       TabOrder = 6
     end
     object chkRememberRecordings: TCheckBox
@@ -293,7 +293,7 @@ object frmSettings: TfrmSettings
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Display notifications on trackchange when playing'
+      Caption = 'Display notifications on track change when playing'
       TabOrder = 8
     end
     object chkShowSplashScreen: TCheckBox

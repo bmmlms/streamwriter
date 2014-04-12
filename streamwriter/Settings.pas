@@ -1443,7 +1443,7 @@ begin
       end;
     stStream:
       begin
-        FPageList.Add(TPage.Create('Streams', pnlStreams, 'APPICON'));
+        FPageList.Add(TPage.Create('Recordings', pnlStreams, 'STREAM'));
         FPageList.Add(TPage.Create('Advanced', pnlStreamsAdvanced, 'MISC', FPageList.Find(pnlStreams)));
         FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
         FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
