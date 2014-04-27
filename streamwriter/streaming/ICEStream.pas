@@ -982,12 +982,11 @@ begin
       FileCheck := TFileChecker.Create(FStreamName, FSaveDirAuto, FSongsSaved, FSettings)
     else
       FileCheck := TFileChecker.Create(FStreamName, FSaveDir, FSongsSaved, FSettings);
-    Dir := FileCheck.SaveDir;
-
     try
       if not FSettings.SaveToMemory then
       begin
         FileCheck.GetStreamFilename(FStreamName, FAudioType);
+        Dir := FileCheck.SaveDir;
         Filename := FileCheck.Filename;
       end;
     finally
