@@ -2,7 +2,7 @@
 HandleExceptions=1
 AppendMapFileToBinary=1
 NoOwnMadExceptSettings=0
-CheckFileCrc=1
+CheckFileCrc=0
 CheckForFrozenMainThread=0
 FreezeTimeout=60000
 AutomaticallySaveBugReport=1
