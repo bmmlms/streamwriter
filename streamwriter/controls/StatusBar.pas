@@ -46,6 +46,8 @@ type
     FSpace: Integer;
     FDots: string;
 
+    FPainted: Boolean;
+
     FTimer: TTimer;
     FSpeedBmp: TBitmap;
     IconConnected, IconDisconnected: TIcon;
@@ -434,6 +436,11 @@ procedure TSWStatusBar.WMPaint(var Message: TWMPaint);
 var
   i: Integer;
 begin
+  // Alles wegmachen, sonst ist da Mist über...
+  if not FPainted then
+    Canvas.FillRect(ClientRect);
+  FPainted := True;
+
   inherited;
 
   for i := 0 to Panels.Count - 1 do
