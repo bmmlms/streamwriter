@@ -146,6 +146,7 @@ type
   protected
   public
     constructor Create;
+    destructor Destroy; override;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
@@ -494,6 +495,14 @@ begin
   inherited;
 
   FCommandType := ctNetworkTitleChangedResponse;
+  FRegExes := TStringList.Create;
+end;
+
+destructor TCommandNetworkTitleChangedResponse.Destroy;
+begin
+  FRegExes.Free;
+
+  inherited;
 end;
 
 procedure TCommandNetworkTitleChangedResponse.Load(CommandHeader: TCommandHeader;

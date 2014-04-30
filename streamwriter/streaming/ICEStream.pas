@@ -978,27 +978,26 @@ begin
 
   if (FAudioStream = nil) and (FAudioType <> atNone) then
   begin
-    if FRecordTitle <> '' then
-      FileCheck := TFileChecker.Create(FStreamName, FSaveDirAuto, FSongsSaved, FSettings)
-    else
+    if not FSettings.SaveToMemory then
+    begin
+      // Nicht nach manuellen und automatischen Aufnahmen unterscheiden - automatische Aufnahmen
+      // schreiben nie eine Stream-Datei, von daher ist das hier egal.
       FileCheck := TFileChecker.Create(FStreamName, FSaveDir, FSongsSaved, FSettings);
-    try
-      if not FSettings.SaveToMemory then
-      begin
+      try
         FileCheck.GetStreamFilename(FStreamName, FAudioType);
         Dir := FileCheck.SaveDir;
         Filename := FileCheck.Filename;
+      finally
+        FileCheck.Free;
       end;
-    finally
-      FileCheck.Free;
-    end;
 
-    try
-      ForceDirectories(Dir);
-    except
-      if Assigned(FOnIOError) then
-        FOnIOError(Self);
-      raise Exception.Create(Format(_('Folder for saved tracks "%s" could not be created'), [Dir]));
+      try
+        ForceDirectories(Dir);
+      except
+        if Assigned(FOnIOError) then
+          FOnIOError(Self);
+        raise Exception.Create(Format(_('Folder for saved tracks "%s" could not be created'), [Dir]));
+      end;
     end;
 
     try
