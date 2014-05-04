@@ -475,7 +475,7 @@ type
     property Stream: TStreamBrowserEntry read FStream write FStream;
     property PlayedLastDay: Cardinal read FPlayedLastDay;
     property PlayedLastWeek: Cardinal read FPlayedLastWeek;
-    property PlayedLast: Cardinal read FPlayedLast;
+    property PlayedLast: Cardinal read FPlayedLast write FPlayedLast;
   end;
 
   TStreamBrowserList = class(TList<TStreamBrowserEntry>)

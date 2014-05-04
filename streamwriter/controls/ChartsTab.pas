@@ -831,7 +831,7 @@ begin
         end;
       2:
         begin
-          Result := CmpInt(Data1.Stream.PlayedLast, Data2.Stream.PlayedLast);
+          Result := CmpInt(Data2.Stream.PlayedLast, Data1.Stream.PlayedLast);
           if (Header.SortDirection = sdAscending) then
             Result := Result * -1;
         end;
@@ -879,16 +879,7 @@ begin
         if NodeData.Chart <> nil then
           Val := NodeData.Chart.PlayedLast
         else if NodeData.Stream <> nil then
-        begin
-          if Node.PrevSibling = nil then
-          begin
-            // Das hier ist ein Hack. Die Berechnung hier drunter ergibt nicht das,
-            // was im PlayedLast des Charts steht.. sieht doof aus. Darum das hier!
-            ParentNodeData := GetNodeData(Node.Parent);
-            Val := ParentNodeData.Chart.PlayedLast;
-          end else
-            Val := DateTimeToUnix(TTimeZone.Local.ToUniversalTime(Now)) - NodeData.Stream.PlayedLast + HomeComm.ServerTimeDiff;
-        end;
+          Val := NodeData.Stream.PlayedLast;
 
         if Val < 1 then
           Val := 1;

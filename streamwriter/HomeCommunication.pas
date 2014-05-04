@@ -362,7 +362,7 @@ end;
 procedure THomeThread.DoSearchChartsReceived(CommandHeader: TCommandHeader;
   Command: TCommandSearchChartsResponse);
 var
-  i: Integer;
+  i, n: Integer;
   Count: Cardinal;
   Stream: TExtendedStream;
 begin
@@ -379,6 +379,14 @@ begin
       Stream.Read(Count);
       for i := 0 to Count - 1 do
         FSearchReceivedCharts.Add(TChartEntry.LoadFromHome(Stream, CommandHeader.Version));
+
+      // Timestamp passig machen
+      for i := 0 to FSearchReceivedCharts.Count - 1 do
+        for n := 0 to FSearchReceivedCharts[i].Streams.Count - 1 do
+          if n = 0 then
+            FSearchReceivedCharts[i].Streams[n].PlayedLast := FSearchReceivedCharts[i].PlayedLast
+          else
+            FSearchReceivedCharts[i].Streams[n].PlayedLast := DateTimeToUnix(TTimeZone.Local.ToUniversalTime(Now)) - FSearchReceivedCharts[i].Streams[n].PlayedLast + HomeComm.ServerTimeDiff;
     except
       for i := 0 to FSearchReceivedCharts.Count - 1 do
         FSearchReceivedCharts[i].Free;

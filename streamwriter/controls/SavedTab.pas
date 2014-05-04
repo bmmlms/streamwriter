@@ -2333,7 +2333,8 @@ begin
 
   if IgnorePattern then
   begin
-    Node := AddChild(FFileNode);
+    //Node := AddChild(FFileNode);
+    Node := InsertNode(FFileNode, amAddChildLast);
     if (FFileNode.ChildCount = 1) then // and (not FromFilter) then
       Expanded[FFileNode] := True;
     NodeData := GetNodeData(Node);
@@ -2342,12 +2343,14 @@ begin
   begin
     if Track.IsStreamFile then
     begin
-      Node := AddChild(FStreamNode);
+      //Node := AddChild(FStreamNode);
+      Node := InsertNode(FStreamNode, amAddChildLast);
       if (FStreamNode.ChildCount = 1) then // and (not FromFilter) then
         Expanded[FStreamNode] := True;
     end else
     begin
-      Node := AddChild(FFileNode);
+      //Node := AddChild(FFileNode);
+      Node := InsertNode(FFileNode, amAddChildLast);
       if (FFileNode.ChildCount = 1) then // and (not FromFilter) then
         Expanded[FFileNode] := True;
     end;
