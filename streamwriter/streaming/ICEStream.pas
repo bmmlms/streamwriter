@@ -258,9 +258,9 @@ begin
   // _ durch ' ' ersetzen
   Title := Functions.RegExReplace('_', ' ', Title);
   // Featuring-dinge fitmachen
-  Title := Functions.RegExReplace(' ft ', ' Feat. ', Title);
-  Title := Functions.RegExReplace(' ft\. ', ' Feat. ', Title);
-  Title := Functions.RegExReplace(' feat ', ' Feat. ', Title);
+  Title := Functions.RegExReplace('\sft\s', ' Feat. ', Title);
+  Title := Functions.RegExReplace('\sft\.\s', ' Feat. ', Title);
+  Title := Functions.RegExReplace('\sfeat\s', ' Feat. ', Title);
   // Mehrere ' zu einem machen
   Title := Functions.RegExReplace('''+(?='')', '', Title);
   // Mehrere leertasten hintereinander zu einer machen
@@ -268,6 +268,10 @@ begin
   // Leertasten nach Klammer auf bzw. vor Klammer zu entfernen
   Title := Functions.RegExReplace('\( ', '(', Title);
   Title := Functions.RegExReplace(' \)', ')', Title);
+  // dont, cant, wont, etc ersetzen
+  Title := Functions.RegExReplace('\sdont\s|\sdont$', ' don''t ', Title);
+  Title := Functions.RegExReplace('\swont\s|\swont$', ' won''t ', Title);
+  Title := Functions.RegExReplace('\scant\s|\scant$', ' can''t ', Title);
 
   Result := '';
   NextUpper := True;

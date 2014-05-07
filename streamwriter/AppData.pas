@@ -503,7 +503,7 @@ begin
   FStreamSettings := TStreamSettings.Create(False);
 
   // The number of the current build
-  FBuildNumber := 621;
+  FBuildNumber := 629;
   FCodename := 'Cantas';
 
   // Adjust dimensions of the main-form
