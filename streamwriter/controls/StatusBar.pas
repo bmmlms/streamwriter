@@ -46,8 +46,6 @@ type
     FSpace: Integer;
     FDots: string;
 
-    FPainted: Boolean;
-
     FTimer: TTimer;
     FSpeedBmp: TBitmap;
     IconConnected, IconDisconnected: TIcon;
@@ -437,9 +435,7 @@ var
   i: Integer;
 begin
   // Alles wegmachen, sonst ist da Mist über...
-  if not FPainted then
-    Canvas.FillRect(ClientRect);
-  FPainted := True;
+  Canvas.FillRect(ClientRect);
 
   inherited;
 
