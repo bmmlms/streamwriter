@@ -305,6 +305,19 @@ begin
   FClients.Free;
   FMonitorClients.Free;
 
+  FOnClientDebug := nil;
+  FOnClientRefresh := nil;
+  FOnClientAddRecent := nil;
+  FOnClientAdded := nil;
+  FOnClientRemoved := nil;
+  FOnClientSongSaved := nil;
+  FOnClientTitleChanged := nil;
+  FOnClientICYReceived := nil;
+  FOnClientTitleAllowed := nil;
+  FOnShowErrorMessage := nil;
+  FOnPlaybackStarted := nil;
+  FOnClientSecondsReceived := nil;
+
   inherited;
 end;
 
