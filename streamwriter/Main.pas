@@ -707,7 +707,7 @@ begin
   // we need to skip this stuff.
   if not FExiting then
   begin
-    if not AppGlobals.FirstStartShown then
+    if not AppGlobals.IntroShown then
     begin
       FormIntro := TfrmIntro.Create(Self);
       try
@@ -715,8 +715,9 @@ begin
       finally
         FormIntro.Free;
       end;
+      AppGlobals.FirstStartShown := True;
+      AppGlobals.IntroShown := True;
     end;
-    AppGlobals.FirstStartShown := True;
 
     if StartupMessagesNeeded then
       if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then

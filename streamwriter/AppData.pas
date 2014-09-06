@@ -324,6 +324,8 @@ type
     FPostProcessManager: TPostProcessManager;
     FLanguageIcons: TLanguageIcons;
 
+    FIntroShown: Boolean;
+
     function FGetDataFile: string;
 
     function FGetEQGain(Idx: Integer): Integer;
@@ -476,6 +478,8 @@ type
     // Icons for languages
     property LanguageIcons: TLanguageIcons read FLanguageIcons;
 
+    property IntroShown: Boolean read FIntroShown write FIntroShown;
+
     property ProjectHelpLinkMain: string read FProjectHelpLinkMain;
     property ProjectHelpLinkSettings: string read FProjectHelpLinkSettings;
     property ProjectHelpLinkAutoSettings: string read FProjectHelpLinkAutoSettings;
@@ -494,7 +498,7 @@ uses
 
 constructor TAppData.Create(AppName: string);
 var
-  W, H: Integer;
+  i, W, H: Integer;
 begin
   FDefaultStreamSettings := TStreamSettings.GetDefaults;
 
@@ -514,15 +518,42 @@ begin
   if Screen.WorkAreaHeight < H then
     H := Screen.WorkAreaHeight - 20;
 
-  // Adjust count of column headers
+  // Adjust count of column headers and initialize them.
+  // Initialization is important because otherwise when finishing the wizard on
+  // first run writes "0" to all columns. When streamWriter crashes afterwards,
+  // every VirtualTreeView has all columns with Width=0. Initializing it with
+  // -1 tells the Load() procedure to skip these columns.
   SetLength(FClientHeaderWidth, 6);
+  for i := 0 to High(FClientHeaderWidth) do
+    FClientHeaderWidth[i] := -1;
+
   SetLength(FClientHeaderPosition, 6);
+  for i := 0 to High(FClientHeaderPosition) do
+    FClientHeaderPosition[i] := -1;
+
   SetLength(FChartHeaderWidth, 4);
+  for i := 0 to High(FChartHeaderWidth) do
+    FChartHeaderWidth[i] := -1;
+
   SetLength(FChartHeaderPosition, 4);
+  for i := 0 to High(FChartHeaderPosition) do
+    FChartHeaderPosition[i] := -1;
+
   SetLength(FListHeaderWidth, 3);
+  for i := 0 to High(FListHeaderWidth) do
+    FListHeaderWidth[i] := -1;
+
   SetLength(FListHeaderPosition, 3);
+  for i := 0 to High(FListHeaderPosition) do
+    FListHeaderPosition[i] := -1;
+
   SetLength(FSavedHeaderWidth, 7);
+  for i := 0 to High(FSavedHeaderWidth) do
+    FSavedHeaderWidth[i] := -1;
+
   SetLength(FSavedHeaderPosition, 7);
+  for i := 0 to High(FSavedHeaderPosition) do
+    FSavedHeaderPosition[i] := -1;
 
   // Set some application-specific settings
   SetLength(FProjectUpdateLinks, 2);
@@ -956,6 +987,15 @@ begin
     if (FEQGain[i] > 15) or (FEQGain[i] < -15) then
       FEQGain[i] := 0;
   end;
+
+  FStorage.Read('IntroShown', FIntroShown, False);
+
+  // Damit es nach einem Update nicht überall aufgeht, das Fenster...
+  if FClientHeaderWidth[0] > -1 then
+  begin
+    FirstStartShown := True;
+    FIntroShown := True;
+  end;
 end;
 
 procedure TAppData.NotifyRunningInstance(Handle: Cardinal);
@@ -1127,6 +1167,8 @@ begin
   FStorage.Write('EQEnabled', FEQEnabled, 'Equalizer');
   for i := 0 to High(FEQGain) do
     FStorage.Write('EQBand' + IntToStr(i), FEQGain[i] + 15, 'Equalizer');
+
+  FStorage.Write('IntroShown', FIntroShown);
 end;
 
 { TStreamSettings }
