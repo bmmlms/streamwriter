@@ -632,13 +632,14 @@ type
 var
   i, n: Integer;
   R: TPerlRegEx;
-  MArtist, MTitle, MAlbum: string;
+  MArtist, MTitle, MAlbum, DefaultRegEx: string;
   RED: TRegExData;
   REDs: TList<TRegExData>;
 const
   BadChars: array[0..3] of string = (':', '-', '|', '*');
 begin
-  Result := '(?P<a>.*) - (?P<t>.*)';
+  DefaultRegEx := '(?P<a>.*) - (?P<t>.*)';
+  Result := DefaultRegEx;
 
   REDs := TList<TRegExData>.Create;
   try
@@ -646,6 +647,8 @@ begin
     begin
       RED.RegEx := FSettings.RegExes[i];
       RED.BadWeight := 0;
+      if RED.RegEx = DefaultRegEx then
+        RED.BadWeight := 1;
 
       MArtist := '';
       MTitle := '';
@@ -665,11 +668,11 @@ begin
                 MArtist := Trim(R.Groups[R.NamedGroup('a')]);
                 for n := 0 to High(BadChars) do
                   if Pos(BadChars[n], MArtist) > 0 then
-                    RED.BadWeight := RED.BadWeight + 1;
+                    RED.BadWeight := RED.BadWeight + 2;
                 if ContainsRegEx('(\d{2})', MArtist) then
-                  RED.BadWeight := RED.BadWeight + 1;
+                  RED.BadWeight := RED.BadWeight + 2;
               end
-                else RED.BadWeight := RED.BadWeight + 2;
+                else RED.BadWeight := RED.BadWeight + 3;
             except end;
             try
               if R.NamedGroup('t') > 0 then
@@ -677,29 +680,29 @@ begin
                 MTitle := Trim(R.Groups[R.NamedGroup('t')]);
                 for n := 0 to High(BadChars) do
                   if Pos(BadChars[n], MTitle) > 0 then
-                    RED.BadWeight := RED.BadWeight + 1;
+                    RED.BadWeight := RED.BadWeight + 2;
                 if ContainsRegEx('(\d{2})', MTitle) then
-                  RED.BadWeight := RED.BadWeight + 1;
+                  RED.BadWeight := RED.BadWeight + 2;
               end
-                else RED.BadWeight := RED.BadWeight + 2;
+                else RED.BadWeight := RED.BadWeight + 3;
             except end;
             try
               if R.NamedGroup('l') > 0 then
               begin
-                RED.BadWeight := RED.BadWeight - 5;
+                RED.BadWeight := RED.BadWeight - 6;
                 MAlbum := Trim(R.Groups[R.NamedGroup('l')]);
                 for n := 0 to High(BadChars) do
                   if Pos(BadChars[n], MAlbum) > 0 then
-                    RED.BadWeight := RED.BadWeight + 1;
+                    RED.BadWeight := RED.BadWeight + 2;
               end;
             except end;
 
             if MAlbum = '' then
               RED.BadWeight := RED.BadWeight + 10;
-
-            REDs.Add(RED);
           end else
             RED.BadWeight := RED.BadWeight + 50;
+
+          REDs.Add(RED);
         except end;
       finally
         R.Free;

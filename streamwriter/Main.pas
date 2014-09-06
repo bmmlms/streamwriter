@@ -381,7 +381,6 @@ begin
       if not TMTabSheet(pagMain.Pages[i]).CanClose then
         Exit;
 
-
   FExiting := True;
 
   if ImportFilename = '' then
