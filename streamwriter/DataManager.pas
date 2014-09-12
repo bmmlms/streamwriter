@@ -1470,8 +1470,10 @@ begin
     Result := RemoveFileExt(ExtractFileName(FFilename))
   else if (FSongArtist <> '') and (FSongTitle <> '') then
     Result := FSongArtist + ' - ' + FSongTitle
+  else if FServerTitle <> '' then
+    Result := FServerTitle
   else
-    Result := FServerTitle;
+    Result := RemoveFileExt(ExtractFileName(FFilename));
 end;
 
 class function TTrackInfo.Load(Stream: TExtendedStream;
