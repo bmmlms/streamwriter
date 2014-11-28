@@ -26,7 +26,7 @@ uses
   Windows, SysUtils, Classes, HTTPThread, StrUtils, Generics.Collections,
   Sockets, WinSock, Communication, Protocol, Commands, ExtendedStream,
   HomeCommands, DataManager, AppData, AudioFunctions, LanguageObjects,
-  TypeDefs, DateUtils, Math;
+  TypeDefs, DateUtils, Math, Functions;
 
 type
   TCommErrors = (ceUnknown, ceAuthRequired, ceNotification, ceOneTimeNotification);
@@ -386,7 +386,7 @@ begin
           if n = 0 then
             FSearchReceivedCharts[i].Streams[n].PlayedLast := FSearchReceivedCharts[i].PlayedLast
           else
-            FSearchReceivedCharts[i].Streams[n].PlayedLast := DateTimeToUnix(TTimeZone.Local.ToUniversalTime(Now)) - FSearchReceivedCharts[i].Streams[n].PlayedLast + HomeComm.ServerTimeDiff;
+            FSearchReceivedCharts[i].Streams[n].PlayedLast := DateTimeToUnix(LocalToUTC(Now)) - FSearchReceivedCharts[i].Streams[n].PlayedLast + HomeComm.ServerTimeDiff;
     except
       for i := 0 to FSearchReceivedCharts.Count - 1 do
         FSearchReceivedCharts[i].Free;
@@ -772,7 +772,7 @@ procedure THomeCommunication.HomeThreadHandshakeReceived(
 begin
   FDisabled := not THomeThread(Sender).FHandshakeSuccess;
 
-  FServerTimeDiff := DateTimeToUnix(TTimeZone.Local.ToUniversalTime(Now)) - THomeThread(Sender).FServerTime;
+  FServerTimeDiff := DateTimeToUnix(LocalToUTC(Now)) - THomeThread(Sender).FServerTime;
 
   if not FDisabled then
   begin

@@ -2343,7 +2343,7 @@ begin
   begin
     Stream.Read(Result.FPlayedLast);
 
-    c := Round((TTimeZone.Local.ToUniversalTime(Now) - UnixStartDate) * 86400) - Result.FPlayedLast;
+    c := Round((LocalToUTC(Now) - UnixStartDate) * 86400) - Result.FPlayedLast;
 
     if c > 86400 then
       Result.FPlayedLastDay := 0;
