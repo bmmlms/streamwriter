@@ -58,6 +58,9 @@ type
 
     FAuthToken: Cardinal;
 
+    FPingPending: Boolean;
+    FLastPingSent: Cardinal;
+
     FOnHandshakeReceived: TSocketEvent;
     FOnLogInReceived: TSocketEvent;
     FOnLogOutReceived: TSocketEvent;
@@ -80,10 +83,12 @@ type
     procedure DoMonitorStreamsReceived(CommandHeader: TCommandHeader; Command: TCommandGetMonitorStreamsResponse);
     procedure DoSearchChartsReceived(CommandHeader: TCommandHeader; Command: TCommandSearchChartsResponse);
     procedure DoGenerateAuthTokenReceived(CommandHeader: TCommandHeader; Command: TCommandGenerateAuthTokenResponse);
+    procedure DoPingReceived(CommandHeader: TCommandHeader; Command: TCommandPingResponse);
   protected
     procedure DoReceivedCommand(ID: Cardinal; CommandHeader: TCommandHeader; Command: TCommand); override;
     procedure DoException(E: Exception); override;
     procedure DoEnded; override;
+    procedure DoStuff; override;
   public
     constructor Create(Lists: TDataLists);
     destructor Destroy; override;
@@ -223,6 +228,7 @@ implementation
 constructor THomeThread.Create(Lists: TDataLists);
 begin
   FLists := Lists;
+  FLastPingSent := GetTickCount;
 
   inherited Create('streamwriter.org', 7085, TSocketStream.Create);
   //inherited Create('gaia', 7085, TSocketStream.Create);
@@ -332,6 +338,7 @@ var
   MonitorStreams: TCommandGetMonitorStreamsResponse absolute Command;
   SearchCharts: TCommandSearchChartsResponse absolute Command;
   GenerateAuthToken: TCommandGenerateAuthTokenResponse absolute Command;
+  Ping: TCommandPingResponse absolute Command;
 begin
   inherited;
 
@@ -356,6 +363,8 @@ begin
       DoSearchChartsReceived(CommandHeader, SearchCharts);
     ctGenerateAuthTokenResponse:
       DoGenerateAuthTokenReceived(CommandHeader, GenerateAuthToken);
+    ctPingResponse:
+      DoPingReceived(CommandHeader, Ping);
   end;
 end;
 
@@ -472,6 +481,24 @@ begin
 
   if Assigned(FOnServerInfoReceived) then
     Sync(FOnServerInfoReceived);
+end;
+
+procedure THomeThread.DoStuff;
+var
+  Cmd: TCommandPing;
+begin
+  inherited;
+
+  if (not FPingPending) and (FLastPingSent < GetTickCount - 5000) then
+  begin
+    Cmd := TCommandPing.Create;
+    SendCommand(Cmd);
+    FPingPending := True;
+    FLastPingSent := GetTickCount;
+  end else if FPingPending and (FLastPingSent < GetTickCount - 15000) then
+  begin
+    raise Exception.Create('No ping received');
+  end;
 end;
 
 { THomeCommunication }
@@ -740,6 +767,12 @@ begin
     FOnAuthTokenReceived(Self, THomeThread(Sender).FAuthToken);
 end;
 
+procedure THomeThread.DoPingReceived(CommandHeader: TCommandHeader;
+  Command: TCommandPingResponse);
+begin
+  FPingPending := False;
+end;
+
 procedure THomeCommunication.HomeThreadBeforeEnded(Sender: TSocketThread);
 begin
   FConnected := False;
@@ -925,6 +958,7 @@ initialization
   TCommand.RegisterCommand(ctGetMonitorStreamsResponse, TCommandGetMonitorStreamsResponse);
   TCommand.RegisterCommand(ctSearchChartsResponse, TCommandSearchChartsResponse);
   TCommand.RegisterCommand(ctGenerateAuthTokenResponse, TCommandGenerateAuthTokenResponse);
+  TCommand.RegisterCommand(ctPingResponse, TCommandPingResponse);
 
   HomeComm := nil;
 

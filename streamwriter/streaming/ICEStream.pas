@@ -259,8 +259,11 @@ begin
   Title := Functions.RegExReplace('_', ' ', Title);
   // Featuring-dinge fitmachen
   Title := Functions.RegExReplace('\sft\s', ' Feat. ', Title);
+  Title := Functions.RegExReplace('\(ft\s', ' Feat. ', Title);
   Title := Functions.RegExReplace('\sft\.\s', ' Feat. ', Title);
+  Title := Functions.RegExReplace('\(ft\.\s', ' Feat. ', Title);
   Title := Functions.RegExReplace('\sfeat\s', ' Feat. ', Title);
+  Title := Functions.RegExReplace('\(feat\s', ' Feat. ', Title);
   // Mehrere ' zu einem machen
   Title := Functions.RegExReplace('''+(?='')', '', Title);
   // Mehrere leertasten hintereinander zu einer machen

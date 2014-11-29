@@ -183,9 +183,9 @@ begin
   IconDisconnected := TIcon.Create;
   IconDisconnected.Handle := LoadImage(HInstance, 'DISCONNECT_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
   IconLoggedIn := TIcon.Create;
-  IconLoggedIn.Handle := LoadImage(HInstance, 'USER_GO_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
+  IconLoggedIn.Handle := LoadImage(HInstance, 'USER_ENABLED_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
   IconLoggedOff := TIcon.Create;
-  IconLoggedOff.Handle := LoadImage(HInstance, 'USER_DELETE_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
+  IconLoggedOff.Handle := LoadImage(HInstance, 'USER_DISABLED_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
   IconAutoRecordEnabled := TIcon.Create;
   IconAutoRecordEnabled.Handle := LoadImage(HInstance, 'AUTO_ENABLED_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
   IconAutoRecordDisabled := TIcon.Create;
@@ -264,7 +264,11 @@ begin
             begin
               FTimer.Enabled := True;
 
-              Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconDisconnected.Height div 2, IconDisconnected);
+              if Length(FDots) mod 2 = 0 then
+                Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconDisconnected.Height div 2, IconDisconnected)
+              else
+                Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconDisconnected.Height div 2, IconConnected);
+
               Canvas.TextOut(R.Left + 56, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connecting') + FDots) div 2, _('Connecting') + FDots);
             end;
           cshFail:

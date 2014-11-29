@@ -588,6 +588,8 @@ begin
       AppGlobals.AutomaticFilePattern := Trim(txtAutomaticFilePattern.Text);
       AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
       AppGlobals.AutoTuneInConsiderIgnore := chkAutoTuneInConsiderIgnore.Checked;
+      // TODO: mindestens das AutoTuneInAddToIgnore-Feld wird ignoriert!!! wenn man das ändert wird es nicht für auto aufnahmen angenommen!!!
+      //       die einstellungen werden erst nach sW-neustart übernommen. fail.
       AppGlobals.AutoTuneInAddToIgnore := chkAutoTuneInAddToIgnore.Checked;
       AppGlobals.AutoRemoveSavedFromWishlist := chkAutoRemoveSavedFromWishlist.Checked;
 
@@ -596,6 +598,10 @@ begin
       AppGlobals.DirAuto := txtDir.Text;
 
       lstBlacklist.UpdateList(FLists.StreamBlacklist);
+
+      // TODO: im suff hinzugefügt. ist das wirklich richtig??? darf ich das überhaupt hier, wegen thread-safety???
+      // funzt aber auch nicht...
+      FStreamSettings[0].AddSavedToIgnore := chkAutoTuneInAddToIgnore.Checked;
 
       AppGlobals.Unlock;
     end;

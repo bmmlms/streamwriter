@@ -61,7 +61,6 @@ uses
   StreamInfoView in 'controls\StreamInfoView.pas',
   StreamDebugView in 'controls\StreamDebugView.pas',
   Base64 in 'Base64.pas',
-  DynBASS in 'audio\DynBASS.pas',
   AudioStream in 'audio\AudioStream.pas',
   ClientTab in 'controls\ClientTab.pas',
   CutTab in 'controls\CutTab.pas',
@@ -137,7 +136,8 @@ uses
   HomeTest in 'HomeTest.pas' {frmHomeTest},
   HomeCommands in 'HomeCommands.pas',
   SharedData in 'SharedData.pas' {modSharedData: TDataModule},
-  MonitorAnalyzer in 'streaming\MonitorAnalyzer.pas';
+  MonitorAnalyzer in 'streaming\MonitorAnalyzer.pas',
+  DynBASS in '..\..\common\bass\DynBASS.pas';
 
 {$SetPEOptFlags $0140}
 
@@ -182,16 +182,16 @@ begin
 
   // Initialize BASS, quit application on error
   Bass := TBassLoader.Create;
-  if not Bass.InitializeBass(Application.Handle) then
+  if not Bass.InitializeBass(Application.Handle, True, False, False, False) then
   begin
-    MsgBox(0, _('The BASS library or it''s AAC plugin could not be extracted/loaded. Without this library streamWriter cannot record/playback streams. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
+    MsgBox(0, _('The BASS library or it''s plugins could not be extracted/loaded. Without these libraries streamWriter cannot record/playback streams. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
     Bass.Free;
     Exit;
   end;
 
   Application.CreateForm(TmodSharedData, modSharedData);
   // Create the main form if everything is setup
-  if InitApp and AppGlobals.WasSetup then
+  if InitApp(TfrmWizard) and AppGlobals.WasSetup then
   begin
     if AppGlobals.Tray and HideMain then
     begin

@@ -1536,6 +1536,9 @@ var
   PP: TPostProcessBase;
   ES: TEncoderSettings;
 begin
+
+Ein Fehler, dass der Buildserver nicht kompiliert!
+
   Result := TStreamSettings.Create;
 
   Result.Assign(AppGlobals.FDefaultStreamSettings);
@@ -1965,3 +1968,4 @@ finalization
   FreeAndNil(AppGlobals);
 
 end.
+

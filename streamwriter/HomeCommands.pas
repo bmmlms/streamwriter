@@ -71,7 +71,6 @@ type
   private
     FSuccess: Boolean;
     FServerTime: Cardinal;
-  protected
   public
     constructor Create;
 
@@ -82,8 +81,6 @@ type
   end;
 
   TCommandUpdateStats = class(TCommand)
-  private
-  protected
   public
     constructor Create;
 
@@ -107,7 +104,6 @@ type
   TCommandLogInResponse = class(TCommand)
   private
     FSuccess, FIsAdmin: Boolean;
-  protected
   public
     constructor Create; overload;
     constructor Create(User, Pass: string); overload;
@@ -119,15 +115,11 @@ type
   end;
 
   TCommandLogOut = class(TCommand)
-  private
-  protected
   public
     constructor Create;
   end;
 
   TCommandLogOutResponse = class(TCommand)
-  private
-  protected
   public
     constructor Create;
   end;
@@ -143,7 +135,6 @@ type
     FRegExes: TStringList;
     FServerHash: Cardinal;
     FServerArtistHash: Cardinal;
-  protected
   public
     constructor Create;
     destructor Destroy; override;
@@ -162,15 +153,11 @@ type
   end;
 
   TCommandGetServerData = class(TCommand)
-  private
-  protected
   public
     constructor Create;
   end;
 
   TCommandGetServerDataResponse = class(TCommand)
-  private
-  protected
   public
     constructor Create;
 
@@ -181,7 +168,6 @@ type
   private
     FClientCount: Cardinal;
     FRecordingCount: Cardinal;
-  protected
   public
     constructor Create;
 
@@ -195,7 +181,6 @@ type
   private
     FMessageID: Cardinal;
     FMessageMsg: string;
-  protected
   public
     constructor Create;
 
@@ -297,7 +282,6 @@ type
   TCommandGetMonitorStreamsResponse = class(TCommand)
   private
     FStreamIDs: TIntArray;
-  protected
   public
     constructor Create;
 
@@ -333,7 +317,6 @@ type
   TCommandSearchChartsResponse = class(TCommand)
   private
     FSuccess: Boolean;
-  protected
   public
     constructor Create;
 
@@ -355,8 +338,6 @@ type
   end;
 
   TCommandGenerateAuthToken = class(TCommand)
-  private
-  protected
   public
     constructor Create;
     destructor Destroy; override;
@@ -365,13 +346,24 @@ type
   TCommandGenerateAuthTokenResponse = class(TCommand)
   private
     FToken: Cardinal;
-  protected
   public
     constructor Create;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
     property Token: Cardinal read FToken;
+  end;
+
+  TCommandPing = class(TCommand)
+  public
+    constructor Create;
+    destructor Destroy; override;
+  end;
+
+  TCommandPingResponse = class(TCommand)
+  public
+    constructor Create;
+    destructor Destroy; override;
   end;
 
 implementation
@@ -915,6 +907,8 @@ end;
 
 constructor TCommandGenerateAuthTokenResponse.Create;
 begin
+  inherited;
+
   FCommandType := ctGenerateAuthTokenResponse;
 end;
 
@@ -924,6 +918,36 @@ begin
   inherited;
 
   Stream.Read(FToken);
+end;
+
+{ TCommandPing }
+
+constructor TCommandPing.Create;
+begin
+  inherited;
+
+  FCommandType := ctPing;
+end;
+
+destructor TCommandPing.Destroy;
+begin
+
+  inherited;
+end;
+
+{ TCommandPingResponse }
+
+constructor TCommandPingResponse.Create;
+begin
+  inherited;
+
+  FCommandType := ctPingResponse;
+end;
+
+destructor TCommandPingResponse.Destroy;
+begin
+
+  inherited;
 end;
 
 end.

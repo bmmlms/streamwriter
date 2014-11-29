@@ -60,6 +60,7 @@ type
     procedure FSetGripperVisible(Value: Boolean);
 
     procedure WMEraseBkgnd(var Msg: TWMEraseBkgnd); message WM_ERASEBKGND;
+    procedure WMMouseWheel(var Msg: TWMMouseWheel); message WM_MOUSEWHEEL;
   protected
     procedure Paint; override;
     procedure MouseMove(Shift: TShiftState; X: Integer; Y: Integer);
@@ -458,6 +459,23 @@ begin
   Msg.Result := 1;
 end;
 
+procedure TSeekBar.WMMouseWheel(var Msg: TWMMouseWheel);
+begin
+  FPosition := FPosition + Trunc(Msg.WheelDelta / 30);
+
+  if FPosition < 0 then
+    FPosition := 0;
+  if FPosition > FMax then
+    FPosition := FMax;
+
+  if FNotifyOnMove then
+    if Assigned(FOnPositionChanged) then
+      FOnPositionChanged(Self);
+
+  if (FLastGripperState <> GetGripperState) or (FLastGripperPos <> FPosition) then
+    Paint;
+end;
+
 procedure TSeekBar.WndProc(var Message: TMessage);
 begin
   inherited;
@@ -634,6 +652,7 @@ begin
     FSetting := True;
   end;
 
+  // TODO: kann das hier nicht mit ins if hier drüber??
   if (FLastGripperState <> GetGripperState) or (FLastGripperPos <> FPosition) then
     Paint;
 end;
@@ -642,6 +661,8 @@ procedure TSeekBar.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
   Y: Integer);
 begin
   inherited;
+
+  SetFocus;
 
   if Button = mbLeft then
   begin

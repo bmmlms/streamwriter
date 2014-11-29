@@ -92,7 +92,7 @@ type
     procedure ClientStop(Sender: TObject);
 
     procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL: string; RegExes: TStringList;
-      Format: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal);
+      AudioType: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal);
     procedure HomeCommMonitorStreamsReceived(Sender: TObject; StreamIDs: TIntArray);
   public
     constructor Create(Lists: TDataLists);
@@ -384,7 +384,7 @@ begin
 end;
 
 procedure TClientManager.HomeCommTitleChanged(Sender: TObject; ID: Cardinal;
-  Name, Title, CurrentURL: string; RegExes: TStringList; Format: TAudioTypes; Kbps: Cardinal;
+  Name, Title, CurrentURL: string; RegExes: TStringList; AudioType: TAudioTypes; Kbps: Cardinal;
   ServerHash, ServerArtistHash: Cardinal);
 var
   i, n: Integer;
@@ -396,7 +396,7 @@ var
 begin
   SaveListTitle := nil;
   SaveListArtist := nil;
-  AutoTuneInMinKbps := GetAutoTuneInMinKbps(TAudioTypes(Format), AppGlobals.AutoTuneInMinQuality);
+  AutoTuneInMinKbps := GetAutoTuneInMinKbps(TAudioTypes(AudioType), AppGlobals.AutoTuneInMinQuality);
 
   if (AppGlobals.DirAuto = '') or (not DirectoryExists(IncludeTrailingBackslash(AppGlobals.DirAuto))) then
   begin
@@ -405,19 +405,29 @@ begin
       OnShowErrorMessage(nil, crDirDoesNotExist, True, False);
       FDirDoesNotExistErrorShown := True;
     end;
+    TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet weil Ordner für automatische Aufnahmen nicht existiert', [Title]));
     Exit;
   end else
     FDirDoesNotExistErrorShown := False;
 
   if Kbps < AutoTuneInMinKbps then
+  begin
+    TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet weil Bitrate zu niedrig ist (%d Kbps)', [Title, Kbps]));
     Exit;
+  end;
 
-  if (AppGlobals.AutoTuneInFormat > 0) and (TAudioTypes(AppGlobals.AutoTuneInFormat) <> Format) then
+  if (AppGlobals.AutoTuneInFormat > 0) and (TAudioTypes(AppGlobals.AutoTuneInFormat) <> AudioType) then
+  begin
+    TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet weil Audio-Format nicht erlaubt ist', [Title]));
     Exit;
+  end;
 
   for i := 0 to FLists.StreamBlacklist.Count - 1 do
     if FLists.StreamBlacklist[i] = Name then
+    begin
+      TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet weil Stream auf Ignorierliste ist', [Title]));
       Exit;
+    end;
 
   for i := 0 to FLists.SaveList.Count - 1 do
   begin
@@ -428,13 +438,17 @@ begin
   end;
 
   if (not Assigned(SaveListTitle)) and (not Assigned(SaveListArtist)) then
+  begin
+    TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet weil SaveListTitle und SaveListArtist == nil', [Title]));
     Exit;
+  end;
 
   if AppGlobals.AutoTuneInConsiderIgnore then
     for n := 0 to FLists.IgnoreList.Count - 1 do
     begin
       if Like(Title, FLists.IgnoreList[n].Pattern) then
       begin
+        TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet wegen Übereinstimmung mit "%s" auf Ignorierliste', [Title, FLists.IgnoreList[n].Pattern]));
         Exit;
       end;
     end;
@@ -447,6 +461,7 @@ begin
       OnShowErrorMessage(nil, Res, True, False);
       FNoFreeSpaceErrorShown := True;
     end;
+    TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet weil kein Speicher mehr frei ist', [Title]));
     Exit;
   end;
   FNoFreeSpaceErrorShown := False;
@@ -458,6 +473,8 @@ begin
 
   Client := AddClient(0, 0, Name, CurrentURL, True);
 
+  // TODO: FAddSavedToIgnore wird hier irgendwie nicht übernommen. nix wird hinzugefügt in ignorelist, aber es ist in settings an...
+  //       das problem dürfte auf alle AUTO-SETTINGS zutreffen. PRÜFEN!!!!!
   Client.Entry.Settings.Assign(FLists.AutoRecordSettings);
 
   Client.Entry.Bitrate := Kbps;
