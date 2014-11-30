@@ -108,14 +108,15 @@ type
   protected
     FHidden: Boolean;
     FCanConfigure: Boolean;
-    FName: string;
-    FHelp: string;
     FActive: Boolean;
     FOrder: Integer;
     FOnlyIfCut: Boolean;
     FGroupID: Integer;
     FPostProcessType: TPostProcessTypes;
     FIsNew: Boolean;
+
+    function FGetName: string; virtual;
+    function FGetHelp: string; virtual;
 
     function FGetNeedsWave: Boolean; virtual;
     function FGetHash: Cardinal; virtual;
@@ -126,18 +127,16 @@ type
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; virtual; abstract;
     function Copy: TPostProcessBase; virtual; abstract;
     procedure Assign(Source: TPostProcessBase); virtual;
-    procedure Initialize; virtual;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; virtual;
     procedure Load(Stream: TExtendedStream; Version: Integer); virtual;
-    procedure Save; overload; virtual;
     procedure Save(Stream: TExtendedStream); overload; virtual;
     function ShowInitMessage(Handle: THandle): Boolean; virtual;
 
     property NeedsWave: Boolean read FGetNeedsWave;
     property Hidden: Boolean read FHidden;
     property CanConfigure: Boolean read FCanConfigure;
-    property Name: string read FName;
-    property Help: string read FHelp;
+    property Name: string read FGetName;
+    property Help: string read FGetHelp;
     property Active: Boolean read FActive write FActive;
     property Order: Integer read FOrder write FOrder;
     property OnlyIfCut: Boolean read FOnlyIfCut write FOnlyIfCut;
@@ -156,7 +155,6 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Initialize; override;
 
     property NeededAddons: TList read FNeededAddons;
     property DependenciesMet: Boolean read FGetDependenciesMet;
@@ -175,6 +173,7 @@ type
 
   TExternalPostProcess = class(TPostProcessBase)
   private
+    FName: string;
     FExe: string;
     FParams: string;
     FIdentifier: Integer;
@@ -182,6 +181,7 @@ type
     procedure FSetExe(Value: string);
   protected
     function FGetHash: Cardinal; override;
+    function FGetName: string; override;
   public
     constructor Create; overload;
     constructor Create(Exe, Params: string; Active, OnlyIfCut: Boolean; Identifier, Order, GroupID: Integer); overload;
@@ -199,7 +199,7 @@ type
 implementation
 
 uses
-  AppData;
+  AppData, DataManager;
 
 { TProcessingEntry }
 
@@ -396,6 +396,11 @@ begin
   Result := inherited + HashString(FExe + FParams);
 end;
 
+function TExternalPostProcess.FGetName: string;
+begin
+  Result := FName;
+end;
+
 procedure TExternalPostProcess.FSetExe(Value: string);
 begin
   FExe := Value;
@@ -462,14 +467,19 @@ begin
   Result := HashString(BoolToStr(FActive) + IntToStr(FOrder) + BoolToStr(FOnlyIfCut));
 end;
 
+function TPostProcessBase.FGetHelp: string;
+begin
+  Result := 'Undefined';
+end;
+
+function TPostProcessBase.FGetName: string;
+begin
+  Result := 'Undefined';
+end;
+
 function TPostProcessBase.FGetNeedsWave: Boolean;
 begin
   Result := GroupID = 0;
-end;
-
-procedure TPostProcessBase.Initialize;
-begin
-
 end;
 
 procedure TPostProcessBase.Load(Stream: TExtendedStream; Version: Integer);
@@ -477,11 +487,6 @@ begin
   Stream.Read(FActive);
   Stream.Read(FOrder);
   Stream.Read(FOnlyIfCut);
-end;
-
-procedure TPostProcessBase.Save;
-begin
-
 end;
 
 procedure TPostProcessBase.Save(Stream: TExtendedStream);
@@ -526,10 +531,7 @@ begin
   Exit(True);
 end;
 
-procedure TInternalPostProcess.Initialize;
-begin
-  inherited;
-
-end;
-
 end.
+
+
+

@@ -226,7 +226,6 @@ type
     FSeek: TSeekBar;
     FSearchBar: TSearchBar;
     FSavedTree: TSavedTree;
-    FStreams: TDataLists;
     FCoverDrag: TDropFileSource;
 
     FImportPanel: TImportPanel;
@@ -267,7 +266,7 @@ type
   protected
     procedure Resize; override;
   public
-    constructor Create(AOwner: TComponent; Streams: TDataLists); reintroduce;
+    constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
     procedure AfterCreate; override;
 
@@ -741,13 +740,11 @@ begin
   end;
 end;
 
-constructor TSavedTab.Create(AOwner: TComponent; Streams: TDataLists);
+constructor TSavedTab.Create(AOwner: TComponent);
 var
   Png: TPngImage;
 begin
   inherited Create(AOwner);
-
-  FStreams := Streams;
 
   MsgBus.AddSubscriber(MessageReceived);
 
@@ -804,7 +801,7 @@ var
 begin
   for i := 0 to FImportThread.FFiles.Count - 1 do
   begin
-    FStreams.TrackList.Add(FImportThread.FFiles[i]);
+    AppGlobals.Data.TrackList.Add(FImportThread.FFiles[i]);
     FSavedTree.AddTrack(FImportThread.FFiles[i], True);
   end;
   FImportThread := nil;
@@ -1067,9 +1064,9 @@ procedure TSavedTab.BuildTree;
 var
   i: Integer;
 begin
-  for i := 0 to FStreams.TrackList.Count - 1 do
+  for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
   begin
-    FSavedTree.AddTrack(FStreams.TrackList[i], True);
+    FSavedTree.AddTrack(AppGlobals.Data.TrackList[i], True);
   end;
 
   FSavedTree.Expanded[FSavedTree.FStreamNode] := False;
@@ -1159,7 +1156,7 @@ begin
         try
           for i := 0 to Length(Tracks) - 1 do
           begin
-            FStreams.TrackList.RemoveTrack(Tracks[i]);
+            AppGlobals.Data.TrackList.RemoveTrack(Tracks[i]);
             FSavedTree.DeleteTrack(Tracks[i]);
             if Assigned(FOnTrackRemoved) then
               FOnTrackRemoved(nil, Tracks[i]);
@@ -1180,7 +1177,7 @@ begin
             if (LowerDir <> LowerCase(IncludeTrailingBackslash(AppGlobals.Dir))) and (LowerDir <> LowerCase(IncludeTrailingBackslash(AppGlobals.DirAuto))) then
               Windows.RemoveDirectory(PChar(ExtractFilePath(Tracks[i].Filename)));
             FSavedTree.DeleteTrack(Tracks[i]);
-            FStreams.TrackList.RemoveTrack(Tracks[i]);
+            AppGlobals.Data.TrackList.RemoveTrack(Tracks[i]);
             if Assigned(FOnTrackRemoved) then
               FOnTrackRemoved(nil, Tracks[i]);
           end;
@@ -1211,7 +1208,7 @@ begin
               if not ((LowerDir = LowerCase(IncludeTrailingBackslash(AppGlobals.Dir))) and (LowerDir = LowerCase(IncludeTrailingBackslash(AppGlobals.DirAuto)))) then
                 Windows.RemoveDirectory(PChar(ExtractFilePath(Tracks[i].Filename)));
               FSavedTree.DeleteTrack(Tracks[i]);
-              FStreams.TrackList.RemoveTrack(Tracks[i]);
+              AppGlobals.Data.TrackList.RemoveTrack(Tracks[i]);
               if Assigned(FOnTrackRemoved) then
                 FOnTrackRemoved(nil, Tracks[i]);
             end else
@@ -1243,8 +1240,8 @@ begin
             if Dlg.Files.Count > 0 then
             begin
               KnownFiles := TStringList.Create;
-              for i := 0 to FStreams.TrackList.Count - 1 do
-                KnownFiles.Add(FStreams.TrackList[i].Filename);
+              for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
+                KnownFiles.Add(AppGlobals.Data.TrackList[i].Filename);
 
               FImportPanel := TImportPanel.Create(Self);
               FImportPanel.Width := 250;
@@ -1277,8 +1274,8 @@ begin
         if Dir <> '' then
         begin
           KnownFiles := TStringList.Create;
-          for i := 0 to FStreams.TrackList.Count - 1 do
-            KnownFiles.Add(FStreams.TrackList[i].Filename);
+          for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
+            KnownFiles.Add(AppGlobals.Data.TrackList[i].Filename);
 
           FImportPanel := TImportPanel.Create(Self);
           FImportPanel.Width := 250;
@@ -2638,14 +2635,14 @@ begin
     FILE_ACTION_REMOVED:
       begin
         RemoveTrack(Track);
-        FTab.FStreams.TrackList.RemoveTrack(Track);
+        AppGlobals.Data.TrackList.RemoveTrack(Track);
       end;
     FILE_ACTION_RENAMED_NEW_NAME:
       begin
         if FiletypeToFormat(LowerCase(ExtractFileExt(NewName))) = atNone then
         begin
           RemoveTrack(Track);
-          FTab.FStreams.TrackList.RemoveTrack(Track);
+          AppGlobals.Data.TrackList.RemoveTrack(Track);
           Exit;
         end;
 

@@ -237,7 +237,6 @@ type
   private
     FCommunityLogin: TfrmCommunityLogin;
 
-    FDataLists: TDataLists;
     FUpdater: TUpdateClient;
     FUpdateOnExit: Boolean;
     FSkipAfterShown: Boolean;
@@ -279,7 +278,6 @@ type
     procedure ToggleWindow(AlwaysShow: Boolean = False);
     procedure UpdaterUpdateFound(Sender: TObject);
     procedure UpdaterNoUpdateFound(Sender: TObject);
-    function HandleLoadError(E: Exception): Integer;
     procedure CheckFilesTerminate(Sender: TObject);
     procedure RegisterHotkeys;
     procedure ShowCommunityLogin;
@@ -424,7 +422,7 @@ begin
 
   try
     // Es ist mir beim Theme-Wechsel passiert, dass der Tray komplett verschwunden ist.
-    // Beim Beenden von sW gab es eine Exception. Das hier sollte helfen ;-) ...
+    // Beim Beenden von sW gab es dann eine Exception. Das hier sollte helfen ;-) ...
     addTrayIcon.Visible := False;
   except
   end;
@@ -490,12 +488,12 @@ begin
   // Erst Lists updaten, dann Streams!
   tabSaved.Tree.UpdateList;
   tabLists.UpdateLists;
-  tabClients.UpdateStreams(FDataLists);
+  tabClients.UpdateStreams;
 
   while True do
   begin
     try
-      FDataLists.Save;
+      AppGlobals.Data.Save;
       Break;
     except
       if not Shutdown then
@@ -526,8 +524,20 @@ begin
         Lst := TSettingsList.Load(S);
         try
           AppGlobals.Storage.Assign(Lst);
-          FDataLists.Load(S);
-          FDataLists.Save;
+          // Hier wird das eben gespeicherte neu geladen, damit das anschließende
+          // verarbeiten der Datendatei (AppGlobals.Data.Load()) Zugriff auf
+          // LastUsedVersion aus den Registry-/Ini-Einstellungen hat.
+          AppGlobals.Load;
+          AppGlobals.LoadOldStreamSettings;
+          // Das hier ist ganz fies, bis zur "Trennlinie" muss das irgendwann raus, wenn jeder Client mindestens DataVersion 61 hat.
+          // Genau dann kann auch StreamSettingsObsolete raus! Das ist hier nur so, dass das InitPostProcessors() was folgt
+          // die Dinger neu lädt mithilfe der importierten Einstellungen aus der Registry. Extrem pfuschig.
+          AppGlobals.StreamSettingsObsolete.PostProcessors.Clear;
+          AppGlobals.StreamSettingsObsolete.EncoderSettings.Clear;
+          AppGlobals.InitPostProcessors;
+          // -----------------------------------------------------------
+          AppGlobals.Data.Load(S, ImportFilename);
+          AppGlobals.Data.Save;
         finally
           Lst.Free;
         end;
@@ -641,34 +651,8 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.actStreamSettingsExecute(Sender: TObject);
-var
-  Clients: TClientArray;
-  S: TfrmSettings;
-  Settings: TStreamSettingsArray;
-  i: Integer;
 begin
-  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
-
-  if Length(Clients) > 0 then
-  begin
-    SetLength(Settings, Length(Clients));
-
-    for i := 0 to Length(Clients) - 1 do
-      Settings[i] := Clients[i].Entry.Settings;
-
-    S := TfrmSettings.Create(Self, stStream, FDataLists, Settings, False);
-    S.ShowModal;
-
-    if S.SaveSettings then
-    begin
-      for i := 0 to Length(Clients) - 1 do
-        if not Clients[i].AutoRemove then
-          Clients[i].Entry.Settings.Assign(S.StreamSettings[i]);
-    end;
-  end;
-
-  // Damit die Entries im Hauptmenü angepasst werden, falls von Popup was geändert wurde.
-  UpdateButtons;
+  ShowSettings(stStream, False);
 end;
 
 procedure TfrmStreamWriterMain.actTimersExecute(Sender: TObject);
@@ -797,9 +781,6 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
-var
-  Recovered: Boolean;
-  S: TExtendedStream;
 begin
   SetCaptionAndTrayHint;
 
@@ -812,57 +793,12 @@ begin
     AppGlobals.EQEnabled := False;
   end;
 
-  FDataLists := TDataLists.Create;
-
-  HomeComm := THomeCommunication.Create(FDataLists);
-
-  Recovered := False;
-  {$IFNDEF DEBUG}
-  if FileExists(AppGlobals.RecoveryFile) then
-  begin
-    if MsgBox(0, _('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
-    begin
-      try
-        S := TExtendedStream.Create;
-        try
-          S.LoadFromFile(AppGlobals.RecoveryFile);
-          FDataLists.Load(S);
-          Recovered := True;
-        finally
-          S.Free;
-        end;
-      except
-        MsgBox(0, _('Data could not be loaded.'), _('Error'), MB_ICONERROR);
-      end;
-    end;
-  end;
-  {$ENDIF}
-
-  try
-    if not Recovered then
-      FDataLists.Load;
-  except
-    on E: Exception do
-    begin
-      try
-        FDataLists.Free;
-      except end;
-      FDataLists := TDataLists.Create;
-      // Damit beim Beenden nichts überschrieben wird.
-      FDataLists.LoadError := True;
-
-      if HandleLoadError(E) = IDYES then
-      begin
-        DeleteFile(E.Message);
-        FDataLists.LoadError := False;
-      end;
-    end;
-  end;
+  HomeComm := THomeCommunication.Create;
 
   addStatus := TSWStatusBar.Create(Self);
   addStatus.Parent := Self;
 
-  FClients := TClientManager.Create(FDataLists);
+  FClients := TClientManager.Create;
 
   pagMain := TMainPageControl.Create(Self);
   pagMain.Parent := Self;
@@ -870,11 +806,11 @@ begin
   pagMain.Align := alClient;
   pagMain.Images := modSharedData.imgImages;
 
-  tabClients := TClientTab.Create(pagMain, tbClients, ActionList1, FClients, FDataLists, mnuStreamPopup);
+  tabClients := TClientTab.Create(pagMain, tbClients, ActionList1, FClients, mnuStreamPopup);
   tabClients.PageControl := pagMain;
   tabClients.AfterCreate;
   tabClients.AddressBar.Stations.Sort;
-  tabClients.AddressBar.Stations.BuildList(FDataLists.RecentList);
+  tabClients.AddressBar.Stations.BuildList;
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
   tabClients.OnTrackAdded := tabClientsTrackAdded;
   tabClients.OnTrackRemoved := tabClientsTrackRemoved;
@@ -886,7 +822,7 @@ begin
   tabClients.OnClientAdded := tabClientsClientAdded;
   tabClients.OnClientRemoved := tabClientsClientRemoved;
 
-  tabCharts := TChartsTab.Create(pagMain, FDataLists);
+  tabCharts := TChartsTab.Create(pagMain);
   tabCharts.PageControl := pagMain;
   tabCharts.AfterCreate;
   tabCharts.OnAddToWishlist := tabChartsAddToWishlist;
@@ -894,11 +830,11 @@ begin
   tabCharts.OnAddStreams := tabChartsAddStreams;
   tabCharts.OnGetIsStreamOnListEvent := tabChartsGetIsStreamOnListEvent;
 
-  tabLists := TListsTab.Create(pagMain, FClients, FDataLists);
+  tabLists := TListsTab.Create(pagMain, FClients);
   tabLists.PageControl := pagMain;
   tabLists.AfterCreate;
 
-  tabSaved := TSavedTab.Create(pagMain, FDataLists);
+  tabSaved := TSavedTab.Create(pagMain);
   tabSaved.PageControl := pagMain;
   tabSaved.AfterCreate;
 
@@ -1005,7 +941,6 @@ begin
 
   FreeAndNil(FClients);
   FreeAndNil(FUpdater);
-  FreeAndNil(FDataLists);
 end;
 
 procedure TfrmStreamWriterMain.FormKeyDown(Sender: TObject; var Key: Word;
@@ -1032,28 +967,6 @@ begin
   tabClients.ClientView.ApplyFocus;
 
   PostMessage(Handle, WM_AFTERSHOWN, 0, 0);
-end;
-
-function TfrmStreamWriterMain.HandleLoadError(E: Exception): Integer;
-begin
-  if E is EVersionException then
-    begin
-      Result := MsgBox(0, Format(_('The file "%s" could not be loaded because it was saved with a newer version of streamWriter. ' +
-                                   'To use the current file, exit streamWriter and use a newer version of the application. ' +
-                                   'To delete the file and continue to use this version click "Yes".'#13#10 +
-                                   'WARNING: All data saved in the file will be lost!'#13#10 +
-                                   'The file will not be overwritten with new data until it was loaded or deleted.'),
-                                 [E.Message]),
-                                 _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
-    end else
-    begin
-      Result := MsgBox(0, Format(_('The file "%s" could not be loaded because it is corrupted. ' +
-                                   'You can delete it to avoid this error when streamWriter starts by clicking "Yes".'#13#10 +
-                                   'WARNING: All data saved in the file will be lost!'#13#10 +
-                                   'The file will not be overwritten with new data until it was loaded or deleted.'),
-                                 [E.Message]),
-                                 _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
-    end;
 end;
 
 procedure TfrmStreamWriterMain.HomeCommBytesTransferred(Sender: TObject;
@@ -1154,7 +1067,7 @@ begin
     if not tabCharts.Searched then
       tabCharts.SearchCharts(True, False);
 
-    if (((FDataLists.BrowserList.Count = 0) or (FDataLists.GenreList.Count = 0)) or (AppGlobals.LastBrowserUpdate < Now - 15)) or
+    if (((AppGlobals.Data.BrowserList.Count = 0) or (AppGlobals.Data.GenreList.Count = 0)) or (AppGlobals.LastBrowserUpdate < Now - 15)) or
        (tabClients.SideBar.BrowserView.Mode = moError) then
     begin
       if HomeComm.SendGetServerData then
@@ -1173,7 +1086,7 @@ begin
       tabClients.SideBar.BrowserView.SwitchMode(moError);
   end;
 
-  HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 end;
 
 procedure TfrmStreamWriterMain.HomeCommTitleNotificationsChanged(
@@ -1710,7 +1623,7 @@ begin
   // Erst Lists updaten, dann Streams! Muss so!
   tabSaved.Tree.UpdateList;
   tabLists.UpdateLists;
-  tabClients.UpdateStreams(FDataLists);
+  tabClients.UpdateStreams;
 end;
 
 procedure TfrmStreamWriterMain.SetWakeups;
@@ -1737,15 +1650,36 @@ end;
 
 procedure TfrmStreamWriterMain.ShowSettings(SettingsType: TSettingsTypes; BrowseDir: Boolean);
 var
+  i: Integer;
   S: TfrmSettings;
   OldMonitorCount, NewMonitorCount: Cardinal;
+  StreamSettings: TStreamSettingsArray;
+  Clients: TClientArray;
 begin
   if AppGlobals.SubmitStats and AppGlobals.MonitorMode then
     OldMonitorCount := AppGlobals.MonitorCount
   else
     OldMonitorCount := 0;
 
-  S := TfrmSettings.Create(Self, SettingsType, FDataLists, nil, BrowseDir);
+  SetLength(StreamSettings, 1);
+  if SettingsType = stApp then
+    StreamSettings[0] := AppGlobals.Data.StreamSettings.Copy
+  else if SettingsType = stAuto then
+    StreamSettings[0] := AppGlobals.Data.AutoRecordSettings.Copy
+  else if SettingsType = stStream then
+  begin
+    Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
+    if Length(Clients) > 0 then
+    begin
+      SetLength(StreamSettings, Length(Clients));
+      for i := 0 to Length(Clients) - 1 do
+        StreamSettings[i] := Clients[i].Entry.Settings;
+    end else
+      Exit;
+  end else
+    raise Exception.Create('SettingsType not allowed here');
+
+  S := TfrmSettings.Create(Self, SettingsType, StreamSettings, BrowseDir);
   try
     S.OnSaveForExport := SettingsSaveForExport;
     S.ShowModal;
@@ -1760,6 +1694,8 @@ begin
       case SettingsType of
         stApp:
           begin
+            AppGlobals.Data.StreamSettings.Assign(S.StreamSettings[0]);
+
             SetCaptionAndTrayHint;
 
             if AppGlobals.SubmitStats and AppGlobals.MonitorMode then
@@ -1780,8 +1716,6 @@ begin
 
             tabClients.ShowInfo;
 
-            AppGlobals.PostProcessManager.ReInitPostProcessors;
-
             addTrayIcon.Visible := AppGlobals.Tray;
 
             ScreenSnap := AppGlobals.SnapMain;
@@ -1792,9 +1726,15 @@ begin
           end;
         stAuto:
           begin
-            FDataLists.AutoRecordSettings.Assign(S.StreamSettings[0]);
+            AppGlobals.Data.AutoRecordSettings.Assign(S.StreamSettings[0]);
 
-            HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+            HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+          end;
+        stStream:
+          begin
+            for i := 0 to Length(Clients) - 1 do
+              if not Clients[i].AutoRemove then
+                Clients[i].Entry.Settings.Assign(S.StreamSettings[i]);
           end;
       end;
   finally
@@ -2043,8 +1983,8 @@ begin
 
   Files := TList.Create;
   try
-    for i := 0 to FDataLists.TrackList.Count - 1 do
-      Files.Add(TFileEntry.Create(FDataLists.TrackList[i].Filename, FDataLists.TrackList[i].Filesize, eaNone));
+    for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
+      Files.Add(TFileEntry.Create(AppGlobals.Data.TrackList[i].Filename, AppGlobals.Data.TrackList[i].Filesize, eaNone));
     FCheckFiles := TCheckFilesThread.Create(Files);
     FCheckFiles.OnTerminate := CheckFilesTerminate;
     FCheckFiles.Resume;
@@ -2089,10 +2029,10 @@ begin
     Pattern := BuildPattern(Arr[i].Title, Hash, NumChars, True);
     Found := False;
 
-    for n := 0 to FDataLists.SaveList.Count - 1 do
-      if ((Arr[i].Hash = 0) and (FDataLists.SaveList[n].ServerHash = 0) and (FDataLists.SaveList[n].Hash = Hash)) or
-         ((Arr[i].Hash > 0) and Arr[i].IsArtist and (FDataLists.SaveList[n].ServerArtistHash = Arr[i].Hash)) or
-         ((Arr[i].Hash > 0) and (not Arr[i].IsArtist) and (FDataLists.SaveList[n].ServerHash = Arr[i].Hash)) then
+    for n := 0 to AppGlobals.Data.SaveList.Count - 1 do
+      if ((Arr[i].Hash = 0) and (AppGlobals.Data.SaveList[n].ServerHash = 0) and (AppGlobals.Data.SaveList[n].Hash = Hash)) or
+         ((Arr[i].Hash > 0) and Arr[i].IsArtist and (AppGlobals.Data.SaveList[n].ServerArtistHash = Arr[i].Hash)) or
+         ((Arr[i].Hash > 0) and (not Arr[i].IsArtist) and (AppGlobals.Data.SaveList[n].ServerHash = Arr[i].Hash)) then
       begin
         Found := True;
         Break;
@@ -2109,7 +2049,7 @@ begin
       end else
         T := TTitleInfo.Create(0, 0, Arr[i].Title);
 
-      FDataLists.SaveList.Add(T);
+      AppGlobals.Data.SaveList.Add(T);
       tabLists.AddTitle(nil, ltSave, T);
 
       if Arr[i].Hash > 0 then
@@ -2121,7 +2061,7 @@ begin
   end;
 
   HomeComm.SendSyncWishlist(swAdd, Hashes);
-  HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
   MsgBus.SendMessage(TListsChangedMsg.Create);
 end;
 
@@ -2147,19 +2087,19 @@ begin
   SetLength(Hashes, 0);
 
   for n := 0 to High(Arr) do
-    for i := FDataLists.SaveList.Count - 1 downto 0 do
-      if (FDataLists.SaveList[i].ServerHash > 0) and (Arr[n].Hash > 0) and (not Arr[n].IsArtist) and
-         (FDataLists.SaveList[i].ServerHash = Arr[n].Hash) then
+    for i := AppGlobals.Data.SaveList.Count - 1 downto 0 do
+      if (AppGlobals.Data.SaveList[i].ServerHash > 0) and (Arr[n].Hash > 0) and (not Arr[n].IsArtist) and
+         (AppGlobals.Data.SaveList[i].ServerHash = Arr[n].Hash) then
       begin
-        tabLists.RemoveTitle(nil, ltSave, FDataLists.SaveList[i]);
-        FDataLists.SaveList.Delete(i);
+        tabLists.RemoveTitle(nil, ltSave, AppGlobals.Data.SaveList[i]);
+        AppGlobals.Data.SaveList.Delete(i);
 
         SetLength(Hashes, Length(Hashes) + 1);
         Hashes[High(Hashes)] := TSyncWishlistRecord.Create(Arr[n].Hash, False);
       end;
 
   HomeComm.SendSyncWishlist(swRemove, Hashes);
-  HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
   MsgBus.SendMessage(TListsChangedMsg.Create);
 end;
 
@@ -2175,9 +2115,9 @@ var
 begin
   if Client = nil then
     if ListType = ltSave then
-      List := FDataLists.SaveList
+      List := AppGlobals.Data.SaveList
     else
-      List := FDataLists.IgnoreList
+      List := AppGlobals.Data.IgnoreList
   else
     if ListType = ltSave then
       List := Client.Entry.SaveList
@@ -2202,7 +2142,7 @@ begin
       List.Add(T);
       tabLists.AddTitle(Client, ListType, T);
 
-      HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+      HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
     end;
   end;
 end;
@@ -2216,9 +2156,9 @@ var
 begin
   if Client = nil then
     if ListType = ltSave then
-      List := FDataLists.SaveList
+      List := AppGlobals.Data.SaveList
     else
-      List := FDataLists.IgnoreList
+      List := AppGlobals.Data.IgnoreList
   else
     if ListType = ltSave then
       List := Client.Entry.SaveList
@@ -2239,7 +2179,7 @@ begin
 
   MsgBus.SendMessage(TListsChangedMsg.Create);
 
-  HomeComm.SendSetSettings((FDataLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsAuthRequired(Sender: TObject);
@@ -2262,21 +2202,21 @@ procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject; AudioInfo: TAudioFil
 var
   i: Integer;
 begin
-  for i := 0 to FDataLists.TrackList.Count - 1 do
-    if LowerCase(FDataLists.TrackList[i].Filename) = LowerCase(TCutTab(Sender).Filename) then
+  for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
+    if LowerCase(AppGlobals.Data.TrackList[i].Filename) = LowerCase(TCutTab(Sender).Filename) then
     begin
-      FDataLists.TrackList[i].Filesize := AudioInfo.Filesize;
-      FDataLists.TrackList[i].Length := Trunc(AudioInfo.Length);
+      AppGlobals.Data.TrackList[i].Filesize := AudioInfo.Filesize;
+      AppGlobals.Data.TrackList[i].Length := Trunc(AudioInfo.Length);
 
       // Ist mal raus, damit das "geschnitten"-Symbol nur bei automatischen Aufnahmen kommt
       //FDataLists.TrackList[i].WasCut := True;
 
-      FDataLists.TrackList[i].Finalized := True;
+      AppGlobals.Data.TrackList[i].Finalized := True;
 
-      FDataLists.TrackList[i].BitRate := AudioInfo.Bitrate;
-      FDataLists.TrackList[i].VBR := AudioInfo.VBR;
+      AppGlobals.Data.TrackList[i].BitRate := AudioInfo.Bitrate;
+      AppGlobals.Data.TrackList[i].VBR := AudioInfo.VBR;
 
-      tabSaved.Tree.UpdateTrack(FDataLists.TrackList[i]);
+      tabSaved.Tree.UpdateTrack(AppGlobals.Data.TrackList[i]);
 
       // Macht den Finalized-Button passig (Down/nicht Down)
       tabSaved.UpdateButtons;
@@ -2309,15 +2249,15 @@ end;
 
 procedure TfrmStreamWriterMain.tmrAutoSaveTimer(Sender: TObject);
 begin
-  if Application.Terminated or AppGlobals.SkipSave or FDataLists.LoadError then
+  if Application.Terminated or AppGlobals.SkipSave or AppGlobals.Data.LoadError then
     Exit;
 
   try
     // Erst Lists updaten, dann Streams!
     tabSaved.Tree.UpdateList;
     tabLists.UpdateLists;
-    tabClients.UpdateStreams(FDataLists);
-    FDataLists.SaveRecover;
+    tabClients.UpdateStreams;
+    AppGlobals.Data.SaveRecover;
 
     try
       AppGlobals.Save(0);
@@ -2451,7 +2391,7 @@ begin
   addStatus.Speed := Speed;
   addStatus.BuildSpeedBmp;
   addStatus.CurrentReceived := tabClients.Received;
-  addStatus.OverallReceived := FDataLists.Received;
+  addStatus.OverallReceived := AppGlobals.Data.Received;
 
   UpdateStatus;
 
@@ -2498,7 +2438,7 @@ begin
     end;
   end;
 
-  Power.Critical := (PlayingActive or RecordingActive or ScheduleActive) or ((FDataLists.SaveList.Count > 0) and (AppGlobals.AutoTuneIn));
+  Power.Critical := (PlayingActive or RecordingActive or ScheduleActive) or ((AppGlobals.Data.SaveList.Count > 0) and (AppGlobals.AutoTuneIn));
 end;
 
 procedure TfrmStreamWriterMain.ToggleWindow(AlwaysShow: Boolean);
@@ -2735,7 +2675,7 @@ begin
   end;
 
   addStatus.SetState(CS, HomeComm.Authenticated, HomeComm.NotifyTitleChanges, FClientCount, FRecordingCount,
-    FClients.SongsSaved, FDataLists.SongsSaved);
+    FClients.SongsSaved, AppGlobals.Data.SongsSaved);
 
   SetCaptionAndTrayHint;
 end;
@@ -2783,17 +2723,17 @@ begin
       if E.Action = eaNone then
         Continue;
 
-      for n := 0 to FDataLists.TrackList.Count - 1 do
-        if FDataLists.TrackList[n].Filename = E.Filename then
+      for n := 0 to AppGlobals.Data.TrackList.Count - 1 do
+        if AppGlobals.Data.TrackList[n].Filename = E.Filename then
         begin
-          Track := FDataLists.TrackList[n];
+          Track := AppGlobals.Data.TrackList[n];
           case E.Action of
             eaNone: ;
             eaSize:
               Track.Filesize := E.Size;
             eaRemove:
               begin
-                FDataLists.TrackList.Delete(n);
+                AppGlobals.Data.TrackList.Delete(n);
                 tabSaved.Tree.RemoveTrack(Track);
                 Track.Free;
               end;

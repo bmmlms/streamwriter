@@ -25,7 +25,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, AppData, LanguageObjects,
-  AudioFunctions;
+  AudioFunctions, DataManager;
 
 type
   TfrmConfigureEncoder = class(TForm)

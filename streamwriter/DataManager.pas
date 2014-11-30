@@ -26,13 +26,24 @@ interface
 
 uses
   Windows, Classes, SysUtils, ExtendedStream, Generics.Collections,
-  ComCtrls, AppData, Functions, Logging, DateUtils, AudioFunctions,
-  PowerManagement, Generics.Defaults, ZLib, TypeDefs, winsock;
+  ComCtrls, Functions, Logging, DateUtils, AudioFunctions, PostProcess,
+  PowerManagement, Generics.Defaults, ZLib, TypeDefs, winsock,
+  AddonManager;
 
 type
   TStreamList = class;
   TDataLists = class;
   TListCategory = class;
+
+  // Do not change the order of items in the following enums!
+  // Definitions for scheduling intervals. siNone has to be the last element!
+  TScheduleInterval = (siDaily, siWeekly, siNone);
+  // A specific day for a schedule. sdNone has to be the last element!
+  TScheduleDay = (sdMonday, sdTuesday, sdWednesday, sdThursday, sdFriday, sdSaturday, sdSunday, sdNone);
+  // Set for definition of filters to use
+  TUseFilters = (ufNone, ufWish, ufIgnoreGlobal, ufIgnoreLocal, ufIgnoreBoth, ufBoth);
+  // Definitions for directions for where to adjust the track-offset
+  TTrackOffsetDirection = (toForward, toBackward);
 
   { This exception is raised when streamWriter tries to load a file saved with
     a newer file-format that it does not know (because it is an old version) }
@@ -334,8 +345,190 @@ type
     property ScheduleStarted: TDateTime read FScheduleStarted write FScheduleStarted;
   end;
 
+  TEncoderSettings = class
+  private
+    function FGetHash: Cardinal;
+  public
+    AudioType: TAudioTypes;
+    BitrateType: TBitRates;
+    CBRBitrate: Integer;
+    VBRQuality: TVBRQualities;
+
+    constructor Create(AudioType: TAudioTypes; BitrateType: TBitRates; VBRQuality: TVBRQualities);
+    procedure Load(Stream: TExtendedStream; Version: Integer); overload;
+    procedure Save(Stream: TExtendedStream); overload;
+    procedure Assign(From: TEncoderSettings);
+    function Copy: TEncoderSettings;
+
+    procedure LoadFromRegistry;
+
+    property Hash: Cardinal read FGetHash;
+  end;
+
   // A list of items of TSchedule
   TScheduleList = TList<TSchedule>;
+
+  TPostProcessorList = class(TList<TPostProcessBase>)
+  private
+    function FGetHash: Cardinal;
+  public
+    function Find(PostProcessor: TPostProcessBase): TPostProcessBase; overload;
+    function Find(ClassType: TClass): TPostProcessBase; overload;
+    function Find(PostProcessType: TPostProcessTypes): TPostProcessBase; overload;
+
+    property Hash: Cardinal read FGetHash;
+  end;
+
+  TEncoderSettingsList = class(TList<TEncoderSettings>)
+  private
+    function FGetHash: Cardinal;
+  public
+    function Find(AudioType: TAudioTypes): TEncoderSettings;
+
+    property Hash: Cardinal read FGetHash;
+  end;
+
+  { This class defines stream-specific settings. It is used in the settings (AppData) for general
+    settings, it is also used in every TStreamEntry which defines configuration of a specific stream }
+  TStreamSettings = class
+  private
+    FFilePattern: string;
+    FIncompleteFilePattern: string;
+    FStreamFilePattern: string;
+    FFilePatternDecimals: Cardinal;
+    FRemoveChars: string;
+    FNormalizeVariables: Boolean;
+    FDeleteStreams: Boolean;
+    FAddSavedToIgnore: Boolean;
+    FAddSavedToStreamIgnore: Boolean;
+    FRemoveSavedFromWishlist: Boolean;
+    FSkipShort: Boolean;
+    FSearchSilence: Boolean;
+    FAutoDetectSilenceLevel: Boolean;
+    FSilenceLevel: Cardinal;
+    FSilenceLength: Cardinal;
+    FSilenceBufferSecondsStart: Integer;
+    FSilenceBufferSecondsEnd: Integer;
+    FShortLengthSeconds: Integer;
+    FSongBuffer: Integer;
+    FAdjustTrackOffset: Boolean;
+    FAdjustTrackOffsetMS: Cardinal;
+    FAdjustTrackOffsetDirection: TTrackOffsetDirection;
+    FMaxRetries: Integer;
+    FRetryDelay: Cardinal;
+    FFilter: TUseFilters;
+    FSeparateTracks: Boolean;
+    FSaveToMemory: Boolean;
+    FOnlySaveFull: Boolean;
+    FOverwriteSmaller: Boolean;
+    FDiscardSmaller: Boolean;
+    FDiscardAlways: Boolean;
+    FOutputFormat: TAudioTypes;
+    FRegExes: TStringList;
+    FIgnoreTrackChangePattern: TStringList;
+    FPostProcessors: TPostProcessorList;
+    FEncoderSettings: TEncoderSettingsList;
+
+    procedure FSetSaveToMemory(Value: Boolean);
+  public
+    // Creates a new instance of TStreamSettings class
+    constructor Create(InitStuff: Boolean = True);
+    // Destroys this instance of TStreamSettings
+    destructor Destroy; override;
+
+    procedure InitStuff(EncoderSettingsFromRegistry: Boolean = False);
+
+    class function GetDefaults: TStreamSettings;
+    class procedure ApplyAutoDefaults(Data: TDataLists; S: TStreamSettings);
+
+    // Loads an instance of TStreamSettings from a stream
+    class function Load(Stream: TExtendedStream; Version: Integer): TStreamSettings;
+    class function LoadAuto(Data: TDataLists; Stream: TExtendedStream; Version: Integer): TStreamSettings;
+    // Saves this instance of TStreamSettings to a stream
+    procedure Save(Stream: TExtendedStream);
+    procedure SaveAuto(Stream: TExtendedStream);
+    // Assigns this instance of TStreamSettings to From
+    procedure Assign(From: TStreamSettings);
+    // Copies this instance of TStreamSettings
+    function Copy: TStreamSettings;
+
+    // The patterns (Regexes) to detect artist/title/album from broadcasted titles
+    property RegExes: TStringList read FRegExes write FRegExes;
+    // The pattern for recorded files
+    property FilePattern: string read FFilePattern write FFilePattern;
+    // The pattern for incompletely recorded files
+    property IncompleteFilePattern: string read FIncompleteFilePattern write FIncompleteFilePattern;
+    // The pattern for stream-files
+    property StreamFilePattern: string read FStreamFilePattern write FStreamFilePattern;
+    // Minimum number of decimals for %n (Tracknumber) in filenames
+    property FilePatternDecimals: Cardinal read FFilePatternDecimals write FFilePatternDecimals;
+    // Chars to remove from filenames of recorded songs
+    property RemoveChars: string read FRemoveChars write FRemoveChars;
+    // When set variables get normalized (i.e. %a = ArTiSt becomes Artist)
+    property NormalizeVariables: Boolean read FNormalizeVariables write FNormalizeVariables;
+    { When set stream-files are deleted when recording stops.
+      This option is only enabled when FSaveToMemory is false }
+    property DeleteStreams: Boolean read FDeleteStreams write FDeleteStreams;
+    // When set recorded titles are added to ignorelist
+    property AddSavedToIgnore: Boolean read FAddSavedToIgnore write FAddSavedToIgnore;
+    // When set recorded titles are added to stream-specific ignorelist
+    property AddSavedToStreamIgnore: Boolean read FAddSavedToStreamIgnore write FAddSavedToStreamIgnore;
+    // When set recorded titles are removed from wishlist
+    property RemoveSavedFromWishlist: Boolean read FRemoveSavedFromWishlist write FRemoveSavedFromWishlist;
+    // When set short songs will not be saved (see FShortLengthSeconds)
+    property SkipShort: Boolean read FSkipShort write FSkipShort;
+    // When set silence will be searched to detect cut-positions
+    property SearchSilence: Boolean read FSearchSilence write FSearchSilence;
+    // When set the level for silence will be automatically detected
+    property AutoDetectSilenceLevel: Boolean read FAutoDetectSilenceLevel write FAutoDetectSilenceLevel;
+    // Manual silence control: The maximum level of volume to detect as silence
+    property SilenceLevel: Cardinal read FSilenceLevel write FSilenceLevel;
+    // Manual silence control: The minumum length of set volume level (SilenceLevel) to detect as silence
+    property SilenceLength: Cardinal read FSilenceLength write FSilenceLength;
+    // Seconds to search for silence before track-change occured
+    property SilenceBufferSecondsStart: Integer read FSilenceBufferSecondsStart write FSilenceBufferSecondsStart;
+    // Seconds to search for silence after track-change occured
+    property SilenceBufferSecondsEnd: Integer read FSilenceBufferSecondsEnd write FSilenceBufferSecondsEnd;
+    // When a recorded song is shorter than the defined length it is discarded if SkipShort is set
+    property ShortLengthSeconds: Integer read FShortLengthSeconds write FShortLengthSeconds;
+    // Use this area of audio data if no silence could be found. It will be appended to the start/end of the song
+    property SongBuffer: Integer read FSongBuffer write FSongBuffer;
+    // When set the detected track offset will be moved
+    property AdjustTrackOffset: Boolean read FAdjustTrackOffset write FAdjustTrackOffset;
+    // Milliseconds to move the detected track offset
+    property AdjustTrackOffsetMS: Cardinal read FAdjustTrackOffsetMS write FAdjustTrackOffsetMS;
+    // The direction to move the adjusted track offset to
+    property AdjustTrackOffsetDirection: TTrackOffsetDirection read FAdjustTrackOffsetDirection write FAdjustTrackOffsetDirection;
+    // Maximum number of retries on error
+    property MaxRetries: Integer read FMaxRetries write FMaxRetries;
+    // The delay between retries (defined by MaxRetries)
+    property RetryDelay: Cardinal read FRetryDelay write FRetryDelay;
+    // The filter to use
+    property Filter: TUseFilters read FFilter write FFilter;
+    // When set separated tracks will be saved (not only the stream-file)
+    property SeparateTracks: Boolean read FSeparateTracks write FSeparateTracks;
+    // When set all data will be saved to memory (instead of harddisk)
+    property SaveToMemory: Boolean read FSaveToMemory write FSetSaveToMemory;
+    // When set only completely received songs will be saved
+    property OnlySaveFull: Boolean read FOnlySaveFull write FOnlySaveFull;
+    // When set smaller files with the same name will be overwritten
+    property OverwriteSmaller: Boolean read FOverwriteSmaller write FOverwriteSmaller;
+    // When set a file will not be saved if it is smaller than an existing same-named song
+    property DiscardSmaller: Boolean read FDiscardSmaller write FDiscardSmaller;
+    property DiscardAlways: Boolean read FDiscardAlways write FDiscardAlways;
+    property OutputFormat: TAudioTypes read FOutputFormat write FOutputFormat;
+    { This list defines when to ignore track changes.
+      If if contains "Radio XYZ - Greatest Hits!!" the following will happen:
+      Artist A - Title A              <- Okay
+      Radio XYZ - Greatest Hits!!     <- No track change detection
+      Artist B -> Title B             <- Okay, track change is detected here, so Radio XYZ... will not be saved }
+    property IgnoreTrackChangePattern: TStringList read FIgnoreTrackChangePattern write FIgnoreTrackChangePattern;
+    property PostProcessors: TPostProcessorList read FPostProcessors;
+    property EncoderSettings: TEncoderSettingsList read FEncoderSettings;
+  end;
+
+  // An array of TStreamSettings
+  TStreamSettingsArray = array of TStreamSettings;
 
   { An entry about a stream that is/was in the stream-list.
     This class contains an instance of TStreamSettings and other data. }
@@ -394,7 +587,7 @@ type
 
     procedure Assign(From: TStreamEntry);
     function Copy: TStreamEntry;
-    class function Load(Stream: TExtendedStream; Version: Integer): TStreamEntry;
+    class function Load(Data: TDataLists; Stream: TExtendedStream; Version: Integer): TStreamEntry;
     procedure Save(Stream: TExtendedStream);
 
     property Settings: TStreamSettings read FSettings;
@@ -512,7 +705,7 @@ type
 
     class function LoadFromHome(Stream: TExtendedStream; Version: Integer): TChartEntry;
 
-    procedure LoadStreams(StreamList: TStreamBrowserList);
+    procedure LoadStreams;
 
     // The name
     property Name: string read FName;
@@ -559,6 +752,8 @@ type
     disposed/saved at the end }
   TDataLists = class
   private
+    FDefaultStreamSettings: TStreamSettings;
+    FStreamSettings: TStreamSettings;
     FAutoRecordSettings: TStreamSettings;
     FCategoryList: TListCategoryList;
     FStreamList: TStreamList;
@@ -583,11 +778,14 @@ type
     // Cleans all lists and frees all their items
     procedure CleanLists;
     procedure Load; overload;
-    procedure Load(var S: TExtendedStream); overload;
+    procedure Load(var S: TExtendedStream; Filename: string); overload;
     procedure Save; overload;
     procedure Save(S: TExtendedStream; UseCompression: Boolean); overload;
     procedure SaveRecover;
+    procedure CheckEncodersAndPostProcessors;
 
+    property DefaultStreamSettings: TStreamSettings read FDefaultStreamSettings;
+    property StreamSettings: TStreamSettings read FStreamSettings;
     property AutoRecordSettings: TStreamSettings read FAutoRecordSettings;
 
     // List that contains all categories
@@ -625,9 +823,12 @@ type
   end;
 
 const
-  DATAVERSION = 60;
+  DATAVERSION = 61;
 
 implementation
+
+uses
+  AppData, PostProcessSetTags, PostProcessSoX, PostProcessMP4Box, PostProcessConvert;
 
 { TTitleInfo }
 
@@ -819,7 +1020,7 @@ begin
   FName := Value;
 end;
 
-class function TStreamEntry.Load(Stream: TExtendedStream; Version: Integer): TStreamEntry;
+class function TStreamEntry.Load(Data: TDataLists; Stream: TExtendedStream; Version: Integer): TStreamEntry;
 var
   BTmp: Boolean;
   i: Integer;
@@ -836,7 +1037,7 @@ begin
   end else
   begin
     // Defaults benutzen..
-    Result.FSettings.Assign(AppGlobals.StreamSettings);
+    Result.FSettings.Assign(Data.StreamSettings);
   end;
 
   if Version >= 24 then
@@ -970,6 +1171,37 @@ end;
 
 { TStreamDataList }
 
+procedure TDataLists.CheckEncodersAndPostProcessors;
+var
+  i, n: Integer;
+begin
+  if AppGlobals.AddonManager.CanEncode(FStreamSettings.OutputFormat) <> ceOkay then
+    FStreamSettings.OutputFormat := atNone;
+
+  if AppGlobals.AddonManager.CanEncode(FAutoRecordSettings.OutputFormat) <> ceOkay then
+    FAutoRecordSettings.OutputFormat := atNone;
+
+  for i := 0 to FStreamList.Count - 1 do
+    if AppGlobals.AddonManager.CanEncode(FStreamList[i].Settings.OutputFormat) <> ceOkay then
+      FStreamList[i].Settings.OutputFormat := atNone;
+
+  for n := 0 to FStreamSettings.PostProcessors.Count - 1 do
+    if FStreamSettings.PostProcessors[n].ClassType.InheritsFrom(TInternalPostProcess) then
+      if not TInternalPostProcess(FStreamSettings.PostProcessors[n]).DependenciesMet then
+        FStreamSettings.PostProcessors[n].Active := False;
+
+  for n := 0 to FAutoRecordSettings.PostProcessors.Count - 1 do
+    if FAutoRecordSettings.PostProcessors[n].ClassType.InheritsFrom(TInternalPostProcess) then
+      if not TInternalPostProcess(FAutoRecordSettings.PostProcessors[n]).DependenciesMet then
+        FAutoRecordSettings.PostProcessors[n].Active := False;
+
+  for i := 0 to FStreamList.Count - 1 do
+    for n := 0 to FStreamList[i].Settings.PostProcessors.Count - 1 do
+      if FStreamList[i].Settings.PostProcessors[n].ClassType.InheritsFrom(TInternalPostProcess) then
+        if not TInternalPostProcess(FStreamList[i].Settings.PostProcessors[n]).DependenciesMet then
+          FStreamList[i].Settings.PostProcessors[n].Active := False;
+end;
+
 procedure TDataLists.CleanLists;
 var
   i: Integer;
@@ -1017,9 +1249,15 @@ constructor TDataLists.Create;
 begin
   inherited;
 
-  FAutoRecordSettings := TStreamSettings.Create(True);
-  FAutoRecordSettings.Assign(AppGlobals.DefaultStreamSettings);
-  TStreamSettings.ApplyAutoDefaults(FAutoRecordSettings);
+  // TODO: auf ner frischen installation testen, ob die settings so auch alle sinnig sind und passen zu den
+  //       settings, die standardmäßig mit default werten aus registry kamen
+  FDefaultStreamSettings := TStreamSettings.GetDefaults;
+  FStreamSettings := TStreamSettings.Create(False);
+  FStreamSettings.Assign(FDefaultStreamSettings);
+
+  FAutoRecordSettings := TStreamSettings.Create(False);
+  FAutoRecordSettings.Assign(FDefaultStreamSettings);
+  TStreamSettings.ApplyAutoDefaults(Self, FAutoRecordSettings);
 
   FLoadError := False;
   FReceived := 0;
@@ -1038,6 +1276,8 @@ end;
 
 destructor TDataLists.Destroy;
 begin
+  FDefaultStreamSettings.Free;
+  FStreamSettings.Free;
   FAutoRecordSettings.Free;
 
   CleanLists;
@@ -1059,7 +1299,7 @@ begin
   inherited;
 end;
 
-procedure TDataLists.Load(var S: TExtendedStream);
+procedure TDataLists.Load(var S: TExtendedStream; Filename: string);
 var
   Entry: TStreamEntry;
   TitleInfo: TTitleInfo;
@@ -1077,7 +1317,7 @@ begin
   S.Read(Version);
 
   if Version > DATAVERSION then
-    raise EVersionException.Create(AppGlobals.DataFile);
+    raise EVersionException.Create(Filename);
 
   // Bei 44 war Kompression immer aktiv, danach optional
   if Version >= 44 then
@@ -1112,12 +1352,120 @@ begin
   begin
     while S.Position < S.Size do
     begin
-      Entry := TStreamEntry.Load(S, Version);
+      Entry := TStreamEntry.Load(Self, S, Version);
       Entry.FParent := FStreamList;
       FStreamList.Add(Entry);
     end;
   end else
   begin
+    if Version >= 61 then
+    begin
+      FStreamSettings.Free;
+      FStreamSettings := TStreamSettings.Load(S, Version);
+    end else
+    begin
+      // Früher wurde alles in den AppGlobals gespeichert, also müssen wir die Einstellungen
+      // ggf. von da übernehmen...
+
+      if (AppGlobals.LastUsedDataVersion > 0) and (AppGlobals.LastUsedDataVersion < 61) then
+        FStreamSettings.Assign(AppGlobals.StreamSettingsObsolete)
+      else
+        FStreamSettings.Assign(FDefaultStreamSettings);
+
+      {
+      FStreamSettings.RegExes.Assign(FDefaultStreamSettings.RegExes);
+
+      FStorage.Read('FilePattern', FStreamSettings.FFilePattern, FDefaultStreamSettings.FFilePattern);
+      FStorage.Read('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern, FDefaultStreamSettings.FIncompleteFilePattern);
+      FStorage.Read('StreamFilePattern', FStreamSettings.FStreamFilePattern, FDefaultStreamSettings.FStreamFilePattern);
+      FStorage.Read('FilePatternDecimals', FStreamSettings.FFilePatternDecimals, FDefaultStreamSettings.FFilePatternDecimals);
+      FStorage.Read('RemoveChars', FStreamSettings.FRemoveChars, FDefaultStreamSettings.FRemoveChars);
+      FStorage.Read('NormalizeVariables', FStreamSettings.FNormalizeVariables, FDefaultStreamSettings.FNormalizeVariables);
+
+      FStorage.Read('DeleteStreams', FStreamSettings.FDeleteStreams, FDefaultStreamSettings.FDeleteStreams);
+      FStorage.Read('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore, FDefaultStreamSettings.FAddSavedToIgnore);
+      FStorage.Read('AddSavedToStreamIgnore', FStreamSettings.FAddSavedToStreamIgnore, FDefaultStreamSettings.FAddSavedToStreamIgnore);
+      FStorage.Read('RemoveSavedFromWishlist', FStreamSettings.FRemoveSavedFromWishlist, FDefaultStreamSettings.FRemoveSavedFromWishlist);
+      FStorage.Read('SkipShort', FStreamSettings.FSkipShort, FDefaultStreamSettings.FSkipShort);
+      FStorage.Read('SearchSilence', FStreamSettings.FSearchSilence, FDefaultStreamSettings.FSearchSilence);
+      FStorage.Read('AutoDetectSilenceLevel', FStreamSettings.FAutoDetectSilenceLevel, FDefaultStreamSettings.FAutoDetectSilenceLevel);
+      FStorage.Read('SilenceLevel', FStreamSettings.FSilenceLevel, FDefaultStreamSettings.FSilenceLevel);
+      FStorage.Read('SilenceLength', FStreamSettings.FSilenceLength, FDefaultStreamSettings.FSilenceLength);
+
+      FStorage.Read('SilenceBufferSeconds', SilenceBuffer, FDefaultStreamSettings.FSilenceBufferSecondsStart);
+      if SilenceBuffer <> FDefaultStreamSettings.FSilenceBufferSecondsStart then
+      begin
+        FStreamSettings.FSilenceBufferSecondsStart := SilenceBuffer;
+        FStreamSettings.FSilenceBufferSecondsEnd := SilenceBuffer;
+      end else
+      begin
+        FStorage.Read('SilenceBufferSecondsStart', FStreamSettings.FSilenceBufferSecondsStart, FDefaultStreamSettings.FSilenceBufferSecondsStart);
+        FStorage.Read('SilenceBufferSecondsEnd', FStreamSettings.FSilenceBufferSecondsEnd, FDefaultStreamSettings.FSilenceBufferSecondsEnd);
+      end;
+
+      FStreamSettings.FAdjustTrackOffset := False;
+      FStreamSettings.FAdjustTrackOffsetMS := 0;
+      FStreamSettings.FAdjustTrackOffsetDirection := toForward;
+
+      FStorage.Read('SaveToMemory', FStreamSettings.FSaveToMemory, FDefaultStreamSettings.FSaveToMemory);
+      FStorage.Read('OnlySaveFull', FStreamSettings.FOnlySaveFull, FDefaultStreamSettings.FOnlySaveFull);
+      FStorage.Read('OverwriteSmaller', FStreamSettings.FOverwriteSmaller, FDefaultStreamSettings.FOverwriteSmaller);
+      FStorage.Read('DiscardSmaller', FStreamSettings.FDiscardSmaller, FDefaultStreamSettings.FDiscardSmaller);
+      FStorage.Read('DiscardAlways', FStreamSettings.FDiscardAlways, FDefaultStreamSettings.FDiscardAlways);
+
+      if (FStreamSettings.FSilenceLevel < 1) or (FStreamSettings.FSilenceLevel > 100) then
+        FStreamSettings.FSilenceLevel := FDefaultStreamSettings.FSilenceLevel;
+      if FStreamSettings.FSilenceLength < 20 then
+        FStreamSettings.FSilenceLength := FDefaultStreamSettings.FSilenceLength;
+
+      FStorage.Read('ShortLengthSeconds', FStreamSettings.FShortLengthSeconds, FDefaultStreamSettings.FShortLengthSeconds);
+
+      FStorage.Read('SongBuffer', FStreamSettings.FSongBuffer, FDefaultStreamSettings.FSongBuffer);
+
+      FStorage.Read('MaxRetries', FStreamSettings.FMaxRetries, FDefaultStreamSettings.FMaxRetries);
+      FStorage.Read('RetryDelay', FStreamSettings.FRetryDelay, FDefaultStreamSettings.FRetryDelay);
+
+      FStorage.Read('SeparateTracks', FStreamSettings.FSeparateTracks, FDefaultStreamSettings.FSeparateTracks);
+
+      FStorage.Read('OutputFormat', OutputFormatTmp, Integer(FDefaultStreamSettings.OutputFormat));
+      if (OutputFormatTmp > Ord(High(TAudioTypes))) or
+         (OutputFormatTmp < Ord(Low(TAudioTypes))) then
+        FStreamSettings.OutputFormat := atNone
+      else
+        FStreamSettings.OutputFormat := TAudioTypes(OutputFormatTmp);
+
+      if IsVersionNewer(LastUsedVersion, AppVersion) and (IsVersionNewer(LastUsedVersion, ParseVersion('2.1.0.9'))) then
+      begin
+        if DefaultFilterTmp = 0 then
+          FStreamSettings.Filter := ufNone
+        else if DefaultFilterTmp = 1 then
+          FStreamSettings.Filter := ufWish
+        else if DefaultFilterTmp = 2 then
+          FStreamSettings.Filter := ufIgnoreBoth
+        else if DefaultFilterTmp = 3 then
+          FStreamSettings.Filter := ufBoth
+        else
+          FStreamSettings.Filter := ufNone;
+      end else if (DefaultFilterTmp > Ord(High(TUseFilters))) or
+                  (DefaultFilterTmp < Ord(Low(TUseFilters))) then
+        FStreamSettings.Filter := ufNone
+      else
+        FStreamSettings.Filter := TUseFilters(DefaultFilterTmp);
+
+      if FStreamSettings.FSaveToMemory then
+      begin
+        FStreamSettings.FSeparateTracks := True;
+        FStreamSettings.FDeleteStreams := False;
+      end;
+
+      if not FStreamSettings.FSeparateTracks then
+        FStreamSettings.FDeleteStreams := False;
+
+      if FStreamSettings.FRetryDelay > 999 then
+        FStreamSettings.RetryDelay := 999;
+      }
+    end;
+
     if (Version > 58) and (Version < 60) then
     begin
       FAutoRecordSettings.Free;
@@ -1127,12 +1475,24 @@ begin
       FAutoRecordSettings.Free;
 
       FAutoRecordSettings := TStreamSettings.Create(True);
-      FAutoRecordSettings.Assign(AppGlobals.DefaultStreamSettings);
-      TStreamSettings.ApplyAutoDefaults(FAutoRecordSettings);
+      FAutoRecordSettings.Assign(DefaultStreamSettings);
+      TStreamSettings.ApplyAutoDefaults(Self, FAutoRecordSettings);
+
+      FAutoRecordSettings.FFilePattern := AppGlobals.AutomaticFilePatternObsolete;
+      FAutoRecordSettings.FAddSavedToIgnore := AppGlobals.AutoTuneInAddToIgnoreObsolete;
+      FAutoRecordSettings.FRemoveSavedFromWishlist := AppGlobals.AutoRemoveSavedFromWishlistObsolete;
     end else if Version >= 60 then
     begin
       FAutoRecordSettings.Free;
-      FAutoRecordSettings := TStreamSettings.LoadAuto(S, Version);
+      FAutoRecordSettings := TStreamSettings.LoadAuto(Self, S, Version);
+    end;
+
+    // Pfusch wegen Update auf neue Version (>=61)
+    if (Version > 58) and (Version < 61) then
+    begin
+      FAutoRecordSettings.FFilePattern := AppGlobals.AutomaticFilePatternObsolete;
+      FAutoRecordSettings.FAddSavedToIgnore := AppGlobals.AutoTuneInAddToIgnoreObsolete;
+      FAutoRecordSettings.FRemoveSavedFromWishlist := AppGlobals.AutoRemoveSavedFromWishlistObsolete;
     end;
 
     if Version >= 5 then
@@ -1147,7 +1507,7 @@ begin
     S.Read(EntryCount);
     for i := 0 to EntryCount - 1 do
     begin
-      Entry := TStreamEntry.Load(S, Version);
+      Entry := TStreamEntry.Load(Self, S, Version);
       Entry.FParent := FStreamList;
       FStreamList.Add(Entry);
     end;
@@ -1271,7 +1631,7 @@ begin
     end;
 
     try
-      Load(S);
+      Load(S, AppGlobals.DataFile);
     except
       on E: EVersionException do
       begin
@@ -1305,6 +1665,7 @@ begin
     CompressedStream.Write(FReceived);
     CompressedStream.Write(FSongsSaved);
 
+    FStreamSettings.Save(CompressedStream);
     FAutoRecordSettings.SaveAuto(CompressedStream);
 
     CompressedStream.Write(FCategoryList.Count);
@@ -2202,14 +2563,14 @@ begin
     Result.Streams.Add(TChartStream.Load(Stream, Version));
 end;
 
-procedure TChartEntry.LoadStreams(StreamList: TStreamBrowserList);
+procedure TChartEntry.LoadStreams;
 var
   i: Integer;
   Stream: TStreamBrowserEntry;
 begin
   for i := Streams.Count - 1 downto 0 do
   begin
-    Stream := StreamList.GetStream(Streams[i].FID);
+    Stream := AppGlobals.Data.BrowserList.GetStream(Streams[i].FID);
     if Stream <> nil then
       Streams[i].Stream := Stream.Copy
     else
@@ -2388,6 +2749,793 @@ begin
 
   if FDict.ContainsKey(ID) then
     Result := FDict[ID];
+end;
+
+{ TStreamSettings }
+
+function TStreamSettings.Copy: TStreamSettings;
+begin
+  Result := TStreamSettings.Create;
+  Result.Assign(Self);
+end;
+
+constructor TStreamSettings.Create(InitStuff: Boolean = True);
+begin
+  inherited Create;
+
+  FRegExes := TStringList.Create;
+  FIgnoreTrackChangePattern := TStringList.Create;
+  FPostProcessors := TPostProcessorList.Create;
+  FEncoderSettings := TEncoderSettingsList.Create;
+
+  if InitStuff then
+    Self.InitStuff;
+end;
+
+destructor TStreamSettings.Destroy;
+var
+  i: Integer;
+begin
+  FRegExes.Free;
+  FIgnoreTrackChangePattern.Free;
+
+  for i := 0 to FPostProcessors.Count - 1 do
+    FPostProcessors[i].Free;
+  FPostProcessors.Free;
+
+  for i := 0 to FEncoderSettings.Count - 1 do
+    FEncoderSettings[i].Free;
+  FEncoderSettings.Free;
+
+  inherited;
+end;
+
+procedure TStreamSettings.FSetSaveToMemory(Value: Boolean);
+begin
+  FSaveToMemory := Value;
+  if Value then
+    FSeparateTracks := True;
+end;
+
+class function TStreamSettings.GetDefaults: TStreamSettings;
+begin
+  Result := TStreamSettings.Create(False);
+
+  Result.RegExes.Add('(?P<a>.*) - (?P<t>.*)');
+
+  Result.FFilePattern := '%s\%a - %t';
+  Result.FIncompleteFilePattern := '%s\%a - %t';
+  Result.FStreamFilePattern := '%s';
+  Result.FFilePatternDecimals := 3;
+  Result.RemoveChars := '[]{}#$§%~^';
+  Result.NormalizeVariables := True;
+
+  Result.FDeleteStreams := False;
+  Result.FAddSavedToIgnore := False;
+  Result.FAddSavedToStreamIgnore := False;
+  Result.FRemoveSavedFromWishlist := False;
+  Result.FSkipShort := True;
+  Result.FSearchSilence := True;
+  Result.FAutoDetectSilenceLevel := True;
+  Result.FSilenceLevel := 5;
+  Result.FSilenceLength := 100;
+  Result.FSilenceBufferSecondsStart := 5;
+  Result.FSilenceBufferSecondsEnd := 5;
+
+  Result.FAdjustTrackOffset := False;
+  Result.FAdjustTrackOffsetMS := 0;
+  Result.FAdjustTrackOffsetDirection := toForward;
+
+  Result.FSaveToMemory := False;
+  Result.FOnlySaveFull := True;
+  Result.FOverwriteSmaller := True;
+  Result.FDiscardSmaller := False;
+  Result.FDiscardAlways := False;
+
+  Result.FSilenceLevel := 5;
+  Result.FShortLengthSeconds := 45;
+
+  Result.FSongBuffer := 0;
+
+  Result.FMaxRetries := 100;
+  Result.FRetryDelay := 5;
+
+  Result.FOutputFormat := atNone;
+
+  Result.FSeparateTracks := True;
+  Result.FDeleteStreams := False;
+
+  Result.FFilter := ufNone;
+end;
+
+procedure TStreamSettings.InitStuff(EncoderSettingsFromRegistry: Boolean = False);
+var
+  i: Integer;
+begin
+  if FEncoderSettings.Count = 0 then
+  begin
+    FEncoderSettings.Add(TEncoderSettings.Create(atMPEG, brVBR, vqMedium));
+    FEncoderSettings.Add(TEncoderSettings.Create(atAAC, brVBR, vqMedium));
+    FEncoderSettings.Add(TEncoderSettings.Create(atOGG, brVBR, vqMedium));
+
+    if EncoderSettingsFromRegistry then
+      for i := 0 to FEncoderSettings.Count - 1 do
+        FEncoderSettings[i].LoadFromRegistry;
+  end;
+
+  if PostProcessors.Count = 0 then
+  begin
+    // Der Convert muss der erste sein! Greife auf die Liste mal mit [0] zu!
+    PostProcessors.Add(TPostProcessConvert.Create);
+    PostProcessors.Add(TPostProcessSetTags.Create);
+    PostProcessors.Add(TPostProcessSoX.Create);
+    PostProcessors.Add(TPostProcessMP4Box.Create);
+  end;
+end;
+
+class function TStreamSettings.Load(Stream: TExtendedStream;
+  Version: Integer): TStreamSettings;
+var
+  B: Byte;
+  i, Count, FilterTmp, TypeTmp: Integer;
+  C: Cardinal;
+  T: TPostProcessTypes;
+  AT: TAudioTypes;
+  Tmp: string;
+  PP: TPostProcessBase;
+  ES: TEncoderSettings;
+begin
+  Result := TStreamSettings.Create;
+
+  if Version < 15 then
+  begin
+    Result.FRegExes.Add('(?P<a>.*) - (?P<t>.*)');
+    Stream.Read(Result.FFilePattern);
+  end else if Version < 58 then
+  begin
+    Stream.Read(Tmp);
+    Result.FRegExes.Add(Tmp);
+  end else
+  begin
+    Stream.Read(C);
+    for i := 0 to C - 1 do
+    begin
+      Stream.Read(Tmp);
+      Result.FRegExes.Add(Tmp);
+    end;
+  end;
+
+  Stream.Read(Result.FFilePattern);
+
+  if Version >= 17 then
+  begin
+    Stream.Read(Result.FIncompleteFilePattern);
+    if Result.FIncompleteFilePattern = '' then
+      Result.FIncompleteFilePattern := Result.FFilePattern;
+  end else
+    Result.FIncompleteFilePattern := Result.FFilePattern;
+
+  if Version >= 31 then
+  begin
+    Stream.Read(Result.FStreamFilePattern);
+    if Result.FStreamFilePattern = '' then
+      Result.FStreamFilePattern := '%s';
+  end else
+    Result.FStreamFilePattern := '%s';
+
+  if Version >= 14 then
+    Stream.Read(Result.FFilePatternDecimals)
+  else
+    Result.FFilePatternDecimals := 3;
+
+  if Version >= 20 then
+    Stream.Read(Result.FRemoveChars)
+  else
+    Result.FRemoveChars := '[]{}#$§%~^';
+
+  if Version >= 36 then
+    Stream.Read(Result.FNormalizeVariables)
+  else
+    Result.FNormalizeVariables := True;
+
+  Stream.Read(Result.FDeleteStreams);
+  Stream.Read(Result.FAddSavedToIgnore);
+  if Version >= 27 then
+    Stream.Read(Result.FAddSavedToStreamIgnore);
+
+  if Version >= 34 then
+    Stream.Read(Result.FRemoveSavedFromWishlist);
+
+  Stream.Read(Result.FSkipShort);
+  Stream.Read(Result.FSearchSilence);
+
+  if Version >= 39 then
+    Stream.Read(Result.FAutoDetectSilenceLevel)
+  else
+    Result.AutoDetectSilenceLevel := True;
+
+  Stream.Read(Result.FSilenceLevel);
+  Stream.Read(Result.FSilenceLength);
+
+  if Version >= 33 then
+  begin
+    Stream.Read(Result.FSilenceBufferSecondsStart);
+    Stream.Read(Result.FSilenceBufferSecondsEnd);
+  end else
+  begin
+    if Version >= 9 then
+    begin
+      Stream.Read(Result.FSilenceBufferSecondsStart);
+      Result.FSilenceBufferSecondsEnd := Result.FSilenceBufferSecondsStart;
+    end else
+    begin
+      Result.FSilenceBufferSecondsStart := 5;
+      Result.FSilenceBufferSecondsEnd := 5;
+    end;
+  end;
+
+  if Version >= 9 then
+    Stream.Read(Result.FShortLengthSeconds)
+  else
+  begin
+    Stream.Read(FilterTmp);
+    Result.FShortLengthSeconds := 45;
+  end;
+
+  if Version >= 9 then
+  begin
+    Stream.Read(Result.FSongBuffer);
+    if Version < 42 then
+      Result.FSongBuffer := Result.FSongBuffer * 1000;
+  end else
+  begin
+    Stream.Read(FilterTmp);
+    Result.FSongBuffer := 0;
+  end;
+
+  Stream.Read(Result.FMaxRetries);
+
+  if Version >= 7 then
+    Stream.Read(Result.FRetryDelay)
+  else
+    Result.FRetryDelay := 5;
+
+  if Result.FRetryDelay > 999 then
+    Result.FRetryDelay := 999;
+
+  Stream.Read(FilterTmp);
+  Stream.Read(Result.FSeparateTracks);
+  Stream.Read(Result.FSaveToMemory);
+
+  if Result.FSaveToMemory then
+  begin
+    Result.FSeparateTracks := True;
+    Result.FDeleteStreams := False;
+  end;
+
+  if Version >= 8 then
+    Stream.Read(Result.FOnlySaveFull)
+  else
+    Result.FOnlySaveFull := True;
+
+  if Version >= 9 then
+    Stream.Read(Result.FOverwriteSmaller)
+  else
+    Result.FOverwriteSmaller := True;
+
+  if Version >= 12 then
+    Stream.Read(Result.FDiscardSmaller)
+  else
+    Result.FDiscardSmaller := False;
+
+  if Version >= 53 then
+    Stream.Read(Result.FDiscardAlways)
+  else
+    Result.FDiscardAlways := False;
+
+  if not Result.FSeparateTracks then
+    Result.FDeleteStreams := False;
+
+  if (FilterTmp > Ord(High(TUseFilters))) or
+     (FilterTmp < Ord(Low(TUseFilters))) then
+    Result.FFilter := ufNone
+  else
+    if Version > 26 then
+      Result.FFilter := TUseFilters(FilterTmp)
+    else
+    begin
+      if FilterTmp = 0 then
+        Result.FFilter := ufNone
+      else if FilterTmp = 1 then
+        Result.FFilter := ufWish
+      else if FilterTmp = 2 then
+        Result.FFilter := ufIgnoreBoth
+      else if FilterTmp = 3 then
+        Result.FFilter := ufBoth
+      else Result.FFilter := ufNone;
+    end;
+
+  if Version >= 28 then
+  begin
+    Stream.Read(Result.FAdjustTrackOffset);
+    Stream.Read(Result.FAdjustTrackOffsetMS);
+
+    if Version < 37 then
+      Result.FAdjustTrackOffsetMS := Result.FAdjustTrackOffsetMS * 1000;
+
+    Stream.Read(B);
+    Result.FAdjustTrackOffsetDirection := TTrackOffsetDirection(B);
+  end;
+
+  if Version >= 26 then
+  begin
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+    begin
+      Stream.Read(Tmp);
+      Result.FIgnoreTrackChangePattern.Add(Tmp);
+    end;
+  end;
+
+  // Einstellungen laden...
+  if Version >= 41 then
+  begin
+    Stream.Read(TypeTmp);
+    Result.FOutputFormat := TAudioTypes(TypeTmp);
+
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+    begin
+      Stream.Read(TypeTmp);
+
+      T := TPostProcessTypes(TypeTmp);
+
+      if T <> ptExternal then
+      begin
+        PP := Result.PostProcessors.Find(T);
+        PP.Load(Stream, Version);
+      end else
+      begin
+        PP := TExternalPostProcess.Create;
+        PP.Load(Stream, Version);
+        Result.PostProcessors.Add(PP);
+      end;
+    end;
+
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+    begin
+      Stream.Read(TypeTmp);
+
+      AT := TAudioTypes(TypeTmp);
+
+      ES := Result.EncoderSettings.Find(AT);
+
+      if ES <> nil then
+      begin
+        ES.Load(Stream, Version);
+      end;
+    end;
+  end;
+end;
+
+{
+// TODO: update testen testen testen. okay settings werden übernommen. den normalen prozess dennoch durchspielen, am besten auch auf xp..
+}
+
+class function TStreamSettings.LoadAuto(Data: TDataLists;
+  Stream: TExtendedStream; Version: Integer): TStreamSettings;
+var
+  i, Count, TypeTmp: Integer;
+  T: TPostProcessTypes;
+  AT: TAudioTypes;
+  PP: TPostProcessBase;
+  ES: TEncoderSettings;
+begin
+  Result := TStreamSettings.Create;
+
+  Result.Assign(Data.DefaultStreamSettings);
+  ApplyAutoDefaults(Data, Result);
+
+  if Version >= 61 then
+  begin
+    Stream.Read(Result.FFilePattern);
+    Stream.Read(Result.FAddSavedToIgnore);
+    Stream.Read(Result.FRemoveSavedFromWishlist);
+  end;
+
+  Stream.Read(Result.FSearchSilence);
+  Stream.Read(Result.FSilenceBufferSecondsStart);
+  Stream.Read(Result.FSilenceBufferSecondsEnd);
+  Stream.Read(Result.FAutoDetectSilenceLevel);
+  Stream.Read(Result.FSilenceLevel);
+  Stream.Read(Result.FSilenceLength);
+  Stream.Read(Result.FSongBuffer);
+
+  Stream.Read(TypeTmp);
+  Result.FOutputFormat := TAudioTypes(TypeTmp);
+
+  Stream.Read(Count);
+  for i := 0 to Count - 1 do
+  begin
+    Stream.Read(TypeTmp);
+
+    T := TPostProcessTypes(TypeTmp);
+
+    if T <> ptExternal then
+    begin
+      PP := Result.PostProcessors.Find(T);
+      PP.Load(Stream, Version);
+    end else
+    begin
+      PP := TExternalPostProcess.Create;
+      PP.Load(Stream, Version);
+      Result.PostProcessors.Add(PP);
+    end;
+  end;
+
+  Stream.Read(Count);
+  for i := 0 to Count - 1 do
+  begin
+    Stream.Read(TypeTmp);
+
+    AT := TAudioTypes(TypeTmp);
+
+    ES := Result.EncoderSettings.Find(AT);
+
+    if ES <> nil then
+    begin
+      ES.Load(Stream, Version);
+    end;
+  end;
+end;
+
+procedure TStreamSettings.Save(Stream: TExtendedStream);
+var
+  i: Integer;
+  Count: Integer;
+begin
+  Stream.Write(FRegExes.Count);
+  for i := 0 to FRegExes.Count - 1 do
+    Stream.Write(FRegExes[i]);
+
+  Stream.Write(FFilePattern);
+  Stream.Write(FIncompleteFilePattern);
+  Stream.Write(FStreamFilePattern);
+  Stream.Write(FFilePatternDecimals);
+  Stream.Write(FRemoveChars);
+  Stream.Write(FNormalizeVariables);
+  Stream.Write(FDeleteStreams);
+  Stream.Write(FAddSavedToIgnore);
+  Stream.Write(FAddSavedToStreamIgnore);
+  Stream.Write(FRemoveSavedFromWishlist);
+  Stream.Write(FSkipShort);
+  Stream.Write(FSearchSilence);
+  Stream.Write(FAutoDetectSilenceLevel);
+  Stream.Write(FSilenceLevel);
+  Stream.Write(FSilenceLength);
+  Stream.Write(FSilenceBufferSecondsStart);
+  Stream.Write(FSilenceBufferSecondsEnd);
+  Stream.Write(FShortLengthSeconds);
+  Stream.Write(FSongBuffer);
+  Stream.Write(FMaxRetries);
+  Stream.Write(FRetryDelay);
+  Stream.Write(Integer(FFilter));
+  Stream.Write(FSeparateTracks);
+  Stream.Write(FSaveToMemory);
+  Stream.Write(FOnlySaveFull);
+  Stream.Write(FOverwriteSmaller);
+  Stream.Write(FDiscardSmaller);
+  Stream.Write(FDiscardAlways);
+
+  Stream.Write(FAdjustTrackOffset);
+  Stream.Write(FAdjustTrackOffsetMS);
+  Stream.Write(Byte(FAdjustTrackOffsetDirection));
+
+  Stream.Write(FIgnoreTrackChangePattern.Count);
+  for i := 0 to FIgnoreTrackChangePattern.Count - 1 do
+    Stream.Write(FIgnoreTrackChangePattern[i]);
+
+  Stream.Write(Integer(FOutputFormat));
+
+  Count := 0;
+  for i := 0 to FPostProcessors.Count - 1 do
+    if (not FPostProcessors[i].Hidden) and (FPostProcessors[i].PostProcessType <> ptConvert) then
+      Inc(Count);
+  Stream.Write(Count);
+  for i := 0 to FPostProcessors.Count - 1 do
+  begin
+    if FPostProcessors[i].Hidden or (FPostProcessors[i].PostProcessType = ptConvert) then
+      Continue;
+    Stream.Write(Integer(FPostProcessors[i].PostProcessType));
+    FPostProcessors[i].Save(Stream);
+  end;
+
+  Stream.Write(FEncoderSettings.Count);
+  for i := 0 to FEncoderSettings.Count - 1 do
+  begin
+    Stream.Write(Integer(FEncoderSettings[i].AudioType));
+    FEncoderSettings[i].Save(Stream);
+  end;
+end;
+
+procedure TStreamSettings.SaveAuto(Stream: TExtendedStream);
+var
+  i: Integer;
+  Count: Integer;
+begin
+  Stream.Write(FFilePattern);
+  Stream.Write(FAddSavedToIgnore);
+  Stream.Write(FRemoveSavedFromWishlist);
+
+  Stream.Write(FSearchSilence);
+  Stream.Write(FSilenceBufferSecondsStart);
+  Stream.Write(FSilenceBufferSecondsEnd);
+  Stream.Write(FAutoDetectSilenceLevel);
+  Stream.Write(FSilenceLevel);
+  Stream.Write(FSilenceLength);
+  Stream.Write(FSongBuffer);
+
+  Stream.Write(Integer(FOutputFormat));
+
+  Count := 0;
+  for i := 0 to FPostProcessors.Count - 1 do
+    if (not FPostProcessors[i].Hidden) and (FPostProcessors[i].PostProcessType <> ptConvert) then
+      Inc(Count);
+  Stream.Write(Count);
+  for i := 0 to FPostProcessors.Count - 1 do
+  begin
+    if FPostProcessors[i].Hidden or (FPostProcessors[i].PostProcessType = ptConvert) then
+      Continue;
+    Stream.Write(Integer(FPostProcessors[i].PostProcessType));
+    FPostProcessors[i].Save(Stream);
+  end;
+
+  Stream.Write(FEncoderSettings.Count);
+  for i := 0 to FEncoderSettings.Count - 1 do
+  begin
+    Stream.Write(Integer(FEncoderSettings[i].AudioType));
+    FEncoderSettings[i].Save(Stream);
+  end;
+end;
+
+class procedure TStreamSettings.ApplyAutoDefaults(Data: TDataLists; S: TStreamSettings);
+var
+  i: Integer;
+begin
+  S.SearchSilence := True;
+  S.SilenceBufferSecondsStart := 15;
+  S.SilenceBufferSecondsEnd := 15;
+  S.AutoDetectSilenceLevel := True;
+  S.SilenceLevel := 5;
+  S.SilenceLength := 100;
+  S.SongBuffer := 10000;
+
+  S.Filter := ufNone;
+  S.SaveToMemory := True;
+  S.SeparateTracks := True;
+  S.OnlySaveFull := False;
+  S.DeleteStreams := False;
+  S.MaxRetries := 0;
+  S.RetryDelay := 0;
+  S.AddSavedToStreamIgnore := False;
+
+  S.RegExes.Assign(Data.DefaultStreamSettings.RegExes);
+
+  S.OutputFormat := atNone;
+  for i := 0 to S.PostProcessors.Count - 1 do
+    S.PostProcessors[i].Active := False;
+end;
+
+procedure TStreamSettings.Assign(From: TStreamSettings);
+var
+  i: Integer;
+begin
+  FRegExes.Assign(From.FRegExes);
+
+  FFilePattern := From.FFilePattern;
+  FIncompleteFilePattern := From.FIncompleteFilePattern;
+  FStreamFilePattern := From.FStreamFilePattern;
+  FFilePatternDecimals := From.FilePatternDecimals;
+  FRemoveChars := From.RemoveChars;
+  FNormalizeVariables := From.NormalizeVariables;
+  FDeleteStreams := From.FDeleteStreams;
+  FAddSavedToIgnore := From.FAddSavedToIgnore;
+  FAddSavedToStreamIgnore := From.FAddSavedToStreamIgnore;
+  FRemoveSavedFromWishlist := From.FRemoveSavedFromWishlist;
+  FSkipShort := From.FSkipShort;
+  FSearchSilence := From.FSearchSilence;
+  FAutoDetectSilenceLevel := From.FAutoDetectSilenceLevel;
+  FSilenceLevel := From.FSilenceLevel;
+  FSilenceLength := From.FSilenceLength;
+  FSilenceBufferSecondsStart := From.FSilenceBufferSecondsStart;
+  FSilenceBufferSecondsEnd := From.FSilenceBufferSecondsEnd;
+  FShortLengthSeconds := From.FShortLengthSeconds;
+  FSongBuffer := From.FSongBuffer;
+  FMaxRetries := From.FMaxRetries;
+  FRetryDelay := From.FRetryDelay;
+  FFilter := From.FFilter;
+  FSeparateTracks := From.FSeparateTracks;
+  FSaveToMemory := From.FSaveToMemory;
+  FOnlySaveFull := From.FOnlySaveFull;
+  FOverwriteSmaller := From.FOverwriteSmaller;
+  FDiscardSmaller := From.FDiscardSmaller;
+  FDiscardAlways := From.FDiscardAlways;
+  FAdjustTrackOffset := From.FAdjustTrackOffset;
+  FAdjustTrackOffsetMS := From.FAdjustTrackOffsetMS;
+  FAdjustTrackOffsetDirection := From.FAdjustTrackOffsetDirection;
+  FIgnoreTrackChangePattern.Assign(From.FIgnoreTrackChangePattern);
+
+  FOutputFormat := From.FOutputFormat;
+  for i := 0 to FPostProcessors.Count - 1 do
+    FPostProcessors[i].Free;
+  FPostProcessors.Clear;
+  for i := 0 to From.PostProcessors.Count - 1 do
+    FPostProcessors.Add(From.PostProcessors[i].Copy);
+
+  for i := 0 to FEncoderSettings.Count - 1 do
+    FEncoderSettings[i].Free;
+  FEncoderSettings.Clear;
+  for i := 0 to From.EncoderSettings.Count - 1 do
+    FEncoderSettings.Add(From.EncoderSettings[i].Copy);
+end;
+
+{ TPostProcessorList }
+
+function TPostProcessorList.Find(PostProcessor: TPostProcessBase): TPostProcessBase;
+var
+  i: Integer;
+begin
+  Result := nil;
+
+  for i := 0 to Count - 1 do
+    if (PostProcessor is TExternalPostProcess) and (Self[i] is TExternalPostProcess) then
+    begin
+      if TExternalPostProcess(PostProcessor).Identifier = TExternalPostProcess(Self[i]).Identifier then
+      begin
+        Result := Self[i];
+        Break;
+      end;
+    end else if PostProcessor.ClassType.InheritsFrom(TInternalPostProcess) and Self[i].ClassType.InheritsFrom(TInternalPostProcess) then
+    begin
+      if PostProcessor.ClassType = Self[i].ClassType then
+      begin
+        Result := Self[i];
+        Break;
+      end;
+    end;
+end;
+
+function TPostProcessorList.Find(ClassType: TClass): TPostProcessBase;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+    if Self[i].ClassType = ClassType then
+    begin
+      Result := Self[i];
+      Break;
+    end;
+end;
+
+function TPostProcessorList.FGetHash: Cardinal;
+var
+  i: Integer;
+begin
+  Result := 0;
+  for i := 0 to Count - 1 do
+    Result := Result + Items[i].Hash;
+end;
+
+function TPostProcessorList.Find(PostProcessType: TPostProcessTypes): TPostProcessBase;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+    if Items[i].PostProcessType = PostProcessType then
+      Exit(Items[i]);
+  Exit(nil);
+end;
+
+{ TEncoderSettingsList }
+
+function TEncoderSettingsList.FGetHash: Cardinal;
+var
+  i: Integer;
+begin
+  Result := 0;
+  for i := 0 to Count - 1 do
+    Result := Result + Items[i].Hash;
+end;
+
+function TEncoderSettingsList.Find(AudioType: TAudioTypes): TEncoderSettings;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+    if Items[i].AudioType = AudioType then
+      Exit(Items[i]);
+  Exit(nil);
+end;
+
+{ TEncoderSettings }
+
+procedure TEncoderSettings.Assign(From: TEncoderSettings);
+begin
+  AudioType := From.AudioType;
+  BitrateType := From.BitrateType;
+  CBRBitrate := From.CBRBitrate;
+  VBRQuality := From.VBRQuality;
+end;
+
+function TEncoderSettings.Copy: TEncoderSettings;
+begin
+  Result := TEncoderSettings.Create(atNone, brVBR, vqMedium);
+  Result.Assign(Self);
+end;
+
+constructor TEncoderSettings.Create(AudioType: TAudioTypes;
+  BitrateType: TBitRates; VBRQuality: TVBRQualities);
+var
+  Tmp: Integer;
+begin
+  inherited Create;
+
+  Self.AudioType := AudioType;
+  Self.BitrateType := BitrateType;
+  Self.CBRBitrate := 128;
+  Self.VBRQuality := VBRQuality;
+end;
+
+function TEncoderSettings.FGetHash: Cardinal;
+begin
+  Result := HashString(IntToStr(Integer(AudioType)) + IntToStr(Integer(BitrateType)) + IntToStr(CBRBitrate) + IntToStr(Integer(VBRQuality)));
+end;
+
+procedure TEncoderSettings.Load(Stream: TExtendedStream; Version: Integer);
+var
+  Tmp: Integer;
+begin
+  Stream.Read(Tmp);
+  BitrateType := TBitRates(Tmp);
+
+  Stream.Read(CBRBitrate);
+
+  Stream.Read(Tmp);
+  VBRQuality := TVBRQualities(Tmp);
+end;
+
+procedure TEncoderSettings.LoadFromRegistry;
+var
+  Tmp: Integer;
+begin
+  // Ggf. Daten von alter Version importieren, ansonsten Defaults zuweisen.
+  // Die echten Daten kommen später über Load().
+  // REMARK: Irgendwann kann das hier weg!
+  AppGlobals.Storage.Read('CBRBitRate_' + IntToStr(Integer(AudioType)), CBRBitrate, 128, 'Encoders');
+  CBRBitRate := RoundBitrate(CBRBitrate);
+
+  AppGlobals.Storage.Read('BitRateType_' + IntToStr(Integer(AudioType)), Tmp, Integer(brVBR), 'Encoders');
+  if (Tmp > Ord(High(TBitRates))) or
+     (Tmp < Ord(Low(TBitRates))) then
+    BitrateType := brVBR
+  else
+    BitrateType := TBitRates(Tmp);
+
+  AppGlobals.Storage.Read('VBRQuality_' + IntToStr(Integer(AudioType)), Tmp, Integer(vqMedium), 'Encoders');
+  if (Tmp > Ord(High(TVBRQualities))) or
+     (Tmp < Ord(Low(TVBRQualities))) then
+    VBRQuality := vqMedium
+  else
+    VBRQuality := TVBRQualities(Tmp);
+end;
+
+procedure TEncoderSettings.Save(Stream: TExtendedStream);
+begin
+  Stream.Write(Integer(BitrateType));
+  Stream.Write(CBRBitrate);
+  Stream.Write(Integer(VBRQuality));
 end;
 
 end.

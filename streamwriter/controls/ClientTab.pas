@@ -36,15 +36,13 @@ uses
 type
   TSidebar = class(TPageControl)
   private
-    FDataLists: TDataLists;
-
     FPage1, FPage2, FPage3: TTabSheet;
 
     FBrowserView: TMStreamBrowserView;
     FInfoView: TMStreamInfoView;
     FDebugView: TMStreamDebugView;
   public
-    constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
+    constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
     procedure AfterCreate;
 
@@ -93,7 +91,6 @@ type
     FSideBar: TSideBar;
 
     FClients: TClientManager;
-    FStreams: TDataLists;
     FHomeCommunication: THomeCommunication;
 
     FReceived: UInt64;
@@ -181,15 +178,15 @@ type
     procedure Resize; override;
   public
     constructor Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList;
-      Clients: TClientManager; Streams: TDataLists; Popup: TPopupMenu); reintroduce;
+      Clients: TClientManager; Popup: TPopupMenu); reintroduce;
     destructor Destroy; override;
     procedure AfterCreate; override;
 
     function StartStreaming(Streams: TStartStreamingInfoArray; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean; overload;
     function StartStreaming(Stream: TStartStreamingInfo; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean; overload;
     procedure TimerTick;
-    procedure UpdateStreams(Streams: TDataLists);
-    procedure BuildTree(Streams: TDataLists);
+    procedure UpdateStreams;
+    procedure BuildTree;
     procedure PausePlay;
     procedure ShowInfo;
 
@@ -373,7 +370,7 @@ var
   NodeData: PClientNodeData;
 begin
   NodeData := FClientView.GetNodeData(FClientView.AddCategory);
-  FStreams.CategoryList.Add(NodeData.Category);
+  AppGlobals.Data.CategoryList.Add(NodeData.Category);
 end;
 
 procedure TClientTab.ActionStartExecute(Sender: TObject);
@@ -520,7 +517,7 @@ begin
       Continue;
     if FClientView.ChildCount[Node] = 0 then
     begin
-      FStreams.CategoryList.Remove(NodeData.Category);
+      AppGlobals.Data.CategoryList.Remove(NodeData.Category);
       NodeData.Category.Free;
       FClientView.DeleteNode(Node);
     end else
@@ -664,8 +661,7 @@ begin
   SavePlaylist(Entries, True);
 end;
 
-constructor TClientTab.Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList; Clients: TClientManager;
-  Streams: TDataLists; Popup: TPopupMenu);
+constructor TClientTab.Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList; Clients: TClientManager; Popup: TPopupMenu);
   function GetAction(Name: string): TAction;
   var
     i: Integer;
@@ -707,8 +703,6 @@ begin
   FClients.OnShowErrorMessage := ClientManagerShowErrorMessage;
   FClients.OnPlaybackStarted := ClientManagerPlaybackStarted;
   FClients.OnClientSecondsReceived := ClientManagerSecondsReceived;
-
-  FStreams := Streams;
 
   FHomeCommunication := HomeComm;
 
@@ -780,7 +774,7 @@ begin
   FSplitter.AutoSnap := False;
   FSplitter.ResizeStyle := rsUpdate;
 
-  FSideBar := TSidebar.Create(Self, FStreams);
+  FSideBar := TSidebar.Create(Self);
   FSideBar.Parent := Self;
   FSideBar.Align := alRight;
   FSideBar.Visible := True;
@@ -830,7 +824,7 @@ procedure TClientTab.AfterCreate;
 begin
   inherited;
 
-  BuildTree(FStreams);
+  BuildTree;
 
   FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2) + 1;
 
@@ -970,7 +964,7 @@ begin
   Client := Sender as TICEClient;
 
   FReceived := FReceived + Received;
-  FStreams.Received := FStreams.Received + Received;
+  AppGlobals.Data.Received := AppGlobals.Data.Received + Received;
   Client.Entry.BytesReceived := Client.Entry.BytesReceived + Received;
 
   // Das ist raus, weil sowieso jede Sekunde das Event für MilliSecondsReceived kommt
@@ -1023,12 +1017,12 @@ begin
   case Client.Entry.Settings.Filter of
     ufWish:
       begin
-        Allowed := ContainsTitle(FStreams.SaveList, Title, Match);
+        Allowed := ContainsTitle(AppGlobals.Data.SaveList, Title, Match);
         Filter := 0;
       end;
     ufIgnoreGlobal:
       begin
-        Allowed := not ContainsTitle(FStreams.IgnoreList, Title, Match);
+        Allowed := not ContainsTitle(AppGlobals.Data.IgnoreList, Title, Match);
         Filter := 1;
       end;
     ufIgnoreLocal:
@@ -1038,7 +1032,7 @@ begin
       end;
     ufIgnoreBoth:
       begin
-        Allowed := not ContainsTitle(FStreams.IgnoreList, Title, Match);
+        Allowed := not ContainsTitle(AppGlobals.Data.IgnoreList, Title, Match);
         Filter := 1;
 
         if Allowed then
@@ -1049,10 +1043,10 @@ begin
       end;
     ufBoth:
       begin
-        Allowed := ContainsTitle(FStreams.SaveList, Title, Match);
+        Allowed := ContainsTitle(AppGlobals.Data.SaveList, Title, Match);
         if Allowed then
         begin
-          Allowed := not ContainsTitle(FStreams.IgnoreList, Title, Match);
+          Allowed := not ContainsTitle(AppGlobals.Data.IgnoreList, Title, Match);
           Filter := 1;
 
           if Allowed then
@@ -1153,7 +1147,7 @@ begin
 
   if RemoveNode <> nil then
   begin
-    FStreams.CategoryList.Remove(FreeCategory);
+    AppGlobals.Data.CategoryList.Remove(FreeCategory);
     FreeCategory.Free;
     FClientView.DeleteNode(RemoveNode);
   end;
@@ -1205,10 +1199,10 @@ begin
   Added := False;
   Track := nil;
   LowerFilename := LowerCase(Filename);
-  for i := 0 to FStreams.TrackList.Count - 1 do
-    if LowerCase(FStreams.TrackList[i].Filename) = LowerFilename then
+  for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
+    if LowerCase(AppGlobals.Data.TrackList[i].Filename) = LowerFilename then
     begin
-      Track := FStreams.TrackList[i];
+      Track := AppGlobals.Data.TrackList[i];
       Track.Time := Now;
       Break;
     end;
@@ -1216,7 +1210,7 @@ begin
   if Track = nil then
   begin
     Track := TTrackInfo.Create(Now, Filename, Client.Entry.Name, Title, SongArtist, SongTitle, ServerTitleHash, ServerArtistHash);
-    FStreams.TrackList.Add(Track);
+    AppGlobals.Data.TrackList.Add(Track);
     Added := True;
   end;
 
@@ -1617,8 +1611,8 @@ begin
     oaBlacklist:
       for i := 0 to Length(Streams) - 1 do
         if Streams[i].Name <> '' then
-          if FStreams.StreamBlacklist.IndexOf(Streams[i].Name) = -1 then
-            FStreams.StreamBlacklist.Add(Streams[i].Name);
+          if AppGlobals.Data.StreamBlacklist.IndexOf(Streams[i].Name) = -1 then
+            AppGlobals.Data.StreamBlacklist.Add(Streams[i].Name);
     oaCopy:
       begin
         s := '';
@@ -1689,7 +1683,7 @@ begin
   end;
 end;
 
-procedure TClientTab.UpdateStreams(Streams: TDataLists);
+procedure TClientTab.UpdateStreams;
 var
   i: Integer;
   Nodes: TNodeArray;
@@ -1701,24 +1695,24 @@ var
 begin
   CatIdx := 0;
 
-  for i := 0 to Streams.StreamList.Count - 1 do
-    Streams.StreamList[i].Free;
-  Streams.StreamList.Clear;
+  for i := 0 to AppGlobals.Data.StreamList.Count - 1 do
+    AppGlobals.Data.StreamList[i].Free;
+  AppGlobals.Data.StreamList.Clear;
 
-  for i := 0 to Streams.RecentList.Count - 1 do
-    Streams.RecentList[i].Free;
-  Streams.RecentList.Clear;
+  for i := 0 to AppGlobals.Data.RecentList.Count - 1 do
+    AppGlobals.Data.RecentList[i].Free;
+  AppGlobals.Data.RecentList.Clear;
 
 
   for i := 0 to FAddressBar.Stations.ItemsEx.Count - 1 do
   begin
-    Streams.RecentList.Add(TRecentEntry(FAddressBar.Stations.ItemsEx[i].Data).Copy);
+    AppGlobals.Data.RecentList.Add(TRecentEntry(FAddressBar.Stations.ItemsEx[i].Data).Copy);
   end;
 
   OldCategories := TListCategoryList.Create;
   try
-    for i := 0 to Streams.CategoryList.Count - 1 do
-      OldCategories.Add(Streams.CategoryList[i]);
+    for i := 0 to AppGlobals.Data.CategoryList.Count - 1 do
+      OldCategories.Add(AppGlobals.Data.CategoryList[i]);
 
     Nodes := FClientView.GetNodes(ntAll, False);
     for i := 0 to Length(Nodes) - 1 do
@@ -1737,14 +1731,14 @@ begin
         begin
           E.CategoryIndex := CatIdx;
         end;
-        FStreams.StreamList.Add(E);
+        AppGlobals.Data.StreamList.Add(E);
       end else
       begin
         CatIdx := Nodes[i].Index + 1;
         C := TListCategory.Create(NodeData.Category.Name, CatIdx);
         C.Expanded := FClientView.Expanded[Nodes[i]];
         C.IsAuto := NodeData.Category.IsAuto;
-        Streams.CategoryList.Add(C);
+        AppGlobals.Data.CategoryList.Add(C);
 
         // Weil hier nicht mit Kopien gearbeitet wird Referenz ändern
         NodeData.Category := C;
@@ -1755,7 +1749,7 @@ begin
     // nicht wie bei den StreamEntries mit Kopien arbeite.
     for i := 0 to OldCategories.Count - 1 do
     begin
-      Streams.CategoryList.Remove(OldCategories[i]);
+      AppGlobals.Data.CategoryList.Remove(OldCategories[i]);
       OldCategories[i].Free;
     end;
   finally
@@ -1763,38 +1757,38 @@ begin
   end;
 end;
 
-procedure TClientTab.BuildTree(Streams: TDataLists);
+procedure TClientTab.BuildTree;
 var
   i: Integer;
   Client: TICEClient;
   Cat: TListCategory;
   Node, ParentNode: PVirtualNode;
 begin
-  for i := 0 to Streams.CategoryList.Count - 1 do
-    FClientView.AddCategory(Streams.CategoryList[i]);
+  for i := 0 to AppGlobals.Data.CategoryList.Count - 1 do
+    FClientView.AddCategory(AppGlobals.Data.CategoryList[i]);
 
-  for i := 0 to Streams.StreamList.Count - 1 do
+  for i := 0 to AppGlobals.Data.StreamList.Count - 1 do
   begin
-    Client := FClients.AddClient(Streams.StreamList[i]);
+    Client := FClients.AddClient(AppGlobals.Data.StreamList[i]);
     Node := FClientView.GetClientNode(Client);
     if Client <> nil then
     begin
-      if Streams.StreamList[i].CategoryIndex > 0 then
+      if AppGlobals.Data.StreamList[i].CategoryIndex > 0 then
       begin
-        ParentNode := FClientView.GetCategoryNode(Streams.StreamList[i].CategoryIndex);
+        ParentNode := FClientView.GetCategoryNode(AppGlobals.Data.StreamList[i].CategoryIndex);
         if ParentNode <> nil then
           FClientView.MoveTo(Node, ParentNode, amAddChildLast, False);
       end;
-      if Streams.StreamList[i].WasRecording and AppGlobals.RememberRecordings then
+      if AppGlobals.Data.StreamList[i].WasRecording and AppGlobals.RememberRecordings then
         Client.StartRecording(True);
       Client.Entry.WasRecording := False;
     end;
   end;
 
-  for i := 0 to Streams.CategoryList.Count - 1 do
+  for i := 0 to AppGlobals.Data.CategoryList.Count - 1 do
   begin
-    Node := FClientView.GetCategoryNode(Streams.CategoryList[i].Index);
-    if Streams.CategoryList[i].Expanded then
+    Node := FClientView.GetCategoryNode(AppGlobals.Data.CategoryList[i].Index);
+    if AppGlobals.Data.CategoryList[i].Expanded then
       FClientView.Expanded[Node] := True;
   end;
 
@@ -1803,7 +1797,7 @@ begin
     Cat := TListCategory.Create(_('Automatic recordings'), High(Integer));
     Cat.IsAuto := True;
     FClientView.AddCategory(Cat);
-    Streams.CategoryList.Add(Cat);
+    AppGlobals.Data.CategoryList.Add(Cat);
   end;
 
   Cat := PClientNodeData(FClientView.GetNodeData(FClientView.AutoNode)).Category;
@@ -1820,17 +1814,12 @@ begin
   FPage2.PageControl := Self;
   FPage3.PageControl := Self;
 
-  FInfoView.Parent := FPage2;
-  FDebugView.Parent := FPage3;
-
   FBrowserView.AfterCreate;
 end;
 
-constructor TSidebar.Create(AOwner: TComponent; DataLists: TDataLists);
+constructor TSidebar.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-
-  FDataLists := DataLists;
 
   FPage1 := TTabSheet.Create(Self);
   FPage1.Caption := 'Browser';
@@ -1841,11 +1830,14 @@ begin
   FPage3 := TTabSheet.Create(Self);
   FPage3.Caption := 'Log';
 
-  FBrowserView := TMStreamBrowserView.Create(Self, FDataLists);
+  FBrowserView := TMStreamBrowserView.Create(Self);
   FBrowserView.Parent := FPage1;
 
   FInfoView := TMStreamInfoView.Create(Self);
+  FInfoView.Parent := FPage2;
+
   FDebugView := TMStreamDebugView.Create(Self);
+  FDebugView.Parent := FPage3;
 end;
 
 destructor TSidebar.Destroy;

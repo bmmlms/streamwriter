@@ -394,7 +394,7 @@ begin
   if Result then
   begin
     ToFileTemp2 := RemoveFileExt(ToFile) + '_convert.m4a';
-    Result := TPostProcessMP4Box(AppGlobals.StreamSettings.PostProcessors.Find(TPostProcessMP4Box)).MP4BoxMux(ToFileTemp, ToFileTemp2, TerminateFlag) = arWin;
+    Result := TPostProcessMP4Box(AppGlobals.Data.StreamSettings.PostProcessors.Find(TPostProcessMP4Box)).MP4BoxMux(ToFileTemp, ToFileTemp2, TerminateFlag) = arWin;
 
     if Result then
       Result := MoveFileEx(PChar(ToFileTemp2), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);

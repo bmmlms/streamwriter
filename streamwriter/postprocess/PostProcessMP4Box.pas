@@ -25,7 +25,7 @@ interface
 uses
   SysUtils, Windows, Classes, PostProcess, LanguageObjects, TypeDefs,
   Functions, Logging, Math, ConfigureSetTags, AddonMP4Box, ExtendedStream,
-  Generics.Collections, AudioFunctions;
+  Generics.Collections, AudioFunctions, DataManager;
 
 type
   TPostProcessMP4BoxThread = class(TPostProcessThreadBase)
@@ -40,6 +40,8 @@ type
   TPostProcessMP4Box = class(TInternalPostProcess)
   private
   protected
+    function FGetName: string; override;
+    function FGetHelp: string; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -50,7 +52,6 @@ type
     procedure Assign(Source: TPostProcessBase); override;
     procedure Load(Stream: TExtendedStream; Version: Integer); override;
     procedure Save(Stream: TExtendedStream); override;
-    procedure Initialize; override;
 
     function MP4BoxMux(InFile, OutFile: string; TerminateFlag: PBoolean): TActResults;
   end;
@@ -141,19 +142,11 @@ begin
   FCanConfigure := False;
   FGroupID := 1;
 
-  FName := _('Convert AAC to M4A');
-  FHelp := _('This postprocessor converts recorded songs from AAC to M4A.');
-
   FPostProcessType := ptMP4Box;
 
-  try
-    AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
-    AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 1001, 'Plugins');
-    AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
-
-    if not FGetDependenciesMet then
-      FActive := False;
-  except end;
+  AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
+  AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 1001, 'Plugins');
+  AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
 end;
 
 function TPostProcessMP4Box.MP4BoxMux(InFile, OutFile: string; TerminateFlag: PBoolean): TActResults;
@@ -188,12 +181,14 @@ begin
   inherited;
 end;
 
-procedure TPostProcessMP4Box.Initialize;
+function TPostProcessMP4Box.FGetHelp: string;
 begin
-  inherited;
+  Result := _('This postprocessor converts recorded songs from AAC to M4A.');
+end;
 
-  FName := _('Convert AAC to M4A');
-  FHelp := _('This postprocessor converts recorded songs from AAC to M4A.');
+function TPostProcessMP4Box.FGetName: string;
+begin
+  Result := _('Convert AAC to M4A');
 end;
 
 procedure TPostProcessMP4Box.Load(Stream: TExtendedStream;

@@ -417,7 +417,7 @@ end;
 
 procedure TCutView.CreateConvertor;
 begin
-  FFileConvertorThread := TPostProcessConvertThread.Create(nil, AppGlobals.StreamSettings.PostProcessors[0]);
+  FFileConvertorThread := TPostProcessConvertThread.Create(nil, AppGlobals.Data.StreamSettings.PostProcessors[0]);
   FFileConvertorThread.OnProgress := FileConvertorProgress;
   FFileConvertorThread.OnFinish := FileConvertorFinish;
   FFileConvertorThread.OnError := FileConvertorError;
@@ -1078,7 +1078,7 @@ begin
   if not CheckSoX then
     Exit;
 
-  F := TfrmConfigureSox.Create(Self, (AppGlobals.StreamSettings.PostProcessors.Find(TPostProcessSoX) as TPostProcessSoX), False, False, False, 5, 5, False, False, 3, 3,
+  F := TfrmConfigureSox.Create(Self, (AppGlobals.Data.StreamSettings.PostProcessors.Find(TPostProcessSoX) as TPostProcessSoX), False, False, False, 5, 5, False, False, 3, 3,
     Trunc(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec));
   try
     F.ShowModal;
@@ -1216,7 +1216,7 @@ function TCutView.CheckSoX: Boolean;
 var
   PostProcessor: TPostProcessSoX;
 begin
-  PostProcessor := AppGlobals.StreamSettings.PostProcessors.Find(TPostProcessSoX) as TPostProcessSoX;
+  PostProcessor := AppGlobals.Data.StreamSettings.PostProcessors.Find(TPostProcessSoX) as TPostProcessSoX;
 
   if not PostProcessor.DependenciesMet then
     Result := AppGlobals.PostProcessManager.EnablePostProcess(GetParentForm(Self), True, PostProcessor)

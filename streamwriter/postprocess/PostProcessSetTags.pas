@@ -46,6 +46,8 @@ type
     FComment: string;
   protected
     function FGetHash: Cardinal; override;
+    function FGetName: string; override;
+    function FGetHelp: string; override;
   public
     constructor Create;
 
@@ -55,9 +57,7 @@ type
     procedure Assign(Source: TPostProcessBase); override;
     procedure Load(Stream: TExtendedStream; Version: Integer); override;
     procedure Save(Stream: TExtendedStream); override;
-    procedure Initialize; override;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
-    procedure Save; override;
   end;
 
 implementation
@@ -87,11 +87,6 @@ begin
   inherited;
 
   FResult := arFail;
-
-  //AppGlobals.Storage.Read('Artist_' + PostProcessor.ClassName, Artist, '%a', 'Plugins');
-  //AppGlobals.Storage.Read('Title_' + PostProcessor.ClassName, Title, '%t', 'Plugins');
-  //AppGlobals.Storage.Read('Album_' + PostProcessor.ClassName, Album, '%l', 'Plugins');
-  //AppGlobals.Storage.Read('Comment_' + PostProcessor.ClassName, Comment, '%s / %u / Recorded using streamWriter', 'Plugins');
 
   SetLength(Arr, 7);
   Arr[0].C := 'a';
@@ -184,8 +179,6 @@ begin
       FTitle := F.Title;
       FAlbum := F.Album;
       FComment := F.Comment;
-
-      Save;
     end;
   finally
     F.Free;
@@ -212,24 +205,18 @@ begin
   FCanConfigure := True;
   FGroupID := 1;
 
-  FName := _('Write tags to recorded songs');
-  FHelp := _('This postprocessor writes tags to recorded songs.');
-
   FPostProcessType := ptSetTags;
 
-  try
-    AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
-    AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 1010, 'Plugins');
-    AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
-
-    AppGlobals.Storage.Read('Artist_' + ClassName, FArtist, '%a', 'Plugins');
-    AppGlobals.Storage.Read('Album_' + ClassName, FAlbum, '%l', 'Plugins');
-    AppGlobals.Storage.Read('Title_' + ClassName, FTitle, '%t', 'Plugins');
-    AppGlobals.Storage.Read('Comment_' + ClassName, FComment, '%s / %u / Recorded using streamWriter', 'Plugins');
-
-    if not FGetDependenciesMet then
-      FActive := False;
-  except end;
+  // Ggf. Daten von alter Version importieren, ansonsten Defaults zuweisen.
+  // Die echten Daten kommen später über Load().
+  // REMARK: Irgendwann kann das hier weg!
+  AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
+  AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 1010, 'Plugins');
+  AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
+  AppGlobals.Storage.Read('Artist_' + ClassName, FArtist, '%a', 'Plugins');
+  AppGlobals.Storage.Read('Album_' + ClassName, FAlbum, '%l', 'Plugins');
+  AppGlobals.Storage.Read('Title_' + ClassName, FTitle, '%t', 'Plugins');
+  AppGlobals.Storage.Read('Comment_' + ClassName, FComment, '%s / %u / Recorded using streamWriter', 'Plugins');
 end;
 
 function TPostProcessSetTags.FGetHash: Cardinal;
@@ -237,12 +224,14 @@ begin
   Result := inherited + HashString(FArtist + FAlbum + FTitle + FComment);
 end;
 
-procedure TPostProcessSetTags.Initialize;
+function TPostProcessSetTags.FGetHelp: string;
 begin
-  inherited;
+  Result := _('This postprocessor writes tags to recorded songs.');
+end;
 
-  FName := _('Write tags to recorded songs');
-  FHelp := _('This postprocessor writes tags to recorded songs.');
+function TPostProcessSetTags.FGetName: string;
+begin
+  Result := _('Write tags to recorded songs');
 end;
 
 procedure TPostProcessSetTags.Load(Stream: TExtendedStream;
@@ -269,16 +258,6 @@ begin
   Stream.Write(FAlbum);
   Stream.Write(FTitle);
   Stream.Write(FComment);
-end;
-
-procedure TPostProcessSetTags.Save;
-begin
-  inherited;
-
-  AppGlobals.Storage.Write('Artist_' + ClassName, FArtist, 'Plugins');
-  AppGlobals.Storage.Write('Title_' + ClassName, FTitle, 'Plugins');
-  AppGlobals.Storage.Write('Album_' + ClassName, FAlbum, 'Plugins');
-  AppGlobals.Storage.Write('Comment_' + ClassName, FComment, 'Plugins');
 end;
 
 end.

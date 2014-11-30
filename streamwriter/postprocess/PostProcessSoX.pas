@@ -24,7 +24,8 @@ interface
 
 uses
   SysUtils, Windows, Classes, PostProcess, LanguageObjects, Generics.Collections,
-  Functions, Logging, Math, AddonBase, ExtendedStream, AudioFunctions;
+  Functions, Logging, Math, AddonBase, ExtendedStream, AudioFunctions,
+  DataManager;
 
 type
   TPostProcessSoxThread = class(TPostProcessThreadBase)
@@ -49,6 +50,8 @@ type
     FSilenceEndLength: Integer;
   protected
     function FGetHash: Cardinal; override;
+    function FGetName: string; override;
+    function FGetHelp: string; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -59,9 +62,7 @@ type
     procedure Assign(Source: TPostProcessBase); override;
     procedure Load(Stream: TExtendedStream; Version: Integer); override;
     procedure Save(Stream: TExtendedStream); override;
-    procedure Initialize; override;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
-    procedure Save; override;
     //function EatFiles(LameFile, MADFile: string): Boolean;
   end;
 
@@ -221,7 +222,6 @@ begin
       FSilenceEnd := F.SilenceEnd;
       FSilenceStartLength := F.SilenceStartLength;
       FSilenceEndLength := F.SilenceEndLength;
-      Save;
     end;
   finally
     F.Free;
@@ -247,31 +247,23 @@ begin
 
   FCanConfigure := True;
 
-  FName := _('Apply effects using SoX');
-  FHelp := _('This postprocessor applies effects to recorded songs using Sound eXchange (SoX).');
-
   FPostProcessType := ptSoX;
 
-  try
-    AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
-    AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 100, 'Plugins');
-    AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
-
-    AppGlobals.Storage.Read('Normalize_' + ClassName, FNormalize, False, 'Plugins');
-
-    AppGlobals.Storage.Read('FadeoutStart_' + ClassName, FFadeoutStart, False, 'Plugins');
-    AppGlobals.Storage.Read('FadeoutEnd_' + ClassName, FFadeoutEnd, False, 'Plugins');
-    AppGlobals.Storage.Read('FadeoutStartLength_' + ClassName, FFadeoutStartLength, 5, 'Plugins');
-    AppGlobals.Storage.Read('FadeoutEndLength_' + ClassName, FFadeoutEndLength, 5, 'Plugins');
-
-    AppGlobals.Storage.Read('SilenceStart_' + ClassName, FSilenceStart, False, 'Plugins');
-    AppGlobals.Storage.Read('SilenceEnd_' + ClassName, FSilenceEnd, False, 'Plugins');
-    AppGlobals.Storage.Read('SilenceStartLength_' + ClassName, FSilenceStartLength, 5, 'Plugins');
-    AppGlobals.Storage.Read('SilenceEndLength_' + ClassName, FSilenceEndLength, 5, 'Plugins');
-
-    if not FGetDependenciesMet then
-      FActive := False;
-  except end;
+  // Ggf. Daten von alter Version importieren, ansonsten Defaults zuweisen.
+  // Die echten Daten kommen später über Load().
+  // REMARK: Irgendwann kann das hier weg!
+  AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
+  AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 100, 'Plugins');
+  AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
+  AppGlobals.Storage.Read('Normalize_' + ClassName, FNormalize, False, 'Plugins');
+  AppGlobals.Storage.Read('FadeoutStart_' + ClassName, FFadeoutStart, False, 'Plugins');
+  AppGlobals.Storage.Read('FadeoutEnd_' + ClassName, FFadeoutEnd, False, 'Plugins');
+  AppGlobals.Storage.Read('FadeoutStartLength_' + ClassName, FFadeoutStartLength, 5, 'Plugins');
+  AppGlobals.Storage.Read('FadeoutEndLength_' + ClassName, FFadeoutEndLength, 5, 'Plugins');
+  AppGlobals.Storage.Read('SilenceStart_' + ClassName, FSilenceStart, False, 'Plugins');
+  AppGlobals.Storage.Read('SilenceEnd_' + ClassName, FSilenceEnd, False, 'Plugins');
+  AppGlobals.Storage.Read('SilenceStartLength_' + ClassName, FSilenceStartLength, 5, 'Plugins');
+  AppGlobals.Storage.Read('SilenceEndLength_' + ClassName, FSilenceEndLength, 5, 'Plugins');
 end;
 
 destructor TPostProcessSoX.Destroy;
@@ -285,6 +277,16 @@ begin
   Result := inherited + HashString(BoolToStr(FNormalize) + BoolToStr(FFadeoutStart) + BoolToStr(FFadeoutEnd) +
     BoolToStr(FSilenceStart) + BoolToStr(FSilenceEnd) + IntToStr(FFadeoutStartLength) +
     IntToStr(FFadeoutEndLength) + IntToStr(FSilenceStartLength) + IntToStr(FSilenceEndLength));
+end;
+
+function TPostProcessSoX.FGetHelp: string;
+begin
+  Result := _('This postprocessor applies effects to recorded songs using Sound eXchange (SoX).');
+end;
+
+function TPostProcessSoX.FGetName: string;
+begin
+  Result := _('Apply effects using SoX');
 end;
 
 {
@@ -340,14 +342,6 @@ begin
 end;
 }
 
-procedure TPostProcessSoX.Initialize;
-begin
-  inherited;
-
-  FName := _('Apply effects using SoX');
-  FHelp := _('This postprocessor applies effects to recorded songs using Sound eXchange (SoX).');
-end;
-
 procedure TPostProcessSoX.Load(Stream: TExtendedStream; Version: Integer);
 begin
   inherited;
@@ -368,23 +362,6 @@ end;
 function TPostProcessSoX.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
   Result := TPostProcessSoxThread.Create(Data, Self);
-end;
-
-procedure TPostProcessSoX.Save;
-begin
-  inherited;
-
-  AppGlobals.Storage.Write('Normalize_' + ClassName, FNormalize, 'Plugins');
-
-  AppGlobals.Storage.Write('FadeoutStart_' + ClassName, FFadeoutStart, 'Plugins');
-  AppGlobals.Storage.Write('FadeoutEnd_' + ClassName, FFadeoutEnd, 'Plugins');
-  AppGlobals.Storage.Write('FadeoutStartLength_' + ClassName, FFadeoutStartLength, 'Plugins');
-  AppGlobals.Storage.Write('FadeoutEndLength_' + ClassName, FFadeoutEndLength, 'Plugins');
-
-  AppGlobals.Storage.Write('SilenceStart_' + ClassName, FSilenceStart, 'Plugins');
-  AppGlobals.Storage.Write('SilenceEnd_' + ClassName, FSilenceEnd, 'Plugins');
-  AppGlobals.Storage.Write('SilenceStartLength_' + ClassName, FSilenceStartLength, 'Plugins');
-  AppGlobals.Storage.Write('SilenceEndLength_' + ClassName, FSilenceEndLength, 'Plugins');
 end;
 
 procedure TPostProcessSoX.Save(Stream: TExtendedStream);

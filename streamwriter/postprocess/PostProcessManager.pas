@@ -25,7 +25,8 @@ interface
 uses
   Windows, SysUtils, Classes, Generics.Collections, PostProcess, PostProcessSetTags,
   PostProcessSoX, Logging, PostProcessMP4Box, AddonBase, Forms, Functions,
-  LanguageObjects, PostProcessConvert, Generics.Defaults, AudioFunctions, TypeDefs;
+  LanguageObjects, PostProcessConvert, Generics.Defaults, AudioFunctions, TypeDefs,
+  DataManager;
 
 type
   TPostProcessManager = class
@@ -47,7 +48,6 @@ type
 
     function ProcessFile(Owner: TObject; Data: TPostProcessInformation): Boolean; overload;
     function ProcessFile(Entry: TProcessingEntry): Boolean; overload;
-    procedure ReInitPostProcessors;
     function EnablePostProcess(Owner: TCustomForm; Enable: Boolean; PostProcess: TInternalPostProcess): Boolean;
     function WorkingForClient(Client: TObject): Boolean;
   end;
@@ -186,14 +186,6 @@ begin
     Exit(True);
 end;
 
-procedure TPostProcessManager.ReInitPostProcessors;
-var
-  i: Integer;
-begin
-  for i := 0 to AppGlobals.StreamSettings.PostProcessors.Count - 1 do
-    AppGlobals.StreamSettings.PostProcessors[i].Initialize;
-end;
-
 procedure TPostProcessManager.Terminate;
 var
   i: Integer;
@@ -311,36 +303,7 @@ var
 begin
   FProcessingList := TProcessingList.Create;
 
-  for i := 0 to AppGlobals.StreamSettings.PostProcessors.Count - 1 do
-    if AppGlobals.StreamSettings.PostProcessors[i].ClassType.InheritsFrom(TInternalPostProcess) then
-    begin
-      IP := TInternalPostProcess(AppGlobals.StreamSettings.PostProcessors[i]);
-      if (IP.Active) and (not IP.DependenciesMet) then
-        IP.Active := False;
-    end;
 
-  i := 0;
-  repeat
-    AppGlobals.Storage.Read('Exe_' + IntToStr(i), App, '', 'Plugins');
-    AppGlobals.Storage.Read('Params_' + IntToStr(i), Params, '', 'Plugins');
-    AppGlobals.Storage.Read('OrderExe_' + IntToStr(i), Order, 0, 'Plugins');
-    AppGlobals.Storage.Read('Active_' + IntToStr(i), Active, False, 'Plugins');
-    AppGlobals.Storage.Read('OnlyIfCut_' + IntToStr(i), OnlyIfCut, False, 'Plugins');
-    AppGlobals.Storage.Read('Group_' + IntToStr(i), GroupID, 1, 'Plugins');
-    if App <> '' then
-    begin
-      EP := TExternalPostProcess.Create(App, Params, Active, OnlyIfCut, i, Order, GroupID);
-      try
-        AppGlobals.StreamSettings.PostProcessors.Add(EP);
-      except
-
-      end;
-    end;
-    Inc(i);
-  until (App = '');
-
-  for i := 0 to AppGlobals.StreamSettings.EncoderSettings.Count - 1 do
-    AppGlobals.StreamSettings.EncoderSettings[i].Load;
 end;
 
 destructor TPostProcessManager.Destroy;

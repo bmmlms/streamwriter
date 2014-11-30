@@ -28,7 +28,7 @@ uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
   AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
   Math, PerlRegEx, Logging, WideStrUtils, AudioFunctions, PostProcessMP4Box,
-  AddonMP4Box, SWFunctions, MonitorAnalyzer, Generics.Defaults;
+  AddonMP4Box, SWFunctions, MonitorAnalyzer, DataManager, Generics.Defaults;
 
 type
   TDebugEvent = procedure(Text, Data: string) of object;
@@ -791,7 +791,7 @@ begin
 
     if FSettings.SkipShort and (P.DataEnd - P.DataStart < FBytesPerSec * FSettings.ShortLengthSeconds) then
     begin
-      WriteDebug(Format(_('Skipping "%s" because it''s too small (%d bytes)'), [Title, P.DataEnd - P.DataStart]), 1, 0);
+      WriteDebug(Format(_('Skipping "%s" because it''s too short (%d seconds)'), [Title, Trunc((P.DataEnd - P.DataStart) / FBytesPerSec)]), 1, 0);
       RemoveData;
       Exit;
     end;
@@ -1838,16 +1838,10 @@ begin
   end;
 
   case TitleState of
-    tsFull:
+    tsFull, tsAuto:
       Replaced := PatternReplace(FSettings.FilePattern, Arr);
     tsIncomplete:
       Replaced := PatternReplace(FSettings.IncompleteFilePattern, Arr);
-    tsAuto:
-      begin
-        AppGlobals.Lock;
-        Replaced := PatternReplace(AppGlobals.AutomaticFilePattern, Arr);
-        AppGlobals.Unlock;
-      end;
     tsStream:
       Replaced := PatternReplace(FSettings.StreamFilePattern, Arr);
   end;

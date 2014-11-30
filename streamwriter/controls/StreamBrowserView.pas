@@ -90,7 +90,6 @@ type
     FSearch: TMStreamSearchPanel;
     FStreamTree: TMStreamTree;
     FCountLabel: TLabel;
-    FDataLists: TDataLists;
     FMode: TModes;
 
     FSelectedSortType: TSortTypes;
@@ -113,7 +112,7 @@ type
     procedure HomeCommAuthTokenReceived(Sender: TObject; Token: Cardinal);
   protected
   public
-    constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
+    constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
     procedure AfterCreate;
 
@@ -145,7 +144,6 @@ type
   TMStreamTree = class(TVirtualStringTree)
   private
     FDragSource: TDropFileSource;
-    FDataLists: TDataLists;
 
     FColName: TVirtualTreeColumn;
 
@@ -224,7 +222,7 @@ type
 
     procedure WMKeyDown(var Message: TWMKeyDown); message WM_KEYDOWN;
   public
-    constructor Create(AOwner: TComponent; DataLists: TDataLists); reintroduce;
+    constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
 
     procedure InvalidateVisible;
@@ -251,15 +249,13 @@ implementation
 
 { TMStreamView }
 
-constructor TMStreamTree.Create(AOwner: TComponent; DataLists: TDataLists);
+constructor TMStreamTree.Create(AOwner: TComponent);
 var
   Res: TResourceStream;
 begin
   inherited Create(AOwner);
 
   FMode := moShow;
-
-  FDataLists := DataLists;
 
   NodeDataSize := SizeOf(TStreamNodeData);
   IncrementalSearch := isVisibleOnly;
@@ -955,17 +951,17 @@ begin
   try
     Clear;
 
-    for i := 0 to FDataLists.BrowserList.Count - 1 do
+    for i := 0 to AppGlobals.Data.BrowserList.Count - 1 do
     begin
-      Add := ((P = '*') or Like(LowerCase(FDataLists.BrowserList[i].Name), LowerCase(P))) and
-             ((P2 = '*') or Like(LowerCase(FDataLists.BrowserList[i].Genre), LowerCase(P2))) and
-             ((AudioType = atNone) or (FDataLists.BrowserList[i].AudioType = AudioType)) and
-             ((Bitrate = 0) or (FDataLists.BrowserList[i].BitRate >= Bitrate));
+      Add := ((P = '*') or Like(LowerCase(AppGlobals.Data.BrowserList[i].Name), LowerCase(P))) and
+             ((P2 = '*') or Like(LowerCase(AppGlobals.Data.BrowserList[i].Genre), LowerCase(P2))) and
+             ((AudioType = atNone) or (AppGlobals.Data.BrowserList[i].AudioType = AudioType)) and
+             ((Bitrate = 0) or (AppGlobals.Data.BrowserList[i].BitRate >= Bitrate));
       if Add then
       begin
         Node := AddChild(nil);
         NodeData := GetNodeData(Node);
-        NodeData.Data := FDataLists.BrowserList[i];
+        NodeData.Data := AppGlobals.Data.BrowserList[i];
       end;
     end;
 
@@ -1053,7 +1049,7 @@ procedure TMStreamBrowserView.AfterCreate;
 begin
   FSearch.AfterCreate;
 
-  if (FDataLists.BrowserList.Count > 0) and (FDataLists.GenreList.Count > 0) then
+  if (AppGlobals.Data.BrowserList.Count > 0) and (AppGlobals.Data.GenreList.Count > 0) then
   begin
     BuildGenres;
     BuildTree(True);
@@ -1076,8 +1072,8 @@ begin
 
   FSearch.FGenreList.Clear;
   FSearch.FGenreList.Items.Add(_('- No genre -'));
-  for i := 0 to FDataLists.GenreList.Count - 1 do
-    FSearch.FGenreList.Items.Add(FDataLists.GenreList[i].Name);
+  for i := 0 to AppGlobals.Data.GenreList.Count - 1 do
+    FSearch.FGenreList.Items.Add(AppGlobals.Data.GenreList[i].Name);
   if FSearch.FGenreList.Items.Count > 0 then
     FSearch.FGenreList.ItemIndex := 0;
   FSearch.FGenreList.Sorted := True;
@@ -1131,11 +1127,9 @@ begin
   end;
 end;
 
-constructor TMStreamBrowserView.Create(AOwner: TComponent; DataLists: TDataLists);
+constructor TMStreamBrowserView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-
-  FDataLists := DataLists;
 
   Align := alClient;
   BevelOuter := bvNone;
@@ -1154,7 +1148,7 @@ begin
   FCountLabel.Parent := Self;
   FCountLabel.Visible := True;
 
-  FStreamTree := TMStreamTree.Create(Self, FDataLists);
+  FStreamTree := TMStreamTree.Create(Self);
   FStreamTree.Align := alClient;
   FStreamTree.Parent := Self;
   FStreamTree.Visible := True;
@@ -1207,7 +1201,7 @@ begin
   BuildGenres;
   BuildTree(True);
 
-  FDataLists.BrowserList.CreateDict;
+  AppGlobals.Data.BrowserList.CreateDict;
 
   SwitchMode(moShow);
 

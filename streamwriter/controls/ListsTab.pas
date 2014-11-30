@@ -93,7 +93,6 @@ type
     FTree: TTitleTree;
 
     FClients: TClientManager;
-    FLists: TDataLists;
     FFilterText: string;
 
     procedure BuildTree(FromFilter: Boolean);
@@ -115,7 +114,7 @@ type
   protected
     procedure Resize; override;
   public
-    constructor Create(AOwner: TComponent; Clients: TClientManager; Lists: TDataLists); reintroduce;
+    constructor Create(AOwner: TComponent; Clients: TClientManager); reintroduce;
     procedure AfterCreate;
 
     procedure PostTranslate;
@@ -138,7 +137,7 @@ type
   protected
     procedure Resize; override;
   public
-    constructor Create(AOwner: TComponent; Clients: TClientManager; Streams: TDataLists); reintroduce;
+    constructor Create(AOwner: TComponent; Clients: TClientManager); reintroduce;
     procedure AfterCreate; override;
 
     procedure AddTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
@@ -163,7 +162,6 @@ type
 
     FPanel: TTitlePanel;
 
-    FLists: TDataLists;
     FDropTarget: TDropComboTarget;
     FPopupMenu: TTitlePopup;
     FWishNode: PVirtualNode;
@@ -193,7 +191,7 @@ type
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
   public
-    constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
+    constructor Create(AOwner: TComponent); reintroduce;
     procedure AfterCreate;
 
     function AddTitle(Title: TTitleInfo; Parent: PVirtualNode; FilterText: string; FromFilter: Boolean): PVirtualNode;
@@ -215,14 +213,14 @@ implementation
 
 { TListsTab }
 
-constructor TListsTab.Create(AOwner: TComponent; Clients: TClientManager; Streams: TDataLists);
+constructor TListsTab.Create(AOwner: TComponent; Clients: TClientManager);
 begin
   inherited Create(AOwner);
 
   ShowCloseButton := False;
   ImageIndex := 30;
 
-  FListsPanel := TTitlePanel.Create(Self, Clients, Streams);
+  FListsPanel := TTitlePanel.Create(Self, Clients);
   FListsPanel.Parent := Self;
   FListsPanel.Align := alClient;
 
@@ -244,8 +242,8 @@ begin
   for i := 0 to WishlistUpgrade.Count - 1 do
   begin
     Found := False;
-    for n := 0 to FListsPanel.FLists.SaveList.Count - 1 do
-      if FListsPanel.FLists.SaveList[n].ServerHash = WishlistUpgrade[i].Hash then
+    for n := 0 to AppGlobals.Data.SaveList.Count - 1 do
+      if AppGlobals.Data.SaveList[n].ServerHash = WishlistUpgrade[i].Hash then
       begin
         Found := True;
         Break;
@@ -255,7 +253,7 @@ begin
       Continue;
 
     Title := TTitleInfo.Create(WishlistUpgrade[i].Hash, 0, WishlistUpgrade[i].Title);
-    FListsPanel.FLists.SaveList.Add(Title);
+    AppGlobals.Data.SaveList.Add(Title);
     AddTitle(nil, ltSave, Title);
 
     SetLength(Hashes, Length(Hashes) + 1);
@@ -281,20 +279,20 @@ begin
     TitleUpdated := False;
     ArtistUpdated := False;
 
-    for i := 0 to FListsPanel.FLists.SaveList.Count - 1 do
+    for i := 0 to AppGlobals.Data.SaveList.Count - 1 do
     begin
-      if (FListsPanel.FLists.SaveList[i].ServerHash > 0) and
-         (FListsPanel.FLists.SaveList[i].ServerHash = SongSavedMsg.ServerTitleHash) then
+      if (AppGlobals.Data.SaveList[i].ServerHash > 0) and
+         (AppGlobals.Data.SaveList[i].ServerHash = SongSavedMsg.ServerTitleHash) then
       begin
-        FListsPanel.FLists.SaveList[i].Saved := FListsPanel.FLists.SaveList[i].Saved + 1;
+        AppGlobals.Data.SaveList[i].Saved := AppGlobals.Data.SaveList[i].Saved + 1;
         TitleUpdated := True;
       end;
 
-      if (FListsPanel.FLists.SaveList[i].ServerArtistHash > 0) and
-         (FListsPanel.FLists.SaveList[i].ServerHash = 0) and
-         (FListsPanel.FLists.SaveList[i].ServerArtistHash = SongSavedMsg.ServerArtistHash) then
+      if (AppGlobals.Data.SaveList[i].ServerArtistHash > 0) and
+         (AppGlobals.Data.SaveList[i].ServerHash = 0) and
+         (AppGlobals.Data.SaveList[i].ServerArtistHash = SongSavedMsg.ServerArtistHash) then
       begin
-        FListsPanel.FLists.SaveList[i].Saved := FListsPanel.FLists.SaveList[i].Saved + 1;
+        AppGlobals.Data.SaveList[i].Saved := AppGlobals.Data.SaveList[i].Saved + 1;
         ArtistUpdated := True;
       end;
 
@@ -419,7 +417,7 @@ begin
         case NodeData.NodeType of
           ntWish:
             begin
-              FLists.SaveList.Remove(NodeData.Title);
+              AppGlobals.Data.SaveList.Remove(NodeData.Title);
               if NodeData.Title.ServerHash > 0 then
               begin
                 SetLength(Hashes, Length(Hashes) + 1);
@@ -432,7 +430,7 @@ begin
             end;
           ntIgnore:
             if NodeData.Stream = nil then
-              FLists.IgnoreList.Remove(NodeData.Title)
+              AppGlobals.Data.IgnoreList.Remove(NodeData.Title)
             else
               NodeData.Stream.Entry.IgnoreList.Remove(NodeData.Title);
         end;
@@ -462,7 +460,7 @@ begin
   MsgBus.SendMessage(TListsChangedMsg.Create);
 
   HomeComm.SendSyncWishlist(swRemove, Hashes);
-  HomeComm.SendSetSettings((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 
   FTree.EndUpdate;
 end;
@@ -476,9 +474,9 @@ var
 begin
   case ListType of
     ltSave:
-      List := FLists.SaveList;
+      List := AppGlobals.Data.SaveList;
     ltIgnore:
-      List := FLists.IgnoreList;
+      List := AppGlobals.Data.IgnoreList;
     else
       Exit;
   end;
@@ -625,8 +623,8 @@ begin
     if FClients[i].Entry.Name <> '' then
       FAddCombo.AddItem('  ' + FClients[i].Entry.Name, FClients[i]);
   FAddCombo.Sorted := True;
-  FAddCombo.Items.InsertObject(0, _('Ignorelist'), FLists.IgnoreList);
-  FAddCombo.Items.InsertObject(0, _('Wishlist'), FLists.SaveList);
+  FAddCombo.Items.InsertObject(0, _('Ignorelist'), AppGlobals.Data.IgnoreList);
+  FAddCombo.Items.InsertObject(0, _('Wishlist'), AppGlobals.Data.SaveList);
 
   if O <> nil then
   begin
@@ -656,11 +654,11 @@ var
 begin
   if FAddCombo.ItemIndex = 0 then
   begin
-    List := FLists.SaveList;
+    List := AppGlobals.Data.SaveList;
     ParentNode := FTree.FWishNode;
   end else if FAddCombo.ItemIndex = 1 then
   begin
-    List := FLists.IgnoreList;
+    List := AppGlobals.Data.IgnoreList;
     ParentNode := FTree.FIgnoreNode;
   end else
   begin
@@ -729,7 +727,7 @@ begin
             ServerHash := 0;
             ServerArtistHash := 0;
 
-            if List = FLists.SaveList then
+            if List = AppGlobals.Data.SaveList then
             begin
               // Wenn ein Hash hinten dran ist auswerten
               ServerHash := 0;
@@ -771,7 +769,7 @@ begin
 
             Exists := False;
             for n := 0 to List.Count - 1 do
-              if List = FLists.SaveList then
+              if List = AppGlobals.Data.SaveList then
               begin
                 if ((ServerHash > 0) and (List[n].ServerHash = ServerHash)) or
                    ((ServerArtistHash > 0) and (List[n].ServerArtistHash = ServerArtistHash)) or
@@ -794,7 +792,7 @@ begin
             List.Add(Title);
             FTree.AddTitle(Title, ParentNode, FFilterText, True);
 
-            if (List = FLists.SaveList) and ((ServerHash > 0) or (ServerArtistHash > 0)) then
+            if (List = AppGlobals.Data.SaveList) and ((ServerHash > 0) or (ServerArtistHash > 0)) then
             begin
               SetLength(Hashes, Length(Hashes) + 1);
 
@@ -817,8 +815,8 @@ begin
     Dlg.Free;
   end;
 
-  HomeComm.SendSetSettings((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
-  if List = FLists.SaveList then
+  HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  if List = AppGlobals.Data.SaveList then
     HomeComm.SendSyncWishlist(swAdd, Hashes);
 end;
 
@@ -854,11 +852,11 @@ begin
     NodeData := FTree.GetNodeData(FTree.FIgnoreNode);
     NodeData.NodeType := ntIgnoreParent;
 
-    for i := 0 to FLists.SaveList.Count - 1 do
-      FTree.AddTitle(FLists.SaveList[i], FTree.FWishNode, FFilterText, FromFilter);
+    for i := 0 to AppGlobals.Data.SaveList.Count - 1 do
+      FTree.AddTitle(AppGlobals.Data.SaveList[i], FTree.FWishNode, FFilterText, FromFilter);
 
-    for i := 0 to FLists.IgnoreList.Count - 1 do
-      FTree.AddTitle(FLists.IgnoreList[i], FTree.FIgnoreNode, FFilterText, FromFilter);
+    for i := 0 to AppGlobals.Data.IgnoreList.Count - 1 do
+      FTree.AddTitle(AppGlobals.Data.IgnoreList[i], FTree.FIgnoreNode, FFilterText, FromFilter);
 
     for i := 0 to FClients.Count - 1 do
     begin
@@ -915,14 +913,13 @@ begin
     end;
 end;
 
-constructor TTitlePanel.Create(AOwner: TComponent; Clients: TClientManager; Lists: TDataLists);
+constructor TTitlePanel.Create(AOwner: TComponent; Clients: TClientManager);
 begin
   inherited Create(AOwner);
 
-  FTree := TTitleTree.Create(Self, Lists);
+  FTree := TTitleTree.Create(Self);
   FTree.Parent := Self;
 
-  FLists := Lists;
   FClients := Clients;
 end;
 
@@ -997,10 +994,10 @@ begin
       Continue;
     end;
 
-    for i := 0 to FLists.TrackList.Count - 1 do
+    for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
     begin
-      if ((NodeData.Title.ServerHash = 0) and (NodeData.Title.ServerArtistHash = 0) and (Like(RemoveFileExt(ExtractFileName(FLists.TrackList[i].Filename)), NodeData.Title.Pattern))) or
-         ((NodeData.Title.ServerHash > 0) and (FLists.TrackList[i].ServerTitleHash = NodeData.Title.ServerHash)) then
+      if ((NodeData.Title.ServerHash = 0) and (NodeData.Title.ServerArtistHash = 0) and (Like(RemoveFileExt(ExtractFileName(AppGlobals.Data.TrackList[i].Filename)), NodeData.Title.Pattern))) or
+         ((NodeData.Title.ServerHash > 0) and (AppGlobals.Data.TrackList[i].ServerTitleHash = NodeData.Title.ServerHash)) then
       begin
         FTree.Selected[Node] := True;
       end;
@@ -1076,12 +1073,12 @@ begin
     if (ListType = ltSave) or
        ((ListType = ltAutoDetermine) and (FAddCombo.ItemIndex = 0)) then
     begin
-      List := FLists.SaveList;
+      List := AppGlobals.Data.SaveList;
       Parent := FTree.FWishNode;
     end else if (ListType = ltIgnore) or
        ((ListType = ltAutoDetermine) and (FAddCombo.ItemIndex = 1)) then
     begin
-      List := FLists.IgnoreList;
+      List := AppGlobals.Data.IgnoreList;
       Parent := FTree.FIgnoreNode;
     end else
     begin
@@ -1089,7 +1086,7 @@ begin
     end;
 
     // Keine doppelten Auto-Einträge erlauben
-    if (TitleHash > 0) and (List = FLists.SaveList) then
+    if (TitleHash > 0) and (List = AppGlobals.Data.SaveList) then
       for i := 0 to List.Count - 1 do
         if (List[i].ServerHash > 0) and (List[i].ServerHash = TitleHash) then
           Exit;
@@ -1111,7 +1108,7 @@ begin
       TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('A short pattern may produce many matches, i.e. using ''a'' records/ignores every song containing an ''a''.'), mtInformation, [mbOK], mbOK, 6);
     end;
 
-    if ShowMessages and (List = FLists.SaveList) then
+    if ShowMessages and (List = AppGlobals.Data.SaveList) then
       TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('Titles manually entered into the wishlist (without using the "Title search" tab) will not be considered for automatic recordings. Use the "Title search" tab to add titles for automatic recordings.'), mtInformation, [mbOK], mbOK, 15);
 
     if Parent = nil then
@@ -1124,7 +1121,7 @@ begin
       NodeData := FTree.GetNodeData(Node);
       NodeData.Title := Title;
 
-      if (List <> FLists.SaveList) and (List <> FLists.IgnoreList) then
+      if (List <> AppGlobals.Data.SaveList) and (List <> AppGlobals.Data.IgnoreList) then
         NodeData.Stream := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]);
 
       if Node.Parent.ChildCount = 1 then
@@ -1133,7 +1130,7 @@ begin
 
     List.Add(Title);
 
-    HomeComm.SendSetSettings((FLists.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+    HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
 
     if TitleHash > 0 then
       HomeComm.SendSyncWishlist(swAdd, TitleHash, False);
@@ -1323,9 +1320,9 @@ begin
   for i := 0 to High(SelectedNodes) do
   begin
     ChildNodeData := FTree.GetNodeData(SelectedNodes[i]);
-    for n := 0 to FLists.TrackList.Count - 1 do
-      if ((ChildNodeData.Title <> nil) and (ChildNodeData.Title.ServerHash = FLists.TrackList[n].ServerTitleHash) and (ChildNodeData.Title.ServerHash > 0))
-         or ((ChildNodeData.Title <> nil) and (ChildNodeData.Title.ServerArtistHash = FLists.TrackList[n].ServerArtistHash) and (ChildNodeData.Title.ServerArtistHash > 0)) then
+    for n := 0 to AppGlobals.Data.TrackList.Count - 1 do
+      if ((ChildNodeData.Title <> nil) and (ChildNodeData.Title.ServerHash = AppGlobals.Data.TrackList[n].ServerTitleHash) and (ChildNodeData.Title.ServerHash > 0))
+         or ((ChildNodeData.Title <> nil) and (ChildNodeData.Title.ServerArtistHash = AppGlobals.Data.TrackList[n].ServerArtistHash) and (ChildNodeData.Title.ServerArtistHash > 0)) then
       begin
         CanShowSaved := True;
         Break;
@@ -1549,14 +1546,13 @@ begin
   FitColumns;
 end;
 
-constructor TTitleTree.Create(AOwner: TComponent; Lists: TDataLists);
+constructor TTitleTree.Create(AOwner: TComponent);
 var
   i: Integer;
 begin
   inherited Create(AOwner);
 
   FPanel := TTitlePanel(AOwner);
-  FLists := Lists;
 
   Header.Height := GetTextSize('Wyg', Font).cy + 5;
 
@@ -1638,11 +1634,11 @@ begin
     case NodeData.NodeType of
       ntWishParent:
         begin
-          List := FLists.SaveList;
+          List := AppGlobals.Data.SaveList;
         end;
       ntIgnoreParent:
         begin
-          List := FLists.IgnoreList;
+          List := AppGlobals.Data.IgnoreList;
         end;
       ntStream:
         begin
@@ -1659,7 +1655,7 @@ begin
             ntWishParent:
               begin
                 Node := FWishNode;
-                List := FLists.SaveList;
+                List := AppGlobals.Data.SaveList;
               end;
             ntStream:
               begin
@@ -1677,7 +1673,7 @@ begin
             ntIgnoreParent:
               begin
                 Node := FIgnoreNode;
-                List := FLists.IgnoreList;
+                List := AppGlobals.Data.IgnoreList;
               end;
             ntStream:
               begin
@@ -1711,7 +1707,7 @@ begin
       List.Add(Title);
       AddTitle(Title, Node, FPanel.FFilterText, True);
 
-      if List = FLists.SaveList then
+      if List = AppGlobals.Data.SaveList then
         HomeComm.SendSetSettings(AppGlobals.AutoTuneIn);
     end else
       Title.Free;

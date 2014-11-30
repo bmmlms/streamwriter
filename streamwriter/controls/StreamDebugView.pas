@@ -114,7 +114,7 @@ begin
   BevelOuter := bvNone;
 
   FChkAutoScroll := TCheckBox.Create(Self);
-  FChkAutoScroll.Caption := _('&Autoscroll');
+  FChkAutoScroll.Caption := '&Autoscroll';
   FChkAutoScroll.Parent := Self;
   FChkAutoScroll.Align := alTop;
   FChkAutoScroll.Visible := True;
@@ -136,7 +136,7 @@ begin
   FPanelBottom.Padding.Top := 4;
 
   FBtnCopy := TButton.Create(Self);
-  FBtnCopy.Caption := _('&Copy');
+  FBtnCopy.Caption := '&Copy';
   FBtnCopy.Align := alRight;
   FBtnCopy.Parent := FPanelBottom;
   FBtnCopy.Visible := True;
@@ -144,7 +144,7 @@ begin
   FBtnCopy.Width := MulDiv(80, Screen.PixelsPerInch, 96);
 
   FBtnClear := TButton.Create(Self);
-  FBtnClear.Caption := _('C&lear');
+  FBtnClear.Caption := 'C&lear';
   FBtnClear.Align := alRight;
   FBtnClear.Parent := FPanelBottom;
   FBtnClear.Visible := True;

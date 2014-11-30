@@ -2,7 +2,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Left = 549
   Top = 450
   Caption = 'streamWriter'
-  ClientHeight = 336
+  ClientHeight = 343
   ClientWidth = 868
   Color = clBtnFace
   Constraints.MinHeight = 390

@@ -260,7 +260,7 @@ begin
   FDebugLog := TDebugLog.Create;
 
   FEntry := TStreamEntry.Create;
-  FEntry.Settings.Assign(AppGlobals.StreamSettings);
+  FEntry.Settings.Assign(AppGlobals.Data.StreamSettings);
 
   FStopped := False;
   FKilled := False;

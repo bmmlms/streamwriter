@@ -80,7 +80,7 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
   object Label10: TLabel
     Left = 8
     Top = 8
-    Width = 188
+    Width = 192
     Height = 13
     Caption = 'Silence is defined by volume lower than:'
   end

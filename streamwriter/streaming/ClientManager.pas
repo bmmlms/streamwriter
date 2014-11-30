@@ -51,7 +51,6 @@ type
     FClients: TClientList;
     FMonitorClients: TClientList;
     FSongsSaved: Integer;
-    FLists: TDataLists;
     FNoFreeSpaceErrorShown: Boolean;
     FDirDoesNotExistErrorShown: Boolean;
 
@@ -95,7 +94,7 @@ type
       AudioType: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal);
     procedure HomeCommMonitorStreamsReceived(Sender: TObject; StreamIDs: TIntArray);
   public
-    constructor Create(Lists: TDataLists);
+    constructor Create;
     destructor Destroy; override;
 
     function GetEnumerator: TClientEnum;
@@ -288,14 +287,13 @@ begin
     RemoveClient(FClients[i]);
 end;
 
-constructor TClientManager.Create(Lists: TDataLists);
+constructor TClientManager.Create;
 begin
   inherited Create;
 
   FSongsSaved := 0;
   FClients := TClientList.Create;
   FMonitorClients := TClientList.Create;
-  FLists := Lists;
   HomeComm.OnNetworkTitleChangedReceived := HomeCommTitleChanged;
   HomeComm.OnMonitorStreamsReceived := HomeCommMonitorStreamsReceived;
 end;
@@ -368,10 +366,10 @@ begin
   StopMonitors;
   for i := 0 to High(StreamIDs) do
   begin
-    for n := 0 to FLists.BrowserList.Count - 1 do
-      if FLists.BrowserList[n].ID = StreamIDs[i] then
+    for n := 0 to AppGlobals.Data.BrowserList.Count - 1 do
+      if AppGlobals.Data.BrowserList[n].ID = StreamIDs[i] then
       begin
-        Client := TICEClient.Create(Self, StreamIDs[i], 128, 'Monitor' + IntToStr(StreamIDs[i]), FLists.BrowserList[n].URL);
+        Client := TICEClient.Create(Self, StreamIDs[i], 128, 'Monitor' + IntToStr(StreamIDs[i]), AppGlobals.Data.BrowserList[n].URL);
         Client.Entry.Settings.MaxRetries := 0;
         Client.Entry.Settings.RetryDelay := 30;
         Client.Entry.Settings.SaveToMemory := True;
@@ -422,19 +420,19 @@ begin
     Exit;
   end;
 
-  for i := 0 to FLists.StreamBlacklist.Count - 1 do
-    if FLists.StreamBlacklist[i] = Name then
+  for i := 0 to AppGlobals.Data.StreamBlacklist.Count - 1 do
+    if AppGlobals.Data.StreamBlacklist[i] = Name then
     begin
       TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet weil Stream auf Ignorierliste ist', [Title]));
       Exit;
     end;
 
-  for i := 0 to FLists.SaveList.Count - 1 do
+  for i := 0 to AppGlobals.Data.SaveList.Count - 1 do
   begin
-    if (FLists.SaveList[i].ServerHash > 0) and (ServerHash = FLists.SaveList[i].ServerHash) then
-      SaveListTitle := FLists.SaveList[i];
-    if (FLists.SaveList[i].ServerHash = 0) and (FLists.SaveList[i].ServerArtistHash > 0) and (ServerArtistHash = FLists.SaveList[i].ServerArtistHash) then
-      SaveListArtist := FLists.SaveList[i];
+    if (AppGlobals.Data.SaveList[i].ServerHash > 0) and (ServerHash = AppGlobals.Data.SaveList[i].ServerHash) then
+      SaveListTitle := AppGlobals.Data.SaveList[i];
+    if (AppGlobals.Data.SaveList[i].ServerHash = 0) and (AppGlobals.Data.SaveList[i].ServerArtistHash > 0) and (ServerArtistHash = AppGlobals.Data.SaveList[i].ServerArtistHash) then
+      SaveListArtist := AppGlobals.Data.SaveList[i];
   end;
 
   if (not Assigned(SaveListTitle)) and (not Assigned(SaveListArtist)) then
@@ -444,11 +442,11 @@ begin
   end;
 
   if AppGlobals.AutoTuneInConsiderIgnore then
-    for n := 0 to FLists.IgnoreList.Count - 1 do
+    for n := 0 to AppGlobals.Data.IgnoreList.Count - 1 do
     begin
-      if Like(Title, FLists.IgnoreList[n].Pattern) then
+      if Like(Title, AppGlobals.Data.IgnoreList[n].Pattern) then
       begin
-        TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet wegen Übereinstimmung mit "%s" auf Ignorierliste', [Title, FLists.IgnoreList[n].Pattern]));
+        TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet wegen Übereinstimmung mit "%s" auf Ignorierliste', [Title, AppGlobals.Data.IgnoreList[n].Pattern]));
         Exit;
       end;
     end;
@@ -472,10 +470,7 @@ begin
         Exit;
 
   Client := AddClient(0, 0, Name, CurrentURL, True);
-
-  // TODO: FAddSavedToIgnore wird hier irgendwie nicht übernommen. nix wird hinzugefügt in ignorelist, aber es ist in settings an...
-  //       das problem dürfte auf alle AUTO-SETTINGS zutreffen. PRÜFEN!!!!!
-  Client.Entry.Settings.Assign(FLists.AutoRecordSettings);
+  Client.Entry.Settings.Assign(AppGlobals.Data.AutoRecordSettings);
 
   Client.Entry.Bitrate := Kbps;
   if RegExes <> nil then
@@ -569,7 +564,7 @@ begin
   begin
     MsgBus.SendMessage(TSongSavedMsg.Create(Sender, ServerTitleHash, ServerArtistHash));
     Inc(FSongsSaved);
-    FLists.SongsSaved := FLists.SongsSaved + 1;
+    AppGlobals.Data.SongsSaved := AppGlobals.Data.SongsSaved + 1;
   end;
   if Assigned(FOnClientSongSaved) then
     FOnClientSongSaved(Sender, Filename, Title, SongArtist, SongTitle, Filesize, Length, Bitrate,

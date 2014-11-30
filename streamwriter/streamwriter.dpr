@@ -152,7 +152,7 @@ uses
 
 var
   i: Integer;
-  HideMain: Boolean;
+  HideMain, Found: Boolean;
   frmStreamWriterMain: TfrmStreamWriterMain;
   frmHomeTest: TfrmHomeTest;
 begin
@@ -187,6 +187,23 @@ begin
     MsgBox(0, _('The BASS library or it''s plugins could not be extracted/loaded. Without these libraries streamWriter cannot record/playback streams. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
     Bass.Free;
     Exit;
+  end;
+
+  Found := False;
+  for i := 0 to Bass.Devices.Count - 1 do
+    if Bass.Devices[i].ID = AppGlobals.SoundDevice then
+    begin
+      Found := True;
+      Break;
+    end;
+  if not Found then
+  begin
+    for i := 0 to Bass.Devices.Count - 1 do
+      if Bass.Devices[i].IsDefault then
+      begin
+        AppGlobals.SoundDevice := Bass.Devices[i].ID;
+        Break;
+      end;
   end;
 
   Application.CreateForm(TmodSharedData, modSharedData);

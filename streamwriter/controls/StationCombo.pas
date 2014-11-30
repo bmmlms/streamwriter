@@ -24,7 +24,8 @@ unit StationCombo;
 interface
 
 uses
-  Windows, SysUtils, Classes, ListActns, ComCtrls, DataManager, Logging;
+  Windows, SysUtils, Classes, ListActns, ComCtrls, DataManager, Logging,
+  AppData;
 
 type
   TMStationCombo = class(TComboBoxEx)
@@ -36,7 +37,7 @@ type
     destructor Destroy; override;
     procedure Sort;
     procedure ReOrganize(FirstItem: TListControlItem);
-    procedure BuildList(List: TRecentList);
+    procedure BuildList;
     function AddItem(ID, Bitrate: Cardinal; Name, URL: string): TListControlItem; reintroduce; overload;
     function AddItem(Entry: TRecentEntry): TListControlItem; reintroduce; overload;
   end;
@@ -127,16 +128,12 @@ begin
   Result.ImageIndex := 16;
 end;
 
-procedure TMStationCombo.BuildList(List: TRecentList);
+procedure TMStationCombo.BuildList;
 var
   i: Integer;
 begin
-  FList := List;
-
-  for i := 0 to List.Count - 1 do
-  begin
-    AddItem(List[i]);
-  end;
+  for i := 0 to AppGlobals.Data.RecentList.Count - 1 do
+    AddItem(AppGlobals.Data.RecentList[i]);
 
   Sort;
 end;
@@ -190,3 +187,4 @@ begin
 end;
 
 end.
+

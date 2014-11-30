@@ -121,8 +121,6 @@ type
 
     FState: TChartStates;
 
-    FLists: TDataLists;
-
     procedure FitColumns;
     procedure MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
 
@@ -159,7 +157,7 @@ type
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
   public
-    constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
+    constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
     procedure AfterCreate;
 
@@ -177,7 +175,6 @@ type
 
   TChartsTab = class(TMainTabSheet)
   private
-    FLists: TDataLists;
     FSearchPanel: TSearchPanel;
     FChartsTree: TChartsTree;
     FResultLabel: TLabel;
@@ -203,7 +200,7 @@ type
   protected
     procedure DoEnter; override;
   public
-    constructor Create(AOwner: TComponent; Lists: TDataLists); reintroduce;
+    constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
     procedure AfterCreate; override;
 
@@ -281,18 +278,16 @@ begin
   UpdateButtons;
 end;
 
-constructor TChartsTab.Create(AOwner: TComponent; Lists: TDataLists);
+constructor TChartsTab.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-
-  FLists := Lists;
 
   FSearchPanel := TSearchPanel.Create(Self);
   FSearchPanel.Parent := Self;
   FSearchPanel.Align := alTop;
   FSearchPanel.Padding.Top := 1;
 
-  FChartsTree := TChartsTree.Create(Self, FLists);
+  FChartsTree := TChartsTree.Create(Self);
   FChartsTree.Parent := Self;
   FChartsTree.Align := alClient;
   FChartsTree.OnChange := ChartsTreeChange;
@@ -522,7 +517,7 @@ begin
         NodeData.IsOnWishlist := False;
         NodeData.IsArtistOnWishlist := False;
 
-        NodeData.Chart.LoadStreams(FLists.BrowserList);
+        NodeData.Chart.LoadStreams;
 
         for n := 0 to NodeData.Chart.Streams.Count - 1 do
         begin
@@ -531,11 +526,11 @@ begin
           NodeDataStream.Stream := NodeData.Chart.Streams[n];
         end;
 
-        for n := 0 to FLists.SaveList.Count - 1 do
+        for n := 0 to AppGlobals.Data.SaveList.Count - 1 do
         begin
-          if (FLists.SaveList[n].ServerHash > 0) and (FLists.SaveList[n].ServerHash = NodeData.Chart.ServerHash) then
+          if (AppGlobals.Data.SaveList[n].ServerHash > 0) and (AppGlobals.Data.SaveList[n].ServerHash = NodeData.Chart.ServerHash) then
             NodeData.IsOnWishlist := True;
-          if (FLists.SaveList[n].ServerArtistHash > 0) and (FLists.SaveList[n].ServerArtistHash = NodeData.Chart.ServerArtistHash) then
+          if (AppGlobals.Data.SaveList[n].ServerArtistHash > 0) and (AppGlobals.Data.SaveList[n].ServerArtistHash = NodeData.Chart.ServerArtistHash) then
             NodeData.IsArtistOnWishlist := True;
 
           if NodeData.IsOnWishlist and NodeData.IsArtistOnWishlist then
@@ -632,15 +627,13 @@ begin
   FitColumns;
 end;
 
-constructor TChartsTree.Create(AOwner: TComponent; Lists: TDataLists);
+constructor TChartsTree.Create(AOwner: TComponent);
 var
   i: Integer;
 begin
   inherited Create(AOwner);
 
   MsgBus.AddSubscriber(MessageReceived);
-
-  FLists := Lists;
 
   FState := csNormal;
 
@@ -781,11 +774,11 @@ begin
           C1 := 0;
           C2 := 0;
 
-          for i := 0 to FLists.SavedTitleHashes.Count - 1 do
+          for i := 0 to AppGlobals.Data.SavedTitleHashes.Count - 1 do
           begin
-            if (Data1.Chart <> nil) and (Data1.Chart.ServerHash = FLists.SavedTitleHashes[i]) then
+            if (Data1.Chart <> nil) and (Data1.Chart.ServerHash = AppGlobals.Data.SavedTitleHashes[i]) then
               C1 := C1 + 1;
-            if (Data2.Chart <> nil) and (Data2.Chart.ServerHash = FLists.SavedTitleHashes[i]) then
+            if (Data2.Chart <> nil) and (Data2.Chart.ServerHash = AppGlobals.Data.SavedTitleHashes[i]) then
               C2 := C2 + 1;
           end;
 
@@ -1197,12 +1190,12 @@ begin
 
         NodeData.IsOnWishlist := False;
         NodeData.IsArtistOnWishlist := False;
-        for i := 0 to FLists.SaveList.Count - 1 do
+        for i := 0 to AppGlobals.Data.SaveList.Count - 1 do
         begin
           if not NodeData.IsOnWishlist then
-            NodeData.IsOnWishlist := (NodeData.Chart <> nil) and (FLists.SaveList.Items[i].ServerHash > 0) and (NodeData.Chart.ServerHash = FLists.SaveList.Items[i].ServerHash);
+            NodeData.IsOnWishlist := (NodeData.Chart <> nil) and (AppGlobals.Data.SaveList.Items[i].ServerHash > 0) and (NodeData.Chart.ServerHash = AppGlobals.Data.SaveList.Items[i].ServerHash);
           if not NodeData.IsArtistOnWishlist then
-            NodeData.IsArtistOnWishlist := (NodeData.Chart <> nil) and (FLists.SaveList.Items[i].ServerArtistHash > 0) and (NodeData.Chart.ServerArtistHash = FLists.SaveList.Items[i].ServerArtistHash);
+            NodeData.IsArtistOnWishlist := (NodeData.Chart <> nil) and (AppGlobals.Data.SaveList.Items[i].ServerArtistHash > 0) and (NodeData.Chart.ServerArtistHash = AppGlobals.Data.SaveList.Items[i].ServerArtistHash);
           if NodeData.IsOnWishlist and NodeData.IsArtistOnWishlist then
             Break;
         end;
@@ -1213,8 +1206,8 @@ begin
       Invalidate;
     end else if Msg is TSongSavedMsg then
     begin
-      if not FLists.SavedTitleHashes.Contains(SongSavedMsg.ServerTitleHash) then
-        FLists.SavedTitleHashes.Add(SongSavedMsg.ServerTitleHash);
+      if not AppGlobals.Data.SavedTitleHashes.Contains(SongSavedMsg.ServerTitleHash) then
+        AppGlobals.Data.SavedTitleHashes.Add(SongSavedMsg.ServerTitleHash);
 
       Node := GetFirst;
       while Node <> nil do
@@ -1281,21 +1274,13 @@ begin
         if NodeData.Chart <> nil then
         begin
           if NodeData.IsOnWishlist then
-          begin
             Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 77);
-          end;
           if NodeData.IsArtistOnWishlist then
-          begin
             Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 86);
-          end;
 
-          for i := 0 to FLists.SavedTitleHashes.Count - 1 do
-          begin
-            if FLists.SavedTitleHashes[i] = NodeData.Chart.ServerHash then
-            begin
+          for i := 0 to AppGlobals.Data.SavedTitleHashes.Count - 1 do
+            if AppGlobals.Data.SavedTitleHashes[i] = NodeData.Chart.ServerHash then
               Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 32, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 14);
-            end;
-          end;
         end else
         begin
           P := Parent;

@@ -302,18 +302,17 @@ type
     FOutputFormatIdx: Integer;
     FMinQualityIdx: Integer;
     FFormatIdx: Integer;
-    FTemporaryPostProcesses: TPostProcessorList;
+    FTemporaryPostProcessors: TPostProcessorList;
     FStreamSettings: TStreamSettingsArray;
     FIgnoreFieldList: TList;
-    FLists: TDataLists;
     lstBlacklist: TBlacklistTree;
     btnReset: TBitBtn;
     FActivePreviewField: TLabeledEdit;
     OutputFormatLastIndex: Integer;
 
-    procedure CreateApp(AOwner: TComponent; Lists: TDataLists; BrowseDir: Boolean);
-    procedure CreateAuto(AOwner: TComponent; Lists: TDataLists; BrowseDir: Boolean);
-    procedure CreateStreams(AOwner: TComponent; StreamSettings: TStreamSettingsArray);
+    procedure CreateApp(AOwner: TComponent; BrowseDir: Boolean);
+    procedure CreateAuto(AOwner: TComponent; BrowseDir: Boolean);
+    procedure CreateStreams(AOwner: TComponent);
     procedure CreateGeneral;
     procedure SetFields;
 
@@ -343,7 +342,7 @@ type
     procedure GetExportData(Stream: TExtendedStream); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
-    constructor Create(AOwner: TComponent; SettingsType: TSettingsTypes; Lists: TDataLists;
+    constructor Create(AOwner: TComponent; SettingsType: TSettingsTypes;
       StreamSettings: TStreamSettingsArray; BrowseDir: Boolean);
 
     destructor Destroy; override;
@@ -363,9 +362,9 @@ begin
   for i := 0 to lstAddons.Items.Count - 1 do
     TAddonBase(lstAddons.Items[i].Data).Free;
 
-  for i := 0 to FTemporaryPostProcesses.Count - 1 do
-    FTemporaryPostProcesses[i].Free;
-  FTemporaryPostProcesses.Free;
+  for i := 0 to FTemporaryPostProcessors.Count - 1 do
+    FTemporaryPostProcessors[i].Free;
+  FTemporaryPostProcessors.Free;
 
   for i := 0 to Length(FStreamSettings) - 1 do
     FStreamSettings[i].Free;
@@ -418,8 +417,8 @@ begin
 
   AppGlobals.Lock;
   txtFilePattern.Text := Settings.FilePattern;
+  txtAutomaticFilePattern.Text := Settings.FilePattern;
   txtIncompleteFilePattern.Text := Settings.IncompleteFilePattern;
-  txtAutomaticFilePattern.Text := AppGlobals.AutomaticFilePattern;
   txtStreamFilePattern.Text := Settings.StreamFilePattern;
   txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
   txtRemoveChars.Text := Settings.RemoveChars;
@@ -465,8 +464,8 @@ begin
 
   chkAutoTuneIn.Checked := AppGlobals.AutoTuneIn;
   chkAutoTuneInConsiderIgnore.Checked := AppGlobals.AutoTuneInConsiderIgnore;
-  chkAutoTuneInAddToIgnore.Checked := AppGlobals.AutoTuneInAddToIgnore;
-  chkAutoRemoveSavedFromWishlist.Checked := AppGlobals.AutoRemoveSavedFromWishlist;
+  chkAutoTuneInAddToIgnore.Checked := Settings.AddSavedToIgnore;
+  chkAutoRemoveSavedFromWishlist.Checked := Settings.RemoveSavedFromWishlist;
   lstMinQuality.ItemIndex := AppGlobals.AutoTuneInMinQuality;
   lstFormat.ItemIndex := AppGlobals.AutoTuneInFormat;
   chkSubmitStreamInfo.Checked := AppGlobals.SubmitStreamInfo;
@@ -534,13 +533,13 @@ begin
   end;
 
   // ---------------------------------------------------------------------------------------------------------
-  if FTemporaryPostProcesses <> nil then
+  if FTemporaryPostProcessors <> nil then
   begin
-    for i := 0 to FTemporaryPostProcesses.Count - 1 do
-      FTemporaryPostProcesses[i].Free;
-    FTemporaryPostProcesses.Free;
+    for i := 0 to FTemporaryPostProcessors.Count - 1 do
+      FTemporaryPostProcessors[i].Free;
+    FTemporaryPostProcessors.Free;
   end;
-  FTemporaryPostProcesses := TPostProcessorList.Create;
+  FTemporaryPostProcessors := TPostProcessorList.Create;
 
   lstOutputFormat.ItemIndex := Integer(Settings.OutputFormat);
   OutputFormatLastIndex := lstOutputFormat.ItemIndex;
@@ -550,10 +549,10 @@ begin
     if Settings.PostProcessors[i].Hidden then
       Continue;
 
-    FTemporaryPostProcesses.Add(Settings.PostProcessors[i].Copy);
+    FTemporaryPostProcessors.Add(Settings.PostProcessors[i].Copy);
   end;
 
-  FTemporaryPostProcesses.Sort(TComparer<TPostProcessBase>.Construct(
+  FTemporaryPostProcessors.Sort(TComparer<TPostProcessBase>.Construct(
     function (const L, R: TPostProcessBase): integer
     begin
       if L.GroupID <> R.GroupID then
@@ -585,30 +584,105 @@ begin
     begin
       AppGlobals.Lock;
 
-      AppGlobals.AutomaticFilePattern := Trim(txtAutomaticFilePattern.Text);
       AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
       AppGlobals.AutoTuneInConsiderIgnore := chkAutoTuneInConsiderIgnore.Checked;
-      // TODO: mindestens das AutoTuneInAddToIgnore-Feld wird ignoriert!!! wenn man das ändert wird es nicht für auto aufnahmen angenommen!!!
-      //       die einstellungen werden erst nach sW-neustart übernommen. fail.
-      AppGlobals.AutoTuneInAddToIgnore := chkAutoTuneInAddToIgnore.Checked;
-      AppGlobals.AutoRemoveSavedFromWishlist := chkAutoRemoveSavedFromWishlist.Checked;
-
       AppGlobals.AutoTuneInMinQuality := lstMinQuality.ItemIndex;
       AppGlobals.AutoTuneInFormat := lstFormat.ItemIndex;
       AppGlobals.DirAuto := txtDir.Text;
 
-      lstBlacklist.UpdateList(FLists.StreamBlacklist);
+      lstBlacklist.UpdateList(AppGlobals.Data.StreamBlacklist);
 
-      // TODO: im suff hinzugefügt. ist das wirklich richtig??? darf ich das überhaupt hier, wegen thread-safety???
-      // funzt aber auch nicht...
-      FStreamSettings[0].AddSavedToIgnore := chkAutoTuneInAddToIgnore.Checked;
+      AppGlobals.Unlock;
+    end;
+
+    if FSettingsType = stApp then
+    begin
+      AppGlobals.Lock; // TODO: bringt das was?
+
+      if lstSoundDevice.ItemIndex > -1 then
+        AppGlobals.SoundDevice := TBassDevice(lstSoundDevice.Items.Objects[lstSoundDevice.ItemIndex]).ID;
+
+      if chkAutostart.Checked then
+      begin
+        CreateLink(Application.ExeName, PChar(GetShellFolder(CSIDL_STARTUP)), AppGlobals.AppName, '-minimize', False);
+      end else
+      begin
+        CreateLink(Application.ExeName, PChar(GetShellFolder(CSIDL_STARTUP)), AppGlobals.AppName, '', True);
+      end;
+
+      AppGlobals.Dir := txtDir.Text;
+
+      AppGlobals.Tray := chkTray.Checked;
+      AppGlobals.SnapMain := chkSnapMain.Checked;
+      AppGlobals.RememberRecordings := chkRememberRecordings.Checked;
+      AppGlobals.DisplayPlayedSong := chkDisplayPlayedSong.Checked;
+      AppGlobals.DisplayPlayNotifications := chkDisplayPlayNotifications.Checked;
+      AppGlobals.ShowSplashScreen := chkShowSplashScreen.Checked;
+      AppGlobals.CoverPanelAlwaysVisible := chkCoverPanelAlwaysVisible.Checked;
+      AppGlobals.TrayOnMinimize := optMinimize.Checked;
+
+      AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
+      AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
+      AppGlobals.SubmitStats := chkSubmitStats.Checked;
+      AppGlobals.MonitorMode := chkMonitorMode.Checked;
+      AppGlobals.MonitorCount := StrToIntDef(txtMonitorCount.Text, 3);
+      AppGlobals.LimitSpeed := chkLimit.Checked;
+      if StrToIntDef(txtMaxSpeed.Text, -1) > 0 then
+        AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);
+
+      AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
+      AppGlobals.LogFile := txtLogFile.Text;
+      AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
+      AppGlobals.DefaultActionBrowser := TStreamOpenActions(lstDefaultActionBrowser.ItemIndex);
+
+      if lstHotkeys.Items[0].SubItems[0] <> '' then
+        AppGlobals.ShortcutPlay := TextToShortCut(lstHotkeys.Items[0].SubItems[0])
+      else
+        AppGlobals.ShortcutPlay := 0;
+
+      if lstHotkeys.Items[1].SubItems[0] <> '' then
+        AppGlobals.ShortcutPause := TextToShortCut(lstHotkeys.Items[1].SubItems[0])
+      else
+        AppGlobals.ShortcutPause := 0;
+
+      if lstHotkeys.Items[2].SubItems[0] <> '' then
+        AppGlobals.ShortcutStop := TextToShortCut(lstHotkeys.Items[2].SubItems[0])
+      else
+        AppGlobals.ShortcutStop := 0;
+
+      if lstHotkeys.Items[3].SubItems[0] <> '' then
+        AppGlobals.ShortcutNext := TextToShortCut(lstHotkeys.Items[3].SubItems[0])
+      else
+        AppGlobals.ShortcutNext := 0;
+
+      if lstHotkeys.Items[4].SubItems[0] <> '' then
+        AppGlobals.ShortcutPrev := TextToShortCut(lstHotkeys.Items[4].SubItems[0])
+      else
+        AppGlobals.ShortcutPrev := 0;
+
+      if lstHotkeys.Items[5].SubItems[0] <> '' then
+        AppGlobals.ShortcutVolUp := TextToShortCut(lstHotkeys.Items[5].SubItems[0])
+      else
+        AppGlobals.ShortcutVolUp := 0;
+
+      if lstHotkeys.Items[6].SubItems[0] <> '' then
+        AppGlobals.ShortcutVolDown := TextToShortCut(lstHotkeys.Items[6].SubItems[0])
+      else
+        AppGlobals.ShortcutVolDown := 0;
+
+      if lstHotkeys.Items[7].SubItems[0] <> '' then
+        AppGlobals.ShortcutMute := TextToShortCut(lstHotkeys.Items[7].SubItems[0])
+      else
+        AppGlobals.ShortcutMute := 0;
 
       AppGlobals.Unlock;
     end;
 
     for i := 0 to Length(FStreamSettings) - 1 do
     begin
-      if FIgnoreFieldList.IndexOf(txtFilePattern) = -1 then
+      if FSettingsType = stAuto then
+        FStreamSettings[i].FilePattern := Trim(txtAutomaticFilePattern.Text)
+      else if FIgnoreFieldList.IndexOf(txtFilePattern) = -1 then
         FStreamSettings[i].FilePattern := Trim(txtFilePattern.Text);
 
       if FIgnoreFieldList.IndexOf(txtIncompleteFilePattern) = -1 then
@@ -629,13 +703,17 @@ begin
       if FIgnoreFieldList.IndexOf(chkDeleteStreams) = -1 then
         FStreamSettings[i].DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
 
-      if FIgnoreFieldList.IndexOf(chkAddSavedToIgnore) = -1 then
+      if FSettingsType = stAuto then
+        FStreamSettings[i].AddSavedToIgnore := chkAutoTuneInAddToIgnore.Checked
+      else if FIgnoreFieldList.IndexOf(chkAddSavedToIgnore) = -1 then
         FStreamSettings[i].AddSavedToIgnore := chkAddSavedToIgnore.Checked;
 
       if FIgnoreFieldList.IndexOf(chkAddSavedToStreamIgnore) = -1 then
         FStreamSettings[i].AddSavedToStreamIgnore := chkAddSavedToStreamIgnore.Checked;
 
-      if FIgnoreFieldList.IndexOf(chkRemoveSavedFromWishlist) = -1 then
+      if FSettingsType = stAuto then
+        FStreamSettings[i].RemoveSavedFromWishlist := chkAutoRemoveSavedFromWishlist.Checked
+      else if FIgnoreFieldList.IndexOf(chkRemoveSavedFromWishlist) = -1 then
         FStreamSettings[i].RemoveSavedFromWishlist := chkRemoveSavedFromWishlist.Checked;
 
       if FIgnoreFieldList.IndexOf(chkOverwriteSmaller) = -1 then
@@ -732,30 +810,30 @@ begin
       if FIgnoreFieldList.IndexOf(lstPostProcess) = -1 then
       begin
         // -----------------------------------------------------------
-        for k := 0 to FTemporaryPostProcesses.Count - 1 do
+        for k := 0 to FTemporaryPostProcessors.Count - 1 do
         begin
-          PostProcessor := FStreamSettings[i].PostProcessors.Find(FTemporaryPostProcesses[k]);
+          PostProcessor := FStreamSettings[i].PostProcessors.Find(FTemporaryPostProcessors[k]);
 
-          if (PostProcessor = nil) or (FTemporaryPostProcesses[k].IsNew) then
+          if (PostProcessor = nil) or (FTemporaryPostProcessors[k].IsNew) then
           begin
             // Ein neuer PostProcessor kann nur TExternalPostProcessor sein.
-            PostProcessor := FTemporaryPostProcesses[k].Copy;
+            PostProcessor := FTemporaryPostProcessors[k].Copy;
             FStreamSettings[i].PostProcessors.Add(PostProcessor);
           end;
 
           Item := nil;
           for n := 0 to lstPostProcess.Items.Count - 1 do
-            if lstPostProcess.Items[n].Data = FTemporaryPostProcesses[k] then
+            if lstPostProcess.Items[n].Data = FTemporaryPostProcessors[k] then
             begin
               Item := lstPostProcess.Items[n];
               Break;
             end;
 
-          PostProcessor.OnlyIfCut := FTemporaryPostProcesses[k].OnlyIfCut;
+          PostProcessor.OnlyIfCut := FTemporaryPostProcessors[k].OnlyIfCut;
           PostProcessor.Order := Item.Index;
           PostProcessor.Active := Item.Checked;
 
-          PostProcessor.Assign(FTemporaryPostProcesses[k]);
+          PostProcessor.Assign(FTemporaryPostProcessors[k]);
         end;
 
         // Vom Benutzer entfernte PostProcessors aus den echten PostProcessors entfernen..
@@ -764,9 +842,9 @@ begin
           if FStreamSettings[i].PostProcessors[k] is TExternalPostProcess then
           begin
             EP := nil;
-            for n := 0 to FTemporaryPostProcesses.Count - 1 do
-              if FTemporaryPostProcesses[n] is TExternalPostProcess then
-                if TExternalPostProcess(FTemporaryPostProcesses[n]).Identifier = TExternalPostProcess(FStreamSettings[i].PostProcessors[k]).Identifier then
+            for n := 0 to FTemporaryPostProcessors.Count - 1 do
+              if FTemporaryPostProcessors[n] is TExternalPostProcess then
+                if TExternalPostProcess(FTemporaryPostProcessors[n]).Identifier = TExternalPostProcess(FStreamSettings[i].PostProcessors[k]).Identifier then
                   begin
                     EP := TExternalPostProcess(FStreamSettings[i].PostProcessors[k]);
                     Break;
@@ -784,175 +862,7 @@ begin
       end;
     end;
   end else
-  begin
-    AppGlobals.Lock;
-    AppGlobals.StreamSettings.FilePattern := Trim(txtFilePattern.Text);
-    AppGlobals.StreamSettings.IncompleteFilePattern := Trim(txtIncompleteFilePattern.Text);
-    AppGlobals.StreamSettings.StreamFilePattern := Trim(txtStreamFilePattern.Text);
-    AppGlobals.StreamSettings.FilePatternDecimals := StrToIntDef(txtFilePatternDecimals.Text, 3);
-    AppGlobals.StreamSettings.RemoveChars := txtRemoveChars.Text;
-    AppGlobals.StreamSettings.NormalizeVariables := chkNormalizeVariables.Checked;
-    AppGlobals.StreamSettings.DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
-    AppGlobals.StreamSettings.AddSavedToIgnore := chkAddSavedToIgnore.Checked;
-    AppGlobals.StreamSettings.AddSavedToStreamIgnore := chkAddSavedToStreamIgnore.Checked;
-    AppGlobals.StreamSettings.RemoveSavedFromWishlist := chkRemoveSavedFromWishlist.Checked;
-    AppGlobals.StreamSettings.OverwriteSmaller := chkOverwriteSmaller.Checked;
-    AppGlobals.StreamSettings.DiscardSmaller := chkDiscardSmaller.Checked;
-    AppGlobals.StreamSettings.DiscardAlways := chkDiscardAlways.Checked;
-
-    if pnlCut.Tag = 0 then
-    begin
-      AppGlobals.StreamSettings.SkipShort := chkSkipShort.Checked;
-      AppGlobals.StreamSettings.SongBuffer := StrToIntDef(txtSongBuffer.Text, 0);
-      AppGlobals.StreamSettings.ShortLengthSeconds := StrToIntDef(txtShortLengthSeconds.Text, 45);
-      AppGlobals.StreamSettings.SearchSilence := chkSearchSilence.Checked;
-      AppGlobals.StreamSettings.AutoDetectSilenceLevel := not chkManualSilenceLevel.Checked;
-      AppGlobals.StreamSettings.SilenceLevel := StrToIntDef(txtSilenceLevel.Text, 5);
-      AppGlobals.StreamSettings.SilenceLength := StrToIntDef(txtSilenceLength.Text, 100);
-      AppGlobals.StreamSettings.SilenceBufferSecondsStart := StrToIntDef(txtSilenceBufferSeconds.Text, 5);
-      AppGlobals.StreamSettings.SilenceBufferSecondsEnd := StrToIntDef(txtSilenceBufferSeconds.Text, 5);
-    end;
-
-    AppGlobals.StreamSettings.MaxRetries := StrToIntDef(txtMaxRetries.Text, 100);
-    AppGlobals.StreamSettings.RetryDelay := StrToIntDef(txtRetryDelay.Text, 5);
-    AppGlobals.StreamSettings.Filter := TUseFilters(lstDefaultFilter.ItemIndex);
-
-    AppGlobals.StreamSettings.SeparateTracks := chkSeparateTracks.Checked and chkSeparateTracks.Enabled;
-    AppGlobals.StreamSettings.SaveToMemory := not chkSaveStreamsToDisk.Checked;
-    AppGlobals.StreamSettings.OnlySaveFull := chkOnlySaveFull.Checked;
-
-    if lstSoundDevice.ItemIndex > -1 then
-      AppGlobals.SoundDevice := TBassDevice(lstSoundDevice.Items.Objects[lstSoundDevice.ItemIndex]).ID;
-
-    if chkAutostart.Checked then
-    begin
-      CreateLink(Application.ExeName, PChar(GetShellFolder(CSIDL_STARTUP)), AppGlobals.AppName, '-minimize', False);
-    end else
-    begin
-      CreateLink(Application.ExeName, PChar(GetShellFolder(CSIDL_STARTUP)), AppGlobals.AppName, '', True);
-    end;
-
-    if FSettingsType = stApp then
-      AppGlobals.Dir := txtDir.Text;
-
-    AppGlobals.Tray := chkTray.Checked;
-    AppGlobals.SnapMain := chkSnapMain.Checked;
-    AppGlobals.RememberRecordings := chkRememberRecordings.Checked;
-    AppGlobals.DisplayPlayedSong := chkDisplayPlayedSong.Checked;
-    AppGlobals.DisplayPlayNotifications := chkDisplayPlayNotifications.Checked;
-    AppGlobals.ShowSplashScreen := chkShowSplashScreen.Checked;
-    AppGlobals.CoverPanelAlwaysVisible := chkCoverPanelAlwaysVisible.Checked;
-    AppGlobals.TrayOnMinimize := optMinimize.Checked;
-
-    AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
-    AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
-    AppGlobals.SubmitStats := chkSubmitStats.Checked;
-    AppGlobals.MonitorMode := chkMonitorMode.Checked;
-    AppGlobals.MonitorCount := StrToIntDef(txtMonitorCount.Text, 3);
-    AppGlobals.LimitSpeed := chkLimit.Checked;
-    if StrToIntDef(txtMaxSpeed.Text, -1) > 0 then
-      AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);
-
-    AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
-    AppGlobals.LogFile := txtLogFile.Text;
-    AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
-    AppGlobals.DefaultActionBrowser := TStreamOpenActions(lstDefaultActionBrowser.ItemIndex);
-
-    if lstHotkeys.Items[0].SubItems[0] <> '' then
-      AppGlobals.ShortcutPlay := TextToShortCut(lstHotkeys.Items[0].SubItems[0])
-    else
-      AppGlobals.ShortcutPlay := 0;
-
-    if lstHotkeys.Items[1].SubItems[0] <> '' then
-      AppGlobals.ShortcutPause := TextToShortCut(lstHotkeys.Items[1].SubItems[0])
-    else
-      AppGlobals.ShortcutPause := 0;
-
-    if lstHotkeys.Items[2].SubItems[0] <> '' then
-      AppGlobals.ShortcutStop := TextToShortCut(lstHotkeys.Items[2].SubItems[0])
-    else
-      AppGlobals.ShortcutStop := 0;
-
-    if lstHotkeys.Items[3].SubItems[0] <> '' then
-      AppGlobals.ShortcutNext := TextToShortCut(lstHotkeys.Items[3].SubItems[0])
-    else
-      AppGlobals.ShortcutNext := 0;
-
-    if lstHotkeys.Items[4].SubItems[0] <> '' then
-      AppGlobals.ShortcutPrev := TextToShortCut(lstHotkeys.Items[4].SubItems[0])
-    else
-      AppGlobals.ShortcutPrev := 0;
-
-    if lstHotkeys.Items[5].SubItems[0] <> '' then
-      AppGlobals.ShortcutVolUp := TextToShortCut(lstHotkeys.Items[5].SubItems[0])
-    else
-      AppGlobals.ShortcutVolUp := 0;
-
-    if lstHotkeys.Items[6].SubItems[0] <> '' then
-      AppGlobals.ShortcutVolDown := TextToShortCut(lstHotkeys.Items[6].SubItems[0])
-    else
-      AppGlobals.ShortcutVolDown := 0;
-
-    if lstHotkeys.Items[7].SubItems[0] <> '' then
-      AppGlobals.ShortcutMute := TextToShortCut(lstHotkeys.Items[7].SubItems[0])
-    else
-      AppGlobals.ShortcutMute := 0;
-
-
-    // -----------------------------------------------------------
-    AppGlobals.StreamSettings.OutputFormat := TAudioTypes(lstOutputFormat.ItemIndex);
-    for i := 0 to FTemporaryPostProcesses.Count - 1 do
-    begin
-      PostProcessor := AppGlobals.StreamSettings.PostProcessors.Find(FTemporaryPostProcesses[i]);
-
-      if (PostProcessor = nil) or (FTemporaryPostProcesses[i].IsNew) then
-      begin
-        // Ein neuer PostProcessor kann nur TExternalPostProcessor sein.
-        PostProcessor := FTemporaryPostProcesses[i].Copy;
-        AppGlobals.StreamSettings.PostProcessors.Add(PostProcessor);
-      end;
-
-      Item := nil;
-      for n := 0 to lstPostProcess.Items.Count - 1 do
-        if lstPostProcess.Items[n].Data = FTemporaryPostProcesses[i] then
-        begin
-          Item := lstPostProcess.Items[n];
-          Break;
-        end;
-
-      PostProcessor.OnlyIfCut := FTemporaryPostProcesses[i].OnlyIfCut;
-      PostProcessor.Order := Item.Index;
-      PostProcessor.Active := Item.Checked;
-
-      PostProcessor.Assign(FTemporaryPostProcesses[i]);
-    end;
-
-    // Vom Benutzer entfernte PostProcessors aus den echten PostProcessors entfernen..
-    for i := AppGlobals.StreamSettings.PostProcessors.Count - 1 downto 0 do
-    begin
-      if AppGlobals.StreamSettings.PostProcessors[i] is TExternalPostProcess then
-      begin
-        EP := nil;
-        for n := 0 to FTemporaryPostProcesses.Count - 1 do
-          if FTemporaryPostProcesses[n] is TExternalPostProcess then
-            if TExternalPostProcess(FTemporaryPostProcesses[n]).Identifier = TExternalPostProcess(AppGlobals.StreamSettings.PostProcessors[i]).Identifier then
-              begin
-                EP := TExternalPostProcess(AppGlobals.StreamSettings.PostProcessors[i]);
-                Break;
-              end;
-        if EP = nil then
-        begin
-          AppGlobals.StreamSettings.PostProcessors[i].Free;
-          AppGlobals.StreamSettings.PostProcessors.Delete(i);
-          Continue;
-        end;
-      end;
-      AppGlobals.StreamSettings.PostProcessors[i].IsNew := False;
-    end;
-    // -----------------------------------------------------------
-
-    AppGlobals.Unlock;
-  end;
+    raise Exception.Create('not Length(FStreamSettings) > 0');
 
   inherited;
 end;
@@ -993,7 +903,7 @@ procedure TfrmSettings.GetExportData(Stream: TExtendedStream);
 begin
   inherited;
 
-  FLists.Save(Stream, True);
+  AppGlobals.Data.Save(Stream, True);
 end;
 
 function TfrmSettings.GetNewID: Integer;
@@ -1204,7 +1114,7 @@ begin
     btnConfigure.Enabled := Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
   end;
 
-  FTemporaryPostProcesses.Find(TPostProcessBase(Item.Data)).Active := Item.Checked;
+  FTemporaryPostProcessors.Find(TPostProcessBase(Item.Data)).Active := Item.Checked;
 
   if TPostProcessBase(Item.Data).NeedsWave and Item.Checked then
     ShowEncoderNeededMessage;
@@ -1324,7 +1234,6 @@ begin
 
   if lstPostProcess.Selected <> nil then
   begin
-    AppGlobals.PostProcessManager.ReInitPostProcessors;
     lstPostProcessSelectItem(lstPostProcess, lstPostProcess.Selected, True);
   end;
 
@@ -1334,7 +1243,7 @@ begin
   for i := 0 to lstPostProcess.Items.Count - 1 do
   begin
     // Damit Sprache neu gesetzt wird und so..
-    TPostProcessBase(lstPostProcess.Items[i].Data).Initialize;
+    //TPostProcessBase(lstPostProcess.Items[i].Data).Initialize;
     lstPostProcess.Items[i].Caption := TPostProcessBase(lstPostProcess.Items[i].Data).Name;
   end;
 
@@ -1343,7 +1252,6 @@ begin
 
   BuildHotkeys;
 
-  AppGlobals.PostProcessManager.ReInitPostProcessors;
   lstDefaultAction.ItemIndex := FDefaultActionIdx;
   lstDefaultActionBrowser.ItemIndex := FDefaultActionBrowserIdx;
   lstDefaultFilter.ItemIndex := FDefaultFilterIdx;
@@ -1400,16 +1308,16 @@ begin
   lstPostProcess.Items.BeginUpdate;
   try
     lstPostProcess.Items.Clear;
-    for i := 0 to FTemporaryPostProcesses.Count - 1 do
+    for i := 0 to FTemporaryPostProcessors.Count - 1 do
     begin
       Item := lstPostProcess.Items.Add;
-      Item.GroupID := FTemporaryPostProcesses[i].GroupID;
-      Item.Caption := FTemporaryPostProcesses[i].Name;
-      Item.Checked := FTemporaryPostProcesses[i].Active;
+      Item.GroupID := FTemporaryPostProcessors[i].GroupID;
+      Item.Caption := FTemporaryPostProcessors[i].Name;
+      Item.Checked := FTemporaryPostProcessors[i].Active;
       // Data must be set at last that events (i.e. lstPostProcessItemChecked) do not fire
-      Item.Data := FTemporaryPostProcesses[i];
+      Item.Data := FTemporaryPostProcessors[i];
 
-      if FTemporaryPostProcesses[i] is TInternalPostProcess then
+      if FTemporaryPostProcessors[i] is TInternalPostProcess then
       begin
         Item.ImageIndex := 4;
       end else
@@ -2264,8 +2172,8 @@ procedure TfrmSettings.btnAddClick(Sender: TObject);
     MaxVal: Integer;
   begin
     MaxVal := -1;
-    for i := 0 to FTemporaryPostProcesses.Count - 1 do
-      if (FTemporaryPostProcesses[i].GroupID = GroupID) and (i > MaxVal) then
+    for i := 0 to FTemporaryPostProcessors.Count - 1 do
+      if (FTemporaryPostProcessors[i].GroupID = GroupID) and (i > MaxVal) then
         MaxVal := i;
     Result := MaxVal;
   end;
@@ -2296,7 +2204,7 @@ begin
           Item.Caption := ExtractFileName(dlgOpen.FileName);
           PostProcessor := TExternalPostProcess.Create(dlgOpen.FileName, '"%f"', True, False, GetNewID, 100000, AddPostProcessorForm.Result);
           PostProcessor.IsNew := True;
-          FTemporaryPostProcesses.Insert(HighestGroupIndex(AddPostProcessorForm.Result) + 1, PostProcessor);
+          FTemporaryPostProcessors.Insert(HighestGroupIndex(AddPostProcessorForm.Result) + 1, PostProcessor);
           Item.GroupID := PostProcessor.GroupID;
           Item.Checked := PostProcessor.Active;
           Item.Data := PostProcessor;
@@ -2407,26 +2315,15 @@ begin
 
   RemoveGray(btnConfigureEncoder);
 
-  if Length(FStreamSettings) = 0 then
-    EncoderSettings := AppGlobals.StreamSettings.EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)).Copy
-  else
-    EncoderSettings := FStreamSettings[0].EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)).Copy;
+  EncoderSettings := FStreamSettings[0].EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)).Copy;
 
   F := TfrmConfigureEncoder.Create(Self, EncoderSettings);
   try
     F.ShowModal;
 
     if F.Save then
-    begin
-      if Length(FStreamSettings) = 0 then
-      begin
-        AppGlobals.StreamSettings.EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)).Assign(F.EncoderSettings);
-      end else
-        for i := 0 to High(FStreamSettings) do
-        begin
-          FStreamSettings[i].EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)).Assign(F.EncoderSettings);
-        end;
-    end;
+      for i := 0 to High(FStreamSettings) do
+        FStreamSettings[i].EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)).Assign(F.EncoderSettings);
   finally
     EncoderSettings.Free;
     F.Free;
@@ -2453,15 +2350,15 @@ begin
 
   Selected := TPostProcessBase(lstPostProcess.Selected.Data);
 
-  for i := 0 to FTemporaryPostProcesses.Count - 1 do
-    if FTemporaryPostProcesses[i] = TPostProcessBase(lstPostProcess.Selected.Data) then
+  for i := 0 to FTemporaryPostProcessors.Count - 1 do
+    if FTemporaryPostProcessors[i] = TPostProcessBase(lstPostProcess.Selected.Data) then
     begin
       if Sender = btnMoveUp then
       begin
-        FTemporaryPostProcesses.Exchange(i, i - 1);
+        FTemporaryPostProcessors.Exchange(i, i - 1);
       end else
       begin
-        FTemporaryPostProcesses.Exchange(i, i + 1);
+        FTemporaryPostProcessors.Exchange(i, i + 1);
       end;
       Break;
     end;
@@ -2487,7 +2384,7 @@ begin
   begin
     RemoveGray(lstPostProcess);
 
-    FTemporaryPostProcesses.Remove(TExternalPostProcess(lstPostProcess.Selected.Data));
+    FTemporaryPostProcessors.Remove(TExternalPostProcess(lstPostProcess.Selected.Data));
     TExternalPostProcess(lstPostProcess.Selected.Data).Free;
     //lstPostProcess.Selected.Delete;
 
@@ -2519,7 +2416,7 @@ begin
     while FIgnoreFieldList.Count > 0 do
       RemoveGray(TControl(FIgnoreFieldList[0]), False);
   end;
-  FillFields(AppGlobals.StreamSettings);
+  FillFields(AppGlobals.Data.StreamSettings);
 
   btnConfigureEncoder.Enabled := TAudioTypes(lstOutputFormat.ItemIndex) <> atNone;
 
@@ -2527,7 +2424,7 @@ begin
   begin
     for i := 0 to High(FStreamSettings) do
     begin
-      FStreamSettings[i].EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)).Assign(AppGlobals.StreamSettings.EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)));
+      FStreamSettings[i].EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)).Assign(AppGlobals.Data.StreamSettings.EncoderSettings.Find(TAudioTypes(lstOutputFormat.ItemIndex)));
     end;
   end;
 
@@ -2728,9 +2625,11 @@ begin
         SetPage(FPageList.Find(TPanel(txtShortLengthSeconds.Parent)));
         txtShortLengthSeconds.ApplyFocus;
         Exit;
-      end else
-        txtShortLengthSeconds.Text := IntToStr(AppGlobals.StreamSettings.ShortLengthSeconds);
+      end;// else
+        //txtShortLengthSeconds.Text := IntToStr(AppGlobals.StreamSettings.ShortLengthSeconds);
     end;
+
+    // TODO: habe hier überall die else blöcke rausgemacht. warum sind die da?? damit überschreibt man ja ne benutzereinstellung?
 
     if (StrToIntDef(txtSilenceLevel.Text, -1) > 100) or (StrToIntDef(txtSilenceLevel.Text, -1) < 1) then
     begin
@@ -2740,8 +2639,8 @@ begin
         SetPage(FPageList.Find(TPanel(txtSilenceLevel.Parent)));
         txtSilenceLevel.ApplyFocus;
         Exit;
-      end else
-        txtSilenceLevel.Text := IntToStr(AppGlobals.StreamSettings.SilenceLevel);
+      end;// else
+        //txtSilenceLevel.Text := IntToStr(AppGlobals.StreamSettings.SilenceLevel);
     end;
 
     if StrToIntDef(txtSilenceLength.Text, -1) < 20 then
@@ -2752,8 +2651,8 @@ begin
         SetPage(FPageList.Find(TPanel(txtSilenceLength.Parent)));
         txtSilenceLength.ApplyFocus;
         Exit;
-      end else
-        txtSilenceLength.Text := IntToStr(AppGlobals.StreamSettings.SilenceLength);
+      end;// else
+        //txtSilenceLength.Text := IntToStr(AppGlobals.StreamSettings.SilenceLength);
     end;
 
     if (StrToIntDef(txtSilenceBufferSeconds.Text, -1) < 1) or (StrToIntDef(txtSilenceBufferSeconds.Text, -1) > 15) then
@@ -2764,8 +2663,8 @@ begin
         SetPage(FPageList.Find(TPanel(txtSilenceBufferSeconds.Parent)));
         txtSilenceBufferSeconds.ApplyFocus;
         Exit;
-      end else
-        txtSilenceBufferSeconds.Text := IntToStr(AppGlobals.StreamSettings.SilenceBufferSecondsStart);
+      end;// else
+        //txtSilenceBufferSeconds.Text := IntToStr(AppGlobals.StreamSettings.SilenceBufferSecondsStart);
     end;
 
     if Trim(txtSongBuffer.Text) = '' then
@@ -2785,8 +2684,8 @@ begin
           SetPage(FPageList.Find(TPanel(txtAdjustTrackOffset.Parent)));
           txtAdjustTrackOffset.ApplyFocus;
           Exit;
-        end else
-          txtAdjustTrackOffset.Text := IntToStr(AppGlobals.StreamSettings.AdjustTrackOffsetMS);
+        end;// else
+          //txtAdjustTrackOffset.Text := IntToStr(AppGlobals.StreamSettings.AdjustTrackOffsetMS);
       end;
   end;
 
@@ -3028,7 +2927,7 @@ begin
     FOptionChanging := True;
 
     chkDeleteStreams.Enabled := chkSeparateTracks.Checked;
-    chkDeleteStreams.Checked := chkSaveStreamsToDisk.Checked and AppGlobals.StreamSettings.DeleteStreams;
+    chkDeleteStreams.Checked := chkSaveStreamsToDisk.Checked; // TODO: warum war das hier?? : and AppGlobals.StreamSettings.DeleteStreams;
 
     chkOnlySaveFull.Enabled := chkSeparateTracks.Checked;
     chkOnlySaveFull.Checked := (not chkSeparateTracks.Checked) and chkSeparateTracks.Checked;
@@ -3059,7 +2958,7 @@ begin
     // Weil das hier drüber die Seite abschaltet, schalten wir sie wieder an..
     EnablePanel(pnlCut, (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto));
     chkDeleteStreams.Enabled := (not chkSeparateTracks.Checked) or (chkSaveStreamsToDisk.Checked);
-    chkDeleteStreams.Checked := chkDeleteStreams.Enabled and AppGlobals.StreamSettings.DeleteStreams;
+    chkDeleteStreams.Checked := chkDeleteStreams.Enabled; // TODO: warum war das hier??: and AppGlobals.StreamSettings.DeleteStreams;
 
     if Length(FStreamSettings) > 0 then
       TfrmMsgDlg.ShowMsg(Self, _('When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.'),
@@ -3120,21 +3019,27 @@ begin
   optMinimize.Enabled := chkTray.Checked;
 end;
 
-constructor TfrmSettings.Create(AOwner: TComponent;
-  SettingsType: TSettingsTypes; Lists: TDataLists;
-  StreamSettings: TStreamSettingsArray; BrowseDir: Boolean);
+constructor TfrmSettings.Create(AOwner: TComponent; SettingsType: TSettingsTypes; StreamSettings: TStreamSettingsArray; BrowseDir: Boolean);
+var
+  i: Integer;
 begin
   FSettingsType := SettingsType;
 
   FIgnoreFieldList := TList.Create;
 
+  SetLength(FStreamSettings, Length(StreamSettings));
+  for i := 0 to Length(StreamSettings) - 1 do
+  begin
+    FStreamSettings[i] := StreamSettings[i].Copy;
+  end;
+
   case SettingsType of
     stApp:
-      CreateApp(AOwner, Lists, BrowseDir);
+      CreateApp(AOwner, BrowseDir);
     stAuto:
-      CreateAuto(AOwner, Lists, BrowseDir);
+      CreateAuto(AOwner, BrowseDir);
     stStream:
-      CreateStreams(AOwner, StreamSettings);
+      CreateStreams(AOwner);
   end;
 
   lblPanelCut.Caption := _('Settings for cutting are only available'#13#10'if ''Save separated tracks'' is enabled.');
@@ -3142,14 +3047,11 @@ begin
   FInitialized := True;
 end;
 
-procedure TfrmSettings.CreateApp(AOwner: TComponent; Lists: TDataLists;
-  BrowseDir: Boolean);
+procedure TfrmSettings.CreateApp(AOwner: TComponent; BrowseDir: Boolean);
 var
   i, Tmp: Integer;
   Item: TListItem;
-  Settings: TStreamSettings;
 begin
-  FLists := Lists;
   FBrowseDir := BrowseDir;
 
   // Wir geben AOwner mit, so dass das MsgDlg zentriert angezeigt wird.
@@ -3160,85 +3062,75 @@ begin
                                         'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), mtInformation, [mbOK], mbOK, 4);
   end;
 
-  Settings := AppGlobals.StreamSettings.Copy;
-  try
-    inherited Create(AOwner, True);
+  inherited Create(AOwner, True);
 
-    FillFields(Settings);
+  FillFields(FStreamSettings[0]);
 
-    // Dateinamen ordentlich machen
-    Tmp := txtStreamFilePattern.Top;
-    txtAutomaticFilePattern.Visible := False;
-    btnResetAutomaticFilePattern.Visible := False;
-    txtStreamFilePattern.Top := txtAutomaticFilePattern.Top;
-    btnResetStreamFilePattern.Top := btnResetAutomaticFilePattern.Top;
-    txtPreview.Top := Tmp;
-    lblFilePattern.Top := txtPreview.Top + txtPreview.Height + MulDiv(8, Screen.PixelsPerInch, 96);
+  // Dateinamen ordentlich machen
+  Tmp := txtStreamFilePattern.Top;
+  txtAutomaticFilePattern.Visible := False;
+  btnResetAutomaticFilePattern.Visible := False;
+  txtStreamFilePattern.Top := txtAutomaticFilePattern.Top;
+  btnResetStreamFilePattern.Top := btnResetAutomaticFilePattern.Top;
+  txtPreview.Top := Tmp;
+  lblFilePattern.Top := txtPreview.Top + txtPreview.Height + MulDiv(8, Screen.PixelsPerInch, 96);
 
-    // Offseteinstellungen verstecken
-    chkAdjustTrackOffset.Visible := False;
-    txtAdjustTrackOffset.Visible := False;
-    optAdjustBackward.Visible := False;
-    optAdjustForward.Visible := False;
+  // Offseteinstellungen verstecken
+  chkAdjustTrackOffset.Visible := False;
+  txtAdjustTrackOffset.Visible := False;
+  optAdjustBackward.Visible := False;
+  optAdjustForward.Visible := False;
 
-    for i := 0 to AppGlobals.AddonManager.Addons.Count - 1 do
-    begin
-      Item := lstAddons.Items.Add;
-      Item.Caption := AppGlobals.AddonManager.Addons[i].Name;
-      Item.Checked := AppGlobals.AddonManager.Addons[i].FilesExtracted;
-      Item.Data := AppGlobals.AddonManager.Addons[i].Copy;
+  for i := 0 to AppGlobals.AddonManager.Addons.Count - 1 do
+  begin
+    Item := lstAddons.Items.Add;
+    Item.Caption := AppGlobals.AddonManager.Addons[i].Name;
+    Item.Checked := AppGlobals.AddonManager.Addons[i].FilesExtracted;
+    Item.Data := AppGlobals.AddonManager.Addons[i].Copy;
 
-      Item.ImageIndex := 6;
-    end;
-    if lstAddons.Items.Count > 0 then
-      lstAddons.Items[0].Selected := True;
-
-    BuildHotkeys;
-
-    if (Bass.DeviceAvailable) and (Bass.Devices.Count > 0) then
-    begin
-      for i := 0 to Bass.Devices.Count - 1 do
-        lstSoundDevice.Items.AddObject(Bass.Devices[i].Name, Bass.Devices[i]);
-      if lstSoundDevice.Items.Count > 0 then
-        lstSoundDevice.ItemIndex := 0;
-      try
-        for i := 0 to lstSoundDevice.Items.Count - 1 do
-          if TBassDevice(lstSoundDevice.Items.Objects[i]).ID = AppGlobals.SoundDevice then
-          begin
-            lstSoundDevice.ItemIndex := i;
-            Break;
-          end;
-      except end;
-    end else
-    begin
-      lstSoundDevice.Style := csDropDown;
-      lstSoundDevice.ItemIndex := -1;
-      lstSoundDevice.Enabled := False;
-      lstSoundDevice.Text := _('(no devices available)');
-    end;
-
-    CreateGeneral;
-  finally
-    Settings.Free;
+    Item.ImageIndex := 6;
   end;
+  if lstAddons.Items.Count > 0 then
+    lstAddons.Items[0].Selected := True;
+
+  BuildHotkeys;
+
+  if (Bass.DeviceAvailable) and (Bass.Devices.Count > 0) then
+  begin
+    for i := 0 to Bass.Devices.Count - 1 do
+      lstSoundDevice.Items.AddObject(Bass.Devices[i].Name, Bass.Devices[i]);
+    if lstSoundDevice.Items.Count > 0 then
+      lstSoundDevice.ItemIndex := 0;
+    try
+      for i := 0 to lstSoundDevice.Items.Count - 1 do
+        if TBassDevice(lstSoundDevice.Items.Objects[i]).ID = AppGlobals.SoundDevice then
+        begin
+          lstSoundDevice.ItemIndex := i;
+          Break;
+        end;
+    except end;
+  end else
+  begin
+    lstSoundDevice.Style := csDropDown;
+    lstSoundDevice.ItemIndex := -1;
+    lstSoundDevice.Enabled := False;
+    lstSoundDevice.Text := _('(no devices available)');
+  end;
+
+  CreateGeneral;
 end;
 
-procedure TfrmSettings.CreateAuto(AOwner: TComponent; Lists: TDataLists;
-  BrowseDir: Boolean);
+procedure TfrmSettings.CreateAuto(AOwner: TComponent; BrowseDir: Boolean);
 var
   i, Substract: Integer;
 begin
-  FLists := Lists;
   FBrowseDir := BrowseDir;
-
-  SetLength(FStreamSettings, 1);
-  FStreamSettings[0] := FLists.AutoRecordSettings.Copy;
 
   inherited Create(AOwner, False);
 
-  FillFields(Lists.AutoRecordSettings);
+  FillFields(FStreamSettings[0]);
 
-  lstBlacklist := TBlacklistTree.Create(Self, FLists.StreamBlacklist);
+  lstBlacklist := TBlacklistTree.Create(Self, AppGlobals.Data.StreamBlacklist);
   lstBlacklist.OnChange := BlacklistTreeChange;
   lstBlacklist.OnKeyDown := BlacklistTreeKeyDown;
   lstBlacklist.Images := PngImageList1;
@@ -3283,6 +3175,9 @@ begin
     pnlCut.Controls[i].Top := pnlCut.Controls[i].Top - Substract;
   end;
 
+  chkAutoTuneInAddToIgnore.Checked := FStreamSettings[0].AddSavedToIgnore;
+  chkAutoRemoveSavedFromWishlist.Checked := FStreamSettings[0].RemoveSavedFromWishlist;
+
   Caption := _('Settings for automatic recordings');
   lblTop.Caption := _('Settings for automatic recordings');
 
@@ -3291,19 +3186,12 @@ begin
   CreateGeneral;
 end;
 
-procedure TfrmSettings.CreateStreams(AOwner: TComponent;
-  StreamSettings: TStreamSettingsArray);
+procedure TfrmSettings.CreateStreams(AOwner: TComponent);
 var
   i, Substract: Integer;
   Tmp: Integer;
   Item: TListItem;
 begin
-  SetLength(FStreamSettings, Length(StreamSettings));
-  for i := 0 to Length(StreamSettings) - 1 do
-  begin
-    FStreamSettings[i] := StreamSettings[i].Copy;
-  end;
-
   inherited Create(AOwner, False);
 
   SetFields;

@@ -650,11 +650,11 @@ begin
         FOnPositionChanged(Self);
 
     FSetting := True;
+
+    if (FLastGripperState <> GetGripperState) or (FLastGripperPos <> FPosition) then
+      Paint;
   end;
 
-  // TODO: kann das hier nicht mit ins if hier drüber??
-  if (FLastGripperState <> GetGripperState) or (FLastGripperPos <> FPosition) then
-    Paint;
 end;
 
 procedure TSeekBar.MouseUp(Button: TMouseButton; Shift: TShiftState; X,

@@ -24,7 +24,8 @@ interface
 
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects, AudioFunctions,
-  Functions, Logging, Math, AddonBase, StrUtils, ExtendedStream;
+  Functions, Logging, Math, AddonBase, StrUtils, ExtendedStream,
+  DataManager;
 
 type
   TPostProcessConvertThread = class(TPostProcessThreadBase)
@@ -59,6 +60,8 @@ type
   TPostProcessConvert = class(TInternalPostProcess)
   private
   protected
+    function FGetName: string; override;
+    function FGetHelp: string; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -182,7 +185,6 @@ begin
 
   FOrder := -100; // Das muss, weil die Liste manchmal nach Order sortiert wird und er immer Position 0 haben muss.
   FHidden := True;
-  FName := _('Convert file');
 
   FPostProcessType := ptConvert;
 end;
@@ -191,6 +193,16 @@ destructor TPostProcessConvert.Destroy;
 begin
 
   inherited;
+end;
+
+function TPostProcessConvert.FGetHelp: string;
+begin
+  Result := '';
+end;
+
+function TPostProcessConvert.FGetName: string;
+begin
+  Result := _('Convert file');
 end;
 
 procedure TPostProcessConvert.Load(Stream: TExtendedStream;

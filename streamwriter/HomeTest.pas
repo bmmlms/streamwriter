@@ -98,7 +98,7 @@ var
 begin
   for i := 0 to 0 do
   begin
-    HC := THomeCommunication.Create(nil);
+    HC := THomeCommunication.Create;
     HC.OnStateChanged := HomeCommunicationStateChanged;
     HC.OnLogInReceived := HomeCommunicationLogInReceived;
     HC.OnBytesTransferred := HomeCommunicationBytesTransferred;

@@ -98,7 +98,7 @@ begin
   txtSilenceLength.Left := Label12.Left + Label12.Width + 4;
   Label13.Left := txtSilenceLength.Left + txtSilenceLength.Width + 4;
 
-  txtSilenceLength.Text := IntToStr(AppGlobals.StreamSettings.SilenceLength);
+  txtSilenceLength.Text := IntToStr(AppGlobals.Data.StreamSettings.SilenceLength);
 
   if FAutoDetect then
   begin
@@ -109,7 +109,7 @@ begin
     txtSilenceLevel.Text := '';
   end else
   begin
-    txtSilenceLevel.Text := IntToStr(AppGlobals.StreamSettings.SilenceLevel);
+    txtSilenceLevel.Text := IntToStr(AppGlobals.Data.StreamSettings.SilenceLevel);
   end;
 end;
 

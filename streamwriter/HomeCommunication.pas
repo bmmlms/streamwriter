@@ -33,8 +33,6 @@ type
 
   THomeThread = class(TCommandThreadBase)
   private
-    FLists: TDataLists;
-
     FAuthenticated: Boolean;
     FIsAdmin: Boolean;
 
@@ -90,7 +88,7 @@ type
     procedure DoEnded; override;
     procedure DoStuff; override;
   public
-    constructor Create(Lists: TDataLists);
+    constructor Create;
     destructor Destroy; override;
 
     property OnHandshakeReceived: TSocketEvent read FOnHandshakeReceived write FOnHandshakeReceived;
@@ -122,8 +120,6 @@ type
     FDisabled: Boolean;
     FServerTimeDiff: Int64;
     FThread: THomeThread;
-
-    FLists: TDataLists;
 
     FAuthenticated, FIsAdmin, FWasConnected, FConnected, FNotifyTitleChanges: Boolean;
     FTitleNotificationsSet: Boolean;
@@ -166,7 +162,7 @@ type
 
     procedure HomeThreadTerminate(Sender: TObject);
   public
-    constructor Create(Lists: TDataLists);
+    constructor Create;
     destructor Destroy; override;
 
     procedure Connect;
@@ -225,9 +221,8 @@ implementation
 
 { THomeThread }
 
-constructor THomeThread.Create(Lists: TDataLists);
+constructor THomeThread.Create;
 begin
-  FLists := Lists;
   FLastPingSent := GetTickCount;
 
   inherited Create('streamwriter.org', 7085, TSocketStream.Create);
@@ -436,7 +431,7 @@ begin
     for i := 0 to Count - 1 do
     begin
       StreamEntry := TStreamBrowserEntry.LoadFromHome(Stream, CommandHeader.Version);
-      for StreamEntry2 in FLists.BrowserList do
+      for StreamEntry2 in AppGlobals.Data.BrowserList do
         if StreamEntry.ID = StreamEntry2.ID then
         begin
           StreamEntry.OwnRating := StreamEntry2.OwnRating;
@@ -447,18 +442,18 @@ begin
 
     // Wenn alles erfolgreich geladen wurde alte Listen leeren.
     // Falls hier jetzt eine Exception kommt wird es bitter...
-    for Genre in FLists.GenreList do
+    for Genre in AppGlobals.Data.GenreList do
       Genre.Free;
-    FLists.GenreList.Clear;
-    for StreamEntry in FLists.BrowserList do
+    AppGlobals.Data.GenreList.Clear;
+    for StreamEntry in AppGlobals.Data.BrowserList do
       StreamEntry.Free;
-    FLists.BrowserList.Clear;
+    AppGlobals.Data.BrowserList.Clear;
 
     // Der Liste alle Sachen wieder hinzufügen
     for Genre in Genres do
-      FLists.GenreList.Add(Genre);
+      AppGlobals.Data.GenreList.Add(Genre);
     for StreamEntry in Streams do
-      FLists.BrowserList.Add(StreamEntry);
+      AppGlobals.Data.BrowserList.Add(StreamEntry);
   except
     for i := 0 to Genres.Count - 1 do
       Genres[i].Free;
@@ -511,11 +506,10 @@ begin
     FOnBytesTransferred(Sender, Direction, CommandID, CommandHeader, Transferred);
 end;
 
-constructor THomeCommunication.Create(Lists: TDataLists);
+constructor THomeCommunication.Create;
 begin
   inherited Create;
 
-  FLists := Lists;
   FTitleNotificationsSet := False;
 end;
 
@@ -608,16 +602,16 @@ begin
   if not FConnected then
     Exit;
 
-  SetLength(Hashes, FLists.SaveList.Count);
+  SetLength(Hashes, AppGlobals.Data.SaveList.Count);
   ItemsFound := 0;
-  for i := 0 to FLists.SaveList.Count - 1 do
-    if FLists.SaveList[i].ServerHash > 0 then
+  for i := 0 to AppGlobals.Data.SaveList.Count - 1 do
+    if AppGlobals.Data.SaveList[i].ServerHash > 0 then
     begin
-      Hashes[ItemsFound] := TSyncWishlistRecord.Create(FLists.SaveList[i].ServerHash, False);
+      Hashes[ItemsFound] := TSyncWishlistRecord.Create(AppGlobals.Data.SaveList[i].ServerHash, False);
       Inc(ItemsFound);
-    end else if FLists.SaveList[i].ServerArtistHash > 0 then
+    end else if AppGlobals.Data.SaveList[i].ServerArtistHash > 0 then
     begin
-      Hashes[ItemsFound] := TSyncWishlistRecord.Create(FLists.SaveList[i].ServerArtistHash, True);
+      Hashes[ItemsFound] := TSyncWishlistRecord.Create(AppGlobals.Data.SaveList[i].ServerArtistHash, True);
       Inc(ItemsFound);
     end;
   SetLength(Hashes, ItemsFound);
@@ -922,7 +916,7 @@ begin
   if FDisabled then
     Exit;
 
-  FThread := THomeThread.Create(FLists);
+  FThread := THomeThread.Create;
   FThread.OnConnected := HomeThreadConnected;
   FThread.OnEnded := HomeThreadEnded;
   FThread.OnBeforeEnded := HomeThreadBeforeEnded;
