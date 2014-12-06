@@ -5,7 +5,7 @@ object frmWizard: TfrmWizard
   BorderStyle = bsSingle
   Caption = 'Setup wizard'
   ClientHeight = 349
-  ClientWidth = 430
+  ClientWidth = 405
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText

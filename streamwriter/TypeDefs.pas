@@ -33,8 +33,13 @@ type
 
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
 
-  TDebugTypes = (dtSocket, dtMessage, dtSong, dtError, dtSaved, dtPostProcess, dtSchedule);
+  // TODO: TDebugTypes nach TLogTypes umbenennen
+  // TODO: das "s" am ende der typnamen wegmachen. sind doch keine sets...
+  TDebugTypes = (dtSocket, dtMessage, dtSong, dtError, dtSaved, dtPostProcess, dtSchedule); // TODO: wo wird das benutzt? ist das nur für das icon?
   TDebugLevels = (dlNormal, dlDebug);
+
+  TLogSource = (lsGeneral, lsAutomatic, lsStream);
+  TLogLevel = (llDebug, llError, llInfo); // TODO: wird noch nicht überall ordentlich benutzt..
 
   // Defines all possible types of lists
   TListType = (ltSave, ltIgnore, ltAutoDetermine);

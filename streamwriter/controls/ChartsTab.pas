@@ -633,7 +633,7 @@ var
 begin
   inherited Create(AOwner);
 
-  MsgBus.AddSubscriber(MessageReceived);
+  MsgBus.AddSubscriber(MessageReceived);   // TODO: RemoveSubscriber? fehlt das noch an anderen stellen?? klar, ist nicht wichtig, aber SAUBER!
 
   FState := csNormal;
 
@@ -1179,7 +1179,6 @@ var
   SongSavedMsg: TSongSavedMsg absolute Msg;
 begin
   BeginUpdate;
-
   try
     if Msg is TListsChangedMsg then
     begin

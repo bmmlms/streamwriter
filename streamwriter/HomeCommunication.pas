@@ -956,6 +956,8 @@ initialization
 
   HomeComm := nil;
 
+// TODO: ich sollte die image-listen combinen. mindestens das log-icon ist in der hauptliste und in imgLog drin. ALLE zusammenführen, eigentlich...
+
 finalization
   TCommand.UnregisterCommands;
   HomeComm.Free;

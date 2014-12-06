@@ -36,7 +36,8 @@ uses
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
   PowerManagement, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
-  AppMessages, CommandLine, Protocol, Commands, HomeCommands, SharedData;
+  AppMessages, CommandLine, Protocol, Commands, HomeCommands, SharedData,
+  LogTab;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -255,6 +256,7 @@ type
     tabCharts: TChartsTab;
     tabLists: TListsTab;
     tabSaved: TSavedTab;
+    tabLog: TLogTab;
     addStatus: TSWStatusBar;
 
     FEqualizer: TfrmEqualizer;
@@ -574,7 +576,7 @@ procedure TfrmStreamWriterMain.actAboutExecute(Sender: TObject);
 var
   F: TfrmAbout;
 begin
-  F := TfrmAbout.Create(Self, _('About'));
+  F := TfrmAbout.Create(Self, _('About'), False);
   try
     F.ShowModal;
   finally
@@ -846,6 +848,10 @@ begin
   tabSaved.OnRemoveTitleFromWishlist := tabSavedRemoveTitleFromWishlist;
   tabSaved.OnAddTitleToIgnorelist := tabSavedAddTitleToIgnorelist;
   tabSaved.OnRemoveTitleFromIgnorelist  := tabSavedRemoveTitleFromIgnorelist;
+
+  tabLog := TLogTab.Create(pagMain);
+  tabLog.PageControl := pagMain;
+  tabLog.AfterCreate;
 
   FWasShown := False;
   FUpdateOnExit := False;
@@ -1422,6 +1428,7 @@ begin
   tabLists.PostTranslate;
   tabCharts.PostTranslate;
   tabSaved.PostTranslate;
+  tabLog.PostTranslate;
 
   addStatus.Invalidate;
 end;
@@ -1617,6 +1624,7 @@ begin
     addTrayIcon.Hint := NewHint;
 end;
 
+// TODO: das hier ist (mindestens) auch im save-timer so. zusammenfassen und in eine funktion auslagern!!!
 procedure TfrmStreamWriterMain.SettingsSaveForExport(Sender: TObject);
 begin
   // Ist hier, damit der Profilexport korrekt funktioniert
@@ -2259,6 +2267,8 @@ begin
     tabClients.UpdateStreams;
     AppGlobals.Data.SaveRecover;
 
+    // TODO: Warum ist das hier? reicht es nicht, SaveReocer() hier drüber zu machen???
+    //       es macht bestimmt sinn, nur welchen? rausfinden!!!
     try
       AppGlobals.Save(0);
     except

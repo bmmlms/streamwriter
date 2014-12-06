@@ -72,6 +72,8 @@ type
 var
   Players: TPlayerManager;
 
+procedure InitPlayerManager;
+
 implementation
 
 uses
@@ -389,9 +391,14 @@ begin
   FLastPlayer := nil;
 end;
 
-initialization
+procedure InitPlayerManager;
+begin
   Players := TPlayerManager.Create;
+end;
+
+initialization
+
 finalization
-  Players.Free;
+  FreeAndNil(Players);
 
 end.

@@ -137,7 +137,8 @@ uses
   HomeCommands in 'HomeCommands.pas',
   SharedData in 'SharedData.pas' {modSharedData: TDataModule},
   MonitorAnalyzer in 'streaming\MonitorAnalyzer.pas',
-  DynBASS in '..\..\common\bass\DynBASS.pas';
+  DynBASS in '..\..\common\bass\DynBASS.pas',
+  LogTab in 'controls\LogTab.pas';
 
 {$SetPEOptFlags $0140}
 
@@ -155,10 +156,13 @@ var
   HideMain, Found: Boolean;
   frmStreamWriterMain: TfrmStreamWriterMain;
   frmHomeTest: TfrmHomeTest;
-begin
+ begin
   {$IFDEF madExcept}
   MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
   {$ENDIF}
+
+  if not InitWinsock then
+    Exit;
 
   HideMain := False;
   for i := 0 to ParamCount do
@@ -170,17 +174,27 @@ begin
     end;
   end;
 
+  // Initialize the AppGlobals object without loading any settings.
+  // If we need to show the profile selection window, this would make no sense.
+  CreateAppData;
+
+  Application.Title := AppGlobals.AppName;
+  Application.Icon.Handle := LoadIcon(HInstance, 'A');
+
+  if not InitAppStageOne then
+    Exit;
+
+  // Now load everything from registry/ini/datafiles
+  if not InitAppData then
+    Exit;
+  InitPlayerManager;
+
   if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and
      (not IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion)) and (not HideMain)
      and (not AppGlobals.InstallUpdateOnStart)
   then
     TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.BuildNumber,
       AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
-
-    // TODO: das normale "gespeicherte titel zu ignorierliste hinzufügen" funzt scheinbar nicht!
-
-  Application.Title := AppGlobals.AppName;
-  Application.Icon.Handle := LoadIcon(HInstance, 'A');
 
   // Initialize BASS, quit application on error
   Bass := TBassLoader.Create;
@@ -210,7 +224,7 @@ begin
 
   Application.CreateForm(TmodSharedData, modSharedData);
   // Create the main form if everything is setup
-  if InitApp(TfrmWizard) and AppGlobals.WasSetup then
+  if InitAppStageTwo(TfrmWizard) and AppGlobals.WasSetup then
   begin
     if AppGlobals.Tray and HideMain then
     begin

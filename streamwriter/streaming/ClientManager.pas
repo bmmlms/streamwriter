@@ -25,7 +25,8 @@ interface
 uses
   SysUtils, Windows, Classes, Generics.Collections, ICEClient, Logging,
   Functions, AppData, DataManager, HomeCommunication, PlayerManager,
-  AudioFunctions, SWFunctions, TypeDefs, MessageBus, AppMessages;
+  AudioFunctions, SWFunctions, TypeDefs, MessageBus, AppMessages,
+  LanguageObjects;
 
 type
   TClientManager = class;
@@ -391,10 +392,13 @@ var
   Res: TMayConnectResults;
   SaveListTitle: TTitleInfo;
   SaveListArtist: TTitleInfo;
+  Text: string;
 begin
   SaveListTitle := nil;
   SaveListArtist := nil;
   AutoTuneInMinKbps := GetAutoTuneInMinKbps(TAudioTypes(AudioType), AppGlobals.AutoTuneInMinQuality);
+
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Format('Title "%s" detected on "%s"', [Title, Name])));
 
   if (AppGlobals.DirAuto = '') or (not DirectoryExists(IncludeTrailingBackslash(AppGlobals.DirAuto))) then
   begin
@@ -403,27 +407,35 @@ begin
       OnShowErrorMessage(nil, crDirDoesNotExist, True, False);
       FDirDoesNotExistErrorShown := True;
     end;
-    TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet weil Ordner für automatische Aufnahmen nicht existiert', [Title]));
+    Text := Format('Automatic recording of "%s" won''t be started because the folder for automatic recordings does not exist', [Title]);
+    TLogger.Write('ClientManager', Text);
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Text));
     Exit;
   end else
     FDirDoesNotExistErrorShown := False;
 
   if Kbps < AutoTuneInMinKbps then
   begin
-    TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet weil Bitrate zu niedrig ist (%d Kbps)', [Title, Kbps]));
+    Text := Format('Automatic recording of "%s" won''t be started because the bitrate is too low (%d Kbps)', [Title, Kbps]);
+    TLogger.Write('ClientManager', Text);
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Text));
     Exit;
   end;
 
   if (AppGlobals.AutoTuneInFormat > 0) and (TAudioTypes(AppGlobals.AutoTuneInFormat) <> AudioType) then
   begin
-    TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet weil Audio-Format nicht erlaubt ist', [Title]));
+    Text := Format('Automatic recording of "%s" won''t be started because the audio format is not allowed', [Title]);
+    TLogger.Write('ClientManager', Text);
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Text));
     Exit;
   end;
 
   for i := 0 to AppGlobals.Data.StreamBlacklist.Count - 1 do
     if AppGlobals.Data.StreamBlacklist[i] = Name then
     begin
-      TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet weil Stream auf Ignorierliste ist', [Title]));
+      Text := Format('Automatic recording of "%s" won''t be started because the stream is on the ignorelist', [Title]);
+      TLogger.Write('ClientManager', Text);
+      MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Text));
       Exit;
     end;
 
@@ -437,7 +449,9 @@ begin
 
   if (not Assigned(SaveListTitle)) and (not Assigned(SaveListArtist)) then
   begin
-    TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet weil SaveListTitle und SaveListArtist == nil', [Title]));
+    Text := Format('Automatic recording of "%s" won''t be started because SaveListTitle and SaveListArtist == nil', [Title]); // TODO: das fachchinesisch hier raus wegmachen!!!
+    TLogger.Write('ClientManager', Text);
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Text));
     Exit;
   end;
 
@@ -446,7 +460,9 @@ begin
     begin
       if Like(Title, AppGlobals.Data.IgnoreList[n].Pattern) then
       begin
-        TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet wegen Übereinstimmung mit "%s" auf Ignorierliste', [Title, AppGlobals.Data.IgnoreList[n].Pattern]));
+        Text := Format('Automatic recording of "%s" won''t be started because it matches "%s" on the ignorelist', [Title, AppGlobals.Data.IgnoreList[n].Pattern]);
+        TLogger.Write('ClientManager', Text);
+        MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Text));
         Exit;
       end;
     end;
@@ -459,7 +475,9 @@ begin
       OnShowErrorMessage(nil, Res, True, False);
       FNoFreeSpaceErrorShown := True;
     end;
-    TLogger.Write('ClientManager', Format('Automatische Aufnahme von "%s" wird nicht gestartet weil kein Speicher mehr frei ist', [Title]));
+    Text := Format('Automatic recording of "%s" won''t be started because no space is available', [Title]);
+    TLogger.Write('ClientManager', Text);
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Text));
     Exit;
   end;
   FNoFreeSpaceErrorShown := False;
@@ -468,6 +486,8 @@ begin
     if MatchesClient(Client, ID, Name, CurrentURL, Title, nil) then
       if (Client.AutoRemove and (Client.RecordTitle = Title)) or (Client.Recording) then
         Exit;
+
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Format('Starting automatic recording of "%s"', [Title])));
 
   Client := AddClient(0, 0, Name, CurrentURL, True);
   Client.Entry.Settings.Assign(AppGlobals.Data.AutoRecordSettings);

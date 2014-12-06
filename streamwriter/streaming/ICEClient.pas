@@ -987,11 +987,20 @@ begin
 end;
 
 procedure TICEClient.WriteDebug(Text, Data: string; T: TDebugTypes; Level: TDebugLevels);
+var
+  LS: TLogSource;
 begin
   {$IFNDEF DEBUG}
   if Level <> dlNormal then
     Exit;
   {$ENDIF}
+
+  LS := lsStream;
+  if FAutoRemove then
+    LS := lsAutomatic;
+
+    // TODO: es ist nicht immer llInfo. Das weiﬂ ich hier aber nicht, weil hier der parameter fehlt...
+  MsgBus.SendMessage(TLogMsg.Create(Self, LS, T, llInfo, FEntry.CustomName, Text)); // TODO: data fehlt hier. man kann im log ATM nix ausklappen. aber hier ja auch nicht.. obwohl, will man es da vllt? kA. erstmal nicht!
 
   TLogger.Write(Copy(FEntry.Name, 1, 20), Text);
 

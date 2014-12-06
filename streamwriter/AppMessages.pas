@@ -92,6 +92,25 @@ type
     property ArtistHashes: TCardinalArray read FArtistHashes;
   end;
 
+  TLogMsg = class(TMessageBase)
+  private
+    FSource: TLogSource;
+    FLogType: TDebugTypes;
+    FLogLevel: TLogLevel;
+    FDate: TDateTime;
+    FSourceText: string;
+    FText: string;
+  public
+    constructor Create(Sender: TObject; Source: TLogSource; LogType: TDebugTypes; LogLevel: TLogLevel; SourceText, Text: string);
+
+    property Source: TLogSource read FSource;
+    property LogType: TDebugTypes read FLogType;
+    property LogLevel: TLogLevel read FLogLevel;
+    property Date: TDateTime read FDate;
+    property SourceText: string read FSourceText;
+    property Text: string read FText;
+  end;
+
 implementation
 
 { TDeleteFileMessage }
@@ -99,6 +118,7 @@ implementation
 constructor TFileModifyMsg.Create(Filename: string);
 begin
   inherited Create;
+
   FFilename := Filename;
 end;
 
@@ -107,6 +127,7 @@ end;
 constructor TVolumeChangedMsg.Create(Volume: Integer);
 begin
   inherited Create;
+
   FVolume := Volume;
 end;
 
@@ -115,6 +136,7 @@ end;
 constructor TPlayingObjectChangedMsg.Create(Sender: TObject; Artist, Title, Stream, Filename: string);
 begin
   inherited Create;
+
   FSender := Sender;
   FArtist := Artist;
   FTitle := Title;
@@ -127,6 +149,7 @@ end;
 constructor TPlayingObjectStopped.Create(Sender: TObject);
 begin
   inherited Create;
+
   FSender := Sender;
 end;
 
@@ -135,6 +158,7 @@ end;
 constructor TSongSavedMsg.Create(Sender: TObject; ServerTitleHash, ServerArtistHash: Cardinal);
 begin
   inherited Create;
+
   FServerTitleHash := ServerTitleHash;
   FServerArtistHash := ServerArtistHash;
 end;
@@ -145,8 +169,22 @@ constructor TSelectSavedSongsMsg.Create(Sender: TObject; TitleHashes,
   ArtistHashes: TCardinalArray);
 begin
   inherited Create;
+
   FTitleHashes := TitleHashes;
   FArtistHashes := ArtistHashes;
+end;
+
+{ TLogMsg }
+
+constructor TLogMsg.Create(Sender: TObject; Source: TLogSource; LogType: TDebugTypes; LogLevel: TLogLevel; SourceText, Text: string);
+begin
+  inherited Create;
+
+  FSource := Source;
+  FLogType := LogType;
+  FLogLevel := LogLevel;
+  FSourceText := SourceText;
+  FText := Text;
 end;
 
 end.

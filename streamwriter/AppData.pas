@@ -298,6 +298,9 @@ type
     property ProjectHelpLinkStreamSettings: string read FProjectHelpLinkStreamSettings;
   end;
 
+procedure CreateAppData;
+function InitAppData: Boolean;
+
 var
   AppGlobals: TAppData;
 
@@ -752,19 +755,7 @@ begin
   end;
 
   FStorage.Read('IntroShown', FIntroShown, False);
-
-  // TODO: hat es negative konsequenzen das wegzumachen?
-  // Damit es nach einem Update nicht überall aufgeht, das Fenster...
-  {
-  if FClientHeaderWidth[0] > -1 then
-  begin
-    FirstStartShown := True;
-    FIntroShown := True;
-  end;
-  }
 end;
-
-Ein absichtlicher Fehler, damit der Buildserver nicht baut...
 
 procedure TAppData.LoadData;
 var
@@ -772,7 +763,6 @@ var
   Res: Integer;
   S: TExtendedStream;
 begin
-  // TODO: hier alles testen. jedes if...
   Recovered := False;
   {$IFNDEF DEBUG}
   if FileExists(AppGlobals.RecoveryFile) then
@@ -1070,14 +1060,6 @@ begin
   FStorage.Write('ShortcutVolUp', FShortcutVolUp);
   FStorage.Write('ShortcutMute', FShortcutMute);
 
-  // Sachen löschen, weil ich Dinge umbenannt habe. Kann irgendwann raus... wird für Release von Version 5 "aktiv".
-  FStorage.Delete('HeaderWidth0', 'Cols');
-  FStorage.Delete('HeaderWidth1', 'Cols');
-  FStorage.Delete('HeaderWidth2', 'Cols');
-  FStorage.Delete('HeaderWidth3', 'Cols');
-  FStorage.Delete('HeaderWidth4', 'Cols');
-  FStorage.Delete('HeaderWidth5', 'Cols');
-
   for i := 0 to High(FClientHeaderWidth) do
     FStorage.Write('ClientHeaderWidth' + IntToStr(i), FClientHeaderWidth[i], 'Cols');
   for i := 0 to High(FClientHeaderPosition) do
@@ -1114,11 +1096,18 @@ begin
   FStorage.Write('IntroShown', FIntroShown);
 end;
 
-initialization
+procedure CreateAppData;
+begin
+  FreeAndNil(AppGlobals);
+  AppGlobals := TAppData.Create('streamWriter');
+end;
+
+function InitAppData: Boolean;
+begin
+  Result := True;
   try
     if Language = nil then
       raise Exception.Create('Language is not initialized');
-    AppGlobals := TAppData.Create('streamWriter');
 
     // PostProcessors etc. laden - das kann erst hier passieren, weil AppGlobals zugewiesen sein muss.
     // AppGlobals müssen übrigens nur zugewiesen sein, weil ich alte PostProcess-Einstellungen
@@ -1143,9 +1132,12 @@ initialization
     on E: Exception do
     begin
       MessageBox(0, PChar(E.Message), PChar(_('Error')), MB_ICONERROR);
-      Halt;
+      Result := False;
     end;
   end;
+end;
+
+initialization
 
 finalization
   FreeAndNil(AppGlobals);
