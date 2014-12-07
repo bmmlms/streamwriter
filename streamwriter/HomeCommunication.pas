@@ -26,7 +26,7 @@ uses
   Windows, SysUtils, Classes, HTTPThread, StrUtils, Generics.Collections,
   Sockets, WinSock, Communication, Protocol, Commands, ExtendedStream,
   HomeCommands, DataManager, AppData, AudioFunctions, LanguageObjects,
-  TypeDefs, DateUtils, Math, Functions;
+  TypeDefs, DateUtils, Math, Functions, MessageBus, AppMessages;
 
 type
   TCommErrors = (ceUnknown, ceAuthRequired, ceNotification, ceOneTimeNotification);
@@ -58,6 +58,8 @@ type
 
     FPingPending: Boolean;
     FLastPingSent: Cardinal;
+
+    FExceptionMessage: string;
 
     FOnHandshakeReceived: TSocketEvent;
     FOnLogInReceived: TSocketEvent;
@@ -268,6 +270,7 @@ procedure THomeThread.DoException(E: Exception);
 begin
   inherited;
 
+  FExceptionMessage := E.Message;
 end;
 
 procedure THomeThread.DoGenerateAuthTokenReceived(CommandHeader: TCommandHeader;
@@ -750,6 +753,8 @@ procedure THomeCommunication.HomeThreadConnected(Sender: TSocketThread);
 begin
   inherited;
 
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), _('Connected to streamWriter server')));
+
   FConnected := True;
 
   SendHandshake;
@@ -781,6 +786,12 @@ end;
 
 procedure THomeCommunication.HomeThreadEnded(Sender: TSocketThread);
 begin
+  if FThread.FExceptionMessage <> '' then
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llError, _('Server'), FThread.FExceptionMessage));
+
+  //if not FThread.FError then
+  //  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llWarning, _('Server'), _('Disconnected from streamWriter server')));
+
   if THomeThread(Sender).Terminated then
     Exit;
 
@@ -803,6 +814,8 @@ begin
 
   if not FDisabled then
   begin
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llDebug, _('Server'), _('Server accepted handshake')));
+
     if AppGlobals.UserWasSetup and (AppGlobals.User <> '') and (AppGlobals.Pass <> '') then
       SendLogIn(AppGlobals.User, AppGlobals.Pass);
 
@@ -813,7 +826,10 @@ begin
   end;
 
   if FDisabled then
+  begin
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llDebug, _('Server'), _('Server rejected handshake')));
     Sender.Terminate;
+  end;
 
   if Assigned(FOnHandshakeReceived) then
     FOnHandshakeReceived(Self, THomeThread(Sender).FHandshakeSuccess);
@@ -824,12 +840,17 @@ begin
   FAuthenticated := THomeThread(Sender).FAuthenticated;
   FIsAdmin := THomeThread(Sender).FIsAdmin;
 
+  if FAuthenticated then
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), _('User logged in')));
+
   if Assigned(FOnLogInReceived) then
     FOnLogInReceived(Self, FAuthenticated);
 end;
 
 procedure THomeCommunication.HomeThreadLogOutReceived(Sender: TSocketThread);
 begin
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), _('User logged out')));
+
   FAuthenticated := THomeThread(Sender).FAuthenticated;
   FIsAdmin := THomeThread(Sender).FIsAdmin;
 
@@ -955,8 +976,6 @@ initialization
   TCommand.RegisterCommand(ctPingResponse, TCommandPingResponse);
 
   HomeComm := nil;
-
-// TODO: ich sollte die image-listen combinen. mindestens das log-icon ist in der hauptliste und in imgLog drin. ALLE zusammenführen, eigentlich...
 
 finalization
   TCommand.UnregisterCommands;

@@ -28,10 +28,11 @@ uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
   AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
   Math, PerlRegEx, Logging, WideStrUtils, AudioFunctions, PostProcessMP4Box,
-  AddonMP4Box, SWFunctions, MonitorAnalyzer, DataManager, Generics.Defaults;
+  AddonMP4Box, SWFunctions, MonitorAnalyzer, DataManager, Generics.Defaults,
+  Sockets, TypeDefs;
 
 type
-  TDebugEvent = procedure(Text, Data: string) of object;
+  TLogEvent = procedure(Text, Data: string) of object;
   TChunkReceivedEvent = procedure(Buf: Pointer; Len: Integer) of object;
 
   TStreamTrack = class
@@ -45,7 +46,7 @@ type
   TStreamTracks = class(TList<TStreamTrack>)
   private
     FRecordTitle: string;
-    FOnDebug: TDebugEvent;
+    FOnLog: TLogEvent;
   public
     destructor Destroy; override;
     procedure Clear; reintroduce;
@@ -108,6 +109,10 @@ type
     FMetaCounter: Integer;
     FRecordingSessionMetaCounter: Integer;
 
+    FExtLogMsg: string;
+    FExtLogType: TLogType;
+    FExtLogLevel: TLogLevel;
+
     FTitle: string;
     FDisplayTitle: string;
     FSavedFilename: string;
@@ -154,6 +159,7 @@ type
     FOnIOError: TNotifyEvent;
     FOnTitleAllowed: TNotifyEvent;
     FOnRefreshInfo: TNotifyEvent;
+    FOnExtLog: TNotifyEvent;
     //FOnMonitorAnalyzerAnalyzed: TNotifyEvent;
 
     function AdjustDisplayTitle(Title: string): string;
@@ -166,7 +172,7 @@ type
     procedure TrySave;
     procedure ProcessData(Received: Cardinal);
     procedure GetSettings;
-    procedure StreamTracksDebug(Text, Data: string);
+    procedure StreamTracksLog(Text, Data: string);
     procedure FreeAudioStream;
     function StartRecordingInternal: Boolean;
     procedure StopRecordingInternal;
@@ -179,6 +185,7 @@ type
     procedure FSetRecordTitle(Value: string);
   protected
     procedure DoHeaderRemoved; override;
+    procedure WriteExtLog(Msg: string; T: TLogType; Level: TLogLevel); overload;
   public
     constructor Create;
     destructor Destroy; override;
@@ -196,6 +203,10 @@ type
 
     property MetaCounter: Integer read FMetaCounter;
     //property MonitorAnalyzer: TMonitorAnalyzer read FMonitorAnalyzer;
+
+    property ExtLogMsg: string read FExtLogMsg;
+    property ExtLogType: TLogType read FExtLogType;
+    property ExtLogLevel: TLogLevel read FExtLogLevel;
 
     property StreamName: string read FStreamName;
     property StreamURL: string read FStreamURL;
@@ -238,6 +249,7 @@ type
     property OnIOError: TNotifyEvent read FOnIOError write FOnIOError;
     property OnTitleAllowed: TNotifyEvent read FOnTitleAllowed write FOnTitleAllowed;
     property OnRefreshInfo: TNotifyEvent read FOnRefreshInfo write FOnRefreshInfo;
+    property OnExtLog: TNotifyEvent read FOnExtLog write FOnExtLog;
     //property OnMonitorAnalyzerAnalyzed: TNotifyEvent read FOnMonitorAnalyzerAnalyzed write FOnMonitorAnalyzerAnalyzed;
   end;
 
@@ -386,7 +398,7 @@ begin
   FRecordingStarted := False;
   FAudioType := atNone;
   FStreamTracks := TStreamTracks.Create;
-  FStreamTracks.FOnDebug := StreamTracksDebug;
+  FStreamTracks.FOnLog := StreamTracksLog;
 end;
 
 destructor TICEStream.Destroy;
@@ -477,14 +489,14 @@ begin
   // hier drunter zur Exception führen.
   if RedirURL <> '' then
   begin
-    WriteDebug(_('HTTP response detected'), 1, 1);
+    WriteExtLog(_('HTTP response detected'), ltGeneral, llDebug);
     Exit;
   end;
 
   if (HeaderType = 'icy') or (ContentType = 'audio/mpeg') or (ContentType = 'audio/aacp') or
      (Pos(#10'icy-metaint:', LowerCase(FHeader)) > 0) or (Pos(#10'icy-name:', LowerCase(FHeader)) > 0) then
   begin
-    WriteDebug(_('Audio-data response detected'), 1, 1);
+    WriteExtLog(_('Audio-data response detected'), ltGeneral, llDebug);
     FHeaderType := 'icy';
 
     if ResponseCode = 200 then
@@ -493,7 +505,7 @@ begin
         FMetaInt := StrToInt(GetHeaderData('icy-metaint'));
         FNextMetaInt := FMetaInt;
       except
-        WriteDebug(_('Meta-interval could not be found'), 1, 1);
+        WriteExtLog(_('Meta-interval could not be found'), ltGeneral, llWarning);
       end;
 
       FStreamName := GetHeaderData('icy-name');
@@ -523,10 +535,10 @@ begin
       if Assigned(FOnDisplayTitleChanged) then
         FOnDisplayTitleChanged(Self);
     end else
-      raise Exception.Create(Format(_('Invalid responsecode (%d)'), [ResponseCode]));
+      raise Exception.Create(Format(_('Invalid responsecode (%d)'), [ResponseCode])); // TODO: landet das hier ordentlich im log?
   end else if HeaderType = 'http' then
   begin
-    WriteDebug(_('HTTP response detected'), 1, 1);
+    WriteExtLog(_('HTTP response detected'), ltGeneral, llDebug);
   end else
     raise Exception.Create(_('Unknown header-type'));
 end;
@@ -560,7 +572,7 @@ end;
 procedure TICEStream.FSetRecordTitle(Value: string);
 begin
   if Value <> FRecordTitle then
-    WriteDebug(Format(_('Recording "%s"'), [Value]), 1, 0);
+    WriteExtLog(Format(_('Recording "%s"'), [Value]), ltGeneral, llInfo);
   FRecordTitle := Value;
   FStreamTracks.RecordTitle := Value;
 end;
@@ -787,11 +799,11 @@ begin
     if (P.DataStart <= -1) or (P.DataEnd <= -1) then
       raise Exception.Create(_('Error in audio data'));
 
-    WriteDebug(Format(_('Saving from %d to %d'), [S, E]), 1, 1);
+    WriteExtLog(Format(_('Saving from %d to %d'), [S, E]), ltGeneral, llDebug);
 
     if FSettings.SkipShort and (P.DataEnd - P.DataStart < FBytesPerSec * FSettings.ShortLengthSeconds) then
     begin
-      WriteDebug(Format(_('Skipping "%s" because it''s too short (%d seconds)'), [Title, Trunc((P.DataEnd - P.DataStart) / FBytesPerSec)]), 1, 0);
+      WriteExtLog(Format(_('Skipping "%s" because it''s too short (%d seconds)'), [Title, Trunc((P.DataEnd - P.DataStart) / FBytesPerSec)]), ltGeneral, llWarning);
       RemoveData;
       Exit;
     end;
@@ -846,12 +858,12 @@ begin
 
         if FileCheck.Result = crDiscard then
         begin
-          WriteDebug(Format(_('Skipping "%s" - file already exists'), [Title]), 1, 0);
+          WriteExtLog(Format(_('Skipping "%s" - file already exists'), [Title]), ltGeneral, llWarning);
           RemoveData;
           Exit;
         end else if FileCheck.Result = crDiscardExistingIsLarger then
         begin
-          WriteDebug(Format(_('Skipping "%s" - existing file is larger'), [Title]), 1, 0);
+          WriteExtLog(Format(_('Skipping "%s" - existing file is larger'), [Title]), ltGeneral, llWarning);
           RemoveData;
           Exit;
         end else if (FileCheck.Result <> crOverwrite) and (FRecordTitle = '') then
@@ -861,27 +873,27 @@ begin
           if not FSaveAllowed then
           begin
             if FSaveAllowedFilter = 0 then
-              WriteDebug(Format(_('Skipping "%s" - not on wishlist'), [Title]), 1, 0)
+              WriteExtLog(Format(_('Skipping "%s" - not on wishlist'), [Title]), ltGeneral, llWarning)
             else if FSaveAllowedFilter = 1 then
-              WriteDebug(Format(_('Skipping "%s" - on global ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), 1, 0)
+              WriteExtLog(Format(_('Skipping "%s" - on global ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), ltGeneral, llWarning)
             else
-              WriteDebug(Format(_('Skipping "%s" - on stream ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), 1, 0);
+              WriteExtLog(Format(_('Skipping "%s" - on stream ignorelist (matches "%s")'), [Title, SaveAllowedMatch]), ltGeneral, llWarning);
 
             RemoveData;
             Exit;
           end;
         end else if FileCheck.Result = crOverwrite then
         begin
-          WriteDebug(Format(_('Saving "%s" - it overwrites a smaller same named file'), [Title]), 1, 0)
+          WriteExtLog(Format(_('Saving "%s" - it overwrites a smaller same named file'), [Title]), ltGeneral, llInfo)
         end;
       finally
         FileCheck.Free;
       end;
 
       if Length(Title) > 0 then
-        WriteDebug(Format('Saving title "%s"', [Title]), 1, 1)
+        WriteExtLog(Format('Saving title "%s"', [Title]), ltSaved, llInfo)
       else
-        WriteDebug('Saving unnamed title', 1, 1);
+        WriteExtLog('Saving unnamed title', ltSaved, llInfo);
 
       try
         ForceDirectories(Dir);
@@ -899,7 +911,7 @@ begin
       except
         Error := GetLastError;
         if (Error = 3) and (Length(Dir + Filename) > MAX_PATH - 2) then
-          raise Exception.Create(_('Could not save file because it exceeds the maximum path length'))
+          raise Exception.Create(_('Could not save file because it exceeds the maximum path length'))   // TODO: exceptions testen
         else
           raise Exception.Create(_('Could not save file'));
       end;
@@ -929,20 +941,20 @@ begin
           FOnSongSaved(Self);
 
         if FullTitle then
-          WriteDebug(Format(_('Saved song "%s"'), [ExtractFilename(Filename)]), '', 4, 0)
+          WriteExtLog(Format(_('Saved song "%s"'), [ExtractFilename(Filename)]), ltSaved, llInfo)
         else
-          WriteDebug(Format(_('Saved incomplete song "%s"'), [ExtractFilename(Filename)]), '', 4, 0);
+          WriteExtLog(Format(_('Saved incomplete song "%s"'), [ExtractFilename(Filename)]), ltSaved, llInfo);
       except
         on E: Exception do
         begin
-          WriteDebug(Format(_('Error after successful save: %s'), [E.Message]), 3, 0);
+          WriteExtLog(Format(_('Error after successful save: %s'), [E.Message]), ltSaved, llError);   // TODO: das hier testen - generiert es 2 log einträge?
           raise;
         end;
       end;
     except
       on E: Exception do
       begin
-        WriteDebug(Format(_('Error while saving "%s": %s'), [ExtractFilename(Filename), E.Message]), 3, 0);
+        WriteExtLog(Format(_('Error while saving "%s": %s'), [ExtractFilename(Filename), E.Message]), ltSaved, llError);
       end;
     end;
   finally
@@ -1046,7 +1058,7 @@ begin
 
       if FAudioStream <> nil then
         if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
-          WriteDebug('Saving stream to "' + Filename + '"', 1, 1);
+          WriteExtLog('Saving stream to "' + Filename + '"', ltGeneral, llDebug);
     except
       if Assigned(FOnIOError) then
         FOnIOError(Self);
@@ -1081,9 +1093,9 @@ begin
   FreeAudioStream;
 end;
 
-procedure TICEStream.StreamTracksDebug(Text, Data: string);
+procedure TICEStream.StreamTracksLog(Text, Data: string);
 begin
-  WriteDebug(Text, Data, 1, 1);
+  WriteExtLog(Text, ltGeneral, llDebug);
 end;
 
 procedure TICEStream.TrySave;
@@ -1108,8 +1120,8 @@ begin
       begin
         if FAudioStream.Size > TrackEnd + FBytesPerSec * FSettings.SilenceBufferSecondsEnd then
         begin
-          WriteDebug(Format('Searching for silence using search range of %d/%d bytes...', [FBytesPerSec * FSettings.SilenceBufferSecondsStart,
-            FBytesPerSec * FSettings.SilenceBufferSecondsEnd]), 1, 1);
+          WriteExtLog(Format('Searching for silence using search range of %d/%d bytes...', [FBytesPerSec * FSettings.SilenceBufferSecondsStart,
+            FBytesPerSec * FSettings.SilenceBufferSecondsEnd]), ltGeneral, llDebug);
 
           if FSettings.AutoDetectSilenceLevel then
             MaxPeaks := -1
@@ -1130,29 +1142,29 @@ begin
 
             if R.DataStart = -1 then
             begin
-              WriteDebug('No silence at SongStart could be found, using configured buffer', 1, 1);
+              WriteExtLog('No silence at SongStart could be found, using configured buffer', ltGeneral, llDebug);
               R.DataStart := TrackStart - Trunc(FSettings.SongBuffer * FBytesPerMSec);
               if R.DataStart < FAudioStream.Size then
                 R.DataStart := TrackStart;
             end else
-              WriteDebug('Silence at SongStart found', 1, 1);
+              WriteExtLog('Silence at SongStart found', ltGeneral, llDebug);
 
             if R.DataEnd = -1 then
             begin
-              WriteDebug('No silence at SongEnd could be found', 1, 1);
+              WriteExtLog('No silence at SongEnd could be found', ltGeneral, llDebug);
               R.DataEnd := TrackEnd + Trunc(FSettings.SongBuffer * FBytesPerMSec);
               if R.DataEnd > FAudioStream.Size then
               begin
-                WriteDebug('Stream is too small, waiting for more data...', 1, 1);
+                WriteExtLog('Stream is too small, waiting for more data...', ltGeneral, llDebug);
                 Exit;
               end else
               begin
-                WriteDebug('Using configured buffer...', 1, 1);
+                WriteExtLog('Using configured buffer...', ltGeneral, llDebug);
               end;
             end else
-              WriteDebug('Silence at SongEnd found', 1, 1);
+              WriteExtLog('Silence at SongEnd found', ltGeneral, llDebug);
 
-            WriteDebug(Format('Scanned song start/end: %d/%d', [R.DataStart, R.DataEnd]), 1, 1);
+            WriteExtLog(Format('Scanned song start/end: %d/%d', [R.DataStart, R.DataEnd]), ltGeneral, llDebug);
 
             if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
             begin
@@ -1161,17 +1173,17 @@ begin
               else
                 SaveData(R.DataStart, R.DataEnd, Track.Title, Track.FullTitle);
             end else
-              WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
+              WriteExtLog('Skipping title because it is not the title to be saved', ltGeneral, llDebug);
 
             Track.Free;
             FStreamTracks.Delete(i);
-            WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]), 1, 1);
+            WriteExtLog(Format('Tracklist count is %d', [FStreamTracks.Count]), ltGeneral, llDebug);
           end else
           begin
             if (FAudioStream.Size >= TrackStart + (TrackEnd - TrackStart) + ((FSettings.SongBuffer * FBytesPerMSec) * 2)) and
                (FAudioStream.Size > TrackEnd + (FSettings.SongBuffer * FBytesPerMSec) * 2) then
             begin
-              WriteDebug(Format('No silence found, saving using buffer of %d bytes...', [Trunc(FSettings.SongBuffer * FBytesPerMSec)]), 1, 1);
+              WriteExtLog(Format('No silence found, saving using buffer of %d bytes...', [Trunc(FSettings.SongBuffer * FBytesPerMSec)]), ltGeneral, llDebug);
 
               if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
               begin
@@ -1180,14 +1192,14 @@ begin
                 else
                   SaveData(TrackStart - Trunc(FSettings.SongBuffer * FBytesPerMSec), TrackEnd + Trunc(FSettings.SongBuffer * FBytesPerMSec), Track.Title, Track.FullTitle);
               end else
-                WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
+                WriteExtLog('Skipping title because it is not the title to be saved', ltGeneral, llDebug);
 
               Track.Free;
               FStreamTracks.Delete(i);
-              WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]), 1, 1);
+              WriteExtLog(Format('Tracklist count is %d', [FStreamTracks.Count]), ltGeneral, llDebug);
             end else
             begin
-              WriteDebug('Waiting for full buffer because no silence found...', 1, 1);
+              WriteExtLog('Waiting for full buffer because no silence found...', ltGeneral, llDebug);
             end;
           end;
         end else
@@ -1199,7 +1211,7 @@ begin
         if (FAudioStream.Size >= TrackStart + (TrackEnd - TrackStart) + ((FSettings.SongBuffer * FBytesPerMSec) * 2)) and
            (FAudioStream.Size > TrackEnd + FSettings.SongBuffer * FBytesPerMSec) then
         begin
-          WriteDebug(Format('Saving using buffer of %d bytes...', [Trunc(FSettings.SongBuffer * FBytesPerMSec)]), 1, 1);
+          WriteExtLog(Format('Saving using buffer of %d bytes...', [Trunc(FSettings.SongBuffer * FBytesPerMSec)]), ltGeneral, llDebug);
 
           if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
           begin
@@ -1208,17 +1220,28 @@ begin
             else
               SaveData(TrackStart - Trunc(FSettings.SongBuffer * FBytesPerMSec), TrackEnd + Trunc(FSettings.SongBuffer * FBytesPerMSec), Track.Title, Track.FullTitle);
           end else
-            WriteDebug('Skipping title because it is not the title to be saved', 1, 1);
+            WriteExtLog('Skipping title because it is not the title to be saved', ltGeneral, llDebug);
 
           Track.Free;
           FStreamTracks.Delete(i);
-          WriteDebug(Format('Tracklist count is %d', [FStreamTracks.Count]), 1, 1);
+          WriteExtLog(Format('Tracklist count is %d', [FStreamTracks.Count]), ltGeneral, llDebug);
         end else
         begin
-          WriteDebug('Waiting for full buffer...', 1, 1);
+          WriteExtLog('Waiting for full buffer...', ltGeneral, llDebug);
         end;
       end;
     end;
+  end;
+end;
+
+procedure TICEStream.WriteExtLog(Msg: string; T: TLogType; Level: TLogLevel);
+begin
+  if Assigned(FOnExtLog) then
+  begin
+    FExtLogMsg := Msg;
+    FExtLogType := T;
+    FExtLogLevel := Level;
+    FOnExtLog(Self);
   end;
 end;
 
@@ -1255,7 +1278,7 @@ begin
 
         if (FRecordTitle <> '') and (FBitRate < AutoTuneInMinKbps) then
         begin
-          WriteDebug(_('Stream will be removed because bitrate does not match'), 2, 0);
+          WriteExtLog(_('Stream will be removed because bitrate does not match'), ltGeneral, llWarning);
           FRemoveClient := True;
         end;
 
@@ -1268,7 +1291,7 @@ begin
     // Wenn der Stream im Speicher sitzt und größer als 200MB ist, dann wird der Stream hier geplättet.
     if (FAudioStream.InheritsFrom(TAudioStreamMemory)) and (FAudioStream.Size > 204800000) then
     begin
-      WriteDebug(_('Clearing recording buffer because size exceeds 200MB'), 2, 0);
+      WriteExtLog(_('Clearing recording buffer because size exceeds 200MB'), ltGeneral, llWarning);
       FStreamTracks.Clear;
       TAudioStreamMemory(FAudioStream).Clear;
     end;
@@ -1294,7 +1317,7 @@ begin
       if ((FBytesPerSec > 0) and (FAudioStream.Size > FBytesPerSec * 60) and (FTitle <> FRecordTitle) and (FStreamTracks.Find(FRecordTitle) = nil)) or
          (FMetaCounter > 5) then
       begin
-        WriteDebug(_('Stream will be removed because wished title was not found'), 2, 0);
+        WriteExtLog(_('Stream will be removed because wished title was not found'), ltGeneral, llWarning);
         FRemoveClient := True;
       end;
 
@@ -1346,7 +1369,7 @@ begin
             //end;
 
             for i := 0 to FSettings.IgnoreTrackChangePattern.Count - 1 do
-              if Like(Title, FSettings.IgnoreTrackChangePattern[i]) then
+              if Like(Title, FSettings.IgnoreTrackChangePattern[i]) then      // TODO: die log einträge wenn ich die fw-sw-block-regel anschalte sind sehr komisch.
               begin
                 IgnoreTitle := True;
                 Break;
@@ -1368,7 +1391,10 @@ begin
 
               if NewDisplayTitle <> FDisplayTitle then
               begin
-                WriteDebug(Format(_('"%s" now playing'), [Title]), 2, 0);
+                if Title <> NewDisplayTitle then
+                  WriteExtLog(Format(_('"%s" (parsed as "%s") now playing'), [Title, NewDisplayTitle]), ltSong, llInfo)
+                else
+                  WriteExtLog(Format(_('"%s" now playing'), [Title]), ltSong, llInfo);
                 DisplayTitleChanged := True;
 
                 Inc(FMetaCounter);

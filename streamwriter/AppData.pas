@@ -72,7 +72,6 @@ type
     FPlayerVolume: Integer;
     FPlayerVolumeBeforeMute: Integer;
     FPlayerShuffle: Boolean;
-    FAutoScrollLog: Boolean;
     FUserWasSetup: Boolean;
     FUser, FPass: string;
     FSoundDevice: Cardinal;
@@ -121,12 +120,20 @@ type
     FSavedHeaderPosition: TIntArray;
     FSavedCols: Integer;
 
+    FLogHeaderWidthLoaded: Boolean;
+    FLogHeaderPositionLoaded: Boolean;
+    FLogHeaderWidth: TIntArray;
+    FLogHeaderPosition: TIntArray;
+    FLogCols: Integer;
+
     FBrowserSortType: Integer;
     FLastUsedDataVersion: Integer;
     FRecoveryFile: string;
 
     FEQEnabled: Boolean;
     FEQGain: array[0..9] of Integer;
+
+    FLogFilterTypes: Integer;
 
     FAddonManager: TAddonManager;
     FPostProcessManager: TPostProcessManager;
@@ -206,8 +213,6 @@ type
     // The volume of the player before muting the volume
     property PlayerVolumeBeforeMute: Integer read FPlayerVolumeBeforeMute write FPlayerVolumeBeforeMute;
     property PlayerShuffle: Boolean read FPlayerShuffle write FPlayerShuffle;
-    // When set the log will scroll automatically
-    property AutoScrollLog: Boolean read FAutoScrollLog write FAutoScrollLog;
     // Indicates whether streamWriter was setup successfully
     property UserWasSetup: Boolean read FUserWasSetup write FUserWasSetup;
     // The username to authenticate at streamWriter's server
@@ -269,6 +274,12 @@ type
     property SavedHeaderPosition: TIntArray read FSavedHeaderPosition write FSavedHeaderPosition;
     property SavedCols: Integer read FSavedCols write FSavedCols;
 
+    property LogHeaderWidthLoaded: Boolean read FLogHeaderWidthLoaded;
+    property LogHeaderPositionLoaded: Boolean read FLogHeaderPositionLoaded;
+    property LogHeaderWidth: TIntArray read FLogHeaderWidth write FLogHeaderWidth;
+    property LogHeaderPosition: TIntArray read FLogHeaderPosition write FLogHeaderPosition;
+    property LogCols: Integer read FLogCols write FLogCols;
+
     property BrowserSortType: Integer read FBrowserSortType write FBrowserSortType;
     // Last used version of the data-file format
     property LastUsedDataVersion: Integer read FLastUsedDataVersion write FLastUsedDataVersion;
@@ -277,6 +288,8 @@ type
 
     property EQEnabled: Boolean read FEQEnabled write FEQEnabled;
     property EQGain[Idx: Integer]: Integer read FGetEQGain write FSetEQGain;
+
+    property LogFilterTypes: Integer read FLogFilterTypes write FLogFilterTypes;
 
     // Path to streamWriter's data-file
     property DataFile: string read FGetDataFile;
@@ -370,6 +383,14 @@ begin
   SetLength(FSavedHeaderPosition, 7);
   for i := 0 to High(FSavedHeaderPosition) do
     FSavedHeaderPosition[i] := -1;
+
+  SetLength(FLogHeaderWidth, 4);
+  for i := 0 to High(FLogHeaderWidth) do
+    FLogHeaderWidth[i] := -1;
+
+  SetLength(FLogHeaderPosition, 4);
+  for i := 0 to High(FLogHeaderPosition) do
+    FLogHeaderPosition[i] := -1;
 
   // Set some application-specific settings
   SetLength(FProjectUpdateLinks, 2);
@@ -616,7 +637,6 @@ begin
   FStorage.Read('PlayerVolumeBeforeMute', FPlayerVolumeBeforeMute, 50);
   FStorage.Read('PlayerShuffle', FPlayerShuffle, False);
 
-  FStorage.Read('AutoScrollLog', FAutoScrollLog, True);
   FStorage.Read('UserWasSetup', FUserWasSetup, False);
   FStorage.Read('User', FUser, '');
   FStorage.Read('Pass', FPass, '');
@@ -730,6 +750,26 @@ begin
   FStorage.Read('SavedCols', FSavedCols, 255, 'Cols');
   FSavedCols := FSavedCols or (2 shl 0);
 
+  // Header of LogView
+  FStorage.Read('LogHeaderWidth0', i, -1, 'Cols');
+  if i > -1 then
+  begin
+    FLogHeaderWidthLoaded := True;
+    for i := 0 to High(FLogHeaderWidth) do
+      FStorage.Read('LogHeaderWidth' + IntToStr(i), FLogHeaderWidth[i], 120, 'Cols');
+  end;
+
+  FStorage.Read('LogHeaderPosition0', i, -1, 'Cols');
+  if i > -1 then
+  begin
+    FLogHeaderPositionLoaded := True;
+    for i := 0 to High(FLogHeaderPosition) do
+      FStorage.Read('LogHeaderPosition' + IntToStr(i), FLogHeaderPosition[i], 100, 'Cols');
+  end;
+
+  FStorage.Read('LogCols', FLogCols, 255, 'Cols');
+  FLogCols := FLogCols or (1 shl 0);
+  FLogCols := FLogCols or (1 shl 3);
 
   FStorage.Read('BrowserSortType', FBrowserSortType, 3);
 
@@ -753,6 +793,8 @@ begin
     if (FEQGain[i] > 15) or (FEQGain[i] < -15) then
       FEQGain[i] := 0;
   end;
+
+  FStorage.Read('LogFilterTypes', FLogFilterTypes, 7);
 
   FStorage.Read('IntroShown', FIntroShown, False);
 end;
@@ -1015,6 +1057,9 @@ begin
   FStorage.Delete('AutoTuneInAddToIgnore');
   FStorage.Delete('AutoRemoveSavedFromWishlist');
 
+  FStorage.Delete('AutoScrollLog');
+
+
   FStorage.Write('Dir', TryRelativePath(FDir, False));
   FStorage.Write('DirAuto', TryRelativePath(FDirAuto, False));
   FStorage.Write('TrayClose', FTray);
@@ -1045,7 +1090,6 @@ begin
   FStorage.Write('PlayerVolume', FPlayerVolume);
   FStorage.Write('PlayerVolumeBeforeMute', FPlayerVolumeBeforeMute);
   FStorage.Write('PlayerShuffle', FPlayerShuffle);
-  FStorage.Write('AutoScrollLog', FAutoScrollLog);
   FStorage.Write('UserWasSetup', FUserWasSetup);
   FStorage.Write('User', FUser);
   FStorage.Write('Pass', EncodeU(CryptStr(FPass)));
@@ -1084,6 +1128,12 @@ begin
     FStorage.Write('SavedHeaderPosition' + IntToStr(i), FSavedHeaderPosition[i], 'Cols');
   FStorage.Write('SavedCols', FSavedCols, 'Cols');
 
+  for i := 0 to High(FLogHeaderWidth) do
+    FStorage.Write('LogHeaderWidth' + IntToStr(i), FLogHeaderWidth[i], 'Cols');
+  for i := 0 to High(FLogHeaderPosition) do
+    FStorage.Write('LogHeaderPosition' + IntToStr(i), FLogHeaderPosition[i], 'Cols');
+  FStorage.Write('LogCols', FLogCols, 'Cols');
+
   FStorage.Write('BrowserSortType', FBrowserSortType);
 
   FStorage.DeleteKey('Plugins');
@@ -1092,6 +1142,8 @@ begin
   FStorage.Write('EQEnabled', FEQEnabled, 'Equalizer');
   for i := 0 to High(FEQGain) do
     FStorage.Write('EQBand' + IntToStr(i), FEQGain[i] + 15, 'Equalizer');
+
+  FStorage.Write('LogFilterTypes', FLogFilterTypes);
 
   FStorage.Write('IntroShown', FIntroShown);
 end;
@@ -1121,7 +1173,7 @@ begin
     // Globale Stream-Einstellungen von Vorgängerversion laden
     AppGlobals.LoadOldStreamSettings;
 
-    // Jetzt den ganzen Rest laden
+    // Jetzt den ganzen Rest laden    // TODO: ab hier sollte es in ein StageTwo kommen, quasi nach dem splash erst den kram laden (datenfile).
     AppGlobals.LoadData;
 
     AppGlobals.FAddonManager := TAddonManager.Create;

@@ -47,14 +47,14 @@ type
     ServerTitleHash, ServerArtistHash: Cardinal) of object;
   TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer) of object;
 
-  TDebugEntry = class
+  TLogEntry = class
   public
     Text: string;
     Data: string;
-    T: TDebugTypes;
-    Level: TDebugLevels;
+    T: TLogType;
+    Level: TLogLevel;
     Time: TDateTime;
-    constructor Create(Text, Data: string; T: TDebugTypes; Level: TDebugLevels);
+    constructor Create(Text, Data: string; T: TLogType; Level: TLogLevel);
   end;
 
   TURLList = class(TStringList)
@@ -62,9 +62,9 @@ type
     function Add(const S: string): Integer; override;
   end;
 
-  TDebugLog = class(TObjectList<TDebugEntry>)
+  TLog = class(TObjectList<TLogEntry>)
   protected
-    procedure Notify(const Item: TDebugEntry; Action: TCollectionNotification); override;
+    procedure Notify(const Item: TLogEntry; Action: TCollectionNotification); override;
   end;
 
   TICEClient = class
@@ -72,7 +72,7 @@ type
     FManager: TObject;
     FEntry: TStreamEntry;
 
-    FDebugLog: TDebugLog;
+    FDebugLog: TLog;
     FICEThread: TICEThread;
 
     FURLsIndex: Integer;
@@ -100,7 +100,7 @@ type
 
     FEQEnabled: Boolean;
 
-    FOnDebug: TNotifyEvent;
+    FOnLog: TNotifyEvent;
     FOnRefresh: TNotifyEvent;
     FOnSongSaved: TSongSavedEvent;
     FOnTitleChanged: TStringEvent;
@@ -132,7 +132,7 @@ type
     function ParsePlaylist: Boolean;
     function GetURL: string;
 
-    procedure ThreadDebug(Sender: TSocketThread);
+    procedure ThreadLog(Sender: TSocketThread);
     procedure ThreadAddRecent(Sender: TSocketThread);
     procedure ThreadSpeedChanged(Sender: TSocketThread);
     procedure ThreadTitleChanged(Sender: TSocketThread);
@@ -147,6 +147,7 @@ type
     procedure ThreadMilliSecondsReceived(Sender: TSocketThread);
     procedure ThreadBeforeEnded(Sender: TSocketThread);
     procedure ThreadTerminated(Sender: TObject);
+    procedure ThreadExtLog(Sender: TSocketThread);
     //procedure ThreadMonitorAnalyzerAnalyzed(Sender: TSocketThread);
   public
     constructor Create(Manager: TObject; StartURL: string); overload;
@@ -154,8 +155,8 @@ type
     constructor Create(Manager: TObject; Entry: TStreamEntry); overload;
     destructor Destroy; override;
 
-    procedure WriteDebug(Text, Data: string; T: TDebugTypes; Level: TDebugLevels); overload;
-    procedure WriteDebug(Text: string; T: TDebugTypes; Level: TDebugLevels); overload;
+    procedure WriteLog(Text, Data: string; T: TLogType; Level: TLogLevel); overload;
+    procedure WriteLog(Text: string; T: TLogType; Level: TLogLevel); overload;
 
     function StartPlay(CheckConditions: Boolean): TMayConnectResults;
     procedure PausePlay;
@@ -183,7 +184,7 @@ type
 
     property Entry: TStreamEntry read FEntry;
 
-    property DebugLog: TDebugLog read FDebugLog;
+    property DebugLog: TLog read FDebugLog;
     property Active: Boolean read FGetActive;
     property Recording: Boolean read FGetRecording;
     property Playing: Boolean read FGetPlaying;
@@ -202,7 +203,7 @@ type
 
     property EQEnabled: Boolean read FEQEnabled write FSetEQEnabled;
 
-    property OnDebug: TNotifyEvent read FOnDebug write FOnDebug;
+    property OnLog: TNotifyEvent read FOnLog write FOnLog;
     property OnRefresh: TNotifyEvent read FOnRefresh write FOnRefresh;
     property OnAddRecent: TNotifyEvent read FOnAddRecent write FOnAddRecent;
     property OnSongSaved: TSongSavedEvent read FOnSongSaved write FOnSongSaved;
@@ -257,7 +258,7 @@ procedure TICEClient.Initialize;
 begin
   Players.AddPlayer(Self);
 
-  FDebugLog := TDebugLog.Create;
+  FDebugLog := TLog.Create;
 
   FEntry := TStreamEntry.Create;
   FEntry.Settings.Assign(AppGlobals.Data.StreamSettings);
@@ -448,7 +449,7 @@ begin
 
   FCurrentURL := GetURL;
   FICEThread := TICEThread.Create(FCurrentURL);
-  FICEThread.OnDebug := ThreadDebug;
+  FICEThread.OnLog := ThreadLog;
   FICEThread.OnTitleChanged := ThreadTitleChanged;
   FICEThread.OnDisplayTitleChanged := ThreadDisplayTitleChanged;
   FICEThread.OnSongSaved := ThreadSongSaved;
@@ -463,6 +464,7 @@ begin
   FICEThread.OnRecordingStopped := ThreadRecordingStopped;
   FICEThread.OnPlaybackStarted := ThreadPlaybackStarted;
   FICEThread.OnMilliSecondsReceived := ThreadMilliSecondsReceived;
+  FICEThread.OnExtLog := ThreadExtLog;
   //FICEThread.OnMonitorAnalyzerAnalyzed := ThreadMonitorAnalyzerAnalyzed;
 
   // Das muss hier so früh sein, wegen z.B. RetryDelay - das hat der Stream nämlich nicht,
@@ -611,15 +613,21 @@ begin
     FOnAddRecent(Self);
 end;
 
-procedure TICEClient.ThreadDebug(Sender: TSocketThread);
+procedure TICEClient.ThreadLog(Sender: TSocketThread);
 var
-  T: TDebugTypes;
-  Level: TDebugLevels;
+  T: TLogType;
+  Level: TLogLevel;
 begin
-  T := TDebugTypes(FICEThread.DebugType);
-  Level := TDebugLevels(FICEThread.DebugLevel);
+  case FICEThread.LogLevel of
+    slError: Level := llError;
+    slWarning: Level := llWarning;
+    slInfo: Level := llInfo;
+    slDebug: Level := llDebug;
+    else raise Exception.Create('Unknown FICEThread.LogLevel');
+  end;
 
-  WriteDebug(FICEThread.DebugMsg, FICEThread.DebugData, T, Level);
+  WriteLog(FICEThread.LogMsg, FICEThread.LogData, ltGeneral, Level); // TODO: dtGeneral ist falsch! bzw: meine ableitungen ICEThread/ICEClient/ICEStream müssen eine neue logging methode haben,
+                                                                     // die den typ mitteilt.
 end;
 
 procedure TICEClient.ThreadMilliSecondsReceived(Sender: TSocketThread);
@@ -643,7 +651,7 @@ begin
     // Das hier kann bei HTTP und bei ICY kommen.
     if FICEThread.RecvStream.RedirURL <> '' then
     begin
-      WriteDebug(_('Redirection found'), dtMessage, dlNormal);
+      WriteLog(_('Redirection found'), ltGeneral, llInfo);
       FRedirectedURL := FICEThread.RecvStream.RedirURL;
       Exit;
     end;
@@ -653,9 +661,9 @@ begin
       if ParsePlaylist then
       begin
         {$IFDEF DEBUG}
-        WriteDebug(_('Playlist parsed'), FEntry.URLs.Text, dtMessage, dlNormal);
+        WriteLog(_('Playlist parsed'), FEntry.URLs.Text, ltGeneral, llInfo);
         {$ELSE}
-        WriteDebug(_('Playlist parsed'), dtMessage, dlNormal);
+        WriteLog(_('Playlist parsed'), ltGeneral, llInfo);
         {$ENDIF}
 
         // ClientManager prüft, ob es in einem anderen Client schon eine der URLs gibt.
@@ -683,7 +691,7 @@ begin
   except
     on E: Exception do
     begin
-      WriteDebug(Format(_('Error: %s'), [E.Message]), '', dtError, dlNormal);
+      WriteLog(Format(_('Error: %s'), [E.Message]), '', ltGeneral, llError);
 
       // Schlafen, wenn die Maximalen Wiederholungsversuche noch nicht erreicht sind oder unendlich sind.
       if ((FRetries < FEntry.Settings.MaxRetries) and (FEntry.Settings.MaxRetries > 0)) or (FEntry.Settings.MaxRetries = 0) then
@@ -880,6 +888,11 @@ begin
     FOnRefresh(Self);
 end;
 
+procedure TICEClient.ThreadExtLog(Sender: TSocketThread);
+begin
+  WriteLog(FICEThread.ExtLogMsg, FICEThread.ExtLogType, FICEThread.ExtLogLevel);
+end;
+
 procedure TICEClient.ThreadStateChanged(Sender: TSocketThread);
 begin
   if FState <> csStopping then
@@ -957,7 +970,7 @@ begin
   begin
     if (FRetries >= MaxRetries) and (MaxRetries > 0) then
     begin
-      WriteDebug(Format(_('Retried %d times, stopping'), [MaxRetries]), dtError, dlNormal);
+      WriteLog(Format(_('Retried %d times, stopping'), [MaxRetries]), ltGeneral, llError);
       FState := csStopped;
     end else
     begin
@@ -986,32 +999,29 @@ begin
     FOnDisconnected(Self);
 end;
 
-procedure TICEClient.WriteDebug(Text, Data: string; T: TDebugTypes; Level: TDebugLevels);
+procedure TICEClient.WriteLog(Text, Data: string; T: TLogType; Level: TLogLevel);
 var
   LS: TLogSource;
 begin
   {$IFNDEF DEBUG}
-  if Level <> dlNormal then
-    Exit;
+  //if Level = llDebug then
+  //  Exit;
   {$ENDIF}
 
   LS := lsStream;
   if FAutoRemove then
     LS := lsAutomatic;
 
-    // TODO: es ist nicht immer llInfo. Das weiß ich hier aber nicht, weil hier der parameter fehlt...
-  MsgBus.SendMessage(TLogMsg.Create(Self, LS, T, llInfo, FEntry.CustomName, Text)); // TODO: data fehlt hier. man kann im log ATM nix ausklappen. aber hier ja auch nicht.. obwohl, will man es da vllt? kA. erstmal nicht!
+  MsgBus.SendMessage(TLogMsg.Create(Self, LS, T, Level, FEntry.CustomName, Text));
 
-  TLogger.Write(Copy(FEntry.Name, 1, 20), Text);
-
-  FDebugLog.Add(TDebugEntry.Create(Text, Data, T, Level));
-  if Assigned(FOnDebug) then
-    FOnDebug(Self);
+  FDebugLog.Add(TLogEntry.Create(Text, Data, T, Level));
+  if Assigned(FOnLog) then
+    FOnLog(Self);
 end;
 
-procedure TICEClient.WriteDebug(Text: string; T: TDebugTypes; Level: TDebugLevels);
+procedure TICEClient.WriteLog(Text: string; T: TLogType; Level: TLogLevel);
 begin
-  WriteDebug(Text, '', T, Level);
+  WriteLog(Text, '', T, Level);
 end;
 
 function TICEClient.ParsePlaylist: Boolean;
@@ -1063,7 +1073,7 @@ end;
 
 { TDebugEntry }
 
-constructor TDebugEntry.Create(Text, Data: string; T: TDebugTypes; Level: TDebugLevels);
+constructor TLogEntry.Create(Text, Data: string; T: TLogType; Level: TLogLevel);
 begin
   Self.Text := Text;
   Self.Data := Data;
@@ -1098,13 +1108,14 @@ end;
 
 { TDebugLog }
 
-procedure TDebugLog.Notify(const Item: TDebugEntry;
+procedure TLog.Notify(const Item: TLogEntry;
   Action: TCollectionNotification);
 var
   i: Integer;
 begin
   inherited;
-  if (Action = cnAdded) and (Count > 1000) then
+  if (Action = cnAdded) and (Count > 1000) then // TODO: das hier ist mist - nach dem löschen muss ich auch dem logview bescheid sagen, dass jetzt was gelöscht wurde.
+                                                // und die löschmethode ist auch doof. warum kein while count > 1000 do delete(0);?
     for i := Count - 500 downto 0 do
       Delete(i);
 end;

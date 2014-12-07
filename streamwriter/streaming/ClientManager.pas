@@ -55,7 +55,7 @@ type
     FNoFreeSpaceErrorShown: Boolean;
     FDirDoesNotExistErrorShown: Boolean;
 
-    FOnClientDebug: TNotifyEvent;
+    FOnClientLog: TNotifyEvent;
     FOnClientRefresh: TNotifyEvent;
     FOnClientAddRecent: TNotifyEvent;
     FOnClientAdded: TNotifyEvent;
@@ -73,7 +73,7 @@ type
 
     function FGetActive: Boolean;
 
-    procedure ClientDebug(Sender: TObject);
+    procedure ClientLog(Sender: TObject);
     procedure ClientRefresh(Sender: TObject);
     procedure ClientAddRecent(Sender: TObject);
     procedure ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
@@ -116,15 +116,15 @@ type
     property Items[Index: Integer]: TICEClient read FGetItem; default;
     property Count: Integer read FGetCount;
 
-    function MatchesClient(Client: TICEClient; ID: Integer; Name, URL, Title: string;
+    function MatchesClient(Client: TICEClient; ID: Integer; Name, URL: string;
       URLs: TStringList): Boolean;
-    function GetClient(ID: Integer; Name, URL, Title: string; URLs: TStringList): TICEClient;
+    function GetClient(ID: Integer; Name, URL: string; URLs: TStringList): TICEClient;
     function GetUsedBandwidth(Bitrate, Speed: Int64; ClientToAdd: TICEClient = nil): Integer;
 
     property Active: Boolean read FGetActive;
     property SongsSaved: Integer read FSongsSaved;
 
-    property OnClientDebug: TNotifyEvent read FOnClientDebug write FOnClientDebug;
+    property OnClientLog: TNotifyEvent read FOnClientLog write FOnClientLog;
     property OnClientRefresh: TNotifyEvent read FOnClientRefresh write FOnClientRefresh;
     property OnClientAddRecent: TNotifyEvent read FOnClientAddRecent write FOnClientAddRecent;
     property OnClientAdded: TNotifyEvent read FOnClientAdded write FOnClientAdded;
@@ -239,7 +239,7 @@ end;
 procedure TClientManager.SetupClient(Client: TICEClient);
 begin
   FClients.Add(Client);
-  Client.OnDebug := ClientDebug;
+  Client.OnLog := ClientLog;
   Client.OnRefresh := ClientRefresh;
   Client.OnAddRecent := ClientAddRecent;
   Client.OnSongSaved := ClientSongSaved;
@@ -304,7 +304,7 @@ begin
   FClients.Free;
   FMonitorClients.Free;
 
-  FOnClientDebug := nil;
+  FOnClientLog := nil;
   FOnClientRefresh := nil;
   FOnClientAddRecent := nil;
   FOnClientAdded := nil;
@@ -393,51 +393,16 @@ var
   SaveListTitle: TTitleInfo;
   SaveListArtist: TTitleInfo;
   Text: string;
-begin
+begin                                      // TODO: llWarning und änderungen an TLogTypes muss ich in protokoll und stream-protokoll berücksichtigen für die wahl der symbole!
   SaveListTitle := nil;
   SaveListArtist := nil;
   AutoTuneInMinKbps := GetAutoTuneInMinKbps(TAudioTypes(AudioType), AppGlobals.AutoTuneInMinQuality);
 
-  MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Format('Title "%s" detected on "%s"', [Title, Name])));
-
-  if (AppGlobals.DirAuto = '') or (not DirectoryExists(IncludeTrailingBackslash(AppGlobals.DirAuto))) then
-  begin
-    if not FDirDoesNotExistErrorShown then
-    begin
-      OnShowErrorMessage(nil, crDirDoesNotExist, True, False);
-      FDirDoesNotExistErrorShown := True;
-    end;
-    Text := Format('Automatic recording of "%s" won''t be started because the folder for automatic recordings does not exist', [Title]);
-    TLogger.Write('ClientManager', Text);
-    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Text));
-    Exit;
-  end else
-    FDirDoesNotExistErrorShown := False;
-
-  if Kbps < AutoTuneInMinKbps then
-  begin
-    Text := Format('Automatic recording of "%s" won''t be started because the bitrate is too low (%d Kbps)', [Title, Kbps]);
-    TLogger.Write('ClientManager', Text);
-    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Text));
-    Exit;
-  end;
-
-  if (AppGlobals.AutoTuneInFormat > 0) and (TAudioTypes(AppGlobals.AutoTuneInFormat) <> AudioType) then
-  begin
-    Text := Format('Automatic recording of "%s" won''t be started because the audio format is not allowed', [Title]);
-    TLogger.Write('ClientManager', Text);
-    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Text));
-    Exit;
-  end;
-
-  for i := 0 to AppGlobals.Data.StreamBlacklist.Count - 1 do
-    if AppGlobals.Data.StreamBlacklist[i] = Name then
-    begin
-      Text := Format('Automatic recording of "%s" won''t be started because the stream is on the ignorelist', [Title]);
-      TLogger.Write('ClientManager', Text);
-      MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Text));
-      Exit;
-    end;
+  // Das hier sind harte Abbruchbedingungen. Das muss nicht ins Log.
+  for Client in Self.FClients do
+    if MatchesClient(Client, ID, Name, CurrentURL, nil) then
+      if (Client.AutoRemove and (Client.RecordTitle = Title)) or (Client.Recording) then
+        Exit;
 
   for i := 0 to AppGlobals.Data.SaveList.Count - 1 do
   begin
@@ -449,11 +414,46 @@ begin
 
   if (not Assigned(SaveListTitle)) and (not Assigned(SaveListArtist)) then
   begin
-    Text := Format('Automatic recording of "%s" won''t be started because SaveListTitle and SaveListArtist == nil', [Title]); // TODO: das fachchinesisch hier raus wegmachen!!!
-    TLogger.Write('ClientManager', Text);
-    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Text));
     Exit;
   end;
+
+  // Ab hier wird protokolliert
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llInfo, _('Automatic recording'), Format('Title "%s" detected on "%s"', [Title, Name])));
+
+  if (AppGlobals.DirAuto = '') or (not DirectoryExists(IncludeTrailingBackslash(AppGlobals.DirAuto))) then
+  begin
+    if not FDirDoesNotExistErrorShown then
+    begin
+      OnShowErrorMessage(nil, crDirDoesNotExist, True, False);
+      FDirDoesNotExistErrorShown := True;
+    end;
+    Text := Format('Automatic recording of "%s" won''t be started because the folder for automatic recordings does not exist', [Title]);
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
+    Exit;
+  end else
+    FDirDoesNotExistErrorShown := False;
+
+  if Kbps < AutoTuneInMinKbps then
+  begin
+    Text := Format('Automatic recording of "%s" won''t be started because the bitrate is too low (%d Kbps)', [Title, Kbps]);
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
+    Exit;
+  end;
+
+  if (AppGlobals.AutoTuneInFormat > 0) and (TAudioTypes(AppGlobals.AutoTuneInFormat) <> AudioType) then
+  begin
+    Text := Format('Automatic recording of "%s" won''t be started because the audio format is not allowed', [Title]);
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
+    Exit;
+  end;
+
+  for i := 0 to AppGlobals.Data.StreamBlacklist.Count - 1 do
+    if AppGlobals.Data.StreamBlacklist[i] = Name then
+    begin
+      Text := Format('Automatic recording of "%s" won''t be started because the stream is on the ignorelist', [Title]);
+      MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
+      Exit;
+    end;
 
   if AppGlobals.AutoTuneInConsiderIgnore then
     for n := 0 to AppGlobals.Data.IgnoreList.Count - 1 do
@@ -461,8 +461,7 @@ begin
       if Like(Title, AppGlobals.Data.IgnoreList[n].Pattern) then
       begin
         Text := Format('Automatic recording of "%s" won''t be started because it matches "%s" on the ignorelist', [Title, AppGlobals.Data.IgnoreList[n].Pattern]);
-        TLogger.Write('ClientManager', Text);
-        MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Text));
+        MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
         Exit;
       end;
     end;
@@ -476,18 +475,12 @@ begin
       FNoFreeSpaceErrorShown := True;
     end;
     Text := Format('Automatic recording of "%s" won''t be started because no space is available', [Title]);
-    TLogger.Write('ClientManager', Text);
-    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Text));
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
     Exit;
   end;
   FNoFreeSpaceErrorShown := False;
 
-  for Client in Self.FClients do
-    if MatchesClient(Client, ID, Name, CurrentURL, Title, nil) then
-      if (Client.AutoRemove and (Client.RecordTitle = Title)) or (Client.Recording) then
-        Exit;
-
-  MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, dtMessage, llInfo, _('Automatic recording'), Format('Starting automatic recording of "%s"', [Title])));
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llInfo, _('Automatic recording'), Format('Starting automatic recording of "%s"', [Title])));
 
   Client := AddClient(0, 0, Name, CurrentURL, True);
   Client.Entry.Settings.Assign(AppGlobals.Data.AutoRecordSettings);
@@ -504,10 +497,10 @@ begin
   Client.StartRecording(False);
 end;
 
-procedure TClientManager.ClientDebug(Sender: TObject);
+procedure TClientManager.ClientLog(Sender: TObject);
 begin
-  if Assigned(FOnClientDebug) then
-    FOnClientDebug(Sender);
+  if Assigned(FOnClientLog) then
+    FOnClientLog(Sender);
 end;
 
 procedure TClientManager.ClientRefresh(Sender: TObject);
@@ -522,7 +515,7 @@ begin
     FOnClientAddRecent(Sender);
 end;
 
-function TClientManager.MatchesClient(Client: TICEClient; ID: Integer; Name, URL, Title: string;
+function TClientManager.MatchesClient(Client: TICEClient; ID: Integer; Name, URL: string;
   URLs: TStringList): Boolean;
 var
   i, n: Integer;
@@ -539,10 +532,6 @@ begin
     if LowerCase(Client.Entry.StartURL) = LowerCase(URL) then
       Exit(True);
 
-  if Title <> '' then
-    if LowerCase(Client.Title) = LowerCase(Title) then
-      Exit(True);
-
   if URLs <> nil then
     for i := 0 to Client.Entry.URLs.Count - 1 do
       for n := 0 to URLs.Count - 1 do
@@ -554,7 +543,7 @@ begin
   Exit(False);
 end;
 
-function TClientManager.GetClient(ID: Integer; Name, URL, Title: string;
+function TClientManager.GetClient(ID: Integer; Name, URL: string;
   URLs: TStringList): TICEClient;
 var
   Client: TICEClient;
@@ -565,7 +554,7 @@ begin
   Result := nil;
   for Client in FClients do
   begin
-    if MatchesClient(Client, ID, Name, URL, Title, URLs) then
+    if MatchesClient(Client, ID, Name, URL, URLs) then
       Exit(Client);
   end;
 end;

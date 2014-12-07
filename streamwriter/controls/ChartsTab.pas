@@ -1412,7 +1412,7 @@ begin
 
   FLabel := TLabel.Create(Self);
   FLabel.Parent := Self;
-  FLabel.Caption := _('Search:');
+  FLabel.Caption := 'Search:';
 
   FSearch := TMyComboBox.Create(Self);
   FSearch.Parent := Self;
@@ -1425,7 +1425,6 @@ end;
 
 procedure TSearchPanel.PostTranslate;
 begin
-  FLabel.Caption := _('Search:');
   FSearch.Left := FLabel.Left + FLabel.Width + 6;
 
   RebuildSearchItems('');
@@ -1487,22 +1486,22 @@ begin
 
   FButtonAddStream := TToolButton.Create(FToolbar);
   FButtonAddStream.Parent := FToolbar;
-  FButtonAddStream.Hint := _('Add stream');
+  FButtonAddStream.Hint := 'Add stream';
   FButtonAddStream.ImageIndex := 80;
 
   FButtonPlayStreamExternal := TToolButton.Create(FToolbar);
   FButtonPlayStreamExternal.Parent := FToolbar;
-  FButtonPlayStreamExternal.Hint := _('Play stream (external player)');
+  FButtonPlayStreamExternal.Hint := 'Play stream (external player)';
   FButtonPlayStreamExternal.ImageIndex := 82;
 
   FButtonPlayStream := TToolButton.Create(FToolbar);
   FButtonPlayStream.Parent := FToolbar;
-  FButtonPlayStream.Hint := _('Play stream');
+  FButtonPlayStream.Hint := 'Play stream';
   FButtonPlayStream.ImageIndex := 33;
 
   FButtonStartStreaming := TToolButton.Create(FToolbar);
   FButtonStartStreaming.Parent := FToolbar;
-  FButtonStartStreaming.Hint := _('Start recording');
+  FButtonStartStreaming.Hint := 'Start recording';
   FButtonStartStreaming.ImageIndex := 0;
 
   Sep := TToolButton.Create(FToolbar);
@@ -1512,7 +1511,7 @@ begin
 
   FButtonEditAndAddToWishlist := TToolButton.Create(FToolbar);
   FButtonEditAndAddToWishlist.Parent := FToolbar;
-  FButtonEditAndAddToWishlist.Hint := _('Edit and add to manual wishlist');
+  FButtonEditAndAddToWishlist.Hint := 'Edit and add to manual wishlist';
   FButtonEditAndAddToWishlist.ImageIndex := 30;
 
   Sep := TToolButton.Create(FToolbar);
@@ -1522,12 +1521,12 @@ begin
 
   FButtonAddArtistToWishlist := TToolButton.Create(FToolbar);
   FButtonAddArtistToWishlist.Parent := FToolbar;
-  FButtonAddArtistToWishlist.Hint := _('Add artist to automatic wishlist');
+  FButtonAddArtistToWishlist.Hint := 'Add artist to automatic wishlist';
   FButtonAddArtistToWishlist.ImageIndex := 86;
 
   FButtonAddToWishlist := TToolButton.Create(FToolbar);
   FButtonAddToWishlist.Parent := FToolbar;
-  FButtonAddToWishlist.Hint := _('Add title to automatic wishlist');
+  FButtonAddToWishlist.Hint := 'Add title to automatic wishlist';
   FButtonAddToWishlist.ImageIndex := 77;
 
   //FToolbar.Padding.Top := 6;
@@ -1565,7 +1564,7 @@ begin
   Items.Add(FItemAddToWishlist);
 
   FItemAddArtistToWishlist := CreateMenuItem;
-  FItemAddArtistToWishlist.Caption := '&Add artist to automatic wishlist';
+  FItemAddArtistToWishlist.Caption := 'A&dd artist to automatic wishlist';
   FItemAddArtistToWishlist.ImageIndex := 86;
   Items.Add(FItemAddArtistToWishlist);
 
@@ -1598,7 +1597,7 @@ begin
   Items.Add(FItemPlayStreamExternal);
 
   FItemAddStream := CreateMenuItem;
-  FItemAddStream.Caption := '&Add stream';
+  FItemAddStream.Caption := 'Add s&tream';
   FItemAddStream.ImageIndex := 80;
   Items.Add(FItemAddStream);
 end;

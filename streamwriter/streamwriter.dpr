@@ -28,7 +28,7 @@ uses
   madExcept,
   madLinkDisAsm,
   madListHardware,
-  madListProcesses,
+  madListProcesses,        // TODO: sortieren im protokoll abschalten.
   madListModules,
   Windows,
   Messages,
@@ -177,6 +177,7 @@ var
   // Initialize the AppGlobals object without loading any settings.
   // If we need to show the profile selection window, this would make no sense.
   CreateAppData;
+  MsgBus := TSWMessageBus.Create;
 
   Application.Title := AppGlobals.AppName;
   Application.Icon.Handle := LoadIcon(HInstance, 'A');

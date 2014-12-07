@@ -422,6 +422,12 @@ begin
     AppGlobals.SavedHeaderPosition[i] := tabSaved.Tree.Header.Columns[i].Position;
   end;
 
+  for i := 0 to tabLog.LogTree.Header.Columns.Count - 1 do
+  begin
+    AppGlobals.LogHeaderWidth[i] := tabLog.LogTree.Header.Columns[i].Width;
+    AppGlobals.LogHeaderPosition[i] := tabLog.LogTree.Header.Columns[i].Position;
+  end;
+
   try
     // Es ist mir beim Theme-Wechsel passiert, dass der Tray komplett verschwunden ist.
     // Beim Beenden von sW gab es dann eine Exception. Das hier sollte helfen ;-) ...
@@ -1975,8 +1981,9 @@ begin
 
   if Txt <> '' then
   begin
-    if Sender <> nil then
-      Sender.WriteDebug(Txt, dtError, dlNormal);
+    // TODO: braucht man das hier noch? weil der clientmanager schickt ja schon logging? bzw: es wird nicht für jeden fehler oben schon geloggt. mindestens schedule fehlt. prüfen!!!
+    //if Sender <> nil then
+    //  Sender.WriteDebug(Txt, dtError, dlNormal);
     TfrmMsgDlg.ShowMsg(Self, Txt, mtInformation, [mbOK], mbOK);
   end;
 end;
@@ -2331,7 +2338,7 @@ begin
       begin
         if Schedule.MatchesStart and (not Schedule.TriedStart) then
         begin
-          Client.WriteDebug(_('Starting scheduled recording'), dtSchedule, dlNormal);
+          Client.WriteLog(_('Starting scheduled recording'), ltSchedule, llInfo);
 
           Schedule.TriedStart := True;
           Schedule.ScheduleStarted := Schedule.GetStartTime;
@@ -2341,14 +2348,15 @@ begin
           else
           begin
             Client.ScheduledRecording := True;
-            Client.WriteDebug(Format(_('Scheduled recording ends at %s'), [TimeToStr(Schedule.GetEndTime(Schedule.GetStartTime))]), dtSchedule, dlNormal);
+            Client.WriteLog
+            (Format(_('Scheduled recording ends at %s'), [TimeToStr(Schedule.GetEndTime(Schedule.GetStartTime))]), ltSchedule, llInfo);
           end;
         end else if not Schedule.MatchesStart then
           Schedule.TriedStart := False;
 
         if Schedule.MatchesEnd and (not Schedule.TriedStop) and Client.ScheduledRecording then
         begin
-          Client.WriteDebug(_('Stopping scheduled recording'), dtSchedule, dlNormal);
+          Client.WriteLog(_('Stopping scheduled recording'), ltSchedule, llInfo);
 
           Client.StopRecording;
           Schedule.TriedStop := True;

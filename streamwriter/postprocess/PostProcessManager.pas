@@ -33,8 +33,8 @@ type
   private
     FProcessingList: TProcessingList;
 
-    procedure WriteDebug(Sender: TObject; Text, Data: string; T: TDebugTypes; Level: TDebugLevels); overload;
-    procedure WriteDebug(Sender: TObject; Text: string; T: TDebugTypes; Level: TDebugLevels); overload;
+    procedure WriteLog(Sender: TObject; Text, Data: string; T: TLogType; Level: TLogLevel); overload;
+    procedure WriteLog(Sender: TObject; Text: string; T: TLogType; Level: TLogLevel); overload;
 
     function FindNextIdx(Entry: TProcessingEntry; Group: Integer): Integer;
     procedure BuildProcessingList(Entry: TProcessingEntry);
@@ -75,7 +75,7 @@ begin
   begin
     Result := True;
 
-    WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), dtPostProcess, dlNormal);
+    WriteLog(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llInfo);
 
     FProcessingList.Add(Entry);
   end;
@@ -208,11 +208,11 @@ begin
 
       case Entry.ActiveThread.Result of
         arWin:
-          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" successfully finished'), [Entry.ActiveThread.PostProcessor.Name]), dtPostProcess, dlNormal);
+          WriteLog(Entry.Owner, Format(_('Postprocessor "%s" successfully finished'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llInfo);
         arTimeout:
-          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" timed out'), [Entry.ActiveThread.PostProcessor.Name]), dtError, dlNormal);
+          WriteLog(Entry.Owner, Format(_('Postprocessor "%s" timed out'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llError);
         arFail:
-          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" failed'), [Entry.ActiveThread.PostProcessor.Name]), dtError, dlNormal);
+          WriteLog(Entry.Owner, Format(_('Postprocessor "%s" failed'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llError);
       end;
 
       // Wenn das Result nicht gut ist, dann wird die Chain hier beendet und der Song gilt als gespeichert.
@@ -241,10 +241,10 @@ begin
       begin
         if ProcessFile(Entry) then
         begin
-          WriteDebug(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), dtPostProcess, dlNormal);
+          WriteLog(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llInfo);
         end else
         begin
-          WriteDebug(Entry.Owner, 'All postprocessors done', dtMessage, dlDebug);
+          WriteLog(Entry.Owner, 'All postprocessors done', ltPostProcess, llInfo);
 
           // Wird hier gemacht, damit WorkingForClient() False zurückliefert. Wichtig!
           FProcessingList.Delete(i);
@@ -257,7 +257,7 @@ begin
         end;
       end else
       begin
-        WriteDebug(Entry.Owner, _('An external application or postprocessor has deleted the saved file'), dtError, dlNormal);
+        WriteLog(Entry.Owner, _('An external application or postprocessor has deleted the saved file'), ltPostProcess, llWarning);
 
         Entry.Free;
         FProcessingList.Delete(i);
@@ -268,11 +268,11 @@ begin
   end;
 end;
 
-procedure TPostProcessManager.WriteDebug(Sender: TObject; Text,
-  Data: string; T: TDebugTypes; Level: TDebugLevels);
+procedure TPostProcessManager.WriteLog(Sender: TObject; Text,
+  Data: string; T: TLogType; Level: TLogLevel);
 begin
   if Sender <> nil then
-    TICEClient(Sender).WriteDebug(Text, Data, T, Level);
+    TICEClient(Sender).WriteLog(Text, Data, T, Level);
 end;
 
 function TPostProcessManager.WorkingForClient(Client: TObject): Boolean;
@@ -285,11 +285,11 @@ begin
       Exit(True);
 end;
 
-procedure TPostProcessManager.WriteDebug(Sender: TObject; Text: string;
-  T: TDebugTypes; Level: TDebugLevels);
+procedure TPostProcessManager.WriteLog(Sender: TObject; Text: string;
+  T: TLogType; Level: TLogLevel);
 begin
   if Sender <> nil then
-    TICEClient(Sender).WriteDebug(Text, T, Level);
+    TICEClient(Sender).WriteLog(Text, T, Level);
 end;
 
 constructor TPostProcessManager.Create;
@@ -302,8 +302,6 @@ var
   Order, GroupID: Integer;
 begin
   FProcessingList := TProcessingList.Create;
-
-
 end;
 
 destructor TPostProcessManager.Destroy;

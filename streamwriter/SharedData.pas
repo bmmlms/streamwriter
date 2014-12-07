@@ -29,7 +29,6 @@ type
   TmodSharedData = class(TDataModule)
     imgImages: TPngImageList;
     imgClients: TPngImageList;
-    imgLog: TPngImageList;
   private
   public
   end;

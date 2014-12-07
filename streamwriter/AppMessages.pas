@@ -23,9 +23,14 @@ unit AppMessages;
 interface
 
 uses
-  Windows, SysUtils, MessageBus, TypeDefs;
+  Windows, SysUtils, MessageBus, TypeDefs, Logging;
 
 type
+  TSWMessageBus = class(TMessageBus)
+  public
+    procedure SendMessage(Msg: TMessageBase); override;
+  end;
+
   TFileModifyMsg = class(TMessageBase)
   private
     FFilename: string;
@@ -95,18 +100,18 @@ type
   TLogMsg = class(TMessageBase)
   private
     FSource: TLogSource;
-    FLogType: TDebugTypes;
+    FLogType: TLogType;
     FLogLevel: TLogLevel;
-    FDate: TDateTime;
+    FTime: TDateTime;
     FSourceText: string;
     FText: string;
   public
-    constructor Create(Sender: TObject; Source: TLogSource; LogType: TDebugTypes; LogLevel: TLogLevel; SourceText, Text: string);
+    constructor Create(Sender: TObject; Source: TLogSource; LogType: TLogType; LogLevel: TLogLevel; SourceText, Text: string);
 
     property Source: TLogSource read FSource;
-    property LogType: TDebugTypes read FLogType;
+    property LogType: TLogType read FLogType;
     property LogLevel: TLogLevel read FLogLevel;
-    property Date: TDateTime read FDate;
+    property Time: TDateTime read FTime;
     property SourceText: string read FSourceText;
     property Text: string read FText;
   end;
@@ -176,15 +181,39 @@ end;
 
 { TLogMsg }
 
-constructor TLogMsg.Create(Sender: TObject; Source: TLogSource; LogType: TDebugTypes; LogLevel: TLogLevel; SourceText, Text: string);
+constructor TLogMsg.Create(Sender: TObject; Source: TLogSource; LogType: TLogType; LogLevel: TLogLevel; SourceText, Text: string);
 begin
   inherited Create;
 
   FSource := Source;
   FLogType := LogType;
+  FTime := Now;
   FLogLevel := LogLevel;
   FSourceText := SourceText;
   FText := Text;
+end;
+
+{ TSWMessageBus }
+
+procedure TSWMessageBus.SendMessage(Msg: TMessageBase);
+var
+  LogMsg: TLogMsg absolute Msg;
+begin
+  if Msg is TLogMsg then
+  begin
+    {$IFNDEF DEBUG}
+    if LogMsg.FLogLevel = llDebug then
+    begin
+      LogMsg.Free;
+      Exit;
+    end;
+    {$ENDIF}
+
+    TLogger.Write(TimeToStr(LogMsg.FTime) + ' - ' + LogMsg.FSourceText + ' - ' + LogMsg.FText);
+  end;
+
+  // Inherited unten, weil da Msg.Free gemacht wird.
+  inherited;
 end;
 
 end.

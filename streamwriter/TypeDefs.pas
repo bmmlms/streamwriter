@@ -27,19 +27,16 @@ uses
   Windows, SysUtils, Classes;
 
 type
-  // An array of integer.........
   TIntArray = array of Integer;
   TCardinalArray = array of Cardinal;
 
+  // TODO: aus "Copyright (c) 2010-2014 Alexander Nottelmann" ein "Copyright (c) 2010-2015 Alexander Nottelmann" machen :)
+
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
 
-  // TODO: TDebugTypes nach TLogTypes umbenennen
-  // TODO: das "s" am ende der typnamen wegmachen. sind doch keine sets...
-  TDebugTypes = (dtSocket, dtMessage, dtSong, dtError, dtSaved, dtPostProcess, dtSchedule); // TODO: wo wird das benutzt? ist das nur für das icon?
-  TDebugLevels = (dlNormal, dlDebug);
-
-  TLogSource = (lsGeneral, lsAutomatic, lsStream);
-  TLogLevel = (llDebug, llError, llInfo); // TODO: wird noch nicht überall ordentlich benutzt..
+  TLogType = (ltGeneral, ltSong, ltSaved, ltPostProcess, ltSchedule);
+  TLogSource = (lsGeneral, lsAutomatic, lsStream, lsHome);
+  TLogLevel = (llError, llWarning, llInfo, llDebug);
 
   // Defines all possible types of lists
   TListType = (ltSave, ltIgnore, ltAutoDetermine);

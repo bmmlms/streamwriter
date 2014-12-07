@@ -53,7 +53,6 @@ type
   TMStreamDebugPanel = class(TPanel)
   private
     FClient: TICEClient;
-    FChkAutoScroll: TCheckBox;
     FDebug: TDebugView;
     FPanelBottom: TPanel;
     FBtnCopy: TButton;
@@ -65,7 +64,6 @@ type
 
     procedure BtnCopyClick(Sender: TObject);
     procedure BtnClearClick(Sender: TObject);
-    procedure ChkAutoScrollClick(Sender: TObject);
   protected
   public
     constructor Create(AOwner: TComponent); reintroduce;
@@ -101,26 +99,12 @@ begin
   FDebug.Copy;
 end;
 
-procedure TMStreamDebugPanel.ChkAutoScrollClick(Sender: TObject);
-begin
-  AppGlobals.AutoScrollLog := FChkAutoScroll.Checked;
-end;
-
 constructor TMStreamDebugPanel.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
   Align := alClient;
   BevelOuter := bvNone;
-
-  FChkAutoScroll := TCheckBox.Create(Self);
-  FChkAutoScroll.Caption := '&Autoscroll';
-  FChkAutoScroll.Parent := Self;
-  FChkAutoScroll.Align := alTop;
-  FChkAutoScroll.Visible := True;
-  FChkAutoScroll.Checked := AppGlobals.AutoScrollLog;
-  FChkAutoScroll.OnClick := ChkAutoScrollClick;
-  FChkAutoScroll.Height := MulDiv(17, Screen.PixelsPerInch, 96) + 2;
 
   FDebug := TDebugView.Create(Self);
   FDebug.Parent := Self;
@@ -225,7 +209,7 @@ begin
   TreeOptions.SelectionOptions := TreeOptions.SelectionOptions + [toFullRowSelect, toMultiSelect];
   ScrollBarOptions.ScrollBars := ssVertical;
 
-  Images := modSharedData.imgLog;
+  Images := modSharedData.imgImages;
 
   Indent := 0;
   ShowHint := True;
@@ -248,6 +232,8 @@ begin
 end;
 
 procedure TDebugView.FSetClient(Value: TICEClient);
+var
+  R: TRect;
 begin
   FClient := Value;
   if FClient <> nil then
@@ -257,8 +243,13 @@ begin
   begin
     RootNodeCount := 0;
   end;
-  if AppGlobals.AutoScrollLog and (GetLast <> nil) then
-    ScrollIntoView(GetLast, False, False);
+
+  if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) then
+  begin
+    R := GetDisplayRect(GetPrevious(GetLast), NoColumn, False);
+    if not (R.Bottom > ClientHeight) then
+      ScrollIntoView(GetLast, False, False);
+  end;
 end;
 
 function TDebugView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
@@ -269,20 +260,26 @@ begin
   Index := -1;
   if Column = 1 then
   begin
-    Index := 4;
-    case FClient.DebugLog[Node.Index].T of
-      dtSocket:;
-      dtMessage:;
-      dtSong:
-        Index := 0;
-      dtError:
-        Index := 1;
-      dtSaved:
-        Index := 2;
-      dtPostProcess:
-        Index := 3;
-      dtSchedule:
-        Index := 5;
+    Index := 3;
+
+    case FClient.DebugLog[Node.Index].Level of
+      llError: Index := 100;
+      llWarning: Index := 97;
+      llDebug: Index := 98;
+    end;
+
+    if Index = 3 then
+    begin
+      case FClient.DebugLog[Node.Index].T of
+        ltSong:
+          Index := 20;
+        ltSaved:
+          Index := 14;
+        ltPostProcess:
+          Index := 56;
+        ltSchedule:
+          Index := 50;
+      end;
     end;
   end;
 end;

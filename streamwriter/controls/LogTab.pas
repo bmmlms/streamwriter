@@ -18,7 +18,6 @@
     ------------------------------------------------------------------------
 }
 
-{ This unit is for showing radio-charts in the main-window }
 unit LogTab;
 
 interface
@@ -29,21 +28,39 @@ uses
   HomeCommunication, DataManager, ImgList, Graphics, Math, Generics.Collections,
   Menus, ChartsTabAdjustTitleName, Forms, TypeDefs, MessageBus, AppMessages,
   HomeCommands, Commands, GUIFunctions, SharedData, PerlRegEx, Messages,
-  DateUtils, SharedControls;
+  DateUtils, SharedControls, Clipbrd;
 
 type
-  TLogNodeData = record
-    Source: TLogSource;
-    LogType: TDebugTypes;
-    LogLevel: TLogLevel;
-    Date: TDateTime;
-    SourceText: string;
+  TFilterTypes = set of TLogLevel;
+
+  TLogEntry = class
+  public
     Text: string;
+    TextSource: string;
+    Source: TLogSource;
+    LogType: TLogType;
+    Level: TLogLevel;
+    Time: TDateTime;
+    constructor Create(Text, TextSource: string; Time: TDateTime; Source: TLogSource; LogType: TLogType; Level: TLogLevel);
+  end;
+
+  TLogNodeData = record
+    LogEntry: TLogEntry;
   end;
   PLogNodeData = ^TLogNodeData;
 
   TLogPanel = class(TPanel)
   private
+    FLabel: TLabel;
+    FSearch: TEdit;
+    FToolbar: TToolBar;
+
+    FButtonDebug: TToolButton;
+    FButtonInfo: TToolButton;
+    FButtonWarning: TToolButton;
+    FButtonError: TToolButton;
+    FButtonCopy: TToolButton;
+    FButtonClear: TToolButton;
   protected
     procedure Resize; override;
   public
@@ -60,9 +77,17 @@ type
     FColSource: TVirtualTreeColumn;
     FColText: TVirtualTreeColumn;
 
+    FLog: TList<TLogEntry>;
+
+    FFilterPattern: string;
+    FFilterTypes: TFilterTypes;
+
     FHeaderDragSourcePosition: Cardinal;
 
     procedure FitColumns;
+    procedure MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
+    function MatchesFilter(LogEntry: TLogEntry): Boolean;
+    procedure Add(LogEntry: TLogEntry); overload;
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType; var Text: string); override;
@@ -74,8 +99,6 @@ type
     procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
     function DoIncrementalSearch(Node: PVirtualNode;
       const Text: string): Integer; override;
-    procedure DoAfterCellPaint(Canvas: TCanvas; Node: PVirtualNode;
-      Column: TColumnIndex; CellRect: TRect); override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo;
@@ -91,7 +114,8 @@ type
 
     procedure PostTranslate;
 
-    procedure Add(Source: TLogSource; LogType: TDebugTypes; LogLevel: TLogLevel; SourceText, Text: string);
+    procedure Add(Source: TLogSource; LogType: TLogType; LogLevel: TLogLevel; SourceText, Text: string; Time: TDateTime); overload;
+    procedure SetFilter(Text: string; FilterTypes: TFilterTypes);
   end;
 
   TLogTab = class(TMainTabSheet)
@@ -99,6 +123,8 @@ type
     FLogPanel: TLogPanel;
     FLogTree: TLogTree;
 
+    procedure TextChange(Sender: TObject);
+    procedure ButtonClick(Sender: TObject);
     procedure LogTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
   protected
   public
@@ -124,9 +150,77 @@ begin
 
   FLogTree.Images := modSharedData.imgImages;
 
+  // TODO: brauchen nen popupmenü!
+  //if Screen.PixelsPerInch = 96 then
+  //  FChartsTree.PopupMenu.Images := modSharedData.imgImages;
+
+  FLogPanel.FSearch.OnChange := TextChange;
+  FLogPanel.FButtonDebug.OnClick := ButtonClick;
+  FLogPanel.FButtonInfo.OnClick := ButtonClick;
+  FLogPanel.FButtonWarning.OnClick := ButtonClick;
+  FLogPanel.FButtonError.OnClick := ButtonClick;
+  FLogPanel.FButtonCopy.OnClick := ButtonClick;
+  FLogPanel.FButtonClear.OnClick := ButtonClick;
+
   Caption := 'Log';
 end;
-     // TODO: als bling bling überall einbauen, dass die aktuell sortierte spalte eingefärbt wird? oder nur die erste oder so?? das sieht geil aus. wie in mp3freund mit dem grau bei "Dateiname"
+
+procedure TLogTab.ButtonClick(Sender: TObject);
+var
+  i: Integer;
+  s: string;
+  Node: PVirtualNode;
+  NodeData: PLogNodeData;
+begin
+  if Sender = FLogPanel.FButtonDebug then
+  begin
+    if FLogPanel.FButtonDebug.Down then
+      FLogTree.SetFilter(FLogPanel.FSearch.Text, FLogTree.FFilterTypes + [llDebug])
+    else
+      FLogTree.SetFilter(FLogPanel.FSearch.Text, FLogTree.FFilterTypes - [llDebug]);
+  end else if Sender = FLogPanel.FButtonInfo then
+  begin
+    if FLogPanel.FButtonInfo.Down then
+      FLogTree.SetFilter(FLogPanel.FSearch.Text, FLogTree.FFilterTypes + [llInfo])
+    else
+      FLogTree.SetFilter(FLogPanel.FSearch.Text, FLogTree.FFilterTypes - [llInfo]);
+  end else if Sender = FLogPanel.FButtonWarning then
+  begin
+    if FLogPanel.FButtonWarning.Down then
+      FLogTree.SetFilter(FLogPanel.FSearch.Text, FLogTree.FFilterTypes + [llWarning])
+    else
+      FLogTree.SetFilter(FLogPanel.FSearch.Text, FLogTree.FFilterTypes - [llWarning]);
+  end else if Sender = FLogPanel.FButtonError then
+  begin
+    if FLogPanel.FButtonError.Down then
+      FLogTree.SetFilter(FLogPanel.FSearch.Text, FLogTree.FFilterTypes + [llError])
+    else
+      FLogTree.SetFilter(FLogPanel.FSearch.Text, FLogTree.FFilterTypes - [llError]);
+  end else if Sender = FLogPanel.FButtonCopy then
+  begin
+    if FLogTree.RootNodeCount > 0 then
+    begin
+      s := '';
+      Node := FLogTree.GetFirst;
+      while Node <> nil do
+      begin
+        NodeData := FLogTree.GetNodeData(Node);
+        if FLogTree.Selected[Node] or (FLogTree.SelectedCount = 0) then
+          s := s + TimeToStr(NodeData.LogEntry.Time) + ' - ' + NodeData.LogEntry.TextSource + ' - ' + NodeData.LogEntry.Text + #13#10;
+        Node := FLogTree.GetNext(Node)
+      end;
+      Clipboard.Clear;
+      Clipboard.SetTextBuf(PChar(s));
+    end;
+  end else if Sender = FLogPanel.FButtonClear then
+  begin
+    FLogTree.Clear;
+    for i := 0 to FLogTree.FLog.Count - 1 do
+      FLogTree.FLog[i].Free;
+    FLogTree.FLog.Clear;
+  end;
+end;
+
 procedure TLogTab.LogTreeChange(Sender: TBaseVirtualTree;
   Node: PVirtualNode);
 begin
@@ -139,12 +233,10 @@ begin
 
   ImageIndex := 3;
 
-  {
   FLogPanel := TLogPanel.Create(Self);
   FLogPanel.Parent := Self;
   FLogPanel.Align := alTop;
   FLogPanel.Padding.Top := 1;
-  }
 
   FLogTree := TLogTree.Create(Self);
   FLogTree.Parent := Self;
@@ -166,23 +258,56 @@ begin
   FLogTree.PostTranslate;
 end;
 
+procedure TLogTab.TextChange(Sender: TObject);
+begin
+  FLogTree.SetFilter(FLogPanel.FSearch.Text, FLogTree.FFilterTypes);
+end;
+
 { TLogTree }
 
-procedure TLogTree.Add(Source: TLogSource; LogType: TDebugTypes; LogLevel: TLogLevel; SourceText, Text: string);
+procedure TLogTree.Add(Source: TLogSource; LogType: TLogType; LogLevel: TLogLevel; SourceText, Text: string; Time: TDateTime);
+var
+  Node: PVirtualNode;
+  NodeData: PLogNodeData;
+  LogEntry: TLogEntry;
+begin
+  while FLog.Count > 10000 do
+  begin
+    if MatchesFilter(FLog[0]) then
+    begin
+      Node := GetFirst;
+      while Node <> nil do
+      begin
+        NodeData := GetNodeData(Node);
+        if NodeData.LogEntry = FLog[0] then
+        begin
+          DeleteNode(Node);
+          Break;
+        end;
+        Node := GetNext(Node);
+      end;
+    end;
+    FLog[0].Free;
+    FLog.Delete(0);
+  end;
+
+  LogEntry := TLogEntry.Create(Text, SourceText, Time, Source,  LogType, LogLevel);
+  FLog.Add(LogEntry);
+
+  Add(LogEntry);
+end;
+
+procedure TLogTree.Add(LogEntry: TLogEntry);
 var
   Node: PVirtualNode;
   NodeData: PLogNodeData;
 begin
-  Node := AddChild(nil);
-
-  NodeData := GetNodeData(Node);
-                                                // TODO: log muss automatisch nach unten scrollen, wenn es schon nach unten gescrollt ist. sonst nicht scrollen.
-  NodeData.Source := Source;
-  NodeData.LogType := LogType;
-  NodeData.LogLevel := LogLevel;
-  NodeData.Date := Now;
-  NodeData.SourceText := SourceText;
-  NodeData.Text := Text;
+  if MatchesFilter(LogEntry) then
+  begin
+    Node := AddChild(nil);
+    NodeData := GetNodeData(Node);
+    NodeData.LogEntry := LogEntry;
+  end;
 end;
 
 procedure TLogTree.AfterCreate;
@@ -196,15 +321,16 @@ var
 begin
   inherited Create(AOwner);
 
+  FLog := TList<TLogEntry>.Create;
+
   MsgBus.AddSubscriber(MessageReceived);    // TODO: RemoveSubscriber? fehlt das noch an anderen stellen?? klar, ist nicht wichtig, aber SAUBER!
 
-  NodeDataSize := SizeOf(TLogNodeData);
+  NodeDataSize := SizeOf(PLogNodeData);
 
   IncrementalSearch := isVisibleOnly;
 
   Indent := 0;
 
-  // TODO: passt das???????? WOHL KAUM!
   Header.Height := GetTextSize('Wyg', Font).cy + 5;
   AutoScrollDelay := 50;
   AutoScrollInterval := 400;
@@ -220,42 +346,45 @@ begin
   FColType.Text := _('Type');
   FColType.Options := FColType.Options - [coDraggable];
   FColTime := Header.Columns.Add;
-  FColTime.Text := _('Time'); // TODO: okay der text?? zeit oder datum?
+  FColTime.Text := _('Time');
   FColSource := Header.Columns.Add;
   FColSource.Text := _('Source');
-  FColText := Header.Columns.Add; // TODO: spalteneinstellungen speichern etcpp...
+  FColText := Header.Columns.Add;
   FColText.Text := _('Text');
 
   Header.PopupMenu := TMTreeColumnPopup.Create(Self);
+  TMTreeColumnPopup(Header.PopupMenu).OnAction := MenuColsAction;
+  TMTreeColumnPopup(Header.PopupMenu).HideIdx := 3;
 
   Header.SortColumn := 1;
   Header.SortDirection := sdDescending;
 
+  FFilterPattern := '*';
+  if (AppGlobals.LogFilterTypes and (1 shl Integer(llDebug))) <> 0 then
+    FFilterTypes := FFilterTypes + [llDebug];
+  if (AppGlobals.LogFilterTypes and (1 shl Integer(llInfo))) <> 0 then
+    FFilterTypes := FFilterTypes + [llInfo];
+  if (AppGlobals.LogFilterTypes and (1 shl Integer(llWarning))) <> 0 then
+    FFilterTypes := FFilterTypes + [llWarning];
+  if (AppGlobals.LogFilterTypes and (1 shl Integer(llError))) <> 0 then
+    FFilterTypes := FFilterTypes + [llError];
+
   for i := 1 to Header.Columns.Count - 1 do
   begin
-    if not ((AppGlobals.ChartCols and (1 shl i)) <> 0) then
+    if not ((AppGlobals.LogCols and (1 shl i)) <> 0) then
       Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
   end;
 end;
 
 destructor TLogTree.Destroy;
-begin
-
-  inherited;
-end;
-
-procedure TLogTree.DoAfterCellPaint(Canvas: TCanvas; Node: PVirtualNode;
-  Column: TColumnIndex; CellRect: TRect);
 var
-  C: Extended;
-  Chance: Integer;
-  R: TRect;
-  DrawWidth, MaxWidth, TextWidth: Integer;
-  NodeData: PLogNodeData;
+  i: Integer;
 begin
-  inherited;
+  for i := 0 to FLog.Count - 1 do
+    FLog[i].Free;
+  FLog.Free;
 
-  NodeData := GetNodeData(Node);
+  inherited;
 end;
 
 function TLogTree.DoCompare(Node1, Node2: PVirtualNode;
@@ -263,12 +392,12 @@ function TLogTree.DoCompare(Node1, Node2: PVirtualNode;
 var
   i: Integer;
   C1, C2: Integer;
-  Data1, Data2: PLogNodeData;
+//  Data1, Data2: PLogNodeData;
 begin
   Result := 0;
 
-  Data1 := GetNodeData(Node1);
-  Data2 := GetNodeData(Node2);
+//  Data1 := GetNodeData(Node1);
+//  Data2 := GetNodeData(Node2);
 end;
 
 function TLogTree.DoGetImageIndex(Node: PVirtualNode;
@@ -294,9 +423,9 @@ begin
   Text := '';
 
   case Column of
-    1: Text := TimeToStr(NodeData.Date);
-    2: Text := NodeData.SourceText;
-    3: Text := NodeData.Text;
+    1: Text := TimeToStr(NodeData.LogEntry.Time);
+    2: Text := NodeData.LogEntry.TextSource;
+    3: Text := NodeData.LogEntry.Text;
   end;
 end;
 
@@ -330,8 +459,6 @@ begin
   Result := 0;
 end;
 
-// TODO: braucht man das logfile noch? hat es mir je weiter geholfen? lohnt sich der doppelte aufwand, wegen in tree und file loggen?
-
 procedure TLogTree.DoMeasureItem(TargetCanvas: TCanvas;
   Node: PVirtualNode; var NodeHeight: Integer);
 begin
@@ -344,54 +471,84 @@ procedure TLogTree.FitColumns;
 var
   i: Integer;
 begin
-  {
-  if (Header.Columns.Count <> Length(AppGlobals.SavedHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.SavedHeaderPosition)) then
-    raise Exception.Create('(Header.Columns.Count <> Length(AppGlobals.SavedHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.SavedHeaderPosition))');
+  if (Header.Columns.Count <> Length(AppGlobals.LogHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.LogHeaderPosition)) then
+    raise Exception.Create('(Header.Columns.Count <> Length(AppGlobals.LogHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.LogHeaderPosition))');
 
-  if AppGlobals.SavedHeaderWidthLoaded then
+  if AppGlobals.LogHeaderWidthLoaded then
   begin
     for i := 1 to Header.Columns.Count - 1 do
-      Header.Columns[i].Width := AppGlobals.SavedHeaderWidth[i];
-    FColImages.Width := 104;
+      Header.Columns[i].Width := AppGlobals.LogHeaderWidth[i];
+    FColType.Width := 52;
   end else
   begin
-    FColImages.Width := 104;
-    FColSize.Width := GetTextSize('111,11 KB', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColLength.Width := GetTextSize('00:00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColBitRate.Width := GetTextSize('320 VBR', font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColStream.Width := MulDiv(200, Screen.PixelsPerInch, 96);
-    FColSaved.Width := MulDiv(130, Screen.PixelsPerInch, 96);
+    FColType.Width := 52;
+
+    FColTime.Width := GetTextSize('00-00-00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColSource.Width := GetTextSize('wwwwwwwwwwwwwww', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
   end;
 
-  if AppGlobals.SavedHeaderPositionLoaded then
+  if AppGlobals.LogHeaderPositionLoaded then
   begin
     for i := 1 to Header.Columns.Count - 1 do
-      Header.Columns[i].Position := AppGlobals.SavedHeaderPosition[i];
+      Header.Columns[i].Position := AppGlobals.LogHeaderPosition[i];
   end;
-  }
-               // TODO: oben mus nen filter hin - nur clients anzeigen, nur auto-clients (und messages warum abgelehnt!) anzeigen
-  // TODO: Das HeaderColumn-Popupmenü funzt noch nicht richtig.
+
                   // TODO: alles auf hohen DPI testen---
-  FColType.Width := 52;
-  FColTime.Width := GetTextSize('00-00-00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-  FColSource.Width := 100 + MulDiv(20, Screen.PixelsPerInch, 96);
+end;
+
+function TLogTree.MatchesFilter(LogEntry: TLogEntry): Boolean;
+
+begin
+  Result := (LogEntry.Level in FFilterTypes)
+    and ((FFilterPattern = '*')
+      or (Like(LowerCase(LogEntry.Text), FFilterPattern))
+      or (Like(LowerCase(LogEntry.TextSource), FFilterPattern))
+      or (Like(LowerCase(TimeToStr(LogEntry.Time)), FFilterPattern)));
+end;
+
+procedure TLogTree.MenuColsAction(Sender: TVirtualStringTree;
+  Index: Integer; Checked: Boolean);
+var
+  Show: Boolean;
+begin
+  Show := True;
+  if coVisible in Header.Columns[Index].Options then
+    Show := False;
+
+  if Show then
+  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible];
+  end else
+  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options - [coVisible];
+  end;
+
+  AppGlobals.LogCols := AppGlobals.LogCols xor (1 shl Index);
 end;
 
 procedure TLogTree.MessageReceived(Msg: TMessageBase);
 var
+  R: TRect;
   LogMsg: TLogMsg absolute Msg;
 begin
   BeginUpdate;
   try
     if Msg is TLogMsg then
     begin
-      Add(LogMsg.Source, LogMsg.LogType, LogMsg.LogLevel, LogMsg.SourceText, LogMsg.Text);
+      Add(LogMsg.Source, LogMsg.LogType, LogMsg.LogLevel, LogMsg.SourceText, LogMsg.Text, LogMsg.Time);
+
+      if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) then
+      begin
+        R := GetDisplayRect(GetPrevious(GetLast), NoColumn, False);
+        if not (R.Bottom > ClientHeight) then
+          ScrollIntoView(GetLast, False, False);
+      end;
 
       Invalidate;
     end;
   finally
     EndUpdate;
-  end;
+  end;                            // TODO: doppelklick bei titelsuche fügt zur wunschliste hinzu, doppelklick entfernt. warum gibts für entfernen kein popupmenu item???
 end;
 
 procedure TLogTree.PaintImage(var PaintInfo: TVTPaintInfo;
@@ -401,48 +558,47 @@ var
   NodeData: PLogNodeData;
 begin
   if PaintInfo.Column = 0 then
-  begin                          // TODO: icons zwischen LogTab und DebugView (das "Protokoll" zu den streams) vereinheitlichen und in eine imagelist packen!
+  begin
     NodeData := GetNodeData(PaintInfo.Node);
 
     L := PaintInfo.ImageInfo[ImageInfoIndex].XPos;
 
-    case NodeData.Source of
+    case NodeData.LogEntry.Source of
       lsGeneral:
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 3);
       lsAutomatic:
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 77);
       lsStream:
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 68);
+      lsHome:
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 99);
     end;
-                   // TODO: nach 2000 einträgen oder so abschneiden... oder noch mehr. soll das mit in die datei, mit nem "Lösch" knopf in der ansicht, um zu leeren?
+
     L := L + 16;
 
-    // TODO: brauche über protokoll-ansicht auf jedenfall nen suchfeld.
-    // TODO: ALLES ins protokoll tun, was sonst in die datei wandern würde!
-    // TODO: LogImageList kicken!
-    // TODO: das bezieht sich nur auf die LogImageList...
-    case NodeData.LogType of
-      dtSocket:;
-      dtMessage:;  // TODO: das muss, oder??? // TODO: ist über, durch das level unten!
-      dtSong:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 16);
-      dtError: ; // TODO: ist über, durch das level unten!
-      dtSaved:
+    case NodeData.LogEntry.LogType of
+      ltGeneral: ;
+      ltSong:
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20);
+      ltSaved:
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 14);
-      dtPostProcess:
+      ltPostProcess:
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 56);
-      dtSchedule:
+      ltSchedule:
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 50);
     end;
-                 // TODO: Bei Einträgen wie "asdf - ASDF" wird gespielt sollte ich dahinter noch den "ge-regexten-titel" zeigen. also einmal wie der stream es meldet, dann, wie es interpretiert wurde. wir haben viel platz.
+
     L := L + 16;
 
-    case NodeData.LogLevel of
-      llDebug: ;
+    case NodeData.LogEntry.Level of
       llError:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 65);
-      llInfo: ;
-//        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 10);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 100);
+      llWarning:
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 97);
+      llInfo:
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 10);
+      llDebug:
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 98);
     end;
   end;
 end;
@@ -455,6 +611,39 @@ begin
   FColText.Text := _('Text');
 end;
 
+procedure TLogTree.SetFilter(Text: string; FilterTypes: TFilterTypes);
+var
+  i: Integer;
+  Hash: Cardinal;
+  Chars: Integer;
+begin
+  FFilterPattern := BuildPattern(Text, Hash, Chars, True);
+  FFilterTypes := FilterTypes;
+
+  BeginUpdate;
+  try                          // TODO: tooltips anzeigen wenn text in spalte nicht ganz sichtbar ist. in der titelsuche funzt das auch nicht.
+    Clear;
+
+    for i := 0 to FLog.Count - 1 do
+      Add(FLog[i]);
+  finally
+    EndUpdate;
+  end;
+
+  if GetLast <> nil then
+    ScrollIntoView(GetLast, False, False);
+
+  AppGlobals.LogFilterTypes := 0;
+  if llDebug in FilterTypes then
+    AppGlobals.LogFilterTypes := AppGlobals.LogFilterTypes or (1 shl Integer(llDebug));
+  if llInfo in FilterTypes then
+    AppGlobals.LogFilterTypes := AppGlobals.LogFilterTypes or (1 shl Integer(llInfo));
+  if llWarning in FilterTypes then
+    AppGlobals.LogFilterTypes := AppGlobals.LogFilterTypes or (1 shl Integer(llWarning));
+  if llError in FilterTypes then
+    AppGlobals.LogFilterTypes := AppGlobals.LogFilterTypes or (1 shl Integer(llError));
+end;
+
 { TLogPanel }
 
 constructor TLogPanel.Create(AOwner: TComponent);
@@ -462,11 +651,22 @@ begin
   inherited;
 
   BevelOuter := bvNone;
+
+  FLabel := TLabel.Create(Self);
+  FLabel.Parent := Self;
+  FLabel.Caption := 'Search:';
+
+  FSearch := TEdit.Create(Self);
+  FSearch.Parent := Self;
+
+  FToolbar := TToolBar.Create(Self);
+  FToolbar.Parent := Self;
+  FToolbar.ShowHint := True;
 end;
 
 procedure TLogPanel.PostTranslate;
 begin
-
+  FSearch.Left := FLabel.Left + FLabel.Width + 6;
 end;
 
 procedure TLogPanel.Resize;
@@ -479,9 +679,80 @@ procedure TLogPanel.AfterCreate;
 var
   Sep: TToolButton;
 begin
+  FToolbar.Images := modSharedData.imgImages;
+
+  FButtonClear := TToolButton.Create(FToolbar);
+  FButtonClear.Parent := FToolbar;
+  FButtonClear.Hint := 'Clear';
+  FButtonClear.ImageIndex := 13;
+
+  FButtonCopy := TToolButton.Create(FToolbar);
+  FButtonCopy.Parent := FToolbar;
+  FButtonCopy.Hint := 'Copy';
+  FButtonCopy.ImageIndex := 57;
+
+  Sep := TToolButton.Create(FToolbar);
+  Sep.Parent := FToolbar;
+  Sep.Style := tbsSeparator;
+  Sep.Width := 8;
+
+  FButtonError := TToolButton.Create(FToolbar);
+  FButtonError.Parent := FToolbar;
+  FButtonError.Hint := 'Error';
+  FButtonError.ImageIndex := 2;
+  FButtonError.Style := tbsCheck;
+  FButtonError.Down := (AppGlobals.LogFilterTypes and (1 shl Integer(llError))) <> 0;
+
+  FButtonWarning := TToolButton.Create(FToolbar);
+  FButtonWarning.Parent := FToolbar;
+  FButtonWarning.Hint := 'Warning';
+  FButtonWarning.ImageIndex := 97;
+  FButtonWarning.Style := tbsCheck;
+  FButtonWarning.Down := (AppGlobals.LogFilterTypes and (1 shl Integer(llWarning))) <> 0;
+
+  FButtonInfo := TToolButton.Create(FToolbar);
+  FButtonInfo.Parent := FToolbar;
+  FButtonInfo.Hint := 'Info';
+  FButtonInfo.ImageIndex := 10;
+  FButtonInfo.Style := tbsCheck;
+  FButtonInfo.Down := (AppGlobals.LogFilterTypes and (1 shl Integer(llInfo))) <> 0;
+
+  FButtonDebug := TToolButton.Create(FToolbar);
+  FButtonDebug.Parent := FToolbar;
+  FButtonDebug.Hint := 'Debug';
+  FButtonDebug.ImageIndex := 98;
+  FButtonDebug.Style := tbsCheck;
+  FButtonDebug.Down := (AppGlobals.LogFilterTypes and (1 shl Integer(llDebug))) <> 0;
+  {$IFNDEF DEBUG}
+  FButtonDebug.Visible := False;
+  {$ENDIF}
+
+  FToolbar.Align := alRight;
+  FToolbar.AutoSize := True;
+
   PostTranslate;
 
-//  ClientHeight := FSearch.Top * 2 + FSearch.Height + MulDiv(3, Screen.PixelsPerInch, 96);
+  FLabel.Left := 0;
+  FSearch.Width := 200;
+  FSearch.Top := 1;
+
+  FLabel.Top := (FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2);
+
+  ClientHeight := FSearch.Top * 2 + FSearch.Height + MulDiv(3, Screen.PixelsPerInch, 96);
+end;
+
+{ TLogEntry }
+
+constructor TLogEntry.Create(Text, TextSource: string; Time: TDateTime; Source: TLogSource; LogType: TLogType; Level: TLogLevel);
+begin
+  inherited Create;
+
+  Self.Text := Text;
+  Self.TextSource := TextSource;
+  Self.Source := Source;
+  Self.LogType := LogType;
+  Self.Level := Level;
+  Self.Time := Time;
 end;
 
 end.

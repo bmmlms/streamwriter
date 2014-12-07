@@ -26,7 +26,7 @@ interface
 
 uses
   SysUtils, Windows, WinSock, Classes, HTTPThread, ExtendedStream, ICEStream,
-  Functions, Sockets, SyncObjs, AudioStream, Generics.Collections,
+  Functions, Sockets, SyncObjs, AudioStream, Generics.Collections, TypeDefs,
   AppData, ICEPlayer, LanguageObjects, PlayerManager, Logging, AudioFunctions,
   DataManager;
 
@@ -47,6 +47,10 @@ type
     FSleepTime: Integer;
     FMonitoringStarted: Boolean;
 
+    FExtLogMsg: string;
+    FExtLogType: TLogType;
+    FExtLogLevel: TLogLevel;
+
     FLastEventMilliSecondsConnected: Cardinal;
     FLastMilliSecondsConnected: Cardinal;
     FMilliSecondsConnected: Cardinal;
@@ -62,6 +66,7 @@ type
     FOnRecordingStopped: TSocketEvent;
     FOnPlaybackStarted: TSocketEvent;
     FOnMilliSecondsReceived: TSocketEvent;
+    FOnExtLog: TSocketEvent;
     FOnMonitorAnalyzerAnalyzed: TSocketEvent;
 
     FTypedStream: TICEStream;
@@ -71,6 +76,8 @@ type
     FPlaybackStarted: Boolean;
 
     function FGetPaused: Boolean;
+
+    procedure WriteExtLog(Msg: string; T: TLogType; Level: TLogLevel);
 
     procedure StartRecordingInternal;
     procedure StopRecordingInternal;
@@ -87,6 +94,7 @@ type
     procedure StreamTitleAllowed(Sender: TObject);
     procedure StreamRefreshInfo(Sender: TObject);
     procedure StreamMonitorAnalyzerAnalyzed(Sender: TObject);
+    procedure StreamExtLog(Sender: TObject);
   protected
     procedure Execute; override;
 
@@ -99,7 +107,6 @@ type
     procedure DoEnded; override;
     procedure DoSpeedChange; override;
     procedure DoException(E: Exception); override;
-    procedure DoDebug(Text, Data: string; T, Level: Integer); override;
   public
     constructor Create(URL: string); reintroduce;
     destructor Destroy; override;
@@ -121,12 +128,13 @@ type
     procedure LockRelay;
     procedure UnlockRelay;
 
+    property ExtLogMsg: string read FExtLogMsg;
+    property ExtLogType: TLogType read FExtLogType;
+    property ExtLogLevel: TLogLevel read FExtLogLevel;
     property RecvStream: TICEStream read FTypedStream;
     property Title: string read FTitle;
     property State: TICEThreadStates read FState;
-
     property MilliSecondsReceived: Cardinal read FMilliSecondsConnected;
-
     property Recording: Boolean read FRecordingStarted;
     property Playing: Boolean read FPlayingStarted;
     property Paused: Boolean read FGetPaused;
@@ -134,7 +142,6 @@ type
     property SleepTime: Integer read FSleepTime write FSleepTime;
     property PlayingPaused: Boolean read FPlayingPaused;
     property PlayingStarted: Boolean read FPlayingStarted;
-
     property OnTitleChanged: TSocketEvent read FOnTitleChanged write FOnTitleChanged;
     property OnDisplayTitleChanged: TSocketEvent read FOnDisplayTitleChanged write FOnDisplayTitleChanged;
     property OnSongSaved: TSocketEvent read FOnSongSaved write FOnSongSaved;
@@ -146,6 +153,7 @@ type
     property OnRecordingStopped: TSocketEvent read FOnRecordingStopped write FOnRecordingStopped;
     property OnPlaybackStarted: TSocketEvent read FOnPlaybackStarted write FOnPlaybackStarted;
     property OnMilliSecondsReceived: TSocketEvent read FOnMilliSecondsReceived write FOnMilliSecondsReceived;
+    property OnExtLog: TSocketEvent read FOnExtLog write FOnExtLog;
     property OnMonitorAnalyzerAnalyzed: TSocketEvent read FOnMonitorAnalyzerAnalyzed write FOnMonitorAnalyzerAnalyzed;
   end;
 
@@ -224,10 +232,10 @@ begin
         end;
         FPlayer.PushData(Pointer(Integer(FPlayBuffer.Memory) + P.DataStart), FPlayBuffer.Size - P.DataStart);
       except
-        // Unbekannte Daten (kein MP3/AAC) - ende.
+        // Unbekannte Daten (kein MP3/AAC) - Ende.
         FPlayingStarted := False;
         FPlaying := False;
-        WriteDebug(_('Stream cannot be played because format is unknown'), 3, 0);
+        WriteExtLog(_('Stream cannot be played because format is unknown'), ltGeneral, llError);
       end;
     finally
       FPlayBufferLock.Leave;
@@ -320,7 +328,7 @@ begin
       // Unbekannte Daten (kein MP3/AAC) - Ende.
       FPlayingStarted := False;
       FPlaying := False;
-      WriteDebug(_('Stream cannot be played because format is unknown'), 3, 0);
+      WriteLog(_('Stream cannot be played because format is unknown'), slError);
 
       Sync(FOnStateChanged);
     end;
@@ -381,21 +389,20 @@ begin
   Sync(FOnDisplayTitleChanged);
 end;
 
+procedure TICEThread.StreamExtLog(Sender: TObject);
+begin
+  WriteExtLog(FTypedStream.ExtLogMsg, FTypedStream.ExtLogType, FTypedStream.ExtLogLevel);
+end;
+
 procedure TICEThread.DoConnecting;
 begin
   inherited;
-  WriteDebug(Format(_('Connecting to %s:%d...'), [Host, Port]), 0, 0);
+  WriteLog(Format(_('Connecting to %s:%d...'), [Host, Port]), slInfo);
 end;
 
 procedure TICEThread.DoConnected;
 begin
-  WriteDebug(_('Connected'), 0, 0);
-  inherited;
-end;
-
-procedure TICEThread.DoDebug(Text, Data: string; T, Level: Integer);
-begin
-
+  WriteLog(_('Connected'), slInfo);
   inherited;
 end;
 
@@ -416,7 +423,7 @@ var
 begin
   inherited;
 
-  WriteDebug(_('Connection closed'), 3, 0);
+  WriteLog(_('Connection closed'), slInfo);
 
   FPlaying := False;
   FPlayer.Stop;
@@ -454,10 +461,10 @@ begin
   FPlayer.Stop;
 
   if E.ClassType = EExceptionParams then
-    WriteDebug(Format(_(E.Message), EExceptionParams(E).Args), 3, 0)
+    WriteLog(Format(_(E.Message), EExceptionParams(E).Args), slError)   // TODO: hier mal das fehlerlogging prüfen
   else
     if E.Message <> '' then
-      WriteDebug(Format(_('%s'), [_(E.Message)]), 3, 0);
+      WriteLog(Format(_('%s'), [_(E.Message)]), slError);
 
   Delay := FTypedStream.Settings.RetryDelay * 1000;
   if FState <> tsIOError then
@@ -617,6 +624,19 @@ begin
   FPlayBufferLock.Leave;
 end;
 
+procedure TICEThread.WriteExtLog(Msg: string; T: TLogType; Level: TLogLevel);
+begin
+  {$IFNDEF DEBUG}
+  if Level = llDebug then
+    Exit;
+  {$ENDIF}
+
+  FExtLogMsg := Msg;
+  FExtLogType := T;
+  FExtLogLevel := Level;
+  Sync(FOnExtLog);
+end;
+
 constructor TICEThread.Create(URL: string);
 var
   Host, Data: string;
@@ -656,6 +676,7 @@ begin
   FTypedStream.OnIOError := StreamIOError;
   FTypedStream.OnTitleAllowed := StreamTitleAllowed;
   FTypedStream.OnRefreshInfo := StreamRefreshInfo;
+  FTypedStream.OnExtLog := StreamExtLog;
   //FTypedStream.OnMonitorAnalyzerAnalyzed := StreamMonitorAnalyzerAnalyzed;
 
   if ProxyEnabled then

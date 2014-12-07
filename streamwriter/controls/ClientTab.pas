@@ -138,7 +138,7 @@ type
     procedure ActionAddToGlobalIgnoreList(Sender: TObject);
     procedure ActionAddToStreamIgnoreList(Sender: TObject);
 
-    procedure ClientManagerDebug(Sender: TObject);
+    procedure ClientManagerLog(Sender: TObject);
     procedure ClientManagerRefresh(Sender: TObject);
     procedure ClientManagerAddRecent(Sender: TObject);
     procedure ClientManagerClientAdded(Sender: TObject);
@@ -691,7 +691,7 @@ begin
   FReceived := 0;
 
   FClients := Clients;
-  FClients.OnClientDebug := ClientManagerDebug;
+  FClients.OnClientLog := ClientManagerLog;
   FClients.OnClientRefresh := ClientManagerRefresh;
   FClients.OnClientAddRecent := ClientManagerAddRecent;
   FClients.OnClientAdded := ClientManagerClientAdded;
@@ -948,7 +948,7 @@ begin
   ShowInfo;
 end;
 
-procedure TClientTab.ClientManagerDebug(Sender: TObject);
+procedure TClientTab.ClientManagerLog(Sender: TObject);
 begin
   if FSideBar.FDebugView.DebugView.Client = Sender then
   begin
@@ -1464,7 +1464,7 @@ begin
       end;
 
       // Ist der Client schon in der Liste?
-      Client := FClients.GetClient(Info.ID, '', Info.URL, '', nil);
+      Client := FClients.GetClient(Info.ID, '', Info.URL, nil);
       if (Client <> nil) and (not Client.AutoRemove) then
       begin
         case Action of
