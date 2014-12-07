@@ -2801,6 +2801,10 @@ class function TStreamSettings.GetDefaults: TStreamSettings;
 begin
   Result := TStreamSettings.Create(False);
 
+  // Hier vorsichtig sein. Manche Einstellungen werden so auch als Defaults
+  // für automatische Aufnahmen benutzt. Immer, wenn ich hier was ändere,
+  // muss ich sicherstellen, dass ich dadurch nichts kaputt mache.
+
   Result.RegExes.Add('(?P<a>.*) - (?P<t>.*)');
 
   Result.FFilePattern := '%s\%a - %t';
@@ -2828,7 +2832,7 @@ begin
 
   Result.FSaveToMemory := False;
   Result.FOnlySaveFull := True;
-  Result.FOverwriteSmaller := True;
+  Result.FOverwriteSmaller := False;
   Result.FDiscardSmaller := False;
   Result.FDiscardAlways := False;
 
