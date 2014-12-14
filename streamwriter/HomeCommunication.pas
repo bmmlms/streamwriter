@@ -382,6 +382,10 @@ var
   i, n: Integer;
   Count: Cardinal;
   Stream: TExtendedStream;
+
+  g: int64;
+  h: cardinal;
+  ll: cardinal;
 begin
   Stream := TExtendedStream(Command.Stream);
 
@@ -400,10 +404,10 @@ begin
       // Timestamp passig machen
       for i := 0 to FSearchReceivedCharts.Count - 1 do
         for n := 0 to FSearchReceivedCharts[i].Streams.Count - 1 do
-          if n = 0 then
-            FSearchReceivedCharts[i].Streams[n].PlayedLast := FSearchReceivedCharts[i].PlayedLast
+          if DateTimeToUnix(LocalToUTC(Now)) - FSearchReceivedCharts[i].Streams[n].PlayedLast - HomeComm.ServerTimeDiff <= 0 then
+            FSearchReceivedCharts[i].Streams[n].PlayedLast := 0
           else
-            FSearchReceivedCharts[i].Streams[n].PlayedLast := DateTimeToUnix(LocalToUTC(Now)) - FSearchReceivedCharts[i].Streams[n].PlayedLast + HomeComm.ServerTimeDiff;
+            FSearchReceivedCharts[i].Streams[n].PlayedLast := DateTimeToUnix(LocalToUTC(Now)) - FSearchReceivedCharts[i].Streams[n].PlayedLast - HomeComm.ServerTimeDiff;
     except
       for i := 0 to FSearchReceivedCharts.Count - 1 do
         FSearchReceivedCharts[i].Free;

@@ -85,7 +85,8 @@ type
     FContentType: string;
     FFilename: string;
     FScheduledRecording: Boolean;
-
+    FIsMonitoring: Boolean;
+                               // TODO: texte übersetzen
     FAutoRemove: Boolean;
     FRecordTitle: string;
     FParsedRecordTitle: string;
@@ -477,6 +478,8 @@ end;
 
 procedure TICEClient.StartMonitoring;
 begin
+  FIsMonitoring := True;
+
   Connect;
 
   if FICEThread <> nil then
@@ -1008,6 +1011,9 @@ begin
   //if Level = llDebug then
   //  Exit;
   {$ENDIF}
+
+  if FIsMonitoring then
+    Exit;
 
   LS := lsStream;
   if FAutoRemove then

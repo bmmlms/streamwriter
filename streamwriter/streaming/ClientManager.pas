@@ -447,6 +447,8 @@ begin
           Client.StartMonitoring;
 
           FMonitorClients.Add(Client);
+
+          Break;
         end;
     end;
   finally
