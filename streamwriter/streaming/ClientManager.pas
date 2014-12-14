@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -34,7 +34,7 @@ type
   TClientEnum = class
   private
     FIndex: Integer;
-    FClients: TClientManager;
+    FClientManager: TClientManager;
   public
     constructor Create(Clients: TClientManager);
     function GetCurrent: TICEClient;
@@ -64,7 +64,7 @@ type
     FOnClientTitleChanged: TTitleChangedEvent;
     FOnClientICYReceived: TICYReceivedEvent;
     FOnClientTitleAllowed: TTitleAllowedEvent;
-    FOnShowErrorMessage: TShowErrorMessageEvent;
+    FOnShowErrorMessage: TStringEvent;
     FOnPlaybackStarted: TNotifyEvent;
     FOnClientSecondsReceived: TNotifyEvent;
 
@@ -91,7 +91,7 @@ type
     procedure ClientPause(Sender: TObject);
     procedure ClientStop(Sender: TObject);
 
-    procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL: string; RegExes: TStringList;
+    procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, ParsedTitle, CurrentURL: string; RegExes: TStringList;
       AudioType: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal);
     procedure HomeCommMonitorStreamsReceived(Sender: TObject; StreamIDs: TIntArray);
   public
@@ -103,6 +103,7 @@ type
     function AddClient(URL: string): TICEClient; overload;
     function AddClient(ID, Bitrate: Cardinal; Name, StartURL: string; IsAuto: Boolean = False): TICEClient; overload;
     function AddClient(Entry: TStreamEntry): TICEClient; overload;
+    function GetErrorText(Msg: TMayConnectResults; Data: string; WasAuto, WasScheduled, ForLog: Boolean): string;
     procedure RemoveClient(Client: TICEClient);
     procedure RemoveMonitorClient(Client: TICEClient);
     procedure Stop;
@@ -133,7 +134,7 @@ type
     property OnClientTitleChanged: TTitleChangedEvent read FOnClientTitleChanged write FOnClientTitleChanged;
     property OnClientICYReceived: TICYReceivedEvent read FOnClientICYReceived write FOnClientICYReceived;
     property OnClientTitleAllowed: TTitleAllowedEvent read FOnClientTitleAllowed write FOnClientTitleAllowed;
-    property OnShowErrorMessage: TShowErrorMessageEvent read FOnShowErrorMessage write FOnShowErrorMessage;
+    property OnShowErrorMessage: TStringEvent read FOnShowErrorMessage write FOnShowErrorMessage;
     property OnPlaybackStarted: TNotifyEvent read FOnPlaybackStarted write FOnPlaybackStarted;
     property OnClientSecondsReceived: TNotifyEvent read FOnClientSecondsReceived write FOnClientSecondsReceived;
   end;
@@ -355,6 +356,71 @@ begin
   Result := TClientEnum.Create(Self);
 end;
 
+function TClientManager.GetErrorText(Msg: TMayConnectResults; Data: string; WasAuto, WasScheduled, ForLog: Boolean): string;
+begin
+  if WasAuto then
+    case Msg of
+      crNoFreeSpace:
+        if ForLog then
+          Result := Format(_('Automatic recording of "%s" won''t be started because no space is available'), [Data])
+        else
+          Result := _('Automatic recording will be stopped as long as available disk space is below the set limit.');
+      crNoBandwidth:
+        if ForLog then
+          Result := Format(_('Automatic recording of "%s" won''t be started because it would exceed the maximum available bandwidth'), [Data]);
+      crDirDoesNotExist:
+        if ForLog then
+          Result := Format(_('Automatic recording of "%s" won''t be started because the folder for automatic recordings does not exist'), [Data])
+        else
+          Result := _('Automatic recording will be stopped as long as the folder for automatically saved songs does not exist.');
+    end
+  else if WasScheduled then
+    case Msg of
+      crNoFreeSpace:
+        begin
+          if ForLog then
+            Result := _('Scheduled recording will not start because available disk space is below the set limit')
+          else
+            Result := Format(_('Scheduled recording of "%s" will not start because available disk space is below the set limit.'), [Data]);
+        end;
+      crNoBandwidth:
+        begin
+          if ForLog then
+            Result := _('Scheduled recording will not start because it would exceed the maximum available bandwidth')
+          else
+            Result := Format(_('Scheduled recording of "%s" will not start because it would exceed the maximum available bandwidth.'), [Data]);
+        end;
+      crDirDoesNotExist:
+        begin
+          if ForLog then
+            Result := _('Scheduled recording will not start because the folder for saved songs does not exist.')
+          else
+            Result := Format(_('Scheduled recording of "%s" will not start because the folder for saved songs does not exist.'), [Data]);
+        end;
+    end
+  else
+    case Msg of
+      crNoFreeSpace:
+        begin
+          Result := _('No connection will be established because available disk space is below the set limit');
+          if not ForLog then
+            Result := Result + '.';
+        end;
+      crNoBandwidth:
+        begin
+          Result := _('No connection will be established because it would exceed the maximum available bandwidth');
+          if not ForLog then
+            Result := Result + '.';
+        end;
+      crDirDoesNotExist:
+        begin
+          Result := _('No connection will be established because the folder for saved songs does not exist');
+          if not ForLog then
+            Result := Result + '.';
+        end;
+    end;
+end;
+
 procedure TClientManager.HomeCommMonitorStreamsReceived(Sender: TObject;
   StreamIDs: TIntArray);
 var
@@ -365,26 +431,31 @@ begin
     RemoveClient(FMonitorClients[i]);
 
   StopMonitors;
-  for i := 0 to High(StreamIDs) do
-  begin
-    for n := 0 to AppGlobals.Data.BrowserList.Count - 1 do
-      if AppGlobals.Data.BrowserList[n].ID = StreamIDs[i] then
-      begin
-        Client := TICEClient.Create(Self, StreamIDs[i], 128, 'Monitor' + IntToStr(StreamIDs[i]), AppGlobals.Data.BrowserList[n].URL);
-        Client.Entry.Settings.MaxRetries := 0;
-        Client.Entry.Settings.RetryDelay := 30;
-        Client.Entry.Settings.SaveToMemory := True;
-        Client.OnDisconnected := ClientDisconnected;
-        Client.StartMonitoring;
 
-        FMonitorClients.Add(Client);
-      end;
+  AppGlobals.Lock;
+  try
+    for i := 0 to High(StreamIDs) do
+    begin
+      for n := 0 to AppGlobals.Data.BrowserList.Count - 1 do
+        if AppGlobals.Data.BrowserList[n].ID = StreamIDs[i] then
+        begin
+          Client := TICEClient.Create(Self, StreamIDs[i], 128, 'Monitor' + IntToStr(StreamIDs[i]), AppGlobals.Data.BrowserList[n].URL);
+          Client.Entry.Settings.MaxRetries := 0;
+          Client.Entry.Settings.RetryDelay := 30;
+          Client.Entry.Settings.SaveToMemory := True;
+          Client.OnDisconnected := ClientDisconnected;
+          Client.StartMonitoring;
+
+          FMonitorClients.Add(Client);
+        end;
+    end;
+  finally
+    AppGlobals.Unlock;
   end;
 end;
 
-procedure TClientManager.HomeCommTitleChanged(Sender: TObject; ID: Cardinal;
-  Name, Title, CurrentURL: string; RegExes: TStringList; AudioType: TAudioTypes; Kbps: Cardinal;
-  ServerHash, ServerArtistHash: Cardinal);
+procedure TClientManager.HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, ParsedTitle, CurrentURL: string;
+  RegExes: TStringList; AudioType: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal);
 var
   i, n: Integer;
   AutoTuneInMinKbps: Cardinal;
@@ -393,7 +464,7 @@ var
   SaveListTitle: TTitleInfo;
   SaveListArtist: TTitleInfo;
   Text: string;
-begin                                      // TODO: llWarning und änderungen an TLogTypes muss ich in protokoll und stream-protokoll berücksichtigen für die wahl der symbole!
+begin
   SaveListTitle := nil;
   SaveListArtist := nil;
   AutoTuneInMinKbps := GetAutoTuneInMinKbps(TAudioTypes(AudioType), AppGlobals.AutoTuneInMinQuality);
@@ -413,36 +484,33 @@ begin                                      // TODO: llWarning und änderungen an 
   end;
 
   if (not Assigned(SaveListTitle)) and (not Assigned(SaveListArtist)) then
-  begin
     Exit;
-  end;
 
   // Ab hier wird protokolliert
-  MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llInfo, _('Automatic recording'), Format('Title "%s" detected on "%s"', [Title, Name])));
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llDebug, _('Automatic recording'), Format('Title "%s" detected on "%s"', [ParsedTitle, Name])));
 
   if (AppGlobals.DirAuto = '') or (not DirectoryExists(IncludeTrailingBackslash(AppGlobals.DirAuto))) then
   begin
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), GetErrorText(crDirDoesNotExist, ParsedTitle, True, False, True)));
     if not FDirDoesNotExistErrorShown then
     begin
-      OnShowErrorMessage(nil, crDirDoesNotExist, True, False);
+      OnShowErrorMessage(Self, GetErrorText(crDirDoesNotExist, ParsedTitle, True, False, False));
       FDirDoesNotExistErrorShown := True;
     end;
-    Text := Format('Automatic recording of "%s" won''t be started because the folder for automatic recordings does not exist', [Title]);
-    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
     Exit;
   end else
     FDirDoesNotExistErrorShown := False;
 
   if Kbps < AutoTuneInMinKbps then
   begin
-    Text := Format('Automatic recording of "%s" won''t be started because the bitrate is too low (%d Kbps)', [Title, Kbps]);
+    Text := Format('Automatic recording of "%s" won''t be started because the bitrate is too low (%d Kbps)', [ParsedTitle, Kbps]);
     MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
     Exit;
   end;
 
   if (AppGlobals.AutoTuneInFormat > 0) and (TAudioTypes(AppGlobals.AutoTuneInFormat) <> AudioType) then
   begin
-    Text := Format('Automatic recording of "%s" won''t be started because the audio format is not allowed', [Title]);
+    Text := Format('Automatic recording of "%s" won''t be started because the audio format is not allowed', [ParsedTitle]);
     MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
     Exit;
   end;
@@ -450,7 +518,7 @@ begin                                      // TODO: llWarning und änderungen an 
   for i := 0 to AppGlobals.Data.StreamBlacklist.Count - 1 do
     if AppGlobals.Data.StreamBlacklist[i] = Name then
     begin
-      Text := Format('Automatic recording of "%s" won''t be started because the stream is on the ignorelist', [Title]);
+      Text := Format('Automatic recording of "%s" won''t be started because the stream is on the ignorelist', [ParsedTitle]);
       MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
       Exit;
     end;
@@ -460,7 +528,7 @@ begin                                      // TODO: llWarning und änderungen an 
     begin
       if Like(Title, AppGlobals.Data.IgnoreList[n].Pattern) then
       begin
-        Text := Format('Automatic recording of "%s" won''t be started because it matches "%s" on the ignorelist', [Title, AppGlobals.Data.IgnoreList[n].Pattern]);
+        Text := Format('Automatic recording of "%s" won''t be started because it matches "%s" on the ignorelist', [ParsedTitle, AppGlobals.Data.IgnoreList[n].Pattern]);
         MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
         Exit;
       end;
@@ -469,18 +537,18 @@ begin                                      // TODO: llWarning und änderungen an 
   Res := TICEClient.MayConnect(False, GetUsedBandwidth(Kbps, 0));
   if Res <> crOk then
   begin
-    if (not FNoFreeSpaceErrorShown) and (Res = crNoFreeSpace) then
-    begin
-      OnShowErrorMessage(nil, Res, True, False);
-      FNoFreeSpaceErrorShown := True;
-    end;
-    Text := Format('Automatic recording of "%s" won''t be started because no space is available', [Title]);
-    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), GetErrorText(Res, ParsedTitle, True, False, True)));
+    if Res = crNoFreeSpace then
+      if not FNoFreeSpaceErrorShown then
+      begin
+        OnShowErrorMessage(Self, GetErrorText(Res, ParsedTitle, True, False, False));
+        FNoFreeSpaceErrorShown := True;
+      end;
     Exit;
   end;
   FNoFreeSpaceErrorShown := False;
 
-  MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llInfo, _('Automatic recording'), Format('Starting automatic recording of "%s"', [Title])));
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llInfo, _('Automatic recording'), Format('Starting automatic recording of "%s"', [ParsedTitle])));
 
   Client := AddClient(0, 0, Name, CurrentURL, True);
   Client.Entry.Settings.Assign(AppGlobals.Data.AutoRecordSettings);
@@ -490,6 +558,7 @@ begin                                      // TODO: llWarning und änderungen an 
     Client.Entry.Settings.RegExes.Assign(RegExes);
 
   Client.RecordTitle := Title;
+  Client.ParsedRecordTitle := ParsedTitle;
   Client.RecordServerTitle := Title;
   Client.RecordTitleHash := ServerHash;
   Client.RecordArtistHash := ServerArtistHash;
@@ -682,18 +751,18 @@ end;
 constructor TClientEnum.Create(Clients: TClientManager);
 begin
   inherited Create;
-  FClients := Clients;
+  FClientManager := Clients;
   FIndex := -1;
 end;
 
 function TClientEnum.GetCurrent: TICEClient;
 begin
-  Result := FClients[FIndex];
+  Result := FClientManager[FIndex];
 end;
 
 function TClientEnum.MoveNext: Boolean;
 begin
-  Result := FIndex < Pred(FClients.Count);
+  Result := FIndex < Pred(FClientManager.Count);
   if Result then
     Inc(FIndex);
 end;

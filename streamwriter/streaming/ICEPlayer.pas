@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -183,7 +183,12 @@ begin
 
   if not Playing then
   begin
-    BASSSetDevice(AppGlobals.SoundDevice);
+    AppGlobals.Lock;
+    try
+      BASSSetDevice(AppGlobals.SoundDevice);
+    finally
+      AppGlobals.Unlock;
+    end;
 
     Funcs.close := BASSClose;
     Funcs.length := BASSLen;
@@ -322,7 +327,12 @@ begin
       begin
         FBandData[i].Handle := BASSChannelSetFX(FPlayer, 7, 0);
       end;
-      SetEQ(AppGlobals.EQGain[i], i);
+      AppGlobals.Lock;
+      try
+        SetEQ(AppGlobals.EQGain[i], i);
+      finally
+        AppGlobals.Unlock;
+      end;
     end;
   end else
   begin

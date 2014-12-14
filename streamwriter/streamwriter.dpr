@@ -28,7 +28,7 @@ uses
   madExcept,
   madLinkDisAsm,
   madListHardware,
-  madListProcesses,        // TODO: sortieren im protokoll abschalten.
+  madListProcesses,
   madListModules,
   Windows,
   Messages,
@@ -185,9 +185,10 @@ var
   if not InitAppStageOne then
     Exit;
 
-  // Now load everything from registry/ini/datafiles
-  if not InitAppData then
+  // Basic initialization
+  if not InitAppDataStageOne then
     Exit;
+
   InitPlayerManager;
 
   if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and
@@ -196,6 +197,10 @@ var
   then
     TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.BuildNumber,
       AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
+
+  // Now load everything from datafiles
+  if not InitAppDataStageTwo then
+    Exit;
 
   // Initialize BASS, quit application on error
   Bass := TBassLoader.Create;

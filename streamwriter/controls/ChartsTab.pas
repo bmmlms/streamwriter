@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -47,6 +47,7 @@ type
   TChartsPopup = class(TPopupMenu)
   private
     FItemAddToWishlist: TMenuItem;
+    FItemRemoveFromWishlist: TMenuItem;
     FItemAddArtistToWishlist: TMenuItem;
     FItemEditAndAddToWishlist: TMenuItem;
     FItemStartStreaming: TMenuItem;
@@ -59,6 +60,7 @@ type
     constructor Create(AOwner: TComponent); override;
 
     property ItemAddToWishlist: TMenuItem read FItemAddToWishlist;
+    property ItemRemoveFromWishlist: TMenuItem read FItemRemoveFromWishlist;
     property ItemAddArtistToWishlist: TMenuItem read FItemAddArtistToWishlist;
     property ItemEditAndAddToWishlist: TMenuItem read FItemEditAndAddToWishlist;
     property ItemStartStreaming: TMenuItem read FItemStartStreaming;
@@ -83,6 +85,7 @@ type
     FToolbar: TToolBar;
 
     FButtonAddToWishlist: TToolButton;
+    FButtonRemoveFromWishlist: TToolButton;
     FButtonAddArtistToWishlist: TToolButton;
     FButtonEditAndAddToWishlist: TToolButton;
     FButtonStartStreaming: TToolButton;
@@ -242,6 +245,7 @@ begin
     FChartsTree.PopupMenu.Images := modSharedData.imgImages;
 
   FSearchPanel.FButtonAddToWishlist.OnClick := ButtonClick;
+  FSearchPanel.FButtonRemoveFromWishlist.OnClick := ButtonClick;
   FSearchPanel.FButtonAddArtistToWishlist.OnClick := ButtonClick;
   FSearchPanel.FButtonEditAndAddToWishlist.OnClick := ButtonClick;
   FSearchPanel.FButtonStartStreaming.OnClick := ButtonClick;
@@ -258,6 +262,8 @@ procedure TChartsTab.ButtonClick(Sender: TObject);
 begin
   if Sender = FSearchPanel.FButtonAddToWishlist then
     FChartsTree.FPopupMenu.FItemAddToWishlist.Click
+  else if Sender = FSearchPanel.FButtonRemoveFromWishlist then
+    FChartsTree.FPopupMenu.FItemRemoveFromWishlist.Click
   else if Sender = FSearchPanel.FButtonAddArtistToWishlist then
     FChartsTree.FPopupMenu.FItemAddArtistToWishlist.Click
   else if Sender = FSearchPanel.FButtonEditAndAddToWishlist then
@@ -549,7 +555,7 @@ end;
 
 procedure TChartsTab.UpdateButtons;
 var
-  AllOnList, AllArtistsOnList: Boolean;
+  AllOnWishlist, AllArtistsOnList, AtLeastOneOnWishlist: Boolean;
   OneSelectedChart, ManySelectedCharts: Boolean;
   OneSelectedStream, ManySelectedStreams: Boolean;
   AtLeastOneArtistSelected: Boolean;
@@ -558,7 +564,8 @@ var
 begin
   inherited;
 
-  AllOnList := True;
+  AllOnWishlist := True;
+  AtLeastOneOnWishlist := False;
   AllArtistsOnList := True;
   OneSelectedChart := False;
   ManySelectedCharts := False;
@@ -566,16 +573,12 @@ begin
   ManySelectedStreams := False;
   AtLeastOneArtistSelected := False;
 
-  N := FChartsTree.GetFirst;
+  N := FChartsTree.GetFirstSelected;
   while N <> nil do
   begin
     if FChartsTree.Selected[N] then
     begin
       NodeData := FChartsTree.GetNodeData(N);
-      if not NodeData.IsOnWishlist then
-        AllOnList := False;
-      if not NodeData.IsArtistOnWishlist then
-        AllArtistsOnList := False;
 
       if NodeData.Chart <> nil then
       begin
@@ -586,8 +589,15 @@ begin
         end else if (not OneSelectedChart) and (not ManySelectedCharts) then
           OneSelectedChart := True;
 
+        if not NodeData.IsOnWishlist then
+          AllOnWishlist := False;
+        if not NodeData.IsArtistOnWishlist then
+          AllArtistsOnList := False;
+
         if NodeData.Chart.ServerArtistHash > 0 then
           AtLeastOneArtistSelected := True;
+        if NodeData.IsOnWishlist then
+          AtLeastOneOnWishlist := True;
       end;
 
       if NodeData.Stream <> nil then
@@ -600,10 +610,11 @@ begin
           OneSelectedStream := True;
       end;
     end;
-    N := FChartsTree.GetNext(N);
+    N := FChartsTree.GetNextSelected(N);
   end;
 
-  FChartsTree.FPopupMenu.FItemAddToWishlist.Enabled := (not AllOnList) and (OneSelectedChart or ManySelectedCharts) and (State = csNormal);
+  FChartsTree.FPopupMenu.FItemAddToWishlist.Enabled := (not AllOnWishlist) and (OneSelectedChart or ManySelectedCharts) and (State = csNormal);
+  FChartsTree.FPopupMenu.FItemRemoveFromWishlist.Enabled := AtLeastOneOnWishlist and (OneSelectedChart or ManySelectedCharts) and (State = csNormal);
   FChartsTree.FPopupMenu.FItemAddArtistToWishlist.Enabled := (not AllArtistsOnList) and (AtLeastOneArtistSelected or ManySelectedCharts) and (State = csNormal);
   FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Enabled := (OneSelectedChart) and (State = csNormal);
   FChartsTree.FPopupMenu.FItemStartStreaming.Enabled := (OneSelectedStream or ManySelectedStreams) and (State = csNormal);
@@ -612,7 +623,8 @@ begin
   FChartsTree.FPopupMenu.FItemAddStream.Enabled := (OneSelectedStream or ManySelectedStreams) and (State = csNormal);
 
   FSearchPanel.FButtonAddToWishlist.Enabled := FChartsTree.FPopupMenu.FItemAddToWishlist.Enabled;
-  FSearchPanel.FButtonAddArtistToWishlist.Enabled := (not AllArtistsOnList) and (AtLeastOneArtistSelected or ManySelectedCharts) and (State = csNormal);
+  FSearchPanel.FButtonRemoveFromWishlist.Enabled := FChartsTree.FPopupMenu.FItemRemoveFromWishlist.Enabled;
+  FSearchPanel.FButtonAddArtistToWishlist.Enabled := FChartsTree.FPopupMenu.FItemAddArtistToWishlist.Enabled;
   FSearchPanel.FButtonEditAndAddToWishlist.Enabled := FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Enabled;
   FSearchPanel.FButtonStartStreaming.Enabled := FChartsTree.FPopupMenu.FItemStartStreaming.Enabled;
   FSearchPanel.FButtonPlayStream.Enabled := FChartsTree.FPopupMenu.FItemPlayStream.Enabled;
@@ -633,7 +645,7 @@ var
 begin
   inherited Create(AOwner);
 
-  MsgBus.AddSubscriber(MessageReceived);   // TODO: RemoveSubscriber? fehlt das noch an anderen stellen?? klar, ist nicht wichtig, aber SAUBER!
+  MsgBus.AddSubscriber(MessageReceived);
 
   FState := csNormal;
 
@@ -654,6 +666,8 @@ begin
   TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toToggleOnDblClick];
+  ShowHint := True;
+  HintMode := hmTooltip;
 
   Header.AutoSizeIndex := 0;
 
@@ -662,6 +676,7 @@ begin
   FColTitle.Options := FColTitle.Options - [coDraggable];
   FColImages := Header.Columns.Add;
   FColImages.Text := _('State');
+  FColImages.Options := FColImages.Options - [coResizable];
   FColLastPlayed := Header.Columns.Add;
   FColLastPlayed.Text := _('Last played');
   FColChance := Header.Columns.Add;
@@ -673,6 +688,7 @@ begin
 
   FPopupMenu := TChartsPopup.Create(Self);
   FPopupMenu.ItemAddToWishlist.OnClick := PopupMenuClick;
+  FPopupMenu.ItemRemoveFromWishlist.OnClick := PopupMenuClick;
   FPopupMenu.ItemAddArtistToWishlist.OnClick := PopupMenuClick;
   FPopupMenu.ItemEditAndAddToWishlist.OnClick := PopupMenuClick;
   FPopupMenu.ItemStartStreaming.OnClick := PopupMenuClick;
@@ -709,6 +725,7 @@ end;
 
 destructor TChartsTree.Destroy;
 begin
+  MsgBus.RemoveSubscriber(MessageReceived);
 
   inherited;
 end;
@@ -947,6 +964,9 @@ end;
 
 function TChartsTree.DoHeaderDragging(Column: TColumnIndex): Boolean;
 begin
+  if Column = -1 then
+    Exit(False);
+
   Result := inherited;
 
   FHeaderDragSourcePosition := Header.Columns[Column].Position;
@@ -1314,7 +1334,7 @@ begin
     begin
       if Nodes[i].Chart <> nil then
       begin
-        if Sender = FPopupMenu.ItemAddToWishlist then
+        if (Sender = FPopupMenu.ItemAddToWishlist) or (Sender = FPopupMenu.ItemRemoveFromWishlist) then
         begin
           SetLength(Titles, Length(Titles) + 1);
           Titles[High(Titles)] := TWishlistTitleInfo.Create(Nodes[i].Chart.ServerHash, Nodes[i].Chart.Name, False);
@@ -1359,7 +1379,10 @@ begin
       TChartsTab(P).FOnAddStreams(Self, Info, oaAdd);
 
     if Length(Titles) > 0 then
-      TChartsTab(P).FOnAddToWishlist(Self, Titles)
+      if Sender = FPopupMenu.ItemRemoveFromWishlist then
+        TChartsTab(P).FOnRemoveTitleFromWishlist(Self, Titles)
+      else
+        TChartsTab(P).FOnAddToWishlist(Self, Titles);
   finally
 
   end;
@@ -1524,6 +1547,11 @@ begin
   FButtonAddArtistToWishlist.Hint := 'Add artist to automatic wishlist';
   FButtonAddArtistToWishlist.ImageIndex := 86;
 
+  FButtonRemoveFromWishlist := TToolButton.Create(FToolbar);
+  FButtonRemoveFromWishlist.Parent := FToolbar;
+  FButtonRemoveFromWishlist.Hint := 'Remove title from automatic wishlist';
+  FButtonRemoveFromWishlist.ImageIndex := 102;
+
   FButtonAddToWishlist := TToolButton.Create(FToolbar);
   FButtonAddToWishlist.Parent := FToolbar;
   FButtonAddToWishlist.Hint := 'Add title to automatic wishlist';
@@ -1562,6 +1590,11 @@ begin
   FItemAddToWishlist.Caption := '&Add title to automatic wishlist';
   FItemAddToWishlist.ImageIndex := 77;
   Items.Add(FItemAddToWishlist);
+
+  FItemRemoveFromWishlist := CreateMenuItem;
+  FItemRemoveFromWishlist.Caption := '&Remove title from automatic wishlist';
+  FItemRemoveFromWishlist.ImageIndex := 102;
+  Items.Add(FItemRemoveFromWishlist);
 
   FItemAddArtistToWishlist := CreateMenuItem;
   FItemAddArtistToWishlist.Caption := 'A&dd artist to automatic wishlist';

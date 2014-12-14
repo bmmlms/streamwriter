@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -129,6 +129,7 @@ type
     FStreamID: Cardinal;
     FStreamName: string;
     FStreamTitle: string;
+    FStreamParsedTitle: string;
     FCurrentURL: string;
     FBitrate: Cardinal;
     FFormat: TAudioTypes;
@@ -144,6 +145,7 @@ type
     property StreamID: Cardinal read FStreamID;
     property StreamName: string read FStreamName;
     property StreamTitle: string read FStreamTitle;
+    property StreamParsedTitle: string read FStreamParsedTitle;
     property CurrentURL: string read FCurrentURL;
     property Bitrate: Cardinal read FBitrate;
     property Format: TAudioTypes read FFormat;
@@ -510,6 +512,7 @@ begin
   Stream.Read(FStreamID);
   Stream.Read(FStreamName);
   Stream.Read(FStreamTitle);
+  Stream.Read(FStreamParsedTitle);
   Stream.Read(FCurrentURL);
   Stream.Read(FBitrate);
   Stream.Read(B);

@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -40,7 +40,6 @@ type
 
   TICEClient = class;
 
-  TShowErrorMessageEvent = procedure(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean) of object;
   TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
   TSongSavedEvent = procedure(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
     Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
@@ -89,6 +88,7 @@ type
 
     FAutoRemove: Boolean;
     FRecordTitle: string;
+    FParsedRecordTitle: string;
     FRecordServerTitle: string;
     FRecordTitleHash: Cardinal;
     FRecordArtistHash: Cardinal;
@@ -176,6 +176,7 @@ type
 
     property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
     property RecordTitle: string read FRecordTitle write FRecordTitle;
+    property ParsedRecordTitle: string read FParsedRecordTitle write FParsedRecordTitle;
     property RecordServerTitle: string read FRecordServerTitle write FRecordServerTitle;
     property RecordTitleHash: Cardinal read FRecordTitleHash write FRecordTitleHash;
     property RecordArtistHash: Cardinal read FRecordArtistHash write FRecordArtistHash;
@@ -626,8 +627,7 @@ begin
     else raise Exception.Create('Unknown FICEThread.LogLevel');
   end;
 
-  WriteLog(FICEThread.LogMsg, FICEThread.LogData, ltGeneral, Level); // TODO: dtGeneral ist falsch! bzw: meine ableitungen ICEThread/ICEClient/ICEStream müssen eine neue logging methode haben,
-                                                                     // die den typ mitteilt.
+  WriteLog(FICEThread.LogMsg, FICEThread.LogData, FICEThread.ExtLogType, Level);
 end;
 
 procedure TICEClient.ThreadMilliSecondsReceived(Sender: TSocketThread);
@@ -646,6 +646,9 @@ end;
 procedure TICEClient.ThreadBeforeEnded(Sender: TSocketThread);
 begin
   inherited;
+
+  if FICEThread.Error then
+    Exit;
 
   try
     // Das hier kann bei HTTP und bei ICY kommen.
@@ -679,7 +682,7 @@ begin
             raise Exception.Create(Format(_('HTTP error %d'),
               [FICEThread.RecvStream.ResponseCode]))
           else
-            raise Exception.Create(_('Response was HTTP, but without supported playlist or redirect'));
+            raise Exception.Create(_('Response was HTTP but without supported playlist or redirect'));
       end;
     end else
     begin
@@ -691,13 +694,11 @@ begin
   except
     on E: Exception do
     begin
+      // Dann geht der Thread in Retrying und wartet etwas...
+      FICEThread.Error := True;
+
       WriteLog(Format(_('Error: %s'), [E.Message]), '', ltGeneral, llError);
 
-      // Schlafen, wenn die Maximalen Wiederholungsversuche noch nicht erreicht sind oder unendlich sind.
-      if ((FRetries < FEntry.Settings.MaxRetries) and (FEntry.Settings.MaxRetries > 0)) or (FEntry.Settings.MaxRetries = 0) then
-        FICEThread.SleepTime := FICEThread.RecvStream.Settings.RetryDelay * 1000;
-
-      FState := csRetrying;
       if Assigned(FOnRefresh) then
         FOnRefresh(Self);
     end;
@@ -707,7 +708,7 @@ end;
 procedure TICEClient.ThreadNeedSettings(Sender: TSocketThread);
 begin
   // Ignore list etc werden immer kopiert, das kann zeit kosten.
-  FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FStopAfterSong, FKilled, FRecordTitle, FEntry.SongsSaved);
+  FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FStopAfterSong, FKilled, FRecordTitle, FParsedRecordTitle, FEntry.SongsSaved);
 end;
 
 procedure TICEClient.ThreadPlaybackStarted(Sender: TSocketThread);
@@ -1114,10 +1115,10 @@ var
   i: Integer;
 begin
   inherited;
-  if (Action = cnAdded) and (Count > 1000) then // TODO: das hier ist mist - nach dem löschen muss ich auch dem logview bescheid sagen, dass jetzt was gelöscht wurde.
-                                                // und die löschmethode ist auch doof. warum kein while count > 1000 do delete(0);?
-    for i := Count - 500 downto 0 do
-      Delete(i);
+
+  if Action = cnAdded then
+    while Count > 1000 do
+      Delete(0);
 end;
 
 end.

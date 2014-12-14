@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -90,7 +90,7 @@ type
     FSplitter: TSplitter;
     FSideBar: TSideBar;
 
-    FClients: TClientManager;
+    FClientManager: TClientManager;
     FHomeCommunication: THomeCommunication;
 
     FReceived: UInt64;
@@ -113,7 +113,7 @@ type
     FOnTrackRemoved: TTrackEvent;
     FOnPlayStarted: TNotifyEvent;
     FOnAuthRequired: TNotifyEvent;
-    FOnShowErrorMessage: TShowErrorMessageEvent;
+    FOnShowErrorMessage: TStringEvent;
     FOnClientAdded: TNotifyEvent;
     FOnClientRemoved: TNotifyEvent;
     FOnAddTitleToList: TAddTitleEvent;
@@ -150,7 +150,7 @@ type
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
     procedure ClientManagerTitleAllowed(Sender: TObject; Title: string;
       var Allowed: Boolean; var Match: string; var Filter: Integer);
-    procedure ClientManagerShowErrorMessage(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
+    procedure ClientManagerShowErrorMessage(Sender: TObject; Data: string);
     procedure ClientManagerPlaybackStarted(Sender: TObject);
     procedure ClientManagerSecondsReceived(Sender: TObject);
 
@@ -202,7 +202,7 @@ type
     property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
     property OnAuthRequired: TNotifyEvent read FOnAuthRequired write FOnAuthRequired;
-    property OnShowErrorMessage: TShowErrorMessageEvent read FOnShowErrorMessage write FOnShowErrorMessage;
+    property OnShowErrorMessage: TStringEvent read FOnShowErrorMessage write FOnShowErrorMessage;
     property OnClientAdded: TNotifyEvent read FOnClientAdded write FOnClientAdded;
     property OnClientRemoved: TNotifyEvent read FOnClientRemoved write FOnClientRemoved;
     property OnAddTitleToList: TAddTitleEvent read FOnAddTitleToList write FOnAddTitleToList;
@@ -375,6 +375,7 @@ end;
 
 procedure TClientTab.ActionStartExecute(Sender: TObject);
 var
+  ErrorShown: Boolean;
   Clients: TClientArray;
   Client: TICEClient;
   Node: PVirtualNode;
@@ -382,6 +383,7 @@ var
   NodeData: PClientNodeData;
   Res: TMayConnectResults;
 begin
+  ErrorShown := False;
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
   for Client in Clients do
   begin
@@ -390,12 +392,15 @@ begin
       Res := Client.StartRecording(True);
       if Res <> crOk then
       begin
-        OnShowErrorMessage(Client, Res, False, False);
-        Exit;
+        Client.WriteLog(FClientManager.GetErrorText(Res, '', False, False, True), '', ltGeneral, llWarning);
+        if not ErrorShown then
+          OnShowErrorMessage(Client, FClientManager.GetErrorText(Res, '', False, False, False));
+        ErrorShown := True;
       end;
     end;
   end;
 
+  ErrorShown := False;
   Nodes := FClientView.GetNodes(ntCategory, True);
   for Node in Nodes do
   begin
@@ -408,8 +413,10 @@ begin
         Res := Client.StartRecording(True);
         if Res <> crOk then
         begin
-          OnShowErrorMessage(Client, Res, False, False);
-          Exit;
+          Client.WriteLog(FClientManager.GetErrorText(Res, '', False, False, True), '', ltGeneral, llWarning);
+          if not ErrorShown then
+            OnShowErrorMessage(Client, FClientManager.GetErrorText(Res, '', False, False, False));
+          ErrorShown := True;
         end;
       end;
     end;
@@ -486,7 +493,7 @@ begin
   begin
     NodeData := FClientView.GetNodeData(Node);
     if NodeData.Client <> nil then
-      FClients.RemoveClient(NodeData.Client);
+      FClientManager.RemoveClient(NodeData.Client);
   end;
 
   Nodes := FClientView.GetNodes(ntCategory, True);
@@ -502,7 +509,7 @@ begin
           if ChildNode.Parent = Node then
           begin
             ChildNodeData := FClientView.GetNodeData(ChildNode);
-            FClients.RemoveClient(ChildNodeData.Client);
+            FClientManager.RemoveClient(ChildNodeData.Client);
           end;
         end;
       end;
@@ -534,6 +541,7 @@ end;
 
 procedure TClientTab.ActionPlayExecute(Sender: TObject);
 var
+  Res: TMayConnectResults;
   Clients: TNodeDataArray;
   SelectedClient, Client: PClientNodeData;
 begin
@@ -548,9 +556,12 @@ begin
     if Client <> SelectedClient then
       Client.Client.StopPlay;
 
-  if SelectedClient.Client.StartPlay(True) <> crOk then
-    OnShowErrorMessage(SelectedClient.Client, crNoBandwidth, False, False)
-  else
+  Res := SelectedClient.Client.StartPlay(True);
+  if Res <> crOk then
+  begin
+    SelectedClient.Client.WriteLog(FClientManager.GetErrorText(Res, '', False, False, True), '', ltGeneral, llWarning);
+    OnShowErrorMessage(SelectedClient.Client, FClientManager.GetErrorText(Res, '', False, False, False));
+  end else
     if Assigned(FOnPlayStarted) then
       FOnPlayStarted(Self);
 
@@ -690,19 +701,19 @@ begin
   FRefreshInfo := False;
   FReceived := 0;
 
-  FClients := Clients;
-  FClients.OnClientLog := ClientManagerLog;
-  FClients.OnClientRefresh := ClientManagerRefresh;
-  FClients.OnClientAddRecent := ClientManagerAddRecent;
-  FClients.OnClientAdded := ClientManagerClientAdded;
-  FClients.OnClientRemoved := ClientManagerClientRemoved;
-  FClients.OnClientSongSaved := ClientManagerSongSaved;
-  FClients.OnClientTitleChanged := ClientManagerTitleChanged;
-  FClients.OnClientICYReceived := ClientManagerICYReceived;
-  FClients.OnClientTitleAllowed := ClientManagerTitleAllowed;
-  FClients.OnShowErrorMessage := ClientManagerShowErrorMessage;
-  FClients.OnPlaybackStarted := ClientManagerPlaybackStarted;
-  FClients.OnClientSecondsReceived := ClientManagerSecondsReceived;
+  FClientManager := Clients;
+  FClientManager.OnClientLog := ClientManagerLog;
+  FClientManager.OnClientRefresh := ClientManagerRefresh;
+  FClientManager.OnClientAddRecent := ClientManagerAddRecent;
+  FClientManager.OnClientAdded := ClientManagerClientAdded;
+  FClientManager.OnClientRemoved := ClientManagerClientRemoved;
+  FClientManager.OnClientSongSaved := ClientManagerSongSaved;
+  FClientManager.OnClientTitleChanged := ClientManagerTitleChanged;
+  FClientManager.OnClientICYReceived := ClientManagerICYReceived;
+  FClientManager.OnClientTitleAllowed := ClientManagerTitleAllowed;
+  FClientManager.OnShowErrorMessage := ClientManagerShowErrorMessage;
+  FClientManager.OnPlaybackStarted := ClientManagerPlaybackStarted;
+  FClientManager.OnClientSecondsReceived := ClientManagerSecondsReceived;
 
   FHomeCommunication := HomeComm;
 
@@ -900,7 +911,7 @@ destructor TClientTab.Destroy;
 begin
   // Es gab einmal die Exception, dass es im EventHandler crashte beim Beenden.
   // Also ist das hier so...
-  FClients.OnClientRefresh := nil;
+  FClientManager.OnClientRefresh := nil;
 
   MsgBus.RemoveSubscriber(MessageReceived);
 
@@ -1074,12 +1085,12 @@ begin
   FClientView.RefreshClient(Sender as TICEClient);
 
   OnePlaying := False;
-  for i := 0 to FClients.Count - 1 do
+  for i := 0 to FClientManager.Count - 1 do
   begin
-    if FClients[i].Playing and (FClients[i].State = csConnected) then
+    if FClientManager[i].Playing and (FClientManager[i].State = csConnected) then
     begin
       OnePlaying := True;
-      OnePlayingName := FClients[i].Entry.Name;
+      OnePlayingName := FClientManager[i].Entry.Name;
       Break;
     end;
   end;
@@ -1170,11 +1181,10 @@ begin
     ShowInfo;
 end;
 
-procedure TClientTab.ClientManagerShowErrorMessage(Sender: TICEClient;
-  Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
+procedure TClientTab.ClientManagerShowErrorMessage(Sender: TObject; Data: string);
 begin
   if Assigned(FOnShowErrorMessage) then
-    FOnShowErrorMessage(Sender, Msg, WasAuto, WasScheduled);
+    FOnShowErrorMessage(Sender, Data);
 end;
 
 procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
@@ -1371,7 +1381,10 @@ begin
           begin
             Res := Clients[0].Client.StartRecording(True);
             if Res <> crOk then
-              OnShowErrorMessage(Clients[0].Client, Res, False, False);
+            begin
+              Clients[0].Client.WriteLog(FClientManager.GetErrorText(Res, '', False, False, True), '', ltGeneral, llWarning);
+              OnShowErrorMessage(Clients[0].Client, FClientManager.GetErrorText(Res, '', False, False, False));
+            end;
           end;
         end;
       caStreamIntegrated:
@@ -1464,7 +1477,7 @@ begin
       end;
 
       // Ist der Client schon in der Liste?
-      Client := FClients.GetClient(Info.ID, '', Info.URL, nil);
+      Client := FClientManager.GetClient(Info.ID, '', Info.URL, nil);
       if (Client <> nil) and (not Client.AutoRemove) then
       begin
         case Action of
@@ -1484,17 +1497,18 @@ begin
           UnkillCategory
         else
         begin
+          Client.WriteLog(FClientManager.GetErrorText(Res, '', False, False, True), '', ltGeneral, llWarning);
           if not (Res in MessagesShown) then
           begin
             MessagesShown := MessagesShown + [Res];
-            OnShowErrorMessage(Client, Res, False, False);
+            OnShowErrorMessage(Client, FClientManager.GetErrorText(Res, '', False, False, False));
           end;
         end;
       end else
       begin
         if ValidURL(Info.URL) then
         begin
-          Client := FClients.AddClient(Info.ID, Info.Bitrate, Info.Name, Info.URL);
+          Client := FClientManager.AddClient(Info.ID, Info.Bitrate, Info.Name, Info.URL);
           if Info.RegExes <> nil then
             Client.Entry.Settings.RegExes.Assign(Info.RegExes);
 
@@ -1524,10 +1538,11 @@ begin
             UnkillCategory
           else
           begin
+            Client.WriteLog(FClientManager.GetErrorText(Res, '', False, False, True), '', ltGeneral, llWarning);
             if not (Res in MessagesShown) then
             begin
               MessagesShown := MessagesShown + [Res];
-              OnShowErrorMessage(Client, Res, False, False);
+              OnShowErrorMessage(Client, FClientManager.GetErrorText(Res, '', False, False, False));
             end;
           end;
         end else
@@ -1769,7 +1784,7 @@ begin
 
   for i := 0 to AppGlobals.Data.StreamList.Count - 1 do
   begin
-    Client := FClients.AddClient(AppGlobals.Data.StreamList[i]);
+    Client := FClientManager.AddClient(AppGlobals.Data.StreamList[i]);
     Node := FClientView.GetClientNode(Client);
     if Client <> nil then
     begin

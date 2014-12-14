@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -2568,16 +2568,21 @@ var
   i: Integer;
   Stream: TStreamBrowserEntry;
 begin
-  for i := Streams.Count - 1 downto 0 do
-  begin
-    Stream := AppGlobals.Data.BrowserList.GetStream(Streams[i].FID);
-    if Stream <> nil then
-      Streams[i].Stream := Stream.Copy
-    else
+  AppGlobals.Lock;
+  try
+    for i := Streams.Count - 1 downto 0 do
     begin
-      Streams[i].Free;
-      Streams.Delete(i);
+      Stream := AppGlobals.Data.BrowserList.GetStream(Streams[i].FID);
+      if Stream <> nil then
+        Streams[i].Stream := Stream.Copy
+      else
+      begin
+        Streams[i].Free;
+        Streams.Delete(i);
+      end;
     end;
+  finally
+    AppGlobals.Unlock;
   end;
 end;
 

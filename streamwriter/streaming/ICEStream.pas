@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -92,6 +92,7 @@ type
   private
     FSettings: TStreamSettings;
     FRecordTitle: string;
+    FParsedRecordTitle: string;
     FStopAfterSong: Boolean;
     FKilled: Boolean;
 
@@ -183,6 +184,7 @@ type
     procedure ParseTitle(S, Pattern: string; var Artist: string; var Title: string; var Album: string);
 
     procedure FSetRecordTitle(Value: string);
+    procedure FSetParsedRecordTitle(Value: string);
   protected
     procedure DoHeaderRemoved; override;
     procedure WriteExtLog(Msg: string; T: TLogType; Level: TLogLevel); overload;
@@ -198,6 +200,7 @@ type
 
     property Settings: TStreamSettings read FSettings;
     property RecordTitle: string read FRecordTitle write FSetRecordTitle;
+    property ParsedRecordTitle: string read FParsedRecordTitle write FSetParsedRecordTitle;
     property StopAfterSong: Boolean read FStopAfterSong write FStopAfterSong;
     property Killed: Boolean read FKilled write FKilled;
 
@@ -535,7 +538,7 @@ begin
       if Assigned(FOnDisplayTitleChanged) then
         FOnDisplayTitleChanged(Self);
     end else
-      raise Exception.Create(Format(_('Invalid responsecode (%d)'), [ResponseCode])); // TODO: landet das hier ordentlich im log?
+      raise Exception.Create(Format(_('Invalid responsecode (%d)'), [ResponseCode]));
   end else if HeaderType = 'http' then
   begin
     WriteExtLog(_('HTTP response detected'), ltGeneral, llDebug);
@@ -545,8 +548,7 @@ end;
 
 procedure TICEStream.FreeAudioStream;
 var
-  Filename: string;
-  LowerDir: string;
+  Filename, LowerDir, D1, D2: string;
 begin
   Filename := '';
   FFilename := '';
@@ -563,18 +565,31 @@ begin
   begin
     DeleteFile(PChar(Filename));
 
+    AppGlobals.Lock;
+    try
+      D1 := LowerCase(IncludeTrailingBackslash(AppGlobals.Dir));
+      D2 := LowerCase(IncludeTrailingBackslash(AppGlobals.DirAuto));
+    finally
+      AppGlobals.Unlock;
+    end;
+
     LowerDir := LowerCase(IncludeTrailingBackslash(ExtractFilePath(Filename)));
-    if (LowerDir <> LowerCase(IncludeTrailingBackslash(AppGlobals.Dir))) and (LowerDir <> LowerCase(IncludeTrailingBackslash(AppGlobals.DirAuto))) then
+    if (LowerDir <> D1) and (LowerDir <> D2) then
       Windows.RemoveDirectory(PChar(ExtractFilePath(Filename)));
   end;
 end;
 
 procedure TICEStream.FSetRecordTitle(Value: string);
 begin
-  if Value <> FRecordTitle then
-    WriteExtLog(Format(_('Recording "%s"'), [Value]), ltGeneral, llInfo);
   FRecordTitle := Value;
   FStreamTracks.RecordTitle := Value;
+end;
+
+procedure TICEStream.FSetParsedRecordTitle(Value: string);
+begin
+  FParsedRecordTitle := Value;
+  if Value <> FParsedRecordTitle then
+    WriteExtLog(Format(_('Recording "%s"'), [Value]), ltGeneral, llInfo);
 end;
 
 function TICEStream.GetFileLength(Filename: string; Filesize: Int64; var Length: UInt64): Boolean;
@@ -627,9 +642,12 @@ begin
     FOnNeedSettings(Self);
 
   AppGlobals.Lock;
-  FSaveDir := AppGlobals.Dir;
-  FSaveDirAuto := AppGlobals.DirAuto;
-  AppGlobals.Unlock;
+  try
+    FSaveDir := AppGlobals.Dir;
+    FSaveDirAuto := AppGlobals.DirAuto;
+  finally
+    AppGlobals.Unlock;
+  end;
 end;
 
 //procedure TICEStream.MonitorAnalyzerAnalyzed(Sender: TObject);
@@ -891,9 +909,9 @@ begin
       end;
 
       if Length(Title) > 0 then
-        WriteExtLog(Format('Saving title "%s"', [Title]), ltSaved, llInfo)
+        WriteExtLog(Format('Saving title "%s"', [Title]), ltSaved, llDebug)
       else
-        WriteExtLog('Saving unnamed title', ltSaved, llInfo);
+        WriteExtLog('Saving unnamed title', ltSaved, llDebug);
 
       try
         ForceDirectories(Dir);
@@ -911,46 +929,38 @@ begin
       except
         Error := GetLastError;
         if (Error = 3) and (Length(Dir + Filename) > MAX_PATH - 2) then
-          raise Exception.Create(_('Could not save file because it exceeds the maximum path length'))   // TODO: exceptions testen
+          raise Exception.Create(_('Could not save file because it exceeds the maximum path length'))
         else
           raise Exception.Create(_('Could not save file'));
       end;
 
       RemoveData;
 
-      try
-        FSavedFilename := Dir + Filename;
-        FSavedFilenameConverted := Dir + FilenameConverted;
-        FSavedSize := P.DataEnd - P.DataStart;
-        FSavedFullTitle := FullTitle;
-        FSavedStreamTitle := Title;
-        FSavedIsStreamFile := False;
+      FSavedFilename := Dir + Filename;
+      FSavedFilenameConverted := Dir + FilenameConverted;
+      FSavedSize := P.DataEnd - P.DataStart;
+      FSavedFullTitle := FullTitle;
+      FSavedStreamTitle := Title;
+      FSavedIsStreamFile := False;
 
-        // Wenn kleiner als 20MB wird FSavedLength ausgegeben, sonst selber rechnen
-        if not ((FSavedSize < 20971520) and (GetFileLength(Dir + Filename, P.DataEnd - P.DataStart, FSavedLength))) then
-        begin
-          if FBytesPerSec > 0 then
-            FSavedLength := Trunc(FSavedSize / FBytesPerSec)
-          else
-            FSavedLength := 0;
-        end;
-
-        FOriginalStreamTitle := Title;
-
-        if Assigned(FOnSongSaved) then
-          FOnSongSaved(Self);
-
-        if FullTitle then
-          WriteExtLog(Format(_('Saved song "%s"'), [ExtractFilename(Filename)]), ltSaved, llInfo)
+      // Wenn kleiner als 20MB wird FSavedLength ausgegeben, sonst selber rechnen
+      if not ((FSavedSize < 20971520) and (GetFileLength(Dir + Filename, P.DataEnd - P.DataStart, FSavedLength))) then
+      begin
+        if FBytesPerSec > 0 then
+          FSavedLength := Trunc(FSavedSize / FBytesPerSec)
         else
-          WriteExtLog(Format(_('Saved incomplete song "%s"'), [ExtractFilename(Filename)]), ltSaved, llInfo);
-      except
-        on E: Exception do
-        begin
-          WriteExtLog(Format(_('Error after successful save: %s'), [E.Message]), ltSaved, llError);   // TODO: das hier testen - generiert es 2 log einträge?
-          raise;
-        end;
+          FSavedLength := 0;
       end;
+
+      FOriginalStreamTitle := Title;
+
+      if FullTitle then
+        WriteExtLog(Format(_('Saved song "%s"'), [ExtractFilename(Filename)]), ltSaved, llInfo)
+      else
+        WriteExtLog(Format(_('Saved incomplete song "%s"'), [ExtractFilename(Filename)]), ltSaved, llInfo);
+
+      if Assigned(FOnSongSaved) then
+        FOnSongSaved(Self);
     except
       on E: Exception do
       begin
@@ -1274,7 +1284,12 @@ begin
       try
         CalcBytesPerSec;
 
-        AutoTuneInMinKbps := GetAutoTuneInMinKbps(Self.FAudioType, AppGlobals.AutoTuneInMinQuality);
+        AppGlobals.Lock;
+        try
+          AutoTuneInMinKbps := GetAutoTuneInMinKbps(Self.FAudioType, AppGlobals.AutoTuneInMinQuality);
+        finally
+          AppGlobals.Unlock;
+        end;
 
         if (FRecordTitle <> '') and (FBitRate < AutoTuneInMinKbps) then
         begin
@@ -1369,7 +1384,7 @@ begin
             //end;
 
             for i := 0 to FSettings.IgnoreTrackChangePattern.Count - 1 do
-              if Like(Title, FSettings.IgnoreTrackChangePattern[i]) then      // TODO: die log einträge wenn ich die fw-sw-block-regel anschalte sind sehr komisch.
+              if Like(Title, FSettings.IgnoreTrackChangePattern[i]) then
               begin
                 IgnoreTitle := True;
                 Break;
@@ -1392,7 +1407,7 @@ begin
               if NewDisplayTitle <> FDisplayTitle then
               begin
                 if Title <> NewDisplayTitle then
-                  WriteExtLog(Format(_('"%s" (parsed as "%s") now playing'), [Title, NewDisplayTitle]), ltSong, llInfo)
+                  WriteExtLog(Format(_('"%s" ("%s") now playing'), [NewDisplayTitle, Title]), ltSong, llInfo)
                 else
                   WriteExtLog(Format(_('"%s" now playing'), [Title]), ltSong, llInfo);
                 DisplayTitleChanged := True;

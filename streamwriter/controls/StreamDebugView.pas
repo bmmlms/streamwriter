@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -250,6 +250,10 @@ begin
     if not (R.Bottom > ClientHeight) then
       ScrollIntoView(GetLast, False, False);
   end;
+
+  // Invalidate, weil FClient.DebugLog.Add() eventuell auch alte Einträge entfernt im Notify().
+  // Ohne Invalidate bekommt die Ansicht das nicht mit.
+  Invalidate;
 end;
 
 function TDebugView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;

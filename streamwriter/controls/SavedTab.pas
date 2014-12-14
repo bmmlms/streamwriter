@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -1709,6 +1709,8 @@ end;
 
 destructor TSavedTree.Destroy;
 begin
+  MsgBus.RemoveSubscriber(MessageReceived);
+
   FPlayerList.Free;
   FPlayer.Free;
   FTrackList.Free;
@@ -2552,6 +2554,9 @@ end;
 
 function TSavedTree.DoHeaderDragging(Column: TColumnIndex): Boolean;
 begin
+  if Column = -1 then
+    Exit(False);
+
   Result := inherited;
 
   FHeaderDragSourcePosition := Header.Columns[Column].Position;

@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -49,6 +49,27 @@ type
   end;
   PLogNodeData = ^TLogNodeData;
 
+  TLogPopup = class(TPopupMenu)
+  private
+    FItemDebug: TMenuItem;
+    FItemInfo: TMenuItem;
+    FItemWarning: TMenuItem;
+    FItemError: TMenuItem;
+    FItemCopy: TMenuItem;
+    FItemClear: TMenuItem;
+  protected
+
+  public
+    constructor Create(AOwner: TComponent); override;
+
+    property ItemDebug: TMenuItem read FItemDebug;
+    property ItemInfo: TMenuItem read FItemInfo;
+    property ItemWarning: TMenuItem read FItemWarning;
+    property ItemError: TMenuItem read FItemError;
+    property ItemCopy: TMenuItem read FItemCopy;
+    property ItemClear: TMenuItem read FItemClear;
+  end;
+
   TLogPanel = class(TPanel)
   private
     FLabel: TLabel;
@@ -72,6 +93,8 @@ type
 
   TLogTree = class(TVirtualStringTree)
   private
+    FPopupMenu: TLogPopup;
+
     FColType: TVirtualTreeColumn;
     FColTime: TVirtualTreeColumn;
     FColSource: TVirtualTreeColumn;
@@ -94,8 +117,6 @@ type
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
       Column: TColumnIndex; var Ghosted: Boolean;
       var Index: Integer): TCustomImageList; override;
-    function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode;
-      Column: TColumnIndex): Integer; override;
     procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
     function DoIncrementalSearch(Node: PVirtualNode;
       const Text: string): Integer; override;
@@ -125,6 +146,7 @@ type
 
     procedure TextChange(Sender: TObject);
     procedure ButtonClick(Sender: TObject);
+    procedure PopupMenuClick(Sender: TObject);
     procedure LogTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
   protected
   public
@@ -150,9 +172,8 @@ begin
 
   FLogTree.Images := modSharedData.imgImages;
 
-  // TODO: brauchen nen popupmenü!
-  //if Screen.PixelsPerInch = 96 then
-  //  FChartsTree.PopupMenu.Images := modSharedData.imgImages;
+  if Screen.PixelsPerInch = 96 then
+    FLogTree.PopupMenu.Images := modSharedData.imgImages;
 
   FLogPanel.FSearch.OnChange := TextChange;
   FLogPanel.FButtonDebug.OnClick := ButtonClick;
@@ -219,6 +240,16 @@ begin
       FLogTree.FLog[i].Free;
     FLogTree.FLog.Clear;
   end;
+
+  FLogPanel.FButtonDebug.Down := llDebug in FLogTree.FFilterTypes;
+  FLogPanel.FButtonInfo.Down := llInfo in FLogTree.FFilterTypes;
+  FLogPanel.FButtonWarning.Down := llWarning in FLogTree.FFilterTypes;
+  FLogPanel.FButtonError.Down := llError in FLogTree.FFilterTypes;
+
+  FLogTree.FPopupMenu.FItemDebug.Checked := llDebug in FLogTree.FFilterTypes;
+  FLogTree.FPopupMenu.FItemInfo.Checked := llInfo in FLogTree.FFilterTypes;
+  FLogTree.FPopupMenu.FItemWarning.Checked := llWarning in FLogTree.FFilterTypes;
+  FLogTree.FPopupMenu.FItemError.Checked := llError in FLogTree.FFilterTypes;
 end;
 
 procedure TLogTab.LogTreeChange(Sender: TBaseVirtualTree;
@@ -243,6 +274,12 @@ begin
   FLogTree.Align := alClient;
   FLogTree.OnChange := LogTreeChange;
 
+  FLogTree.FPopupMenu.ItemInfo.OnClick := PopupMenuClick;
+  FLogTree.FPopupMenu.ItemWarning.OnClick := PopupMenuClick;
+  FLogTree.FPopupMenu.ItemError.OnClick := PopupMenuClick;
+  FLogTree.FPopupMenu.ItemCopy.OnClick := PopupMenuClick;
+  FLogTree.FPopupMenu.ItemClear.OnClick := PopupMenuClick;
+
   ShowCloseButton := False;
 end;
 
@@ -250,6 +287,45 @@ destructor TLogTab.Destroy;
 begin
 
   inherited;
+end;
+
+procedure TLogTab.PopupMenuClick(Sender: TObject);
+var
+  i: Integer;
+  s: string;
+  Node: PVirtualNode;
+  NodeData: PLogNodeData;
+begin
+  if (Sender = FLogTree.FPopupMenu.FItemDebug) or (Sender = FLogTree.FPopupMenu.FItemInfo)
+    or (Sender = FLogTree.FPopupMenu.FItemWarning) or (Sender = FLogTree.FPopupMenu.FItemError)
+  then
+  begin
+    TMenuItem(Sender).Checked := not TMenuItem(Sender).Checked;
+  end;
+
+  if Sender = FLogTree.FPopupMenu.FItemDebug then
+  begin
+    FLogPanel.FButtonDebug.Down := TMenuItem(Sender).Checked;
+    ButtonClick(FLogPanel.FButtonDebug)
+  end else if Sender = FLogTree.FPopupMenu.FItemInfo then
+  begin
+    FLogPanel.FButtonInfo.Down := TMenuItem(Sender).Checked;
+    ButtonClick(FLogPanel.FButtonInfo)
+  end else if Sender = FLogTree.FPopupMenu.FItemWarning then
+  begin
+    FLogPanel.FButtonWarning.Down := TMenuItem(Sender).Checked;
+    ButtonClick(FLogPanel.FButtonWarning)
+  end else if Sender = FLogTree.FPopupMenu.FItemError then
+  begin
+    FLogPanel.FButtonError.Down := TMenuItem(Sender).Checked;
+    ButtonClick(FLogPanel.FButtonError)
+  end else if Sender = FLogTree.FPopupMenu.FItemCopy then
+  begin
+    ButtonClick(FLogPanel.FButtonCopy)
+  end else if Sender = FLogTree.FPopupMenu.FItemClear then
+  begin
+    ButtonClick(FLogPanel.FButtonClear);
+  end;
 end;
 
 procedure TLogTab.PostTranslate;
@@ -323,7 +399,7 @@ begin
 
   FLog := TList<TLogEntry>.Create;
 
-  MsgBus.AddSubscriber(MessageReceived);    // TODO: RemoveSubscriber? fehlt das noch an anderen stellen?? klar, ist nicht wichtig, aber SAUBER!
+  MsgBus.AddSubscriber(MessageReceived);
 
   NodeDataSize := SizeOf(PLogNodeData);
 
@@ -334,17 +410,19 @@ begin
   Header.Height := GetTextSize('Wyg', Font).cy + 5;
   AutoScrollDelay := 50;
   AutoScrollInterval := 400;
-  Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoShowSortGlyphs, hoVisible];
+  Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoVisible, hoShowSortGlyphs];
   TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
   TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toToggleOnDblClick];
+  ShowHint := True;
+  HintMode := hmTooltip;
 
   Header.AutoSizeIndex := 3;
 
   FColType := Header.Columns.Add;
   FColType.Text := _('Type');
-  FColType.Options := FColType.Options - [coDraggable];
+  FColType.Options := FColType.Options - [coDraggable, coResizable, coAllowClick];
   FColTime := Header.Columns.Add;
   FColTime.Text := _('Time');
   FColSource := Header.Columns.Add;
@@ -355,6 +433,10 @@ begin
   Header.PopupMenu := TMTreeColumnPopup.Create(Self);
   TMTreeColumnPopup(Header.PopupMenu).OnAction := MenuColsAction;
   TMTreeColumnPopup(Header.PopupMenu).HideIdx := 3;
+
+  FPopupMenu := TLogPopup.Create(Self);
+
+  PopupMenu := FPopupMenu;
 
   Header.SortColumn := 1;
   Header.SortDirection := sdDescending;
@@ -380,24 +462,13 @@ destructor TLogTree.Destroy;
 var
   i: Integer;
 begin
+  MsgBus.RemoveSubscriber(MessageReceived);
+
   for i := 0 to FLog.Count - 1 do
     FLog[i].Free;
   FLog.Free;
 
   inherited;
-end;
-
-function TLogTree.DoCompare(Node1, Node2: PVirtualNode;
-  Column: TColumnIndex): Integer;
-var
-  i: Integer;
-  C1, C2: Integer;
-//  Data1, Data2: PLogNodeData;
-begin
-  Result := 0;
-
-//  Data1 := GetNodeData(Node1);
-//  Data2 := GetNodeData(Node2);
 end;
 
 function TLogTree.DoGetImageIndex(Node: PVirtualNode;
@@ -440,13 +511,18 @@ procedure TLogTree.DoHeaderDragged(Column: TColumnIndex;
 begin
   inherited;
 
+  if Header.Columns[Column].Position = 0 then
+    Header.Columns[Column].Position := FHeaderDragSourcePosition;
 end;
 
 function TLogTree.DoHeaderDragging(Column: TColumnIndex): Boolean;
 begin
+  if Column = -1 then
+    Exit(False);
+
   Result := inherited;
 
-  FHeaderDragSourcePosition := Header.Columns[Column].Position;
+  FHeaderDragSourcePosition := Header.Columns[Column].Position
 end;
 
 function TLogTree.DoIncrementalSearch(Node: PVirtualNode;
@@ -478,10 +554,11 @@ begin
   begin
     for i := 1 to Header.Columns.Count - 1 do
       Header.Columns[i].Width := AppGlobals.LogHeaderWidth[i];
-    FColType.Width := 52;
+    FColType.Width := GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
   end else
   begin
-    FColType.Width := 52;
+    FColType.Width := GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+    FColType.Width := GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
 
     FColTime.Width := GetTextSize('00-00-00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
     FColSource.Width := GetTextSize('wwwwwwwwwwwwwww', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
@@ -548,7 +625,7 @@ begin
     end;
   finally
     EndUpdate;
-  end;                            // TODO: doppelklick bei titelsuche fügt zur wunschliste hinzu, doppelklick entfernt. warum gibts für entfernen kein popupmenu item???
+  end;
 end;
 
 procedure TLogTree.PaintImage(var PaintInfo: TVTPaintInfo;
@@ -596,7 +673,7 @@ begin
       llWarning:
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 97);
       llInfo:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 10);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 101);
       llDebug:
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 98);
     end;
@@ -621,7 +698,7 @@ begin
   FFilterTypes := FilterTypes;
 
   BeginUpdate;
-  try                          // TODO: tooltips anzeigen wenn text in spalte nicht ganz sichtbar ist. in der titelsuche funzt das auch nicht.
+  try
     Clear;
 
     for i := 0 to FLog.Count - 1 do
@@ -699,7 +776,7 @@ begin
   FButtonError := TToolButton.Create(FToolbar);
   FButtonError.Parent := FToolbar;
   FButtonError.Hint := 'Error';
-  FButtonError.ImageIndex := 2;
+  FButtonError.ImageIndex := 100;
   FButtonError.Style := tbsCheck;
   FButtonError.Down := (AppGlobals.LogFilterTypes and (1 shl Integer(llError))) <> 0;
 
@@ -713,7 +790,7 @@ begin
   FButtonInfo := TToolButton.Create(FToolbar);
   FButtonInfo.Parent := FToolbar;
   FButtonInfo.Hint := 'Info';
-  FButtonInfo.ImageIndex := 10;
+  FButtonInfo.ImageIndex := 101;
   FButtonInfo.Style := tbsCheck;
   FButtonInfo.Down := (AppGlobals.LogFilterTypes and (1 shl Integer(llInfo))) <> 0;
 
@@ -753,6 +830,53 @@ begin
   Self.LogType := LogType;
   Self.Level := Level;
   Self.Time := Time;
+end;
+
+{ TLogPopup }
+
+constructor TLogPopup.Create(AOwner: TComponent);
+var
+  Sep: TMenuItem;
+begin
+  inherited;
+
+  FItemDebug := CreateMenuItem;
+  FItemDebug.Caption := '&Debug';
+  FItemDebug.Checked := (AppGlobals.LogFilterTypes and (1 shl Integer(llDebug))) <> 0;
+  Items.Add(FItemDebug);
+  {$IFNDEF DEBUG}
+  FItemDebug.Visible := False;
+  {$ENDIF}
+
+  FItemInfo := CreateMenuItem;
+  FItemInfo.Caption := '&Info';
+  FItemInfo.Checked := (AppGlobals.LogFilterTypes and (1 shl Integer(llInfo))) <> 0;
+  Items.Add(FItemInfo);
+
+  FItemWarning := CreateMenuItem;
+  FItemWarning.Caption := '&Warning';
+  FItemWarning.Checked := (AppGlobals.LogFilterTypes and (1 shl Integer(llWarning))) <> 0;
+  Items.Add(FItemWarning);
+
+  FItemError := CreateMenuItem;
+  FItemError.Caption := '&Error';
+  FItemError.Checked := (AppGlobals.LogFilterTypes and (1 shl Integer(llError))) <> 0;
+  Items.Add(FItemError);
+
+  Sep := CreateMenuItem;
+  Sep.Caption := '-';
+  Items.Add(Sep);
+
+  FItemCopy := CreateMenuItem;
+  FItemCopy.Caption := '&Copy';
+  FItemCopy.ImageIndex := 57;
+  Items.Add(FItemCopy);
+
+  // TODO: Hint in Toolbar ist "Leeren", hier im PopupMenü steht "Löschen". Fail!
+  FItemClear := CreateMenuItem;
+  FItemClear.Caption := 'C&lear';
+  FItemClear.ImageIndex := 13;
+  Items.Add(FItemClear);
 end;
 
 end.

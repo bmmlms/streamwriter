@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -29,8 +29,6 @@ uses
 type
   TIntArray = array of Integer;
   TCardinalArray = array of Cardinal;
-
-  // TODO: aus "Copyright (c) 2010-2014 Alexander Nottelmann" ein "Copyright (c) 2010-2015 Alexander Nottelmann" machen :)
 
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
 

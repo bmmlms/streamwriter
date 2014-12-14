@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -112,7 +112,7 @@ type
     destructor Destroy; override;
 
     procedure SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean;
-      RecordTitle: string; SongsSaved: Cardinal);
+      RecordTitle, ParsedRecordTitle: string; SongsSaved: Cardinal);
 
     procedure StartPlay;
     procedure PausePlay;
@@ -172,11 +172,12 @@ begin
 end;
 
 procedure TICEThread.SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean;
-  RecordTitle: string; SongsSaved: Cardinal);
+  RecordTitle, ParsedRecordTitle: string; SongsSaved: Cardinal);
 begin
   // Das hier wird nur gesynct aus dem Mainthread heraus aufgerufen.
   FTypedStream.Settings.Assign(Settings);
   FTypedStream.RecordTitle := RecordTitle;
+  FTypedStream.ParsedRecordTitle := ParsedRecordTitle;
   FTypedStream.StopAfterSong := StopAfterSong;
   FTypedStream.Killed := Killed;
   FTypedStream.SongsSaved := SongsSaved;
@@ -420,6 +421,7 @@ end;
 procedure TICEThread.DoEnded;
 var
   StartTime: Cardinal;
+  Delay: Cardinal;
 begin
   inherited;
 
@@ -440,13 +442,19 @@ begin
       Sync(FOnRecordingStopped);
   end;
 
-  // FSleepTime ist die Schlaf-Zeit, die von aussen festgelegt wird. Nicht Retry-Delay!
-  StartTime := GetTickCount;
-  while StartTime > GetTickCount - FSleepTime do
+  if FError then
   begin
-    Sleep(100);
-    if Terminated then
-      Exit;
+    Delay := FTypedStream.Settings.RetryDelay * 1000;
+
+    FState := tsRetrying;
+    Sync(FOnStateChanged);
+    StartTime := GetTickCount;
+    while StartTime > GetTickCount - Delay do
+    begin
+      Sleep(100);
+      if Terminated then
+        Exit;
+    end;
   end;
 end;
 
@@ -461,24 +469,10 @@ begin
   FPlayer.Stop;
 
   if E.ClassType = EExceptionParams then
-    WriteLog(Format(_(E.Message), EExceptionParams(E).Args), slError)   // TODO: hier mal das fehlerlogging prüfen
+    WriteLog(Format(_(E.Message), EExceptionParams(E).Args), slError)
   else
     if E.Message <> '' then
       WriteLog(Format(_('%s'), [_(E.Message)]), slError);
-
-  Delay := FTypedStream.Settings.RetryDelay * 1000;
-  if FState <> tsIOError then
-  begin
-    FState := tsRetrying;
-    Sync(FOnStateChanged);
-    StartTime := GetTickCount;
-    while StartTime > GetTickCount - Delay do
-    begin
-      Sleep(100);
-      if Terminated then
-        Exit;
-    end;
-  end;
 end;
 
 procedure TICEThread.DoStuff;
@@ -656,10 +650,13 @@ begin
   FSleepTime := 0;
 
   AppGlobals.Lock;
-  ProxyEnabled := AppGlobals.ProxyEnabled;
-  ProxyHost := AppGlobals.ProxyHost;
-  ProxyPort := AppGlobals.ProxyPort;
-  AppGlobals.Unlock;
+  try
+    ProxyEnabled := AppGlobals.ProxyEnabled;
+    ProxyHost := AppGlobals.ProxyHost;
+    ProxyPort := AppGlobals.ProxyPort;
+  finally
+    AppGlobals.Unlock;
+  end;
 
   FPlayBufferLock := TCriticalSection.Create;
   FTitle := '';

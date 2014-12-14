@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -209,10 +209,11 @@ begin
   TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowDropmark, toShowRoot, toShowButtons];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toAcceptOLEDrop, toEditable];
-  Header.AutoSizeIndex := 1;
   DragMode := dmAutomatic;
   ShowHint := True;
   HintMode := hmTooltip;
+
+  Header.AutoSizeIndex := 1;
 
   Self.PopupMenu := PopupMenu;
   FDragSource := TDropFileSource.Create(Self);
@@ -432,6 +433,9 @@ end;
 
 function TMClientView.DoHeaderDragging(Column: TColumnIndex): Boolean;
 begin
+  if Column = -1 then
+    Exit(False);
+
   Result := inherited;
 
   FHeaderDragSourcePosition := Header.Columns[Column].Position;

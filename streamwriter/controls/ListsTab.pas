@@ -1,7 +1,7 @@
     {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -92,7 +92,7 @@ type
     FToolbar: TTitleToolbar;
     FTree: TTitleTree;
 
-    FClients: TClientManager;
+    FClientManager: TClientManager;
     FFilterText: string;
 
     procedure BuildTree(FromFilter: Boolean);
@@ -138,6 +138,8 @@ type
     procedure Resize; override;
   public
     constructor Create(AOwner: TComponent; Clients: TClientManager); reintroduce;
+    destructor Destroy; override;
+
     procedure AfterCreate; override;
 
     procedure AddTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
@@ -227,6 +229,13 @@ begin
   MsgBus.AddSubscriber(MessageReceived);
 
   HomeComm.OnWishlistUpgradeReceived := HomeCommWishlistUpgradeReceived;
+end;
+
+destructor TListsTab.Destroy;
+begin
+  MsgBus.RemoveSubscriber(MessageReceived);
+
+  inherited;
 end;
 
 procedure TListsTab.HomeCommWishlistUpgradeReceived(Sender: TObject;
@@ -619,9 +628,9 @@ begin
 
   FAddCombo.Clear;
 
-  for i := 0 to FClients.Count - 1 do
-    if FClients[i].Entry.Name <> '' then
-      FAddCombo.AddItem('  ' + FClients[i].Entry.Name, FClients[i]);
+  for i := 0 to FClientManager.Count - 1 do
+    if FClientManager[i].Entry.Name <> '' then
+      FAddCombo.AddItem('  ' + FClientManager[i].Entry.Name, FClientManager[i]);
   FAddCombo.Sorted := True;
   FAddCombo.Items.InsertObject(0, _('Ignorelist'), AppGlobals.Data.IgnoreList);
   FAddCombo.Items.InsertObject(0, _('Wishlist'), AppGlobals.Data.SaveList);
@@ -858,13 +867,13 @@ begin
     for i := 0 to AppGlobals.Data.IgnoreList.Count - 1 do
       FTree.AddTitle(AppGlobals.Data.IgnoreList[i], FTree.FIgnoreNode, FFilterText, FromFilter);
 
-    for i := 0 to FClients.Count - 1 do
+    for i := 0 to FClientManager.Count - 1 do
     begin
-      if FClients[i].Entry.IgnoreList.Count > 0 then
+      if FClientManager[i].Entry.IgnoreList.Count > 0 then
       begin
-        ClientNode := FTree.GetNode(FClients[i]);
-        for n := 0 to FClients[i].Entry.IgnoreList.Count - 1 do
-          FTree.AddTitle(FClients[i].Entry.IgnoreList[n], ClientNode, FFilterText, FromFilter);
+        ClientNode := FTree.GetNode(FClientManager[i]);
+        for n := 0 to FClientManager[i].Entry.IgnoreList.Count - 1 do
+          FTree.AddTitle(FClientManager[i].Entry.IgnoreList[n], ClientNode, FFilterText, FromFilter);
       end;
     end;
 
@@ -920,7 +929,7 @@ begin
   FTree := TTitleTree.Create(Self);
   FTree.Parent := Self;
 
-  FClients := Clients;
+  FClientManager := Clients;
 end;
 
 procedure TTitlePanel.SearchTextChange(Sender: TObject);
@@ -2026,6 +2035,9 @@ end;
 
 function TTitleTree.DoHeaderDragging(Column: TColumnIndex): Boolean;
 begin
+  if Column = -1 then
+    Exit(False);
+
   Result := inherited;
 
   FHeaderDragSourcePosition := Header.Columns[Column].Position;

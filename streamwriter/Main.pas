@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -250,7 +250,7 @@ type
     FWasMaximized: Boolean;
 
     FCheckFiles: TCheckFilesThread;
-    FClients: TClientManager;
+    FClientManager: TClientManager;
     pagMain: TMainPageControl;
     tabClients: TClientTab;
     tabCharts: TChartsTab;
@@ -292,6 +292,7 @@ type
 
     function StartupMessagesNeeded: Boolean;
     procedure ShowStartupMessages;
+    procedure PrepareSave;
 
     procedure CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
 
@@ -315,7 +316,7 @@ type
     procedure tabClientsAddTitleToList(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string);
     procedure tabClientsRemoveTitleFromList(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string; ServerTitleHash: Cardinal);
     procedure tabClientsAuthRequired(Sender: TObject);
-    procedure tabClientsShowErrorMessage(Sender: TICEClient; Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
+    procedure tabClientsShowErrorMessage(Sender: TObject; Data: string);
     procedure tabClientsClientAdded(Sender: TObject);
     procedure tabClientsClientRemoved(Sender: TObject);
 
@@ -474,14 +475,14 @@ begin
   // Shutdown all postprocessors. Since they get terminated, all postprocessing chains get terminated.
   AppGlobals.PostProcessManager.Terminate;
   // Disconnect all clients. They will save their recordings and will not postprocess any file.
-  FClients.Stop;
+  FClientManager.Stop;
 
   if FCheckFiles <> nil then
     FCheckFiles.Terminate;
 
   Hard := False;
   StartTime := GetTickCount;
-  while (HomeComm.ThreadAlive or HomeComm.Connected) or FClients.Active or (FCheckFiles <> nil) or FUpdater.Active do
+  while (HomeComm.ThreadAlive or HomeComm.Connected) or FClientManager.Active or (FCheckFiles <> nil) or FUpdater.Active do
   begin
     // Wait 30 seconds for threads to finish
     if StartTime < GetTickCount - 30000 then
@@ -493,10 +494,7 @@ begin
     Application.ProcessMessages;
   end;
 
-  // Erst Lists updaten, dann Streams!
-  tabSaved.Tree.UpdateList;
-  tabLists.UpdateLists;
-  tabClients.UpdateStreams;
+  PrepareSave;
 
   while True do
   begin
@@ -515,7 +513,7 @@ begin
   end;
 
   // Remove all clients from list
-  FClients.Terminate;
+  FClientManager.Terminate;
 
   tabClients.ClientView.Clear;
 
@@ -806,7 +804,7 @@ begin
   addStatus := TSWStatusBar.Create(Self);
   addStatus.Parent := Self;
 
-  FClients := TClientManager.Create;
+  FClientManager := TClientManager.Create;
 
   pagMain := TMainPageControl.Create(Self);
   pagMain.Parent := Self;
@@ -814,7 +812,7 @@ begin
   pagMain.Align := alClient;
   pagMain.Images := modSharedData.imgImages;
 
-  tabClients := TClientTab.Create(pagMain, tbClients, ActionList1, FClients, mnuStreamPopup);
+  tabClients := TClientTab.Create(pagMain, tbClients, ActionList1, FClientManager, mnuStreamPopup);
   tabClients.PageControl := pagMain;
   tabClients.AfterCreate;
   tabClients.AddressBar.Stations.Sort;
@@ -838,7 +836,7 @@ begin
   tabCharts.OnAddStreams := tabChartsAddStreams;
   tabCharts.OnGetIsStreamOnListEvent := tabChartsGetIsStreamOnListEvent;
 
-  tabLists := TListsTab.Create(pagMain, FClients);
+  tabLists := TListsTab.Create(pagMain, FClientManager);
   tabLists.PageControl := pagMain;
   tabLists.AfterCreate;
 
@@ -951,7 +949,7 @@ procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
 begin
   inherited;
 
-  FreeAndNil(FClients);
+  FreeAndNil(FClientManager);
   FreeAndNil(FUpdater);
 end;
 
@@ -1068,7 +1066,7 @@ begin
   begin
     tmrRecordingsTimer(tmrRecordings);
 
-    FClients.StopMonitors;
+    FClientManager.StopMonitors;
     if AppGlobals.SubmitStats and AppGlobals.MonitorMode and (AppGlobals.MonitorCount > 0) then
       HomeComm.SendGetMonitorStreams(AppGlobals.MonitorCount)
     else
@@ -1079,17 +1077,22 @@ begin
     if not tabCharts.Searched then
       tabCharts.SearchCharts(True, False);
 
-    if (((AppGlobals.Data.BrowserList.Count = 0) or (AppGlobals.Data.GenreList.Count = 0)) or (AppGlobals.LastBrowserUpdate < Now - 15)) or
-       (tabClients.SideBar.BrowserView.Mode = moError) then
-    begin
-      if HomeComm.SendGetServerData then
+    AppGlobals.Lock;
+    try
+      if (((AppGlobals.Data.BrowserList.Count = 0) or (AppGlobals.Data.GenreList.Count = 0)) or (AppGlobals.LastBrowserUpdate < Now - 15)) or
+         (tabClients.SideBar.BrowserView.Mode = moError) then
       begin
-        tabClients.SideBar.BrowserView.SwitchMode(moLoading);
+        if HomeComm.SendGetServerData then
+        begin
+          tabClients.SideBar.BrowserView.SwitchMode(moLoading);
+        end;
       end;
+    finally
+      AppGlobals.Unlock;
     end;
   end else if (HomeComm.WasConnected) and (not HomeComm.Connected) then
   begin
-    FClients.StopMonitors;
+    FClientManager.StopMonitors;
 
     if tabCharts.State = csSearching then
       tabCharts.SetState(csSearchError);
@@ -1342,6 +1345,14 @@ procedure TfrmStreamWriterMain.pagSidebarChange(Sender: TObject);
 begin
   // Damit Child-Controls passende Dimensionen in ShowInfo haben
   Application.ProcessMessages;
+end;
+
+procedure TfrmStreamWriterMain.PrepareSave;
+begin
+  // Erst Lists, dann Streams. Reihenfolge ist wichtig!
+  tabSaved.Tree.UpdateList;
+  tabLists.UpdateLists;
+  tabClients.UpdateStreams;
 end;
 
 procedure TfrmStreamWriterMain.PreTranslate;
@@ -1630,23 +1641,19 @@ begin
     addTrayIcon.Hint := NewHint;
 end;
 
-// TODO: das hier ist (mindestens) auch im save-timer so. zusammenfassen und in eine funktion auslagern!!!
 procedure TfrmStreamWriterMain.SettingsSaveForExport(Sender: TObject);
 begin
   // Ist hier, damit der Profilexport korrekt funktioniert
-  // Erst Lists updaten, dann Streams! Muss so!
-  tabSaved.Tree.UpdateList;
-  tabLists.UpdateLists;
-  tabClients.UpdateStreams;
+  PrepareSave;
 end;
 
 procedure TfrmStreamWriterMain.SetWakeups;
 var
   i, n: Integer;
 begin
-  for i := 0 to FClients.Count - 1 do
-    for n := 0 to FClients[i].Entry.Schedules.Count - 1 do
-      FClients[i].Entry.Schedules[n].SetWakeup;
+  for i := 0 to FClientManager.Count - 1 do
+    for n := 0 to FClientManager[i].Entry.Schedules.Count - 1 do
+      FClientManager[i].Entry.Schedules[n].SetWakeup;
 end;
 
 procedure TfrmStreamWriterMain.ShowCommunityLogin;
@@ -1718,7 +1725,7 @@ begin
               NewMonitorCount := 0;
             if NewMonitorCount <> OldMonitorCount then
             begin
-              FClients.StopMonitors;
+              FClientManager.StopMonitors;
               HomeComm.SendGetMonitorStreams(NewMonitorCount);
             end;
 
@@ -1944,48 +1951,9 @@ begin
   end;
 end;
 
-procedure TfrmStreamWriterMain.tabClientsShowErrorMessage(Sender: TICEClient;
-  Msg: TMayConnectResults; WasAuto, WasScheduled: Boolean);
-var
-  Txt: string;
+procedure TfrmStreamWriterMain.tabClientsShowErrorMessage(Sender: TObject; Data: string);
 begin
-  Txt := '';
-
-  if WasAuto then
-    case Msg of
-      crNoFreeSpace:
-        Txt := _('Automatic recording will be stopped as long as available disk space is below the set limit.');
-      crNoBandwidth:
-        Exit;
-      crDirDoesNotExist:
-        Txt := _('Automatic recording will be stopped as long as the folder for automatically saved songs does not exist.');
-    end
-  else if WasScheduled then
-    case Msg of
-      crNoFreeSpace:
-        Txt := Format(_('Scheduled recording of "%s" will not start because available disk space is below the set limit.'), [Sender.Entry.Name]);
-      crNoBandwidth:
-        Txt := Format(_('Scheduled recording of "%s" will not start because it would exceed the maximum available bandwidth.'), [Sender.Entry.Name]);
-      crDirDoesNotExist:
-        Txt := Format(_('Scheduled recording of "%s" will not start because the folder for saved songs does not exist.'), [Sender.Entry.Name]);
-    end
-  else
-    case Msg of
-      crNoFreeSpace:
-        Txt := _('No connection will be established because available disk space is below the set limit.');
-      crNoBandwidth:
-        Txt := _('No connection will be established because it would exceed the maximum available bandwidth.');
-      crDirDoesNotExist:
-        Txt := _('No connection will be established because the folder for saved songs does not exist.');
-    end;
-
-  if Txt <> '' then
-  begin
-    // TODO: braucht man das hier noch? weil der clientmanager schickt ja schon logging? bzw: es wird nicht für jeden fehler oben schon geloggt. mindestens schedule fehlt. prüfen!!!
-    //if Sender <> nil then
-    //  Sender.WriteDebug(Txt, dtError, dlNormal);
-    TfrmMsgDlg.ShowMsg(Self, Txt, mtInformation, [mbOK], mbOK);
-  end;
+  TfrmMsgDlg.ShowMsg(Self, Data, mtInformation, [mbOK], mbOK);
 end;
 
 procedure TfrmStreamWriterMain.tabSavedRefresh(Sender: TObject);
@@ -2268,14 +2236,8 @@ begin
     Exit;
 
   try
-    // Erst Lists updaten, dann Streams!
-    tabSaved.Tree.UpdateList;
-    tabLists.UpdateLists;
-    tabClients.UpdateStreams;
+    PrepareSave;
     AppGlobals.Data.SaveRecover;
-
-    // TODO: Warum ist das hier? reicht es nicht, SaveReocer() hier drüber zu machen???
-    //       es macht bestimmt sinn, nur welchen? rausfinden!!!
     try
       AppGlobals.Save(0);
     except
@@ -2301,18 +2263,18 @@ begin
 
   L := TList<Cardinal>.Create;
   try
-    for i := 0 to FClients.Count - 1 do
-      if FClients[i].Recording or FClients[i].Playing and not FClients[i].AutoRemove then
+    for i := 0 to FClientManager.Count - 1 do
+      if FClientManager[i].Recording or FClientManager[i].Playing and not FClientManager[i].AutoRemove then
       begin
-        if FClients[i].Entry.ID > 0 then
-          L.Add(FClients[i].Entry.ID)
+        if FClientManager[i].Entry.ID > 0 then
+          L.Add(FClientManager[i].Entry.ID)
         else
           Inc(C);
       end;
 
-    for i := 0 to FClients.Monitors.Count - 1 do
-      if FClients.Monitors[i].Entry.ID > 0 then
-        L.Add(FClients.Monitors[i].Entry.ID);
+    for i := 0 to FClientManager.Monitors.Count - 1 do
+      if FClientManager.Monitors[i].Entry.ID > 0 then
+        L.Add(FClientManager.Monitors[i].Entry.ID);
 
     HomeComm.SendUpdateStats(L, C);
   finally
@@ -2344,12 +2306,13 @@ begin
           Schedule.ScheduleStarted := Schedule.GetStartTime;
           Res := Client.StartRecording(True);
           if Res <> crOk then
-            tabClientsShowErrorMessage(Client, Res, False, True)
-          else
+          begin
+            Client.WriteLog(FClientManager.GetErrorText(Res, Client.Entry.CustomName, False, True, True), ltSchedule, llWarning);
+            tabClientsShowErrorMessage(Client, FClientManager.GetErrorText(Res, Client.Entry.CustomName, False, True, False));
+          end else
           begin
             Client.ScheduledRecording := True;
-            Client.WriteLog
-            (Format(_('Scheduled recording ends at %s'), [TimeToStr(Schedule.GetEndTime(Schedule.GetStartTime))]), ltSchedule, llInfo);
+            Client.WriteLog(Format(_('Scheduled recording ends at %s'), [TimeToStr(Schedule.GetEndTime(Schedule.GetStartTime))]), ltSchedule, llInfo);
           end;
         end else if not Schedule.MatchesStart then
           Schedule.TriedStart := False;
@@ -2398,7 +2361,7 @@ begin
     tabClients.ClientView.RefreshClient(Client.Client);
   end;
 
-  for Client2 in FClients.Monitors do
+  for Client2 in FClientManager.Monitors do
   begin
     Speed := Speed + Client2.Speed;
   end;
@@ -2414,21 +2377,21 @@ begin
   UpdateStatus;
 
   tabClients.TimerTick;
-
+                          // TODO: neuen codenamen suchen :)
   RecordingActive := False;
   PlayingActive := False;
   ScheduleActive := False;
-  for i := 0 to FClients.Count - 1 do
+  for i := 0 to FClientManager.Count - 1 do
   begin
-    if FClients[i].Recording then
+    if FClientManager[i].Recording then
     begin
       RecordingActive := True;
     end;
-    if FClients[i].Playing then
+    if FClientManager[i].Playing then
     begin
       PlayingActive := True;
     end;
-    if FClients[i].Entry.Schedules.Count > 0 then
+    if FClientManager[i].Entry.Schedules.Count > 0 then
     begin
       ScheduleActive := True;
     end;
@@ -2437,21 +2400,20 @@ begin
   OnlyAuto := True;
   if RecordingActive and not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
   begin
-    for i := 0 to FClients.Count - 1 do
-      if FClients[i].Recording and (not FClients[i].AutoRemove) then
+    for i := 0 to FClientManager.Count - 1 do
+      if FClientManager[i].Recording and (not FClientManager[i].AutoRemove) then
       begin
+        FClientManager[i].WriteLog(_('Stopping recording because available disk space is below the set limit'), '', ltGeneral, llWarning);
+        FClientManager[i].StopRecording;
         OnlyAuto := False;
-        Break;
       end;
-
-    for i := 0 to FClients.Count - 1 do
-      if not FClients[i].AutoRemove then
-        FClients[i].StopRecording;
 
     if not OnlyAuto then
     begin
       tmrSpeed.Enabled := False;
-      MsgBox(Handle, _('Available disk space is below the set limit, so recording will be stopped.'), _('Info'), MB_ICONINFORMATION);
+
+      TfrmMsgDlg.ShowMsg(Self, _('Available disk space is below the set limit, so recordings will be stopped.'), mtInformation, [mbOK], mbOK);
+
       tmrSpeed.Enabled := True;
     end;
   end;
@@ -2693,7 +2655,7 @@ begin
   end;
 
   addStatus.SetState(CS, HomeComm.Authenticated, HomeComm.NotifyTitleChanges, FClientCount, FRecordingCount,
-    FClients.SongsSaved, AppGlobals.Data.SongsSaved);
+    FClientManager.SongsSaved, AppGlobals.Data.SongsSaved);
 
   SetCaptionAndTrayHint;
 end;

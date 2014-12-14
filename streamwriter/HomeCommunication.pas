@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -57,7 +57,6 @@ type
     FAuthToken: Cardinal;
 
     FPingPending: Boolean;
-    FLastPingSent: Cardinal;
 
     FExceptionMessage: string;
 
@@ -109,7 +108,7 @@ type
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
   TStreamsReceivedEvent = procedure(Sender: TObject) of object;
   TChartsReceivedEvent = procedure(Sender: TObject; Success: Boolean; Charts: TChartList) of object;
-  TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, CurrentURL: string; RegExes: TStringList;
+  TTitleChangedEvent = procedure(Sender: TObject; ID: Cardinal; Name, Title, ParsedTitle, CurrentURL: string; RegExes: TStringList;
     Format: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal) of object;
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
@@ -161,6 +160,7 @@ type
     procedure HomeThreadSearchChartsReceived(Sender: TSocketThread);
     procedure HomeThreadWishlistUpgradeReceived(Sender: TSocketThread);
     procedure HomeThreadAuthTokenReceived(Sender: TSocketThread);
+    procedure HomeThreadLog(Sender: TSocketThread; Data: string);
 
     procedure HomeThreadTerminate(Sender: TObject);
   public
@@ -225,7 +225,8 @@ implementation
 
 constructor THomeThread.Create;
 begin
-  FLastPingSent := GetTickCount;
+  // Wenn für 15 Sekunden nichts kommt ist Feierabend. Mindestens die Antwort auf den Ping muss immer ankommen.
+  FDataTimeout := 15000;
 
   inherited Create('streamwriter.org', 7085, TSocketStream.Create);
   //inherited Create('gaia', 7085, TSocketStream.Create);
@@ -270,7 +271,11 @@ procedure THomeThread.DoException(E: Exception);
 begin
   inherited;
 
-  FExceptionMessage := E.Message;
+  if E.ClassType = EExceptionParams then
+    WriteLog(Format(_(E.Message), EExceptionParams(E).Args))
+  else
+    if E.Message <> '' then
+      WriteLog(Format(_('%s'), [_(E.Message)]));
 end;
 
 procedure THomeThread.DoGenerateAuthTokenReceived(CommandHeader: TCommandHeader;
@@ -314,8 +319,13 @@ end;
 procedure THomeThread.DoNetworkTitleChanged(CommandHeader: TCommandHeader;
   Command: TCommandNetworkTitleChangedResponse);
 begin
-  if not AppGlobals.AutoTuneIn then
-    Exit;
+  AppGlobals.Lock;
+  try
+    if not AppGlobals.AutoTuneIn then
+      Exit;
+  finally
+    AppGlobals.Unlock;
+  end;
 
   FNetworkTitleChanged := Command;
 
@@ -429,28 +439,34 @@ begin
     for i := 0 to Count - 1 do
       Genres.Add(TGenre.LoadFromHome(Stream, CommandHeader.Version));
 
-    // Streams laden und OwnRating synchronisieren
-    Stream.Read(Count);
-    for i := 0 to Count - 1 do
-    begin
-      StreamEntry := TStreamBrowserEntry.LoadFromHome(Stream, CommandHeader.Version);
-      for StreamEntry2 in AppGlobals.Data.BrowserList do
-        if StreamEntry.ID = StreamEntry2.ID then
-        begin
-          StreamEntry.OwnRating := StreamEntry2.OwnRating;
-          Break;
-        end;
-      Streams.Add(StreamEntry);
-    end;
+    AppGlobals.Lock;
+    try
+      // Streams laden und OwnRating synchronisieren
+      Stream.Read(Count);
+      for i := 0 to Count - 1 do
+      begin
+        StreamEntry := TStreamBrowserEntry.LoadFromHome(Stream, CommandHeader.Version);
 
-    // Wenn alles erfolgreich geladen wurde alte Listen leeren.
-    // Falls hier jetzt eine Exception kommt wird es bitter...
-    for Genre in AppGlobals.Data.GenreList do
-      Genre.Free;
-    AppGlobals.Data.GenreList.Clear;
-    for StreamEntry in AppGlobals.Data.BrowserList do
-      StreamEntry.Free;
-    AppGlobals.Data.BrowserList.Clear;
+        for StreamEntry2 in AppGlobals.Data.BrowserList do
+          if StreamEntry.ID = StreamEntry2.ID then
+          begin
+            StreamEntry.OwnRating := StreamEntry2.OwnRating;
+            Break;
+          end;
+        Streams.Add(StreamEntry);
+      end;
+
+      // Wenn alles erfolgreich geladen wurde alte Listen leeren.
+      // Falls hier jetzt eine Exception kommt wird es bitter...
+      for Genre in AppGlobals.Data.GenreList do
+        Genre.Free;
+      AppGlobals.Data.GenreList.Clear;
+      for StreamEntry in AppGlobals.Data.BrowserList do
+        StreamEntry.Free;
+      AppGlobals.Data.BrowserList.Clear;
+    finally
+      AppGlobals.Unlock;
+    end;
 
     // Der Liste alle Sachen wieder hinzufügen
     for Genre in Genres do
@@ -487,15 +503,11 @@ var
 begin
   inherited;
 
-  if (not FPingPending) and (FLastPingSent < GetTickCount - 5000) then
+  if (not FPingPending) and (FLastTimeReceived < GetTickCount - 5000) then
   begin
     Cmd := TCommandPing.Create;
     SendCommand(Cmd);
     FPingPending := True;
-    FLastPingSent := GetTickCount;
-  end else if FPingPending and (FLastPingSent < GetTickCount - 15000) then
-  begin
-    raise Exception.Create('No ping received');
   end;
 end;
 
@@ -786,12 +798,6 @@ end;
 
 procedure THomeCommunication.HomeThreadEnded(Sender: TSocketThread);
 begin
-  if FThread.FExceptionMessage <> '' then
-    MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llError, _('Server'), FThread.FExceptionMessage));
-
-  //if not FThread.FError then
-  //  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llWarning, _('Server'), _('Disconnected from streamWriter server')));
-
   if THomeThread(Sender).Terminated then
     Exit;
 
@@ -827,12 +833,18 @@ begin
 
   if FDisabled then
   begin
-    MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llDebug, _('Server'), _('Server rejected handshake')));
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llError, _('Server'), _('Server rejected handshake')));
     Sender.Terminate;
   end;
 
   if Assigned(FOnHandshakeReceived) then
     FOnHandshakeReceived(Self, THomeThread(Sender).FHandshakeSuccess);
+end;
+
+procedure THomeCommunication.HomeThreadLog(Sender: TSocketThread;
+  Data: string);
+begin
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llError, _('Server'), Data));
 end;
 
 procedure THomeCommunication.HomeThreadLogInReceived(Sender: TSocketThread);
@@ -906,10 +918,10 @@ procedure THomeCommunication.HomeThreadNetworkTitleChangedReceived(
 begin
   if Assigned(FOnNetworkTitleChangedReceived) then
     FOnNetworkTitleChangedReceived(Self,  THomeThread(Sender).FNetworkTitleChanged.StreamID, THomeThread(Sender).FNetworkTitleChanged.StreamName,
-      THomeThread(Sender).FNetworkTitleChanged.StreamTitle, THomeThread(Sender).FNetworkTitleChanged.CurrentURL,
-      THomeThread(Sender).FNetworkTitleChanged.RegExes, THomeThread(Sender).FNetworkTitleChanged.Format,
-      THomeThread(Sender).FNetworkTitleChanged.Bitrate, THomeThread(Sender).FNetworkTitleChanged.ServerHash,
-      THomeThread(Sender).FNetworkTitleChanged.ServerArtistHash);
+      THomeThread(Sender).FNetworkTitleChanged.StreamTitle, THomeThread(Sender).FNetworkTitleChanged.StreamParsedTitle,
+      THomeThread(Sender).FNetworkTitleChanged.CurrentURL, THomeThread(Sender).FNetworkTitleChanged.RegExes,
+      THomeThread(Sender).FNetworkTitleChanged.Format, THomeThread(Sender).FNetworkTitleChanged.Bitrate,
+      THomeThread(Sender).FNetworkTitleChanged.ServerHash, THomeThread(Sender).FNetworkTitleChanged.ServerArtistHash);
 end;
 
 procedure THomeCommunication.SendHandshake;
@@ -927,7 +939,7 @@ begin
   Cmd.VersionBuild := AppGlobals.AppVersion.Build;
   Cmd.Build := AppGlobals.BuildNumber;
   Cmd.Language := Language.CurrentLanguage.ID;
-  Cmd.ProtoVersion := 5;
+  Cmd.ProtoVersion := 6;
 
   FThread.SendCommand(Cmd);
 end;
@@ -942,6 +954,7 @@ begin
   FThread.OnEnded := HomeThreadEnded;
   FThread.OnBeforeEnded := HomeThreadBeforeEnded;
   FThread.OnBytesTransferred := HomeThreadBytesTransferred;
+  FThread.OnLog := HomeThreadLog;
 
   FThread.OnHandshakeReceived := HomeThreadHandshakeReceived;
   FThread.OnLogInReceived := HomeThreadLogInReceived;

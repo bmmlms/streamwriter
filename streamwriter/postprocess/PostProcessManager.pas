@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -235,7 +235,6 @@ begin
         Exit;
       end;
 
-
       // Eine externe App könnte das File gelöscht haben
       if Entry.Data.Filesize <> High(UInt64) then // GetFileSize = Int64 => -1
       begin
@@ -244,7 +243,7 @@ begin
           WriteLog(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llInfo);
         end else
         begin
-          WriteLog(Entry.Owner, 'All postprocessors done', ltPostProcess, llInfo);
+          WriteLog(Entry.Owner, _('All postprocessors done'), ltPostProcess, llInfo);
 
           // Wird hier gemacht, damit WorkingForClient() False zurückliefert. Wichtig!
           FProcessingList.Delete(i);

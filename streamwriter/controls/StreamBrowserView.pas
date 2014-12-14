@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -951,18 +951,23 @@ begin
   try
     Clear;
 
-    for i := 0 to AppGlobals.Data.BrowserList.Count - 1 do
-    begin
-      Add := ((P = '*') or Like(LowerCase(AppGlobals.Data.BrowserList[i].Name), LowerCase(P))) and
-             ((P2 = '*') or Like(LowerCase(AppGlobals.Data.BrowserList[i].Genre), LowerCase(P2))) and
-             ((AudioType = atNone) or (AppGlobals.Data.BrowserList[i].AudioType = AudioType)) and
-             ((Bitrate = 0) or (AppGlobals.Data.BrowserList[i].BitRate >= Bitrate));
-      if Add then
+    AppGlobals.Lock;
+    try
+      for i := 0 to AppGlobals.Data.BrowserList.Count - 1 do
       begin
-        Node := AddChild(nil);
-        NodeData := GetNodeData(Node);
-        NodeData.Data := AppGlobals.Data.BrowserList[i];
+        Add := ((P = '*') or Like(LowerCase(AppGlobals.Data.BrowserList[i].Name), LowerCase(P))) and
+               ((P2 = '*') or Like(LowerCase(AppGlobals.Data.BrowserList[i].Genre), LowerCase(P2))) and
+               ((AudioType = atNone) or (AppGlobals.Data.BrowserList[i].AudioType = AudioType)) and
+               ((Bitrate = 0) or (AppGlobals.Data.BrowserList[i].BitRate >= Bitrate));
+        if Add then
+        begin
+          Node := AddChild(nil);
+          NodeData := GetNodeData(Node);
+          NodeData.Data := AppGlobals.Data.BrowserList[i];
+        end;
       end;
+    finally
+      AppGlobals.Unlock;
     end;
 
     FLastSearch := P;
@@ -1049,11 +1054,16 @@ procedure TMStreamBrowserView.AfterCreate;
 begin
   FSearch.AfterCreate;
 
-  if (AppGlobals.Data.BrowserList.Count > 0) and (AppGlobals.Data.GenreList.Count > 0) then
-  begin
-    BuildGenres;
-    BuildTree(True);
-    SwitchMode(moShow);
+  AppGlobals.Lock;
+  try
+    if (AppGlobals.Data.BrowserList.Count > 0) and (AppGlobals.Data.GenreList.Count > 0) then
+    begin
+      BuildGenres;
+      BuildTree(True);
+      SwitchMode(moShow);
+    end;
+  finally
+    AppGlobals.Unlock;
   end;
 
   FSelectedSortType := TSortTypes(AppGlobals.BrowserSortType);
@@ -1072,8 +1082,13 @@ begin
 
   FSearch.FGenreList.Clear;
   FSearch.FGenreList.Items.Add(_('- No genre -'));
-  for i := 0 to AppGlobals.Data.GenreList.Count - 1 do
-    FSearch.FGenreList.Items.Add(AppGlobals.Data.GenreList[i].Name);
+  AppGlobals.Lock;
+  try
+    for i := 0 to AppGlobals.Data.GenreList.Count - 1 do
+      FSearch.FGenreList.Items.Add(AppGlobals.Data.GenreList[i].Name);
+  finally
+    AppGlobals.Unlock;
+  end;
   if FSearch.FGenreList.Items.Count > 0 then
     FSearch.FGenreList.ItemIndex := 0;
   FSearch.FGenreList.Sorted := True;

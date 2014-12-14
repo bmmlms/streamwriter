@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -416,94 +416,96 @@ begin
   pnlGeneral.BringToFront;
 
   AppGlobals.Lock;
-  txtFilePattern.Text := Settings.FilePattern;
-  txtAutomaticFilePattern.Text := Settings.FilePattern;
-  txtIncompleteFilePattern.Text := Settings.IncompleteFilePattern;
-  txtStreamFilePattern.Text := Settings.StreamFilePattern;
-  txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
-  txtRemoveChars.Text := Settings.RemoveChars;
-  chkNormalizeVariables.Checked := Settings.NormalizeVariables;
+  try
+    txtFilePattern.Text := Settings.FilePattern;
+    txtAutomaticFilePattern.Text := Settings.FilePattern;
+    txtIncompleteFilePattern.Text := Settings.IncompleteFilePattern;
+    txtStreamFilePattern.Text := Settings.StreamFilePattern;
+    txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
+    txtRemoveChars.Text := Settings.RemoveChars;
+    chkNormalizeVariables.Checked := Settings.NormalizeVariables;
 
-  if FSettingsType = stAuto then
-  begin
-    txtDir.EditLabel.Caption := _('Folder for automatically saved songs:');
-    txtDir.Text := AppGlobals.DirAuto;
-  end else
-  begin
-    txtDir.EditLabel.Caption := _('Folder for saved songs:');
-    txtDir.Text := AppGlobals.Dir;
-  end;
+    if FSettingsType = stAuto then
+    begin
+      txtDir.EditLabel.Caption := _('Folder for automatically saved songs:');
+      txtDir.Text := AppGlobals.DirAuto;
+    end else
+    begin
+      txtDir.EditLabel.Caption := _('Folder for saved songs:');
+      txtDir.Text := AppGlobals.Dir;
+    end;
 
-  chkDeleteStreams.Checked := Settings.DeleteStreams;
-  chkAddSavedToIgnore.Checked := Settings.AddSavedToIgnore;
-  chkAddSavedToStreamIgnore.Checked := Settings.AddSavedToStreamIgnore;
-  chkRemoveSavedFromWishlist.Checked := Settings.RemoveSavedFromWishlist;
-  chkOverwriteSmaller.Checked := Settings.OverwriteSmaller;
-  chkDiscardSmaller.Checked := Settings.DiscardSmaller;
-  chkDiscardAlways.Checked := Settings.DiscardAlways;
+    chkDeleteStreams.Checked := Settings.DeleteStreams;
+    chkAddSavedToIgnore.Checked := Settings.AddSavedToIgnore;
+    chkAddSavedToStreamIgnore.Checked := Settings.AddSavedToStreamIgnore;
+    chkRemoveSavedFromWishlist.Checked := Settings.RemoveSavedFromWishlist;
+    chkOverwriteSmaller.Checked := Settings.OverwriteSmaller;
+    chkDiscardSmaller.Checked := Settings.DiscardSmaller;
+    chkDiscardAlways.Checked := Settings.DiscardAlways;
 
-  chkSkipShort.Checked := Settings.SkipShort;
-  chkSearchSilence.Checked := Settings.SearchSilence;
-  chkManualSilenceLevel.Checked := not Settings.AutoDetectSilenceLevel;
+    chkSkipShort.Checked := Settings.SkipShort;
+    chkSearchSilence.Checked := Settings.SearchSilence;
+    chkManualSilenceLevel.Checked := not Settings.AutoDetectSilenceLevel;
 
-  chkSearchSilenceClick(nil);
-  chkManualSilenceLevelClick(nil);
+    chkSearchSilenceClick(nil);
+    chkManualSilenceLevelClick(nil);
 
-  chkAutostart.Checked := FileExists(IncludeTrailingPathDelimiter(GetShellFolder(CSIDL_STARTUP)) + AppGlobals.AppName + '.lnk');
-  chkTray.Checked := AppGlobals.Tray;
-  chkSnapMain.Checked := AppGlobals.SnapMain;
-  chkRememberRecordings.Checked := AppGlobals.RememberRecordings;
-  chkDisplayPlayedSong.Checked := AppGlobals.DisplayPlayedSong;
-  chkDisplayPlayNotifications.Checked := AppGlobals.DisplayPlayNotifications;
-  chkShowSplashScreen.Checked := AppGlobals.ShowSplashScreen;
-  chkCoverPanelAlwaysVisible.Checked := AppGlobals.CoverPanelAlwaysVisible;
-  optClose.Checked := not AppGlobals.TrayOnMinimize;
-  optMinimize.Checked := AppGlobals.TrayOnMinimize;
+    chkAutostart.Checked := FileExists(IncludeTrailingPathDelimiter(GetShellFolder(CSIDL_STARTUP)) + AppGlobals.AppName + '.lnk');
+    chkTray.Checked := AppGlobals.Tray;
+    chkSnapMain.Checked := AppGlobals.SnapMain;
+    chkRememberRecordings.Checked := AppGlobals.RememberRecordings;
+    chkDisplayPlayedSong.Checked := AppGlobals.DisplayPlayedSong;
+    chkDisplayPlayNotifications.Checked := AppGlobals.DisplayPlayNotifications;
+    chkShowSplashScreen.Checked := AppGlobals.ShowSplashScreen;
+    chkCoverPanelAlwaysVisible.Checked := AppGlobals.CoverPanelAlwaysVisible;
+    optClose.Checked := not AppGlobals.TrayOnMinimize;
+    optMinimize.Checked := AppGlobals.TrayOnMinimize;
 
-  chkTrayClick(nil);
+    chkTrayClick(nil);
 
-  chkAutoTuneIn.Checked := AppGlobals.AutoTuneIn;
-  chkAutoTuneInConsiderIgnore.Checked := AppGlobals.AutoTuneInConsiderIgnore;
-  chkAutoTuneInAddToIgnore.Checked := Settings.AddSavedToIgnore;
-  chkAutoRemoveSavedFromWishlist.Checked := Settings.RemoveSavedFromWishlist;
-  lstMinQuality.ItemIndex := AppGlobals.AutoTuneInMinQuality;
-  lstFormat.ItemIndex := AppGlobals.AutoTuneInFormat;
-  chkSubmitStreamInfo.Checked := AppGlobals.SubmitStreamInfo;
-  chkSubmitStats.Checked := AppGlobals.SubmitStats;
-  chkMonitorMode.Checked := AppGlobals.MonitorMode;
-  txtMonitorCount.Text := IntToStr(AppGlobals.MonitorCount);
-  chkLimit.Checked := AppGlobals.LimitSpeed;
-  if AppGlobals.MaxSpeed > 0 then
-    txtMaxSpeed.Text := IntToStr(AppGlobals.MaxSpeed);
+    chkAutoTuneIn.Checked := AppGlobals.AutoTuneIn;
+    chkAutoTuneInConsiderIgnore.Checked := AppGlobals.AutoTuneInConsiderIgnore;
+    chkAutoTuneInAddToIgnore.Checked := Settings.AddSavedToIgnore;
+    chkAutoRemoveSavedFromWishlist.Checked := Settings.RemoveSavedFromWishlist;
+    lstMinQuality.ItemIndex := AppGlobals.AutoTuneInMinQuality;
+    lstFormat.ItemIndex := AppGlobals.AutoTuneInFormat;
+    chkSubmitStreamInfo.Checked := AppGlobals.SubmitStreamInfo;
+    chkSubmitStats.Checked := AppGlobals.SubmitStats;
+    chkMonitorMode.Checked := AppGlobals.MonitorMode;
+    txtMonitorCount.Text := IntToStr(AppGlobals.MonitorCount);
+    chkLimit.Checked := AppGlobals.LimitSpeed;
+    if AppGlobals.MaxSpeed > 0 then
+      txtMaxSpeed.Text := IntToStr(AppGlobals.MaxSpeed);
 
-  chkSubmitStreamInfoClick(nil);
-  chkSubmitStatsClick(nil);
-  chkMonitorModeClick(nil);
+    chkSubmitStreamInfoClick(nil);
+    chkSubmitStatsClick(nil);
+    chkMonitorModeClick(nil);
 
-  txtShortLengthSeconds.Text := IntToStr(Settings.ShortLengthSeconds);
-  txtSongBuffer.Text := IntToStr(Settings.SongBuffer);
-  txtMaxRetries.Text := IntToStr(Settings.MaxRetries);
-  txtRetryDelay.Text := IntToStr(Settings.RetryDelay);
-  txtMinDiskSpace.Text := IntToStr(AppGlobals.MinDiskSpace);
-  txtLogFile.Text := AppGlobals.LogFile;
+    txtShortLengthSeconds.Text := IntToStr(Settings.ShortLengthSeconds);
+    txtSongBuffer.Text := IntToStr(Settings.SongBuffer);
+    txtMaxRetries.Text := IntToStr(Settings.MaxRetries);
+    txtRetryDelay.Text := IntToStr(Settings.RetryDelay);
+    txtMinDiskSpace.Text := IntToStr(AppGlobals.MinDiskSpace);
+    txtLogFile.Text := AppGlobals.LogFile;
 
-  txtSilenceLevel.Text := IntToStr(Settings.SilenceLevel);
-  txtSilenceLength.Text := IntToStr(Settings.SilenceLength);
-  txtSilenceBufferSeconds.Text := IntToStr(Settings.SilenceBufferSecondsStart);
+    txtSilenceLevel.Text := IntToStr(Settings.SilenceLevel);
+    txtSilenceLength.Text := IntToStr(Settings.SilenceLength);
+    txtSilenceBufferSeconds.Text := IntToStr(Settings.SilenceBufferSecondsStart);
 
-  chkAdjustTrackOffset.Checked := Settings.AdjustTrackOffset;
-  txtAdjustTrackOffset.Text := IntToStr(Settings.AdjustTrackOffsetMS);
-  if Settings.AdjustTrackOffsetDirection = toForward then
-    optAdjustForward.Checked := True
-  else
-    optAdjustBackward.Checked := True;
+    chkAdjustTrackOffset.Checked := Settings.AdjustTrackOffset;
+    txtAdjustTrackOffset.Text := IntToStr(Settings.AdjustTrackOffsetMS);
+    if Settings.AdjustTrackOffsetDirection = toForward then
+      optAdjustForward.Checked := True
+    else
+      optAdjustBackward.Checked := True;
 
-  AppGlobals.Unlock;
-
-  if ((FSettingsType = stAuto) and not DirectoryExists(AppGlobals.DirAuto)) or
-     ((FSettingsType <> stAuto) and not DirectoryExists(AppGlobals.Dir)) then
-  begin
-    txtDir.Text := '';
+    if ((FSettingsType = stAuto) and not DirectoryExists(AppGlobals.DirAuto)) or
+       ((FSettingsType <> stAuto) and not DirectoryExists(AppGlobals.Dir)) then
+    begin
+      txtDir.Text := '';
+    end;
+  finally
+    AppGlobals.Unlock;
   end;
 
   SetGray;
@@ -583,99 +585,101 @@ begin
     if FSettingsType = stAuto then
     begin
       AppGlobals.Lock;
+      try
+        AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
+        AppGlobals.AutoTuneInConsiderIgnore := chkAutoTuneInConsiderIgnore.Checked;
+        AppGlobals.AutoTuneInMinQuality := lstMinQuality.ItemIndex;
+        AppGlobals.AutoTuneInFormat := lstFormat.ItemIndex;
+        AppGlobals.DirAuto := txtDir.Text;
 
-      AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
-      AppGlobals.AutoTuneInConsiderIgnore := chkAutoTuneInConsiderIgnore.Checked;
-      AppGlobals.AutoTuneInMinQuality := lstMinQuality.ItemIndex;
-      AppGlobals.AutoTuneInFormat := lstFormat.ItemIndex;
-      AppGlobals.DirAuto := txtDir.Text;
-
-      lstBlacklist.UpdateList(AppGlobals.Data.StreamBlacklist);
-
-      AppGlobals.Unlock;
+        lstBlacklist.UpdateList(AppGlobals.Data.StreamBlacklist);
+      finally
+        AppGlobals.Unlock;
+      end;
     end;
 
     if FSettingsType = stApp then
     begin
-      AppGlobals.Lock; // TODO: bringt das was?
+      AppGlobals.Lock;
+      try
+        if lstSoundDevice.ItemIndex > -1 then
+          AppGlobals.SoundDevice := TBassDevice(lstSoundDevice.Items.Objects[lstSoundDevice.ItemIndex]).ID;
 
-      if lstSoundDevice.ItemIndex > -1 then
-        AppGlobals.SoundDevice := TBassDevice(lstSoundDevice.Items.Objects[lstSoundDevice.ItemIndex]).ID;
+        if chkAutostart.Checked then
+        begin
+          CreateLink(Application.ExeName, PChar(GetShellFolder(CSIDL_STARTUP)), AppGlobals.AppName, '-minimize', False);
+        end else
+        begin
+          CreateLink(Application.ExeName, PChar(GetShellFolder(CSIDL_STARTUP)), AppGlobals.AppName, '', True);
+        end;
 
-      if chkAutostart.Checked then
-      begin
-        CreateLink(Application.ExeName, PChar(GetShellFolder(CSIDL_STARTUP)), AppGlobals.AppName, '-minimize', False);
-      end else
-      begin
-        CreateLink(Application.ExeName, PChar(GetShellFolder(CSIDL_STARTUP)), AppGlobals.AppName, '', True);
+        AppGlobals.Dir := txtDir.Text;
+
+        AppGlobals.Tray := chkTray.Checked;
+        AppGlobals.SnapMain := chkSnapMain.Checked;
+        AppGlobals.RememberRecordings := chkRememberRecordings.Checked;
+        AppGlobals.DisplayPlayedSong := chkDisplayPlayedSong.Checked;
+        AppGlobals.DisplayPlayNotifications := chkDisplayPlayNotifications.Checked;
+        AppGlobals.ShowSplashScreen := chkShowSplashScreen.Checked;
+        AppGlobals.CoverPanelAlwaysVisible := chkCoverPanelAlwaysVisible.Checked;
+        AppGlobals.TrayOnMinimize := optMinimize.Checked;
+
+        AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
+        AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
+        AppGlobals.SubmitStats := chkSubmitStats.Checked;
+        AppGlobals.MonitorMode := chkMonitorMode.Checked;
+        AppGlobals.MonitorCount := StrToIntDef(txtMonitorCount.Text, 3);
+        AppGlobals.LimitSpeed := chkLimit.Checked;
+        if StrToIntDef(txtMaxSpeed.Text, -1) > 0 then
+          AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);
+
+        AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
+        AppGlobals.LogFile := txtLogFile.Text;
+        AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
+        AppGlobals.DefaultActionBrowser := TStreamOpenActions(lstDefaultActionBrowser.ItemIndex);
+
+        if lstHotkeys.Items[0].SubItems[0] <> '' then
+          AppGlobals.ShortcutPlay := TextToShortCut(lstHotkeys.Items[0].SubItems[0])
+        else
+          AppGlobals.ShortcutPlay := 0;
+
+        if lstHotkeys.Items[1].SubItems[0] <> '' then
+          AppGlobals.ShortcutPause := TextToShortCut(lstHotkeys.Items[1].SubItems[0])
+        else
+          AppGlobals.ShortcutPause := 0;
+
+        if lstHotkeys.Items[2].SubItems[0] <> '' then
+          AppGlobals.ShortcutStop := TextToShortCut(lstHotkeys.Items[2].SubItems[0])
+        else
+          AppGlobals.ShortcutStop := 0;
+
+        if lstHotkeys.Items[3].SubItems[0] <> '' then
+          AppGlobals.ShortcutNext := TextToShortCut(lstHotkeys.Items[3].SubItems[0])
+        else
+          AppGlobals.ShortcutNext := 0;
+
+        if lstHotkeys.Items[4].SubItems[0] <> '' then
+          AppGlobals.ShortcutPrev := TextToShortCut(lstHotkeys.Items[4].SubItems[0])
+        else
+          AppGlobals.ShortcutPrev := 0;
+
+        if lstHotkeys.Items[5].SubItems[0] <> '' then
+          AppGlobals.ShortcutVolUp := TextToShortCut(lstHotkeys.Items[5].SubItems[0])
+        else
+          AppGlobals.ShortcutVolUp := 0;
+
+        if lstHotkeys.Items[6].SubItems[0] <> '' then
+          AppGlobals.ShortcutVolDown := TextToShortCut(lstHotkeys.Items[6].SubItems[0])
+        else
+          AppGlobals.ShortcutVolDown := 0;
+
+        if lstHotkeys.Items[7].SubItems[0] <> '' then
+          AppGlobals.ShortcutMute := TextToShortCut(lstHotkeys.Items[7].SubItems[0])
+        else
+          AppGlobals.ShortcutMute := 0;
+      finally
+        AppGlobals.Unlock;
       end;
-
-      AppGlobals.Dir := txtDir.Text;
-
-      AppGlobals.Tray := chkTray.Checked;
-      AppGlobals.SnapMain := chkSnapMain.Checked;
-      AppGlobals.RememberRecordings := chkRememberRecordings.Checked;
-      AppGlobals.DisplayPlayedSong := chkDisplayPlayedSong.Checked;
-      AppGlobals.DisplayPlayNotifications := chkDisplayPlayNotifications.Checked;
-      AppGlobals.ShowSplashScreen := chkShowSplashScreen.Checked;
-      AppGlobals.CoverPanelAlwaysVisible := chkCoverPanelAlwaysVisible.Checked;
-      AppGlobals.TrayOnMinimize := optMinimize.Checked;
-
-      AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;
-      AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
-      AppGlobals.SubmitStats := chkSubmitStats.Checked;
-      AppGlobals.MonitorMode := chkMonitorMode.Checked;
-      AppGlobals.MonitorCount := StrToIntDef(txtMonitorCount.Text, 3);
-      AppGlobals.LimitSpeed := chkLimit.Checked;
-      if StrToIntDef(txtMaxSpeed.Text, -1) > 0 then
-        AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);
-
-      AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
-      AppGlobals.LogFile := txtLogFile.Text;
-      AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
-      AppGlobals.DefaultActionBrowser := TStreamOpenActions(lstDefaultActionBrowser.ItemIndex);
-
-      if lstHotkeys.Items[0].SubItems[0] <> '' then
-        AppGlobals.ShortcutPlay := TextToShortCut(lstHotkeys.Items[0].SubItems[0])
-      else
-        AppGlobals.ShortcutPlay := 0;
-
-      if lstHotkeys.Items[1].SubItems[0] <> '' then
-        AppGlobals.ShortcutPause := TextToShortCut(lstHotkeys.Items[1].SubItems[0])
-      else
-        AppGlobals.ShortcutPause := 0;
-
-      if lstHotkeys.Items[2].SubItems[0] <> '' then
-        AppGlobals.ShortcutStop := TextToShortCut(lstHotkeys.Items[2].SubItems[0])
-      else
-        AppGlobals.ShortcutStop := 0;
-
-      if lstHotkeys.Items[3].SubItems[0] <> '' then
-        AppGlobals.ShortcutNext := TextToShortCut(lstHotkeys.Items[3].SubItems[0])
-      else
-        AppGlobals.ShortcutNext := 0;
-
-      if lstHotkeys.Items[4].SubItems[0] <> '' then
-        AppGlobals.ShortcutPrev := TextToShortCut(lstHotkeys.Items[4].SubItems[0])
-      else
-        AppGlobals.ShortcutPrev := 0;
-
-      if lstHotkeys.Items[5].SubItems[0] <> '' then
-        AppGlobals.ShortcutVolUp := TextToShortCut(lstHotkeys.Items[5].SubItems[0])
-      else
-        AppGlobals.ShortcutVolUp := 0;
-
-      if lstHotkeys.Items[6].SubItems[0] <> '' then
-        AppGlobals.ShortcutVolDown := TextToShortCut(lstHotkeys.Items[6].SubItems[0])
-      else
-        AppGlobals.ShortcutVolDown := 0;
-
-      if lstHotkeys.Items[7].SubItems[0] <> '' then
-        AppGlobals.ShortcutMute := TextToShortCut(lstHotkeys.Items[7].SubItems[0])
-      else
-        AppGlobals.ShortcutMute := 0;
-
-      AppGlobals.Unlock;
     end;
 
     for i := 0 to Length(FStreamSettings) - 1 do
@@ -2625,11 +2629,12 @@ begin
         SetPage(FPageList.Find(TPanel(txtShortLengthSeconds.Parent)));
         txtShortLengthSeconds.ApplyFocus;
         Exit;
-      end;// else
-        //txtShortLengthSeconds.Text := IntToStr(AppGlobals.StreamSettings.ShortLengthSeconds);
+      end else
+        if Length(FStreamSettings) = 1 then
+          txtShortLengthSeconds.Text := IntToStr(FStreamSettings[0].ShortLengthSeconds)
+        else
+          txtShortLengthSeconds.Text := IntToStr(AppGlobals.Data.StreamSettings.ShortLengthSeconds);
     end;
-
-    // TODO: habe hier überall die else blöcke rausgemacht. warum sind die da?? damit überschreibt man ja ne benutzereinstellung?
 
     if (StrToIntDef(txtSilenceLevel.Text, -1) > 100) or (StrToIntDef(txtSilenceLevel.Text, -1) < 1) then
     begin
@@ -2639,8 +2644,11 @@ begin
         SetPage(FPageList.Find(TPanel(txtSilenceLevel.Parent)));
         txtSilenceLevel.ApplyFocus;
         Exit;
-      end;// else
-        //txtSilenceLevel.Text := IntToStr(AppGlobals.StreamSettings.SilenceLevel);
+      end else
+        if Length(FStreamSettings) = 1 then
+          txtSilenceLevel.Text := IntToStr(FStreamSettings[0].SilenceLevel)
+        else
+          txtSilenceLevel.Text := IntToStr(AppGlobals.Data.StreamSettings.SilenceLevel);
     end;
 
     if StrToIntDef(txtSilenceLength.Text, -1) < 20 then
@@ -2651,8 +2659,11 @@ begin
         SetPage(FPageList.Find(TPanel(txtSilenceLength.Parent)));
         txtSilenceLength.ApplyFocus;
         Exit;
-      end;// else
-        //txtSilenceLength.Text := IntToStr(AppGlobals.StreamSettings.SilenceLength);
+      end else
+        if Length(FStreamSettings) = 1 then
+          txtSilenceLength.Text := IntToStr(FStreamSettings[0].SilenceLength)
+        else
+          txtSilenceLength.Text := IntToStr(AppGlobals.Data.StreamSettings.SilenceLength);
     end;
 
     if (StrToIntDef(txtSilenceBufferSeconds.Text, -1) < 1) or (StrToIntDef(txtSilenceBufferSeconds.Text, -1) > 15) then
@@ -2663,8 +2674,11 @@ begin
         SetPage(FPageList.Find(TPanel(txtSilenceBufferSeconds.Parent)));
         txtSilenceBufferSeconds.ApplyFocus;
         Exit;
-      end;// else
-        //txtSilenceBufferSeconds.Text := IntToStr(AppGlobals.StreamSettings.SilenceBufferSecondsStart);
+      end else
+        if Length(FStreamSettings) = 1 then
+          txtSilenceBufferSeconds.Text := IntToStr(FStreamSettings[0].SilenceBufferSecondsStart)
+        else
+          txtSilenceBufferSeconds.Text := IntToStr(AppGlobals.Data.StreamSettings.SilenceBufferSecondsStart);
     end;
 
     if Trim(txtSongBuffer.Text) = '' then
@@ -2684,8 +2698,11 @@ begin
           SetPage(FPageList.Find(TPanel(txtAdjustTrackOffset.Parent)));
           txtAdjustTrackOffset.ApplyFocus;
           Exit;
-        end;// else
-          //txtAdjustTrackOffset.Text := IntToStr(AppGlobals.StreamSettings.AdjustTrackOffsetMS);
+        end else
+          if Length(FStreamSettings) = 1 then
+            txtAdjustTrackOffset.Text := IntToStr(FStreamSettings[0].AdjustTrackOffsetMS)
+          else
+            txtAdjustTrackOffset.Text := IntToStr(AppGlobals.Data.StreamSettings.AdjustTrackOffsetMS);
       end;
   end;
 
@@ -2861,7 +2878,9 @@ begin
     end else
     begin
       chkDiscardSmaller.Enabled := True;
+      chkDiscardSmaller.Checked := FStreamSettings[0].DiscardSmaller;
       chkOverwriteSmaller.Enabled := True;
+      chkOverwriteSmaller.Checked := FStreamSettings[0].OverwriteSmaller;
     end;
 
     FOptionChanging := False;
@@ -2927,10 +2946,10 @@ begin
     FOptionChanging := True;
 
     chkDeleteStreams.Enabled := chkSeparateTracks.Checked;
-    chkDeleteStreams.Checked := chkSaveStreamsToDisk.Checked; // TODO: warum war das hier?? : and AppGlobals.StreamSettings.DeleteStreams;
+    chkDeleteStreams.Checked := chkSaveStreamsToDisk.Checked and FStreamSettings[0].DeleteStreams;
 
     chkOnlySaveFull.Enabled := chkSeparateTracks.Checked;
-    chkOnlySaveFull.Checked := (not chkSeparateTracks.Checked) and chkSeparateTracks.Checked;
+    chkOnlySaveFull.Checked := chkSeparateTracks.Checked and FStreamSettings[0].OnlySaveFull;
 
     pnlCut.Enabled := False;
     if (not chkSeparateTracks.Checked) or (not chkSaveStreamsToDisk.Checked) then
@@ -2958,7 +2977,7 @@ begin
     // Weil das hier drüber die Seite abschaltet, schalten wir sie wieder an..
     EnablePanel(pnlCut, (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto));
     chkDeleteStreams.Enabled := (not chkSeparateTracks.Checked) or (chkSaveStreamsToDisk.Checked);
-    chkDeleteStreams.Checked := chkDeleteStreams.Enabled; // TODO: warum war das hier??: and AppGlobals.StreamSettings.DeleteStreams;
+    chkDeleteStreams.Checked := chkDeleteStreams.Enabled and FStreamSettings[0].DeleteStreams;
 
     if Length(FStreamSettings) > 0 then
       TfrmMsgDlg.ShowMsg(Self, _('When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.'),

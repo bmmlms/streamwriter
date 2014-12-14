@@ -1,7 +1,7 @@
 ﻿{
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2014 Alexander Nottelmann
+    Copyright (c) 2010-2015 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -312,7 +312,8 @@ type
   end;
 
 procedure CreateAppData;
-function InitAppData: Boolean;
+function InitAppDataStageOne: Boolean;
+function InitAppDataStageTwo: Boolean;
 
 var
   AppGlobals: TAppData;
@@ -1154,7 +1155,7 @@ begin
   AppGlobals := TAppData.Create('streamWriter');
 end;
 
-function InitAppData: Boolean;
+function InitAppDataStageOne: Boolean;
 begin
   Result := True;
   try
@@ -1172,8 +1173,20 @@ begin
 
     // Globale Stream-Einstellungen von Vorgängerversion laden
     AppGlobals.LoadOldStreamSettings;
+  except
+    on E: Exception do
+    begin
+      MessageBox(0, PChar(E.Message), PChar(_('Error')), MB_ICONERROR);
+      Result := False;
+    end;
+  end;
+end;
 
-    // Jetzt den ganzen Rest laden    // TODO: ab hier sollte es in ein StageTwo kommen, quasi nach dem splash erst den kram laden (datenfile).
+function InitAppDataStageTwo: Boolean;
+begin
+  Result := True;
+  try
+    // Load settings from datafile
     AppGlobals.LoadData;
 
     AppGlobals.FAddonManager := TAddonManager.Create;
