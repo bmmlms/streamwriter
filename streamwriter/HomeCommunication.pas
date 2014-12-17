@@ -119,7 +119,8 @@ type
   THomeCommunication = class
   private
     FDisabled: Boolean;
-    FServerTimeDiff: Int64;
+    // TODO: feld löschen bald und alle auskommentierten codestellen die darauf verweisen
+    //FServerTimeDiff: Int64;
     FThread: THomeThread;
 
     FAuthenticated, FIsAdmin, FWasConnected, FConnected, FNotifyTitleChanges: Boolean;
@@ -190,7 +191,7 @@ type
     procedure SendGenerateAuthToken;
 
     property Disabled: Boolean read FDisabled;
-    property ServerTimeDiff: Int64 read FServerTimeDiff;
+    //property ServerTimeDiff: Int64 read FServerTimeDiff;
     property WasConnected: Boolean read FWasConnected;
     property Connected: Boolean read FConnected;
     property Authenticated: Boolean read FAuthenticated;
@@ -400,14 +401,6 @@ begin
       Stream.Read(Count);
       for i := 0 to Count - 1 do
         FSearchReceivedCharts.Add(TChartEntry.LoadFromHome(Stream, CommandHeader.Version));
-
-      // Timestamp passig machen
-      for i := 0 to FSearchReceivedCharts.Count - 1 do
-        for n := 0 to FSearchReceivedCharts[i].Streams.Count - 1 do
-          if DateTimeToUnix(LocalToUTC(Now)) - FSearchReceivedCharts[i].Streams[n].PlayedLast - HomeComm.ServerTimeDiff <= 0 then
-            FSearchReceivedCharts[i].Streams[n].PlayedLast := 0
-          else
-            FSearchReceivedCharts[i].Streams[n].PlayedLast := DateTimeToUnix(LocalToUTC(Now)) - FSearchReceivedCharts[i].Streams[n].PlayedLast - HomeComm.ServerTimeDiff;
     except
       for i := 0 to FSearchReceivedCharts.Count - 1 do
         FSearchReceivedCharts[i].Free;
@@ -820,7 +813,7 @@ procedure THomeCommunication.HomeThreadHandshakeReceived(
 begin
   FDisabled := not THomeThread(Sender).FHandshakeSuccess;
 
-  FServerTimeDiff := DateTimeToUnix(LocalToUTC(Now)) - THomeThread(Sender).FServerTime;
+  //FServerTimeDiff := DateTimeToUnix(LocalToUTC(Now)) - THomeThread(Sender).FServerTime;
 
   if not FDisabled then
   begin
@@ -943,7 +936,7 @@ begin
   Cmd.VersionBuild := AppGlobals.AppVersion.Build;
   Cmd.Build := AppGlobals.BuildNumber;
   Cmd.Language := Language.CurrentLanguage.ID;
-  Cmd.ProtoVersion := 6;
+  Cmd.ProtoVersion := 7;
 
   FThread.SendCommand(Cmd);
 end;

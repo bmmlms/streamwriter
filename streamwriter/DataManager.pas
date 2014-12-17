@@ -2697,8 +2697,8 @@ class function TChartStream.Load(Stream: TExtendedStream;
   Version: Integer): TChartStream;
 var
   c: Cardinal;
-const
-  UnixStartDate: TDateTime = 25569.0;
+//const                                TODO: kicken..
+//  UnixStartDate: TDateTime = 25569.0;
 begin
   Result := TChartStream.Create(0, 0, 0, 0);
   Stream.Read(Result.FID);
@@ -2709,11 +2709,13 @@ begin
   begin
     Stream.Read(Result.FPlayedLast);
 
-    c := Round((LocalToUTC(Now) - UnixStartDate) * 86400) - Result.FPlayedLast;
+    // TODO: was soll das hier? warum ist FPlayedLast nicht der direkt wert in sekunden wie bei den streams???
+    //       wenn ich das erledige kann FServerTimeDiff und LocalToUTC raus!!!
+    //c := Round((LocalToUTC(Now) - UnixStartDate) * 86400) - Result.FPlayedLast;
 
-    if c > 86400 then
+    if Result.FPlayedLast > 86400 then
       Result.FPlayedLastDay := 0;
-    if c > 604800 then
+    if Result.FPlayedLast > 604800 then
       Result.FPlayedLastWeek := 0;
   end;
 end;
