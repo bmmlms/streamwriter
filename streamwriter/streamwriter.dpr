@@ -25,11 +25,6 @@ program streamwriter;
 
 uses
   MM in '..\..\common\MM.pas',
-  madExcept,
-  madLinkDisAsm,
-  madListHardware,
-  madListProcesses,
-  madListModules,
   Windows,
   Messages,
   SysUtils,
@@ -138,7 +133,8 @@ uses
   SharedData in 'SharedData.pas' {modSharedData: TDataModule},
   MonitorAnalyzer in 'streaming\MonitorAnalyzer.pas',
   DynBASS in '..\..\common\bass\DynBASS.pas',
-  LogTab in 'controls\LogTab.pas';
+  LogTab in 'controls\LogTab.pas',
+  Scheduler in 'Scheduler.pas';
 
 {$SetPEOptFlags $0140}
 
@@ -210,6 +206,14 @@ var
     Bass.Free;
     Exit;
   end;
+
+  // Rename the BASS default device
+  for i := 0 to Bass.Devices.Count - 1 do
+    if Bass.Devices[i].IsDefault then
+    begin
+      Bass.Devices[i].Name := _('Default device');
+      Break;
+    end;
 
   Found := False;
   for i := 0 to Bass.Devices.Count - 1 do

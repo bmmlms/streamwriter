@@ -292,13 +292,6 @@ type
     FDate: TDateTime;
     FAutoRemove: Boolean;
     FStartHour, FStartMinute, FEndHour, FEndMinute: Integer;
-
-    FTriedStart: Boolean;
-    FTriedStop: Boolean;
-    FWakeupHandle: Integer;
-    FScheduleStarted: TDateTime;
-
-    function GetWakeupTime: TDateTime;
   public
     constructor Create;
     destructor Destroy; override;
@@ -308,16 +301,8 @@ type
     class function Load(Stream: TExtendedStream; Version: Integer): TSchedule;
     procedure Save(Stream: TExtendedStream);
 
-    procedure RemoveWakeup;
-    procedure SetWakeup;
-
-    function GetStartTime: TDateTime;
+    function GetStartTime(ModificationAllowed: Boolean): TDateTime;
     function GetEndTime(ScheduleStarted: TDateTime): TDateTime;
-
-    // Does the current time meet the scheduled start-time?
-    function MatchesStart: Boolean;
-    // Does the current time meet the scheduled end-time?
-    function MatchesEnd: Boolean;
 
     // When set this schedule is active
     property Active: Boolean read FActive write FActive;
@@ -339,10 +324,6 @@ type
     property EndHour: Integer read FEndHour write FEndHour;
     // Defines the end minute for the schedule
     property EndMinute: Integer read FEndMinute write FEndMinute;
-
-    property TriedStart: Boolean read FTriedStart write FTriedStart;
-    property TriedStop: Boolean read FTriedStop write FTriedStop;
-    property ScheduleStarted: TDateTime read FScheduleStarted write FScheduleStarted;
   end;
 
   TEncoderSettings = class
@@ -2111,7 +2092,6 @@ end;
 
 destructor TSchedule.Destroy;
 begin
-  RemoveWakeup;
 
   inherited;
 end;
@@ -2127,13 +2107,10 @@ begin
 
     Result := RecodeHour(Result, FEndHour);
     Result := RecodeMinute(Result, FEndMinute);
-
-    if (Result > 0) and (Now > Result) then
-      Result := 0;
   end;
 end;
 
-function TSchedule.GetStartTime: TDateTime;
+function TSchedule.GetStartTime(ModificationAllowed: Boolean): TDateTime;
 var
   N: TDateTime;
 begin
@@ -2144,14 +2121,10 @@ begin
     case FInterval of
       siDaily:
         begin
-          if ((FStartHour = HourOf(N)) and (FStartMinute > MinuteOf(N)) or
-              (FStartHour > HourOf(N)))
-          then
-            Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(N), FStartHour, FStartMinute, 0, 0)
+          if ModificationAllowed and ((FStartHour < HourOf(N)) or ((FStartHour = HourOf(N)) and (FStartMinute < MinuteOf(N)))) then
+            Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(IncDay(N)), FStartHour, FStartMinute, 0, 0)
           else
-          begin
-            Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(IncDay(N)), FStartHour, FStartMinute, 0, 0);
-          end;
+            Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(N), FStartHour, FStartMinute, 0, 0);
         end;
       siWeekly:
         begin
@@ -2159,27 +2132,15 @@ begin
           if DayOfTheWeek(N) <= Integer(FDay) + 1 then
           begin
             Result := IncDay(Result, (Integer(FDay) + 1 - DayOfTheWeek(N)));
-            if Result < N then
+            if ModificationAllowed and (Result < N) then
               Result := IncWeek(Result);
           end else
-          begin
             Result := IncDay(Result, 7 - DayOfTheWeek(N) + Integer(FDay) + 1);
-          end;
         end;
       siNone:
-        Result := EncodeDateTime(YearOf(FDate), MonthOf(FDate), DayOf(FDate), FStartHour, FStartMinute, 0, 0)
+        Result := EncodeDateTime(YearOf(FDate), MonthOf(FDate), DayOf(FDate), FStartHour, FStartMinute, 0, 0);
     end;
-
-    if (Result > 0) and (N > Result) then
-      Result := 0;
   end;
-end;
-
-function TSchedule.GetWakeupTime: TDateTime;
-begin
-  Result := GetStartTime;
-  if (Result > 0) and (Now < IncMinute(Result, -1)) then
-    Result := IncMinute(Result, -1)
 end;
 
 class function TSchedule.Load(Stream: TExtendedStream;
@@ -2203,27 +2164,6 @@ begin
   Stream.Read(Result.FEndMinute);
 end;
 
-function TSchedule.MatchesEnd: Boolean;
-begin
-  Result := False;
-  if ScheduleStarted > 0 then
-    Result := WithinPastSeconds(Now, IncSecond(GetEndTime(ScheduleStarted), 30), 30);
-end;
-
-function TSchedule.MatchesStart: Boolean;
-begin
-  Result := WithinPastSeconds(Now, IncSecond(GetStartTime, 30), 30);
-end;
-
-procedure TSchedule.RemoveWakeup;
-begin
-  if FWakeupHandle > 0 then
-  begin
-    Power.RemoveWakeup(FWakeupHandle);
-    FWakeupHandle := 0;
-  end;
-end;
-
 procedure TSchedule.Save(Stream: TExtendedStream);
 begin
   Stream.Write(FActive);
@@ -2236,26 +2176,6 @@ begin
   Stream.Write(FStartMinute);
   Stream.Write(FEndHour);
   Stream.Write(FEndMinute);
-end;
-
-procedure TSchedule.SetWakeup;
-var
-  WT: TDateTime;
-begin
-  if FWakeupHandle > 0 then
-  begin
-    Power.RemoveWakeup(FWakeupHandle);
-    FWakeupHandle := 0;
-  end;
-
-  WT := GetWakeupTime;
-  if WT > 0 then
-  begin
-    try
-      FWakeupHandle := Power.AddWakeup(WT);
-    except
-    end;
-  end;
 end;
 
 { TRatingEntry }
@@ -2697,8 +2617,6 @@ class function TChartStream.Load(Stream: TExtendedStream;
   Version: Integer): TChartStream;
 var
   c: Cardinal;
-//const                                TODO: kicken..
-//  UnixStartDate: TDateTime = 25569.0;
 begin
   Result := TChartStream.Create(0, 0, 0, 0);
   Stream.Read(Result.FID);
@@ -2708,10 +2626,6 @@ begin
   if (Version >= 50) or (Version = 1) then
   begin
     Stream.Read(Result.FPlayedLast);
-
-    // TODO: was soll das hier? warum ist FPlayedLast nicht der direkt wert in sekunden wie bei den streams???
-    //       wenn ich das erledige kann FServerTimeDiff und LocalToUTC raus!!!
-    //c := Round((LocalToUTC(Now) - UnixStartDate) * 86400) - Result.FPlayedLast;
 
     if Result.FPlayedLast > 86400 then
       Result.FPlayedLastDay := 0;

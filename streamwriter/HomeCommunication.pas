@@ -119,8 +119,6 @@ type
   THomeCommunication = class
   private
     FDisabled: Boolean;
-    // TODO: feld löschen bald und alle auskommentierten codestellen die darauf verweisen
-    //FServerTimeDiff: Int64;
     FThread: THomeThread;
 
     FAuthenticated, FIsAdmin, FWasConnected, FConnected, FNotifyTitleChanges: Boolean;
@@ -191,7 +189,6 @@ type
     procedure SendGenerateAuthToken;
 
     property Disabled: Boolean read FDisabled;
-    //property ServerTimeDiff: Int64 read FServerTimeDiff;
     property WasConnected: Boolean read FWasConnected;
     property Connected: Boolean read FConnected;
     property Authenticated: Boolean read FAuthenticated;
@@ -461,21 +458,29 @@ begin
       for StreamEntry in AppGlobals.Data.BrowserList do
         StreamEntry.Free;
       AppGlobals.Data.BrowserList.Clear;
+
+      // Der Liste alle Sachen wieder hinzufügen
+      try
+        for Genre in Genres do
+          AppGlobals.Data.GenreList.Add(Genre);
+      except
+        for i := 0 to Genres.Count - 1 do
+          Genres[i].Free;
+        AppGlobals.Data.GenreList.Clear;
+      end;
+
+      try
+        for StreamEntry in Streams do
+          AppGlobals.Data.BrowserList.Add(StreamEntry);
+      except
+        for i := 0 to Streams.Count - 1 do
+          Streams[i].Free;
+        AppGlobals.Data.BrowserList.Clear;
+      end;
     finally
       AppGlobals.Unlock;
     end;
-
-    // Der Liste alle Sachen wieder hinzufügen
-    for Genre in Genres do
-      AppGlobals.Data.GenreList.Add(Genre);
-    for StreamEntry in Streams do
-      AppGlobals.Data.BrowserList.Add(StreamEntry);
-  except
-    for i := 0 to Genres.Count - 1 do
-      Genres[i].Free;
-    for i := 0 to Streams.Count - 1 do
-      Streams[i].Free;
-
+  finally
     Genres.Free;
     Streams.Free;
   end;
@@ -812,8 +817,6 @@ procedure THomeCommunication.HomeThreadHandshakeReceived(
   Sender: TSocketThread);
 begin
   FDisabled := not THomeThread(Sender).FHandshakeSuccess;
-
-  //FServerTimeDiff := DateTimeToUnix(LocalToUTC(Now)) - THomeThread(Sender).FServerTime;
 
   if not FDisabled then
   begin

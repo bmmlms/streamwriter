@@ -434,6 +434,12 @@ begin
 end;
 
 procedure TClientTab.ActionStopExecute(Sender: TObject);
+  procedure StopClient(Client: TICEClient);
+  begin
+    if Client.ScheduledRecording then
+      Client.WriteLog(_('Scheduled recording was interrupted by user'), '', ltSchedule, llInfo);
+    Client.StopRecording;
+  end;
 var
   Clients: TClientArray;
   Client: TICEClient;
@@ -445,7 +451,7 @@ begin
   for Client in Clients do
   begin
     if not Client.AutoRemove then
-      Client.StopRecording;
+      StopClient(Client);
   end;
 
   Nodes := FClientView.GetNodes(ntCategory, True);
@@ -456,9 +462,7 @@ begin
     begin
       Clients := FClientView.NodesToClients(FClientView.GetChildNodes(Node));
       for Client in Clients do
-      begin
-        Client.StopRecording;
-      end;
+        StopClient(Client);
     end;
   end;
 end;

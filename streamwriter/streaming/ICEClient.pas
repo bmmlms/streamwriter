@@ -419,9 +419,6 @@ var
 begin
   FStopAfterSong := False;
 
-  for i := 0 to FEntry.Schedules.Count - 1 do
-    FEntry.Schedules[i].ScheduleStarted := 0;
-
   FFilename := '';
   if FICEThread <> nil then
   begin
@@ -1128,8 +1125,4 @@ begin
 end;
 
 end.
-
-
-
-
 

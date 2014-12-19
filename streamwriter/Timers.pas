@@ -92,6 +92,7 @@ type
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
   private
+    FOkay: Boolean;
     Tree: TScheduleTree;
     FEntry: TStreamEntry;
 
@@ -101,6 +102,10 @@ type
     procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
   public
     constructor Create(AOwner: TComponent; Entry: TStreamEntry); reintroduce;
+    destructor Destroy; override;
+
+    property Okay: Boolean read FOkay;
+    property Entry: TStreamEntry read FEntry;
   end;
 
 implementation
@@ -114,10 +119,7 @@ var
   NodeData: PScheduleTreeNodeData;
 begin
   for i := 0 to FEntry.Schedules.Count - 1 do
-  begin
-    FEntry.Schedules[i].RemoveWakeup;
     FEntry.Schedules[i].Free;
-  end;
   FEntry.Schedules.Clear;
 
   Node := Tree.GetFirst;
@@ -125,9 +127,10 @@ begin
   begin
     NodeData := Tree.GetNodeData(Node);
     FEntry.Schedules.Add(NodeData.Schedule.Copy);
-    FEntry.Schedules[FEntry.Schedules.Count - 1].SetWakeup;
     Node := Tree.GetNext(Node);
   end;
+
+  FOkay := True;
 
   Close;
 end;
@@ -191,7 +194,17 @@ constructor TfrmTimers.Create(AOwner: TComponent;
 begin
   inherited Create(AOwner);
 
-  FEntry := Entry;
+  // TODO: und was ist bei überlappenden schedules. die können auch durchaus "erlaubt" sein!
+  //       täglich von 13:00-15:00 aufnehmen und nur donnerstags von 12:00-16:00 .....
+
+  FEntry := Entry.Copy;
+end;
+
+destructor TfrmTimers.Destroy;
+begin
+  FEntry.Free;
+
+  inherited;
 end;
 
 procedure TfrmTimers.dtpDateChange(Sender: TObject);

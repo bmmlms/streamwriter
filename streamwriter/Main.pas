@@ -152,7 +152,6 @@ type
     mnuCurrentTitle1: TMenuItem;
     actCopyTitle: TAction;
     cmdCopyTitle: TToolButton;
-    tmrSchedule: TTimer;
     Copytitletoclipboard1: TMenuItem;
     actAddToSaveList: TAction;
     Addtowishlist1: TMenuItem;
@@ -225,7 +224,6 @@ type
     procedure Community1Click(Sender: TObject);
     procedure actLogOffExecute(Sender: TObject);
     procedure actTimersExecute(Sender: TObject);
-    procedure tmrScheduleTimer(Sender: TObject);
     procedure tmrAutoSaveTimer(Sender: TObject);
     procedure actPlayerDecreaseVolumeExecute(Sender: TObject);
     procedure actPlayerIncreaseVolumeExecute(Sender: TObject);
@@ -286,7 +284,6 @@ type
     procedure OpenCut(Filename: string); overload;
     procedure OpenCut(Track: TTrackInfo); overload;
     procedure ProcessCommandLine(Data: string);
-    procedure SetWakeups;
     procedure SetCaptionAndTrayHint;
     procedure BuildMoveToCategoryMenu;
 
@@ -347,7 +344,6 @@ type
 
   public
     constructor Create(AOwner: TComponent); override;
-
   end;
 
   TStatusHint = class(TCustomHint)
@@ -437,7 +433,6 @@ begin
   end;
 
   tmrSpeed.Enabled := False;
-  tmrSchedule.Enabled := False;
   tmrAutoSave.Enabled := False;
   tmrRecordings.Enabled := False;
 
@@ -663,17 +658,46 @@ end;
 
 procedure TfrmStreamWriterMain.actTimersExecute(Sender: TObject);
 var
+  i, n: Integer;
   Clients: TClientArray;
   T: TfrmTimers;
+  Lst: TList<TSchedule>;
+  ScheduleValid: Boolean;
 begin
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
 
-  if (Length(Clients) <> 1) and (Clients[0].AutoRemove) then
+  if (Length(Clients) <> 1) or ((Length(Clients) = 1) and (Clients[0].AutoRemove)) then
     Exit;
 
   T := TfrmTimers.Create(Self, Clients[0].Entry);
   try
     T.ShowModal;
+
+    if T.Okay then
+    begin
+      FClientManager.Scheduler.SetSchedules(nil);
+
+      Clients[0].Entry.Schedules.Clear;
+      for i := 0 to T.Entry.Schedules.Count - 1 do
+        Clients[0].Entry.Schedules.Add(T.Entry.Schedules[i].Copy);
+
+      ScheduleValid := False;
+      if Clients[0].ScheduledRecording and Clients[0].Recording then
+      begin
+        for i := 0 to Clients[0].Entry.Schedules.Count - 1 do
+        begin
+          if (Clients[0].Entry.Schedules[i].GetStartTime(False) < Now) and (Clients[0].Entry.Schedules[i].GetEndTime(Clients[0].Entry.Schedules[i].GetStartTime(False)) > Now) then
+          begin
+            ScheduleValid := True;
+            Break;
+          end;
+        end;
+        Clients[0].ScheduledRecording := ScheduleValid; // TODO: Alle Konstellationen testen! Scheduled darf nie gehen, wenn manuell aktiv war. und schedule muss bleiben,
+                                                        //       wenn es da war und weiterhin valid ist (neue zeiten sich in altem schedule befinden oder so)
+      end;
+
+      FClientManager.RefreshScheduler;
+    end;
   finally
     T.Free;
   end;
@@ -909,10 +933,7 @@ begin
 
   ProcessCommandLine('');
 
-  SetWakeups;
-
   tmrSpeed.Enabled := True;
-  tmrSchedule.Enabled := True;
 
   RegisterHotkeys;
 
@@ -943,6 +964,8 @@ begin
     if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
       FUpdater.Start(uaVersion, True);
   end;
+
+  FClientManager.RefreshScheduler;
 end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
@@ -1647,15 +1670,6 @@ begin
   PrepareSave;
 end;
 
-procedure TfrmStreamWriterMain.SetWakeups;
-var
-  i, n: Integer;
-begin
-  for i := 0 to FClientManager.Count - 1 do
-    for n := 0 to FClientManager[i].Entry.Schedules.Count - 1 do
-      FClientManager[i].Entry.Schedules[n].SetWakeup;
-end;
-
 procedure TfrmStreamWriterMain.ShowCommunityLogin;
 begin
   if FCommunityLogin <> nil then
@@ -2253,14 +2267,10 @@ var
   C: Cardinal;
   L: TList<Cardinal>;
 begin
-  if Application.Terminated then
-    Exit;
-
-  if not AppGlobals.SubmitStats then
+  if Application.Terminated or (not AppGlobals.SubmitStats) then
     Exit;
 
   C := 0;
-
   L := TList<Cardinal>.Create;
   try
     for i := 0 to FClientManager.Count - 1 do
@@ -2279,65 +2289,6 @@ begin
     HomeComm.SendUpdateStats(L, C);
   finally
     L.Free;
-  end;
-end;
-
-procedure TfrmStreamWriterMain.tmrScheduleTimer(Sender: TObject);
-var
-  i: Integer;
-  Clients: TClientArray;
-  Client: TICEClient;
-  Schedule: TSchedule;
-  Res: TMayConnectResults;
-begin
-  Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, False));
-  for Client in Clients do
-  begin
-    for i := Client.Entry.Schedules.Count - 1 downto 0 do
-    begin
-      Schedule := Client.Entry.Schedules[i];
-      if Schedule.Active then
-      begin
-        if Schedule.MatchesStart and (not Schedule.TriedStart) then
-        begin
-          Client.WriteLog(_('Starting scheduled recording'), ltSchedule, llInfo);
-
-          Schedule.TriedStart := True;
-          Schedule.ScheduleStarted := Schedule.GetStartTime;
-          Res := Client.StartRecording(True);
-          if Res <> crOk then
-          begin
-            Client.WriteLog(FClientManager.GetErrorText(Res, Client.Entry.CustomName, False, True, True), ltSchedule, llWarning);
-            tabClientsShowErrorMessage(Client, FClientManager.GetErrorText(Res, Client.Entry.CustomName, False, True, False));
-          end else
-          begin
-            Client.ScheduledRecording := True;
-            Client.WriteLog(Format(_('Scheduled recording ends at %s'), [TimeToStr(Schedule.GetEndTime(Schedule.GetStartTime))]), ltSchedule, llInfo);
-          end;
-        end else if not Schedule.MatchesStart then
-          Schedule.TriedStart := False;
-
-        if Schedule.MatchesEnd and (not Schedule.TriedStop) and Client.ScheduledRecording then
-        begin
-          Client.WriteLog(_('Stopping scheduled recording'), ltSchedule, llInfo);
-
-          Client.StopRecording;
-          Schedule.TriedStop := True;
-          Schedule.ScheduleStarted := 0;
-          if Schedule.AutoRemove then
-          begin
-            Client.Entry.Schedules.Remove(Schedule);
-
-            tabClients.ClientView.RefreshClient(Client);
-
-            Schedule.Free;
-          end;
-
-          SetWakeups;
-        end else if not Schedule.MatchesEnd then
-          Schedule.TriedStop := False;
-      end;
-    end;
   end;
 end;
 
@@ -2526,7 +2477,7 @@ begin
   ClientSchedulesActive := False;
   if Length(Clients) = 1 then
     for i := 0 to Clients[0].Entry.Schedules.Count - 1 do
-      if (Clients[0].Entry.Schedules[i].ScheduleStarted > 0) and (Clients[0].ScheduledRecording) then
+      if {(Clients[0].Entry.Schedules[i].ScheduleStarted > 0) and} (Clients[0].ScheduledRecording) then
       begin
         ClientSchedulesActive := True;
         Break;
@@ -2586,8 +2537,8 @@ begin
   if actStopAfterSong.Checked <> OneNormalRecordingWithTitle and AllNormalStopsAfterSong then
     actStopAfterSong.Checked := OneNormalRecordingWithTitle and AllNormalStopsAfterSong;
 
-  if actTimers.Enabled <> (Length(Clients) = 1) and (not Clients[0].AutoRemove) and (not ClientSchedulesActive) then
-    actTimers.Enabled := (Length(Clients) = 1) and (not Clients[0].AutoRemove) and (not ClientSchedulesActive);
+  if actTimers.Enabled <> (Length(Clients) = 1) and (not Clients[0].AutoRemove) then
+    actTimers.Enabled := (Length(Clients) = 1) and (not Clients[0].AutoRemove);
 
   if mnuCurrentTitle1.Enabled <> (Length(Clients) > 0) and OneHasTitle then
     mnuCurrentTitle1.Enabled := (Length(Clients) > 0) and OneHasTitle;

@@ -32,7 +32,6 @@ uses
   Sockets, TypeDefs;
 
 type
-  TLogEvent = procedure(Text, Data: string) of object;
   TChunkReceivedEvent = procedure(Buf: Pointer; Len: Integer) of object;
 
   TStreamTrack = class
@@ -421,8 +420,7 @@ var
   Track: TStreamTrack;
 begin
   // Falls erlaubt, versuchen, das Empfangene wegzuspeichern...
-  if (not FMonitoring) and (FAudioStream <> nil) and (FStreamTracks.Count > 0) and
-     (not FSettings.OnlySaveFull) and (FRecordTitle = '') then
+  if (not FMonitoring) and (FAudioStream <> nil) and (FStreamTracks.Count > 0) and (not FSettings.OnlySaveFull) and (FRecordTitle = '') then
   begin
     Track := FStreamTracks[0];
     Track.E := FAudioStream.Size;

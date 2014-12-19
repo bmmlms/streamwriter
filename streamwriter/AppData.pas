@@ -655,6 +655,11 @@ begin
 
   FStorage.Read('SoundDevice', FSoundDevice, 0);
 
+  // Default-Device is now available in BASS, so set it for every user to this device
+  // after upgrading...
+  if FLastUsedDataVersion < 61 then       // TODO: testen.
+    FSoundDevice := 0;
+
   FStorage.Read('ShortcutPlay', FShortcutPlay, 0);
   FStorage.Read('ShortcutPause', FShortcutPause, 0);
   FStorage.Read('ShortcutStop', FShortcutStop, 0);

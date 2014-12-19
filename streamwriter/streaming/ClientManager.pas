@@ -26,7 +26,7 @@ uses
   SysUtils, Windows, Classes, Generics.Collections, ICEClient, Logging,
   Functions, AppData, DataManager, HomeCommunication, PlayerManager,
   AudioFunctions, SWFunctions, TypeDefs, MessageBus, AppMessages,
-  LanguageObjects;
+  LanguageObjects, Scheduler;
 
 type
   TClientManager = class;
@@ -50,6 +50,7 @@ type
   TClientManager = class
   private
     FClients: TClientList;
+    FScheduler: TScheduler;
     FMonitorClients: TClientList;
     FSongsSaved: Integer;
     FNoFreeSpaceErrorShown: Boolean;
@@ -91,6 +92,9 @@ type
     procedure ClientPause(Sender: TObject);
     procedure ClientStop(Sender: TObject);
 
+    procedure SchedulerLog(Text, Data: string);
+    procedure SchedulerSchedule(IsStart: Boolean; Schedule: TSchedule);
+
     procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, ParsedTitle, CurrentURL: string; RegExes: TStringList;
       AudioType: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal);
     procedure HomeCommMonitorStreamsReceived(Sender: TObject; StreamIDs: TIntArray);
@@ -114,8 +118,12 @@ type
 
     procedure SetupClient(Client: TICEClient);
 
+    procedure RefreshScheduler;
+
     property Items[Index: Integer]: TICEClient read FGetItem; default;
     property Count: Integer read FGetCount;
+
+    property Scheduler: TScheduler read FScheduler;
 
     function MatchesClient(Client: TICEClient; ID: Integer; Name, URL: string;
       URLs: TStringList): Boolean;
@@ -213,6 +221,25 @@ begin
   Result := UsedKBs;
 end;
 
+procedure TClientManager.RefreshScheduler;
+var
+  i, n: Integer;
+  Lst: TList<TSchedule>;
+begin
+  Scheduler.SetSchedules(nil);
+  Lst := TList<TSchedule>.Create;
+  try
+    for i := 0 to FClients.Count - 1 do
+    begin
+      for n := 0 to FClients[i].Entry.Schedules.Count - 1 do
+        Lst.Add(FClients[i].Entry.Schedules[n]);
+    end;
+    Scheduler.SetSchedules(Lst);
+  finally
+    Lst.Free;
+  end;
+end;
+
 procedure TClientManager.RemoveClient(Client: TICEClient);
 begin
   if Client.Active then
@@ -234,6 +261,77 @@ begin
   begin
     FMonitorClients.Remove(Client);
     Client.Free;
+  end;
+end;
+
+procedure TClientManager.SchedulerLog(Text, Data: string);
+begin
+  MsgBus.SendMessage(TLogMsg.Create(nil, lsGeneral, ltSchedule, llDebug, _('Scheduler'), Text));
+end;
+
+procedure TClientManager.SchedulerSchedule(IsStart: Boolean;
+  Schedule: TSchedule);
+var
+  i, n: Integer;
+  Client: TICEClient;
+  Res: TMayConnectResults;
+begin
+  Client := nil;
+  for i := 0 to FClients.Count - 1 do
+    for n := 0 to FClients[i].Entry.Schedules.Count - 1 do
+      if FClients[i].Entry.Schedules[n] = Schedule then
+      begin
+        Client := FClients[i];
+        Break;
+      end;
+
+  if Client = nil then
+    Exit;
+
+  // TODO: nach dem schedule dialog müssen natürlich streams, die gerade ScheduleActive haben, "angefasst" werden..... behindert.
+
+  if IsStart then
+  begin
+    if Client.Recording then
+    begin
+      Client.WriteLog(_('Skipping scheduled recording because manual recording is active'), '', ltSchedule, llInfo);
+    end else
+    begin
+      Client.WriteLog(_('Starting scheduled recording'), ltSchedule, llInfo);
+
+      Res := Client.StartRecording(True);
+      if Res <> crOk then
+      begin
+        Client.WriteLog(GetErrorText(Res, Client.Entry.CustomName, False, True, True), ltSchedule, llWarning);
+        FOnShowErrorMessage(Client, GetErrorText(Res, Client.Entry.CustomName, False, True, False));
+      end else
+      begin
+        Client.ScheduledRecording := True;
+        // TODO: Hier wieder TimeToStr() nehmen. DateTimeToStr() ist nur zum debuggen.
+        Client.WriteLog(Format(_('Scheduled recording ends at %s'), [DateTimeToStr(Schedule.GetEndTime(Schedule.GetStartTime(False)))]), ltSchedule, llInfo);
+      end;
+    end;
+  end else
+  begin
+    // TODO: tja, und hier wird es lustig.
+    //       wenn sich 2 aufnahmen überlappen (13:00-14:00 täglich und 12:00-15:00 jeden donnerstag oder so), dann muss man aufpassen.
+    //       das würde zur zeit stark schief gehen. wenn ich eine "innere" aufnahme bin und die äußere läuft, darf ich eigentlich nix machen!
+    if Client.ScheduledRecording then
+    begin
+      Client.WriteLog(_('Stopping scheduled recording'), ltSchedule, llInfo);
+
+      Client.StopRecording;
+      if Schedule.AutoRemove then
+      begin
+        // TODO: !!! neu bauen!
+        //Client.Entry.Schedules.Remove(Schedule);
+
+        //FOnClientRefresh(Client);
+        ////tabClients.ClientView.RefreshClient(Client);
+
+        //Schedule.Free;
+      end;
+    end;
   end;
 end;
 
@@ -262,6 +360,8 @@ procedure TClientManager.Stop;
 var
   i: Integer;
 begin
+  FScheduler.Stop;
+
   for i := Count - 1 downto 0 do
   begin
     FClients[i].Entry.WasRecording := FClients[i].Recording;
@@ -298,10 +398,16 @@ begin
   FMonitorClients := TClientList.Create;
   HomeComm.OnNetworkTitleChangedReceived := HomeCommTitleChanged;
   HomeComm.OnMonitorStreamsReceived := HomeCommMonitorStreamsReceived;
+
+  FScheduler := TScheduler.Create;
+  FScheduler.OnLog := SchedulerLog;
+  FScheduler.OnSchedule := SchedulerSchedule;
+  FScheduler.Start;
 end;
 
 destructor TClientManager.Destroy;
 begin
+  FScheduler.Free;
   FClients.Free;
   FMonitorClients.Free;
 
@@ -325,6 +431,9 @@ function TClientManager.FGetActive: Boolean;
 var
   i: Integer;
 begin
+  if FScheduler.Active then
+    Exit(True);
+
   Result := False;
   for i := 0 to FClients.Count - 1 do
     if FClients[i].Active then

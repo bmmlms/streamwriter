@@ -30,6 +30,7 @@ type
   TIntArray = array of Integer;
   TCardinalArray = array of Cardinal;
 
+  TLogEvent = procedure(Text, Data: string) of object;
   TStringEvent = procedure(Sender: TObject; Data: string) of object;
 
   TLogType = (ltGeneral, ltSong, ltSaved, ltPostProcess, ltSchedule);
