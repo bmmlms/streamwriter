@@ -64,8 +64,6 @@ type
 
   TMStreamSearchPanel = class(TPanel)
   private
-    //FShowHideFilters: TMShowHidePanel;
-
     FSearchLabel: TLabel;
     FGenreLabel: TLabel;
     FKbpsLabel: TLabel;
@@ -76,8 +74,6 @@ type
     FTypeList: TComboBox;
 
     procedure SetVisible(Value: Boolean);
-
-    procedure ExpandButtonClick(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
     procedure AfterCreate;
@@ -260,7 +256,7 @@ begin
   NodeDataSize := SizeOf(TStreamNodeData);
   IncrementalSearch := isVisibleOnly;
 
-  Header.Height := GetTextSize('Wyg', Font).cy + 5;
+  Header.Height := GetTextSize('Wyg', Font).cy + 6;
 
   TreeOptions.SelectionOptions := [toDisableDrawSelection, toRightClickSelect, toFullRowSelect, toMultiSelect];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
@@ -1486,35 +1482,14 @@ begin
   FTypeList.Left := MaxW + 12;
 end;
 
-procedure TMStreamSearchPanel.ExpandButtonClick(Sender: TObject);
-begin
-  SetVisible(not FTypeList.Visible);
-end;
-
 procedure TMStreamSearchPanel.SetVisible(Value: Boolean);
 var
   i: Integer;
 begin
-  if Value then
-  begin
-    //FExpandButton.Caption := _('Hide filters');
-    //FExpandButton.PngImage := FImageHideFilter;
-  end else
-  begin
-    //FExpandButton.Caption := _('Show filters');
-    //FExpandButton.PngImage := FImageShowFilter;
-  end;
-
   for i := 0 to ControlCount - 1 do
-    if {(Controls[i] <> FExpandLabel) and (Controls[i] <> FShowHideFilters) and}
-       (Controls[i] <> FSearchLabel) and (Controls[i] <> FSearchEdit) then
-    begin
+    if (Controls[i] <> FSearchLabel) and (Controls[i] <> FSearchEdit) then
       Controls[i].Visible := Value;
-    end;
-  //if Value then
-    ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4
-  //else
-  //  ClientHeight := FShowHideFilters.Top + FShowHideFilters.Height + FSearchEdit.Top + 4;
+  ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4
 end;
 
 { TMStreamTreeHeaderPopup }

@@ -99,6 +99,7 @@ type
     FNextMetaInt: Integer;
     FSongsSaved: Cardinal;
     FStreamName: string;
+    FStreamCustomName: string;
     FStreamURL: string;
     FBitRate: Cardinal;
     FGenre: string;
@@ -211,6 +212,7 @@ type
     property ExtLogLevel: TLogLevel read FExtLogLevel;
 
     property StreamName: string read FStreamName;
+    property StreamCustomName: string read FStreamCustomName write FStreamCustomName;
     property StreamURL: string read FStreamURL;
     property BitRate: Cardinal read FBitRate;
     property Genre: string read FGenre;
@@ -510,6 +512,8 @@ begin
       end;
 
       FStreamName := GetHeaderData('icy-name');
+      if FStreamCustomName = '' then
+        FStreamCustomName := FStreamName;
       FStreamURL := GetHeaderData('icy-url');
       FBitRate := StrToIntDef(GetHeaderData('icy-br'), 0);
       FGenre := GetHeaderData('icy-genre');
@@ -848,9 +852,9 @@ begin
         FSavedTitle := _('Unknown title');
 
       if FRecordTitle <> '' then
-        FileCheck := TFileChecker.Create(FStreamName, FSaveDirAuto, FSongsSaved, FSettings)
+        FileCheck := TFileChecker.Create(FStreamCustomName, FSaveDirAuto, FSongsSaved, FSettings)
       else
-        FileCheck := TFileChecker.Create(FStreamName, FSaveDir, FSongsSaved, FSettings);
+        FileCheck := TFileChecker.Create(FStreamCustomName, FSaveDir, FSongsSaved, FSettings);
 
       try
         if FRecordTitle <> '' then
@@ -1012,9 +1016,9 @@ begin
     begin
       // Nicht nach manuellen und automatischen Aufnahmen unterscheiden - automatische Aufnahmen
       // schreiben nie eine Stream-Datei, von daher ist das hier egal.
-      FileCheck := TFileChecker.Create(FStreamName, FSaveDir, FSongsSaved, FSettings);
+      FileCheck := TFileChecker.Create(FStreamCustomName, FSaveDir, FSongsSaved, FSettings);
       try
-        FileCheck.GetStreamFilename(FStreamName, FAudioType);
+        FileCheck.GetStreamFilename(FStreamCustomName, FAudioType);
         Dir := FileCheck.SaveDir;
         Filename := FileCheck.Filename;
       finally

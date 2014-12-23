@@ -25,7 +25,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
-  DataManager, VirtualTrees, LanguageObjects, GUIFunctions,
+  DataManager, VirtualTrees, LanguageObjects, GUIFunctions, Messages,
   Generics.Collections, Graphics, Forms, ICEClient, Clipbrd, AppData,
   Logging, Math, TypeDefs, SharedData;
 
@@ -228,7 +228,7 @@ procedure TDebugView.DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
 begin
   inherited;
 
-  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
+  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
 end;
 
 procedure TDebugView.FSetClient(Value: TICEClient);
@@ -244,11 +244,11 @@ begin
     RootNodeCount := 0;
   end;
 
-  if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) then
+  if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) and (GetPrevious(GetPrevious(GetLast)) <> nil) then
   begin
-    R := GetDisplayRect(GetPrevious(GetLast), NoColumn, False);
-    if not (R.Bottom > ClientHeight) then
-      ScrollIntoView(GetLast, False, False);
+    R := GetDisplayRect(GetPrevious(GetPrevious(GetLast)), NoColumn, False);
+    if R.Top <= ClientHeight then
+      PostMessage(Handle, WM_VSCROLL, SB_BOTTOM, 0);
   end;
 
   // Invalidate, weil FClient.DebugLog.Add() eventuell auch alte Einträge entfernt im Notify().
@@ -338,10 +338,20 @@ begin
 end;
 
 procedure TDebugView.Resize;
+var
+  R: TRect;
 begin
   inherited;
+
   Header.Columns[0].Width := Canvas.TextWidth(TimeToStr(Now)) + 10;
   Header.Columns[1].Width := ClientWidth - Header.Columns[0].Width;
+
+  if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) and (GetPrevious(GetPrevious(GetLast)) <> nil) then
+  begin
+    R := GetDisplayRect(GetPrevious(GetPrevious(GetLast)), NoColumn, False);
+    if R.Top <= ClientHeight then
+      PostMessage(Handle, WM_VSCROLL, SB_BOTTOM, 0);
+  end;
 end;
 
 end.

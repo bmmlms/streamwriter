@@ -194,9 +194,6 @@ constructor TfrmTimers.Create(AOwner: TComponent;
 begin
   inherited Create(AOwner);
 
-  // TODO: und was ist bei überlappenden schedules. die können auch durchaus "erlaubt" sein!
-  //       täglich von 13:00-15:00 aufnehmen und nur donnerstags von 12:00-16:00 .....
-
   FEntry := Entry.Copy;
 end;
 
@@ -411,7 +408,7 @@ begin
 
   NodeDataSize := SizeOf(TScheduleTreeNodeData);
 
-  Header.Height := GetTextSize('Wyg', Font).cy + 5;
+  Header.Height := GetTextSize('Wyg', Font).cy + 6;
 
   TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toCheckSupport];
   TreeOptions.SelectionOptions := [toMultiSelect, toFullRowSelect];
@@ -497,7 +494,7 @@ procedure TScheduleTree.DoMeasureItem(TargetCanvas: TCanvas;
 begin
   inherited;
 
-  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
+  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
 end;
 
 procedure TScheduleTree.Resize;

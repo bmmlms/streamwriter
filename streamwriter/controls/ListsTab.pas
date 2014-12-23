@@ -1563,7 +1563,7 @@ begin
 
   FPanel := TTitlePanel(AOwner);
 
-  Header.Height := GetTextSize('Wyg', Font).cy + 5;
+  Header.Height := GetTextSize('Wyg', Font).cy + 6;
 
   NodeDataSize := SizeOf(TTitleNodeData);
   IncrementalSearch := isVisibleOnly;
@@ -2070,7 +2070,7 @@ procedure TTitleTree.DoMeasureItem(TargetCanvas: TCanvas;
 begin
   inherited;
 
-  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
+  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
 end;
 
 procedure TTitleTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex;

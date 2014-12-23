@@ -2615,8 +2615,6 @@ end;
 
 class function TChartStream.Load(Stream: TExtendedStream;
   Version: Integer): TChartStream;
-var
-  c: Cardinal;
 begin
   Result := TChartStream.Create(0, 0, 0, 0);
   Stream.Read(Result.FID);
@@ -3044,9 +3042,7 @@ begin
   end;
 end;
 
-{
 // TODO: update testen testen testen. okay settings werden übernommen. den normalen prozess dennoch durchspielen, am besten auch auf xp..
-}
 
 class function TStreamSettings.LoadAuto(Data: TDataLists;
   Stream: TExtendedStream; Version: Integer): TStreamSettings;
@@ -3402,8 +3398,6 @@ end;
 
 constructor TEncoderSettings.Create(AudioType: TAudioTypes;
   BitrateType: TBitRates; VBRQuality: TVBRQualities);
-var
-  Tmp: Integer;
 begin
   inherited Create;
 

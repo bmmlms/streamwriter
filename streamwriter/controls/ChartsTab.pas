@@ -658,7 +658,7 @@ begin
 
   IncrementalSearch := isVisibleOnly;
 
-  Header.Height := GetTextSize('Wyg', Font).cy + 5;
+  Header.Height := GetTextSize('Wyg', Font).cy + 6;
   AutoScrollDelay := 50;
   AutoScrollInterval := 400;
   Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoShowSortGlyphs, hoVisible];
@@ -870,7 +870,7 @@ procedure TChartsTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
   TextType: TVSTTextType; var Text: string);
 var
   Val: Int64;
-  NodeData, ParentNodeData: PChartNodeData;
+  NodeData: PChartNodeData;
 begin
   inherited;
 
@@ -989,7 +989,7 @@ procedure TChartsTree.DoMeasureItem(TargetCanvas: TCanvas;
 begin
   inherited;
 
-  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
+  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
 end;
 
 procedure TChartsTree.ExecDefaultAction;

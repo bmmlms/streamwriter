@@ -288,13 +288,11 @@ begin
   if Client = nil then
     Exit;
 
-  // TODO: nach dem schedule dialog müssen natürlich streams, die gerade ScheduleActive haben, "angefasst" werden..... behindert.
-
   if IsStart then
   begin
     if Client.Recording then
     begin
-      Client.WriteLog(_('Skipping scheduled recording because manual recording is active'), '', ltSchedule, llInfo);
+      Client.WriteLog(_('Skipping scheduled recording because recording is already active'), '', ltSchedule, llInfo);
     end else
     begin
       Client.WriteLog(_('Starting scheduled recording'), ltSchedule, llInfo);
@@ -307,29 +305,33 @@ begin
       end else
       begin
         Client.ScheduledRecording := True;
-        // TODO: Hier wieder TimeToStr() nehmen. DateTimeToStr() ist nur zum debuggen.
-        Client.WriteLog(Format(_('Scheduled recording ends at %s'), [DateTimeToStr(Schedule.GetEndTime(Schedule.GetStartTime(False)))]), ltSchedule, llInfo);
+        Client.WriteLog(Format(_('Scheduled recording ends at %s'), [TimeToStr(Schedule.GetEndTime(Schedule.GetStartTime(False)))]), ltSchedule, llInfo);
       end;
     end;
   end else
   begin
-    // TODO: tja, und hier wird es lustig.
-    //       wenn sich 2 aufnahmen überlappen (13:00-14:00 täglich und 12:00-15:00 jeden donnerstag oder so), dann muss man aufpassen.
-    //       das würde zur zeit stark schief gehen. wenn ich eine "innere" aufnahme bin und die äußere läuft, darf ich eigentlich nix machen!
     if Client.ScheduledRecording then
     begin
-      Client.WriteLog(_('Stopping scheduled recording'), ltSchedule, llInfo);
+      if Client.IsCurrentTimeInSchedule(Schedule) then
+      begin
+        // Another schedule "surrounds" the triggered schedule, so do nothing
+        Client.WriteLog(_('Not stopping scheduled recording because another schedule is active'), ltSchedule, llInfo);
+      end else
+      begin
+        Client.WriteLog(_('Stopping scheduled recording'), ltSchedule, llInfo);
+        Client.StopRecording;
+      end;
 
-      Client.StopRecording;
       if Schedule.AutoRemove then
       begin
-        // TODO: !!! neu bauen!
-        //Client.Entry.Schedules.Remove(Schedule);
+        Scheduler.SetSchedules(nil);
 
-        //FOnClientRefresh(Client);
-        ////tabClients.ClientView.RefreshClient(Client);
+        Client.Entry.Schedules.Remove(Schedule);
+        Schedule.Free;
 
-        //Schedule.Free;
+        FOnClientRefresh(Client);
+
+        RefreshScheduler;
       end;
     end;
   end;
@@ -471,7 +473,7 @@ begin
     case Msg of
       crNoFreeSpace:
         if ForLog then
-          Result := Format(_('Automatic recording of "%s" won''t be started because no space is available'), [Data])
+          Result := Format(_('Automatic recording of "%s" won''t be started because available disk space is below the set limit'), [Data])
         else
           Result := _('Automatic recording will be stopped as long as available disk space is below the set limit.');
       crNoBandwidth:
@@ -549,7 +551,7 @@ begin
         if AppGlobals.Data.BrowserList[n].ID = StreamIDs[i] then
         begin
           Client := TICEClient.Create(Self, StreamIDs[i], 128, 'Monitor' + IntToStr(StreamIDs[i]), AppGlobals.Data.BrowserList[n].URL);
-          Client.Entry.Settings.MaxRetries := 0;
+          Client.Entry.Settings.MaxRetries := 5;
           Client.Entry.Settings.RetryDelay := 30;
           Client.Entry.Settings.SaveToMemory := True;
           Client.OnDisconnected := ClientDisconnected;
@@ -629,7 +631,7 @@ begin
   for i := 0 to AppGlobals.Data.StreamBlacklist.Count - 1 do
     if AppGlobals.Data.StreamBlacklist[i] = Name then
     begin
-      Text := Format('Automatic recording of "%s" won''t be started because the stream is on the ignorelist', [ParsedTitle]);
+      Text := Format('Automatic recording of "%s" won''t be started because the stream is on the blacklist', [ParsedTitle]);
       MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
       Exit;
     end;

@@ -144,41 +144,46 @@ end;
 
 procedure TSchedulerThread.Execute;
 var
-  //ST, ET,
-  Lowest: TDateTime;
   i: Integer;
-  FoundSchedules: Boolean;
-  //MSeconds, NSeconds: Int64;
+  Lowest, LowestWakeup: TDateTime;
+  FoundSchedules, FoundLowestWakeup: Boolean;
   WakeTime: Int64;
   S: TList<TSchedulerSchedule>;
-  CS: TList<TSchedulerSchedule>;
-  Timer: THandle;
-  A: TWOHandleArray;
+  Timer, TimerWakeup: THandle;
+  WaitHandles: TWOHandleArray;
   Res, ArrLen: Cardinal;
 begin
   inherited;
 
-  S := TList<TSchedulerSchedule>.Create;
-  CS := TList<TSchedulerSchedule>.Create;
   Timer := CreateWaitableTimer(nil, True, nil);
-
   if Timer = 0 then
   begin
-    // TODO: krasser fehler...
+    Sleep(1000);
+    Exit;
   end;
 
+  TimerWakeup := CreateWaitableTimer(nil, True, nil);
+  if TimerWakeup = 0 then
+  begin
+    CloseHandle(Timer);
+    Sleep(1000);
+    Exit;
+  end;
+
+  S := TList<TSchedulerSchedule>.Create;
   try
     while True do
     begin
       // Niedrigsten nächsten Zeitpunkt suchen
       FoundSchedules := False;
       Lowest := MaxDouble;
+      FoundLowestWakeup := False;
+      LowestWakeup := MaxDouble;
       EnterCriticalSection(FSchedulesLock);
       try
         for i := FSchedules.Count - 1 downto 0 do
         begin
-          // Wenn beide Punkte in der Vergangenheit liegen, echte
-          // Zeiten neu berechnen.
+          // Wenn beide Punkte in der Vergangenheit liegen echte Zeiten neu berechnen.
 
           if (FSchedules[i].GetStartTime(False) < Now) and (FSchedules[i].GetEndTime(FSchedules[i].GetStartTime(False)) > Now) then
           begin
@@ -188,6 +193,12 @@ begin
           begin
             FSchedules[i].CalculatedStart := FSchedules[i].GetStartTime(True);
             FSchedules[i].CalculatedEnd := FSchedules[i].GetEndTime(FSchedules[i].CalculatedStart);
+          end;
+
+          if (FSchedules[i].CalculatedStart < LowestWakeup) and (FSchedules[i].CalculatedStart > Now) then
+          begin
+            LowestWakeup := FSchedules[i].CalculatedStart;
+            FoundLowestWakeup := True;
           end;
 
           if (FSchedules[i].CalculatedStart < Lowest) and (FSchedules[i].CalculatedStart > Now) then
@@ -211,10 +222,10 @@ begin
       begin
         //DoSyncLog('Keine Schedules gefunden, warte auf ReloadEvent');
 
-        A[0] := FReloadEvent;
-        A[1] := FTerminateEvent;
+        WaitHandles[0] := FReloadEvent;
+        WaitHandles[1] := FTerminateEvent;
         ArrLen := 2;
-        Res := WaitForMultipleObjects(ArrLen, @A, False, INFINITE);
+        Res := WaitForMultipleObjects(ArrLen, @WaitHandles, False, INFINITE);
         if Res <= WAIT_OBJECT_0 + ArrLen - 1 then
         begin
           if Res - WAIT_OBJECT_0 = 0 then
@@ -222,20 +233,18 @@ begin
           else if Res - WAIT_OBJECT_0 = 1 then
             Exit;
         end else if Res = WAIT_FAILED then
+        begin
+          Sleep(1000);
           Exit;
+        end;
 
         Continue;
       end;
 
       ResetEvent(FReloadEvent);
 
-      // TODO: wegen verschachtelten aufnahmen (A ist 15-16 uhr, B ist 15:30-16:30):
-      //       der thread muss diese mergen. dann würde B nicht loslaufen, wenn user A abbricht am anfang,
-      //       aber da kann man glaube ich kompromisse eingehen! prüfen ob das so gehen würde.
-
       // Alle Aktionen suchen, die zu dem niedrigsten Zeitpunkt ausgeführt werden müssen
       S.Clear;
-
       EnterCriticalSection(FSchedulesLock);
       try
         for i := 0 to FSchedules.Count - 1 do
@@ -257,25 +266,45 @@ begin
 
       //MSeconds := MilliSecondsBetween(Now, Lowest);
       //NSeconds := MSeconds * -10000;
-      // TODO: geil - man kann damit das system aufwecken. evtl kann ich dann sachen aus dem powermanager wieder entfernen?
-      //       wann wird der nochmal aufgerufen und benutzt? nur zum aufwachen, super :)
       WakeTime := GetTimerTime(Lowest);
-      if WakeTime = 0 then  // TODO: wenn ich hier einfach so exit mache, wird der thread dann neu gestartet und gefüttert? nein.
-                            // muss er vllt auch nicht, aber ne logsuagabe ins errorlog wäre cool! und zwar IMMER sichtbar, für jeden etc.
+      if WakeTime = 0 then
+      begin
+        Sleep(1000);
         Exit;
+      end;
 
-      if not SetWaitableTimer(Timer, WakeTime, 0, nil, nil, True) then
+      // Timer zum Start der Aufnahme
+      if not SetWaitableTimer(Timer, WakeTime, 0, nil, nil, False) then
+      begin
+        Sleep(1000);
         Exit;
+      end;
+
+      // Timer für Aufwachen aus Standby setzen, nur für nächstes Start-Event
+      if FoundLowestWakeup then
+      begin
+        WakeTime := GetTimerTime(IncSecond(LowestWakeup, -30));
+        if WakeTime = 0 then
+        begin
+          Sleep(1000);
+          Exit;
+        end;
+        if not SetWaitableTimer(TimerWakeup, WakeTime, 0, nil, nil, True) then
+        begin
+          Sleep(1000);
+          Exit;
+        end;
+      end;
 
       //DoSyncLog(Format('Sleeping for %ds', [Trunc(MSeconds / 1000)]));
       //DoSyncLog(Format('Sleeping until %s (%ds)', [DateTimeToStr(Lowest), SecondsBetween(Now, Lowest)]));
 
       // Jetzt solange schlafen
-      A[0] := Timer;
-      A[1] := FReloadEvent;
-      A[2] := FTerminateEvent;
+      WaitHandles[0] := Timer;
+      WaitHandles[1] := FReloadEvent;
+      WaitHandles[2] := FTerminateEvent;
       ArrLen := 3;
-      Res := WaitForMultipleObjectsEx(ArrLen, @A, False, INFINITE, True);       // TODO: res genauer auswerten!!!1
+      Res := WaitForMultipleObjectsEx(ArrLen, @WaitHandles, False, INFINITE, False);
       if Res <= WAIT_OBJECT_0 + ArrLen - 1 then
       begin
         if Res - WAIT_OBJECT_0 = 1 then
@@ -285,7 +314,10 @@ begin
         end else if Res - WAIT_OBJECT_0 = 2 then
           Exit;
       end else if Res = WAIT_FAILED then
+      begin
+        Sleep(1000);
         Exit;
+      end;
 
       // Nun Aktionen ausführen
       if WaitForSingleObject(Timer, 0) = WAIT_OBJECT_0 then
@@ -293,6 +325,12 @@ begin
         for i := 0 to S.Count - 1 do
           if not s[i].IsStart then
             DoSyncSchedule(S[i].ID, S[i].IsStart);
+
+        // Etwas Zeit geben, falls eine Aufnahme gerade stoppt und gleich wieder gestartet werden soll.
+        // Das hier sollte helfen. Solange wir nur kurz schlafen (unter einer Minute) ist das okay.
+        // Keine schöne Lösung, aber sollte klappen...
+        Sleep(2000);
+
         for i := 0 to S.Count - 1 do
           if s[i].IsStart then
             DoSyncSchedule(S[i].ID, S[i].IsStart);
@@ -300,8 +338,8 @@ begin
     end;
   finally
     S.Free;
-    CS.Free;
     CloseHandle(Timer);
+    CloseHandle(TimerWakeup);
 
     EnterCriticalSection(FSchedulesLock);
     try
@@ -393,8 +431,6 @@ begin
   Result := FThread <> nil;
 end;
 
-// TODO: schedules automatisch entfernen noch kein stück getestet!!!
-// TODO: das hier auch immer aufrufen wenn sich eine schedule automatisch entfernt hat. funzt das?
 procedure TScheduler.SetSchedules(ScheduleList: TList<TSchedule>);
 var
   i: Integer;
@@ -415,7 +451,7 @@ begin
         FThread.Reload(L);
 
         // Wait for the new data to be loaded...
-        WaitForSingleObject(FThread.FReloadDoneEvent, INFINITE);
+        WaitForSingleObject(FThread.FReloadDoneEvent, 500);
       finally
         L.Free;
       end;
@@ -442,7 +478,7 @@ begin
         FThread.Reload(L);
 
         // Wait for the new data to be loaded...
-        WaitForSingleObject(FThread.FReloadDoneEvent, INFINITE);
+        WaitForSingleObject(FThread.FReloadDoneEvent, 500);
       finally
         // Don't free the items - the thread owns them now.
         L.Free;
@@ -479,11 +515,6 @@ end;
 
 procedure TScheduler.ThreadSchedule(IsStart: Boolean; ScheduleID: Integer);
 begin
-  // TODO: hier beim zuordnen der ereignisse über FID aufpassen! wenn ich scheiße gebaut habe,
-  //       habe ich hier in der liste ein objekt, was nicht nil ist, aber was freigegeben wurde,
-  //       weil das alles von aussen gesteuert wird. also alles schön try...except!!!
-  //       AUSSERDEM kann es sein, dass hier einfach ein falscher scheduler über den index
-  //       ermittelt wird. das muss ganz stark alles sichergestellt werden!
   try
     FOnSchedule(IsStart, FSchedules[ScheduleID]);
   except
@@ -491,8 +522,15 @@ begin
 end;
 
 procedure TScheduler.ThreadTerminate(Sender: TObject);
+var
+  Restart: Boolean;
 begin
+  Restart := not FThread.Terminated;
+
   FThread := nil;
+
+  if Restart then
+    Start;
 end;
 
 end.

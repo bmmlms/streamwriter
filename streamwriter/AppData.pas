@@ -141,12 +141,15 @@ type
 
     FIntroShown: Boolean;
 
+    FMutexHandleExiting: Cardinal;
+
     function FGetDataFile: string;
 
     function FGetEQGain(Idx: Integer): Integer;
     procedure FSetEQGain(Idx: Integer; Value: Integer);
   protected
     // Save ALL the things!
+    procedure InitOnlyOne; override;
     procedure DoSave; override;
     procedure NotifyRunningInstance(Handle: Cardinal); override;
   public
@@ -304,6 +307,8 @@ type
     property LanguageIcons: TLanguageIcons read FLanguageIcons;
 
     property IntroShown: Boolean read FIntroShown write FIntroShown;
+
+    property MutexHandleExiting: Cardinal read FMutexHandleExiting;
 
     property ProjectHelpLinkMain: string read FProjectHelpLinkMain;
     property ProjectHelpLinkSettings: string read FProjectHelpLinkSettings;
@@ -473,6 +478,17 @@ begin
   FEQGain[Idx] := Value;
 end;
 
+procedure TAppData.InitOnlyOne;
+begin
+  inherited;
+
+  // This mutex is released when the application exits but did not finish
+  // every finializaion (save to datafile, registry, etc)
+  // Required to make Inno Setup more comfortable :)
+  if MutexHandle > 0 then
+    FMutexHandleExiting := CreateMutex(nil, True, PChar(AppName + 'MutexExiting'));
+end;
+
 procedure TAppData.InitPostProcessors;
 var
   i: Integer;
@@ -557,11 +573,8 @@ procedure TAppData.Load;
       Result := GetID;
   end;
 var
-  i, DefaultActionTmp, DefaultActionBrowser, DefaultFilterTmp, SilenceBuffer, OutputFormatTmp: Integer;
+  i, DefaultActionTmp, DefaultActionBrowser: Integer;
   TmpStr: string;
-  TmpCardinal: Cardinal;
-  TmpBoolean: Boolean;
-  TmpInteger: Integer;
 begin
   inherited;
 
@@ -657,7 +670,7 @@ begin
 
   // Default-Device is now available in BASS, so set it for every user to this device
   // after upgrading...
-  if FLastUsedDataVersion < 61 then       // TODO: testen.
+  if FLastUsedDataVersion < 61 then
     FSoundDevice := 0;
 
   FStorage.Read('ShortcutPlay', FShortcutPlay, 0);
@@ -1019,7 +1032,7 @@ end;
 
 procedure TAppData.DoSave;
 var
-  i, n: Integer;
+  i: Integer;
 begin
   inherited;
 

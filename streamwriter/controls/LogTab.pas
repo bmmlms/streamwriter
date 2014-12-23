@@ -117,9 +117,6 @@ type
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
       Column: TColumnIndex; var Ghosted: Boolean;
       var Index: Integer): TCustomImageList; override;
-    procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
-    function DoIncrementalSearch(Node: PVirtualNode;
-      const Text: string): Integer; override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo;
@@ -128,6 +125,7 @@ type
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
 
     procedure MessageReceived(Msg: TMessageBase);
+    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -143,6 +141,8 @@ type
   private
     FLogPanel: TLogPanel;
     FLogTree: TLogTree;
+
+    procedure UpdateButtons;
 
     procedure TextChange(Sender: TObject);
     procedure ButtonClick(Sender: TObject);
@@ -250,12 +250,14 @@ begin
   FLogTree.FPopupMenu.FItemInfo.Checked := llInfo in FLogTree.FFilterTypes;
   FLogTree.FPopupMenu.FItemWarning.Checked := llWarning in FLogTree.FFilterTypes;
   FLogTree.FPopupMenu.FItemError.Checked := llError in FLogTree.FFilterTypes;
+
+  UpdateButtons;
 end;
 
 procedure TLogTab.LogTreeChange(Sender: TBaseVirtualTree;
   Node: PVirtualNode);
 begin
-
+  UpdateButtons;
 end;
 
 constructor TLogTab.Create(AOwner: TComponent);
@@ -290,11 +292,6 @@ begin
 end;
 
 procedure TLogTab.PopupMenuClick(Sender: TObject);
-var
-  i: Integer;
-  s: string;
-  Node: PVirtualNode;
-  NodeData: PLogNodeData;
 begin
   if (Sender = FLogTree.FPopupMenu.FItemDebug) or (Sender = FLogTree.FPopupMenu.FItemInfo)
     or (Sender = FLogTree.FPopupMenu.FItemWarning) or (Sender = FLogTree.FPopupMenu.FItemError)
@@ -339,6 +336,15 @@ begin
   FLogTree.SetFilter(FLogPanel.FSearch.Text, FLogTree.FFilterTypes);
 end;
 
+procedure TLogTab.UpdateButtons;
+begin
+  FLogPanel.FButtonCopy.Enabled := FLogTree.RootNodeCount > 0;
+  FLogPanel.FButtonClear.Enabled := FLogTree.FLog.Count > 0;
+
+  FLogTree.FPopupMenu.FItemCopy.Enabled := FLogPanel.FButtonCopy.Enabled;
+  FLogTree.FPopupMenu.FItemClear.Enabled := FLogPanel.FButtonClear.Enabled;
+end;
+
 { TLogTree }
 
 procedure TLogTree.Add(Source: TLogSource; LogType: TLogType; LogLevel: TLogLevel; SourceText, Text: string; Time: TDateTime);
@@ -371,6 +377,9 @@ begin
   FLog.Add(LogEntry);
 
   Add(LogEntry);
+
+  // Just to trigger "UpdateButtons" in LogTab..
+  OnChange(nil, nil);
 end;
 
 procedure TLogTree.Add(LogEntry: TLogEntry);
@@ -403,11 +412,11 @@ begin
 
   NodeDataSize := SizeOf(PLogNodeData);
 
-  IncrementalSearch := isVisibleOnly;
+  IncrementalSearch := isNone;
 
   Indent := 0;
 
-  Header.Height := GetTextSize('Wyg', Font).cy + 5;
+  Header.Height := GetTextSize('Wyg', Font).cy + 6;
   AutoScrollDelay := 50;
   AutoScrollInterval := 400;
   Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoVisible, hoShowSortGlyphs];
@@ -500,12 +509,6 @@ begin
   end;
 end;
 
-procedure TLogTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
-begin
-  inherited;
-
-end;
-
 procedure TLogTree.DoHeaderDragged(Column: TColumnIndex;
   OldPosition: TColumnPosition);
 begin
@@ -525,22 +528,12 @@ begin
   FHeaderDragSourcePosition := Header.Columns[Column].Position
 end;
 
-function TLogTree.DoIncrementalSearch(Node: PVirtualNode;
-  const Text: string): Integer;
-var
-  NodeData: PLogNodeData;
-begin
-  NodeData := GetNodeData(Node);
-
-  Result := 0;
-end;
-
 procedure TLogTree.DoMeasureItem(TargetCanvas: TCanvas;
   Node: PVirtualNode; var NodeHeight: Integer);
 begin
   inherited;
 
-  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
+  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
 end;
 
 procedure TLogTree.FitColumns;
@@ -569,8 +562,6 @@ begin
     for i := 1 to Header.Columns.Count - 1 do
       Header.Columns[i].Position := AppGlobals.LogHeaderPosition[i];
   end;
-
-                  // TODO: alles auf hohen DPI testen---
 end;
 
 function TLogTree.MatchesFilter(LogEntry: TLogEntry): Boolean;
@@ -614,11 +605,11 @@ begin
     begin
       Add(LogMsg.Source, LogMsg.LogType, LogMsg.LogLevel, LogMsg.SourceText, LogMsg.Text, LogMsg.Time);
 
-      if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) then
+      if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) and (GetPrevious(GetPrevious(GetLast)) <> nil) then
       begin
-        R := GetDisplayRect(GetPrevious(GetLast), NoColumn, False);
-        if not (R.Bottom > ClientHeight) then
-          ScrollIntoView(GetLast, False, False);
+        R := GetDisplayRect(GetPrevious(GetPrevious(GetLast)), NoColumn, False);
+        if R.Top <= ClientHeight then
+          PostMessage(Handle, WM_VSCROLL, SB_BOTTOM, 0);
       end;
 
       Invalidate;
@@ -686,6 +677,20 @@ begin
   FColTime.Text := _('Time');
   FColSource.Text := _('Source');
   FColText.Text := _('Text');
+end;
+
+procedure TLogTree.Resize;
+var
+  R: TRect;
+begin
+  inherited;
+
+  if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) and (GetPrevious(GetPrevious(GetLast)) <> nil) then
+  begin
+    R := GetDisplayRect(GetPrevious(GetPrevious(GetLast)), NoColumn, False);
+    if R.Top <= ClientHeight then
+      PostMessage(Handle, WM_VSCROLL, SB_BOTTOM, 0);
+  end;
 end;
 
 procedure TLogTree.SetFilter(Text: string; FilterTypes: TFilterTypes);
@@ -872,7 +877,6 @@ begin
   FItemCopy.ImageIndex := 57;
   Items.Add(FItemCopy);
 
-  // TODO: Hint in Toolbar ist "Leeren", hier im PopupMenü steht "Löschen". Fail!
   FItemClear := CreateMenuItem;
   FItemClear.Caption := 'C&lear';
   FItemClear.ImageIndex := 13;

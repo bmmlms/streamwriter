@@ -58,8 +58,6 @@ type
 
     FPingPending: Boolean;
 
-    FExceptionMessage: string;
-
     FOnHandshakeReceived: TSocketEvent;
     FOnLogInReceived: TSocketEvent;
     FOnLogOutReceived: TSocketEvent;
@@ -377,13 +375,9 @@ end;
 procedure THomeThread.DoSearchChartsReceived(CommandHeader: TCommandHeader;
   Command: TCommandSearchChartsResponse);
 var
-  i, n: Integer;
+  i: Integer;
   Count: Cardinal;
   Stream: TExtendedStream;
-
-  g: int64;
-  h: cardinal;
-  ll: cardinal;
 begin
   Stream := TExtendedStream(Command.Stream);
 

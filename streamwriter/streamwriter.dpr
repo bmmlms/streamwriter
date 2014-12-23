@@ -26,6 +26,7 @@ program streamwriter;
 uses
   MM in '..\..\common\MM.pas',
   Windows,
+  Classes,
   Messages,
   SysUtils,
   Forms,
@@ -172,7 +173,13 @@ var
 
   // Initialize the AppGlobals object without loading any settings.
   // If we need to show the profile selection window, this would make no sense.
-  CreateAppData;
+
+  try
+    CreateAppData;
+  except
+    on EAlreadyRunning do
+      Exit;
+  end;
   MsgBus := TSWMessageBus.Create;
 
   Application.Title := AppGlobals.AppName;

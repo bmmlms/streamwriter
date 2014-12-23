@@ -292,13 +292,6 @@ begin
 end;
 
 constructor TPostProcessManager.Create;
-var
-  i: Integer;
-  App, Params: string;
-  IP: TInternalPostProcess;
-  EP: TExternalPostProcess;
-  Active, OnlyIfCut: Boolean;
-  Order, GroupID: Integer;
 begin
   FProcessingList := TProcessingList.Create;
 end;

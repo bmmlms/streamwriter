@@ -3331,7 +3331,7 @@ begin
   Header.Options := Header.Options + [hoAutoResize];
   Header.Options := Header.Options - [hoDrag];
   Header.AutoSizeIndex := 0;
-  Header.Height := GetTextSize('Wyg', Font).cy + 5;
+  Header.Height := GetTextSize('Wyg', Font).cy + 6;
   DragMode := dmManual;
   ShowHint := True;
   HintMode := hmTooltip;
@@ -3421,7 +3421,7 @@ procedure TBlacklistTree.DoMeasureItem(TargetCanvas: TCanvas;
 begin
   inherited;
 
-  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
+  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
 end;
 
 procedure TBlacklistTree.RemoveSelected;

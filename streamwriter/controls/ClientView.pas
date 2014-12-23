@@ -198,7 +198,7 @@ begin
 
   FDragTreshold := 6;
 
-  Header.Height := GetTextSize('Wyg', Font).cy + 5;
+  Header.Height := GetTextSize('Wyg', Font).cy + 6;
 
   NodeDataSize := SizeOf(TClientNodeData);
   IncrementalSearch := isVisibleOnly;
@@ -461,7 +461,7 @@ procedure TMClientView.DoMeasureItem(TargetCanvas: TCanvas;
 begin
   inherited;
 
-  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
+  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
 end;
 
 procedure TMClientView.DoNewText(Node: PVirtualNode; Column: TColumnIndex;

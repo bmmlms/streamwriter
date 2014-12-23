@@ -112,7 +112,7 @@ type
     destructor Destroy; override;
 
     procedure SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean;
-      RecordTitle, ParsedRecordTitle: string; SongsSaved: Cardinal);
+      RecordTitle, ParsedRecordTitle: string; SongsSaved: Cardinal; StreamCustomName: string);
 
     procedure StartPlay;
     procedure PausePlay;
@@ -172,7 +172,7 @@ begin
 end;
 
 procedure TICEThread.SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean;
-  RecordTitle, ParsedRecordTitle: string; SongsSaved: Cardinal);
+  RecordTitle, ParsedRecordTitle: string; SongsSaved: Cardinal; StreamCustomName: string);
 begin
   // Das hier wird nur gesynct aus dem Mainthread heraus aufgerufen.
   FTypedStream.Settings.Assign(Settings);
@@ -181,6 +181,7 @@ begin
   FTypedStream.StopAfterSong := StopAfterSong;
   FTypedStream.Killed := Killed;
   FTypedStream.SongsSaved := SongsSaved;
+  FTypedStream.StreamCustomName := StreamCustomName;
 end;
 
 procedure TICEThread.SetVolume(Vol: Integer);
@@ -423,9 +424,11 @@ var
   StartTime: Cardinal;
   Delay: Cardinal;
 begin
-  inherited;
-
   WriteLog(_('Connection closed'), slInfo);
+
+  // Inherited kommt nach der 'Connection closed' Logausgabe, weil dann die Postprocessors schön an einem Stück im Log erscheinen.
+  // Wäre inherited ganz oben, würde vor dem 'Connection closed' im Log noch 'Postprocessor asdf started' stehen, was nervt.
+  inherited;
 
   FPlaying := False;
   FPlayer.Stop;
@@ -459,9 +462,6 @@ begin
 end;
 
 procedure TICEThread.DoException(E: Exception);
-var
-  StartTime: Cardinal;
-  Delay: Cardinal;
 begin
   inherited;
 

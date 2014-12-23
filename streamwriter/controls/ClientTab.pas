@@ -374,6 +374,20 @@ begin
 end;
 
 procedure TClientTab.ActionStartExecute(Sender: TObject);
+  function StartClient(Client: TICEClient; ErrorShown: Boolean): Boolean;
+  var
+    Res: TMayConnectResults;
+  begin
+    Result := ErrorShown;
+    Res := Client.StartRecording(True);
+    if Res <> crOk then
+    begin
+      Client.WriteLog(FClientManager.GetErrorText(Res, '', False, False, True), '', ltGeneral, llWarning);
+      if not ErrorShown then
+        OnShowErrorMessage(Client, FClientManager.GetErrorText(Res, '', False, False, False));
+      Result := True;
+    end;
+  end;
 var
   ErrorShown: Boolean;
   Clients: TClientArray;
@@ -381,24 +395,12 @@ var
   Node: PVirtualNode;
   Nodes: TNodeArray;
   NodeData: PClientNodeData;
-  Res: TMayConnectResults;
 begin
   ErrorShown := False;
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
   for Client in Clients do
-  begin
     if not Client.AutoRemove then
-    begin
-      Res := Client.StartRecording(True);
-      if Res <> crOk then
-      begin
-        Client.WriteLog(FClientManager.GetErrorText(Res, '', False, False, True), '', ltGeneral, llWarning);
-        if not ErrorShown then
-          OnShowErrorMessage(Client, FClientManager.GetErrorText(Res, '', False, False, False));
-        ErrorShown := True;
-      end;
-    end;
-  end;
+      ErrorShown := StartClient(Client, ErrorShown);
 
   ErrorShown := False;
   Nodes := FClientView.GetNodes(ntCategory, True);
@@ -409,16 +411,7 @@ begin
     begin
       Clients := FClientView.NodesToClients(FClientView.GetChildNodes(Node));
       for Client in Clients do
-      begin
-        Res := Client.StartRecording(True);
-        if Res <> crOk then
-        begin
-          Client.WriteLog(FClientManager.GetErrorText(Res, '', False, False, True), '', ltGeneral, llWarning);
-          if not ErrorShown then
-            OnShowErrorMessage(Client, FClientManager.GetErrorText(Res, '', False, False, False));
-          ErrorShown := True;
-        end;
-      end;
+        ErrorShown := StartClient(Client, ErrorShown);
     end;
   end;
 end;

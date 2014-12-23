@@ -86,7 +86,7 @@ type
     FFilename: string;
     FScheduledRecording: Boolean;
     FIsMonitoring: Boolean;
-                               // TODO: texte übersetzen
+
     FAutoRemove: Boolean;
     FRecordTitle: string;
     FParsedRecordTitle: string;
@@ -171,6 +171,7 @@ type
     procedure PostProcessingFinished(Filename, Title, SongArtist, SongTitle: string;
       Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
       ServerTitleHash, ServerArtistHash: Cardinal);
+    function IsCurrentTimeInSchedule(ExcludeSchedule: TSchedule = nil): Boolean;
 
     procedure Stop;
     procedure Kill;
@@ -371,6 +372,8 @@ begin
   Result := crOk;
 
   if not PlayOnly then
+    // TODO: BÄM!!! MayConnect() wird auch von auto-recordings benutzt, es wird aber immer nur AppGlobals.Dir hier abgefragt
+    //       wegen speicher. ändern, hier muss auch .AutoDir ausgewertet werden. evtl auch an anderen stellen? wühlen.
     if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
     begin
       Result := crNoFreeSpace;
@@ -414,8 +417,6 @@ begin
 end;
 
 procedure TICEClient.StopRecording;
-var
-  i: Integer;
 begin
   FStopAfterSong := False;
 
@@ -425,9 +426,7 @@ begin
     FICEThread.StopRecording;
 
     if (not FICEThread.Recording) and (not FICEThread.Playing) then
-    begin
       Disconnect;
-    end;
   end;
 end;
 
@@ -515,6 +514,17 @@ end;
 function TICEClient.FGetActive: Boolean;
 begin
   Result := ((FState <> csStopped) and (FState <> csIOError)) or (AppGlobals.PostProcessManager.WorkingForClient(Self));
+end;
+
+function TICEClient.IsCurrentTimeInSchedule(ExcludeSchedule: TSchedule = nil): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 0 to Entry.Schedules.Count - 1 do
+    if Entry.Schedules[i] <> ExcludeSchedule then
+      if (Entry.Schedules[i].GetStartTime(False) < Now) and (Entry.Schedules[i].GetEndTime(Entry.Schedules[i].GetStartTime(False)) > Now) then
+        Exit(True);
 end;
 
 function TICEClient.FGetRecording: Boolean;
@@ -616,7 +626,6 @@ end;
 
 procedure TICEClient.ThreadLog(Sender: TSocketThread);
 var
-  T: TLogType;
   Level: TLogLevel;
 begin
   case FICEThread.LogLevel of
@@ -627,7 +636,7 @@ begin
     else raise Exception.Create('Unknown FICEThread.LogLevel');
   end;
 
-  WriteLog(FICEThread.LogMsg, FICEThread.LogData, FICEThread.ExtLogType, Level);
+  WriteLog(FICEThread.LogMsg, FICEThread.LogData, ltGeneral, Level);
 end;
 
 procedure TICEClient.ThreadMilliSecondsReceived(Sender: TSocketThread);
@@ -707,8 +716,7 @@ end;
 
 procedure TICEClient.ThreadNeedSettings(Sender: TSocketThread);
 begin
-  // Ignore list etc werden immer kopiert, das kann zeit kosten.
-  FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FStopAfterSong, FKilled, FRecordTitle, FParsedRecordTitle, FEntry.SongsSaved);
+  FICEThread.SetSettings(FEntry.Settings, FAutoRemove, FStopAfterSong, FKilled, FRecordTitle, FParsedRecordTitle, FEntry.SongsSaved, FEntry.CustomName);
 end;
 
 procedure TICEClient.ThreadPlaybackStarted(Sender: TSocketThread);
@@ -1114,8 +1122,6 @@ end;
 
 procedure TLog.Notify(const Item: TLogEntry;
   Action: TCollectionNotification);
-var
-  i: Integer;
 begin
   inherited;
 

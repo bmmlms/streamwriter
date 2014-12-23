@@ -30,7 +30,6 @@ uses
 type
   TMStationCombo = class(TComboBoxEx)
   private
-    FList: TRecentList;
     function ItemsCompare(List: TListControlItems; Item1, Item2: TListControlItem): Integer;
   public
     constructor Create(AOwner: TComponent); override;

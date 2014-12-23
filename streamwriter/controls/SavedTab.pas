@@ -1598,7 +1598,7 @@ begin
 
   FTab := TSavedTab(AOwner);
 
-  Header.Height := GetTextSize('Wyg', Font).cy + 5;
+  Header.Height := GetTextSize('Wyg', Font).cy + 6;
 
   NodeDataSize := SizeOf(TSavedNodeData);
   IncrementalSearch := isVisibleOnly;
@@ -2581,7 +2581,7 @@ procedure TSavedTree.DoMeasureItem(TargetCanvas: TCanvas;
 begin
   inherited;
 
-  NodeHeight := GetTextSize('Wyg', Font).cy + 5;
+  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
 end;
 
 procedure TSavedTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex;

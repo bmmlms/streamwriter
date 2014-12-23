@@ -268,6 +268,7 @@ type
     procedure SysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
     procedure Hotkey(var Msg: TWMHotKey); message WM_HOTKEY;
     procedure UpdateFound(var Msg: TMessage); message WM_UPDATEFOUND;
+    procedure SetupExitMessage(var Msg: TMessage); message 5432;
 
     function CanExitApp: Boolean;
     procedure ExitApp(Shutdown: Boolean; ImportFilename: string = '');
@@ -379,6 +380,8 @@ begin
         Exit;
 
   FExiting := True;
+  Hide;
+  CloseHandle(AppGlobals.MutexHandleExiting);
 
   if ImportFilename = '' then
     AppGlobals.WindowHandle := 0;
@@ -439,7 +442,6 @@ begin
   TfrmNotification.Stop;
 
   FEqualizer.Hide;
-  Hide;
 
   Players.StopAll;
 
@@ -658,11 +660,9 @@ end;
 
 procedure TfrmStreamWriterMain.actTimersExecute(Sender: TObject);
 var
-  i, n: Integer;
+  i: Integer;
   Clients: TClientArray;
   T: TfrmTimers;
-  Lst: TList<TSchedule>;
-  ScheduleValid: Boolean;
 begin
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
 
@@ -681,20 +681,8 @@ begin
       for i := 0 to T.Entry.Schedules.Count - 1 do
         Clients[0].Entry.Schedules.Add(T.Entry.Schedules[i].Copy);
 
-      ScheduleValid := False;
       if Clients[0].ScheduledRecording and Clients[0].Recording then
-      begin
-        for i := 0 to Clients[0].Entry.Schedules.Count - 1 do
-        begin
-          if (Clients[0].Entry.Schedules[i].GetStartTime(False) < Now) and (Clients[0].Entry.Schedules[i].GetEndTime(Clients[0].Entry.Schedules[i].GetStartTime(False)) > Now) then
-          begin
-            ScheduleValid := True;
-            Break;
-          end;
-        end;
-        Clients[0].ScheduledRecording := ScheduleValid; // TODO: Alle Konstellationen testen! Scheduled darf nie gehen, wenn manuell aktiv war. und schedule muss bleiben,
-                                                        //       wenn es da war und weiterhin valid ist (neue zeiten sich in altem schedule befinden oder so)
-      end;
+        Clients[0].ScheduledRecording := Clients[0].IsCurrentTimeInSchedule;
 
       FClientManager.RefreshScheduler;
     end;
@@ -1670,6 +1658,12 @@ begin
   PrepareSave;
 end;
 
+procedure TfrmStreamWriterMain.SetupExitMessage(var Msg: TMessage);
+begin
+  if (Msg.WParam = 6345) and (Msg.LParam = 555) then
+    ExitApp(False);
+end;
+
 procedure TfrmStreamWriterMain.ShowCommunityLogin;
 begin
   if FCommunityLogin <> nil then
@@ -1785,16 +1779,16 @@ begin
                        mtWarning, [mbOK], mbOK, 7);
   end;
 
-  if (AppGlobals.LastUsedDataVersion > 0) and (AppGlobals.LastUsedDataVersion < 60) then
+  if (AppGlobals.LastUsedDataVersion > 0) and (AppGlobals.LastUsedDataVersion < 60) and (not FExiting) then
     MsgBox(Handle, _('Since handling of settings for automatically saved songs changed, these settings were reset to default values. Please see "Settings"->"Settings for automatic recordings..." in the menu to adjust these settings.'), _('Info'), MB_ICONINFORMATION);
 
-  if not DirectoryExists(AppGlobals.Dir) then
+  if (not DirectoryExists(AppGlobals.Dir)) and (not FExiting) then
   begin
     MsgBox(Handle, _('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
     ShowSettings(stApp, True);
   end;
 
-  if not DirectoryExists(AppGlobals.DirAuto) then
+  if (not DirectoryExists(AppGlobals.DirAuto)) and (not FExiting) then
   begin
     MsgBox(Handle, _('The folder for automatically saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
     ShowSettings(stAuto, True);
@@ -2296,7 +2290,6 @@ procedure TfrmStreamWriterMain.tmrSpeedTimer(Sender: TObject);
 var
   RecordingActive: Boolean;
   PlayingActive: Boolean;
-  ScheduleActive: Boolean;
   i: Integer;
   Clients: TNodeDataArray;
   Client: PClientNodeData;
@@ -2328,24 +2321,16 @@ begin
   UpdateStatus;
 
   tabClients.TimerTick;
-                          // TODO: neuen codenamen suchen :)
+  // TODO: neuen codenamen suchen :)
+  // TODO: texte übersetzen
   RecordingActive := False;
   PlayingActive := False;
-  ScheduleActive := False;
   for i := 0 to FClientManager.Count - 1 do
   begin
     if FClientManager[i].Recording then
-    begin
       RecordingActive := True;
-    end;
     if FClientManager[i].Playing then
-    begin
       PlayingActive := True;
-    end;
-    if FClientManager[i].Entry.Schedules.Count > 0 then
-    begin
-      ScheduleActive := True;
-    end;
   end;
 
   OnlyAuto := True;
@@ -2369,7 +2354,7 @@ begin
     end;
   end;
 
-  Power.Critical := (PlayingActive or RecordingActive or ScheduleActive) or ((AppGlobals.Data.SaveList.Count > 0) and (AppGlobals.AutoTuneIn));
+  Power.Critical := (PlayingActive or RecordingActive) or ((AppGlobals.Data.SaveList.Count > 0) and (AppGlobals.AutoTuneIn));
 end;
 
 procedure TfrmStreamWriterMain.ToggleWindow(AlwaysShow: Boolean);
@@ -2410,7 +2395,7 @@ var
   OneNormalRecordingWithTitle, AllNormalStopsAfterSong: Boolean;
   B, OnlyAutomatedSelected, OnlyAutomatedCatsSelected, OnlyAutomaticRecording: Boolean;
   URLFound, OneRecording, OneNotRecording, OnePlaying, OnePaused: Boolean;
-  OneHasTitle, ClientSchedulesActive: Boolean;
+  OneHasTitle: Boolean;
   Clients, AllClients: TClientArray;
   Client: TICEClient;
   CatNodes: TNodeArray;
@@ -2473,15 +2458,6 @@ begin
     if Client.Paused and Client.Playing then
       OnePaused := True;
   end;
-
-  ClientSchedulesActive := False;
-  if Length(Clients) = 1 then
-    for i := 0 to Clients[0].Entry.Schedules.Count - 1 do
-      if {(Clients[0].Entry.Schedules[i].ScheduleStarted > 0) and} (Clients[0].ScheduledRecording) then
-      begin
-        ClientSchedulesActive := True;
-        Break;
-      end;
 
   for i := 0 to Length(CatNodes) - 1 do
     if not PClientNodeData(tabClients.ClientView.GetNodeData(CatNodes[i])).Category.IsAuto then

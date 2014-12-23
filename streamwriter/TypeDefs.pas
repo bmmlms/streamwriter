@@ -30,12 +30,12 @@ type
   TIntArray = array of Integer;
   TCardinalArray = array of Cardinal;
 
-  TLogEvent = procedure(Text, Data: string) of object;
-  TStringEvent = procedure(Sender: TObject; Data: string) of object;
-
   TLogType = (ltGeneral, ltSong, ltSaved, ltPostProcess, ltSchedule);
   TLogSource = (lsGeneral, lsAutomatic, lsStream, lsHome);
   TLogLevel = (llError, llWarning, llInfo, llDebug);
+
+  TLogEvent = procedure(Text, Data: string) of object;
+  TStringEvent = procedure(Sender: TObject; Data: string) of object;
 
   // Defines all possible types of lists
   TListType = (ltSave, ltIgnore, ltAutoDetermine);
