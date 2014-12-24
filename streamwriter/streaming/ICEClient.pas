@@ -162,7 +162,7 @@ type
     function StartPlay(CheckConditions: Boolean): TMayConnectResults;
     procedure PausePlay;
     procedure StopPlay;
-    class function MayConnect(PlayOnly: Boolean; UsedBandwidth: Integer): TMayConnectResults;
+    class function MayConnect(PlayOnly: Boolean; UsedBandwidth: Integer; IsAuto: Boolean): TMayConnectResults;
     function StartRecording(CheckConditions: Boolean): TMayConnectResults;
     procedure StartMonitoring;
     procedure StopRecording;
@@ -291,7 +291,7 @@ begin
 
   if CheckConditions then
   begin
-    Result := MayConnect(True, TClientManager(FManager).GetUsedBandwidth(FEntry.Bitrate, FSpeed, Self));
+    Result := MayConnect(True, TClientManager(FManager).GetUsedBandwidth(FEntry.Bitrate, FSpeed, Self), False);
 
     if Result <> crOk then
       Exit;
@@ -367,18 +367,25 @@ begin
   end;
 end;
 
-class function TICEClient.MayConnect(PlayOnly: Boolean; UsedBandwidth: Integer): TMayConnectResults;
+class function TICEClient.MayConnect(PlayOnly: Boolean; UsedBandwidth: Integer; IsAuto: Boolean): TMayConnectResults;
+var
+  Dir: string;
 begin
   Result := crOk;
 
   if not PlayOnly then
-    // TODO: BÄM!!! MayConnect() wird auch von auto-recordings benutzt, es wird aber immer nur AppGlobals.Dir hier abgefragt
-    //       wegen speicher. ändern, hier muss auch .AutoDir ausgewertet werden. evtl auch an anderen stellen? wühlen.
+  begin
+    if IsAuto then
+      Dir := AppGlobals.DirAuto
+    else
+      Dir := AppGlobals.Dir;
+
+    if (Dir = '') or (not DirectoryExists(Dir)) then
+      Exit(crDirDoesNotExist);
+
     if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
-    begin
-      Result := crNoFreeSpace;
-      Exit;
-    end;
+      Exit(crNoFreeSpace);
+  end;
 
   if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
     if Cardinal(UsedBandwidth) > AppGlobals.MaxSpeed then
@@ -391,21 +398,7 @@ begin
 
   if CheckConditions then
   begin
-    Result := MayConnect(False, TClientManager(FManager).GetUsedBandwidth(FEntry.Bitrate, FSpeed, Self));
-
-    if Result = crOk then
-    begin
-      if FRecordTitle = '' then
-      begin
-        if ((AppGlobals.Dir = '') or (not DirectoryExists(AppGlobals.Dir))) then
-          Result := crDirDoesNotExist;
-      end else
-      begin
-        if ((AppGlobals.DirAuto = '') or (not DirectoryExists(AppGlobals.DirAuto))) then
-          Result := crDirDoesNotExist;
-      end;
-    end;
-
+    Result := MayConnect(False, TClientManager(FManager).GetUsedBandwidth(FEntry.Bitrate, FSpeed, Self), FAutoRemove);
     if Result <> crOk then
       Exit;
   end;

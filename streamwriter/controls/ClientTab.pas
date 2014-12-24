@@ -184,6 +184,7 @@ type
 
     function StartStreaming(Streams: TStartStreamingInfoArray; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean; overload;
     function StartStreaming(Stream: TStartStreamingInfo; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean; overload;
+    function StopStreaming(Info: TStartStreamingInfo; Action: TStreamOpenActions): Boolean; overload;
     procedure TimerTick;
     procedure UpdateStreams;
     procedure BuildTree;
@@ -1561,6 +1562,29 @@ begin
   SetLength(Arr, 1);
   Arr[0] := Stream;
   Result := StartStreaming(Arr, Action, HitNode, Mode);
+end;
+
+function TClientTab.StopStreaming(Info: TStartStreamingInfo; Action: TStreamOpenActions): Boolean;
+var
+  i: Integer;
+  Client: TICEClient;
+begin
+  Result := False;
+
+  if Info.URL <> '' then
+  begin
+    Client := FClientManager.GetClient(Info.ID, '', Info.URL, nil);
+    if (Client <> nil) and (not Client.AutoRemove) then
+    begin
+      case Action of
+        oaStart:
+          Client.StopRecording;
+        oaPlay:
+          Client.StopPlay;
+      end;
+      Result := True;
+    end;
+  end;
 end;
 
 procedure TClientTab.StreamBrowserAction(Sender: TObject; Action: TStreamOpenActions;

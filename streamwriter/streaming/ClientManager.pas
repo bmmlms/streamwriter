@@ -602,17 +602,25 @@ begin
   // Ab hier wird protokolliert
   MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llDebug, _('Automatic recording'), Format('Title "%s" detected on "%s"', [ParsedTitle, Name])));
 
-  if (AppGlobals.DirAuto = '') or (not DirectoryExists(IncludeTrailingBackslash(AppGlobals.DirAuto))) then
+  // TODO: das hier testen!
+  Res := TICEClient.MayConnect(False, GetUsedBandwidth(Kbps, 0), True);
+  if Res <> crOk then
   begin
-    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), GetErrorText(crDirDoesNotExist, ParsedTitle, True, False, True)));
-    if not FDirDoesNotExistErrorShown then
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), GetErrorText(Res, ParsedTitle, True, False, True)));
+    if (Res = crDirDoesNotExist) and (not FDirDoesNotExistErrorShown) then
     begin
-      OnShowErrorMessage(Self, GetErrorText(crDirDoesNotExist, ParsedTitle, True, False, False));
+      OnShowErrorMessage(Self, GetErrorText(Res, ParsedTitle, True, False, False));
       FDirDoesNotExistErrorShown := True;
     end;
+    if (Res = crNoFreeSpace) and (not FNoFreeSpaceErrorShown) then
+    begin
+      OnShowErrorMessage(Self, GetErrorText(Res, ParsedTitle, True, False, False));
+      FNoFreeSpaceErrorShown := True;
+    end;
     Exit;
-  end else
-    FDirDoesNotExistErrorShown := False;
+  end;
+  FDirDoesNotExistErrorShown := False;
+  FNoFreeSpaceErrorShown := False;
 
   if Kbps < AutoTuneInMinKbps then
   begin
@@ -646,20 +654,6 @@ begin
         Exit;
       end;
     end;
-
-  Res := TICEClient.MayConnect(False, GetUsedBandwidth(Kbps, 0));
-  if Res <> crOk then
-  begin
-    MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), GetErrorText(Res, ParsedTitle, True, False, True)));
-    if Res = crNoFreeSpace then
-      if not FNoFreeSpaceErrorShown then
-      begin
-        OnShowErrorMessage(Self, GetErrorText(Res, ParsedTitle, True, False, False));
-        FNoFreeSpaceErrorShown := True;
-      end;
-    Exit;
-  end;
-  FNoFreeSpaceErrorShown := False;
 
   MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llInfo, _('Automatic recording'), Format('Starting automatic recording of "%s"', [ParsedTitle])));
 
