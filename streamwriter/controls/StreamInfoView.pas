@@ -129,7 +129,7 @@ var
   i: Integer;
   SongsSaved: Cardinal;
   Received, SecondsReceived: UInt64;
-  Title, Info, Genres, BitRates, NextTitle: string;
+  Title, Info, Genres, Bitrates, NextTitle: string;
   Entry: TStreamEntry;
   EntriesNew: TStreamList;
 begin
@@ -142,7 +142,7 @@ begin
 
     Title := '';
     Genres := '';
-    BitRates := '';
+    Bitrates := '';
     SongsSaved := 0;
     Received := 0;
     SecondsReceived := 0;
@@ -164,11 +164,13 @@ begin
           Genres := Genres + ' / ';
         Genres := Genres + Entry.Genre;
       end;
-      if Entry.BitRate > 0 then
+      if Entry.Bitrate > 0 then
       begin
-        if BitRates <> '' then
-          BitRates := BitRates + ' / ';
-        BitRates := BitRates + IntToStr(Entry.BitRate);
+        if Bitrates <> '' then
+          Bitrates := Bitrates + ' / ';
+        Bitrates := Bitrates + IntToStr(Entry.Bitrate) + 'kbps';
+        if Entry.VBR then
+          Bitrates := Bitrates + ' VBR';
       end;
       SongsSaved := SongsSaved + Entry.SongsSaved;
       Received := Received + Entry.BytesReceived;
@@ -191,8 +193,8 @@ begin
         Info := Info + Genres + #13#10;
       if Entries[0].AudioType <> atNone then
         Info := Info + FormatToDesc(Entries[0].AudioType) + #13#10;
-      if BitRates <> '' then
-        Info := Info + Bitrates + 'kbps' + #13#10;
+      if Bitrates <> '' then
+        Info := Info + Bitrates + #13#10;
     end;
     Info := Info + Format(_('%d songs saved'), [SongsSaved]) + #13#10;
     Info := Info + Format(_('%s received'), [MakeSize(Received)]);

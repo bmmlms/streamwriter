@@ -149,8 +149,8 @@ type
 
   TFileConvertor = class
   private
-    FCBRBitRate: Integer;
-    FBitRateType: TBitRates;
+    FCBRBitrate: Integer;
+    FBitrateType: TBitrates;
     FVBRQuality: TVBRQualities;
     FLastProgress: Integer;
     FOnProgress: TFileConvertorProgressEvent;
@@ -167,8 +167,8 @@ type
     function Convert(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
     function Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil; F: Int64 = -1; T: Int64 = -1): Boolean;
 
-    property CBRBitRate: Integer read FCBRBitRate write FCBRBitRate;
-    property BitRateType: TBitRates read FBitRateType write FBitRateType;
+    property CBRBitrate: Integer read FCBRBitrate write FCBRBitrate;
+    property BitrateType: TBitrates read FBitrateType write FBitrateType;
     property VBRQuality: TVBRQualities read FVBRQuality write FVBRQuality;
     property OnProgress: TFileConvertorProgressEvent read FOnProgress write FOnProgress;
   end;
@@ -352,10 +352,10 @@ begin
 
   ToFileTemp := RemoveFileExt(ToFile) + '_convert.aac';
 
-  case FBitRateType of
+  case FBitrateType of
     brCBR:
       begin
-        Opts := '-b ' + IntToStr(FCBRBitRate);
+        Opts := '-b ' + IntToStr(FCBRBitrate);
       end;
     brVBR:
       begin
@@ -422,10 +422,10 @@ begin
 
   ToFileTemp := RemoveFileExt(ToFile) + '_convert.mp3';
 
-  case FBitRateType of
+  case FBitrateType of
     brCBR:
       begin
-        Opts := '-b ' + IntToStr(FCBRBitRate);
+        Opts := '-b ' + IntToStr(FCBRBitrate);
       end;
     brVBR:
       begin
@@ -468,10 +468,10 @@ begin
 
   ToFileTemp := RemoveFileExt(ToFile) + '_convert.ogg';
 
-  case FBitRateType of
+  case FBitrateType of
     brCBR:
       begin
-        Opts := '-m ' + IntToStr(FCBRBitRate) + ' -M ' + IntToStr(FCBRBitRate);
+        Opts := '-m ' + IntToStr(FCBRBitrate) + ' -M ' + IntToStr(FCBRBitrate);
       end;
     brVBR:
       begin

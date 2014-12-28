@@ -190,8 +190,6 @@ type
     chkSubmitStats: TCheckBox;
     chkShowSplashScreen: TCheckBox;
     chkDisplayPlayedSong: TCheckBox;
-    txtLogFile: TLabeledEdit;
-    btnBrowseLogFile: TPngSpeedButton;
     dlgSave: TSaveDialog;
     chkMonitorMode: TCheckBox;
     Label20: TLabel;
@@ -207,6 +205,8 @@ type
     txtDir: TLabeledEdit;
     btnBrowse: TPngSpeedButton;
     Bevel1: TBevel;
+    btnBrowseLogFile: TPngSpeedButton;
+    txtLogFile: TLabeledEdit;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -348,6 +348,9 @@ type
     destructor Destroy; override;
     property StreamSettings: TStreamSettingsArray read FStreamSettings;
   end;
+
+const
+  WARNING_STREAMRECORDING = 'When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.';
 
 implementation
 
@@ -754,8 +757,8 @@ begin
 
         if FIgnoreFieldList.IndexOf(txtSilenceBufferSeconds) = -1 then
         begin
-          FStreamSettings[i].SilenceBufferSecondsStart := StrToIntDef(txtSilenceBufferSeconds.Text, 5);
-          FStreamSettings[i].SilenceBufferSecondsEnd := StrToIntDef(txtSilenceBufferSeconds.Text, 5);
+          FStreamSettings[i].SilenceBufferSecondsStart := StrToIntDef(txtSilenceBufferSeconds.Text, 10);
+          FStreamSettings[i].SilenceBufferSecondsEnd := StrToIntDef(txtSilenceBufferSeconds.Text, 10);
         end;
 
         if Length(FStreamSettings) > 0 then
@@ -2929,8 +2932,8 @@ begin
   begin
     RemoveGray(chkOnlySaveFull);
 
-    if (Length(FStreamSettings) > 0) and (not FOptionChanging) then
-      TfrmMsgDlg.ShowMsg(Self, _('When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.'),
+    if (FSettingsType = stStream) and (Length(FStreamSettings) > 0) and (not FOptionChanging) then
+      TfrmMsgDlg.ShowMsg(Self, _(WARNING_STREAMRECORDING),
                          mtInformation, [mbOK], mbOK, 5);
   end;
 end;
@@ -2979,8 +2982,8 @@ begin
     chkDeleteStreams.Enabled := (not chkSeparateTracks.Checked) or (chkSaveStreamsToDisk.Checked);
     chkDeleteStreams.Checked := chkDeleteStreams.Enabled and FStreamSettings[0].DeleteStreams;
 
-    if Length(FStreamSettings) > 0 then
-      TfrmMsgDlg.ShowMsg(Self, _('When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.'),
+    if (FSettingsType = stStream) and (Length(FStreamSettings) > 0) then
+      TfrmMsgDlg.ShowMsg(Self, _(WARNING_STREAMRECORDING),
                          mtInformation, [mbOK], mbOK, 3);
   end;
 end;

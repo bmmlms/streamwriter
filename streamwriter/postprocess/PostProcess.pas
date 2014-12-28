@@ -50,7 +50,7 @@ type
     WasCut: Boolean;
     FullTitle: Boolean;
     StreamTitle: string;
-    BitRate: Cardinal;
+    Bitrate: Cardinal;
     VBR: Boolean;
     EncoderSettings: TObject;
     ServerTitleHash: Cardinal;
@@ -226,7 +226,7 @@ begin
   FData.WasCut := Data.WasCut;
   FData.FullTitle := Data.FullTitle;
   FData.StreamTitle := Data.StreamTitle;
-  FData.BitRate := Data.BitRate;
+  FData.Bitrate := Data.Bitrate;
   FData.EncoderSettings := TEncoderSettings(Data.EncoderSettings);
   FData.VBR := Data.VBR;
   FData.ServerTitleHash := Data.ServerTitleHash;

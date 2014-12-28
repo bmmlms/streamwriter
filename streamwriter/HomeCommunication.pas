@@ -129,7 +129,6 @@ type
     FOnHandshakeReceived: TBooleanEvent;
     FOnLogInReceived: TBooleanEvent;
     FOnLogOutReceived: TNotifyEvent;
-    FOnStreamsReceived: TStreamsReceivedEvent;
     FOnServerDataReceived: TNotifyEvent;
     FOnNetworkTitleChangedReceived: TTitleChangedEvent;
     FOnServerInfoReceived: TServerInfoEvent;
@@ -201,7 +200,6 @@ type
     property OnHandshakeReceived: TBooleanEvent read FOnHandshakeReceived write FOnHandshakeReceived;
     property OnLogInReceived: TBooleanEvent read FOnLogInReceived write FOnLogInReceived;
     property OnLogOutReceived: TNotifyEvent read FOnLogOutReceived write FOnLogOutReceived;
-    property OnStreamsReceived: TStreamsReceivedEvent read FOnStreamsReceived write FOnStreamsReceived;
     property OnServerDataReceived: TNotifyEvent read FOnServerDataReceived write FOnServerDataReceived;
     property OnNetworkTitleChangedReceived: TTitleChangedEvent read FOnNetworkTitleChangedReceived write FOnNetworkTitleChangedReceived;
     property OnServerInfoReceived: TServerInfoEvent read FOnServerInfoReceived write FOnServerInfoReceived;
@@ -702,11 +700,11 @@ begin
   FOnHandshakeReceived := nil;
   FOnLogInReceived := nil;
   FOnLogOutReceived := nil;
-  FOnStreamsReceived := nil;
   FOnNetworkTitleChangedReceived := nil;
   FOnErrorReceived := nil;
   FOnMonitorStreamsReceived := nil;
   FOnSearchChartsReceived := nil;
+  FOnServerDataReceived := nil;
 
   if FThread <> nil then
     FThread.Terminate;
@@ -880,9 +878,6 @@ end;
 
 procedure THomeCommunication.HomeThreadServerDataReceived(Sender: TSocketThread);
 begin
-  if Assigned(FOnStreamsReceived) then
-    FOnStreamsReceived(Self);
-
   if Assigned(FOnServerDataReceived) then
     FOnServerDataReceived(Self);
 end;

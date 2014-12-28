@@ -1226,7 +1226,7 @@ begin
   Track.Filesize := Filesize;
   Track.Length := Length;
   Track.WasCut := WasCut;
-  Track.BitRate := Bitrate;
+  Track.Bitrate := Bitrate;
   Track.IsAuto := Client.AutoRemove;
   Track.RecordBecauseArtist := Client.RecordBecauseArtist;
   Track.IsStreamFile := IsStreamFile;
@@ -1566,7 +1566,6 @@ end;
 
 function TClientTab.StopStreaming(Info: TStartStreamingInfo; Action: TStreamOpenActions): Boolean;
 var
-  i: Integer;
   Client: TICEClient;
 begin
   Result := False;

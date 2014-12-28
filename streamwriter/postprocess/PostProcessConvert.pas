@@ -35,7 +35,7 @@ type
     FToFile: string;
     FEncoderSettings: TObject;
     FProgress: Integer;
-    FFileInfo: TAudioFileInfo;
+    FFileInfo: TAudioInfo;
 
     FOnProgress: TNotifyEvent;
     FOnFinish: TNotifyEvent;
@@ -50,7 +50,7 @@ type
     destructor Destroy; override;
 
     property Progress: Integer read FProgress;
-    property FileInfo: TAudioFileInfo read FFileInfo;
+    property FileInfo: TAudioInfo read FFileInfo;
 
     property OnProgress: TNotifyEvent read FOnProgress write FOnProgress;
     property OnFinish: TNotifyEvent read FOnFinish write FOnFinish;
@@ -114,8 +114,8 @@ begin
   FC := TFileConvertor.Create;
   if FEncoderSettings <> nil then // Bei "nach WAV" sind die über.
   begin
-    FC.CBRBitRate := TEncoderSettings(FEncoderSettings).CBRBitrate;
-    FC.BitRateType := TEncoderSettings(FEncoderSettings).BitrateType;
+    FC.CBRBitrate := TEncoderSettings(FEncoderSettings).CBRBitrate;
+    FC.BitrateType := TEncoderSettings(FEncoderSettings).BitrateType;
     FC.VBRQuality := TEncoderSettings(FEncoderSettings).VBRQuality;
   end;
 
@@ -129,10 +129,10 @@ begin
 
         if LowerCase(ExtractFileExt(FToFile)) <> '.wav' then
         begin
-          FFileInfo := GetFileInfo(FToFile);
+          FFileInfo.GetAudioInfo(FToFile);
           if FFileInfo.Success and (FData <> nil) then
           begin
-            FData.BitRate := FFileInfo.Bitrate;
+            FData.Bitrate := FFileInfo.Bitrate;
             FData.VBR := FFileInfo.VBR;
           end;
         end;

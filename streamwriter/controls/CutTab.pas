@@ -52,7 +52,7 @@ type
     procedure Setup;
   end;
 
-  TFileSavedEvent = procedure(Sender: TObject; AudioInfo: TAudioFileInfo) of object;
+  TFileSavedEvent = procedure(Sender: TObject; AudioInfo: TAudioInfo) of object;
 
   TCutTab = class(TMainTabSheet)
   private

@@ -383,7 +383,7 @@ begin
     if (Dir = '') or (not DirectoryExists(Dir)) then
       Exit(crDirDoesNotExist);
 
-    if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
+    if not DiskSpaceOkay(Dir, AppGlobals.MinDiskSpace) then
       Exit(crNoFreeSpace);
   end;
 
@@ -747,10 +747,12 @@ begin
   FEntry.StreamURL := FICEThread.RecvStream.StreamURL;
 
   FContentType := FICEThread.RecvStream.ContentType;
-  if FICEThread.RecvStream.BitRate > 0 then
-    FEntry.Bitrate := FICEThread.RecvStream.BitRate;
+  if FICEThread.RecvStream.AudioInfo.Bitrate > 0 then
+    FEntry.Bitrate := FICEThread.RecvStream.AudioInfo.Bitrate;
   if FICEThread.RecvStream.Genre <> '' then
     FEntry.Genre := FICEThread.RecvStream.Genre;
+
+  FEntry.VBR := FICEThread.RecvStream.AudioInfo.VBR;
 
   FEntry.AudioType := FICEThread.RecvStream.AudioType;
 end;
@@ -766,34 +768,35 @@ begin
     if not FAutoRemove then
       FRecordServerTitle := FICEThread.RecvStream.OriginalStreamTitle;
 
-    Data.Filename := FICEThread.RecvStream.SavedFilename;
-    Data.FilenameConverted := FICEThread.RecvStream.SavedFilenameConverted;
-    Data.WorkFilename := '';
-    Data.Station := FEntry.Name;
-    Data.Artist := FICEThread.RecvStream.SavedArtist;
-    Data.Title := FICEThread.RecvStream.SavedTitle;
-    Data.Album := FICEThread.RecvStream.SavedAlbum;
-    Data.TrackNumber := FEntry.SongsSaved;
-    Data.Filesize := FICEThread.RecvStream.SavedSize;
-    Data.Length := FICEThread.RecvStream.SavedLength;
-    Data.WasCut := FICEThread.RecvStream.SavedWasCut;
-    Data.FullTitle := FICEThread.RecvStream.SavedFullTitle;
-    Data.StreamTitle := FICEThread.RecvStream.SavedStreamTitle;
-    Data.Bitrate := FICEThread.RecvStream.BitRate;
-    Data.ServerTitleHash := FRecordTitleHash;
-    Data.ServerArtistHash := FRecordArtistHash;
-    Data.RecordBecauseArtist := FRecordBecauseArtist;
-    Data.VBR := False;
-
     if FKilled or FStopped then
     begin
       if Assigned(FOnSongSaved) then
         FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
-          FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
-          FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.BitRate, False, FICEThread.RecvStream.SavedWasCut,
-          FICEThread.RecvStream.SavedFullTitle, False, FRecordBecauseArtist, FRecordTitleHash, FRecordArtistHash);
+          FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle, FICEThread.RecvStream.SavedSize,
+          FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.AudioInfo.Bitrate, FICEThread.RecvStream.AudioInfo.VBR,
+          FICEThread.RecvStream.SavedWasCut, FICEThread.RecvStream.SavedFullTitle, False, FRecordBecauseArtist,
+          FRecordTitleHash, FRecordArtistHash);
     end else
     begin
+      Data.Filename := FICEThread.RecvStream.SavedFilename;
+      Data.FilenameConverted := FICEThread.RecvStream.SavedFilenameConverted;
+      Data.WorkFilename := '';
+      Data.Station := FEntry.Name;
+      Data.Artist := FICEThread.RecvStream.SavedArtist;
+      Data.Title := FICEThread.RecvStream.SavedTitle;
+      Data.Album := FICEThread.RecvStream.SavedAlbum;
+      Data.TrackNumber := FEntry.SongsSaved;
+      Data.Filesize := FICEThread.RecvStream.SavedSize;
+      Data.Length := FICEThread.RecvStream.SavedLength;
+      Data.WasCut := FICEThread.RecvStream.SavedWasCut;
+      Data.FullTitle := FICEThread.RecvStream.SavedFullTitle;
+      Data.StreamTitle := FICEThread.RecvStream.SavedStreamTitle;
+      Data.Bitrate := FICEThread.RecvStream.AudioInfo.Bitrate;
+      Data.ServerTitleHash := FRecordTitleHash;
+      Data.ServerArtistHash := FRecordArtistHash;
+      Data.RecordBecauseArtist := FRecordBecauseArtist;
+      Data.VBR := FICEThread.RecvStream.AudioInfo.VBR;
+
       if Entry.Settings.OutputFormat = atNone then
       begin
         Data.EncoderSettings := Entry.Settings.EncoderSettings.Find(FICEThread.RecvStream.AudioType).Copy;
@@ -805,9 +808,10 @@ begin
       begin
         if Assigned(FOnSongSaved) then
           FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
-            FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
-            FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.BitRate, False, FICEThread.RecvStream.SavedWasCut,
-            FICEThread.RecvStream.SavedFullTitle, False, FRecordBecauseArtist, FRecordTitleHash, FRecordArtistHash);
+            FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle, FICEThread.RecvStream.SavedSize,
+            FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.AudioInfo.Bitrate, FICEThread.RecvStream.AudioInfo.VBR,
+            FICEThread.RecvStream.SavedWasCut, FICEThread.RecvStream.SavedFullTitle, False, FRecordBecauseArtist,
+            FRecordTitleHash, FRecordArtistHash);
         if Assigned(FOnRefresh) then
           FOnRefresh(Self);
       end;
@@ -821,9 +825,9 @@ begin
   begin
     if Assigned(FOnSongSaved) then
       FOnSongSaved(Self, FICEThread.RecvStream.SavedFilename, FICEThread.RecvStream.SavedStreamTitle,
-        FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle,
-        FICEThread.RecvStream.SavedSize, FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.BitRate, False, FICEThread.RecvStream.SavedWasCut,
-        FICEThread.RecvStream.SavedFullTitle, True, FRecordBecauseArtist, 0, 0);
+        FICEThread.RecvStream.SavedArtist, FICEThread.RecvStream.SavedTitle, FICEThread.RecvStream.SavedSize,
+        FICEThread.RecvStream.SavedLength, FICEThread.RecvStream.AudioInfo.Bitrate, FICEThread.RecvStream.AudioInfo.VBR,
+        FICEThread.RecvStream.SavedWasCut, FICEThread.RecvStream.SavedFullTitle, True, FRecordBecauseArtist, 0, 0);
     if Assigned(FOnRefresh) then
       FOnRefresh(Self);
   end;
@@ -868,7 +872,7 @@ begin
     if AppGlobals.SubmitStreamInfo then
     begin
       HomeComm.SendTitleChanged(Entry.ID, Entry.Name, FTitle, FCurrentURL, Entry.StartURL, FICEThread.RecvStream.AudioType,
-        Entry.BitRate, Entry.URLs);
+        Entry.Bitrate, Entry.URLs);
     end;
 end;
 

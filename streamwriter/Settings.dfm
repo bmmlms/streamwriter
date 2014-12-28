@@ -50,7 +50,7 @@ object frmSettings: TfrmSettings
     end
     object chkAddSavedToIgnore: TCheckBox
       Left = 4
-      Top = 80
+      Top = 84
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -107,7 +107,7 @@ object frmSettings: TfrmSettings
     end
     object chkOverwriteSmaller: TCheckBox
       Left = 20
-      Top = 160
+      Top = 164
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -117,7 +117,7 @@ object frmSettings: TfrmSettings
     end
     object chkDiscardSmaller: TCheckBox
       Left = 20
-      Top = 180
+      Top = 184
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -127,7 +127,7 @@ object frmSettings: TfrmSettings
     end
     object chkAddSavedToStreamIgnore: TCheckBox
       Left = 4
-      Top = 100
+      Top = 104
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -137,7 +137,7 @@ object frmSettings: TfrmSettings
     end
     object chkRemoveSavedFromWishlist: TCheckBox
       Left = 4
-      Top = 120
+      Top = 124
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -147,7 +147,7 @@ object frmSettings: TfrmSettings
     end
     object chkDiscardAlways: TCheckBox
       Left = 4
-      Top = 140
+      Top = 144
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -188,19 +188,6 @@ object frmSettings: TfrmSettings
       Height = 13
       Anchors = [akLeft, akBottom]
       Caption = 'Default action on doubleclick in browser:'
-    end
-    object btnBrowseLogFile: TPngSpeedButton
-      Left = 264
-      Top = 272
-      Width = 25
-      Height = 21
-      Hint = 'Browse...'
-      Anchors = [akTop, akRight]
-      Flat = True
-      Layout = blGlyphRight
-      ParentShowHint = False
-      ShowHint = True
-      OnClick = btnBrowseLogFileClick
     end
     object chkTray: TCheckBox
       Left = 4
@@ -314,18 +301,6 @@ object frmSettings: TfrmSettings
       Caption = 'Display played song in titlebar'
       TabOrder = 10
     end
-    object txtLogFile: TLabeledEdit
-      Left = 4
-      Top = 272
-      Width = 257
-      Height = 21
-      Anchors = [akLeft, akTop, akRight]
-      AutoSize = False
-      EditLabel.Width = 35
-      EditLabel.Height = 13
-      EditLabel.Caption = 'Logfile:'
-      TabOrder = 11
-    end
     object chkCoverPanelAlwaysVisible: TCheckBox
       Left = 4
       Top = 184
@@ -333,7 +308,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Always show cover in "Saved songs"'
-      TabOrder = 12
+      TabOrder = 11
     end
     object chkAutostart: TCheckBox
       Left = 4
@@ -342,16 +317,19 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Start streamWriter on windows logon'
-      TabOrder = 13
+      TabOrder = 12
     end
   end
   object pnlAdvanced: TPanel
-    Left = 604
-    Top = 4
+    Left = 903
+    Top = 271
     Width = 293
-    Height = 137
+    Height = 207
     TabOrder = 2
     Visible = False
+    DesignSize = (
+      293
+      207)
     object Label1: TLabel
       Left = 56
       Top = 64
@@ -365,6 +343,19 @@ object frmSettings: TfrmSettings
       Width = 68
       Height = 13
       Caption = 'Sound device:'
+    end
+    object btnBrowseLogFile: TPngSpeedButton
+      Left = 264
+      Top = 148
+      Width = 25
+      Height = 21
+      Hint = 'Browse...'
+      Anchors = [akTop, akRight]
+      Flat = True
+      Layout = blGlyphRight
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = btnBrowseLogFileClick
     end
     object txtMaxRetries: TLabeledEdit
       Left = 4
@@ -395,10 +386,22 @@ object frmSettings: TfrmSettings
     object lstSoundDevice: TComboBox
       Left = 4
       Top = 104
-      Width = 277
+      Width = 285
       Height = 21
       Style = csDropDownList
       TabOrder = 2
+    end
+    object txtLogFile: TLabeledEdit
+      Left = 4
+      Top = 148
+      Width = 257
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      EditLabel.Width = 35
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Logfile:'
+      TabOrder = 3
     end
   end
   object pnlPostProcess: TPanel
@@ -624,7 +627,7 @@ object frmSettings: TfrmSettings
   end
   object pnlCut: TPanel
     Left = 604
-    Top = 148
+    Top = 4
     Width = 293
     Height = 361
     TabOrder = 4
@@ -1281,7 +1284,7 @@ object frmSettings: TfrmSettings
   end
   object pnlStreamsAdvanced: TPanel
     Left = 604
-    Top = 516
+    Top = 371
     Width = 293
     Height = 369
     TabOrder = 9

@@ -94,6 +94,8 @@ type
 
     FSetStreamDataID: Cardinal;
 
+    FOnStreamsReceived: TNotifyEvent;
+
     procedure ListsChange(Sender: TObject);
     procedure SearchEditChange(Sender: TObject);
     procedure SortItemClick(Sender: TObject);
@@ -104,7 +106,7 @@ type
 
     procedure StreamBrowserHeaderClick(Sender: TVTHeader; HitInfo: TVTHeaderHitInfo);
 
-    procedure HomeCommStreamsReceived(Sender: TObject);
+    procedure HomeCommDataReceived(Sender: TObject);
     procedure HomeCommAuthTokenReceived(Sender: TObject; Token: Cardinal);
   protected
   public
@@ -121,6 +123,8 @@ type
     property Mode: TModes read FMode;
     property StreamTree: TMStreamTree read FStreamTree;
     property SetStreamDataID: Cardinal read FSetStreamDataID write FSetStreamDataID;
+
+    property OnStreamsReceived: TNotifyEvent read FOnStreamsReceived write FOnStreamsReceived;
   end;
 
   TMStreamTreeHeaderPopup = class(TPopupMenu)
@@ -506,7 +510,7 @@ begin
 
     SetLength(Result, Length(Result) + 1);
     Result[High(Result)].ID := NodeData.Data.ID;
-    Result[High(Result)].Bitrate := NodeData.Data.BitRate;
+    Result[High(Result)].Bitrate := NodeData.Data.Bitrate;
     Result[High(Result)].Name := NodeData.Data.Name;
     Result[High(Result)].URL := NodeData.Data.URL;
     Result[High(Result)].Website := NodeData.Data.Website;
@@ -623,11 +627,11 @@ begin
       Text := 'AAC';
   end;
 
-  if NodeData.Data.BitRate > 0 then
+  if NodeData.Data.Bitrate > 0 then
   begin
     if Text <> '' then
       Text := Text + ' / ';
-    Text := Text + IntToStr(NodeData.Data.BitRate) + 'kbps';
+    Text := Text + IntToStr(NodeData.Data.Bitrate) + 'kbps';
   end;
 
   if NodeData.Data.Genre <> '' then
@@ -889,7 +893,7 @@ begin
 
   case FSelectedSortType of
     stName: Result := CompareText(Data1.Data.Name, Data2.Data.Name);
-    stBitrate: Result := CmpInt(Data1.Data.BitRate, Data2.Data.BitRate);
+    stBitrate: Result := CmpInt(Data1.Data.Bitrate, Data2.Data.Bitrate);
     stType: Result := CompareText(S1, S2);
     stRating: Result := CmpInt(Data1.Data.Rating, Data2.Data.Rating)
   end;
@@ -954,7 +958,7 @@ begin
         Add := ((P = '*') or Like(LowerCase(AppGlobals.Data.BrowserList[i].Name), LowerCase(P))) and
                ((P2 = '*') or Like(LowerCase(AppGlobals.Data.BrowserList[i].Genre), LowerCase(P2))) and
                ((AudioType = atNone) or (AppGlobals.Data.BrowserList[i].AudioType = AudioType)) and
-               ((Bitrate = 0) or (AppGlobals.Data.BrowserList[i].BitRate >= Bitrate));
+               ((Bitrate = 0) or (AppGlobals.Data.BrowserList[i].Bitrate >= Bitrate));
         if Add then
         begin
           Node := AddChild(nil);
@@ -1177,7 +1181,7 @@ begin
   FSearch.FKbpsList.OnChange := ListsChange;
   FSearch.FTypeList.OnChange := ListsChange;
 
-  HomeComm.OnStreamsReceived := HomeCommStreamsReceived;
+  HomeComm.OnServerDataReceived := HomeCommDataReceived;
   HomeComm.OnAuthTokenReceived := HomeCommAuthTokenReceived;
 end;
 
@@ -1204,7 +1208,7 @@ begin
   FStreamTree.HomeCommBytesTransferred(CommandHeader, Transferred);
 end;
 
-procedure TMStreamBrowserView.HomeCommStreamsReceived(Sender: TObject);
+procedure TMStreamBrowserView.HomeCommDataReceived(Sender: TObject);
 begin
   FSearch.FGenreList.Clear;
   FStreamTree.Clear;
@@ -1217,6 +1221,9 @@ begin
   SwitchMode(moShow);
 
   AppGlobals.LastBrowserUpdate := Trunc(Now);
+
+  if Assigned(FOnStreamsReceived) then
+    FOnStreamsReceived(Self);
 end;
 
 procedure TMStreamBrowserView.ListsChange(Sender: TObject);

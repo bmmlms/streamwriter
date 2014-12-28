@@ -146,7 +146,7 @@ procedure TSchedulerThread.Execute;
 var
   i: Integer;
   Lowest, LowestWakeup: TDateTime;
-  FoundSchedules, FoundLowestWakeup: Boolean;
+  FoundSchedules, FoundLowestWakeup, StopEventsTriggered: Boolean;
   WakeTime: Int64;
   S: TList<TSchedulerSchedule>;
   Timer, TimerWakeup: THandle;
@@ -322,14 +322,19 @@ begin
       // Nun Aktionen ausführen
       if WaitForSingleObject(Timer, 0) = WAIT_OBJECT_0 then
       begin
+        StopEventsTriggered := False;
         for i := 0 to S.Count - 1 do
           if not s[i].IsStart then
+          begin
+            StopEventsTriggered := True;
             DoSyncSchedule(S[i].ID, S[i].IsStart);
+          end;
 
         // Etwas Zeit geben, falls eine Aufnahme gerade stoppt und gleich wieder gestartet werden soll.
         // Das hier sollte helfen. Solange wir nur kurz schlafen (unter einer Minute) ist das okay.
         // Keine schöne Lösung, aber sollte klappen...
-        Sleep(2000);
+        if StopEventsTriggered then
+          Sleep(2000);
 
         for i := 0 to S.Count - 1 do
           if s[i].IsStart then

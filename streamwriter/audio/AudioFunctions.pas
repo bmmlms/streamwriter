@@ -31,12 +31,20 @@ type
     Gain: Single;
   end;
 
-  TAudioFileInfo = record
+  TAudioInfo = record
+  private
+    procedure GetAudioInfo(Player: Cardinal; Size: Int64); overload;
+    function IsVBR(Player: Cardinal): Boolean;
+  public
     Length: Double;
     Bitrate: Integer;
-    FileSize: Int64;
     VBR: Boolean;
+    BytesPerSec: Integer;
+    BytesPerMSec: Double;
     Success: Boolean;
+
+    procedure GetAudioInfo(MemoryStream: TMemoryStream); overload;
+    procedure GetAudioInfo(Filename: string); overload;
   end;
 
   TBitrateInfo = record
@@ -48,14 +56,13 @@ type
   // That is because the settings window and stream loading/saving uses this.
   // It generally makes sense not to alter these enums because they are used in binary streams..
   TAudioTypes = (atNone, atMPEG, atAAC, atOGG, atM4A);
-  TBitRates = (brCBR, brVBR);
+  TBitrates = (brCBR, brVBR);
   TVBRQualities = (vqHigh, vqMedium, vqLow);
 
   TPlaylistTypes = (ptM3U, ptPLS, ptUnknown);
 
 function RoundBitrate(Bitrate: Cardinal): Cardinal;
-function GetFileInfo(Filename: string): TAudioFileInfo;
-function GuessVBRQuality(BitRate: Integer; AudioType: TAudioTypes): TVBRQualities;
+function GuessVBRQuality(Bitrate: Integer; AudioType: TAudioTypes): TVBRQualities;
 function BuildTime(T: Double; MSecs: Boolean): string;
 function FiletypeToFormat(Filename: string): TAudioTypes;
 function FormatToFiletype(Format: TAudioTypes): string;
@@ -69,118 +76,45 @@ uses
 
 function RoundBitrate(Bitrate: Cardinal): Cardinal;
 begin
-  if Bitrate < 63 then
+  Result := Bitrate;
+
+  if InRange(Bitrate, 30, 34) then
     Result := 32
-  else if Bitrate < 95 then
+  else if InRange(Bitrate, 62, 66) then
     Result := 64
-  else if Bitrate < 127 then
+  else if InRange(Bitrate, 94, 98) then
     Result := 96
-  else if Bitrate < 159 then
+  else if InRange(Bitrate, 126, 130) then
     Result := 128
-  else if Bitrate < 191 then
+  else if InRange(Bitrate, 158, 162) then
     Result := 160
-  else if Bitrate < 223 then
+  else if InRange(Bitrate, 190, 194) then
     Result := 192
-  else if Bitrate < 255 then
+  else if InRange(Bitrate, 222, 226) then
     Result := 224
-  else if Bitrate < 319 then
+  else if InRange(Bitrate, 254, 258) then
     Result := 256
-  else if Bitrate < 383 then
+  else if InRange(Bitrate, 318, 322) then
     Result := 320
-  else
+  else if InRange(Bitrate, 382, 386) then
     Result := 384;
 end;
 
-function GetFileInfo(Filename: string): TAudioFileInfo;
-var
-  TempPlayer: Cardinal;
-  Time: Double;
-  BufLen: Int64;
-  BytesPerSec: Integer;
-  BitRate: Cardinal;
-  FileSize: Int64;
-  P, LastP, ElapsedP, LastElapsedP: QWORD;
-  Counter: Integer;
-begin
-  Result.Length := 0;
-  Result.Bitrate := 0;
-  Result.VBR := False;
-  Result.Success := False;
-
-  TempPlayer := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE or BASS_STREAM_PRESCAN or BASS_UNICODE);
-
-  if TempPlayer = 0 then
-    Exit;
-
-  try
-    FileSize := GetFileSize(Filename);
-
-    Result.FileSize := Filesize;
-
-    BASSChannelSetPosition(TempPlayer, BASSStreamGetFilePosition(TempPlayer, BASS_FILEPOS_END), BASS_POS_BYTE);
-    Time := BASSChannelBytes2Seconds(TempPlayer, BASSChannelGetLength(TempPlayer, BASS_POS_BYTE));
-    BufLen := BASSStreamGetFilePosition(TempPlayer, BASS_FILEPOS_END);
-    if BufLen = -1 then
-      raise Exception.Create('');
-    BytesPerSec := Trunc((BufLen / (125 * Time) + 0.5) * 125);
-    BitRate := Trunc(BufLen / Floor(((125 * Time)) + 0.5));
-    BitRate := RoundBitrate(BitRate);
-
-    if BytesPerSec <= 10 then
-      Exit;
-
-    Result.Length := Time;
-    Result.Bitrate := BitRate;
-    Result.Success := True;
-
-    Counter := 0;
-    LastP := 0;
-    LastElapsedP := 0;
-    BassChannelSetPosition(TempPlayer, 0, BASS_POS_BYTE);
-    while BASSChannelIsActive(TempPlayer) = BASS_ACTIVE_PLAYING do
-    begin
-      BASSChannelGetLevel(TempPlayer);
-
-      ElapsedP := BASSStreamGetFilePosition(TempPlayer, BASS_FILEPOS_CURRENT);
-
-      if ElapsedP > 5000000 then
-        Break;
-
-      P := ElapsedP - LastElapsedP;
-      if (P > 0) and (LastP > 0) and ((P > LastP + 10) or (P < LastP - 10)) then
-      begin
-        Inc(Counter);
-      end;
-
-      if Counter = 5 then
-      begin
-        Result.VBR := True;
-        Break;
-      end;
-
-      LastP := P;
-      LastElapsedP := ElapsedP;
-    end;
-  finally
-    BASSStreamFree(TempPlayer);
-  end;
-end;
-
-function GuessVBRQuality(BitRate: Integer; AudioType: TAudioTypes): TVBRQualities;
+function GuessVBRQuality(Bitrate: Integer; AudioType: TAudioTypes): TVBRQualities;
 begin
   Result := vqMedium;
   case AudioType of
     atMPEG, atOGG:
-      if BitRate >= 210 then
+      if Bitrate >= 210 then
         Result := vqHigh
-      else if BitRate >= 110 then
+      else if Bitrate >= 110 then
         Result := vqMedium
       else
         Result := vqLow;
     atAAC, atM4A:
-      if BitRate >= 150 then
+      if Bitrate >= 150 then
         Result := vqHigh
-      //else if BitRate >= 128 then  // Das löst das Problem von "Rix". Ist vllt. nicht optimal, aber besser als nichts..
+      //else if Bitrate >= 128 then  // Das löst das Problem von "Rix". Ist vllt. nicht optimal, aber besser als nichts..
                                      // Am besten wäre es wohl, den Encoder präziser zu füttern was Bitraten angeht => Enum vergrößern..
                                      // Nicht 3 Stufen, sondern 6 oder so! Oder Bitrate durchschleifen und jeder Encoder denkt selber nach?
       //  Result := vqMedium
@@ -258,6 +192,99 @@ begin
     9: Result := 16000;
     else
       raise Exception.Create('');
+  end;
+end;
+
+procedure TAudioInfo.GetAudioInfo(MemoryStream: TMemoryStream);
+var
+  Player: Cardinal;
+begin
+  Success := False;
+  if MemoryStream.Size = 0 then
+    Exit;
+  Player := BASSStreamCreateFile(True, MemoryStream.Memory, 0, MemoryStream.Size, BASS_STREAM_DECODE or BASS_STREAM_PRESCAN);
+
+  if Player = 0 then
+    Exit;
+
+  try
+    GetAudioInfo(Player, MemoryStream.Size);
+  finally
+    BASSStreamFree(Player);
+  end;
+end;
+
+procedure TAudioInfo.GetAudioInfo(Filename: string);
+var
+  Player: Cardinal;
+  Size: Int64;
+begin
+  Success := False;
+  Size := GetFileSize(Filename);
+  if Size = 0 then
+    Exit;
+  Player := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE or BASS_STREAM_PRESCAN or BASS_UNICODE);
+
+  try
+    GetAudioInfo(Player, Size);
+  finally
+    BASSStreamFree(Player);
+  end;
+end;
+
+procedure TAudioInfo.GetAudioInfo(Player: Cardinal; Size: Int64);
+var
+  Time: Double;
+  BufLen: Int64;
+begin
+  BASSChannelSetPosition(Player, Size, BASS_POS_BYTE);
+  Time := BASSChannelBytes2Seconds(Player, BASSChannelGetLength(Player, BASS_POS_BYTE));
+  BufLen := BASSStreamGetFilePosition(Player, BASS_FILEPOS_END);
+  if BufLen = -1 then
+    Exit;
+
+  Length := Time;
+  Bitrate := Round(BufLen / ((125 * Time)) + 0.5);
+  VBR := IsVBR(Player);
+  if not VBR then
+    Bitrate := RoundBitrate(Bitrate);
+
+  BytesPerSec := Trunc((BufLen / (125 * Time) + 0.5) * 125);
+  BytesPerMSec := ((BufLen / (125 * Time) + 0.5) * 125) / 1000;
+
+  if BytesPerMSec > 0 then
+    Success := True;
+end;
+
+function TAudioInfo.IsVBR(Player: Cardinal): Boolean;
+var
+  P, LastP, ElapsedP, LastElapsedP: QWORD;
+  Counter: Integer;
+begin
+  Result := False;
+
+  Counter := 0;
+  LastP := 0;
+  LastElapsedP := 0;
+  BassChannelSetPosition(Player, 0, BASS_POS_BYTE);
+  while BASSChannelIsActive(Player) = BASS_ACTIVE_PLAYING do
+  begin
+    BASSChannelGetLevel(Player);
+
+    ElapsedP := BASSStreamGetFilePosition(Player, BASS_FILEPOS_CURRENT);
+
+    if ElapsedP > 5000000 then
+      Break;
+
+    P := ElapsedP - LastElapsedP;
+    if (P > 0) and (LastP > 0) and ((P > LastP + 1) or (P < LastP - 1)) then
+      Inc(Counter);
+
+    if Counter = 5 then
+      Exit(True);
+
+    LastP := P;
+    LastElapsedP := ElapsedP;
   end;
 end;
 

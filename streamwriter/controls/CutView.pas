@@ -222,9 +222,9 @@ type
     FFilesize: UInt64;
     FSaveSecs: UInt64;
 
-    FBitRateType: TBitRates;
+    FBitrateType: TBitrates;
     FQuality: TVBRQualities;
-    FBitRate: Cardinal;
+    FBitrate: Cardinal;
 
     FDropTarget: TDropComboTarget;
 
@@ -560,12 +560,12 @@ procedure TCutView.LoadFile(Track: TTrackInfo);
 begin
   if Track.VBR then
   begin
-    FBitRateType := brVBR;
-    FQuality := GuessVBRQuality(Track.BitRate, FiletypeToFormat(Track.Filename));
+    FBitrateType := brVBR;
+    FQuality := GuessVBRQuality(Track.Bitrate, FiletypeToFormat(Track.Filename));
   end else
   begin
-    FBitRateType := brCBR;
-    FBitRate := Track.BitRate;
+    FBitrateType := brCBR;
+    FBitrate := Track.Bitrate;
   end;
 
   LoadFile(Track.Filename, False, False);
@@ -573,7 +573,7 @@ end;
 
 procedure TCutView.LoadFile(Filename: string; IsConverted, LoadTrackData: Boolean);
 var
-  Info: TAudioFileInfo;
+  Info: TAudioInfo;
 begin
   if (FScanThread <> nil) or (FProcessThread <> nil) then
     Exit;
@@ -623,6 +623,26 @@ begin
       FOnStateChanged(Self);
   end else
   begin
+    if LoadTrackData then
+    begin
+      Info.GetAudioInfo(Filename);
+      if Info.Success then
+      begin
+        if Info.VBR then
+        begin
+          FBitrateType := brVBR;
+          FQuality := GuessVBRQuality(Info.Bitrate, FiletypeToFormat(Filename));
+        end else
+        begin
+          FBitrateType := brCBR;
+          FBitrate := Info.Bitrate;
+        end
+      end else begin
+        ThreadScanError(Self);
+        Exit;
+      end;
+    end;
+
     FOriginalFilename := Filename;
     FWorkingFilename := GetUndoFilename;
 
@@ -634,21 +654,6 @@ begin
 
     FProgressBarLoad.Position := 0;
     FProgressBarLoad.Visible := True;
-
-    if LoadTrackData then
-    begin
-      Info := GetFileInfo(Filename);
-
-      if Info.VBR then
-      begin
-        FBitRateType := brVBR;
-        FQuality := GuessVBRQuality(Info.BitRate, FiletypeToFormat(Filename));
-      end else
-      begin
-        FBitRateType := brCBR;
-        FBitRate := Info.BitRate;
-      end;
-    end;
 
     FFileConvertorThread.Convert(FOriginalFilename, FWorkingFilename, nil);
     FFileConvertorThread.Resume;
@@ -811,8 +816,8 @@ begin
 
   CreateConvertor;
 
-  EncoderSettings := TEncoderSettings.Create(FiletypeToFormat(FOriginalFilename), FBitRateType, FQuality);
-  EncoderSettings.CBRBitrate := FBitRate;
+  EncoderSettings := TEncoderSettings.Create(FiletypeToFormat(FOriginalFilename), FBitrateType, FQuality);
+  EncoderSettings.CBRBitrate := FBitrate;
   try
     FFileConvertorThread.Convert(FWorkingFilename, FOriginalFilename, EncoderSettings);
   finally

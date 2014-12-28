@@ -315,7 +315,7 @@ type
     FColLength: TVirtualTreeColumn;
     FColStream: TVirtualTreeColumn;
     FColSaved: TVirtualTreeColumn;
-    FColBitRate: TVirtualTreeColumn;
+    FColBitrate: TVirtualTreeColumn;
 
     FHeaderDragSourcePosition: Cardinal;
 
@@ -1670,9 +1670,9 @@ begin
   FColLength := Header.Columns.Add;
   FColLength.Alignment := taRightJustify;
   FColLength.Text := _('Length');
-  FColBitRate := Header.Columns.Add;
-  FColBitRate.Alignment := taRightJustify;
-  FColBitRate.Text := _('Bitrate');
+  FColBitrate := Header.Columns.Add;
+  FColBitrate.Alignment := taRightJustify;
+  FColBitrate.Text := _('Bitrate');
   FColStream := Header.Columns.Add;
   FColStream.Text := _('Stream');
   FColSaved := Header.Columns.Add;
@@ -2426,7 +2426,7 @@ begin
   FColLength.Text := _('Length');
   FColStream.Text := _('Stream');
   FColSaved.Text := _('Date');
-  FColBitRate.Text := _('Bitrate');
+  FColBitrate.Text := _('Bitrate');
 end;
 
 procedure TSavedTree.UpdateList;
@@ -2487,9 +2487,9 @@ begin
         3:
           Text := BuildTime(NodeData.Track.Length, False);
         4:
-          if NodeData.Track.BitRate > 0 then
+          if NodeData.Track.Bitrate > 0 then
           begin
-            Text := IntToStr(NodeData.Track.BitRate);
+            Text := IntToStr(NodeData.Track.Bitrate);
 
             if NodeData.Track.VBR then
               Text := Text + ' ' + 'VBR';
@@ -2789,7 +2789,7 @@ begin
     FColImages.Width := 104;
     FColSize.Width := GetTextSize('111,11 KB', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
     FColLength.Width := GetTextSize('00:00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColBitRate.Width := GetTextSize('320 VBR', font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColBitrate.Width := GetTextSize('320 VBR', font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
     FColStream.Width := MulDiv(200, Screen.PixelsPerInch, 96);
     FColSaved.Width := MulDiv(130, Screen.PixelsPerInch, 96);
   end;
@@ -2914,7 +2914,7 @@ begin
       end;
     4:
       begin
-        Result := CmpInt(Data1.Track.BitRate, Data2.Track.BitRate);
+        Result := CmpInt(Data1.Track.Bitrate, Data2.Track.Bitrate);
         if Result = 0 then
         begin
           Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
@@ -3159,7 +3159,7 @@ var
   Add: Boolean;
   FoundFiles: TStringList;
   Track: TTrackInfo;
-  Info: TAudioFileInfo;
+  Info: TAudioInfo;
 begin
   inherited;
 
@@ -3203,32 +3203,31 @@ begin
               FOnProgress(Self);
           end);
 
-      Info := GetFileInfo(FFoundAudioFiles[i]);
-
+      Info.GetAudioInfo(FFoundAudioFiles[i]);
       if Info.Success then
       begin
         Track := TTrackInfo.Create;
         Track.Time := Now;
-        Track.BitRate := Info.Bitrate;
+        Track.Bitrate := Info.Bitrate;
         Track.Length := Trunc(Info.Length);
         Track.Filename := FFoundAudioFiles[i];
         Track.Filesize := GetFileSize(FFoundAudioFiles[i]);
         Track.VBR := Info.VBR;
+
         if OccurenceCount('\', FFoundAudioFiles[i]) > 1 then
           Track.Streamname := ExtractLastDirName(ExtractFilePath(FFoundAudioFiles[i]));
         FFiles.Add(Track);
-
-        FProgress := Trunc((i / FFoundAudioFiles.Count) * 100);
-        FCurrentFilename := ExtractFileName(FFoundAudioFiles[i]);
-
-        if Assigned(FOnProgress) then
-          Synchronize(
-            procedure
-            begin
-              if Assigned(FOnProgress) then
-                FOnProgress(Self);
-            end);
       end;
+
+      FProgress := Trunc((i / FFoundAudioFiles.Count) * 100);
+      FCurrentFilename := ExtractFileName(FFoundAudioFiles[i]);
+      if Assigned(FOnProgress) then
+        Synchronize(
+          procedure
+          begin
+            if Assigned(FOnProgress) then
+              FOnProgress(Self);
+          end);
     end;
   finally
     FoundFiles.Free;

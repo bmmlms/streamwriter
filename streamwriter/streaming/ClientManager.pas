@@ -602,7 +602,6 @@ begin
   // Ab hier wird protokolliert
   MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llDebug, _('Automatic recording'), Format('Title "%s" detected on "%s"', [ParsedTitle, Name])));
 
-  // TODO: das hier testen!
   Res := TICEClient.MayConnect(False, GetUsedBandwidth(Kbps, 0), True);
   if Res <> crOk then
   begin

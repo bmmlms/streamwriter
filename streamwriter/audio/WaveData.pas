@@ -156,7 +156,7 @@ procedure TWaveData.Load(Filename: string);
 begin
   FFilename := Filename;
   FFilesize := GetFileSize(Filename);
-  if FFilesize =  -1 then
+  if FFilesize = -1 then
   begin
     raise Exception.Create('Filesize could not be determined');
   end;

@@ -317,6 +317,7 @@ type
     procedure tabClientsShowErrorMessage(Sender: TObject; Data: string);
     procedure tabClientsClientAdded(Sender: TObject);
     procedure tabClientsClientRemoved(Sender: TObject);
+    procedure tabClientsBrowserViewStreamsReceived(Sender: TObject);
 
     procedure tabSavedCut(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
@@ -327,7 +328,7 @@ type
     procedure tabSavedRemoveTitleFromIgnorelist(Sender: TObject; Title: string; TitleHash: Cardinal);
 
     procedure tabCutCutFile(Sender: TObject; Filename: string);
-    procedure tabCutSaved(Sender: TObject; AudioInfo: TAudioFileInfo);
+    procedure tabCutSaved(Sender: TObject; AudioInfo: TAudioInfo);
 
     procedure tabPlayStarted(Sender: TObject);
 
@@ -709,7 +710,9 @@ begin
   // we need to skip this stuff.
   if not FExiting then
   begin
-    if not AppGlobals.IntroShown then
+    // Remark: Der Vergleich hier nach dem "and" kann irgendwann raus. Wenn Version > 5.0.0.1 lange genug
+    //         veröffentlicht ist, rausmachen.
+    if (not AppGlobals.IntroShown) and (AppGlobals.LastUsedDataVersion <= 39) then
     begin
       FormIntro := TfrmIntro.Create(Self);
       try
@@ -719,7 +722,9 @@ begin
       end;
       AppGlobals.FirstStartShown := True;
       AppGlobals.IntroShown := True;
-    end;
+    end else
+      // Remark: Das kann irgendwann raus. Genau dann, wenn der dumme Vergleich hier drüber auch rausfliegt.
+      AppGlobals.IntroShown := True;
 
     if StartupMessagesNeeded then
       if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
@@ -839,6 +844,7 @@ begin
   tabClients.OnShowErrorMessage := tabClientsShowErrorMessage;
   tabClients.OnClientAdded := tabClientsClientAdded;
   tabClients.OnClientRemoved := tabClientsClientRemoved;
+  tabClients.SideBar.BrowserView.OnStreamsReceived := tabClientsBrowserViewStreamsReceived;
 
   tabCharts := TChartsTab.Create(pagMain);
   tabCharts.PageControl := pagMain;
@@ -1078,10 +1084,16 @@ begin
     tmrRecordingsTimer(tmrRecordings);
 
     FClientManager.StopMonitors;
-    if AppGlobals.SubmitStats and AppGlobals.MonitorMode and (AppGlobals.MonitorCount > 0) then
-      HomeComm.SendGetMonitorStreams(AppGlobals.MonitorCount)
-    else
-      HomeComm.SendGetMonitorStreams(0);
+
+    AppGlobals.Lock;
+    try
+      if AppGlobals.SubmitStats and AppGlobals.MonitorMode and (AppGlobals.MonitorCount > 0) and (AppGlobals.Data.BrowserList.Count > 0) then
+        HomeComm.SendGetMonitorStreams(AppGlobals.MonitorCount)
+      else
+        HomeComm.SendGetMonitorStreams(0);
+    finally
+      AppGlobals.Unlock;
+    end;
 
     HomeComm.SendSyncWishlist;
 
@@ -1395,7 +1407,6 @@ begin
       tabClients.StartStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil), oaStart, nil, amNoWhere);
   end;
 
-  // TODO: Dokumentieren
   Param := CmdLine.GetParam('-sr');
   if Param <> nil then
   begin
@@ -1410,7 +1421,6 @@ begin
       tabClients.StartStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil), oaPlay, nil, amNoWhere);
   end;
 
-  // TODO: Dokumentieren
   Param := CmdLine.GetParam('-sp');
   if Param <> nil then
   begin
@@ -2195,6 +2205,14 @@ begin
     ShowCommunityLogin;
 end;
 
+procedure TfrmStreamWriterMain.tabClientsBrowserViewStreamsReceived(Sender: TObject);
+begin
+  // Nach einer Neuinstallation können wir noch keine Monitors anfragen, weil wir noch keine Streams kennen.
+  // Wenn die Streams angekommen sind, dann machen wir das hier klar!
+  if AppGlobals.SubmitStats and AppGlobals.MonitorMode and (AppGlobals.MonitorCount > 0) and (AppGlobals.Data.BrowserList.Count > 0) and (FClientManager.Monitors.Count = 0) then
+    HomeComm.SendGetMonitorStreams(AppGlobals.MonitorCount);
+end;
+
 procedure TfrmStreamWriterMain.tabClientsUpdateButtons(Sender: TObject);
 begin
   UpdateButtons;
@@ -2205,14 +2223,14 @@ begin
 
 end;
 
-procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject; AudioInfo: TAudioFileInfo);
+procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject; AudioInfo: TAudioInfo);
 var
   i: Integer;
 begin
   for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
     if LowerCase(AppGlobals.Data.TrackList[i].Filename) = LowerCase(TCutTab(Sender).Filename) then
     begin
-      AppGlobals.Data.TrackList[i].Filesize := AudioInfo.Filesize;
+      AppGlobals.Data.TrackList[i].Filesize := GetFileSize(TCutTab(Sender).Filename);
       AppGlobals.Data.TrackList[i].Length := Trunc(AudioInfo.Length);
 
       // Ist mal raus, damit das "geschnitten"-Symbol nur bei automatischen Aufnahmen kommt
@@ -2220,7 +2238,7 @@ begin
 
       AppGlobals.Data.TrackList[i].Finalized := True;
 
-      AppGlobals.Data.TrackList[i].BitRate := AudioInfo.Bitrate;
+      AppGlobals.Data.TrackList[i].Bitrate := AudioInfo.Bitrate;
       AppGlobals.Data.TrackList[i].VBR := AudioInfo.VBR;
 
       tabSaved.Tree.UpdateTrack(AppGlobals.Data.TrackList[i]);
@@ -2337,7 +2355,6 @@ begin
   UpdateStatus;
 
   tabClients.TimerTick;
-  // TODO: neuen codenamen suchen :)
   // TODO: texte übersetzen
   RecordingActive := False;
   PlayingActive := False;

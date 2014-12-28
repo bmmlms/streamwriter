@@ -89,7 +89,7 @@ type
     FGenre: string;
     FURL: string;
     FWebsite: string;
-    FBitRate: Integer;
+    FBitrate: Integer;
     FAudioType: TAudioTypes;
     FMetaData: Boolean;
     FChangesTitleInSong: Boolean;
@@ -120,7 +120,7 @@ type
     property Website: string read FWebsite write FWebsite;
     { The broadcasted bitrate of the stream. This value might get overriden
       when streamWriter parses received audio data }
-    property BitRate: Integer read FBitRate write FBitRate;
+    property Bitrate: Integer read FBitrate write FBitrate;
     // The format of the audio-data
     property AudioType: TAudioTypes read FAudioType write FAudioType;
     // When set the stream broadcasts metadata
@@ -148,7 +148,7 @@ type
     FFilesize: UInt64;
     FLength: UInt64;
     FWasCut: Boolean;
-    FBitRate: Cardinal;
+    FBitrate: Cardinal;
     FIsAuto: Boolean;
     FIsStreamFile: Boolean;
     FFinalized: Boolean;
@@ -184,7 +184,7 @@ type
     // Indicates whether the title was cut (silence on begin/end detected)
     property WasCut: Boolean read FWasCut write FWasCut;
     // The bitrate of the file
-    property BitRate: Cardinal read FBitRate write FBitRate;
+    property Bitrate: Cardinal read FBitrate write FBitrate;
     // When set the file was automatically recorded from the wishlist
     property IsAuto: Boolean read FIsAuto write FIsAuto;
     // When set this is a stream-file (not a single saved file from a stream with artist/title)
@@ -331,11 +331,11 @@ type
     function FGetHash: Cardinal;
   public
     AudioType: TAudioTypes;
-    BitrateType: TBitRates;
+    BitrateType: TBitrates;
     CBRBitrate: Integer;
     VBRQuality: TVBRQualities;
 
-    constructor Create(AudioType: TAudioTypes; BitrateType: TBitRates; VBRQuality: TVBRQualities);
+    constructor Create(AudioType: TAudioTypes; BitrateType: TBitrates; VBRQuality: TVBRQualities);
     procedure Load(Stream: TExtendedStream; Version: Integer); overload;
     procedure Save(Stream: TExtendedStream); overload;
     procedure Assign(From: TEncoderSettings);
@@ -532,6 +532,7 @@ type
     FURLs: TStringList;
     // Bitrate of the stream
     FBitrate: Cardinal;
+    FVBR: Boolean;
     // Audiotype ('mpg', 'aac', 'ogg', ...)
     FAudioType: TAudioTypes;
     // Genre ('punk   , rock, speedmetal')
@@ -581,6 +582,7 @@ type
     property StartURL: string read FStartURL write FStartURL;
     property URLs: TStringList read FURLs;
     property Bitrate: Cardinal read FBitrate write FBitrate;
+    property VBR: Boolean read FVBR write FVBR;
     property AudioType: TAudioTypes read FAudioType write FAudioType;
     property Genre: string read FGenre write FSetGenre;
     property Index: Integer read FIndex write FIndex;
@@ -804,7 +806,7 @@ type
   end;
 
 const
-  DATAVERSION = 61;
+  DATAVERSION = 62;
 
 implementation
 
@@ -923,7 +925,8 @@ begin
   FSecondsReceived := From.FSecondsReceived;
   FIndex := From.FIndex;
   FCategoryIndex := From.CategoryIndex;
-  FBitRate := From.BitRate;
+  FBitrate := From.Bitrate;
+  FVBR := From.VBR;
   FAudioType := From.AudioType;
   FGenre := From.Genre;
   FWasRecording := From.WasRecording;
@@ -1043,6 +1046,9 @@ begin
 
   Stream.Read(Result.FBitrate);
 
+  if Version >= 62 then
+    Stream.Read(Result.FVBR);
+
   if Version < 40 then
   begin
     Stream.Read(STmp);
@@ -1117,7 +1123,8 @@ begin
   begin
     Stream.Write(FURLs[i]);
   end;
-  Stream.Write(FBitRate);
+  Stream.Write(FBitrate);
+  Stream.Write(FVBR);
   Stream.Write(Byte(FAudioType));
   Stream.Write(FGenre);
 
@@ -1230,8 +1237,6 @@ constructor TDataLists.Create;
 begin
   inherited;
 
-  // TODO: auf ner frischen installation testen, ob die settings so auch alle sinnig sind und passen zu den
-  //       settings, die standardmäßig mit default werten aus registry kamen
   FDefaultStreamSettings := TStreamSettings.GetDefaults;
   FStreamSettings := TStreamSettings.Create(False);
   FStreamSettings.Assign(FDefaultStreamSettings);
@@ -1770,7 +1775,7 @@ begin
   FFilesize := Source.Filesize;
   FLength := Source.Length;
   FWasCut := Source.WasCut;
-  FBitRate := Source.BitRate;
+  FBitrate := Source.Bitrate;
   FIsAuto := Source.IsAuto;
   FIsStreamFile := Source.IsStreamFile;
   FFinalized := Source.Finalized;
@@ -1837,7 +1842,7 @@ begin
   Stream.Read(Result.FWasCut);
   if Version > 10 then
   begin
-    Stream.Read(Result.FBitRate);
+    Stream.Read(Result.FBitrate);
     Stream.Read(Result.FIsAuto);
   end;
 
@@ -1886,7 +1891,7 @@ begin
   Stream.Write(FLength);
   Stream.Write(FTime);
   Stream.Write(FWasCut);
-  Stream.Write(FBitRate);
+  Stream.Write(FBitrate);
   Stream.Write(FIsAuto);
   Stream.Write(FIsStreamFile);
   Stream.Write(FFinalized);
@@ -2264,7 +2269,7 @@ begin
   FGenre := Source.FGenre;
   FURL := Source.FURL;
   FWebsite := Source.FWebsite;
-  FBitRate := Source.FBitRate;
+  FBitrate := Source.FBitrate;
   FAudioType := Source.FAudioType;
   FMetaData := Source.FMetaData;
   FChangesTitleInSong := Source.FChangesTitleInSong;
@@ -2295,7 +2300,7 @@ begin
   Stream.Read(Result.FGenre);
   Stream.Read(Result.FURL);
   Stream.Read(Result.FWebsite);
-  Stream.Read(Result.FBitRate);
+  Stream.Read(Result.FBitrate);
   Stream.Read(B);
   Result.FAudioType := TAudioTypes(B);
   Stream.Read(Result.FMetaData);
@@ -2341,7 +2346,7 @@ begin
   Stream.Read(Result.FGenre);
   Stream.Read(Result.FURL);
   Stream.Read(Result.FWebsite);
-  Stream.Read(Result.FBitRate);
+  Stream.Read(Result.FBitrate);
   Stream.Read(B);
   Result.FAudioType := TAudioTypes(B);
   Stream.Read(Result.FMetaData);
@@ -2373,7 +2378,7 @@ begin
   Stream.Write(FGenre);
   Stream.Write(FURL);
   Stream.Write(FWebsite);
-  Stream.Write(FBitRate);
+  Stream.Write(FBitrate);
   Stream.Write(Byte(FAudioType));
   Stream.Write(FMetaData);
   Stream.Write(FChangesTitleInSong);
@@ -2742,15 +2747,15 @@ begin
   Result.FAutoDetectSilenceLevel := True;
   Result.FSilenceLevel := 5;
   Result.FSilenceLength := 100;
-  Result.FSilenceBufferSecondsStart := 5;
-  Result.FSilenceBufferSecondsEnd := 5;
+  Result.FSilenceBufferSecondsStart := 10;
+  Result.FSilenceBufferSecondsEnd := 10;
 
   Result.FAdjustTrackOffset := False;
   Result.FAdjustTrackOffsetMS := 0;
   Result.FAdjustTrackOffsetDirection := toForward;
 
   Result.FSaveToMemory := False;
-  Result.FOnlySaveFull := True;
+  Result.FOnlySaveFull := False;
   Result.FOverwriteSmaller := False;
   Result.FDiscardSmaller := False;
   Result.FDiscardAlways := False;
@@ -2892,8 +2897,8 @@ begin
       Result.FSilenceBufferSecondsEnd := Result.FSilenceBufferSecondsStart;
     end else
     begin
-      Result.FSilenceBufferSecondsStart := 5;
-      Result.FSilenceBufferSecondsEnd := 5;
+      Result.FSilenceBufferSecondsStart := 10;
+      Result.FSilenceBufferSecondsEnd := 10;
     end;
   end;
 
@@ -3035,14 +3040,10 @@ begin
       ES := Result.EncoderSettings.Find(AT);
 
       if ES <> nil then
-      begin
         ES.Load(Stream, Version);
-      end;
     end;
   end;
 end;
-
-// TODO: update testen testen testen. okay settings werden übernommen. den normalen prozess dennoch durchspielen, am besten auch auf xp..
 
 class function TStreamSettings.LoadAuto(Data: TDataLists;
   Stream: TExtendedStream; Version: Integer): TStreamSettings;
@@ -3397,7 +3398,7 @@ begin
 end;
 
 constructor TEncoderSettings.Create(AudioType: TAudioTypes;
-  BitrateType: TBitRates; VBRQuality: TVBRQualities);
+  BitrateType: TBitrates; VBRQuality: TVBRQualities);
 begin
   inherited Create;
 
@@ -3417,7 +3418,7 @@ var
   Tmp: Integer;
 begin
   Stream.Read(Tmp);
-  BitrateType := TBitRates(Tmp);
+  BitrateType := TBitrates(Tmp);
 
   Stream.Read(CBRBitrate);
 
@@ -3433,14 +3434,13 @@ begin
   // Die echten Daten kommen später über Load().
   // REMARK: Irgendwann kann das hier weg!
   AppGlobals.Storage.Read('CBRBitRate_' + IntToStr(Integer(AudioType)), CBRBitrate, 128, 'Encoders');
-  CBRBitRate := RoundBitrate(CBRBitrate);
 
   AppGlobals.Storage.Read('BitRateType_' + IntToStr(Integer(AudioType)), Tmp, Integer(brVBR), 'Encoders');
-  if (Tmp > Ord(High(TBitRates))) or
-     (Tmp < Ord(Low(TBitRates))) then
+  if (Tmp > Ord(High(TBitrates))) or
+     (Tmp < Ord(Low(TBitrates))) then
     BitrateType := brVBR
   else
-    BitrateType := TBitRates(Tmp);
+    BitrateType := TBitrates(Tmp);
 
   AppGlobals.Storage.Read('VBRQuality_' + IntToStr(Integer(AudioType)), Tmp, Integer(vqMedium), 'Encoders');
   if (Tmp > Ord(High(TVBRQualities))) or

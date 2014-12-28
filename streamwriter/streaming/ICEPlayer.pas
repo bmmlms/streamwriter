@@ -35,6 +35,7 @@ type
     FPlayer: DWORD;
     FPausing, FStopping: Boolean;
     FPlayStartBuffer: Cardinal;
+    FDataRead: Boolean;
 
     FEQEnabled: Boolean;
     FBandData: array[0..9] of TBandData;
@@ -62,6 +63,7 @@ type
     property Pausing: Boolean read FPausing;
     property Stopping: Boolean read FStopping;
     property Mem: TExtendedStream read FMem;
+    property DataRead: Boolean read FDataRead;
   end;
 
 implementation
@@ -258,9 +260,7 @@ end;
 
 procedure TICEPlayer.PushData(Buf: Pointer; Len: Integer);
 var
-  Time: Double;
-  BufLen: Int64;
-  TempPlayer, BitRate: Cardinal;
+  AudioInfo: TAudioInfo;
 const
   MAX_BUFFER_SIZE = 1048576;
 begin
@@ -280,21 +280,12 @@ begin
 
     if (not Playing) and (not Paused) then
     begin
-      TempPlayer := BASSStreamCreateFile(True, FMem.Memory, 0, FMem.Size, BASS_STREAM_DECODE);
-      if TempPlayer = 0 then
+      AudioInfo.GetAudioInfo(FMem);
+      if AudioInfo.Success then
+      begin
+        FPlayStartBuffer := AudioInfo.Bitrate * 1100;
+      end else
         raise Exception.Create('');
-      try
-        BASSChannelSetPosition(TempPlayer, FMem.Size, BASS_POS_BYTE);
-        Time := BASSChannelBytes2Seconds(TempPlayer, BASSChannelGetLength(TempPlayer, BASS_POS_BYTE));
-        BufLen := BASSStreamGetFilePosition(TempPlayer, BASS_FILEPOS_END);
-        if BufLen = -1 then
-          raise Exception.Create('');
-        BitRate := Trunc(BufLen / (125 * Time) + 0.5);
-
-        FPlayStartBuffer := BitRate * 1100;
-      finally
-        BASSStreamFree(TempPlayer);
-      end;
     end;
   finally
     FLock.Leave;

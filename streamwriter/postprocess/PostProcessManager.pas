@@ -249,7 +249,7 @@ begin
           FProcessingList.Delete(i);
 
           TICEClient(Entry.Owner).PostProcessingFinished(Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Artist, Entry.Data.Title,
-          Entry.Data.Filesize, Entry.Data.Length, Entry.Data.BitRate, Entry.Data.VBR, Entry.Data.WasCut,
+          Entry.Data.Filesize, Entry.Data.Length, Entry.Data.Bitrate, Entry.Data.VBR, Entry.Data.WasCut,
             Entry.Data.FullTitle, False, Entry.Data.RecordBecauseArtist, Entry.Data.ServerTitleHash, Entry.Data.ServerArtistHash);
 
           Entry.Free;
