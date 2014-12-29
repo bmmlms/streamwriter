@@ -339,6 +339,7 @@ type
     procedure SetPage(Page: TPage); override;
     procedure PreTranslate; override;
     procedure PostTranslate; override;
+    procedure GetExportDataHeader(Stream: TExtendedStream); override;
     procedure GetExportData(Stream: TExtendedStream); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
@@ -910,7 +911,19 @@ procedure TfrmSettings.GetExportData(Stream: TExtendedStream);
 begin
   inherited;
 
-  AppGlobals.Data.Save(Stream, True);
+  AppGlobals.Lock;
+  try
+    AppGlobals.Data.Save(Stream, True);
+  finally
+    AppGlobals.Unlock;
+  end;
+end;
+
+procedure TfrmSettings.GetExportDataHeader(Stream: TExtendedStream);
+begin
+  inherited;
+
+  Stream.Write(EXPORTMAGIC[0], Length(EXPORTMAGIC));
 end;
 
 function TfrmSettings.GetNewID: Integer;

@@ -49,6 +49,10 @@ type
     a newer file-format that it does not know (because it is an old version) }
   EVersionException = class(Exception);
 
+  EUnknownFormatException = class(Exception);
+
+  EUnsupportedFormatException = class(Exception);
+
   // Contains information about titles in the wishlist/ignorelist
   TTitleInfo = class
   private
@@ -760,12 +764,14 @@ type
 
     // Cleans all lists and frees all their items
     procedure CleanLists;
-    procedure Load; overload;
+    procedure Load(Recovery: Boolean); overload;
     procedure Load(var S: TExtendedStream; Filename: string); overload;
     procedure Save; overload;
     procedure Save(S: TExtendedStream; UseCompression: Boolean); overload;
     procedure SaveRecover;
     procedure CheckEncodersAndPostProcessors;
+
+    class procedure VerifyMagic(S: TExtendedStream; MinVersion: Cardinal; IsData: Boolean);
 
     property DefaultStreamSettings: TStreamSettings read FDefaultStreamSettings;
     property StreamSettings: TStreamSettings read FStreamSettings;
@@ -806,7 +812,9 @@ type
   end;
 
 const
-  DATAVERSION = 62;
+  DATAVERSION: Cardinal = 63;
+  DATAMAGIC: array[0..3] of Byte = (118, 114, 110, 97);
+  EXPORTMAGIC: array[0..3] of Byte = (97, 110, 114, 118);
 
 implementation
 
@@ -1601,35 +1609,37 @@ begin
   end;
 end;
 
-procedure TDataLists.Load;
+procedure TDataLists.Load(Recovery: Boolean);
 var
+  Filename: string;
   S: TExtendedStream;
 begin
-  if AppGlobals.DataFile = '' then
+  if Recovery then
+    Filename := AppGlobals.RecoveryFile
+  else
+    Filename := AppGlobals.DataFile;
+
+  if Filename = '' then
     Exit;
 
   S := TExtendedStream.Create;
   try
     try
-      S.LoadFromFile(AppGlobals.DataFile);
+      S.LoadFromFile(Filename);
     except
       Exit;
     end;
 
     try
-      Load(S, AppGlobals.DataFile);
+      // Siehe Kommentar bei ExitApp() in Main.pas....
+      VerifyMagic(S, 62, True);
+
+      Load(S, Filename);
     except
-      on E: EVersionException do
-      begin
-        FReceived := 0;
-        FLoadError := True;
-        raise;
-      end;
       on E: Exception do
       begin
-        FReceived := 0;
-        FLoadError := True;
-        raise Exception.Create(AppGlobals.DataFile);
+        E.Message := Filename;
+        raise;
       end;
     end;
   finally
@@ -1722,6 +1732,7 @@ var
 begin
   S := TExtendedStream.Create;
   try
+    S.WriteBuffer(DATAMAGIC[0], Length(DATAMAGIC));
     Save(S, False);
     S.SaveToFile(AppGlobals.RecoveryFile);
   finally
@@ -1729,14 +1740,57 @@ begin
   end;
 end;
 
+class procedure TDataLists.VerifyMagic(S: TExtendedStream; MinVersion: Cardinal; IsData: Boolean);
+var
+  Buf: array[0..Length(DATAMAGIC) - 1] of Byte;
+  Magic: array[0..Length(DATAMAGIC) - 1] of Byte;
+  OtherMagic: array[0..Length(DATAMAGIC) - 1] of Byte;
+  Version: Cardinal;
+begin
+  // Remark: Die Funktion hier kam am 29.12.14 rein.
+  //         Muss drin bleiben, aber Parameter "MinVersion" kann irgendwann raus, und dann
+  //         kann ich mir hier das lesen der Versionsnummer auch schenken. Entfernen,
+  //         wenn es keine Versionen ohne Magicbytes mehr gibt.
+
+  if Length(DATAMAGIC) <> Length(EXPORTMAGIC) then
+    raise Exception.Create('Length(DATAMAGIC) <> Length(EXPORTMAGIC)');
+
+  if IsData then
+  begin
+    Move(DATAMAGIC[0], Magic[0], Length(Magic));
+    Move(EXPORTMAGIC[0], OtherMagic[0], Length(Magic));
+  end else
+  begin
+    Move(EXPORTMAGIC[0], Magic[0], Length(Magic));
+    Move(DATAMAGIC[0], OtherMagic[0], Length(Magic));
+  end;
+
+  S.Read(Version);
+  if Version > MinVersion then
+  begin
+    if S.Size >= Length(Magic) then
+    begin
+      S.Position := 0;
+      S.Read(Buf, Length(Buf));
+
+      if CompareMem(@Buf[0], @OtherMagic[0], Length(Buf)) then
+        raise EUnsupportedFormatException.Create('')
+      else if CompareMem(@Buf[0], @Magic[0], Length(Buf)) then
+        S.Position := Length(Buf)
+      else
+        raise EUnknownFormatException.Create('');
+    end else
+      raise Exception.Create('');
+  end else
+    S.Position := 0;
+end;
+
 procedure TDataLists.Save;
 var
   S: TExtendedStream;
 begin
   if (AppGlobals.SkipSave) or (AppGlobals.DataFile = '') then
-  begin
     Exit;
-  end;
 
   if (FCategoryList.Count = 1) and (FStreamList.Count = 0) and (FRecentList.Count = 0) and
      (FIgnoreList.Count = 0) and (FSaveList.Count = 0) and (FBrowserList.Count = 0) and
@@ -1749,6 +1803,7 @@ begin
   begin
     S := TExtendedStream.Create;
     try
+      S.WriteBuffer(DATAMAGIC[0], Length(DATAMAGIC));
       Save(S, True);
       S.SaveToFile(AppGlobals.DataFile);
 

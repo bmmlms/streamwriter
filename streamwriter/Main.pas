@@ -524,6 +524,19 @@ begin
       S := TExtendedStream.Create;
       try
         S.LoadFromFile(ImportFilename);
+
+        // Remark: Ich limitiere hier die maximal-Version auf 10. Das liegt daran, dass es manchmal vorkommt,
+        //         dass Menschen die Einstellungsdatei importieren. Ich kann dann eine passende Fehlermeldung ausgeben.
+        //         Weil es dreckig so gelöst ist, stehen bei neuen exportierten Dateien/gespeicherten Einstellungsdateien
+        //         in Zukunft immer "magische Bytes" am Anfang. Wenn es diese neuen Dateiversionen lange genug gibt,
+        //         dann kann ich den Versionshack hier auslassen und nur noch die Bytes auswerten.
+        //         Mögliche Fälle:
+        //          - User importiert alte normale Einstellungsdatei, Version ist > 10, keine EXPORTMAGIC, Exception
+        //          - User importiert alte exportierte Datei, Version ist 1, alles cool
+        //          - User importiert neue normale Einstellungsdatei (mit Magic), Version ist > 10 durch Magic, keine EXPORTMAGIC, Exception
+        //          - User importiert neue exportierte Datei, Version ist > 10 durch Magic, EXPORTMAGIC gefunden, alles cool
+        TDataLists.VerifyMagic(S, 10, False);
+
         S.Read(Version);
         Lst := TSettingsList.Load(S);
         try
@@ -533,9 +546,9 @@ begin
           // LastUsedVersion aus den Registry-/Ini-Einstellungen hat.
           AppGlobals.Load;
           AppGlobals.LoadOldStreamSettings;
-          // Das hier ist ganz fies, bis zur "Trennlinie" muss das irgendwann raus, wenn jeder Client mindestens DataVersion 61 hat.
-          // Genau dann kann auch StreamSettingsObsolete raus! Das ist hier nur so, dass das InitPostProcessors() was folgt
-          // die Dinger neu lädt mithilfe der importierten Einstellungen aus der Registry. Extrem pfuschig.
+          // Remark: Das hier ist ganz fies, bis zur "Trennlinie" muss das irgendwann raus, wenn jeder Client mindestens DataVersion 61 hat.
+          //         Genau dann kann auch StreamSettingsObsolete raus! Das ist hier nur so, dass das InitPostProcessors() was folgt
+          //         die Dinger neu lädt mithilfe der importierten Einstellungen aus der Registry. Extrem pfuschig.
           AppGlobals.StreamSettingsObsolete.PostProcessors.Clear;
           AppGlobals.StreamSettingsObsolete.EncoderSettings.Clear;
           AppGlobals.InitPostProcessors;
@@ -550,7 +563,11 @@ begin
       end;
     except
       on E: EVersionException do
-        MsgBox(0, _('The file could not be imported because it was exported with a newer version of streamWriter.'), _('Error'), MB_ICONERROR)
+        MsgBox(0, _('The file could not be imported because it was exported with a newer version of streamWriter.'), _('Error'), MB_ICONERROR);
+      on E: EUnsupportedFormatException do
+        MsgBox(0, _('The file could not be imported because it contains regular saved data and no exported profile.'), _('Error'), MB_ICONERROR);
+      on E: EUnknownFormatException do
+        MsgBox(0, _('The file could not be imported because it''s format is unknown to streamWriter.'), _('Error'), MB_ICONERROR);
       else
         MsgBox(0, _('The file could not be imported.'), _('Error'), MB_ICONERROR)
     end;

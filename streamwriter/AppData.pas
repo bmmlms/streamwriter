@@ -320,6 +320,10 @@ procedure CreateAppData;
 function InitAppDataStageOne: Boolean;
 function InitAppDataStageTwo: Boolean;
 
+const LoadErrorMsg = 'You can delete it to avoid this error when streamWriter starts by clicking "Yes".'#13#10 +
+                     'WARNING: When clicking "Yes" all data saved in the file will be lost!'#13#10 +
+                     'The file will not be overwritten with new data until it was loaded or deleted.';
+
 var
   AppGlobals: TAppData;
 
@@ -822,33 +826,24 @@ procedure TAppData.LoadData;
 var
   Recovered: Boolean;
   Res: Integer;
-  S: TExtendedStream;
 begin
   Recovered := False;
   {$IFNDEF DEBUG}
   if FileExists(AppGlobals.RecoveryFile) then
   begin
     if MsgBox(0, _('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
-    begin
       try
-        S := TExtendedStream.Create;
-        try
-          S.LoadFromFile(AppGlobals.RecoveryFile);
-          FData.Load(S, AppGlobals.RecoveryFile);
-          Recovered := True;
-        finally
-          S.Free;
-        end;
+        FData.Load(True);
+        Recovered := True;
       except
         MsgBox(0, _('Data could not be loaded.'), _('Error'), MB_ICONERROR);
       end;
-    end;
   end;
   {$ENDIF}
 
   try
     if not Recovered then
-      FData.Load;
+      FData.Load(False);
   except
     on E: Exception do
     begin
@@ -857,26 +852,27 @@ begin
       except end;
       FData := TDataLists.Create;
       InitPostProcessors;
+
       // Damit beim Beenden nichts überschrieben wird.
       FData.LoadError := True;
 
       if E is EVersionException then
       begin
         Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it was saved with a newer version of streamWriter. ' +
-                                  'To use the current file, exit streamWriter and use a newer version of the application. ' +
-                                  'To delete the file and continue to use this version click "Yes".'#13#10 +
-                                  'WARNING: All data saved in the file will be lost!'#13#10 +
-                                  'The file will not be overwritten with new data until it was loaded or deleted.'),
-                                [E.Message]),
-                                _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
+                                  'To use the current file exit streamWriter and use a newer version of the application.') + #13#10 + _(LoadErrorMsg),
+                                [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
+      end else if E is EUnsupportedFormatException then
+      begin
+        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it is contains an exported profile and no regular saved data.') + #13#10 + _(LoadErrorMsg),
+                                [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
+      end else if E is EUnknownFormatException then
+      begin
+        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it''s format is unknown to streamWriter.') + #13#10 + _(LoadErrorMsg),
+                                [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
       end else
       begin
-        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it is corrupted. ' +
-                                  'You can delete it to avoid this error when streamWriter starts by clicking "Yes".'#13#10 +
-                                  'WARNING: All data saved in the file will be lost!'#13#10 +
-                                  'The file will not be overwritten with new data until it was loaded or deleted.'),
-                                [E.Message]),
-                                _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
+        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it is corrupted.') + #13#10 + _(LoadErrorMsg),
+                                [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
       end;
 
       if Res = IDYES then
