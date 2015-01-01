@@ -166,8 +166,6 @@ var
   if not InitWinsock then
     Exit;
 
-  raise Exception.Create('Fehlermeldung');
-
   HideMain := False;
   for i := 0 to ParamCount do
   begin
@@ -180,7 +178,6 @@ var
 
   // Initialize the AppGlobals object without loading any settings.
   // If we need to show the profile selection window, this would make no sense.
-
   try
     CreateAppData;
   except
