@@ -637,9 +637,6 @@ var
   SendData: AnsiString;
   Port: Integer;
 begin
-  // Das muss vor das inherited(), weil es dadrin benutzt wird.
-  FUserAgent := AnsiString(AppGlobals.AppName) + '/' + AppGlobals.AppVersion.AsString;
-
   inherited Create(URL, TICEStream.Create);
 
   UseSynchronize := True;
@@ -682,7 +679,6 @@ begin
     SendData := 'GET ' + AnsiString(Data) + ' HTTP/1.1'#13#10;
   SendData := SendData + 'Host: ' + AnsiString(Host) + #13#10;
   SendData := SendData + 'Accept: */*'#13#10;
-  SendData := SendData + 'User-Agent: mhttplib/' + FUserAgent + #13#10;
   SendData := SendData + 'Icy-MetaData:1'#13#10;
   SendData := SendData + 'Connection: close'#13#10;
   SendData := SendData + #13#10;

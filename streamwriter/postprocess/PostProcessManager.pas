@@ -69,13 +69,12 @@ begin
   BuildProcessingList(Entry);
 
   if not ProcessFile(Entry) then
-  begin
-    Entry.Free;
-  end else
+    Entry.Free
+  else
   begin
     Result := True;
 
-    WriteLog(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llInfo);
+    WriteLog(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llDebug);
 
     FProcessingList.Add(Entry);
   end;
@@ -119,9 +118,7 @@ begin
   Entry.NeedsWave := PostProcessingNeedsWave(Entry);
 
   if Entry.NeedsWave then
-  begin
     Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0].Copy);
-  end;
 
   // Nach Order sortieren
   Client.Entry.Settings.PostProcessors.Sort(TComparer<TPostProcessBase>.Construct(
@@ -140,9 +137,7 @@ begin
     end;
 
   if Entry.NeedsWave then
-  begin
     Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0].Copy);
-  end;
 
   // Jetzt GroupID 1 (Nach WAVE-Phase)
   for i := 0 to Client.Entry.Settings.PostProcessors.Count - 1 do
@@ -240,10 +235,10 @@ begin
       begin
         if ProcessFile(Entry) then
         begin
-          WriteLog(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llInfo);
+          WriteLog(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llDebug);
         end else
         begin
-          WriteLog(Entry.Owner, _('All postprocessors done'), ltPostProcess, llInfo);
+          WriteLog(Entry.Owner, _('All postprocessors done'), ltPostProcess, llDebug);
 
           // Wird hier gemacht, damit WorkingForClient() False zurückliefert. Wichtig!
           FProcessingList.Delete(i);
@@ -314,9 +309,7 @@ begin
   if Enable and (not PostProcess.DependenciesMet) then
   begin
     if not PostProcess.ShowInitMessage(Owner.Handle) then
-    begin
       Exit(False);
-    end;
 
     if MsgBox(Owner.Handle, _('This postprocessor needs additional addons. Do you want to download these addons now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
     begin

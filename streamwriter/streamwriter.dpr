@@ -24,6 +24,11 @@ program streamwriter;
 {$RTTI EXPLICIT METHODS([vcPublic]) PROPERTIES([]) FIELDS([])}
 
 uses
+  madExcept,
+  madLinkDisAsm,
+  madListHardware,
+  madListProcesses,
+  madListModules,
   MM in '..\..\common\MM.pas',
   Windows,
   Classes,
@@ -160,6 +165,8 @@ var
 
   if not InitWinsock then
     Exit;
+
+  raise Exception.Create('Fehlermeldung');
 
   HideMain := False;
   for i := 0 to ParamCount do

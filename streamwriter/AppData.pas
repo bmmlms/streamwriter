@@ -867,7 +867,7 @@ begin
                                 [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
       end else if E is EUnknownFormatException then
       begin
-        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it''s format is unknown to streamWriter.') + #13#10 + _(LoadErrorMsg),
+        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it''s format is unknown.') + #13#10 + _(LoadErrorMsg),
                                 [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
       end else
       begin

@@ -504,7 +504,7 @@ begin
       crDirDoesNotExist:
         begin
           if ForLog then
-            Result := _('Scheduled recording will not start because the folder for saved songs does not exist.')
+            Result := _('Scheduled recording will not start because the folder for saved songs does not exist')
           else
             Result := Format(_('Scheduled recording of "%s" will not start because the folder for saved songs does not exist.'), [Data]);
         end;

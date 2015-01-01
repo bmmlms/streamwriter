@@ -503,18 +503,18 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       ImageIndex = 57
     end
     object actAddToSaveList: TAction
-      Caption = 'Add to manual &wishlist'
-      Hint = 'Add to manual wishlist'
+      Caption = 'Add title to manual &wishlist'
+      Hint = 'Add title to manual wishlist'
       ImageIndex = 31
     end
     object actAddToGlobalIgnoreList: TAction
-      Caption = 'Add to &global ignorelist'
-      Hint = 'Add to global ignorelist'
+      Caption = 'Add title to &global ignorelist'
+      Hint = 'Add title to global ignorelist'
       ImageIndex = 65
     end
     object actAddToStreamIgnoreList: TAction
-      Caption = 'Add to &stream ignorelist'
-      Hint = 'Add to stream ignorelist'
+      Caption = 'Add title to &stream ignorelist'
+      Hint = 'Add title to stream ignorelist'
       ImageIndex = 93
     end
     object actPlayerDecreaseVolume: TAction

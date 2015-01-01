@@ -567,7 +567,7 @@ begin
       on E: EUnsupportedFormatException do
         MsgBox(0, _('The file could not be imported because it contains regular saved data and no exported profile.'), _('Error'), MB_ICONERROR);
       on E: EUnknownFormatException do
-        MsgBox(0, _('The file could not be imported because it''s format is unknown to streamWriter.'), _('Error'), MB_ICONERROR);
+        MsgBox(0, _('The file could not be imported because it''s format is unknown.'), _('Error'), MB_ICONERROR);
       else
         MsgBox(0, _('The file could not be imported.'), _('Error'), MB_ICONERROR)
     end;
@@ -1292,14 +1292,9 @@ begin
   else if Msg is TRefreshServerDataMsg then
   begin
     if HomeComm.SendGetServerData then
-    begin
-      //tabCharts.SetState(csLoading);
       tabClients.SideBar.BrowserView.SwitchMode(moLoading);
-    end;
   end else if Msg is TSelectSavedSongsMsg then
-  begin
     pagMain.ActivePage := tabSaved;
-  end;
 end;
 
 procedure TfrmStreamWriterMain.mnuCheckUpdateClick(Sender: TObject);
@@ -1334,10 +1329,8 @@ begin
   end;
 
   if (Length(Nodes) > 0) and (Cat <> nil) then
-  begin
     for Node in Nodes do
       tabClients.ClientView.MoveTo(Node, Cat, amAddChildLast, False);
-  end;
 end;
 
 procedure TfrmStreamWriterMain.mnuPlayerClick(Sender: TObject);
@@ -2357,9 +2350,7 @@ begin
   end;
 
   for Client2 in FClientManager.Monitors do
-  begin
     Speed := Speed + Client2.Speed;
-  end;
 
   FSpeed := Speed;
   SetCaptionAndTrayHint;
@@ -2372,7 +2363,7 @@ begin
   UpdateStatus;
 
   tabClients.TimerTick;
-  // TODO: texte übersetzen
+
   RecordingActive := False;
   PlayingActive := False;
   for i := 0 to FClientManager.Count - 1 do
