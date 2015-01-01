@@ -341,6 +341,7 @@ type
     procedure PostTranslate; override;
     procedure GetExportDataHeader(Stream: TExtendedStream); override;
     procedure GetExportData(Stream: TExtendedStream); override;
+    function CheckImportFile(Filename: string): Boolean; override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
     constructor Create(AOwner: TComponent; SettingsType: TSettingsTypes;
@@ -2787,6 +2788,34 @@ begin
     txtRetryDelay.Text := '999';
 
   Result := True;
+end;
+
+function TfrmSettings.CheckImportFile(Filename: string): Boolean;
+var
+  S: TExtendedStream;
+begin
+  Result := inherited;
+
+  try
+    S := TExtendedStream.Create;
+    try
+      S.LoadFromFile(Filename);
+      TDataLists.VerifyMagic(S, 10, False);
+    finally
+      S.Free;
+    end;
+  except
+    on E: Exception do
+    begin
+      Result := False;
+      if E is EUnsupportedFormatException then
+        MsgBox(0, _('The file could not be imported because it contains regular saved data and no exported profile.'), _('Error'), MB_ICONERROR)
+      else if E is EUnknownFormatException then
+        MsgBox(0, _('The file could not be imported because it''s format is unknown.'), _('Error'), MB_ICONERROR)
+      else
+        MsgBox(0, _('The file could not be imported.'), _('Error'), MB_ICONERROR);
+    end;
+  end;
 end;
 
 procedure TfrmSettings.chkAddSavedToIgnoreClick(Sender: TObject);
