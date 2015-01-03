@@ -69,8 +69,6 @@ Virtual Treeview
 
 
 &IMG0
-&IMG1
-&IMG2
 
 
 
