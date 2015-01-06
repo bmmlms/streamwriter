@@ -96,7 +96,7 @@ begin
     txtAlbum.ApplyFocus;
   end else if Sender = btnResetCommentPattern then
   begin
-    txtComment.Text := '%s / %u / Recorded using streamWriter';
+    txtComment.Text := _('%s / %u / Recorded using streamWriter');
     txtComment.SelectAll;
     txtComment.ApplyFocus;
   end;

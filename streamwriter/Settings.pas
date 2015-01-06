@@ -1243,7 +1243,7 @@ end;
 
 procedure TfrmSettings.PostTranslate;
 var
-  i: Integer;
+  i, LastIdx: Integer;
 begin
   inherited;
 
@@ -1266,6 +1266,15 @@ begin
     // Damit Sprache neu gesetzt wird und so..
     //TPostProcessBase(lstPostProcess.Items[i].Data).Initialize;
     lstPostProcess.Items[i].Caption := TPostProcessBase(lstPostProcess.Items[i].Data).Name;
+  end;
+
+  // TODO: testen ohne default device, und auch ganz ohne devices. darf nich crashen.
+  if (lstSoundDevice.Items.Count > 0) and (lstSoundDevice.Items.Objects[0] <> nil) and
+     (TBassDevice(lstSoundDevice.Items.Objects[0]).IsDefault) then
+  begin
+    LastIdx := lstSoundDevice.ItemIndex;
+    lstSoundDevice.Items[0] := _('Default device');
+    lstSoundDevice.ItemIndex := LastIdx;
   end;
 
   lstPostProcess.Groups[0].Header := _('Processing when in WAVE-format');
@@ -3162,9 +3171,16 @@ begin
   if (Bass.DeviceAvailable) and (Bass.Devices.Count > 0) then
   begin
     for i := 0 to Bass.Devices.Count - 1 do
-      lstSoundDevice.Items.AddObject(Bass.Devices[i].Name, Bass.Devices[i]);
+    begin
+      if Bass.Devices[i].IsDefault then
+        lstSoundDevice.Items.AddObject(_('Default device'), Bass.Devices[i])
+      else
+        lstSoundDevice.Items.AddObject(Bass.Devices[i].Name, Bass.Devices[i]);
+    end;
+
     if lstSoundDevice.Items.Count > 0 then
       lstSoundDevice.ItemIndex := 0;
+
     try
       for i := 0 to lstSoundDevice.Items.Count - 1 do
         if TBassDevice(lstSoundDevice.Items.Objects[i]).ID = AppGlobals.SoundDevice then

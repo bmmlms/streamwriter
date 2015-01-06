@@ -218,14 +218,6 @@ var
     Exit;
   end;
 
-  // Rename the BASS default device
-  for i := 0 to Bass.Devices.Count - 1 do
-    if Bass.Devices[i].IsDefault then
-    begin
-      Bass.Devices[i].Name := _('Default device');
-      Break;
-    end;
-
   Found := False;
   for i := 0 to Bass.Devices.Count - 1 do
     if Bass.Devices[i].ID = AppGlobals.SoundDevice then

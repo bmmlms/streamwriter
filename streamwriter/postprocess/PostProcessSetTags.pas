@@ -216,7 +216,7 @@ begin
   AppGlobals.Storage.Read('Artist_' + ClassName, FArtist, '%a', 'Plugins');
   AppGlobals.Storage.Read('Album_' + ClassName, FAlbum, '%l', 'Plugins');
   AppGlobals.Storage.Read('Title_' + ClassName, FTitle, '%t', 'Plugins');
-  AppGlobals.Storage.Read('Comment_' + ClassName, FComment, '%s / %u / Recorded using streamWriter', 'Plugins');
+  AppGlobals.Storage.Read('Comment_' + ClassName, FComment, _('%s / %u / Recorded using streamWriter'), 'Plugins');
 end;
 
 function TPostProcessSetTags.FGetHash: Cardinal;
