@@ -1667,7 +1667,7 @@ object frmSettings: TfrmSettings
       Left = 20
       Top = 152
       Width = 268
-      Height = 73
+      Height = 81
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
       Caption = 
@@ -1712,7 +1712,7 @@ object frmSettings: TfrmSettings
     end
     object txtMonitorCount: TLabeledEdit
       Left = 20
-      Top = 244
+      Top = 252
       Width = 53
       Height = 21
       EditLabel.Width = 173
