@@ -334,8 +334,6 @@ uses
 
 { TAppData }
 
-// TODO: am ende auf memory leaks checken...
-
 constructor TAppData.Create(AppName: string);
 var
   i, W, H: Integer;

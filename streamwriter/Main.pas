@@ -981,10 +981,10 @@ end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
 begin
-  inherited;
-
   FreeAndNil(FClientManager);
   FreeAndNil(FUpdater);
+
+  inherited;
 end;
 
 procedure TfrmStreamWriterMain.FormKeyDown(Sender: TObject; var Key: Word;
