@@ -262,7 +262,7 @@
 						<VersionInfoKeys Name="FileDescription">streamWriter</VersionInfoKeys>
 						<VersionInfoKeys Name="FileVersion">5.0.0.1</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName">streamwriter</VersionInfoKeys>
-						<VersionInfoKeys Name="LegalCopyright">streamwriter.org</VersionInfoKeys>
+						<VersionInfoKeys Name="LegalCopyright">Copyright (c) 2010-2015 Alexander Nottelmann</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
 						<VersionInfoKeys Name="OriginalFilename">streamwriter.exe</VersionInfoKeys>
 						<VersionInfoKeys Name="ProductName">streamWriter</VersionInfoKeys>
