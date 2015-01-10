@@ -1268,7 +1268,6 @@ begin
     lstPostProcess.Items[i].Caption := TPostProcessBase(lstPostProcess.Items[i].Data).Name;
   end;
 
-  // TODO: testen ohne default device, und auch ganz ohne devices. darf nich crashen.
   if (lstSoundDevice.Items.Count > 0) and (lstSoundDevice.Items.Objects[0] <> nil) and
      (TBassDevice(lstSoundDevice.Items.Objects[0]).IsDefault) then
   begin
@@ -1288,6 +1287,9 @@ begin
   lstOutputFormat.ItemIndex := FOutputFormatIdx;
   lstMinQuality.ItemIndex := FMinQualityIdx;
   lstFormat.ItemIndex := FFormatIdx;
+
+  if not lstSoundDevice.Enabled then
+    lstSoundDevice.Text := _('(no devices available)');
 
   FormResize(Self);
 end;
@@ -3307,6 +3309,8 @@ begin
   // Erweitert ordentlich machen
   lstSoundDevice.Visible := False;
   lblSoundDevice.Visible := False;
+  txtLogFile.Visible := False;
+  btnBrowseLogFile.Visible := False;
 
   btnReset := TBitBtn.Create(Self);
   btnReset.Parent := pnlNav;
