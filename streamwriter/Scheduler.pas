@@ -476,7 +476,7 @@ begin
           begin
             FSchedules.Add(ScheduleList[i]);
             S := TSchedulerSchedule.Create(ScheduleList[i]);
-            S.ID := i;
+            S.ID := FSchedules.Count - 1;
             L.Add(S);
           end;
         end;
