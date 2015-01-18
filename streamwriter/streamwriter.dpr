@@ -156,6 +156,7 @@ uses
 {$R ..\..\common\res\lang_icons.res}
 {$R ..\..\common\res\icons.res}
 
+
 var
   i: Integer;
   HideMain, Found: Boolean;
