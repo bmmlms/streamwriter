@@ -1102,7 +1102,7 @@ begin
   Result := -1;
   try
     S2 := s;
-    if not ParseURL(S2, Host, Port, Data) then
+    if not ParseURL(S2).Success then
       Exit;
   except
     Exit;

@@ -633,9 +633,8 @@ end;
 
 constructor TICEThread.Create(URL: string);
 var
-  Host, Data: string;
-  SendData: AnsiString;
-  Port: Integer;
+  Res: TParseURLRes;
+  SendData: string;
 begin
   inherited Create(URL, TICEStream.Create);
 
@@ -659,7 +658,7 @@ begin
   FTitle := '';
   FPlayer := TICEPlayer.Create;
 
-  ParseURL(URL, Host, Port, Data);
+  Res := ParseURL(URL);
 
   FTypedStream := TICEStream(FRecvStream);
   FTypedStream.OnTitleChanged := StreamTitleChanged;
@@ -676,7 +675,7 @@ begin
   if ProxyEnabled then
     SendData := 'GET ' + AnsiString(URL) + ' HTTP/1.1'#13#10
   else
-    SendData := 'GET ' + AnsiString(Data) + ' HTTP/1.1'#13#10;
+    SendData := 'GET ' + AnsiString(Res.Data) + ' HTTP/1.1'#13#10;
   SendData := SendData + 'Host: ' + AnsiString(Host) + #13#10;
   SendData := SendData + 'Accept: */*'#13#10;
   SendData := SendData + 'Icy-MetaData:1'#13#10;

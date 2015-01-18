@@ -222,7 +222,7 @@ begin
   // Wenn für 15 Sekunden nichts kommt ist Feierabend. Mindestens die Antwort auf den Ping muss immer ankommen.
   FDataTimeout := 15000;
 
-  inherited Create('streamwriter.org', 7085, TSocketStream.Create);
+  inherited Create('streamwriter.org', 7085, TSocketStream.Create, False);
   //inherited Create('gaia', 7085, TSocketStream.Create);
 
   UseSynchronize := True;

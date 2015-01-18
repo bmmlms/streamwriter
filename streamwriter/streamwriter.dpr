@@ -140,7 +140,9 @@ uses
   MonitorAnalyzer in 'streaming\MonitorAnalyzer.pas',
   DynBASS in '..\..\common\bass\DynBASS.pas',
   LogTab in 'controls\LogTab.pas',
-  Scheduler in 'Scheduler.pas';
+  Scheduler in 'Scheduler.pas',
+  DynOpenSSL in '..\..\common\openssl\DynOpenSSL.pas',
+  IdSSLOpenSSLHeadersCustom in '..\..\common\openssl\IdSSLOpenSSLHeadersCustom.pas';
 
 {$SetPEOptFlags $0140}
 
@@ -148,6 +150,7 @@ uses
 {$R res\language.res}
 {$R res\icons.res}
 {$R res\bass.res}
+{$R res\openssl.res}
 {$R res\about.res}
 {$R ..\..\common\res\language.res}
 {$R ..\..\common\res\lang_icons.res}
@@ -159,96 +162,108 @@ var
   frmStreamWriterMain: TfrmStreamWriterMain;
   frmHomeTest: TfrmHomeTest;
  begin
-  {$IFDEF madExcept}
-  MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
-  {$ENDIF}
-
-  if not InitWinsock then
-    Exit;
-
-  HideMain := False;
-  for i := 0 to ParamCount do
-  begin
-    if ParamStr(i) = '-minimize' then
-    begin
-      HideMain := True;
-      Break;
-    end;
-  end;
-
-  // Initialize the AppGlobals object without loading any settings.
-  // If we need to show the profile selection window, this would make no sense.
+  Bass := nil;
+  OpenSSL := nil;
   try
-    CreateAppData;
-  except
-    on EAlreadyRunning do
+    {$IFDEF madExcept}
+    MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
+    {$ENDIF}
+
+    if not InitWinsock then
       Exit;
-  end;
-  MsgBus := TSWMessageBus.Create;
 
-  Application.Title := AppGlobals.AppName;
-  Application.Icon.Handle := LoadIcon(HInstance, 'A');
-
-  if not InitAppStageOne then
-    Exit;
-
-  // Basic initialization
-  if not InitAppDataStageOne then
-    Exit;
-
-  InitPlayerManager;
-
-  if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and
-     (not IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion)) and (not HideMain)
-     and (not AppGlobals.InstallUpdateOnStart)
-  then
-    TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.BuildNumber,
-      AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
-
-  // Now load everything from datafiles
-  if not InitAppDataStageTwo then
-    Exit;
-
-  // Initialize BASS, quit application on error
-  Bass := TBassLoader.Create;
-  if not Bass.InitializeBass(Application.Handle, True, False, False, False) then
-  begin
-    MsgBox(0, _('The BASS library or it''s plugins could not be extracted/loaded. Without these libraries streamWriter cannot record/playback streams. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
-    Bass.Free;
-    Exit;
-  end;
-
-  Found := False;
-  for i := 0 to Bass.Devices.Count - 1 do
-    if Bass.Devices[i].ID = AppGlobals.SoundDevice then
+    HideMain := False;
+    for i := 0 to ParamCount do
     begin
-      Found := True;
-      Break;
-    end;
-  if not Found then
-  begin
-    for i := 0 to Bass.Devices.Count - 1 do
-      if Bass.Devices[i].IsDefault then
+      if ParamStr(i) = '-minimize' then
       begin
-        AppGlobals.SoundDevice := Bass.Devices[i].ID;
+        HideMain := True;
         Break;
       end;
-  end;
-
-  Application.CreateForm(TmodSharedData, modSharedData);
-  // Create the main form if everything is setup
-  if InitAppStageTwo(TfrmWizard) and AppGlobals.WasSetup then
-  begin
-    if AppGlobals.Tray and HideMain then
-    begin
-      Application.ShowMainForm := False;
     end;
 
-    Application.CreateForm(TfrmStreamWriterMain, frmStreamWriterMain);
-    //Application.CreateForm(TfrmHomeTest, frmHomeTest);
+    // Initialize the AppGlobals object without loading any settings.
+    // If we need to show the profile selection window, this would make no sense.
+    try
+      CreateAppData;
+    except
+      on EAlreadyRunning do
+        Exit;
+    end;
+    MsgBus := TSWMessageBus.Create;
+
+    Application.Title := AppGlobals.AppName;
+    Application.Icon.Handle := LoadIcon(HInstance, 'A');
+
+    if not InitAppStageOne then
+      Exit;
+
+    // Basic initialization
+    if not InitAppDataStageOne then
+      Exit;
+
+    InitPlayerManager;
+
+    if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and
+       (not IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion)) and (not HideMain)
+       and (not AppGlobals.InstallUpdateOnStart)
+    then
+      TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.BuildNumber,
+        AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
+
+    // Now load everything from datafiles
+    if not InitAppDataStageTwo then
+      Exit;
+
+    // Initialize BASS, quit application on error
+    Bass := TBassLoader.Create;
+    if not Bass.InitializeBass(Application.Handle, True, False, False, False) then
+    begin
+      MsgBox(0, _('The BASS library or it''s plugins could not be extracted/loaded. Without these libraries streamWriter cannot record/playback streams. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
+      Bass.Free;
+      Exit;
+    end;
+
+    OpenSSL := TOpenSSLLoader.Create;
+    if not OpenSSL.InitializeOpenSSL then
+    begin
+      OpenSSL.Free;
+      Exit;
+    end;
+
+    Found := False;
+    for i := 0 to Bass.Devices.Count - 1 do
+      if Bass.Devices[i].ID = AppGlobals.SoundDevice then
+      begin
+        Found := True;
+        Break;
+      end;
+    if not Found then
+    begin
+      for i := 0 to Bass.Devices.Count - 1 do
+        if Bass.Devices[i].IsDefault then
+        begin
+          AppGlobals.SoundDevice := Bass.Devices[i].ID;
+          Break;
+        end;
+    end;
+
+    Application.CreateForm(TmodSharedData, modSharedData);
+    // Create the main form if everything is setup
+    if InitAppStageTwo(TfrmWizard) and AppGlobals.WasSetup then
+    begin
+      if AppGlobals.Tray and HideMain then
+      begin
+        Application.ShowMainForm := False;
+      end;
+
+      Application.CreateForm(TfrmStreamWriterMain, frmStreamWriterMain);
+      //Application.CreateForm(TfrmHomeTest, frmHomeTest);
+    end;
+
+    Application.Run;
+  finally
+    Bass.Free;
+    OpenSSL.Free;
   end;
-
-  Application.Run;
-
-  Bass.Free;
 end.

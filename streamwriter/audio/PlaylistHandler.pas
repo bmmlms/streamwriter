@@ -86,23 +86,22 @@ end;
 function TPlaylistHandler.ParsePlaylist(Data: string; PlaylistType: TPlaylistTypes): Boolean;
   procedure ParseLine(Line: string);
   var
-    Host, URLData: string;
-    Port: Integer;
-    PortDetected: Boolean;
+    Res: TParseURLRes;
   begin
     if Pos('\', Line) > 0 then
       Exit;
 
-    if ParseURL(Line, Host, Port, URLData, PortDetected) then
+    Res := ParseURL(Line);
+    if Res.Success then
     begin
-      if not PortDetected then
+      if not Res.PortDetected then
       begin
         // Es gibt keinen Standard scheinbar - beide nehmen.
-        FURLs.Add('http://' + Host + ':80' + URLData);
-        FURLs.Add('http://' + Host + ':6666' + URLData);
+        FURLs.Add('http://' + Res.Host + ':80' + Res.Data);
+        FURLs.Add('http://' + Res.Host + ':6666' + Res.Data);
       end else
       begin
-        FURLs.Add('http://' + Host + ':' + IntToStr(Port) + URLData);
+        FURLs.Add('http://' + Res.Host + ':' + IntToStr(Res.Port) + Res.Data);
       end;
     end;
   end;

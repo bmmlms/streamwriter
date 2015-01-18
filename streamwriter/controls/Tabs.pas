@@ -76,19 +76,18 @@ end;
 
 { TMainTabSheet }
 
-procedure TMainTabSheet.SavePlaylist(Entries: TPlaylistEntryArray;
-  Open: Boolean);
- function GetURLString(URL: string): string;
- var
-  H, D: string;
-  P: Integer;
- begin
-   if ParseURL(URL, H, P, D) then
-   begin
-     Result := 'http://' + H + ':' + IntToStr(P) + D;
-   end else
-    Result := URL;
- end;
+procedure TMainTabSheet.SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean);
+  function GetURLString(URL: string): string;
+  var
+    Res: TParseURLRes;
+  begin
+    Res := ParseURL(URL);
+    if Res.Success then
+    begin
+      Result := 'http://' + Res.Host + ':' + IntToStr(Res.Port) + Res.Data;
+    end else
+      Result := URL;
+  end;
  procedure BuildPLS(Entries: TPlaylistEntryArray; List: TStringList);
   var
     i: Integer;

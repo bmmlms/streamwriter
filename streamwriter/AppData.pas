@@ -403,23 +403,23 @@ begin
   // Set some application-specific settings
   SetLength(FProjectUpdateLinks, 2);
   {$IFDEF DEBUG}
-  FProjectUpdateLinks[0] := 'http://streamwriter.gaia/';
-  FProjectUpdateLinks[1] := 'http://streamwriter.gaia/';
+  FProjectUpdateLinks[0] := 'https://streamwriter.gaia/';
+  FProjectUpdateLinks[1] := 'https://streamwriter.gaia/';
   {$ELSE}
-  FProjectUpdateLinks[0] := 'http://streamwriter.org/';
-  FProjectUpdateLinks[1] := 'http://streamwriter.de/';
+  FProjectUpdateLinks[0] := 'https://streamwriter.org/';
+  FProjectUpdateLinks[1] := 'https://streamwriter.de/';
   {$ENDIF}
-  FProjectHomepageLink := 'http://streamwriter.org/';
-  FProjectLink := 'http://streamwriter.org/';
+  FProjectHomepageLink := 'https://streamwriter.org/';
+  FProjectLink := 'https://streamwriter.org/';
 
-  FProjectHelpLink := 'http://streamwriter.org/wiki/artikel/help/';
-  FProjectHelpLinkMain := 'http://streamwriter.org/wiki/artikel/mainwindow/';
-  FProjectHelpLinkSettings := 'http://streamwriter.org/wiki/artikel/settings/';
-  FProjectHelpLinkAutoSettings := 'http://streamwriter.org/wiki/artikel/autosettings/';
-  FProjectHelpLinkStreamSettings := 'http://streamwriter.org/wiki/artikel/streamsettings/';
+  FProjectHelpLink := 'https://streamwriter.org/wiki/artikel/help/';
+  FProjectHelpLinkMain := 'https://streamwriter.org/wiki/artikel/mainwindow/';
+  FProjectHelpLinkSettings := 'https://streamwriter.org/wiki/artikel/settings/';
+  FProjectHelpLinkAutoSettings := 'https://streamwriter.org/wiki/artikel/autosettings/';
+  FProjectHelpLinkStreamSettings := 'https://streamwriter.org/wiki/artikel/streamsettings/';
 
-  FProjectForumLink := 'http://streamwriter.org/forum/';
-  FProjectDonateLink := 'http://streamwriter.org/inhalt/donate/';
+  FProjectForumLink := 'https://streamwriter.org/forum/';
+  FProjectDonateLink := 'https://streamwriter.org/inhalt/donate/';
 
   // Call the base-constructor with our defined variables
   inherited Create(AppName, True, W, H);
