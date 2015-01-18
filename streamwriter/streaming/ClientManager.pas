@@ -155,6 +155,11 @@ function TClientManager.AddClient(URL: string): TICEClient;
 var
   C: TICEClient;
 begin
+  if Copy(LowerCase(URL), 1, 23) = 'http://streamwriter.org' then
+  begin
+    URL := 'https://' + Copy(URL, 8, Length(URL));
+  end;
+
   C := TICEClient.Create(Self, URL);
   SetupClient(C);
   Result := C;
@@ -164,6 +169,11 @@ function TClientManager.AddClient(ID, Bitrate: Cardinal; Name, StartURL: string;
 var
   C: TICEClient;
 begin
+  if Copy(LowerCase(StartURL), 1, 23) = 'http://streamwriter.org' then
+  begin
+    StartURL := 'https://' + Copy(StartURL, 8, Length(StartURL));
+  end;
+
   C := TICEClient.Create(Self, ID, Bitrate, Name, StartURL);
   // Ist hier, damit das ClientView das direkt weiﬂ und passig in die Kategorie packt
   if IsAuto then
@@ -176,6 +186,11 @@ function TClientManager.AddClient(Entry: TStreamEntry): TICEClient;
 var
   C: TICEClient;
 begin
+  if Copy(LowerCase(Entry.StartURL), 1, 23) = 'http://streamwriter.org' then
+  begin
+    Entry.StartURL := 'https://' + Copy(Entry.StartURL, 8, Length(Entry.StartURL));
+  end;
+
   C := TICEClient.Create(Self, Entry);
   SetupClient(C);
   Result := C;
