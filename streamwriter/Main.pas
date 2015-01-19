@@ -2614,16 +2614,20 @@ begin
   if HomeComm.Disabled then
     CS := cshFail
   else if HomeComm.Connected then
-    CS := cshConnected
-  else
+  begin
+    if HomeComm.Secured then
+      CS := cshConnectedSecure
+    else
+      CS := cshConnected;
+  end else
   begin
     CS := cshDisconnected;
     FClientCount := 0;
     FRecordingCount := 0;
   end;
 
-  addStatus.SetState(CS, HomeComm.Authenticated, HomeComm.NotifyTitleChanges, FClientCount, FRecordingCount,
-    FClientManager.SongsSaved, AppGlobals.Data.SongsSaved);
+  addStatus.SetState(CS, HomeComm.Authenticated, HomeComm.NotifyTitleChanges, FClientCount,
+    FRecordingCount, FClientManager.SongsSaved, AppGlobals.Data.SongsSaved);
 
   SetCaptionAndTrayHint;
 end;

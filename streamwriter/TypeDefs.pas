@@ -30,7 +30,7 @@ type
   TIntArray = array of Integer;
   TCardinalArray = array of Cardinal;
 
-  TLogType = (ltGeneral, ltSong, ltSaved, ltPostProcess, ltSchedule);
+  TLogType = (ltGeneral, ltSong, ltSaved, ltPostProcess, ltSchedule, ltSecure);
   TLogSource = (lsGeneral, lsAutomatic, lsStream, lsHome);
   TLogLevel = (llError, llWarning, llInfo, llDebug);
 

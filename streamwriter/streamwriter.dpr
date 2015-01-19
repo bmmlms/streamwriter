@@ -24,12 +24,6 @@ program streamwriter;
 {$RTTI EXPLICIT METHODS([vcPublic]) PROPERTIES([]) FIELDS([])}
 
 uses
-  madExcept,
-  madLinkDisAsm,
-  madListHardware,
-  madListProcesses,
-  madListModules,
-  MM in '..\..\common\MM.pas',
   Windows,
   Classes,
   Messages,
@@ -166,7 +160,7 @@ var
   OpenSSL := nil;
   try
     {$IFDEF madExcept}
-    MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
+    //MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
     {$ENDIF}
 
     if not InitWinsock then

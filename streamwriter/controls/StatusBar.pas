@@ -28,7 +28,7 @@ uses
   Functions, LanguageObjects, CommCtrl, GUIFunctions, Forms, ExtCtrls;
 
 type
-  THomeConnectionState = (cshUndefined, cshConnected, cshDisconnected, cshFail);
+  THomeConnectionState = (cshUndefined, cshConnected, cshConnectedSecure, cshDisconnected, cshFail);
 
   TSWStatusBar = class(TStatusBar)
   private
@@ -48,7 +48,7 @@ type
 
     FTimer: TTimer;
     FSpeedBmp: TBitmap;
-    IconConnected, IconDisconnected: TIcon;
+    IconConnected, IconConnectedSecure, IconDisconnected: TIcon;
     IconLoggedIn, IconLoggedOff: TIcon;
     IconAutoRecordEnabled: TIcon;
     IconAutoRecordDisabled: TIcon;
@@ -69,8 +69,8 @@ type
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
 
-    procedure SetState(ConnectionState: THomeConnectionState; LoggedIn, NotifyTitleChanges: Boolean; Clients, Recordings: Integer;
-      SongsSaved, OverallSongsSaved: Cardinal);
+    procedure SetState(ConnectionState: THomeConnectionState; LoggedIn, NotifyTitleChanges: Boolean;
+      Clients, Recordings: Integer; SongsSaved, OverallSongsSaved: Cardinal);
     procedure BuildSpeedBmp;
     property Speed: UInt64 read FSpeed write FSetSpeed;
     property CurrentReceived: UInt64 read FCurrentReceived write FSetCurrentReceived;
@@ -180,6 +180,8 @@ begin
 
   IconConnected := TIcon.Create;
   IconConnected.Handle := LoadImage(HInstance, 'CONNECT_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
+  IconConnectedSecure := TIcon.Create;
+  IconConnectedSecure.Handle := LoadImage(HInstance, 'CONNECT_SECURE_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
   IconDisconnected := TIcon.Create;
   IconDisconnected.Handle := LoadImage(HInstance, 'DISCONNECT_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
   IconLoggedIn := TIcon.Create;
@@ -219,6 +221,7 @@ end;
 destructor TSWStatusBar.Destroy;
 begin
   IconConnected.Free;
+  IconConnectedSecure.Free;
   IconDisconnected.Free;
   IconLoggedIn.Free;
   IconLoggedOff.Free;
@@ -258,6 +261,14 @@ begin
               FDots := '';
 
               Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconConnected);
+              Canvas.TextOut(R.Left + 56, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connected')) div 2, _('Connected'));
+            end;
+          cshConnectedSecure:
+            begin
+              FTimer.Enabled := False;
+              FDots := '';
+
+              Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconConnectedSecure);
               Canvas.TextOut(R.Left + 56, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connected')) div 2, _('Connected'));
             end;
           cshDisconnected:
@@ -377,8 +388,8 @@ begin
   BuildSpeedBmp;
 end;
 
-procedure TSWStatusBar.SetState(ConnectionState: THomeConnectionState; LoggedIn, NotifyTitleChanges: Boolean; Clients, Recordings: Integer;
-  SongsSaved, OverallSongsSaved: Cardinal);
+procedure TSWStatusBar.SetState(ConnectionState: THomeConnectionState; LoggedIn, NotifyTitleChanges: Boolean;
+  Clients, Recordings: Integer; SongsSaved, OverallSongsSaved: Cardinal);
 var
   OldConnectionState: THomeConnectionState;
   OldLoggedIn, OldNotifyTitleChanges: Boolean;

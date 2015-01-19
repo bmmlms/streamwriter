@@ -283,6 +283,8 @@ begin
           Index := 56;
         ltSchedule:
           Index := 50;
+        ltSecure:
+          Index := 103;
       end;
     end;
   end;

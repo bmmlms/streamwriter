@@ -86,6 +86,8 @@ type
     procedure DoException(E: Exception); override;
     procedure DoEnded; override;
     procedure DoStuff; override;
+    procedure DoConnected; override;
+    procedure DoSecured; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -119,7 +121,7 @@ type
     FDisabled: Boolean;
     FThread: THomeThread;
 
-    FAuthenticated, FIsAdmin, FWasConnected, FConnected, FNotifyTitleChanges: Boolean;
+    FAuthenticated, FIsAdmin, FWasConnected, FConnected, FNotifyTitleChanges, FSecured: Boolean;
     FTitleNotificationsSet: Boolean;
 
     FOnStateChanged: TNotifyEvent;
@@ -157,6 +159,7 @@ type
     procedure HomeThreadWishlistUpgradeReceived(Sender: TSocketThread);
     procedure HomeThreadAuthTokenReceived(Sender: TSocketThread);
     procedure HomeThreadLog(Sender: TSocketThread; Data: string);
+    procedure HomeThreadSecured(Sender: TSocketThread);
 
     procedure HomeThreadTerminate(Sender: TObject);
   public
@@ -190,6 +193,7 @@ type
     property Connected: Boolean read FConnected;
     property Authenticated: Boolean read FAuthenticated;
     property NotifyTitleChanges: Boolean read FNotifyTitleChanges;
+    property Secured: Boolean read FSecured;
     property IsAdmin: Boolean read FIsAdmin;
     property ThreadAlive: Boolean read FGetThreadAlive;
 
@@ -222,7 +226,7 @@ begin
   // Wenn für 15 Sekunden nichts kommt ist Feierabend. Mindestens die Antwort auf den Ping muss immer ankommen.
   FDataTimeout := 15000;
 
-  inherited Create('streamwriter.org', 7085, TSocketStream.Create, False);
+  inherited Create('streamwriter.org', 7086, TSocketStream.Create, True);
   //inherited Create('gaia', 7085, TSocketStream.Create);
 
   UseSynchronize := True;
@@ -232,6 +236,12 @@ destructor THomeThread.Destroy;
 begin
 
   inherited;
+end;
+
+procedure THomeThread.DoConnected;
+begin
+  inherited;
+
 end;
 
 procedure THomeThread.DoEnded;
@@ -402,6 +412,12 @@ begin
 
   if Assigned(FOnSearchChartsReceived) then
     Sync(FOnSearchChartsReceived)
+end;
+
+procedure THomeThread.DoSecured;
+begin
+  inherited;
+
 end;
 
 procedure THomeThread.DoServerDataReceived(CommandHeader: TCommandHeader;
@@ -876,6 +892,12 @@ begin
     FOnSearchChartsReceived(Self, THomeThread(Sender).FSearchReceivedChartsSuccess, THomeThread(Sender).FSearchReceivedCharts);
 end;
 
+procedure THomeCommunication.HomeThreadSecured(Sender: TSocketThread);
+begin
+  FSecured := True;
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltSecure, llInfo, _('Server'), _('Connection secured')));
+end;
+
 procedure THomeCommunication.HomeThreadServerDataReceived(Sender: TSocketThread);
 begin
   if Assigned(FOnServerDataReceived) then
@@ -958,6 +980,8 @@ begin
   FThread.OnSearchChartsReceived := HomeThreadSearchChartsReceived;
   FThread.OnWishlistUpgradeReceived := HomeThreadWishlistUpgradeReceived;
   FThread.OnAuthTokenReceived := HomeThreadAuthTokenReceived;
+
+  FThread.OnSecured := HomeThreadSecured;
 
   FThread.OnTerminate := HomeThreadTerminate;
 

@@ -654,6 +654,8 @@ begin
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 56);
       ltSchedule:
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 50);
+      ltSecure:
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 103);
     end;
 
     L := L + 16;
