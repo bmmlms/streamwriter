@@ -796,6 +796,9 @@ end;
 
 procedure THomeCommunication.HomeThreadBeforeEnded(Sender: TSocketThread);
 begin
+  if FConnected then
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llWarning, _('Server'), _('Disconnected from streamWriter server')));
+
   FConnected := False;
   FAuthenticated := False;
   FIsAdmin := False;
