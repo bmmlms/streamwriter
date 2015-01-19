@@ -292,19 +292,19 @@ begin
             end;
         end;
 
-        if (FConnectionState = cshConnected) and FLoggedIn then
+        if (FConnectionState = cshConnectedSecure) and FLoggedIn then
           Canvas.Draw(R.Left + 18, R.Top + (R.Bottom - R.Top) div 2 - IconLoggedIn.Height div 2, IconLoggedIn)
         else
           Canvas.Draw(R.Left + 18, R.Top + (R.Bottom - R.Top) div 2 - IconLoggedOff.Height div 2, IconLoggedOff);
 
-        if (FConnectionState = cshConnected) and FNotifyTitleChanges then
+        if (FConnectionState = cshConnectedSecure) and FNotifyTitleChanges then
           Canvas.Draw(R.Left + 36, R.Top + (R.Bottom - R.Top) div 2 - IconAutoRecordEnabled.Height div 2, IconAutoRecordEnabled)
         else
           Canvas.Draw(R.Left + 36, R.Top + (R.Bottom - R.Top) div 2 - IconAutoRecordDisabled.Height div 2, IconAutoRecordDisabled);
       end;
     1:
       begin
-        if FConnectionState = cshConnected then
+        if FConnectionState = cshConnectedSecure then
         begin
           Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconGroup.Height div 2, IconGroup);
           Canvas.TextOut(R.Left + 18, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FClients)) div 2, IntToStr(FClients));
@@ -407,7 +407,7 @@ begin
   FConnectionState := ConnectionState;
   FLoggedIn := LoggedIn;
   FNotifyTitleChanges := NotifyTitleChanges;
-  if ConnectionState = cshConnected then
+  if ConnectionState = cshConnectedSecure then
   begin
     FClients := Clients;
     FRecordings := Recordings;
