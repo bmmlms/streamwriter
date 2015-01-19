@@ -24,6 +24,12 @@ program streamwriter;
 {$RTTI EXPLICIT METHODS([vcPublic]) PROPERTIES([]) FIELDS([])}
 
 uses
+  madExcept,
+  madLinkDisAsm,
+  madListHardware,
+  madListProcesses,
+  madListModules,
+  MM in '..\..\common\MM.pas',
   Windows,
   Classes,
   Messages,
@@ -160,7 +166,7 @@ var
   OpenSSL := nil;
   try
     {$IFDEF madExcept}
-    //MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
+    MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
     {$ENDIF}
 
     if not InitWinsock then
@@ -214,14 +220,13 @@ var
     if not Bass.InitializeBass(Application.Handle, True, False, False, False) then
     begin
       MsgBox(0, _('The BASS library or it''s plugins could not be extracted/loaded. Without these libraries streamWriter cannot record/playback streams. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
-      Bass.Free;
       Exit;
     end;
 
     OpenSSL := TOpenSSLLoader.Create;
     if not OpenSSL.InitializeOpenSSL then
     begin
-      OpenSSL.Free;
+      MsgBox(0, _('The OpenSSL libraries could not be extracted/loaded. Without these libraries streamWriter cannot be run. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
       Exit;
     end;
 
@@ -257,7 +262,9 @@ var
 
     Application.Run;
   finally
-    Bass.Free;
-    OpenSSL.Free;
+    if Bass <> nil then
+      Bass.Free;
+    if OpenSSL <> nil then
+      OpenSSL.Free;
   end;
 end.
