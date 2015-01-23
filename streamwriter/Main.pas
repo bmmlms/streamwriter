@@ -261,6 +261,8 @@ type
 
     FExiting: Boolean;
 
+    FSSLErrorShown: Boolean;
+
     procedure AfterShown(var Msg: TMessage); message WM_AFTERSHOWN;
     procedure ReceivedData(var Msg: TWMCopyData); message WM_COPYDATA;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
@@ -304,6 +306,7 @@ type
     procedure HomeCommLogOut(Sender: TObject);
     procedure HomeCommServerInfo(Sender: TObject; ClientCount, RecordingCount: Cardinal);
     procedure HomeCommError(Sender: TObject; ID: TCommErrors; Msg: string);
+    procedure HomeCommSSLError(Sender: TObject);
 
     procedure PreTranslate;
     procedure PostTranslate;
@@ -930,6 +933,7 @@ begin
   HomeComm.OnLogOutReceived := HomeCommLogOut;
   HomeComm.OnServerInfoReceived := HomeCommServerInfo;
   HomeComm.OnErrorReceived := HomeCommError;
+  HomeComm.OnSSLError := HomeCommSSLError;
   HomeComm.Connect;
 
   actPlayerIncreaseVolume.Enabled := Bass.DeviceAvailable;
@@ -1064,6 +1068,8 @@ end;
 procedure TfrmStreamWriterMain.HomeCommHandshake(Sender: TObject;
   Success: Boolean);
 begin
+  FSSLErrorShown := False;
+
   UpdateStatus;
 
   if not Success then
@@ -1089,6 +1095,16 @@ begin
   FClientCount := ClientCount;
   FRecordingCount := RecordingCount;
   UpdateStatus;
+end;
+
+procedure TfrmStreamWriterMain.HomeCommSSLError(Sender: TObject);
+begin
+  if not FSSLErrorShown then
+  begin
+    FSSLErrorShown := True;
+    TfrmMsgDlg.ShowMsg(Self, _('The certificate received from streamwriter.org could not be validated. ' +
+                               'Please go to streamwriter.org and download and install the newest version. If this message continues to pop up afterwards please post to the board.'), mtError, [mbOK], mbOK);
+  end;
 end;
 
 procedure TfrmStreamWriterMain.HomeCommStateChanged(Sender: TObject);

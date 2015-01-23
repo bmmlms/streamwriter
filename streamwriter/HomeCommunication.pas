@@ -139,6 +139,7 @@ type
     FOnSearchChartsReceived: TChartsReceivedEvent;
     FOnWishlistUpgradeReceived: TWishlistUpgradeEvent;
     FOnAuthTokenReceived: TCardinalEvent;
+    FOnSSLError: TNotifyEvent;
 
     function FGetThreadAlive: Boolean;
 
@@ -160,6 +161,7 @@ type
     procedure HomeThreadAuthTokenReceived(Sender: TSocketThread);
     procedure HomeThreadLog(Sender: TSocketThread; Data: string);
     procedure HomeThreadSecured(Sender: TSocketThread);
+    procedure HomeThreadException(Sender: TSocketThread);
 
     procedure HomeThreadTerminate(Sender: TObject);
   public
@@ -212,6 +214,7 @@ type
     property OnSearchChartsReceived: TChartsReceivedEvent read FOnSearchChartsReceived write FOnSearchChartsReceived;
     property OnWishlistUpgradeReceived: TWishlistUpgradeEvent read FOnWishlistUpgradeReceived write FOnWishlistUpgradeReceived;
     property OnAuthTokenReceived: TCardinalEvent read FOnAuthTokenReceived write FOnAuthTokenReceived;
+    property OnSSLError: TNotifyEvent read FOnSSLError write FOnSSLError;
   end;
 
 var
@@ -249,7 +252,7 @@ begin
   inherited;
 
   if not Terminated then
-    Sleep(3000);
+    Sleep(5000);
 end;
 
 procedure THomeThread.DoMessageReceived(CommandHeader: TCommandHeader;
@@ -274,7 +277,6 @@ end;
 procedure THomeThread.DoException(E: Exception);
 begin
   inherited;
-
   if E.ClassType = EExceptionParams then
     WriteLog(Format(_(E.Message), EExceptionParams(E).Args))
   else
@@ -824,6 +826,15 @@ begin
     FOnErrorReceived(Self, FThread.FErrorID, FThread.FErrorMsg);
 end;
 
+procedure THomeCommunication.HomeThreadException(Sender: TSocketThread);
+begin
+  if Sender.SSLError then
+  begin
+    if Assigned(FOnSSLError) then
+      FOnSSLError(Self);
+  end;
+end;
+
 procedure THomeCommunication.HomeThreadHandshakeReceived(
   Sender: TSocketThread);
 begin
@@ -985,6 +996,7 @@ begin
   FThread.OnAuthTokenReceived := HomeThreadAuthTokenReceived;
 
   FThread.OnSecured := HomeThreadSecured;
+  FThread.OnException := HomeThreadException;
 
   FThread.OnTerminate := HomeThreadTerminate;
 

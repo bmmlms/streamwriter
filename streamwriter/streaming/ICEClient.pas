@@ -1095,9 +1095,8 @@ end;
 
 function TURLList.Add(const S: string): Integer;
 var
-  i, Port: Integer;
-  Host, Data: string;
-  S2: string;
+  i: Integer;
+  Host, S2: string;
 begin
   Result := -1;
   try
