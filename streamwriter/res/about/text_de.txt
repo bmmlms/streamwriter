@@ -43,6 +43,7 @@ MP4Box
 MySQL
 node.js
 OggEnc
+OpenSSL
 Programmer's Notepad
 Python
 SoX
