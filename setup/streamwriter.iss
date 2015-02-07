@@ -49,7 +49,7 @@ WizardImageFile=compiler:wizmodernimage-is.bmp
 WizardSmallImageFile=wizmodernsmallimage-is.bmp
 Compression=lzma2/ultra
 LicenseFile=license.txt
-VersionInfoVersion=5.1.0.0
+VersionInfoVersion=5.2.0.0
 UninstallDisplayIcon={app}\streamwriter.exe
 CloseApplications=no
 
