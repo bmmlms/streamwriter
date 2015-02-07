@@ -142,7 +142,8 @@ uses
   LogTab in 'controls\LogTab.pas',
   Scheduler in 'Scheduler.pas',
   DynOpenSSL in '..\..\common\openssl\DynOpenSSL.pas',
-  IdSSLOpenSSLHeadersCustom in '..\..\common\openssl\IdSSLOpenSSLHeadersCustom.pas';
+  IdSSLOpenSSLHeadersCustom in '..\..\common\openssl\IdSSLOpenSSLHeadersCustom.pas',
+  WindowsFunctions in '..\..\common\WindowsFunctions.pas';
 
 {$SetPEOptFlags $0140}
 

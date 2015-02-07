@@ -37,7 +37,7 @@ uses
   ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
   PowerManagement, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
   AppMessages, CommandLine, Protocol, Commands, HomeCommands, SharedData,
-  LogTab;
+  LogTab, WindowsFunctions;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -386,10 +386,11 @@ begin
 
   FExiting := True;
 
-  // Das Hide lassen wir weg. Das ist nämlich gefährlich, wenn Windows herunter
-  // gefahren wird. Wenn ein Programm kein sichtbares Top-Level-Fenster mehr hat,
-  // dann kann es einfach abgeschossen werden, und darf den Shutdown nicht blockieren!
-  //Hide;
+  if Assigned(ShutdownBlockReasonCreate) and Assigned(ShutdownBlockReasonDestroy) then
+    ShutdownBlockReasonCreate(Handle, _('Stopping recordings and saving settings...'));
+
+  // Hide geht nur durch ShutdownBlockReasonCreate, wir werden sonst abgeschossen eventuell!
+  Hide;
 
   CloseHandle(AppGlobals.MutexHandleExiting);
 
@@ -593,6 +594,9 @@ begin
   for i := pagMain.PageCount - 1 downto 0 do
     if pagMain.Pages[i].ClassType = TCutTab then
       pagMain.Pages[i].Free;
+
+  if Assigned(ShutdownBlockReasonCreate) and Assigned(ShutdownBlockReasonDestroy) then
+    ShutdownBlockReasonDestroy(Handle);
 
   if Hard then
     Halt

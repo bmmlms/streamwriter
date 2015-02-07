@@ -219,6 +219,7 @@
 			<DCCReference Include="Scheduler.pas"/>
 			<DCCReference Include="..\..\common\openssl\DynOpenSSL.pas"/>
 			<DCCReference Include="..\..\common\openssl\IdSSLOpenSSLHeadersCustom.pas"/>
+			<DCCReference Include="..\..\common\WindowsFunctions.pas"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
