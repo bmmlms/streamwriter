@@ -372,6 +372,7 @@ var
   Res: Integer;
   StartTime, Version: Cardinal;
   Hard: Boolean;
+  HardTimeout: Integer;
   S: TExtendedStream;
   Lst: TSettingsList;
 begin
@@ -384,7 +385,12 @@ begin
         Exit;
 
   FExiting := True;
-  Hide;
+
+  // Das Hide lassen wir weg. Das ist nämlich gefährlich, wenn Windows herunter
+  // gefahren wird. Wenn ein Programm kein sichtbares Top-Level-Fenster mehr hat,
+  // dann kann es einfach abgeschossen werden, und darf den Shutdown nicht blockieren!
+  //Hide;
+
   CloseHandle(AppGlobals.MutexHandleExiting);
 
   if ImportFilename = '' then
@@ -481,12 +487,17 @@ begin
   if FCheckFiles <> nil then
     FCheckFiles.Terminate;
 
+  if Shutdown then
+    HardTimeout := 2000
+  else
+    HardTimeout := 10000;
+
   Hard := False;
   StartTime := GetTickCount;
   while (HomeComm.ThreadAlive or HomeComm.Connected) or FClientManager.Active or (FCheckFiles <> nil) or FUpdater.Active do
   begin
-    // Wait 30 seconds for threads to finish
-    if StartTime < GetTickCount - 30000 then
+    // Wait for threads to finish
+    if StartTime < GetTickCount - HardTimeout then
     begin
       Hard := True;
       Break;
@@ -1630,7 +1641,7 @@ procedure TfrmStreamWriterMain.EndSession(var Msg: TMessage);
 begin
   if WordBool(Msg.WParam) then
   begin
-    Msg.Result := 1;
+    Msg.Result := 0;
     ExitApp(True);
   end;
 end;
