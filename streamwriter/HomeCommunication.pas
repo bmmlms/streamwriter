@@ -1002,7 +1002,7 @@ begin
 
   FThread.Start;
 end;
-
+               // TODO: übersetzen. besonders diese ssl-fehlermeldung im formmain, wenn cert nicht validiert werden konnte!
 initialization
   TCommand.RegisterCommand(ctHandshakeResponse, TCommandHandshakeResponse);
   TCommand.RegisterCommand(ctLogInResponse, TCommandLogInResponse);
