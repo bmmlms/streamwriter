@@ -207,6 +207,7 @@ type
     Bevel1: TBevel;
     btnBrowseLogFile: TPngSpeedButton;
     txtLogFile: TLabeledEdit;
+    chkCheckCertificate: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -491,6 +492,7 @@ begin
     txtMaxRetries.Text := IntToStr(Settings.MaxRetries);
     txtRetryDelay.Text := IntToStr(Settings.RetryDelay);
     txtMinDiskSpace.Text := IntToStr(AppGlobals.MinDiskSpace);
+    chkCheckCertificate.Checked := AppGlobals.CheckCertificate;
     txtLogFile.Text := AppGlobals.LogFile;
 
     txtSilenceLevel.Text := IntToStr(Settings.SilenceLevel);
@@ -639,6 +641,7 @@ begin
           AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);
 
         AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
+        AppGlobals.CheckCertificate := chkCheckCertificate.Checked;
         AppGlobals.LogFile := txtLogFile.Text;
         AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
         AppGlobals.DefaultActionBrowser := TStreamOpenActions(lstDefaultActionBrowser.ItemIndex);

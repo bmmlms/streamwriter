@@ -339,14 +339,14 @@ object frmSettings: TfrmSettings
     end
     object lblSoundDevice: TLabel
       Left = 4
-      Top = 88
+      Top = 112
       Width = 68
       Height = 13
       Caption = 'Sound device:'
     end
     object btnBrowseLogFile: TPngSpeedButton
       Left = 264
-      Top = 148
+      Top = 172
       Width = 25
       Height = 21
       Hint = 'Browse...'
@@ -385,7 +385,7 @@ object frmSettings: TfrmSettings
     end
     object lstSoundDevice: TComboBox
       Left = 4
-      Top = 104
+      Top = 128
       Width = 285
       Height = 21
       Style = csDropDownList
@@ -393,7 +393,7 @@ object frmSettings: TfrmSettings
     end
     object txtLogFile: TLabeledEdit
       Left = 4
-      Top = 148
+      Top = 172
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -402,6 +402,16 @@ object frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Caption = 'Logfile:'
       TabOrder = 3
+    end
+    object chkCheckCertificate: TCheckBox
+      Left = 4
+      Top = 88
+      Width = 284
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Cancel connections on invalid certificate'
+      TabOrder = 4
+      OnClick = chkAutoTuneInClick
     end
   end
   object pnlPostProcess: TPanel

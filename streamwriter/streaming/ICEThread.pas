@@ -636,7 +636,7 @@ var
   Res: TParseURLRes;
   SendData: string;
 begin
-  inherited Create(URL, TICEStream.Create);
+  inherited Create(URL, TICEStream.Create, False);
 
   UseSynchronize := True;
   FRecording := False;

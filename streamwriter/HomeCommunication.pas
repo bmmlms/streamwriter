@@ -120,6 +120,7 @@ type
   private
     FDisabled: Boolean;
     FThread: THomeThread;
+    FRaisedException: Exception;
 
     FAuthenticated, FIsAdmin, FWasConnected, FConnected, FNotifyTitleChanges, FSecured: Boolean;
     FTitleNotificationsSet: Boolean;
@@ -139,7 +140,7 @@ type
     FOnSearchChartsReceived: TChartsReceivedEvent;
     FOnWishlistUpgradeReceived: TWishlistUpgradeEvent;
     FOnAuthTokenReceived: TCardinalEvent;
-    FOnSSLError: TNotifyEvent;
+    FOnException: TNotifyEvent;
 
     function FGetThreadAlive: Boolean;
 
@@ -159,7 +160,7 @@ type
     procedure HomeThreadSearchChartsReceived(Sender: TSocketThread);
     procedure HomeThreadWishlistUpgradeReceived(Sender: TSocketThread);
     procedure HomeThreadAuthTokenReceived(Sender: TSocketThread);
-    procedure HomeThreadLog(Sender: TSocketThread; Data: string);
+    procedure HomeThreadLog(Sender: TSocketThread);
     procedure HomeThreadSecured(Sender: TSocketThread);
     procedure HomeThreadException(Sender: TSocketThread);
 
@@ -190,7 +191,7 @@ type
     procedure SendStreamAnalyzationData(StreamID: Cardinal; Data: TExtendedStream);
     procedure SendGenerateAuthToken;
 
-    property Disabled: Boolean read FDisabled;
+    property Disabled: Boolean read FDisabled write FDisabled;
     property WasConnected: Boolean read FWasConnected;
     property Connected: Boolean read FConnected;
     property Authenticated: Boolean read FAuthenticated;
@@ -198,6 +199,7 @@ type
     property Secured: Boolean read FSecured;
     property IsAdmin: Boolean read FIsAdmin;
     property ThreadAlive: Boolean read FGetThreadAlive;
+    property RaisedException: Exception read FRaisedException;
 
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
     property OnTitleNotificationsChanged: TNotifyEvent read FOnTitleNotificationsChanged write FOnTitleNotificationsChanged;
@@ -214,7 +216,7 @@ type
     property OnSearchChartsReceived: TChartsReceivedEvent read FOnSearchChartsReceived write FOnSearchChartsReceived;
     property OnWishlistUpgradeReceived: TWishlistUpgradeEvent read FOnWishlistUpgradeReceived write FOnWishlistUpgradeReceived;
     property OnAuthTokenReceived: TCardinalEvent read FOnAuthTokenReceived write FOnAuthTokenReceived;
-    property OnSSLError: TNotifyEvent read FOnSSLError write FOnSSLError;
+    property OnException: TNotifyEvent read FOnException write FOnException;
   end;
 
 var
@@ -229,7 +231,7 @@ begin
   // Wenn für 15 Sekunden nichts kommt ist Feierabend. Mindestens die Antwort auf den Ping muss immer ankommen.
   FDataTimeout := 15000;
 
-  inherited Create('streamwriter.org', 7086, TSocketStream.Create, True);
+  inherited Create('streamwriter.org', 7086, TSocketStream.Create, True, AppGlobals.CheckCertificate);
   //inherited Create('gaia', 7085, TSocketStream.Create);
 
   UseSynchronize := True;
@@ -276,12 +278,13 @@ end;
 
 procedure THomeThread.DoException(E: Exception);
 begin
-  inherited;
   if E.ClassType = EExceptionParams then
-    WriteLog(Format(_(E.Message), EExceptionParams(E).Args))
+    WriteLog(Format(_(E.Message), EExceptionParams(E).Args), slError)
   else
     if E.Message <> '' then
-      WriteLog(Format(_('%s'), [_(E.Message)]));
+      WriteLog(Format(_('%s'), [_(E.Message)]), slError);
+
+  inherited;
 end;
 
 procedure THomeThread.DoGenerateAuthTokenReceived(CommandHeader: TCommandHeader;
@@ -826,15 +829,6 @@ begin
     FOnErrorReceived(Self, FThread.FErrorID, FThread.FErrorMsg);
 end;
 
-procedure THomeCommunication.HomeThreadException(Sender: TSocketThread);
-begin
-  if Sender.SSLError then
-  begin
-    if Assigned(FOnSSLError) then
-      FOnSSLError(Self);
-  end;
-end;
-
 procedure THomeCommunication.HomeThreadHandshakeReceived(
   Sender: TSocketThread);
 begin
@@ -863,10 +857,9 @@ begin
     FOnHandshakeReceived(Self, THomeThread(Sender).FHandshakeSuccess);
 end;
 
-procedure THomeCommunication.HomeThreadLog(Sender: TSocketThread;
-  Data: string);
+procedure THomeCommunication.HomeThreadLog(Sender: TSocketThread);
 begin
-  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llError, _('Server'), Data));
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llError, _('Server'), _(FThread.LogMsg)));
 end;
 
 procedure THomeCommunication.HomeThreadLogInReceived(Sender: TSocketThread);
@@ -923,6 +916,13 @@ procedure THomeCommunication.HomeThreadServerInfoReceived(
 begin
   if Assigned(FOnServerInfoReceived) then
     FOnServerInfoReceived(Self, THomeThread(Sender).FServerInfoClientCount, THomeThread(Sender).FServerInfoRecordingCount);
+end;
+
+procedure THomeCommunication.HomeThreadException(Sender: TSocketThread);
+begin
+  FRaisedException := Sender.RaisedException;
+  if Assigned(FOnException) then
+    FOnException(Self);
 end;
 
 procedure THomeCommunication.HomeThreadTerminate(Sender: TObject);

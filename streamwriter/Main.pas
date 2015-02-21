@@ -37,7 +37,7 @@ uses
   ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
   PowerManagement, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
   AppMessages, CommandLine, Protocol, Commands, HomeCommands, SharedData,
-  LogTab, WindowsFunctions;
+  LogTab, WindowsFunctions, Sockets;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -261,8 +261,6 @@ type
 
     FExiting: Boolean;
 
-    FSSLErrorShown: Boolean;
-
     procedure AfterShown(var Msg: TMessage); message WM_AFTERSHOWN;
     procedure ReceivedData(var Msg: TWMCopyData); message WM_COPYDATA;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
@@ -306,7 +304,7 @@ type
     procedure HomeCommLogOut(Sender: TObject);
     procedure HomeCommServerInfo(Sender: TObject; ClientCount, RecordingCount: Cardinal);
     procedure HomeCommError(Sender: TObject; ID: TCommErrors; Msg: string);
-    procedure HomeCommSSLError(Sender: TObject);
+    procedure HomeCommException(Sender: TObject);
 
     procedure PreTranslate;
     procedure PostTranslate;
@@ -948,7 +946,7 @@ begin
   HomeComm.OnLogOutReceived := HomeCommLogOut;
   HomeComm.OnServerInfoReceived := HomeCommServerInfo;
   HomeComm.OnErrorReceived := HomeCommError;
-  HomeComm.OnSSLError := HomeCommSSLError;
+  HomeComm.OnException := HomeCommException;
   HomeComm.Connect;
 
   actPlayerIncreaseVolume.Enabled := Bass.DeviceAvailable;
@@ -1083,8 +1081,6 @@ end;
 procedure TfrmStreamWriterMain.HomeCommHandshake(Sender: TObject;
   Success: Boolean);
 begin
-  FSSLErrorShown := False;
-
   UpdateStatus;
 
   if not Success then
@@ -1112,13 +1108,20 @@ begin
   UpdateStatus;
 end;
 
-procedure TfrmStreamWriterMain.HomeCommSSLError(Sender: TObject);
+procedure TfrmStreamWriterMain.HomeCommException(Sender: TObject);
+var
+  Res: TModalResult;
 begin
-  if not FSSLErrorShown then
+  if HomeComm.RaisedException is ESSLException then
   begin
-    FSSLErrorShown := True;
-    TfrmMsgDlg.ShowMsg(Self, _('The certificate received from streamwriter.org could not be validated. ' +
-                               'Please go to streamwriter.org and download and install the newest version. If this message continues to pop up afterwards please post to the board.'), mtError, [mbOK], mbOK);
+    Res := TfrmMsgDlg.ShowMsg(Self, _('The certificate received from streamwriter.org could not be validated. ' +
+                                      'To abort the insecure connection press "Cancel", to continue using an insecure connection press "OK". ' +
+                                      'If you decide to use an insecure connection this setting will be remembered for future connections. ' +
+                                      'You can change it in the settings window in the "Advanced" category.'), mtError, [mbOK, mbCancel], mbCancel);
+    if Res = mrOk then
+      AppGlobals.CheckCertificate := False
+    else
+      HomeComm.Disabled := True;
   end;
 end;
 
