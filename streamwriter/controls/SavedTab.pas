@@ -2324,37 +2324,30 @@ end;
 
 procedure TSavedTree.AddTrack(Track: TTrackInfo; AddToInternalList: Boolean; IgnorePattern: Boolean);
 var
-  Node: PVirtualNode;
+  Node, ParentNode: PVirtualNode;
   NodeData: PSavedNodeData;
 begin
   if AddToInternalList then
     FTrackList.Add(Track);
 
+  ParentNode := nil;
   if IgnorePattern then
-  begin
-    //Node := AddChild(FFileNode);
-    Node := InsertNode(FFileNode, amAddChildLast);
-    if (FFileNode.ChildCount = 1) then // and (not FromFilter) then
-      Expanded[FFileNode] := True;
-    NodeData := GetNodeData(Node);
-    NodeData.Track := Track;
-  end else if (FPattern = '*') or (Like(LowerCase(Track.Filename), FPattern)) or (Like(LowerCase(Track.Streamname), FPattern)) then
+    ParentNode := FFileNode
+  else if (FPattern = '*') or (Like(LowerCase(Track.Filename), FPattern)) or (Like(LowerCase(Track.Streamname), FPattern)) then
   begin
     if Track.IsStreamFile then
-    begin
-      //Node := AddChild(FStreamNode);
-      Node := InsertNode(FStreamNode, amAddChildLast);
-      if (FStreamNode.ChildCount = 1) then // and (not FromFilter) then
-        Expanded[FStreamNode] := True;
-    end else
-    begin
-      //Node := AddChild(FFileNode);
-      Node := InsertNode(FFileNode, amAddChildLast);
-      if (FFileNode.ChildCount = 1) then // and (not FromFilter) then
-        Expanded[FFileNode] := True;
-    end;
+      ParentNode := FStreamNode
+    else
+      ParentNode := FFileNode;
+  end;
+
+  if ParentNode <> nil then
+  begin
+    Node := InsertNode(ParentNode, amAddChildLast);
     NodeData := GetNodeData(Node);
     NodeData.Track := Track;
+    if (ParentNode.ChildCount = 1) then
+      Expanded[ParentNode] := True;
   end;
 end;
 
