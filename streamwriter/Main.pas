@@ -1114,10 +1114,10 @@ var
 begin
   if HomeComm.RaisedException is ESSLException then
   begin
-    Res := TfrmMsgDlg.ShowMsg(Self, _('The certificate received from streamwriter.org could not be validated. ' +
+    Res := TfrmMsgDlg.ShowMsg(Self, _('The certificate received from streamwriter.org could not be validated, somebody might be intercepting your connection to streamWriter''s server. ' +
                                       'To abort the insecure connection press "Cancel", to continue using an insecure connection press "OK". ' +
                                       'If you decide to use an insecure connection this setting will be remembered for future connections. ' +
-                                      'You can change it in the settings window in the "Advanced" category.'), mtError, [mbOK, mbCancel], mbCancel);
+                                      'You can change it in the settings window in the "General" category.'), mtError, [mbOK, mbCancel], mbCancel);
     if Res = mrOk then
       AppGlobals.CheckCertificate := False
     else

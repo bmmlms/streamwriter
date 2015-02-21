@@ -81,7 +81,6 @@ type
     FMaxSpeed: Cardinal;
     FLastBrowserUpdate: Cardinal;
     FAutomaticFilePatternObsolete: string;
-    FCheckCertificate: Boolean;
 
     FProjectHelpLinkMain: string;
     FProjectHelpLinkSettings: string;
@@ -253,7 +252,6 @@ type
     property LastBrowserUpdate: Cardinal read FLastBrowserUpdate write FLastBrowserUpdate;
     // The pattern for automatically recorded files
     property AutomaticFilePatternObsolete: string read FAutomaticFilePatternObsolete write FAutomaticFilePatternObsolete;
-    property CheckCertificate: Boolean read FCheckCertificate write FCheckCertificate;
 
     property ClientHeaderWidthLoaded: Boolean read FClientHeaderWidthLoaded;
     property ClientHeaderPositionLoaded: Boolean read FClientHeaderPositionLoaded;
@@ -638,8 +636,6 @@ begin
   FStorage.Read('LastBrowserUpdate', FLastBrowserUpdate, Trunc(Now));
 
   FStorage.Read('AutomaticFilePattern', FAutomaticFilePatternObsolete, '%s\%a - %t');
-
-  FStorage.Read('CheckCertificate', FCheckCertificate, True);
 
   FStorage.Read('AutoTuneInMinQuality', FAutoTuneInMinQuality, 2);
   if (FAutoTuneInMinQuality > 2) or (FAutoTuneInMinQuality < 0) then
@@ -1099,7 +1095,6 @@ begin
   FStorage.Write('LimitSpeed', FLimitSpeed);
   FStorage.Write('MaxSpeed', FMaxSpeed);
   FStorage.Write('LastBrowserUpdate', FLastBrowserUpdate);
-  FStorage.Write('CheckCertificate', FCheckCertificate);
 
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('LogFile', FLogFile);
