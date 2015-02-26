@@ -528,7 +528,7 @@ begin
 
   tabClients.ClientView.Clear;
 
-  if FUpdateOnExit then
+  if FUpdateOnExit and (not Shutdown) then
     FUpdater.RunUpdate(Handle);
 
   if ImportFilename <> '' then
