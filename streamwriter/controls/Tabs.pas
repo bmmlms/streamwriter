@@ -27,7 +27,7 @@ uses
   Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
   StdCtrls, Menus, VirtualTrees, DragDrop, DragDropFile, ShellApi,
   Themes, ImgList, AppData, GUIFunctions, LanguageObjects, MControls,
-  DataManager, Dialogs, Functions, Logging;
+  DataManager, Dialogs, Functions, Logging, SWFunctions;
 
 type
   TMainTabSheet = class;
@@ -81,6 +81,7 @@ procedure TMainTabSheet.SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean
   var
     Res: TParseURLRes;
   begin
+    URL := SecureSWURLToInsecure(URL);
     Res := ParseURL(URL);
     if Res.Success then
     begin

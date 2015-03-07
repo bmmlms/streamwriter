@@ -23,10 +23,11 @@ unit SWFunctions;
 interface
 
 uses
-  Windows, SysUtils, AudioFunctions;
+  Windows, SysUtils, AudioFunctions, Functions;
 
 function GetAutoTuneInMinKbps(AudioType: TAudioTypes; Idx: Integer): Cardinal;
 function FixPatternFilename(Filename: string): string;
+function SecureSWURLToInsecure(URL: string): string;
 
 implementation
 
@@ -90,6 +91,16 @@ begin
   if Length(Result) > 0 then
     if Result[Length(Result)] = '\' then
       Result := Copy(Result, 1, Length(Result) - 1);
+end;
+
+function SecureSWURLToInsecure(URL: string): string;
+var
+  Res: TParseURLRes;
+begin
+  Result := URL;
+  Res := ParseURL(URL);
+  if Res.Success and Res.Secure and (Pos('streamwriter.', LowerCase(Res.Host)) > 0) then
+    Result := 'http://' + Res.Host + ':80' + Res.Data;
 end;
 
 end.

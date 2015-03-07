@@ -210,6 +210,9 @@ begin
   // Ggf. Daten von alter Version importieren, ansonsten Defaults zuweisen.
   // Die echten Daten kommen später über Load().
   // REMARK: Irgendwann kann das hier weg!
+  // REMARK: Wenn ich diesen Abschnitt an PostProcessors entferne, dann wird FOrder nicht mehr zugewiesen!
+  // Das ist wichtig, dass da Defaults für integrierte PostProcessors gegeben sind.
+  // z.B. sollte SetTags IMMER als letztes kommen!!!
   AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
   AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 1010, 'Plugins');
   AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');

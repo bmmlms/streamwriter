@@ -29,7 +29,7 @@ uses
   StdCtrls, Menus, ImgList, Math, ICEClient, VirtualTrees, LanguageObjects,
   Graphics, DragDrop, DragDropFile, Functions, AppData, Tabs, DropComboTarget,
   DropSource, ShlObj, ComObj, ShellAPI, DataManager, StreamBrowserView,
-  Logging, PngImage, SharedControls, GUIFunctions, Forms;
+  Logging, PngImage, SharedControls, GUIFunctions, Forms, SWFunctions;
 
 type
   TAccessCanvas = class(TCanvas);
@@ -1231,7 +1231,7 @@ begin
       Entries := GetEntries(etStream);
 
     for i := 0 to Length(Entries) - 1 do
-      FDragSource.Files.Add(AnsiString(Entries[i].URL));
+      FDragSource.Files.Add(AnsiString(SecureSWURLToInsecure(Entries[i].URL)));
 
     if FDragSource.Files.Count = 0 then
       Exit;

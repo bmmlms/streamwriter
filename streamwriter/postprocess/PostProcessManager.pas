@@ -366,6 +366,8 @@ begin
 
             Entry.Data.ReEncodedFilename := RemoveFileExt(Entry.Data.Filename) + '_temp' + Output;
             TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.WorkFilename, Entry.Data.ReEncodedFilename, Entry.Data.EncoderSettings);
+
+            // TODO: HIER NACH MÜSSEN NOCH TAGS GESETZT WERDEN!!!
           end;
         end;
 

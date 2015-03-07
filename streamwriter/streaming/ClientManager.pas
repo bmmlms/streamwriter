@@ -155,10 +155,12 @@ function TClientManager.AddClient(URL: string): TICEClient;
 var
   C: TICEClient;
 begin
+  {$IFNDEF NOSSL}
   if Copy(LowerCase(URL), 1, 23) = 'http://streamwriter.org' then
   begin
     URL := 'https://' + Copy(URL, 8, Length(URL));
   end;
+  {$ENDIF}
 
   C := TICEClient.Create(Self, URL);
   SetupClient(C);
@@ -169,10 +171,12 @@ function TClientManager.AddClient(ID, Bitrate: Cardinal; Name, StartURL: string;
 var
   C: TICEClient;
 begin
+  {$IFNDEF NOSSL}
   if Copy(LowerCase(StartURL), 1, 23) = 'http://streamwriter.org' then
   begin
     StartURL := 'https://' + Copy(StartURL, 8, Length(StartURL));
   end;
+  {$ENDIF}
 
   C := TICEClient.Create(Self, ID, Bitrate, Name, StartURL);
   // Ist hier, damit das ClientView das direkt weiﬂ und passig in die Kategorie packt
