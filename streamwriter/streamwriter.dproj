@@ -242,9 +242,7 @@
 					<Source>
 						<Source Name="MainSource">streamwriter.dpr</Source>
 					</Source>
-					<Parameters>
-						<Parameters Name="RunParams">-extractsetuphelper11 &quot;z:\neuer ordner\&quot;</Parameters>
-					</Parameters>
+					<Parameters/>
 					<VersionInfo>
 						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
 						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
