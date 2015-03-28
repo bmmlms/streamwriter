@@ -424,7 +424,7 @@ begin
 
   if (FAudioStream <> nil) and (not FMonitoring) then
   begin
-    FAudioStream.Position := FAudioStream.Size - 1;
+    FAudioStream.Position := FAudioStream.Size;
     FAudioStream.CopyFrom(RecvStream, CopySize);
   end else
     Seek(CopySize, soFromCurrent);
