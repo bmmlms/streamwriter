@@ -31,7 +31,7 @@ uses
   Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
   LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions,
   AddonManager, PostProcessManager, Logging, Base64, AudioFunctions, TypeDefs,
-  Messages, DataManager;
+  Messages, DataManager, SWFunctions;
 
 type
   // Do not change the order of items in the following enums!
@@ -422,7 +422,7 @@ begin
   FProjectDonateLink := 'https://streamwriter.org/inhalt/donate/';
 
   // Call the base-constructor with our defined variables
-  inherited Create(AppName, True, W, H);
+  inherited Create(AppName, True, W, H, alGPL);
 
   // Set the name for the recovery-file
   FRecoveryFile := FStorage.DataDir + 'streamwriter_data_recovery.dat';
@@ -635,7 +635,9 @@ begin
     FLimitSpeed := False;
   FStorage.Read('LastBrowserUpdate', FLastBrowserUpdate, Trunc(Now));
 
-  FStorage.Read('AutomaticFilePattern', FAutomaticFilePatternObsolete, '%s\%a - %t');
+  FStorage.Read('AutomaticFilePattern', FAutomaticFilePatternObsolete, '%streamname%\%artist% - %title%');
+  if (LastUsedDataVersion > 0) and (LastUsedDataVersion < 64) and (FAutomaticFilePatternObsolete <> '%streamname%\%artist% - %title%') then
+    FAutomaticFilePatternObsolete := ConvertPattern(FAutomaticFilePatternObsolete);
 
   FStorage.Read('AutoTuneInMinQuality', FAutoTuneInMinQuality, 2);
   if (FAutoTuneInMinQuality > 2) or (FAutoTuneInMinQuality < 0) then

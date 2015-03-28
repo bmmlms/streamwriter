@@ -103,9 +103,9 @@ begin
   Stream := TFileStream.Create(Filename, fmCreate);
   try
     OldPos := Position;
-    Seek(From, soFromBeginning);
+    Position := From;
     Stream.CopyFrom(Self, Length);
-    Seek(OldPos, soFromBeginning);
+    Position := OldPos;
   finally
     Stream.Free;
   end;
@@ -143,10 +143,10 @@ begin
       if EndPos + LenEnd > Size then
         LenEnd := Size - EndPos;
 
-      Seek(StartPos, soFromBeginning);
+      Position := StartPos;
       M1.CopyFrom(Self, LenStart);
 
-      Seek(EndPos, soFromBeginning);
+      Position := EndPos;
       M2.CopyFrom(Self, LenEnd);
 
       WD.Load(M1);
@@ -190,16 +190,16 @@ begin
     WD2.Free;
   end;
 
-  Seek(OldPos, soFromBeginning);
+  Position := OldPos;
 end;
 
 { TMPEGStreamFile }
 
 function TMPEGStreamFile.GetFrame(F, T: Int64): TPosRect;
 var
-  i, OldPos: Int64;
+  i, OldPos, LastFrame: Int64;
   Frame: FrameData;
-  FL, LastFrame: Integer;
+  FL: Integer;
   Buf: array[0..3] of byte;
 begin
   Result.DataStart := -1;
@@ -232,7 +232,7 @@ begin
         if Size < Position + FL * 2 then
           Exit;
 
-        Seek(FL - 4, soFromCurrent);
+        Position := Position + FL - 4;
         Read(Buf, 4);
         if IsFrameHeader(Buf, 0) then
         begin
@@ -285,9 +285,9 @@ end;
 
 function TMPEGStreamMemory.GetFrame(F, T: Int64): TPosRect;
 var
-  i, OldPos: Int64;
+  i, OldPos, LastFrame: Int64;
   Frame: FrameData;
-  FL, LastFrame: Integer;
+  FL: Integer;
   Buf: array[0..3] of byte;
 begin
   Result.DataStart := -1;
@@ -320,7 +320,7 @@ begin
         if Size < Position + FL * 2 then
           Exit;
 
-        Seek(FL - 4, soFromCurrent);
+        Position := Position + FL - 4;
         Read(Buf, 4);
         if IsFrameHeader(Buf, 0) then
         begin
@@ -380,9 +380,9 @@ begin
   Stream := TFileStream.Create(Filename, fmCreate);
   try
     OldPos := Position;
-    Seek(From, soFromBeginning);
+    Position := From;
     Stream.CopyFrom(Self, Length);
-    Seek(OldPos, soFromBeginning);
+    Position := OldPos;
   finally
     Stream.Free;
   end;
@@ -421,10 +421,10 @@ begin
       if EndPos + LenEnd > Size then
         LenEnd := Size - EndPos;
 
-      Seek(StartPos, soFromBeginning);
+      Position := StartPos;
       M1.CopyFrom(Self, LenStart);
 
-      Seek(EndPos, soFromBeginning);
+      Position := EndPos;
       M2.CopyFrom(Self, LenEnd);
 
       WD.Load(M1);
@@ -468,7 +468,7 @@ begin
     WD2.Free;
   end;
 
-  Seek(OldPos, soFromBeginning);
+  Position := OldPos;
 end;
 
 { TOGGStreamFile }

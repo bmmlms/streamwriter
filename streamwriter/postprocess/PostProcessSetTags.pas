@@ -25,7 +25,7 @@ interface
 uses
   Windows, SysUtils, Classes, PostProcess, LanguageObjects, AudioGenie,
   AddonAudioGenie, Functions, Logging, ConfigureSetTags, AudioFunctions,
-  ExtendedStream, Generics.Collections, FileTagger;
+  ExtendedStream, Generics.Collections, FileTagger, SWFunctions;
 
 type
   TPostProcessSetTagsThread = class(TPostProcessThreadBase)
@@ -88,31 +88,39 @@ begin
 
   FResult := arFail;
 
-  SetLength(Arr, 7);
-  Arr[0].C := 'a';
+  SetLength(Arr, 11);
+  Arr[0].C := 'artist';
   Arr[0].Replace := FData.Artist;
-  Arr[1].C := 't';
+  Arr[1].C := 'title';
   Arr[1].Replace := FData.Title;
-  Arr[2].C := 'l';
+  Arr[2].C := 'album';
   Arr[2].Replace := FData.Album;
-  Arr[3].C := 's';
+  Arr[3].C := 'streamname';
   Arr[3].Replace := Trim(FData.Station);
-  Arr[4].C := 'u';
+  Arr[4].C := 'streamtitle';
   Arr[4].Replace := Trim(FData.StreamTitle);
-  Arr[5].C := 'd';
-  Arr[5].Replace := FormatDateTime('dd.mm.yy', Now);
-  Arr[6].C := 'i';
-  Arr[6].Replace := FormatDateTime('hh.nn.ss', Now);
+  Arr[5].C := 'day';
+  Arr[5].Replace := FormatDateTime('dd', Now);
+  Arr[6].C := 'month';
+  Arr[6].Replace := FormatDateTime('mm', Now);
+  Arr[7].C := 'year';
+  Arr[7].Replace := FormatDateTime('yy', Now);
+  Arr[8].C := 'hour';
+  Arr[8].Replace := FormatDateTime('hh', Now);
+  Arr[9].C := 'minute';
+  Arr[9].Replace := FormatDateTime('nn', Now);
+  Arr[10].C := 'second';
+  Arr[10].Replace := FormatDateTime('ss', Now);
 
   FileTagger := TFileTagger.Create;
   try
     try
       if FileTagger.Read(FData.Filename) then
       begin
-        Artist := PatternReplace(FArtist, Arr);
-        Title := PatternReplace(FTitle, Arr);
-        Album := PatternReplace(FAlbum, Arr);
-        Comment := PatternReplace(FComment, Arr);
+        Artist := PatternReplaceNew(FArtist, Arr);
+        Title := PatternReplaceNew(FTitle, Arr);
+        Album := PatternReplaceNew(FAlbum, Arr);
+        Comment := PatternReplaceNew(FComment, Arr);
 
         FileTagger.Tag.Artist := Artist;
         FileTagger.Tag.Title := Title;
@@ -204,22 +212,14 @@ begin
 
   FCanConfigure := True;
   FGroupID := 1;
+  FOrder := 1010;
 
   FPostProcessType := ptSetTags;
 
-  // Ggf. Daten von alter Version importieren, ansonsten Defaults zuweisen.
-  // Die echten Daten kommen später über Load().
-  // REMARK: Irgendwann kann das hier weg!
-  // REMARK: Wenn ich diesen Abschnitt an PostProcessors entferne, dann wird FOrder nicht mehr zugewiesen!
-  // Das ist wichtig, dass da Defaults für integrierte PostProcessors gegeben sind.
-  // z.B. sollte SetTags IMMER als letztes kommen!!!
-  AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
-  AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 1010, 'Plugins');
-  AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
-  AppGlobals.Storage.Read('Artist_' + ClassName, FArtist, '%a', 'Plugins');
-  AppGlobals.Storage.Read('Album_' + ClassName, FAlbum, '%l', 'Plugins');
-  AppGlobals.Storage.Read('Title_' + ClassName, FTitle, '%t', 'Plugins');
-  AppGlobals.Storage.Read('Comment_' + ClassName, FComment, _('%s / %u / Recorded using streamWriter'), 'Plugins');
+  FArtist := '%artist%';
+  FTitle := '%title%';
+  FAlbum := '%album%';
+  FComment := _('%streamname% / %streamtitle% / Recorded using streamWriter');
 end;
 
 function TPostProcessSetTags.FGetHash: Cardinal;
@@ -246,6 +246,14 @@ begin
   Stream.Read(FAlbum);
   Stream.Read(FTitle);
   Stream.Read(FComment);
+
+  if Version < 64 then
+  begin
+    FArtist := ConvertPattern(FArtist);
+    FAlbum := ConvertPattern(FAlbum);
+    FTitle := ConvertPattern(FTitle);
+    FComment := ConvertPattern(FComment);
+  end;
 end;
 
 function TPostProcessSetTags.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;

@@ -141,12 +141,9 @@ begin
 
   FCanConfigure := False;
   FGroupID := 1;
+  FOrder := 1001;
 
   FPostProcessType := ptMP4Box;
-
-  AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
-  AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 1001, 'Plugins');
-  AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
 end;
 
 function TPostProcessMP4Box.MP4BoxMux(InFile, OutFile: string; TerminateFlag: PBoolean): TActResults;

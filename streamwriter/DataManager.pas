@@ -28,7 +28,7 @@ uses
   Windows, Classes, SysUtils, ExtendedStream, Generics.Collections,
   ComCtrls, Functions, Logging, DateUtils, AudioFunctions, PostProcess,
   PowerManagement, Generics.Defaults, ZLib, TypeDefs, winsock,
-  AddonManager;
+  AddonManager, SWFunctions;
 
 type
   TStreamList = class;
@@ -449,7 +449,7 @@ type
     property FilePatternDecimals: Cardinal read FFilePatternDecimals write FFilePatternDecimals;
     // Chars to remove from filenames of recorded songs
     property RemoveChars: string read FRemoveChars write FRemoveChars;
-    // When set variables get normalized (i.e. %a = ArTiSt becomes Artist)
+    // When set variables get normalized (i.e. %artist% = ArTiSt becomes Artist)
     property NormalizeVariables: Boolean read FNormalizeVariables write FNormalizeVariables;
     { When set stream-files are deleted when recording stops.
       This option is only enabled when FSaveToMemory is false }
@@ -812,7 +812,7 @@ type
   end;
 
 const
-  DATAVERSION: Cardinal = 63;
+  DATAVERSION: Cardinal = 64;
   DATAMAGIC: array[0..3] of Byte = (118, 114, 110, 97);
   EXPORTMAGIC: array[0..3] of Byte = (97, 110, 114, 118);
 
@@ -1360,104 +1360,10 @@ begin
     begin
       // Früher wurde alles in den AppGlobals gespeichert, also müssen wir die Einstellungen
       // ggf. von da übernehmen...
-
       if (AppGlobals.LastUsedDataVersion > 0) and (AppGlobals.LastUsedDataVersion < 61) then
         FStreamSettings.Assign(AppGlobals.StreamSettingsObsolete)
       else
         FStreamSettings.Assign(FDefaultStreamSettings);
-
-      {
-      FStreamSettings.RegExes.Assign(FDefaultStreamSettings.RegExes);
-
-      FStorage.Read('FilePattern', FStreamSettings.FFilePattern, FDefaultStreamSettings.FFilePattern);
-      FStorage.Read('IncompleteFilePattern', FStreamSettings.FIncompleteFilePattern, FDefaultStreamSettings.FIncompleteFilePattern);
-      FStorage.Read('StreamFilePattern', FStreamSettings.FStreamFilePattern, FDefaultStreamSettings.FStreamFilePattern);
-      FStorage.Read('FilePatternDecimals', FStreamSettings.FFilePatternDecimals, FDefaultStreamSettings.FFilePatternDecimals);
-      FStorage.Read('RemoveChars', FStreamSettings.FRemoveChars, FDefaultStreamSettings.FRemoveChars);
-      FStorage.Read('NormalizeVariables', FStreamSettings.FNormalizeVariables, FDefaultStreamSettings.FNormalizeVariables);
-
-      FStorage.Read('DeleteStreams', FStreamSettings.FDeleteStreams, FDefaultStreamSettings.FDeleteStreams);
-      FStorage.Read('AddSavedToIgnore', FStreamSettings.FAddSavedToIgnore, FDefaultStreamSettings.FAddSavedToIgnore);
-      FStorage.Read('AddSavedToStreamIgnore', FStreamSettings.FAddSavedToStreamIgnore, FDefaultStreamSettings.FAddSavedToStreamIgnore);
-      FStorage.Read('RemoveSavedFromWishlist', FStreamSettings.FRemoveSavedFromWishlist, FDefaultStreamSettings.FRemoveSavedFromWishlist);
-      FStorage.Read('SkipShort', FStreamSettings.FSkipShort, FDefaultStreamSettings.FSkipShort);
-      FStorage.Read('SearchSilence', FStreamSettings.FSearchSilence, FDefaultStreamSettings.FSearchSilence);
-      FStorage.Read('AutoDetectSilenceLevel', FStreamSettings.FAutoDetectSilenceLevel, FDefaultStreamSettings.FAutoDetectSilenceLevel);
-      FStorage.Read('SilenceLevel', FStreamSettings.FSilenceLevel, FDefaultStreamSettings.FSilenceLevel);
-      FStorage.Read('SilenceLength', FStreamSettings.FSilenceLength, FDefaultStreamSettings.FSilenceLength);
-
-      FStorage.Read('SilenceBufferSeconds', SilenceBuffer, FDefaultStreamSettings.FSilenceBufferSecondsStart);
-      if SilenceBuffer <> FDefaultStreamSettings.FSilenceBufferSecondsStart then
-      begin
-        FStreamSettings.FSilenceBufferSecondsStart := SilenceBuffer;
-        FStreamSettings.FSilenceBufferSecondsEnd := SilenceBuffer;
-      end else
-      begin
-        FStorage.Read('SilenceBufferSecondsStart', FStreamSettings.FSilenceBufferSecondsStart, FDefaultStreamSettings.FSilenceBufferSecondsStart);
-        FStorage.Read('SilenceBufferSecondsEnd', FStreamSettings.FSilenceBufferSecondsEnd, FDefaultStreamSettings.FSilenceBufferSecondsEnd);
-      end;
-
-      FStreamSettings.FAdjustTrackOffset := False;
-      FStreamSettings.FAdjustTrackOffsetMS := 0;
-      FStreamSettings.FAdjustTrackOffsetDirection := toForward;
-
-      FStorage.Read('SaveToMemory', FStreamSettings.FSaveToMemory, FDefaultStreamSettings.FSaveToMemory);
-      FStorage.Read('OnlySaveFull', FStreamSettings.FOnlySaveFull, FDefaultStreamSettings.FOnlySaveFull);
-      FStorage.Read('OverwriteSmaller', FStreamSettings.FOverwriteSmaller, FDefaultStreamSettings.FOverwriteSmaller);
-      FStorage.Read('DiscardSmaller', FStreamSettings.FDiscardSmaller, FDefaultStreamSettings.FDiscardSmaller);
-      FStorage.Read('DiscardAlways', FStreamSettings.FDiscardAlways, FDefaultStreamSettings.FDiscardAlways);
-
-      if (FStreamSettings.FSilenceLevel < 1) or (FStreamSettings.FSilenceLevel > 100) then
-        FStreamSettings.FSilenceLevel := FDefaultStreamSettings.FSilenceLevel;
-      if FStreamSettings.FSilenceLength < 20 then
-        FStreamSettings.FSilenceLength := FDefaultStreamSettings.FSilenceLength;
-
-      FStorage.Read('ShortLengthSeconds', FStreamSettings.FShortLengthSeconds, FDefaultStreamSettings.FShortLengthSeconds);
-
-      FStorage.Read('SongBuffer', FStreamSettings.FSongBuffer, FDefaultStreamSettings.FSongBuffer);
-
-      FStorage.Read('MaxRetries', FStreamSettings.FMaxRetries, FDefaultStreamSettings.FMaxRetries);
-      FStorage.Read('RetryDelay', FStreamSettings.FRetryDelay, FDefaultStreamSettings.FRetryDelay);
-
-      FStorage.Read('SeparateTracks', FStreamSettings.FSeparateTracks, FDefaultStreamSettings.FSeparateTracks);
-
-      FStorage.Read('OutputFormat', OutputFormatTmp, Integer(FDefaultStreamSettings.OutputFormat));
-      if (OutputFormatTmp > Ord(High(TAudioTypes))) or
-         (OutputFormatTmp < Ord(Low(TAudioTypes))) then
-        FStreamSettings.OutputFormat := atNone
-      else
-        FStreamSettings.OutputFormat := TAudioTypes(OutputFormatTmp);
-
-      if IsVersionNewer(LastUsedVersion, AppVersion) and (IsVersionNewer(LastUsedVersion, ParseVersion('2.1.0.9'))) then
-      begin
-        if DefaultFilterTmp = 0 then
-          FStreamSettings.Filter := ufNone
-        else if DefaultFilterTmp = 1 then
-          FStreamSettings.Filter := ufWish
-        else if DefaultFilterTmp = 2 then
-          FStreamSettings.Filter := ufIgnoreBoth
-        else if DefaultFilterTmp = 3 then
-          FStreamSettings.Filter := ufBoth
-        else
-          FStreamSettings.Filter := ufNone;
-      end else if (DefaultFilterTmp > Ord(High(TUseFilters))) or
-                  (DefaultFilterTmp < Ord(Low(TUseFilters))) then
-        FStreamSettings.Filter := ufNone
-      else
-        FStreamSettings.Filter := TUseFilters(DefaultFilterTmp);
-
-      if FStreamSettings.FSaveToMemory then
-      begin
-        FStreamSettings.FSeparateTracks := True;
-        FStreamSettings.FDeleteStreams := False;
-      end;
-
-      if not FStreamSettings.FSeparateTracks then
-        FStreamSettings.FDeleteStreams := False;
-
-      if FStreamSettings.FRetryDelay > 999 then
-        FStreamSettings.RetryDelay := 999;
-      }
     end;
 
     if (Version > 58) and (Version < 60) then
@@ -1485,6 +1391,7 @@ begin
     if (Version > 58) and (Version < 61) then
     begin
       FAutoRecordSettings.FFilePattern := AppGlobals.AutomaticFilePatternObsolete;
+      FAutoRecordSettings.FFilePattern := ConvertPattern(FAutoRecordSettings.FFilePattern);
       FAutoRecordSettings.FAddSavedToIgnore := AppGlobals.AutoTuneInAddToIgnoreObsolete;
       FAutoRecordSettings.FRemoveSavedFromWishlist := AppGlobals.AutoRemoveSavedFromWishlistObsolete;
     end;
@@ -2786,9 +2693,9 @@ begin
 
   Result.RegExes.Add('(?P<a>.*) - (?P<t>.*)');
 
-  Result.FFilePattern := '%s\%a - %t';
-  Result.FIncompleteFilePattern := '%s\%a - %t';
-  Result.FStreamFilePattern := '%s';
+  Result.FFilePattern := '%streamname%\%artist% - %title%';
+  Result.FIncompleteFilePattern := '%streamname%\%artist% - %title%';
+  Result.FStreamFilePattern := '%streamname%';
   Result.FFilePatternDecimals := 3;
   Result.RemoveChars := '[]{}#$§%~^';
   Result.NormalizeVariables := True;
@@ -2889,22 +2796,31 @@ begin
   end;
 
   Stream.Read(Result.FFilePattern);
+  if Version < 64 then
+    Result.FFilePattern := ConvertPattern(Result.FFilePattern);
 
   if Version >= 17 then
   begin
     Stream.Read(Result.FIncompleteFilePattern);
     if Result.FIncompleteFilePattern = '' then
-      Result.FIncompleteFilePattern := Result.FFilePattern;
+      Result.FIncompleteFilePattern := Result.FFilePattern
+    else
+    begin
+      if Version < 64 then
+        Result.FIncompleteFilePattern := ConvertPattern(Result.FIncompleteFilePattern);
+    end;
   end else
     Result.FIncompleteFilePattern := Result.FFilePattern;
 
   if Version >= 31 then
   begin
     Stream.Read(Result.FStreamFilePattern);
+    if Version < 64 then
+      Result.FStreamFilePattern := ConvertPattern(Result.FStreamFilePattern);
     if Result.FStreamFilePattern = '' then
-      Result.FStreamFilePattern := '%s';
+      Result.FStreamFilePattern := '%streamname%';
   end else
-    Result.FStreamFilePattern := '%s';
+    Result.FStreamFilePattern := '%streamname%';
 
   if Version >= 14 then
     Stream.Read(Result.FFilePatternDecimals)
@@ -3119,6 +3035,9 @@ begin
     Stream.Read(Result.FFilePattern);
     Stream.Read(Result.FAddSavedToIgnore);
     Stream.Read(Result.FRemoveSavedFromWishlist);
+
+    if Version < 64 then
+      Result.FFilePattern := ConvertPattern(Result.FFilePattern);
   end;
 
   Stream.Read(Result.FSearchSilence);

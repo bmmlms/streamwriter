@@ -4,8 +4,8 @@ object frmSettings: TfrmSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Settings'
-  ClientHeight = 470
-  ClientWidth = 620
+  ClientHeight = 480
+  ClientWidth = 630
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -356,6 +356,12 @@ object frmSettings: TfrmSettings
       ParentShowHint = False
       ShowHint = True
       OnClick = btnBrowseLogFileClick
+      PngImage.Data = {
+        89504E470D0A1A0A0000000D4948445200000001000000010802000000907753
+        DE000000097048597300000B1300000B1301009A9C180000000774494D4507DF
+        031C0C0C1A2A1ED9BF0000001D69545874436F6D6D656E740000000000437265
+        6174656420776974682047494D50642E65070000000C4944415478DA63FCFFFF
+        3F00060202FFB792D1D40000000049454E44AE426082}
     end
     object txtMaxRetries: TLabeledEdit
       Left = 4
@@ -416,14 +422,13 @@ object frmSettings: TfrmSettings
       349)
     object lblAppParams: TLabel
       Left = 4
-      Top = 304
+      Top = 292
       Width = 281
-      Height = 41
+      Height = 53
       Anchors = [akLeft, akRight, akBottom]
       AutoSize = False
       Caption = '-'
       WordWrap = True
-      ExplicitTop = 264
     end
     object btnBrowseApp: TPngSpeedButton
       Left = 264
@@ -438,12 +443,18 @@ object frmSettings: TfrmSettings
       ParentShowHint = False
       ShowHint = True
       OnClick = btnBrowseAppClick
+      PngImage.Data = {
+        89504E470D0A1A0A0000000D4948445200000001000000010802000000907753
+        DE000000097048597300000B1300000B1301009A9C180000000774494D4507DF
+        031C0C0C1A2A1ED9BF0000001D69545874436F6D6D656E740000000000437265
+        6174656420776974682047494D50642E65070000000C4944415478DA63FCFFFF
+        3F00060202FFB792D1D40000000049454E44AE426082}
       ExplicitTop = 192
     end
     object btnHelpPostProcess: TPngSpeedButton
-      Left = 266
-      Top = 128
-      Width = 24
+      Left = 264
+      Top = 116
+      Width = 25
       Height = 25
       Hint = 'Info...'
       Anchors = [akRight, akBottom]
@@ -451,13 +462,18 @@ object frmSettings: TfrmSettings
       ParentShowHint = False
       ShowHint = True
       OnClick = btnHelpClick
+      PngImage.Data = {
+        89504E470D0A1A0A0000000D4948445200000001000000010802000000907753
+        DE000000097048597300000B1300000B1301009A9C180000000774494D4507DF
+        031C0C0C1A2A1ED9BF0000001D69545874436F6D6D656E740000000000437265
+        6174656420776974682047494D50642E65070000000C4944415478DA63FCFFFF
+        3F00060202FFB792D1D40000000049454E44AE426082}
       PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
-      ExplicitTop = 88
     end
     object btnMoveDown: TPngSpeedButton
-      Left = 266
+      Left = 264
       Top = 80
-      Width = 24
+      Width = 25
       Height = 25
       Hint = 'Move down'
       Anchors = [akTop, akRight]
@@ -465,12 +481,18 @@ object frmSettings: TfrmSettings
       ParentShowHint = False
       ShowHint = True
       OnClick = btnMoveClick
+      PngImage.Data = {
+        89504E470D0A1A0A0000000D4948445200000001000000010802000000907753
+        DE000000097048597300000B1300000B1301009A9C180000000774494D4507DF
+        031C0C0C1A2A1ED9BF0000001D69545874436F6D6D656E740000000000437265
+        6174656420776974682047494D50642E65070000000C4944415478DA63FCFFFF
+        3F00060202FFB792D1D40000000049454E44AE426082}
       PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     end
     object btnMoveUp: TPngSpeedButton
-      Left = 266
+      Left = 264
       Top = 52
-      Width = 24
+      Width = 25
       Height = 25
       Hint = 'Move up'
       Anchors = [akTop, akRight]
@@ -478,6 +500,12 @@ object frmSettings: TfrmSettings
       ParentShowHint = False
       ShowHint = True
       OnClick = btnMoveClick
+      PngImage.Data = {
+        89504E470D0A1A0A0000000D4948445200000001000000010802000000907753
+        DE000000097048597300000B1300000B1301009A9C180000000774494D4507DF
+        031C0C0C1A2A1ED9BF0000001D69545874436F6D6D656E740000000000437265
+        6174656420776974682047494D50642E65070000000C4944415478DA63FCFFFF
+        3F00060202FFB792D1D40000000049454E44AE426082}
       PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     end
     object lblOutputFormat: TLabel
@@ -488,23 +516,29 @@ object frmSettings: TfrmSettings
       Caption = 'Format to convert recorded files to:'
     end
     object btnConfigureEncoder: TPngSpeedButton
-      Left = 266
+      Left = 264
       Top = 16
-      Width = 24
-      Height = 21
+      Width = 25
+      Height = 25
       Hint = 'Configure encoder...'
       Anchors = [akTop, akRight]
       Layout = blGlyphRight
       ParentShowHint = False
       ShowHint = True
       OnClick = btnConfigureEncoderClick
+      PngImage.Data = {
+        89504E470D0A1A0A0000000D4948445200000001000000010802000000907753
+        DE000000097048597300000B1300000B1301009A9C180000000774494D4507DF
+        031C0C0C1A2A1ED9BF0000001D69545874436F6D6D656E740000000000437265
+        6174656420776974682047494D50642E65070000000C4944415478DA63FCFFFF
+        3F00060202FFB792D1D40000000049454E44AE426082}
       PngOptions = [pngBlendOnDisabled, pngGrayscaleOnDisabled]
     end
     object lstPostProcess: TListView
       Left = 4
       Top = 44
       Width = 257
-      Height = 109
+      Height = 97
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
       Checkboxes = True
@@ -542,7 +576,7 @@ object frmSettings: TfrmSettings
     end
     object btnAdd: TButton
       Left = 96
-      Top = 160
+      Top = 148
       Width = 93
       Height = 27
       Anchors = [akRight, akBottom]
@@ -552,7 +586,7 @@ object frmSettings: TfrmSettings
     end
     object btnRemove: TButton
       Left = 196
-      Top = 160
+      Top = 148
       Width = 93
       Height = 27
       Anchors = [akRight, akBottom]
@@ -563,7 +597,7 @@ object frmSettings: TfrmSettings
     end
     object txtApp: TLabeledEdit
       Left = 4
-      Top = 232
+      Top = 220
       Width = 257
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -578,7 +612,7 @@ object frmSettings: TfrmSettings
     end
     object txtAppParams: TLabeledEdit
       Left = 4
-      Top = 276
+      Top = 264
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -591,7 +625,7 @@ object frmSettings: TfrmSettings
     end
     object chkOnlyIfCut: TCheckBox
       Left = 4
-      Top = 192
+      Top = 180
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -601,7 +635,7 @@ object frmSettings: TfrmSettings
     end
     object btnConfigure: TButton
       Left = 4
-      Top = 160
+      Top = 148
       Width = 93
       Height = 27
       Anchors = [akLeft, akBottom]
@@ -987,7 +1021,7 @@ object frmSettings: TfrmSettings
       Top = 280
       Width = 284
       Height = 49
-      Anchors = [akLeft, akTop, akRight]
+      Anchors = [akLeft, akTop, akRight, akBottom]
       AutoSize = False
       Caption = '-'
       WordWrap = True
@@ -1152,6 +1186,12 @@ object frmSettings: TfrmSettings
       ParentShowHint = False
       ShowHint = True
       OnClick = btnBrowseClick
+      PngImage.Data = {
+        89504E470D0A1A0A0000000D4948445200000001000000010802000000907753
+        DE000000097048597300000B1300000B1301009A9C180000000774494D4507DF
+        031C0C0C1A2A1ED9BF0000001D69545874436F6D6D656E740000000000437265
+        6174656420776974682047494D50642E65070000000C4944415478DA63FCFFFF
+        3F00060202FFB792D1D40000000049454E44AE426082}
     end
     object Bevel1: TBevel
       Left = 4
@@ -1206,11 +1246,9 @@ object frmSettings: TfrmSettings
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 333
+      EditLabel.Width = 262
       EditLabel.Height = 13
-      EditLabel.Caption = 
-        'Pattern for filenames of automatically recorded tracks (%n is in' +
-        'valid):'
+      EditLabel.Caption = 'Pattern for filenames of automatically recorded tracks:'
       TabOrder = 3
       OnChange = txtFilePatternChange
       OnEnter = txtFilePatternEnter
@@ -1221,11 +1259,9 @@ object frmSettings: TfrmSettings
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      EditLabel.Width = 331
+      EditLabel.Width = 176
       EditLabel.Height = 13
-      EditLabel.Caption = 
-        'Pattern for filenames of stream files (only %s, %d and %i are va' +
-        'lid):'
+      EditLabel.Caption = 'Pattern for filenames of stream files:'
       TabOrder = 4
       OnChange = txtStreamFilePatternChange
       OnClick = txtStreamFilePatternClick
@@ -1284,7 +1320,7 @@ object frmSettings: TfrmSettings
   end
   object pnlStreamsAdvanced: TPanel
     Left = 604
-    Top = 371
+    Top = 372
     Width = 293
     Height = 369
     TabOrder = 9
@@ -1294,7 +1330,7 @@ object frmSettings: TfrmSettings
       369)
     object btnResetTitlePattern: TPngSpeedButton
       Left = 264
-      Top = 116
+      Top = 120
       Width = 25
       Height = 21
       Hint = 'Reset regular expression to default'
@@ -1352,7 +1388,7 @@ object frmSettings: TfrmSettings
     end
     object txtRegEx: TLabeledEdit
       Left = 4
-      Top = 116
+      Top = 120
       Width = 257
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -1367,7 +1403,7 @@ object frmSettings: TfrmSettings
       Left = 4
       Top = 212
       Width = 285
-      Height = 85
+      Height = 77
       Align = alCustom
       Anchors = [akLeft, akTop, akRight, akBottom]
       Columns = <
@@ -1384,7 +1420,7 @@ object frmSettings: TfrmSettings
     end
     object btnRemoveIgnoreTitlePattern: TButton
       Left = 196
-      Top = 342
+      Top = 340
       Width = 93
       Height = 27
       Anchors = [akRight, akBottom]
@@ -1395,7 +1431,7 @@ object frmSettings: TfrmSettings
     end
     object btnAddIgnoreTitlePattern: TButton
       Left = 100
-      Top = 342
+      Top = 340
       Width = 93
       Height = 27
       Anchors = [akRight, akBottom]
@@ -1406,7 +1442,7 @@ object frmSettings: TfrmSettings
     end
     object txtIgnoreTitlePattern: TLabeledEdit
       Left = 4
-      Top = 318
+      Top = 312
       Width = 285
       Height = 21
       Anchors = [akLeft, akRight, akBottom]
@@ -1437,7 +1473,7 @@ object frmSettings: TfrmSettings
     end
     object btnAddRegEx: TButton
       Left = 100
-      Top = 140
+      Top = 148
       Width = 93
       Height = 27
       Anchors = [akTop, akRight]
@@ -1448,7 +1484,7 @@ object frmSettings: TfrmSettings
     end
     object btnRemoveRegEx: TButton
       Left = 196
-      Top = 140
+      Top = 148
       Width = 93
       Height = 27
       Anchors = [akTop, akRight]

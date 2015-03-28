@@ -24,7 +24,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, Functions,
-  LanguageObjects, Logging, AddonBase, ExtendedStream;
+  LanguageObjects, Logging, AddonBase, ExtendedStream, SWFunctions;
 
 type
   TPostProcessBase = class;
@@ -291,41 +291,50 @@ end;
 
 procedure TExternalProcessThread.Execute;
 var
+  i: Integer;
   Res: TRunProcessResults;
   CmdLine, Replaced: string;
   Output: AnsiString;
   Arr: TPatternReplaceArray;
   EC: DWORD;
+  PList: TStringList;
 begin
   if Trim(FExe) <> '' then
   begin
     if FileExists(FExe) then
     begin
-      SetLength(Arr, 9);
-
-      Arr[0].C := 'f';
+      SetLength(Arr, 13);
+      Arr[0].C := 'artist';
+      Arr[0].Replace := FData.Artist;
+      Arr[1].C := 'title';
+      Arr[1].Replace := FData.Title;
+      Arr[2].C := 'album';
+      Arr[2].Replace := FData.Album;
+      Arr[3].C := 'streamname';
+      Arr[3].Replace := Trim(FData.Station);
+      Arr[4].C := 'streamtitle';
+      Arr[4].Replace := Trim(FData.StreamTitle);
+      Arr[5].C := 'day';
+      Arr[5].Replace := FormatDateTime('dd', Now);
+      Arr[6].C := 'month';
+      Arr[6].Replace := FormatDateTime('mm', Now);
+      Arr[7].C := 'year';
+      Arr[7].Replace := FormatDateTime('yy', Now);
+      Arr[8].C := 'hour';
+      Arr[8].Replace := FormatDateTime('hh', Now);
+      Arr[9].C := 'minute';
+      Arr[9].Replace := FormatDateTime('nn', Now);
+      Arr[10].C := 'second';
+      Arr[10].Replace := FormatDateTime('ss', Now);
+      Arr[11].C := 'number';
+      Arr[11].Replace := IntToStr(FData.TrackNumber);
+      Arr[12].C := 'filename';
       if PostProcessor.GroupID = 0 then
-        Arr[0].Replace := FData.WorkFilename
+        Arr[12].Replace := FData.WorkFilename
       else
-        Arr[0].Replace := FData.Filename;
-      Arr[1].C := 'a';
-      Arr[1].Replace := FData.Artist;
-      Arr[2].C := 't';
-      Arr[2].Replace := FData.Title;
-      Arr[3].C := 'l';
-      Arr[3].Replace := FData.Album;
-      Arr[4].C := 'u';
-      Arr[4].Replace := FData.StreamTitle;
-      Arr[5].C := 's';
-      Arr[5].Replace := FData.Station;
-      Arr[6].C := 'n';
-      Arr[6].Replace := IntToStr(FData.TrackNumber);
-      Arr[7].C := 'd';
-      Arr[7].Replace := FormatDateTime('dd.mm.yy', Now);
-      Arr[8].C := 'i';
-      Arr[8].Replace := FormatDateTime('hh.nn.ss', Now);
+        Arr[12].Replace := FData.Filename;
 
-      Replaced := PatternReplace(FParams, Arr);
+      Replaced := PatternReplaceNew(FParams, Arr);
       if Trim(Replaced) <> '' then
       begin
         if LowerCase(ExtractFileExt(FExe)) = '.bat' then
@@ -417,6 +426,9 @@ begin
   Stream.Read(FParams);
   Stream.Read(FGroupID);
   Stream.Read(FName);
+
+  if Version < 64 then
+    FParams := ConvertPattern(FParams);
 end;
 
 function TExternalPostProcess.ProcessFile(

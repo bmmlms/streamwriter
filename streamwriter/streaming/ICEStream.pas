@@ -162,6 +162,7 @@ type
     FOnTitleAllowed: TNotifyEvent;
     FOnRefreshInfo: TNotifyEvent;
     FOnExtLog: TNotifyEvent;
+
     //FOnMonitorAnalyzerAnalyzed: TNotifyEvent;
 
     function AdjustDisplayTitle(Title: string): string;
@@ -423,7 +424,7 @@ begin
 
   if (FAudioStream <> nil) and (not FMonitoring) then
   begin
-    FAudioStream.Seek(0, soFromEnd);
+    FAudioStream.Position := FAudioStream.Size - 1;
     FAudioStream.CopyFrom(RecvStream, CopySize);
   end else
     Seek(CopySize, soFromCurrent);
@@ -1190,7 +1191,7 @@ var
 const
   AUDIO_BUFFER = 524288;
 begin
-  RecvStream.Seek(0, soFromBeginning);
+  RecvStream.Position := 0;
 
   // Falls Einstellungen vom User geändert wurde, die nicht zu unserem Stream-Typ passen, müssen
   // diese rückgängig gemacht werden. Beim nächsten Aufnahmestart müsstes dann passen.
@@ -1289,7 +1290,7 @@ begin
           begin
             MetaLen := Buf * 16;
             MetaData := AnsiString(Trim(RecvStream.ToString(RecvStream.Position, MetaLen)));
-            RecvStream.Seek(MetaLen, soFromCurrent);
+            RecvStream.Position := RecvStream.Position + MetaLen;
             P := PosEx(''';', MetaData, 14);
             MetaData := AnsiString(Trim(Copy(MetaData, 14, P - 14)));
             if IsUTF8String(MetaData) then
@@ -1392,7 +1393,7 @@ begin
       end;
     end;
     RecvStream.RemoveRange(0, Position);
-    RecvStream.Seek(0, soFromBeginning);
+    RecvStream.Position := 0;
   end;
 end;
 
@@ -1653,11 +1654,11 @@ begin
 
   case TitleState of
     tsAuto:
-      Patterns := 'atlusdi';
+      Patterns := 'artist|title|album|streamtitle|streamname|day|month|year|hour|minute|second';
     tsStream:
-      Patterns := 'sdi';
+      Patterns := 'streamname|day|month|year|hour|minute|second';
     else
-      Patterns := 'atlusndi';
+      Patterns := 'artist|title|album|streamtitle|number|streamname|day|month|year|hour|minute|second';
   end;
 
   Filename := InfoToFilename(Artist, Title, Album, StreamTitle, TitleState, Patterns);
@@ -1719,7 +1720,7 @@ begin
       Name := _('Unknown stream');
     end;
 
-    Name := InfoToFilename('', '', '', '', tsStream, 'sdi');
+    Name := InfoToFilename('', '', '', '', tsStream, 'streamname|day|month|year|hour|minute|second');
     FFilename := GetValidFilename(Name);
 
     if FileExists(FSaveDir + Filename + Ext) then
@@ -1759,6 +1760,7 @@ var
   Dir, StreamName: string;
   Replaced: string;
   Arr: TPatternReplaceArray;
+  PList: TStringList;
 begin
   inherited;
 
@@ -1781,37 +1783,51 @@ begin
   if StreamName = '' then
     StreamName := _('Unknown stream');
 
-  SetLength(Arr, Length(Patterns));
-  for i := 0 to Length(Patterns) - 1 do
-  begin
-    Arr[i].C := Patterns[i + 1];
-    case Arr[i].C of
-      'a':
-        Arr[i].Replace := Artist;
-      't':
-        Arr[i].Replace := Title;
-      'l':
-        Arr[i].Replace := Album;
-      'u':
-        Arr[i].Replace := StreamTitle;
-      's':
-        Arr[i].Replace := Trim(StreamName);
-      'n':
-        Arr[i].Replace := Format('%.*d', [FSettings.FilePatternDecimals, FSongsSaved]);
-      'd':
-        Arr[i].Replace := FormatDateTime('dd.mm.yy', Now);
-      'i':
-        Arr[i].Replace := FormatDateTime('hh.nn.ss', Now);
+  PList := TStringList.Create;
+  try
+    Explode('|', Patterns, PList);
+
+    SetLength(Arr, PList.Count);
+    for i := 0 to PList.Count - 1 do
+    begin
+      Arr[i].C := PList[i];
+
+      if Arr[i].C = 'artist' then
+        Arr[i].Replace := Artist
+      else if Arr[i].C = 'title' then
+        Arr[i].Replace := Title
+      else if Arr[i].C = 'album' then
+        Arr[i].Replace := Album
+      else if Arr[i].C = 'streamtitle' then
+        Arr[i].Replace := StreamTitle
+      else if Arr[i].C = 'streamname' then
+        Arr[i].Replace := Trim(StreamName)
+      else if Arr[i].C = 'number' then
+        Arr[i].Replace := Format('%.*d', [FSettings.FilePatternDecimals, FSongsSaved])
+      else if Arr[i].C = 'day' then
+        Arr[i].Replace := FormatDateTime('dd', Now)
+      else if Arr[i].C = 'month' then
+        Arr[i].Replace := FormatDateTime('mm', Now)
+      else if Arr[i].C = 'year' then
+        Arr[i].Replace := FormatDateTime('yy', Now)
+      else if Arr[i].C = 'hour' then
+        Arr[i].Replace := FormatDateTime('hh', Now)
+      else if Arr[i].C = 'minute' then
+        Arr[i].Replace := FormatDateTime('nn', Now)
+      else if Arr[i].C = 'second' then
+        Arr[i].Replace := FormatDateTime('ss', Now)
     end;
+  finally
+    PList.Free;
   end;
 
   case TitleState of
     tsFull, tsAuto:
-      Replaced := PatternReplace(FSettings.FilePattern, Arr);
+      Replaced := PatternReplaceNew(FSettings.FilePattern, Arr);
     tsIncomplete:
-      Replaced := PatternReplace(FSettings.IncompleteFilePattern, Arr);
+      Replaced := PatternReplaceNew(FSettings.IncompleteFilePattern, Arr);
     tsStream:
-      Replaced := PatternReplace(FSettings.StreamFilePattern, Arr);
+      Replaced := PatternReplaceNew(FSettings.StreamFilePattern, Arr);
   end;
 
   Replaced := FixPatternFilename(Replaced);

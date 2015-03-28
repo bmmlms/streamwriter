@@ -84,19 +84,19 @@ procedure TfrmConfigureSetTags.btnResetPatternClick(Sender: TObject);
 begin
   if Sender = btnResetArtistPattern then
   begin
-    txtArtist.Text := '%a';
+    txtArtist.Text := '%artist%';
     txtArtist.ApplyFocus;
   end else if Sender = btnResetTitlePattern then
   begin
-    txtTitle.Text := '%t';
+    txtTitle.Text := '%title%';
     txtTitle.ApplyFocus;
   end else if Sender = btnResetAlbumPattern then
   begin
-    txtAlbum.Text := '%l';
+    txtAlbum.Text := '%album%';
     txtAlbum.ApplyFocus;
   end else if Sender = btnResetCommentPattern then
   begin
-    txtComment.Text := _('%s / %u / Recorded using streamWriter');
+    txtComment.Text := _('%streamname% / %streamtitle% / Recorded using streamWriter');
     txtComment.SelectAll;
     txtComment.ApplyFocus;
   end;

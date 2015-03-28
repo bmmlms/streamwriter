@@ -145,6 +145,10 @@ uses
   IdSSLOpenSSLHeadersCustom in '..\..\common\openssl\IdSSLOpenSSLHeadersCustom.pas',
   WindowsFunctions in '..\..\common\WindowsFunctions.pas';
 
+{$SetPEFlags IMAGE_FILE_LARGE_ADDRESS_AWARE}
+{$SetPEOptFlags $0100} // IMAGE_DLLCHARACTERISTICS_NX_COMPAT
+{$SetPEOptFlags $0040} // IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE
+
 {$SetPEOptFlags $0140}
 
 {$R *.res}
@@ -225,7 +229,7 @@ var
     end;
 
     OpenSSL := TOpenSSLLoader.Create;
-    if not OpenSSL.InitializeOpenSSL then
+    if not OpenSSL.InitializeOpenSSL(AppGlobals.TempDir) then
     begin
       MsgBox(0, _('The OpenSSL libraries could not be extracted/loaded. Without these libraries streamWriter cannot be run. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
       Exit;

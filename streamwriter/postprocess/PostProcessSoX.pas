@@ -246,24 +246,14 @@ begin
   FNeededAddons.Add(TAddonSoX);
 
   FCanConfigure := True;
+  FOrder := 100;
 
   FPostProcessType := ptSoX;
 
-  // Ggf. Daten von alter Version importieren, ansonsten Defaults zuweisen.
-  // Die echten Daten kommen später über Load().
-  // REMARK: Irgendwann kann das hier weg!
-  AppGlobals.Storage.Read('Active_' + ClassName, FActive, False, 'Plugins');
-  AppGlobals.Storage.Read('Order_' + ClassName, FOrder, 100, 'Plugins');
-  AppGlobals.Storage.Read('OnlyIfCut_' + ClassName, FOnlyIfCut, False, 'Plugins');
-  AppGlobals.Storage.Read('Normalize_' + ClassName, FNormalize, False, 'Plugins');
-  AppGlobals.Storage.Read('FadeoutStart_' + ClassName, FFadeoutStart, False, 'Plugins');
-  AppGlobals.Storage.Read('FadeoutEnd_' + ClassName, FFadeoutEnd, False, 'Plugins');
-  AppGlobals.Storage.Read('FadeoutStartLength_' + ClassName, FFadeoutStartLength, 5, 'Plugins');
-  AppGlobals.Storage.Read('FadeoutEndLength_' + ClassName, FFadeoutEndLength, 5, 'Plugins');
-  AppGlobals.Storage.Read('SilenceStart_' + ClassName, FSilenceStart, False, 'Plugins');
-  AppGlobals.Storage.Read('SilenceEnd_' + ClassName, FSilenceEnd, False, 'Plugins');
-  AppGlobals.Storage.Read('SilenceStartLength_' + ClassName, FSilenceStartLength, 5, 'Plugins');
-  AppGlobals.Storage.Read('SilenceEndLength_' + ClassName, FSilenceEndLength, 5, 'Plugins');
+  FFadeoutStartLength := 5;
+  FFadeoutEndLength := 5;
+  FSilenceStartLength := 5;
+  FSilenceEndLength := 5;
 end;
 
 destructor TPostProcessSoX.Destroy;

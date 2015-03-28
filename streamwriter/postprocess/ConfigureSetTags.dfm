@@ -185,8 +185,8 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     Caption = 
-      '%a = artist, %t = title, %l = album, %u = title on stream, %s = ' +
-      'streamname, %d = date song was saved, %i = time song was saved'
+      'Valid variables: %artist%, %title%, %album%, %streamtitle%, %str' +
+      'eamname%, %day%, %month%, %year%, %hour%, %minute%, %second%'
     WordWrap = True
   end
   object btnResetAlbumPattern: TPngSpeedButton
@@ -280,7 +280,6 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 4
-    ExplicitTop = 267
     object Bevel2: TBevel
       Left = 4
       Top = 4

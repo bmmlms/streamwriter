@@ -28,6 +28,7 @@ uses
 function GetAutoTuneInMinKbps(AudioType: TAudioTypes; Idx: Integer): Cardinal;
 function FixPatternFilename(Filename: string): string;
 function SecureSWURLToInsecure(URL: string): string;
+function ConvertPattern(OldPattern: string): string;
 
 implementation
 
@@ -75,14 +76,14 @@ begin
     end;
 
   // Replace invalid characters for filenames
-  Result := StringReplace(Result, '/', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, ':', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '*', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '"', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '?', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '<', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '>', '_', [rfReplaceAll]);
-  Result := StringReplace(Result, '|', '_', [rfReplaceAll]);
+  Result := StringReplace(Result, '/', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, ':', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, '*', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, '"', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, '?', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, '<', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, '>', ' ', [rfReplaceAll]);
+  Result := StringReplace(Result, '|', ' ', [rfReplaceAll]);
 
   // Make sure there is no \ at the beginning/ending
   if Length(Result) > 0 then
@@ -101,6 +102,44 @@ begin
   Res := ParseURL(URL);
   if Res.Success and Res.Secure and (Pos('streamwriter.', LowerCase(Res.Host)) > 0) then
     Result := 'http://' + Res.Host + ':80' + Res.Data;
+end;
+
+function ConvertPattern(OldPattern: string): string;
+var
+  i: Integer;
+  C: Char;
+  Patterns: string;
+  Arr: TPatternReplaceArray;
+begin
+  Patterns := 'fatlusndi';
+  SetLength(Arr, Length(Patterns));
+  for i := 0 to Length(Patterns) - 1 do
+  begin
+    Arr[i].C := Patterns[i + 1];
+    C := Arr[i].C[1];
+    case C of
+      'f':
+        Arr[i].Replace := '%filename%';
+      'a':
+        Arr[i].Replace := '%artist%';
+      't':
+        Arr[i].Replace := '%title%';
+      'l':
+        Arr[i].Replace := '%album%';
+      'u':
+        Arr[i].Replace := '%streamtitle%';
+      's':
+        Arr[i].Replace := '%streamname%';
+      'n':
+        Arr[i].Replace := '%number%';
+      'd':
+        Arr[i].Replace := '%day%.%month%.%year';
+      'i':
+        Arr[i].Replace := '%hour%.%minute%.%second%';
+    end;
+  end;
+
+  Result := PatternReplace(OldPattern, Arr);
 end;
 
 end.
