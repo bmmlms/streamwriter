@@ -1816,7 +1816,10 @@ begin
       end;
       if AppGlobals.Data.StreamList[i].WasRecording and AppGlobals.RememberRecordings then
         Client.StartRecording(True);
+      if AppGlobals.Data.StreamList[i].WasPlaying and AppGlobals.RememberPlaying then
+        Client.StartPlay(False);
       Client.Entry.WasRecording := False;
+      Client.Entry.WasPlaying := False;
     end;
   end;
 

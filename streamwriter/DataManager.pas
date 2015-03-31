@@ -547,6 +547,7 @@ type
     FCategoryIndex: Integer;
     // When set this stream was being recorded when streamWriter exited on the last run
     FWasRecording: Boolean;
+    FWasPlaying: Boolean;
 
     // Number of songs saved
     FSongsSaved: Cardinal;
@@ -592,6 +593,7 @@ type
     property Index: Integer read FIndex write FIndex;
     property CategoryIndex: Integer read FCategoryIndex write FCategoryIndex;
     property WasRecording: Boolean read FWasRecording write FWasRecording;
+    property WasPlaying: Boolean read FWasPlaying write FWasPlaying;
 
     property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
     property BytesReceived: UInt64 read FBytesReceived write FBytesReceived;
@@ -812,7 +814,7 @@ type
   end;
 
 const
-  DATAVERSION: Cardinal = 64;
+  DATAVERSION: Cardinal = 65;
   DATAMAGIC: array[0..3] of Byte = (118, 114, 110, 97);
   EXPORTMAGIC: array[0..3] of Byte = (97, 110, 114, 118);
 
@@ -938,6 +940,7 @@ begin
   FAudioType := From.AudioType;
   FGenre := From.Genre;
   FWasRecording := From.WasRecording;
+  FWasPlaying := From.WasPlaying;
   FURLs.Assign(From.FURLs);
   FSettings.Assign(From.FSettings);
 
@@ -1088,9 +1091,10 @@ begin
     Stream.Read(Result.FSecondsReceived);
 
   if Version >= 17 then
-  begin
     Stream.Read(Result.FWasRecording);
-  end;
+
+  if Version >= 65 then
+    Stream.Read(Result.FWasPlaying);
 
   if Version >= 18 then
   begin
@@ -1144,6 +1148,7 @@ begin
   Stream.Write(FSecondsReceived);
 
   Stream.Write(FWasRecording);
+  Stream.Write(FWasPlaying);
 
   Stream.Write(FSchedules.Count);
   for i := 0 to FSchedules.Count - 1 do

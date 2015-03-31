@@ -19,7 +19,7 @@
 }
 
 unit Settings;
-
+                // TODO: im wizard kann man nicht auf die labels klicken, um die checkboxes zu toggeln. prüfen und fixen
 interface
 
 uses
@@ -207,6 +207,7 @@ type
     Bevel1: TBevel;
     btnBrowseLogFile: TPngSpeedButton;
     txtLogFile: TLabeledEdit;
+    chkRememberPlaying: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -459,6 +460,7 @@ begin
     chkTray.Checked := AppGlobals.Tray;
     chkSnapMain.Checked := AppGlobals.SnapMain;
     chkRememberRecordings.Checked := AppGlobals.RememberRecordings;
+    chkRememberPlaying.Checked := AppGlobals.RememberPlaying;
     chkDisplayPlayedSong.Checked := AppGlobals.DisplayPlayedSong;
     chkDisplayPlayNotifications.Checked := AppGlobals.DisplayPlayNotifications;
     chkShowSplashScreen.Checked := AppGlobals.ShowSplashScreen;
@@ -623,6 +625,7 @@ begin
         AppGlobals.Tray := chkTray.Checked;
         AppGlobals.SnapMain := chkSnapMain.Checked;
         AppGlobals.RememberRecordings := chkRememberRecordings.Checked;
+        AppGlobals.RememberPlaying := chkRememberPlaying.Checked;
         AppGlobals.DisplayPlayedSong := chkDisplayPlayedSong.Checked;
         AppGlobals.DisplayPlayNotifications := chkDisplayPlayNotifications.Checked;
         AppGlobals.ShowSplashScreen := chkShowSplashScreen.Checked;

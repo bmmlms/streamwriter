@@ -52,6 +52,7 @@ type
     FTrayOnMinimize: Boolean;
     FSnapMain: Boolean;
     FRememberRecordings: Boolean;
+    FRememberPlaying: Boolean;
     FDisplayPlayedSong: Boolean;
     FDisplayPlayNotifications: Boolean;
     FShowSplashScreen: Boolean;
@@ -183,6 +184,7 @@ type
     property SnapMain: Boolean read FSnapMain write FSnapMain;
     // When set streamWriter will resume recordings on startup if it is closed while recording streams
     property RememberRecordings: Boolean read FRememberRecordings write FRememberRecordings;
+    property RememberPlaying: Boolean read FRememberPlaying write FRememberPlaying;
     property DisplayPlayedSong: Boolean read FDisplayPlayedSong write FDisplayPlayedSong;
     // When set notifications on the lower right of the screen will be displayed when a title on a stream changes
     property DisplayPlayNotifications: Boolean read FDisplayPlayNotifications write FDisplayPlayNotifications;
@@ -612,6 +614,7 @@ begin
   FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);
   FStorage.Read('SnapMain', FSnapMain, False);
   FStorage.Read('RememberRecordings', FRememberRecordings, False);
+  FStorage.Read('RememberPlaying', FRememberPlaying, False);
   FStorage.Read('DisplayPlayedSong', FDisplayPlayedSong, True);
   FStorage.Read('DisplayPlayNotifications', FDisplayPlayNotifications, True);
   FStorage.Read('ShowSplashScreen', FShowSplashScreen, True);
@@ -1081,6 +1084,7 @@ begin
   FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
   FStorage.Write('SnapMain', FSnapMain);
   FStorage.Write('RememberRecordings', FRememberRecordings);
+  FStorage.Write('RememberPlaying', FRememberPlaying);
   FStorage.Write('DisplayPlayedSong', FDisplayPlayedSong);
   FStorage.Write('DisplayPlayNotifications', FDisplayPlayNotifications);
   FStorage.Write('ShowSplashScreen', FShowSplashScreen);

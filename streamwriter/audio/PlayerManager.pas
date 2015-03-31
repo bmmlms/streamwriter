@@ -386,6 +386,8 @@ begin
     end else if TObject(FPlayers[i]) is TICEClient then
     begin
       IP := TICEClient(FPlayers[i]);
+      if IP.Playing and (not IP.Paused) then
+        IP.Entry.WasPlaying := True;
       IP.StopPlay;
     end;
   FLastPlayer := nil;

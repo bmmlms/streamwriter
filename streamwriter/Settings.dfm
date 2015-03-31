@@ -168,7 +168,7 @@ object frmSettings: TfrmSettings
       385)
     object Label7: TLabel
       Left = 56
-      Top = 232
+      Top = 252
       Width = 13
       Height = 13
       Caption = 'GB'
@@ -201,7 +201,7 @@ object frmSettings: TfrmSettings
     end
     object txtMinDiskSpace: TLabeledEdit
       Left = 4
-      Top = 228
+      Top = 248
       Width = 49
       Height = 21
       EditLabel.Width = 212
@@ -276,7 +276,7 @@ object frmSettings: TfrmSettings
     end
     object chkDisplayPlayNotifications: TCheckBox
       Left = 4
-      Top = 144
+      Top = 164
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -285,7 +285,7 @@ object frmSettings: TfrmSettings
     end
     object chkShowSplashScreen: TCheckBox
       Left = 4
-      Top = 164
+      Top = 184
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -294,7 +294,7 @@ object frmSettings: TfrmSettings
     end
     object chkDisplayPlayedSong: TCheckBox
       Left = 4
-      Top = 124
+      Top = 144
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -303,7 +303,7 @@ object frmSettings: TfrmSettings
     end
     object chkCoverPanelAlwaysVisible: TCheckBox
       Left = 4
-      Top = 184
+      Top = 204
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -318,6 +318,15 @@ object frmSettings: TfrmSettings
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Start streamWriter on windows logon'
       TabOrder = 12
+    end
+    object chkRememberPlaying: TCheckBox
+      Left = 4
+      Top = 124
+      Width = 281
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Remember stream that was playing on exit'
+      TabOrder = 13
     end
   end
   object pnlAdvanced: TPanel
