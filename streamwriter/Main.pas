@@ -1448,28 +1448,28 @@ begin
   if Param <> nil then
   begin
     for i := 0 to Param.Values.Count - 1 do
-      tabClients.StartStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil), oaStart, nil, amNoWhere);
+      tabClients.StartStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil, nil), oaStart, nil, amNoWhere);
   end;
 
   Param := CmdLine.GetParam('-sr');
   if Param <> nil then
   begin
     for i := 0 to Param.Values.Count - 1 do
-      tabClients.StopStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil), oaStart);
+      tabClients.StopStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil, nil), oaStart);
   end;
 
   Param := CmdLine.GetParam('-p');
   if Param <> nil then
   begin
     for i := 0 to Param.Values.Count - 1 do
-      tabClients.StartStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil), oaPlay, nil, amNoWhere);
+      tabClients.StartStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil, nil), oaPlay, nil, amNoWhere);
   end;
 
   Param := CmdLine.GetParam('-sp');
   if Param <> nil then
   begin
     for i := 0 to Param.Values.Count - 1 do
-      tabClients.StopStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil), oaPlay);
+      tabClients.StopStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil, nil), oaPlay);
   end;
 
   Param := CmdLine.GetParam('-wishadd');

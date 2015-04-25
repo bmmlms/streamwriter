@@ -1026,7 +1026,7 @@ begin
       begin
         SetLength(Info, Length(Info) + 1);
         Info[High(Info)] := TStartStreamingInfo.Create(NodesData[i].Stream.ID, NodesData[i].Stream.Stream.Bitrate,
-          NodesData[i].Stream.Stream.Name, NodesData[i].Stream.Stream.URL, NodesData[i].Stream.Stream.RegExes,
+          NodesData[i].Stream.Stream.Name, NodesData[i].Stream.Stream.URL, NodesData[i].Stream.Stream.URLs, NodesData[i].Stream.Stream.RegExes,
           NodesData[i].Stream.Stream.IgnoreTitles);
       end;
     end;
@@ -1364,7 +1364,7 @@ begin
       begin
         SetLength(Info, Length(Info) + 1);
         Info[High(Info)] := TStartStreamingInfo.Create(Nodes[i].Stream.ID, Nodes[i].Stream.Stream.Bitrate,
-          Nodes[i].Stream.Stream.Name, Nodes[i].Stream.Stream.URL, Nodes[i].Stream.Stream.RegExes,
+          Nodes[i].Stream.Stream.Name, Nodes[i].Stream.Stream.URL, Nodes[i].Stream.Stream.URLs, Nodes[i].Stream.Stream.RegExes,
           Nodes[i].Stream.Stream.IgnoreTitles);
       end;
     end;

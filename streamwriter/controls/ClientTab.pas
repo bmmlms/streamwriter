@@ -158,8 +158,8 @@ type
     procedure FClientViewDblClick(Sender: TObject);
     procedure FClientViewKeyPress(Sender: TObject; var Key: Char);
     procedure FClientViewKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string; RegExes,
-      IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode);
+    procedure FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string;
+      URLs, RegExes, IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 
     procedure StreamBrowserAction(Sender: TObject; Action: TStreamOpenActions; Streams: TStreamDataArray);
     function StreamBrowserIsInClientList(Sender: TObject; ID: Cardinal): Boolean;
@@ -815,11 +815,11 @@ var
 begin
   if FAddressBar.FStations.ItemIndex = -1 then
   begin
-    StartStreaming(TStartStreamingInfo.Create(0, 0, '', FAddressBar.FStations.Text, nil, nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere)
+    StartStreaming(TStartStreamingInfo.Create(0, 0, '', FAddressBar.FStations.Text, nil, nil, nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere)
   end else
   begin
     Entry := TRecentEntry(FAddressBar.FStations.ItemsEx[FAddressBar.FStations.ItemIndex].Data);
-    StartStreaming(TStartStreamingInfo.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, nil, nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere);
+    StartStreaming(TStartStreamingInfo.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, nil, nil, nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere);
   end;
 end;
 
@@ -1279,10 +1279,10 @@ begin
 end;
 
 procedure TClientTab.FClientViewStartStreaming(Sender: TObject;
-  ID, Bitrate: Cardinal; Name, URL: string; RegExes, IgnoreTitles: TStringList;
+  ID, Bitrate: Cardinal; Name, URL: string; URLs, RegExes, IgnoreTitles: TStringList;
   Node: PVirtualNode; Mode: TVTNodeAttachMode);
 begin
-  StartStreaming(TStartStreamingInfo.Create(ID, Bitrate, Name, URL, RegExes, IgnoreTitles), AppGlobals.DefaultActionBrowser, Node, Mode);
+  StartStreaming(TStartStreamingInfo.Create(ID, Bitrate, Name, URL, URLs, RegExes, IgnoreTitles), AppGlobals.DefaultActionBrowser, Node, Mode);
 end;
 
 procedure TClientTab.MessageReceived(Msg: TMessageBase);
@@ -1438,7 +1438,7 @@ var
 begin
   Result := True;
 
-  // Sonderbehandlung fürs Extern abspielen...
+  // Sonderbehandlung fürs extern abspielen...
   if Action = oaPlayExternal then
   begin
     SetLength(Entries, 0);
@@ -1466,7 +1466,7 @@ begin
         try
           PH.ParsePlaylist(Info.URL);
           for i := 0 to PH.URLs.Count - 1 do
-            StartStreaming(TStartStreamingInfo.Create(Info.ID, Info.Bitrate, Info.Name, PH.URLs[i], Info.RegExes, Info.IgnoreTitles),
+            StartStreaming(TStartStreamingInfo.Create(Info.ID, Info.Bitrate, Info.Name, PH.URLs[i], nil, Info.RegExes, Info.IgnoreTitles),
               oaAdd, HitNode, Mode);
         finally
           PH.Free;
@@ -1507,6 +1507,10 @@ begin
         if ValidURL(Info.URL) then
         begin
           Client := FClientManager.AddClient(Info.ID, Info.Bitrate, Info.Name, Info.URL);
+
+          if Info.URLs <> nil then
+            Client.Entry.URLs.Assign(Info.URLs);
+
           if Info.RegExes <> nil then
             Client.Entry.Settings.RegExes.Assign(Info.RegExes);
 
@@ -1631,7 +1635,7 @@ begin
     for i := 0 to Length(Streams) - 1 do
     begin
       SetLength(Arr, Length(Arr) + 1);
-      Arr[High(Arr)] := TStartStreamingInfo.Create(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].RegExes, Streams[i].IgnoreTitles);
+      Arr[High(Arr)] := TStartStreamingInfo.Create(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].URLs, Streams[i].RegExes, Streams[i].IgnoreTitles);
     end;
     StartStreaming(Arr, Action, nil, amNoWhere);
     Exit;

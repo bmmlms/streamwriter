@@ -967,7 +967,7 @@ begin
   Cmd.VersionBuild := AppGlobals.AppVersion.Build;
   Cmd.Build := AppGlobals.BuildNumber;
   Cmd.Language := Language.CurrentLanguage.ID;
-  Cmd.ProtoVersion := 7;
+  Cmd.ProtoVersion := 8;
 
   FThread.SendCommand(Cmd);
 end;

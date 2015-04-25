@@ -50,8 +50,8 @@ type
 
   TNodeDataArray = array of PClientNodeData;
 
-  TStartStreamingEvent = procedure(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string; RegExes,
-    IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode) of object;
+  TStartStreamingEvent = procedure(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string;
+    URLs, RegExes, IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode) of object;
 
   TMClientView = class(TVirtualStringTree)
   private
@@ -1129,10 +1129,12 @@ begin
         if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere) then
           if (HitNodeData <> nil) and (HitNodeData.Client <> nil) then
             OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
-              FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles, HI.HitNode, amInsertAfter)
+              FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].URLs, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles,
+              HI.HitNode, amInsertAfter)
           else
             OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
-              FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles, HI.HitNode, amAddChildLast)
+              FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].URLs, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles,
+              HI.HitNode, amAddChildLast)
         else
         begin
           if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
@@ -1140,7 +1142,8 @@ begin
           if AttachMode = amNoWhere then
             AttachMode := amInsertAfter;
           OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
-            FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles, HI.HitNode, Attachmode);
+            FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].URLs, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles,
+            HI.HitNode, Attachmode);
         end;
         UnkillCategory(HI.HitNode);
       end;
@@ -1170,14 +1173,14 @@ begin
             // Das selbe wie im Kommentar oben beschrieben...
             if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or
                ((Attachmode = amNoWhere) and (HI.HitNode <> nil) and (HitNodeData.Client = nil)) then
-              OnStartStreaming(Self, 0, 0, '', Files[i], nil, nil, HI.HitNode, amAddChildLast)
+              OnStartStreaming(Self, 0, 0, '', Files[i], nil, nil, nil, HI.HitNode, amAddChildLast)
             else
             begin
               if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
                 Attachmode := amAddChildLast;
               if AttachMode = amNoWhere then
                 AttachMode := amInsertAfter;
-              OnStartStreaming(Self, 0, 0, '', Files[i], nil, nil, HI.HitNode, Attachmode);
+              OnStartStreaming(Self, 0, 0, '', Files[i], nil, nil, nil, HI.HitNode, Attachmode);
             end;
             UnkillCategory(HI.HitNode);
       finally

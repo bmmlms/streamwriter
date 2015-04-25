@@ -92,6 +92,7 @@ type
     FName: string;
     FGenre: string;
     FURL: string;
+    FURLs: TStringList;
     FWebsite: string;
     FBitrate: Integer;
     FAudioType: TAudioTypes;
@@ -120,6 +121,7 @@ type
     property Genre: string read FGenre write FGenre;
     // The URL to the stream
     property URL: string read FURL write FURL;
+    property URLs: TStringList read FURLs write FURLs;
     // The broadcasted URL to the stream's website
     property Website: string read FWebsite write FWebsite;
     { The broadcasted bitrate of the stream. This value might get overriden
@@ -814,7 +816,7 @@ type
   end;
 
 const
-  DATAVERSION: Cardinal = 65;
+  DATAVERSION: Cardinal = 66;
   DATAMAGIC: array[0..3] of Byte = (118, 114, 110, 97);
   EXPORTMAGIC: array[0..3] of Byte = (97, 110, 114, 118);
 
@@ -2217,12 +2219,14 @@ constructor TStreamBrowserEntry.Create;
 begin
   inherited;
 
+  FURLs := TStringList.Create;
   FIgnoreTitles := TStringList.Create;
   FRegExes := TStringList.Create;
 end;
 
 destructor TStreamBrowserEntry.Destroy;
 begin
+  FURLs.Free;
   FIgnoreTitles.Free;
   FRegExes.Free;
 
@@ -2235,6 +2239,7 @@ begin
   FName := Source.FName;
   FGenre := Source.FGenre;
   FURL := Source.FURL;
+  FURLs.Assign(Source.FURLs);
   FWebsite := Source.FWebsite;
   FBitrate := Source.FBitrate;
   FAudioType := Source.FAudioType;
@@ -2266,6 +2271,17 @@ begin
   Stream.Read(Result.FName);
   Stream.Read(Result.FGenre);
   Stream.Read(Result.FURL);
+
+  if Version >= 66 then
+  begin
+    Stream.Read(Count);
+    for i := 0 to Count - 1 do
+    begin
+      Stream.Read(E);
+      Result.FURLs.Add(E);
+    end;
+  end;
+
   Stream.Read(Result.FWebsite);
   Stream.Read(Result.FBitrate);
   Stream.Read(B);
@@ -2312,6 +2328,14 @@ begin
   Stream.Read(Result.FName);
   Stream.Read(Result.FGenre);
   Stream.Read(Result.FURL);
+
+  Stream.Read(Count);
+  for i := 0 to Count - 1 do
+  begin
+    Stream.Read(E);
+    Result.URLs.Add(E);
+  end;
+
   Stream.Read(Result.FWebsite);
   Stream.Read(Result.FBitrate);
   Stream.Read(B);
@@ -2344,6 +2368,11 @@ begin
   Stream.Write(FName);
   Stream.Write(FGenre);
   Stream.Write(FURL);
+
+  Stream.Write(Cardinal(FURLs.Count));
+  for i := 0 to FURLs.Count - 1 do
+    Stream.Write(FURLs[i]);
+
   Stream.Write(FWebsite);
   Stream.Write(FBitrate);
   Stream.Write(Byte(FAudioType));

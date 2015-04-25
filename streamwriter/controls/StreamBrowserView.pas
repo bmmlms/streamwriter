@@ -42,6 +42,7 @@ type
     Bitrate: Cardinal;
     Name: string;
     URL: string;
+    URLs: TStringList;
     Website: string;
     Rating: Integer;
     RecordingOkay: Boolean;
@@ -513,6 +514,7 @@ begin
     Result[High(Result)].Bitrate := NodeData.Data.Bitrate;
     Result[High(Result)].Name := NodeData.Data.Name;
     Result[High(Result)].URL := NodeData.Data.URL;
+    Result[High(Result)].URLs := NodeData.Data.URLs;
     Result[High(Result)].Website := NodeData.Data.Website;
     Result[High(Result)].Rating := NodeData.Data.Rating;
     Result[High(Result)].RegExes := NodeData.Data.RegExes;
