@@ -50,6 +50,7 @@ type
     procedure cmdBrowseClick(Sender: TObject);
     procedure chkLimitClick(Sender: TObject);
     procedure chkMonitorModeClick(Sender: TObject);
+    procedure Label20Click(Sender: TObject);
   protected
     procedure RegisterSteps; override;
     procedure Finish; override;
@@ -146,6 +147,11 @@ begin
         Result := False;
       end;
   end;
+end;
+
+procedure TfrmWizard.Label20Click(Sender: TObject);
+begin
+  chkMonitorMode.Checked := not chkMonitorMode.Checked;
 end;
 
 procedure TfrmWizard.RegisterSteps;

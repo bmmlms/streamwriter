@@ -19,8 +19,10 @@
 }
 
 unit Settings;
-                // TODO: im wizard kann man nicht auf die labels klicken, um die checkboxes zu toggeln. prüfen und fixen
+
 interface
+
+// TODO: am ende nochmal übersetzungen auf problematische texte prüfen.
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,

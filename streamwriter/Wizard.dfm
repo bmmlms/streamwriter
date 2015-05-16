@@ -88,6 +88,7 @@ object frmWizard: TfrmWizard
         ' One monitored stream consumes between 8 and 40KB/s depending on' +
         ' the stream'#39's quality.'
       WordWrap = True
+      OnClick = Label20Click
     end
     object chkLimit: TCheckBox
       Left = 8

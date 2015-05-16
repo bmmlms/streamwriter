@@ -121,7 +121,7 @@ object frmSettings: TfrmSettings
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Discard new file if existing one is lager'
+      Caption = 'Discard new file if existing one is larger'
       TabOrder = 7
       OnClick = chkDiscardSmallerClick
     end
@@ -441,7 +441,7 @@ object frmSettings: TfrmSettings
     end
     object btnBrowseApp: TPngSpeedButton
       Left = 264
-      Top = 232
+      Top = 220
       Width = 25
       Height = 21
       Hint = 'Browse...'
@@ -458,7 +458,6 @@ object frmSettings: TfrmSettings
         031C0C0C1A2A1ED9BF0000001D69545874436F6D6D656E740000000000437265
         6174656420776974682047494D50642E65070000000C4944415478DA63FCFFFF
         3F00060202FFB792D1D40000000049454E44AE426082}
-      ExplicitTop = 192
     end
     object btnHelpPostProcess: TPngSpeedButton
       Left = 264
