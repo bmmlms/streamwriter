@@ -23,6 +23,7 @@ program streamwriter;
 // vcPublic, damit TCommand-Nachfahren erzeugt werden können.
 {$RTTI EXPLICIT METHODS([vcPublic]) PROPERTIES([]) FIELDS([])}
 
+
 uses
   madExcept,
   madLinkDisAsm,
