@@ -203,7 +203,9 @@ begin
 
       case Entry.ActiveThread.Result of
         arWin:
-          WriteLog(Entry.Owner, Format(_('Postprocessor "%s" successfully finished'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llInfo);
+          // Bei Erfolg nur loggen, wenn nicht nach Wave konvertiert wurde
+          if not ((Entry.ActiveThread.PostProcessor is TPostProcessConvert) and (LowerCase(ExtractFileExt(TPostProcessConvertThread(Entry.ActiveThread).ToFile)) = '.wav')) then
+            WriteLog(Entry.Owner, Format(_('Postprocessor "%s" successfully finished'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llInfo);
         arTimeout:
           WriteLog(Entry.Owner, Format(_('Postprocessor "%s" timed out'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llError);
         arFail:

@@ -49,6 +49,7 @@ type
     procedure Convert(FromFile, ToFile: string; EncoderSettings: TObject);
     destructor Destroy; override;
 
+    property ToFile: string read FToFile;
     property Progress: Integer read FProgress;
     property FileInfo: TAudioInfo read FFileInfo;
 

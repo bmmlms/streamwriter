@@ -1010,8 +1010,8 @@ var
   LS: TLogSource;
 begin
   {$IFNDEF DEBUG}
-  //if Level = llDebug then
-  //  Exit;
+  if Level = llDebug then
+    Exit;
   {$ENDIF}
 
   if FIsMonitoring then

@@ -346,7 +346,7 @@ begin
   FStreamSettingsObsolete := TStreamSettings.Create(False);
 
   // The number of the current build
-  FBuildNumber := 698;
+  FBuildNumber := 699;
   FCodename := 'Libitum';
 
   // Adjust dimensions of the main-form
