@@ -24,6 +24,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_UsePackage>vclx;vcl;VclSmp;rtl;vclimg;svnui;svn;bdertl;TeeUI;TeeDB;Tee;vclactnband;vcldb;dbrtl;vcldbx;vcltouch;xmlrtl;dsnap;dsnapcon;adortl;IndyCore;IndySystem;IndyProtocols;vclie;inet;inetdb;webdsnap;websnap;inetdbbde;inetdbxpress;dbexpress;DbxCommonDriver;DbxClientDriver;AzureCloud;DBXInterBaseDriver;DBXMySQLDriver;dbxcds;VirtualTreesR;PngComponents;madBasic_;madDisAsm_;madExcept_</DCC_UsePackage>
 			<DCC_DcuOutput>.\dcu</DCC_DcuOutput>
 			<DCC_E>false</DCC_E>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
@@ -81,17 +82,17 @@
 						<VersionInfo Name="Special">False</VersionInfo>
 						<VersionInfo Name="Private">False</VersionInfo>
 						<VersionInfo Name="DLL">False</VersionInfo>
-						<VersionInfo Name="Locale">1031</VersionInfo>
+						<VersionInfo Name="Locale">1033</VersionInfo>
 						<VersionInfo Name="CodePage">1252</VersionInfo>
 					</VersionInfo>
 					<VersionInfoKeys>
-						<VersionInfoKeys Name="CompanyName"/>
-						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="CompanyName">streamwriter.org</VersionInfoKeys>
+						<VersionInfoKeys Name="FileDescription">streamWriter MP4Box Addon</VersionInfoKeys>
 						<VersionInfoKeys Name="FileVersion">1.0.0.1</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
-						<VersionInfoKeys Name="LegalCopyright"/>
+						<VersionInfoKeys Name="LegalCopyright">Copyright (c) 2010-2015 Alexander Nottelmann</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
-						<VersionInfoKeys Name="OriginalFilename"/>
+						<VersionInfoKeys Name="OriginalFilename">addon_mp4box.dll</VersionInfoKeys>
 						<VersionInfoKeys Name="ProductName"/>
 						<VersionInfoKeys Name="ProductVersion">1.0.0.1</VersionInfoKeys>
 						<VersionInfoKeys Name="Comments"/>

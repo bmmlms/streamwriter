@@ -22,8 +22,6 @@ unit Settings;
 
 interface
 
-// TODO: am ende nochmal übersetzungen auf problematische texte prüfen.
-
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
