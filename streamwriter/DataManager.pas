@@ -27,8 +27,8 @@ interface
 uses
   Windows, Classes, SysUtils, ExtendedStream, Generics.Collections,
   ComCtrls, Functions, Logging, DateUtils, AudioFunctions, PostProcess,
-  PowerManagement, Generics.Defaults, ZLib, TypeDefs, winsock,
-  AddonManager, SWFunctions;
+  PowerManagement, Generics.Defaults, TypeDefs, winsock, AddonManager,
+  SWFunctions, ZLib;
 
 type
   TStreamList = class;
@@ -1334,7 +1334,7 @@ begin
   begin
     DecompressedStream := TExtendedStream.Create;
     try
-      ZDecompressStream(S, DecompressedStream);
+      DecompressStream(S, DecompressedStream);
 
       S.Size := 0;
       DecompressedStream.Seek(0, soFromBeginning);
@@ -1629,9 +1629,9 @@ begin
     if UseCompression then
     begin
       {$IFDEF DEBUG}
-      ZCompressStream(CompressedStream, S, zcNone);
+      CompressStream(CompressedStream, S, zcNone);
       {$ELSE}
-      ZCompressStream(CompressedStream, S, zcDefault);
+      CompressStream(CompressedStream, S, zcDefault);
       {$ENDIF}
     end else
       S.CopyFrom(CompressedStream, CompressedStream.Size);

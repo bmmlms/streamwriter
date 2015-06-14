@@ -2704,6 +2704,9 @@ begin
   try
     for i := 0 to FCheckFiles.Files.Count - 1 do
     begin
+      if FExiting then
+        Break;
+
       E := TFileEntry(FCheckFiles.Files[i]);
 
       if E.Action = eaNone then

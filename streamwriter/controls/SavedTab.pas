@@ -2362,15 +2362,20 @@ begin
 
   FTrackList.Remove(Track);
 
-  Nodes := GetNodes(False);
-  for i := 0 to Length(Nodes) - 1 do
-  begin
-    NodeData := GetNodeData(Nodes[i]);
-    if NodeData.Track = Track then
+  BeginUpdate;
+  try
+    Nodes := GetNodes(False);
+    for i := 0 to Length(Nodes) - 1 do
     begin
-      DeleteNode(Nodes[i]);
-      Break;
+      NodeData := GetNodeData(Nodes[i]);
+      if NodeData.Track = Track then
+      begin
+        DeleteNode(Nodes[i]);
+        Break;
+      end;
     end;
+  finally
+    EndUpdate;
   end;
 
   Change(nil);

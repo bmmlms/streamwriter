@@ -291,13 +291,11 @@ end;
 
 procedure TExternalProcessThread.Execute;
 var
-  i: Integer;
   Res: TRunProcessResults;
   CmdLine, Replaced: string;
   Output: AnsiString;
   Arr: TPatternReplaceArray;
   EC: DWORD;
-  PList: TStringList;
 begin
   if Trim(FExe) <> '' then
   begin
