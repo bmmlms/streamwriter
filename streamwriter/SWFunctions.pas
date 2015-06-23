@@ -133,7 +133,7 @@ begin
       'n':
         Arr[i].Replace := '%number%';
       'd':
-        Arr[i].Replace := '%day%.%month%.%year';
+        Arr[i].Replace := '%day%.%month%.%year%';
       'i':
         Arr[i].Replace := '%hour%.%minute%.%second%';
     end;
