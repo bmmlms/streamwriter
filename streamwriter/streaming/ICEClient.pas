@@ -868,12 +868,11 @@ procedure TICEClient.ThreadTitleChanged(Sender: TSocketThread);
 begin
   FTitle := FICEThread.RecvStream.Title;
 
-  if (FEntry.ID > 0) and (FICEThread.RecvStream.FullTitleFound) and (not FAutoRemove) and (FRecordTitle = '') then
-    if AppGlobals.SubmitStreamInfo then
-    begin
-      HomeComm.SendTitleChanged(Entry.ID, Entry.Name, FTitle, FCurrentURL, Entry.StartURL, FICEThread.RecvStream.AudioType,
-        Entry.Bitrate, Entry.URLs);
-    end;
+  if (FEntry.ID > 0) and (FICEThread.RecvStream.FullTitleFound) and (not FAutoRemove) and (FRecordTitle = '') and (AppGlobals.SubmitStats) then
+  begin
+    HomeComm.SendTitleChanged(Entry.ID, Entry.Name, FTitle, FCurrentURL, Entry.StartURL, FICEThread.RecvStream.AudioType,
+      Entry.Bitrate, Entry.URLs);
+  end;
 end;
 
 procedure TICEClient.ThreadDisplayTitleChanged(Sender: TSocketThread);
