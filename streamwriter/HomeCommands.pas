@@ -219,13 +219,15 @@ type
   TCommandSubmitStream = class(TCommand)
   private
     FURL: string;
+    FStreamName: string;
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
     constructor Create; overload;
-    constructor Create(URL: string); overload;
+    constructor Create(URL, StreamName: string); overload;
 
     property URL: string read FURL write FURL;
+    property StreamName: string read FStreamName write FStreamName;
   end;
 
   TCommandSetStreamData = class(TCommand)
@@ -645,23 +647,26 @@ end;
 
 { TCommandSubmitStream }
 
-constructor TCommandSubmitStream.Create(URL: string);
+constructor TCommandSubmitStream.Create(URL, StreamName: string);
 begin
   Create;
 
   FURL := URL;
+  FStreamName := StreamName;
 end;
 
 constructor TCommandSubmitStream.Create;
 begin
   inherited;
 
+  FVersion := 2;
   FCommandType := ctSubmitStream;
 end;
 
 procedure TCommandSubmitStream.DoGet(S: TExtendedStream);
 begin
   S.Write(FURL);
+  S.Write(FStreamName);
 end;
 
 { TCommandSetStreamData }

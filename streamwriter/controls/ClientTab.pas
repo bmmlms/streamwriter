@@ -950,8 +950,8 @@ begin
   begin
     FAddressBar.Stations.AddItem(Client.Entry.ID, Client.Entry.Bitrate, Client.Entry.Name, Client.Entry.StartURL);
 
-    if (Client.Entry.ID = 0) and (AppGlobals.SubmitStreamInfo) then
-      FHomeCommunication.SendSubmitStream(Client.Entry.StartURL);
+    if (Client.Entry.ID = 0) and (Trim(Client.Entry.Name) <> '') and (AppGlobals.SubmitStreamInfo) then
+      FHomeCommunication.SendSubmitStream(Client.Entry.StartURL, Client.Entry.Name);
   end;
 
   ShowInfo;

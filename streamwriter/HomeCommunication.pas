@@ -179,7 +179,7 @@ type
     procedure SendUpdateStats(List: TList<Cardinal>; RecordingCount: Cardinal);
     procedure SendSetSettings(TitleNotifications: Boolean);
     procedure SendClientStats(Auto: Boolean);
-    procedure SendSubmitStream(URL: string);
+    procedure SendSubmitStream(URL, StreamName: string);
     procedure SendSetStreamData(StreamID: Cardinal; Rating: Byte);
     procedure SendTitleChanged(StreamID: Cardinal; StreamName, Title, CurrentURL, URL: string; Format: TAudioTypes;
       Kbps: Cardinal; URLs: TStringList);
@@ -618,12 +618,12 @@ begin
   FThread.SendCommand(TCommandStreamAnalyzationData.Create(StreamID, Data));
 end;
 
-procedure THomeCommunication.SendSubmitStream(URL: string);
+procedure THomeCommunication.SendSubmitStream(URL, StreamName: string);
 begin
   if not FConnected then
     Exit;
 
-  FThread.SendCommand(TCommandSubmitStream.Create(URL));
+  FThread.SendCommand(TCommandSubmitStream.Create(URL, StreamName));
 end;
 
 procedure THomeCommunication.SendSyncWishlist;
