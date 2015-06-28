@@ -1087,7 +1087,7 @@ begin
   AppGlobals.Lock;
   try
     for i := 0 to AppGlobals.Data.GenreList.Count - 1 do
-      FSearch.FGenreList.Items.Add(AppGlobals.Data.GenreList[i].Name);
+      FSearch.FGenreList.Items.Add(AppGlobals.Data.GenreList[i].Name + ' (' + IntToStr(AppGlobals.Data.GenreList[i].StreamCount) + ')');
   finally
     AppGlobals.Unlock;
   end;
@@ -1112,7 +1112,10 @@ begin
   Genre := '';
 
   if FSearch.FGenreList.ItemIndex > 0 then
+  begin
     Genre := FSearch.FGenreList.Items[FSearch.FGenreList.ItemIndex];
+    Genre := Copy(Genre, 1, Pos(' (', Genre) - 1);
+  end;
 
   case FSearch.FTypeList.ItemIndex of
     0: AudioType := atNone;

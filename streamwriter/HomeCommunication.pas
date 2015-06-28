@@ -58,6 +58,9 @@ type
 
     FPingPending: Boolean;
 
+    FConvertManualToAutomaticFoundTitles: TConvertManualToAutomaticArray;
+    FConvertManualToAutomaticNotFoundTitles: TStringArray;
+
     FOnHandshakeReceived: TSocketEvent;
     FOnLogInReceived: TSocketEvent;
     FOnLogOutReceived: TSocketEvent;
@@ -69,6 +72,7 @@ type
     FOnSearchChartsReceived: TSocketEvent;
     FOnWishlistUpgradeReceived: TSocketEvent;
     FOnAuthTokenReceived: TSocketEvent;
+    FOnConvertManualToAutomaticReceived: TSocketEvent;
 
     procedure DoHandshakeReceived(CommandHeader: TCommandHeader; Command: TCommandHandshakeResponse);
     procedure DoLogInReceived(CommandHeader: TCommandHeader; Command: TCommandLogInResponse);
@@ -81,6 +85,7 @@ type
     procedure DoSearchChartsReceived(CommandHeader: TCommandHeader; Command: TCommandSearchChartsResponse);
     procedure DoGenerateAuthTokenReceived(CommandHeader: TCommandHeader; Command: TCommandGenerateAuthTokenResponse);
     procedure DoPingReceived(CommandHeader: TCommandHeader; Command: TCommandPingResponse);
+    procedure DoConvertManualToAutomaticReceived(CommandHeader: TCommandHeader; Command: TCommandConvertManualToAutomaticResponse);
   protected
     procedure DoReceivedCommand(ID: Cardinal; CommandHeader: TCommandHeader; Command: TCommand); override;
     procedure DoException(E: Exception); override;
@@ -103,6 +108,7 @@ type
     property OnSearchChartsReceived: TSocketEvent read FOnSearchChartsReceived write FOnSearchChartsReceived;
     property OnWishlistUpgradeReceived: TSocketEvent read FOnWishlistUpgradeReceived write FOnWishlistUpgradeReceived;
     property OnAuthTokenReceived: TSocketEvent read FOnAuthTokenReceived write FOnAuthTokenReceived;
+    property OnConvertManualToAutomaticReceived: TSocketEvent read FOnConvertManualToAutomaticReceived write FOnConvertManualToAutomaticReceived;
   end;
 
   TBooleanEvent = procedure(Sender: TObject; Value: Boolean) of object;
@@ -114,6 +120,7 @@ type
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
   TIntArrayEvent = procedure(Sender: TObject; IntArr: TIntArray) of object;
   TWishlistUpgradeEvent = procedure(Sender: TObject; WishlistUpgrade: TWishlistUpgradeList) of object;
+  TConvertManualToAutomaticEvent = procedure(Sender: TObject; FoundTitles: TConvertManualToAutomaticArray; NotFoundTitles: TStringArray) of object;
   TCardinalEvent = procedure(Sender: TObject; Data: Cardinal) of object;
 
   THomeCommunication = class
@@ -140,6 +147,7 @@ type
     FOnSearchChartsReceived: TChartsReceivedEvent;
     FOnWishlistUpgradeReceived: TWishlistUpgradeEvent;
     FOnAuthTokenReceived: TCardinalEvent;
+    FOnConvertManualToAutomaticReceived: TConvertManualToAutomaticEvent;
     FOnException: TNotifyEvent;
 
     function FGetThreadAlive: Boolean;
@@ -160,6 +168,7 @@ type
     procedure HomeThreadSearchChartsReceived(Sender: TSocketThread);
     procedure HomeThreadWishlistUpgradeReceived(Sender: TSocketThread);
     procedure HomeThreadAuthTokenReceived(Sender: TSocketThread);
+    procedure HomeThreadConvertManualToAutomaticReceived(Sender: TSocketThread);
     procedure HomeThreadLog(Sender: TSocketThread);
     procedure HomeThreadSecured(Sender: TSocketThread);
     procedure HomeThreadException(Sender: TSocketThread);
@@ -190,6 +199,7 @@ type
     procedure SendSearchCharts(Top: Boolean; Term: string);
     procedure SendStreamAnalyzationData(StreamID: Cardinal; Data: TExtendedStream);
     procedure SendGenerateAuthToken;
+    procedure SendConvertManualToAutomatic(Titles: TStringList);
 
     property Disabled: Boolean read FDisabled write FDisabled;
     property WasConnected: Boolean read FWasConnected;
@@ -216,6 +226,7 @@ type
     property OnSearchChartsReceived: TChartsReceivedEvent read FOnSearchChartsReceived write FOnSearchChartsReceived;
     property OnWishlistUpgradeReceived: TWishlistUpgradeEvent read FOnWishlistUpgradeReceived write FOnWishlistUpgradeReceived;
     property OnAuthTokenReceived: TCardinalEvent read FOnAuthTokenReceived write FOnAuthTokenReceived;
+    property OnConvertManualToAutomaticReceived: TConvertManualToAutomaticEvent read FOnConvertManualToAutomaticReceived write FOnConvertManualToAutomaticReceived;
     property OnException: TNotifyEvent read FOnException write FOnException;
   end;
 
@@ -359,6 +370,7 @@ var
   SearchCharts: TCommandSearchChartsResponse absolute Command;
   GenerateAuthToken: TCommandGenerateAuthTokenResponse absolute Command;
   Ping: TCommandPingResponse absolute Command;
+  ConvertManualToAutomatic: TCommandConvertManualToAutomaticResponse absolute Command;
 begin
   inherited;
 
@@ -385,6 +397,8 @@ begin
       DoGenerateAuthTokenReceived(CommandHeader, GenerateAuthToken);
     ctPingResponse:
       DoPingReceived(CommandHeader, Ping);
+    ctConvertManualToAutomaticResponse:
+      DoConvertManualToAutomaticReceived(CommandHeader, ConvertManualToAutomatic);
   end;
 end;
 
@@ -513,6 +527,23 @@ begin
 
   if Assigned(FOnServerInfoReceived) then
     Sync(FOnServerInfoReceived);
+end;
+
+procedure THomeThread.DoPingReceived(CommandHeader: TCommandHeader;
+  Command: TCommandPingResponse);
+begin
+  FPingPending := False;
+end;
+
+procedure THomeThread.DoConvertManualToAutomaticReceived(
+  CommandHeader: TCommandHeader;
+  Command: TCommandConvertManualToAutomaticResponse);
+begin
+  FConvertManualToAutomaticFoundTitles := Command.FoundTitles;
+  FConvertManualToAutomaticNotFoundTitles := Command.NotFoundTitles;
+
+  if Assigned(FOnConvertManualToAutomaticReceived) then
+    Sync(FOnConvertManualToAutomaticReceived);
 end;
 
 procedure THomeThread.DoStuff;
@@ -754,6 +785,25 @@ begin
   FThread.SendCommand(Cmd);
 end;
 
+procedure THomeCommunication.SendConvertManualToAutomatic(
+  Titles: TStringList);
+var
+  Arr: TStringArray;
+  i: Integer;
+begin
+  if not FConnected then
+    Exit;
+
+  if Titles.Count = 0 then
+    Exit;
+
+  SetLength(Arr, Titles.Count);
+  for i := 0 to Titles.Count - 1 do
+    Arr[i] := Titles[i];
+
+  FThread.SendCommand(TCommandConvertManualToAutomatic.Create(Arr));
+end;
+
 procedure THomeCommunication.SendGenerateAuthToken;
 begin
   if not FConnected then
@@ -790,17 +840,19 @@ begin
   SendHandshake;
 end;
 
+procedure THomeCommunication.HomeThreadConvertManualToAutomaticReceived(
+  Sender: TSocketThread);
+begin
+  if Assigned(FOnConvertManualToAutomaticReceived) then
+    FOnConvertManualToAutomaticReceived(Self, THomeThread(Sender).FConvertManualToAutomaticFoundTitles, THomeThread(Sender).FConvertManualToAutomaticNotFoundTitles);
+end;
+
 procedure THomeCommunication.HomeThreadAuthTokenReceived(Sender: TSocketThread);
 begin
   if Assigned(FOnAuthTokenReceived) then
     FOnAuthTokenReceived(Self, THomeThread(Sender).FAuthToken);
 end;
 
-procedure THomeThread.DoPingReceived(CommandHeader: TCommandHeader;
-  Command: TCommandPingResponse);
-begin
-  FPingPending := False;
-end;
 
 procedure THomeCommunication.HomeThreadBeforeEnded(Sender: TSocketThread);
 begin
@@ -998,6 +1050,8 @@ begin
   FThread.OnWishlistUpgradeReceived := HomeThreadWishlistUpgradeReceived;
   FThread.OnAuthTokenReceived := HomeThreadAuthTokenReceived;
 
+  FThread.OnConvertManualToAutomaticReceived := HomeThreadConvertManualToAutomaticReceived;
+
   FThread.OnSecured := HomeThreadSecured;
   FThread.OnException := HomeThreadException;
 
@@ -1018,6 +1072,7 @@ initialization
   TCommand.RegisterCommand(ctSearchChartsResponse, TCommandSearchChartsResponse);
   TCommand.RegisterCommand(ctGenerateAuthTokenResponse, TCommandGenerateAuthTokenResponse);
   TCommand.RegisterCommand(ctPingResponse, TCommandPingResponse);
+  TCommand.RegisterCommand(ctConvertManualToAutomaticResponse, TCommandConvertManualToAutomaticResponse);
 
   HomeComm := nil;
 

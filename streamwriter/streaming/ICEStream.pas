@@ -292,6 +292,8 @@ begin
   Title := Functions.RegExReplace('\swont\s|\swont$', ' won''t ', Title);
   Title := Functions.RegExReplace('\scant\s|\scant$', ' can''t ', Title);
 
+  Title := Trim(Title);
+
   Result := '';
   NextUpper := True;
   for i := 1 to Length(Title) do

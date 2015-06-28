@@ -29,6 +29,7 @@ uses
 type
   TIntArray = array of Integer;
   TCardinalArray = array of Cardinal;
+  TStringArray = array of string;
 
   TLogType = (ltGeneral, ltSong, ltSaved, ltPostProcess, ltSchedule, ltSecure);
   TLogSource = (lsGeneral, lsAutomatic, lsStream, lsHome);

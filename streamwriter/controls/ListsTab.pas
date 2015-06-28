@@ -46,6 +46,14 @@ type
 
   TTitleDataArray = array of PTitleNodeData;
 
+  TImportListEntry = class
+    Title: string;
+    Hash: Cardinal;
+    IsArtist: Boolean;
+
+    constructor Create(Title: string; Hash: Cardinal; IsArtist: Boolean);
+  end;
+
   TTitlePopup = class(TPopupMenu)
   private
     FRemove: TMenuItem;
@@ -134,6 +142,7 @@ type
     procedure MessageReceived(Msg: TMessageBase);
 
     procedure HomeCommWishlistUpgradeReceived(Sender: TObject; WishlistUpgrade: TWishlistUpgradeList);
+    procedure HomeCommConvertManualToAutomaticReceived(Sender: TObject; FoundTitles: TConvertManualToAutomaticArray; NotFoundTitles: TStringArray);
   protected
     procedure Resize; override;
   public
@@ -229,6 +238,7 @@ begin
   MsgBus.AddSubscriber(MessageReceived);
 
   HomeComm.OnWishlistUpgradeReceived := HomeCommWishlistUpgradeReceived;
+  HomeComm.OnConvertManualToAutomaticReceived := HomeCommConvertManualToAutomaticReceived;
 end;
 
 destructor TListsTab.Destroy;
@@ -236,6 +246,65 @@ begin
   MsgBus.RemoveSubscriber(MessageReceived);
 
   inherited;
+end;
+
+procedure TListsTab.HomeCommConvertManualToAutomaticReceived(
+  Sender: TObject; FoundTitles: TConvertManualToAutomaticArray;
+  NotFoundTitles: TStringArray);
+var
+  i, n: Integer;
+  Found: Boolean;
+  Title: TTitleInfo;
+  Hashes: TSyncWishlistRecordArray;
+begin
+  SetLength(Hashes, 0);
+
+  for i := 0 to High(FoundTitles) do
+  begin
+    // If a manual title already exists the manual title needs to be removed
+    for n := 0 to AppGlobals.Data.SaveList.Count - 1 do
+    begin
+      if (LowerCase(FoundTitles[i].Title) = LowerCase(AppGlobals.Data.SaveList[n].Title)) and
+         (AppGlobals.Data.SaveList[n].ServerHash = 0) and (AppGlobals.Data.SaveList[n].ServerArtistHash = 0) then
+      begin
+        FListsPanel.FTree.RemoveTitle(AppGlobals.Data.SaveList[n]);
+        AppGlobals.Data.SaveList.Delete(n);
+        Break;
+      end;
+    end;
+
+    Found := False;
+    for n := 0 to AppGlobals.Data.SaveList.Count - 1 do
+      if AppGlobals.Data.SaveList[n].ServerHash = FoundTitles[i].Hash then
+      begin
+        Found := True;
+        Break;
+      end;
+
+    if Found then
+      Continue;
+
+    Title := TTitleInfo.Create(FoundTitles[i].Hash, 0, FoundTitles[i].Title);
+    AppGlobals.Data.SaveList.Add(Title);
+    AddTitle(nil, ltSave, Title);
+
+    SetLength(Hashes, Length(Hashes) + 1);
+    Hashes[High(Hashes)] := TSyncWishlistRecord.Create(FoundTitles[i].Hash, False);
+  end;
+
+  if Length(Hashes) > 0 then
+  begin
+    HomeComm.SendSyncWishlist(swAdd, Hashes);
+    HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+    MsgBus.SendMessage(TListsChangedMsg.Create);
+  end;
+
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), Format(_('Successfully converted %d title(s), %d title(s) not available for automatic recordings'), [Length(FoundTitles), Length(NotFoundTitles)])));
+
+
+  // TODO: die messagebox hier ist NICHT gut. die hält den thread nämlich an... und dann excepted er wegen keine daten empfangen.
+  //       das problem gibt es bestimmt auch an anderen stellen... evtl. die msgbox ausm thread erstellen?
+  //          -> okay, die msgbox hier ist weg. ich muss aber auch andere stellen prüfen. msgbox ist böse wenn vom thread sync() aufgerufen.
 end;
 
 procedure TListsTab.HomeCommWishlistUpgradeReceived(Sender: TObject;
@@ -466,10 +535,12 @@ begin
     DeleteList.Free;
   end;
 
-  MsgBus.SendMessage(TListsChangedMsg.Create);
-
-  HomeComm.SendSyncWishlist(swRemove, Hashes);
-  HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  if Length(Hashes) > 0 then
+  begin
+    HomeComm.SendSyncWishlist(swRemove, Hashes);
+    HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+    MsgBus.SendMessage(TListsChangedMsg.Create);
+  end;
 
   FTree.EndUpdate;
 end;
@@ -647,19 +718,23 @@ begin
     FAddCombo.ItemIndex := 0;
 end;
 
+// TODO: das hier mit fastmm auf leaks checken.
 procedure TTitlePanel.ImportClick(Sender: TObject);
 var
-  i, n, P: Integer;
-  NumChars: Integer;
+  i, n, P, NumChars, MsgRes: Integer;
   Hash, ServerHash, ServerArtistHash: Cardinal;
-  Exists, UseTitleInfo: Boolean;
+  Exists, UseTitleInfo, Deleted: Boolean;
   Pattern, Ext: string;
   Dlg: TOpenDialog;
   Lst: TStringList;
   Title: TTitleInfo;
   List: TList<TTitleInfo>;
   ParentNode: PVirtualNode;
+  ImportData, NewImportData: TList<TImportListEntry>;
   Hashes: TSyncWishlistRecordArray;
+  ConversionData: TStringList;
+  KeepEntry: TImportListEntry;
+  TitleInfo: TTitleInfo;
 begin
   if FAddCombo.ItemIndex = 0 then
   begin
@@ -675,6 +750,7 @@ begin
     ParentNode := nil;
   end;
 
+  ImportData := TList<TImportListEntry>.Create;
   Dlg := TOpenDialog.Create(Self);
   try
     Dlg.Filter := _('All supported types') + ' (*.txt, *.m3u, *.pls)|*.txt;*.m3u;*.pls|' +  _('Text files') + ' (*.txt)|*.txt|' + _('M3U playlists') + ' (*.m3u)|*.m3u|' + _('PLS playlists') + ' (*.pls)|*.pls';
@@ -684,8 +760,6 @@ begin
       try
         try
           Lst.LoadFromFile(Dlg.FileName);
-
-          SetLength(Hashes, 0);
 
           UseTitleInfo := False;
           for i := 0 to Lst.Count - 1 do
@@ -736,97 +810,239 @@ begin
             ServerHash := 0;
             ServerArtistHash := 0;
 
-            if List = AppGlobals.Data.SaveList then
+            // Wenn ein Künstler Künstler-Hash hinten dran ist auswerten
+            ServerArtistHash := 0;
+            P := RPos('|A', Lst[i]);
+            if P > -1 then
             begin
-              // Wenn ein Hash hinten dran ist auswerten
+              ServerArtistHash := StrToIntDef(Copy(Lst[i], P + 2, Length(Lst[i]) - P), 0);
+              Lst[i] := Copy(Lst[i], 1, P - 1);
+            end;
+
+            // Wenn ein Hash hinten dran ist auswerten
+            ServerHash := 0;
+            P := RPos('|', Lst[i]);
+            if P > -1 then
+            begin
+              ServerHash := StrToIntDef(Copy(Lst[i], P + 1, Length(Lst[i]) - P), 0);
+              Lst[i] := Copy(Lst[i], 1, P - 1);
+            end;
+
+            // Das hier darf nicht sein, könnte aber passieren
+            if (ServerHash > 0) and (ServerArtistHash > 0) then
+            begin
               ServerHash := 0;
-              P := RPos('|', Lst[i]);
-              if P > -1 then
-              begin
-                if Length(Lst[i]) > P then
-                begin
-                  ServerHash := StrToIntDef(Copy(Lst[i], P + 1, Length(Lst[i]) - P), 0);
-                  if ServerHash > 0 then
-                    Lst[i] := Copy(Lst[i], 1, P - 1);
-                end;
-              end;
-
-              // Vielleicht ist es auch ein Künstler-Hash
               ServerArtistHash := 0;
-              P := RPos('|A', Lst[i]);
-              if P > -1 then
-              begin
-                if Length(Lst[i]) > P + 1 then
-                begin
-                  ServerArtistHash := StrToIntDef(Copy(Lst[i], P + 2, Length(Lst[i]) - P), 0);
-                  if ServerArtistHash > 0 then
-                    Lst[i] := Copy(Lst[i], 1, P - 1);
-                end;
-              end;
-
-              // Das hier darf nicht sein, könnte aber passieren
-              if (ServerHash > 0) and (ServerArtistHash > 0) then
-              begin
-                ServerHash := 0;
-                ServerArtistHash := 0;
-              end;
             end;
 
             Pattern := BuildPattern(Lst[i], Hash, NumChars, False);
             if NumChars <= 3 then
               Continue;
 
-            Exists := False;
-            for n := 0 to List.Count - 1 do
-              if List = AppGlobals.Data.SaveList then
-              begin
-                if ((ServerHash > 0) and (List[n].ServerHash = ServerHash)) or
-                   ((ServerArtistHash > 0) and (List[n].ServerArtistHash = ServerArtistHash)) or
-                   ((ServerHash = 0) and (List[n].ServerHash = 0) and (List[n].Hash = Hash)) then
-                begin
-                  Exists := True;
-                  Break;
-                end;
-              end else
-                if List[n].Hash = Hash then
-                begin
-                  Exists := True;
-                  Break;
-                end;
-
-            if Exists then
-              Continue;
-
-            Title := TTitleInfo.Create(ServerHash, ServerArtistHash, Lst[i]);
-            List.Add(Title);
-            FTree.AddTitle(Title, ParentNode, FFilterText, True);
-
-            if (List = AppGlobals.Data.SaveList) and ((ServerHash > 0) or (ServerArtistHash > 0)) then
-            begin
-              SetLength(Hashes, Length(Hashes) + 1);
-
-              if ServerHash > 0 then
-                Hashes[High(Hashes)] := TSyncWishlistRecord.Create(ServerHash, False)
-              else
-                Hashes[High(Hashes)] := TSyncWishlistRecord.Create(ServerArtistHash, True);
-            end;
+            if (ServerHash > 0) or ((ServerHash = 0) and (ServerArtistHash = 0)) then
+              ImportData.Add(TImportListEntry.Create(Lst[i], ServerHash, False))
+            else
+              ImportData.Add(TImportListEntry.Create(Lst[i], ServerArtistHash, True));
           end;
         except
           MsgBox(GetParentForm(Self).Handle, _('The file could not be loaded.'), _('Error'), MB_ICONEXCLAMATION);
+          Exit;
         end;
-
-        MsgBus.SendMessage(TListsChangedMsg.Create);
       finally
         Lst.Free;
       end;
     end;
+
+    // When not importing into the wishlist no artists or hashes are allowed, so rebuild the list
+    if List <> AppGlobals.Data.SaveList then
+    begin
+      NewImportData := TList<TImportListEntry>.Create;
+      for i := 0 to ImportData.Count - 1 do
+      begin
+        if (not ImportData[i].IsArtist) then
+        begin
+          ImportData[i].Hash := 0;
+          NewImportData.Add(ImportData[i]);
+        end else
+          ImportData[i].Free;
+      end;
+
+      ImportData.Free;
+      ImportData := NewImportData;
+    end;
+
+    // Now remove duplicates. Titles with hashes have higher priority than titles without hashes
+    NewImportData := TList<TImportListEntry>.Create;
+    while ImportData.Count > 0 do
+    begin
+      KeepEntry := ImportData[0];
+
+      for n := 0 to ImportData.Count - 1 do
+      begin
+        if KeepEntry = ImportData[n] then
+          Continue;
+
+        if LowerCase(KeepEntry.Title) = LowerCase(ImportData[n].Title) then
+        begin
+          if (KeepEntry.Hash = 0) and (ImportData[n].Hash > 0) then
+            KeepEntry := ImportData[n];
+        end;
+      end;
+
+      for n := 0 to List.Count - 1 do
+      begin
+        TitleInfo := List[n];
+
+        if List = AppGlobals.Data.SaveList then
+        begin
+          // TODO: Das hier stark testen...
+          if ((LowerCase(KeepEntry.Title) = LowerCase(TitleInfo.Title)) and (not KeepEntry.IsArtist) and (KeepEntry.Hash = 0) and (TitleInfo.ServerHash > 0)) or
+             ((not KeepEntry.IsArtist) and (KeepEntry.Hash > 0) and (KeepEntry.Hash = TitleInfo.ServerHash)) or
+             ((KeepEntry.IsArtist) and (TitleInfo.ServerArtistHash > 0) and (LowerCase(KeepEntry.Title) = LowerCase(TitleInfo.Title))) or
+             ((KeepEntry.IsArtist) and (KeepEntry.Hash > 0) and (KeepEntry.Hash = TitleInfo.ServerArtistHash)) then
+          begin
+            KeepEntry := nil;
+            Break;
+          end;
+        end else
+        begin
+          if LowerCase(KeepEntry.Title) = LowerCase(TitleInfo.Title) then
+          begin
+            KeepEntry := nil;
+            Break;
+          end;
+        end;
+      end;
+
+      if KeepEntry <> nil then
+      begin
+        NewImportData.Add(KeepEntry);
+
+        for n := ImportData.Count - 1 downto 0 do
+          if (LowerCase(KeepEntry.Title) = LowerCase(ImportData[n].Title)) then
+          begin
+            if KeepEntry <> ImportData[n] then
+              ImportData[n].Free;
+            ImportData.Delete(n);
+          end;
+      end else
+      begin
+        ImportData[0].Free;
+        ImportData.Delete(0);
+      end;
+    end;
+    ImportData.Free;
+    ImportData := NewImportData;
+
+
+    if ImportData.Count > 0 then
+    begin
+      if List = AppGlobals.Data.SaveList then
+      begin
+        ConversionData := TStringList.Create;
+        try
+          // Create a separate list for titles without hashes
+          for i := 0 to ImportData.Count - 1 do
+            if ImportData[i].Hash = 0 then
+              ConversionData.Add(ImportData[i].Title);
+
+          if ConversionData.Count > 0 then
+          begin
+            // If there are manual titles ask the user if they should be converted to automatic titles
+            if not HomeComm.Connected then
+            begin
+               MsgRes := MsgBox(GetParentForm(Self).Handle, Format(_('You have imported %d title(s) for the manual wishlist. You are not connected to the streamWriter server to convert these titles into titles for the automatic wishlist. Do you want to continue and import these titles as manual titles without conversion?'), [ConversionData.Count]), _('Question'), MB_YESNO or MB_ICONQUESTION or MB_DEFBUTTON2);
+               if MsgRes = ID_NO then
+                 Exit;
+            end else
+            begin
+              MsgRes := MsgBox(GetParentForm(Self).Handle, Format(_('You have imported %d title(s) for the manual wishlist. Do you want to convert these titles into titles used by the automatic wishlist?'), [ConversionData.Count]), _('Question'), MB_YESNOCANCEL or MB_ICONQUESTION);
+              case MsgRes of
+                ID_YES:
+                  begin
+                    // We need to build a separate list to send to the server for conversion.
+                    // The stuff we send to the server will be removed from the list of titles we will add soon.
+                    NewImportData := TList<TImportListEntry>.Create;
+                    for i := ImportData.Count - 1 downto 0 do
+                    begin
+                      // If it is an automatic title keep it, otherwise add it to the other list for conversion
+                      if ImportData[i].Hash <> 0 then
+                        NewImportData.Add(ImportData[i])
+                      else
+                        ImportData[i].Free;
+                    end;
+
+                    ImportData := NewImportData;
+
+                    HomeComm.SendConvertManualToAutomatic(ConversionData);
+                  end;
+                ID_CANCEL:
+                  Exit;
+              end;
+            end;
+          end;
+        finally
+          ConversionData.Free;
+        end;
+      end;
+
+      // TODO: Checklist:
+      //   - wenn ich nen automatischen importiere, den es schon in der wunschliste als manuellen gibt, muss der manuelle rausfliegen
+      //     und der automatische hinzugefügt werden
+      //   - ich muss für import von manuellen und automatischen titeln testen, ob die aufnahme danach funktioniert und anspringt.
+      //     das ist ganz wichtig!
+      //   - wenn es nen ignorelist eintrag schon gibt, darf er nicht nochmal durch den import importiert werden
+      //   - wo wird sichergestellt, dass nicht doppelte titles hinzugefügt werden?
+      //     das muss auch geprüft werden, wenn vom streamWriter-server das conversion-result ankommt...
+
+      SetLength(Hashes, 0);
+      for i := 0 to ImportData.Count - 1 do
+      begin
+        // If we are importing an automatic title and a manual title already exists the manual title needs to be removed
+        if List = AppGlobals.Data.SaveList then
+          for n := 0 to List.Count - 1 do
+          begin
+            if (LowerCase(ImportData[i].Title) = LowerCase(List[n].Title)) and (ImportData[i].Hash > 0) and (not ImportData[i].IsArtist) and
+               (List[n].ServerHash = 0) and (List[n].ServerArtistHash = 0) then
+            begin
+              FTree.RemoveTitle(List[n]);
+              List.Delete(n);
+              Break;
+            end;
+          end;
+
+
+        if ImportData[i].Hash = 0 then
+          Title := TTitleInfo.Create(0, 0, ImportData[i].Title)
+        else if ImportData[i].IsArtist then
+        begin
+          Title := TTitleInfo.Create(0, ImportData[i].Hash, ImportData[i].Title);
+          SetLength(Hashes, Length(Hashes) + 1);
+          Hashes[High(Hashes)] := TSyncWishlistRecord.Create(ImportData[i].Hash, True);
+        end else
+        begin
+          Title := TTitleInfo.Create(ImportData[i].Hash, 0, ImportData[i].Title);
+          SetLength(Hashes, Length(Hashes) + 1);
+          Hashes[High(Hashes)] := TSyncWishlistRecord.Create(ImportData[i].Hash, False)
+        end;
+
+        List.Add(Title);
+        FTree.AddTitle(Title, ParentNode, FFilterText, True);
+      end;
+
+      if (List = AppGlobals.Data.SaveList) and (Length(Hashes) > 0) then
+      begin
+        HomeComm.SendSyncWishlist(swAdd, Hashes);
+        HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+        MsgBus.SendMessage(TListsChangedMsg.Create);
+      end;
+    end;
   finally
+    for i := 0 to ImportData.Count - 1 do
+      ImportData[i].Free;
+    ImportData.Free;
     Dlg.Free;
   end;
-
-  HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
-  if List = AppGlobals.Data.SaveList then
-    HomeComm.SendSyncWishlist(swAdd, Hashes);
 end;
 
 procedure TTitlePanel.PostTranslate;
@@ -1996,7 +2212,7 @@ begin
         else
           Index := 93;
       ntStream:
-        Index := 16;
+        Index := 68;
     end;
 end;
 
@@ -2233,6 +2449,16 @@ begin
   FImport.Caption := '&Import...';
   FImport.ImageIndex := 36;
   Items.Add(FImport);
+end;
+
+{ TImportListEntry }
+
+constructor TImportListEntry.Create(Title: string; Hash: Cardinal;
+  IsArtist: Boolean);
+begin
+  Self.Title := Title;
+  Self.Hash := Hash;
+  Self.IsArtist := IsArtist;
 end;
 
 end.

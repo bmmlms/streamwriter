@@ -2121,9 +2121,12 @@ begin
     end;
   end;
 
-  HomeComm.SendSyncWishlist(swAdd, Hashes);
-  HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
-  MsgBus.SendMessage(TListsChangedMsg.Create);
+  if Length(Hashes) > 0 then
+  begin
+    HomeComm.SendSyncWishlist(swAdd, Hashes);
+    HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+    MsgBus.SendMessage(TListsChangedMsg.Create);
+  end;
 end;
 
 function TfrmStreamWriterMain.tabChartsGetIsStreamOnListEvent(
@@ -2159,9 +2162,12 @@ begin
         Hashes[High(Hashes)] := TSyncWishlistRecord.Create(Arr[n].Hash, False);
       end;
 
-  HomeComm.SendSyncWishlist(swRemove, Hashes);
-  HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
-  MsgBus.SendMessage(TListsChangedMsg.Create);
+  if Length(Hashes) > 0 then
+  begin
+    HomeComm.SendSyncWishlist(swRemove, Hashes);
+    HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+    MsgBus.SendMessage(TListsChangedMsg.Create);
+  end;
 end;
 
 procedure TfrmStreamWriterMain.tabClientsAddTitleToList(Sender: TObject; Client: TICEClient;
@@ -2238,9 +2244,8 @@ begin
     end;
   end;
 
-  MsgBus.SendMessage(TListsChangedMsg.Create);
-
   HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  MsgBus.SendMessage(TListsChangedMsg.Create);
 end;
 
 procedure TfrmStreamWriterMain.tabClientsAuthRequired(Sender: TObject);

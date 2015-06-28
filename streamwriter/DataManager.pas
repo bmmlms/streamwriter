@@ -720,6 +720,7 @@ type
   private
     FID: Cardinal;
     FName: string;
+    FStreamCount: Cardinal;
   public
     constructor Create; overload;
     constructor Create(Name: string; ID: Cardinal); overload;
@@ -730,6 +731,7 @@ type
 
     property ID: Cardinal read FID write FID;
     property Name: string read FName write FName;
+    property StreamCount: Cardinal read FStreamCount write FStreamCount;
   end;
 
   TGenreList = class(TList<TGenre>)
@@ -2541,7 +2543,7 @@ begin
     Stream.Read(Result.FName);
   end;
 end;
-
+                          // TODO: der genrecount hinter combobox-items im streambrowser passt nicht zum listencount, nachdem ein genre gewählt wurde
 class function TGenre.LoadFromHome(Stream: TExtendedStream;
   Version: Integer): TGenre;
 begin
@@ -2549,6 +2551,7 @@ begin
 
   Stream.Read(Result.FID);
   Stream.Read(Result.FName);
+  Stream.Read(Result.FStreamCount);
 end;
 
 procedure TGenre.Save(Stream: TExtendedStream);

@@ -45,6 +45,13 @@ type
   end;
   TWishlistUpgradeList = TList<TWishlistUpgrade>;
 
+  TConvertManualToAutomatic = record
+  public
+    Title: string;
+    Hash: Cardinal;
+  end;
+  TConvertManualToAutomaticArray = array of TConvertManualToAutomatic;
+
   TCommandHandshake = class(TCommand)
   private
     FID: Cardinal;
@@ -370,6 +377,30 @@ type
     destructor Destroy; override;
   end;
 
+  TCommandConvertManualToAutomatic = class(TCommand)
+  private
+    FTitles: TStringArray;
+  protected
+    procedure DoGet(S: TExtendedStream); override;
+  public
+    constructor Create; overload;
+    constructor Create(Titles: TStringArray); overload;
+    destructor Destroy; override;
+  end;
+
+  TCommandConvertManualToAutomaticResponse = class(TCommand)
+  private
+    FFoundTitles: TConvertManualToAutomaticArray;
+    FNotFoundTitles: TStringArray;
+  public
+    constructor Create;
+
+    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+
+    property FoundTitles: TConvertManualToAutomaticArray read FFoundTitles;
+    property NotFoundTitles: TStringArray read FNotFoundTitles;
+  end;
+
 implementation
 
 
@@ -419,6 +450,7 @@ constructor TCommandGetServerData.Create;
 begin
   inherited;
 
+  FVersion := 2;
   FCommandType := ctGetServerData;
 end;
 
@@ -956,6 +988,74 @@ destructor TCommandPingResponse.Destroy;
 begin
 
   inherited;
+end;
+
+{ TCommandConvertManualToAutomatic }
+
+constructor TCommandConvertManualToAutomatic.Create;
+begin
+  inherited;
+
+  FCommandType := ctConvertManualToAutomatic;
+end;
+
+constructor TCommandConvertManualToAutomatic.Create(Titles: TStringArray);
+begin
+  Create;
+
+  FTitles := Titles;
+end;
+
+destructor TCommandConvertManualToAutomatic.Destroy;
+begin
+
+  inherited;
+end;
+
+procedure TCommandConvertManualToAutomatic.DoGet(S: TExtendedStream);
+var
+  i: Integer;
+begin
+  inherited;
+
+  S.Write(Cardinal(Length(FTitles)));
+  for i := 0 to High(FTitles) do
+    S.Write(FTitles[i]);
+end;
+
+{ TCommandConvertManualToAutomaticResponse }
+
+constructor TCommandConvertManualToAutomaticResponse.Create;
+begin
+  inherited;
+
+  FCommandType := ctConvertManualToAutomaticResponse;
+end;
+
+procedure TCommandConvertManualToAutomaticResponse.Load(
+  CommandHeader: TCommandHeader; Stream: TExtendedStream);
+var
+  Count: Cardinal;
+  i: Integer;
+begin
+  inherited;
+
+  SetLength(FFoundTitles, 0);
+  SetLength(FNotFoundTitles, 0);
+
+  Stream.Read(Count);
+  for i := 0 to Count - 1 do
+  begin
+    SetLength(FFoundTitles, Length(FFoundTitles) + 1);
+    Stream.Read(FFoundTitles[High(FFoundTitles)].Title);
+    Stream.Read(FFoundTitles[High(FFoundTitles)].Hash);
+  end;
+  Stream.Read(Count);
+  for i := 0 to Count - 1 do
+  begin
+    SetLength(FNotFoundTitles, Length(FNotFoundTitles) + 1);
+    Stream.Read(FNotFoundTitles[i]);
+  end;
 end;
 
 end.
