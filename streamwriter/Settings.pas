@@ -355,6 +355,12 @@ type
 const
   WARNING_STREAMRECORDING = 'When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.';
 
+  // TODO: übersetzen. das kann ich mir bis auf STREAMPATTERN zusammenreimen denke ich...
+  LABEL_TRACKPATTERN = 'Valid variables for saved tracks: %artist%, %title%, %album%, %streamtitle%, %streamname%, %number%, %day%, %month%, %year%, %hour%, %minute%, %second%';
+  LABEL_STREAMPATTERN = 'Valid variables for saved streams: %streamname%, %day%, %month%, %year%, %hour%, %minute%, %second%';
+  LABEL_PATTERNSEPARATOR = 'Backslashes can be used to seperate directories.';
+
+
 implementation
 
 {$R *.dfm}
@@ -1250,8 +1256,13 @@ var
 begin
   inherited;
 
-  lblFilePattern.Caption := _('Valid variables: %artist%, %title%, %album%, %streamtitle%, %streamname%, %number%, %day%, %month%, %year%, %hour%, %minute%, %second%'#13#10 +
-                              'Backslashes can be used to seperate directories.');
+  if FSettingsType = stAuto then
+  begin
+    lblFilePattern.Caption := _(LABEL_TRACKPATTERN) + #13#10 + _(LABEL_PATTERNSEPARATOR);
+  end else
+  begin
+    lblFilePattern.Caption := _(LABEL_TRACKPATTERN) + #13#10 + _(LABEL_STREAMPATTERN) + #13#10 + _(LABEL_PATTERNSEPARATOR);
+  end;
 
   lblAppParams.Caption := _('Valid variables: %filename%, %artist%, %title%, %album%, %streamtitle%, %streamname%, %number%, %day%, %month%, %year%, %hour%, %minute%, %second%'#13#10 +
                             'Every parameter should be quoted using ".');

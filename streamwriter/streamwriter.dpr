@@ -20,7 +20,7 @@
 
 program streamwriter;
 
-// vcPublic, damit TCommand-Nachfahren erzeugt werden können.
+// vcPublic so TCommand-descendants can be created
 {$RTTI EXPLICIT METHODS([vcPublic]) PROPERTIES([]) FIELDS([])}
 
 uses

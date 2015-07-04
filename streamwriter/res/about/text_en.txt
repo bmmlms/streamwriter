@@ -42,7 +42,7 @@ LAME
 LED icons
 MP4Box
 MySQL
-node.js
+Node.js
 OggEnc
 OpenSSL
 Programmer's Notepad
