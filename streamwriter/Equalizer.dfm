@@ -17,6 +17,7 @@ object frmEqualizer: TfrmEqualizer
   OldCreateOrder = False
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
+  OnShow = FormShow
   DesignSize = (
     217
     145)
@@ -33,8 +34,7 @@ object frmEqualizer: TfrmEqualizer
     Padding.Top = 4
     Padding.Right = 4
     Padding.Bottom = 4
-    TabOrder = 0
-    ExplicitWidth = 269
+    TabOrder = 2
   end
   object chkEqualizer: TCheckBox
     Left = 8
@@ -42,7 +42,7 @@ object frmEqualizer: TfrmEqualizer
     Width = 121
     Height = 21
     Caption = 'Equalizer active'
-    TabOrder = 1
+    TabOrder = 0
     OnClick = chkEqualizerClick
   end
   object btnReset: TPngBitBtn
@@ -56,7 +56,7 @@ object frmEqualizer: TfrmEqualizer
     ParentDoubleBuffered = False
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 2
+    TabOrder = 1
     OnClick = btnResetClick
     PngImage.Data = {
       89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
@@ -79,6 +79,5 @@ object frmEqualizer: TfrmEqualizer
       B16D86E449B57B90CAAEA3BFF2302E2BD1C247026CD66EB30C8761A593CC7310
       67827B118AF78FF28E590F68569333E03631A79F492D4F07BC6267BA6528FF66
       AE803FE5B32DF0F03636220000000049454E44AE426082}
-    ExplicitLeft = 240
   end
 end

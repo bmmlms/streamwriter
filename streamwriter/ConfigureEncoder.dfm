@@ -70,7 +70,7 @@ object frmConfigureEncoder: TfrmConfigureEncoder
     Width = 197
     Height = 21
     Caption = 'Use variable bitrate'
-    TabOrder = 1
+    TabOrder = 2
     OnClick = optVBRClick
   end
   object lstCBR: TComboBox
@@ -79,7 +79,7 @@ object frmConfigureEncoder: TfrmConfigureEncoder
     Width = 185
     Height = 21
     Style = csDropDownList
-    TabOrder = 2
+    TabOrder = 1
   end
   object lstVBR: TComboBox
     Left = 24
@@ -101,7 +101,6 @@ object frmConfigureEncoder: TfrmConfigureEncoder
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 4
-    ExplicitTop = 114
     object Bevel2: TBevel
       Left = 4
       Top = 4

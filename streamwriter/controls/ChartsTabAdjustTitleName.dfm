@@ -71,8 +71,7 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
     Padding.Top = 4
     Padding.Right = 4
     Padding.Bottom = 4
-    TabOrder = 0
-    ExplicitTop = 77
+    TabOrder = 1
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -96,7 +95,6 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitHeight = 31
     end
   end
   object txtTitle: TLabeledEdit
@@ -108,6 +106,6 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
     EditLabel.Width = 199
     EditLabel.Height = 13
     EditLabel.Caption = 'Please enter the name of the title to add:'
-    TabOrder = 1
+    TabOrder = 0
   end
 end

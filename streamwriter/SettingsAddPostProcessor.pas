@@ -36,6 +36,8 @@ type
     optDestinationFormat: TRadioButton;
     procedure FormCreate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
   private
     FResult: Integer;
   public
@@ -60,6 +62,16 @@ begin
   FResult := 2;
 
   Language.Translate(Self);
+end;
+
+procedure TfrmSettingsAddPostProcessor.FormKeyDown(Sender: TObject;
+  var Key: Word; Shift: TShiftState);
+begin
+ if Key = 27 then
+  begin
+    Key := 0;
+    Close;
+  end;
 end;
 
 end.

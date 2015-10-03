@@ -170,6 +170,9 @@ begin
   txtAlbum.Enabled := False;
   Label1.Enabled := False;
   grpTags.Enabled := False;
+
+  txtStreamname.SetFocus;
+  txtStreamname.SelLength := 0;
 end;
 
 procedure TfrmEditTags.FormKeyDown(Sender: TObject; var Key: Word;

@@ -254,7 +254,7 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Width = 293
     Height = 61
     Anchors = [akLeft, akTop, akRight, akBottom]
-    TabOrder = 2
+    TabOrder = 3
     OnKeyPress = txtCommentKeyPress
   end
   object txtAlbum: TLabeledEdit
@@ -266,7 +266,7 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     EditLabel.Width = 33
     EditLabel.Height = 13
     EditLabel.Caption = 'Album:'
-    TabOrder = 3
+    TabOrder = 2
   end
   object pnlNav: TPanel
     Left = 0

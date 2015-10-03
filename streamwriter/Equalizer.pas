@@ -52,6 +52,7 @@ type
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure btnResetClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
   private
     FEqualizer: TEqualizer;
   public
@@ -210,6 +211,11 @@ begin
     Key := 0;
     Close;
   end;
+end;
+
+procedure TfrmEqualizer.FormShow(Sender: TObject);
+begin
+  chkEqualizer.SetFocus;
 end;
 
 end.

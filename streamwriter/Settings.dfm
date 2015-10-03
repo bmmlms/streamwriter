@@ -45,7 +45,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Delete stream files when recording stops'
-      TabOrder = 0
+      TabOrder = 3
       OnClick = chkDeleteStreamsClick
     end
     object chkAddSavedToIgnore: TCheckBox
@@ -55,7 +55,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Add saved titles to global ignorelist'
-      TabOrder = 1
+      TabOrder = 4
       OnClick = chkAddSavedToIgnoreClick
     end
     object lstDefaultFilter: TComboBox
@@ -65,7 +65,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Style = csDropDownList
       Anchors = [akLeft, akBottom]
-      TabOrder = 2
+      TabOrder = 10
       OnChange = lstDefaultFilterChange
       Items.Strings = (
         'Save every song'
@@ -82,7 +82,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Save separated tracks'
-      TabOrder = 3
+      TabOrder = 1
       OnClick = chkSeparateTracksClick
     end
     object chkSaveStreamsToDisk: TCheckBox
@@ -92,7 +92,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Save stream files to hard disk drive'
-      TabOrder = 4
+      TabOrder = 0
       OnClick = chkSaveStreamsToDiskClick
     end
     object chkOnlySaveFull: TCheckBox
@@ -102,7 +102,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Only save whole songs'
-      TabOrder = 5
+      TabOrder = 2
       OnClick = chkOnlySaveFullClick
     end
     object chkOverwriteSmaller: TCheckBox
@@ -112,7 +112,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Overwrite existing file if newer file is larger'
-      TabOrder = 6
+      TabOrder = 8
       OnClick = chkOverwriteSmallerClick
     end
     object chkDiscardSmaller: TCheckBox
@@ -122,7 +122,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Discard new file if existing one is larger'
-      TabOrder = 7
+      TabOrder = 9
       OnClick = chkDiscardSmallerClick
     end
     object chkAddSavedToStreamIgnore: TCheckBox
@@ -132,7 +132,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Add saved titles to stream ignorelist'
-      TabOrder = 8
+      TabOrder = 5
       OnClick = chkAddSavedToStreamIgnoreClick
     end
     object chkRemoveSavedFromWishlist: TCheckBox
@@ -142,7 +142,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Remove saved titles from wishlist'
-      TabOrder = 9
+      TabOrder = 6
       OnClick = chkRemoveSavedFromWishlistClick
     end
     object chkDiscardAlways: TCheckBox
@@ -152,7 +152,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Discard new file if it already exists'
-      TabOrder = 10
+      TabOrder = 7
       OnClick = chkDiscardAlwaysClick
     end
   end
@@ -196,7 +196,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Move to notification area...'
-      TabOrder = 0
+      TabOrder = 1
       OnClick = chkTrayClick
     end
     object txtMinDiskSpace: TLabeledEdit
@@ -209,7 +209,7 @@ object frmSettings: TfrmSettings
       EditLabel.Caption = 'Stop recording when free space gets below:'
       MaxLength = 3
       NumbersOnly = True
-      TabOrder = 1
+      TabOrder = 11
     end
     object lstDefaultAction: TComboBox
       Left = 4
@@ -218,7 +218,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Style = csDropDownList
       Anchors = [akLeft, akBottom]
-      TabOrder = 2
+      TabOrder = 12
       Items.Strings = (
         'Start/stop recording'
         'Listen to stream'
@@ -231,7 +231,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = '...on close'
-      TabOrder = 3
+      TabOrder = 2
     end
     object optMinimize: TRadioButton
       Left = 20
@@ -240,7 +240,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = '...on minimize'
-      TabOrder = 4
+      TabOrder = 3
     end
     object lstDefaultActionBrowser: TComboBox
       Left = 4
@@ -249,7 +249,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Style = csDropDownList
       Anchors = [akLeft, akBottom]
-      TabOrder = 5
+      TabOrder = 13
       Items.Strings = (
         'Start recording'
         'Listen to stream'
@@ -263,7 +263,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Snap main window to screen edges'
-      TabOrder = 6
+      TabOrder = 4
     end
     object chkRememberRecordings: TCheckBox
       Left = 4
@@ -272,7 +272,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Remember streams that were recording on exit'
-      TabOrder = 7
+      TabOrder = 5
     end
     object chkDisplayPlayNotifications: TCheckBox
       Left = 4
@@ -299,7 +299,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Display played song in titlebar'
-      TabOrder = 10
+      TabOrder = 7
     end
     object chkCoverPanelAlwaysVisible: TCheckBox
       Left = 4
@@ -308,7 +308,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Always show cover in "Saved songs"'
-      TabOrder = 11
+      TabOrder = 10
     end
     object chkAutostart: TCheckBox
       Left = 4
@@ -317,7 +317,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Start streamWriter on windows logon'
-      TabOrder = 12
+      TabOrder = 0
     end
     object chkRememberPlaying: TCheckBox
       Left = 4
@@ -326,7 +326,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Remember stream that was playing on exit'
-      TabOrder = 13
+      TabOrder = 6
     end
   end
   object pnlAdvanced: TPanel
@@ -576,7 +576,7 @@ object frmSettings: TfrmSettings
       RowSelect = True
       ShowColumnHeaders = False
       SmallImages = PngImageList1
-      TabOrder = 0
+      TabOrder = 1
       ViewStyle = vsReport
       OnResize = lstPostProcessResize
       OnSelectItem = lstPostProcessSelectItem
@@ -589,7 +589,7 @@ object frmSettings: TfrmSettings
       Height = 27
       Anchors = [akRight, akBottom]
       Caption = '&Add...'
-      TabOrder = 1
+      TabOrder = 3
       OnClick = btnAddClick
     end
     object btnRemove: TButton
@@ -600,7 +600,7 @@ object frmSettings: TfrmSettings
       Anchors = [akRight, akBottom]
       Caption = '&Remove'
       Enabled = False
-      TabOrder = 2
+      TabOrder = 4
       OnClick = btnRemoveClick
     end
     object txtApp: TLabeledEdit
@@ -616,7 +616,7 @@ object frmSettings: TfrmSettings
       EditLabel.Caption = 'Path to application:'
       Enabled = False
       ReadOnly = True
-      TabOrder = 3
+      TabOrder = 6
     end
     object txtAppParams: TLabeledEdit
       Left = 4
@@ -628,7 +628,7 @@ object frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Caption = 'Parameters:'
       Enabled = False
-      TabOrder = 4
+      TabOrder = 7
       OnChange = txtAppParamsChange
     end
     object chkOnlyIfCut: TCheckBox
@@ -648,7 +648,7 @@ object frmSettings: TfrmSettings
       Height = 27
       Anchors = [akLeft, akBottom]
       Caption = '&Configure...'
-      TabOrder = 6
+      TabOrder = 2
       OnClick = btnConfigureClick
     end
     object lstOutputFormat: TComboBox
@@ -658,7 +658,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Style = csDropDownList
       Anchors = [akLeft, akTop, akRight]
-      TabOrder = 7
+      TabOrder = 0
       OnSelect = lstOutputFormatSelect
       Items.Strings = (
         'Do not change format'
@@ -751,7 +751,7 @@ object frmSettings: TfrmSettings
       EditLabel.Caption = 'If no silence was found, append buffer to start/end:'
       MaxLength = 5
       NumbersOnly = True
-      TabOrder = 0
+      TabOrder = 7
       OnChange = txtSongBufferChange
     end
     object txtShortLengthSeconds: TLabeledEdit
@@ -774,7 +774,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Skip ads (short songs)'
-      TabOrder = 2
+      TabOrder = 0
       OnClick = chkSkipShortClick
     end
     object chkSearchSilence: TCheckBox
@@ -784,7 +784,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Search for silence before saving tracks'
-      TabOrder = 3
+      TabOrder = 2
       OnClick = chkSearchSilenceClick
     end
     object txtSilenceLevel: TEdit
@@ -794,7 +794,7 @@ object frmSettings: TfrmSettings
       Height = 21
       MaxLength = 3
       NumbersOnly = True
-      TabOrder = 4
+      TabOrder = 5
       OnChange = txtSilenceLevelChange
     end
     object txtSilenceLength: TEdit
@@ -804,7 +804,7 @@ object frmSettings: TfrmSettings
       Height = 21
       MaxLength = 4
       NumbersOnly = True
-      TabOrder = 5
+      TabOrder = 6
       OnChange = txtSilenceLengthChange
     end
     object txtSilenceBufferSeconds: TEdit
@@ -814,7 +814,7 @@ object frmSettings: TfrmSettings
       Height = 21
       MaxLength = 2
       NumbersOnly = True
-      TabOrder = 6
+      TabOrder = 3
       OnChange = txtSilenceBufferSecondsChange
     end
     object chkAdjustTrackOffset: TCheckBox
@@ -824,7 +824,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Adjust offset of detected track changes'
-      TabOrder = 7
+      TabOrder = 8
       OnClick = chkAdjustTrackOffsetClick
     end
     object txtAdjustTrackOffset: TLabeledEdit
@@ -839,7 +839,7 @@ object frmSettings: TfrmSettings
       LabelPosition = lpRight
       MaxLength = 5
       NumbersOnly = True
-      TabOrder = 8
+      TabOrder = 9
       OnChange = txtAdjustTrackOffsetChange
     end
     object optAdjustBackward: TRadioButton
@@ -851,7 +851,7 @@ object frmSettings: TfrmSettings
       Caption = 'Before detected change'
       Checked = True
       Enabled = False
-      TabOrder = 9
+      TabOrder = 10
       TabStop = True
       OnClick = optAdjustClick
     end
@@ -863,7 +863,7 @@ object frmSettings: TfrmSettings
       Anchors = [akLeft, akTop, akRight]
       Caption = 'After detected change'
       Enabled = False
-      TabOrder = 10
+      TabOrder = 11
       OnClick = optAdjustClick
     end
     object chkManualSilenceLevel: TCheckBox
@@ -873,7 +873,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Use manual silence detection settings:'
-      TabOrder = 11
+      TabOrder = 4
       OnClick = chkManualSilenceLevelClick
     end
   end
@@ -967,7 +967,7 @@ object frmSettings: TfrmSettings
       Width = 129
       Height = 21
       Style = csDropDownList
-      TabOrder = 1
+      TabOrder = 4
       Items.Strings = (
         'High'
         'Medium'
@@ -979,7 +979,7 @@ object frmSettings: TfrmSettings
       Width = 129
       Height = 21
       Style = csDropDownList
-      TabOrder = 2
+      TabOrder = 5
       Items.Strings = (
         'MP3/AAC'
         'MP3'
@@ -992,7 +992,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Do not tune in if song is on global ignorelist'
-      TabOrder = 3
+      TabOrder = 1
       OnClick = chkAutoTuneInClick
     end
     object chkAutoTuneInAddToIgnore: TCheckBox
@@ -1002,7 +1002,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Add saved titles to global ignorelist'
-      TabOrder = 4
+      TabOrder = 2
     end
     object chkAutoRemoveSavedFromWishlist: TCheckBox
       Left = 20
@@ -1011,7 +1011,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Remove saved titles from wishlist'
-      TabOrder = 5
+      TabOrder = 3
     end
   end
   object pnlFilenames: TPanel
@@ -1218,7 +1218,7 @@ object frmSettings: TfrmSettings
       EditLabel.Width = 250
       EditLabel.Height = 13
       EditLabel.Caption = 'Pattern for filenames of completely recorded tracks:'
-      TabOrder = 0
+      TabOrder = 1
       OnChange = txtFilePatternChange
       OnEnter = txtFilePatternEnter
     end
@@ -1233,7 +1233,7 @@ object frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Caption = 'Preview for selected pattern:'
       ReadOnly = True
-      TabOrder = 1
+      TabOrder = 5
     end
     object txtIncompleteFilePattern: TLabeledEdit
       Left = 4
@@ -1285,7 +1285,7 @@ object frmSettings: TfrmSettings
       EditLabel.Width = 114
       EditLabel.Height = 13
       EditLabel.Caption = 'Folder for saved songs:'
-      TabOrder = 5
+      TabOrder = 0
     end
   end
   object pnlCommunityBlacklist: TPanel
@@ -1404,7 +1404,7 @@ object frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Caption = 'Regular expression to add:'
       EditLabel.Layout = tlBottom
-      TabOrder = 0
+      TabOrder = 1
       OnChange = txtRegExChange
     end
     object lstIgnoreTitles: TListView
@@ -1420,7 +1420,7 @@ object frmSettings: TfrmSettings
       RowSelect = True
       ShowColumnHeaders = False
       SmallImages = PngImageList1
-      TabOrder = 1
+      TabOrder = 4
       ViewStyle = vsReport
       OnChange = lstIgnoreTitlesChange
       OnEdited = lstIgnoreTitlesEdited
@@ -1434,7 +1434,7 @@ object frmSettings: TfrmSettings
       Anchors = [akRight, akBottom]
       Caption = 'R&emove'
       Enabled = False
-      TabOrder = 2
+      TabOrder = 7
       OnClick = btnRemoveIgnoreTitlePatternClick
     end
     object btnAddIgnoreTitlePattern: TButton
@@ -1445,7 +1445,7 @@ object frmSettings: TfrmSettings
       Anchors = [akRight, akBottom]
       Caption = 'A&dd'
       Enabled = False
-      TabOrder = 3
+      TabOrder = 6
       OnClick = btnAddIgnoreTitlePatternClick
     end
     object txtIgnoreTitlePattern: TLabeledEdit
@@ -1457,7 +1457,7 @@ object frmSettings: TfrmSettings
       EditLabel.Width = 171
       EditLabel.Height = 13
       EditLabel.Caption = 'Pattern to add (use '#39'*'#39' as wildcard):'
-      TabOrder = 4
+      TabOrder = 5
       OnChange = txtIgnoreTitlePatternChange
     end
     object lstRegExes: TListView
@@ -1473,7 +1473,7 @@ object frmSettings: TfrmSettings
       RowSelect = True
       ShowColumnHeaders = False
       SmallImages = PngImageList1
-      TabOrder = 5
+      TabOrder = 0
       ViewStyle = vsReport
       OnChange = lstRegExesChange
       OnEdited = lstRegExesEdited
@@ -1487,7 +1487,7 @@ object frmSettings: TfrmSettings
       Anchors = [akTop, akRight]
       Caption = '&Add'
       Enabled = False
-      TabOrder = 6
+      TabOrder = 2
       OnClick = btnAddRegExClick
     end
     object btnRemoveRegEx: TButton
@@ -1498,7 +1498,7 @@ object frmSettings: TfrmSettings
       Anchors = [akTop, akRight]
       Caption = '&Remove'
       Enabled = False
-      TabOrder = 7
+      TabOrder = 3
       OnClick = btnRemoveRegExClick
     end
   end
@@ -1546,7 +1546,7 @@ object frmSettings: TfrmSettings
       Enabled = False
       MaxLength = 5
       NumbersOnly = True
-      TabOrder = 0
+      TabOrder = 1
     end
     object chkLimit: TCheckBox
       Left = 4
@@ -1555,7 +1555,7 @@ object frmSettings: TfrmSettings
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Limit bandwidth for recordings'
-      TabOrder = 1
+      TabOrder = 0
       OnClick = chkLimitClick
     end
   end
@@ -1614,7 +1614,7 @@ object frmSettings: TfrmSettings
       EditLabel.Width = 234
       EditLabel.Height = 13
       EditLabel.Caption = 'Remove the following characters from filenames:'
-      TabOrder = 0
+      TabOrder = 1
       OnChange = txtRemoveCharsChange
     end
     object txtFilePatternDecimals: TLabeledEdit
@@ -1627,7 +1627,7 @@ object frmSettings: TfrmSettings
       EditLabel.Caption = 'Minimum count of decimals for tracknumbers:'
       MaxLength = 1
       NumbersOnly = True
-      TabOrder = 1
+      TabOrder = 0
       OnChange = txtFilePatternDecimalsChange
     end
     object chkNormalizeVariables: TCheckBox

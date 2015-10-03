@@ -140,7 +140,7 @@ object frmCommunityLogin: TfrmCommunityLogin
       DoubleBuffered = True
       Layout = blGlyphRight
       ParentDoubleBuffered = False
-      TabOrder = 0
+      TabOrder = 1
       OnClick = btnOKClick
     end
     object btnCancel: TBitBtn
@@ -153,7 +153,7 @@ object frmCommunityLogin: TfrmCommunityLogin
       DoubleBuffered = True
       Layout = blGlyphRight
       ParentDoubleBuffered = False
-      TabOrder = 1
+      TabOrder = 0
       OnClick = btnCancelClick
     end
   end

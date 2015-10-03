@@ -67,9 +67,7 @@ object frmConfigureSoX: TfrmConfigureSoX
     Padding.Top = 4
     Padding.Right = 4
     Padding.Bottom = 4
-    TabOrder = 0
-    ExplicitTop = 415
-    ExplicitWidth = 417
+    TabOrder = 1
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -93,7 +91,6 @@ object frmConfigureSoX: TfrmConfigureSoX
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 316
     end
   end
   object pnlConfigure: TPanel
@@ -102,7 +99,7 @@ object frmConfigureSoX: TfrmConfigureSoX
     Width = 409
     Height = 213
     BevelOuter = bvNone
-    TabOrder = 1
+    TabOrder = 0
     Visible = False
     object GroupBox1: TGroupBox
       Left = 4
@@ -122,7 +119,7 @@ object frmConfigureSoX: TfrmConfigureSoX
         Enabled = False
         MaxLength = 2
         NumbersOnly = True
-        TabOrder = 0
+        TabOrder = 1
       end
       object chkFadeoutStart: TCheckBox
         Left = 8
@@ -130,7 +127,7 @@ object frmConfigureSoX: TfrmConfigureSoX
         Width = 181
         Height = 21
         Caption = 'Add fadein at beginning'
-        TabOrder = 1
+        TabOrder = 0
         OnClick = chkClick
       end
       object txtFadeoutEnd: TLabeledEdit
@@ -144,7 +141,7 @@ object frmConfigureSoX: TfrmConfigureSoX
         Enabled = False
         MaxLength = 2
         NumbersOnly = True
-        TabOrder = 2
+        TabOrder = 3
       end
       object chkFadeoutEnd: TCheckBox
         Left = 8
@@ -152,7 +149,7 @@ object frmConfigureSoX: TfrmConfigureSoX
         Width = 181
         Height = 21
         Caption = 'Add fadeout at end'
-        TabOrder = 3
+        TabOrder = 2
         OnClick = chkClick
       end
     end
@@ -174,7 +171,7 @@ object frmConfigureSoX: TfrmConfigureSoX
         Enabled = False
         MaxLength = 2
         NumbersOnly = True
-        TabOrder = 0
+        TabOrder = 1
       end
       object chkSilenceStart: TCheckBox
         Left = 8
@@ -182,7 +179,7 @@ object frmConfigureSoX: TfrmConfigureSoX
         Width = 181
         Height = 21
         Caption = 'Add silence at beginning'
-        TabOrder = 1
+        TabOrder = 0
         OnClick = chkClick
       end
       object txtSilenceEnd: TLabeledEdit
@@ -196,7 +193,7 @@ object frmConfigureSoX: TfrmConfigureSoX
         Enabled = False
         MaxLength = 2
         NumbersOnly = True
-        TabOrder = 2
+        TabOrder = 3
       end
       object chkSilenceEnd: TCheckBox
         Left = 8
@@ -204,7 +201,7 @@ object frmConfigureSoX: TfrmConfigureSoX
         Width = 181
         Height = 21
         Caption = 'Add silence at end'
-        TabOrder = 3
+        TabOrder = 2
         OnClick = chkClick
       end
     end

@@ -67,9 +67,7 @@ object frmEditTags: TfrmEditTags
     Padding.Top = 4
     Padding.Right = 4
     Padding.Bottom = 4
-    TabOrder = 0
-    ExplicitTop = 315
-    ExplicitWidth = 273
+    TabOrder = 2
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -93,7 +91,6 @@ object frmEditTags: TfrmEditTags
       ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnCloseClick
-      ExplicitLeft = 172
     end
   end
   object grpTags: TGroupBox
@@ -102,7 +99,7 @@ object frmEditTags: TfrmEditTags
     Width = 277
     Height = 249
     Caption = ' Tags '
-    TabOrder = 1
+    TabOrder = 0
     DesignSize = (
       277
       249)
@@ -123,7 +120,6 @@ object frmEditTags: TfrmEditTags
       EditLabel.Height = 13
       EditLabel.Caption = 'Artist:'
       TabOrder = 0
-      ExplicitWidth = 249
     end
     object txtTitle: TLabeledEdit
       Left = 8
@@ -135,7 +131,6 @@ object frmEditTags: TfrmEditTags
       EditLabel.Height = 13
       EditLabel.Caption = 'Title:'
       TabOrder = 1
-      ExplicitWidth = 249
     end
     object txtComment: TMemo
       Left = 8
@@ -144,9 +139,7 @@ object frmEditTags: TfrmEditTags
       Height = 73
       Anchors = [akLeft, akTop, akRight, akBottom]
       ScrollBars = ssVertical
-      TabOrder = 2
-      ExplicitWidth = 249
-      ExplicitHeight = 53
+      TabOrder = 3
     end
     object txtAlbum: TLabeledEdit
       Left = 8
@@ -157,8 +150,7 @@ object frmEditTags: TfrmEditTags
       EditLabel.Width = 33
       EditLabel.Height = 13
       EditLabel.Caption = 'Album:'
-      TabOrder = 3
-      ExplicitWidth = 249
+      TabOrder = 2
     end
   end
   object grpData: TGroupBox
@@ -167,7 +159,7 @@ object frmEditTags: TfrmEditTags
     Width = 277
     Height = 65
     Caption = ' Data '
-    TabOrder = 2
+    TabOrder = 1
     DesignSize = (
       277
       65)
@@ -181,7 +173,6 @@ object frmEditTags: TfrmEditTags
       EditLabel.Height = 13
       EditLabel.Caption = 'Streamname:'
       TabOrder = 0
-      ExplicitWidth = 249
     end
   end
 end
