@@ -757,6 +757,7 @@ begin
   FItemPlay.Enabled := (Length(Streams) = 1) and Bass.DeviceAvailable;
   FItemOpen.Enabled := Length(Streams) = 1;
   FItemOpenWebsite.Enabled := (Length(Streams) > 0) and (Trim(Streams[0].Website) <> '');
+  FItemAdd.Enabled := Length(Streams) > 0;
   FItemBlacklist.Enabled := Length(Streams) > 0;
 
   FItemRate.Enabled := HomeComm.Connected and (Length(Streams) = 1);
