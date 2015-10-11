@@ -1204,7 +1204,7 @@ begin
     {$IFDEF DEBUG}
     ShellExecute(Handle, 'open', PChar('http://gaia:3000/streams#stream=' + IntToStr(FSetStreamDataID) + ',token=' + IntToStr(Token)), '', '', 1);
     {$ELSE}
-    ShellExecute(Handle, 'open', PChar('http://streamdata.streamwriter.org/streams#stream=' + IntToStr(FSetStreamDataID) + ',token=' + IntToStr(Token)), '', '', 1);
+    ShellExecute(Handle, 'open', PChar('https://streamwriter.org/streamdata/streams#stream=' + IntToStr(FSetStreamDataID) + ',token=' + IntToStr(Token)), '', '', 1);
     {$ENDIF}
   end;
 end;
