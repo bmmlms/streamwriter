@@ -58,6 +58,7 @@ type
   private
     FRemove: TMenuItem;
     FRename: TMenuItem;
+    FConvertToAutomatic: TMenuItem;
     FShowSaved: TMenuItem;
     FSelectSaved: TMenuItem;
     FSelectIgnored: TMenuItem;
@@ -76,6 +77,7 @@ type
     FAdd: TToolButton;
     FRemove: TToolButton;
     FRename: TToolButton;
+    FConvertToAutomatic: TToolButton;
     FShowSaved: TToolButton;
     FSelectSaved: TToolButton;
     FSelectIgnored: TToolButton;
@@ -115,6 +117,7 @@ type
     procedure ImportClick(Sender: TObject);
     procedure SelectSavedClick(Sender: TObject);
     procedure SelectIgnoredClick(Sender: TObject);
+    procedure ConvertToAutomaticClick(Sender: TObject);
     procedure AddEditKeyPress(Sender: TObject; var Key: Char);
     procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -299,7 +302,12 @@ begin
     MsgBus.SendMessage(TListsChangedMsg.Create);
   end;
 
-  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), Format(_('Successfully converted %d title(s), %d title(s) not available for automatic recordings'), [Length(FoundTitles), Length(NotFoundTitles)])));
+  if Length(NotFoundTitles) = 0 then
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), Format(_('Conversion to automatic wishlist titles succeeded'), [Length(FoundTitles), Length(NotFoundTitles)])))
+  else if Length(FoundTitles) = 0 then
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), Format(_('Conversion to automatic wishlist titles failed'), [Length(FoundTitles), Length(NotFoundTitles)])))
+  else
+    MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), Format(_('Conversion to automatic wishlist titles succeeded for %d title(s), failed for %d title(s)'), [Length(FoundTitles), Length(NotFoundTitles)])));
 
 
   // TODO: die messagebox hier ist NICHT gut. die hält den thread nämlich an... und dann excepted er wegen keine daten empfangen.
@@ -1201,6 +1209,30 @@ begin
   end;
 end;
 
+procedure TTitlePanel.ConvertToAutomaticClick(Sender: TObject);
+var
+  i: Integer;
+  Nodes: TNodeArray;
+  NodeData: PTitleNodeData;
+  ConversionData: TStringList;
+begin
+  ConversionData := TStringList.Create;
+  try
+    Nodes := FTree.GetNodes([ntWish], True);
+    for i := 0 to High(Nodes) do
+    begin
+      NodeData := FTree.GetNodeData(Nodes[i]);
+
+      if (NodeData.Title.ServerHash = 0) and (NodeData.Title.ServerArtistHash = 0) then
+        ConversionData.Add(NodeData.Title.Title);
+    end;
+
+    HomeComm.SendConvertManualToAutomatic(ConversionData);
+  finally
+    ConversionData.Free;
+  end;
+end;
+
 procedure TTitlePanel.SelectSavedClick(Sender: TObject);
 var
   i: Integer;
@@ -1422,6 +1454,7 @@ begin
   FToolbar.FSelectSaved.OnClick := SelectSavedClick;
   FToolbar.FSelectIgnored.OnClick := SelectIgnoredClick;
   FToolbar.FRename.OnClick := RenameClick;
+  FToolbar.FConvertToAutomatic.OnClick := ConvertToAutomaticClick;
 
   FTree.Align := alClient;
   FTree.OnChange := TreeChange;
@@ -1508,7 +1541,7 @@ end;
 procedure TTitlePanel.UpdateButtons;
 var
   i, n: Integer;
-  SingleParentSelected, TitlesSelected, CanRemove, CanRename, CanImport, CanShowSaved: Boolean;
+  SingleParentSelected, TitlesSelected, CanRemove, CanRename, CanImport, CanShowSaved, CanConvert: Boolean;
   SelectedNodes, SelectedParents: TNodeArray;
   ChildNodeData: PTitleNodeData;
 
@@ -1529,6 +1562,7 @@ begin
   SelectedNodes := FTree.GetNodes([ntStream, ntWish, ntIgnore], True);
   SelectedParents := FTree.GetNodes([ntWishParent, ntIgnoreParent, ntStream], True);
   CanShowSaved := False;
+  CanConvert := False;
 
   SingleParentSelected := (FTree.SelectedCount = 1) and (Length(SelectedParents) = 1);
   if SingleParentSelected then
@@ -1552,6 +1586,12 @@ begin
         CanShowSaved := True;
         Break;
       end;
+
+    if HomeComm.Connected and (ChildNodeData.NodeType = ntWish) and (ChildNodeData.Title.ServerHash = 0) and (ChildNodeData.Title.ServerArtistHash = 0) then
+      CanConvert := True;
+
+    if CanShowSaved and (CanConvert or (not CanConvert and not HomeComm.Connected)) then
+      Break;
   end;
 
   TitlesSelected := (TypeCount(ntWish) > 0) or (TypeCount(ntIgnore) > 0);
@@ -1568,14 +1608,16 @@ begin
   FToolbar.FExport.Enabled := (TitlesSelected and (not SingleParentSelected) and (Length(SelectedParents) = 0)) or
                               (SingleParentSelected and (not TitlesSelected));
   FToolbar.FImport.Enabled := CanImport;
+  FToolbar.FConvertToAutomatic.Enabled := CanConvert;
 
   FTree.FPopupMenu.FRemove.Enabled := CanRemove;
   FTree.FPopupMenu.FRename.Enabled := CanRename;
   FTree.FPopupMenu.FShowSaved.Enabled := CanShowSaved;
   FTree.FPopupMenu.FSelectSaved.Enabled := FTree.FWishNode.ChildCount > 0;
   FTree.FPopupMenu.FSelectIgnored.Enabled := FTree.FWishNode.ChildCount > 0;
-  FTree.FPopupMenu.FExport.Enabled := TitlesSelected;
+  FTree.FPopupMenu.FExport.Enabled := FToolbar.FExport.Enabled;
   FTree.FPopupMenu.FImport.Enabled := CanImport;
+  FTree.FPopupMenu.FConvertToAutomatic.Enabled := CanConvert;
 end;
 
 procedure TTitlePanel.UpdateList;
@@ -1650,6 +1692,11 @@ begin
   FShowSaved.Parent := Self;
   FShowSaved.Hint := 'Show in saved tracks';
   FShowSaved.ImageIndex := 14;
+
+  FConvertToAutomatic := TToolButton.Create(Self);
+  FConvertToAutomatic.Parent := Self;
+  FConvertToAutomatic.Hint := 'Convert to automatic wishlist title';
+  FConvertToAutomatic.ImageIndex := 104;
 
   Sep := TToolButton.Create(Self);
   Sep.Parent := Self;
@@ -1791,6 +1838,7 @@ begin
   TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
+
   Header.AutoSizeIndex := 0;
   DragMode := dmManual;
   ShowHint := True;
@@ -1826,6 +1874,7 @@ begin
   FPopupMenu.FSelectIgnored.OnClick := PopupMenuClick;
   FPopupMenu.FExport.OnClick := PopupMenuClick;
   FPopupMenu.FImport.OnClick := PopupMenuClick;
+  FPopupMenu.FConvertToAutomatic.OnClick := PopupMenuClick;
 
   PopupMenu := FPopupMenu;
 
@@ -2065,7 +2114,9 @@ begin
   else if Sender = FPopupMenu.FExport then
     TTitlePanel(Owner).FToolbar.FExport.Click
   else if Sender = FPopupMenu.FImport then
-    TTitlePanel(Owner).FToolbar.FImport.Click;
+    TTitlePanel(Owner).FToolbar.FImport.Click
+  else if Sender = FPopupMenu.FConvertToAutomatic then
+    TTitlePanel(Owner).FToolbar.FConvertToAutomatic.Click;
 end;
 
 procedure TTitleTree.PostTranslate;
@@ -2416,6 +2467,11 @@ begin
   Sep := CreateMenuItem;
   Sep.Caption := '-';
   Items.Add(Sep);
+
+  FConvertToAutomatic := CreateMenuItem;
+  FConvertToAutomatic.Caption := '&Convert to automatic wishlist title';
+  FConvertToAutomatic.ImageIndex := 104;
+  Items.Add(FConvertToAutomatic);
 
   FShowSaved := CreateMenuItem;
   FShowSaved.Caption := 'S&how in saved tracks';

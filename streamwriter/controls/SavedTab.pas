@@ -338,7 +338,7 @@ type
 
     procedure CutCopy(Cut: Boolean);
 
-    procedure FileWatcherEvent(Sender: TObject; Action: DWORD; OldName, NewName: string);
+    procedure FileWatcherEvent(Sender: TObject; Action: DWORD; RootDir, OldName, NewName: string);
     procedure FileWatcherTerminate(Sender: TObject);
 
     procedure MessageReceived(Msg: TMessageBase);
@@ -2384,23 +2384,25 @@ end;
 procedure TSavedTree.SetFileWatcher;
 begin
   if FFileWatcher <> nil then
-  begin
     FFileWatcher.Terminate;
-  end;
   if FFileWatcherAuto <> nil then
-  begin
     FFileWatcherAuto.Terminate;
-  end;
 
-  FFileWatcher := TFileWatcher.Create(AppGlobals.Dir, FILE_NOTIFY_CHANGE_FILE_NAME);
+  FFileWatcher := nil;
+  FFileWatcherAuto := nil;
+
+  FFileWatcher := TFileWatcher.Create(AppGlobals.Dir, FILE_NOTIFY_CHANGE_FILE_NAME or FILE_NOTIFY_CHANGE_DIR_NAME);
   FFileWatcher.OnEvent := FileWatcherEvent;
   FFileWatcher.OnTerminate := FileWatcherTerminate;
   FFileWatcher.Start;
 
-  FFileWatcherAuto := TFileWatcher.Create(AppGlobals.DirAuto, FILE_NOTIFY_CHANGE_FILE_NAME);
-  FFileWatcherAuto.OnEvent := FileWatcherEvent;
-  FFileWatcherAuto.OnTerminate := FileWatcherTerminate;
-  FFileWatcherAuto.Start;
+  if LowerCase(AppGlobals.Dir) <> LowerCase(AppGlobals.DirAuto) then
+  begin
+    FFileWatcherAuto := TFileWatcher.Create(AppGlobals.DirAuto, FILE_NOTIFY_CHANGE_FILE_NAME or FILE_NOTIFY_CHANGE_DIR_NAME);
+    FFileWatcherAuto.OnEvent := FileWatcherEvent;
+    FFileWatcherAuto.OnTerminate := FileWatcherTerminate;
+    FFileWatcherAuto.Start;
+  end;
 end;
 
 procedure TSavedTree.AfterCreate;
@@ -2619,20 +2621,35 @@ begin
 end;
 
 procedure TSavedTree.FileWatcherEvent(Sender: TObject; Action: DWORD;
-  OldName, NewName: string);
+  RootDir, OldName, NewName: string);
 var
+  i: Integer;
   Track: TTrackInfo;
+  RemoveTracks: TList<TTrackInfo>;
   Node: PVirtualNode;
 begin
   Track := nil;
   if (Action = FILE_ACTION_REMOVED) or (Action = FILE_ACTION_RENAMED_NEW_NAME) then
-    if Sender = FFileWatcher then
-      Track := FTrackList.GetTrack(AppGlobals.Dir + OldName)
-    else
-      Track := FTrackList.GetTrack(AppGlobals.DirAuto + OldName);
+    Track := FTrackList.GetTrack(RootDir + OldName);
 
   if Track = nil then
+  begin
+    RemoveTracks := TList<TTrackInfo>.Create;
+    try
+      for i := 0 to FTrackList.Count - 1 do
+      begin
+        if LowerCase(Copy(FTrackList[i].Filename, 1, Length(RootDir + OldName + '\'))) = LowerCase(RootDir + OldName + '\') then
+          RemoveTracks.Add(FTrackList[i]);
+      end;
+
+      for i := 0 to RemoveTracks.Count - 1 do
+        RemoveTrack(RemoveTracks[i]);
+    finally
+      RemoveTracks.Free;
+    end;
+
     Exit;
+  end;
 
   case Action of
     FILE_ACTION_REMOVED:

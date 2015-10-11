@@ -265,7 +265,7 @@ begin
 
   TreeOptions.SelectionOptions := [toDisableDrawSelection, toRightClickSelect, toFullRowSelect, toMultiSelect];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
-  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop] + [toFullRowDrag];
+  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop] + [toFullRowDrag, toVariableNodeHeight];
   Header.Options := Header.Options + [hoShowSortGlyphs, hoVisible, hoOwnerDraw] - [hoDrag];
   DragMode := dmAutomatic;
   ShowHint := True;

@@ -167,7 +167,7 @@ begin
         Break;
       end;
 
-  Result := ((FiletypeToFormat(Data.Filename) in [atMPEG, atOGG, atM4A]) or (M4AActive)) and FGetDependenciesMet;
+  Result := ((FiletypeToFormat(Data.FilenameConverted) in [atMPEG, atOGG]) or M4AActive) and FGetDependenciesMet;
 end;
 
 function TPostProcessSetTags.Configure(AOwner: TComponent; Handle: Cardinal;

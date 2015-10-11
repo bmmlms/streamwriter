@@ -43,7 +43,7 @@ type
     procedure Resize; override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
-    procedure DoInitChildren(Node: PVirtualNode; var ChildCount: Cardinal); override;
+    function DoInitChildren(Node: PVirtualNode; var ChildCount: Cardinal): Boolean; virtual;
   public
     constructor Create(AOwner: TComponent); override;
     procedure Copy;
@@ -321,8 +321,8 @@ begin
   end;
 end;
 
-procedure TDebugView.DoInitChildren(Node: PVirtualNode;
-  var ChildCount: Cardinal);
+function TDebugView.DoInitChildren(Node: PVirtualNode;
+  var ChildCount: Cardinal): Boolean;
 begin
   inherited;
   if FClient <> nil then
@@ -332,6 +332,7 @@ begin
     else
       ChildCount := 0;
   end;
+  Result := True;
 end;
 
 procedure TDebugView.DoFreeNode(Node: PVirtualNode);

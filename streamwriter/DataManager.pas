@@ -2527,8 +2527,6 @@ end;
 
 class function TGenre.Load(Stream: TExtendedStream;
   Version: Integer): TGenre;
-var
-  Dummy: Cardinal;
 begin
   Result := TGenre.Create;
 
@@ -2536,7 +2534,7 @@ begin
   begin
     Stream.Read(Result.FID);
     Stream.Read(Result.FName);
-    Stream.Read(Dummy); // Das war mal ChartCount. Ich sollte Data version irgendwann erhöhen und das kicken.
+    Stream.Read(Result.FStreamCount);
   end else
   begin
     Result.FID := 0;
@@ -2558,7 +2556,7 @@ procedure TGenre.Save(Stream: TExtendedStream);
 begin
   Stream.Write(FID);
   Stream.Write(FName);
-  Stream.Write(Cardinal(0));
+  Stream.Write(FStreamCount);
 end;
 
 { TChartCategory }

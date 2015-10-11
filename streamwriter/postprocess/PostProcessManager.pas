@@ -122,7 +122,7 @@ begin
 
   // Nach Order sortieren
   Client.Entry.Settings.PostProcessors.Sort(TComparer<TPostProcessBase>.Construct(
-    function (const L, R: TPostProcessBase): integer
+    function (const L, R: TPostProcessBase): Integer
     begin
       Result := CmpInt(L.Order, R.Order);
     end
@@ -368,8 +368,6 @@ begin
 
             Entry.Data.ReEncodedFilename := RemoveFileExt(Entry.Data.Filename) + '_temp' + Output;
             TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.WorkFilename, Entry.Data.ReEncodedFilename, Entry.Data.EncoderSettings);
-
-            // TODO: HIER NACH MÜSSEN NOCH TAGS GESETZT WERDEN!!!
           end;
         end;
 
