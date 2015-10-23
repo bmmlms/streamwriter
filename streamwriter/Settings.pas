@@ -79,10 +79,7 @@ type
     Label3: TLabel;
     pnlCut: TPanel;
     txtSongBuffer: TLabeledEdit;
-    txtShortLengthSeconds: TLabeledEdit;
-    Label4: TLabel;
     Label5: TLabel;
-    chkSkipShort: TCheckBox;
     chkSearchSilence: TCheckBox;
     Label10: TLabel;
     txtSilenceLevel: TEdit;
@@ -208,6 +205,9 @@ type
     btnBrowseLogFile: TPngSpeedButton;
     txtLogFile: TLabeledEdit;
     chkRememberPlaying: TCheckBox;
+    txtShortLengthSeconds: TLabeledEdit;
+    Label4: TLabel;
+    chkSkipShort: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -355,11 +355,9 @@ type
 const
   WARNING_STREAMRECORDING = 'When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.';
 
-  // TODO: übersetzen. das kann ich mir bis auf STREAMPATTERN zusammenreimen denke ich...
   LABEL_TRACKPATTERN = 'Valid variables for saved tracks: %artist%, %title%, %album%, %streamtitle%, %streamname%, %number%, %day%, %month%, %year%, %hour%, %minute%, %second%';
   LABEL_STREAMPATTERN = 'Valid variables for saved streams: %streamname%, %day%, %month%, %year%, %hour%, %minute%, %second%';
   LABEL_PATTERNSEPARATOR = 'Backslashes can be used to seperate directories.';
-
 
 implementation
 
@@ -583,6 +581,8 @@ begin
   // ---------------------------------------------------------------------------------------------------------
 
   txtShortLengthSeconds.Enabled := chkSkipShort.State <> cbUnchecked;
+  Label4.Enabled := txtShortLengthSeconds.Enabled;
+
   EnablePanel(pnlCut, (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto));
 end;
 
@@ -3093,6 +3093,7 @@ procedure TfrmSettings.chkSkipShortClick(Sender: TObject);
 begin
   inherited;
   txtShortLengthSeconds.Enabled := chkSkipShort.State <> cbUnchecked;
+  Label4.Enabled := txtShortLengthSeconds.Enabled;
 
   if FInitialized then
     RemoveGray(chkSkipShort);

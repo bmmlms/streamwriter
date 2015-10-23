@@ -243,6 +243,7 @@ type
     FSpeed: UInt64;
     FClientCount: Cardinal;
     FRecordingCount: Cardinal;
+    FDiskSpaceFailCount: Cardinal;
 
     FWasShown: Boolean;
     FWasMaximized: Boolean;
@@ -2414,25 +2415,35 @@ begin
   end;
 
   OnlyAuto := True;
-  if RecordingActive and not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
+
+  if RecordingActive then
   begin
-    for i := 0 to FClientManager.Count - 1 do
-      if FClientManager[i].Recording and (not FClientManager[i].AutoRemove) then
-      begin
-        FClientManager[i].WriteLog(_('Stopping recording because available disk space is below the set limit'), '', ltGeneral, llWarning);
-        FClientManager[i].StopRecording;
-        OnlyAuto := False;
-      end;
+    if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
+      Inc(FDiskSpaceFailCount)
+    else
+      FDiskSpaceFailCount := 0;
 
-    if not OnlyAuto then
+    if FDiskSpaceFailCount >= 10 then
     begin
-      tmrSpeed.Enabled := False;
+      for i := 0 to FClientManager.Count - 1 do
+        if FClientManager[i].Recording and (not FClientManager[i].AutoRemove) then
+        begin
+          FClientManager[i].WriteLog(_('Stopping recording because available disk space is below the set limit'), '', ltGeneral, llWarning);
+          FClientManager[i].StopRecording;
+          OnlyAuto := False;
+        end;
 
-      TfrmMsgDlg.ShowMsg(Self, _('Available disk space is below the set limit, so recordings will be stopped.'), mtInformation, [mbOK], mbOK);
+      if not OnlyAuto then
+      begin
+        tmrSpeed.Enabled := False;
 
-      tmrSpeed.Enabled := True;
+        TfrmMsgDlg.ShowMsg(Self, _('Available disk space is below the set limit, so recordings will be stopped.'), mtInformation, [mbOK], mbOK);
+
+        tmrSpeed.Enabled := True;
+      end;
     end;
-  end;
+  end else
+    FDiskSpaceFailCount := 0;
 
   Power.Critical := (PlayingActive or RecordingActive) or ((AppGlobals.Data.SaveList.Count > 0) and (AppGlobals.AutoTuneIn));
 end;

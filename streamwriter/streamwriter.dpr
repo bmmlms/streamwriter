@@ -161,8 +161,6 @@ uses
 {$R ..\..\common\res\lang_icons.res}
 {$R ..\..\common\res\icons.res}
 
-// TODO: Direktive FREESPACETEST rausmachen, in Sourcen und Projekt-Datei. Und alle Stellen, wo die Direktive benutzt wird, auch!
-
 var
   i: Integer;
   HideMain, Found: Boolean;

@@ -38,6 +38,13 @@ object frmSettings: TfrmSettings
       Anchors = [akLeft, akRight, akBottom]
       Caption = 'Lists:'
     end
+    object Label4: TLabel
+      Left = 72
+      Top = 252
+      Width = 39
+      Height = 13
+      Caption = 'seconds'
+    end
     object chkDeleteStreams: TCheckBox
       Left = 20
       Top = 60
@@ -154,6 +161,29 @@ object frmSettings: TfrmSettings
       Caption = 'Discard new file if it already exists'
       TabOrder = 7
       OnClick = chkDiscardAlwaysClick
+    end
+    object txtShortLengthSeconds: TLabeledEdit
+      Left = 20
+      Top = 248
+      Width = 49
+      Height = 21
+      EditLabel.Width = 138
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Ads to skip are shorter than:'
+      MaxLength = 3
+      NumbersOnly = True
+      TabOrder = 11
+      OnChange = txtShortLengthSecondsChange
+    end
+    object chkSkipShort: TCheckBox
+      Left = 4
+      Top = 208
+      Width = 285
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      Caption = 'Skip ads (short songs)'
+      TabOrder = 12
+      OnClick = chkSkipShortClick
     end
   end
   object pnlMain: TPanel
@@ -671,50 +701,43 @@ object frmSettings: TfrmSettings
     Left = 604
     Top = 4
     Width = 293
-    Height = 361
+    Height = 297
     TabOrder = 4
     Visible = False
     DesignSize = (
       293
-      361)
-    object Label4: TLabel
-      Left = 56
-      Top = 48
-      Width = 39
-      Height = 13
-      Caption = 'seconds'
-    end
+      297)
     object Label5: TLabel
       Left = 56
-      Top = 240
+      Top = 168
       Width = 55
       Height = 13
       Caption = 'milliseconds'
     end
     object Label10: TLabel
       Left = 36
-      Top = 148
+      Top = 76
       Width = 192
       Height = 13
       Caption = 'Silence is defined by volume lower than:'
     end
     object Label12: TLabel
       Left = 36
-      Top = 192
+      Top = 120
       Width = 31
       Height = 13
       Caption = 'lasting'
     end
     object Label13: TLabel
       Left = 160
-      Top = 192
+      Top = 120
       Width = 59
       Height = 13
       Caption = 'ms (min. 20)'
     end
     object Label14: TLabel
       Left = 120
-      Top = 168
+      Top = 96
       Width = 36
       Height = 13
       Caption = '(1-100)'
@@ -729,21 +752,21 @@ object frmSettings: TfrmSettings
     end
     object Label6: TLabel
       Left = 20
-      Top = 100
+      Top = 28
       Width = 61
       Height = 13
       Caption = 'in a range of'
     end
     object Label15: TLabel
       Left = 164
-      Top = 100
+      Top = 28
       Width = 39
       Height = 13
       Caption = 'seconds'
     end
     object txtSongBuffer: TLabeledEdit
       Left = 4
-      Top = 236
+      Top = 164
       Width = 49
       Height = 21
       EditLabel.Width = 252
@@ -751,85 +774,62 @@ object frmSettings: TfrmSettings
       EditLabel.Caption = 'If no silence was found, append buffer to start/end:'
       MaxLength = 5
       NumbersOnly = True
-      TabOrder = 7
+      TabOrder = 5
       OnChange = txtSongBufferChange
     end
-    object txtShortLengthSeconds: TLabeledEdit
-      Left = 4
-      Top = 44
-      Width = 49
-      Height = 21
-      EditLabel.Width = 134
-      EditLabel.Height = 13
-      EditLabel.Caption = 'Ads to skip are shorter than'
-      MaxLength = 3
-      NumbersOnly = True
-      TabOrder = 1
-      OnChange = txtShortLengthSecondsChange
-    end
-    object chkSkipShort: TCheckBox
+    object chkSearchSilence: TCheckBox
       Left = 4
       Top = 0
       Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
-      Caption = 'Skip ads (short songs)'
-      TabOrder = 0
-      OnClick = chkSkipShortClick
-    end
-    object chkSearchSilence: TCheckBox
-      Left = 4
-      Top = 72
-      Width = 285
-      Height = 21
-      Anchors = [akLeft, akTop, akRight]
       Caption = 'Search for silence before saving tracks'
-      TabOrder = 2
+      TabOrder = 0
       OnClick = chkSearchSilenceClick
     end
     object txtSilenceLevel: TEdit
       Left = 36
-      Top = 164
+      Top = 92
       Width = 81
       Height = 21
       MaxLength = 3
       NumbersOnly = True
-      TabOrder = 5
+      TabOrder = 3
       OnChange = txtSilenceLevelChange
     end
     object txtSilenceLength: TEdit
       Left = 76
-      Top = 188
+      Top = 116
       Width = 81
       Height = 21
       MaxLength = 4
       NumbersOnly = True
-      TabOrder = 6
+      TabOrder = 4
       OnChange = txtSilenceLengthChange
     end
     object txtSilenceBufferSeconds: TEdit
       Left = 92
-      Top = 96
+      Top = 24
       Width = 69
       Height = 21
       MaxLength = 2
       NumbersOnly = True
-      TabOrder = 3
+      TabOrder = 1
       OnChange = txtSilenceBufferSecondsChange
     end
     object chkAdjustTrackOffset: TCheckBox
       Left = 4
-      Top = 268
+      Top = 196
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Adjust offset of detected track changes'
-      TabOrder = 8
+      TabOrder = 6
       OnClick = chkAdjustTrackOffsetClick
     end
     object txtAdjustTrackOffset: TLabeledEdit
       Left = 20
-      Top = 292
+      Top = 220
       Width = 61
       Height = 21
       EditLabel.Width = 55
@@ -839,41 +839,41 @@ object frmSettings: TfrmSettings
       LabelPosition = lpRight
       MaxLength = 5
       NumbersOnly = True
-      TabOrder = 9
+      TabOrder = 7
       OnChange = txtAdjustTrackOffsetChange
     end
     object optAdjustBackward: TRadioButton
       Left = 20
-      Top = 316
+      Top = 244
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Before detected change'
       Checked = True
       Enabled = False
-      TabOrder = 10
+      TabOrder = 8
       TabStop = True
       OnClick = optAdjustClick
     end
     object optAdjustForward: TRadioButton
       Left = 20
-      Top = 336
+      Top = 264
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'After detected change'
       Enabled = False
-      TabOrder = 11
+      TabOrder = 9
       OnClick = optAdjustClick
     end
     object chkManualSilenceLevel: TCheckBox
       Left = 20
-      Top = 120
+      Top = 48
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       Caption = 'Use manual silence detection settings:'
-      TabOrder = 4
+      TabOrder = 2
       OnClick = chkManualSilenceLevelClick
     end
   end
@@ -1328,7 +1328,7 @@ object frmSettings: TfrmSettings
   end
   object pnlStreamsAdvanced: TPanel
     Left = 604
-    Top = 372
+    Top = 308
     Width = 293
     Height = 369
     TabOrder = 9

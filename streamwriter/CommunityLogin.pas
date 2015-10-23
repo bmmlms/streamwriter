@@ -65,11 +65,7 @@ implementation
 
 procedure TfrmCommunityLogin.btnCancelClick(Sender: TObject);
 begin
-  if pnlConnecting.Visible then
-  begin
-
-  end else
-    Close;
+  Close;
 end;
 
 procedure TfrmCommunityLogin.btnOKClick(Sender: TObject);
@@ -189,7 +185,6 @@ begin
   pnlConnect.Visible := not Show;
   pnlConnecting.Visible := Show;
 
-  btnCancel.Enabled := not Show;
   btnOK.Enabled := not Show;
 end;
 

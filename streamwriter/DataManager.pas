@@ -2541,7 +2541,7 @@ begin
     Stream.Read(Result.FName);
   end;
 end;
-                          // TODO: der genrecount hinter combobox-items im streambrowser passt nicht zum listencount, nachdem ein genre gewählt wurde
+
 class function TGenre.LoadFromHome(Stream: TExtendedStream;
   Version: Integer): TGenre;
 begin
