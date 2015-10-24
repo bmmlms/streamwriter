@@ -403,7 +403,6 @@ type
 
 implementation
 
-
 { TCommandHandshake }
 
 constructor TCommandHandshake.Create;

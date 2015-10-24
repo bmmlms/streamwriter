@@ -936,13 +936,12 @@ var
   Node: PVirtualNode;
   NodeData: PStreamNodeData;
   Add: Boolean;
-  P, P2: string;
+  P: string;
   Hash: Cardinal;
   Chars: Integer;
 begin
   Result := False;
   P := BuildPattern(Search, Hash, Chars, False);
-  P2 := BuildPattern(Genre, Hash, Chars, False);
 
   if (not AlwaysBuild) and (P = FLastSearch) and (Genre = FLastGenre) and
      (AudioType = FLastAudioType) and (Bitrate = FLastBitrate) then
@@ -959,7 +958,7 @@ begin
       for i := 0 to AppGlobals.Data.BrowserList.Count - 1 do
       begin
         Add := ((P = '*') or Like(LowerCase(AppGlobals.Data.BrowserList[i].Name), LowerCase(P))) and
-               ((P2 = '*') or Like(LowerCase(AppGlobals.Data.BrowserList[i].Genre), LowerCase(P2))) and
+               ((Genre = '') or (Pos(LowerCase(Genre), LowerCase(AppGlobals.Data.BrowserList[i].Genre)) > 0)) and
                ((AudioType = atNone) or (AppGlobals.Data.BrowserList[i].AudioType = AudioType)) and
                ((Bitrate = 0) or (AppGlobals.Data.BrowserList[i].Bitrate >= Bitrate));
         if Add then
