@@ -271,6 +271,7 @@ begin
          (AppGlobals.Data.SaveList[n].ServerHash = 0) and (AppGlobals.Data.SaveList[n].ServerArtistHash = 0) then
       begin
         FListsPanel.FTree.RemoveTitle(AppGlobals.Data.SaveList[n]);
+        AppGlobals.Data.SaveList[n].Free;
         AppGlobals.Data.SaveList.Delete(n);
         Break;
       end;
@@ -725,7 +726,6 @@ begin
     FAddCombo.ItemIndex := 0;
 end;
 
-// TODO: das hier mit fastmm auf leaks checken.
 procedure TTitlePanel.ImportClick(Sender: TObject);
 var
   i, n, P, NumChars, MsgRes: Integer;
@@ -975,6 +975,7 @@ begin
                         ImportData[i].Free;
                     end;
 
+                    ImportData.Free;
                     ImportData := NewImportData;
 
                     HomeComm.SendConvertManualToAutomatic(ConversionData);
@@ -1005,11 +1006,12 @@ begin
                (List[n].ServerHash = 0) and (List[n].ServerArtistHash = 0) then
             begin
               FTree.RemoveTitle(List[n]);
+              List[n].Free;
               List.Delete(n);
               Break;
             end;
 
-            // Do not allow duplicated manual wishlist entries
+            // Do not allow duplicate manual wishlist entries
             if (ImportData[i].Hash = 0) and (List[n].Hash = Hash) then
             begin
               Skip := True;
@@ -1032,7 +1034,7 @@ begin
         begin
           Title := TTitleInfo.Create(ImportData[i].Hash, 0, ImportData[i].Title);
           SetLength(Hashes, Length(Hashes) + 1);
-          Hashes[High(Hashes)] := TSyncWishlistRecord.Create(ImportData[i].Hash, False)
+          Hashes[High(Hashes)] := TSyncWishlistRecord.Create(ImportData[i].Hash, False);
         end;
 
         List.Add(Title);
