@@ -129,7 +129,7 @@ type
     FThread: THomeThread;
     FRaisedException: Exception;
 
-    FAuthenticated, FIsAdmin, FWasConnected, FConnected, FNotifyTitleChanges, FSecured: Boolean;
+    FAuthenticated, FIsAdmin, FWasConnected, FConnected, FNotifyTitleChanges, FSecured, FCommunicationEstablished: Boolean;
     FTitleNotificationsSet: Boolean;
 
     FOnStateChanged: TNotifyEvent;
@@ -171,6 +171,7 @@ type
     procedure HomeThreadConvertManualToAutomaticReceived(Sender: TSocketThread);
     procedure HomeThreadLog(Sender: TSocketThread);
     procedure HomeThreadSecured(Sender: TSocketThread);
+    procedure HomeThreadCommunicationEstablished(Sender: TSocketThread);
     procedure HomeThreadException(Sender: TSocketThread);
 
     procedure HomeThreadTerminate(Sender: TObject);
@@ -210,6 +211,7 @@ type
     property IsAdmin: Boolean read FIsAdmin;
     property ThreadAlive: Boolean read FGetThreadAlive;
     property RaisedException: Exception read FRaisedException;
+    property CommunicationEstablished: Boolean read FCommunicationEstablished;
 
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
     property OnTitleNotificationsChanged: TNotifyEvent read FOnTitleNotificationsChanged write FOnTitleNotificationsChanged;
@@ -590,7 +592,7 @@ end;
 
 procedure THomeCommunication.SendLogIn(User, Pass: string);
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   FThread.SendCommand(TCommandLogIn.Create(User, Pass));
@@ -598,7 +600,7 @@ end;
 
 procedure THomeCommunication.SendLogOut;
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   FThread.SendCommand(TCommandLogOut.Create)
@@ -606,7 +608,7 @@ end;
 
 procedure THomeCommunication.SendSearchCharts(Top: Boolean; Term: string);
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   FThread.SendCommand(TCommandSearchCharts.Create(Top, Term));
@@ -614,7 +616,7 @@ end;
 
 procedure THomeCommunication.SendSetSettings(TitleNotifications: Boolean);
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   FNotifyTitleChanges := TitleNotifications;
@@ -630,7 +632,7 @@ procedure THomeCommunication.SendSetStreamData(StreamID: Cardinal;
 var
   Cmd: TCommandSetStreamData;
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   Cmd := TCommandSetStreamData.Create;
@@ -643,7 +645,7 @@ end;
 procedure THomeCommunication.SendStreamAnalyzationData(
   StreamID: Cardinal; Data: TExtendedStream);
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   FThread.SendCommand(TCommandStreamAnalyzationData.Create(StreamID, Data));
@@ -651,7 +653,7 @@ end;
 
 procedure THomeCommunication.SendSubmitStream(URL, StreamName: string);
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   FThread.SendCommand(TCommandSubmitStream.Create(URL, StreamName));
@@ -663,7 +665,7 @@ var
   ItemsFound: Integer;
   Hashes: TSyncWishlistRecordArray;
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   SetLength(Hashes, AppGlobals.Data.SaveList.Count);
@@ -686,7 +688,7 @@ end;
 procedure THomeCommunication.SendSyncWishlist(SyncType: TSyncWishlistTypes;
   Hashes: TSyncWishlistRecordArray);
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   if Length(Hashes) = 0 then
@@ -700,7 +702,7 @@ procedure THomeCommunication.SendSyncWishlist(SyncType: TSyncWishlistTypes;
 var
   Hashes: TSyncWishlistRecordArray;
 begin
-  if (not Connected) or (Hash = 0) or (SyncType = swSync) then
+  if (not FCommunicationEstablished) or (Hash = 0) or (SyncType = swSync) then
     Exit;
 
   SetLength(Hashes, 1);
@@ -713,7 +715,7 @@ procedure THomeCommunication.SendTitleChanged(StreamID: Cardinal;
   StreamName, Title, CurrentURL, URL: string; Format: TAudioTypes; Kbps: Cardinal;
   URLs: TStringList);
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   if (StreamID = 0) or (Trim(StreamName) = '') or (Trim(URL) = '') or (Length(Title) <= 3) then
@@ -730,7 +732,7 @@ var
   Cmd: TCommandUpdateStats;
   Stream: TExtendedStream;
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   Cmd := TCommandUpdateStats.Create;
@@ -767,7 +769,7 @@ end;
 
 procedure THomeCommunication.SendClientStats(Auto: Boolean);
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   if Auto then
@@ -779,7 +781,7 @@ end;
 function THomeCommunication.SendCommand(Cmd: TCommand): Boolean;
 begin
   Result := True;
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit(False);
 
   FThread.SendCommand(Cmd);
@@ -791,7 +793,7 @@ var
   Arr: TStringArray;
   i: Integer;
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   if Titles.Count = 0 then
@@ -806,7 +808,7 @@ end;
 
 procedure THomeCommunication.SendGenerateAuthToken;
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   FThread.SendCommand(TCommandGenerateAuthToken.Create)
@@ -814,7 +816,7 @@ end;
 
 procedure THomeCommunication.SendGetMonitorStreams(Count: Cardinal);
 begin
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit;
 
   FThread.SendCommand(TCommandGetMonitorStreams.Create(Count))
@@ -823,10 +825,15 @@ end;
 function THomeCommunication.SendGetServerData: Boolean;
 begin
   Result := True;
-  if not FConnected then
+  if not FCommunicationEstablished then
     Exit(False);
 
   FThread.SendCommand(TCommandGetServerData.Create)
+end;
+
+procedure THomeCommunication.HomeThreadCommunicationEstablished(Sender: TSocketThread);
+begin
+  SendHandshake;
 end;
 
 procedure THomeCommunication.HomeThreadConnected(Sender: TSocketThread);
@@ -836,8 +843,6 @@ begin
   MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), _('Connected to streamWriter server')));
 
   FConnected := True;
-
-  SendHandshake;
 end;
 
 procedure THomeCommunication.HomeThreadConvertManualToAutomaticReceived(
@@ -863,6 +868,8 @@ begin
   FAuthenticated := False;
   FIsAdmin := False;
   FTitleNotificationsSet := False;
+  FSecured := False;
+  FCommunicationEstablished := False;
   //FThread := nil;
 
   if Assigned(FOnStateChanged) then
@@ -892,6 +899,8 @@ begin
   if not FDisabled then
   begin
     MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llDebug, _('Server'), _('Server accepted handshake')));
+
+    FCommunicationEstablished := True;
 
     if AppGlobals.UserWasSetup and (AppGlobals.User <> '') and (AppGlobals.Pass <> '') then
       SendLogIn(AppGlobals.User, AppGlobals.Pass);
@@ -1053,6 +1062,7 @@ begin
   FThread.OnConvertManualToAutomaticReceived := HomeThreadConvertManualToAutomaticReceived;
 
   FThread.OnSecured := HomeThreadSecured;
+  FThread.OnCommunicationEstablished := HomeThreadCommunicationEstablished;
   FThread.OnException := HomeThreadException;
 
   FThread.OnTerminate := HomeThreadTerminate;

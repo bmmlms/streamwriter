@@ -395,7 +395,7 @@ var
   Abort: Boolean;
   SL: TStringList;
 begin
-  if not HomeComm.Connected then
+  if not HomeComm.CommunicationEstablished then
   begin
     if ShowMessages then
       MsgBox(GetParentForm(Self).Handle, _('streamWriter needs to be connected to the server in order to search.'), _('Info'), MB_ICONINFORMATION);

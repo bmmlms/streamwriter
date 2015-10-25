@@ -298,7 +298,7 @@ begin
   if Length(Hashes) > 0 then
   begin
     HomeComm.SendSyncWishlist(swAdd, Hashes);
-    HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+    HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
     MsgBus.SendMessage(TListsChangedMsg.Create);
   end;
 
@@ -545,7 +545,7 @@ begin
   if Length(Hashes) > 0 then
   begin
     HomeComm.SendSyncWishlist(swRemove, Hashes);
-    HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+    HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
     MsgBus.SendMessage(TListsChangedMsg.Create);
   end;
 
@@ -730,7 +730,7 @@ procedure TTitlePanel.ImportClick(Sender: TObject);
 var
   i, n, P, NumChars, MsgRes: Integer;
   Hash, ServerHash, ServerArtistHash: Cardinal;
-  Exists, UseTitleInfo, Deleted: Boolean;
+  Exists, UseTitleInfo, Deleted, Skip: Boolean;
   Pattern, Ext: string;
   Dlg: TOpenDialog;
   Lst: TStringList;
@@ -899,7 +899,6 @@ begin
 
         if List = AppGlobals.Data.SaveList then
         begin
-          // TODO: Das hier stark testen...
           if ((LowerCase(KeepEntry.Title) = LowerCase(TitleInfo.Title)) and (not KeepEntry.IsArtist) and (KeepEntry.Hash = 0) and (TitleInfo.ServerHash > 0)) or
              ((not KeepEntry.IsArtist) and (KeepEntry.Hash > 0) and (KeepEntry.Hash = TitleInfo.ServerHash)) or
              ((KeepEntry.IsArtist) and (TitleInfo.ServerArtistHash > 0) and (LowerCase(KeepEntry.Title) = LowerCase(TitleInfo.Title))) or
@@ -953,7 +952,7 @@ begin
           if ConversionData.Count > 0 then
           begin
             // If there are manual titles ask the user if they should be converted to automatic titles
-            if not HomeComm.Connected then
+            if not HomeComm.CommunicationEstablished then
             begin
                MsgRes := MsgBox(GetParentForm(Self).Handle, Format(_('You have imported %d title(s) for the manual wishlist. You are not connected to the streamWriter server to convert these titles into titles for the automatic wishlist. Do you want to continue and import these titles as manual titles without conversion?'), [ConversionData.Count]), _('Question'), MB_YESNO or MB_ICONQUESTION or MB_DEFBUTTON2);
                if MsgRes = ID_NO then
@@ -990,20 +989,16 @@ begin
         end;
       end;
 
-      // TODO: Checklist:
-      //   - wenn ich nen automatischen importiere, den es schon in der wunschliste als manuellen gibt, muss der manuelle rausfliegen
-      //     und der automatische hinzugefügt werden
-      //   - ich muss für import von manuellen und automatischen titeln testen, ob die aufnahme danach funktioniert und anspringt.
-      //     das ist ganz wichtig!
-      //   - wenn es nen ignorelist eintrag schon gibt, darf er nicht nochmal durch den import importiert werden
-      //   - wo wird sichergestellt, dass nicht doppelte titles hinzugefügt werden?
-      //     das muss auch geprüft werden, wenn vom streamWriter-server das conversion-result ankommt...
-
       SetLength(Hashes, 0);
       for i := 0 to ImportData.Count - 1 do
       begin
+        Skip := False;
+
         // If we are importing an automatic title and a manual title already exists the manual title needs to be removed
         if List = AppGlobals.Data.SaveList then
+        begin
+          Pattern := BuildPattern(Trim(ImportData[i].Title), Hash, NumChars, False);
+
           for n := 0 to List.Count - 1 do
           begin
             if (LowerCase(ImportData[i].Title) = LowerCase(List[n].Title)) and (ImportData[i].Hash > 0) and (not ImportData[i].IsArtist) and
@@ -1013,8 +1008,18 @@ begin
               List.Delete(n);
               Break;
             end;
-          end;
 
+            // Do not allow duplicated manual wishlist entries
+            if (ImportData[i].Hash = 0) and (List[n].Hash = Hash) then
+            begin
+              Skip := True;
+              Break;
+            end;
+          end;
+        end;
+
+        if Skip then
+          Continue;
 
         if ImportData[i].Hash = 0 then
           Title := TTitleInfo.Create(0, 0, ImportData[i].Title)
@@ -1037,7 +1042,7 @@ begin
       if (List = AppGlobals.Data.SaveList) and (Length(Hashes) > 0) then
       begin
         HomeComm.SendSyncWishlist(swAdd, Hashes);
-        HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+        HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
         MsgBus.SendMessage(TListsChangedMsg.Create);
       end;
     end;
@@ -1383,7 +1388,7 @@ begin
 
     List.Add(Title);
 
-    HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+    HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
 
     if TitleHash > 0 then
       HomeComm.SendSyncWishlist(swAdd, TitleHash, False);
@@ -1583,10 +1588,10 @@ begin
         Break;
       end;
 
-    if HomeComm.Connected and (ChildNodeData.NodeType = ntWish) and (ChildNodeData.Title.ServerHash = 0) and (ChildNodeData.Title.ServerArtistHash = 0) then
+    if HomeComm.CommunicationEstablished and (ChildNodeData.NodeType = ntWish) and (ChildNodeData.Title.ServerHash = 0) and (ChildNodeData.Title.ServerArtistHash = 0) then
       CanConvert := True;
 
-    if CanShowSaved and (CanConvert or (not CanConvert and not HomeComm.Connected)) then
+    if CanShowSaved and (CanConvert or (not CanConvert and not HomeComm.CommunicationEstablished)) then
       Break;
   end;
 

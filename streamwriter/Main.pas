@@ -1176,7 +1176,7 @@ begin
       tabClients.SideBar.BrowserView.SwitchMode(moError);
   end;
 
-  HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
 end;
 
 procedure TfrmStreamWriterMain.HomeCommTitleNotificationsChanged(
@@ -1827,8 +1827,7 @@ begin
         stAuto:
           begin
             AppGlobals.Data.AutoRecordSettings.Assign(S.StreamSettings[0]);
-
-            HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+            HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
           end;
         stStream:
           begin
@@ -2125,7 +2124,7 @@ begin
   if Length(Hashes) > 0 then
   begin
     HomeComm.SendSyncWishlist(swAdd, Hashes);
-    HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+    HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
     MsgBus.SendMessage(TListsChangedMsg.Create);
   end;
 end;
@@ -2166,7 +2165,7 @@ begin
   if Length(Hashes) > 0 then
   begin
     HomeComm.SendSyncWishlist(swRemove, Hashes);
-    HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+    HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
     MsgBus.SendMessage(TListsChangedMsg.Create);
   end;
 end;
@@ -2210,7 +2209,7 @@ begin
       List.Add(T);
       tabLists.AddTitle(Client, ListType, T);
 
-      HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+      HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
     end;
   end;
 end;
@@ -2245,7 +2244,7 @@ begin
     end;
   end;
 
-  HomeComm.SendSetSettings((AppGlobals.Data.SaveList.Count > 0) and AppGlobals.AutoTuneIn);
+  HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
   MsgBus.SendMessage(TListsChangedMsg.Create);
 end;
 
@@ -2261,6 +2260,30 @@ begin
   // Wenn die Streams angekommen sind, dann machen wir das hier klar!
   if AppGlobals.SubmitStats and AppGlobals.MonitorMode and (AppGlobals.MonitorCount > 0) and (AppGlobals.Data.BrowserList.Count > 0) and (FClientManager.Monitors.Count = 0) then
     HomeComm.SendGetMonitorStreams(AppGlobals.MonitorCount);
+
+  {
+  // URLs von Streams in der Liste aktualisieren
+  // Ist auskommentiert, weil sW sich eh immer erst zu sw.org verbindet, um die neueste Playlist zu bekommen.
+  // Das hier wäre höchstens für RegExps interessant...
+  for i := 0 to AppGlobals.Data.BrowserList.Count - 1 do
+    for n := 0 to FClientManager.Count - 1 do
+    begin
+      if (AppGlobals.Data.BrowserList[i].ID = FClientManager[n].Entry.ID) then
+      begin
+        outputdebugstring(pchar(appglobals.Data.BrowserList[i].Name));
+        outputdebugstring(pchar(FClientManager[n].Entry.Name));
+        asm
+          int 3;
+        end;
+      end;
+
+      if (AppGlobals.Data.BrowserList[i].ID = FClientManager[n].Entry.ID) and
+         (LowerCase(Trim(AppGlobals.Data.BrowserList[i].Name)) = LowerCase(Trim(FClientManager[n].Entry.Name))) then
+      begin
+        FClientManager[n].Entry.URLs.Assign(AppGlobals.Data.BrowserList[i].URLs);
+      end;
+    end;
+  }
 end;
 
 procedure TfrmStreamWriterMain.tabClientsUpdateButtons(Sender: TObject);
@@ -2445,7 +2468,7 @@ begin
   end else
     FDiskSpaceFailCount := 0;
 
-  Power.Critical := (PlayingActive or RecordingActive) or ((AppGlobals.Data.SaveList.Count > 0) and (AppGlobals.AutoTuneIn));
+  Power.Critical := (PlayingActive or RecordingActive) or (AppGlobals.Data.SaveList.AnyAutomatic and (AppGlobals.AutoTuneIn));
 end;
 
 procedure TfrmStreamWriterMain.ToggleWindow(AlwaysShow: Boolean);
@@ -2755,8 +2778,8 @@ end;
 
 procedure TfrmStreamWriterMain.Community1Click(Sender: TObject);
 begin
-  actLogOn.Enabled := not HomeComm.Authenticated and HomeComm.Connected;
-  actLogOff.Enabled := HomeComm.Authenticated and HomeComm.Connected;
+  actLogOn.Enabled := not HomeComm.Authenticated and HomeComm.CommunicationEstablished;
+  actLogOff.Enabled := HomeComm.Authenticated and HomeComm.CommunicationEstablished;
 end;
 
 procedure TfrmStreamWriterMain.CommunityLoginClose(Sender: TObject; var Action: TCloseAction);

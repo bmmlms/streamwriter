@@ -760,10 +760,10 @@ begin
   FItemAdd.Enabled := Length(Streams) > 0;
   FItemBlacklist.Enabled := Length(Streams) > 0;
 
-  FItemRate.Enabled := HomeComm.Connected and (Length(Streams) = 1);
-  FItemRefresh.Enabled := HomeComm.Connected;
+  FItemRate.Enabled := HomeComm.CommunicationEstablished and (Length(Streams) = 1);
+  FItemRefresh.Enabled := HomeComm.CommunicationEstablished;
 
-  FItemSetData.Enabled := HomeComm.Connected and (Length(Streams) = 1);
+  FItemSetData.Enabled := HomeComm.CommunicationEstablished and (Length(Streams) = 1);
 
   FItemCopy.Enabled := Length(Streams) > 0;
   FItemSave.Enabled := Length(Streams) > 0;

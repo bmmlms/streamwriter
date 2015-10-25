@@ -740,6 +740,13 @@ type
   TChartCategoryList = class(TList<TChartCategory>)
   end;
 
+  TSaveIgnoreList = class(TList<TTitleInfo>)
+  private
+    function FGetAnyAutomatic: Boolean;
+  public
+    property AnyAutomatic: Boolean read FGetAnyAutomatic;
+  end;
+
   { This class contains lists and stuff about everything streamWriter
     needs to know at runtime. This class gets loaded at startup and
     disposed/saved at the end }
@@ -751,8 +758,8 @@ type
     FCategoryList: TListCategoryList;
     FStreamList: TStreamList;
     FTrackList: TTrackList;
-    FSaveList: TList<TTitleInfo>;
-    FIgnoreList: TList<TTitleInfo>;
+    FSaveList: TSaveIgnoreList;
+    FIgnoreList: TSaveIgnoreList;
     FRecentList: TRecentList;
     FStreamBlacklist: TStringList;
     FRatingList: TRatingList;
@@ -790,9 +797,9 @@ type
     // List that contains all saved tracks
     property TrackList: TTrackList read FTrackList;
     // List that contains all titles to be saved
-    property SaveList: TList<TTitleInfo> read FSaveList;
+    property SaveList: TSaveIgnoreList read FSaveList;
     // List that contains all titles to be ignored
-    property IgnoreList: TList<TTitleInfo> read FIgnoreList;
+    property IgnoreList: TSaveIgnoreList read FIgnoreList;
     // List that contains all recently used streams
     property RecentList: TRecentList read FRecentList;
     // List that contains all streams to blacklist for automatic recordings
@@ -1267,8 +1274,8 @@ begin
   FCategoryList := TListCategoryList.Create;
   FStreamList := TStreamList.Create;
   FTrackList := TTrackList.Create;
-  FSaveList := TList<TTitleInfo>.Create;
-  FIgnoreList := TList<TTitleInfo>.Create;
+  FSaveList := TSaveIgnoreList.Create;
+  FIgnoreList := TSaveIgnoreList.Create;
   FRecentList := TRecentList.Create;
   FStreamBlacklist := TStringList.Create;
   FRatingList := TRatingList.Create;
@@ -3464,6 +3471,18 @@ begin
   Stream.Write(Integer(BitrateType));
   Stream.Write(CBRBitrate);
   Stream.Write(Integer(VBRQuality));
+end;
+
+{ TSaveIgnoreList }
+
+function TSaveIgnoreList.FGetAnyAutomatic: Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 0 to Count - 1 do
+    if (Self[i].FServerHash > 0) or (Self[i].FServerArtistHash > 0) then
+      Exit(True);
 end;
 
 end.

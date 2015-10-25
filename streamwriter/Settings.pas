@@ -3282,12 +3282,6 @@ begin
   txtPreview.Visible := True;
   lblFilePattern.Top := txtPreview.Top + txtPreview.Height + MulDiv(8, Screen.PixelsPerInch, 96);
 
-  Substract := chkSearchSilence.Top - chkSkipShort.Top;
-  for i := 0 to pnlCut.ControlCount - 1 do
-  begin
-    pnlCut.Controls[i].Top := pnlCut.Controls[i].Top - Substract;
-  end;
-
   chkAutoTuneInAddToIgnore.Checked := FStreamSettings[0].AddSavedToIgnore;
   chkAutoRemoveSavedFromWishlist.Checked := FStreamSettings[0].RemoveSavedFromWishlist;
 

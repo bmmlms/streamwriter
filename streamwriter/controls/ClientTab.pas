@@ -1667,7 +1667,7 @@ begin
       FSideBar.FBrowserView.RefreshStreams;
     oaSetData:
       begin
-        if HomeComm.Connected then
+        if HomeComm.CommunicationEstablished then
         begin
           FSideBar.BrowserView.SetStreamDataID := Streams[0].ID;
           HomeComm.SendGenerateAuthToken;
