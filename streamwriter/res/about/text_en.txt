@@ -41,6 +41,7 @@ Inno Setup
 jQuery
 LAME
 LED icons
+Let's Encrypt
 MP4Box
 MySQL
 Node.js

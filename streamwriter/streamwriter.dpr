@@ -157,6 +157,7 @@ uses
 {$R res\bass.res}
 {$R res\openssl.res}
 {$R res\about.res}
+{$R res\certificates.res}
 {$R ..\..\common\res\language.res}
 {$R ..\..\common\res\lang_icons.res}
 {$R ..\..\common\res\icons.res}
