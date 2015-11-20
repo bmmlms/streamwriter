@@ -1,7 +1,7 @@
     {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2015 Alexander Nottelmann
+    Copyright (c) 2010-2016 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License

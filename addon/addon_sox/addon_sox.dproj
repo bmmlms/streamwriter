@@ -90,7 +90,7 @@
 						<VersionInfoKeys Name="FileDescription">streamWriter Sox Addon</VersionInfoKeys>
 						<VersionInfoKeys Name="FileVersion">1.0.0.1</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
-						<VersionInfoKeys Name="LegalCopyright">Copyright (c) 2010-2015 Alexander Nottelmann</VersionInfoKeys>
+						<VersionInfoKeys Name="LegalCopyright">Copyright (c) 2010-2016 Alexander Nottelmann</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
 						<VersionInfoKeys Name="OriginalFilename">addon_sox.dll</VersionInfoKeys>
 						<VersionInfoKeys Name="ProductName"/>
