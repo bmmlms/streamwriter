@@ -209,7 +209,7 @@ begin
     end;
     {$ENDIF}
 
-    TLogger.Write(TimeToStr(LogMsg.FTime) + ' - ' + LogMsg.FSourceText + ' - ' + LogMsg.FText);
+    TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', LogMsg.FTime) + ' - ' + LogMsg.FSourceText + ' - ' + LogMsg.FText);
   end;
 
   // Inherited unten, weil da Msg.Free gemacht wird.
