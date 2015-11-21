@@ -764,6 +764,7 @@ procedure TMClientView.KeyDown(var Key: Word; Shift: TShiftState);
 begin
   if Key = VK_SPACE then
     Key := 0;
+  inherited;
 end;
 
 procedure TMClientView.KeyPress(var Key: Char);
