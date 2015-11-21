@@ -105,6 +105,8 @@ type
       CellRect: TRect; DrawFormat: Cardinal); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
+    procedure KeyDown(var Key: Word; Shift: TShiftState); override;
+    procedure KeyPress(var Key: Char); override;
   public
     constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree); reintroduce;
     destructor Destroy; override;
@@ -756,6 +758,36 @@ begin
     Result[Length(Result) - 1] := Node;
     Node := GetNext(Node);
   end;
+end;
+
+procedure TMClientView.KeyDown(var Key: Word; Shift: TShiftState);
+begin
+  if Key = VK_SPACE then
+    Key := 0;
+end;
+
+procedure TMClientView.KeyPress(var Key: Char);
+var
+  Node: PVirtualNode;
+  NodeData: PClientNodeData;
+  Nodes: TNodeArray;
+begin
+  if Key = ' ' then
+  begin
+    Nodes := GetNodes(ntAll, False);
+    for Node in Nodes do
+    begin
+      NodeData := GetNodeData(Node);
+      if (NodeData.Client <> nil) and NodeData.Client.Playing then
+      begin
+        ClearSelection;
+        SelectNodes(Node, Node, False);
+        ScrollIntoView(Node, True);
+        Exit;
+      end;
+    end;
+  end else
+    inherited;
 end;
 
 procedure TMClientView.MenuColsAction(Sender: TVirtualStringTree; Index: Integer;
