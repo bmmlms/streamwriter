@@ -2978,7 +2978,9 @@ procedure TSavedTree.KeyDown(var Key: Word; Shift: TShiftState);
 begin
   inherited;
 
-  if Key = VK_DELETE then
+  if Key = VK_SPACE then
+    Key := 0
+  else if Key = VK_DELETE then
   begin
     FPopupMenu.FItemDelete.Click;
   end else if ssCtrl in Shift then
@@ -2994,10 +2996,25 @@ end;
 procedure TSavedTree.KeyPress(var Key: Char);
 var
   Tracks: TTrackInfoArray;
+  Node: PVirtualNode;
+  NodeData: PSavedNodeData;
+  Nodes: TNodeArray;
 begin
-  inherited;
-
-  if (Key = #13) or (Key = #32) then
+  if Key = ' ' then
+  begin
+    Nodes := GetNodes(False);
+    for Node in Nodes do
+    begin
+      NodeData := GetNodeData(Node);
+      if (NodeData.Track <> nil) and (FPlayer.Filename = NodeData.Track.Filename) then
+      begin
+        ClearSelection;
+        SelectNodes(Node, Node, False);
+        ScrollIntoView(Node, True);
+        Exit;
+      end;
+    end;
+  end else if Key = #13 then
   begin
     Key := #0;
     Tracks := GetSelected;
@@ -3005,7 +3022,8 @@ begin
     begin
       FPopupMenu.FItemPlay.Click;
     end;
-  end;
+  end else
+    inherited;
 end;
 
 procedure TSavedTree.MenuColsAction(Sender: TVirtualStringTree;
