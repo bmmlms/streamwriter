@@ -202,6 +202,10 @@ type
     procedure DoDragging(P: TPoint); override;
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; Text: UnicodeString; CellRect: TRect; DrawFormat: Cardinal); override;
     procedure DoPaintNode(var PaintInfo: TVTPaintInfo); override;
+    function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
+    function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
+    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
+    function DoBeforeItemPaint(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect): Boolean; override;
 
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     procedure DoBeforeCellPaint(Canvas: TCanvas; Node: PVirtualNode;
@@ -211,9 +215,6 @@ type
     procedure Resize; override;
     procedure Paint; override;
     procedure KeyPress(var Key: Char); override;
-    function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
-    function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
-    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
 
     procedure WndProc(var Message: TMessage); override;
 
@@ -413,6 +414,7 @@ var
   NodeData: PStreamNodeData;
 begin
   Result := inherited;
+
   NodeData := PStreamNodeData(GetNodeData(Node));
 
   if ((Kind = ikNormal) or (Kind = ikSelected)) and (Column = 0) then
@@ -670,7 +672,7 @@ begin
     DrawText(Canvas.Handle, PChar(TmpText), Length(TmpText), R, 0);
   end;
 
-  if (FMode = moLoading) and (RootNodeCount = 0) then
+  if FMode = moLoading then
   begin
     TmpText := _('Loading streams');
     GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
@@ -870,6 +872,18 @@ begin
   end;
 end;
 
+function TMStreamTree.DoBeforeItemPaint(Canvas: TCanvas;
+  Node: PVirtualNode; ItemRect: TRect): Boolean;
+begin
+  if FMode <> moShow then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  Result := inherited;
+end;
+
 function TMStreamTree.DoCompare(Node1, Node2: PVirtualNode;
   Column: TColumnIndex): Integer;
 var
@@ -1013,8 +1027,6 @@ begin
   FTimer.Enabled := False;
   if Mode = moLoading then
   begin
-    Clear;
-
     // Damit die Position der ProgressBar passt
     Resize;
 
@@ -1109,6 +1121,8 @@ var
   AudioType: TAudioTypes;
   Bitrate: Cardinal;
 begin
+  FStreamTree.Clear;
+
   Genre := '';
 
   if FSearch.FGenreList.ItemIndex > 0 then
