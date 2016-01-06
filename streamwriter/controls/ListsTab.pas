@@ -309,10 +309,6 @@ begin
     MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), Format(_('Conversion to automatic wishlist titles failed'), [Length(FoundTitles), Length(NotFoundTitles)])))
   else
     MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), Format(_('Conversion to automatic wishlist titles succeeded for %d title(s), failed for %d title(s)'), [Length(FoundTitles), Length(NotFoundTitles)])));
-
-  // TODO: die messagebox hier ist NICHT gut. die hält den thread nämlich an... und dann excepted er wegen keine daten empfangen.
-  //       das problem gibt es bestimmt auch an anderen stellen... evtl. die msgbox ausm thread erstellen?
-  //          -> okay, die msgbox hier ist weg. ich muss aber auch andere stellen prüfen. msgbox ist böse wenn vom thread sync() aufgerufen.
 end;
 
 procedure TListsTab.HomeCommWishlistUpgradeReceived(Sender: TObject;
