@@ -346,7 +346,7 @@ begin
   FStreamSettingsObsolete := TStreamSettings.Create(False);
 
   // The number of the current build
-  FBuildNumber := 722;
+  FBuildNumber := 723;
   FCodename := 'Tranquillo';
 
   // Adjust dimensions of the main-form

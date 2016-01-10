@@ -801,6 +801,15 @@ begin
       begin
         Data.EncoderSettings := Entry.Settings.EncoderSettings.Find(FICEThread.RecvStream.AudioType).Copy;
         TEncoderSettings(Data.EncoderSettings).AudioType := atNone;
+
+        // Falls zwischendurch nach WAVE konvertiert wird, würde die Datei danach mit Default-Einstellungen neu enkodiert werden.
+        // Das will man aber nicht, wenn der Stream 320kbps eigentlich hat. Deshalb das folgende.
+        if Data.VBR then
+          TEncoderSettings(Data.EncoderSettings).BitrateType := brVBR
+        else
+          TEncoderSettings(Data.EncoderSettings).BitrateType := brCBR;
+        TEncoderSettings(Data.EncoderSettings).CBRBitrate := Data.Bitrate;
+        TEncoderSettings(Data.EncoderSettings).VBRQuality := GuessVBRQuality(Data.Bitrate, FICEThread.RecvStream.AudioType);
       end else
         Data.EncoderSettings := Entry.Settings.EncoderSettings.Find(Entry.Settings.OutputFormat).Copy;
 
