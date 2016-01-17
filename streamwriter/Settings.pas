@@ -584,6 +584,8 @@ begin
   Label4.Enabled := txtShortLengthSeconds.Enabled;
 
   EnablePanel(pnlCut, (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto));
+  chkSkipShort.Enabled := (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto);
+  txtShortLengthSeconds.Enabled := chkSkipShort.Enabled and chkSkipShort.Checked;
 end;
 
 procedure TfrmSettings.Finish;
@@ -3046,6 +3048,11 @@ begin
     Application.ProcessMessages;
 
     EnablePanel(pnlCut, (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto));
+
+    chkSkipShort.Enabled := (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto);
+    txtShortLengthSeconds.Enabled := chkSkipShort.Enabled and chkSkipShort.Checked;
+    if (not chkSeparateTracks.Checked) or (not chkSaveStreamsToDisk.Checked) then
+      chkSkipShort.Checked := False;
   end;
 end;
 
@@ -3064,6 +3071,9 @@ begin
     EnablePanel(pnlCut, (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto));
     chkDeleteStreams.Enabled := (not chkSeparateTracks.Checked) or (chkSaveStreamsToDisk.Checked);
     chkDeleteStreams.Checked := chkDeleteStreams.Enabled and FStreamSettings[0].DeleteStreams;
+
+    chkSkipShort.Enabled := (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto);
+    txtShortLengthSeconds.Enabled := chkSkipShort.Enabled and chkSkipShort.Checked;
 
     if (FSettingsType = stStream) and (Length(FStreamSettings) > 0) then
       TfrmMsgDlg.ShowMsg(Self, _(WARNING_STREAMRECORDING),

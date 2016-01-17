@@ -39,8 +39,8 @@ object frmSettings: TfrmSettings
       Caption = 'Lists:'
     end
     object Label4: TLabel
-      Left = 72
-      Top = 252
+      Left = 88
+      Top = 124
       Width = 39
       Height = 13
       Caption = 'seconds'
@@ -57,7 +57,7 @@ object frmSettings: TfrmSettings
     end
     object chkAddSavedToIgnore: TCheckBox
       Left = 4
-      Top = 84
+      Top = 148
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -114,7 +114,7 @@ object frmSettings: TfrmSettings
     end
     object chkOverwriteSmaller: TCheckBox
       Left = 20
-      Top = 164
+      Top = 228
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -124,7 +124,7 @@ object frmSettings: TfrmSettings
     end
     object chkDiscardSmaller: TCheckBox
       Left = 20
-      Top = 184
+      Top = 248
       Width = 265
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -134,7 +134,7 @@ object frmSettings: TfrmSettings
     end
     object chkAddSavedToStreamIgnore: TCheckBox
       Left = 4
-      Top = 104
+      Top = 168
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -144,7 +144,7 @@ object frmSettings: TfrmSettings
     end
     object chkRemoveSavedFromWishlist: TCheckBox
       Left = 4
-      Top = 124
+      Top = 188
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -154,7 +154,7 @@ object frmSettings: TfrmSettings
     end
     object chkDiscardAlways: TCheckBox
       Left = 4
-      Top = 144
+      Top = 208
       Width = 281
       Height = 21
       Anchors = [akLeft, akTop, akRight]
@@ -163,8 +163,8 @@ object frmSettings: TfrmSettings
       OnClick = chkDiscardAlwaysClick
     end
     object txtShortLengthSeconds: TLabeledEdit
-      Left = 20
-      Top = 248
+      Left = 36
+      Top = 120
       Width = 49
       Height = 21
       EditLabel.Width = 138
@@ -176,8 +176,8 @@ object frmSettings: TfrmSettings
       OnChange = txtShortLengthSecondsChange
     end
     object chkSkipShort: TCheckBox
-      Left = 4
-      Top = 208
+      Left = 20
+      Top = 80
       Width = 285
       Height = 21
       Anchors = [akLeft, akTop, akRight]
