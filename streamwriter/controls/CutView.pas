@@ -1100,13 +1100,19 @@ begin
   if not CheckSoX then
     Exit;
 
-  F := TfrmConfigureSox.Create(Self, (AppGlobals.Data.StreamSettings.PostProcessors.Find(TPostProcessSoX) as TPostProcessSoX), False, False, False, 5, 5, False, False, 3, 3,
+  F := TfrmConfigureSox.Create(Self, (AppGlobals.Data.StreamSettings.PostProcessors.Find(TPostProcessSoX) as TPostProcessSoX), False, False, False,
+    AppGlobals.ApplyEffectFadeoutStart, AppGlobals.ApplyEffectFadeoutEnd, False, False, AppGlobals.ApplyEffectSilenceStart, AppGlobals.ApplyEffectSilenceEnd,
     Trunc(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec));
   try
     F.ShowModal;
 
     if F.SaveData then
     begin
+      AppGlobals.ApplyEffectFadeoutStart := F.FadeoutStartLength;
+      AppGlobals.ApplyEffectFadeoutEnd := F.FadeoutEndLength;
+      AppGlobals.ApplyEffectSilenceStart := F.SilenceStartLength;
+      AppGlobals.ApplyEffectSilenceEnd := F.SilenceEndLength;
+
       CmdLine := '';
 
       if F.FadeoutStart and F.FadeoutEnd then

@@ -134,6 +134,11 @@ type
     FEQEnabled: Boolean;
     FEQGain: array[0..9] of Integer;
 
+    FApplyEffectFadeoutStart: Integer;
+    FApplyEffectFadeoutEnd: Integer;
+    FApplyEffectSilenceStart: Integer;
+    FApplyEffectSilenceEnd: Integer;
+
     FLogFilterTypes: Integer;
 
     FAddonManager: TAddonManager;
@@ -293,6 +298,11 @@ type
 
     property EQEnabled: Boolean read FEQEnabled write FEQEnabled;
     property EQGain[Idx: Integer]: Integer read FGetEQGain write FSetEQGain;
+
+    property ApplyEffectFadeoutStart: Integer read FApplyEffectFadeoutStart write FApplyEffectFadeoutStart;
+    property ApplyEffectFadeoutEnd: Integer read FApplyEffectFadeoutEnd write FApplyEffectFadeoutEnd;
+    property ApplyEffectSilenceStart: Integer read FApplyEffectSilenceStart write FApplyEffectSilenceStart;
+    property ApplyEffectSilenceEnd: Integer read FApplyEffectSilenceEnd write FApplyEffectSilenceEnd;
 
     property LogFilterTypes: Integer read FLogFilterTypes write FLogFilterTypes;
 
@@ -820,6 +830,11 @@ begin
       FEQGain[i] := 0;
   end;
 
+  FStorage.Read('ApplyEffectFadeoutStart', FApplyEffectFadeoutStart, 5);
+  FStorage.Read('ApplyEffectFadeoutEnd', FApplyEffectFadeoutEnd, 5);
+  FStorage.Read('ApplyEffectSilenceStart', FApplyEffectSilenceStart, 3);
+  FStorage.Read('ApplyEffectSilenceEnd', FApplyEffectSilenceEnd, 3);
+
   FStorage.Read('LogFilterTypes', FLogFilterTypes, 7);
 
   FStorage.Read('IntroShown', FIntroShown, False);
@@ -1161,6 +1176,11 @@ begin
   FStorage.Write('EQEnabled', FEQEnabled, 'Equalizer');
   for i := 0 to High(FEQGain) do
     FStorage.Write('EQBand' + IntToStr(i), FEQGain[i] + 15, 'Equalizer');
+
+  FStorage.Write('ApplyEffectFadeoutStart', FApplyEffectFadeoutStart);
+  FStorage.Write('ApplyEffectFadeoutEnd', FApplyEffectFadeoutEnd);
+  FStorage.Write('ApplyEffectSilenceStart', FApplyEffectSilenceStart);
+  FStorage.Write('ApplyEffectSilenceEnd', FApplyEffectSilenceEnd);
 
   FStorage.Write('LogFilterTypes', FLogFilterTypes);
 
