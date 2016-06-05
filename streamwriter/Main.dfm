@@ -20,6 +20,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnKeyDown = FormKeyDown
+  OnShortCut = FormShortCut
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13

@@ -27,7 +27,7 @@ uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
   MControls, LanguageObjects, Tabs, CutView, Functions, AppData, SharedControls,
   DynBass, Logging, CutTabSearchSilence, MessageBus, AppMessages, PlayerManager,
-  Forms, DataManager, AudioFunctions, SharedData;
+  Forms, DataManager, AudioFunctions, SharedData, Messages;
 
 type
   TCutToolBar = class(TToolBar)
@@ -86,8 +86,6 @@ type
     function VolumeGetVolumeBeforeMute(Sender: TObject): Integer;
 
     procedure MessageReceived(Msg: TMessageBase);
-  protected
-
   public
     constructor Create(AOwner: TComponent; Track: TTrackInfo; Filename: string = ''); reintroduce;
     destructor Destroy; override;
@@ -96,6 +94,8 @@ type
     procedure PausePlay;
 
     function CanClose: Boolean; override;
+
+    function ProcessShortCut(Msg: TWMKey): Boolean; override;
 
     property Filename: string read FFilename;
 
@@ -233,14 +233,75 @@ begin
   end;
 end;
 
+function TCutTab.ProcessShortCut(Msg: TWMKey): Boolean;
+var
+  Button: TToolButton;
+begin
+  Button := nil;
+
+  if (GetKeyState(VK_CONTROL) < 0) and (GetKeyState(VK_MENU) = 0) then
+  begin
+    if Msg.CharCode = Ord('S') then
+      Button := FToolBar.FSave;
+    if Msg.CharCode = Ord('Z') then
+      Button := FToolBar.FUndo;
+  end else
+  begin
+    if Msg.CharCode = VK_SPACE then
+    begin
+      if FCutView.Player.Playing then
+        Button := FToolBar.FStop
+      else
+        Button := FToolBar.FPlay;
+    end;
+
+    if Msg.CharCode = VK_HOME then
+    begin
+      FCutView.SetPosition(True);
+      Result := True;
+    end;
+
+    if Msg.CharCode = VK_END then
+    begin
+      FCutView.SetPosition(False);
+      Result := True;
+    end;
+
+    if Msg.CharCode = Ord('S') then
+      Button := FToolBar.FPosEffectsMarker;
+
+    if Msg.CharCode = VK_ADD then
+      Button := FToolBar.FZoomIn;
+
+    if Msg.CharCode = VK_SUBTRACT then
+      Button := FToolBar.FZoomOut;
+
+    if Msg.CharCode = Ord('P') then
+      Button := FToolBar.FPosPlay;
+
+    if Msg.CharCode = Ord('C') then
+      Button := FToolBar.FPosEdit;
+
+    if Msg.CharCode = Ord('F') then
+      FCutView.ApplyFade;
+  end;
+
+  if Button <> nil then
+  begin
+    if Button.Enabled then
+      Button.Click;
+    Result := True;
+  end;
+end;
+
 procedure TCutTab.ApplyFadeinClick(Sender: TObject);
 begin
-  FCutView.ApplyFadein;
+  FCutView.ApplyFade;
 end;
 
 procedure TCutTab.ApplyFadeoutClick(Sender: TObject);
 begin
-  FCutView.ApplyFadeout;
+  FCutView.ApplyFade;
 end;
 
 procedure TCutTab.ApplyEffectsClick(Sender: TObject);

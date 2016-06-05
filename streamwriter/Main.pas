@@ -233,6 +233,7 @@ type
     procedure mnuPlayerClick(Sender: TObject);
     procedure actEqualizerExecute(Sender: TObject);
     procedure mnuStreamsClick(Sender: TObject);
+    procedure FormShortCut(var Msg: TWMKey; var Handled: Boolean);
   private
     FCommunityLogin: TfrmCommunityLogin;
 
@@ -1010,6 +1011,12 @@ procedure TfrmStreamWriterMain.FormKeyDown(Sender: TObject; var Key: Word;
 begin
   if Key = VK_F1 then
     actHelp.Execute;
+end;
+
+procedure TfrmStreamWriterMain.FormShortCut(var Msg: TWMKey;
+  var Handled: Boolean);
+begin
+  Handled := TMTabSheet(pagMain.ActivePage).ProcessShortCut(Msg);
 end;
 
 procedure TfrmStreamWriterMain.FormShow(Sender: TObject);

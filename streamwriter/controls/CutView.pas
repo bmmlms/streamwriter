@@ -282,15 +282,15 @@ type
 
     function CheckSoX: Boolean;
 
+    procedure SetPosition(Start: Boolean);
+
     procedure Save;
     procedure Cut;
     procedure Undo;
     procedure Play;
     procedure Stop;
     procedure AutoCut(MaxPeaks: Integer; MinDuration: Cardinal);
-    function ApplyFade(Fadein: Boolean): Boolean;
-    procedure ApplyFadein;
-    procedure ApplyFadeout;
+    procedure ApplyFade;
     procedure ApplyEffects;
     procedure ZoomIn;
     procedure ZoomOut;
@@ -885,6 +885,39 @@ begin
   FSaveCutThread := nil;
 end;
 
+procedure TCutView.SetPosition(Start: Boolean);
+var
+  Paused: Boolean;
+begin
+  if (FWaveData = nil) or (Length(FWaveData.WaveArray) < 2) then
+    Exit;
+
+  Paused := False;
+
+  if Start then
+  begin
+    if (FPlayer <> nil) and FPlayer.Playing then
+    begin
+      Paused := True;
+      FPlayer.Pause;
+    end;
+
+    FPlayer.PositionByte := FWaveData.WaveArray[0].Pos;
+    FPB.FPlayLine := 0;
+
+    if Paused then
+      FPlayer.Play;
+  end else
+  begin
+    Stop;
+    FPlayer.PositionByte := FWaveData.WaveArray[Length(FWaveData.WaveArray) - 1].Pos;
+    FPB.FPlayLine := Length(FWaveData.WaveArray) - 1;
+  end;
+
+  FPB.BuildDrawBuffer;
+  FPB.Invalidate;
+end;
+
 procedure TCutView.Play;
 begin
   if not CanPlay then
@@ -1025,48 +1058,32 @@ begin
     FOnStateChanged(Self);
 end;
 
-function TCutView.ApplyFade(Fadein: Boolean): Boolean;
+procedure TCutView.ApplyFade;
 var
   CmdLine: string;
   FadeTo, FadeStart: Cardinal;
 begin
-  Result := False;
-
   if not CheckSoX then
     Exit;
 
   CmdLine := '"' + (AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath + '" --show-progress "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ';
 
-  if Fadein then
+  if CanApplyFadeIn then
   begin
     FadeTo := Max(FPB.FEffectStartLine, FPB.FEffectEndLine);
 
-    CmdLine := CmdLine + 'fade p ' + IntToStr(Round(FWaveData.WaveArray[FadeTo].Sec))
-  end else
+    CmdLine := CmdLine + 'fade p ' + IntToStr(Round(FWaveData.WaveArray[FadeTo].Sec));
+
+    StartProcessing(CmdLine);
+  end else if CanApplyFadeOut then
   begin
     FadeStart := Min(FPB.FEffectStartLine, FPB.FEffectEndLine);
 
     CmdLine := CmdLine + 'fade p 0 ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec)) + ' ' +
-      IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - FWaveData.WaveArray[FadeStart].Sec))
+      IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - FWaveData.WaveArray[FadeStart].Sec));
+
+    StartProcessing(CmdLine);
   end;
-
-  StartProcessing(CmdLine);
-end;
-
-procedure TCutView.ApplyFadein;
-begin
-  if not CanApplyFadeIn then
-    Exit;
-
-  ApplyFade(True);
-end;
-
-procedure TCutView.ApplyFadeout;
-begin
-  if not CanApplyFadeOut then
-    Exit;
-
-  ApplyFade(False);
 end;
 
 procedure TCutView.AddUndo;
