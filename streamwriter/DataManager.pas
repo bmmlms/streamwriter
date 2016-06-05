@@ -418,6 +418,7 @@ type
 
     procedure FSetSaveToMemory(Value: Boolean);
   public
+
     // Creates a new instance of TStreamSettings class
     constructor Create(InitStuff: Boolean = True);
     // Destroys this instance of TStreamSettings
