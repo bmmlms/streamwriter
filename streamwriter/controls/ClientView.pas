@@ -939,6 +939,7 @@ var
   NodeData: PClientNodeData;
 begin
   inherited;
+
   NodeData := GetNodeData(Node);
   Allowed := ((NodeData.Client <> nil) and (not NodeData.Client.AutoRemove)) or
              ((NodeData.Category <> nil) and (not NodeData.Category.IsAuto));
