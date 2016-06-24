@@ -1,3 +1,5 @@
+#define AppVersion GetFileVersion("..\bin\streamwriter.exe")
+
 [Files]
 Source: ..\bin\streamwriter.exe; DestDir: {app}; Flags: ignoreversion
 Source: .\InnoCallback.dll; DestDir: {tmp}; Flags: dontcopy
@@ -49,8 +51,11 @@ WizardImageFile=compiler:wizmodernimage-is.bmp
 WizardSmallImageFile=wizmodernsmallimage-is.bmp
 Compression=lzma2/ultra
 LicenseFile=license.txt
-VersionInfoVersion=5.4.0.1
+AppVersion={#AppVersion}
+VersionInfoVersion={#AppVersion}
 UninstallDisplayIcon={app}\streamwriter.exe
+AppPublisher=Alexander Nottelmann
+AppPublisherURL=https://streamwriter.org
 CloseApplications=no
 
 [Run]
