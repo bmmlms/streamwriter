@@ -237,6 +237,7 @@ function TCutTab.ProcessShortCut(Msg: TWMKey): Boolean;
 var
   Button: TToolButton;
 begin
+  Result := False;
   Button := nil;
 
   if (GetKeyState(VK_CONTROL) < 0) and (GetKeyState(VK_MENU) = 0) then

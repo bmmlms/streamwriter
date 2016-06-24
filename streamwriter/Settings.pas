@@ -3245,7 +3245,7 @@ end;
 
 procedure TfrmSettings.CreateAuto(AOwner: TComponent; BrowseDir: Boolean);
 var
-  i, Substract: Integer;
+  i: Integer;
 begin
   FBrowseDir := BrowseDir;
 
