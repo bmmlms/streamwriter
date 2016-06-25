@@ -138,6 +138,7 @@ type
     FApplyEffectFadeoutEnd: Integer;
     FApplyEffectSilenceStart: Integer;
     FApplyEffectSilenceEnd: Integer;
+    FApplyEffectNormalize: Boolean;
 
     FLogFilterTypes: Integer;
 
@@ -303,6 +304,7 @@ type
     property ApplyEffectFadeoutEnd: Integer read FApplyEffectFadeoutEnd write FApplyEffectFadeoutEnd;
     property ApplyEffectSilenceStart: Integer read FApplyEffectSilenceStart write FApplyEffectSilenceStart;
     property ApplyEffectSilenceEnd: Integer read FApplyEffectSilenceEnd write FApplyEffectSilenceEnd;
+    property ApplyEffectNormalize: Boolean read FApplyEffectNormalize write FApplyEffectNormalize;
 
     property LogFilterTypes: Integer read FLogFilterTypes write FLogFilterTypes;
 
@@ -834,6 +836,7 @@ begin
   FStorage.Read('ApplyEffectFadeoutEnd', FApplyEffectFadeoutEnd, 5);
   FStorage.Read('ApplyEffectSilenceStart', FApplyEffectSilenceStart, 3);
   FStorage.Read('ApplyEffectSilenceEnd', FApplyEffectSilenceEnd, 3);
+  FStorage.Read('ApplyEffectNormalize', FApplyEffectNormalize, False);
 
   FStorage.Read('LogFilterTypes', FLogFilterTypes, 7);
 
@@ -1181,6 +1184,7 @@ begin
   FStorage.Write('ApplyEffectFadeoutEnd', FApplyEffectFadeoutEnd);
   FStorage.Write('ApplyEffectSilenceStart', FApplyEffectSilenceStart);
   FStorage.Write('ApplyEffectSilenceEnd', FApplyEffectSilenceEnd);
+  FStorage.Write('ApplyEffectNormalize', FApplyEffectNormalize);
 
   FStorage.Write('LogFilterTypes', FLogFilterTypes);
 

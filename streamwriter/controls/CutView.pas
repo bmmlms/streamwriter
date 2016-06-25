@@ -131,7 +131,7 @@ type
 
   TCutPaintBox = class(TCustomControl)
   const
-    ScrollbarHeight = 8;
+    ScrollbarHeight = 12;
     MinimumDisplayedSampleCount = 30;
   private
     FWaveBuf: TBitmap;
@@ -892,10 +892,25 @@ begin
   if (FWaveData = nil) or (Length(FWaveData.WaveArray) < 2) then
     Exit;
 
-  Paused := False;
+  if FWaveData.ZoomSize < Length(FWaveData.WaveArray) - 1 then
+  begin
+    if Start then
+    begin
+      FPB.FZoomStartLine := 0;
+      FPB.FZoomEndLine := FWaveData.ZoomSize;
+    end else
+    begin
+      FPB.FZoomStartLine := Length(FWaveData.WaveArray) - FWaveData.ZoomSize - 1;
+      FPB.FZoomEndLine := Length(FWaveData.WaveArray) - 1;
+    end;
+    FPB.FDoZoom := True;
+
+    FPB.BuildBuffer;
+  end;
 
   if Start then
   begin
+    Paused := False;
     if (FPlayer <> nil) and FPlayer.Playing then
     begin
       Paused := True;
@@ -1100,7 +1115,7 @@ begin
   if not CheckSoX then
     Exit;
 
-  F := TfrmConfigureSox.Create(Self, (AppGlobals.Data.StreamSettings.PostProcessors.Find(TPostProcessSoX) as TPostProcessSoX), False, False, False,
+  F := TfrmConfigureSox.Create(Self, (AppGlobals.Data.StreamSettings.PostProcessors.Find(TPostProcessSoX) as TPostProcessSoX), AppGlobals.ApplyEffectNormalize, False, False,
     AppGlobals.ApplyEffectFadeoutStart, AppGlobals.ApplyEffectFadeoutEnd, False, False, AppGlobals.ApplyEffectSilenceStart, AppGlobals.ApplyEffectSilenceEnd,
     Trunc(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec));
   try
@@ -1112,6 +1127,7 @@ begin
       AppGlobals.ApplyEffectFadeoutEnd := F.FadeoutEndLength;
       AppGlobals.ApplyEffectSilenceStart := F.SilenceStartLength;
       AppGlobals.ApplyEffectSilenceEnd := F.SilenceEndLength;
+      AppGlobals.ApplyEffectNormalize := F.Normalize;
 
       CmdLine := '';
 
@@ -1865,7 +1881,7 @@ begin
   FZoomStartLine := StartX;
   FZoomEndLine := EndX;
   FMouseMoveStartX := X;
-  FDoZoom := true;
+  FDoZoom := True;
   BuildBuffer;
   BuildDrawBuffer;
   Paint;
