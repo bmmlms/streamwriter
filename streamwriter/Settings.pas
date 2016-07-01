@@ -2266,7 +2266,7 @@ begin
         begin
           Item := lstPostProcess.Items.Insert(HighestGroupIndex(AddPostProcessorForm.Result) + 1);
           Item.Caption := ExtractFileName(dlgOpen.FileName);
-          PostProcessor := TExternalPostProcess.Create(dlgOpen.FileName, '"%f"', True, False, GetNewID, 100000, AddPostProcessorForm.Result);
+          PostProcessor := TExternalPostProcess.Create(dlgOpen.FileName, '"%filename%"', True, False, GetNewID, 100000, AddPostProcessorForm.Result);
           PostProcessor.IsNew := True;
           FTemporaryPostProcessors.Insert(HighestGroupIndex(AddPostProcessorForm.Result) + 1, PostProcessor);
           Item.GroupID := PostProcessor.GroupID;
