@@ -18,6 +18,7 @@
     ------------------------------------------------------------------------
 }
 
+
 program streamwriter;
 
 // vcPublic so TCommand-descendants can be created
