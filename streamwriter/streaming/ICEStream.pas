@@ -305,7 +305,7 @@ begin
     end else
       C := LowerCase(Title[i])[1];
 
-    if (c = ' ') or (c = '-') or (c = '_') or (c = ':') or (c = '(') or (c = '\') or (c = '/') then
+    if (C = ' ') or (C = '-') or (C = '_') or (C = ':') or (C = '(') or (C = '\') or (C = '/') then
       NextUpper := True;
     Result := Result + C;
   end;
@@ -393,8 +393,7 @@ begin
 
   // Und noch die dicke Stream-Datei melden
   if (not FMonitoring) and (FAudioStream <> nil) and FAudioStream.InheritsFrom(TAudioStreamFile) and
-      not (FSettings.SeparateTracks and FSettings.DeleteStreams) and (FRecordTitle = '') and
-     (FAudioStream.Size > 0) then
+      not (FSettings.SeparateTracks and FSettings.DeleteStreams) and (FRecordTitle = '') and (FAudioStream.Size > 0) then
   begin
     FSavedFilename := TAudioStreamFile(FAudioStream).FileName;
     FSavedSize := TAudioStreamFile(FAudioStream).Size;
@@ -429,7 +428,7 @@ begin
     FAudioStream.Position := FAudioStream.Size;
     FAudioStream.CopyFrom(RecvStream, CopySize);
   end else
-    Seek(CopySize, soFromCurrent);
+    RecvStream.Seek(CopySize, soFromCurrent);
 
   if Assigned(FOnChunkReceived) and (not FMonitoring) then
   begin
@@ -1394,8 +1393,8 @@ begin
           Break;
       end;
     end;
-    RecvStream.RemoveRange(0, Position);
-    RecvStream.Position := 0;
+
+    RecvStream.RemoveRange(0, RecvStream.Position);
   end;
 end;
 
@@ -1491,11 +1490,12 @@ end;
 procedure TICEStream.Process(Received: Cardinal);
 begin
   inherited;
+
   if not HeaderRemoved then
     Exit;
   if HeaderType = 'icy'  then
   begin
-    if (HeaderRemoved) and (Size > 8192) then
+    if (HeaderRemoved) and (RecvStream.Size > 8192) then
     begin
       if Cardinal(FLastGetSettings + 2000) < GetTickCount then
       begin
@@ -1523,7 +1523,7 @@ begin
     end;
   end else if HeaderType = 'http' then
   begin
-    if Size > 512000 then
+    if (Size > 512000) or (RecvStream.Size > 512000) then
       raise Exception.Create(_('Too many bytes in HTTP-response'))
   end else if HeaderRemoved then
     raise Exception.Create(_('Unknown header-type'));
