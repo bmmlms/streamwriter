@@ -271,10 +271,10 @@ begin
     if Msg.CharCode = Ord('S') then
       Button := FToolBar.FPosEffectsMarker;
 
-    if Msg.CharCode = VK_ADD then
+    if (Msg.CharCode = VK_ADD) or (Msg.CharCode = VK_OEM_PLUS) then
       Button := FToolBar.FZoomIn;
 
-    if Msg.CharCode = VK_SUBTRACT then
+    if (Msg.CharCode = VK_SUBTRACT) or (Msg.CharCode = VK_OEM_MINUS) then
       Button := FToolBar.FZoomOut;
 
     if Msg.CharCode = Ord('P') then
@@ -464,17 +464,17 @@ procedure TCutToolBar.Setup;
 begin
   FStop := TToolButton.Create(Self);
   FStop.Parent := Self;
-  FStop.Hint := 'Stop';
+  FStop.Hint := 'Stop (Space bar)';
   FStop.ImageIndex := 1;
 
   FPlay := TToolButton.Create(Self);
   FPlay.Parent := Self;
-  FPlay.Hint := 'Play';
+  FPlay.Hint := 'Play (Space bar)';
   FPlay.ImageIndex := 33;
 
   FPosPlay := TToolButton.Create(Self);
   FPosPlay.Parent := Self;
-  FPosPlay.Hint := 'Set playposition';
+  FPosPlay.Hint := 'Set playposition (P)';
   FPosPlay.ImageIndex := 27;
 
   FSep := TToolButton.Create(Self);
@@ -501,7 +501,7 @@ begin
 
   FUndo := TToolButton.Create(Self);
   FUndo.Parent := Self;
-  FUndo.Hint := 'Undo';
+  FUndo.Hint := 'Undo (Ctrl+Z)';
   FUndo.ImageIndex := 18;
 
   FSep := TToolButton.Create(Self);
@@ -526,7 +526,7 @@ begin
 
   FPosEdit := TToolButton.Create(Self);
   FPosEdit.Parent := Self;
-  FPosEdit.Hint := 'Set cutpositions (left mousebutton sets start, right button sets end)';
+  FPosEdit.Hint := 'Set cutpositions (left mousebutton sets start, right button sets end) (C)';
   FPosEdit.ImageIndex := 37;
 
   FSep := TToolButton.Create(Self);
@@ -536,27 +536,27 @@ begin
 
   FApplyFadeout := TToolButton.Create(Self);
   FApplyFadeout.Parent := Self;
-  FApplyFadeout.Hint := 'Apply fadeout';
+  FApplyFadeout.Hint := 'Apply fadeout (F)';
   FApplyFadeout.ImageIndex := 55;
 
   FApplyFadein := TToolButton.Create(Self);
   FApplyFadein.Parent := Self;
-  FApplyFadein.Hint := 'Apply fadein';
+  FApplyFadein.Hint := 'Apply fadein (F)';
   FApplyFadein.ImageIndex := 54;
 
   FZoomOut := TToolButton.Create(Self);
   FZoomOut.Parent := Self;
-  FZoomOut.Hint := 'Zoom out';
+  FZoomOut.Hint := 'Zoom out (-)';
   FZoomOut.ImageIndex := 66;
 
   FZoomIn := TToolButton.Create(Self);
   FZoomIn.Parent := Self;
-  FZoomIn.Hint := 'Zoom in';
+  FZoomIn.Hint := 'Zoom in (+)';
   FZoomIn.ImageIndex := 48;
 
   FPosEffectsMarker := TToolButton.Create(Self);
   FPosEffectsMarker.Parent := Self;
-  FPosEffectsMarker.Hint := 'Select area';
+  FPosEffectsMarker.Hint := 'Select area (S)';
   FPosEffectsMarker.ImageIndex := 53;
 
   FSep := TToolButton.Create(Self);
@@ -566,7 +566,7 @@ begin
 
   FSave := TToolButton.Create(Self);
   FSave.Parent := Self;
-  FSave.Hint := 'Save';
+  FSave.Hint := 'Save (Ctrl+S)';
   FSave.ImageIndex := 14;
 end;
 
