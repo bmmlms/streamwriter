@@ -881,6 +881,15 @@ begin
     FImportPanel.Left := FSavedTree.ClientWidth div 2 - FImportPanel.Width div 2;
     FImportPanel.Top := FSavedTree.Top + (FSavedTree.Height - FSavedTree.ClientHeight) + FSavedTree.ClientHeight div 2 - FImportPanel.Height div 2;
   end;
+
+  if FPosLabel <> nil then
+    FPosLabel.Left := FSeekPosPanel.ClientWidth - FPosLabel.Width - 4;
+
+  if FPlayToolbar <> nil then
+  begin
+    FPlayToolbar.Align := alNone;
+    FPlayToolbar.Left := FSeek.Width - FPlayToolbar.Width;
+  end;
 end;
 
 procedure TSavedTab.AfterCreate;
@@ -904,22 +913,14 @@ begin
   // Panel links
   FTopLeftPanel := TPanel.Create(Self);
   FTopLeftPanel.Parent := FTopPanel;
-  FTopLeftPanel.Align := alClient;
-  //FTopLeftPanel.ClientHeight := 40;
+  FTopLeftPanel.Align := alLeft;
+  FTopLeftPanel.Width := 460;
   FTopLeftPanel.Padding.Top := 1;
   FTopLeftPanel.BevelOuter := bvNone;
 
-  // Panel rechts
-  FTopRightPanel := TPanel.Create(Self);
-  FTopRightPanel.Parent := FTopPanel;
-  FTopRightPanel.Align := alRight;
-  FTopRightPanel.ClientHeight := 52;
-  FTopRightPanel.ClientWidth := 330;
-  FTopRightPanel.BevelOuter := bvNone;
-
   FCoverPanel := TPanel.Create(Self);
   FCoverPanel.Parent := FTopPanel;
-  FCoverPanel.Align := alRight;
+  FCoverPanel.Align := alLeft;
   FCoverPanel.BevelOuter := bvNone;
   FCoverPanel.Padding.Bottom := 4;
   FCoverPanel.Padding.Right := 8;
@@ -937,6 +938,13 @@ begin
   FCoverImage.Stretch := False;
   FCoverImage.Center := True;
   FCoverImage.OnMouseDown := CoverImageMouseDown;
+
+  // Panel rechts
+  FTopRightPanel := TPanel.Create(Self);
+  FTopRightPanel.Parent := FTopPanel;
+  FTopRightPanel.Align := alClient;
+  FTopRightPanel.ClientHeight := 52;
+  FTopRightPanel.BevelOuter := bvNone;
 
   // Panel rechts unten für Positionslabel/Playercontrols
   FTopRightBottomPanel := TPanel.Create(Self);
@@ -960,9 +968,12 @@ begin
 
   FPlayToolbar := TPlayToolBar.Create(Self);
   FPlayToolbar.Parent := FSeekPosPanel;
+  FPlayToolbar.Align := alNone;
+  FPlayToolbar.AutoSize := True;
+  // Wir müssen hier alLeft machen, damit AutoSize funktioniert.
+  // Im Resize() wird dann alNone gemacht, aber wir kennen die passende Breite...
   FPlayToolbar.Align := alLeft;
   FPlayToolbar.Images := modSharedData.imgImages;
-  FPlayToolbar.Width := 190;
   FPlayToolbar.Setup;
   FPlayToolbar.Left := 0;
 
@@ -991,9 +1002,7 @@ begin
 
   FSeek := TSeekBar.Create(Self);
   FSeek.Parent := FTopRightTopPanel;
-  FSeek.Align := alLeft;
-  FSeek.Left := FToolbar.Left + FToolbar.Width + 10;
-  FSeek.Width := 177;
+  FSeek.Align := alClient;
   FSeek.OnPositionChanged := SeekChange;
 
   FVolume := TVolumePanel.Create(Self);
@@ -1048,8 +1057,6 @@ begin
 
   FSavedTree.Expanded[FSavedTree.FStreamNode] := True;
   FSavedTree.Expanded[FSavedTree.FFileNode] := True;
-
-  FPosLabel.Left := FSeekPosPanel.ClientWidth - FPosLabel.Width - 4;
 
   if FSavedTree.RootNodeCount > 0 then
   begin
@@ -1542,12 +1549,12 @@ begin
   if (not FSavedTree.Player.Playing) and (not FSavedTree.Player.Paused) then
   begin
     FCoverImage.Picture := nil;
-    FCoverPanel.Hide;
+    //FCoverPanel.Hide;
     FCoverBorderPanel.BevelKind := bkNone;
   end else
     if Img <> nil then
     begin
-      FCoverPanel.Visible := True;
+      //FCoverPanel.Visible := True;
       FCoverBorderPanel.BevelKind := bkFlat;
 
       FCoverImage.Picture.Assign(ResizeBitmap(Img as TBitmap, Min(Min(FCoverImage.Height, FCoverImage.Width), Min(Img.Height, Img.Width))))
@@ -1558,7 +1565,7 @@ begin
         ShowCover(FNoCoverPNG);
       end else
       begin
-        FCoverPanel.Hide;
+        //FCoverPanel.Hide;
         FCoverBorderPanel.BevelKind := bkNone;
       end;
     end;
