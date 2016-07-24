@@ -1457,6 +1457,7 @@ begin
   end;
 
   FPlayToolbar.FShuffle.Down := AppGlobals.PlayerShuffle;
+  FPlayToolbar.FShuffle.Enabled := Bass.DeviceAvailable;
 
   FPlayToolbar.FPause.Down := Tree.Player.Paused;
 
