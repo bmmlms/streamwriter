@@ -852,13 +852,16 @@ begin
   {$IFNDEF DEBUG}
   if FileExists(AppGlobals.RecoveryFile) then
   begin
-    if MsgBox(0, _('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+    if (CommandLine.GetParam('-autoloadrecovery') <> nil)
+        or (MsgBox(0, _('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES) then
+    begin
       try
         FData.Load(True);
         Recovered := True;
       except
         MsgBox(0, _('Data could not be loaded.'), _('Error'), MB_ICONERROR);
       end;
+    end;
   end;
   {$ENDIF}
 
