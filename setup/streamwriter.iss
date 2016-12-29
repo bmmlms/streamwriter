@@ -1,4 +1,5 @@
 #define AppVersion GetFileVersion("..\bin\streamwriter.exe")
+#define AppCopyright GetStringFileInfo("..\bin\streamwriter.exe", LEGAL_COPYRIGHT)
 
 [Files]
 Source: ..\bin\streamwriter.exe; DestDir: {app}; Flags: ignoreversion
@@ -53,6 +54,7 @@ Compression=lzma2/ultra
 LicenseFile=license.txt
 AppVersion={#AppVersion}
 VersionInfoVersion={#AppVersion}
+AppCopyright={#AppCopyright}
 UninstallDisplayIcon={app}\streamwriter.exe
 AppPublisher=Alexander Nottelmann
 AppPublisherURL=https://streamwriter.org
