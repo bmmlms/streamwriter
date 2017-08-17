@@ -265,7 +265,6 @@ type
 
     procedure AfterShown(var Msg: TMessage); message WM_AFTERSHOWN;
     procedure ReceivedData(var Msg: TWMCopyData); message WM_COPYDATA;
-    procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
     procedure EndSession(var Msg: TMessage); message WM_ENDSESSION;
     procedure SysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
     procedure Hotkey(var Msg: TWMHotKey); message WM_HOTKEY;
@@ -385,11 +384,6 @@ begin
         Exit;
 
   FExiting := True;
-
-  if Assigned(ShutdownBlockReasonCreate) and Assigned(ShutdownBlockReasonDestroy) then
-    ShutdownBlockReasonCreate(Handle, _('Stopping recordings and saving settings...'));
-
-  // Hide geht nur durch ShutdownBlockReasonCreate, wir werden sonst abgeschossen eventuell!
   Hide;
 
   CloseHandle(AppGlobals.MutexHandleExiting);
@@ -594,9 +588,6 @@ begin
   for i := pagMain.PageCount - 1 downto 0 do
     if pagMain.Pages[i].ClassType = TCutTab then
       pagMain.Pages[i].Free;
-
-  if Assigned(ShutdownBlockReasonCreate) and Assigned(ShutdownBlockReasonDestroy) then
-    ShutdownBlockReasonDestroy(Handle);
 
   if Hard then
     Halt
@@ -840,6 +831,9 @@ end;
 
 procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
 begin
+  if Assigned(ShutdownBlockReasonCreate) and Assigned(ShutdownBlockReasonDestroy) then
+    ShutdownBlockReasonCreate(Handle, _('Stopping recordings and saving settings...'));
+
   SetCaptionAndTrayHint;
 
   AppGlobals.WindowHandle := Handle;
@@ -1536,6 +1530,9 @@ begin
   tabSaved.PostTranslate;
   tabLog.PostTranslate;
 
+  if Assigned(ShutdownBlockReasonCreate) and Assigned(ShutdownBlockReasonDestroy) then
+    ShutdownBlockReasonCreate(Handle, _('Stopping recordings and saving settings...'));
+
   addStatus.Invalidate;
 end;
 
@@ -1553,12 +1550,6 @@ procedure TfrmStreamWriterMain.mnuStreamSettingsToolbarPopup(
   Sender: TObject);
 begin
   UpdateButtons;
-end;
-
-procedure TfrmStreamWriterMain.QueryEndSession(var Msg: TMessage);
-begin
-  inherited;
-  Msg.Result := 1;
 end;
 
 procedure ShortCutToHotKey(HotKey: TShortCut; var Key : Word; var Modifiers: Uint);
