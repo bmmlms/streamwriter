@@ -1099,8 +1099,8 @@ begin
   FStorage.Delete('AutoScrollLog');
 
 
-  FStorage.Write('Dir', TryRelativePath(FDir, False));
-  FStorage.Write('DirAuto', TryRelativePath(FDirAuto, False));
+  FStorage.Write('Dir', TryRelativePath(FDir, False, True));
+  FStorage.Write('DirAuto', TryRelativePath(FDirAuto, False, True));
   FStorage.Write('TrayClose', FTray);
   FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
   FStorage.Write('SnapMain', FSnapMain);

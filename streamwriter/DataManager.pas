@@ -1862,7 +1862,7 @@ end;
 
 procedure TTrackInfo.Save(Stream: TExtendedStream);
 begin
-  Stream.Write(TryRelativePath(FFilename, True));
+  Stream.Write(TryRelativePath(FFilename, True, True));
 
   Stream.Write(FStreamname);
   Stream.Write(FFilesize);
