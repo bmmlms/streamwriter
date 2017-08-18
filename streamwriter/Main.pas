@@ -265,6 +265,7 @@ type
 
     procedure AfterShown(var Msg: TMessage); message WM_AFTERSHOWN;
     procedure ReceivedData(var Msg: TWMCopyData); message WM_COPYDATA;
+    procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
     procedure EndSession(var Msg: TMessage); message WM_ENDSESSION;
     procedure SysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
     procedure Hotkey(var Msg: TWMHotKey); message WM_HOTKEY;
@@ -589,10 +590,7 @@ begin
     if pagMain.Pages[i].ClassType = TCutTab then
       pagMain.Pages[i].Free;
 
-  if Hard then
-    Halt
-  else
-    Application.Terminate;
+  TerminateProcess(GetCurrentProcess, 0);
 end;
 
 procedure TfrmStreamWriterMain.actSettingsExecute(Sender: TObject);
@@ -831,9 +829,6 @@ end;
 
 procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
 begin
-  if Assigned(ShutdownBlockReasonCreate) and Assigned(ShutdownBlockReasonDestroy) then
-    ShutdownBlockReasonCreate(Handle, _('Stopping recordings and saving settings...'));
-
   SetCaptionAndTrayHint;
 
   AppGlobals.WindowHandle := Handle;
@@ -1530,9 +1525,6 @@ begin
   tabSaved.PostTranslate;
   tabLog.PostTranslate;
 
-  if Assigned(ShutdownBlockReasonCreate) and Assigned(ShutdownBlockReasonDestroy) then
-    ShutdownBlockReasonCreate(Handle, _('Stopping recordings and saving settings...'));
-
   addStatus.Invalidate;
 end;
 
@@ -1641,6 +1633,14 @@ begin
     ShortCutToHotKey(AppGlobals.ShortcutMute, K, M);
     RegisterHotkey(Handle, 7, M, K);
   end;
+end;
+
+procedure TfrmStreamWriterMain.QueryEndSession(var Msg: TMessage);
+begin
+  Msg.Result := 1;
+
+  if Assigned(ShutdownBlockReasonCreate) and Assigned(ShutdownBlockReasonDestroy) then
+    ShutdownBlockReasonCreate(Handle, _('Stopping recordings and saving settings...'));
 end;
 
 procedure TfrmStreamWriterMain.EndSession(var Msg: TMessage);
@@ -2644,7 +2644,7 @@ begin
     actAddToStreamIgnoreList.Enabled := (Length(Clients) > 0) and OneHasTitle;
 
   cmdPause.Down := OnePaused;
-  
+
   actCopyTitle.Enabled := (Length(Clients) > 0) and OneHasTitle;
 end;
 
@@ -2832,4 +2832,5 @@ begin
 end;
 
 end.
+
 
