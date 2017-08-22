@@ -31,7 +31,7 @@ uses
   Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
   LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions,
   AddonManager, PostProcessManager, Logging, Base64, AudioFunctions, TypeDefs,
-  Messages, DataManager, SWFunctions;
+  Messages, DataManager, SWFunctions, CommandLine;
 
 type
   // Do not change the order of items in the following enums!
@@ -351,6 +351,8 @@ uses
 constructor TAppData.Create(AppName: string);
 var
   i, W, H: Integer;
+  OnlyOne: Boolean;
+  CommandLine: TCommandLine;
 begin
   // Create an instance for global stream-settings
   // (these are used for new streams that do not have user-specified settings)
@@ -435,8 +437,27 @@ begin
   FProjectForumLink := 'https://streamwriter.org/forum/';
   FProjectDonateLink := 'https://streamwriter.org/inhalt/donate/';
 
+  // Should multiple instanced be allowed?
+  CommandLine := TCommandLine.Create(GetCommandLineW);
+  try
+    if CommandLine.GetParam('-enablemultipleinstances') = nil then
+    begin
+      OnlyOne := True;
+    end else
+    begin
+      OnlyOne := False;
+      if (CommandLine.GetParam('-datadir') = nil) or (CommandLine.GetParam('-tempdir') = nil) then
+      begin
+        MsgBox(0, Format(_('When the argument -enablemultipleinstances is supplied you also need to supply -datadir and -tempdir.'#13#10'Make sure to supply distinct directories to both launched streamWriter instances.'), [AppName]), _('Info'), MB_ICONINFORMATION);
+        TerminateProcess(GetCurrentProcess, 1);
+      end;
+    end;
+  finally
+    CommandLine.Free;
+  end;
+
   // Call the base-constructor with our defined variables
-  inherited Create(AppName, True, W, H, alGPL);
+  inherited Create(AppName, OnlyOne, W, H, alGPL);
 
   // Set the name for the recovery-file
   FRecoveryFile := FStorage.DataDir + 'streamwriter_data_recovery.dat';
