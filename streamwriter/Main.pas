@@ -371,7 +371,6 @@ var
   i: Integer;
   Res: Integer;
   StartTime, Version: Cardinal;
-  Hard: Boolean;
   HardTimeout: Integer;
   S: TExtendedStream;
   Lst: TSettingsList;
@@ -488,16 +487,12 @@ begin
   else
     HardTimeout := 10000;
 
-  Hard := False;
   StartTime := GetTickCount;
   while (HomeComm.ThreadAlive or HomeComm.Connected) or FClientManager.Active or (FCheckFiles <> nil) or FUpdater.Active do
   begin
     // Wait for threads to finish
     if StartTime < GetTickCount - HardTimeout then
-    begin
-      Hard := True;
       Break;
-    end;
     Sleep(100);
     Application.ProcessMessages;
   end;
