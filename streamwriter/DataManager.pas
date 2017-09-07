@@ -779,7 +779,7 @@ type
     procedure CleanLists;
     procedure Load(Recovery: Boolean); overload;
     procedure Load(var S: TExtendedStream; Filename: string); overload;
-    procedure Save; overload;
+    procedure Save(UseCompression: Boolean); overload;
     procedure Save(S: TExtendedStream; UseCompression: Boolean); overload;
     procedure SaveRecover;
     procedure CheckEncodersAndPostProcessors;
@@ -1708,7 +1708,7 @@ begin
     S.Position := 0;
 end;
 
-procedure TDataLists.Save;
+procedure TDataLists.Save(UseCompression: Boolean);
 var
   S: TExtendedStream;
 begin
@@ -1727,7 +1727,7 @@ begin
     S := TExtendedStream.Create;
     try
       S.WriteBuffer(DATAMAGIC[0], Length(DATAMAGIC));
-      Save(S, True);
+      Save(S, UseCompression);
       S.SaveToFile(AppGlobals.DataFile);
 
       DeleteFile(AppGlobals.RecoveryFile);
