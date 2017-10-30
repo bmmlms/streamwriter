@@ -454,7 +454,7 @@ begin
     Exit;
   end;
 
-  if (HeaderType = 'icy') or (ContentType = 'audio/mpeg') or (ContentType = 'audio/aacp') or
+  if (HeaderType = 'icy') or (LowerCase(ContentType) = 'audio/mpeg') or (LowerCase(ContentType) = 'audio/aacp') or (LowerCase(ContentType) = 'audio/aac') or
      (Pos(#10'icy-metaint:', LowerCase(FHeader)) > 0) or (Pos(#10'icy-name:', LowerCase(FHeader)) > 0) then
   begin
     WriteExtLog(_('Audio-data response detected'), ltGeneral, llDebug);
@@ -485,7 +485,6 @@ begin
       //  FAudioType := atOGG
       else
         raise Exception.Create(_('Unknown content-type'));
-
 
       AppGlobals.Lock;
       try

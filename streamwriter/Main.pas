@@ -375,8 +375,6 @@ var
   S: TExtendedStream;
   Lst: TSettingsList;
 begin
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp 1');
-
   if FExiting then
     Exit;
 
@@ -385,14 +383,10 @@ begin
       if not TMTabSheet(pagMain.Pages[i]).CanClose then
         Exit;
 
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp 2');
-
   FExiting := True;
   Hide;
 
   CloseHandle(AppGlobals.MutexHandleExiting);
-
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp 3');
 
   if ImportFilename = '' then
     AppGlobals.WindowHandle := 0;
@@ -446,8 +440,6 @@ begin
   except
   end;
 
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp 4');
-
   tmrSpeed.Enabled := False;
   tmrAutoSave.Enabled := False;
   tmrRecordings.Enabled := False;
@@ -463,8 +455,6 @@ begin
   AppGlobals.PlayerVolume := Players.Volume;
   AppGlobals.PlayerVolumeBeforeMute := Players.VolumeBeforeMute;
 
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp 5');
-
   HomeComm.Terminate;
   while (HomeComm.ThreadAlive) and HomeComm.Connected do
   begin
@@ -476,8 +466,6 @@ begin
 
   FUpdater.Kill;
 
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp 6');
-
   AppGlobals.LastUsedDataVersion := DataManager.DATAVERSION;
   if not Shutdown then
     AppGlobals.Save(Handle)
@@ -486,14 +474,10 @@ begin
       AppGlobals.Save;
     except end;
 
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp 7');
-
   // Shutdown all postprocessors. Since they get terminated, all postprocessing chains get terminated.
   AppGlobals.PostProcessManager.Terminate;
   // Disconnect all clients. They will save their recordings and will not postprocess any file.
   FClientManager.Stop;
-
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp 8');
 
   if FCheckFiles <> nil then
     FCheckFiles.Terminate;
@@ -502,8 +486,6 @@ begin
     HardTimeout := 2000
   else
     HardTimeout := 10000;
-
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp 9');
 
   StartTime := GetTickCount;
   while (HomeComm.ThreadAlive or HomeComm.Connected) or FClientManager.Active or (FCheckFiles <> nil) or FUpdater.Active do
@@ -515,11 +497,7 @@ begin
     Application.ProcessMessages;
   end;
 
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp 10');
-
   PrepareSave;
-
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp 11');
 
   while True do
   begin
@@ -537,8 +515,6 @@ begin
     end;
   end;
 
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp 12');
-
   // Remove all clients from list
   FClientManager.Terminate;
 
@@ -546,8 +522,6 @@ begin
 
   if FUpdateOnExit and (not Shutdown) then
     FUpdater.RunUpdate(Handle);
-
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp 13');
 
   if ImportFilename <> '' then
   begin
@@ -605,15 +579,11 @@ begin
     RunProcess('"' + Application.ExeName + '" /profileupdate', False);
   end;
 
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp 14');
-
   // We have to close all cut-tabs here because otherwise FreeAndNil(FPlayer) in CutTab.Free()
   // throws an exception which causes that the temporary WAVE-file cannot be deleted...
   for i := pagMain.PageCount - 1 downto 0 do
     if pagMain.Pages[i].ClassType = TCutTab then
       pagMain.Pages[i].Free;
-
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - ExitApp Finished');
 
   TerminateProcess(GetCurrentProcess, 0);
 end;
@@ -1662,8 +1632,6 @@ end;
 
 procedure TfrmStreamWriterMain.QueryEndSession(var Msg: TMessage);
 begin
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - WM_QUERYENDSESSION');
-
   Msg.Result := 1;
 
   if Assigned(ShutdownBlockReasonCreate) and Assigned(ShutdownBlockReasonDestroy) then
@@ -1672,13 +1640,11 @@ end;
 
 procedure TfrmStreamWriterMain.EndSession(var Msg: TMessage);
 begin
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - WM_ENDSESSION');
   if WordBool(Msg.WParam) then
   begin
     Msg.Result := 0;
     ExitApp(True);
   end;
-  TLogger.Write(FormatDateTime('yyyy-mm-dd - hh:nn:ss', Now) + ' - WM_ENDSESSION End');
 end;
 
 procedure TfrmStreamWriterMain.SetCaptionAndTrayHint;

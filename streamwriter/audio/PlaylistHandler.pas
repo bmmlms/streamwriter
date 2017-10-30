@@ -35,7 +35,7 @@ type
     destructor Destroy; override;
 
     function ParsePlaylist(Filename: string): Boolean; overload;
-    function ParsePlaylist(Data: string; PlaylistType: TPlaylistTypes): Boolean; overload;
+    function ParsePlaylist(Data: string; PlaylistType: TPlaylistTypes; OriginURL: string): Boolean; overload;
 
     property URLs: TStringList read FURLs;
   end;
@@ -75,33 +75,74 @@ begin
     MS.LoadFromFile(Filename);
 
     if Ext = '.m3u' then
-      Result := ParsePlaylist(MS.ToString, ptM3U)
+      Result := ParsePlaylist(MS.ToString, ptM3U, '')
     else if Ext = '.pls' then
-      Result := ParsePlaylist(MS.ToString, ptPLS);
+      Result := ParsePlaylist(MS.ToString, ptPLS, '');
   finally
     MS.Free;
   end;
 end;
 
-function TPlaylistHandler.ParsePlaylist(Data: string; PlaylistType: TPlaylistTypes): Boolean;
+function TPlaylistHandler.ParsePlaylist(Data: string; PlaylistType: TPlaylistTypes; OriginURL: string): Boolean;
   procedure ParseLine(Line: string);
   var
     Res: TParseURLRes;
+    SlashPos: Integer;
+    OriginPort: Integer;
+    OriginProto, LineProto: string;
   begin
     if Pos('\', Line) > 0 then
       Exit;
 
+    // Wenn es eine vorherige URL gab, und die nun empfangene keine "ganze" URL ist,
+    // dann müssen wir die empfangene an den Pfad der vorherigen dranhängen.
+    if (OriginURL <> '') and (Length(Line) > 0) and (Copy(LowerCase(Line), 1, 7) <> 'http://') and (Copy(LowerCase(Line), 1, 8) <> 'https://') then
+    begin
+      Res := ParseURL(OriginURL);
+      if Res.Success then
+      begin
+        if Res.PortDetected then
+          OriginPort := Res.Port
+        else if Res.Secure then
+          OriginPort := 443
+        else
+          OriginPort := 80;
+
+        if Res.Secure then
+          OriginProto := 'https://'
+        else
+          OriginProto := 'http://';
+
+        if Line[1] = '/' then
+        begin
+          Line := OriginProto + Res.Host + ':' + IntToStr(OriginPort) + Line
+        end else
+        begin
+          SlashPos := LastDelimiter('/', Res.Data);
+          if SlashPos > 0 then
+            Res.Data := Copy(Res.Data, 1, SlashPos);
+
+          Line := OriginProto + Res.Host + ':' + IntToStr(OriginPort) + Res.Data + Line
+        end;
+      end;
+    end;
+
     Res := ParseURL(Line);
     if Res.Success then
     begin
+      if Res.Secure then
+        LineProto := 'https://'
+      else
+        LineProto := 'http://';
+
       if not Res.PortDetected then
       begin
         // Es gibt keinen Standard scheinbar - beide nehmen.
-        FURLs.Add('http://' + Res.Host + ':80' + Res.Data);
+        FURLs.Add(LineProto + Res.Host + Res.Data);
         FURLs.Add('http://' + Res.Host + ':6666' + Res.Data);
       end else
       begin
-        FURLs.Add('http://' + Res.Host + ':' + IntToStr(Res.Port) + Res.Data);
+        FURLs.Add(LineProto + Res.Host + ':' + IntToStr(Res.Port) + Res.Data);
       end;
     end;
   end;

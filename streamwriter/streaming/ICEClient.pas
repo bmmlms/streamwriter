@@ -680,11 +680,12 @@ begin
         if FICEThread.RecvStream.ResponseCode = 404 then
           raise Exception.Create(_('HTTP error 404, document not found'))
         else
+        begin
           if IntToStr(FICEThread.RecvStream.ResponseCode)[1] <> '2' then
-            raise Exception.Create(Format(_('HTTP error %d'),
-              [FICEThread.RecvStream.ResponseCode]))
+            raise Exception.Create(Format(_('HTTP error %d'), [FICEThread.RecvStream.ResponseCode]))
           else
             raise Exception.Create(_('Response was HTTP but without supported playlist or redirect'));
+        end;
       end;
     end else
     begin
@@ -1057,14 +1058,14 @@ begin
        (Pos('audio/x-scpls', FICEThread.RecvStream.ContentType) > 0) or
        (Pos('application/pls+xml', FICEThread.RecvStream.ContentType) > 0) then // .pls
     begin
-      Result := PH.ParsePlaylist(Data, ptPLS);
+      Result := PH.ParsePlaylist(Data, ptPLS, FCurrentURL);
     end else if (LowerCase(Copy(Data, 1, 7)) = '#extm3u') or
                 (Pos('audio/x-mpegurl', FICEThread.RecvStream.ContentType) > 0) or
                 (Pos('audio/mpegurl', FICEThread.RecvStream.ContentType) > 0) then // .m3u
     begin
-      Result := PH.ParsePlaylist(Data, ptM3U);
+      Result := PH.ParsePlaylist(Data, ptM3U, FCurrentURL);
     end else if Pos('application/octet-stream', FICEThread.RecvStream.ContentType) > 0 then
-      Result := PH.ParsePlaylist(Data, ptUnknown);
+      Result := PH.ParsePlaylist(Data, ptUnknown, FCurrentURL);
 
     if Result then
     begin
