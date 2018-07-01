@@ -194,13 +194,12 @@ type
     procedure FitColumns;
     function GetSelected: TStreamDataArray;
   protected
-    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-      TextType: TVSTTextType; var Text: UnicodeString); override;
+    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
+      var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
     procedure DoDragging(P: TPoint); override;
-    procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; Text: UnicodeString; CellRect: TRect; DrawFormat: Cardinal); override;
+    procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal); override;
     procedure DoPaintNode(var PaintInfo: TVTPaintInfo); override;
     function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
@@ -407,9 +406,8 @@ begin
   inherited;
 end;
 
-function TMStreamTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
-  Column: TColumnIndex; var Ghosted: Boolean;
-  var Index: Integer): TCustomImageList;
+function TMStreamTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
+  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
 var
   NodeData: PStreamNodeData;
 begin
@@ -429,16 +427,15 @@ begin
   end;
 end;
 
-procedure TMStreamTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-  TextType: TVSTTextType; var Text: UnicodeString);
+procedure TMStreamTree.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
 var
   NodeData: PStreamNodeData;
 begin
   inherited;
-  NodeData := PStreamNodeData(GetNodeData(Node));
-  case Column of
+  NodeData := PStreamNodeData(GetNodeData(pEventArgs.Node));
+  case pEventArgs.Column of
     0:
-      Text := StringReplace(NodeData.Data.Name, '&', '&&', [rfReplaceAll]) // Wegen & und dem Shortcut..
+      pEventArgs.CellText := StringReplace(NodeData.Data.Name, '&', '&&', [rfReplaceAll]) // Wegen & und dem Shortcut..
   end;
 end;
 
@@ -605,9 +602,9 @@ begin
   end;
 end;
 
-procedure TMStreamTree.DoTextDrawing(var PaintInfo: TVTPaintInfo;
-  Text: UnicodeString; CellRect: TRect; DrawFormat: Cardinal);
+procedure TMStreamTree.DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal);
 var
+  NewText: string;
   Size: TSize;
   NodeData: PStreamNodeData;
 begin
@@ -621,35 +618,36 @@ begin
 
   CellRect.Top := CellRect.Top + 2 + Size.cy;
 
-  Text := '';
+  NewText := '';
 
   if NodeData.Data.AudioType <> atNone then
   begin
     if NodeData.Data.AudioType = atMPEG then
-      Text := 'MP3'
+      NewText := 'MP3'
     else if NodeData.Data.AudioType = atAAC then
-      Text := 'AAC';
+      NewText := 'AAC';
   end;
 
   if NodeData.Data.Bitrate > 0 then
   begin
-    if Text <> '' then
-      Text := Text + ' / ';
-    Text := Text + IntToStr(NodeData.Data.Bitrate) + 'kbps';
+    if NewText <> '' then
+      NewText := NewText + ' / ';
+    NewText := NewText + IntToStr(NodeData.Data.Bitrate) + 'kbps';
   end;
 
   if NodeData.Data.Genre <> '' then
   begin
-    if Text <> '' then
-      Text := Text + ' / ';
-    Text := Text + NodeData.Data.Genre;
+    if NewText <> '' then
+      NewText := NewText + ' / ';
+    NewText := NewText + NodeData.Data.Genre;
   end;
 
-  if Text = '' then
-    Text := _('No info available')
+  if NewText = '' then
+    NewText := _('No info available')
   else
-    Text := StringReplace(Text, '&', '&&', [rfReplaceall]); // Wegen & und dem Shortcut..
-  inherited;
+    NewText := StringReplace(NewText, '&', '&&', [rfReplaceall]); // Wegen & und dem Shortcut..
+
+  inherited DoTextDrawing(PaintInfo, NewText, CellRect, DrawFormat);
 end;
 
 procedure TMStreamTree.Paint;
@@ -1046,20 +1044,20 @@ begin
 end;
 
 function TMStreamTree.DoGetNodeTooltip(Node: PVirtualNode;
-  Column: TColumnIndex;
-  var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString;
+  Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString;
 var
-  Text: UnicodeString;
+  Args: TVSTGetCellTextEventArgs;
   NodeData: PStreamNodeData;
 begin
   inherited;
-  Text := '';
+
+  Args := TVSTGetCellTextEventArgs.Create(Node, Column);
   LineBreakStyle := hlbForceMultiLine;
-  DoGetText(Node, Column, ttNormal, Text);
+  DoGetText(Args);
   NodeData := GetNodeData(Node);
   if NodeData.Data.Genre <> '' then
-    Text := Text + #13#10 + NodeData.Data.Genre;
-  Result := Text;
+    Args.CellText := Args.CellText + #13#10 + NodeData.Data.Genre;
+  Result := Args.CellText;
 end;
 
 { TMStreamView }

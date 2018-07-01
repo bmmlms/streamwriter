@@ -35,10 +35,9 @@ type
     FClient: TICEClient;
     procedure FSetClient(Value: TICEClient);
   protected
-    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-      TextType: TVSTTextType; var Text: UnicodeString); override;
+    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
+      var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
     procedure Resize; override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
@@ -256,11 +255,11 @@ begin
   Invalidate;
 end;
 
-function TDebugView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
-  Column: TColumnIndex; var Ghosted: Boolean;
-  var Index: Integer): TCustomImageList;
+function TDebugView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
+  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
 begin
-  Result := inherited;
+  Result := Images;
+
   Index := -1;
   if Column = 1 then
   begin
@@ -290,30 +289,29 @@ begin
   end;
 end;
 
-procedure TDebugView.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-  TextType: TVSTTextType; var Text: UnicodeString);
+procedure TDebugView.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
 begin
   inherited;
   if FClient <> nil then
   begin
-    case Column of
+    case pEventArgs.Column of
       0:
         begin
-          Text := TimeToStr(FClient.DebugLog[Node.Index].Time);
+          pEventArgs.CellText := TimeToStr(FClient.DebugLog[pEventArgs.Node.Index].Time);
         end;
       1:
         begin
-          case GetNodeLevel(Node) of
+          case GetNodeLevel(pEventArgs.Node) of
             0:
               begin
-                Text := FClient.DebugLog[Node.Index].Text;
-                if (FClient.DebugLog[Node.Index].Data <> '') and not HasChildren[Node] then
-                  HasChildren[Node] := True;
+                pEventArgs.CellText := FClient.DebugLog[pEventArgs.Node.Index].Text;
+                if (FClient.DebugLog[pEventArgs.Node.Index].Data <> '') and not HasChildren[pEventArgs.Node] then
+                  HasChildren[pEventArgs.Node] := True;
               end;
             1:
               begin
-                MultiLine[Node] := True;
-                Text := FClient.DebugLog[Node.Parent.Index].Data;
+                MultiLine[pEventArgs.Node] := True;
+                pEventArgs.CellText := FClient.DebugLog[pEventArgs.Node.Parent.Index].Data;
               end;
           end;
         end;

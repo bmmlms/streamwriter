@@ -112,11 +112,9 @@ type
     function MatchesFilter(LogEntry: TLogEntry): Boolean;
     procedure Add(LogEntry: TLogEntry); overload;
   protected
-    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-      TextType: TVSTTextType; var Text: string); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
-      Column: TColumnIndex; var Ghosted: Boolean;
-      var Index: Integer): TCustomImageList; override;
+    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
+      var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo;
@@ -480,9 +478,8 @@ begin
   inherited;
 end;
 
-function TLogTree.DoGetImageIndex(Node: PVirtualNode;
-  Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean;
-  var Index: Integer): TCustomImageList;
+function TLogTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
+  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
 begin
   Result := inherited;
 
@@ -491,21 +488,20 @@ begin
     Index := 0;
 end;
 
-procedure TLogTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-  TextType: TVSTTextType; var Text: string);
+procedure TLogTree.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
 var
   NodeData: PLogNodeData;
 begin
   inherited;
 
-  NodeData := GetNodeData(Node);
+  NodeData := GetNodeData(pEventArgs.Node);
 
-  Text := '';
+  pEventArgs.CellText := '';
 
-  case Column of
-    1: Text := TimeToStr(NodeData.LogEntry.Time);
-    2: Text := NodeData.LogEntry.TextSource;
-    3: Text := NodeData.LogEntry.Text;
+  case pEventArgs.Column of
+    1: pEventArgs.CellText := TimeToStr(NodeData.LogEntry.Time);
+    2: pEventArgs.CellText := NodeData.LogEntry.TextSource;
+    3: pEventArgs.CellText := NodeData.LogEntry.Text;
   end;
 end;
 

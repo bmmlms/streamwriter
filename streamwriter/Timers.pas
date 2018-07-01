@@ -38,8 +38,7 @@ type
   private
   protected
     procedure Resize; override;
-    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-      TextType: TVSTTextType; var Text: string); override;
+    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
     procedure DoChecked(Node: PVirtualNode); override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
@@ -435,8 +434,7 @@ begin
   NodeData.Schedule.Active := Node.CheckState = csCheckedNormal;
 end;
 
-procedure TScheduleTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-  TextType: TVSTTextType; var Text: string);
+procedure TScheduleTree.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
 var
   NodeData: PScheduleTreeNodeData;
   Day: string;
@@ -444,49 +442,48 @@ var
 begin
   inherited;
 
-  NodeData := GetNodeData(Node);
+  NodeData := GetNodeData(pEventArgs.Node);
 
-  if TextType = ttNormal then
-    case Column of
-      0:
+  case pEventArgs.Column of
+    0:
+      begin
+        DTStart := EncodeTime(NodeData.Schedule.StartHour, NodeData.Schedule.StartMinute, 0, 0);
+        DTEnd := EncodeTime(NodeData.Schedule.EndHour, NodeData.Schedule.EndMinute, 0, 0);
+
+        if NodeData.Schedule.Recurring then
         begin
-          DTStart := EncodeTime(NodeData.Schedule.StartHour, NodeData.Schedule.StartMinute, 0, 0);
-          DTEnd := EncodeTime(NodeData.Schedule.EndHour, NodeData.Schedule.EndMinute, 0, 0);
-
-          if NodeData.Schedule.Recurring then
+          if NodeData.Schedule.Interval = siDaily then
           begin
-            if NodeData.Schedule.Interval = siDaily then
-            begin
-              Text := _('Record daily from %s to %s');
-              Text := Format(Text, [TimeToStr(DTStart), TimeToStr(DTEnd)]);
-            end else
-            begin
-              Text := _('Record every %s from %s to %s');
-
-              case NodeData.Schedule.Day of
-                sdMonday: Day := _('monday');
-                sdTuesday: Day := _('tuesday');
-                sdWednesday: Day := _('wednesday');
-                sdThursday: Day := _('thursday');
-                sdFriday: Day := _('friday');
-                sdSaturday: Day := _('saturday');
-                sdSunday: Day := _('sunday');
-              end;
-
-              Text := Format(Text, [Day, TimeToStr(DTStart), TimeToStr(DTEnd)]);
-            end;
+            pEventArgs.CellText := _('Record daily from %s to %s');
+            pEventArgs.CellText := Format(pEventArgs.CellText, [TimeToStr(DTStart), TimeToStr(DTEnd)]);
           end else
           begin
-            Text := _('Record on %s from %s to %s');
-            Text := Format(Text, [DateToStr(NodeData.Schedule.Date), TimeToStr(DTStart), TimeToStr(DTEnd)]);
+            pEventArgs.CellText := _('Record every %s from %s to %s');
+
+            case NodeData.Schedule.Day of
+              sdMonday: Day := _('monday');
+              sdTuesday: Day := _('tuesday');
+              sdWednesday: Day := _('wednesday');
+              sdThursday: Day := _('thursday');
+              sdFriday: Day := _('friday');
+              sdSaturday: Day := _('saturday');
+              sdSunday: Day := _('sunday');
+            end;
+
+            pEventArgs.CellText := Format(pEventArgs.CellText, [Day, TimeToStr(DTStart), TimeToStr(DTEnd)]);
           end;
+        end else
+        begin
+          pEventArgs.CellText := _('Record on %s from %s to %s');
+          pEventArgs.CellText := Format(pEventArgs.CellText, [DateToStr(NodeData.Schedule.Date), TimeToStr(DTStart), TimeToStr(DTEnd)]);
         end;
-      1:
-        if NodeData.Schedule.AutoRemove then
-          Text := _('Yes')
-        else
-          Text := _('No');
-    end;
+      end;
+    1:
+      if NodeData.Schedule.AutoRemove then
+        pEventArgs.CellText := _('Yes')
+      else
+        pEventArgs.CellText := _('No');
+  end;
 end;
 
 procedure TScheduleTree.DoMeasureItem(TargetCanvas: TCanvas;

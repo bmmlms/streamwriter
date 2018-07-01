@@ -137,14 +137,12 @@ type
 
     procedure ExecDefaultAction;
   protected
-    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-      TextType: TVSTTextType; var Text: string); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
-      Column: TColumnIndex; var Ghosted: Boolean;
-      var Index: Integer): TCustomImageList; override;
+    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
+      var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode;
       Column: TColumnIndex): Integer; override;
-    procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
+    procedure DoHeaderClick(const HitInfo: TVTHeaderHitInfo); override;
     procedure KeyPress(var Key: Char); override;
     procedure Paint; override;
     procedure DblClick; override;
@@ -855,9 +853,8 @@ begin
   end;
 end;
 
-function TChartsTree.DoGetImageIndex(Node: PVirtualNode;
-  Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean;
-  var Index: Integer): TCustomImageList;
+function TChartsTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
+  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
 begin
   Result := inherited;
 
@@ -866,8 +863,7 @@ begin
     Index := 0;
 end;
 
-procedure TChartsTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-  TextType: TVSTTextType; var Text: string);
+procedure TChartsTree.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
 var
   Val: Int64;
   NodeData: PChartNodeData;
@@ -875,15 +871,15 @@ begin
   inherited;
 
   Val := 1;
-  Text := '';
+  pEventArgs.CellText := '';
 
-  NodeData := GetNodeData(Node);
-  case Column of
+  NodeData := GetNodeData(pEventArgs.Node);
+  case pEventArgs.Column of
     0:
       if NodeData.Chart <> nil then
-        Text := NodeData.Chart.Name
+        pEventArgs.CellText := NodeData.Chart.Name
       else
-        Text := NodeData.Stream.Stream.Name;
+        pEventArgs.CellText := NodeData.Stream.Stream.Name;
     2:
       begin
         if NodeData.Chart <> nil then
@@ -897,38 +893,38 @@ begin
         if Val >= 86400 then
         begin
           if Val div 86400 = 1 then
-            Text := Format(_('%d day ago'), [Val div 86400])
+            pEventArgs.CellText := Format(_('%d day ago'), [Val div 86400])
           else
-            Text := Format(_('%d days ago'), [Val div 86400]);
+            pEventArgs.CellText := Format(_('%d days ago'), [Val div 86400]);
         end else if Val >= 3600 then
         begin
           if Val div 3600 = 1 then
-            Text := Format(_('%d hour ago'), [Val div 3600])
+            pEventArgs.CellText := Format(_('%d hour ago'), [Val div 3600])
           else
-            Text := Format(_('%d hours ago'), [Val div 3600]);
+            pEventArgs.CellText := Format(_('%d hours ago'), [Val div 3600]);
         end else if Val >= 60 then
         begin
           if Val div 60 = 1 then
-            Text := Format(_('%d minute ago'), [Val div 60])
+            pEventArgs.CellText := Format(_('%d minute ago'), [Val div 60])
           else
-            Text := Format(_('%d minutes ago'), [Val div 60]);
+            pEventArgs.CellText := Format(_('%d minutes ago'), [Val div 60]);
         end else
         begin
           if Val = 1 then
-            Text := Format(_('%d second ago'), [Val])
+            pEventArgs.CellText := Format(_('%d second ago'), [Val])
           else
-            Text := Format(_('%d seconds ago'), [Val]);
+            pEventArgs.CellText := Format(_('%d seconds ago'), [Val]);
         end;
       end;
     3:
       if NodeData.Chart <> nil then
-        Text := Format('%d / %d', [NodeData.Chart.PlayedLastDay, NodeData.Chart.PlayedLastWeek])
+        pEventArgs.CellText := Format('%d / %d', [NodeData.Chart.PlayedLastDay, NodeData.Chart.PlayedLastWeek])
       else
-        Text := Format('%d / %d', [NodeData.Stream.PlayedLastDay, NodeData.Stream.PlayedLastWeek]);
+        pEventArgs.CellText := Format('%d / %d', [NodeData.Stream.PlayedLastDay, NodeData.Stream.PlayedLastWeek]);
   end;
 end;
 
- procedure TChartsTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
+ procedure TChartsTree.DoHeaderClick(const HitInfo: TVTHeaderHitInfo);
 begin
   inherited;
   if HitInfo.Button = mbLeft then

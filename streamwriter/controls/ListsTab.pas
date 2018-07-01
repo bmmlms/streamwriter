@@ -191,14 +191,13 @@ type
     procedure FitColumns;
     procedure MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
   protected
-    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-      TextType: TVSTTextType; var Text: UnicodeString); override;
+    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
-    procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
+      var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
+    procedure DoHeaderClick(const HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     function DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer; override;
-    procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; Text: UnicodeString); override;
+    procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string); override;
     procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
@@ -2173,73 +2172,69 @@ begin
   end;
 end;
 
-procedure TTitleTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-  TextType: TVSTTextType; var Text: UnicodeString);
+procedure TTitleTree.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
 var
   ChildCount: Integer;
   NodeData: PTitleNodeData;
+  Node: PVirtualNode;
 begin
   inherited;
 
-  if TextType = ttNormal then
-  begin
-    NodeData := GetNodeData(Node);
-    case Column of
-      0:
-        begin
-          case NodeData.NodeType of
-            ntWishParent:
-              Text := _(WISHTEXT);
-            ntIgnoreParent:
-              Text := _(IGNORETEXT);
-            ntStream:
-              Text := NodeData.Stream.Entry.Name;
-            ntWish, ntIgnore:
-              Text := NodeData.Title.Title;
-          end;
+  NodeData := GetNodeData(pEventArgs.Node);
+  case pEventArgs.Column of
+    0:
+      begin
+        case NodeData.NodeType of
+          ntWishParent:
+            pEventArgs.CellText := _(WISHTEXT);
+          ntIgnoreParent:
+            pEventArgs.CellText := _(IGNORETEXT);
+          ntStream:
+            pEventArgs.CellText := NodeData.Stream.Entry.Name;
+          ntWish, ntIgnore:
+            pEventArgs.CellText := NodeData.Title.Title;
+        end;
 
-          if NodeData.NodeType in [ntWishParent, ntIgnoreParent, ntStream] then
+        if NodeData.NodeType in [ntWishParent, ntIgnoreParent, ntStream] then
+        begin
+          ChildCount := 0;
+          Node := GetFirstChild(pEventArgs.Node);
+          while Node <> nil do
           begin
-            ChildCount := 0;
-            Node := GetFirstChild(Node);
-            while Node <> nil do
-            begin
-              NodeData := GetNodeData(Node);
-              if (NodeData.NodeType = ntWish) or (NodeData.NodeType = ntIgnore) then
-                Inc(ChildCount);
-              Node := GetNextSibling(Node);
-            end;
-            Text := Text + ' (' + IntToStr(ChildCount) + ')';
+            NodeData := GetNodeData(pEventArgs.Node);
+            if (NodeData.NodeType = ntWish) or (NodeData.NodeType = ntIgnore) then
+              Inc(ChildCount);
+            Node := GetNextSibling(Node);
           end;
+          pEventArgs.CellText := pEventArgs.CellText + ' (' + IntToStr(ChildCount) + ')';
         end;
-      1:
+      end;
+    1:
+      begin
+        if (NodeData.NodeType = ntWish) and (NodeData.Title <> nil) and
+           ((NodeData.Title.ServerHash > 0) or (NodeData.Title.ServerArtistHash > 0)) then
         begin
-          if (NodeData.NodeType = ntWish) and (NodeData.Title <> nil) and
-             ((NodeData.Title.ServerHash > 0) or (NodeData.Title.ServerArtistHash > 0)) then
-          begin
-            Text := IntToStr(NodeData.Title.Saved);
-          end else
-            Text := '';
-        end;
-      2:
+          pEventArgs.CellText := IntToStr(NodeData.Title.Saved);
+        end else
+          pEventArgs.CellText := '';
+      end;
+    2:
+      begin
+        if NodeData.Title <> nil then
         begin
-          if NodeData.Title <> nil then
-          begin
-            Text := DateToStr(NodeData.Title.Added);
-          end else
-            Text := '';
-        end;
-    end;
+          pEventArgs.CellText := DateToStr(NodeData.Title.Added);
+        end else
+          pEventArgs.CellText := '';
+      end;
   end;
 end;
 
-function TTitleTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
-  Column: TColumnIndex; var Ghosted: Boolean;
-  var Index: Integer): TCustomImageList;
+function TTitleTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
+  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
 var
   NodeData: PTitleNodeData;
 begin
-  Result := inherited;
+  Result := Images;
 
   NodeData := GetNodeData(Node);
 
@@ -2266,7 +2261,7 @@ begin
     end;
 end;
 
-procedure TTitleTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
+procedure TTitleTree.DoHeaderClick(const HitInfo: TVTHeaderHitInfo);
 begin
   inherited;
   if HitInfo.Button = mbLeft then
@@ -2339,8 +2334,7 @@ begin
   NodeHeight := GetTextSize('Wyg', Font).cy + 6;
 end;
 
-procedure TTitleTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex;
-  Text: UnicodeString);
+procedure TTitleTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string);
 var
   NodeData: PTitleNodeData;
 begin

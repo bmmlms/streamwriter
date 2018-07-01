@@ -78,31 +78,29 @@ type
     procedure FitColumns;
     procedure MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
   protected
-    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-      TextType: TVSTTextType; var Text: UnicodeString); override;
+    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
+      var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
     procedure DoDragging(P: TPoint); override;
-    function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
-    procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
+    function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): string; override;
+    procedure DoHeaderClick(const HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     function DoIncrementalSearch(Node: PVirtualNode;
       const Text: string): Integer; override;
-    procedure DoDragDrop(Source: TObject; DataObject: IDataObject; Formats: TFormatArray; Shift: TShiftState; Pt: TPoint;
+    procedure DoDragDrop(Source: TObject; const DataObject: IDataObject; const Formats: TFormatArray; Shift: TShiftState; Pt: TPoint;
       var Effect: Integer; Mode: TDropMode); override;
     function DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; Pt: TPoint; Mode: TDropMode;
       var Effect: Integer): Boolean; override;
     procedure DoEdit; override;
     procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
     function DoEndEdit: Boolean; override;
-    procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; Text: UnicodeString); override;
+    procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string); override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo;
       ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
-    procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; Text: string;
-      CellRect: TRect; DrawFormat: Cardinal); override;
+    procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
@@ -258,14 +256,13 @@ begin
   inherited;
 end;
 
-function TMClientView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
-  Column: TColumnIndex; var Ghosted: Boolean;
-  var Index: Integer): TCustomImageList;
+function TMClientView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
+  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
 var
   NodeData: PClientNodeData;
   AnyPlaying, AnyRecording, AnyPlayingRecording: Boolean;
 begin
-  Result := inherited;
+  Result := Images;
 
   if Kind = ikOverlay then
     Exit;
@@ -327,75 +324,74 @@ begin
   end;
 end;
 
-function TMClientView.DoGetNodeTooltip(Node: PVirtualNode;
-  Column: TColumnIndex;
-  var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString;
+function TMClientView.DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex;
+  var LineBreakStyle: TVTTooltipLineBreakStyle): string;
 var
-  Text: UnicodeString;
+  Args: TVSTGetCellTextEventArgs;
 begin
-  Text := '';
-  DoGetText(Node, Column, ttNormal, Text);
-  Result := Text;
+  Args := TVSTGetCellTextEventArgs.Create(Node, Column);
+  DoGetText(Args);
+  Result := Args.CellText;
 end;
 
-procedure TMClientView.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-  TextType: TVSTTextType; var Text: UnicodeString);
+procedure TMClientView.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
 var
   NodeData: PClientNodeData;
 begin
   inherited;
-  Text := '';
-  NodeData := PClientNodeData(GetNodeData(Node));
+
+  pEventArgs.CellText := '';
+  NodeData := PClientNodeData(GetNodeData(pEventArgs.Node));
   if NodeData.Client <> nil then
   begin
-    case Column of
+    case pEventArgs.Column of
       0:
         if NodeData.Client.Entry.CustomName = '' then
           if NodeData.Client.Entry.StartURL = '' then
-            Text := _('Unknown')
+            pEventArgs.CellText := _('Unknown')
           else
-            Text := NodeData.Client.Entry.StartURL
+            pEventArgs.CellText := NodeData.Client.Entry.StartURL
         else
-          Text := NodeData.Client.Entry.CustomName;
+          pEventArgs.CellText := NodeData.Client.Entry.CustomName;
       1:
         if NodeData.Client.DisplayTitle = '' then
           if (NodeData.Client.State = csConnected) or (NodeData.Client.State = csConnecting) then
-            Text := _('Unknown')
+            pEventArgs.CellText := _('Unknown')
           else
-            Text := ''
+            pEventArgs.CellText := ''
         else
-          Text := NodeData.Client.DisplayTitle;
+          pEventArgs.CellText := NodeData.Client.DisplayTitle;
       2:
-        Text := MakeSize(NodeData.Client.Entry.BytesReceived);
+        pEventArgs.CellText := MakeSize(NodeData.Client.Entry.BytesReceived);
       3:
         if NodeData.Client.AutoRemove then
-          Text := ''
+          pEventArgs.CellText := ''
         else
-          Text := IntToStr(NodeData.Client.Entry.SongsSaved);
+          pEventArgs.CellText := IntToStr(NodeData.Client.Entry.SongsSaved);
       4:
-        Text := MakeSize(NodeData.Client.Speed) + '/s';
+        pEventArgs.CellText := MakeSize(NodeData.Client.Speed) + '/s';
       5:
         case NodeData.Client.State of
           csConnecting:
-            Text := _('Connecting...');
+            pEventArgs.CellText := _('Connecting...');
           csConnected:
-            Text := _('Connected');
+            pEventArgs.CellText := _('Connected');
           csRetrying:
-            Text := _('Waiting...');
+            pEventArgs.CellText := _('Waiting...');
           csStopped:
-            Text := _('Stopped');
+            pEventArgs.CellText := _('Stopped');
           csStopping:
-            Text := _('Stopping...');
+            pEventArgs.CellText := _('Stopping...');
           csIOError:
-            Text := _('Error creating file');
+            pEventArgs.CellText := _('Error creating file');
         end;
     end
   end else
-    if Column = 0 then
-      Text := NodeData.Category.Name + ' (' + IntToStr(Node.ChildCount) + ')';
+    if pEventArgs.Column = 0 then
+      pEventArgs.CellText := NodeData.Category.Name + ' (' + IntToStr(pEventArgs.Node.ChildCount) + ')';
 end;
 
-procedure TMClientView.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
+procedure TMClientView.DoHeaderClick(const HitInfo: TVTHeaderHitInfo);
 var
   i: Integer;
   Nodes: TNodeArray;
@@ -448,13 +444,16 @@ function TMClientView.DoIncrementalSearch(Node: PVirtualNode;
 var
   s, NodeText: string;
   NodeData: PClientNodeData;
+  Args: TVSTGetCellTextEventArgs;
 begin
   Result := 0;
   S := Text;
   NodeData := GetNodeData(Node);
   if NodeData = nil then
     Exit;
-  DoGetText(Node, 0, ttNormal, NodeText);
+
+  Args := TVSTGetCellTextEventArgs.Create(Node, 0);
+  DoGetText(Args);
   Result := StrLIComp(PChar(s), PChar(NodeText), Min(Length(s), Length(NodeText)));
 end;
 
@@ -466,8 +465,7 @@ begin
   NodeHeight := GetTextSize('Wyg', Font).cy + 6;
 end;
 
-procedure TMClientView.DoNewText(Node: PVirtualNode; Column: TColumnIndex;
-  Text: UnicodeString);
+procedure TMClientView.DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string);
 var
   NodeData: PClientNodeData;
 begin
@@ -484,8 +482,7 @@ begin
   end;
 end;
 
-procedure TMClientView.DoTextDrawing(var PaintInfo: TVTPaintInfo;
-  Text: string; CellRect: TRect; DrawFormat: Cardinal);
+procedure TMClientView.DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal);
 var
   Node: PVirtualNode;
   NodeData: PClientNodeData;
@@ -941,8 +938,11 @@ begin
   inherited;
 
   NodeData := GetNodeData(Node);
-  Allowed := ((NodeData.Client <> nil) and (not NodeData.Client.AutoRemove)) or
-             ((NodeData.Category <> nil) and (not NodeData.Category.IsAuto));
+
+  // Den Check auf NodeData wegen Bugreport von "Klaus <knatterton_nick@gmx.net>" eingebaut...
+  Allowed := (NodeData <> nil) and
+             (((NodeData.Client <> nil) and (not NodeData.Client.AutoRemove)) or
+              ((NodeData.Category <> nil) and (not NodeData.Category.IsAuto)));
 end;
 
 function TMClientView.DoCompare(Node1, Node2: PVirtualNode;
@@ -1065,8 +1065,7 @@ begin
   Result := S <> '';
 end;
 
-procedure TMClientView.DoDragDrop(Source: TObject; DataObject: IDataObject;
-  Formats: TFormatArray; Shift: TShiftState; Pt: TPoint;
+procedure TMClientView.DoDragDrop(Source: TObject; const DataObject: IDataObject; const Formats: TFormatArray; Shift: TShiftState; Pt: TPoint;
   var Effect: Integer; Mode: TDropMode);
   procedure UnkillCategory(Node: PVirtualNode);
   var

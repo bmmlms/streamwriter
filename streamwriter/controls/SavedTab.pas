@@ -343,24 +343,22 @@ type
 
     procedure MessageReceived(Msg: TMessageBase);
   protected
-    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-      TextType: TVSTTextType; var Text: UnicodeString); override;
+    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
-    procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
+      var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
+    procedure DoHeaderClick(const HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     procedure HandleMouseDblClick(var Message: TWMMouse; const HitInfo: THitInfo); override;
     procedure DoDragging(P: TPoint); override;
     function DoIncrementalSearch(Node: PVirtualNode;
       const Text: string): Integer; override;
-    procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; Text: UnicodeString); override;
+    procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string); override;
     procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
     procedure Change(Node: PVirtualNode); override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo;
       ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     procedure DoEdit; override;
-    procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; Text: string;
-      CellRect: TRect; DrawFormat: Cardinal); override;
+    procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure KeyPress(var Key: Char); override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
@@ -2465,59 +2463,54 @@ begin
     InvalidateNode(Node);
 end;
 
-procedure TSavedTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-  TextType: TVSTTextType; var Text: UnicodeString);
+procedure TSavedTree.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
 var
   NodeData: PSavedNodeData;
 begin
   inherited;
 
-  Text := '';
+  pEventArgs.CellText := '';
 
-  if TextType = ttNormal then
+  NodeData := GetNodeData(pEventArgs.Node);
+
+  if (NodeData.IsStreamParent) or (NodeData.IsFileParent) then
   begin
-    NodeData := GetNodeData(Node);
-
-    if (NodeData.IsStreamParent) or (NodeData.IsFileParent) then
+    if pEventArgs.Column = 1 then
     begin
-      if Column = 1 then
-      begin
-        if NodeData.IsStreamParent then
-          Text := _(STREAMNODETEXT) + ' (' + IntToStr(Node.ChildCount) + ')'
-        else
-          Text := _(FILENODETEXT) + ' (' + IntToStr(Node.ChildCount) + ')';
-      end;
-    end else
-      case Column of
-        1: Text := ExtractFileName(NodeData.Track.Filename);
-        2:
-          Text := MakeSize(NodeData.Track.Filesize);
-        3:
-          Text := BuildTime(NodeData.Track.Length, False);
-        4:
-          if NodeData.Track.Bitrate > 0 then
-          begin
-            Text := IntToStr(NodeData.Track.Bitrate);
+      if NodeData.IsStreamParent then
+        pEventArgs.CellText := _(STREAMNODETEXT) + ' (' + IntToStr(pEventArgs.Node.ChildCount) + ')'
+      else
+        pEventArgs.CellText := _(FILENODETEXT) + ' (' + IntToStr(pEventArgs.Node.ChildCount) + ')';
+    end;
+  end else
+    case pEventArgs.Column of
+      1: pEventArgs.CellText := ExtractFileName(NodeData.Track.Filename);
+      2:
+        pEventArgs.CellText := MakeSize(NodeData.Track.Filesize);
+      3:
+        pEventArgs.CellText := BuildTime(NodeData.Track.Length, False);
+      4:
+        if NodeData.Track.Bitrate > 0 then
+        begin
+          pEventArgs.CellText := IntToStr(NodeData.Track.Bitrate);
 
-            if NodeData.Track.VBR then
-              Text := Text + ' ' + 'VBR';
-          end;
-        5:
-          Text := NodeData.Track.Streamname;
-        6:
-          begin
-            if Trunc(NodeData.Track.Time) = Trunc(Now) then
-              Text := TimeToStr(NodeData.Track.Time)
-            else
-              Text := DateTimeToStr(NodeData.Track.Time);
-          end;
-      end;
+          if NodeData.Track.VBR then
+            pEventArgs.CellText := pEventArgs.CellText + ' ' + 'VBR';
+        end;
+      5:
+        pEventArgs.CellText := NodeData.Track.Streamname;
+      6:
+        begin
+          if Trunc(NodeData.Track.Time) = Trunc(Now) then
+            pEventArgs.CellText := TimeToStr(NodeData.Track.Time)
+          else
+            pEventArgs.CellText := DateTimeToStr(NodeData.Track.Time);
+        end;
   end;
 end;
 
-function TSavedTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
-  Column: TColumnIndex; var Ghosted: Boolean;
-  var Index: Integer): TCustomImageList;
+function TSavedTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
+  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
 begin
   Result := inherited;
 
@@ -2526,7 +2519,7 @@ begin
     Index := 0;
 end;
 
-procedure TSavedTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
+procedure TSavedTree.DoHeaderClick(const HitInfo: TVTHeaderHitInfo);
 begin
   inherited;
   if HitInfo.Button = mbLeft then
@@ -2592,28 +2585,28 @@ begin
   NodeHeight := GetTextSize('Wyg', Font).cy + 6;
 end;
 
-procedure TSavedTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex;
-  Text: UnicodeString);
+procedure TSavedTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string);
 var
   NodeData: PSavedNodeData;
+  NewText: string;
 begin
   inherited;
 
   NodeData := GetNodeData(Node);
+  NewText := Text;
 
-  if FiletypeToFormat(LowerCase(ExtractFileExt(Text))) = atNone then
-    Text := RemoveFileExt(Text) + ExtractFileExt(NodeData.Track.Filename);
+  if FiletypeToFormat(LowerCase(ExtractFileExt(NewText))) = atNone then
+    NewText := RemoveFileExt(NewText) + ExtractFileExt(NodeData.Track.Filename);
 
   if RenameFile(IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + ExtractFileName(NodeData.Track.Filename),
-    IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + Text) then
+    IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + NewText) then
   begin
-    NodeData.Track.Filename := IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + Text;
+    NodeData.Track.Filename := IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + NewText;
   end else
     MsgBox(GetParentForm(Self).Handle, _('The file could not be renamed. Make sure that it is not in use and that no other file with the same name already exists.'), _('Info'), MB_ICONINFORMATION);
 end;
 
-procedure TSavedTree.DoTextDrawing(var PaintInfo: TVTPaintInfo;
-  Text: string; CellRect: TRect; DrawFormat: Cardinal);
+procedure TSavedTree.DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal);
 var
   NodeData: PSavedNodeData;
 begin

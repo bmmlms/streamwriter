@@ -45,11 +45,10 @@ type
   private
     FColTitle: TVirtualTreeColumn;
   protected
-    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-      TextType: TVSTTextType; var Text: UnicodeString); override;
+    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
-    procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
+      var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
+    procedure DoHeaderClick(const HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     function DoIncrementalSearch(Node: PVirtualNode;
       const Text: string): Integer; override;
@@ -3458,33 +3457,28 @@ begin
   inherited;
 end;
 
-procedure TBlacklistTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-  TextType: TVSTTextType; var Text: UnicodeString);
+procedure TBlacklistTree.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
 var
   NodeData: PBlacklistNodeData;
 begin
   inherited;
 
-  if TextType = ttNormal then
-  begin
-    NodeData := GetNodeData(Node);
-    case Column of
-      0: Text := NodeData.Name;
-    end;
+  NodeData := GetNodeData(pEventArgs.Node);
+  case pEventArgs.Column of
+    0: pEventArgs.CellText := NodeData.Name;
   end;
 end;
 
-function TBlacklistTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
-  Column: TColumnIndex; var Ghosted: Boolean;
-  var Index: Integer): TCustomImageList;
+function TBlacklistTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
+  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
 begin
-  Result := inherited;
+  Result := Images;
 
   if Column = 0 then
     Index := 1;
 end;
 
-procedure TBlacklistTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
+procedure TBlacklistTree.DoHeaderClick(const HitInfo: TVTHeaderHitInfo);
 begin
   inherited;
   if HitInfo.Button = mbLeft then
