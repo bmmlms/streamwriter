@@ -248,7 +248,7 @@
 						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
 						<VersionInfo Name="MajorVer">5</VersionInfo>
 						<VersionInfo Name="MinorVer">4</VersionInfo>
-						<VersionInfo Name="Release">1</VersionInfo>
+						<VersionInfo Name="Release">2</VersionInfo>
 						<VersionInfo Name="Build">0</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
@@ -261,13 +261,13 @@
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName">streamwriter.org</VersionInfoKeys>
 						<VersionInfoKeys Name="FileDescription">streamWriter</VersionInfoKeys>
-						<VersionInfoKeys Name="FileVersion">5.4.1.0</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">5.4.2.0</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName">streamwriter</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalCopyright">Copyright (c) 2010-2018 Alexander Nottelmann et al.</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
 						<VersionInfoKeys Name="OriginalFilename">streamwriter.exe</VersionInfoKeys>
 						<VersionInfoKeys Name="ProductName">streamWriter</VersionInfoKeys>
-						<VersionInfoKeys Name="ProductVersion">5.4.1.0</VersionInfoKeys>
+						<VersionInfoKeys Name="ProductVersion">5.4.2.0</VersionInfoKeys>
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
 					<Excluded_Packages/>
