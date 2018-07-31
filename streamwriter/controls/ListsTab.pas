@@ -2201,7 +2201,7 @@ begin
           Node := GetFirstChild(pEventArgs.Node);
           while Node <> nil do
           begin
-            NodeData := GetNodeData(pEventArgs.Node);
+            NodeData := GetNodeData(Node);
             if (NodeData.NodeType = ntWish) or (NodeData.NodeType = ntIgnore) then
               Inc(ChildCount);
             Node := GetNextSibling(Node);
