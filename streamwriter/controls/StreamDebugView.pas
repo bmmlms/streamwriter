@@ -204,7 +204,7 @@ begin
 
   NodeDataSize := SizeOf(Integer);
   TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toVariableNodeHeight];
-  TreeOptions.PaintOptions := TreeOptions.PaintOptions - [toShowTreeLines] + [toHideFocusRect];
+  TreeOptions.PaintOptions := TreeOptions.PaintOptions - [toShowTreeLines, toHideFocusRect];
   TreeOptions.SelectionOptions := TreeOptions.SelectionOptions + [toFullRowSelect, toMultiSelect];
   ScrollBarOptions.ScrollBars := ssVertical;
 

@@ -37,7 +37,7 @@ uses
   ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
   PowerManagement, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
   AppMessages, CommandLine, Protocol, Commands, HomeCommands, SharedData,
-  LogTab, WindowsFunctions, Sockets;
+  LogTab, WindowsFunctions, Sockets, System.Actions;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;

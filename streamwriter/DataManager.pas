@@ -1638,9 +1638,9 @@ begin
     if UseCompression then
     begin
       {$IFDEF DEBUG}
-      CompressStream(CompressedStream, S, zcNone);
+      CompressStream(CompressedStream, S, clNone);
       {$ELSE}
-      CompressStream(CompressedStream, S, zcDefault);
+      CompressStream(CompressedStream, S, clDefault);
       {$ENDIF}
     end else
       S.CopyFrom(CompressedStream, CompressedStream.Size);

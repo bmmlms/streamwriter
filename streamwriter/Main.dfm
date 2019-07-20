@@ -371,7 +371,6 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
   end
   object ActionList1: TActionList
-    Images = modSharedData.imgImages
     Left = 276
     Top = 116
     object actStart: TAction
@@ -702,6 +701,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Top = 64
   end
   object mnuTray: TPopupMenu
+    Images = modSharedData.imgImages
     Left = 108
     Top = 88
     object mnuShow: TMenuItem
