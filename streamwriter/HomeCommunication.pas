@@ -56,8 +56,6 @@ type
 
     FAuthToken: Cardinal;
 
-    FPingPending: Boolean;
-
     FConvertManualToAutomaticFoundTitles: TConvertManualToAutomaticArray;
     FConvertManualToAutomaticNotFoundTitles: TStringArray;
 
@@ -84,7 +82,6 @@ type
     procedure DoMonitorStreamsReceived(CommandHeader: TCommandHeader; Command: TCommandGetMonitorStreamsResponse);
     procedure DoSearchChartsReceived(CommandHeader: TCommandHeader; Command: TCommandSearchChartsResponse);
     procedure DoGenerateAuthTokenReceived(CommandHeader: TCommandHeader; Command: TCommandGenerateAuthTokenResponse);
-    procedure DoPingReceived(CommandHeader: TCommandHeader; Command: TCommandPingResponse);
     procedure DoConvertManualToAutomaticReceived(CommandHeader: TCommandHeader; Command: TCommandConvertManualToAutomaticResponse);
   protected
     procedure DoReceivedCommand(ID: Cardinal; CommandHeader: TCommandHeader; Command: TCommand); override;
@@ -241,8 +238,8 @@ implementation
 
 constructor THomeThread.Create;
 begin
-  // Wenn für 15 Sekunden nichts kommt ist Feierabend. Mindestens die Antwort auf den Ping muss immer ankommen.
-  FDataTimeout := 15000;
+  // Wenn für 30 Sekunden nichts kommt ist Feierabend, das Timeout wird vom Server in HandshakeReceived überschrieben.
+  FDataTimeout := 30000;
 
   {$IFDEF NOSSL}
   inherited Create('streamwriter.org', 7085, TSocketStream.Create, False, AppGlobals.CheckCertificate);
@@ -317,6 +314,7 @@ procedure THomeThread.DoHandshakeReceived(CommandHeader: TCommandHeader;
 begin
   FHandshakeSuccess := Command.Success;
   FServerTime := Command.ServerTime;
+  FDataTimeout := Command.CommunicationTimeout;
 
   if Assigned(FOnHandshakeReceived) then
     Sync(FOnHandshakeReceived);
@@ -397,8 +395,6 @@ begin
       DoSearchChartsReceived(CommandHeader, SearchCharts);
     ctGenerateAuthTokenResponse:
       DoGenerateAuthTokenReceived(CommandHeader, GenerateAuthToken);
-    ctPingResponse:
-      DoPingReceived(CommandHeader, Ping);
     ctConvertManualToAutomaticResponse:
       DoConvertManualToAutomaticReceived(CommandHeader, ConvertManualToAutomatic);
   end;
@@ -531,12 +527,6 @@ begin
     Sync(FOnServerInfoReceived);
 end;
 
-procedure THomeThread.DoPingReceived(CommandHeader: TCommandHeader;
-  Command: TCommandPingResponse);
-begin
-  FPingPending := False;
-end;
-
 procedure THomeThread.DoConvertManualToAutomaticReceived(
   CommandHeader: TCommandHeader;
   Command: TCommandConvertManualToAutomaticResponse);
@@ -549,17 +539,9 @@ begin
 end;
 
 procedure THomeThread.DoStuff;
-var
-  Cmd: TCommandPing;
 begin
   inherited;
 
-  if (not FPingPending) and (FLastTimeReceived < GetTickCount - 5000) then
-  begin
-    Cmd := TCommandPing.Create;
-    SendCommand(Cmd);
-    FPingPending := True;
-  end;
 end;
 
 { THomeCommunication }

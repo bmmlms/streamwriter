@@ -78,6 +78,7 @@ type
   private
     FSuccess: Boolean;
     FServerTime: Cardinal;
+    FCommunicationTimeout: Cardinal;
   public
     constructor Create;
 
@@ -85,6 +86,7 @@ type
 
     property Success: Boolean read FSuccess;
     property ServerTime: Cardinal read FServerTime;
+    property CommunicationTimeout: Cardinal read FCommunicationTimeout;
   end;
 
   TCommandUpdateStats = class(TCommand)
@@ -409,6 +411,7 @@ constructor TCommandHandshake.Create;
 begin
   inherited;
 
+  FVersion := 2;
   FCommandType := ctHandshake;
 end;
 
@@ -441,6 +444,7 @@ begin
 
   Stream.Read(FSuccess);
   Stream.Read(FServerTime);
+  Stream.Read(FCommunicationTimeout);
 end;
 
 { TCommandGetServerData }
