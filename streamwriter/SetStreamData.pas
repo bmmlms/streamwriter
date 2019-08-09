@@ -54,8 +54,12 @@ type
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormCreate(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
+    procedure lstTitlesMeasureTextWidth(Sender: TBaseVirtualTree;
+      TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex;
+      const Text: string; var Extent: Integer);
   private
     FStreamID: Integer;
+    FMaxTextWidth: Integer;
 
     procedure InvalidateTree;
     procedure SetState(Enable: Boolean);
@@ -162,6 +166,8 @@ end;
 
 constructor TfrmSetStreamData.Create(AOwner: TComponent;
   StreamID: Integer);
+var
+  Col: TVirtualTreeColumn;
 begin
   inherited Create(AOwner);
 
@@ -213,7 +219,7 @@ end;
 procedure TfrmSetStreamData.HomeCommGetStreamData(Sender: TObject;
   LastTitles, OtherUserRegExps, UserRegExps: TStringArray);
 var
-  i: Integer;
+  i, W: Integer;
   Node: PVirtualNode;
   NodeData: PTitleNodeData;
   Item: TListItem;
@@ -226,6 +232,10 @@ begin
 
     NodeData.Title := LastTitles[i];
     lstTitles.MultiLine[Node] := True;
+
+    W := GUIFunctions.GetTextSize(NodeData.Title, lstTitles.Font).cx;
+    if W > FMaxTextWidth then
+      FMaxTextwidth := W;
   end;
 
   lstOtherRegExps.Items.Clear;
@@ -324,6 +334,8 @@ begin
     end;
 
     lstTitles.Invalidate;
+    lstTitles.FullExpand;
+    lstTitles.Header.AutoFitColumns;
   finally
     RegExps.Free;
     OtherRegExps.Free;
@@ -369,7 +381,14 @@ end;
 procedure TfrmSetStreamData.lstTitlesMeasureItem(Sender: TBaseVirtualTree;
   TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer);
 begin
-  NodeHeight := Trunc(GUIFunctions.GetTextSize('Wyg', lstTitles.Font).cy * 3) + 4;
+  NodeHeight := Trunc(GUIFunctions.GetTextSize('Wyg', TargetCanvas.Font).cy * 3) + 4;
+end;
+
+procedure TfrmSetStreamData.lstTitlesMeasureTextWidth(
+  Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode;
+  Column: TColumnIndex; const Text: string; var Extent: Integer);
+begin
+  Extent := FMaxTextWidth;
 end;
 
 procedure TfrmSetStreamData.SetState(Enable: Boolean);
@@ -377,9 +396,8 @@ var
   i: Integer;
 begin
   for i := 0 to ControlCount - 1 do
-  begin
     Controls[i].Enabled := Enable;
-  end;
+
   btnOK.Enabled := Enable;
   btnCancel.Enabled := True;
   pnlNav.Enabled := True;

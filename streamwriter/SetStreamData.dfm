@@ -128,7 +128,6 @@ object frmSetStreamData: TfrmSetStreamData
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 0
-    ExplicitWidth = 769
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -151,7 +150,6 @@ object frmSetStreamData: TfrmSetStreamData
       Layout = blGlyphRight
       TabOrder = 0
       OnClick = btnOKClick
-      ExplicitLeft = 668
     end
     object btnCancel: TBitBtn
       Left = 4
@@ -183,6 +181,7 @@ object frmSetStreamData: TfrmSetStreamData
     OnGetText = lstTitlesGetText
     OnGetImageIndex = lstTitlesGetImageIndex
     OnMeasureItem = lstTitlesMeasureItem
+    OnMeasureTextWidth = lstTitlesMeasureTextWidth
     Columns = <>
   end
   object txtRegEx: TLabeledEdit
