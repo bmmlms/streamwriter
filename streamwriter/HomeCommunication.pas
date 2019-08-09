@@ -52,8 +52,6 @@ type
     FSearchReceivedChartsSuccess: Boolean;
     FSearchReceivedCharts: TChartList;
 
-    FWishlistUpgradeTitles: TWishlistUpgradeList;
-
     FConvertManualToAutomaticFoundTitles: TConvertManualToAutomaticArray;
     FConvertManualToAutomaticNotFoundTitles: TStringArray;
 
@@ -118,7 +116,6 @@ type
   TServerInfoEvent = procedure(Sender: TObject; ClientCount, RecordingCount: Cardinal) of object;
   TErrorEvent = procedure(Sender: TObject; ID: TCommErrors; Msg: string) of object;
   TIntArrayEvent = procedure(Sender: TObject; IntArr: TIntArray) of object;
-  TWishlistUpgradeEvent = procedure(Sender: TObject; WishlistUpgrade: TWishlistUpgradeList) of object;
   TConvertManualToAutomaticEvent = procedure(Sender: TObject; FoundTitles: TConvertManualToAutomaticArray; NotFoundTitles: TStringArray) of object;
   TGetStreamDataEvent = procedure(Sender: TObject; LastTitles: TStringArray; OtherUserRegExps: TStringArray; UserRegExps: TStringArray) of object;
   TCardinalEvent = procedure(Sender: TObject; Data: Cardinal) of object;
@@ -145,7 +142,6 @@ type
     FOnErrorReceived: TErrorEvent;
     FOnMonitorStreamsReceived: TIntArrayEvent;
     FOnSearchChartsReceived: TChartsReceivedEvent;
-    FOnWishlistUpgradeReceived: TWishlistUpgradeEvent;
     FOnConvertManualToAutomaticReceived: TConvertManualToAutomaticEvent;
     FOnGetStreamDataReceived: TGetStreamDataEvent;
     FOnException: TNotifyEvent;
@@ -166,7 +162,6 @@ type
     procedure HomeThreadErrorReceived(Sender: TSocketThread);
     procedure HomeThreadMonitorStreamsReceived(Sender: TSocketThread);
     procedure HomeThreadSearchChartsReceived(Sender: TSocketThread);
-    procedure HomeThreadWishlistUpgradeReceived(Sender: TSocketThread);
     procedure HomeThreadConvertManualToAutomaticReceived(Sender: TSocketThread);
     procedure HomeThreadGetStreamDataReceived(Sender: TSocketThread);
     procedure HomeThreadLog(Sender: TSocketThread);
@@ -227,7 +222,6 @@ type
     property OnErrorReceived: TErrorEvent read FOnErrorReceived write FOnErrorReceived;
     property OnMonitorStreamsReceived: TIntArrayEvent read FOnMonitorStreamsReceived write FOnMonitorStreamsReceived;
     property OnSearchChartsReceived: TChartsReceivedEvent read FOnSearchChartsReceived write FOnSearchChartsReceived;
-    property OnWishlistUpgradeReceived: TWishlistUpgradeEvent read FOnWishlistUpgradeReceived write FOnWishlistUpgradeReceived;
     property OnConvertManualToAutomaticReceived: TConvertManualToAutomaticEvent read FOnConvertManualToAutomaticReceived write FOnConvertManualToAutomaticReceived;
     property OnGetStreamDataReceived: TGetStreamDataEvent read FOnGetStreamDataReceived write FOnGetStreamDataReceived;
     property OnException: TNotifyEvent read FOnException write FOnException;
@@ -768,7 +762,6 @@ begin
   FOnSearchChartsReceived := nil;
   FOnServerDataReceived := nil;
   FOnServerInfoReceived := nil;
-  FOnWishlistUpgradeReceived := nil;
   FOnConvertManualToAutomaticReceived := nil;
   FOnGetStreamDataReceived := nil;
   FOnException := nil;
@@ -1005,13 +998,6 @@ begin
     FThread := nil;
 end;
 
-procedure THomeCommunication.HomeThreadWishlistUpgradeReceived(
-  Sender: TSocketThread);
-begin
-  if Assigned(FOnWishlistUpgradeReceived) then
-    FOnWishlistUpgradeReceived(Self, THomeThread(Sender).FWishlistUpgradeTitles);
-end;
-
 procedure THomeCommunication.HomeThreadNetworkTitleChangedReceived(
   Sender: TSocketThread);
 begin
@@ -1066,7 +1052,6 @@ begin
   FThread.OnNetworkTitleChangedReceived := HomeThreadNetworkTitleChangedReceived;
   FThread.OnMonitorStreamsReceived := HomeThreadMonitorStreamsReceived;
   FThread.OnSearchChartsReceived := HomeThreadSearchChartsReceived;
-  FThread.OnWishlistUpgradeReceived := HomeThreadWishlistUpgradeReceived;
 
   FThread.OnConvertManualToAutomaticReceived := HomeThreadConvertManualToAutomaticReceived;
 

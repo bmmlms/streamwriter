@@ -1056,6 +1056,7 @@ begin
     Data := string(FICEThread.RecvStream.RecvStream.ToString);
     if (Copy(LowerCase(Data), 1, 10) = '[playlist]') or
        (Pos('audio/x-scpls', FICEThread.RecvStream.ContentType) > 0) or
+       (Pos('application/x-scpls', FICEThread.RecvStream.ContentType) > 0) or
        (Pos('application/pls+xml', FICEThread.RecvStream.ContentType) > 0) then // .pls
     begin
       Result := PH.ParsePlaylist(Data, ptPLS, FCurrentURL);

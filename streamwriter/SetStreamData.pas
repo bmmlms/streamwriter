@@ -16,6 +16,7 @@ type
     ParsedTitle: string;
     MatchedRegExp: Boolean;
     MatchedOtherRegExp: Boolean;
+    DataSet: Boolean;
   end;
   PTitleNodeData = ^TTitleNodeData;
 
@@ -63,6 +64,7 @@ type
 
     procedure InvalidateTree;
     procedure SetState(Enable: Boolean);
+    procedure SetNodeData(NodeData: PTitleNodeData);
 
     procedure HomeCommGetStreamData(Sender: TObject; LastTitles: TStringArray; OtherUserRegExps: TStringArray; UserRegExps: TStringArray);
   public
@@ -166,8 +168,6 @@ end;
 
 constructor TfrmSetStreamData.Create(AOwner: TComponent;
   StreamID: Integer);
-var
-  Col: TVirtualTreeColumn;
 begin
   inherited Create(AOwner);
 
@@ -229,6 +229,7 @@ begin
   begin
     Node := lstTitles.AddChild(nil);
     NodeData := lstTitles.GetNodeData(Node);
+    NodeData.DataSet := False;
 
     NodeData.Title := LastTitles[i];
     lstTitles.MultiLine[Node] := True;
@@ -261,86 +262,18 @@ end;
 
 procedure TfrmSetStreamData.InvalidateTree;
 var
-  n: Integer;
   Node: PVirtualNode;
   NodeData: PTitleNodeData;
-  RegExps: TStringList;
-  OtherRegExps: TStringList;
-  AllRegExps: TStringList;
-  R: TPerlRegEx;
-  RegExp: string;
 begin
-  RegExps := TStringList.Create;
-  OtherRegExps := TStringList.Create;
-  AllRegExps := TStringList.Create;
-  try
-    Node := lstTitles.GetFirst;
-    while Node <> nil do
-    begin
-      NodeData := lstTitles.GetNodeData(Node);
-
-      NodeData.ParsedArtist := '';
-      NodeData.ParsedTitle := '';
-      NodeData.MatchedRegExp := False;
-      NodeData.MatchedOtherRegExp := False;
-
-      RegExps.Clear;
-      OtherRegExps.Clear;
-      AllRegExps.Clear;
-
-      for n := 0 to lstRegExps.Items.Count - 1 do
-        RegExps.Add(lstRegExps.Items[n].Caption);
-      RegExps.Add(Trim(txtRegEx.Text));
-
-      for n := 0 to lstOtherRegExps.Items.Count - 1 do
-        OtherRegExps.Add(lstOtherRegExps.Items[n].Caption);
-
-      AllRegExps.AddStrings(RegExps);
-      AllRegExps.AddStrings(OtherRegExps);
-
-      RegExp := SWFunctions.GetBestRegEx(NodeData.Title, AllRegExps);
-
-      R := TPerlRegEx.Create;
-      R.Options := R.Options + [preCaseLess];
-      try
-        R.Subject := NodeData.Title;
-        R.RegEx := RegExp;
-        try
-          if R.Match then
-          begin
-            try
-              if R.NamedGroup('a') > 0 then
-                NodeData.ParsedArtist := Trim(R.Groups[R.NamedGroup('a')]);
-            except end;
-            try
-              if R.NamedGroup('t') > 0 then
-                NodeData.ParsedTitle := Trim(R.Groups[R.NamedGroup('t')]);
-            except end;
-          end;
-        except end;
-      finally
-        R.Free;
-      end;
-
-      if (Length(NodeData.ParsedArtist) > 0) and (Length(NodeData.ParsedTitle) > 0) then
-      begin
-        if RegExps.IndexOf(RegExp) > -1 then
-          NodeData.MatchedRegExp := True
-        else if OtherRegExps.IndexOf(RegExp) > -1 then
-          NodeData.MatchedOtherRegExp := True;
-      end;
-
-      Node := lstTitles.GetNext(Node);
-    end;
-
-    lstTitles.Invalidate;
-    lstTitles.FullExpand;
-    lstTitles.Header.AutoFitColumns;
-  finally
-    RegExps.Free;
-    OtherRegExps.Free;
-    AllRegExps.Free;
+  Node := lstTitles.GetFirst;
+  while Node <> nil do
+  begin
+    NodeData := lstTitles.GetNodeData(Node);
+    NodeData.DataSet := False;
+    Node := lstTitles.GetNext(Node);
   end;
+
+  lstTitles.Invalidate;
 end;
 
 procedure TfrmSetStreamData.lstRegExpsChange(Sender: TObject;
@@ -356,6 +289,8 @@ var
   NodeData: PTitleNodeData;
 begin
   NodeData := lstTitles.GetNodeData(Node);
+
+  SetNodeData(NodeData);
 
   if Kind <> ikState then
   begin
@@ -375,6 +310,9 @@ var
   NodeData: PTitleNodeData;
 begin
   NodeData := lstTitles.GetNodeData(Node);
+
+  SetNodeData(NodeData);
+
   CellText := Format('%s'#13#10'%s %s'#13#10'%s %s', [NodeData.Title, _('Artist:'), NodeData.ParsedArtist, _('Title:'), NodeData.ParsedTitle]);
 end;
 
@@ -389,6 +327,80 @@ procedure TfrmSetStreamData.lstTitlesMeasureTextWidth(
   Column: TColumnIndex; const Text: string; var Extent: Integer);
 begin
   Extent := FMaxTextWidth;
+end;
+
+procedure TfrmSetStreamData.SetNodeData(NodeData: PTitleNodeData);
+var
+  n: Integer;
+  RegExps: TStringList;
+  OtherRegExps: TStringList;
+  AllRegExps: TStringList;
+  R: TPerlRegEx;
+  RegExp: string;
+begin
+  if NodeData.DataSet then
+    Exit;
+
+  RegExps := TStringList.Create;
+  OtherRegExps := TStringList.Create;
+  AllRegExps := TStringList.Create;
+  try
+    NodeData.ParsedArtist := '';
+    NodeData.ParsedTitle := '';
+    NodeData.MatchedRegExp := False;
+    NodeData.MatchedOtherRegExp := False;
+    NodeData.DataSet := True;
+
+    RegExps.Clear;
+    OtherRegExps.Clear;
+    AllRegExps.Clear;
+
+    for n := 0 to lstRegExps.Items.Count - 1 do
+      RegExps.Add(lstRegExps.Items[n].Caption);
+    RegExps.Add(Trim(txtRegEx.Text));
+
+    for n := 0 to lstOtherRegExps.Items.Count - 1 do
+      OtherRegExps.Add(lstOtherRegExps.Items[n].Caption);
+
+    AllRegExps.AddStrings(RegExps);
+    AllRegExps.AddStrings(OtherRegExps);
+
+    RegExp := SWFunctions.GetBestRegEx(NodeData.Title, AllRegExps);
+
+    R := TPerlRegEx.Create;
+    R.Options := R.Options + [preCaseLess];
+    try
+      R.Subject := NodeData.Title;
+      R.RegEx := RegExp;
+      try
+        if R.Match then
+        begin
+          try
+            if R.NamedGroup('a') > 0 then
+              NodeData.ParsedArtist := Trim(R.Groups[R.NamedGroup('a')]);
+          except end;
+          try
+            if R.NamedGroup('t') > 0 then
+              NodeData.ParsedTitle := Trim(R.Groups[R.NamedGroup('t')]);
+          except end;
+        end;
+      except end;
+    finally
+      R.Free;
+    end;
+
+    if (Length(NodeData.ParsedArtist) > 0) and (Length(NodeData.ParsedTitle) > 0) then
+    begin
+      if RegExps.IndexOf(RegExp) > -1 then
+        NodeData.MatchedRegExp := True
+      else if OtherRegExps.IndexOf(RegExp) > -1 then
+        NodeData.MatchedOtherRegExp := True;
+    end;
+  finally
+    RegExps.Free;
+    OtherRegExps.Free;
+    AllRegExps.Free;
+  end;
 end;
 
 procedure TfrmSetStreamData.SetState(Enable: Boolean);

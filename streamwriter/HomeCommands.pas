@@ -38,13 +38,6 @@ type
   end;
   TSyncWishlistRecordArray = array of TSyncWishlistRecord;
 
-  TWishlistUpgrade = class
-  public
-    Title: string;
-    Hash: Cardinal;
-  end;
-  TWishlistUpgradeList = TList<TWishlistUpgrade>;
-
   TConvertManualToAutomatic = record
   public
     Title: string;

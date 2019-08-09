@@ -144,7 +144,6 @@ type
 
     procedure MessageReceived(Msg: TMessageBase);
 
-    procedure HomeCommWishlistUpgradeReceived(Sender: TObject; WishlistUpgrade: TWishlistUpgradeList);
     procedure HomeCommConvertManualToAutomaticReceived(Sender: TObject; FoundTitles: TConvertManualToAutomaticArray; NotFoundTitles: TStringArray);
   protected
     procedure Resize; override;
@@ -239,7 +238,6 @@ begin
 
   MsgBus.AddSubscriber(MessageReceived);
 
-  HomeComm.OnWishlistUpgradeReceived := HomeCommWishlistUpgradeReceived;
   HomeComm.OnConvertManualToAutomaticReceived := HomeCommConvertManualToAutomaticReceived;
 end;
 
@@ -308,40 +306,6 @@ begin
     MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), Format(_('Conversion to automatic wishlist titles failed'), [Length(FoundTitles), Length(NotFoundTitles)])))
   else
     MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), Format(_('Conversion to automatic wishlist titles succeeded for %d title(s), failed for %d title(s)'), [Length(FoundTitles), Length(NotFoundTitles)])));
-end;
-
-procedure TListsTab.HomeCommWishlistUpgradeReceived(Sender: TObject;
-  WishlistUpgrade: TWishlistUpgradeList);
-var
-  i, n: Integer;
-  Found: Boolean;
-  Title: TTitleInfo;
-  Hashes: TSyncWishlistRecordArray;
-begin
-  SetLength(Hashes, 0);
-
-  for i := 0 to WishlistUpgrade.Count - 1 do
-  begin
-    Found := False;
-    for n := 0 to AppGlobals.Data.SaveList.Count - 1 do
-      if AppGlobals.Data.SaveList[n].ServerHash = WishlistUpgrade[i].Hash then
-      begin
-        Found := True;
-        Break;
-      end;
-
-    if Found then
-      Continue;
-
-    Title := TTitleInfo.Create(WishlistUpgrade[i].Hash, 0, WishlistUpgrade[i].Title);
-    AppGlobals.Data.SaveList.Add(Title);
-    AddTitle(nil, ltSave, Title);
-
-    SetLength(Hashes, Length(Hashes) + 1);
-    Hashes[High(Hashes)] := TSyncWishlistRecord.Create(Title.ServerHash, False);
-  end;
-
-  HomeComm.SendSyncWishlist(swAdd, Hashes);
 end;
 
 procedure TListsTab.MessageReceived(Msg: TMessageBase);
