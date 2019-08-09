@@ -29,7 +29,7 @@ uses
   AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
   Math, PerlRegEx, Logging, WideStrUtils, AudioFunctions, PostProcessMP4Box,
   AddonMP4Box, SWFunctions, MonitorAnalyzer, DataManager, Generics.Defaults,
-  Sockets, TypeDefs;
+  Sockets, TypeDefs, Constants;
 
 type
   TChunkReceivedEvent = procedure(Buf: Pointer; Len: Integer) of object;
@@ -168,7 +168,6 @@ type
     function AdjustDisplayTitle(Title: string): string;
     function CalcAdjustment(Offset: Int64): Int64;
     procedure DataReceived(CopySize: Integer);
-    function GetBestRegEx(Title: string): string;
     procedure SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
     procedure TrySave;
     procedure ProcessData(Received: Cardinal);
@@ -578,106 +577,6 @@ end;
 //    FOnMonitorAnalyzerAnalyzed(Self);
 //end;
 
-function TICEStream.GetBestRegEx(Title: string): string;
-type
-  TRegExData = record
-    RegEx: string;
-    BadWeight: Integer;
-  end;
-var
-  i, n: Integer;
-  R: TPerlRegEx;
-  MArtist, MTitle, MAlbum, DefaultRegEx: string;
-  RED: TRegExData;
-  REDs: TList<TRegExData>;
-const
-  BadChars: array[0..3] of string = (':', '-', '|', '*');
-begin
-  DefaultRegEx := '(?P<a>.*) - (?P<t>.*)';
-  Result := DefaultRegEx;
-
-  REDs := TList<TRegExData>.Create;
-  try
-    for i := 0 to FSettings.RegExes.Count - 1 do
-    begin
-      RED.RegEx := FSettings.RegExes[i];
-      RED.BadWeight := 0;
-      if RED.RegEx = DefaultRegEx then
-        RED.BadWeight := 1;
-
-      MArtist := '';
-      MTitle := '';
-      MAlbum := '';
-
-      R := TPerlRegEx.Create;
-      try
-        R.Options := R.Options + [preCaseLess];
-        R.Subject := Title;
-        R.RegEx := RED.RegEx;
-        try
-          if R.Match then
-          begin
-            try
-              if R.NamedGroup('a') > 0 then
-              begin
-                MArtist := Trim(R.Groups[R.NamedGroup('a')]);
-                for n := 0 to High(BadChars) do
-                  if Pos(BadChars[n], MArtist) > 0 then
-                    RED.BadWeight := RED.BadWeight + 2;
-                if ContainsRegEx('(\d{2})', MArtist) then
-                  RED.BadWeight := RED.BadWeight + 2;
-              end
-                else RED.BadWeight := RED.BadWeight + 3;
-            except end;
-            try
-              if R.NamedGroup('t') > 0 then
-              begin
-                MTitle := Trim(R.Groups[R.NamedGroup('t')]);
-                for n := 0 to High(BadChars) do
-                  if Pos(BadChars[n], MTitle) > 0 then
-                    RED.BadWeight := RED.BadWeight + 2;
-                if ContainsRegEx('(\d{2})', MTitle) then
-                  RED.BadWeight := RED.BadWeight + 2;
-              end
-                else RED.BadWeight := RED.BadWeight + 3;
-            except end;
-            try
-              if R.NamedGroup('l') > 0 then
-              begin
-                RED.BadWeight := RED.BadWeight - 6;
-                MAlbum := Trim(R.Groups[R.NamedGroup('l')]);
-                for n := 0 to High(BadChars) do
-                  if Pos(BadChars[n], MAlbum) > 0 then
-                    RED.BadWeight := RED.BadWeight + 2;
-              end;
-            except end;
-
-            if MAlbum = '' then
-              RED.BadWeight := RED.BadWeight + 10;
-          end else
-            RED.BadWeight := RED.BadWeight + 50;
-
-          REDs.Add(RED);
-        except end;
-      finally
-        R.Free;
-      end;
-    end;
-
-    REDs.Sort(TComparer<TRegExData>.Construct(
-      function (const L, R: TRegExData): integer
-      begin
-        Result := CmpInt(L.BadWeight, R.BadWeight);
-      end
-    ));
-
-    if REDs.Count > 0 then
-      Result := REDs[0].RegEx;
-  finally
-    REDs.Free;
-  end;
-end;
-
 procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
   procedure RemoveData;
   var
@@ -761,7 +660,7 @@ begin
       FSaveAllowedTitle := Title;
       FSaveAllowed := True;
 
-      RegEx := GetBestRegEx(Title);
+      RegEx := SWFunctions.GetBestRegEx(Title, FSettings.RegExes);
       ParseTitle(Title, RegEx, FSavedArtist, FSavedTitle, FSavedAlbum);
 
       if (FSavedArtist <> '') and (FSavedTitle <> '') then
@@ -1322,7 +1221,7 @@ begin
             begin
               NewDisplayTitle := Title;
 
-              ParseTitle(Title, GetBestRegEx(Title), ParsedArtist, ParsedTitle, ParsedAlbum);
+              ParseTitle(Title, SWFunctions.GetBestRegEx(Title, FSettings.RegExes), ParsedArtist, ParsedTitle, ParsedAlbum);
               if (ParsedArtist <> '') and (ParsedTitle <> '') and (ParsedAlbum <> '') then
                 NewDisplayTitle := ParsedArtist + ' - ' + ParsedTitle + ' - ' + ParsedAlbum
               else if (ParsedArtist <> '') and (ParsedTitle <> '') then
@@ -1466,10 +1365,10 @@ begin
     end;
   end;
 
-  if (Artist = '') and (Title = '') and (Pattern <> '(?P<a>.*) - (?P<t>.*)') then
+  if (Artist = '') and (Title = '') and (Pattern <> DEFAULT_TITLE_REGEXP) then
   begin
     // Wenn nichts gefunden wurde, Fallback mit normalem Muster..
-    ParseTitle(S, '(?P<a>.*) - (?P<t>.*)', Artist, Title, Album);
+    ParseTitle(S, DEFAULT_TITLE_REGEXP, Artist, Title, Album);
   end;
 
   if (Artist = '') and (Title = '') then

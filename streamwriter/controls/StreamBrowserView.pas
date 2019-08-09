@@ -48,6 +48,7 @@ type
     RecordingOkay: Boolean;
     RegExes: TStringList;
     IgnoreTitles: TStringList;
+    CanSetRegExps: Boolean;
   end;
   TStreamDataArray = array of TStreamData;
 
@@ -93,8 +94,6 @@ type
 
     FLoading: Boolean;
 
-    FSetStreamDataID: Cardinal;
-
     FOnStreamsReceived: TNotifyEvent;
 
     procedure ListsChange(Sender: TObject);
@@ -108,7 +107,6 @@ type
     procedure StreamBrowserHeaderClick(Sender: TVTHeader; HitInfo: TVTHeaderHitInfo);
 
     procedure HomeCommDataReceived(Sender: TObject);
-    procedure HomeCommAuthTokenReceived(Sender: TObject; Token: Cardinal);
   protected
   public
     constructor Create(AOwner: TComponent); reintroduce;
@@ -123,7 +121,6 @@ type
 
     property Mode: TModes read FMode;
     property StreamTree: TMStreamTree read FStreamTree;
-    property SetStreamDataID: Cardinal read FSetStreamDataID write FSetStreamDataID;
 
     property OnStreamsReceived: TNotifyEvent read FOnStreamsReceived write FOnStreamsReceived;
   end;
@@ -365,7 +362,6 @@ begin
   FSortPopupMenu := TMStreamTreeHeaderPopup.Create(Self);
   Header.PopupMenu := FSortPopupMenu;
 
-
   FProgressBar := TProgressBar.Create(Self);
   FProgressBar.Parent := Self;
   FProgressBar.Width := 150;
@@ -519,6 +515,7 @@ begin
     Result[High(Result)].RegExes := NodeData.Data.RegExes;
     Result[High(Result)].RecordingOkay := NodeData.Data.RecordingOkay;
     Result[High(Result)].IgnoreTitles := NodeData.Data.IgnoreTitles;
+    Result[High(Result)].CanSetRegExps := NodeData.Data.CanSetRegExps;
   end;
 end;
 
@@ -763,7 +760,7 @@ begin
   FItemRate.Enabled := HomeComm.CommunicationEstablished and (Length(Streams) = 1);
   FItemRefresh.Enabled := HomeComm.CommunicationEstablished;
 
-  FItemSetData.Enabled := HomeComm.CommunicationEstablished and (Length(Streams) = 1);
+  FItemSetData.Enabled := HomeComm.CommunicationEstablished and (Length(Streams) = 1) and (Streams[0].CanSetRegExps);
 
   FItemCopy.Enabled := Length(Streams) > 0;
   FItemSave.Enabled := Length(Streams) > 0;
@@ -1199,25 +1196,12 @@ begin
   FSearch.FTypeList.OnChange := ListsChange;
 
   HomeComm.OnServerDataReceived := HomeCommDataReceived;
-  HomeComm.OnAuthTokenReceived := HomeCommAuthTokenReceived;
 end;
 
 destructor TMStreamBrowserView.Destroy;
 begin
 
   inherited;
-end;
-
-procedure TMStreamBrowserView.HomeCommAuthTokenReceived(Sender: TObject; Token: Cardinal);
-begin
-  if FSetStreamDataID > 0 then
-  begin
-    {$IFDEF DEBUG}
-    ShellExecute(Handle, 'open', PChar('http://gaia:3000/streams#stream=' + IntToStr(FSetStreamDataID) + ',token=' + IntToStr(Token)), '', '', 1);
-    {$ELSE}
-    ShellExecute(Handle, 'open', PChar('https://streamwriter.org/streamdata/streams#stream=' + IntToStr(FSetStreamDataID) + ',token=' + IntToStr(Token)), '', '', 1);
-    {$ENDIF}
-  end;
 end;
 
 procedure TMStreamBrowserView.HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);

@@ -37,7 +37,7 @@ uses
   ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
   PowerManagement, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
   AppMessages, CommandLine, Protocol, Commands, HomeCommands, SharedData,
-  LogTab, WindowsFunctions, Sockets, System.Actions;
+  LogTab, WindowsFunctions, Sockets, System.Actions, SetStreamData;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -321,6 +321,7 @@ type
     procedure tabClientsClientAdded(Sender: TObject);
     procedure tabClientsClientRemoved(Sender: TObject);
     procedure tabClientsBrowserViewStreamsReceived(Sender: TObject);
+    procedure tabClientsSetStreamData(Sender: TObject; StreamID: Integer);
 
     procedure tabSavedCut(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
@@ -863,6 +864,7 @@ begin
   tabClients.OnShowErrorMessage := tabClientsShowErrorMessage;
   tabClients.OnClientAdded := tabClientsClientAdded;
   tabClients.OnClientRemoved := tabClientsClientRemoved;
+  tabClients.OnSetStreamData := tabClientsSetStreamData;
   tabClients.SideBar.BrowserView.OnStreamsReceived := tabClientsBrowserViewStreamsReceived;
 
   tabCharts := TChartsTab.Create(pagMain);
@@ -2277,6 +2279,18 @@ begin
       end;
     end;
   }
+end;
+
+procedure TfrmStreamWriterMain.tabClientsSetStreamData(Sender: TObject; StreamID: Integer);
+var
+  Form: TfrmSetStreamData;
+begin
+  Form := TfrmSetStreamData.Create(Self, StreamID);
+  try
+    Form.ShowModal;
+  finally
+    Form.Free;
+  end;
 end;
 
 procedure TfrmStreamWriterMain.tabClientsUpdateButtons(Sender: TObject);

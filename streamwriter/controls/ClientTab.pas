@@ -118,6 +118,7 @@ type
     FOnClientRemoved: TNotifyEvent;
     FOnAddTitleToList: TAddTitleEvent;
     FOnRemoveTitleFromList: TAddTitleEventWithServerHash;
+    FOnSetStreamData: TIntegerEvent;
 
     procedure ActionNewCategoryExecute(Sender: TObject);
     procedure ActionStartExecute(Sender: TObject);
@@ -208,6 +209,7 @@ type
     property OnClientRemoved: TNotifyEvent read FOnClientRemoved write FOnClientRemoved;
     property OnAddTitleToList: TAddTitleEvent read FOnAddTitleToList write FOnAddTitleToList;
     property OnRemoveTitleFromList: TAddTitleEventWithServerHash read FOnRemoveTitleFromList write FOnRemoveTitleFromList;
+    property OnSetStreamData: TIntegerEvent read FOnSetStreamData write FOnSetStreamData;
   end;
 
 implementation
@@ -1667,12 +1669,16 @@ begin
       FSideBar.FBrowserView.RefreshStreams;
     oaSetData:
       begin
-        if HomeComm.CommunicationEstablished then
+        if HomeComm.CommunicationEstablished and HomeComm.Authenticated then
         begin
-          FSideBar.BrowserView.SetStreamDataID := Streams[0].ID;
-          HomeComm.SendGenerateAuthToken;
-        end else
+          FOnSetStreamData(Self, Streams[0].ID);
+        end else if not HomeComm.CommunicationEstablished then
+        begin
           MsgBox(Handle, _('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION);
+        end else if not HomeComm.Authenticated then
+        begin
+          FOnAuthRequired(Self)
+        end;
       end;
     oaRate1:
       Rate(1);

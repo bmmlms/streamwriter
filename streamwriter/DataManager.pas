@@ -28,7 +28,7 @@ uses
   Windows, Classes, SysUtils, ExtendedStream, Generics.Collections,
   ComCtrls, Functions, Logging, DateUtils, AudioFunctions, PostProcess,
   PowerManagement, Generics.Defaults, TypeDefs, winsock, AddonManager,
-  SWFunctions, ZLib;
+  SWFunctions, ZLib, Constants;
 
 type
   TStreamList = class;
@@ -103,6 +103,7 @@ type
     FRecordingOkay: Boolean;
     FRegExes: TStringList;
     FIgnoreTitles: TStringList;
+    FCanSetRegExps: Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -143,6 +144,7 @@ type
     property RegExes: TStringList read FRegExes write FRegExes;
     // A list containing titles to ignore for track changes
     property IgnoreTitles: TStringList read FIgnoreTitles;
+    property CanSetRegExps: Boolean read FCanSetRegExps;
   end;
 
   // An entry in the "Saved tracks" tab
@@ -825,7 +827,7 @@ type
   end;
 
 const
-  DATAVERSION: Cardinal = 66;
+  DATAVERSION: Cardinal = 67;
   DATAMAGIC: array[0..3] of Byte = (118, 114, 110, 97);
   EXPORTMAGIC: array[0..3] of Byte = (97, 110, 114, 118);
 
@@ -2322,6 +2324,11 @@ begin
       Result.FIgnoreTitles.Add(E);
     end;
   end;
+
+  if Version >= 67 then
+  begin
+    Stream.Read(Result.FCanSetRegExps);
+  end;
 end;
 
 class function TStreamBrowserEntry.LoadFromHome(Stream: TExtendedStream;
@@ -2367,6 +2374,8 @@ begin
     Stream.Read(E);
     Result.FIgnoreTitles.Add(E);
   end;
+
+  Stream.Read(Result.FCanSetRegExps);
 end;
 
 procedure TStreamBrowserEntry.Save(Stream: TExtendedStream);
@@ -2398,6 +2407,8 @@ begin
   Stream.Write(Cardinal(FIgnoreTitles.Count));
   for i := 0 to FIgnoreTitles.Count - 1 do
     Stream.Write(FIgnoreTitles[i]);
+
+  Stream.Write(FCanSetRegExps);
 end;
 
 { TChartEntry }
@@ -2733,7 +2744,7 @@ begin
   // für automatische Aufnahmen benutzt. Immer, wenn ich hier was ändere,
   // muss ich sicherstellen, dass ich dadurch nichts kaputt mache.
 
-  Result.RegExes.Add('(?P<a>.*) - (?P<t>.*)');
+  Result.RegExes.Add(DEFAULT_TITLE_REGEXP);
 
   Result.FFilePattern := '%streamname%\%artist% - %title%';
   Result.FIncompleteFilePattern := '%streamname%\%artist% - %title%';
@@ -2821,7 +2832,7 @@ begin
 
   if Version < 15 then
   begin
-    Result.FRegExes.Add('(?P<a>.*) - (?P<t>.*)');
+    Result.FRegExes.Add(DEFAULT_TITLE_REGEXP);
     Stream.Read(Result.FFilePattern);
   end else if Version < 58 then
   begin

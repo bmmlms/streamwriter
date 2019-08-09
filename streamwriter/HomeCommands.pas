@@ -248,6 +248,8 @@ type
     FTitleRegEx: string;
     FHasIgnoreTitles: Boolean;
     FIgnoreTitles: string;
+    FSetRegExps: Boolean;
+    FRegExps: TStringArray;
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
@@ -260,6 +262,8 @@ type
     property TitleRegEx: string read FTitleRegEx write FTitleRegEx;
     property HasIgnoreTitles: Boolean read FHasIgnoreTitles write FHasIgnoreTitles;
     property IgnoreTitles: string read FIgnoreTitles write FIgnoreTitles;
+    property SetRegExps: Boolean read FSetRegExps write FSetRegExps;
+    property RegExps: TStringArray read FRegExps write FRegExps;
   end;
 
   TCommandTitleChanged = class(TCommand)
@@ -350,35 +354,6 @@ type
     destructor Destroy; override;
   end;
 
-  TCommandGenerateAuthToken = class(TCommand)
-  public
-    constructor Create;
-    destructor Destroy; override;
-  end;
-
-  TCommandGenerateAuthTokenResponse = class(TCommand)
-  private
-    FToken: Cardinal;
-  public
-    constructor Create;
-
-    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
-
-    property Token: Cardinal read FToken;
-  end;
-
-  TCommandPing = class(TCommand)
-  public
-    constructor Create;
-    destructor Destroy; override;
-  end;
-
-  TCommandPingResponse = class(TCommand)
-  public
-    constructor Create;
-    destructor Destroy; override;
-  end;
-
   TCommandConvertManualToAutomatic = class(TCommand)
   private
     FTitles: TStringArray;
@@ -401,6 +376,31 @@ type
 
     property FoundTitles: TConvertManualToAutomaticArray read FFoundTitles;
     property NotFoundTitles: TStringArray read FNotFoundTitles;
+  end;
+
+  TCommandGetStreamData = class(TCommand)
+  private
+    FStreamID: Cardinal;
+  protected
+    procedure DoGet(S: TExtendedStream); override;
+  public
+    constructor Create; overload;
+    constructor Create(StreamID: Cardinal); overload;
+  end;
+
+  TCommandGetStreamDataResponse = class(TCommand)
+  private
+    FLastTitles: TStringArray;
+    FOtherUserRegExps: TStringArray;
+    FUserRegExps: TStringArray;
+  public
+    constructor Create;
+
+    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+
+    property LastTitles: TStringArray read FLastTitles;
+    property OtherUserRegExps: TStringArray read FOtherUserRegExps;
+    property UserRegExps: TStringArray read FUserRegExps;
   end;
 
 implementation
@@ -453,7 +453,7 @@ constructor TCommandGetServerData.Create;
 begin
   inherited;
 
-  FVersion := 2;
+  FVersion := 3;
   FCommandType := ctGetServerData;
 end;
 
@@ -710,10 +710,13 @@ constructor TCommandSetStreamData.Create;
 begin
   inherited;
 
+  FVersion := 2;
   FCommandType := ctSetStreamData;
 end;
 
 procedure TCommandSetStreamData.DoGet(S: TExtendedStream);
+var
+  i: Integer;
 begin
   S.Write(FStreamID);
   S.Write(FRating);
@@ -722,6 +725,10 @@ begin
   S.Write(FTitleRegEx);
   S.Write(FHasIgnoreTitles);
   S.Write(FIgnoreTitles);
+  S.Write(FSetRegExps);
+  S.Write(Cardinal(Length(FRegExps)));
+  for i := 0 to High(FRegExps) do
+    S.Write(FRegExps[i]);
 end;
 
 { TCommandTitleChanged }
@@ -933,66 +940,6 @@ begin
   S.CopyFrom(FData, FData.Size);
 end;
 
-{ TCommandGenerateAuthToken }
-
-constructor TCommandGenerateAuthToken.Create;
-begin
-  FCommandType := ctGenerateAuthToken;
-end;
-
-destructor TCommandGenerateAuthToken.Destroy;
-begin
-
-  inherited;
-end;
-
-{ TCommandGenerateAuthTokenResponse }
-
-constructor TCommandGenerateAuthTokenResponse.Create;
-begin
-  inherited;
-
-  FCommandType := ctGenerateAuthTokenResponse;
-end;
-
-procedure TCommandGenerateAuthTokenResponse.Load(
-  CommandHeader: TCommandHeader; Stream: TExtendedStream);
-begin
-  inherited;
-
-  Stream.Read(FToken);
-end;
-
-{ TCommandPing }
-
-constructor TCommandPing.Create;
-begin
-  inherited;
-
-  FCommandType := ctPing;
-end;
-
-destructor TCommandPing.Destroy;
-begin
-
-  inherited;
-end;
-
-{ TCommandPingResponse }
-
-constructor TCommandPingResponse.Create;
-begin
-  inherited;
-
-  FCommandType := ctPingResponse;
-end;
-
-destructor TCommandPingResponse.Destroy;
-begin
-
-  inherited;
-end;
-
 { TCommandConvertManualToAutomatic }
 
 constructor TCommandConvertManualToAutomatic.Create;
@@ -1058,6 +1005,70 @@ begin
   begin
     SetLength(FNotFoundTitles, Length(FNotFoundTitles) + 1);
     Stream.Read(FNotFoundTitles[i]);
+  end;
+end;
+
+{ TCommandGetStreamData }
+
+constructor TCommandGetStreamData.Create;
+begin
+  inherited;
+
+  FCommandType := ctGetStreamData;
+end;
+
+constructor TCommandGetStreamData.Create(StreamID: Cardinal);
+begin
+  Create;
+
+  FStreamID := StreamID;
+end;
+
+procedure TCommandGetStreamData.DoGet(S: TExtendedStream);
+begin
+  inherited;
+
+  S.Write(FStreamID);
+end;
+
+{ TCommandGetStreamDataResponse }
+
+constructor TCommandGetStreamDataResponse.Create;
+begin
+  inherited;
+
+  FCommandType := ctGetStreamDataResponse;
+end;
+
+procedure TCommandGetStreamDataResponse.Load(CommandHeader: TCommandHeader;
+  Stream: TExtendedStream);
+var
+  Count: Cardinal;
+  i: Integer;
+begin
+  inherited;
+
+  SetLength(FLastTitles, 0);
+  SetLength(FOtherUserRegExps, 0);
+  SetLength(FUserRegExps, 0);
+
+  Stream.Read(Count);
+  for i := 0 to Count - 1 do
+  begin
+    SetLength(FLastTitles, Length(FLastTitles) + 1);
+    Stream.Read(FLastTitles[High(FLastTitles)]);
+  end;
+  Stream.Read(Count);
+  for i := 0 to Count - 1 do
+  begin
+    SetLength(FOtherUserRegExps, Length(FOtherUserRegExps) + 1);
+    Stream.Read(FOtherUserRegExps[High(FOtherUserRegExps)]);
+  end;
+  Stream.Read(Count);
+  for i := 0 to Count - 1 do
+  begin
+    SetLength(FUserRegExps, Length(FUserRegExps) + 1);
+    Stream.Read(FUserRegExps[High(FUserRegExps)]);
   end;
 end;
 

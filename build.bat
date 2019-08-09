@@ -1,6 +1,6 @@
 @echo off
 
-set "RSVARS=D:\Embarcadero\Studio\19.0\bin\rsvars.bat"
+set "RSVARS=D:\Embarcadero\Studio\20.0\bin\rsvars.bat"
 set "MSBUILD=c:\Windows\Microsoft.NET\Framework\v4.0.30319\msbuild.exe"
 set "MADEXCEPTPATCH=E:\Entwicklung\Lib\madCollection\madExcept\Tools\madExceptPatch.exe"
 set "ZIP=D:\7-Zip\7z.exe"

@@ -30,8 +30,9 @@ uses
   MsgDlg, PngImageList, PngSpeedButton, pngimage, VirtualTrees, Math,
   DataManager, PngBitBtn, Logging, ToolWin, ListsTab, DownloadAddons,
   ExtendedStream, AddonManager, AddonBase, Generics.Defaults,
-  SettingsAddPostProcessor, ConfigureEncoder, AudioFunctions,
-  SWFunctions, TypeDefs, SharedData, PerlRegEx, MControls;
+  SettingsAddPostProcessor, ConfigureEncoder, AudioFunctions, Constants,
+  SWFunctions, TypeDefs, SharedData, PerlRegEx, MControls, System.ImageList,
+  System.Types;
 
 type
   TSettingsTypes = (stApp, stAuto, stStream);
@@ -286,8 +287,6 @@ type
     procedure chkSubmitStreamInfoClick(Sender: TObject);
     procedure lstRegExesChange(Sender: TObject; Item: TListItem;
       Change: TItemChange);
-    procedure lstRegExesEdited(Sender: TObject; Item: TListItem;
-      var S: string);
     procedure lstRegExesResize(Sender: TObject);
     procedure btnAddRegExClick(Sender: TObject);
     procedure btnRemoveRegExClick(Sender: TObject);
@@ -1208,17 +1207,6 @@ procedure TfrmSettings.lstRegExesChange(Sender: TObject; Item: TListItem;
   Change: TItemChange);
 begin
   btnRemoveRegEx.Enabled := lstRegExes.Selected <> nil;
-end;
-
-procedure TfrmSettings.lstRegExesEdited(Sender: TObject; Item: TListItem;
-  var S: string);
-begin
-  inherited;
-
-  if Trim(S) = '' then
-    S := Item.Caption
-  else
-    RemoveGray(lstRegExes);
 end;
 
 procedure TfrmSettings.lstRegExesResize(Sender: TObject);
@@ -2189,9 +2177,12 @@ var
   Item: TListItem;
   RValid, ArtistFound, TitleFound: Boolean;
   R: TPerlRegEx;
+  RegExp: string;
 begin
+  RegExp := Trim(txtRegEx.Text);
+
   for i := 0 to lstRegExes.Items.Count - 1 do
-    if Trim(txtRegEx.Text) = Trim(lstRegExes.Items[i].Caption) then
+    if LowerCase(RegExp) = LowerCase(Trim(lstRegExes.Items[i].Caption)) then
     begin
       MsgBox(Handle, _('The specified regular expression is already on the list.'), _('Info'), MB_ICONINFORMATION);
       Exit;
@@ -2200,7 +2191,7 @@ begin
   RValid := False;
   R := TPerlRegEx.Create;
   try
-    R.RegEx := txtRegEx.Text;
+    R.RegEx := RegExp;
     try
       R.Compile;
       RValid := True;
@@ -2209,17 +2200,17 @@ begin
     R.Free;
   end;
 
-  ArtistFound := (Pos('(?P<a>.*)', txtRegEx.Text) > 0) or (Pos('(?P<a>.*?)', txtRegEx.Text) > 0);
-  TitleFound := (Pos('(?P<t>.*)', txtRegEx.Text) > 0) or (Pos('(?P<t>.*?)', txtRegEx.Text) > 0);
+  ArtistFound := (Pos('(?P<a>.*)', RegExp) > 0) or (Pos('(?P<a>.*?)', RegExp) > 0);
+  TitleFound := (Pos('(?P<t>.*)', RegExp) > 0) or (Pos('(?P<t>.*?)', RegExp) > 0);
 
-  if (Trim(txtRegEx.Text) = '') or (not RValid) or (not ArtistFound) or (not TitleFound) then
+  if (RegExp = '') or (not RValid) or (not ArtistFound) or (not TitleFound) then
   begin
     MsgBox(Handle, _('Please supply a valid regular expression containing the groups (?P<a>.*)/(?P<a>.*?) and (?P<t>.*)/(?P<t>.*?).'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 
   Item := lstRegExes.Items.Add;
-  Item.Caption := txtRegEx.Text;
+  Item.Caption := RegExp;
   Item.ImageIndex := 7;
   txtRegEx.Text := '';
   txtRegEx.ApplyFocus;
@@ -2457,6 +2448,7 @@ end;
 
 procedure TfrmSettings.btnRemoveIgnoreTitlePatternClick(Sender: TObject);
 begin
+  txtIgnoreTitlePattern.Text := lstIgnoreTitles.Selected.Caption;
   lstIgnoreTitles.Items.Delete(lstIgnoreTitles.Selected.Index);
 
   RemoveGray(lstIgnoreTitles);
@@ -2464,6 +2456,7 @@ end;
 
 procedure TfrmSettings.btnRemoveRegExClick(Sender: TObject);
 begin
+  txtRegEx.Text := lstRegExes.Selected.Caption;
   lstRegExes.Items.Delete(lstRegExes.Selected.Index);
 
   RemoveGray(lstRegExes);
@@ -2533,7 +2526,7 @@ procedure TfrmSettings.btnResetTitlePatternClick(Sender: TObject);
 begin
   inherited;
 
-  txtRegEx.Text := '(?P<a>.*) - (?P<t>.*)';
+  txtRegEx.Text := DEFAULT_TITLE_REGEXP;
   txtRegEx.ApplyFocus;
 end;
 

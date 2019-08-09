@@ -1404,6 +1404,7 @@ object frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Caption = 'Regular expression to add:'
       EditLabel.Layout = tlBottom
+      MaxLength = 255
       TabOrder = 1
       OnChange = txtRegExChange
     end
@@ -1470,13 +1471,13 @@ object frmSettings: TfrmSettings
       Columns = <
         item
         end>
+      ReadOnly = True
       RowSelect = True
       ShowColumnHeaders = False
       SmallImages = PngImageList1
       TabOrder = 0
       ViewStyle = vsReport
       OnChange = lstRegExesChange
-      OnEdited = lstRegExesEdited
       OnResize = lstRegExesResize
     end
     object btnAddRegEx: TButton

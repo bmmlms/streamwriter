@@ -143,7 +143,9 @@ uses
   Scheduler in 'Scheduler.pas',
   DynOpenSSL in '..\..\common\openssl\DynOpenSSL.pas',
   IdSSLOpenSSLHeadersCustom in '..\..\common\openssl\IdSSLOpenSSLHeadersCustom.pas',
-  WindowsFunctions in '..\..\common\WindowsFunctions.pas';
+  WindowsFunctions in '..\..\common\WindowsFunctions.pas',
+  SetStreamData in 'SetStreamData.pas' {frmSetStreamData},
+  Constants in 'Constants.pas';
 
 {$SetPEFlags IMAGE_FILE_LARGE_ADDRESS_AWARE}
 {$SetPEOptFlags $0100} // IMAGE_DLLCHARACTERISTICS_NX_COMPAT
@@ -253,9 +255,9 @@ var
         end;
     end;
 
-    Application.CreateForm(TmodSharedData, modSharedData);
     // Create the main form if everything is setup
-    if InitAppStageTwo(TfrmWizard) and AppGlobals.WasSetup then
+    Application.CreateForm(TmodSharedData, modSharedData);
+  if InitAppStageTwo(TfrmWizard) and AppGlobals.WasSetup then
     begin
       if AppGlobals.Tray and HideMain then
       begin

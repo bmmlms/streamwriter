@@ -25,7 +25,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, SyncObjs, Logging, MessageBus, AppMessages,
-  AppData;
+  AppData, System.Types;
 
 type
   TPlayerManager = class

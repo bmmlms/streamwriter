@@ -2,7 +2,7 @@
     <PropertyGroup>
         <ProjectGuid>{73971DDF-229B-4DFE-8B85-26BF3714690B}</ProjectGuid>
         <MainSource>addon_oggenc.dpr</MainSource>
-        <ProjectVersion>18.4</ProjectVersion>
+        <ProjectVersion>18.7</ProjectVersion>
         <Basis>True</Basis>
         <Config Condition="'$(Config)'==''">Debug</Config>
         <AppType>Library</AppType>
