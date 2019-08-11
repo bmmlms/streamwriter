@@ -290,6 +290,8 @@ type
     procedure lstRegExesResize(Sender: TObject);
     procedure btnAddRegExClick(Sender: TObject);
     procedure btnRemoveRegExClick(Sender: TObject);
+    procedure lstRegExesEdited(Sender: TObject; Item: TListItem;
+      var S: string);
   private
     FSettingsType: TSettingsTypes;
     FInitialized: Boolean;
@@ -1207,6 +1209,17 @@ procedure TfrmSettings.lstRegExesChange(Sender: TObject; Item: TListItem;
   Change: TItemChange);
 begin
   btnRemoveRegEx.Enabled := lstRegExes.Selected <> nil;
+end;
+
+procedure TfrmSettings.lstRegExesEdited(Sender: TObject; Item: TListItem; var S: string);
+begin
+  if not CheckRegExp(Handle, S, lstRegExes, Item) then
+  begin
+    S := Item.Caption;
+    Exit;
+  end;
+
+  Item.Caption := S;
 end;
 
 procedure TfrmSettings.lstRegExesResize(Sender: TObject);
@@ -2173,41 +2186,12 @@ end;
 
 procedure TfrmSettings.btnAddRegExClick(Sender: TObject);
 var
-  i: Integer;
   Item: TListItem;
-  RValid, ArtistFound, TitleFound: Boolean;
-  R: TPerlRegEx;
   RegExp: string;
 begin
-  RegExp := Trim(txtRegEx.Text);
-
-  for i := 0 to lstRegExes.Items.Count - 1 do
-    if LowerCase(RegExp) = LowerCase(Trim(lstRegExes.Items[i].Caption)) then
-    begin
-      MsgBox(Handle, _('The specified regular expression is already on the list.'), _('Info'), MB_ICONINFORMATION);
-      Exit;
-    end;
-
-  RValid := False;
-  R := TPerlRegEx.Create;
-  try
-    R.RegEx := RegExp;
-    try
-      R.Compile;
-      RValid := True;
-    except end;
-  finally
-    R.Free;
-  end;
-
-  ArtistFound := (Pos('(?P<a>.*)', RegExp) > 0) or (Pos('(?P<a>.*?)', RegExp) > 0);
-  TitleFound := (Pos('(?P<t>.*)', RegExp) > 0) or (Pos('(?P<t>.*?)', RegExp) > 0);
-
-  if (RegExp = '') or (not RValid) or (not ArtistFound) or (not TitleFound) then
-  begin
-    MsgBox(Handle, _('Please supply a valid regular expression containing the groups (?P<a>.*)/(?P<a>.*?) and (?P<t>.*)/(?P<t>.*?).'), _('Info'), MB_ICONINFORMATION);
+  RegExp := txtRegEx.Text;
+  if not CheckRegExp(Handle, RegExp, lstRegExes, nil) then
     Exit;
-  end;
 
   Item := lstRegExes.Items.Add;
   Item.Caption := RegExp;

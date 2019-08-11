@@ -4,7 +4,7 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, VirtualTrees, Vcl.StdCtrls, Constants,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, VirtualTrees, Vcl.StdCtrls, Constants, AppData,
   Vcl.Buttons, Vcl.ExtCtrls, Vcl.ComCtrls, PngSpeedButton, PerlRegEx, Functions, LanguageObjects,
   MControls, TypeDefs, HomeCommunication, Generics.Collections, SharedData, SWFunctions,
   GUIFunctions;
@@ -58,6 +58,8 @@ type
     procedure lstTitlesMeasureTextWidth(Sender: TBaseVirtualTree;
       TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex;
       const Text: string; var Extent: Integer);
+    procedure lstRegExpsEdited(Sender: TObject; Item: TListItem;
+      var S: string);
   private
     FStreamID: Integer;
     FMaxTextWidth: Integer;
@@ -79,41 +81,12 @@ implementation
 
 procedure TfrmSetStreamData.btnAddRegExClick(Sender: TObject);
 var
-  i: Integer;
   Item: TListItem;
-  RValid, ArtistFound, TitleFound: Boolean;
-  R: TPerlRegEx;
   RegExp: string;
 begin
-  RegExp := Trim(txtRegEx.Text);
-
-  for i := 0 to lstRegExps.Items.Count - 1 do
-    if LowerCase(RegExp) = LowerCase(Trim(lstRegExps.Items[i].Caption)) then
-    begin
-      MsgBox(Handle, _('The specified regular expression is already on the list.'), _('Info'), MB_ICONINFORMATION);
-      Exit;
-    end;
-
-  RValid := False;
-  R := TPerlRegEx.Create;
-  try
-    R.RegEx := RegExp;
-    try
-      R.Compile;
-      RValid := True;
-    except end;
-  finally
-    R.Free;
-  end;
-
-  ArtistFound := (Pos('(?P<a>.*)', RegExp) > 0) or (Pos('(?P<a>.*?)', RegExp) > 0);
-  TitleFound := (Pos('(?P<t>.*)', RegExp) > 0) or (Pos('(?P<t>.*?)', RegExp) > 0);
-
-  if (RegExp = '') or (not RValid) or (not ArtistFound) or (not TitleFound) then
-  begin
-    MsgBox(Handle, _('Please supply a valid regular expression containing the groups (?P<a>.*)/(?P<a>.*?) and (?P<t>.*)/(?P<t>.*?).'), _('Info'), MB_ICONINFORMATION);
+  RegExp := txtRegEx.Text;
+  if not CheckRegExp(Handle, RegExp, lstRegExps, nil) then
     Exit;
-  end;
 
   Item := lstRegExps.Items.Add;
   Item.Caption := RegExp;
@@ -192,12 +165,20 @@ end;
 procedure TfrmSetStreamData.FormClose(Sender: TObject;
   var Action: TCloseAction);
 begin
+  Action := caFree;
+
+  AppGlobals.SetDataWidth := Width;
+  AppGlobals.SetDataHeight := Height;
+
   HomeComm.OnGetStreamDataReceived := nil;
 end;
 
 procedure TfrmSetStreamData.FormCreate(Sender: TObject);
 begin
   Language.Translate(Self);
+
+  Width := AppGlobals.SetDataWidth;
+  Height := AppGlobals.SetDataHeight;
 end;
 
 procedure TfrmSetStreamData.FormKeyDown(Sender: TObject; var Key: Word;
@@ -280,6 +261,19 @@ procedure TfrmSetStreamData.lstRegExpsChange(Sender: TObject;
   Item: TListItem; Change: TItemChange);
 begin
   btnRemoveRegEx.Enabled := lstRegExps.Selected <> nil;
+end;
+
+procedure TfrmSetStreamData.lstRegExpsEdited(Sender: TObject;
+  Item: TListItem; var S: string);
+begin
+  if not CheckRegExp(Handle, S, lstRegExps, Item) then
+  begin
+    S := Item.Caption;
+    Exit;
+  end;
+
+  Item.Caption := S;
+  InvalidateTree;
 end;
 
 procedure TfrmSetStreamData.lstTitlesGetImageIndex(
@@ -413,6 +407,9 @@ begin
   btnOK.Enabled := Enable;
   btnCancel.Enabled := True;
   pnlNav.Enabled := True;
+
+  btnAddRegEx.Enabled := Length(Trim(txtRegEx.Text)) >= 1;
+  btnRemoveRegEx.Enabled := lstRegExps.Selected <> nil;
 end;
 
 procedure TfrmSetStreamData.txtRegExChange(Sender: TObject);

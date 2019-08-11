@@ -142,6 +142,9 @@ type
 
     FLogFilterTypes: Integer;
 
+    FSetDataWidth: Integer;
+    FSetDataHeight: Integer;
+
     FAddonManager: TAddonManager;
     FPostProcessManager: TPostProcessManager;
     FLanguageIcons: TLanguageIcons;
@@ -307,6 +310,9 @@ type
     property ApplyEffectNormalize: Boolean read FApplyEffectNormalize write FApplyEffectNormalize;
 
     property LogFilterTypes: Integer read FLogFilterTypes write FLogFilterTypes;
+
+    property SetDataWidth: Integer read FSetDataWidth write FSetDataWidth;
+    property SetDataHeight: Integer read FSetDataHeight write FSetDataHeight;
 
     // Path to streamWriter's data-file
     property DataFile: string read FGetDataFile;
@@ -861,6 +867,9 @@ begin
 
   FStorage.Read('LogFilterTypes', FLogFilterTypes, 7);
 
+  FStorage.Read('SetDataWidth', FSetDataWidth, 670);
+  FStorage.Read('SetDataHeight', FSetDataHeight, 440);
+
   FStorage.Read('IntroShown', FIntroShown, False);
 end;
 
@@ -1211,6 +1220,9 @@ begin
   FStorage.Write('ApplyEffectNormalize', FApplyEffectNormalize);
 
   FStorage.Write('LogFilterTypes', FLogFilterTypes);
+
+  FStorage.Write('SetDataWidth', FSetDataWidth);
+  FStorage.Write('SetDataHeight', FSetDataHeight);
 
   FStorage.Write('IntroShown', FIntroShown);
 end;

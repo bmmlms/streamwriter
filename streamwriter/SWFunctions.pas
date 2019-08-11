@@ -24,13 +24,15 @@ interface
 
 uses
   Windows, SysUtils, AudioFunctions, Functions, PerlRegEx, Classes,
-  Generics.Defaults, Generics.Collections, Constants;
+  Generics.Defaults, Generics.Collections, Constants, ComCtrls,
+  LanguageObjects;
 
 function GetAutoTuneInMinKbps(AudioType: TAudioTypes; Idx: Integer): Cardinal;
 function FixPatternFilename(Filename: string): string;
 function SecureSWURLToInsecure(URL: string): string;
 function ConvertPattern(OldPattern: string): string;
 function GetBestRegEx(Title: string; RegExps: TStringList): string;
+function CheckRegExp(Handle: THandle; var RegExp: string; List: TListView; Item: TListItem): Boolean;
 
 implementation
 
@@ -241,6 +243,46 @@ begin
   finally
     REDs.Free;
   end;
+end;
+
+function CheckRegExp(Handle: THandle; var RegExp: string; List: TListView; Item: TListItem): Boolean;
+var
+  i: Integer;
+  RValid, ArtistFound, TitleFound: Boolean;
+  R: TPerlRegEx;
+begin
+  Result := False;
+  RegExp := Trim(RegExp);
+
+  for i := 0 to List.Items.Count - 1 do
+    if (LowerCase(RegExp) = LowerCase(Trim(List.Items[i].Caption))) and (List.Items[i] <> Item) then
+    begin
+      MsgBox(Handle, _('The specified regular expression is already on the list.'), _('Info'), MB_ICONINFORMATION);
+      Exit;
+    end;
+
+  RValid := False;
+  R := TPerlRegEx.Create;
+  try
+    R.RegEx := RegExp;
+    try
+      R.Compile;
+      RValid := True;
+    except end;
+  finally
+    R.Free;
+  end;
+
+  ArtistFound := (Pos('(?P<a>.*)', RegExp) > 0) or (Pos('(?P<a>.*?)', RegExp) > 0);
+  TitleFound := (Pos('(?P<t>.*)', RegExp) > 0) or (Pos('(?P<t>.*?)', RegExp) > 0);
+
+  if (RegExp = '') or (not RValid) or (not ArtistFound) or (not TitleFound) then
+  begin
+    MsgBox(Handle, _('Please supply a valid regular expression containing the groups (?P<a>.*)/(?P<a>.*?) and (?P<t>.*)/(?P<t>.*?).'), _('Info'), MB_ICONINFORMATION);
+    Exit;
+  end;
+
+  Result := True;
 end;
 
 end.
