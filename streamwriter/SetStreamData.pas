@@ -239,6 +239,8 @@ begin
   InvalidateTree;
 
   SetState(True);
+
+  lstTitles.ApplyFocus;
 end;
 
 procedure TfrmSetStreamData.InvalidateTree;

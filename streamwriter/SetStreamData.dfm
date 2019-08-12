@@ -133,7 +133,7 @@ object frmSetStreamData: TfrmSetStreamData
     Padding.Top = 4
     Padding.Right = 4
     Padding.Bottom = 4
-    TabOrder = 0
+    TabOrder = 6
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -153,7 +153,7 @@ object frmSetStreamData: TfrmSetStreamData
       Caption = '&OK'
       DoubleBuffered = False
       Layout = blGlyphRight
-      TabOrder = 0
+      TabOrder = 1
       OnClick = btnOKClick
     end
     object btnCancel: TBitBtn
@@ -165,7 +165,7 @@ object frmSetStreamData: TfrmSetStreamData
       Caption = '&Cancel'
       DoubleBuffered = False
       Layout = blGlyphRight
-      TabOrder = 1
+      TabOrder = 0
       OnClick = btnCancelClick
     end
   end
@@ -183,7 +183,7 @@ object frmSetStreamData: TfrmSetStreamData
     Header.Font.Style = []
     Header.MainColumn = -1
     Images = modSharedData.imgImages
-    TabOrder = 1
+    TabOrder = 0
     OnGetText = lstTitlesGetText
     OnGetImageIndex = lstTitlesGetImageIndex
     OnMeasureItem = lstTitlesMeasureItem
@@ -201,7 +201,7 @@ object frmSetStreamData: TfrmSetStreamData
     EditLabel.Caption = 'Regular expression to add:'
     EditLabel.Layout = tlBottom
     MaxLength = 255
-    TabOrder = 2
+    TabOrder = 3
     OnChange = txtRegExChange
   end
   object btnAddRegEx: TButton
@@ -211,7 +211,7 @@ object frmSetStreamData: TfrmSetStreamData
     Height = 27
     Anchors = [akRight, akBottom]
     Caption = '&Add'
-    TabOrder = 3
+    TabOrder = 4
     OnClick = btnAddRegExClick
   end
   object btnRemoveRegEx: TButton
@@ -221,7 +221,7 @@ object frmSetStreamData: TfrmSetStreamData
     Height = 27
     Anchors = [akRight, akBottom]
     Caption = '&Remove'
-    TabOrder = 4
+    TabOrder = 5
     OnClick = btnRemoveRegExClick
   end
   object lstRegExps: TListView
@@ -237,7 +237,7 @@ object frmSetStreamData: TfrmSetStreamData
     RowSelect = True
     ShowColumnHeaders = False
     SmallImages = modSharedData.imgImages
-    TabOrder = 5
+    TabOrder = 2
     ViewStyle = vsReport
     OnChange = lstRegExpsChange
     OnEdited = lstRegExpsEdited
@@ -256,7 +256,7 @@ object frmSetStreamData: TfrmSetStreamData
     RowSelect = True
     ShowColumnHeaders = False
     SmallImages = modSharedData.imgImages
-    TabOrder = 6
+    TabOrder = 1
     ViewStyle = vsReport
   end
 end
