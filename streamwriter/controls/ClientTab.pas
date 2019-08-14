@@ -156,7 +156,7 @@ type
     procedure ClientManagerSecondsReceived(Sender: TObject);
 
     procedure FClientViewChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
-    procedure FClientViewDblClick(Sender: TObject);
+    procedure FClientViewNodeDblClick(Sender: TBaseVirtualTree; const HitInfo: THitInfo);
     procedure FClientViewKeyPress(Sender: TObject; var Key: Char);
     procedure FClientViewKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string;
@@ -803,7 +803,7 @@ begin
   FClientView.Visible := True;
   FClientView.Images := modSharedData.imgClients;
   FClientView.OnChange := FClientViewChange;
-  FClientView.OnDblClick := FClientViewDblClick;
+  FClientView.OnNodeDblClick := FClientViewNodeDblClick;
   FClientView.OnKeyPress := FClientViewKeyPress;
   FClientView.OnKeyDown := FClientViewKeyDown;
   FClientView.OnStartStreaming := FClientViewStartStreaming;
@@ -1333,39 +1333,26 @@ begin
 }
 end;
 
-procedure TClientTab.FClientViewKeyPress(Sender: TObject;
-  var Key: Char);
+procedure TClientTab.FClientViewKeyPress(Sender: TObject; var Key: Char);
+var
+  Dummy: THitInfo;
 begin
   if (Key = #13) or (Key = #32) then
   begin
-    FClientViewDblClick(FClientView);
+    Dummy.HitPositions := [hiOnItem];
+    FClientViewNodeDblClick(FClientView, Dummy);
     Key := #0;
   end;
 end;
 
-procedure TClientTab.FClientViewChange(Sender: TBaseVirtualTree;
-  Node: PVirtualNode);
-var
-  Clients: TNodeDataArray;
-begin
-  if Assigned(OnUpdateButtons) then
-    OnUpdateButtons(Self);
-  ShowInfo;
-
-  if FClientView.SelectedCount = 1 then
-  begin
-    Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
-    if Length(Clients) = 1 then
-      FSideBar.FDebugView.ShowDebug(Clients[0].Client);
-  end else
-    FSideBar.FDebugView.ShowDebug(nil);
-end;
-
-procedure TClientTab.FClientViewDblClick(Sender: TObject);
+procedure TClientTab.FClientViewNodeDblClick(Sender: TBaseVirtualTree; const HitInfo: THitInfo);
 var
   Clients: TNodeDataArray;
   Res: TMayConnectResults;
 begin
+  if hiOnItemButton in HitInfo.HitPositions then
+    Exit;
+
   Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
   if Length(Clients) = 1 then
   begin
@@ -1399,6 +1386,24 @@ begin
         FActionTuneInStream.Execute;
     end;
   end;
+end;
+
+procedure TClientTab.FClientViewChange(Sender: TBaseVirtualTree;
+  Node: PVirtualNode);
+var
+  Clients: TNodeDataArray;
+begin
+  if Assigned(OnUpdateButtons) then
+    OnUpdateButtons(Self);
+  ShowInfo;
+
+  if FClientView.SelectedCount = 1 then
+  begin
+    Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
+    if Length(Clients) = 1 then
+      FSideBar.FDebugView.ShowDebug(Clients[0].Client);
+  end else
+    FSideBar.FDebugView.ShowDebug(nil);
 end;
 
 function TClientTab.StartStreaming(Streams: TStartStreamingInfoArray; Action: TStreamOpenActions; HitNode: PVirtualNode;

@@ -145,7 +145,6 @@ type
     procedure DoHeaderClick(const HitInfo: TVTHeaderHitInfo); override;
     procedure KeyPress(var Key: Char); override;
     procedure Paint; override;
-    procedure DblClick; override;
     function DoIncrementalSearch(Node: PVirtualNode;
       const Text: string): Integer; override;
     procedure Resize; override;
@@ -157,6 +156,7 @@ type
       ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
+    procedure DoNodeDblClick(const HitInfo: THitInfo); override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -713,14 +713,6 @@ begin
   end;
 end;
 
-procedure TChartsTree.DblClick;
-begin
-  inherited;
-
-  if (SelectedCount = 1) and (FocusedNode <> nil) then
-    ExecDefaultAction;
-end;
-
 destructor TChartsTree.Destroy;
 begin
   MsgBus.RemoveSubscriber(MessageReceived);
@@ -986,6 +978,17 @@ begin
   inherited;
 
   NodeHeight := GetTextSize('Wyg', Font).cy + 6;
+end;
+
+procedure TChartsTree.DoNodeDblClick(const HitInfo: THitInfo);
+begin
+  inherited;
+
+  if hiOnItemButton in HitInfo.HitPositions then
+    Exit;
+
+  if (SelectedCount = 1) and (FocusedNode <> nil) then
+    ExecDefaultAction;
 end;
 
 procedure TChartsTree.ExecDefaultAction;

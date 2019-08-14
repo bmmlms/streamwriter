@@ -348,7 +348,6 @@ type
       var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
     procedure DoHeaderClick(const HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
-    procedure HandleMouseDblClick(var Message: TWMMouse; const HitInfo: THitInfo); override;
     procedure DoDragging(P: TPoint); override;
     function DoIncrementalSearch(Node: PVirtualNode;
       const Text: string): Integer; override;
@@ -365,6 +364,7 @@ type
       var NodeHeight: Integer); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
+    procedure DoNodeDblClick(const HitInfo: THitInfo); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -2606,6 +2606,23 @@ begin
     MsgBox(GetParentForm(Self).Handle, _('The file could not be renamed. Make sure that it is not in use and that no other file with the same name already exists.'), _('Info'), MB_ICONINFORMATION);
 end;
 
+procedure TSavedTree.DoNodeDblClick(const HitInfo: THitInfo);
+var
+  Tracks: TTrackInfoArray;
+begin
+  inherited;
+
+  if hiOnItemButton in HitInfo.HitPositions then
+    Exit;
+
+  if HitInfo.HitNode <> nil then
+  begin
+    Tracks := GetSelected;
+    if Length(Tracks) = 1 then
+      FPopupMenu.FItemPlay.Click;
+  end;
+end;
+
 procedure TSavedTree.DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal);
 var
   NodeData: PSavedNodeData;
@@ -2961,20 +2978,6 @@ begin
   end;
 end;
 
-procedure TSavedTree.HandleMouseDblClick(var Message: TWMMouse;
-  const HitInfo: THitInfo);
-var
-  Tracks: TTrackInfoArray;
-begin
-  inherited;
-  if HitInfo.HitNode <> nil then
-  begin
-    Tracks := GetSelected;
-    if Length(Tracks) = 1 then
-      FPopupMenu.FItemPlay.Click;
-  end;
-end;
-
 procedure TSavedTree.KeyDown(var Key: Word; Shift: TShiftState);
 begin
   inherited;
@@ -3011,6 +3014,7 @@ begin
       begin
         ClearSelection;
         SelectNodes(Node, Node, False);
+        FocusedNode := Node;
         ScrollIntoView(Node, True);
         Exit;
       end;
