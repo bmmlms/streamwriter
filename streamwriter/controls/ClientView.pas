@@ -780,6 +780,7 @@ begin
       begin
         ClearSelection;
         SelectNodes(Node, Node, False);
+        FocusedNode := Node;
         ScrollIntoView(Node, True);
         Exit;
       end;
