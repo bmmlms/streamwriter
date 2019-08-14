@@ -255,6 +255,8 @@ var
         end;
     end;
 
+  Application.CreateForm(TmodSharedData, modSharedData);
+
   // Create the main form if everything is setup
   if InitAppStageTwo(TfrmWizard) and AppGlobals.WasSetup then
     begin
@@ -263,7 +265,6 @@ var
         Application.ShowMainForm := False;
       end;
 
-      Application.CreateForm(TmodSharedData, modSharedData);
       Application.CreateForm(TfrmStreamWriterMain, frmStreamWriterMain);
       //Application.CreateForm(TfrmHomeTest, frmHomeTest);
     end;
