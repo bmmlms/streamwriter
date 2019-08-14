@@ -702,6 +702,7 @@ begin
   FFinalized.Parent := Self;
   FFinalized.Hint := 'Finalized';
   FFinalized.ImageIndex := 58;
+  FFinalized.Style := tbsCheck;
 
   FEditTags := TToolButton.Create(Self);
   FEditTags.Parent := Self;
@@ -1496,6 +1497,7 @@ begin
       AllFinalized := False;
       Break;
     end;
+
   // Das muss so, sonst klappt das .Down := AllFinalized nicht, wenn sie
   // vorher Disabled waren, vor dem Enable da oben...
   FToolbar.FFinalized.Down := False;

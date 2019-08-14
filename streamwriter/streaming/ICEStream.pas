@@ -260,36 +260,35 @@ implementation
 
 { TICEStream }
 
+// Das hier ist genau so im Server. Ändert man an einem Programm was
+// muss es im anderen Programm nachgezogen werden!
 function TICEStream.AdjustDisplayTitle(Title: string): string;
 var
   i: Integer;
   C: Char;
   NextUpper: Boolean;
 begin
-  // Das hier ist genau so im Server. Ändert man an einem Programm was
-  // muss es im anderen Programm nachgezogen werden!
-  // ´ durch ' ersetzen
-  Title := Functions.RegExReplace('´', '''', Title);
+  // ´ und ` durch ' ersetzen
+  Title := Functions.RegExReplace('[´`]', '''', Title);
+
+  // Featuring-Dinge fitmachen
+  Title := Functions.RegExReplace('(\s+|^|\()(ft\.?|feat)(\s+|$|\))', '$1 Feat. $3', Title);
+
+  // Mehrere ' hintereinander zu einem machen ({2,} und kein + ist wichtig, sonst gibt es in RegExReplace eine Endlose Schleife)
+  Title := Functions.RegExReplace('''{2,}', '''', Title);
+
+  // dont, cant, wont, etc ersetzen
+  Title := Functions.RegExReplace('(\s+|^|\()(won|can|don)([\s´`]{0,1}t)(\s+|$|\))', '$1 $2''t $4', Title);
+
   // _ durch ' ' ersetzen
   Title := Functions.RegExReplace('_', ' ', Title);
-  // Featuring-dinge fitmachen
-  Title := Functions.RegExReplace('\sft\s', ' Feat. ', Title);
-  Title := Functions.RegExReplace('\(ft\s', ' Feat. ', Title);
-  Title := Functions.RegExReplace('\sft\.\s', ' Feat. ', Title);
-  Title := Functions.RegExReplace('\(ft\.\s', ' Feat. ', Title);
-  Title := Functions.RegExReplace('\sfeat\s', ' Feat. ', Title);
-  Title := Functions.RegExReplace('\(feat\s', ' Feat. ', Title);
-  // Mehrere ' zu einem machen
-  Title := Functions.RegExReplace('''+(?='')', '', Title);
-  // Mehrere leertasten hintereinander zu einer machen
-  Title := Functions.RegExReplace(' +(?= )', '', Title);
+
+  // Mehrere Leertasten hintereinander zu einer machen
+  Title := Functions.RegExReplace('\s{2,}', ' ', Title);
+
   // Leertasten nach Klammer auf bzw. vor Klammer zu entfernen
-  Title := Functions.RegExReplace('\( ', '(', Title);
-  Title := Functions.RegExReplace(' \)', ')', Title);
-  // dont, cant, wont, etc ersetzen
-  Title := Functions.RegExReplace('\sdont\s|\sdont$', ' don''t ', Title);
-  Title := Functions.RegExReplace('\swont\s|\swont$', ' won''t ', Title);
-  Title := Functions.RegExReplace('\scant\s|\scant$', ' can''t ', Title);
+  Title := Functions.RegExReplace('\(\s+', '(', Title);
+  Title := Functions.RegExReplace('\s+\)', ')', Title);
 
   Title := Trim(Title);
 
