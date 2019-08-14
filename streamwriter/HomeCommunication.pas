@@ -242,7 +242,7 @@ begin
   {$IFDEF NOSSL}
   inherited Create('streamwriter.org', 7085, TSocketStream.Create, False, AppGlobals.CheckCertificate);
   {$ELSE}
-  inherited Create('streamwriter.org', 7086, TSocketStream.Create, True, AppGlobals.CheckCertificate);
+  inherited Create('gaia', 7085, TSocketStream.Create, False, AppGlobals.CheckCertificate);
   {$ENDIF}
 
   UseSynchronize := True;

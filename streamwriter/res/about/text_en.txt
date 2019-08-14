@@ -72,12 +72,6 @@ Virtual Treeview
 
 
 
-&IMG1
-
-
-
-
-
 
 
 
@@ -88,7 +82,6 @@ Virtual Treeview
 D1734FA178BF7D5AE50CB1AD54442494
 
 
-"bin enger natürlich nur versteht sich doch."
 
 
 
