@@ -3387,6 +3387,7 @@ begin
   FPause.Parent := Self;
   FPause.Hint := 'Pause';
   FPause.ImageIndex := 39;
+  FPause.Style := tbsCheck;
 
   FPlay := TToolButton.Create(Self);
   FPlay.Parent := Self;

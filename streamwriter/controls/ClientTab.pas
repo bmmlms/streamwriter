@@ -564,9 +564,6 @@ begin
   end else
     if Assigned(FOnPlayStarted) then
       FOnPlayStarted(Self);
-
-  if Assigned(FOnUpdateButtons) then
-    FOnUpdateButtons(Sender);
 end;
 
 procedure TClientTab.ActionPauseExecute(Sender: TObject);
@@ -595,9 +592,6 @@ begin
         FOnPlayStarted(Self);
     end;
   end;
-
-  if Assigned(FOnUpdateButtons) then
-    FOnUpdateButtons(Sender);
 end;
 
 procedure TClientTab.ActionPlayStopExecute(Sender: TObject);

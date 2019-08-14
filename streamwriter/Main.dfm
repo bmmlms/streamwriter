@@ -79,6 +79,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Left = 133
       Top = 0
       Action = actPause
+      Style = tbsCheck
     end
     object cmdStopPlay: TToolButton
       Left = 156
