@@ -147,19 +147,36 @@ begin
 end;
 
 function GetBestRegEx(Title: string; RegExps: TStringList): string;
+const
+  BadChars: array[0..3] of string = (':', '-', '|', '*');
 type
   TRegExData = record
     RegEx: string;
     BadWeight: Integer;
   end;
+function GetBadWeight(Text: string): Integer;
 var
-  i, n: Integer;
+  n: Integer;
+begin
+  Result := 0;
+
+  Text := Trim(Text);
+  if Length(Text) = 0 then
+    Exit(3);
+
+  for n := 0 to High(BadChars) do
+    if Pos(BadChars[n], Text) > 0 then
+      Result := Result + 2;
+
+  if ContainsRegEx('(\d{2,})', Text) then
+    Result := Result + 2;
+end;
+var
+  i: Integer;
   R: TPerlRegEx;
-  MArtist, MTitle, MAlbum, DefaultRegEx: string;
+  DefaultRegEx: string;
   RED: TRegExData;
   REDs: TList<TRegExData>;
-const
-  BadChars: array[0..3] of string = (':', '-', '|', '*');
 begin
   Result := DefaultRegEx;
 
@@ -172,10 +189,6 @@ begin
       if RED.RegEx = DEFAULT_TITLE_REGEXP then
         RED.BadWeight := 1;
 
-      MArtist := '';
-      MTitle := '';
-      MAlbum := '';
-
       R := TPerlRegEx.Create;
       try
         R.Options := R.Options + [preCaseLess];
@@ -184,45 +197,31 @@ begin
         try
           if R.Match then
           begin
+
             try
               if R.NamedGroup('a') > 0 then
-              begin
-                MArtist := Trim(R.Groups[R.NamedGroup('a')]);
-                for n := 0 to High(BadChars) do
-                  if Pos(BadChars[n], MArtist) > 0 then
-                    RED.BadWeight := RED.BadWeight + 2;
-                if ContainsRegEx('(\d{2})', MArtist) then
-                  RED.BadWeight := RED.BadWeight + 2;
-              end
-                else RED.BadWeight := RED.BadWeight + 3;
+                RED.BadWeight := RED.BadWeight + GetBadWeight(Trim(R.Groups[R.NamedGroup('a')]))
+              else
+                RED.BadWeight := RED.BadWeight + 3;
             except end;
+
             try
               if R.NamedGroup('t') > 0 then
-              begin
-                MTitle := Trim(R.Groups[R.NamedGroup('t')]);
-                for n := 0 to High(BadChars) do
-                  if Pos(BadChars[n], MTitle) > 0 then
-                    RED.BadWeight := RED.BadWeight + 2;
-                if ContainsRegEx('(\d{2})', MTitle) then
-                  RED.BadWeight := RED.BadWeight + 2;
-              end
-                else RED.BadWeight := RED.BadWeight + 3;
+                RED.BadWeight := RED.BadWeight + GetBadWeight(Trim(R.Groups[R.NamedGroup('t')]))
+              else
+                RED.BadWeight := RED.BadWeight + 3;
             except end;
+
             try
               if R.NamedGroup('l') > 0 then
               begin
                 RED.BadWeight := RED.BadWeight - 6;
-                MAlbum := Trim(R.Groups[R.NamedGroup('l')]);
-                for n := 0 to High(BadChars) do
-                  if Pos(BadChars[n], MAlbum) > 0 then
-                    RED.BadWeight := RED.BadWeight + 2;
-              end;
+                RED.BadWeight := RED.BadWeight + GetBadWeight(Trim(R.Groups[R.NamedGroup('l')]))
+              end else
+                RED.BadWeight := RED.BadWeight + 10;
             except end;
-
-            if MAlbum = '' then
-              RED.BadWeight := RED.BadWeight + 10;
           end else
-            RED.BadWeight := RED.BadWeight + 50;
+            RED.BadWeight := RED.BadWeight + 1000;
 
           REDs.Add(RED);
         except end;

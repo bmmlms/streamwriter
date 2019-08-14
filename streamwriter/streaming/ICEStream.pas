@@ -274,8 +274,8 @@ begin
   // Featuring-Dinge fitmachen
   Title := Functions.RegExReplace('(\s+|^|\()(ft\.?|feat)(\s+|$|\))', '$1 Feat. $3', Title);
 
-  // Mehrere ' hintereinander zu einem machen ({2,} und kein + ist wichtig, sonst gibt es in RegExReplace eine Endlose Schleife)
-  Title := Functions.RegExReplace('''{2,}', '''', Title);
+  // Mehrere ' hintereinander zu einem machen
+  Title := Functions.RegExReplace('''+', '''', Title);
 
   // dont, cant, wont, etc ersetzen
   Title := Functions.RegExReplace('(\s+|^|\()(won|can|don)([\s´`]{0,1}t)(\s+|$|\))', '$1 $2''t $4', Title);
@@ -284,7 +284,7 @@ begin
   Title := Functions.RegExReplace('_', ' ', Title);
 
   // Mehrere Leertasten hintereinander zu einer machen
-  Title := Functions.RegExReplace('\s{2,}', ' ', Title);
+  Title := Functions.RegExReplace('\s+', ' ', Title);
 
   // Leertasten nach Klammer auf bzw. vor Klammer zu entfernen
   Title := Functions.RegExReplace('\(\s+', '(', Title);
@@ -659,7 +659,7 @@ begin
       FSaveAllowedTitle := Title;
       FSaveAllowed := True;
 
-      RegEx := SWFunctions.GetBestRegEx(Title, FSettings.RegExes);
+      RegEx := GetBestRegEx(Title, FSettings.RegExes);
       ParseTitle(Title, RegEx, FSavedArtist, FSavedTitle, FSavedAlbum);
 
       if (FSavedArtist <> '') and (FSavedTitle <> '') then
@@ -1220,7 +1220,7 @@ begin
             begin
               NewDisplayTitle := Title;
 
-              ParseTitle(Title, SWFunctions.GetBestRegEx(Title, FSettings.RegExes), ParsedArtist, ParsedTitle, ParsedAlbum);
+              ParseTitle(Title, GetBestRegEx(Title, FSettings.RegExes), ParsedArtist, ParsedTitle, ParsedAlbum);
               if (ParsedArtist <> '') and (ParsedTitle <> '') and (ParsedAlbum <> '') then
                 NewDisplayTitle := ParsedArtist + ' - ' + ParsedTitle + ' - ' + ParsedAlbum
               else if (ParsedArtist <> '') and (ParsedTitle <> '') then

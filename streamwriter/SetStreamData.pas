@@ -361,7 +361,7 @@ begin
     AllRegExps.AddStrings(RegExps);
     AllRegExps.AddStrings(OtherRegExps);
 
-    RegExp := SWFunctions.GetBestRegEx(NodeData.Title, AllRegExps);
+    RegExp := GetBestRegEx(NodeData.Title, AllRegExps);
 
     R := TPerlRegEx.Create;
     R.Options := R.Options + [preCaseLess];
