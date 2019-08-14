@@ -9,6 +9,7 @@ set "CURL=C:\Program Files\curl.exe"
 set "CWD=%cd%"
 set "BUILDDIR=%CWD%\build"
 set "SWDIR=%BUILDDIR%\streamwriter"
+set "OUTDIR=%CWD%\bin"
 
 call %rsvars%
 
@@ -84,8 +85,19 @@ goto end
 
   exit /b 0
 
+:copyfiles
+  if not exist "%OUTDIR%" mkdir "%OUTDIR%"
+
+  copy /Y "%SWDIR%\bin\streamwriter.zip" "%OUTDIR%\streamwriter.zip"
+  if %ERRORLEVEL% GEQ 1 exit /B 1
+
+  copy /Y "%SWDIR%\setup\output\streamwriter_setup.exe" "%OUTDIR%\streamwriter_setup.exe"
+  if %ERRORLEVEL% GEQ 1 exit /B 1
+
+  exit /b 0
+
 :upload
-  cd "%SWDIR%\bin"
+  cd "%OUTDIR%"
 
   "%CURL%" -k -f -S -o nul -F "file=@streamwriter.zip" "https://streamwriter.org/de/downloads/svnbuild/?download=67&revision=%REVISION%"
   if %ERRORLEVEL% GEQ 1 exit /B 1
@@ -109,6 +121,9 @@ goto end
   if %ERRORLEVEL% GEQ 1 exit /b 1
 
   call :setup
+  if %ERRORLEVEL% GEQ 1 exit /b 1
+
+  call :copyfiles
   if %ERRORLEVEL% GEQ 1 exit /b 1
 
   call :upload
