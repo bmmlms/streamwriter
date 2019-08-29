@@ -913,7 +913,7 @@ begin
   FTopLeftPanel := TPanel.Create(Self);
   FTopLeftPanel.Parent := FTopPanel;
   FTopLeftPanel.Align := alLeft;
-  FTopLeftPanel.Width := 460;
+  FTopLeftPanel.Width := MulDiv(460, Screen.PixelsPerInch, 96);
   FTopLeftPanel.Padding.Top := 1;
   FTopLeftPanel.BevelOuter := bvNone;
 
