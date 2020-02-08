@@ -31,7 +31,7 @@ uses
   Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
   LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions,
   AddonManager, PostProcessManager, Logging, Base64, AudioFunctions, TypeDefs,
-  Messages, DataManager, SWFunctions, CommandLine;
+  Messages, DataManager, SWFunctions, CommandLine, Graphics;
 
 type
   // Do not change the order of items in the following enums!
@@ -126,6 +126,12 @@ type
     FLogHeaderWidth: TIntArray;
     FLogHeaderPosition: TIntArray;
     FLogCols: Integer;
+
+    FNodeColorsLoaded: Boolean;
+    FNodeTextColor: TColor;
+    FNodeTextColorSelected: TColor;
+    FNodeTextColorSelectedFocused: TColor;
+    FNodeBackgroundColor: TColor;
 
     FBrowserSortType: Integer;
     FLastUsedDataVersion: Integer;
@@ -293,6 +299,12 @@ type
     property LogHeaderWidth: TIntArray read FLogHeaderWidth write FLogHeaderWidth;
     property LogHeaderPosition: TIntArray read FLogHeaderPosition write FLogHeaderPosition;
     property LogCols: Integer read FLogCols write FLogCols;
+
+    property NodeColorsLoaded: Boolean read FNodeColorsLoaded write FNodeColorsLoaded;
+    property NodeBackgroundColor: TColor read FNodeBackgroundColor write FNodeBackgroundColor;
+    property NodeTextColor: TColor read FNodeTextColor write FNodeTextColor;
+    property NodeTextColorSelected: TColor read FNodeTextColorSelected write FNodeTextColorSelected;
+    property NodeTextColorSelectedFocused: TColor read FNodeTextColorSelectedFocused write FNodeTextColorSelectedFocused;
 
     property BrowserSortType: Integer read FBrowserSortType write FBrowserSortType;
     // Last used version of the data-file format
@@ -836,6 +848,17 @@ begin
   FLogCols := FLogCols or (1 shl 0);
   FLogCols := FLogCols or (1 shl 3);
 
+  FStorage.Read('NodeTextColor', Integer(FNodeTextColor), $7F000000, 'Display');
+  FStorage.Read('NodeTextColorSelected', Integer(FNodeTextColorSelected), $7F000000, 'Display');
+  FStorage.Read('NodeTextColorSelectedFocused', Integer(FNodeTextColorSelectedFocused), $7F000000, 'Display');
+  FStorage.Read('NodeBackgroundColor', Integer(FNodeBackgroundColor), $7F000000, 'Display');
+
+  if (FNodeTextColor <> $7F000000) and (FNodeTextColorSelected <> $7F000000) and (FNodeTextColorSelectedFocused <> $7F000000) and
+     (FNodeBackgroundColor <> $7F000000) then
+  begin
+    FNodeColorsLoaded := True;
+  end;
+
   FStorage.Read('BrowserSortType', FBrowserSortType, 3);
 
   if (DefaultActionTmp > Ord(High(TClientActions))) or
@@ -1203,6 +1226,11 @@ begin
   for i := 0 to High(FLogHeaderPosition) do
     FStorage.Write('LogHeaderPosition' + IntToStr(i), FLogHeaderPosition[i], 'Cols');
   FStorage.Write('LogCols', FLogCols, 'Cols');
+
+  FStorage.Write('NodeBackgroundColor', Integer(FNodeBackgroundColor), 'Display');
+  FStorage.Write('NodeTextColor', Integer(FNodeTextColor), 'Display');
+  FStorage.Write('NodeTextColorSelected', Integer(FNodeTextColorSelected), 'Display');
+  FStorage.Write('NodeTextColorSelectedFocused', Integer(FNodeTextColorSelectedFocused), 'Display');
 
   FStorage.Write('BrowserSortType', FBrowserSortType);
 

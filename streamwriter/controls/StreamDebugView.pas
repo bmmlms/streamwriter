@@ -36,13 +36,14 @@ type
     procedure FSetClient(Value: TICEClient);
   protected
     procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
     procedure Resize; override;
-    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
-      var NodeHeight: Integer); override;
+    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
     function DoInitChildren(Node: PVirtualNode; var ChildCount: Cardinal): Boolean; override;
+    function DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean; override;
+    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect); override;
+    procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
   public
     constructor Create(AOwner: TComponent); override;
     procedure Copy;
@@ -332,6 +333,49 @@ begin
       ChildCount := 0;
   end;
   Result := True;
+end;
+
+function TDebugView.DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean;
+begin
+  inherited;
+
+  Result := True;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
+
+  Canvas.FillRect(R);
+end;
+
+procedure TDebugView.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
+begin
+  inherited;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
+
+  Canvas.FillRect(ItemRect);
+end;
+
+procedure TDebugView.DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType);
+begin
+  inherited;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  if Focused and Selected[Node] then
+    Canvas.Font.Color := AppGlobals.NodeTextColorSelectedFocused
+  else if Selected[Node] then
+    Canvas.Font.Color := AppGlobals.NodeTextColorSelected
+  else
+    Canvas.Font.Color := AppGlobals.NodeTextColor;
 end;
 
 procedure TDebugView.DoFreeNode(Node: PVirtualNode);

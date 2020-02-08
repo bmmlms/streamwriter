@@ -4,8 +4,8 @@ object frmSettings: TfrmSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Settings'
-  ClientHeight = 480
-  ClientWidth = 630
+  ClientHeight = 975
+  ClientWidth = 1324
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -16,6 +16,7 @@ object frmSettings: TfrmSettings
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnActivate = FormActivate
+  OnCreate = FormCreate
   OnResize = FormResize
   OnShow = FormShow
   PixelsPerInch = 96
@@ -1768,6 +1769,124 @@ object frmSettings: TfrmSettings
       TabOrder = 3
     end
   end
+  object pnlDisplay: TPanel
+    Left = 603
+    Top = 683
+    Width = 293
+    Height = 238
+    TabOrder = 14
+    Visible = False
+    DesignSize = (
+      293
+      238)
+    object PngSpeedButton1: TPngSpeedButton
+      Left = 264
+      Top = 148
+      Width = 25
+      Height = 21
+      Hint = 'Browse...'
+      Anchors = [akTop, akRight]
+      Flat = True
+      Layout = blGlyphRight
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = btnBrowseLogFileClick
+      PngImage.Data = {
+        89504E470D0A1A0A0000000D4948445200000001000000010802000000907753
+        DE000000097048597300000B1300000B1301009A9C180000000774494D4507DF
+        031C0C0C1A2A1ED9BF0000001D69545874436F6D6D656E740000000000437265
+        6174656420776974682047494D50642E65070000000C4944415478DA63FCFFFF
+        3F00060202FFB792D1D40000000049454E44AE426082}
+    end
+    object Label23: TLabel
+      Left = 36
+      Top = 52
+      Width = 48
+      Height = 13
+      Caption = 'Text color'
+    end
+    object Label24: TLabel
+      Left = 36
+      Top = 80
+      Width = 99
+      Height = 13
+      Caption = 'Text color (selected)'
+    end
+    object Label25: TLabel
+      Left = 36
+      Top = 108
+      Width = 144
+      Height = 13
+      Caption = 'Text color (selected, focused)'
+    end
+    object Label26: TLabel
+      Left = 36
+      Top = 24
+      Width = 82
+      Height = 13
+      Caption = 'Background color'
+    end
+    object Label29: TLabel
+      Left = 4
+      Top = 0
+      Width = 93
+      Height = 13
+      Caption = 'Colors of list views:'
+    end
+    object pnlNodeTextColor: TPanel
+      Left = 4
+      Top = 48
+      Width = 25
+      Height = 21
+      BevelKind = bkFlat
+      BevelOuter = bvNone
+      ParentBackground = False
+      TabOrder = 0
+      OnClick = pnlNodeColorClick
+    end
+    object pnlNodeTextColorSelected: TPanel
+      Left = 4
+      Top = 76
+      Width = 25
+      Height = 21
+      BevelKind = bkFlat
+      BevelOuter = bvNone
+      ParentBackground = False
+      TabOrder = 1
+      OnClick = pnlNodeColorClick
+    end
+    object pnlNodeTextColorSelectedFocused: TPanel
+      Left = 4
+      Top = 104
+      Width = 25
+      Height = 21
+      BevelKind = bkFlat
+      BevelOuter = bvNone
+      ParentBackground = False
+      TabOrder = 2
+      OnClick = pnlNodeColorClick
+    end
+    object pnlNodeBackgroundColor: TPanel
+      Left = 4
+      Top = 20
+      Width = 25
+      Height = 21
+      BevelKind = bkFlat
+      BevelOuter = bvNone
+      ParentBackground = False
+      TabOrder = 3
+      OnClick = pnlNodeColorClick
+    end
+    object btnResetColor: TButton
+      Left = 4
+      Top = 140
+      Width = 93
+      Height = 27
+      Caption = '&Reset'
+      TabOrder = 4
+      OnClick = btnResetColorClick
+    end
+  end
   object dlgOpen: TOpenDialog
     Filter = 'Executable files (*.exe, *.bat)|*.exe;*.bat'
     Options = [ofHideReadOnly, ofEnableSizing, ofDontAddToRecent]
@@ -2018,5 +2137,10 @@ object frmSettings: TfrmSettings
     Options = [ofOverwritePrompt, ofHideReadOnly, ofPathMustExist, ofEnableSizing, ofDontAddToRecent]
     Left = 548
     Top = 320
+  end
+  object dlgColor: TColorDialog
+    Options = [cdFullOpen]
+    Left = 824
+    Top = 832
   end
 end

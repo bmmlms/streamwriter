@@ -344,27 +344,26 @@ type
     procedure MessageReceived(Msg: TMessageBase);
   protected
     procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
     procedure DoHeaderClick(const HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     procedure DoDragging(P: TPoint); override;
-    function DoIncrementalSearch(Node: PVirtualNode;
-      const Text: string): Integer; override;
+    function DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer; override;
     procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string); override;
     procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
     procedure Change(Node: PVirtualNode); override;
-    procedure PaintImage(var PaintInfo: TVTPaintInfo;
-      ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
+    procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     procedure DoEdit; override;
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure KeyPress(var Key: Char); override;
-    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
-      var NodeHeight: Integer); override;
+    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
     procedure DoNodeDblClick(const HitInfo: THitInfo); override;
+    function DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean; override;
+    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect); override;
+    procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -2623,6 +2622,49 @@ begin
     if Length(Tracks) = 1 then
       FPopupMenu.FItemPlay.Click;
   end;
+end;
+
+function TSavedTree.DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean;
+begin
+  inherited;
+
+  Result := True;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
+
+  Canvas.FillRect(R);
+end;
+
+procedure TSavedTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
+begin
+  inherited;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
+
+  Canvas.FillRect(ItemRect);
+end;
+
+procedure TSavedTree.DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType);
+begin
+  inherited;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  if Focused and Selected[Node] then
+    Canvas.Font.Color := AppGlobals.NodeTextColorSelectedFocused
+  else if Selected[Node] then
+    Canvas.Font.Color := AppGlobals.NodeTextColorSelected
+  else
+    Canvas.Font.Color := AppGlobals.NodeTextColor;
 end;
 
 procedure TSavedTree.DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal);

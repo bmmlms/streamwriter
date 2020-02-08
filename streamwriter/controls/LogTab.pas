@@ -113,14 +113,14 @@ type
     procedure Add(LogEntry: TLogEntry); overload;
   protected
     procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
-    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
-      var NodeHeight: Integer); override;
-    procedure PaintImage(var PaintInfo: TVTPaintInfo;
-      ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
+    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
+    procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
+    function DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean; override;
+    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect); override;
+    procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
 
     procedure MessageReceived(Msg: TMessageBase);
     procedure Resize; override;
@@ -512,6 +512,49 @@ begin
 
   if Header.Columns[Column].Position = 0 then
     Header.Columns[Column].Position := FHeaderDragSourcePosition;
+end;
+
+function TLogTree.DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean;
+begin
+  inherited;
+
+  Result := True;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
+
+  Canvas.FillRect(R);
+end;
+
+procedure TLogTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
+begin
+  inherited;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
+
+  Canvas.FillRect(ItemRect);
+end;
+
+procedure TLogTree.DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType);
+begin
+  inherited;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  if Focused and Selected[Node] then
+    Canvas.Font.Color := AppGlobals.NodeTextColorSelectedFocused
+  else if Selected[Node] then
+    Canvas.Font.Color := AppGlobals.NodeTextColorSelected
+  else
+    Canvas.Font.Color := AppGlobals.NodeTextColor;
 end;
 
 function TLogTree.DoHeaderDragging(Column: TColumnIndex): Boolean;

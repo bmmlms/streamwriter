@@ -47,16 +47,12 @@ type
     FColTitle: TVirtualTreeColumn;
   protected
     procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
     procedure DoHeaderClick(const HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
-    function DoIncrementalSearch(Node: PVirtualNode;
-      const Text: string): Integer; override;
+    function DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
-    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
-      var NodeHeight: Integer); override;
-
+    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
   public
     constructor Create(AOwner: TComponent; Streams: TStringList); reintroduce;
     destructor Destroy; override;
@@ -208,6 +204,19 @@ type
     txtShortLengthSeconds: TLabeledEdit;
     Label4: TLabel;
     chkSkipShort: TCheckBox;
+    pnlDisplay: TPanel;
+    PngSpeedButton1: TPngSpeedButton;
+    dlgColor: TColorDialog;
+    Label23: TLabel;
+    Label24: TLabel;
+    Label25: TLabel;
+    Label26: TLabel;
+    pnlNodeTextColor: TPanel;
+    pnlNodeTextColorSelected: TPanel;
+    pnlNodeTextColorSelectedFocused: TPanel;
+    pnlNodeBackgroundColor: TPanel;
+    btnResetColor: TButton;
+    Label29: TLabel;
     procedure FormActivate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem;
@@ -292,6 +301,8 @@ type
     procedure btnRemoveRegExClick(Sender: TObject);
     procedure lstRegExesEdited(Sender: TObject; Item: TListItem;
       var S: string);
+    procedure pnlNodeColorClick(Sender: TObject);
+    procedure btnResetColorClick(Sender: TObject);
   private
     FSettingsType: TSettingsTypes;
     FInitialized: Boolean;
@@ -344,6 +355,7 @@ type
     procedure GetExportData(Stream: TExtendedStream); override;
     function CheckImportFile(Filename: string): Boolean; override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
+    procedure DoCreate; override;
   public
     constructor Create(AOwner: TComponent; SettingsType: TSettingsTypes;
       StreamSettings: TStreamSettingsArray; BrowseDir: Boolean);
@@ -380,6 +392,14 @@ begin
     FStreamSettings[i].Free;
 
   inherited;
+end;
+
+procedure TfrmSettings.DoCreate;
+begin
+  inherited;
+
+  Width := 636;
+  Height := 509;
 end;
 
 procedure TfrmSettings.EnablePanel(Panel: TPanel; Enable: Boolean);
@@ -594,6 +614,7 @@ var
   PostProcessor: TPostProcessBase;
   EP: TExternalPostProcess;
   Item: TListItem;
+  Tree: TVirtualStringTree;
 begin
   if Length(FStreamSettings) > 0 then
   begin
@@ -693,6 +714,28 @@ begin
           AppGlobals.ShortcutMute := TextToShortCut(lstHotkeys.Items[7].SubItems[0])
         else
           AppGlobals.ShortcutMute := 0;
+
+        Tree := TVirtualStringTree.Create(Self);
+        try
+          if (pnlNodeTextColor.Color <> Tree.Colors.NodeFontColor) or (pnlNodeTextColorSelected.Color <> Tree.Colors.NodeFontColor) or
+             (pnlNodeTextColorSelectedFocused.Color <> Tree.Colors.SelectionTextColor) or (pnlNodeBackgroundColor.Color <> Tree.Colors.BackGroundColor) then
+          begin
+            AppGlobals.NodeColorsLoaded := True;
+            AppGlobals.NodeTextColor := pnlNodeTextColor.Color;
+            AppGlobals.NodeTextColorSelected := pnlNodeTextColorSelected.Color;
+            AppGlobals.NodeTextColorSelectedFocused := pnlNodeTextColorSelectedFocused.Color;
+            AppGlobals.NodeBackgroundColor := pnlNodeBackgroundColor.Color;
+          end else
+          begin
+            AppGlobals.NodeColorsLoaded := False;
+            AppGlobals.NodeTextColor := $7F000000;
+            AppGlobals.NodeTextColorSelected := $7F000000;
+            AppGlobals.NodeTextColorSelectedFocused := $7F000000;
+            AppGlobals.NodeBackgroundColor := $7F000000;
+          end;
+        finally
+          Tree.Free;
+        end;
       finally
         AppGlobals.Unlock;
       end;
@@ -1240,6 +1283,13 @@ begin
   end;
 end;
 
+procedure TfrmSettings.pnlNodeColorClick(Sender: TObject);
+begin
+  dlgColor.Color := TPanel(Sender).Color;
+  if dlgColor.Execute(Handle) then
+    TPanel(Sender).Color := dlgColor.Color;
+end;
+
 procedure TfrmSettings.PreTranslate;
 begin
   inherited;
@@ -1400,6 +1450,7 @@ begin
     stApp:
       begin
         FPageList.Add(TPage.Create('Settings', pnlMain, 'PROPERTIES'));
+        FPageList.Add(TPage.Create('Display', pnlDisplay, 'DISPLAY'));
         FPageList.Add(TPage.Create('Recordings', pnlStreams, 'STREAM'));
         FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
         FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
@@ -2471,6 +2522,21 @@ begin
   FInitialized := True;
 end;
 
+procedure TfrmSettings.btnResetColorClick(Sender: TObject);
+var
+  Tree: TVirtualStringTree;
+begin
+  Tree := TVirtualStringTree.Create(Self);
+  try
+    pnlNodeTextColor.Color := Tree.Colors.NodeFontColor;
+    pnlNodeTextColorSelected.Color := Tree.Colors.NodeFontColor;
+    pnlNodeTextColorSelectedFocused.Color := Tree.Colors.SelectionTextColor;
+    pnlNodeBackgroundColor.Color := Tree.Colors.BackGroundColor;
+  finally
+    Tree.Free;
+  end;
+end;
+
 procedure TfrmSettings.btnResetFilePatternClick(Sender: TObject);
 begin
   inherited;
@@ -3215,6 +3281,15 @@ begin
     lstSoundDevice.Enabled := False;
     lstSoundDevice.Text := _('(no devices available)');
   end;
+
+  if AppGlobals.NodeColorsLoaded then
+  begin
+    pnlNodeTextColor.Color := AppGlobals.NodeTextColor;
+    pnlNodeTextColorSelected.Color := AppGlobals.NodeTextColorSelected;
+    pnlNodeTextColorSelectedFocused.Color := AppGlobals.NodeTextColorSelectedFocused;
+    pnlNodeBackgroundColor.Color := AppGlobals.NodeBackgroundColor;
+  end else
+    btnResetColorClick(btnReset);
 
   CreateGeneral;
 end;

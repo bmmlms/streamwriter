@@ -192,8 +192,7 @@ type
     function GetSelected: TStreamDataArray;
   protected
     procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
     procedure DoDragging(P: TPoint); override;
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal); override;
@@ -202,11 +201,11 @@ type
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
     function DoBeforeItemPaint(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect): Boolean; override;
-
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
-    procedure DoBeforeCellPaint(Canvas: TCanvas; Node: PVirtualNode;
-      Column: TColumnIndex; CellPaintMode: TVTCellPaintMode;
-      CellRect: TRect; var ContentRect: TRect); override;
+    procedure DoBeforeCellPaint(Canvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect); override;
+    function DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean; override;
+    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect); override;
+    procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
     procedure HandleMouseDblClick(var Message: TWMMouse; const HitInfo: THitInfo); override;
     procedure Resize; override;
     procedure Paint; override;
@@ -850,6 +849,9 @@ var
 begin
   inherited;
 
+  if AppGlobals.NodeColorsLoaded then
+    Exit;
+
   NodeData := GetNodeData(Node);
 
   if CellPaintMode = cpmPaint then
@@ -859,12 +861,55 @@ begin
     else
       case Node.Index mod 2 of
         0:
-          Canvas.Brush.Color := clWindow;
+          Canvas.Brush.Color := Colors.BackGroundColor;
         1:
           Canvas.Brush.Color := HTML2Color('f3f3f3');
       end;
     Canvas.FillRect(CellRect);
   end;
+end;
+
+function TMStreamTree.DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean;
+begin
+  inherited;
+
+  Result := True;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
+
+  Canvas.FillRect(R);
+end;
+
+procedure TMStreamTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
+begin
+  inherited;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
+
+  Canvas.FillRect(ItemRect);
+end;
+
+procedure TMStreamTree.DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType);
+begin
+  inherited;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  if Focused and Selected[Node] then
+    Canvas.Font.Color := AppGlobals.NodeTextColorSelectedFocused
+  else if Selected[Node] then
+    Canvas.Font.Color := AppGlobals.NodeTextColorSelected
+  else
+    Canvas.Font.Color := AppGlobals.NodeTextColor;
 end;
 
 function TMStreamTree.DoBeforeItemPaint(Canvas: TCanvas;

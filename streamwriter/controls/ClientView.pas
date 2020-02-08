@@ -105,6 +105,9 @@ type
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure KeyPress(var Key: Char); override;
+    function DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean; override;
+    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect); override;
+    procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
   public
     constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree); reintroduce;
     destructor Destroy; override;
@@ -480,6 +483,49 @@ begin
     else if NodeData.Client <> nil then
       NodeData.Client.Entry.CustomName := Text;
   end;
+end;
+
+function TMClientView.DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean;
+begin
+  inherited;
+
+  Result := True;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
+
+  Canvas.FillRect(R);
+end;
+
+procedure TMClientView.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
+begin
+  inherited;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
+
+  Canvas.FillRect(ItemRect);
+end;
+
+procedure TMClientView.DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType);
+begin
+  inherited;
+
+  if not AppGlobals.NodeColorsLoaded then
+    Exit;
+
+  if Focused and Selected[Node] then
+    Canvas.Font.Color := AppGlobals.NodeTextColorSelectedFocused
+  else if Selected[Node] then
+    Canvas.Font.Color := AppGlobals.NodeTextColorSelected
+  else
+    Canvas.Font.Color := AppGlobals.NodeTextColor;
 end;
 
 procedure TMClientView.DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal);
