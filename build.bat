@@ -7,9 +7,12 @@ set "ZIP=D:\7-Zip\7z.exe"
 set "INNO=D:\Inno Setup\ISCC.exe"
 set "CURL=C:\Program Files\curl.exe"
 set "CWD=%cd%"
+set "APPNAME=streamwriter"
 set "BUILDDIR=%CWD%\build"
-set "SWDIR=%BUILDDIR%\streamwriter"
+set "APPDIR=%BUILDDIR%\app"
 set "OUTDIR=%CWD%\bin"
+set "ZIPFILES=%APPNAME%.exe"
+set "UPLOADURL=https://streamwriter.org/de/downloads/svnbuild/?download=67&filename=%APPNAME%"
 
 call %rsvars%
 
@@ -35,18 +38,18 @@ goto end
   SVN checkout svn://mistake.ws/common common
   if %ERRORLEVEL% GEQ 1 exit /B 1
 
-  SVN checkout svn://mistake.ws/streamwriter streamwriter
+  SVN checkout svn://mistake.ws/%APPNAME% app
   if %ERRORLEVEL% GEQ 1 exit /B 1
 
   exit /b 0
 
 :getrevision
-  cd "%SWDIR%"
+  cd "%APPDIR%"
   for /f "tokens=2" %%r in ('svn info -r HEAD ^| find "Revision: "') do set REVISION=%%r
   exit /b 0
 
 :modifybuildnumber
-  powershell -Command "(Get-Content "%SWDIR%\streamwriter\AppData.pas") -replace '"FBuildNumber :=.*;"', 'FBuildNumber := %REVISION%;' | Out-File "%SWDIR%\streamwriter\AppData.pas""
+  powershell -Command "(Get-Content "%APPDIR%\%APPNAME%\AppData.pas") -replace '"FBuildNumber :=.*;"', 'FBuildNumber := %REVISION%;' | Out-File "%APPDIR%\%APPNAME%\AppData.pas""
 
   exit /b %ERRORLEVEL%
 
@@ -59,28 +62,31 @@ goto end
     if %ERRORLEVEL% GEQ 1 exit /B 1
   )
 
-  cd "%SWDIR%"
+  cd "%APPDIR%"
 
   "%MSBUILD%" /t:build /p:config=Release
   if %ERRORLEVEL% GEQ 1 exit /B 1
 
-  "%MADEXCEPTPATCH%" "%SWDIR%\bin\streamwriter.exe" "%SWDIR%\streamwriter\streamwriter.mes"
+  "%MADEXCEPTPATCH%" "%APPDIR%\bin\%APPNAME%.exe" "%APPDIR%\%APPNAME%\%APPNAME%.mes"
   if %ERRORLEVEL% GEQ 1 exit /B 1
 
   exit /b 0
 
-:zip
-  cd "%SWDIR%\bin"
+:beforezip
+  exit /b 0
 
-  "%ZIP%" a -mx9 streamwriter.zip streamwriter.exe 
+:zip
+  cd "%APPDIR%\bin"
+
+  "%ZIP%" a -mx9 %APPNAME%.zip %ZIPFILES%
   if %ERRORLEVEL% GEQ 1 exit /B 1
 
   exit /b 0
 
 :setup
-  cd "%SWDIR%\setup"
+  cd "%APPDIR%\setup"
 
-  "%INNO%" /Q streamwriter.iss
+  "%INNO%" /Q %APPNAME%.iss
   if %ERRORLEVEL% GEQ 1 exit /B 1
 
   exit /b 0
@@ -88,10 +94,10 @@ goto end
 :copyfiles
   if not exist "%OUTDIR%" mkdir "%OUTDIR%"
 
-  copy /Y "%SWDIR%\bin\streamwriter.zip" "%OUTDIR%\streamwriter.zip"
+  copy /Y "%APPDIR%\bin\%APPNAME%.zip" "%OUTDIR%\%APPNAME%.zip"
   if %ERRORLEVEL% GEQ 1 exit /B 1
 
-  copy /Y "%SWDIR%\setup\output\streamwriter_setup.exe" "%OUTDIR%\streamwriter_setup.exe"
+  copy /Y "%APPDIR%\setup\output\%APPNAME%_setup.exe" "%OUTDIR%\%APPNAME%_setup.exe"
   if %ERRORLEVEL% GEQ 1 exit /B 1
 
   exit /b 0
@@ -99,7 +105,7 @@ goto end
 :upload
   cd "%OUTDIR%"
 
-  "%CURL%" -k -f -S -o nul -F "file=@streamwriter.zip" "https://streamwriter.org/de/downloads/svnbuild/?download=67&revision=%REVISION%"
+  "%CURL%" -k -f -S -o nul -F "file=@%APPNAME%.zip" "%UPLOADURL%&revision=%REVISION%"
   if %ERRORLEVEL% GEQ 1 exit /B 1
 
   exit /b 0
@@ -115,6 +121,9 @@ goto end
   if %ERRORLEVEL% GEQ 1 exit /b 1
 
   call :build
+  if %ERRORLEVEL% GEQ 1 exit /b 1
+
+  call :beforezip
   if %ERRORLEVEL% GEQ 1 exit /b 1
 
   call :zip
