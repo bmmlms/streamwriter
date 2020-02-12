@@ -487,12 +487,12 @@ end;
 
 function TMClientView.DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean;
 begin
-  inherited;
-
-  Result := True;
+  Result := inherited;
 
   if not AppGlobals.NodeColorsLoaded then
     Exit;
+
+  Result := True;
 
   Canvas.Brush.Style := bsSolid;
   Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
