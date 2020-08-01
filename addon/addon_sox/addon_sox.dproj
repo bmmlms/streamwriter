@@ -2,7 +2,7 @@
     <PropertyGroup>
         <ProjectGuid>{F557A19B-F6AC-4E25-A8B8-D29D63B69A32}</ProjectGuid>
         <MainSource>addon_sox.dpr</MainSource>
-        <ProjectVersion>18.7</ProjectVersion>
+        <ProjectVersion>18.8</ProjectVersion>
         <Basis>True</Basis>
         <Config Condition="'$(Config)'==''">Debug</Config>
         <AppType>Library</AppType>

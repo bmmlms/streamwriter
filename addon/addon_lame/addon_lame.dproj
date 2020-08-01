@@ -2,7 +2,7 @@
     <PropertyGroup>
         <ProjectGuid>{CB4B5AFB-C02F-4957-A2C5-CA48FFF7B2FD}</ProjectGuid>
         <MainSource>addon_lame.dpr</MainSource>
-        <ProjectVersion>18.7</ProjectVersion>
+        <ProjectVersion>18.8</ProjectVersion>
         <Basis>True</Basis>
         <Config Condition="'$(Config)'==''">Debug</Config>
         <AppType>Library</AppType>

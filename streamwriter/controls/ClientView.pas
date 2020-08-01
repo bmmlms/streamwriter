@@ -445,19 +445,18 @@ end;
 function TMClientView.DoIncrementalSearch(Node: PVirtualNode;
   const Text: string): Integer;
 var
-  s, NodeText: string;
   NodeData: PClientNodeData;
   Args: TVSTGetCellTextEventArgs;
 begin
   Result := 0;
-  S := Text;
+
   NodeData := GetNodeData(Node);
   if NodeData = nil then
     Exit;
 
   Args := TVSTGetCellTextEventArgs.Create(Node, 0);
   DoGetText(Args);
-  Result := StrLIComp(PChar(s), PChar(NodeText), Min(Length(s), Length(NodeText)));
+  Result := StrLIComp(PChar(Text), PChar(Args.CellText), Min(Length(Text), Length(Args.CellText)));
 end;
 
 procedure TMClientView.DoMeasureItem(TargetCanvas: TCanvas;
@@ -1021,7 +1020,7 @@ begin
 
   if (Data1.Client <> nil) and (Data2.Client <> nil) then
     case Column of
-      0: Result := CompareText(Data1.Client.Entry.Name, Data2.Client.Entry.Name);
+      0: Result := CompareText(Data1.Client.Entry.CustomName, Data2.Client.Entry.CustomName);
       1: Result := CompareText(Data1.Client.Title, Data2.Client.Title);
       2: Result := CmpUInt64(Data1.Client.Entry.BytesReceived, Data2.Client.Entry.BytesReceived);
       3: Result := CmpInt(Data1.Client.Entry.SongsSaved, Data2.Client.Entry.SongsSaved);

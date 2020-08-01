@@ -2,7 +2,7 @@
     <PropertyGroup>
         <ProjectGuid>{050E904D-41A5-43C7-875C-7300A8E0368E}</ProjectGuid>
         <MainSource>addon_faac.dpr</MainSource>
-        <ProjectVersion>18.7</ProjectVersion>
+        <ProjectVersion>18.8</ProjectVersion>
         <Basis>True</Basis>
         <Config Condition="'$(Config)'==''">Debug</Config>
         <AppType>Library</AppType>
