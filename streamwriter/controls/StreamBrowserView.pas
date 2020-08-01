@@ -1161,8 +1161,6 @@ var
   AudioType: TAudioTypes;
   Bitrate: Cardinal;
 begin
-  FStreamTree.Clear;
-
   Genre := '';
 
   if FSearch.FGenreList.ItemIndex > 0 then
