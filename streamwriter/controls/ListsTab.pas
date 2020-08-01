@@ -668,8 +668,8 @@ begin
   FAddCombo.Clear;
 
   for i := 0 to FClientManager.Count - 1 do
-    if FClientManager[i].Entry.Name <> '' then
-      FAddCombo.AddItem('  ' + FClientManager[i].Entry.Name, FClientManager[i]);
+    if FClientManager[i].Entry.CustomName <> '' then
+      FAddCombo.AddItem('  ' + FClientManager[i].Entry.CustomName, FClientManager[i]);
   FAddCombo.Sorted := True;
   FAddCombo.Items.InsertObject(0, _('Ignorelist'), AppGlobals.Data.IgnoreList);
   FAddCombo.Items.InsertObject(0, _('Wishlist'), AppGlobals.Data.SaveList);
@@ -1084,7 +1084,7 @@ procedure TTitlePanel.ClientAdded(Client: TICEClient);
 var
   i: Integer;
 begin
-  if (Client.AutoRemove) or (Client.Entry.Name = '') then
+  if (Client.AutoRemove) or (Client.Entry.CustomName = '') then
     Exit;
 
   for i := 0 to FAddCombo.Items.Count - 1 do
@@ -2155,7 +2155,7 @@ begin
           ntIgnoreParent:
             pEventArgs.CellText := _(IGNORETEXT);
           ntStream:
-            pEventArgs.CellText := NodeData.Stream.Entry.Name;
+            pEventArgs.CellText := NodeData.Stream.Entry.CustomName;
           ntWish, ntIgnore:
             pEventArgs.CellText := NodeData.Title.Title;
         end;
@@ -2331,7 +2331,7 @@ begin
   if NodeData.Title <> nil then
     Result := StrLIComp(PChar(s), PChar(NodeData.Title.Title), Min(Length(s), Length(NodeData.Title.Title)))
   else
-    Result := StrLIComp(PChar(s), PChar(NodeData.Stream.Entry.Name), Min(Length(s), Length(NodeData.Stream.Entry.Name)))
+    Result := StrLIComp(PChar(s), PChar(NodeData.Stream.Entry.CustomName), Min(Length(s), Length(NodeData.Stream.Entry.CustomName)))
 end;
 
 procedure TTitleTree.DoMeasureItem(TargetCanvas: TCanvas;
@@ -2420,7 +2420,7 @@ begin
         if (Data1.Title <> nil) and (Data2.Title <> nil) then
           Result := CompareText(Data1.Title.Title, Data2.Title.Title)
         else if (Data1.NodeType = ntStream) and (Data2.NodeType = ntStream) then
-          Result := CompareText(Data1.Stream.Entry.Name, Data2.Stream.Entry.Name)
+          Result := CompareText(Data1.Stream.Entry.CustomName, Data2.Stream.Entry.CustomName)
         else if (Data1.Title <> nil) and (Data2.Stream = nil) then
           Exit(1)
         else if (Data1.Title = nil) and (Data2.Stream <> nil) then

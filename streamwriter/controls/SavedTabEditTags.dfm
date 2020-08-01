@@ -4,7 +4,7 @@ object frmEditTags: TfrmEditTags
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Edit tags and data'
-  ClientHeight = 375
+  ClientHeight = 393
   ClientWidth = 285
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -58,7 +58,7 @@ object frmEditTags: TfrmEditTags
   TextHeight = 13
   object pnlNav: TPanel
     Left = 0
-    Top = 335
+    Top = 353
     Width = 285
     Height = 40
     Align = alBottom
@@ -68,6 +68,7 @@ object frmEditTags: TfrmEditTags
     Padding.Right = 4
     Padding.Bottom = 4
     TabOrder = 2
+    ExplicitTop = 335
     object Bevel2: TBevel
       Left = 4
       Top = 4
@@ -88,7 +89,6 @@ object frmEditTags: TfrmEditTags
       Default = True
       DoubleBuffered = False
       Layout = blGlyphRight
-      ParentDoubleBuffered = False
       TabOrder = 0
       OnClick = btnCloseClick
     end
@@ -97,15 +97,15 @@ object frmEditTags: TfrmEditTags
     Left = 4
     Top = 4
     Width = 277
-    Height = 249
+    Height = 273
     Caption = ' Tags '
     TabOrder = 0
     DesignSize = (
       277
-      249)
+      273)
     object Label1: TLabel
       Left = 8
-      Top = 152
+      Top = 196
       Width = 49
       Height = 13
       Caption = 'Comment:'
@@ -134,9 +134,9 @@ object frmEditTags: TfrmEditTags
     end
     object txtComment: TMemo
       Left = 8
-      Top = 168
+      Top = 212
       Width = 261
-      Height = 73
+      Height = 53
       Anchors = [akLeft, akTop, akRight, akBottom]
       ScrollBars = ssVertical
       TabOrder = 3
@@ -152,10 +152,21 @@ object frmEditTags: TfrmEditTags
       EditLabel.Caption = 'Album:'
       TabOrder = 2
     end
+    object txtGenre: TLabeledEdit
+      Left = 8
+      Top = 168
+      Width = 261
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      EditLabel.Width = 33
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Genre:'
+      TabOrder = 4
+    end
   end
   object grpData: TGroupBox
     Left = 4
-    Top = 264
+    Top = 284
     Width = 277
     Height = 65
     Caption = ' Data '

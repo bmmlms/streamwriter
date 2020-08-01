@@ -43,7 +43,7 @@ type
   TConfigure = function(Handle: Cardinal; ShowMessages: Boolean): Boolean; stdcall;
 
   TPostProcessInformation = record
-    Filename, FilenameConverted, WorkFilename, ReEncodedFilename, Station, Artist, Album, Title: string;
+    Filename, FilenameConverted, WorkFilename, ReEncodedFilename, Station, Artist, Album, Title, Genre: string;
     TrackNumber: Cardinal;
     Filesize: UInt64;
     Length: UInt64;
@@ -70,8 +70,7 @@ type
     FPostProcessList: TList<TPostProcessBase>;
     FActivePostProcessIndex: Integer;
   public
-    constructor Create(Owner: TObject; ActiveThread: TPostProcessThreadBase;
-      Data: TPostProcessInformation);
+    constructor Create(Owner: TObject; ActiveThread: TPostProcessThreadBase; Data: TPostProcessInformation);
     destructor Destroy; override;
 
     property Owner: TObject read FOwner write FOwner;
@@ -203,8 +202,7 @@ uses
 
 { TProcessingEntry }
 
-constructor TProcessingEntry.Create(Owner: TObject; ActiveThread: TPostProcessThreadBase;
-  Data: TPostProcessInformation);
+constructor TProcessingEntry.Create(Owner: TObject; ActiveThread: TPostProcessThreadBase; Data: TPostProcessInformation);
 begin
   inherited Create;
 
@@ -232,6 +230,7 @@ begin
   FData.ServerTitleHash := Data.ServerTitleHash;
   FData.ServerArtistHash := Data.ServerArtistHash;
   FData.RecordBecauseArtist := Data.RecordBecauseArtist;
+  FData.Genre := Data.Genre;
 
   FPostProcessList := TList<TPostProcessBase>.Create;
 end;
@@ -301,7 +300,7 @@ begin
   begin
     if FileExists(FExe) then
     begin
-      SetLength(Arr, 13);
+      SetLength(Arr, 14);
       Arr[0].C := 'artist';
       Arr[0].Replace := FData.Artist;
       Arr[1].C := 'title';
@@ -331,6 +330,8 @@ begin
         Arr[12].Replace := FData.WorkFilename
       else
         Arr[12].Replace := FData.Filename;
+      Arr[13].C := 'genre';
+      Arr[13].Replace := FData.Genre;
 
       Replaced := PatternReplaceNew(FParams, Arr);
       if Trim(Replaced) <> '' then

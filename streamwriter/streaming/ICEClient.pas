@@ -731,9 +731,7 @@ procedure TICEClient.ThreadRefreshInfo(Sender: TSocketThread);
 var
   KeepCustom: Boolean;
 begin
-  KeepCustom := False;
-  if FEntry.Name <> FEntry.CustomName then
-    KeepCustom := True;
+  KeepCustom := FEntry.Name <> FEntry.CustomName;
 
   FEntry.Name := FICEThread.RecvStream.StreamName;
   if not KeepCustom then
@@ -797,6 +795,7 @@ begin
       Data.ServerArtistHash := FRecordArtistHash;
       Data.RecordBecauseArtist := FRecordBecauseArtist;
       Data.VBR := FICEThread.RecvStream.AudioInfo.VBR;
+      Data.Genre := FICEThread.RecvStream.Genre;
 
       if Entry.Settings.OutputFormat = atNone then
       begin
@@ -892,9 +891,9 @@ begin
   if (FDisplayTitle <> '') and Playing and (not Paused) then
   begin
     if AppGlobals.DisplayPlayNotifications then
-      TfrmNotification.Act(FDisplayTitle, FEntry.Name);
+      TfrmNotification.Act(FDisplayTitle, FEntry.CustomName);
 
-    MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, '', FICEThread.RecvStream.DisplayTitle, FEntry.Name, ''));
+    MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, '', FICEThread.RecvStream.DisplayTitle, FEntry.CustomName, ''));
   end;
 
   if Assigned(FOnTitleChanged) then

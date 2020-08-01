@@ -1074,7 +1074,6 @@ procedure TClientTab.ClientManagerRefresh(Sender: TObject);
 var
   i: Integer;
   OnePlaying: Boolean;
-  OnePlayingName: string;
 begin
   FClientView.RefreshClient(Sender as TICEClient);
 
@@ -1084,7 +1083,6 @@ begin
     if FClientManager[i].Playing and (FClientManager[i].State = csConnected) then
     begin
       OnePlaying := True;
-      OnePlayingName := FClientManager[i].Entry.Name;
       Break;
     end;
   end;
@@ -1213,12 +1211,12 @@ begin
 
   if Track = nil then
   begin
-    Track := TTrackInfo.Create(Now, Filename, Client.Entry.Name, Title, SongArtist, SongTitle, ServerTitleHash, ServerArtistHash);
+    Track := TTrackInfo.Create(Now, Filename, Client.Entry.CustomName, Title, SongArtist, SongTitle, ServerTitleHash, ServerArtistHash);
     AppGlobals.Data.TrackList.Add(Track);
     Added := True;
   end;
 
-  Track.Streamname := Client.Entry.Name;
+  Track.Streamname := Client.Entry.CustomName;
   Track.Filesize := Filesize;
   Track.Length := Length;
   Track.WasCut := WasCut;

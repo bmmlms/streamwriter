@@ -27,9 +27,8 @@ interface
 uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
   AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
-  Math, PerlRegEx, Logging, WideStrUtils, AudioFunctions, PostProcessMP4Box,
-  AddonMP4Box, SWFunctions, MonitorAnalyzer, DataManager, Generics.Defaults,
-  Sockets, TypeDefs, Constants;
+  Math, PerlRegEx, Logging, WideStrUtils, AudioFunctions, SWFunctions,
+  MonitorAnalyzer, DataManager, Generics.Defaults, Sockets, TypeDefs, Constants;
 
 type
   TChunkReceivedEvent = procedure(Buf: Pointer; Len: Integer) of object;
@@ -73,12 +72,12 @@ type
     function LimitToMaxPath(Filename: string): string;
     function GetValidFilename(Name: string): string;
     function GetAppendNumber(Dir, Filename: string): Integer;
-    function InfoToFilename(Artist, Title, Album, StreamTitle: string; TitleState: TTitleStates; Patterns: string): string;
+    function InfoToFilename(Artist, Title, Album, Genre, StreamTitle: string; TitleState: TTitleStates; Patterns: string): string;
   public
     constructor Create(Streamname, Dir: string; SongsSaved: Cardinal; Settings: TStreamSettings);
 
     procedure GetStreamFilename(Name: string; AudioType: TAudioTypes);
-    procedure GetFilename(Filesize: UInt64; Artist, Title, Album, StreamTitle: string; AudioType: TAudioTypes;
+    procedure GetFilename(Filesize: UInt64; Artist, Title, Album, Genre, StreamTitle: string; AudioType: TAudioTypes;
       TitleState: TTitleStates; Killed: Boolean);
 
     property Result: TCheckResults read FResult;
@@ -686,7 +685,7 @@ begin
             TitleState := tsIncomplete;
         end;
 
-        FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FSavedAlbum, Title, FAudioType, TitleState, FKilled);
+        FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FSavedAlbum, FGenre, Title, FAudioType, TitleState, FKilled);
         if (FileCheck.Result in [crSave, crOverwrite]) and (FileCheck.FFilename <> '') then
         begin
           Dir := FileCheck.SaveDir;
@@ -1531,7 +1530,7 @@ begin
     Result := Append;
 end;
 
-procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title, Album, StreamTitle: string; AudioType: TAudioTypes;
+procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title, Album, Genre, StreamTitle: string; AudioType: TAudioTypes;
   TitleState: TTitleStates; Killed: Boolean);
 
   function AnyFileExists(Filename: string): Boolean;
@@ -1553,14 +1552,14 @@ begin
 
   case TitleState of
     tsAuto:
-      Patterns := 'artist|title|album|streamtitle|streamname|day|month|year|hour|minute|second';
+      Patterns := 'artist|title|album|genre|streamtitle|streamname|day|month|year|hour|minute|second';
     tsStream:
       Patterns := 'streamname|day|month|year|hour|minute|second';
     else
-      Patterns := 'artist|title|album|streamtitle|number|streamname|day|month|year|hour|minute|second';
+      Patterns := 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second';
   end;
 
-  Filename := InfoToFilename(Artist, Title, Album, StreamTitle, TitleState, Patterns);
+  Filename := InfoToFilename(Artist, Title, Album, Genre, StreamTitle, TitleState, Patterns);
   Filename := GetValidFilename(Filename);
 
   if AnyFileExists(FSaveDir + Filename) then
@@ -1619,7 +1618,7 @@ begin
       Name := _('Unknown stream');
     end;
 
-    Name := InfoToFilename('', '', '', '', tsStream, 'streamname|day|month|year|hour|minute|second');
+    Name := InfoToFilename('', '', '', '', '', tsStream, 'streamname|day|month|year|hour|minute|second');
     FFilename := GetValidFilename(Name);
 
     if FileExists(FSaveDir + Filename + Ext) then
@@ -1653,7 +1652,7 @@ begin
   Result := StringReplace(Result, '|', ' ', [rfReplaceAll]);
 end;
 
-function TFileChecker.InfoToFilename(Artist, Title, Album, StreamTitle: string; TitleState: TTitleStates; Patterns: string): string;
+function TFileChecker.InfoToFilename(Artist, Title, Album, Genre, StreamTitle: string; TitleState: TTitleStates; Patterns: string): string;
 var
   i: Integer;
   Dir, StreamName: string;
@@ -1697,6 +1696,8 @@ begin
         Arr[i].Replace := Title
       else if Arr[i].C = 'album' then
         Arr[i].Replace := Album
+      else if Arr[i].C = 'genre' then
+        Arr[i].Replace := Genre
       else if Arr[i].C = 'streamtitle' then
         Arr[i].Replace := StreamTitle
       else if Arr[i].C = 'streamname' then

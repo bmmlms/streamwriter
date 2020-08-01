@@ -43,6 +43,7 @@ type
     txtAlbum: TLabeledEdit;
     grpData: TGroupBox;
     txtStreamname: TLabeledEdit;
+    txtGenre: TLabeledEdit;
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure btnCloseClick(Sender: TObject);
@@ -99,6 +100,7 @@ begin
             txtArtist.Text := FileTagger.Tag.Artist;
             txtTitle.Text := FileTagger.Tag.Title;
             txtAlbum.Text := FileTagger.Tag.Album;
+            txtGenre.Text := FileTagger.Tag.Genre;
             txtComment.Text := FileTagger.Tag.Comment;
 
             FTagsRead := True;
@@ -127,6 +129,7 @@ begin
       FileTagger.Tag.Artist := Trim(txtArtist.Text);
       FileTagger.Tag.Title := Trim(txtTitle.Text);
       FileTagger.Tag.Album := Trim(txtAlbum.Text);
+      FileTagger.Tag.Genre := Trim(txtGenre.Text);
       FileTagger.Tag.Comment := Trim(txtComment.Text);
 
       if not FileTagger.Write(Language.CurrentLanguage.LCID, FTracks[0].Filename) then
@@ -166,9 +169,10 @@ procedure TfrmEditTags.DisableTags;
 begin
   txtArtist.Enabled := False;
   txtTitle.Enabled := False;
-  txtComment.Enabled := False;
   txtAlbum.Enabled := False;
+  txtGenre.Enabled := False;
   Label1.Enabled := False;
+  txtComment.Enabled := False;
   grpTags.Enabled := False;
 
   txtStreamname.SetFocus;

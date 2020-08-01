@@ -42,6 +42,8 @@ type
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;
+    btnResetGenrePattern: TPngSpeedButton;
+    txtGenre: TLabeledEdit;
     procedure FormShow(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure btnResetPatternClick(Sender: TObject);
@@ -52,13 +54,14 @@ type
     FSaveData: Boolean;
 
     FPostProcessor: TPostProcessBase;
-    FArtist, FTitle, FAlbum, FComment: string;
+    FArtist, FTitle, FAlbum, FGenre, FComment: string;
   public
-    constructor Create(AOwner: TComponent; PostProcessor: TPostProcessBase; Artist, Title, Album, Comment: string); reintroduce;
+    constructor Create(AOwner: TComponent; PostProcessor: TPostProcessBase; Artist, Title, Album, Genre, Comment: string); reintroduce;
 
     property Artist: string read FArtist;
     property Title: string read FTitle;
     property Album: string read FAlbum;
+    property Genre: string read FGenre;
     property Comment: string read FComment;
 
     property SaveData: Boolean read FSaveData;
@@ -73,6 +76,7 @@ begin
   FArtist := Trim(txtArtist.Text);
   FTitle := Trim(txtTitle.Text);
   FAlbum := Trim(txtAlbum.Text);
+  FGenre := Trim(txtGenre.Text);
   FComment := Trim(txtComment.Text);
 
   FSaveData := True;
@@ -99,11 +103,15 @@ begin
     txtComment.Text := _('%streamname% / %streamtitle% / Recorded using streamWriter');
     txtComment.SelectAll;
     txtComment.ApplyFocus;
+  end else if Sender = btnResetGenrePattern then
+  begin
+    txtGenre.Text := '%genre%';
+    txtGenre.ApplyFocus;
   end;
 end;
 
 constructor TfrmConfigureSetTags.Create(AOwner: TComponent;
-  PostProcessor: TPostProcessBase; Artist, Title, Album, Comment: string);
+  PostProcessor: TPostProcessBase; Artist, Title, Album, Genre, Comment: string);
 begin
   inherited Create(AOwner);
 
@@ -112,11 +120,13 @@ begin
   FArtist := Artist;
   FTitle := Title;
   FAlbum := Album;
+  FGenre := Genre;
   FComment := Comment;
 
   txtArtist.Text := Artist;
   txtTitle.Text := Title;
   txtAlbum.Text := Album;
+  txtGenre.Text := Genre;
   txtComment.Text := Comment;
 
   Language.Translate(Self);

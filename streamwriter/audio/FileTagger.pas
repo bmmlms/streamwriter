@@ -29,7 +29,7 @@ uses
 type
   TTagData = class
   private
-    FArtist, FTitle, FAlbum, FComment, FTrackNumber: string;
+    FArtist, FTitle, FAlbum, FGenre, FComment, FTrackNumber: string;
     FCoverImage: TBitmap;
     FPopulariMeterEmail: WideString;
     FPopulariMeterRating: SmallInt;
@@ -42,6 +42,7 @@ type
     property Artist: string read FArtist write FArtist;
     property Title: string read FTitle write FTitle;
     property Album: string read FAlbum write FAlbum;
+    property Genre: string read FGenre write FGenre;
     property Comment: string read FComment write FComment;
     property TrackNumber: string read FTrackNumber write FTrackNumber;
     //property PopularityMeter: SmallInt read FPopulatityMeter write FPopulatityMeter;
@@ -254,6 +255,7 @@ begin
         FTag.FArtist := AG.AUDIOArtistW;
         FTag.FTitle := AG.AUDIOTitleW;
         FTag.FAlbum := AG.AUDIOAlbumW;
+        FTag.FGenre := AG.AUDIOGenreW;
         FTag.FComment := AG.AUDIOCommentW;
         FTag.FTrackNumber := AG.AUDIOTrackW;
 
@@ -300,6 +302,7 @@ begin
         AG.AUDIOArtistW := FTag.FArtist;
         AG.AUDIOTitleW := FTag.FTitle;
         AG.AUDIOAlbumW := FTag.FAlbum;
+        AG.AUDIOGenreW := FTag.FGenre;
         AG.AUDIOCommentW := FTag.FComment;
 
         // Der Abschnitt hier fügt einen lokalisierten Kommentar hinzu, so dass der Windows-Explorer
@@ -349,6 +352,7 @@ begin
   Result.FArtist := FArtist;
   Result.FTitle := FTitle;
   Result.FAlbum := FAlbum;
+  Result.FGenre := FGenre;
   Result.FComment := FComment;
   Result.FTrackNumber := FTrackNumber;
 
