@@ -85,7 +85,7 @@ var
   SoXOutFile, CmdLine, Params: string;
   Output: AnsiString;
   P: TPostProcessSoX;
-  LoopStarted: Cardinal;
+  LoopStarted: UInt64;
   Failed: Boolean;
   FS: TFileStream;
   EC: DWORD;
@@ -127,7 +127,7 @@ begin
           Failed := True;
           if FileExists(SoxOutFile) and (EC = 0) then
           begin
-            LoopStarted := GetTickCount;
+            LoopStarted := GetTickCount64;
             while Failed do
             begin
               try
@@ -140,7 +140,7 @@ begin
                 end;
               except
                 Sleep(50);
-                if GetTickCount > LoopStarted + 5000 then
+                if GetTickCount64 > LoopStarted + 5000 then
                 begin
                   Break;
                 end;

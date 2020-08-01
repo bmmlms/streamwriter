@@ -144,7 +144,7 @@ type
     FMonitoringStarted: Boolean;
     FRemoveClient: Boolean;
     FClientStopRecording: Boolean;
-    FLastGetSettings: Cardinal;
+    FLastGetSettings: UInt64;
 
     FStreamTracks: TStreamTracks;
     //FMonitorAnalyzer: TMonitorAnalyzer;
@@ -1393,10 +1393,10 @@ begin
   begin
     if (HeaderRemoved) and (RecvStream.Size > 8192) then
     begin
-      if Cardinal(FLastGetSettings + 2000) < GetTickCount then
+      if FLastGetSettings + 2000 < GetTickCount64 then
       begin
         GetSettings;
-        FLastGetSettings := GetTickCount;
+        FLastGetSettings := GetTickCount64;
       end;
 
       if FMonitoringStarted then

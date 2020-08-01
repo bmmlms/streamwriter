@@ -1927,7 +1927,7 @@ end;
 
 procedure TProcessThread.Execute;
 var
-  LoopStarted: Cardinal;
+  LoopStarted: UInt64;
   FS: TFileStream;
   Failed: Boolean;
   EC: DWORD;
@@ -1940,7 +1940,7 @@ begin
     rpWin:
       if FileExists(TempFile) and (EC = 0) then
       begin
-        LoopStarted := GetTickCount;
+        LoopStarted := GetTickCount64;
         while Failed do
         begin
           try
@@ -1953,7 +1953,7 @@ begin
             end;
           except
             Sleep(50);
-            if GetTickCount > LoopStarted + 5000 then
+            if GetTickCount64 > LoopStarted + 5000 then
             begin
               Break;
             end;

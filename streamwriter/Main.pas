@@ -371,8 +371,8 @@ procedure TfrmStreamWriterMain.ExitApp(Shutdown: Boolean; ImportFilename: string
 var
   i: Integer;
   Res: Integer;
-  StartTime, Version: Cardinal;
-  HardTimeout: Integer;
+  Version: Cardinal;
+  StartTime, HardTimeout: UInt64;
   S: TExtendedStream;
   Lst: TSettingsList;
 begin
@@ -488,11 +488,11 @@ begin
   else
     HardTimeout := 10000;
 
-  StartTime := GetTickCount;
+  StartTime := GetTickCount64;
   while (HomeComm.ThreadAlive or HomeComm.Connected) or FClientManager.Active or (FCheckFiles <> nil) or FUpdater.Active do
   begin
     // Wait for threads to finish
-    if StartTime < GetTickCount - HardTimeout then
+    if StartTime < GetTickCount64 - HardTimeout then
       Break;
     Sleep(100);
     Application.ProcessMessages;
