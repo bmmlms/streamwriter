@@ -46,7 +46,7 @@
         <VerInfo_Build>2</VerInfo_Build>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
-        <VerInfo_Keys>CompanyName=streamwriter.org;FileDescription=streamWriter FAAC Addon;FileVersion=1.0.0.2;InternalName=;LegalCopyright=Copyright (c) 2010-2019 Alexander Nottelmann et al.;LegalTrademarks=;OriginalFilename=addon_faac.dll;ProductName=streamWriter;ProductVersion=1.0.0.2;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=streamwriter.org;FileDescription=streamWriter FAAC Addon;FileVersion=1.0.0.2;InternalName=;LegalCopyright=Copyright (c) 2010-2020 Alexander Nottelmann et al.;LegalTrademarks=;OriginalFilename=addon_faac.dll;ProductName=streamWriter;ProductVersion=1.0.0.2;Comments=</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
         <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
@@ -105,7 +105,7 @@
                     <VersionInfoKeys Name="FileDescription">streamWriter FAAC Addon</VersionInfoKeys>
                     <VersionInfoKeys Name="FileVersion">1.0.0.2</VersionInfoKeys>
                     <VersionInfoKeys Name="InternalName"/>
-                    <VersionInfoKeys Name="LegalCopyright">Copyright (c) 2010-2019 Alexander Nottelmann</VersionInfoKeys>
+                    <VersionInfoKeys Name="LegalCopyright">Copyright (c) 2010-2020 Alexander Nottelmann</VersionInfoKeys>
                     <VersionInfoKeys Name="LegalTrademarks"/>
                     <VersionInfoKeys Name="OriginalFilename">addon_faac.dll</VersionInfoKeys>
                     <VersionInfoKeys Name="ProductName"/>
