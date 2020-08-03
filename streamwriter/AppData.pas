@@ -133,7 +133,13 @@ type
     FNodeTextColorSelectedFocused: TColor;
     FNodeBackgroundColor: TColor;
 
-    FBrowserSortType: Integer;
+    FBrowserSortType: Cardinal;
+    FBrowserSortDir: Cardinal;
+    FBrowserSearchText: string;
+    FBrowserSearchGenre: Cardinal;
+    FBrowserSearchAudioType: Cardinal;
+    FBrowserSearchBitrate: Cardinal;
+
     FLastUsedDataVersion: Integer;
     FRecoveryFile: string;
 
@@ -306,7 +312,13 @@ type
     property NodeTextColorSelected: TColor read FNodeTextColorSelected write FNodeTextColorSelected;
     property NodeTextColorSelectedFocused: TColor read FNodeTextColorSelectedFocused write FNodeTextColorSelectedFocused;
 
-    property BrowserSortType: Integer read FBrowserSortType write FBrowserSortType;
+    property BrowserSortType: Cardinal read FBrowserSortType write FBrowserSortType;
+    property BrowserSortDir: Cardinal read FBrowserSortDir write FBrowserSortDir;
+    property BrowserSearchText: string read FBrowserSearchText write FBrowserSearchText;
+    property BrowserSearchGenre: Cardinal read FBrowserSearchGenre write FBrowserSearchGenre;
+    property BrowserSearchAudioType: Cardinal read FBrowserSearchAudioType write FBrowserSearchAudioType;
+    property BrowserSearchBitrate: Cardinal read FBrowserSearchBitrate write FBrowserSearchBitrate;
+
     // Last used version of the data-file format
     property LastUsedDataVersion: Integer read FLastUsedDataVersion write FLastUsedDataVersion;
     // Path to the recovery-file (this is set if streamWriter crashed or something)
@@ -859,7 +871,12 @@ begin
     FNodeColorsLoaded := True;
   end;
 
-  FStorage.Read('BrowserSortType', FBrowserSortType, 3);
+  FStorage.Read('BrowserSortType', FBrowserSortType, 3, 'Streambrowser');
+  FStorage.Read('BrowserSortDir', FBrowserSortDir, 1, 'Streambrowser');
+  FStorage.Read('BrowserSearchText', FBrowserSearchText, '', 'Streambrowser');
+  FStorage.Read('BrowserSearchGenre', FBrowserSearchGenre, 0, 'Streambrowser');
+  FStorage.Read('BrowserSearchAudioType', FBrowserSearchAudioType, 0, 'Streambrowser');
+  FStorage.Read('BrowserSearchBitrate', FBrowserSearchBitrate, 0, 'Streambrowser');
 
   if (DefaultActionTmp > Ord(High(TClientActions))) or
      (DefaultActionTmp < Ord(Low(TClientActions))) then
@@ -1232,7 +1249,12 @@ begin
   FStorage.Write('NodeTextColorSelected', Integer(FNodeTextColorSelected), 'Display');
   FStorage.Write('NodeTextColorSelectedFocused', Integer(FNodeTextColorSelectedFocused), 'Display');
 
-  FStorage.Write('BrowserSortType', FBrowserSortType);
+  FStorage.Write('BrowserSortType', FBrowserSortType, 'Streambrowser');
+  FStorage.Write('BrowserSortDir', FBrowserSortDir, 'Streambrowser');
+  FStorage.Write('BrowserSearchText', FBrowserSearchText, 'Streambrowser');
+  FStorage.Write('BrowserSearchGenre', FBrowserSearchGenre, 'Streambrowser');
+  FStorage.Write('BrowserSearchAudioType', FBrowserSearchAudioType, 'Streambrowser');
+  FStorage.Write('BrowserSearchBitrate', FBrowserSearchBitrate, 'Streambrowser');
 
   FStorage.DeleteKey('Plugins');
   FStorage.DeleteKey('Encoders');

@@ -90,7 +90,7 @@ type
     FCountLabel: TLabel;
     FMode: TModes;
 
-    FSelectedSortType: TSortTypes;
+    FSortType: TSortTypes;
 
     FLoading: Boolean;
 
@@ -102,7 +102,7 @@ type
 
     procedure BuildTree(AlwaysBuild: Boolean);
     procedure BuildGenres;
-    procedure SortTree;
+    procedure SortTree(ResetSortDir: Boolean);
 
     procedure StreamBrowserHeaderClick(Sender: TVTHeader; HitInfo: TVTHeaderHitInfo);
 
@@ -149,7 +149,7 @@ type
     FLastGenre: string;
     FLastAudioType: TAudioTypes;
     FLastBitrate: Cardinal;
-    FSelectedSortType: TSortTypes;
+    FSortType: TSortTypes;
 
     FImageMetaData: TPngImage;
     FImageChangesTitle: TPngImage;
@@ -239,7 +239,6 @@ type
     property OnNeedData: TNeedDataEvent read FOnNeedData write FOnNeedData;
     property OnAction: TActionEvent read FOnAction write FOnAction;
     property OnIsInClientList: TIsInClientListEvent read FOnIsInClientList write FOnIsInClientList;
-    property SelectedSortType: TSortTypes read FSelectedSortType write FSelectedSortType;
   end;
 
 implementation
@@ -948,17 +947,17 @@ begin
     atOGG: S2 := 'o';
   end;
 
-  case FSelectedSortType of
+  case FSortType of
     stName: Result := CompareText(Data1.Data.Name, Data2.Data.Name);
     stBitrate: Result := CmpInt(Data1.Data.Bitrate, Data2.Data.Bitrate);
     stType: Result := CompareText(S1, S2);
     stRating: Result := CmpInt(Data1.Data.Rating, Data2.Data.Rating)
   end;
 
-  if (Result = 0) and (FSelectedSortType <> stName) then
+  if (Result = 0) and (FSortType <> stName) then
     Result := CompareText(Data2.Data.Name, Data1.Data.Name);
 
-  if (Result = 0) and (FSelectedSortType <> stRating) then
+  if (Result = 0) and (FSortType <> stRating) then
     Result := CmpInt(Data1.Data.Rating, Data2.Data.Rating)
 end;
 
@@ -1053,7 +1052,10 @@ end;
 procedure TMStreamTree.Sort(Node: PVirtualNode; Column: TColumnIndex;
   SortType: TSortTypes; Direction: TSortDirection);
 begin
-  FSelectedSortType := SortType;
+  FSortType := SortType;
+
+  AppGlobals.BrowserSortType := Cardinal(FSortType);
+
   inherited Sort(nil, 0, Direction);
 end;
 
@@ -1105,8 +1107,18 @@ end;
 { TMStreamView }
 
 procedure TMStreamBrowserView.AfterCreate;
+var
+  i: Integer;
 begin
   FSearch.AfterCreate;
+
+  FSortType := TSortTypes(AppGlobals.BrowserSortType);
+  FStreamTree.Header.SortDirection := TSortDirection(AppGlobals.BrowserSortDir);
+  FSearch.FSearchEdit.Text := AppGlobals.BrowserSearchText;
+  if AppGlobals.BrowserSearchAudioType < FSearch.FTypeList.Items.Count then
+    FSearch.FTypeList.ItemIndex := AppGlobals.BrowserSearchAudioType;
+  if AppGlobals.BrowserSearchBitrate < FSearch.FKbpsList.Items.Count then
+    FSearch.FKbpsList.ItemIndex := AppGlobals.BrowserSearchBitrate;
 
   AppGlobals.Lock;
   try
@@ -1120,20 +1132,13 @@ begin
     AppGlobals.Unlock;
   end;
 
-  FSelectedSortType := TSortTypes(AppGlobals.BrowserSortType);
-
-  SortTree;
+  SortTree(False);
 end;
 
 procedure TMStreamBrowserView.BuildGenres;
 var
   i: Integer;
-  LastGenre: string;
 begin
-  LastGenre := '';
-  if FSearch.FGenreList.ItemIndex > -1 then
-    LastGenre := FSearch.FGenreList.Text;
-
   FSearch.FGenreList.Clear;
   FSearch.FGenreList.Items.Add(_('- No genre -'));
   AppGlobals.Lock;
@@ -1147,12 +1152,8 @@ begin
     FSearch.FGenreList.ItemIndex := 0;
   FSearch.FGenreList.Sorted := True;
 
-  for i := 0 to FSearch.FGenreList.Items.Count - 1 do
-    if FSearch.FGenreList.Items[i] = LastGenre then
-    begin
-      FSearch.FGenreList.ItemIndex := i;
-      Break;
-    end;
+  if AppGlobals.BrowserSearchGenre < FSearch.FGenreList.Items.Count then
+    FSearch.FGenreList.ItemIndex := AppGlobals.BrowserSearchGenre;
 end;
 
 procedure TMStreamBrowserView.BuildTree(AlwaysBuild: Boolean);
@@ -1163,7 +1164,9 @@ var
 begin
   Genre := '';
 
-  if FSearch.FGenreList.ItemIndex > 0 then
+  if FSearch.FGenreList.ItemIndex = -1 then
+    Exit
+  else if FSearch.FGenreList.ItemIndex > 0 then
   begin
     Genre := FSearch.FGenreList.Items[FSearch.FGenreList.ItemIndex];
     Genre := Copy(Genre, 1, Pos(' (', Genre) - 1);
@@ -1190,7 +1193,13 @@ begin
 
   if FStreamTree.Build(AlwaysBuild, FSearch.FSearchEdit.Text, Genre, AudioType, Bitrate) then
   begin
-    FStreamTree.Sort(nil, 0, FSelectedSortType, FStreamTree.Header.SortDirection);
+    // Es ist etwas dreckig, dass wir das hier speichern. Aber so ist es am einfachsten...
+    AppGlobals.BrowserSearchText := FSearch.FSearchEdit.Text;
+    AppGlobals.BrowserSearchGenre := FSearch.FGenreList.ItemIndex;
+    AppGlobals.BrowserSearchAudioType := Cardinal(AudioType);
+    AppGlobals.BrowserSearchBitrate := FSearch.FKbpsList.ItemIndex;
+
+    FStreamTree.Sort(nil, 0, FSortType, FStreamTree.Header.SortDirection);
 
     if FStreamTree.RootNodeCount = 1 then
       FCountLabel.Caption := Format(_('%d stream found'), [FStreamTree.RootNodeCount])
@@ -1207,7 +1216,7 @@ begin
   BevelOuter := bvNone;
 
   FLoading := False;
-  FSelectedSortType := stRating;
+  FSortType := stRating;
 
   FSearch := TMStreamSearchPanel.Create(Self);
   FSearch.Parent := Self;
@@ -1233,7 +1242,6 @@ begin
   SwitchMode(moShow);
 
   FSearch.FSearchEdit.OnChange := SearchEditChange;
-  //FSearch.FSearchButton.OnClick := SearchButtonClick;
   FSearch.FGenreList.OnChange := ListsChange;
   FSearch.FKbpsList.OnChange := ListsChange;
   FSearch.FTypeList.OnChange := ListsChange;
@@ -1285,14 +1293,17 @@ begin
   BuildTree(False);
 end;
 
-procedure TMStreamBrowserView.SortTree;
+procedure TMStreamBrowserView.SortTree(ResetSortDir: Boolean);
 var
   i: Integer;
   SortDir: TSortDirection;
 begin
-  SortDir := sdAscending;
+  if ResetSortDir then
+    SortDir := sdAscending
+  else
+    SortDir := TSortDirection(AppGlobals.BrowserSortDir);
 
-  case FSelectedSortType of
+  case FSortType of
     stName:
       begin
         FStreamTree.Header.Columns[0].Text := _('Name');
@@ -1316,13 +1327,13 @@ begin
   end;
 
   for i := 0 to FStreamTree.FSortPopupMenu.Items.Count - 1 do
-    if FStreamTree.FSortPopupMenu.Items[i].Tag = Integer(FSelectedSortType) then
+    if FStreamTree.FSortPopupMenu.Items[i].Tag = Integer(FSortType) then
     begin
       FStreamTree.FSortPopupMenu.Items[i].Checked := True;
       Break;
     end;
 
-  FStreamTree.Sort(nil, 0, FSelectedSortType, SortDir);
+  FStreamTree.Sort(nil, 0, FSortType, SortDir);
 end;
 
 procedure TMStreamBrowserView.SortItemClick(Sender: TObject);
@@ -1345,20 +1356,20 @@ begin
 
   if Sender = FStreamTree.FSortPopupMenu.FItemName then
   begin
-    FSelectedSortType := stName;
+    FSortType := stName;
   end else if Sender = FStreamTree.FSortPopupMenu.FItemKbps then
   begin
-    FSelectedSortType := stBitrate;
+    FSortType := stBitrate;
   end else if Sender = FStreamTree.FSortPopupMenu.FItemType then
   begin
-    FSelectedSortType := stType;
+    FSortType := stType;
   end else if Sender = FStreamTree.FSortPopupMenu.FItemRating then
   begin
-    FSelectedSortType := stRating;
+    FSortType := stRating;
   end else
     raise Exception.Create('');
 
-  SortTree;
+  SortTree(True);
 end;
 
 procedure TMStreamBrowserView.StreamBrowserHeaderClick(Sender: TVTHeader;
@@ -1371,7 +1382,9 @@ begin
     else
       FStreamTree.Header.SortDirection := sdAscending;
 
-    FStreamTree.Sort(nil, 0, FSelectedSortType, FStreamTree.Header.SortDirection);
+    AppGlobals.BrowserSortDir := Cardinal(FStreamTree.Header.SortDirection);
+
+    FStreamTree.Sort(nil, 0, FSortType, FStreamTree.Header.SortDirection);
   end;
 end;
 
@@ -1386,7 +1399,6 @@ begin
   FSearch.FGenreList.Enabled := Mode = moShow;
   FSearch.FKbpsList.Enabled := Mode = moShow;
   FSearch.FTypeList.Enabled := Mode = moShow;
-  //FSearch.FSearchButton.Enabled := Mode = moShow;
 
   FCountLabel.Enabled := Mode = moShow;
 

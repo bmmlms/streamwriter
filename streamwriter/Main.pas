@@ -402,7 +402,6 @@ begin
   end;
 
   AppGlobals.SidebarWidth := tabClients.SideBar.Width;
-  AppGlobals.BrowserSortType := Integer(tabClients.SideBar.BrowserView.StreamTree.SelectedSortType);
 
   for i := 0 to tabClients.ClientView.Header.Columns.Count - 1 do
   begin
