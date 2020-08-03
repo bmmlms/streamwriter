@@ -162,7 +162,7 @@ begin
     ButtonCloseApp.Enabled := False;
     PostMessage(GetWindowHandle, 5432, 6345, 555);
 
-    TimerAppCheckExit := CreateTimer(1, 5000, @AppCheckExitTimer);
+    TimerAppCheckExit := CreateTimer(1, 10000, @AppCheckExitTimer);
   end;
 end;
 
