@@ -860,10 +860,10 @@ begin
   FLogCols := FLogCols or (1 shl 0);
   FLogCols := FLogCols or (1 shl 3);
 
-  FStorage.Read('NodeTextColor', Integer(FNodeTextColor), $7F000000, 'Display');
-  FStorage.Read('NodeTextColorSelected', Integer(FNodeTextColorSelected), $7F000000, 'Display');
-  FStorage.Read('NodeTextColorSelectedFocused', Integer(FNodeTextColorSelectedFocused), $7F000000, 'Display');
-  FStorage.Read('NodeBackgroundColor', Integer(FNodeBackgroundColor), $7F000000, 'Display');
+  FStorage.Read('NodeTextColor', Integer(FNodeTextColor), $7F000000, 'Appearance');
+  FStorage.Read('NodeTextColorSelected', Integer(FNodeTextColorSelected), $7F000000, 'Appearance');
+  FStorage.Read('NodeTextColorSelectedFocused', Integer(FNodeTextColorSelectedFocused), $7F000000, 'Appearance');
+  FStorage.Read('NodeBackgroundColor', Integer(FNodeBackgroundColor), $7F000000, 'Appearance');
 
   if (FNodeTextColor <> $7F000000) and (FNodeTextColorSelected <> $7F000000) and (FNodeTextColorSelectedFocused <> $7F000000) and
      (FNodeBackgroundColor <> $7F000000) then
@@ -1244,10 +1244,10 @@ begin
     FStorage.Write('LogHeaderPosition' + IntToStr(i), FLogHeaderPosition[i], 'Cols');
   FStorage.Write('LogCols', FLogCols, 'Cols');
 
-  FStorage.Write('NodeBackgroundColor', Integer(FNodeBackgroundColor), 'Display');
-  FStorage.Write('NodeTextColor', Integer(FNodeTextColor), 'Display');
-  FStorage.Write('NodeTextColorSelected', Integer(FNodeTextColorSelected), 'Display');
-  FStorage.Write('NodeTextColorSelectedFocused', Integer(FNodeTextColorSelectedFocused), 'Display');
+  FStorage.Write('NodeBackgroundColor', Integer(FNodeBackgroundColor), 'Appearance');
+  FStorage.Write('NodeTextColor', Integer(FNodeTextColor), 'Appearance');
+  FStorage.Write('NodeTextColorSelected', Integer(FNodeTextColorSelected), 'Appearance');
+  FStorage.Write('NodeTextColorSelectedFocused', Integer(FNodeTextColorSelectedFocused), 'Appearance');
 
   FStorage.Write('BrowserSortType', FBrowserSortType, 'Streambrowser');
   FStorage.Write('BrowserSortDir', FBrowserSortDir, 'Streambrowser');

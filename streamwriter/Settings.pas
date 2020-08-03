@@ -204,7 +204,7 @@ type
     txtShortLengthSeconds: TLabeledEdit;
     Label4: TLabel;
     chkSkipShort: TCheckBox;
-    pnlDisplay: TPanel;
+    pnlAppearance: TPanel;
     PngSpeedButton1: TPngSpeedButton;
     dlgColor: TColorDialog;
     Label23: TLabel;
@@ -1452,7 +1452,7 @@ begin
     stApp:
       begin
         FPageList.Add(TPage.Create('Settings', pnlMain, 'PROPERTIES'));
-        FPageList.Add(TPage.Create('Display', pnlDisplay, 'DISPLAY'));
+        FPageList.Add(TPage.Create('Appearance', pnlAppearance, 'APPEARANCE'));
         FPageList.Add(TPage.Create('Recordings', pnlStreams, 'STREAM'));
         FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
         FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));

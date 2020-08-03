@@ -1769,7 +1769,7 @@ object frmSettings: TfrmSettings
       TabOrder = 3
     end
   end
-  object pnlDisplay: TPanel
+  object pnlAppearance: TPanel
     Left = 603
     Top = 683
     Width = 293
