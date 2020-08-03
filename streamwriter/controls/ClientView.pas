@@ -1328,7 +1328,29 @@ begin
   end;
 
   DoStateChange([], [tsOLEDragPending, tsOLEDragging, tsClearPending]);
-  FDragSource.Execute(False);
+
+  try
+    FDragSource.Execute(False);
+  except
+    // Das try..except ist gegen die Bugs, die ich nicht beheben kann...
+    {
+    76625958 +028 SHELL32.dll                                ILClone
+    007c8da3 +00b streamwriter.exe DragDropPIDL     696   +1 StringToPIDL
+    007c8e87 +023 streamwriter.exe DragDropPIDL     784   +1 TPIDLList.Add
+    007c8c16 +132 streamwriter.exe DragDropPIDL     523  +31 GetPIDLsFromFilenames
+    007c947d +039 streamwriter.exe DragDropPIDL     912   +5 TPIDLsToFilenamesStrings.Assign
+    007d0fec +040 streamwriter.exe DragDropFile    3147   +7 TFileDataFormat.AssignTo
+    007bd9f5 +0bd streamwriter.exe DropSource      1507  +36 TCustomDropMultiSource.DoGetData
+    007bc534 +048 streamwriter.exe DropSource       680  +11 TCustomDropSource.GetData
+    00784493 +06b streamwriter.exe VirtualTrees    5305  +11 TVTDragManager.DragEnter
+    75ed9c1e +0de ole32.dll                                  DoDragDrop
+    007bcb6a +12a streamwriter.exe DropSource       992  +58 TCustomDropSource.DoExecute
+    007c4d77 +00f streamwriter.exe DragDrop        1501   +2 TCustomDataFormat.Changing
+    007bce85 +1ad streamwriter.exe DropSource      1145  +60 TCustomDropSource.Execute
+    008abe9d +37d streamwriter.exe ClientView      1286  +51 TMClientView.DoDragging
+    }
+  end;
+
   SetLength(FDragNodes, 0);
 end;
 
