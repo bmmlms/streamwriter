@@ -66,7 +66,7 @@
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <AppEnableHighDPI>true</AppEnableHighDPI>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=streamwriter.org;FileDescription=streamWriter;FileVersion=5.5.0.0;InternalName=streamwriter;LegalCopyright=Copyright (c) 2010-2020 Alexander Nottelmann et al.;LegalTrademarks=;OriginalFilename=streamwriter.exe;ProductName=streamWriter;ProductVersion=5.5.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=streamwriter.org;FileDescription=streamWriter;FileVersion=5.5.1.0;InternalName=streamwriter;LegalCopyright=Copyright (c) 2010-2020 Alexander Nottelmann et al.;LegalTrademarks=;OriginalFilename=streamwriter.exe;ProductName=streamWriter;ProductVersion=5.5.1.0;Comments=</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <Manifest_File>(Ohne)</Manifest_File>
