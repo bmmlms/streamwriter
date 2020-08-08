@@ -43,8 +43,7 @@ type
   private
     FData: TDataLists;
     FUserLoggedIn: Boolean;
-    FID: Integer;
-    //FEasyMode: Boolean;
+    FID: Cardinal;
     FDir: string;
     FDirAuto: string;
     FTray: Boolean;
@@ -184,8 +183,7 @@ type
     property UserLoggedIn: Boolean read FUserLoggedIn write FUserLoggedIn;
 
     // The unique ID generated for this specific client
-    property ID: Integer read FID;
-    //property EasyMode: Boolean read FEasyMode write FEasyMode;
+    property ID: Cardinal read FID;
     // The directory songs get saved to
     property Dir: string read FDir write FDir;
     // The direcroty automatically recorded songs get saved to
@@ -376,7 +374,7 @@ begin
   FData := TDataLists.Create;
 
   // The number of the current build
-  FBuildNumber := 787;
+  FBuildNumber := 804;
   FCodename := 'Vivo';
 
   // Adjust dimensions of the main-form
@@ -568,37 +566,18 @@ end;
 
 // Loads everything streamWriter needs to know for startup
 procedure TAppData.Load;
-  // Generates an unique ID (this is only used to know how many people are using streamWriter - seriously!)
-  function GetID: Integer;
-  var
-    Len: Cardinal;
-    Name: string;
-  begin
-    Result := Random(9999) + 1;
-
-    SetLength(Name, 255);
-    Len := 255;
-    if GetComputerName(@Name[1], Len) then
-    begin
-      SetLength(Name, Len);
-      Result := Result + HashString(Name);
-    end;
-    Result := Result + GetTickCount;
-    if Result < 1 then
-      Result := Result * -1;
-    if Result = 0 then
-      Result := GetID;
-  end;
 var
   i, DefaultActionTmp, DefaultActionBrowser: Integer;
   TmpStr: string;
+  GUID: TGUID;
 begin
   inherited;
 
   FStorage.Read('ID', FID, 0);
   if FID < 1 then
   begin
-    FID := GetID;
+    CreateGUID(GUID);
+    FID := HashString(GUID.ToString);
   end;
 
   FStorage.Read('LastUsedDataVersion', FLastUsedDataVersion, 0);

@@ -75,7 +75,6 @@ begin
   AppGlobals.MonitorMode := chkMonitorMode.Checked;
   if StrToIntDef(txtMonitorCount.Text, -1) > 0 then
     AppGlobals.MonitorCount := StrToInt(txtMonitorCount.Text);
-  //AppGlobals.EasyMode := optModeEasy.Checked;
   inherited;
 end;
 
@@ -108,8 +107,7 @@ begin
       txtMonitorCount.Text := IntToStr(AppGlobals.MonitorCount);
   end else if Step.Panel = pnlSelectMode then
   begin
-    //optModeEasy.Checked := AppGlobals.EasyMode;
-    //optModeAdvanced.Checked := not AppGlobals.EasyMode;
+
   end;
 end;
 
