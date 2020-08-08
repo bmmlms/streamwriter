@@ -42,7 +42,6 @@ type
   TAppData = class(TAppDataBase)
   private
     FData: TDataLists;
-    FStreamSettingsObsolete: TStreamSettings;
     FUserLoggedIn: Boolean;
     FID: Integer;
     //FEasyMode: Boolean;
@@ -60,8 +59,6 @@ type
     FSidebarWidth: Integer;
     FAutoTuneIn: Boolean;
     FAutoTuneInConsiderIgnore: Boolean;
-    FAutoTuneInAddToIgnoreObsolete: Boolean;
-    FAutoRemoveSavedFromWishlistObsolete: Boolean;
     FSubmitStreamInfo: Boolean;
     FSubmitStats: Boolean;
     FMonitorMode: Boolean;
@@ -81,7 +78,6 @@ type
     FLimitSpeed: Boolean;
     FMaxSpeed: Cardinal;
     FLastBrowserUpdate: Cardinal;
-    FAutomaticFilePatternObsolete: string;
 
     FProjectHelpLinkMain: string;
     FProjectHelpLinkSettings: string;
@@ -183,11 +179,8 @@ type
     procedure DeleteUndoFiles;
 
     procedure LoadData;
-    procedure LoadOldStreamSettings;
-    procedure InitPostProcessors;
 
     property Data: TDataLists read FData;
-    property StreamSettingsObsolete: TStreamSettings read FStreamSettingsObsolete;
     property UserLoggedIn: Boolean read FUserLoggedIn write FUserLoggedIn;
 
     // The unique ID generated for this specific client
@@ -217,10 +210,6 @@ type
     property AutoTuneIn: Boolean read FAutoTuneIn write FAutoTuneIn;
     // When set streamWriter will not record songs automatically when they are on the ignorelist
     property AutoTuneInConsiderIgnore: Boolean read FAutoTuneInConsiderIgnore write FAutoTuneInConsiderIgnore;
-    // When set automatically recorded songs will be added to the global ignorelist
-    property AutoTuneInAddToIgnoreObsolete: Boolean read FAutoTuneInAddToIgnoreObsolete write FAutoTuneInAddToIgnoreObsolete;
-    // When set automatically recorded songs will be removed from the wishlist
-    property AutoRemoveSavedFromWishlistObsolete: Boolean read FAutoRemoveSavedFromWishlistObsolete write FAutoRemoveSavedFromWishlistObsolete;
     // When set information about streams the user records will be sent to the server (only the URL of the stream)
     property SubmitStreamInfo: Boolean read FSubmitStreamInfo write FSubmitStreamInfo;
     // When set some statistics will be sent to the server (number of recoring streams/automatically recording streams)
@@ -273,8 +262,6 @@ type
     property MaxSpeed: Cardinal read FMaxSpeed write FMaxSpeed;
     // Time of last browser update (Browser will be updated automatically in specific intervals)
     property LastBrowserUpdate: Cardinal read FLastBrowserUpdate write FLastBrowserUpdate;
-    // The pattern for automatically recorded files
-    property AutomaticFilePatternObsolete: string read FAutomaticFilePatternObsolete write FAutomaticFilePatternObsolete;
 
     property ClientHeaderWidthLoaded: Boolean read FClientHeaderWidthLoaded;
     property ClientHeaderPositionLoaded: Boolean read FClientHeaderPositionLoaded;
@@ -387,7 +374,6 @@ begin
   // Create an instance for global stream-settings
   // (these are used for new streams that do not have user-specified settings)
   FData := TDataLists.Create;
-  FStreamSettingsObsolete := TStreamSettings.Create(False);
 
   // The number of the current build
   FBuildNumber := 787;
@@ -520,7 +506,6 @@ begin
   FLanguageIcons.Free;
   FAddonManager.Free;
   FPostProcessManager.Free;
-  FStreamSettingsObsolete.Free;
   FData.Free;
 
   DeleteFile(TempDir + 'playlist.m3u');
@@ -554,41 +539,6 @@ begin
   // Required to make Inno Setup more comfortable :)
   if MutexHandle > 0 then
     FMutexHandleExiting := CreateMutex(nil, True, PChar(AppName + 'MutexExiting'));
-end;
-
-procedure TAppData.InitPostProcessors;
-var
-  i: Integer;
-  App, Params: string;
-  EP: TExternalPostProcess;
-  Active, OnlyIfCut: Boolean;
-  Order, GroupID: Integer;
-begin
-  StreamSettingsObsolete.InitStuff(True);
-  Data.DefaultStreamSettings.InitStuff;
-  Data.StreamSettings.InitStuff;
-  Data.AutoRecordSettings.InitStuff;
-
-  // REMARK: Das kann raus, wenn DataVersion >= 61 gut verbreitet ist... Nur für Abwärtskompatibilität!
-  i := 0;
-  repeat
-    AppGlobals.Storage.Read('Exe_' + IntToStr(i), App, '', 'Plugins');
-    AppGlobals.Storage.Read('Params_' + IntToStr(i), Params, '', 'Plugins');
-    AppGlobals.Storage.Read('OrderExe_' + IntToStr(i), Order, 0, 'Plugins');
-    AppGlobals.Storage.Read('Active_' + IntToStr(i), Active, False, 'Plugins');
-    AppGlobals.Storage.Read('OnlyIfCut_' + IntToStr(i), OnlyIfCut, False, 'Plugins');
-    AppGlobals.Storage.Read('Group_' + IntToStr(i), GroupID, 1, 'Plugins');
-    if App <> '' then
-    begin
-      EP := TExternalPostProcess.Create(App, Params, Active, OnlyIfCut, i, Order, GroupID);
-      try
-        AppGlobals.StreamSettingsObsolete.PostProcessors.Add(EP);
-      except
-
-      end;
-    end;
-    Inc(i);
-  until (App = '');
 end;
 
 procedure TAppData.BuildThanksText;
@@ -653,10 +603,6 @@ begin
 
   FStorage.Read('LastUsedDataVersion', FLastUsedDataVersion, 0);
 
-  //FStorage.Read('EasyMode', FEasyMode, FLastUsedDataVersion = 0);
-
-  // Remark: Dran denken irgendwann StreamSettingsObsolete zu entfernen!
-
   FStorage.Read('Dir', FDir, '');
   if FDir <> '' then
     FDir := IncludeTrailingBackslash(FDir);
@@ -685,8 +631,6 @@ begin
   FStorage.Read('SidebarWidth', FSidebarWidth, MulDiv(220, Screen.PixelsPerInch, 96));
   FStorage.Read('AutoTuneIn', FAutoTuneIn, True);
   FStorage.Read('AutoTuneInConsiderIgnore', FAutoTuneInConsiderIgnore, False);
-  FStorage.Read('AutoTuneInAddToIgnore', FAutoTuneInAddToIgnoreObsolete, False);
-  FStorage.Read('AutoRemoveSavedFromWishlist', FAutoRemoveSavedFromWishlistObsolete, False);
   FStorage.Read('SubmitStreamInfo', FSubmitStreamInfo, True);
   FStorage.Read('SubmitStats', FSubmitStats, True);
   FStorage.Read('MonitorMode', FMonitorMode, True);
@@ -700,10 +644,6 @@ begin
   if FMaxSpeed <= 0 then
     FLimitSpeed := False;
   FStorage.Read('LastBrowserUpdate', FLastBrowserUpdate, Trunc(Now));
-
-  FStorage.Read('AutomaticFilePattern', FAutomaticFilePatternObsolete, '%streamname%\%artist% - %title%');
-  if (LastUsedDataVersion > 0) and (LastUsedDataVersion < 64) and (FAutomaticFilePatternObsolete <> '%streamname%\%artist% - %title%') then
-    FAutomaticFilePatternObsolete := ConvertPattern(FAutomaticFilePatternObsolete);
 
   FStorage.Read('AutoTuneInMinQuality', FAutoTuneInMinQuality, 2);
   if (FAutoTuneInMinQuality > 2) or (FAutoTuneInMinQuality < 0) then
@@ -945,7 +885,6 @@ begin
         FData.Free;
       except end;
       FData := TDataLists.Create;
-      InitPostProcessors;
 
       // Damit beim Beenden nichts überschrieben wird.
       FData.LoadError := True;
@@ -990,136 +929,6 @@ begin
   SendMessage(Handle, WM_COPYDATA, 0, LongInt(@CDS));
 end;
 
-procedure TAppData.LoadOldStreamSettings;
-var
-  TmpStr: string;
-  TmpCardinal: Cardinal;
-  TmpBoolean: Boolean;
-  TmpInteger: Integer;
-begin
-  if (FLastUsedDataVersion > 0) and (FLastUsedDataVersion < 61) then
-  begin
-    FStreamSettingsObsolete.RegExes.Assign(FData.DefaultStreamSettings.RegExes);
-
-    FStorage.Read('FilePattern', TmpStr, FData.DefaultStreamSettings.FilePattern);
-    FStreamSettingsObsolete.FilePattern := TmpStr;
-    FStorage.Read('IncompleteFilePattern', TmpStr, FData.DefaultStreamSettings.IncompleteFilePattern);
-    FStreamSettingsObsolete.IncompleteFilePattern := TmpStr;
-    FStorage.Read('StreamFilePattern', TmpStr, FData.DefaultStreamSettings.StreamFilePattern);
-    FStreamSettingsObsolete.StreamFilePattern := TmpStr;
-    FStorage.Read('FilePatternDecimals', TmpCardinal, FData.DefaultStreamSettings.FilePatternDecimals);
-    FStreamSettingsObsolete.FilePatternDecimals := TmpCardinal;
-    FStorage.Read('RemoveChars', TmpStr, FData.DefaultStreamSettings.RemoveChars);
-    FStreamSettingsObsolete.RemoveChars := TmpStr;
-    FStorage.Read('NormalizeVariables', TmpBoolean, FData.DefaultStreamSettings.NormalizeVariables);
-    FStreamSettingsObsolete.NormalizeVariables := TmpBoolean;
-
-    FStorage.Read('DeleteStreams', TmpBoolean, FData.DefaultStreamSettings.DeleteStreams);
-    FStreamSettingsObsolete.DeleteStreams := TmpBoolean;
-    FStorage.Read('AddSavedToIgnore', TmpBoolean, FData.DefaultStreamSettings.AddSavedToIgnore);
-    FStreamSettingsObsolete.AddSavedToIgnore := TmpBoolean;
-    FStorage.Read('AddSavedToStreamIgnore', TmpBoolean, FData.DefaultStreamSettings.AddSavedToStreamIgnore);
-    FStreamSettingsObsolete.AddSavedToStreamIgnore := TmpBoolean;
-    FStorage.Read('RemoveSavedFromWishlist', TmpBoolean, FData.DefaultStreamSettings.RemoveSavedFromWishlist);
-    FStreamSettingsObsolete.RemoveSavedFromWishlist := TmpBoolean;
-    FStorage.Read('SkipShort', TmpBoolean, FData.DefaultStreamSettings.SkipShort);
-    FStreamSettingsObsolete.SkipShort := TmpBoolean;
-    FStorage.Read('SearchSilence', TmpBoolean, FData.DefaultStreamSettings.SearchSilence);
-    FStreamSettingsObsolete.SearchSilence := TmpBoolean;
-    FStorage.Read('AutoDetectSilenceLevel', TmpBoolean, FData.DefaultStreamSettings.AutoDetectSilenceLevel);
-    FStreamSettingsObsolete.AutoDetectSilenceLevel := TmpBoolean;
-    FStorage.Read('SilenceLevel', TmpCardinal, FData.DefaultStreamSettings.SilenceLevel);
-    FStreamSettingsObsolete.SilenceLevel := TmpCardinal;
-    FStorage.Read('SilenceLength', TmpCardinal, FData.DefaultStreamSettings.SilenceLength);
-    FStreamSettingsObsolete.SilenceLength := TmpCardinal;
-
-    FStorage.Read('SilenceBufferSeconds', TmpInteger, FData.DefaultStreamSettings.SilenceBufferSecondsStart);
-    if TmpInteger <> FData.DefaultStreamSettings.SilenceBufferSecondsStart then
-    begin
-      FStreamSettingsObsolete.SilenceBufferSecondsStart := TmpInteger;
-      FStreamSettingsObsolete.SilenceBufferSecondsEnd := TmpInteger;
-    end else
-    begin
-      FStorage.Read('SilenceBufferSecondsStart', TmpInteger, FData.DefaultStreamSettings.SilenceBufferSecondsStart);
-      FStreamSettingsObsolete.SilenceBufferSecondsStart := TmpInteger;
-      FStorage.Read('SilenceBufferSecondsEnd', TmpInteger, FData.DefaultStreamSettings.SilenceBufferSecondsEnd);
-      FStreamSettingsObsolete.SilenceBufferSecondsEnd := TmpInteger;
-    end;
-
-    FStreamSettingsObsolete.AdjustTrackOffset := False;
-    FStreamSettingsObsolete.AdjustTrackOffsetMS := 0;
-    FStreamSettingsObsolete.AdjustTrackOffsetDirection := toForward;
-
-    FStorage.Read('SaveToMemory', TmpBoolean, FData.DefaultStreamSettings.SaveToMemory);
-    FStreamSettingsObsolete.SaveToMemory := TmpBoolean;
-    FStorage.Read('OnlySaveFull', TmpBoolean, FData.DefaultStreamSettings.OnlySaveFull);
-    FStreamSettingsObsolete.OnlySaveFull := TmpBoolean;
-    FStorage.Read('OverwriteSmaller', TmpBoolean, FData.DefaultStreamSettings.OverwriteSmaller);
-    FStreamSettingsObsolete.OverwriteSmaller := TmpBoolean;
-    FStorage.Read('DiscardSmaller', TmpBoolean, FData.DefaultStreamSettings.DiscardSmaller);
-    FStreamSettingsObsolete.DiscardSmaller := TmpBoolean;
-    FStorage.Read('DiscardAlways', TmpBoolean, FData.DefaultStreamSettings.DiscardAlways);
-    FStreamSettingsObsolete.DiscardAlways := TmpBoolean;
-
-    if (FStreamSettingsObsolete.SilenceLevel < 1) or (StreamSettingsObsolete.SilenceLevel > 100) then
-      FStreamSettingsObsolete.SilenceLevel := FData.DefaultStreamSettings.SilenceLevel;
-    if FStreamSettingsObsolete.SilenceLength < 20 then
-      FStreamSettingsObsolete.SilenceLength := FData.DefaultStreamSettings.SilenceLength;
-
-    FStorage.Read('ShortLengthSeconds', TmpInteger, FData.DefaultStreamSettings.ShortLengthSeconds);
-    FStreamSettingsObsolete.ShortLengthSeconds := TmpInteger;
-
-    FStorage.Read('SongBuffer', TmpInteger, FData.DefaultStreamSettings.SongBuffer);
-    FStreamSettingsObsolete.SongBuffer := TmpInteger;
-
-    FStorage.Read('MaxRetries', TmpInteger, FData.DefaultStreamSettings.MaxRetries);
-    FStreamSettingsObsolete.MaxRetries := TmpInteger;
-    FStorage.Read('RetryDelay', TmpCardinal, FData.DefaultStreamSettings.RetryDelay);
-    FStreamSettingsObsolete.RetryDelay := TmpCardinal;
-
-    FStorage.Read('SeparateTracks', TmpBoolean, FData.DefaultStreamSettings.SeparateTracks);
-    FStreamSettingsObsolete.SeparateTracks := TmpBoolean;
-
-    FStorage.Read('OutputFormat', TmpInteger, Integer(FData.DefaultStreamSettings.OutputFormat));
-    if (TmpInteger > Ord(High(TAudioTypes))) or
-       (TmpInteger < Ord(Low(TAudioTypes))) then
-      FStreamSettingsObsolete.OutputFormat := atNone
-    else
-      FStreamSettingsObsolete.OutputFormat := TAudioTypes(TmpInteger);
-
-    FStorage.Read('DefaultFilter', TmpInteger, Integer(ufNone));
-    if IsVersionNewer(LastUsedVersion, AppVersion) and (IsVersionNewer(LastUsedVersion, ParseVersion('2.1.0.9'))) then
-    begin
-      if TmpInteger = 0 then
-        FStreamSettingsObsolete.Filter := ufNone
-      else if TmpInteger = 1 then
-        FStreamSettingsObsolete.Filter := ufWish
-      else if TmpInteger = 2 then
-        FStreamSettingsObsolete.Filter := ufIgnoreBoth
-      else if TmpInteger = 3 then
-        FStreamSettingsObsolete.Filter := ufBoth
-      else
-        FStreamSettingsObsolete.Filter := ufNone;
-    end else if (TmpInteger > Ord(High(TUseFilters))) or
-                (TmpInteger < Ord(Low(TUseFilters))) then
-      FStreamSettingsObsolete.Filter := ufNone
-    else
-      FStreamSettingsObsolete.Filter := TUseFilters(TmpInteger);
-
-    if FStreamSettingsObsolete.SaveToMemory then
-    begin
-      FStreamSettingsObsolete.SeparateTracks := True;
-      FStreamSettingsObsolete.DeleteStreams := False;
-    end;
-
-    if not FStreamSettingsObsolete.SeparateTracks then
-      FStreamSettingsObsolete.DeleteStreams := False;
-
-    if FStreamSettingsObsolete.RetryDelay > 999 then
-      FStreamSettingsObsolete.RetryDelay := 999;
-  end;
-end;
-
 procedure TAppData.DoSave;
 var
   i: Integer;
@@ -1127,47 +936,8 @@ begin
   inherited;
 
   FStorage.Write('ID', FID);
-  //FStorage.Write('EasyMode', FEasyMode);
 
   FStorage.Write('LastUsedDataVersion', FLastUsedDataVersion);
-
-  // Alte Einstellungen löschen...
-  FStorage.Delete('FilePattern');
-  FStorage.Delete('IncompleteFilePattern');
-  FStorage.Delete('StreamFilePattern');
-  FStorage.Delete('FilePatternDecimals');
-  FStorage.Delete('RemoveChars');
-  FStorage.Delete('NormalizeVariables');
-  FStorage.Delete('DeleteStreams');
-  FStorage.Delete('AddSavedToIgnore');
-  FStorage.Delete('AddSavedToStreamIgnore');
-  FStorage.Delete('RemoveSavedFromWishlist');
-  FStorage.Delete('SkipShort');
-  FStorage.Delete('SearchSilence');
-  FStorage.Delete('AutoDetectSilenceLevel');
-  FStorage.Delete('SilenceLevel');
-  FStorage.Delete('SilenceLength');
-  FStorage.Delete('SilenceBufferSecondsStart');
-  FStorage.Delete('SilenceBufferSecondsEnd');
-  FStorage.Delete('SaveToMemory');
-  FStorage.Delete('OnlySaveFull');
-  FStorage.Delete('ShortLengthSeconds');
-  FStorage.Delete('SongBuffer');
-  FStorage.Delete('MaxRetries');
-  FStorage.Delete('RetryDelay');
-  FStorage.Delete('DefaultFilter');
-  FStorage.Delete('SeparateTracks');
-  FStorage.Delete('OverwriteSmaller');
-  FStorage.Delete('DiscardSmaller');
-  FStorage.Delete('DiscardAlways');
-  FStorage.Delete('OutputFormat');
-
-  FStorage.Delete('AutomaticFilePattern');
-  FStorage.Delete('AutoTuneInAddToIgnore');
-  FStorage.Delete('AutoRemoveSavedFromWishlist');
-
-  FStorage.Delete('AutoScrollLog');
-
 
   FStorage.Write('Dir', TryRelativePath(FDir, False, True));
   FStorage.Write('DirAuto', TryRelativePath(FDirAuto, False, True));
@@ -1256,9 +1026,6 @@ begin
   FStorage.Write('BrowserSearchAudioType', FBrowserSearchAudioType, 'Streambrowser');
   FStorage.Write('BrowserSearchBitrate', FBrowserSearchBitrate, 'Streambrowser');
 
-  FStorage.DeleteKey('Plugins');
-  FStorage.DeleteKey('Encoders');
-
   FStorage.Write('EQEnabled', FEQEnabled, 'Equalizer');
   for i := 0 to High(FEQGain) do
     FStorage.Write('EQBand' + IntToStr(i), FEQGain[i] + 15, 'Equalizer');
@@ -1290,17 +1057,7 @@ begin
     if Language = nil then
       raise Exception.Create('Language is not initialized');
 
-    // PostProcessors etc. laden - das kann erst hier passieren, weil AppGlobals zugewiesen sein muss.
-    // AppGlobals müssen übrigens nur zugewiesen sein, weil ich alte PostProcess-Einstellungen
-    // aus der Registry/Ini laden muss. Wenn ich das nicht mehr machen muss, kann InitPostProcessors()
-    // auch direkt im Konstruktor aufgerufen werden bzw. jedes StreamSettings kann mit True im Konstruktor
-    // erzeugt werden, damit es sich die PostProcessors selber klarmacht.
-    AppGlobals.InitPostProcessors;
-
     TLogger.SetFilename(AppGlobals.LogFile);
-
-    // Globale Stream-Einstellungen von Vorgängerversion laden
-    AppGlobals.LoadOldStreamSettings;
   except
     on E: Exception do
     begin

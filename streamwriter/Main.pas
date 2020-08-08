@@ -550,14 +550,6 @@ begin
           // verarbeiten der Datendatei (AppGlobals.Data.Load()) Zugriff auf
           // LastUsedVersion aus den Registry-/Ini-Einstellungen hat.
           AppGlobals.Load;
-          AppGlobals.LoadOldStreamSettings;
-          // Remark: Das hier ist ganz fies, bis zur "Trennlinie" muss das irgendwann raus, wenn jeder Client mindestens DataVersion 61 hat.
-          //         Genau dann kann auch StreamSettingsObsolete raus! Das ist hier nur so, dass das InitPostProcessors() was folgt
-          //         die Dinger neu lädt mithilfe der importierten Einstellungen aus der Registry. Extrem pfuschig.
-          AppGlobals.StreamSettingsObsolete.PostProcessors.Clear;
-          AppGlobals.StreamSettingsObsolete.EncoderSettings.Clear;
-          AppGlobals.InitPostProcessors;
-          // -----------------------------------------------------------
           AppGlobals.Data.Load(S, ImportFilename);
           AppGlobals.Data.Save(True);
         finally

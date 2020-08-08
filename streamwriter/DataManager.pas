@@ -349,8 +349,6 @@ type
     procedure Assign(From: TEncoderSettings);
     function Copy: TEncoderSettings;
 
-    procedure LoadFromRegistry;
-
     property Hash: Cardinal read FGetHash;
   end;
 
@@ -421,11 +419,9 @@ type
     procedure FSetSaveToMemory(Value: Boolean);
   public
     // Creates a new instance of TStreamSettings class
-    constructor Create(InitStuff: Boolean = True);
+    constructor Create;
     // Destroys this instance of TStreamSettings
     destructor Destroy; override;
-
-    procedure InitStuff(EncoderSettingsFromRegistry: Boolean = False);
 
     class function GetDefaults: TStreamSettings;
     class procedure ApplyAutoDefaults(Data: TDataLists; S: TStreamSettings);
@@ -1264,10 +1260,10 @@ begin
   inherited;
 
   FDefaultStreamSettings := TStreamSettings.GetDefaults;
-  FStreamSettings := TStreamSettings.Create(False);
+  FStreamSettings := TStreamSettings.Create;
   FStreamSettings.Assign(FDefaultStreamSettings);
 
-  FAutoRecordSettings := TStreamSettings.Create(False);
+  FAutoRecordSettings := TStreamSettings.Create;
   FAutoRecordSettings.Assign(FDefaultStreamSettings);
   TStreamSettings.ApplyAutoDefaults(Self, FAutoRecordSettings);
 
@@ -1376,42 +1372,24 @@ begin
       FStreamSettings := TStreamSettings.Load(S, Version);
     end else
     begin
-      // Früher wurde alles in den AppGlobals gespeichert, also müssen wir die Einstellungen
-      // ggf. von da übernehmen...
-      if (AppGlobals.LastUsedDataVersion > 0) and (AppGlobals.LastUsedDataVersion < 61) then
-        FStreamSettings.Assign(AppGlobals.StreamSettingsObsolete)
-      else
-        FStreamSettings.Assign(FDefaultStreamSettings);
+      FStreamSettings.Assign(FDefaultStreamSettings);
     end;
 
     if (Version > 58) and (Version < 60) then
     begin
       FAutoRecordSettings.Free;
 
-      // Pfusch für Zwischenversion, damit im File gespult wird... für Build 601 von Version 4.9.0.1.
+      // REMARK: Pfusch für Zwischenversion, damit im File gespult wird... für Build 601 von Version 4.9.0.1.
       FAutoRecordSettings := TStreamSettings.Load(S, Version);
       FAutoRecordSettings.Free;
 
-      FAutoRecordSettings := TStreamSettings.Create(True);
+      FAutoRecordSettings := TStreamSettings.Create;
       FAutoRecordSettings.Assign(DefaultStreamSettings);
       TStreamSettings.ApplyAutoDefaults(Self, FAutoRecordSettings);
-
-      FAutoRecordSettings.FFilePattern := AppGlobals.AutomaticFilePatternObsolete;
-      FAutoRecordSettings.FAddSavedToIgnore := AppGlobals.AutoTuneInAddToIgnoreObsolete;
-      FAutoRecordSettings.FRemoveSavedFromWishlist := AppGlobals.AutoRemoveSavedFromWishlistObsolete;
     end else if Version >= 60 then
     begin
       FAutoRecordSettings.Free;
       FAutoRecordSettings := TStreamSettings.LoadAuto(Self, S, Version);
-    end;
-
-    // Pfusch wegen Update auf neue Version (>=61)
-    if (Version > 58) and (Version < 61) then
-    begin
-      FAutoRecordSettings.FFilePattern := AppGlobals.AutomaticFilePatternObsolete;
-      FAutoRecordSettings.FFilePattern := ConvertPattern(FAutoRecordSettings.FFilePattern);
-      FAutoRecordSettings.FAddSavedToIgnore := AppGlobals.AutoTuneInAddToIgnoreObsolete;
-      FAutoRecordSettings.FRemoveSavedFromWishlist := AppGlobals.AutoRemoveSavedFromWishlistObsolete;
     end;
 
     if Version >= 5 then
@@ -2698,7 +2676,9 @@ begin
   Result.Assign(Self);
 end;
 
-constructor TStreamSettings.Create(InitStuff: Boolean = True);
+constructor TStreamSettings.Create;
+var
+  i: Integer;
 begin
   inherited Create;
 
@@ -2707,8 +2687,21 @@ begin
   FPostProcessors := TPostProcessorList.Create;
   FEncoderSettings := TEncoderSettingsList.Create;
 
-  if InitStuff then
-    Self.InitStuff;
+  if FEncoderSettings.Count = 0 then
+  begin
+    FEncoderSettings.Add(TEncoderSettings.Create(atMPEG, brVBR, vqMedium));
+    FEncoderSettings.Add(TEncoderSettings.Create(atAAC, brVBR, vqMedium));
+    FEncoderSettings.Add(TEncoderSettings.Create(atOGG, brVBR, vqMedium));
+  end;
+
+  if PostProcessors.Count = 0 then
+  begin
+    // Der Convert muss der erste sein! Greife auf die Liste mal mit [0] zu!
+    PostProcessors.Add(TPostProcessConvert.Create);
+    PostProcessors.Add(TPostProcessSetTags.Create);
+    PostProcessors.Add(TPostProcessSoX.Create);
+    PostProcessors.Add(TPostProcessMP4Box.Create);
+  end;
 end;
 
 destructor TStreamSettings.Destroy;
@@ -2738,7 +2731,7 @@ end;
 
 class function TStreamSettings.GetDefaults: TStreamSettings;
 begin
-  Result := TStreamSettings.Create(False);
+  Result := TStreamSettings.Create;
 
   // Hier vorsichtig sein. Manche Einstellungen werden so auch als Defaults
   // für automatische Aufnahmen benutzt. Immer, wenn ich hier was ändere,
@@ -2789,31 +2782,6 @@ begin
   Result.FDeleteStreams := False;
 
   Result.FFilter := ufNone;
-end;
-
-procedure TStreamSettings.InitStuff(EncoderSettingsFromRegistry: Boolean = False);
-var
-  i: Integer;
-begin
-  if FEncoderSettings.Count = 0 then
-  begin
-    FEncoderSettings.Add(TEncoderSettings.Create(atMPEG, brVBR, vqMedium));
-    FEncoderSettings.Add(TEncoderSettings.Create(atAAC, brVBR, vqMedium));
-    FEncoderSettings.Add(TEncoderSettings.Create(atOGG, brVBR, vqMedium));
-
-    if EncoderSettingsFromRegistry then
-      for i := 0 to FEncoderSettings.Count - 1 do
-        FEncoderSettings[i].LoadFromRegistry;
-  end;
-
-  if PostProcessors.Count = 0 then
-  begin
-    // Der Convert muss der erste sein! Greife auf die Liste mal mit [0] zu!
-    PostProcessors.Add(TPostProcessConvert.Create);
-    PostProcessors.Add(TPostProcessSetTags.Create);
-    PostProcessors.Add(TPostProcessSoX.Create);
-    PostProcessors.Add(TPostProcessMP4Box.Create);
-  end;
 end;
 
 class function TStreamSettings.Load(Stream: TExtendedStream;
@@ -3451,30 +3419,6 @@ begin
 
   Stream.Read(Tmp);
   VBRQuality := TVBRQualities(Tmp);
-end;
-
-procedure TEncoderSettings.LoadFromRegistry;
-var
-  Tmp: Integer;
-begin
-  // Ggf. Daten von alter Version importieren, ansonsten Defaults zuweisen.
-  // Die echten Daten kommen später über Load().
-  // REMARK: Irgendwann kann das hier weg!
-  AppGlobals.Storage.Read('CBRBitRate_' + IntToStr(Integer(AudioType)), CBRBitrate, 128, 'Encoders');
-
-  AppGlobals.Storage.Read('BitRateType_' + IntToStr(Integer(AudioType)), Tmp, Integer(brVBR), 'Encoders');
-  if (Tmp > Ord(High(TBitrates))) or
-     (Tmp < Ord(Low(TBitrates))) then
-    BitrateType := brVBR
-  else
-    BitrateType := TBitrates(Tmp);
-
-  AppGlobals.Storage.Read('VBRQuality_' + IntToStr(Integer(AudioType)), Tmp, Integer(vqMedium), 'Encoders');
-  if (Tmp > Ord(High(TVBRQualities))) or
-     (Tmp < Ord(Low(TVBRQualities))) then
-    VBRQuality := vqMedium
-  else
-    VBRQuality := TVBRQualities(Tmp);
 end;
 
 procedure TEncoderSettings.Save(Stream: TExtendedStream);
