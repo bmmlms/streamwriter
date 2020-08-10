@@ -2612,11 +2612,20 @@ begin
 
   if actStopPlay.Enabled <> OnePlaying and Bass.DeviceAvailable then
     actStopPlay.Enabled := OnePlaying and Bass.DeviceAvailable;
+
+  if actPause.Checked <> OnePaused then
+    actPause.Checked := OnePaused;
+
   if actPause.Enabled <> OnePlaying and Bass.DeviceAvailable then
     actPause.Enabled := OnePlaying and Bass.DeviceAvailable;
 
   if actPlay.Enabled <> (Length(Clients) = 1) and (not (Clients[0].AutoRemove and (Clients[0].State <> csConnected))) and Bass.DeviceAvailable then
     actPlay.Enabled := (Length(Clients) = 1) and (not (Clients[0].AutoRemove and (Clients[0].State <> csConnected))) and Bass.DeviceAvailable;
+
+  // Das hier muss man vor dem nächsten "Enabled"-Setzen machen. Er muss aus, sonst lässt sich "Checked" nach dem nächsten "Enabled := True" nicht mehr setzen.
+  // Der Button malt sich halt nicht passend...
+  if not OneNormalRecordingWithTitle then
+    actStopAfterSong.Checked := False;
 
   if actStopAfterSong.Enabled <> OneNormalRecordingWithTitle then
     actStopAfterSong.Enabled := OneNormalRecordingWithTitle;
@@ -2641,8 +2650,6 @@ begin
 
   if actAddToStreamIgnoreList.Enabled <> (Length(Clients) > 0) and OneHasTitle then
     actAddToStreamIgnoreList.Enabled := (Length(Clients) > 0) and OneHasTitle;
-
-  cmdPause.Down := OnePaused;
 
   actCopyTitle.Enabled := (Length(Clients) > 0) and OneHasTitle;
 end;
