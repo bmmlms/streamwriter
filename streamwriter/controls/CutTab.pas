@@ -248,7 +248,7 @@ begin
       Button := FToolBar.FUndo;
   end else
   begin
-    if Msg.CharCode = VK_SPACE then
+    if (Msg.CharCode = VK_SPACE) and (FCutView.Player <> nil) then
     begin
       if FCutView.Player.Playing then
         Button := FToolBar.FStop
