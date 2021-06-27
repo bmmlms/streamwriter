@@ -374,7 +374,7 @@ begin
   FData := TDataLists.Create;
 
   // The number of the current build
-  FBuildNumber := 805;
+  FBuildNumber := 812;
   FCodename := 'Vivo';
 
   // Adjust dimensions of the main-form
