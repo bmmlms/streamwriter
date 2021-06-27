@@ -1,2 +1,0 @@
-;lame-enc_dll RCDATA ".\lame_enc.dll"
-lame_exe RCDATA ".\lame.exe"
