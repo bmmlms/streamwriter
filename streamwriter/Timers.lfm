@@ -1,0 +1,325 @@
+object frmTimers: TfrmTimers
+  Left = 0
+  Height = 395
+  Top = 0
+  Width = 477
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Setup timers'
+  ClientHeight = 395
+  ClientWidth = 477
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Icon.Data = {
+    7E04000000000100010010100000010020006804000016000000280000001000
+    0000200000000100200000000000000400006400000064000000000000000000
+    0000FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00617D9536537591A74E7293E14D74
+    97F64D7497F64E7293E1527490A95E7A9137FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF005D7C957D50789AF35A97B1FF85BDCEFFA4D6
+    DEFFA0D5DEFF7BB9CBFF4F8CABFF4D7294F459768F82FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF0061819A785588A6FF96C8D6FFCCCABFFFC89F86FFC592
+    76FFC49073FFC49A80FFC3C4B9FF7DBDCDFF477798FF5A778F80FFFFFF00FFFF
+    FF00FFFFFF006B879D305782A2F6A2CCD8FFCDB7A5FFD8AA89FFEFDFCFFFFAF6
+    F3FFFAF5F3FFEFDFD1FFD7A785FFC3AC98FF82BDCEFF4D7194F7627B9135FFFF
+    FF00FFFFFF005E85A09F78A9C0FFDAD1C6FFD9AA88FFFFFEEBFFFFFAEEFFFFFD
+    F2FFFFFEF2FFFFFCEFFFFFFDEBFFD9A37AFFCBC6B9FF5894B1FF547490AAFFFF
+    FF00FFFFFF005E8EADDEB7D3DDFFD1AA90FFF0DBC1FFFFF7E6FFFAF2E3FFC5C0
+    B6FFF1EDDEFFFFFCE8FFFFF5DFFFEFD4AFFFC99B7BFF92C2D0FF507595E2FFFF
+    FF00FFFFFF00679AB8F7DDEAECFFCF9F81FFFAF3E2FFFDF6E9FFF2F0E3FF8D8C
+    84FF817F77FFD2CFC2FFFFFBEBFFFAECCCFFC7906DFFC1DDE1FF53799DF6FFFF
+    FF00FFFFFF006CA1BDF7E4ECEEFFD1A58AFFFAF6E9FFFDF8EEFFFFFFF9FF8180
+    79FFB1AEA4FF817F77FFC9C6BAFFFAF0D3FFC99572FFC9DFE2FF547B9EF6FFFF
+    FF00FFFFFF006DA2BEE7D3E1E6FFDBB9A4FFF1E3D6FFFEFBF5FFF5F5F3FF9F9E
+    95FFF0F0E9FFF8F8F2FFBEB9ADFFF0DAC2FFD1A78BFFA9CAD3FF537B9BDFFFFF
+    FF00FFFFFF0077A1BCB6B7CFDBFFEDE0D7FFDEBDAAFFFFFFFFFFF0F0EEFFE7E5
+    DAFFFFFFF7FFFFFFF7FFFFFEF3FFDCB498FFE1D1C4FF73A4BBFF597C98A3FFFF
+    FF00FFFFFF0088A3B93C74B3CCFADFE9ECFFE6CFC2FFDFBFAEFFF1E3DCFFF3F1
+    ECFFF4F1EBFFF1E2D9FFDCBAA3FFDEC1AFFFB7CFD8FF5883A4F56A869B31FFFF
+    FF00FFFFFF00FFFFFF0085A8C09197CCDCFFE1EBEEFFEEE1D9FFDFBEACFFD5AD
+    96FFD4AA92FFDCB7A3FFE8DACEFFC6D9DFFF689BB6FF64859F75FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF0086AAC29678BAD2F9C8D9E3FFDDE7EAFFEEF1
+    F1FFECF0F0FFD2E0E4FFA8C4D2FF679CB8F46C8FA97DFFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF008AA8BF427EABC6BD78B3CDED7BB8
+    D0FA7AB4CDFA71A9C4E8719DB9B07A99B039FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00000000000000000000000000000000000000000000000000000000000000
+    0000000000000000000000000000000000000000000000000000000000000000
+    0000
+  }
+  KeyPreview = True
+  OnClose = FormClose
+  OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
+  OnShow = FormShow
+  Position = poOwnerFormCenter
+  object Panel2: TPanel
+    Left = 0
+    Height = 355
+    Top = 0
+    Width = 477
+    Align = alClient
+    BevelOuter = bvNone
+    ClientHeight = 355
+    ClientWidth = 477
+    TabOrder = 1
+    object Panel1: TPanel
+      Left = 0
+      Height = 355
+      Top = 0
+      Width = 477
+      Align = alClient
+      BevelOuter = bvNone
+      ClientHeight = 355
+      ClientWidth = 477
+      TabOrder = 0
+      object pnlConfig: TPanel
+        Left = 0
+        Height = 197
+        Top = 0
+        Width = 477
+        Align = alTop
+        BevelOuter = bvNone
+        ClientHeight = 197
+        ClientWidth = 477
+        TabOrder = 0
+        object Label1: TLabel
+          Left = 4
+          Height = 13
+          Top = 156
+          Width = 82
+          Caption = 'Start Time (24h):'
+          ParentColor = False
+        end
+        object Label2: TLabel
+          Left = 108
+          Height = 13
+          Top = 156
+          Width = 76
+          Caption = 'End Time (24h):'
+          ParentColor = False
+        end
+        object Label3: TLabel
+          Left = 44
+          Height = 13
+          Top = 176
+          Width = 4
+          Alignment = taCenter
+          Caption = ':'
+          ParentColor = False
+        end
+        object Label4: TLabel
+          Left = 148
+          Height = 13
+          Top = 176
+          Width = 4
+          Alignment = taCenter
+          Caption = ':'
+          ParentColor = False
+        end
+        object rbRecurring: TRadioButton
+          Left = 4
+          Height = 19
+          Top = 0
+          Width = 111
+          Caption = 'Recurring schedule'
+          Checked = True
+          OnClick = rbRecurringClick
+          TabOrder = 0
+          TabStop = True
+        end
+        object rbDate: TRadioButton
+          Left = 4
+          Height = 19
+          Top = 80
+          Width = 81
+          Caption = 'Specific date'
+          OnClick = rbDateClick
+          TabOrder = 1
+        end
+        object lstInterval: TComboBox
+          Left = 20
+          Height = 21
+          Top = 24
+          Width = 452
+          Anchors = [akTop, akLeft, akRight]
+          ItemHeight = 13
+          ItemIndex = 0
+          Items.Strings = (
+            'Daily'
+            'Weekly'
+          )
+          OnChange = lstIntervalChange
+          Style = csDropDownList
+          TabOrder = 2
+          Text = 'Daily'
+        end
+        object lstDay: TComboBox
+          Left = 20
+          Height = 21
+          Top = 52
+          Width = 452
+          Anchors = [akTop, akLeft, akRight]
+          Enabled = False
+          ItemHeight = 13
+          ItemIndex = 0
+          Items.Strings = (
+            'Monday'
+            'Tuesday'
+            'Wednesday'
+            'Thursday'
+            'Friday'
+            'Saturday'
+            'Sunday'
+          )
+          OnChange = lstDayChange
+          Style = csDropDownList
+          TabOrder = 3
+          Text = 'Monday'
+        end
+        object dtpDate: TDateTimePicker
+          Left = 20
+          Height = 21
+          Top = 104
+          Width = 452
+          CenturyFrom = 1941
+          MaxDate = 2958465
+          MinDate = -53780
+          TabOrder = 4
+          TrailingSeparator = False
+          LeadingZeros = True
+          Anchors = [akTop, akLeft, akRight]
+          Kind = dtkDate
+          TimeFormat = tf24
+          TimeDisplay = tdHMS
+          DateMode = dmComboBox
+          Date = 40674
+          Time = 0.868549270831863
+          UseDefaultSeparators = True
+          HideDateTimeParts = []
+          MonthNames = 'Long'
+          OnChange = dtpDateChange
+        end
+        object txtStartHour: TEdit
+          Left = 4
+          Height = 21
+          Top = 172
+          Width = 37
+          MaxLength = 2
+          TabOrder = 5
+        end
+        object txtStartMinute: TEdit
+          Left = 52
+          Height = 21
+          Top = 172
+          Width = 37
+          MaxLength = 2
+          TabOrder = 6
+        end
+        object txtEndHour: TEdit
+          Left = 108
+          Height = 21
+          Top = 172
+          Width = 37
+          MaxLength = 2
+          TabOrder = 7
+        end
+        object txtEndMinute: TEdit
+          Left = 156
+          Height = 21
+          Top = 172
+          Width = 37
+          MaxLength = 2
+          TabOrder = 8
+        end
+        object btnAdd: TButton
+          Left = 376
+          Height = 27
+          Top = 169
+          Width = 96
+          Anchors = [akTop, akRight]
+          Caption = '&Add'
+          OnClick = btnAddClick
+          TabOrder = 9
+        end
+        object chkAutoRemove: TCheckBox
+          Left = 20
+          Height = 19
+          Top = 128
+          Width = 452
+          Anchors = [akTop, akLeft, akRight]
+          Caption = 'Remove schedule when recording finished'
+          TabOrder = 10
+        end
+      end
+      object pnlTree: TPanel
+        Left = 0
+        Height = 158
+        Top = 197
+        Width = 477
+        Align = alClient
+        BevelOuter = bvNone
+        ClientHeight = 158
+        ClientWidth = 477
+        TabOrder = 1
+        object Panel3: TPanel
+          Left = 0
+          Height = 35
+          Top = 123
+          Width = 477
+          Align = alBottom
+          BevelOuter = bvNone
+          ClientHeight = 35
+          ClientWidth = 477
+          TabOrder = 0
+          object btnRemove: TButton
+            Left = 380
+            Height = 35
+            Top = 0
+            Width = 97
+            Align = alRight
+            Anchors = [akTop, akRight]
+            Caption = '&Remove'
+            Enabled = False
+            OnClick = btnRemoveClick
+            TabOrder = 0
+          end
+        end
+      end
+    end
+  end
+  object pnlNav: TPanel
+    Left = 0
+    Height = 40
+    Top = 355
+    Width = 477
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 40
+    ClientWidth = 477
+    TabOrder = 0
+    object Bevel2: TBevel
+      Left = 0
+      Height = 5
+      Top = 0
+      Width = 477
+      Align = alTop
+      Shape = bsTopLine
+    end
+    object btnOK: TBitBtn
+      Left = 380
+      Height = 35
+      Top = 5
+      Width = 97
+      Align = alRight
+      Caption = '&OK'
+      Layout = blGlyphLeft
+      OnClick = btnOKClick
+      TabOrder = 0
+    end
+  end
+end

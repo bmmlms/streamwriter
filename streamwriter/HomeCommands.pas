@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, ExtendedStream, Commands, AudioFunctions,
-  TypeDefs, Generics.Collections, ZLib;
+  TypeDefs, Generics.Collections, Functions, ZStream;
 
 type
   TSendClientStatTypes = (csSave, csAutoSave);
@@ -925,7 +925,7 @@ begin
 
   FData.Seek(0, soFromBeginning);
   CompressedData := TExtendedStream.Create;
-  ZLib.ZCompressStream(FData, CompressedData, zcDefault);
+  CompressStream(FData, CompressedData, clDefault);
   FData.Free;
   FData := CompressedData;
 

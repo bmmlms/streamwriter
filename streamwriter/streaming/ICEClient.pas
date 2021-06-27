@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -63,7 +63,7 @@ type
 
   TLog = class(TObjectList<TLogEntry>)
   protected
-    procedure Notify(const Item: TLogEntry; Action: TCollectionNotification); override;
+    procedure Notify(constref Item: TLogEntry; Action: TCollectionNotification); override;
   end;
 
   TICEClient = class
@@ -1125,8 +1125,7 @@ end;
 
 { TDebugLog }
 
-procedure TLog.Notify(const Item: TLogEntry;
-  Action: TCollectionNotification);
+procedure TLog.Notify(constref Item: TLogEntry; Action: TCollectionNotification);
 begin
   inherited;
 

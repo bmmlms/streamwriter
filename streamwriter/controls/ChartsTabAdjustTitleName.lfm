@@ -1,0 +1,62 @@
+object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
+  Left = 0
+  Height = 94
+  Top = 0
+  Width = 297
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Change title name'
+  ClientHeight = 94
+  ClientWidth = 297
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  KeyPreview = True
+  OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
+  OnShow = FormShow
+  Position = poOwnerFormCenter
+  object pnlNav: TPanel
+    Left = 0
+    Height = 40
+    Top = 54
+    Width = 297
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 40
+    ClientWidth = 297
+    TabOrder = 1
+    object Bevel2: TBevel
+      Left = 0
+      Height = 5
+      Top = 0
+      Width = 297
+      Align = alTop
+      Shape = bsTopLine
+    end
+    object btnOK: TBitBtn
+      Left = 200
+      Height = 35
+      Top = 5
+      Width = 97
+      Align = alRight
+      Caption = '&OK'
+      Layout = blGlyphLeft
+      OnClick = btnOKClick
+      TabOrder = 0
+    end
+  end
+  object txtTitle: TLabeledEdit
+    Left = 8
+    Height = 21
+    Top = 24
+    Width = 281
+    Anchors = [akTop, akLeft, akRight]
+    EditLabel.Height = 13
+    EditLabel.Width = 281
+    EditLabel.Caption = 'Please enter the name of the title to add:'
+    EditLabel.ParentColor = False
+    TabOrder = 0
+  end
+end

@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -174,7 +174,7 @@ begin
         Break;
       end;
 
-  Result := ((FiletypeToFormat(Data.FilenameConverted) in [atMPEG, atOGG]) or M4AActive) and FGetDependenciesMet;
+  Result := ((FilenameToFormat(Data.FilenameConverted) in [atMPEG, atOGG]) or M4AActive) and FGetDependenciesMet;
 end;
 
 function TPostProcessSetTags.Configure(AOwner: TComponent; Handle: Cardinal;
@@ -216,7 +216,7 @@ constructor TPostProcessSetTags.Create;
 begin
   inherited;
 
-  FNeededAddons.Add(TAddonAudioGenie);
+//  FNeededAddons.Add(TAddonAudioGenie);
 
   FCanConfigure := True;
   FGroupID := 1;

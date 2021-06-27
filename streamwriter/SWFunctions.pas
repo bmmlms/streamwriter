@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -23,7 +23,7 @@ unit SWFunctions;
 interface
 
 uses
-  Windows, SysUtils, AudioFunctions, Functions, PerlRegEx, Classes,
+  Windows, SysUtils, AudioFunctions, Functions, RegExpr, Classes,
   Generics.Defaults, Generics.Collections, Constants, ComCtrls,
   LanguageObjects;
 
@@ -173,12 +173,12 @@ begin
 end;
 var
   i: Integer;
-  R: TPerlRegEx;
+  R: TRegExpr;
   DefaultRegEx: string;
   RED: TRegExData;
   REDs: TList<TRegExData>;
 begin
-  Result := DefaultRegEx;
+  Result := DefaultRegEx; // TODO: !?
 
   REDs := TList<TRegExData>.Create;
   try
@@ -189,34 +189,31 @@ begin
       if RED.RegEx = DEFAULT_TITLE_REGEXP then
         RED.BadWeight := 1;
 
-      R := TPerlRegEx.Create;
+      R := TRegExpr.Create(RED.RegEx);
+      R.ModifierI := True;
       try
-        R.Options := R.Options + [preCaseLess];
-        R.Subject := Title;
-        R.RegEx := RED.RegEx;
         try
-          if R.Match then
+          if R.Exec(Title) then
           begin
-
             try
-              if R.NamedGroup('a') > 0 then
-                RED.BadWeight := RED.BadWeight + GetBadWeight(Trim(R.Groups[R.NamedGroup('a')]))
+              if R.MatchFromName('a') <> '' then
+                RED.BadWeight := RED.BadWeight + GetBadWeight(Trim(R.MatchFromName('a')))
               else
                 RED.BadWeight := RED.BadWeight + 3;
             except end;
 
             try
-              if R.NamedGroup('t') > 0 then
-                RED.BadWeight := RED.BadWeight + GetBadWeight(Trim(R.Groups[R.NamedGroup('t')]))
+              if R.MatchFromName('t') <> '' then
+                RED.BadWeight := RED.BadWeight + GetBadWeight(Trim(R.MatchFromName('t')))
               else
                 RED.BadWeight := RED.BadWeight + 3;
             except end;
 
             try
-              if R.NamedGroup('l') > 0 then
+              if R.MatchFromName('l') <> '' then
               begin
                 RED.BadWeight := RED.BadWeight - 6;
-                RED.BadWeight := RED.BadWeight + GetBadWeight(Trim(R.Groups[R.NamedGroup('l')]))
+                RED.BadWeight := RED.BadWeight + GetBadWeight(Trim(R.MatchFromName('l')))
               end else
                 RED.BadWeight := RED.BadWeight + 10;
             except end;
@@ -230,12 +227,14 @@ begin
       end;
     end;
 
+    {             // TODO:
     REDs.Sort(TComparer<TRegExData>.Construct(
       function (const L, R: TRegExData): integer
       begin
         Result := CmpInt(L.BadWeight, R.BadWeight);
       end
     ));
+    }
 
     if REDs.Count > 0 then
       Result := REDs[0].RegEx;
@@ -248,8 +247,9 @@ function CheckRegExp(Handle: THandle; var RegExp: string; List: TListView; Item:
 var
   i: Integer;
   RValid, ArtistFound, TitleFound: Boolean;
-  R: TPerlRegEx;
+//  R: TPerlRegEx;
 begin
+  {           // TODO:
   Result := False;
   RegExp := Trim(RegExp);
 
@@ -282,6 +282,7 @@ begin
   end;
 
   Result := True;
+  }
 end;
 
 end.

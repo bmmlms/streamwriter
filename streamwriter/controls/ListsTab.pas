@@ -1,7 +1,7 @@
     {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@ uses
   ImgList, Functions, GUIFunctions, Menus, Math, DragDrop, DropComboTarget,
   Dialogs, MsgDlg, Forms, Logging, AppData, HomeCommunication, ICEClient,
   ClientManager, Generics.Collections, TypeDefs, MessageBus, AppMessages,
-  Graphics, SharedData, HomeCommands, SharedControls;
+  Graphics, SharedData, HomeCommands, SharedControls, Images;
 
 type
   TTitleTree = class;
@@ -89,6 +89,8 @@ type
     procedure Setup;
   end;
 
+  { TTitlePanel }
+
   TTitlePanel = class(TPanel)
   private
     FTopPanel: TPanel;
@@ -124,6 +126,8 @@ type
     procedure SearchTextChange(Sender: TObject);
   protected
     procedure Resize; override;
+    procedure ControlsAligned; override;
+    procedure SetParent(AParent: TWinControl); override;
   public
     constructor Create(AOwner: TComponent; Clients: TClientManager); reintroduce;
     procedure AfterCreate;
@@ -138,6 +142,8 @@ type
     property Tree: TTitleTree read FTree;
   end;
 
+  { TListsTab }
+
   TListsTab = class(TMainTabSheet)
   private
     FListsPanel: TTitlePanel;
@@ -146,6 +152,7 @@ type
 
     procedure HomeCommConvertManualToAutomaticReceived(Sender: TObject; FoundTitles: TConvertManualToAutomaticArray; NotFoundTitles: TStringArray);
   protected
+    procedure SetParent(AParent: TWinControl); override;
     procedure Resize; override;
   public
     constructor Create(AOwner: TComponent; Clients: TClientManager); reintroduce;
@@ -190,9 +197,9 @@ type
     procedure FitColumns;
     procedure MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
   protected
-    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
-    procedure DoHeaderClick(const HitInfo: TVTHeaderHitInfo); override;
+    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: string); override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
+    procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     function DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer; override;
     procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string); override;
@@ -200,8 +207,8 @@ type
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
-    function DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean; override;
-    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect); override;
+    function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
+    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
     procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
@@ -231,7 +238,7 @@ begin
   inherited Create(AOwner);
 
   ShowCloseButton := False;
-  ImageIndex := 30;
+  ImageIndex := TImages.SCRIPT_EDIT;
 
   FListsPanel := TTitlePanel.Create(Self, Clients);
   FListsPanel.Parent := Self;
@@ -240,6 +247,12 @@ begin
   MsgBus.AddSubscriber(MessageReceived);
 
   HomeComm.OnConvertManualToAutomaticReceived := HomeCommConvertManualToAutomaticReceived;
+end;
+
+procedure TListsTab.SetParent(AParent: TWinControl);
+begin
+  inherited;
+
 end;
 
 destructor TListsTab.Destroy;
@@ -563,13 +576,16 @@ begin
   FTree.EditNode(FTree.GetFirstSelected, 0);
 end;
 
-procedure TTitlePanel.Resize;
+procedure TTitlePanel.SetParent(AParent: TWinControl);
 begin
   inherited;
 
-  FAddCombo.Width := (FToolbarPanel.ClientWidth - FToolbar.Width - FAddEdit.Width - FAddEdit.Left) - 6;
+  // TODO:
+  if Assigned(FTree) then
+    Exit;
 
-  FToolbar.Left := ClientWidth + 100;
+  FTree := TTitleTree.Create(Self);
+  FTree.Parent := Self;
 end;
 
 procedure TTitlePanel.ExportClick(Sender: TObject);
@@ -626,6 +642,7 @@ begin
       Dlg.Filter := _('Text files') + ' (*.txt)|*.txt';
       Dlg.Options := Dlg.Options + [ofOverwritePrompt];
       Dlg.DefaultExt := '.txt';
+      {
       if Dlg.Execute(Handle) then
       begin
         Lst := TStringList.Create;
@@ -648,6 +665,7 @@ begin
           Lst.Free;
         end;
       end;
+      }
     finally
       Dlg.Free;
     end;
@@ -670,7 +688,10 @@ begin
   for i := 0 to FClientManager.Count - 1 do
     if FClientManager[i].Entry.CustomName <> '' then
       FAddCombo.AddItem('  ' + FClientManager[i].Entry.CustomName, FClientManager[i]);
+
   FAddCombo.Sorted := True;
+  FAddCombo.Sorted := False;
+
   FAddCombo.Items.InsertObject(0, _('Ignorelist'), AppGlobals.Data.IgnoreList);
   FAddCombo.Items.InsertObject(0, _('Wishlist'), AppGlobals.Data.SaveList);
 
@@ -721,6 +742,7 @@ begin
   Dlg := TOpenDialog.Create(Self);
   try
     Dlg.Filter := _('All supported types') + ' (*.txt, *.m3u, *.pls)|*.txt;*.m3u;*.pls|' +  _('Text files') + ' (*.txt)|*.txt|' + _('M3U playlists') + ' (*.m3u)|*.m3u|' + _('PLS playlists') + ' (*.pls)|*.pls';
+    {
     if Dlg.Execute(Handle) then
     begin
       Lst := TStringList.Create;
@@ -816,6 +838,7 @@ begin
         Lst.Free;
       end;
     end;
+    }
 
     // When not importing into the wishlist no artists or hashes are allowed, so rebuild the list
     if List <> AppGlobals.Data.SaveList then
@@ -909,6 +932,7 @@ begin
             if ImportData[i].Hash = 0 then
               ConversionData.Add(ImportData[i].Title);
 
+          {
           if ConversionData.Count > 0 then
           begin
             // If there are manual titles ask the user if they should be converted to automatic titles
@@ -945,6 +969,7 @@ begin
               end;
             end;
           end;
+          }
         finally
           ConversionData.Free;
         end;
@@ -1113,9 +1138,6 @@ constructor TTitlePanel.Create(AOwner: TComponent; Clients: TClientManager);
 begin
   inherited Create(AOwner);
 
-  FTree := TTitleTree.Create(Self);
-  FTree.Parent := Self;
-
   FClientManager := Clients;
 end;
 
@@ -1126,6 +1148,23 @@ var
 begin
   FFilterText := BuildPattern(FSearchText.Text, Hash, NumChars, False);
   BuildTree(True);
+end;
+
+procedure TTitlePanel.Resize;
+begin
+  inherited Resize;
+
+  if (not Assigned(FAddCombo)) or (not Assigned(FToolbar)) then
+    Exit;
+
+end;
+
+procedure TTitlePanel.ControlsAligned;
+begin
+  inherited ControlsAligned;
+
+  FAddCombo.Width := (FToolbarPanel.ClientWidth - FToolbar.Width - FAddEdit.Width - FAddEdit.Left) - 6;
+  FToolbar.Left := ClientWidth - FToolbar.Width;
 end;
 
 procedure TTitlePanel.SelectIgnoredClick(Sender: TObject);
@@ -1388,7 +1427,6 @@ begin
   FToolbarPanel.Parent := FTopPanel;
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Align := alTop;
-  FToolbarPanel.Padding.Top := 1;
 
   FAddLabel := TLabel.Create(Self);
   FAddLabel.Parent := FToolbarPanel;
@@ -1405,9 +1443,8 @@ begin
   FToolbar := TTitleToolbar.Create(Self);
   FToolbar.Parent := FToolbarPanel;
   FToolbar.Images := modSharedData.imgImages;
-  FToolbar.Align := alRight;
+  FToolbar.Align := alNone;
   FToolbar.AutoSize := True;
-  FToolbar.Indent := 4;
   FToolbar.Setup;
   FToolbar.FAdd.OnClick := AddClick;
   FToolbar.FRemove.OnClick := RemoveClick;
@@ -1614,77 +1651,73 @@ begin
   inherited;
 
   ShowHint := True;
-  Transparent := True;
+  EdgeBorders := [];
 end;
 
 procedure TTitleToolbar.Setup;
 var
   Sep: TToolButton;
 begin
-  FImport := TToolButton.Create(Self);
-  FImport.Parent := Self;
-  FImport.Hint := 'Import...';
-  FImport.ImageIndex := 36;
-
-  FExport := TToolButton.Create(Self);
-  FExport.Parent := Self;
-  FExport.Hint := 'Export...';
-  FExport.ImageIndex := 35;
+  FAdd := TToolButton.Create(Self);
+  FAdd.Parent := Self;
+  FAdd.Hint := 'Add';
+  FAdd.ImageIndex := TImages.ADD;
 
   Sep := TToolButton.Create(Self);
   Sep.Parent := Self;
   Sep.Style := tbsSeparator;
-  Sep.Width := 8;
-
-  FSelectIgnored := TToolButton.Create(Self);
-  FSelectIgnored.Parent := Self;
-  FSelectIgnored.Hint := 'Select ignored titles';
-  FSelectIgnored.ImageIndex := 84;
-
-  FSelectSaved := TToolButton.Create(Self);
-  FSelectSaved.Parent := Self;
-  FSelectSaved.Hint := 'Select saved titles';
-  FSelectSaved.ImageIndex := 70;
-
-  Sep := TToolButton.Create(Self);
-  Sep.Parent := Self;
-  Sep.Style := tbsSeparator;
-  Sep.Width := 8;
-
-  FShowSaved := TToolButton.Create(Self);
-  FShowSaved.Parent := Self;
-  FShowSaved.Hint := 'Show in saved tracks';
-  FShowSaved.ImageIndex := 14;
-
-  FConvertToAutomatic := TToolButton.Create(Self);
-  FConvertToAutomatic.Parent := Self;
-  FConvertToAutomatic.Hint := 'Convert to automatic wishlist title';
-  FConvertToAutomatic.ImageIndex := 104;
-
-  Sep := TToolButton.Create(Self);
-  Sep.Parent := Self;
-  Sep.Style := tbsSeparator;
-  Sep.Width := 8;
-
-  FRemove := TToolButton.Create(Self);
-  FRemove.Parent := Self;
-  FRemove.Hint := 'Remove';
-  FRemove.ImageIndex := 21;
 
   FRename := TToolButton.Create(Self);
   FRename.Parent := Self;
   FRename.Hint := 'Rename';
-  FRename.ImageIndex := 74;
+  FRename.ImageIndex := TImages.TEXTFIELD_RENAME;
+
+  FRemove := TToolButton.Create(Self);
+  FRemove.Parent := Self;
+  FRemove.Hint := 'Remove';
+  FRemove.ImageIndex := TImages.DELETE;
 
   Sep := TToolButton.Create(Self);
   Sep.Parent := Self;
   Sep.Style := tbsSeparator;
-  Sep.Width := 8;
 
-  FAdd := TToolButton.Create(Self);
-  FAdd.Parent := Self;
-  FAdd.Hint := 'Add';
-  FAdd.ImageIndex := 11;
+  FConvertToAutomatic := TToolButton.Create(Self);
+  FConvertToAutomatic.Parent := Self;
+  FConvertToAutomatic.Hint := 'Convert to automatic wishlist title';
+  FConvertToAutomatic.ImageIndex := TImages.BRICKS_COG;
+
+  FShowSaved := TToolButton.Create(Self);
+  FShowSaved.Parent := Self;
+  FShowSaved.Hint := 'Show in saved tracks';
+  FShowSaved.ImageIndex := TImages.DRIVE_GO;
+
+  Sep := TToolButton.Create(Self);
+  Sep.Parent := Self;
+  Sep.Style := tbsSeparator;
+
+  FSelectSaved := TToolButton.Create(Self);
+  FSelectSaved.Parent := Self;
+  FSelectSaved.Hint := 'Select saved titles';
+  FSelectSaved.ImageIndex := TImages.DRIVE_SELECT;
+
+  FSelectIgnored := TToolButton.Create(Self);
+  FSelectIgnored.Parent := Self;
+  FSelectIgnored.Hint := 'Select ignored titles';
+  FSelectIgnored.ImageIndex := TImages.DECLINE_SELECT;
+
+  Sep := TToolButton.Create(Self);
+  Sep.Parent := Self;
+  Sep.Style := tbsSeparator;
+
+  FExport := TToolButton.Create(Self);
+  FExport.Parent := Self;
+  FExport.Hint := 'Export...';
+  FExport.ImageIndex := TImages.SCRIPT_OUT;
+
+  FImport := TToolButton.Create(Self);
+  FImport.Parent := Self;
+  FImport.Hint := 'Import...';
+  FImport.ImageIndex := TImages.SCRIPT_IN;
 end;
 
 { TTitleTree }
@@ -2137,33 +2170,32 @@ begin
   end;
 end;
 
-procedure TTitleTree.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
+procedure TTitleTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: string);
 var
   ChildCount: Integer;
   NodeData: PTitleNodeData;
-  Node: PVirtualNode;
 begin
   inherited;
 
-  NodeData := GetNodeData(pEventArgs.Node);
-  case pEventArgs.Column of
+  NodeData := GetNodeData(Node);
+  case Column of
     0:
       begin
         case NodeData.NodeType of
           ntWishParent:
-            pEventArgs.CellText := _(WISHTEXT);
+            Text := _(WISHTEXT);
           ntIgnoreParent:
-            pEventArgs.CellText := _(IGNORETEXT);
+            Text := _(IGNORETEXT);
           ntStream:
-            pEventArgs.CellText := NodeData.Stream.Entry.CustomName;
+            Text := NodeData.Stream.Entry.CustomName;
           ntWish, ntIgnore:
-            pEventArgs.CellText := NodeData.Title.Title;
+            Text := NodeData.Title.Title;
         end;
 
         if NodeData.NodeType in [ntWishParent, ntIgnoreParent, ntStream] then
         begin
           ChildCount := 0;
-          Node := GetFirstChild(pEventArgs.Node);
+          Node := GetFirstChild(Node);
           while Node <> nil do
           begin
             NodeData := GetNodeData(Node);
@@ -2171,7 +2203,7 @@ begin
               Inc(ChildCount);
             Node := GetNextSibling(Node);
           end;
-          pEventArgs.CellText := pEventArgs.CellText + ' (' + IntToStr(ChildCount) + ')';
+          Text := Text + ' (' + IntToStr(ChildCount) + ')';
         end;
       end;
     1:
@@ -2179,23 +2211,22 @@ begin
         if (NodeData.NodeType = ntWish) and (NodeData.Title <> nil) and
            ((NodeData.Title.ServerHash > 0) or (NodeData.Title.ServerArtistHash > 0)) then
         begin
-          pEventArgs.CellText := IntToStr(NodeData.Title.Saved);
+          Text := IntToStr(NodeData.Title.Saved);
         end else
-          pEventArgs.CellText := '';
+          Text := '';
       end;
     2:
       begin
         if NodeData.Title <> nil then
         begin
-          pEventArgs.CellText := DateToStr(NodeData.Title.Added);
+          Text := DateToStr(NodeData.Title.Added);
         end else
-          pEventArgs.CellText := '';
+          Text := '';
       end;
   end;
 end;
 
-function TTitleTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
+function TTitleTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList;
 var
   NodeData: PTitleNodeData;
 begin
@@ -2206,27 +2237,24 @@ begin
   if Column = 0 then
     case NodeData.NodeType of
       ntWishParent:
-        Index := 31;
+        Index := TImages.SCRIPT_HEART;
       ntWish:
         if NodeData.Title.ServerHash > 0 then
-          Index := 77
+          Index := TImages.BRICKS
         else if NodeData.Title.ServerArtistHash > 0 then
-          Index := 86
+          Index := TImages.USER_GRAY_COOL
         else
-          Index := 31;
+          Index := TImages.HEART;
       ntIgnoreParent:
-        Index := 65;
+        Index := TImages.SCRIPT_DECLINE;
       ntIgnore:
-        if NodeData.Stream = nil then
-          Index := 65
-        else
-          Index := 93;
+        Index := TImages.DECLINE;
       ntStream:
-        Index := 68;
+        Index := TImages.TRANSMIT;
     end;
 end;
 
-procedure TTitleTree.DoHeaderClick(const HitInfo: TVTHeaderHitInfo);
+procedure TTitleTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
 begin
   inherited;
   if HitInfo.Button = mbLeft then
@@ -2250,7 +2278,7 @@ begin
   end;
 end;
 
-function TTitleTree.DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean;
+function TTitleTree.DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean;
 begin
   Result := inherited;
 
@@ -2265,7 +2293,7 @@ begin
   Canvas.FillRect(R);
 end;
 
-procedure TTitleTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
+procedure TTitleTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect);
 begin
   inherited;
 
@@ -2448,63 +2476,53 @@ end;
 { TTitlePopup }
 
 constructor TTitlePopup.Create(AOwner: TComponent);
-var
-  Sep: TMenuItem;
 begin
   inherited;
 
-  Self.AutoHotkeys := maManual;
-
-  FRename := CreateMenuItem;
+  FRename := TMenuItem.Create(Self);;
   FRename.Caption := 'Ren&ame';
-  FRename.ImageIndex := 74;
+  FRename.ImageIndex := TImages.TEXTFIELD_RENAME;
   Items.Add(FRename);
 
-  FRemove := CreateMenuItem;
+  FRemove := TMenuItem.Create(Self);;
   FRemove.Caption := '&Remove';
-  FRemove.ImageIndex := 21;
+  FRemove.ImageIndex := TImages.DELETE;
   Items.Add(FRemove);
 
-  Sep := CreateMenuItem;
-  Sep.Caption := '-';
-  Items.Add(Sep);
+  Items.AddSeparator;
 
-  FConvertToAutomatic := CreateMenuItem;
+  FConvertToAutomatic := TMenuItem.Create(Self);;
   FConvertToAutomatic.Caption := '&Convert to automatic wishlist title';
-  FConvertToAutomatic.ImageIndex := 104;
+  FConvertToAutomatic.ImageIndex := TImages.BRICKS_COG;
   Items.Add(FConvertToAutomatic);
 
-  FShowSaved := CreateMenuItem;
+  FShowSaved := TMenuItem.Create(Self);;
   FShowSaved.Caption := 'S&how in saved tracks';
-  FShowSaved.ImageIndex := 14;
+  FShowSaved.ImageIndex := TImages.DRIVE_GO;
   Items.Add(FShowSaved);
 
-  Sep := CreateMenuItem;
-  Sep.Caption := '-';
-  Items.Add(Sep);
+  Items.AddSeparator;
 
-  FSelectSaved := CreateMenuItem;
+  FSelectSaved := TMenuItem.Create(Self);;
   FSelectSaved.Caption := '&Select saved titles';
-  FSelectSaved.ImageIndex := 70;
+  FSelectSaved.ImageIndex := TImages.DRIVE_SELECT;
   Items.Add(FSelectSaved);
 
-  FSelectIgnored := CreateMenuItem;
+  FSelectIgnored := TMenuItem.Create(Self);;
   FSelectIgnored.Caption := 'Se&lect ignored titles';
-  FSelectIgnored.ImageIndex := 84;
+  FSelectIgnored.ImageIndex := TImages.DECLINE_SELECT;
   Items.Add(FSelectIgnored);
 
-  Sep := CreateMenuItem;
-  Sep.Caption := '-';
-  Items.Add(Sep);
+  Items.AddSeparator;
 
-  FExport := CreateMenuItem;
+  FExport := TMenuItem.Create(Self);;
   FExport.Caption := '&Export...';
-  FExport.ImageIndex := 35;
+  FExport.ImageIndex := TImages.SCRIPT_OUT;
   Items.Add(FExport);
 
-  FImport := CreateMenuItem;
+  FImport := TMenuItem.Create(Self);;
   FImport.Caption := '&Import...';
-  FImport.ImageIndex := 36;
+  FImport.ImageIndex := TImages.SCRIPT_IN;
   Items.Add(FImport);
 end;
 

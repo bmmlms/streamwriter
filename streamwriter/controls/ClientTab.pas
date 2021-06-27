@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -30,10 +30,13 @@ uses
   GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, Tabs,
   Graphics, SharedControls, Generics.Collections, Generics.Defaults, Math,
   Logging, DynBass, Forms, MsgDlg, TypeDefs, MessageBus, AppMessages,
-  PlayerManager, PlaylistHandler, AudioFunctions, SharedData, PngSpeedButton,
+  PlayerManager, PlaylistHandler, AudioFunctions, SharedData, Images,
   Dialogs, ShellAPI;
 
 type
+
+  { TSidebar }
+
   TSidebar = class(TPageControl)
   private
     FPage1, FPage2, FPage3: TTabSheet;
@@ -41,9 +44,9 @@ type
     FBrowserView: TMStreamBrowserView;
     FInfoView: TMStreamInfoView;
     FDebugView: TMStreamDebugView;
+  protected
+    procedure SetParent(NewParent: TWinControl); override;
   public
-    constructor Create(AOwner: TComponent); reintroduce;
-    destructor Destroy; override;
     procedure AfterCreate;
 
     property BrowserView: TMStreamBrowserView read FBrowserView;
@@ -55,7 +58,7 @@ type
   private
     FLabel: TLabel;
     FStations: TMStationCombo;
-    FStart: TPngSpeedButton;
+    FStart: TSpeedButton;
     FDropTarget: TDropComboTarget;
 
     FOnStart: TNotifyEvent;
@@ -78,6 +81,8 @@ type
   TAddTitleEvent = procedure(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string) of object;
   TAddTitleEventWithServerHash = procedure(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string;
     ServerTitleHash: Cardinal) of object;
+
+  { TClientTab }
 
   TClientTab = class(TMainTabSheet)
   private
@@ -147,7 +152,7 @@ type
     procedure ClientManagerSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
       Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
       ServerTitleHash, ServerArtistHash: Cardinal);
-    procedure ClientManagerTitleChanged(Sender: TObject; Title: string);
+    procedure ClientManagerClientTitleChanged(Sender: TObject; Title: string);
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
     procedure ClientManagerTitleAllowed(Sender: TObject; Title: string;
       var Allowed: Boolean; var Match: string; var Filter: Integer);
@@ -176,7 +181,7 @@ type
 
     procedure PlaybackTimerTimer(Sender: TObject);
   protected
-    procedure Resize; override;
+    procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList;
       Clients: TClientManager; Popup: TPopupMenu); reintroduce;
@@ -191,8 +196,6 @@ type
     procedure BuildTree;
     procedure PausePlay;
     procedure ShowInfo;
-
-    procedure AdjustTextSizeDirtyHack;
 
     property AddressBar: TClientAddressBar read FAddressBar;
     property ClientView: TMClientView read FClientView;
@@ -223,7 +226,7 @@ begin
   FLabel := TLabel.Create(Self);
   FLabel.Parent := Self;
 
-  FStart := TPngSpeedButton.Create(Self);
+  FStart := TSpeedButton.Create(Self);
   FStart.Parent := Self;
 
   FStations := TMStationCombo.Create(Self);
@@ -264,7 +267,8 @@ begin
   FStart.ShowHint := True;
   FStart.NumGlyphs := 1;
   FStart.OnClick := FStartClick;
-  FStart.PngImage := modSharedData.imgImages.PngImages[11].PngImage;
+  FStart.Images := modSharedData.imgImages;
+  FStart.ImageIndex := TImages.ADD;
 
   FStations.DropDownCount := 15;
   FStations.Left := FLabel.Left + FLabel.Width + 6;
@@ -685,7 +689,7 @@ begin
   inherited Create(AOwner);
 
   ShowCloseButton := False;
-  ImageIndex := 68;
+  ImageIndex := TImages.TRANSMIT;
 
   FPlaybackTimer := TTimer.Create(Self);
   FPlaybackTimer.Interval := 1000;
@@ -702,7 +706,7 @@ begin
   FClientManager.OnClientAdded := ClientManagerClientAdded;
   FClientManager.OnClientRemoved := ClientManagerClientRemoved;
   FClientManager.OnClientSongSaved := ClientManagerSongSaved;
-  FClientManager.OnClientTitleChanged := ClientManagerTitleChanged;
+  FClientManager.OnClientTitleChanged := ClientManagerClientTitleChanged;
   FClientManager.OnClientICYReceived := ClientManagerICYReceived;
   FClientManager.OnClientTitleAllowed := ClientManagerTitleAllowed;
   FClientManager.OnShowErrorMessage := ClientManagerShowErrorMessage;
@@ -713,28 +717,25 @@ begin
 
   Caption := 'Streams';
 
-  FAddressBar := TClientAddressBar.Create(Self);
-  FAddressBar.Parent := Self;
-  FAddressBar.Align := alTop;
-  FAddressBar.Visible := True;
-  FAddressBar.OnStart := AddressBarStart;
-
   FToolbarPanel := TPanel.Create(Self);
   FToolbarPanel.Align := alTop;
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Parent := Self;
-  FToolbarPanel.Padding.Top := 1;
+
+  FAddressBar := TClientAddressBar.Create(Self);
+  FAddressBar.Align := alTop;
+  FAddressBar.Parent := Self;
+  FAddressBar.Visible := True;
+  FAddressBar.OnStart := AddressBarStart;
 
   FToolbar := Toolbar;
-  FToolbar.Align := alLeft;
-  FToolbar.Indent := 0;
-  FToolbar.Top := 0;
+  FToolbar.Align := alClient;
+  FToolbar.EdgeBorders := [];
   FToolbar.Parent := FToolbarPanel;
 
   FVolume := TVolumePanel.Create(Self);
   FVolume.Parent := FToolbarPanel;
   FVolume.Align := alRight;
-  FVolume.Padding.Bottom := 1;
   FVolume.OnVolumeChange := VolumeVolumeChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
 
@@ -784,18 +785,14 @@ begin
   FSideBar.Align := alRight;
   FSideBar.Visible := True;
 
-
   FSideBar.Visible := True;
   FSplitter.Visible := True;
-
-  FToolbarPanel.Top := 0;
-  FAddressBar.Top := 100;
 
   FClientView := TMClientView.Create(Self, Popup, FSideBar.FBrowserView.StreamTree);
   FClientView.Parent := Self;
   FClientView.Align := alClient;
   FClientView.Visible := True;
-  FClientView.Images := modSharedData.imgClients;
+  FClientView.Images := modSharedData.imgImages;
   FClientView.OnChange := FClientViewChange;
   FClientView.OnNodeDblClick := FClientViewNodeDblClick;
   FClientView.OnKeyPress := FClientViewKeyPress;
@@ -819,12 +816,6 @@ begin
   end;
 end;
 
-procedure TClientTab.AdjustTextSizeDirtyHack;
-begin
-  FAddressBar.FStations.Left := FAddressBar.FLabel.Left + FAddressBar.FLabel.Width + 6;
-  FAddressBar.FStations.Width := FAddressBar.ClientWidth - FAddressBar.FStations.Left - FAddressBar.FStart.Width - 6;
-end;
-
 procedure TClientTab.AfterCreate;
 begin
   inherited;
@@ -832,11 +823,6 @@ begin
   BuildTree;
 
   FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2) + 1;
-
-  FToolbarPanel.ClientHeight := 24;
-
-  FToolbar.Width := FToolbarPanel.ClientWidth - 250;
-  FToolbar.Height := 25;
 
   FVolume.Setup;
   FVolume.Enabled := Bass.DeviceAvailable;
@@ -852,7 +838,6 @@ begin
 
   FSideBar.Width := AppGlobals.SidebarWidth;
 
-
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
   FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
@@ -867,8 +852,6 @@ begin
 
   FToolbarPanel.ClientHeight := 24;
 
-  FToolbar.Width := FToolbarPanel.ClientWidth - 250;
-
   FVolume.Width := 140;
 
   FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
@@ -879,8 +862,6 @@ begin
   FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
 
   FSideBar.Width := AppGlobals.SidebarWidth;
-
-  //AdjustTextSizeDirtyHack;
 
   FAddressBar.AfterCreate;
   FClientView.AfterCreate;
@@ -1144,7 +1125,7 @@ begin
   FClientView.RemoveClient(Client);
 
   if FSidebar.FDebugView.DebugView.Client = Client then
-    FSidebar.FDebugView.ShowDebug(nil);
+    FSidebar.FDebugView.ShowDebug(nil);;
 
   ShowInfo;
 
@@ -1252,7 +1233,7 @@ begin
   ShowInfo;
 end;
 
-procedure TClientTab.ClientManagerTitleChanged(Sender: TObject;
+procedure TClientTab.ClientManagerClientTitleChanged(Sender: TObject;
   Title: string);
 begin
   // Ist hier, weil wenn FFilename im Client gesetzt wird, das hier aufgerufen wird.
@@ -1313,16 +1294,12 @@ begin
   FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx - 6;
 end;
 
-procedure TClientTab.Resize;
+procedure TClientTab.ControlsAligned;
 begin
-  inherited;
+  inherited ControlsAligned;
 
-{
-  if FToolbarPanel <> nil then
-    FToolbarPanel.Width := FToolbar.Width + 10;
-  if FTimeLabel <> nil then
-    FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx - 8;
-}
+  FToolbarPanel.Top := 0;
+  FToolbarPanel.ClientHeight := FToolbar.Height;
 end;
 
 procedure TClientTab.FClientViewKeyPress(Sender: TObject; var Key: Char);
@@ -1862,9 +1839,13 @@ begin
   FBrowserView.AfterCreate;
 end;
 
-constructor TSidebar.Create(AOwner: TComponent);
+procedure TSidebar.SetParent(NewParent: TWinControl);
 begin
-  inherited Create(AOwner);
+  inherited SetParent(NewParent);
+
+  // TODO:
+  if Assigned(FPage1) then
+    Exit;
 
   FPage1 := TTabSheet.Create(Self);
   FPage1.Caption := 'Browser';
@@ -1883,12 +1864,6 @@ begin
 
   FDebugView := TMStreamDebugView.Create(Self);
   FDebugView.Parent := FPage3;
-end;
-
-destructor TSidebar.Destroy;
-begin
-
-  inherited;
 end;
 
 end.

@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -27,12 +27,12 @@ uses
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
   PostProcess, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus,
-  MsgDlg, PngImageList, PngSpeedButton, pngimage, VirtualTrees, Math,
-  DataManager, PngBitBtn, Logging, ToolWin, ListsTab, DownloadAddons,
+  MsgDlg, VirtualTrees, Math, Images,
+  DataManager, Logging, ToolWin, ListsTab, DownloadAddons,
   ExtendedStream, AddonManager, AddonBase, Generics.Defaults,
   SettingsAddPostProcessor, ConfigureEncoder, AudioFunctions, Constants,
-  SWFunctions, TypeDefs, SharedData, PerlRegEx, MControls, System.ImageList,
-  System.Types;
+  SWFunctions, TypeDefs, SharedData, MControls,
+  Types;
 
 type
   TSettingsTypes = (stApp, stAuto, stStream);
@@ -46,9 +46,9 @@ type
   private
     FColTitle: TVirtualTreeColumn;
   protected
-    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
-    procedure DoHeaderClick(const HitInfo: TVTHeaderHitInfo); override;
+    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String); override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
+    procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     function DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
@@ -59,6 +59,8 @@ type
     procedure UpdateList(List: TStringList);
     procedure RemoveSelected;
   end;
+
+  { TfrmSettings }
 
   TfrmSettings = class(TfrmSettingsBase)
     pnlStreams: TPanel;
@@ -96,10 +98,9 @@ type
     txtApp: TLabeledEdit;
     txtAppParams: TLabeledEdit;
     lblAppParams: TLabel;
-    btnBrowseApp: TPngSpeedButton;
+    btnBrowseApp: TSpeedButton;
     pnlHotkeys: TPanel;
     lstHotkeys: TListView;
-    txtHotkey: THotKey;
     Label9: TLabel;
     chkSeparateTracks: TCheckBox;
     chkSaveStreamsToDisk: TCheckBox;
@@ -110,7 +111,6 @@ type
     Label6: TLabel;
     txtSilenceBufferSeconds: TEdit;
     Label15: TLabel;
-    PngImageList1: TPngImageList;
     pnlAutoRecord: TPanel;
     chkAutoTuneIn: TCheckBox;
     lstSoundDevice: TComboBox;
@@ -119,9 +119,9 @@ type
     lstMinQuality: TComboBox;
     Label17: TLabel;
     lstFormat: TComboBox;
-    btnHelpPostProcess: TPngSpeedButton;
-    btnMoveDown: TPngSpeedButton;
-    btnMoveUp: TPngSpeedButton;
+    btnHelpPostProcess: TSpeedButton;
+    btnMoveDown: TSpeedButton;
+    btnMoveUp: TSpeedButton;
     chkDiscardSmaller: TCheckBox;
     pnlFilenames: TPanel;
     lblFilePattern: TLabel;
@@ -134,7 +134,7 @@ type
     chkSnapMain: TCheckBox;
     pnlStreamsAdvanced: TPanel;
     txtRegEx: TLabeledEdit;
-    btnResetTitlePattern: TPngSpeedButton;
+    btnResetTitlePattern: TSpeedButton;
     btnConfigure: TButton;
     chkRememberRecordings: TCheckBox;
     chkDisplayPlayNotifications: TCheckBox;
@@ -158,15 +158,15 @@ type
     txtRemoveChars: TLabeledEdit;
     txtFilePatternDecimals: TLabeledEdit;
     txtFilePattern: TLabeledEdit;
-    btnResetFilePattern: TPngSpeedButton;
+    btnResetFilePattern: TSpeedButton;
     txtPreview: TLabeledEdit;
     txtIncompleteFilePattern: TLabeledEdit;
-    btnResetIncompleteFilePattern: TPngSpeedButton;
+    btnResetIncompleteFilePattern: TSpeedButton;
     txtAutomaticFilePattern: TLabeledEdit;
-    btnResetAutomaticFilePattern: TPngSpeedButton;
-    btnResetRemoveChars: TPngSpeedButton;
+    btnResetAutomaticFilePattern: TSpeedButton;
+    btnResetRemoveChars: TSpeedButton;
     txtStreamFilePattern: TLabeledEdit;
-    btnResetStreamFilePattern: TPngSpeedButton;
+    btnResetStreamFilePattern: TSpeedButton;
     chkAutoRemoveSavedFromWishlist: TCheckBox;
     chkRemoveSavedFromWishlist: TCheckBox;
     chkNormalizeVariables: TCheckBox;
@@ -175,7 +175,7 @@ type
     lstAddons: TListView;
     lblOutputFormat: TLabel;
     lstOutputFormat: TComboBox;
-    btnConfigureEncoder: TPngSpeedButton;
+    btnConfigureEncoder: TSpeedButton;
     pnlCommunity: TPanel;
     Label2: TLabel;
     chkSubmitStreamInfo: TCheckBox;
@@ -196,16 +196,15 @@ type
     btnRemoveRegEx: TButton;
     Label22: TLabel;
     txtDir: TLabeledEdit;
-    btnBrowse: TPngSpeedButton;
+    btnBrowse: TSpeedButton;
     Bevel1: TBevel;
-    btnBrowseLogFile: TPngSpeedButton;
+    btnBrowseLogFile: TSpeedButton;
     txtLogFile: TLabeledEdit;
     chkRememberPlaying: TCheckBox;
     txtShortLengthSeconds: TLabeledEdit;
     Label4: TLabel;
     chkSkipShort: TCheckBox;
     pnlAppearance: TPanel;
-    PngSpeedButton1: TPngSpeedButton;
     dlgColor: TColorDialog;
     Label23: TLabel;
     Label24: TLabel;
@@ -373,7 +372,7 @@ const
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 destructor TfrmSettings.Destroy;
 var
@@ -480,7 +479,7 @@ begin
     chkSearchSilenceClick(nil);
     chkManualSilenceLevelClick(nil);
 
-    chkAutostart.Checked := FileExists(IncludeTrailingPathDelimiter(GetShellFolder(CSIDL_STARTUP)) + AppGlobals.AppName + '.lnk');
+    chkAutostart.Checked := FileExists(ConcatPaths([GetShellFolder(CSIDL_STARTUP), AppGlobals.AppName + '.lnk']));
     chkTray.Checked := AppGlobals.Tray;
     chkSnapMain.Checked := AppGlobals.SnapMain;
     chkRememberRecordings.Checked := AppGlobals.RememberRecordings;
@@ -585,6 +584,7 @@ begin
     FTemporaryPostProcessors.Add(Settings.PostProcessors[i].Copy);
   end;
 
+  {
   FTemporaryPostProcessors.Sort(TComparer<TPostProcessBase>.Construct(
     function (const L, R: TPostProcessBase): integer
     begin
@@ -594,6 +594,7 @@ begin
         Result := CmpInt(L.Order, R.Order);
     end
   ));
+  }
 
   RebuildPostProcessingList;
   if lstPostProcess.Items.Count > 0 then
@@ -675,6 +676,7 @@ begin
         AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
         AppGlobals.DefaultActionBrowser := TStreamOpenActions(lstDefaultActionBrowser.ItemIndex);
 
+        {
         if lstHotkeys.Items[0].SubItems[0] <> '' then
           AppGlobals.ShortcutPlay := TextToShortCut(lstHotkeys.Items[0].SubItems[0])
         else
@@ -714,6 +716,7 @@ begin
           AppGlobals.ShortcutMute := TextToShortCut(lstHotkeys.Items[7].SubItems[0])
         else
           AppGlobals.ShortcutMute := 0;
+        }
 
         Tree := TVirtualStringTree.Create(Self);
         try
@@ -932,12 +935,14 @@ end;
 
 procedure TfrmSettings.FormActivate(Sender: TObject);
 begin
+  {
   if FBrowseDir then
   begin
     SetPage(FPageList.Find(TPanel(txtDir.Parent)));
     btnBrowse.Click;
   end;
   FBrowseDir := False;
+  }
 end;
 
 procedure TfrmSettings.FormResize(Sender: TObject);
@@ -1066,6 +1071,7 @@ procedure TfrmSettings.lstHotkeysChange(Sender: TObject; Item: TListItem;
   Change: TItemChange);
 begin
   inherited;
+  {
   txtHotkey.Enabled := lstHotkeys.Selected <> nil;
   if txtHotkey.Enabled then
   begin
@@ -1073,6 +1079,7 @@ begin
     txtHotkey.ApplyFocus;
   end else
     txtHotkey.HotKey := 0;
+  }
 end;
 
 procedure TfrmSettings.lstHotkeysResize(Sender: TObject);
@@ -1286,8 +1293,10 @@ end;
 procedure TfrmSettings.pnlNodeColorClick(Sender: TObject);
 begin
   dlgColor.Color := TPanel(Sender).Color;
+  {
   if dlgColor.Execute(Handle) then
     TPanel(Sender).Color := dlgColor.Color;
+  }
 end;
 
 procedure TfrmSettings.PreTranslate;
@@ -1342,8 +1351,10 @@ begin
     lstSoundDevice.ItemIndex := LastIdx;
   end;
 
+  {
   lstPostProcess.Groups[0].Header := _('Processing when in WAVE-format');
   lstPostProcess.Groups[1].Header := _('Processing after conversion to destination format');
+  }
 
   BuildHotkeys;
 
@@ -1427,7 +1438,7 @@ begin
     for i := 0 to FTemporaryPostProcessors.Count - 1 do
     begin
       Item := lstPostProcess.Items.Add;
-      Item.GroupID := FTemporaryPostProcessors[i].GroupID;
+   //   Item.GroupID := FTemporaryPostProcessors[i].GroupID;
       Item.Caption := FTemporaryPostProcessors[i].Name;
       Item.Checked := FTemporaryPostProcessors[i].Active;
       // Data must be set at last that events (i.e. lstPostProcessItemChecked) do not fire
@@ -1435,10 +1446,10 @@ begin
 
       if FTemporaryPostProcessors[i] is TInternalPostProcess then
       begin
-        Item.ImageIndex := 4;
+        Item.ImageIndex := TImages.LIGHTNING;
       end else
       begin
-        Item.ImageIndex := 5;
+        Item.ImageIndex := TImages.APPLICATION_XP_TERMINAL;
       end;
     end;
   finally
@@ -1451,40 +1462,40 @@ begin
   case FSettingsType of
     stApp:
       begin
-        FPageList.Add(TPage.Create('Settings', pnlMain, 'PROPERTIES'));
-        FPageList.Add(TPage.Create('Appearance', pnlAppearance, 'APPEARANCE'));
-        FPageList.Add(TPage.Create('Recordings', pnlStreams, 'STREAM'));
-        FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
-        FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
-        FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
-        FPageList.Add(TPage.Create('Addons', pnlAddons, 'ADDONS_PNG'));
-        FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
-        FPageList.Add(TPage.Create('Bandwidth', pnlBandwidth, 'BANDWIDTH'));
-        FPageList.Add(TPage.Create('Community', pnlCommunity, 'GROUP_PNG'));
-        FPageList.Add(TPage.Create('Hotkeys', pnlHotkeys, 'KEYBOARD'));
-        FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
+        FPageList.Add(TPage.Create('Settings', pnlMain, TImages.WRENCH_APPLICATION));
+        FPageList.Add(TPage.Create('Appearance', pnlAppearance, TImages.PAINT));
+        FPageList.Add(TPage.Create('Recordings', pnlStreams, TImages.RECORD_RED));
+        FPageList.Add(TPage.Create('Filenames', pnlFilenames, TImages.TEXTFIELD_RENAME));
+        FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, TImages.TEXTFIELD_RENAME_COG, FPageList.Find(pnlFilenames)));
+        FPageList.Add(TPage.Create('Cut songs', pnlCut, TImages.CUT));
+        FPageList.Add(TPage.Create('Addons', pnlAddons, TImages.PLUGIN));
+        FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, TImages.LIGHTNING));
+        FPageList.Add(TPage.Create('Bandwidth', pnlBandwidth, TImages.CONNECT));
+        FPageList.Add(TPage.Create('Community', pnlCommunity, TImages.GROUP));
+        FPageList.Add(TPage.Create('Hotkeys', pnlHotkeys, TImages.KEYBOARD));
+        FPageList.Add(TPage.Create('Advanced', pnlAdvanced, TImages.COG));
       end;
     stAuto:
       begin
-        FPageList.Add(TPage.Create('Recordings', pnlAutoRecord, 'STREAM'));
-        FPageList.Add(TPage.Create('Blacklist', pnlCommunityBlacklist, 'BLACKLIST', FPageList.Find(pnlAutoRecord)));
-        FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
-        FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
-        FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
+        FPageList.Add(TPage.Create('Recordings', pnlAutoRecord, TImages.RECORD_RED));
+        FPageList.Add(TPage.Create('Blacklist', pnlCommunityBlacklist, TImages.PAGE_WHITE_TRANSMIT, FPageList.Find(pnlAutoRecord)));
+        FPageList.Add(TPage.Create('Filenames', pnlFilenames, TImages.TEXTFIELD_RENAME));
+        FPageList.Add(TPage.Create('Cut songs', pnlCut, TImages.CUT));
+        FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, TImages.LIGHTNING));
       end;
     stStream:
       begin
-        FPageList.Add(TPage.Create('Recordings', pnlStreams, 'STREAM'));
-        FPageList.Add(TPage.Create('Advanced', pnlStreamsAdvanced, 'MISC', FPageList.Find(pnlStreams)));
-        FPageList.Add(TPage.Create('Filenames', pnlFilenames, 'FILENAMES'));
-        FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, 'FILENAMESEXT', FPageList.Find(pnlFilenames)));
-        FPageList.Add(TPage.Create('Cut songs', pnlCut, 'CUT'));
-        FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, 'LIGHTNING'));
-        FPageList.Add(TPage.Create('Advanced', pnlAdvanced, 'MISC'));
+        FPageList.Add(TPage.Create('Recordings', pnlStreams, TImages.RECORD_RED));
+        FPageList.Add(TPage.Create('Advanced', pnlStreamsAdvanced, TImages.RECORD_RED_COG, FPageList.Find(pnlStreams)));
+        FPageList.Add(TPage.Create('Filenames', pnlFilenames, TImages.TEXTFIELD_RENAME));
+        FPageList.Add(TPage.Create('Advanced', pnlFilenamesExt, TImages.TEXTFIELD_RENAME_COG, FPageList.Find(pnlFilenames)));
+        FPageList.Add(TPage.Create('Cut songs', pnlCut, TImages.CUT));
+        FPageList.Add(TPage.Create('Postprocessing', pnlPostProcess, TImages.LIGHTNING));
+        FPageList.Add(TPage.Create('Advanced', pnlAdvanced, TImages.COG));
       end;
   end;
 
-  inherited;
+  inherited RegisterGeneralPage(19);
 end;
 
 function TfrmSettings.RemoveGray(C: TControl; ShowMessage: Boolean = True): Boolean;
@@ -2080,7 +2091,7 @@ end;
 procedure TfrmSettings.txtHotkeyChange(Sender: TObject);
 begin
   inherited;
-  lstHotkeys.Selected.SubItems[0] := ShortCutToText(txtHotkey.HotKey);
+ // lstHotkeys.Selected.SubItems[0] := ShortCutToText(txtHotkey.HotKey);
 end;
 
 procedure TfrmSettings.txtIgnoreTitlePatternChange(Sender: TObject);
@@ -2205,8 +2216,8 @@ end;
 
 procedure TfrmSettings.UpdatePostProcessUpDown;
 begin
-  btnMoveUp.Enabled := (lstPostProcess.Selected <> nil) and (TObject(lstPostProcess.Selected.Data) is TExternalPostProcess) and (not (lstPostProcess.Selected.Index = 0)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index - 1].GroupID <> lstPostProcess.Selected.GroupID));
-  btnMoveDown.Enabled := (lstPostProcess.Selected <> nil) and (TObject(lstPostProcess.Selected.Data) is TExternalPostProcess) and (not (lstPostProcess.Selected.Index = lstPostProcess.Items.Count - 1)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index + 1].GroupID <> lstPostProcess.Selected.GroupID));
+ // btnMoveUp.Enabled := (lstPostProcess.Selected <> nil) and (TObject(lstPostProcess.Selected.Data) is TExternalPostProcess) and (not (lstPostProcess.Selected.Index = 0)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index - 1].GroupID <> lstPostProcess.Selected.GroupID));
+ // btnMoveDown.Enabled := (lstPostProcess.Selected <> nil) and (TObject(lstPostProcess.Selected.Data) is TExternalPostProcess) and (not (lstPostProcess.Selected.Index = lstPostProcess.Items.Count - 1)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index + 1].GroupID <> lstPostProcess.Selected.GroupID));
 end;
 
 procedure TfrmSettings.BlacklistTreeChange(Sender: TBaseVirtualTree;
@@ -2230,7 +2241,7 @@ var
 begin
   Item := lstIgnoreTitles.Items.Add;
   Item.Caption := txtIgnoreTitlePattern.Text;
-  Item.ImageIndex := 1;
+  Item.ImageIndex := TImages.DECLINE;
   txtIgnoreTitlePattern.Text := '';
   txtIgnoreTitlePattern.ApplyFocus;
 
@@ -2248,7 +2259,7 @@ begin
 
   Item := lstRegExes.Items.Add;
   Item.Caption := RegExp;
-  Item.ImageIndex := 7;
+  Item.ImageIndex := TImages.FONT;
   txtRegEx.Text := '';
   txtRegEx.ApplyFocus;
 
@@ -2296,10 +2307,10 @@ begin
           PostProcessor := TExternalPostProcess.Create(dlgOpen.FileName, '"%filename%"', True, False, GetNewID, 100000, AddPostProcessorForm.Result);
           PostProcessor.IsNew := True;
           FTemporaryPostProcessors.Insert(HighestGroupIndex(AddPostProcessorForm.Result) + 1, PostProcessor);
-          Item.GroupID := PostProcessor.GroupID;
+         // Item.GroupID := PostProcessor.GroupID;
           Item.Checked := PostProcessor.Active;
           Item.Data := PostProcessor;
-          Item.ImageIndex := 5;
+          Item.ImageIndex := TImages.APPLICATION_XP_TERMINAL;
           Item.Selected := True;
 
           if TPostProcessBase(Item.Data).NeedsWave then
@@ -2598,6 +2609,7 @@ begin
     lstHotkeys.Items[7].Caption := _('Mute');
   end else
   begin
+    {
     Item := lstHotkeys.Items.Add;
     Item.Caption := _('Play');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutPlay));
@@ -2629,6 +2641,7 @@ begin
     Item := lstHotkeys.Items.Add;
     Item.Caption := _('Mute');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutMute));
+    }
   end;
 end;
 
@@ -3179,7 +3192,9 @@ begin
   optMinimize.Enabled := chkTray.Checked;
 end;
 
-constructor TfrmSettings.Create(AOwner: TComponent; SettingsType: TSettingsTypes; StreamSettings: TStreamSettingsArray; BrowseDir: Boolean);
+constructor TfrmSettings.Create(AOwner: TComponent;
+  SettingsType: TSettingsTypes; StreamSettings: TStreamSettingsArray;
+  BrowseDir: Boolean);
 var
   i: Integer;
 begin
@@ -3222,7 +3237,9 @@ begin
                                         'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), mtInformation, [mbOK], mbOK, 4);
   end;
 
-  inherited Create(AOwner, True);
+  inherited Create(AOwner, modSharedData.imgImages, True);
+
+  modSharedData.imgImages.GetIcon(TImages.WRENCH_APPLICATION, Icon);
 
   FillFields(FStreamSettings[0]);
 
@@ -3248,7 +3265,7 @@ begin
     Item.Checked := AppGlobals.AddonManager.Addons[i].FilesExtracted;
     Item.Data := AppGlobals.AddonManager.Addons[i].Copy;
 
-    Item.ImageIndex := 6;
+    Item.ImageIndex := TImages.PLUGIN;
   end;
   if lstAddons.Items.Count > 0 then
     lstAddons.Items[0].Selected := True;
@@ -3302,14 +3319,16 @@ var
 begin
   FBrowseDir := BrowseDir;
 
-  inherited Create(AOwner, False);
+  inherited Create(AOwner, modSharedData.imgImages, False);
+
+  modSharedData.imgImages.GetIcon(TImages.WRENCH_BRICKS, Icon);
 
   FillFields(FStreamSettings[0]);
 
   lstBlacklist := TBlacklistTree.Create(Self, AppGlobals.Data.StreamBlacklist);
   lstBlacklist.OnChange := BlacklistTreeChange;
   lstBlacklist.OnKeyDown := BlacklistTreeKeyDown;
-  lstBlacklist.Images := PngImageList1;
+  lstBlacklist.Images := modSharedData.imgImages;
   lstBlacklist.Parent := pnlBlacklist;
   lstBlacklist.Align := alClient;
 
@@ -3332,7 +3351,7 @@ begin
 
   // Dateinamen ordentlich machen
   for i := 0 to pnlFilenames.ControlCount - 1 do
-    if ((pnlFilenames.Controls[i].ClassType = TLabeledEdit) or (pnlFilenames.Controls[i].ClassType = TPngSpeedButton))
+    if ((pnlFilenames.Controls[i].ClassType = TLabeledEdit) or (pnlFilenames.Controls[i].ClassType = TSpeedButton))
        and (pnlFilenames.Controls[i].Top > txtDir.Top) then
     begin
       pnlFilenames.Controls[i].Visible := False;
@@ -3362,7 +3381,9 @@ var
   Tmp: Integer;
   Item: TListItem;
 begin
-  inherited Create(AOwner, False);
+  inherited Create(AOwner, modSharedData.imgImages, False);
+
+  modSharedData.imgImages.GetIcon(TImages.WRENCH_TRANSMIT, Icon);
 
   SetFields;
   FillFields(FStreamSettings[0]);
@@ -3409,14 +3430,14 @@ begin
   begin
     Item := lstRegExes.Items.Add;
     Item.Caption := FStreamSettings[0].RegExes[i];
-    Item.ImageIndex := 7;
+    Item.ImageIndex := TImages.FONT;
   end;
 
   for i := 0 to FStreamSettings[0].IgnoreTrackChangePattern.Count - 1 do
   begin
     Item := lstIgnoreTitles.Items.Add;
     Item.Caption := FStreamSettings[0].IgnoreTrackChangePattern[i];
-    Item.ImageIndex := 1;
+    Item.ImageIndex := TImages.DECLINE;
   end;
 
   Caption := _('Stream settings');
@@ -3427,7 +3448,7 @@ procedure TfrmSettings.CreateGeneral;
 var
   i: Integer;
   B: TBitmap;
-  P: TPngImage;
+  P: TImage;
 begin
   for i := 0 to Self.ControlCount - 1 do
   begin
@@ -3441,25 +3462,27 @@ begin
     end;
   end;
 
+  {
   B := TBitmap.Create;
-  P := TPngImage.Create;
+  P := TImage.Create;
   try
     P.LoadFromResourceName(HInstance, 'ARROWUP');
-    btnMoveUp.PngImage := P;
+    btnMoveUp.Image := P;
     P.LoadFromResourceName(HInstance, 'ARROWDOWN');
-    btnMoveDown.PngImage := P;
+    btnMoveDown.Image := P;
     P.LoadFromResourceName(HInstance, 'QUESTION');
-    btnHelpPostProcess.PngImage := P;
+    btnHelpPostProcess.Image := P;
     P.LoadFromResourceName(HInstance, 'CONFIGURE');
-    btnConfigureEncoder.PngImage := P;
+    btnConfigureEncoder.Image := P;
 
-    btnBrowse.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
-    btnBrowseApp.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
-    btnBrowseLogFile.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
+    btnBrowse.Image := modSharedData.imgImages.Images[85].Image;
+    btnBrowseApp.Image := modSharedData.imgImages.Images[85].Image;
+    btnBrowseLogFile.Image := modSharedData.imgImages.Images[85].Image;
   finally
     B.Free;
     P.Free;
   end;
+  }
 
   btnConfigureEncoder.Enabled := lstOutputFormat.ItemIndex > 0;
 end;
@@ -3511,28 +3534,28 @@ begin
   inherited;
 end;
 
-procedure TBlacklistTree.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
+procedure TBlacklistTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String);
 var
   NodeData: PBlacklistNodeData;
 begin
   inherited;
 
-  NodeData := GetNodeData(pEventArgs.Node);
-  case pEventArgs.Column of
-    0: pEventArgs.CellText := NodeData.Name;
+  NodeData := GetNodeData(Node);
+
+  case Column of
+    0: Text := NodeData.Name;
   end;
 end;
 
-function TBlacklistTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
+function TBlacklistTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList;
 begin
   Result := Images;
 
   if Column = 0 then
-    Index := 1;
+    Index := TImages.DECLINE;
 end;
 
-procedure TBlacklistTree.DoHeaderClick(const HitInfo: TVTHeaderHitInfo);
+procedure TBlacklistTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
 begin
   inherited;
   if HitInfo.Button = mbLeft then

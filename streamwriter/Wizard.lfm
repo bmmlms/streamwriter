@@ -1,0 +1,155 @@
+inherited frmWizard: TfrmWizard
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  KeyPreview = True
+  Position = poScreenCenter
+  inherited pnlLanguage: TPanel
+    TabOrder = 6
+  end
+  inherited pnlNav: TPanel
+    TabOrder = 7
+  end
+  inherited pnlStorage: TPanel
+    TabOrder = 8
+  end
+  object pnlDir: TPanel[6]
+    Left = 8
+    Height = 233
+    Top = 8
+    Width = 413
+    BevelOuter = bvNone
+    ClientHeight = 233
+    ClientWidth = 413
+    TabOrder = 0
+    object cmdBrowse: TSpeedButton
+      Left = 388
+      Height = 21
+      Hint = 'Browse...'
+      Top = 16
+      Width = 21
+      Anchors = [akTop, akRight]
+      Flat = True
+      Layout = blGlyphLeft
+      OnClick = cmdBrowseClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object txtDir: TLabeledEdit
+      Left = 8
+      Height = 21
+      Top = 16
+      Width = 373
+      Anchors = [akTop, akLeft, akRight]
+      AutoSize = False
+      Color = 15790320
+      EditLabel.Height = 13
+      EditLabel.Width = 34
+      EditLabel.Caption = 'Folder:'
+      EditLabel.ParentColor = False
+      ReadOnly = True
+      TabOrder = 0
+    end
+  end
+  object pnlMisc: TPanel[7]
+    Left = 8
+    Height = 233
+    Top = 248
+    Width = 413
+    BevelOuter = bvNone
+    ClientHeight = 233
+    ClientWidth = 413
+    TabOrder = 1
+    object Label2: TLabel
+      Left = 80
+      Height = 13
+      Top = 44
+      Width = 21
+      Caption = 'KB/s'
+      ParentColor = False
+    end
+    object Label20: TLabel
+      Left = 24
+      Height = 69
+      Top = 100
+      Width = 389
+      Anchors = [akTop, akLeft, akRight]
+      AutoSize = False
+      Caption = 'Server-assigned streams will be monitored for title changes in the background. Do not disable this option if you have a fast internet connection (DSL or faster) and unlimited traffic (flatrate). Monitored streams will not be covered by the bandwidth limit. One monitored stream consumes between 8 and 40KB/s depending on the stream''s quality.'
+      ParentColor = False
+      WordWrap = True
+      OnClick = Label20Click
+    end
+    object chkLimit: TCheckBox
+      Left = 8
+      Height = 21
+      Top = 0
+      Width = 369
+      Caption = 'Limit bandwidth for recordings'
+      OnClick = chkLimitClick
+      TabOrder = 0
+    end
+    object txtMaxSpeed: TLabeledEdit
+      Left = 24
+      Height = 21
+      Top = 40
+      Width = 53
+      EditLabel.Height = 13
+      EditLabel.Width = 205
+      EditLabel.Caption = 'Max. bandwidth available to streamWriter:'
+      EditLabel.ParentColor = False
+      Enabled = False
+      MaxLength = 5
+      TabOrder = 1
+    end
+    object chkMonitorMode: TCheckBox
+      Left = 8
+      Height = 21
+      Top = 76
+      Width = 369
+      Caption = 'Monitor server-assigned streams for title changes in the background'
+      OnClick = chkMonitorModeClick
+      TabOrder = 2
+    end
+    object txtMonitorCount: TLabeledEdit
+      Left = 24
+      Height = 21
+      Top = 188
+      Width = 53
+      EditLabel.Height = 13
+      EditLabel.Width = 173
+      EditLabel.Caption = 'Max. number of streams to monitor:'
+      EditLabel.ParentColor = False
+      MaxLength = 2
+      TabOrder = 3
+    end
+  end
+  object pnlSelectMode: TPanel[8]
+    Left = 8
+    Height = 233
+    Top = 8
+    Width = 417
+    BevelOuter = bvNone
+    ClientHeight = 233
+    ClientWidth = 417
+    TabOrder = 2
+    Visible = False
+    object optModeEasy: TRadioButton
+      Left = 8
+      Height = 21
+      Top = 0
+      Width = 197
+      Caption = 'Easy mode'
+      Checked = True
+      TabOrder = 0
+      TabStop = True
+    end
+    object optModeAdvanced: TRadioButton
+      Left = 8
+      Height = 21
+      Top = 24
+      Width = 197
+      Caption = 'Advanced mode'
+      TabOrder = 1
+    end
+  end
+end

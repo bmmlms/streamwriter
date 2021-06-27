@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -23,12 +23,11 @@ unit SharedData;
 interface
 
 uses
-  SysUtils, Classes, ImgList, Controls, PngImageList, System.ImageList;
+  SysUtils, Classes, ImgList, Controls;
 
 type
   TmodSharedData = class(TDataModule)
-    imgImages: TPngImageList;
-    imgClients: TPngImageList;
+    imgImages: TImageList;
   private
   public
   end;
@@ -38,6 +37,6 @@ var
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 end.

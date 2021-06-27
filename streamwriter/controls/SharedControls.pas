@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,8 +25,8 @@ interface
 
 uses
   Windows, SysUtils, Classes, ComCtrls, ExtCtrls, Controls, Graphics,
-  Functions, PngSpeedButton, PngImage, LanguageObjects, Menus,
-  Themes, Messages, Math, Buttons, Logging, Forms, VirtualTrees;
+  LanguageObjects, Menus, SharedData, Images, Themes, Messages, Math,
+  Buttons, Logging, Forms, VirtualTrees;
 
 type
   TGripperStates = (gsUnknown, gsNormal, gsHot, gsDown);
@@ -88,12 +88,10 @@ type
   private
     FTrackBarPanel: TPanel;
     FTrackBar: TSeekBar;
-    FMute: TPngSpeedButton;
+    FMute: TSpeedButton;
     FVolume: Integer;
     FVolumeBeforeDrag: Integer;
     FVolumeChange: TNotifyEvent;
-    FVolumePng: TPngImage;
-    FVolumeMutedPng: TPngImage;
 
     FOnGetVolumeBeforeMute: TOnGetVolumeBeforeMute;
 
@@ -163,8 +161,8 @@ begin
 
   FTrackBarPanel.Align := alClient;
   FTrackBarPanel.BevelOuter := bvNone;
-  FTrackBarPanel.Padding.Left := 4;
-  FTrackBarPanel.Padding.Right := 2;
+//  FTrackBarPanel.Padding.Left := 4;
+//  FTrackBarPanel.Padding.Right := 2;
   FTrackBarPanel.Parent := Self;
 
   FTrackBar.Max := 100;
@@ -187,23 +185,22 @@ begin
     FTrackBar.FPositionBeforeDrag := FTrackBar.Position;
     FTrackBar.Position := 0;
 
-    FMute.PngImage := FVolumeMutedPng;
-    if not FMute.Down then
-      FMute.Down := True;
+    FMute.ImageIndex := TImages.SOUND_MUTE;
+    FMute.Down := True;
   end else
   begin
     P := FOnGetVolumeBeforeMute(Self);
     FTrackBar.Position := P;
-    FMute.PngImage := FVolumePng;
+    FMute.ImageIndex := IfThen(P > 50, TImages.SOUND, TImages.SOUND_LOW);
   end;
 end;
 
 procedure TVolumePanel.VolumeChange(Sender: TObject);
 begin
-  RefreshButtonState(False);
-
   FVolume := FTrackBar.Position;
   FVolumeBeforeDrag := FTrackBar.PositionBeforeDrag;
+
+  RefreshButtonState(False);
 
   if Assigned(OnVolumeChange) then
     OnVolumeChange(Self);
@@ -213,18 +210,12 @@ procedure TVolumePanel.RefreshButtonState(DoIt: Boolean);
 begin
   if Volume = 0 then
   begin
-    if not FMute.Down or DoIt then
-    begin
-      FMute.Down := True;
-      FMute.PngImage := FVolumeMutedPng;
-    end;
+    FMute.Down := True;
+    FMute.ImageIndex := TImages.SOUND_MUTE;
   end else
   begin
-    if FMute.Down or DoIt then
-    begin
-      FMute.Down := False;
-      FMute.PngImage := FVolumePng;
-    end;
+    FMute.Down := False;
+    FMute.ImageIndex := IfThen(Volume > 50, TImages.SOUND, TImages.SOUND_LOW);
   end;
 end;
 
@@ -245,38 +236,20 @@ begin
 end;
 
 constructor TVolumePanel.Create(AOwner: TComponent);
-var
-  ResStream: TResourceStream;
 begin
   inherited;
 
-  FMute := TPngSpeedButton.Create(Self);
+  FMute := TSpeedButton.Create(Self);
   FTrackBar := TSeekBar.Create(Self);
   FTrackBarPanel := TPanel.Create(Self);
 
-  ResStream := TResourceStream.Create(HInstance, 'VOLUME', RT_RCDATA);
-  try
-    FVolumePng := TPngImage.Create;
-    FVolumePng.LoadFromStream(ResStream);
-  finally
-    ResStream.Free;
-  end;
-
-  ResStream := TResourceStream.Create(HInstance, 'VOLUME_MUTED', RT_RCDATA);
-  try
-    FVolumeMutedPng := TPngImage.Create;
-    FVolumeMutedPng.LoadFromStream(ResStream);
-  finally
-    ResStream.Free;
-  end;
+  FMute.Images := modSharedData.imgImages;
 end;
 
 destructor TVolumePanel.Destroy;
 begin
   inherited;
 
-  FVolumePng.Destroy;
-  FVolumeMutedPng.Destroy;
 end;
 
 { TSeekBar }
@@ -439,14 +412,16 @@ begin
       ThemeServices.DrawElement(Bmp.Canvas.Handle, D2, R);
     end else
     begin
-      case GetGripperState of
+      //case GetGripperState of
+        {
         gsNormal:
           DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, False);
         gsHot:
           DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, True);
         gsDown:
           DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, True, True);
-      end;
+        }
+      //end;
     end;
 
     FLastGripperState := GetGripperState;
@@ -486,7 +461,7 @@ end;
 
 function TSeekBar.GetGripperState: TGripperStates;
 var
-  P: Cardinal;
+  P: LongInt;
   R: TRect;
 begin
   Result := gsUnknown;
@@ -702,7 +677,7 @@ begin
   begin
     if i = FHideIdx then
       Continue;
-    Item := CreateMenuItem;
+    Item := TMenuItem.Create(Self);
     Item.Caption := Tree.Header.Columns[i].Text;
     Item.OnClick := ColItemsClick;
     Item.Tag := Integer(Tree.Header.Columns[i]);

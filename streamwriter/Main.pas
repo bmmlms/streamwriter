@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,27 +25,33 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, WinSock, ICEClient, StdCtrls, ExtCtrls, ImgList, Menus,
-  XPMan, VirtualTrees, ComCtrls, ToolWin, ClientView, ICEThread,
+  VirtualTrees, DateTimePicker, ComCtrls, ToolWin, ClientView, ICEThread,
   Settings, DataManager, ActnList, DragDrop, DropTarget,
   DragDropInternet, DragDropText, DragDropFile, Update, UpdateClient,
   LanguageObjects, AppDataBase, Functions, ClientManager, ShellAPI, DropSource,
   About, MsgDlg, HomeCommunication, StreamBrowserView, Clipbrd,
   StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, MessageBus,
   Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
-  CheckFilesThread, ListsTab, CommCtrl, PngImageList, CommunityLogin,
+  CheckFilesThread, ListsTab, CommCtrl, CommunityLogin,
   PlayerManager, Logging, Timers, Notifications, Generics.Collections,
   ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
   PowerManagement, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
   AppMessages, CommandLine, Protocol, Commands, HomeCommands, SharedData,
-  LogTab, WindowsFunctions, Sockets, System.Actions, SetStreamData;
+  LogTab, WindowsFunctions, Sockets, SetStreamData;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
   WM_AFTERSHOWN = WM_USER + 678;
 
 type
+
+  { TfrmStreamWriterMain }
+
   TfrmStreamWriterMain = class(TForm)
-    addXP: TXPManifest;
+    actCheckUpdate: TAction;
+    actPlay: TAction;
+    actPause: TAction;
+    actStopPlay: TAction;
     mnuMain: TMainMenu;
     mnuFile: TMenuItem;
     mnuSettings: TMenuItem;
@@ -106,13 +112,9 @@ type
     ToolButton6: TToolButton;
     ToolButton4: TToolButton;
     cmdShowStreamBrowser: TToolButton;
-    actCutSave: TAction;
-    actCutSaveAs: TAction;
     mnuHelp2: TMenuItem;
     N1: TMenuItem;
     actHelp: TAction;
-    actPlay: TAction;
-    actStopPlay: TAction;
     mnuStartPlay2: TMenuItem;
     mnuStopPlay2: TMenuItem;
     N10: TMenuItem;
@@ -131,7 +133,6 @@ type
     mnuOpenWebsite1: TMenuItem;
     Openwebsite1: TMenuItem;
     cmdPause: TToolButton;
-    actPause: TAction;
     Pause1: TMenuItem;
     mnuPause1: TMenuItem;
     tmrRecordings: TTimer;
@@ -205,7 +206,7 @@ type
     procedure tmrSpeedTimer(Sender: TObject);
     procedure actStreamSettingsExecute(Sender: TObject);
     procedure addTrayClick(Sender: TObject);
-    procedure mnuCheckUpdateClick(Sender: TObject);
+    procedure actCheckUpdateExecute(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure mnuShowClick(Sender: TObject);
     procedure mnuStreamPopupPopup(Sender: TObject);
@@ -264,11 +265,11 @@ type
     FExiting: Boolean;
 
     procedure AfterShown(var Msg: TMessage); message WM_AFTERSHOWN;
-    procedure ReceivedData(var Msg: TWMCopyData); message WM_COPYDATA;
+   // procedure ReceivedData(var Msg: TWMCopyData); message WM_COPYDATA;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
-    procedure EndSession(var Msg: TMessage); message WM_ENDSESSION;
+    procedure EndSession(var Msg: TWMEndSession); message WM_ENDSESSION;
     procedure SysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
-    procedure Hotkey(var Msg: TWMHotKey); message WM_HOTKEY;
+   // procedure Hotkey(var Msg: TWMHotKey); message WM_HOTKEY;
     procedure UpdateFound(var Msg: TMessage); message WM_UPDATEFOUND;
     procedure SetupExitMessage(var Msg: TMessage); message 5432;
 
@@ -352,6 +353,7 @@ type
     constructor Create(AOwner: TComponent); override;
   end;
 
+  {
   TStatusHint = class(TCustomHint)
   public
     constructor Create(AOwner: TComponent); override;
@@ -359,13 +361,13 @@ type
     procedure SetHintSize(HintWindow: TCustomHintWindow); override;
     procedure PaintHint(HintWindow: TCustomHintWindow); override;
   end;
-
+              }
 implementation
 
 uses
   AppData, Player;
 
-{$R *.dfm}
+{$R *.lfm}
 
 procedure TfrmStreamWriterMain.ExitApp(Shutdown: Boolean; ImportFilename: string);
 var
@@ -415,11 +417,13 @@ begin
     AppGlobals.ChartHeaderPosition[i] := tabCharts.ChartsTree.Header.Columns[i].Position;
   end;
 
+  {
   for i := 0 to tabLists.ListsPanel.Tree.Header.Columns.Count - 1 do
   begin
     AppGlobals.ListHeaderWidth[i] := tabLists.ListsPanel.Tree.Header.Columns[i].Width;
     AppGlobals.ListHeaderPosition[i] := tabLists.ListsPanel.Tree.Header.Columns[i].Position;
   end;
+  }
 
   for i := 0 to tabSaved.Tree.Header.Columns.Count - 1 do
   begin
@@ -502,7 +506,23 @@ begin
   while True do
   begin
     try
+
+
+
+
+
+
+
       AppGlobals.Data.Save(not Shutdown);
+
+
+
+
+
+
+
+
+
       Break;
     except
       if not Shutdown then
@@ -577,7 +597,7 @@ begin
     if pagMain.Pages[i].ClassType = TCutTab then
       pagMain.Pages[i].Free;
 
-  TerminateProcess(GetCurrentProcess, 0);
+  Close;
 end;
 
 procedure TfrmStreamWriterMain.actSettingsExecute(Sender: TObject);
@@ -777,13 +797,13 @@ begin
     Cat := tabClients.ClientView.GetNodeData(Node);
     if (not Cat.Category.IsAuto) and (not AllClientsInCat(ClientNodes, Node)) then
     begin
-      Item := mnuStreamPopup.CreateMenuItem;
+      Item := TMenuItem.Create(mnuMain);;
       Item.Caption := Cat.Category.Name;
       Item.Tag := Integer(Cat);
       Item.OnClick := mnuMoveToCategory;
       mnuMoveToCategory1.Add(Item);
 
-      Item := mnuMain.CreateMenuItem;
+      Item := TMenuItem.Create(mnuMain);;
       Item.Caption := Cat.Category.Name;
       Item.Tag := Integer(Cat);
       Item.OnClick := mnuMoveToCategory;
@@ -810,7 +830,10 @@ begin
   end else
   begin
     if CanExitApp then
+    begin
+      Action := caFree;
       ExitApp(False);
+    end;
   end;
 end;
 
@@ -902,9 +925,9 @@ begin
   end;
   Left := AppGlobals.MainLeft;
   Top := AppGlobals.MainTop;
-  ScreenSnap := AppGlobals.SnapMain;
+ // ScreenSnap := AppGlobals.SnapMain;
 
-  addStatus.CustomHint := TStatusHint.Create(Self);
+  //addStatus.CustomHint := TStatusHint.Create(Self);
 
   // Ist nun hier, damit man nicht sieht, wie sich alle Controls resizen.
   if AppGlobals.MainMaximized then
@@ -1168,7 +1191,7 @@ procedure TfrmStreamWriterMain.HomeCommTitleNotificationsChanged(
 begin
   UpdateStatus;
 end;
-
+                                     {
 procedure TfrmStreamWriterMain.Hotkey(var Msg: TWMHotKey);
   procedure StopPlay;
   var
@@ -1296,7 +1319,7 @@ begin
       end;
   end;
 end;
-
+                }
 procedure TfrmStreamWriterMain.MessageReceived(Msg: TMessageBase);
 var
   SelectSavedSongsMsg: TSelectSavedSongsMsg absolute Msg;
@@ -1316,7 +1339,7 @@ begin
     pagMain.ActivePage := tabSaved;
 end;
 
-procedure TfrmStreamWriterMain.mnuCheckUpdateClick(Sender: TObject);
+procedure TfrmStreamWriterMain.actCheckUpdateExecute(Sender: TObject);
 begin
   ShowUpdate;
 end;
@@ -1545,7 +1568,7 @@ begin
   if (ssCtrl in Shift) then
     Modifiers := Modifiers or MOD_CONTROL;
 end;
-
+                                      {
 procedure TfrmStreamWriterMain.ReceivedData(var Msg: TWMCopyData);
 var
   CmdLine: TCommandLine;
@@ -1559,7 +1582,7 @@ begin
     ProcessCommandLine(PChar(Msg.CopyDataStruct.lpData));
   end;
 end;
-
+                                      }
 procedure TfrmStreamWriterMain.RegisterHotkeys;
 var
   K: Word;
@@ -1626,18 +1649,19 @@ end;
 procedure TfrmStreamWriterMain.QueryEndSession(var Msg: TMessage);
 begin
   Msg.Result := 1;
-
+                       {
   if Assigned(ShutdownBlockReasonCreate) and Assigned(ShutdownBlockReasonDestroy) then
-    ShutdownBlockReasonCreate(Handle, _('Stopping recordings and saving settings...'));
+    ShutdownBlockReasonCreate(Handle, PChar(_('Stopping recordings and saving settings...')));       }
 end;
 
-procedure TfrmStreamWriterMain.EndSession(var Msg: TMessage);
+procedure TfrmStreamWriterMain.EndSession(var Msg: TWMEndSession);
 begin
-  if WordBool(Msg.WParam) then
+  if Msg.EndSession then
   begin
     Msg.Result := 0;
     ExitApp(True);
-  end;
+  end else
+    ShutdownBlockReasonDestroy(Handle);
 end;
 
 procedure TfrmStreamWriterMain.SetCaptionAndTrayHint;
@@ -1798,13 +1822,11 @@ begin
 
             Language.Translate(Self, PreTranslate, PostTranslate);
 
-            tabClients.AdjustTextSizeDirtyHack;
-
             tabClients.ShowInfo;
 
             addTrayIcon.Visible := AppGlobals.Tray;
 
-            ScreenSnap := AppGlobals.SnapMain;
+          //  ScreenSnap := AppGlobals.SnapMain;   // TODO:
 
             RegisterHotkeys;
 
@@ -1869,7 +1891,7 @@ begin
   end else if S.Updated then
   begin
     AppGlobals.InstallUpdateOnStart := True;
-    mnuCheckUpdate.Enabled := False;
+    actCheckUpdate.Enabled := False;
     S.Free;
   end;
 end;
@@ -1919,7 +1941,7 @@ var
 begin
   Application.ProcessMessages;
 
-  AudioType := FiletypeToFormat(ExtractFileExt(Filename));
+  AudioType := FilenameToFormat(Filename);
 
   case AppGlobals.AddonManager.CanEncode(AudioType) of
     ceNoAddon:
@@ -1994,7 +2016,7 @@ var
   tabCut: TCutTab;
   AudioType: TAudioTypes;
 begin
-  AudioType := FiletypeToFormat(ExtractFileExt(Track.Filename));
+  AudioType := FilenameToFormat(Track.Filename);
   if AppGlobals.AddonManager.CanEncode(AudioType) <> ceOkay then
   begin
     if MsgBox(Handle, _('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
@@ -2345,6 +2367,8 @@ end;
 
 procedure TfrmStreamWriterMain.tmrAutoSaveTimer(Sender: TObject);
 begin
+  Exit;
+
   if Application.Terminated or AppGlobals.SkipSave or AppGlobals.Data.LoadError then
     Exit;
 
@@ -2804,7 +2828,7 @@ begin
 end;
 
 { TStatusHint }
-
+                   {
 constructor TStatusHint.Create(AOwner: TComponent);
 begin
   inherited;
@@ -2836,7 +2860,7 @@ begin
     HintWindow.Height := 0;
   end;
 end;
-
+            }
 end.
 
 

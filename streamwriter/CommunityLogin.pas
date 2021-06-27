@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,9 +25,13 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, ExtCtrls, Buttons, LanguageObjects, ShellAPI, Functions,
-  AppData, ComCtrls, HomeCommunication, Logging, MControls;
+  AppData, ComCtrls, HomeCommunication, Logging, MControls, SharedData,
+  Images;
 
 type
+
+  { TfrmCommunityLogin }
+
   TfrmCommunityLogin = class(TForm)
     pnlHeader: TPanel;
     Shape1: TShape;
@@ -61,7 +65,7 @@ type
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 procedure TfrmCommunityLogin.btnCancelClick(Sender: TObject);
 begin
@@ -115,6 +119,8 @@ begin
 
   txtUsername.Text := AppGlobals.User;
   txtPassword.Text := AppGlobals.Pass;
+
+  modSharedData.imgImages.GetIcon(TImages.USER, Icon);
 end;
 
 procedure TfrmCommunityLogin.FormKeyDown(Sender: TObject; var Key: Word;

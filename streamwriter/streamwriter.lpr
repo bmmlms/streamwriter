@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -20,22 +20,17 @@
 
 program streamwriter;
 
-// vcPublic so TCommand-descendants can be created
-{$RTTI EXPLICIT METHODS([vcPublic]) PROPERTIES([]) FIELDS([])}
-
 uses
   MM in '..\..\common\MM.pas',
-  madExcept,
-  madLinkDisAsm,
-  madListHardware,
-  madListProcesses,
-  madListModules,
   Windows,
   Classes,
   Messages,
   SysUtils,
   Forms,
+  Interfaces,
   ShlObj,
+  Images,
+  JwaWinNT,
   Main in 'Main.pas' {frmStreamWriterMain},
   ClientView in 'controls\ClientView.pas',
   DataManager in 'DataManager.pas',
@@ -138,7 +133,7 @@ uses
   HomeCommands in 'HomeCommands.pas',
   SharedData in 'SharedData.pas' {modSharedData: TDataModule},
   MonitorAnalyzer in 'streaming\MonitorAnalyzer.pas',
-  DynBASS in '..\..\common\bass\DynBASS.pas',
+  DynBASS in 'audio\DynBASS.pas',
   LogTab in 'controls\LogTab.pas',
   Scheduler in 'Scheduler.pas',
   DynOpenSSL in '..\..\common\openssl\DynOpenSSL.pas',
@@ -149,28 +144,28 @@ uses
 
 {$SetPEFlags IMAGE_FILE_LARGE_ADDRESS_AWARE}
 {$SetPEFlags IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP}
-{$SetPEOptFlags $0100} // IMAGE_DLLCHARACTERISTICS_NX_COMPAT
-{$SetPEOptFlags $0040} // IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE
-
-{$SetPEOptFlags $0140}
+{$SetPEOptFlags IMAGE_DLLCHARACTERISTICS_NX_COMPAT}
+{$SetPEOptFlags IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE}
 
 {$R *.res}
+{$R res\images.rc}
 {$R res\language.res}
-{$R res\icons.res}
-{$R res\bass.res}
-{$R res\openssl.res}
-{$R res\about.res}
-{$R res\certificates.res}
-{$R ..\..\common\res\language.res}
-{$R ..\..\common\res\lang_icons.res}
-{$R ..\..\common\res\icons.res}
+{$R res\bass.rc}
+{$R res\openssl.rc}
+{$R res\about.rc}
+{$R res\certificates.rc}
+{$R ..\..\common\res\language_common.res}
+{$R ..\..\common\res\lang_icons.rc}
 
 var
   i: Integer;
   HideMain, Found: Boolean;
   frmStreamWriterMain: TfrmStreamWriterMain;
   frmHomeTest: TfrmHomeTest;
+
  begin
+  IsMultiThread := True;
+
   Bass := nil;
   OpenSSL := nil;
   try
@@ -202,7 +197,6 @@ var
     MsgBus := TSWMessageBus.Create;
 
     Application.Title := AppGlobals.AppName;
-    Application.Icon.Handle := LoadIcon(HInstance, 'A');
 
     if not InitAppStageOne then
       Exit;
@@ -217,7 +211,7 @@ var
        (not IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion)) and (not HideMain)
        and (not AppGlobals.InstallUpdateOnStart)
     then
-      TSplashThread.Create('TfrmStreamWriterMain', 'SPLASHIMAGE', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.BuildNumber,
+      TSplashThread.Create('TfrmStreamWriterMain', 'SPLASH', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.BuildNumber,
         AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
 
     // Now load everything from datafiles
@@ -226,7 +220,7 @@ var
 
     // Initialize BASS, quit application on error
     Bass := TBassLoader.Create;
-    if not Bass.InitializeBass(Application.Handle, True, False, False, False) then
+    if not Bass.InitializeBass(0, True, False, False, False) then
     begin
       MsgBox(0, _('The BASS library or it''s plugins could not be extracted/loaded. Without these libraries streamWriter cannot record/playback streams. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
       Exit;

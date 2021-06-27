@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, LanguageObjects, StdCtrls, Buttons, ExtCtrls, AppData, AudioGenie,
-  AddonAudioGenie, FileTagger, Functions, DataManager;
+  AddonAudioGenie, FileTagger, Functions, DataManager, SharedData, Images;
 
 const
   WM_AFTERSHOWN = WM_USER + 678;
@@ -66,7 +66,7 @@ type
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 procedure TfrmEditTags.AfterShown(var Msg: TMessage);
 var
@@ -151,6 +151,8 @@ end;
 constructor TfrmEditTags.Create(AOwner: TComponent);
 begin
   inherited;
+
+  modSharedData.imgImages.GetIcon(TImages.TAG_BLUE_EDIT, Icon);
 
   Language.Translate(Self);
 end;

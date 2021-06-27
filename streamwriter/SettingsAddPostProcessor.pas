@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,9 +24,13 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, LanguageObjects, StdCtrls, Buttons, ExtCtrls;
+  Dialogs, LanguageObjects, StdCtrls, Buttons, ExtCtrls, SharedData,
+  Images;
 
 type
+
+  { TfrmSettingsAddPostProcessor }
+
   TfrmSettingsAddPostProcessor = class(TForm)
     pnlNav: TPanel;
     Bevel2: TBevel;
@@ -42,11 +46,13 @@ type
     FResult: Integer;
   public
     property Result: Integer read FResult;
+
+    constructor Create(AOwner: TComponent); override;
   end;
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 procedure TfrmSettingsAddPostProcessor.btnOKClick(Sender: TObject);
 begin
@@ -72,6 +78,13 @@ begin
     Key := 0;
     Close;
   end;
+end;
+
+constructor TfrmSettingsAddPostProcessor.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+
+  modSharedData.imgImages.GetIcon(TImages.LIGHTNING, Icon);
 end;
 
 end.

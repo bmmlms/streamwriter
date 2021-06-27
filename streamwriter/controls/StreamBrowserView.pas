@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -26,11 +26,11 @@ interface
 uses
   Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
   StdCtrls, Menus, ImgList, Math, VirtualTrees, LanguageObjects, MControls,
-  Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls,
-  HomeCommunication, DynBASS, pngimage, PngImageList, Forms, Logging,
-  DataManager, DropSource, Types, AudioFunctions, PngSpeedButton,
+  Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls, GraphType,
+  HomeCommunication, DynBASS, Forms, Logging, Images,
+  DataManager, DropSource, Types, AudioFunctions, Themes,
   Generics.Collections, TypeDefs, MessageBus, AppMessages, Commands,
-  GUIFunctions, SharedData, ShellAPI;
+  GUIFunctions, SharedData, ShellAPI, LMessages;
 
 type
   TModes = (moShow, moLoading, moError);
@@ -83,6 +83,8 @@ type
 
   TSortTypes = (stName, stBitrate, stType, stRating);
 
+  { TMStreamBrowserView }
+
   TMStreamBrowserView = class(TPanel)
   private
     FSearch: TMStreamSearchPanel;
@@ -108,6 +110,7 @@ type
 
     procedure HomeCommDataReceived(Sender: TObject);
   protected
+    procedure SetParent(NewParent: TWinControl); override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -151,9 +154,6 @@ type
     FLastBitrate: Cardinal;
     FSortType: TSortTypes;
 
-    FImageMetaData: TPngImage;
-    FImageChangesTitle: TPngImage;
-
     FPopupMenu: TPopupMenu;
     FItemStart: TMenuItem;
     FItemPlay: TMenuItem;
@@ -191,22 +191,22 @@ type
     procedure FitColumns;
     function GetSelected: TStreamDataArray;
   protected
-    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
+    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: string); override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
     procedure DoDragging(P: TPoint); override;
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal); override;
     procedure DoPaintNode(var PaintInfo: TVTPaintInfo); override;
-    function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
+//    function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
-    function DoBeforeItemPaint(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect): Boolean; override;
+    function DoBeforeItemPaint(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect): Boolean; override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     procedure DoBeforeCellPaint(Canvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect); override;
-    function DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean; override;
-    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect); override;
+    function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
+    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
     procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
-    procedure HandleMouseDblClick(var Message: TWMMouse; const HitInfo: THitInfo); override;
+    procedure HandleMouseDblClick(var Message: TLMMouse; const HitInfo: THitInfo); override;
     procedure Resize; override;
     procedure Paint; override;
     procedure KeyPress(var Key: Char); override;
@@ -246,8 +246,6 @@ implementation
 { TMStreamView }
 
 constructor TMStreamTree.Create(AOwner: TComponent);
-var
-  Res: TResourceStream;
 begin
   inherited Create(AOwner);
 
@@ -271,79 +269,63 @@ begin
 
   FDragSource := TDropFileSource.Create(Self);
 
-  Res := TResourceStream.Create(HInstance, 'BROWSER_METADATA', MakeIntResource(RT_RCDATA));
-  try
-    FImageMetaData := TPngImage.Create;
-    FImageMetaData.LoadFromStream(Res);
-  finally
-    Res.Free;
-  end;
-  Res := TResourceStream.Create(HInstance, 'BROWSER_CHANGESTITLE', MakeIntResource(RT_RCDATA));
-  try
-    FImageChangesTitle := TPngImage.Create;
-    FImageChangesTitle.LoadFromStream(Res);
-  finally
-    Res.Free;
-  end;
-
   FColName := Header.Columns.Add;
   FColName.Text := _('Rating');
   FitColumns;
 
   FPopupMenu := TPopupMenu.Create(Self);
-  FPopupMenu.AutoHotkeys := maManual;
   FPopupMenu.OnPopup := PopupMenuPopup;
 
-  FItemRefresh := CreateItem('Re&fresh', 23, nil);
+  FItemRefresh := CreateItem('Re&fresh', TImages.ARROW_REFRESH, nil);
   FItemRefresh.OnClick := PopupMenuClick;
 
-  CreateItem('-', -1, nil);
+  FPopupMenu.Items.AddSeparator;
 
-  FItemStart := CreateItem('&Start recording', 0, nil);
+  FItemStart := CreateItem('&Start recording', TImages.RECORD_RED, nil);
   FItemStart.OnClick := PopupMenuClick;
 
-  FItemPlay := CreateItem('&Play stream', 33, nil);
+  FItemPlay := CreateItem('&Play stream', TImages.PLAY_BLUE, nil);
   FItemPlay.OnClick := PopupMenuClick;
 
-  FItemOpen := CreateItem('P&lay stream (external player)', 82, nil);
+  FItemOpen := CreateItem('P&lay stream (external player)', TImages.PLAY_GO, nil);
   FItemOpen.OnClick := PopupMenuClick;
 
-  FItemAdd := CreateItem('&Add stream', 80, nil);
+  FItemAdd := CreateItem('&Add stream', TImages.TRANSMIT_ADD, nil);
   FItemAdd.OnClick := PopupMenuClick;
 
-  FItemSetData := CreateItem('S&et data...', 9, nil);
+  FItemSetData := CreateItem('S&et data...', TImages.TRANSMIT_EDIT, nil);
   FItemSetData.OnClick := PopupMenuClick;
 
-  FItemRate := CreateItem('&Rate', 64, nil);
+  FItemRate := CreateItem('&Rate', TImages.STAR, nil);
 
-  FItemRate5 := CreateItem('&5', 64, FItemRate);
+  FItemRate5 := CreateItem('&5', TImages.STAR, FItemRate);
   FItemRate5.OnClick := PopupMenuClick;
   FItemRate5.Tag := 5;
-  FItemRate4 := CreateItem('&4', 63, FItemRate);
+  FItemRate4 := CreateItem('&4', TImages.STAR_2, FItemRate);
   FItemRate4.OnClick := PopupMenuClick;
   FItemRate4.Tag := 4;
-  FItemRate3 := CreateItem('&3', 62, FItemRate);
+  FItemRate3 := CreateItem('&3', TImages.STAR_3, FItemRate);
   FItemRate3.OnClick := PopupMenuClick;
   FItemRate3.Tag := 3;
-  FItemRate2 := CreateItem('&2', 61, FItemRate);
+  FItemRate2 := CreateItem('&2', TImages.STAR_4, FItemRate);
   FItemRate2.OnClick := PopupMenuClick;
   FItemRate2.Tag := 2;
-  FItemRate1 := CreateItem('&1', 60, FItemRate);
+  FItemRate1 := CreateItem('&1', TImages.STAR_5, FItemRate);
   FItemRate1.OnClick := PopupMenuClick;
   FItemRate1.Tag := 1;
 
-  CreateItem('-', -1, nil);
+  FPopupMenu.Items.AddSeparator;
 
-  FItemOpenWebsite := CreateItem('Open &website...', 38, nil);
+  FItemOpenWebsite := CreateItem('Open &website...', TImages.LINK_GO, nil);
   FItemOpenWebsite.OnClick := PopupMenuClick;
 
-  FItemBlacklist := CreateItem('Add to &blacklist', 51, nil);
+  FItemBlacklist := CreateItem('Add to &blacklist', TImages.PAGE_WHITE_TRANSMIT_ADD, nil);
   FItemBlacklist.OnClick := PopupMenuClick;
 
   FItemCopy := CreateItem('&Copy URL', 57, nil);
   FItemCopy.OnClick := PopupMenuClick;
 
-  FItemSave := CreateItem('&Save as playlist...', 95, nil);
+  FItemSave := CreateItem('&Save as playlist...', TImages.PAGE_WHITE_MUSIC_OUT, nil);
   FItemSave.OnClick := PopupMenuClick;
 
   PopupMenu := FPopupMenu;
@@ -374,7 +356,7 @@ end;
 function TMStreamTree.CreateItem(Caption: string; ImageIndex: Integer;
   Parent: TMenuItem): TMenuItem;
 begin
-  Result := FPopupMenu.CreateMenuItem;
+  Result := TMenuItem.Create(FPopupMenu);
   Result.Caption := Caption;
   Result.ImageIndex := ImageIndex;
   if Parent = nil then
@@ -388,9 +370,6 @@ begin
   FDragSource.Free;
   FTimer.Free;
 
-  FImageMetaData.Free;
-  FImageChangesTitle.Free;
-
   inherited;
 end;
 
@@ -400,8 +379,7 @@ begin
   inherited;
 end;
 
-function TMStreamTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
+function TMStreamTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList;
 var
   NodeData: PStreamNodeData;
 begin
@@ -412,24 +390,24 @@ begin
   if ((Kind = ikNormal) or (Kind = ikSelected)) and (Column = 0) then
   begin
     if NodeData.Data.OwnRating > 0 then
-      Index := 59 + NodeData.Data.OwnRating
+      Index := TImages.STAR_BLUE_5 + 1 - NodeData.Data.OwnRating
     else
       if NodeData.Data.Rating > 0 then
-        Index := 39 + NodeData.Data.Rating
+        Index := TImages.STAR_5 + 1 - NodeData.Data.Rating
       else
-        Index := 16;
+        Index := TImages.TRANSMIT;
   end;
 end;
 
-procedure TMStreamTree.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
+procedure TMStreamTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: string);
 var
   NodeData: PStreamNodeData;
 begin
   inherited;
-  NodeData := PStreamNodeData(GetNodeData(pEventArgs.Node));
-  case pEventArgs.Column of
+  NodeData := PStreamNodeData(GetNodeData(Node));
+  case Column of
     0:
-      pEventArgs.CellText := StringReplace(NodeData.Data.Name, '&', '&&', [rfReplaceAll]) // Wegen & und dem Shortcut..
+      Text := StringReplace(NodeData.Data.Name, '&', '&&', [rfReplaceAll]) // Wegen & und dem Shortcut..
   end;
 end;
 
@@ -453,11 +431,12 @@ begin
   L := 4;
   if NodeData.Data.MetaData then
   begin
-    PaintInfo.Canvas.Draw(L, 21, FImageMetaData);
+    Images.Resolution[8].Draw(PaintInfo.Canvas, L, 21, TImages.TAG_GREEN, gdeNormal);
     L := L + 9;
   end;
+
   if NodeData.Data.ChangesTitleInSong or (not NodeData.Data.RecordingOkay) then
-    PaintInfo.Canvas.Draw(L, 21, FImageChangesTitle);
+    Images.Resolution[10].Draw(PaintInfo.Canvas, L, 21, TImages.CROSS, gdeNormal);
 end;
 
 procedure TMStreamTree.FitColumns;
@@ -517,7 +496,7 @@ begin
   end;
 end;
 
-procedure TMStreamTree.HandleMouseDblClick(var Message: TWMMouse;
+procedure TMStreamTree.HandleMouseDblClick(var Message: TLMMouse;
   const HitInfo: THitInfo);
 var
   Entries: TStreamDataArray;
@@ -656,10 +635,10 @@ begin
   if FMode = moError then
   begin
     TmpText := _('No connection to server.');
-    GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
+//    GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
 
     R := ClientRect;
-    R.Left := (R.Right div 2) - (Size.cx div 2) - 4;
+//    R.Left := (R.Right div 2) - (Size.cx div 2) - 4;
     R.Top := ClientHeight div 2 - Canvas.TextHeight('Wy');
 
     DrawText(Canvas.Handle, PChar(TmpText), Length(TmpText), R, 0);
@@ -668,7 +647,7 @@ begin
   if FMode = moLoading then
   begin
     TmpText := _('Loading streams');
-    GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
+//    GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
 
     R := ClientRect;
     R.Left := (R.Right div 2) - (Size.cx div 2) - 4;
@@ -868,7 +847,7 @@ begin
   end;
 end;
 
-function TMStreamTree.DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean;
+function TMStreamTree.DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean;
 begin
   Result := inherited;
 
@@ -883,7 +862,7 @@ begin
   Canvas.FillRect(R);
 end;
 
-procedure TMStreamTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
+procedure TMStreamTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect);
 begin
   inherited;
 
@@ -911,8 +890,7 @@ begin
     Canvas.Font.Color := AppGlobals.NodeTextColor;
 end;
 
-function TMStreamTree.DoBeforeItemPaint(Canvas: TCanvas;
-  Node: PVirtualNode; ItemRect: TRect): Boolean;
+function TMStreamTree.DoBeforeItemPaint(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect): Boolean;
 begin
   if FMode <> moShow then
   begin
@@ -1043,10 +1021,14 @@ procedure TMStreamTree.Resize;
 begin
   inherited;
 
-  FColName.Width := ClientWidth;
+  if Assigned(FColName) then
+    FColName.Width := ClientWidth;
 
+  if Assigned(FProgressBar) then
+  begin
   FProgressBar.Left := Trunc(ClientWidth / 2 - FProgressBar.Width / 2);
   FProgressBar.Top := ClientHeight div 2 - Canvas.TextHeight('Wy') + 15;
+  end;
 end;
 
 procedure TMStreamTree.Sort(Node: PVirtualNode; Column: TColumnIndex;
@@ -1087,6 +1069,7 @@ begin
   Invalidate;
 end;
 
+{
 function TMStreamTree.DoGetNodeTooltip(Node: PVirtualNode;
   Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString;
 var
@@ -1103,6 +1086,7 @@ begin
     Args.CellText := Args.CellText + #13#10 + NodeData.Data.Genre;
   Result := Args.CellText;
 end;
+}
 
 { TMStreamView }
 
@@ -1150,7 +1134,9 @@ begin
   end;
   if FSearch.FGenreList.Items.Count > 0 then
     FSearch.FGenreList.ItemIndex := 0;
+
   FSearch.FGenreList.Sorted := True;
+  FSearch.FGenreList.Sorted := False;
 
   if AppGlobals.BrowserSearchGenre < FSearch.FGenreList.Items.Count then
     FSearch.FGenreList.ItemIndex := AppGlobals.BrowserSearchGenre;
@@ -1212,6 +1198,46 @@ constructor TMStreamBrowserView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
+  Color := clWindow;
+end;
+
+destructor TMStreamBrowserView.Destroy;
+begin
+
+  inherited;
+end;
+
+procedure TMStreamBrowserView.HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
+begin
+  FStreamTree.HomeCommBytesTransferred(CommandHeader, Transferred);
+end;
+
+procedure TMStreamBrowserView.HomeCommDataReceived(Sender: TObject);
+begin
+  FSearch.FGenreList.Clear;
+  FStreamTree.Clear;
+
+  BuildGenres;
+  BuildTree(True);
+
+  AppGlobals.Data.BrowserList.CreateDict;
+
+  SwitchMode(moShow);
+
+  AppGlobals.LastBrowserUpdate := Trunc(Now);
+
+  if Assigned(FOnStreamsReceived) then
+    FOnStreamsReceived(Self);
+end;
+
+procedure TMStreamBrowserView.SetParent(NewParent: TWinControl);
+begin
+  inherited SetParent(NewParent);
+
+  // TODO:
+  if Assigned(FSearch) then
+    Exit;
+
   Align := alClient;
   BevelOuter := bvNone;
 
@@ -1247,35 +1273,6 @@ begin
   FSearch.FTypeList.OnChange := ListsChange;
 
   HomeComm.OnServerDataReceived := HomeCommDataReceived;
-end;
-
-destructor TMStreamBrowserView.Destroy;
-begin
-
-  inherited;
-end;
-
-procedure TMStreamBrowserView.HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
-begin
-  FStreamTree.HomeCommBytesTransferred(CommandHeader, Transferred);
-end;
-
-procedure TMStreamBrowserView.HomeCommDataReceived(Sender: TObject);
-begin
-  FSearch.FGenreList.Clear;
-  FStreamTree.Clear;
-
-  BuildGenres;
-  BuildTree(True);
-
-  AppGlobals.Data.BrowserList.CreateDict;
-
-  SwitchMode(moShow);
-
-  AppGlobals.LastBrowserUpdate := Trunc(Now);
-
-  if Assigned(FOnStreamsReceived) then
-    FOnStreamsReceived(Self);
 end;
 
 procedure TMStreamBrowserView.ListsChange(Sender: TObject);
@@ -1394,7 +1391,6 @@ begin
   FSearch.FGenreLabel.Enabled := Mode = moShow;
   FSearch.FKbpsLabel.Enabled := Mode = moShow;
   FSearch.FTypeLabel.Enabled := Mode = moShow;
-
   FSearch.FSearchEdit.Enabled := Mode = moShow;
   FSearch.FGenreList.Enabled := Mode = moShow;
   FSearch.FKbpsList.Enabled := Mode = moShow;
@@ -1561,25 +1557,25 @@ constructor TMStreamTreeHeaderPopup.Create(AOwner: TComponent);
 begin
   inherited;
 
-  FItemName := CreateMenuItem;
+  FItemName := TMenuItem.Create(Self);;
   FItemName.Caption := _('Name');
   FItemName.RadioItem := True;
   FItemName.Tag := Integer(stName);
   Items.Add(FItemName);
 
-  FItemKbps := CreateMenuItem;
+  FItemKbps := TMenuItem.Create(Self);;
   FItemKbps.Caption := _('Kbps');
   FItemKbps.RadioItem := True;
   FItemKbps.Tag := Integer(stBitrate);
   Items.Add(FItemKbps);
 
-  FItemType := CreateMenuItem;
+  FItemType := TMenuItem.Create(Self);;
   FItemType.Caption := _('Type');
   FItemType.RadioItem := True;
   FItemType.Tag := Integer(stType);
   Items.Add(FItemType);
 
-  FItemRating := CreateMenuItem;
+  FItemRating := TMenuItem.Create(Self);;
   FItemRating.Caption := _('Rating');
   FItemRating.RadioItem := True;
   FItemRating.Tag := Integer(stRating);

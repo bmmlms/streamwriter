@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -148,14 +148,14 @@ type
   TInternalPostProcess = class(TPostProcessBase)
   private
   protected
-    FNeededAddons: TList;
+    FNeededAddons: Classes.TList;
 
     function FGetDependenciesMet: Boolean; virtual;
   public
     constructor Create;
     destructor Destroy; override;
 
-    property NeededAddons: TList read FNeededAddons;
+    property NeededAddons: Classes.TList read FNeededAddons;
     property DependenciesMet: Boolean read FGetDependenciesMet;
   end;
 
@@ -518,7 +518,7 @@ constructor TInternalPostProcess.Create;
 begin
   inherited;
 
-  FNeededAddons := TList.Create;
+  FNeededAddons := Classes.TList.Create;
 end;
 
 destructor TInternalPostProcess.Destroy;

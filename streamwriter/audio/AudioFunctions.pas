@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -64,7 +64,7 @@ type
 function RoundBitrate(Bitrate: Cardinal): Cardinal;
 function GuessVBRQuality(Bitrate: Integer; AudioType: TAudioTypes): TVBRQualities;
 function BuildTime(T: Double; MSecs: Boolean): string;
-function FiletypeToFormat(Filename: string): TAudioTypes;
+function FilenameToFormat(Filename: string): TAudioTypes;
 function FormatToFiletype(Format: TAudioTypes): string;
 function FormatToDesc(Format: TAudioTypes): string;
 function BandToFreq(Idx: Integer): Integer;
@@ -138,7 +138,7 @@ begin
     Result := Format('%0.2d:%0.2d', [Min, Sec])
 end;
 
-function FiletypeToFormat(Filename: string): TAudioTypes;
+function FilenameToFormat(Filename: string): TAudioTypes;
 begin
   Result := atNone;
 
@@ -223,7 +223,7 @@ begin
   Size := GetFileSize(Filename);
   if Size = 0 then
     Exit;
-  Player := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE or BASS_STREAM_PRESCAN or BASS_UNICODE);
+  Player := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE or BASS_STREAM_PRESCAN);
 
   try
     GetAudioInfo(Player, Size);

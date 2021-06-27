@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, SharedControls, StdCtrls, PlayerManager, LanguageObjects,
-  ExtCtrls, AppData, GUIFunctions, Buttons, PngBitBtn;
+  ExtCtrls, AppData, GUIFunctions, Buttons;
 
 type
   TEqualizer = class(TWinControl)
@@ -46,7 +46,7 @@ type
   TfrmEqualizer = class(TForm)
     pnlEqualizer: TPanel;
     chkEqualizer: TCheckBox;
-    btnReset: TPngBitBtn;
+    btnReset: TBitBtn;
     procedure FormCreate(Sender: TObject);
     procedure chkEqualizerClick(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
@@ -61,7 +61,7 @@ type
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 { TEqualizer }
 

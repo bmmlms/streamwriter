@@ -1,6 +1,6 @@
 {
     ------------------------------------------------------------------------
-    streamWriter
+    mistake.ws common application library
     Copyright (c) 2010-2020 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
@@ -27,6 +27,9 @@ uses
   Windows, SysUtils, Classes, AppData, Generics.Collections;
 
 const
+  // BASS
+  DW_ERROR = LongWord(-1);
+  QW_ERROR = Int64(-1);
   STREAMFILE_BUFFER = 1;
   STREAMFILE_BUFFERPUSH = 2;
   BASS_STREAM_DECODE = $200000;
@@ -47,8 +50,23 @@ const
   BASS_SYNC_SLIDE = 5;
   BASS_DEVICE_ENABLED = 1;
   BASS_DEVICE_DEFAULT = 2;
+  BASS_SAMPLE_FLOAT = 256; // 32-bit floating-point
+  STREAMPROC_PUSH = Pointer(-1); // push stream
+  BASS_CONFIG_DEV_DEFAULT   = 36;
+
+  // BASS WASAPI
+  BASS_DEVICE_LOOPBACK = 8;
+  BASS_DEVICE_INPUT = 16;
+
+  // BASS Mixer
+
+  // BASS Enc
+  BASS_ENCODE_PAUSE = 32;	// start encording paused
+  BASS_ENCODE_PCM = 64; // write PCM sample data (no encoder)
+
 
 type
+  // BASS
   QWORD = Int64;
   HSTREAM = DWORD;
   HSYNC = DWORD;
@@ -63,6 +81,7 @@ type
     seek: FILESEEKPROC;
   end;
   SYNCPROC = procedure(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
+  STREAMPROC = function(handle: HSTREAM; buffer: Pointer; length: DWORD; user: Pointer): DWORD; stdcall;
   BASS_DEVICEINFO = record
     name: PAnsiChar;
     driver: PAnsiChar;
@@ -100,30 +119,75 @@ type
     fGain: Single;
   end;
 
+  // BASS WASAPI
+  // Device info structure
+  BASS_WASAPI_INFO = record
+    initflags: DWORD;
+    freq: DWORD;
+    chans: DWORD;
+    format: DWORD;
+    buflen: DWORD;
+    volmax: Single;
+    volmin: Single;
+    volstep: Single;
+  end;
+  BASS_WASAPI_DEVICEINFO = record
+    name: PAnsiChar;
+    id: PAnsiChar;
+    &type: DWORD;
+    flags: DWORD;
+    minperiod: Single;
+    defperiod: Single;
+    mixfreq: DWORD;
+    mixchans: DWORD;
+  end;
+  WASAPIPROC = function(buffer: Pointer; length: DWORD; user: Pointer): DWORD; stdcall;
+
+  // BASS Mixer
+
+  // BASS Enc
+  ENCODEPROC = procedure(handle: DWORD; channel: DWORD; buffer: Pointer; length: DWORD; user: Pointer); stdcall;
+
+
+
   TBassDevice = class
   private
     FID: Cardinal;
     FName: string;
     FIsDefault: Boolean;
+    FIsLoopback: Boolean;
   public
-    constructor Create(ID: Cardinal; Name: string; IsDefault: Boolean);
+    constructor Create(ID: Cardinal; Name: string; IsDefault, IsLoopback: Boolean);
 
     property ID: Cardinal read FID;
-    property Name: string read FName;
+    property Name: string read FName write FName;
     property IsDefault: Boolean read FIsDefault;
+    property IsLoopback: Boolean read FIsLoopback;
   end;
 
   TBassLoader = class
   private
     FBassDLLPath: string;
     FBassAACDLLPath: string;
+    FBassWASAPIDLLPath: string;
+    FBassMixerDLLPath: string;
+    FBassEncDLLPath: string;
+
     FDLLHandle: Cardinal;
     FAACDLLHandle: Cardinal;
+    FWASAPIDLLHandle: Cardinal;
+    FMixerDLLHandle: Cardinal;
+    FEncDLLHandle: Cardinal;
+
     FEffectsAvailable: Boolean;
 
     FDevices: TList<TBassDevice>;
+    FWASAPIDevices: TList<TBassDevice>;
+
+    FWASAPIInfo: BASS_WASAPI_INFO;
 
     procedure EnumDevices;
+    procedure EnumWASAPIDevices;
     procedure UninitializeBass;
   public
     BassLoaded: Boolean;
@@ -131,20 +195,27 @@ type
 
     constructor Create;
     destructor Destroy; override;
-    function InitializeBass(Handle: THandle): Boolean;
+    function InitializeBass(Handle: THandle; LoadAAC, LoadMixer, LoadEnc, LoadWASAPI: Boolean): Boolean;
+    function InitializeWASAPIDevice(Device: Integer; InputProc: WASAPIPROC; User: Pointer): Boolean;
 
     property EffectsAvailable: Boolean read FEffectsAvailable;
     property Devices: TList<TBassDevice> read FDevices;
+    property WASAPIDevices: TList<TBassDevice> read FWASAPIDevices;
+    property WASAPIInfo: BASS_WASAPI_INFO read FWASAPIInfo;
   end;
 
 var
+  // BASS
   BASSInit: function(device: LongInt; freq, flags: DWORD; win: HWND; clsid: PGUID): BOOL; stdcall;
   BASSFree: procedure; stdcall;
   BASSGetInfo: function(var info: BASS_INFO): BOOL; stdcall;
   BASSGetDeviceInfo: function(device: DWORD; var info: BASS_DEVICEINFO): BOOL; stdcall;
   BASSSetDevice: function(device: DWORD): BOOL; stdcall;
+
+  BASSStreamCreate: function(freq, chans, flags: DWORD; proc: STREAMPROC; user: Pointer): HSTREAM; stdcall;
   BASSStreamCreateFile: function(mem: BOOL; f: Pointer; offset, length: QWORD; flags: DWORD): HSTREAM; stdcall;
   BASSStreamCreateFileUser: function(system, flags: DWORD; var procs: BASS_FILEPROCS; user: Pointer): HSTREAM; stdcall;
+  BASSStreamPutData: function(handle: HSTREAM; buffer: Pointer; length: DWORD): DWORD; stdcall;
   BASSChannelIsActive: function(handle: DWORD): DWORD; stdcall;
   BASSStreamGetFilePosition: function(handle: HSTREAM; mode: DWORD): QWORD; stdcall;
   BASSChannelGetPosition: function(handle, mode: DWORD): QWORD; stdcall;
@@ -173,7 +244,24 @@ var
   BASSChannelSetFX: function(handle, type_: DWORD; priority: LongInt): DWORD; stdcall;
   BASSChannelRemoveFX: function(handle: DWORD; fx: DWORD): BOOL; stdcall;
 
-var
+  // BASS WASAPI
+  BASSWASAPIInit: function(device: Integer; freq, chans, flags: DWORD; buffer, period: Single; proc: WASAPIPROC; user: Pointer): BOOL; stdcall;
+  BASSWASAPIGetDeviceInfo: function(device: DWORD; var info: BASS_WASAPI_DEVICEINFO): BOOL; stdcall;
+  BASSWASAPIGetInfo: function(var info: BASS_WASAPI_INFO): BOOL; stdcall;
+  BASSWASAPIStop: function(reset: BOOL): BOOL; stdcall;
+  BASSWASAPIStart: function: BOOL; stdcall;
+  BASSWASAPISetDevice: function(device: DWORD): BOOL; stdcall;
+  BASSWASAPIFree: function: BOOL; stdcall;
+
+  // BASS Mixer
+  BASSMixerStreamCreate: function(freq, chans, flags: DWORD): HSTREAM; stdcall;
+  BASSMixerStreamAddChannel: function(handle: HSTREAM; channel, flags: DWORD): BOOL; stdcall;
+
+  // BASS Enc
+  BASSEncodeStart: function(handle: DWORD; cmdline: PChar; flags: DWORD; proc: ENCODEPROC; user: Pointer): DWORD; stdcall;
+  BASSEncodeSetPaused: function(handle: DWORD; paused: BOOL): BOOL; stdcall;
+  BASSEncodeStop: function(handle: DWORD): BOOL; stdcall;
+
   Bass: TBassLoader;
 
 implementation
@@ -184,7 +272,8 @@ constructor TBassLoader.Create;
 begin
   inherited;
 
-  FDevices := TList<TBassDevice>.Create();
+  FDevices := TList<TBassDevice>.Create;
+  FWASAPIDevices := TList<TBassDevice>.Create;
 end;
 
 destructor TBassLoader.Destroy;
@@ -192,9 +281,14 @@ var
   i: Integer;
 begin
   UninitializeBass;
+
   for i := 0 to FDevices.Count - 1 do
     FDevices[i].Free;
   FDevices.Free;
+
+  for i := 0 to FWASAPIDevices.Count - 1 do
+    FWASAPIDevices[i].Free;
+  FWASAPIDevices.Free;
 
   inherited;
 end;
@@ -208,18 +302,30 @@ begin
   while BASSGetDeviceInfo(i, Info) do
   begin
     if (Info.flags and BASS_DEVICE_ENABLED) = BASS_DEVICE_ENABLED then
-    begin
       FDevices.Add(TBassDevice.Create(i, Info.name,
-        (Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT));
-    end;
+        (Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT, False));
     Inc(i);
   end;
 end;
 
-function TBassLoader.InitializeBass(Handle: THandle): Boolean;
+procedure TBassLoader.EnumWASAPIDevices;
 var
   i: Integer;
-  Found: Boolean;
+  Info: BASS_WASAPI_DEVICEINFO;
+begin
+  i := 0;
+  while BASSWASAPIGetDeviceInfo(i, Info) do
+  begin
+    if (Info.flags and BASS_DEVICE_INPUT > 0) AND (Info.flags and BASS_DEVICE_ENABLED > 0) then
+      FWASAPIDevices.Add(TBassDevice.Create(i, Info.name,
+        (Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT, (Info.flags and BASS_DEVICE_LOOPBACK) = BASS_DEVICE_LOOPBACK));
+    Inc(i);
+  end;
+end;
+
+function TBassLoader.InitializeBass(Handle: THandle; LoadAAC, LoadMixer, LoadEnc, LoadWASAPI: Boolean): Boolean;
+var
+  i: Integer;
   Res: TResourceStream;
   BassInfo: BASS_INFO;
 begin
@@ -227,6 +333,9 @@ begin
 
   FBassDLLPath := AppGlobals.TempDir + 'bass.dll';
   FBassAACDLLPath := AppGlobals.TempDir + 'bass_aac.dll';
+  FBassWASAPIDLLPath := AppGlobals.TempDir + 'basswasapi.dll';
+  FBassMixerDLLPath := AppGlobals.TempDir + 'bassmix.dll';
+  FBassEncDLLPath := AppGlobals.TempDir + 'bassenc.dll';
 
   Res := TResourceStream.Create(0, 'BASS', MakeIntResource(RT_RCDATA));
   try
@@ -237,13 +346,52 @@ begin
     Res.Free;
   end;
 
-  Res := TResourceStream.Create(0, 'BASS_AAC', MakeIntResource(RT_RCDATA));
-  try
+  if LoadAAC then
+  begin
+    Res := TResourceStream.Create(0, 'BASS_AAC', MakeIntResource(RT_RCDATA));
     try
-      Res.SaveToFile(FBassAACDLLPath);
-    except end;
-  finally
-    Res.Free;
+      try
+        Res.SaveToFile(FBassAACDLLPath);
+      except end;
+    finally
+      Res.Free;
+    end;
+  end;
+
+  if LoadWASAPI then
+  begin
+    Res := TResourceStream.Create(0, 'BASS_WASAPI', MakeIntResource(RT_RCDATA));
+    try
+      try
+        Res.SaveToFile(FBassWASAPIDLLPath);
+      except end;
+    finally
+      Res.Free;
+    end;
+  end;
+
+  if LoadMixer then
+  begin
+    Res := TResourceStream.Create(0, 'BASS_MIXER', MakeIntResource(RT_RCDATA));
+    try
+      try
+        Res.SaveToFile(FBassMixerDLLPath);
+      except end;
+    finally
+      Res.Free;
+    end;
+  end;
+
+  if LoadEnc then
+  begin
+    Res := TResourceStream.Create(0, 'BASS_ENC', MakeIntResource(RT_RCDATA));
+    try
+      try
+        Res.SaveToFile(FBassEncDLLPath);
+      except end;
+    finally
+      Res.Free;
+    end;
   end;
 
   FDLLHandle := LoadLibrary(PChar(FBassDLLPath));
@@ -255,8 +403,10 @@ begin
     BASSGetInfo := GetProcAddress(FDLLHandle, 'BASS_GetInfo');
     BASSGetDeviceInfo := GetProcAddress(FDLLHandle, 'BASS_GetDeviceInfo');
     BASSSetDevice := GetProcAddress(FDLLHandle, 'BASS_SetDevice');
+    BASSStreamCreate := GetProcAddress(FDLLHandle, 'BASS_StreamCreate');
     BASSStreamCreateFile := GetProcAddress(FDLLHandle, 'BASS_StreamCreateFile');
     BASSStreamCreateFileUser := GetProcAddress(FDLLHandle, 'BASS_StreamCreateFileUser');
+    BASSStreamPutData := GetProcAddress(FDLLHandle, 'BASS_StreamPutData');
     BASSChannelIsActive := GetProcAddress(FDLLHandle, 'BASS_ChannelIsActive');
     BASSStreamGetFilePosition := GetProcAddress(FDLLHandle, 'BASS_StreamGetFilePosition');
     BASSChannelGetPosition := GetProcAddress(FDLLHandle, 'BASS_ChannelGetPosition');
@@ -288,24 +438,9 @@ begin
     BassLoaded := False;
     DeviceAvailable := False;
 
-    EnumDevices;
+    BASSSetConfig(BASS_CONFIG_DEV_DEFAULT, 1);
 
-    Found := False;
-    for i := 0 to FDevices.Count - 1 do
-      if FDevices[i].ID = AppGlobals.SoundDevice then
-      begin
-        Found := True;
-        Break;
-      end;
-    if not Found then
-    begin
-      for i := 0 to FDevices.Count - 1 do
-        if FDevices[i].IsDefault then
-        begin
-          AppGlobals.SoundDevice := FDevices[i].ID;
-          Break;
-        end;
-    end;
+    EnumDevices;
 
     for i := 0 to FDevices.Count - 1 do
       if BASSInit(FDevices[i].ID, 44100, 0, Handle, nil) then
@@ -313,16 +448,71 @@ begin
         BassLoaded := True;
         DeviceAvailable := True;
       end;
+
     if not BassLoaded then
       if BassInit(0, 44100, 0, Handle, nil) then
         BassLoaded := True;
 
-    if not BassLoaded then
-      Exit;
+    if BassLoaded and LoadAAC then
+    begin
+      FAACDLLHandle := BASSPluginLoad(PChar(FBassAACDLLPath), BASS_UNICODE);
+      if FAACDLLHandle = 0 then
+        BassLoaded := False;
+    end;
 
-    FAACDLLHandle := BASSPluginLoad(PChar(FBassAACDLLPath), BASS_UNICODE);
-    if FAACDLLHandle = 0 then
-      BassLoaded := False;
+    if BassLoaded and LoadWASAPI then
+    begin
+      FWASAPIDLLHandle := LoadLibrary(PChar(FBassWASAPIDLLPath));
+      if FWASAPIDLLHandle = 0 then
+        BassLoaded := False
+      else
+      begin
+        BASSWASAPIInit := GetProcAddress(FWASAPIDLLHandle, 'BASS_WASAPI_Init');
+        BASSWASAPIGetDeviceInfo := GetProcAddress(FWASAPIDLLHandle, 'BASS_WASAPI_GetDeviceInfo');
+        BASSWASAPIGetInfo := GetProcAddress(FWASAPIDLLHandle, 'BASS_WASAPI_GetInfo');
+        BASSWASAPIStop := GetProcAddress(FWASAPIDLLHandle, 'BASS_WASAPI_Stop');
+        BASSWASAPIStart := GetProcAddress(FWASAPIDLLHandle, 'BASS_WASAPI_Start');
+        BASSWASAPISetDevice := GetProcAddress(FWASAPIDLLHandle, 'BASS_WASAPI_SetDevice');
+        BASSWASAPIFree := GetProcAddress(FWASAPIDLLHandle, 'BASS_WASAPI_Free');
+
+        if not BASSWASAPIInit(-1, 0, 0, 0, 0.4, 0.05, nil, nil) then
+        begin
+          raise Exception.Create('BASSWASAPIInit() failed');
+        end;
+
+        if not BASSWASAPIGetInfo(FWASAPIInfo) then
+        begin
+          raise Exception.Create('BASSWASAPIGetInfo() failed');
+        end;
+
+        EnumWASAPIDevices;
+      end;
+    end;
+
+    if BassLoaded and LoadMixer then
+    begin
+      FMixerDLLHandle := LoadLibrary(PChar(FBassMixerDLLPath));
+      if FMixerDLLHandle = 0 then
+        BassLoaded := False
+      else
+      begin
+        BASSMixerStreamCreate := GetProcAddress(FMixerDLLHandle, 'BASS_Mixer_StreamCreate');
+        BASSMixerStreamAddChannel := GetProcAddress(FMixerDLLHandle, 'BASS_Mixer_StreamAddChannel');
+      end;
+    end;
+
+    if BassLoaded and LoadEnc then
+    begin
+      FEncDLLHandle := LoadLibrary(PChar(FBassEncDLLPath));
+      if FEncDLLHandle = 0 then
+        BassLoaded := False
+      else
+      begin
+        BASSEncodeStart := GetProcAddress(FEncDLLHandle, 'BASS_Encode_Start');
+        BASSEncodeSetPaused := GetProcAddress(FEncDLLHandle, 'BASS_Encode_SetPaused');
+        BASSEncodeStop := GetProcAddress(FEncDLLHandle, 'BASS_Encode_Stop');
+      end;
+    end;
 
     if BassLoaded then
     begin
@@ -334,6 +524,17 @@ begin
   end;
 end;
 
+function TBassLoader.InitializeWASAPIDevice(Device: Integer; InputProc: WASAPIPROC; User: Pointer): Boolean;
+begin
+  if not BASSWASAPIInit(Device, 0, 0, 0, 1, 0.1, InputProc, User) then
+  begin
+    if BASSErrorGetCode <> 14 then
+      raise Exception.Create('BASSErrorGetCode <> 14');
+  end;
+
+  Result := True;
+end;
+
 procedure TBassLoader.UninitializeBass;
 var
   i: Integer;
@@ -341,6 +542,13 @@ begin
   try
     if FAACDLLHandle <> 0 then
       BASSPluginFree(FAACDLLHandle);
+    if FMixerDLLHandle <> 0 then
+      FreeLibrary(FMixerDLLHandle);
+    if FEncDLLHandle <> 0 then
+      FreeLibrary(FEncDLLHandle);
+    if FWASAPIDLLHandle <> 0 then
+      FreeLibrary(FWASAPIDLLHandle);
+
     if FDLLHandle <> 0 then
     begin
       for i := 0 to FDevices.Count - 1 do
@@ -350,21 +558,31 @@ begin
       end;
       FreeLibrary(FDLLHandle);
     end;
+
     if FBassDLLPath <> '' then
       DeleteFile(FBassDLLPath);
     if FBassAACDLLPath <> '' then
       DeleteFile(FBassAACDLLPath);
+    if FBassMixerDLLPath <> '' then
+      DeleteFile(FBassMixerDLLPath);
+    if FBassEncDLLPath <> '' then
+      DeleteFile(FBassEncDLLPath);
+    if FBassWASAPIDLLPath <> '' then
+      DeleteFile(FBassWASAPIDLLPath);
   except
   end;
 end;
 
 { TBassDevice }
 
-constructor TBassDevice.Create(ID: Cardinal; Name: string; IsDefault: Boolean);
+constructor TBassDevice.Create(ID: Cardinal; Name: string; IsDefault, IsLoopback: Boolean);
 begin
+  inherited Create;
+
   FID := ID;
   FName := Name;
   FIsDefault := IsDefault;
+  FIsLoopback := IsLoopback;
 end;
 
 end.

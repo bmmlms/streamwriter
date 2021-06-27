@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -121,12 +121,14 @@ begin
     Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0].Copy);
 
   // Nach Order sortieren
+  {
   Client.Entry.Settings.PostProcessors.Sort(TComparer<TPostProcessBase>.Construct(
     function (const L, R: TPostProcessBase): Integer
     begin
       Result := CmpInt(L.Order, R.Order);
     end
   ));
+  }
 
   // Erst die mit GroupID 0 fitmachen (WAVE-Phase)
   for i := 0 to Client.Entry.Settings.PostProcessors.Count - 1 do
@@ -315,9 +317,11 @@ begin
 
     if MsgBox(Owner.Handle, _('This postprocessor needs additional addons. Do you want to download these addons now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
     begin
+      {
       for i := 0 to PostProcess.NeededAddons.Count - 1 do
         if not AppGlobals.AddonManager.EnableAddon(Owner, AppGlobals.AddonManager.Find(PostProcess.NeededAddons[i]), False) then
           Exit(False);
+      }
     end else
       Exit(False);
   end;

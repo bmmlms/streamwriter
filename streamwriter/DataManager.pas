@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@ uses
   Windows, Classes, SysUtils, ExtendedStream, Generics.Collections,
   ComCtrls, Functions, Logging, DateUtils, AudioFunctions, PostProcess,
   PowerManagement, Generics.Defaults, TypeDefs, winsock, AddonManager,
-  SWFunctions, ZLib, Constants;
+  SWFunctions, ZStream, Constants;
 
 type
   TStreamList = class;
@@ -823,7 +823,7 @@ type
   end;
 
 const
-  DATAVERSION: Cardinal = 68;
+  DATAVERSION: Cardinal = 69;
   DATAMAGIC: array[0..3] of Byte = (118, 114, 110, 97);
   EXPORTMAGIC: array[0..3] of Byte = (97, 110, 114, 118);
 
@@ -855,8 +855,7 @@ begin
   FUpdatedToHash := True;
 end;
 
-class function TTitleInfo.Load(Stream: TExtendedStream;
-  Version: Integer): TTitleInfo;
+class function TTitleInfo.Load(Stream: TExtendedStream; Version: Integer): TTitleInfo;
 var
   NumChars: Integer;
   Hash: Cardinal;
@@ -1333,7 +1332,7 @@ begin
   else
     Compressed := False;
 
-  // Ab 45 für Recoveryfile abgeschaltet, darum als Feld gespeichert
+  // Ab 45 fÃ¼r Recoveryfile abgeschaltet, darum als Feld gespeichert
   if Version >= 45 then
     S.Read(Compressed);
 
@@ -1379,7 +1378,7 @@ begin
     begin
       FAutoRecordSettings.Free;
 
-      // REMARK: Pfusch für Zwischenversion, damit im File gespult wird... für Build 601 von Version 4.9.0.1.
+      // REMARK: Pfusch fÃ¼r Zwischenversion, damit im File gespult wird... fÃ¼r Build 601 von Version 4.9.0.1.
       FAutoRecordSettings := TStreamSettings.Load(S, Version);
       FAutoRecordSettings.Free;
 
@@ -1506,7 +1505,7 @@ begin
       SavedTitleHashes.Add(Hash);
     end;
 
-    // Aufräumen...
+    // AufrÃ¤umen...
     while SavedTitleHashes.Count > 5000 do
       SavedTitleHashes.Delete(0);
   end;
@@ -1573,9 +1572,7 @@ begin
 
     CompressedStream.Write(FStreamList.Count);
     for i := 0 to FStreamList.Count - 1 do
-    begin
       FStreamList[i].Save(CompressedStream);
-    end;
 
     CompressedStream.Write(FTrackList.Count);
     for i := 0 to FTrackList.Count - 1 do
@@ -1583,15 +1580,11 @@ begin
 
     CompressedStream.Write(FSaveList.Count);
     for i := 0 to FSaveList.Count - 1 do
-    begin
       FSaveList[i].Save(CompressedStream);
-    end;
 
     CompressedStream.Write(FIgnoreList.Count);
     for i := 0 to FIgnoreList.Count - 1 do
-    begin
       FIgnoreList[i].Save(CompressedStream);
-    end;
 
     CompressedStream.Write(FRecentList.Count);
     for i := 0 to FRecentList.Count - 1 do
@@ -1870,9 +1863,9 @@ begin
   // Der Name ist hier leer, da es Streams mit selben Namen
   // aber anderen URLs gibt (z.B. "Die Neue 107.7")...
 
-  // Ausserdem glaube ich, dass das hier über ist. Doppelte Streams
-  // lassen sich nämlich nicht der Liste hinzufügen, deshalb
-  // dürfte das heir nichts bringen...
+  // Ausserdem glaube ich, dass das hier Ã¼ber ist. Doppelte Streams
+  // lassen sich nÃ¤mlich nicht der Liste hinzufÃ¼gen, deshalb
+  // dÃ¼rfte das heir nichts bringen...
   {
   Result := Get('', Entry.StartURL, Entry.URLs);
 
@@ -2734,7 +2727,7 @@ begin
   Result := TStreamSettings.Create;
 
   // Hier vorsichtig sein. Manche Einstellungen werden so auch als Defaults
-  // für automatische Aufnahmen benutzt. Immer, wenn ich hier was ändere,
+  // fÃ¼r automatische Aufnahmen benutzt. Immer, wenn ich hier was Ã¤ndere,
   // muss ich sicherstellen, dass ich dadurch nichts kaputt mache.
 
   Result.RegExes.Add(DEFAULT_TITLE_REGEXP);
@@ -2743,7 +2736,7 @@ begin
   Result.FIncompleteFilePattern := '%streamname%\%artist% - %title%';
   Result.FStreamFilePattern := '%streamname%';
   Result.FFilePatternDecimals := 3;
-  Result.RemoveChars := '[]{}#$§%~^';
+  Result.RemoveChars := '[]{}#$Â§%~^';
   Result.NormalizeVariables := True;
 
   Result.FDeleteStreams := False;
@@ -2851,7 +2844,7 @@ begin
   if Version >= 20 then
     Stream.Read(Result.FRemoveChars)
   else
-    Result.FRemoveChars := '[]{}#$§%~^';
+    Result.FRemoveChars := '[]{}#$Â§%~^';
 
   if Version >= 36 then
     Stream.Read(Result.FNormalizeVariables)

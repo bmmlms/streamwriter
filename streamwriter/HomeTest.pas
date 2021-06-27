@@ -34,7 +34,7 @@ type
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 procedure TfrmHomeTest.Button1Click(Sender: TObject);
 var
@@ -84,10 +84,10 @@ end;
 
 procedure TfrmHomeTest.FormCreate(Sender: TObject);
 begin
-  TCommand.RegisterCommand(ctHandshakeResponse, TCommandHandshakeResponse);
-  TCommand.RegisterCommand(ctLogInResponse, TCommandLogInResponse);
-  TCommand.RegisterCommand(ctLogOutResponse, TCommandLogOutResponse);
-  TCommand.RegisterCommand(ctGetServerDataResponse, TCommandGetServerDataResponse);
+  TCommand.RegisterCommand(ctHandshakeResponse, @TCommandHandshakeResponse.Create);
+  TCommand.RegisterCommand(ctLogInResponse, @TCommandLogInResponse.Create);
+  TCommand.RegisterCommand(ctLogOutResponse, @TCommandLogOutResponse.Create);
+  TCommand.RegisterCommand(ctGetServerDataResponse, @TCommandGetServerDataResponse.Create);
 
   Start;
 end;

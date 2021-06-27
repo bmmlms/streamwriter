@@ -1,0 +1,304 @@
+object frmConfigureSoX: TfrmConfigureSoX
+  Left = 0
+  Height = 253
+  Top = 0
+  Width = 409
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Configure SoX'
+  ClientHeight = 253
+  ClientWidth = 409
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Icon.Data = {
+    7E04000000000100010010100000010020006804000016000000280000001000
+    0000200000000100200000000000000000000000000000000000000000000000
+    0000FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00B25E2AFFAA5A28FFA65727FFA15426FF985024F7FFFFFF00FFFF
+    FF008C4A21FD894820FD86461FF484451FE6FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00B65F2BFFC98459FFC88256FFC77F53FFA35526FFFFFFFF00FFFF
+    FF00924D22FFC57A4CFFC57748FF86461FFFFFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00BE642CFFCA855CFFC06730FFC98459FFC06730FFA35526FF9E53
+    25FFB55F2BFFC67B4DFFC57A4CFF894820FFFFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00C06832FFCB8960FFCA855CFFC37341FFC98459FFC88256FFC882
+    56FFC77F53FFC06832FFC77E52FF8E4A21FFFFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00C26E3BFFC06832FFC37545FFCB8960FFC06832FFC06730FFBF65
+    2DFFBB622CFFB7602CFFC77F53FFB35E2BFF8E4A21F98C4A21FF88471FFFFFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00C16A35FFCB8A62FFC16B37FFC06832FFC068
+    32FFC06730FFBB622CFFC26E3BFFC77F53FFC77E52FFC77E52FF8C4A21FFFFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00C36F3CFFCC8C65FFC36F3CFFC16C39FFC16B
+    37FFC06832FFC06730FFC36F3CFFC88256FFC77F53FFC77F53FF904C22FFFFFF
+    FF00FFFFFF00C5784AFFC47645FFC67C4FFFCD8E68FFC37341FFC3703EFFC16C
+    39FFC16C39FFC06832FFCA855CFFC06730FFA35526FF9C5224FF954F23FFFFFF
+    FF00FFFFFF00C67C4FFFCF936FFFCD906BFFC77F53FFC47645FFC37341FFC373
+    41FFC37341FFC37140FFCB8960FFAD5B29FFFFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00C77F53FFCF9471FFCF936FFFCD906BFFCD906BFFCD8E68FFCD8E
+    68FFCC8B63FFCB8960FFCA855CFFB35E2BFFFFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00C88256FFC77F53FFC67C4FFFC67B4DFFC5784AFECD906BFFCD8E
+    68FFC26E3BF0C06832EDBF652DEFB9612CEFFFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00C67B4DF4CE916CFFCC8C
+    65FFC37140BEFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00C8825612C77F53FFCF9471FFCE91
+    6CFFC47645ECFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00C88256D4C77F53FFC67C
+    4FFEC5784AB4FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFF0000830F0000830F0000800F0000800F000080010000E0010000E001
+    000080010000800F0000800F0000800F0000F87F0000F87F0000F87F0000FFFF
+    0000
+  }
+  KeyPreview = True
+  OnKeyDown = FormKeyDown
+  OnShow = FormShow
+  Position = poOwnerFormCenter
+  LCLVersion = '2.0.12.0'
+  object pnlNav: TPanel
+    Left = 0
+    Height = 40
+    Top = 213
+    Width = 409
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 40
+    ClientWidth = 409
+    TabOrder = 1
+    object Bevel2: TBevel
+      Left = 4
+      Height = 5
+      Top = 4
+      Width = 401
+      Align = alTop
+      Shape = bsTopLine
+    end
+    object btnOK: TBitBtn
+      Left = 308
+      Height = 27
+      Top = 9
+      Width = 97
+      Align = alRight
+      Caption = '&OK'
+      Layout = blGlyphLeft
+      OnClick = btnOKClick
+      TabOrder = 0
+    end
+  end
+  object pnlConfigure: TPanel
+    Left = 0
+    Height = 213
+    Top = 0
+    Width = 409
+    BevelOuter = bvNone
+    ClientHeight = 213
+    ClientWidth = 409
+    TabOrder = 0
+    Visible = False
+    object GroupBox1: TGroupBox
+      Left = 4
+      Height = 157
+      Top = 4
+      Width = 197
+      Caption = ' Fadein/Fadeout '
+      ClientHeight = 157
+      ClientWidth = 197
+      TabOrder = 0
+      object txtFadeoutStart: TLabeledEdit
+        Left = 24
+        Height = 21
+        Top = 60
+        Width = 53
+        EditLabel.Height = 13
+        EditLabel.Width = 90
+        EditLabel.Caption = 'Length in seconds:'
+        EditLabel.ParentColor = False
+        Enabled = False
+        MaxLength = 2
+        TabOrder = 1
+      end
+      object chkFadeoutStart: TCheckBox
+        Left = 8
+        Height = 21
+        Top = 20
+        Width = 181
+        Caption = 'Add fadein at beginning'
+        OnClick = chkClick
+        TabOrder = 0
+      end
+      object txtFadeoutEnd: TLabeledEdit
+        Left = 24
+        Height = 21
+        Top = 124
+        Width = 53
+        EditLabel.Height = 13
+        EditLabel.Width = 90
+        EditLabel.Caption = 'Length in seconds:'
+        EditLabel.ParentColor = False
+        Enabled = False
+        MaxLength = 2
+        TabOrder = 3
+      end
+      object chkFadeoutEnd: TCheckBox
+        Left = 8
+        Height = 21
+        Top = 84
+        Width = 181
+        Caption = 'Add fadeout at end'
+        OnClick = chkClick
+        TabOrder = 2
+      end
+    end
+    object GroupBox2: TGroupBox
+      Left = 208
+      Height = 157
+      Top = 4
+      Width = 197
+      Caption = ' Silence '
+      ClientHeight = 157
+      ClientWidth = 197
+      TabOrder = 1
+      object txtSilenceStart: TLabeledEdit
+        Left = 24
+        Height = 21
+        Top = 60
+        Width = 53
+        EditLabel.Height = 13
+        EditLabel.Width = 90
+        EditLabel.Caption = 'Length in seconds:'
+        EditLabel.ParentColor = False
+        Enabled = False
+        MaxLength = 2
+        TabOrder = 1
+      end
+      object chkSilenceStart: TCheckBox
+        Left = 8
+        Height = 21
+        Top = 20
+        Width = 181
+        Caption = 'Add silence at beginning'
+        OnClick = chkClick
+        TabOrder = 0
+      end
+      object txtSilenceEnd: TLabeledEdit
+        Left = 24
+        Height = 21
+        Top = 124
+        Width = 53
+        EditLabel.Height = 13
+        EditLabel.Width = 90
+        EditLabel.Caption = 'Length in seconds:'
+        EditLabel.ParentColor = False
+        Enabled = False
+        MaxLength = 2
+        TabOrder = 3
+      end
+      object chkSilenceEnd: TCheckBox
+        Left = 8
+        Height = 21
+        Top = 84
+        Width = 181
+        Caption = 'Add silence at end'
+        OnClick = chkClick
+        TabOrder = 2
+      end
+    end
+    object GroupBox3: TGroupBox
+      Left = 4
+      Height = 49
+      Top = 164
+      Width = 401
+      Caption = ' Misc '
+      ClientHeight = 49
+      ClientWidth = 401
+      TabOrder = 2
+      object chkNormalize: TCheckBox
+        Left = 8
+        Height = 21
+        Top = 20
+        Width = 181
+        Caption = 'Normalize'
+        OnClick = chkClick
+        TabOrder = 0
+      end
+    end
+  end
+  object pnlSetup: TPanel
+    Left = 376
+    Height = 161
+    Top = 60
+    Width = 397
+    ClientHeight = 161
+    ClientWidth = 397
+    TabOrder = 2
+    Visible = False
+    object btnBrowse1: TSpeedButton
+      Left = 308
+      Height = 21
+      Hint = 'Browse...'
+      Top = 84
+      Width = 25
+      Flat = True
+      Layout = blGlyphLeft
+      OnClick = btnBrowseClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object btnBrowse2: TSpeedButton
+      Left = 308
+      Height = 21
+      Hint = 'Browse...'
+      Top = 132
+      Width = 25
+      Flat = True
+      Layout = blGlyphLeft
+      OnClick = btnBrowseClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object lblInfo: TLabel
+      Left = 4
+      Height = 65
+      Top = 0
+      Width = 385
+      AutoSize = False
+      Caption = 'Due to licensing issues streamWriter does not supply two needed DLLs. Please download both DLLs and select them using the "Browse..." buttons. If clicking "Next" does not show any error messages, you can delete the downloaded files.'
+      ParentColor = False
+      WordWrap = True
+    end
+    object txtLameDLL: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 84
+      Width = 301
+      AutoSize = False
+      Color = 15790320
+      EditLabel.Height = 13
+      EditLabel.Width = 109
+      EditLabel.Caption = 'Path to "lame_enc.dll":'
+      EditLabel.ParentColor = False
+      ReadOnly = True
+      TabOrder = 0
+    end
+    object txtMadDLL: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 132
+      Width = 301
+      AutoSize = False
+      Color = 15790320
+      EditLabel.Height = 13
+      EditLabel.Width = 94
+      EditLabel.Caption = 'Path to "libmad.dll":'
+      EditLabel.ParentColor = False
+      ReadOnly = True
+      TabOrder = 1
+    end
+  end
+  object dlgOpen: TOpenDialog
+    Filter = 'lame-enc.dll|lame-enc.dll'
+    Left = 168
+    Top = 60
+  end
+end

@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -53,7 +53,7 @@ type
     procedure Load(Stream: TExtendedStream; Version: Integer); override;
     procedure Save(Stream: TExtendedStream); override;
 
-    function MP4BoxMux(InFile, OutFile: string; TerminateFlag: PBoolean): TActResults;
+    function MP4BoxMux(InFile, OutFile: string; TerminateFlag: PByteBool): TActResults;
   end;
 
 implementation
@@ -117,7 +117,7 @@ var
 begin
   OutputFormat := TEncoderSettings(Data.EncoderSettings).AudioType;
   if OutputFormat = atNone then
-    OutputFormat := FiletypeToFormat(Data.Filename);
+    OutputFormat := FilenameToFormat(Data.Filename);
 
   Result := (OutputFormat = atAAC) and FGetDependenciesMet;
 end;
@@ -137,7 +137,7 @@ constructor TPostProcessMP4Box.Create;
 begin
   inherited;
 
-  FNeededAddons.Add(TAddonMP4Box);
+//  FNeededAddons.Add(TAddonMP4Box);
 
   FCanConfigure := False;
   FGroupID := 1;
@@ -146,7 +146,7 @@ begin
   FPostProcessType := ptMP4Box;
 end;
 
-function TPostProcessMP4Box.MP4BoxMux(InFile, OutFile: string; TerminateFlag: PBoolean): TActResults;
+function TPostProcessMP4Box.MP4BoxMux(InFile, OutFile: string; TerminateFlag: PByteBool): TActResults;
 var
   CmdLine, MP4BoxPath: string;
   Output: AnsiString;

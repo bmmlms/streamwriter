@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -40,7 +40,6 @@ type
 
     function Find(ClassType: TClass): TAddonBase;
     function EnableAddon(Owner: TCustomForm; Addon: TAddonBase; ShowMessage: Boolean): Boolean;
-    function CanEncode(FileExtension: string): TCanEncodeResults; overload;
     function CanEncode(AudioType: TAudioTypes): TCanEncodeResults; overload;
     function InstallEncoderFor(Owner: TCustomForm; AudioType: TAudioTypes): Boolean;
 
@@ -54,11 +53,6 @@ uses
   DownloadAddons;
 
 { TAddonManager }
-
-function TAddonManager.CanEncode(FileExtension: string): TCanEncodeResults;
-begin
-  Result := CanEncode(FiletypeToFormat(FileExtension));
-end;
 
 function TAddonManager.CanEncode(AudioType: TAudioTypes): TCanEncodeResults;
 var

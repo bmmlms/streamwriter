@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,9 +24,9 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ComCtrls, StdCtrls, Mask, Buttons, ExtCtrls, LanguageObjects,
+  Dialogs, ComCtrls, StdCtrls, Buttons, ExtCtrls, LanguageObjects,
   VirtualTrees, AppData, Functions, DateUtils, Logging, DataManager,
-  PowerManagement, GUIFunctions;
+  PowerManagement, GUIFunctions, SharedData, Images;
 
 type
   TScheduleTreeNodeData = record
@@ -38,7 +38,7 @@ type
   private
   protected
     procedure Resize; override;
-    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
+   // procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
     procedure DoChecked(Node: PVirtualNode); override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
       var NodeHeight: Integer); override;
@@ -63,7 +63,7 @@ type
     rbDate: TRadioButton;
     lstInterval: TComboBox;
     lstDay: TComboBox;
-    dtpDate: TDateTimePicker;
+  //  dtpDate: TDateTimePicker;
     txtStartHour: TEdit;
     txtStartMinute: TEdit;
     txtEndHour: TEdit;
@@ -109,7 +109,7 @@ type
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 procedure TfrmTimers.btnOKClick(Sender: TObject);
 var
@@ -142,6 +142,7 @@ begin
     Exit;
   end;
 
+  {
   if rbRecurring.Checked then
   begin
     Tree.Add(TScheduleInterval(lstInterval.ItemIndex), TScheduleDay(lstDay.ItemIndex),
@@ -151,7 +152,7 @@ begin
   begin
     Tree.Add(dtpDate.DateTime, StrToInt(txtStartHour.Text), StrToInt(txtStartMinute.Text),
       StrToInt(txtEndHour.Text), StrToInt(txtEndMinute.Text), chkAutoRemove.Checked);
-  end;
+  end;                                        }
 end;
 
 procedure TfrmTimers.btnRemoveClick(Sender: TObject);
@@ -173,7 +174,7 @@ begin
       lstIntervalChange(lstInterval);
     end else
     begin
-      dtpDate.DateTime := NodeData.Schedule.Date;
+     { dtpDate.DateTime := NodeData.Schedule.Date;   }
       chkAutoRemove.Checked := NodeData.Schedule.AutoRemove;
     end;
     txtStartHour.Text := IntToStr(NodeData.Schedule.StartHour);
@@ -192,6 +193,8 @@ constructor TfrmTimers.Create(AOwner: TComponent;
   Entry: TStreamEntry);
 begin
   inherited Create(AOwner);
+
+  modSharedData.imgImages.GetIcon(TImages.Time, Icon);
 
   FEntry := Entry.Copy;
 end;
@@ -253,7 +256,7 @@ begin
 
   Language.Translate(Self);
 
-  dtpDate.DateTime := Now;
+ { dtpDate.DateTime := Now;    }
   lstInterval.ItemIndex := 0;
   lstDay.ItemIndex := 0;
 end;
@@ -332,7 +335,7 @@ procedure TfrmTimers.UpdateButtons;
 begin
   lstInterval.Enabled := rbRecurring.Checked;
   lstDay.Enabled := rbRecurring.Checked and (lstInterval.ItemIndex > 0);
-  dtpDate.Enabled := rbDate.Checked;
+ { dtpDate.Enabled := rbDate.Checked; }
   chkAutoRemove.Enabled := rbDate.Checked;
 end;
 
@@ -433,7 +436,7 @@ begin
   NodeData := GetNodeData(Node);
   NodeData.Schedule.Active := Node.CheckState = csCheckedNormal;
 end;
-
+                            {
 procedure TScheduleTree.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
 var
   NodeData: PScheduleTreeNodeData;
@@ -485,7 +488,7 @@ begin
         pEventArgs.CellText := _('No');
   end;
 end;
-
+                                       }
 procedure TScheduleTree.DoMeasureItem(TargetCanvas: TCanvas;
   Node: PVirtualNode; var NodeHeight: Integer);
 begin

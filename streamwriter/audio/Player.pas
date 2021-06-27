@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -40,7 +40,7 @@ type
     FPosToReach: Cardinal;
     FEndPos: Cardinal;
     FShowTitle: Boolean;
-    FMessageHWnd: HWND;
+//    FMessageHWnd: HWND;
 
     FEQEnabled: Boolean;
     FBandData: array[0..9] of TBandData;
@@ -134,7 +134,7 @@ var
 begin
   P := TPlayer(user);
 
-  PostMessage(P.FMessageHWnd, 1001, 0, 0);
+//  PostMessage(P.FMessageHWnd, 1001, 0, 0);
 end;
 
 procedure EndSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
@@ -146,7 +146,7 @@ begin
   P.FPaused := False;
   P.FStopped := False;
 
-  PostMessage(P.FMessageHWnd, 1000, 0, 0);
+//  PostMessage(P.FMessageHWnd, 1000, 0, 0);
 end;
 
 { TPlayer }
@@ -158,7 +158,7 @@ begin
   inherited;
 
   FShowTitle := True;
-  FMessageHWnd := AllocateHWnd(WndMethod);
+//  FMessageHWnd := AllocateHWnd(WndMethod);     // TODO:
 
   for i := 0 to High(FBandData) do
   begin
@@ -177,7 +177,7 @@ begin
     AppGlobals.Unlock;
   end;
 
-  FPlayer := BASSStreamCreateFile(False, PChar(FFilename), 0, 0, {$IFDEF UNICODE}BASS_UNICODE{$ENDIF});
+  FPlayer := BASSStreamCreateFile(False, PChar(FFilename), 0, 0, 0);
   if FPlayer = 0 then
     raise Exception.Create('');
   FSyncEnd := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, EndSyncProc, Self);
@@ -197,13 +197,14 @@ end;
 
 destructor TPlayer.Destroy;
 begin
-  DeallocateHWnd(FMessageHWnd);
+//  DeallocateHWnd(FMessageHWnd);
 
   // Crashed bei Programmende, deshalb try..except. Ist nötig wegen dem SavedTab,
   // wenn man hier nicht freigibt, kann er nicht speichern.
   Players.RemovePlayer(Self);
   try
-    FreeStream(FPlayer);
+    // TODO:
+    // FreeStream(FPlayer);
   except end;
 
   FreeAndNil(FTag);
@@ -495,8 +496,8 @@ begin
 
   if Handled then
     Msg.Result := 0
-  else
-    Msg.Result := DefWindowProc(FMessageHWnd, Msg.Msg, Msg.WParam, Msg.LParam);
+//  else
+//    Msg.Result := DefWindowProc(FMessageHWnd, Msg.Msg, Msg.WParam, Msg.LParam);
 end;
 
 end.

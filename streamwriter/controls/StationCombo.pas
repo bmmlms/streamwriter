@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,8 +24,8 @@ unit StationCombo;
 interface
 
 uses
-  Windows, SysUtils, Classes, ListActns, ComCtrls, DataManager, Logging,
-  AppData;
+  Windows, SysUtils, Classes, ComCtrls, DataManager, Logging, ComboEx,
+  AppData, Images;
 
 type
   TMStationCombo = class(TComboBoxEx)
@@ -115,7 +115,7 @@ begin
   Result := ItemsEx.Add;
   Result.Caption := Name;
   Result.Data := Entry;
-  Result.ImageIndex := 16;
+  Result.ImageIndex := TImages.TRANSMIT;
   ReOrganize(Result);
 end;
 
@@ -124,7 +124,7 @@ begin
   Result := ItemsEx.Add;
   Result.Caption := Entry.Name;
   Result.Data := Entry.Copy;
-  Result.ImageIndex := 16;
+  Result.ImageIndex := TImages.TRANSMIT;
 end;
 
 procedure TMStationCombo.BuildList;
@@ -140,6 +140,8 @@ end;
 constructor TMStationCombo.Create(AOwner: TComponent);
 begin
   inherited;
+
+  Style := csExDropDownList;
   ItemsEx.OnCompare := ItemsCompare;
 end;
 
@@ -156,6 +158,8 @@ procedure TMStationCombo.Sort;
 var
   s: string;
 begin
+  Exit; // TODO: Exception without Exit
+
   ItemsEx.BeginUpdate;
   try
     if ItemIndex > -1 then
@@ -163,7 +167,7 @@ begin
     else
       s := Text;
 
-    ItemsEx.SortType := ListActns.stData;
+    ItemsEx.SortType := stData;
     ItemsEx.Sort;
   finally
     ItemsEx.EndUpdate;

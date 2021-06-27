@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -27,7 +27,7 @@ uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
   DataManager, VirtualTrees, LanguageObjects, GUIFunctions, Messages,
   Generics.Collections, Graphics, Forms, ICEClient, Clipbrd, AppData,
-  Logging, Math, TypeDefs, SharedData;
+  Logging, Math, TypeDefs, SharedData, Images;
 
 type
   TDebugView = class(TVirtualStringTree)
@@ -35,14 +35,16 @@ type
     FClient: TICEClient;
     procedure FSetClient(Value: TICEClient);
   protected
-    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
+    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
+      var Text: String); override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
+      var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
     procedure Resize; override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
     function DoInitChildren(Node: PVirtualNode; var ChildCount: Cardinal): Boolean; override;
-    function DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean; override;
-    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect); override;
+    function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
+    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
     procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
   public
     constructor Create(AOwner: TComponent); override;
@@ -117,7 +119,7 @@ begin
   FPanelBottom.BevelOuter := bvNone;
   FPanelBottom.Visible := True;
   FPanelBottom.Height := MulDiv(27, Screen.PixelsPerInch, 96) + 4;
-  FPanelBottom.Padding.Top := 4;
+//  FPanelBottom.Padding.Top := 4;
 
   FBtnCopy := TButton.Create(Self);
   FBtnCopy.Caption := '&Copy';
@@ -257,62 +259,64 @@ begin
 end;
 
 function TDebugView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
+      var Ghosted: Boolean; var Index: Integer): TCustomImageList;
 begin
   Result := Images;
 
   Index := -1;
   if Column = 1 then
   begin
-    Index := 3;
+    Index := TImages.BOOK_OPEN;
 
     case FClient.DebugLog[Node.Index].Level of
-      llError: Index := 100;
-      llWarning: Index := 97;
-      llDebug: Index := 98;
+      llError: Index := TImages.EXCLAMATION;
+      llWarning: Index := TImages.ERROR;
+      llDebug: Index := TImages.BUG;
     end;
 
     if Index = 3 then
     begin
       case FClient.DebugLog[Node.Index].T of
         ltSong:
-          Index := 20;
+          Index := TImages.MUSIC;
         ltSaved:
-          Index := 14;
+          Index := TImages.DRIVE;
         ltPostProcess:
-          Index := 56;
+          Index := TImages.LIGHTNING;
         ltSchedule:
-          Index := 50;
+          Index := TImages.TIME;
         ltSecure:
-          Index := 103;
+          Index := TImages.LOCK;
       end;
     end;
   end;
 end;
 
-procedure TDebugView.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
+procedure TDebugView.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
+  var Text: String);
 begin
   inherited;
+
   if FClient <> nil then
   begin
-    case pEventArgs.Column of
+    case Column of
       0:
         begin
-          pEventArgs.CellText := TimeToStr(FClient.DebugLog[pEventArgs.Node.Index].Time);
+          Text := TimeToStr(FClient.DebugLog[Node.Index].Time);
         end;
       1:
         begin
-          case GetNodeLevel(pEventArgs.Node) of
+          case GetNodeLevel(Node) of
             0:
               begin
-                pEventArgs.CellText := FClient.DebugLog[pEventArgs.Node.Index].Text;
-                if (FClient.DebugLog[pEventArgs.Node.Index].Data <> '') and not HasChildren[pEventArgs.Node] then
-                  HasChildren[pEventArgs.Node] := True;
+                Text := FClient.DebugLog[Node.Index].Text;
+                if (FClient.DebugLog[Node.Index].Data <> '') and not HasChildren[Node] then
+                  HasChildren[Node] := True;
               end;
             1:
               begin
-                MultiLine[pEventArgs.Node] := True;
-                pEventArgs.CellText := FClient.DebugLog[pEventArgs.Node.Parent.Index].Data;
+                MultiLine[Node] := True;
+                Text := FClient.DebugLog[Node.Parent.Index].Data;
               end;
           end;
         end;
@@ -335,7 +339,7 @@ begin
   Result := True;
 end;
 
-function TDebugView.DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean;
+function TDebugView.DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean;
 begin
   Result := inherited;
 
@@ -350,7 +354,7 @@ begin
   Canvas.FillRect(R);
 end;
 
-procedure TDebugView.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
+procedure TDebugView.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect);
 begin
   inherited;
 
@@ -389,6 +393,7 @@ var
 begin
   inherited;
 
+  {
   Header.Columns[0].Width := Canvas.TextWidth(TimeToStr(Now)) + 10;
   Header.Columns[1].Width := ClientWidth - Header.Columns[0].Width;
 
@@ -398,6 +403,7 @@ begin
     if R.Top <= ClientHeight then
       PostMessage(Handle, WM_VSCROLL, SB_BOTTOM, 0);
   end;
+  }
 end;
 
 end.

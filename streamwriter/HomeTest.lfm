@@ -1,0 +1,57 @@
+object frmHomeTest: TfrmHomeTest
+  Left = 0
+  Height = 261
+  Top = 0
+  Width = 421
+  Caption = 'frmHomeTest'
+  ClientHeight = 261
+  ClientWidth = 421
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  OnCreate = FormCreate
+  Position = poScreenCenter
+  LCLVersion = '2.0.12.0'
+  Visible = True
+  object lstEvents: TListBox
+    Left = 4
+    Height = 233
+    Top = 4
+    Width = 309
+    ItemHeight = 13
+    TabOrder = 0
+  end
+  object prgTransfer: TProgressBar
+    Left = 4
+    Height = 17
+    Top = 240
+    Width = 309
+    TabOrder = 1
+  end
+  object Button1: TButton
+    Left = 320
+    Height = 29
+    Top = 4
+    Width = 97
+    Caption = 'Button1'
+    OnClick = Button1Click
+    TabOrder = 2
+  end
+  object Button2: TButton
+    Left = 328
+    Height = 29
+    Top = 40
+    Width = 81
+    Caption = 'Button2'
+    OnClick = Button2Click
+    TabOrder = 3
+  end
+  object Timer1: TTimer
+    Enabled = False
+    Interval = 100000
+    OnTimer = Timer1Timer
+    Left = 336
+    Top = 156
+  end
+end

@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -30,7 +30,7 @@ uses
   Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
   PlayerManager, Logging, FileWatcher, MessageBus, AppMessages, ShlObj,
   SavedTabEditTags, Generics.Collections, TypeDefs, AudioFunctions, FileTagger,
-  Notifications, Dialogs, SharedData, DragDrop, pngimage;
+  Notifications, Dialogs, SharedData, DragDrop, Images;
 
 type
   TSavedTree = class;
@@ -130,7 +130,6 @@ type
   TSavedToolBar = class(TToolBar)
   private
     FRefresh: TToolButton;
-    FSep1: TToolButton;
     FCutSong: TToolButton;
     FEditTags: TToolButton;
     FFinalized: TToolButton;
@@ -138,14 +137,12 @@ type
     FRemoveFromWishlist: TToolButton;
     FAddToIgnorelist: TToolButton;
     FRemoveFromIgnorelist: TToolButton;
-    FSep2: TToolButton;
     FCut: TToolButton;
     FCopy: TToolButton;
     FRename: TToolButton;
     FRemove: TToolButton;
     FRecycle: TToolButton;
     FDelete: TToolButton;
-    FSep3: TToolButton;
     FShowFile: TToolButton;
     FProperties: TToolButton;
     FImportFiles: TToolButton;
@@ -171,8 +168,6 @@ type
     constructor Create(AOwner: TComponent); override;
 
     procedure EnableItems(Enable, Playing, IsFirst, IsLast: Boolean);
-
-    procedure Setup;
   end;
 
   TSearchBar = class(TPanel)
@@ -343,9 +338,9 @@ type
 
     procedure MessageReceived(Msg: TMessageBase);
   protected
-    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
-    procedure DoHeaderClick(const HitInfo: TVTHeaderHitInfo); override;
+    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String); override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
+    procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     procedure DoDragging(P: TPoint); override;
     function DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer; override;
@@ -361,8 +356,8 @@ type
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
     procedure DoNodeDblClick(const HitInfo: THitInfo); override;
-    function DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean; override;
-    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect); override;
+    function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
+    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
     procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
   public
     constructor Create(AOwner: TComponent); override;
@@ -397,159 +392,143 @@ implementation
 { TSavedTracksPopup }
 
 constructor TSavedTracksPopup.Create(AOwner: TComponent);
-var
-  ItemTmp: TMenuItem;
 begin
   inherited;
 
-  AutoHotkeys := maManual;
-
-  FItemRefresh := CreateMenuItem;
+  FItemRefresh := TMenuItem.Create(Self);;
   FItemRefresh.Caption := 'Re&fresh';
-  FItemRefresh.ImageIndex := 23;
+  FItemRefresh.ImageIndex := TImages.ARROW_REFRESH;
   Items.Add(FItemRefresh);
 
-  ItemTmp := CreateMenuItem;
-  ItemTmp.Caption := '-';
-  Items.Add(ItemTmp);
+  Items.AddSeparator;
 
   {
-  FItemPrev := CreateMenuItem;
+  FItemPrev := TMenuItem.Create(Self);;
   FItemPrev.Caption := 'Pre&vious';
-  FItemPrev.ImageIndex := 79;
+  FItemPrev.ImageIndex := TImages.PREVIOUS_BLUE;
   Items.Add(FItemPrev);
   }
 
-  FItemPlay := CreateMenuItem;
+  FItemPlay := TMenuItem.Create(Self);;
   FItemPlay.Caption := '&Play';
-  FItemPlay.ImageIndex := 33;
+  FItemPlay.ImageIndex := TImages.PLAY_BLUE;
   Items.Add(FItemPlay);
 
   {
-  FItemPause := CreateMenuItem;
+  FItemPause := TMenuItem.Create(Self);;
   FItemPause.Caption := 'Pa&use';
-  FItemPause.ImageIndex := 39;
+  FItemPause.ImageIndex := TImages.PAUSE_BLUE;
   Items.Add(FItemPause);
 
-  FItemStop := CreateMenuItem;
+  FItemStop := TMenuItem.Create(Self);;
   FItemStop.Caption := 'St&op';
-  FItemStop.ImageIndex := 1;
+  FItemStop.ImageIndex := TImages.STOP_BLUE;
   Items.Add(FItemStop);
 
-  FItemNext := CreateMenuItem;
+  FItemNext := TMenuItem.Create(Self);;
   FItemNext.Caption := '&Next';
-  FItemNext.ImageIndex := 78;
+  FItemNext.ImageIndex := TImages.NEXT_BLUE;
   Items.Add(FItemNext);
 
-  FItemPlayLastSecs := CreateMenuItem;
+  FItemPlayLastSecs := TMenuItem.Create(Self);;
   FItemPlayLastSecs.Caption := 'P&lay end';
-  FItemPlayLastSecs.ImageIndex := 83;
+  FItemPlayLastSecs.ImageIndex := TImages.PLAY_END_BLUE;
   Items.Add(FItemPlayLastSecs);
   }
 
-  ItemTmp := CreateMenuItem;
-  ItemTmp.Caption := '-';
-  Items.Add(ItemTmp);
+  Items.AddSeparator;
 
-  FItemCutSong := CreateMenuItem;
+  FItemCutSong := TMenuItem.Create(Self);;
   FItemCutSong.Caption := '&Cut song';
-  FItemCutSong.ImageIndex := 17;
+  FItemCutSong.ImageIndex := TImages.CUT;
   Items.Add(FItemCutSong);
 
-  FItemEditTags := CreateMenuItem;
+  FItemEditTags := TMenuItem.Create(Self);;
   FItemEditTags.Caption := '&Edit tags and data...';
-  FItemEditTags.ImageIndex := 75;
+  FItemEditTags.ImageIndex := TImages.TAG_BLUE_EDIT;
   Items.Add(FItemEditTags);
 
-  FItemFinalized := CreateMenuItem;
+  FItemFinalized := TMenuItem.Create(Self);;
   FItemFinalized.Caption := 'Finali&zed';
-  FItemFinalized.ImageIndex := 58;
+  FItemFinalized.ImageIndex := TImages.TICK;
   Items.Add(FItemFinalized);
 
-  ItemTmp := CreateMenuItem;
-  ItemTmp.Caption := '-';
-  Items.Add(ItemTmp);
+  Items.AddSeparator;
 
-  FItemAddToWishlist := CreateMenuItem;
+  FItemAddToWishlist := TMenuItem.Create(Self);;
   FItemAddToWishlist.Caption := 'Add to &wishlist';
-  FItemAddToWishlist.ImageIndex := 31;
+  FItemAddToWishlist.ImageIndex := TImages.SCRIPT_HEART_ADD;
   Items.Add(FItemAddToWishlist);
 
-  FItemRemoveFromWishlist := CreateMenuItem;
+  FItemRemoveFromWishlist := TMenuItem.Create(Self);;
   FItemRemoveFromWishlist.Caption := 'Remo&ve from wishlist';
-  FItemRemoveFromWishlist.ImageIndex := 88;
+  FItemRemoveFromWishlist.ImageIndex := TImages.SCRIPT_HEART_DELETE;
   Items.Add(FItemRemoveFromWishlist);
 
-  FItemAddToIgnorelist := CreateMenuItem;
+  FItemAddToIgnorelist := TMenuItem.Create(Self);;
   FItemAddToIgnorelist.Caption := 'Add to i&gnorelist';
-  FItemAddToIgnorelist.ImageIndex := 65;
+  FItemAddToIgnorelist.ImageIndex := TImages.SCRIPT_DECLINE_ADD;
   Items.Add(FItemAddToIgnorelist);
 
-  FItemRemoveFromIgnorelist := CreateMenuItem;
+  FItemRemoveFromIgnorelist := TMenuItem.Create(Self);;
   FItemRemoveFromIgnorelist.Caption := 'Remove from ig&norelist';
-  FItemRemoveFromIgnorelist.ImageIndex := 91;
+  FItemRemoveFromIgnorelist.ImageIndex := TImages.SCRIPT_DECLINE_DELETE;
   Items.Add(FItemRemoveFromIgnorelist);
 
-  ItemTmp := CreateMenuItem;
-  ItemTmp.Caption := '-';
-  Items.Add(ItemTmp);
+  Items.AddSeparator;
 
-  FItemCut := CreateMenuItem;
+  FItemCut := TMenuItem.Create(Self);;
   FItemCut.Caption := 'C&ut';
-  FItemCut.ImageIndex := 87;
+  FItemCut.ImageIndex := TImages.CUT;
   Items.Add(FItemCut);
 
-  FItemCopy := CreateMenuItem;
+  FItemCopy := TMenuItem.Create(Self);;
   FItemCopy.Caption := 'C&opy';
-  FItemCopy.ImageIndex := 57;
+  FItemCopy.ImageIndex := TImages.PAGE_WHITE_COPY;
   Items.Add(FItemCopy);
 
-  FItemRename := CreateMenuItem;
+  FItemRename := TMenuItem.Create(Self);;
   FItemRename.Caption := 'Ren&ame';
-  FItemRename.ImageIndex := 74;
+  FItemRename.ImageIndex := TImages.TEXTFIELD_RENAME;
   Items.Add(FItemRename);
 
-  FItemRemove := CreateMenuItem;
+  FItemRemove := TMenuItem.Create(Self);;
   FItemRemove.Caption := '&Remove from list';
-  FItemRemove.ImageIndex := 21;
+  FItemRemove.ImageIndex := TImages.CROSS;
   Items.Add(FItemRemove);
 
-  FItemRecycle := CreateMenuItem;
+  FItemRecycle := TMenuItem.Create(Self);;
   FItemRecycle.Caption := 'Rec&ycle files';
-  FItemRecycle.ImageIndex := 24;
+  FItemRecycle.ImageIndex := TImages.BIN;
   Items.Add(FItemRecycle);
 
-  FItemDelete := CreateMenuItem;
+  FItemDelete := TMenuItem.Create(Self);;
   FItemDelete.Caption := '&Delete files';
-  FItemDelete.ImageIndex := 2;
+  FItemDelete.ImageIndex := TImages.DELETE;
   Items.Add(FItemDelete);
 
-  ItemTmp := CreateMenuItem;
-  ItemTmp.Caption := '-';
-  Items.Add(ItemTmp);
+  Items.AddSeparator;
 
-  FItemShowFile := CreateMenuItem;
+  FItemShowFile := TMenuItem.Create(Self);;
   FItemShowFile.Caption := 'Show in e&xplorer...';
-  FItemShowFile.ImageIndex := 28;
+  FItemShowFile.ImageIndex := TImages.FOLDER_GO;
   Items.Add(FItemShowFile);
 
-  FItemProperties := CreateMenuItem;
+  FItemProperties := TMenuItem.Create(Self);;
   FItemProperties.Caption := 'Proper&ties...';
-  FItemProperties.ImageIndex := 22;
+  FItemProperties.ImageIndex := TImages.MUSIC_INFORMATION;
   Items.Add(FItemProperties);
 
-  ItemTmp := CreateMenuItem;
-  ItemTmp.Caption := '-';
-  Items.Add(ItemTmp);
+  Items.AddSeparator;
 
-  FItemImportFiles := CreateMenuItem;
+  FItemImportFiles := TMenuItem.Create(Self);;
   FItemImportFiles.Caption := '&Import files...';
-  FItemImportFiles.ImageIndex := 36;
+  FItemImportFiles.ImageIndex := TImages.MUSIC_IN;
   Items.Add(FItemImportFiles);
 
-  FItemImportFolder := CreateMenuItem;
+  FItemImportFolder := TMenuItem.Create(Self);;
   FItemImportFolder.Caption := 'I&mport folder...';
-  FItemImportFolder.ImageIndex := 81;
+  FItemImportFolder.ImageIndex := TImages.FOLDER_IN;
   Items.Add(FItemImportFolder);
 end;
 
@@ -580,11 +559,124 @@ end;
 { TSavedToolBar }
 
 constructor TSavedToolBar.Create(AOwner: TComponent);
+var
+  Sep: TToolButton;
 begin
   inherited;
 
   ShowHint := True;
-  Transparent := True;
+  EdgeBorders := [];
+
+  FRefresh := TToolButton.Create(Self);
+  FRefresh.Parent := Self;
+  FRefresh.Hint := 'Refresh';
+  FRefresh.ImageIndex := TImages.ARROW_REFRESH;
+
+  Sep := TToolButton.Create(Self);
+  Sep.Parent := Self;
+  Sep.Style := tbsSeparator;
+
+  FCutSong := TToolButton.Create(Self);
+  FCutSong.Parent := Self;
+  FCutSong.Hint := 'Cut song';
+  FCutSong.ImageIndex := TImages.CUT;
+
+  FEditTags := TToolButton.Create(Self);
+  FEditTags.Parent := Self;
+  FEditTags.Hint := 'Edit tags and data...';
+  FEditTags.ImageIndex := TImages.TAG_BLUE_EDIT;
+
+  FFinalized := TToolButton.Create(Self);
+  FFinalized.Parent := Self;
+  FFinalized.Hint := 'Finalized';
+  FFinalized.ImageIndex := TImages.TICK;
+  FFinalized.Style := tbsCheck;
+
+  Sep := TToolButton.Create(Self);
+  Sep.Parent := Self;
+  Sep.Style := tbsSeparator;
+
+  FAddToWishlist := TToolButton.Create(Self);
+  FAddToWishlist.Parent := Self;
+  FAddToWishlist.Hint := 'Add to wishlist';
+  FAddToWishlist.ImageIndex := TImages.SCRIPT_HEART;
+
+  FRemoveFromWishlist := TToolButton.Create(Self);
+  FRemoveFromWishlist.Parent := Self;
+  FRemoveFromWishlist.Hint := 'Remove from wishlist';
+  FRemoveFromWishlist.ImageIndex := TImages.SCRIPT_HEART_DELETE;
+
+  FAddToIgnoreList := TToolButton.Create(Self);
+  FAddToIgnoreList.Parent := Self;
+  FAddToIgnoreList.Hint := 'Add to ignorelist';
+  FAddToIgnoreList.ImageIndex := TImages.SCRIPT_DECLINE;
+
+  FRemoveFromIgnorelist := TToolButton.Create(Self);
+  FRemoveFromIgnorelist.Parent := Self;
+  FRemoveFromIgnorelist.Hint := 'Remove from ignorelist';
+  FRemoveFromIgnorelist.ImageIndex := TImages.SCRIPT_DECLINE_DELETE;
+
+  Sep := TToolButton.Create(Self);
+  Sep.Parent := Self;
+  Sep.Style := tbsSeparator;
+
+  FCut := TToolButton.Create(Self);
+  FCut.Parent := Self;
+  FCut.Hint := 'Cut';
+  FCut.ImageIndex := TImages.CUT;
+
+  FCopy := TToolButton.Create(Self);
+  FCopy.Parent := Self;
+  FCopy.Hint := 'Copy';
+  FCopy.ImageIndex := TImages.PAGE_WHITE_COPY;
+
+  FRename := TToolButton.Create(Self);
+  FRename.Parent := Self;
+  FRename.Hint := 'Rename';
+  FRename.ImageIndex := TImages.TEXTFIELD_RENAME;
+
+  FRemove := TToolButton.Create(Self);
+  FRemove.Parent := Self;
+  FRemove.Hint := 'Remove from list';
+  FRemove.ImageIndex := TImages.CROSS;
+
+  FRecycle := TToolButton.Create(Self);
+  FRecycle.Parent := Self;
+  FRecycle.Hint := 'Recycle files';
+  FRecycle.ImageIndex := TImages.BIN;
+
+  FDelete := TToolButton.Create(Self);
+  FDelete.Parent := Self;
+  FDelete.Hint := 'Delete files';
+  FDelete.ImageIndex := TImages.DELETE;
+
+  Sep := TToolButton.Create(Self);
+  Sep.Parent := Self;
+  Sep.Style := tbsSeparator;
+
+  FShowFile := TToolButton.Create(Self);
+  FShowFile.Parent := Self;
+  FShowFile.Hint := _('Show in explorer...');
+  FShowFile.ImageIndex := TImages.FOLDER_GO;
+
+  FProperties := TToolButton.Create(Self);
+  FProperties.Parent := Self;
+  FProperties.Hint := _('Properties...');
+  FProperties.ImageIndex := TImages.MUSIC_INFORMATION;
+
+  Sep := TToolButton.Create(Self);
+  Sep.Parent := Self;
+  Sep.Style := tbsSeparator;
+
+  FImportFiles := TToolButton.Create(Self);
+  FImportFiles.Parent := Self;
+  FImportFiles.Hint := _('Import files...');
+  FImportFiles.ImageIndex := TImages.MUSIC_IN;
+
+  FImportFolder := TToolButton.Create(Self);
+  FImportFolder.Parent := Self;
+  FImportFolder.Hint := _('Import folder...');
+  FImportFolder.ImageIndex := TImages.FOLDER_IN;
 end;
 
 procedure TSavedToolBar.EnableItems(Enable, HashesSelected: Boolean);
@@ -607,121 +699,7 @@ end;
 
 procedure TSavedToolBar.Setup;
 begin
-  FImportFolder := TToolButton.Create(Self);
-  FImportFolder.Parent := Self;
-  FImportFolder.Hint := _('Import folder...');
-  FImportFolder.ImageIndex := 81;
 
-  FImportFiles := TToolButton.Create(Self);
-  FImportFiles.Parent := Self;
-  FImportFiles.Hint := _('Import files...');
-  FImportFiles.ImageIndex := 36;
-
-  FSep3 := TToolButton.Create(Self);
-  FSep3.Parent := Self;
-  FSep3.Style := tbsSeparator;
-  FSep3.Width := 8;
-
-  FProperties := TToolButton.Create(Self);
-  FProperties.Parent := Self;
-  FProperties.Hint := _('Properties...');
-  FProperties.ImageIndex := 22;
-
-  FShowFile := TToolButton.Create(Self);
-  FShowFile.Parent := Self;
-  FShowFile.Hint := _('Show in explorer...');
-  FShowFile.ImageIndex := 28;
-
-  FSep2 := TToolButton.Create(Self);
-  FSep2.Parent := Self;
-  FSep2.Style := tbsSeparator;
-  FSep2.Width := 8;
-
-  FDelete := TToolButton.Create(Self);
-  FDelete.Parent := Self;
-  FDelete.Hint := 'Delete files';
-  FDelete.ImageIndex := 2;
-
-  FRecycle := TToolButton.Create(Self);
-  FRecycle.Parent := Self;
-  FRecycle.Hint := 'Recycle files';
-  FRecycle.ImageIndex := 24;
-
-  FRemove := TToolButton.Create(Self);
-  FRemove.Parent := Self;
-  FRemove.Hint := 'Remove from list';
-  FRemove.ImageIndex := 21;
-
-  FRename := TToolButton.Create(Self);
-  FRename.Parent := Self;
-  FRename.Hint := 'Rename';
-  FRename.ImageIndex := 74;
-
-  FCopy := TToolButton.Create(Self);
-  FCopy.Parent := Self;
-  FCopy.Hint := 'Copy';
-  FCopy.ImageIndex := 57;
-
-  FCut := TToolButton.Create(Self);
-  FCut.Parent := Self;
-  FCut.Hint := 'Cut';
-  FCut.ImageIndex := 87;
-
-  FSep2 := TToolButton.Create(Self);
-  FSep2.Parent := Self;
-  FSep2.Style := tbsSeparator;
-  FSep2.Width := 8;
-
-  FRemoveFromIgnorelist := TToolButton.Create(Self);
-  FRemoveFromIgnorelist.Parent := Self;
-  FRemoveFromIgnorelist.Hint := 'Remove from ignorelist';
-  FRemoveFromIgnorelist.ImageIndex := 91;
-
-  FAddToIgnoreList := TToolButton.Create(Self);
-  FAddToIgnoreList.Parent := Self;
-  FAddToIgnoreList.Hint := 'Add to ignorelist';
-  FAddToIgnoreList.ImageIndex := 65;
-
-  FRemoveFromWishlist := TToolButton.Create(Self);
-  FRemoveFromWishlist.Parent := Self;
-  FRemoveFromWishlist.Hint := 'Remove from wishlist';
-  FRemoveFromWishlist.ImageIndex := 88;
-
-  FAddToWishlist := TToolButton.Create(Self);
-  FAddToWishlist.Parent := Self;
-  FAddToWishlist.Hint := 'Add to wishlist';
-  FAddToWishlist.ImageIndex := 31;
-
-  FSep2 := TToolButton.Create(Self);
-  FSep2.Parent := Self;
-  FSep2.Style := tbsSeparator;
-  FSep2.Width := 8;
-
-  FFinalized := TToolButton.Create(Self);
-  FFinalized.Parent := Self;
-  FFinalized.Hint := 'Finalized';
-  FFinalized.ImageIndex := 58;
-  FFinalized.Style := tbsCheck;
-
-  FEditTags := TToolButton.Create(Self);
-  FEditTags.Parent := Self;
-  FEditTags.Hint := 'Edit tags and data...';
-  FEditTags.ImageIndex := 75;
-
-  FCutSong := TToolButton.Create(Self);
-  FCutSong.Parent := Self;
-  FCutSong.Hint := 'Cut song';
-  FCutSong.ImageIndex := 17;
-
-  FSep1 := TToolButton.Create(Self);
-  FSep1.Parent := Self;
-  FSep1.Style := tbsSeparator;
-  FSep1.Width := 8;
-
-  FRefresh := TToolButton.Create(Self);
-  FRefresh.Parent := Self;
-  FRefresh.Hint := 'Refresh';
-  FRefresh.ImageIndex := 23;
 end;
 
 { TSavedTab }
@@ -732,7 +710,7 @@ begin
   if DragDetectPlus(FCoverPanel.Handle) and (FSavedTree.Player.Playing or FSavedTree.Player.Paused) then
   begin
     FCoverDrag.Files.Clear;
-    FCoverDrag.Files.Add(FSavedTree.Player.Filename);
+   // FCoverDrag.Files.Add(FSavedTree.Player.Filename);
 
     FCoverDrag.Execute;
   end;
@@ -740,14 +718,14 @@ end;
 
 constructor TSavedTab.Create(AOwner: TComponent);
 var
-  Png: TPngImage;
+  Png: TImage;
 begin
   inherited Create(AOwner);
 
   MsgBus.AddSubscriber(MessageReceived);
 
   ShowCloseButton := False;
-  ImageIndex := 14;
+  ImageIndex := TImages.DRIVE;
 
   FPositionTimer := TTimer.Create(Self);
   FPositionTimer.Interval := 50;
@@ -762,14 +740,15 @@ begin
   FCoverDrag := TDropFileSource.Create(Self);
   FCoverDrag.DragTypes := [dtCopy, dtMove];
 
-  Png := TPngImage.Create;
+  {
+  Png := TImage.Create;
   try
     Png.LoadFromResourceName(HInstance, 'COVER_EMPTY');
     FNoCoverPNG := TBitmap.Create;
     FNoCoverPNG.Assign(Png);
   finally
     Png.Free;
-  end;
+  end;      }
 end;
 
 destructor TSavedTab.Destroy;
@@ -913,20 +892,20 @@ begin
   FTopLeftPanel.Parent := FTopPanel;
   FTopLeftPanel.Align := alLeft;
   FTopLeftPanel.Width := MulDiv(460, Screen.PixelsPerInch, 96);
-  FTopLeftPanel.Padding.Top := 1;
+ // FTopLeftPanel.Padding.Top := 1;
   FTopLeftPanel.BevelOuter := bvNone;
 
   FCoverPanel := TPanel.Create(Self);
   FCoverPanel.Parent := FTopPanel;
   FCoverPanel.Align := alLeft;
   FCoverPanel.BevelOuter := bvNone;
-  FCoverPanel.Padding.Bottom := 4;
-  FCoverPanel.Padding.Right := 8;
+//  FCoverPanel.Padding.Bottom := 4;
+//  FCoverPanel.Padding.Right := 8;
   FCoverPanel.Visible := True;
 
   FCoverBorderPanel := TPanel.Create(FCoverPanel);
   FCoverBorderPanel.Parent := FCoverPanel;
-  FCoverBorderPanel.BevelKind := bkNone;
+ // FCoverBorderPanel.BevelKind := bkNone;
   FCoverBorderPanel.BevelOuter := bvNone;
   FCoverBorderPanel.Align := alClient;
 
@@ -955,7 +934,7 @@ begin
   FTopRightTopPanel.Parent := FTopRightPanel;
   FTopRightTopPanel.Align := alTop;
   FTopRightTopPanel.ClientHeight := 24;
-  FTopRightTopPanel.Padding.Top := 1;
+//  FTopRightTopPanel.Padding.Top := 1;
   FTopRightTopPanel.BevelOuter := bvNone;
 
   // Panel für Zeitanzeigen und Playercontrols
@@ -972,7 +951,6 @@ begin
   // Im Resize() wird dann alNone gemacht, aber wir kennen die passende Breite...
   FPlayToolbar.Align := alLeft;
   FPlayToolbar.Images := modSharedData.imgImages;
-  FPlayToolbar.Setup;
   FPlayToolbar.Left := 0;
 
   FPosLabel := TLabel.Create(Self);
@@ -994,7 +972,6 @@ begin
   FToolBar.Parent := FTopLeftPanel;
   FToolBar.Align := alTop;
   FToolBar.AutoSize := True;
-  FToolbar.Indent := 0;
   FToolBar.Images := modSharedData.imgImages;
   FToolBar.Setup;
 
@@ -1012,8 +989,8 @@ begin
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
-  FVolume.Padding.Left := 10;
-  FVolume.Padding.Bottom := 1;
+//  FVolume.Padding.Left := 10;
+ // FVolume.Padding.Bottom := 1;
   FVolume.Left := High(Integer);
 
   FToolbar.Top := 0;
@@ -1239,7 +1216,7 @@ begin
           begin
             for i := Dlg.Files.Count - 1 downto 0 do
             begin
-              if FiletypeToFormat(Dlg.Files[i]) = atNone then
+              if FilenameToFormat(Dlg.Files[i]) = atNone then
                 Dlg.Files.Delete(i);
             end;
             if Dlg.Files.Count > 0 then
@@ -1497,9 +1474,7 @@ begin
       Break;
     end;
 
-  // Das muss so, sonst klappt das .Down := AllFinalized nicht, wenn sie
-  // vorher Disabled waren, vor dem Enable da oben...
-  FToolbar.FFinalized.Down := False;
+  FSavedTree.FPopupMenu.FItemFinalized.Checked := AllFinalized;
   FToolbar.FFinalized.Down := AllFinalized;
 
   FPlayToolbar.FPause.Enabled := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
@@ -1550,12 +1525,12 @@ begin
   begin
     FCoverImage.Picture := nil;
     //FCoverPanel.Hide;
-    FCoverBorderPanel.BevelKind := bkNone;
+  //  FCoverBorderPanel.BevelKind := bkNone;
   end else
     if Img <> nil then
     begin
       //FCoverPanel.Visible := True;
-      FCoverBorderPanel.BevelKind := bkFlat;
+   //   FCoverBorderPanel.BevelKind := bkFlat;
 
       FCoverImage.Picture.Assign(ResizeBitmap(Img as TBitmap, Min(Min(FCoverImage.Height, FCoverImage.Width), Min(Img.Height, Img.Width))))
     end else
@@ -1566,13 +1541,14 @@ begin
       end else
       begin
         //FCoverPanel.Hide;
-        FCoverBorderPanel.BevelKind := bkNone;
+   //     FCoverBorderPanel.BevelKind := bkNone;
       end;
     end;
 end;
 
 procedure TSavedTab.StopThreads;
 begin
+  // TODO:
   while FImportThread <> nil do
   begin
     FImportThread.Terminate;
@@ -1866,43 +1842,36 @@ begin
 
     if NodeData.Track = nil then
     begin
-      Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 67);
+      Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.FOLDER_MUSIC);
       Exit;
     end;
 
     if LowerCase(FPlayer.Filename) = LowerCase(NodeData.Track.Filename) then
     begin
       if FPlayer.Playing then
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 33)
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.PLAY_BLUE)
       else if FPlayer.Paused then
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 39)
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.PAUSE_BLUE)
       else
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC);
     end else
-      Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20);
+      Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC);
 
-    if NodeData.Track.IsStreamFile then
+    if NodeData.Track.IsAuto then
     begin
-      if NodeData.Track.WasCut then
-        Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 17);
-      if NodeData.Track.Finalized then
-        Images.Draw(PaintInfo.Canvas, L + 32, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 58);
-    end else
-    begin
-      if NodeData.Track.WasCut then
-        Images.Draw(PaintInfo.Canvas, L + 32, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 17);
+      if NodeData.Track.RecordBecauseArtist then
+        Images.Draw(PaintInfo.Canvas, L + 18, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.USER_GRAY_COOL)
+      else
+        Images.Draw(PaintInfo.Canvas, L + 18, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BRICKS);
 
-      if NodeData.Track.IsAuto then
-      begin
-        if NodeData.Track.RecordBecauseArtist then
-          Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 86)
-        else
-          Images.Draw(PaintInfo.Canvas, L + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 77);
-      end;
-
-      if NodeData.Track.Finalized then
-        Images.Draw(PaintInfo.Canvas, L + 48, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 58);
+      L += 18 * 2;
     end;
+
+    if NodeData.Track.WasCut then
+      Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.CUT);
+
+    if NodeData.Track.Finalized then
+      Images.Draw(PaintInfo.Canvas, L + 18, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TICK);
   end;
 end;
 
@@ -1948,11 +1917,12 @@ begin
     else
       TfrmNotification.Act(RemoveFileExt(ExtractFileName(FPlayer.Filename)), '');
 
+  {
   if (FPlayer.Tag <> nil) and (FPlayer.Tag.CoverImage <> nil) then
     FTab.ShowCover(FPlayer.Tag.CoverImage)
   else
     FTab.ShowCover(nil);
-
+    }
   FTab.UpdateButtons;
   Invalidate;
 end;
@@ -2464,54 +2434,53 @@ begin
     InvalidateNode(Node);
 end;
 
-procedure TSavedTree.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
+procedure TSavedTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String);
 var
   NodeData: PSavedNodeData;
 begin
   inherited;
 
-  pEventArgs.CellText := '';
+  Text := '';
 
-  NodeData := GetNodeData(pEventArgs.Node);
+  NodeData := GetNodeData(Node);
 
   if (NodeData.IsStreamParent) or (NodeData.IsFileParent) then
   begin
-    if pEventArgs.Column = 1 then
+    if Column = 1 then
     begin
       if NodeData.IsStreamParent then
-        pEventArgs.CellText := _(STREAMNODETEXT) + ' (' + IntToStr(pEventArgs.Node.ChildCount) + ')'
+        Text := _(STREAMNODETEXT) + ' (' + IntToStr(Node.ChildCount) + ')'
       else
-        pEventArgs.CellText := _(FILENODETEXT) + ' (' + IntToStr(pEventArgs.Node.ChildCount) + ')';
+        Text := _(FILENODETEXT) + ' (' + IntToStr(Node.ChildCount) + ')';
     end;
   end else
-    case pEventArgs.Column of
-      1: pEventArgs.CellText := ExtractFileName(NodeData.Track.Filename);
+    case Column of
+      1: Text := ExtractFileName(NodeData.Track.Filename);
       2:
-        pEventArgs.CellText := MakeSize(NodeData.Track.Filesize);
+        Text := MakeSize(NodeData.Track.Filesize);
       3:
-        pEventArgs.CellText := BuildTime(NodeData.Track.Length, False);
+        Text := BuildTime(NodeData.Track.Length, False);
       4:
         if NodeData.Track.Bitrate > 0 then
         begin
-          pEventArgs.CellText := IntToStr(NodeData.Track.Bitrate);
+          Text := IntToStr(NodeData.Track.Bitrate);
 
           if NodeData.Track.VBR then
-            pEventArgs.CellText := pEventArgs.CellText + ' ' + 'VBR';
+            Text := Text + ' ' + 'VBR';
         end;
       5:
-        pEventArgs.CellText := NodeData.Track.Streamname;
+        Text := NodeData.Track.Streamname;
       6:
         begin
           if Trunc(NodeData.Track.Time) = Trunc(Now) then
-            pEventArgs.CellText := TimeToStr(NodeData.Track.Time)
+            Text := TimeToStr(NodeData.Track.Time)
           else
-            pEventArgs.CellText := DateTimeToStr(NodeData.Track.Time);
+            Text := DateTimeToStr(NodeData.Track.Time);
         end;
   end;
 end;
 
-function TSavedTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
+function TSavedTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList;
 begin
   Result := inherited;
 
@@ -2520,7 +2489,7 @@ begin
     Index := 0;
 end;
 
-procedure TSavedTree.DoHeaderClick(const HitInfo: TVTHeaderHitInfo);
+procedure TSavedTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
 begin
   inherited;
   if HitInfo.Button = mbLeft then
@@ -2596,7 +2565,7 @@ begin
   NodeData := GetNodeData(Node);
   NewText := Text;
 
-  if FiletypeToFormat(LowerCase(ExtractFileExt(NewText))) = atNone then
+  if FilenameToFormat(NewText) = atNone then
     NewText := RemoveFileExt(NewText) + ExtractFileExt(NodeData.Track.Filename);
 
   if RenameFile(IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + ExtractFileName(NodeData.Track.Filename),
@@ -2624,7 +2593,7 @@ begin
   end;
 end;
 
-function TSavedTree.DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean;
+function TSavedTree.DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean;
 begin
   Result := inherited;
 
@@ -2639,7 +2608,7 @@ begin
   Canvas.FillRect(R);
 end;
 
-procedure TSavedTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
+procedure TSavedTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect);
 begin
   inherited;
 
@@ -2721,7 +2690,7 @@ begin
       end;
     FILE_ACTION_RENAMED_NEW_NAME:
       begin
-        if FiletypeToFormat(LowerCase(ExtractFileExt(NewName))) = atNone then
+        if FilenameToFormat(NewName) = atNone then
         begin
           RemoveTrack(Track);
           AppGlobals.Data.TrackList.RemoveTrack(Track);
@@ -3255,7 +3224,7 @@ begin
         if Terminated then
           Exit;
 
-        if FiletypeToFormat(FoundFiles[i]) <> atNone then
+        if FilenameToFormat(FoundFiles[i]) <> atNone then
         begin
           Add := True;
           for n := 0 to FKnownFiles.Count - 1 do
@@ -3277,13 +3246,14 @@ begin
         Exit;
 
       FCurrentFilename := ExtractFileName(FFoundAudioFiles[i]);
+      {
       if Assigned(FOnProgress) then
         Synchronize(
           procedure
           begin
             if Assigned(FOnProgress) then
               FOnProgress(Self);
-          end);
+          end);                           }
 
       Info.GetAudioInfo(FFoundAudioFiles[i]);
       if Info.Success then
@@ -3303,13 +3273,14 @@ begin
 
       FProgress := Trunc((i / FFoundAudioFiles.Count) * 100);
       FCurrentFilename := ExtractFileName(FFoundAudioFiles[i]);
+      {
       if Assigned(FOnProgress) then
         Synchronize(
           procedure
           begin
             if Assigned(FOnProgress) then
               FOnProgress(Self);
-          end);
+          end);                       }
     end;
   finally
     FoundFiles.Free;
@@ -3375,11 +3346,59 @@ end;
 { TPlayToolBar }
 
 constructor TPlayToolBar.Create(AOwner: TComponent);
+var
+  Sep: TToolButton;
 begin
   inherited;
 
   ShowHint := True;
-  Transparent := True;
+  EdgeBorders := [];
+
+  FPrev := TToolButton.Create(Self);
+  FPrev.Parent := Self;
+  FPrev.Hint := 'Previous';
+  FPrev.ImageIndex := TImages.PREVIOUS_BLUE;
+
+  FPlay := TToolButton.Create(Self);
+  FPlay.Parent := Self;
+  FPlay.Hint := 'Play';
+  FPlay.ImageIndex := TImages.PLAY_BLUE;
+
+  FPause := TToolButton.Create(Self);
+  FPause.Parent := Self;
+  FPause.Hint := 'Pause';
+  FPause.ImageIndex := TImages.PAUSE_BLUE;
+  FPause.Style := tbsCheck;
+
+  FStop := TToolButton.Create(Self);
+  FStop.Parent := Self;
+  FStop.Hint := 'Stop';
+  FStop.ImageIndex := TImages.STOP_BLUE;
+
+  FNext := TToolButton.Create(Self);
+  FNext.Parent := Self;
+  FNext.Hint := 'Next';
+  FNext.ImageIndex := TImages.NEXT_BLUE;
+
+  Sep := TToolButton.Create(Self);
+  Sep.Style := tbsSeparator;
+  Sep.Parent := Self;
+
+  FPlayLastSecs := TToolButton.Create(Self);
+  FPlayLastSecs.Parent := Self;
+  FPlayLastSecs.Hint := 'Play end';
+  FPlayLastSecs.ImageIndex := TImages.PLAY_END_BLUE;
+
+  Sep := TToolButton.Create(Self);
+  Sep.Style := tbsSeparator;
+  Sep.Parent := Self;
+
+  FShuffle := TToolButton.Create(Self);
+  FShuffle.Parent := Self;
+  FShuffle.Hint := 'Shuffle';
+  FShuffle.ImageIndex := TImages.ARROW_SWITCH_BLUE;
+  FShuffle.Down := AppGlobals.PlayerShuffle;
+  FShuffle.Style := tbsCheck;
 end;
 
 procedure TPlayToolBar.EnableItems(Enable, Playing, IsFirst, IsLast: Boolean);
@@ -3389,59 +3408,6 @@ begin
   FPause.Enabled := Playing and Bass.DeviceAvailable;
   FStop.Enabled := Playing and Bass.DeviceAvailable;
   FNext.Enabled := (not IsLast) and Playing;
-end;
-
-procedure TPlayToolBar.Setup;
-var
-  Sep: TToolButton;
-begin
-  FShuffle := TToolButton.Create(Self);
-  FShuffle.Parent := Self;
-  FShuffle.Hint := 'Shuffle';
-  FShuffle.ImageIndex := 96;
-  FShuffle.Down := AppGlobals.PlayerShuffle;
-  FShuffle.Style := tbsCheck;
-
-  Sep := TToolButton.Create(Self);
-  Sep.Style := tbsSeparator;
-  Sep.Parent := Self;
-  Sep.Width := 8;
-
-  FPlayLastSecs := TToolButton.Create(Self);
-  FPlayLastSecs.Parent := Self;
-  FPlayLastSecs.Hint := 'Play end';
-  FPlayLastSecs.ImageIndex := 83;
-
-  Sep := TToolButton.Create(Self);
-  Sep.Style := tbsSeparator;
-  Sep.Parent := Self;
-  Sep.Width := 8;
-
-  FNext := TToolButton.Create(Self);
-  FNext.Parent := Self;
-  FNext.Hint := 'Next';
-  FNext.ImageIndex := 78;
-
-  FStop := TToolButton.Create(Self);
-  FStop.Parent := Self;
-  FStop.Hint := 'Stop';
-  FStop.ImageIndex := 1;
-
-  FPause := TToolButton.Create(Self);
-  FPause.Parent := Self;
-  FPause.Hint := 'Pause';
-  FPause.ImageIndex := 39;
-  FPause.Style := tbsCheck;
-
-  FPlay := TToolButton.Create(Self);
-  FPlay.Parent := Self;
-  FPlay.Hint := 'Play';
-  FPlay.ImageIndex := 33;
-
-  FPrev := TToolButton.Create(Self);
-  FPrev.Parent := Self;
-  FPrev.Hint := 'Previous';
-  FPrev.ImageIndex := 79;
 end;
 
 end.

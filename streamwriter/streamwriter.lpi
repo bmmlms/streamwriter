@@ -99,7 +99,7 @@
         <PackageName Value="LCL"/>
       </Item5>
     </RequiredPackages>
-    <Units Count="113">
+    <Units Count="114">
       <Unit0>
         <Filename Value="streamwriter.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -633,6 +633,10 @@
         <Filename Value="Images.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit112>
+      <Unit113>
+        <Filename Value="audio\DynBASS.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit113>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

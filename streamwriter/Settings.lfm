@@ -1,0 +1,1772 @@
+inherited frmSettings: TfrmSettings
+  Left = 350
+  Height = 1025
+  Top = 283
+  Width = 1406
+  ClientHeight = 1025
+  ClientWidth = 1406
+  KeyPreview = True
+  OnActivate = FormActivate
+  OnCreate = FormCreate
+  OnResize = FormResize
+  OnShow = FormShow
+  Position = poOwnerFormCenter
+  inherited pnlHeader: TPanel
+    Width = 1406
+    ClientWidth = 1406
+    TabOrder = 15
+    inherited Shape1: TShape
+      Left = 0
+      Height = 33
+      Top = 0
+      Width = 1406
+    end
+    inherited lblTop: TLabel
+      Left = 0
+      Height = 33
+      Top = 0
+      Width = 1406
+    end
+  end
+  inherited pnlNav: TPanel
+    Top = 985
+    Width = 1406
+    ClientWidth = 1406
+    TabOrder = 16
+    inherited Bevel2: TBevel
+      Left = 0
+      Top = 0
+      Width = 1406
+    end
+    inherited btnOK: TBitBtn
+      Left = 1309
+      Height = 35
+      Top = 5
+    end
+  end
+  inherited pnlLeft: TPanel
+    Height = 952
+    TabOrder = 17
+  end
+  inherited pnlGeneral: TPanel
+    TabOrder = 18
+    inherited lstLanguages: TComboBoxEx
+      ItemHeight = 16
+    end
+    inherited chkAutoUpdateCheck: TCheckBox
+      Height = 19
+      Width = 196
+    end
+    inherited txtPort: TLabeledEdit
+      EditLabel.Width = 121
+    end
+    inherited txtHost: TLabeledEdit
+      EditLabel.Width = 121
+    end
+    inherited chkProxy: TCheckBox
+      Height = 19
+    end
+    inherited chkCheckCertificate: TCheckBox
+      Height = 19
+    end
+  end
+  object pnlStreams: TPanel[4]
+    Left = 304
+    Height = 325
+    Top = 4
+    Width = 293
+    ClientHeight = 325
+    ClientWidth = 293
+    TabOrder = 0
+    Visible = False
+    object lblDefaultFilter: TLabel
+      Left = 4
+      Height = 13
+      Top = 288
+      Width = 25
+      Anchors = [akLeft, akRight, akBottom]
+      Caption = 'Lists:'
+      ParentColor = False
+    end
+    object Label4: TLabel
+      Left = 88
+      Height = 13
+      Top = 124
+      Width = 39
+      Caption = 'seconds'
+      ParentColor = False
+    end
+    object chkDeleteStreams: TCheckBox
+      Left = 20
+      Height = 19
+      Top = 60
+      Width = 265
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Delete stream files when recording stops'
+      OnClick = chkDeleteStreamsClick
+      TabOrder = 3
+    end
+    object chkAddSavedToIgnore: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 148
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Add saved titles to global ignorelist'
+      OnClick = chkAddSavedToIgnoreClick
+      TabOrder = 4
+    end
+    object lstDefaultFilter: TComboBox
+      Left = 4
+      Height = 21
+      Top = 304
+      Width = 213
+      Anchors = [akLeft, akBottom]
+      ItemHeight = 13
+      Items.Strings = (
+        'Save every song'
+        'Use wishlist'
+        'Use global ignorelist'
+        'Use stream ignorelist'
+        'Use both ignorelists'
+        'Use all lists'
+      )
+      OnChange = lstDefaultFilterChange
+      Style = csDropDownList
+      TabOrder = 10
+    end
+    object chkSeparateTracks: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 20
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Save separated tracks'
+      OnClick = chkSeparateTracksClick
+      TabOrder = 1
+    end
+    object chkSaveStreamsToDisk: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 0
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Save stream files to hard disk drive'
+      OnClick = chkSaveStreamsToDiskClick
+      TabOrder = 0
+    end
+    object chkOnlySaveFull: TCheckBox
+      Left = 20
+      Height = 19
+      Top = 40
+      Width = 265
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Only save whole songs'
+      OnClick = chkOnlySaveFullClick
+      TabOrder = 2
+    end
+    object chkOverwriteSmaller: TCheckBox
+      Left = 20
+      Height = 19
+      Top = 228
+      Width = 265
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Overwrite existing file if newer file is larger'
+      OnClick = chkOverwriteSmallerClick
+      TabOrder = 8
+    end
+    object chkDiscardSmaller: TCheckBox
+      Left = 20
+      Height = 19
+      Top = 248
+      Width = 265
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Discard new file if existing one is larger'
+      OnClick = chkDiscardSmallerClick
+      TabOrder = 9
+    end
+    object chkAddSavedToStreamIgnore: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 168
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Add saved titles to stream ignorelist'
+      OnClick = chkAddSavedToStreamIgnoreClick
+      TabOrder = 5
+    end
+    object chkRemoveSavedFromWishlist: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 188
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Remove saved titles from wishlist'
+      OnClick = chkRemoveSavedFromWishlistClick
+      TabOrder = 6
+    end
+    object chkDiscardAlways: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 208
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Discard new file if it already exists'
+      OnClick = chkDiscardAlwaysClick
+      TabOrder = 7
+    end
+    object txtShortLengthSeconds: TLabeledEdit
+      Left = 36
+      Height = 21
+      Top = 120
+      Width = 49
+      EditLabel.Height = 13
+      EditLabel.Width = 49
+      EditLabel.Caption = 'Ads to skip are shorter than:'
+      EditLabel.ParentColor = False
+      MaxLength = 3
+      TabOrder = 11
+      OnChange = txtShortLengthSecondsChange
+    end
+    object chkSkipShort: TCheckBox
+      Left = 20
+      Height = 19
+      Top = 80
+      Width = 285
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Skip ads (short songs)'
+      OnClick = chkSkipShortClick
+      TabOrder = 12
+    end
+  end
+  object pnlMain: TPanel[5]
+    Left = 4
+    Height = 385
+    Top = 4
+    Width = 293
+    ClientHeight = 385
+    ClientWidth = 293
+    TabOrder = 1
+    Visible = False
+    object Label7: TLabel
+      Left = 56
+      Height = 13
+      Top = 252
+      Width = 13
+      Caption = 'GB'
+      ParentColor = False
+    end
+    object Label3: TLabel
+      Left = 4
+      Height = 13
+      Top = 304
+      Width = 191
+      Anchors = [akLeft, akBottom]
+      Caption = 'Default action on doubleclick on stream:'
+      ParentColor = False
+    end
+    object Label18: TLabel
+      Left = 4
+      Height = 13
+      Top = 348
+      Width = 193
+      Anchors = [akLeft, akBottom]
+      Caption = 'Default action on doubleclick in browser:'
+      ParentColor = False
+    end
+    object chkTray: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 20
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Move to notification area...'
+      OnClick = chkTrayClick
+      TabOrder = 1
+    end
+    object txtMinDiskSpace: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 248
+      Width = 49
+      EditLabel.Height = 13
+      EditLabel.Width = 49
+      EditLabel.Caption = 'Stop recording when free space gets below:'
+      EditLabel.ParentColor = False
+      MaxLength = 3
+      TabOrder = 11
+    end
+    object lstDefaultAction: TComboBox
+      Left = 4
+      Height = 21
+      Top = 320
+      Width = 213
+      Anchors = [akLeft, akBottom]
+      ItemHeight = 13
+      Items.Strings = (
+        'Start/stop recording'
+        'Listen to stream'
+        'Listen to stream (external player)'
+      )
+      Style = csDropDownList
+      TabOrder = 12
+    end
+    object optClose: TRadioButton
+      Left = 20
+      Height = 19
+      Top = 40
+      Width = 265
+      Anchors = [akTop, akLeft, akRight]
+      Caption = '...on close'
+      TabOrder = 2
+    end
+    object optMinimize: TRadioButton
+      Left = 20
+      Height = 19
+      Top = 60
+      Width = 265
+      Anchors = [akTop, akLeft, akRight]
+      Caption = '...on minimize'
+      TabOrder = 3
+    end
+    object lstDefaultActionBrowser: TComboBox
+      Left = 4
+      Height = 21
+      Top = 364
+      Width = 213
+      Anchors = [akLeft, akBottom]
+      ItemHeight = 13
+      Items.Strings = (
+        'Start recording'
+        'Listen to stream'
+        'Listen to stream (external player)'
+        'Only add to list'
+      )
+      Style = csDropDownList
+      TabOrder = 13
+    end
+    object chkSnapMain: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 84
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Snap main window to screen edges'
+      TabOrder = 4
+    end
+    object chkRememberRecordings: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 104
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Remember streams that were recording on exit'
+      TabOrder = 5
+    end
+    object chkDisplayPlayNotifications: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 164
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Display notifications on track change when playing'
+      TabOrder = 8
+    end
+    object chkShowSplashScreen: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 184
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Show splash screen on startup'
+      TabOrder = 9
+    end
+    object chkDisplayPlayedSong: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 144
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Display played song in titlebar'
+      TabOrder = 7
+    end
+    object chkCoverPanelAlwaysVisible: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 204
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Always show cover in "Saved songs"'
+      TabOrder = 10
+    end
+    object chkAutostart: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 0
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Start streamWriter on windows logon'
+      TabOrder = 0
+    end
+    object chkRememberPlaying: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 124
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Remember stream that was playing on exit'
+      TabOrder = 6
+    end
+  end
+  object pnlAdvanced: TPanel[6]
+    Left = 903
+    Height = 207
+    Top = 271
+    Width = 293
+    ClientHeight = 207
+    ClientWidth = 293
+    TabOrder = 2
+    Visible = False
+    object Label1: TLabel
+      Left = 56
+      Height = 13
+      Top = 64
+      Width = 39
+      Caption = 'seconds'
+      ParentColor = False
+    end
+    object lblSoundDevice: TLabel
+      Left = 4
+      Height = 13
+      Top = 88
+      Width = 68
+      Caption = 'Sound device:'
+      ParentColor = False
+    end
+    object btnBrowseLogFile: TSpeedButton
+      Left = 264
+      Height = 21
+      Hint = 'Browse...'
+      Top = 148
+      Width = 25
+      Anchors = [akTop, akRight]
+      Flat = True
+      Images = modSharedData.imgImages
+      ImageIndex = 39
+      OnClick = btnBrowseLogFileClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object txtMaxRetries: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 16
+      Width = 49
+      EditLabel.Height = 13
+      EditLabel.Width = 49
+      EditLabel.Caption = 'Max. connect retries on error (zero is infinite):'
+      EditLabel.ParentColor = False
+      MaxLength = 3
+      TabOrder = 0
+      OnChange = txtMaxRetriesChange
+    end
+    object txtRetryDelay: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 60
+      Width = 49
+      EditLabel.Height = 13
+      EditLabel.Width = 49
+      EditLabel.Caption = 'Time between retries:'
+      EditLabel.ParentColor = False
+      MaxLength = 3
+      TabOrder = 1
+      OnChange = txtRetryDelayChange
+    end
+    object lstSoundDevice: TComboBox
+      Left = 4
+      Height = 21
+      Top = 104
+      Width = 285
+      ItemHeight = 13
+      Style = csDropDownList
+      TabOrder = 2
+    end
+    object txtLogFile: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 148
+      Width = 257
+      Anchors = [akTop, akLeft, akRight]
+      AutoSize = False
+      EditLabel.Height = 13
+      EditLabel.Width = 257
+      EditLabel.Caption = 'Logfile:'
+      EditLabel.ParentColor = False
+      TabOrder = 3
+    end
+  end
+  object pnlPostProcess: TPanel[7]
+    Left = 304
+    Height = 349
+    Top = 336
+    Width = 294
+    ClientHeight = 349
+    ClientWidth = 294
+    TabOrder = 3
+    Visible = False
+    object lblAppParams: TLabel
+      Left = 4
+      Height = 53
+      Top = 292
+      Width = 281
+      Anchors = [akLeft, akRight, akBottom]
+      AutoSize = False
+      Caption = '-'
+      ParentColor = False
+      WordWrap = True
+    end
+    object btnBrowseApp: TSpeedButton
+      Left = 264
+      Height = 21
+      Hint = 'Browse...'
+      Top = 220
+      Width = 25
+      Anchors = [akRight, akBottom]
+      Enabled = False
+      Flat = True
+      Images = modSharedData.imgImages
+      ImageIndex = 37
+      OnClick = btnBrowseAppClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object btnHelpPostProcess: TSpeedButton
+      Left = 264
+      Height = 25
+      Hint = 'Info'
+      Top = 116
+      Width = 25
+      Anchors = [akRight, akBottom]
+      Images = modSharedData.imgImages
+      ImageIndex = 54
+      OnClick = btnHelpClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object btnMoveDown: TSpeedButton
+      Left = 264
+      Height = 25
+      Hint = 'Move down'
+      Top = 80
+      Width = 25
+      Anchors = [akTop, akRight]
+      Images = modSharedData.imgImages
+      ImageIndex = 12
+      OnClick = btnMoveClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object btnMoveUp: TSpeedButton
+      Left = 264
+      Height = 25
+      Hint = 'Move up'
+      Top = 52
+      Width = 25
+      Anchors = [akTop, akRight]
+      Images = modSharedData.imgImages
+      ImageIndex = 13
+      OnClick = btnMoveClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object lblOutputFormat: TLabel
+      Left = 4
+      Height = 13
+      Top = 0
+      Width = 172
+      Caption = 'Format to convert recorded files to:'
+      ParentColor = False
+    end
+    object btnConfigureEncoder: TSpeedButton
+      Left = 264
+      Height = 25
+      Hint = 'Configure encoder...'
+      Top = 16
+      Width = 25
+      Anchors = [akTop, akRight]
+      Images = modSharedData.imgImages
+      ImageIndex = 15
+      OnClick = btnConfigureEncoderClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object lstPostProcess: TListView
+      Left = 4
+      Height = 97
+      Top = 44
+      Width = 257
+      Align = alCustom
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      Checkboxes = True
+      Columns = <      
+        item
+          Width = 200
+        end>
+      ReadOnly = True
+      RowSelect = True
+      ShowColumnHeaders = False
+      SmallImages = modSharedData.imgImages
+      TabOrder = 1
+      ViewStyle = vsReport
+      OnItemChecked = lstPostProcessItemChecked
+      OnResize = lstPostProcessResize
+      OnSelectItem = lstPostProcessSelectItem
+    end
+    object btnAdd: TButton
+      Left = 96
+      Height = 27
+      Top = 148
+      Width = 93
+      Anchors = [akRight, akBottom]
+      Caption = '&Add...'
+      OnClick = btnAddClick
+      TabOrder = 3
+    end
+    object btnRemove: TButton
+      Left = 196
+      Height = 27
+      Top = 148
+      Width = 93
+      Anchors = [akRight, akBottom]
+      Caption = '&Remove'
+      Enabled = False
+      OnClick = btnRemoveClick
+      TabOrder = 4
+    end
+    object txtApp: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 220
+      Width = 257
+      Anchors = [akLeft, akRight, akBottom]
+      AutoSize = False
+      Color = 15790320
+      EditLabel.Height = 13
+      EditLabel.Width = 257
+      EditLabel.Caption = 'Path to application:'
+      EditLabel.ParentColor = False
+      Enabled = False
+      ReadOnly = True
+      TabOrder = 6
+    end
+    object txtAppParams: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 264
+      Width = 285
+      Anchors = [akLeft, akRight, akBottom]
+      EditLabel.Height = 13
+      EditLabel.Width = 285
+      EditLabel.Caption = 'Parameters:'
+      EditLabel.ParentColor = False
+      Enabled = False
+      TabOrder = 7
+      OnChange = txtAppParamsChange
+    end
+    object chkOnlyIfCut: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 182
+      Width = 285
+      Anchors = [akLeft, akRight, akBottom]
+      Caption = 'Use only if file was cut successfully'
+      OnClick = chkOnlyIfCutClick
+      TabOrder = 5
+    end
+    object btnConfigure: TButton
+      Left = 4
+      Height = 27
+      Top = 148
+      Width = 93
+      Anchors = [akLeft, akBottom]
+      Caption = '&Configure...'
+      OnClick = btnConfigureClick
+      TabOrder = 2
+    end
+    object lstOutputFormat: TComboBox
+      Left = 4
+      Height = 21
+      Top = 16
+      Width = 257
+      Anchors = [akTop, akLeft, akRight]
+      ItemHeight = 13
+      Items.Strings = (
+        'Do not change format'
+        'MP3'
+        'AAC'
+        'OGG'
+      )
+      OnSelect = lstOutputFormatSelect
+      Style = csDropDownList
+      TabOrder = 0
+    end
+  end
+  object pnlCut: TPanel[8]
+    Left = 604
+    Height = 297
+    Top = 4
+    Width = 293
+    ClientHeight = 297
+    ClientWidth = 293
+    TabOrder = 4
+    Visible = False
+    object Label5: TLabel
+      Left = 56
+      Height = 13
+      Top = 168
+      Width = 55
+      Caption = 'milliseconds'
+      ParentColor = False
+    end
+    object Label10: TLabel
+      Left = 36
+      Height = 13
+      Top = 76
+      Width = 192
+      Caption = 'Silence is defined by volume lower than:'
+      ParentColor = False
+    end
+    object Label12: TLabel
+      Left = 36
+      Height = 13
+      Top = 120
+      Width = 31
+      Caption = 'lasting'
+      ParentColor = False
+    end
+    object Label13: TLabel
+      Left = 160
+      Height = 13
+      Top = 120
+      Width = 59
+      Caption = 'ms (min. 20)'
+      ParentColor = False
+    end
+    object Label14: TLabel
+      Left = 120
+      Height = 13
+      Top = 96
+      Width = 36
+      Caption = '(1-100)'
+      ParentColor = False
+    end
+    object lblPanelCut: TLabel
+      Left = 208
+      Height = 13
+      Top = 168
+      Width = 53
+      Alignment = taCenter
+      Caption = 'lblPanelCut'
+      ParentColor = False
+    end
+    object Label6: TLabel
+      Left = 20
+      Height = 13
+      Top = 28
+      Width = 61
+      Caption = 'in a range of'
+      ParentColor = False
+    end
+    object Label15: TLabel
+      Left = 164
+      Height = 13
+      Top = 28
+      Width = 39
+      Caption = 'seconds'
+      ParentColor = False
+    end
+    object txtSongBuffer: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 164
+      Width = 49
+      EditLabel.Height = 13
+      EditLabel.Width = 49
+      EditLabel.Caption = 'If no silence was found, append buffer to start/end:'
+      EditLabel.ParentColor = False
+      MaxLength = 5
+      TabOrder = 5
+      OnChange = txtSongBufferChange
+    end
+    object chkSearchSilence: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 0
+      Width = 285
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Search for silence before saving tracks'
+      OnClick = chkSearchSilenceClick
+      TabOrder = 0
+    end
+    object txtSilenceLevel: TEdit
+      Left = 36
+      Height = 21
+      Top = 92
+      Width = 81
+      MaxLength = 3
+      OnChange = txtSilenceLevelChange
+      TabOrder = 3
+    end
+    object txtSilenceLength: TEdit
+      Left = 76
+      Height = 21
+      Top = 116
+      Width = 81
+      MaxLength = 4
+      OnChange = txtSilenceLengthChange
+      TabOrder = 4
+    end
+    object txtSilenceBufferSeconds: TEdit
+      Left = 92
+      Height = 21
+      Top = 24
+      Width = 69
+      MaxLength = 2
+      OnChange = txtSilenceBufferSecondsChange
+      TabOrder = 1
+    end
+    object chkAdjustTrackOffset: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 196
+      Width = 281
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Adjust offset of detected track changes'
+      OnClick = chkAdjustTrackOffsetClick
+      TabOrder = 6
+    end
+    object txtAdjustTrackOffset: TLabeledEdit
+      Left = 20
+      Height = 21
+      Top = 220
+      Width = 61
+      EditLabel.Height = 13
+      EditLabel.Width = 55
+      EditLabel.Caption = 'milliseconds'
+      EditLabel.ParentColor = False
+      Enabled = False
+      LabelPosition = lpRight
+      MaxLength = 5
+      TabOrder = 7
+      OnChange = txtAdjustTrackOffsetChange
+    end
+    object optAdjustBackward: TRadioButton
+      Left = 20
+      Height = 19
+      Top = 244
+      Width = 265
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Before detected change'
+      Checked = True
+      Enabled = False
+      OnClick = optAdjustClick
+      TabOrder = 8
+      TabStop = True
+    end
+    object optAdjustForward: TRadioButton
+      Left = 20
+      Height = 19
+      Top = 264
+      Width = 265
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'After detected change'
+      Enabled = False
+      OnClick = optAdjustClick
+      TabOrder = 9
+    end
+    object chkManualSilenceLevel: TCheckBox
+      Left = 20
+      Height = 19
+      Top = 48
+      Width = 265
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Use manual silence detection settings:'
+      OnClick = chkManualSilenceLevelClick
+      TabOrder = 2
+    end
+  end
+  object pnlHotkeys: TPanel[9]
+    Left = 904
+    Height = 77
+    Top = 484
+    Width = 293
+    ClientHeight = 77
+    ClientWidth = 293
+    TabOrder = 5
+    Visible = False
+    object Label9: TLabel
+      Left = 4
+      Height = 13
+      Top = 40
+      Width = 38
+      Anchors = [akLeft, akBottom]
+      Caption = 'Hotkey:'
+      ParentColor = False
+    end
+    object lstHotkeys: TListView
+      Left = 4
+      Height = 33
+      Top = 0
+      Width = 285
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      Columns = <      
+        item
+          Caption = 'Action'
+        end      
+        item
+          Caption = 'Hotkey'
+        end>
+      RowSelect = True
+      TabOrder = 0
+      ViewStyle = vsReport
+      OnChange = lstHotkeysChange
+      OnResize = lstHotkeysResize
+    end
+  end
+  object pnlAutoRecord: TPanel[10]
+    Left = 904
+    Height = 261
+    Top = 4
+    Width = 293
+    ClientHeight = 261
+    ClientWidth = 293
+    TabOrder = 6
+    Visible = False
+    object Label16: TLabel
+      Left = 20
+      Height = 13
+      Top = 88
+      Width = 79
+      Caption = 'Minimum quality:'
+      ParentColor = False
+    end
+    object Label17: TLabel
+      Left = 20
+      Height = 13
+      Top = 136
+      Width = 38
+      Caption = 'Format:'
+      ParentColor = False
+    end
+    object chkAutoTuneIn: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 0
+      Width = 284
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Tune into stations when a wishlist''s song is playing'
+      OnClick = chkAutoTuneInClick
+      TabOrder = 0
+    end
+    object lstMinQuality: TComboBox
+      Left = 20
+      Height = 21
+      Top = 104
+      Width = 129
+      ItemHeight = 13
+      Items.Strings = (
+        'High'
+        'Medium'
+        'Low'
+      )
+      Style = csDropDownList
+      TabOrder = 4
+    end
+    object lstFormat: TComboBox
+      Left = 20
+      Height = 21
+      Top = 152
+      Width = 129
+      ItemHeight = 13
+      Items.Strings = (
+        'MP3/AAC'
+        'MP3'
+        'AAC'
+      )
+      Style = csDropDownList
+      TabOrder = 5
+    end
+    object chkAutoTuneInConsiderIgnore: TCheckBox
+      Left = 20
+      Height = 19
+      Top = 20
+      Width = 268
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Do not tune in if song is on global ignorelist'
+      OnClick = chkAutoTuneInClick
+      TabOrder = 1
+    end
+    object chkAutoTuneInAddToIgnore: TCheckBox
+      Left = 20
+      Height = 19
+      Top = 40
+      Width = 269
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Add saved titles to global ignorelist'
+      TabOrder = 2
+    end
+    object chkAutoRemoveSavedFromWishlist: TCheckBox
+      Left = 20
+      Height = 19
+      Top = 60
+      Width = 269
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Remove saved titles from wishlist'
+      TabOrder = 3
+    end
+  end
+  object pnlFilenames: TPanel[11]
+    Left = 304
+    Height = 333
+    Top = 692
+    Width = 293
+    ClientHeight = 333
+    ClientWidth = 293
+    TabOrder = 7
+    Visible = False
+    object lblFilePattern: TLabel
+      Left = 4
+      Height = 49
+      Top = 280
+      Width = 284
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      AutoSize = False
+      Caption = '-'
+      ParentColor = False
+      WordWrap = True
+    end
+    object btnResetFilePattern: TSpeedButton
+      Left = 264
+      Height = 21
+      Hint = 'Reset pattern to default'
+      Top = 72
+      Width = 25
+      Anchors = [akTop, akRight]
+      Flat = True
+      Images = modSharedData.imgImages
+      ImageIndex = 2
+      OnClick = btnResetFilePatternClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object btnResetIncompleteFilePattern: TSpeedButton
+      Left = 264
+      Height = 21
+      Hint = 'Reset pattern to default'
+      Top = 116
+      Width = 25
+      Anchors = [akTop, akRight]
+      Flat = True
+      Images = modSharedData.imgImages
+      ImageIndex = 2
+      OnClick = btnResetFilePatternClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object btnResetAutomaticFilePattern: TSpeedButton
+      Left = 264
+      Height = 21
+      Hint = 'Reset pattern to default'
+      Top = 160
+      Width = 25
+      Anchors = [akTop, akRight]
+      Flat = True
+      Images = modSharedData.imgImages
+      ImageIndex = 2
+      OnClick = btnResetFilePatternClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object btnResetStreamFilePattern: TSpeedButton
+      Left = 264
+      Height = 21
+      Hint = 'Reset pattern to default'
+      Top = 204
+      Width = 25
+      Anchors = [akTop, akRight]
+      Flat = True
+      Images = modSharedData.imgImages
+      ImageIndex = 2
+      OnClick = btnResetFilePatternClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object btnBrowse: TSpeedButton
+      Left = 264
+      Height = 21
+      Hint = 'Browse...'
+      Top = 16
+      Width = 25
+      Anchors = [akTop, akRight]
+      Flat = True
+      Images = modSharedData.imgImages
+      ImageIndex = 39
+      OnClick = btnBrowseClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object Bevel1: TBevel
+      Left = 4
+      Height = 9
+      Top = 48
+      Width = 285
+      Anchors = [akTop, akLeft, akRight]
+      Shape = bsTopLine
+    end
+    object txtFilePattern: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 72
+      Width = 257
+      Anchors = [akTop, akLeft, akRight]
+      EditLabel.Height = 13
+      EditLabel.Width = 257
+      EditLabel.Caption = 'Pattern for filenames of completely recorded tracks:'
+      EditLabel.ParentColor = False
+      TabOrder = 1
+      OnChange = txtFilePatternChange
+      OnEnter = txtFilePatternEnter
+    end
+    object txtPreview: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 248
+      Width = 256
+      Anchors = [akTop, akLeft, akRight]
+      Color = 15790320
+      EditLabel.Height = 13
+      EditLabel.Width = 256
+      EditLabel.Caption = 'Preview for selected pattern:'
+      EditLabel.ParentColor = False
+      ReadOnly = True
+      TabOrder = 5
+    end
+    object txtIncompleteFilePattern: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 116
+      Width = 257
+      Anchors = [akTop, akLeft, akRight]
+      EditLabel.Height = 13
+      EditLabel.Width = 257
+      EditLabel.Caption = 'Pattern for filenames of incompletely recorded tracks:'
+      EditLabel.ParentColor = False
+      TabOrder = 2
+      OnChange = txtFilePatternChange
+      OnEnter = txtFilePatternEnter
+    end
+    object txtAutomaticFilePattern: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 160
+      Width = 257
+      Anchors = [akTop, akLeft, akRight]
+      EditLabel.Height = 13
+      EditLabel.Width = 257
+      EditLabel.Caption = 'Pattern for filenames of automatically recorded tracks:'
+      EditLabel.ParentColor = False
+      TabOrder = 3
+      OnChange = txtFilePatternChange
+      OnEnter = txtFilePatternEnter
+    end
+    object txtStreamFilePattern: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 204
+      Width = 257
+      Anchors = [akTop, akLeft, akRight]
+      EditLabel.Height = 13
+      EditLabel.Width = 257
+      EditLabel.Caption = 'Pattern for filenames of stream files:'
+      EditLabel.ParentColor = False
+      TabOrder = 4
+      OnChange = txtStreamFilePatternChange
+      OnClick = txtStreamFilePatternClick
+      OnEnter = txtFilePatternEnter
+    end
+    object txtDir: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 16
+      Width = 257
+      Anchors = [akTop, akLeft, akRight]
+      AutoSize = False
+      EditLabel.Height = 13
+      EditLabel.Width = 257
+      EditLabel.Caption = 'Folder for saved songs:'
+      EditLabel.ParentColor = False
+      TabOrder = 0
+    end
+  end
+  object pnlCommunityBlacklist: TPanel[12]
+    Left = 4
+    Height = 69
+    Top = 544
+    Width = 293
+    ClientHeight = 69
+    ClientWidth = 293
+    TabOrder = 8
+    Visible = False
+    object Label19: TLabel
+      Left = 4
+      Height = 13
+      Top = 0
+      Width = 266
+      Caption = 'Do not automatically record from the following streams:'
+      ParentColor = False
+    end
+    object pnlBlacklist: TPanel
+      Left = 4
+      Height = 17
+      Top = 16
+      Width = 285
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BevelOuter = bvNone
+      TabOrder = 0
+    end
+    object btnBlacklistRemove: TButton
+      Left = 196
+      Height = 27
+      Top = 42
+      Width = 93
+      Anchors = [akRight, akBottom]
+      Caption = '&Remove'
+      Enabled = False
+      OnClick = btnBlacklistRemoveClick
+      TabOrder = 1
+    end
+  end
+  object pnlStreamsAdvanced: TPanel[13]
+    Left = 604
+    Height = 369
+    Top = 308
+    Width = 293
+    ClientHeight = 369
+    ClientWidth = 293
+    TabOrder = 9
+    Visible = False
+    object btnResetTitlePattern: TSpeedButton
+      Left = 264
+      Height = 21
+      Hint = 'Reset regular expression to default'
+      Top = 120
+      Width = 25
+      Anchors = [akTop, akRight]
+      Flat = True
+      Images = modSharedData.imgImages
+      ImageIndex = 2
+      OnClick = btnResetTitlePatternClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object lblIgnoreTitles: TLabel
+      Left = 4
+      Height = 26
+      Top = 184
+      Width = 271
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Ignore the following stream title changes (i.e. announcements like ''Next playing: ...'') to disable saving:'
+      ParentColor = False
+      WordWrap = True
+    end
+    object Label21: TLabel
+      Left = 4
+      Height = 26
+      Top = 0
+      Width = 255
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Use the following regular expressions for this stream (groups: a = artist, t = title, l = album):'
+      ParentColor = False
+      WordWrap = True
+    end
+    object txtRegEx: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 120
+      Width = 257
+      Anchors = [akTop, akLeft, akRight]
+      EditLabel.Height = 13
+      EditLabel.Width = 257
+      EditLabel.Caption = 'Regular expression to add:'
+      EditLabel.ParentColor = False
+      EditLabel.Layout = tlBottom
+      MaxLength = 255
+      TabOrder = 1
+      OnChange = txtRegExChange
+    end
+    object lstIgnoreTitles: TListView
+      Left = 4
+      Height = 77
+      Top = 212
+      Width = 285
+      Align = alCustom
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      Columns = <      
+        item
+        end>
+      RowSelect = True
+      ShowColumnHeaders = False
+      SmallImages = modSharedData.imgImages
+      TabOrder = 4
+      ViewStyle = vsReport
+      OnChange = lstIgnoreTitlesChange
+      OnEdited = lstIgnoreTitlesEdited
+      OnResize = lstIgnoreTitlesResize
+    end
+    object btnRemoveIgnoreTitlePattern: TButton
+      Left = 196
+      Height = 27
+      Top = 340
+      Width = 93
+      Anchors = [akRight, akBottom]
+      Caption = 'R&emove'
+      Enabled = False
+      OnClick = btnRemoveIgnoreTitlePatternClick
+      TabOrder = 7
+    end
+    object btnAddIgnoreTitlePattern: TButton
+      Left = 100
+      Height = 27
+      Top = 340
+      Width = 93
+      Anchors = [akRight, akBottom]
+      Caption = 'A&dd'
+      Enabled = False
+      OnClick = btnAddIgnoreTitlePatternClick
+      TabOrder = 6
+    end
+    object txtIgnoreTitlePattern: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 312
+      Width = 285
+      Anchors = [akLeft, akRight, akBottom]
+      EditLabel.Height = 13
+      EditLabel.Width = 285
+      EditLabel.Caption = 'Pattern to add (use ''*'' as wildcard):'
+      EditLabel.ParentColor = False
+      TabOrder = 5
+      OnChange = txtIgnoreTitlePatternChange
+    end
+    object lstRegExes: TListView
+      Left = 4
+      Height = 69
+      Top = 28
+      Width = 285
+      Align = alCustom
+      Anchors = [akTop, akLeft, akRight]
+      Columns = <      
+        item
+        end>
+      RowSelect = True
+      ShowColumnHeaders = False
+      SmallImages = modSharedData.imgImages
+      TabOrder = 0
+      ViewStyle = vsReport
+      OnChange = lstRegExesChange
+      OnEdited = lstRegExesEdited
+      OnResize = lstRegExesResize
+    end
+    object btnAddRegEx: TButton
+      Left = 100
+      Height = 27
+      Top = 148
+      Width = 93
+      Anchors = [akTop, akRight]
+      Caption = '&Add'
+      Enabled = False
+      OnClick = btnAddRegExClick
+      TabOrder = 2
+    end
+    object btnRemoveRegEx: TButton
+      Left = 196
+      Height = 27
+      Top = 148
+      Width = 93
+      Anchors = [akTop, akRight]
+      Caption = '&Remove'
+      Enabled = False
+      OnClick = btnRemoveRegExClick
+      TabOrder = 3
+    end
+  end
+  object pnlBandwidth: TPanel[14]
+    Left = 4
+    Height = 157
+    Top = 620
+    Width = 293
+    ClientHeight = 157
+    ClientWidth = 293
+    TabOrder = 10
+    Visible = False
+    object Label11: TLabel
+      Left = 76
+      Height = 13
+      Top = 44
+      Width = 21
+      Caption = 'KB/s'
+      ParentColor = False
+    end
+    object Label22: TLabel
+      Left = 4
+      Height = 81
+      Top = 72
+      Width = 285
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      AutoSize = False
+      Caption = 'Bandwidth is also used for monitoring streams for the community. If your bandwidth/traffic is limited look at the "Community" section on the left and disable the "Enable monitor mode" checkbox because bandwith used by monitor mode is not considered for the "Limit bandwidth for recordings" setting.'
+      ParentColor = False
+      WordWrap = True
+    end
+    object txtMaxSpeed: TLabeledEdit
+      Left = 20
+      Height = 21
+      Top = 40
+      Width = 53
+      EditLabel.Height = 13
+      EditLabel.Width = 53
+      EditLabel.Caption = 'Max. bandwidth available to streamWriter:'
+      EditLabel.ParentColor = False
+      Enabled = False
+      MaxLength = 5
+      TabOrder = 1
+    end
+    object chkLimit: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 0
+      Width = 285
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Limit bandwidth for recordings'
+      OnClick = chkLimitClick
+      TabOrder = 0
+    end
+  end
+  object pnlFilenamesExt: TPanel[15]
+    Left = 4
+    Height = 129
+    Top = 408
+    Width = 293
+    ClientHeight = 129
+    ClientWidth = 293
+    TabOrder = 11
+    object btnResetRemoveChars: TSpeedButton
+      Left = 264
+      Height = 21
+      Hint = 'Reset pattern to default'
+      Top = 60
+      Width = 25
+      Anchors = [akTop, akRight]
+      Flat = True
+      Images = modSharedData.imgImages
+      ImageIndex = 2
+      OnClick = btnResetRemoveCharsClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object txtRemoveChars: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 60
+      Width = 257
+      Anchors = [akTop, akLeft, akRight]
+      EditLabel.Height = 13
+      EditLabel.Width = 257
+      EditLabel.Caption = 'Remove the following characters from filenames:'
+      EditLabel.ParentColor = False
+      TabOrder = 1
+      OnChange = txtRemoveCharsChange
+    end
+    object txtFilePatternDecimals: TLabeledEdit
+      Left = 4
+      Height = 21
+      Top = 16
+      Width = 41
+      EditLabel.Height = 13
+      EditLabel.Width = 41
+      EditLabel.Caption = 'Minimum count of decimals for tracknumbers:'
+      EditLabel.ParentColor = False
+      MaxLength = 1
+      TabOrder = 0
+      OnChange = txtFilePatternDecimalsChange
+    end
+    object chkNormalizeVariables: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 88
+      Width = 284
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Adjust upper-/lowercase of artist/title/album'
+      OnClick = chkNormalizeVariablesClick
+      TabOrder = 2
+    end
+  end
+  object pnlAddons: TPanel[16]
+    Left = 32
+    Height = 37
+    Top = 368
+    Width = 293
+    ClientHeight = 37
+    ClientWidth = 293
+    TabOrder = 12
+    Visible = False
+    object lstAddons: TListView
+      Left = 4
+      Height = 37
+      Top = 0
+      Width = 285
+      Align = alCustom
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      Checkboxes = True
+      Columns = <      
+        item
+          Width = 200
+        end>
+      ReadOnly = True
+      RowSelect = True
+      ShowColumnHeaders = False
+      SmallImages = modSharedData.imgImages
+      TabOrder = 0
+      ViewStyle = vsReport
+      OnItemChecked = lstAddonsItemChecked
+      OnResize = lstAddonsResize
+    end
+  end
+  object pnlCommunity: TPanel[17]
+    Left = 904
+    Height = 297
+    Top = 568
+    Width = 293
+    ClientHeight = 297
+    ClientWidth = 293
+    TabOrder = 13
+    Visible = False
+    object Label2: TLabel
+      Left = 20
+      Height = 33
+      Top = 24
+      Width = 268
+      Anchors = [akTop, akLeft, akRight]
+      AutoSize = False
+      Caption = 'Streams unknown to streamWriter will be submitted to the server so they can appear in the browser.'
+      ParentColor = False
+      WordWrap = True
+      OnClick = Label2Click
+    end
+    object Label8: TLabel
+      Left = 20
+      Height = 57
+      Top = 84
+      Width = 268
+      Anchors = [akTop, akLeft, akRight]
+      AutoSize = False
+      Caption = 'Information about track changes will be sent to the server and broadcasted to other users. This is important for the automatic recording of songs on the wishlist.'
+      ParentColor = False
+      WordWrap = True
+      OnClick = Label8Click
+    end
+    object Label20: TLabel
+      Left = 20
+      Height = 81
+      Top = 152
+      Width = 268
+      Anchors = [akTop, akLeft, akRight]
+      AutoSize = False
+      Caption = 'Server-assigned streams will be monitored for title changes in the background. Do not disable this option if you have a fast internet connection (DSL or faster) and unlimited traffic (flatrate). Monitored streams will not be covered by the bandwidth limit. One monitored stream consumes between 8 and 40KB/s depending on the stream''s quality.'
+      ParentColor = False
+      WordWrap = True
+      OnClick = Label20Click
+    end
+    object chkSubmitStreamInfo: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 0
+      Width = 284
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Submit information about streams to the server'
+      OnClick = chkSubmitStreamInfoClick
+      TabOrder = 0
+    end
+    object chkSubmitStats: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 60
+      Width = 284
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Submit statistics/track changes to the server'
+      OnClick = chkSubmitStatsClick
+      TabOrder = 1
+    end
+    object chkMonitorMode: TCheckBox
+      Left = 4
+      Height = 19
+      Top = 128
+      Width = 284
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'Enable monitor mode'
+      OnClick = chkMonitorModeClick
+      TabOrder = 2
+    end
+    object txtMonitorCount: TLabeledEdit
+      Left = 20
+      Height = 21
+      Top = 252
+      Width = 53
+      EditLabel.Height = 13
+      EditLabel.Width = 53
+      EditLabel.Caption = 'Max. number of streams to monitor:'
+      EditLabel.ParentColor = False
+      MaxLength = 3
+      TabOrder = 3
+    end
+  end
+  object pnlAppearance: TPanel[18]
+    Left = 603
+    Height = 238
+    Top = 683
+    Width = 293
+    ClientHeight = 238
+    ClientWidth = 293
+    TabOrder = 14
+    Visible = False
+    object Label23: TLabel
+      Left = 36
+      Height = 13
+      Top = 52
+      Width = 48
+      Caption = 'Text color'
+      ParentColor = False
+    end
+    object Label24: TLabel
+      Left = 36
+      Height = 13
+      Top = 80
+      Width = 99
+      Caption = 'Text color (selected)'
+      ParentColor = False
+    end
+    object Label25: TLabel
+      Left = 36
+      Height = 13
+      Top = 108
+      Width = 144
+      Caption = 'Text color (selected, focused)'
+      ParentColor = False
+    end
+    object Label26: TLabel
+      Left = 36
+      Height = 13
+      Top = 24
+      Width = 82
+      Caption = 'Background color'
+      ParentColor = False
+    end
+    object Label29: TLabel
+      Left = 4
+      Height = 13
+      Top = 0
+      Width = 93
+      Caption = 'Colors of list views:'
+      ParentColor = False
+    end
+    object pnlNodeTextColor: TPanel
+      Left = 4
+      Height = 21
+      Top = 48
+      Width = 25
+      BevelOuter = bvNone
+      ParentBackground = False
+      TabOrder = 0
+      OnClick = pnlNodeColorClick
+    end
+    object pnlNodeTextColorSelected: TPanel
+      Left = 4
+      Height = 21
+      Top = 76
+      Width = 25
+      BevelOuter = bvNone
+      ParentBackground = False
+      TabOrder = 1
+      OnClick = pnlNodeColorClick
+    end
+    object pnlNodeTextColorSelectedFocused: TPanel
+      Left = 4
+      Height = 21
+      Top = 104
+      Width = 25
+      BevelOuter = bvNone
+      ParentBackground = False
+      TabOrder = 2
+      OnClick = pnlNodeColorClick
+    end
+    object pnlNodeBackgroundColor: TPanel
+      Left = 4
+      Height = 21
+      Top = 20
+      Width = 25
+      BevelOuter = bvNone
+      ParentBackground = False
+      TabOrder = 3
+      OnClick = pnlNodeColorClick
+    end
+    object btnResetColor: TButton
+      Left = 4
+      Height = 27
+      Top = 140
+      Width = 93
+      Caption = '&Reset'
+      OnClick = btnResetColorClick
+      TabOrder = 4
+    end
+  end
+  object dlgOpen: TOpenDialog[19]
+    Filter = 'Executable files (*.exe, *.bat)|*.exe;*.bat'
+    Options = [ofHideReadOnly, ofEnableSizing, ofDontAddToRecent]
+    Left = 548
+    Top = 272
+  end
+  object dlgSave: TSaveDialog[20]
+    Filter = 'Text files (*.txt)|*.txt'
+    Options = [ofOverwritePrompt, ofHideReadOnly, ofPathMustExist, ofEnableSizing, ofDontAddToRecent]
+    Left = 548
+    Top = 320
+  end
+  object dlgColor: TColorDialog[21]
+    Color = clBlack
+    CustomColors.Strings = (
+      'ColorA=000000'
+      'ColorB=000080'
+      'ColorC=008000'
+      'ColorD=008080'
+      'ColorE=800000'
+      'ColorF=800080'
+      'ColorG=808000'
+      'ColorH=808080'
+      'ColorI=C0C0C0'
+      'ColorJ=0000FF'
+      'ColorK=00FF00'
+      'ColorL=00FFFF'
+      'ColorM=FF0000'
+      'ColorN=FF00FF'
+      'ColorO=FFFF00'
+      'ColorP=FFFFFF'
+      'ColorQ=C0DCC0'
+      'ColorR=F0CAA6'
+      'ColorS=F0FBFF'
+      'ColorT=A4A0A0'
+    )
+    Left = 824
+    Top = 832
+  end
+end

@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -27,7 +27,7 @@ interface
 uses
   SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
   AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
-  Math, PerlRegEx, Logging, WideStrUtils, AudioFunctions, SWFunctions,
+  Math, Logging, WideStrUtils, AudioFunctions, SWFunctions,
   MonitorAnalyzer, DataManager, Generics.Defaults, Sockets, TypeDefs, Constants;
 
 type
@@ -300,7 +300,7 @@ begin
       C := UpperCase(Title[i])[1];
       NextUpper := False;
     end else
-      C := LowerCase(Title[i])[1];
+      C := LowerCase(Title[i]);
 
     if (C = ' ') or (C = '-') or (C = '_') or (C = ':') or (C = '(') or (C = '\') or (C = '/') then
       NextUpper := True;
@@ -1190,9 +1190,9 @@ begin
             RecvStream.Position := RecvStream.Position + MetaLen;
             P := PosEx(''';', MetaData, 14);
             MetaData := AnsiString(Trim(Copy(MetaData, 14, P - 14)));
-            if IsUTF8String(MetaData) then
-              Title := CleanTitle(UTF8ToString(MetaData))
-            else
+//            if IsUTF8String(MetaData) then // TODO:
+//              Title := CleanTitle(UTF8ToString(MetaData))
+//            else
               Title := CleanTitle(MetaData);
 
             IgnoreTitle := Title = '';
@@ -1304,10 +1304,10 @@ procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Titl
   end;
   function MyLowerCase(C: Char): Char;
   begin
-    if CharInSet(C, ['ä', 'Ä', 'ö', 'Ö', 'ü', 'Ü']) then
-      Result := AnsiLowerCase(C)[1]
-    else
-      Result := LowerCase(C)[1];
+//    if CharInSet(C, ['ä', 'Ä', 'ö', 'Ö', 'ü', 'Ü']) then
+//      Result := AnsiLowerCase(C)[1]
+//    else
+//      Result := LowerCase(C)[1];
   end;
   function NormalizeText(Text: string): string;
   var
@@ -1327,9 +1327,10 @@ procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Titl
       LastChar := Text[i];
     end;
   end;
-var
-  R: TPerlRegEx;
+//var
+//  R: TPerlRegEx;
 begin
+  {
   Artist := '';
   Title := '';
   Album := '';
@@ -1381,6 +1382,7 @@ begin
     Title := NormalizeText(Title);
     Album := NormalizeText(Album);
   end;
+  }
 end;
 
 procedure TICEStream.Process(Received: Cardinal);

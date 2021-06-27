@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, AppData, Functions,
-  MControls;
+  MControls, SharedData, Images;
 
 type
   TfrmCutTabSearchSilence = class(TForm)
@@ -54,7 +54,7 @@ type
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 procedure TfrmCutTabSearchSilence.btnOKClick(Sender: TObject);
 begin
@@ -85,6 +85,8 @@ constructor TfrmCutTabSearchSilence.Create(AOwner: TComponent;
   AutoDetect: Boolean);
 begin
   inherited Create(AOwner);
+
+  modSharedData.imgImages.GetIcon(TImages.WAND, Icon);
 
   FAutoDetect := AutoDetect;
 end;

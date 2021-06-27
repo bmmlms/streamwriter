@@ -1,0 +1,53 @@
+object frmEqualizer: TfrmEqualizer
+  Left = 0
+  Height = 145
+  Top = 0
+  Width = 217
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsToolWindow
+  Caption = 'Equalizer'
+  ClientHeight = 145
+  ClientWidth = 217
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  FormStyle = fsStayOnTop
+  KeyPreview = True
+  OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
+  OnShow = FormShow
+  LCLVersion = '2.0.12.0'
+  object pnlEqualizer: TPanel
+    Left = 0
+    Height = 109
+    Top = 36
+    Width = 217
+    Align = alBottom
+    BevelOuter = bvNone
+    TabOrder = 2
+  end
+  object chkEqualizer: TCheckBox
+    Left = 8
+    Height = 19
+    Top = 8
+    Width = 95
+    Caption = 'Equalizer active'
+    OnClick = chkEqualizerClick
+    TabOrder = 0
+  end
+  object btnReset: TBitBtn
+    Left = 188
+    Height = 25
+    Hint = 'Reset'
+    Top = 4
+    Width = 25
+    Anchors = [akTop, akRight]
+    Images = modSharedData.imgImages
+    ImageIndex = 2
+    OnClick = btnResetClick
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 1
+  end
+end

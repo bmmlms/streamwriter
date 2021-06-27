@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@ uses
   MControls, LanguageObjects, Tabs, Functions, AppData, Logging, VirtualTrees,
   HomeCommunication, DataManager, ImgList, Graphics, Math, Generics.Collections,
   Menus, ChartsTabAdjustTitleName, Forms, TypeDefs, MessageBus, AppMessages,
-  HomeCommands, Commands, GUIFunctions, SharedData, PerlRegEx, Messages,
+  HomeCommands, Commands, GUIFunctions, SharedData, Messages, Images,
   DateUtils, SharedControls;
 
 type
@@ -71,12 +71,15 @@ type
 
   TMyComboBox = class(TComboBox)
   protected
+    { // TODO:
     function MouseActivate(Button: TMouseButton; Shift: TShiftState;
-      X: Integer; Y: Integer; HitTest: Integer): TMouseActivate; override;
+      X: Integer; Y: Integer; HitTest: Integer): TMouseActivate; override;     }
     procedure WndProc(var Message: TMessage); override;
   public
   published
   end;
+
+  { TSearchPanel }
 
   TSearchPanel = class(TPanel)
   private
@@ -93,7 +96,7 @@ type
     FButtonPlayStreamExternal: TToolButton;
     FButtonAddStream: TToolButton;
   protected
-    procedure Resize; override;
+    procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     procedure AfterCreate;
@@ -137,22 +140,22 @@ type
 
     procedure ExecDefaultAction;
   protected
-    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
+    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: string); override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
-    procedure DoHeaderClick(const HitInfo: TVTHeaderHitInfo); override;
+    procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
     procedure KeyPress(var Key: Char); override;
     procedure Paint; override;
     function DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer; override;
     procedure Resize; override;
-    procedure DoAfterCellPaint(Canvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; CellRect: TRect); override;
+    procedure DoAfterCellPaint(Canvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; const CellRect: TRect); override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
     procedure DoNodeDblClick(const HitInfo: THitInfo); override;
-    function DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean; override;
-    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect); override;
+    function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
+    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
     procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
@@ -286,7 +289,7 @@ begin
   FSearchPanel := TSearchPanel.Create(Self);
   FSearchPanel.Parent := Self;
   FSearchPanel.Align := alTop;
-  FSearchPanel.Padding.Top := 1;
+ // FSearchPanel.Padding.Top := 1;
 
   FChartsTree := TChartsTree.Create(Self);
   FChartsTree.Parent := Self;
@@ -300,7 +303,7 @@ begin
 
   HomeComm.OnSearchChartsReceived := HomeCommSearchChartsReceived;
 
-  ImageIndex := 89;
+  ImageIndex := TImages.FIND;
   ShowCloseButton := False;
 
   FSearchPanel.FSearch.OnKeyPress := SearchKeyPress;
@@ -317,7 +320,7 @@ begin
     begin
       FCharts[i].Free;
     end;
-    FCharts.Free;
+    FreeAndNil(FCharts);
   end;
 
   inherited;
@@ -341,9 +344,7 @@ begin
   if FCharts <> nil then
   begin
     for i := 0 to FCharts.Count - 1 do
-    begin
       FCharts[i].Free;
-    end;
     FCharts.Free;
   end;
 
@@ -717,8 +718,7 @@ begin
   inherited;
 end;
 
-procedure TChartsTree.DoAfterCellPaint(Canvas: TCanvas; Node: PVirtualNode;
-  Column: TColumnIndex; CellRect: TRect);
+procedure TChartsTree.DoAfterCellPaint(Canvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; const CellRect: TRect);
 var
   C: Extended;
   Chance: Integer;
@@ -842,8 +842,7 @@ begin
   end;
 end;
 
-function TChartsTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
+function TChartsTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList;
 begin
   Result := inherited;
 
@@ -852,7 +851,8 @@ begin
     Index := 0;
 end;
 
-procedure TChartsTree.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
+procedure TChartsTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
+  TextType: TVSTTextType; var Text: string);
 var
   Val: Int64;
   NodeData: PChartNodeData;
@@ -860,15 +860,15 @@ begin
   inherited;
 
   Val := 1;
-  pEventArgs.CellText := '';
+  Text := '';
 
-  NodeData := GetNodeData(pEventArgs.Node);
-  case pEventArgs.Column of
+  NodeData := GetNodeData(Node);
+  case Column of
     0:
       if NodeData.Chart <> nil then
-        pEventArgs.CellText := NodeData.Chart.Name
+        Text := NodeData.Chart.Name
       else
-        pEventArgs.CellText := NodeData.Stream.Stream.Name;
+        Text := NodeData.Stream.Stream.Name;
     2:
       begin
         if NodeData.Chart <> nil then
@@ -882,38 +882,38 @@ begin
         if Val >= 86400 then
         begin
           if Val div 86400 = 1 then
-            pEventArgs.CellText := Format(_('%d day ago'), [Val div 86400])
+            Text := Format(_('%d day ago'), [Val div 86400])
           else
-            pEventArgs.CellText := Format(_('%d days ago'), [Val div 86400]);
+            Text := Format(_('%d days ago'), [Val div 86400]);
         end else if Val >= 3600 then
         begin
           if Val div 3600 = 1 then
-            pEventArgs.CellText := Format(_('%d hour ago'), [Val div 3600])
+            Text := Format(_('%d hour ago'), [Val div 3600])
           else
-            pEventArgs.CellText := Format(_('%d hours ago'), [Val div 3600]);
+            Text := Format(_('%d hours ago'), [Val div 3600]);
         end else if Val >= 60 then
         begin
           if Val div 60 = 1 then
-            pEventArgs.CellText := Format(_('%d minute ago'), [Val div 60])
+            Text := Format(_('%d minute ago'), [Val div 60])
           else
-            pEventArgs.CellText := Format(_('%d minutes ago'), [Val div 60]);
+            Text := Format(_('%d minutes ago'), [Val div 60]);
         end else
         begin
           if Val = 1 then
-            pEventArgs.CellText := Format(_('%d second ago'), [Val])
+            Text := Format(_('%d second ago'), [Val])
           else
-            pEventArgs.CellText := Format(_('%d seconds ago'), [Val]);
+            Text := Format(_('%d seconds ago'), [Val]);
         end;
       end;
     3:
       if NodeData.Chart <> nil then
-        pEventArgs.CellText := Format('%d / %d', [NodeData.Chart.PlayedLastDay, NodeData.Chart.PlayedLastWeek])
+        Text := Format('%d / %d', [NodeData.Chart.PlayedLastDay, NodeData.Chart.PlayedLastWeek])
       else
-        pEventArgs.CellText := Format('%d / %d', [NodeData.Stream.PlayedLastDay, NodeData.Stream.PlayedLastWeek]);
+        Text := Format('%d / %d', [NodeData.Stream.PlayedLastDay, NodeData.Stream.PlayedLastWeek]);
   end;
 end;
 
- procedure TChartsTree.DoHeaderClick(const HitInfo: TVTHeaderHitInfo);
+ procedure TChartsTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
 begin
   inherited;
   if HitInfo.Button = mbLeft then
@@ -988,7 +988,7 @@ begin
     ExecDefaultAction;
 end;
 
-function TChartsTree.DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean;
+function TChartsTree.DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean;
 begin
   Result := inherited;
 
@@ -1003,7 +1003,7 @@ begin
   Canvas.FillRect(R);
 end;
 
-procedure TChartsTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
+procedure TChartsTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect);
 begin
   inherited;
 
@@ -1323,29 +1323,29 @@ begin
     0:
       begin
         if NodeData.Chart <> nil then
-          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20)
+          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC)
         else
-          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 68);
+          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TRANSMIT);
       end;
     1:
       begin
         if NodeData.Chart <> nil then
         begin
           if NodeData.IsOnWishlist then
-            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 77);
+            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.SCRIPT_BRICKS);
           if NodeData.IsArtistOnWishlist then
-            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 16, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 86);
+            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 18, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.SCRIPT_USER_GRAY_COOL);
 
           for i := 0 to AppGlobals.Data.SavedTitleHashes.Count - 1 do
             if AppGlobals.Data.SavedTitleHashes[i] = NodeData.Chart.ServerHash then
-              Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 32, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 14);
+              Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 36, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.DRIVE);
         end else
         begin
           P := Parent;
           while not (P.ClassType = TChartsTab) do
             P := P.Parent;
           if TChartsTab(P).FOnGetIsStreamOnListEvent(Self, NodeData.Stream.Stream) then
-            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 80);
+            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TRANSMIT_ADD);
         end;
       end;
   end;
@@ -1435,6 +1435,9 @@ procedure TChartsTree.Resize;
 begin
   inherited;
 
+  if not Assigned(FProgressBar) then
+    Exit;
+
   FProgressBar.Left := Trunc(ClientWidth / 2 - FProgressBar.Width / 2);
   FProgressBar.Top := ClientHeight div 2 - Canvas.TextHeight('Wy') + 15;
 
@@ -1483,6 +1486,7 @@ begin
   FToolbar := TToolBar.Create(Self);
   FToolbar.Parent := Self;
   FToolbar.ShowHint := True;
+  FToolbar.EdgeBorders := [];
 end;
 
 procedure TSearchPanel.PostTranslate;
@@ -1534,10 +1538,11 @@ begin
   end;
 end;
 
-procedure TSearchPanel.Resize;
+procedure TSearchPanel.ControlsAligned;
 begin
-  inherited;
+  inherited ControlsAligned;
 
+  FToolbar.Left := ClientRect.Width - FToolbar.Width;
 end;
 
 procedure TSearchPanel.AfterCreate;
@@ -1546,58 +1551,55 @@ var
 begin
   FToolbar.Images := modSharedData.imgImages;
 
-  FButtonAddStream := TToolButton.Create(FToolbar);
-  FButtonAddStream.Parent := FToolbar;
-  FButtonAddStream.Hint := 'Add stream';
-  FButtonAddStream.ImageIndex := 80;
-
-  FButtonPlayStreamExternal := TToolButton.Create(FToolbar);
-  FButtonPlayStreamExternal.Parent := FToolbar;
-  FButtonPlayStreamExternal.Hint := 'Play stream (external player)';
-  FButtonPlayStreamExternal.ImageIndex := 82;
-
-  FButtonPlayStream := TToolButton.Create(FToolbar);
-  FButtonPlayStream.Parent := FToolbar;
-  FButtonPlayStream.Hint := 'Play stream';
-  FButtonPlayStream.ImageIndex := 33;
-
-  FButtonStartStreaming := TToolButton.Create(FToolbar);
-  FButtonStartStreaming.Parent := FToolbar;
-  FButtonStartStreaming.Hint := 'Start recording';
-  FButtonStartStreaming.ImageIndex := 0;
-
-  Sep := TToolButton.Create(FToolbar);
-  Sep.Parent := FToolbar;
-  Sep.Style := tbsSeparator;
-  Sep.Width := 8;
-
-  FButtonEditAndAddToWishlist := TToolButton.Create(FToolbar);
-  FButtonEditAndAddToWishlist.Parent := FToolbar;
-  FButtonEditAndAddToWishlist.Hint := 'Edit and add to manual wishlist';
-  FButtonEditAndAddToWishlist.ImageIndex := 30;
-
-  Sep := TToolButton.Create(FToolbar);
-  Sep.Parent := FToolbar;
-  Sep.Style := tbsSeparator;
-  Sep.Width := 8;
-
-  FButtonAddArtistToWishlist := TToolButton.Create(FToolbar);
-  FButtonAddArtistToWishlist.Parent := FToolbar;
-  FButtonAddArtistToWishlist.Hint := 'Add artist to automatic wishlist';
-  FButtonAddArtistToWishlist.ImageIndex := 86;
+  FButtonAddToWishlist := TToolButton.Create(FToolbar);
+  FButtonAddToWishlist.Parent := FToolbar;
+  FButtonAddToWishlist.Hint := 'Add title to automatic wishlist';
+  FButtonAddToWishlist.ImageIndex := TImages.SCRIPT_BRICKS_ADD;
 
   FButtonRemoveFromWishlist := TToolButton.Create(FToolbar);
   FButtonRemoveFromWishlist.Parent := FToolbar;
   FButtonRemoveFromWishlist.Hint := 'Remove title from automatic wishlist';
-  FButtonRemoveFromWishlist.ImageIndex := 102;
+  FButtonRemoveFromWishlist.ImageIndex := TImages.SCRIPT_BRICKS_DELETE;
 
-  FButtonAddToWishlist := TToolButton.Create(FToolbar);
-  FButtonAddToWishlist.Parent := FToolbar;
-  FButtonAddToWishlist.Hint := 'Add title to automatic wishlist';
-  FButtonAddToWishlist.ImageIndex := 77;
+  FButtonAddArtistToWishlist := TToolButton.Create(FToolbar);
+  FButtonAddArtistToWishlist.Parent := FToolbar;
+  FButtonAddArtistToWishlist.Hint := 'Add artist to automatic wishlist';
+  FButtonAddArtistToWishlist.ImageIndex := TImages.SCRIPT_USER_GRAY_COOL_ADD;
 
-  //FToolbar.Padding.Top := 6;
-  FToolbar.Align := alRight;
+  Sep := TToolButton.Create(FToolbar);
+  Sep.Parent := FToolbar;
+  Sep.Style := tbsSeparator;
+
+  FButtonEditAndAddToWishlist := TToolButton.Create(FToolbar);
+  FButtonEditAndAddToWishlist.Parent := FToolbar;
+  FButtonEditAndAddToWishlist.Hint := 'Edit and add to manual wishlist';
+  FButtonEditAndAddToWishlist.ImageIndex := TImages.SCRIPT_HEART_ADD;
+
+  Sep := TToolButton.Create(FToolbar);
+  Sep.Parent := FToolbar;
+  Sep.Style := tbsSeparator;
+
+  FButtonStartStreaming := TToolButton.Create(FToolbar);
+  FButtonStartStreaming.Parent := FToolbar;
+  FButtonStartStreaming.Hint := 'Start recording';
+  FButtonStartStreaming.ImageIndex := TImages.RECORD_RED;
+
+  FButtonPlayStream := TToolButton.Create(FToolbar);
+  FButtonPlayStream.Parent := FToolbar;
+  FButtonPlayStream.Hint := 'Play stream';
+  FButtonPlayStream.ImageIndex := TImages.PLAY_BLUE;
+
+  FButtonPlayStreamExternal := TToolButton.Create(FToolbar);
+  FButtonPlayStreamExternal.Parent := FToolbar;
+  FButtonPlayStreamExternal.Hint := 'Play stream (external player)';
+  FButtonPlayStreamExternal.ImageIndex := TImages.PLAY_GO;
+
+  FButtonAddStream := TToolButton.Create(FToolbar);
+  FButtonAddStream.Parent := FToolbar;
+  FButtonAddStream.Hint := 'Add stream';
+  FButtonAddStream.ImageIndex := TImages.TRANSMIT_ADD;
+
+  FToolbar.Align := alNone;
   FToolbar.AutoSize := True;
 
   RebuildSearchItems('');
@@ -1616,66 +1618,56 @@ end;
 { TChartsPopup }
 
 constructor TChartsPopup.Create(AOwner: TComponent);
-var
-  Sep: TMenuItem;
 begin
   inherited;
 
-  Sep := CreateMenuItem;
-  Sep.Caption := '-';
-  Items.Add(Sep);
-
-  FItemAddToWishlist := CreateMenuItem;
+  FItemAddToWishlist := TMenuItem.Create(Self);;
   FItemAddToWishlist.Caption := '&Add title to automatic wishlist';
-  FItemAddToWishlist.ImageIndex := 77;
+  FItemAddToWishlist.ImageIndex := TImages.SCRIPT_BRICKS_ADD;
   Items.Add(FItemAddToWishlist);
 
-  FItemRemoveFromWishlist := CreateMenuItem;
+  FItemRemoveFromWishlist := TMenuItem.Create(Self);;
   FItemRemoveFromWishlist.Caption := '&Remove title from automatic wishlist';
-  FItemRemoveFromWishlist.ImageIndex := 102;
+  FItemRemoveFromWishlist.ImageIndex := TImages.SCRIPT_BRICKS_DELETE;
   Items.Add(FItemRemoveFromWishlist);
 
-  FItemAddArtistToWishlist := CreateMenuItem;
+  FItemAddArtistToWishlist := TMenuItem.Create(Self);;
   FItemAddArtistToWishlist.Caption := 'A&dd artist to automatic wishlist';
-  FItemAddArtistToWishlist.ImageIndex := 86;
+  FItemAddArtistToWishlist.ImageIndex := TImages.SCRIPT_USER_GRAY_COOL_ADD;
   Items.Add(FItemAddArtistToWishlist);
 
-  Sep := CreateMenuItem;
-  Sep.Caption := '-';
-  Items.Add(Sep);
+  Items.AddSeparator;
 
-  FItemEditAndAddToWishlist := CreateMenuItem;
+  FItemEditAndAddToWishlist := TMenuItem.Create(Self);;
   FItemEditAndAddToWishlist.Caption := '&Edit and add to manual wishlist';
-  FItemEditAndAddToWishlist.ImageIndex := 30;
+  FItemEditAndAddToWishlist.ImageIndex := TImages.SCRIPT_HEART_ADD;
   Items.Add(FItemEditAndAddToWishlist);
 
-  Sep := CreateMenuItem;
-  Sep.Caption := '-';
-  Items.Add(Sep);
+  Items.AddSeparator;
 
-  FItemStartStreaming := CreateMenuItem;
+  FItemStartStreaming := TMenuItem.Create(Self);;
   FItemStartStreaming.Caption := '&Start recording';
-  FItemStartStreaming.ImageIndex := 0;
+  FItemStartStreaming.ImageIndex := TImages.RECORD_RED;
   Items.Add(FItemStartStreaming);
 
-  FItemPlayStream := CreateMenuItem;
+  FItemPlayStream := TMenuItem.Create(Self);;
   FItemPlayStream.Caption := '&Play stream';
-  FItemPlayStream.ImageIndex := 33;
+  FItemPlayStream.ImageIndex := TImages.PLAY_BLUE;
   Items.Add(FItemPlayStream);
 
-  FItemPlayStreamExternal := CreateMenuItem;
+  FItemPlayStreamExternal := TMenuItem.Create(Self);;
   FItemPlayStreamExternal.Caption := 'P&lay stream (external player)';
-  FItemPlayStreamExternal.ImageIndex := 82;
+  FItemPlayStreamExternal.ImageIndex := TImages.PLAY_GO;
   Items.Add(FItemPlayStreamExternal);
 
-  FItemAddStream := CreateMenuItem;
+  FItemAddStream := TMenuItem.Create(Self);;
   FItemAddStream.Caption := 'Add s&tream';
-  FItemAddStream.ImageIndex := 80;
+  FItemAddStream.ImageIndex := TImages.TRANSMIT_ADD; // TOOD: oder _ADD?
   Items.Add(FItemAddStream);
 end;
 
 { TMyComboBox }
-
+                                    {
 function TMyComboBox.MouseActivate(Button: TMouseButton;
   Shift: TShiftState; X, Y, HitTest: Integer): TMouseActivate;
 begin
@@ -1684,7 +1676,7 @@ begin
   if GetParentForm(Self).Handle <> GetForegroundWindow then
     SetTimer(Handle, 0, 10, nil);
 end;
-
+                               }
 procedure TMyComboBox.WndProc(var Message: TMessage);
 begin
   inherited;

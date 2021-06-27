@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, Functions,
-  Logging, PostProcessSoX, ComCtrls, PngSpeedButton, SharedData;
+  Logging, PostProcessSoX, ComCtrls, SharedData;
 
 type
   TfrmConfigureSoX = class(TForm)
@@ -34,8 +34,8 @@ type
     btnOK: TBitBtn;
     pnlConfigure: TPanel;
     pnlSetup: TPanel;
-    btnBrowse1: TPngSpeedButton;
-    btnBrowse2: TPngSpeedButton;
+    btnBrowse1: TSpeedButton;
+    btnBrowse2: TSpeedButton;
     txtLameDLL: TLabeledEdit;
     txtMadDLL: TLabeledEdit;
     lblInfo: TLabel;
@@ -97,7 +97,7 @@ type
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 procedure TfrmConfigureSoX.btnBrowseClick(Sender: TObject);
 begin
@@ -307,8 +307,8 @@ end;
 
 procedure TfrmConfigureSoX.InitForm;
 begin
-  btnBrowse1.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
-  btnBrowse2.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
+//  btnBrowse1.Image := modSharedData.imgImages.Images[85].Image;
+//  btnBrowse2.Image := modSharedData.imgImages.Images[85].Image;
 end;
 
 end.

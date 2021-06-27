@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, AudioGenie, AddonAudioGenie, SyncObjs, Graphics,
-  JPEG, PngImage, Math, Base64;
+  Math, Base64;
 
 type
   TTagData = class
@@ -114,17 +114,21 @@ begin
   if BufferSize < 44 then
     Exit(False);
 
+  // TODO: !?
+  {
   if Words[0] = $D8FF then
     GraphicClass := TJPEGImage
   else if Int64(Buffer) = $A1A0A0D474E5089 then
-    GraphicClass := TPNGImage;
+    GraphicClass := TImage;
+    }
 
   Result := (GraphicClass <> nil);
 end;
 
 function Swap32(Data: Integer): Integer; assembler;
 asm
-  BSWAP eax
+//  BSWAP eax
+//  BSWAP rax
 end;
 
 procedure TFileTagger.ReadCover(AG: TAudioGenie3);

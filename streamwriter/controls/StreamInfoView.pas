@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -33,7 +33,6 @@ type
   TMStreamInfoViewPanel = class(TPanel)
   private
     FEntries: TStreamList;
-    FResized: Boolean;
     FTopPanel: TPanel;
     FName: TLabel;
     FInfo: TMemo;
@@ -41,8 +40,6 @@ type
     function MakeDuration(Seconds: UInt64): string;
 
     procedure ShowInfo(Entries: TStreamList; ChangedOverride: Boolean = False);
-  protected
-    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -71,7 +68,6 @@ begin
   inherited Create(AOwner);
 
   FEntries := TStreamList.Create;
-  FResized := False;
 
   BevelOuter := bvNone;
 
@@ -116,12 +112,6 @@ begin
   S := (Seconds - (H * 60 * 60) - (M * 60));
 
   Result := Format('%dh %dm %ds', [H, M, S]);
-end;
-
-procedure TMStreamInfoViewPanel.Resize;
-begin
-  inherited;
-  ShowInfo(FEntries);
 end;
 
 procedure TMStreamInfoViewPanel.ShowInfo(Entries: TStreamList; ChangedOverride: Boolean = False);

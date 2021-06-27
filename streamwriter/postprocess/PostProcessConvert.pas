@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -138,28 +138,34 @@ begin
           end;
         end;
 
+        {
         Synchronize(
           procedure
           begin
             if Assigned(FOnFinish) then
               FOnFinish(Self)
           end);
+        }
       end else
       begin
+        {
         Synchronize(
           procedure
           begin
             if Assigned(FOnError) then
               FOnError(Self)
           end);
+          }
       end;
     except
+      {
       Synchronize(
         procedure
         begin
           if Assigned(FOnError) then
             FOnError(Self)
         end);
+      }
     end;
   finally
     FC.Free;
@@ -169,6 +175,7 @@ end;
 procedure TPostProcessConvertThread.FileConvertorProgress(Sender: TObject;
   Percent: Integer);
 begin
+  {
   Synchronize(
     procedure
     begin
@@ -176,6 +183,7 @@ begin
       if Assigned(FOnProgress) then
         FOnProgress(Sender);
     end);
+  }
 end;
 
 { TPostProcessConvert }

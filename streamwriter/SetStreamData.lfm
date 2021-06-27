@@ -1,0 +1,166 @@
+object frmSetStreamData: TfrmSetStreamData
+  Left = 0
+  Height = 440
+  Top = 0
+  Width = 670
+  BorderIcons = [biSystemMenu]
+  Caption = 'Set data'
+  ClientHeight = 440
+  ClientWidth = 670
+  Color = clBtnFace
+  Constraints.MinHeight = 440
+  Constraints.MinWidth = 670
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  KeyPreview = True
+  OnClose = FormClose
+  OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
+  OnResize = FormResize
+  Position = poOwnerFormCenter
+  LCLVersion = '2.0.12.0'
+  object btnResetTitlePattern: TSpeedButton
+    Left = 625
+    Height = 21
+    Hint = 'Reset regular expression to default'
+    Top = 304
+    Width = 25
+    Anchors = [akRight, akBottom]
+    Flat = True
+    OnClick = btnResetTitlePatternClick
+    ShowHint = True
+    ParentShowHint = False
+  end
+  object Label21: TLabel
+    Left = 289
+    Height = 29
+    Top = 160
+    Width = 360
+    Anchors = [akTop, akRight]
+    AutoSize = False
+    Caption = 'Use the following regular expressions for this stream (groups: a = artist, t = title, l = album):'
+    ParentColor = False
+    WordWrap = True
+  end
+  object Label1: TLabel
+    Left = 289
+    Height = 17
+    Top = 4
+    Width = 360
+    Anchors = [akTop, akRight]
+    AutoSize = False
+    Caption = 'Regular expressions set by other users:'
+    ParentColor = False
+    WordWrap = True
+  end
+  object pnlNav: TPanel
+    Left = 0
+    Height = 40
+    Top = 400
+    Width = 670
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 40
+    ClientWidth = 670
+    TabOrder = 5
+    object Bevel2: TBevel
+      Left = 0
+      Height = 5
+      Top = 0
+      Width = 670
+      Align = alTop
+      Shape = bsTopLine
+    end
+    object btnOK: TBitBtn
+      Left = 573
+      Height = 35
+      Top = 5
+      Width = 97
+      Align = alRight
+      Caption = '&OK'
+      OnClick = btnOKClick
+      TabOrder = 1
+    end
+    object btnCancel: TBitBtn
+      Left = 0
+      Height = 35
+      Top = 5
+      Width = 97
+      Align = alLeft
+      Caption = '&Cancel'
+      OnClick = btnCancelClick
+      TabOrder = 0
+    end
+  end
+  object txtRegEx: TLabeledEdit
+    Left = 289
+    Height = 21
+    Top = 304
+    Width = 333
+    Anchors = [akRight, akBottom]
+    EditLabel.Height = 13
+    EditLabel.Width = 333
+    EditLabel.Caption = 'Regular expression to add:'
+    EditLabel.ParentColor = False
+    EditLabel.Layout = tlBottom
+    MaxLength = 255
+    TabOrder = 2
+    OnChange = txtRegExChange
+  end
+  object btnAddRegEx: TButton
+    Left = 461
+    Height = 27
+    Top = 332
+    Width = 93
+    Anchors = [akRight, akBottom]
+    Caption = '&Add'
+    OnClick = btnAddRegExClick
+    TabOrder = 3
+  end
+  object btnRemoveRegEx: TButton
+    Left = 557
+    Height = 27
+    Top = 332
+    Width = 93
+    Anchors = [akRight, akBottom]
+    Caption = '&Remove'
+    OnClick = btnRemoveRegExClick
+    TabOrder = 4
+  end
+  object lstRegExps: TListView
+    Left = 289
+    Height = 93
+    Top = 188
+    Width = 361
+    Align = alCustom
+    Anchors = [akTop, akRight, akBottom]
+    Columns = <    
+      item
+      end>
+    RowSelect = True
+    ShowColumnHeaders = False
+    SmallImages = modSharedData.imgImages
+    TabOrder = 1
+    ViewStyle = vsReport
+    OnChange = lstRegExpsChange
+    OnEdited = lstRegExpsEdited
+  end
+  object lstOtherRegExps: TListView
+    Left = 289
+    Height = 133
+    Top = 20
+    Width = 361
+    Align = alCustom
+    Anchors = [akTop, akRight]
+    Columns = <    
+      item
+      end>
+    ReadOnly = True
+    RowSelect = True
+    ShowColumnHeaders = False
+    SmallImages = modSharedData.imgImages
+    TabOrder = 0
+    ViewStyle = vsReport
+  end
+end

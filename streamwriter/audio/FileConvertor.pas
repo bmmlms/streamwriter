@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@ interface
 
 uses
   SysUtils, Windows, Classes, DynBASS, ExtendedStream, AddonLAME, AppData,
-  AddonOGGEnc, AddonFAAC, Functions, PerlRegEx, AudioFunctions;
+  AddonOGGEnc, AddonFAAC, Functions, AudioFunctions;
 
 const
   BE_CONFIG_MP3 = 0;
@@ -159,13 +159,13 @@ type
     procedure ReadCallbackOGG(Data: AnsiString);
     procedure ReadCallbackAAC(Data: AnsiString);
 
-    function ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
-    function ConvertWAV2OGG(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
-    function ConvertWAV2AAC(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
-    function ConvertWAV2M4A(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
+    function ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PByteBool = nil): Boolean;
+    function ConvertWAV2OGG(FromFile, ToFile: string; TerminateFlag: PByteBool = nil): Boolean;
+    function ConvertWAV2AAC(FromFile, ToFile: string; TerminateFlag: PByteBool = nil): Boolean;
+    function ConvertWAV2M4A(FromFile, ToFile: string; TerminateFlag: PByteBool = nil): Boolean;
   public
-    function Convert(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
-    function Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil; F: Int64 = -1; T: Int64 = -1): Boolean;
+    function Convert(FromFile, ToFile: string; TerminateFlag: PByteBool = nil): Boolean;
+    function Convert2WAV(FromFile, ToFile: string; TerminateFlag: PByteBool = nil; F: Int64 = -1; T: Int64 = -1): Boolean;
 
     property CBRBitrate: Integer read FCBRBitrate write FCBRBitrate;
     property BitrateType: TBitrates read FBitrateType write FBitrateType;
@@ -183,7 +183,7 @@ const
 
 { TFileConvertor }
 
-function TFileConvertor.Convert(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
+function TFileConvertor.Convert(FromFile, ToFile: string; TerminateFlag: PByteBool = nil): Boolean;
 var
   ExtFrom: string;
   ExtTo: string;
@@ -206,7 +206,7 @@ begin
     Result := ConvertWAV2M4A(FromFile, ToFile, TerminateFlag);
 end;
 
-function TFileConvertor.Convert2WAV(FromFile, ToFile: string; TerminateFlag: PBoolean = nil; F: Int64 = -1; T: Int64 = -1): Boolean;
+function TFileConvertor.Convert2WAV(FromFile, ToFile: string; TerminateFlag: PByteBool = nil; F: Int64 = -1; T: Int64 = -1): Boolean;
 var
   Channel: DWORD;
   Freq: Single;
@@ -230,7 +230,7 @@ begin
   BytesToRead := 16384;
   SetLength(Buf, BytesToRead);
 
-  Channel := BASSStreamCreateFile(False, PChar(FromFile), 0, 0, BASS_STREAM_DECODE {$IFDEF UNICODE}or BASS_UNICODE{$ENDIF});
+  Channel := BASSStreamCreateFile(False, PChar(FromFile), 0, 0, BASS_STREAM_DECODE);
 
   if Channel = 0 then
     Exit;
@@ -336,7 +336,7 @@ begin
 end;
 
 function TFileConvertor.ConvertWAV2AAC(FromFile, ToFile: string;
-  TerminateFlag: PBoolean): Boolean;
+  TerminateFlag: PByteBool): Boolean;
 var
   CmdLine, ToFileTemp, Opts: string;
   Output: AnsiString;
@@ -382,7 +382,7 @@ begin
 end;
 
 function TFileConvertor.ConvertWAV2M4A(FromFile, ToFile: string;
-  TerminateFlag: PBoolean): Boolean;
+  TerminateFlag: PByteBool): Boolean;
 var
   ToFileTemp, ToFileTemp2: string;
 begin
@@ -405,7 +405,7 @@ begin
     DeleteFile(PChar(ToFileTemp2));
 end;
 
-function TFileConvertor.ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PBoolean = nil): Boolean;
+function TFileConvertor.ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PByteBool = nil): Boolean;
 var
   Addon: TAddonLAME;
 
@@ -452,7 +452,7 @@ begin
 end;
 
 function TFileConvertor.ConvertWAV2OGG(FromFile, ToFile: string;
-  TerminateFlag: PBoolean): Boolean;
+  TerminateFlag: PByteBool): Boolean;
 var
   CmdLine, ToFileTemp, Opts: string;
   Output: AnsiString;
@@ -499,9 +499,10 @@ end;
 
 procedure TFileConvertor.ReadCallbackAAC(Data: AnsiString);
 var
-  R: TPerlRegEx;
+//  R: TPerlRegEx;
   Progress: Integer;
 begin
+  {
   if not Assigned(FOnProgress) then
    Exit;
 
@@ -526,13 +527,15 @@ begin
   finally
     R.Free;
   end;
+  }
 end;
 
 procedure TFileConvertor.ReadCallbackMP3(Data: AnsiString);
 var
-  R: TPerlRegEx;
+//  R: TPerlRegEx;
   Progress: Integer;
 begin
+  {
   if not Assigned(FOnProgress) then
    Exit;
 
@@ -557,13 +560,15 @@ begin
   finally
     R.Free;
   end;
+  }
 end;
 
 procedure TFileConvertor.ReadCallbackOGG(Data: AnsiString);
 var
-  R: TPerlRegEx;
+//  R: TPerlRegEx;
   Progress: Integer;
 begin
+  {
   if not Assigned(FOnProgress) then
    Exit;
 
@@ -588,6 +593,7 @@ begin
   finally
     R.Free;
   end;
+  }
 end;
 
 end.

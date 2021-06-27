@@ -1,7 +1,7 @@
 ﻿{
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -29,8 +29,8 @@ interface
 
 uses
   Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
-  LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions,
-  AddonManager, PostProcessManager, Logging, Base64, AudioFunctions, TypeDefs,
+  LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions, Base64,
+  AddonManager, PostProcessManager, Logging, AudioFunctions, TypeDefs,
   Messages, DataManager, SWFunctions, CommandLine, Graphics;
 
 type
@@ -642,18 +642,12 @@ begin
 
   FStorage.Read('UserWasSetup', FUserWasSetup, False);
   FStorage.Read('User', FUser, '');
-  FStorage.Read('Pass', FPass, '');
-  if FLastUsedDataVersion >= 29 then
+  if FLastUsedDataVersion > 68 then
   begin
-    // If FPass was empty when reading it, this leads to an exception!
-    // We NEED to catch it here so that the startup process does not get interrupted..
-    try
-      FPass := CryptStr(UTF8ToUnicodeString(Decode(RawByteString(FPass))));
-    except
-      FPass := '';
-    end;
-  end else
-    FPass := CryptStr(FPass);
+    FStorage.Read('Pass', FPass, '');
+    if FPass <> '' then
+      FPass := Base64.Decode(FPass);
+  end;
 
   FStorage.Read('SoundDevice', FSoundDevice, 0);
 
@@ -951,7 +945,7 @@ begin
   FStorage.Write('PlayerShuffle', FPlayerShuffle);
   FStorage.Write('UserWasSetup', FUserWasSetup);
   FStorage.Write('User', FUser);
-  FStorage.Write('Pass', EncodeU(CryptStr(FPass)));
+  FStorage.Write('Pass', Base64.Encode(FPass));
   FStorage.Write('SoundDevice', FSoundDevice);
 
   FStorage.Write('ShortcutPlay', FShortcutPlay);

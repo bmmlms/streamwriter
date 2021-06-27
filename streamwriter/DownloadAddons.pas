@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,7 +25,8 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, ComCtrls, PostProcess, DownloadClient,
-  Functions, LanguageObjects, AppData, Logging, AddonBase;
+  Functions, LanguageObjects, AppData, Logging, AddonBase, SharedData,
+  Images;
 
 type
   TfrmDownloadAddons = class(TForm)
@@ -51,11 +52,13 @@ type
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 constructor TfrmDownloadAddons.Create(AOwner: TComponent; Addon: TAddonBase);
 begin
   inherited Create(AOwner);
+
+  modSharedData.imgImages.GetIcon(TImages.PACKAGE_DOWN, Icon);
 
   FDownloadName := Addon.DownloadName;
   FDownloadPackage := Addon.DownloadPackage;

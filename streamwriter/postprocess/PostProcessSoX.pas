@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -193,7 +193,7 @@ var
 begin
   OutputFormat := TEncoderSettings(Data.EncoderSettings).AudioType;
   if OutputFormat = atNone then
-    OutputFormat := FiletypeToFormat(Data.Filename);
+    OutputFormat := FilenameToFormat(Data.Filename);
 
   Result := (AppGlobals.AddonManager.CanEncode(OutputFormat) = ceOkay) and FGetDependenciesMet and (FNormalize or FFadeoutStart or
     FFadeoutEnd or FSilenceStart or FSilenceEnd);
@@ -243,7 +243,7 @@ constructor TPostProcessSoX.Create;
 begin
   inherited;
 
-  FNeededAddons.Add(TAddonSoX);
+//  FNeededAddons.Add(TAddonSoX);
 
   FCanConfigure := True;
   FOrder := 100;

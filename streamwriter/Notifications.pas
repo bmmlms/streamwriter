@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,10 +25,12 @@ interface
 uses
   Windows, SysUtils, Messages, Classes, Controls, Forms, StdCtrls,
   Graphics, UxTheme, Math, GUIFunctions, LanguageObjects, Logging,
-  pngimage, PngFunctions, ExtCtrls;
+  ExtCtrls;
 
 type
   TNotificationStates = (nsFadingIn, nsVisible, nsFadingOut);
+
+  { TfrmNotification }
 
   TfrmNotification = class(TForm)
     lblTitle: TLabel;
@@ -42,7 +44,8 @@ type
 
     class function OtherWindowIsFullscreen: Boolean;
   protected
-    procedure CreateParams(var Params: TCreateParams); override;
+    //procedure CreateParams(var Params: TCreateParams); override;
+    //procedure CreateHandle; override;
     procedure DoShow; override;
     procedure WMMouseActivate(var Message: TWMMouseActivate);
       message WM_MOUSEACTIVATE;
@@ -63,7 +66,7 @@ var
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 { TfrmNotification }
 
@@ -90,14 +93,18 @@ begin
   Parent := nil;
 end;
 
-procedure TfrmNotification.CreateParams(var Params: TCreateParams);
+{
+procedure TfrmNotification.CreateHandle;
 begin
   inherited;
 
-  Params.WndParent := 0;
-  Params.Style := WS_POPUP or WS_THICKFRAME or WS_EX_TOPMOST;
-  Params.ExStyle := Params.ExStyle or WS_EX_NOACTIVATE;
+  //Params.WndParent := 0;
+  //Params.Style := WS_POPUP or WS_THICKFRAME or WS_EX_TOPMOST;
+  //Params.ExStyle := Params.ExStyle or WS_EX_NOACTIVATE;
+  SetWindowLong(Handle, GWL_STYLE, LONG(WS_POPUPWINDOW or WS_THICKFRAME) and (not WS_CAPTION)); // and (not WS_BORDER));
+  SetWindowLong(Handle, GWL_EXSTYLE, GetWindowLong(Handle, GWL_EXSTYLE) or LONG(WS_EX_NOACTIVATE or WS_EX_TOPMOST));
 end;
+}
 
 procedure TfrmNotification.Display(Title, Stream: string);
 var
@@ -121,16 +128,16 @@ begin
         if StreamTextWidth > 350 then
           StreamTextWidth := 350;
 
-        lblStream.Top := lblTitle.Top + TitleTextHeight + 8;
+       // lblStream.Top := lblTitle.Top + TitleTextHeight + 8;
 
-        ClientWidth := lblTitle.Left * 2 + imgLogo.Width + 16 + Max(TitleTextWidth, StreamTextWidth);
-        ClientHeight := Max(lblTitle.Top * 2 + TitleTextHeight + StreamTextHeight + 8, imgLogo.Height);
+     //   ClientWidth := lblTitle.Left * 2 + imgLogo.Width + 16 + Max(TitleTextWidth, StreamTextWidth);
+     //   ClientHeight := Max(lblTitle.Top * 2 + TitleTextHeight + StreamTextHeight + 8, imgLogo.Height);
 
-        imgLogo.Left := ClientWidth - imgLogo.Width - lblTitle.Left;
-        imgLogo.Top := ClientHeight div 2 - imgLogo.Height div 2;
+    //    imgLogo.Left := ClientWidth - imgLogo.Width - lblTitle.Left;
+     //   imgLogo.Top := ClientHeight div 2 - imgLogo.Height div 2;
 
-        Left := Screen.PrimaryMonitor.WorkareaRect.Right - ClientWidth - GlassFrame.Right * 2 - 15;
-        Top := Screen.PrimaryMonitor.WorkareaRect.Bottom - ClientHeight - GlassFrame.Top * 2 - 15;
+        Left := Screen.PrimaryMonitor.WorkareaRect.Right - ClientWidth - 15;
+        Top := Screen.PrimaryMonitor.WorkareaRect.Bottom - ClientHeight - 15;
 
         DoShow;
         lblTitle.Caption := TruncateText(Title, TitleTextWidth, lblTitle.Font);

@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, SyncObjs, Logging, MessageBus, AppMessages,
-  AppData, System.Types;
+  AppData, Types;
 
 type
   TPlayerManager = class

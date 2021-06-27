@@ -1,0 +1,97 @@
+object frmCutTabSearchSilence: TfrmCutTabSearchSilence
+  Left = 0
+  Height = 122
+  Top = 0
+  Width = 253
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Silence settings'
+  ClientHeight = 122
+  ClientWidth = 253
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  KeyPreview = True
+  OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
+  Position = poOwnerFormCenter
+  object Label14: TLabel
+    Left = 92
+    Height = 13
+    Top = 28
+    Width = 36
+    Caption = '(1-100)'
+    ParentColor = False
+  end
+  object Label12: TLabel
+    Left = 8
+    Height = 13
+    Top = 52
+    Width = 31
+    Caption = 'lasting'
+    ParentColor = False
+  end
+  object Label13: TLabel
+    Left = 132
+    Height = 13
+    Top = 52
+    Width = 59
+    Caption = 'ms (min. 20)'
+    ParentColor = False
+  end
+  object Label10: TLabel
+    Left = 8
+    Height = 13
+    Top = 8
+    Width = 192
+    Caption = 'Silence is defined by volume lower than:'
+    ParentColor = False
+  end
+  object txtSilenceLevel: TEdit
+    Left = 8
+    Height = 21
+    Top = 24
+    Width = 81
+    MaxLength = 3
+    TabOrder = 0
+  end
+  object txtSilenceLength: TEdit
+    Left = 48
+    Height = 21
+    Top = 48
+    Width = 81
+    MaxLength = 4
+    TabOrder = 1
+  end
+  object pnlNav: TPanel
+    Left = 0
+    Height = 44
+    Top = 78
+    Width = 253
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 44
+    ClientWidth = 253
+    TabOrder = 2
+    object Bevel2: TBevel
+      Left = 0
+      Height = 5
+      Top = 0
+      Width = 253
+      Align = alTop
+      Shape = bsTopLine
+    end
+    object btnOK: TBitBtn
+      Left = 156
+      Height = 39
+      Top = 5
+      Width = 97
+      Align = alRight
+      Caption = '&OK'
+      Layout = blGlyphLeft
+      OnClick = btnOKClick
+      TabOrder = 0
+    end
+  end
+end

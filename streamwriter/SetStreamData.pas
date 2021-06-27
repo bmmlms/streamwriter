@@ -3,11 +3,11 @@ unit SetStreamData;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, VirtualTrees, Vcl.StdCtrls, Constants, AppData,
-  Vcl.Buttons, Vcl.ExtCtrls, Vcl.ComCtrls, PngSpeedButton, PerlRegEx, Functions, LanguageObjects,
+  Windows, Messages, SysUtils, Variants, Classes, Graphics,
+  Controls, Forms, Dialogs, VirtualTrees, StdCtrls, Constants, AppData,
+  Buttons, ExtCtrls, ComCtrls, Functions, LanguageObjects, ImgList, Images,
   MControls, TypeDefs, HomeCommunication, Generics.Collections, SharedData, SWFunctions,
-  GUIFunctions;
+  GUIFunctions, GraphType, RegExpr;
 
 type
   TTitleNodeData = record
@@ -20,12 +20,27 @@ type
   end;
   PTitleNodeData = ^TTitleNodeData;
 
+  { TTitleTree }
+
+  TTitleTree = class(TVirtualStringTree)
+  private
+  protected
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
+      Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer
+      ): TCustomImageList; override;
+    procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
+  public
+    constructor Create(AOwner: TComponent); reintroduce;
+    destructor Destroy; override;
+  end;
+
+  { TfrmSetStreamData }
+
   TfrmSetStreamData = class(TForm)
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;
-    lstTitles: TVirtualStringTree;
-    btnResetTitlePattern: TPngSpeedButton;
+    btnResetTitlePattern: TSpeedButton;
     txtRegEx: TLabeledEdit;
     btnAddRegEx: TButton;
     btnRemoveRegEx: TButton;
@@ -45,9 +60,6 @@ type
       var CellText: string);
     procedure FormResize(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
-    procedure lstTitlesGetImageIndex(Sender: TBaseVirtualTree;
-      Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var ImageIndex: TImageIndex);
     procedure lstTitlesMeasureItem(Sender: TBaseVirtualTree;
       TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
@@ -58,9 +70,12 @@ type
     procedure lstTitlesMeasureTextWidth(Sender: TBaseVirtualTree;
       TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex;
       const Text: string; var Extent: Integer);
+    procedure lstTitlesBeforeCellPaint(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode;
+      Column: TColumnIndex; CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect);
     procedure lstRegExpsEdited(Sender: TObject; Item: TListItem;
       var S: string);
   private
+    FTitleTree: TTitleTree;
     FStreamID: Integer;
     FMaxTextWidth: Integer;
 
@@ -75,7 +90,45 @@ type
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
+
+{ TTitleTree }
+
+function TTitleTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
+  Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer
+  ): TCustomImageList;
+begin
+  Result := inherited;
+  Index := 19;
+end;
+
+procedure TTitleTree.PaintImage(var PaintInfo: TVTPaintInfo;
+  ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
+var
+  ImageIndex: Integer;
+  NodeData: PTitleNodeData;
+begin
+  NodeData := GetNodeData(PaintInfo.Node);
+
+  if NodeData.MatchedRegExp then
+    ImageIndex := TImages.FONT_USER
+  else if NodeData.MatchedOtherRegExp then
+    ImageIndex := TImages.FONT_GROUP
+  else
+    Exit;
+
+  modSharedData.imgImages.Resolution[16].Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, ImageIndex, gdeNormal);
+end;
+
+constructor TTitleTree.Create(AOwner: TComponent);
+begin
+  inherited;
+end;
+
+destructor TTitleTree.Destroy;
+begin
+  inherited Destroy;
+end;
 
 { TfrmSetStreamData }
 
@@ -90,7 +143,7 @@ begin
 
   Item := lstRegExps.Items.Add;
   Item.Caption := RegExp;
-  Item.ImageIndex := 30;
+  Item.ImageIndex := TImages.FONT_USER;
   txtRegEx.Text := '';
   txtRegEx.ApplyFocus;
   InvalidateTree;
@@ -144,16 +197,28 @@ constructor TfrmSetStreamData.Create(AOwner: TComponent;
 begin
   inherited Create(AOwner);
 
+  modSharedData.imgImages.GetIcon(TImages.TRANSMIT_EDIT, Icon);
+
   SetState(False);
 
-  lstTitles.NodeDataSize := SizeOf(TTitleNodeData);
-  lstTitles.IncrementalSearch := isVisibleOnly;
+  FTitleTree := TTitleTree.Create(Self);
+  FTitleTree.Parent := Self;
+  FTitleTree.Align := alLeft;
+  FTitleTree.Images := modSharedData.imgImages;
 
-  lstTitles.TreeOptions.SelectionOptions := [toDisableDrawSelection, toRightClickSelect, toFullRowSelect];
-  lstTitles.TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
-  lstTitles.TreeOptions.MiscOptions := lstTitles.TreeOptions.MiscOptions + [toVariableNodeHeight] - [toAcceptOLEDrop];
-  lstTitles.Header.Options := lstTitles.Header.Options - [hoVisible];
-  lstTitles.ShowHint := False;
+  FTitleTree.NodeDataSize := SizeOf(TTitleNodeData);
+  FTitleTree.IncrementalSearch := isVisibleOnly;
+
+  FTitleTree.TreeOptions.SelectionOptions := [toDisableDrawSelection, toRightClickSelect, toFullRowSelect];
+  FTitleTree.TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
+  FTitleTree.TreeOptions.MiscOptions := FTitleTree.TreeOptions.MiscOptions + [toVariableNodeHeight] - [toAcceptOLEDrop];
+  FTitleTree.Header.Options := FTitleTree.Header.Options - [hoVisible];
+  FTitleTree.ShowHint := False;
+
+  FTitleTree.OnGetText := lstTitlesGetText;
+  FTitleTree.OnMeasureItem := lstTitlesMeasureItem;
+  FTitleTree.OnMeasureTextWidth := lstTitlesMeasureTextWidth;
+  FTitleTree.OnBeforeCellPaint := lstTitlesBeforeCellPaint;
 
   FStreamID := StreamID;
 
@@ -198,24 +263,25 @@ begin
 end;
 
 procedure TfrmSetStreamData.HomeCommGetStreamData(Sender: TObject;
-  LastTitles, OtherUserRegExps, UserRegExps: TStringArray);
+  LastTitles: TStringArray; OtherUserRegExps: TStringArray;
+  UserRegExps: TStringArray);
 var
   i, W: Integer;
   Node: PVirtualNode;
   NodeData: PTitleNodeData;
   Item: TListItem;
 begin
-  lstTitles.Clear;
+  FTitleTree.Clear;
   for i := 0 to High(LastTitles) do
   begin
-    Node := lstTitles.AddChild(nil);
-    NodeData := lstTitles.GetNodeData(Node);
+    Node := FTitleTree.AddChild(nil);
+    NodeData := FTitleTree.GetNodeData(Node);
     NodeData.DataSet := False;
 
     NodeData.Title := LastTitles[i];
-    lstTitles.MultiLine[Node] := True;
+    FTitleTree.MultiLine[Node] := True;
 
-    W := GUIFunctions.GetTextSize(NodeData.Title, lstTitles.Font).cx;
+    W := GUIFunctions.GetTextSize(NodeData.Title, FTitleTree.Font).cx;
     if W > FMaxTextWidth then
       FMaxTextwidth := W;
   end;
@@ -225,7 +291,7 @@ begin
   begin
     Item := lstOtherRegExps.Items.Add;
     Item.Caption := OtherUserRegExps[i];
-    Item.ImageIndex := 30;
+    Item.ImageIndex := TImages.FONT_GROUP;
   end;
 
   lstRegExps.Items.Clear;
@@ -233,14 +299,14 @@ begin
   begin
     Item := lstRegExps.Items.Add;
     Item.Caption := UserRegExps[i];
-    Item.ImageIndex := 30;
+    Item.ImageIndex := TImages.FONT_USER;
   end;
 
   InvalidateTree;
 
   SetState(True);
 
-  lstTitles.ApplyFocus;
+  FTitleTree.ApplyFocus;
 end;
 
 procedure TfrmSetStreamData.InvalidateTree;
@@ -248,15 +314,15 @@ var
   Node: PVirtualNode;
   NodeData: PTitleNodeData;
 begin
-  Node := lstTitles.GetFirst;
+  Node := FTitleTree.GetFirst;
   while Node <> nil do
   begin
-    NodeData := lstTitles.GetNodeData(Node);
+    NodeData := FTitleTree.GetNodeData(Node);
     NodeData.DataSet := False;
-    Node := lstTitles.GetNext(Node);
+    Node := FTitleTree.GetNext(Node);
   end;
 
-  lstTitles.Invalidate;
+  FTitleTree.Invalidate;
 end;
 
 procedure TfrmSetStreamData.lstRegExpsChange(Sender: TObject;
@@ -278,36 +344,13 @@ begin
   InvalidateTree;
 end;
 
-procedure TfrmSetStreamData.lstTitlesGetImageIndex(
-  Sender: TBaseVirtualTree; Node: PVirtualNode; Kind: TVTImageKind;
-  Column: TColumnIndex; var Ghosted: Boolean; var ImageIndex: TImageIndex);
-var
-  NodeData: PTitleNodeData;
-begin
-  NodeData := lstTitles.GetNodeData(Node);
-
-  SetNodeData(NodeData);
-
-  if Kind <> ikState then
-  begin
-   if NodeData.MatchedRegExp then
-     ImageIndex := 107
-   else if NodeData.MatchedOtherRegExp then
-    ImageIndex := 106
-   else
-    ImageIndex := 105;
-  end;
-end;
-
 procedure TfrmSetStreamData.lstTitlesGetText(Sender: TBaseVirtualTree;
   Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
   var CellText: string);
 var
   NodeData: PTitleNodeData;
 begin
-  NodeData := lstTitles.GetNodeData(Node);
-
-  SetNodeData(NodeData);
+  NodeData := FTitleTree.GetNodeData(Node);
 
   CellText := Format('%s'#13#10'%s %s'#13#10'%s %s', [NodeData.Title, _('Artist:'), NodeData.ParsedArtist, _('Title:'), NodeData.ParsedTitle]);
 end;
@@ -325,13 +368,24 @@ begin
   Extent := FMaxTextWidth;
 end;
 
+procedure TfrmSetStreamData.lstTitlesBeforeCellPaint(Sender: TBaseVirtualTree;
+  TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex;
+  CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect);
+var
+  NodeData: PTitleNodeData;
+begin
+  NodeData := FTitleTree.GetNodeData(Node);
+
+  SetNodeData(NodeData);
+end;
+
 procedure TfrmSetStreamData.SetNodeData(NodeData: PTitleNodeData);
 var
   n: Integer;
   RegExps: TStringList;
   OtherRegExps: TStringList;
   AllRegExps: TStringList;
-  R: TPerlRegEx;
+  R: TRegExpr;
   RegExp: string;
 begin
   if NodeData.DataSet then
@@ -363,21 +417,19 @@ begin
 
     RegExp := GetBestRegEx(NodeData.Title, AllRegExps);
 
-    R := TPerlRegEx.Create;
-    R.Options := R.Options + [preCaseLess];
+    R := TRegExpr.Create(RegExp);
+    R.ModifierI := True;
     try
-      R.Subject := NodeData.Title;
-      R.RegEx := RegExp;
       try
-        if R.Match then
+        if R.Exec(NodeData.Title) then
         begin
           try
-            if R.NamedGroup('a') > 0 then
-              NodeData.ParsedArtist := Trim(R.Groups[R.NamedGroup('a')]);
+            if R.MatchIndexFromName('a') > 0 then
+              NodeData.ParsedArtist := Trim(R.MatchFromName('a'));
           except end;
           try
-            if R.NamedGroup('t') > 0 then
-              NodeData.ParsedTitle := Trim(R.Groups[R.NamedGroup('t')]);
+            if R.MatchIndexFromName('t') > 0 then
+              NodeData.ParsedTitle := Trim(R.MatchFromName('t'));
           except end;
         end;
       except end;

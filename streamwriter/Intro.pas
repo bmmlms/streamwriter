@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, pngimage, ExtCtrls, LanguageObjects, StdCtrls, Buttons;
+  Dialogs, ExtCtrls, LanguageObjects, StdCtrls, Buttons;
 
 type
   TfrmIntro = class(TForm)
@@ -48,7 +48,7 @@ type
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 procedure TfrmIntro.btnCloseClick(Sender: TObject);
 begin

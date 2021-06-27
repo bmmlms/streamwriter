@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, AppData, LanguageObjects,
-  AudioFunctions, DataManager;
+  AudioFunctions, DataManager, SharedData, Images;
 
 type
   TfrmConfigureEncoder = class(TForm)
@@ -53,7 +53,7 @@ type
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 procedure TfrmConfigureEncoder.btnOKClick(Sender: TObject);
 begin
@@ -72,6 +72,8 @@ end;
 constructor TfrmConfigureEncoder.Create(AOwner: TComponent; EncoderSettings: TEncoderSettings);
 begin
   inherited Create(AOwner);
+
+  modSharedData.imgImages.GetIcon(TImages.COG_GO, Icon);
 
   FEncoderSettings := EncoderSettings;
 

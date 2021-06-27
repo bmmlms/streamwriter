@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -131,6 +131,7 @@ begin
         Dlg.FileName := '';
         Dlg.Filter := '.M3U Playlist|*.m3u|.PLS Playlist|*.pls';
         Dlg.Options := Dlg.Options + [ofOverwritePrompt, ofPathMustExist];
+        {
         if Dlg.Execute(Handle) then
         begin
           try
@@ -151,6 +152,7 @@ begin
             MsgBox(Handle, Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [ExtractFilePath(Dlg.FileName)]), _('Error'), MB_ICONEXCLAMATION);
           end;
         end;
+        }
       finally
         Dlg.Free;
       end;

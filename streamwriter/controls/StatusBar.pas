@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,11 +24,14 @@ unit StatusBar;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, ComCtrls, AppData,
-  Functions, LanguageObjects, CommCtrl, GUIFunctions, Forms, ExtCtrls;
+  Windows, SysUtils, Classes, Graphics, Controls, ComCtrls, AppData, SharedData,
+  Functions, LanguageObjects, CommCtrl, GUIFunctions, Forms, ExtCtrls, Images,
+  GraphType;
 
 type
   THomeConnectionState = (cshUndefined, cshConnected, cshConnectedSecure, cshDisconnected, cshFail);
+
+  { TSWStatusBar }
 
   TSWStatusBar = class(TStatusBar)
   private
@@ -48,23 +51,15 @@ type
 
     FTimer: TTimer;
     FSpeedBmp: TBitmap;
-    IconConnected, IconConnectedSecure, IconDisconnected: TIcon;
-    IconLoggedIn, IconLoggedOff: TIcon;
-    IconAutoRecordEnabled: TIcon;
-    IconAutoRecordDisabled: TIcon;
-    IconGroup: TIcon;
-    IconRecord: TIcon;
 
     procedure TimerTimer(Sender: TObject);
-    procedure PaintPanel(Index: Integer);
     procedure FSetSpeed(Value: UInt64);
     procedure FSetCurrentReceived(Value: UInt64);
     procedure FSetOverallReceived(Value: UInt64);
   protected
     procedure DrawPanel(Panel: TStatusPanel; const R: TRect); override;
     procedure Resize; override;
-    procedure CNDrawitem(var Message: TWMDrawItem); message CN_DRAWITEM;
-    procedure WMPaint(var Message: TWMPaint); message WM_PAINT;
+    procedure InvalidatePanel(PanelIndex: integer); overload;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -156,18 +151,13 @@ begin
   FLastPos := P;
 end;
 
-procedure TSWStatusBar.CNDrawitem(var Message: TWMDrawItem);
-begin
-  inherited;
-
-  Message.Result := 1;
-end;
-
 constructor TSWStatusBar.Create(AOwner: TComponent);
 var
   P: TStatusPanel;
 begin
   inherited;
+
+  SimplePanel := False;
 
   Height := GetTextSize('Wyg', Font).cy + 4;
 
@@ -177,25 +167,6 @@ begin
   FTimer.OnTimer := TimerTimer;
   FTimer.Interval := 1000;
   FTimer.Enabled := True;
-
-  IconConnected := TIcon.Create;
-  IconConnected.Handle := LoadImage(HInstance, 'CONNECT_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
-  IconConnectedSecure := TIcon.Create;
-  IconConnectedSecure.Handle := LoadImage(HInstance, 'CONNECT_SECURE_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
-  IconDisconnected := TIcon.Create;
-  IconDisconnected.Handle := LoadImage(HInstance, 'DISCONNECT_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
-  IconLoggedIn := TIcon.Create;
-  IconLoggedIn.Handle := LoadImage(HInstance, 'USER_ENABLED_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
-  IconLoggedOff := TIcon.Create;
-  IconLoggedOff.Handle := LoadImage(HInstance, 'USER_DISABLED_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
-  IconAutoRecordEnabled := TIcon.Create;
-  IconAutoRecordEnabled.Handle := LoadImage(HInstance, 'AUTO_ENABLED_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
-  IconAutoRecordDisabled := TIcon.Create;
-  IconAutoRecordDisabled.Handle := LoadImage(HInstance, 'AUTO_DISABLED_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
-  IconGroup := TIcon.Create;
-  IconGroup.Handle := LoadImage(HInstance, 'GROUP_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
-  IconRecord := TIcon.Create;
-  IconRecord.Handle := LoadImage(HInstance, 'RECORD_15', IMAGE_ICON, 15, 15, LR_DEFAULTCOLOR);
 
   FSpace := MulDiv(GetTextSize('WWW', Font).cx, Screen.PixelsPerInch, 96);
 
@@ -220,15 +191,6 @@ end;
 
 destructor TSWStatusBar.Destroy;
 begin
-  IconConnected.Free;
-  IconConnectedSecure.Free;
-  IconDisconnected.Free;
-  IconLoggedIn.Free;
-  IconLoggedOff.Free;
-  IconAutoRecordEnabled.Free;
-  IconAutoRecordDisabled.Free;
-  IconGroup.Free;
-  IconRecord.Free;
   FSpeedBmp.Free;
 
   inherited;
@@ -236,17 +198,12 @@ end;
 
 procedure TSWStatusBar.DrawPanel(Panel: TStatusPanel; const R: TRect);
 var
-  R2: TRect;
+  ImageTop, TextTop: Integer;
 begin
   inherited;
 
-  {
-  Hint := _('Users/active streams');
-  if (FConnectionState = cshConnected) and FNotifyTitleChanges then
-    Hint := Hint + _(' (automatic recordings enabled)')
-  else
-    Hint := Hint + _(' (automatic recordings disabled)');
-  }
+  ImageTop := R.Top + (R.Bottom - R.Top) div 2 - MulDiv(16, Screen.PixelsPerInch, 96) div 2;
+  TextTop := R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Wyg')) div 2;
 
   Canvas.Brush.Color := clBtnFace;
   Canvas.FillRect(R);
@@ -254,71 +211,51 @@ begin
   case Panel.Index of
     0:
       begin
+        if FConnectionState = cshDisconnected then
+          FTimer.Enabled := True
+        else
+        begin
+          FTimer.Enabled := False;
+          FDots := '';
+        end;
+
         case FConnectionState of
           cshConnected:
             begin
-              FTimer.Enabled := False;
-              FDots := '';
-
-              Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconConnected);
-              Canvas.TextOut(R.Left + 56, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connected')) div 2, _('Connected'));
+              modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.CONNECT, 16, Self, gdeNormal);
+              Canvas.TextOut(R.Left + 56, TextTop, _('Connected'));
             end;
           cshConnectedSecure:
             begin
-              FTimer.Enabled := False;
-              FDots := '';
-
-              Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconConnected.Height div 2, IconConnectedSecure);
-              Canvas.TextOut(R.Left + 56, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connected')) div 2, _('Connected'));
+              modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.CONNECT_SECURE, 16, Self, gdeNormal);
+              Canvas.TextOut(R.Left + 56, TextTop, _('Connected'));
             end;
           cshDisconnected:
             begin
-              FTimer.Enabled := True;
-
-              if Length(FDots) mod 2 = 0 then
-                Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconDisconnected.Height div 2, IconDisconnected)
-              else
-                Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconDisconnected.Height div 2, IconConnected);
-
-              Canvas.TextOut(R.Left + 56, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Connecting') + FDots) div 2, _('Connecting') + FDots);
+              modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, IfThen<Integer>(Length(FDots) mod 2 = 0, TImages.CONNECT, TImages.DISCONNECT), 16, Self, gdeNormal);
+              Canvas.TextOut(R.Left + 56, TextTop, _('Connecting') + FDots);
             end;
           cshFail:
             begin
-              FTimer.Enabled := False;
-              FDots := '';
-
-              Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconDisconnected.Height div 2, IconDisconnected);
-              Canvas.TextOut(R.Left + 56, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Error')) div 2, _('Error'));
+              modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.DISCONNECT, 16, Self, gdeNormal);
+              Canvas.TextOut(R.Left + 56, TextTop, _('Error'));
             end;
         end;
 
-        if FLoggedIn then
-          Canvas.Draw(R.Left + 18, R.Top + (R.Bottom - R.Top) div 2 - IconLoggedIn.Height div 2, IconLoggedIn)
-        else
-          Canvas.Draw(R.Left + 18, R.Top + (R.Bottom - R.Top) div 2 - IconLoggedOff.Height div 2, IconLoggedOff);
-
-        if FNotifyTitleChanges then
-          Canvas.Draw(R.Left + 36, R.Top + (R.Bottom - R.Top) div 2 - IconAutoRecordEnabled.Height div 2, IconAutoRecordEnabled)
-        else
-          Canvas.Draw(R.Left + 36, R.Top + (R.Bottom - R.Top) div 2 - IconAutoRecordDisabled.Height div 2, IconAutoRecordDisabled);
+        modSharedData.imgImages.DrawForControl(Canvas, R.Left + 18, ImageTop, TImages.USER, 16, Self, IfThen<TGraphicsDrawEffect>(FLoggedIn, gdeNormal, gdeDisabled));
+        modSharedData.imgImages.DrawForControl(Canvas, R.Left + 36, ImageTop, TImages.BRICKS, 16, Self, IfThen<TGraphicsDrawEffect>(FNotifyTitleChanges, gdeNormal, gdeDisabled));
       end;
     1:
       begin
         if (FConnectionState = cshConnected) or (FConnectionState = cshConnectedSecure) then
         begin
-          Canvas.Draw(R.Left, R.Top + (R.Bottom - R.Top) div 2 - IconGroup.Height div 2, IconGroup);
-          Canvas.TextOut(R.Left + 18, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FClients)) div 2, IntToStr(FClients));
+          modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.GROUP, 16, Self, gdeNormal);
+          Canvas.TextOut(R.Left + 18, TextTop, IntToStr(FClients));
 
-          Canvas.Draw(R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4, R.Top + (R.Bottom - R.Top) div 2 - IconRecord.Height div 2, IconRecord);
-          Canvas.TextOut(R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4 + 18, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(IntToStr(FRecordings)) div 2, IntToStr(FRecordings));
+          modSharedData.imgImages.DrawForControl(Canvas, R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4, ImageTop, TImages.RECORD_RED, 16, Self, gdeNormal);
+          Canvas.TextOut(R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4 + 18, TextTop, IntToStr(FRecordings));
         end else
-        begin
-          R2 := R;
-          // -2, weil es unten im PaintPanel() so addiert wird.
-          // Und dann noch etwas mehr ins Minus gehen, damit der Rahmen links verschwindet.
-          R2.Left := R2.Left - 6;
-          Canvas.FillRect(R2);
-        end;
+          Canvas.FillRect(R);
       end;
     2:
       begin
@@ -332,9 +269,9 @@ begin
           Panels[2].Width := 2 + GetTextSize(_('0000/KBs'), Font).cx + FSpace;
       end;
     3:
-      Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(Format(_('%s/%s received'), [MakeSize(FCurrentReceived), MakeSize(FOverallReceived)])) div 2, Format(_('%s/%s received'), [MakeSize(FCurrentReceived), MakeSize(FOverallReceived)]));
+      Canvas.TextOut(R.Left + 2, TextTop, _('%s/%s received').Format([MakeSize(FCurrentReceived), MakeSize(FOverallReceived)]));
     4:
-      Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(Format(_('%d/%d songs saved'), [FSongsSaved, FOverallSongsSaved])) div 2, Format(_('%d/%d songs saved'), [FSongsSaved, FOverallSongsSaved]));
+      Canvas.TextOut(R.Left + 2, TextTop, _('%d/%d songs saved').Format([FSongsSaved, FOverallSongsSaved]));
   end;
 end;
 
@@ -346,7 +283,7 @@ begin
   FCurrentReceived := Value;
 
   if C then
-    PaintPanel(3);
+    InvalidatePanel(3);
 end;
 
 procedure TSWStatusBar.FSetOverallReceived(Value: UInt64);
@@ -357,28 +294,14 @@ begin
   FOverallReceived := Value;
 
   if C then
-    PaintPanel(3);
+    InvalidatePanel(3);
 end;
 
 procedure TSWStatusBar.FSetSpeed(Value: UInt64);
 begin
   FSpeed := Value;
   BuildSpeedBmp;
-  PaintPanel(2);
-end;
-
-procedure TSWStatusBar.PaintPanel(Index: Integer);
-var
-  R: TRect;
-begin
-  Perform(SB_GETRECT, Index, Integer(@R));
-  R.Right := R.Right - 2;
-  R.Top := R.Top + 1;
-  // Achtung: Wenn ich das ändere, muss ich auch DrawPanel() für Panel 1 ändern,
-  // für den Fall, dass keine Verbindung zum Server da ist.
-  R.Left := R.Left + 2;
-  R.Bottom := R.Bottom - 1;
-  DrawPanel(Panels[Index], R);
+ InvalidatePanel(2);
 end;
 
 procedure TSWStatusBar.Resize;
@@ -422,19 +345,18 @@ begin
 
   if (OldConnectionState <> FConnectionState) or (OldLoggedIn <> FLoggedIn) then
   begin
-    Repaint;
-    PaintPanel(0);
-    PaintPanel(1);
+   InvalidatePanel(0);
+   InvalidatePanel(1);
   end;
 
   if (OldClients <> FClients) or (OldRecordings <> FRecordings) or (OldNotifyTitleChanges <> FNotifyTitleChanges) then
   begin
-    PaintPanel(0);
-    PaintPanel(1);
+    InvalidatePanel(0);
+    InvalidatePanel(1);
   end;
 
   if (OldSongsSaved <> FSongsSaved) or (OldOverallSongsSaved <> FOverallSongsSaved) then
-    PaintPanel(4);
+    InvalidatePanel(4);
 end;
 
 procedure TSWStatusBar.TimerTimer(Sender: TObject);
@@ -442,22 +364,12 @@ begin
   FDots := FDots + '.';
   if Length(FDots) = 4 then
     FDots := '';
-  PaintPanel(0);
+ InvalidatePanel(0);
 end;
 
-procedure TSWStatusBar.WMPaint(var Message: TWMPaint);
-var
-  i: Integer;
+procedure TSWStatusBar.InvalidatePanel(PanelIndex: integer);
 begin
-  // Alles wegmachen, sonst ist da Mist über...
-  Canvas.FillRect(ClientRect);
-
-  inherited;
-
-  for i := 0 to Panels.Count - 1 do
-  begin
-    PaintPanel(i);
-  end;
+  InvalidatePanel(PanelIndex, [ppText]);
 end;
 
 end.

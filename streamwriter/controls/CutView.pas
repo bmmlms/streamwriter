@@ -1,7 +1,7 @@
 ﻿{
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     Portions created by Ralf Kruse
 
@@ -32,7 +32,7 @@ uses
   PlayerManager, PostProcess, PostProcessSoX, DownloadAddons, ConfigureSoX,
   MsgDlg, DragDrop, DropTarget, DropComboTarget, AudioFunctions,
   MessageBus, AppMessages, AddonSoX, PostProcessConvert, FileTagger,
-  DataManager, PerlRegEx, Logging, FileConvertor;
+  DataManager, Logging, FileConvertor;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -495,7 +495,7 @@ var
 begin
   for i := 0 to FDropTarget.Files.Count - 1 do
   begin
-    if FiletypeToFormat(LowerCase(ExtractFileExt(FDropTarget.Files[i]))) <> atNone then
+    if FilenameToFormat(FDropTarget.Files[i]) <> atNone then
     begin
       if Assigned(FOnCutFile) then
         FOnCutFile(TCutTab(Self.Parent), FDropTarget.Files[i]);
@@ -561,7 +561,7 @@ begin
   if Track.VBR then
   begin
     FBitrateType := brVBR;
-    FQuality := GuessVBRQuality(Track.Bitrate, FiletypeToFormat(Track.Filename));
+    FQuality := GuessVBRQuality(Track.Bitrate, FilenameToFormat(Track.Filename));
   end else
   begin
     FBitrateType := brCBR;
@@ -631,7 +631,7 @@ begin
         if Info.VBR then
         begin
           FBitrateType := brVBR;
-          FQuality := GuessVBRQuality(Info.Bitrate, FiletypeToFormat(Filename));
+          FQuality := GuessVBRQuality(Info.Bitrate, FilenameToFormat(Filename));
         end else
         begin
           FBitrateType := brCBR;
@@ -816,7 +816,7 @@ begin
 
   CreateConvertor;
 
-  EncoderSettings := TEncoderSettings.Create(FiletypeToFormat(FOriginalFilename), FBitrateType, FQuality);
+  EncoderSettings := TEncoderSettings.Create(FilenameToFormat(FOriginalFilename), FBitrateType, FQuality);
   EncoderSettings.CBRBitrate := FBitrate;
   try
     FFileConvertorThread.Convert(FWorkingFilename, FOriginalFilename, EncoderSettings);
@@ -1014,6 +1014,9 @@ end;
 procedure TCutView.Resize;
 begin
   inherited;
+
+  if not Assigned(FProgressBarLoad) then // TODO:
+    Exit;
 
   FProgressBarLoad.Width := Min(350, ClientWidth - 50);
   FProgressBarLoad.Height := 24;

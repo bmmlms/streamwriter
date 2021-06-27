@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, PostProcess,
-  PngSpeedButton, MControls;
+  MControls;
 
 type
   TfrmConfigureSetTags = class(TForm)
@@ -33,16 +33,16 @@ type
     txtTitle: TLabeledEdit;
     Label1: TLabel;
     txtComment: TMemo;
-    btnResetArtistPattern: TPngSpeedButton;
-    btnResetTitlePattern: TPngSpeedButton;
-    btnResetCommentPattern: TPngSpeedButton;
+    btnResetArtistPattern: TSpeedButton;
+    btnResetTitlePattern: TSpeedButton;
+    btnResetCommentPattern: TSpeedButton;
     lblPattern: TLabel;
     txtAlbum: TLabeledEdit;
-    btnResetAlbumPattern: TPngSpeedButton;
+    btnResetAlbumPattern: TSpeedButton;
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;
-    btnResetGenrePattern: TPngSpeedButton;
+    btnResetGenrePattern: TSpeedButton;
     txtGenre: TLabeledEdit;
     procedure FormShow(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
@@ -69,7 +69,7 @@ type
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 procedure TfrmConfigureSetTags.btnOKClick(Sender: TObject);
 begin

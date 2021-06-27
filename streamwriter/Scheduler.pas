@@ -27,7 +27,7 @@ type
 
   TSchedulerThread = class(TThread)
   private
-    FSchedulesLock: _RTL_CRITICAL_SECTION;
+//    FSchedulesLock: _RTL_CRITICAL_SECTION;
     FSchedules: TList<TSchedulerSchedule>;
 
     FReloadEvent: THandle;
@@ -101,7 +101,7 @@ begin
 
   FreeOnTerminate := True;
 
-  InitializeCriticalSection(FSchedulesLock);
+//  InitializeCriticalSection(FSchedulesLock);
   FReloadEvent := CreateEvent(nil, True, False, nil);
   FTerminateEvent := CreateEvent(nil, True, False, nil);
   FReloadDoneEvent := CreateEvent(nil, True, False, nil);
@@ -119,7 +119,7 @@ begin
   CloseHandle(FReloadDoneEvent);
   CloseHandle(FTerminateEvent);
   CloseHandle(FReloadEvent);
-  DeleteCriticalSection(FSchedulesLock);
+//  DeleteCriticalSection(FSchedulesLock);
 
   FSchedules.Free;
 
@@ -179,7 +179,7 @@ begin
       Lowest := MaxDouble;
       FoundLowestWakeup := False;
       LowestWakeup := MaxDouble;
-      EnterCriticalSection(FSchedulesLock);
+//      EnterCriticalSection(FSchedulesLock);
       try
         for i := FSchedules.Count - 1 downto 0 do
         begin
@@ -212,7 +212,7 @@ begin
           end;
         end;
       finally
-        LeaveCriticalSection(FSchedulesLock);
+//        LeaveCriticalSection(FSchedulesLock);
       end;
 
       SetEvent(FReloadDoneEvent);
@@ -245,7 +245,7 @@ begin
 
       // Alle Aktionen suchen, die zu dem niedrigsten Zeitpunkt ausgeführt werden müssen
       S.Clear;
-      EnterCriticalSection(FSchedulesLock);
+//      EnterCriticalSection(FSchedulesLock);
       try
         for i := 0 to FSchedules.Count - 1 do
         begin
@@ -259,7 +259,7 @@ begin
         if S.Count = 0 then
           Continue;
       finally
-        LeaveCriticalSection(FSchedulesLock);
+//        LeaveCriticalSection(FSchedulesLock);
       end;
 
       DoSyncLog(Format('It is %s, next action is at %s', [DateTimeToStr(Now), DateTimeToStr(Lowest)]));
@@ -346,13 +346,13 @@ begin
     CloseHandle(Timer);
     CloseHandle(TimerWakeup);
 
-    EnterCriticalSection(FSchedulesLock);
+//    EnterCriticalSection(FSchedulesLock);
     try
       for i := 0 to FSchedules.Count - 1 do
         FSchedules[i].Free;
       FSchedules.Clear;
     finally
-      LeaveCriticalSection(FSchedulesLock);
+//      LeaveCriticalSection(FSchedulesLock);
     end;
   end;
 end;
@@ -376,7 +376,7 @@ procedure TSchedulerThread.Reload(ScheduleList: TList<TSchedulerSchedule>);
 var
   i: Integer;
 begin
-  EnterCriticalSection(FSchedulesLock);
+//  EnterCriticalSection(FSchedulesLock);
   try
     for i := 0 to FSchedules.Count - 1 do
       FSchedules[i].Free;
@@ -387,7 +387,7 @@ begin
 
     SetEvent(FReloadEvent);
   finally
-    LeaveCriticalSection(FSchedulesLock);
+//    LeaveCriticalSection(FSchedulesLock);
   end;
 end;
 

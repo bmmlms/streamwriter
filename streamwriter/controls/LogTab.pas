@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -27,8 +27,8 @@ uses
   MControls, LanguageObjects, Tabs, Functions, AppData, Logging, VirtualTrees,
   HomeCommunication, DataManager, ImgList, Graphics, Math, Generics.Collections,
   Menus, ChartsTabAdjustTitleName, Forms, TypeDefs, MessageBus, AppMessages,
-  HomeCommands, Commands, GUIFunctions, SharedData, PerlRegEx, Messages,
-  DateUtils, SharedControls, Clipbrd;
+  HomeCommands, Commands, GUIFunctions, SharedData, Messages,
+  DateUtils, SharedControls, Clipbrd, Images;
 
 type
   TFilterTypes = set of TLogLevel;
@@ -112,14 +112,14 @@ type
     function MatchesFilter(LogEntry: TLogEntry): Boolean;
     procedure Add(LogEntry: TLogEntry); overload;
   protected
-    procedure DoGetText(var pEventArgs: TVSTGetCellTextEventArgs); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList; override;
+    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String); override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
-    function DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean; override;
-    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect); override;
+    function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
+    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
     procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
 
     procedure MessageReceived(Msg: TMessageBase);
@@ -262,12 +262,12 @@ constructor TLogTab.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
-  ImageIndex := 3;
+  ImageIndex := TImages.BOOK_OPEN;
 
   FLogPanel := TLogPanel.Create(Self);
   FLogPanel.Parent := Self;
   FLogPanel.Align := alTop;
-  FLogPanel.Padding.Top := 1;
+ { FLogPanel.Padding.Top := 1;                      }
 
   FLogTree := TLogTree.Create(Self);
   FLogTree.Parent := Self;
@@ -478,8 +478,7 @@ begin
   inherited;
 end;
 
-function TLogTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-  var Ghosted: Boolean; var Index: TImageIndex): TCustomImageList;
+function TLogTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList;
 begin
   Result := inherited;
 
@@ -488,20 +487,20 @@ begin
     Index := 0;
 end;
 
-procedure TLogTree.DoGetText(var pEventArgs: TVSTGetCellTextEventArgs);
+procedure TLogTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String);
 var
   NodeData: PLogNodeData;
 begin
   inherited;
 
-  NodeData := GetNodeData(pEventArgs.Node);
+  NodeData := GetNodeData(Node);
 
-  pEventArgs.CellText := '';
+  Text := '';
 
-  case pEventArgs.Column of
-    1: pEventArgs.CellText := TimeToStr(NodeData.LogEntry.Time);
-    2: pEventArgs.CellText := NodeData.LogEntry.TextSource;
-    3: pEventArgs.CellText := NodeData.LogEntry.Text;
+  case Column of
+    1: Text := TimeToStr(NodeData.LogEntry.Time);
+    2: Text := NodeData.LogEntry.TextSource;
+    3: Text := NodeData.LogEntry.Text;
   end;
 end;
 
@@ -514,7 +513,7 @@ begin
     Header.Columns[Column].Position := FHeaderDragSourcePosition;
 end;
 
-function TLogTree.DoPaintBackground(Canvas: TCanvas; R: TRect): Boolean;
+function TLogTree.DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean;
 begin
   Result := inherited;
 
@@ -529,7 +528,7 @@ begin
   Canvas.FillRect(R);
 end;
 
-procedure TLogTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
+procedure TLogTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect);
 begin
   inherited;
 
@@ -672,13 +671,13 @@ begin
 
     case NodeData.LogEntry.Source of
       lsGeneral:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 3);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BOOK_OPEN);
       lsAutomatic:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 77);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BRICKS);
       lsStream:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 68);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TRANSMIT);
       lsHome:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 99);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.CONNECT);
     end;
 
     L := L + 16;
@@ -686,28 +685,28 @@ begin
     case NodeData.LogEntry.LogType of
       ltGeneral: ;
       ltSong:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 20);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC);
       ltSaved:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 14);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.DRIVE);
       ltPostProcess:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 56);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.LIGHTNING);
       ltSchedule:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 50);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TIME);
       ltSecure:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 103);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.LOCK);
     end;
 
     L := L + 16;
 
     case NodeData.LogEntry.Level of
       llError:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 100);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.EXCLAMATION);
       llWarning:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 97);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.ERROR);
       llInfo:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 101);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.INFORMATION);
       llDebug:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, 98);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BUG);
     end;
   end;
 end;
@@ -726,12 +725,14 @@ var
 begin
   inherited;
 
+  {
   if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) and (GetPrevious(GetPrevious(GetLast)) <> nil) then
   begin
     R := GetDisplayRect(GetPrevious(GetPrevious(GetLast)), NoColumn, False);
     if R.Top <= ClientHeight then
       PostMessage(Handle, WM_VSCROLL, SB_BOTTOM, 0);
   end;
+  }
 end;
 
 procedure TLogTree.SetFilter(Text: string; FilterTypes: TFilterTypes);
@@ -785,6 +786,7 @@ begin
   FToolbar := TToolBar.Create(Self);
   FToolbar.Parent := Self;
   FToolbar.ShowHint := True;
+  FToolbar.EdgeBorders := [];
 end;
 
 procedure TLogPanel.PostTranslate;
@@ -796,6 +798,8 @@ procedure TLogPanel.Resize;
 begin
   inherited;
 
+  if Assigned(FToolbar) then
+    FToolbar.Left := ClientWidth - FToolbar.Width;
 end;
 
 procedure TLogPanel.AfterCreate;
@@ -804,53 +808,52 @@ var
 begin
   FToolbar.Images := modSharedData.imgImages;
 
-  FButtonClear := TToolButton.Create(FToolbar);
-  FButtonClear.Parent := FToolbar;
-  FButtonClear.Hint := 'Clear';
-  FButtonClear.ImageIndex := 13;
-
-  FButtonCopy := TToolButton.Create(FToolbar);
-  FButtonCopy.Parent := FToolbar;
-  FButtonCopy.Hint := 'Copy';
-  FButtonCopy.ImageIndex := 57;
-
-  Sep := TToolButton.Create(FToolbar);
-  Sep.Parent := FToolbar;
-  Sep.Style := tbsSeparator;
-  Sep.Width := 8;
-
-  FButtonError := TToolButton.Create(FToolbar);
-  FButtonError.Parent := FToolbar;
-  FButtonError.Hint := 'Error';
-  FButtonError.ImageIndex := 100;
-  FButtonError.Style := tbsCheck;
-  FButtonError.Down := (AppGlobals.LogFilterTypes and (1 shl Integer(llError))) <> 0;
-
-  FButtonWarning := TToolButton.Create(FToolbar);
-  FButtonWarning.Parent := FToolbar;
-  FButtonWarning.Hint := 'Warning';
-  FButtonWarning.ImageIndex := 97;
-  FButtonWarning.Style := tbsCheck;
-  FButtonWarning.Down := (AppGlobals.LogFilterTypes and (1 shl Integer(llWarning))) <> 0;
-
-  FButtonInfo := TToolButton.Create(FToolbar);
-  FButtonInfo.Parent := FToolbar;
-  FButtonInfo.Hint := 'Info';
-  FButtonInfo.ImageIndex := 101;
-  FButtonInfo.Style := tbsCheck;
-  FButtonInfo.Down := (AppGlobals.LogFilterTypes and (1 shl Integer(llInfo))) <> 0;
-
   FButtonDebug := TToolButton.Create(FToolbar);
   FButtonDebug.Parent := FToolbar;
   FButtonDebug.Hint := 'Debug';
-  FButtonDebug.ImageIndex := 98;
+  FButtonDebug.ImageIndex := TImages.BUG;
   FButtonDebug.Style := tbsCheck;
   FButtonDebug.Down := (AppGlobals.LogFilterTypes and (1 shl Integer(llDebug))) <> 0;
   {$IFNDEF DEBUG}
   FButtonDebug.Visible := False;
   {$ENDIF}
 
-  FToolbar.Align := alRight;
+  FButtonInfo := TToolButton.Create(FToolbar);
+  FButtonInfo.Parent := FToolbar;
+  FButtonInfo.Hint := 'Info';
+  FButtonInfo.ImageIndex := TImages.INFORMATION;
+  FButtonInfo.Style := tbsCheck;
+  FButtonInfo.Down := (AppGlobals.LogFilterTypes and (1 shl Integer(llInfo))) <> 0;
+
+  FButtonWarning := TToolButton.Create(FToolbar);
+  FButtonWarning.Parent := FToolbar;
+  FButtonWarning.Hint := 'Warning';
+  FButtonWarning.ImageIndex := TImages.ERROR;
+  FButtonWarning.Style := tbsCheck;
+  FButtonWarning.Down := (AppGlobals.LogFilterTypes and (1 shl Integer(llWarning))) <> 0;
+
+  FButtonError := TToolButton.Create(FToolbar);
+  FButtonError.Parent := FToolbar;
+  FButtonError.Hint := 'Error';
+  FButtonError.ImageIndex := TImages.EXCLAMATION;
+  FButtonError.Style := tbsCheck;
+  FButtonError.Down := (AppGlobals.LogFilterTypes and (1 shl Integer(llError))) <> 0;
+
+  Sep := TToolButton.Create(FToolbar);
+  Sep.Parent := FToolbar;
+  Sep.Style := tbsSeparator;
+
+  FButtonCopy := TToolButton.Create(FToolbar);
+  FButtonCopy.Parent := FToolbar;
+  FButtonCopy.Hint := 'Copy';
+  FButtonCopy.ImageIndex := TImages.PAGE_WHITE_COPY;
+
+  FButtonClear := TToolButton.Create(FToolbar);
+  FButtonClear.Parent := FToolbar;
+  FButtonClear.Hint := 'Clear';
+  FButtonClear.ImageIndex := TImages.ERASE;
+
+  FToolbar.Align := alNone;
   FToolbar.AutoSize := True;
 
   PostTranslate;
@@ -886,7 +889,7 @@ var
 begin
   inherited;
 
-  FItemDebug := CreateMenuItem;
+  FItemDebug := TMenuItem.Create(Self);
   FItemDebug.Caption := '&Debug';
   FItemDebug.Checked := (AppGlobals.LogFilterTypes and (1 shl Integer(llDebug))) <> 0;
   Items.Add(FItemDebug);
@@ -894,33 +897,31 @@ begin
   FItemDebug.Visible := False;
   {$ENDIF}
 
-  FItemInfo := CreateMenuItem;
+  FItemInfo := TMenuItem.Create(Self);
   FItemInfo.Caption := '&Info';
   FItemInfo.Checked := (AppGlobals.LogFilterTypes and (1 shl Integer(llInfo))) <> 0;
   Items.Add(FItemInfo);
 
-  FItemWarning := CreateMenuItem;
+  FItemWarning := TMenuItem.Create(Self);
   FItemWarning.Caption := '&Warning';
   FItemWarning.Checked := (AppGlobals.LogFilterTypes and (1 shl Integer(llWarning))) <> 0;
   Items.Add(FItemWarning);
 
-  FItemError := CreateMenuItem;
+  FItemError := TMenuItem.Create(Self);
   FItemError.Caption := '&Error';
   FItemError.Checked := (AppGlobals.LogFilterTypes and (1 shl Integer(llError))) <> 0;
   Items.Add(FItemError);
 
-  Sep := CreateMenuItem;
-  Sep.Caption := '-';
-  Items.Add(Sep);
+  Self.Items.AddSeparator;
 
-  FItemCopy := CreateMenuItem;
+  FItemCopy := TMenuItem.Create(Self);
   FItemCopy.Caption := '&Copy';
-  FItemCopy.ImageIndex := 57;
+  FItemCopy.ImageIndex := TImages.PAGE_WHITE_COPY;
   Items.Add(FItemCopy);
 
-  FItemClear := CreateMenuItem;
+  FItemClear := TMenuItem.Create(Self);
   FItemClear.Caption := 'C&lear';
-  FItemClear.ImageIndex := 13;
+  FItemClear.ImageIndex := TImages.ERASE;
   Items.Add(FItemClear);
 end;
 

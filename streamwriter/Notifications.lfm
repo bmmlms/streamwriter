@@ -1,0 +1,48 @@
+object frmNotification: TfrmNotification
+  Left = 0
+  Height = 73
+  Top = 0
+  Width = 300
+  BorderIcons = []
+  BorderStyle = bsNone
+  Caption = 'frmNotification'
+  ClientHeight = 73
+  ClientWidth = 300
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  FormStyle = fsSystemStayOnTop
+  OnClose = FormClose
+  LCLVersion = '2.0.12.0'
+  object lblTitle: TLabel
+    Left = 8
+    Height = 24
+    Top = 4
+    Width = 61
+    Anchors = [akTop, akLeft, akRight]
+    Caption = 'lblTitle'
+    Font.Color = clWindowText
+    Font.Height = -20
+    Font.Name = 'Tahoma'
+    ParentColor = False
+    ParentFont = False
+  end
+  object lblStream: TLabel
+    Left = 8
+    Height = 13
+    Top = 36
+    Width = 44
+    Anchors = [akTop, akLeft, akRight]
+    Caption = 'lblStream'
+    ParentColor = False
+  end
+  object imgLogo: TImage
+    Left = 260
+    Height = 44
+    Top = 6
+    Width = 32
+    Anchors = [akTop, akRight]
+    AutoSize = True
+  end
+end

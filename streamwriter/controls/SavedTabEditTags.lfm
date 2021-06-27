@@ -1,0 +1,146 @@
+object frmEditTags: TfrmEditTags
+  Left = 0
+  Height = 393
+  Top = 0
+  Width = 285
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Edit tags and data'
+  ClientHeight = 393
+  ClientWidth = 285
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  KeyPreview = True
+  OnKeyDown = FormKeyDown
+  OnShow = FormShow
+  Position = poOwnerFormCenter
+  object pnlNav: TPanel
+    Left = 0
+    Height = 40
+    Top = 353
+    Width = 285
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 40
+    ClientWidth = 285
+    TabOrder = 2
+    object Bevel2: TBevel
+      Left = 0
+      Height = 5
+      Top = 0
+      Width = 285
+      Align = alTop
+      Shape = bsTopLine
+    end
+    object btnClose: TBitBtn
+      Left = 188
+      Height = 35
+      Top = 5
+      Width = 97
+      Align = alRight
+      Caption = '&Save'
+      Layout = blGlyphLeft
+      OnClick = btnCloseClick
+      TabOrder = 0
+    end
+  end
+  object grpTags: TGroupBox
+    Left = 4
+    Height = 273
+    Top = 4
+    Width = 277
+    Caption = ' Tags '
+    ClientHeight = 255
+    ClientWidth = 273
+    TabOrder = 0
+    object Label1: TLabel
+      Left = 8
+      Height = 13
+      Top = 196
+      Width = 49
+      Caption = 'Comment:'
+      ParentColor = False
+    end
+    object txtArtist: TLabeledEdit
+      Left = 8
+      Height = 21
+      Top = 36
+      Width = 257
+      Anchors = [akTop, akLeft, akRight]
+      EditLabel.Height = 13
+      EditLabel.Width = 257
+      EditLabel.Caption = 'Artist:'
+      EditLabel.ParentColor = False
+      TabOrder = 0
+    end
+    object txtTitle: TLabeledEdit
+      Left = 8
+      Height = 21
+      Top = 80
+      Width = 257
+      Anchors = [akTop, akLeft, akRight]
+      EditLabel.Height = 13
+      EditLabel.Width = 257
+      EditLabel.Caption = 'Title:'
+      EditLabel.ParentColor = False
+      TabOrder = 1
+    end
+    object txtComment: TMemo
+      Left = 8
+      Height = 35
+      Top = 212
+      Width = 257
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      ScrollBars = ssVertical
+      TabOrder = 3
+    end
+    object txtAlbum: TLabeledEdit
+      Left = 8
+      Height = 21
+      Top = 124
+      Width = 257
+      Anchors = [akTop, akLeft, akRight]
+      EditLabel.Height = 13
+      EditLabel.Width = 257
+      EditLabel.Caption = 'Album:'
+      EditLabel.ParentColor = False
+      TabOrder = 2
+    end
+    object txtGenre: TLabeledEdit
+      Left = 8
+      Height = 21
+      Top = 168
+      Width = 257
+      Anchors = [akTop, akLeft, akRight]
+      EditLabel.Height = 13
+      EditLabel.Width = 257
+      EditLabel.Caption = 'Genre:'
+      EditLabel.ParentColor = False
+      TabOrder = 4
+    end
+  end
+  object grpData: TGroupBox
+    Left = 4
+    Height = 65
+    Top = 284
+    Width = 277
+    Caption = ' Data '
+    ClientHeight = 47
+    ClientWidth = 273
+    TabOrder = 1
+    object txtStreamname: TLabeledEdit
+      Left = 8
+      Height = 21
+      Top = 36
+      Width = 257
+      Anchors = [akTop, akLeft, akRight]
+      EditLabel.Height = 13
+      EditLabel.Width = 257
+      EditLabel.Caption = 'Streamname:'
+      EditLabel.ParentColor = False
+      TabOrder = 0
+    end
+  end
+end

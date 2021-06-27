@@ -1,0 +1,727 @@
+object frmStreamWriterMain: TfrmStreamWriterMain
+  Left = 549
+  Height = 390
+  Top = 450
+  Width = 872
+  Caption = 'streamWriter'
+  ClientHeight = 370
+  ClientWidth = 872
+  Color = clBtnFace
+  Constraints.MinHeight = 390
+  Constraints.MinWidth = 872
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  KeyPreview = True
+  Menu = mnuMain
+  OnClose = FormClose
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnKeyDown = FormKeyDown
+  OnShortCut = FormShortCut
+  OnShow = FormShow
+  LCLVersion = '2.0.12.0'
+  object tbClients: TToolBar
+    Left = 0
+    Height = 25
+    Top = 0
+    Width = 872
+    Images = modSharedData.imgImages
+    Indent = 2
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 0
+    Transparent = True
+    object ToolButton5: TToolButton
+      Left = 2
+      Top = 2
+      Action = actNewCategory
+    end
+    object ToolButton7: TToolButton
+      Left = 25
+      Height = 8
+      Top = 2
+      ImageIndex = 14
+      Style = tbsSeparator
+    end
+    object cmdStart: TToolButton
+      Left = 33
+      Top = 2
+      Action = actStart
+    end
+    object cmdStop: TToolButton
+      Left = 56
+      Top = 2
+      Action = actStop
+    end
+    object cmdStopAfterSong: TToolButton
+      Left = 79
+      Top = 2
+      Action = actStopAfterSong
+    end
+    object ToolButton3: TToolButton
+      Left = 102
+      Height = 8
+      Top = 2
+      Caption = '-'
+      ImageIndex = 7
+      Style = tbsSeparator
+    end
+    object cmdStartPlay: TToolButton
+      Left = 110
+      Top = 2
+      Action = actPlay
+    end
+    object cmdPause: TToolButton
+      Left = 133
+      Top = 2
+      Action = actPause
+      Style = tbsCheck
+    end
+    object cmdStopPlay: TToolButton
+      Left = 156
+      Top = 2
+      Action = actStopPlay
+    end
+    object ToolButton1: TToolButton
+      Left = 179
+      Height = 8
+      Top = 2
+      Caption = '-'
+      ImageIndex = 7
+      Style = tbsSeparator
+    end
+    object cmdRename: TToolButton
+      Left = 187
+      Top = 2
+      Action = actRename
+    end
+    object cmdRemove: TToolButton
+      Left = 210
+      Top = 2
+      Action = actRemove
+    end
+    object ToolButton2: TToolButton
+      Left = 233
+      Height = 8
+      Top = 2
+      Caption = '-'
+      ImageIndex = 11
+      Style = tbsSeparator
+    end
+    object cmdCopyTitle: TToolButton
+      Left = 241
+      Top = 2
+      Action = actCopyTitle
+    end
+    object cmdAddToSaveList: TToolButton
+      Left = 264
+      Top = 2
+      Action = actAddToSaveList
+    end
+    object cmdAddToGlobalIgnoreList: TToolButton
+      Left = 287
+      Top = 2
+      Action = actAddToGlobalIgnoreList
+    end
+    object cmdAddToStreamIgnoreList: TToolButton
+      Left = 310
+      Top = 2
+      Action = actAddToStreamIgnoreList
+    end
+    object ToolButton10: TToolButton
+      Left = 333
+      Height = 8
+      Top = 2
+      Caption = 'ToolButton10'
+      ImageIndex = 13
+      Style = tbsSeparator
+    end
+    object cmdOpenWebsite: TToolButton
+      Left = 341
+      Top = 2
+      Action = actOpenWebsite
+    end
+    object cmdTuneInStream: TToolButton
+      Left = 364
+      Top = 2
+      Action = actTuneInStream
+    end
+    object cmdSavePlaylistStream: TToolButton
+      Left = 387
+      Top = 2
+      Action = actSavePlaylistStream
+    end
+    object ToolButton8: TToolButton
+      Left = 410
+      Height = 8
+      Top = 2
+      Caption = 'ToolButton8'
+      ImageIndex = 13
+      Style = tbsSeparator
+    end
+    object cmdSetupTimers: TToolButton
+      Left = 418
+      Top = 2
+      Action = actTimers
+    end
+    object cmdStreamSettings: TToolButton
+      Left = 441
+      Top = 2
+      Action = actStreamSettings
+    end
+    object ToolButton6: TToolButton
+      Left = 464
+      Top = 2
+      Action = actResetData
+    end
+    object ToolButton4: TToolButton
+      Left = 487
+      Height = 8
+      Top = 2
+      Caption = '-'
+      ImageIndex = 10
+      Style = tbsSeparator
+      Visible = False
+    end
+    object cmdShowStreamBrowser: TToolButton
+      Left = 495
+      Top = 2
+      Action = actShowSideBar
+      Visible = False
+    end
+  end
+  object mnuMain: TMainMenu
+    Images = modSharedData.imgImages
+    Left = 32
+    Top = 32
+    object mnuFile: TMenuItem
+      Caption = '&File'
+      object mnuSettings: TMenuItem
+        Action = actSettings
+      end
+      object Settingsforautomaticrecordings1: TMenuItem
+        Action = actAutoSettings
+      end
+      object N3: TMenuItem
+        Caption = '-'
+      end
+      object mnuExit: TMenuItem
+        Action = actExit
+      end
+    end
+    object Community1: TMenuItem
+      Caption = '&Community'
+      OnClick = Community1Click
+      object Login1: TMenuItem
+        Action = actLogOn
+      end
+      object Logoff1: TMenuItem
+        Action = actLogOff
+      end
+    end
+    object mnuStreams: TMenuItem
+      Caption = '&Stream'
+      OnClick = mnuStreamsClick
+      object Newcategory1: TMenuItem
+        Action = actNewCategory
+      end
+      object N13: TMenuItem
+        Caption = '-'
+      end
+      object mnuStartStreaming2: TMenuItem
+        Action = actStart
+      end
+      object mnuStopStreaming2: TMenuItem
+        Action = actStop
+      end
+      object Stoprecordingaftercurrenttitle1: TMenuItem
+        Action = actStopAfterSong
+        AutoCheck = True
+      end
+      object N11: TMenuItem
+        Caption = '-'
+      end
+      object mnuStartPlay2: TMenuItem
+        Action = actPlay
+      end
+      object Pause1: TMenuItem
+        Action = actPause
+      end
+      object mnuStopPlay2: TMenuItem
+        Action = actStopPlay
+      end
+      object N10: TMenuItem
+        Caption = '-'
+      end
+      object Rename1: TMenuItem
+        Action = actRename
+      end
+      object mnuRemove2: TMenuItem
+        Action = actRemove
+      end
+      object N8: TMenuItem
+        Caption = '-'
+      end
+      object mnuCurrentTitle2: TMenuItem
+        Caption = 'Current tit&le'
+        object Copytitletoclipboard2: TMenuItem
+          Action = actCopyTitle
+        end
+        object N17: TMenuItem
+          Caption = '-'
+        end
+        object Addtomanualwishlist1: TMenuItem
+          Action = actAddToSaveList
+        end
+        object Addtoglobalignorelist2: TMenuItem
+          Action = actAddToGlobalIgnoreList
+        end
+        object Addtostreamignorelist2: TMenuItem
+          Action = actAddToStreamIgnoreList
+        end
+      end
+      object Openwebsite1: TMenuItem
+        Action = actOpenWebsite
+      end
+      object mnuListenToStream2: TMenuItem
+        Action = actTuneInStream
+      end
+      object actSavePlaylistStream1: TMenuItem
+        Action = actSavePlaylistStream
+      end
+      object mnuMoveToCategory2: TMenuItem
+        Caption = 'Move to &category'
+        ImageIndex = 92
+      end
+      object N6: TMenuItem
+        Caption = '-'
+      end
+      object Setupscheduledrecordings1: TMenuItem
+        Action = actTimers
+      end
+      object mnuStreamSettings2: TMenuItem
+        Action = actStreamSettings
+      end
+      object mnuReset11: TMenuItem
+        Action = actResetData
+      end
+    end
+    object mnuPlayer: TMenuItem
+      Caption = '&Player'
+      OnClick = mnuPlayerClick
+      object mnuPlayPause: TMenuItem
+        Action = actPlayerPlayPause
+      end
+      object mnuStop: TMenuItem
+        Action = actPlayerStop
+      end
+      object N7: TMenuItem
+        Caption = '-'
+      end
+      object mnuIncreaseVolume: TMenuItem
+        Action = actPlayerIncreaseVolume
+      end
+      object mnuPlayerDecreaseVolume: TMenuItem
+        Action = actPlayerDecreaseVolume
+      end
+      object mnuPlayerMuteVolume: TMenuItem
+        Action = actPlayerMuteVolume
+      end
+      object N14: TMenuItem
+        Caption = '-'
+      end
+      object mnuEqualizer: TMenuItem
+        Action = actEqualizer
+      end
+    end
+    object View1: TMenuItem
+      Caption = '&View'
+      Visible = False
+      object mnuShowStreamBrowser: TMenuItem
+        Action = actShowSideBar
+      end
+    end
+    object mnuUpdate: TMenuItem
+      Caption = '&Update'
+      object mnuCheckUpdate: TMenuItem
+        Action = actCheckUpdate
+      end
+    end
+    object mnuHelp: TMenuItem
+      Caption = '&Help'
+      object mnuHelp2: TMenuItem
+        Action = actHelp
+      end
+      object N1: TMenuItem
+        Caption = '-'
+      end
+      object mnuAbout: TMenuItem
+        Action = actAbout
+      end
+    end
+  end
+  object ActionList1: TActionList
+    Images = modSharedData.imgImages
+    Left = 276
+    Top = 116
+    object actStart: TAction
+      Caption = '&Start recording'
+      Hint = 'Start recording'
+      ImageIndex = 81
+    end
+    object actStop: TAction
+      Caption = 'S&top recording'
+      Hint = 'Stop recording'
+      ImageIndex = 113
+    end
+    object actRemove: TAction
+      Caption = '&Remove'
+      Hint = 'Remove'
+      ImageIndex = 24
+    end
+    object actExit: TAction
+      Caption = '&Exit'
+      Hint = 'Exit'
+      ImageIndex = 27
+      OnExecute = actExitExecute
+    end
+    object actSettings: TAction
+      Caption = '&Settings...'
+      Hint = 'Settings...'
+      ImageIndex = 131
+      OnExecute = actSettingsExecute
+    end
+    object actAbout: TAction
+      Caption = '&About...'
+      Hint = 'About...'
+      ImageIndex = 54
+      OnExecute = actAboutExecute
+    end
+    object actShowSideBar: TAction
+      Caption = '&Show sidebar'
+      Hint = 'Show sidebar'
+    end
+    object actTuneInStream: TAction
+      Caption = 'Open strea&m...'
+      Hint = 'Open stream...'
+      ImageIndex = 76
+    end
+    object actSavePlaylistStream: TAction
+      Caption = 'Sa&ve playlist...'
+      Hint = 'Save playlist...'
+      ImageIndex = 69
+    end
+    object actResetData: TAction
+      Caption = 'Reset &data'
+      Hint = 'Reset data'
+      ImageIndex = 32
+    end
+    object actHelp: TAction
+      Caption = '&Help...'
+      Hint = 'Help'
+      ImageIndex = 53
+      OnExecute = actHelpExecute
+    end
+    object actNewCategory: TAction
+      Caption = '&New category...'
+      Hint = 'New category...'
+      ImageIndex = 43
+    end
+    object actStreamSettings: TAction
+      Caption = 'S&ettings...'
+      Hint = 'Settings...'
+      ImageIndex = 133
+      OnExecute = actStreamSettingsExecute
+    end
+    object actOpenWebsite: TAction
+      Caption = 'Open &website...'
+      Hint = 'Open website...'
+      ImageIndex = 61
+    end
+    object actLogOn: TAction
+      Caption = '&Logon...'
+      Hint = 'Logon'
+      ImageIndex = 126
+      OnExecute = actLogOnExecute
+    end
+    object actLogOff: TAction
+      Caption = 'L&ogoff'
+      Hint = 'Logoff'
+      ImageIndex = 129
+      OnExecute = actLogOffExecute
+    end
+    object actTimers: TAction
+      Caption = 'Setup scheduled record&ings...'
+      Hint = 'Setup scheduled recordings...'
+      ImageIndex = 120
+      OnExecute = actTimersExecute
+    end
+    object actStopAfterSong: TAction
+      AutoCheck = True
+      Caption = 'Stop recording after &current title'
+      Hint = 'Stop recording after current title'
+      ImageIndex = 114
+    end
+    object actCopyTitle: TAction
+      Caption = '&Copy title to clipboard'
+      Hint = 'Copy title to clipboard'
+      ImageIndex = 68
+    end
+    object actAddToSaveList: TAction
+      Caption = 'Add title to manual &wishlist'
+      Hint = 'Add title to manual wishlist'
+      ImageIndex = 92
+    end
+    object actAddToGlobalIgnoreList: TAction
+      Caption = 'Add title to &global ignorelist'
+      Hint = 'Add title to global ignorelist'
+      ImageIndex = 21
+    end
+    object actAddToStreamIgnoreList: TAction
+      Caption = 'Add title to &stream ignorelist'
+      Hint = 'Add title to stream ignorelist'
+      ImageIndex = 23
+    end
+    object actPlayerDecreaseVolume: TAction
+      Caption = '&Decrease volume'
+      ImageIndex = 100
+      OnExecute = actPlayerDecreaseVolumeExecute
+    end
+    object actPlayerIncreaseVolume: TAction
+      Caption = '&Increase volume'
+      ImageIndex = 99
+      OnExecute = actPlayerIncreaseVolumeExecute
+    end
+    object actPlayerMuteVolume: TAction
+      Caption = '&Mute'
+      ImageIndex = 101
+      OnExecute = actPlayerMuteVolumeExecute
+    end
+    object actPlayerPlayPause: TAction
+      Caption = '&Pause/play'
+      ImageIndex = 74
+      OnExecute = actPlayerPlayPauseExecute
+    end
+    object actPlayerStop: TAction
+      Caption = '&Stop'
+      ImageIndex = 112
+      OnExecute = actPlayerStopExecute
+    end
+    object actRename: TAction
+      Caption = 'Ren&ame'
+      Hint = 'Rename'
+      ImageIndex = 117
+    end
+    object actEqualizer: TAction
+      Caption = '&Equalizer...'
+      Hint = 'Equalizer...'
+      ImageIndex = 31
+      OnExecute = actEqualizerExecute
+    end
+    object actAutoSettings: TAction
+      Caption = 'Settings for &automatic recordings...'
+      Hint = 'Settings for automatic recordings...'
+      ImageIndex = 132
+      OnExecute = actAutoSettingsExecute
+    end
+    object actStopPlay: TAction
+      Caption = 'St&op'
+      Hint = 'Stop'
+      ImageIndex = 112
+    end
+    object actPause: TAction
+      Caption = 'Pa&use'
+      Hint = 'Pause'
+      ImageIndex = 73
+    end
+    object actPlay: TAction
+      Caption = '&Play'
+      Hint = 'Play'
+      ImageIndex = 74
+    end
+    object actCheckUpdate: TAction
+      Caption = 'Search for &update...'
+      Hint = 'Search for update...'
+      ImageIndex = 67
+      OnExecute = actCheckUpdateExecute
+    end
+  end
+  object mnuStreamPopup: TPopupMenu
+    Images = modSharedData.imgImages
+    OnPopup = mnuStreamPopupPopup
+    Left = 32
+    Top = 88
+    object mnuNewCategory1: TMenuItem
+      Action = actNewCategory
+    end
+    object N12: TMenuItem
+      Caption = '-'
+    end
+    object mnuStartStreaming1: TMenuItem
+      Action = actStart
+    end
+    object mnuStopStreaming1: TMenuItem
+      Action = actStop
+    end
+    object mnuStopAfterSong1: TMenuItem
+      Action = actStopAfterSong
+      AutoCheck = True
+    end
+    object N16: TMenuItem
+      Caption = '-'
+    end
+    object mnuStartPlay1: TMenuItem
+      Caption = '&Play'
+      Hint = 'Play'
+      ImageIndex = 73
+    end
+    object mnuPause1: TMenuItem
+      Caption = 'Pa&use'
+      Hint = 'Pause'
+      ImageIndex = 72
+    end
+    object mnuStopPlay1: TMenuItem
+      Caption = 'St&op'
+      Hint = 'Stop'
+      ImageIndex = 111
+    end
+    object N4: TMenuItem
+      Caption = '-'
+    end
+    object mnuRename1: TMenuItem
+      Action = actRename
+    end
+    object mnuRemove1: TMenuItem
+      Action = actRemove
+    end
+    object N9: TMenuItem
+      Caption = '-'
+    end
+    object mnuCurrentTitle1: TMenuItem
+      Caption = 'Current tit&le'
+      object Copytitletoclipboard1: TMenuItem
+        Action = actCopyTitle
+      end
+      object N5: TMenuItem
+        Caption = '-'
+      end
+      object Addtowishlist1: TMenuItem
+        Action = actAddToSaveList
+      end
+      object Addtoglobalignorelist1: TMenuItem
+        Action = actAddToGlobalIgnoreList
+      end
+      object Addtostreamignorelist1: TMenuItem
+        Action = actAddToStreamIgnoreList
+      end
+    end
+    object mnuOpenWebsite1: TMenuItem
+      Action = actOpenWebsite
+    end
+    object mnuTuneIn1: TMenuItem
+      Action = actTuneInStream
+    end
+    object mnuSavePlaylist1: TMenuItem
+      Action = actSavePlaylistStream
+    end
+    object mnuMoveToCategory1: TMenuItem
+      Caption = 'Move to &category'
+      ImageIndex = 92
+    end
+    object N15: TMenuItem
+      Caption = '-'
+    end
+    object mnuSetupTimers1: TMenuItem
+      Action = actTimers
+    end
+    object mnuStreamSettings1: TMenuItem
+      Action = actStreamSettings
+    end
+    object mnuReset1: TMenuItem
+      Action = actResetData
+    end
+  end
+  object tmrSpeed: TTimer
+    Enabled = False
+    OnTimer = tmrSpeedTimer
+    Left = 32
+    Top = 144
+  end
+  object addTrayIcon: TTrayIcon
+    PopUpMenu = mnuTray
+    Icon.Data = {
+      7E04000000000100010010100000010020006804000016000000280000001000
+      0000200000000100200000000000000000000000000000000000000000000000
+      0000FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FF800002C387
+      1E1100000001FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF008253103168420F85854B11CD643A
+      0ED4402808945E3E0D5FAA711C09FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00B26D1546A85B17EBCD701BFDDA7F1CFFD77A
+      1BFFC36B1AFA874B12E859370A81FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00B96419D5DB862EFFEBA242FFEA9A2EFFEA92
+      1EFFEA921EFFCB6C1CFF814911DDC880240EFFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFF0001C5691DF0EDB878FFEEC08CFFEDB570FFEB9C
+      37FFEA921EFFDF851DFFA55A17DC80800002FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00CA6B1BBFDB9E68FFF1DBCCFFEEC390FFECA6
+      4EFFEA921EFFCB6C1CFFAB671783FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00DB801E2ACC6E20C5D07D3EFBDB9151FFD47D
+      2CFFC7641AFFAE5C17E8BF800004FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00DE831A27D1751A74D276
+      1B82C0611BFBA65F169EFFFFFF00FFFFFF00FFFFFF00BA751525FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00D078
+      1A7CB65F19F3B26F1617FFFFFF00FFFFFF00B36A179683520F6CFFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00BC65
+      18CDA15A15C000000001FFFFFF00AC65155BB96519F1A1671622FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00DD8C1716C064
+      1AF88F5A137C8F60201088531393B15D18F0BC6A18B1FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00D47B1C7AB75E
+      18F8945D12809B5715DBBE611AF8C9701A9AFF800002FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00C06A1ABBB55E
+      18F8B05B18F6BD6119F0D2781B5CFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00BD6419E4BC58
+      1AFFC2681AD7D2831A27FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00E68C211FC5651AF7C970
+      1BAAFFAA2B06FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00E38E1C09E1861E3BFFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFF0000F87F0000F01F0000E01F0000E01F0000E01F0000F03F0000FE3F
+      0000FF770000FE770000FEC70000FE0F0000FC3F0000FC7F0000FCFF0000FFFF
+      0000
+    }
+    Hint = 'streamWriter'
+    OnClick = addTrayClick
+    Left = 328
+    Top = 64
+  end
+  object mnuTray: TPopupMenu
+    Images = modSharedData.imgImages
+    Left = 108
+    Top = 88
+    object mnuShow: TMenuItem
+      Caption = '&Show/Hide'
+      Default = True
+      OnClick = mnuShowClick
+    end
+    object N2: TMenuItem
+      Caption = '-'
+    end
+    object Beenden1: TMenuItem
+      Action = actExit
+    end
+  end
+  object tmrRecordings: TTimer
+    Enabled = False
+    Interval = 60000
+    OnTimer = tmrRecordingsTimer
+    Left = 108
+    Top = 144
+  end
+  object tmrAutoSave: TTimer
+    Enabled = False
+    Interval = 600000
+    OnTimer = tmrAutoSaveTimer
+    Left = 288
+    Top = 200
+  end
+end

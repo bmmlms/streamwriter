@@ -1,7 +1,7 @@
 {
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2020 Alexander Nottelmann
+    Copyright (c) 2010-2021 Alexander Nottelmann
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -26,7 +26,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ComCtrls, ExtCtrls, Buttons, StdCtrls, ShellAPI, ShlObj, AppData,
   ImgList, LanguageObjects, Functions, WizardBase, GUIFunctions, Logging,
-  PngSpeedButton, SharedData;
+  SharedData;
 
 type
   TStepDir = class(TStep)
@@ -35,7 +35,7 @@ type
 
   TfrmWizard = class(TfrmWizardBase)
     pnlDir: TPanel;
-    cmdBrowse: TPngSpeedButton;
+    cmdBrowse: TSpeedButton;
     txtDir: TLabeledEdit;
     pnlMisc: TPanel;
     chkLimit: TCheckBox;
@@ -63,7 +63,7 @@ type
 
 implementation
 
-{$R *.dfm}
+{$R *.lfm}
 
 procedure TfrmWizard.Finish;
 begin
@@ -93,7 +93,7 @@ begin
       s := GetShellFolder(CSIDL_MYMUSIC);
       if (Trim(s) <> '') and (txtDir.Text = '') then
       begin
-        s := IncludeTrailingPathDelimiter(s) + 'streamWriter\';
+        s := ConcatPaths([s, 'streamWriter']);
         txtDir.Text := s;
       end;
     end;
@@ -189,7 +189,7 @@ constructor TfrmWizard.Create(AOwner: TComponent);
 begin
   inherited;
 
-  cmdBrowse.PngImage := modSharedData.imgImages.PngImages[85].PngImage;
+ // cmdBrowse.Image := modSharedData.imgImages.Images[85].Image;
 end;
 
 end.
