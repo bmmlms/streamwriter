@@ -1,8 +1,8 @@
-#define AppVersion GetFileVersion("..\bin\streamwriter.exe")
-#define AppCopyright GetStringFileInfo("..\bin\streamwriter.exe", LEGAL_COPYRIGHT)
+#define AppVersion GetFileVersion("..\Build\streamwriter.exe")
+#define AppCopyright GetStringFileInfo("..\Build\streamwriter.exe", LEGAL_COPYRIGHT)
 
 [Files]
-Source: ..\bin\streamwriter.exe; DestDir: {app}; Flags: ignoreversion
+Source: ..\Build\streamwriter.exe; DestDir: {app}; Flags: ignoreversion
 Source: .\InnoCallback.dll; DestDir: {tmp}; Flags: dontcopy
 Source: .\WizModernSmallImage-IS.bmp; DestDir: {tmp}; Flags: dontcopy
 

@@ -133,12 +133,12 @@ uses
   HomeCommands in 'HomeCommands.pas',
   SharedData in 'SharedData.pas' {modSharedData: TDataModule},
   MonitorAnalyzer in 'streaming\MonitorAnalyzer.pas',
-  DynBASS in 'audio\DynBASS.pas',
   LogTab in 'controls\LogTab.pas',
   Scheduler in 'Scheduler.pas',
   DynOpenSSL in '..\..\common\openssl\DynOpenSSL.pas',
   IdSSLOpenSSLHeadersCustom in '..\..\common\openssl\IdSSLOpenSSLHeadersCustom.pas',
   WindowsFunctions in '..\..\common\WindowsFunctions.pas',
+  DynBass in 'audio\DynBass.pas',
   SetStreamData in 'SetStreamData.pas' {frmSetStreamData},
   Constants in 'Constants.pas';
 
