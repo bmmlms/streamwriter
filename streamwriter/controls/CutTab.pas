@@ -407,9 +407,7 @@ begin
   FToolbarPanel.ClientHeight := 25;
 
   FToolBar.Images := modSharedData.imgImages;
-  FToolBar.Align := alLeft;
-  FToolBar.Width := Self.ClientWidth - 130;
-  FToolBar.Height := 24;
+  FToolBar.Align := alClient;
   FToolBar.Setup;
 
   FToolbar.FSave.OnClick := SaveClick;
@@ -456,6 +454,7 @@ begin
   inherited;
 
   ShowHint := True;
+  EdgeBorders := [];
 end;
 
 procedure TCutToolBar.Setup;

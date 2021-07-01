@@ -642,12 +642,13 @@ begin
 
   FStorage.Read('UserWasSetup', FUserWasSetup, False);
   FStorage.Read('User', FUser, '');
-  if FLastUsedDataVersion > 68 then
-  begin
-    FStorage.Read('Pass', FPass, '');
-    if FPass <> '' then
+  FStorage.Read('Pass', FPass, '');
+  if FPass <> '' then
+    try
       FPass := Base64.Decode(FPass);
-  end;
+    except
+      FPass := '';
+    end;
 
   FStorage.Read('SoundDevice', FSoundDevice, 0);
 

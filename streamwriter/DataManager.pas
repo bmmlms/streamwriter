@@ -823,7 +823,7 @@ type
   end;
 
 const
-  DATAVERSION: Cardinal = 69;
+  DATAVERSION: Cardinal = 68;
   DATAMAGIC: array[0..3] of Byte = (118, 114, 110, 97);
   EXPORTMAGIC: array[0..3] of Byte = (97, 110, 114, 118);
 

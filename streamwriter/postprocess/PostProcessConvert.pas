@@ -28,6 +28,9 @@ uses
   DataManager;
 
 type
+
+  { TPostProcessConvertThread }
+
   TPostProcessConvertThread = class(TPostProcessThreadBase)
   private
     FFromCutView: Boolean;
@@ -36,12 +39,14 @@ type
     FEncoderSettings: TObject;
     FProgress: Integer;
     FFileInfo: TAudioInfo;
+    FSync: TNotifyEvent;
 
     FOnProgress: TNotifyEvent;
     FOnFinish: TNotifyEvent;
     FOnError: TNotifyEvent;
 
     procedure FileConvertorProgress(Sender: TObject; Percent: Integer);
+    procedure Sync;
   protected
     procedure Execute; override;
   public
@@ -138,34 +143,25 @@ begin
           end;
         end;
 
-        {
-        Synchronize(
-          procedure
-          begin
-            if Assigned(FOnFinish) then
-              FOnFinish(Self)
-          end);
-        }
+        if Assigned(FOnFinish) then
+        begin
+          FSync := FOnFinish;
+          Synchronize(Sync);
+        end;
       end else
       begin
-        {
-        Synchronize(
-          procedure
-          begin
-            if Assigned(FOnError) then
-              FOnError(Self)
-          end);
-          }
+        if Assigned(FOnError) then
+        begin
+          FSync := FOnError;
+          Synchronize(Sync);
+        end;
       end;
     except
-      {
-      Synchronize(
-        procedure
-        begin
-          if Assigned(FOnError) then
-            FOnError(Self)
-        end);
-      }
+      if Assigned(FOnError) then
+      begin
+        FSync := FOnError;
+        Synchronize(Sync);
+      end;
     end;
   finally
     FC.Free;
@@ -175,15 +171,17 @@ end;
 procedure TPostProcessConvertThread.FileConvertorProgress(Sender: TObject;
   Percent: Integer);
 begin
-  {
-  Synchronize(
-    procedure
-    begin
-      FProgress := Percent;
-      if Assigned(FOnProgress) then
-        FOnProgress(Sender);
-    end);
-  }
+  if not Assigned(FOnProgress) then
+    Exit;
+
+  FProgress := Percent;
+  FSync := FOnProgress;;
+  Synchronize(Sync);
+end;
+
+procedure TPostProcessConvertThread.Sync;
+begin
+  FSync(Self);
 end;
 
 { TPostProcessConvert }

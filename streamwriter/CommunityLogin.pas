@@ -165,9 +165,6 @@ begin
       Close;
     end else
     begin
-      AppGlobals.User := '';
-      AppGlobals.Pass := '';
-
       MsgBox(Handle, _('You have entered an unknown username or a wrong password.'#13#10'Please try again.'), _('Error'), MB_ICONERROR);
     end;
   end;

@@ -1098,6 +1098,12 @@ end;
 procedure TfrmStreamWriterMain.HomeCommLogIn(Sender: TObject;
   Success: Boolean);
 begin
+  if not Success then
+  begin
+    AppGlobals.User := '';
+    AppGlobals.Pass := '';
+  end;
+
   UpdateStatus;
   if FCommunityLogin <> nil then
     FCommunityLogin.HomeCommLogIn(Sender, Success);

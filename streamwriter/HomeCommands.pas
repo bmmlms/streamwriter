@@ -55,7 +55,7 @@ type
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
-    constructor Create;
+    constructor Create; override;
 
     property ID: Cardinal read FID write FID;
     property ProtoVersion: Cardinal read FProtoVersion write FProtoVersion;
@@ -73,7 +73,7 @@ type
     FServerTime: Cardinal;
     FCommunicationTimeout: Cardinal;
   public
-    constructor Create;
+    constructor Create; override;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
@@ -96,7 +96,7 @@ type
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
     constructor Create(User, Pass: string); overload;
 
     property User: string read FUser write FUser;
@@ -107,7 +107,7 @@ type
   private
     FSuccess, FIsAdmin: Boolean;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
     constructor Create(User, Pass: string); overload;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
@@ -123,7 +123,7 @@ type
 
   TCommandLogOutResponse = class(TCommand)
   public
-    constructor Create;
+    constructor Create; override;
   end;
 
   TCommandNetworkTitleChangedResponse = class(TCommand)
@@ -139,8 +139,8 @@ type
     FServerHash: Cardinal;
     FServerArtistHash: Cardinal;
   public
-    constructor Create;
-    destructor Destroy; override;
+    constructor Create; override;
+    destructor Destroy; override; // TODO: alle destruktoren checken. das muss auch virtual und override gemacht werden.
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
@@ -163,7 +163,7 @@ type
 
   TCommandGetServerDataResponse = class(TCommand)
   public
-    constructor Create;
+    constructor Create; override;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
   end;
@@ -173,7 +173,7 @@ type
     FClientCount: Cardinal;
     FRecordingCount: Cardinal;
   public
-    constructor Create;
+    constructor Create; override;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
@@ -186,7 +186,7 @@ type
     FMessageID: Cardinal;
     FMessageMsg: string;
   public
-    constructor Create;
+    constructor Create; override;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
@@ -200,7 +200,7 @@ type
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
     constructor Create(TitleNotifications: Boolean); overload;
 
     property TitleNotifications: Boolean read FTitleNotifications write FTitleNotifications;
@@ -212,7 +212,7 @@ type
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
     constructor Create(StatType: TSendClientStatTypes); overload;
 
     property StatType: TSendClientStatTypes read FStatType write FStatType;
@@ -225,7 +225,7 @@ type
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
     constructor Create(URL, StreamName: string); overload;
 
     property URL: string read FURL write FURL;
@@ -246,7 +246,7 @@ type
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
-    constructor Create;
+    constructor Create; override;
 
     property StreamID: Cardinal read FStreamID write FStreamID;
     property Rating: Byte read FRating write FRating;
@@ -272,7 +272,7 @@ type
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
     constructor Create(StreamID: Cardinal; StreamName, StreamTitle, CurrentURL, URL: string;
       Format: TAudioTypes; Kbps: Cardinal; URLs: string); overload;
   end;
@@ -283,7 +283,7 @@ type
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
     constructor Create(Count: Cardinal); overload;
 
     property Count: Cardinal read FCount write FCount;
@@ -293,7 +293,7 @@ type
   private
     FStreamIDs: TIntArray;
   public
-    constructor Create;
+    constructor Create; override;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
@@ -307,7 +307,7 @@ type
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
     constructor Create(SyncType: TSyncWishlistTypes; Hashes: TSyncWishlistRecordArray); overload;
 
     property Hashes: TSyncWishlistRecordArray read FHashes write FHashes;
@@ -320,7 +320,7 @@ type
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
     constructor Create(Top: Boolean; Term: string); overload;
   end;
 
@@ -328,7 +328,7 @@ type
   private
     FSuccess: Boolean;
   public
-    constructor Create;
+    constructor Create; override;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
@@ -342,7 +342,7 @@ type
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
     constructor Create(StreamID: Cardinal; Data: TExtendedStream); overload;
     destructor Destroy; override;
   end;
@@ -353,7 +353,7 @@ type
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
     constructor Create(Titles: TStringArray); overload;
     destructor Destroy; override;
   end;
@@ -363,7 +363,7 @@ type
     FFoundTitles: TConvertManualToAutomaticArray;
     FNotFoundTitles: TStringArray;
   public
-    constructor Create;
+    constructor Create; override;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 
@@ -377,7 +377,7 @@ type
   protected
     procedure DoGet(S: TExtendedStream); override;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
     constructor Create(StreamID: Cardinal); overload;
   end;
 
@@ -387,7 +387,7 @@ type
     FOtherUserRegExps: TStringArray;
     FUserRegExps: TStringArray;
   public
-    constructor Create;
+    constructor Create; override;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 

@@ -649,17 +649,9 @@
     <Parsing>
       <SyntaxOptions>
         <SyntaxMode Value="Delphi"/>
-        <IncludeAssertionCode Value="True"/>
       </SyntaxOptions>
     </Parsing>
     <CodeGeneration>
-      <Checks>
-        <IOChecks Value="True"/>
-        <RangeChecks Value="True"/>
-        <OverflowChecks Value="True"/>
-        <StackChecks Value="True"/>
-      </Checks>
-      <VerifyObjMethodCallValidity Value="True"/>
       <TargetCPU Value="i386"/>
       <TargetOS Value="win32"/>
     </CodeGeneration>
