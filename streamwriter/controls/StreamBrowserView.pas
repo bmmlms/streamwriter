@@ -64,6 +64,8 @@ type
 
   TScrollDirection = (sdUp, sdDown);
 
+  { TMStreamSearchPanel }
+
   TMStreamSearchPanel = class(TPanel)
   private
     FSearchLabel: TLabel;
@@ -76,9 +78,10 @@ type
     FTypeList: TComboBox;
 
     procedure SetVisible(Value: Boolean);
+  protected
+    procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent); override;
-    procedure AfterCreate;
   end;
 
   TSortTypes = (stName, stBitrate, stType, stRating);
@@ -111,10 +114,10 @@ type
     procedure HomeCommDataReceived(Sender: TObject);
   protected
     procedure SetParent(NewParent: TWinControl); override;
+    procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
-    procedure AfterCreate;
 
     procedure PostTranslate;
     procedure RefreshStreams;
@@ -1090,35 +1093,6 @@ end;
 
 { TMStreamView }
 
-procedure TMStreamBrowserView.AfterCreate;
-var
-  i: Integer;
-begin
-  FSearch.AfterCreate;
-
-  FSortType := TSortTypes(AppGlobals.BrowserSortType);
-  FStreamTree.Header.SortDirection := TSortDirection(AppGlobals.BrowserSortDir);
-  FSearch.FSearchEdit.Text := AppGlobals.BrowserSearchText;
-  if AppGlobals.BrowserSearchAudioType < FSearch.FTypeList.Items.Count then
-    FSearch.FTypeList.ItemIndex := AppGlobals.BrowserSearchAudioType;
-  if AppGlobals.BrowserSearchBitrate < FSearch.FKbpsList.Items.Count then
-    FSearch.FKbpsList.ItemIndex := AppGlobals.BrowserSearchBitrate;
-
-  AppGlobals.Lock;
-  try
-    if (AppGlobals.Data.BrowserList.Count > 0) and (AppGlobals.Data.GenreList.Count > 0) then
-    begin
-      BuildGenres;
-      BuildTree(True);
-      SwitchMode(moShow);
-    end;
-  finally
-    AppGlobals.Unlock;
-  end;
-
-  SortTree(False);
-end;
-
 procedure TMStreamBrowserView.BuildGenres;
 var
   i: Integer;
@@ -1199,6 +1173,42 @@ begin
   inherited Create(AOwner);
 
   Color := clWindow;
+
+  FSearch := TMStreamSearchPanel.Create(Self);
+  FSearch.Parent := Self;
+  FSearch.Align := alTop;
+  FSearch.Height := 100;
+  FSearch.Visible := True;
+
+  FCountLabel := TLabel.Create(Self);
+  FCountLabel.Align := alBottom;
+  FCountLabel.Parent := Self;
+  FCountLabel.Visible := True;
+
+  FStreamTree := TMStreamTree.Create(Self);
+  FStreamTree.Align := alClient;
+  FStreamTree.Parent := Self;
+  FStreamTree.Visible := True;
+  FStreamTree.OnHeaderClick := StreamBrowserHeaderClick;
+  FStreamTree.FSortPopupMenu.FItemName.OnClick := SortItemClick;
+  FStreamTree.FSortPopupMenu.FItemKbps.OnClick := SortItemClick;
+  FStreamTree.FSortPopupMenu.FItemType.OnClick := SortItemClick;
+  FStreamTree.FSortPopupMenu.FItemRating.OnClick := SortItemClick;
+
+  AppGlobals.Lock;
+  try
+    // TODO: controlsaligned wird oft aufgerufen. da drin buildtree oder sowas zu machen ist falsch.
+    if (AppGlobals.Data.BrowserList.Count > 0) and (AppGlobals.Data.GenreList.Count > 0) then
+    begin
+      BuildGenres;
+      //BuildTree(True);
+      SwitchMode(moShow);
+    end;
+  finally
+    AppGlobals.Unlock;
+  end;
+
+  SortTree(False);
 end;
 
 destructor TMStreamBrowserView.Destroy;
@@ -1244,26 +1254,7 @@ begin
   FLoading := False;
   FSortType := stRating;
 
-  FSearch := TMStreamSearchPanel.Create(Self);
-  FSearch.Parent := Self;
-  FSearch.Align := alTop;
-  FSearch.Height := 100;
-  FSearch.Visible := True;
 
-  FCountLabel := TLabel.Create(Self);
-  FCountLabel.Align := alBottom;
-  FCountLabel.Parent := Self;
-  FCountLabel.Visible := True;
-
-  FStreamTree := TMStreamTree.Create(Self);
-  FStreamTree.Align := alClient;
-  FStreamTree.Parent := Self;
-  FStreamTree.Visible := True;
-  FStreamTree.OnHeaderClick := StreamBrowserHeaderClick;
-  FStreamTree.FSortPopupMenu.FItemName.OnClick := SortItemClick;
-  FStreamTree.FSortPopupMenu.FItemKbps.OnClick := SortItemClick;
-  FStreamTree.FSortPopupMenu.FItemType.OnClick := SortItemClick;
-  FStreamTree.FSortPopupMenu.FItemRating.OnClick := SortItemClick;
 
   SwitchMode(moShow);
 
@@ -1273,6 +1264,23 @@ begin
   FSearch.FTypeList.OnChange := ListsChange;
 
   HomeComm.OnServerDataReceived := HomeCommDataReceived;
+end;
+
+procedure TMStreamBrowserView.ControlsAligned;
+var
+  i: Integer;
+begin
+  inherited ControlsAligned;
+
+  FSortType := TSortTypes(AppGlobals.BrowserSortType);
+  FStreamTree.Header.SortDirection := TSortDirection(AppGlobals.BrowserSortDir);
+  FSearch.FSearchEdit.Text := AppGlobals.BrowserSearchText;
+  if AppGlobals.BrowserSearchAudioType < FSearch.FTypeList.Items.Count then
+    FSearch.FTypeList.ItemIndex := AppGlobals.BrowserSearchAudioType;
+  if AppGlobals.BrowserSearchBitrate < FSearch.FKbpsList.Items.Count then
+    FSearch.FKbpsList.ItemIndex := AppGlobals.BrowserSearchBitrate;
+
+
 end;
 
 procedure TMStreamBrowserView.ListsChange(Sender: TObject);
@@ -1438,48 +1446,6 @@ end;
 
 { TMStreamSearch }
 
-procedure TMStreamSearchPanel.AfterCreate;
-begin
-  FKbpsList.Items.Add(_('- No kbps -'));
-  FKbpsList.Items.Add('>= 64');
-  FKbpsList.Items.Add('>= 128');
-  FKbpsList.Items.Add('>= 192');
-  FKbpsList.Items.Add('>= 256');
-  FKbpsList.Items.Add('= 320');
-  FKbpsList.ItemIndex := 0;
-
-  FTypeList.Items.Add(_('- No type -'));
-  FTypeList.Items.Add(_('MP3'));
-  FTypeList.Items.Add(_('AAC'));
-  FTypeList.ItemIndex := 0;
-
-  FSearchEdit.Width := ClientWidth - FSearchEdit.Left - FSearchLabel.Left;
-  FGenreList.Width := ClientWidth - FGenreList.Left - FGenreLabel.Left;
-  FKbpsList.Width := ClientWidth - FKbpsList.Left - FKbpsLabel.Left;
-  FTypeList.Width := ClientWidth - FTypeList.Left - FTypeLabel.Left;
-
-  FSearchEdit.Top := 4;
-  FSearchLabel.Top := FSearchEdit.Top + FSearchEdit.Height div 2 - FSearchLabel.Height div 2;
-
-  FGenreList.Top := FSearchEdit.Top + FSearchEdit.Height + 4;
-  FGenreLabel.Top := FGenreList.Top + FGenreList.Height div 2 - FGenreLabel.Height div 2;
-
-  FKbpsList.Top := FGenreList.Top + FGenreList.Height;
-  FKbpsLabel.Top := FKbpsList.Top + FKbpsList.Height div 2 - FKbpsLabel.Height div 2;
-
-  FTypeList.Top := FKbpsList.Top + FKbpsList.Height + 4;
-  FTypeLabel.Top := FTypeList.Top + FTypeList.Height div 2 - FTypeLabel.Height div 2;
-
-  ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top;
-
-  FSearchEdit.Anchors := [akLeft, akRight, akTop];
-  FGenreList.Anchors := [akLeft, akRight, akTop];
-  FKbpsList.Anchors := [akLeft, akRight, akTop];
-  FTypeList.Anchors := [akLeft, akRight, akTop];
-
-  SetVisible(True);
-end;
-
 constructor TMStreamSearchPanel.Create(AOwner: TComponent);
 var
   MaxW: Integer;
@@ -1549,6 +1515,52 @@ begin
     if (Controls[i] <> FSearchLabel) and (Controls[i] <> FSearchEdit) then
       Controls[i].Visible := Value;
   ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4
+end;
+
+procedure TMStreamSearchPanel.ControlsAligned;
+begin
+  inherited ControlsAligned;
+
+  exit;
+
+  FKbpsList.Items.Add(_('- No kbps -'));
+  FKbpsList.Items.Add('>= 64');
+  FKbpsList.Items.Add('>= 128');
+  FKbpsList.Items.Add('>= 192');
+  FKbpsList.Items.Add('>= 256');
+  FKbpsList.Items.Add('= 320');
+  FKbpsList.ItemIndex := 0;
+
+  FTypeList.Items.Add(_('- No type -'));
+  FTypeList.Items.Add(_('MP3'));
+  FTypeList.Items.Add(_('AAC'));
+  FTypeList.ItemIndex := 0;
+
+  FSearchEdit.Width := ClientWidth - FSearchEdit.Left - FSearchLabel.Left;
+  FGenreList.Width := ClientWidth - FGenreList.Left - FGenreLabel.Left;
+  FKbpsList.Width := ClientWidth - FKbpsList.Left - FKbpsLabel.Left;
+  FTypeList.Width := ClientWidth - FTypeList.Left - FTypeLabel.Left;
+
+  FSearchEdit.Top := 4;
+  FSearchLabel.Top := FSearchEdit.Top + FSearchEdit.Height div 2 - FSearchLabel.Height div 2;
+
+  FGenreList.Top := FSearchEdit.Top + FSearchEdit.Height + 4;
+  FGenreLabel.Top := FGenreList.Top + FGenreList.Height div 2 - FGenreLabel.Height div 2;
+
+  FKbpsList.Top := FGenreList.Top + FGenreList.Height;
+  FKbpsLabel.Top := FKbpsList.Top + FKbpsList.Height div 2 - FKbpsLabel.Height div 2;
+
+  FTypeList.Top := FKbpsList.Top + FKbpsList.Height + 4;
+  FTypeLabel.Top := FTypeList.Top + FTypeList.Height div 2 - FTypeLabel.Height div 2;
+
+  ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top;
+
+  FSearchEdit.Anchors := [akLeft, akRight, akTop];
+  FGenreList.Anchors := [akLeft, akRight, akTop];
+  FKbpsList.Anchors := [akLeft, akRight, akTop];
+  FTypeList.Anchors := [akLeft, akRight, akTop];
+
+  SetVisible(True);
 end;
 
 { TMStreamTreeHeaderPopup }

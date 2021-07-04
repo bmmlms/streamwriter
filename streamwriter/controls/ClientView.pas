@@ -53,6 +53,8 @@ type
   TStartStreamingEvent = procedure(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string;
     URLs, RegExes, IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode) of object;
 
+  { TMClientView }
+
   TMClientView = class(TVirtualStringTree)
   private
     FBrowser: TMStreamTree;
@@ -107,10 +109,10 @@ type
     function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
     procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
     procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
+    procedure CreateHandle; override;
   public
     constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree); reintroduce;
     destructor Destroy; override;
-    procedure AfterCreate;
 
     function AddClient(Client: TICEClient): PVirtualNode;
     function RefreshClient(Client: TICEClient): Boolean;
@@ -245,6 +247,8 @@ begin
     if not ((AppGlobals.ClientCols and (1 shl i)) <> 0) then
       Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
   end;
+
+  FitColumns;
 end;
 
 destructor TMClientView.Destroy;
@@ -519,6 +523,18 @@ begin
     Canvas.Font.Color := AppGlobals.NodeTextColorSelected
   else
     Canvas.Font.Color := AppGlobals.NodeTextColor;
+end;
+
+procedure TMClientView.CreateHandle;
+begin
+  inherited CreateHandle;
+
+  // TODO: das hier auch bei savedtrab so machen. da ist es z.z. im createhandle vom tab selber und nicht vom tree
+  if RootNodeCount > 0 then
+  begin
+    Selected[GetFirst] := True;
+    FocusedNode := GetFirst;
+  end;
 end;
 
 procedure TMClientView.DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal);
@@ -902,11 +918,6 @@ begin
       Break;
     end;
   end;
-end;
-
-procedure TMClientView.AfterCreate;
-begin
-  FitColumns;
 end;
 
 procedure TMClientView.SortItems;

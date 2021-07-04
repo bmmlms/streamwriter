@@ -46,13 +46,14 @@ type
     FDebugView: TMStreamDebugView;
   protected
     procedure SetParent(NewParent: TWinControl); override;
+    procedure ControlsAligned; override;
   public
-    procedure AfterCreate;
-
     property BrowserView: TMStreamBrowserView read FBrowserView;
     property InfoView: TMStreamInfoView read FInfoView;
     property DebugView: TMStreamDebugView read FDebugView;
   end;
+
+  { TClientAddressBar }
 
   TClientAddressBar = class(TPanel)
   private
@@ -69,10 +70,10 @@ type
 
     procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
       APoint: TPoint; var Effect: Integer);
+    procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    procedure AfterCreate;
 
     property Stations: TMStationCombo read FStations;
     property OnStart: TNotifyEvent read FOnStart write FOnStart;
@@ -186,7 +187,6 @@ type
     constructor Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList;
       Clients: TClientManager; Popup: TPopupMenu); reintroduce;
     destructor Destroy; override;
-    procedure AfterCreate; override;
 
     function StartStreaming(Streams: TStartStreamingInfoArray; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean; overload;
     function StartStreaming(Stream: TStartStreamingInfo; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean; overload;
@@ -233,6 +233,42 @@ begin
   FStations.Parent := Self;
 
   FDropTarget := TDropComboTarget.Create(Self);
+
+
+
+  FLabel.Left := 0;
+  FLabel.Caption := 'Playlist/Stream-URL:';
+
+  FStart.Width := 24;
+  FStart.Height := 22;
+  FStart.Anchors := [akRight];
+  FStart.Flat := True;
+  FStart.Hint := 'Add and start recording';
+  FStart.ShowHint := True;
+  FStart.NumGlyphs := 1;
+  FStart.OnClick := FStartClick;
+  FStart.Images := modSharedData.imgImages;
+  FStart.ImageIndex := TImages.ADD;
+
+  FStations.DropDownCount := 15;
+  FStations.Top := 3;
+  FStations.Anchors := [akLeft, akTop, akRight];
+  FStations.OnKeyPress := FStationsKeyPress;
+  FStations.OnChange := FStationsChange;
+  FStations.Images := modSharedData.imgImages;
+
+
+  FDropTarget.Formats := [mfText, mfURL, mfFile];
+  FDropTarget.Register(FStations);
+  FDropTarget.OnDrop := DropTargetDrop;
+
+  BevelOuter := bvNone;
+
+
+  // Das muss nach dem Setzen der ClientHeight. KA warum, aber die ClientHeight ändert FStart.Top!
+//  FStart.Top := 3;
+
+  FStart.Enabled := False;
 end;
 
 destructor TClientAddressBar.Destroy;
@@ -253,46 +289,15 @@ begin
     FStations.Text := string(FDropTarget.Files[0]);
 end;
 
-procedure TClientAddressBar.AfterCreate;
+procedure TClientAddressBar.ControlsAligned;
 begin
-  FLabel.Left := 0;
-  FLabel.Caption := 'Playlist/Stream-URL:';
+  inherited ControlsAligned;
 
-  FStart.Width := 24;
-  FStart.Height := 22;
   FStart.Left := ClientWidth - 1 - FStart.Width;
-  FStart.Anchors := [akRight];
-  FStart.Flat := True;
-  FStart.Hint := 'Add and start recording';
-  FStart.ShowHint := True;
-  FStart.NumGlyphs := 1;
-  FStart.OnClick := FStartClick;
-  FStart.Images := modSharedData.imgImages;
-  FStart.ImageIndex := TImages.ADD;
-
-  FStations.DropDownCount := 15;
   FStations.Left := FLabel.Left + FLabel.Width + 6;
-  FStations.Top := 3;
   FStations.Width := ClientWidth - FStations.Left - FStart.Width - 6;
-  FStations.Anchors := [akLeft, akTop, akRight];
-  FStations.OnKeyPress := FStationsKeyPress;
-  FStations.OnChange := FStationsChange;
-  FStations.Images := modSharedData.imgImages;
-
   FLabel.Top := FStations.Top + FStations.Height div 2 - FLabel.Height div 2;
-
-  FDropTarget.Formats := [mfText, mfURL, mfFile];
-  FDropTarget.Register(FStations);
-  FDropTarget.OnDrop := DropTargetDrop;
-
-  BevelOuter := bvNone;
-
   ClientHeight := Max(FLabel.Height + FLabel.Top * 2, FStations.Height + FStations.Top * 2) - 2;
-
-  // Das muss nach dem Setzen der ClientHeight. KA warum, aber die ClientHeight ändert FStart.Top!
-  FStart.Top := 3;
-
-  FStart.Enabled := False;
 end;
 
 procedure TClientAddressBar.FStationsChange(Sender: TObject);
@@ -800,6 +805,13 @@ begin
   FClientView.OnStartStreaming := FClientViewStartStreaming;
 
   MsgBus.AddSubscriber(MessageReceived);
+
+  BuildTree;
+
+  FSplitter.Width := MulDiv(4, Screen.PixelsPerInch, 96);
+  FSplitter.MinSize := MulDiv(220, Screen.PixelsPerInch, 96);
+  FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
+  FSideBar.Width := AppGlobals.SidebarWidth;
 end;
 
 procedure TClientTab.AddressBarStart(Sender: TObject);
@@ -814,58 +826,6 @@ begin
     Entry := TRecentEntry(FAddressBar.FStations.ItemsEx[FAddressBar.FStations.ItemIndex].Data);
     StartStreaming(TStartStreamingInfo.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, nil, nil, nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere);
   end;
-end;
-
-procedure TClientTab.AfterCreate;
-begin
-  inherited;
-
-  BuildTree;
-
-  FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2) + 1;
-
-  FVolume.Setup;
-  FVolume.Enabled := Bass.DeviceAvailable;
-  FVolume.Width := 140;
-  FVolume.Volume := Players.Volume;
-
-  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
-  FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
-
-  FSplitter.Width := MulDiv(4, Screen.PixelsPerInch, 96);
-  FSplitter.MinSize := MulDiv(220, Screen.PixelsPerInch, 96);
-  FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
-
-  FSideBar.Width := AppGlobals.SidebarWidth;
-
-  FSideBar.FDebugView.DebugView.OnClear := DebugClear;
-  FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
-  FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
-  if Screen.PixelsPerInch = 96 then
-    FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := modSharedData.imgImages;
-
-  if FClientView.RootNodeCount > 0 then
-  begin
-    FClientView.Selected[FClientView.GetFirst] := True;
-    FClientView.FocusedNode := FClientView.GetFirst;
-  end;
-
-  FToolbarPanel.ClientHeight := 24;
-
-  FVolume.Width := 140;
-
-  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
-  FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
-
-  FSplitter.Width := MulDiv(4, Screen.PixelsPerInch, 96);
-  FSplitter.MinSize := MulDiv(220, Screen.PixelsPerInch, 96);
-  FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
-
-  FSideBar.Width := AppGlobals.SidebarWidth;
-
-  FAddressBar.AfterCreate;
-  FClientView.AfterCreate;
-  FSideBar.AfterCreate;
 end;
 
 procedure TClientTab.DebugClear(Sender: TObject);
@@ -1296,10 +1256,35 @@ end;
 
 procedure TClientTab.ControlsAligned;
 begin
-  inherited ControlsAligned;
+  inherited;
 
   FToolbarPanel.Top := 0;
   FToolbarPanel.ClientHeight := FToolbar.Height;
+
+//  FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2) + 1;
+
+  // TODO: wirklich hier machen? alles checken hier.
+  FVolume.Setup;
+  FVolume.Enabled := Bass.DeviceAvailable;
+  FVolume.Width := 140;
+  FVolume.Volume := Players.Volume;
+
+  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
+  FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
+
+
+
+  FSideBar.FDebugView.DebugView.OnClear := DebugClear;
+  FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
+  FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
+  if Screen.PixelsPerInch = 96 then
+    FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := modSharedData.imgImages;
+
+  //FToolbarPanel.ClientHeight := 24;    // TODO: hier ganz viel anpassen. ganzen fixen größenangaben raus und so.
+  //FVolume.Width := 140;
+
+  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
+  FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
 end;
 
 procedure TClientTab.FClientViewKeyPress(Sender: TObject; var Key: Char);
@@ -1830,15 +1815,6 @@ end;
 
 { TSidebar }
 
-procedure TSidebar.AfterCreate;
-begin
-  FPage1.PageControl := Self;
-  FPage2.PageControl := Self;
-  FPage3.PageControl := Self;
-
-  FBrowserView.AfterCreate;
-end;
-
 procedure TSidebar.SetParent(NewParent: TWinControl);
 begin
   inherited SetParent(NewParent);
@@ -1864,6 +1840,15 @@ begin
 
   FDebugView := TMStreamDebugView.Create(Self);
   FDebugView.Parent := FPage3;
+end;
+
+procedure TSidebar.ControlsAligned;
+begin
+  inherited ControlsAligned;
+
+  FPage1.PageControl := Self;
+  FPage2.PageControl := Self;
+  FPage3.PageControl := Self;
 end;
 
 end.

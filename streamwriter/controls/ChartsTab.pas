@@ -19,17 +19,44 @@
 }
 
 { This unit is for showing radio-charts in the main-window }
+
 unit ChartsTab;
 
 interface
 
 uses
-  Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
-  MControls, LanguageObjects, Tabs, Functions, AppData, Logging, VirtualTrees,
-  HomeCommunication, DataManager, ImgList, Graphics, Math, Generics.Collections,
-  Menus, ChartsTabAdjustTitleName, Forms, TypeDefs, MessageBus, AppMessages,
-  HomeCommands, Commands, GUIFunctions, SharedData, Messages, Images,
-  DateUtils, SharedControls;
+  AppData,
+  AppMessages,
+  Buttons,
+  ChartsTabAdjustTitleName,
+  Classes,
+  ComCtrls,
+  Controls,
+  DataManager,
+  DateUtils,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Graphics,
+  GUIFunctions,
+  HomeCommunication,
+  Images,
+  ImgList,
+  LanguageObjects,
+  Logging,
+  Math,
+  MControls,
+  Menus,
+  MessageBus,
+  Messages,
+  SharedControls,
+  SharedData,
+  StdCtrls,
+  SysUtils,
+  Tabs,
+  TypeDefs,
+  VirtualTrees,
+  Windows;
 
 type
   TNodeTypes = (ntChart, ntStream, ntAll);
@@ -99,7 +126,6 @@ type
     procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
-    procedure AfterCreate;
 
     procedure RebuildSearchItems(NewEntry: string);
 
@@ -109,35 +135,28 @@ type
   TChartArray = array of TChartEntry;
   TChartStates = (csNormal, csSearching, csSearchError);
 
+  { TChartsTree }
+
   TChartsTree = class(TVirtualStringTree)
   private
     FTimer: TTimer;
     FDots: string;
     FTextLeft: Integer;
     FProgressBar: TProgressBar;
-
     FPopupMenu: TChartsPopup;
-
     FColTitle: TVirtualTreeColumn;
     FColImages: TVirtualTreeColumn;
     FColLastPlayed: TVirtualTreeColumn;
     FColChance: TVirtualTreeColumn;
-
     FHeaderDragSourcePosition: Cardinal;
-
     FState: TChartStates;
 
     procedure FitColumns;
     procedure MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
-
     procedure MessageReceived(Msg: TMessageBase);
-
     procedure PopupMenuClick(Sender: TObject);
-
     procedure TimerOnTimer(Sender: TObject);
-
     procedure FSetState(Value: TChartStates);
-
     procedure ExecDefaultAction;
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: string); override;
@@ -160,10 +179,8 @@ type
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
-    procedure AfterCreate;
 
     procedure PostTranslate;
-
     function GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
     function NodesToData(Nodes: TNodeArray): TChartDataArray;
 
@@ -190,25 +207,20 @@ type
 
     procedure ShowCharts;
     procedure UpdateButtons;
-
     procedure SearchKeyPress(Sender: TObject; var Key: Char);
     procedure SearchSelect(Sender: TObject);
-
     procedure HomeCommSearchChartsReceived(Sender: TObject; Success: Boolean; Charts: TChartList);
-
     procedure ButtonClick(Sender: TObject);
     procedure ChartsTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
   protected
-    procedure DoEnter; override;
+    procedure DoEnter; override;  // TODO: das hier macht nicht das was es soll.
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
-    procedure AfterCreate; override;
 
     procedure PostTranslate;
     procedure SetState(State: TChartStates);
     procedure SearchCharts(Top, ShowMessages: Boolean);
-
     procedure HomeCommStateChanged(Sender: TObject);
 
     property ChartsTree: TChartsTree read FChartsTree;
@@ -230,32 +242,6 @@ implementation
 
 { TChartsTab }
 
-procedure TChartsTab.AfterCreate;
-begin
-  inherited;
-
-  FChartsTree.AfterCreate;
-  FSearchPanel.AfterCreate;
-
-  FChartsTree.Images := modSharedData.imgImages;
-
-  if Screen.PixelsPerInch = 96 then
-    FChartsTree.PopupMenu.Images := modSharedData.imgImages;
-
-  FSearchPanel.FButtonAddToWishlist.OnClick := ButtonClick;
-  FSearchPanel.FButtonRemoveFromWishlist.OnClick := ButtonClick;
-  FSearchPanel.FButtonAddArtistToWishlist.OnClick := ButtonClick;
-  FSearchPanel.FButtonEditAndAddToWishlist.OnClick := ButtonClick;
-  FSearchPanel.FButtonStartStreaming.OnClick := ButtonClick;
-  FSearchPanel.FButtonPlayStream.OnClick := ButtonClick;
-  FSearchPanel.FButtonPlayStreamExternal.OnClick := ButtonClick;
-  FSearchPanel.FButtonAddStream.OnClick := ButtonClick;
-
-  Caption := 'Title search';
-
-  UpdateButtons;
-end;
-
 procedure TChartsTab.ButtonClick(Sender: TObject);
 begin
   if Sender = FSearchPanel.FButtonAddToWishlist then
@@ -276,8 +262,7 @@ begin
     FChartsTree.FPopupMenu.FItemAddStream.Click;
 end;
 
-procedure TChartsTab.ChartsTreeChange(Sender: TBaseVirtualTree;
-  Node: PVirtualNode);
+procedure TChartsTab.ChartsTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
 begin
   UpdateButtons;
 end;
@@ -289,7 +274,7 @@ begin
   FSearchPanel := TSearchPanel.Create(Self);
   FSearchPanel.Parent := Self;
   FSearchPanel.Align := alTop;
- // FSearchPanel.Padding.Top := 1;
+  // FSearchPanel.Padding.Top := 1;
 
   FChartsTree := TChartsTree.Create(Self);
   FChartsTree.Parent := Self;
@@ -308,6 +293,24 @@ begin
 
   FSearchPanel.FSearch.OnKeyPress := SearchKeyPress;
   FSearchPanel.FSearch.OnSelect := SearchSelect;
+
+  FChartsTree.Images := modSharedData.imgImages;
+
+  if Screen.PixelsPerInch = 96 then
+    FChartsTree.PopupMenu.Images := modSharedData.imgImages;
+
+  FSearchPanel.FButtonAddToWishlist.OnClick := ButtonClick;
+  FSearchPanel.FButtonRemoveFromWishlist.OnClick := ButtonClick;
+  FSearchPanel.FButtonAddArtistToWishlist.OnClick := ButtonClick;
+  FSearchPanel.FButtonEditAndAddToWishlist.OnClick := ButtonClick;
+  FSearchPanel.FButtonStartStreaming.OnClick := ButtonClick;
+  FSearchPanel.FButtonPlayStream.OnClick := ButtonClick;
+  FSearchPanel.FButtonPlayStreamExternal.OnClick := ButtonClick;
+  FSearchPanel.FButtonAddStream.OnClick := ButtonClick;
+
+  Caption := 'Title search';
+
+  UpdateButtons;
 end;
 
 destructor TChartsTab.Destroy;
@@ -317,9 +320,7 @@ begin
   if FCharts <> nil then
   begin
     for i := 0 to FCharts.Count - 1 do
-    begin
       FCharts[i].Free;
-    end;
     FreeAndNil(FCharts);
   end;
 
@@ -334,8 +335,7 @@ begin
     FSearchPanel.FSearch.ApplyFocus;
 end;
 
-procedure TChartsTab.HomeCommSearchChartsReceived(Sender: TObject;
-  Success: Boolean; Charts: TChartList);
+procedure TChartsTab.HomeCommSearchChartsReceived(Sender: TObject; Success: Boolean; Charts: TChartList);
 var
   i: Integer;
 begin
@@ -408,14 +408,6 @@ begin
 
     Tmp := Trim(FSearchPanel.FSearch.Text);
 
-    {
-    if (Pos('+', Tmp) > 0) or (Pos('-', Tmp) > 0) or (Pos('*', Tmp) > 0) or (Pos('(', Tmp) > 0) or (Pos(')', Tmp) > 0) or
-       (Pos('<', Tmp) > 0) or (Pos('>', Tmp) > 0) or (Pos('~', Tmp) > 0) or (Pos('''', Tmp) > 0) then
-    begin
-      Abort := True;
-    end;
-    }
-
     if (Pos('"', Tmp) > 0) and (OccurenceCount('"', Tmp) mod 2 <> 0) then
     begin
       MsgBox(GetParentForm(Self).Handle, _('When using quotes every opening quote needs a closing quote.'), _('Info'), MB_ICONINFORMATION);
@@ -436,9 +428,8 @@ begin
     end;
 
     if Abort then
-    begin
-      MsgBox(GetParentForm(Self).Handle, _('You need to specify at least one word to search for. Special chars (+-*()<>~'') are not allowed.'), _('Info'), MB_ICONINFORMATION);
-    end else
+      MsgBox(GetParentForm(Self).Handle, _('You need to specify at least one word to search for. Special chars (+-*()<>~'') are not allowed.'), _('Info'), MB_ICONINFORMATION)
+    else
     begin
       FSearchPanel.RebuildSearchItems(Tmp);
 
@@ -492,9 +483,7 @@ begin
     FResultLabel.Enabled := not (State = csSearching);
 
     if State = csSearching then
-    begin
       FResultLabel.Caption := Format(_(TEXT_RESULTS), [0]);
-    end;
 
     UpdateButtons;
   end;
@@ -597,14 +586,12 @@ begin
       end;
 
       if NodeData.Stream <> nil then
-      begin
         if OneSelectedStream then
         begin
           ManySelectedStreams := True;
           OneSelectedStream := False;
         end else if (not OneSelectedStream) and (not ManySelectedStreams) then
           OneSelectedStream := True;
-      end;
     end;
     N := FChartsTree.GetNextSelected(N);
   end;
@@ -629,11 +616,6 @@ begin
 end;
 
 { TChartsTree }
-
-procedure TChartsTree.AfterCreate;
-begin
-  FitColumns;
-end;
 
 constructor TChartsTree.Create(AOwner: TComponent);
 var
@@ -705,10 +687,10 @@ begin
   Header.SortDirection := sdDescending;
 
   for i := 1 to Header.Columns.Count - 1 do
-  begin
     if not ((AppGlobals.ChartCols and (1 shl i)) <> 0) then
       Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
-  end;
+
+  FitColumns;
 end;
 
 destructor TChartsTree.Destroy;
@@ -756,8 +738,7 @@ begin
   end;
 end;
 
-function TChartsTree.DoCompare(Node1, Node2: PVirtualNode;
-  Column: TColumnIndex): Integer;
+function TChartsTree.DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer;
 var
   i: Integer;
   C1, C2: Integer;
@@ -774,72 +755,70 @@ begin
       0:
         Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
       1:
+      begin
+        C1 := 0;
+        C2 := 0;
+
+        for i := 0 to AppGlobals.Data.SavedTitleHashes.Count - 1 do
         begin
-          C1 := 0;
-          C2 := 0;
-
-          for i := 0 to AppGlobals.Data.SavedTitleHashes.Count - 1 do
-          begin
-            if (Data1.Chart <> nil) and (Data1.Chart.ServerHash = AppGlobals.Data.SavedTitleHashes[i]) then
-              C1 := C1 + 1;
-            if (Data2.Chart <> nil) and (Data2.Chart.ServerHash = AppGlobals.Data.SavedTitleHashes[i]) then
-              C2 := C2 + 1;
-          end;
-
-          if Data1.IsArtistOnWishlist then
-            C1 := C1 + 2;
-          if Data2.IsArtistOnWishlist then
-            C2 := C2 + 2;
-
-          if Data1.IsOnWishlist then
-            C1 := C1 + 3;
-          if Data2.IsOnWishlist then
-            C2 := C2 + 3;
-
-          Result := CmpInt(C1, C2);
-          if Result = 0 then
-          begin
-            Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
-            if Header.SortDirection = sdDescending then
-              Result := Result * -1;
-          end;
+          if (Data1.Chart <> nil) and (Data1.Chart.ServerHash = AppGlobals.Data.SavedTitleHashes[i]) then
+            C1 := C1 + 1;
+          if (Data2.Chart <> nil) and (Data2.Chart.ServerHash = AppGlobals.Data.SavedTitleHashes[i]) then
+            C2 := C2 + 1;
         end;
+
+        if Data1.IsArtistOnWishlist then
+          C1 := C1 + 2;
+        if Data2.IsArtistOnWishlist then
+          C2 := C2 + 2;
+
+        if Data1.IsOnWishlist then
+          C1 := C1 + 3;
+        if Data2.IsOnWishlist then
+          C2 := C2 + 3;
+
+        Result := CmpInt(C1, C2);
+        if Result = 0 then
+        begin
+          Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
+          if Header.SortDirection = sdDescending then
+            Result := Result * -1;
+        end;
+      end;
       2:
         Result := CmpInt(Data1.Chart.PlayedLast, Data2.Chart.PlayedLast);
       3:
+      begin
+        Result := CmpInt(Data1.Chart.PlayedLastWeek, Data2.Chart.PlayedLastWeek);
+        if Result = 0 then
         begin
-          Result := CmpInt(Data1.Chart.PlayedLastWeek, Data2.Chart.PlayedLastWeek);
-          if Result = 0 then
-          begin
-            Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
-            if Header.SortDirection = sdDescending then
-              Result := Result * -1;
-          end;
+          Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
+          if Header.SortDirection = sdDescending then
+            Result := Result * -1;
         end;
+      end;
     end;
   end else if (Data1.Stream <> nil) and (Data2.Stream <> nil) then
-  begin
     case Column of
       0, 1:
-        begin
-          Result := CompareText(Data1.Stream.Stream.Name, Data2.Stream.Stream.Name);
-          if (Header.SortDirection = sdDescending) then
-            Result := Result * -1;
-        end;
+      begin
+        Result := CompareText(Data1.Stream.Stream.Name, Data2.Stream.Stream.Name);
+        if (Header.SortDirection = sdDescending) then
+          Result := Result * -1;
+      end;
       2:
-        begin
-          Result := CmpInt(Data2.Stream.PlayedLast, Data1.Stream.PlayedLast);
-          if (Header.SortDirection = sdAscending) then
-            Result := Result * -1;
-        end;
+      begin
+        Result := CmpInt(Data2.Stream.PlayedLast, Data1.Stream.PlayedLast);
+        if (Header.SortDirection = sdAscending) then
+          Result := Result * -1;
+      end;
       3:
-        begin
-          Result := CmpInt(Data1.Stream.PlayedLastWeek, Data2.Stream.PlayedLastWeek);
-          if (Header.SortDirection = sdAscending) then
-            Result := Result * -1;
-        end;
+      begin
+        Result := CmpInt(Data1.Stream.PlayedLastWeek, Data2.Stream.PlayedLastWeek);
+        if (Header.SortDirection = sdAscending) then
+          Result := Result * -1;
+      end;
     end;
-  end;
 end;
 
 function TChartsTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList;
@@ -851,8 +830,7 @@ begin
     Index := 0;
 end;
 
-procedure TChartsTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex;
-  TextType: TVSTTextType; var Text: string);
+procedure TChartsTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: string);
 var
   Val: Int64;
   NodeData: PChartNodeData;
@@ -870,41 +848,38 @@ begin
       else
         Text := NodeData.Stream.Stream.Name;
     2:
+    begin
+      if NodeData.Chart <> nil then
+        Val := NodeData.Chart.PlayedLast
+      else if NodeData.Stream <> nil then
+        Val := NodeData.Stream.PlayedLast;
+
+      if Val < 1 then
+        Val := 1;
+
+      if Val >= 86400 then
       begin
-        if NodeData.Chart <> nil then
-          Val := NodeData.Chart.PlayedLast
-        else if NodeData.Stream <> nil then
-          Val := NodeData.Stream.PlayedLast;
-
-        if Val < 1 then
-          Val := 1;
-
-        if Val >= 86400 then
-        begin
-          if Val div 86400 = 1 then
-            Text := Format(_('%d day ago'), [Val div 86400])
-          else
-            Text := Format(_('%d days ago'), [Val div 86400]);
-        end else if Val >= 3600 then
-        begin
-          if Val div 3600 = 1 then
-            Text := Format(_('%d hour ago'), [Val div 3600])
-          else
-            Text := Format(_('%d hours ago'), [Val div 3600]);
-        end else if Val >= 60 then
-        begin
-          if Val div 60 = 1 then
-            Text := Format(_('%d minute ago'), [Val div 60])
-          else
-            Text := Format(_('%d minutes ago'), [Val div 60]);
-        end else
-        begin
-          if Val = 1 then
-            Text := Format(_('%d second ago'), [Val])
-          else
-            Text := Format(_('%d seconds ago'), [Val]);
-        end;
-      end;
+        if Val div 86400 = 1 then
+          Text := Format(_('%d day ago'), [Val div 86400])
+        else
+          Text := Format(_('%d days ago'), [Val div 86400]);
+      end else if Val >= 3600 then
+      begin
+        if Val div 3600 = 1 then
+          Text := Format(_('%d hour ago'), [Val div 3600])
+        else
+          Text := Format(_('%d hours ago'), [Val div 3600]);
+      end else if Val >= 60 then
+      begin
+        if Val div 60 = 1 then
+          Text := Format(_('%d minute ago'), [Val div 60])
+        else
+          Text := Format(_('%d minutes ago'), [Val div 60]);
+      end else if Val = 1 then
+        Text := Format(_('%d second ago'), [Val])
+      else
+        Text := Format(_('%d seconds ago'), [Val]);
+    end;
     3:
       if NodeData.Chart <> nil then
         Text := Format('%d / %d', [NodeData.Chart.PlayedLastDay, NodeData.Chart.PlayedLastWeek])
@@ -913,7 +888,7 @@ begin
   end;
 end;
 
- procedure TChartsTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
+procedure TChartsTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
 begin
   inherited;
   if HitInfo.Button = mbLeft then
@@ -927,19 +902,15 @@ begin
         2: Header.SortDirection := sdAscending;
         3: Header.SortDirection := sdDescending;
       end;
-    end else
-    begin
-      if Header.SortDirection = sdAscending then
-        Header.SortDirection := sdDescending
-      else
-        Header.SortDirection := sdAscending;
-    end;
+    end else if Header.SortDirection = sdAscending then
+      Header.SortDirection := sdDescending
+    else
+      Header.SortDirection := sdAscending;
     SortTree(Header.SortColumn, Header.SortDirection);
   end;
 end;
 
-procedure TChartsTree.DoHeaderDragged(Column: TColumnIndex;
-  OldPosition: TColumnPosition);
+procedure TChartsTree.DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition);
 begin
   inherited;
 
@@ -957,8 +928,7 @@ begin
   FHeaderDragSourcePosition := Header.Columns[Column].Position;
 end;
 
-function TChartsTree.DoIncrementalSearch(Node: PVirtualNode;
-  const Text: string): Integer;
+function TChartsTree.DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer;
 var
   NodeData: PChartNodeData;
 begin
@@ -966,11 +936,10 @@ begin
   if NodeData.Chart <> nil then
     Result := StrLIComp(PChar(Text), PChar(NodeData.Chart.Name), Min(Length(Text), Length(NodeData.Chart.Name)))
   else
-    Result := StrLIComp(PChar(Text), PChar(NodeData.Stream.Stream.Name), Min(Length(Text), Length(NodeData.Stream.Stream.Name)))
+    Result := StrLIComp(PChar(Text), PChar(NodeData.Stream.Stream.Name), Min(Length(Text), Length(NodeData.Stream.Stream.Name)));
 end;
 
-procedure TChartsTree.DoMeasureItem(TargetCanvas: TCanvas;
-  Node: PVirtualNode; var NodeHeight: Integer);
+procedure TChartsTree.DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer);
 begin
   inherited;
 
@@ -1051,47 +1020,40 @@ begin
 
   SetLength(Titles, 0);
   SetLength(Info, 0);
-  try
-    for i := 0 to Length(NodesData) - 1 do
+  for i := 0 to Length(NodesData) - 1 do
+    if NodesData[i].Chart <> nil then
     begin
-      if NodesData[i].Chart <> nil then
-      begin
-        if not NodesData[i].IsOnWishlist then
-          AllOnWishlist := False;
+      if not NodesData[i].IsOnWishlist then
+        AllOnWishlist := False;
 
-        SetLength(Titles, Length(Titles) + 1);
-        Titles[High(Titles)] := TWishlistTitleInfo.Create(NodesData[i].Chart.ServerHash, NodesData[i].Chart.Name, False);
-      end else if NodesData[i].Stream <> nil then
-      begin
-        SetLength(Info, Length(Info) + 1);
-        Info[High(Info)] := TStartStreamingInfo.Create(NodesData[i].Stream.ID, NodesData[i].Stream.Stream.Bitrate,
-          NodesData[i].Stream.Stream.Name, NodesData[i].Stream.Stream.URL, NodesData[i].Stream.Stream.URLs, NodesData[i].Stream.Stream.RegExes,
-          NodesData[i].Stream.Stream.IgnoreTitles);
-      end;
+      SetLength(Titles, Length(Titles) + 1);
+      Titles[High(Titles)] := TWishlistTitleInfo.Create(NodesData[i].Chart.ServerHash, NodesData[i].Chart.Name, False);
+    end else if NodesData[i].Stream <> nil then
+    begin
+      SetLength(Info, Length(Info) + 1);
+      Info[High(Info)] := TStartStreamingInfo.Create(NodesData[i].Stream.ID, NodesData[i].Stream.Stream.Bitrate, NodesData[i].Stream.Stream.Name, NodesData[i].Stream.Stream.URL,
+        NodesData[i].Stream.Stream.URLs, NodesData[i].Stream.Stream.RegExes, NodesData[i].Stream.Stream.IgnoreTitles);
     end;
 
-    case AppGlobals.DefaultActionBrowser of
-      oaStart:
-        TChartsTab(P).FOnAddStreams(Self, Info, oaStart);
-      oaPlay:
-        TChartsTab(P).FOnAddStreams(Self, Info, oaPlay);
-      oaPlayExternal:
-        TChartsTab(P).FOnAddStreams(Self, Info, oaPlayExternal);
-      oaAdd:
-        TChartsTab(P).FOnAddStreams(Self, Info, oaAdd)
-    end;
-
-    if Length(Titles) > 0 then
-      if AllOnWishlist then
-        TChartsTab(P).FOnRemoveTitleFromWishlist(Self, Titles)
-      else
-        TChartsTab(P).FOnAddToWishlist(Self, Titles);
-
-    for i := 0 to Length(Nodes) - 1 do
-      InvalidateNode(Nodes[i]);
-  finally
-
+  case AppGlobals.DefaultActionBrowser of
+    oaStart:
+      TChartsTab(P).FOnAddStreams(Self, Info, oaStart);
+    oaPlay:
+      TChartsTab(P).FOnAddStreams(Self, Info, oaPlay);
+    oaPlayExternal:
+      TChartsTab(P).FOnAddStreams(Self, Info, oaPlayExternal);
+    oaAdd:
+      TChartsTab(P).FOnAddStreams(Self, Info, oaAdd)
   end;
+
+  if Length(Titles) > 0 then
+    if AllOnWishlist then
+      TChartsTab(P).FOnRemoveTitleFromWishlist(Self, Titles)
+    else
+      TChartsTab(P).FOnAddToWishlist(Self, Titles);
+
+  for i := 0 to Length(Nodes) - 1 do
+    InvalidateNode(Nodes[i]);
 end;
 
 procedure TChartsTree.FitColumns;
@@ -1102,10 +1064,9 @@ begin
     raise Exception.Create('(Header.Columns.Count <> Length(AppGlobals.ChartHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.ChartHeaderPosition))');
 
   if AppGlobals.ChartHeaderWidthLoaded then
-  begin
     for i := 1 to Header.Columns.Count - 1 do
-      Header.Columns[i].Width := AppGlobals.ChartHeaderWidth[i];
-  end else
+      Header.Columns[i].Width := AppGlobals.ChartHeaderWidth[i]
+  else
   begin
     FColImages.Width := GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
     FColLastPlayed.Width := GetTextSize(FColLastPlayed.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
@@ -1113,10 +1074,8 @@ begin
   end;
 
   if AppGlobals.ChartHeaderPositionLoaded then
-  begin
     for i := 1 to Header.Columns.Count - 1 do
       Header.Columns[i].Position := AppGlobals.ChartHeaderPosition[i];
-  end;
 end;
 
 procedure TChartsTree.FSetState(Value: TChartStates);
@@ -1127,36 +1086,31 @@ begin
 
   case Value of
     csNormal:
-      begin
-        FProgressBar.Visible := False;
-        //Enabled := True;
-      end;
-    csSearching:
-      begin
-        // Marquee wieder zurücksetzen, dass es links anfängt...
-        FProgressBar.Style := pbstNormal;
-        FProgressBar.Style := pbstMarquee;
+      FProgressBar.Visible := False;
 
-        FProgressBar.Visible := True;
-        //Enabled := False;
-        FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_SEARCHING) + '..') div 2;
-        FTimer.Enabled := True;
-        Invalidate;
-      end;
+    csSearching:
+    begin
+      // Marquee wieder zurücksetzen, dass es links anfängt...
+      FProgressBar.Style := pbstNormal;
+      FProgressBar.Style := pbstMarquee;
+
+      FProgressBar.Visible := True;
+      FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_SEARCHING) + '..') div 2;
+      FTimer.Enabled := True;
+      Invalidate;
+    end;
     csSearchError:
-      begin
-        FProgressBar.Visible := False;
-        //Enabled := False;
-        FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_SEARCH_ERROR)) div 2;
-        Invalidate;
-      end;
+    begin
+      FProgressBar.Visible := False;
+      FTextLeft := ClientWidth div 2 - Canvas.TextWidth(_(TEXT_SEARCH_ERROR)) div 2;
+      Invalidate;
+    end;
   end;
 
   FState := Value;
 end;
 
-function TChartsTree.GetNodes(NodeTypes: TNodeTypes;
-  SelectedOnly: Boolean): TNodeArray;
+function TChartsTree.GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
 var
   Node: PVirtualNode;
   NodeData: PChartNodeData;
@@ -1173,8 +1127,7 @@ begin
       Continue;
     end;
 
-    if ((NodeTypes = ntChart) and (NodeData.Chart = nil)) or
-       ((NodeTypes = ntStream) and (NodeData.Stream = nil)) then
+    if ((NodeTypes = ntChart) and (NodeData.Chart = nil)) or ((NodeTypes = ntStream) and (NodeData.Stream = nil)) then
     begin
       Node := GetNext(Node);
       Continue;
@@ -1210,8 +1163,7 @@ begin
   end;
 end;
 
-procedure TChartsTree.MenuColsAction(Sender: TVirtualStringTree;
-  Index: Integer; Checked: Boolean);
+procedure TChartsTree.MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
 var
   Show: Boolean;
 begin
@@ -1220,12 +1172,9 @@ begin
     Show := False;
 
   if Show then
-  begin
-    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible];
-  end else
-  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible]
+  else
     Header.Columns[Index].Options := Header.Columns[Index].Options - [coVisible];
-  end;
 
   AppGlobals.ChartCols := AppGlobals.ChartCols xor (1 shl Index);
 end;
@@ -1298,20 +1247,19 @@ begin
     case FState of
       csNormal: ;
       csSearching:
-        begin
-          Msg := _(TEXT_SEARCHING) + FDots;
-          Canvas.TextOut(FTextLeft, FProgressBar.Top - GetTextSize('Wyg', Font).cy - MulDiv(2, Screen.PixelsPerInch, 96), Msg);
-        end;
+      begin
+        Msg := _(TEXT_SEARCHING) + FDots;
+        Canvas.TextOut(FTextLeft, FProgressBar.Top - GetTextSize('Wyg', Font).cy - MulDiv(2, Screen.PixelsPerInch, 96), Msg);
+      end;
       csSearchError:
-        begin
-          Msg := _(TEXT_SEARCH_ERROR);
-          Canvas.TextOut(FTextLeft, ClientHeight div 2 - Canvas.TextHeight(Msg), Msg);
-        end;
+      begin
+        Msg := _(TEXT_SEARCH_ERROR);
+        Canvas.TextOut(FTextLeft, ClientHeight div 2 - Canvas.TextHeight(Msg), Msg);
+      end;
     end;
 end;
 
-procedure TChartsTree.PaintImage(var PaintInfo: TVTPaintInfo;
-  ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
+procedure TChartsTree.PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
 var
   i: Integer;
   NodeData: PChartNodeData;
@@ -1321,32 +1269,28 @@ begin
 
   case PaintInfo.Column of
     0:
-      begin
-        if NodeData.Chart <> nil then
-          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC)
-        else
-          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TRANSMIT);
-      end;
+      if NodeData.Chart <> nil then
+        Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC)
+      else
+        Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TRANSMIT);
     1:
+      if NodeData.Chart <> nil then
       begin
-        if NodeData.Chart <> nil then
-        begin
-          if NodeData.IsOnWishlist then
-            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.SCRIPT_BRICKS);
-          if NodeData.IsArtistOnWishlist then
-            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 18, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.SCRIPT_USER_GRAY_COOL);
+        if NodeData.IsOnWishlist then
+          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.SCRIPT_BRICKS);
+        if NodeData.IsArtistOnWishlist then
+          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 18, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.SCRIPT_USER_GRAY_COOL);
 
-          for i := 0 to AppGlobals.Data.SavedTitleHashes.Count - 1 do
-            if AppGlobals.Data.SavedTitleHashes[i] = NodeData.Chart.ServerHash then
-              Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 36, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.DRIVE);
-        end else
-        begin
-          P := Parent;
-          while not (P.ClassType = TChartsTab) do
-            P := P.Parent;
-          if TChartsTab(P).FOnGetIsStreamOnListEvent(Self, NodeData.Stream.Stream) then
-            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TRANSMIT_ADD);
-        end;
+        for i := 0 to AppGlobals.Data.SavedTitleHashes.Count - 1 do
+          if AppGlobals.Data.SavedTitleHashes[i] = NodeData.Chart.ServerHash then
+            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 36, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.DRIVE);
+      end else
+      begin
+        P := Parent;
+        while not (P.ClassType = TChartsTab) do
+          P := P.Parent;
+        if TChartsTab(P).FOnGetIsStreamOnListEvent(Self, NodeData.Stream.Stream) then
+          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TRANSMIT_ADD);
       end;
   end;
 end;
@@ -1370,7 +1314,6 @@ begin
   SetLength(Info, 0);
   try
     for i := 0 to Length(Nodes) - 1 do
-    begin
       if Nodes[i].Chart <> nil then
       begin
         if (Sender = FPopupMenu.ItemAddToWishlist) or (Sender = FPopupMenu.ItemRemoveFromWishlist) then
@@ -1402,11 +1345,9 @@ begin
       end else
       begin
         SetLength(Info, Length(Info) + 1);
-        Info[High(Info)] := TStartStreamingInfo.Create(Nodes[i].Stream.ID, Nodes[i].Stream.Stream.Bitrate,
-          Nodes[i].Stream.Stream.Name, Nodes[i].Stream.Stream.URL, Nodes[i].Stream.Stream.URLs, Nodes[i].Stream.Stream.RegExes,
-          Nodes[i].Stream.Stream.IgnoreTitles);
+        Info[High(Info)] := TStartStreamingInfo.Create(Nodes[i].Stream.ID, Nodes[i].Stream.Stream.Bitrate, Nodes[i].Stream.Stream.Name, Nodes[i].Stream.Stream.URL,
+          Nodes[i].Stream.Stream.URLs, Nodes[i].Stream.Stream.RegExes, Nodes[i].Stream.Stream.IgnoreTitles);
       end;
-    end;
 
     if Sender = FPopupMenu.ItemStartStreaming then
       TChartsTab(P).FOnAddStreams(Self, Info, oaStart)
@@ -1470,6 +1411,8 @@ end;
 { TSearchPanel }
 
 constructor TSearchPanel.Create(AOwner: TComponent);
+var
+  Sep: TToolButton;
 begin
   inherited;
 
@@ -1487,68 +1430,7 @@ begin
   FToolbar.Parent := Self;
   FToolbar.ShowHint := True;
   FToolbar.EdgeBorders := [];
-end;
 
-procedure TSearchPanel.PostTranslate;
-begin
-  FSearch.Left := FLabel.Left + FLabel.Width + 6;
-
-  RebuildSearchItems('');
-end;
-
-procedure TSearchPanel.RebuildSearchItems(NewEntry: string);
-var
-  SL: TStringList;
-  i, OldIndex: Integer;
-begin
-  OldIndex := FSearch.ItemIndex;
-  SL := TStringList.Create;
-  try
-    SL.Assign(FSearch.Items);
-
-    for i := SL.Count - 1 downto 0 do
-      if (AnsiLowerCase(SL[i]) = AnsiLowerCase(NewEntry)) or (SL.Objects[i] <> nil) then
-        SL.Delete(i);
-    while SL.Count > 9 do
-      SL.Delete(SL.Count - 1);
-
-    FSearch.Items.Clear;
-    FSearch.AddItem(_(SEARCH_TOP), FSearch);
-    if Trim(NewEntry) <> '' then
-      FSearch.Items.Add(NewEntry);
-
-    for i := 0 to SL.Count - 1 do
-      FSearch.Items.Add(SL[i]);
-
-    if NewEntry <> '' then
-    begin
-      for i := 0 to FSearch.Items.Count - 1 do
-        if FSearch.Items[i] = NewEntry then
-        begin
-          FSearch.ItemIndex := i;
-          Break;
-        end;
-    end else
-      if (OldIndex = -1) and (FSearch.Items.Count > 0) then
-        FSearch.ItemIndex := 0
-      else
-        FSearch.ItemIndex := OldIndex;
-  finally
-    SL.Free;
-  end;
-end;
-
-procedure TSearchPanel.ControlsAligned;
-begin
-  inherited ControlsAligned;
-
-  FToolbar.Left := ClientRect.Width - FToolbar.Width;
-end;
-
-procedure TSearchPanel.AfterCreate;
-var
-  Sep: TToolButton;
-begin
   FToolbar.Images := modSharedData.imgImages;
 
   FButtonAddToWishlist := TToolButton.Create(FToolbar);
@@ -1609,9 +1491,62 @@ begin
   FLabel.Left := 0;
   FSearch.Width := 200;
   FSearch.Top := 1;
+end;
 
+procedure TSearchPanel.PostTranslate;
+begin
+  FSearch.Left := FLabel.Left + FLabel.Width + 6;
+
+  RebuildSearchItems('');
+end;
+
+procedure TSearchPanel.RebuildSearchItems(NewEntry: string);
+var
+  SL: TStringList;
+  i, OldIndex: Integer;
+begin
+  OldIndex := FSearch.ItemIndex;
+  SL := TStringList.Create;
+  try
+    SL.Assign(FSearch.Items);
+
+    for i := SL.Count - 1 downto 0 do
+      if (AnsiLowerCase(SL[i]) = AnsiLowerCase(NewEntry)) or (SL.Objects[i] <> nil) then
+        SL.Delete(i);
+    while SL.Count > 9 do
+      SL.Delete(SL.Count - 1);
+
+    FSearch.Items.Clear;
+    FSearch.AddItem(_(SEARCH_TOP), FSearch);
+    if Trim(NewEntry) <> '' then
+      FSearch.Items.Add(NewEntry);
+
+    for i := 0 to SL.Count - 1 do
+      FSearch.Items.Add(SL[i]);
+
+    if NewEntry <> '' then
+    begin
+      for i := 0 to FSearch.Items.Count - 1 do
+        if FSearch.Items[i] = NewEntry then
+        begin
+          FSearch.ItemIndex := i;
+          Break;
+        end;
+    end else if (OldIndex = -1) and (FSearch.Items.Count > 0) then
+      FSearch.ItemIndex := 0
+    else
+      FSearch.ItemIndex := OldIndex;
+  finally
+    SL.Free;
+  end;
+end;
+
+procedure TSearchPanel.ControlsAligned;
+begin
+  inherited ControlsAligned;
+
+  FToolbar.Left := ClientRect.Width - FToolbar.Width;
   FLabel.Top := (FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2);
-
   ClientHeight := FSearch.Top * 2 + FSearch.Height + MulDiv(3, Screen.PixelsPerInch, 96);
 end;
 
@@ -1621,46 +1556,46 @@ constructor TChartsPopup.Create(AOwner: TComponent);
 begin
   inherited;
 
-  FItemAddToWishlist := TMenuItem.Create(Self);;
+  FItemAddToWishlist := TMenuItem.Create(Self);
   FItemAddToWishlist.Caption := '&Add title to automatic wishlist';
   FItemAddToWishlist.ImageIndex := TImages.SCRIPT_BRICKS_ADD;
   Items.Add(FItemAddToWishlist);
 
-  FItemRemoveFromWishlist := TMenuItem.Create(Self);;
+  FItemRemoveFromWishlist := TMenuItem.Create(Self);
   FItemRemoveFromWishlist.Caption := '&Remove title from automatic wishlist';
   FItemRemoveFromWishlist.ImageIndex := TImages.SCRIPT_BRICKS_DELETE;
   Items.Add(FItemRemoveFromWishlist);
 
-  FItemAddArtistToWishlist := TMenuItem.Create(Self);;
+  FItemAddArtistToWishlist := TMenuItem.Create(Self);
   FItemAddArtistToWishlist.Caption := 'A&dd artist to automatic wishlist';
   FItemAddArtistToWishlist.ImageIndex := TImages.SCRIPT_USER_GRAY_COOL_ADD;
   Items.Add(FItemAddArtistToWishlist);
 
   Items.AddSeparator;
 
-  FItemEditAndAddToWishlist := TMenuItem.Create(Self);;
+  FItemEditAndAddToWishlist := TMenuItem.Create(Self);
   FItemEditAndAddToWishlist.Caption := '&Edit and add to manual wishlist';
   FItemEditAndAddToWishlist.ImageIndex := TImages.SCRIPT_HEART_ADD;
   Items.Add(FItemEditAndAddToWishlist);
 
   Items.AddSeparator;
 
-  FItemStartStreaming := TMenuItem.Create(Self);;
+  FItemStartStreaming := TMenuItem.Create(Self);
   FItemStartStreaming.Caption := '&Start recording';
   FItemStartStreaming.ImageIndex := TImages.RECORD_RED;
   Items.Add(FItemStartStreaming);
 
-  FItemPlayStream := TMenuItem.Create(Self);;
+  FItemPlayStream := TMenuItem.Create(Self);
   FItemPlayStream.Caption := '&Play stream';
   FItemPlayStream.ImageIndex := TImages.PLAY_BLUE;
   Items.Add(FItemPlayStream);
 
-  FItemPlayStreamExternal := TMenuItem.Create(Self);;
+  FItemPlayStreamExternal := TMenuItem.Create(Self);
   FItemPlayStreamExternal.Caption := 'P&lay stream (external player)';
   FItemPlayStreamExternal.ImageIndex := TImages.PLAY_GO;
   Items.Add(FItemPlayStreamExternal);
 
-  FItemAddStream := TMenuItem.Create(Self);;
+  FItemAddStream := TMenuItem.Create(Self);
   FItemAddStream.Caption := 'Add s&tream';
   FItemAddStream.ImageIndex := TImages.TRANSMIT_ADD; // TOOD: oder _ADD?
   Items.Add(FItemAddStream);
@@ -1689,4 +1624,5 @@ begin
 end;
 
 end.
+
 

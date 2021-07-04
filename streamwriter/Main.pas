@@ -865,7 +865,6 @@ begin
 
   tabClients := TClientTab.Create(pagMain, tbClients, ActionList1, FClientManager, mnuStreamPopup);
   tabClients.PageControl := pagMain;
-  tabClients.AfterCreate;
   tabClients.AddressBar.Stations.Sort;
   tabClients.AddressBar.Stations.BuildList;
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
@@ -883,7 +882,6 @@ begin
 
   tabCharts := TChartsTab.Create(pagMain);
   tabCharts.PageControl := pagMain;
-  tabCharts.AfterCreate;
   tabCharts.OnAddToWishlist := tabChartsAddToWishlist;
   tabCharts.OnRemoveTitleFromWishlist := tabChartsRemoveFromWishlist;
   tabCharts.OnAddStreams := tabChartsAddStreams;
@@ -891,11 +889,9 @@ begin
 
   tabLists := TListsTab.Create(pagMain, FClientManager);
   tabLists.PageControl := pagMain;
-  tabLists.AfterCreate;
 
   tabSaved := TSavedTab.Create(pagMain);
   tabSaved.PageControl := pagMain;
-  tabSaved.AfterCreate;
 
   tabSaved.OnCut := tabSavedCut;
   tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
@@ -908,7 +904,6 @@ begin
 
   tabLog := TLogTab.Create(pagMain);
   tabLog.PageControl := pagMain;
-  tabLog.AfterCreate;
 
   FWasShown := False;
   FUpdateOnExit := False;
@@ -1398,7 +1393,7 @@ var
 begin
   tabCut := TCutTab.Create(pagMain, nil, Filename);
   tabCut.PageControl := pagMain;
-  tabCut.AfterCreate;
+
   tabCut.OnSaved := tabCutSaved;
   tabCut.OnPlayStarted := tabPlayStarted;
 
@@ -1413,7 +1408,7 @@ var
 begin
   tabCut := TCutTab.Create(pagMain, Track);
   tabCut.PageControl := pagMain;
-  tabCut.AfterCreate;
+
   tabCut.OnSaved := tabCutSaved;
   tabCut.OnPlayStarted := tabPlayStarted;
 

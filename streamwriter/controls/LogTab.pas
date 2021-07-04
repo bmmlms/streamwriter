@@ -70,6 +70,8 @@ type
     property ItemClear: TMenuItem read FItemClear;
   end;
 
+  { TLogPanel }
+
   TLogPanel = class(TPanel)
   private
     FLabel: TLabel;
@@ -83,10 +85,9 @@ type
     FButtonCopy: TToolButton;
     FButtonClear: TToolButton;
   protected
-    procedure Resize; override;
+    procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
-    procedure AfterCreate;
 
     procedure PostTranslate;
   end;
@@ -127,7 +128,6 @@ type
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
-    procedure AfterCreate;
 
     procedure PostTranslate;
 
@@ -150,7 +150,6 @@ type
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
-    procedure AfterCreate; override;
 
     procedure PostTranslate;
 
@@ -160,29 +159,6 @@ type
 implementation
 
 { TLogTab }
-
-procedure TLogTab.AfterCreate;
-begin
-  inherited;
-
-  FLogTree.AfterCreate;
-  FLogPanel.AfterCreate;
-
-  FLogTree.Images := modSharedData.imgImages;
-
-  if Screen.PixelsPerInch = 96 then
-    FLogTree.PopupMenu.Images := modSharedData.imgImages;
-
-  FLogPanel.FSearch.OnChange := TextChange;
-  FLogPanel.FButtonDebug.OnClick := ButtonClick;
-  FLogPanel.FButtonInfo.OnClick := ButtonClick;
-  FLogPanel.FButtonWarning.OnClick := ButtonClick;
-  FLogPanel.FButtonError.OnClick := ButtonClick;
-  FLogPanel.FButtonCopy.OnClick := ButtonClick;
-  FLogPanel.FButtonClear.OnClick := ButtonClick;
-
-  Caption := 'Log';
-end;
 
 procedure TLogTab.ButtonClick(Sender: TObject);
 var
@@ -281,6 +257,21 @@ begin
   FLogTree.FPopupMenu.ItemClear.OnClick := PopupMenuClick;
 
   ShowCloseButton := False;
+
+  FLogTree.Images := modSharedData.imgImages;
+
+  if Screen.PixelsPerInch = 96 then
+    FLogTree.PopupMenu.Images := modSharedData.imgImages;
+
+  FLogPanel.FSearch.OnChange := TextChange;
+  FLogPanel.FButtonDebug.OnClick := ButtonClick;
+  FLogPanel.FButtonInfo.OnClick := ButtonClick;
+  FLogPanel.FButtonWarning.OnClick := ButtonClick;
+  FLogPanel.FButtonError.OnClick := ButtonClick;
+  FLogPanel.FButtonCopy.OnClick := ButtonClick;
+  FLogPanel.FButtonClear.OnClick := ButtonClick;
+
+  Caption := 'Log';
 end;
 
 destructor TLogTab.Destroy;
@@ -393,11 +384,6 @@ begin
   end;
 end;
 
-procedure TLogTree.AfterCreate;
-begin
-  FitColumns;
-end;
-
 constructor TLogTree.Create(AOwner: TComponent);
 var
   i: Integer;
@@ -463,6 +449,8 @@ begin
     if not ((AppGlobals.LogCols and (1 shl i)) <> 0) then
       Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
   end;
+
+  FitColumns;
 end;
 
 destructor TLogTree.Destroy;
@@ -771,6 +759,8 @@ end;
 { TLogPanel }
 
 constructor TLogPanel.Create(AOwner: TComponent);
+var
+  Sep: TToolButton;
 begin
   inherited;
 
@@ -787,25 +777,7 @@ begin
   FToolbar.Parent := Self;
   FToolbar.ShowHint := True;
   FToolbar.EdgeBorders := [];
-end;
 
-procedure TLogPanel.PostTranslate;
-begin
-  FSearch.Left := FLabel.Left + FLabel.Width + 6;
-end;
-
-procedure TLogPanel.Resize;
-begin
-  inherited;
-
-  if Assigned(FToolbar) then
-    FToolbar.Left := ClientWidth - FToolbar.Width;
-end;
-
-procedure TLogPanel.AfterCreate;
-var
-  Sep: TToolButton;
-begin
   FToolbar.Images := modSharedData.imgImages;
 
   FButtonDebug := TToolButton.Create(FToolbar);
@@ -861,6 +833,18 @@ begin
   FLabel.Left := 0;
   FSearch.Width := 200;
   FSearch.Top := 1;
+end;
+
+procedure TLogPanel.PostTranslate;
+begin
+  FSearch.Left := FLabel.Left + FLabel.Width + 6;
+end;
+
+procedure TLogPanel.ControlsAligned;
+begin
+  inherited ControlsAligned;
+
+  FToolbar.Left := ClientWidth - FToolbar.Width;
 
   FLabel.Top := (FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2);
 
@@ -888,7 +872,7 @@ var
   Sep: TMenuItem;
 begin
   inherited;
-
+                                                 // TODO: hier fehlen im popup die image indices
   FItemDebug := TMenuItem.Create(Self);
   FItemDebug.Caption := '&Debug';
   FItemDebug.Checked := (AppGlobals.LogFilterTypes and (1 shl Integer(llDebug))) <> 0;

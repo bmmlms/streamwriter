@@ -89,7 +89,6 @@ type
   public
     constructor Create(AOwner: TComponent; Track: TTrackInfo; Filename: string = ''); reintroduce;
     destructor Destroy; override;
-    procedure AfterCreate; override;
 
     procedure PausePlay;
 
@@ -149,6 +148,62 @@ begin
 
   ImageIndex := TImages.CUT;
   ShowCloseButton := True;
+
+
+
+  if FTrack <> nil then
+  begin
+    Caption := ExtractFileName(StringReplace(FTrack.Filename, '&', '&&', [rfReplaceAll]));
+    FCutView.LoadFile(FTrack);
+  end else
+  begin
+    Caption := ExtractFileName(StringReplace(Filename, '&', '&&', [rfReplaceAll]));
+    FCutView.LoadFile(Filename, False, True);
+  end;
+
+  FToolbarPanel.Align := alTop;
+  FToolbarPanel.BevelOuter := bvNone;
+  FToolbarPanel.ClientHeight := 25;
+
+  FToolBar.Images := modSharedData.imgImages;
+  FToolBar.Align := alClient;
+  FToolBar.Setup;
+
+  FToolbar.FSave.OnClick := SaveClick;
+  FToolBar.FPosEdit.OnClick := PosClick;
+  FToolBar.FPosPlay.OnClick := PosClick;
+  FToolBar.FZoomIn.OnClick := ZoomInClick;
+  FToolBar.FZoomOut.OnClick := ZoomOutClick;
+  FToolBar.FPosEffectsMarker.OnClick := PosClick;
+  FToolBar.FAutoCut.OnClick := AutoCutClick;
+
+  {$IFDEF DEBUG}
+  //FToolBar.FAutoCutAutoDetect.OnClick := AutoCutAutoDetectClick;
+  {$ENDIF}
+
+  FToolBar.FCut.OnClick := CutClick;
+  FToolBar.FUndo.OnClick := UndoClick;
+  FToolBar.FApplyFadein.OnClick := ApplyFadeinClick;
+  FToolBar.FApplyFadeout.OnClick := ApplyFadeoutClick;
+  FToolBar.FApplyEffects.OnClick := ApplyEffectsClick;
+  FToolBar.FPlay.OnClick := PlayClick;
+  FToolBar.FStop.OnClick := StopClick;
+
+  FVolume.Align := alRight;
+  FVolume.Setup;
+  FVolume.Enabled := Bass.DeviceAvailable;
+  FVolume.Width := 140;
+//  FVolume.Padding.Bottom := 2;
+  FVolume.Volume := Players.Volume;
+  FVolume.OnVolumeChange := VolumeTrackbarChange;
+  FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
+
+//  FCutView.Padding.Top := 2;
+  FCutView.Align := alClient;
+  FCutView.OnStateChanged := CutViewStateChanged;
+
+  UpdateButtons;
+  Language.Translate(Self);
 end;
 
 procedure TCutTab.UpdateButtons;
@@ -384,67 +439,6 @@ end;
 procedure TCutTab.SaveClick(Sender: TObject);
 begin
   FCutView.Save;
-end;
-
-procedure TCutTab.AfterCreate;
-begin
-  inherited;
-
-  if FTrack <> nil then
-  begin
-    Caption := ExtractFileName(StringReplace(FTrack.Filename, '&', '&&', [rfReplaceAll]));
-    FCutView.LoadFile(FTrack);
-  end else
-  begin
-    Caption := ExtractFileName(StringReplace(Filename, '&', '&&', [rfReplaceAll]));
-    FCutView.LoadFile(Filename, False, True);
-  end;
-
-  MaxWidth := 120;
-
-  FToolbarPanel.Align := alTop;
-  FToolbarPanel.BevelOuter := bvNone;
-  FToolbarPanel.ClientHeight := 25;
-
-  FToolBar.Images := modSharedData.imgImages;
-  FToolBar.Align := alClient;
-  FToolBar.Setup;
-
-  FToolbar.FSave.OnClick := SaveClick;
-  FToolBar.FPosEdit.OnClick := PosClick;
-  FToolBar.FPosPlay.OnClick := PosClick;
-  FToolBar.FZoomIn.OnClick := ZoomInClick;
-  FToolBar.FZoomOut.OnClick := ZoomOutClick;
-  FToolBar.FPosEffectsMarker.OnClick := PosClick;
-  FToolBar.FAutoCut.OnClick := AutoCutClick;
-
-  {$IFDEF DEBUG}
-  //FToolBar.FAutoCutAutoDetect.OnClick := AutoCutAutoDetectClick;
-  {$ENDIF}
-
-  FToolBar.FCut.OnClick := CutClick;
-  FToolBar.FUndo.OnClick := UndoClick;
-  FToolBar.FApplyFadein.OnClick := ApplyFadeinClick;
-  FToolBar.FApplyFadeout.OnClick := ApplyFadeoutClick;
-  FToolBar.FApplyEffects.OnClick := ApplyEffectsClick;
-  FToolBar.FPlay.OnClick := PlayClick;
-  FToolBar.FStop.OnClick := StopClick;
-
-  FVolume.Align := alRight;
-  FVolume.Setup;
-  FVolume.Enabled := Bass.DeviceAvailable;
-  FVolume.Width := 140;
-//  FVolume.Padding.Bottom := 2;
-  FVolume.Volume := Players.Volume;
-  FVolume.OnVolumeChange := VolumeTrackbarChange;
-  FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
-
-//  FCutView.Padding.Top := 2;
-  FCutView.Align := alClient;
-  FCutView.OnStateChanged := CutViewStateChanged;
-
-  UpdateButtons;
-  Language.Translate(Self);
 end;
 
 { TCutToolbar }

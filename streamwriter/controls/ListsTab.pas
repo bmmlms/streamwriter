@@ -114,7 +114,7 @@ type
     procedure AddClick(Sender: TObject);
     procedure RemoveClick(Sender: TObject);
     procedure RenameClick(Sender: TObject);
-    procedure ShowSavedClick(Sender: TObject);
+    procedure ShowSavedClick(Sender: TObject);                   // TODO: log funzt nicht mehr
     procedure ExportClick(Sender: TObject);
     procedure ImportClick(Sender: TObject);
     procedure SelectSavedClick(Sender: TObject);
@@ -130,7 +130,6 @@ type
     procedure SetParent(AParent: TWinControl); override;
   public
     constructor Create(AOwner: TComponent; Clients: TClientManager); reintroduce;
-    procedure AfterCreate;
 
     procedure PostTranslate;
     function AddEntry(Text: string; TitleHash: Cardinal; ShowMessages: Boolean; ListType: TListType): Boolean;
@@ -152,13 +151,10 @@ type
 
     procedure HomeCommConvertManualToAutomaticReceived(Sender: TObject; FoundTitles: TConvertManualToAutomaticArray; NotFoundTitles: TStringArray);
   protected
-    procedure SetParent(AParent: TWinControl); override;
     procedure Resize; override;
   public
     constructor Create(AOwner: TComponent; Clients: TClientManager); reintroduce;
     destructor Destroy; override;
-
-    procedure AfterCreate; override;
 
     procedure AddTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
     procedure RemoveTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
@@ -212,7 +208,6 @@ type
     procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
-    procedure AfterCreate;
 
     function AddTitle(Title: TTitleInfo; Parent: PVirtualNode; FilterText: string; FromFilter: Boolean): PVirtualNode;
     procedure RemoveTitle(Title: TTitleInfo);
@@ -247,12 +242,8 @@ begin
   MsgBus.AddSubscriber(MessageReceived);
 
   HomeComm.OnConvertManualToAutomaticReceived := HomeCommConvertManualToAutomaticReceived;
-end;
 
-procedure TListsTab.SetParent(AParent: TWinControl);
-begin
-  inherited;
-
+  Caption := 'Lists';
 end;
 
 destructor TListsTab.Destroy;
@@ -407,15 +398,6 @@ begin
     FListsPanel.FTree.AddTitle(Title, FListsPanel.FTree.FIgnoreNode, FListsPanel.FFilterText, True);
 
   FListsPanel.UpdateButtons;
-end;
-
-procedure TListsTab.AfterCreate;
-begin
-  inherited;
-
-  Caption := 'Lists';
-
-  FListsPanel.AfterCreate;
 end;
 
 { TTitlePanel }
@@ -584,8 +566,6 @@ begin
   if Assigned(FTree) then
     Exit;
 
-  FTree := TTitleTree.Create(Self);
-  FTree.Parent := Self;
 end;
 
 procedure TTitlePanel.ExportClick(Sender: TObject);
@@ -1139,6 +1119,83 @@ begin
   inherited Create(AOwner);
 
   FClientManager := Clients;
+
+  FTopPanel := TPanel.Create(Self);
+  FTopPanel.Parent := Self;
+  FTopPanel.BevelOuter := bvNone;
+  FTopPanel.Align := alTop;
+
+  FSearchPanel := TPanel.Create(Self);
+  FSearchPanel.Parent := Self;
+  FSearchPanel.BevelOuter := bvNone;
+  FSearchPanel.Align := alTop;
+  FSearchPanel.Height := 24;
+
+  FSearchLabel := TLabel.Create(Self);
+  FSearchLabel.Parent := FSearchPanel;
+  FSearchLabel.Caption := 'Search:';
+
+  FSearchText := TEdit.Create(Self);
+  FSearchText.Parent := FSearchPanel;
+  FSearchText.OnChange := SearchTextChange;
+
+  FToolbarPanel := TPanel.Create(Self);
+  FToolbarPanel.Parent := FTopPanel;
+  FToolbarPanel.BevelOuter := bvNone;
+  FToolbarPanel.Align := alTop;
+
+  FAddLabel := TLabel.Create(Self);
+  FAddLabel.Parent := FToolbarPanel;
+  FAddLabel.Caption := 'Add entry:';
+
+  FAddEdit := TEdit.Create(Self);
+  FAddEdit.Parent := FToolbarPanel;
+  FAddEdit.OnKeyPress := AddEditKeyPress;
+
+  FAddCombo := TComboBox.Create(Self);
+  FAddCombo.Parent := FToolbarPanel;
+  FAddCombo.Style := csDropDownList;
+
+  FToolbar := TTitleToolbar.Create(Self);
+  FToolbar.Parent := FToolbarPanel;
+  FToolbar.Images := modSharedData.imgImages;
+  FToolbar.Align := alNone;
+  FToolbar.AutoSize := True;
+  FToolbar.Setup;
+  FToolbar.FAdd.OnClick := AddClick;
+  FToolbar.FRemove.OnClick := RemoveClick;
+  FToolbar.FExport.OnClick := ExportClick;
+  FToolbar.FShowSaved.OnClick := ShowSavedClick;
+  FToolbar.FImport.OnClick := ImportClick;
+  FToolbar.FSelectSaved.OnClick := SelectSavedClick;
+  FToolbar.FSelectIgnored.OnClick := SelectIgnoredClick;
+  FToolbar.FRename.OnClick := RenameClick;
+  FToolbar.FConvertToAutomatic.OnClick := ConvertToAutomaticClick;
+
+  FTree := TTitleTree.Create(Self);
+  FTree.Parent := Self;
+  FTree.Align := alClient;
+  FTree.OnChange := TreeChange;
+  FTree.OnKeyDown := TreeKeyDown;
+
+  BuildTree(False);
+  FillClientCombo;
+
+  BevelOuter := bvNone;
+
+  UpdateButtons;
+
+  Resize;
+
+  FSearchPanel.Height := 24;
+  FSearchLabel.Left := 0;
+  FSearchLabel.Top := 0;
+  FSearchText.Top := 2;
+  FAddLabel.Left := 0;
+  FAddEdit.Top := 1;
+  FAddEdit.Width := 250;
+
+  FAddCombo.Top := 1;
 end;
 
 procedure TTitlePanel.SearchTextChange(Sender: TObject);
@@ -1165,6 +1222,14 @@ begin
 
   FAddCombo.Width := (FToolbarPanel.ClientWidth - FToolbar.Width - FAddEdit.Width - FAddEdit.Left) - 6;
   FToolbar.Left := ClientWidth - FToolbar.Width;
+
+  FSearchLabel.Top := FSearchText.Top + FSearchText.Height div 2 - FSearchLabel.Height div 2;
+  FAddLabel.Top := FAddEdit.Top + FAddEdit.Height div 2 - FAddLabel.Height div 2;
+
+  // Das macht Höhen/Breiten von manchen Controls passig
+  PostTranslate;                                                     // TODO: das ist fail. und resize ist irgendwie komplett über.
+  FSearchPanel.ClientHeight := FSearchText.Top + FSearchText.Height + 4;
+  FTopPanel.ClientHeight := FAddLabel.Height + FAddLabel.Top * 2 + 1;
 end;
 
 procedure TTitlePanel.SelectIgnoredClick(Sender: TObject);
@@ -1400,94 +1465,6 @@ begin
   end else
     if ShowMessages then
       MsgBox(GetParentForm(Self).Handle, _('Please enter a pattern to add to the list.'), _('Info'), MB_ICONINFORMATION);
-end;
-
-procedure TTitlePanel.AfterCreate;
-begin
-  FTopPanel := TPanel.Create(Self);
-  FTopPanel.Parent := Self;
-  FTopPanel.BevelOuter := bvNone;
-  FTopPanel.Align := alTop;
-
-  FSearchPanel := TPanel.Create(Self);
-  FSearchPanel.Parent := Self;
-  FSearchPanel.BevelOuter := bvNone;
-  FSearchPanel.Align := alTop;
-  FSearchPanel.Height := 24;
-
-  FSearchLabel := TLabel.Create(Self);
-  FSearchLabel.Parent := FSearchPanel;
-  FSearchLabel.Caption := 'Search:';
-
-  FSearchText := TEdit.Create(Self);
-  FSearchText.Parent := FSearchPanel;
-  FSearchText.OnChange := SearchTextChange;
-
-  FToolbarPanel := TPanel.Create(Self);
-  FToolbarPanel.Parent := FTopPanel;
-  FToolbarPanel.BevelOuter := bvNone;
-  FToolbarPanel.Align := alTop;
-
-  FAddLabel := TLabel.Create(Self);
-  FAddLabel.Parent := FToolbarPanel;
-  FAddLabel.Caption := 'Add entry:';
-
-  FAddEdit := TEdit.Create(Self);
-  FAddEdit.Parent := FToolbarPanel;
-  FAddEdit.OnKeyPress := AddEditKeyPress;
-
-  FAddCombo := TComboBox.Create(Self);
-  FAddCombo.Parent := FToolbarPanel;
-  FAddCombo.Style := csDropDownList;
-
-  FToolbar := TTitleToolbar.Create(Self);
-  FToolbar.Parent := FToolbarPanel;
-  FToolbar.Images := modSharedData.imgImages;
-  FToolbar.Align := alNone;
-  FToolbar.AutoSize := True;
-  FToolbar.Setup;
-  FToolbar.FAdd.OnClick := AddClick;
-  FToolbar.FRemove.OnClick := RemoveClick;
-  FToolbar.FExport.OnClick := ExportClick;
-  FToolbar.FShowSaved.OnClick := ShowSavedClick;
-  FToolbar.FImport.OnClick := ImportClick;
-  FToolbar.FSelectSaved.OnClick := SelectSavedClick;
-  FToolbar.FSelectIgnored.OnClick := SelectIgnoredClick;
-  FToolbar.FRename.OnClick := RenameClick;
-  FToolbar.FConvertToAutomatic.OnClick := ConvertToAutomaticClick;
-
-  FTree.Align := alClient;
-  FTree.OnChange := TreeChange;
-  FTree.OnKeyDown := TreeKeyDown;
-
-  BuildTree(False);
-  FillClientCombo;
-
-  BevelOuter := bvNone;
-
-  UpdateButtons;
-
-  Resize;
-
-  FSearchPanel.Height := 24;
-  FSearchLabel.Left := 0;
-  FSearchLabel.Top := 0;
-  FSearchText.Top := 2;
-  FSearchLabel.Top := FSearchText.Top + FSearchText.Height div 2 - FSearchLabel.Height div 2;
-  FAddLabel.Left := 0;
-  FAddEdit.Top := 1;
-  FAddEdit.Width := 250;
-
-  FAddLabel.Top := FAddEdit.Top + FAddEdit.Height div 2 - FAddLabel.Height div 2;
-
-  FAddCombo.Top := 1;
-
-  // Das macht Höhen/Breiten von manchen Controls passig
-  PostTranslate;
-  FSearchPanel.ClientHeight := FSearchText.Top + FSearchText.Height + 4;
-  FTopPanel.ClientHeight := FAddLabel.Height + FAddLabel.Top * 2 + 1;
-
-  FTree.AfterCreate;
 end;
 
 procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree;
@@ -1807,13 +1784,6 @@ begin
   end;
 end;
 
-procedure TTitleTree.AfterCreate;
-begin
-  inherited;
-
-  FitColumns;
-end;
-
 constructor TTitleTree.Create(AOwner: TComponent);
 var
   i: Integer;
@@ -1879,6 +1849,8 @@ begin
     if not ((AppGlobals.ListCols and (1 shl i)) <> 0) then
       Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
   end;
+
+  FitColumns;
 end;
 
 procedure TTitleTree.DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
