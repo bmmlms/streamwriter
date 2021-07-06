@@ -56,7 +56,6 @@ uses
   StationCombo in 'controls\StationCombo.pas',
   StreamInfoView in 'controls\StreamInfoView.pas',
   StreamDebugView in 'controls\StreamDebugView.pas',
-  Base64 in 'Base64.pas',
   AudioStream in 'audio\AudioStream.pas',
   ClientTab in 'controls\ClientTab.pas',
   CutTab in 'controls\CutTab.pas',

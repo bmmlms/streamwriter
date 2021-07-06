@@ -68,18 +68,11 @@ type
 
   TMStreamSearchPanel = class(TPanel)
   private
-    FSearchLabel: TLabel;
-    FGenreLabel: TLabel;
-    FKbpsLabel: TLabel;
-    FTypeLabel: TLabel;
     FSearchEdit: TEdit;
     FGenreList: TComboBox;
     FKbpsList: TComboBox;
     FTypeList: TComboBox;
-
-    procedure SetVisible(Value: Boolean);
   protected
-    procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent); override;
   end;
@@ -1172,13 +1165,15 @@ constructor TMStreamBrowserView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
-  Color := clWindow;
+  BevelOuter := bvNone;
+  Align := alClient;
 
   FSearch := TMStreamSearchPanel.Create(Self);
   FSearch.Parent := Self;
   FSearch.Align := alTop;
-  FSearch.Height := 100;
+  //FSearch.Height := 100;
   FSearch.Visible := True;
+  FSearch.AutoSize := True;
 
   FCountLabel := TLabel.Create(Self);
   FCountLabel.Align := alBottom;
@@ -1201,7 +1196,7 @@ begin
     if (AppGlobals.Data.BrowserList.Count > 0) and (AppGlobals.Data.GenreList.Count > 0) then
     begin
       BuildGenres;
-      //BuildTree(True);
+      BuildTree(True);
       SwitchMode(moShow);
     end;
   finally
@@ -1240,12 +1235,13 @@ begin
     FOnStreamsReceived(Self);
 end;
 
+// TODO: das gehört hier nicht hin denke ich.
 procedure TMStreamBrowserView.SetParent(NewParent: TWinControl);
 begin
   inherited SetParent(NewParent);
 
   // TODO:
-  if Assigned(FSearch) then
+  if not Assigned(FSearch) then
     Exit;
 
   Align := alClient;
@@ -1253,8 +1249,6 @@ begin
 
   FLoading := False;
   FSortType := stRating;
-
-
 
   SwitchMode(moShow);
 
@@ -1272,6 +1266,7 @@ var
 begin
   inherited ControlsAligned;
 
+  // TODO: muss das hier? warum nicht ctor?
   FSortType := TSortTypes(AppGlobals.BrowserSortType);
   FStreamTree.Header.SortDirection := TSortDirection(AppGlobals.BrowserSortDir);
   FSearch.FSearchEdit.Text := AppGlobals.BrowserSearchText;
@@ -1279,7 +1274,6 @@ begin
     FSearch.FTypeList.ItemIndex := AppGlobals.BrowserSearchAudioType;
   if AppGlobals.BrowserSearchBitrate < FSearch.FKbpsList.Items.Count then
     FSearch.FKbpsList.ItemIndex := AppGlobals.BrowserSearchBitrate;
-
 
 end;
 
@@ -1394,15 +1388,18 @@ begin
 end;
 
 procedure TMStreamBrowserView.SwitchMode(Mode: TModes);
+var
+  i: Integer;
 begin
-  FSearch.FSearchLabel.Enabled := Mode = moShow;
-  FSearch.FGenreLabel.Enabled := Mode = moShow;
-  FSearch.FKbpsLabel.Enabled := Mode = moShow;
-  FSearch.FTypeLabel.Enabled := Mode = moShow;
+  for i := 0 to FSearch.ControlCount - 1 do
+    FSearch.Controls[i].Enabled := Mode = moShow;
+
+  {
   FSearch.FSearchEdit.Enabled := Mode = moShow;
   FSearch.FGenreList.Enabled := Mode = moShow;
   FSearch.FKbpsList.Enabled := Mode = moShow;
   FSearch.FTypeList.Enabled := Mode = moShow;
+  }
 
   FCountLabel.Enabled := Mode = moShow;
 
@@ -1447,81 +1444,46 @@ end;
 { TMStreamSearch }
 
 constructor TMStreamSearchPanel.Create(AOwner: TComponent);
+  function CreatePanel(const LabelText: string): TPanel;
+  var
+    L: TLabel;
+  begin
+    Result := TPanel.Create(Self);
+    Result.Parent := Self;
+    Result.Align := alTop;
+    Result.AutoSize := True;
+    Result.BevelOuter := bvNone;
+
+    L := TLabel.Create(Self);
+    L.Parent := Result;
+    L.Align := alLeft;
+    L.Caption := LabelText;
+    L.Layout := tlCenter;
+    L.Constraints.MinWidth := 60;
+  end;
 var
-  MaxW: Integer;
+  P: TPanel;
 begin
   inherited;
 
   BevelOuter := bvNone;
 
-  FSearchLabel := TLabel.Create(Self);
-  FSearchEdit := TEdit.Create(Self);
-  FGenreLabel := TLabel.Create(Self);
-  FGenreList := TComboBox.Create(Self);
-  FKbpsLabel := TLabel.Create(Self);
-  FKbpsList := TComboBox.Create(Self);
-  FTypeLabel := TLabel.Create(Self);
+  P := CreatePanel(_('Type') + ':');
   FTypeList := TComboBox.Create(Self);
-
-  MaxW := 0;
-
-  FSearchLabel.Parent := Self;
-  FSearchLabel.Left := 4;
-  FSearchLabel.Caption := 'Search:';
-  if MaxW < FSearchLabel.Width then
-    MaxW := FSearchLabel.Width;
-
-  FSearchEdit.Parent := Self;
-
-  FGenreLabel.Parent := Self;
-  FGenreLabel.Left := 4;
-  FGenreLabel.Caption := _('Genre') + ':';
-  if MaxW < FGenreLabel.Width then
-    MaxW := FGenreLabel.Width;
-
-  FGenreList.Parent := Self;
-  FGenreList.Style := csDropDownList;
-  FGenreList.DropDownCount := 16;
-
-  FKbpsLabel.Parent := Self;
-  FKbpsLabel.Left := 4;
-  FKbpsLabel.Caption := _('Kbps') + ':';
-  if MaxW < FKbpsLabel.Width then
-    MaxW := FKbpsLabel.Width;
-
-  FKbpsList.Parent := Self;
-  FKbpsList.Style := csDropDownList;
-
-  FTypeLabel.Parent := Self;
-  FTypeLabel.Left := 4;
-  FTypeLabel.Caption := _('Type') + ':';
-  if MaxW < FTypeLabel.Width then
-    MaxW := FTypeLabel.Width;
-
-  FTypeList.Parent := Self;
+  FTypeList.Parent := P;
+  FTypeList.Align := alClient;
   FTypeList.Style := csDropDownList;
 
-  FSearchEdit.Left := MaxW + 12;
-  FGenreList.Left := MaxW + 12;
-  FKbpsList.Left := MaxW + 12;
-  FTypeList.Left := MaxW + 12;
-end;
+  FTypeList.Items.Add(_('- No type -'));
+  FTypeList.Items.Add(_('MP3'));
+  FTypeList.Items.Add(_('AAC'));
+  FTypeList.ItemIndex := 0;
 
-procedure TMStreamSearchPanel.SetVisible(Value: Boolean);
-var
-  i: Integer;
-begin
-  for i := 0 to ControlCount - 1 do
-    if (Controls[i] <> FSearchLabel) and (Controls[i] <> FSearchEdit) then
-      Controls[i].Visible := Value;
-  ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top + 4
-end;
-
-procedure TMStreamSearchPanel.ControlsAligned;
-begin
-  inherited ControlsAligned;
-
-  exit;
+  P := CreatePanel(_('Kbps') + ':');
+  FKbpsList := TComboBox.Create(Self);
+  FKbpsList.Parent := P;
+  FKbpsList.Align := alClient;
+  FKbpsList.Style := csDropDownList;
 
   FKbpsList.Items.Add(_('- No kbps -'));
   FKbpsList.Items.Add('>= 64');
@@ -1531,36 +1493,17 @@ begin
   FKbpsList.Items.Add('= 320');
   FKbpsList.ItemIndex := 0;
 
-  FTypeList.Items.Add(_('- No type -'));
-  FTypeList.Items.Add(_('MP3'));
-  FTypeList.Items.Add(_('AAC'));
-  FTypeList.ItemIndex := 0;
+  P := CreatePanel(_('Genre') + ':');
+  FGenreList := TComboBox.Create(Self);
+  FGenreList.Parent := P;
+  FGenreList.Align := alClient;
+  FGenreList.Style := csDropDownList;
+  FGenreList.DropDownCount := 16;
 
-  FSearchEdit.Width := ClientWidth - FSearchEdit.Left - FSearchLabel.Left;
-  FGenreList.Width := ClientWidth - FGenreList.Left - FGenreLabel.Left;
-  FKbpsList.Width := ClientWidth - FKbpsList.Left - FKbpsLabel.Left;
-  FTypeList.Width := ClientWidth - FTypeList.Left - FTypeLabel.Left;
-
-  FSearchEdit.Top := 4;
-  FSearchLabel.Top := FSearchEdit.Top + FSearchEdit.Height div 2 - FSearchLabel.Height div 2;
-
-  FGenreList.Top := FSearchEdit.Top + FSearchEdit.Height + 4;
-  FGenreLabel.Top := FGenreList.Top + FGenreList.Height div 2 - FGenreLabel.Height div 2;
-
-  FKbpsList.Top := FGenreList.Top + FGenreList.Height;
-  FKbpsLabel.Top := FKbpsList.Top + FKbpsList.Height div 2 - FKbpsLabel.Height div 2;
-
-  FTypeList.Top := FKbpsList.Top + FKbpsList.Height + 4;
-  FTypeLabel.Top := FTypeList.Top + FTypeList.Height div 2 - FTypeLabel.Height div 2;
-
-  ClientHeight := FTypeList.Top + FTypeList.Height + FSearchEdit.Top;
-
-  FSearchEdit.Anchors := [akLeft, akRight, akTop];
-  FGenreList.Anchors := [akLeft, akRight, akTop];
-  FKbpsList.Anchors := [akLeft, akRight, akTop];
-  FTypeList.Anchors := [akLeft, akRight, akTop];
-
-  SetVisible(True);
+  P := CreatePanel(_('Search') + ':');
+  FSearchEdit := TEdit.Create(Self);
+  FSearchEdit.Parent := P;
+  FSearchEdit.Align := alClient;
 end;
 
 { TMStreamTreeHeaderPopup }

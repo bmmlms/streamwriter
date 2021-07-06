@@ -1038,10 +1038,7 @@ procedure TfrmStreamWriterMain.HomeCommBytesTransferred(Sender: TObject;
   CommandHeader: TCommandHeader; Transferred: UInt64);
 begin
   if CommandHeader.CommandType = ctGetServerDataResponse then
-  begin
     tabClients.SideBar.BrowserView.HomeCommBytesTransferred(CommandHeader, Transferred);
-    //tabCharts.HomeCommBytesTransferred(CommandHeader, Transferred);
-  end;
 end;
 
 procedure TfrmStreamWriterMain.HomeCommError(Sender: TObject; ID: TCommErrors; Msg: string);

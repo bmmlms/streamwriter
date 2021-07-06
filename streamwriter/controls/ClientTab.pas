@@ -46,7 +46,6 @@ type
     FDebugView: TMStreamDebugView;
   protected
     procedure SetParent(NewParent: TWinControl); override;
-    procedure ControlsAligned; override;
   public
     property BrowserView: TMStreamBrowserView read FBrowserView;
     property InfoView: TMStreamInfoView read FInfoView;
@@ -1815,6 +1814,7 @@ end;
 
 { TSidebar }
 
+// TODO: nicht setparent pls.
 procedure TSidebar.SetParent(NewParent: TWinControl);
 begin
   inherited SetParent(NewParent);
@@ -1824,12 +1824,15 @@ begin
     Exit;
 
   FPage1 := TTabSheet.Create(Self);
+  FPage1.PageControl := Self;
   FPage1.Caption := 'Browser';
 
   FPage2 := TTabSheet.Create(Self);
+  FPage2.PageControl := Self;
   FPage2.Caption := 'Info';
 
   FPage3 := TTabSheet.Create(Self);
+  FPage3.PageControl := Self;
   FPage3.Caption := 'Log';
 
   FBrowserView := TMStreamBrowserView.Create(Self);
@@ -1840,15 +1843,6 @@ begin
 
   FDebugView := TMStreamDebugView.Create(Self);
   FDebugView.Parent := FPage3;
-end;
-
-procedure TSidebar.ControlsAligned;
-begin
-  inherited ControlsAligned;
-
-  FPage1.PageControl := Self;
-  FPage2.PageControl := Self;
-  FPage3.PageControl := Self;
 end;
 
 end.
