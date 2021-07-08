@@ -374,7 +374,7 @@ begin
   FData := TDataLists.Create;
 
   // The number of the current build
-  FBuildNumber := 812;
+  FBuildNumber := 816;
   FCodename := 'Vivo';
 
   // Adjust dimensions of the main-form
@@ -645,7 +645,7 @@ begin
   FStorage.Read('Pass', FPass, '');
   if FPass <> '' then
     try
-      FPass := Base64.Decode(FPass);
+      DecodeStringBase64(FPass);
     except
       FPass := '';
     end;
@@ -946,7 +946,7 @@ begin
   FStorage.Write('PlayerShuffle', FPlayerShuffle);
   FStorage.Write('UserWasSetup', FUserWasSetup);
   FStorage.Write('User', FUser);
-  FStorage.Write('Pass', Base64.Encode(FPass));
+  FStorage.Write('Pass', EncodeStringBase64(FPass));
   FStorage.Write('SoundDevice', FSoundDevice);
 
   FStorage.Write('ShortcutPlay', FShortcutPlay);

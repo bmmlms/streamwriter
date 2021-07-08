@@ -274,7 +274,6 @@ begin
   FSearchPanel := TSearchPanel.Create(Self);
   FSearchPanel.Parent := Self;
   FSearchPanel.Align := alTop;
-  // FSearchPanel.Padding.Top := 1;
 
   FChartsTree := TChartsTree.Create(Self);
   FChartsTree.Parent := Self;

@@ -130,7 +130,7 @@ begin
   if Track <> nil then
     FFilename := Track.Filename
   else
-    FFilename := Filename;
+    FFilename := Filename;        // TODO: zusammenhängende sachen zusammen machen, im code.
 
   FToolbarPanel := TPanel.Create(Self);
   FToolbarPanel.Parent := Self;
@@ -149,8 +149,6 @@ begin
   ImageIndex := TImages.CUT;
   ShowCloseButton := True;
 
-
-
   if FTrack <> nil then
   begin
     Caption := ExtractFileName(StringReplace(FTrack.Filename, '&', '&&', [rfReplaceAll]));
@@ -163,10 +161,9 @@ begin
 
   FToolbarPanel.Align := alTop;
   FToolbarPanel.BevelOuter := bvNone;
-  FToolbarPanel.ClientHeight := 25;
+  FToolbarPanel.AutoSize := True;
 
   FToolBar.Images := modSharedData.imgImages;
-  FToolBar.Align := alClient;
   FToolBar.Setup;
 
   FToolbar.FSave.OnClick := SaveClick;
@@ -193,12 +190,10 @@ begin
   FVolume.Setup;
   FVolume.Enabled := Bass.DeviceAvailable;
   FVolume.Width := 140;
-//  FVolume.Padding.Bottom := 2;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
 
-//  FCutView.Padding.Top := 2;
   FCutView.Align := alClient;
   FCutView.OnStateChanged := CutViewStateChanged;
 
@@ -471,7 +466,6 @@ begin
   FSep := TToolButton.Create(Self);
   FSep.Parent := Self;
   FSep.Style := tbsSeparator;
-  FSep.Width := 8;
 
   FAutoCut := TToolButton.Create(Self);
   FAutoCut.Parent := Self;
@@ -488,7 +482,6 @@ begin
   FSep := TToolButton.Create(Self);
   FSep.Parent := Self;
   FSep.Style := tbsSeparator;
-  FSep.Width := 8;
 
   FUndo := TToolButton.Create(Self);
   FUndo.Parent := Self;
@@ -498,7 +491,6 @@ begin
   FSep := TToolButton.Create(Self);
   FSep.Parent := Self;
   FSep.Style := tbsSeparator;
-  FSep.Width := 8;
 
   FApplyEffects := TToolButton.Create(Self);
   FApplyEffects.Parent := Self;
@@ -508,7 +500,6 @@ begin
   FSep := TToolButton.Create(Self);
   FSep.Parent := Self;
   FSep.Style := tbsSeparator;
-  FSep.Width := 8;
 
   FCut := TToolButton.Create(Self);
   FCut.Parent := Self;
@@ -523,7 +514,6 @@ begin
   FSep := TToolButton.Create(Self);
   FSep.Parent := Self;
   FSep.Style := tbsSeparator;
-  FSep.Width := 8;
 
   FApplyFadeout := TToolButton.Create(Self);
   FApplyFadeout.Parent := Self;
@@ -553,7 +543,6 @@ begin
   FSep := TToolButton.Create(Self);
   FSep.Parent := Self;
   FSep.Style := tbsSeparator;
-  FSep.Width := 8;
 
   FSave := TToolButton.Create(Self);
   FSave.Parent := Self;

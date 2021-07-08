@@ -1257,11 +1257,6 @@ procedure TClientTab.ControlsAligned;
 begin
   inherited;
 
-  FToolbarPanel.Top := 0;
-  FToolbarPanel.ClientHeight := FToolbar.Height;
-
-//  FAddressBar.ClientHeight := Max(FAddressBar.FLabel.Height + FAddressBar.FLabel.Top * 2, FAddressBar.FStations.Height + FAddressBar.FStations.Top * 2) + 1;
-
   // TODO: wirklich hier machen? alles checken hier.
   FVolume.Setup;
   FVolume.Enabled := Bass.DeviceAvailable;
@@ -1271,16 +1266,11 @@ begin
   FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
   FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
 
-
-
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
   FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
   if Screen.PixelsPerInch = 96 then
     FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := modSharedData.imgImages;
-
-  //FToolbarPanel.ClientHeight := 24;    // TODO: hier ganz viel anpassen. ganzen fixen größenangaben raus und so.
-  //FVolume.Width := 140;
 
   FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
   FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;

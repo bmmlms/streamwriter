@@ -243,7 +243,6 @@ begin
   FLogPanel := TLogPanel.Create(Self);
   FLogPanel.Parent := Self;
   FLogPanel.Align := alTop;
- { FLogPanel.Padding.Top := 1;                      }
 
   FLogTree := TLogTree.Create(Self);
   FLogTree.Parent := Self;

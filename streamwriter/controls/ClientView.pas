@@ -558,7 +558,7 @@ begin
 
         if NodeData.Client.Playing or NodeData.Client.Paused then
         begin
-          PaintInfo.Canvas.Font.Color := HTML2Color('#0078ff');
+          PaintInfo.Canvas.Font.Color := HTML2Color('#0078ff');    // TODO: diese funktionsaufrufe sind schon hart...
           Break;
         end;
 

@@ -117,9 +117,8 @@ begin
   FPanelBottom.Parent := Self;
   FPanelBottom.Align := alBottom;
   FPanelBottom.BevelOuter := bvNone;
-  FPanelBottom.Visible := True;
-  FPanelBottom.Height := MulDiv(27, Screen.PixelsPerInch, 96) + 4;
-//  FPanelBottom.Padding.Top := 4;
+  FPanelBottom.Visible := True;        // TODO: muss man visible setzen? falls nicht.. überall wegmachen.
+  FPanelBottom.AutoSize := True;
 
   FBtnCopy := TButton.Create(Self);
   FBtnCopy.Caption := '&Copy';
@@ -127,7 +126,6 @@ begin
   FBtnCopy.Parent := FPanelBottom;
   FBtnCopy.Visible := True;
   FBtnCopy.OnClick := BtnCopyClick;
-  FBtnCopy.Width := MulDiv(80, Screen.PixelsPerInch, 96);
 
   FBtnClear := TButton.Create(Self);
   FBtnClear.Caption := 'C&lear';
@@ -135,7 +133,6 @@ begin
   FBtnClear.Parent := FPanelBottom;
   FBtnClear.Visible := True;
   FBtnClear.OnClick := BtnClearClick;
-  FBtnClear.Width := MulDiv(80, Screen.PixelsPerInch, 96);
 end;
 
 destructor TMStreamDebugPanel.Destroy;
@@ -219,10 +216,7 @@ begin
 
   Header.Columns.Add;
   Header.Columns.Add;
-  Header.Columns[0].Margin := 0;
-  Header.Columns[1].Margin := 0;
   Header.AutoSizeIndex := 1;
-  TextMargin := 0;
 end;
 
 procedure TDebugView.DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
@@ -230,7 +224,7 @@ procedure TDebugView.DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
 begin
   inherited;
 
-  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
+  NodeHeight := GetTextSize('Wyg', Font).cy + 6;     // TODO: ??
 end;
 
 procedure TDebugView.FSetClient(Value: TICEClient);

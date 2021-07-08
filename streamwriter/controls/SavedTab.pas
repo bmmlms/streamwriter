@@ -770,20 +770,16 @@ begin
   FTopLeftPanel.Parent := FTopPanel;
   FTopLeftPanel.Align := alLeft;
   FTopLeftPanel.Width := MulDiv(460, Screen.PixelsPerInch, 96);
- // FTopLeftPanel.Padding.Top := 1;
   FTopLeftPanel.BevelOuter := bvNone;
 
   FCoverPanel := TPanel.Create(Self);
   FCoverPanel.Parent := FTopPanel;
   FCoverPanel.Align := alLeft;
   FCoverPanel.BevelOuter := bvNone;
-//  FCoverPanel.Padding.Bottom := 4;
-//  FCoverPanel.Padding.Right := 8;
   FCoverPanel.Visible := True;
 
   FCoverBorderPanel := TPanel.Create(FCoverPanel);
   FCoverBorderPanel.Parent := FCoverPanel;
- // FCoverBorderPanel.BevelKind := bkNone;
   FCoverBorderPanel.BevelOuter := bvNone;
   FCoverBorderPanel.Align := alClient;
 
@@ -798,7 +794,6 @@ begin
   FTopRightPanel := TPanel.Create(Self);
   FTopRightPanel.Parent := FTopPanel;
   FTopRightPanel.Align := alClient;
-  FTopRightPanel.ClientHeight := 52;
   FTopRightPanel.BevelOuter := bvNone;
 
   // Panel rechts unten für Positionslabel/Playercontrols
@@ -811,8 +806,6 @@ begin
   FTopRightTopPanel := TPanel.Create(Self);
   FTopRightTopPanel.Parent := FTopRightPanel;
   FTopRightTopPanel.Align := alTop;
-  FTopRightTopPanel.ClientHeight := 24;
-//  FTopRightTopPanel.Padding.Top := 1;
   FTopRightTopPanel.BevelOuter := bvNone;
 
   // Panel für Zeitanzeigen und Playercontrols
@@ -829,7 +822,6 @@ begin
   // Im Resize() wird dann alNone gemacht, aber wir kennen die passende Breite...
   FPlayToolbar.Align := alLeft;
   FPlayToolbar.Images := modSharedData.imgImages;
-  FPlayToolbar.Left := 0;
 
   FPosLabel := TLabel.Create(Self);
   FPosLabel.AutoSize := True;
@@ -837,7 +829,6 @@ begin
   FPosLabel.Caption := '00:00';
   FPosLabel.Parent := FSeekPosPanel;
   FPosLabel.Left := FPlayToolbar.Left + FPlayToolbar.Width + 4;
-  FPosLabel.Top := FPlayToolbar.Top + 4;         // TODO: bah.
 
   FSearchBar := TSearchBar.Create(Self);
   FSearchBar.Parent := FTopLeftPanel;
@@ -863,16 +854,11 @@ begin
   FVolume.Align := alRight;
   FVolume.Setup;
   FVolume.Enabled := Bass.DeviceAvailable;
-  FVolume.Width := 150;
+  FVolume.Width := 140;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
-//  FVolume.Padding.Left := 10;
- // FVolume.Padding.Bottom := 1;
   FVolume.Left := High(Integer);
-
-  FToolbar.Top := 0;
-  FSearchBar.Top := FToolBar.Height + 20;
 
   FToolBar.FRefresh.OnClick := ToolBarClick;
 

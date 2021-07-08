@@ -161,8 +161,6 @@ begin
 
   FTrackBarPanel.Align := alClient;
   FTrackBarPanel.BevelOuter := bvNone;
-//  FTrackBarPanel.Padding.Left := 4;
-//  FTrackBarPanel.Padding.Right := 2;
   FTrackBarPanel.Parent := Self;
 
   FTrackBar.Max := 100;

@@ -185,7 +185,7 @@ begin
           ImageData := AG.OGGUserItemW['METADATA_BLOCK_PICTURE'];
           if (Length(ImageData) > 0) and (Length(ImageData) < 1000000) then
           begin
-            ImageData := Base64.Decode(ImageData);
+            ImageData := DecodeStringBase64(ImageData);
 
             MS := TMemoryStream.Create;
             try
