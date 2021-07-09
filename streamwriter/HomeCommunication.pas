@@ -1022,7 +1022,7 @@ begin
   Cmd.VersionMinor := AppGlobals.AppVersion.Minor;
   Cmd.VersionRevision := AppGlobals.AppVersion.Revision;
   Cmd.VersionBuild := AppGlobals.AppVersion.Build;
-  Cmd.Build := AppGlobals.BuildNumber;
+  Cmd.Build := 900; // AppGlobals.BuildNumber;  // TODO: !!!
   Cmd.Language := Language.CurrentLanguage.ID;
   Cmd.ProtoVersion := 8;
 

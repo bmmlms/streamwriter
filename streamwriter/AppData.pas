@@ -374,7 +374,7 @@ begin
   FData := TDataLists.Create;
 
   // The number of the current build
-  FBuildNumber := 816;
+  FGitSHA := 'd14e914';
   FCodename := 'Vivo';
 
   // Adjust dimensions of the main-form
@@ -431,7 +431,7 @@ begin
     FLogHeaderPosition[i] := -1;
 
   // Set some application-specific settings
-  SetLength(FProjectUpdateLinks, 2);
+  SetLength(FProjectUpdateLinks, 2);                          // TODO: warum überall slashes am ende der urls..
   {$IFDEF DEBUG}
   FProjectUpdateLinks[0] := 'https://streamwriter.gaia/';
   FProjectUpdateLinks[1] := 'https://streamwriter.gaia/';

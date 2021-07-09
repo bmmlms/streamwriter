@@ -34,8 +34,8 @@
             <Filename Value="..\Build\streamwriter"/>
           </Target>
           <SearchPaths>
-            <IncludeFiles Value="..\..\common;controls;..\..\common\forms;audio;streaming;..\..\common\sockets;postprocess;addon;..\..\common\bass;..\..\common\openssl;$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..\..\common;controls;..\..\common\forms;audio;streaming;..\..\common\sockets;postprocess;addon;..\..\common\openssl"/>
+            <IncludeFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\fpc-common\openssl;$(ProjOutDir)"/>
+            <OtherUnitFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\fpc-common\openssl;..\SubModules\TRegExpr\src"/>
             <UnitOutputDirectory Value="..\Build\Units\$(TargetCPU)\$(BuildMode)"/>
           </SearchPaths>
           <Parsing>
@@ -105,7 +105,7 @@
         <IsPartOfProject Value="True"/>
       </Unit0>
       <Unit1>
-        <Filename Value="..\..\common\MM.pas"/>
+        <Filename Value="..\SubModules\fpc-common\MM.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit1>
       <Unit2>
@@ -142,78 +142,78 @@
         <ResourceBaseClass Value="Form"/>
       </Unit7>
       <Unit8>
-        <Filename Value="..\..\common\ExtendedStream.pas"/>
+        <Filename Value="..\SubModules\fpc-common\ExtendedStream.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit8>
       <Unit9>
-        <Filename Value="..\..\common\Functions.pas"/>
+        <Filename Value="..\SubModules\fpc-common\Functions.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit9>
       <Unit10>
-        <Filename Value="..\..\common\AppDataBase.pas"/>
+        <Filename Value="..\SubModules\fpc-common\AppDataBase.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit10>
       <Unit11>
-        <Filename Value="..\..\common\UpdateClient.pas"/>
+        <Filename Value="..\SubModules\fpc-common\UpdateClient.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit11>
       <Unit12>
-        <Filename Value="..\..\common\LanguageObjects.pas"/>
+        <Filename Value="..\SubModules\fpc-common\LanguageObjects.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit12>
       <Unit13>
-        <Filename Value="..\..\common\GUIFunctions.pas"/>
+        <Filename Value="..\SubModules\fpc-common\GUIFunctions.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit13>
       <Unit14>
-        <Filename Value="..\..\common\forms\Update.pas"/>
+        <Filename Value="..\SubModules\fpc-common\forms\Update.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmUpdate"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit14>
       <Unit15>
-        <Filename Value="..\..\common\forms\Changelog.pas"/>
+        <Filename Value="..\SubModules\fpc-common\forms\Changelog.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmChangeLog"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit15>
       <Unit16>
-        <Filename Value="..\..\common\LanguageIcons.pas"/>
+        <Filename Value="..\SubModules\fpc-common\LanguageIcons.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit16>
       <Unit17>
-        <Filename Value="..\..\common\forms\MsgDlg.pas"/>
+        <Filename Value="..\SubModules\fpc-common\forms\MsgDlg.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmMsgDlg"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit17>
       <Unit18>
-        <Filename Value="..\..\common\SettingsStorage.pas"/>
+        <Filename Value="..\SubModules\fpc-common\SettingsStorage.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit18>
       <Unit19>
-        <Filename Value="..\..\common\forms\WizardBase.pas"/>
+        <Filename Value="..\SubModules\fpc-common\forms\WizardBase.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmWizardBase"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit19>
       <Unit20>
-        <Filename Value="..\..\common\AppStartup.pas"/>
+        <Filename Value="..\SubModules\fpc-common\AppStartup.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit20>
       <Unit21>
-        <Filename Value="..\..\common\forms\ProfileSettings.pas"/>
+        <Filename Value="..\SubModules\fpc-common\forms\ProfileSettings.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmProfileSettings"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit21>
       <Unit22>
-        <Filename Value="..\..\common\forms\SettingsBase.pas"/>
+        <Filename Value="..\SubModules\fpc-common\forms\SettingsBase.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmSettingsBase"/>
         <HasResources Value="True"/>
@@ -248,7 +248,7 @@
         <IsPartOfProject Value="True"/>
       </Unit29>
       <Unit30>
-        <Filename Value="..\..\common\MControls.pas"/>
+        <Filename Value="..\SubModules\fpc-common\MControls.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit30>
       <Unit31>
@@ -268,7 +268,7 @@
         <IsPartOfProject Value="True"/>
       </Unit34>
       <Unit35>
-        <Filename Value="..\..\common\forms\About.pas"/>
+        <Filename Value="..\SubModules\fpc-common\forms\About.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmAbout"/>
         <HasResources Value="True"/>
@@ -283,7 +283,7 @@
         <IsPartOfProject Value="True"/>
       </Unit37>
       <Unit38>
-        <Filename Value="..\..\common\forms\UpdatedInfo.pas"/>
+        <Filename Value="..\SubModules\fpc-common\forms\UpdatedInfo.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmUpdatedInfo"/>
         <HasResources Value="True"/>
@@ -325,27 +325,27 @@
         <ResourceBaseClass Value="Form"/>
       </Unit46>
       <Unit47>
-        <Filename Value="..\..\common\sockets\Commands.pas"/>
+        <Filename Value="..\SubModules\fpc-common\sockets\Commands.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit47>
       <Unit48>
-        <Filename Value="..\..\common\sockets\Communication.pas"/>
+        <Filename Value="..\SubModules\fpc-common\sockets\Communication.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit48>
       <Unit49>
-        <Filename Value="..\..\common\sockets\Protocol.pas"/>
+        <Filename Value="..\SubModules\fpc-common\sockets\Protocol.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit49>
       <Unit50>
-        <Filename Value="..\..\common\sockets\HTTPStream.pas"/>
+        <Filename Value="..\SubModules\fpc-common\sockets\HTTPStream.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit50>
       <Unit51>
-        <Filename Value="..\..\common\sockets\HTTPThread.pas"/>
+        <Filename Value="..\SubModules\fpc-common\sockets\HTTPThread.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit51>
       <Unit52>
-        <Filename Value="..\..\common\sockets\Sockets.pas"/>
+        <Filename Value="..\SubModules\fpc-common\sockets\Sockets.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit52>
       <Unit53>
@@ -373,7 +373,7 @@
         <IsPartOfProject Value="True"/>
       </Unit58>
       <Unit59>
-        <Filename Value="..\..\common\Logging.pas"/>
+        <Filename Value="..\SubModules\fpc-common\Logging.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit59>
       <Unit60>
@@ -395,7 +395,7 @@
         <ResourceBaseClass Value="Form"/>
       </Unit62>
       <Unit63>
-        <Filename Value="..\..\common\DownloadClient.pas"/>
+        <Filename Value="..\SubModules\fpc-common\DownloadClient.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit63>
       <Unit64>
@@ -424,7 +424,7 @@
         <ResourceBaseClass Value="Form"/>
       </Unit67>
       <Unit68>
-        <Filename Value="..\..\common\FileWatcher.pas"/>
+        <Filename Value="..\SubModules\fpc-common\FileWatcher.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit68>
       <Unit69>
@@ -446,7 +446,7 @@
         <ResourceBaseClass Value="Form"/>
       </Unit71>
       <Unit72>
-        <Filename Value="..\..\common\MessageBus.pas"/>
+        <Filename Value="..\SubModules\fpc-common\MessageBus.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit72>
       <Unit73>
@@ -462,7 +462,7 @@
         <IsPartOfProject Value="True"/>
       </Unit75>
       <Unit76>
-        <Filename Value="..\..\common\PowerManagement.pas"/>
+        <Filename Value="..\SubModules\fpc-common\PowerManagement.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit76>
       <Unit77>
@@ -561,11 +561,11 @@
         <IsPartOfProject Value="True"/>
       </Unit96>
       <Unit97>
-        <Filename Value="..\..\common\SplashThread.pas"/>
+        <Filename Value="..\SubModules\fpc-common\SplashThread.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit97>
       <Unit98>
-        <Filename Value="..\..\common\CommandLine.pas"/>
+        <Filename Value="..\SubModules\fpc-common\CommandLine.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit98>
       <Unit99>
@@ -599,15 +599,15 @@
         <IsPartOfProject Value="True"/>
       </Unit104>
       <Unit105>
-        <Filename Value="..\..\common\openssl\DynOpenSSL.pas"/>
+        <Filename Value="..\SubModules\fpc-common\openssl\DynOpenSSL.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit105>
       <Unit106>
-        <Filename Value="..\..\common\openssl\IdSSLOpenSSLHeadersCustom.pas"/>
+        <Filename Value="..\SubModules\fpc-common\openssl\IdSSLOpenSSLHeadersCustom.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit106>
       <Unit107>
-        <Filename Value="..\..\common\WindowsFunctions.pas"/>
+        <Filename Value="..\SubModules\fpc-common\WindowsFunctions.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit107>
       <Unit108>
@@ -638,8 +638,8 @@
       <Filename Value="..\Build\streamwriter"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="..\..\common;controls;..\..\common\forms;audio;streaming;..\..\common\sockets;postprocess;addon;..\..\common\bass;..\..\common\openssl;$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\common;controls;..\..\common\forms;audio;streaming;..\..\common\sockets;postprocess;addon;..\..\common\openssl"/>
+      <IncludeFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\fpc-common\openssl;$(ProjOutDir)"/>
+      <OtherUnitFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\fpc-common\openssl;..\SubModules\TRegExpr\src"/>
       <UnitOutputDirectory Value="..\Build\Units\$(TargetCPU)\$(BuildMode)"/>
     </SearchPaths>
     <Parsing>

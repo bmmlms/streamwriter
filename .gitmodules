@@ -1,0 +1,6 @@
+[submodule "SubModules/fpc-common"]
+	path = SubModules/fpc-common
+	url = ssh://gaia/mnt/ssd/git/fpc-common
+[submodule "SubModules/TRegExpr"]
+	path = SubModules/TRegExpr
+	url = https://github.com/Alexey-T/TRegExpr.git

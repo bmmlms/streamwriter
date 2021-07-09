@@ -294,7 +294,9 @@ begin
         BytesToRead := T - BASSChannelGetPosition(Channel, BASS_POS_BYTE);
       end;
 
+      {$R-}
       BytesRead := BASSChannelGetData(Channel, @Buf[0], BytesToRead);
+      {$IFDEF DEBUG}{$R+}{$ENDIF}
       OutStream.Write(Buf[0], BytesRead);
 
       if Assigned(FOnProgress) then

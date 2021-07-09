@@ -153,8 +153,8 @@ uses
 {$R res\openssl.rc}
 {$R res\about.rc}
 {$R res\certificates.rc}
-{$R ..\..\common\res\language_common.res}
-{$R ..\..\common\res\lang_icons.rc}
+{$R ..\SubModules\fpc-common\res\language_common.res}
+{$R ..\SubModules\fpc-common\res\lang_icons.rc}
 
 var
   i: Integer;
@@ -210,7 +210,7 @@ var
        (not IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion)) and (not HideMain)
        and (not AppGlobals.InstallUpdateOnStart)
     then
-      TSplashThread.Create('TfrmStreamWriterMain', 'SPLASH', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.BuildNumber,
+      TSplashThread.Create('TfrmStreamWriterMain', 'SPLASH', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.GitSHA,
         AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
 
     // Now load everything from datafiles

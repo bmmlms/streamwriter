@@ -247,9 +247,10 @@ function CheckRegExp(Handle: THandle; var RegExp: string; List: TListView; Item:
 var
   i: Integer;
   RValid, ArtistFound, TitleFound: Boolean;
-//  R: TPerlRegEx;
+  // R: TPerlRegEx;
 begin
-  {           // TODO:
+  // TODO: ...
+  {
   Result := False;
   RegExp := Trim(RegExp);
 
