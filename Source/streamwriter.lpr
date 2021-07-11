@@ -147,12 +147,12 @@ uses
 {$SetPEOptFlags IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE}
 
 {$R *.res}
-{$R res\images.rc}
-{$R res\language.res}
-{$R res\bass.rc}
-{$R res\openssl.rc}
-{$R res\about.rc}
-{$R res\certificates.rc}
+{$R ..\Resources\images.rc}
+{$R ..\Resources\language.res}
+{$R ..\Resources\bass.rc}
+{$R ..\Resources\openssl.rc}
+{$R ..\Resources\about.rc}
+{$R ..\Resources\certificates.rc}
 {$R ..\SubModules\fpc-common\res\language_common.res}
 {$R ..\SubModules\fpc-common\res\lang_icons.rc}
 
