@@ -32,18 +32,18 @@ if %ERRORLEVEL% EQU 0 (
   echo Ok
 ) else (
   echo Error
+  pause
 )
 echo(
-pause
 goto end
 
-:getrevision
+:getgitsha
   cd "%PROJECTDIR%"
-  for /f "tokens=1" %%r in ('git rev-parse --short HEAD') do set REVISION=%%r
+  for /f "tokens=1" %%r in ('git rev-parse --short HEAD') do set GITSHA=%%r
   exit /b 0
 
 :modifybuildnumber
-  powershell -Command "(Get-Content "%SOURCEDIR%\AppData.pas") -replace '"FGitSHA :=.*;"', 'FGitSHA := ''%REVISION%'';' | Out-File -Encoding UTF8 "%SOURCEDIR%\AppData.pas""
+  powershell -Command "(Get-Content "%SOURCEDIR%\AppData.pas") -replace '"FGitSHA :=.*;"', 'FGitSHA := ''%GITSHA%'';' | Out-File -Encoding UTF8 "%SOURCEDIR%\AppData.pas""
 
   exit /b %ERRORLEVEL%
 
@@ -94,13 +94,13 @@ goto end
 :upload
   cd "%PUBLISHDIR%"
 
-  "%CURL%" -k -f -S -o nul -F "file=@%APPNAME%.zip" "%UPLOADURL%&revision=%REVISION%"
+  "%CURL%" -k -f -S -o nul -F "file=@%APPNAME%.zip" "%UPLOADURL%&gitsha=%GITSHA%"
   if %ERRORLEVEL% GEQ 1 exit /B 1
 
   exit /b 0
 
 :main
-  call :getrevision
+  call :getgitsha
   if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 
   call :modifybuildnumber
@@ -118,8 +118,8 @@ goto end
   call :copyfiles
   if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 
-  REM call :upload
-  REM if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+  call :upload
+  if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 
   exit /b 0
 
