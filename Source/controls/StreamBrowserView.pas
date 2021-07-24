@@ -24,13 +24,41 @@ unit StreamBrowserView;
 interface
 
 uses
-  Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
-  StdCtrls, Menus, ImgList, Math, VirtualTrees, LanguageObjects, MControls,
-  Graphics, DragDrop, DragDropFile, Functions, AppData, ExtCtrls, GraphType,
-  HomeCommunication, DynBASS, Forms, Logging, Images,
-  DataManager, DropSource, Types, AudioFunctions, Themes,
-  Generics.Collections, TypeDefs, MessageBus, AppMessages, Commands,
-  GUIFunctions, SharedData, ShellAPI, LMessages;
+  AppData,
+  AppMessages,
+  AudioFunctions,
+  Buttons,
+  Classes,
+  ComCtrls,
+  Commands,
+  Controls,
+  DataManager,
+  DragDrop,
+  DragDropFile,
+  DropSource,
+  DynBASS,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Graphics,
+  GraphType,
+  GUIFunctions,
+  HomeCommunication,
+  Images,
+  ImgList,
+  LanguageObjects,
+  LMessages,
+  Logging,
+  Menus,
+  MessageBus,
+  SharedData,
+  StdCtrls,
+  SysUtils,
+  Themes,
+  TypeDefs,
+  Types,
+  VirtualTrees,
+  Windows;
 
 type
   TModes = (moShow, moLoading, moError);
@@ -105,9 +133,6 @@ type
     procedure StreamBrowserHeaderClick(Sender: TVTHeader; HitInfo: TVTHeaderHitInfo);
 
     procedure HomeCommDataReceived(Sender: TObject);
-  protected
-    procedure SetParent(NewParent: TWinControl); override;
-    procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -193,7 +218,7 @@ type
     procedure DoDragging(P: TPoint); override;
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal); override;
     procedure DoPaintNode(var PaintInfo: TVTPaintInfo); override;
-//    function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
+    //    function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
     function DoBeforeItemPaint(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect): Boolean; override;
@@ -249,8 +274,6 @@ begin
 
   NodeDataSize := SizeOf(TStreamNodeData);
   IncrementalSearch := isVisibleOnly;
-
-  Header.Height := GetTextSize('Wyg', Font).cy + 6;
 
   TreeOptions.SelectionOptions := [toDisableDrawSelection, toRightClickSelect, toFullRowSelect, toMultiSelect];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
@@ -349,8 +372,7 @@ begin
   Images := modSharedData.imgImages;
 end;
 
-function TMStreamTree.CreateItem(Caption: string; ImageIndex: Integer;
-  Parent: TMenuItem): TMenuItem;
+function TMStreamTree.CreateItem(Caption: string; ImageIndex: Integer; Parent: TMenuItem): TMenuItem;
 begin
   Result := TMenuItem.Create(FPopupMenu);
   Result.Caption := Caption;
@@ -384,15 +406,12 @@ begin
   NodeData := PStreamNodeData(GetNodeData(Node));
 
   if ((Kind = ikNormal) or (Kind = ikSelected)) and (Column = 0) then
-  begin
     if NodeData.Data.OwnRating > 0 then
       Index := TImages.STAR_BLUE_5 + 1 - NodeData.Data.OwnRating
+    else if NodeData.Data.Rating > 0 then
+      Index := TImages.STAR_5 + 1 - NodeData.Data.Rating
     else
-      if NodeData.Data.Rating > 0 then
-        Index := TImages.STAR_5 + 1 - NodeData.Data.Rating
-      else
-        Index := TImages.TRANSMIT;
-  end;
+      Index := TImages.TRANSMIT;
 end;
 
 procedure TMStreamTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: string);
@@ -407,8 +426,7 @@ begin
   end;
 end;
 
-procedure TMStreamTree.DoMeasureItem(TargetCanvas: TCanvas;
-  Node: PVirtualNode; var NodeHeight: Integer);
+procedure TMStreamTree.DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer);
 begin
   inherited;
 
@@ -448,17 +466,21 @@ var
   Nodes: TNodeArray;
 begin
   SetLength(Result, 0);
-  if not SelectedOnly then begin
+  if not SelectedOnly then
+  begin
     Node := GetFirst;
-    while Node <> nil do begin
+    while Node <> nil do
+    begin
       SetLength(Result, Length(Result) + 1);
       Result[Length(Result) - 1] := Node;
       Node := GetNext(Node);
     end;
-  end else begin
+  end else
+  begin
     SetLength(Result, 0);
     Nodes := GetSortedSelection(True);
-    for i := 0 to Length(Nodes) - 1 do begin
+    for i := 0 to Length(Nodes) - 1 do
+    begin
       SetLength(Result, Length(Result) + 1);
       Result[Length(Result) - 1] := Nodes[i];
     end;
@@ -492,8 +514,7 @@ begin
   end;
 end;
 
-procedure TMStreamTree.HandleMouseDblClick(var Message: TLMMouse;
-  const HitInfo: THitInfo);
+procedure TMStreamTree.HandleMouseDblClick(var Message: TLMMouse; const HitInfo: THitInfo);
 var
   Entries: TStreamDataArray;
 begin
@@ -515,8 +536,7 @@ begin
   end;
 end;
 
-procedure TMStreamTree.HomeCommBytesTransferred(
-  CommandHeader: TCommandHeader; Transferred: UInt64);
+procedure TMStreamTree.HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
 begin
   if FProgressBar.Position < 100 then
     FProgressBar.Position := FProgressBar.Position + 1;
@@ -547,9 +567,8 @@ begin
       FoundStart := True;
       InvalidateNode(Node);
       RepaintNode(Node);
-    end else
-      if FoundStart then
-        Exit;
+    end else if FoundStart then
+      Exit;
 
     Node := GetNext(Node);
   end;
@@ -591,12 +610,10 @@ begin
   NewText := '';
 
   if NodeData.Data.AudioType <> atNone then
-  begin
     if NodeData.Data.AudioType = atMPEG then
       NewText := 'MP3'
     else if NodeData.Data.AudioType = atAAC then
       NewText := 'AAC';
-  end;
 
   if NodeData.Data.Bitrate > 0 then
   begin
@@ -631,10 +648,10 @@ begin
   if FMode = moError then
   begin
     TmpText := _('No connection to server.');
-//    GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
+    //    GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
 
     R := ClientRect;
-//    R.Left := (R.Right div 2) - (Size.cx div 2) - 4;
+    //    R.Left := (R.Right div 2) - (Size.cx div 2) - 4;
     R.Top := ClientHeight div 2 - Canvas.TextHeight('Wy');
 
     DrawText(Canvas.Handle, PChar(TmpText), Length(TmpText), R, 0);
@@ -643,7 +660,7 @@ begin
   if FMode = moLoading then
   begin
     TmpText := _('Loading streams');
-//    GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
+    //    GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
 
     R := ClientRect;
     R.Left := (R.Right div 2) - (Size.cx div 2) - 4;
@@ -653,8 +670,7 @@ begin
   end;
 end;
 
-procedure TMStreamTree.PaintImage(var PaintInfo: TVTPaintInfo;
-  ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
+procedure TMStreamTree.PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
 begin
   PaintInfo.ImageInfo[ImageInfoIndex].XPos := 4;
   PaintInfo.ImageInfo[ImageInfoIndex].YPos := 4;
@@ -691,30 +707,24 @@ begin
     Action := oaSetData
   else if Sender = FItemRefresh then
     Action := oaRefresh
-  else if (Sender = FItemRate1) or (Sender = FItemRate2) or (Sender = FItemRate3) or
-          (Sender = FItemRate4) or (Sender = FItemRate5) then
+  else if (Sender = FItemRate1) or (Sender = FItemRate2) or (Sender = FItemRate3) or (Sender = FItemRate4) or (Sender = FItemRate5) then
     if Length(Streams) = 1 then
-    begin
       case TMenuItem(Sender).Tag of
         1: Action := oaRate1;
         2: Action := oaRate2;
         3: Action := oaRate3;
         4: Action := oaRate4;
         5: Action := oaRate5;
-      end;
-    end
-  else
-    raise Exception.Create('');
+      end else
+      raise Exception.Create('');
 
   if (Action <> oaNone) and (Length(Streams) > 0) then
   begin
     if Assigned(FOnAction) then
       FOnAction(Self, Action, Streams);
   end else if Action = oaRefresh then
-  begin
     if Assigned(FOnAction) then
       FOnAction(Self, Action, Streams);
-  end;
 end;
 
 procedure TMStreamTree.PopupMenuPopup(Sender: TObject);
@@ -764,6 +774,7 @@ begin
 end;
 
 procedure TMStreamTree.WndProc(var Message: TMessage);
+
   procedure DrawImg(C: TCanvas);
   var
     SBW: Integer;
@@ -777,6 +788,7 @@ procedure TMStreamTree.WndProc(var Message: TMessage);
     C.FillRect(R);
     Images.Draw(C, FButtonPos.Left, FButtonPos.Top, 47, True);
   end;
+
 var
   DC: HDC;
   Flags: DWORD;
@@ -787,37 +799,32 @@ begin
 
   case Message.Msg of
     WM_NCPAINT:
+    begin
+      Flags := DCX_CACHE or DCX_CLIPSIBLINGS or DCX_WINDOW or DCX_VALIDATE;
+      DC := GetDCEx(Self.Header.Treeview.Handle, 0, Flags);
+      if DC <> 0 then
       begin
-        Flags := DCX_CACHE or DCX_CLIPSIBLINGS or DCX_WINDOW or DCX_VALIDATE;
-        DC := GetDCEx(Self.Header.Treeview.Handle, 0, Flags);
-        if DC <> 0 then
-        begin
-          C := TCanvas.Create;
-          try
-            C.Handle := DC;
-            DrawImg(C);
-          finally
-            C.Free;
-          end;
+        C := TCanvas.Create;
+        try
+          C.Handle := DC;
+          DrawImg(C);
+        finally
+          C.Free;
         end;
       end;
+    end;
     WM_NCLBUTTONDOWN:
-      begin
-        P.X := TWMNCLButtonDown(Message).XCursor;
-        P.Y := TWMNCLButtonDown(Message).YCursor + Header.Height;
+    begin
+      P.X := TWMNCLButtonDown(Message).XCursor;
+      P.Y := TWMNCLButtonDown(Message).YCursor + Header.Height;
 
-        if PtInRect(FButtonPos, ScreenToClient(P)) then
-        begin
-          FSortPopupMenu.Popup(P.X, P.Y - Header.Height);
-        end;
-      end;
+      if PtInRect(FButtonPos, ScreenToClient(P)) then
+        FSortPopupMenu.Popup(P.X, P.Y - Header.Height);
+    end;
   end;
 end;
 
-procedure TMStreamTree.DoBeforeCellPaint(Canvas: TCanvas;
-  Node: PVirtualNode; Column: TColumnIndex;
-  CellPaintMode: TVTCellPaintMode; CellRect: TRect;
-  var ContentRect: TRect);
+procedure TMStreamTree.DoBeforeCellPaint(Canvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect);
 var
   NodeData: PStreamNodeData;
 begin
@@ -897,8 +904,7 @@ begin
   Result := inherited;
 end;
 
-function TMStreamTree.DoCompare(Node1, Node2: PVirtualNode;
-  Column: TColumnIndex): Integer;
+function TMStreamTree.DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer;
 var
   Data1, Data2: PStreamNodeData;
   S1, S2: string;
@@ -932,7 +938,7 @@ begin
     Result := CompareText(Data2.Data.Name, Data1.Data.Name);
 
   if (Result = 0) and (FSortType <> stRating) then
-    Result := CmpInt(Data1.Data.Rating, Data2.Data.Rating)
+    Result := CmpInt(Data1.Data.Rating, Data2.Data.Rating);
 end;
 
 procedure TMStreamTree.DoDragging(P: TPoint);
@@ -970,8 +976,7 @@ begin
   Result := False;
   P := BuildPattern(Search, Hash, Chars, False);
 
-  if (not AlwaysBuild) and (P = FLastSearch) and (Genre = FLastGenre) and
-     (AudioType = FLastAudioType) and (Bitrate = FLastBitrate) then
+  if (not AlwaysBuild) and (P = FLastSearch) and (Genre = FLastGenre) and (AudioType = FLastAudioType) and (Bitrate = FLastBitrate) then
     Exit;
 
   Result := True;
@@ -984,10 +989,8 @@ begin
     try
       for i := 0 to AppGlobals.Data.BrowserList.Count - 1 do
       begin
-        Add := ((P = '*') or Like(LowerCase(AppGlobals.Data.BrowserList[i].Name), LowerCase(P))) and
-               ((Genre = '') or (Pos(LowerCase(Genre), LowerCase(AppGlobals.Data.BrowserList[i].Genre)) > 0)) and
-               ((AudioType = atNone) or (AppGlobals.Data.BrowserList[i].AudioType = AudioType)) and
-               ((Bitrate = 0) or (AppGlobals.Data.BrowserList[i].Bitrate >= Bitrate));
+        Add := ((P = '*') or Like(LowerCase(AppGlobals.Data.BrowserList[i].Name), LowerCase(P))) and ((Genre = '') or (Pos(LowerCase(Genre), LowerCase(AppGlobals.Data.BrowserList[i].Genre)) > 0)) and
+          ((AudioType = atNone) or (AppGlobals.Data.BrowserList[i].AudioType = AudioType)) and ((Bitrate = 0) or (AppGlobals.Data.BrowserList[i].Bitrate >= Bitrate));
         if Add then
         begin
           Node := AddChild(nil);
@@ -1022,13 +1025,12 @@ begin
 
   if Assigned(FProgressBar) then
   begin
-  FProgressBar.Left := Trunc(ClientWidth / 2 - FProgressBar.Width / 2);
-  FProgressBar.Top := ClientHeight div 2 - Canvas.TextHeight('Wy') + 15;
+    FProgressBar.Left := Trunc(ClientWidth / 2 - FProgressBar.Width / 2);
+    FProgressBar.Top := ClientHeight div 2 - Canvas.TextHeight('Wy') + 15;
   end;
 end;
 
-procedure TMStreamTree.Sort(Node: PVirtualNode; Column: TColumnIndex;
-  SortType: TSortTypes; Direction: TSortDirection);
+procedure TMStreamTree.Sort(Node: PVirtualNode; Column: TColumnIndex; SortType: TSortTypes; Direction: TSortDirection);
 begin
   FSortType := SortType;
 
@@ -1056,9 +1058,8 @@ begin
 
     FDots := '';
     FTimer.Enabled := True;
-  end else
-    if FProgressBar.Visible then
-      FProgressBar.Visible := False;
+  end else if FProgressBar.Visible then
+    FProgressBar.Visible := False;
 
   FMode := Mode;
 
@@ -1171,9 +1172,12 @@ begin
   FSearch := TMStreamSearchPanel.Create(Self);
   FSearch.Parent := Self;
   FSearch.Align := alTop;
-  //FSearch.Height := 100;
   FSearch.Visible := True;
   FSearch.AutoSize := True;
+  FSearch.FSearchEdit.OnChange := SearchEditChange;
+  FSearch.FGenreList.OnChange := ListsChange;
+  FSearch.FKbpsList.OnChange := ListsChange;
+  FSearch.FTypeList.OnChange := ListsChange;
 
   FCountLabel := TLabel.Create(Self);
   FCountLabel.Align := alBottom;
@@ -1190,9 +1194,17 @@ begin
   FStreamTree.FSortPopupMenu.FItemType.OnClick := SortItemClick;
   FStreamTree.FSortPopupMenu.FItemRating.OnClick := SortItemClick;
 
+  FLoading := False;
+  FSortType := TSortTypes(AppGlobals.BrowserSortType);
+  FStreamTree.Header.SortDirection := TSortDirection(AppGlobals.BrowserSortDir);
+  FSearch.FSearchEdit.Text := AppGlobals.BrowserSearchText;
+  if AppGlobals.BrowserSearchAudioType < FSearch.FTypeList.Items.Count then
+    FSearch.FTypeList.ItemIndex := AppGlobals.BrowserSearchAudioType;
+  if AppGlobals.BrowserSearchBitrate < FSearch.FKbpsList.Items.Count then
+    FSearch.FKbpsList.ItemIndex := AppGlobals.BrowserSearchBitrate;
+
   AppGlobals.Lock;
   try
-    // TODO: controlsaligned wird oft aufgerufen. da drin buildtree oder sowas zu machen ist falsch.
     if (AppGlobals.Data.BrowserList.Count > 0) and (AppGlobals.Data.GenreList.Count > 0) then
     begin
       BuildGenres;
@@ -1204,6 +1216,8 @@ begin
   end;
 
   SortTree(False);
+
+  HomeComm.OnServerDataReceived := HomeCommDataReceived;
 end;
 
 destructor TMStreamBrowserView.Destroy;
@@ -1235,48 +1249,6 @@ begin
     FOnStreamsReceived(Self);
 end;
 
-// TODO: das gehört hier nicht hin denke ich.
-procedure TMStreamBrowserView.SetParent(NewParent: TWinControl);
-begin
-  inherited SetParent(NewParent);
-
-  // TODO:
-  if not Assigned(FSearch) then
-    Exit;
-
-  Align := alClient;
-  BevelOuter := bvNone;
-
-  FLoading := False;
-  FSortType := stRating;
-
-  SwitchMode(moShow);
-
-  FSearch.FSearchEdit.OnChange := SearchEditChange;
-  FSearch.FGenreList.OnChange := ListsChange;
-  FSearch.FKbpsList.OnChange := ListsChange;
-  FSearch.FTypeList.OnChange := ListsChange;
-
-  HomeComm.OnServerDataReceived := HomeCommDataReceived;
-end;
-
-procedure TMStreamBrowserView.ControlsAligned;
-var
-  i: Integer;
-begin
-  inherited ControlsAligned;
-
-  // TODO: muss das hier? warum nicht ctor?
-  FSortType := TSortTypes(AppGlobals.BrowserSortType);
-  FStreamTree.Header.SortDirection := TSortDirection(AppGlobals.BrowserSortDir);
-  FSearch.FSearchEdit.Text := AppGlobals.BrowserSearchText;
-  if AppGlobals.BrowserSearchAudioType < FSearch.FTypeList.Items.Count then
-    FSearch.FTypeList.ItemIndex := AppGlobals.BrowserSearchAudioType;
-  if AppGlobals.BrowserSearchBitrate < FSearch.FKbpsList.Items.Count then
-    FSearch.FKbpsList.ItemIndex := AppGlobals.BrowserSearchBitrate;
-
-end;
-
 procedure TMStreamBrowserView.ListsChange(Sender: TObject);
 begin
   BuildTree(False);
@@ -1304,24 +1276,19 @@ begin
 
   case FSortType of
     stName:
-      begin
-        FStreamTree.Header.Columns[0].Text := _('Name');
-      end;
+      FStreamTree.Header.Columns[0].Text := _('Name');
     stBitrate:
-      begin
-        FStreamTree.Header.Columns[0].Text := _('Kbps');
-        SortDir := sdDescending;
-      end;
+    begin
+      FStreamTree.Header.Columns[0].Text := _('Kbps');
+      SortDir := sdDescending;
+    end;
     stType:
-      begin
-        FStreamTree.Header.Columns[0].Text := _('Type');
-      end;
+      FStreamTree.Header.Columns[0].Text := _('Type');
     stRating:
-      begin
-        FStreamTree.Header.Columns[0].Text := _('Rating');
-        SortDir := sdDescending;
-      end
-    else
+    begin
+      FStreamTree.Header.Columns[0].Text := _('Rating');
+      SortDir := sdDescending;
+    end else
       raise Exception.Create('');
   end;
 
@@ -1354,25 +1321,20 @@ begin
     Exit;
 
   if Sender = FStreamTree.FSortPopupMenu.FItemName then
-  begin
-    FSortType := stName;
-  end else if Sender = FStreamTree.FSortPopupMenu.FItemKbps then
-  begin
-    FSortType := stBitrate;
-  end else if Sender = FStreamTree.FSortPopupMenu.FItemType then
-  begin
-    FSortType := stType;
-  end else if Sender = FStreamTree.FSortPopupMenu.FItemRating then
-  begin
-    FSortType := stRating;
-  end else
+    FSortType := stName
+  else if Sender = FStreamTree.FSortPopupMenu.FItemKbps then
+    FSortType := stBitrate
+  else if Sender = FStreamTree.FSortPopupMenu.FItemType then
+    FSortType := stType
+  else if Sender = FStreamTree.FSortPopupMenu.FItemRating then
+    FSortType := stRating
+  else
     raise Exception.Create('');
 
   SortTree(True);
 end;
 
-procedure TMStreamBrowserView.StreamBrowserHeaderClick(Sender: TVTHeader;
-  HitInfo: TVTHeaderHitInfo);
+procedure TMStreamBrowserView.StreamBrowserHeaderClick(Sender: TVTHeader; HitInfo: TVTHeaderHitInfo);
 begin
   if HitInfo.Button = mbLeft then
   begin
@@ -1436,7 +1398,7 @@ begin
   if FStreamTree.RootNodeCount = 1 then
     FCountLabel.Caption := Format(_('%d stream found'), [FStreamTree.RootNodeCount])
   else
-   FCountLabel.Caption := Format(_('%d streams found'), [FStreamTree.RootNodeCount]);
+    FCountLabel.Caption := Format(_('%d streams found'), [FStreamTree.RootNodeCount]);
 
   FStreamTree.FSortPopupMenu.PostTranslate;
 end;
@@ -1444,6 +1406,7 @@ end;
 { TMStreamSearch }
 
 constructor TMStreamSearchPanel.Create(AOwner: TComponent);
+
   function CreatePanel(const LabelText: string): TPanel;
   var
     L: TLabel;
@@ -1461,6 +1424,7 @@ constructor TMStreamSearchPanel.Create(AOwner: TComponent);
     L.Layout := tlCenter;
     L.Constraints.MinWidth := 60;
   end;
+
 var
   P: TPanel;
 begin
@@ -1512,25 +1476,29 @@ constructor TMStreamTreeHeaderPopup.Create(AOwner: TComponent);
 begin
   inherited;
 
-  FItemName := TMenuItem.Create(Self);;
+  FItemName := TMenuItem.Create(Self);
+  ;
   FItemName.Caption := _('Name');
   FItemName.RadioItem := True;
   FItemName.Tag := Integer(stName);
   Items.Add(FItemName);
 
-  FItemKbps := TMenuItem.Create(Self);;
+  FItemKbps := TMenuItem.Create(Self);
+  ;
   FItemKbps.Caption := _('Kbps');
   FItemKbps.RadioItem := True;
   FItemKbps.Tag := Integer(stBitrate);
   Items.Add(FItemKbps);
 
-  FItemType := TMenuItem.Create(Self);;
+  FItemType := TMenuItem.Create(Self);
+  ;
   FItemType.Caption := _('Type');
   FItemType.RadioItem := True;
   FItemType.Tag := Integer(stType);
   Items.Add(FItemType);
 
-  FItemRating := TMenuItem.Create(Self);;
+  FItemRating := TMenuItem.Create(Self);
+  ;
   FItemRating.Caption := _('Rating');
   FItemRating.RadioItem := True;
   FItemRating.Tag := Integer(stRating);
@@ -1552,4 +1520,3 @@ begin
 end;
 
 end.
-

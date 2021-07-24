@@ -27,31 +27,9 @@ uses
   Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
   MControls, LanguageObjects, Tabs, CutView, Functions, AppData, SharedControls,
   DynBass, Logging, CutTabSearchSilence, MessageBus, AppMessages, PlayerManager,
-  Forms, DataManager, AudioFunctions, SharedData, Messages, Images;
+  Forms, DataManager, AudioFunctions, SharedData, Messages, Images, CutToolBar;
 
 type
-  TCutToolBar = class(TToolBar)
-  private
-    FSave: TToolButton;
-    FSep: TToolButton;
-    FZoomIn: TToolButton;
-    FZoomOut: TToolButton;
-    FPosEdit: TToolButton;
-    FPosPlay: TToolButton;
-    FAutoCut: TToolButton;
-    FCut: TToolButton;
-    FUndo: TToolButton;
-    FPosEffectsMarker: TToolButton;
-    FApplyFadein: TToolButton;
-    FApplyFadeout: TToolButton;
-    FApplyEffects: TToolButton;
-    FPlay: TToolButton;
-    FStop: TToolButton;
-  public
-    constructor Create(AOwner: TComponent); override;
-    procedure Setup;
-  end;
-
   TFileSavedEvent = procedure(Sender: TObject; AudioInfo: TAudioInfo) of object;
 
   TCutTab = class(TMainTabSheet)
@@ -130,7 +108,7 @@ begin
   if Track <> nil then
     FFilename := Track.Filename
   else
-    FFilename := Filename;        // TODO: zusammenhängende sachen zusammen machen, im code.
+    FFilename := Filename;
 
   FToolbarPanel := TPanel.Create(Self);
   FToolbarPanel.Parent := Self;
@@ -166,30 +144,31 @@ begin
   FToolBar.Images := modSharedData.imgImages;
   FToolBar.Setup;
 
-  FToolbar.FSave.OnClick := SaveClick;
-  FToolBar.FPosEdit.OnClick := PosClick;
-  FToolBar.FPosPlay.OnClick := PosClick;
-  FToolBar.FZoomIn.OnClick := ZoomInClick;
-  FToolBar.FZoomOut.OnClick := ZoomOutClick;
-  FToolBar.FPosEffectsMarker.OnClick := PosClick;
-  FToolBar.FAutoCut.OnClick := AutoCutClick;
+  FToolbar.Save.OnClick := SaveClick;
+  FToolBar.PosEdit.OnClick := PosClick;
+  FToolBar.PosPlay.OnClick := PosClick;
+  FToolBar.ZoomIn.OnClick := ZoomInClick;
+  FToolBar.ZoomOut.OnClick := ZoomOutClick;
+  FToolBar.PosEffectsMarker.OnClick := PosClick;
+  FToolBar.AutoCut.OnClick := AutoCutClick;
 
   {$IFDEF DEBUG}
   //FToolBar.FAutoCutAutoDetect.OnClick := AutoCutAutoDetectClick;
   {$ENDIF}
 
-  FToolBar.FCut.OnClick := CutClick;
-  FToolBar.FUndo.OnClick := UndoClick;
-  FToolBar.FApplyFadein.OnClick := ApplyFadeinClick;
-  FToolBar.FApplyFadeout.OnClick := ApplyFadeoutClick;
-  FToolBar.FApplyEffects.OnClick := ApplyEffectsClick;
-  FToolBar.FPlay.OnClick := PlayClick;
-  FToolBar.FStop.OnClick := StopClick;
+  FToolBar.Cut.OnClick := CutClick;
+  FToolBar.Undo.OnClick := UndoClick;
+  FToolBar.ApplyFadein.OnClick := ApplyFadeinClick;
+  FToolBar.ApplyFadeout.OnClick := ApplyFadeoutClick;
+  FToolBar.ApplyEffects.OnClick := ApplyEffectsClick;
+  FToolBar.Play.OnClick := PlayClick;
+  FToolBar.Stop.OnClick := StopClick;
 
   FVolume.Align := alRight;
   FVolume.Setup;
   FVolume.Enabled := Bass.DeviceAvailable;
-  FVolume.Width := 140;
+  FVolume.Constraints.MinWidth := 140;
+  FVolume.Constraints.MaxWidth := 140;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
@@ -203,36 +182,33 @@ end;
 
 procedure TCutTab.UpdateButtons;
 begin
-  FToolBar.FSave.Enabled := FCutView.CanSave;
-  FToolBar.FPosEdit.Enabled := FCutView.CanSetLine;
-  FToolBar.FPosPlay.Enabled := FCutView.CanSetLine;
-  FToolBar.FAutoCut.Enabled := FCutView.CanAutoCut;
-  FToolBar.FPosPlay.Enabled := FCutView.CanSetLine;
-  FToolBar.FCut.Enabled := FCutView.CanCut;
-  FToolBar.FZoomIn.Enabled := FCutView.CanZoomIn;
-  FToolBar.FZoomOut.Enabled := FCutView.CanZoomOut;
-  FToolBar.FPosEffectsMarker.Enabled := FCutView.CanEffectsMarker;
-  FToolBar.FUndo.Enabled := FCutView.CanUndo;
-  FToolBar.FApplyFadein.Enabled := FCutView.CanApplyFadeIn;
-  FToolBar.FApplyFadeout.Enabled := FCutView.CanApplyFadeOut;
-  FToolBar.FApplyEffects.Enabled := FCutView.CanApplyEffects;
-  FToolBar.FPlay.Enabled := FCutView.CanPlay and Bass.DeviceAvailable;
-  FToolBar.FStop.Enabled := FCutView.CanStop and Bass.DeviceAvailable;
+  FToolBar.Save.Enabled := FCutView.CanSave;
+  FToolBar.PosEdit.Enabled := FCutView.CanSetLine;
+  FToolBar.PosPlay.Enabled := FCutView.CanSetLine;
+  FToolBar.AutoCut.Enabled := FCutView.CanAutoCut;
+  FToolBar.PosPlay.Enabled := FCutView.CanSetLine;
+  FToolBar.Cut.Enabled := FCutView.CanCut;
+  FToolBar.ZoomIn.Enabled := FCutView.CanZoomIn;
+  FToolBar.ZoomOut.Enabled := FCutView.CanZoomOut;
+  FToolBar.PosEffectsMarker.Enabled := FCutView.CanEffectsMarker;
+  FToolBar.Undo.Enabled := FCutView.CanUndo;
+  FToolBar.ApplyFadein.Enabled := FCutView.CanApplyFadeIn;
+  FToolBar.ApplyFadeout.Enabled := FCutView.CanApplyFadeOut;
+  FToolBar.ApplyEffects.Enabled := FCutView.CanApplyEffects;
+  FToolBar.Play.Enabled := FCutView.CanPlay and Bass.DeviceAvailable;
+  FToolBar.Stop.Enabled := FCutView.CanStop and Bass.DeviceAvailable;
 
-  // TODO: Is this still valid?
-  // Das muss so, sonst klappt das .Down := True nicht, wenn sie
-  // vorher Disabled waren, vor dem Enable da oben...
-  FToolBar.FPosEdit.Down := False;
-  FToolBar.FPosPlay.Down := False;
-  FToolBar.FPosEffectsMarker.Down := False;
+  FToolBar.PosEdit.Down := False;
+  FToolBar.PosPlay.Down := False;
+  FToolBar.PosEffectsMarker.Down := False;
 
   case FCutView.LineMode of
     lmEdit:
-      FToolBar.FPosEdit.Down := True;
+      FToolBar.PosEdit.Down := True;
     lmPlay:
-      FToolBar.FPosPlay.Down := True;
+      FToolBar.PosPlay.Down := True;
     lmEffectsMarker:
-      FToolBar.FPosEffectsMarker.Down := True;
+      FToolBar.PosEffectsMarker.Down := True;
   end;
 end;
 
@@ -263,24 +239,22 @@ begin
   if TToolButton(Sender).Down then
     Exit;
 
-  FToolBar.FPosEdit.Down := False;
-  FToolBar.FPosPlay.Down := False;
-  FToolBar.FPosEffectsMarker.Down := False;
+  FToolBar.PosEdit.Down := False;
+  FToolBar.PosPlay.Down := False;
+  FToolBar.PosEffectsMarker.Down := False;
 
-  if Sender = FToolBar.FPosEdit then
+  if Sender = FToolBar.PosEdit then
   begin
     FCutView.LineMode := lmEdit;
-    FToolBar.FPosEdit.Down := True;
-  end;
-  if Sender = FToolBar.FPosPlay then
+    FToolBar.PosEdit.Down := True;
+  end else if Sender = FToolBar.PosPlay then
   begin
     FCutView.LineMode := lmPlay;
-    FToolBar.FPosPlay.Down := True;
-  end;
-  if Sender = FToolBar.FPosEffectsMarker then
+    FToolBar.PosPlay.Down := True;
+  end else if Sender = FToolBar.PosEffectsMarker then
   begin
     FCutView.LineMode := lmEffectsMarker;
-    FToolBar.FPosEffectsMarker.Down := True;
+    FToolBar.PosEffectsMarker.Down := True;
   end;
 end;
 
@@ -294,17 +268,17 @@ begin
   if (GetKeyState(VK_CONTROL) < 0) and (GetKeyState(VK_MENU) = 0) then
   begin
     if Msg.CharCode = Ord('S') then
-      Button := FToolBar.FSave;
+      Button := FToolBar.Save;
     if Msg.CharCode = Ord('Z') then
-      Button := FToolBar.FUndo;
+      Button := FToolBar.Undo;
   end else
   begin
     if (Msg.CharCode = VK_SPACE) and (FCutView.Player <> nil) then
     begin
       if FCutView.Player.Playing then
-        Button := FToolBar.FStop
+        Button := FToolBar.Stop
       else
-        Button := FToolBar.FPlay;
+        Button := FToolBar.Play;
     end;
 
     if Msg.CharCode = VK_HOME then
@@ -320,19 +294,19 @@ begin
     end;
 
     if Msg.CharCode = Ord('S') then
-      Button := FToolBar.FPosEffectsMarker;
+      Button := FToolBar.PosEffectsMarker;
 
     if (Msg.CharCode = VK_ADD) or (Msg.CharCode = VK_OEM_PLUS) then
-      Button := FToolBar.FZoomIn;
+      Button := FToolBar.ZoomIn;
 
     if (Msg.CharCode = VK_SUBTRACT) or (Msg.CharCode = VK_OEM_MINUS) then
-      Button := FToolBar.FZoomOut;
+      Button := FToolBar.ZoomOut;
 
     if Msg.CharCode = Ord('P') then
-      Button := FToolBar.FPosPlay;
+      Button := FToolBar.PosPlay;
 
     if Msg.CharCode = Ord('C') then
-      Button := FToolBar.FPosEdit;
+      Button := FToolBar.PosEdit;
 
     if Msg.CharCode = Ord('F') then
       FCutView.ApplyFade;
@@ -434,120 +408,6 @@ end;
 procedure TCutTab.SaveClick(Sender: TObject);
 begin
   FCutView.Save;
-end;
-
-{ TCutToolbar }
-
-constructor TCutToolBar.Create(AOwner: TComponent);
-begin
-  inherited;
-
-  ShowHint := True;
-  EdgeBorders := [];
-end;
-
-procedure TCutToolBar.Setup;
-begin
-  FStop := TToolButton.Create(Self);
-  FStop.Parent := Self;
-  FStop.Hint := 'Stop (Space bar)';
-  FStop.ImageIndex := TImages.STOP_BLUE;
-
-  FPlay := TToolButton.Create(Self);
-  FPlay.Parent := Self;
-  FPlay.Hint := 'Play (Space bar)';
-  FPlay.ImageIndex := TImages.PLAY_BLUE;
-
-  FPosPlay := TToolButton.Create(Self);
-  FPosPlay.Parent := Self;
-  FPosPlay.Hint := 'Set playposition (P)';
-  FPosPlay.ImageIndex := TImages.LINE_PLAY;
-
-  FSep := TToolButton.Create(Self);
-  FSep.Parent := Self;
-  FSep.Style := tbsSeparator;
-
-  FAutoCut := TToolButton.Create(Self);
-  FAutoCut.Parent := Self;
-  FAutoCut.Hint := 'Show silence...';
-  FAutoCut.ImageIndex := TImages.WAND;
-
-  {$IFDEF DEBUG}
-  //FAutoCutAutoDetect := TToolButton.Create(Self);
-  //FAutoCutAutoDetect.Parent := Self;
-  //FAutoCutAutoDetect.Hint := 'Show silence...';
-  //FAutoCutAutoDetect.ImageIndex := 19;
-  {$ENDIF}
-
-  FSep := TToolButton.Create(Self);
-  FSep.Parent := Self;
-  FSep.Style := tbsSeparator;
-
-  FUndo := TToolButton.Create(Self);
-  FUndo.Parent := Self;
-  FUndo.Hint := 'Undo (Ctrl+Z)';
-  FUndo.ImageIndex := TImages.ARROW_UNDO;
-
-  FSep := TToolButton.Create(Self);
-  FSep.Parent := Self;
-  FSep.Style := tbsSeparator;
-
-  FApplyEffects := TToolButton.Create(Self);
-  FApplyEffects.Parent := Self;
-  FApplyEffects.Hint := 'Apply effects...';
-  FApplyEffects.ImageIndex := TImages.LIGHTNING;
-
-  FSep := TToolButton.Create(Self);
-  FSep.Parent := Self;
-  FSep.Style := tbsSeparator;
-
-  FCut := TToolButton.Create(Self);
-  FCut.Parent := Self;
-  FCut.Hint := 'Cut song';
-  FCut.ImageIndex := TImages.CUT;
-
-  FPosEdit := TToolButton.Create(Self);
-  FPosEdit.Parent := Self;
-  FPosEdit.Hint := 'Set cutpositions (left mousebutton sets start, right button sets end) (C)';
-  FPosEdit.ImageIndex := TImages.LINES_COMBINED;
-
-  FSep := TToolButton.Create(Self);
-  FSep.Parent := Self;
-  FSep.Style := tbsSeparator;
-
-  FApplyFadeout := TToolButton.Create(Self);
-  FApplyFadeout.Parent := Self;
-  FApplyFadeout.Hint := 'Apply fadeout (F)';
-  FApplyFadeout.ImageIndex := TImages.FADE_OUT;
-
-  FApplyFadein := TToolButton.Create(Self);
-  FApplyFadein.Parent := Self;
-  FApplyFadein.Hint := 'Apply fadein (F)';
-  FApplyFadein.ImageIndex := TImages.FADE_IN;
-
-  FZoomOut := TToolButton.Create(Self);
-  FZoomOut.Parent := Self;
-  FZoomOut.Hint := 'Zoom out (-)';
-  FZoomOut.ImageIndex := TImages.ZOOM_OUT;
-
-  FZoomIn := TToolButton.Create(Self);
-  FZoomIn.Parent := Self;
-  FZoomIn.Hint := 'Zoom in (+)';
-  FZoomIn.ImageIndex := TImages.ZOOM_IN;
-
-  FPosEffectsMarker := TToolButton.Create(Self);
-  FPosEffectsMarker.Parent := Self;
-  FPosEffectsMarker.Hint := 'Select area (S)';
-  FPosEffectsMarker.ImageIndex := TImages.TIMELINE_MARKER;
-
-  FSep := TToolButton.Create(Self);
-  FSep.Parent := Self;
-  FSep.Style := tbsSeparator;
-
-  FSave := TToolButton.Create(Self);
-  FSave.Parent := Self;
-  FSave.Hint := 'Save (Ctrl+S)';
-  FSave.ImageIndex := TImages.DISK;
 end;
 
 end.

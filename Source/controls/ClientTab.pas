@@ -23,15 +23,57 @@ unit ClientTab;
 interface
 
 uses
-  Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
-  MControls, ClientView, StreamBrowserView, StreamDebugView, StreamInfoView,
-  LanguageObjects, HomeCommunication, StationCombo, Menus, ActnList, ImgList,
-  DataManager, ICEClient, ClientManager, VirtualTrees, Clipbrd, Functions,
-  GUIFunctions, AppData, DragDrop, DropTarget, DropComboTarget, Tabs,
-  Graphics, SharedControls, Generics.Collections, Generics.Defaults, Math,
-  Logging, DynBass, Forms, MsgDlg, TypeDefs, MessageBus, AppMessages,
-  PlayerManager, PlaylistHandler, AudioFunctions, SharedData, Images,
-  Dialogs, ShellAPI;
+  ActnList,
+  AppData,
+  AppMessages,
+  AudioFunctions,
+  Buttons,
+  Classes,
+  ClientAddressBar,
+  ClientManager,
+  ClientView,
+  Clipbrd,
+  ComCtrls,
+  Controls,
+  DataManager,
+  Dialogs,
+  DragDrop,
+  DropComboTarget,
+  DropTarget,
+  DynBass,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Generics.Collections,
+  Generics.Defaults,
+  Graphics,
+  GUIFunctions,
+  HomeCommunication,
+  ICEClient,
+  Images,
+  ImgList,
+  LanguageObjects,
+  Logging,
+  Math,
+  MControls,
+  Menus,
+  MessageBus,
+  MsgDlg,
+  PlayerManager,
+  PlaylistHandler,
+  SharedControls,
+  SharedData,
+  ShellAPI,
+  StationCombo,
+  StdCtrls,
+  StreamBrowserView,
+  StreamDebugView,
+  StreamInfoView,
+  SysUtils,
+  Tabs,
+  TypeDefs,
+  VirtualTrees,
+  Windows;
 
 type
 
@@ -44,43 +86,16 @@ type
     FBrowserView: TMStreamBrowserView;
     FInfoView: TMStreamInfoView;
     FDebugView: TMStreamDebugView;
-  protected
-    procedure SetParent(NewParent: TWinControl); override;
   public
+    constructor Create(TheOwner: TComponent); override;
+
     property BrowserView: TMStreamBrowserView read FBrowserView;
     property InfoView: TMStreamInfoView read FInfoView;
     property DebugView: TMStreamDebugView read FDebugView;
   end;
 
-  { TClientAddressBar }
-
-  TClientAddressBar = class(TPanel)
-  private
-    FLabel: TLabel;
-    FStations: TMStationCombo;
-    FStart: TSpeedButton;
-    FDropTarget: TDropComboTarget;
-
-    FOnStart: TNotifyEvent;
-
-    procedure FStationsChange(Sender: TObject);
-    procedure FStationsKeyPress(Sender: TObject; var Key: Char);
-    procedure FStartClick(Sender: TObject);
-
-    procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
-      APoint: TPoint; var Effect: Integer);
-    procedure ControlsAligned; override;
-  public
-    constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
-
-    property Stations: TMStationCombo read FStations;
-    property OnStart: TNotifyEvent read FOnStart write FOnStart;
-  end;
-
   TAddTitleEvent = procedure(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string) of object;
-  TAddTitleEventWithServerHash = procedure(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string;
-    ServerTitleHash: Cardinal) of object;
+  TAddTitleEventWithServerHash = procedure(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string; ServerTitleHash: Cardinal) of object;
 
   { TClientTab }
 
@@ -149,13 +164,11 @@ type
     procedure ClientManagerAddRecent(Sender: TObject);
     procedure ClientManagerClientAdded(Sender: TObject);
     procedure ClientManagerClientRemoved(Sender: TObject);
-    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
-      Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
+    procedure ClientManagerSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
       ServerTitleHash, ServerArtistHash: Cardinal);
     procedure ClientManagerClientTitleChanged(Sender: TObject; Title: string);
     procedure ClientManagerICYReceived(Sender: TObject; Received: Integer);
-    procedure ClientManagerTitleAllowed(Sender: TObject; Title: string;
-      var Allowed: Boolean; var Match: string; var Filter: Integer);
+    procedure ClientManagerTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer);
     procedure ClientManagerShowErrorMessage(Sender: TObject; Data: string);
     procedure ClientManagerPlaybackStarted(Sender: TObject);
     procedure ClientManagerSecondsReceived(Sender: TObject);
@@ -164,8 +177,7 @@ type
     procedure FClientViewNodeDblClick(Sender: TBaseVirtualTree; const HitInfo: THitInfo);
     procedure FClientViewKeyPress(Sender: TObject; var Key: Char);
     procedure FClientViewKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string;
-      URLs, RegExes, IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode);
+    procedure FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string; URLs, RegExes, IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 
     procedure StreamBrowserAction(Sender: TObject; Action: TStreamOpenActions; Streams: TStreamDataArray);
     function StreamBrowserIsInClientList(Sender: TObject; ID: Cardinal): Boolean;
@@ -183,8 +195,7 @@ type
   protected
     procedure ControlsAligned; override;
   public
-    constructor Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList;
-      Clients: TClientManager; Popup: TPopupMenu); reintroduce;
+    constructor Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList; Clients: TClientManager; Popup: TPopupMenu); reintroduce;
     destructor Destroy; override;
 
     function StartStreaming(Streams: TStartStreamingInfoArray; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean; overload;
@@ -215,111 +226,6 @@ type
   end;
 
 implementation
-
-{ TClientAddressBar }
-
-constructor TClientAddressBar.Create(AOwner: TComponent);
-begin
-  inherited;
-
-  FLabel := TLabel.Create(Self);
-  FLabel.Parent := Self;
-
-  FStart := TSpeedButton.Create(Self);
-  FStart.Parent := Self;
-
-  FStations := TMStationCombo.Create(Self);
-  FStations.Parent := Self;
-
-  FDropTarget := TDropComboTarget.Create(Self);
-
-
-
-  FLabel.Left := 0;
-  FLabel.Caption := 'Playlist/Stream-URL:';
-
-  FStart.Width := 24;
-  FStart.Height := 22;
-  FStart.Anchors := [akRight];
-  FStart.Flat := True;
-  FStart.Hint := 'Add and start recording';
-  FStart.ShowHint := True;
-  FStart.NumGlyphs := 1;
-  FStart.OnClick := FStartClick;
-  FStart.Images := modSharedData.imgImages;
-  FStart.ImageIndex := TImages.ADD;
-
-  FStations.DropDownCount := 15;
-  FStations.Top := 3;
-  FStations.Anchors := [akLeft, akTop, akRight];
-  FStations.OnKeyPress := FStationsKeyPress;
-  FStations.OnChange := FStationsChange;
-  FStations.Images := modSharedData.imgImages;
-
-
-  FDropTarget.Formats := [mfText, mfURL, mfFile];
-  FDropTarget.Register(FStations);
-  FDropTarget.OnDrop := DropTargetDrop;
-
-  BevelOuter := bvNone;
-
-
-  // Das muss nach dem Setzen der ClientHeight. KA warum, aber die ClientHeight ändert FStart.Top!
-//  FStart.Top := 3;
-
-  FStart.Enabled := False;
-end;
-
-destructor TClientAddressBar.Destroy;
-begin
-
-  inherited;
-end;
-
-procedure TClientAddressBar.DropTargetDrop(Sender: TObject;
-  ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
-begin
-  FStations.ItemIndex := -1;
-  if FDropTarget.URL <> '' then
-    FStations.Text := string(FDropTarget.URL)
-  else if FDropTarget.Text <> '' then
-    FStations.Text := string(FDropTarget.Text)
-  else if FDropTarget.Files.Count > 0 then
-    FStations.Text := string(FDropTarget.Files[0]);
-end;
-
-procedure TClientAddressBar.ControlsAligned;
-begin
-  inherited ControlsAligned;
-
-  FStart.Left := ClientWidth - 1 - FStart.Width;
-  FStations.Left := FLabel.Left + FLabel.Width + 6;
-  FStations.Width := ClientWidth - FStations.Left - FStart.Width - 6;
-  FLabel.Top := FStations.Top + FStations.Height div 2 - FLabel.Height div 2;
-  ClientHeight := Max(FLabel.Height + FLabel.Top * 2, FStations.Height + FStations.Top * 2) - 2;
-end;
-
-procedure TClientAddressBar.FStationsChange(Sender: TObject);
-begin
-  FStart.Enabled := (Length(Trim(FStations.Text)) > 0) or (FStations.ItemIndex > -1);
-end;
-
-procedure TClientAddressBar.FStationsKeyPress(Sender: TObject; var Key: Char);
-begin
-  if Key = #13 then
-  begin
-    FStart.Click;
-  end else
-  begin
-    FStations.ItemIndex := -1;
-  end;
-end;
-
-procedure TClientAddressBar.FStartClick(Sender: TObject);
-begin
-  if Assigned(FOnStart) then
-    FOnStart(Self);
-end;
 
 { TClientTab }
 
@@ -365,15 +271,11 @@ begin
   Title := '';
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
   for Client in Clients do
-  begin
     if Client.Title <> '' then
       Title := Title + Client.Title + #13#10;
-  end;
   Title := Trim(Title);
   if Title <> '' then
-  begin
     Clipboard.SetTextBuf(PChar(Title));
-  end;
 end;
 
 procedure TClientTab.ActionNewCategoryExecute(Sender: TObject);
@@ -385,6 +287,7 @@ begin
 end;
 
 procedure TClientTab.ActionStartExecute(Sender: TObject);
+
   function StartClient(Client: TICEClient; ErrorShown: Boolean): Boolean;
   var
     Res: TMayConnectResults;
@@ -399,6 +302,7 @@ procedure TClientTab.ActionStartExecute(Sender: TObject);
       Result := True;
     end;
   end;
+
 var
   ErrorShown: Boolean;
   Clients: TClientArray;
@@ -438,12 +342,14 @@ begin
 end;
 
 procedure TClientTab.ActionStopExecute(Sender: TObject);
+
   procedure StopClient(Client: TICEClient);
   begin
     if Client.ScheduledRecording then
       Client.WriteLog(_('Scheduled recording was interrupted by user'), '', ltSchedule, llInfo);
     Client.StopRecording;
   end;
+
 var
   Clients: TClientArray;
   Client: TICEClient;
@@ -453,10 +359,8 @@ var
 begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
   for Client in Clients do
-  begin
     if not Client.AutoRemove then
       StopClient(Client);
-  end;
 
   Nodes := FClientView.GetNodes(ntCategory, True);
   for Node in Nodes do
@@ -491,10 +395,8 @@ begin
   end;
 
   if not OnlyAutomatic then
-    if TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('All selected streams will be removed from the list. This also means that their ' +
-                                                 'settings and ignorelists get deleted.'#13#10'Are you sure you want to continue?'),
-                                                 mtConfirmation, [mbOK, mbCancel], mbCancel, 8) = mrCancel
-    then
+    if TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('All selected streams will be removed from the list. This also means that their ' + 'settings and ignorelists get deleted.'#13#10'Are you sure you want to continue?'),
+      mtConfirmation, [mbOK, mbCancel], mbCancel, 8) = mrCancel then
       Exit;
 
   for Node in Nodes do
@@ -513,13 +415,11 @@ begin
       begin
         ChildNodes := FClientView.GetNodes(ntAll, False);
         for ChildNode in ChildNodes do
-        begin
           if ChildNode.Parent = Node then
           begin
             ChildNodeData := FClientView.GetNodeData(ChildNode);
             FClientManager.RemoveClient(ChildNodeData.Client);
           end;
-        end;
       end;
   end;
 
@@ -536,9 +436,7 @@ begin
       NodeData.Category.Free;
       FClientView.DeleteNode(Node);
     end else
-    begin
       NodeData.Category.Killed := True;
-    end;
   end;
 end;
 
@@ -569,9 +467,8 @@ begin
   begin
     SelectedClient.Client.WriteLog(FClientManager.GetErrorText(Res, '', False, False, True), '', ltGeneral, llWarning);
     OnShowErrorMessage(SelectedClient.Client, FClientManager.GetErrorText(Res, '', False, False, False));
-  end else
-    if Assigned(FOnPlayStarted) then
-      FOnPlayStarted(Self);
+  end else if Assigned(FOnPlayStarted) then
+    FOnPlayStarted(Self);
 end;
 
 procedure TClientTab.ActionPauseExecute(Sender: TObject);
@@ -582,24 +479,20 @@ begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
 
   for Client in Clients do
-  begin
     if Client.Playing and (Client.Paused) then
     begin
       Client.PausePlay;
       if Assigned(FOnPlayStarted) then
         FOnPlayStarted(Self);
     end;
-  end;
 
   for Client in Clients do
-  begin
     if (Client.Playing) and (not Client.Paused) then
     begin
       Client.PausePlay;
       if Assigned(FOnPlayStarted) then
         FOnPlayStarted(Self);
     end;
-  end;
 end;
 
 procedure TClientTab.ActionPlayStopExecute(Sender: TObject);
@@ -609,9 +502,7 @@ var
 begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
   for Client in Clients do
-  begin
     Client.StopPlay;
-  end;
 end;
 
 procedure TClientTab.ActionOpenWebsiteExecute(Sender: TObject);
@@ -630,10 +521,8 @@ var
   Clients: TNodeDataArray;
   Client: PClientNodeData;
 begin
-  Res := MsgBox(GetParentForm(Self).Handle,
-                _('This will reset the saved song and bytes received counters.'#13#10 +
-                  'The tracknumber of new saved titles will be 1 if you specified the tracknumber in the filename pattern, this number will also be set in ID3 tags.'#13#10 +
-                  'Do you want to continue?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
+  Res := MsgBox(GetParentForm(Self).Handle, _('This will reset the saved song and bytes received counters.'#13#10 +
+    'The tracknumber of new saved titles will be 1 if you specified the tracknumber in the filename pattern, this number will also be set in ID3 tags.'#13#10 + 'Do you want to continue?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
   if Res = IDYES then
   begin
     Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
@@ -675,6 +564,7 @@ begin
 end;
 
 constructor TClientTab.Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList; Clients: TClientManager; Popup: TPopupMenu);
+
   function GetAction(Name: string): TAction;
   var
     i: Integer;
@@ -689,6 +579,7 @@ constructor TClientTab.Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TA
     if Result = nil then
       raise Exception.Create('');
   end;
+
 begin
   inherited Create(AOwner);
 
@@ -725,9 +616,11 @@ begin
   FToolbarPanel.Align := alTop;
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Parent := Self;
+  FToolbarPanel.Top := -100;
 
   FAddressBar := TClientAddressBar.Create(Self);
   FAddressBar.Align := alTop;
+  FAddressBar.AutoSize := True;
   FAddressBar.Parent := Self;
   FAddressBar.Visible := True;
   FAddressBar.OnStart := AddressBarStart;
@@ -740,6 +633,11 @@ begin
   FVolume := TVolumePanel.Create(Self);
   FVolume.Parent := FToolbarPanel;
   FVolume.Align := alRight;
+  FVolume.Constraints.MinWidth := 140;
+  FVolume.Constraints.MaxWidth := 140;
+  FVolume.Setup;
+  FVolume.Enabled := Bass.DeviceAvailable;
+  FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeVolumeChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
 
@@ -787,7 +685,11 @@ begin
   FSideBar := TSidebar.Create(Self);
   FSideBar.Parent := Self;
   FSideBar.Align := alRight;
-  FSideBar.Visible := True;
+  FSideBar.FDebugView.DebugView.OnClear := DebugClear;
+  FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
+  FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
+  if Screen.PixelsPerInch = 96 then
+    FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := modSharedData.imgImages;
 
   FSideBar.Visible := True;
   FSplitter.Visible := True;
@@ -817,12 +719,11 @@ procedure TClientTab.AddressBarStart(Sender: TObject);
 var
   Entry: TRecentEntry;
 begin
-  if FAddressBar.FStations.ItemIndex = -1 then
+  if FAddressBar.Stations.ItemIndex = -1 then
+    StartStreaming(TStartStreamingInfo.Create(0, 0, '', FAddressBar.Stations.Text, nil, nil, nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere)
+  else
   begin
-    StartStreaming(TStartStreamingInfo.Create(0, 0, '', FAddressBar.FStations.Text, nil, nil, nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere)
-  end else
-  begin
-    Entry := TRecentEntry(FAddressBar.FStations.ItemsEx[FAddressBar.FStations.ItemIndex].Data);
+    Entry := TRecentEntry(FAddressBar.Stations.ItemsEx[FAddressBar.Stations.ItemIndex].Data);
     StartStreaming(TStartStreamingInfo.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, nil, nil, nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere);
   end;
 end;
@@ -896,13 +797,10 @@ end;
 procedure TClientTab.ClientManagerLog(Sender: TObject);
 begin
   if FSideBar.FDebugView.DebugView.Client = Sender then
-  begin
     FSideBar.FDebugView.ShowDebug(TICEClient(Sender));
-  end;
 end;
 
-procedure TClientTab.ClientManagerICYReceived(Sender: TObject;
-  Received: Integer);
+procedure TClientTab.ClientManagerICYReceived(Sender: TObject; Received: Integer);
 var
   Client: TICEClient;
 begin
@@ -932,8 +830,8 @@ begin
     FOnPlayStarted(Self);
 end;
 
-procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string;
-  var Allowed: Boolean; var Match: string; var Filter: Integer);
+procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer);
+
   function ContainsTitle(List: TList<TTitleInfo>; Title: string; var Match: string): Boolean;
   var
     i: Integer;
@@ -941,15 +839,14 @@ procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string;
     Result := False;
     Title := LowerCase(Title);
     for i := 0 to List.Count - 1 do
-    begin
       if Like(Title, List[i].Pattern) then
       begin
         Result := True;
         Match := List[i].Title;
         Exit;
       end;
-    end;
   end;
+
 var
   Client: TICEClient;
 begin
@@ -961,21 +858,35 @@ begin
 
   case Client.Entry.Settings.Filter of
     ufWish:
-      begin
-        Allowed := ContainsTitle(AppGlobals.Data.SaveList, Title, Match);
-        Filter := 0;
-      end;
+    begin
+      Allowed := ContainsTitle(AppGlobals.Data.SaveList, Title, Match);
+      Filter := 0;
+    end;
     ufIgnoreGlobal:
-      begin
-        Allowed := not ContainsTitle(AppGlobals.Data.IgnoreList, Title, Match);
-        Filter := 1;
-      end;
+    begin
+      Allowed := not ContainsTitle(AppGlobals.Data.IgnoreList, Title, Match);
+      Filter := 1;
+    end;
     ufIgnoreLocal:
+    begin
+      Allowed := not ContainsTitle(Client.Entry.IgnoreList, Title, Match);
+      Filter := 2;
+    end;
+    ufIgnoreBoth:
+    begin
+      Allowed := not ContainsTitle(AppGlobals.Data.IgnoreList, Title, Match);
+      Filter := 1;
+
+      if Allowed then
       begin
         Allowed := not ContainsTitle(Client.Entry.IgnoreList, Title, Match);
         Filter := 2;
       end;
-    ufIgnoreBoth:
+    end;
+    ufBoth:
+    begin
+      Allowed := ContainsTitle(AppGlobals.Data.SaveList, Title, Match);
+      if Allowed then
       begin
         Allowed := not ContainsTitle(AppGlobals.Data.IgnoreList, Title, Match);
         Filter := 1;
@@ -985,28 +896,13 @@ begin
           Allowed := not ContainsTitle(Client.Entry.IgnoreList, Title, Match);
           Filter := 2;
         end;
-      end;
-    ufBoth:
-      begin
-        Allowed := ContainsTitle(AppGlobals.Data.SaveList, Title, Match);
-        if Allowed then
-        begin
-          Allowed := not ContainsTitle(AppGlobals.Data.IgnoreList, Title, Match);
-          Filter := 1;
-
-          if Allowed then
-          begin
-            Allowed := not ContainsTitle(Client.Entry.IgnoreList, Title, Match);
-            Filter := 2;
-          end;
-        end else
-          Filter := 0;
-      end
-    else
-      begin
-        Allowed := True;
-        Exit;
-      end;
+      end else
+        Filter := 0;
+    end else
+    begin
+      Allowed := True;
+      Exit;
+    end;
   end;
 end;
 
@@ -1019,18 +915,15 @@ begin
 
   OnePlaying := False;
   for i := 0 to FClientManager.Count - 1 do
-  begin
     if FClientManager[i].Playing and (FClientManager[i].State = csConnected) then
     begin
       OnePlaying := True;
       Break;
     end;
-  end;
 
   if OnePlaying then
-  begin
-    FPlaybackTimer.Enabled := True;
-  end else
+    FPlaybackTimer.Enabled := True
+  else
   begin
     FPlaybackTimer.Enabled := False;
     FTimeLabel.Caption := '';
@@ -1084,7 +977,8 @@ begin
   FClientView.RemoveClient(Client);
 
   if FSidebar.FDebugView.DebugView.Client = Client then
-    FSidebar.FDebugView.ShowDebug(nil);;
+    FSidebar.FDebugView.ShowDebug(nil);
+  ;
 
   ShowInfo;
 
@@ -1119,9 +1013,7 @@ begin
     FOnShowErrorMessage(Sender, Data);
 end;
 
-procedure TClientTab.ClientManagerSongSaved(Sender: TObject;
-  Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64;
-  VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
+procedure TClientTab.ClientManagerSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
   ServerTitleHash, ServerArtistHash: Cardinal);
 var
   Client: TICEClient;
@@ -1167,10 +1059,8 @@ begin
   Track.VBR := VBR;
 
   if Added then
-  begin
     if Assigned(FOnTrackAdded) then
       FOnTrackAdded(Client.Entry, Track);
-  end;
 
   if FullTitle and (not IsStreamFile) then
   begin
@@ -1183,17 +1073,14 @@ begin
         FOnAddTitleToList(Self, Client, ltIgnore, Track.ParsedTitle);
 
     if Client.Entry.Settings.RemoveSavedFromWishlist then
-    begin
       if Assigned(FOnRemoveTitleFromList) then
         FOnRemoveTitleFromList(Self, nil, ltSave, Track.ParsedTitle, ServerTitleHash);
-    end;
   end;
 
   ShowInfo;
 end;
 
-procedure TClientTab.ClientManagerClientTitleChanged(Sender: TObject;
-  Title: string);
+procedure TClientTab.ClientManagerClientTitleChanged(Sender: TObject; Title: string);
 begin
   // Ist hier, weil wenn FFilename im Client gesetzt wird, das hier aufgerufen wird.
   // Relativ unschön so, aber Hauptsache es tut..
@@ -1203,18 +1090,13 @@ begin
   FPlaybackSeconds := 0;
 end;
 
-procedure TClientTab.FClientViewKeyDown(Sender: TObject;
-  var Key: Word; Shift: TShiftState);
+procedure TClientTab.FClientViewKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if Key = VK_DELETE then
-  begin
     FActionRemove.Execute;
-  end;
 end;
 
-procedure TClientTab.FClientViewStartStreaming(Sender: TObject;
-  ID, Bitrate: Cardinal; Name, URL: string; URLs, RegExes, IgnoreTitles: TStringList;
-  Node: PVirtualNode; Mode: TVTNodeAttachMode);
+procedure TClientTab.FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string; URLs, RegExes, IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 begin
   StartStreaming(TStartStreamingInfo.Create(ID, Bitrate, Name, URL, URLs, RegExes, IgnoreTitles), AppGlobals.DefaultActionBrowser, Node, Mode);
 end;
@@ -1239,10 +1121,8 @@ var
 begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
   for Client in Clients do
-  begin
     if Client.Playing and (not Client.Paused) then
       Client.PausePlay;
-  end;
 end;
 
 procedure TClientTab.PlaybackTimerTimer(Sender: TObject);
@@ -1257,20 +1137,7 @@ procedure TClientTab.ControlsAligned;
 begin
   inherited;
 
-  // TODO: wirklich hier machen? alles checken hier.
-  FVolume.Setup;
-  FVolume.Enabled := Bass.DeviceAvailable;
-  FVolume.Width := 140;
-  FVolume.Volume := Players.Volume;
-
-  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
-  FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
-
-  FSideBar.FDebugView.DebugView.OnClear := DebugClear;
-  FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
-  FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
-  if Screen.PixelsPerInch = 96 then
-    FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := modSharedData.imgImages;
+  FToolbarPanel.ClientHeight := FToolbar.Height;
 
   FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
   FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
@@ -1298,25 +1165,24 @@ begin
 
   Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, True));
   if Length(Clients) = 1 then
-  begin
     case AppGlobals.DefaultAction of
       caStartStop:
-        begin
-          if Clients[0].Client.AutoRemove then
-            Exit;
+      begin
+        if Clients[0].Client.AutoRemove then
+          Exit;
 
-          if Clients[0].Client.Recording then
-            Clients[0].Client.StopRecording
-          else
+        if Clients[0].Client.Recording then
+          Clients[0].Client.StopRecording
+        else
+        begin
+          Res := Clients[0].Client.StartRecording(True);
+          if Res <> crOk then
           begin
-            Res := Clients[0].Client.StartRecording(True);
-            if Res <> crOk then
-            begin
-              Clients[0].Client.WriteLog(FClientManager.GetErrorText(Res, '', False, False, True), '', ltGeneral, llWarning);
-              OnShowErrorMessage(Clients[0].Client, FClientManager.GetErrorText(Res, '', False, False, False));
-            end;
+            Clients[0].Client.WriteLog(FClientManager.GetErrorText(Res, '', False, False, True), '', ltGeneral, llWarning);
+            OnShowErrorMessage(Clients[0].Client, FClientManager.GetErrorText(Res, '', False, False, False));
           end;
         end;
+      end;
       caStreamIntegrated:
         if Clients[0].Client.Playing then
           if Clients[0].Client.Paused then
@@ -1328,11 +1194,9 @@ begin
       caStream:
         FActionTuneInStream.Execute;
     end;
-  end;
 end;
 
-procedure TClientTab.FClientViewChange(Sender: TBaseVirtualTree;
-  Node: PVirtualNode);
+procedure TClientTab.FClientViewChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
 var
   Clients: TNodeDataArray;
 begin
@@ -1349,8 +1213,8 @@ begin
     FSideBar.FDebugView.ShowDebug(nil);
 end;
 
-function TClientTab.StartStreaming(Streams: TStartStreamingInfoArray; Action: TStreamOpenActions; HitNode: PVirtualNode;
-  Mode: TVTNodeAttachMode): Boolean;
+function TClientTab.StartStreaming(Streams: TStartStreamingInfoArray; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
+
   procedure UnkillCategory;
   var
     NodeData: PClientNodeData;
@@ -1362,6 +1226,7 @@ function TClientTab.StartStreaming(Streams: TStartStreamingInfoArray; Action: TS
         NodeData.Category.Killed := False;
     end;
   end;
+
   procedure PlayStarted(Client: TICEClient);
   var
     Clients: TClientArray;
@@ -1369,13 +1234,12 @@ function TClientTab.StartStreaming(Streams: TStartStreamingInfoArray; Action: TS
   begin
     Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
     for C in Clients do
-    begin
       if C <> Client then
         C.StopPlay;
-    end;
     if Assigned(FOnPlayStarted) then
       FOnPlayStarted(Self);
   end;
+
 var
   i: Integer;
   Client: TICEClient;
@@ -1406,7 +1270,6 @@ begin
   end;
 
   for Info in Streams do
-  begin
     if Info.URL <> '' then
     begin
       // Falls eine Datei gemeint ist...
@@ -1432,11 +1295,54 @@ begin
           oaStart:
             Res := Client.StartRecording(True);
           oaPlay:
-            begin
-              Res := Client.StartPlay(True);
-              if Res = crOk then
-                PlayStarted(Client);
-            end;
+          begin
+            Res := Client.StartPlay(True);
+            if Res = crOk then
+              PlayStarted(Client);
+          end;
+          else
+            Res := crOk;
+        end;
+
+        if Res = crOk then
+          UnkillCategory
+        else
+        begin
+          Client.WriteLog(FClientManager.GetErrorText(Res, '', False, False, True), '', ltGeneral, llWarning);
+          if not (Res in MessagesShown) then
+          begin
+            MessagesShown := MessagesShown + [Res];
+            OnShowErrorMessage(Client, FClientManager.GetErrorText(Res, '', False, False, False));
+          end;
+        end;
+      end else if ValidURL(Info.URL) then
+      begin
+        Client := FClientManager.AddClient(Info.ID, Info.Bitrate, Info.Name, Info.URL);
+
+        if Info.URLs <> nil then
+          Client.Entry.URLs.Assign(Info.URLs);
+
+        if Info.RegExes <> nil then
+          Client.Entry.Settings.RegExes.Assign(Info.RegExes);
+
+        if Info.IgnoreTitles <> nil then
+          Client.Entry.Settings.IgnoreTrackChangePattern.Assign(Info.IgnoreTitles);
+
+        if HitNode <> nil then
+        begin
+          Node := FClientView.GetClientNode(Client);
+          FClientView.MoveTo(Node, HitNode, Mode, False);
+        end;
+
+        case Action of
+          oaStart:
+            Res := Client.StartRecording(True);
+          oaPlay:
+          begin
+            Res := Client.StartPlay(True);
+            if Res = crOk then
+              PlayStarted(Client);
+          end;
           else
             Res := crOk;
         end;
@@ -1454,62 +1360,13 @@ begin
         end;
       end else
       begin
-        if ValidURL(Info.URL) then
-        begin
-          Client := FClientManager.AddClient(Info.ID, Info.Bitrate, Info.Name, Info.URL);
-
-          if Info.URLs <> nil then
-            Client.Entry.URLs.Assign(Info.URLs);
-
-          if Info.RegExes <> nil then
-            Client.Entry.Settings.RegExes.Assign(Info.RegExes);
-
-          if Info.IgnoreTitles <> nil then
-            Client.Entry.Settings.IgnoreTrackChangePattern.Assign(Info.IgnoreTitles);
-
-          if HitNode <> nil then
-          begin
-            Node := FClientView.GetClientNode(Client);
-            FClientView.MoveTo(Node, HitNode, Mode, False);
-          end;
-
-          case Action of
-            oaStart:
-              Res := Client.StartRecording(True);
-            oaPlay:
-              begin
-                Res := Client.StartPlay(True);
-                if Res = crOk then
-                  PlayStarted(Client);
-              end;
-            else
-              Res := crOk;
-          end;
-
-          if Res = crOk then
-            UnkillCategory
-          else
-          begin
-            Client.WriteLog(FClientManager.GetErrorText(Res, '', False, False, True), '', ltGeneral, llWarning);
-            if not (Res in MessagesShown) then
-            begin
-              MessagesShown := MessagesShown + [Res];
-              OnShowErrorMessage(Client, FClientManager.GetErrorText(Res, '', False, False, False));
-            end;
-          end;
-        end else
-        begin
-          Result := False;
-          MsgBox(GetParentForm(Self).Handle, _('The stream could not be added to the list because the URL is invalid.'), _('Info'), MB_ICONINFORMATION);
-        end;
+        Result := False;
+        MsgBox(GetParentForm(Self).Handle, _('The stream could not be added to the list because the URL is invalid.'), _('Info'), MB_ICONINFORMATION);
       end;
     end;
-  end;
 end;
 
-function TClientTab.StartStreaming(Stream: TStartStreamingInfo;
-  Action: TStreamOpenActions; HitNode: PVirtualNode;
-  Mode: TVTNodeAttachMode): Boolean;
+function TClientTab.StartStreaming(Stream: TStartStreamingInfo; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean;
 var
   Arr: TStartStreamingInfoArray;
 begin
@@ -1540,8 +1397,8 @@ begin
   end;
 end;
 
-procedure TClientTab.StreamBrowserAction(Sender: TObject; Action: TStreamOpenActions;
-  Streams: TStreamDataArray);
+procedure TClientTab.StreamBrowserAction(Sender: TObject; Action: TStreamOpenActions; Streams: TStreamDataArray);
+
   procedure Rate(R: Integer);
   var
     Node: PVirtualNode;
@@ -1562,6 +1419,7 @@ procedure TClientTab.StreamBrowserAction(Sender: TObject; Action: TStreamOpenAct
       end;
     end;
   end;
+
 var
   i: Integer;
   s: string;
@@ -1603,31 +1461,25 @@ begin
           if AppGlobals.Data.StreamBlacklist.IndexOf(Streams[i].Name) = -1 then
             AppGlobals.Data.StreamBlacklist.Add(Streams[i].Name);
     oaCopy:
-      begin
-        s := '';
-        for i := 0 to Length(Streams) - 1 do
-          s := s + Streams[i].URL + #13#10;
-        s := Trim(s);
-        Clipboard.Clear;
-        Clipboard.SetTextBuf(PChar(s));
-      end;
+    begin
+      s := '';
+      for i := 0 to Length(Streams) - 1 do
+        s := s + Streams[i].URL + #13#10;
+      s := Trim(s);
+      Clipboard.Clear;
+      Clipboard.SetTextBuf(PChar(s));
+    end;
     oaSave:
       SavePlaylist(Entries, False);
     oaRefresh:
       FSideBar.FBrowserView.RefreshStreams;
     oaSetData:
-      begin
-        if HomeComm.CommunicationEstablished and HomeComm.Authenticated then
-        begin
-          FOnSetStreamData(Self, Streams[0].ID);
-        end else if not HomeComm.CommunicationEstablished then
-        begin
-          MsgBox(Handle, _('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION);
-        end else if not HomeComm.Authenticated then
-        begin
-          FOnAuthRequired(Self)
-        end;
-      end;
+      if HomeComm.CommunicationEstablished and HomeComm.Authenticated then
+        FOnSetStreamData(Self, Streams[0].ID)
+      else if not HomeComm.CommunicationEstablished then
+        MsgBox(Handle, _('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION)
+      else if not HomeComm.Authenticated then
+        FOnAuthRequired(Self);
     oaRate1:
       Rate(1);
     oaRate2:
@@ -1648,10 +1500,8 @@ var
 begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, False));
   for Client in Clients do
-  begin
     if Client.Entry.ID = ID then
       Exit(True);
-  end;
   Exit(False);
 end;
 
@@ -1698,9 +1548,7 @@ begin
 
 
   for i := 0 to FAddressBar.Stations.ItemsEx.Count - 1 do
-  begin
     AppGlobals.Data.RecentList.Add(TRecentEntry(FAddressBar.Stations.ItemsEx[i].Data).Copy);
-  end;
 
   OldCategories := TListCategoryList.Create;
   try
@@ -1721,9 +1569,7 @@ begin
         E.Index := Nodes[i].Index;
         E.CategoryIndex := 0;
         if Nodes[i].Parent <> FClientView.RootNode then
-        begin
           E.CategoryIndex := CatIdx;
-        end;
         AppGlobals.Data.StreamList.Add(E);
       end else
       begin
@@ -1804,14 +1650,9 @@ end;
 
 { TSidebar }
 
-// TODO: nicht setparent pls.
-procedure TSidebar.SetParent(NewParent: TWinControl);
+constructor TSidebar.Create(TheOwner: TComponent);
 begin
-  inherited SetParent(NewParent);
-
-  // TODO:
-  if Assigned(FPage1) then
-    Exit;
+  inherited Create(TheOwner);
 
   FPage1 := TTabSheet.Create(Self);
   FPage1.PageControl := Self;
@@ -1836,6 +1677,3 @@ begin
 end;
 
 end.
-
-
-

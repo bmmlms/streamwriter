@@ -49,6 +49,7 @@ uses
   Menus,
   MessageBus,
   Messages,
+  ChartsPopup,
   SharedControls,
   SharedData,
   StdCtrls,
@@ -70,31 +71,6 @@ type
   PChartNodeData = ^TChartNodeData;
 
   TChartDataArray = array of PChartNodeData;
-
-  TChartsPopup = class(TPopupMenu)
-  private
-    FItemAddToWishlist: TMenuItem;
-    FItemRemoveFromWishlist: TMenuItem;
-    FItemAddArtistToWishlist: TMenuItem;
-    FItemEditAndAddToWishlist: TMenuItem;
-    FItemStartStreaming: TMenuItem;
-    FItemPlayStream: TMenuItem;
-    FItemPlayStreamExternal: TMenuItem;
-    FItemAddStream: TMenuItem;
-  protected
-
-  public
-    constructor Create(AOwner: TComponent); override;
-
-    property ItemAddToWishlist: TMenuItem read FItemAddToWishlist;
-    property ItemRemoveFromWishlist: TMenuItem read FItemRemoveFromWishlist;
-    property ItemAddArtistToWishlist: TMenuItem read FItemAddArtistToWishlist;
-    property ItemEditAndAddToWishlist: TMenuItem read FItemEditAndAddToWishlist;
-    property ItemStartStreaming: TMenuItem read FItemStartStreaming;
-    property ItemPlayStream: TMenuItem read FItemPlayStream;
-    property ItemPlayStreamExternal: TMenuItem read FItemPlayStreamExternal;
-    property ItemAddStream: TMenuItem read FItemAddStream;
-  end;
 
   TMyComboBox = class(TComboBox)
   protected
@@ -123,7 +99,7 @@ type
     FButtonPlayStreamExternal: TToolButton;
     FButtonAddStream: TToolButton;
   protected
-    procedure ControlsAligned; override;
+    procedure CreateHandle; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
 
@@ -168,7 +144,6 @@ type
     function DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer; override;
     procedure Resize; override;
     procedure DoAfterCellPaint(Canvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; const CellRect: TRect); override;
-    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
@@ -245,21 +220,21 @@ implementation
 procedure TChartsTab.ButtonClick(Sender: TObject);
 begin
   if Sender = FSearchPanel.FButtonAddToWishlist then
-    FChartsTree.FPopupMenu.FItemAddToWishlist.Click
+    FChartsTree.FPopupMenu.ItemAddToWishlist.Click
   else if Sender = FSearchPanel.FButtonRemoveFromWishlist then
-    FChartsTree.FPopupMenu.FItemRemoveFromWishlist.Click
+    FChartsTree.FPopupMenu.ItemRemoveFromWishlist.Click
   else if Sender = FSearchPanel.FButtonAddArtistToWishlist then
-    FChartsTree.FPopupMenu.FItemAddArtistToWishlist.Click
+    FChartsTree.FPopupMenu.ItemAddArtistToWishlist.Click
   else if Sender = FSearchPanel.FButtonEditAndAddToWishlist then
-    FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Click
+    FChartsTree.FPopupMenu.ItemEditAndAddToWishlist.Click
   else if Sender = FSearchPanel.FButtonStartStreaming then
-    FChartsTree.FPopupMenu.FItemStartStreaming.Click
+    FChartsTree.FPopupMenu.ItemStartStreaming.Click
   else if Sender = FSearchPanel.FButtonPlayStream then
-    FChartsTree.FPopupMenu.FItemPlayStream.Click
+    FChartsTree.FPopupMenu.ItemPlayStream.Click
   else if Sender = FSearchPanel.FButtonPlayStreamExternal then
-    FChartsTree.FPopupMenu.FItemPlayStreamExternal.Click
+    FChartsTree.FPopupMenu.ItemPlayStreamExternal.Click
   else if Sender = FSearchPanel.FButtonAddStream then
-    FChartsTree.FPopupMenu.FItemAddStream.Click;
+    FChartsTree.FPopupMenu.ItemAddStream.Click;
 end;
 
 procedure TChartsTab.ChartsTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
@@ -595,23 +570,23 @@ begin
     N := FChartsTree.GetNextSelected(N);
   end;
 
-  FChartsTree.FPopupMenu.FItemAddToWishlist.Enabled := (not AllOnWishlist) and (OneSelectedChart or ManySelectedCharts) and (State = csNormal);
-  FChartsTree.FPopupMenu.FItemRemoveFromWishlist.Enabled := AtLeastOneOnWishlist and (OneSelectedChart or ManySelectedCharts) and (State = csNormal);
-  FChartsTree.FPopupMenu.FItemAddArtistToWishlist.Enabled := (not AllArtistsOnList) and (AtLeastOneArtistSelected or ManySelectedCharts) and (State = csNormal);
-  FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Enabled := (OneSelectedChart) and (State = csNormal);
-  FChartsTree.FPopupMenu.FItemStartStreaming.Enabled := (OneSelectedStream or ManySelectedStreams) and (State = csNormal);
-  FChartsTree.FPopupMenu.FItemPlayStream.Enabled := (OneSelectedStream) and (State = csNormal);
-  FChartsTree.FPopupMenu.FItemPlayStreamExternal.Enabled := (OneSelectedStream) and (State = csNormal);
-  FChartsTree.FPopupMenu.FItemAddStream.Enabled := (OneSelectedStream or ManySelectedStreams) and (State = csNormal);
+  FChartsTree.FPopupMenu.ItemAddToWishlist.Enabled := (not AllOnWishlist) and (OneSelectedChart or ManySelectedCharts) and (State = csNormal);
+  FChartsTree.FPopupMenu.ItemRemoveFromWishlist.Enabled := AtLeastOneOnWishlist and (OneSelectedChart or ManySelectedCharts) and (State = csNormal);
+  FChartsTree.FPopupMenu.ItemAddArtistToWishlist.Enabled := (not AllArtistsOnList) and (AtLeastOneArtistSelected or ManySelectedCharts) and (State = csNormal);
+  FChartsTree.FPopupMenu.ItemEditAndAddToWishlist.Enabled := (OneSelectedChart) and (State = csNormal);
+  FChartsTree.FPopupMenu.ItemStartStreaming.Enabled := (OneSelectedStream or ManySelectedStreams) and (State = csNormal);
+  FChartsTree.FPopupMenu.ItemPlayStream.Enabled := (OneSelectedStream) and (State = csNormal);
+  FChartsTree.FPopupMenu.ItemPlayStreamExternal.Enabled := (OneSelectedStream) and (State = csNormal);
+  FChartsTree.FPopupMenu.ItemAddStream.Enabled := (OneSelectedStream or ManySelectedStreams) and (State = csNormal);
 
-  FSearchPanel.FButtonAddToWishlist.Enabled := FChartsTree.FPopupMenu.FItemAddToWishlist.Enabled;
-  FSearchPanel.FButtonRemoveFromWishlist.Enabled := FChartsTree.FPopupMenu.FItemRemoveFromWishlist.Enabled;
-  FSearchPanel.FButtonAddArtistToWishlist.Enabled := FChartsTree.FPopupMenu.FItemAddArtistToWishlist.Enabled;
-  FSearchPanel.FButtonEditAndAddToWishlist.Enabled := FChartsTree.FPopupMenu.FItemEditAndAddToWishlist.Enabled;
-  FSearchPanel.FButtonStartStreaming.Enabled := FChartsTree.FPopupMenu.FItemStartStreaming.Enabled;
-  FSearchPanel.FButtonPlayStream.Enabled := FChartsTree.FPopupMenu.FItemPlayStream.Enabled;
-  FSearchPanel.FButtonPlayStreamExternal.Enabled := FChartsTree.FPopupMenu.FItemPlayStreamExternal.Enabled;
-  FSearchPanel.FButtonAddStream.Enabled := FChartsTree.FPopupMenu.FItemAddStream.Enabled;
+  FSearchPanel.FButtonAddToWishlist.Enabled := FChartsTree.FPopupMenu.ItemAddToWishlist.Enabled;
+  FSearchPanel.FButtonRemoveFromWishlist.Enabled := FChartsTree.FPopupMenu.ItemRemoveFromWishlist.Enabled;
+  FSearchPanel.FButtonAddArtistToWishlist.Enabled := FChartsTree.FPopupMenu.ItemAddArtistToWishlist.Enabled;
+  FSearchPanel.FButtonEditAndAddToWishlist.Enabled := FChartsTree.FPopupMenu.ItemEditAndAddToWishlist.Enabled;
+  FSearchPanel.FButtonStartStreaming.Enabled := FChartsTree.FPopupMenu.ItemStartStreaming.Enabled;
+  FSearchPanel.FButtonPlayStream.Enabled := FChartsTree.FPopupMenu.ItemPlayStream.Enabled;
+  FSearchPanel.FButtonPlayStreamExternal.Enabled := FChartsTree.FPopupMenu.ItemPlayStreamExternal.Enabled;
+  FSearchPanel.FButtonAddStream.Enabled := FChartsTree.FPopupMenu.ItemAddStream.Enabled;
 end;
 
 { TChartsTree }
@@ -635,7 +610,6 @@ begin
 
   IncrementalSearch := isVisibleOnly;
 
-  Header.Height := GetTextSize('Wyg', Font).cy + 6;
   AutoScrollDelay := 50;
   AutoScrollInterval := 400;
   Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoShowSortGlyphs, hoVisible];
@@ -936,13 +910,6 @@ begin
     Result := StrLIComp(PChar(Text), PChar(NodeData.Chart.Name), Min(Length(Text), Length(NodeData.Chart.Name)))
   else
     Result := StrLIComp(PChar(Text), PChar(NodeData.Stream.Stream.Name), Min(Length(Text), Length(NodeData.Stream.Stream.Name)));
-end;
-
-procedure TChartsTree.DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer);
-begin
-  inherited;
-
-  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
 end;
 
 procedure TChartsTree.DoNodeDblClick(const HitInfo: THitInfo);
@@ -1416,12 +1383,16 @@ begin
   inherited;
 
   BevelOuter := bvNone;
+  AutoSize := True;
 
   FLabel := TLabel.Create(Self);
+  FLabel.Align := alLeft;
+  FLabel.Layout := tlCenter;
   FLabel.Parent := Self;
   FLabel.Caption := 'Search:';
 
   FSearch := TMyComboBox.Create(Self);
+  FSearch.Align := alLeft;
   FSearch.Parent := Self;
   FSearch.AutoComplete := False;
 
@@ -1429,7 +1400,9 @@ begin
   FToolbar.Parent := Self;
   FToolbar.ShowHint := True;
   FToolbar.EdgeBorders := [];
-
+  FToolbar.Align := alNone;
+  FToolbar.Anchors := [akTop, akRight];
+  FToolbar.AutoSize := True;
   FToolbar.Images := modSharedData.imgImages;
 
   FButtonAddToWishlist := TToolButton.Create(FToolbar);
@@ -1479,9 +1452,6 @@ begin
   FButtonAddStream.Parent := FToolbar;
   FButtonAddStream.Hint := 'Add stream';
   FButtonAddStream.ImageIndex := TImages.TRANSMIT_ADD;
-
-  FToolbar.Align := alNone;
-  FToolbar.AutoSize := True;
 
   RebuildSearchItems('');
 
@@ -1540,64 +1510,11 @@ begin
   end;
 end;
 
-procedure TSearchPanel.ControlsAligned;
+procedure TSearchPanel.CreateHandle;
 begin
-  inherited ControlsAligned;
+  inherited CreateHandle;
 
   FToolbar.Left := ClientRect.Width - FToolbar.Width;
-  FLabel.Top := (FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2);
-  ClientHeight := FSearch.Top * 2 + FSearch.Height + MulDiv(3, Screen.PixelsPerInch, 96);
-end;
-
-{ TChartsPopup }
-
-constructor TChartsPopup.Create(AOwner: TComponent);
-begin
-  inherited;
-
-  FItemAddToWishlist := TMenuItem.Create(Self);
-  FItemAddToWishlist.Caption := '&Add title to automatic wishlist';
-  FItemAddToWishlist.ImageIndex := TImages.SCRIPT_BRICKS_ADD;
-  Items.Add(FItemAddToWishlist);
-
-  FItemRemoveFromWishlist := TMenuItem.Create(Self);
-  FItemRemoveFromWishlist.Caption := '&Remove title from automatic wishlist';
-  FItemRemoveFromWishlist.ImageIndex := TImages.SCRIPT_BRICKS_DELETE;
-  Items.Add(FItemRemoveFromWishlist);
-
-  FItemAddArtistToWishlist := TMenuItem.Create(Self);
-  FItemAddArtistToWishlist.Caption := 'A&dd artist to automatic wishlist';
-  FItemAddArtistToWishlist.ImageIndex := TImages.SCRIPT_USER_GRAY_COOL_ADD;
-  Items.Add(FItemAddArtistToWishlist);
-
-  Items.AddSeparator;
-
-  FItemEditAndAddToWishlist := TMenuItem.Create(Self);
-  FItemEditAndAddToWishlist.Caption := '&Edit and add to manual wishlist';
-  FItemEditAndAddToWishlist.ImageIndex := TImages.SCRIPT_HEART_ADD;
-  Items.Add(FItemEditAndAddToWishlist);
-
-  Items.AddSeparator;
-
-  FItemStartStreaming := TMenuItem.Create(Self);
-  FItemStartStreaming.Caption := '&Start recording';
-  FItemStartStreaming.ImageIndex := TImages.RECORD_RED;
-  Items.Add(FItemStartStreaming);
-
-  FItemPlayStream := TMenuItem.Create(Self);
-  FItemPlayStream.Caption := '&Play stream';
-  FItemPlayStream.ImageIndex := TImages.PLAY_BLUE;
-  Items.Add(FItemPlayStream);
-
-  FItemPlayStreamExternal := TMenuItem.Create(Self);
-  FItemPlayStreamExternal.Caption := 'P&lay stream (external player)';
-  FItemPlayStreamExternal.ImageIndex := TImages.PLAY_GO;
-  Items.Add(FItemPlayStreamExternal);
-
-  FItemAddStream := TMenuItem.Create(Self);
-  FItemAddStream.Caption := 'Add s&tream';
-  FItemAddStream.ImageIndex := TImages.TRANSMIT_ADD; // TOOD: oder _ADD?
-  Items.Add(FItemAddStream);
 end;
 
 { TMyComboBox }

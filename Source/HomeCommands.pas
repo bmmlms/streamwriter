@@ -140,7 +140,7 @@ type
     FServerArtistHash: Cardinal;
   public
     constructor Create; override;
-    destructor Destroy; override; // TODO: alle destruktoren checken. das muss auch virtual und override gemacht werden.
+    destructor Destroy; override;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
 

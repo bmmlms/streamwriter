@@ -52,7 +52,6 @@ type
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     function DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
-    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
   public
     constructor Create(AOwner: TComponent; Streams: TStringList); reintroduce;
     destructor Destroy; override;
@@ -3507,7 +3506,6 @@ begin
   Header.Options := Header.Options + [hoAutoResize];
   Header.Options := Header.Options - [hoDrag];
   Header.AutoSizeIndex := 0;
-  Header.Height := GetTextSize('Wyg', Font).cy + 6;
   DragMode := dmManual;
   ShowHint := True;
   HintMode := hmTooltip;
@@ -3585,14 +3583,6 @@ begin
   NodeData := GetNodeData(Node);
   Result := StrLIComp(PChar(S), PChar(NodeData.Name),
     Min(Length(S), Length(NodeData.Name)));
-end;
-
-procedure TBlacklistTree.DoMeasureItem(TargetCanvas: TCanvas;
-  Node: PVirtualNode; var NodeHeight: Integer);
-begin
-  inherited;
-
-  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
 end;
 
 procedure TBlacklistTree.RemoveSelected;

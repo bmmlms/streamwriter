@@ -41,7 +41,7 @@ type
       var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
     procedure Resize; override;
-    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
+//    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
     function DoInitChildren(Node: PVirtualNode; var ChildCount: Cardinal): Boolean; override;
     function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
     procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
@@ -111,27 +111,23 @@ begin
   FDebug := TDebugView.Create(Self);
   FDebug.Parent := Self;
   FDebug.Align := alClient;
-  FDebug.Visible := True;
 
   FPanelBottom := TPanel.Create(Self);
   FPanelBottom.Parent := Self;
   FPanelBottom.Align := alBottom;
   FPanelBottom.BevelOuter := bvNone;
-  FPanelBottom.Visible := True;        // TODO: muss man visible setzen? falls nicht.. überall wegmachen.
   FPanelBottom.AutoSize := True;
 
   FBtnCopy := TButton.Create(Self);
   FBtnCopy.Caption := '&Copy';
   FBtnCopy.Align := alRight;
   FBtnCopy.Parent := FPanelBottom;
-  FBtnCopy.Visible := True;
   FBtnCopy.OnClick := BtnCopyClick;
 
   FBtnClear := TButton.Create(Self);
   FBtnClear.Caption := 'C&lear';
   FBtnClear.Align := alRight;
   FBtnClear.Parent := FPanelBottom;
-  FBtnClear.Visible := True;
   FBtnClear.OnClick := BtnClearClick;
 end;
 
@@ -204,7 +200,7 @@ begin
 
   NodeDataSize := SizeOf(Integer);
   TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toVariableNodeHeight];
-  TreeOptions.PaintOptions := TreeOptions.PaintOptions - [toShowTreeLines, toHideFocusRect];
+  TreeOptions.PaintOptions := TreeOptions.PaintOptions - [toShowTreeLines] + [toHideFocusRect];
   TreeOptions.SelectionOptions := TreeOptions.SelectionOptions + [toFullRowSelect, toMultiSelect];
   ScrollBarOptions.ScrollBars := ssVertical;
 
@@ -214,17 +210,16 @@ begin
   ShowHint := True;
   HintMode := hmTooltip;
 
+  Header.Options := [hoAutoResize];
+
   Header.Columns.Add;
+  Header.Columns[0].MinWidth := GetTextSize('00-00-00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+  Header.Columns[0].MaxWidth := Header.Columns[0].MinWidth;
+  Header.Columns[0].Options := Header.Columns[0].Options - [coResizable];
+
   Header.Columns.Add;
+
   Header.AutoSizeIndex := 1;
-end;
-
-procedure TDebugView.DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
-  var NodeHeight: Integer);
-begin
-  inherited;
-
-  NodeHeight := GetTextSize('Wyg', Font).cy + 6;     // TODO: ??
 end;
 
 procedure TDebugView.FSetClient(Value: TICEClient);
@@ -388,9 +383,6 @@ begin
   inherited;
 
   {
-  Header.Columns[0].Width := Canvas.TextWidth(TimeToStr(Now)) + 10;
-  Header.Columns[1].Width := ClientWidth - Header.Columns[0].Width;
-
   if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) and (GetPrevious(GetPrevious(GetLast)) <> nil) then
   begin
     R := GetDisplayRect(GetPrevious(GetPrevious(GetLast)), NoColumn, False);

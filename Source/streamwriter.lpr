@@ -128,7 +128,6 @@ uses
   SWFunctions in 'SWFunctions.pas',
   SplashThread in '..\..\common\SplashThread.pas',
   CommandLine in '..\..\common\CommandLine.pas',
-  HomeTest in 'HomeTest.pas' {frmHomeTest},
   HomeCommands in 'HomeCommands.pas',
   SharedData in 'SharedData.pas' {modSharedData: TDataModule},
   MonitorAnalyzer in 'streaming\MonitorAnalyzer.pas',
@@ -160,7 +159,6 @@ var
   i: Integer;
   HideMain, Found: Boolean;
   frmStreamWriterMain: TfrmStreamWriterMain;
-  frmHomeTest: TfrmHomeTest;
 
  begin
   IsMultiThread := True;

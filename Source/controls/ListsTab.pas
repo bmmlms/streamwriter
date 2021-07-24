@@ -114,7 +114,7 @@ type
     procedure AddClick(Sender: TObject);
     procedure RemoveClick(Sender: TObject);
     procedure RenameClick(Sender: TObject);
-    procedure ShowSavedClick(Sender: TObject);                   // TODO: log funzt nicht mehr
+    procedure ShowSavedClick(Sender: TObject);
     procedure ExportClick(Sender: TObject);
     procedure ImportClick(Sender: TObject);
     procedure SelectSavedClick(Sender: TObject);
@@ -125,9 +125,7 @@ type
     procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure SearchTextChange(Sender: TObject);
   protected
-    procedure Resize; override;
-    procedure ControlsAligned; override;
-    procedure SetParent(AParent: TWinControl); override;
+    procedure CreateHandle; override;
   public
     constructor Create(AOwner: TComponent; Clients: TClientManager); reintroduce;
 
@@ -200,7 +198,6 @@ type
     function DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer; override;
     procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string); override;
     procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
-    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
     function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
@@ -556,16 +553,6 @@ end;
 procedure TTitlePanel.RenameClick(Sender: TObject);
 begin
   FTree.EditNode(FTree.GetFirstSelected, 0);
-end;
-
-procedure TTitlePanel.SetParent(AParent: TWinControl);
-begin
-  inherited;
-
-  // TODO:
-  if Assigned(FTree) then
-    Exit;
-
 end;
 
 procedure TTitlePanel.ExportClick(Sender: TObject);
@@ -1124,6 +1111,7 @@ begin
   FTopPanel.Parent := Self;
   FTopPanel.BevelOuter := bvNone;
   FTopPanel.Align := alTop;
+  FTopPanel.Top := -100;
 
   FSearchPanel := TPanel.Create(Self);
   FSearchPanel.Parent := Self;
@@ -1207,18 +1195,9 @@ begin
   BuildTree(True);
 end;
 
-procedure TTitlePanel.Resize;
+procedure TTitlePanel.CreateHandle;
 begin
-  inherited Resize;
-
-  if (not Assigned(FAddCombo)) or (not Assigned(FToolbar)) then
-    Exit;
-
-end;
-
-procedure TTitlePanel.ControlsAligned;
-begin
-  inherited ControlsAligned;
+  inherited CreateHandle;
 
   FAddCombo.Width := (FToolbarPanel.ClientWidth - FToolbar.Width - FAddEdit.Width - FAddEdit.Left) - 6;
   FToolbar.Left := ClientWidth - FToolbar.Width;
@@ -1792,8 +1771,6 @@ begin
 
   FPanel := TTitlePanel(AOwner);
 
-  Header.Height := GetTextSize('Wyg', Font).cy + 6;
-
   NodeDataSize := SizeOf(TTitleNodeData);
   IncrementalSearch := isVisibleOnly;
 
@@ -2332,14 +2309,6 @@ begin
     Result := StrLIComp(PChar(s), PChar(NodeData.Title.Title), Min(Length(s), Length(NodeData.Title.Title)))
   else
     Result := StrLIComp(PChar(s), PChar(NodeData.Stream.Entry.CustomName), Min(Length(s), Length(NodeData.Stream.Entry.CustomName)))
-end;
-
-procedure TTitleTree.DoMeasureItem(TargetCanvas: TCanvas;
-  Node: PVirtualNode; var NodeHeight: Integer);
-begin
-  inherited;
-
-  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
 end;
 
 procedure TTitleTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string);

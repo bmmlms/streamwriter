@@ -57,6 +57,7 @@ object frmTimers: TfrmTimers
   OnKeyDown = FormKeyDown
   OnShow = FormShow
   Position = poOwnerFormCenter
+  LCLVersion = '2.2.0.1'
   object Panel2: TPanel
     Left = 0
     Height = 355
@@ -93,7 +94,6 @@ object frmTimers: TfrmTimers
           Top = 156
           Width = 82
           Caption = 'Start Time (24h):'
-          ParentColor = False
         end
         object Label2: TLabel
           Left = 108
@@ -101,7 +101,6 @@ object frmTimers: TfrmTimers
           Top = 156
           Width = 76
           Caption = 'End Time (24h):'
-          ParentColor = False
         end
         object Label3: TLabel
           Left = 44
@@ -110,7 +109,6 @@ object frmTimers: TfrmTimers
           Width = 4
           Alignment = taCenter
           Caption = ':'
-          ParentColor = False
         end
         object Label4: TLabel
           Left = 148
@@ -119,7 +117,6 @@ object frmTimers: TfrmTimers
           Width = 4
           Alignment = taCenter
           Caption = ':'
-          ParentColor = False
         end
         object rbRecurring: TRadioButton
           Left = 4
@@ -191,6 +188,7 @@ object frmTimers: TfrmTimers
           MinDate = -53780
           TabOrder = 4
           TrailingSeparator = False
+          TextForNullDate = 'NULL'
           LeadingZeros = True
           Anchors = [akTop, akLeft, akRight]
           Kind = dtkDate
@@ -317,7 +315,6 @@ object frmTimers: TfrmTimers
       Width = 97
       Align = alRight
       Caption = '&OK'
-      Layout = blGlyphLeft
       OnClick = btnOKClick
       TabOrder = 0
     end

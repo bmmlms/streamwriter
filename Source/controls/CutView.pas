@@ -666,13 +666,11 @@ end;
 
 procedure TCutView.MessageReceived(Msg: TMessageBase);
 begin
-  {     // TODO: ..
   if Msg is TFileModifyMsg then
   begin
     if LowerCase(FPlayer.Filename) = LowerCase(TFileModifyMsg(Msg).Filename) then
       FPlayer.Stop(False);
   end;
-  }
 end;
 
 procedure TCutView.MsgRefresh(var Msg: TMessage);

@@ -86,7 +86,6 @@ inherited frmSettings: TfrmSettings
       Width = 25
       Anchors = [akLeft, akRight, akBottom]
       Caption = 'Lists:'
-      ParentColor = False
     end
     object Label4: TLabel
       Left = 88
@@ -94,7 +93,6 @@ inherited frmSettings: TfrmSettings
       Top = 124
       Width = 39
       Caption = 'seconds'
-      ParentColor = False
     end
     object chkDeleteStreams: TCheckBox
       Left = 20
@@ -223,7 +221,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 49
       EditLabel.Caption = 'Ads to skip are shorter than:'
-      EditLabel.ParentColor = False
       MaxLength = 3
       TabOrder = 11
       OnChange = txtShortLengthSecondsChange
@@ -254,7 +251,6 @@ inherited frmSettings: TfrmSettings
       Top = 252
       Width = 13
       Caption = 'GB'
-      ParentColor = False
     end
     object Label3: TLabel
       Left = 4
@@ -263,7 +259,6 @@ inherited frmSettings: TfrmSettings
       Width = 191
       Anchors = [akLeft, akBottom]
       Caption = 'Default action on doubleclick on stream:'
-      ParentColor = False
     end
     object Label18: TLabel
       Left = 4
@@ -272,7 +267,6 @@ inherited frmSettings: TfrmSettings
       Width = 193
       Anchors = [akLeft, akBottom]
       Caption = 'Default action on doubleclick in browser:'
-      ParentColor = False
     end
     object chkTray: TCheckBox
       Left = 4
@@ -292,7 +286,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 49
       EditLabel.Caption = 'Stop recording when free space gets below:'
-      EditLabel.ParentColor = False
       MaxLength = 3
       TabOrder = 11
     end
@@ -433,7 +426,6 @@ inherited frmSettings: TfrmSettings
       Top = 64
       Width = 39
       Caption = 'seconds'
-      ParentColor = False
     end
     object lblSoundDevice: TLabel
       Left = 4
@@ -441,7 +433,6 @@ inherited frmSettings: TfrmSettings
       Top = 88
       Width = 68
       Caption = 'Sound device:'
-      ParentColor = False
     end
     object btnBrowseLogFile: TSpeedButton
       Left = 264
@@ -465,7 +456,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 49
       EditLabel.Caption = 'Max. connect retries on error (zero is infinite):'
-      EditLabel.ParentColor = False
       MaxLength = 3
       TabOrder = 0
       OnChange = txtMaxRetriesChange
@@ -478,7 +468,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 49
       EditLabel.Caption = 'Time between retries:'
-      EditLabel.ParentColor = False
       MaxLength = 3
       TabOrder = 1
       OnChange = txtRetryDelayChange
@@ -502,7 +491,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 257
       EditLabel.Caption = 'Logfile:'
-      EditLabel.ParentColor = False
       TabOrder = 3
     end
   end
@@ -523,7 +511,6 @@ inherited frmSettings: TfrmSettings
       Anchors = [akLeft, akRight, akBottom]
       AutoSize = False
       Caption = '-'
-      ParentColor = False
       WordWrap = True
     end
     object btnBrowseApp: TSpeedButton
@@ -586,7 +573,6 @@ inherited frmSettings: TfrmSettings
       Top = 0
       Width = 172
       Caption = 'Format to convert recorded files to:'
-      ParentColor = False
     end
     object btnConfigureEncoder: TSpeedButton
       Left = 264
@@ -655,7 +641,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 257
       EditLabel.Caption = 'Path to application:'
-      EditLabel.ParentColor = False
       Enabled = False
       ReadOnly = True
       TabOrder = 6
@@ -669,7 +654,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 285
       EditLabel.Caption = 'Parameters:'
-      EditLabel.ParentColor = False
       Enabled = False
       TabOrder = 7
       OnChange = txtAppParamsChange
@@ -727,7 +711,6 @@ inherited frmSettings: TfrmSettings
       Top = 168
       Width = 55
       Caption = 'milliseconds'
-      ParentColor = False
     end
     object Label10: TLabel
       Left = 36
@@ -735,7 +718,6 @@ inherited frmSettings: TfrmSettings
       Top = 76
       Width = 192
       Caption = 'Silence is defined by volume lower than:'
-      ParentColor = False
     end
     object Label12: TLabel
       Left = 36
@@ -743,7 +725,6 @@ inherited frmSettings: TfrmSettings
       Top = 120
       Width = 31
       Caption = 'lasting'
-      ParentColor = False
     end
     object Label13: TLabel
       Left = 160
@@ -751,7 +732,6 @@ inherited frmSettings: TfrmSettings
       Top = 120
       Width = 59
       Caption = 'ms (min. 20)'
-      ParentColor = False
     end
     object Label14: TLabel
       Left = 120
@@ -759,7 +739,6 @@ inherited frmSettings: TfrmSettings
       Top = 96
       Width = 36
       Caption = '(1-100)'
-      ParentColor = False
     end
     object lblPanelCut: TLabel
       Left = 208
@@ -768,7 +747,6 @@ inherited frmSettings: TfrmSettings
       Width = 53
       Alignment = taCenter
       Caption = 'lblPanelCut'
-      ParentColor = False
     end
     object Label6: TLabel
       Left = 20
@@ -776,7 +754,6 @@ inherited frmSettings: TfrmSettings
       Top = 28
       Width = 61
       Caption = 'in a range of'
-      ParentColor = False
     end
     object Label15: TLabel
       Left = 164
@@ -784,7 +761,6 @@ inherited frmSettings: TfrmSettings
       Top = 28
       Width = 39
       Caption = 'seconds'
-      ParentColor = False
     end
     object txtSongBuffer: TLabeledEdit
       Left = 4
@@ -794,7 +770,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 49
       EditLabel.Caption = 'If no silence was found, append buffer to start/end:'
-      EditLabel.ParentColor = False
       MaxLength = 5
       TabOrder = 5
       OnChange = txtSongBufferChange
@@ -854,7 +829,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 55
       EditLabel.Caption = 'milliseconds'
-      EditLabel.ParentColor = False
       Enabled = False
       LabelPosition = lpRight
       MaxLength = 5
@@ -912,7 +886,6 @@ inherited frmSettings: TfrmSettings
       Width = 38
       Anchors = [akLeft, akBottom]
       Caption = 'Hotkey:'
-      ParentColor = False
     end
     object lstHotkeys: TListView
       Left = 4
@@ -949,7 +922,6 @@ inherited frmSettings: TfrmSettings
       Top = 88
       Width = 79
       Caption = 'Minimum quality:'
-      ParentColor = False
     end
     object Label17: TLabel
       Left = 20
@@ -957,7 +929,6 @@ inherited frmSettings: TfrmSettings
       Top = 136
       Width = 38
       Caption = 'Format:'
-      ParentColor = False
     end
     object chkAutoTuneIn: TCheckBox
       Left = 4
@@ -1043,7 +1014,6 @@ inherited frmSettings: TfrmSettings
       Anchors = [akTop, akLeft, akRight, akBottom]
       AutoSize = False
       Caption = '-'
-      ParentColor = False
       WordWrap = True
     end
     object btnResetFilePattern: TSpeedButton
@@ -1133,7 +1103,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 257
       EditLabel.Caption = 'Pattern for filenames of completely recorded tracks:'
-      EditLabel.ParentColor = False
       TabOrder = 1
       OnChange = txtFilePatternChange
       OnEnter = txtFilePatternEnter
@@ -1148,7 +1117,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 256
       EditLabel.Caption = 'Preview for selected pattern:'
-      EditLabel.ParentColor = False
       ReadOnly = True
       TabOrder = 5
     end
@@ -1161,7 +1129,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 257
       EditLabel.Caption = 'Pattern for filenames of incompletely recorded tracks:'
-      EditLabel.ParentColor = False
       TabOrder = 2
       OnChange = txtFilePatternChange
       OnEnter = txtFilePatternEnter
@@ -1175,7 +1142,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 257
       EditLabel.Caption = 'Pattern for filenames of automatically recorded tracks:'
-      EditLabel.ParentColor = False
       TabOrder = 3
       OnChange = txtFilePatternChange
       OnEnter = txtFilePatternEnter
@@ -1189,7 +1155,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 257
       EditLabel.Caption = 'Pattern for filenames of stream files:'
-      EditLabel.ParentColor = False
       TabOrder = 4
       OnChange = txtStreamFilePatternChange
       OnClick = txtStreamFilePatternClick
@@ -1205,7 +1170,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 257
       EditLabel.Caption = 'Folder for saved songs:'
-      EditLabel.ParentColor = False
       TabOrder = 0
     end
   end
@@ -1224,7 +1188,6 @@ inherited frmSettings: TfrmSettings
       Top = 0
       Width = 266
       Caption = 'Do not automatically record from the following streams:'
-      ParentColor = False
     end
     object pnlBlacklist: TPanel
       Left = 4
@@ -1277,7 +1240,6 @@ inherited frmSettings: TfrmSettings
       Width = 271
       Anchors = [akTop, akLeft, akRight]
       Caption = 'Ignore the following stream title changes (i.e. announcements like ''Next playing: ...'') to disable saving:'
-      ParentColor = False
       WordWrap = True
     end
     object Label21: TLabel
@@ -1287,7 +1249,6 @@ inherited frmSettings: TfrmSettings
       Width = 255
       Anchors = [akTop, akLeft, akRight]
       Caption = 'Use the following regular expressions for this stream (groups: a = artist, t = title, l = album):'
-      ParentColor = False
       WordWrap = True
     end
     object txtRegEx: TLabeledEdit
@@ -1299,7 +1260,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 257
       EditLabel.Caption = 'Regular expression to add:'
-      EditLabel.ParentColor = False
       EditLabel.Layout = tlBottom
       MaxLength = 255
       TabOrder = 1
@@ -1355,7 +1315,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 285
       EditLabel.Caption = 'Pattern to add (use ''*'' as wildcard):'
-      EditLabel.ParentColor = False
       TabOrder = 5
       OnChange = txtIgnoreTitlePatternChange
     end
@@ -1416,7 +1375,6 @@ inherited frmSettings: TfrmSettings
       Top = 44
       Width = 21
       Caption = 'KB/s'
-      ParentColor = False
     end
     object Label22: TLabel
       Left = 4
@@ -1426,7 +1384,6 @@ inherited frmSettings: TfrmSettings
       Anchors = [akTop, akLeft, akRight, akBottom]
       AutoSize = False
       Caption = 'Bandwidth is also used for monitoring streams for the community. If your bandwidth/traffic is limited look at the "Community" section on the left and disable the "Enable monitor mode" checkbox because bandwith used by monitor mode is not considered for the "Limit bandwidth for recordings" setting.'
-      ParentColor = False
       WordWrap = True
     end
     object txtMaxSpeed: TLabeledEdit
@@ -1437,7 +1394,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 53
       EditLabel.Caption = 'Max. bandwidth available to streamWriter:'
-      EditLabel.ParentColor = False
       Enabled = False
       MaxLength = 5
       TabOrder = 1
@@ -1484,7 +1440,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 257
       EditLabel.Caption = 'Remove the following characters from filenames:'
-      EditLabel.ParentColor = False
       TabOrder = 1
       OnChange = txtRemoveCharsChange
     end
@@ -1496,7 +1451,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 41
       EditLabel.Caption = 'Minimum count of decimals for tracknumbers:'
-      EditLabel.ParentColor = False
       MaxLength = 1
       TabOrder = 0
       OnChange = txtFilePatternDecimalsChange
@@ -1560,7 +1514,6 @@ inherited frmSettings: TfrmSettings
       Anchors = [akTop, akLeft, akRight]
       AutoSize = False
       Caption = 'Streams unknown to streamWriter will be submitted to the server so they can appear in the browser.'
-      ParentColor = False
       WordWrap = True
       OnClick = Label2Click
     end
@@ -1572,7 +1525,6 @@ inherited frmSettings: TfrmSettings
       Anchors = [akTop, akLeft, akRight]
       AutoSize = False
       Caption = 'Information about track changes will be sent to the server and broadcasted to other users. This is important for the automatic recording of songs on the wishlist.'
-      ParentColor = False
       WordWrap = True
       OnClick = Label8Click
     end
@@ -1584,7 +1536,6 @@ inherited frmSettings: TfrmSettings
       Anchors = [akTop, akLeft, akRight]
       AutoSize = False
       Caption = 'Server-assigned streams will be monitored for title changes in the background. Do not disable this option if you have a fast internet connection (DSL or faster) and unlimited traffic (flatrate). Monitored streams will not be covered by the bandwidth limit. One monitored stream consumes between 8 and 40KB/s depending on the stream''s quality.'
-      ParentColor = False
       WordWrap = True
       OnClick = Label20Click
     end
@@ -1626,7 +1577,6 @@ inherited frmSettings: TfrmSettings
       EditLabel.Height = 13
       EditLabel.Width = 53
       EditLabel.Caption = 'Max. number of streams to monitor:'
-      EditLabel.ParentColor = False
       MaxLength = 3
       TabOrder = 3
     end
@@ -1646,7 +1596,6 @@ inherited frmSettings: TfrmSettings
       Top = 52
       Width = 48
       Caption = 'Text color'
-      ParentColor = False
     end
     object Label24: TLabel
       Left = 36
@@ -1654,7 +1603,6 @@ inherited frmSettings: TfrmSettings
       Top = 80
       Width = 99
       Caption = 'Text color (selected)'
-      ParentColor = False
     end
     object Label25: TLabel
       Left = 36
@@ -1662,7 +1610,6 @@ inherited frmSettings: TfrmSettings
       Top = 108
       Width = 144
       Caption = 'Text color (selected, focused)'
-      ParentColor = False
     end
     object Label26: TLabel
       Left = 36
@@ -1670,7 +1617,6 @@ inherited frmSettings: TfrmSettings
       Top = 24
       Width = 82
       Caption = 'Background color'
-      ParentColor = False
     end
     object Label29: TLabel
       Left = 4
@@ -1678,7 +1624,6 @@ inherited frmSettings: TfrmSettings
       Top = 0
       Width = 93
       Caption = 'Colors of list views:'
-      ParentColor = False
     end
     object pnlNodeTextColor: TPanel
       Left = 4

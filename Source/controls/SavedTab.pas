@@ -239,7 +239,6 @@ type
 
     FNoCoverPNG: TBitmap;
 
-    procedure BuildTree;
     procedure SavedTreeAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
     procedure ToolBarClick(Sender: TObject);
     procedure SearchTextClick(Sender: TObject);
@@ -287,6 +286,8 @@ type
     property OnAddTitleToIgnorelist: TAddTitleEvent read FOnAddTitleToIgnorelist write FOnAddTitleToIgnorelist;
     property OnRemoveTitleFromIgnorelist: TAddTitleEvent read FOnRemoveTitleFromIgnorelist write FOnRemoveTitleFromIgnorelist;
   end;
+
+  { TSavedTree }
 
   TSavedTree = class(TVirtualStringTree)
   private
@@ -340,6 +341,7 @@ type
 
     procedure MessageReceived(Msg: TMessageBase);
   protected
+    procedure CreateHandle; override;
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String); override;
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
     procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
@@ -354,7 +356,6 @@ type
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure KeyPress(var Key: Char); override;
-    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
     procedure DoNodeDblClick(const HitInfo: THitInfo); override;
@@ -854,7 +855,8 @@ begin
   FVolume.Align := alRight;
   FVolume.Setup;
   FVolume.Enabled := Bass.DeviceAvailable;
-  FVolume.Width := 140;
+  FVolume.Constraints.MinWidth := 140;
+  FVolume.Constraints.MaxWidth := 140;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
@@ -1008,24 +1010,6 @@ begin
     FPlayToolbar.Align := alNone;
     FPlayToolbar.Left := FSeek.Width - FPlayToolbar.Width;
   end;
-end;
-
-procedure TSavedTab.BuildTree;
-var
-  i: Integer;
-begin
-  for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
-  begin
-    FSavedTree.AddTrack(AppGlobals.Data.TrackList[i], True);
-  end;
-
-  FSavedTree.Expanded[FSavedTree.FStreamNode] := False;
-
-  FSavedTree.Header.SortColumn := -1;
-
-  FSavedTree.SortTree(FSavedTree.Header.SortColumn, FSavedTree.Header.SortDirection);
-
-  FSavedTree.Change(nil);   // TODO: war das wichtig? ich glaube das sollte updatebuttons machen, was jetzt fehlt.
 end;
 
 procedure TSavedTab.SavedTreeAction(Sender: TObject; Action: TTrackActions;
@@ -1356,16 +1340,7 @@ procedure TSavedTab.CreateHandle;   // TODO: gibt evtl noch andfere stellen wo c
 begin
   inherited CreateHandle;
 
-  BuildTree;
 
-  FSavedTree.Expanded[FSavedTree.FStreamNode] := True;
-  FSavedTree.Expanded[FSavedTree.FFileNode] := True;
-
-  if FSavedTree.RootNodeCount > 0 then
-  begin
-    FSavedTree.Selected[FSavedTree.GetFirst] := True;
-    FSavedTree.FocusedNode := FSavedTree.GetFirst;
-  end;
 end;
 
 procedure TSavedTab.UpdateButtons;
@@ -1564,8 +1539,6 @@ begin
   FTrackList := TTrackList.Create;
 
   FTab := TSavedTab(AOwner);
-
-  Header.Height := GetTextSize('Wyg', Font).cy + 6;
 
   NodeDataSize := SizeOf(TSavedNodeData);
   IncrementalSearch := isVisibleOnly;
@@ -1975,7 +1948,8 @@ begin
   end;
 end;
 
-function TSavedTree.NextPlayingTrack(ConsiderRnd, AddToPlayerList: Boolean): TTrackInfo;
+function TSavedTree.NextPlayingTrack(ConsiderRnd: Boolean;
+  AddToPlayerList: Boolean): TTrackInfo;
   function GetRandom(ExceptFilename: string): TTrackInfo;
   var
     R: Integer;
@@ -2528,14 +2502,6 @@ begin
   Result := StrLIComp(PChar(Text), PChar(CmpTxt), Min(Length(Text), Length(CmpTxt)));
 end;
 
-procedure TSavedTree.DoMeasureItem(TargetCanvas: TCanvas;
-  Node: PVirtualNode; var NodeHeight: Integer);
-begin
-  inherited;
-
-  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
-end;
-
 procedure TSavedTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string);
 var
   NodeData: PSavedNodeData;
@@ -3054,6 +3020,29 @@ begin
   end;
 end;
 
+procedure TSavedTree.CreateHandle;
+var
+  TrackInfo: TTrackInfo;
+begin
+  inherited CreateHandle;
+
+  for TrackInfo in AppGlobals.Data.TrackList do
+    AddTrack(TrackInfo, True);
+
+  SortTree(Header.SortColumn, Header.SortDirection);
+
+  Change(nil);   // TODO: war das wichtig? ich glaube das sollte updatebuttons machen, was jetzt fehlt.
+
+  Expanded[FStreamNode] := True;
+  Expanded[FFileNode] := True;
+
+  if RootNodeCount > 0 then
+  begin
+    Selected[GetFirst] := True;
+    FocusedNode := GetFirst;
+  end;
+end;
+
 procedure TSavedTree.DoDragging(P: TPoint);
 var
   i: Integer;
@@ -3084,7 +3073,7 @@ begin
 
   if (EditLink <> nil) and (EditLink is TStringEditLink) then
   begin
-    Edit := TStringEditLink(EditLink).Edit;
+    Edit := (EditLink as TStringEditLink).Edit;
     Edit.SelStart := 0;
     Edit.SelLength := Length(Edit.Text) - Length(ExtractFileExt(Edit.Text));
   end;

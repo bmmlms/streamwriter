@@ -28,10 +28,29 @@ unit AppData;
 interface
 
 uses
-  Windows, SysUtils, Classes, Generics.Collections, Registry, SyncObjs, AppDataBase,
-  LanguageObjects, LanguageIcons, ExtendedStream, Forms, Functions, Base64,
-  AddonManager, PostProcessManager, Logging, AudioFunctions, TypeDefs,
-  Messages, DataManager, SWFunctions, CommandLine, Graphics;
+  AddonManager,
+  AppDataBase,
+  AudioFunctions,
+  Base64,
+  Classes,
+  CommandLine,
+  DataManager,
+  ExtendedStream,
+  Forms,
+  Functions,
+  Generics.Collections,
+  Graphics,
+  LanguageIcons,
+  LanguageObjects,
+  Logging,
+  Messages,
+  PostProcessManager,
+  Registry,
+  SWFunctions,
+  SyncObjs,
+  SysUtils,
+  TypeDefs,
+  Windows;
 
 type
   // Do not change the order of items in the following enums!
@@ -349,9 +368,9 @@ procedure CreateAppData;
 function InitAppDataStageOne: Boolean;
 function InitAppDataStageTwo: Boolean;
 
-const LoadErrorMsg = 'You can delete it to avoid this error when streamWriter starts by clicking "Yes".'#13#10 +
-                     'WARNING: When clicking "Yes" all data saved in the file will be lost!'#13#10 +
-                     'The file will not be overwritten with new data until it was loaded or deleted.';
+const
+  LoadErrorMsg = 'You can delete it to avoid this error when streamWriter starts by clicking "Yes".'#13#10 + 'WARNING: When clicking "Yes" all data saved in the file will be lost!'#13#10 +
+    'The file will not be overwritten with new data until it was loaded or deleted.';
 
 var
   AppGlobals: TAppData;
@@ -374,7 +393,7 @@ begin
   FData := TDataLists.Create;
 
   // The number of the current build
-  FGitSHA := '89114eb';
+  FGitSHA := '79d72c9';
   FCodename := 'Vivo';
 
   // Adjust dimensions of the main-form
@@ -431,38 +450,38 @@ begin
     FLogHeaderPosition[i] := -1;
 
   // Set some application-specific settings
-  SetLength(FProjectUpdateLinks, 2);                          // TODO: warum überall slashes am ende der urls..
+  SetLength(FProjectUpdateLinks, 2);
   {$IFDEF DEBUG}
-  FProjectUpdateLinks[0] := 'https://streamwriter.gaia/';
-  FProjectUpdateLinks[1] := 'https://streamwriter.gaia/';
+  FProjectUpdateLinks[0] := 'https://streamwriter.gaia';
+  FProjectUpdateLinks[1] := 'https://streamwriter.gaia';
   {$ELSE}
-  FProjectUpdateLinks[0] := 'https://streamwriter.org/';
-  FProjectUpdateLinks[1] := 'https://streamwriter.de/';
+  FProjectUpdateLinks[0] := 'https://streamwriter.org';
+  FProjectUpdateLinks[1] := 'https://streamwriter.de';
   {$ENDIF}
-  FProjectHomepageLink := 'https://streamwriter.org/';
-  FProjectLink := 'https://streamwriter.org/';
+  FProjectHomepageLink := 'https://streamwriter.org';
+  FProjectLink := 'https://streamwriter.org';
 
-  FProjectHelpLink := 'https://streamwriter.org/wiki/artikel/help/';
-  FProjectHelpLinkMain := 'https://streamwriter.org/wiki/artikel/mainwindow/';
-  FProjectHelpLinkSettings := 'https://streamwriter.org/wiki/artikel/settings/';
-  FProjectHelpLinkAutoSettings := 'https://streamwriter.org/wiki/artikel/autosettings/';
-  FProjectHelpLinkStreamSettings := 'https://streamwriter.org/wiki/artikel/streamsettings/';
+  FProjectHelpLink := 'https://streamwriter.org/wiki/artikel/help';
+  FProjectHelpLinkMain := 'https://streamwriter.org/wiki/artikel/mainwindow';
+  FProjectHelpLinkSettings := 'https://streamwriter.org/wiki/artikel/settings';
+  FProjectHelpLinkAutoSettings := 'https://streamwriter.org/wiki/artikel/autosettings';
+  FProjectHelpLinkStreamSettings := 'https://streamwriter.org/wiki/artikel/streamsettings';
 
-  FProjectForumLink := 'https://streamwriter.org/forum/';
-  FProjectDonateLink := 'https://streamwriter.org/inhalt/donate/';
+  FProjectForumLink := 'https://streamwriter.org/forum';
+  FProjectDonateLink := 'https://streamwriter.org/inhalt/donate';
 
-  // Should multiple instanced be allowed?
+  // Should multiple instances be allowed?
   CommandLine := TCommandLine.Create(GetCommandLineW);
   try
     if CommandLine.GetParam('-enablemultipleinstances') = nil then
-    begin
-      OnlyOne := True;
-    end else
+      OnlyOne := True
+    else
     begin
       OnlyOne := False;
       if (CommandLine.GetParam('-datadir') = nil) or (CommandLine.GetParam('-tempdir') = nil) then
       begin
-        MsgBox(0, Format(_('When the argument -enablemultipleinstances is supplied you also need to supply -datadir and -tempdir.'#13#10'Make sure to supply distinct directories to both launched streamWriter instances.'), [AppName]), _('Info'), MB_ICONINFORMATION);
+        MsgBox(0, Format(_('When the argument -enablemultipleinstances is supplied you also need to supply -datadir and -tempdir.'#13#10'Make sure to supply distinct directories to both launched streamWriter instances.'), [AppName]),
+          _('Info'), MB_ICONINFORMATION);
         TerminateProcess(GetCurrentProcess, 1);
       end;
     end;
@@ -493,9 +512,9 @@ begin
   begin
     repeat
       if (SR.Name <> '.') and (SR.Name <> '..') then
-        DeleteFile(TempDir + SR.Name);
+        SysUtils.DeleteFile(TempDir + SR.Name);
     until FindNext(SR) <> 0;
-    FindClose(SR);
+    SysUtils.FindClose(SR);
   end;
 end;
 
@@ -506,7 +525,7 @@ begin
   FPostProcessManager.Free;
   FData.Free;
 
-  DeleteFile(TempDir + 'playlist.m3u');
+  SysUtils.DeleteFile(TempDir + 'playlist.m3u');
   DeleteUndoFiles;
 
   inherited;
@@ -779,11 +798,8 @@ begin
   FStorage.Read('NodeTextColorSelectedFocused', Integer(FNodeTextColorSelectedFocused), $7F000000, 'Appearance');
   FStorage.Read('NodeBackgroundColor', Integer(FNodeBackgroundColor), $7F000000, 'Appearance');
 
-  if (FNodeTextColor <> $7F000000) and (FNodeTextColorSelected <> $7F000000) and (FNodeTextColorSelectedFocused <> $7F000000) and
-     (FNodeBackgroundColor <> $7F000000) then
-  begin
+  if (FNodeTextColor <> $7F000000) and (FNodeTextColorSelected <> $7F000000) and (FNodeTextColorSelectedFocused <> $7F000000) and (FNodeBackgroundColor <> $7F000000) then
     FNodeColorsLoaded := True;
-  end;
 
   FStorage.Read('BrowserSortType', FBrowserSortType, 3, 'Streambrowser');
   FStorage.Read('BrowserSortDir', FBrowserSortDir, 1, 'Streambrowser');
@@ -792,14 +808,12 @@ begin
   FStorage.Read('BrowserSearchAudioType', FBrowserSearchAudioType, 0, 'Streambrowser');
   FStorage.Read('BrowserSearchBitrate', FBrowserSearchBitrate, 0, 'Streambrowser');
 
-  if (DefaultActionTmp > Ord(High(TClientActions))) or
-     (DefaultActionTmp < Ord(Low(TClientActions))) then
+  if (DefaultActionTmp > Ord(High(TClientActions))) or (DefaultActionTmp < Ord(Low(TClientActions))) then
     FDefaultAction := caStartStop
   else
     FDefaultAction := TClientActions(DefaultActionTmp);
 
-  if (DefaultActionBrowser > Ord(High(TStreamOpenActions))) or
-     (DefaultActionBrowser < Ord(Low(TStreamOpenActions))) then
+  if (DefaultActionBrowser > Ord(High(TStreamOpenActions))) or (DefaultActionBrowser < Ord(Low(TStreamOpenActions))) then
     FDefaultActionBrowser := oaStart
   else
     FDefaultActionBrowser := TStreamOpenActions(DefaultActionBrowser);
@@ -835,18 +849,13 @@ begin
   Recovered := False;
   {$IFNDEF DEBUG}
   if FileExists(AppGlobals.RecoveryFile) then
-  begin
-    if (CommandLine.GetParam('-autoloadrecovery') <> nil)
-        or (MsgBox(0, _('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES) then
-    begin
+    if (CommandLine.GetParam('-autoloadrecovery') <> nil) or (MsgBox(0, _('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES) then
       try
         FData.Load(True);
         Recovered := True;
       except
         MsgBox(0, _('Data could not be loaded.'), _('Error'), MB_ICONERROR);
       end;
-    end;
-  end;
   {$ENDIF}
 
   try
@@ -857,34 +866,28 @@ begin
     begin
       try
         FData.Free;
-      except end;
+      except
+      end;
       FData := TDataLists.Create;
 
       // Damit beim Beenden nichts überschrieben wird.
       FData.LoadError := True;
 
       if E is EVersionException then
-      begin
         Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it was saved with a newer version of streamWriter. ' +
-                                  'To use the current file exit streamWriter and use a newer version of the application.') + #13#10 + _(LoadErrorMsg),
-                                [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
-      end else if E is EUnsupportedFormatException then
-      begin
-        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it is contains an exported profile and no regular saved data.') + #13#10 + _(LoadErrorMsg),
-                                [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
-      end else if E is EUnknownFormatException then
-      begin
-        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it''s format is unknown.') + #13#10 + _(LoadErrorMsg),
-                                [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
-      end else
-      begin
-        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it is corrupted.') + #13#10 + _(LoadErrorMsg),
-                                [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
-      end;
+          'To use the current file exit streamWriter and use a newer version of the application.') + #13#10 + _(LoadErrorMsg), [E.Message]),
+          _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
+      else if E is EUnsupportedFormatException then
+        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it is contains an exported profile and no regular saved data.') + #13#10 + _(LoadErrorMsg), [E.Message]),
+          _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
+      else if E is EUnknownFormatException then
+        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it''s format is unknown.') + #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
+      else
+        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it is corrupted.') + #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
 
       if Res = IDYES then
       begin
-        DeleteFile(E.Message);
+        SysUtils.DeleteFile(E.Message);
         FData.LoadError := False;
       end;
     end;
@@ -1067,6 +1070,3 @@ finalization
   FreeAndNil(AppGlobals);
 
 end.
-
-
-

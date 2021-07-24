@@ -95,12 +95,9 @@ type
       var Effect: LongWord): Boolean; override;
     procedure DoEdit; override;
     procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
-    function DoEndEdit: Boolean; override;
     procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string); override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo;
       ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
-    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode;
-      var NodeHeight: Integer); override;
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
@@ -201,8 +198,6 @@ begin
   FBrowser := Browser;
 
   FDragTreshold := 6;
-
-  Header.Height := GetTextSize('Wyg', Font).cy + 6;
 
   NodeDataSize := SizeOf(TClientNodeData);
   IncrementalSearch := isVisibleOnly;
@@ -457,14 +452,6 @@ begin
   Result := StrLIComp(PChar(Text), PChar(CellText), Min(Length(Text), Length(CellText)));
 end;
 
-procedure TMClientView.DoMeasureItem(TargetCanvas: TCanvas;
-  Node: PVirtualNode; var NodeHeight: Integer);
-begin
-  inherited;
-
-  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
-end;
-
 procedure TMClientView.DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string);
 var
   NodeData: PClientNodeData;
@@ -529,7 +516,6 @@ procedure TMClientView.CreateHandle;
 begin
   inherited CreateHandle;
 
-  // TODO: das hier auch bei savedtrab so machen. da ist es z.z. im createhandle vom tab selber und nicht vom tree
   if RootNodeCount > 0 then
   begin
     Selected[GetFirst] := True;
@@ -558,7 +544,7 @@ begin
 
         if NodeData.Client.Playing or NodeData.Client.Paused then
         begin
-          PaintInfo.Canvas.Font.Color := HTML2Color('#0078ff');    // TODO: diese funktionsaufrufe sind schon hart...
+          PaintInfo.Canvas.Font.Color := HTML2Color('#0078ff');
           Break;
         end;
 
@@ -685,26 +671,23 @@ end;
 
 procedure TMClientView.DoEdit;
 var
-  P: Integer;
   Edit: TVTEdit;
+  NodeData: PClientNodeData;
 begin
   inherited;
 
   if (EditLink <> nil) and (EditLink is TStringEditLink) then
   begin
-    Edit := TStringEditLink(EditLink).Edit;
-    P := Pos('(', Edit.Text);
-    if P > 0 then
-    begin
-      Edit.Text := Copy(Edit.Text, 1, P - 2);
-      Edit.SelectAll;
-    end;
-  end;
-end;
+    NodeData := GetNodeData((EditLink as TStringEditLink).Node);
+    Edit := (EditLink as TStringEditLink).Edit;
 
-function TMClientView.DoEndEdit: Boolean;
-begin
-  Result := inherited;
+    if NodeData.Client <> nil then
+      Edit.Text := NodeData.Client.Entry.CustomName
+    else
+      Edit.Text := NodeData.Category.Name;
+
+    Edit.SelectAll;
+  end;
 end;
 
 function TMClientView.GetClientNodeData(Client: TICEClient): PClientNodeData;
@@ -992,7 +975,7 @@ begin
 
   // Den Check auf NodeData wegen Bugreport von "Klaus <knatterton_nick@gmx.net>" eingebaut...
   Allowed := (NodeData <> nil) and
-             (((NodeData.Client <> nil) and (not NodeData.Client.AutoRemove)) or
+             (((NodeData.Client <> nil) and (not NodeData.Client.AutoRemove) and (NodeData.Client.Entry.CustomName <> '')) or
               ((NodeData.Category <> nil) and (not NodeData.Category.IsAuto)));
 end;
 

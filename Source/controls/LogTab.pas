@@ -23,12 +23,42 @@ unit LogTab;
 interface
 
 uses
-  Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
-  MControls, LanguageObjects, Tabs, Functions, AppData, Logging, VirtualTrees,
-  HomeCommunication, DataManager, ImgList, Graphics, Math, Generics.Collections,
-  Menus, ChartsTabAdjustTitleName, Forms, TypeDefs, MessageBus, AppMessages,
-  HomeCommands, Commands, GUIFunctions, SharedData, Messages,
-  DateUtils, SharedControls, Clipbrd, Images;
+  AppData,
+  AppMessages,
+  Buttons,
+  ChartsTabAdjustTitleName,
+  Classes,
+  Clipbrd,
+  ComCtrls,
+  Commands,
+  Controls,
+  DataManager,
+  DateUtils,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Generics.Collections,
+  Graphics,
+  GUIFunctions,
+  HomeCommands,
+  HomeCommunication,
+  Images,
+  ImgList,
+  LanguageObjects,
+  Logging,
+  Math,
+  MControls,
+  Menus,
+  MessageBus,
+  Messages,
+  SharedControls,
+  SharedData,
+  StdCtrls,
+  SysUtils,
+  Tabs,
+  TypeDefs,
+  VirtualTrees,
+  Windows;
 
 type
   TFilterTypes = set of TLogLevel;
@@ -85,11 +115,10 @@ type
     FButtonCopy: TToolButton;
     FButtonClear: TToolButton;
   protected
+    procedure CreateHandle; override;
     procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
-
-    procedure PostTranslate;
   end;
 
   TLogTree = class(TVirtualStringTree)
@@ -115,7 +144,6 @@ type
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String); override;
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
-    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
@@ -202,7 +230,7 @@ begin
         NodeData := FLogTree.GetNodeData(Node);
         if FLogTree.Selected[Node] or (FLogTree.SelectedCount = 0) then
           s := s + TimeToStr(NodeData.LogEntry.Time) + ' - ' + NodeData.LogEntry.TextSource + ' - ' + NodeData.LogEntry.Text + #13#10;
-        Node := FLogTree.GetNext(Node)
+        Node := FLogTree.GetNext(Node);
       end;
       Clipboard.Clear;
       Clipboard.SetTextBuf(PChar(s));
@@ -228,8 +256,7 @@ begin
   UpdateButtons;
 end;
 
-procedure TLogTab.LogTreeChange(Sender: TBaseVirtualTree;
-  Node: PVirtualNode);
+procedure TLogTab.LogTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
 begin
   UpdateButtons;
 end;
@@ -281,41 +308,33 @@ end;
 
 procedure TLogTab.PopupMenuClick(Sender: TObject);
 begin
-  if (Sender = FLogTree.FPopupMenu.FItemDebug) or (Sender = FLogTree.FPopupMenu.FItemInfo)
-    or (Sender = FLogTree.FPopupMenu.FItemWarning) or (Sender = FLogTree.FPopupMenu.FItemError)
-  then
-  begin
+  if (Sender = FLogTree.FPopupMenu.FItemDebug) or (Sender = FLogTree.FPopupMenu.FItemInfo) or (Sender = FLogTree.FPopupMenu.FItemWarning) or (Sender = FLogTree.FPopupMenu.FItemError) then
     TMenuItem(Sender).Checked := not TMenuItem(Sender).Checked;
-  end;
 
   if Sender = FLogTree.FPopupMenu.FItemDebug then
   begin
     FLogPanel.FButtonDebug.Down := TMenuItem(Sender).Checked;
-    ButtonClick(FLogPanel.FButtonDebug)
+    ButtonClick(FLogPanel.FButtonDebug);
   end else if Sender = FLogTree.FPopupMenu.FItemInfo then
   begin
     FLogPanel.FButtonInfo.Down := TMenuItem(Sender).Checked;
-    ButtonClick(FLogPanel.FButtonInfo)
+    ButtonClick(FLogPanel.FButtonInfo);
   end else if Sender = FLogTree.FPopupMenu.FItemWarning then
   begin
     FLogPanel.FButtonWarning.Down := TMenuItem(Sender).Checked;
-    ButtonClick(FLogPanel.FButtonWarning)
+    ButtonClick(FLogPanel.FButtonWarning);
   end else if Sender = FLogTree.FPopupMenu.FItemError then
   begin
     FLogPanel.FButtonError.Down := TMenuItem(Sender).Checked;
-    ButtonClick(FLogPanel.FButtonError)
+    ButtonClick(FLogPanel.FButtonError);
   end else if Sender = FLogTree.FPopupMenu.FItemCopy then
-  begin
     ButtonClick(FLogPanel.FButtonCopy)
-  end else if Sender = FLogTree.FPopupMenu.FItemClear then
-  begin
+  else if Sender = FLogTree.FPopupMenu.FItemClear then
     ButtonClick(FLogPanel.FButtonClear);
-  end;
 end;
 
 procedure TLogTab.PostTranslate;
 begin
-  FLogPanel.PostTranslate;
   FLogTree.PostTranslate;
 end;
 
@@ -361,7 +380,7 @@ begin
     FLog.Delete(0);
   end;
 
-  LogEntry := TLogEntry.Create(Text, SourceText, Time, Source,  LogType, LogLevel);
+  LogEntry := TLogEntry.Create(Text, SourceText, Time, Source, LogType, LogLevel);
   FLog.Add(LogEntry);
 
   Add(LogEntry);
@@ -399,7 +418,6 @@ begin
 
   Indent := 0;
 
-  Header.Height := GetTextSize('Wyg', Font).cy + 6;
   AutoScrollDelay := 50;
   AutoScrollInterval := 400;
   Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoVisible, hoShowSortGlyphs];
@@ -444,10 +462,8 @@ begin
     FFilterTypes := FFilterTypes + [llError];
 
   for i := 1 to Header.Columns.Count - 1 do
-  begin
     if not ((AppGlobals.LogCols and (1 shl i)) <> 0) then
       Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
-  end;
 
   FitColumns;
 end;
@@ -491,8 +507,7 @@ begin
   end;
 end;
 
-procedure TLogTree.DoHeaderDragged(Column: TColumnIndex;
-  OldPosition: TColumnPosition);
+procedure TLogTree.DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition);
 begin
   inherited;
 
@@ -550,15 +565,7 @@ begin
 
   Result := inherited;
 
-  FHeaderDragSourcePosition := Header.Columns[Column].Position
-end;
-
-procedure TLogTree.DoMeasureItem(TargetCanvas: TCanvas;
-  Node: PVirtualNode; var NodeHeight: Integer);
-begin
-  inherited;
-
-  NodeHeight := GetTextSize('Wyg', Font).cy + 6;
+  FHeaderDragSourcePosition := Header.Columns[Column].Position;
 end;
 
 procedure TLogTree.FitColumns;
@@ -583,24 +590,18 @@ begin
   end;
 
   if AppGlobals.LogHeaderPositionLoaded then
-  begin
     for i := 1 to Header.Columns.Count - 1 do
       Header.Columns[i].Position := AppGlobals.LogHeaderPosition[i];
-  end;
 end;
 
 function TLogTree.MatchesFilter(LogEntry: TLogEntry): Boolean;
 
 begin
-  Result := (LogEntry.Level in FFilterTypes)
-    and ((FFilterPattern = '*')
-      or (Like(LowerCase(LogEntry.Text), FFilterPattern))
-      or (Like(LowerCase(LogEntry.TextSource), FFilterPattern))
-      or (Like(LowerCase(TimeToStr(LogEntry.Time)), FFilterPattern)));
+  Result := (LogEntry.Level in FFilterTypes) and ((FFilterPattern = '*') or (Like(LowerCase(LogEntry.Text), FFilterPattern)) or (Like(LowerCase(LogEntry.TextSource), FFilterPattern)) or
+    (Like(LowerCase(TimeToStr(LogEntry.Time)), FFilterPattern)));
 end;
 
-procedure TLogTree.MenuColsAction(Sender: TVirtualStringTree;
-  Index: Integer; Checked: Boolean);
+procedure TLogTree.MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
 var
   Show: Boolean;
 begin
@@ -609,12 +610,9 @@ begin
     Show := False;
 
   if Show then
-  begin
-    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible];
-  end else
-  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible]
+  else
     Header.Columns[Index].Options := Header.Columns[Index].Options - [coVisible];
-  end;
 
   AppGlobals.LogCols := AppGlobals.LogCols xor (1 shl Index);
 end;
@@ -644,8 +642,7 @@ begin
   end;
 end;
 
-procedure TLogTree.PaintImage(var PaintInfo: TVTPaintInfo;
-  ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
+procedure TLogTree.PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
 var
   L: Integer;
   NodeData: PLogNodeData;
@@ -767,16 +764,22 @@ begin
 
   FLabel := TLabel.Create(Self);
   FLabel.Parent := Self;
+  FLabel.Align := alLeft;
+  FLabel.Layout := tlCenter;
   FLabel.Caption := 'Search:';
+  FLabel.Left := -100;
 
   FSearch := TEdit.Create(Self);
   FSearch.Parent := Self;
+  FSearch.Align := alLeft;
 
   FToolbar := TToolBar.Create(Self);
   FToolbar.Parent := Self;
   FToolbar.ShowHint := True;
   FToolbar.EdgeBorders := [];
-
+  FToolbar.Align := alNone;
+  FToolbar.Anchors := [akTop, akRight];
+  FToolbar.AutoSize := True;
   FToolbar.Images := modSharedData.imgImages;
 
   FButtonDebug := TToolButton.Create(FToolbar);
@@ -824,30 +827,21 @@ begin
   FButtonClear.Hint := 'Clear';
   FButtonClear.ImageIndex := TImages.ERASE;
 
-  FToolbar.Align := alNone;
-  FToolbar.AutoSize := True;
-
-  PostTranslate;
-
-  FLabel.Left := 0;
   FSearch.Width := 200;
-  FSearch.Top := 1;
 end;
 
-procedure TLogPanel.PostTranslate;
+procedure TLogPanel.CreateHandle;
 begin
-  FSearch.Left := FLabel.Left + FLabel.Width + 6;
+  inherited CreateHandle;
+
+  FToolbar.Left := ClientWidth - FToolbar.Width;
 end;
 
 procedure TLogPanel.ControlsAligned;
 begin
   inherited ControlsAligned;
 
-  FToolbar.Left := ClientWidth - FToolbar.Width;
-
-  FLabel.Top := (FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2);
-
-  ClientHeight := FSearch.Top * 2 + FSearch.Height + MulDiv(3, Screen.PixelsPerInch, 96);
+  ClientHeight := FToolbar.Height;
 end;
 
 { TLogEntry }
@@ -867,14 +861,13 @@ end;
 { TLogPopup }
 
 constructor TLogPopup.Create(AOwner: TComponent);
-var
-  Sep: TMenuItem;
 begin
   inherited;
-                                                 // TODO: hier fehlen im popup die image indices
+
   FItemDebug := TMenuItem.Create(Self);
   FItemDebug.Caption := '&Debug';
   FItemDebug.Checked := (AppGlobals.LogFilterTypes and (1 shl Integer(llDebug))) <> 0;
+  FItemDebug.ImageIndex := TImages.BUG;
   Items.Add(FItemDebug);
   {$IFNDEF DEBUG}
   FItemDebug.Visible := False;
@@ -883,16 +876,19 @@ begin
   FItemInfo := TMenuItem.Create(Self);
   FItemInfo.Caption := '&Info';
   FItemInfo.Checked := (AppGlobals.LogFilterTypes and (1 shl Integer(llInfo))) <> 0;
+  FItemInfo.ImageIndex := TImages.INFORMATION;
   Items.Add(FItemInfo);
 
   FItemWarning := TMenuItem.Create(Self);
   FItemWarning.Caption := '&Warning';
   FItemWarning.Checked := (AppGlobals.LogFilterTypes and (1 shl Integer(llWarning))) <> 0;
+  FItemWarning.ImageIndex := TImages.ERROR;
   Items.Add(FItemWarning);
 
   FItemError := TMenuItem.Create(Self);
   FItemError.Caption := '&Error';
   FItemError.Checked := (AppGlobals.LogFilterTypes and (1 shl Integer(llError))) <> 0;
+  FItemError.ImageIndex := TImages.EXCLAMATION;
   Items.Add(FItemError);
 
   Self.Items.AddSeparator;
@@ -909,4 +905,3 @@ begin
 end;
 
 end.
-
