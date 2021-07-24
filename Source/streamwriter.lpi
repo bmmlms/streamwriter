@@ -622,9 +622,8 @@
         <IsPartOfProject Value="True"/>
       </Unit110>
       <Unit111>
-        <Filename Value="controls\cuttoolbar.pas"/>
+        <Filename Value="controls\CutToolBar.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="CutToolBar"/>
       </Unit111>
       <Unit112>
         <Filename Value="controls\chartspopup.pas"/>

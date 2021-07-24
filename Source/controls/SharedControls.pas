@@ -84,6 +84,8 @@ type
 
   TOnGetVolumeBeforeMute = function(Sender: TObject): Integer of object;
 
+  { TVolumePanel }
+
   TVolumePanel = class(TPanel)
   private
     FTrackBarPanel: TPanel;
@@ -103,11 +105,10 @@ type
     function FGetVolume: Integer;
   protected
     procedure SetEnabled(Value: Boolean); override;
+    procedure CalculatePreferredSize(var PreferredWidth, PreferredHeight: integer; WithThemeSpace: Boolean); override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
-
-    procedure Setup;
 
     property OnVolumeChange: TNotifyEvent read FVolumeChange write FVolumeChange;
     property Volume: Integer read FGetVolume write FSetVolume;
@@ -144,34 +145,12 @@ begin
   FTrackBar.GripperVisible := Value;
 end;
 
-procedure TVolumePanel.Setup;
+procedure TVolumePanel.CalculatePreferredSize(var PreferredWidth,
+  PreferredHeight: integer; WithThemeSpace: Boolean);
 begin
-  BevelOuter := bvNone;
+  inherited;
 
-  FMute.Hint := 'Mute';
-  FMute.ShowHint := True;
-  FMute.Flat := True;
-  FMute.Align := alLeft;
-  FMute.ClientWidth := 22;
-  FMute.GroupIndex := 1;
-  FMute.AllowAllUp := True;
-  FMute.Down := True;
-  FMute.OnClick := MuteClick;
-  FMute.Parent := Self;
-
-  FTrackBarPanel.Align := alClient;
-  FTrackBarPanel.BevelOuter := bvNone;
-  FTrackBarPanel.Parent := Self;
-
-  FTrackBar.Max := 100;
-  FTrackBar.Align := alClient;
-  FTrackBar.OnPositionChanged := VolumeChange;
-  FTrackBar.Parent := FTrackBarPanel;
-  FTrackBar.GripperVisible := True;
-  FTrackBar.NotifyOnMove := True;
-  FTrackBar.NotifyOnDown := True;
-
-  RefreshButtonState(True);
+  PreferredHeight := FMute.Height;
 end;
 
 procedure TVolumePanel.MuteClick(Sender: TObject);
@@ -237,11 +216,36 @@ constructor TVolumePanel.Create(AOwner: TComponent);
 begin
   inherited;
 
-  FMute := TSpeedButton.Create(Self);
-  FTrackBar := TSeekBar.Create(Self);
-  FTrackBarPanel := TPanel.Create(Self);
+  BevelOuter := bvNone;
 
+  FMute := TSpeedButton.Create(Self);
+  FMute.Hint := 'Mute';
+  FMute.ShowHint := True;
+  FMute.Flat := True;
+  FMute.Align := alLeft;
+  FMute.ClientWidth := 22;
+  FMute.GroupIndex := 1;
+  FMute.AllowAllUp := True;
+  FMute.Down := True;
+  FMute.OnClick := MuteClick;
+  FMute.Parent := Self;
   FMute.Images := modSharedData.imgImages;
+
+  FTrackBarPanel := TPanel.Create(Self);
+  FTrackBarPanel.Align := alClient;
+  FTrackBarPanel.BevelOuter := bvNone;
+  FTrackBarPanel.Parent := Self;
+
+  FTrackBar := TSeekBar.Create(Self);
+  FTrackBar.Max := 100;
+  FTrackBar.Align := alClient;
+  FTrackBar.OnPositionChanged := VolumeChange;
+  FTrackBar.Parent := FTrackBarPanel;
+  FTrackBar.GripperVisible := True;
+  FTrackBar.NotifyOnMove := True;
+  FTrackBar.NotifyOnDown := True;
+
+  RefreshButtonState(True);
 end;
 
 destructor TVolumePanel.Destroy;

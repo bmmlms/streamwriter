@@ -260,7 +260,6 @@ type
 
     procedure TopPanelResize(Sender: TObject);
   protected
-    procedure CreateHandle; override;
     procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
@@ -853,10 +852,8 @@ begin
   FVolume := TVolumePanel.Create(Self);
   FVolume.Parent := FTopRightTopPanel;
   FVolume.Align := alRight;
-  FVolume.Setup;
   FVolume.Enabled := Bass.DeviceAvailable;
-  FVolume.Constraints.MinWidth := 140;
-  FVolume.Constraints.MaxWidth := 140;
+  FVolume.Width := 140;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
@@ -1334,13 +1331,6 @@ begin
   begin
     FCoverPanel.Width := FCoverPanel.Height + 8;
   end;
-end;
-
-procedure TSavedTab.CreateHandle;   // TODO: gibt evtl noch andfere stellen wo createhandle überschreiben am besten ist?
-begin
-  inherited CreateHandle;
-
-
 end;
 
 procedure TSavedTab.UpdateButtons;

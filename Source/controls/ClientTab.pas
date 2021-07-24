@@ -633,9 +633,7 @@ begin
   FVolume := TVolumePanel.Create(Self);
   FVolume.Parent := FToolbarPanel;
   FVolume.Align := alRight;
-  FVolume.Constraints.MinWidth := 140;
-  FVolume.Constraints.MaxWidth := 140;
-  FVolume.Setup;
+  FVolume.Width := 140;
   FVolume.Enabled := Bass.DeviceAvailable;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeVolumeChange;

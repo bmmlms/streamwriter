@@ -32,6 +32,8 @@ uses
 type
   TFileSavedEvent = procedure(Sender: TObject; AudioInfo: TAudioInfo) of object;
 
+  { TCutTab }
+
   TCutTab = class(TMainTabSheet)
   private
     FToolbarPanel: TPanel;
@@ -64,6 +66,8 @@ type
     function VolumeGetVolumeBeforeMute(Sender: TObject): Integer;
 
     procedure MessageReceived(Msg: TMessageBase);
+  protected
+    procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent; Track: TTrackInfo; Filename: string = ''); reintroduce;
     destructor Destroy; override;
@@ -104,6 +108,8 @@ constructor TCutTab.Create(AOwner: TComponent; Track: TTrackInfo; Filename: stri
 begin
   inherited Create(AOwner);
 
+  MsgBus.AddSubscriber(MessageReceived);
+
   FTrack := Track;
   if Track <> nil then
     FFilename := Track.Filename
@@ -112,17 +118,45 @@ begin
 
   FToolbarPanel := TPanel.Create(Self);
   FToolbarPanel.Parent := Self;
+  FToolbarPanel.Align := alTop;
+  FToolbarPanel.BevelOuter := bvNone;
 
   FToolBar := TCutToolBar.Create(Self);
   FToolBar.Parent := FToolbarPanel;
+  FToolBar.Align := alClient;
+  FToolBar.Images := modSharedData.imgImages;
+  FToolBar.Setup;
+  FToolbar.Save.OnClick := SaveClick;
+  FToolBar.PosEdit.OnClick := PosClick;
+  FToolBar.PosPlay.OnClick := PosClick;
+  FToolBar.ZoomIn.OnClick := ZoomInClick;
+  FToolBar.ZoomOut.OnClick := ZoomOutClick;
+  FToolBar.PosEffectsMarker.OnClick := PosClick;
+  FToolBar.AutoCut.OnClick := AutoCutClick;
+  FToolBar.Cut.OnClick := CutClick;
+  FToolBar.Undo.OnClick := UndoClick;
+  FToolBar.ApplyFadein.OnClick := ApplyFadeinClick;
+  FToolBar.ApplyFadeout.OnClick := ApplyFadeoutClick;
+  FToolBar.ApplyEffects.OnClick := ApplyEffectsClick;
+  FToolBar.Play.OnClick := PlayClick;
+  FToolBar.Stop.OnClick := StopClick;
+  {$IFDEF DEBUG}
+  FToolBar.FAutoCutAutoDetect.OnClick := AutoCutAutoDetectClick;
+  {$ENDIF}
 
   FVolume := TVolumePanel.Create(Self);
   FVolume.Parent := FToolbarPanel;
+  FVolume.Align := alRight;
+  FVolume.Enabled := Bass.DeviceAvailable;
+  FVolume.Width := 140;
+  FVolume.Volume := Players.Volume;
+  FVolume.OnVolumeChange := VolumeTrackbarChange;
+  FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
 
   FCutView := TCutView.Create(Self);
   FCutView.Parent := Self;
-
-  MsgBus.AddSubscriber(MessageReceived);
+  FCutView.Align := alClient;
+  FCutView.OnStateChanged := CutViewStateChanged;
 
   ImageIndex := TImages.CUT;
   ShowCloseButton := True;
@@ -136,45 +170,6 @@ begin
     Caption := ExtractFileName(StringReplace(Filename, '&', '&&', [rfReplaceAll]));
     FCutView.LoadFile(Filename, False, True);
   end;
-
-  FToolbarPanel.Align := alTop;
-  FToolbarPanel.BevelOuter := bvNone;
-  FToolbarPanel.AutoSize := True;
-
-  FToolBar.Images := modSharedData.imgImages;
-  FToolBar.Setup;
-
-  FToolbar.Save.OnClick := SaveClick;
-  FToolBar.PosEdit.OnClick := PosClick;
-  FToolBar.PosPlay.OnClick := PosClick;
-  FToolBar.ZoomIn.OnClick := ZoomInClick;
-  FToolBar.ZoomOut.OnClick := ZoomOutClick;
-  FToolBar.PosEffectsMarker.OnClick := PosClick;
-  FToolBar.AutoCut.OnClick := AutoCutClick;
-
-  {$IFDEF DEBUG}
-  //FToolBar.FAutoCutAutoDetect.OnClick := AutoCutAutoDetectClick;
-  {$ENDIF}
-
-  FToolBar.Cut.OnClick := CutClick;
-  FToolBar.Undo.OnClick := UndoClick;
-  FToolBar.ApplyFadein.OnClick := ApplyFadeinClick;
-  FToolBar.ApplyFadeout.OnClick := ApplyFadeoutClick;
-  FToolBar.ApplyEffects.OnClick := ApplyEffectsClick;
-  FToolBar.Play.OnClick := PlayClick;
-  FToolBar.Stop.OnClick := StopClick;
-
-  FVolume.Align := alRight;
-  FVolume.Setup;
-  FVolume.Enabled := Bass.DeviceAvailable;
-  FVolume.Constraints.MinWidth := 140;
-  FVolume.Constraints.MaxWidth := 140;
-  FVolume.Volume := Players.Volume;
-  FVolume.OnVolumeChange := VolumeTrackbarChange;
-  FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
-
-  FCutView.Align := alClient;
-  FCutView.OnStateChanged := CutViewStateChanged;
 
   UpdateButtons;
   Language.Translate(Self);
@@ -403,6 +398,13 @@ begin
     if VolMsg.Volume <> FVolume.Volume then
       FVolume.Volume := TVolumeChangedMsg(Msg).Volume;
   end;
+end;
+
+procedure TCutTab.ControlsAligned;
+begin
+  inherited ControlsAligned;
+
+  FToolbarPanel.ClientHeight := FToolbar.Height;
 end;
 
 procedure TCutTab.SaveClick(Sender: TObject);
