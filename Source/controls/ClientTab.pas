@@ -192,8 +192,6 @@ type
     procedure MessageReceived(Msg: TMessageBase);
 
     procedure PlaybackTimerTimer(Sender: TObject);
-  protected
-    procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList; Clients: TClientManager; Popup: TPopupMenu); reintroduce;
     destructor Destroy; override;
@@ -617,6 +615,7 @@ begin
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Parent := Self;
   FToolbarPanel.Top := -100;
+  FToolbarPanel.AutoSize := True;
 
   FAddressBar := TClientAddressBar.Create(Self);
   FAddressBar.Align := alTop;
@@ -627,20 +626,19 @@ begin
 
   FToolbar := Toolbar;
   FToolbar.Align := alClient;
-  FToolbar.EdgeBorders := [];
   FToolbar.Parent := FToolbarPanel;
 
   FVolume := TVolumePanel.Create(Self);
   FVolume.Parent := FToolbarPanel;
   FVolume.Align := alRight;
-  FVolume.Width := 140;
   FVolume.Enabled := Bass.DeviceAvailable;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeVolumeChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
 
   FTimeLabel := TLabel.Create(Self);
-  FTimeLabel.Anchors := [akRight, akTop];
+  FTimeLabel.Align := alRight;
+  FTimeLabel.Layout := tlCenter;
   FTimeLabel.Alignment := taCenter;
   FTimeLabel.Parent := FToolbarPanel;
 
@@ -1128,17 +1126,6 @@ begin
   Inc(FPlaybackSeconds);
 
   FTimeLabel.Caption := BuildTime(FPlaybackSeconds, False);
-  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx - 6;
-end;
-
-procedure TClientTab.ControlsAligned;
-begin
-  inherited;
-
-  FToolbarPanel.ClientHeight := FToolbar.Height;
-
-  FTimeLabel.Left := FVolume.Left - GetTextSize(FTimeLabel.Caption, FTimeLabel.Font).cx;
-  FTimeLabel.Top := FToolbarPanel.ClientHeight div 2 - FTimeLabel.Height div 2;
 end;
 
 procedure TClientTab.FClientViewKeyPress(Sender: TObject; var Key: Char);

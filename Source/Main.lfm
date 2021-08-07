@@ -22,170 +22,172 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   OnShow = FormShow
   object tbClients: TToolBar
     Left = 0
-    Height = 25
+    Height = 22
     Top = 0
     Width = 872
+    AutoSize = True
+    EdgeBorders = []
     Images = modSharedData.imgImages
-    Indent = 2
+    Indent = 0
     ParentShowHint = False
     ShowHint = True
     TabOrder = 0
     Transparent = True
     object ToolButton5: TToolButton
-      Left = 2
-      Top = 2
+      Left = 0
+      Top = 0
       Action = actNewCategory
     end
     object ToolButton7: TToolButton
-      Left = 25
+      Left = 23
       Height = 22
-      Top = 2
+      Top = 0
       ImageIndex = 14
       Style = tbsSeparator
     end
     object cmdStart: TToolButton
-      Left = 33
-      Top = 2
+      Left = 31
+      Top = 0
       Action = actStart
     end
     object cmdStop: TToolButton
-      Left = 56
-      Top = 2
+      Left = 54
+      Top = 0
       Action = actStop
     end
     object cmdStopAfterSong: TToolButton
-      Left = 79
-      Top = 2
+      Left = 77
+      Top = 0
       Action = actStopAfterSong
     end
     object ToolButton3: TToolButton
-      Left = 102
+      Left = 100
       Height = 22
-      Top = 2
+      Top = 0
       Caption = '-'
       ImageIndex = 7
       Style = tbsSeparator
     end
     object cmdStartPlay: TToolButton
-      Left = 110
-      Top = 2
+      Left = 108
+      Top = 0
       Action = actPlay
     end
     object cmdPause: TToolButton
-      Left = 133
-      Top = 2
+      Left = 131
+      Top = 0
       Action = actPause
       Style = tbsCheck
     end
     object cmdStopPlay: TToolButton
-      Left = 156
-      Top = 2
+      Left = 154
+      Top = 0
       Action = actStopPlay
     end
     object ToolButton1: TToolButton
-      Left = 179
+      Left = 177
       Height = 22
-      Top = 2
+      Top = 0
       Caption = '-'
       ImageIndex = 7
       Style = tbsSeparator
     end
     object cmdRename: TToolButton
-      Left = 187
-      Top = 2
+      Left = 185
+      Top = 0
       Action = actRename
     end
     object cmdRemove: TToolButton
-      Left = 210
-      Top = 2
+      Left = 208
+      Top = 0
       Action = actRemove
     end
     object ToolButton2: TToolButton
-      Left = 233
+      Left = 231
       Height = 22
-      Top = 2
+      Top = 0
       Caption = '-'
       ImageIndex = 11
       Style = tbsSeparator
     end
     object cmdCopyTitle: TToolButton
-      Left = 241
-      Top = 2
+      Left = 239
+      Top = 0
       Action = actCopyTitle
     end
     object cmdAddToSaveList: TToolButton
-      Left = 264
-      Top = 2
+      Left = 262
+      Top = 0
       Action = actAddToSaveList
     end
     object cmdAddToGlobalIgnoreList: TToolButton
-      Left = 287
-      Top = 2
+      Left = 285
+      Top = 0
       Action = actAddToGlobalIgnoreList
     end
     object cmdAddToStreamIgnoreList: TToolButton
-      Left = 310
-      Top = 2
+      Left = 308
+      Top = 0
       Action = actAddToStreamIgnoreList
     end
     object ToolButton10: TToolButton
-      Left = 333
+      Left = 331
       Height = 22
-      Top = 2
+      Top = 0
       Caption = 'ToolButton10'
       ImageIndex = 13
       Style = tbsSeparator
     end
     object cmdOpenWebsite: TToolButton
-      Left = 341
-      Top = 2
+      Left = 339
+      Top = 0
       Action = actOpenWebsite
     end
     object cmdTuneInStream: TToolButton
-      Left = 364
-      Top = 2
+      Left = 362
+      Top = 0
       Action = actTuneInStream
     end
     object cmdSavePlaylistStream: TToolButton
-      Left = 387
-      Top = 2
+      Left = 385
+      Top = 0
       Action = actSavePlaylistStream
     end
     object ToolButton8: TToolButton
-      Left = 410
+      Left = 408
       Height = 22
-      Top = 2
+      Top = 0
       Caption = 'ToolButton8'
       ImageIndex = 13
       Style = tbsSeparator
     end
     object cmdSetupTimers: TToolButton
-      Left = 418
-      Top = 2
+      Left = 416
+      Top = 0
       Action = actTimers
     end
     object cmdStreamSettings: TToolButton
-      Left = 441
-      Top = 2
+      Left = 439
+      Top = 0
       Action = actStreamSettings
     end
     object ToolButton6: TToolButton
-      Left = 464
-      Top = 2
+      Left = 462
+      Top = 0
       Action = actResetData
     end
     object ToolButton4: TToolButton
-      Left = 487
+      Left = 485
       Height = 22
-      Top = 2
+      Top = 0
       Caption = '-'
       ImageIndex = 10
       Style = tbsSeparator
       Visible = False
     end
     object cmdShowStreamBrowser: TToolButton
-      Left = 495
-      Top = 2
+      Left = 493
+      Top = 0
       Action = actShowSideBar
       Visible = False
     end

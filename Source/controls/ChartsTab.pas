@@ -88,7 +88,7 @@ type
   private
     FLabel: TLabel;
     FSearch: TMyComboBox;
-    FToolbar: TToolBar;
+    FToolbar: TToolbarForcedHorizontal;
 
     FButtonAddToWishlist: TToolButton;
     FButtonRemoveFromWishlist: TToolButton;
@@ -1390,19 +1390,17 @@ begin
   FLabel.Layout := tlCenter;
   FLabel.Parent := Self;
   FLabel.Caption := 'Search:';
+  FLabel.Left := -100;
 
   FSearch := TMyComboBox.Create(Self);
   FSearch.Align := alLeft;
   FSearch.Parent := Self;
   FSearch.AutoComplete := False;
+  FSearch.Width := 200;
 
-  FToolbar := TToolBar.Create(Self);
+  FToolbar := TToolbarForcedHorizontal.Create(Self);
   FToolbar.Parent := Self;
-  FToolbar.ShowHint := True;
-  FToolbar.EdgeBorders := [];
-  FToolbar.Align := alNone;
-  FToolbar.Anchors := [akTop, akRight];
-  FToolbar.AutoSize := True;
+  FToolbar.Align := alRight;
   FToolbar.Images := modSharedData.imgImages;
 
   FButtonAddToWishlist := TToolButton.Create(FToolbar);
@@ -1456,16 +1454,10 @@ begin
   RebuildSearchItems('');
 
   PostTranslate;
-
-  FLabel.Left := 0;
-  FSearch.Width := 200;
-  FSearch.Top := 1;
 end;
 
 procedure TSearchPanel.PostTranslate;
 begin
-  FSearch.Left := FLabel.Left + FLabel.Width + 6;
-
   RebuildSearchItems('');
 end;
 
@@ -1508,13 +1500,6 @@ begin
   finally
     SL.Free;
   end;
-end;
-
-procedure TSearchPanel.CreateHandle;
-begin
-  inherited CreateHandle;
-
-  FToolbar.Left := ClientRect.Width - FToolbar.Width;
 end;
 
 { TMyComboBox }

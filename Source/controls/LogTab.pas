@@ -26,13 +26,10 @@ uses
   AppData,
   AppMessages,
   Buttons,
-  ChartsTabAdjustTitleName,
   Classes,
   Clipbrd,
   ComCtrls,
-  Commands,
   Controls,
-  DataManager,
   DateUtils,
   ExtCtrls,
   Forms,
@@ -40,17 +37,14 @@ uses
   Generics.Collections,
   Graphics,
   GUIFunctions,
-  HomeCommands,
   HomeCommunication,
   Images,
   ImgList,
   LanguageObjects,
   Logging,
-  Math,
   MControls,
   Menus,
   MessageBus,
-  Messages,
   SharedControls,
   SharedData,
   StdCtrls,
@@ -114,9 +108,6 @@ type
     FButtonError: TToolButton;
     FButtonCopy: TToolButton;
     FButtonClear: TToolButton;
-  protected
-    procedure CreateHandle; override;
-    procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
   end;
@@ -177,7 +168,6 @@ type
   protected
   public
     constructor Create(AOwner: TComponent); reintroduce;
-    destructor Destroy; override;
 
     procedure PostTranslate;
 
@@ -270,6 +260,7 @@ begin
   FLogPanel := TLogPanel.Create(Self);
   FLogPanel.Parent := Self;
   FLogPanel.Align := alTop;
+  FLogPanel.AutoSize := True;
 
   FLogTree := TLogTree.Create(Self);
   FLogTree.Parent := Self;
@@ -298,12 +289,6 @@ begin
   FLogPanel.FButtonClear.OnClick := ButtonClick;
 
   Caption := 'Log';
-end;
-
-destructor TLogTab.Destroy;
-begin
-
-  inherited;
 end;
 
 procedure TLogTab.PopupMenuClick(Sender: TObject);
@@ -773,13 +758,9 @@ begin
   FSearch.Parent := Self;
   FSearch.Align := alLeft;
 
-  FToolbar := TToolBar.Create(Self);
+  FToolbar := TToolbarForcedHorizontal.Create(Self);
   FToolbar.Parent := Self;
-  FToolbar.ShowHint := True;
-  FToolbar.EdgeBorders := [];
-  FToolbar.Align := alNone;
-  FToolbar.Anchors := [akTop, akRight];
-  FToolbar.AutoSize := True;
+  FToolbar.Align := alRight;
   FToolbar.Images := modSharedData.imgImages;
 
   FButtonDebug := TToolButton.Create(FToolbar);
@@ -828,20 +809,6 @@ begin
   FButtonClear.ImageIndex := TImages.ERASE;
 
   FSearch.Width := 200;
-end;
-
-procedure TLogPanel.CreateHandle;
-begin
-  inherited CreateHandle;
-
-  FToolbar.Left := ClientWidth - FToolbar.Width;
-end;
-
-procedure TLogPanel.ControlsAligned;
-begin
-  inherited ControlsAligned;
-
-  ClientHeight := FToolbar.Height;
 end;
 
 { TLogEntry }

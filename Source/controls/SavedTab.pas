@@ -127,7 +127,7 @@ type
     property ItemImportFolder: TMenuItem read FItemImportFolder;
   end;
 
-  TSavedToolBar = class(TToolBar)
+  TSavedToolBar = class(TToolbarForcedHorizontal)
   private
     FRefresh: TToolButton;
     FCutSong: TToolButton;
@@ -151,11 +151,9 @@ type
     constructor Create(AOwner: TComponent); override;
 
     procedure EnableItems(Enable, HashesSelected: Boolean);
-
-    procedure Setup;
   end;
 
-  TPlayToolBar = class(TToolBar)
+  TPlayToolBar = class(TToolbarForcedHorizontal)
   private
     FPrev: TToolButton;
     FPlay: TToolButton;
@@ -182,7 +180,6 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    procedure Setup;
     procedure PostTranslate;
 
     property HashFilterSet: Boolean read FHashFilterSet write FSetHashFilterSet;
@@ -210,20 +207,16 @@ type
     FTopPanel: TPanel;
     FTopLeftPanel: TPanel;
     FTopRightPanel: TPanel;
-    FTopRightTopPanel: TPanel;
-    FTopRightBottomPanel: TPanel;
-    FCoverPanel: TPanel;
-    FCoverBorderPanel: TPanel;
-    FCoverImage: TImage;
-    FSeekPosPanel: TPanel;
+    FTopRightLeftPanel: TPanel;
+    FTopRightRightPanel: TPanel;
+
     FPosLabel: TLabel;
-    FToolbar: TSavedToolBar;
+    FToolBar: TSavedToolBar;
     FPlayToolbar: TPlayToolBar;
     FVolume: TVolumePanel;
     FSeek: TSeekBar;
     FSearchBar: TSearchBar;
     FSavedTree: TSavedTree;
-    FCoverDrag: TDropFileSource;
 
     FImportPanel: TImportPanel;
     FImportThread: TImportFilesThread;
@@ -236,8 +229,6 @@ type
     FOnRemoveTitleFromWishlist: TAddTitleEvent;
     FOnAddTitleToIgnorelist: TAddTitleEvent;
     FOnRemoveTitleFromIgnorelist: TAddTitleEvent;
-
-    FNoCoverPNG: TBitmap;
 
     procedure SavedTreeAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
     procedure ToolBarClick(Sender: TObject);
@@ -254,12 +245,8 @@ type
     procedure ImportThreadTerminate(Sender: TObject);
 
     procedure ImportPanelCancelClick(Sender: TObject);
-
-    procedure CoverImageMouseDown(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
-
-    procedure TopPanelResize(Sender: TObject);
   protected
+    procedure ControlsAligned; override;
     procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
@@ -267,7 +254,6 @@ type
 
     procedure PausePlay;
     procedure PostTranslate;
-    procedure ShowCover(Img: TBitmap);
 
     procedure UpdateButtons;
     procedure StopThreads;
@@ -565,9 +551,6 @@ var
 begin
   inherited;
 
-  ShowHint := True;
-  EdgeBorders := [];
-
   FRefresh := TToolButton.Create(Self);
   FRefresh.Parent := Self;
   FRefresh.Hint := 'Refresh';
@@ -698,24 +681,7 @@ begin
   FProperties.Enabled := Enable;
 end;
 
-procedure TSavedToolBar.Setup;
-begin
-
-end;
-
 { TSavedTab }
-
-procedure TSavedTab.CoverImageMouseDown(Sender: TObject;
-  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-begin
-  if DragDetectPlus(FCoverPanel.Handle) and (FSavedTree.Player.Playing or FSavedTree.Player.Paused) then
-  begin
-    FCoverDrag.Files.Clear;
-   // FCoverDrag.Files.Add(FSavedTree.Player.Filename);
-
-    FCoverDrag.Execute;
-  end;
-end;
 
 constructor TSavedTab.Create(AOwner: TComponent);
 var
@@ -738,19 +704,6 @@ begin
   FSavedTree.Align := alClient;
   FSavedTree.OnAction := SavedTreeAction;
 
-  FCoverDrag := TDropFileSource.Create(Self);
-  FCoverDrag.DragTypes := [dtCopy, dtMove];
-
-  {
-  Png := TImage.Create;
-  try
-    Png.LoadFromResourceName(HInstance, 'COVER_EMPTY');
-    FNoCoverPNG := TBitmap.Create;
-    FNoCoverPNG.Assign(Png);
-  finally
-    Png.Free;
-  end;      }
-
   Caption := 'Saved songs';
 
   FSavedTree.Images := modSharedData.imgImages;
@@ -763,7 +716,7 @@ begin
   FTopPanel.Parent := Self;
   FTopPanel.Align := alTop;
   FTopPanel.BevelOuter := bvNone;
-  FTopPanel.OnResize := TopPanelResize;
+  FTopPanel.AutoSize := True;
 
   // Panel links
   FTopLeftPanel := TPanel.Create(Self);
@@ -772,23 +725,7 @@ begin
   FTopLeftPanel.Width := MulDiv(460, Screen.PixelsPerInch, 96);
   FTopLeftPanel.BevelOuter := bvNone;
 
-  FCoverPanel := TPanel.Create(Self);
-  FCoverPanel.Parent := FTopPanel;
-  FCoverPanel.Align := alLeft;
-  FCoverPanel.BevelOuter := bvNone;
-  FCoverPanel.Visible := True;
-
-  FCoverBorderPanel := TPanel.Create(FCoverPanel);
-  FCoverBorderPanel.Parent := FCoverPanel;
-  FCoverBorderPanel.BevelOuter := bvNone;
-  FCoverBorderPanel.Align := alClient;
-
-  FCoverImage := TImage.Create(Self);
-  FCoverImage.Parent := FCoverBorderPanel;
-  FCoverImage.Align := alClient;
-  FCoverImage.Stretch := False;
-  FCoverImage.Center := True;
-  FCoverImage.OnMouseDown := CoverImageMouseDown;
+  FTopLeftPanel.AutoSize := True;
 
   // Panel rechts
   FTopRightPanel := TPanel.Create(Self);
@@ -796,84 +733,51 @@ begin
   FTopRightPanel.Align := alClient;
   FTopRightPanel.BevelOuter := bvNone;
 
-  // Panel rechts unten für Positionslabel/Playercontrols
-  FTopRightBottomPanel := TPanel.Create(Self);
-  FTopRightBottomPanel.Parent := FTopRightPanel;
-  FTopRightBottomPanel.Align := alTop;
-  FTopRightBottomPanel.BevelOuter := bvNone;
+  FTopRightPanel.AutoSize := True;
 
-  // Panel rechts oben für Position suchen und Lautstärke
-  FTopRightTopPanel := TPanel.Create(Self);
-  FTopRightTopPanel.Parent := FTopRightPanel;
-  FTopRightTopPanel.Align := alTop;
-  FTopRightTopPanel.BevelOuter := bvNone;
+  FTopRightLeftPanel := TPanel.Create(Self);
+  FTopRightLeftPanel.Parent := FTopRightPanel;
+  FTopRightLeftPanel.Align := alRight;
+  FTopRightLeftPanel.BevelOuter := bvNone;
+  FTopRightLeftPanel.AutoSize := True;
 
-  // Panel für Zeitanzeigen und Playercontrols
-  FSeekPosPanel := TPanel.Create(Self);
-  FSeekPosPanel.Parent := FTopRightBottomPanel;
-  FSeekPosPanel.Align := alClient;
-  FSeekPosPanel.BevelOuter := bvNone;
+  FTopRightRightPanel := TPanel.Create(Self);
+  FTopRightRightPanel.Parent := FTopRightPanel;
+  FTopRightRightPanel.Align := alRight;
+  FTopRightRightPanel.BevelOuter := bvNone;
+
+  FTopRightPanel.AutoSize := True;
 
   FPlayToolbar := TPlayToolBar.Create(Self);
-  FPlayToolbar.Parent := FSeekPosPanel;
-  FPlayToolbar.Align := alNone;
-  FPlayToolbar.AutoSize := True;
-  // Wir müssen hier alLeft machen, damit AutoSize funktioniert.
-  // Im Resize() wird dann alNone gemacht, aber wir kennen die passende Breite...
-  FPlayToolbar.Align := alLeft;
+  FPlayToolbar.Parent := FTopRightLeftPanel;
+  FPlayToolbar.Align := alBottom;
   FPlayToolbar.Images := modSharedData.imgImages;
 
   FPosLabel := TLabel.Create(Self);
   FPosLabel.AutoSize := True;
   FPosLabel.Alignment := taRightJustify;
+  FPosLabel.Layout := tlCenter;
   FPosLabel.Caption := '00:00';
-  FPosLabel.Parent := FSeekPosPanel;
-  FPosLabel.Left := FPlayToolbar.Left + FPlayToolbar.Width + 4;
+  FPosLabel.Parent := FTopRightRightPanel;
+  FPosLabel.Align := alClient;
 
   FSearchBar := TSearchBar.Create(Self);
   FSearchBar.Parent := FTopLeftPanel;
-  FSearchBar.Align := alTop;
-  FSearchBar.Setup;
+  FSearchBar.Align := alClient;
+  FSearchBar.AutoSize := True;
   FSearchBar.FSearch.OnClick := SearchTextClick;
   FSearchBar.FSearch.OnChange := SearchTextChange;
 
   FToolBar := TSavedToolBar.Create(Self);
   FToolBar.Parent := FTopLeftPanel;
   FToolBar.Align := alTop;
-  FToolBar.AutoSize := True;
   FToolBar.Images := modSharedData.imgImages;
-  FToolBar.Setup;
-
-  FSeek := TSeekBar.Create(Self);
-  FSeek.Parent := FTopRightTopPanel;
-  FSeek.Align := alClient;
-  FSeek.OnPositionChanged := SeekChange;
-
-  FVolume := TVolumePanel.Create(Self);
-  FVolume.Parent := FTopRightTopPanel;
-  FVolume.Align := alRight;
-  FVolume.Enabled := Bass.DeviceAvailable;
-  FVolume.Width := 140;
-  FVolume.Volume := Players.Volume;
-  FVolume.OnVolumeChange := VolumeTrackbarChange;
-  FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
-  FVolume.Left := High(Integer);
-
   FToolBar.FRefresh.OnClick := ToolBarClick;
-
-  FPlayToolBar.FPrev.OnClick := FSavedTree.PopupMenuClick;
-  FPlayToolBar.FPlay.OnClick := ToolBarClick;
-  FPlayToolBar.FPause.OnClick := FSavedTree.PopupMenuClick;
-  FPlayToolBar.FStop.OnClick := FSavedTree.PopupMenuClick;
-  FPlayToolBar.FNext.OnClick := FSavedTree.PopupMenuClick;
-  FPlayToolBar.FPlayLastSecs.OnClick := FSavedTree.PopupMenuClick;
-  FPlayToolbar.FShuffle.OnClick := ToolBarClick;
-
   FToolBar.FCutSong.OnClick := ToolBarClick;
   FToolBar.FEditTags.OnClick := ToolBarClick;
   FToolBar.FFinalized.OnClick := ToolBarClick;
   FToolBar.FAddToWishlist.OnClick := ToolBarClick;
-  FToolbar.FRemoveFromWishlist.OnClick := ToolBarClick;
+  FToolBar.FRemoveFromWishlist.OnClick := ToolBarClick;
   FToolBar.FAddToIgnorelist.OnClick := ToolBarClick;
   FToolBar.FRemoveFromIgnorelist.OnClick := ToolBarClick;
   FToolBar.FCut.OnClick := ToolBarClick;
@@ -887,15 +791,34 @@ begin
   FToolBar.FImportFiles.OnClick := ToolBarClick;
   FToolBar.FImportFolder.OnClick := ToolBarClick;
 
+  FSeek := TSeekBar.Create(Self);
+  FSeek.Parent := FTopRightLeftPanel;
+  FSeek.Align := alTop;
+  FSeek.OnPositionChanged := SeekChange;
+
+  FVolume := TVolumePanel.Create(Self);
+  FVolume.Parent := FTopRightRightPanel;
+  FVolume.Align := alTop;
+  FVolume.Enabled := Bass.DeviceAvailable;
+  FVolume.Volume := Players.Volume;
+  FVolume.OnVolumeChange := VolumeTrackbarChange;
+  FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
+
+  FPlayToolBar.FPrev.OnClick := FSavedTree.PopupMenuClick;
+  FPlayToolBar.FPlay.OnClick := ToolBarClick;
+  FPlayToolBar.FPause.OnClick := FSavedTree.PopupMenuClick;
+  FPlayToolBar.FStop.OnClick := FSavedTree.PopupMenuClick;
+  FPlayToolBar.FNext.OnClick := FSavedTree.PopupMenuClick;
+  FPlayToolBar.FPlayLastSecs.OnClick := FSavedTree.PopupMenuClick;
+  FPlayToolbar.FShuffle.OnClick := ToolBarClick;
+
   FPositionTimer.Enabled := True;
 end;
 
 destructor TSavedTab.Destroy;
 begin
-  FCoverDrag.Free;
   MsgBus.RemoveSubscriber(MessageReceived);
   FPositionTimer.Enabled := False;
-  FNoCoverPNG.Free;
 
   inherited;
 end;
@@ -963,21 +886,15 @@ begin
   if csDestroying in ComponentState then
     Exit;
 
+  FPosLabel.Visible := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
+  FSeek.GripperVisible := FSavedTree.Player.Playing or FSavedTree.Player.Paused;
+
   if FSavedTree.Player.Playing or FSavedTree.Player.Paused then
   begin
-    FSeek.GripperVisible := True;
-
-    // Ich habe das Gefühl, dass das hier eine schwer reproduzierbare Exception verursachen
-    // kann, die dank des Timers jede Sekunde ein paar MsgBox() macht, deshalb so komisch hier.
-    try
-      FSeek.Position := Tree.Player.PositionByte;
-      FPosLabel.Caption := BuildTime(Tree.Player.PositionTime, False);
-    except
-      FPosLabel.Caption := '00:00';
-    end;
+    FSeek.Position := Tree.Player.PositionByte;
+    FPosLabel.Caption := BuildTime(Tree.Player.PositionTime, False);
   end else
   begin
-    FSeek.GripperVisible := False;
     FPosLabel.Caption := '00:00';
   end;
 end;
@@ -988,7 +905,6 @@ begin
   FSavedTree.PostTranslate;
 end;
 
-// TODO: weg damit.
 procedure TSavedTab.Resize;
 begin
   inherited;
@@ -997,15 +913,6 @@ begin
   begin
     FImportPanel.Left := FSavedTree.ClientWidth div 2 - FImportPanel.Width div 2;
     FImportPanel.Top := FSavedTree.Top + (FSavedTree.Height - FSavedTree.ClientHeight) + FSavedTree.ClientHeight div 2 - FImportPanel.Height div 2;
-  end;
-
-  if FPosLabel <> nil then
-    FPosLabel.Left := FSeekPosPanel.ClientWidth - FPosLabel.Width - 4;
-
-  if FPlayToolbar <> nil then
-  begin
-    FPlayToolbar.Align := alNone;
-    FPlayToolbar.Left := FSeek.Width - FPlayToolbar.Width;
   end;
 end;
 
@@ -1325,12 +1232,11 @@ begin
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemImportFolder);
 end;
 
-procedure TSavedTab.TopPanelResize(Sender: TObject);
+procedure TSavedTab.ControlsAligned;
 begin
-  if FCoverPanel <> nil then
-  begin
-    FCoverPanel.Width := FCoverPanel.Height + 8;
-  end;
+  inherited ControlsAligned;
+
+  FTopRightLeftPanel.ClientWidth := FPlayToolbar.Width;
 end;
 
 procedure TSavedTab.UpdateButtons;
@@ -1464,35 +1370,6 @@ begin
   FSavedTree.FPlayer.PositionByte := FSeek.Position;
   PositionTimer(FPositionTimer);
   UpdateButtons;
-end;
-
-procedure TSavedTab.ShowCover(Img: TBitmap);
-begin
-  TopPanelResize(FTopPanel);
-
-  if (not FSavedTree.Player.Playing) and (not FSavedTree.Player.Paused) then
-  begin
-    FCoverImage.Picture := nil;
-    //FCoverPanel.Hide;
-  //  FCoverBorderPanel.BevelKind := bkNone;
-  end else
-    if Img <> nil then
-    begin
-      //FCoverPanel.Visible := True;
-   //   FCoverBorderPanel.BevelKind := bkFlat;
-
-      FCoverImage.Picture.Assign(ResizeBitmap(Img as TBitmap, Min(Min(FCoverImage.Height, FCoverImage.Width), Min(Img.Height, Img.Width))))
-    end else
-    begin
-      if AppGlobals.CoverPanelAlwaysVisible then
-      begin
-        ShowCover(FNoCoverPNG);
-      end else
-      begin
-        //FCoverPanel.Hide;
-   //     FCoverBorderPanel.BevelKind := bkNone;
-      end;
-    end;
 end;
 
 procedure TSavedTab.StopThreads;
@@ -1866,12 +1743,6 @@ begin
     else
       TfrmNotification.Act(RemoveFileExt(ExtractFileName(FPlayer.Filename)), '');
 
-  {
-  if (FPlayer.Tag <> nil) and (FPlayer.Tag.CoverImage <> nil) then
-    FTab.ShowCover(FPlayer.Tag.CoverImage)
-  else
-    FTab.ShowCover(nil);
-    }
   FTab.UpdateButtons;
   Invalidate;
 end;
@@ -1882,8 +1753,6 @@ begin
     Players.LastPlayer := nil;
   FTab.UpdateButtons;
   Invalidate;
-
-  FTab.ShowCover(nil);
 end;
 
 function TSavedTree.PrevPlayingTrack(ConsiderRnd: Boolean): TTrackInfo;
@@ -3075,6 +2944,21 @@ constructor TSearchBar.Create(AOwner: TComponent);
 begin
   inherited;
 
+  BevelOuter := bvNone;
+
+  FLabel := TLabel.Create(Self);
+  FLabel.Align := alLeft;
+  FLabel.Layout := tlCenter;
+  FLabel.Parent := Self;
+
+  FSearch := TEdit.Create(Self);
+  FSearch.Align := alLeft;
+  FSearch.Width := 200;
+  FSearch.Parent := Self;
+
+  FLabel.Left := -100;
+
+  PostTranslate;
 end;
 
 destructor TSearchBar.Destroy;
@@ -3103,29 +2987,8 @@ end;
 
 procedure TSearchBar.PostTranslate;
 begin
-  FLabel.Caption := _('Search:');
-  FSearch.Left := FLabel.Left + FLabel.Width + 6;
-end;
-
-procedure TSearchBar.Setup;
-begin
-  FLabel := TLabel.Create(Self);
-  FLabel.Parent := Self;
-  FLabel.Left := 0;
-
-  FSearch := TEdit.Create(Self);
-  FSearch.Parent := Self;
-
-  FSearch.Top := 4;
-  FSearch.Width := 200;
-
-  FLabel.Top := FSearch.Top + FSearch.Height div 2 - FLabel.Height div 2;;
-
-  //Height := FSearch.Top + FSearch.Height + FSearch.Top + 40;
-
-  BevelOuter := bvNone;
-
-  PostTranslate;
+  FLabel.Caption := _('Search:'); // TODO: warum hier? posttranslate ist eh mist irgendwie generell.
+  // FSearch.Left := FLabel.Left + FLabel.Width + 6;
 end;
 
 { TImportFilesThread }
@@ -3310,9 +3173,6 @@ var
   Sep: TToolButton;
 begin
   inherited;
-
-  ShowHint := True;
-  EdgeBorders := [];
 
   FPrev := TToolButton.Create(Self);
   FPrev.Parent := Self;

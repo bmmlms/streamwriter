@@ -31,6 +31,8 @@ uses
 type
   TGripperStates = (gsUnknown, gsNormal, gsHot, gsDown);
 
+  { TSeekBar }
+
   TSeekBar = class(TCustomControl)
   private
     FMax: Int64;
@@ -105,7 +107,6 @@ type
     function FGetVolume: Integer;
   protected
     procedure SetEnabled(Value: Boolean); override;
-    procedure CalculatePreferredSize(var PreferredWidth, PreferredHeight: integer; WithThemeSpace: Boolean); override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -133,6 +134,15 @@ type
     property HideIdx: Integer read FHideIdx write FHideIdx;
   end;
 
+  { TToolbarForcedHorizontal }
+
+  TToolbarForcedHorizontal = class(TToolBar)
+  public
+    constructor Create(TheOwner: TComponent); override;
+  protected
+    function IsVertical: Boolean; override;
+  end;
+
 implementation
 
 { TVolumePanel }
@@ -143,14 +153,6 @@ begin
 
   FMute.Enabled := Value;
   FTrackBar.GripperVisible := Value;
-end;
-
-procedure TVolumePanel.CalculatePreferredSize(var PreferredWidth,
-  PreferredHeight: integer; WithThemeSpace: Boolean);
-begin
-  inherited;
-
-  PreferredHeight := FMute.Height;
 end;
 
 procedure TVolumePanel.MuteClick(Sender: TObject);
@@ -223,13 +225,13 @@ begin
   FMute.ShowHint := True;
   FMute.Flat := True;
   FMute.Align := alLeft;
-  FMute.ClientWidth := 22;
   FMute.GroupIndex := 1;
   FMute.AllowAllUp := True;
   FMute.Down := True;
   FMute.OnClick := MuteClick;
   FMute.Parent := Self;
   FMute.Images := modSharedData.imgImages;
+  FMute.AutoSize := True;
 
   FTrackBarPanel := TPanel.Create(Self);
   FTrackBarPanel.Align := alClient;
@@ -244,6 +246,9 @@ begin
   FTrackBar.GripperVisible := True;
   FTrackBar.NotifyOnMove := True;
   FTrackBar.NotifyOnDown := True;
+
+  Constraints.MinHeight := 21;
+  Constraints.MaxHeight := 21;
 
   RefreshButtonState(True);
 end;
@@ -353,18 +358,18 @@ begin
   begin
     if FOrientation = sbHorizontal then
     begin
-      P := Trunc((FPosition / FMax) * (ClientWidth - 20));
+      P := Trunc((FPosition / FMax) * (Bmp.Width - 20));
 
-      R.Top := 2;
+      R.Top := 0;
       R.Left := P;
-      R.Bottom := Bmp.Height - 2;
-      R.Right := 20 + R.Left;
+      R.Bottom := Bmp.Height;
+      R.Right := P + 20;
     end else
     begin
-      P := Trunc((FPosition / FMax) * (ClientHeight - 20));
+      P := Trunc((FPosition / FMax) * (Bmp.Height - 20));
 
       R.Top := P;
-      R.Left := 2;
+      R.Left := 0;
       R.Bottom := P + 20;;
       R.Right := Bmp.Width;
     end;
@@ -509,6 +514,9 @@ begin
   FMax := 0;
   FPositionBeforeDrag := -1;
   FOrientation := sbHorizontal;
+
+  Constraints.MinHeight := 21;
+  Constraints.MaxHeight := 21;
 end;
 
 procedure TSeekBar.FSetGripperVisible(Value: Boolean);
@@ -542,8 +550,8 @@ begin
     Paint;
 end;
 
-procedure TSeekBar.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
-  Y: Integer);
+procedure TSeekBar.MouseDown(Button: TMouseButton; Shift: TShiftState;
+  X: Integer; Y: Integer);
 var
   V: Integer;
 begin
@@ -598,7 +606,7 @@ begin
   end;
 end;
 
-procedure TSeekBar.MouseMove(Shift: TShiftState; X, Y: Integer);
+procedure TSeekBar.MouseMove(Shift: TShiftState; X: Integer; Y: Integer);
 begin
   inherited;
 
@@ -634,8 +642,8 @@ begin
 
 end;
 
-procedure TSeekBar.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
-  Y: Integer);
+procedure TSeekBar.MouseUp(Button: TMouseButton; Shift: TShiftState;
+  X: Integer; Y: Integer);
 begin
   inherited;
 
@@ -690,6 +698,23 @@ begin
   begin
     Items[i].Checked := coVisible in TVirtualTreeColumn(Items[i].Tag).Options;
   end;
+end;
+
+{ TToolbarForcedHorizontal }
+
+constructor TToolbarForcedHorizontal.Create(TheOwner: TComponent);
+begin
+  inherited Create(TheOwner);
+
+  Indent := 0;
+  ShowHint := True;
+  EdgeBorders := [];
+  AutoSize := True;
+end;
+
+function TToolbarForcedHorizontal.IsVertical: Boolean;
+begin
+  Result := False;
 end;
 
 end.

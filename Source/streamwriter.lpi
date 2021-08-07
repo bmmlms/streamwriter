@@ -631,9 +631,8 @@
         <UnitName Value="ChartsPopup"/>
       </Unit112>
       <Unit113>
-        <Filename Value="controls\clientaddressbar.pas"/>
+        <Filename Value="controls\ClientAddressBar.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="ClientAddressBar"/>
       </Unit113>
     </Units>
   </ProjectOptions>

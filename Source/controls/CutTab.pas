@@ -125,7 +125,6 @@ begin
   FToolBar.Parent := FToolbarPanel;
   FToolBar.Align := alClient;
   FToolBar.Images := modSharedData.imgImages;
-  FToolBar.Setup;
   FToolbar.Save.OnClick := SaveClick;
   FToolBar.PosEdit.OnClick := PosClick;
   FToolBar.PosPlay.OnClick := PosClick;
@@ -148,7 +147,6 @@ begin
   FVolume.Parent := FToolbarPanel;
   FVolume.Align := alRight;
   FVolume.Enabled := Bass.DeviceAvailable;
-  FVolume.Width := 140;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;

@@ -4,12 +4,16 @@ interface
 
 uses
   Classes,
-  SysUtils,
   ComCtrls,
-  Images;
+  Images,
+  SharedControls,
+  SysUtils;
 
 type
-  TCutToolBar = class(TToolBar)
+
+  { TCutToolBar }
+
+  TCutToolBar = class(TToolbarForcedHorizontal)
   private
     FSave: TToolButton;
     FZoomIn: TToolButton;
@@ -27,7 +31,6 @@ type
     FStop: TToolButton;
   public
     constructor Create(AOwner: TComponent); override;
-    procedure Setup;
   published
     property Save: TToolButton read FSave;
     property ZoomIn: TToolButton read FZoomIn;
@@ -50,17 +53,11 @@ implementation
 { TCutToolbar }
 
 constructor TCutToolBar.Create(AOwner: TComponent);
-begin
-  inherited;
-
-  ShowHint := True;
-  EdgeBorders := [];
-end;
-
-procedure TCutToolBar.Setup;
 var
   Sep: TToolButton;
 begin
+  inherited Create(AOwner);
+
   FStop := TToolButton.Create(Self);
   FStop.Parent := Self;
   FStop.Hint := 'Stop (Space bar)';

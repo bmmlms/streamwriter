@@ -72,7 +72,7 @@ type
     property Rename: TMenuItem read FRename;
   end;
 
-  TTitleToolbar = class(TToolbar)
+  TTitleToolbar = class(TToolbarForcedHorizontal)
   private
     FAdd: TToolButton;
     FRemove: TToolButton;
@@ -85,8 +85,6 @@ type
     FImport: TToolButton;
   public
     constructor Create(AOwner: TComponent); override;
-
-    procedure Setup;
   end;
 
   { TTitlePanel }
@@ -125,7 +123,7 @@ type
     procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure SearchTextChange(Sender: TObject);
   protected
-    procedure CreateHandle; override;
+    procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent; Clients: TClientManager); reintroduce;
 
@@ -1107,49 +1105,60 @@ begin
 
   FClientManager := Clients;
 
+  BevelOuter := bvNone;
+
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := Self;
   FTopPanel.BevelOuter := bvNone;
   FTopPanel.Align := alTop;
+  FTopPanel.AutoSize := True;
   FTopPanel.Top := -100;
 
   FSearchPanel := TPanel.Create(Self);
   FSearchPanel.Parent := Self;
   FSearchPanel.BevelOuter := bvNone;
   FSearchPanel.Align := alTop;
-  FSearchPanel.Height := 24;
+  FSearchPanel.AutoSize := True;
 
   FSearchLabel := TLabel.Create(Self);
   FSearchLabel.Parent := FSearchPanel;
+  FSearchLabel.Align := alLeft;
+  FSearchLabel.Layout := tlCenter;
   FSearchLabel.Caption := 'Search:';
 
   FSearchText := TEdit.Create(Self);
   FSearchText.Parent := FSearchPanel;
+  FSearchText.Align := alLeft;
+  FSearchText.Width := 200;
   FSearchText.OnChange := SearchTextChange;
 
   FToolbarPanel := TPanel.Create(Self);
   FToolbarPanel.Parent := FTopPanel;
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Align := alTop;
+  FToolbarPanel.AutoSize := True;
 
   FAddLabel := TLabel.Create(Self);
+  FAddLabel.Align := alLeft;
+  FAddLabel.Layout := tlCenter;
   FAddLabel.Parent := FToolbarPanel;
   FAddLabel.Caption := 'Add entry:';
 
   FAddEdit := TEdit.Create(Self);
+  FAddEdit.Align := alLeft;
   FAddEdit.Parent := FToolbarPanel;
+  FAddEdit.Width := 200;
   FAddEdit.OnKeyPress := AddEditKeyPress;
 
   FAddCombo := TComboBox.Create(Self);
   FAddCombo.Parent := FToolbarPanel;
+  FAddCombo.Align := alClient;
   FAddCombo.Style := csDropDownList;
 
   FToolbar := TTitleToolbar.Create(Self);
-  FToolbar.Parent := FToolbarPanel;
   FToolbar.Images := modSharedData.imgImages;
-  FToolbar.Align := alNone;
-  FToolbar.AutoSize := True;
-  FToolbar.Setup;
+  FToolbar.Align := alRight;
+  FToolbar.Parent := FToolbarPanel;
   FToolbar.FAdd.OnClick := AddClick;
   FToolbar.FRemove.OnClick := RemoveClick;
   FToolbar.FExport.OnClick := ExportClick;
@@ -1169,21 +1178,7 @@ begin
   BuildTree(False);
   FillClientCombo;
 
-  BevelOuter := bvNone;
-
   UpdateButtons;
-
-  Resize;
-
-  FSearchPanel.Height := 24;
-  FSearchLabel.Left := 0;
-  FSearchLabel.Top := 0;
-  FSearchText.Top := 2;
-  FAddLabel.Left := 0;
-  FAddEdit.Top := 1;
-  FAddEdit.Width := 250;
-
-  FAddCombo.Top := 1;
 end;
 
 procedure TTitlePanel.SearchTextChange(Sender: TObject);
@@ -1195,20 +1190,19 @@ begin
   BuildTree(True);
 end;
 
-procedure TTitlePanel.CreateHandle;
+procedure TTitlePanel.ControlsAligned;
 begin
-  inherited CreateHandle;
+  inherited ControlsAligned;
 
-  FAddCombo.Width := (FToolbarPanel.ClientWidth - FToolbar.Width - FAddEdit.Width - FAddEdit.Left) - 6;
-  FToolbar.Left := ClientWidth - FToolbar.Width;
-
-  FSearchLabel.Top := FSearchText.Top + FSearchText.Height div 2 - FSearchLabel.Height div 2;
-  FAddLabel.Top := FAddEdit.Top + FAddEdit.Height div 2 - FAddLabel.Height div 2;
-
-  // Das macht Höhen/Breiten von manchen Controls passig
-  PostTranslate;                                                     // TODO: das ist fail. und resize ist irgendwie komplett über.
-  FSearchPanel.ClientHeight := FSearchText.Top + FSearchText.Height + 4;
-  FTopPanel.ClientHeight := FAddLabel.Height + FAddLabel.Top * 2 + 1;
+  if FAddLabel.Width > FSearchLabel.Width then
+  begin
+    FAddLabel.BorderSpacing.Right := 0;
+    FSearchLabel.BorderSpacing.Right := FAddLabel.Width - FSearchLabel.Width
+  end else
+  begin
+    FSearchLabel.BorderSpacing.Right := 0;
+    FAddLabel.BorderSpacing.Right := FSearchLabel.Width - FAddLabel.Width;
+  end;
 end;
 
 procedure TTitlePanel.SelectIgnoredClick(Sender: TObject);
@@ -1603,17 +1597,11 @@ end;
 { TTitleToolbar }
 
 constructor TTitleToolbar.Create(AOwner: TComponent);
-begin
-  inherited;
-
-  ShowHint := True;
-  EdgeBorders := [];
-end;
-
-procedure TTitleToolbar.Setup;
 var
   Sep: TToolButton;
 begin
+  inherited;
+
   FAdd := TToolButton.Create(Self);
   FAdd.Parent := Self;
   FAdd.Hint := 'Add';

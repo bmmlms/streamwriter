@@ -32,7 +32,6 @@ type
     procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
   public
     constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
 
     property Stations: TMStationCombo read FStations;
     property OnStart: TNotifyEvent read FOnStart write FOnStart;
@@ -71,7 +70,6 @@ begin
   FStations.Parent := Self;
   FStations.Align := alClient;
   FStations.DropDownCount := 15;
-  FStations.Anchors := [akLeft, akTop, akRight];
   FStations.OnKeyPress := FStationsKeyPress;
   FStations.OnChange := FStationsChange;
   FStations.Images := modSharedData.imgImages;
@@ -82,12 +80,6 @@ begin
   FDropTarget.OnDrop := DropTargetDrop;
 
   FStart.Enabled := False;
-end;
-
-destructor TClientAddressBar.Destroy;
-begin
-
-  inherited;
 end;
 
 procedure TClientAddressBar.DropTargetDrop(Sender: TObject; ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
