@@ -190,8 +190,6 @@ type
     LabelFilename: TLabel;
     ProgressBar: TProgressBar;
     Button: TButton;
-  protected
-    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
 
@@ -245,9 +243,6 @@ type
     procedure ImportThreadTerminate(Sender: TObject);
 
     procedure ImportPanelCancelClick(Sender: TObject);
-  protected
-    procedure ControlsAligned; override;
-    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -684,8 +679,6 @@ end;
 { TSavedTab }
 
 constructor TSavedTab.Create(AOwner: TComponent);
-var
-  Png: TImage;
 begin
   inherited Create(AOwner);
 
@@ -697,7 +690,6 @@ begin
   FPositionTimer := TTimer.Create(Self);
   FPositionTimer.Interval := 50;
   FPositionTimer.OnTimer := PositionTimer;
-  FPositionTimer.Enabled := False;
 
   FSavedTree := TSavedTree.Create(Self);
   FSavedTree.Parent := Self;
@@ -724,7 +716,6 @@ begin
   FTopLeftPanel.Align := alLeft;
   FTopLeftPanel.Width := MulDiv(460, Screen.PixelsPerInch, 96);
   FTopLeftPanel.BevelOuter := bvNone;
-
   FTopLeftPanel.AutoSize := True;
 
   // Panel rechts
@@ -732,7 +723,6 @@ begin
   FTopRightPanel.Parent := FTopPanel;
   FTopRightPanel.Align := alClient;
   FTopRightPanel.BevelOuter := bvNone;
-
   FTopRightPanel.AutoSize := True;
 
   FTopRightLeftPanel := TPanel.Create(Self);
@@ -745,7 +735,6 @@ begin
   FTopRightRightPanel.Parent := FTopRightPanel;
   FTopRightRightPanel.Align := alRight;
   FTopRightRightPanel.BevelOuter := bvNone;
-
   FTopRightPanel.AutoSize := True;
 
   FPlayToolbar := TPlayToolBar.Create(Self);
@@ -812,7 +801,14 @@ begin
   FPlayToolBar.FPlayLastSecs.OnClick := FSavedTree.PopupMenuClick;
   FPlayToolbar.FShuffle.OnClick := ToolBarClick;
 
-  FPositionTimer.Enabled := True;
+  FImportPanel := TImportPanel.Create(Self);
+  FImportPanel.Width := 250;
+  FImportPanel.Height := 80;
+  FImportPanel.Visible := False;
+  FImportPanel.Parent := Self;
+  FImportPanel.AnchorVerticalCenterTo(Self);
+  FImportPanel.AnchorHorizontalCenterTo(Self);
+  FImportPanel.Button.OnClick := ImportPanelCancelClick;
 end;
 
 destructor TSavedTab.Destroy;
@@ -845,7 +841,7 @@ begin
   end;
   FImportThread := nil;
 
-  FreeAndNil(FImportPanel);
+  FImportPanel.Visible := False;
   FSavedTree.Enabled := True;
   FSearchBar.FSearch.Enabled := True;
 
@@ -903,17 +899,6 @@ procedure TSavedTab.PostTranslate;
 begin
   FSearchBar.PostTranslate;
   FSavedTree.PostTranslate;
-end;
-
-procedure TSavedTab.Resize;
-begin
-  inherited;
-
-  if FImportPanel <> nil then
-  begin
-    FImportPanel.Left := FSavedTree.ClientWidth div 2 - FImportPanel.Width div 2;
-    FImportPanel.Top := FSavedTree.Top + (FSavedTree.Height - FSavedTree.ClientHeight) + FSavedTree.ClientHeight div 2 - FImportPanel.Height div 2;
-  end;
 end;
 
 procedure TSavedTab.SavedTreeAction(Sender: TObject; Action: TTrackActions;
@@ -1081,13 +1066,6 @@ begin
               for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
                 KnownFiles.Add(AppGlobals.Data.TrackList[i].Filename);
 
-              FImportPanel := TImportPanel.Create(Self);
-              FImportPanel.Width := 250;
-              FImportPanel.Height := 80;
-              FImportPanel.Parent := Self;
-              FImportPanel.Button.OnClick := ImportPanelCancelClick;
-              Resize;
-
               FImportThread := TImportFilesThread.Create(Dlg.Files, KnownFiles);
               FImportThread.OnTerminate := ImportThreadTerminate;
               FImportThread.OnProgress := ImportThreadProgress;
@@ -1098,6 +1076,7 @@ begin
 
               FSavedTree.Enabled := False;
               FSearchBar.FSearch.Enabled := False;
+              FImportPanel.Show;
 
               UpdateButtons;
             end;
@@ -1115,13 +1094,6 @@ begin
           for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
             KnownFiles.Add(AppGlobals.Data.TrackList[i].Filename);
 
-          FImportPanel := TImportPanel.Create(Self);
-          FImportPanel.Width := 250;
-          FImportPanel.Height := 80;
-          FImportPanel.Parent := Self;
-          FImportPanel.Button.OnClick := ImportPanelCancelClick;
-          Resize;
-
           FImportThread := TImportFilesThread.Create(Dir, KnownFiles);
           FImportThread.OnTerminate := ImportThreadTerminate;
           FImportThread.OnProgress := ImportThreadProgress;
@@ -1132,6 +1104,7 @@ begin
 
           FSavedTree.Enabled := False;
           FSearchBar.FSearch.Enabled := False;
+          FImportPanel.Show;
 
           UpdateButtons;
         end;
@@ -1230,13 +1203,6 @@ begin
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemImportFiles);
   if Sender = FToolbar.FImportFolder then
     FSavedTree.PopupMenuClick(FSavedTree.FPopupMenu.ItemImportFolder);
-end;
-
-procedure TSavedTab.ControlsAligned;
-begin
-  inherited ControlsAligned;
-
-  FTopRightLeftPanel.ClientWidth := FPlayToolbar.Width;
 end;
 
 procedure TSavedTab.UpdateButtons;
@@ -1739,9 +1705,9 @@ procedure TSavedTree.PlayerPlay(Sender: TObject);
 begin
   if AppGlobals.DisplayPlayNotifications then
     if (FPlayer.Tag <> nil) and (FPlayer.Tag.Artist <> '') and (FPlayer.Tag.Title <> '') then
-      TfrmNotification.Act(FPlayer.Tag.Artist + ' - ' + FPlayer.Tag.Title, '')
+      TfrmNotification.Display(FPlayer.Tag.Artist + ' - ' + FPlayer.Tag.Title, '')
     else
-      TfrmNotification.Act(RemoveFileExt(ExtractFileName(FPlayer.Filename)), '');
+      TfrmNotification.Display(RemoveFileExt(ExtractFileName(FPlayer.Filename)), '');
 
   FTab.UpdateButtons;
   Invalidate;
@@ -2988,7 +2954,6 @@ end;
 procedure TSearchBar.PostTranslate;
 begin
   FLabel.Caption := _('Search:'); // TODO: warum hier? posttranslate ist eh mist irgendwie generell.
-  // FSearch.Left := FLabel.Left + FLabel.Width + 6;
 end;
 
 { TImportFilesThread }
@@ -3069,7 +3034,7 @@ begin
         Exit;
 
       FCurrentFilename := ExtractFileName(FFoundAudioFiles[i]);
-      {
+      {    // TODO: fehlt weiter unten auch noch
       if Assigned(FOnProgress) then
         Synchronize(
           procedure
@@ -3118,35 +3083,24 @@ begin
 
   LabelFilename := TLabel.Create(Self);
   LabelFilename.Parent := Self;
-  LabelFilename.AutoSize := False;
+  LabelFilename.Align := alTop;
   LabelFilename.Alignment := taCenter;
   LabelFilename.Caption := _('Searching files...');
+  LabelFilename.Top := -100;
 
   ProgressBar := TProgressBar.Create(Self);
   ProgressBar.Parent := Self;
+  ProgressBar.Align := alTop;
   ProgressBar.Style := pbstMarquee;
 
   Button := TButton.Create(Self);
-  Button.Parent := Self;
-  Button.Caption := _('Cancel');
-end;
-
-procedure TImportPanel.Resize;
-begin
-  inherited;
-
-  LabelFilename.Width := ClientWidth - 8;
-  LabelFilename.Top := 4;
-  LabelFilename.Left := 4;
-
   Button.Width := 93;
   Button.Height := 25;
-  Button.Top := ClientHeight - 4 - Button.Height;
-  Button.Left := ClientWidth - 4 - Button.Width;
-
-  ProgressBar.Width := ClientWidth - 8;
-  ProgressBar.Top := Button.Top - 4 - ProgressBar.Height;
-  ProgressBar.Left := 4;
+  Button.Anchors := [];
+  Button.AnchorParallel(akBottom, 0, Self);
+  Button.AnchorParallel(akRight, 0, Self);
+  Button.Parent := Self;
+  Button.Caption := _('Cancel');
 end;
 
 procedure TImportPanel.SetData(Progress: Integer; CurrentFilename: string);

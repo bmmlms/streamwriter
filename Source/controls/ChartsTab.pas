@@ -98,8 +98,6 @@ type
     FButtonPlayStream: TToolButton;
     FButtonPlayStreamExternal: TToolButton;
     FButtonAddStream: TToolButton;
-  protected
-    procedure CreateHandle; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
 

@@ -1,48 +1,66 @@
 object frmNotification: TfrmNotification
   Left = 0
-  Height = 73
+  Height = 64
   Top = 0
-  Width = 300
+  Width = 125
+  AutoSize = True
   BorderIcons = []
   BorderStyle = bsNone
   Caption = 'frmNotification'
-  ClientHeight = 73
-  ClientWidth = 300
+  ClientHeight = 64
+  ClientWidth = 125
   Color = clBtnFace
+  Constraints.MaxHeight = 64
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
   FormStyle = fsSystemStayOnTop
-  OnClose = FormClose
-  LCLVersion = '2.0.12.0'
-  object lblTitle: TLabel
-    Left = 8
-    Height = 24
-    Top = 4
+  object Panel1: TPanel
+    Left = 0
+    Height = 64
+    Top = 0
     Width = 61
-    Anchors = [akTop, akLeft, akRight]
-    Caption = 'lblTitle'
-    Font.Color = clWindowText
-    Font.Height = -20
-    Font.Name = 'Tahoma'
-    ParentColor = False
-    ParentFont = False
-  end
-  object lblStream: TLabel
-    Left = 8
-    Height = 13
-    Top = 36
-    Width = 44
-    Anchors = [akTop, akLeft, akRight]
-    Caption = 'lblStream'
-    ParentColor = False
-  end
-  object imgLogo: TImage
-    Left = 260
-    Height = 44
-    Top = 6
-    Width = 32
-    Anchors = [akTop, akRight]
+    Align = alClient
     AutoSize = True
+    BevelOuter = bvNone
+    ClientHeight = 64
+    ClientWidth = 61
+    TabOrder = 0
+    object lblTitle: TLabel
+      Left = 0
+      Height = 24
+      Top = 0
+      Width = 61
+      Align = alTop
+      Caption = 'lblTitle'
+      Font.Color = clWindowText
+      Font.Height = -20
+      Font.Name = 'Tahoma'
+      ParentFont = False
+      ShowAccelChar = False
+    end
+    object lblStream: TLabel
+      Left = 0
+      Height = 40
+      Top = 24
+      Width = 61
+      Align = alClient
+      Caption = 'lblStream'
+      ShowAccelChar = False
+    end
+  end
+  object pbLogo: TPaintBox
+    Left = 61
+    Height = 64
+    Top = 0
+    Width = 64
+    Align = alRight
+    OnPaint = pbLogoPaint
+  end
+  object tmrFade: TTimer
+    Interval = 20
+    OnTimer = tmrFadeTimer
+    Left = 16
+    Top = 16
   end
 end

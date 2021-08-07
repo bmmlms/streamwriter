@@ -23,9 +23,18 @@ unit Notifications;
 interface
 
 uses
-  Windows, SysUtils, Messages, Classes, Controls, Forms, StdCtrls,
-  Graphics, UxTheme, Math, GUIFunctions, LanguageObjects, Logging,
-  ExtCtrls;
+  Classes,
+  Controls,
+  DateUtils,
+  ExtCtrls,
+  Forms,
+  Graphics,
+  GUIFunctions,
+  LMessages,
+  StdCtrls,
+  SysUtils,
+  UxTheme,
+  Windows;
 
 type
   TNotificationStates = (nsFadingIn, nsVisible, nsFadingOut);
@@ -33,36 +42,39 @@ type
   { TfrmNotification }
 
   TfrmNotification = class(TForm)
-    lblTitle: TLabel;
     lblStream: TLabel;
-    imgLogo: TImage;
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    lblTitle: TLabel;
+    pbLogo: TPaintBox;
+    Panel1: TPanel;
+    tmrFade: TTimer;
+    procedure pbLogoPaint(Sender: TObject);
+    procedure tmrFadeTimer(Sender: TObject);
+  private
+  const
+    FADE_DURATION = 500;
+    SHOW_DURATION = 3000;
   private
     FState: TNotificationStates;
-    FDisplayOnEndTitle: string;
-    FDisplayOnEndStream: string;
+    FFadeStartedAt, FFadeoutAt: TDateTime;
+    FTitle, FStream: string;
+    FRedisplayTitle, FRedisplayStream: string;
+    FWindow: TfrmNotification; static;
 
-    class function OtherWindowIsFullscreen: Boolean;
+    procedure MouseHook(Sender: TObject; Msg: Cardinal);
   protected
-    //procedure CreateParams(var Params: TCreateParams); override;
-    //procedure CreateHandle; override;
-    procedure DoShow; override;
-    procedure WMMouseActivate(var Message: TWMMouseActivate);
-      message WM_MOUSEACTIVATE;
-    procedure WMNCHitTest(var Message: TWMNCHitTest); message WM_NCHITTEST;
-    procedure WMTimer(var Message: TWMTimer); message WM_TIMER;
+    procedure ShowNoActivate;
+    procedure ControlsAligned; override;
+    procedure DoClose(var CloseAction: TCloseAction); override;
   public
-    constructor Create(AOwner: TComponent); reintroduce;
+    class procedure Display(Title, Stream: string);
+    class procedure Hide;
 
-    class procedure Act(Title, Stream: string);
-    class procedure Stop;
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
 
-    procedure Display(Title, Stream: string);
-    procedure StopDisplay;
+    procedure DisplayWindow(Title, Stream: string);
+    procedure HideWindow;
   end;
-
-var
-  NotificationForm: TfrmNotification;
 
 implementation
 
@@ -70,19 +82,20 @@ implementation
 
 { TfrmNotification }
 
-class procedure TfrmNotification.Act(Title, Stream: string);
+class procedure TfrmNotification.Display(Title, Stream: string);
 begin
-  if OtherWindowIsFullscreen then
+  if WindowIsFullscreen then
     Exit;
 
-  if NotificationForm = nil then
-  begin
-    NotificationForm := TfrmNotification.Create(nil);
-    NotificationForm.Display(Title, Stream);
-  end else
-  begin
-    NotificationForm.Display(Title, Stream);
-  end;
+  if FWindow = nil then
+    FWindow := TfrmNotification.Create(nil);
+  FWindow.DisplayWindow(Title, Stream);
+end;
+
+class procedure TfrmNotification.Hide;
+begin
+  if FWindow <> nil then
+    FWindow.HideWindow;
 end;
 
 constructor TfrmNotification.Create(AOwner: TComponent);
@@ -90,196 +103,129 @@ begin
   inherited;
 
   FState := nsFadingIn;
-  Parent := nil;
+  Application.AddOnUserInputHandler(MouseHook);
 end;
 
-{
-procedure TfrmNotification.CreateHandle;
+destructor TfrmNotification.Destroy;
 begin
-  inherited;
+  Application.RemoveOnUserInputHandler(MouseHook);
+  FWindow := nil;
 
-  //Params.WndParent := 0;
-  //Params.Style := WS_POPUP or WS_THICKFRAME or WS_EX_TOPMOST;
-  //Params.ExStyle := Params.ExStyle or WS_EX_NOACTIVATE;
-  SetWindowLong(Handle, GWL_STYLE, LONG(WS_POPUPWINDOW or WS_THICKFRAME) and (not WS_CAPTION)); // and (not WS_BORDER));
-  SetWindowLong(Handle, GWL_EXSTYLE, GetWindowLong(Handle, GWL_EXSTYLE) or LONG(WS_EX_NOACTIVATE or WS_EX_TOPMOST));
+  inherited Destroy;
 end;
-}
 
-procedure TfrmNotification.Display(Title, Stream: string);
-var
-  TitleTextWidth, TitleTextHeight: Integer;
-  StreamTextHeight, StreamTextWidth: Integer;
+procedure TfrmNotification.DisplayWindow(Title, Stream: string);
 begin
   case FState of
     nsFadingIn:
-      begin
-        Title := StringReplace(Title, '&', '&&', [rfReplaceAll]);
-        if Trim(Stream) <> '' then
-          Stream := Format(_('on %s'), [StringReplace(Stream, '&', '&&', [rfReplaceAll])]);
+    begin
+      FTitle := Title;
+      FStream := Stream;
+      ;
 
-        TitleTextWidth := GetTextSize(Title, lblTitle.Font).cx;
-        TitleTextHeight := GetTextSize(Title, lblTitle.Font).cy;
-        StreamTextWidth := GetTextSize(Stream, lblStream.Font).cx;
-        StreamTextHeight := GetTextSize(Stream, lblStream.Font).cy;
+      FFadeStartedAt := Now;
 
-        if TitleTextWidth > 350 then
-          TitleTextWidth := 350;
-        if StreamTextWidth > 350 then
-          StreamTextWidth := 350;
+      if Visible then
+        ControlsAligned;
 
-       // lblStream.Top := lblTitle.Top + TitleTextHeight + 8;
-
-     //   ClientWidth := lblTitle.Left * 2 + imgLogo.Width + 16 + Max(TitleTextWidth, StreamTextWidth);
-     //   ClientHeight := Max(lblTitle.Top * 2 + TitleTextHeight + StreamTextHeight + 8, imgLogo.Height);
-
-    //    imgLogo.Left := ClientWidth - imgLogo.Width - lblTitle.Left;
-     //   imgLogo.Top := ClientHeight div 2 - imgLogo.Height div 2;
-
-        Left := Screen.PrimaryMonitor.WorkareaRect.Right - ClientWidth - 15;
-        Top := Screen.PrimaryMonitor.WorkareaRect.Bottom - ClientHeight - 15;
-
-        DoShow;
-        lblTitle.Caption := TruncateText(Title, TitleTextWidth, lblTitle.Font);
-        if Stream <> '' then
-          lblStream.Caption := TruncateText(Stream, StreamTextWidth, lblStream.Font)
-        else
-          lblStream.Caption := '';
-
-        ShowWindow(Handle, SW_HIDE);
-        ShowWindow(Handle, SW_SHOWNOACTIVATE);
-      end;
+      ShowNoActivate;
+    end;
     nsVisible, nsFadingOut:
-      begin
-        FDisplayOnEndTitle := Title;
-        FDisplayOnEndStream := Stream;
-        KillTimer(Handle, 0);
-        KillTimer(Handle, 1);
-        KillTimer(Handle, 2);
-        SetTimer(Handle, 2, 20, nil);
-      end;
+    begin
+      FRedisplayTitle := Title;
+      FRedisplayStream := Stream;
+    end;
   end;
 end;
 
-procedure TfrmNotification.DoShow;
+procedure TfrmNotification.tmrFadeTimer(Sender: TObject);
+begin
+  case FState of
+    nsFadingIn:
+      if MilliSecondsBetween(Now, FFadeStartedAt) > FADE_DURATION then
+      begin
+        AlphaBlendValue := High(Byte);
+        FState := nsVisible;
+        FFadeoutAt := IncMilliSecond(Now, SHOW_DURATION);
+      end else
+        AlphaBlendValue := Trunc((MilliSecondsBetween(Now, FFadeStartedAt) / FADE_DURATION) * High(Byte));
+    nsVisible:
+      if Now > FFadeoutAt then
+      begin
+        FFadeStartedAt := Now;
+        FState := nsFadingOut;
+      end;
+    nsFadingOut:
+      if MilliSecondsBetween(Now, FFadeStartedAt) > FADE_DURATION then
+      begin
+        AlphaBlendValue := Low(Byte);
+
+        if FRedisplayTitle <> '' then
+        begin
+          FState := nsFadingIn;
+          DisplayWindow(FRedisplayTitle, FRedisplayStream);
+          FRedisplayTitle := '';
+          FRedisplayStream := '';
+        end else
+          Close;
+
+      end else
+        AlphaBlendValue := High(Byte) - Trunc((MilliSecondsBetween(Now, FFadeStartedAt) / FADE_DURATION) * High(Byte));
+  end;
+end;
+
+procedure TfrmNotification.MouseHook(Sender: TObject; Msg: Cardinal);
+begin
+  if Msg = LM_LBUTTONDOWN then
+    Close;
+end;
+
+procedure TfrmNotification.pbLogoPaint(Sender: TObject);
+var
+  Icon: TIcon;
+begin
+  Icon := TIcon.Create;
+  try
+    Icon.SetSize(96, 96);
+    Icon.LoadFromResourceName(HINSTANCE, 'MAINICON');
+
+    DrawIconEx(pbLogo.Canvas.Handle, 0, 0, Icon.Handle, 64, 64, 0, 0, DI_NORMAL);
+  finally
+    Icon.Free;
+  end;
+end;
+
+procedure TfrmNotification.ShowNoActivate;
 begin
   AlphaBlend := True;
   AlphaBlendValue := 0;
+
   ShowWindow(Handle, SW_SHOWNOACTIVATE);
-  SetTimer(Handle, 0, 20, nil);
-  SetTimer(Handle, 10, 50, nil);
+  Visible := True;
 end;
 
-procedure TfrmNotification.FormClose(Sender: TObject;
-  var Action: TCloseAction);
+procedure TfrmNotification.ControlsAligned;
 begin
-  KillTimer(Handle, 10);
-  Action := caFree;
-  NotificationForm := nil;
+  inherited ControlsAligned;
+
+  lblTitle.Caption := TruncateText(FTitle, 300 - pbLogo.Width, lblTitle.Font);
+  lblStream.Caption := TruncateText(FStream, 300 - pbLogo.Width, lblStream.Font);
+
+  Left := Screen.PrimaryMonitor.WorkareaRect.Right - ClientWidth - 15;
+  Top := Screen.PrimaryMonitor.WorkareaRect.Bottom - ClientHeight - 15;
 end;
 
-class function TfrmNotification.OtherWindowIsFullscreen: Boolean;
-  function RectMatches(R: TRect; R2: TRect): Boolean;
-  begin
-    Result := (R.Left = R2.Left) and (R.Top = R2.Top) and (R.Right = R2.Right) and (R.Bottom = R2.Bottom);
-  end;
-type
-  TGetShellWindow = function(): HWND; stdcall;
-var
-  i: Integer;
-  H, Handle: Cardinal;
-  R: TRect;
-  GetShellWindow: TGetShellWindow;
+procedure TfrmNotification.DoClose(var CloseAction: TCloseAction);
 begin
-  H := GetForegroundWindow;
+  inherited DoClose(CloseAction);
 
-  @GetShellWindow := nil;
-  Handle := GetModuleHandle('user32.dll');
-  if (Handle > 0) then
-    @GetShellWindow := GetProcAddress(Handle, 'GetShellWindow');
-
-  if ((H <> GetDesktopWindow) and ((@GetShellWindow <> nil) and (H <> GetShellWindow))) then
-  begin
-    GetWindowRect(H, R);
-    for i := 0 to Screen.MonitorCount - 1 do
-      if RectMatches(Screen.Monitors[i].BoundsRect, R) then
-        Exit(True);
-  end;
-
-  Exit(False);
+  CloseAction := caFree;
 end;
 
-class procedure TfrmNotification.Stop;
+procedure TfrmNotification.HideWindow;
 begin
-  if NotificationForm <> nil then
-    NotificationForm.StopDisplay;
-end;
-
-procedure TfrmNotification.StopDisplay;
-begin
-  FDisplayOnEndTitle := '';
-  FDisplayOnEndStream := '';
-  KillTimer(Handle, 0);
-  KillTimer(Handle, 1);
-  KillTimer(Handle, 2);
-  SetTimer(Handle, 2, 5, nil);
-end;
-
-procedure TfrmNotification.WMMouseActivate(var Message: TWMMouseActivate);
-begin
-  inherited;
-  Message.Result := MA_NOACTIVATEANDEAT;
-end;
-
-procedure TfrmNotification.WMNCHitTest(var Message: TWMNCHitTest);
-begin
-  Message.Result := HTCLIENT;
-end;
-
-procedure TfrmNotification.WMTimer(var Message: TWMTimer);
-begin
-  if Message.TimerID = 0 then
-  begin
-    if AlphaBlendValue + 20 < 225 then
-      AlphaBlendValue := AlphaBlendValue + 20
-    else
-    begin
-      AlphaBlendValue := 225;
-      KillTimer(Handle, 0);
-      SetTimer(Handle, 1, 4000, nil);
-      FState := nsVisible;
-    end;
-  end else if Message.TimerID = 1 then
-  begin
-    KillTimer(Handle, 1);
-    SetTimer(Handle, 2, 20, nil);
-    FState := nsFadingOut;
-  end else if Message.TimerID = 2 then
-  begin
-    if AlphaBlendValue - 20 > 0 then
-      AlphaBlendValue := AlphaBlendValue - 20
-    else
-    begin
-      AlphaBlendValue := 0;
-      KillTimer(Handle, 2);
-
-      if FDisplayOnEndTitle <> '' then
-      begin
-        FState := nsFadingIn;
-        Display(FDisplayOnEndTitle, FDisplayOnEndStream);
-        FDisplayOnEndTitle := '';
-        FDisplayOnEndStream := '';
-      end else
-      begin
-        Close;
-      end;
-    end;
-  end;
-
-  if Message.TimerID = 10 then
-  begin
-    SetWindowPos(Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE or SWP_NOSIZE or SWP_NOACTIVATE);
-  end;
+  FRedisplayTitle := '';
+  FRedisplayStream := '';
 end;
 
 end.

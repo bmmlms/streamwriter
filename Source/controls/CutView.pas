@@ -271,8 +271,6 @@ type
     procedure FileConvertorTerminate(Sender: TObject);
 
     function GetUndoFilename: string;
-  protected
-    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -401,7 +399,11 @@ begin
 
   FProgressBarLoad := TProgressBar.Create(Self);
   FProgressBarLoad.Max := 100;
+  FProgressBarLoad.Width := 300;
+  FProgressBarLoad.Height := 24;
   FProgressBarLoad.Parent := Self;
+  FProgressBarLoad.AnchorHorizontalCenterTo(Self);
+  FProgressBarLoad.AnchorVerticalCenterTo(Self);
   FProgressBarLoad.Visible := False;
 
   FDropTarget := TDropComboTarget.Create(Self);
@@ -1007,19 +1009,6 @@ end;
 procedure TCutView.ProcessThreadTerminate(Sender: TObject);
 begin
   FProcessThread := nil;
-end;
-
-procedure TCutView.Resize;
-begin
-  inherited;
-
-  if not Assigned(FProgressBarLoad) then // TODO:
-    Exit;
-
-  FProgressBarLoad.Width := Min(350, ClientWidth - 50);
-  FProgressBarLoad.Height := 24;
-  FProgressBarLoad.Left := ClientWidth div 2 - FProgressBarLoad.Width div 2;
-  FProgressBarLoad.Top := ClientHeight div 2 - FProgressBarLoad.Height div 2 + 20;
 end;
 
 procedure TCutView.StartProcessing(CmdLine: string);

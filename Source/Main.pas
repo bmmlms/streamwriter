@@ -448,7 +448,7 @@ begin
   tmrAutoSave.Enabled := False;
   tmrRecordings.Enabled := False;
 
-  TfrmNotification.Stop;
+  TfrmNotification.Hide;
 
   FEqualizer.Hide;
 

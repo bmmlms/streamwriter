@@ -891,7 +891,7 @@ begin
   if (FDisplayTitle <> '') and Playing and (not Paused) then
   begin
     if AppGlobals.DisplayPlayNotifications then
-      TfrmNotification.Act(FDisplayTitle, FEntry.CustomName);
+      TfrmNotification.Display(FDisplayTitle, FEntry.CustomName);
 
     MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, '', FICEThread.RecvStream.DisplayTitle, FEntry.CustomName, ''));
   end;
