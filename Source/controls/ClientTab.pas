@@ -192,6 +192,8 @@ type
     procedure MessageReceived(Msg: TMessageBase);
 
     procedure PlaybackTimerTimer(Sender: TObject);
+  protected
+    procedure CreateHandle; override;
   public
     constructor Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList; Clients: TClientManager; Popup: TPopupMenu); reintroduce;
     destructor Destroy; override;
@@ -703,8 +705,6 @@ begin
 
   MsgBus.AddSubscriber(MessageReceived);
 
-  BuildTree;
-
   FSplitter.Width := MulDiv(4, Screen.PixelsPerInch, 96);
   FSplitter.MinSize := MulDiv(220, Screen.PixelsPerInch, 96);
   FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
@@ -1126,6 +1126,13 @@ begin
   Inc(FPlaybackSeconds);
 
   FTimeLabel.Caption := BuildTime(FPlaybackSeconds, False);
+end;
+
+procedure TClientTab.CreateHandle;
+begin
+  inherited CreateHandle;
+
+  BuildTree;
 end;
 
 procedure TClientTab.FClientViewKeyPress(Sender: TObject; var Key: Char);
