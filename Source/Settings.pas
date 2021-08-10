@@ -27,11 +27,11 @@ uses
   Dialogs, Buttons, StdCtrls, ExtCtrls, ImgList, ComCtrls, ShellAPI,
   ShlObj, AppData, LanguageObjects, Functions, GUIFunctions, SettingsBase,
   PostProcess, StrUtils, DynBASS, ICEClient, Generics.Collections, Menus,
-  MsgDlg, VirtualTrees, Math, Images,
-  DataManager, Logging, ToolWin, ListsTab, DownloadAddons,
+  MsgDlg, VirtualTrees, Math, Images, SharedControls,
+  DataManager, Logging, ToolWin, LazHelpHTML, ListsTab, DownloadAddons,
   ExtendedStream, AddonManager, AddonBase, Generics.Defaults,
   SettingsAddPostProcessor, ConfigureEncoder, AudioFunctions, Constants,
-  SWFunctions, TypeDefs, SharedData, MControls,
+  SWFunctions, TypeDefs, SharedData, MLabeledEdit, MControls, mhotkeyedit,
   Types;
 
 type
@@ -62,20 +62,31 @@ type
   { TfrmSettings }
 
   TfrmSettings = class(TfrmSettingsBase)
+    btnAddRegEx: TButton;
+    btnRemoveRegEx: TButton;
+    FlowPanel1: TFlowPanel;
+    Label1: TLabel;
+    Label15: TLabel;
+    Label6: TLabel;
+    Label7: TLabel;
+    txtMonitorCount: TMLabeledSpinEdit;
+    txtHotkey: TMLabeledHotkeyEdit;
+    txtShortLengthSeconds: TMLabeledSpinEdit;
+    txtMinDiskSpace: TMLabeledSpinEdit;
+    txtRemoveChars: TMLabeledEditButton;
+    txtFilePatternDecimals: TMLabeledSpinEdit;
     pnlStreams: TPanel;
     pnlMain: TPanel;
     chkTray: TCheckBox;
     pnlAdvanced: TPanel;
-    txtMaxRetries: TLabeledEdit;
-    txtRetryDelay: TLabeledEdit;
-    Label1: TLabel;
-    txtMinDiskSpace: TLabeledEdit;
-    Label7: TLabel;
+    txtMaxRetries: TMLabeledSpinEdit;
+    txtRetryDelay: TMLabeledSpinEdit;
     pnlPostProcess: TPanel;
     lstPostProcess: TListView;
     Label3: TLabel;
     pnlCut: TPanel;
-    txtSongBuffer: TLabeledEdit;
+    txtSilenceBufferSeconds: TEdit;
+    txtSongBuffer: TMLabeledSpinEdit;
     Label5: TLabel;
     chkSearchSilence: TCheckBox;
     Label10: TLabel;
@@ -94,22 +105,18 @@ type
     dlgOpen: TOpenDialog;
     btnAdd: TButton;
     btnRemove: TButton;
-    txtApp: TLabeledEdit;
-    txtAppParams: TLabeledEdit;
+    txtApp: TMLabeledEdit;
+    txtAppParams: TMLabeledEdit;
     lblAppParams: TLabel;
     btnBrowseApp: TSpeedButton;
     pnlHotkeys: TPanel;
     lstHotkeys: TListView;
-    Label9: TLabel;
     chkSeparateTracks: TCheckBox;
     chkSaveStreamsToDisk: TCheckBox;
     chkOnlyIfCut: TCheckBox;
     chkOnlySaveFull: TCheckBox;
     lblPanelCut: TLabel;
     chkOverwriteSmaller: TCheckBox;
-    Label6: TLabel;
-    txtSilenceBufferSeconds: TEdit;
-    Label15: TLabel;
     pnlAutoRecord: TPanel;
     chkAutoTuneIn: TCheckBox;
     lstSoundDevice: TComboBox;
@@ -132,21 +139,20 @@ type
     Label19: TLabel;
     chkSnapMain: TCheckBox;
     pnlStreamsAdvanced: TPanel;
-    txtRegEx: TLabeledEdit;
-    btnResetTitlePattern: TSpeedButton;
+    txtRegEx: TMLabeledEditButton;
     btnConfigure: TButton;
     chkRememberRecordings: TCheckBox;
     chkDisplayPlayNotifications: TCheckBox;
     chkAutoTuneInConsiderIgnore: TCheckBox;
     pnlBandwidth: TPanel;
     Label11: TLabel;
-    txtMaxSpeed: TLabeledEdit;
+    txtMaxSpeed: TMLabeledSpinEdit;
     chkLimit: TCheckBox;
     lblIgnoreTitles: TLabel;
     lstIgnoreTitles: TListView;
     btnRemoveIgnoreTitlePattern: TButton;
     btnAddIgnoreTitlePattern: TButton;
-    txtIgnoreTitlePattern: TLabeledEdit;
+    txtIgnoreTitlePattern: TMLabeledEdit;
     chkAddSavedToStreamIgnore: TCheckBox;
     chkAdjustTrackOffset: TCheckBox;
     txtAdjustTrackOffset: TLabeledEdit;
@@ -154,8 +160,6 @@ type
     optAdjustForward: TRadioButton;
     chkAutoTuneInAddToIgnore: TCheckBox;
     pnlFilenamesExt: TPanel;
-    txtRemoveChars: TLabeledEdit;
-    txtFilePatternDecimals: TLabeledEdit;
     txtFilePattern: TLabeledEdit;
     btnResetFilePattern: TSpeedButton;
     txtPreview: TLabeledEdit;
@@ -163,7 +167,6 @@ type
     btnResetIncompleteFilePattern: TSpeedButton;
     txtAutomaticFilePattern: TLabeledEdit;
     btnResetAutomaticFilePattern: TSpeedButton;
-    btnResetRemoveChars: TSpeedButton;
     txtStreamFilePattern: TLabeledEdit;
     btnResetStreamFilePattern: TSpeedButton;
     chkAutoRemoveSavedFromWishlist: TCheckBox;
@@ -185,14 +188,11 @@ type
     dlgSave: TSaveDialog;
     chkMonitorMode: TCheckBox;
     Label20: TLabel;
-    txtMonitorCount: TLabeledEdit;
     chkCoverPanelAlwaysVisible: TCheckBox;
     chkDiscardAlways: TCheckBox;
     chkAutostart: TCheckBox;
     Label21: TLabel;
     lstRegExes: TListView;
-    btnAddRegEx: TButton;
-    btnRemoveRegEx: TButton;
     Label22: TLabel;
     txtDir: TLabeledEdit;
     btnBrowse: TSpeedButton;
@@ -200,7 +200,6 @@ type
     btnBrowseLogFile: TSpeedButton;
     txtLogFile: TLabeledEdit;
     chkRememberPlaying: TCheckBox;
-    txtShortLengthSeconds: TLabeledEdit;
     Label4: TLabel;
     chkSkipShort: TCheckBox;
     pnlAppearance: TPanel;
@@ -251,7 +250,6 @@ type
     procedure lstPostProcessResize(Sender: TObject);
     procedure chkAutoTuneInClick(Sender: TObject);
     procedure chkDiscardSmallerClick(Sender: TObject);
-    procedure lstHotkeysResize(Sender: TObject);
     procedure txtFilePatternDecimalsChange(Sender: TObject);
     procedure btnBlacklistRemoveClick(Sender: TObject);
     procedure txtRegExChange(Sender: TObject);
@@ -449,8 +447,8 @@ begin
     txtAutomaticFilePattern.Text := Settings.FilePattern;
     txtIncompleteFilePattern.Text := Settings.IncompleteFilePattern;
     txtStreamFilePattern.Text := Settings.StreamFilePattern;
-    txtFilePatternDecimals.Text := IntToStr(Settings.FilePatternDecimals);
-    txtRemoveChars.Text := Settings.RemoveChars;
+    txtFilePatternDecimals.Control.Value := Settings.FilePatternDecimals;
+    txtRemoveChars.Control.Text := Settings.RemoveChars;
     chkNormalizeVariables.Checked := Settings.NormalizeVariables;
 
     if FSettingsType = stAuto then
@@ -501,20 +499,20 @@ begin
     chkSubmitStreamInfo.Checked := AppGlobals.SubmitStreamInfo;
     chkSubmitStats.Checked := AppGlobals.SubmitStats;
     chkMonitorMode.Checked := AppGlobals.MonitorMode;
-    txtMonitorCount.Text := IntToStr(AppGlobals.MonitorCount);
+    txtMonitorCount.Control.Value := AppGlobals.MonitorCount;
     chkLimit.Checked := AppGlobals.LimitSpeed;
     if AppGlobals.MaxSpeed > 0 then
-      txtMaxSpeed.Text := IntToStr(AppGlobals.MaxSpeed);
+      txtMaxSpeed.Control.Value := AppGlobals.MaxSpeed;
 
     chkSubmitStreamInfoClick(nil);
     chkSubmitStatsClick(nil);
     chkMonitorModeClick(nil);
 
-    txtShortLengthSeconds.Text := IntToStr(Settings.ShortLengthSeconds);
-    txtSongBuffer.Text := IntToStr(Settings.SongBuffer);
-    txtMaxRetries.Text := IntToStr(Settings.MaxRetries);
-    txtRetryDelay.Text := IntToStr(Settings.RetryDelay);
-    txtMinDiskSpace.Text := IntToStr(AppGlobals.MinDiskSpace);
+    txtShortLengthSeconds.Control.Value := Settings.ShortLengthSeconds;
+    txtSongBuffer.Control.Value := Settings.SongBuffer;
+    txtMaxRetries.Control.Value := Settings.MaxRetries;
+    txtRetryDelay.Control.Value := Settings.RetryDelay;
+    txtMinDiskSpace.Control.Value := AppGlobals.MinDiskSpace;
     txtLogFile.Text := AppGlobals.LogFile;
 
     txtSilenceLevel.Text := IntToStr(Settings.SilenceLevel);
@@ -601,7 +599,6 @@ begin
   // ---------------------------------------------------------------------------------------------------------
 
   txtShortLengthSeconds.Enabled := chkSkipShort.State <> cbUnchecked;
-  Label4.Enabled := txtShortLengthSeconds.Enabled;
 
   EnablePanel(pnlCut, (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto));
   chkSkipShort.Enabled := (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto);
@@ -665,57 +662,24 @@ begin
         AppGlobals.SubmitStreamInfo := chkSubmitStreamInfo.Checked;
         AppGlobals.SubmitStats := chkSubmitStats.Checked;
         AppGlobals.MonitorMode := chkMonitorMode.Checked;
-        AppGlobals.MonitorCount := StrToIntDef(txtMonitorCount.Text, 3);
+        AppGlobals.MonitorCount := txtMonitorCount.Control.Value;
         AppGlobals.LimitSpeed := chkLimit.Checked;
-        if StrToIntDef(txtMaxSpeed.Text, -1) > 0 then
-          AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);
+        if txtMaxSpeed.Control.Value > 0 then
+          AppGlobals.MaxSpeed := txtMaxSpeed.Control.Value;
 
-        AppGlobals.MinDiskSpace := StrToIntDef(txtMinDiskSpace.Text, 5);
+        AppGlobals.MinDiskSpace := txtMinDiskSpace.Control.Value;
         AppGlobals.LogFile := txtLogFile.Text;
         AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
         AppGlobals.DefaultActionBrowser := TStreamOpenActions(lstDefaultActionBrowser.ItemIndex);
 
-        {
-        if lstHotkeys.Items[0].SubItems[0] <> '' then
-          AppGlobals.ShortcutPlay := TextToShortCut(lstHotkeys.Items[0].SubItems[0])
-        else
-          AppGlobals.ShortcutPlay := 0;
-
-        if lstHotkeys.Items[1].SubItems[0] <> '' then
-          AppGlobals.ShortcutPause := TextToShortCut(lstHotkeys.Items[1].SubItems[0])
-        else
-          AppGlobals.ShortcutPause := 0;
-
-        if lstHotkeys.Items[2].SubItems[0] <> '' then
-          AppGlobals.ShortcutStop := TextToShortCut(lstHotkeys.Items[2].SubItems[0])
-        else
-          AppGlobals.ShortcutStop := 0;
-
-        if lstHotkeys.Items[3].SubItems[0] <> '' then
-          AppGlobals.ShortcutNext := TextToShortCut(lstHotkeys.Items[3].SubItems[0])
-        else
-          AppGlobals.ShortcutNext := 0;
-
-        if lstHotkeys.Items[4].SubItems[0] <> '' then
-          AppGlobals.ShortcutPrev := TextToShortCut(lstHotkeys.Items[4].SubItems[0])
-        else
-          AppGlobals.ShortcutPrev := 0;
-
-        if lstHotkeys.Items[5].SubItems[0] <> '' then
-          AppGlobals.ShortcutVolUp := TextToShortCut(lstHotkeys.Items[5].SubItems[0])
-        else
-          AppGlobals.ShortcutVolUp := 0;
-
-        if lstHotkeys.Items[6].SubItems[0] <> '' then
-          AppGlobals.ShortcutVolDown := TextToShortCut(lstHotkeys.Items[6].SubItems[0])
-        else
-          AppGlobals.ShortcutVolDown := 0;
-
-        if lstHotkeys.Items[7].SubItems[0] <> '' then
-          AppGlobals.ShortcutMute := TextToShortCut(lstHotkeys.Items[7].SubItems[0])
-        else
-          AppGlobals.ShortcutMute := 0;
-        }
+        AppGlobals.ShortcutPlay := LongWord(lstHotkeys.Items[0].Data);
+        AppGlobals.ShortcutPause := LongWord(lstHotkeys.Items[1].Data);
+        AppGlobals.ShortcutStop := LongWord(lstHotkeys.Items[2].Data);
+        AppGlobals.ShortcutNext := LongWord(lstHotkeys.Items[3].Data);
+        AppGlobals.ShortcutPrev := LongWord(lstHotkeys.Items[4].Data);
+        AppGlobals.ShortcutVolUp := LongWord(lstHotkeys.Items[5].Data);
+        AppGlobals.ShortcutVolDown := LongWord(lstHotkeys.Items[6].Data);
+        AppGlobals.ShortcutMute := LongWord(lstHotkeys.Items[7].Data);
 
         Tree := TVirtualStringTree.Create(Self);
         try
@@ -757,10 +721,10 @@ begin
         FStreamSettings[i].StreamFilePattern := Trim(txtStreamFilePattern.Text);
 
       if FIgnoreFieldList.IndexOf(txtFilePatternDecimals) = -1 then
-        FStreamSettings[i].FilePatternDecimals := StrToIntDef(txtFilePatternDecimals.Text, 3);
+        FStreamSettings[i].FilePatternDecimals := txtFilePatternDecimals.Control.Value;
 
       if FIgnoreFieldList.IndexOf(txtRemoveChars) = -1 then
-        FStreamSettings[i].RemoveChars := txtRemoveChars.Text;
+        FStreamSettings[i].RemoveChars := txtRemoveChars.Control.Text;
 
       if FIgnoreFieldList.IndexOf(chkNormalizeVariables) = -1 then
         FStreamSettings[i].NormalizeVariables := chkNormalizeVariables.Checked;
@@ -796,10 +760,10 @@ begin
           FStreamSettings[i].SkipShort := chkSkipShort.Checked;
 
         if FIgnoreFieldList.IndexOf(txtSongBuffer) = -1 then
-          FStreamSettings[i].SongBuffer := StrToIntDef(txtSongBuffer.Text, 0);
+          FStreamSettings[i].SongBuffer := txtSongBuffer.Control.Value;
 
         if FIgnoreFieldList.IndexOf(txtShortLengthSeconds) = -1 then
-          FStreamSettings[i].ShortLengthSeconds := StrToIntDef(txtShortLengthSeconds.Text, 45);
+          FStreamSettings[i].ShortLengthSeconds := txtShortLengthSeconds.Control.Value;
 
         if FIgnoreFieldList.IndexOf(chkSearchSilence) = -1 then
           FStreamSettings[i].SearchSilence := chkSearchSilence.Checked;
@@ -838,10 +802,10 @@ begin
       end;
 
       if FIgnoreFieldList.IndexOf(txtMaxRetries) = -1 then
-        FStreamSettings[i].MaxRetries := StrToIntDef(txtMaxRetries.Text, 100);
+        FStreamSettings[i].MaxRetries := txtMaxRetries.Control.Value;
 
       if FIgnoreFieldList.IndexOf(txtRetryDelay) = -1 then
-        FStreamSettings[i].RetryDelay := StrToIntDef(txtRetryDelay.Text, 5);
+        FStreamSettings[i].RetryDelay := txtRetryDelay.Control.Value;
 
       if FIgnoreFieldList.IndexOf(lstDefaultFilter) = -1 then
         FStreamSettings[i].Filter := TUseFilters(lstDefaultFilter.ItemIndex);
@@ -934,14 +898,13 @@ end;
 
 procedure TfrmSettings.FormActivate(Sender: TObject);
 begin
-  {
+  // TODO: testen
   if FBrowseDir then
   begin
     SetPage(FPageList.Find(TPanel(txtDir.Parent)));
     btnBrowse.Click;
   end;
   FBrowseDir := False;
-  }
 end;
 
 procedure TfrmSettings.FormResize(Sender: TObject);
@@ -1070,23 +1033,14 @@ procedure TfrmSettings.lstHotkeysChange(Sender: TObject; Item: TListItem;
   Change: TItemChange);
 begin
   inherited;
-  {
+
   txtHotkey.Enabled := lstHotkeys.Selected <> nil;
   if txtHotkey.Enabled then
   begin
-    txtHotkey.HotKey := TextToShortCut(lstHotkeys.Selected.SubItems[0]);
-    txtHotkey.ApplyFocus;
+    txtHotkey.Control.HotKey := TShortCut(lstHotkeys.Selected.Data);
+    txtHotkey.Control.ApplyFocus;
   end else
-    txtHotkey.HotKey := 0;
-  }
-end;
-
-procedure TfrmSettings.lstHotkeysResize(Sender: TObject);
-begin
-  inherited;
-
-  lstHotkeys.Columns[0].Width := lstHotkeys.ClientWidth div 2;
-  lstHotkeys.Columns[1].Width := lstHotkeys.ClientWidth div 2 - 25;
+    txtHotkey.Control.HotKey := 0;
 end;
 
 procedure TfrmSettings.lstIgnoreTitlesChange(Sender: TObject; Item: TListItem;
@@ -1233,8 +1187,8 @@ begin
 
   if Selected and (TPostProcessBase(Item.Data) is TExternalPostProcess) then
   begin
-    txtApp.Text := TExternalPostProcess(Item.Data).Exe;
-    txtAppParams.Text := TExternalPostProcess(Item.Data).Params;
+    txtApp.Control.Text := TExternalPostProcess(Item.Data).Exe;
+    txtAppParams.Control.Text := TExternalPostProcess(Item.Data).Params;
     txtApp.Enabled := True;
     txtAppParams.Enabled := True;
     btnBrowseApp.Enabled := True;
@@ -1242,8 +1196,8 @@ begin
     btnRemove.Enabled := True;
   end else
   begin
-    txtApp.Text := '';
-    txtAppParams.Text := '';
+    txtApp.Control.Text := '';
+    txtAppParams.Control.Text := '';
     txtApp.Enabled := False;
     txtAppParams.Enabled := False;
     btnBrowseApp.Enabled := False;
@@ -1401,7 +1355,7 @@ begin
       else if Arr[i].C = 'streamname' then
         Arr[i].Replace := _('Streamname')
       else if Arr[i].C = 'number' then
-        Arr[i].Replace := Format('%.*d', [StrToIntDef(txtFilePatternDecimals.Text, 3), 78])
+        Arr[i].Replace := Format('%.*d', [txtFilePatternDecimals.Control.Value, 78])
       else if Arr[i].C = 'day' then
         Arr[i].Replace := FormatDateTime('dd', Now)
       else if Arr[i].C = 'month' then
@@ -1494,7 +1448,7 @@ begin
       end;
   end;
 
-  inherited RegisterGeneralPage(19);
+  inherited RegisterGeneralPage(TImages.WRENCH_APPLICATION);
 end;
 
 function TfrmSettings.RemoveGray(C: TControl; ShowMessage: Boolean = True): Boolean;
@@ -2054,7 +2008,7 @@ procedure TfrmSettings.txtAppParamsChange(Sender: TObject);
 begin
   inherited;
   if (lstPostProcess.Selected <> nil) and txtAppParams.Focused then
-    TExternalPostProcess(lstPostProcess.Selected.Data).Params := txtAppParams.Text;
+    TExternalPostProcess(lstPostProcess.Selected.Data).Params := txtAppParams.Control.Text;
 end;
 
 procedure TfrmSettings.txtFilePatternChange(Sender: TObject);
@@ -2089,13 +2043,16 @@ end;
 
 procedure TfrmSettings.txtHotkeyChange(Sender: TObject);
 begin
-  inherited;
- // lstHotkeys.Selected.SubItems[0] := ShortCutToText(txtHotkey.HotKey);
+  if Assigned(lstHotkeys.Selected) then
+  begin
+    lstHotkeys.Selected.SubItems[0] := ShortCutToText(txtHotkey.Control.HotKey);
+    lstHotkeys.Selected.Data := Pointer(txtHotkey.Control.HotKey);
+  end;
 end;
 
 procedure TfrmSettings.txtIgnoreTitlePatternChange(Sender: TObject);
 begin
-  btnAddIgnoreTitlePattern.Enabled := Length(Trim(txtIgnoreTitlePattern.Text)) >= 1;
+  btnAddIgnoreTitlePattern.Enabled := Length(Trim(txtIgnoreTitlePattern.Control.Text)) >= 1;
 end;
 
 procedure TfrmSettings.txtFilePatternEnter(Sender: TObject);
@@ -2210,13 +2167,13 @@ procedure TfrmSettings.txtRegExChange(Sender: TObject);
 begin
   inherited;
 
-  btnAddRegEx.Enabled := Length(Trim(txtRegEx.Text)) >= 1;
+  btnAddRegEx.Enabled := Length(Trim(txtRegEx.Control.Text)) >= 1;
 end;
 
 procedure TfrmSettings.UpdatePostProcessUpDown;
 begin
- // btnMoveUp.Enabled := (lstPostProcess.Selected <> nil) and (TObject(lstPostProcess.Selected.Data) is TExternalPostProcess) and (not (lstPostProcess.Selected.Index = 0)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index - 1].GroupID <> lstPostProcess.Selected.GroupID));
- // btnMoveDown.Enabled := (lstPostProcess.Selected <> nil) and (TObject(lstPostProcess.Selected.Data) is TExternalPostProcess) and (not (lstPostProcess.Selected.Index = lstPostProcess.Items.Count - 1)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index + 1].GroupID <> lstPostProcess.Selected.GroupID));
+//  btnMoveUp.Enabled := (lstPostProcess.Selected <> nil) and (TObject(lstPostProcess.Selected.Data) is TExternalPostProcess) and (not (lstPostProcess.Selected.Index = 0)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index - 1].GroupID <> lstPostProcess.Selected.GroupID));
+//  btnMoveDown.Enabled := (lstPostProcess.Selected <> nil) and (TObject(lstPostProcess.Selected.Data) is TExternalPostProcess) and (not (lstPostProcess.Selected.Index = lstPostProcess.Items.Count - 1)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index + 1].GroupID <> lstPostProcess.Selected.GroupID));
 end;
 
 procedure TfrmSettings.BlacklistTreeChange(Sender: TBaseVirtualTree;
@@ -2239,9 +2196,9 @@ var
   Item: TListItem;
 begin
   Item := lstIgnoreTitles.Items.Add;
-  Item.Caption := txtIgnoreTitlePattern.Text;
+  Item.Caption := txtIgnoreTitlePattern.Control.Text;
   Item.ImageIndex := TImages.DECLINE;
-  txtIgnoreTitlePattern.Text := '';
+  txtIgnoreTitlePattern.Control.Text := '';
   txtIgnoreTitlePattern.ApplyFocus;
 
   RemoveGray(lstIgnoreTitles);
@@ -2252,14 +2209,14 @@ var
   Item: TListItem;
   RegExp: string;
 begin
-  RegExp := txtRegEx.Text;
+  RegExp := txtRegEx.Control.Text;
   if not CheckRegExp(Handle, RegExp, lstRegExes, nil) then
     Exit;
 
   Item := lstRegExes.Items.Add;
   Item.Caption := RegExp;
   Item.ImageIndex := TImages.FONT;
-  txtRegEx.Text := '';
+  txtRegEx.Control.Text := '';
   txtRegEx.ApplyFocus;
 
   RemoveGray(lstRegExes);
@@ -2345,7 +2302,7 @@ begin
   begin
     if FileExists(dlgOpen.FileName) then
     begin
-      txtApp.Text := dlgOpen.FileName;
+      txtApp.Control.Text := dlgOpen.FileName;
       lstPostProcess.Selected.Caption := ExtractFileName(dlgOpen.FileName);
       TExternalPostProcess(lstPostProcess.Selected.Data).Exe := dlgOpen.FileName;
     end;
@@ -2487,7 +2444,6 @@ begin
 
     FTemporaryPostProcessors.Remove(TExternalPostProcess(lstPostProcess.Selected.Data));
     TExternalPostProcess(lstPostProcess.Selected.Data).Free;
-    //lstPostProcess.Selected.Delete;
 
     RebuildPostProcessingList;
   end;
@@ -2495,7 +2451,7 @@ end;
 
 procedure TfrmSettings.btnRemoveIgnoreTitlePatternClick(Sender: TObject);
 begin
-  txtIgnoreTitlePattern.Text := lstIgnoreTitles.Selected.Caption;
+  txtIgnoreTitlePattern.Control.Text := lstIgnoreTitles.Selected.Caption;
   lstIgnoreTitles.Items.Delete(lstIgnoreTitles.Selected.Index);
 
   RemoveGray(lstIgnoreTitles);
@@ -2503,7 +2459,7 @@ end;
 
 procedure TfrmSettings.btnRemoveRegExClick(Sender: TObject);
 begin
-  txtRegEx.Text := lstRegExes.Selected.Caption;
+  txtRegEx.Control.Text := lstRegExes.Selected.Caption;
   lstRegExes.Items.Delete(lstRegExes.Selected.Index);
 
   RemoveGray(lstRegExes);
@@ -2579,7 +2535,7 @@ procedure TfrmSettings.btnResetRemoveCharsClick(Sender: TObject);
 begin
   inherited;
 
-  txtRemoveChars.Text := '[]{}#$§%~^';
+  txtRemoveChars.Control.Text := '[]{}#$§%~^';
   txtRemoveChars.ApplyFocus;
   RemoveGray(txtRemoveChars);
 end;
@@ -2588,7 +2544,7 @@ procedure TfrmSettings.btnResetTitlePatternClick(Sender: TObject);
 begin
   inherited;
 
-  txtRegEx.Text := DEFAULT_TITLE_REGEXP;
+  txtRegEx.Control.Text := DEFAULT_TITLE_REGEXP;
   txtRegEx.ApplyFocus;
 end;
 
@@ -2596,52 +2552,57 @@ procedure TfrmSettings.BuildHotkeys;
 var
   Item: TListItem;
 begin
-  if lstHotkeys.Items.Count > 0 then
+  if lstHotkeys.Items.Count = 0 then
   begin
-    lstHotkeys.Items[0].Caption := _('Play');
-    lstHotkeys.Items[1].Caption := _('Pause');
-    lstHotkeys.Items[2].Caption := _('Stop');
-    lstHotkeys.Items[3].Caption := _('Next stream');
-    lstHotkeys.Items[4].Caption := _('Previous stream');
-    lstHotkeys.Items[5].Caption := _('Volume up');
-    lstHotkeys.Items[6].Caption := _('Volume down');
-    lstHotkeys.Items[7].Caption := _('Mute');
-  end else
-  begin
-    {
     Item := lstHotkeys.Items.Add;
-    Item.Caption := _('Play');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutPlay));
+    Item.Data := Pointer(AppGlobals.ShortcutPlay);
+    Item.ImageIndex := TImages.KEYBOARD;
 
     Item := lstHotkeys.Items.Add;
-    Item.Caption := _('Pause');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutPause));
+    Item.Data := Pointer(AppGlobals.ShortcutPause);
+    Item.ImageIndex := TImages.KEYBOARD;
 
     Item := lstHotkeys.Items.Add;
-    Item.Caption := _('Stop');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutStop));
+    Item.Data := Pointer(AppGlobals.ShortcutStop);
+    Item.ImageIndex := TImages.KEYBOARD;
 
     Item := lstHotkeys.Items.Add;
-    Item.Caption := _('Next stream');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutNext));
+    Item.Data := Pointer(AppGlobals.ShortcutNext);
+    Item.ImageIndex := TImages.KEYBOARD;
 
     Item := lstHotkeys.Items.Add;
-    Item.Caption := _('Previous stream');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutPrev));
+    Item.Data := Pointer(AppGlobals.ShortcutPrev);
+    Item.ImageIndex := TImages.KEYBOARD;
 
     Item := lstHotkeys.Items.Add;
-    Item.Caption := _('Volume up');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutVolUp));
+    Item.Data := Pointer(AppGlobals.ShortcutVolUp);
+    Item.ImageIndex := TImages.KEYBOARD;
 
     Item := lstHotkeys.Items.Add;
-    Item.Caption := _('Volume down');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutVolDown));
+    Item.Data := Pointer(AppGlobals.ShortcutVolDown);
+    Item.ImageIndex := TImages.KEYBOARD;
 
     Item := lstHotkeys.Items.Add;
-    Item.Caption := _('Mute');
     Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutMute));
-    }
+    Item.Data := Pointer(AppGlobals.ShortcutMute);
+    Item.ImageIndex := TImages.KEYBOARD;
   end;
+
+  lstHotkeys.Items[0].Caption := _('Play');
+  lstHotkeys.Items[1].Caption := _('Pause');
+  lstHotkeys.Items[2].Caption := _('Stop');
+  lstHotkeys.Items[3].Caption := _('Next stream');
+  lstHotkeys.Items[4].Caption := _('Previous stream');
+  lstHotkeys.Items[5].Caption := _('Volume up');
+  lstHotkeys.Items[6].Caption := _('Volume down');
+  lstHotkeys.Items[7].Caption := _('Mute');
 end;
 
 function TfrmSettings.CanFinish: Boolean;
@@ -2676,6 +2637,8 @@ begin
   if not inherited then
     Exit;
 
+  // TODO: ...
+  {
   if Trim(txtMinDiskSpace.Text) = '' then
   begin
     MsgBox(Handle, _('Please enter the minumum free space that must be available for recording.'), _('Info'), MB_ICONINFORMATION);
@@ -2683,6 +2646,7 @@ begin
     txtMinDiskSpace.ApplyFocus;
     Exit;
   end;
+  }
 
   if ControlVisible(txtFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtFilePattern.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second'))) = '') then
   begin
@@ -2716,6 +2680,8 @@ begin
     Exit;
   end;
 
+  // TODO:
+  {
   if ControlVisible(txtFilePatternDecimals) and ((StrToIntDef(txtFilePatternDecimals.Text, -1) > 9) or (StrToIntDef(txtFilePatternDecimals.Text, -1) < 1)) then
   begin
     MsgBox(Handle, _('Please enter the minimum count of decimals for tracknumbers in filenames.'), _('Info'), MB_ICONINFORMATION);
@@ -2723,6 +2689,7 @@ begin
     txtFilePatternDecimals.ApplyFocus;
     Exit;
   end;
+  }
 
   if ControlVisible(txtDir) and (not DirectoryExists(txtDir.Text)) then
   begin
@@ -2737,6 +2704,8 @@ begin
 
   if pnlCut.Tag = 0 then
   begin
+    // TODO:
+    {
     if Trim(txtShortLengthSeconds.Text) = '' then
     begin
       if chkSkipShort.Checked then
@@ -2751,6 +2720,7 @@ begin
         else
           txtShortLengthSeconds.Text := IntToStr(AppGlobals.Data.StreamSettings.ShortLengthSeconds);
     end;
+    }
 
     if (StrToIntDef(txtSilenceLevel.Text, -1) > 100) or (StrToIntDef(txtSilenceLevel.Text, -1) < 1) then
     begin
@@ -2797,6 +2767,7 @@ begin
           txtSilenceBufferSeconds.Text := IntToStr(AppGlobals.Data.StreamSettings.SilenceBufferSecondsStart);
     end;
 
+    { // TODO: ...
     if Trim(txtSongBuffer.Text) = '' then
     begin
       MsgBox(Handle, _('Please enter the length of the buffer that should be added to every beginning/end of saved titles if no silence could be found.'), _('Info'), MB_ICONINFORMATION);
@@ -2820,8 +2791,10 @@ begin
           else
             txtAdjustTrackOffset.Text := IntToStr(AppGlobals.Data.StreamSettings.AdjustTrackOffsetMS);
       end;
+    }
   end;
 
+  {
   if ControlVisible(txtMaxRetries) and (Trim(txtMaxRetries.Text) = '') then
   begin
     MsgBox(Handle, _('Please enter the number of maximum connect retries.'), _('Info'), MB_ICONINFORMATION);
@@ -2837,7 +2810,10 @@ begin
     txtRetryDelay.ApplyFocus;
     Exit;
   end;
+  }
 
+  // TODO: ..
+  {
   if chkLimit.Checked then
     if ControlVisible(txtMaxSpeed) and (StrToIntDef(txtMaxSpeed.Text, -1) <= 0) then
     begin
@@ -2846,7 +2822,10 @@ begin
       txtMaxSpeed.ApplyFocus;
       Exit;
     end;
+  }
 
+  // TODO:
+  {
   if chkMonitorMode.Checked then
   begin
     if ControlVisible(txtMonitorCount) and (StrToIntDef(txtMonitorCount.Text, -1) <= 0) then
@@ -2868,14 +2847,13 @@ begin
       end;
     end;
   end;
+  }
 
   if ControlVisible(lstHotkeys) then
     for i := 0 to lstHotkeys.Items.Count - 1 do
       for n := 0 to lstHotkeys.Items.Count - 1 do
       begin
-        if (lstHotkeys.Items[i] <> lstHotkeys.Items[n]) and
-           (lstHotkeys.Items[i].SubItems[0] <> '') and
-           (lstHotkeys.Items[i].SubItems[0] = lstHotkeys.Items[n].SubItems[0]) then
+        if (lstHotkeys.Items[i] <> lstHotkeys.Items[n]) and Assigned(lstHotkeys.Items[i].Data) and (lstHotkeys.Items[i].Data = lstHotkeys.Items[n].Data) then
         begin
           MsgBox(Handle, _('A hotkey can be defined only once. Please edit the key mappings.'), _('Info'), MB_ICONINFORMATION);
           SetPage(FPageList.Find(pnlHotkeys));
@@ -2883,8 +2861,8 @@ begin
         end;
       end;
 
-  if ControlVisible(txtRetryDelay) and (StrToIntDef(txtRetryDelay.Text, 5) > 999) then
-    txtRetryDelay.Text := '999';
+  if ControlVisible(txtRetryDelay) and (txtRetryDelay.Control.Value > 999) then
+    txtRetryDelay.Control.Value := 999;
 
   Result := True;
 end;
@@ -3158,8 +3136,8 @@ end;
 procedure TfrmSettings.chkSkipShortClick(Sender: TObject);
 begin
   inherited;
+
   txtShortLengthSeconds.Enabled := chkSkipShort.State <> cbUnchecked;
-  Label4.Enabled := txtShortLengthSeconds.Enabled;
 
   if FInitialized then
     RemoveGray(chkSkipShort);
@@ -3334,7 +3312,6 @@ begin
   // Werbung überspringen ausblenden
   chkSkipShort.Visible := False;
   txtShortLengthSeconds.Visible := False;
-  Label4.Visible := False;
 
   // Offset setzen ausblenden
   chkAdjustTrackOffset.Visible := False;
