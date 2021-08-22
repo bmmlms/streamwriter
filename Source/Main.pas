@@ -44,6 +44,12 @@ const
   WM_AFTERSHOWN = WM_USER + 678;
 
 type
+  TWMHotKey = packed record
+    Msg: Cardinal;
+    HotKey: Longint;
+    Unused: Longint;
+    Result: Longint;
+  end;
 
   { TfrmStreamWriterMain }
 
@@ -269,7 +275,7 @@ type
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
     procedure EndSession(var Msg: TWMEndSession); message WM_ENDSESSION;
     procedure SysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
-   // procedure Hotkey(var Msg: TWMHotKey); message WM_HOTKEY;
+    procedure Hotkey(var Msg: TWMHotKey); message WM_HOTKEY;
     procedure UpdateFound(var Msg: TMessage); message WM_UPDATEFOUND;
     procedure SetupExitMessage(var Msg: TMessage); message 5432;
 
@@ -1189,7 +1195,7 @@ procedure TfrmStreamWriterMain.HomeCommTitleNotificationsChanged(
 begin
   UpdateStatus;
 end;
-                                     {
+
 procedure TfrmStreamWriterMain.Hotkey(var Msg: TWMHotKey);
   procedure StopPlay;
   var
@@ -1317,7 +1323,7 @@ begin
       end;
   end;
 end;
-                }
+
 procedure TfrmStreamWriterMain.MessageReceived(Msg: TMessageBase);
 var
   SelectSavedSongsMsg: TSelectSavedSongsMsg absolute Msg;
