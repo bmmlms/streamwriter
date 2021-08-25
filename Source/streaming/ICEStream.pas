@@ -25,10 +25,31 @@ unit ICEStream;
 interface
 
 uses
-  SysUtils, Windows, StrUtils, Classes, HTTPStream, ExtendedStream, AudioStream,
-  AppData, LanguageObjects, Functions, DynBASS, WaveData, Generics.Collections,
-  Math, Logging, WideStrUtils, AudioFunctions, SWFunctions,
-  MonitorAnalyzer, DataManager, Generics.Defaults, Sockets, TypeDefs, Constants;
+  Windows,
+  AppData,
+  AudioFunctions,
+  AudioStream,
+  Classes,
+  Constants,
+  DataManager,
+  DynBASS,
+  ExtendedStream,
+  Functions,
+  Generics.Collections,
+  Generics.Defaults,
+  HTTPStream,
+  LanguageObjects,
+  Logging,
+  Math,
+  MonitorAnalyzer,
+  RegExpr,
+  Sockets,
+  StrUtils,
+  SWFunctions,
+  SysUtils,
+  TypeDefs,
+  WaveData,
+  WideStrUtils;
 
 type
   TChunkReceivedEvent = procedure(Buf: Pointer; Len: Integer) of object;
@@ -77,8 +98,7 @@ type
     constructor Create(Streamname, Dir: string; SongsSaved: Cardinal; Settings: TStreamSettings);
 
     procedure GetStreamFilename(Name: string; AudioType: TAudioTypes);
-    procedure GetFilename(Filesize: UInt64; Artist, Title, Album, Genre, StreamTitle: string; AudioType: TAudioTypes;
-      TitleState: TTitleStates; Killed: Boolean);
+    procedure GetFilename(Filesize: UInt64; Artist, Title, Album, Genre, StreamTitle: string; AudioType: TAudioTypes; TitleState: TTitleStates; Killed: Boolean);
 
     property Result: TCheckResults read FResult;
     property SaveDir: string read FSaveDir;
@@ -330,10 +350,8 @@ begin
   Result := '';
   if Length(Title) > 0 then
     for i := 1 to Length(Title) do
-    begin
       if (Ord(Title[i]) >= 32) then
         Result := Result + Title[i];
-    end;
 end;
 
 constructor TICEStream.Create;
@@ -389,8 +407,7 @@ begin
   end;
 
   // Und noch die dicke Stream-Datei melden
-  if (not FMonitoring) and (FAudioStream <> nil) and FAudioStream.InheritsFrom(TAudioStreamFile) and
-      not (FSettings.SeparateTracks and FSettings.DeleteStreams) and (FRecordTitle = '') and (FAudioStream.Size > 0) then
+  if (not FMonitoring) and (FAudioStream <> nil) and FAudioStream.InheritsFrom(TAudioStreamFile) and not (FSettings.SeparateTracks and FSettings.DeleteStreams) and (FRecordTitle = '') and (FAudioStream.Size > 0) then
   begin
     FSavedFilename := TAudioStreamFile(FAudioStream).FileName;
     FSavedSize := TAudioStreamFile(FAudioStream).Size;
@@ -451,8 +468,8 @@ begin
     Exit;
   end;
 
-  if (HeaderType = 'icy') or (LowerCase(ContentType) = 'audio/mpeg') or (LowerCase(ContentType) = 'audio/aacp') or (LowerCase(ContentType) = 'audio/aac') or
-     (Pos(#10'icy-metaint:', LowerCase(FHeader)) > 0) or (Pos(#10'icy-name:', LowerCase(FHeader)) > 0) then
+  if (HeaderType = 'icy') or (LowerCase(ContentType) = 'audio/mpeg') or (LowerCase(ContentType) = 'audio/aacp') or (LowerCase(ContentType) = 'audio/aac') or (Pos(#10'icy-metaint:', LowerCase(FHeader)) > 0) or
+    (Pos(#10'icy-name:', LowerCase(FHeader)) > 0) then
   begin
     WriteExtLog(_('Audio-data response detected'), ltGeneral, llDebug);
     FHeaderType := 'icy';
@@ -472,9 +489,7 @@ begin
       FStreamURL := GetHeaderData('icy-url');
       FGenre := GetHeaderData('icy-genre');
 
-      if (LowerCase(ContentType) = 'audio/mpeg') or
-         ((ContentType = '') and ((FStreamName <> '') or (FStreamURL <> '')))
-      then
+      if (LowerCase(ContentType) = 'audio/mpeg') or ((ContentType = '') and ((FStreamName <> '') or (FStreamURL <> ''))) then
         FAudioType := atMPEG
       else if (LowerCase(ContentType) = 'audio/aacp') or (LowerCase(ContentType) = 'audio/aac') then
         FAudioType := atAAC
@@ -503,9 +518,8 @@ begin
     end else
       raise Exception.Create(Format(_('Invalid responsecode (%d)'), [ResponseCode]));
   end else if HeaderType = 'http' then
-  begin
-    WriteExtLog(_('HTTP response detected'), ltGeneral, llDebug);
-  end else
+    WriteExtLog(_('HTTP response detected'), ltGeneral, llDebug)
+  else
     raise Exception.Create(_('Unknown header-type'));
 end;
 
@@ -518,9 +532,7 @@ begin
   if FAudioStream <> nil then
   begin
     if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
-    begin
       Filename := TAudioStreamFile(FAudioStream).FileName;
-    end;
     FreeAndNil(FAudioStream);
   end;
 
@@ -576,6 +588,7 @@ end;
 //end;
 
 procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
+
   procedure RemoveData;
   var
     i: Integer;
@@ -611,6 +624,7 @@ procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
       end;
     end;
   end;
+
 var
   Dir, Filename, FilenameConverted, RegEx: string;
   FileCheck: TFileChecker;
@@ -677,13 +691,10 @@ begin
       try
         if FRecordTitle <> '' then
           TitleState := tsAuto
+        else if FullTitle then
+          TitleState := tsFull
         else
-        begin
-          if FullTitle then
-            TitleState := tsFull
-          else
-            TitleState := tsIncomplete;
-        end;
+          TitleState := tsIncomplete;
 
         FileCheck.GetFilename(E - S, FSavedArtist, FSavedTitle, FSavedAlbum, FGenre, Title, FAudioType, TitleState, FKilled);
         if (FileCheck.Result in [crSave, crOverwrite]) and (FileCheck.FFilename <> '') then
@@ -721,9 +732,7 @@ begin
             Exit;
           end;
         end else if FileCheck.Result = crOverwrite then
-        begin
-          WriteExtLog(Format(_('Saving "%s" - it overwrites a smaller same named file'), [Title]), ltGeneral, llInfo)
-        end;
+          WriteExtLog(Format(_('Saving "%s" - it overwrites a smaller same named file'), [Title]), ltGeneral, llInfo);
       finally
         FileCheck.Free;
       end;
@@ -743,9 +752,7 @@ begin
         if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
           TAudioStreamFile(FAudioStream).SaveToFile(Dir + Filename, P.DataStart, P.DataEnd - P.DataStart)
         else
-        begin
           TAudioStreamMemory(FAudioStream).SaveToFile(Dir + Filename, P.DataStart, P.DataEnd - P.DataStart);
-        end;
       except
         Error := GetLastError;
         if (Error = 3) and (Length(Dir + Filename) > MAX_PATH - 2) then
@@ -769,7 +776,7 @@ begin
       begin
         AInfo.GetAudioInfo(FSavedFilename);
         if AInfo.Success then
-          FSavedLength := Trunc(FSavedSize / AInfo.BytesPerSec)
+          FSavedLength := Trunc(FSavedSize / AInfo.BytesPerSec);
       end;
       if FSavedLength = 0 then
         FSavedLength := Trunc(FSavedSize / FAudioInfo.BytesPerSec);
@@ -857,34 +864,28 @@ begin
     try
       case FAudioType of
         atMPEG:
+          if FSettings.SaveToMemory then
+            FAudioStream := TMPEGStreamMemory.Create
+          else
           begin
-            if FSettings.SaveToMemory then
-              FAudioStream := TMPEGStreamMemory.Create
-            else
-            begin
-              FAudioStream := TMPEGStreamFile.Create(Dir + Filename, fmCreate or fmShareDenyWrite);
-              FFilename := Dir + Filename;
-            end;
+            FAudioStream := TMPEGStreamFile.Create(Dir + Filename, fmCreate or fmShareDenyWrite);
+            FFilename := Dir + Filename;
           end;
         atAAC:
+          if FSettings.SaveToMemory then
+            FAudioStream := TAACStreamMemory.Create
+          else
           begin
-            if FSettings.SaveToMemory then
-              FAudioStream := TAACStreamMemory.Create
-            else
-            begin
-              FAudioStream := TAACStreamFile.Create(Dir + Filename, fmCreate or fmShareDenyWrite);
-              FFilename := Dir + Filename;
-            end;
+            FAudioStream := TAACStreamFile.Create(Dir + Filename, fmCreate or fmShareDenyWrite);
+            FFilename := Dir + Filename;
           end;
         atOGG:
+          if FSettings.SaveToMemory then
+            FAudioStream := TOGGStreamMemory.Create
+          else
           begin
-            if FSettings.SaveToMemory then
-              FAudioStream := TOGGStreamMemory.Create
-            else
-            begin
-              FAudioStream := TOGGStreamFile.Create(Dir + Filename, fmCreate or fmShareDenyWrite);
-              FFilename := Dir + Filename;
-            end;
+            FAudioStream := TOGGStreamFile.Create(Dir + Filename, fmCreate or fmShareDenyWrite);
+            FFilename := Dir + Filename;
           end;
       end;
 
@@ -952,8 +953,8 @@ begin
       begin
         if FAudioStream.Size > TrackEnd + FAudioInfo.BytesPerSec * FSettings.SilenceBufferSecondsEnd then
         begin
-          WriteExtLog(Format('Searching for silence using search range of %d/%d bytes...', [FAudioInfo.BytesPerSec * FSettings.SilenceBufferSecondsStart,
-            FAudioInfo.BytesPerSec * FSettings.SilenceBufferSecondsEnd]), ltGeneral, llDebug);
+          WriteExtLog(Format('Searching for silence using search range of %d/%d bytes...', [FAudioInfo.BytesPerSec * FSettings.SilenceBufferSecondsStart, FAudioInfo.BytesPerSec * FSettings.SilenceBufferSecondsEnd]),
+            ltGeneral, llDebug);
 
           if FSettings.AutoDetectSilenceLevel then
             MaxPeaks := -1
@@ -961,11 +962,11 @@ begin
             MaxPeaks := FSettings.SilenceLevel;
 
           if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
-            R := TAudioStreamFile(FAudioStream).SearchSilence(TrackStart, TrackEnd, FAudioInfo.BytesPerSec * FSettings.SilenceBufferSecondsStart,
-              FAudioInfo.BytesPerSec * FSettings.SilenceBufferSecondsEnd, MaxPeaks, FSettings.SilenceLength)
+            R := TAudioStreamFile(FAudioStream).SearchSilence(TrackStart, TrackEnd, FAudioInfo.BytesPerSec * FSettings.SilenceBufferSecondsStart, FAudioInfo.BytesPerSec *
+              FSettings.SilenceBufferSecondsEnd, MaxPeaks, FSettings.SilenceLength)
           else
-            R := TAudioStreamMemory(FAudioStream).SearchSilence(TrackStart, TrackEnd, FAudioInfo.BytesPerSec * FSettings.SilenceBufferSecondsStart,
-              FAudioInfo.BytesPerSec * FSettings.SilenceBufferSecondsEnd, MaxPeaks, FSettings.SilenceLength);
+            R := TAudioStreamMemory(FAudioStream).SearchSilence(TrackStart, TrackEnd, FAudioInfo.BytesPerSec * FSettings.SilenceBufferSecondsStart, FAudioInfo.BytesPerSec *
+              FSettings.SilenceBufferSecondsEnd, MaxPeaks, FSettings.SilenceLength);
 
           if (R.DataStart > -1) or (R.DataEnd > -1) then
           begin
@@ -1012,8 +1013,8 @@ begin
             WriteExtLog(Format('Tracklist count is %d', [FStreamTracks.Count]), ltGeneral, llDebug);
           end else
           begin
-            if (FAudioStream.Size >= TrackStart + (TrackEnd - TrackStart) + ((FSettings.SongBuffer * FAudioInfo.BytesPerMSec) * 2)) and
-               (FAudioStream.Size > TrackEnd + (FSettings.SongBuffer * FAudioInfo.BytesPerMSec) * 2) then
+            if (FAudioStream.Size >= TrackStart + (TrackEnd - TrackStart) + ((FSettings.SongBuffer * FAudioInfo.BytesPerMSec) * 2)) and (FAudioStream.Size > TrackEnd +
+              (FSettings.SongBuffer * FAudioInfo.BytesPerMSec) * 2) then
             begin
               WriteExtLog(Format('No silence found, saving using buffer of %d bytes...', [Trunc(FSettings.SongBuffer * FAudioInfo.BytesPerMSec)]), ltGeneral, llDebug);
 
@@ -1030,38 +1031,30 @@ begin
               FStreamTracks.Delete(i);
               WriteExtLog(Format('Tracklist count is %d', [FStreamTracks.Count]), ltGeneral, llDebug);
             end else
-            begin
               WriteExtLog('Waiting for full buffer because no silence found...', ltGeneral, llDebug);
-            end;
           end;
         end else
         begin
           // WriteDebug(Format('Waiting to save "%s" because stream is too small', [Track.Title]));
         end;
-      end else
+      end else if (FAudioStream.Size >= TrackStart + (TrackEnd - TrackStart) + ((FSettings.SongBuffer * FAudioInfo.BytesPerMSec) * 2)) and (FAudioStream.Size > TrackEnd + FSettings.SongBuffer * FAudioInfo.BytesPerMSec) then
       begin
-        if (FAudioStream.Size >= TrackStart + (TrackEnd - TrackStart) + ((FSettings.SongBuffer * FAudioInfo.BytesPerMSec) * 2)) and
-           (FAudioStream.Size > TrackEnd + FSettings.SongBuffer * FAudioInfo.BytesPerMSec) then
+        WriteExtLog(Format('Saving using buffer of %d bytes...', [Trunc(FSettings.SongBuffer * FAudioInfo.BytesPerMSec)]), ltGeneral, llDebug);
+
+        if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
         begin
-          WriteExtLog(Format('Saving using buffer of %d bytes...', [Trunc(FSettings.SongBuffer * FAudioInfo.BytesPerMSec)]), ltGeneral, llDebug);
-
-          if (FRecordTitle = '') or ((FRecordTitle <> '') and (FRecordTitle = Track.Title)) then
-          begin
-            if FRecordTitle <> '' then
-              SaveData(TrackStart - Trunc(FSettings.SongBuffer * FAudioInfo.BytesPerMSec), TrackEnd + Trunc(FSettings.SongBuffer * FAudioInfo.BytesPerMSec), Track.Title, True)
-            else
-              SaveData(TrackStart - Trunc(FSettings.SongBuffer * FAudioInfo.BytesPerMSec), TrackEnd + Trunc(FSettings.SongBuffer * FAudioInfo.BytesPerMSec), Track.Title, Track.FullTitle);
-          end else
-            WriteExtLog('Skipping title because it is not the title to be saved', ltGeneral, llDebug);
-
-          Track.Free;
-          FStreamTracks.Delete(i);
-          WriteExtLog(Format('Tracklist count is %d', [FStreamTracks.Count]), ltGeneral, llDebug);
+          if FRecordTitle <> '' then
+            SaveData(TrackStart - Trunc(FSettings.SongBuffer * FAudioInfo.BytesPerMSec), TrackEnd + Trunc(FSettings.SongBuffer * FAudioInfo.BytesPerMSec), Track.Title, True)
+          else
+            SaveData(TrackStart - Trunc(FSettings.SongBuffer * FAudioInfo.BytesPerMSec), TrackEnd + Trunc(FSettings.SongBuffer * FAudioInfo.BytesPerMSec), Track.Title, Track.FullTitle);
         end else
-        begin
-          WriteExtLog('Waiting for full buffer...', ltGeneral, llDebug);
-        end;
-      end;
+          WriteExtLog('Skipping title because it is not the title to be saved', ltGeneral, llDebug);
+
+        Track.Free;
+        FStreamTracks.Delete(i);
+        WriteExtLog(Format('Tracklist count is %d', [FStreamTracks.Count]), ltGeneral, llDebug);
+      end else
+        WriteExtLog('Waiting for full buffer...', ltGeneral, llDebug);
     end;
   end;
 end;
@@ -1103,7 +1096,6 @@ begin
       FSettings.DeleteStreams := False;
 
     if (not FBitrateMeasured) and (((FAudioInfo.BytesPerSec = 0) and (FAudioStream.Size > 32768)) or ((FAudioInfo.BytesPerSec > 0) and (FAudioStream.Size > AUDIO_BUFFER))) then
-    begin
       try
         if FAudioStream.InheritsFrom(TAudioStreamFile) then
           FAudioInfo.GetAudioInfo(TAudioStreamFile(FAudioStream).FileName)
@@ -1126,7 +1118,6 @@ begin
       except
         raise Exception.Create(_('Bytes per second could not be calculated'));
       end;
-    end;
 
     // Wenn der Stream im Speicher sitzt und größer als 200MB ist, dann wird der Stream hier geplättet.
     if (FAudioStream.InheritsFrom(TAudioStreamMemory)) and (FAudioStream.Size > 204800000) then
@@ -1154,8 +1145,7 @@ begin
       TrySave;
 
     if RecordTitle <> '' then
-      if ((FAudioInfo.BytesPerSec > 0) and (FAudioStream.Size > FAudioInfo.BytesPerSec * 60) and (FTitle <> FRecordTitle) and (FStreamTracks.Find(FRecordTitle) = nil)) or
-         (FMetaCounter > 5) then
+      if ((FAudioInfo.BytesPerSec > 0) and (FAudioStream.Size > FAudioInfo.BytesPerSec * 60) and (FTitle <> FRecordTitle) and (FStreamTracks.Find(FRecordTitle) = nil)) or (FMetaCounter > 5) then
       begin
         WriteExtLog(_('Stream will be removed because wished title was not found'), ltGeneral, llWarning);
         FRemoveClient := True;
@@ -1177,7 +1167,6 @@ begin
       end;
 
       if FNextMetaInt = 0 then
-      begin
         if RecvStream.Position < RecvStream.Size - 4081 then // 4081 wegen 255*16+1 (Max-MetaLen)
         begin
           FNextMetaInt := FMetaInt;
@@ -1190,9 +1179,9 @@ begin
             RecvStream.Position := RecvStream.Position + MetaLen;
             P := PosEx(''';', MetaData, 14);
             MetaData := AnsiString(Trim(Copy(MetaData, 14, P - 14)));
-//            if IsUTF8String(MetaData) then // TODO:
-//              Title := CleanTitle(UTF8ToString(MetaData))
-//            else
+            if IsUTF8String(MetaData) then
+              Title := CleanTitle(UTF8ToString(MetaData))
+            else
               Title := CleanTitle(MetaData);
 
             IgnoreTitle := Title = '';
@@ -1247,9 +1236,7 @@ begin
                 // Wenn eh nur ganze gespeichert werden sollen, dann jetzt schon raus,
                 // sonst wird nie ins SaveData gegangen, wo das auch gemacht wird.
                 if FStopAfterSong and (FRecordingSessionMetaCounter = 2) and FSettings.OnlySaveFull then
-                begin
                   FClientStopRecording := True;
-                end;
               end;
 
               if (not FMonitoring) and FSettings.SeparateTracks and DisplayTitleChanged then
@@ -1257,22 +1244,17 @@ begin
                 begin
                   if FAudioStream <> nil then
                     FStreamTracks.FoundTitle(FAudioStream.Size, Title, FAudioInfo.BytesPerSec, True);
-                end else
-                begin
-                  // Achtung: Der Block hier ist so ähnlich in StartRecordingInternal() nochmal!
-                  if (FMetaCounter >= 2) or ((FMetaCounter = 1) and (not FSettings.OnlySaveFull)) then
+                end else if (FMetaCounter >= 2) or ((FMetaCounter = 1) and (not FSettings.OnlySaveFull)) then
+                  if FAudioStream <> nil then
                   begin
-                    if FAudioStream <> nil then
-                    begin
-                      FRecordingTitleFound := True;
+                    FRecordingTitleFound := True;
 
-                      if FMetaCounter >= 2 then
-                        FStreamTracks.FoundTitle(FAudioStream.Size, Title, FAudioInfo.BytesPerSec, True)
-                      else
-                        FStreamTracks.FoundTitle(FAudioStream.Size, Title, FAudioInfo.BytesPerSec, False);
-                    end;
-                  end;
-                end;
+                    if FMetaCounter >= 2 then
+                      FStreamTracks.FoundTitle(FAudioStream.Size, Title, FAudioInfo.BytesPerSec, True)
+                    else
+                      FStreamTracks.FoundTitle(FAudioStream.Size, Title, FAudioInfo.BytesPerSec, False);
+                  end// Achtung: Der Block hier ist so ähnlich in StartRecordingInternal() nochmal!
+              ;
 
               FTitle := Title;
               FDisplayTitle := NewDisplayTitle;
@@ -1287,7 +1269,6 @@ begin
           end;
         end else
           Break;
-      end;
     end;
 
     RecvStream.RemoveRange(0, RecvStream.Position);
@@ -1295,6 +1276,7 @@ begin
 end;
 
 procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Title: string; var Album: string);
+
   function MyUpperCase(C: Char): Char;
   begin
     if CharInSet(C, ['ä', 'Ä', 'ö', 'Ö', 'ü', 'Ü']) then
@@ -1302,13 +1284,15 @@ procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Titl
     else
       Result := UpperCase(C)[1];
   end;
+
   function MyLowerCase(C: Char): Char;
   begin
-//    if CharInSet(C, ['ä', 'Ä', 'ö', 'Ö', 'ü', 'Ü']) then
-//      Result := AnsiLowerCase(C)[1]
-//    else
-//      Result := LowerCase(C)[1];
+    if CharInSet(C, ['ä', 'Ä', 'ö', 'Ö', 'ü', 'Ü']) then
+      Result := AnsiLowerCase(C)[1]
+    else
+      Result := LowerCase(C);
   end;
+
   function NormalizeText(Text: string): string;
   var
     i: Integer;
@@ -1327,54 +1311,52 @@ procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Titl
       LastChar := Text[i];
     end;
   end;
-//var
-//  R: TPerlRegEx;
+
+var
+  R: TRegExpr;
 begin
-  {
   Artist := '';
   Title := '';
   Album := '';
 
   if (S <> '') and (Pattern <> '') then
   begin
-    R := TPerlRegEx.Create;
-    R.Options := R.Options + [preCaseLess];
+    R := TRegExpr.Create(Pattern);
+    R.ModifierI := True;
     try
-      R.Subject := S;
-      R.RegEx := Pattern;
       try
-        if R.Match then
+        if R.Exec(S) then
         begin
           try
-            if R.NamedGroup('a') > 0 then
-              Artist := Trim(R.Groups[R.NamedGroup('a')]);
-          except end;
+            if R.MatchFromName('a') <> '' then
+              Artist := Trim(R.MatchFromName('a'));
+          except
+          end;
           try
-            if R.NamedGroup('t') > 0 then
-              Title := Trim(R.Groups[R.NamedGroup('t')]);
-          except end;
+            if R.MatchFromName('t') <> '' then
+              Title := Trim(R.MatchFromName('t'));
+          except
+          end;
           try
-            if R.NamedGroup('l') > 0 then
-              Album := Trim(R.Groups[R.NamedGroup('l')]);
-          except end;
+            if R.MatchFromName('l') <> '' then
+              Album := Trim(R.MatchFromName('l'));
+          except
+          end;
         end;
-      except end;
+      except
+      end;
     finally
       R.Free;
     end;
   end;
 
   if (Artist = '') and (Title = '') and (Pattern <> DEFAULT_TITLE_REGEXP) then
-  begin
-    // Wenn nichts gefunden wurde, Fallback mit normalem Muster..
-    ParseTitle(S, DEFAULT_TITLE_REGEXP, Artist, Title, Album);
-  end;
+    ParseTitle(S, DEFAULT_TITLE_REGEXP, Artist, Title, Album)// Wenn nichts gefunden wurde, Fallback mit normalem Muster..
+  ;
 
   if (Artist = '') and (Title = '') then
-  begin
-    // Wenn immer noch nichts gefunden wurde, ist das einfach der Titel..
-    Title := S;
-  end;
+    Title := S// Wenn immer noch nichts gefunden wurde, ist das einfach der Titel..
+  ;
 
   if FSettings.NormalizeVariables then
   begin
@@ -1382,7 +1364,6 @@ begin
     Title := NormalizeText(Title);
     Album := NormalizeText(Album);
   end;
-  }
 end;
 
 procedure TICEStream.Process(Received: Cardinal);
@@ -1391,7 +1372,7 @@ begin
 
   if not HeaderRemoved then
     Exit;
-  if HeaderType = 'icy'  then
+  if HeaderType = 'icy' then
   begin
     if (HeaderRemoved) and (RecvStream.Size > 8192) then
     begin
@@ -1402,15 +1383,11 @@ begin
       end;
 
       if FMonitoringStarted then
-      begin
         FMonitoring := True;
-      end;
 
       if FRecordingStarted and (not FRecording) then
-      begin
         if StartRecordingInternal then
           FRecording := True;
-      end;
       if (not FRecordingStarted) and FRecording then
       begin
         StopRecordingInternal;
@@ -1422,7 +1399,7 @@ begin
   end else if HeaderType = 'http' then
   begin
     if (Size > 512000) or (RecvStream.Size > 512000) then
-      raise Exception.Create(_('Too many bytes in HTTP-response'))
+      raise Exception.Create(_('Too many bytes in HTTP-response'));
   end else if HeaderRemoved then
     raise Exception.Create(_('Unknown header-type'));
 end;
@@ -1467,11 +1444,9 @@ end;
 procedure TStreamTracks.FoundTitle(Offset: Int64; Title: string; BytesPerSec: Cardinal; FullTitle: Boolean);
 begin
   if Count > 0 then
-  begin
-    Items[Count - 1].E := Offset;
-    //if Assigned(FOnDebug) then
+    Items[Count - 1].E := Offset//if Assigned(FOnDebug) then
     //  FOnDebug(Format('Setting SongEnd of "%s" to %d', [Items[Count - 1].Title, Offset]), '');
-  end;
+  ;
 
   // Wenn wir automatisch aufnehmen und der Titel der Titel ist, den wir haben wollen
   // und dabei der erste empfangene ist, dann nutzen wir nicht den Start bei
@@ -1503,6 +1478,7 @@ begin
 end;
 
 function TFileChecker.GetAppendNumber(Dir, Filename: string): Integer;
+
   function AnyFileExists(Filename: string): Boolean;
   var
     i: Integer;
@@ -1513,6 +1489,7 @@ function TFileChecker.GetAppendNumber(Dir, Filename: string): Integer;
         if FileExists(Filename + FormatToFiletype(TAudioTypes(i))) then
           Exit(True);
   end;
+
 var
   Append: Integer;
   FilenameTmp: string;
@@ -1532,8 +1509,7 @@ begin
     Result := Append;
 end;
 
-procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title, Album, Genre, StreamTitle: string; AudioType: TAudioTypes;
-  TitleState: TTitleStates; Killed: Boolean);
+procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title, Album, Genre, StreamTitle: string; AudioType: TAudioTypes; TitleState: TTitleStates; Killed: Boolean);
 
   function AnyFileExists(Filename: string): Boolean;
   var
@@ -1545,6 +1521,7 @@ procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title, Album, Genre
         if FileExists(Filename + FormatToFiletype(TAudioTypes(i))) then
           Exit(True);
   end;
+
 var
   Filename, Ext, Patterns: string;
 begin
@@ -1567,19 +1544,15 @@ begin
   if AnyFileExists(FSaveDir + Filename) then
   begin
     if FSettings.DiscardAlways then
-    begin
-      FResult := crDiscard;
-    end else if FSettings.OverwriteSmaller and (GetFileSize(FSaveDir + Filename + Ext) < Filesize) then
+      FResult := crDiscard
+    else if FSettings.OverwriteSmaller and (GetFileSize(FSaveDir + Filename + Ext) < Filesize) then
     begin
       FResult := crOverwrite;
       FFilename := Filename + Ext;
     end else if FSettings.DiscardSmaller and (GetFileSize(FSaveDir + Filename + Ext) >= Filesize) then
-    begin
-      FResult := crDiscardExistingIsLarger;
-    end else
-    begin
+      FResult := crDiscardExistingIsLarger
+    else
       FFilename := FixPathName(Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext);
-    end;
   end else
   begin
     FResult := crSave;
@@ -1616,17 +1589,14 @@ begin
       Name := StringReplace(Name, FSettings.RemoveChars[i], '', [rfReplaceAll]);
 
     if Trim(Name) = '' then
-    begin
       Name := _('Unknown stream');
-    end;
 
     Name := InfoToFilename('', '', '', '', '', tsStream, 'streamname|day|month|year|hour|minute|second');
     FFilename := GetValidFilename(Name);
 
     if FileExists(FSaveDir + Filename + Ext) then
-    begin
-      FFilename := Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext;
-    end else
+      FFilename := Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext
+    else
       FFilename := Filename + Ext;
 
     if Length(FSaveDir + FFilename) > MAX_PATH - 2 then
@@ -1717,7 +1687,7 @@ begin
       else if Arr[i].C = 'minute' then
         Arr[i].Replace := FormatDateTime('nn', Now)
       else if Arr[i].C = 'second' then
-        Arr[i].Replace := FormatDateTime('ss', Now)
+        Arr[i].Replace := FormatDateTime('ss', Now);
     end;
   finally
     PList.Free;
@@ -1751,9 +1721,7 @@ begin
     F := RemoveFileExt(Filename);
 
     if Length(D + E) < MAX_PATH - 2 then
-    begin
       Result := Copy(F, 1, MAX_PATH - 2 - Length(D + E)) + E;
-    end;
   end;
 end;
 
