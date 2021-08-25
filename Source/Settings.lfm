@@ -10,76 +10,11 @@ inherited frmSettings: TfrmSettings
   OnCreate = FormCreate
   OnShow = FormShow
   Position = poOwnerFormCenter
-  inherited pnlHeader: TPanel
-    Width = 1576
-    ClientWidth = 1576
-    TabOrder = 1
-    inherited Shape1: TShape
-      Width = 1576
-    end
-    inherited lblTop: TLabel
-      Width = 1576
-    end
-  end
-  inherited pnlNav: TPanel
-    Top = 841
-    Width = 1576
-    ClientWidth = 1576
-    TabOrder = 2
-    inherited Bevel2: TBevel
-      Width = 1576
-    end
-    inherited btnOK: TBitBtn
-      Left = 1479
-      Default = False
-    end
-  end
-  inherited pnlLeft: TPanel
+  inherited FlowPanelPages: TFlowPanel
     Height = 808
-    TabOrder = 3
-  end
-  inherited pnlGeneral: TPanel
-    Left = 1212
-    Top = 84
-    TabOrder = 4
-  end
-  object pnlAddons: TPanel[4]
-    Left = 1204
-    Height = 37
-    Top = 392
-    Width = 293
-    ClientHeight = 37
-    ClientWidth = 293
-    TabOrder = 0
-    Visible = False
-    object lstAddons: TListView
-      Left = 1
-      Height = 35
-      Top = 1
-      Width = 291
-      Align = alClient
-      Checkboxes = True
-      Columns = <      
-        item
-          Width = 200
-        end>
-      ReadOnly = True
-      RowSelect = True
-      ShowColumnHeaders = False
-      SmallImages = modSharedData.imgImages
-      TabOrder = 0
-      ViewStyle = vsReport
-      OnItemChecked = lstAddonsItemChecked
-      OnResize = lstAddonsResize
-    end
-  end
-  object FlowPanel7: TFlowPanel[5]
-    Left = 93
-    Height = 808
-    Top = 33
     Width = 1483
-    Align = alClient
-    Caption = 'FlowPanel7'
+    BevelOuter = bvRaised
+    Caption = 'FlowPanel1'
     ControlList = <    
       item
         Control = pnlMain
@@ -151,10 +86,7 @@ inherited frmSettings: TfrmSettings
         WrapAfter = waAuto
         Index = 13
       end>
-    FlowLayout = tlTop
-    FlowStyle = fsLeftRightTopBottom
-    TabOrder = 5
-    object pnlMain: TPanel
+    object pnlMain: TPanel[0]
       Left = 1
       Height = 332
       Top = 1
@@ -164,24 +96,6 @@ inherited frmSettings: TfrmSettings
       ClientWidth = 293
       TabOrder = 0
       Visible = False
-      object Label3: TLabel
-        Left = 1
-        Height = 13
-        Top = 263
-        Width = 291
-        Align = alBottom
-        Anchors = [akLeft, akBottom]
-        Caption = 'Default action on doubleclick on stream:'
-      end
-      object Label18: TLabel
-        Left = 1
-        Height = 13
-        Top = 297
-        Width = 291
-        Align = alBottom
-        Anchors = [akLeft, akBottom]
-        Caption = 'Default action on doubleclick in browser:'
-      end
       object chkTray: TCheckBox
         Left = 1
         Height = 19
@@ -191,22 +105,6 @@ inherited frmSettings: TfrmSettings
         Caption = 'Move to notification area...'
         OnClick = chkTrayClick
         TabOrder = 1
-      end
-      object lstDefaultAction: TComboBox
-        Left = 1
-        Height = 21
-        Top = 276
-        Width = 291
-        Align = alBottom
-        Anchors = [akLeft, akBottom]
-        ItemHeight = 13
-        Items.Strings = (
-          'Start/stop recording'
-          'Listen to stream'
-          'Listen to stream (external player)'
-        )
-        Style = csDropDownList
-        TabOrder = 11
       end
       object optClose: TRadioButton
         Left = 19
@@ -227,23 +125,6 @@ inherited frmSettings: TfrmSettings
         BorderSpacing.Left = 18
         Caption = '...on minimize'
         TabOrder = 3
-      end
-      object lstDefaultActionBrowser: TComboBox
-        Left = 1
-        Height = 21
-        Top = 310
-        Width = 291
-        Align = alBottom
-        Anchors = [akLeft, akBottom]
-        ItemHeight = 13
-        Items.Strings = (
-          'Start recording'
-          'Listen to stream'
-          'Listen to stream (external player)'
-          'Only add to list'
-        )
-        Style = csDropDownList
-        TabOrder = 12
       end
       object chkSnapMain: TCheckBox
         Left = 1
@@ -341,8 +222,61 @@ inherited frmSettings: TfrmSettings
           Layout = tlCenter
         end
       end
+      object lstDefaultAction: TMLabeledComboBoxEx
+        Left = 1
+        Height = 39
+        Top = 253
+        Width = 291
+        Align = alBottom
+        Caption = 'Default action on doubleclick on stream:'
+        Control.Left = 0
+        Control.Height = 22
+        Control.Top = 17
+        Control.Width = 291
+        Control.Align = alClient
+        Control.ItemHeight = 16
+        Control.ItemsEx = <        
+          item
+            Caption = 'Start/stop recording'
+          end        
+          item
+            Caption = 'Listen to stream'
+          end        
+          item
+            Caption = 'Listen to stream (external player)'
+          end>
+        Control.TabOrder = 0
+      end
+      object lstDefaultActionBrowser: TMLabeledComboBoxEx
+        Left = 1
+        Height = 39
+        Top = 292
+        Width = 291
+        Align = alBottom
+        Caption = 'Default action on doubleclick in browser:'
+        Control.Left = 0
+        Control.Height = 22
+        Control.Top = 17
+        Control.Width = 291
+        Control.Align = alClient
+        Control.ItemHeight = 16
+        Control.ItemsEx = <        
+          item
+            Caption = 'Start recording'
+          end        
+          item
+            Caption = 'Listen to stream'
+          end        
+          item
+            Caption = 'Listen to stream (external player)'
+          end        
+          item
+            Caption = 'Only add to list'
+          end>
+        Control.TabOrder = 0
+      end
     end
-    object pnlStreams: TPanel
+    object pnlStreams: TPanel[1]
       Left = 294
       Height = 293
       Top = 1
@@ -352,14 +286,6 @@ inherited frmSettings: TfrmSettings
       ClientWidth = 293
       TabOrder = 1
       Visible = False
-      object lblDefaultFilter: TLabel
-        Left = 1
-        Height = 13
-        Top = 258
-        Width = 291
-        Align = alBottom
-        Caption = 'Lists:'
-      end
       object chkDeleteStreams: TCheckBox
         Left = 19
         Height = 19
@@ -380,26 +306,6 @@ inherited frmSettings: TfrmSettings
         Caption = 'Add saved titles to global ignorelist'
         OnClick = chkAddSavedToIgnoreClick
         TabOrder = 4
-      end
-      object lstDefaultFilter: TComboBox
-        Left = 1
-        Height = 21
-        Top = 271
-        Width = 291
-        Align = alBottom
-        Anchors = [akLeft, akBottom]
-        ItemHeight = 13
-        Items.Strings = (
-          'Save every song'
-          'Use wishlist'
-          'Use global ignorelist'
-          'Use stream ignorelist'
-          'Use both ignorelists'
-          'Use all lists'
-        )
-        OnChange = lstDefaultFilterChange
-        Style = csDropDownList
-        TabOrder = 10
       end
       object chkSeparateTracks: TCheckBox
         Left = 1
@@ -491,7 +397,7 @@ inherited frmSettings: TfrmSettings
         BorderSpacing.Left = 18
         Caption = 'Skip ads (short songs)'
         OnClick = chkSkipShortClick
-        TabOrder = 11
+        TabOrder = 10
       end
       object txtShortLengthSeconds: TMLabeledSpinEdit
         Left = 19
@@ -518,8 +424,43 @@ inherited frmSettings: TfrmSettings
           Layout = tlCenter
         end
       end
+      object lstDefaultFilter: TMLabeledComboBoxEx
+        Left = 1
+        Height = 39
+        Top = 253
+        Width = 291
+        Align = alBottom
+        Caption = 'Lists:'
+        Control.Left = 0
+        Control.Height = 22
+        Control.Top = 17
+        Control.Width = 291
+        Control.Align = alClient
+        Control.ItemHeight = 16
+        Control.ItemsEx = <        
+          item
+            Caption = 'Save every song'
+          end        
+          item
+            Caption = 'Use wishlist'
+          end        
+          item
+            Caption = 'Use global ignorelist'
+          end        
+          item
+            Caption = 'Use stream ignorelist'
+          end        
+          item
+            Caption = 'Use both ignorelists'
+          end        
+          item
+            Caption = 'Use all lists'
+          end>
+        Control.OnChange = lstDefaultFilterChange
+        Control.TabOrder = 0
+      end
     end
-    object pnlPostProcess: TPanel
+    object pnlPostProcess: TPanel[2]
       Left = 587
       Height = 301
       Top = 1
@@ -814,7 +755,7 @@ inherited frmSettings: TfrmSettings
         Control.TabOrder = 0
       end
     end
-    object pnlStreamsAdvanced: TPanel
+    object pnlStreamsAdvanced: TPanel[3]
       Left = 881
       Height = 353
       Top = 1
@@ -1009,7 +950,7 @@ inherited frmSettings: TfrmSettings
         end
       end
     end
-    object pnlCommunity: TPanel
+    object pnlCommunity: TPanel[4]
       Left = 1174
       Height = 269
       Top = 1
@@ -1099,7 +1040,7 @@ inherited frmSettings: TfrmSettings
         Control.TabOrder = 0
       end
     end
-    object pnlFilenames: TPanel
+    object pnlFilenames: TPanel[5]
       Left = 1
       Height = 268
       Top = 354
@@ -1267,7 +1208,7 @@ inherited frmSettings: TfrmSettings
         Control.TabOrder = 0
       end
     end
-    object pnlCut: TPanel
+    object pnlCut: TPanel[6]
       Left = 294
       Height = 237
       Top = 354
@@ -1500,7 +1441,7 @@ inherited frmSettings: TfrmSettings
         end
       end
     end
-    object pnlAdvanced: TPanel
+    object pnlAdvanced: TPanel[7]
       Left = 587
       Height = 171
       Top = 354
@@ -1592,7 +1533,7 @@ inherited frmSettings: TfrmSettings
         Control.TabOrder = 0
       end
     end
-    object pnlBandwidth: TPanel
+    object pnlBandwidth: TPanel[8]
       Left = 880
       Height = 160
       Top = 354
@@ -1638,7 +1579,7 @@ inherited frmSettings: TfrmSettings
         TabOrder = 0
       end
     end
-    object pnlAppearance: TPanel
+    object pnlAppearance: TPanel[9]
       Left = 1172
       Height = 145
       Top = 354
@@ -1815,7 +1756,7 @@ inherited frmSettings: TfrmSettings
         end
       end
     end
-    object pnlHotkeys: TPanel
+    object pnlHotkeys: TPanel[10]
       Left = 1
       Height = 77
       Top = 622
@@ -1863,7 +1804,7 @@ inherited frmSettings: TfrmSettings
         Control.OnChange = txtHotkeyChange
       end
     end
-    object pnlCommunityBlacklist: TPanel
+    object pnlCommunityBlacklist: TPanel[11]
       Left = 294
       Height = 42
       Top = 622
@@ -1922,7 +1863,7 @@ inherited frmSettings: TfrmSettings
         end
       end
     end
-    object pnlFilenamesExt: TPanel
+    object pnlFilenamesExt: TPanel[12]
       Left = 562
       Height = 112
       Top = 622
@@ -1981,7 +1922,7 @@ inherited frmSettings: TfrmSettings
         Control.TabOrder = 0
       end
     end
-    object pnlAutoRecord: TPanel
+    object pnlAutoRecord: TPanel[13]
       Left = 855
       Height = 177
       Top = 622
@@ -2084,6 +2025,69 @@ inherited frmSettings: TfrmSettings
           end>
         Control.TabOrder = 0
       end
+    end
+  end
+  inherited pnlHeader: TPanel
+    Width = 1576
+    ClientWidth = 1576
+    TabOrder = 1
+    inherited Shape1: TShape
+      Width = 1576
+    end
+    inherited lblTop: TLabel
+      Width = 1576
+    end
+  end
+  inherited pnlNav: TPanel
+    Top = 841
+    Width = 1576
+    ClientWidth = 1576
+    TabOrder = 2
+    inherited Bevel2: TBevel
+      Width = 1576
+    end
+    inherited btnOK: TBitBtn
+      Left = 1479
+      Default = False
+    end
+  end
+  inherited pnlLeft: TPanel
+    Height = 808
+    TabOrder = 3
+  end
+  inherited pnlGeneral: TPanel
+    Left = 1212
+    Top = 84
+    TabOrder = 5
+  end
+  object pnlAddons: TPanel[5]
+    Left = 1204
+    Height = 37
+    Top = 392
+    Width = 293
+    ClientHeight = 37
+    ClientWidth = 293
+    TabOrder = 0
+    Visible = False
+    object lstAddons: TListView
+      Left = 1
+      Height = 35
+      Top = 1
+      Width = 291
+      Align = alClient
+      Checkboxes = True
+      Columns = <      
+        item
+          Width = 200
+        end>
+      ReadOnly = True
+      RowSelect = True
+      ShowColumnHeaders = False
+      SmallImages = modSharedData.imgImages
+      TabOrder = 0
+      ViewStyle = vsReport
+      OnItemChecked = lstAddonsItemChecked
+      OnResize = lstAddonsResize
     end
   end
   object dlgOpen: TOpenDialog[6]

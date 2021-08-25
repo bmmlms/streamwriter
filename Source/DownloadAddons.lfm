@@ -1,38 +1,39 @@
 object frmDownloadAddons: TfrmDownloadAddons
   Left = 0
-  Height = 53
+  Height = 34
   Top = 0
-  Width = 313
+  Width = 250
+  AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Download addons'
-  ClientHeight = 53
-  ClientWidth = 313
+  ClientHeight = 34
+  ClientWidth = 250
   Color = clBtnFace
+  Constraints.MinWidth = 250
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
   OnActivate = FormActivate
   OnClose = FormClose
   Position = poOwnerFormCenter
-  LCLVersion = '2.0.12.0'
   object Label1: TLabel
-    Left = 8
+    Left = 0
     Height = 17
-    Top = 8
-    Width = 297
+    Top = 0
+    Width = 250
+    Align = alTop
     Alignment = taCenter
     AutoSize = False
     Caption = 'Downloading required files...'
-    ParentColor = False
     WordWrap = True
   end
   object ProgressBar1: TProgressBar
-    Left = 8
+    Left = 0
     Height = 17
-    Top = 32
-    Width = 297
-    Anchors = [akTop, akLeft, akRight]
+    Top = 17
+    Width = 250
+    Align = alTop
     TabOrder = 0
   end
 end

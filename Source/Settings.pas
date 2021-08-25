@@ -150,12 +150,10 @@ type
     FlowPanel4: TFlowPanel;
     FlowPanel5: TFlowPanel;
     FlowPanel6: TFlowPanel;
-    FlowPanel7: TFlowPanel;
     Label1: TLabel;
     Label12: TLabel;
     Label13: TLabel;
     Label15: TLabel;
-    Label18: TLabel;
     Label19: TLabel;
     Label2: TLabel;
     Label20: TLabel;
@@ -165,7 +163,6 @@ type
     Label27: TLabel;
     Label28: TLabel;
     Label29: TLabel;
-    Label3: TLabel;
     Label30: TLabel;
     Label4: TLabel;
     Label5: TLabel;
@@ -174,13 +171,12 @@ type
     Label8: TLabel;
     Label9: TLabel;
     lblAppParams: TLabel;
-    lblDefaultFilter: TLabel;
     lblFilePattern: TLabel;
     lblIgnoreTitles: TLabel;
     lblPanelCut: TLabel;
-    lstDefaultAction: TComboBox;
-    lstDefaultActionBrowser: TComboBox;
-    lstDefaultFilter: TComboBox;
+    lstDefaultAction: TMLabeledComboBoxEx;
+    lstDefaultActionBrowser: TMLabeledComboBoxEx;
+    lstDefaultFilter: TMLabeledComboBoxEx;
     lstFormat: TMLabeledComboBoxEx;
     lstHotkeys: TListView;
     lstIgnoreTitles: TListView;
@@ -238,15 +234,15 @@ type
     txtMonitorCount: TMLabeledSpinEdit;
     txtPreview: TMLabeledEdit;
     txtRegEx: TMLabeledEditButton;
-    txtRemoveChars: TMLabeledEditButton;
-    txtRetryDelay: TMLabeledSpinEdit;
-    txtShortLengthSeconds: TMLabeledSpinEdit;
     dlgOpen: TOpenDialog;
     Label11: TLabel;
     pnlAddons: TPanel;
     lstAddons: TListView;
     dlgSave: TSaveDialog;
     dlgColor: TColorDialog;
+    txtRemoveChars: TMLabeledEditButton;
+    txtRetryDelay: TMLabeledSpinEdit;
+    txtShortLengthSeconds: TMLabeledSpinEdit;
     txtSilenceBufferSeconds: TSpinEdit;
     txtSilenceLength: TSpinEdit;
     txtSilenceLevel: TMLabeledSpinEdit;
@@ -422,6 +418,7 @@ procedure TfrmSettings.DoCreate;
 begin
   inherited;
 
+  // TODO: ..... das auch beim wizard so machen. klappt das?
   Width := 636;
   Height := 509;
 end;
@@ -458,9 +455,9 @@ procedure TfrmSettings.FillFields(Settings: TStreamSettings);
 var
   i: Integer;
 begin
-  lstDefaultAction.ItemIndex := Integer(AppGlobals.DefaultAction);
-  lstDefaultActionBrowser.ItemIndex := Integer(AppGlobals.DefaultActionBrowser);
-  lstDefaultFilter.ItemIndex := Integer(Settings.Filter);
+  lstDefaultAction.Control.ItemIndex := Integer(AppGlobals.DefaultAction);
+  lstDefaultActionBrowser.Control.ItemIndex := Integer(AppGlobals.DefaultActionBrowser);
+  lstDefaultFilter.Control.ItemIndex := Integer(Settings.Filter);
   chkSeparateTracks.Checked := Settings.SeparateTracks;
   chkSaveStreamsToDisk.Checked := not Settings.SaveToMemory;
   chkOnlySaveFull.Checked := Settings.OnlySaveFull;
@@ -691,8 +688,8 @@ begin
 
         AppGlobals.MinDiskSpace := txtMinDiskSpace.Control.Value;
         AppGlobals.LogFile := txtLogFile.Control.Text;
-        AppGlobals.DefaultAction := TClientActions(lstDefaultAction.ItemIndex);
-        AppGlobals.DefaultActionBrowser := TStreamOpenActions(lstDefaultActionBrowser.ItemIndex);
+        AppGlobals.DefaultAction := TClientActions(lstDefaultAction.Control.ItemIndex);
+        AppGlobals.DefaultActionBrowser := TStreamOpenActions(lstDefaultActionBrowser.Control.ItemIndex);
 
         AppGlobals.ShortcutPlay := LongWord(lstHotkeys.Items[0].Data);
         AppGlobals.ShortcutPause := LongWord(lstHotkeys.Items[1].Data);
@@ -828,7 +825,7 @@ begin
         FStreamSettings[i].RetryDelay := txtRetryDelay.Control.Value;
 
       if FIgnoreFieldList.IndexOf(lstDefaultFilter) = -1 then
-        FStreamSettings[i].Filter := TUseFilters(lstDefaultFilter.ItemIndex);
+        FStreamSettings[i].Filter := TUseFilters(lstDefaultFilter.Control.ItemIndex);
 
       if FIgnoreFieldList.IndexOf(chkSeparateTracks) = -1 then
         FStreamSettings[i].SeparateTracks := chkSeparateTracks.Checked and chkSeparateTracks.Enabled;
@@ -1239,9 +1236,9 @@ procedure TfrmSettings.PreTranslate;
 begin
   inherited;
 
-  FDefaultActionIdx := lstDefaultAction.ItemIndex;
-  FDefaultActionBrowserIdx := lstDefaultActionBrowser.ItemIndex;
-  FDefaultFilterIdx := lstDefaultFilter.ItemIndex;
+  FDefaultActionIdx := lstDefaultAction.Control.ItemIndex;
+  FDefaultActionBrowserIdx := lstDefaultActionBrowser.Control.ItemIndex;
+  FDefaultFilterIdx := lstDefaultFilter.Control.ItemIndex;
   FOutputFormatIdx := lstOutputFormat.Control.ItemIndex;
   FMinQualityIdx := lstMinQuality.Control.ItemIndex;
   FFormatIdx := lstFormat.Control.ItemIndex;
@@ -1280,9 +1277,9 @@ begin
 
   BuildHotkeys;
 
-  lstDefaultAction.ItemIndex := FDefaultActionIdx;
-  lstDefaultActionBrowser.ItemIndex := FDefaultActionBrowserIdx;
-  lstDefaultFilter.ItemIndex := FDefaultFilterIdx;
+  lstDefaultAction.Control.ItemIndex := FDefaultActionIdx;
+  lstDefaultActionBrowser.Control.ItemIndex := FDefaultActionBrowserIdx;
+  lstDefaultFilter.Control.ItemIndex := FDefaultFilterIdx;
   lstOutputFormat.Control.ItemIndex := FOutputFormatIdx;
   lstMinQuality.Control.ItemIndex := FMinQualityIdx;
   lstFormat.Control.ItemIndex := FFormatIdx;
@@ -2860,9 +2857,6 @@ begin
       CreateStreams(AOwner);
   end;
 
-  for i := FlowPanel7.ControlCount - 1 downto 0 do
-    FlowPanel7.Controls[i].Parent := Self;
-
   lblPanelCut.Caption := _('Settings for cutting are only available'#13#10'if ''Save separated tracks'' is enabled.');
   lblPanelCut.Align := alClient;
   lblPanelCut.Layout := tlCenter;
@@ -2986,9 +2980,9 @@ begin
       pnlFilenames.Controls[i].Visible := False;
 
   txtAutomaticFilePattern.Visible := True;
-  txtPreview.Top := txtIncompleteFilePattern.Top;
+ // txtPreview.Top := txtIncompleteFilePattern.Top;
   txtPreview.Visible := True;
-  lblFilePattern.Top := txtPreview.Top + txtPreview.Height + MulDiv(8, Screen.PixelsPerInch, 96);
+ // lblFilePattern.Top := txtPreview.Top + txtPreview.Height + MulDiv(8, Screen.PixelsPerInch, 96);
 
   chkAutoTuneInAddToIgnore.Checked := FStreamSettings[0].AddSavedToIgnore;
   chkAutoRemoveSavedFromWishlist.Checked := FStreamSettings[0].RemoveSavedFromWishlist;
@@ -3049,6 +3043,7 @@ begin
   lblTop.Caption := _('Stream settings');
 end;
 
+// TODO: was ist das hier?
 procedure TfrmSettings.CreateGeneral;
 var
   i: Integer;
