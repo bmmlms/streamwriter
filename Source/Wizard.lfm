@@ -29,7 +29,6 @@ inherited frmWizard: TfrmWizard
       Width = 21
       Anchors = [akTop, akRight]
       Flat = True
-      Layout = blGlyphLeft
       OnClick = cmdBrowseClick
       ShowHint = True
       ParentShowHint = False
@@ -45,7 +44,6 @@ inherited frmWizard: TfrmWizard
       EditLabel.Height = 13
       EditLabel.Width = 34
       EditLabel.Caption = 'Folder:'
-      EditLabel.ParentColor = False
       ReadOnly = True
       TabOrder = 0
     end
@@ -65,7 +63,6 @@ inherited frmWizard: TfrmWizard
       Top = 44
       Width = 21
       Caption = 'KB/s'
-      ParentColor = False
     end
     object Label20: TLabel
       Left = 24
@@ -75,7 +72,6 @@ inherited frmWizard: TfrmWizard
       Anchors = [akTop, akLeft, akRight]
       AutoSize = False
       Caption = 'Server-assigned streams will be monitored for title changes in the background. Do not disable this option if you have a fast internet connection (DSL or faster) and unlimited traffic (flatrate). Monitored streams will not be covered by the bandwidth limit. One monitored stream consumes between 8 and 40KB/s depending on the stream''s quality.'
-      ParentColor = False
       WordWrap = True
       OnClick = Label20Click
     end
@@ -96,7 +92,6 @@ inherited frmWizard: TfrmWizard
       EditLabel.Height = 13
       EditLabel.Width = 205
       EditLabel.Caption = 'Max. bandwidth available to streamWriter:'
-      EditLabel.ParentColor = False
       Enabled = False
       MaxLength = 5
       TabOrder = 1
@@ -118,7 +113,6 @@ inherited frmWizard: TfrmWizard
       EditLabel.Height = 13
       EditLabel.Width = 173
       EditLabel.Caption = 'Max. number of streams to monitor:'
-      EditLabel.ParentColor = False
       MaxLength = 2
       TabOrder = 3
     end

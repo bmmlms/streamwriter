@@ -548,7 +548,7 @@ begin
       AppGlobals.Unlock;
     end;
 
-    LowerDir := LowerCase(IncludeTrailingBackslash(ExtractFilePath(Filename)));
+    LowerDir := LowerCase(ExtractFilePath(Filename));
     if (LowerDir <> D1) and (LowerDir <> D2) then
       Windows.RemoveDirectory(PChar(ExtractFilePath(Filename)));
   end;
@@ -1444,9 +1444,9 @@ end;
 procedure TStreamTracks.FoundTitle(Offset: Int64; Title: string; BytesPerSec: Cardinal; FullTitle: Boolean);
 begin
   if Count > 0 then
-    Items[Count - 1].E := Offset//if Assigned(FOnDebug) then
-    //  FOnDebug(Format('Setting SongEnd of "%s" to %d', [Items[Count - 1].Title, Offset]), '');
-  ;
+    Items[Count - 1].E := Offset;
+  //if Assigned(FOnDebug) then
+  //  FOnDebug(Format('Setting SongEnd of "%s" to %d', [Items[Count - 1].Title, Offset]), '');
 
   // Wenn wir automatisch aufnehmen und der Titel der Titel ist, den wir haben wollen
   // und dabei der erste empfangene ist, dann nutzen wir nicht den Start bei
@@ -1472,7 +1472,7 @@ begin
 
   FStreamname := Streamname;
   if Dir <> '' then
-    FSaveDir := IncludeTrailingBackslash(Dir);
+    FSaveDir := Dir;
   FSongsSaved := SongsSaved;
   FSettings := Settings;
 end;
@@ -1499,7 +1499,7 @@ begin
   Append := 0;
   FilenameTmp := Filename;
 
-  while AnyFileExists(Dir + FilenameTmp) do
+  while AnyFileExists(ConcatPaths([Dir, FilenameTmp])) do
   begin
     Inc(Append);
     FilenameTmp := Filename + ' (' + IntToStr(Append) + ')';
@@ -1541,15 +1541,15 @@ begin
   Filename := InfoToFilename(Artist, Title, Album, Genre, StreamTitle, TitleState, Patterns);
   Filename := GetValidFilename(Filename);
 
-  if AnyFileExists(FSaveDir + Filename) then
+  if AnyFileExists(ConcatPaths([FSaveDir, Filename])) then
   begin
     if FSettings.DiscardAlways then
       FResult := crDiscard
-    else if FSettings.OverwriteSmaller and (GetFileSize(FSaveDir + Filename + Ext) < Filesize) then
+    else if FSettings.OverwriteSmaller and (GetFileSize(ConcatPaths([FSaveDir, Filename + Ext])) < Filesize) then
     begin
       FResult := crOverwrite;
       FFilename := Filename + Ext;
-    end else if FSettings.DiscardSmaller and (GetFileSize(FSaveDir + Filename + Ext) >= Filesize) then
+    end else if FSettings.DiscardSmaller and (GetFileSize(ConcatPaths([FSaveDir, Filename + Ext])) >= Filesize) then
       FResult := crDiscardExistingIsLarger
     else
       FFilename := FixPathName(Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext);
@@ -1594,18 +1594,17 @@ begin
     Name := InfoToFilename('', '', '', '', '', tsStream, 'streamname|day|month|year|hour|minute|second');
     FFilename := GetValidFilename(Name);
 
-    if FileExists(FSaveDir + Filename + Ext) then
+    if FileExists(ConcatPaths([FSaveDir, Filename + Ext])) then
       FFilename := Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext
     else
       FFilename := Filename + Ext;
 
-    if Length(FSaveDir + FFilename) > MAX_PATH - 2 then
+    if Length(ConcatPaths([FSaveDir, FFilename])) > MAX_PATH - 2 then
       if Length(Name) = 1 then
         raise Exception.Create(_('Could not save file because it exceeds the maximum path length'))
       else
         Name := Copy(Name, 1, Length(Name) - 1);
-
-  until Length(FSaveDir + FFilename) <= MAX_PATH - 2;
+  until Length(ConcatPaths([FSaveDir, FFilename])) <= MAX_PATH - 2;
 
   FFilename := FixPathName(FFilename);
 end;
@@ -1704,24 +1703,23 @@ begin
 
   Replaced := FixPatternFilename(Replaced);
 
-  FSaveDir := FixPathName(IncludeTrailingBackslash(ExtractFilePath(FSaveDir + Replaced)));
+  FSaveDir := FixPathName(ExtractFilePath(FSaveDir + Replaced));
   Result := ExtractFileName(Replaced);
 end;
 
 function TFileChecker.LimitToMaxPath(Filename: string): string;
 var
-  D, F, E: string;
+  F, E: string;
 begin
   Result := Filename;
   // Überall MAX_PATH-2.... -1 funzt nicht immer. Ich bin angetrunken und habe keine Lust das zu untersuchen!
-  if (Length(Filename) > 0) and (Length(IncludeTrailingPathDelimiter(FSaveDir) + Filename) > MAX_PATH - 2) then
+  if (Length(Filename) > 0) and (Length(ConcatPaths([FSaveDir, Filename])) > MAX_PATH - 2) then
   begin
-    D := IncludeTrailingPathDelimiter(FSaveDir);
     E := ExtractFileExt(Filename);
     F := RemoveFileExt(Filename);
 
-    if Length(D + E) < MAX_PATH - 2 then
-      Result := Copy(F, 1, MAX_PATH - 2 - Length(D + E)) + E;
+    if Length(ConcatPaths([FSaveDir, E])) < MAX_PATH - 2 then
+      Result := Copy(F, 1, MAX_PATH - 2 - Length(ConcatPaths([FSaveDir, E]))) + E;
   end;
 end;
 

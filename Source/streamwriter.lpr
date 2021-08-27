@@ -71,10 +71,6 @@ begin
   Bass := nil;
   OpenSSL := nil;
   try
-    {$IFDEF madExcept}
-    MESettings.BugReportFile := AnsiString(IncludeTrailingBackslash(GUIFunctions.GetShellFolder(CSIDL_DESKTOP)) + 'streamwriter_bugreport.txt');
-    {$ENDIF}
-
     if not InitWinsock then
       Exit;
 

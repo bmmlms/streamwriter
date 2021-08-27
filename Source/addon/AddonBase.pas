@@ -144,9 +144,9 @@ begin
   Result := False;
 
   ForceDirectories(FFilesDir);
-  if FileExists(AppGlobals.Storage.DataDir + FDownloadPackage) then
+  if FileExists(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage])) then
   begin
-    H := LoadLibrary(PChar(AppGlobals.Storage.DataDir + FDownloadPackage));
+    H := LoadLibrary(PChar(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage])));
     if H > 0 then
     begin
       for i := 0 to FFilenames.Count - 1 do
@@ -154,7 +154,7 @@ begin
         try
           Res := TResourceStream.Create(H, StringReplace(FFilenames[i], '.', '_', [rfReplaceAll]), RT_RCDATA);
           try
-            Res.SaveToFile(FFilesDir + FFilenames[i]);
+            Res.SaveToFile(ConcatPaths([FFilesDir, FFilenames[i]]));
           finally
             Res.Free;
           end;
@@ -163,7 +163,7 @@ begin
       Result := FilesExtracted;
       FreeLibrary(H);
     end else
-      Windows.DeleteFile(PChar(AppGlobals.Storage.DataDir + FDownloadPackage));
+      Windows.DeleteFile(PChar(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage])));
   end;
 end;
 
@@ -206,7 +206,7 @@ end;
 
 function TAddonBase.FGetPackageDownloaded: Boolean;
 begin
-  Result := FileExists(AppGlobals.Storage.DataDir + FDownloadPackage);
+  Result := FileExists(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]));
 end;
 
 function TAddonBase.FGetVersionOkay: Boolean;
@@ -215,7 +215,7 @@ var
 begin
   Result := True;
   try
-    Ver := GetFileVersion(AppGlobals.Storage.DataDir + FDownloadPackage);
+    Ver := GetFileVersion(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]));
     if IsVersionNewer(Ver, FNeededVersion) then
       Result := False;
   except
@@ -224,7 +224,7 @@ begin
 
   if not Result then
   begin
-    DeleteFile(PChar(AppGlobals.Storage.DataDir + FDownloadPackage));
+    DeleteFile(PChar(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage])));
     Result := False;
   end;
 end;

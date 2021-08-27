@@ -1034,9 +1034,7 @@ begin
   FPB.BuildDrawBuffer;
   FPB.Paint;
 
-  FProcessThread := TProcessThread.Create(CmdLine,
-    IncludeTrailingBackslash(ExtractFilePath((AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath)),
-    FWorkingFilename, TempFile);
+  FProcessThread := TProcessThread.Create(CmdLine, ExtractFilePath((AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath), FWorkingFilename, TempFile);
   FProcessThread.OnSuccess := ProcessThreadSuccess;
   FProcessThread.OnError := ProcessThreadError;
   FProcessThread.OnTerminate := ProcessThreadTerminate;

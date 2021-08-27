@@ -2340,11 +2340,9 @@ begin
   if FilenameToFormat(NewText) = atNone then
     NewText := RemoveFileExt(NewText) + ExtractFileExt(NodeData.Track.Filename);
 
-  if RenameFile(IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + ExtractFileName(NodeData.Track.Filename),
-    IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + NewText) then
-  begin
-    NodeData.Track.Filename := IncludeTrailingBackslash(ExtractFilePath(NodeData.Track.Filename)) + NewText;
-  end else
+  if RenameFile(ConcatPaths([ExtractFilePath(NodeData.Track.Filename), ExtractFileName(NodeData.Track.Filename)]), ConcatPaths([ExtractFilePath(NodeData.Track.Filename), NewText])) then
+    NodeData.Track.Filename := ConcatPaths([ExtractFilePath(NodeData.Track.Filename), NewText])
+  else
     MsgBox(GetParentForm(Self).Handle, _('The file could not be renamed. Make sure that it is not in use and that no other file with the same name already exists.'), _('Info'), MB_ICONINFORMATION);
 end;
 
@@ -2964,7 +2962,7 @@ begin
 
   FreeOnTerminate := True;
 
-  FDir := IncludeTrailingBackslash(Dir);
+  FDir := Dir;
   FFoundAudioFiles := TStringList.Create;
   FFiles := TList<TTrackInfo>.Create;
   FKnownFiles := KnownFiles;

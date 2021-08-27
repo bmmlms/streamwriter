@@ -84,20 +84,15 @@ type
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
     procedure DoFreeNode(Node: PVirtualNode); override;
     procedure DoDragging(P: TPoint); override;
-    // function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): string; override;
     procedure DoHeaderClick(HitInfo: TVTHeaderHitInfo); override;
     function DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
-    function DoIncrementalSearch(Node: PVirtualNode;
-      const Text: string): Integer; override;
-    procedure DoDragDrop(Source: TObject; DataObject: IDataObject; Formats: TFormatArray; Shift: TShiftState; const Pt: TPoint;
-      var Effect: LongWord; Mode: TDropMode); override;
-    function DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; const Pt: TPoint; Mode: TDropMode;
-      var Effect: LongWord): Boolean; override;
+    function DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer; override;
+    procedure DoDragDrop(Source: TObject; DataObject: IDataObject; Formats: TFormatArray; Shift: TShiftState; const Pt: TPoint; var Effect: LongWord; Mode: TDropMode); override;
+    function DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; const Pt: TPoint; Mode: TDropMode; var Effect: LongWord): Boolean; override;
     procedure DoEdit; override;
     procedure DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean); override;
     procedure DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string); override;
-    procedure PaintImage(var PaintInfo: TVTPaintInfo;
-      ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
+    procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
@@ -319,18 +314,6 @@ begin
     end;
   end;
 end;
-
-{
-function TMClientView.DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex;
-  var LineBreakStyle: TVTTooltipLineBreakStyle): string;
-var
-  Args: TVSTGetCellTextEventArgs;
-begin
-  Args := TVSTGetCellTextEventArgs.Create(Node, Column);
-  DoGetText(Args);
-  Result := Args.CellText;
-end;
-}
 
 procedure TMClientView.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: string);
 var

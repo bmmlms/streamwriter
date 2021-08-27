@@ -31,8 +31,8 @@ type
   TfrmConfigureEncoder = class(TForm)
     optCBR: TRadioButton;
     optVBR: TRadioButton;
-    lstCBR: TComboBox;
-    lstVBR: TComboBox;
+    lstCBR: TComboBox;        // TODO: Ex
+    lstVBR: TComboBox;        // TODO: Ex
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;

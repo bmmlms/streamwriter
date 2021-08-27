@@ -98,7 +98,7 @@ type
     FToolbarPanel: TPanel;
     FAddLabel: TLabel;
     FAddEdit: TEdit;
-    FAddCombo: TComboBox;
+    FAddCombo: TComboBox;   // TODO: tcomboboxex pls
     FToolbar: TTitleToolbar;
     FTree: TTitleTree;
 

@@ -56,9 +56,6 @@ type
     procedure Finish; override;
     function IsValid(Step: TStep): Boolean; override;
     procedure InitStep(Step: TStep); override;
-  published
-  public
-    constructor Create(AOwner: TComponent); override;
   end;
 
 implementation
@@ -87,7 +84,7 @@ begin
   if Step.Panel = pnlDir then
   begin
     if (AppGlobals.Dir <> '') and DirectoryExists(AppGlobals.Dir) then
-      txtDir.Text := IncludeTrailingBackslash(AppGlobals.Dir)
+      txtDir.Text := AppGlobals.Dir
     else
     begin
       s := GetShellFolder(CSIDL_MYMUSIC);
@@ -179,17 +176,7 @@ var
 begin
   Dir := BrowseDialog(Handle, _('Select folder for saved songs:'), BIF_RETURNONLYFSDIRS);
   if DirectoryExists(Dir) then
-  begin
-    Dir := IncludeTrailingBackslash(Dir);
     txtDir.Text := Dir;
-  end;
-end;
-
-constructor TfrmWizard.Create(AOwner: TComponent);
-begin
-  inherited;
-
- // cmdBrowse.Image := modSharedData.imgImages.Images[85].Image;
 end;
 
 end.

@@ -37,7 +37,6 @@ uses
   Windows;
 
 type
-  TNotificationStates = (nsFadingIn, nsVisible, nsFadingOut);
 
   { TfrmNotification }
 
@@ -49,6 +48,8 @@ type
     tmrFade: TTimer;
     procedure pbLogoPaint(Sender: TObject);
     procedure tmrFadeTimer(Sender: TObject);
+  type
+    TNotificationStates = (nsFadingIn, nsVisible, nsFadingOut);
   private
   const
     FADE_DURATION = 500;
@@ -121,7 +122,6 @@ begin
     begin
       FTitle := Title;
       FStream := Stream;
-      ;
 
       FFadeStartedAt := Now;
 
@@ -168,7 +168,6 @@ begin
           FRedisplayStream := '';
         end else
           Close;
-
       end else
         AlphaBlendValue := High(Byte) - Trunc((MilliSecondsBetween(Now, FFadeStartedAt) / FADE_DURATION) * High(Byte));
   end;
@@ -176,7 +175,7 @@ end;
 
 procedure TfrmNotification.MouseHook(Sender: TObject; Msg: Cardinal);
 begin
-  if Msg = LM_LBUTTONDOWN then
+  if (Msg = LM_LBUTTONDOWN) and (PtInRect(Self.BoundsRect, Mouse.CursorPos)) then
     Close;
 end;
 

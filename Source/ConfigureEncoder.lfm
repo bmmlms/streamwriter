@@ -17,6 +17,7 @@ object frmConfigureEncoder: TfrmConfigureEncoder
   KeyPreview = True
   OnKeyDown = FormKeyDown
   Position = poOwnerFormCenter
+  LCLVersion = '2.2.0.1'
   object optCBR: TRadioButton
     Left = 0
     Height = 19

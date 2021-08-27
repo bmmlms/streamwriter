@@ -81,8 +81,8 @@ type
     Label2: TLabel;
     rbRecurring: TRadioButton;
     rbDate: TRadioButton;
-    lstInterval: TComboBox;
-    lstDay: TComboBox;
+    lstInterval: TComboBox;           // TODO: Ex
+    lstDay: TComboBox;                // TODO: Ex
     dtpDate: TDateTimePicker;
     txtStartHour: TEdit;
     txtStartMinute: TEdit;

@@ -24,7 +24,11 @@ unit DynBASS;
 interface
 
 uses
-  Windows, SysUtils, Classes, AppData, Generics.Collections;
+  Windows,
+  AppData,
+  Classes,
+  Generics.Collections,
+  SysUtils;
 
 const
   // BASS
@@ -38,7 +42,7 @@ const
   BASS_ACTIVE_STOPPED = 0;
   BASS_ACTIVE_PLAYING = 1;
   BASS_ACTIVE_STALLED = 2;
-  BASS_ACTIVE_PAUSED  = 3;
+  BASS_ACTIVE_PAUSED = 3;
   BASS_FILEPOS_CURRENT = 0;
   BASS_STREAM_PRESCAN = $20000;
   BASS_STREAM_BLOCK = $100000;
@@ -52,7 +56,7 @@ const
   BASS_DEVICE_DEFAULT = 2;
   BASS_SAMPLE_FLOAT = 256; // 32-bit floating-point
   STREAMPROC_PUSH = Pointer(-1); // push stream
-  BASS_CONFIG_DEV_DEFAULT   = 36;
+  BASS_CONFIG_DEV_DEFAULT = 36;
 
   // BASS WASAPI
   BASS_DEVICE_LOOPBACK = 8;
@@ -61,7 +65,7 @@ const
   // BASS Mixer
 
   // BASS Enc
-  BASS_ENCODE_PAUSE = 32;	// start encording paused
+  BASS_ENCODE_PAUSE = 32;  // start encording paused
   BASS_ENCODE_PCM = 64; // write PCM sample data (no encoder)
 
 
@@ -74,19 +78,22 @@ type
   FILELENPROC = function(user: Pointer): QWORD; stdcall;
   FILEREADPROC = function(buffer: Pointer; length: DWORD; user: Pointer): DWORD; stdcall;
   FILESEEKPROC = function(offset: QWORD; user: Pointer): BOOL; stdcall;
+
   BASS_FILEPROCS = record
-    close: FILECLOSEPROC;
+    Close: FILECLOSEPROC;
     length: FILELENPROC;
-    read: FILEREADPROC;
+    Read: FILEREADPROC;
     seek: FILESEEKPROC;
   end;
-  SYNCPROC = procedure(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
+  SYNCPROC = procedure(handle: HSYNC; channel, Data: DWORD; user: Pointer); stdcall;
   STREAMPROC = function(handle: HSTREAM; buffer: Pointer; length: DWORD; user: Pointer): DWORD; stdcall;
+
   BASS_DEVICEINFO = record
-    name: PAnsiChar;
+    Name: PAnsiChar;
     driver: PAnsiChar;
     flags: DWORD;
   end;
+
   BASS_INFO = record
     flags: DWORD;       // device capabilities (DSCAPS_xxx flags)
     hwsize: DWORD;      // size of total device hardware memory
@@ -103,6 +110,7 @@ type
     speakers: DWORD;    // number of speakers available
     freq: DWORD;        // current output rate (OSX only)
   end;
+
   BASS_CHANNELINFO = record
     freq: DWORD;        // default playback rate
     chans: DWORD;       // channels
@@ -113,6 +121,7 @@ type
     sample: DWORD;    // sample
     filename: PChar;    // filename
   end;
+
   BASS_DX8_PARAMEQ = record
     fCenter: Single;
     fBandwidth: Single;
@@ -131,8 +140,9 @@ type
     volmin: Single;
     volstep: Single;
   end;
+
   BASS_WASAPI_DEVICEINFO = record
-    name: PAnsiChar;
+    Name: PAnsiChar;
     id: PAnsiChar;
     &type: DWORD;
     flags: DWORD;
@@ -147,8 +157,6 @@ type
 
   // BASS Enc
   ENCODEPROC = procedure(handle: DWORD; channel: DWORD; buffer: Pointer; length: DWORD; user: Pointer); stdcall;
-
-
 
   TBassDevice = class
   private
@@ -229,16 +237,16 @@ var
   BASSChannelSetPosition: function(handle: DWORD; pos: QWORD; mode: DWORD): BOOL; stdcall;
   BASSChannelSetSync: function(handle: DWORD; type_: DWORD; param: QWORD; proc: SYNCPROC; user: Pointer): HSYNC; stdcall;
   BASSChannelRemoveSync: function(handle: DWORD; sync: HSYNC): BOOL; stdcall;
-  BASSChannelSetAttribute: function(handle, attrib: DWORD; value: Single): BOOL; stdcall;
-  BASSChannelSlideAttribute: function(handle, attrib: DWORD; value: Single; time: DWORD): BOOL; stdcall;
+  BASSChannelSetAttribute: function(handle, attrib: DWORD; Value: Single): BOOL; stdcall;
+  BASSChannelSlideAttribute: function(handle, attrib: DWORD; Value: Single; time: DWORD): BOOL; stdcall;
   BASSStreamFree: function(handle: HSTREAM): BOOL; stdcall;
   BASSStreamPutFileData: function(handle: HSTREAM; buffer: Pointer; length: DWORD): DWORD; stdcall;
   BASSErrorGetCode: function: LongInt; stdcall;
-  BASSSetConfig: function(option, value: DWORD): BOOL; stdcall;
+  BASSSetConfig: function(option, Value: DWORD): BOOL; stdcall;
   BASSPluginLoad: function(filename: PChar; flags: DWORD): DWORD; stdcall;
   BASSPluginFree: function(handle: DWORD): BOOL; stdcall;
-  BASSChannelGetInfo: function(handle: DWORD; var info: BASS_CHANNELINFO):BOOL; stdcall;
-  BASSChannelGetAttribute: function(handle, attrib: DWORD; var value: Single): BOOL; stdcall;
+  BASSChannelGetInfo: function(handle: DWORD; var info: BASS_CHANNELINFO): BOOL; stdcall;
+  BASSChannelGetAttribute: function(handle, attrib: DWORD; var Value: Single): BOOL; stdcall;
   BASSChannelGetData: function(handle: DWORD; buffer: Pointer; length: DWORD): DWORD; stdcall;
   BASSFXSetParameters: function(handle: DWORD; par: Pointer): BOOL; stdcall;
   BASSChannelSetFX: function(handle, type_: DWORD; priority: LongInt): DWORD; stdcall;
@@ -302,8 +310,7 @@ begin
   while BASSGetDeviceInfo(i, Info) do
   begin
     if (Info.flags and BASS_DEVICE_ENABLED) = BASS_DEVICE_ENABLED then
-      FDevices.Add(TBassDevice.Create(i, Info.name,
-        (Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT, False));
+      FDevices.Add(TBassDevice.Create(i, Info.Name, (Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT, False));
     Inc(i);
   end;
 end;
@@ -316,9 +323,8 @@ begin
   i := 0;
   while BASSWASAPIGetDeviceInfo(i, Info) do
   begin
-    if (Info.flags and BASS_DEVICE_INPUT > 0) AND (Info.flags and BASS_DEVICE_ENABLED > 0) then
-      FWASAPIDevices.Add(TBassDevice.Create(i, Info.name,
-        (Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT, (Info.flags and BASS_DEVICE_LOOPBACK) = BASS_DEVICE_LOOPBACK));
+    if (Info.flags and BASS_DEVICE_INPUT > 0) and (Info.flags and BASS_DEVICE_ENABLED > 0) then
+      FWASAPIDevices.Add(TBassDevice.Create(i, Info.Name, (Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT, (Info.flags and BASS_DEVICE_LOOPBACK) = BASS_DEVICE_LOOPBACK));
     Inc(i);
   end;
 end;
@@ -331,17 +337,18 @@ var
 begin
   Result := False;
 
-  FBassDLLPath := AppGlobals.TempDir + 'bass.dll';
-  FBassAACDLLPath := AppGlobals.TempDir + 'bass_aac.dll';
-  FBassWASAPIDLLPath := AppGlobals.TempDir + 'basswasapi.dll';
-  FBassMixerDLLPath := AppGlobals.TempDir + 'bassmix.dll';
-  FBassEncDLLPath := AppGlobals.TempDir + 'bassenc.dll';
+  FBassDLLPath := ConcatPaths([AppGlobals.TempDir, 'bass.dll']);
+  FBassAACDLLPath := ConcatPaths([AppGlobals.TempDir, 'bass_aac.dll']);
+  FBassWASAPIDLLPath := ConcatPaths([AppGlobals.TempDir, 'basswasapi.dll']);
+  FBassMixerDLLPath := ConcatPaths([AppGlobals.TempDir + 'bassmix.dll']);
+  FBassEncDLLPath := ConcatPaths([AppGlobals.TempDir + 'bassenc.dll']);
 
   Res := TResourceStream.Create(0, 'BASS', MakeIntResource(RT_RCDATA));
   try
     try
       Res.SaveToFile(FBassDLLPath);
-    except end;
+    except
+    end;
   finally
     Res.Free;
   end;
@@ -352,7 +359,8 @@ begin
     try
       try
         Res.SaveToFile(FBassAACDLLPath);
-      except end;
+      except
+      end;
     finally
       Res.Free;
     end;
@@ -364,7 +372,8 @@ begin
     try
       try
         Res.SaveToFile(FBassWASAPIDLLPath);
-      except end;
+      except
+      end;
     finally
       Res.Free;
     end;
@@ -376,7 +385,8 @@ begin
     try
       try
         Res.SaveToFile(FBassMixerDLLPath);
-      except end;
+      except
+      end;
     finally
       Res.Free;
     end;
@@ -388,7 +398,8 @@ begin
     try
       try
         Res.SaveToFile(FBassEncDLLPath);
-      except end;
+      except
+      end;
     finally
       Res.Free;
     end;
@@ -476,14 +487,10 @@ begin
         BASSWASAPIFree := GetProcAddress(FWASAPIDLLHandle, 'BASS_WASAPI_Free');
 
         if not BASSWASAPIInit(-1, 0, 0, 0, 0.4, 0.05, nil, nil) then
-        begin
           raise Exception.Create('BASSWASAPIInit() failed');
-        end;
 
         if not BASSWASAPIGetInfo(FWASAPIInfo) then
-        begin
           raise Exception.Create('BASSWASAPIGetInfo() failed');
-        end;
 
         EnumWASAPIDevices;
       end;
@@ -516,8 +523,8 @@ begin
 
     if BassLoaded then
     begin
-       BASSGetInfo(BassInfo);
-       FEffectsAvailable := BassInfo.dsver >= 8;
+      BASSGetInfo(BassInfo);
+      FEffectsAvailable := BassInfo.dsver >= 8;
     end;
 
     Result := BassLoaded;
@@ -527,10 +534,8 @@ end;
 function TBassLoader.InitializeWASAPIDevice(Device: Integer; InputProc: WASAPIPROC; User: Pointer): Boolean;
 begin
   if not BASSWASAPIInit(Device, 0, 0, 0, 1, 0.1, InputProc, User) then
-  begin
     if BASSErrorGetCode <> 14 then
       raise Exception.Create('BASSErrorGetCode <> 14');
-  end;
 
   Result := True;
 end;
@@ -586,4 +591,3 @@ begin
 end;
 
 end.
-

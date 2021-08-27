@@ -72,7 +72,7 @@ type
 
   TChartDataArray = array of PChartNodeData;
 
-  TMyComboBox = class(TComboBox)
+  TMyComboBox = class(TComboBox)   // TODO: Ex
   protected
     { // TODO:
     function MouseActivate(Button: TMouseButton; Shift: TShiftState;

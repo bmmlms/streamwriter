@@ -29,6 +29,7 @@ uses
   AudioFunctions,
   Buttons,
   Classes,
+  ComboEx,
   ComCtrls,
   Commands,
   Controls,
@@ -97,9 +98,9 @@ type
   TMStreamSearchPanel = class(TPanel)
   private
     FSearchEdit: TEdit;
-    FGenreList: TComboBox;
-    FKbpsList: TComboBox;
-    FTypeList: TComboBox;
+    FGenreList: TComboBoxEx;
+    FKbpsList: TComboBoxEx;
+    FTypeList: TComboBoxEx;
   protected
   public
     constructor Create(AOwner: TComponent); override;
@@ -218,10 +219,9 @@ type
     procedure DoDragging(P: TPoint); override;
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal); override;
     procedure DoPaintNode(var PaintInfo: TVTPaintInfo); override;
-    //    function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString; override;
+    function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): string; override;
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
-    function DoBeforeItemPaint(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect): Boolean; override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     procedure DoBeforeCellPaint(Canvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect); override;
     function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
@@ -893,17 +893,6 @@ begin
     Canvas.Font.Color := AppGlobals.NodeTextColor;
 end;
 
-function TMStreamTree.DoBeforeItemPaint(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect): Boolean;
-begin
-  if FMode <> moShow then
-  begin
-    Result := True;
-    Exit;
-  end;
-
-  Result := inherited;
-end;
-
 function TMStreamTree.DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer;
 var
   Data1, Data2: PStreamNodeData;
@@ -1049,8 +1038,10 @@ begin
   FTimer.Enabled := False;
   if Mode = moLoading then
   begin
+    Clear;
+
     // Damit die Position der ProgressBar passt
-    Resize;
+    Resize; // TODO: das geht auf jeden fall auch schöner!!
 
     FProgressBar.Position := 0;
     if not FProgressBar.Visible then
@@ -1066,24 +1057,19 @@ begin
   Invalidate;
 end;
 
-{
-function TMStreamTree.DoGetNodeTooltip(Node: PVirtualNode;
-  Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): UnicodeString;
+function TMStreamTree.DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): string;
 var
-  Args: TVSTGetCellTextEventArgs;
   NodeData: PStreamNodeData;
 begin
   inherited;
 
-  Args := TVSTGetCellTextEventArgs.Create(Node, Column);
   LineBreakStyle := hlbForceMultiLine;
-  DoGetText(Args);
+  DoGetText(Node, Column, ttNormal, Result);
   NodeData := GetNodeData(Node);
   if NodeData.Data.Genre <> '' then
-    Args.CellText := Args.CellText + #13#10 + NodeData.Data.Genre;
-  Result := Args.CellText;
+    Result := Result + #13#10 + NodeData.Data.Genre;
+  Result := Result;
 end;
-}
 
 { TMStreamView }
 
@@ -1092,21 +1078,22 @@ var
   i: Integer;
 begin
   FSearch.FGenreList.Clear;
-  FSearch.FGenreList.Items.Add(_('- No genre -'));
+  FSearch.FGenreList.ItemsEx.AddItem(_('- No genre -'));
   AppGlobals.Lock;
   try
     for i := 0 to AppGlobals.Data.GenreList.Count - 1 do
-      FSearch.FGenreList.Items.Add(AppGlobals.Data.GenreList[i].Name + ' (' + IntToStr(AppGlobals.Data.GenreList[i].StreamCount) + ')');
+      FSearch.FGenreList.ItemsEx.AddItem(AppGlobals.Data.GenreList[i].Name + ' (' + IntToStr(AppGlobals.Data.GenreList[i].StreamCount) + ')');
   finally
     AppGlobals.Unlock;
   end;
-  if FSearch.FGenreList.Items.Count > 0 then
+  if FSearch.FGenreList.ItemsEx.Count > 0 then
     FSearch.FGenreList.ItemIndex := 0;
 
-  FSearch.FGenreList.Sorted := True;
-  FSearch.FGenreList.Sorted := False;
+  // TODO: die liste sortieren und so...
+//  FSearch.FGenreList.ItemsEx.SortType := stText; //.Sorted := True;
+//  FSearch.FGenreList.Sorted := False;
 
-  if AppGlobals.BrowserSearchGenre < FSearch.FGenreList.Items.Count then
+  if AppGlobals.BrowserSearchGenre < FSearch.FGenreList.ItemsEx.Count then
     FSearch.FGenreList.ItemIndex := AppGlobals.BrowserSearchGenre;
 end;
 
@@ -1122,8 +1109,8 @@ begin
     Exit
   else if FSearch.FGenreList.ItemIndex > 0 then
   begin
-    Genre := FSearch.FGenreList.Items[FSearch.FGenreList.ItemIndex];
-    Genre := Copy(Genre, 1, Pos(' (', Genre) - 1);
+    Genre := FSearch.FGenreList.ItemsEx[FSearch.FGenreList.ItemIndex].Caption;
+    Genre := Copy(Genre, 1, Pos(' (', Genre) - 1); // TODO: bah. Data property am item nutzen..
   end;
 
   case FSearch.FTypeList.ItemIndex of
@@ -1198,9 +1185,9 @@ begin
   FSortType := TSortTypes(AppGlobals.BrowserSortType);
   FStreamTree.Header.SortDirection := TSortDirection(AppGlobals.BrowserSortDir);
   FSearch.FSearchEdit.Text := AppGlobals.BrowserSearchText;
-  if AppGlobals.BrowserSearchAudioType < FSearch.FTypeList.Items.Count then
+  if AppGlobals.BrowserSearchAudioType < FSearch.FTypeList.ItemsEx.Count then
     FSearch.FTypeList.ItemIndex := AppGlobals.BrowserSearchAudioType;
-  if AppGlobals.BrowserSearchBitrate < FSearch.FKbpsList.Items.Count then
+  if AppGlobals.BrowserSearchBitrate < FSearch.FKbpsList.ItemsEx.Count then
     FSearch.FKbpsList.ItemIndex := AppGlobals.BrowserSearchBitrate;
 
   AppGlobals.Lock;
@@ -1233,7 +1220,7 @@ end;
 
 procedure TMStreamBrowserView.HomeCommDataReceived(Sender: TObject);
 begin
-  FSearch.FGenreList.Clear;
+  FSearch.FGenreList.ItemsEx.Clear;
   FStreamTree.Clear;
 
   BuildGenres;
@@ -1356,13 +1343,6 @@ begin
   for i := 0 to FSearch.ControlCount - 1 do
     FSearch.Controls[i].Enabled := Mode = moShow;
 
-  {
-  FSearch.FSearchEdit.Enabled := Mode = moShow;
-  FSearch.FGenreList.Enabled := Mode = moShow;
-  FSearch.FKbpsList.Enabled := Mode = moShow;
-  FSearch.FTypeList.Enabled := Mode = moShow;
-  }
-
   FCountLabel.Enabled := Mode = moShow;
 
   FMode := Mode;
@@ -1376,22 +1356,22 @@ var
 begin
   FStreamTree.FColName.Text := _('Rating');
 
-  if FSearch.FGenreList.Items.Count > 0 then
+  if FSearch.FGenreList.ItemsEx.Count > 0 then
   begin
     Idx := FSearch.FGenreList.ItemIndex;
-    FSearch.FGenreList.Items[0] := _('- No genre -');
+    FSearch.FGenreList.ItemsEx[0].Caption := _('- No genre -');
     FSearch.FGenreList.ItemIndex := Idx;
   end;
-  if FSearch.FKbpsList.Items.Count > 0 then
+  if FSearch.FKbpsList.ItemsEx.Count > 0 then
   begin
     Idx := FSearch.FKbpsList.ItemIndex;
-    FSearch.FKbpsList.Items[0] := _('- No kbps -');
+    FSearch.FKbpsList.ItemsEx[0].Caption := _('- No kbps -');
     FSearch.FKbpsList.ItemIndex := Idx;
   end;
-  if FSearch.FTypeList.Items.Count > 0 then
+  if FSearch.FTypeList.ItemsEx.Count > 0 then
   begin
     Idx := FSearch.FTypeList.ItemIndex;
-    FSearch.FTypeList.Items[0] := _('- No type -');
+    FSearch.FTypeList.ItemsEx[0].Caption := _('- No type -');
     FSearch.FTypeList.ItemIndex := Idx;
   end;
 
@@ -1433,35 +1413,35 @@ begin
   BevelOuter := bvNone;
 
   P := CreatePanel(_('Type') + ':');
-  FTypeList := TComboBox.Create(Self);
+  FTypeList := TComboBoxEx.Create(Self);
   FTypeList.Parent := P;
   FTypeList.Align := alClient;
-  FTypeList.Style := csDropDownList;
+//  FTypeList.Style := csDropDownList;
 
-  FTypeList.Items.Add(_('- No type -'));
-  FTypeList.Items.Add(_('MP3'));
-  FTypeList.Items.Add(_('AAC'));
+  FTypeList.ItemsEx.AddItem(_('- No type -'));
+  FTypeList.ItemsEx.AddItem(_('MP3'));
+  FTypeList.ItemsEx.AddItem(_('AAC'));
   FTypeList.ItemIndex := 0;
 
   P := CreatePanel(_('Kbps') + ':');
-  FKbpsList := TComboBox.Create(Self);
+  FKbpsList := TComboBoxEx.Create(Self);
   FKbpsList.Parent := P;
   FKbpsList.Align := alClient;
-  FKbpsList.Style := csDropDownList;
+//  FKbpsList.Style := csDropDownList;
 
-  FKbpsList.Items.Add(_('- No kbps -'));
-  FKbpsList.Items.Add('>= 64');
-  FKbpsList.Items.Add('>= 128');
-  FKbpsList.Items.Add('>= 192');
-  FKbpsList.Items.Add('>= 256');
-  FKbpsList.Items.Add('= 320');
+  FKbpsList.ItemsEx.AddItem(_('- No kbps -'));
+  FKbpsList.ItemsEx.AddItem('>= 64');
+  FKbpsList.ItemsEx.AddItem('>= 128');
+  FKbpsList.ItemsEx.AddItem('>= 192');
+  FKbpsList.ItemsEx.AddItem('>= 256');
+  FKbpsList.ItemsEx.AddItem('= 320');
   FKbpsList.ItemIndex := 0;
 
   P := CreatePanel(_('Genre') + ':');
-  FGenreList := TComboBox.Create(Self);
+  FGenreList := TComboBoxEx.Create(Self);
   FGenreList.Parent := P;
   FGenreList.Align := alClient;
-  FGenreList.Style := csDropDownList;
+//  FGenreList.Style := csDropDownList;
   FGenreList.DropDownCount := 16;
 
   P := CreatePanel(_('Search') + ':');
@@ -1477,28 +1457,24 @@ begin
   inherited;
 
   FItemName := TMenuItem.Create(Self);
-  ;
   FItemName.Caption := _('Name');
   FItemName.RadioItem := True;
   FItemName.Tag := Integer(stName);
   Items.Add(FItemName);
 
   FItemKbps := TMenuItem.Create(Self);
-  ;
   FItemKbps.Caption := _('Kbps');
   FItemKbps.RadioItem := True;
   FItemKbps.Tag := Integer(stBitrate);
   Items.Add(FItemKbps);
 
   FItemType := TMenuItem.Create(Self);
-  ;
   FItemType.Caption := _('Type');
   FItemType.RadioItem := True;
   FItemType.Tag := Integer(stType);
   Items.Add(FItemType);
 
   FItemRating := TMenuItem.Create(Self);
-  ;
   FItemRating.Caption := _('Rating');
   FItemRating.RadioItem := True;
   FItemRating.Tag := Integer(stRating);

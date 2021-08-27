@@ -30,6 +30,7 @@ uses
   Buttons,
   Classes,
   ComCtrls,
+  ComboEx,
   ConfigureEncoder,
   Constants,
   Controls,
@@ -1424,7 +1425,7 @@ begin
   if (TControl(C) is TEdit) or (TControl(C) is TLabeledEdit) then
     TEdit(C).Color := clWindow
   else if TControl(C) is TCheckBox then
-  else if TControl(C) is TComboBox then
+  else if TControl(C) is TComboBoxEx then
   else if TControl(C) is TListView then
     TListView(C).Color := clWindow;
 
@@ -1855,7 +1856,7 @@ begin
       TEdit(FIgnoreFieldList[i]).Color := clGrayText
     else if TControl(FIgnoreFieldList[i]) is TCheckBox then
       TCheckBox(FIgnoreFieldList[i]).State := cbGrayed
-    else if TControl(FIgnoreFieldList[i]) is TComboBox then
+    else if TControl(FIgnoreFieldList[i]) is TComboBoxEx then
     else if TControl(FIgnoreFieldList[i]) is TListView then
       TListView(FIgnoreFieldList[i]).Color := clGrayText;
 end;
@@ -2166,7 +2167,7 @@ begin
     Exit;
 
   if DirectoryExists(Dir) then
-    txtDir.Control.Text := IncludeTrailingBackslash(Dir)
+    txtDir.Control.Text := Dir
   else
     MsgBox(Self.Handle, _('The selected folder does not exist. Please choose another one.'), _('Info'), MB_ICONINFORMATION);
 end;
@@ -2917,9 +2918,9 @@ begin
   begin
     for i := 0 to Bass.Devices.Count - 1 do
       if Bass.Devices[i].IsDefault then
-        lstSoundDevice.Control.ItemsEx.AddItem(_('Default device'), -1, -1, -1, -1, Bass.Devices[i])
+        lstSoundDevice.Control.ItemsEx.AddItem(_('Default device'), TImages.SOUND, -1, -1, -1, Bass.Devices[i])
       else
-        lstSoundDevice.Control.ItemsEx.AddItem(Bass.Devices[i].Name, -1, -1, -1, -1, Bass.Devices[i]);
+        lstSoundDevice.Control.ItemsEx.AddItem(Bass.Devices[i].Name, TImages.SOUND, -1, -1, -1, Bass.Devices[i]);
 
     if lstSoundDevice.Control.ItemsEx.Count > 0 then
       lstSoundDevice.Control.ItemIndex := 0;

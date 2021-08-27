@@ -24,7 +24,8 @@ unit TypeDefs;
 interface
 
 uses
-  Windows, SysUtils, Classes;
+  Classes,
+  SysUtils;
 
 type
   TIntArray = array of Integer;
@@ -70,8 +71,7 @@ implementation
 
 { TStartStreamingInfo }
 
-constructor TStartStreamingInfo.Create(ID, Bitrate: Cardinal; Name, URL: string;
-  URLs, RegExes, IgnoreTitles: TStringList);
+constructor TStartStreamingInfo.Create(ID, Bitrate: Cardinal; Name, URL: string; URLs, RegExes, IgnoreTitles: TStringList);
 begin
   Self.ID := ID;
   Self.Bitrate := Bitrate;

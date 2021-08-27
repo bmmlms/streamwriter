@@ -234,16 +234,20 @@ inherited frmSettings: TfrmSettings
         Control.Top = 17
         Control.Width = 291
         Control.Align = alClient
+        Control.Images = modSharedData.imgImages
         Control.ItemHeight = 16
         Control.ItemsEx = <        
           item
             Caption = 'Start/stop recording'
+            ImageIndex = 81
           end        
           item
             Caption = 'Listen to stream'
+            ImageIndex = 74
           end        
           item
             Caption = 'Listen to stream (external player)'
+            ImageIndex = 76
           end>
         Control.TabOrder = 0
       end
@@ -259,19 +263,24 @@ inherited frmSettings: TfrmSettings
         Control.Top = 17
         Control.Width = 291
         Control.Align = alClient
+        Control.Images = modSharedData.imgImages
         Control.ItemHeight = 16
         Control.ItemsEx = <        
           item
             Caption = 'Start recording'
+            ImageIndex = 81
           end        
           item
             Caption = 'Listen to stream'
+            ImageIndex = 74
           end        
           item
             Caption = 'Listen to stream (external player)'
+            ImageIndex = 76
           end        
           item
             Caption = 'Only add to list'
+            ImageIndex = 0
           end>
         Control.TabOrder = 0
       end
@@ -436,25 +445,32 @@ inherited frmSettings: TfrmSettings
         Control.Top = 17
         Control.Width = 291
         Control.Align = alClient
+        Control.Images = modSharedData.imgImages
         Control.ItemHeight = 16
         Control.ItemsEx = <        
           item
             Caption = 'Save every song'
+            ImageIndex = 119
           end        
           item
             Caption = 'Use wishlist'
+            ImageIndex = 92
           end        
           item
             Caption = 'Use global ignorelist'
+            ImageIndex = 88
           end        
           item
             Caption = 'Use stream ignorelist'
+            ImageIndex = 88
           end        
           item
             Caption = 'Use both ignorelists'
+            ImageIndex = 88
           end        
           item
             Caption = 'Use all lists'
+            ImageIndex = 91
           end>
         Control.OnChange = lstDefaultFilterChange
         Control.TabOrder = 0
@@ -519,6 +535,7 @@ inherited frmSettings: TfrmSettings
         Control.Top = 17
         Control.Width = 261
         Control.Align = alClient
+        Control.Images = modSharedData.imgImages
         Control.ItemHeight = 16
         Control.ItemsEx = <        
           item
@@ -526,12 +543,15 @@ inherited frmSettings: TfrmSettings
           end        
           item
             Caption = 'MP3'
+            ImageIndex = 14
           end        
           item
             Caption = 'AAC'
+            ImageIndex = 14
           end        
           item
             Caption = 'OGG'
+            ImageIndex = 14
           end>
         Control.OnSelect = lstOutputFormatSelect
         Control.TabOrder = 0
@@ -1505,6 +1525,7 @@ inherited frmSettings: TfrmSettings
         Control.Top = 17
         Control.Width = 291
         Control.Align = alClient
+        Control.Images = modSharedData.imgImages
         Control.ItemHeight = 16
         Control.ItemsEx = <>
         Control.TabOrder = 0
