@@ -23,24 +23,37 @@ unit ConfigureEncoder;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, ExtCtrls, AppData, LanguageObjects,
-  AudioFunctions, DataManager, SharedData, Images;
+  AppData,
+  AudioFunctions,
+  Buttons,
+  Classes,
+  ComboEx,
+  Controls,
+  DataManager,
+  Dialogs,
+  ExtCtrls,
+  Forms,
+  Graphics,
+  Images,
+  LanguageObjects,
+  SharedData,
+  StdCtrls,
+  SysUtils,
+  Variants;
 
 type
   TfrmConfigureEncoder = class(TForm)
     optCBR: TRadioButton;
     optVBR: TRadioButton;
-    lstCBR: TComboBox;        // TODO: Ex
-    lstVBR: TComboBox;        // TODO: Ex
+    lstCBR: TComboBoxEx;
+    lstVBR: TComboBoxEx;
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;
     procedure btnOKClick(Sender: TObject);
     procedure optCBRClick(Sender: TObject);
     procedure optVBRClick(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     FEncoderSettings: TEncoderSettings;
     FSave: Boolean;
@@ -63,13 +76,15 @@ begin
     FEncoderSettings.BitrateType := brCBR
   else
     FEncoderSettings.BitrateType := brVBR;
-  FEncoderSettings.CBRBitrate := StrToInt(lstCBR.Text);
+  FEncoderSettings.CBRBitrate := StrToInt(lstCBR.ItemsEx[lstCBR.ItemIndex].Caption);
   FEncoderSettings.VBRQuality := TVBRQualities(lstVBR.ItemIndex);
 
   Close;
 end;
 
 constructor TfrmConfigureEncoder.Create(AOwner: TComponent; EncoderSettings: TEncoderSettings);
+var
+  Item: TCollectionItem;
 begin
   inherited Create(AOwner);
 
@@ -77,24 +92,30 @@ begin
 
   FEncoderSettings := EncoderSettings;
 
-  lstCBR.Items.Add('320');
-  lstCBR.Items.Add('256');
-  lstCBR.Items.Add('224');
-  lstCBR.Items.Add('192');
-  lstCBR.Items.Add('160');
-  lstCBR.Items.Add('128');
-  lstCBR.Items.Add('96');
-  lstCBR.Items.Add('64');
-  lstCBR.Items.Add('32');
+  lstCBR.ItemsEx.AddItem('320');
+  lstCBR.ItemsEx.AddItem('256');
+  lstCBR.ItemsEx.AddItem('224');
+  lstCBR.ItemsEx.AddItem('192');
+  lstCBR.ItemsEx.AddItem('160');
+  lstCBR.ItemsEx.AddItem('128');
+  lstCBR.ItemsEx.AddItem('96');
+  lstCBR.ItemsEx.AddItem('64');
+  lstCBR.ItemsEx.AddItem('32');
 
-  lstVBR.Items.Add(_('High quality'));
-  lstVBR.Items.Add(_('Medium quality'));
-  lstVBR.Items.Add(_('Low quality'));
+  lstVBR.ItemsEx.AddItem(_('High quality'));
+  lstVBR.ItemsEx.AddItem(_('Medium quality'));
+  lstVBR.ItemsEx.AddItem(_('Low quality'));
 
   optCBR.Checked := FEncoderSettings.BitrateType = brCBR;
   optVBR.Checked := FEncoderSettings.BitrateType = brVBR;
 
-  lstCBR.ItemIndex := lstCBR.Items.IndexOf(IntToStr(EncoderSettings.CBRBitrate));
+  for Item in lstCBR.ItemsEx do
+    if TComboExItem(Item).Caption = EncoderSettings.CBRBitrate.ToString then
+    begin
+      lstCBR.ItemIndex := Item.Index;
+      Break;
+    end;
+
   lstVBR.ItemIndex := Integer(EncoderSettings.VBRQuality);
 
   lstCBR.Enabled := optCBR.Checked;
@@ -103,8 +124,7 @@ begin
   Language.Translate(Self);
 end;
 
-procedure TfrmConfigureEncoder.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TfrmConfigureEncoder.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if Key = 27 then
   begin

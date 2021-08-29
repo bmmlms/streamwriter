@@ -512,7 +512,7 @@ var
 begin
   Clients := FClientView.NodesToClients(FClientView.GetNodes(ntClient, True));
   for Client in Clients do
-    ShellExecute(Handle, 'open', PChar(Client.Entry.StreamURL), '', '', 1);
+    ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(Client.Entry.StreamURL)), '', '', 1);
 end;
 
 procedure TClientTab.ActionResetDataExecute(Sender: TObject);
@@ -974,7 +974,6 @@ begin
 
   if FSidebar.FDebugView.DebugView.Client = Client then
     FSidebar.FDebugView.ShowDebug(nil);
-  ;
 
   ShowInfo;
 
@@ -1446,7 +1445,7 @@ begin
       SavePlaylist(Entries, True);
     oaOpenWebsite:
       for i := 0 to Length(Streams) - 1 do
-        ShellExecute(Handle, 'open', PChar(Streams[i].Website), '', '', 1);
+        ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(Streams[i].Website)), '', '', 1);
     oaBlacklist:
       for i := 0 to Length(Streams) - 1 do
         if Streams[i].Name <> '' then

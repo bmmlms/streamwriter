@@ -153,7 +153,6 @@ type
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
 
-    procedure PostTranslate;
     function GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
     function NodesToData(Nodes: TNodeArray): TChartDataArray;
 
@@ -352,7 +351,6 @@ begin
   FChartsTree.FColChance.Text := _('Played last day/week');
 
   FSearchPanel.PostTranslate;
-  FChartsTree.PostTranslate;
 
   FResultLabel.Caption := Format(_(TEXT_RESULTS), [FChartsTree.RootNodeCount]);
 end;
@@ -1032,10 +1030,11 @@ begin
       Header.Columns[i].Width := AppGlobals.ChartHeaderWidth[i]
   else
   begin
-    FColImages.Width := GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
     FColLastPlayed.Width := GetTextSize(FColLastPlayed.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
     FColChance.Width := GetTextSize(FColChance.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
   end;
+
+  FColImages.Width := Max(Margin * 2 + 3 * 16 + 2 * 2, GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96));
 
   if AppGlobals.ChartHeaderPositionLoaded then
     for i := 1 to Header.Columns.Count - 1 do
@@ -1362,14 +1361,6 @@ begin
     FDots := '';
 
   Invalidate;
-end;
-
-procedure TChartsTree.PostTranslate;
-begin
-  FColTitle.Text := _('Name');
-  FColImages.Text := _('State');
-  FColLastPlayed.Text := _('Last played');
-  FColChance.Text := _('Played last day/week');
 end;
 
 { TSearchPanel }

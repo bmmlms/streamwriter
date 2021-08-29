@@ -983,11 +983,11 @@ begin
   if Key = VK_F1 then
     case FSettingsType of
       stApp:
-        ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLinkSettings), '', '', 1);
+        ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(AppGlobals.ProjectHelpLinkSettings)), '', '', 1);
       stAuto:
-        ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLinkAutoSettings), '', '', 1);
+        ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(AppGlobals.ProjectHelpLinkAutoSettings)), '', '', 1);
       stStream:
-        ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLinkStreamSettings), '', '', 1);
+        ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(AppGlobals.ProjectHelpLinkStreamSettings)), '', '', 1);
     end;
 end;
 

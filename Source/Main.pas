@@ -646,7 +646,7 @@ end;
 
 procedure TfrmStreamWriterMain.actHelpExecute(Sender: TObject);
 begin
-  ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectHelpLinkMain), '', '', 1);
+  ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(AppGlobals.ProjectHelpLinkMain)), '', '', 1);
 end;
 
 procedure TfrmStreamWriterMain.actPlayerIncreaseVolumeExecute(Sender: TObject);
@@ -2692,7 +2692,7 @@ begin
     if AppGlobals.RunningFromInstalledLocation then
       ShowUpdate(FUpdater.FoundVersion.AsString, FUpdater.UpdateURL)
     else
-      ShellExecute(Handle, 'open', PChar(AppGlobals.ProjectLink), nil, nil, 1);
+      ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(AppGlobals.ProjectLink)), nil, nil, 1);
   end;
 end;
 

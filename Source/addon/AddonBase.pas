@@ -23,9 +23,16 @@ unit AddonBase;
 interface
 
 uses
-  SysUtils, Windows, Classes, Functions, AudioFunctions;
+  AudioFunctions,
+  Classes,
+  Functions,
+  SysUtils,
+  Windows;
 
 type
+
+  { TAddonBase }
+
   TAddonBase = class
   private
   protected
@@ -115,10 +122,11 @@ begin
     Exit;
 
   for i := 0 to FFilenames.Count - 1 do
-    Windows.DeleteFile(PChar(FFilesDir + FFilenames[i]));
+    SysUtils.DeleteFile(ConcatPaths([FFilesDir, FFilenames[i]]));
   try
-    RmDir(FFilesDir);
-  except end;
+    RemoveDir(FFilesDir);
+  except
+  end;
 end;
 
 destructor TAddonBase.Destroy;
@@ -139,8 +147,6 @@ begin
   if FilesExtracted then
     Exit(True);
 
-  SetErrorMode(SEM_FAILCRITICALERRORS);
-
   Result := False;
 
   ForceDirectories(FFilesDir);
@@ -150,20 +156,19 @@ begin
     if H > 0 then
     begin
       for i := 0 to FFilenames.Count - 1 do
-      begin
         try
-          Res := TResourceStream.Create(H, StringReplace(FFilenames[i], '.', '_', [rfReplaceAll]), RT_RCDATA);
+          Res := TResourceStream.Create(H, StringReplace(FFilenames[i], '.', '_', [rfReplaceAll]), Windows.RT_RCDATA);
           try
             Res.SaveToFile(ConcatPaths([FFilesDir, FFilenames[i]]));
           finally
             Res.Free;
           end;
-        except end;
-      end;
+        except
+        end;
       Result := FilesExtracted;
       FreeLibrary(H);
     end else
-      Windows.DeleteFile(PChar(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage])));
+      SysUtils.DeleteFile(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]));
   end;
 end;
 
@@ -187,7 +192,7 @@ var
 begin
   Result := True;
   for i := 0 to FFilenames.Count - 1 do
-    if not FileExists(FFilesDir + FFilenames[i]) then
+    if not FileExists(ConcatPaths([FFilesDir, FFilenames[i]])) then
     begin
       Result := False;
       Break;
@@ -215,7 +220,7 @@ var
 begin
   Result := True;
   try
-    Ver := GetFileVersion(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]));
+    Ver := Functions.GetFileVersion(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]));
     if IsVersionNewer(Ver, FNeededVersion) then
       Result := False;
   except
@@ -223,10 +228,7 @@ begin
   end;
 
   if not Result then
-  begin
-    DeleteFile(PChar(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage])));
-    Result := False;
-  end;
+    SysUtils.DeleteFile(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]));
 end;
 
 function TAddonBase.ShowInitMessage(Handle: THandle): Boolean;

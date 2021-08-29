@@ -1048,11 +1048,10 @@ function TICEClient.ParsePlaylist: Boolean;
 begin
   Result := False;
 
-  Data := string(FICEThread.RecvStream.RecvStream.ToString);
-
   PH := TPlaylistHandler.Create;
   try
-    Data := string(FICEThread.RecvStream.RecvStream.ToString);
+    Data := FICEThread.RecvStream.RecvStream.ToString;
+
     if (Copy(LowerCase(Data), 1, 10) = '[playlist]') or
        (Pos('audio/x-scpls', FICEThread.RecvStream.ContentType) > 0) or
        (Pos('application/x-scpls', FICEThread.RecvStream.ContentType) > 0) or

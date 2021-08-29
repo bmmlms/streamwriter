@@ -24,12 +24,12 @@ unit ListsTab;
 interface
 
 uses
-  Windows, SysUtils, Messages, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls,
+  Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls,
   Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, DataManager,
-  ImgList, Functions, GUIFunctions, Menus, Math, DragDrop, DropComboTarget,
+  ImgList, Functions, Menus, Math, DragDrop, DropComboTarget,
   Dialogs, MsgDlg, Forms, Logging, AppData, HomeCommunication, ICEClient,
   ClientManager, Generics.Collections, TypeDefs, MessageBus, AppMessages,
-  Graphics, SharedData, HomeCommands, SharedControls, Images;
+  Graphics, SharedData, HomeCommands, SharedControls, Images, ComboEx;
 
 type
   TTitleTree = class;
@@ -98,7 +98,7 @@ type
     FToolbarPanel: TPanel;
     FAddLabel: TLabel;
     FAddEdit: TEdit;
-    FAddCombo: TComboBox;   // TODO: tcomboboxex pls
+    FAddCombo: TComboBoxEx;
     FToolbar: TTitleToolbar;
     FTree: TTitleTree;
 
@@ -643,27 +643,34 @@ procedure TTitlePanel.FillClientCombo;
 var
   i: Integer;
   O: TObject;
+  Item: TComboExItem;
 begin
   O := nil;
   if FAddCombo.ItemIndex > -1 then
-    O := FAddCombo.Items.Objects[FAddCombo.ItemIndex];
+    O := FAddCombo.ItemsEx[FAddCombo.ItemIndex].Data;
 
-  FAddCombo.Clear;
+  FAddCombo.ItemsEx.Clear;
 
   for i := 0 to FClientManager.Count - 1 do
     if FClientManager[i].Entry.CustomName <> '' then
-      FAddCombo.AddItem('  ' + FClientManager[i].Entry.CustomName, FClientManager[i]);
+      FAddCombo.ItemsEx.AddItem(FClientManager[i].Entry.CustomName, TImages.TRANSMIT, -1, -1, 16, FClientManager[i]);
 
-  FAddCombo.Sorted := True;
-  FAddCombo.Sorted := False;
+  // TODO: ...
+  //FAddCombo.Sorted := True;
+  //FAddCombo.Sorted := False;
 
-  FAddCombo.Items.InsertObject(0, _('Ignorelist'), AppGlobals.Data.IgnoreList);
-  FAddCombo.Items.InsertObject(0, _('Wishlist'), AppGlobals.Data.SaveList);
+  Item := FAddCombo.ItemsEx.Insert(0);
+  Item.Caption := _('Ignorelist');
+  Item.ImageIndex := TImages.SCRIPT_DECLINE;
+
+  Item := FAddCombo.ItemsEx.Insert(0);
+  Item.Caption := _('Wishlist');
+  Item.ImageIndex := TImages.SCRIPT_HEART;
 
   if O <> nil then
   begin
-    for i := 0 to FAddCombo.Items.Count - 1 do
-      if FAddCombo.Items.Objects[i] = O then
+    for i := 0 to FAddCombo.ItemsEx.Count - 1 do
+      if FAddCombo.ItemsEx[i].Data = O then
       begin
         FAddCombo.ItemIndex := i;
         Break;
@@ -699,7 +706,7 @@ begin
     ParentNode := FTree.FIgnoreNode;
   end else
   begin
-    List := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]).Entry.IgnoreList;
+    List := TICEClient(FAddCombo.ItemsEx[FAddCombo.ItemIndex].Data).Entry.IgnoreList;
     ParentNode := nil;
   end;
 
@@ -1008,16 +1015,8 @@ end;
 
 procedure TTitlePanel.PostTranslate;
 begin
-  FSearchText.Left := Max(FAddLabel.Width, FSearchLabel.Width) + 4;
-  FAddEdit.Left := Max(FAddLabel.Width, FSearchLabel.Width) + 4;
-  FAddCombo.Left := FAddEdit.Left + FAddEdit.Width + 4;
-  FSearchText.Width := FAddEdit.Width;
-
   FTree.PostTranslate;
   FillClientCombo;
-
-  // Damit die ComboBox auch wieder passig wird von der Breite her
-  Resize;
 end;
 
 procedure TTitlePanel.BuildTree(FromFilter: Boolean);
@@ -1077,8 +1076,8 @@ begin
   if (Client.AutoRemove) or (Client.Entry.CustomName = '') then
     Exit;
 
-  for i := 0 to FAddCombo.Items.Count - 1 do
-    if FAddCombo.Items.Objects[i] = Client then
+  for i := 0 to FAddCombo.ItemsEx.Count - 1 do
+    if FAddCombo.ItemsEx[i].Data = Client then
       Exit;
 
   FillClientCombo;
@@ -1089,12 +1088,12 @@ var
   i: Integer;
 begin
   FTree.RemoveClient(Client);
-  for i := 0 to FAddCombo.Items.Count - 1 do
-    if FAddCombo.Items.Objects[i] = Client then
+  for i := 0 to FAddCombo.ItemsEx.Count - 1 do
+    if FAddCombo.ItemsEx[i].Data = Client then
     begin
       if FAddCombo.ItemIndex = i then
         FAddCombo.ItemIndex := 0;
-      FAddCombo.Items.Delete(i);
+      FAddCombo.ItemsEx.Delete(i);
       Exit;
     end;
 end;
@@ -1125,6 +1124,7 @@ begin
   FSearchLabel.Align := alLeft;
   FSearchLabel.Layout := tlCenter;
   FSearchLabel.Caption := 'Search:';
+  FSearchLabel.Left := -1;
 
   FSearchText := TEdit.Create(Self);
   FSearchText.Parent := FSearchPanel;
@@ -1143,6 +1143,7 @@ begin
   FAddLabel.Layout := tlCenter;
   FAddLabel.Parent := FToolbarPanel;
   FAddLabel.Caption := 'Add entry:';
+  FAddLabel.Left := -1;
 
   FAddEdit := TEdit.Create(Self);
   FAddEdit.Align := alLeft;
@@ -1150,10 +1151,10 @@ begin
   FAddEdit.Width := 200;
   FAddEdit.OnKeyPress := AddEditKeyPress;
 
-  FAddCombo := TComboBox.Create(Self);
+  FAddCombo := TComboBoxEx.Create(Self);
   FAddCombo.Parent := FToolbarPanel;
   FAddCombo.Align := alClient;
-  FAddCombo.Style := csDropDownList;
+  FAddCombo.Images := modSharedData.imgImages;
 
   FToolbar := TTitleToolbar.Create(Self);
   FToolbar.Images := modSharedData.imgImages;
@@ -1367,20 +1368,16 @@ begin
   begin
     Parent := nil;
 
-    if (ListType = ltSave) or
-       ((ListType = ltAutoDetermine) and (FAddCombo.ItemIndex = 0)) then
+    if (ListType = ltSave) or ((ListType = ltAutoDetermine) and (FAddCombo.ItemIndex = 0)) then
     begin
       List := AppGlobals.Data.SaveList;
       Parent := FTree.FWishNode;
-    end else if (ListType = ltIgnore) or
-       ((ListType = ltAutoDetermine) and (FAddCombo.ItemIndex = 1)) then
+    end else if (ListType = ltIgnore) or ((ListType = ltAutoDetermine) and (FAddCombo.ItemIndex = 1)) then
     begin
       List := AppGlobals.Data.IgnoreList;
       Parent := FTree.FIgnoreNode;
     end else
-    begin
-      List := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]).Entry.IgnoreList;
-    end;
+      List := TICEClient(FAddCombo.ItemsEx[FAddCombo.ItemIndex].Data).Entry.IgnoreList;
 
     // Keine doppelten Auto-Einträge erlauben
     if (TitleHash > 0) and (List = AppGlobals.Data.SaveList) then
@@ -1401,15 +1398,13 @@ begin
         end;
 
     if (NumChars <= 3) and ShowMessages then
-    begin
       TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('A short pattern may produce many matches, i.e. using ''a'' records/ignores every song containing an ''a''.'), mtInformation, [mbOK], mbOK, 6);
-    end;
 
     if ShowMessages and (List = AppGlobals.Data.SaveList) then
       TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('Titles manually entered into the wishlist (without using the "Title search" tab) will not be considered for automatic recordings. Use the "Title search" tab to add titles for automatic recordings.'), mtInformation, [mbOK], mbOK, 15);
 
     if Parent = nil then
-      Parent := FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]));
+      Parent := FTree.GetNode(TICEClient(FAddCombo.ItemsEx[FAddCombo.ItemIndex].Data));
 
     Title := TTitleInfo.Create(TitleHash, 0, Trim(Text));
     Node := FTree.AddTitle(Title, Parent, FFilterText, True);
@@ -1419,7 +1414,7 @@ begin
       NodeData.Title := Title;
 
       if (List <> AppGlobals.Data.SaveList) and (List <> AppGlobals.Data.IgnoreList) then
-        NodeData.Stream := TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]);
+        NodeData.Stream := TICEClient(FAddCombo.ItemsEx[FAddCombo.ItemIndex].Data);
 
       if Node.Parent.ChildCount = 1 then
         FTree.Expanded[Node.Parent] := True;
@@ -1467,9 +1462,8 @@ begin
     end;
 
     if List <> nil then
-      for i := 0 to FAddCombo.Items.Count - 1 do
-        if (FAddCombo.Items.Objects[i] is TICEClient) and
-           (TICEClient(FAddCombo.Items.Objects[i]).Entry.IgnoreList = List) then
+      for i := 0 to FAddCombo.ItemsEx.Count - 1 do
+        if Assigned(FAddCombo.ItemsEx[i].Data) and (TObject(FAddCombo.ItemsEx[i].Data).ClassType = TICEClient) and (TICEClient(FAddCombo.ItemsEx[i].Data).Entry.IgnoreList = List) then
         begin
           FAddCombo.ItemIndex := i;
           Break;
@@ -2283,6 +2277,7 @@ var
   s: string;
   NodeData: PTitleNodeData;
 begin
+  // TODO: was ist mit "s"???
   if Node = FWishNode then
     Exit(StrLIComp(PChar(s), PChar(_(WISHTEXT)), Min(Length(s), Length(_(WISHTEXT)))));
   if Node = FIgnoreNode then

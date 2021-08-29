@@ -24,13 +24,47 @@ unit SavedTab;
 interface
 
 uses
-  Windows, SysUtils, Messages, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls,
-  Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, DataManager,
-  ImgList, Functions, DragDropFile, GUIFunctions, StreamInfoView, DynBASS,
-  Menus, Math, Forms, Player, SharedControls, AppData, Graphics, Themes,
-  PlayerManager, Logging, FileWatcher, MessageBus, AppMessages, ShlObj,
-  SavedTabEditTags, Generics.Collections, TypeDefs, AudioFunctions, FileTagger,
-  Notifications, Dialogs, SharedData, DragDrop, Images;
+  Windows,
+  AppData,
+  AppMessages,
+  AudioFunctions,
+  Buttons,
+  Classes,
+  ComCtrls,
+  Controls,
+  DataManager,
+  Dialogs,
+  DragDrop,
+  DragDropFile,
+  DynBASS,
+  ExtCtrls,
+  FileTagger,
+  FileWatcher,
+  Forms,
+  Functions,
+  Generics.Collections,
+  Graphics,
+  GUIFunctions,
+  Images,
+  ImgList,
+  LanguageObjects,
+  Logging,
+  Math,
+  MControls,
+  Menus,
+  MessageBus,
+  Notifications,
+  Player,
+  PlayerManager,
+  SavedTabEditTags,
+  SharedControls,
+  SharedData,
+  ShlObj,
+  StdCtrls,
+  SysUtils,
+  Tabs,
+  Themes,
+  VirtualTrees;
 
 type
   TSavedTree = class;
@@ -43,8 +77,8 @@ type
   PSavedNodeData = ^TSavedNodeData;
 
   TTrackActions = (taUndefined, taRefresh, taCutSong, taEditTags, taFinalized, taAddToWishlist, taRemoveFromWishlist,
-                   taAddToIgnorelist, taRemoveFromIgnorelist, taRemove, taRecycle, taDelete, taShowFile, taProperties,
-                   taImportFiles, taImportFolder);
+    taAddToIgnorelist, taRemoveFromIgnorelist, taRemove, taRecycle, taDelete, taShowFile, taProperties,
+    taImportFiles, taImportFolder);
 
   TTrackActionEvent = procedure(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray) of object;
   TAddTitleEvent = procedure(Sender: TObject; Title: string; TitleHash: Cardinal) of object;
@@ -356,8 +390,7 @@ type
     procedure UpdateTrack(Track: TTrackInfo);
     procedure Filter(S: string); overload;
     procedure Filter(S: string; ServerTitleHashes, ServerArtistHashes: TCardinalArray); overload;
-    procedure Sort(Node: PVirtualNode; Column: TColumnIndex;
-      Direction: VirtualTrees.TSortDirection; DoInit: Boolean = True); override;
+    procedure Sort(Node: PVirtualNode; Column: TColumnIndex; Direction: VirtualTrees.TSortDirection; DoInit: Boolean = True); override;
     procedure SetFileWatcher;
     procedure UpdateList;
 
@@ -377,7 +410,7 @@ constructor TSavedTracksPopup.Create(AOwner: TComponent);
 begin
   inherited;
 
-  FItemRefresh := TMenuItem.Create(Self);;
+  FItemRefresh := TMenuItem.Create(Self);
   FItemRefresh.Caption := 'Re&fresh';
   FItemRefresh.ImageIndex := TImages.ARROW_REFRESH;
   Items.Add(FItemRefresh);
@@ -391,28 +424,28 @@ begin
   Items.Add(FItemPrev);
   }
 
-  FItemPlay := TMenuItem.Create(Self);;
+  FItemPlay := TMenuItem.Create(Self);
   FItemPlay.Caption := '&Play';
   FItemPlay.ImageIndex := TImages.PLAY_BLUE;
   Items.Add(FItemPlay);
 
   {
-  FItemPause := TMenuItem.Create(Self);;
+  FItemPause := TMenuItem.Create(Self);
   FItemPause.Caption := 'Pa&use';
   FItemPause.ImageIndex := TImages.PAUSE_BLUE;
   Items.Add(FItemPause);
 
-  FItemStop := TMenuItem.Create(Self);;
+  FItemStop := TMenuItem.Create(Self);
   FItemStop.Caption := 'St&op';
   FItemStop.ImageIndex := TImages.STOP_BLUE;
   Items.Add(FItemStop);
 
-  FItemNext := TMenuItem.Create(Self);;
+  FItemNext := TMenuItem.Create(Self);
   FItemNext.Caption := '&Next';
   FItemNext.ImageIndex := TImages.NEXT_BLUE;
   Items.Add(FItemNext);
 
-  FItemPlayLastSecs := TMenuItem.Create(Self);;
+  FItemPlayLastSecs := TMenuItem.Create(Self);
   FItemPlayLastSecs.Caption := 'P&lay end';
   FItemPlayLastSecs.ImageIndex := TImages.PLAY_END_BLUE;
   Items.Add(FItemPlayLastSecs);
@@ -420,95 +453,95 @@ begin
 
   Items.AddSeparator;
 
-  FItemCutSong := TMenuItem.Create(Self);;
+  FItemCutSong := TMenuItem.Create(Self);
   FItemCutSong.Caption := '&Cut song';
   FItemCutSong.ImageIndex := TImages.CUT;
   Items.Add(FItemCutSong);
 
-  FItemEditTags := TMenuItem.Create(Self);;
+  FItemEditTags := TMenuItem.Create(Self);
   FItemEditTags.Caption := '&Edit tags and data...';
   FItemEditTags.ImageIndex := TImages.TAG_BLUE_EDIT;
   Items.Add(FItemEditTags);
 
-  FItemFinalized := TMenuItem.Create(Self);;
+  FItemFinalized := TMenuItem.Create(Self);
   FItemFinalized.Caption := 'Finali&zed';
   FItemFinalized.ImageIndex := TImages.TICK;
   Items.Add(FItemFinalized);
 
   Items.AddSeparator;
 
-  FItemAddToWishlist := TMenuItem.Create(Self);;
+  FItemAddToWishlist := TMenuItem.Create(Self);
   FItemAddToWishlist.Caption := 'Add to &wishlist';
   FItemAddToWishlist.ImageIndex := TImages.SCRIPT_HEART_ADD;
   Items.Add(FItemAddToWishlist);
 
-  FItemRemoveFromWishlist := TMenuItem.Create(Self);;
+  FItemRemoveFromWishlist := TMenuItem.Create(Self);
   FItemRemoveFromWishlist.Caption := 'Remo&ve from wishlist';
   FItemRemoveFromWishlist.ImageIndex := TImages.SCRIPT_HEART_DELETE;
   Items.Add(FItemRemoveFromWishlist);
 
-  FItemAddToIgnorelist := TMenuItem.Create(Self);;
+  FItemAddToIgnorelist := TMenuItem.Create(Self);
   FItemAddToIgnorelist.Caption := 'Add to i&gnorelist';
   FItemAddToIgnorelist.ImageIndex := TImages.SCRIPT_DECLINE_ADD;
   Items.Add(FItemAddToIgnorelist);
 
-  FItemRemoveFromIgnorelist := TMenuItem.Create(Self);;
+  FItemRemoveFromIgnorelist := TMenuItem.Create(Self);
   FItemRemoveFromIgnorelist.Caption := 'Remove from ig&norelist';
   FItemRemoveFromIgnorelist.ImageIndex := TImages.SCRIPT_DECLINE_DELETE;
   Items.Add(FItemRemoveFromIgnorelist);
 
   Items.AddSeparator;
 
-  FItemCut := TMenuItem.Create(Self);;
+  FItemCut := TMenuItem.Create(Self);
   FItemCut.Caption := 'C&ut';
   FItemCut.ImageIndex := TImages.CUT;
   Items.Add(FItemCut);
 
-  FItemCopy := TMenuItem.Create(Self);;
+  FItemCopy := TMenuItem.Create(Self);
   FItemCopy.Caption := 'C&opy';
   FItemCopy.ImageIndex := TImages.PAGE_WHITE_COPY;
   Items.Add(FItemCopy);
 
-  FItemRename := TMenuItem.Create(Self);;
+  FItemRename := TMenuItem.Create(Self);
   FItemRename.Caption := 'Ren&ame';
   FItemRename.ImageIndex := TImages.TEXTFIELD_RENAME;
   Items.Add(FItemRename);
 
-  FItemRemove := TMenuItem.Create(Self);;
+  FItemRemove := TMenuItem.Create(Self);
   FItemRemove.Caption := '&Remove from list';
   FItemRemove.ImageIndex := TImages.CROSS;
   Items.Add(FItemRemove);
 
-  FItemRecycle := TMenuItem.Create(Self);;
+  FItemRecycle := TMenuItem.Create(Self);
   FItemRecycle.Caption := 'Rec&ycle files';
   FItemRecycle.ImageIndex := TImages.BIN;
   Items.Add(FItemRecycle);
 
-  FItemDelete := TMenuItem.Create(Self);;
+  FItemDelete := TMenuItem.Create(Self);
   FItemDelete.Caption := '&Delete files';
   FItemDelete.ImageIndex := TImages.DELETE;
   Items.Add(FItemDelete);
 
   Items.AddSeparator;
 
-  FItemShowFile := TMenuItem.Create(Self);;
+  FItemShowFile := TMenuItem.Create(Self);
   FItemShowFile.Caption := 'Show in e&xplorer...';
   FItemShowFile.ImageIndex := TImages.FOLDER_GO;
   Items.Add(FItemShowFile);
 
-  FItemProperties := TMenuItem.Create(Self);;
+  FItemProperties := TMenuItem.Create(Self);
   FItemProperties.Caption := 'Proper&ties...';
   FItemProperties.ImageIndex := TImages.MUSIC_INFORMATION;
   Items.Add(FItemProperties);
 
   Items.AddSeparator;
 
-  FItemImportFiles := TMenuItem.Create(Self);;
+  FItemImportFiles := TMenuItem.Create(Self);
   FItemImportFiles.Caption := '&Import files...';
   FItemImportFiles.ImageIndex := TImages.MUSIC_IN;
   Items.Add(FItemImportFiles);
 
-  FItemImportFolder := TMenuItem.Create(Self);;
+  FItemImportFolder := TMenuItem.Create(Self);
   FItemImportFolder.Caption := 'I&mport folder...';
   FItemImportFolder.ImageIndex := TImages.FOLDER_IN;
   Items.Add(FItemImportFolder);
@@ -627,7 +660,7 @@ begin
   FDelete := TToolButton.Create(Self);
   FDelete.Parent := Self;
   FDelete.Hint := 'Delete files';
-  FDelete.ImageIndex := TImages.DELETE;
+  FDelete.ImageIndex := TImages.Delete;
 
   Sep := TToolButton.Create(Self);
   Sep.Parent := Self;
@@ -890,9 +923,7 @@ begin
     FSeek.Position := Tree.Player.PositionByte;
     FPosLabel.Caption := BuildTime(Tree.Player.PositionTime, False);
   end else
-  begin
     FPosLabel.Caption := '00:00';
-  end;
 end;
 
 procedure TSavedTab.PostTranslate;
@@ -901,8 +932,7 @@ begin
   FSavedTree.PostTranslate;
 end;
 
-procedure TSavedTab.SavedTreeAction(Sender: TObject; Action: TTrackActions;
-  Tracks: TTrackInfoArray);
+procedure TSavedTab.SavedTreeAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
 var
   i, n: Integer;
   Error, AllFinalized: Boolean;
@@ -914,201 +944,186 @@ var
 begin
   case Action of
     taRefresh:
-      begin
-        if Assigned(FOnRefresh) then
-          FOnRefresh(Self);
-      end;
+      if Assigned(FOnRefresh) then
+        FOnRefresh(Self);
     taCutSong:
-      begin
-        if Assigned(FOnCut) then
-          for i := 0 to Length(Tracks) - 1 do
-            FOnCut(nil, Tracks[i]);
-      end;
+      if Assigned(FOnCut) then
+        for i := 0 to Length(Tracks) - 1 do
+          FOnCut(nil, Tracks[i]);
     taEditTags:
-      begin
-        EditTags := TfrmEditTags.Create(GetParentForm(Self));
-        try
-          EditTags.ShowModal(Tracks);
+    begin
+      EditTags := TfrmEditTags.Create(GetParentForm(Self));
+      try
+        EditTags.ShowModal(Tracks);
 
-          // Es könnte sein, dass inzwischen Files gelöscht wurden oder so. Also nochmal Nodes
-          // holen und Änderungen aus Formular anwenden.
-          Tracks2 := FSavedTree.GetSelected;
-          for i := 0 to High(EditTags.Tracks) do
-            for n := 0 to High(Tracks2) do
-              if EditTags.Tracks[i].Filename = Tracks2[n].Filename then
-                Tracks2[n].Streamname := EditTags.Tracks[i].Streamname;
-        finally
-          EditTags.Free;
-        end;
+        // Es könnte sein, dass inzwischen Files gelöscht wurden oder so. Also nochmal Nodes
+        // holen und Änderungen aus Formular anwenden.
+        Tracks2 := FSavedTree.GetSelected;
+        for i := 0 to High(EditTags.Tracks) do
+          for n := 0 to High(Tracks2) do
+            if EditTags.Tracks[i].Filename = Tracks2[n].Filename then
+              Tracks2[n].Streamname := EditTags.Tracks[i].Streamname;
+      finally
+        EditTags.Free;
       end;
+    end;
     taFinalized:
-      begin
-        AllFinalized := True;
-        for i := 0 to Length(Tracks) - 1 do
-          if not Tracks[i].Finalized then
-          begin
-            AllFinalized := False;
-            Break;
-          end;
-        for i := 0 to Length(Tracks) - 1 do
-          Tracks[i].Finalized := not AllFinalized;
-      end;
+    begin
+      AllFinalized := True;
+      for i := 0 to Length(Tracks) - 1 do
+        if not Tracks[i].Finalized then
+        begin
+          AllFinalized := False;
+          Break;
+        end;
+      for i := 0 to Length(Tracks) - 1 do
+        Tracks[i].Finalized := not AllFinalized;
+    end;
     taAddToWishlist:
-      begin
-        for i := 0 to Length(Tracks) - 1 do
-          FOnAddTitleToWishlist(Self, Tracks[i].ParsedTitle, Tracks[i].ServerTitleHash)
-      end;
+      for i := 0 to Length(Tracks) - 1 do
+        FOnAddTitleToWishlist(Self, Tracks[i].ParsedTitle, Tracks[i].ServerTitleHash);
     taRemoveFromWishlist:
-      begin
-        for i := 0 to Length(Tracks) - 1 do
-          FOnRemoveTitleFromWishlist(Self, Tracks[i].ParsedTitle, Tracks[i].ServerTitleHash)
-      end;
+      for i := 0 to Length(Tracks) - 1 do
+        FOnRemoveTitleFromWishlist(Self, Tracks[i].ParsedTitle, Tracks[i].ServerTitleHash);
     taAddToIgnorelist:
-      begin
-        for i := 0 to Length(Tracks) - 1 do
-          FOnAddTitleToIgnorelist(Self, Tracks[i].ParsedTitle, 0)
-      end;
+      for i := 0 to Length(Tracks) - 1 do
+        FOnAddTitleToIgnorelist(Self, Tracks[i].ParsedTitle, 0);
     taRemoveFromIgnorelist:
-      begin
-        for i := 0 to Length(Tracks) - 1 do
-          FOnRemoveTitleFromIgnorelist(Self, Tracks[i].ParsedTitle, 0)
-      end;
+      for i := 0 to Length(Tracks) - 1 do
+        FOnRemoveTitleFromIgnorelist(Self, Tracks[i].ParsedTitle, 0);
     taRemove:
+    begin
+      FSavedTree.BeginUpdate;
+      try
+        for i := 0 to Length(Tracks) - 1 do
+        begin
+          AppGlobals.Data.TrackList.RemoveTrack(Tracks[i]);
+          FSavedTree.DeleteTrack(Tracks[i]);
+          if Assigned(FOnTrackRemoved) then
+            FOnTrackRemoved(nil, Tracks[i]);
+        end;
+      finally
+        FSavedTree.EndUpdate;
+      end;
+    end;
+    taRecycle:
+      for i := 0 to Length(Tracks) - 1 do
       begin
-        FSavedTree.BeginUpdate;
-        try
-          for i := 0 to Length(Tracks) - 1 do
-          begin
-            AppGlobals.Data.TrackList.RemoveTrack(Tracks[i]);
-            FSavedTree.DeleteTrack(Tracks[i]);
-            if Assigned(FOnTrackRemoved) then
-              FOnTrackRemoved(nil, Tracks[i]);
-          end;
-        finally
-          FSavedTree.EndUpdate;
+        MsgBus.SendMessage(TFileModifyMsg.Create(Tracks[i].Filename));
+
+        if Recycle(Handle, Tracks[i].Filename) then
+        begin
+          LowerDir := LowerCase(ExtractFileDir(Tracks[i].Filename));
+          if (LowerDir <> LowerCase(ExcludeTrailingPathDelimiter(AppGlobals.Dir))) and (LowerDir <> LowerCase(ExcludeTrailingPathDelimiter(AppGlobals.DirAuto))) then
+            RemoveDir(ExtractFileDir(Tracks[i].Filename));
+
+          FSavedTree.DeleteTrack(Tracks[i]);
+          AppGlobals.Data.TrackList.RemoveTrack(Tracks[i]);
+          if Assigned(FOnTrackRemoved) then
+            FOnTrackRemoved(nil, Tracks[i]);
         end;
       end;
-    taRecycle:
+    taDelete:
+    begin
+      if Length(Tracks) = 1 then
       begin
+        if MsgBox(GetParentForm(Self).Handle, Format(_('Do you really want to delete "%s"?'), [ExtractFileName(Tracks[0].Filename)]), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
+          Exit;
+      end else if MsgBox(GetParentForm(Self).Handle, _('Do you really want to delete all selected files?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
+        Exit;
+
+      Error := False;
+      FSavedTree.BeginUpdate;
+      try
         for i := 0 to Length(Tracks) - 1 do
         begin
           MsgBus.SendMessage(TFileModifyMsg.Create(Tracks[i].Filename));
 
-          if Recycle(Handle, Tracks[i].Filename) then
+          if FileExists(Tracks[i].Filename) then
+            Error := not DeleteFile(Tracks[i].Filename);
+
+          if not Error then
           begin
-            LowerDir := LowerCase(IncludeTrailingBackslash(ExtractFilePath(Tracks[i].Filename)));
-            if (LowerDir <> LowerCase(IncludeTrailingBackslash(AppGlobals.Dir))) and (LowerDir <> LowerCase(IncludeTrailingBackslash(AppGlobals.DirAuto))) then
-              Windows.RemoveDirectory(PChar(ExtractFilePath(Tracks[i].Filename)));
+            LowerDir := LowerCase(ExtractFileDir(Tracks[i].Filename));
+            if not ((LowerDir = LowerCase(ExcludeTrailingPathDelimiter(AppGlobals.Dir))) and (LowerDir = LowerCase(ExcludeTrailingPathDelimiter(AppGlobals.DirAuto)))) then
+              RemoveDir(ExtractFileDir(Tracks[i].Filename));
+
             FSavedTree.DeleteTrack(Tracks[i]);
             AppGlobals.Data.TrackList.RemoveTrack(Tracks[i]);
             if Assigned(FOnTrackRemoved) then
               FOnTrackRemoved(nil, Tracks[i]);
           end;
         end;
+      finally
+        FSavedTree.EndUpdate;
       end;
-    taDelete:
-      begin
-        if Length(Tracks) = 1 then
-        begin
-          if MsgBox(GetParentForm(Self).Handle, Format(_('Do you really want to delete "%s"?'), [ExtractFileName(Tracks[0].Filename)]), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
-            Exit;
-        end else
-        begin
-          if MsgBox(GetParentForm(Self).Handle, _('Do you really want to delete all selected files?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
-            Exit;
-        end;
-
-        Error := False;
-        FSavedTree.BeginUpdate;
-        try
-          for i := 0 to Length(Tracks) - 1 do
-          begin
-            MsgBus.SendMessage(TFileModifyMsg.Create(Tracks[i].Filename));
-
-            if Windows.DeleteFile(PChar(Tracks[i].Filename)) or (GetLastError = ERROR_FILE_NOT_FOUND) then
-            begin
-              LowerDir := LowerCase(IncludeTrailingBackslash(ExtractFilePath(Tracks[i].Filename)));
-              if not ((LowerDir = LowerCase(IncludeTrailingBackslash(AppGlobals.Dir))) and (LowerDir = LowerCase(IncludeTrailingBackslash(AppGlobals.DirAuto)))) then
-                Windows.RemoveDirectory(PChar(ExtractFilePath(Tracks[i].Filename)));
-              FSavedTree.DeleteTrack(Tracks[i]);
-              AppGlobals.Data.TrackList.RemoveTrack(Tracks[i]);
-              if Assigned(FOnTrackRemoved) then
-                FOnTrackRemoved(nil, Tracks[i]);
-            end else
-              Error := True;
-          end;
-        finally
-          FSavedTree.EndUpdate;
-        end;
-        if Error then
-          MsgBox(GetParentForm(Self).Handle, _('Some files could not be deleted.'#13#10'Please make sure they are not opened in a cut-tab or in use by another application.'), _('Info'), MB_ICONINFORMATION);
-      end;
+      if Error then
+        MsgBox(GetParentForm(Self).Handle, _('Some files could not be deleted.'#13#10'Please make sure they are not opened in a cut-tab or in use by another application.'), _('Info'), MB_ICONINFORMATION);
+    end;
     taShowFile:
       RunProcess('explorer.exe /select,"' + Tracks[0].Filename + '"');
     taProperties:
       PropertiesDialog(Tracks[0].Filename);
     taImportFiles:
-      begin
-        Dlg := TOpenDialog.Create(GetParentForm(Self));
-        try
-          Dlg.Options := [ofAllowMultiSelect, ofFileMustExist];
-          Dlg.Filter := _('Audio files|*.mp3;*.ogg;*.aac;*.m4a');
-          if Dlg.Execute and (Dlg.Files.Count > 0) then
-          begin
-            for i := Dlg.Files.Count - 1 downto 0 do
-            begin
-              if FilenameToFormat(Dlg.Files[i]) = atNone then
-                Dlg.Files.Delete(i);
-            end;
-            if Dlg.Files.Count > 0 then
-            begin
-              KnownFiles := TStringList.Create;
-              for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
-                KnownFiles.Add(AppGlobals.Data.TrackList[i].Filename);
-
-              FImportThread := TImportFilesThread.Create(Dlg.Files, KnownFiles);
-              FImportThread.OnTerminate := ImportThreadTerminate;
-              FImportThread.OnProgress := ImportThreadProgress;
-              FImportThread.Resume;
-
-              if FSavedTree.Player.Playing then
-                FSavedTree.FPlayer.Pause;
-
-              FSavedTree.Enabled := False;
-              FSearchBar.FSearch.Enabled := False;
-              FImportPanel.Show;
-
-              UpdateButtons;
-            end;
-          end;
-        finally
-          Dlg.Free;
-        end;
-      end;
-    taImportFolder:
-      begin
-        Dir := BrowseDialog(GetParentForm(Self).Handle, _('Select folder with files to import:'), BIF_RETURNONLYFSDIRS);
-        if Dir <> '' then
+    begin
+      Dlg := TOpenDialog.Create(GetParentForm(Self));
+      try
+        Dlg.Options := [ofAllowMultiSelect, ofFileMustExist];
+        Dlg.Filter := _('Audio files|*.mp3;*.ogg;*.aac;*.m4a');
+        if Dlg.Execute and (Dlg.Files.Count > 0) then
         begin
-          KnownFiles := TStringList.Create;
-          for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
-            KnownFiles.Add(AppGlobals.Data.TrackList[i].Filename);
+          for i := Dlg.Files.Count - 1 downto 0 do
+            if FilenameToFormat(Dlg.Files[i]) = atNone then
+              Dlg.Files.Delete(i);
+          if Dlg.Files.Count > 0 then
+          begin
+            KnownFiles := TStringList.Create;
+            for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
+              KnownFiles.Add(AppGlobals.Data.TrackList[i].Filename);
 
-          FImportThread := TImportFilesThread.Create(Dir, KnownFiles);
-          FImportThread.OnTerminate := ImportThreadTerminate;
-          FImportThread.OnProgress := ImportThreadProgress;
-          FImportThread.Resume;
+            FImportThread := TImportFilesThread.Create(Dlg.Files, KnownFiles);
+            FImportThread.OnTerminate := ImportThreadTerminate;
+            FImportThread.OnProgress := ImportThreadProgress;
+            FImportThread.Resume;
 
-          if FSavedTree.Player.Playing then
-            FSavedTree.FPlayer.Pause;
+            if FSavedTree.Player.Playing then
+              FSavedTree.FPlayer.Pause;
 
-          FSavedTree.Enabled := False;
-          FSearchBar.FSearch.Enabled := False;
-          FImportPanel.Show;
+            FSavedTree.Enabled := False;
+            FSearchBar.FSearch.Enabled := False;
+            FImportPanel.Show;
 
-          UpdateButtons;
+            UpdateButtons;
+          end;
         end;
+      finally
+        Dlg.Free;
       end;
+    end;
+    taImportFolder:
+    begin
+      Dir := BrowseDialog(GetParentForm(Self).Handle, _('Select folder with files to import:'), BIF_RETURNONLYFSDIRS);
+      if Dir <> '' then
+      begin
+        KnownFiles := TStringList.Create;
+        for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
+          KnownFiles.Add(AppGlobals.Data.TrackList[i].Filename);
+
+        FImportThread := TImportFilesThread.Create(Dir, KnownFiles);
+        FImportThread.OnTerminate := ImportThreadTerminate;
+        FImportThread.OnProgress := ImportThreadProgress;
+        FImportThread.Resume;
+
+        if FSavedTree.Player.Playing then
+          FSavedTree.FPlayer.Pause;
+
+        FSavedTree.Enabled := False;
+        FSearchBar.FSearch.Enabled := False;
+        FImportPanel.Show;
+
+        UpdateButtons;
+      end;
+    end;
   end;
 
   FSavedTree.Change(nil);
@@ -1144,17 +1159,14 @@ begin
     begin
       FSavedTree.FPlayerList.Clear;
       FSavedTree.FPlayerIndex := 0;
-    end else
+    end else if FSavedTree.Player.Playing then
     begin
-      if FSavedTree.Player.Playing then
+      Node := FSavedTree.GetNode(FSavedTree.Player.Filename);
+      if Node <> nil then
       begin
-        Node := FSavedTree.GetNode(FSavedTree.Player.Filename);
-        if Node <> nil then
-        begin
-          NodeData := FSavedTree.GetNodeData(Node);
-          FSavedTree.FPlayerList.Add(NodeData.Track.Filename);
-          FSavedTree.FPlayerIndex := FSavedTree.FPlayerList.Count - 1;
-        end;
+        NodeData := FSavedTree.GetNodeData(Node);
+        FSavedTree.FPlayerList.Add(NodeData.Track.Filename);
+        FSavedTree.FPlayerIndex := FSavedTree.FPlayerList.Count - 1;
       end;
     end;
 
@@ -1244,13 +1256,11 @@ begin
 
   HashesSelected := False;
   for i := 0 to High(Tracks) do
-  begin
     if Tracks[i].ServerTitleHash > 0 then
     begin
       HashesSelected := True;
       Break;
     end;
-  end;
 
   FPlayToolbar.FShuffle.Down := AppGlobals.PlayerShuffle;
   FPlayToolbar.FShuffle.Enabled := Bass.DeviceAvailable;
@@ -1326,9 +1336,7 @@ end;
 procedure TSavedTab.SearchTextClick(Sender: TObject);
 begin
   if FSearchBar.HashFilterSet then
-  begin
     FSearchBar.FSearch.SelectAll;
-  end;
 end;
 
 procedure TSavedTab.SeekChange(Sender: TObject);
@@ -1457,10 +1465,8 @@ begin
   TMTreeColumnPopup(Header.PopupMenu).OnAction := MenuColsAction;
 
   for i := 1 to Header.Columns.Count - 1 do
-  begin
     if not ((AppGlobals.SavedCols and (1 shl i)) <> 0) then
       Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
-  end;
 
   FitColumns;
 end;
@@ -1572,13 +1578,11 @@ begin
     SetLength(Result, 0);
     Nodes := GetSortedSelection(False);
     for i := 0 to Length(Nodes) - 1 do
-    begin
       if PSavedNodeData(GetNodeData(Nodes[i])).Track <> nil then
       begin
         SetLength(Result, Length(Result) + 1);
         Result[Length(Result) - 1] := Nodes[i];
       end;
-    end;
   end;
 end;
 
@@ -1620,8 +1624,7 @@ begin
   FTrackList.Remove(Track);
 end;
 
-procedure TSavedTree.PaintImage(var PaintInfo: TVTPaintInfo;
-  ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
+procedure TSavedTree.PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
 var
   L: Integer;
   NodeData: PSavedNodeData;
@@ -1655,15 +1658,12 @@ begin
         Images.Draw(PaintInfo.Canvas, L + 18, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.USER_GRAY_COOL)
       else
         Images.Draw(PaintInfo.Canvas, L + 18, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BRICKS);
-
-      L += 18 * 2;
     end;
 
-    if NodeData.Track.WasCut then
-      Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.CUT);
-
     if NodeData.Track.Finalized then
-      Images.Draw(PaintInfo.Canvas, L + 18, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TICK);
+      Images.Draw(PaintInfo.Canvas, L + 18 * 2, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TICK)
+    else if NodeData.Track.WasCut then
+      Images.Draw(PaintInfo.Canvas, L + 18 * 2, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.CUT);
   end;
 end;
 
@@ -1773,8 +1773,8 @@ begin
   end;
 end;
 
-function TSavedTree.NextPlayingTrack(ConsiderRnd: Boolean;
-  AddToPlayerList: Boolean): TTrackInfo;
+function TSavedTree.NextPlayingTrack(ConsiderRnd: Boolean; AddToPlayerList: Boolean): TTrackInfo;
+
   function GetRandom(ExceptFilename: string): TTrackInfo;
   var
     R: Integer;
@@ -1812,6 +1812,7 @@ function TSavedTree.NextPlayingTrack(ConsiderRnd: Boolean;
     if NodeData.Track <> nil then
       Exit(NodeData.Track);
   end;
+
 var
   i: Integer;
   Nodes: TNodeArray;
@@ -1950,8 +1951,8 @@ begin
 
     FPlayer.Play;
     Exit;
-  //end else if Sender = FPopupMenu.ItemPlayLastSecs then
-  end else if Sender = FTab.FPlayToolbar.FPlayLastSecs then           
+    //end else if Sender = FPopupMenu.ItemPlayLastSecs then
+  end else if Sender = FTab.FPlayToolbar.FPlayLastSecs then
   begin
     if (not FPlayer.Paused) and (not FPlayer.Playing) then
     begin
@@ -1976,9 +1977,7 @@ begin
     Exit;
   end;
 
-  if (Length(Tracks) = 0) and (Sender <> FPopupMenu.ItemImportFiles) and
-     (Sender <> FPopupMenu.ItemImportFolder) and (Sender <> FPopupMenu.ItemRefresh)
-  then
+  if (Length(Tracks) = 0) and (Sender <> FPopupMenu.ItemImportFiles) and (Sender <> FPopupMenu.ItemImportFolder) and (Sender <> FPopupMenu.ItemRefresh) then
     Exit;
 
   if Sender = FPopupMenu.ItemRefresh then
@@ -2035,9 +2034,8 @@ begin
   end else if Sender = FPopupMenu.ItemCutSong then
     Action := taCutSong
   else if Sender = FPopupMenu.ItemEditTags then
-  begin
-    Action := taEditTags;
-  end else if Sender = FPopupMenu.ItemFinalized then
+    Action := taEditTags
+  else if Sender = FPopupMenu.ItemFinalized then
     Action := taFinalized
   else if Sender = FPopupMenu.ItemAddToWishlist then
     Action := taAddToWishlist
@@ -2054,15 +2052,12 @@ begin
   else if Sender = FPopupMenu.ItemRename then
     EditNode(GetNode(Tracks[0]), 0)
   else if Sender = FPopupMenu.ItemRemove then
-  begin
-    Action := taRemove;
-  end else if Sender = FPopupMenu.ItemRecycle then
-  begin
-    Action := taRecycle;
-  end else if Sender = FPopupMenu.ItemDelete then
-  begin
-    Action := taDelete;
-  end else if Sender = FPopupMenu.ItemShowFile then
+    Action := taRemove
+  else if Sender = FPopupMenu.ItemRecycle then
+    Action := taRecycle
+  else if Sender = FPopupMenu.ItemDelete then
+    Action := taDelete
+  else if Sender = FPopupMenu.ItemShowFile then
     Action := taShowFile
   else if Sender = FPopupMenu.ItemProperties then
     Action := taProperties
@@ -2096,12 +2091,10 @@ begin
   if IgnorePattern then
     ParentNode := FFileNode
   else if (FPattern = '*') or (Like(LowerCase(Track.Filename), FPattern)) or (Like(LowerCase(Track.Streamname), FPattern)) then
-  begin
     if Track.IsStreamFile then
       ParentNode := FStreamNode
     else
       ParentNode := FFileNode;
-  end;
 
   if ParentNode <> nil then
   begin
@@ -2167,8 +2160,7 @@ begin
   end;
 end;
 
-procedure TSavedTree.Sort(Node: PVirtualNode; Column: TColumnIndex;
-  Direction: VirtualTrees.TSortDirection; DoInit: Boolean);
+procedure TSavedTree.Sort(Node: PVirtualNode; Column: TColumnIndex; Direction: VirtualTrees.TSortDirection; DoInit: Boolean);
 begin
   inherited;
 
@@ -2197,9 +2189,7 @@ begin
     NodeData := GetNodeData(Node);
 
     if NodeData.Track <> nil then
-    begin
       NodeData.Track.Index := Node.Index;
-    end;
 
     Node := GetNext(Node);
   end;
@@ -2227,12 +2217,10 @@ begin
   if (NodeData.IsStreamParent) or (NodeData.IsFileParent) then
   begin
     if Column = 1 then
-    begin
       if NodeData.IsStreamParent then
         Text := _(STREAMNODETEXT) + ' (' + IntToStr(Node.ChildCount) + ')'
       else
         Text := _(FILENODETEXT) + ' (' + IntToStr(Node.ChildCount) + ')';
-    end;
   end else
     case Column of
       1: Text := ExtractFileName(NodeData.Track.Filename);
@@ -2251,13 +2239,11 @@ begin
       5:
         Text := NodeData.Track.Streamname;
       6:
-        begin
-          if Trunc(NodeData.Track.Time) = Trunc(Now) then
-            Text := TimeToStr(NodeData.Track.Time)
-          else
-            Text := DateTimeToStr(NodeData.Track.Time);
-        end;
-  end;
+        if Trunc(NodeData.Track.Time) = Trunc(Now) then
+          Text := TimeToStr(NodeData.Track.Time)
+        else
+          Text := DateTimeToStr(NodeData.Track.Time);
+    end;
 end;
 
 function TSavedTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList;
@@ -2277,25 +2263,20 @@ begin
     if Header.SortColumn <> HitInfo.Column then
     begin
       Header.SortColumn := HitInfo.Column;
-      if (HitInfo.Column = 0) or (HitInfo.Column = 2) or (HitInfo.Column = 3) or (HitInfo.Column = 4) or
-         (HitInfo.Column = 5) or (HitInfo.Column = 6) then
+      if (HitInfo.Column = 0) or (HitInfo.Column = 2) or (HitInfo.Column = 3) or (HitInfo.Column = 4) or (HitInfo.Column = 5) or (HitInfo.Column = 6) then
         Header.SortDirection := sdDescending
       else
         Header.SortDirection := sdAscending;
-    end else
-    begin
-      if Header.SortDirection = sdAscending then
-        Header.SortDirection := sdDescending
-      else
-        Header.SortDirection := sdAscending;
-    end;
+    end else if Header.SortDirection = sdAscending then
+      Header.SortDirection := sdDescending
+    else
+      Header.SortDirection := sdAscending;
     Sort(FStreamNode, HitInfo.Column, Header.SortDirection);
     Sort(FFileNode, HitInfo.Column, Header.SortDirection);
   end;
 end;
 
-procedure TSavedTree.DoHeaderDragged(Column: TColumnIndex;
-  OldPosition: TColumnPosition);
+procedure TSavedTree.DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition);
 begin
   inherited;
 
@@ -2313,8 +2294,7 @@ begin
   FHeaderDragSourcePosition := Header.Columns[Column].Position;
 end;
 
-function TSavedTree.DoIncrementalSearch(Node: PVirtualNode;
-  const Text: string): Integer;
+function TSavedTree.DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer;
 var
   CmpTxt: string;
   NodeData: PSavedNodeData;
@@ -2421,8 +2401,7 @@ begin
   inherited;
 end;
 
-procedure TSavedTree.FileWatcherEvent(Sender: TObject; Action: DWORD;
-  RootDir, OldName, NewName: string);
+procedure TSavedTree.FileWatcherEvent(Sender: TObject; Action: DWORD; RootDir, OldName, NewName: string);
 var
   i: Integer;
   Track: TTrackInfo;
@@ -2431,17 +2410,15 @@ var
 begin
   Track := nil;
   if (Action = FILE_ACTION_REMOVED) or (Action = FILE_ACTION_RENAMED_NEW_NAME) then
-    Track := FTrackList.GetTrack(RootDir + OldName);
+    Track := FTrackList.GetTrack(ConcatPaths([RootDir, OldName]));
 
   if Track = nil then
   begin
     RemoveTracks := TList<TTrackInfo>.Create;
     try
       for i := 0 to FTrackList.Count - 1 do
-      begin
-        if LowerCase(Copy(FTrackList[i].Filename, 1, Length(RootDir + OldName + '\'))) = LowerCase(RootDir + OldName + '\') then
+        if LowerCase(Copy(FTrackList[i].Filename, 1, Length(ConcatPaths([RootDir, OldName])))) = LowerCase(ConcatPaths([RootDir, OldName])) then
           RemoveTracks.Add(FTrackList[i]);
-      end;
 
       for i := 0 to RemoveTracks.Count - 1 do
         RemoveTrack(RemoveTracks[i]);
@@ -2454,27 +2431,27 @@ begin
 
   case Action of
     FILE_ACTION_REMOVED:
+    begin
+      RemoveTrack(Track);
+      AppGlobals.Data.TrackList.RemoveTrack(Track);
+    end;
+    FILE_ACTION_RENAMED_NEW_NAME:
+    begin
+      if FilenameToFormat(NewName) = atNone then
       begin
         RemoveTrack(Track);
         AppGlobals.Data.TrackList.RemoveTrack(Track);
+        Exit;
       end;
-    FILE_ACTION_RENAMED_NEW_NAME:
-      begin
-        if FilenameToFormat(NewName) = atNone then
-        begin
-          RemoveTrack(Track);
-          AppGlobals.Data.TrackList.RemoveTrack(Track);
-          Exit;
-        end;
 
-        if Sender = FFileWatcher then
-          Track.Filename := AppGlobals.Dir + NewName
-        else
-          Track.Filename := AppGlobals.DirAuto + NewName;
-        Node := GetNode(Track);
-        if Node <> nil then
-          InvalidateNode(Node);
-      end;
+      if Sender = FFileWatcher then
+        Track.Filename := ConcatPaths([AppGlobals.Dir, NewName])
+      else
+        Track.Filename := ConcatPaths([AppGlobals.DirAuto, NewName]);
+      Node := GetNode(Track);
+      if Node <> nil then
+        InvalidateNode(Node);
+    end;
   end;
 end;
 
@@ -2555,24 +2532,20 @@ begin
 
       // Jetzt alles basierend auf Artist-Hashes einfügen, wenn noch nicht vorhanden
       for i := 0 to FTrackList.Count - 1 do
-      begin
         for n := 0 to High(ServerArtistHashes) do
           if FTrackList[i].ServerArtistHash = ServerArtistHashes[n] then
           begin
             Found := False;
             for k := 0 to AddedTitles.Count - 1 do
-            begin
               if AddedTitles[k] = FTrackList[i] then
               begin
                 Found := True;
                 Break;
               end;
-            end;
 
             if not Found then
               AddTrack(FTrackList[i], False, True);
           end;
-      end;
     end;
   finally
     AddedTitles.Free;
@@ -2596,13 +2569,10 @@ begin
     raise Exception.Create('(Header.Columns.Count <> Length(AppGlobals.SavedHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.SavedHeaderPosition))');
 
   if AppGlobals.SavedHeaderWidthLoaded then
-  begin
     for i := 1 to Header.Columns.Count - 1 do
-      Header.Columns[i].Width := AppGlobals.SavedHeaderWidth[i];
-    FColImages.Width := 104;
-  end else
+      Header.Columns[i].Width := AppGlobals.SavedHeaderWidth[i]
+  else
   begin
-    FColImages.Width := 104;
     FColSize.Width := GetTextSize('111,11 KB', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
     FColLength.Width := GetTextSize('00:00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
     FColBitrate.Width := GetTextSize('320 VBR', font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
@@ -2610,15 +2580,14 @@ begin
     FColSaved.Width := MulDiv(130, Screen.PixelsPerInch, 96);
   end;
 
+  FColImages.Width := Max(Indent + Margin * 2 + 16 * 4 + 3 * 2, GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96));
+
   if AppGlobals.SavedHeaderPositionLoaded then
-  begin
     for i := 1 to Header.Columns.Count - 1 do
       Header.Columns[i].Position := AppGlobals.SavedHeaderPosition[i];
-  end;
 end;
 
-procedure TSavedTree.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;
-  var Allowed: Boolean);
+procedure TSavedTree.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean);
 begin
   inherited;
 
@@ -2632,8 +2601,8 @@ begin
   FTab.UpdateButtons;
 end;
 
-function TSavedTree.DoCompare(Node1, Node2: PVirtualNode;
-  Column: TColumnIndex): Integer;
+function TSavedTree.DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer;
+
   function CmpTime(a, b: TDateTime): Integer;
   begin
     if a > b then
@@ -2643,6 +2612,7 @@ function TSavedTree.DoCompare(Node1, Node2: PVirtualNode;
     else
       Result := 0;
   end;
+
   function CmpC(a, b: Cardinal): Integer;
   begin
     if a > b then
@@ -2652,6 +2622,7 @@ function TSavedTree.DoCompare(Node1, Node2: PVirtualNode;
     else
       Result := 0;
   end;
+
 var
   I1, I2: Integer;
   Data1, Data2: PSavedNodeData;
@@ -2669,95 +2640,91 @@ begin
     -1:
       Result := CmpC(Data1.Track.Index, Data2.Track.Index);
     0:
+    begin
+      I1 := 0;
+      I2 := 0;
+
+      if Data1.Track.Finalized then
+        I1 := I1 + 4;
+      if Data2.Track.Finalized then
+        I2 := I2 + 4;
+
+      if Data1.Track.WasCut then
+        I1 := I1 + 3;
+      if Data2.Track.WasCut then
+        I2 := I2 + 3;
+
+      if Data1.Track.IsAuto then
+        if Data1.Track.RecordBecauseArtist then
+          I1 := I1 + 1
+        else
+          I1 := I1 + 2;
+      if Data2.Track.IsAuto then
+        if Data2.Track.RecordBecauseArtist then
+          I2 := I2 + 1
+        else
+          I2 := I2 + 2;
+
+      Result := CmpInt(I1, I2);
+
+      if Result = 0 then
       begin
-        I1 := 0;
-        I2 := 0;
-
-        if Data1.Track.Finalized then
-          I1 := I1 + 4;
-        if Data2.Track.Finalized then
-          I2 := I2 + 4;
-
-        if Data1.Track.WasCut then
-          I1 := I1 + 3;
-        if Data2.Track.WasCut then
-          I2 := I2 + 3;
-
-        if Data1.Track.IsAuto then
-        begin
-          if Data1.Track.RecordBecauseArtist then
-            I1 := I1 + 1
-          else
-            I1 := I1 + 2;
-        end;
-        if Data2.Track.IsAuto then
-        begin
-          if Data2.Track.RecordBecauseArtist then
-            I2 := I2 + 1
-          else
-            I2 := I2 + 2;
-        end;
-
-        Result := CmpInt(I1, I2);
-
-        if Result = 0 then
-        begin
-          Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
-          if Header.SortDirection = sdDescending then
-            Result := Result * -1;
-        end;
+        Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
+        if Header.SortDirection = sdDescending then
+          Result := Result * -1;
       end;
+    end;
     1: Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
     2:
+    begin
+      Result := CmpInt(Data1.Track.Filesize, Data2.Track.Filesize);
+      if Result = 0 then
       begin
-        Result := CmpInt(Data1.Track.Filesize, Data2.Track.Filesize);
-        if Result = 0 then
-        begin
-          Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
-          if Header.SortDirection = sdDescending then
-            Result := Result * -1;
-        end;
+        Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
+        if Header.SortDirection = sdDescending then
+          Result := Result * -1;
       end;
+    end;
     3:
+    begin
+      Result := CmpInt(Data1.Track.Length, Data2.Track.Length);
+      if Result = 0 then
       begin
-        Result := CmpInt(Data1.Track.Length, Data2.Track.Length);
-        if Result = 0 then
-        begin
-          Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
-          if Header.SortDirection = sdDescending then
-            Result := Result * -1;
-        end;
+        Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
+        if Header.SortDirection = sdDescending then
+          Result := Result * -1;
       end;
+    end;
     4:
+    begin
+      Result := CmpInt(Data1.Track.Bitrate, Data2.Track.Bitrate);
+      if Result = 0 then
       begin
-        Result := CmpInt(Data1.Track.Bitrate, Data2.Track.Bitrate);
-        if Result = 0 then
-        begin
-          Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
-          if Header.SortDirection = sdDescending then
-            Result := Result * -1;
-        end;
+        Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
+        if Header.SortDirection = sdDescending then
+          Result := Result * -1;
       end;
+    end;
     5:
+    begin
+      Result := CompareText(Data1.Track.Streamname, Data2.Track.Streamname);
+      if Result = 0 then
       begin
-        Result := CompareText(Data1.Track.Streamname, Data2.Track.Streamname);
-        if Result = 0 then
-        begin
-          Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
-          if Header.SortDirection = sdDescending then
-            Result := Result * -1;
-        end;
+        Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
+        if Header.SortDirection = sdDescending then
+          Result := Result * -1;
       end;
+    end;
     6:
+    begin
+      Result := CmpTime(Data1.Track.Time, Data2.Track.Time);
+      if Result = 0 then
       begin
-        Result := CmpTime(Data1.Track.Time, Data2.Track.Time);
-        if Result = 0 then
-        begin
-          Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
-          if Header.SortDirection = sdDescending then
-            Result := Result * -1;
-        end;
+        Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
+        if Header.SortDirection = sdDescending then
+          Result := Result * -1;
       end;
+    end;
   end;
 end;
 
@@ -2768,9 +2735,8 @@ begin
   if Key = VK_SPACE then
     Key := 0
   else if Key = VK_DELETE then
-  begin
-    FPopupMenu.FItemDelete.Click;
-  end else if ssCtrl in Shift then
+    FPopupMenu.FItemDelete.Click
+  else if ssCtrl in Shift then
     // Die Bedingung hier für ist dreckig. In China ist das bestimmt kein 'C' und eigentlich
     // sollte das über einen Menü-Shortcut laufen. Naja.... hauptsache funzt,
     // dann ich geb kein Fick drauf.
@@ -2807,15 +2773,12 @@ begin
     Key := #0;
     Tracks := GetSelected;
     if Length(Tracks) = 1 then
-    begin
       FPopupMenu.FItemPlay.Click;
-    end;
   end else
     inherited;
 end;
 
-procedure TSavedTree.MenuColsAction(Sender: TVirtualStringTree;
-  Index: Integer; Checked: Boolean);
+procedure TSavedTree.MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
 var
   Show: Boolean;
 begin
@@ -2824,12 +2787,9 @@ begin
     Show := False;
 
   if Show then
-  begin
-    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible];
-  end else
-  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible]
+  else
     Header.Columns[Index].Options := Header.Columns[Index].Options - [coVisible];
-  end;
 
   AppGlobals.SavedCols := AppGlobals.SavedCols xor (1 shl Index);
 end;
@@ -2837,10 +2797,8 @@ end;
 procedure TSavedTree.MessageReceived(Msg: TMessageBase);
 begin
   if Msg is TFileModifyMsg then
-  begin
     if LowerCase(FPlayer.Filename) = LowerCase(TFileModifyMsg(Msg).Filename) then
       FPlayer.Stop(True, True);
-  end;
 end;
 
 procedure TSavedTree.CreateHandle;
@@ -2944,9 +2902,7 @@ begin
     FSearch.Color := clBtnFace;
     FSearch.OnChange := Tmp;
   end else
-  begin
     FSearch.Color := clWindow;
-  end;
 end;
 
 procedure TSearchBar.PostTranslate;

@@ -25,8 +25,15 @@ unit WaveData;
 interface
 
 uses
-  SysUtils, Windows, Classes, DynBass, Math, Generics.Collections,
-  Functions, AudioStream, FileConvertor;
+  AudioStream,
+  Classes,
+  DynBass,
+  FileConvertor,
+  Functions,
+  Generics.Collections,
+  Math,
+  SysUtils,
+  Windows;
 
 type
   TMinSilence = record
@@ -138,12 +145,10 @@ end;
 
 procedure TWaveData.Load(Stream: TMemoryStream);
 begin
-  FDecoder := BASSStreamCreateFile(True, Stream.Memory, 0, Stream.Size, BASS_STREAM_DECODE {or BASS_STREAM_PRESCAN});
+  FDecoder := BASSStreamCreateFile(True, Stream.Memory, 0, Stream.Size, BASS_STREAM_DECODE);
 
   if FDecoder = 0 then
-  begin
     raise Exception.Create('Decoder could not be created');
-  end;
 
   try
     AnalyzeData;
@@ -155,17 +160,13 @@ end;
 procedure TWaveData.Load(Filename: string);
 begin
   FFilename := Filename;
-  FFilesize := GetFileSize(Filename);
+  FFilesize := Functions.GetFileSize(Filename);
   if FFilesize = -1 then
-  begin
     raise Exception.Create('Filesize could not be determined');
-  end;
 
-  FDecoder := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE {or BASS_STREAM_PRESCAN});
+  FDecoder := BASSStreamCreateFile(False, PWideChar(UnicodeString(Filename)), 0, 0, BASS_STREAM_DECODE or BASS_UNICODE);
   if FDecoder = 0 then
-  begin
     raise Exception.Create('Decoder could not be created');
-  end;
 
   try
     AnalyzeData;
@@ -205,9 +206,7 @@ begin
   while BASSChannelIsActive(FDecoder) = BASS_ACTIVE_PLAYING do
   begin
     if Counter >= Cardinal(Length(FWaveArray)) then
-    begin
       SetLength(FWaveArray, Length(FWaveArray) + 1000);
-    end;
 
     Position := BASSChannelGetPosition(FDecoder, BASS_POS_BYTE);
 
@@ -215,10 +214,8 @@ begin
     begin
       FProgress := Trunc((Position / Len) * 100);
       if FProgress <> OldPercent then
-      begin
         if Assigned(FOnProgress) then
           FOnProgress(Self);
-      end;
       OldPercent := FProgress;
     end;
 
@@ -244,9 +241,7 @@ begin
 
   // Bei weniger als 2 = Crash später
   if Counter < 10 then
-  begin
     raise Exception.Create('WaveArray is too short');
-  end;
 
   FWaveArray[High(FWaveArray)].Len := BASSChannelGetLength(FDecoder, BASS_POS_BYTE) - FWaveArray[High(FWaveArray)].Pos;
   FWavesize := FWaveArray[High(FWaveArray)].Pos + FWaveArray[High(FWaveArray)].Len;
@@ -266,9 +261,8 @@ var
   SilenceStart, SilenceEnd: Cardinal;
 begin
   if MaxPeaks = -1 then
-  begin
-    FindLowestArea(SearchFirst, FromEntry, ToEntry);
-  end else
+    FindLowestArea(SearchFirst, FromEntry, ToEntry)
+  else
   begin
     MinDurationD := MinDuration / 1000;
     MaxPeaks := Trunc((MaxPeaks / 100) * 6000);
@@ -281,28 +275,16 @@ begin
       if Avg < MaxPeaks then
       begin
         if SilenceStart = 0 then
-        begin
           SilenceStart := i;
-        end;
-      end else
+      end else if SilenceStart > 0 then
       begin
-        if SilenceStart > 0 then
-        begin
-          SilenceEnd := i;
+        SilenceEnd := i;
 
-          if TimeBetween(SilenceStart, SilenceEnd) >= MinDurationD then
-          begin
-            FSilence.Add(TCutState.Create(SilenceStart, SilenceEnd));
-          end else
-          begin
-          end;
+        if TimeBetween(SilenceStart, SilenceEnd) >= MinDurationD then
+          FSilence.Add(TCutState.Create(SilenceStart, SilenceEnd));
 
-          SilenceStart := 0;
-          SilenceEnd := 0;
-        end else
-        begin
-
-        end;
+        SilenceStart := 0;
+        SilenceEnd := 0;
       end;
     end;
 
@@ -374,7 +356,6 @@ begin
         MaxPeaks := MinSilence[i].Peak;
       end;
   end else
-  begin
     for i := High(MinSilence) downto 0 do
       if MinSilence[i].Peak < MaxPeaks then
       begin
@@ -383,7 +364,6 @@ begin
         Result.B := MinSilence[i].B;
         MaxPeaks := MinSilence[i].Peak;
       end;
-  end;
 
   // Jetzt die gefundene Stille noch breiter ziehen, wenn die Bereiche
   // davor/danach auch leise sind
@@ -457,18 +437,16 @@ var
 begin
   Result := False;
   for i := 0 to FSilence.Count - 1 do
-  begin
     if (O >= FSilence[i].CutStart) and (O <= FSilence[i].CutEnd) then
     begin
       Result := True;
       Break;
     end;
-  end;
 end;
 
 function TWaveData.TimeBetween(F, T: Cardinal): Double;
 begin
-  Result := Max(FWaveArray[F].Sec, FWaveArray[T].Sec) - Min(FWaveArray[F].Sec, FWaveArray[T].Sec);
+  Result := Math.Max(FWaveArray[F].Sec, FWaveArray[T].Sec) - Math.Min(FWaveArray[F].Sec, FWaveArray[T].Sec);
 end;
 
 { TCutState }
@@ -482,4 +460,3 @@ begin
 end;
 
 end.
-

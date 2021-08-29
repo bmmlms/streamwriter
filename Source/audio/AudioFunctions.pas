@@ -223,7 +223,7 @@ begin
   Size := GetFileSize(Filename);
   if Size = 0 then
     Exit;
-  Player := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE or BASS_STREAM_PRESCAN);
+  Player := BASSStreamCreateFile(False, PWideChar(UnicodeString(Filename)), 0, 0, BASS_STREAM_DECODE or BASS_UNICODE or BASS_STREAM_PRESCAN);
 
   try
     GetAudioInfo(Player, Size);

@@ -172,7 +172,7 @@ end;
 
 procedure TfrmCommunityLogin.lblSignupClick(Sender: TObject);
 begin
-  ShellExecute(0, 'open', PChar('https://streamwriter.org/benutzer/anmelden/'), '', '', 1);
+  ShellExecuteW(0, 'open', PWideChar(UnicodeString('https://streamwriter.org/benutzer/anmelden/')), '', '', 1);
 end;
 
 procedure TfrmCommunityLogin.ShowConnecting(Show: Boolean);

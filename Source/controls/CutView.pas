@@ -475,9 +475,7 @@ begin
     FreeAndNil(FWaveData);
 
   if FPlayer <> nil then
-  begin
     FreeAndNil(FPlayer);
-  end;
 
   for i := 0 to FUndoList.Count - 1 do
   begin
@@ -554,7 +552,7 @@ end;
 function TCutView.GetUndoFilename: string;
 begin
   repeat
-    Result := AppGlobals.TempDir + 'UNDO_' + IntToStr(GetTickCount) + '_' + RemoveFileExt(ExtractFileName(FOriginalFilename)) + '_cut.wav';
+    Result := ConcatPaths([AppGlobals.TempDir, 'UNDO_' + IntToStr(GetTickCount) + '_' + RemoveFileExt(ExtractFileName(FOriginalFilename)) + '_cut.wav']);
   until not FileExists(Result);
 end;
 
@@ -583,9 +581,8 @@ begin
   if IsConverted then
   begin
     if FPlayer <> nil then
-    begin
       FreeAndNil(FPlayer);
-    end;
+
     FPlayer := TPlayer.Create;
     FPlayer.ShowTitle := False;
     FPlayer.OnEndReached := PlayerEndReached;
@@ -658,7 +655,7 @@ begin
     FProgressBarLoad.Visible := True;
 
     FFileConvertorThread.Convert(FOriginalFilename, FWorkingFilename, nil);
-    FFileConvertorThread.Resume;
+    FFileConvertorThread.Start;
 
     FPB.BuildBuffer;
     FPB.BuildDrawBuffer;
@@ -670,7 +667,7 @@ procedure TCutView.MessageReceived(Msg: TMessageBase);
 begin
   if Msg is TFileModifyMsg then
   begin
-    if LowerCase(FPlayer.Filename) = LowerCase(TFileModifyMsg(Msg).Filename) then
+    if Assigned(FPlayer) and (LowerCase(FPlayer.Filename) = LowerCase(TFileModifyMsg(Msg).Filename)) then
       FPlayer.Stop(False);
   end;
 end;
@@ -715,7 +712,7 @@ begin
   FSaveCutThread.OnSaveError := SaveCutThreadError;
   FSaveCutThread.OnTerminate := SaveCutThreadTerminate;
 
-  FSaveCutThread.Resume;
+  FSaveCutThread.Start;
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
@@ -823,7 +820,7 @@ begin
   finally
     EncoderSettings.Free;
   end;
-  FFileConvertorThread.Resume;
+  FFileConvertorThread.Start;
 
   FState := csEncoding;
   FProgressBarLoad.Position := 0;
@@ -911,7 +908,7 @@ begin
   if Start then
   begin
     Paused := False;
-    if (FPlayer <> nil) and FPlayer.Playing then
+    if (FPlayer <> nil) and FPlayer.Playing then  // TODO: hier abfrage auf nil, sonst aber einfach weiter unten zugriff?
     begin
       Paused := True;
       FPlayer.Pause;

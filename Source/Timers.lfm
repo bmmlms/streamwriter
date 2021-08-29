@@ -57,7 +57,6 @@ object frmTimers: TfrmTimers
   OnKeyDown = FormKeyDown
   OnShow = FormShow
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.1'
   object Panel2: TPanel
     Left = 0
     Height = 355
@@ -138,45 +137,56 @@ object frmTimers: TfrmTimers
           OnClick = rbDateClick
           TabOrder = 1
         end
-        object lstInterval: TComboBox
+        object lstInterval: TComboBoxEx
           Left = 20
-          Height = 21
+          Height = 19
           Top = 24
           Width = 452
           Anchors = [akTop, akLeft, akRight]
           ItemHeight = 13
+          ItemsEx = <          
+            item
+              Caption = 'Daily'
+            end          
+            item
+              Caption = 'Weekly'
+            end>
           ItemIndex = 0
-          Items.Strings = (
-            'Daily'
-            'Weekly'
-          )
           OnChange = lstIntervalChange
-          Style = csDropDownList
           TabOrder = 2
-          Text = 'Daily'
         end
-        object lstDay: TComboBox
+        object lstDay: TComboBoxEx
           Left = 20
-          Height = 21
+          Height = 19
           Top = 52
           Width = 452
           Anchors = [akTop, akLeft, akRight]
           Enabled = False
           ItemHeight = 13
-          ItemIndex = 0
-          Items.Strings = (
-            'Monday'
-            'Tuesday'
-            'Wednesday'
-            'Thursday'
-            'Friday'
-            'Saturday'
-            'Sunday'
-          )
+          ItemsEx = <          
+            item
+              Caption = 'Monday'
+            end          
+            item
+              Caption = 'Tuesday'
+            end          
+            item
+              Caption = 'Wednesday'
+            end          
+            item
+              Caption = 'Thursday'
+            end          
+            item
+              Caption = 'Friday'
+            end          
+            item
+              Caption = 'Saturday'
+            end          
+            item
+              Caption = 'Sunday'
+            end>
           OnChange = lstDayChange
-          Style = csDropDownList
           TabOrder = 3
-          Text = 'Monday'
         end
         object dtpDate: TDateTimePicker
           Left = 20

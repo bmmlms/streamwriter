@@ -58,45 +58,53 @@ var
 begin
   inherited Create(AOwner);
 
-  FStop := TToolButton.Create(Self);
-  FStop.Parent := Self;
-  FStop.Hint := 'Stop (Space bar)';
-  FStop.ImageIndex := TImages.STOP_BLUE;
-
-  FPlay := TToolButton.Create(Self);
-  FPlay.Parent := Self;
-  FPlay.Hint := 'Play (Space bar)';
-  FPlay.ImageIndex := TImages.PLAY_BLUE;
-
-  FPosPlay := TToolButton.Create(Self);
-  FPosPlay.Parent := Self;
-  FPosPlay.Hint := 'Set playposition (P)';
-  FPosPlay.ImageIndex := TImages.LINE_PLAY;
+  FSave := TToolButton.Create(Self);
+  FSave.Parent := Self;
+  FSave.Hint := 'Save (Ctrl+S)';
+  FSave.ImageIndex := TImages.DISK;
 
   Sep := TToolButton.Create(Self);
   Sep.Parent := Self;
   Sep.Style := tbsSeparator;
 
-  FAutoCut := TToolButton.Create(Self);
-  FAutoCut.Parent := Self;
-  FAutoCut.Hint := 'Show silence...';
-  FAutoCut.ImageIndex := TImages.WAND;
+  FPosEffectsMarker := TToolButton.Create(Self);
+  FPosEffectsMarker.Parent := Self;
+  FPosEffectsMarker.Hint := 'Select area (S)';
+  FPosEffectsMarker.ImageIndex := TImages.TIMELINE_MARKER;
 
-  {$IFDEF DEBUG}
-  //FAutoCutAutoDetect := TToolButton.Create(Self);
-  //FAutoCutAutoDetect.Parent := Self;
-  //FAutoCutAutoDetect.Hint := 'Show silence...';
-  //FAutoCutAutoDetect.ImageIndex := 19;
-  {$ENDIF}
+  FZoomIn := TToolButton.Create(Self);
+  FZoomIn.Parent := Self;
+  FZoomIn.Hint := 'Zoom in (+)';
+  FZoomIn.ImageIndex := TImages.ZOOM_IN;
+
+  FZoomOut := TToolButton.Create(Self);
+  FZoomOut.Parent := Self;
+  FZoomOut.Hint := 'Zoom out (-)';
+  FZoomOut.ImageIndex := TImages.ZOOM_OUT;
+
+  FApplyFadein := TToolButton.Create(Self);
+  FApplyFadein.Parent := Self;
+  FApplyFadein.Hint := 'Apply fadein (F)';
+  FApplyFadein.ImageIndex := TImages.FADE_IN;
+
+  FApplyFadeout := TToolButton.Create(Self);
+  FApplyFadeout.Parent := Self;
+  FApplyFadeout.Hint := 'Apply fadeout (F)';
+  FApplyFadeout.ImageIndex := TImages.FADE_OUT;
 
   Sep := TToolButton.Create(Self);
   Sep.Parent := Self;
   Sep.Style := tbsSeparator;
 
-  FUndo := TToolButton.Create(Self);
-  FUndo.Parent := Self;
-  FUndo.Hint := 'Undo (Ctrl+Z)';
-  FUndo.ImageIndex := TImages.ARROW_UNDO;
+  FPosEdit := TToolButton.Create(Self);
+  FPosEdit.Parent := Self;
+  FPosEdit.Hint := 'Set cutpositions (left mousebutton sets start, right button sets end) (C)';
+  FPosEdit.ImageIndex := TImages.LINES_COMBINED;
+
+  FCut := TToolButton.Create(Self);
+  FCut.Parent := Self;
+  FCut.Hint := 'Cut song';
+  FCut.ImageIndex := TImages.CUT;
 
   Sep := TToolButton.Create(Self);
   Sep.Parent := Self;
@@ -111,53 +119,45 @@ begin
   Sep.Parent := Self;
   Sep.Style := tbsSeparator;
 
-  FCut := TToolButton.Create(Self);
-  FCut.Parent := Self;
-  FCut.Hint := 'Cut song';
-  FCut.ImageIndex := TImages.CUT;
-
-  FPosEdit := TToolButton.Create(Self);
-  FPosEdit.Parent := Self;
-  FPosEdit.Hint := 'Set cutpositions (left mousebutton sets start, right button sets end) (C)';
-  FPosEdit.ImageIndex := TImages.LINES_COMBINED;
+  FUndo := TToolButton.Create(Self);
+  FUndo.Parent := Self;
+  FUndo.Hint := 'Undo (Ctrl+Z)';
+  FUndo.ImageIndex := TImages.ARROW_UNDO;
 
   Sep := TToolButton.Create(Self);
   Sep.Parent := Self;
   Sep.Style := tbsSeparator;
 
-  FApplyFadeout := TToolButton.Create(Self);
-  FApplyFadeout.Parent := Self;
-  FApplyFadeout.Hint := 'Apply fadeout (F)';
-  FApplyFadeout.ImageIndex := TImages.FADE_OUT;
-
-  FApplyFadein := TToolButton.Create(Self);
-  FApplyFadein.Parent := Self;
-  FApplyFadein.Hint := 'Apply fadein (F)';
-  FApplyFadein.ImageIndex := TImages.FADE_IN;
-
-  FZoomOut := TToolButton.Create(Self);
-  FZoomOut.Parent := Self;
-  FZoomOut.Hint := 'Zoom out (-)';
-  FZoomOut.ImageIndex := TImages.ZOOM_OUT;
-
-  FZoomIn := TToolButton.Create(Self);
-  FZoomIn.Parent := Self;
-  FZoomIn.Hint := 'Zoom in (+)';
-  FZoomIn.ImageIndex := TImages.ZOOM_IN;
-
-  FPosEffectsMarker := TToolButton.Create(Self);
-  FPosEffectsMarker.Parent := Self;
-  FPosEffectsMarker.Hint := 'Select area (S)';
-  FPosEffectsMarker.ImageIndex := TImages.TIMELINE_MARKER;
+  FAutoCut := TToolButton.Create(Self);
+  FAutoCut.Parent := Self;
+  FAutoCut.Hint := 'Show silence...';
+  FAutoCut.ImageIndex := TImages.WAND;
 
   Sep := TToolButton.Create(Self);
   Sep.Parent := Self;
   Sep.Style := tbsSeparator;
 
-  FSave := TToolButton.Create(Self);
-  FSave.Parent := Self;
-  FSave.Hint := 'Save (Ctrl+S)';
-  FSave.ImageIndex := TImages.DISK;
+  FPosPlay := TToolButton.Create(Self);
+  FPosPlay.Parent := Self;
+  FPosPlay.Hint := 'Set playposition (P)';
+  FPosPlay.ImageIndex := TImages.LINE_PLAY;
+
+  FPlay := TToolButton.Create(Self);
+  FPlay.Parent := Self;
+  FPlay.Hint := 'Play (Space bar)';
+  FPlay.ImageIndex := TImages.PLAY_BLUE;
+
+  FStop := TToolButton.Create(Self);
+  FStop.Parent := Self;
+  FStop.Hint := 'Stop (Space bar)';
+  FStop.ImageIndex := TImages.STOP_BLUE;
+
+  {$IFDEF DEBUG}
+  //FAutoCutAutoDetect := TToolButton.Create(Self);
+  //FAutoCutAutoDetect.Parent := Self;
+  //FAutoCutAutoDetect.Hint := 'Show silence...';
+  //FAutoCutAutoDetect.ImageIndex := 19;
+  {$ENDIF}
 end;
 
 end.

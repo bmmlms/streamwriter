@@ -82,8 +82,8 @@ begin
   FDownloadPackage := 'addon_lame.dll';
   FHasInitMessage := True;
 
-  FFilesDir := AppGlobals.TempDir + 'addon_lame\';
-  FEXEPath := FFilesDir + 'lame.exe';
+  FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_lame']);
+  FEXEPath := ConcatPaths([FFilesDir, 'lame.exe']);
 
   FFilenames.Add('lame.exe');
 end;

@@ -81,8 +81,8 @@ begin
   FDownloadName := 'addon_oggenc';
   FDownloadPackage := 'addon_oggenc.dll';
 
-  FFilesDir := AppGlobals.TempDir + 'addon_oggenc\';
-  FEXEPath := FFilesDir + 'oggenc2.exe';
+  FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_oggenc']);
+  FEXEPath := ConcatPaths([FFilesDir, 'oggenc2.exe']);
 
   FFilenames.Add('oggenc2.exe');
 end;

@@ -85,8 +85,8 @@ begin
   FDownloadName := 'addon_mp4box';
   FDownloadPackage := 'addon_mp4box.dll';
 
-  FFilesDir := AppGlobals.TempDir + 'addon_mp4box\';
-  FMP4BoxEXEPath := FFilesDir + 'MP4Box.exe';
+  FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_mp4box']);
+  FMP4BoxEXEPath := ConcatPaths([FFilesDir, 'MP4Box.exe']);
 
   FFilenames.Add('js32.dll');
   FFilenames.Add('MP4Box.exe');

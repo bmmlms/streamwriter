@@ -71,8 +71,8 @@ begin
   FDownloadName := 'addon_audiogenie';
   FDownloadPackage := 'addon_audiogenie.dll';
 
-  FFilesDir := AppGlobals.TempDir + 'addon_audiogenie\';
-  FDLLPath := FFilesDir + 'audiogenie3.dll';
+  FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_audiogenie']);
+  FDLLPath := ConcatPaths([FFilesDir, 'audiogenie3.dll']);
 
   FFilenames.Add('audiogenie3.dll');
 end;

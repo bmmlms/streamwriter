@@ -1,13 +1,13 @@
 object frmConfigureEncoder: TfrmConfigureEncoder
   Left = 0
-  Height = 120
+  Height = 116
   Top = 0
   Width = 250
   AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Configure encoder'
-  ClientHeight = 120
+  ClientHeight = 116
   ClientWidth = 250
   Color = clBtnFace
   Constraints.MinWidth = 250
@@ -17,7 +17,6 @@ object frmConfigureEncoder: TfrmConfigureEncoder
   KeyPreview = True
   OnKeyDown = FormKeyDown
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.1'
   object optCBR: TRadioButton
     Left = 0
     Height = 19
@@ -31,39 +30,41 @@ object frmConfigureEncoder: TfrmConfigureEncoder
   object optVBR: TRadioButton
     Left = 0
     Height = 19
-    Top = 40
+    Top = 38
     Width = 250
     Align = alTop
     Caption = 'Use variable bitrate'
     OnClick = optVBRClick
     TabOrder = 2
   end
-  object lstCBR: TComboBox
+  object lstCBR: TComboBoxEx
     Left = 18
-    Height = 21
+    Height = 19
     Top = 19
     Width = 232
     Align = alTop
     BorderSpacing.Left = 18
+    Images = modSharedData.imgImages
     ItemHeight = 13
-    Style = csDropDownList
+    ItemsEx = <>
     TabOrder = 1
   end
-  object lstVBR: TComboBox
+  object lstVBR: TComboBoxEx
     Left = 18
-    Height = 21
-    Top = 59
+    Height = 19
+    Top = 57
     Width = 232
     Align = alTop
     BorderSpacing.Left = 18
+    Images = modSharedData.imgImages
     ItemHeight = 13
-    Style = csDropDownList
+    ItemsEx = <>
     TabOrder = 3
   end
   object pnlNav: TPanel
     Left = 0
     Height = 40
-    Top = 80
+    Top = 76
     Width = 250
     Align = alTop
     BevelOuter = bvNone

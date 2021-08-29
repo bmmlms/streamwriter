@@ -17,7 +17,7 @@ object frmCommunityLogin: TfrmCommunityLogin
   OnKeyDown = FormKeyDown
   OnShow = FormShow
   Position = poOwnerFormCenter
-  LCLVersion = '2.0.12.0'
+  LCLVersion = '2.2.0.1'
   object pnlHeader: TPanel
     Left = 0
     Height = 33
@@ -51,7 +51,6 @@ object frmCommunityLogin: TfrmCommunityLogin
       Font.Name = 'Tahoma'
       Font.Style = [fsBold]
       Layout = tlCenter
-      ParentColor = False
       ParentFont = False
       Transparent = False
     end
@@ -113,7 +112,6 @@ object frmCommunityLogin: TfrmCommunityLogin
       Anchors = [akTop, akLeft, akRight]
       AutoSize = False
       Caption = 'Logging in...'
-      ParentColor = False
     end
     object prgConnecting: TProgressBar
       Left = 4
@@ -146,7 +144,6 @@ object frmCommunityLogin: TfrmCommunityLogin
       Font.Height = -11
       Font.Name = 'Tahoma'
       Font.Style = [fsUnderline]
-      ParentColor = False
       ParentFont = False
       OnClick = lblSignupClick
     end
@@ -160,7 +157,6 @@ object frmCommunityLogin: TfrmCommunityLogin
       EditLabel.Height = 13
       EditLabel.Width = 85
       EditLabel.Caption = 'Password:'
-      EditLabel.ParentColor = False
       PasswordChar = '*'
       TabOrder = 1
     end
@@ -173,7 +169,6 @@ object frmCommunityLogin: TfrmCommunityLogin
       EditLabel.Height = 13
       EditLabel.Width = 85
       EditLabel.Caption = 'Username:'
-      EditLabel.ParentColor = False
       TabOrder = 0
     end
     object txtText: TMemo

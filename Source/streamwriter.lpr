@@ -68,6 +68,8 @@ var
 begin
   IsMultiThread := True;
 
+  SetErrorMode(SEM_FAILCRITICALERRORS);
+
   Bass := nil;
   OpenSSL := nil;
   try
@@ -105,7 +107,7 @@ begin
 
     if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and (not IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion)) and
       (not HideMain) and (not AppGlobals.InstallUpdateOnStart) then
-      TSplashThread.Create('TfrmStreamWriterMain', 'SPLASH', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.GitSHA,
+      TSplashThread.Create('Window', 'SPLASH', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.GitSHA,
         AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
 
     // Now load everything from datafiles

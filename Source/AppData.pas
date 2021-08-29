@@ -393,7 +393,7 @@ begin
   FData := TDataLists.Create;
 
   // The number of the current build
-  FGitSHA := '79d72c9';
+  FGitSHA := 'f4b166c';
   FCodename := 'Vivo';
 
   // Adjust dimensions of the main-form
@@ -493,7 +493,7 @@ begin
   inherited Create(AppName, OnlyOne, W, H, alGPL);
 
   // Set the name for the recovery-file
-  FRecoveryFile := FStorage.DataDir + 'streamwriter_data_recovery.dat';
+  FRecoveryFile := ConcatPaths([FStorage.DataDir, 'streamwriter_data_recovery.dat']);
 
   // This builds a large string used to generate the about-window
   BuildThanksText;
@@ -508,11 +508,11 @@ var
   SR: TSearchRec;
 begin
   // Delete any undo-files of a possible previous session
-  if FindFirst(TempDir + 'UNDO_*', faAnyFile and not faDirectory, SR) = 0 then
+  if FindFirst(ConcatPaths([TempDir, 'UNDO_*']), faAnyFile and not faDirectory, SR) = 0 then
   begin
     repeat
       if (SR.Name <> '.') and (SR.Name <> '..') then
-        SysUtils.DeleteFile(TempDir + SR.Name);
+        SysUtils.DeleteFile(ConcatPaths([TempDir, SR.Name]));
     until FindNext(SR) <> 0;
     SysUtils.FindClose(SR);
   end;
@@ -525,7 +525,7 @@ begin
   FPostProcessManager.Free;
   FData.Free;
 
-  SysUtils.DeleteFile(TempDir + 'playlist.m3u');
+  SysUtils.DeleteFile(ConcatPaths([TempDir, 'playlist.m3u']));
   DeleteUndoFiles;
 
   inherited;
@@ -603,7 +603,7 @@ begin
 
   FStorage.Read('Dir', FDir, '');
   if FDir <> '' then
-    FDir := IncludeTrailingBackslash(FDir);
+    FDir := IncludeTrailingPathDelimiter(FDir);
   FDir := TryUnRelativePath(FDir);
   if not DirectoryExists(FDir) then
     FDir := '';
@@ -612,7 +612,7 @@ begin
   if FDirAuto = '' then
     FDirAuto := FDir;
   if FDirAuto <> '' then
-    FDirAuto := IncludeTrailingBackslash(FDirAuto);
+    FDirAuto := IncludeTrailingPathDelimiter(FDirAuto);
   FDirAuto := TryUnRelativePath(FDirAuto);
   if not DirectoryExists(FDirAuto) then
     FDirAuto := '';

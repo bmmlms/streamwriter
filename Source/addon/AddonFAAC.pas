@@ -82,8 +82,8 @@ begin
   FDownloadPackage := 'addon_faac.dll';
   FHasInitMessage := True;
 
-  FFilesDir := AppGlobals.TempDir + 'addon_faac\';
-  FEXEPath := FFilesDir + 'faac.exe';
+  FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_faac']);
+  FEXEPath := ConcatPaths([FFilesDir, 'faac.exe']);
 
   FFilenames.Add('faac.exe');
 end;

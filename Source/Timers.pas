@@ -26,6 +26,7 @@ uses
   AppData,
   Buttons,
   Classes,
+  ComboEx,
   ComCtrls,
   Controls,
   DataManager,
@@ -36,11 +37,9 @@ uses
   Forms,
   Functions,
   Graphics,
-  GUIFunctions,
   Images,
   LanguageObjects,
   Logging,
-  Messages,
   PowerManagement,
   SharedData,
   StdCtrls,
@@ -81,8 +80,8 @@ type
     Label2: TLabel;
     rbRecurring: TRadioButton;
     rbDate: TRadioButton;
-    lstInterval: TComboBox;           // TODO: Ex
-    lstDay: TComboBox;                // TODO: Ex
+    lstInterval: TComboBoxEx;
+    lstDay: TComboBoxEx;
     dtpDate: TDateTimePicker;
     txtStartHour: TEdit;
     txtStartMinute: TEdit;

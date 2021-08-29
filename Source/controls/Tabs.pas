@@ -160,15 +160,15 @@ begin
     begin
       try
         BuildM3U(Entries, List);
-        List.SaveToFile(AppGlobals.TempDir + 'playlist.m3u');
-        Res := ShellExecute(Handle, 'open', PChar(AppGlobals.TempDir + 'playlist.m3u'), nil, nil, 1);
+        List.SaveToFile(ConcatPaths([AppGlobals.TempDir, 'playlist.m3u']));
+        Res := ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(ConcatPaths([AppGlobals.TempDir, 'playlist.m3u']))), nil, nil, 1);
         if Res <= 32 then
         begin
           BuildPLS(Entries, List);
-          List.SaveToFile(AppGlobals.TempDir + 'playlist.pls');
-          Res := ShellExecute(Handle, 'open', PChar(AppGlobals.TempDir + 'playlist.pls'), nil, nil, 1);
+          List.SaveToFile(ConcatPaths([AppGlobals.TempDir, 'playlist.pls']));
+          Res := ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(ConcatPaths([AppGlobals.TempDir, 'playlist.pls']))), nil, nil, 1);
           if Res <= 32 then
-            ShellExecute(Handle, nil, 'rundll32.exe', PChar('shell32.dll,OpenAs_RunDLL ' + AppGlobals.TempDir + 'playlist.pls'), nil, 1);
+            ShellExecuteW(Handle, nil, 'rundll32.exe', PWideChar(UnicodeString('shell32.dll,OpenAs_RunDLL ' + ConcatPaths([AppGlobals.TempDir, 'playlist.pls']))), nil, 1);
         end;
       except
         MsgBox(Handle, Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [AppGlobals.TempDir]), _('Error'), MB_ICONEXCLAMATION);
