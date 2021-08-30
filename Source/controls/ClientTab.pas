@@ -715,11 +715,11 @@ procedure TClientTab.AddressBarStart(Sender: TObject);
 var
   Entry: TRecentEntry;
 begin
-  if FAddressBar.Stations.ItemIndex = -1 then
+  if not Assigned(FAddressBar.Stations.FocusedItemData) then
     StartStreaming(TStartStreamingInfo.Create(0, 0, '', FAddressBar.Stations.Text, nil, nil, nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere)
   else
   begin
-    Entry := TRecentEntry(FAddressBar.Stations.ItemsEx[FAddressBar.Stations.ItemIndex].Data);
+    Entry := TRecentEntry(FAddressBar.Stations.FocusedItemData);
     StartStreaming(TStartStreamingInfo.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, nil, nil, nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere);
   end;
 end;

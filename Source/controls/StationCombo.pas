@@ -24,11 +24,18 @@ unit StationCombo;
 interface
 
 uses
-  Windows, SysUtils, Classes, ComCtrls, DataManager, Logging, ComboEx,
-  AppData, Images;
+  AppData,
+  Classes,
+  ComboEx,
+  ComCtrls,
+  DataManager,
+  Images,
+  Logging,
+  MControls,
+  SysUtils;
 
 type
-  TMStationCombo = class(TComboBoxEx)
+  TMStationCombo = class(TComboBoxExEditable)
   private
     function ItemsCompare(List: TListControlItems; Item1, Item2: TListControlItem): Integer;
   public
@@ -141,7 +148,6 @@ constructor TMStationCombo.Create(AOwner: TComponent);
 begin
   inherited;
 
-  Style := csExDropDownList;
   ItemsEx.OnCompare := ItemsCompare;
 end;
 
@@ -174,8 +180,7 @@ begin
   end;
 end;
 
-function TMStationCombo.ItemsCompare(List: TListControlItems; Item1,
-  Item2: TListControlItem): Integer;
+function TMStationCombo.ItemsCompare(List: TListControlItems; Item1, Item2: TListControlItem): Integer;
 var
   E1, E2: TRecentEntry;
 begin
@@ -190,4 +195,3 @@ begin
 end;
 
 end.
-

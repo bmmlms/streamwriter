@@ -86,11 +86,11 @@ procedure TClientAddressBar.DropTargetDrop(Sender: TObject; ShiftState: TShiftSt
 begin
   FStations.ItemIndex := -1;
   if FDropTarget.URL <> '' then
-    FStations.Text := string(FDropTarget.URL)
+    FStations.Text := FDropTarget.URL
   else if FDropTarget.Text <> '' then
-    FStations.Text := string(FDropTarget.Text)
+    FStations.Text := FDropTarget.Text
   else if FDropTarget.Files.Count > 0 then
-    FStations.Text := string(FDropTarget.Files[0]);
+    FStations.Text := FDropTarget.Files[0];
 end;
 
 procedure TClientAddressBar.FStationsChange(Sender: TObject);
