@@ -254,7 +254,6 @@ type
     FImportThread: TImportFilesThread;
 
     FOnCut: TTrackEvent;
-    FOnTrackRemoved: TTrackEvent;
     FOnRefresh: TNotifyEvent;
     FOnPlayStarted: TNotifyEvent;
     FOnAddTitleToWishlist: TAddTitleEvent;
@@ -292,7 +291,6 @@ type
     property Tree: TSavedTree read FSavedTree;
 
     property OnCut: TTrackEvent read FOnCut write FOnCut;
-    property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
     property OnRefresh: TNotifyEvent read FOnRefresh write FOnRefresh;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
     property OnAddTitleToWishlist: TAddTitleEvent read FOnAddTitleToWishlist write FOnAddTitleToWishlist;
@@ -350,7 +348,7 @@ type
 
     procedure CutCopy(Cut: Boolean);
 
-    procedure FileWatcherEvent(Sender: TObject; Action: DWORD; RootDir, OldName, NewName: string);
+    procedure FileWatcherEvent(Sender: TObject; Action: TFileWatcherEventActions; Path, PathNew: string);
     procedure FileWatcherTerminate(Sender: TObject);
 
     procedure MessageReceived(Msg: TMessageBase);
@@ -385,9 +383,8 @@ type
     function PrevPlayingTrack(ConsiderRnd: Boolean): TTrackInfo;
     function NextPlayingTrack(ConsiderRnd: Boolean; AddToPlayerList: Boolean = True): TTrackInfo;
     procedure AddTrack(Track: TTrackInfo; AddToInternalList: Boolean; IgnorePattern: Boolean = False);
-    procedure RemoveTrack(Track: TTrackInfo); overload;
-    procedure DeleteTrack(Track: TTrackInfo);
-    procedure UpdateTrack(Track: TTrackInfo);
+    procedure RemoveTracks(Tracks: TTrackInfoArray);
+    procedure UpdateTracks(Tracks: TTrackInfoArray);
     procedure Filter(S: string); overload;
     procedure Filter(S: string; ServerTitleHashes, ServerArtistHashes: TCardinalArray); overload;
     procedure Sort(Node: PVirtualNode; Column: TColumnIndex; Direction: VirtualTrees.TSortDirection; DoInit: Boolean = True); override;
@@ -519,7 +516,7 @@ begin
 
   FItemDelete := TMenuItem.Create(Self);
   FItemDelete.Caption := '&Delete files';
-  FItemDelete.ImageIndex := TImages.DELETE;
+  FItemDelete.ImageIndex := TImages.Delete;
   Items.Add(FItemDelete);
 
   Items.AddSeparator;
@@ -992,20 +989,7 @@ begin
       for i := 0 to Length(Tracks) - 1 do
         FOnRemoveTitleFromIgnorelist(Self, Tracks[i].ParsedTitle, 0);
     taRemove:
-    begin
-      FSavedTree.BeginUpdate;
-      try
-        for i := 0 to Length(Tracks) - 1 do
-        begin
-          AppGlobals.Data.TrackList.RemoveTrack(Tracks[i]);
-          FSavedTree.DeleteTrack(Tracks[i]);
-          if Assigned(FOnTrackRemoved) then
-            FOnTrackRemoved(nil, Tracks[i]);
-        end;
-      finally
-        FSavedTree.EndUpdate;
-      end;
-    end;
+      FSavedTree.RemoveTracks(Tracks);
     taRecycle:
       for i := 0 to Length(Tracks) - 1 do
       begin
@@ -1017,10 +1001,7 @@ begin
           if (LowerDir <> LowerCase(ExcludeTrailingPathDelimiter(AppGlobals.Dir))) and (LowerDir <> LowerCase(ExcludeTrailingPathDelimiter(AppGlobals.DirAuto))) then
             RemoveDir(ExtractFileDir(Tracks[i].Filename));
 
-          FSavedTree.DeleteTrack(Tracks[i]);
-          AppGlobals.Data.TrackList.RemoveTrack(Tracks[i]);
-          if Assigned(FOnTrackRemoved) then
-            FOnTrackRemoved(nil, Tracks[i]);
+          FSavedTree.RemoveTracks([Tracks[i]]);
         end;
       end;
     taDelete:
@@ -1048,10 +1029,7 @@ begin
             if not ((LowerDir = LowerCase(ExcludeTrailingPathDelimiter(AppGlobals.Dir))) and (LowerDir = LowerCase(ExcludeTrailingPathDelimiter(AppGlobals.DirAuto)))) then
               RemoveDir(ExtractFileDir(Tracks[i].Filename));
 
-            FSavedTree.DeleteTrack(Tracks[i]);
-            AppGlobals.Data.TrackList.RemoveTrack(Tracks[i]);
-            if Assigned(FOnTrackRemoved) then
-              FOnTrackRemoved(nil, Tracks[i]);
+            FSavedTree.RemoveTracks([Tracks[i]]);
           end;
         end;
       finally
@@ -1084,7 +1062,7 @@ begin
             FImportThread := TImportFilesThread.Create(Dlg.Files, KnownFiles);
             FImportThread.OnTerminate := ImportThreadTerminate;
             FImportThread.OnProgress := ImportThreadProgress;
-            FImportThread.Resume;
+            FImportThread.Start;
 
             if FSavedTree.Player.Playing then
               FSavedTree.FPlayer.Pause;
@@ -1112,7 +1090,7 @@ begin
         FImportThread := TImportFilesThread.Create(Dir, KnownFiles);
         FImportThread.OnTerminate := ImportThreadTerminate;
         FImportThread.OnProgress := ImportThreadProgress;
-        FImportThread.Resume;
+        FImportThread.Start;
 
         if FSavedTree.Player.Playing then
           FSavedTree.FPlayer.Pause;
@@ -1499,13 +1477,11 @@ begin
 
   if FFileWatcher <> nil then
   begin
-    FFileWatcher.OnEvent := nil;
     FFileWatcher.OnTerminate := nil;
     FFileWatcher.Terminate;
   end;
   if FFileWatcherAuto <> nil then
   begin
-    FFileWatcherAuto.OnEvent := nil;
     FFileWatcherAuto.OnTerminate := nil;
     FFileWatcherAuto.Terminate;
   end;
@@ -1605,25 +1581,6 @@ begin
   end;
 end;
 
-procedure TSavedTree.DeleteTrack(Track: TTrackInfo);
-var
-  i: Integer;
-  NodeData: PSavedNodeData;
-  Nodes: TNodeArray;
-begin
-  Nodes := GetNodes(False);
-  for i := 0 to Length(Nodes) - 1 do
-  begin
-    NodeData := GetNodeData(Nodes[i]);
-    if Track = NodeData.Track then
-    begin
-      DeleteNode(Nodes[i]);
-      Break;
-    end;
-  end;
-  FTrackList.Remove(Track);
-end;
-
 procedure TSavedTree.PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
 var
   L: Integer;
@@ -1653,12 +1610,10 @@ begin
       Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC);
 
     if NodeData.Track.IsAuto then
-    begin
       if NodeData.Track.RecordBecauseArtist then
         Images.Draw(PaintInfo.Canvas, L + 18, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.USER_GRAY_COOL)
       else
         Images.Draw(PaintInfo.Canvas, L + 18, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BRICKS);
-    end;
 
     if NodeData.Track.Finalized then
       Images.Draw(PaintInfo.Canvas, L + 18 * 2, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TICK)
@@ -2106,28 +2061,30 @@ begin
   end;
 end;
 
-procedure TSavedTree.RemoveTrack(Track: TTrackInfo);
+procedure TSavedTree.RemoveTracks(Tracks: TTrackInfoArray);
 var
-  i: Integer;
+  Node: PVirtualNode;
   Nodes: TNodeArray;
   NodeData: PSavedNodeData;
+  Track: TTrackInfo;
 begin
-  if Track = nil then
-    Exit;
-
-  FTrackList.Remove(Track);
-
   BeginUpdate;
   try
     Nodes := GetNodes(False);
-    for i := 0 to Length(Nodes) - 1 do
+
+    for Track in Tracks do
     begin
-      NodeData := GetNodeData(Nodes[i]);
-      if NodeData.Track = Track then
+      for Node in Nodes do
       begin
-        DeleteNode(Nodes[i]);
-        Break;
+        NodeData := GetNodeData(Node);
+        if NodeData.Track = Track then
+        begin
+          DeleteNode(Node);
+          Break;
+        end;
       end;
+      FTrackList.Remove(Track);
+      AppGlobals.Data.TrackList.RemoveTrack(Track);
     end;
   finally
     EndUpdate;
@@ -2146,14 +2103,14 @@ begin
   FFileWatcher := nil;
   FFileWatcherAuto := nil;
 
-  FFileWatcher := TFileWatcher.Create(AppGlobals.Dir, FILE_NOTIFY_CHANGE_FILE_NAME or FILE_NOTIFY_CHANGE_DIR_NAME);
+  FFileWatcher := TFileWatcher.Create(AppGlobals.Dir, FILE_NOTIFY_CHANGE_FILE_NAME or FILE_NOTIFY_CHANGE_DIR_NAME or FILE_NOTIFY_CHANGE_SIZE);
   FFileWatcher.OnEvent := FileWatcherEvent;
   FFileWatcher.OnTerminate := FileWatcherTerminate;
   FFileWatcher.Start;
 
   if LowerCase(AppGlobals.Dir) <> LowerCase(AppGlobals.DirAuto) then
   begin
-    FFileWatcherAuto := TFileWatcher.Create(AppGlobals.DirAuto, FILE_NOTIFY_CHANGE_FILE_NAME or FILE_NOTIFY_CHANGE_DIR_NAME);
+    FFileWatcherAuto := TFileWatcher.Create(AppGlobals.DirAuto, FILE_NOTIFY_CHANGE_FILE_NAME or FILE_NOTIFY_CHANGE_DIR_NAME or FILE_NOTIFY_CHANGE_SIZE);
     FFileWatcherAuto.OnEvent := FileWatcherEvent;
     FFileWatcherAuto.OnTerminate := FileWatcherTerminate;
     FFileWatcherAuto.Start;
@@ -2195,13 +2152,17 @@ begin
   end;
 end;
 
-procedure TSavedTree.UpdateTrack(Track: TTrackInfo);
+procedure TSavedTree.UpdateTracks(Tracks: TTrackInfoArray);
 var
+  Track: TTrackInfo;
   Node: PVirtualNode;
 begin
-  Node := GetNode(Track);
-  if Node <> nil then
-    InvalidateNode(Node);
+  for Track in Tracks do
+  begin
+    Node := GetNode(Track);
+    if Node <> nil then
+      InvalidateNode(Node);
+  end;
 end;
 
 procedure TSavedTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String);
@@ -2401,65 +2362,61 @@ begin
   inherited;
 end;
 
-procedure TSavedTree.FileWatcherEvent(Sender: TObject; Action: DWORD; RootDir, OldName, NewName: string);
-var
-  i: Integer;
-  Track: TTrackInfo;
-  RemoveTracks: TList<TTrackInfo>;
-  Node: PVirtualNode;
-begin
-  Track := nil;
-  if (Action = FILE_ACTION_REMOVED) or (Action = FILE_ACTION_RENAMED_NEW_NAME) then
-    Track := FTrackList.GetTrack(ConcatPaths([RootDir, OldName]));
+procedure TSavedTree.FileWatcherEvent(Sender: TObject; Action: TFileWatcherEventActions; Path, PathNew: string);
 
-  if Track = nil then
+  function GetTracks(StartingWith: string): TTrackInfoArray;
+  var
+    Track: TTrackInfo;
+    RemoveList: TList<TTrackInfo>;
   begin
-    RemoveTracks := TList<TTrackInfo>.Create;
+    RemoveList := TList<TTrackInfo>.Create;
     try
-      for i := 0 to FTrackList.Count - 1 do
-        if LowerCase(Copy(FTrackList[i].Filename, 1, Length(ConcatPaths([RootDir, OldName])))) = LowerCase(ConcatPaths([RootDir, OldName])) then
-          RemoveTracks.Add(FTrackList[i]);
+      for Track in FTrackList do
+        if LowerCase(Track.Filename.Substring(0, Length(IncludeTrailingPathDelimiter(StartingWith)))) = LowerCase(IncludeTrailingPathDelimiter(StartingWith)) then
+          RemoveList.Add(Track);
 
-      for i := 0 to RemoveTracks.Count - 1 do
-        RemoveTrack(RemoveTracks[i]);
+      Result := RemoveList.ToArray;
     finally
-      RemoveTracks.Free;
+      RemoveList.Free;
     end;
-
-    Exit;
   end;
+
+var
+  Track: TTrackInfo;
+  Tracks: TTrackInfoArray;
+begin
+  if Action = eaAdded then
+    Exit;
+
+  Track := AppGlobals.Data.TrackList.GetTrack(Path);
+  if Assigned(Track) then
+    Tracks := [Track]
+  else
+    Tracks := GetTracks(Path);
 
   case Action of
-    FILE_ACTION_REMOVED:
-    begin
-      RemoveTrack(Track);
-      AppGlobals.Data.TrackList.RemoveTrack(Track);
-    end;
-    FILE_ACTION_RENAMED_NEW_NAME:
-    begin
-      if FilenameToFormat(NewName) = atNone then
-      begin
-        RemoveTrack(Track);
-        AppGlobals.Data.TrackList.RemoveTrack(Track);
-        Exit;
-      end;
-
-      if Sender = FFileWatcher then
-        Track.Filename := ConcatPaths([AppGlobals.Dir, NewName])
+    eaMoved:
+      if Assigned(Track) then
+        Track.Filename := PathNew
       else
-        Track.Filename := ConcatPaths([AppGlobals.DirAuto, NewName]);
-      Node := GetNode(Track);
-      if Node <> nil then
-        InvalidateNode(Node);
-    end;
+        for Track in Tracks do
+          Track.Filename := ConcatPaths([PathNew, Track.Filename.Remove(0, Path.Length)]);
+    eaModified:
+      if Assigned(Track) then
+        Track.Filesize := GetFileSize(Track.Filename);
   end;
+
+  if Action = eaRemoved then
+    RemoveTracks(Tracks)
+  else
+    UpdateTracks(Tracks);
 end;
 
 procedure TSavedTree.FileWatcherTerminate(Sender: TObject);
 begin
   if Sender = FFileWatcher then
-    FFileWatcher := nil;
-  if Sender = FFileWatcherAuto then
+    FFileWatcher := nil
+  else if Sender = FFileWatcherAuto then
     FFileWatcherAuto := nil;
 end;
 

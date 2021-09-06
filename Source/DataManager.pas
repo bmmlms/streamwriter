@@ -1957,9 +1957,10 @@ function TTrackList.GetTrack(Filename: string): TTrackInfo;
 var
   i: Integer;
 begin
+  Filename := Filename.ToLower;
   Result := nil;
   for i := 0 to Count - 1 do
-    if LowerCase(Items[i].FFilename) = LowerCase(Filename) then
+    if Items[i].FFilename.ToLower = Filename then
       Exit(Items[i]);
 end;
 

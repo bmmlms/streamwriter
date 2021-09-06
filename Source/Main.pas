@@ -320,7 +320,6 @@ type
 
     procedure tabClientsUpdateButtons(Sender: TObject);
     procedure tabClientsTrackAdded(Entry: TStreamEntry; Track: TTrackInfo);
-    procedure tabClientsTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabClientsAddTitleToList(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string);
     procedure tabClientsRemoveTitleFromList(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string; ServerTitleHash: Cardinal);
     procedure tabClientsAuthRequired(Sender: TObject);
@@ -331,7 +330,6 @@ type
     procedure tabClientsSetStreamData(Sender: TObject; StreamID: Integer);
 
     procedure tabSavedCut(Entry: TStreamEntry; Track: TTrackInfo);
-    procedure tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
     procedure tabSavedRefresh(Sender: TObject);
     procedure tabSavedAddTitleToWishlist(Sender: TObject; Title: string; TitleHash: Cardinal);
     procedure tabSavedRemoveTitleFromWishlist(Sender: TObject; Title: string; TitleHash: Cardinal);
@@ -875,7 +873,6 @@ begin
   tabClients.AddressBar.Stations.BuildList;
   tabClients.OnUpdateButtons := tabClientsUpdateButtons;
   tabClients.OnTrackAdded := tabClientsTrackAdded;
-  tabClients.OnTrackRemoved := tabClientsTrackRemoved;
   tabClients.OnAddTitleToList := tabClientsAddTitleToList;
   tabClients.OnRemoveTitleFromList := tabClientsRemoveTitleFromList;
   tabClients.OnPlayStarted := tabPlayStarted;
@@ -900,7 +897,6 @@ begin
   tabSaved.PageControl := pagMain;
 
   tabSaved.OnCut := tabSavedCut;
-  tabSaved.OnTrackRemoved := tabSavedTrackRemoved;
   tabSaved.OnRefresh := tabSavedRefresh;
   tabSaved.OnPlayStarted := tabPlayStarted;
   tabSaved.OnAddTitleToWishlist := tabSavedAddTitleToWishlist;
@@ -2060,7 +2056,7 @@ begin
       Files.Add(TFileEntry.Create(AppGlobals.Data.TrackList[i].Filename, AppGlobals.Data.TrackList[i].Filesize, eaNone));
     FCheckFiles := TCheckFilesThread.Create(Files);
     FCheckFiles.OnTerminate := CheckFilesTerminate;
-    FCheckFiles.Resume;
+    FCheckFiles.Start;
   finally
     // Wird vom Thread erledigt. Unschön, aber...
     // Files.Free;
@@ -2071,12 +2067,6 @@ procedure TfrmStreamWriterMain.tabClientsTrackAdded(Entry: TStreamEntry;
   Track: TTrackInfo);
 begin
   tabSaved.Tree.AddTrack(Track, True);
-end;
-
-procedure TfrmStreamWriterMain.tabClientsTrackRemoved(Entry: TStreamEntry;
-  Track: TTrackInfo);
-begin
-  tabSaved.Tree.RemoveTrack(Track);
 end;
 
 procedure TfrmStreamWriterMain.tabChartsAddStreams(Sender: TObject;
@@ -2315,36 +2305,30 @@ begin
   UpdateButtons;
 end;
 
-procedure TfrmStreamWriterMain.tabSavedTrackRemoved(Entry: TStreamEntry; Track: TTrackInfo);
-begin
-
-end;
-
 procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject; AudioInfo: TAudioInfo);
 var
-  i: Integer;
+  Track: TTrackInfo;
 begin
-  for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
-    if LowerCase(AppGlobals.Data.TrackList[i].Filename) = LowerCase(TCutTab(Sender).Filename) then
-    begin
-      AppGlobals.Data.TrackList[i].Filesize := GetFileSize(TCutTab(Sender).Filename);
-      AppGlobals.Data.TrackList[i].Length := Trunc(AudioInfo.Length);
+  Track := AppGlobals.Data.TrackList.GetTrack(TCutTab(Sender).Filename);
 
-      // Ist mal raus, damit das "geschnitten"-Symbol nur bei automatischen Aufnahmen kommt
-      //FDataLists.TrackList[i].WasCut := True;
+  if not Assigned(Track) then
+    Exit;
 
-      AppGlobals.Data.TrackList[i].Finalized := True;
+  Track.Filesize := GetFileSize(TCutTab(Sender).Filename);
+  Track.Length := Trunc(AudioInfo.Length);
 
-      AppGlobals.Data.TrackList[i].Bitrate := AudioInfo.Bitrate;
-      AppGlobals.Data.TrackList[i].VBR := AudioInfo.VBR;
+  // Ist mal raus, damit das "geschnitten"-Symbol nur bei automatischen Aufnahmen kommt
+  // Track.WasCut := True;
 
-      tabSaved.Tree.UpdateTrack(AppGlobals.Data.TrackList[i]);
+  Track.Finalized := True;
 
-      // Macht den Finalized-Button passig (Down/nicht Down)
-      tabSaved.UpdateButtons;
+  Track.Bitrate := AudioInfo.Bitrate;
+  Track.VBR := AudioInfo.VBR;
 
-      Exit;
-    end;
+  tabSaved.Tree.UpdateTracks([Track]);
+
+  // Macht den Finalized-Button passig (Down/nicht Down)
+  tabSaved.UpdateButtons;
 end;
 
 procedure TfrmStreamWriterMain.tabPlayStarted(Sender: TObject);
@@ -2794,7 +2778,7 @@ begin
             eaRemove:
               begin
                 AppGlobals.Data.TrackList.Delete(n);
-                tabSaved.Tree.RemoveTrack(Track);
+                tabSaved.Tree.RemoveTracks([Track]);
                 Track.Free;
               end;
           end;

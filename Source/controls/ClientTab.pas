@@ -130,7 +130,6 @@ type
 
     FOnUpdateButtons: TNotifyEvent;
     FOnTrackAdded: TTrackEvent;
-    FOnTrackRemoved: TTrackEvent;
     FOnPlayStarted: TNotifyEvent;
     FOnAuthRequired: TNotifyEvent;
     FOnShowErrorMessage: TStringEvent;
@@ -214,7 +213,6 @@ type
 
     property OnUpdateButtons: TNotifyEvent read FOnUpdateButtons write FOnUpdateButtons;
     property OnTrackAdded: TTrackEvent read FOnTrackAdded write FOnTrackAdded;
-    property OnTrackRemoved: TTrackEvent read FOnTrackRemoved write FOnTrackRemoved;
     property OnPlayStarted: TNotifyEvent read FOnPlayStarted write FOnPlayStarted;
     property OnAuthRequired: TNotifyEvent read FOnAuthRequired write FOnAuthRequired;
     property OnShowErrorMessage: TStringEvent read FOnShowErrorMessage write FOnShowErrorMessage;
