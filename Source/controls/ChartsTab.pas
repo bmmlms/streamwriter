@@ -28,8 +28,10 @@ uses
   AppData,
   AppMessages,
   Buttons,
+  ChartsPopup,
   ChartsTabAdjustTitleName,
   Classes,
+  ComboEx,
   ComCtrls,
   Controls,
   DataManager,
@@ -49,7 +51,6 @@ uses
   Menus,
   MessageBus,
   Messages,
-  ChartsPopup,
   SharedControls,
   SharedData,
   StdCtrls,
@@ -72,22 +73,12 @@ type
 
   TChartDataArray = array of PChartNodeData;
 
-  TMyComboBox = class(TComboBox)   // TODO: Ex
-  protected
-    { // TODO:
-    function MouseActivate(Button: TMouseButton; Shift: TShiftState;
-      X: Integer; Y: Integer; HitTest: Integer): TMouseActivate; override;     }
-    procedure WndProc(var Message: TMessage); override;
-  public
-  published
-  end;
-
   { TSearchPanel }
 
   TSearchPanel = class(TPanel)
   private
     FLabel: TLabel;
-    FSearch: TMyComboBox;
+    FSearch: TComboBoxExEditable;
     FToolbar: TToolbarForcedHorizontal;
 
     FButtonAddToWishlist: TToolButton;
@@ -98,10 +89,12 @@ type
     FButtonPlayStream: TToolButton;
     FButtonPlayStreamExternal: TToolButton;
     FButtonAddStream: TToolButton;
+  protected
+    procedure CreateHandle; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
 
-    procedure RebuildSearchItems(NewEntry: string);
+    procedure InsertSearchItem(Search: string);
 
     procedure PostTranslate;
   end;
@@ -376,7 +369,10 @@ begin
   begin
     Abort := False;
 
-    Tmp := Trim(FSearchPanel.FSearch.Text);
+    if FSearchPanel.FSearch.ItemIndex = -1 then
+      Tmp := Trim(FSearchPanel.FSearch.Text)
+    else
+      Tmp := Trim(FSearchPanel.FSearch.ItemsEx[FSearchPanel.FSearch.ItemIndex].Caption);
 
     if (Pos('"', Tmp) > 0) and (OccurenceCount('"', Tmp) mod 2 <> 0) then
     begin
@@ -401,7 +397,7 @@ begin
       MsgBox(GetParentForm(Self).Handle, _('You need to specify at least one word to search for. Special chars (+-*()<>~'') are not allowed.'), _('Info'), MB_ICONINFORMATION)
     else
     begin
-      FSearchPanel.RebuildSearchItems(Tmp);
+      FSearchPanel.InsertSearchItem(Tmp);
 
       HomeComm.SendSearchCharts(False, Tmp);
       SetState(csSearching);
@@ -425,13 +421,10 @@ end;
 
 procedure TChartsTab.SearchSelect(Sender: TObject);
 begin
-  if FSearchPanel.FSearch.Items.Objects[FSearchPanel.FSearch.ItemIndex] <> nil then
+  if FSearchPanel.FSearch.ItemIndex = 0 then
     SearchCharts(True, True)
   else
-  begin
-    FSearchPanel.RebuildSearchItems(FSearchPanel.FSearch.Text);
     SearchCharts(False, True);
-  end;
 end;
 
 procedure TChartsTab.SetState(State: TChartStates);
@@ -1308,8 +1301,8 @@ begin
       end else
       begin
         SetLength(Info, Length(Info) + 1);
-        Info[High(Info)] := TStartStreamingInfo.Create(Nodes[i].Stream.ID, Nodes[i].Stream.Stream.Bitrate, Nodes[i].Stream.Stream.Name, Nodes[i].Stream.Stream.URL,
-          Nodes[i].Stream.Stream.URLs, Nodes[i].Stream.Stream.RegExes, Nodes[i].Stream.Stream.IgnoreTitles);
+        Info[High(Info)] := TStartStreamingInfo.Create(Nodes[i].Stream.ID, Nodes[i].Stream.Stream.Bitrate, Nodes[i].Stream.Stream.Name, Nodes[i].Stream.Stream.URL, Nodes[i].Stream.Stream.URLs,
+          Nodes[i].Stream.Stream.RegExes, Nodes[i].Stream.Stream.IgnoreTitles);
       end;
 
     if Sender = FPopupMenu.ItemStartStreaming then
@@ -1365,6 +1358,13 @@ end;
 
 { TSearchPanel }
 
+procedure TSearchPanel.CreateHandle;
+begin
+  inherited CreateHandle;
+
+  FSearch.ItemIndex := 0;
+end;
+
 constructor TSearchPanel.Create(AOwner: TComponent);
 var
   Sep: TToolButton;
@@ -1381,11 +1381,14 @@ begin
   FLabel.Caption := 'Search:';
   FLabel.Left := -100;
 
-  FSearch := TMyComboBox.Create(Self);
+  FSearch := TComboBoxExEditable.Create(Self);
   FSearch.Align := alLeft;
   FSearch.Parent := Self;
-  FSearch.AutoComplete := False;
+  FSearch.Images := modSharedData.imgImages;
   FSearch.Width := 200;
+  FSearch.DropDownCount := 16;
+
+  FSearch.ItemsEx.AddItem(_(SEARCH_TOP), 0);
 
   FToolbar := TToolbarForcedHorizontal.Create(Self);
   FToolbar.Parent := Self;
@@ -1440,79 +1443,33 @@ begin
   FButtonAddStream.Hint := 'Add stream';
   FButtonAddStream.ImageIndex := TImages.TRANSMIT_ADD;
 
-  RebuildSearchItems('');
-
   PostTranslate;
 end;
 
 procedure TSearchPanel.PostTranslate;
 begin
-  RebuildSearchItems('');
+  FSearch.ItemsEx[0].Caption := _(SEARCH_TOP);
 end;
 
-procedure TSearchPanel.RebuildSearchItems(NewEntry: string);
+procedure TSearchPanel.InsertSearchItem(Search: string);
 var
-  SL: TStringList;
-  i, OldIndex: Integer;
+  i: Integer;
+  ComboItem: TComboExItem;
 begin
-  OldIndex := FSearch.ItemIndex;
-  SL := TStringList.Create;
-  try
-    SL.Assign(FSearch.Items);
+  Search := Search.Trim;
 
-    for i := SL.Count - 1 downto 0 do
-      if (AnsiLowerCase(SL[i]) = AnsiLowerCase(NewEntry)) or (SL.Objects[i] <> nil) then
-        SL.Delete(i);
-    while SL.Count > 9 do
-      SL.Delete(SL.Count - 1);
+  ComboItem := FSearch.ItemsEx.Insert(1);
+  ComboItem.Caption := Search;
+  ComboItem.ImageIndex := 1;
 
-    FSearch.Items.Clear;
-    FSearch.AddItem(_(SEARCH_TOP), FSearch);
-    if Trim(NewEntry) <> '' then
-      FSearch.Items.Add(NewEntry);
+  for i := FSearch.ItemsEx.Count - 1 downto 2 do
+    if LowerCase(FSearch.ItemsEx[i].Caption) = LowerCase(Search) then
+      FSearch.ItemsEx.Delete(i);
 
-    for i := 0 to SL.Count - 1 do
-      FSearch.Items.Add(SL[i]);
+  while FSearch.ItemsEx.Count > 9 do
+    FSearch.ItemsEx.Delete(FSearch.ItemsEx.Count - 1);
 
-    if NewEntry <> '' then
-    begin
-      for i := 0 to FSearch.Items.Count - 1 do
-        if FSearch.Items[i] = NewEntry then
-        begin
-          FSearch.ItemIndex := i;
-          Break;
-        end;
-    end else if (OldIndex = -1) and (FSearch.Items.Count > 0) then
-      FSearch.ItemIndex := 0
-    else
-      FSearch.ItemIndex := OldIndex;
-  finally
-    SL.Free;
-  end;
-end;
-
-{ TMyComboBox }
-                                    {
-function TMyComboBox.MouseActivate(Button: TMouseButton;
-  Shift: TShiftState; X, Y, HitTest: Integer): TMouseActivate;
-begin
-  Result := inherited;
-
-  if GetParentForm(Self).Handle <> GetForegroundWindow then
-    SetTimer(Handle, 0, 10, nil);
-end;
-                               }
-procedure TMyComboBox.WndProc(var Message: TMessage);
-begin
-  inherited;
-
-  if Message.Msg = WM_TIMER then
-  begin
-    KillTimer(Handle, 0);
-    SelectAll;
-  end;
+  FSearch.ItemIndex := 1;
 end;
 
 end.
-
-

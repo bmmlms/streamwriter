@@ -69,7 +69,7 @@ begin
   FStations := TMStationCombo.Create(Self);
   FStations.Parent := Self;
   FStations.Align := alClient;
-  FStations.DropDownCount := 15;
+  FStations.DropDownCount := 16;
   FStations.OnKeyPress := FStationsKeyPress;
   FStations.OnChange := FStationsChange;
   FStations.Images := modSharedData.imgImages;
