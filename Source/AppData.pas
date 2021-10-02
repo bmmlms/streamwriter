@@ -393,8 +393,8 @@ begin
   FData := TDataLists.Create;
 
   // The number of the current build
-  FGitSHA := 'f4b166c';
-  FCodename := 'Vivo';
+  FGitSHA := '80753fb';
+  FCodename := 'Innominatam';
 
   // Adjust dimensions of the main-form
   W := 900;
