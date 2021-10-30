@@ -3,7 +3,7 @@
 call SetEnvironment.bat
 if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
 
-SET "SCRIPTSDIR=%cd%"
+SET "SCRIPTSDIR=%~dp0"
 SET "TEMPDIR=%TEMP%\sw_build"
 SET "APPNAME=streamwriter"
 
@@ -30,9 +30,9 @@ goto end
   git clone --recurse-submodules https://github.com/bmmlms/streamwriter.git
   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
   
-  cd "%TEMPDIR%\streamwriter\Scripts"
+  cd "streamwriter\Scripts"
   
-  build.bat
+  call build.bat
 
 :end
   cd /D "%SCRIPTSDIR%"
