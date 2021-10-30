@@ -95,6 +95,7 @@ begin
     MsgBus := TSWMessageBus.Create;
 
     Application.Title := AppGlobals.AppName;
+    Application.Initialize;
 
     if not InitAppStageOne then
       Exit;

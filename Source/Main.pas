@@ -613,7 +613,7 @@ procedure TfrmStreamWriterMain.actAboutExecute(Sender: TObject);
 var
   F: TfrmAbout;
 begin
-  F := TfrmAbout.Create(Self, _('About'), False);
+  F := TfrmAbout.Create(Self, _('About'));
   try
     F.ShowModal;
   finally
