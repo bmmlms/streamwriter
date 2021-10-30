@@ -19,6 +19,9 @@ echo(
 goto end
 
 :main
+  REM IF EXIST "%SCRIPTSDIR2%\..\Build" rmdir /s /q "%SCRIPTSDIR2%\..\Build"
+  if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
+  
   IF EXIST "%TEMPDIR%" rmdir /s /q "%TEMPDIR%"
   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
 

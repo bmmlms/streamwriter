@@ -33,6 +33,8 @@ goto end
 
   REM Build executables
   lazbuild --build-all --cpu=i386 --os=Win32 --build-mode=Release streamwriter_gitsha.lpi
+  if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
+  
   del streamwriter_gitsha.lpi
   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
 
@@ -94,8 +96,8 @@ goto end
   call :copyfiles
   if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 
-  REM call :upload
-  REM if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+  call :upload
+  if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 
   exit /b 0
 
