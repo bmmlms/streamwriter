@@ -24,24 +24,37 @@ unit StreamDebugView;
 interface
 
 uses
-  Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
-  DataManager, VirtualTrees, LanguageObjects, GUIFunctions, Messages,
-  Generics.Collections, Graphics, Forms, ICEClient, Clipbrd, AppData,
-  Logging, Math, TypeDefs, SharedData, Images;
+  AppData,
+  Classes,
+  Clipbrd,
+  Controls,
+  ExtCtrls,
+  Forms,
+  Graphics,
+  GUIFunctions,
+  ICEClient,
+  Images,
+  ImgList,
+  LanguageObjects,
+  Logging,
+  SharedData,
+  StdCtrls,
+  SysUtils,
+  TypeDefs,
+  VirtualTrees,
+  Windows;
 
 type
+
+  { TDebugView }
+
   TDebugView = class(TVirtualStringTree)
   private
     FClient: TICEClient;
     procedure FSetClient(Value: TICEClient);
   protected
-    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
-      var Text: String); override;
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
-    procedure DoFreeNode(Node: PVirtualNode); override;
-    procedure Resize; override;
-//    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
+    procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String); override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
     function DoInitChildren(Node: PVirtualNode; var ChildCount: Cardinal): Boolean; override;
     function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
     procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
@@ -49,6 +62,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     procedure Copy;
+
     property Client: TICEClient read FClient write FSetClient;
   end;
 
@@ -69,7 +83,6 @@ type
   protected
   public
     constructor Create(AOwner: TComponent); reintroduce;
-    destructor Destroy; override;
 
     property Client: TICEClient read FClient;
     property OnClear: TNotifyEvent read FOnClear write FOnClear;
@@ -129,12 +142,6 @@ begin
   FBtnClear.Align := alRight;
   FBtnClear.Parent := FPanelBottom;
   FBtnClear.OnClick := BtnClearClick;
-end;
-
-destructor TMStreamDebugPanel.Destroy;
-begin
-
-  inherited;
 end;
 
 procedure TMStreamDebugPanel.ShowDebug(Client: TICEClient);
@@ -213,10 +220,9 @@ begin
   Header.Options := [hoAutoResize];
 
   Header.Columns.Add;
-  Header.Columns[0].MinWidth := GetTextSize('00-00-00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+  Header.Columns[0].MinWidth := GetTextSize('00-00-00', Font).cx + MulDiv(16 + Margin * 2 + TextMargin, Screen.PixelsPerInch, 96);
   Header.Columns[0].MaxWidth := Header.Columns[0].MinWidth;
   Header.Columns[0].Options := Header.Columns[0].Options - [coResizable];
-
   Header.Columns.Add;
 
   Header.AutoSizeIndex := 1;
@@ -228,12 +234,9 @@ var
 begin
   FClient := Value;
   if FClient <> nil then
-  begin
-    RootNodeCount := FClient.DebugLog.Count;
-  end else
-  begin
+    RootNodeCount := FClient.DebugLog.Count
+  else
     RootNodeCount := 0;
-  end;
 
   if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) and (GetPrevious(GetPrevious(GetLast)) <> nil) then
   begin
@@ -247,24 +250,20 @@ begin
   Invalidate;
 end;
 
-function TDebugView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex;
-      var Ghosted: Boolean; var Index: Integer): TCustomImageList;
+function TDebugView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList;
 begin
   Result := Images;
 
   Index := -1;
-  if Column = 1 then
+  if Column = 0 then
   begin
-    Index := TImages.BOOK_OPEN;
-
     case FClient.DebugLog[Node.Index].Level of
       llError: Index := TImages.EXCLAMATION;
       llWarning: Index := TImages.ERROR;
       llDebug: Index := TImages.BUG;
     end;
 
-    if Index = 3 then
-    begin
+    if Index = -1 then
       case FClient.DebugLog[Node.Index].T of
         ltSong:
           Index := TImages.MUSIC;
@@ -276,55 +275,46 @@ begin
           Index := TImages.TIME;
         ltSecure:
           Index := TImages.LOCK;
+        else
+          Index := TImages.INFORMATION;
       end;
-    end;
   end;
 end;
 
-procedure TDebugView.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
-  var Text: String);
+procedure TDebugView.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String);
 begin
   inherited;
 
   if FClient <> nil then
-  begin
     case Column of
       0:
-        begin
-          Text := TimeToStr(FClient.DebugLog[Node.Index].Time);
-        end;
+        Text := TimeToStr(FClient.DebugLog[Node.Index].Time);
       1:
-        begin
-          case GetNodeLevel(Node) of
-            0:
-              begin
-                Text := FClient.DebugLog[Node.Index].Text;
-                if (FClient.DebugLog[Node.Index].Data <> '') and not HasChildren[Node] then
-                  HasChildren[Node] := True;
-              end;
-            1:
-              begin
-                MultiLine[Node] := True;
-                Text := FClient.DebugLog[Node.Parent.Index].Data;
-              end;
+        case GetNodeLevel(Node) of
+          0:
+          begin
+            Text := FClient.DebugLog[Node.Index].Text;
+            if (FClient.DebugLog[Node.Index].Data <> '') and not HasChildren[Node] then
+              HasChildren[Node] := True;
+          end;
+          1:
+          begin
+            MultiLine[Node] := True;
+            Text := FClient.DebugLog[Node.Parent.Index].Data;
           end;
         end;
     end;
-  end;
 end;
 
-function TDebugView.DoInitChildren(Node: PVirtualNode;
-  var ChildCount: Cardinal): Boolean;
+function TDebugView.DoInitChildren(Node: PVirtualNode; var ChildCount: Cardinal): Boolean;
 begin
   inherited;
 
   if FClient <> nil then
-  begin
     if FClient.DebugLog[Node.Index].Data <> '' then
       ChildCount := 1
     else
       ChildCount := 0;
-  end;
   Result := True;
 end;
 
@@ -369,27 +359,6 @@ begin
     Canvas.Font.Color := AppGlobals.NodeTextColorSelected
   else
     Canvas.Font.Color := AppGlobals.NodeTextColor;
-end;
-
-procedure TDebugView.DoFreeNode(Node: PVirtualNode);
-begin
-  inherited;
-end;
-
-procedure TDebugView.Resize;
-var
-  R: TRect;
-begin
-  inherited;
-
-  {
-  if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) and (GetPrevious(GetPrevious(GetLast)) <> nil) then
-  begin
-    R := GetDisplayRect(GetPrevious(GetPrevious(GetLast)), NoColumn, False);
-    if R.Top <= ClientHeight then
-      PostMessage(Handle, WM_VSCROLL, SB_BOTTOM, 0);
-  end;
-  }
 end;
 
 end.

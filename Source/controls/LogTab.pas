@@ -568,8 +568,6 @@ begin
   end else
   begin
     FColType.Width := GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
-    FColType.Width := GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
-
     FColTime.Width := GetTextSize('00-00-00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
     FColSource.Width := GetTextSize('wwwwwwwwwwwwwww', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
   end;
@@ -651,6 +649,19 @@ begin
 
     L := L + 16;
 
+    case NodeData.LogEntry.Level of
+      llError:
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.EXCLAMATION);
+      llWarning:
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.ERROR);
+      llInfo:
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.INFORMATION);
+      llDebug:
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BUG);
+    end;
+
+    L := L + 16;
+
     case NodeData.LogEntry.LogType of
       ltGeneral: ;
       ltSong:
@@ -663,19 +674,6 @@ begin
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TIME);
       ltSecure:
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.LOCK);
-    end;
-
-    L := L + 16;
-
-    case NodeData.LogEntry.Level of
-      llError:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.EXCLAMATION);
-      llWarning:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.ERROR);
-      llInfo:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.INFORMATION);
-      llDebug:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BUG);
     end;
   end;
 end;
