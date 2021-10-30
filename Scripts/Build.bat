@@ -25,6 +25,11 @@ if %ERRORLEVEL% EQU 0 (
 echo(
 goto end
 
+:getgitsha
+  cd "%PROJECTDIR%"
+  for /f "tokens=1" %%r in ('git rev-parse --short HEAD') do set GITSHA=%%r
+  exit /b 0
+
 :build
   cd "%SOURCEDIR%"
 
@@ -84,6 +89,9 @@ goto end
   exit /b 0
 
 :main
+  call :getgitsha
+  if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+
   call :build
   if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 
