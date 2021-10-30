@@ -174,7 +174,7 @@ procedure TfrmWizard.cmdBrowseClick(Sender: TObject);
 var
   Dir: String;
 begin
-  Dir := BrowseDialog(Handle, _('Select folder for saved songs:'), BIF_RETURNONLYFSDIRS);
+  Dir := BrowseDialog(Self, _('Select folder for saved songs:'));
   if DirectoryExists(Dir) then
     txtDir.Text := Dir;
 end;

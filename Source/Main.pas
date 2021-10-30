@@ -863,7 +863,6 @@ begin
 
   pagMain := TMainPageControl.Create(Self);
   pagMain.Parent := Self;
-  pagMain.Visible := True;
   pagMain.Align := alClient;
   pagMain.Images := modSharedData.imgImages;
 
@@ -1930,6 +1929,7 @@ begin
       Exit;
     end;
   end;
+
   DefaultHandler(Msg);
 end;
 

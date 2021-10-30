@@ -446,10 +446,7 @@ begin
   else
     Panel.Tag := 1;
 
-  if Enable then
-    lblPanelCut.Visible := False
-  else
-    lblPanelCut.Visible := True;
+  lblPanelCut.Visible := not Enable;
 end;
 
 procedure TfrmSettings.FillFields(Settings: TStreamSettings);
@@ -2153,15 +2150,14 @@ end;
 
 procedure TfrmSettings.btnBrowseClick(Sender: TObject);
 var
-  Msg: string;
-  Dir: string;
+  Dir, Msg: string;
 begin
   if FSettingsType = stAuto then
     Msg := 'Select folder for automatically saved songs'
   else
     Msg := 'Select folder for saved songs';
 
-  Dir := BrowseDialog(Handle, _(Msg), BIF_RETURNONLYFSDIRS);
+  Dir := BrowseDialog(Self, _(Msg));
 
   if Dir = '' then
     Exit;

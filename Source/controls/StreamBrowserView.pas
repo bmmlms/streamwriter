@@ -1159,7 +1159,6 @@ begin
   FSearch := TMStreamSearchPanel.Create(Self);
   FSearch.Parent := Self;
   FSearch.Align := alTop;
-  FSearch.Visible := True;
   FSearch.AutoSize := True;
   FSearch.FSearchEdit.OnChange := SearchEditChange;
   FSearch.FGenreList.OnChange := ListsChange;
@@ -1169,12 +1168,10 @@ begin
   FCountLabel := TLabel.Create(Self);
   FCountLabel.Align := alBottom;
   FCountLabel.Parent := Self;
-  FCountLabel.Visible := True;
 
   FStreamTree := TMStreamTree.Create(Self);
   FStreamTree.Align := alClient;
   FStreamTree.Parent := Self;
-  FStreamTree.Visible := True;
   FStreamTree.OnHeaderClick := StreamBrowserHeaderClick;
   FStreamTree.FSortPopupMenu.FItemName.OnClick := SortItemClick;
   FStreamTree.FSortPopupMenu.FItemKbps.OnClick := SortItemClick;

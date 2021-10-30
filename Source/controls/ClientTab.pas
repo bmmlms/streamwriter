@@ -621,7 +621,6 @@ begin
   FAddressBar.Align := alTop;
   FAddressBar.AutoSize := True;
   FAddressBar.Parent := Self;
-  FAddressBar.Visible := True;
   FAddressBar.OnStart := AddressBarStart;
 
   FToolbar := Toolbar;
@@ -674,7 +673,6 @@ begin
   FSplitter := TSplitter.Create(Self);
   FSplitter.Parent := Self;
   FSplitter.Align := alRight;
-  FSplitter.Visible := True;
   FSplitter.AutoSnap := False;
   FSplitter.ResizeStyle := rsUpdate;
 
@@ -687,13 +685,9 @@ begin
   if Screen.PixelsPerInch = 96 then
     FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := modSharedData.imgImages;
 
-  FSideBar.Visible := True;
-  FSplitter.Visible := True;
-
   FClientView := TMClientView.Create(Self, Popup, FSideBar.FBrowserView.StreamTree);
   FClientView.Parent := Self;
   FClientView.Align := alClient;
-  FClientView.Visible := True;
   FClientView.Images := modSharedData.imgImages;
   FClientView.OnChange := FClientViewChange;
   FClientView.OnNodeDblClick := FClientViewNodeDblClick;

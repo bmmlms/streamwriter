@@ -76,14 +76,12 @@ begin
   FTopPanel.Align := alClient;
   FTopPanel.Height := 110;
   FTopPanel.BevelOuter := bvNone;
-  FTopPanel.Visible := True;
 
   FName := TLabel.Create(Self);
   FName.Parent := FTopPanel;
   FName.Align := alTop;
   FName.Font.Size := 10;
   FName.Font.Style := [fsBold];
-  FName.Visible := True;
 
   FInfo := TMemo.Create(Self);
   FInfo.Parent := FTopPanel;
@@ -92,7 +90,6 @@ begin
   FInfo.Color := clWindow;
   FInfo.ScrollBars := ssVertical;
   FInfo.ReadOnly := True;
-  FInfo.Visible := True;
 
   Align := alClient;
 end;
