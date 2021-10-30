@@ -3,7 +3,7 @@
 call SetEnvironment.bat
 if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
 
-SET "SCRIPTSDIR=%~dp0"
+SET "SCRIPTSDIR2=%~dp0"
 SET "TEMPDIR=%TEMP%\sw_build"
 SET "APPNAME=streamwriter"
 
@@ -33,6 +33,10 @@ goto end
   cd "streamwriter\Scripts"
   
   call build.bat
+  if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
+  
+  xcopy /s "..\Build" "%SCRIPTSDIR2%\..\Build\"
+  if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
 
 :end
-  cd /D "%SCRIPTSDIR%"
+  cd /D "%SCRIPTSDIR2%"
