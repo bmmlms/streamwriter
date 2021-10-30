@@ -9,7 +9,6 @@ var
 begin
   Proc := TProcess.Create(nil);
   try
-   // Proc.CurrentDirectory := 'E:\Entwicklung\Mistake\streamwriter';
     Proc.Executable := 'git';
     Proc.Parameters.SetStrings(['rev-parse', '--short', 'HEAD']);
 
@@ -56,8 +55,7 @@ begin
 
     TDOMElement(VersionInfoNode.FindNode('StringTable')).SetAttribute('ProductVersion', ProductVersion);
 
-    WriteXMLFile(Doc, ParamStr(1));
-    WriteXMLFile(Doc, 'z:\aaa.xml');
+    WriteXMLFile(Doc, ParamStr(2));
   finally
     Doc.Free;
   end;

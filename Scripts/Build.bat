@@ -1,30 +1,18 @@
 @ECHO OFF
 
-REM Path to fpc binaries
-SET "FPCBIN=D:\Lazarus\fpc\3.2.0\bin\x86_64-win64"
-
-set "ZIP=D:\7-Zip\7z.exe"
-set "INNO=D:\Inno Setup\ISCC.exe"
-set "CURL=C:\Program Files\curl.exe"
-set "CWD=%cd%"
-set "APPNAME=streamwriter"
-set "PROJECTDIR=%CWD%\.."
-set "SOURCEDIR=%PROJECTDIR%\Source"
-set "OUTDIR=%PROJECTDIR%\Build"
-set "PUBLISHDIR=%PROJECTDIR%\Build\Publish"
-set "ZIPFILES=%APPNAME%.exe"
-set "UPLOADURL=https://streamwriter.org/de/downloads/svnbuild/?download=67&filename=%APPNAME%"
-
-IF NOT EXIST %FPCBIN% (
-  ECHO.
-  ECHO FPCBIN does not exist, please adjust variable
-  ECHO.
-  PAUSE
-  exit /b 1
+if "%FPCBIN%" == "" (
+  call SetEnvironment.bat
+  if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
 )
 
-REM Extend PATH
-SET "PATH=%PATH%;%FPCBIN%;%FPCBIN%\..\..\..\.."
+SET "SCRIPTSDIR=%cd%"
+SET "APPNAME=streamwriter"
+SET "PROJECTDIR=%SCRIPTSDIR%\.."
+SET "SOURCEDIR=%PROJECTDIR%\Source"
+SET "OUTDIR=%PROJECTDIR%\Build"
+SET "PUBLISHDIR=%PROJECTDIR%\Build\Publish"
+SET "ZIPFILES=%APPNAME%.exe"
+SET "UPLOADURL=https://streamwriter.org/de/downloads/svnbuild/?download=67&filename=%APPNAME%"
 
 call :main
 echo(
@@ -37,21 +25,15 @@ if %ERRORLEVEL% EQU 0 (
 echo(
 goto end
 
-:getgitsha
-  cd "%PROJECTDIR%"
-  for /f "tokens=1" %%r in ('git rev-parse --short HEAD') do set GITSHA=%%r
-  exit /b 0
-
-:modifybuildnumber
-  powershell -Command "(Get-Content "%SOURCEDIR%\AppData.pas") -replace '"FGitSHA :=.*;"', 'FGitSHA := ''%GITSHA%'';' | Out-File -Encoding UTF8 "%SOURCEDIR%\AppData.pas""
-
-  exit /b %ERRORLEVEL%
-
 :build
   cd "%SOURCEDIR%"
 
+  instantfpc "%SCRIPTSDIR%\SetGitVersion.pas" streamwriter.lpi streamwriter_gitsha.lpi
+  if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
+
   REM Build executables
-  lazbuild --build-all --cpu=i386 --os=Win32 --build-mode=Release streamWriter.lpi
+  lazbuild --build-all --cpu=i386 --os=Win32 --build-mode=Release streamwriter_gitsha.lpi
+  del streamwriter_gitsha.lpi
   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
 
   REM Build addons
@@ -100,12 +82,6 @@ goto end
   exit /b 0
 
 :main
-  call :getgitsha
-  if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
-
-  call :modifybuildnumber
-  if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
-
   call :build
   if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 
@@ -118,10 +94,10 @@ goto end
   call :copyfiles
   if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 
-  call :upload
-  if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+  REM call :upload
+  REM if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 
   exit /b 0
 
 :end
-  cd "%CWD%"
+  cd "%SCRIPTSDIR%"

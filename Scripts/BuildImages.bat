@@ -1,14 +1,7 @@
 @ECHO OFF
 
-REM Path to fpc binaries
-SET "FPCBIN=D:\Lazarus\fpc\3.2.0\bin\x86_64-win64"
-
-IF NOT EXIST %FPCBIN% GOTO FAILENVIRONMENT
-
-REM Extend PATH
-SET "PATH=%PATH%;%FPCBIN%;%FPCBIN%\..\..\..\.."
-
-SET "INSTANTFPCOPTIONS=-Fu%FPCBIN%\..\..\..\..\lcl\units\x86_64-win64\win32 -Fu%FPCBIN%\..\..\..\..\lcl\units\x86_64-win64 -Fu%FPCBIN%\..\..\..\..\components\lazutils\lib\x86_64-win64"
+call SetEnvironment.bat
+if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
 
 instantfpc BuildImages.pas
 
