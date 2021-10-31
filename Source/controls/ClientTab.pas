@@ -519,7 +519,7 @@ var
   Clients: TNodeDataArray;
   Client: PClientNodeData;
 begin
-  Res := MsgBox(GetParentForm(Self).Handle, _('This will reset the saved song and bytes received counters.'#13#10 +
+  Res := MsgBox(_('This will reset the saved song and bytes received counters.'#13#10 +
     'The tracknumber of new saved titles will be 1 if you specified the tracknumber in the filename pattern, this number will also be set in ID3 tags.'#13#10 + 'Do you want to continue?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
   if Res = IDYES then
   begin
@@ -1344,7 +1344,7 @@ begin
       end else
       begin
         Result := False;
-        MsgBox(GetParentForm(Self).Handle, _('The stream could not be added to the list because the URL is invalid.'), _('Info'), MB_ICONINFORMATION);
+        MsgBox(_('The stream could not be added to the list because the URL is invalid.'), _('Info'), MB_ICONINFORMATION);
       end;
     end;
 end;
@@ -1460,7 +1460,7 @@ begin
       if HomeComm.CommunicationEstablished and HomeComm.Authenticated then
         FOnSetStreamData(Self, Streams[0].ID)
       else if not HomeComm.CommunicationEstablished then
-        MsgBox(Handle, _('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION)
+        MsgBox(_('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION)
       else if not HomeComm.Authenticated then
         FOnAuthRequired(Self);
     oaRate1:

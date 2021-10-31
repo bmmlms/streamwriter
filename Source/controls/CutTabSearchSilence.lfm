@@ -16,13 +16,13 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   Position = poOwnerFormCenter
+  LCLVersion = '2.2.0.1'
   object Label14: TLabel
     Left = 92
     Height = 13
     Top = 28
     Width = 36
     Caption = '(1-100)'
-    ParentColor = False
   end
   object Label12: TLabel
     Left = 8
@@ -30,7 +30,6 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
     Top = 52
     Width = 31
     Caption = 'lasting'
-    ParentColor = False
   end
   object Label13: TLabel
     Left = 132
@@ -38,7 +37,6 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
     Top = 52
     Width = 59
     Caption = 'ms (min. 20)'
-    ParentColor = False
   end
   object Label10: TLabel
     Left = 8
@@ -46,7 +44,6 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
     Top = 8
     Width = 192
     Caption = 'Silence is defined by volume lower than:'
-    ParentColor = False
   end
   object txtSilenceLevel: TEdit
     Left = 8
@@ -89,7 +86,6 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
       Width = 97
       Align = alRight
       Caption = '&OK'
-      Layout = blGlyphLeft
       OnClick = btnOKClick
       TabOrder = 0
     end

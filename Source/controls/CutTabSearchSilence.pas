@@ -60,14 +60,14 @@ procedure TfrmCutTabSearchSilence.btnOKClick(Sender: TObject);
 begin
   if (not FAutoDetect) and ((StrToIntDef(txtSilenceLevel.Text, -1) > 100) or (StrToIntDef(txtSilenceLevel.Text, -1) < 1)) then
   begin
-    MsgBox(Handle, _('Please enter the maximum volume level for silence detection as a value ranging from 1 to 100.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(_('Please enter the maximum volume level for silence detection as a value ranging from 1 to 100.'), _('Info'), MB_ICONINFORMATION);
     txtSilenceLevel.ApplyFocus;
     Exit;
   end;
 
   if StrToIntDef(txtSilenceLength.Text, -1) < 20 then
   begin
-    MsgBox(Handle, _('Please enter the minimum length for silence (at least 20 ms).'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(_('Please enter the minimum length for silence (at least 20 ms).'), _('Info'), MB_ICONINFORMATION);
     txtSilenceLength.ApplyFocus;
     Exit;
   end;

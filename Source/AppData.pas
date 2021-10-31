@@ -490,7 +490,7 @@ begin
       OnlyOne := False;
       if (CommandLine.GetParam('-datadir') = nil) or (CommandLine.GetParam('-tempdir') = nil) then
       begin
-        MsgBox(0, Format(_('When the argument -enablemultipleinstances is supplied you also need to supply -datadir and -tempdir.'#13#10'Make sure to supply distinct directories to both launched streamWriter instances.'), [AppName]),
+        MsgBox(Format(_('When the argument -enablemultipleinstances is supplied you also need to supply -datadir and -tempdir.'#13#10'Make sure to supply distinct directories to both launched streamWriter instances.'), [AppName]),
           _('Info'), MB_ICONINFORMATION);
         TerminateProcess(GetCurrentProcess, 1);
       end;
@@ -859,12 +859,12 @@ begin
   Recovered := False;
   {$IFNDEF DEBUG}
   if FileExists(AppGlobals.RecoveryFile) then
-    if (CommandLine.GetParam('-autoloadrecovery') <> nil) or (MsgBox(0, _('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES) then
+    if (CommandLine.GetParam('-autoloadrecovery') <> nil) or (MsgBox(_('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES) then
       try
         FData.Load(True);
         Recovered := True;
       except
-        MsgBox(0, _('Data could not be loaded.'), _('Error'), MB_ICONERROR);
+        MsgBox(_('Data could not be loaded.'), _('Error'), MB_ICONERROR);
       end;
   {$ENDIF}
 
@@ -884,16 +884,16 @@ begin
       FData.LoadError := True;
 
       if E is EVersionException then
-        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it was saved with a newer version of streamWriter. ' +
+        Res := MsgBox(Format(_('The file "%s" could not be loaded because it was saved with a newer version of streamWriter. ' +
           'To use the current file exit streamWriter and use a newer version of the application.') + #13#10 + _(LoadErrorMsg), [E.Message]),
           _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
       else if E is EUnsupportedFormatException then
-        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it is contains an exported profile and no regular saved data.') + #13#10 + _(LoadErrorMsg), [E.Message]),
+        Res := MsgBox(Format(_('The file "%s" could not be loaded because it is contains an exported profile and no regular saved data.') + #13#10 + _(LoadErrorMsg), [E.Message]),
           _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
       else if E is EUnknownFormatException then
-        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it''s format is unknown.') + #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
+        Res := MsgBox(Format(_('The file "%s" could not be loaded because it''s format is unknown.') + #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
       else
-        Res := MsgBox(0, Format(_('The file "%s" could not be loaded because it is corrupted.') + #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
+        Res := MsgBox(Format(_('The file "%s" could not be loaded because it is corrupted.') + #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
 
       if Res = IDYES then
       begin

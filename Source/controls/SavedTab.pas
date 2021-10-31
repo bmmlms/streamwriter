@@ -1008,9 +1008,9 @@ begin
     begin
       if Length(Tracks) = 1 then
       begin
-        if MsgBox(GetParentForm(Self).Handle, Format(_('Do you really want to delete "%s"?'), [ExtractFileName(Tracks[0].Filename)]), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
+        if MsgBox(Format(_('Do you really want to delete "%s"?'), [ExtractFileName(Tracks[0].Filename)]), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
           Exit;
-      end else if MsgBox(GetParentForm(Self).Handle, _('Do you really want to delete all selected files?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
+      end else if MsgBox(_('Do you really want to delete all selected files?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
         Exit;
 
       Error := False;
@@ -1036,7 +1036,7 @@ begin
         FSavedTree.EndUpdate;
       end;
       if Error then
-        MsgBox(GetParentForm(Self).Handle, _('Some files could not be deleted.'#13#10'Please make sure they are not opened in a cut-tab or in use by another application.'), _('Info'), MB_ICONINFORMATION);
+        MsgBox(_('Some files could not be deleted.'#13#10'Please make sure they are not opened in a cut-tab or in use by another application.'), _('Info'), MB_ICONINFORMATION);
     end;
     taShowFile:
       RunProcess('explorer.exe /select,"' + Tracks[0].Filename + '"');
@@ -1853,7 +1853,7 @@ begin
     try
       FPlayer.Filename := PrevPlayingTrack(True).Filename;
     except
-      MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
+      MsgBox(_('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
       Exit;
     end;
 
@@ -1893,7 +1893,7 @@ begin
     try
       FPlayer.Filename := Track.Filename;
     except
-      MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
+      MsgBox(_('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
       Exit;
     end;
 
@@ -1914,7 +1914,7 @@ begin
       try
         FPlayer.Filename := Tracks[0].Filename;
       except
-        MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
+        MsgBox(_('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
         Exit;
       end;
       FPlayer.Volume := Players.Volume;
@@ -1965,7 +1965,7 @@ begin
           FPlayerIndex := FPlayerList.Count - 1;
         end;
       except
-        MsgBox(GetParentForm(Self).Handle, _('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
+        MsgBox(_('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
         Exit;
       end;
 
@@ -2096,9 +2096,15 @@ end;
 procedure TSavedTree.SetFileWatcher;
 begin
   if FFileWatcher <> nil then
+  begin
+    FFileWatcher.OnTerminate := nil;
     FFileWatcher.Terminate;
+  end;
   if FFileWatcherAuto <> nil then
+  begin
+    FFileWatcherAuto.OnTerminate := nil;
     FFileWatcherAuto.Terminate;
+  end;
 
   FFileWatcher := nil;
   FFileWatcherAuto := nil;
@@ -2284,7 +2290,7 @@ begin
   if RenameFile(ConcatPaths([ExtractFilePath(NodeData.Track.Filename), ExtractFileName(NodeData.Track.Filename)]), ConcatPaths([ExtractFilePath(NodeData.Track.Filename), NewText])) then
     NodeData.Track.Filename := ConcatPaths([ExtractFilePath(NodeData.Track.Filename), NewText])
   else
-    MsgBox(GetParentForm(Self).Handle, _('The file could not be renamed. Make sure that it is not in use and that no other file with the same name already exists.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(_('The file could not be renamed. Make sure that it is not in use and that no other file with the same name already exists.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TSavedTree.DoNodeDblClick(const HitInfo: THitInfo);

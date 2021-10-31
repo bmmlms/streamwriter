@@ -161,7 +161,7 @@ var
 begin
   if (Length(Trim(txtRegEx.Text)) > 0) and (LowerCase(Trim(txtRegEx.Text)) <> LowerCase(DEFAULT_TITLE_REGEXP)) then
   begin
-    if MsgBox(Handle, _('A regular expression was entered into the text field but not added to the list.'#13#10'Do you want to continue without saving that regular expression?'), _('Question'), MB_YESNO or MB_ICONQUESTION) = IDNO then
+    if MsgBox(_('A regular expression was entered into the text field but not added to the list.'#13#10'Do you want to continue without saving that regular expression?'), _('Question'), MB_YESNO or MB_ICONQUESTION) = IDNO then
       Exit;
   end;
 
@@ -174,7 +174,7 @@ begin
 
   if not HomeComm.SendSetStreamData(FStreamID, RegExps) then
   begin
-    MsgBox(Handle, _('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION)
+    MsgBox(_('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION)
   end else
     Close;
 end;

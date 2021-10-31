@@ -84,7 +84,7 @@ begin
       if not AppGlobals.AddonManager.EnableAddon(Owner as TCustomForm, FAddon, True) then
       begin
         DisableTags;
-        MsgBox(GetParentForm(Self).Handle, _('Tags cannot be read and written because a needed addon has not been installed.'), _('Info'), MB_ICONINFORMATION);
+        MsgBox(_('Tags cannot be read and written because a needed addon has not been installed.'), _('Info'), MB_ICONINFORMATION);
       end;
     end;
 
@@ -111,7 +111,7 @@ begin
         end;
       except
         DisableTags;
-        MsgBox(GetParentForm(Self).Handle, _('Tags could not be read from the file because it is in use.'), _('Info'), MB_ICONINFORMATION);
+        MsgBox(_('Tags could not be read from the file because it is in use.'), _('Info'), MB_ICONINFORMATION);
       end;
   end else
     DisableTags;
@@ -134,7 +134,7 @@ begin
 
       if not FileTagger.Write(Language.CurrentLanguage.LCID, FTracks[0].Filename) then
       begin
-        MsgBox(Self.Handle, _('The file could not be saved. Please make sure it is not in use and try saving again.'), _('Error'), MB_ICONERROR);
+        MsgBox(_('The file could not be saved. Please make sure it is not in use and try saving again.'), _('Error'), MB_ICONERROR);
         Exit;
       end;
     finally

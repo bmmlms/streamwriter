@@ -55,7 +55,7 @@ object frmConfigureSoX: TfrmConfigureSoX
   OnKeyDown = FormKeyDown
   OnShow = FormShow
   Position = poOwnerFormCenter
-  LCLVersion = '2.0.12.0'
+  LCLVersion = '2.2.0.1'
   object pnlNav: TPanel
     Left = 0
     Height = 40
@@ -81,7 +81,6 @@ object frmConfigureSoX: TfrmConfigureSoX
       Width = 97
       Align = alRight
       Caption = '&OK'
-      Layout = blGlyphLeft
       OnClick = btnOKClick
       TabOrder = 0
     end
@@ -113,7 +112,6 @@ object frmConfigureSoX: TfrmConfigureSoX
         EditLabel.Height = 13
         EditLabel.Width = 90
         EditLabel.Caption = 'Length in seconds:'
-        EditLabel.ParentColor = False
         Enabled = False
         MaxLength = 2
         TabOrder = 1
@@ -135,7 +133,6 @@ object frmConfigureSoX: TfrmConfigureSoX
         EditLabel.Height = 13
         EditLabel.Width = 90
         EditLabel.Caption = 'Length in seconds:'
-        EditLabel.ParentColor = False
         Enabled = False
         MaxLength = 2
         TabOrder = 3
@@ -167,7 +164,6 @@ object frmConfigureSoX: TfrmConfigureSoX
         EditLabel.Height = 13
         EditLabel.Width = 90
         EditLabel.Caption = 'Length in seconds:'
-        EditLabel.ParentColor = False
         Enabled = False
         MaxLength = 2
         TabOrder = 1
@@ -189,7 +185,6 @@ object frmConfigureSoX: TfrmConfigureSoX
         EditLabel.Height = 13
         EditLabel.Width = 90
         EditLabel.Caption = 'Length in seconds:'
-        EditLabel.ParentColor = False
         Enabled = False
         MaxLength = 2
         TabOrder = 3
@@ -240,7 +235,6 @@ object frmConfigureSoX: TfrmConfigureSoX
       Top = 84
       Width = 25
       Flat = True
-      Layout = blGlyphLeft
       OnClick = btnBrowseClick
       ShowHint = True
       ParentShowHint = False
@@ -252,7 +246,6 @@ object frmConfigureSoX: TfrmConfigureSoX
       Top = 132
       Width = 25
       Flat = True
-      Layout = blGlyphLeft
       OnClick = btnBrowseClick
       ShowHint = True
       ParentShowHint = False
@@ -264,7 +257,6 @@ object frmConfigureSoX: TfrmConfigureSoX
       Width = 385
       AutoSize = False
       Caption = 'Due to licensing issues streamWriter does not supply two needed DLLs. Please download both DLLs and select them using the "Browse..." buttons. If clicking "Next" does not show any error messages, you can delete the downloaded files.'
-      ParentColor = False
       WordWrap = True
     end
     object txtLameDLL: TLabeledEdit
@@ -277,7 +269,6 @@ object frmConfigureSoX: TfrmConfigureSoX
       EditLabel.Height = 13
       EditLabel.Width = 109
       EditLabel.Caption = 'Path to "lame_enc.dll":'
-      EditLabel.ParentColor = False
       ReadOnly = True
       TabOrder = 0
     end
@@ -291,7 +282,6 @@ object frmConfigureSoX: TfrmConfigureSoX
       EditLabel.Height = 13
       EditLabel.Width = 94
       EditLabel.Caption = 'Path to "libmad.dll":'
-      EditLabel.ParentColor = False
       ReadOnly = True
       TabOrder = 1
     end

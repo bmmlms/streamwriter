@@ -315,7 +315,7 @@ begin
     if not PostProcess.ShowInitMessage(Owner.Handle) then
       Exit(False);
 
-    if MsgBox(Owner.Handle, _('This postprocessor needs additional addons. Do you want to download these addons now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
+    if MsgBox(_('This postprocessor needs additional addons. Do you want to download these addons now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
     begin
       {
       for i := 0 to PostProcess.NeededAddons.Count - 1 do
@@ -328,7 +328,7 @@ begin
 
   if Enable and (not PostProcess.DependenciesMet) then
   begin
-    MsgBox(Owner.Handle, _('The postprocessor is not ready for use. This might happen when required addons'' files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
+    MsgBox(_('The postprocessor is not ready for use. This might happen when required addons'' files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
     Exit(False);
   end;
 

@@ -375,7 +375,7 @@ function TPostProcessSoX.ShowInitMessage(Handle: THandle): Boolean;
 begin
   Result := inherited;
 
-  //MsgBox(Handle, _('Additional encoding-addons might be needed to have this postprocessor working, that is an encoder for the desired output format or an encoder for the format of the stream itself.'),
+  //MsgBox(_('Additional encoding-addons might be needed to have this postprocessor working, that is an encoder for the desired output format or an encoder for the format of the stream itself.'),
   //  _('Info'), MB_ICONINFORMATION);
 end;
 

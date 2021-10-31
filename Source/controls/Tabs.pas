@@ -149,7 +149,7 @@ begin
 
             List.SaveToFile(Dlg.FileName);
           except
-            MsgBox(Handle, Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [ExtractFilePath(Dlg.FileName)]), _('Error'), MB_ICONEXCLAMATION);
+            MsgBox(Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [ExtractFilePath(Dlg.FileName)]), _('Error'), MB_ICONEXCLAMATION);
           end;
         end;
         }
@@ -171,7 +171,7 @@ begin
             ShellExecuteW(Handle, nil, 'rundll32.exe', PWideChar(UnicodeString('shell32.dll,OpenAs_RunDLL ' + ConcatPaths([AppGlobals.TempDir, 'playlist.pls']))), nil, 1);
         end;
       except
-        MsgBox(Handle, Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [AppGlobals.TempDir]), _('Error'), MB_ICONEXCLAMATION);
+        MsgBox(Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [AppGlobals.TempDir]), _('Error'), MB_ICONEXCLAMATION);
       end;
     end;
   finally

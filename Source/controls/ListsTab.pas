@@ -598,7 +598,7 @@ begin
 
     if ExportList.Count = 0 then
     begin
-      MsgBox(GetParentForm(Self).Handle, _('Please select at least one title or a single category containing titles to export.'), _('Info'), MB_ICONINFORMATION);
+      MsgBox(_('Please select at least one title or a single category containing titles to export.'), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
 
@@ -624,7 +624,7 @@ begin
           try
             Lst.SaveToFile(Dlg.FileName);
           except
-            MsgBox(GetParentForm(Self).Handle, _('The file could not be saved.'), _('Error'), MB_ICONEXCLAMATION);
+            MsgBox(_('The file could not be saved.'), _('Error'), MB_ICONEXCLAMATION);
           end;
         finally
           Lst.Free;
@@ -803,7 +803,7 @@ begin
               ImportData.Add(TImportListEntry.Create(Lst[i], ServerArtistHash, True));
           end;
         except
-          MsgBox(GetParentForm(Self).Handle, _('The file could not be loaded.'), _('Error'), MB_ICONEXCLAMATION);
+          MsgBox(_('The file could not be loaded.'), _('Error'), MB_ICONEXCLAMATION);
           Exit;
         end;
       finally
@@ -910,12 +910,12 @@ begin
             // If there are manual titles ask the user if they should be converted to automatic titles
             if not HomeComm.CommunicationEstablished then
             begin
-               MsgRes := MsgBox(GetParentForm(Self).Handle, Format(_('You have imported %d title(s) for the manual wishlist. You are not connected to the streamWriter server to convert these titles into titles for the automatic wishlist. Do you want to continue and import these titles as manual titles without conversion?'), [ConversionData.Count]), _('Question'), MB_YESNO or MB_ICONQUESTION or MB_DEFBUTTON2);
+               MsgRes := MsgBox(Format(_('You have imported %d title(s) for the manual wishlist. You are not connected to the streamWriter server to convert these titles into titles for the automatic wishlist. Do you want to continue and import these titles as manual titles without conversion?'), [ConversionData.Count]), _('Question'), MB_YESNO or MB_ICONQUESTION or MB_DEFBUTTON2);
                if MsgRes = ID_NO then
                  Exit;
             end else
             begin
-              MsgRes := MsgBox(GetParentForm(Self).Handle, Format(_('You have imported %d title(s) for the manual wishlist. Do you want to convert these titles into titles used by the automatic wishlist?'), [ConversionData.Count]), _('Question'), MB_YESNOCANCEL or MB_ICONQUESTION);
+              MsgRes := MsgBox(Format(_('You have imported %d title(s) for the manual wishlist. Do you want to convert these titles into titles used by the automatic wishlist?'), [ConversionData.Count]), _('Question'), MB_YESNOCANCEL or MB_ICONQUESTION);
               case MsgRes of
                 ID_YES:
                   begin
@@ -1393,7 +1393,7 @@ begin
         if (List[i].ServerHash = 0) and (List[i].Hash = Hash) then
         begin
           if ShowMessages then
-            MsgBox(GetParentForm(Self).Handle, Format(_('The list already contains an entry matching the pattern "%s".'), [Pattern]), _('Info'), MB_ICONINFORMATION);
+            MsgBox(Format(_('The list already contains an entry matching the pattern "%s".'), [Pattern]), _('Info'), MB_ICONINFORMATION);
           Exit;
         end;
 
@@ -1432,7 +1432,7 @@ begin
     Result := True;
   end else
     if ShowMessages then
-      MsgBox(GetParentForm(Self).Handle, _('Please enter a pattern to add to the list.'), _('Info'), MB_ICONINFORMATION);
+      MsgBox(_('Please enter a pattern to add to the list.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree;

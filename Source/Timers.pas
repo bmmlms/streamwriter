@@ -156,7 +156,7 @@ procedure TfrmTimers.btnAddClick(Sender: TObject);
 begin
   if not TimesOkay then
   begin
-    MsgBox(Handle, _('Please enter a valid start and end time for the schedule.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(_('Please enter a valid start and end time for the schedule.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 

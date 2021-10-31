@@ -531,7 +531,7 @@ begin
     except
       if not Shutdown then
       begin
-        Res := MsgBox(Handle, Format(_('An error occured while saving the data file. Please make sure you can write to "%s" and that the file is not in use by another application. Click "Yes" to try again, "No" to exit without saving data.'), [AppGlobals.DataFile]), _('Info'), MB_ICONEXCLAMATION or MB_YESNO or MB_DEFBUTTON1);
+        Res := MsgBox(Format(_('An error occured while saving the data file. Please make sure you can write to "%s" and that the file is not in use by another application. Click "Yes" to try again, "No" to exit without saving data.'), [AppGlobals.DataFile]), _('Info'), MB_ICONEXCLAMATION or MB_YESNO or MB_DEFBUTTON1);
         if Res = IDNO then
           Break;
       end else
@@ -584,13 +584,13 @@ begin
       end;
     except
       on E: EVersionException do
-        MsgBox(0, _('The file could not be imported because it was exported with a newer version of streamWriter.'), _('Error'), MB_ICONERROR);
+        MsgBox(_('The file could not be imported because it was exported with a newer version of streamWriter.'), _('Error'), MB_ICONERROR);
       on E: EUnsupportedFormatException do
-        MsgBox(0, _('The file could not be imported because it contains regular saved data and no exported profile.'), _('Error'), MB_ICONERROR);
+        MsgBox(_('The file could not be imported because it contains regular saved data and no exported profile.'), _('Error'), MB_ICONERROR);
       on E: EUnknownFormatException do
-        MsgBox(0, _('The file could not be imported because it''s format is unknown.'), _('Error'), MB_ICONERROR);
+        MsgBox(_('The file could not be imported because it''s format is unknown.'), _('Error'), MB_ICONERROR);
       else
-        MsgBox(0, _('The file could not be imported.'), _('Error'), MB_ICONERROR)
+        MsgBox(_('The file could not be imported.'), _('Error'), MB_ICONERROR)
     end;
     RunProcess('"' + Application.ExeName + '" /profileupdate', False);
   end;
@@ -1051,10 +1051,10 @@ var
 begin
   case ID of
     ceUnknown:
-      MsgBox(Handle, Format(_('An error occured while communicating with the server: '#13#10'%s'), [Msg]), _('Error'), MB_ICONERROR);
+      MsgBox(Format(_('An error occured while communicating with the server: '#13#10'%s'), [Msg]), _('Error'), MB_ICONERROR);
     ceAuthRequired:
       begin
-        if MsgBox(Handle, _('You need to be logged in to perform that action.'#13#10'Do you want to login now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+        if MsgBox(_('You need to be logged in to perform that action.'#13#10'Do you want to login now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
           ShowCommunityLogin;
       end;
     ceNotification:
@@ -1085,7 +1085,7 @@ begin
   UpdateStatus;
 
   if not Success then
-    MsgBox(Handle, _('The server did not accept the handshake. Please update streamWriter.'), _('Error'), MB_ICONERROR);
+    MsgBox(_('The server did not accept the handshake. Please update streamWriter.'), _('Error'), MB_ICONERROR);
 end;
 
 procedure TfrmStreamWriterMain.HomeCommLogIn(Sender: TObject;
@@ -1857,17 +1857,17 @@ begin
   end;
 
   if (AppGlobals.LastUsedDataVersion > 0) and (AppGlobals.LastUsedDataVersion < 60) and (not FExiting) then
-    MsgBox(Handle, _('Since handling of settings for automatically saved songs changed, these settings were reset to default values. Please see "Settings"->"Settings for automatic recordings..." in the menu to adjust these settings.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(_('Since handling of settings for automatically saved songs changed, these settings were reset to default values. Please see "Settings"->"Settings for automatic recordings..." in the menu to adjust these settings.'), _('Info'), MB_ICONINFORMATION);
 
   if (not DirectoryExists(AppGlobals.Dir)) and (not FExiting) then
   begin
-    MsgBox(Handle, _('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(_('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
     ShowSettings(stApp, True);
   end;
 
   if (not DirectoryExists(AppGlobals.DirAuto)) and (not FExiting) then
   begin
-    MsgBox(Handle, _('The folder for automatically saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(_('The folder for automatically saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
     ShowSettings(stAuto, True);
   end;
 end;
@@ -1946,12 +1946,12 @@ begin
   case AppGlobals.AddonManager.CanEncode(AudioType) of
     ceNoAddon:
       begin
-        MsgBox(Handle, _('This filetype is not supported by streamWriter.'), _('Info'), MB_ICONINFORMATION);
+        MsgBox(_('This filetype is not supported by streamWriter.'), _('Info'), MB_ICONINFORMATION);
         Exit;
       end;
     ceAddonNeeded:
       begin
-        if MsgBox(Handle, _('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+        if MsgBox(_('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
         begin
           if not AppGlobals.AddonManager.InstallEncoderFor(Self, AudioType) then
             Exit;
@@ -2019,7 +2019,7 @@ begin
   AudioType := FilenameToFormat(Track.Filename);
   if AppGlobals.AddonManager.CanEncode(AudioType) <> ceOkay then
   begin
-    if MsgBox(Handle, _('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+    if MsgBox(_('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
     begin
       if not AppGlobals.AddonManager.InstallEncoderFor(Self, AudioType) then
         Exit;
@@ -2252,7 +2252,7 @@ end;
 
 procedure TfrmStreamWriterMain.tabClientsAuthRequired(Sender: TObject);
 begin
-  if MsgBox(Handle, _('You need to be logged in to perform that action.'#13#10'Do you want to login now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+  if MsgBox(_('You need to be logged in to perform that action.'#13#10'Do you want to login now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
     ShowCommunityLogin;
 end;
 
@@ -2262,30 +2262,6 @@ begin
   // Wenn die Streams angekommen sind, dann machen wir das hier klar!
   if AppGlobals.SubmitStats and AppGlobals.MonitorMode and (AppGlobals.MonitorCount > 0) and (AppGlobals.Data.BrowserList.Count > 0) and (FClientManager.Monitors.Count = 0) then
     HomeComm.SendGetMonitorStreams(AppGlobals.MonitorCount);
-
-  {
-  // URLs von Streams in der Liste aktualisieren
-  // Ist auskommentiert, weil sW sich eh immer erst zu sw.org verbindet, um die neueste Playlist zu bekommen.
-  // Das hier wäre höchstens für RegExps interessant...
-  for i := 0 to AppGlobals.Data.BrowserList.Count - 1 do
-    for n := 0 to FClientManager.Count - 1 do
-    begin
-      if (AppGlobals.Data.BrowserList[i].ID = FClientManager[n].Entry.ID) then
-      begin
-        outputdebugstring(pchar(appglobals.Data.BrowserList[i].Name));
-        outputdebugstring(pchar(FClientManager[n].Entry.Name));
-        asm
-          int 3;
-        end;
-      end;
-
-      if (AppGlobals.Data.BrowserList[i].ID = FClientManager[n].Entry.ID) and
-         (LowerCase(Trim(AppGlobals.Data.BrowserList[i].Name)) = LowerCase(Trim(FClientManager[n].Entry.Name))) then
-      begin
-        FClientManager[n].Entry.URLs.Assign(AppGlobals.Data.BrowserList[i].URLs);
-      end;
-    end;
-  }
 end;
 
 procedure TfrmStreamWriterMain.tabClientsSetStreamData(Sender: TObject; StreamID: Integer);
@@ -2670,7 +2646,7 @@ procedure TfrmStreamWriterMain.UpdateFound(var Msg: TMessage);
 var
   Res: Integer;
 begin
-  Res := MsgBox(Handle, _('A new version of streamWriter was found.'#13#10'Do you want to download the update now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
+  Res := MsgBox(_('A new version of streamWriter was found.'#13#10'Do you want to download the update now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
   if Res = IDYES then
   begin
     if AppGlobals.RunningFromInstalledLocation then

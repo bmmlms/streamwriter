@@ -60,7 +60,7 @@ begin
 
   if NumChars = 0 then
   begin
-    MsgBox(GetParentForm(Self).Handle, _('Please enter a pattern to add to list.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(_('Please enter a pattern to add to list.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 

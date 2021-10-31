@@ -19,7 +19,7 @@ object frmSetStreamData: TfrmSetStreamData
   OnKeyDown = FormKeyDown
   OnResize = FormResize
   Position = poOwnerFormCenter
-  LCLVersion = '2.0.12.0'
+  LCLVersion = '2.2.0.1'
   object btnResetTitlePattern: TSpeedButton
     Left = 625
     Height = 21
@@ -40,7 +40,6 @@ object frmSetStreamData: TfrmSetStreamData
     Anchors = [akTop, akRight]
     AutoSize = False
     Caption = 'Use the following regular expressions for this stream (groups: a = artist, t = title, l = album):'
-    ParentColor = False
     WordWrap = True
   end
   object Label1: TLabel
@@ -51,7 +50,6 @@ object frmSetStreamData: TfrmSetStreamData
     Anchors = [akTop, akRight]
     AutoSize = False
     Caption = 'Regular expressions set by other users:'
-    ParentColor = False
     WordWrap = True
   end
   object pnlNav: TPanel
@@ -102,7 +100,6 @@ object frmSetStreamData: TfrmSetStreamData
     EditLabel.Height = 13
     EditLabel.Width = 333
     EditLabel.Caption = 'Regular expression to add:'
-    EditLabel.ParentColor = False
     EditLabel.Layout = tlBottom
     MaxLength = 255
     TabOrder = 2

@@ -747,7 +747,7 @@ begin
       FOnStateChanged(Self);
   end else
   begin
-    MsgBox(GetParentForm(Self).Handle, _('The file could not be replaced by the saved undo file that contains the last version of the file.'), _('Error'), MB_ICONERROR);
+    MsgBox(_('The file could not be replaced by the saved undo file that contains the last version of the file.'), _('Error'), MB_ICONERROR);
   end;
 end;
 
@@ -864,7 +864,7 @@ begin
   if Length(AppGlobals.TempDir) > 3 then
   begin
     DriveLetter := Copy(AppGlobals.TempDir, 0, 2);
-    MsgBox(GetParentForm(Self).Handle, Format(_('The temporary cut-file could not be saved. Make sure there is enough free diskspace on drive %s.'), [DriveLetter]), _('Error'), MB_ICONERROR)
+    MsgBox(Format(_('The temporary cut-file could not be saved. Make sure there is enough free diskspace on drive %s.'), [DriveLetter]), _('Error'), MB_ICONERROR)
   end;
 end;
 
@@ -985,7 +985,7 @@ var
 begin
   Msg := FProcessThread.ProcessOutput;
   FProcessThread := nil;
-  MsgBox(GetParentForm(Self).Handle, _('An error occured while processing the file.'), _('Error'), MB_ICONERROR);
+  MsgBox(_('An error occured while processing the file.'), _('Error'), MB_ICONERROR);
 
   LoadFile(FWorkingFilename, True, False);
 end;

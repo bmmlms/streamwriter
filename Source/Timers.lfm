@@ -57,6 +57,7 @@ object frmTimers: TfrmTimers
   OnKeyDown = FormKeyDown
   OnShow = FormShow
   Position = poOwnerFormCenter
+  LCLVersion = '2.2.0.1'
   object Panel2: TPanel
     Left = 0
     Height = 355

@@ -96,7 +96,7 @@ begin
   if FCutView.WaveData <> nil then
     if FCutView.LastCheckSum <> FCutView.WaveData.CheckSum then
     begin
-      if MsgBox(GetParentForm(Self).Handle, Format(_('The file "%s" has not been saved. Do you really want to close the editor?'), [ExtractFileName(FFilename)]),
+      if MsgBox(Format(_('The file "%s" has not been saved. Do you really want to close the editor?'), [ExtractFileName(FFilename)]),
         _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON2) = IDYES then
         Result := True
       else

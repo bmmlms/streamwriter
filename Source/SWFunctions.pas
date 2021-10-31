@@ -257,7 +257,7 @@ begin
   for i := 0 to List.Items.Count - 1 do
     if (LowerCase(RegExp) = LowerCase(Trim(List.Items[i].Caption))) and (List.Items[i] <> Item) then
     begin
-      MsgBox(Handle, _('The specified regular expression is already on the list.'), _('Info'), MB_ICONINFORMATION);
+      MsgBox(_('The specified regular expression is already on the list.'), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
 
@@ -278,7 +278,7 @@ begin
 
   if (RegExp = '') or (not RValid) or (not ArtistFound) or (not TitleFound) then
   begin
-    MsgBox(Handle, _('Please supply a valid regular expression containing the groups (?P<a>.*)/(?P<a>.*?) and (?P<t>.*)/(?P<t>.*?).'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(_('Please supply a valid regular expression containing the groups (?P<a>.*)/(?P<a>.*?) and (?P<t>.*)/(?P<t>.*?).'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 

@@ -119,14 +119,14 @@ begin
     Bass := TBassLoader.Create;
     if not Bass.InitializeBass(0, True, False, False, False) then
     begin
-      MsgBox(0, _('The BASS library or it''s plugins could not be extracted/loaded. Without these libraries streamWriter cannot record/playback streams. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
+      MsgBox(_('The BASS library or it''s plugins could not be extracted/loaded. Without these libraries streamWriter cannot record/playback streams. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
       Exit;
     end;
 
     OpenSSL := TOpenSSLLoader.Create;
     if not OpenSSL.InitializeOpenSSL(AppGlobals.TempDir) then
     begin
-      MsgBox(0, _('The OpenSSL libraries could not be extracted/loaded. Without these libraries streamWriter cannot be run. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
+      MsgBox(_('The OpenSSL libraries could not be extracted/loaded. Without these libraries streamWriter cannot be run. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
       Exit;
     end;
 

@@ -357,7 +357,7 @@ begin
   if not HomeComm.CommunicationEstablished then
   begin
     if ShowMessages then
-      MsgBox(GetParentForm(Self).Handle, _('streamWriter needs to be connected to the server in order to search.'), _('Info'), MB_ICONINFORMATION);
+      MsgBox(_('streamWriter needs to be connected to the server in order to search.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 
@@ -376,7 +376,7 @@ begin
 
     if (Pos('"', Tmp) > 0) and (OccurenceCount('"', Tmp) mod 2 <> 0) then
     begin
-      MsgBox(GetParentForm(Self).Handle, _('When using quotes every opening quote needs a closing quote.'), _('Info'), MB_ICONINFORMATION);
+      MsgBox(_('When using quotes every opening quote needs a closing quote.'), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
 
@@ -394,7 +394,7 @@ begin
     end;
 
     if Abort then
-      MsgBox(GetParentForm(Self).Handle, _('You need to specify at least one word to search for. Special chars (+-*()<>~'') are not allowed.'), _('Info'), MB_ICONINFORMATION)
+      MsgBox(_('You need to specify at least one word to search for. Special chars (+-*()<>~'') are not allowed.'), _('Info'), MB_ICONINFORMATION)
     else
     begin
       FSearchPanel.InsertSearchItem(Tmp);
