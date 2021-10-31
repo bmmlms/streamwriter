@@ -639,34 +639,32 @@ end;
 
 procedure TMStreamTree.Paint;
 var
-  Size: TSize;
   TmpText: string;
   R: TRect;
+  Style: TTextStyle;
 begin
   inherited;
 
   if FMode = moError then
   begin
-    TmpText := _('No connection to server.');
-    //    GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
-
     R := ClientRect;
-    //    R.Left := (R.Right div 2) - (Size.cx div 2) - 4;
-    R.Top := ClientHeight div 2 - Canvas.TextHeight('Wy');
 
-    DrawText(Canvas.Handle, PChar(TmpText), Length(TmpText), R, 0);
+    ZeroMemory(@Style, SizeOf(Style));
+    Style.Alignment := taCenter;
+    Style.Layout := tlCenter;
+
+    Canvas.TextRect(R, R.Left, R.Top, _('No connection to server.'), Style);
   end;
 
   if FMode = moLoading then
   begin
     TmpText := _('Loading streams');
-    //    GetTextExtentPoint32W(Canvas.Handle, TmpText, Length(TmpText), Size);
 
     R := ClientRect;
-    R.Left := (R.Right div 2) - (Size.cx div 2) - 4;
+    R.Left := (R.Right div 2) - (Canvas.TextWidth(TmpText) div 2);
     R.Top := FProgressBar.Top - GetTextSize('Wyg', Font).cy - MulDiv(2, Screen.PixelsPerInch, 96);
 
-    DrawText(Canvas.Handle, PChar(TmpText + FDots), Length(TmpText) + Length(FDots), R, 0);
+    Canvas.TextRect(R, R.Left, R.Top, TmpText + FDots);
   end;
 end;
 
