@@ -196,8 +196,7 @@ begin
       Node := GetNext(Node);
     end;
 
-    Clipboard.Clear;
-    Clipboard.SetTextBuf(PChar(s));
+    Clipboard.AsText := s;
   end;
 end;
 

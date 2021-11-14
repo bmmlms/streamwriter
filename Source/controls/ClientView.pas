@@ -25,11 +25,36 @@ unit ClientView;
 interface
 
 uses
-  Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
-  StdCtrls, Menus, ImgList, Math, ICEClient, VirtualTrees, LanguageObjects,
-  Graphics, DragDrop, DragDropFile, Functions, AppData, Tabs, DropComboTarget,
-  DropSource, ShlObj, ComObj, ShellAPI, DataManager, StreamBrowserView,
-  Logging, SharedControls, GUIFunctions, Forms, SWFunctions, Images;
+  ActiveX,
+  AppData,
+  Buttons,
+  Classes,
+  ComCtrls,
+  ComObj,
+  Controls,
+  DataManager,
+  DragDrop,
+  DragDropFile,
+  DropSource,
+  Forms,
+  Functions,
+  Graphics,
+  GUIFunctions,
+  ICEClient,
+  Images,
+  ImgList,
+  LanguageObjects,
+  Logging,
+  Menus,
+  SharedControls,
+  StdCtrls,
+  StreamBrowserView,
+  StrUtils,
+  SWFunctions,
+  SysUtils,
+  Tabs,
+  VirtualTrees,
+  Windows;
 
 type
   TAccessCanvas = class(TCanvas);
@@ -50,8 +75,7 @@ type
 
   TNodeDataArray = array of PClientNodeData;
 
-  TStartStreamingEvent = procedure(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string;
-    URLs, RegExes, IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode) of object;
+  TStartStreamingEvent = procedure(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string; URLs, RegExes, IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode) of object;
 
   { TMClientView }
 
@@ -147,9 +171,7 @@ begin
   NodeData.Client := nil;
   NodeData.Category := Category;
   if Category.IsAuto then
-  begin
     FAutoNode := Node;
-  end;
   Result := Node;
 end;
 
@@ -177,9 +199,7 @@ begin
   NodeData.Category := nil;
 
   if Client.AutoRemove then
-  begin
     MoveTo(Node, FAutoNode, amAddChildLast, False);
-  end;
 
   Result := Node;
 end;
@@ -233,10 +253,8 @@ begin
   TMTreeColumnPopup(Header.PopupMenu).OnAction := MenuColsAction;
 
   for i := 1 to Header.Columns.Count - 1 do
-  begin
     if not ((AppGlobals.ClientCols and (1 shl i)) <> 0) then
       Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
-  end;
 
   FitColumns;
 end;
@@ -266,23 +284,19 @@ begin
   if NodeData.Client <> nil then
     case Column of
       0:
-        begin
-          if NodeData.Client.Playing and NodeData.Client.Paused and NodeData.Client.Recording then
-            Index := TImages.RECORD_PAUSE
-          else if NodeData.Client.Playing and NodeData.Client.Recording then
-            Index := TImages.RECORD_PLAY
-          else if NodeData.Client.Recording then
-            Index := TImages.RECORD_RED
-          else if NodeData.Client.Playing and NodeData.Client.Paused then
-            Index := TImages.PAUSE_BLUE
-          else if NodeData.Client.Playing then
-            Index := TImages.PLAY_BLUE
-          else
-            Index := TImages.STOP_BLUE;
-        end;
-    end
-  else if Column = 0 then
-  begin
+        if NodeData.Client.Playing and NodeData.Client.Paused and NodeData.Client.Recording then
+          Index := TImages.RECORD_PAUSE
+        else if NodeData.Client.Playing and NodeData.Client.Recording then
+          Index := TImages.RECORD_PLAY
+        else if NodeData.Client.Recording then
+          Index := TImages.RECORD_RED
+        else if NodeData.Client.Playing and NodeData.Client.Paused then
+          Index := TImages.PAUSE_BLUE
+        else if NodeData.Client.Playing then
+          Index := TImages.PLAY_BLUE
+        else
+          Index := TImages.STOP_BLUE;
+    end else if Column = 0 then
     if NodeData.Category.IsAuto then
       Index := TImages.FOLDER_BRICKS
     else
@@ -312,7 +326,6 @@ begin
       else
         Index := TImages.FOLDER_TRANSMIT;
     end;
-  end;
 end;
 
 procedure TMClientView.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: string);
@@ -366,10 +379,9 @@ begin
           csIOError:
             Text := _('Error creating file');
         end;
-    end
-  end else
-    if Column = 0 then
-      Text := NodeData.Category.Name + ' (' + IntToStr(Node.ChildCount) + ')';
+    end;
+  end else if Column = 0 then
+    Text := NodeData.Category.Name + ' (' + IntToStr(Node.ChildCount) + ')';
 end;
 
 procedure TMClientView.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
@@ -387,13 +399,10 @@ begin
         Header.SortDirection := sdDescending
       else
         Header.SortDirection := sdAscending;
-    end else
-    begin
-      if Header.SortDirection = sdAscending then
-        Header.SortDirection := sdDescending
-      else
-        Header.SortDirection := sdAscending;
-    end;
+    end else if Header.SortDirection = sdAscending then
+      Header.SortDirection := sdDescending
+    else
+      Header.SortDirection := sdAscending;
     Sort(nil, HitInfo.Column, Header.SortDirection);
     Nodes := GetNodes(ntCategory, False);
     for i := 0 to Length(Nodes) - 1 do
@@ -401,8 +410,7 @@ begin
   end;
 end;
 
-procedure TMClientView.DoHeaderDragged(Column: TColumnIndex;
-  OldPosition: TColumnPosition);
+procedure TMClientView.DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition);
 begin
   inherited;
 
@@ -432,7 +440,9 @@ begin
     Exit;
 
   DoGetText(Node, 0, ttNormal, CellText);
-  Result := StrLIComp(PChar(Text), PChar(CellText), Min(Length(Text), Length(CellText)));
+
+  if not StartsText(Text, CellText) then
+    Result := 1;
 end;
 
 procedure TMClientView.DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string);
@@ -560,14 +570,11 @@ begin
   end;
 
   if AppGlobals.ClientHeaderPositionLoaded then
-  begin
     for i := 1 to Header.Columns.Count - 1 do
       Header.Columns[i].Position := AppGlobals.ClientHeaderPosition[i];
-  end;
 end;
 
-function TMClientView.DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; const Pt: TPoint; Mode: TDropMode;
-      var Effect: LongWord): Boolean;
+function TMClientView.DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; const Pt: TPoint; Mode: TDropMode; var Effect: LongWord): Boolean;
 var
   i, n: Integer;
   Children: TNodeArray;
@@ -601,26 +608,23 @@ begin
             Exit;
           end;
         end;
-      end else
-        if (not (Pt.Y > R.Bottom - FDragTreshold)) and (not (Pt.Y < R.Top + FDragTreshold)) then
-        begin
-          // Man darf in die automatische Kategorie nix reindraggen
-          Result := False;
-          Exit;
-        end;
+      end else if (not (Pt.Y > R.Bottom - FDragTreshold)) and (not (Pt.Y < R.Top + FDragTreshold)) then
+      begin
+        // Man darf in die automatische Kategorie nix reindraggen
+        Result := False;
+        Exit;
+      end;
     end;
 
     if (NodeData.Client <> nil) and (GetNodeLevel(HitNode) > 0) then
     begin
       ParentNodeData := GetNodeData(HitNode.Parent);
       if ParentNodeData.Category <> nil then
-      begin
         if ParentNodeData.Category.IsAuto then
         begin
           Result := False;
           Exit;
         end;
-      end;
     end;
 
     // Drop darf nur erlaubt sein, wenn Ziel-Node nicht in gedraggten
@@ -645,10 +649,8 @@ begin
           end;
       end;
     end else
-    begin
       // Drag von wo anders (Browser, Streambrowser)
-
-    end;
+    ;
   end;
 end;
 
@@ -764,9 +766,8 @@ begin
       Continue;
     end;
 
-    if ((NodeTypes = ntClient) and (NodeData.Client = nil)) or
-       (((NodeTypes = ntClientNoAuto) and (NodeData.Client = nil)) or ((NodeTypes = ntClientNoAuto) and (NodeData.Client <> nil) and (NodeData.Client.AutoRemove))) or
-       ((NodeTypes = ntCategory) and (NodeData.Client <> nil)) then
+    if ((NodeTypes = ntClient) and (NodeData.Client = nil)) or (((NodeTypes = ntClientNoAuto) and (NodeData.Client = nil)) or ((NodeTypes = ntClientNoAuto) and (NodeData.Client <> nil) and (NodeData.Client.AutoRemove))) or
+      ((NodeTypes = ntCategory) and (NodeData.Client <> nil)) then
     begin
       Node := GetNext(Node);
       Continue;
@@ -810,8 +811,7 @@ begin
     inherited;
 end;
 
-procedure TMClientView.MenuColsAction(Sender: TVirtualStringTree; Index: Integer;
-  Checked: Boolean);
+procedure TMClientView.MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
 var
   Show: Boolean;
 begin
@@ -820,18 +820,14 @@ begin
     Show := False;
 
   if Show then
-  begin
-    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible];
-  end else
-  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible]
+  else
     Header.Columns[Index].Options := Header.Columns[Index].Options - [coVisible];
-  end;
 
   AppGlobals.ClientCols := AppGlobals.ClientCols xor (1 shl Index);
 end;
 
-procedure TMClientView.MoveTo(Source, Target: PVirtualNode;
-  Mode: TVTNodeAttachMode; ChildrenOnly: Boolean);
+procedure TMClientView.MoveTo(Source, Target: PVirtualNode; Mode: TVTNodeAttachMode; ChildrenOnly: Boolean);
 var
   NodeData: PClientNodeData;
 begin
@@ -921,8 +917,7 @@ begin
   end;
 end;
 
-procedure TMClientView.PaintImage(var PaintInfo: TVTPaintInfo;
-  ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
+procedure TMClientView.PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
 var
   NodeData: PClientNodeData;
 begin
@@ -947,8 +942,7 @@ begin
   end;
 end;
 
-procedure TMClientView.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;
-  var Allowed: Boolean);
+procedure TMClientView.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean);
 var
   NodeData: PClientNodeData;
 begin
@@ -957,13 +951,10 @@ begin
   NodeData := GetNodeData(Node);
 
   // Den Check auf NodeData wegen Bugreport von "Klaus <knatterton_nick@gmx.net>" eingebaut...
-  Allowed := (NodeData <> nil) and
-             (((NodeData.Client <> nil) and (not NodeData.Client.AutoRemove) and (NodeData.Client.Entry.CustomName <> '')) or
-              ((NodeData.Category <> nil) and (not NodeData.Category.IsAuto)));
+  Allowed := (NodeData <> nil) and (((NodeData.Client <> nil) and (not NodeData.Client.AutoRemove) and (NodeData.Client.Entry.CustomName <> '')) or ((NodeData.Category <> nil) and (not NodeData.Category.IsAuto)));
 end;
 
-function TMClientView.DoCompare(Node1, Node2: PVirtualNode;
-  Column: TColumnIndex): Integer;
+function TMClientView.DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer;
 var
   Data1, Data2: PClientNodeData;
   I1, I2: Integer;
@@ -997,18 +988,16 @@ begin
       3: Result := CmpInt(Data1.Client.Entry.SongsSaved, Data2.Client.Entry.SongsSaved);
       4: Result := CmpInt(Data1.Client.Speed, Data2.Client.Speed);
       5: Result := CmpInt(Integer(Data1.Client.State), Integer(Data2.Client.State), True);
-    end
-  else if (Data1.Category <> nil) and (Data2.Category <> nil) then
+    end else if (Data1.Category <> nil) and (Data2.Category <> nil) then
     if Column = 0 then
       Result := CompareText(Data1.Category.Name, Data2.Category.Name);
 end;
 
-function GetFileListFromObj(const DataObj: IDataObject;
-  const FileList: TStrings): Boolean;
+function GetFileListFromObj(const DataObj: IDataObject; const FileList: TStrings): Boolean;
 var
   FormatEtc: TFormatEtc;
   Medium: TStgMedium;
-  FileName: string;
+  FileName: UnicodeString;
   i, DroppedFileCount, FileNameLength: Integer;
 begin
   Result := False;
@@ -1021,12 +1010,12 @@ begin
     OleCheck(DataObj.GetData(FormatEtc, Medium));
     try
       try
-        DroppedFileCount := DragQueryFile(Medium.hGlobal, $FFFFFFFF, nil, 0);
+        DroppedFileCount := DragQueryFileW(Medium.hGlobal, $FFFFFFFF, nil, 0);
         for i := 0 to Pred(DroppedFileCount) do
         begin
-          FileNameLength := DragQueryFile(Medium.hGlobal, i, nil, 0);
+          FileNameLength := DragQueryFileW(Medium.hGlobal, i, nil, 0) + 1;
           SetLength(FileName, FileNameLength);
-          DragQueryFile(Medium.hGlobal, i, PChar(FileName), FileNameLength + 1);
+          DragQueryFileW(Medium.hGlobal, i, @FileName[1], FileNameLength);
           FileList.Add(FileName);
         end;
       finally
@@ -1036,15 +1025,15 @@ begin
       ReleaseStgMedium(Medium);
     end;
     Result := FileList.Count > 0;
-  except end;
+  except
+  end;
 end;
 
 function GetWideStringFromObj(const DataObject: IDataObject; var S: string): Boolean;
 var
   FormatEtc: TFormatEtc;
   Medium: TStgMedium;
-  OLEData,
-  Head: PWideChar;
+  OLEData, Head: PWideChar;
   Chars: Integer;
 begin
   S := '';
@@ -1056,7 +1045,6 @@ begin
   FormatEtc.tymed := TYMED_HGLOBAL;
 
   if DataObject.QueryGetData(FormatEtc) = S_OK then
-  begin
     if DataObject.GetData(FormatEtc, Medium) = S_OK then
     begin
       OLEData := GlobalLock(Medium.hGlobal);
@@ -1078,12 +1066,11 @@ begin
       end;
       ReleaseStgMedium(Medium);
     end;
-  end;
   Result := S <> '';
 end;
 
-procedure TMClientView.DoDragDrop(Source: TObject; DataObject: IDataObject; Formats: TFormatArray; Shift: TShiftState; const Pt: TPoint;
-      var Effect: LongWord; Mode: TDropMode);
+procedure TMClientView.DoDragDrop(Source: TObject; DataObject: IDataObject; Formats: TFormatArray; Shift: TShiftState; const Pt: TPoint; var Effect: LongWord; Mode: TDropMode);
+
   procedure UnkillCategory(Node: PVirtualNode);
   var
     NodeData: PClientNodeData;
@@ -1095,6 +1082,7 @@ procedure TMClientView.DoDragDrop(Source: TObject; DataObject: IDataObject; Form
         NodeData.Category.Killed := False;
     end;
   end;
+
 var
   Attachmode: TVTNodeAttachMode;
   Nodes: TNodeArray;
@@ -1163,11 +1151,9 @@ begin
           end;
         end;
       end else
-      begin
-        // Nodes ins "nichts" gedraggt
         for i := 0 to Length(FDragNodes) - 1 do
-          MoveTo(FDragNodes[i], RootNode, amAddChildLast, False);
-      end;
+          MoveTo(FDragNodes[i], RootNode, amAddChildLast, False)// Nodes ins "nichts" gedraggt
+      ;
       Exit;
     end;
 
@@ -1202,18 +1188,14 @@ begin
       Files := TStringList.Create;
       try
         for n := 0 to High(Formats) do
-        begin
           case Formats[n] of
             CF_UNICODETEXT:
+              if GetWideStringFromObj(DataObject, DropURL) then
               begin
-                if GetWideStringFromObj(DataObject, DropURL) then
-                begin
-                  Files.Add(DropURL);
-                  Break;
-                end;
+                Files.Add(DropURL);
+                Break;
               end;
           end;
-        end;
 
         if Files.Count = 0 then
           GetFileListFromObj(DataObject, Files);
@@ -1221,8 +1203,7 @@ begin
         for i := 0 to Files.Count - 1 do
           if (Files[i] <> '') then
             // Das selbe wie im Kommentar oben beschrieben...
-            if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or
-               ((Attachmode = amNoWhere) and (HI.HitNode <> nil) and (HitNodeData.Client = nil)) then
+            if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or ((Attachmode = amNoWhere) and (HI.HitNode <> nil) and (HitNodeData.Client = nil)) then
               OnStartStreaming(Self, 0, 0, '', Files[i], nil, nil, nil, HI.HitNode, amAddChildLast)
             else
             begin
@@ -1232,7 +1213,7 @@ begin
                 AttachMode := amInsertAfter;
               OnStartStreaming(Self, 0, 0, '', Files[i], nil, nil, nil, HI.HitNode, Attachmode);
             end;
-            UnkillCategory(HI.HitNode);
+        UnkillCategory(HI.HitNode);
       finally
         Files.Free;
       end;
@@ -1252,12 +1233,9 @@ begin
   if FDragSource.DragInProgress then
     Exit;
 
-  if ((Length(GetNodes(ntCategory, True)) = 0) and (Length(GetNodes(ntClient, True)) = 0)) or
-     ((Length(GetNodes(ntCategory, True)) > 0) and (Length(GetNodes(ntClient, True)) > 0)) then
-  begin
-    // Raus, wenn nichts markiert ist oder von beiden etwas...
-    Exit;
-  end;
+  if ((Length(GetNodes(ntCategory, True)) = 0) and (Length(GetNodes(ntClient, True)) = 0)) or ((Length(GetNodes(ntCategory, True)) > 0) and (Length(GetNodes(ntClient, True)) > 0)) then
+    Exit// Raus, wenn nichts markiert ist oder von beiden etwas...
+  ;
 
   SetLength(FDragNodes, 0);
   FDragSource.Files.Clear;
@@ -1360,4 +1338,3 @@ begin
 end;
 
 end.
-

@@ -23,21 +23,78 @@ unit Main;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, WinSock, ICEClient, StdCtrls, ExtCtrls, ImgList, Menus,
-  VirtualTrees, DateTimePicker, ComCtrls, ToolWin, ClientView, ICEThread,
-  Settings, DataManager, ActnList, DragDrop, DropTarget,
-  DragDropInternet, DragDropText, DragDropFile, Update, UpdateClient,
-  LanguageObjects, AppDataBase, Functions, ClientManager, ShellAPI, DropSource,
-  About, MsgDlg, HomeCommunication, StreamBrowserView, Clipbrd,
-  StationCombo, GUIFunctions, StreamInfoView, StreamDebugView, MessageBus,
-  Buttons, DynBass, ClientTab, CutTab, MControls, Tabs, SavedTab,
-  CheckFilesThread, ListsTab, CommCtrl, CommunityLogin,
-  PlayerManager, Logging, Timers, Notifications, Generics.Collections,
-  ExtendedStream, SettingsStorage, ChartsTab, StatusBar, AudioFunctions,
-  PowerManagement, Intro, AddonManager, Equalizer, TypeDefs, SplashThread,
-  AppMessages, CommandLine, Protocol, Commands, HomeCommands, SharedData,
-  LogTab, WindowsFunctions, Sockets, SetStreamData;
+  About,
+  ActnList,
+  AddonManager,
+  AppDataBase,
+  AppMessages,
+  AudioFunctions,
+  Buttons,
+  ChartsTab,
+  CheckFilesThread,
+  Classes,
+  ClientManager,
+  ClientTab,
+  ClientView,
+  Clipbrd,
+  ComCtrls,
+  CommandLine,
+  Commands,
+  CommCtrl,
+  CommunityLogin,
+  Controls,
+  CutTab,
+  DataManager,
+  Dialogs,
+  DragDrop,
+  DragDropFile,
+  DragDropInternet,
+  DragDropText,
+  DynBass,
+  Equalizer,
+  ExtCtrls,
+  ExtendedStream,
+  Forms,
+  Functions,
+  Generics.Collections,
+  Graphics,
+  HomeCommands,
+  HomeCommunication,
+  ICEClient,
+  ImgList,
+  Intro,
+  LanguageObjects,
+  ListsTab,
+  Logging,
+  LogTab,
+  MControls,
+  Menus,
+  MessageBus,
+  MsgDlg,
+  Notifications,
+  PlayerManager,
+  PowerManagement,
+  Protocol,
+  SavedTab,
+  SetStreamData,
+  Settings,
+  SettingsStorage,
+  SharedData,
+  Sockets,
+  StationCombo,
+  StatusBar,
+  StreamBrowserView,
+  StreamInfoView,
+  SysUtils,
+  Tabs,
+  Timers,
+  TypeDefs,
+  Update,
+  UpdateClient,
+  Variants,
+  VirtualTrees,
+  Windows,
+  WindowsFunctions;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -223,8 +280,7 @@ type
     procedure mnuStreamSettingsToolbarPopup(Sender: TObject);
     procedure pagSidebarChange(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure actHelpExecute(Sender: TObject);
     procedure tmrRecordingsTimer(Sender: TObject);
     procedure actLogOnExecute(Sender: TObject);
@@ -309,9 +365,7 @@ type
     procedure CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
 
     procedure HomeCommStateChanged(Sender: TObject);
-    procedure HomeCommBytesTransferred(Sender: TObject;
-      Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader;
-      Transferred: UInt64);
+    procedure HomeCommBytesTransferred(Sender: TObject; Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader; Transferred: UInt64);
     procedure HomeCommTitleNotificationsChanged(Sender: TObject);
     procedure HomeCommHandshake(Sender: TObject; Success: Boolean);
     procedure HomeCommLogIn(Sender: TObject; Success: Boolean);
@@ -375,7 +429,8 @@ type
 implementation
 
 uses
-  AppData, Player;
+  AppData,
+  Player;
 
 {$R *.lfm}
 
@@ -486,7 +541,8 @@ begin
   else
     try
       AppGlobals.Save;
-    except end;
+    except
+    end;
 
   // Shutdown all postprocessors. Since they get terminated, all postprocessing chains get terminated.
   AppGlobals.PostProcessManager.Terminate;
@@ -514,11 +570,7 @@ begin
   PrepareSave;
 
   while True do
-  begin
     try
-
-
-
 
 
 
@@ -528,22 +580,17 @@ begin
 
 
 
-
-
-
-
-
       Break;
     except
       if not Shutdown then
       begin
-        Res := MsgBox(Format(_('An error occured while saving the data file. Please make sure you can write to "%s" and that the file is not in use by another application. Click "Yes" to try again, "No" to exit without saving data.'), [AppGlobals.DataFile]), _('Info'), MB_ICONEXCLAMATION or MB_YESNO or MB_DEFBUTTON1);
+        Res := MsgBox(Format(_('An error occured while saving the data file. Please make sure you can write to "%s" and that the file is not in use by another application. Click "Yes" to try again, "No" to exit without saving data.'),
+          [AppGlobals.DataFile]), _('Info'), MB_ICONEXCLAMATION or MB_YESNO or MB_DEFBUTTON1);
         if Res = IDNO then
           Break;
       end else
         Break;
     end;
-  end;
 
   // Remove all clients from list
   FClientManager.Terminate;
@@ -661,12 +708,9 @@ end;
 procedure TfrmStreamWriterMain.actPlayerMuteVolumeExecute(Sender: TObject);
 begin
   if Players.Volume > 0 then
-  begin
-    Players.Volume := 0;
-  end else
-  begin
+    Players.Volume := 0
+  else
     Players.Volume := Players.VolumeBeforeMute;
-  end;
 end;
 
 procedure TfrmStreamWriterMain.actPlayerPlayPauseExecute(Sender: TObject);
@@ -684,8 +728,7 @@ begin
   ShowCommunityLogin;
 end;
 
-procedure TfrmStreamWriterMain.actPlayerDecreaseVolumeExecute(
-  Sender: TObject);
+procedure TfrmStreamWriterMain.actPlayerDecreaseVolumeExecute(Sender: TObject);
 begin
   Players.DecreaseVolume;
 end;
@@ -774,6 +817,7 @@ begin
 end;
 
 procedure TfrmStreamWriterMain.BuildMoveToCategoryMenu;
+
   function AllClientsInCat(Clients: TNodeArray; Cat: PVirtualNode): Boolean;
   var
     i: Integer;
@@ -786,6 +830,7 @@ procedure TfrmStreamWriterMain.BuildMoveToCategoryMenu;
         Break;
       end;
   end;
+
 var
   Cats: TNodeArray;
   Cat: PClientNodeData;
@@ -807,13 +852,15 @@ begin
     Cat := tabClients.ClientView.GetNodeData(Node);
     if (not Cat.Category.IsAuto) and (not AllClientsInCat(ClientNodes, Node)) then
     begin
-      Item := TMenuItem.Create(mnuMain);;
+      Item := TMenuItem.Create(mnuMain);
+      ;
       Item.Caption := Cat.Category.Name;
       Item.Tag := Integer(Cat);
       Item.OnClick := mnuMoveToCategory;
       mnuMoveToCategory1.Add(Item);
 
-      Item := TMenuItem.Create(mnuMain);;
+      Item := TMenuItem.Create(mnuMain);
+      ;
       Item.Caption := Cat.Category.Name;
       Item.Tag := Integer(Cat);
       Item.OnClick := mnuMoveToCategory;
@@ -825,8 +872,7 @@ begin
   mnuMoveToCategory2.Enabled := (Length(Clients) > 0) and (mnuMoveToCategory2.Count > 0);
 end;
 
-procedure TfrmStreamWriterMain.FormClose(Sender: TObject;
-  var Action: TCloseAction);
+procedure TfrmStreamWriterMain.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   Action := caNone;
   if (AppGlobals.Tray) and (not AppGlobals.TrayOnMinimize) then
@@ -837,13 +883,10 @@ begin
       FWasMaximized := WindowState = wsMaximized;
       Hide;
     end;
-  end else
+  end else if CanExitApp then
   begin
-    if CanExitApp then
-    begin
-      Action := caFree;
-      ExitApp(False);
-    end;
+    Action := caFree;
+    ExitApp(False);
   end;
 end;
 
@@ -907,7 +950,7 @@ begin
   tabSaved.OnAddTitleToWishlist := tabSavedAddTitleToWishlist;
   tabSaved.OnRemoveTitleFromWishlist := tabSavedRemoveTitleFromWishlist;
   tabSaved.OnAddTitleToIgnorelist := tabSavedAddTitleToIgnorelist;
-  tabSaved.OnRemoveTitleFromIgnorelist  := tabSavedRemoveTitleFromIgnorelist;
+  tabSaved.OnRemoveTitleFromIgnorelist := tabSavedRemoveTitleFromIgnorelist;
 
   tabLog := TLogTab.Create(pagMain);
   tabLog.PageControl := pagMain;
@@ -927,7 +970,7 @@ begin
   end;
   Left := AppGlobals.MainLeft;
   Top := AppGlobals.MainTop;
- // ScreenSnap := AppGlobals.SnapMain;
+  // ScreenSnap := AppGlobals.SnapMain;
 
   //addStatus.CustomHint := TStatusHint.Create(Self);
 
@@ -981,21 +1024,14 @@ begin
   tabLists.PostTranslate;
 
   if not Application.ShowMainForm then
-  begin
     if StartupMessagesNeeded then
-    begin
-      Show;
-    end else
-    begin
+      Show
+    else
       FSkipAfterShown := True;
-    end;
-  end;
 
   if not StartupMessagesNeeded then
-  begin
     if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
       FUpdater.Start(uaVersion, True);
-  end;
 
   FClientManager.RefreshScheduler;
 end;
@@ -1008,15 +1044,13 @@ begin
   inherited;
 end;
 
-procedure TfrmStreamWriterMain.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TfrmStreamWriterMain.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if Key = VK_F1 then
     actHelp.Execute;
 end;
 
-procedure TfrmStreamWriterMain.FormShortCut(var Msg: TWMKey;
-  var Handled: Boolean);
+procedure TfrmStreamWriterMain.FormShortCut(var Msg: TWMKey; var Handled: Boolean);
 begin
   Handled := TMTabSheet(pagMain.ActivePage).ProcessShortCut(Msg);
 end;
@@ -1040,9 +1074,7 @@ begin
   PostMessage(Handle, WM_AFTERSHOWN, 0, 0);
 end;
 
-procedure TfrmStreamWriterMain.HomeCommBytesTransferred(Sender: TObject;
-  Direction: TTransferDirection; CommandID: Cardinal;
-  CommandHeader: TCommandHeader; Transferred: UInt64);
+procedure TfrmStreamWriterMain.HomeCommBytesTransferred(Sender: TObject; Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader; Transferred: UInt64);
 begin
   if CommandHeader.CommandType = ctGetServerDataResponse then
     tabClients.SideBar.BrowserView.HomeCommBytesTransferred(CommandHeader, Transferred);
@@ -1059,34 +1091,29 @@ begin
     ceUnknown:
       MsgBox(Format(_('An error occured while communicating with the server: '#13#10'%s'), [Msg]), _('Error'), MB_ICONERROR);
     ceAuthRequired:
-      begin
-        if MsgBox(_('You need to be logged in to perform that action.'#13#10'Do you want to login now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
-          ShowCommunityLogin;
-      end;
+      if MsgBox(_('You need to be logged in to perform that action.'#13#10'Do you want to login now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+        ShowCommunityLogin;
     ceNotification:
-      begin
-        TfrmMsgDlg.ShowMsg(Self, Format(_(Notification), [Msg]), mtInformation, [mbOK], mbOK);
-      end;
+      TfrmMsgDlg.ShowMsg(Self, Format(_(Notification), [Msg]), mtInformation, [mbOK], mbOK);
     ceOneTimeNotification:
-      begin
-        MsgHC := HashString(Msg);
-        if MsgHC > MaxInt then
-          MsgHash := MsgHC - MaxInt
-        else
-          MsgHash := MsgHC;
+    begin
+      MsgHC := HashString(Msg);
+      if MsgHC > MaxInt then
+        MsgHash := MsgHC - MaxInt
+      else
+        MsgHash := MsgHC;
 
-        if MsgHash < 0 then
-          MsgHash := MsgHash * -1;
-        if MsgHash < 100 then
-          MsgHash := MsgHash + 100;
+      if MsgHash < 0 then
+        MsgHash := MsgHash * -1;
+      if MsgHash < 100 then
+        MsgHash := MsgHash + 100;
 
-        TfrmMsgDlg.ShowMsg(Self, Format(_(Notification), [Msg]), mtInformation, [mbOK], mbOK, MsgHash);
-      end;
+      TfrmMsgDlg.ShowMsg(Self, Format(_(Notification), [Msg]), mtInformation, [mbOK], mbOK, MsgHash);
+    end;
   end;
 end;
 
-procedure TfrmStreamWriterMain.HomeCommHandshake(Sender: TObject;
-  Success: Boolean);
+procedure TfrmStreamWriterMain.HomeCommHandshake(Sender: TObject; Success: Boolean);
 begin
   UpdateStatus;
 
@@ -1094,8 +1121,7 @@ begin
     MsgBox(_('The server did not accept the handshake. Please update streamWriter.'), _('Error'), MB_ICONERROR);
 end;
 
-procedure TfrmStreamWriterMain.HomeCommLogIn(Sender: TObject;
-  Success: Boolean);
+procedure TfrmStreamWriterMain.HomeCommLogIn(Sender: TObject; Success: Boolean);
 begin
   if not Success then
   begin
@@ -1113,8 +1139,7 @@ begin
   UpdateStatus;
 end;
 
-procedure TfrmStreamWriterMain.HomeCommServerInfo(Sender: TObject;
-  ClientCount, RecordingCount: Cardinal);
+procedure TfrmStreamWriterMain.HomeCommServerInfo(Sender: TObject; ClientCount, RecordingCount: Cardinal);
 begin
   FClientCount := ClientCount;
   FRecordingCount := RecordingCount;
@@ -1128,9 +1153,8 @@ begin
   if HomeComm.RaisedException is ESSLException then
   begin
     Res := TfrmMsgDlg.ShowMsg(Self, _('The certificate received from streamwriter.org could not be validated, somebody might be intercepting your connection to streamWriter''s server. ' +
-                                      'To abort the insecure connection press "Cancel", to continue using an insecure connection press "OK". ' +
-                                      'If you decide to use an insecure connection this setting will be remembered for future connections. ' +
-                                      'You can change it in the settings window in the "General" category.'), mtError, [mbOK, mbCancel], mbCancel);
+      'To abort the insecure connection press "Cancel", to continue using an insecure connection press "OK". ' + 'If you decide to use an insecure connection this setting will be remembered for future connections. ' +
+      'You can change it in the settings window in the "General" category.'), mtError, [mbOK, mbCancel], mbCancel);
     if Res = mrOk then
       AppGlobals.CheckCertificate := False
     else
@@ -1166,14 +1190,9 @@ begin
 
     AppGlobals.Lock;
     try
-      if (((AppGlobals.Data.BrowserList.Count = 0) or (AppGlobals.Data.GenreList.Count = 0)) or (AppGlobals.LastBrowserUpdate < Now - 15)) or
-         (tabClients.SideBar.BrowserView.Mode = moError) then
-      begin
+      if (((AppGlobals.Data.BrowserList.Count = 0) or (AppGlobals.Data.GenreList.Count = 0)) or (AppGlobals.LastBrowserUpdate < Now - 15)) or (tabClients.SideBar.BrowserView.Mode = moError) then
         if HomeComm.SendGetServerData then
-        begin
           tabClients.SideBar.BrowserView.SwitchMode(moLoading);
-        end;
-      end;
     finally
       AppGlobals.Unlock;
     end;
@@ -1191,13 +1210,13 @@ begin
   HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
 end;
 
-procedure TfrmStreamWriterMain.HomeCommTitleNotificationsChanged(
-  Sender: TObject);
+procedure TfrmStreamWriterMain.HomeCommTitleNotificationsChanged(Sender: TObject);
 begin
   UpdateStatus;
 end;
 
 procedure TfrmStreamWriterMain.Hotkey(var Msg: TWMHotKey);
+
   procedure StopPlay;
   var
     i: Integer;
@@ -1207,6 +1226,7 @@ procedure TfrmStreamWriterMain.Hotkey(var Msg: TWMHotKey);
     for i := 0 to Length(Clients) - 1 do
       Clients[i].StopPlay;
   end;
+
 var
   i: Integer;
   NextIsPlaying: Boolean;
@@ -1222,106 +1242,98 @@ begin
 
   case Msg.HotKey of
     0:
+    begin
+      Nodes := tabClients.ClientView.GetNodes(ntClient, True);
+      if Length(Nodes) > 0 then
       begin
-        Nodes := tabClients.ClientView.GetNodes(ntClient, True);
+        NodeData := tabClients.ClientView.GetNodeData(Nodes[0]);
+        if not NodeData.Client.Playing then
+          StopPlay;
+        NodeData.Client.StartPlay(True);
+      end else
+      begin
+        Nodes := tabClients.ClientView.GetNodes(ntClient, False);
         if Length(Nodes) > 0 then
         begin
           NodeData := tabClients.ClientView.GetNodeData(Nodes[0]);
           if not NodeData.Client.Playing then
             StopPlay;
           NodeData.Client.StartPlay(True);
-        end else
-        begin
-          Nodes := tabClients.ClientView.GetNodes(ntClient, False);
-          if Length(Nodes) > 0 then
-          begin
-            NodeData := tabClients.ClientView.GetNodeData(Nodes[0]);
-            if not NodeData.Client.Playing then
-              StopPlay;
-            NodeData.Client.StartPlay(True);
-          end;
         end;
       end;
+    end;
     1:
       Players.PauseAll;
     2:
       Players.StopAll;
     3:
+    begin
+      Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
+      for i := 0 to Length(Clients) - 1 do
+        if Clients[i].Playing then
+          PlayingClient := Clients[i];
+      if PlayingClient <> nil then
       begin
-        Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
         for i := 0 to Length(Clients) - 1 do
-          if Clients[i].Playing then
-            PlayingClient := Clients[i];
-        if PlayingClient <> nil then
         begin
-          for i := 0 to Length(Clients) - 1 do
+          if NextIsPlaying then
           begin
-            if NextIsPlaying then
-            begin
-              StartPlayClient := Clients[i];
-              Break;
-            end;
-            if Clients[i].Playing then
-              NextIsPlaying := True;
+            StartPlayClient := Clients[i];
+            Break;
           end;
+          if Clients[i].Playing then
+            NextIsPlaying := True;
+        end;
 
-          if StartPlayClient = nil then
-            if Length(Clients) > 0 then
-              StartPlayClient := Clients[0];
+        if StartPlayClient = nil then
+          if Length(Clients) > 0 then
+            StartPlayClient := Clients[0];
 
-          if StartPlayClient <> PlayingClient then
-          begin
-            StopPlay;
-            StartPlayClient.StartPlay(True);
-          end;
+        if StartPlayClient <> PlayingClient then
+        begin
+          StopPlay;
+          StartPlayClient.StartPlay(True);
         end;
       end;
+    end;
     4:
+    begin
+      Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
+      for i := 0 to Length(Clients) - 1 do
+        if Clients[i].Playing then
+          PlayingClient := Clients[i];
+      if PlayingClient <> nil then
       begin
-        Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
-        for i := 0 to Length(Clients) - 1 do
-          if Clients[i].Playing then
-            PlayingClient := Clients[i];
-        if PlayingClient <> nil then
+        for i := Length(Clients) - 1 downto 0 do
         begin
-          for i := Length(Clients) - 1 downto 0 do
+          if NextIsPlaying then
           begin
-            if NextIsPlaying then
-            begin
-              StartPlayClient := Clients[i];
-              Break;
-            end;
-            if Clients[i].Playing then
-              NextIsPlaying := True;
+            StartPlayClient := Clients[i];
+            Break;
           end;
+          if Clients[i].Playing then
+            NextIsPlaying := True;
+        end;
 
-          if StartPlayClient = nil then
-            if Length(Clients) > 0 then
-              StartPlayClient := Clients[High(Clients)];
+        if StartPlayClient = nil then
+          if Length(Clients) > 0 then
+            StartPlayClient := Clients[High(Clients)];
 
-          if StartPlayClient <> PlayingClient then
-          begin
-            StopPlay;
-            StartPlayClient.StartPlay(True);
-          end;
+        if StartPlayClient <> PlayingClient then
+        begin
+          StopPlay;
+          StartPlayClient.StartPlay(True);
         end;
       end;
+    end;
     5:
-      begin
-        Players.IncreaseVolume;
-      end;
+      Players.IncreaseVolume;
     6:
-      begin
-        Players.DecreaseVolume;
-      end;
+      Players.DecreaseVolume;
     7:
-      begin
-        Players.Mute;
-      end;
+      Players.Mute;
     8:
-      begin
-        tabSaved.ToggleShuffle;
-      end;
+      tabSaved.ToggleShuffle;
   end;
 end;
 
@@ -1335,8 +1347,7 @@ begin
       Exit;
 
     SetCaptionAndTrayHint;
-  end
-  else if Msg is TRefreshServerDataMsg then
+  end else if Msg is TRefreshServerDataMsg then
   begin
     if HomeComm.SendGetServerData then
       tabClients.SideBar.BrowserView.SwitchMode(moLoading);
@@ -1459,31 +1470,23 @@ begin
 
   Param := CmdLine.GetParam('-r');
   if Param <> nil then
-  begin
     for i := 0 to Param.Values.Count - 1 do
       tabClients.StartStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil, nil), oaStart, nil, amNoWhere);
-  end;
 
   Param := CmdLine.GetParam('-sr');
   if Param <> nil then
-  begin
     for i := 0 to Param.Values.Count - 1 do
       tabClients.StopStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil, nil), oaStart);
-  end;
 
   Param := CmdLine.GetParam('-p');
   if Param <> nil then
-  begin
     for i := 0 to Param.Values.Count - 1 do
       tabClients.StartStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil, nil), oaPlay, nil, amNoWhere);
-  end;
 
   Param := CmdLine.GetParam('-sp');
   if Param <> nil then
-  begin
     for i := 0 to Param.Values.Count - 1 do
       tabClients.StopStreaming(TStartStreamingInfo.Create(0, 0, '', Param.Values[i], nil, nil, nil), oaPlay);
-  end;
 
   Param := CmdLine.GetParam('-wishadd');
   if Param <> nil then
@@ -1500,12 +1503,8 @@ begin
 
   Param := CmdLine.GetParam('-wishremove');
   if Param <> nil then
-  begin
     for i := 0 to Param.Values.Count - 1 do
-    begin
       tabClientsRemoveTitleFromList(nil, nil, ltSave, Param.Values[i], 0);
-    end;
-  end;
 
   Param := CmdLine.GetParam('-priority');
   if Param <> nil then
@@ -1554,13 +1553,12 @@ begin
   BuildMoveToCategoryMenu;
 end;
 
-procedure TfrmStreamWriterMain.mnuStreamSettingsToolbarPopup(
-  Sender: TObject);
+procedure TfrmStreamWriterMain.mnuStreamSettingsToolbarPopup(Sender: TObject);
 begin
   UpdateButtons;
 end;
 
-procedure ShortCutToHotKey(HotKey: TShortCut; var Key : Word; var Modifiers: Uint);
+procedure ShortCutToHotKey(HotKey: TShortCut; var Key: Word; var Modifiers: Uint);
 var
   Shift: TShiftState;
 begin
@@ -1640,9 +1638,9 @@ end;
 procedure TfrmStreamWriterMain.QueryEndSession(var Msg: TMessage);
 begin
   Msg.Result := 1;
-                       {
-  if Assigned(ShutdownBlockReasonCreate) and Assigned(ShutdownBlockReasonDestroy) then
-    ShutdownBlockReasonCreate(Handle, PChar(_('Stopping recordings and saving settings...')));       }
+
+  // if Assigned(ShutdownBlockReasonCreate) and Assigned(ShutdownBlockReasonDestroy) then
+  //   ShutdownBlockReasonCreate(Handle, PWideChar(_('Stopping recordings and saving settings...')));
 end;
 
 procedure TfrmStreamWriterMain.EndSession(var Msg: TWMEndSession);
@@ -1668,10 +1666,14 @@ begin
     Nodes := tabClients.ClientView.GetNodes(ntClient, False);
 
   NewCaption := 'streamWriter';
-  {$IFDEF DEBUG}NewCaption := NewCaption + ' -: DEBUG BUiLD :- ';{$ENDIF}
+  {$IFDEF DEBUG}
+  NewCaption := NewCaption + ' -: DEBUG BUiLD :- ';
+{$ENDIF}
 
   NewHint := 'streamWriter';
-  {$IFDEF DEBUG}NewHint := NewHint + ' -: DEBUG BUiLD :- ';{$ENDIF}
+  {$IFDEF DEBUG}
+  NewHint := NewHint + ' -: DEBUG BUiLD :- ';
+{$ENDIF}
 
   PlayerManager.Players.GetPlayingInfo(Artist, Title, Stream, Filename);
 
@@ -1689,7 +1691,6 @@ begin
       NewHint := NewHint + #13#10 + _('Playing:') + ' ' + RemoveFileExt(ExtractFileName(Filename));
     end;
   end else if Stream <> '' then
-  begin
     if Title <> '' then
     begin
       if AppGlobals.DisplayPlayedSong then
@@ -1701,7 +1702,6 @@ begin
         NewCaption := NewCaption + ' - ' + Stream;
       NewHint := NewHint + #13#10 + _('Playing:') + ' ' + Stream;
     end;
-  end;
 
   Recordings := 0;
   if tabClients <> nil then
@@ -1794,46 +1794,44 @@ begin
     if S.SaveSettings then
       case SettingsType of
         stApp:
+        begin
+          AppGlobals.Data.StreamSettings.Assign(S.StreamSettings[0]);
+
+          SetCaptionAndTrayHint;
+
+          if AppGlobals.SubmitStats and AppGlobals.MonitorMode then
+            NewMonitorCount := AppGlobals.MonitorCount
+          else
+            NewMonitorCount := 0;
+          if NewMonitorCount <> OldMonitorCount then
           begin
-            AppGlobals.Data.StreamSettings.Assign(S.StreamSettings[0]);
+            FClientManager.StopMonitors;
+            HomeComm.SendGetMonitorStreams(NewMonitorCount);
+          end;
 
-            SetCaptionAndTrayHint;
+          tabSaved.Tree.SetFileWatcher;
 
-            if AppGlobals.SubmitStats and AppGlobals.MonitorMode then
-              NewMonitorCount := AppGlobals.MonitorCount
-            else
-              NewMonitorCount := 0;
-            if NewMonitorCount <> OldMonitorCount then
-            begin
-              FClientManager.StopMonitors;
-              HomeComm.SendGetMonitorStreams(NewMonitorCount);
-            end;
+          Language.Translate(Self, PreTranslate, PostTranslate);
 
-            tabSaved.Tree.SetFileWatcher;
+          tabClients.ShowInfo;
 
-            Language.Translate(Self, PreTranslate, PostTranslate);
-
-            tabClients.ShowInfo;
-
-            addTrayIcon.Visible := AppGlobals.Tray;
+          addTrayIcon.Visible := AppGlobals.Tray;
 
           //  ScreenSnap := AppGlobals.SnapMain;   // TODO:
 
-            RegisterHotkeys;
+          RegisterHotkeys;
 
-            TLogger.SetFilename(AppGlobals.LogFile);
-          end;
+          TLogger.SetFilename(AppGlobals.LogFile);
+        end;
         stAuto:
-          begin
-            AppGlobals.Data.AutoRecordSettings.Assign(S.StreamSettings[0]);
-            HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
-          end;
+        begin
+          AppGlobals.Data.AutoRecordSettings.Assign(S.StreamSettings[0]);
+          HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
+        end;
         stStream:
-          begin
-            for i := 0 to Length(Clients) - 1 do
-              if not Clients[i].AutoRemove then
-                Clients[i].Entry.Settings.Assign(S.StreamSettings[i]);
-          end;
+          for i := 0 to Length(Clients) - 1 do
+            if not Clients[i].AutoRemove then
+              Clients[i].Entry.Settings.Assign(S.StreamSettings[i]);
       end;
   finally
     S.Free;
@@ -1843,13 +1841,12 @@ end;
 procedure TfrmStreamWriterMain.ShowStartupMessages;
 begin
   if not Bass.DeviceAvailable then
-  begin
     TfrmMsgDlg.ShowMsg(Self, _('No sound devices could be detected so playback of streams and files will not be possible.'),
-                       mtWarning, [mbOK], mbOK, 7);
-  end;
+      mtWarning, [mbOK], mbOK, 7);
 
   if (AppGlobals.LastUsedDataVersion > 0) and (AppGlobals.LastUsedDataVersion < 60) and (not FExiting) then
-    MsgBox(_('Since handling of settings for automatically saved songs changed, these settings were reset to default values. Please see "Settings"->"Settings for automatic recordings..." in the menu to adjust these settings.'), _('Info'), MB_ICONINFORMATION);
+    MsgBox(_('Since handling of settings for automatically saved songs changed, these settings were reset to default values. Please see "Settings"->"Settings for automatic recordings..." in the menu to adjust these settings.'),
+      _('Info'), MB_ICONINFORMATION);
 
   if (not DirectoryExists(AppGlobals.Dir)) and (not FExiting) then
   begin
@@ -1864,8 +1861,7 @@ begin
   end;
 end;
 
-procedure TfrmStreamWriterMain.ShowUpdate(Version: string = '';
-  UpdateURL: string = '');
+procedure TfrmStreamWriterMain.ShowUpdate(Version: string = ''; UpdateURL: string = '');
 var
   S: TfrmUpdate;
 begin
@@ -1925,8 +1921,7 @@ begin
   DefaultHandler(Msg);
 end;
 
-procedure TfrmStreamWriterMain.tabCutCutFile(Sender: TObject;
-  Filename: string);
+procedure TfrmStreamWriterMain.tabCutCutFile(Sender: TObject; Filename: string);
 var
   tabCut: TCutTab;
   AudioType: TAudioTypes;
@@ -1937,29 +1932,24 @@ begin
 
   case AppGlobals.AddonManager.CanEncode(AudioType) of
     ceNoAddon:
-      begin
-        MsgBox(_('This filetype is not supported by streamWriter.'), _('Info'), MB_ICONINFORMATION);
-        Exit;
-      end;
+    begin
+      MsgBox(_('This filetype is not supported by streamWriter.'), _('Info'), MB_ICONINFORMATION);
+      Exit;
+    end;
     ceAddonNeeded:
+      if MsgBox(_('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
       begin
-        if MsgBox(_('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
-        begin
-          if not AppGlobals.AddonManager.InstallEncoderFor(Self, AudioType) then
-            Exit;
-        end else
+        if not AppGlobals.AddonManager.InstallEncoderFor(Self, AudioType) then
           Exit;
-      end;
+      end else
+        Exit;
   end;
 
   tabCut := TCutTab(Sender);
   if tabCut <> nil then
-  begin
-    OpenCut(Filename);
-  end else
-  begin
+    OpenCut(Filename)
+  else
     pagMain.ActivePage := tabCut;
-  end;
 end;
 
 procedure TfrmStreamWriterMain.tabClientsClientAdded(Sender: TObject);
@@ -1978,55 +1968,45 @@ begin
   tabLists.RemoveClient(Client);
 end;
 
-procedure TfrmStreamWriterMain.tabSavedAddTitleToWishlist(Sender: TObject;
-  Title: string; TitleHash: Cardinal);
+procedure TfrmStreamWriterMain.tabSavedAddTitleToWishlist(Sender: TObject; Title: string; TitleHash: Cardinal);
 begin
   tabLists.ListsPanel.AddEntry(Title, TitleHash, False, ltSave);
 end;
 
-procedure TfrmStreamWriterMain.tabSavedRemoveTitleFromWishlist(
-  Sender: TObject; Title: string; TitleHash: Cardinal);
+procedure TfrmStreamWriterMain.tabSavedRemoveTitleFromWishlist(Sender: TObject; Title: string; TitleHash: Cardinal);
 begin
   tabLists.ListsPanel.RemoveEntry(Title, TitleHash, ltSave);
 end;
 
-procedure TfrmStreamWriterMain.tabSavedAddTitleToIgnorelist(Sender: TObject;
-  Title: string; TitleHash: Cardinal);
+procedure TfrmStreamWriterMain.tabSavedAddTitleToIgnorelist(Sender: TObject; Title: string; TitleHash: Cardinal);
 begin
   tabLists.ListsPanel.AddEntry(Title, TitleHash, False, ltIgnore);
 end;
 
-procedure TfrmStreamWriterMain.tabSavedRemoveTitleFromIgnorelist(
-  Sender: TObject; Title: string; TitleHash: Cardinal);
+procedure TfrmStreamWriterMain.tabSavedRemoveTitleFromIgnorelist(Sender: TObject; Title: string; TitleHash: Cardinal);
 begin
   tabLists.ListsPanel.RemoveEntry(Title, TitleHash, ltIgnore);
 end;
 
-procedure TfrmStreamWriterMain.tabSavedCut(Entry: TStreamEntry;
-  Track: TTrackInfo);
+procedure TfrmStreamWriterMain.tabSavedCut(Entry: TStreamEntry; Track: TTrackInfo);
 var
   tabCut: TCutTab;
   AudioType: TAudioTypes;
 begin
   AudioType := FilenameToFormat(Track.Filename);
   if AppGlobals.AddonManager.CanEncode(AudioType) <> ceOkay then
-  begin
     if MsgBox(_('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
     begin
       if not AppGlobals.AddonManager.InstallEncoderFor(Self, AudioType) then
         Exit;
     end else
       Exit;
-  end;
 
   tabCut := TCutTab(pagMain.FindCut(Track.Filename));
   if tabCut = nil then
-  begin
-    OpenCut(Track);
-  end else
-  begin
+    OpenCut(Track)
+  else
     pagMain.ActivePage := tabCut;
-  end;
 end;
 
 procedure TfrmStreamWriterMain.tabClientsShowErrorMessage(Sender: TObject; Data: string);
@@ -2037,15 +2017,15 @@ end;
 procedure TfrmStreamWriterMain.tabSavedRefresh(Sender: TObject);
 var
   i: Integer;
-  Files: TList;
+  Files: TList<TFileEntry>;
 begin
   if FCheckFiles <> nil then
     Exit;
 
-  Files := TList.Create;
+  Files := TList<TFileEntry>.Create;
   try
     for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
-      Files.Add(TFileEntry.Create(AppGlobals.Data.TrackList[i].Filename, AppGlobals.Data.TrackList[i].Filesize, eaNone));
+      Files.Add(TFileEntry.Create(AppGlobals.Data.TrackList[i].Filename, AppGlobals.Data.TrackList[i].Filesize, TFileEntryAction.eaNone));
     FCheckFiles := TCheckFilesThread.Create(Files);
     FCheckFiles.OnTerminate := CheckFilesTerminate;
     FCheckFiles.Start;
@@ -2055,20 +2035,17 @@ begin
   end;
 end;
 
-procedure TfrmStreamWriterMain.tabClientsTrackAdded(Entry: TStreamEntry;
-  Track: TTrackInfo);
+procedure TfrmStreamWriterMain.tabClientsTrackAdded(Entry: TStreamEntry; Track: TTrackInfo);
 begin
   tabSaved.Tree.AddTrack(Track, True);
 end;
 
-procedure TfrmStreamWriterMain.tabChartsAddStreams(Sender: TObject;
-  Info: TStartStreamingInfoArray; Action: TStreamOpenActions);
+procedure TfrmStreamWriterMain.tabChartsAddStreams(Sender: TObject; Info: TStartStreamingInfoArray; Action: TStreamOpenActions);
 begin
   tabClients.StartStreaming(Info, Action, nil, amAddChildLast);
 end;
 
-procedure TfrmStreamWriterMain.tabChartsAddToWishlist(Sender: TObject;
-  Arr: TWishlistTitleInfoArray);
+procedure TfrmStreamWriterMain.tabChartsAddToWishlist(Sender: TObject; Arr: TWishlistTitleInfoArray);
 var
   i, n, NumChars: Integer;
   Hash: Cardinal;
@@ -2085,9 +2062,8 @@ begin
     Found := False;
 
     for n := 0 to AppGlobals.Data.SaveList.Count - 1 do
-      if ((Arr[i].Hash = 0) and (AppGlobals.Data.SaveList[n].ServerHash = 0) and (AppGlobals.Data.SaveList[n].Hash = Hash)) or
-         ((Arr[i].Hash > 0) and Arr[i].IsArtist and (AppGlobals.Data.SaveList[n].ServerArtistHash = Arr[i].Hash)) or
-         ((Arr[i].Hash > 0) and (not Arr[i].IsArtist) and (AppGlobals.Data.SaveList[n].ServerHash = Arr[i].Hash)) then
+      if ((Arr[i].Hash = 0) and (AppGlobals.Data.SaveList[n].ServerHash = 0) and (AppGlobals.Data.SaveList[n].Hash = Hash)) or ((Arr[i].Hash > 0) and Arr[i].IsArtist and
+        (AppGlobals.Data.SaveList[n].ServerArtistHash = Arr[i].Hash)) or ((Arr[i].Hash > 0) and (not Arr[i].IsArtist) and (AppGlobals.Data.SaveList[n].ServerHash = Arr[i].Hash)) then
       begin
         Found := True;
         Break;
@@ -2123,8 +2099,7 @@ begin
   end;
 end;
 
-function TfrmStreamWriterMain.tabChartsGetIsStreamOnListEvent(
-  Sender: TObject; Stream: TStreamBrowserEntry): Boolean;
+function TfrmStreamWriterMain.tabChartsGetIsStreamOnListEvent(Sender: TObject; Stream: TStreamBrowserEntry): Boolean;
 var
   Clients: TClientArray;
   Client: TICEClient;
@@ -2136,8 +2111,7 @@ begin
       Exit(True);
 end;
 
-procedure TfrmStreamWriterMain.tabChartsRemoveFromWishlist(Sender: TObject;
-  Arr: TWishlistTitleInfoArray);
+procedure TfrmStreamWriterMain.tabChartsRemoveFromWishlist(Sender: TObject; Arr: TWishlistTitleInfoArray);
 var
   i, n: Integer;
   Hashes: TSyncWishlistRecordArray;
@@ -2146,8 +2120,7 @@ begin
 
   for n := 0 to High(Arr) do
     for i := AppGlobals.Data.SaveList.Count - 1 downto 0 do
-      if (AppGlobals.Data.SaveList[i].ServerHash > 0) and (Arr[n].Hash > 0) and (not Arr[n].IsArtist) and
-         (AppGlobals.Data.SaveList[i].ServerHash = Arr[n].Hash) then
+      if (AppGlobals.Data.SaveList[i].ServerHash > 0) and (Arr[n].Hash > 0) and (not Arr[n].IsArtist) and (AppGlobals.Data.SaveList[i].ServerHash = Arr[n].Hash) then
       begin
         tabLists.RemoveTitle(nil, ltSave, AppGlobals.Data.SaveList[i]);
         AppGlobals.Data.SaveList.Delete(i);
@@ -2164,8 +2137,7 @@ begin
   end;
 end;
 
-procedure TfrmStreamWriterMain.tabClientsAddTitleToList(Sender: TObject; Client: TICEClient;
-  ListType: TListType; Title: string);
+procedure TfrmStreamWriterMain.tabClientsAddTitleToList(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string);
 var
   i, NumChars: Integer;
   Hash: Cardinal;
@@ -2179,11 +2151,10 @@ begin
       List := AppGlobals.Data.SaveList
     else
       List := AppGlobals.Data.IgnoreList
+  else if ListType = ltSave then
+    List := Client.Entry.SaveList
   else
-    if ListType = ltSave then
-      List := Client.Entry.SaveList
-    else
-      List := Client.Entry.IgnoreList;
+    List := Client.Entry.IgnoreList;
 
   Pattern := BuildPattern(Title, Hash, NumChars, True);
   if NumChars > 3 then
@@ -2208,8 +2179,7 @@ begin
   end;
 end;
 
-procedure TfrmStreamWriterMain.tabClientsRemoveTitleFromList(
-  Sender: TObject; Client: TICEClient; ListType: TListType; Title: string; ServerTitleHash: Cardinal);
+procedure TfrmStreamWriterMain.tabClientsRemoveTitleFromList(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string; ServerTitleHash: Cardinal);
 var
   i: Integer;
   List: TList<TTitleInfo>;
@@ -2220,14 +2190,12 @@ begin
       List := AppGlobals.Data.SaveList
     else
       List := AppGlobals.Data.IgnoreList
+  else if ListType = ltSave then
+    List := Client.Entry.SaveList
   else
-    if ListType = ltSave then
-      List := Client.Entry.SaveList
-    else
-      List := Client.Entry.IgnoreList;
+    List := Client.Entry.IgnoreList;
 
   for i := List.Count - 1 downto 0 do
-  begin
     if ((List[i].ServerHash > 0) and (List[i].ServerHash = ServerTitleHash)) or Like(Title, List[i].Pattern) then
     begin
       tabLists.RemoveTitle(Client, ListType, List[i]);
@@ -2236,7 +2204,6 @@ begin
       List.Delete(i);
       T.Free;
     end;
-  end;
 
   HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
   MsgBus.SendMessage(TListsChangedMsg.Create);
@@ -2282,7 +2249,7 @@ begin
   if not Assigned(Track) then
     Exit;
 
-  Track.Filesize := GetFileSize(TCutTab(Sender).Filename);
+  Track.Filesize := Functions.GetFileSize(TCutTab(Sender).Filename);
   Track.Length := Trunc(AudioInfo.Length);
 
   // Ist mal raus, damit das "geschnitten"-Symbol nur bei automatischen Aufnahmen kommt
@@ -2309,15 +2276,11 @@ begin
     Tab := pagMain.Pages[i];
     if Tab <> Sender then
       if Tab is TSavedTab then
-      begin
-        TSavedTab(Tab).PausePlay;
-      end else if Tab is TClientTab then
-      begin
-        TClientTab(Tab).PausePlay;
-      end else if Tab is TCutTab then
-      begin
+        TSavedTab(Tab).PausePlay
+      else if Tab is TClientTab then
+        TClientTab(Tab).PausePlay
+      else if Tab is TCutTab then
         TCutTab(Tab).PausePlay;
-      end;
   end;
 end;
 
@@ -2354,12 +2317,10 @@ begin
   try
     for i := 0 to FClientManager.Count - 1 do
       if FClientManager[i].Recording or FClientManager[i].Playing and not FClientManager[i].AutoRemove then
-      begin
         if FClientManager[i].Entry.ID > 0 then
           L.Add(FClientManager[i].Entry.ID)
         else
           Inc(C);
-      end;
 
     for i := 0 to FClientManager.Monitors.Count - 1 do
       if FClientManager.Monitors[i].Entry.ID > 0 then
@@ -2461,23 +2422,17 @@ begin
       WindowState := wsMaximized;
 
     SetForegroundWindow(Handle);
-  end else
+  end else if not Visible then
   begin
-    if not Visible then
-    begin
-      Show;
-      SetForegroundWindow(Handle);
-    end else
-    begin
-      if not AlwaysShow then
-      begin
-        FWasMaximized := WindowState = wsMaximized;
-        CloseWindow(Handle);
-        Hide;
-      end else
-        SetForegroundWindow(Handle);
-    end;
-  end;
+    Show;
+    SetForegroundWindow(Handle);
+  end else if not AlwaysShow then
+  begin
+    FWasMaximized := WindowState = wsMaximized;
+    CloseWindow(Handle);
+    Hide;
+  end else
+    SetForegroundWindow(Handle);
 end;
 
 procedure TfrmStreamWriterMain.UpdateButtons;
@@ -2512,13 +2467,11 @@ begin
   OneHasTitle := False;
 
   for i := 0 to High(CatNodes) do
-  begin
     if not PClientNodeData(tabClients.ClientView.GetNodeData(CatNodes[i])).Category.IsAuto then
     begin
       OnlyAutomatedCatsSelected := False;
       Break;
     end;
-  end;
 
   for Client in Clients do
   begin
@@ -2640,12 +2593,10 @@ var
 begin
   Res := MsgBox(_('A new version of streamWriter was found.'#13#10'Do you want to download the update now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
   if Res = IDYES then
-  begin
     if AppGlobals.RunningFromInstalledLocation then
       ShowUpdate(FUpdater.FoundVersion.AsString, FUpdater.UpdateURL)
     else
       ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(AppGlobals.ProjectLink)), nil, nil, 1);
-  end;
 end;
 
 procedure TfrmStreamWriterMain.UpdaterNoUpdateFound(Sender: TObject);
@@ -2708,13 +2659,8 @@ begin
     end;
 
   if Rec then
-  begin
-    if TfrmMsgDlg.ShowMsg(Self, _('You are recording at least one stream at the moment. Exiting the application will abort streaming.'#13#10'Do you really want to quit?'),
-                          mtConfirmation, mbYesNo, mbNo, 1) = mrNo then
-    begin
+    if TfrmMsgDlg.ShowMsg(Self, _('You are recording at least one stream at the moment. Exiting the application will abort streaming.'#13#10'Do you really want to quit?'), mtConfirmation, mbYesNo, mbNo, 1) = mrNo then
       Result := False;
-    end;
-  end;
 end;
 
 procedure TfrmStreamWriterMain.CheckFilesTerminate(Sender: TObject);
@@ -2732,7 +2678,7 @@ begin
 
       E := TFileEntry(FCheckFiles.Files[i]);
 
-      if E.Action = eaNone then
+      if E.Action = TFileEntryAction.eaNone then
         Continue;
 
       for n := 0 to AppGlobals.Data.TrackList.Count - 1 do
@@ -2740,15 +2686,15 @@ begin
         begin
           Track := AppGlobals.Data.TrackList[n];
           case E.Action of
-            eaNone: ;
+            TFileEntryAction.eaNone: ;
             eaSize:
               Track.Filesize := E.Size;
             eaRemove:
-              begin
-                AppGlobals.Data.TrackList.Delete(n);
-                tabSaved.Tree.RemoveTracks([Track]);
-                Track.Free;
-              end;
+            begin
+              AppGlobals.Data.TrackList.Delete(n);
+              tabSaved.Tree.RemoveTracks([Track]);
+              Track.Free;
+            end;
           end;
           Break;
         end;
@@ -2821,5 +2767,3 @@ begin
 end;
 
 end.
-
-

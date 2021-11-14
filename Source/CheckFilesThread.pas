@@ -24,7 +24,12 @@ unit CheckFilesThread;
 interface
 
 uses
-  Windows, SysUtils, Classes, Functions, Logging;
+  Classes,
+  Functions,
+  Generics.Collections,
+  Logging,
+  SysUtils,
+  Windows;
 
 type
   // Defines what happened to a moved/renamed file
@@ -49,22 +54,22 @@ type
   TCheckFilesThread = class(TThread)
   private
     FSuccess: Boolean;
-    FFiles: TList;
+    FFiles: TList<TFileEntry>;
   protected
     procedure Execute; override;
   public
-    constructor Create(Files: TList); overload;
+    constructor Create(Files: TList<TFileEntry>); overload;
     destructor Destroy; override;
 
     property Success: Boolean read FSuccess;
-    property Files: TList read FFiles;
+    property Files: TList<TFileEntry> read FFiles;
   end;
 
 implementation
 
 { TCheckFilesThread }
 
-constructor TCheckFilesThread.Create(Files: TList);
+constructor TCheckFilesThread.Create(Files: TList<TFileEntry>);
 begin
   inherited Create(True);
 
@@ -79,7 +84,7 @@ var
   i: Integer;
 begin
   for i := 0 to FFiles.Count - 1 do
-    TFileEntry(FFiles[i]).Free;
+    FFiles[i].Free;
   FFiles.Free;
   inherited;
 end;
@@ -94,7 +99,7 @@ begin
 
   for i := FFiles.Count - 1 downto 0 do
   begin
-    E := TFileEntry(FFiles[i]);
+    E := FFiles[i];
     if Terminated then
       Exit;
 
@@ -102,7 +107,7 @@ begin
       E.Action := eaRemove
     else
     begin
-      NewSize := GetFileSize(E.Filename);
+      NewSize := Functions.GetFileSize(E.Filename);
       if E.Size <> NewSize then
       begin
         E.Action := eaSize;
@@ -115,8 +120,7 @@ end;
 
 { TFileEntry }
 
-constructor TFileEntry.Create(Filename: string; Size: UInt64;
-  Action: TFileEntryAction);
+constructor TFileEntry.Create(Filename: string; Size: UInt64; Action: TFileEntryAction);
 begin
   FFilename := Filename;
   FSize := Size;

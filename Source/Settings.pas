@@ -29,8 +29,8 @@ uses
   AudioFunctions,
   Buttons,
   Classes,
-  ComCtrls,
   ComboEx,
+  ComCtrls,
   ConfigureEncoder,
   Constants,
   Controls,
@@ -63,6 +63,7 @@ uses
   ShlObj,
   Spin,
   StdCtrls,
+  StrUtils,
   SWFunctions,
   SysUtils,
   TypeDefs,
@@ -2231,7 +2232,7 @@ begin
   if lstPostProcess.Selected = nil then
     Exit;
   PostProcess := lstPostProcess.Selected.Data;
-  MessageBox(Handle, PChar(PostProcess.Help), 'Info', MB_ICONINFORMATION);
+  MsgBox(PostProcess.Help, 'Info', MB_ICONINFORMATION);
 end;
 
 procedure TfrmSettings.btnMoveClick(Sender: TObject);
@@ -2977,9 +2978,7 @@ begin
       pnlFilenames.Controls[i].Visible := False;
 
   txtAutomaticFilePattern.Visible := True;
- // txtPreview.Top := txtIncompleteFilePattern.Top;
   txtPreview.Visible := True;
- // lblFilePattern.Top := txtPreview.Top + txtPreview.Height + MulDiv(8, Screen.PixelsPerInch, 96);
 
   chkAutoTuneInAddToIgnore.Checked := FStreamSettings[0].AddSavedToIgnore;
   chkAutoRemoveSavedFromWishlist.Checked := FStreamSettings[0].RemoveSavedFromWishlist;
@@ -3144,12 +3143,12 @@ end;
 
 function TBlacklistTree.DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer;
 var
-  S: string;
   NodeData: PBlacklistNodeData;
 begin
-  S := Text;
+  Result := 0;
   NodeData := GetNodeData(Node);
-  Result := StrLIComp(PChar(S), PChar(NodeData.Name), Min(Length(S), Length(NodeData.Name)));
+  if not StartsText(Text, NodeData.Name) then
+    Result := 1;
 end;
 
 procedure TBlacklistTree.RemoveSelected;

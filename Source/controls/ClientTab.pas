@@ -273,7 +273,7 @@ begin
       Title := Title + Client.Title + #13#10;
   Title := Trim(Title);
   if Title <> '' then
-    Clipboard.SetTextBuf(PChar(Title));
+    Clipboard.AsText := Title;
 end;
 
 procedure TClientTab.ActionNewCategoryExecute(Sender: TObject);
@@ -1449,8 +1449,7 @@ begin
       for i := 0 to Length(Streams) - 1 do
         s := s + Streams[i].URL + #13#10;
       s := Trim(s);
-      Clipboard.Clear;
-      Clipboard.SetTextBuf(PChar(s));
+      Clipboard.AsText := s;
     end;
     oaSave:
       SavePlaylist(Entries, False);

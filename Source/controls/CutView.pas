@@ -26,13 +26,43 @@ unit CutView;
 interface
 
 uses
-  SysUtils, Windows, Classes, Controls, StdCtrls, ExtCtrls, Functions,
-  Graphics, DynBASS, Forms, Math, Generics.Collections, GUIFunctions,
-  LanguageObjects, WaveData, Messages, ComCtrls, AppData, Player,
-  PlayerManager, PostProcess, PostProcessSoX, DownloadAddons, ConfigureSoX,
-  MsgDlg, DragDrop, DropTarget, DropComboTarget, AudioFunctions,
-  MessageBus, AppMessages, AddonSoX, PostProcessConvert, FileTagger,
-  DataManager, Logging, FileConvertor;
+  AddonSoX,
+  AppData,
+  AppMessages,
+  AudioFunctions,
+  Classes,
+  ComCtrls,
+  ConfigureSoX,
+  Controls,
+  DataManager,
+  DownloadAddons,
+  DragDrop,
+  DropComboTarget,
+  DropTarget,
+  DynBASS,
+  ExtCtrls,
+  FileConvertor,
+  FileTagger,
+  Forms,
+  Functions,
+  Generics.Collections,
+  Graphics,
+  GUIFunctions,
+  LanguageObjects,
+  Logging,
+  Math,
+  MessageBus,
+  Messages,
+  MsgDlg,
+  Player,
+  PlayerManager,
+  PostProcess,
+  PostProcessConvert,
+  PostProcessSoX,
+  StdCtrls,
+  SysUtils,
+  WaveData,
+  Windows;
 
 type
   TPeakEvent = procedure(P, AI, L, R: Integer) of object;
@@ -134,8 +164,8 @@ type
     ScrollbarHeight = 12;
     MinimumDisplayedSampleCount = 30;
   private
-    FWaveBuf: TBitmap;
-    FDrawBuf: TBitmap;
+    FWaveBuf: Graphics.TBitmap;
+    FDrawBuf: Graphics.TBitmap;
 
     FCutView: TCutView;
     FTimer: TTimer;
@@ -153,8 +183,7 @@ type
     procedure BuildDrawBuffer;
 
     procedure SetLine(X: Integer; Button: TMouseButton; Mode: TMouseMode);
-    procedure HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton;
-      Mode: TMouseMode);
+    procedure HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton; Mode: TMouseMode);
     function GetControlMode(Y: Integer): TControlMode;
     function PixelsToArray(X: Integer): Cardinal;
     function GetPlayerPos: Cardinal;
@@ -165,11 +194,9 @@ type
   protected
     procedure Paint; override;
     procedure Resize; override;
-    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X: Integer;
-      Y: Integer); override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X: Integer; Y: Integer); override;
     procedure MouseMove(Shift: TShiftState; X: Integer; Y: Integer); override;
-    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X: Integer;
-      Y: Integer); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X: Integer; Y: Integer); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -258,8 +285,7 @@ type
 
     procedure MsgRefresh(var Msg: TMessage); message WM_USER + 1234;
 
-    procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
-      APoint: TPoint; var Effect: Integer);
+    procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
 
     procedure MessageReceived(Msg: TMessageBase);
 
@@ -479,28 +505,23 @@ begin
 
   for i := 0 to FUndoList.Count - 1 do
   begin
-    DeleteFile(PChar(FUndoList[i].Filename));
+    SysUtils.DeleteFile(FUndoList[i].Filename);
     FUndoList[i].Free;
   end;
   FUndoList.Free;
-  DeleteFile(PChar(FWorkingFilename));
+  SysUtils.DeleteFile(FWorkingFilename);
 
   inherited;
 end;
 
-procedure TCutView.DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
-  APoint: TPoint; var Effect: Integer);
+procedure TCutView.DropTargetDrop(Sender: TObject; ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
 var
   i: Integer;
 begin
   for i := 0 to FDropTarget.Files.Count - 1 do
-  begin
     if FilenameToFormat(FDropTarget.Files[i]) <> atNone then
-    begin
       if Assigned(FOnCutFile) then
         FOnCutFile(TCutTab(Self.Parent), FDropTarget.Files[i]);
-    end;
-  end;
 end;
 
 procedure TCutView.FileConvertorError(Sender: TObject);
@@ -524,7 +545,7 @@ begin
 
     for i := 0 to FUndoList.Count - 1 do
     begin
-      DeleteFile(PChar(FUndoList[i].Filename));
+      SysUtils.DeleteFile(FUndoList[i].Filename);
       FUndoList[i].Free;
     end;
     FUndoList.Clear;
@@ -635,8 +656,9 @@ begin
         begin
           FBitrateType := brCBR;
           FBitrate := Info.Bitrate;
-        end
-      end else begin
+        end;
+      end else
+      begin
         ThreadScanError(Self);
         Exit;
       end;
@@ -666,10 +688,8 @@ end;
 procedure TCutView.MessageReceived(Msg: TMessageBase);
 begin
   if Msg is TFileModifyMsg then
-  begin
     if Assigned(FPlayer) and (LowerCase(FPlayer.Filename) = LowerCase(TFileModifyMsg(Msg).Filename)) then
       FPlayer.Stop(False);
-  end;
 end;
 
 procedure TCutView.MsgRefresh(var Msg: TMessage);
@@ -720,6 +740,7 @@ end;
 
 procedure TCutView.Undo;
 var
+  Source, Dest: UnicodeString;
   UndoStep: TUndoStep;
 begin
   if not CanUndo then
@@ -729,26 +750,29 @@ begin
 
   UndoStep := FUndoList[FUndoList.Count - 1];
 
-  if MoveFileEx(PChar(UndoStep.Filename), PChar(FWorkingFilename), MOVEFILE_REPLACE_EXISTING) then
-  begin
-    FWaveData.Free;
-    FWaveData := nil;
+  if FileExists(FWorkingFilename) then
+    SysUtils.DeleteFile(FWorkingFilename);
 
-    LoadFile(FWorkingFilename, True, False);
-
-    FPB.BuildBuffer;
-    FPB.BuildDrawBuffer;
-    FPB.Paint;
-
-    FUndoStep := UndoStep;
-    FUndoList.Remove(UndoStep);
-
-    if Assigned(FOnStateChanged) then
-      FOnStateChanged(Self);
-  end else
+  if not RenameFile(UndoStep.Filename, FWorkingFilename) then
   begin
     MsgBox(_('The file could not be replaced by the saved undo file that contains the last version of the file.'), _('Error'), MB_ICONERROR);
+    Exit;
   end;
+
+  FWaveData.Free;
+  FWaveData := nil;
+
+  LoadFile(FWorkingFilename, True, False);
+
+  FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
+  FPB.Paint;
+
+  FUndoStep := UndoStep;
+  FUndoList.Remove(UndoStep);
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
 procedure TCutView.ZoomIn;
@@ -864,7 +888,7 @@ begin
   if Length(AppGlobals.TempDir) > 3 then
   begin
     DriveLetter := Copy(AppGlobals.TempDir, 0, 2);
-    MsgBox(Format(_('The temporary cut-file could not be saved. Make sure there is enough free diskspace on drive %s.'), [DriveLetter]), _('Error'), MB_ICONERROR)
+    MsgBox(Format(_('The temporary cut-file could not be saved. Make sure there is enough free diskspace on drive %s.'), [DriveLetter]), _('Error'), MB_ICONERROR);
   end;
 end;
 
@@ -938,9 +962,7 @@ begin
   FPB.FPlayingIndex := 0;
 
   if FPlayer = nil then
-  begin
     Exit;
-  end;
 
   FPlayer.Volume := Players.Volume;
   FPlayer.PositionByte := FWaveData.WaveArray[FPB.FPlayLine].Pos;
@@ -1015,9 +1037,7 @@ begin
   AddUndo;
 
   if FPlayer <> nil then
-  begin
     FreeAndNil(FPlayer);
-  end;
 
   if FWaveData <> nil then
     FreeAndNil(FWaveData);
@@ -1047,9 +1067,7 @@ begin
     Exit;
 
   if FPlayer <> nil then
-  begin
     FPlayer.Pause;
-  end;
 
   FPB.BuildDrawBuffer;
   FPB.Paint;
@@ -1079,8 +1097,7 @@ begin
   begin
     FadeStart := Min(FPB.FEffectStartLine, FPB.FEffectEndLine);
 
-    CmdLine := CmdLine + 'fade p 0 ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec)) + ' ' +
-      IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - FWaveData.WaveArray[FadeStart].Sec));
+    CmdLine := CmdLine + 'fade p 0 ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec)) + ' ' + IntToStr(Round(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec - FWaveData.WaveArray[FadeStart].Sec));
 
     StartProcessing(CmdLine);
   end;
@@ -1088,8 +1105,7 @@ end;
 
 procedure TCutView.AddUndo;
 begin
-  FUndoList.Add(TUndoStep.Create(FWorkingFilename, FPB.FStartLine, FPB.FEndLine,
-    FPB.FEffectStartLine, FPB.FEffectEndLine, FPB.FPlayLine));
+  FUndoList.Add(TUndoStep.Create(FWorkingFilename, FPB.FStartLine, FPB.FEndLine, FPB.FEffectStartLine, FPB.FEffectEndLine, FPB.FPlayLine));
 end;
 
 procedure TCutView.ApplyEffects;
@@ -1101,8 +1117,7 @@ begin
     Exit;
 
   F := TfrmConfigureSox.Create(Self, (AppGlobals.Data.StreamSettings.PostProcessors.Find(TPostProcessSoX) as TPostProcessSoX), AppGlobals.ApplyEffectNormalize, False, False,
-    AppGlobals.ApplyEffectFadeoutStart, AppGlobals.ApplyEffectFadeoutEnd, False, False, AppGlobals.ApplyEffectSilenceStart, AppGlobals.ApplyEffectSilenceEnd,
-    Trunc(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec));
+    AppGlobals.ApplyEffectFadeoutStart, AppGlobals.ApplyEffectFadeoutEnd, False, False, AppGlobals.ApplyEffectSilenceStart, AppGlobals.ApplyEffectSilenceEnd, Trunc(FWaveData.WaveArray[High(FWaveData.WaveArray)].Sec));
   try
     F.ShowModal;
 
@@ -1161,9 +1176,7 @@ end;
 
 function TCutView.CanCut: Boolean;
 begin
-  Result := (FWaveData <> nil) and (FPB.FEndLine - FPB.FStartLine > 0) and
-    (FWaveData.TimeBetween(FPB.FStartLine, FPB.FEndLine) >= 0.5) and
-    ((FPB.FStartLine > 0) or (FPB.FEndLine < High(FWaveData.WaveArray)));
+  Result := (FWaveData <> nil) and (FPB.FEndLine - FPB.FStartLine > 0) and (FWaveData.TimeBetween(FPB.FStartLine, FPB.FEndLine) >= 0.5) and ((FPB.FStartLine > 0) or (FPB.FEndLine < High(FWaveData.WaveArray)));
 end;
 
 function TCutView.CanEffectsMarker: Boolean;
@@ -1194,8 +1207,7 @@ begin
     Exit(False);
 
   Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5) + 4;
-  Result := (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
-            ((FPB.FEffectStartLine <= Tolerance) or (FPB.FEffectEndLine <= Tolerance));
+  Result := (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and ((FPB.FEffectStartLine <= Tolerance) or (FPB.FEffectEndLine <= Tolerance));
 end;
 
 function TCutView.CanApplyFadeOut: Boolean;
@@ -1206,8 +1218,7 @@ begin
     Exit(False);
 
   Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5) + 4;
-  Result := (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and
-            ((FPB.FEffectStartLine >= Length(FWaveData.WaveArray) - Tolerance) or (FPB.FEffectEndLine >= Length(FWaveData.WaveArray) - Tolerance));
+  Result := (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and ((FPB.FEffectStartLine >= Length(FWaveData.WaveArray) - Tolerance) or (FPB.FEffectEndLine >= Length(FWaveData.WaveArray) - Tolerance));
 end;
 
 function TCutView.CanApplyEffects: Boolean;
@@ -1237,8 +1248,7 @@ end;
 
 function TCutView.CanZoomOut: Boolean;
 begin
-  Result := (FWaveData <> nil) and ((FWaveData.ZoomStart <> High(Cardinal)) or (FWaveData.ZoomEnd <> High(FWaveData.WaveArray))) and
-    ((FWaveData.ZoomStart <> 0) or (FWaveData.ZoomEnd <> High(FWaveData.WaveArray)));
+  Result := (FWaveData <> nil) and ((FWaveData.ZoomStart <> High(Cardinal)) or (FWaveData.ZoomEnd <> High(FWaveData.WaveArray))) and ((FWaveData.ZoomStart <> 0) or (FWaveData.ZoomEnd <> High(FWaveData.WaveArray)));
 end;
 
 function TCutView.CheckSoX: Boolean;
@@ -1327,6 +1337,7 @@ end;
 { TCutPaintBox }
 
 procedure TCutPaintBox.BuildBuffer;
+
   procedure DrawTransparentBox(StartIdx: Cardinal; EndIdx: Cardinal; LineColor: TColor; FillColor: TColor);
   var
     RectStart, RectEnd: Int64;
@@ -1348,9 +1359,11 @@ procedure TCutPaintBox.BuildBuffer;
       Pen.Mode := originalMode;
     end;
   end;
+
   procedure DrawScrollBar(Color: TColor);
-  var StartX, StartY, EndX: Integer;
-      y: Cardinal;
+  var
+    StartX, StartY, EndX: Integer;
+    y: Cardinal;
   begin
     with FWaveBuf.Canvas do
     begin
@@ -1375,6 +1388,7 @@ procedure TCutPaintBox.BuildBuffer;
       end;
     end;
   end;
+
 var
   i, v, vnext: Integer;
   v2: Double;
@@ -1392,7 +1406,7 @@ begin
   TextWrite := '';
 
   FWaveBuf.Canvas.Brush.Color := clBlack;
-  FWaveBuf.Canvas.FillRect(Rect(0, 0, FWaveBuf.Width, FWaveBuf.Height));
+  FWaveBuf.Canvas.FillRect(Classes.Rect(0, 0, FWaveBuf.Width, FWaveBuf.Height));
 
   if (ClientHeight < 2) or (ClientWidth < 2) then
     Exit;
@@ -1465,8 +1479,8 @@ begin
       Inc(L2);
 
     FWaveBuf.Canvas.Brush.Color := clGray;
-    FWaveBuf.Canvas.FillRect(Rect(L1, 0, L2, ht - 1));
-    FWaveBuf.Canvas.FillRect(Rect(L1, ht + 1, L2, FWaveBuf.Height - ScrollbarHeight - 3));
+    FWaveBuf.Canvas.FillRect(Classes.Rect(L1, 0, L2, ht - 1));
+    FWaveBuf.Canvas.FillRect(Classes.Rect(L1, ht + 1, L2, FWaveBuf.Height - ScrollbarHeight - 3));
   end;
 
   ArrayFrom := FCutView.FWaveData.ZoomStart;
@@ -1485,17 +1499,14 @@ begin
       RBuf := RBuf + FCutView.FWaveData.WaveArray[i].R;
       Added := Added + 1;
       Continue;
+    end else if Added > 0 then
+    begin
+      LBuf := LBuf div Added;
+      RBuf := RBuf div Added;
     end else
     begin
-      if Added > 0 then
-      begin
-        LBuf := LBuf div Added;
-        RBuf := RBuf div Added;
-      end else
-      begin
-        LBuf := FCutView.FWaveData.WaveArray[i].L;
-        RBuf := FCutView.FWaveData.WaveArray[i].R;
-      end;
+      LBuf := FCutView.FWaveData.WaveArray[i].L;
+      RBuf := FCutView.FWaveData.WaveArray[i].R;
     end;
 
     FWaveBuf.Canvas.Pen.Color := FPeakColor;
@@ -1510,8 +1521,8 @@ begin
       FWaveBuf.Canvas.Pixels[v, ht + 1 + Trunc((RBuf / 33000) * ht)] := FPeakEndColor;
     end else
     begin
-      FWaveBuf.Canvas.FillRect(Rect(v, ht, vnext - 1, ht - Trunc((LBuf / 33000) * ht)));
-      FWaveBuf.Canvas.FillRect(Rect(v, ht + 1, vnext - 1, ht + 1 + Trunc((LBuf / 33000) * ht)));
+      FWaveBuf.Canvas.FillRect(Classes.Rect(v, ht, vnext - 1, ht - Trunc((LBuf / 33000) * ht)));
+      FWaveBuf.Canvas.FillRect(Classes.Rect(v, ht + 1, vnext - 1, ht + 1 + Trunc((LBuf / 33000) * ht)));
     end;
 
     RBuf := 0;
@@ -1533,6 +1544,7 @@ begin
 end;
 
 procedure TCutPaintBox.BuildDrawBuffer;
+
   procedure DrawLine(ArrayIdx: Cardinal; Color: TColor);
   var
     L: Cardinal;
@@ -1545,6 +1557,7 @@ procedure TCutPaintBox.BuildDrawBuffer;
 
     FDrawBuf.Canvas.Brush.Color := clBlack;
   end;
+
   procedure DrawLineText(ArrayIdx, X: Cardinal);
   var
     L: Integer;
@@ -1561,9 +1574,10 @@ procedure TCutPaintBox.BuildDrawBuffer;
     else
       FDrawBuf.Canvas.TextOut(L + 4, X, SecText);
   end;
+
 begin
   FDrawBuf.Free;
-  FDrawBuf := TBitmap.Create;
+  FDrawBuf := Graphics.TBitmap.Create;
   FDrawBuf.Width := FWaveBuf.Width;
   FDrawBuf.Height := FWaveBuf.Height;
 
@@ -1595,16 +1609,16 @@ begin
   FStartColor := HTML2Color('ece52b');
   FEndColor := HTML2Color('218030');
   FPlayColor := HTML2Color('c33131');
-  FZoomOuterColor :=  HTML2Color('748cf7');
+  FZoomOuterColor := HTML2Color('748cf7');
   FZoomInnerColor := HTML2Color('4d5ea5');
 
   FControlMode := cmNone;
 
   FCutView := TCutView(AOwner);
   if FWaveBuf = nil then
-    FWaveBuf := TBitmap.Create;
+    FWaveBuf := Graphics.TBitmap.Create;
   if FDrawBuf = nil then
-    FDrawBuf := TBitmap.Create;
+    FDrawBuf := Graphics.TBitmap.Create;
 
   FZoomStartLine := High(Cardinal);
   FZoomEndLine := High(Cardinal);
@@ -1622,8 +1636,7 @@ begin
   inherited;
 end;
 
-procedure TCutPaintBox.MouseDown(Button: TMouseButton; Shift: TShiftState;
-  X, Y: Integer);
+procedure TCutPaintBox.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   inherited;
 
@@ -1671,13 +1684,11 @@ begin
     begin
       ButtonData := mbLeft;
       Button := @ButtonData;
-    end
-    else if ssRight in Shift then
+    end else if ssRight in Shift then
     begin
       ButtonData := mbRight;
       Button := @ButtonData;
-    end
-    else
+    end else
       Button := nil;
 
     case FControlMode of
@@ -1694,8 +1705,7 @@ begin
   end;
 end;
 
-procedure TCutPaintBox.MouseUp(Button: TMouseButton; Shift: TShiftState;
-  X, Y: Integer);
+procedure TCutPaintBox.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   inherited;
 
@@ -1721,7 +1731,7 @@ begin
     Exit;
 
   FWaveBuf.Free;
-  FWaveBuf := TBitmap.Create;
+  FWaveBuf := Graphics.TBitmap.Create;
   FWaveBuf.Width := ClientWidth;
   FWaveBuf.Height := ClientHeight;
 
@@ -1755,18 +1765,14 @@ begin
 
   SearchFrom := 0;
   if BytePos > FCutView.FWaveData.WaveArray[FPlayingIndex].Pos then
-  begin
     SearchFrom := FPlayingIndex;
-  end;
 
   for i := SearchFrom to High(FCutView.FWaveData.WaveArray) - 1 do
-  begin
     if FCutView.FWaveData.WaveArray[i].Pos >= BytePos then
     begin
       Result := i;
       Break;
     end;
-  end;
 end;
 
 procedure TCutPaintBox.SetLine(X: Integer; Button: TMouseButton; Mode: TMouseMode);
@@ -1798,44 +1804,40 @@ begin
           FStartLine := FEndLine - 1;
       end;
     lmPlay:
+    begin
+      if (Button = mbLeft) and (Mode <> mmUp) then
       begin
-        if (Button = mbLeft) and (Mode <> mmUp) then
+        if FCutView.FPlayer <> nil then
         begin
-          if FCutView.FPlayer <> nil then
+          if FCutView.FPlayer.Playing then
           begin
-            if FCutView.FPlayer.Playing then
-            begin
-              FPlayerPaused := True;
-              FCutView.FPlayer.Pause;
-            end;
-            FCutView.FPlayer.PositionByte := FCutView.FWaveData.WaveArray[ArrayPos].Pos;
+            FPlayerPaused := True;
+            FCutView.FPlayer.Pause;
           end;
-          FPlayLine := ArrayPos;
+          FCutView.FPlayer.PositionByte := FCutView.FWaveData.WaveArray[ArrayPos].Pos;
         end;
-
-        if (Button = mbLeft) and (Mode = mmUp) then
-          if (FCutView.FPlayer <> nil) and FPlayerPaused then
-          begin
-            FCutView.FPlayer.Play;
-            FPlayerPaused := False;
-          end;
+        FPlayLine := ArrayPos;
       end;
+
+      if (Button = mbLeft) and (Mode = mmUp) then
+        if (FCutView.FPlayer <> nil) and FPlayerPaused then
+        begin
+          FCutView.FPlayer.Play;
+          FPlayerPaused := False;
+        end;
+    end;
     lmEffectsMarker:
-      begin
-        if (Button = mbLeft) and (Mode <> mmUp) then
+    begin
+      if (Button = mbLeft) and (Mode <> mmUp) then
+        if (FEffectStartLine = High(Cardinal)) or (Mode = mmDown) then
         begin
-          if (FEffectStartLine = High(Cardinal)) or (Mode = mmDown) then
-          begin
-            FEffectStartLine := ArrayPos;
-            FEffectEndLine := ArrayPos;
-          end else
-          begin
-            FEffectEndLine := ArrayPos;
-          end;
-        end;
+          FEffectStartLine := ArrayPos;
+          FEffectEndLine := ArrayPos;
+        end else
+          FEffectEndLine := ArrayPos;
 
-        BuildBuffer;
-      end;
+      BuildBuffer;
+    end;
   end;
 
   if Assigned(FCutView.FOnStateChanged) then
@@ -1845,8 +1847,7 @@ begin
   Paint;
 end;
 
-procedure TCutPaintBox.HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton;
-  Mode: TMouseMode);
+procedure TCutPaintBox.HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton; Mode: TMouseMode);
 var
   StartX, EndX, DiffX: Integer;
 begin
@@ -1927,7 +1928,6 @@ begin
       begin
         LoopStarted := GetTickCount64;
         while Failed do
-        begin
           try
             FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
             try
@@ -1939,17 +1939,14 @@ begin
           except
             Sleep(50);
             if GetTickCount64 > LoopStarted + 5000 then
-            begin
               Break;
-            end;
           end;
-        end;
       end;
-    rpFail, rpTerminated, rpTimeout:;
+    rpFail, rpTerminated, rpTimeout: ;
   end;
 
   if Failed then
-    DeleteFile(PChar(TempFile));
+    SysUtils.DeleteFile(TempFile);
 
   if Failed then
     SyncError
@@ -2020,19 +2017,15 @@ begin
   C.OnProgress := FileConvertorProgress;
   try
     if C.Convert2WAV(FInFilename, FOutFilename, @Terminated, FS, FE) then
-    begin
-      Synchronize(SyncSaveCutEnd);
-    end else
-    begin
+      Synchronize(SyncSaveCutEnd)
+    else
       Synchronize(SyncSaveCutError);
-    end;
   finally
     C.Free;
   end;
 end;
 
-procedure TSaveCutThread.FileConvertorProgress(Sender: TObject;
-  Percent: Integer);
+procedure TSaveCutThread.FileConvertorProgress(Sender: TObject; Percent: Integer);
 begin
   FProgress := Percent;
   Synchronize(SyncSaveCutProgress);
@@ -2063,6 +2056,3 @@ begin
 end;
 
 end.
-
-
-

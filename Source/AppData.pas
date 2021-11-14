@@ -30,29 +30,22 @@ interface
 uses
   AddonManager,
   AppDataBase,
-  FileInfo,
-  winpeimagereader,
-  AudioFunctions,
   Base64,
   Classes,
   CommandLine,
   DataManager,
-  ExtendedStream,
+  FileInfo,
   Forms,
   Functions,
-  Generics.Collections,
   Graphics,
   LanguageIcons,
   LanguageObjects,
   Logging,
-  Messages,
   PostProcessManager,
-  Registry,
-  SWFunctions,
-  SyncObjs,
   SysUtils,
   TypeDefs,
-  Windows;
+  Windows,
+  winpeimagereader;
 
 type
   // Do not change the order of items in the following enums!
@@ -884,9 +877,8 @@ begin
       FData.LoadError := True;
 
       if E is EVersionException then
-        Res := MsgBox(Format(_('The file "%s" could not be loaded because it was saved with a newer version of streamWriter. ' +
-          'To use the current file exit streamWriter and use a newer version of the application.') + #13#10 + _(LoadErrorMsg), [E.Message]),
-          _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
+        Res := MsgBox(Format(_('The file "%s" could not be loaded because it was saved with a newer version of streamWriter. ' + 'To use the current file exit streamWriter and use a newer version of the application.') +
+          #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
       else if E is EUnsupportedFormatException then
         Res := MsgBox(Format(_('The file "%s" could not be loaded because it is contains an exported profile and no regular saved data.') + #13#10 + _(LoadErrorMsg), [E.Message]),
           _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
@@ -1048,7 +1040,7 @@ begin
   except
     on E: Exception do
     begin
-      MessageBox(0, PChar(E.Message), PChar(_('Error')), MB_ICONERROR);
+      MsgBox(E.Message, _('Error'), MB_ICONERROR);
       Result := False;
     end;
   end;
@@ -1068,7 +1060,7 @@ begin
   except
     on E: Exception do
     begin
-      MessageBox(0, PChar(E.Message), PChar(_('Error')), MB_ICONERROR);
+      MsgBox(E.Message, _('Error'), MB_ICONERROR);
       Result := False;
     end;
   end;

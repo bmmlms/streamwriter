@@ -1822,6 +1822,7 @@ inherited frmSettings: TfrmSettings
         Control.Height = 21
         Control.Top = 17
         Control.Width = 100
+        Control.Align = alLeft
         Control.OnChange = txtHotkeyChange
       end
     end

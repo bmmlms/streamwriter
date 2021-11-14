@@ -1080,7 +1080,7 @@ begin
     end;
     taImportFolder:
     begin
-      Dir := BrowseDialog(GetParentForm(Self), _('Select folder with files to import:'));
+      Dir := BrowseDialog(GetParentForm(Self), _('Select folder with files to import'));
       if Dir <> '' then
       begin
         KnownFiles := TStringList.Create;
