@@ -906,13 +906,13 @@ end;
 
 procedure TAppData.NotifyRunningInstance(Handle: Cardinal);
 var
-  s: string;
+  s: UnicodeString;
   CDS: TCOPYDATASTRUCT;
 begin
   s := GetCommandLineW;
   CDS.dwData := 0;
-  CDS.cbData := (Length(s) * SizeOf(Char)) + 2;
-  CDS.lpData := PChar(s);
+  CDS.cbData := (Length(s) * SizeOf(WideChar)) + 2;
+  CDS.lpData := PWideChar(s);
   SendMessage(Handle, WM_COPYDATA, 0, LongInt(@CDS));
 end;
 

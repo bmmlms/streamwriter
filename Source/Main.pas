@@ -242,6 +242,8 @@ type
     procedure mnuStreamsClick(Sender: TObject);
     procedure FormShortCut(var Msg: TWMKey; var Handled: Boolean);
   private
+    FPrevWndProc: Windows.WNDPROC;
+
     FCommunityLogin: TfrmCommunityLogin;
 
     FUpdater: TUpdateClient;
@@ -270,8 +272,11 @@ type
 
     FExiting: Boolean;
 
+    class function CustomWndProcWrapper(hwnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall; static;
+
+    function CustomWndProc(hwnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
+
     procedure AfterShown(var Msg: TMessage); message WM_AFTERSHOWN;
-   // procedure ReceivedData(var Msg: TWMCopyData); message WM_COPYDATA;
     procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
     procedure EndSession(var Msg: TWMEndSession); message WM_ENDSESSION;
     procedure SysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
@@ -355,6 +360,7 @@ type
 
   public
     constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
   end;
 
   {
@@ -1567,21 +1573,7 @@ begin
   if (ssCtrl in Shift) then
     Modifiers := Modifiers or MOD_CONTROL;
 end;
-                                      {
-procedure TfrmStreamWriterMain.ReceivedData(var Msg: TWMCopyData);
-var
-  CmdLine: TCommandLine;
-begin
-  if not FExiting then
-  begin
-    CmdLine := TCommandLine.Create(PChar(Msg.CopyDataStruct.lpData));
-    if CmdLine.Records.Count = 0 then
-      ToggleWindow(True);
 
-    ProcessCommandLine(PChar(Msg.CopyDataStruct.lpData));
-  end;
-end;
-                                      }
 procedure TfrmStreamWriterMain.RegisterHotkeys;
 var
   K: Word;
@@ -2789,42 +2781,45 @@ begin
     mnuStreamPopup.Images := nil;
     mnuTray.Images := nil;
   end;
+
+  SetWindowLongPtrW(Handle, GWLP_USERDATA, Windows.HANDLE(Self));
+
+  FPrevWndProc := Pointer(SetWindowLongPtrW(Handle, GWLP_WNDPROC, LONG_PTR(@CustomWndProcWrapper)));
 end;
 
-{ TStatusHint }
-                   {
-constructor TStatusHint.Create(AOwner: TComponent);
+destructor TfrmStreamWriterMain.Destroy;
 begin
-  inherited;
+  SetWindowLongPtrW(Handle, GWLP_WNDPROC, LONG_PTR(@FPrevWndProc));
 
-  Delay := 500;
+  inherited Destroy;
 end;
 
-procedure TStatusHint.PaintHint(HintWindow: TCustomHintWindow);
+class function TfrmStreamWriterMain.CustomWndProcWrapper(hwnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
 begin
-
-  inherited;
+  Result := TfrmStreamWriterMain(GetWindowLongPtrW(hwnd, GWLP_USERDATA)).CustomWndProc(hwnd, uMsg, wParam, lParam);
 end;
 
-procedure TStatusHint.SetHintSize(HintWindow: TCustomHintWindow);
+function TfrmStreamWriterMain.CustomWndProc(hwnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
 var
-  Pos: TPoint;
-  R: TRect;
+  CDS: PCOPYDATASTRUCT;
+  CmdLine: TCommandLine;
 begin
-  inherited;
-
-  Pos := Mouse.CursorPos;
-  Pos := TfrmStreamWriterMain(Owner).addStatus.ScreenToClient(Pos);
-  TfrmStreamWriterMain(Owner).addStatus.Perform(SB_GETRECT, 1, Integer(@R));
-  R.Top := 0;
-
-  if not PtInRect(R, Pos) then
+  if (not FExiting) and (uMsg = WM_COPYDATA) then
   begin
-    HintWindow.Width := 0;
-    HintWindow.Height := 0;
+    CDS := PCOPYDATASTRUCT(lParam);
+
+    CmdLine := TCommandLine.Create(StrPas(PWideChar(CDS.lpData)));
+    if CmdLine.Records.Count = 0 then
+      ToggleWindow(True);
+
+    ProcessCommandLine(StrPas(PWideChar(CDS.lpData)));
+
+    Exit(0);
   end;
+
+  Result := FPrevWndProc(hwnd, uMsg, wParam, lParam);
 end;
-            }
+
 end.
 
 
