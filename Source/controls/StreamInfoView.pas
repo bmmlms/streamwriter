@@ -24,10 +24,24 @@ unit StreamInfoView;
 interface
 
 uses
-  Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ImgList,
-  DataManager, VirtualTrees, LanguageObjects, GUIFunctions,
-  Generics.Collections, Graphics, Forms, Menus, Messages, DragDrop,
-  DragDropFile, Functions, Logging, AudioFunctions;
+  AudioFunctions,
+  Classes,
+  Controls,
+  DataManager,
+  DragDrop,
+  DragDropFile,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Graphics,
+  GUIFunctions,
+  ImgList,
+  LanguageObjects,
+  Logging,
+  Menus,
+  StdCtrls,
+  SysUtils,
+  VirtualTrees;
 
 type
   TMStreamInfoViewPanel = class(TPanel)
@@ -121,9 +135,8 @@ var
   EntriesNew: TStreamList;
 begin
   if Entries = nil then
-  begin
-    FEntries.Clear;
-  end else
+    FEntries.Clear
+  else
   begin
     EntriesNew := TStreamList.Create;
 
@@ -238,6 +251,3 @@ begin
 end;
 
 end.
-
-
-

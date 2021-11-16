@@ -59,7 +59,6 @@ uses
   SavedTabEditTags,
   SharedControls,
   SharedData,
-  ShlObj,
   StdCtrls,
   SysUtils,
   Tabs,

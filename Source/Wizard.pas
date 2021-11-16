@@ -23,10 +23,25 @@ unit Wizard;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ComCtrls, ExtCtrls, Buttons, StdCtrls, ShellAPI, ShlObj, AppData,
-  ImgList, LanguageObjects, Functions, WizardBase, GUIFunctions, Logging,
-  SharedData;
+  AppData,
+  Buttons,
+  Classes,
+  ComCtrls,
+  Controls,
+  Dialogs,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Graphics,
+  GUIFunctions,
+  ImgList,
+  LanguageObjects,
+  Logging,
+  ShlObj,
+  StdCtrls,
+  SysUtils,
+  Windows,
+  WizardBase;
 
 type
   TStepDir = class(TStep)
@@ -103,9 +118,7 @@ begin
     if AppGlobals.MonitorCount > 0 then
       txtMonitorCount.Text := IntToStr(AppGlobals.MonitorCount);
   end else if Step.Panel = pnlSelectMode then
-  begin
-
-  end;
+  ;
 end;
 
 function TfrmWizard.IsValid(Step: TStep): Boolean;

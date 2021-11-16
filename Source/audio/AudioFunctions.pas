@@ -23,7 +23,10 @@ unit AudioFunctions;
 interface
 
 uses
-  Windows, SysUtils, Math, Classes;
+  Classes,
+  Math,
+  SysUtils,
+  Windows;
 
 type
   TBandData = record
@@ -72,7 +75,8 @@ function BandToFreq(Idx: Integer): Integer;
 implementation
 
 uses
-  DynBASS, Functions;
+  DynBASS,
+  Functions;
 
 function RoundBitrate(Bitrate: Cardinal): Cardinal;
 begin
@@ -115,8 +119,8 @@ begin
       if Bitrate >= 150 then
         Result := vqHigh
       //else if Bitrate >= 128 then  // Das löst das Problem von "Rix". Ist vllt. nicht optimal, aber besser als nichts..
-                                     // Am besten wäre es wohl, den Encoder präziser zu füttern was Bitraten angeht => Enum vergrößern..
-                                     // Nicht 3 Stufen, sondern 6 oder so! Oder Bitrate durchschleifen und jeder Encoder denkt selber nach?
+      // Am besten wäre es wohl, den Encoder präziser zu füttern was Bitraten angeht => Enum vergrößern..
+      // Nicht 3 Stufen, sondern 6 oder so! Oder Bitrate durchschleifen und jeder Encoder denkt selber nach?
       //  Result := vqMedium
       else
         Result := vqMedium;
@@ -135,7 +139,7 @@ begin
   if MSecs then
     Result := Format('%0.2d:%0.2d.%0.3d', [Min, Sec, MSec])
   else
-    Result := Format('%0.2d:%0.2d', [Min, Sec])
+    Result := Format('%0.2d:%0.2d', [Min, Sec]);
 end;
 
 function FilenameToFormat(Filename: string): TAudioTypes;

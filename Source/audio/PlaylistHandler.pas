@@ -23,8 +23,13 @@ unit PlaylistHandler;
 interface
 
 uses
-  Windows, SysUtils, StrUtils, Classes, Functions, ExtendedStream,
-  AudioFunctions;
+  AudioFunctions,
+  Classes,
+  ExtendedStream,
+  Functions,
+  StrUtils,
+  SysUtils,
+  Windows;
 
 type
   TPlaylistHandler = class
@@ -84,6 +89,7 @@ begin
 end;
 
 function TPlaylistHandler.ParsePlaylist(Data: string; PlaylistType: TPlaylistTypes; OriginURL: string): Boolean;
+
   procedure ParseLine(Line: string);
   var
     Res: TParseURLRes;
@@ -114,15 +120,14 @@ function TPlaylistHandler.ParsePlaylist(Data: string; PlaylistType: TPlaylistTyp
           OriginProto := 'http://';
 
         if Line[1] = '/' then
-        begin
           Line := OriginProto + Res.Host + ':' + IntToStr(OriginPort) + Line
-        end else
+        else
         begin
           SlashPos := LastDelimiter('/', Res.Data);
           if SlashPos > 0 then
             Res.Data := Copy(Res.Data, 1, SlashPos);
 
-          Line := OriginProto + Res.Host + ':' + IntToStr(OriginPort) + Res.Data + Line
+          Line := OriginProto + Res.Host + ':' + IntToStr(OriginPort) + Res.Data + Line;
         end;
       end;
     end;
@@ -141,11 +146,10 @@ function TPlaylistHandler.ParsePlaylist(Data: string; PlaylistType: TPlaylistTyp
         FURLs.Add(LineProto + Res.Host + Res.Data);
         FURLs.Add('http://' + Res.Host + ':6666' + Res.Data);
       end else
-      begin
         FURLs.Add(LineProto + Res.Host + ':' + IntToStr(Res.Port) + Res.Data);
-      end;
     end;
   end;
+
 var
   Offset, Offset2, Offset3: Integer;
   Line: string;

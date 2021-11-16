@@ -23,7 +23,10 @@ unit SharedData;
 interface
 
 uses
-  SysUtils, Classes, ImgList, Controls;
+  Classes,
+  Controls,
+  ImgList,
+  SysUtils;
 
 type
   TmodSharedData = class(TDataModule)

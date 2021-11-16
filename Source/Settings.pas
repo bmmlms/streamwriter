@@ -36,7 +36,6 @@ uses
   Controls,
   DataManager,
   Dialogs,
-  DownloadAddons,
   DynBASS,
   EditBtn,
   ExtCtrls,

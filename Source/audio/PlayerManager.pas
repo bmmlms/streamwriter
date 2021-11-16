@@ -24,8 +24,13 @@ unit PlayerManager;
 interface
 
 uses
-  Windows, SysUtils, Classes, SyncObjs, Logging, MessageBus, AppMessages,
-  AppData, Types;
+  AppData,
+  AppMessages,
+  Classes,
+  Logging,
+  MessageBus,
+  SyncObjs,
+  SysUtils;
 
 type
   TPlayerManager = class
@@ -77,7 +82,8 @@ procedure InitPlayerManager;
 implementation
 
 uses
-  Player, ICEClient;
+  ICEClient,
+  Player;
 
 { TPlayerManager }
 
@@ -213,7 +219,6 @@ begin
   FEQEnabled := Value;
 
   for i := 0 to FPlayers.Count - 1 do
-  begin
     if TObject(FPlayers[i]).ClassType = TPlayer then
     begin
       P := TPlayer(FPlayers[i]);
@@ -223,7 +228,6 @@ begin
       IP := TICEClient(FPlayers[i]);
       IP.EQEnabled := Value;
     end;
-  end;
 end;
 
 procedure TPlayerManager.FSetVolume(Value: Integer);
@@ -243,7 +247,6 @@ begin
   FVolume := Value;
 
   for i := 0 to FPlayers.Count - 1 do
-  begin
     if TObject(FPlayers[i]).ClassType = TPlayer then
     begin
       P := TPlayer(FPlayers[i]);
@@ -253,13 +256,11 @@ begin
       IP := TICEClient(FPlayers[i]);
       IP.SetVolume(Value);
     end;
-  end;
 
   MsgBus.SendMessage(TVolumeChangedMsg.Create(Value));
 end;
 
-procedure TPlayerManager.GetPlayingInfo(var Artist, Title, Stream,
-  Filename: string);
+procedure TPlayerManager.GetPlayingInfo(var Artist, Title, Stream, Filename: string);
 var
   i: Integer;
   P: TPlayer;
@@ -271,7 +272,6 @@ begin
   Filename := '';
 
   for i := 0 to FPlayers.Count - 1 do
-  begin
     if TObject(FPlayers[i]) is TPlayer then
     begin
       P := TPlayer(FPlayers[i]);
@@ -295,7 +295,6 @@ begin
         Exit;
       end;
     end;
-  end;
 end;
 
 procedure TPlayerManager.PauseAll;
@@ -312,9 +311,7 @@ begin
     if FLastPlayer <> nil then
       Play(FLastPlayer);
   end else
-  begin
     for i := 0 to FPlayers.Count - 1 do
-    begin
       if TObject(FPlayers[i]) is TPlayer then
       begin
         P := TPlayer(FPlayers[i]);
@@ -332,8 +329,6 @@ begin
           IP.PausePlay;
         end;
       end;
-    end;
-  end;
 end;
 
 procedure TPlayerManager.Play(Player: TObject);
@@ -341,9 +336,7 @@ begin
   if TObject(Player) is TPlayer then
     TPlayer(Player).Play
   else if TObject(Player) is TICEClient then
-  begin
     TICEClient(Player).StartPlay(True);
-  end;
 end;
 
 procedure TPlayerManager.RemovePlayer(Player: TObject);

@@ -23,9 +23,17 @@ unit PostProcessSoX;
 interface
 
 uses
-  SysUtils, Windows, Classes, PostProcess, LanguageObjects, Generics.Collections,
-  Functions, Logging, Math, AddonBase, ExtendedStream, AudioFunctions,
-  DataManager;
+  AudioFunctions,
+  Classes,
+  DataManager,
+  ExtendedStream,
+  Functions,
+  Generics.Collections,
+  LanguageObjects,
+  Logging,
+  PostProcess,
+  SysUtils,
+  Windows;
 
 type
   TPostProcessSoxThread = class(TPostProcessThreadBase)
@@ -69,7 +77,11 @@ type
 implementation
 
 uses
-  AppData, ConfigureSoX, AddonManager, AddonLAME, AddonSoX;
+  AddonLAME,
+  AddonManager,
+  AddonSoX,
+  AppData,
+  ConfigureSoX;
 
 { TPostProcessSoxThread }
 
@@ -120,51 +132,45 @@ begin
     Params := Params + ' pad 0 ' + IntToStr(P.FSilenceEndLength);
 
   if (Params <> '') or P.FNormalize then
-  begin
     case RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 300000, Output, EC, @Terminated, True) of
       rpWin:
+      begin
+        Failed := True;
+        if FileExists(SoxOutFile) and (EC = 0) then
         begin
-          Failed := True;
-          if FileExists(SoxOutFile) and (EC = 0) then
-          begin
-            LoopStarted := GetTickCount64;
-            while Failed do
-            begin
+          LoopStarted := GetTickCount64;
+          while Failed do
+            try
+              FS := TFileStream.Create(SoxOutFile, fmOpenRead or fmShareExclusive);
               try
-                FS := TFileStream.Create(SoxOutFile, fmOpenRead or fmShareExclusive);
-                try
-                  Failed := False;
-                  Break;
-                finally
-                  FS.Free;
-                end;
-              except
-                Sleep(50);
-                if GetTickCount64 > LoopStarted + 5000 then
-                begin
-                  Break;
-                end;
+                Failed := False;
+                Break;
+              finally
+                FS.Free;
               end;
+            except
+              Sleep(50);
+              if GetTickCount64 > LoopStarted + 5000 then
+                Break;
             end;
 
-            if not Failed then
-              if not MoveFileEx(PChar(SoXOutFile), PChar(FData.WorkFilename), MOVEFILE_REPLACE_EXISTING) then
-                Failed := True;
-            if not Failed then
-            begin
-              if P.FSilenceStart then
-                FData.Length := FData.Length + P.FSilenceStartLength;
-              if P.FSilenceEnd then
-                FData.Length := FData.Length + P.FSilenceEndLength;
+          if not Failed then
+            if not MoveFileEx(PChar(SoXOutFile), PChar(FData.WorkFilename), MOVEFILE_REPLACE_EXISTING) then
+              Failed := True;
+          if not Failed then
+          begin
+            if P.FSilenceStart then
+              FData.Length := FData.Length + P.FSilenceStartLength;
+            if P.FSilenceEnd then
+              FData.Length := FData.Length + P.FSilenceEndLength;
 
-              FResult := arWin;
-            end;
+            FResult := arWin;
           end;
         end;
+      end;
       rpTimeout:
         FResult := arTimeout;
     end;
-  end;
 
   if FResult <> arWin then
     DeleteFile(PChar(SoXOutFile));
@@ -195,8 +201,7 @@ begin
   if OutputFormat = atNone then
     OutputFormat := FilenameToFormat(Data.Filename);
 
-  Result := (AppGlobals.AddonManager.CanEncode(OutputFormat) = ceOkay) and FGetDependenciesMet and (FNormalize or FFadeoutStart or
-    FFadeoutEnd or FSilenceStart or FSilenceEnd);
+  Result := (AppGlobals.AddonManager.CanEncode(OutputFormat) = ceOkay) and FGetDependenciesMet and (FNormalize or FFadeoutStart or FFadeoutEnd or FSilenceStart or FSilenceEnd);
 end;
 
 function TPostProcessSoX.Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean;
@@ -205,9 +210,7 @@ var
 begin
   Result := True;
 
-  F := TfrmConfigureSoX.Create(AOwner, Self, FNormalize, FFadeoutStart, FFadeoutEnd,
-    FFadeoutStartLength, FFadeoutEndLength, FSilenceStart, FSilenceEnd, FSilenceStartLength,
-    FSilenceEndLength, 0);
+  F := TfrmConfigureSoX.Create(AOwner, Self, FNormalize, FFadeoutStart, FFadeoutEnd, FFadeoutStartLength, FFadeoutEndLength, FSilenceStart, FSilenceEnd, FSilenceStartLength, FSilenceEndLength, 0);
   try
     F.ShowModal;
 
@@ -243,7 +246,7 @@ constructor TPostProcessSoX.Create;
 begin
   inherited;
 
-//  FNeededAddons.Add(TAddonSoX);
+  //  FNeededAddons.Add(TAddonSoX);
 
   FCanConfigure := True;
   FOrder := 100;
@@ -264,8 +267,7 @@ end;
 
 function TPostProcessSoX.FGetHash: Cardinal;
 begin
-  Result := inherited + HashString(BoolToStr(FNormalize) + BoolToStr(FFadeoutStart) + BoolToStr(FFadeoutEnd) +
-    BoolToStr(FSilenceStart) + BoolToStr(FSilenceEnd) + IntToStr(FFadeoutStartLength) +
+  Result := inherited + HashString(BoolToStr(FNormalize) + BoolToStr(FFadeoutStart) + BoolToStr(FFadeoutEnd) + BoolToStr(FSilenceStart) + BoolToStr(FSilenceEnd) + IntToStr(FFadeoutStartLength) +
     IntToStr(FFadeoutEndLength) + IntToStr(FSilenceStartLength) + IntToStr(FSilenceEndLength));
 end;
 

@@ -24,11 +24,11 @@ unit DynBASS;
 interface
 
 uses
-  Windows,
   AppData,
   Classes,
   Generics.Collections,
-  SysUtils;
+  SysUtils,
+  Windows;
 
 const
   // BASS
@@ -565,15 +565,15 @@ begin
     end;
 
     if FBassDLLPath <> '' then
-      DeleteFile(FBassDLLPath);
+      SysUtils.DeleteFile(FBassDLLPath);
     if FBassAACDLLPath <> '' then
-      DeleteFile(FBassAACDLLPath);
+      SysUtils.DeleteFile(FBassAACDLLPath);
     if FBassMixerDLLPath <> '' then
-      DeleteFile(FBassMixerDLLPath);
+      SysUtils.DeleteFile(FBassMixerDLLPath);
     if FBassEncDLLPath <> '' then
-      DeleteFile(FBassEncDLLPath);
+      SysUtils.DeleteFile(FBassEncDLLPath);
     if FBassWASAPIDLLPath <> '' then
-      DeleteFile(FBassWASAPIDLLPath);
+      SysUtils.DeleteFile(FBassWASAPIDLLPath);
   except
   end;
 end;

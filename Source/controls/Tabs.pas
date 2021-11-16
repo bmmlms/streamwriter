@@ -24,10 +24,26 @@ unit Tabs;
 interface
 
 uses
-  Windows, SysUtils, Classes, Messages, ComCtrls, ActiveX, Controls, Buttons,
-  StdCtrls, Menus, VirtualTrees, DragDrop, DragDropFile, ShellApi,
-  Themes, ImgList, AppData, GUIFunctions, LanguageObjects, MControls,
-  DataManager, Dialogs, Functions, Logging, SWFunctions;
+  AppData,
+  Buttons,
+  Classes,
+  ComCtrls,
+  Controls,
+  DataManager,
+  Dialogs,
+  DragDrop,
+  DragDropFile,
+  Functions,
+  ImgList,
+  LanguageObjects,
+  Logging,
+  MControls,
+  Menus,
+  SWFunctions,
+  SysUtils,
+  Themes,
+  VirtualTrees,
+  Windows;
 
 type
   TMainTabSheet = class;
@@ -64,19 +80,18 @@ begin
   Result := nil;
   Filename := LowerCase(Filename);
   for i := 0 to PageCount - 1 do
-  begin
     if Pages[i] is TCutTab then
       if LowerCase(TCutTab(Pages[i]).Filename) = Filename then
       begin
         Result := TCutTab(Pages[i]);
         Break;
       end;
-  end;
 end;
 
 { TMainTabSheet }
 
 procedure TMainTabSheet.SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean);
+
   function GetURLString(URL: string): string;
   var
     Res: TParseURLRes;
@@ -84,12 +99,12 @@ procedure TMainTabSheet.SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean
     URL := SecureSWURLToInsecure(URL);
     Res := ParseURL(URL);
     if Res.Success then
-    begin
-      Result := 'http://' + Res.Host + ':' + IntToStr(Res.Port) + Res.Data;
-    end else
+      Result := 'http://' + Res.Host + ':' + IntToStr(Res.Port) + Res.Data
+    else
       Result := URL;
   end;
- procedure BuildPLS(Entries: TPlaylistEntryArray; List: TStringList);
+
+  procedure BuildPLS(Entries: TPlaylistEntryArray; List: TStringList);
   var
     i: Integer;
   begin
@@ -103,6 +118,7 @@ procedure TMainTabSheet.SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean
       List.Add('Length' + IntToStr(i + 1) + '=-1');
     end;
   end;
+
   procedure BuildM3U(Entries: TPlaylistEntryArray; List: TStringList);
   var
     i: Integer;
@@ -115,6 +131,7 @@ procedure TMainTabSheet.SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean
       List.Add(GetURLString(Entries[i].URL));
     end;
   end;
+
 var
   Res: Integer;
   List: TStringList;
@@ -157,7 +174,6 @@ begin
         Dlg.Free;
       end;
     end else
-    begin
       try
         BuildM3U(Entries, List);
         List.SaveToFile(ConcatPaths([AppGlobals.TempDir, 'playlist.m3u']));
@@ -173,7 +189,6 @@ begin
       except
         MsgBox(Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [AppGlobals.TempDir]), _('Error'), MB_ICONEXCLAMATION);
       end;
-    end;
   finally
     List.Free;
   end;

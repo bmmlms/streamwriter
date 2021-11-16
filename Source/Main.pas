@@ -2025,7 +2025,7 @@ begin
   Files := TList<TFileEntry>.Create;
   try
     for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
-      Files.Add(TFileEntry.Create(AppGlobals.Data.TrackList[i].Filename, AppGlobals.Data.TrackList[i].Filesize, TFileEntryAction.eaNone));
+      Files.Add(TFileEntry.Create(AppGlobals.Data.TrackList[i].Filename, AppGlobals.Data.TrackList[i].Filesize, feaNone));
     FCheckFiles := TCheckFilesThread.Create(Files);
     FCheckFiles.OnTerminate := CheckFilesTerminate;
     FCheckFiles.Start;
@@ -2678,7 +2678,7 @@ begin
 
       E := TFileEntry(FCheckFiles.Files[i]);
 
-      if E.Action = TFileEntryAction.eaNone then
+      if E.Action = feaNone then
         Continue;
 
       for n := 0 to AppGlobals.Data.TrackList.Count - 1 do
@@ -2686,10 +2686,10 @@ begin
         begin
           Track := AppGlobals.Data.TrackList[n];
           case E.Action of
-            TFileEntryAction.eaNone: ;
-            eaSize:
+            feaNone: ;
+            feaSize:
               Track.Filesize := E.Size;
-            eaRemove:
+            feaRemove:
             begin
               AppGlobals.Data.TrackList.Delete(n);
               tabSaved.Tree.RemoveTracks([Track]);

@@ -23,8 +23,14 @@ unit HomeCommands;
 interface
 
 uses
-  Windows, SysUtils, Classes, ExtendedStream, Commands, AudioFunctions,
-  TypeDefs, Generics.Collections, Functions, ZStream;
+  AudioFunctions,
+  Classes,
+  Commands,
+  ExtendedStream,
+  Functions,
+  SysUtils,
+  TypeDefs,
+  ZStream;
 
 type
   TSendClientStatTypes = (csSave, csAutoSave);
@@ -273,8 +279,7 @@ type
     procedure DoGet(S: TExtendedStream); override;
   public
     constructor Create; overload; override;
-    constructor Create(StreamID: Cardinal; StreamName, StreamTitle, CurrentURL, URL: string;
-      Format: TAudioTypes; Kbps: Cardinal; URLs: string); overload;
+    constructor Create(StreamID: Cardinal; StreamName, StreamTitle, CurrentURL, URL: string; Format: TAudioTypes; Kbps: Cardinal; URLs: string); overload;
   end;
 
   TCommandGetMonitorStreams = class(TCommand)
@@ -430,8 +435,7 @@ begin
 end;
 
 
-procedure TCommandHandshakeResponse.Load(CommandHeader: TCommandHeader;
-  Stream: TExtendedStream);
+procedure TCommandHandshakeResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
 begin
   inherited;
 
@@ -459,9 +463,7 @@ begin
   FCommandType := ctGetServerDataResponse;
 end;
 
-procedure TCommandGetServerDataResponse.Load(
-  CommandHeader: TCommandHeader;
-  Stream: TExtendedStream);
+procedure TCommandGetServerDataResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
 begin
   LoadStream(Stream);
 end;
@@ -498,8 +500,7 @@ begin
   FCommandType := ctLoginResponse;
 end;
 
-procedure TCommandLogInResponse.Load(CommandHeader: TCommandHeader;
-  Stream: TExtendedStream);
+procedure TCommandLogInResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
 begin
   inherited;
 
@@ -529,8 +530,7 @@ begin
   inherited;
 end;
 
-procedure TCommandNetworkTitleChangedResponse.Load(CommandHeader: TCommandHeader;
-  Stream: TExtendedStream);
+procedure TCommandNetworkTitleChangedResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
 var
   B: Byte;
   i: Integer;
@@ -586,8 +586,7 @@ begin
   FCommandType := ctServerInfoResponse;
 end;
 
-procedure TCommandServerInfoResponse.Load(CommandHeader: TCommandHeader;
-  Stream: TExtendedStream);
+procedure TCommandServerInfoResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
 begin
   inherited;
 
@@ -604,8 +603,7 @@ begin
   FCommandType := ctMessageResponse;
 end;
 
-procedure TCommandMessageResponse.Load(CommandHeader: TCommandHeader;
-  Stream: TExtendedStream);
+procedure TCommandMessageResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
 begin
   inherited;
 
@@ -733,9 +731,7 @@ begin
   FCommandType := ctTitleChanged;
 end;
 
-constructor TCommandTitleChanged.Create(StreamID: Cardinal; StreamName,
-  StreamTitle, CurrentURL, URL: string; Format: TAudioTypes; Kbps: Cardinal;
-  URLs: string);
+constructor TCommandTitleChanged.Create(StreamID: Cardinal; StreamName, StreamTitle, CurrentURL, URL: string; Format: TAudioTypes; Kbps: Cardinal; URLs: string);
 begin
   Create;
 
@@ -772,8 +768,7 @@ begin
   FCommandType := ctGetMonitorStreamsResponse;
 end;
 
-procedure TCommandGetMonitorStreamsResponse.Load(CommandHeader: TCommandHeader;
-  Stream: TExtendedStream);
+procedure TCommandGetMonitorStreamsResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
 var
   Count: Cardinal;
   i: Integer;
@@ -873,8 +868,7 @@ begin
   FCommandType := ctSearchChartsResponse;
 end;
 
-procedure TCommandSearchChartsResponse.Load(CommandHeader: TCommandHeader;
-  Stream: TExtendedStream);
+procedure TCommandSearchChartsResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
 begin
   LoadStream(Stream);
 
@@ -975,8 +969,7 @@ begin
   FCommandType := ctConvertManualToAutomaticResponse;
 end;
 
-procedure TCommandConvertManualToAutomaticResponse.Load(
-  CommandHeader: TCommandHeader; Stream: TExtendedStream);
+procedure TCommandConvertManualToAutomaticResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
 var
   Count: Cardinal;
   i: Integer;
@@ -1033,8 +1026,7 @@ begin
   FCommandType := ctGetStreamDataResponse;
 end;
 
-procedure TCommandGetStreamDataResponse.Load(CommandHeader: TCommandHeader;
-  Stream: TExtendedStream);
+procedure TCommandGetStreamDataResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
 var
   Count: Cardinal;
   i: Integer;

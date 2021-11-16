@@ -23,10 +23,23 @@ unit ClientManager;
 interface
 
 uses
-  SysUtils, Windows, Classes, Generics.Collections, ICEClient, Logging,
-  Functions, AppData, DataManager, HomeCommunication, PlayerManager,
-  AudioFunctions, SWFunctions, TypeDefs, MessageBus, AppMessages,
-  LanguageObjects, Scheduler;
+  AppData,
+  AppMessages,
+  AudioFunctions,
+  Classes,
+  DataManager,
+  Functions,
+  Generics.Collections,
+  HomeCommunication,
+  ICEClient,
+  LanguageObjects,
+  Logging,
+  MessageBus,
+  PlayerManager,
+  Scheduler,
+  SWFunctions,
+  SysUtils,
+  TypeDefs;
 
 type
   TClientManager = class;
@@ -77,8 +90,7 @@ type
     procedure ClientLog(Sender: TObject);
     procedure ClientRefresh(Sender: TObject);
     procedure ClientAddRecent(Sender: TObject);
-    procedure ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
-      Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
+    procedure ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
       ServerTitleHash, ServerArtistHash: Cardinal);
     procedure ClientTitleChanged(Sender: TObject; Title: string);
     procedure ClientDisconnected(Sender: TObject);
@@ -95,8 +107,7 @@ type
     procedure SchedulerLog(Text, Data: string);
     procedure SchedulerSchedule(IsStart: Boolean; Schedule: TSchedule);
 
-    procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, ParsedTitle, CurrentURL: string; RegExes: TStringList;
-      AudioType: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal);
+    procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, ParsedTitle, CurrentURL: string; RegExes: TStringList; AudioType: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal);
     procedure HomeCommMonitorStreamsReceived(Sender: TObject; StreamIDs: TIntArray);
   public
     constructor Create;
@@ -125,8 +136,7 @@ type
 
     property Scheduler: TScheduler read FScheduler;
 
-    function MatchesClient(Client: TICEClient; ID: Integer; Name, URL: string;
-      URLs: TStringList): Boolean;
+    function MatchesClient(Client: TICEClient; ID: Integer; Name, URL: string; URLs: TStringList): Boolean;
     function GetClient(ID: Integer; Name, URL: string; URLs: TStringList): TICEClient;
     function GetUsedBandwidth(Bitrate, Speed: Int64; ClientToAdd: TICEClient = nil): Integer;
 
@@ -157,9 +167,7 @@ var
 begin
   {$IFNDEF NOSSL}
   if Copy(LowerCase(URL), 1, 23) = 'http://streamwriter.org' then
-  begin
     URL := 'https://' + Copy(URL, 8, Length(URL));
-  end;
   {$ENDIF}
 
   C := TICEClient.Create(Self, URL);
@@ -173,9 +181,7 @@ var
 begin
   {$IFNDEF NOSSL}
   if Copy(LowerCase(StartURL), 1, 23) = 'http://streamwriter.org' then
-  begin
     StartURL := 'https://' + Copy(StartURL, 8, Length(StartURL));
-  end;
   {$ENDIF}
 
   C := TICEClient.Create(Self, ID, Bitrate, Name, StartURL);
@@ -191,9 +197,7 @@ var
   C: TICEClient;
 begin
   if Copy(LowerCase(Entry.StartURL), 1, 23) = 'http://streamwriter.org' then
-  begin
     Entry.StartURL := 'https://' + Copy(Entry.StartURL, 8, Length(Entry.StartURL));
-  end;
 
   C := TICEClient.Create(Self, Entry);
   SetupClient(C);
@@ -208,14 +212,12 @@ begin
   UsedKBs := -1;
 
   for Client in FClients do
-  begin
     if ClientToAdd = Client then
       if Client.Recording or Client.Playing then
       begin
         Result := 0;
         Exit;
       end;
-  end;
 
   if UsedKBs = -1 then
     if (Bitrate = 0) and (Speed = 0) then
@@ -226,16 +228,12 @@ begin
       UsedKBs := Speed;
 
   for Client in FClients do
-  begin
     if ClientToAdd <> Client then
       if Client.Recording or Client.Playing then
-      begin
         if Client.Entry.Bitrate >= 64 then
           UsedKBs := UsedKBs + (Integer(Client.Entry.Bitrate) div 8) + 3
         else
           UsedKBs := UsedKBs + Client.Speed div 1024;
-      end;
-  end;
 
   Result := UsedKBs;
 end;
@@ -249,10 +247,8 @@ begin
   Lst := TList<TSchedule>.Create;
   try
     for i := 0 to FClients.Count - 1 do
-    begin
       for n := 0 to FClients[i].Entry.Schedules.Count - 1 do
         Lst.Add(FClients[i].Entry.Schedules[n]);
-    end;
     Scheduler.SetSchedules(Lst);
   finally
     Lst.Free;
@@ -288,8 +284,7 @@ begin
   MsgBus.SendMessage(TLogMsg.Create(nil, lsGeneral, ltSchedule, llDebug, _('Scheduler'), Text));
 end;
 
-procedure TClientManager.SchedulerSchedule(IsStart: Boolean;
-  Schedule: TSchedule);
+procedure TClientManager.SchedulerSchedule(IsStart: Boolean; Schedule: TSchedule);
 var
   i, n: Integer;
   Client: TICEClient;
@@ -310,9 +305,8 @@ begin
   if IsStart then
   begin
     if Client.Recording then
-    begin
-      Client.WriteLog(_('Skipping scheduled recording because recording is already active'), '', ltSchedule, llInfo);
-    end else
+      Client.WriteLog(_('Skipping scheduled recording because recording is already active'), '', ltSchedule, llInfo)
+    else
     begin
       Client.WriteLog(_('Starting scheduled recording'), ltSchedule, llInfo);
 
@@ -327,31 +321,26 @@ begin
         Client.WriteLog(Format(_('Scheduled recording ends at %s'), [TimeToStr(Schedule.GetEndTime(Schedule.GetStartTime(False)))]), ltSchedule, llInfo);
       end;
     end;
-  end else
+  end else if Client.ScheduledRecording then
   begin
-    if Client.ScheduledRecording then
+    if Client.IsCurrentTimeInSchedule(Schedule) then
+      Client.WriteLog(_('Not stopping scheduled recording because another schedule is active'), ltSchedule, llInfo)// Another schedule "surrounds" the triggered schedule, so do nothing
+    else
     begin
-      if Client.IsCurrentTimeInSchedule(Schedule) then
-      begin
-        // Another schedule "surrounds" the triggered schedule, so do nothing
-        Client.WriteLog(_('Not stopping scheduled recording because another schedule is active'), ltSchedule, llInfo);
-      end else
-      begin
-        Client.WriteLog(_('Stopping scheduled recording'), ltSchedule, llInfo);
-        Client.StopRecording;
-      end;
+      Client.WriteLog(_('Stopping scheduled recording'), ltSchedule, llInfo);
+      Client.StopRecording;
+    end;
 
-      if Schedule.AutoRemove then
-      begin
-        Scheduler.SetSchedules(nil);
+    if Schedule.AutoRemove then
+    begin
+      Scheduler.SetSchedules(nil);
 
-        Client.Entry.Schedules.Remove(Schedule);
-        Schedule.Free;
+      Client.Entry.Schedules.Remove(Schedule);
+      Schedule.Free;
 
-        FOnClientRefresh(Client);
+      FOnClientRefresh(Client);
 
-        RefreshScheduler;
-      end;
+      RefreshScheduler;
     end;
   end;
 end;
@@ -503,56 +492,47 @@ begin
           Result := Format(_('Automatic recording of "%s" won''t be started because the folder for automatic recordings does not exist'), [Data])
         else
           Result := _('Automatic recording will be stopped as long as the folder for automatically saved songs does not exist.');
-    end
-  else if WasScheduled then
+    end else if WasScheduled then
     case Msg of
       crNoFreeSpace:
-        begin
-          if ForLog then
-            Result := _('Scheduled recording will not start because available disk space is below the set limit')
-          else
-            Result := Format(_('Scheduled recording of "%s" will not start because available disk space is below the set limit.'), [Data]);
-        end;
+        if ForLog then
+          Result := _('Scheduled recording will not start because available disk space is below the set limit')
+        else
+          Result := Format(_('Scheduled recording of "%s" will not start because available disk space is below the set limit.'), [Data]);
       crNoBandwidth:
-        begin
-          if ForLog then
-            Result := _('Scheduled recording will not start because it would exceed the maximum available bandwidth')
-          else
-            Result := Format(_('Scheduled recording of "%s" will not start because it would exceed the maximum available bandwidth.'), [Data]);
-        end;
+        if ForLog then
+          Result := _('Scheduled recording will not start because it would exceed the maximum available bandwidth')
+        else
+          Result := Format(_('Scheduled recording of "%s" will not start because it would exceed the maximum available bandwidth.'), [Data]);
       crDirDoesNotExist:
-        begin
-          if ForLog then
-            Result := _('Scheduled recording will not start because the folder for saved songs does not exist')
-          else
-            Result := Format(_('Scheduled recording of "%s" will not start because the folder for saved songs does not exist.'), [Data]);
-        end;
-    end
-  else
+        if ForLog then
+          Result := _('Scheduled recording will not start because the folder for saved songs does not exist')
+        else
+          Result := Format(_('Scheduled recording of "%s" will not start because the folder for saved songs does not exist.'), [Data]);
+    end else
     case Msg of
       crNoFreeSpace:
-        begin
-          Result := _('No connection will be established because available disk space is below the set limit');
-          if not ForLog then
-            Result := Result + '.';
-        end;
+      begin
+        Result := _('No connection will be established because available disk space is below the set limit');
+        if not ForLog then
+          Result := Result + '.';
+      end;
       crNoBandwidth:
-        begin
-          Result := _('No connection will be established because it would exceed the maximum available bandwidth');
-          if not ForLog then
-            Result := Result + '.';
-        end;
+      begin
+        Result := _('No connection will be established because it would exceed the maximum available bandwidth');
+        if not ForLog then
+          Result := Result + '.';
+      end;
       crDirDoesNotExist:
-        begin
-          Result := _('No connection will be established because the folder for saved songs does not exist');
-          if not ForLog then
-            Result := Result + '.';
-        end;
+      begin
+        Result := _('No connection will be established because the folder for saved songs does not exist');
+        if not ForLog then
+          Result := Result + '.';
+      end;
     end;
 end;
 
-procedure TClientManager.HomeCommMonitorStreamsReceived(Sender: TObject;
-  StreamIDs: TIntArray);
+procedure TClientManager.HomeCommMonitorStreamsReceived(Sender: TObject; StreamIDs: TIntArray);
 var
   i, n: Integer;
   Client: TICEClient;
@@ -565,7 +545,6 @@ begin
   AppGlobals.Lock;
   try
     for i := 0 to High(StreamIDs) do
-    begin
       for n := 0 to AppGlobals.Data.BrowserList.Count - 1 do
         if AppGlobals.Data.BrowserList[n].ID = StreamIDs[i] then
         begin
@@ -580,14 +559,12 @@ begin
 
           Break;
         end;
-    end;
   finally
     AppGlobals.Unlock;
   end;
 end;
 
-procedure TClientManager.HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, ParsedTitle, CurrentURL: string;
-  RegExes: TStringList; AudioType: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal);
+procedure TClientManager.HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, ParsedTitle, CurrentURL: string; RegExes: TStringList; AudioType: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal);
 var
   i, n: Integer;
   AutoTuneInMinKbps: Cardinal;
@@ -664,14 +641,12 @@ begin
 
   if AppGlobals.AutoTuneInConsiderIgnore then
     for n := 0 to AppGlobals.Data.IgnoreList.Count - 1 do
-    begin
       if Like(Title, AppGlobals.Data.IgnoreList[n].Pattern) then
       begin
         Text := Format('Automatic recording of "%s" won''t be started because it matches "%s" on the ignorelist', [ParsedTitle, AppGlobals.Data.IgnoreList[n].Pattern]);
         MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
         Exit;
       end;
-    end;
 
   MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llInfo, _('Automatic recording'), Format('Starting automatic recording of "%s"', [ParsedTitle])));
 
@@ -709,8 +684,7 @@ begin
     FOnClientAddRecent(Sender);
 end;
 
-function TClientManager.MatchesClient(Client: TICEClient; ID: Integer; Name, URL: string;
-  URLs: TStringList): Boolean;
+function TClientManager.MatchesClient(Client: TICEClient; ID: Integer; Name, URL: string; URLs: TStringList): Boolean;
 var
   i, n: Integer;
 begin
@@ -729,16 +703,12 @@ begin
   if URLs <> nil then
     for i := 0 to Client.Entry.URLs.Count - 1 do
       for n := 0 to URLs.Count - 1 do
-        if (LowerCase(Client.Entry.URLs[i]) = LowerCase(URL)) or
-           (LowerCase(Client.Entry.URLs[i]) = LowerCase(URLs[n])) then
-        begin
+        if (LowerCase(Client.Entry.URLs[i]) = LowerCase(URL)) or (LowerCase(Client.Entry.URLs[i]) = LowerCase(URLs[n])) then
           Exit(True);
-        end;
   Exit(False);
 end;
 
-function TClientManager.GetClient(ID: Integer; Name, URL: string;
-  URLs: TStringList): TICEClient;
+function TClientManager.GetClient(ID: Integer; Name, URL: string; URLs: TStringList): TICEClient;
 var
   Client: TICEClient;
 begin
@@ -747,10 +717,8 @@ begin
 
   Result := nil;
   for Client in FClients do
-  begin
     if MatchesClient(Client, ID, Name, URL, URLs) then
       Exit(Client);
-  end;
 end;
 
 procedure TClientManager.ClientSecondsReceived(Sender: TObject);
@@ -759,9 +727,8 @@ begin
     FOnClientSecondsReceived(Sender);
 end;
 
-procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
-  Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile,
-  RecordBecauseArtist: Boolean; ServerTitleHash, ServerArtistHash: Cardinal);
+procedure TClientManager.ClientSongSaved(Sender: TObject; Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
+  ServerTitleHash, ServerArtistHash: Cardinal);
 begin
   if not IsStreamFile then
   begin
@@ -782,8 +749,7 @@ begin
     FOnClientRefresh(Sender);
 end;
 
-procedure TClientManager.ClientTitleChanged(Sender: TObject;
-  Title: string);
+procedure TClientManager.ClientTitleChanged(Sender: TObject; Title: string);
 begin
   if Assigned(FOnClientTitleChanged) then
     FOnClientTitleChanged(Sender, Title);
@@ -803,8 +769,7 @@ begin
   for i := 0 to FClients.Count - 1 do
     if FClients[i] <> Client then
       for n := 0 to Client.Entry.URLs.Count - 1 do
-        if (FClients[i].Entry.StartURL = Client.Entry.StartURL) or
-           (FClients[i].Entry.URLs.IndexOf(Client.Entry.URLs[n]) > -1) then
+        if (FClients[i].Entry.StartURL = Client.Entry.StartURL) or (FClients[i].Entry.URLs.IndexOf(Client.Entry.URLs[n]) > -1) then
         begin
           if not FClients[i].Killed then
           begin
@@ -818,8 +783,7 @@ begin
         end;
 end;
 
-procedure TClientManager.ClientTitleAllowed(Sender: TObject; Title: string;
-  var Allowed: Boolean; var Match: string; var Filter: Integer);
+procedure TClientManager.ClientTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer);
 begin
   FOnClientTitleAllowed(Sender, Title, Allowed, Match, Filter);
 end;
@@ -845,8 +809,7 @@ begin
   end;
 end;
 
-procedure TClientManager.ClientICYReceived(Sender: TObject;
-  Bytes: Integer);
+procedure TClientManager.ClientICYReceived(Sender: TObject; Bytes: Integer);
 begin
   if Assigned(FOnClientICYReceived) then
     FOnClientICYReceived(Sender, Bytes);
@@ -893,6 +856,3 @@ begin
 end;
 
 end.
-
-
-

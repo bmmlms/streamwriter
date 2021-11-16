@@ -28,12 +28,11 @@ uses
   Functions,
   Generics.Collections,
   Logging,
-  SysUtils,
-  Windows;
+  SysUtils;
 
 type
   // Defines what happened to a moved/renamed file
-  TFileEntryAction = (eaNone, eaSize, eaRemove);
+  TFileEntryAction = (feaNone, feaSize, feaRemove);
 
   TFileEntry = class
   private
@@ -104,13 +103,13 @@ begin
       Exit;
 
     if not FileExists(E.Filename) then
-      E.Action := eaRemove
+      E.Action := feaRemove
     else
     begin
       NewSize := Functions.GetFileSize(E.Filename);
       if E.Size <> NewSize then
       begin
-        E.Action := eaSize;
+        E.Action := feaSize;
         E.Size := NewSize;
       end;
     end;

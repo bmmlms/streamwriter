@@ -1088,8 +1088,8 @@ begin
     FSearch.FGenreList.ItemIndex := 0;
 
   // TODO: die liste sortieren und so...
-//  FSearch.FGenreList.ItemsEx.SortType := stText; //.Sorted := True;
-//  FSearch.FGenreList.Sorted := False;
+  //  FSearch.FGenreList.ItemsEx.SortType := stText; //.Sorted := True;
+  //  FSearch.FGenreList.Sorted := False;
 
   if AppGlobals.BrowserSearchGenre < FSearch.FGenreList.ItemsEx.Count then
     FSearch.FGenreList.ItemIndex := AppGlobals.BrowserSearchGenre;
@@ -1411,7 +1411,7 @@ begin
   FTypeList := TComboBoxEx.Create(Self);
   FTypeList.Parent := P;
   FTypeList.Align := alClient;
-//  FTypeList.Style := csDropDownList;
+  //  FTypeList.Style := csDropDownList;
 
   FTypeList.ItemsEx.AddItem(_('- No type -'));
   FTypeList.ItemsEx.AddItem(_('MP3'));
@@ -1422,7 +1422,7 @@ begin
   FKbpsList := TComboBoxEx.Create(Self);
   FKbpsList.Parent := P;
   FKbpsList.Align := alClient;
-//  FKbpsList.Style := csDropDownList;
+  //  FKbpsList.Style := csDropDownList;
 
   FKbpsList.ItemsEx.AddItem(_('- No kbps -'));
   FKbpsList.ItemsEx.AddItem('>= 64');
@@ -1436,7 +1436,7 @@ begin
   FGenreList := TComboBoxEx.Create(Self);
   FGenreList.Parent := P;
   FGenreList.Align := alClient;
-//  FGenreList.Style := csDropDownList;
+  //  FGenreList.Style := csDropDownList;
   FGenreList.DropDownCount := 16;
 
   P := CreatePanel(_('Search') + ':');

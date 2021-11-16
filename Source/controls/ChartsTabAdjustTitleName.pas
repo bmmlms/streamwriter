@@ -23,9 +23,23 @@ unit ChartsTabAdjustTitleName;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, DataManager, Functions,
-  MsgDlg, MControls, SharedData, Images;
+  Buttons,
+  Classes,
+  Controls,
+  Dialogs,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Graphics,
+  Images,
+  LanguageObjects,
+  MControls,
+  MsgDlg,
+  SharedData,
+  StdCtrls,
+  SysUtils,
+  Variants,
+  Windows;
 
 type
   TfrmChartsTabAdjustTitleName = class(TForm)
@@ -36,8 +50,7 @@ type
     procedure FormCreate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
   public
     TitleName: string;
@@ -65,9 +78,7 @@ begin
   end;
 
   if NumChars <= 3 then
-  begin
     TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('A short pattern may produce many matches, i.e. using ''a'' records/ignores every song containing an ''a''.'), mtInformation, [mbOK], mbOK, 6);
-  end;
 
   TitleName := Trim(txtTitle.Text);
   Okay := True;
@@ -82,8 +93,7 @@ begin
   Okay := False;
 end;
 
-procedure TfrmChartsTabAdjustTitleName.FormKeyDown(Sender: TObject;
-  var Key: Word; Shift: TShiftState);
+procedure TfrmChartsTabAdjustTitleName.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if Key = 27 then
   begin
@@ -99,8 +109,7 @@ begin
   txtTitle.SelLength := 0;
 end;
 
-constructor TfrmChartsTabAdjustTitleName.Create(AOwner: TComponent;
-  Title: string);
+constructor TfrmChartsTabAdjustTitleName.Create(AOwner: TComponent; Title: string);
 begin
   inherited Create(AOwner);
 

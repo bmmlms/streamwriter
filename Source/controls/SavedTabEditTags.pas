@@ -23,9 +23,25 @@ unit SavedTabEditTags;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, LanguageObjects, StdCtrls, Buttons, ExtCtrls, AppData, AudioGenie,
-  AddonAudioGenie, FileTagger, Functions, DataManager, SharedData, Images;
+  AddonAudioGenie,
+  AppData,
+  Buttons,
+  Classes,
+  Controls,
+  DataManager,
+  Dialogs,
+  ExtCtrls,
+  FileTagger,
+  Forms,
+  Functions,
+  Graphics,
+  Images,
+  LanguageObjects,
+  SharedData,
+  StdCtrls,
+  SysUtils,
+  Variants,
+  Windows;
 
 const
   WM_AFTERSHOWN = WM_USER + 678;
@@ -44,8 +60,7 @@ type
     grpData: TGroupBox;
     txtStreamname: TLabeledEdit;
     txtGenre: TLabeledEdit;
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure btnCloseClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
   private
@@ -80,13 +95,11 @@ begin
   if Length(FTracks) = 1 then
   begin
     if not FAddon.FilesExtracted then
-    begin
       if not AppGlobals.AddonManager.EnableAddon(Owner as TCustomForm, FAddon, True) then
       begin
         DisableTags;
         MsgBox(_('Tags cannot be read and written because a needed addon has not been installed.'), _('Info'), MB_ICONINFORMATION);
       end;
-    end;
 
     if FAddon.FilesExtracted then
       try
@@ -181,8 +194,7 @@ begin
   txtStreamname.SelLength := 0;
 end;
 
-procedure TfrmEditTags.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TfrmEditTags.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if Key = 27 then
   begin

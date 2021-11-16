@@ -24,9 +24,24 @@ unit SharedControls;
 interface
 
 uses
-  Windows, SysUtils, Classes, ComCtrls, ExtCtrls, Controls, Graphics,
-  LanguageObjects, Menus, SharedData, Images, Themes, Messages, Math,
-  Buttons, Logging, Forms, VirtualTrees;
+  Buttons,
+  Classes,
+  ComCtrls,
+  Controls,
+  ExtCtrls,
+  Forms,
+  Graphics,
+  Images,
+  LanguageObjects,
+  Logging,
+  Math,
+  Menus,
+  Messages,
+  SharedData,
+  SysUtils,
+  Themes,
+  VirtualTrees,
+  Windows;
 
 type
   TGripperStates = (gsUnknown, gsNormal, gsHot, gsDown);
@@ -53,8 +68,8 @@ type
     FSetting: Boolean;
     FOnPositionChanged: TNotifyEvent;
 
-    procedure PaintBackground(Bmp: TBitmap);
-    procedure PaintGripper(Bmp: TBitmap);
+    procedure PaintBackground(Bmp: Graphics.TBitmap);
+    procedure PaintGripper(Bmp: Graphics.TBitmap);
 
     function GetGripperState: TGripperStates;
 
@@ -67,10 +82,8 @@ type
     procedure Paint; override;
     procedure MouseMove(Shift: TShiftState; X: Integer; Y: Integer);
       override;
-    procedure MouseDown(Button: TMouseButton; Shift: TShiftState;
-      X: Integer; Y: Integer); override;
-    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X: Integer;
-      Y: Integer); override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X: Integer; Y: Integer); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X: Integer; Y: Integer); override;
     procedure WndProc(var Message: TMessage); override;
   public
     constructor Create(AOwner: TComponent); override;
@@ -263,7 +276,7 @@ end;
 
 procedure TSeekBar.Paint;
 var
-  Bmp: TBitmap;
+  Bmp: Graphics.TBitmap;
   R: TRect;
 begin
   inherited;
@@ -271,7 +284,7 @@ begin
   if not HandleAllocated then
     Exit;
 
-  Bmp := TBitmap.Create;
+  Bmp := Graphics.TBitmap.Create;
   try
     Bmp.Width := ClientWidth;
     Bmp.Height := ClientHeight;
@@ -287,9 +300,7 @@ begin
       Bmp.Canvas.Brush.Color := clBtnFace;
       Bmp.Canvas.FillRect(R);
     end else
-    begin
       ThemeServices.DrawParentBackground(Handle, BMP.Canvas.Handle, nil, False);
-    end;
 
     PaintBackground(Bmp);
     PaintGripper(Bmp);
@@ -300,7 +311,7 @@ begin
   end;
 end;
 
-procedure TSeekBar.PaintBackground(Bmp: TBitmap);
+procedure TSeekBar.PaintBackground(Bmp: Graphics.TBitmap);
 var
   R: TRect;
 begin
@@ -309,43 +320,43 @@ begin
 
   case FOrientation of
     sbHorizontal:
-      begin
-        // Rand links und oben
-        Bmp.Canvas.MoveTo(0, Bmp.Height div 2 + 3); // Unten links
-        Bmp.Canvas.LineTo(0, Bmp.Height div 2 - 3); // Nach oben malen
-        Bmp.Canvas.LineTo(Bmp.Width - Bmp.Canvas.Pen.Width, Bmp.Height div 2 - 3); // Nach rechts malen
-        // Rand rechts und unten
-        Bmp.Canvas.Pen.Color := clGray;
-        Bmp.Canvas.LineTo(Bmp.Width - Bmp.Canvas.Pen.Width, Bmp.Height div 2 + 3);
-        Bmp.Canvas.LineTo(0, Bmp.Height div 2 + 3);
+    begin
+      // Rand links und oben
+      Bmp.Canvas.MoveTo(0, Bmp.Height div 2 + 3); // Unten links
+      Bmp.Canvas.LineTo(0, Bmp.Height div 2 - 3); // Nach oben malen
+      Bmp.Canvas.LineTo(Bmp.Width - Bmp.Canvas.Pen.Width, Bmp.Height div 2 - 3); // Nach rechts malen
+      // Rand rechts und unten
+      Bmp.Canvas.Pen.Color := clGray;
+      Bmp.Canvas.LineTo(Bmp.Width - Bmp.Canvas.Pen.Width, Bmp.Height div 2 + 3);
+      Bmp.Canvas.LineTo(0, Bmp.Height div 2 + 3);
 
-        R.Left := Canvas.Pen.Width;
-        R.Top := Bmp.Height div 2 - 3 + Bmp.Canvas.Pen.Width;
-        R.Bottom := Bmp.Height div 2 + 3;
-        R.Right := Bmp.Width - Bmp.Canvas.Pen.Width;
-      end;
+      R.Left := Canvas.Pen.Width;
+      R.Top := Bmp.Height div 2 - 3 + Bmp.Canvas.Pen.Width;
+      R.Bottom := Bmp.Height div 2 + 3;
+      R.Right := Bmp.Width - Bmp.Canvas.Pen.Width;
+    end;
     sbVertical:
-      begin
-        // Rand links und oben
-        Bmp.Canvas.MoveTo(Bmp.Width div 2 - 3, Bmp.Height - Bmp.Canvas.Pen.Width);
-        Bmp.Canvas.LineTo(Bmp.Width div 2 - 3, 0);
-        Bmp.Canvas.LineTo(Bmp.Width div 2 + 3, 0);
-        // Rand rechts und unten
-        Bmp.Canvas.Pen.Color := clGray;
-        Bmp.Canvas.LineTo(Bmp.Width div 2 + 3, Bmp.Height - Bmp.Canvas.Pen.Width);
-        Bmp.Canvas.LineTo(Bmp.Width div 2 - 3, Bmp.Height - Bmp.Canvas.Pen.Width);
+    begin
+      // Rand links und oben
+      Bmp.Canvas.MoveTo(Bmp.Width div 2 - 3, Bmp.Height - Bmp.Canvas.Pen.Width);
+      Bmp.Canvas.LineTo(Bmp.Width div 2 - 3, 0);
+      Bmp.Canvas.LineTo(Bmp.Width div 2 + 3, 0);
+      // Rand rechts und unten
+      Bmp.Canvas.Pen.Color := clGray;
+      Bmp.Canvas.LineTo(Bmp.Width div 2 + 3, Bmp.Height - Bmp.Canvas.Pen.Width);
+      Bmp.Canvas.LineTo(Bmp.Width div 2 - 3, Bmp.Height - Bmp.Canvas.Pen.Width);
 
-        R.Left := Bmp.Width div 2 - 3 + Canvas.Pen.Width;
-        R.Top := Bmp.Canvas.Pen.Width;
-        R.Bottom := Bmp.Height - Bmp.Canvas.Pen.Width;
-        R.Right := Bmp.Width div 2 + 3 - Bmp.Canvas.Pen.Width;
-      end;
+      R.Left := Bmp.Width div 2 - 3 + Canvas.Pen.Width;
+      R.Top := Bmp.Canvas.Pen.Width;
+      R.Bottom := Bmp.Height - Bmp.Canvas.Pen.Width;
+      R.Right := Bmp.Width div 2 + 3 - Bmp.Canvas.Pen.Width;
+    end;
   end;
   Bmp.Canvas.Brush.Color := clBtnFace;
   Bmp.Canvas.FillRect(R);
 end;
 
-procedure TSeekBar.PaintGripper(Bmp: TBitmap);
+procedure TSeekBar.PaintGripper(Bmp: Graphics.TBitmap);
 var
   P: Cardinal;
   R: TRect;
@@ -370,7 +381,8 @@ begin
 
       R.Top := P;
       R.Left := 0;
-      R.Bottom := P + 20;;
+      R.Bottom := P + 20;
+      ;
       R.Right := Bmp.Width;
     end;
 
@@ -378,58 +390,50 @@ begin
     begin
       case GetGripperState of
         gsNormal:
+          if FOrientation = sbHorizontal then
           begin
-            if FOrientation = sbHorizontal then
-            begin
-              D := ThemeServices.GetElementDetails(tsThumbBtnHorzNormal);
-              D2 := ThemeServices.GetElementDetails(tsGripperHorzNormal);
-            end else
-            begin
-              D := ThemeServices.GetElementDetails(tsThumbBtnVertNormal);
-              D2 := ThemeServices.GetElementDetails(tsGripperVertNormal);
-            end;
+            D := ThemeServices.GetElementDetails(tsThumbBtnHorzNormal);
+            D2 := ThemeServices.GetElementDetails(tsGripperHorzNormal);
+          end else
+          begin
+            D := ThemeServices.GetElementDetails(tsThumbBtnVertNormal);
+            D2 := ThemeServices.GetElementDetails(tsGripperVertNormal);
           end;
         gsHot:
+          if FOrientation = sbHorizontal then
           begin
-            if FOrientation = sbHorizontal then
-            begin
-              D := ThemeServices.GetElementDetails(tsThumbBtnHorzHot);
-              D2 := ThemeServices.GetElementDetails(tsGripperHorzHot);
-            end else
-            begin
-              D := ThemeServices.GetElementDetails(tsThumbBtnVertHot);
-              D2 := ThemeServices.GetElementDetails(tsGripperVertHot);
-            end;
+            D := ThemeServices.GetElementDetails(tsThumbBtnHorzHot);
+            D2 := ThemeServices.GetElementDetails(tsGripperHorzHot);
+          end else
+          begin
+            D := ThemeServices.GetElementDetails(tsThumbBtnVertHot);
+            D2 := ThemeServices.GetElementDetails(tsGripperVertHot);
           end;
         gsDown:
+          if FOrientation = sbHorizontal then
           begin
-            if FOrientation = sbHorizontal then
-            begin
-              D := ThemeServices.GetElementDetails(tsThumbBtnHorzPressed);
-              D2 := ThemeServices.GetElementDetails(tsGripperHorzPressed);
-            end else
-            begin
-              D := ThemeServices.GetElementDetails(tsThumbBtnVertPressed);
-              D2 := ThemeServices.GetElementDetails(tsGripperVertPressed);
-            end;
+            D := ThemeServices.GetElementDetails(tsThumbBtnHorzPressed);
+            D2 := ThemeServices.GetElementDetails(tsGripperHorzPressed);
+          end else
+          begin
+            D := ThemeServices.GetElementDetails(tsThumbBtnVertPressed);
+            D2 := ThemeServices.GetElementDetails(tsGripperVertPressed);
           end;
       end;
 
       ThemeServices.DrawElement(Bmp.Canvas.Handle, D, R);
       ThemeServices.DrawElement(Bmp.Canvas.Handle, D2, R);
     end else
-    begin
       //case GetGripperState of
-        {
+{
         gsNormal:
           DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, False);
         gsHot:
           DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, True);
         gsDown:
           DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, True, True);
-        }
-      //end;
-    end;
+        }//end;
+    ;
 
     FLastGripperState := GetGripperState;
     FLastGripperPos := FPosition;
@@ -490,21 +494,17 @@ begin
 
     R.Top := P;
     R.Left := 2;
-    R.Bottom := P + 20;;
+    R.Bottom := P + 20;
+    ;
     R.Right := ClientWidth;
   end;
 
   if not FGripperDown and PtInRect(R, ScreenToClient(Mouse.CursorPos)) then
-  begin
-    Result := gsHot;
-  end else
-  if FGripperDown then
-  begin
-    Result := gsDown;
-  end else
-  begin
+    Result := gsHot
+  else if FGripperDown then
+    Result := gsDown
+  else
     Result := gsNormal;
-  end;
 end;
 
 constructor TSeekBar.Create(AOwner: TComponent);
@@ -536,11 +536,10 @@ begin
   FPosition := Value;
   if FMax = 0 then
     FGripperPos := 0
+  else if FOrientation = sbHorizontal then
+    FGripperPos := Trunc((FPosition / FMax) * (ClientWidth - 20))
   else
-    if FOrientation = sbHorizontal then
-      FGripperPos := Trunc((FPosition / FMax) * (ClientWidth - 20))
-    else
-      FGripperPos := Trunc((FPosition / FMax) * (ClientHeight - 20));
+    FGripperPos := Trunc((FPosition / FMax) * (ClientHeight - 20));
 
   if FNotifyOnMove then
     if Assigned(FOnPositionChanged) then
@@ -550,8 +549,7 @@ begin
     Paint;
 end;
 
-procedure TSeekBar.MouseDown(Button: TMouseButton; Shift: TShiftState;
-  X: Integer; Y: Integer);
+procedure TSeekBar.MouseDown(Button: TMouseButton; Shift: TShiftState; X: Integer; Y: Integer);
 var
   V: Integer;
 begin
@@ -567,7 +565,7 @@ begin
     if FOrientation = sbHorizontal then
     begin
       V := X;
-      FGripperPos := Trunc((FPosition / FMax) * (ClientWidth - 20))
+      FGripperPos := Trunc((FPosition / FMax) * (ClientWidth - 20));
     end else
     begin
       V := Y;
@@ -575,9 +573,8 @@ begin
     end;
 
     if (V > FGripperPos) and (V < FGripperPos + 20) then
-    begin
-      FDragFrom := Min(Abs(V - FGripperPos), Abs(FGripperPos - V));
-    end else
+      FDragFrom := Min(Abs(V - FGripperPos), Abs(FGripperPos - V))
+    else
     begin
       FDragFrom := 10;
 
@@ -642,8 +639,7 @@ begin
 
 end;
 
-procedure TSeekBar.MouseUp(Button: TMouseButton; Shift: TShiftState;
-  X: Integer; Y: Integer);
+procedure TSeekBar.MouseUp(Button: TMouseButton; Shift: TShiftState; X: Integer; Y: Integer);
 begin
   inherited;
 
@@ -695,9 +691,7 @@ begin
   end;
 
   for i := 0 to Items.Count - 1 do
-  begin
     Items[i].Checked := coVisible in TVirtualTreeColumn(Items[i].Tag).Options;
-  end;
 end;
 
 { TToolbarForcedHorizontal }
@@ -718,4 +712,3 @@ begin
 end;
 
 end.
-

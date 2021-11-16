@@ -23,8 +23,13 @@ unit MonitorAnalyzer;
 interface
 
 uses
-  SysUtils, Windows, Classes, Generics.Collections, DynBASS, WaveData,
-  ExtendedStream, HomeCommunication;
+  Classes,
+  DynBASS,
+  ExtendedStream,
+  Generics.Collections,
+  HomeCommunication,
+  SysUtils,
+  Windows;
 
 type
   TMonitorAnalyzer = class
@@ -137,10 +142,10 @@ begin
   // im Konstruktor nicht (es wird direkt BASSRead aufgerufen, wenn da nichts rauskommt ist ende!)
   if FPlayer = 0 then
   begin
-    Funcs.close := BASSClose;
+    Funcs.Close := BASSClose;
     Funcs.length := BASSLen;
     Funcs.seek := BASSSeek;
-    Funcs.read := BASSRead;
+    Funcs.Read := BASSRead;
     FPlayer := BASSStreamCreateFileUser(STREAMFILE_BUFFERPUSH, BASS_STREAM_DECODE, Funcs, Self);
   end;
 
@@ -187,7 +192,7 @@ begin
     FWaveDataStream.Write(Byte(FTitleChanges.Count));
 
     if (FWaveDataStream.Size > 4096) and (Assigned(FOnAnalyzed)) then
-       FOnAnalyzed(Self);
+      FOnAnalyzed(Self);
   end;
 end;
 

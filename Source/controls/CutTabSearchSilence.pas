@@ -23,9 +23,23 @@ unit CutTabSearchSilence;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, AppData, Functions,
-  MControls, SharedData, Images;
+  AppData,
+  Buttons,
+  Classes,
+  Controls,
+  Dialogs,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Graphics,
+  Images,
+  LanguageObjects,
+  MControls,
+  SharedData,
+  StdCtrls,
+  SysUtils,
+  Variants,
+  Windows;
 
 type
   TfrmCutTabSearchSilence = class(TForm)
@@ -39,8 +53,7 @@ type
     Bevel2: TBevel;
     btnOK: TBitBtn;
     procedure btnOKClick(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormCreate(Sender: TObject);
   private
     FAutoDetect: Boolean;
@@ -81,8 +94,7 @@ begin
   Close;
 end;
 
-constructor TfrmCutTabSearchSilence.Create(AOwner: TComponent;
-  AutoDetect: Boolean);
+constructor TfrmCutTabSearchSilence.Create(AOwner: TComponent; AutoDetect: Boolean);
 begin
   inherited Create(AOwner);
 
@@ -110,13 +122,10 @@ begin
     Label14.Enabled := False;
     txtSilenceLevel.Text := '';
   end else
-  begin
     txtSilenceLevel.Text := IntToStr(AppGlobals.Data.StreamSettings.SilenceLevel);
-  end;
 end;
 
-procedure TfrmCutTabSearchSilence.FormKeyDown(Sender: TObject;
-  var Key: Word; Shift: TShiftState);
+procedure TfrmCutTabSearchSilence.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if Key = 27 then
   begin

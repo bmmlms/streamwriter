@@ -23,9 +23,22 @@ unit Equalizer;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, SharedControls, StdCtrls, PlayerManager, LanguageObjects,
-  ExtCtrls, AppData, GUIFunctions, Buttons;
+  AppData,
+  Buttons,
+  Classes,
+  Controls,
+  Dialogs,
+  ExtCtrls,
+  Forms,
+  Graphics,
+  GUIFunctions,
+  LanguageObjects,
+  PlayerManager,
+  SharedControls,
+  StdCtrls,
+  SysUtils,
+  Variants,
+  Windows;
 
 type
   TEqualizer = class(TWinControl)
@@ -49,8 +62,7 @@ type
     btnReset: TBitBtn;
     procedure FormCreate(Sender: TObject);
     procedure chkEqualizerClick(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure btnResetClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
   private
@@ -203,10 +215,9 @@ begin
   chkEqualizer.Checked := AppGlobals.EQEnabled;
 end;
 
-procedure TfrmEqualizer.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TfrmEqualizer.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
- if Key = 27 then
+  if Key = 27 then
   begin
     Key := 0;
     Close;

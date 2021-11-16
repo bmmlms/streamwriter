@@ -23,14 +23,21 @@ unit FileTagger;
 interface
 
 uses
-  Windows, SysUtils, Classes, AudioGenie, AddonAudioGenie, SyncObjs, Graphics,
-  Math, Base64;
+  AddonAudioGenie,
+  AudioGenie,
+  Base64,
+  Classes,
+  Graphics,
+  Math,
+  SyncObjs,
+  SysUtils,
+  Windows;
 
 type
   TTagData = class
   private
     FArtist, FTitle, FAlbum, FGenre, FComment, FTrackNumber: string;
-    FCoverImage: TBitmap;
+    FCoverImage: Graphics.TBitmap;
     FPopulariMeterEmail: WideString;
     FPopulariMeterRating: SmallInt;
     FPopulariMeterCounter: LongInt;
@@ -46,7 +53,7 @@ type
     property Comment: string read FComment write FComment;
     property TrackNumber: string read FTrackNumber write FTrackNumber;
     //property PopularityMeter: SmallInt read FPopulatityMeter write FPopulatityMeter;
-    property CoverImage: TBitmap read FCoverImage;
+    property CoverImage: Graphics.TBitmap read FCoverImage;
   end;
 
   TFileTagger = class
@@ -55,8 +62,7 @@ type
     FAudioType: TAudioFormatID;
     FTag: TTagData;
 
-    function FindGraphicClass(const Buffer; const BufferSize: Int64;
-      out GraphicClass: TGraphicClass): Boolean;
+    function FindGraphicClass(const Buffer; const BufferSize: Int64; out GraphicClass: TGraphicClass): Boolean;
     //procedure ResizeBitmap(var Bitmap: TBitmap; MaxSize: Integer);
     procedure ReadCover(AG: TAudioGenie3);
   public
@@ -85,7 +91,7 @@ uses
   AppData;
 
 var
-  FileTaggerLock: TCriticalSection;
+  FileTaggerLock: SyncObjs.TCriticalSection;
 
 { TFileTagger }
 
@@ -103,8 +109,7 @@ begin
   inherited;
 end;
 
-function TFileTagger.FindGraphicClass(const Buffer; const BufferSize: Int64;
-  out GraphicClass: TGraphicClass): Boolean;
+function TFileTagger.FindGraphicClass(const Buffer; const BufferSize: Int64; out GraphicClass: TGraphicClass): Boolean;
 var
   LongWords: array[Byte] of LongWord absolute Buffer;
   Words: array[Byte] of Word absolute Buffer;
@@ -127,8 +132,8 @@ end;
 
 function Swap32(Data: Integer): Integer; assembler;
 asm
-//  BSWAP eax
-//  BSWAP rax
+         //  BSWAP eax
+         //  BSWAP rax
 end;
 
 procedure TFileTagger.ReadCover(AG: TAudioGenie3);
@@ -146,79 +151,77 @@ begin
 
   case FAudioType of
     MPEG:
+    begin
+      PicFrameCount := AG.ID3V2GetFrameCountW(ID3F_APIC);
+      if PicFrameCount > 0 then
       begin
-        PicFrameCount := AG.ID3V2GetFrameCountW(ID3F_APIC);
-        if PicFrameCount > 0 then
+        PicSize := AG.ID3V2GetPictureSizeW(PicFrameCount);
+        if (PicSize > 0) and (PicSize < 1000000) then
         begin
-          PicSize := AG.ID3V2GetPictureSizeW(PicFrameCount);
-          if (PicSize > 0) and (PicSize < 1000000) then
+          Mem := AllocMem(PicSize);
+          if Mem <> nil then
           begin
-            Mem := AllocMem(PicSize);
-            if Mem <> nil then
+            if AG.ID3V2GetPictureArrayW(Mem, PicSize, PicFrameCount) > 0 then
             begin
-              if AG.ID3V2GetPictureArrayW(Mem, PicSize, PicFrameCount) > 0 then
-              begin
-                MS := TMemoryStream.Create;
-                try
-                  MS.Write(Mem^, PicSize);
-                  MS.Position := 0;
+              MS := TMemoryStream.Create;
+              try
+                MS.Write(Mem^, PicSize);
+                MS.Position := 0;
 
-                  if FindGraphicClass(MS.Memory^, MS.Size, GraphicClass) then
-                  begin
-                    Graphic := GraphicClass.Create;
-                    Graphic.LoadFromStream(MS);
-                  end;
-                finally
-                  MS.Free;
+                if FindGraphicClass(MS.Memory^, MS.Size, GraphicClass) then
+                begin
+                  Graphic := GraphicClass.Create;
+                  Graphic.LoadFromStream(MS);
                 end;
+              finally
+                MS.Free;
               end;
-              FreeMem(Mem);
             end;
+            FreeMem(Mem);
           end;
         end;
       end;
+    end;
     OGGVORBIS:
+    begin
+      Keys := AG.OGGGetItemKeysW;
+      if Pos('METADATA_BLOCK_PICTURE', Keys) > 0 then
       begin
-        Keys := AG.OGGGetItemKeysW;
-        if Pos('METADATA_BLOCK_PICTURE', Keys) > 0 then
+        ImageData := AG.OGGUserItemW['METADATA_BLOCK_PICTURE'];
+        if (Length(ImageData) > 0) and (Length(ImageData) < 1000000) then
         begin
-          ImageData := AG.OGGUserItemW['METADATA_BLOCK_PICTURE'];
-          if (Length(ImageData) > 0) and (Length(ImageData) < 1000000) then
-          begin
-            ImageData := DecodeStringBase64(ImageData);
+          ImageData := DecodeStringBase64(ImageData);
 
-            MS := TMemoryStream.Create;
-            try
-              MS.Write(ImageData[1], Length(ImageData));
+          MS := TMemoryStream.Create;
+          try
+            MS.Write(ImageData[1], Length(ImageData));
 
-              // Siehe http://flac.sourceforge.net/format.html#metadata_block_picture
-              MS.Seek(4, soFromBeginning);
+            // Siehe http://flac.sourceforge.net/format.html#metadata_block_picture
+            MS.Seek(4, soFromBeginning);
 
-              MS.Read(Len, SizeOf(Len));
-              Len := Swap32(Len);
-              MS.Seek(Len, soFromCurrent);
+            MS.Read(Len, SizeOf(Len));
+            Len := Swap32(Len);
+            MS.Seek(Len, soFromCurrent);
 
-              MS.Read(Len, SizeOf(Len));
-              Len := Swap32(Len);
-              MS.Seek(Len, soFromCurrent);
+            MS.Read(Len, SizeOf(Len));
+            Len := Swap32(Len);
+            MS.Seek(Len, soFromCurrent);
 
-              MS.Seek(20, soFromCurrent);
+            MS.Seek(20, soFromCurrent);
 
-              if FindGraphicClass(Pointer(Int64(MS.Memory) + MS.Position)^, MS.Size, GraphicClass) then
-              begin
-                Graphic := GraphicClass.Create;
-                Graphic.LoadFromStream(MS);
-              end;
-            finally
-              MS.Free;
+            if FindGraphicClass(Pointer(Int64(MS.Memory) + MS.Position)^, MS.Size, GraphicClass) then
+            begin
+              Graphic := GraphicClass.Create;
+              Graphic.LoadFromStream(MS);
             end;
+          finally
+            MS.Free;
           end;
         end;
       end;
-    MP4M4A:
-      begin
-        // ...
-      end;
+    end;
+    MP4M4A: ;// ...
+
   end;
 
   if Graphic <> nil then
@@ -226,7 +229,7 @@ begin
     FTag.FCoverImage.Free;
 
     try
-      FTag.FCoverImage := TBitmap.Create;
+      FTag.FCoverImage := Graphics.TBitmap.Create;
       FTag.FCoverImage.Assign(Graphic);
 
       //ResizeBitmap(FCoverImage, MaxCoverWidth);
@@ -254,7 +257,7 @@ begin
 
     try
       FAudioType := AG.AUDIOAnalyzeFileW(Filename);
-      if FAudioType <> UNKNOWN then
+      if FAudioType <> TAudioFormatID.UNKNOWN then
       begin
         FTag.FArtist := AG.AUDIOArtistW;
         FTag.FTitle := AG.AUDIOTitleW;
@@ -265,11 +268,11 @@ begin
 
         case FAudioType of
           MPEG:
-            begin
-              FTag.FPopulariMeterEmail := AG.ID3V2GetPopularimeterEmailW(1);
-              FTag.FPopulariMeterRating := AG.ID3V2GetPopularimeterRatingW(1);
-              FTag.FPopulariMeterCounter := AG.ID3V2GetPopularimeterCounterW(1);
-            end;
+          begin
+            FTag.FPopulariMeterEmail := AG.ID3V2GetPopularimeterEmailW(1);
+            FTag.FPopulariMeterRating := AG.ID3V2GetPopularimeterRatingW(1);
+            FTag.FPopulariMeterCounter := AG.ID3V2GetPopularimeterCounterW(1);
+          end;
         end;
 
         ReadCover(AG);
@@ -301,7 +304,7 @@ begin
   try
     AG := TAudioGenie3.Create(TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).DLLPath);
     try
-      if AG.AUDIOAnalyzeFileW(Filename) <> UNKNOWN then
+      if AG.AUDIOAnalyzeFileW(Filename) <> TAudioFormatID.UNKNOWN then
       begin
         AG.AUDIOArtistW := FTag.FArtist;
         AG.AUDIOTitleW := FTag.FTitle;
@@ -313,7 +316,6 @@ begin
         // ihn in der Eigenschaften-Seite anzeigt ($0067 geht ab Windows Vista).
         Ver.dwOSVersionInfoSize := SizeOf(Ver);
         if GetVersionEx(Ver) then
-        begin
           if Ver.dwMajorVersion = 6 then
           begin
             ZeroMemory(@LangCode[0], 9);
@@ -324,17 +326,12 @@ begin
               AG.ID3V2AddCommentW(S, '', FTag.FComment);
             end;
           end;
-        end;
 
         AG.AUDIOTrackW := FTag.FTrackNumber;
         case FAudioType of
           MPEG:
-            begin
-              if (FTag.FPopulariMeterRating > 0) or (FTag.FPopulariMeterCounter > 0) then
-              begin
-                AG.ID3V2AddPopularimeterW(FTag.FPopulariMeterEmail, FTag.FPopulariMeterRating, FTag.FPopulariMeterCounter);
-              end;
-            end;
+            if (FTag.FPopulariMeterRating > 0) or (FTag.FPopulariMeterCounter > 0) then
+              AG.ID3V2AddPopularimeterW(FTag.FPopulariMeterEmail, FTag.FPopulariMeterRating, FTag.FPopulariMeterCounter);
         end;
 
         if AG.AUDIOSaveChangesW then
@@ -362,7 +359,7 @@ begin
 
   if FCoverImage <> nil then
   begin
-    Result.FCoverImage := TBitmap.Create;
+    Result.FCoverImage := Graphics.TBitmap.Create;
     Result.FCoverImage.Assign(FCoverImage);
   end;
 end;
@@ -382,7 +379,7 @@ begin
 end;
 
 initialization
-  FileTaggerLock := TCriticalSection.Create;
+  FileTaggerLock := SyncObjs.TCriticalSection.Create;
 
 finalization
   FileTaggerLock.Free;

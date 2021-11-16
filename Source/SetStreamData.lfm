@@ -19,7 +19,7 @@ object frmSetStreamData: TfrmSetStreamData
   OnKeyDown = FormKeyDown
   OnResize = FormResize
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.1'
+  LCLVersion = '2.2.0.2'
   object btnResetTitlePattern: TSpeedButton
     Left = 625
     Height = 21

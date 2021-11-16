@@ -1,230 +1,217 @@
 object frmConfigureSetTags: TfrmConfigureSetTags
   Left = 0
+  Height = 369
   Top = 0
+  Width = 329
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'frmConfigureSetTags'
   ClientHeight = 369
   ClientWidth = 329
   Color = clBtnFace
-  Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
-  Font.Style = []
   Icon.Data = {
-    0000010001001010000001002000680400001600000028000000100000002000
-    000001002000000000000000000000000000000000000000000000000000FFFF
+    7E04000000000100010010100000010020006804000016000000280000001000
+    0000200000000100200000000000000000000000000000000000000000000000
+    0000FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00B25E2AFFAA5A28FFA65727FFA15426FF985024F7FFFFFF00FFFF
+    FF008C4A21FD894820FD86461FF484451FE6FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00B65F2BFFC98459FFC88256FFC77F53FFA35526FFFFFFFF00FFFF
+    FF00924D22FFC57A4CFFC57748FF86461FFFFFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00BE642CFFCA855CFFC06730FFC98459FFC06730FFA35526FF9E53
+    25FFB55F2BFFC67B4DFFC57A4CFF894820FFFFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00C06832FFCB8960FFCA855CFFC37341FFC98459FFC88256FFC882
+    56FFC77F53FFC06832FFC77E52FF8E4A21FFFFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00C26E3BFFC06832FFC37545FFCB8960FFC06832FFC06730FFBF65
+    2DFFBB622CFFB7602CFFC77F53FFB35E2BFF8E4A21F98C4A21FF88471FFFFFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00C16A35FFCB8A62FFC16B37FFC06832FFC068
+    32FFC06730FFBB622CFFC26E3BFFC77F53FFC77E52FFC77E52FF8C4A21FFFFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00C36F3CFFCC8C65FFC36F3CFFC16C39FFC16B
+    37FFC06832FFC06730FFC36F3CFFC88256FFC77F53FFC77F53FF904C22FFFFFF
+    FF00FFFFFF00C5784AFFC47645FFC67C4FFFCD8E68FFC37341FFC3703EFFC16C
+    39FFC16C39FFC06832FFCA855CFFC06730FFA35526FF9C5224FF954F23FFFFFF
+    FF00FFFFFF00C67C4FFFCF936FFFCD906BFFC77F53FFC47645FFC37341FFC373
+    41FFC37341FFC37140FFCB8960FFAD5B29FFFFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00C77F53FFCF9471FFCF936FFFCD906BFFCD906BFFCD8E68FFCD8E
+    68FFCC8B63FFCB8960FFCA855CFFB35E2BFFFFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00C88256FFC77F53FFC67C4FFFC67B4DFFC5784AFECD906BFFCD8E
+    68FFC26E3BF0C06832EDBF652DEFB9612CEFFFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00C67B4DF4CE916CFFCC8C
+    65FFC37140BEFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00C8825612C77F53FFCF9471FFCE91
+    6CFFC47645ECFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00C88256D4C77F53FFC67C
+    4FFEC5784AB4FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
     FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
     FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-    FF00B25E2AFFAA5A28FFA65727FFA15426FF985024F7FFFFFF00FFFFFF008C4A
-    21FD894820FD86461FF484451FE6FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-    FF00B65F2BFFC98459FFC88256FFC77F53FFA35526FFFFFFFF00FFFFFF00924D
-    22FFC57A4CFFC57748FF86461FFFFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-    FF00BE642CFFCA855CFFC06730FFC98459FFC06730FFA35526FF9E5325FFB55F
-    2BFFC67B4DFFC57A4CFF894820FFFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-    FF00C06832FFCB8960FFCA855CFFC37341FFC98459FFC88256FFC88256FFC77F
-    53FFC06832FFC77E52FF8E4A21FFFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-    FF00C26E3BFFC06832FFC37545FFCB8960FFC06832FFC06730FFBF652DFFBB62
-    2CFFB7602CFFC77F53FFB35E2BFF8E4A21F98C4A21FF88471FFFFFFFFF00FFFF
-    FF00FFFFFF00FFFFFF00C16A35FFCB8A62FFC16B37FFC06832FFC06832FFC067
-    30FFBB622CFFC26E3BFFC77F53FFC77E52FFC77E52FF8C4A21FFFFFFFF00FFFF
-    FF00FFFFFF00FFFFFF00C36F3CFFCC8C65FFC36F3CFFC16C39FFC16B37FFC068
-    32FFC06730FFC36F3CFFC88256FFC77F53FFC77F53FF904C22FFFFFFFF00FFFF
-    FF00C5784AFFC47645FFC67C4FFFCD8E68FFC37341FFC3703EFFC16C39FFC16C
-    39FFC06832FFCA855CFFC06730FFA35526FF9C5224FF954F23FFFFFFFF00FFFF
-    FF00C67C4FFFCF936FFFCD906BFFC77F53FFC47645FFC37341FFC37341FFC373
-    41FFC37140FFCB8960FFAD5B29FFFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-    FF00C77F53FFCF9471FFCF936FFFCD906BFFCD906BFFCD8E68FFCD8E68FFCC8B
-    63FFCB8960FFCA855CFFB35E2BFFFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-    FF00C88256FFC77F53FFC67C4FFFC67B4DFFC5784AFECD906BFFCD8E68FFC26E
-    3BF0C06832EDBF652DEFB9612CEFFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00C67B4DF4CE916CFFCC8C65FFC371
-    40BEFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-    FF00FFFFFF00FFFFFF00FFFFFF00C8825612C77F53FFCF9471FFCE916CFFC476
-    45ECFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00C88256D4C77F53FFC67C4FFEC578
-    4AB4FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-    FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-    0000830F0000830F0000800F0000800F000080010000E0010000E00100008001
-    0000800F0000800F0000800F0000F87F0000F87F0000F87F0000FFFF0000}
+    FF00FFFF0000830F0000830F0000800F0000800F000080010000E0010000E001
+    000080010000800F0000800F0000800F0000F87F0000F87F0000F87F0000FFFF
+    0000
+  }
   KeyPreview = True
-  OldCreateOrder = False
-  Position = poOwnerFormCenter
   OnKeyDown = FormKeyDown
   OnShow = FormShow
-  DesignSize = (
-    329
-    369)
-  PixelsPerInch = 96
-  TextHeight = 13
+  Position = poOwnerFormCenter
+  LCLVersion = '2.2.0.2'
   object Label1: TLabel
     Left = 4
+    Height = 13
     Top = 232
     Width = 49
-    Height = 13
     Caption = 'Comment:'
   end
   object btnResetArtistPattern: TSpeedButton
     Left = 300
-    Top = 72
-    Width = 25
     Height = 21
     Hint = 'Reset pattern to default'
+    Top = 72
+    Width = 25
     Anchors = [akTop, akRight]
     Flat = True
-    Layout = blGlyphLeft
-    ParentShowHint = False
-    ShowHint = True
     OnClick = btnResetPatternClick
+    ShowHint = True
+    ParentShowHint = False
   end
   object btnResetTitlePattern: TSpeedButton
     Left = 300
-    Top = 116
-    Width = 25
     Height = 21
     Hint = 'Reset pattern to default'
+    Top = 116
+    Width = 25
     Anchors = [akTop, akRight]
     Flat = True
-    Layout = blGlyphLeft
-    ParentShowHint = False
-    ShowHint = True
     OnClick = btnResetPatternClick
+    ShowHint = True
+    ParentShowHint = False
   end
   object btnResetCommentPattern: TSpeedButton
     Left = 300
-    Top = 248
-    Width = 25
     Height = 21
     Hint = 'Reset pattern to default'
+    Top = 248
+    Width = 25
     Anchors = [akTop, akRight]
     Flat = True
-    Layout = blGlyphLeft
-    ParentShowHint = False
-    ShowHint = True
     OnClick = btnResetPatternClick
+    ShowHint = True
+    ParentShowHint = False
   end
   object lblPattern: TLabel
     Left = 4
+    Height = 45
     Top = 4
     Width = 321
-    Height = 45
-    Anchors = [akLeft, akTop, akRight]
+    Anchors = [akTop, akLeft, akRight]
     AutoSize = False
-    Caption = 
-      'Valid variables: %artist%, %title%, %album%, %genre%, %streamtit' +
-      'le%, %streamname%, %day%, %month%, %year%, %hour%, %minute%, %se' +
-      'cond%'
+    Caption = 'Valid variables: %artist%, %title%, %album%, %genre%, %streamtitle%, %streamname%, %day%, %month%, %year%, %hour%, %minute%, %second%'
     WordWrap = True
   end
   object btnResetAlbumPattern: TSpeedButton
     Left = 300
-    Top = 160
-    Width = 25
     Height = 21
     Hint = 'Reset pattern to default'
+    Top = 160
+    Width = 25
     Anchors = [akTop, akRight]
     Flat = True
-    Layout = blGlyphLeft
-    ParentShowHint = False
-    ShowHint = True
     OnClick = btnResetPatternClick
+    ShowHint = True
+    ParentShowHint = False
   end
   object btnResetGenrePattern: TSpeedButton
     Left = 300
-    Top = 204
-    Width = 25
     Height = 21
     Hint = 'Reset pattern to default'
+    Top = 204
+    Width = 25
     Anchors = [akTop, akRight]
     Flat = True
-    Layout = blGlyphLeft
-    ParentShowHint = False
-    ShowHint = True
     OnClick = btnResetPatternClick
+    ShowHint = True
+    ParentShowHint = False
   end
   object txtArtist: TLabeledEdit
     Left = 4
+    Height = 21
     Top = 72
     Width = 293
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    EditLabel.Width = 30
+    Anchors = [akTop, akLeft, akRight]
     EditLabel.Height = 13
+    EditLabel.Width = 30
     EditLabel.Caption = 'Artist:'
     TabOrder = 0
   end
   object txtTitle: TLabeledEdit
     Left = 4
+    Height = 21
     Top = 116
     Width = 293
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    EditLabel.Width = 24
+    Anchors = [akTop, akLeft, akRight]
     EditLabel.Height = 13
+    EditLabel.Width = 24
     EditLabel.Caption = 'Title:'
     TabOrder = 1
   end
   object txtComment: TMemo
     Left = 4
+    Height = 81
     Top = 248
     Width = 293
-    Height = 81
-    Anchors = [akLeft, akTop, akRight, akBottom]
-    TabOrder = 3
+    Anchors = [akTop, akLeft, akRight, akBottom]
     OnKeyPress = txtCommentKeyPress
+    TabOrder = 3
   end
   object txtAlbum: TLabeledEdit
     Left = 4
+    Height = 21
     Top = 160
     Width = 293
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    EditLabel.Width = 33
+    Anchors = [akTop, akLeft, akRight]
     EditLabel.Height = 13
+    EditLabel.Width = 33
     EditLabel.Caption = 'Album:'
     TabOrder = 2
   end
   object pnlNav: TPanel
     Left = 0
+    Height = 40
     Top = 329
     Width = 329
-    Height = 40
     Align = alBottom
     BevelOuter = bvNone
+    ClientHeight = 40
+    ClientWidth = 329
     TabOrder = 4
-    ExplicitTop = 265
     object Bevel2: TBevel
       Left = 4
+      Height = 5
       Top = 4
       Width = 321
-      Height = 5
       Align = alTop
       Shape = bsTopLine
-      ExplicitLeft = -7
-      ExplicitWidth = 396
     end
     object btnOK: TBitBtn
       Left = 228
+      Height = 27
       Top = 9
       Width = 97
-      Height = 27
       Align = alRight
       Caption = '&OK'
-      Layout = blGlyphLeft
-      TabOrder = 0
       OnClick = btnOKClick
+      TabOrder = 0
     end
   end
   object txtGenre: TLabeledEdit
     Left = 4
+    Height = 21
     Top = 204
     Width = 293
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    EditLabel.Width = 33
+    Anchors = [akTop, akLeft, akRight]
     EditLabel.Height = 13
+    EditLabel.Width = 33
     EditLabel.Caption = 'Genre:'
     TabOrder = 5
   end

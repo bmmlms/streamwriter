@@ -23,7 +23,10 @@ unit AppMessages;
 interface
 
 uses
-  Windows, SysUtils, MessageBus, TypeDefs, Logging;
+  Logging,
+  MessageBus,
+  SysUtils,
+  TypeDefs;
 
 type
   TSWMessageBus = class(TMessageBus)
@@ -170,8 +173,7 @@ end;
 
 { TSelectSavedSongs }
 
-constructor TSelectSavedSongsMsg.Create(Sender: TObject; TitleHashes,
-  ArtistHashes: TCardinalArray);
+constructor TSelectSavedSongsMsg.Create(Sender: TObject; TitleHashes, ArtistHashes: TCardinalArray);
 begin
   inherited Create;
 

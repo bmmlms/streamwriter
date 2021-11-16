@@ -23,9 +23,18 @@ unit PostProcessSetTags;
 interface
 
 uses
-  Windows, SysUtils, Classes, PostProcess, LanguageObjects, AudioGenie,
-  AddonAudioGenie, Functions, Logging, ConfigureSetTags, AudioFunctions,
-  ExtendedStream, Generics.Collections, FileTagger, SWFunctions;
+  AudioFunctions,
+  Classes,
+  ConfigureSetTags,
+  ExtendedStream,
+  FileTagger,
+  Functions,
+  Generics.Collections,
+  LanguageObjects,
+  Logging,
+  PostProcess,
+  SWFunctions,
+  SysUtils;
 
 type
   TPostProcessSetTagsThread = class(TPostProcessThreadBase)
@@ -34,8 +43,7 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(Data: PPostProcessInformation; PostProcessor: TPostProcessBase;
-      Artist, Title, Album, Genre, Comment: string);
+    constructor Create(Data: PPostProcessInformation; PostProcessor: TPostProcessBase; Artist, Title, Album, Genre, Comment: string);
   end;
 
   TPostProcessSetTags = class(TInternalPostProcess)
@@ -68,8 +76,7 @@ uses
 
 { TPostProcessSetTagsThread }
 
-constructor TPostProcessSetTagsThread.Create(Data: PPostProcessInformation;
-  PostProcessor: TPostProcessBase; Artist, Title, Album, Genre, Comment: string);
+constructor TPostProcessSetTagsThread.Create(Data: PPostProcessInformation; PostProcessor: TPostProcessBase; Artist, Title, Album, Genre, Comment: string);
 begin
   inherited Create(Data, PostProcessor);
 
@@ -177,8 +184,7 @@ begin
   Result := ((FilenameToFormat(Data.FilenameConverted) in [atMPEG, atOGG]) or M4AActive) and FGetDependenciesMet;
 end;
 
-function TPostProcessSetTags.Configure(AOwner: TComponent; Handle: Cardinal;
-  ShowMessages: Boolean): Boolean;
+function TPostProcessSetTags.Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean;
 var
   F: TfrmConfigureSetTags;
 begin
@@ -216,7 +222,7 @@ constructor TPostProcessSetTags.Create;
 begin
   inherited;
 
-//  FNeededAddons.Add(TAddonAudioGenie);
+  //  FNeededAddons.Add(TAddonAudioGenie);
 
   FCanConfigure := True;
   FGroupID := 1;
@@ -246,8 +252,7 @@ begin
   Result := _('Write tags to recorded songs');
 end;
 
-procedure TPostProcessSetTags.Load(Stream: TExtendedStream;
-  Version: Integer);
+procedure TPostProcessSetTags.Load(Stream: TExtendedStream; Version: Integer);
 begin
   inherited;
 

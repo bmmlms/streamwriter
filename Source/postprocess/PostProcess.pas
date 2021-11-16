@@ -23,8 +23,16 @@ unit PostProcess;
 interface
 
 uses
-  Windows, SysUtils, Classes, Generics.Collections, Functions,
-  LanguageObjects, Logging, AddonBase, ExtendedStream, SWFunctions;
+  AddonBase,
+  Classes,
+  ExtendedStream,
+  Functions,
+  Generics.Collections,
+  LanguageObjects,
+  Logging,
+  SWFunctions,
+  SysUtils,
+  Windows;
 
 type
   TPostProcessBase = class;
@@ -198,7 +206,8 @@ type
 implementation
 
 uses
-  AppData, DataManager;
+  AppData,
+  DataManager;
 
 { TProcessingEntry }
 
@@ -297,7 +306,6 @@ var
   EC: DWORD;
 begin
   if Trim(FExe) <> '' then
-  begin
     if FileExists(FExe) then
     begin
       SetLength(Arr, 14);
@@ -337,15 +345,13 @@ begin
       if Trim(Replaced) <> '' then
       begin
         if LowerCase(ExtractFileExt(FExe)) = '.bat' then
-        begin
-          // & ist für Batch nen Sonderzeichen. Also escapen.
-          Replaced := StringReplace(Replaced, '&', '^&', [rfReplaceAll]);
-        end;
+          Replaced := StringReplace(Replaced, '&', '^&', [rfReplaceAll])// & ist für Batch nen Sonderzeichen. Also escapen.
+        ;
         CmdLine := '"' + FExe + '" ' + Replaced;
       end else
         CmdLine := FExe;
       Res := RunProcess(CmdLine, ExtractFilePath(FExe), 120000, Output, EC, @Terminated, False);
-      FData.Filesize := GetFileSize(FData.Filename);
+      FData.Filesize := Functions.GetFileSize(FData.Filename);
       FOutput := Output;
       case Res of
         rpWin:
@@ -356,7 +362,6 @@ begin
           FResult := arTimeout;
       end;
     end;
-  end;
 end;
 
 { TExternalPostProcess }
@@ -415,8 +420,7 @@ begin
   FName := ExtractFileName(FExe);
 end;
 
-procedure TExternalPostProcess.Load(Stream: TExtendedStream;
-  Version: Integer);
+procedure TExternalPostProcess.Load(Stream: TExtendedStream; Version: Integer);
 begin
   inherited;
 
@@ -430,8 +434,7 @@ begin
     FParams := ConvertPattern(FParams);
 end;
 
-function TExternalPostProcess.ProcessFile(
-  Data: PPostProcessInformation): TPostProcessThreadBase;
+function TExternalPostProcess.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 var
   Thread: TExternalProcessThread;
 begin
@@ -543,6 +546,3 @@ begin
 end;
 
 end.
-
-
-

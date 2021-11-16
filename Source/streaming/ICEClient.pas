@@ -25,11 +25,25 @@ unit ICEClient;
 interface
 
 uses
-  SysUtils, Windows, StrUtils, Classes, ICEThread, ICEStream, AppData,
-  Generics.Collections, Functions, Sockets, LanguageObjects,
-  DataManager, HomeCommunication, PlayerManager, Notifications,
-  Logging, PlaylistHandler, AudioFunctions, TypeDefs, MessageBus,
-  AppMessages;
+  AppData,
+  AppMessages,
+  AudioFunctions,
+  Classes,
+  DataManager,
+  Functions,
+  Generics.Collections,
+  HomeCommunication,
+  ICEStream,
+  ICEThread,
+  LanguageObjects,
+  Logging,
+  MessageBus,
+  Notifications,
+  PlayerManager,
+  PlaylistHandler,
+  Sockets,
+  SysUtils,
+  TypeDefs;
 
 type
   // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
@@ -41,8 +55,7 @@ type
   TICEClient = class;
 
   TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
-  TSongSavedEvent = procedure(Sender: TObject; Filename, Title, SongArtist, SongTitle: string;
-    Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
+  TSongSavedEvent = procedure(Sender: TObject; Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
     ServerTitleHash, ServerArtistHash: Cardinal) of object;
   TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer) of object;
 
@@ -168,8 +181,7 @@ type
     procedure StopRecording;
     procedure SetVolume(Vol: Integer);
     procedure SetEQ(Value, Freq: Integer);
-    procedure PostProcessingFinished(Filename, Title, SongArtist, SongTitle: string;
-      Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
+    procedure PostProcessingFinished(Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
       ServerTitleHash, ServerArtistHash: Cardinal);
     function IsCurrentTimeInSchedule(ExcludeSchedule: TSchedule = nil): Boolean;
 
@@ -227,7 +239,8 @@ type
 implementation
 
 uses
-  ClientManager, PostProcess;
+  ClientManager,
+  PostProcess;
 
 { TICEClient }
 
@@ -326,9 +339,8 @@ begin
   end;
 end;
 
-procedure TICEClient.PostProcessingFinished(Filename, Title, SongArtist,
-  SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle,
-  IsStreamFile, RecordBecauseArtist: Boolean; ServerTitleHash, ServerArtistHash: Cardinal);
+procedure TICEClient.PostProcessingFinished(Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
+  ServerTitleHash, ServerArtistHash: Cardinal);
 begin
   if Assigned(FOnSongSaved) then
     FOnSongSaved(Self, Filename, Title, SongArtist, SongTitle, Filesize, Length, Bitrate,
@@ -361,9 +373,7 @@ begin
       FOnStop(Self);
 
     if (not FICEThread.Recording) and (not FICEThread.Playing) and (not FICEThread.Paused) then
-    begin
       Disconnect;
-    end;
   end;
 end;
 
@@ -534,9 +544,7 @@ begin
   FEQEnabled := Value;
 
   if FICEThread <> nil then
-  begin
     FICEThread.SetEQEnabled(Value);
-  end;
 end;
 
 function TICEClient.FGetPaused: Boolean;
@@ -594,7 +602,6 @@ begin
   if FEntry.URLs.Count > 0 then
   begin
     if FURLsIndex >= FEntry.URLs.Count then
-    begin
       if (FEntry.StartURL <> '') and (Pos('streamwriter.', LowerCase(FEntry.StartURL)) = 0) then
       begin
         Result := FEntry.StartURL;
@@ -602,7 +609,6 @@ begin
         Exit;
       end else
         FURLsIndex := 0;
-    end;
     if FURLsIndex = -1 then
       FURLsIndex := 0;
     Result := FEntry.URLs[FURLsIndex];
@@ -626,7 +632,8 @@ begin
     slWarning: Level := llWarning;
     slInfo: Level := llInfo;
     slDebug: Level := llDebug;
-    else raise Exception.Create('Unknown FICEThread.LogLevel');
+    else
+      raise Exception.Create('Unknown FICEThread.LogLevel');
   end;
 
   WriteLog(FICEThread.LogMsg, FICEThread.LogData, ltGeneral, Level);
@@ -679,13 +686,10 @@ begin
       begin
         if FICEThread.RecvStream.ResponseCode = 404 then
           raise Exception.Create(_('HTTP error 404, document not found'))
+        else if IntToStr(FICEThread.RecvStream.ResponseCode)[1] <> '2' then
+          raise Exception.Create(Format(_('HTTP error %d'), [FICEThread.RecvStream.ResponseCode]))
         else
-        begin
-          if IntToStr(FICEThread.RecvStream.ResponseCode)[1] <> '2' then
-            raise Exception.Create(Format(_('HTTP error %d'), [FICEThread.RecvStream.ResponseCode]))
-          else
-            raise Exception.Create(_('Response was HTTP but without supported playlist or redirect'));
-        end;
+          raise Exception.Create(_('Response was HTTP but without supported playlist or redirect'));
       end;
     end else
     begin
@@ -827,9 +831,7 @@ begin
     end;
 
     if FAutoRemove then
-    begin
       Kill;
-    end;
   end else
   begin
     if Assigned(FOnSongSaved) then
@@ -878,10 +880,8 @@ begin
   FTitle := FICEThread.RecvStream.Title;
 
   if (FEntry.ID > 0) and (FICEThread.RecvStream.FullTitleFound) and (not FAutoRemove) and (FRecordTitle = '') and (AppGlobals.SubmitStats) then
-  begin
     HomeComm.SendTitleChanged(Entry.ID, Entry.Name, FTitle, FCurrentURL, Entry.StartURL, FICEThread.RecvStream.AudioType,
       Entry.Bitrate, Entry.URLs);
-  end;
 end;
 
 procedure TICEClient.ThreadDisplayTitleChanged(Sender: TSocketThread);
@@ -913,21 +913,21 @@ begin
   begin
     case FICEThread.State of
       tsRecording:
-        begin
-          FFilename := FICEThread.RecvStream.Filename;
-          FState := csConnected;
-        end;
+      begin
+        FFilename := FICEThread.RecvStream.Filename;
+        FState := csConnected;
+      end;
       tsRetrying:
-        begin
-          FTitle := '';
-          FDisplayTitle := '';
-          FState := csRetrying;
-        end;
+      begin
+        FTitle := '';
+        FDisplayTitle := '';
+        FState := csRetrying;
+      end;
       tsIOError:
-        begin
-          FState := csIOError;
-          FScheduledRecording := False;
-        end;
+      begin
+        FState := csIOError;
+        FScheduledRecording := False;
+      end;
     end;
     if Assigned(FOnRefresh) then
       FOnRefresh(Self);
@@ -936,9 +936,7 @@ begin
   // Das muss, damit bei Fehlern mit Daten, die BASS nicht parsen kann, beendet wird.
   // Der ICEPlayer wirft bei PushData() eine Exception wenn das so ist.
   if (not FICEThread.Recording) and (not FICEThread.Playing) and (not FICEThread.Monitoring) then
-  begin
     Disconnect;
-  end;
 end;
 
 procedure TICEClient.ThreadTerminated(Sender: TObject);
@@ -1042,7 +1040,7 @@ begin
 end;
 
 function TICEClient.ParsePlaylist: Boolean;
- var
+var
   Data: string;
   PH: TPlaylistHandler;
 begin
@@ -1052,18 +1050,12 @@ begin
   try
     Data := FICEThread.RecvStream.RecvStream.ToString;
 
-    if (Copy(LowerCase(Data), 1, 10) = '[playlist]') or
-       (Pos('audio/x-scpls', FICEThread.RecvStream.ContentType) > 0) or
-       (Pos('application/x-scpls', FICEThread.RecvStream.ContentType) > 0) or
-       (Pos('application/pls+xml', FICEThread.RecvStream.ContentType) > 0) then // .pls
-    begin
-      Result := PH.ParsePlaylist(Data, ptPLS, FCurrentURL);
-    end else if (LowerCase(Copy(Data, 1, 7)) = '#extm3u') or
-                (Pos('audio/x-mpegurl', FICEThread.RecvStream.ContentType) > 0) or
-                (Pos('audio/mpegurl', FICEThread.RecvStream.ContentType) > 0) then // .m3u
-    begin
-      Result := PH.ParsePlaylist(Data, ptM3U, FCurrentURL);
-    end else if Pos('application/octet-stream', FICEThread.RecvStream.ContentType) > 0 then
+    if (Copy(LowerCase(Data), 1, 10) = '[playlist]') or (Pos('audio/x-scpls', FICEThread.RecvStream.ContentType) > 0) or (Pos('application/x-scpls', FICEThread.RecvStream.ContentType) > 0) or
+      (Pos('application/pls+xml', FICEThread.RecvStream.ContentType) > 0) then // .pls
+      Result := PH.ParsePlaylist(Data, ptPLS, FCurrentURL)
+    else if (LowerCase(Copy(Data, 1, 7)) = '#extm3u') or (Pos('audio/x-mpegurl', FICEThread.RecvStream.ContentType) > 0) or (Pos('audio/mpegurl', FICEThread.RecvStream.ContentType) > 0) then // .m3u
+      Result := PH.ParsePlaylist(Data, ptM3U, FCurrentURL)
+    else if Pos('application/octet-stream', FICEThread.RecvStream.ContentType) > 0 then
       Result := PH.ParsePlaylist(Data, ptUnknown, FCurrentURL);
 
     if Result then
@@ -1134,4 +1126,3 @@ begin
 end;
 
 end.
-

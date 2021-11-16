@@ -25,8 +25,15 @@ unit AudioStream;
 interface
 
 uses
-  Windows, SysUtils, StrUtils, Classes, ExtendedStream, MPEG, DynBass,
-  Math, LanguageObjects;
+  Classes,
+  DynBass,
+  ExtendedStream,
+  LanguageObjects,
+  Math,
+  MPEG,
+  StrUtils,
+  SysUtils,
+  Windows;
 
 type
   // Defines where data starts/ends
@@ -235,9 +242,8 @@ begin
         Position := Position + FL - 4;
         Read(Buf, 4);
         if IsFrameHeader(Buf, 0) then
-        begin
-          Result.DataStart := i;
-        end else
+          Result.DataStart := i
+        else
         begin
           Inc(i);
           Continue;
@@ -323,9 +329,8 @@ begin
         Position := Position + FL - 4;
         Read(Buf, 4);
         if IsFrameHeader(Buf, 0) then
-        begin
-          Result.DataStart := i;
-        end else
+          Result.DataStart := i
+        else
         begin
           Inc(i);
           Continue;
@@ -371,8 +376,7 @@ end;
 
 { TAudioStreamMemory }
 
-procedure TAudioStreamMemory.SaveToFile(const Filename: string; From,
-  Length: Int64);
+procedure TAudioStreamMemory.SaveToFile(const Filename: string; From, Length: Int64);
 var
   Stream: TFileStream;
   OldPos: Int64;
@@ -388,8 +392,7 @@ begin
   end;
 end;
 
-function TAudioStreamMemory.SearchSilence(StartPos, EndPos, LenStart, LenEnd, MaxPeaks,
-  MinDuration: Int64): TPosRect;
+function TAudioStreamMemory.SearchSilence(StartPos, EndPos, LenStart, LenEnd, MaxPeaks, MinDuration: Int64): TPosRect;
 var
   i, MaxLenIdx: Integer;
   WD, WD2: TWaveData;

@@ -23,8 +23,12 @@ unit AddonOGGEnc;
 interface
 
 uses
-  SysUtils, Windows, Classes, AddonBase, LanguageObjects, Functions,
-  AudioFunctions;
+  AddonBase,
+  AudioFunctions,
+  Classes,
+  LanguageObjects,
+  SysUtils,
+  Windows;
 
 type
   TAddonOGGEnc = class(TAddonBase)

@@ -3,11 +3,33 @@ unit SetStreamData;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics,
-  Controls, Forms, Dialogs, VirtualTrees, StdCtrls, Constants, AppData,
-  Buttons, ExtCtrls, ComCtrls, Functions, LanguageObjects, ImgList, Images,
-  MControls, TypeDefs, HomeCommunication, Generics.Collections, SharedData, SWFunctions,
-  GUIFunctions, GraphType, RegExpr;
+  AppData,
+  Buttons,
+  Classes,
+  ComCtrls,
+  Constants,
+  Controls,
+  Dialogs,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Graphics,
+  GraphType,
+  GUIFunctions,
+  HomeCommunication,
+  Images,
+  ImgList,
+  LanguageObjects,
+  MControls,
+  RegExpr,
+  SharedData,
+  StdCtrls,
+  SWFunctions,
+  SysUtils,
+  TypeDefs,
+  Variants,
+  VirtualTrees,
+  Windows;
 
 type
   TTitleNodeData = record
@@ -25,9 +47,7 @@ type
   TTitleTree = class(TVirtualStringTree)
   private
   protected
-    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
-      Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer
-      ): TCustomImageList; override;
+    function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
@@ -52,28 +72,19 @@ type
     procedure btnAddRegExClick(Sender: TObject);
     procedure btnRemoveRegExClick(Sender: TObject);
     procedure btnResetTitlePatternClick(Sender: TObject);
-    procedure lstRegExpsChange(Sender: TObject; Item: TListItem;
-      Change: TItemChange);
+    procedure lstRegExpsChange(Sender: TObject; Item: TListItem; Change: TItemChange);
     procedure txtRegExChange(Sender: TObject);
-    procedure lstTitlesGetText(Sender: TBaseVirtualTree;
-      Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
-      var CellText: string);
+    procedure lstTitlesGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
     procedure FormResize(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
-    procedure lstTitlesMeasureItem(Sender: TBaseVirtualTree;
-      TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure lstTitlesMeasureItem(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormCreate(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
-    procedure lstTitlesMeasureTextWidth(Sender: TBaseVirtualTree;
-      TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex;
-      const Text: string; var Extent: Integer);
-    procedure lstTitlesBeforeCellPaint(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode;
-      Column: TColumnIndex; CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect);
-    procedure lstRegExpsEdited(Sender: TObject; Item: TListItem;
-      var S: string);
+    procedure lstTitlesMeasureTextWidth(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; const Text: string; var Extent: Integer);
+    procedure lstTitlesBeforeCellPaint(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect);
+    procedure lstRegExpsEdited(Sender: TObject; Item: TListItem; var S: string);
   private
     FTitleTree: TTitleTree;
     FStreamID: Integer;
@@ -94,16 +105,13 @@ implementation
 
 { TTitleTree }
 
-function TTitleTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind;
-  Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer
-  ): TCustomImageList;
+function TTitleTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList;
 begin
   Result := inherited;
   Index := 19;
 end;
 
-procedure TTitleTree.PaintImage(var PaintInfo: TVTPaintInfo;
-  ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
+procedure TTitleTree.PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
 var
   ImageIndex: Integer;
   NodeData: PTitleNodeData;
@@ -160,10 +168,8 @@ var
   RegExps: TStringArray;
 begin
   if (Length(Trim(txtRegEx.Text)) > 0) and (LowerCase(Trim(txtRegEx.Text)) <> LowerCase(DEFAULT_TITLE_REGEXP)) then
-  begin
     if MsgBox(_('A regular expression was entered into the text field but not added to the list.'#13#10'Do you want to continue without saving that regular expression?'), _('Question'), MB_YESNO or MB_ICONQUESTION) = IDNO then
       Exit;
-  end;
 
   SetLength(RegExps, 0);
   for i := 0 to lstRegExps.Items.Count - 1 do
@@ -173,9 +179,8 @@ begin
   end;
 
   if not HomeComm.SendSetStreamData(FStreamID, RegExps) then
-  begin
     MsgBox(_('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION)
-  end else
+  else
     Close;
 end;
 
@@ -192,8 +197,7 @@ begin
   txtRegEx.ApplyFocus;
 end;
 
-constructor TfrmSetStreamData.Create(AOwner: TComponent;
-  StreamID: Integer);
+constructor TfrmSetStreamData.Create(AOwner: TComponent; StreamID: Integer);
 begin
   inherited Create(AOwner);
 
@@ -227,8 +231,7 @@ begin
   HomeComm.SendGetStreamData(StreamID);
 end;
 
-procedure TfrmSetStreamData.FormClose(Sender: TObject;
-  var Action: TCloseAction);
+procedure TfrmSetStreamData.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   Action := caFree;
 
@@ -246,10 +249,9 @@ begin
   Height := AppGlobals.SetDataHeight;
 end;
 
-procedure TfrmSetStreamData.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TfrmSetStreamData.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
- if Key = 27 then
+  if Key = 27 then
   begin
     Key := 0;
     Close;
@@ -262,9 +264,7 @@ begin
   lstOtherRegExps.Columns[0].Width := lstOtherRegExps.ClientWidth - 25;
 end;
 
-procedure TfrmSetStreamData.HomeCommGetStreamData(Sender: TObject;
-  LastTitles: TStringArray; OtherUserRegExps: TStringArray;
-  UserRegExps: TStringArray);
+procedure TfrmSetStreamData.HomeCommGetStreamData(Sender: TObject; LastTitles: TStringArray; OtherUserRegExps: TStringArray; UserRegExps: TStringArray);
 var
   i, W: Integer;
   Node: PVirtualNode;
@@ -325,14 +325,12 @@ begin
   FTitleTree.Invalidate;
 end;
 
-procedure TfrmSetStreamData.lstRegExpsChange(Sender: TObject;
-  Item: TListItem; Change: TItemChange);
+procedure TfrmSetStreamData.lstRegExpsChange(Sender: TObject; Item: TListItem; Change: TItemChange);
 begin
   btnRemoveRegEx.Enabled := lstRegExps.Selected <> nil;
 end;
 
-procedure TfrmSetStreamData.lstRegExpsEdited(Sender: TObject;
-  Item: TListItem; var S: string);
+procedure TfrmSetStreamData.lstRegExpsEdited(Sender: TObject; Item: TListItem; var S: string);
 begin
   if not CheckRegExp(Handle, S, lstRegExps, Item) then
   begin
@@ -344,9 +342,7 @@ begin
   InvalidateTree;
 end;
 
-procedure TfrmSetStreamData.lstTitlesGetText(Sender: TBaseVirtualTree;
-  Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
-  var CellText: string);
+procedure TfrmSetStreamData.lstTitlesGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
 var
   NodeData: PTitleNodeData;
 begin
@@ -355,22 +351,17 @@ begin
   CellText := Format('%s'#13#10'%s %s'#13#10'%s %s', [NodeData.Title, _('Artist:'), NodeData.ParsedArtist, _('Title:'), NodeData.ParsedTitle]);
 end;
 
-procedure TfrmSetStreamData.lstTitlesMeasureItem(Sender: TBaseVirtualTree;
-  TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer);
+procedure TfrmSetStreamData.lstTitlesMeasureItem(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer);
 begin
   NodeHeight := Trunc(GUIFunctions.GetTextSize('Wyg', TargetCanvas.Font).cy * 3) + 4;
 end;
 
-procedure TfrmSetStreamData.lstTitlesMeasureTextWidth(
-  Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode;
-  Column: TColumnIndex; const Text: string; var Extent: Integer);
+procedure TfrmSetStreamData.lstTitlesMeasureTextWidth(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; const Text: string; var Extent: Integer);
 begin
   Extent := FMaxTextWidth;
 end;
 
-procedure TfrmSetStreamData.lstTitlesBeforeCellPaint(Sender: TBaseVirtualTree;
-  TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex;
-  CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect);
+procedure TfrmSetStreamData.lstTitlesBeforeCellPaint(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect);
 var
   NodeData: PTitleNodeData;
 begin
@@ -426,24 +417,25 @@ begin
           try
             if R.MatchIndexFromName('a') > 0 then
               NodeData.ParsedArtist := Trim(R.MatchFromName('a'));
-          except end;
+          except
+          end;
           try
             if R.MatchIndexFromName('t') > 0 then
               NodeData.ParsedTitle := Trim(R.MatchFromName('t'));
-          except end;
+          except
+          end;
         end;
-      except end;
+      except
+      end;
     finally
       R.Free;
     end;
 
     if (Length(NodeData.ParsedArtist) > 0) and (Length(NodeData.ParsedTitle) > 0) then
-    begin
       if RegExps.IndexOf(RegExp) > -1 then
         NodeData.MatchedRegExp := True
       else if OtherRegExps.IndexOf(RegExp) > -1 then
         NodeData.MatchedOtherRegExp := True;
-    end;
   finally
     RegExps.Free;
     OtherRegExps.Free;
@@ -473,4 +465,3 @@ begin
 end;
 
 end.
-

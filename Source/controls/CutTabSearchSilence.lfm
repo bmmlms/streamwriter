@@ -16,7 +16,7 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.1'
+  LCLVersion = '2.2.0.2'
   object Label14: TLabel
     Left = 92
     Height = 13

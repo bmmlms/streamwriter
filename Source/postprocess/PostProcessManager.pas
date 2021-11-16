@@ -23,10 +23,19 @@ unit PostProcessManager;
 interface
 
 uses
-  Windows, SysUtils, Classes, Generics.Collections, PostProcess, PostProcessSetTags,
-  PostProcessSoX, Logging, PostProcessMP4Box, AddonBase, Forms, Functions,
-  LanguageObjects, PostProcessConvert, Generics.Defaults, AudioFunctions, TypeDefs,
-  DataManager;
+  AudioFunctions,
+  Classes,
+  DataManager,
+  Forms,
+  Functions,
+  Generics.Defaults,
+  LanguageObjects,
+  Logging,
+  PostProcess,
+  PostProcessConvert,
+  SysUtils,
+  TypeDefs,
+  Windows;
 
 type
   TPostProcessManager = class
@@ -55,7 +64,8 @@ type
 implementation
 
 uses
-  AppData, DownloadAddons, FileConvertor, ICEClient;
+  AppData,
+  ICEClient;
 
 { TPostProcessManager }
 
@@ -99,16 +109,14 @@ var
       Exit(True);
 
     for i := 0 to Client.Entry.Settings.PostProcessors.Count - 1 do
-      if (Client.Entry.Settings.PostProcessors[i].Active) and
-         ((Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data, nil) and Client.Entry.Settings.PostProcessors[i].NeedsWave and
-         ((Client.Entry.Settings.PostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not Client.Entry.Settings.PostProcessors[i].OnlyIfCut))) or
-         ((Client.Entry.Settings.PostProcessors[i] is TExternalPostProcess) and (TExternalPostProcess(Client.Entry.Settings.PostProcessors[i]).GroupID = 0))) then
-      begin
+      if (Client.Entry.Settings.PostProcessors[i].Active) and ((Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data, nil) and Client.Entry.Settings.PostProcessors[i].NeedsWave and
+        ((Client.Entry.Settings.PostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not Client.Entry.Settings.PostProcessors[i].OnlyIfCut))) or
+        ((Client.Entry.Settings.PostProcessors[i] is TExternalPostProcess) and (TExternalPostProcess(Client.Entry.Settings.PostProcessors[i]).GroupID = 0))) then
         Exit(True);
-      end;
 
     Exit(False);
   end;
+
 begin
   Client := TICEClient(Entry.Owner);
 
@@ -132,19 +140,19 @@ begin
 
   // Erst die mit GroupID 0 fitmachen (WAVE-Phase)
   for i := 0 to Client.Entry.Settings.PostProcessors.Count - 1 do
-    if Client.Entry.Settings.PostProcessors[i].Active and (Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data, Client.Entry.Settings.PostProcessors)) and (not Client.Entry.Settings.PostProcessors[i].Hidden) and
-       (Client.Entry.Settings.PostProcessors[i].GroupID = 0) and ((Client.Entry.Settings.PostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not Client.Entry.Settings.PostProcessors[i].OnlyIfCut)) then
-    begin
+    if Client.Entry.Settings.PostProcessors[i].Active and (Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data, Client.Entry.Settings.PostProcessors)) and
+      (not Client.Entry.Settings.PostProcessors[i].Hidden) and (Client.Entry.Settings.PostProcessors[i].GroupID = 0) and ((Client.Entry.Settings.PostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or
+      (not Client.Entry.Settings.PostProcessors[i].OnlyIfCut)) then
       Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[i].Copy);
-    end;
 
   if Entry.NeedsWave then
     Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0].Copy);
 
   // Jetzt GroupID 1 (Nach WAVE-Phase)
   for i := 0 to Client.Entry.Settings.PostProcessors.Count - 1 do
-    if Client.Entry.Settings.PostProcessors[i].Active and (Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data, Client.Entry.Settings.PostProcessors)) and (not Client.Entry.Settings.PostProcessors[i].Hidden) and
-       (Client.Entry.Settings.PostProcessors[i].GroupID = 1) and ((Client.Entry.Settings.PostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or (not Client.Entry.Settings.PostProcessors[i].OnlyIfCut)) then
+    if Client.Entry.Settings.PostProcessors[i].Active and (Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data, Client.Entry.Settings.PostProcessors)) and
+      (not Client.Entry.Settings.PostProcessors[i].Hidden) and (Client.Entry.Settings.PostProcessors[i].GroupID = 1) and ((Client.Entry.Settings.PostProcessors[i].OnlyIfCut and Entry.Data.WasCut) or
+      (not Client.Entry.Settings.PostProcessors[i].OnlyIfCut)) then
     begin
       Client.Entry.Settings.PostProcessors[i].CanProcess(Entry.Data, Entry.PostProcessList);
       Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[i].Copy);
@@ -198,7 +206,6 @@ var
   Entry: TProcessingEntry;
 begin
   for i := 0 to FProcessingList.Count - 1 do
-  begin
     if FProcessingList[i].ActiveThread = Sender then
     begin
       Entry := FProcessingList[i];
@@ -238,9 +245,8 @@ begin
       if Entry.Data.Filesize <> High(UInt64) then // GetFileSize = Int64 => -1
       begin
         if ProcessFile(Entry) then
-        begin
-          WriteLog(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llDebug);
-        end else
+          WriteLog(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llDebug)
+        else
         begin
           WriteLog(Entry.Owner, _('All postprocessors done'), ltPostProcess, llDebug);
 
@@ -248,7 +254,7 @@ begin
           FProcessingList.Delete(i);
 
           TICEClient(Entry.Owner).PostProcessingFinished(Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Artist, Entry.Data.Title,
-          Entry.Data.Filesize, Entry.Data.Length, Entry.Data.Bitrate, Entry.Data.VBR, Entry.Data.WasCut,
+            Entry.Data.Filesize, Entry.Data.Length, Entry.Data.Bitrate, Entry.Data.VBR, Entry.Data.WasCut,
             Entry.Data.FullTitle, False, Entry.Data.RecordBecauseArtist, Entry.Data.ServerTitleHash, Entry.Data.ServerArtistHash);
 
           Entry.Free;
@@ -263,11 +269,9 @@ begin
 
       Break;
     end;
-  end;
 end;
 
-procedure TPostProcessManager.WriteLog(Sender: TObject; Text,
-  Data: string; T: TLogType; Level: TLogLevel);
+procedure TPostProcessManager.WriteLog(Sender: TObject; Text, Data: string; T: TLogType; Level: TLogLevel);
 begin
   if Sender <> nil then
     TICEClient(Sender).WriteLog(Text, Data, T, Level);
@@ -283,8 +287,7 @@ begin
       Exit(True);
 end;
 
-procedure TPostProcessManager.WriteLog(Sender: TObject; Text: string;
-  T: TLogType; Level: TLogLevel);
+procedure TPostProcessManager.WriteLog(Sender: TObject; Text: string; T: TLogType; Level: TLogLevel);
 begin
   if Sender <> nil then
     TICEClient(Sender).WriteLog(Text, T, Level);
@@ -302,8 +305,7 @@ begin
   inherited;
 end;
 
-function TPostProcessManager.EnablePostProcess(Owner: TCustomForm;
-  Enable: Boolean; PostProcess: TInternalPostProcess): Boolean;
+function TPostProcessManager.EnablePostProcess(Owner: TCustomForm; Enable: Boolean; PostProcess: TInternalPostProcess): Boolean;
 var
   i: Integer;
 begin
@@ -316,13 +318,11 @@ begin
       Exit(False);
 
     if MsgBox(_('This postprocessor needs additional addons. Do you want to download these addons now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
-    begin
-      {
+    {
       for i := 0 to PostProcess.NeededAddons.Count - 1 do
         if not AppGlobals.AddonManager.EnableAddon(Owner, AppGlobals.AddonManager.Find(PostProcess.NeededAddons[i]), False) then
           Exit(False);
-      }
-    end else
+      } else
       Exit(False);
   end;
 
@@ -335,8 +335,7 @@ begin
   Exit(True);
 end;
 
-function TPostProcessManager.FindNextIdx(Entry: TProcessingEntry;
-  Group: Integer): Integer;
+function TPostProcessManager.FindNextIdx(Entry: TProcessingEntry; Group: Integer): Integer;
 var
   i, NextIdx: Integer;
   Output: string;
@@ -349,7 +348,6 @@ begin
     NextIdx := 0;
 
   for i := NextIdx to Entry.PostProcessList.Count - 1 do
-  begin
     if Entry.PostProcessList[i].CanProcess(Entry.Data, Entry.PostProcessList) and (Group = Entry.PostProcessList[i].GroupID) then
     begin
       Entry.ActiveThread := Entry.PostProcessList[i].ProcessFile(Entry.Data);
@@ -358,7 +356,6 @@ begin
         Entry.ActivePostProcessIndex := i;
 
         if Entry.PostProcessList[i] is TPostProcessConvert then
-        begin
           if Entry.Data.WorkFilename = '' then
           begin
             Entry.Data.WorkFilename := RemoveFileExt(Entry.Data.Filename) + '_temp.wav';
@@ -373,7 +370,6 @@ begin
             Entry.Data.ReEncodedFilename := RemoveFileExt(Entry.Data.Filename) + '_temp' + Output;
             TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.WorkFilename, Entry.Data.ReEncodedFilename, Entry.Data.EncoderSettings);
           end;
-        end;
 
         Entry.ActiveThread.OnTerminate := ThreadTerminate;
         Entry.ActiveThread.Resume;
@@ -381,9 +377,6 @@ begin
         Exit(i);
       end;
     end;
-  end;
 end;
 
 end.
-
-

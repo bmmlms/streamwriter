@@ -23,7 +23,10 @@ unit AddonSoX;
 interface
 
 uses
-  SysUtils, Windows, Classes, AddonBase, LanguageObjects;
+  AddonBase,
+  Classes,
+  LanguageObjects,
+  SysUtils;
 
 type
   TAddonSoX = class(TAddonBase)

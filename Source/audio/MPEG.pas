@@ -94,12 +94,16 @@ function GetCoefficient(const Frame: FrameData): Byte;
 begin
   { Get frame size coefficient }
   if Frame.VersionID = MPEG_VERSION_1 then
-    if Frame.LayerID = MPEG_LAYER_I then Result := 48
-    else Result := 144
+    if Frame.LayerID = MPEG_LAYER_I then
+      Result := 48
+    else
+      Result := 144
+  else if Frame.LayerID = MPEG_LAYER_I then
+    Result := 24
+  else if Frame.LayerID = MPEG_LAYER_II then
+    Result := 144
   else
-    if Frame.LayerID = MPEG_LAYER_I then Result := 24
-    else if Frame.LayerID = MPEG_LAYER_II then Result := 144
-    else Result := 72;
+    Result := 72;
 end;
 
 function GetBitRate(const Frame: FrameData): Word;
@@ -122,25 +126,22 @@ function GetPadding(const Frame: FrameData): Byte;
 begin
   { Get frame padding }
   if Frame.PaddingBit then
-    if Frame.LayerID = MPEG_LAYER_I then Result := 4
-    else Result := 1
-  else Result := 0;
+    if Frame.LayerID = MPEG_LAYER_I then
+      Result := 4
+    else
+      Result := 1
+  else
+    Result := 0;
 end;
 
 function IsFrameHeader(const HeaderData: array of Byte; Offset: Integer): Boolean;
 begin
   { Check for valid frame header }
-  if ((HeaderData[0 + Offset] and $FF) <> $FF) or
-    ((HeaderData[1 + Offset] and $E0) <> $E0) or
-    (((HeaderData[1 + Offset] shr 3) and 3) = 1) or
-    (((HeaderData[1 + Offset] shr 1) and 3) = 0) or
-    ((HeaderData[2 + Offset] and $F0) = $F0) or
-    ((HeaderData[2 + Offset] and $F0) = 0) or
-    (((HeaderData[2 + Offset] shr 2) and 3) = 3) or
-    ((HeaderData[3 + Offset] and 3) = 2) then
-    Result := false
+  if ((HeaderData[0 + Offset] and $FF) <> $FF) or ((HeaderData[1 + Offset] and $E0) <> $E0) or (((HeaderData[1 + Offset] shr 3) and 3) = 1) or (((HeaderData[1 + Offset] shr 1) and 3) = 0) or
+    ((HeaderData[2 + Offset] and $F0) = $F0) or ((HeaderData[2 + Offset] and $F0) = 0) or (((HeaderData[2 + Offset] shr 2) and 3) = 3) or ((HeaderData[3 + Offset] and 3) = 2) then
+    Result := False
   else
-    Result := true;
+    Result := True;
 end;
 
 procedure DecodeHeader(const x: array of Byte; var Frame: FrameData; Offset: Integer);
@@ -148,9 +149,9 @@ var
   HeaderData: array[0..3] of byte;
 begin
   HeaderData[0] := x[Offset];
-  HeaderData[1] := x[Offset+1];
-  HeaderData[2] := x[Offset+2];
-  HeaderData[3] := x[Offset+3];
+  HeaderData[1] := x[Offset + 1];
+  HeaderData[2] := x[Offset + 2];
+  HeaderData[3] := x[Offset + 3];
 
   { Decode frame header data }
   Move(HeaderData, Frame.Data, SizeOf(Frame.Data));

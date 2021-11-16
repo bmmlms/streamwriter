@@ -23,9 +23,21 @@ unit AddonManager;
 interface
 
 uses
-  Windows, SysUtils, Classes, Generics.Collections, AddonBase, AddonLAME,
-  Forms, Functions, LanguageObjects, AddonSoX, AddonFAAC, AddonOggEnc,
-  AddonMP4Box, AddonAudioGenie, AudioFunctions;
+  AddonAudioGenie,
+  AddonBase,
+  AddonFAAC,
+  AddonLAME,
+  AddonMP4Box,
+  AddonOggEnc,
+  AddonSoX,
+  AudioFunctions,
+  Classes,
+  Forms,
+  Functions,
+  Generics.Collections,
+  LanguageObjects,
+  SysUtils,
+  Windows;
 
 type
   TCanEncodeResults = (ceNoAddon, ceAddonNeeded, ceOkay);
@@ -90,7 +102,6 @@ begin
     begin
       PB := TAddonBase(Addons[i]);
       if (PB.PackageDownloaded) and (not PB.FilesExtracted) then
-      begin
         try
           if not PB.VersionOkay then
           begin
@@ -100,7 +111,6 @@ begin
           PB.ExtractFiles;
         except
         end;
-      end;
     end;
 end;
 
@@ -109,9 +119,7 @@ var
   i: Integer;
 begin
   for i := 0 to FAddons.Count - 1 do
-  begin
     FAddons[i].Free;
-  end;
 
   FAddons.Free;
 
@@ -135,9 +143,7 @@ begin
         if not MsgShown then
         begin
           if MsgBox(_('The selected addon has some unmet dependencies.'#13#10'Do you want do download the required addons now?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
-          begin
             Exit(False);
-          end;
           MsgShown := True;
         end;
         if not EnableAddon(Owner, Find(Addon.NeededAddons[i]), False) then
@@ -155,9 +161,7 @@ begin
     if Res = IDYES then
     begin
       if not Addon.ShowInitMessage(Owner.Handle) then
-      begin
         Exit(False);
-      end;
 
       DA := TfrmDownloadAddons.Create(Owner, Addon);
       try
@@ -174,9 +178,7 @@ begin
         DA.Free;
       end;
     end else if Res = IDNO then
-    begin
       Exit(False);
-    end;
   end;
 
   if not Addon.ExtractFiles then
@@ -202,8 +204,7 @@ begin
     end;
 end;
 
-function TAddonManager.InstallEncoderFor(Owner: TCustomForm;
-  AudioType: TAudioTypes): Boolean;
+function TAddonManager.InstallEncoderFor(Owner: TCustomForm; AudioType: TAudioTypes): Boolean;
 var
   i: Integer;
 begin

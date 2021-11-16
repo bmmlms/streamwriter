@@ -23,9 +23,19 @@ unit ConfigureSetTags;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, PostProcess,
-  MControls;
+  Buttons,
+  Classes,
+  Controls,
+  Dialogs,
+  ExtCtrls,
+  Forms,
+  Graphics,
+  LanguageObjects,
+  MControls,
+  PostProcess,
+  StdCtrls,
+  SysUtils,
+  Variants;
 
 type
   TfrmConfigureSetTags = class(TForm)
@@ -47,8 +57,7 @@ type
     procedure FormShow(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure btnResetPatternClick(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure txtCommentKeyPress(Sender: TObject; var Key: Char);
   private
     FSaveData: Boolean;
@@ -110,8 +119,7 @@ begin
   end;
 end;
 
-constructor TfrmConfigureSetTags.Create(AOwner: TComponent;
-  PostProcessor: TPostProcessBase; Artist, Title, Album, Genre, Comment: string);
+constructor TfrmConfigureSetTags.Create(AOwner: TComponent; PostProcessor: TPostProcessBase; Artist, Title, Album, Genre, Comment: string);
 begin
   inherited Create(AOwner);
 
@@ -132,8 +140,7 @@ begin
   Language.Translate(Self);
 end;
 
-procedure TfrmConfigureSetTags.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TfrmConfigureSetTags.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if Key = 27 then
   begin
@@ -147,8 +154,7 @@ begin
   Caption := Format(_('Configure "%s"'), [FPostProcessor.Name]);
 end;
 
-procedure TfrmConfigureSetTags.txtCommentKeyPress(Sender: TObject;
-  var Key: Char);
+procedure TfrmConfigureSetTags.txtCommentKeyPress(Sender: TObject; var Key: Char);
 begin
   if Key = #13 then
     Key := #0;

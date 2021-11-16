@@ -23,8 +23,13 @@ unit AddonLAME;
 interface
 
 uses
-  SysUtils, Windows, Classes, AddonBase, LanguageObjects, Functions,
-  AudioFunctions;
+  AddonBase,
+  AudioFunctions,
+  Classes,
+  Functions,
+  LanguageObjects,
+  SysUtils,
+  Windows;
 
 type
   TAddonLAME = class(TAddonBase)
@@ -101,8 +106,8 @@ end;
 function TAddonLAME.ShowInitMessage(Handle: THandle): Boolean;
 begin
   Result := MsgBox(_('WARNING:'#13#10'It may not be allowed in some contries to use the LAME-addon because it contains lame.exe ' +
-                             'that makes use of some patented technologies. Please make sure you may use these files in your country. ' +
-                             'If you are sure you may use these files, press "Yes" to continue.'), _('Warning'), MB_ICONWARNING or MB_YESNO or MB_DEFBUTTON2) = IDYES;
+    'that makes use of some patented technologies. Please make sure you may use these files in your country. ' + 'If you are sure you may use these files, press "Yes" to continue.'),
+    _('Warning'), MB_ICONWARNING or MB_YESNO or MB_DEFBUTTON2) = IDYES;
 end;
 
 end.

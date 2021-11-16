@@ -24,10 +24,32 @@ unit CutTab;
 interface
 
 uses
-  Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls, Buttons,
-  MControls, LanguageObjects, Tabs, CutView, Functions, AppData, SharedControls,
-  DynBass, Logging, CutTabSearchSilence, MessageBus, AppMessages, PlayerManager,
-  Forms, DataManager, AudioFunctions, SharedData, Messages, Images, CutToolBar;
+  AppData,
+  AppMessages,
+  AudioFunctions,
+  Buttons,
+  Classes,
+  ComCtrls,
+  Controls,
+  CutTabSearchSilence,
+  CutToolBar,
+  CutView,
+  DataManager,
+  DynBass,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Images,
+  LanguageObjects,
+  Logging,
+  MControls,
+  MessageBus,
+  PlayerManager,
+  SharedControls,
+  SharedData,
+  SysUtils,
+  Tabs,
+  Windows;
 
 type
   TFileSavedEvent = procedure(Sender: TObject; AudioInfo: TAudioInfo) of object;
@@ -95,13 +117,10 @@ begin
 
   if FCutView.WaveData <> nil then
     if FCutView.LastCheckSum <> FCutView.WaveData.CheckSum then
-    begin
-      if MsgBox(Format(_('The file "%s" has not been saved. Do you really want to close the editor?'), [ExtractFileName(FFilename)]),
-        _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON2) = IDYES then
+      if MsgBox(Format(_('The file "%s" has not been saved. Do you really want to close the editor?'), [ExtractFileName(FFilename)]), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON2) = IDYES then
         Result := True
       else
         Result := False;
-    end;
 end;
 
 constructor TCutTab.Create(AOwner: TComponent; Track: TTrackInfo; Filename: string = '');
@@ -267,12 +286,10 @@ begin
   end else
   begin
     if (Msg.CharCode = VK_SPACE) and (FCutView.Player <> nil) then
-    begin
       if FCutView.Player.Playing then
         Button := FToolBar.Stop
       else
         Button := FToolBar.Play;
-    end;
 
     if Msg.CharCode = VK_HOME then
     begin
@@ -337,9 +354,7 @@ begin
     F.ShowModal;
 
     if F.Okay then
-    begin
       FCutView.AutoCut(F.SilenceLevel, F.SilenceLength);
-    end;
   finally
     F.Free;
   end;
@@ -411,4 +426,3 @@ begin
 end;
 
 end.
-

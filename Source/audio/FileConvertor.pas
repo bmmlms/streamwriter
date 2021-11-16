@@ -23,8 +23,17 @@ unit FileConvertor;
 interface
 
 uses
-  SysUtils, Windows, Classes, DynBASS, ExtendedStream, AddonLAME, AppData,
-  AddonOGGEnc, AddonFAAC, Functions, AudioFunctions;
+  AddonFAAC,
+  AddonLAME,
+  AddonOGGEnc,
+  AppData,
+  AudioFunctions,
+  Classes,
+  DynBASS,
+  ExtendedStream,
+  Functions,
+  SysUtils,
+  Windows;
 
 const
   BE_CONFIG_MP3 = 0;
@@ -76,7 +85,7 @@ type
     // BASIC ENCODER SETTINGS
     dwSampleRate: DWORD;   // ALLOWED SAMPLERATE VALUES DEPENDS ON dwMPEGVersion
     dwReSampleRate: DWORD; // DOWNSAMPLERATE, 0=ENCODER DECIDES
-    nMode: Integer;	      // BE_MP3_MODE_STEREO, BE_MP3_MODE_DUALCHANNEL, BE_MP3_MODE_MONO
+    nMode: Integer;        // BE_MP3_MODE_STEREO, BE_MP3_MODE_DUALCHANNEL, BE_MP3_MODE_MONO
     dwBitrate: DWORD;      // CBR bitrate, VBR min bitrate
     dwMaxBitrate: DWORD;   // CBR ignored, VBR Max bitrate
     nQuality: Integer;     // Quality setting (NORMAL,HIGH,LOW,VOICE)
@@ -86,7 +95,7 @@ type
 
     // BIT STREAM SETTINGS
     bPrivate: LONGBOOL;    // Set Private Bit (TRUE/FALSE)
-    bCRC: LONGBOOL;	      // Insert CRC (TRUE/FALSE)
+    bCRC: LONGBOOL;        // Insert CRC (TRUE/FALSE)
     bCopyright: LONGBOOL;  // Set Copyright Bit (TRUE/FALSE)
     bOriginal: LONGBOOL;   // Set Original Bit (TRUE/FALSE)
 
@@ -98,7 +107,8 @@ type
     btReserved: array[0..255] of Byte; // FUTURE USE, SET TO 0
   end;
 
-  type TAAC = packed record
+type
+  TAAC = packed record
     dwSampleRate: LongWord;
     byMode: Byte;
     wBitRate: Word;
@@ -110,40 +120,42 @@ type
       1: (mp3: TMP3);
       2: (lhv1: TLHV1);
       3: (aac: TAAC);
-    end;
+  end;
 
   PBE_CONFIG = ^TBE_CONFIG;
+
   TBE_CONFIG = packed record
-    dwConfig   : LongWord; // BE_CONFIG_MP3 or BE_CONFIG_LAME
-    format     : TFormat;
+    dwConfig: LongWord; // BE_CONFIG_MP3 or BE_CONFIG_LAME
+    format: TFormat;
   end;
 
   PBE_VERSION = ^TBE_VERSION;
+
   TBE_VERSION = record
     // BladeEnc DLL Version number
-    byDLLMajorVersion : Byte;
-    byDLLMinorVersion : Byte;
+    byDLLMajorVersion: Byte;
+    byDLLMinorVersion: Byte;
 
     // BladeEnc Engine Version Number
-    byMajorVersion    : Byte;
-    byMinorVersion    : Byte;
+    byMajorVersion: Byte;
+    byMinorVersion: Byte;
 
     // DLL Release date
-    byDay             : Byte;
-    byMonth           : Byte;
-    wYear             : Word;
+    byDay: Byte;
+    byMonth: Byte;
+    wYear: Word;
 
-    // BladeEnc	Homepage URL
-    zHomePage         : Array[0..BE_MAX_HOMEPAGE + 1] of Char;
+    // BladeEnc  Homepage URL
+    zHomePage: array[0..BE_MAX_HOMEPAGE + 1] of Char;
   end;
 
   PLongWord = ^LongWord;
   PByte = ^Byte;
 
-  LameInitStream = function (pbeConfig: PBE_CONFIG; dwSamples: PLongWord; dwBufferSize: PLongWord; phbeStream: PHBE_STREAM): BE_ERR; stdcall;
-  LameEncodeChunk = function (hbeStream: THBE_STREAM; nSamples: LongWord; pSamples: PSmallInt; pOutput: PByte;pdwOutput: PLongWord): BE_ERR; stdcall;
-  LameDeInitStream = function (hbeStream: THBE_STREAM; pOutput: PByte; pdwOutput: PLongWord): BE_ERR; stdcall;
-  LameCloseStream  = function (hbeStream: THBE_STREAM): BE_ERR; stdcall;
+  LameInitStream = function(pbeConfig: PBE_CONFIG; dwSamples: PLongWord; dwBufferSize: PLongWord; phbeStream: PHBE_STREAM): BE_ERR; stdcall;
+  LameEncodeChunk = function(hbeStream: THBE_STREAM; nSamples: LongWord; pSamples: PSmallInt; pOutput: PByte; pdwOutput: PLongWord): BE_ERR; stdcall;
+  LameDeInitStream = function(hbeStream: THBE_STREAM; pOutput: PByte; pdwOutput: PLongWord): BE_ERR; stdcall;
+  LameCloseStream = function(hbeStream: THBE_STREAM): BE_ERR; stdcall;
 
   TFileConvertorProgressEvent = procedure(Sender: TObject; Percent: Integer) of object;
 
@@ -176,7 +188,8 @@ type
 implementation
 
 uses
-  PostProcess, PostProcessMP4Box;
+  PostProcess,
+  PostProcessMP4Box;
 
 const
   CONVERT_TIMEOUT = 60000;
@@ -236,17 +249,17 @@ begin
     Exit;
 
   BASSChannelGetInfo(Channel, ChanInfo);
-	Channels := ChanInfo.chans;
+  Channels := ChanInfo.chans;
 
   if (ChanInfo.flags and 1 > 0) then
     BitsPerSample := 8
   else
     BitsPerSample := 16;
 
-	BlockAlign := Channels * BitsPerSample div 8;
-	BASSChannelGetAttribute(Channel, 1, Freq);
+  BlockAlign := Channels * BitsPerSample div 8;
+  BASSChannelGetAttribute(Channel, 1, Freq);
   SamplesPerSec := Trunc(Freq);
-	AvgBytesPerSec := SamplesPerSec * BlockAlign;
+  AvgBytesPerSec := SamplesPerSec * BlockAlign;
 
   OutStream := TFileStream.Create(ToFile, fmCreate);
   try
@@ -264,9 +277,9 @@ begin
     OutStream.Write(Tmp[1], Length(Tmp));
 
     if Channels = 1 then
-       Tmp := #1#0
+      Tmp := #1#0
     else
-       Tmp := #2#0;
+      Tmp := #2#0;
     OutStream.Write(Tmp[1], Length(Tmp));
 
     OutStream.Write(SamplesPerSec, 2);
@@ -290,9 +303,7 @@ begin
     while (BASSChannelIsActive(Channel) > 0) do
     begin
       if (T > -1) and (BASSChannelGetPosition(Channel, BASS_POS_BYTE) + BytesToRead > T) then
-      begin
         BytesToRead := T - BASSChannelGetPosition(Channel, BASS_POS_BYTE);
-      end;
 
       {$R-}
       BytesRead := BASSChannelGetData(Channel, @Buf[0], BytesToRead);
@@ -334,11 +345,10 @@ begin
   begin
     DeleteFile(PChar(ToFile));
     Result := False;
-  end
+  end;
 end;
 
-function TFileConvertor.ConvertWAV2AAC(FromFile, ToFile: string;
-  TerminateFlag: PByteBool): Boolean;
+function TFileConvertor.ConvertWAV2AAC(FromFile, ToFile: string; TerminateFlag: PByteBool): Boolean;
 var
   CmdLine, ToFileTemp, Opts: string;
   Output: AnsiString;
@@ -356,16 +366,12 @@ begin
 
   case FBitrateType of
     brCBR:
-      begin
-        Opts := '-b ' + IntToStr(FCBRBitrate);
-      end;
+      Opts := '-b ' + IntToStr(FCBRBitrate);
     brVBR:
-      begin
-        case FVBRQuality of
-          vqHigh: Opts := '-q 150';
-          vqMedium: Opts := '-q 100';
-          vqLow: Opts := '-q 50';
-        end;
+      case FVBRQuality of
+        vqHigh: Opts := '-q 150';
+        vqMedium: Opts := '-q 100';
+        vqLow: Opts := '-q 50';
       end;
   end;
 
@@ -383,8 +389,7 @@ begin
     DeleteFile(PChar(ToFileTemp));
 end;
 
-function TFileConvertor.ConvertWAV2M4A(FromFile, ToFile: string;
-  TerminateFlag: PByteBool): Boolean;
+function TFileConvertor.ConvertWAV2M4A(FromFile, ToFile: string; TerminateFlag: PByteBool): Boolean;
 var
   ToFileTemp, ToFileTemp2: string;
 begin
@@ -426,16 +431,12 @@ begin
 
   case FBitrateType of
     brCBR:
-      begin
-        Opts := '-b ' + IntToStr(FCBRBitrate);
-      end;
+      Opts := '-b ' + IntToStr(FCBRBitrate);
     brVBR:
-      begin
-        case FVBRQuality of
-          vqHigh: Opts := '-V 0';
-          vqMedium: Opts := '-V 4';
-          vqLow: Opts := '-V 8';
-        end;
+      case FVBRQuality of
+        vqHigh: Opts := '-V 0';
+        vqMedium: Opts := '-V 4';
+        vqLow: Opts := '-V 8';
       end;
   end;
 
@@ -453,8 +454,7 @@ begin
     DeleteFile(PChar(ToFileTemp));
 end;
 
-function TFileConvertor.ConvertWAV2OGG(FromFile, ToFile: string;
-  TerminateFlag: PByteBool): Boolean;
+function TFileConvertor.ConvertWAV2OGG(FromFile, ToFile: string; TerminateFlag: PByteBool): Boolean;
 var
   CmdLine, ToFileTemp, Opts: string;
   Output: AnsiString;
@@ -472,16 +472,12 @@ begin
 
   case FBitrateType of
     brCBR:
-      begin
-        Opts := '-m ' + IntToStr(FCBRBitrate) + ' -M ' + IntToStr(FCBRBitrate);
-      end;
+      Opts := '-m ' + IntToStr(FCBRBitrate) + ' -M ' + IntToStr(FCBRBitrate);
     brVBR:
-      begin
-        case FVBRQuality of
-          vqHigh: Opts := '-m 224 -M 320';
-          vqMedium: Opts := '-m 128 -M 192';
-          vqLow: Opts := '-m 32 -M 96';
-        end;
+      case FVBRQuality of
+        vqHigh: Opts := '-m 224 -M 320';
+        vqMedium: Opts := '-m 128 -M 192';
+        vqLow: Opts := '-m 32 -M 96';
       end;
   end;
 
@@ -501,7 +497,7 @@ end;
 
 procedure TFileConvertor.ReadCallbackAAC(Data: AnsiString);
 var
-//  R: TPerlRegEx;
+  //  R: TPerlRegEx;
   Progress: Integer;
 begin
   {
@@ -534,7 +530,7 @@ end;
 
 procedure TFileConvertor.ReadCallbackMP3(Data: AnsiString);
 var
-//  R: TPerlRegEx;
+  //  R: TPerlRegEx;
   Progress: Integer;
 begin
   {
@@ -567,7 +563,7 @@ end;
 
 procedure TFileConvertor.ReadCallbackOGG(Data: AnsiString);
 var
-//  R: TPerlRegEx;
+  //  R: TPerlRegEx;
   Progress: Integer;
 begin
   {

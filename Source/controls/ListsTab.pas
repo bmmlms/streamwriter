@@ -24,12 +24,43 @@ unit ListsTab;
 interface
 
 uses
-  Windows, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls,
-  Buttons, MControls, LanguageObjects, Tabs, VirtualTrees, DataManager,
-  ImgList, Functions, Menus, Math, DragDrop, DropComboTarget,
-  Dialogs, MsgDlg, Forms, Logging, AppData, HomeCommunication, ICEClient,
-  ClientManager, Generics.Collections, TypeDefs, MessageBus, AppMessages,
-  Graphics, SharedData, HomeCommands, SharedControls, Images, ComboEx;
+  AppData,
+  AppMessages,
+  Buttons,
+  Classes,
+  ClientManager,
+  ComboEx,
+  ComCtrls,
+  Controls,
+  DataManager,
+  Dialogs,
+  DragDrop,
+  DropComboTarget,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Generics.Collections,
+  Graphics,
+  HomeCommands,
+  HomeCommunication,
+  ICEClient,
+  Images,
+  ImgList,
+  LanguageObjects,
+  Logging,
+  Math,
+  MControls,
+  Menus,
+  MessageBus,
+  MsgDlg,
+  SharedControls,
+  SharedData,
+  StdCtrls,
+  SysUtils,
+  Tabs,
+  TypeDefs,
+  VirtualTrees,
+  Windows;
 
 type
   TTitleTree = class;
@@ -181,8 +212,7 @@ type
 
     function GetNode(Stream: TICEClient): PVirtualNode;
 
-    procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
-      APoint: TPoint; var Effect: Integer);
+    procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
 
     procedure PopupMenuClick(Sender: TObject);
 
@@ -218,7 +248,7 @@ type
 const
   WISHTEXT = 'Wishlist';
   IGNORETEXT = 'Ignorelist';
-  
+
 implementation
 
 { TListsTab }
@@ -248,9 +278,7 @@ begin
   inherited;
 end;
 
-procedure TListsTab.HomeCommConvertManualToAutomaticReceived(
-  Sender: TObject; FoundTitles: TConvertManualToAutomaticArray;
-  NotFoundTitles: TStringArray);
+procedure TListsTab.HomeCommConvertManualToAutomaticReceived(Sender: TObject; FoundTitles: TConvertManualToAutomaticArray; NotFoundTitles: TStringArray);
 var
   i, n: Integer;
   Found: Boolean;
@@ -263,16 +291,13 @@ begin
   begin
     // If a manual title already exists the manual title needs to be removed
     for n := 0 to AppGlobals.Data.SaveList.Count - 1 do
-    begin
-      if (LowerCase(FoundTitles[i].Title) = LowerCase(AppGlobals.Data.SaveList[n].Title)) and
-         (AppGlobals.Data.SaveList[n].ServerHash = 0) and (AppGlobals.Data.SaveList[n].ServerArtistHash = 0) then
+      if (LowerCase(FoundTitles[i].Title) = LowerCase(AppGlobals.Data.SaveList[n].Title)) and (AppGlobals.Data.SaveList[n].ServerHash = 0) and (AppGlobals.Data.SaveList[n].ServerArtistHash = 0) then
       begin
         FListsPanel.FTree.RemoveTitle(AppGlobals.Data.SaveList[n]);
         AppGlobals.Data.SaveList[n].Free;
         AppGlobals.Data.SaveList.Delete(n);
         Break;
       end;
-    end;
 
     Found := False;
     for n := 0 to AppGlobals.Data.SaveList.Count - 1 do
@@ -326,16 +351,13 @@ begin
 
     for i := 0 to AppGlobals.Data.SaveList.Count - 1 do
     begin
-      if (AppGlobals.Data.SaveList[i].ServerHash > 0) and
-         (AppGlobals.Data.SaveList[i].ServerHash = SongSavedMsg.ServerTitleHash) then
+      if (AppGlobals.Data.SaveList[i].ServerHash > 0) and (AppGlobals.Data.SaveList[i].ServerHash = SongSavedMsg.ServerTitleHash) then
       begin
         AppGlobals.Data.SaveList[i].Saved := AppGlobals.Data.SaveList[i].Saved + 1;
         TitleUpdated := True;
       end;
 
-      if (AppGlobals.Data.SaveList[i].ServerArtistHash > 0) and
-         (AppGlobals.Data.SaveList[i].ServerHash = 0) and
-         (AppGlobals.Data.SaveList[i].ServerArtistHash = SongSavedMsg.ServerArtistHash) then
+      if (AppGlobals.Data.SaveList[i].ServerArtistHash > 0) and (AppGlobals.Data.SaveList[i].ServerHash = 0) and (AppGlobals.Data.SaveList[i].ServerArtistHash = SongSavedMsg.ServerArtistHash) then
       begin
         AppGlobals.Data.SaveList[i].Saved := AppGlobals.Data.SaveList[i].Saved + 1;
         ArtistUpdated := True;
@@ -377,8 +399,7 @@ begin
   FListsPanel.ClientRemoved(Client);
 end;
 
-procedure TListsTab.RemoveTitle(Client: TICEClient; ListType: TListType;
-  Title: TTitleInfo);
+procedure TListsTab.RemoveTitle(Client: TICEClient; ListType: TListType; Title: TTitleInfo);
 begin
   FListsPanel.FTree.RemoveTitle(Title);
 end;
@@ -428,7 +449,7 @@ begin
       begin
         NodeData := FTree.GetNodeData(Node);
 
-        if not (NodeData.NodeType in [ntWishParent, ntIgnoreParent])  then
+        if not (NodeData.NodeType in [ntWishParent, ntIgnoreParent]) then
         begin
           SubNode := FTree.GetFirstChild(Node);
           while SubNode <> nil do
@@ -452,18 +473,18 @@ begin
       begin
         case NodeData.NodeType of
           ntWish:
+          begin
+            AppGlobals.Data.SaveList.Remove(NodeData.Title);
+            if NodeData.Title.ServerHash > 0 then
             begin
-              AppGlobals.Data.SaveList.Remove(NodeData.Title);
-              if NodeData.Title.ServerHash > 0 then
-              begin
-                SetLength(Hashes, Length(Hashes) + 1);
-                Hashes[High(Hashes)] := TSyncWishlistRecord.Create(NodeData.Title.ServerHash, False);
-              end else if NodeData.Title.ServerArtistHash > 0 then
-              begin
-                SetLength(Hashes, Length(Hashes) + 1);
-                Hashes[High(Hashes)] := TSyncWishlistRecord.Create(NodeData.Title.ServerArtistHash, True);
-              end;
+              SetLength(Hashes, Length(Hashes) + 1);
+              Hashes[High(Hashes)] := TSyncWishlistRecord.Create(NodeData.Title.ServerHash, False);
+            end else if NodeData.Title.ServerArtistHash > 0 then
+            begin
+              SetLength(Hashes, Length(Hashes) + 1);
+              Hashes[High(Hashes)] := TSyncWishlistRecord.Create(NodeData.Title.ServerArtistHash, True);
             end;
+          end;
           ntIgnore:
             if NodeData.Stream = nil then
               AppGlobals.Data.IgnoreList.Remove(NodeData.Title)
@@ -503,8 +524,7 @@ begin
   FTree.EndUpdate;
 end;
 
-procedure TTitlePanel.RemoveEntry(Text: string; ServerTitleHash: Cardinal;
-  ListType: TListType);
+procedure TTitlePanel.RemoveEntry(Text: string; ServerTitleHash: Cardinal; ListType: TListType);
 var
   i: Integer;
   Title: TTitleInfo;
@@ -577,23 +597,17 @@ begin
         begin
           NodeData := FTree.GetNodeData(Node);
           if NodeData.Title <> nil then
-          begin
             ExportList.Add(NodeData.Title);
-          end;
           Node := FTree.GetNextSibling(Node);
         end;
       end else
-      begin
         while Node <> nil do
         begin
           NodeData := FTree.GetNodeData(Node);
           if FTree.Selected[Node] and (NodeData.Title <> nil) then
-          begin
             ExportList.Add(NodeData.Title);
-          end;
           Node := FTree.GetNext(Node);
         end;
-      end;
     end;
 
     if ExportList.Count = 0 then
@@ -713,7 +727,7 @@ begin
   ImportData := TList<TImportListEntry>.Create;
   Dlg := TOpenDialog.Create(Self);
   try
-    Dlg.Filter := _('All supported types') + ' (*.txt, *.m3u, *.pls)|*.txt;*.m3u;*.pls|' +  _('Text files') + ' (*.txt)|*.txt|' + _('M3U playlists') + ' (*.m3u)|*.m3u|' + _('PLS playlists') + ' (*.pls)|*.pls';
+    Dlg.Filter := _('All supported types') + ' (*.txt, *.m3u, *.pls)|*.txt;*.m3u;*.pls|' + _('Text files') + ' (*.txt)|*.txt|' + _('M3U playlists') + ' (*.m3u)|*.m3u|' + _('PLS playlists') + ' (*.pls)|*.pls';
     {
     if Dlg.Execute(Handle) then
     begin
@@ -817,14 +831,12 @@ begin
     begin
       NewImportData := TList<TImportListEntry>.Create;
       for i := 0 to ImportData.Count - 1 do
-      begin
         if (not ImportData[i].IsArtist) then
         begin
           ImportData[i].Hash := 0;
           NewImportData.Add(ImportData[i]);
         end else
           ImportData[i].Free;
-      end;
 
       ImportData.Free;
       ImportData := NewImportData;
@@ -842,10 +854,8 @@ begin
           Continue;
 
         if LowerCase(KeepEntry.Title) = LowerCase(ImportData[n].Title) then
-        begin
           if (KeepEntry.Hash = 0) and (ImportData[n].Hash > 0) then
             KeepEntry := ImportData[n];
-        end;
       end;
 
       for n := 0 to List.Count - 1 do
@@ -855,20 +865,16 @@ begin
         if List = AppGlobals.Data.SaveList then
         begin
           if ((LowerCase(KeepEntry.Title) = LowerCase(TitleInfo.Title)) and (not KeepEntry.IsArtist) and (KeepEntry.Hash = 0) and (TitleInfo.ServerHash > 0)) or
-             ((not KeepEntry.IsArtist) and (KeepEntry.Hash > 0) and (KeepEntry.Hash = TitleInfo.ServerHash)) or
-             ((KeepEntry.IsArtist) and (TitleInfo.ServerArtistHash > 0) and (LowerCase(KeepEntry.Title) = LowerCase(TitleInfo.Title))) or
-             ((KeepEntry.IsArtist) and (KeepEntry.Hash > 0) and (KeepEntry.Hash = TitleInfo.ServerArtistHash)) then
+            ((not KeepEntry.IsArtist) and (KeepEntry.Hash > 0) and (KeepEntry.Hash = TitleInfo.ServerHash)) or ((KeepEntry.IsArtist) and (TitleInfo.ServerArtistHash > 0) and
+            (LowerCase(KeepEntry.Title) = LowerCase(TitleInfo.Title))) or ((KeepEntry.IsArtist) and (KeepEntry.Hash > 0) and (KeepEntry.Hash = TitleInfo.ServerArtistHash)) then
           begin
             KeepEntry := nil;
             Break;
           end;
-        end else
+        end else if LowerCase(KeepEntry.Title) = LowerCase(TitleInfo.Title) then
         begin
-          if LowerCase(KeepEntry.Title) = LowerCase(TitleInfo.Title) then
-          begin
-            KeepEntry := nil;
-            Break;
-          end;
+          KeepEntry := nil;
+          Break;
         end;
       end;
 
@@ -959,8 +965,7 @@ begin
 
           for n := 0 to List.Count - 1 do
           begin
-            if (LowerCase(ImportData[i].Title) = LowerCase(List[n].Title)) and (ImportData[i].Hash > 0) and (not ImportData[i].IsArtist) and
-               (List[n].ServerHash = 0) and (List[n].ServerArtistHash = 0) then
+            if (LowerCase(ImportData[i].Title) = LowerCase(List[n].Title)) and (ImportData[i].Hash > 0) and (not ImportData[i].IsArtist) and (List[n].ServerHash = 0) and (List[n].ServerArtistHash = 0) then
             begin
               FTree.RemoveTitle(List[n]);
               List[n].Free;
@@ -1044,14 +1049,12 @@ begin
       FTree.AddTitle(AppGlobals.Data.IgnoreList[i], FTree.FIgnoreNode, FFilterText, FromFilter);
 
     for i := 0 to FClientManager.Count - 1 do
-    begin
       if FClientManager[i].Entry.IgnoreList.Count > 0 then
       begin
         ClientNode := FTree.GetNode(FClientManager[i]);
         for n := 0 to FClientManager[i].Entry.IgnoreList.Count - 1 do
           FTree.AddTitle(FClientManager[i].Entry.IgnoreList[n], ClientNode, FFilterText, FromFilter);
       end;
-    end;
 
     Node := FTree.GetFirst;
     while Node <> nil do
@@ -1198,7 +1201,7 @@ begin
   if FAddLabel.Width > FSearchLabel.Width then
   begin
     FAddLabel.BorderSpacing.Right := 0;
-    FSearchLabel.BorderSpacing.Right := FAddLabel.Width - FSearchLabel.Width
+    FSearchLabel.BorderSpacing.Right := FAddLabel.Width - FSearchLabel.Width;
   end else
   begin
     FSearchLabel.BorderSpacing.Right := 0;
@@ -1235,10 +1238,8 @@ begin
         IgnoreNodeData := FTree.GetNodeData(IgnoreNode);
 
         if IgnoreNodeData.NodeType = ntIgnore then
-        begin
           if Like(WishNodeData.Title.Title, IgnoreNodeData.Title.Pattern) then
-            FTree.Selected[WishNode] := True
-        end;
+            FTree.Selected[WishNode] := True;
 
         IgnoreNode := FTree.GetNext(IgnoreNode);
       end;
@@ -1293,13 +1294,9 @@ begin
     end;
 
     for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
-    begin
       if ((NodeData.Title.ServerHash = 0) and (NodeData.Title.ServerArtistHash = 0) and (Like(RemoveFileExt(ExtractFileName(AppGlobals.Data.TrackList[i].Filename)), NodeData.Title.Pattern))) or
-         ((NodeData.Title.ServerHash > 0) and (AppGlobals.Data.TrackList[i].ServerTitleHash = NodeData.Title.ServerHash)) then
-      begin
+        ((NodeData.Title.ServerHash > 0) and (AppGlobals.Data.TrackList[i].ServerTitleHash = NodeData.Title.ServerHash)) then
         FTree.Selected[Node] := True;
-      end;
-    end;
 
     Node := FTree.GetNext(Node);
   end;
@@ -1326,7 +1323,6 @@ begin
     NodeData := FTree.GetNodeData(Nodes[i]);
 
     if NodeData.Title <> nil then
-    begin
       if NodeData.Title.ServerHash = 0 then
       begin
         SetLength(ArtistHashes, Length(ArtistHashes) + 1);
@@ -1336,7 +1332,6 @@ begin
         SetLength(TitleHashes, Length(TitleHashes) + 1);
         TitleHashes[High(TitleHashes)] := NodeData.Title.ServerHash;
       end;
-    end;
   end;
 
   if (Length(TitleHashes) > 0) or (Length(ArtistHashes) > 0) then
@@ -1401,7 +1396,9 @@ begin
       TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('A short pattern may produce many matches, i.e. using ''a'' records/ignores every song containing an ''a''.'), mtInformation, [mbOK], mbOK, 6);
 
     if ShowMessages and (List = AppGlobals.Data.SaveList) then
-      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('Titles manually entered into the wishlist (without using the "Title search" tab) will not be considered for automatic recordings. Use the "Title search" tab to add titles for automatic recordings.'), mtInformation, [mbOK], mbOK, 15);
+      TfrmMsgDlg.ShowMsg(GetParentForm(Self),
+        _('Titles manually entered into the wishlist (without using the "Title search" tab) will not be considered for automatic recordings. Use the "Title search" tab to add titles for automatic recordings.'),
+        mtInformation, [mbOK], mbOK, 15);
 
     if Parent = nil then
       Parent := FTree.GetNode(TICEClient(FAddCombo.ItemsEx[FAddCombo.ItemIndex].Data));
@@ -1430,13 +1427,11 @@ begin
     UpdateButtons;
 
     Result := True;
-  end else
-    if ShowMessages then
-      MsgBox(_('Please enter a pattern to add to the list.'), _('Info'), MB_ICONINFORMATION);
+  end else if ShowMessages then
+    MsgBox(_('Please enter a pattern to add to the list.'), _('Info'), MB_ICONINFORMATION);
 end;
 
-procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree;
-  Node: PVirtualNode);
+procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
 var
   List: TList<TTitleInfo>;
   NodeData: PTitleNodeData;
@@ -1473,13 +1468,10 @@ begin
   UpdateButtons;
 end;
 
-procedure TTitlePanel.TreeKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TTitlePanel.TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if Key = VK_DELETE then
-  begin
     RemoveClick(nil);
-  end;
 end;
 
 procedure TTitlePanel.UpdateButtons;
@@ -1502,6 +1494,7 @@ var
         Inc(Result);
     end;
   end;
+
 begin
   SelectedNodes := FTree.GetNodes([ntStream, ntWish, ntIgnore], True);
   SelectedParents := FTree.GetNodes([ntWishParent, ntIgnoreParent, ntStream], True);
@@ -1510,22 +1503,20 @@ begin
 
   SingleParentSelected := (FTree.SelectedCount = 1) and (Length(SelectedParents) = 1);
   if SingleParentSelected then
-  begin
-    // Es muss zum Parent mindestens ein Child geben was drunter liegt und ein Titel ist.
     if SelectedParents[0].ChildCount > 0 then
     begin
       ChildNodeData := FTree.GetNodeData(FTree.GetFirstChild(SelectedParents[0]));
       SingleParentSelected := (ChildNodeData.NodeType = ntWish) or (ChildNodeData.NodeType = ntIgnore);
     end else
-      SingleParentSelected := False;
-  end;
+      SingleParentSelected := False// Es muss zum Parent mindestens ein Child geben was drunter liegt und ein Titel ist.
+  ;
 
   for i := 0 to High(SelectedNodes) do
   begin
     ChildNodeData := FTree.GetNodeData(SelectedNodes[i]);
     for n := 0 to AppGlobals.Data.TrackList.Count - 1 do
-      if ((ChildNodeData.Title <> nil) and (ChildNodeData.Title.ServerHash = AppGlobals.Data.TrackList[n].ServerTitleHash) and (ChildNodeData.Title.ServerHash > 0))
-         or ((ChildNodeData.Title <> nil) and (ChildNodeData.Title.ServerArtistHash = AppGlobals.Data.TrackList[n].ServerArtistHash) and (ChildNodeData.Title.ServerArtistHash > 0)) then
+      if ((ChildNodeData.Title <> nil) and (ChildNodeData.Title.ServerHash = AppGlobals.Data.TrackList[n].ServerTitleHash) and (ChildNodeData.Title.ServerHash > 0)) or
+        ((ChildNodeData.Title <> nil) and (ChildNodeData.Title.ServerArtistHash = AppGlobals.Data.TrackList[n].ServerArtistHash) and (ChildNodeData.Title.ServerArtistHash > 0)) then
       begin
         CanShowSaved := True;
         Break;
@@ -1540,8 +1531,7 @@ begin
 
   TitlesSelected := (TypeCount(ntWish) > 0) or (TypeCount(ntIgnore) > 0);
   CanRemove := TitlesSelected or (TypeCount(ntStream) > 0);
-  CanRename := (FTree.SelectedCount = 1) and TitlesSelected and (PTitleNodeData(FTree.GetNodeData(SelectedNodes[0])).Title.ServerHash = 0) and
-    (PTitleNodeData(FTree.GetNodeData(SelectedNodes[0])).Title.ServerArtistHash = 0);
+  CanRename := (FTree.SelectedCount = 1) and TitlesSelected and (PTitleNodeData(FTree.GetNodeData(SelectedNodes[0])).Title.ServerHash = 0) and (PTitleNodeData(FTree.GetNodeData(SelectedNodes[0])).Title.ServerArtistHash = 0);
   CanImport := True;
 
   FToolbar.FRemove.Enabled := CanRemove;
@@ -1549,8 +1539,7 @@ begin
   FToolbar.FShowSaved.Enabled := CanShowSaved;
   FToolbar.FSelectSaved.Enabled := FTree.FWishNode.ChildCount > 0;
   FToolbar.FSelectIgnored.Enabled := FTree.FWishNode.ChildCount > 0;
-  FToolbar.FExport.Enabled := (TitlesSelected and (not SingleParentSelected) and (Length(SelectedParents) = 0)) or
-                              (SingleParentSelected and (not TitlesSelected));
+  FToolbar.FExport.Enabled := (TitlesSelected and (not SingleParentSelected) and (Length(SelectedParents) = 0)) or (SingleParentSelected and (not TitlesSelected));
   FToolbar.FImport.Enabled := CanImport;
   FToolbar.FConvertToAutomatic.Enabled := CanConvert;
 
@@ -1575,14 +1564,10 @@ begin
     NodeData := FTree.GetNodeData(Node);
 
     if NodeData.Title <> nil then
-    begin
       NodeData.Title.Index := Node.Index;
-    end;
 
     if (NodeData.Stream <> nil) and (NodeData.Title = nil) then
-    begin
       NodeData.Stream.Entry.IgnoreListIndex := Node.Index;
-    end;
 
     Node := FTree.GetNext(Node);
   end;
@@ -1613,7 +1598,7 @@ begin
   FRemove := TToolButton.Create(Self);
   FRemove.Parent := Self;
   FRemove.Hint := 'Remove';
-  FRemove.ImageIndex := TImages.DELETE;
+  FRemove.ImageIndex := TImages.Delete;
 
   Sep := TToolButton.Create(Self);
   Sep.Parent := Self;
@@ -1690,10 +1675,8 @@ begin
     if ((Parent = FWishNode) or (Parent = FIgnoreNode)) and (Parent.ChildCount = 1) then
       Expanded[Parent] := True;
     if (ParentData.Stream <> nil) and (Parent.ChildCount = 1) and (Parent.Parent.ChildCount = 1) then
-    begin
       Expanded[Parent.Parent] := True;
-    end;
-    
+
     NodeData.Stream := ParentData.Stream;
 
     case ParentData.NodeType of
@@ -1708,16 +1691,16 @@ begin
 
           AttachMode := amInsertAfter;
           LastFoundChild := nil;
-          
+
           SearchNode := GetLastChild(Parent);
           while SearchNode <> nil do
-          begin         
+          begin
             if SearchNode = Node then
             begin
               SearchNode := GetPreviousSibling(SearchNode);
               Continue;
             end;
-            
+
             SearchNodeData := GetNodeData(SearchNode);
             if SearchNodeData.Stream = nil then
             begin
@@ -1731,7 +1714,7 @@ begin
           end;
           if LastFoundChild <> nil then
             MoveTo(Node, LastFoundChild, AttachMode, False);
-          
+
           NodeData.NodeType := ntIgnore;
         end;
       ntStream:
@@ -1740,9 +1723,7 @@ begin
   end;
 
   if (Parent <> nil) and (Parent.ChildCount = 1) then
-  begin
     Expanded[Parent] := True;
-  end;
 end;
 
 constructor TTitleTree.Create(AOwner: TComponent);
@@ -1804,16 +1785,13 @@ begin
   PopupMenu := FPopupMenu;
 
   for i := 1 to Header.Columns.Count - 1 do
-  begin
     if not ((AppGlobals.ListCols and (1 shl i)) <> 0) then
       Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
-  end;
 
   FitColumns;
 end;
 
-procedure TTitleTree.DropTargetDrop(Sender: TObject; ShiftState: TShiftState;
-  APoint: TPoint; var Effect: Integer);
+procedure TTitleTree.DropTargetDrop(Sender: TObject; ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
 var
   i, n: Integer;
   Found: Boolean;
@@ -1834,56 +1812,52 @@ begin
 
     case NodeData.NodeType of
       ntWishParent:
-        begin
-          List := AppGlobals.Data.SaveList;
-        end;
+        List := AppGlobals.Data.SaveList;
       ntIgnoreParent:
-        begin
-          List := AppGlobals.Data.IgnoreList;
-        end;
+        List := AppGlobals.Data.IgnoreList;
       ntStream:
-        begin
-          ParentNodeData := GetNodeData(Hi.HitNode.Parent);
-          if ParentNodeData.NodeType = ntWishParent then
-            List := NodeData.Stream.Entry.SaveList
-          else
-            List := NodeData.Stream.Entry.IgnoreList;
-        end;
+      begin
+        ParentNodeData := GetNodeData(Hi.HitNode.Parent);
+        if ParentNodeData.NodeType = ntWishParent then
+          List := NodeData.Stream.Entry.SaveList
+        else
+          List := NodeData.Stream.Entry.IgnoreList;
+      end;
       ntWish:
-        begin
-          ParentNodeData := GetNodeData(Hi.HitNode.Parent);
-          case ParentNodeData.NodeType of
-            ntWishParent:
-              begin
-                Node := FWishNode;
-                List := AppGlobals.Data.SaveList;
-              end;
-            ntStream:
-              begin
-                Node := Hi.HitNode.Parent;
-                ParentNodeData := GetNodeData(Hi.HitNode.Parent);
-                List := ParentNodeData.Stream.Entry.SaveList
-              end;
+      begin
+        ParentNodeData := GetNodeData(Hi.HitNode.Parent);
+        case ParentNodeData.NodeType of
+          ntWishParent:
+          begin
+            Node := FWishNode;
+            List := AppGlobals.Data.SaveList;
+          end;
+          ntStream:
+          begin
+            Node := Hi.HitNode.Parent;
+            ParentNodeData := GetNodeData(Hi.HitNode.Parent);
+            List := ParentNodeData.Stream.Entry.SaveList;
           end;
         end;
+      end;
       ntIgnore:
-        begin
-          ParentNodeData := GetNodeData(Hi.HitNode.Parent);
+      begin
+        ParentNodeData := GetNodeData(Hi.HitNode.Parent);
 
-          case ParentNodeData.NodeType of
-            ntIgnoreParent:
-              begin
-                Node := FIgnoreNode;
-                List := AppGlobals.Data.IgnoreList;
-              end;
-            ntStream:
-              begin
-                Node := Hi.HitNode.Parent;
-                ParentNodeData := GetNodeData(Hi.HitNode.Parent);
-                List := ParentNodeData.Stream.Entry.IgnoreList;
-              end;
+        case ParentNodeData.NodeType of
+          ntIgnoreParent:
+          begin
+            Node := FIgnoreNode;
+            List := AppGlobals.Data.IgnoreList;
+          end;
+          ntStream:
+          begin
+            Node := Hi.HitNode.Parent;
+            ParentNodeData := GetNodeData(Hi.HitNode.Parent);
+            List := ParentNodeData.Stream.Entry.IgnoreList;
           end;
         end;
+      end;
     end;
   end else
     Exit;
@@ -1923,20 +1897,17 @@ begin
     raise Exception.Create('(Header.Columns.Count <> Length(AppGlobals.ListHeaderWidth)) or (Header.Columns.Count <> Length(AppGlobals.ListHeaderPosition))');
 
   if AppGlobals.ListHeaderWidthLoaded then
-  begin
     for i := 1 to Header.Columns.Count - 1 do
-      Header.Columns[i].Width := AppGlobals.ListHeaderWidth[i];
-  end else
+      Header.Columns[i].Width := AppGlobals.ListHeaderWidth[i]
+  else
   begin
     FColSaved.Width := MulDiv(120, Screen.PixelsPerInch, 96);
     FColAdded.Width := MulDiv(130, Screen.PixelsPerInch, 96);
   end;
 
   if AppGlobals.ListHeaderPositionLoaded then
-  begin
     for i := 1 to Header.Columns.Count - 1 do
       Header.Columns[i].Position := AppGlobals.ListHeaderPosition[i];
-  end;
 end;
 
 function TTitleTree.GetNode(Stream: TICEClient): PVirtualNode;
@@ -1963,8 +1934,7 @@ begin
   NodeData.NodeType := ntStream;
 end;
 
-function TTitleTree.GetNodes(NodeTypes: TNodeTypes;
-  SelectedOnly: Boolean): TNodeArray;
+function TTitleTree.GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
 var
   Node: PVirtualNode;
   NodeData: PTitleNodeData;
@@ -1993,8 +1963,7 @@ begin
   end;
 end;
 
-procedure TTitleTree.MenuColsAction(Sender: TVirtualStringTree;
-  Index: Integer; Checked: Boolean);
+procedure TTitleTree.MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
 var
   Show: Boolean;
 begin
@@ -2003,12 +1972,9 @@ begin
     Show := False;
 
   if Show then
-  begin
-    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible];
-  end else
-  begin
+    Header.Columns[Index].Options := Header.Columns[Index].Options + [coVisible]
+  else
     Header.Columns[Index].Options := Header.Columns[Index].Options - [coVisible];
-  end;
 
   AppGlobals.ListCols := AppGlobals.ListCols xor (1 shl Index);
 end;
@@ -2111,49 +2077,42 @@ begin
   NodeData := GetNodeData(Node);
   case Column of
     0:
-      begin
-        case NodeData.NodeType of
-          ntWishParent:
-            Text := _(WISHTEXT);
-          ntIgnoreParent:
-            Text := _(IGNORETEXT);
-          ntStream:
-            Text := NodeData.Stream.Entry.CustomName;
-          ntWish, ntIgnore:
-            Text := NodeData.Title.Title;
-        end;
+    begin
+      case NodeData.NodeType of
+        ntWishParent:
+          Text := _(WISHTEXT);
+        ntIgnoreParent:
+          Text := _(IGNORETEXT);
+        ntStream:
+          Text := NodeData.Stream.Entry.CustomName;
+        ntWish, ntIgnore:
+          Text := NodeData.Title.Title;
+      end;
 
-        if NodeData.NodeType in [ntWishParent, ntIgnoreParent, ntStream] then
+      if NodeData.NodeType in [ntWishParent, ntIgnoreParent, ntStream] then
+      begin
+        ChildCount := 0;
+        Node := GetFirstChild(Node);
+        while Node <> nil do
         begin
-          ChildCount := 0;
-          Node := GetFirstChild(Node);
-          while Node <> nil do
-          begin
-            NodeData := GetNodeData(Node);
-            if (NodeData.NodeType = ntWish) or (NodeData.NodeType = ntIgnore) then
-              Inc(ChildCount);
-            Node := GetNextSibling(Node);
-          end;
-          Text := Text + ' (' + IntToStr(ChildCount) + ')';
+          NodeData := GetNodeData(Node);
+          if (NodeData.NodeType = ntWish) or (NodeData.NodeType = ntIgnore) then
+            Inc(ChildCount);
+          Node := GetNextSibling(Node);
         end;
+        Text := Text + ' (' + IntToStr(ChildCount) + ')';
       end;
+    end;
     1:
-      begin
-        if (NodeData.NodeType = ntWish) and (NodeData.Title <> nil) and
-           ((NodeData.Title.ServerHash > 0) or (NodeData.Title.ServerArtistHash > 0)) then
-        begin
-          Text := IntToStr(NodeData.Title.Saved);
-        end else
-          Text := '';
-      end;
+      if (NodeData.NodeType = ntWish) and (NodeData.Title <> nil) and ((NodeData.Title.ServerHash > 0) or (NodeData.Title.ServerArtistHash > 0)) then
+        Text := IntToStr(NodeData.Title.Saved)
+      else
+        Text := '';
     2:
-      begin
-        if NodeData.Title <> nil then
-        begin
-          Text := DateToStr(NodeData.Title.Added);
-        end else
-          Text := '';
-      end;
+      if NodeData.Title <> nil then
+        Text := DateToStr(NodeData.Title.Added)
+      else
+        Text := '';
   end;
 end;
 
@@ -2197,13 +2156,10 @@ begin
 
       if (HitInfo.Column = 1) or (HitInfo.Column = 2) then
         Header.SortDirection := sdDescending;
-    end else
-    begin
-      if Header.SortDirection = sdAscending then
-        Header.SortDirection := sdDescending
-      else
-        Header.SortDirection := sdAscending;
-    end;
+    end else if Header.SortDirection = sdAscending then
+      Header.SortDirection := sdDescending
+    else
+      Header.SortDirection := sdAscending;
 
     SortItems;
   end;
@@ -2252,8 +2208,7 @@ begin
     Canvas.Font.Color := AppGlobals.NodeTextColor;
 end;
 
-procedure TTitleTree.DoHeaderDragged(Column: TColumnIndex;
-  OldPosition: TColumnPosition);
+procedure TTitleTree.DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition);
 begin
   inherited;
 
@@ -2271,8 +2226,7 @@ begin
   FHeaderDragSourcePosition := Header.Columns[Column].Position;
 end;
 
-function TTitleTree.DoIncrementalSearch(Node: PVirtualNode;
-  const Text: string): Integer;
+function TTitleTree.DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer;
 var
   s: string;
   NodeData: PTitleNodeData;
@@ -2291,7 +2245,7 @@ begin
   if NodeData.Title <> nil then
     Result := StrLIComp(PChar(s), PChar(NodeData.Title.Title), Min(Length(s), Length(NodeData.Title.Title)))
   else
-    Result := StrLIComp(PChar(s), PChar(NodeData.Stream.Entry.CustomName), Min(Length(s), Length(NodeData.Stream.Entry.CustomName)))
+    Result := StrLIComp(PChar(s), PChar(NodeData.Stream.Entry.CustomName), Min(Length(s), Length(NodeData.Stream.Entry.CustomName)));
 end;
 
 procedure TTitleTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string);
@@ -2309,8 +2263,7 @@ begin
   NodeData.Title := TTitleInfo.Create(0, 0, Text);
 end;
 
-procedure TTitleTree.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex;
-  var Allowed: Boolean);
+procedure TTitleTree.DoCanEdit(Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean);
 var
   NodeData: PTitleNodeData;
 begin
@@ -2321,8 +2274,8 @@ begin
   Allowed := (NodeData.Title <> nil) and (NodeData.Title.ServerHash = 0);
 end;
 
-function TTitleTree.DoCompare(Node1, Node2: PVirtualNode;
-  Column: TColumnIndex): Integer;
+function TTitleTree.DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer;
+
   function CmpTime(a, b: TDateTime): Integer;
   begin
     if a > b then
@@ -2332,6 +2285,7 @@ function TTitleTree.DoCompare(Node1, Node2: PVirtualNode;
     else
       Result := 0;
   end;
+
   function CmpC(a, b: Cardinal): Integer;
   begin
     if a > b then
@@ -2341,6 +2295,7 @@ function TTitleTree.DoCompare(Node1, Node2: PVirtualNode;
     else
       Result := 0;
   end;
+
 var
   Data1, Data2: PTitleNodeData;
 begin
@@ -2361,35 +2316,28 @@ begin
   case Header.SortColumn of
     -1:
       if (Data1.Stream <> nil) and (Data1.Title = nil) and (Data2.Stream <> nil) and (Data2.Title = nil) then
-      begin
-        Result := CmpC(Data1.Stream.Entry.IgnoreListIndex, Data2.Stream.Entry.IgnoreListIndex);
-      end else if (Data1.Title <> nil) and (Data2.Title <> nil) then
-      begin
+        Result := CmpC(Data1.Stream.Entry.IgnoreListIndex, Data2.Stream.Entry.IgnoreListIndex)
+      else if (Data1.Title <> nil) and (Data2.Title <> nil) then
         Result := CmpC(Data1.Title.Index, Data2.Title.Index);
-      end;
     0:
-      begin
-        if (Data1.Title <> nil) and (Data2.Title <> nil) then
-          Result := CompareText(Data1.Title.Title, Data2.Title.Title)
-        else if (Data1.NodeType = ntStream) and (Data2.NodeType = ntStream) then
-          Result := CompareText(Data1.Stream.Entry.CustomName, Data2.Stream.Entry.CustomName)
-        else if (Data1.Title <> nil) and (Data2.Stream = nil) then
-          Exit(1)
-        else if (Data1.Title = nil) and (Data2.Stream <> nil) then
-          Exit(-1);
-      end;
+      if (Data1.Title <> nil) and (Data2.Title <> nil) then
+        Result := CompareText(Data1.Title.Title, Data2.Title.Title)
+      else if (Data1.NodeType = ntStream) and (Data2.NodeType = ntStream) then
+        Result := CompareText(Data1.Stream.Entry.CustomName, Data2.Stream.Entry.CustomName)
+      else if (Data1.Title <> nil) and (Data2.Stream = nil) then
+        Exit(1)
+      else if (Data1.Title = nil) and (Data2.Stream <> nil) then
+        Exit(-1);
     1:
-      begin
-        if (Data1.Title <> nil) and (Data2.Title <> nil) then
-          Result := CmpInt(Data1.Title.Saved, Data2.Title.Saved)
-        else
-          Result := 0;
-      end;
+      if (Data1.Title <> nil) and (Data2.Title <> nil) then
+        Result := CmpInt(Data1.Title.Saved, Data2.Title.Saved)
+      else
+        Result := 0;
     2:
-      if Node1 = FWishNode then                                
+      if Node1 = FWishNode then
         Result := 1
       else if Node1 = FIgnoreNode then
-        Result := -1    
+        Result := -1
       else if (Data1.Title <> nil) and (Data2.Title <> nil) then
         Result := CmpTime(Data1.Title.Added, Data2.Title.Added)
       else
@@ -2403,48 +2351,56 @@ constructor TTitlePopup.Create(AOwner: TComponent);
 begin
   inherited;
 
-  FRename := TMenuItem.Create(Self);;
+  FRename := TMenuItem.Create(Self);
+  ;
   FRename.Caption := 'Ren&ame';
   FRename.ImageIndex := TImages.TEXTFIELD_RENAME;
   Items.Add(FRename);
 
-  FRemove := TMenuItem.Create(Self);;
+  FRemove := TMenuItem.Create(Self);
+  ;
   FRemove.Caption := '&Remove';
-  FRemove.ImageIndex := TImages.DELETE;
+  FRemove.ImageIndex := TImages.Delete;
   Items.Add(FRemove);
 
   Items.AddSeparator;
 
-  FConvertToAutomatic := TMenuItem.Create(Self);;
+  FConvertToAutomatic := TMenuItem.Create(Self);
+  ;
   FConvertToAutomatic.Caption := '&Convert to automatic wishlist title';
   FConvertToAutomatic.ImageIndex := TImages.BRICKS_COG;
   Items.Add(FConvertToAutomatic);
 
-  FShowSaved := TMenuItem.Create(Self);;
+  FShowSaved := TMenuItem.Create(Self);
+  ;
   FShowSaved.Caption := 'S&how in saved tracks';
   FShowSaved.ImageIndex := TImages.DRIVE_GO;
   Items.Add(FShowSaved);
 
   Items.AddSeparator;
 
-  FSelectSaved := TMenuItem.Create(Self);;
+  FSelectSaved := TMenuItem.Create(Self);
+  ;
   FSelectSaved.Caption := '&Select saved titles';
   FSelectSaved.ImageIndex := TImages.DRIVE_SELECT;
   Items.Add(FSelectSaved);
 
-  FSelectIgnored := TMenuItem.Create(Self);;
+  FSelectIgnored := TMenuItem.Create(Self);
+  ;
   FSelectIgnored.Caption := 'Se&lect ignored titles';
   FSelectIgnored.ImageIndex := TImages.DECLINE_SELECT;
   Items.Add(FSelectIgnored);
 
   Items.AddSeparator;
 
-  FExport := TMenuItem.Create(Self);;
+  FExport := TMenuItem.Create(Self);
+  ;
   FExport.Caption := '&Export...';
   FExport.ImageIndex := TImages.SCRIPT_OUT;
   Items.Add(FExport);
 
-  FImport := TMenuItem.Create(Self);;
+  FImport := TMenuItem.Create(Self);
+  ;
   FImport.Caption := '&Import...';
   FImport.ImageIndex := TImages.SCRIPT_IN;
   Items.Add(FImport);
@@ -2452,8 +2408,7 @@ end;
 
 { TImportListEntry }
 
-constructor TImportListEntry.Create(Title: string; Hash: Cardinal;
-  IsArtist: Boolean);
+constructor TImportListEntry.Create(Title: string; Hash: Cardinal; IsArtist: Boolean);
 begin
   Self.Title := Title;
   Self.Hash := Hash;

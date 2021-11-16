@@ -23,10 +23,25 @@ unit DownloadAddons;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, ExtCtrls, ComCtrls, PostProcess, DownloadClient,
-  Functions, LanguageObjects, AppData, Logging, AddonBase, SharedData,
-  Images;
+  AddonBase,
+  AppData,
+  Buttons,
+  Classes,
+  ComCtrls,
+  Controls,
+  Dialogs,
+  DownloadClient,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Graphics,
+  Images,
+  LanguageObjects,
+  Logging,
+  SharedData,
+  StdCtrls,
+  SysUtils,
+  Variants;
 
 type
   TfrmDownloadAddons = class(TForm)
@@ -112,8 +127,7 @@ begin
   FDownloader.Start;
 end;
 
-procedure TfrmDownloadAddons.FormClose(Sender: TObject;
-  var Action: TCloseAction);
+procedure TfrmDownloadAddons.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   FDownloader.Kill;
   FDownloader.Free;

@@ -23,9 +23,19 @@ unit SettingsAddPostProcessor;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, LanguageObjects, StdCtrls, Buttons, ExtCtrls, SharedData,
-  Images;
+  Buttons,
+  Classes,
+  Controls,
+  Dialogs,
+  ExtCtrls,
+  Forms,
+  Graphics,
+  Images,
+  LanguageObjects,
+  SharedData,
+  StdCtrls,
+  SysUtils,
+  Variants;
 
 type
 
@@ -40,8 +50,7 @@ type
     optDestinationFormat: TRadioButton;
     procedure FormCreate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     FResult: Integer;
   public
@@ -70,10 +79,9 @@ begin
   Language.Translate(Self);
 end;
 
-procedure TfrmSettingsAddPostProcessor.FormKeyDown(Sender: TObject;
-  var Key: Word; Shift: TShiftState);
+procedure TfrmSettingsAddPostProcessor.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
- if Key = 27 then
+  if Key = 27 then
   begin
     Key := 0;
     Close;

@@ -24,9 +24,22 @@ unit StatusBar;
 interface
 
 uses
-  Windows, SysUtils, Classes, Graphics, Controls, ComCtrls, AppData, SharedData,
-  Functions, LanguageObjects, CommCtrl, GUIFunctions, Forms, ExtCtrls, Images,
-  GraphType;
+  AppData,
+  Classes,
+  ComCtrls,
+  CommCtrl,
+  Controls,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Graphics,
+  GraphType,
+  GUIFunctions,
+  Images,
+  LanguageObjects,
+  SharedData,
+  SysUtils,
+  Windows;
 
 type
   THomeConnectionState = (cshUndefined, cshConnected, cshConnectedSecure, cshDisconnected, cshFail);
@@ -50,7 +63,7 @@ type
     FDots: string;
 
     FTimer: TTimer;
-    FSpeedBmp: TBitmap;
+    FSpeedBmp: Graphics.TBitmap;
 
     procedure TimerTimer(Sender: TObject);
     procedure FSetSpeed(Value: UInt64);
@@ -64,8 +77,7 @@ type
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
 
-    procedure SetState(ConnectionState: THomeConnectionState; LoggedIn, NotifyTitleChanges: Boolean;
-      Clients, Recordings: Integer; SongsSaved, OverallSongsSaved: Cardinal);
+    procedure SetState(ConnectionState: THomeConnectionState; LoggedIn, NotifyTitleChanges: Boolean; Clients, Recordings: Integer; SongsSaved, OverallSongsSaved: Cardinal);
     procedure BuildSpeedBmp;
     property Speed: UInt64 read FSpeed write FSetSpeed;
     property CurrentReceived: UInt64 read FCurrentReceived write FSetCurrentReceived;
@@ -80,20 +92,18 @@ implementation
 procedure TSWStatusBar.BuildSpeedBmp;
 var
   P: Integer;
-  NewBmp: TBitmap;
+  NewBmp: Graphics.TBitmap;
 begin
-  NewBmp := TBitmap.Create;
+  NewBmp := Graphics.TBitmap.Create;
   NewBmp.Width := 35;
   NewBmp.Height := ClientHeight - 4;
   NewBmp.Canvas.Pen.Width := 1;
   NewBmp.Canvas.Brush.Color := clBtnFace;
   NewBmp.Canvas.Pen.Color := clBlack;
-  NewBmp.Canvas.FillRect(Rect(0, 0, NewBmp.Width, NewBmp.Height));
+  NewBmp.Canvas.FillRect(Classes.Rect(0, 0, NewBmp.Width, NewBmp.Height));
 
   if FSpeedBmp <> nil then
-  begin
     NewBmp.Canvas.Draw(-1, 0, FSpeedBmp);
-  end;
   FSpeedBmp.Free;
   FSpeedBmp := NewBmp;
 
@@ -117,35 +127,35 @@ begin
   begin
     FSpeedBmp.Canvas.Brush.Color := HTML2Color('4b1616');
     FSpeedBmp.Canvas.Pen.Color := HTML2Color('4b1616');
-    FSpeedBmp.Canvas.FillRect(Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(75, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(65, FSpeedBmp.Height, 100)));
+    FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(75, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(65, FSpeedBmp.Height, 100)));
   end;
 
   if MulDiv(P, 100, FSpeedBmp.Height) >= 75 then
   begin
     FSpeedBmp.Canvas.Brush.Color := HTML2Color('722222');
     FSpeedBmp.Canvas.Pen.Color := HTML2Color('722222');
-    FSpeedBmp.Canvas.FillRect(Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(85, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(75, FSpeedBmp.Height, 100)));
+    FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(85, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(75, FSpeedBmp.Height, 100)));
   end;
 
   if MulDiv(P, 100, FSpeedBmp.Height) >= 85 then
   begin
     FSpeedBmp.Canvas.Brush.Color := HTML2Color('9d2626');
     FSpeedBmp.Canvas.Pen.Color := HTML2Color('9d2626');
-    FSpeedBmp.Canvas.FillRect(Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(90, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(85, FSpeedBmp.Height, 100)));
+    FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(90, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(85, FSpeedBmp.Height, 100)));
   end;
 
   if MulDiv(P, 100, FSpeedBmp.Height) >= 90 then
   begin
     FSpeedBmp.Canvas.Brush.Color := HTML2Color('c42c2c');
     FSpeedBmp.Canvas.Pen.Color := HTML2Color('c42c2c');
-    FSpeedBmp.Canvas.FillRect(Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(95, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(90, FSpeedBmp.Height, 100)));
+    FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(95, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(90, FSpeedBmp.Height, 100)));
   end;
 
   if MulDiv(P, 100, FSpeedBmp.Height) >= 95 then
   begin
     FSpeedBmp.Canvas.Brush.Color := HTML2Color('d71717');
     FSpeedBmp.Canvas.Pen.Color := HTML2Color('d71717');
-    FSpeedBmp.Canvas.FillRect(Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(100, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(95, FSpeedBmp.Height, 100)));
+    FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(100, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(95, FSpeedBmp.Height, 100)));
   end;
 
   FLastPos := P;
@@ -210,64 +220,62 @@ begin
 
   case Panel.Index of
     0:
+    begin
+      if FConnectionState = cshDisconnected then
+        FTimer.Enabled := True
+      else
       begin
-        if FConnectionState = cshDisconnected then
-          FTimer.Enabled := True
-        else
-        begin
-          FTimer.Enabled := False;
-          FDots := '';
-        end;
-
-        case FConnectionState of
-          cshConnected:
-            begin
-              modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.CONNECT, 16, Self, gdeNormal);
-              Canvas.TextOut(R.Left + 56, TextTop, _('Connected'));
-            end;
-          cshConnectedSecure:
-            begin
-              modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.CONNECT_SECURE, 16, Self, gdeNormal);
-              Canvas.TextOut(R.Left + 56, TextTop, _('Connected'));
-            end;
-          cshDisconnected:
-            begin
-              modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, IfThen<Integer>(Length(FDots) mod 2 = 0, TImages.CONNECT, TImages.DISCONNECT), 16, Self, gdeNormal);
-              Canvas.TextOut(R.Left + 56, TextTop, _('Connecting') + FDots);
-            end;
-          cshFail:
-            begin
-              modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.DISCONNECT, 16, Self, gdeNormal);
-              Canvas.TextOut(R.Left + 56, TextTop, _('Error'));
-            end;
-        end;
-
-        modSharedData.imgImages.DrawForControl(Canvas, R.Left + 18, ImageTop, TImages.USER, 16, Self, IfThen<TGraphicsDrawEffect>(FLoggedIn, gdeNormal, gdeDisabled));
-        modSharedData.imgImages.DrawForControl(Canvas, R.Left + 36, ImageTop, TImages.BRICKS, 16, Self, IfThen<TGraphicsDrawEffect>(FNotifyTitleChanges, gdeNormal, gdeDisabled));
+        FTimer.Enabled := False;
+        FDots := '';
       end;
+
+      case FConnectionState of
+        cshConnected:
+        begin
+          modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.CONNECT, 16, Self, gdeNormal);
+          Canvas.TextOut(R.Left + 56, TextTop, _('Connected'));
+        end;
+        cshConnectedSecure:
+        begin
+          modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.CONNECT_SECURE, 16, Self, gdeNormal);
+          Canvas.TextOut(R.Left + 56, TextTop, _('Connected'));
+        end;
+        cshDisconnected:
+        begin
+          modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, IfThen<Integer>(Length(FDots) mod 2 = 0, TImages.CONNECT, TImages.DISCONNECT), 16, Self, gdeNormal);
+          Canvas.TextOut(R.Left + 56, TextTop, _('Connecting') + FDots);
+        end;
+        cshFail:
+        begin
+          modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.DISCONNECT, 16, Self, gdeNormal);
+          Canvas.TextOut(R.Left + 56, TextTop, _('Error'));
+        end;
+      end;
+
+      modSharedData.imgImages.DrawForControl(Canvas, R.Left + 18, ImageTop, TImages.USER, 16, Self, IfThen<TGraphicsDrawEffect>(FLoggedIn, gdeNormal, gdeDisabled));
+      modSharedData.imgImages.DrawForControl(Canvas, R.Left + 36, ImageTop, TImages.BRICKS, 16, Self, IfThen<TGraphicsDrawEffect>(FNotifyTitleChanges, gdeNormal, gdeDisabled));
+    end;
     1:
+      if (FConnectionState = cshConnected) or (FConnectionState = cshConnectedSecure) then
       begin
-        if (FConnectionState = cshConnected) or (FConnectionState = cshConnectedSecure) then
-        begin
-          modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.GROUP, 16, Self, gdeNormal);
-          Canvas.TextOut(R.Left + 18, TextTop, IntToStr(FClients));
+        modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.GROUP, 16, Self, gdeNormal);
+        Canvas.TextOut(R.Left + 18, TextTop, IntToStr(FClients));
 
-          modSharedData.imgImages.DrawForControl(Canvas, R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4, ImageTop, TImages.RECORD_RED, 16, Self, gdeNormal);
-          Canvas.TextOut(R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4 + 18, TextTop, IntToStr(FRecordings));
-        end else
-          Canvas.FillRect(R);
-      end;
+        modSharedData.imgImages.DrawForControl(Canvas, R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4, ImageTop, TImages.RECORD_RED, 16, Self, gdeNormal);
+        Canvas.TextOut(R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4 + 18, TextTop, IntToStr(FRecordings));
+      end else
+        Canvas.FillRect(R);
     2:
+    begin
+      Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(MakeSize(FSpeed) + '/s') div 2, MakeSize(FSpeed) + '/s');
+      if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
       begin
-        Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(MakeSize(FSpeed) + '/s') div 2, MakeSize(FSpeed) + '/s');
-        if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
-        begin
-          Panels[2].Width := 2 + 35 + GetTextSize(_('0000/KBs'), Font).cx + FSpace;
-          if FSpeedBmp <> nil then
-            Canvas.Draw(R.Right - FSpeedBmp.Width - 2, R.Bottom - FSpeedBmp.Height, FSpeedBmp);
-        end else
-          Panels[2].Width := 2 + GetTextSize(_('0000/KBs'), Font).cx + FSpace;
-      end;
+        Panels[2].Width := 2 + 35 + GetTextSize(_('0000/KBs'), Font).cx + FSpace;
+        if FSpeedBmp <> nil then
+          Canvas.Draw(R.Right - FSpeedBmp.Width - 2, R.Bottom - FSpeedBmp.Height, FSpeedBmp);
+      end else
+        Panels[2].Width := 2 + GetTextSize(_('0000/KBs'), Font).cx + FSpace;
+    end;
     3:
       Canvas.TextOut(R.Left + 2, TextTop, _('%s/%s received').Format([MakeSize(FCurrentReceived), MakeSize(FOverallReceived)]));
     4:
@@ -301,7 +309,7 @@ procedure TSWStatusBar.FSetSpeed(Value: UInt64);
 begin
   FSpeed := Value;
   BuildSpeedBmp;
- InvalidatePanel(2);
+  InvalidatePanel(2);
 end;
 
 procedure TSWStatusBar.Resize;
@@ -311,8 +319,7 @@ begin
   BuildSpeedBmp;
 end;
 
-procedure TSWStatusBar.SetState(ConnectionState: THomeConnectionState; LoggedIn, NotifyTitleChanges: Boolean;
-  Clients, Recordings: Integer; SongsSaved, OverallSongsSaved: Cardinal);
+procedure TSWStatusBar.SetState(ConnectionState: THomeConnectionState; LoggedIn, NotifyTitleChanges: Boolean; Clients, Recordings: Integer; SongsSaved, OverallSongsSaved: Cardinal);
 var
   OldConnectionState: THomeConnectionState;
   OldLoggedIn, OldNotifyTitleChanges: Boolean;
@@ -345,8 +352,8 @@ begin
 
   if (OldConnectionState <> FConnectionState) or (OldLoggedIn <> FLoggedIn) then
   begin
-   InvalidatePanel(0);
-   InvalidatePanel(1);
+    InvalidatePanel(0);
+    InvalidatePanel(1);
   end;
 
   if (OldClients <> FClients) or (OldRecordings <> FRecordings) or (OldNotifyTitleChanges <> FNotifyTitleChanges) then
@@ -364,7 +371,7 @@ begin
   FDots := FDots + '.';
   if Length(FDots) = 4 then
     FDots := '';
- InvalidatePanel(0);
+  InvalidatePanel(0);
 end;
 
 procedure TSWStatusBar.InvalidatePanel(PanelIndex: integer);

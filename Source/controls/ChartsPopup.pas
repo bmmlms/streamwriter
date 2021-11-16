@@ -4,9 +4,9 @@ interface
 
 uses
   Classes,
-  SysUtils,
+  Images,
   Menus,
-  Images;
+  SysUtils;
 
 type
   TChartsPopup = class(TPopupMenu)

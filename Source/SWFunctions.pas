@@ -23,9 +23,17 @@ unit SWFunctions;
 interface
 
 uses
-  Windows, SysUtils, AudioFunctions, Functions, RegExpr, Classes,
-  Generics.Defaults, Generics.Collections, Constants, ComCtrls,
-  LanguageObjects;
+  AudioFunctions,
+  Classes,
+  ComCtrls,
+  Constants,
+  Functions,
+  Generics.Collections,
+  Generics.Defaults,
+  LanguageObjects,
+  RegExpr,
+  SysUtils,
+  Windows;
 
 function GetAutoTuneInMinKbps(AudioType: TAudioTypes; Idx: Integer): Cardinal;
 function FixPatternFilename(Filename: string): string;
@@ -41,18 +49,14 @@ begin
   Result := 0;
   case AudioType of
     atMPEG:
-      begin
-        case Idx of
-          0: Result := 192;
-          1: Result := 128;
-        end;
+      case Idx of
+        0: Result := 192;
+        1: Result := 128;
       end;
     atAAC:
-      begin
-        case Idx of
-          0: Result := 96;
-          1: Result := 48;
-        end;
+      case Idx of
+        0: Result := 96;
+        1: Result := 48;
       end;
   end;
 end;
@@ -154,23 +158,25 @@ type
     RegEx: string;
     BadWeight: Integer;
   end;
-function GetBadWeight(Text: string): Integer;
-var
-  n: Integer;
-begin
-  Result := 0;
 
-  Text := Trim(Text);
-  if Length(Text) = 0 then
-    Exit(3);
+  function GetBadWeight(Text: string): Integer;
+  var
+    n: Integer;
+  begin
+    Result := 0;
 
-  for n := 0 to High(BadChars) do
-    if Pos(BadChars[n], Text) > 0 then
+    Text := Trim(Text);
+    if Length(Text) = 0 then
+      Exit(3);
+
+    for n := 0 to High(BadChars) do
+      if Pos(BadChars[n], Text) > 0 then
+        Result := Result + 2;
+
+    if ContainsRegEx('(\d{2,})', Text) then
       Result := Result + 2;
+  end;
 
-  if ContainsRegEx('(\d{2,})', Text) then
-    Result := Result + 2;
-end;
 var
   i: Integer;
   R: TRegExpr;
@@ -200,28 +206,32 @@ begin
                 RED.BadWeight := RED.BadWeight + GetBadWeight(Trim(R.MatchFromName('a')))
               else
                 RED.BadWeight := RED.BadWeight + 3;
-            except end;
+            except
+            end;
 
             try
               if R.MatchFromName('t') <> '' then
                 RED.BadWeight := RED.BadWeight + GetBadWeight(Trim(R.MatchFromName('t')))
               else
                 RED.BadWeight := RED.BadWeight + 3;
-            except end;
+            except
+            end;
 
             try
               if R.MatchFromName('l') <> '' then
               begin
                 RED.BadWeight := RED.BadWeight - 6;
-                RED.BadWeight := RED.BadWeight + GetBadWeight(Trim(R.MatchFromName('l')))
+                RED.BadWeight := RED.BadWeight + GetBadWeight(Trim(R.MatchFromName('l')));
               end else
                 RED.BadWeight := RED.BadWeight + 10;
-            except end;
+            except
+            end;
           end else
             RED.BadWeight := RED.BadWeight + 1000;
 
           REDs.Add(RED);
-        except end;
+        except
+        end;
       finally
         R.Free;
       end;

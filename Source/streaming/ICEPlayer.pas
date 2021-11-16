@@ -24,8 +24,16 @@ unit ICEPlayer;
 interface
 
 uses
-  Windows, SysUtils, Classes, DynBASS, ExtendedStream, SyncObjs, AppData,
-  AudioStream, Logging, PlayerManager, AudioFunctions;
+  AppData,
+  AudioFunctions,
+  AudioStream,
+  Classes,
+  DynBASS,
+  ExtendedStream,
+  Logging,
+  PlayerManager,
+  SyncObjs,
+  SysUtils;
 
 type
   TICEPlayer = class
@@ -68,14 +76,14 @@ type
 
 implementation
 
-procedure EndSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
+procedure EndSyncProc(handle: HSYNC; channel, Data: DWORD; user: Pointer); stdcall;
 var
   P: TICEPlayer;
 begin
   P := TICEPlayer(user);
   if P.FPausing then
     BASSChannelPause(channel)
-  else if P.Stopping then       
+  else if P.Stopping then
     P.FreeStream(channel);
   TICEPlayer(user).FPausing := False;
   TICEPlayer(user).FStopping := False;
@@ -126,7 +134,7 @@ begin
     if Length < CopyLen then
       CopyLen := Length;
 
-    CopyMemory(Buffer, Mem.Memory, CopyLen);
+    Move(Mem.Memory^, Buffer^, CopyLen);
     Result := CopyLen;
 
     Mem.RemoveRange(0, CopyLen);
@@ -135,9 +143,9 @@ begin
   end;
 end;
 
-function BASSSeek(offset: QWORD; user: Pointer): BOOL; stdcall;
+function BASSSeek(offset: QWORD; user: Pointer): longbool; stdcall;
 begin
-  Result := BOOL(0);
+  Result := longbool(0);
 end;
 
 { TPlayThread }
@@ -192,10 +200,10 @@ begin
       AppGlobals.Unlock;
     end;
 
-    Funcs.close := BASSClose;
+    Funcs.Close := BASSClose;
     Funcs.length := BASSLen;
     Funcs.seek := BASSSeek;
-    Funcs.read := BASSRead;
+    Funcs.Read := BASSRead;
 
     if FPlayer > 0 then
       FreeStream(FPlayer);
@@ -245,9 +253,7 @@ begin
       BASSChannelSlideAttribute(FPlayer, 2, 0, 300);
       BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, EndSyncProc, Self);
     end else
-    begin
       FreeStream(FPlayer);
-    end;
   end;
   FPlayer := 0;
 end;
@@ -270,10 +276,7 @@ begin
     FMem.Write(Buf^, Len);
 
     while FMem.Size > MAX_BUFFER_SIZE do
-    begin
-      // Puffer "rotieren"
-      FMem.RemoveRange(0, 65536);
-    end;
+      FMem.RemoveRange(0, 65536); // Puffer "rotieren"
 
     if FMem.Size < 8192 then
       Exit;
@@ -282,9 +285,8 @@ begin
     begin
       AudioInfo.GetAudioInfo(FMem);
       if AudioInfo.Success then
-      begin
-        FPlayStartBuffer := AudioInfo.Bitrate * 1100;
-      end else
+        FPlayStartBuffer := AudioInfo.Bitrate * 1100
+      else
         raise Exception.Create('');
     end;
   finally
@@ -315,9 +317,7 @@ begin
     for i := 0 to High(FBandData) do
     begin
       if FPlayer > 0 then
-      begin
         FBandData[i].Handle := BASSChannelSetFX(FPlayer, 7, 0);
-      end;
       AppGlobals.Lock;
       try
         SetEQ(AppGlobals.EQGain[i], i);
@@ -326,14 +326,12 @@ begin
       end;
     end;
   end else
-  begin
     for i := 0 to High(FBandData) do
     begin
       if FBandData[i].Handle > 0 then
         BASSChannelRemoveFX(FPlayer, FBandData[i].Handle);
       FBandData[i].Handle := 0;
     end;
-  end;
 end;
 
 procedure TICEPlayer.SetEQ(Value, Freq: Integer);

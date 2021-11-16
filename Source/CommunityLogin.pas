@@ -23,10 +23,26 @@ unit CommunityLogin;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ExtCtrls, Buttons, LanguageObjects, ShellAPI, Functions,
-  AppData, ComCtrls, HomeCommunication, Logging, MControls, SharedData,
-  Images;
+  AppData,
+  Buttons,
+  Classes,
+  ComCtrls,
+  Controls,
+  Dialogs,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Graphics,
+  HomeCommunication,
+  Images,
+  LanguageObjects,
+  Logging,
+  MControls,
+  SharedData,
+  StdCtrls,
+  SysUtils,
+  Variants,
+  Windows;
 
 type
 
@@ -53,8 +69,7 @@ type
     procedure FormShow(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure lblSignupClick(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     procedure ShowConnecting(Show: Boolean);
   protected
@@ -115,7 +130,7 @@ begin
   pnlConnect.Align := alClient;
 
   txtText.Text := _('Logging in to the streamWriter community gives you some more options, for example setting ratings for streams.'#13#10 +
-                    'More community features may get introduced in the future. If you don''t have an account yet, click the link below to signup for free.');
+    'More community features may get introduced in the future. If you don''t have an account yet, click the link below to signup for free.');
 
   txtUsername.Text := AppGlobals.User;
   txtPassword.Text := AppGlobals.Pass;
@@ -123,8 +138,7 @@ begin
   modSharedData.imgImages.GetIcon(TImages.USER, Icon);
 end;
 
-procedure TfrmCommunityLogin.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TfrmCommunityLogin.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if Key = 27 then
   begin
@@ -164,9 +178,7 @@ begin
 
       Close;
     end else
-    begin
       MsgBox(_('You have entered an unknown username or a wrong password.'#13#10'Please try again.'), _('Error'), MB_ICONERROR);
-    end;
   end;
 end;
 

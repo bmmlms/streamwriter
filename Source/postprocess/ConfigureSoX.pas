@@ -23,9 +23,22 @@ unit ConfigureSoX;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, ExtCtrls, LanguageObjects, Functions,
-  Logging, PostProcessSoX, ComCtrls, SharedData;
+  Buttons,
+  Classes,
+  ComCtrls,
+  Controls,
+  Dialogs,
+  ExtCtrls,
+  Forms,
+  Functions,
+  Graphics,
+  LanguageObjects,
+  Logging,
+  PostProcessSoX,
+  StdCtrls,
+  SysUtils,
+  Variants,
+  Windows;
 
 type
   TfrmConfigureSoX = class(TForm)
@@ -53,8 +66,7 @@ type
     GroupBox3: TGroupBox;
     chkNormalize: TCheckBox;
     procedure btnOKClick(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure chkClick(Sender: TObject);
     procedure btnBrowseClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -78,9 +90,8 @@ type
     procedure InitForm;
   public
     constructor Create(AOwner: TComponent; PostProcessor: TPostProcessSoX; TitleLength: Cardinal); reintroduce; overload;
-    constructor Create(AOwner: TComponent; PostProcessor: TPostProcessSoX; Normalize, FadeoutStart, FadeoutEnd: Boolean;
-      FadeoutStartLength, FadeoutEndLength: Integer; SilenceStart, SilenceEnd: Boolean; SilenceStartLength,
-      SilenceEndLength: Integer; TitleLength: Cardinal); reintroduce; overload;
+    constructor Create(AOwner: TComponent; PostProcessor: TPostProcessSoX; Normalize, FadeoutStart, FadeoutEnd: Boolean; FadeoutStartLength, FadeoutEndLength: Integer;
+      SilenceStart, SilenceEnd: Boolean; SilenceStartLength, SilenceEndLength: Integer; TitleLength: Cardinal); reintroduce; overload;
 
     property Normalize: Boolean read FNormalize write FNormalize;
     property FadeoutStart: Boolean read FFadeoutStart write FFadeoutStart;
@@ -107,15 +118,11 @@ begin
     dlgOpen.Filter := 'libmad.dll|*.dll';
 
   if dlgOpen.Execute then
-  begin
     if FileExists(dlgOpen.FileName) then
-    begin
       if Sender = btnBrowse1 then
         txtLameDLL.Text := dlgOpen.FileName
       else
         txtMadDLL.Text := dlgOpen.FileName;
-    end;
-  end;
 end;
 
 procedure TfrmConfigureSoX.btnOKClick(Sender: TObject);
@@ -261,9 +268,8 @@ begin
   Language.Translate(Self);
 end;
 
-constructor TfrmConfigureSoX.Create(AOwner: TComponent; PostProcessor: TPostProcessSoX; Normalize, FadeoutStart,
-  FadeoutEnd: Boolean; FadeoutStartLength, FadeoutEndLength: Integer; SilenceStart, SilenceEnd: Boolean;
-  SilenceStartLength, SilenceEndLength: Integer; TitleLength: Cardinal);
+constructor TfrmConfigureSoX.Create(AOwner: TComponent; PostProcessor: TPostProcessSoX; Normalize, FadeoutStart, FadeoutEnd: Boolean; FadeoutStartLength, FadeoutEndLength: Integer;
+  SilenceStart, SilenceEnd: Boolean; SilenceStartLength, SilenceEndLength: Integer; TitleLength: Cardinal);
 begin
   inherited Create(AOwner);
 
@@ -290,8 +296,7 @@ begin
   Language.Translate(Self);
 end;
 
-procedure TfrmConfigureSoX.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TfrmConfigureSoX.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if Key = 27 then
   begin
@@ -307,8 +312,8 @@ end;
 
 procedure TfrmConfigureSoX.InitForm;
 begin
-//  btnBrowse1.Image := modSharedData.imgImages.Images[85].Image;
-//  btnBrowse2.Image := modSharedData.imgImages.Images[85].Image;
+  //  btnBrowse1.Image := modSharedData.imgImages.Images[85].Image;
+  //  btnBrowse2.Image := modSharedData.imgImages.Images[85].Image;
 end;
 
 end.

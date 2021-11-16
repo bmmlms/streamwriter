@@ -23,8 +23,17 @@ unit Intro;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ExtCtrls, LanguageObjects, StdCtrls, Buttons;
+  Buttons,
+  Classes,
+  Controls,
+  Dialogs,
+  ExtCtrls,
+  Forms,
+  Graphics,
+  LanguageObjects,
+  StdCtrls,
+  SysUtils,
+  Variants;
 
 type
   TfrmIntro = class(TForm)
@@ -39,8 +48,7 @@ type
     Bevel2: TBevel;
     btnClose: TBitBtn;
     procedure btnCloseClick(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormCreate(Sender: TObject);
   private
   public
@@ -60,10 +68,9 @@ begin
   Language.Translate(Self);
 end;
 
-procedure TfrmIntro.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TfrmIntro.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
- if Key = 27 then
+  if Key = 27 then
   begin
     Key := 0;
     Close;

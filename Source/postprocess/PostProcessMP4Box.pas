@@ -23,9 +23,18 @@ unit PostProcessMP4Box;
 interface
 
 uses
-  SysUtils, Windows, Classes, PostProcess, LanguageObjects, TypeDefs,
-  Functions, Logging, Math, ConfigureSetTags, AddonMP4Box, ExtendedStream,
-  Generics.Collections, AudioFunctions, DataManager;
+  AddonMP4Box,
+  AudioFunctions,
+  Classes,
+  DataManager,
+  ExtendedStream,
+  Functions,
+  Generics.Collections,
+  LanguageObjects,
+  Logging,
+  PostProcess,
+  SysUtils,
+  Windows;
 
 type
   TPostProcessMP4BoxThread = class(TPostProcessThreadBase)
@@ -59,7 +68,8 @@ type
 implementation
 
 uses
-  AppData, ConfigureSoX;
+  AppData,
+  ConfigureSoX;
 
 { TPostProcessMP4BoxThread }
 
@@ -86,18 +96,18 @@ begin
   FResult := TPostProcessMP4Box(PostProcessor).MP4BoxMux(FData.Filename, OutFile, @Terminated);
   case FResult of
     arWin:
+    begin
+      MovedFileName := RemoveFileExt(FData.Filename) + '.m4a';
+      if MoveFile(PChar(OutFile), PChar(MovedFileName)) then
       begin
-        MovedFileName := RemoveFileExt(FData.Filename) + '.m4a';
-        if MoveFile(PChar(OutFile), PChar(MovedFileName)) then
-        begin
-          DeleteFile(PChar(FData.Filename));
-          FData.Filename := MovedFileName;
-          FData.Filesize := GetFileSize(MovedFileName);
-        end;
+        DeleteFile(PChar(FData.Filename));
+        FData.Filename := MovedFileName;
+        FData.Filesize := Functions.GetFileSize(MovedFileName);
       end;
-    arFail:;
-    arTimeOut:;
-    arImpossible:;
+    end;
+    arFail: ;
+    arTimeOut: ;
+    arImpossible: ;
   end;
 
   DeleteFile(PChar(OutFile));
@@ -137,7 +147,7 @@ constructor TPostProcessMP4Box.Create;
 begin
   inherited;
 
-//  FNeededAddons.Add(TAddonMP4Box);
+  //  FNeededAddons.Add(TAddonMP4Box);
 
   FCanConfigure := False;
   FGroupID := 1;
@@ -161,9 +171,7 @@ begin
   case RunProcess(CmdLine, ExtractFilePath(MP4BoxPath), 300000, Output, EC, TerminateFlag, True) of
     rpWin:
       if FileExists(OutFile) and (EC = 0) then
-      begin
         Result := arWin;
-      end;
     rpTimeout:
       Result := arTimeout;
   end;
@@ -188,8 +196,7 @@ begin
   Result := _('Convert AAC to M4A');
 end;
 
-procedure TPostProcessMP4Box.Load(Stream: TExtendedStream;
-  Version: Integer);
+procedure TPostProcessMP4Box.Load(Stream: TExtendedStream; Version: Integer);
 begin
   inherited;
 

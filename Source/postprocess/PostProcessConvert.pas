@@ -23,9 +23,14 @@ unit PostProcessConvert;
 interface
 
 uses
-  Windows, SysUtils, Classes, PostProcess, LanguageObjects, AudioFunctions,
-  Functions, Logging, Math, AddonBase, StrUtils, ExtendedStream,
-  DataManager;
+  AudioFunctions,
+  Classes,
+  DataManager,
+  ExtendedStream,
+  LanguageObjects,
+  Logging,
+  PostProcess,
+  SysUtils;
 
 type
 
@@ -80,7 +85,8 @@ type
 implementation
 
 uses
-  AppData, FileConvertor;
+  AppData,
+  FileConvertor;
 
 { TPostProcessConvertThread }
 
@@ -148,13 +154,10 @@ begin
           FSync := FOnFinish;
           Synchronize(Sync);
         end;
-      end else
+      end else if Assigned(FOnError) then
       begin
-        if Assigned(FOnError) then
-        begin
-          FSync := FOnError;
-          Synchronize(Sync);
-        end;
+        FSync := FOnError;
+        Synchronize(Sync);
       end;
     except
       if Assigned(FOnError) then
@@ -168,14 +171,14 @@ begin
   end;
 end;
 
-procedure TPostProcessConvertThread.FileConvertorProgress(Sender: TObject;
-  Percent: Integer);
+procedure TPostProcessConvertThread.FileConvertorProgress(Sender: TObject; Percent: Integer);
 begin
   if not Assigned(FOnProgress) then
     Exit;
 
   FProgress := Percent;
-  FSync := FOnProgress;;
+  FSync := FOnProgress;
+  ;
   Synchronize(Sync);
 end;
 
@@ -212,8 +215,7 @@ begin
   Result := _('Convert file');
 end;
 
-procedure TPostProcessConvert.Load(Stream: TExtendedStream;
-  Version: Integer);
+procedure TPostProcessConvert.Load(Stream: TExtendedStream; Version: Integer);
 begin
 
 end;
@@ -240,4 +242,3 @@ begin
 end;
 
 end.
-

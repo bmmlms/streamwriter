@@ -25,10 +25,23 @@ unit ICEThread;
 interface
 
 uses
-  SysUtils, Windows, WinSock, Classes, HTTPThread, ExtendedStream, ICEStream,
-  Functions, Sockets, SyncObjs, AudioStream, Generics.Collections, TypeDefs,
-  AppData, ICEPlayer, LanguageObjects, PlayerManager, Logging, AudioFunctions,
-  DataManager;
+  AppData,
+  AudioFunctions,
+  AudioStream,
+  Classes,
+  DataManager,
+  ExtendedStream,
+  Functions,
+  HTTPThread,
+  ICEPlayer,
+  ICEStream,
+  LanguageObjects,
+  Logging,
+  PlayerManager,
+  Sockets,
+  SyncObjs,
+  SysUtils,
+  TypeDefs;
 
 type
   TICEThreadStates = (tsRecording, tsRetrying, tsIOError);
@@ -111,8 +124,7 @@ type
     constructor Create(URL: string); reintroduce;
     destructor Destroy; override;
 
-    procedure SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean;
-      RecordTitle, ParsedRecordTitle: string; SongsSaved: Cardinal; StreamCustomName: string);
+    procedure SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean; RecordTitle, ParsedRecordTitle: string; SongsSaved: Cardinal; StreamCustomName: string);
 
     procedure StartPlay;
     procedure PausePlay;
@@ -124,9 +136,6 @@ type
     procedure SetVolume(Vol: Integer);
     procedure SetEQ(Value, Freq: Integer);
     procedure SetEQEnabled(Value: Boolean);
-
-    procedure LockRelay;
-    procedure UnlockRelay;
 
     property ExtLogMsg: string read FExtLogMsg;
     property ExtLogType: TLogType read FExtLogType;
@@ -163,7 +172,7 @@ implementation
 
 procedure TICEThread.SetEQ(Value, Freq: Integer);
 begin
- FPlayer.SetEQ(Value, Freq);
+  FPlayer.SetEQ(Value, Freq);
 end;
 
 procedure TICEThread.SetEQEnabled(Value: Boolean);
@@ -171,8 +180,7 @@ begin
   FPlayer.EQEnabled := Value;
 end;
 
-procedure TICEThread.SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean;
-  RecordTitle, ParsedRecordTitle: string; SongsSaved: Cardinal; StreamCustomName: string);
+procedure TICEThread.SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean; RecordTitle, ParsedRecordTitle: string; SongsSaved: Cardinal; StreamCustomName: string);
 begin
   // Das hier wird nur gesynct aus dem Mainthread heraus aufgerufen.
   FTypedStream.Settings.Assign(Settings);
@@ -243,9 +251,7 @@ begin
       FPlayBufferLock.Leave;
     end;
   end else
-  begin
-
-  end;
+  ;
   FPlayer.Play;
   Sync(FOnStateChanged);
 end;
@@ -314,7 +320,6 @@ const
 begin
 
   if FPlaying then
-  begin
     try
       if not FPlaybackStarted then
       begin
@@ -333,9 +338,8 @@ begin
       WriteLog(_('Stream cannot be played because format is unknown'), slError);
 
       Sync(FOnStateChanged);
-    end;
-    //WriteDebug(Format('Playbuffer size: %d', [FPlayer.Mem.Size]));
-  end;
+    end//WriteDebug(Format('Playbuffer size: %d', [FPlayer.Mem.Size]));
+  ;
 
   if FPlayBuffer = nil then
     Exit;
@@ -434,15 +438,11 @@ begin
 
   // Noch schön ausfaden lassen
   while FPlayer.Playing or FPlayer.Pausing or FPlayer.Stopping do
-  begin
     Sleep(100);
-  end;
 
   if FTypedStream.StopAfterSong then
-  begin
     if Assigned(FOnRecordingStopped) then
       Sync(FOnRecordingStopped);
-  end;
 
   if FError then
   begin
@@ -450,6 +450,7 @@ begin
 
     FState := tsRetrying;
     Sync(FOnStateChanged);
+    // TODO: per event lösen..
     StartTime := GetTickCount64;
     while StartTime > GetTickCount64 - Delay do
     begin
@@ -469,9 +470,8 @@ begin
 
   if E.ClassType = EExceptionParams then
     WriteLog(Format(_(E.Message), EExceptionParams(E).Args), slError)
-  else
-    if E.Message <> '' then
-      WriteLog(Format(_('%s'), [_(E.Message)]), slError);
+  else if E.Message <> '' then
+    WriteLog(Format(_('%s'), [_(E.Message)]), slError);
 end;
 
 procedure TICEThread.DoStuff;
@@ -504,9 +504,8 @@ begin
 
     if (not FRecording) and (not FPlaying) then
       Terminate
-    else
-      if Assigned(FOnRecordingStopped) then
-        Sync(FOnRecordingStopped);
+    else if Assigned(FOnRecordingStopped) then
+      Sync(FOnRecordingStopped);
   end;
 
   while FPlayer.Pausing or FPlayer.Stopping do
@@ -519,9 +518,7 @@ begin
   end;
 
   if FMonitoringStarted then
-  begin
     StartMonitoringInternal;
-  end;
 
   if FPlayingPaused and (not FPaused) then
   begin
@@ -545,13 +542,9 @@ begin
   end;
 
   if FPlayingStarted and (not FPlaying) then
-  begin
     StartPlayInternal;
-  end;
   if (not FPlayingStarted) and FPlaying then
-  begin
     StopPlayInternal;
-  end;
 end;
 
 procedure TICEThread.DoHeaderRemoved;
@@ -571,8 +564,7 @@ begin
   FLastMilliSecondsConnected := GetTickCount64;
   FMilliSecondsConnected := 0;
 
-  if (FTypedStream.HeaderType = 'icy') and
-     (FTypedStream.StreamName <> '') then
+  if (FTypedStream.HeaderType = 'icy') and (FTypedStream.StreamName <> '') then
   begin
     Sync(FOnRefreshInfo);
     Sync(FOnAddRecent);
@@ -602,19 +594,9 @@ begin
   Result := FPaused or FPlayingPaused;
 end;
 
-procedure TICEThread.LockRelay;
-begin
-  FPlayBufferLock.Enter;
-end;
-
 procedure TICEThread.Pause;
 begin
   FPaused := not FPaused;
-end;
-
-procedure TICEThread.UnlockRelay;
-begin
-  FPlayBufferLock.Leave;
 end;
 
 procedure TICEThread.WriteExtLog(Msg: string; T: TLogType; Level: TLogLevel);
@@ -693,7 +675,3 @@ begin
 end;
 
 end.
-
-
-
-

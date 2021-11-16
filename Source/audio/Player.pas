@@ -24,8 +24,16 @@ unit Player;
 interface
 
 uses
-  Windows, SysUtils, Messages, Classes, DynBass, Math, Logging, AppData,
-  AudioFunctions, FileTagger, MessageBus, AppMessages;
+  AppData,
+  AppMessages,
+  AudioFunctions,
+  Classes,
+  DynBass,
+  FileTagger,
+  Logging,
+  MessageBus,
+  SysUtils,
+  Windows;
 
 type
   TPlayer = class
@@ -40,7 +48,7 @@ type
     FPosToReach: Cardinal;
     FEndPos: Cardinal;
     FShowTitle: Boolean;
-//    FMessageHWnd: HWND;
+    //    FMessageHWnd: HWND;
 
     FEQEnabled: Boolean;
     FBandData: array[0..9] of TBandData;
@@ -107,7 +115,7 @@ implementation
 uses
   PlayerManager;
 
-procedure SlideEndSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
+procedure SlideEndSyncProc(handle: HSYNC; channel, Data: DWORD; user: Pointer); stdcall;
 var
   P: TPlayer;
 begin
@@ -115,9 +123,8 @@ begin
 
   P := TPlayer(user);
   if P.FPaused then
-  begin
     BASSChannelPause(channel)
-  end else if P.FStopped then
+  else if P.FStopped then
   begin
     BASSChannelStop(channel);
     if P.FFree then
@@ -128,16 +135,16 @@ begin
   P.FStopped := False;
 end;
 
-procedure PosSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
+procedure PosSyncProc(handle: HSYNC; channel, Data: DWORD; user: Pointer); stdcall;
 var
   P: TPlayer;
 begin
   P := TPlayer(user);
 
-//  PostMessage(P.FMessageHWnd, 1001, 0, 0);
+  //  PostMessage(P.FMessageHWnd, 1001, 0, 0);
 end;
 
-procedure EndSyncProc(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
+procedure EndSyncProc(handle: HSYNC; channel, Data: DWORD; user: Pointer); stdcall;
 var
   P: TPlayer;
 begin
@@ -146,7 +153,7 @@ begin
   P.FPaused := False;
   P.FStopped := False;
 
-//  PostMessage(P.FMessageHWnd, 1000, 0, 0);
+  //  PostMessage(P.FMessageHWnd, 1000, 0, 0);
 end;
 
 { TPlayer }
@@ -158,12 +165,10 @@ begin
   inherited;
 
   FShowTitle := True;
-//  FMessageHWnd := AllocateHWnd(WndMethod);     // TODO:
+  //  FMessageHWnd := AllocateHWnd(WndMethod);     // TODO:
 
   for i := 0 to High(FBandData) do
-  begin
     FBandData[i].Handle := 0;
-  end;
 end;
 
 procedure TPlayer.CreatePlayer;
@@ -197,7 +202,7 @@ end;
 
 destructor TPlayer.Destroy;
 begin
-//  DeallocateHWnd(FMessageHWnd);
+  //  DeallocateHWnd(FMessageHWnd);
 
   // Crashed bei Programmende, deshalb try..except. Ist nötig wegen dem SavedTab,
   // wenn man hier nicht freigibt, kann er nicht speichern.
@@ -205,7 +210,8 @@ begin
   try
     // TODO:
     // FreeStream(FPlayer);
-  except end;
+  except
+  end;
 
   FreeAndNil(FTag);
 
@@ -290,9 +296,7 @@ begin
     for i := 0 to High(FBandData) do
     begin
       if FPlayer > 0 then
-      begin
         FBandData[i].Handle := BASSChannelSetFX(FPlayer, 7, 0);
-      end;
 
       AppGlobals.Lock;
       try
@@ -302,25 +306,19 @@ begin
       end;
     end;
   end else
-  begin
     for i := 0 to High(FBandData) do
     begin
       if FBandData[i].Handle > 0 then
         BASSChannelRemoveFX(FPlayer, FBandData[i].Handle);
       FBandData[i].Handle := 0;
     end;
-  end;
 end;
 
 procedure TPlayer.FSetFilename(Value: string);
 begin
   if FPlayer > 0 then
-  begin
     if Value <> FFilename then
-    begin
       Stop(True);
-    end;
-  end;
 
   if FPlayer = 0 then
   begin
@@ -332,7 +330,6 @@ end;
 procedure TPlayer.FSetPositionByte(Value: Cardinal);
 begin
   if FPlayer > 0 then
-  begin
     if Value = MaxByte then
     begin
       Stop(False);
@@ -340,15 +337,12 @@ begin
         FOnEndReached(Self);
     end else
       BASSChannelSetPosition(FPlayer, Value, BASS_POS_BYTE);
-  end;
 end;
 
 procedure TPlayer.FSetPositionTime(Value: Double);
 begin
   if FPlayer > 0 then
-  begin
     FSetPositionByte(BASSChannelSeconds2Bytes(FPlayer, FGetMaxTime - 5));
-  end;
 end;
 
 procedure TPlayer.FSetPosToReach(Value: Cardinal);
@@ -379,12 +373,11 @@ begin
     Len := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetLength(FPlayer, BASS_POS_BYTE));
 
     if Len - Pos < 0.300 then
-    begin
-      BASSChannelPause(FPlayer);
-    end else
+      BASSChannelPause(FPlayer)
+    else
     begin
       FSyncSlide := BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, SlideEndSyncProc, Self);
-      BASSChannelSlideAttribute(FPlayer, 2, 0, Trunc(Min(Len - Pos - 10, 300)));
+      BASSChannelSlideAttribute(FPlayer, 2, 0, Min(Trunc(Len - Pos - 10), 300));
       while BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING do
         Sleep(50);
     end;
@@ -399,9 +392,7 @@ end;
 procedure TPlayer.Play;
 begin
   if FPlayer = 0 then
-  begin
     CreatePlayer;
-  end;
 
   BASSChannelSetAttribute(FPlayer, 2, FVolume / 100);
   BASSChannelPlay(FPlayer, False);
@@ -495,11 +486,9 @@ begin
   end;
 
   if Handled then
-    Msg.Result := 0
-//  else
-//    Msg.Result := DefWindowProc(FMessageHWnd, Msg.Msg, Msg.WParam, Msg.LParam);
+    Msg.Result := 0;
+  //  else
+  //    Msg.Result := DefWindowProc(FMessageHWnd, Msg.Msg, Msg.WParam, Msg.LParam);
 end;
 
 end.
-
-

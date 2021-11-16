@@ -25,10 +25,23 @@ unit DataManager;
 interface
 
 uses
-  Windows, Classes, SysUtils, ExtendedStream, Generics.Collections,
-  ComCtrls, Functions, Logging, DateUtils, AudioFunctions, PostProcess,
-  PowerManagement, Generics.Defaults, TypeDefs, winsock, AddonManager,
-  SWFunctions, ZStream, Constants;
+  AddonManager,
+  AudioFunctions,
+  Classes,
+  ComCtrls,
+  Constants,
+  DateUtils,
+  ExtendedStream,
+  Functions,
+  Generics.Collections,
+  Generics.Defaults,
+  Logging,
+  PostProcess,
+  PowerManagement,
+  SWFunctions,
+  SysUtils,
+  TypeDefs,
+  ZStream;
 
 type
   TStreamList = class;
@@ -830,7 +843,11 @@ const
 implementation
 
 uses
-  AppData, PostProcessSetTags, PostProcessSoX, PostProcessMP4Box, PostProcessConvert;
+  AppData,
+  PostProcessConvert,
+  PostProcessMP4Box,
+  PostProcessSetTags,
+  PostProcessSoX;
 
 { TTitleInfo }
 
@@ -1038,10 +1055,8 @@ begin
     Result.FSettings.Free;
     Result.FSettings := TStreamSettings.Load(Stream, Version);
   end else
-  begin
-    // Defaults benutzen..
-    Result.FSettings.Assign(Data.StreamSettings);
-  end;
+    Result.FSettings.Assign(Data.StreamSettings)// Defaults benutzen..
+  ;
 
   if Version >= 24 then
     Stream.Read(Result.FID);
@@ -1140,9 +1155,7 @@ begin
   Stream.Write(FStartURL);
   Stream.Write(FURLs.Count);
   for i := 0 to FURLs.Count - 1 do
-  begin
     Stream.Write(FURLs[i]);
-  end;
   Stream.Write(FBitrate);
   Stream.Write(FVBR);
   Stream.Write(Byte(FAudioType));
@@ -1356,23 +1369,19 @@ begin
     S.Read(FSongsSaved);
 
   if Version <= 2 then
-  begin
     while S.Position < S.Size do
     begin
       Entry := TStreamEntry.Load(Self, S, Version);
       Entry.FParent := FStreamList;
       FStreamList.Add(Entry);
-    end;
-  end else
+    end else
   begin
     if Version >= 61 then
     begin
       FStreamSettings.Free;
       FStreamSettings := TStreamSettings.Load(S, Version);
     end else
-    begin
       FStreamSettings.Assign(FDefaultStreamSettings);
-    end;
 
     if (Version > 58) and (Version < 60) then
     begin
@@ -1395,9 +1404,7 @@ begin
     begin
       S.Read(CatCount);
       for i := 0 to CatCount - 1 do
-      begin
         FCategoryList.Add(TListCategory.Load(S, Version));
-      end;
     end;
 
     S.Read(EntryCount);
@@ -1441,9 +1448,7 @@ begin
         begin
           S.Read(EntryCount);
           for i := 0 to EntryCount - 1 do
-          begin
             S.Read(Str);
-          end;
         end;
 
         S.Read(EntryCount);
@@ -1688,12 +1693,8 @@ begin
   if (AppGlobals.SkipSave) or (AppGlobals.DataFile = '') then
     Exit;
 
-  if (FCategoryList.Count = 1) and (FStreamList.Count = 0) and (FRecentList.Count = 0) and
-     (FIgnoreList.Count = 0) and (FSaveList.Count = 0) and (FBrowserList.Count = 0) and
-     not (FileExists(AppGlobals.DataFile)) then
-  begin
+  if (FCategoryList.Count = 1) and (FStreamList.Count = 0) and (FRecentList.Count = 0) and (FIgnoreList.Count = 0) and (FSaveList.Count = 0) and (FBrowserList.Count = 0) and not (FileExists(AppGlobals.DataFile)) then
     Exit;
-  end;
 
   if not FLoadError then
   begin
@@ -1774,8 +1775,7 @@ begin
     Result := RemoveFileExt(ExtractFileName(FFilename));
 end;
 
-class function TTrackInfo.Load(Stream: TExtendedStream;
-  Version: Integer): TTrackInfo;
+class function TTrackInfo.Load(Stream: TExtendedStream; Version: Integer): TTrackInfo;
 begin
   Result := TTrackInfo.Create;
 
@@ -1812,9 +1812,8 @@ begin
     Stream.Read(Result.FVBR);
 
   if Version > 51 then
-  begin
-    Stream.Read(Result.FServerTitle);
-  end else
+    Stream.Read(Result.FServerTitle)
+  else
     Result.FServerTitle := RemoveFileExt(ExtractFileName(Result.FFilename));
 
   if Version > 54 then
@@ -1878,8 +1877,7 @@ begin
   inherited Add(Result);
 end;
 
-function TStreamList.Get(Name, URL: string;
-  URLs: TStringList): TStreamEntry;
+function TStreamList.Get(Name, URL: string; URLs: TStringList): TStreamEntry;
 var
   i, n, j: Integer;
 begin
@@ -1931,8 +1929,7 @@ begin
   FKilled := False;
 end;
 
-class function TListCategory.Load(Stream: TExtendedStream;
-  Version: Integer): TListCategory;
+class function TListCategory.Load(Stream: TExtendedStream; Version: Integer): TListCategory;
 begin
   Result := TListCategory.Create;
   Result.FKilled := False;
@@ -1997,8 +1994,7 @@ begin
   FBitrate := Bitrate;
 end;
 
-class function TRecentEntry.Load(Stream: TExtendedStream;
-  Version: Integer): TRecentEntry;
+class function TRecentEntry.Load(Stream: TExtendedStream; Version: Integer): TRecentEntry;
 begin
   Result := TRecentEntry.Create(0, 0, '', '', 0);
   if Version >= 24 then
@@ -2077,31 +2073,28 @@ begin
     N := Now;
     case FInterval of
       siDaily:
-        begin
-          if ModificationAllowed and ((FStartHour < HourOf(N)) or ((FStartHour = HourOf(N)) and (FStartMinute < MinuteOf(N)))) then
-            Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(IncDay(N)), FStartHour, FStartMinute, 0, 0)
-          else
-            Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(N), FStartHour, FStartMinute, 0, 0);
-        end;
-      siWeekly:
-        begin
+        if ModificationAllowed and ((FStartHour < HourOf(N)) or ((FStartHour = HourOf(N)) and (FStartMinute < MinuteOf(N)))) then
+          Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(IncDay(N)), FStartHour, FStartMinute, 0, 0)
+        else
           Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(N), FStartHour, FStartMinute, 0, 0);
-          if DayOfTheWeek(N) <= Integer(FDay) + 1 then
-          begin
-            Result := IncDay(Result, (Integer(FDay) + 1 - DayOfTheWeek(N)));
-            if ModificationAllowed and (Result < N) then
-              Result := IncWeek(Result);
-          end else
-            Result := IncDay(Result, 7 - DayOfTheWeek(N) + Integer(FDay) + 1);
-        end;
+      siWeekly:
+      begin
+        Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(N), FStartHour, FStartMinute, 0, 0);
+        if DayOfTheWeek(N) <= Integer(FDay) + 1 then
+        begin
+          Result := IncDay(Result, (Integer(FDay) + 1 - DayOfTheWeek(N)));
+          if ModificationAllowed and (Result < N) then
+            Result := IncWeek(Result);
+        end else
+          Result := IncDay(Result, 7 - DayOfTheWeek(N) + Integer(FDay) + 1);
+      end;
       siNone:
         Result := EncodeDateTime(YearOf(FDate), MonthOf(FDate), DayOf(FDate), FStartHour, FStartMinute, 0, 0);
     end;
   end;
 end;
 
-class function TSchedule.Load(Stream: TExtendedStream;
-  Version: Integer): TSchedule;
+class function TSchedule.Load(Stream: TExtendedStream; Version: Integer): TSchedule;
 var
   B: Byte;
 begin
@@ -2146,8 +2139,7 @@ begin
   FRating := Rating;
 end;
 
-class function TRatingEntry.Load(Stream: TExtendedStream;
-  Version: Integer): TRatingEntry;
+class function TRatingEntry.Load(Stream: TExtendedStream; Version: Integer): TRatingEntry;
 begin
   Result := TRatingEntry.Create('', '', 0);
   Stream.Read(Result.FName);
@@ -2241,8 +2233,7 @@ begin
   Result.Assign(Self);
 end;
 
-class function TStreamBrowserEntry.Load(Stream: TExtendedStream;
-  Version: Integer): TStreamBrowserEntry;
+class function TStreamBrowserEntry.Load(Stream: TExtendedStream; Version: Integer): TStreamBrowserEntry;
 var
   i: Integer;
   B: Byte;
@@ -2278,7 +2269,8 @@ begin
   begin
     Stream.Read(E);
     Result.FRegExes.Add(E);
-  end else begin
+  end else
+  begin
     Stream.Read(Count);
     for i := 0 to Count - 1 do
     begin
@@ -2298,13 +2290,10 @@ begin
   end;
 
   if Version >= 67 then
-  begin
     Stream.Read(Result.FCanSetRegExps);
-  end;
 end;
 
-class function TStreamBrowserEntry.LoadFromHome(Stream: TExtendedStream;
-  Version: Integer): TStreamBrowserEntry;
+class function TStreamBrowserEntry.LoadFromHome(Stream: TExtendedStream; Version: Integer): TStreamBrowserEntry;
 var
   i: Integer;
   B: Byte;
@@ -2515,8 +2504,7 @@ begin
 
 end;
 
-class function TGenre.Load(Stream: TExtendedStream;
-  Version: Integer): TGenre;
+class function TGenre.Load(Stream: TExtendedStream; Version: Integer): TGenre;
 begin
   Result := TGenre.Create;
 
@@ -2532,8 +2520,7 @@ begin
   end;
 end;
 
-class function TGenre.LoadFromHome(Stream: TExtendedStream;
-  Version: Integer): TGenre;
+class function TGenre.LoadFromHome(Stream: TExtendedStream; Version: Integer): TGenre;
 begin
   Result := TGenre.Create;
 
@@ -2576,8 +2563,7 @@ begin
   inherited;
 end;
 
-class function TChartCategory.Load(Stream: TExtendedStream;
-  Version: Integer): TChartCategory;
+class function TChartCategory.Load(Stream: TExtendedStream; Version: Integer): TChartCategory;
 begin
   Result := TChartCategory.Create;
   Stream.Read(Result.FID);
@@ -2605,8 +2591,7 @@ begin
   FPlayedLast := PlayedLast;
 end;
 
-class function TChartStream.Load(Stream: TExtendedStream;
-  Version: Integer): TChartStream;
+class function TChartStream.Load(Stream: TExtendedStream; Version: Integer): TChartStream;
 begin
   Result := TChartStream.Create(0, 0, 0, 0);
   Stream.Read(Result.FID);
@@ -2778,8 +2763,7 @@ begin
   Result.FFilter := ufNone;
 end;
 
-class function TStreamSettings.Load(Stream: TExtendedStream;
-  Version: Integer): TStreamSettings;
+class function TStreamSettings.Load(Stream: TExtendedStream; Version: Integer): TStreamSettings;
 var
   B: Byte;
   i, Count, FilterTmp, TypeTmp: Integer;
@@ -2875,17 +2859,14 @@ begin
   begin
     Stream.Read(Result.FSilenceBufferSecondsStart);
     Stream.Read(Result.FSilenceBufferSecondsEnd);
+  end else if Version >= 9 then
+  begin
+    Stream.Read(Result.FSilenceBufferSecondsStart);
+    Result.FSilenceBufferSecondsEnd := Result.FSilenceBufferSecondsStart;
   end else
   begin
-    if Version >= 9 then
-    begin
-      Stream.Read(Result.FSilenceBufferSecondsStart);
-      Result.FSilenceBufferSecondsEnd := Result.FSilenceBufferSecondsStart;
-    end else
-    begin
-      Result.FSilenceBufferSecondsStart := 10;
-      Result.FSilenceBufferSecondsEnd := 10;
-    end;
+    Result.FSilenceBufferSecondsStart := 10;
+    Result.FSilenceBufferSecondsEnd := 10;
   end;
 
   if Version >= 9 then
@@ -2950,24 +2931,20 @@ begin
   if not Result.FSeparateTracks then
     Result.FDeleteStreams := False;
 
-  if (FilterTmp > Ord(High(TUseFilters))) or
-     (FilterTmp < Ord(Low(TUseFilters))) then
+  if (FilterTmp > Ord(High(TUseFilters))) or (FilterTmp < Ord(Low(TUseFilters))) then
     Result.FFilter := ufNone
+  else if Version > 26 then
+    Result.FFilter := TUseFilters(FilterTmp)
+  else if FilterTmp = 0 then
+    Result.FFilter := ufNone
+  else if FilterTmp = 1 then
+    Result.FFilter := ufWish
+  else if FilterTmp = 2 then
+    Result.FFilter := ufIgnoreBoth
+  else if FilterTmp = 3 then
+    Result.FFilter := ufBoth
   else
-    if Version > 26 then
-      Result.FFilter := TUseFilters(FilterTmp)
-    else
-    begin
-      if FilterTmp = 0 then
-        Result.FFilter := ufNone
-      else if FilterTmp = 1 then
-        Result.FFilter := ufWish
-      else if FilterTmp = 2 then
-        Result.FFilter := ufIgnoreBoth
-      else if FilterTmp = 3 then
-        Result.FFilter := ufBoth
-      else Result.FFilter := ufNone;
-    end;
+    Result.FFilter := ufNone;
 
   if Version >= 28 then
   begin
@@ -3031,8 +3008,7 @@ begin
   end;
 end;
 
-class function TStreamSettings.LoadAuto(Data: TDataLists;
-  Stream: TExtendedStream; Version: Integer): TStreamSettings;
+class function TStreamSettings.LoadAuto(Data: TDataLists; Stream: TExtendedStream; Version: Integer): TStreamSettings;
 var
   i, Count, TypeTmp: Integer;
   T: TPostProcessTypes;
@@ -3095,9 +3071,7 @@ begin
     ES := Result.EncoderSettings.Find(AT);
 
     if ES <> nil then
-    begin
       ES.Load(Stream, Version);
-    end;
   end;
 end;
 
@@ -3308,13 +3282,11 @@ begin
         Break;
       end;
     end else if PostProcessor.ClassType.InheritsFrom(TInternalPostProcess) and Self[i].ClassType.InheritsFrom(TInternalPostProcess) then
-    begin
       if PostProcessor.ClassType = Self[i].ClassType then
       begin
         Result := Self[i];
         Break;
       end;
-    end;
 end;
 
 function TPostProcessorList.Find(ClassType: TClass): TPostProcessBase;
@@ -3386,8 +3358,7 @@ begin
   Result.Assign(Self);
 end;
 
-constructor TEncoderSettings.Create(AudioType: TAudioTypes;
-  BitrateType: TBitrates; VBRQuality: TVBRQualities);
+constructor TEncoderSettings.Create(AudioType: TAudioTypes; BitrateType: TBitrates; VBRQuality: TVBRQualities);
 begin
   inherited Create;
 
@@ -3435,5 +3406,3 @@ begin
 end;
 
 end.
-
-

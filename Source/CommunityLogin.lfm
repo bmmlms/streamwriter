@@ -17,7 +17,7 @@ object frmCommunityLogin: TfrmCommunityLogin
   OnKeyDown = FormKeyDown
   OnShow = FormShow
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.1'
+  LCLVersion = '2.2.0.2'
   object pnlHeader: TPanel
     Left = 0
     Height = 33

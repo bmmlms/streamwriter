@@ -31,7 +31,6 @@ uses
   Classes,
   Constants,
   DataManager,
-  DynBASS,
   ExtendedStream,
   Functions,
   Generics.Collections,
@@ -40,14 +39,11 @@ uses
   LanguageObjects,
   Logging,
   Math,
-  MonitorAnalyzer,
   RegExpr,
   Sockets,
-  StrUtils,
   SWFunctions,
   SysUtils,
   TypeDefs,
-  WaveData,
   WideStrUtils;
 
 type

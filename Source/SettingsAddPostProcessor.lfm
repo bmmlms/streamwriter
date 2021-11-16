@@ -17,6 +17,7 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   Position = poOwnerFormCenter
+  LCLVersion = '2.2.0.2'
   object Label1: TLabel
     Left = 0
     Height = 13

@@ -372,9 +372,6 @@ var
 
 implementation
 
-uses
-  PostProcess;
-
 { TAppData }
 
 constructor TAppData.Create(AppName: string);
