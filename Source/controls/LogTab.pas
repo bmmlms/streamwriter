@@ -615,7 +615,7 @@ begin
       begin
         R := GetDisplayRect(GetPrevious(GetPrevious(GetLast)), NoColumn, False);
         if R.Top <= ClientHeight then
-          PostMessage(Handle, WM_VSCROLL, SB_BOTTOM, 0);
+          ScrollIntoView(GetLast, True, False);
       end;
 
       Invalidate;
@@ -692,14 +692,8 @@ var
 begin
   inherited;
 
-  {
-  if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) and (GetPrevious(GetPrevious(GetLast)) <> nil) then
-  begin
-    R := GetDisplayRect(GetPrevious(GetPrevious(GetLast)), NoColumn, False);
-    if R.Top <= ClientHeight then
-      PostMessage(Handle, WM_VSCROLL, SB_BOTTOM, 0);
-  end;
-  }
+  if HandleAllocated and (GetLast <> nil) and IsVisible[GetLast] then
+    ScrollIntoView(GetLast, True, False);
 end;
 
 procedure TLogTree.SetFilter(Text: string; FilterTypes: TFilterTypes);

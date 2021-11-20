@@ -59,6 +59,7 @@ type
     function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
     procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
     procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
+    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); override;
     procedure Copy;
@@ -229,19 +230,26 @@ end;
 
 procedure TDebugView.FSetClient(Value: TICEClient);
 var
+  ClientChanged: Boolean;
   R: TRect;
 begin
+  ClientChanged := FClient <> Value;
+
   FClient := Value;
   if FClient <> nil then
     RootNodeCount := FClient.DebugLog.Count
   else
     RootNodeCount := 0;
 
-  if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) and (GetPrevious(GetPrevious(GetLast)) <> nil) then
+  if ClientChanged then
+  begin
+    if GetLast <> nil then
+      ScrollIntoView(GetLast, True, False);
+  end else if (GetLast <> nil) and (GetPrevious(GetLast) <> nil) and (GetPrevious(GetPrevious(GetLast)) <> nil) then
   begin
     R := GetDisplayRect(GetPrevious(GetPrevious(GetLast)), NoColumn, False);
     if R.Top <= ClientHeight then
-      PostMessage(Handle, WM_VSCROLL, SB_BOTTOM, 0);
+      ScrollIntoView(GetLast, True, False);
   end;
 
   // Invalidate, weil FClient.DebugLog.Add() eventuell auch alte Einträge entfernt im Notify().
@@ -358,6 +366,14 @@ begin
     Canvas.Font.Color := AppGlobals.NodeTextColorSelected
   else
     Canvas.Font.Color := AppGlobals.NodeTextColor;
+end;
+
+procedure TDebugView.Resize;
+begin
+  inherited Resize;
+
+  if HandleAllocated and (GetLast <> nil) and IsVisible[GetLast] then
+    ScrollIntoView(GetLast, True, False);
 end;
 
 end.
