@@ -30,8 +30,8 @@ uses
   Dialogs,
   ExtCtrls,
   Forms,
+  Functions,
   Graphics,
-  GUIFunctions,
   LanguageObjects,
   PlayerManager,
   SharedControls,
@@ -165,7 +165,7 @@ begin
     FEqualizers[i].Top := 0;
     FEqualizers[i].Left := i * WidthPerBar;
     FEqualizers[i].Width := WidthPerBar;
-    FEqualizers[i].Height := ClientHeight - GetTextSize(FLabels[i].Caption, FLabels[i].Font).cy;
+    FEqualizers[i].Height := ClientHeight - TFunctions.GetTextSize(FLabels[i].Caption, FLabels[i].Font).cy;
     FEqualizers[i].Max := 30;
     AppGlobals.Lock;
     try

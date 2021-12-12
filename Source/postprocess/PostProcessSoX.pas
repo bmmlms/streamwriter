@@ -32,8 +32,7 @@ uses
   LanguageObjects,
   Logging,
   PostProcess,
-  SysUtils,
-  Windows;
+  SysUtils;
 
 type
   TPostProcessSoxThread = class(TPostProcessThreadBase)
@@ -106,7 +105,7 @@ begin
 
   FResult := arFail;
 
-  SoxOutFile := RemoveFileExt(FData.WorkFilename) + '_sox.wav';
+  SoxOutFile := TFunctions.RemoveFileExt(FData.WorkFilename) + '_sox.wav';
 
   P := TPostProcessSoX(PostProcessor);
 
@@ -132,7 +131,7 @@ begin
     Params := Params + ' pad 0 ' + IntToStr(P.FSilenceEndLength);
 
   if (Params <> '') or P.FNormalize then
-    case RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 300000, Output, EC, @Terminated, True) of
+    case TFunctions.RunProcess(CmdLine + Params, ExtractFilePath(FSoxPath), 300000, Output, EC, @Terminated, True) of
       rpWin:
       begin
         Failed := True;
@@ -154,9 +153,13 @@ begin
                 Break;
             end;
 
+          if FileExists(FData.WorkFilename) and (not DeleteFile(FData.WorkFilename)) then
+            Failed := True;
+
           if not Failed then
-            if not MoveFileEx(PChar(SoXOutFile), PChar(FData.WorkFilename), MOVEFILE_REPLACE_EXISTING) then
+            if not RenameFile(SoXOutFile, FData.WorkFilename) then
               Failed := True;
+
           if not Failed then
           begin
             if P.FSilenceStart then
@@ -173,7 +176,7 @@ begin
     end;
 
   if FResult <> arWin then
-    DeleteFile(PChar(SoXOutFile));
+    DeleteFile(SoXOutFile);
 end;
 
 { TPostProcessSoX }
@@ -267,7 +270,7 @@ end;
 
 function TPostProcessSoX.FGetHash: Cardinal;
 begin
-  Result := inherited + HashString(BoolToStr(FNormalize) + BoolToStr(FFadeoutStart) + BoolToStr(FFadeoutEnd) + BoolToStr(FSilenceStart) + BoolToStr(FSilenceEnd) + IntToStr(FFadeoutStartLength) +
+  Result := inherited + TFunctions.HashString(BoolToStr(FNormalize) + BoolToStr(FFadeoutStart) + BoolToStr(FFadeoutEnd) + BoolToStr(FSilenceStart) + BoolToStr(FSilenceEnd) + IntToStr(FFadeoutStartLength) +
     IntToStr(FFadeoutEndLength) + IntToStr(FSilenceStartLength) + IntToStr(FSilenceEndLength));
 end;
 
@@ -280,59 +283,6 @@ function TPostProcessSoX.FGetName: string;
 begin
   Result := _('Apply effects using SoX');
 end;
-
-{
-function TPostProcessSox.EatFiles(LameFile, MADFile: string): Boolean;
-var
-  Lame, MAD: Boolean;
-  H: Cardinal;
-  MS1, MS2: TMemoryStream;
-begin
-  Result := False;
-  Lame := False;
-  MAD := False;
-
-  if FileExists(AppGlobals.Storage.DataDir + FDownloadPackage) then
-  begin
-    MS1 := TMemoryStream.Create;
-    MS2 := TMemoryStream.Create;
-    try
-      try
-        MS1.LoadFromFile(LameFile);
-        MS2.LoadFromFile(MADFile);
-      except
-        Exit;
-      end;
-
-      H := BeginUpdateResource(PChar(AppGlobals.Storage.DataDir + FDownloadPackage), False);
-      if H > 0 then
-      begin
-        UpdateResource(H, RT_RCDATA, 'lame-enc_dll',
-          MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL), MS1.Memory, MS1.Size);
-        if EndUpdateResource(H, False) then
-          Lame := True;
-      end;
-
-      H := BeginUpdateResource(PChar(AppGlobals.Storage.DataDir + FDownloadPackage), False);
-      if H > 0 then
-      begin
-        UpdateResource(H, RT_RCDATA, 'libmad_dll',
-          MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL), MS2.Memory, MS2.Size);
-        if EndUpdateResource(H, False) then
-          MAD := True;
-      end;
-    finally
-      MS1.Free;
-      MS2.Free;
-    end;
-  end;
-
-  Result := Lame and MAD;
-
-  if Result then
-    ExtractFiles;
-end;
-}
 
 procedure TPostProcessSoX.Load(Stream: TExtendedStream; Version: Integer);
 begin

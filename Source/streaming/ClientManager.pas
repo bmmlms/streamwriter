@@ -641,7 +641,7 @@ begin
 
   if AppGlobals.AutoTuneInConsiderIgnore then
     for n := 0 to AppGlobals.Data.IgnoreList.Count - 1 do
-      if Like(Title, AppGlobals.Data.IgnoreList[n].Pattern) then
+      if TFunctions.Like(Title, AppGlobals.Data.IgnoreList[n].Pattern) then
       begin
         Text := Format('Automatic recording of "%s" won''t be started because it matches "%s" on the ignorelist', [ParsedTitle, AppGlobals.Data.IgnoreList[n].Pattern]);
         MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));

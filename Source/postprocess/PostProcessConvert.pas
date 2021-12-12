@@ -178,7 +178,6 @@ begin
 
   FProgress := Percent;
   FSync := FOnProgress;
-  ;
   Synchronize(Sync);
 end;
 

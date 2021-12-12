@@ -480,7 +480,8 @@ begin
       OnlyOne := False;
       if (CommandLine.GetParam('-datadir') = nil) or (CommandLine.GetParam('-tempdir') = nil) then
       begin
-        MsgBox(Format(_('When the argument -enablemultipleinstances is supplied you also need to supply -datadir and -tempdir.'#13#10'Make sure to supply distinct directories to both launched streamWriter instances.'), [AppName]),
+        TFunctions.MsgBox(Format(_('When the argument -enablemultipleinstances is supplied you also need to supply -datadir and -tempdir.'#13#10'Make sure to supply distinct directories to both launched streamWriter instances.'),
+          [AppName]),
           _('Info'), MB_ICONINFORMATION);
         TerminateProcess(GetCurrentProcess, 1);
       end;
@@ -548,6 +549,8 @@ begin
 end;
 
 procedure TAppData.InitOnlyOne;
+var
+  MutexName: string;
 begin
   inherited;
 
@@ -555,7 +558,10 @@ begin
   // every finializaion (save to datafile, registry, etc)
   // Required to make Inno Setup more comfortable :)
   if MutexHandle > 0 then
-    FMutexHandleExiting := CreateMutex(nil, True, PChar(AppName + 'MutexExiting'));
+  begin
+    MutexName := AppName + 'MutexExiting';
+    FMutexHandleExiting := CreateMutexW(nil, True, PWideChar(UnicodeString(MutexName)));
+  end;
 end;
 
 procedure TAppData.BuildThanksText;
@@ -596,7 +602,7 @@ begin
   if FID < 1 then
   begin
     CreateGUID(GUID);
-    FID := HashString(GUID.ToString);
+    FID := TFunctions.HashString(GUID.ToString);
   end;
 
   FStorage.Read('LastUsedDataVersion', FLastUsedDataVersion, 0);
@@ -604,7 +610,7 @@ begin
   FStorage.Read('Dir', FDir, '');
   if FDir <> '' then
     FDir := IncludeTrailingPathDelimiter(FDir);
-  FDir := TryUnRelativePath(FDir);
+  FDir := TFunctions.TryUnRelativePath(FDir);
   if not DirectoryExists(FDir) then
     FDir := '';
 
@@ -613,7 +619,7 @@ begin
     FDirAuto := FDir;
   if FDirAuto <> '' then
     FDirAuto := IncludeTrailingPathDelimiter(FDirAuto);
-  FDirAuto := TryUnRelativePath(FDirAuto);
+  FDirAuto := TFunctions.TryUnRelativePath(FDirAuto);
   if not DirectoryExists(FDirAuto) then
     FDirAuto := '';
 
@@ -849,12 +855,12 @@ begin
   Recovered := False;
   {$IFNDEF DEBUG}
   if FileExists(AppGlobals.RecoveryFile) then
-    if (CommandLine.GetParam('-autoloadrecovery') <> nil) or (MsgBox(_('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES) then
+    if (CommandLine.GetParam('-autoloadrecovery') <> nil) or (TFunctions.MsgBox(_('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES) then
       try
         FData.Load(True);
         Recovered := True;
       except
-        MsgBox(_('Data could not be loaded.'), _('Error'), MB_ICONERROR);
+        TFunctions.MsgBox(_('Data could not be loaded.'), _('Error'), MB_ICONERROR);
       end;
   {$ENDIF}
 
@@ -874,15 +880,15 @@ begin
       FData.LoadError := True;
 
       if E is EVersionException then
-        Res := MsgBox(Format(_('The file "%s" could not be loaded because it was saved with a newer version of streamWriter. ' + 'To use the current file exit streamWriter and use a newer version of the application.') +
+        Res := TFunctions.MsgBox(Format(_('The file "%s" could not be loaded because it was saved with a newer version of streamWriter. ' + 'To use the current file exit streamWriter and use a newer version of the application.') +
           #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
       else if E is EUnsupportedFormatException then
-        Res := MsgBox(Format(_('The file "%s" could not be loaded because it is contains an exported profile and no regular saved data.') + #13#10 + _(LoadErrorMsg), [E.Message]),
+        Res := TFunctions.MsgBox(Format(_('The file "%s" could not be loaded because it is contains an exported profile and no regular saved data.') + #13#10 + _(LoadErrorMsg), [E.Message]),
           _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
       else if E is EUnknownFormatException then
-        Res := MsgBox(Format(_('The file "%s" could not be loaded because it''s format is unknown.') + #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
+        Res := TFunctions.MsgBox(Format(_('The file "%s" could not be loaded because it''s format is unknown.') + #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
       else
-        Res := MsgBox(Format(_('The file "%s" could not be loaded because it is corrupted.') + #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
+        Res := TFunctions.MsgBox(Format(_('The file "%s" could not be loaded because it is corrupted.') + #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
 
       if Res = IDYES then
       begin
@@ -915,8 +921,8 @@ begin
 
   FStorage.Write('LastUsedDataVersion', FLastUsedDataVersion);
 
-  FStorage.Write('Dir', TryRelativePath(FDir, False, True));
-  FStorage.Write('DirAuto', TryRelativePath(FDirAuto, False, True));
+  FStorage.Write('Dir', TFunctions.TryRelativePath(FDir, False, True));
+  FStorage.Write('DirAuto', TFunctions.TryRelativePath(FDirAuto, False, True));
   FStorage.Write('TrayClose', FTray);
   FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
   FStorage.Write('SnapMain', FSnapMain);
@@ -1037,7 +1043,7 @@ begin
   except
     on E: Exception do
     begin
-      MsgBox(E.Message, _('Error'), MB_ICONERROR);
+      TFunctions.MsgBox(E.Message, _('Error'), MB_ICONERROR);
       Result := False;
     end;
   end;
@@ -1057,7 +1063,7 @@ begin
   except
     on E: Exception do
     begin
-      MsgBox(E.Message, _('Error'), MB_ICONERROR);
+      TFunctions.MsgBox(E.Message, _('Error'), MB_ICONERROR);
       Result := False;
     end;
   end;

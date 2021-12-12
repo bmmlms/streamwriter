@@ -393,7 +393,7 @@ begin
     if (Dir = '') or (not DirectoryExists(Dir)) then
       Exit(crDirDoesNotExist);
 
-    if not DiskSpaceOkay(Dir, AppGlobals.MinDiskSpace) then
+    if not TFunctions.DiskSpaceOkay(Dir, AppGlobals.MinDiskSpace) then
       Exit(crNoFreeSpace);
   end;
 
@@ -1101,7 +1101,7 @@ begin
   Result := -1;
   try
     S2 := s;
-    if not ParseURL(S2).Success then
+    if not TFunctions.ParseURL(S2).Success then
       Exit;
   except
     Exit;

@@ -45,7 +45,6 @@ uses
   Generics.Collections,
   Generics.Defaults,
   Graphics,
-  GUIFunctions,
   Images,
   ImgList,
   LanguageObjects,
@@ -499,7 +498,7 @@ begin
     chkSearchSilenceClick(nil);
     chkManualSilenceLevelClick(nil);
 
-    chkAutostart.Checked := FileExists(ConcatPaths([GetShellFolder(CSIDL_STARTUP), AppGlobals.AppName + '.lnk']));
+    chkAutostart.Checked := FileExists(ConcatPaths([TFunctions.GetShellFolder(CSIDL_STARTUP), AppGlobals.AppName + '.lnk']));
     chkTray.Checked := AppGlobals.Tray;
     chkSnapMain.Checked := AppGlobals.SnapMain;
     chkRememberRecordings.Checked := AppGlobals.RememberRecordings;
@@ -606,9 +605,9 @@ begin
     function (const L, R: TPostProcessBase): integer
     begin
       if L.GroupID <> R.GroupID then
-        Result := CmpInt(L.GroupID, R.GroupID)
+        Result := TFunctions.CmpInt(L.GroupID, R.GroupID)
       else
-        Result := CmpInt(L.Order, R.Order);
+        Result := TFunctions.CmpInt(L.Order, R.Order);
     end
   ));
   }
@@ -659,9 +658,9 @@ begin
           AppGlobals.SoundDevice := TBassDevice(lstSoundDevice.Control.ItemsEx[lstSoundDevice.Control.ItemIndex].Data).ID;
 
         if chkAutostart.Checked then
-          CreateLink(Application.ExeName, GetShellFolder(CSIDL_STARTUP), AppGlobals.AppName, '-minimize', False)
+          TFunctions.CreateLink(Application.ExeName, TFunctions.GetShellFolder(CSIDL_STARTUP), AppGlobals.AppName, '-minimize', False)
         else
-          CreateLink(Application.ExeName, GetShellFolder(CSIDL_STARTUP), AppGlobals.AppName, '', True);
+          TFunctions.CreateLink(Application.ExeName, TFunctions.GetShellFolder(CSIDL_STARTUP), AppGlobals.AppName, '', True);
 
         AppGlobals.Dir := txtDir.Control.Text;
 
@@ -970,7 +969,7 @@ var
 begin
   Result := 0;
   for i := 0 to Lst.Count - 1 do
-    Result := Result + HashString(Lst[i]);
+    Result := Result + TFunctions.HashString(Lst[i]);
 end;
 
 procedure TfrmSettings.KeyDown(var Key: Word; Shift: TShiftState);
@@ -1069,7 +1068,7 @@ begin
   end;
 
   if AppGlobals.AddonManager.CanEncode(TAudioTypes(lstOutputFormat.Control.ItemIndex)) <> ceOkay then
-    if MsgBox(_('Additional addons are needed to use the selected output format. Do you want to download these addons now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
+    if TFunctions.MsgBox(_('Additional addons are needed to use the selected output format. Do you want to download these addons now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
       AppGlobals.AddonManager.InstallEncoderFor(Self, TAudioTypes(lstOutputFormat.Control.ItemIndex));
 
   if AppGlobals.AddonManager.CanEncode(TAudioTypes(lstOutputFormat.Control.ItemIndex)) <> ceOkay then
@@ -1293,7 +1292,7 @@ begin
 
   PList := TStringList.Create;
   try
-    Explode('|', Patterns, PList);
+    TFunctions.Explode('|', Patterns, PList);
 
     SetLength(Arr, PList.Count);
 
@@ -1332,11 +1331,11 @@ begin
     PList.Free;
   end;
 
-  Result := PatternReplaceNew(Text, Arr);
+  Result := TFunctions.PatternReplaceNew(Text, Arr);
 
   Result := FixPatternFilename(Result);
 
-  Result := FixPathName(Result + '.mp3');
+  Result := TFunctions.FixPathName(Result + '.mp3');
 end;
 
 procedure TfrmSettings.RebuildPostProcessingList;
@@ -1906,7 +1905,7 @@ begin
     else
       txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second');
 
-    if Trim(RemoveFileExt(txtPreview.Control.Text)) = '' then
+    if Trim(TFunctions.RemoveFileExt(txtPreview.Control.Text)) = '' then
       txtPreview.Control.Text := '';
   end;
 end;
@@ -1946,7 +1945,7 @@ begin
   else
     txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second');
 
-  if Trim(RemoveFileExt(txtPreview.Control.Text)) = '' then
+  if Trim(TFunctions.RemoveFileExt(txtPreview.Control.Text)) = '' then
     txtPreview.Control.Text := '';
 end;
 
@@ -2157,7 +2156,7 @@ begin
   else
     Msg := 'Select folder for saved songs';
 
-  Dir := BrowseDialog(Self, _(Msg));
+  Dir := TFunctions.BrowseDialog(Self, _(Msg));
 
   if Dir = '' then
     Exit;
@@ -2165,7 +2164,7 @@ begin
   if DirectoryExists(Dir) then
     txtDir.Control.Text := Dir
   else
-    MsgBox(_('The selected folder does not exist. Please choose another one.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('The selected folder does not exist. Please choose another one.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TfrmSettings.btnBrowseLogFileClick(Sender: TObject);
@@ -2231,7 +2230,7 @@ begin
   if lstPostProcess.Selected = nil then
     Exit;
   PostProcess := lstPostProcess.Selected.Data;
-  MsgBox(PostProcess.Help, 'Info', MB_ICONINFORMATION);
+  TFunctions.MsgBox(PostProcess.Help, 'Info', MB_ICONINFORMATION);
 end;
 
 procedure TfrmSettings.btnMoveClick(Sender: TObject);
@@ -2466,33 +2465,33 @@ begin
   if not Result then
     Exit;
 
-  if ControlVisible(txtFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second'))) = '') then
+  if ControlVisible(txtFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second'))) = '') then
   begin
-    MsgBox(_('Please enter a valid pattern for filenames of completely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('Please enter a valid pattern for filenames of completely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePattern.Parent)));
     txtFilePattern.Control.ApplyFocus;
     Exit;
   end;
 
-  if ControlVisible(txtIncompleteFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second'))) = '') then
+  if ControlVisible(txtIncompleteFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second'))) = '') then
   begin
-    MsgBox(_('Please enter a valid pattern for filenames of incompletely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('Please enter a valid pattern for filenames of incompletely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtIncompleteFilePattern.Parent)));
     txtIncompleteFilePattern.Control.ApplyFocus;
     Exit;
   end;
 
-  if ControlVisible(txtAutomaticFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtAutomaticFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|streamname|day|month|year|hour|minute|second'))) = '') then
+  if ControlVisible(txtAutomaticFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtAutomaticFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|streamname|day|month|year|hour|minute|second'))) = '') then
   begin
-    MsgBox(_('Please enter a valid pattern for filenames of automatically recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('Please enter a valid pattern for filenames of automatically recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtAutomaticFilePattern.Parent)));
     txtAutomaticFilePattern.Control.ApplyFocus;
     Exit;
   end;
 
-  if ControlVisible(txtStreamFilePattern) and (Trim(RemoveFileExt(ValidatePattern(txtStreamFilePattern.Control.Text, 'streamname|day|month|year|hour|minute|second'))) = '') then
+  if ControlVisible(txtStreamFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtStreamFilePattern.Control.Text, 'streamname|day|month|year|hour|minute|second'))) = '') then
   begin
-    MsgBox(_('Please enter a valid pattern for filenames of stream files so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('Please enter a valid pattern for filenames of stream files so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtStreamFilePattern.Parent)));
     txtStreamFilePattern.Control.ApplyFocus;
     Exit;
@@ -2501,9 +2500,9 @@ begin
   if ControlVisible(txtDir) and (not DirectoryExists(txtDir.Control.Text)) then
   begin
     if FSettingsType = stAuto then
-      MsgBox(_('The selected folder for automatically saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION)
+      TFunctions.MsgBox(_('The selected folder for automatically saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION)
     else
-      MsgBox(_('The selected folder for saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
+      TFunctions.MsgBox(_('The selected folder for saved songs does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtDir.Parent)));
     btnBrowseClick(nil);
     Exit;
@@ -2525,7 +2524,7 @@ begin
       for n := 0 to lstHotkeys.Items.Count - 1 do
         if (lstHotkeys.Items[i] <> lstHotkeys.Items[n]) and Assigned(lstHotkeys.Items[i].Data) and (lstHotkeys.Items[i].Data = lstHotkeys.Items[n].Data) then
         begin
-          MsgBox(_('A hotkey can be defined only once. Please edit the key mappings.'), _('Info'), MB_ICONINFORMATION);
+          TFunctions.MsgBox(_('A hotkey can be defined only once. Please edit the key mappings.'), _('Info'), MB_ICONINFORMATION);
           SetPage(FPageList.Find(pnlHotkeys));
           Exit;
         end;
@@ -2555,11 +2554,11 @@ begin
     begin
       Result := False;
       if E is EUnsupportedFormatException then
-        MsgBox(_('The file could not be imported because it contains regular saved data and no exported profile.'), _('Error'), MB_ICONERROR)
+        TFunctions.MsgBox(_('The file could not be imported because it contains regular saved data and no exported profile.'), _('Error'), MB_ICONERROR)
       else if E is EUnknownFormatException then
-        MsgBox(_('The file could not be imported because it''s format is unknown.'), _('Error'), MB_ICONERROR)
+        TFunctions.MsgBox(_('The file could not be imported because it''s format is unknown.'), _('Error'), MB_ICONERROR)
       else
-        MsgBox(_('The file could not be imported.'), _('Error'), MB_ICONERROR);
+        TFunctions.MsgBox(_('The file could not be imported.'), _('Error'), MB_ICONERROR);
     end;
   end;
 end;

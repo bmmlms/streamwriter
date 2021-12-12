@@ -93,8 +93,7 @@ uses
   UpdateClient,
   Variants,
   VirtualTrees,
-  Windows,
-  WindowsFunctions;
+  Windows;
 
 const
   WM_UPDATEFOUND = WM_USER + 628;
@@ -584,7 +583,7 @@ begin
     except
       if not Shutdown then
       begin
-        Res := MsgBox(Format(_('An error occured while saving the data file. Please make sure you can write to "%s" and that the file is not in use by another application. Click "Yes" to try again, "No" to exit without saving data.'),
+        Res := TFunctions.MsgBox(Format(_('An error occured while saving the data file. Please make sure you can write to "%s" and that the file is not in use by another application. Click "Yes" to try again, "No" to exit without saving data.'),
           [AppGlobals.DataFile]), _('Info'), MB_ICONEXCLAMATION or MB_YESNO or MB_DEFBUTTON1);
         if Res = IDNO then
           Break;
@@ -637,15 +636,15 @@ begin
       end;
     except
       on E: EVersionException do
-        MsgBox(_('The file could not be imported because it was exported with a newer version of streamWriter.'), _('Error'), MB_ICONERROR);
+        TFunctions.MsgBox(_('The file could not be imported because it was exported with a newer version of streamWriter.'), _('Error'), MB_ICONERROR);
       on E: EUnsupportedFormatException do
-        MsgBox(_('The file could not be imported because it contains regular saved data and no exported profile.'), _('Error'), MB_ICONERROR);
+        TFunctions.MsgBox(_('The file could not be imported because it contains regular saved data and no exported profile.'), _('Error'), MB_ICONERROR);
       on E: EUnknownFormatException do
-        MsgBox(_('The file could not be imported because it''s format is unknown.'), _('Error'), MB_ICONERROR);
+        TFunctions.MsgBox(_('The file could not be imported because it''s format is unknown.'), _('Error'), MB_ICONERROR);
       else
-        MsgBox(_('The file could not be imported.'), _('Error'), MB_ICONERROR)
+        TFunctions.MsgBox(_('The file could not be imported.'), _('Error'), MB_ICONERROR)
     end;
-    RunProcess('"' + Application.ExeName + '" /profileupdate', False);
+    TFunctions.RunProcess('"' + Application.ExeName + '" /profileupdate', False);
   end;
 
   // We have to close all cut-tabs here because otherwise FreeAndNil(FPlayer) in CutTab.Free()
@@ -654,7 +653,7 @@ begin
     if pagMain.Pages[i].ClassType = TCutTab then
       pagMain.Pages[i].Free;
 
-  Close;
+  Application.Terminate;
 end;
 
 procedure TfrmStreamWriterMain.actSettingsExecute(Sender: TObject);
@@ -853,14 +852,12 @@ begin
     if (not Cat.Category.IsAuto) and (not AllClientsInCat(ClientNodes, Node)) then
     begin
       Item := TMenuItem.Create(mnuMain);
-      ;
       Item.Caption := Cat.Category.Name;
       Item.Tag := Integer(Cat);
       Item.OnClick := mnuMoveToCategory;
       mnuMoveToCategory1.Add(Item);
 
       Item := TMenuItem.Create(mnuMain);
-      ;
       Item.Caption := Cat.Category.Name;
       Item.Tag := Integer(Cat);
       Item.OnClick := mnuMoveToCategory;
@@ -884,10 +881,7 @@ begin
       Hide;
     end;
   end else if CanExitApp then
-  begin
-    Action := caFree;
     ExitApp(False);
-  end;
 end;
 
 procedure TfrmStreamWriterMain.FormCreate(Sender: TObject);
@@ -1089,15 +1083,15 @@ var
 begin
   case ID of
     ceUnknown:
-      MsgBox(Format(_('An error occured while communicating with the server: '#13#10'%s'), [Msg]), _('Error'), MB_ICONERROR);
+      TFunctions.MsgBox(Format(_('An error occured while communicating with the server: '#13#10'%s'), [Msg]), _('Error'), MB_ICONERROR);
     ceAuthRequired:
-      if MsgBox(_('You need to be logged in to perform that action.'#13#10'Do you want to login now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+      if TFunctions.MsgBox(_('You need to be logged in to perform that action.'#13#10'Do you want to login now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
         ShowCommunityLogin;
     ceNotification:
       TfrmMsgDlg.ShowMsg(Self, Format(_(Notification), [Msg]), mtInformation, [mbOK], mbOK);
     ceOneTimeNotification:
     begin
-      MsgHC := HashString(Msg);
+      MsgHC := TFunctions.HashString(Msg);
       if MsgHC > MaxInt then
         MsgHash := MsgHC - MaxInt
       else
@@ -1118,7 +1112,7 @@ begin
   UpdateStatus;
 
   if not Success then
-    MsgBox(_('The server did not accept the handshake. Please update streamWriter.'), _('Error'), MB_ICONERROR);
+    TFunctions.MsgBox(_('The server did not accept the handshake. Please update streamWriter.'), _('Error'), MB_ICONERROR);
 end;
 
 procedure TfrmStreamWriterMain.HomeCommLogIn(Sender: TObject; Success: Boolean);
@@ -1639,8 +1633,7 @@ procedure TfrmStreamWriterMain.QueryEndSession(var Msg: TMessage);
 begin
   Msg.Result := 1;
 
-  // if Assigned(ShutdownBlockReasonCreate) and Assigned(ShutdownBlockReasonDestroy) then
-  //   ShutdownBlockReasonCreate(Handle, PWideChar(_('Stopping recordings and saving settings...')));
+  TFunctions.ShutdownBlockReasonCreate(Handle, _('Stopping recordings and saving settings...'));
 end;
 
 procedure TfrmStreamWriterMain.EndSession(var Msg: TWMEndSession);
@@ -1650,7 +1643,7 @@ begin
     Msg.Result := 0;
     ExitApp(True);
   end else
-    ShutdownBlockReasonDestroy(Handle);
+    TFunctions.ShutdownBlockReasonDestroy(Handle);
 end;
 
 procedure TfrmStreamWriterMain.SetCaptionAndTrayHint;
@@ -1687,8 +1680,8 @@ begin
     end else
     begin
       if AppGlobals.DisplayPlayedSong then
-        NewCaption := NewCaption + ' - ' + RemoveFileExt(ExtractFileName(Filename));
-      NewHint := NewHint + #13#10 + _('Playing:') + ' ' + RemoveFileExt(ExtractFileName(Filename));
+        NewCaption := NewCaption + ' - ' + TFunctions.RemoveFileExt(ExtractFileName(Filename));
+      NewHint := NewHint + #13#10 + _('Playing:') + ' ' + TFunctions.RemoveFileExt(ExtractFileName(Filename));
     end;
   end else if Stream <> '' then
     if Title <> '' then
@@ -1716,7 +1709,7 @@ begin
     NewHint := NewHint + #13#10 + Format(_('%d active recording'), [Recordings])
   else
     NewHint := NewHint + #13#10 + Format(_('%d active recordings'), [Recordings]);
-  NewHint := NewHint + #13#10 + MakeSize(FSpeed) + '/s';
+  NewHint := NewHint + #13#10 + TFunctions.MakeSize(FSpeed) + '/s';
 
   if Caption <> NewCaption then
     Caption := NewCaption;
@@ -1845,18 +1838,18 @@ begin
       mtWarning, [mbOK], mbOK, 7);
 
   if (AppGlobals.LastUsedDataVersion > 0) and (AppGlobals.LastUsedDataVersion < 60) and (not FExiting) then
-    MsgBox(_('Since handling of settings for automatically saved songs changed, these settings were reset to default values. Please see "Settings"->"Settings for automatic recordings..." in the menu to adjust these settings.'),
+    TFunctions.MsgBox(_('Since handling of settings for automatically saved songs changed, these settings were reset to default values. Please see "Settings"->"Settings for automatic recordings..." in the menu to adjust these settings.'),
       _('Info'), MB_ICONINFORMATION);
 
   if (not DirectoryExists(AppGlobals.Dir)) and (not FExiting) then
   begin
-    MsgBox(_('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('The folder for saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
     ShowSettings(stApp, True);
   end;
 
   if (not DirectoryExists(AppGlobals.DirAuto)) and (not FExiting) then
   begin
-    MsgBox(_('The folder for automatically saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('The folder for automatically saved songs does not exist.'#13#10'Please select a folder now.'), _('Info'), MB_ICONINFORMATION);
     ShowSettings(stAuto, True);
   end;
 end;
@@ -1933,11 +1926,12 @@ begin
   case AppGlobals.AddonManager.CanEncode(AudioType) of
     ceNoAddon:
     begin
-      MsgBox(_('This filetype is not supported by streamWriter.'), _('Info'), MB_ICONINFORMATION);
+      TFunctions.MsgBox(_('This filetype is not supported by streamWriter.'), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
     ceAddonNeeded:
-      if MsgBox(_('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+      if TFunctions.MsgBox(_('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'),
+        MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
       begin
         if not AppGlobals.AddonManager.InstallEncoderFor(Self, AudioType) then
           Exit;
@@ -1995,7 +1989,8 @@ var
 begin
   AudioType := FilenameToFormat(Track.Filename);
   if AppGlobals.AddonManager.CanEncode(AudioType) <> ceOkay then
-    if MsgBox(_('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'), MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+    if TFunctions.MsgBox(_('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'),
+      MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
     begin
       if not AppGlobals.AddonManager.InstallEncoderFor(Self, AudioType) then
         Exit;
@@ -2058,7 +2053,7 @@ begin
 
   for i := 0 to High(Arr) do
   begin
-    Pattern := BuildPattern(Arr[i].Title, Hash, NumChars, True);
+    Pattern := TFunctions.BuildPattern(Arr[i].Title, Hash, NumChars, True);
     Found := False;
 
     for n := 0 to AppGlobals.Data.SaveList.Count - 1 do
@@ -2156,7 +2151,7 @@ begin
   else
     List := Client.Entry.IgnoreList;
 
-  Pattern := BuildPattern(Title, Hash, NumChars, True);
+  Pattern := TFunctions.BuildPattern(Title, Hash, NumChars, True);
   if NumChars > 3 then
   begin
     Found := False;
@@ -2196,7 +2191,7 @@ begin
     List := Client.Entry.IgnoreList;
 
   for i := List.Count - 1 downto 0 do
-    if ((List[i].ServerHash > 0) and (List[i].ServerHash = ServerTitleHash)) or Like(Title, List[i].Pattern) then
+    if ((List[i].ServerHash > 0) and (List[i].ServerHash = ServerTitleHash)) or TFunctions.Like(Title, List[i].Pattern) then
     begin
       tabLists.RemoveTitle(Client, ListType, List[i]);
 
@@ -2211,7 +2206,7 @@ end;
 
 procedure TfrmStreamWriterMain.tabClientsAuthRequired(Sender: TObject);
 begin
-  if MsgBox(_('You need to be logged in to perform that action.'#13#10'Do you want to login now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
+  if TFunctions.MsgBox(_('You need to be logged in to perform that action.'#13#10'Do you want to login now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
     ShowCommunityLogin;
 end;
 
@@ -2249,7 +2244,7 @@ begin
   if not Assigned(Track) then
     Exit;
 
-  Track.Filesize := Functions.GetFileSize(TCutTab(Sender).Filename);
+  Track.Filesize := TFunctions.GetFileSize(TCutTab(Sender).Filename);
   Track.Length := Trunc(AudioInfo.Length);
 
   // Ist mal raus, damit das "geschnitten"-Symbol nur bei automatischen Aufnahmen kommt
@@ -2380,7 +2375,7 @@ begin
 
   if RecordingActive then
   begin
-    if not DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
+    if not TFunctions.DiskSpaceOkay(AppGlobals.Dir, AppGlobals.MinDiskSpace) then
       Inc(FDiskSpaceFailCount)
     else
       FDiskSpaceFailCount := 0;
@@ -2591,7 +2586,7 @@ procedure TfrmStreamWriterMain.UpdateFound(var Msg: TMessage);
 var
   Res: Integer;
 begin
-  Res := MsgBox(_('A new version of streamWriter was found.'#13#10'Do you want to download the update now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
+  Res := TFunctions.MsgBox(_('A new version of streamWriter was found.'#13#10'Do you want to download the update now?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1);
   if Res = IDYES then
     if AppGlobals.RunningFromInstalledLocation then
       ShowUpdate(FUpdater.FoundVersion.AsString, FUpdater.UpdateURL)
@@ -2693,7 +2688,6 @@ begin
             begin
               AppGlobals.Data.TrackList.Delete(n);
               tabSaved.Tree.RemoveTracks([Track]);
-              Track.Free;
             end;
           end;
           Break;

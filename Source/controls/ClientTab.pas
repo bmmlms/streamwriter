@@ -514,7 +514,7 @@ var
   Clients: TNodeDataArray;
   Client: PClientNodeData;
 begin
-  Res := MsgBox(_('This will reset the saved song and bytes received counters.'#13#10 +
+  Res := TFunctions.MsgBox(_('This will reset the saved song and bytes received counters.'#13#10 +
     'The tracknumber of new saved titles will be 1 if you specified the tracknumber in the filename pattern, this number will also be set in ID3 tags.'#13#10 + 'Do you want to continue?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
   if Res = IDYES then
   begin
@@ -822,7 +822,7 @@ procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string; v
     Result := False;
     Title := LowerCase(Title);
     for i := 0 to List.Count - 1 do
-      if Like(Title, List[i].Pattern) then
+      if TFunctions.Like(Title, List[i].Pattern) then
       begin
         Result := True;
         Match := List[i].Title;
@@ -1293,7 +1293,7 @@ begin
             OnShowErrorMessage(Client, FClientManager.GetErrorText(Res, '', False, False, False));
           end;
         end;
-      end else if ValidURL(Info.URL) then
+      end else if TFunctions.ValidURL(Info.URL) then
       begin
         Client := FClientManager.AddClient(Info.ID, Info.Bitrate, Info.Name, Info.URL);
 
@@ -1339,7 +1339,7 @@ begin
       end else
       begin
         Result := False;
-        MsgBox(_('The stream could not be added to the list because the URL is invalid.'), _('Info'), MB_ICONINFORMATION);
+        TFunctions.MsgBox(_('The stream could not be added to the list because the URL is invalid.'), _('Info'), MB_ICONINFORMATION);
       end;
     end;
 end;
@@ -1454,7 +1454,7 @@ begin
       if HomeComm.CommunicationEstablished and HomeComm.Authenticated then
         FOnSetStreamData(Self, Streams[0].ID)
       else if not HomeComm.CommunicationEstablished then
-        MsgBox(_('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION)
+        TFunctions.MsgBox(_('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION)
       else if not HomeComm.Authenticated then
         FOnAuthRequired(Self);
     oaRate1:

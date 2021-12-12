@@ -250,8 +250,8 @@ begin
     finally
       FPlayBufferLock.Leave;
     end;
-  end else
-  ;
+  end;
+  
   FPlayer.Play;
   Sync(FOnStateChanged);
 end;
@@ -338,8 +338,7 @@ begin
       WriteLog(_('Stream cannot be played because format is unknown'), slError);
 
       Sync(FOnStateChanged);
-    end//WriteDebug(Format('Playbuffer size: %d', [FPlayer.Mem.Size]));
-  ;
+    end;
 
   if FPlayBuffer = nil then
     Exit;
@@ -639,7 +638,7 @@ begin
   FTitle := '';
   FPlayer := TICEPlayer.Create;
 
-  Res := ParseURL(URL);
+  Res := TFunctions.ParseURL(URL);
 
   FTypedStream := TICEStream(FRecvStream);
   FTypedStream.OnTitleChanged := StreamTitleChanged;

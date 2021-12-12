@@ -15,13 +15,12 @@ uses
   Functions,
   Graphics,
   GraphType,
-  GUIFunctions,
   HomeCommunication,
   Images,
   ImgList,
   LanguageObjects,
   MControls,
-  RegExpr,
+  regexpr,
   SharedData,
   StdCtrls,
   SWFunctions,
@@ -168,7 +167,7 @@ var
   RegExps: TStringArray;
 begin
   if (Length(Trim(txtRegEx.Text)) > 0) and (LowerCase(Trim(txtRegEx.Text)) <> LowerCase(DEFAULT_TITLE_REGEXP)) then
-    if MsgBox(_('A regular expression was entered into the text field but not added to the list.'#13#10'Do you want to continue without saving that regular expression?'), _('Question'), MB_YESNO or MB_ICONQUESTION) = IDNO then
+    if TFunctions.MsgBox(_('A regular expression was entered into the text field but not added to the list.'#13#10'Do you want to continue without saving that regular expression?'), _('Question'), MB_YESNO or MB_ICONQUESTION) = IDNO then
       Exit;
 
   SetLength(RegExps, 0);
@@ -179,7 +178,7 @@ begin
   end;
 
   if not HomeComm.SendSetStreamData(FStreamID, RegExps) then
-    MsgBox(_('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION)
+    TFunctions.MsgBox(_('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION)
   else
     Close;
 end;
@@ -281,7 +280,7 @@ begin
     NodeData.Title := LastTitles[i];
     FTitleTree.MultiLine[Node] := True;
 
-    W := GUIFunctions.GetTextSize(NodeData.Title, FTitleTree.Font).cx;
+    W := TFunctions.GetTextSize(NodeData.Title, FTitleTree.Font).cx;
     if W > FMaxTextWidth then
       FMaxTextwidth := W;
   end;
@@ -353,7 +352,7 @@ end;
 
 procedure TfrmSetStreamData.lstTitlesMeasureItem(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer);
 begin
-  NodeHeight := Trunc(GUIFunctions.GetTextSize('Wyg', TargetCanvas.Font).cy * 3) + 4;
+  NodeHeight := Trunc(TFunctions.GetTextSize('Wyg', TargetCanvas.Font).cy * 3) + 4;
 end;
 
 procedure TfrmSetStreamData.lstTitlesMeasureTextWidth(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; const Text: string; var Extent: Integer);

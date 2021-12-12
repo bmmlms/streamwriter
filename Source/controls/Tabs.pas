@@ -97,7 +97,7 @@ procedure TMainTabSheet.SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean
     Res: TParseURLRes;
   begin
     URL := SecureSWURLToInsecure(URL);
-    Res := ParseURL(URL);
+    Res := TFunctions.ParseURL(URL);
     if Res.Success then
       Result := 'http://' + Res.Host + ':' + IntToStr(Res.Port) + Res.Data
     else
@@ -166,7 +166,7 @@ begin
 
             List.SaveToFile(Dlg.FileName);
           except
-            MsgBox(Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [ExtractFilePath(Dlg.FileName)]), _('Error'), MB_ICONEXCLAMATION);
+            TFunctions.MsgBox(Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [ExtractFilePath(Dlg.FileName)]), _('Error'), MB_ICONEXCLAMATION);
           end;
         end;
         }
@@ -187,7 +187,7 @@ begin
             ShellExecuteW(Handle, nil, 'rundll32.exe', PWideChar(UnicodeString('shell32.dll,OpenAs_RunDLL ' + ConcatPaths([AppGlobals.TempDir, 'playlist.pls']))), nil, 1);
         end;
       except
-        MsgBox(Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [AppGlobals.TempDir]), _('Error'), MB_ICONEXCLAMATION);
+        TFunctions.MsgBox(Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [AppGlobals.TempDir]), _('Error'), MB_ICONEXCLAMATION);
       end;
   finally
     List.Free;

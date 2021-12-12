@@ -224,7 +224,7 @@ var
   Size: Int64;
 begin
   Success := False;
-  Size := GetFileSize(Filename);
+  Size := TFunctions.GetFileSize(Filename);
   if Size = 0 then
     Exit;
   Player := BASSStreamCreateFile(False, PWideChar(UnicodeString(Filename)), 0, 0, BASS_STREAM_DECODE or BASS_UNICODE or BASS_STREAM_PRESCAN);

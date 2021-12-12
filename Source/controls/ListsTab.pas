@@ -612,7 +612,7 @@ begin
 
     if ExportList.Count = 0 then
     begin
-      MsgBox(_('Please select at least one title or a single category containing titles to export.'), _('Info'), MB_ICONINFORMATION);
+      TFunctions.MsgBox(_('Please select at least one title or a single category containing titles to export.'), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
 
@@ -638,7 +638,7 @@ begin
           try
             Lst.SaveToFile(Dlg.FileName);
           except
-            MsgBox(_('The file could not be saved.'), _('Error'), MB_ICONEXCLAMATION);
+            TFunctions.MsgBox(_('The file could not be saved.'), _('Error'), MB_ICONEXCLAMATION);
           end;
         finally
           Lst.Free;
@@ -779,7 +779,7 @@ begin
               if (Copy(Lst[i], 2, 2) = ':\') and (Pos('\', Lst[i]) > -1) and (Pos('.', Lst[i]) > -1) then
               begin
                 Lst[i] := ExtractFileName(Lst[i]);
-                Lst[i] := RemoveFileExt(Lst[i]);
+                Lst[i] := TFunctions.RemoveFileExt(Lst[i]);
               end;
 
             // Wenn ein Künstler Künstler-Hash hinten dran ist auswerten
@@ -817,7 +817,7 @@ begin
               ImportData.Add(TImportListEntry.Create(Lst[i], ServerArtistHash, True));
           end;
         except
-          MsgBox(_('The file could not be loaded.'), _('Error'), MB_ICONEXCLAMATION);
+          TFunctions.MsgBox(_('The file could not be loaded.'), _('Error'), MB_ICONEXCLAMATION);
           Exit;
         end;
       finally
@@ -916,12 +916,12 @@ begin
             // If there are manual titles ask the user if they should be converted to automatic titles
             if not HomeComm.CommunicationEstablished then
             begin
-               MsgRes := MsgBox(Format(_('You have imported %d title(s) for the manual wishlist. You are not connected to the streamWriter server to convert these titles into titles for the automatic wishlist. Do you want to continue and import these titles as manual titles without conversion?'), [ConversionData.Count]), _('Question'), MB_YESNO or MB_ICONQUESTION or MB_DEFBUTTON2);
+               MsgRes := TFunctions.MsgBox(Format(_('You have imported %d title(s) for the manual wishlist. You are not connected to the streamWriter server to convert these titles into titles for the automatic wishlist. Do you want to continue and import these titles as manual titles without conversion?'), [ConversionData.Count]), _('Question'), MB_YESNO or MB_ICONQUESTION or MB_DEFBUTTON2);
                if MsgRes = ID_NO then
                  Exit;
             end else
             begin
-              MsgRes := MsgBox(Format(_('You have imported %d title(s) for the manual wishlist. Do you want to convert these titles into titles used by the automatic wishlist?'), [ConversionData.Count]), _('Question'), MB_YESNOCANCEL or MB_ICONQUESTION);
+              MsgRes := TFunctions.MsgBox(Format(_('You have imported %d title(s) for the manual wishlist. Do you want to convert these titles into titles used by the automatic wishlist?'), [ConversionData.Count]), _('Question'), MB_YESNOCANCEL or MB_ICONQUESTION);
               case MsgRes of
                 ID_YES:
                   begin
@@ -961,7 +961,7 @@ begin
         // If we are importing an automatic title and a manual title already exists the manual title needs to be removed
         if List = AppGlobals.Data.SaveList then
         begin
-          Pattern := BuildPattern(Trim(ImportData[i].Title), Hash, NumChars, False);
+          Pattern := TFunctions.BuildPattern(Trim(ImportData[i].Title), Hash, NumChars, False);
 
           for n := 0 to List.Count - 1 do
           begin
@@ -1190,7 +1190,7 @@ var
   Hash: Cardinal;
   NumChars: Integer;
 begin
-  FFilterText := BuildPattern(FSearchText.Text, Hash, NumChars, False);
+  FFilterText := TFunctions.BuildPattern(FSearchText.Text, Hash, NumChars, False);
   BuildTree(True);
 end;
 
@@ -1238,7 +1238,7 @@ begin
         IgnoreNodeData := FTree.GetNodeData(IgnoreNode);
 
         if IgnoreNodeData.NodeType = ntIgnore then
-          if Like(WishNodeData.Title.Title, IgnoreNodeData.Title.Pattern) then
+          if TFunctions.Like(WishNodeData.Title.Title, IgnoreNodeData.Title.Pattern) then
             FTree.Selected[WishNode] := True;
 
         IgnoreNode := FTree.GetNext(IgnoreNode);
@@ -1294,7 +1294,7 @@ begin
     end;
 
     for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
-      if ((NodeData.Title.ServerHash = 0) and (NodeData.Title.ServerArtistHash = 0) and (Like(RemoveFileExt(ExtractFileName(AppGlobals.Data.TrackList[i].Filename)), NodeData.Title.Pattern))) or
+      if ((NodeData.Title.ServerHash = 0) and (NodeData.Title.ServerArtistHash = 0) and (TFunctions.Like(TFunctions.RemoveFileExt(ExtractFileName(AppGlobals.Data.TrackList[i].Filename)), NodeData.Title.Pattern))) or
         ((NodeData.Title.ServerHash > 0) and (AppGlobals.Data.TrackList[i].ServerTitleHash = NodeData.Title.ServerHash)) then
         FTree.Selected[Node] := True;
 
@@ -1380,7 +1380,7 @@ begin
         if (List[i].ServerHash > 0) and (List[i].ServerHash = TitleHash) then
           Exit;
 
-    Pattern := BuildPattern(Trim(Text), Hash, NumChars, False);
+    Pattern := TFunctions.BuildPattern(Trim(Text), Hash, NumChars, False);
 
     // Keine doppelten manuellen Einträge erlauben
     if TitleHash = 0 then
@@ -1388,7 +1388,7 @@ begin
         if (List[i].ServerHash = 0) and (List[i].Hash = Hash) then
         begin
           if ShowMessages then
-            MsgBox(Format(_('The list already contains an entry matching the pattern "%s".'), [Pattern]), _('Info'), MB_ICONINFORMATION);
+            TFunctions.MsgBox(Format(_('The list already contains an entry matching the pattern "%s".'), [Pattern]), _('Info'), MB_ICONINFORMATION);
           Exit;
         end;
 
@@ -1428,7 +1428,7 @@ begin
 
     Result := True;
   end else if ShowMessages then
-    MsgBox(_('Please enter a pattern to add to the list.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('Please enter a pattern to add to the list.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
@@ -1503,13 +1503,13 @@ begin
 
   SingleParentSelected := (FTree.SelectedCount = 1) and (Length(SelectedParents) = 1);
   if SingleParentSelected then
+    // Es muss zum Parent mindestens ein Child geben was drunter liegt und ein Titel ist.
     if SelectedParents[0].ChildCount > 0 then
     begin
       ChildNodeData := FTree.GetNodeData(FTree.GetFirstChild(SelectedParents[0]));
       SingleParentSelected := (ChildNodeData.NodeType = ntWish) or (ChildNodeData.NodeType = ntIgnore);
     end else
-      SingleParentSelected := False// Es muss zum Parent mindestens ein Child geben was drunter liegt und ein Titel ist.
-  ;
+      SingleParentSelected := False;
 
   for i := 0 to High(SelectedNodes) do
   begin
@@ -1659,7 +1659,7 @@ begin
   if Title = nil then
     Exit;
 
-  if FromFilter and ((FilterText <> '') and (not Like(LowerCase(Title.Title), FilterText))) then
+  if FromFilter and ((FilterText <> '') and (not TFunctions.Like(LowerCase(Title.Title), FilterText))) then
     Exit;
 
   Node := AddChild(Parent);
@@ -1867,7 +1867,7 @@ begin
 
   for i := 0 to FDropTarget.Files.Count - 1 do
   begin
-    Title := TTitleInfo.Create(0, 0, RemoveFileExt(ExtractFileName(FDropTarget.Files[i])));
+    Title := TTitleInfo.Create(0, 0, TFunctions.RemoveFileExt(ExtractFileName(FDropTarget.Files[i])));
 
     Found := False;
     for n := 0 to List.Count - 1 do
@@ -2330,7 +2330,7 @@ begin
         Exit(-1);
     1:
       if (Data1.Title <> nil) and (Data2.Title <> nil) then
-        Result := CmpInt(Data1.Title.Saved, Data2.Title.Saved)
+        Result := TFunctions.CmpInt(Data1.Title.Saved, Data2.Title.Saved)
       else
         Result := 0;
     2:
@@ -2352,13 +2352,11 @@ begin
   inherited;
 
   FRename := TMenuItem.Create(Self);
-  ;
   FRename.Caption := 'Ren&ame';
   FRename.ImageIndex := TImages.TEXTFIELD_RENAME;
   Items.Add(FRename);
 
   FRemove := TMenuItem.Create(Self);
-  ;
   FRemove.Caption := '&Remove';
   FRemove.ImageIndex := TImages.Delete;
   Items.Add(FRemove);
@@ -2366,13 +2364,11 @@ begin
   Items.AddSeparator;
 
   FConvertToAutomatic := TMenuItem.Create(Self);
-  ;
   FConvertToAutomatic.Caption := '&Convert to automatic wishlist title';
   FConvertToAutomatic.ImageIndex := TImages.BRICKS_COG;
   Items.Add(FConvertToAutomatic);
 
   FShowSaved := TMenuItem.Create(Self);
-  ;
   FShowSaved.Caption := 'S&how in saved tracks';
   FShowSaved.ImageIndex := TImages.DRIVE_GO;
   Items.Add(FShowSaved);
@@ -2380,13 +2376,11 @@ begin
   Items.AddSeparator;
 
   FSelectSaved := TMenuItem.Create(Self);
-  ;
   FSelectSaved.Caption := '&Select saved titles';
   FSelectSaved.ImageIndex := TImages.DRIVE_SELECT;
   Items.Add(FSelectSaved);
 
   FSelectIgnored := TMenuItem.Create(Self);
-  ;
   FSelectIgnored.Caption := 'Se&lect ignored titles';
   FSelectIgnored.ImageIndex := TImages.DECLINE_SELECT;
   Items.Add(FSelectIgnored);
@@ -2394,13 +2388,11 @@ begin
   Items.AddSeparator;
 
   FExport := TMenuItem.Create(Self);
-  ;
   FExport.Caption := '&Export...';
   FExport.ImageIndex := TImages.SCRIPT_OUT;
   Items.Add(FExport);
 
   FImport := TMenuItem.Create(Self);
-  ;
   FImport.Caption := '&Import...';
   FImport.ImageIndex := TImages.SCRIPT_IN;
   Items.Add(FImport);

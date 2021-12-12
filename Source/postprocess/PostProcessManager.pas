@@ -30,12 +30,12 @@ uses
   Functions,
   Generics.Defaults,
   LanguageObjects,
+  LCLType,
   Logging,
   PostProcess,
   PostProcessConvert,
   SysUtils,
-  TypeDefs,
-  Windows;
+  TypeDefs;
 
 type
   TPostProcessManager = class
@@ -133,7 +133,7 @@ begin
   Client.Entry.Settings.PostProcessors.Sort(TComparer<TPostProcessBase>.Construct(
     function (const L, R: TPostProcessBase): Integer
     begin
-      Result := CmpInt(L.Order, R.Order);
+      Result := TFunctions.CmpInt(L.Order, R.Order);
     end
   ));
   }
@@ -173,14 +173,14 @@ begin
     Exit(True);
 
   if Entry.Data.WorkFilename <> '' then
-    DeleteFile(PChar(Entry.Data.WorkFilename));
+    DeleteFile(Entry.Data.WorkFilename);
 
   if Entry.Data.ReEncodedFilename <> '' then
   begin
-    DeleteFile(PChar(Entry.Data.Filename));
+    DeleteFile(Entry.Data.Filename);
 
     Entry.Data.Filename := Entry.Data.FilenameConverted;
-    MoveFileEx(PChar(Entry.Data.ReEncodedFilename), PChar(Entry.Data.FilenameConverted), MOVEFILE_REPLACE_EXISTING);
+    TFunctions.MoveFile(Entry.Data.ReEncodedFilename, Entry.Data.FilenameConverted, True);
 
     Entry.Data.WorkFilename := '';
     Entry.Data.ReEncodedFilename := '';
@@ -225,9 +225,9 @@ begin
       if Entry.ActiveThread.Terminated or ((Entry.ActiveThread.Result <> arWin) and (Entry.ActiveThread.Result <> arImpossible)) then
       begin
         if Entry.Data.WorkFilename <> '' then
-          DeleteFile(PChar(Entry.Data.WorkFilename));
+          DeleteFile(Entry.Data.WorkFilename);
         if Entry.Data.ReEncodedFilename <> '' then
-          DeleteFile(PChar(Entry.Data.ReEncodedFilename));
+          DeleteFile(Entry.Data.ReEncodedFilename);
 
         // Wird hier gemacht, damit WorkingForClient() False zurückliefert. Wichtig!
         FProcessingList.Remove(Entry);
@@ -317,7 +317,7 @@ begin
     if not PostProcess.ShowInitMessage(Owner.Handle) then
       Exit(False);
 
-    if MsgBox(_('This postprocessor needs additional addons. Do you want to download these addons now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
+    if TFunctions.MsgBox(_('This postprocessor needs additional addons. Do you want to download these addons now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
     {
       for i := 0 to PostProcess.NeededAddons.Count - 1 do
         if not AppGlobals.AddonManager.EnableAddon(Owner, AppGlobals.AddonManager.Find(PostProcess.NeededAddons[i]), False) then
@@ -328,7 +328,7 @@ begin
 
   if Enable and (not PostProcess.DependenciesMet) then
   begin
-    MsgBox(_('The postprocessor is not ready for use. This might happen when required addons'' files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
+    TFunctions.MsgBox(_('The postprocessor is not ready for use. This might happen when required addons'' files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
     Exit(False);
   end;
 
@@ -358,7 +358,7 @@ begin
         if Entry.PostProcessList[i] is TPostProcessConvert then
           if Entry.Data.WorkFilename = '' then
           begin
-            Entry.Data.WorkFilename := RemoveFileExt(Entry.Data.Filename) + '_temp.wav';
+            Entry.Data.WorkFilename := TFunctions.RemoveFileExt(Entry.Data.Filename) + '_temp.wav';
             TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.Filename, Entry.Data.WorkFilename, nil);
           end else if Entry.Data.ReEncodedFilename = '' then
           begin
@@ -367,7 +367,7 @@ begin
             else
               Output := FormatToFiletype(TEncoderSettings(Entry.Data.EncoderSettings).AudioType);
 
-            Entry.Data.ReEncodedFilename := RemoveFileExt(Entry.Data.Filename) + '_temp' + Output;
+            Entry.Data.ReEncodedFilename := TFunctions.RemoveFileExt(Entry.Data.Filename) + '_temp' + Output;
             TPostProcessConvertThread(Entry.ActiveThread).Convert(Entry.Data.WorkFilename, Entry.Data.ReEncodedFilename, Entry.Data.EncoderSettings);
           end;
 

@@ -98,7 +98,7 @@ begin
   FFilenames.Add('MP4Box.exe');
   FFilenames.Add('msvcr100.dll');
 
-  FNeededVersion := ParseVersion('1.0.0.1');
+  FNeededVersion := TFunctions.ParseVersion('1.0.0.1');
 end;
 
 function TAddonMP4Box.FGetHelp: string;

@@ -104,7 +104,7 @@ function TPlaylistHandler.ParsePlaylist(Data: string; PlaylistType: TPlaylistTyp
     // dann müssen wir die empfangene an den Pfad der vorherigen dranhängen.
     if (OriginURL <> '') and (Length(Line) > 0) and (Copy(LowerCase(Line), 1, 7) <> 'http://') and (Copy(LowerCase(Line), 1, 8) <> 'https://') then
     begin
-      Res := ParseURL(OriginURL);
+      Res := TFunctions.ParseURL(OriginURL);
       if Res.Success then
       begin
         if Res.PortDetected then
@@ -132,7 +132,7 @@ function TPlaylistHandler.ParsePlaylist(Data: string; PlaylistType: TPlaylistTyp
       end;
     end;
 
-    Res := ParseURL(Line);
+    Res := TFunctions.ParseURL(Line);
     if Res.Success then
     begin
       if Res.Secure then

@@ -382,7 +382,6 @@ begin
       R.Top := P;
       R.Left := 0;
       R.Bottom := P + 20;
-      ;
       R.Right := Bmp.Width;
     end;
 
@@ -423,17 +422,15 @@ begin
 
       ThemeServices.DrawElement(Bmp.Canvas.Handle, D, R);
       ThemeServices.DrawElement(Bmp.Canvas.Handle, D2, R);
-    end else
-      //case GetGripperState of
-{
+    end; { else
+      case GetGripperState of
         gsNormal:
           DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, False);
         gsHot:
           DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, True);
         gsDown:
           DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, True, True);
-        }//end;
-    ;
+      end; }
 
     FLastGripperState := GetGripperState;
     FLastGripperPos := FPosition;
@@ -495,7 +492,6 @@ begin
     R.Top := P;
     R.Left := 2;
     R.Bottom := P + 20;
-    ;
     R.Right := ClientWidth;
   end;
 

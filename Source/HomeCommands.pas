@@ -919,7 +919,7 @@ begin
 
   FData.Seek(0, soFromBeginning);
   CompressedData := TExtendedStream.Create;
-  CompressStream(FData, CompressedData, clDefault);
+  TFunctions.CompressStream(FData, CompressedData, clDefault);
   FData.Free;
   FData := CompressedData;
 

@@ -33,8 +33,7 @@ uses
   LanguageObjects,
   Logging,
   PostProcess,
-  SysUtils,
-  Windows;
+  SysUtils;
 
 type
   TPostProcessMP4BoxThread = class(TPostProcessThreadBase)
@@ -92,17 +91,17 @@ begin
     Exit;
   end;
 
-  OutFile := RemoveFileExt(FData.Filename) + '_mux.m4a';
+  OutFile := TFunctions.RemoveFileExt(FData.Filename) + '_mux.m4a';
   FResult := TPostProcessMP4Box(PostProcessor).MP4BoxMux(FData.Filename, OutFile, @Terminated);
   case FResult of
     arWin:
     begin
-      MovedFileName := RemoveFileExt(FData.Filename) + '.m4a';
-      if MoveFile(PChar(OutFile), PChar(MovedFileName)) then
+      MovedFileName := TFunctions.RemoveFileExt(FData.Filename) + '.m4a';
+      if RenameFile(OutFile, MovedFileName) then
       begin
-        DeleteFile(PChar(FData.Filename));
+        DeleteFile(FData.Filename);
         FData.Filename := MovedFileName;
-        FData.Filesize := Functions.GetFileSize(MovedFileName);
+        FData.Filesize := TFunctions.GetFileSize(MovedFileName);
       end;
     end;
     arFail: ;
@@ -110,7 +109,7 @@ begin
     arImpossible: ;
   end;
 
-  DeleteFile(PChar(OutFile));
+  DeleteFile(OutFile);
 end;
 
 { TPostProcessMP4Box }
@@ -168,7 +167,7 @@ begin
 
   CmdLine := '"' + MP4BoxPath + '" -add "' + InFile + '" "' + OutFile + '"';
 
-  case RunProcess(CmdLine, ExtractFilePath(MP4BoxPath), 300000, Output, EC, TerminateFlag, True) of
+  case TFunctions.RunProcess(CmdLine, ExtractFilePath(MP4BoxPath), 300000, Output, EC, TerminateFlag, True) of
     rpWin:
       if FileExists(OutFile) and (EC = 0) then
         Result := arWin;
@@ -177,7 +176,7 @@ begin
   end;
 
   if Result <> arWin then
-    DeleteFile(PChar(OutFile));
+    DeleteFile(OutFile);
 end;
 
 destructor TPostProcessMP4Box.Destroy;

@@ -46,7 +46,6 @@ uses
   Functions,
   Generics.Collections,
   Graphics,
-  GUIFunctions,
   LanguageObjects,
   Logging,
   Math,
@@ -569,7 +568,7 @@ end;
 function TCutView.GetUndoFilename: string;
 begin
   repeat
-    Result := ConcatPaths([AppGlobals.TempDir, 'UNDO_' + IntToStr(GetTickCount) + '_' + RemoveFileExt(ExtractFileName(FOriginalFilename)) + '_cut.wav']);
+    Result := ConcatPaths([AppGlobals.TempDir, 'UNDO_' + IntToStr(GetTickCount) + '_' + TFunctions.RemoveFileExt(ExtractFileName(FOriginalFilename)) + '_cut.wav']);
   until not FileExists(Result);
 end;
 
@@ -751,7 +750,7 @@ begin
 
   if not RenameFile(UndoStep.Filename, FWorkingFilename) then
   begin
-    MsgBox(_('The file could not be replaced by the saved undo file that contains the last version of the file.'), _('Error'), MB_ICONERROR);
+    TFunctions.MsgBox(_('The file could not be replaced by the saved undo file that contains the last version of the file.'), _('Error'), MB_ICONERROR);
     Exit;
   end;
 
@@ -884,7 +883,7 @@ begin
   if Length(AppGlobals.TempDir) > 3 then
   begin
     DriveLetter := Copy(AppGlobals.TempDir, 0, 2);
-    MsgBox(Format(_('The temporary cut-file could not be saved. Make sure there is enough free diskspace on drive %s.'), [DriveLetter]), _('Error'), MB_ICONERROR);
+    TFunctions.MsgBox(Format(_('The temporary cut-file could not be saved. Make sure there is enough free diskspace on drive %s.'), [DriveLetter]), _('Error'), MB_ICONERROR);
   end;
 end;
 
@@ -1003,7 +1002,7 @@ var
 begin
   Msg := FProcessThread.ProcessOutput;
   FProcessThread := nil;
-  MsgBox(_('An error occured while processing the file.'), _('Error'), MB_ICONERROR);
+  TFunctions.MsgBox(_('An error occured while processing the file.'), _('Error'), MB_ICONERROR);
 
   LoadFile(FWorkingFilename, True, False);
 end;
@@ -1427,7 +1426,7 @@ begin
 
   if TextWrite <> '' then
   begin
-    TS := GetTextSize(TextWrite, Canvas.Font);
+    TS := TFunctions.GetTextSize(TextWrite, Canvas.Font);
     FWaveBuf.Canvas.Font.Color := clWhite;
     SetBkMode(FWaveBuf.Canvas.Handle, TRANSPARENT);
     FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - TS.cx div 2, FWaveBuf.Height div 2 - TS.cy, TextWrite);
@@ -1564,7 +1563,7 @@ procedure TCutPaintBox.BuildDrawBuffer;
     SecText := BuildTime(FCutView.FWaveData.WaveArray[ArrayIdx].Sec, True);
     FDrawBuf.Canvas.Font.Color := clWhite;
     SetBkMode(FDrawBuf.Canvas.Handle, TRANSPARENT);
-    TS := GetTextSize(SecText, Canvas.Font);
+    TS := TFunctions.GetTextSize(SecText, Canvas.Font);
     if FDrawBuf.Width < L + 4 + TS.cx then
       FDrawBuf.Canvas.TextOut(L - 4 - TS.cx, X, SecText)
     else
@@ -1592,7 +1591,7 @@ begin
 
     FDrawBuf.Canvas.Font.Color := clWhite;
 
-    FDrawBuf.Canvas.TextOut(4, 4, BuildTime(FCutView.FWaveData.Secs, True) + ' - ' + RemoveFileExt(ExtractFileName(FCutView.FOriginalFilename)));
+    FDrawBuf.Canvas.TextOut(4, 4, BuildTime(FCutView.FWaveData.Secs, True) + ' - ' + TFunctions.RemoveFileExt(ExtractFileName(FCutView.FOriginalFilename)));
   end;
 end;
 
@@ -1600,13 +1599,13 @@ constructor TCutPaintBox.Create(AOwner: TComponent);
 begin
   inherited;
 
-  FPeakColor := HTML2Color('3b477e');
-  FPeakEndColor := HTML2Color('424e83');
-  FStartColor := HTML2Color('ece52b');
-  FEndColor := HTML2Color('218030');
-  FPlayColor := HTML2Color('c33131');
-  FZoomOuterColor := HTML2Color('748cf7');
-  FZoomInnerColor := HTML2Color('4d5ea5');
+  FPeakColor := TFunctions.HTML2Color('3b477e');
+  FPeakEndColor := TFunctions.HTML2Color('424e83');
+  FStartColor := TFunctions.HTML2Color('ece52b');
+  FEndColor := TFunctions.HTML2Color('218030');
+  FPlayColor := TFunctions.HTML2Color('c33131');
+  FZoomOuterColor := TFunctions.HTML2Color('748cf7');
+  FZoomInnerColor := TFunctions.HTML2Color('4d5ea5');
 
   FControlMode := cmNone;
 
@@ -1918,7 +1917,7 @@ begin
 
   Failed := True;
 
-  case RunProcess(FCommandLine, FWorkingDir, 300000, FProcessOutput, EC, @Self.Terminated, True, ReadCallbackSoX) of
+  case TFunctions.RunProcess(FCommandLine, FWorkingDir, 300000, FProcessOutput, EC, @Self.Terminated, True, ReadCallbackSoX) of
     rpWin:
       if FileExists(TempFile) and (EC = 0) then
       begin

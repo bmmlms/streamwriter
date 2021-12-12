@@ -39,7 +39,7 @@ uses
   LanguageObjects,
   Logging,
   Math,
-  RegExpr,
+  regexpr,
   Sockets,
   SWFunctions,
   SysUtils,
@@ -283,26 +283,26 @@ var
   NextUpper: Boolean;
 begin
   // ´ und ` durch ' ersetzen
-  Title := Functions.RegExReplace('[´`]', '''', Title);
+  Title := TFunctions.RegExReplace('[´`]', '''', Title);
 
   // Featuring-Dinge fitmachen
-  Title := Functions.RegExReplace('(\s+|^|\()(ft\.?|feat)(\s+|$|\))', '$1 Feat. $3', Title);
+  Title := TFunctions.RegExReplace('(\s+|^|\()(ft\.?|feat)(\s+|$|\))', '$1 Feat. $3', Title);
 
   // Mehrere ' hintereinander zu einem machen
-  Title := Functions.RegExReplace('''+', '''', Title);
+  Title := TFunctions.RegExReplace('''+', '''', Title);
 
   // dont, cant, wont, etc ersetzen
-  Title := Functions.RegExReplace('(\s+|^|\()(won|can|don)([\s´`]{0,1}t)(\s+|$|\))', '$1 $2''t $4', Title);
+  Title := TFunctions.RegExReplace('(\s+|^|\()(won|can|don)([\s´`]{0,1}t)(\s+|$|\))', '$1 $2''t $4', Title);
 
   // _ durch ' ' ersetzen
-  Title := Functions.RegExReplace('_', ' ', Title);
+  Title := TFunctions.RegExReplace('_', ' ', Title);
 
   // Mehrere Leertasten hintereinander zu einer machen
-  Title := Functions.RegExReplace('\s+', ' ', Title);
+  Title := TFunctions.RegExReplace('\s+', ' ', Title);
 
   // Leertasten nach Klammer auf bzw. vor Klammer zu entfernen
-  Title := Functions.RegExReplace('\(\s+', '(', Title);
-  Title := Functions.RegExReplace('\s+\)', ')', Title);
+  Title := TFunctions.RegExReplace('\(\s+', '(', Title);
+  Title := TFunctions.RegExReplace('\s+\)', ')', Title);
 
   Title := Trim(Title);
 
@@ -1195,7 +1195,7 @@ begin
             //end;
 
             for i := 0 to FSettings.IgnoreTrackChangePattern.Count - 1 do
-              if Like(Title, FSettings.IgnoreTrackChangePattern[i]) then
+              if TFunctions.Like(Title, FSettings.IgnoreTrackChangePattern[i]) then
               begin
                 IgnoreTitle := True;
                 Break;
@@ -1542,22 +1542,22 @@ begin
   begin
     if FSettings.DiscardAlways then
       FResult := crDiscard
-    else if FSettings.OverwriteSmaller and (GetFileSize(ConcatPaths([FSaveDir, Filename + Ext])) < Filesize) then
+    else if FSettings.OverwriteSmaller and (TFunctions.GetFileSize(ConcatPaths([FSaveDir, Filename + Ext])) < Filesize) then
     begin
       FResult := crOverwrite;
       FFilename := Filename + Ext;
-    end else if FSettings.DiscardSmaller and (GetFileSize(ConcatPaths([FSaveDir, Filename + Ext])) >= Filesize) then
+    end else if FSettings.DiscardSmaller and (TFunctions.GetFileSize(ConcatPaths([FSaveDir, Filename + Ext])) >= Filesize) then
       FResult := crDiscardExistingIsLarger
     else
-      FFilename := FixPathName(Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext);
+      FFilename := TFunctions.FixPathName(Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext);
   end else
   begin
     FResult := crSave;
-    FFilename := FixPathName(Filename + Ext);
+    FFilename := TFunctions.FixPathName(Filename + Ext);
   end;
 
   if FSettings.OutputFormat <> atNone then
-    FFilenameConverted := RemoveFileExt(FFilename) + FormatToFiletype(FSettings.OutputFormat)
+    FFilenameConverted := TFunctions.RemoveFileExt(FFilename) + FormatToFiletype(FSettings.OutputFormat)
   else
     FFilenameConverted := FFilename;
 
@@ -1603,7 +1603,7 @@ begin
         Name := Copy(Name, 1, Length(Name) - 1);
   until Length(ConcatPaths([FSaveDir, FFilename])) <= MAX_PATH - 2;
 
-  FFilename := FixPathName(FFilename);
+  FFilename := TFunctions.FixPathName(FFilename);
 end;
 
 function TFileChecker.GetValidFilename(Name: string): string;
@@ -1651,7 +1651,7 @@ begin
 
   PList := TStringList.Create;
   try
-    Explode('|', Patterns, PList);
+    TFunctions.Explode('|', Patterns, PList);
 
     SetLength(Arr, PList.Count);
     for i := 0 to PList.Count - 1 do
@@ -1691,16 +1691,16 @@ begin
 
   case TitleState of
     tsFull, tsAuto:
-      Replaced := PatternReplaceNew(FSettings.FilePattern, Arr);
+      Replaced := TFunctions.PatternReplaceNew(FSettings.FilePattern, Arr);
     tsIncomplete:
-      Replaced := PatternReplaceNew(FSettings.IncompleteFilePattern, Arr);
+      Replaced := TFunctions.PatternReplaceNew(FSettings.IncompleteFilePattern, Arr);
     tsStream:
-      Replaced := PatternReplaceNew(FSettings.StreamFilePattern, Arr);
+      Replaced := TFunctions.PatternReplaceNew(FSettings.StreamFilePattern, Arr);
   end;
 
   Replaced := FixPatternFilename(Replaced);
 
-  FSaveDir := FixPathName(ExtractFilePath(FSaveDir + Replaced));
+  FSaveDir := TFunctions.FixPathName(ExtractFilePath(FSaveDir + Replaced));
   Result := ExtractFileName(Replaced);
 end;
 
@@ -1713,7 +1713,7 @@ begin
   if (Length(Filename) > 0) and (Length(ConcatPaths([FSaveDir, Filename])) > MAX_PATH - 2) then
   begin
     E := ExtractFileExt(Filename);
-    F := RemoveFileExt(Filename);
+    F := TFunctions.RemoveFileExt(Filename);
 
     if Length(ConcatPaths([FSaveDir, E])) < MAX_PATH - 2 then
       Result := Copy(F, 1, MAX_PATH - 2 - Length(ConcatPaths([FSaveDir, E]))) + E;

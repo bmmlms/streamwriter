@@ -106,7 +106,7 @@ begin
 
     InitPlayerManager;
 
-    if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and (not IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion)) and
+    if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and (not TFunctions.IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion)) and
       (not HideMain) and (not AppGlobals.InstallUpdateOnStart) then
       TSplashThread.Create('Window', 'SPLASH', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.GitSHA,
         AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
@@ -119,14 +119,14 @@ begin
     Bass := TBassLoader.Create;
     if not Bass.InitializeBass(0, True, False, False, False) then
     begin
-      MsgBox(_('The BASS library or it''s plugins could not be extracted/loaded. Without these libraries streamWriter cannot record/playback streams. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
+      TFunctions.MsgBox(_('The BASS library or it''s plugins could not be extracted/loaded. Without these libraries streamWriter cannot record/playback streams. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
       Exit;
     end;
 
     OpenSSL := TOpenSSLLoader.Create;
     if not OpenSSL.InitializeOpenSSL(AppGlobals.TempDir) then
     begin
-      MsgBox(_('The OpenSSL libraries could not be extracted/loaded. Without these libraries streamWriter cannot be run. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
+      TFunctions.MsgBox(_('The OpenSSL libraries could not be extracted/loaded. Without these libraries streamWriter cannot be run. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
       Exit;
     end;
 

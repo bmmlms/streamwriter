@@ -33,14 +33,13 @@ uses
   Forms,
   Functions,
   Graphics,
-  GUIFunctions,
   ImgList,
   LanguageObjects,
+  LCLType,
   Logging,
   ShlObj,
   StdCtrls,
   SysUtils,
-  Windows,
   WizardBase;
 
 type
@@ -102,7 +101,7 @@ begin
       txtDir.Text := AppGlobals.Dir
     else
     begin
-      s := GetShellFolder(CSIDL_MYMUSIC);
+      s := TFunctions.GetShellFolder(CSIDL_MYMUSIC);
       if (Trim(s) <> '') and (txtDir.Text = '') then
       begin
         s := ConcatPaths([s, 'streamWriter']);
@@ -137,7 +136,7 @@ begin
 
     if not DirectoryExists(txtDir.Text) then
     begin
-      MsgBox(_('The selected folder does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
+      TFunctions.MsgBox(_('The selected folder does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
       Result := False;
     end;
   end else if Step.Panel = pnlMisc then
@@ -145,13 +144,13 @@ begin
     if chkLimit.Checked then
       if StrToIntDef(txtMaxSpeed.Text, -1) <= 0 then
       begin
-        MsgBox(_('Please enter the maximum bandwidth in KB/s available to streamWriter.'), _('Info'), MB_ICONINFORMATION);
+        TFunctions.MsgBox(_('Please enter the maximum bandwidth in KB/s available to streamWriter.'), _('Info'), MB_ICONINFORMATION);
         Result := False;
       end;
     if chkMonitorMode.Checked then
       if StrToIntDef(txtMonitorCount.Text, -1) <= 0 then
       begin
-        MsgBox(_('Please enter the maximum number of streams to monitor.'), _('Info'), MB_ICONINFORMATION);
+        TFunctions.MsgBox(_('Please enter the maximum number of streams to monitor.'), _('Info'), MB_ICONINFORMATION);
         Result := False;
       end;
   end;
@@ -187,7 +186,7 @@ procedure TfrmWizard.cmdBrowseClick(Sender: TObject);
 var
   Dir: String;
 begin
-  Dir := BrowseDialog(Self, _('Select folder for saved songs'));
+  Dir := TFunctions.BrowseDialog(Self, _('Select folder for saved songs'));
   if DirectoryExists(Dir) then
     txtDir.Text := Dir;
 end;

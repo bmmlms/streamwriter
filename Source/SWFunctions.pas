@@ -31,7 +31,7 @@ uses
   Generics.Collections,
   Generics.Defaults,
   LanguageObjects,
-  RegExpr,
+  regexpr,
   SysUtils,
   Windows;
 
@@ -107,7 +107,7 @@ var
   Res: TParseURLRes;
 begin
   Result := URL;
-  Res := ParseURL(URL);
+  Res := TFunctions.ParseURL(URL);
   if Res.Success and Res.Secure and (Pos('streamwriter.', LowerCase(Res.Host)) > 0) then
     Result := 'http://' + Res.Host + ':80' + Res.Data;
 end;
@@ -147,7 +147,7 @@ begin
     end;
   end;
 
-  Result := PatternReplace(OldPattern, Arr);
+  Result := TFunctions.PatternReplace(OldPattern, Arr);
 end;
 
 function GetBestRegEx(Title: string; RegExps: TStringList): string;
@@ -173,7 +173,7 @@ type
       if Pos(BadChars[n], Text) > 0 then
         Result := Result + 2;
 
-    if ContainsRegEx('(\d{2,})', Text) then
+    if TFunctions.ContainsRegEx('(\d{2,})', Text) then
       Result := Result + 2;
   end;
 
@@ -241,7 +241,7 @@ begin
     REDs.Sort(TComparer<TRegExData>.Construct(
       function (const L, R: TRegExData): integer
       begin
-        Result := CmpInt(L.BadWeight, R.BadWeight);
+        Result := TFunctions.CmpInt(L.BadWeight, R.BadWeight);
       end
     ));
     }
@@ -267,7 +267,7 @@ begin
   for i := 0 to List.Items.Count - 1 do
     if (LowerCase(RegExp) = LowerCase(Trim(List.Items[i].Caption))) and (List.Items[i] <> Item) then
     begin
-      MsgBox(_('The specified regular expression is already on the list.'), _('Info'), MB_ICONINFORMATION);
+      TFunctions.MsgBox(_('The specified regular expression is already on the list.'), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
 
@@ -288,7 +288,7 @@ begin
 
   if (RegExp = '') or (not RValid) or (not ArtistFound) or (not TitleFound) then
   begin
-    MsgBox(_('Please supply a valid regular expression containing the groups (?P<a>.*)/(?P<a>.*?) and (?P<t>.*)/(?P<t>.*?).'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('Please supply a valid regular expression containing the groups (?P<a>.*)/(?P<a>.*?) and (?P<t>.*)/(?P<t>.*?).'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 

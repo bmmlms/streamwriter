@@ -34,7 +34,6 @@ uses
   Functions,
   Graphics,
   GraphType,
-  GUIFunctions,
   Images,
   LanguageObjects,
   SharedData,
@@ -125,36 +124,36 @@ begin
 
   if MulDiv(P, 100, FSpeedBmp.Height) >= 65 then
   begin
-    FSpeedBmp.Canvas.Brush.Color := HTML2Color('4b1616');
-    FSpeedBmp.Canvas.Pen.Color := HTML2Color('4b1616');
+    FSpeedBmp.Canvas.Brush.Color := TFunctions.HTML2Color('4b1616');
+    FSpeedBmp.Canvas.Pen.Color := TFunctions.HTML2Color('4b1616');
     FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(75, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(65, FSpeedBmp.Height, 100)));
   end;
 
   if MulDiv(P, 100, FSpeedBmp.Height) >= 75 then
   begin
-    FSpeedBmp.Canvas.Brush.Color := HTML2Color('722222');
-    FSpeedBmp.Canvas.Pen.Color := HTML2Color('722222');
+    FSpeedBmp.Canvas.Brush.Color := TFunctions.HTML2Color('722222');
+    FSpeedBmp.Canvas.Pen.Color := TFunctions.HTML2Color('722222');
     FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(85, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(75, FSpeedBmp.Height, 100)));
   end;
 
   if MulDiv(P, 100, FSpeedBmp.Height) >= 85 then
   begin
-    FSpeedBmp.Canvas.Brush.Color := HTML2Color('9d2626');
-    FSpeedBmp.Canvas.Pen.Color := HTML2Color('9d2626');
+    FSpeedBmp.Canvas.Brush.Color := TFunctions.HTML2Color('9d2626');
+    FSpeedBmp.Canvas.Pen.Color := TFunctions.HTML2Color('9d2626');
     FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(90, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(85, FSpeedBmp.Height, 100)));
   end;
 
   if MulDiv(P, 100, FSpeedBmp.Height) >= 90 then
   begin
-    FSpeedBmp.Canvas.Brush.Color := HTML2Color('c42c2c');
-    FSpeedBmp.Canvas.Pen.Color := HTML2Color('c42c2c');
+    FSpeedBmp.Canvas.Brush.Color := TFunctions.HTML2Color('c42c2c');
+    FSpeedBmp.Canvas.Pen.Color := TFunctions.HTML2Color('c42c2c');
     FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(95, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(90, FSpeedBmp.Height, 100)));
   end;
 
   if MulDiv(P, 100, FSpeedBmp.Height) >= 95 then
   begin
-    FSpeedBmp.Canvas.Brush.Color := HTML2Color('d71717');
-    FSpeedBmp.Canvas.Pen.Color := HTML2Color('d71717');
+    FSpeedBmp.Canvas.Brush.Color := TFunctions.HTML2Color('d71717');
+    FSpeedBmp.Canvas.Pen.Color := TFunctions.HTML2Color('d71717');
     FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(100, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(95, FSpeedBmp.Height, 100)));
   end;
 
@@ -169,7 +168,7 @@ begin
 
   SimplePanel := False;
 
-  Height := GetTextSize('Wyg', Font).cy + 4;
+  Height := TFunctions.GetTextSize('Wyg', Font).cy + 4;
 
   ShowHint := False;
 
@@ -178,21 +177,21 @@ begin
   FTimer.Interval := 1000;
   FTimer.Enabled := True;
 
-  FSpace := MulDiv(GetTextSize('WWW', Font).cx, Screen.PixelsPerInch, 96);
+  FSpace := MulDiv(TFunctions.GetTextSize('WWW', Font).cx, Screen.PixelsPerInch, 96);
 
   P := Panels.Add;
-  P.Width := 2 + 56 + GetTextSize(_('Connecting...'), Font).cx + FSpace;
+  P.Width := 2 + 56 + TFunctions.GetTextSize(_('Connecting...'), Font).cx + FSpace;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
-  P.Width := 18 + 4 + 18 + GetTextSize('00000000', Font).cx + MulDiv(GetTextSize('W', Font).cx, Screen.PixelsPerInch, 96) + 10;
+  P.Width := 18 + 4 + 18 + TFunctions.GetTextSize('00000000', Font).cx + MulDiv(TFunctions.GetTextSize('W', Font).cx, Screen.PixelsPerInch, 96) + 10;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
-  P.Width := 2 + GetTextSize(Format(_('%s/%s received'), ['000,00 kb', '000,00 kb']), Font).cx + FSpace;
+  P.Width := 2 + TFunctions.GetTextSize(Format(_('%s/%s received'), ['000,00 kb', '000,00 kb']), Font).cx + FSpace;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
@@ -267,17 +266,17 @@ begin
         Canvas.FillRect(R);
     2:
     begin
-      Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(MakeSize(FSpeed) + '/s') div 2, MakeSize(FSpeed) + '/s');
+      Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(TFunctions.MakeSize(FSpeed) + '/s') div 2, TFunctions.MakeSize(FSpeed) + '/s');
       if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
       begin
-        Panels[2].Width := 2 + 35 + GetTextSize(_('0000/KBs'), Font).cx + FSpace;
+        Panels[2].Width := 2 + 35 + TFunctions.GetTextSize(_('0000/KBs'), Font).cx + FSpace;
         if FSpeedBmp <> nil then
           Canvas.Draw(R.Right - FSpeedBmp.Width - 2, R.Bottom - FSpeedBmp.Height, FSpeedBmp);
       end else
-        Panels[2].Width := 2 + GetTextSize(_('0000/KBs'), Font).cx + FSpace;
+        Panels[2].Width := 2 + TFunctions.GetTextSize(_('0000/KBs'), Font).cx + FSpace;
     end;
     3:
-      Canvas.TextOut(R.Left + 2, TextTop, _('%s/%s received').Format([MakeSize(FCurrentReceived), MakeSize(FOverallReceived)]));
+      Canvas.TextOut(R.Left + 2, TextTop, _('%s/%s received').Format([TFunctions.MakeSize(FCurrentReceived), TFunctions.MakeSize(FOverallReceived)]));
     4:
       Canvas.TextOut(R.Left + 2, TextTop, _('%d/%d songs saved').Format([FSongsSaved, FOverallSongsSaved]));
   end;

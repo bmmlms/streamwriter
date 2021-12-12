@@ -43,7 +43,6 @@ uses
   Functions,
   Graphics,
   GraphType,
-  GUIFunctions,
   HomeCommunication,
   Images,
   ImgList,
@@ -136,7 +135,6 @@ type
     procedure HomeCommDataReceived(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); reintroduce;
-    destructor Destroy; override;
 
     procedure PostTranslate;
     procedure RefreshStreams;
@@ -430,7 +428,7 @@ procedure TMStreamTree.DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; 
 begin
   inherited;
 
-  NodeHeight := GetTextSize('Wyg', Font).cy + 6 + GetTextSize('Wyg', Font).cy;
+  NodeHeight := TFunctions.GetTextSize('Wyg', Font).cy + 6 + TFunctions.GetTextSize('Wyg', Font).cy;
 end;
 
 procedure TMStreamTree.DoPaintNode(var PaintInfo: TVTPaintInfo);
@@ -662,7 +660,7 @@ begin
 
     R := ClientRect;
     R.Left := (R.Right div 2) - (Canvas.TextWidth(TmpText) div 2);
-    R.Top := FProgressBar.Top - GetTextSize('Wyg', Font).cy - MulDiv(2, Screen.PixelsPerInch, 96);
+    R.Top := FProgressBar.Top - TFunctions.GetTextSize('Wyg', Font).cy - MulDiv(2, Screen.PixelsPerInch, 96);
 
     Canvas.TextRect(R, R.Left, R.Top, TmpText + FDots);
   end;
@@ -836,13 +834,13 @@ begin
   if CellPaintMode = cpmPaint then
   begin
     if FOnIsInClientList(Self, NodeData.Data.ID) then
-      Canvas.Brush.Color := HTML2Color('c3c1c1')
+      Canvas.Brush.Color := TFunctions.HTML2Color('c3c1c1')
     else
       case Node.Index mod 2 of
         0:
           Canvas.Brush.Color := Colors.BackGroundColor;
         1:
-          Canvas.Brush.Color := HTML2Color('f3f3f3');
+          Canvas.Brush.Color := TFunctions.HTML2Color('f3f3f3');
       end;
     Canvas.FillRect(CellRect);
   end;
@@ -916,16 +914,16 @@ begin
 
   case FSortType of
     stName: Result := CompareText(Data1.Data.Name, Data2.Data.Name);
-    stBitrate: Result := CmpInt(Data1.Data.Bitrate, Data2.Data.Bitrate);
+    stBitrate: Result := TFunctions.CmpInt(Data1.Data.Bitrate, Data2.Data.Bitrate);
     stType: Result := CompareText(S1, S2);
-    stRating: Result := CmpInt(Data1.Data.Rating, Data2.Data.Rating)
+    stRating: Result := TFunctions.CmpInt(Data1.Data.Rating, Data2.Data.Rating)
   end;
 
   if (Result = 0) and (FSortType <> stName) then
     Result := CompareText(Data2.Data.Name, Data1.Data.Name);
 
   if (Result = 0) and (FSortType <> stRating) then
-    Result := CmpInt(Data1.Data.Rating, Data2.Data.Rating);
+    Result := TFunctions.CmpInt(Data1.Data.Rating, Data2.Data.Rating);
 end;
 
 procedure TMStreamTree.DoDragging(P: TPoint);
@@ -961,7 +959,7 @@ var
   Chars: Integer;
 begin
   Result := False;
-  P := BuildPattern(Search, Hash, Chars, False);
+  P := TFunctions.BuildPattern(Search, Hash, Chars, False);
 
   if (not AlwaysBuild) and (P = FLastSearch) and (Genre = FLastGenre) and (AudioType = FLastAudioType) and (Bitrate = FLastBitrate) then
     Exit;
@@ -976,7 +974,7 @@ begin
     try
       for i := 0 to AppGlobals.Data.BrowserList.Count - 1 do
       begin
-        Add := ((P = '*') or Like(LowerCase(AppGlobals.Data.BrowserList[i].Name), LowerCase(P))) and ((Genre = '') or (Pos(LowerCase(Genre), LowerCase(AppGlobals.Data.BrowserList[i].Genre)) > 0)) and
+        Add := ((P = '*') or TFunctions.Like(LowerCase(AppGlobals.Data.BrowserList[i].Name), LowerCase(P))) and ((Genre = '') or (Pos(LowerCase(Genre), LowerCase(AppGlobals.Data.BrowserList[i].Genre)) > 0)) and
           ((AudioType = atNone) or (AppGlobals.Data.BrowserList[i].AudioType = AudioType)) and ((Bitrate = 0) or (AppGlobals.Data.BrowserList[i].Bitrate >= Bitrate));
         if Add then
         begin
@@ -1200,12 +1198,6 @@ begin
   SortTree(False);
 
   HomeComm.OnServerDataReceived := HomeCommDataReceived;
-end;
-
-destructor TMStreamBrowserView.Destroy;
-begin
-
-  inherited;
 end;
 
 procedure TMStreamBrowserView.HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);

@@ -15,7 +15,7 @@ object frmNotification: TfrmNotification
   Font.Height = -11
   Font.Name = 'Tahoma'
   FormStyle = fsSystemStayOnTop
-  LCLVersion = '2.2.0.1'
+  LCLVersion = '2.2.0.2'
   object Panel1: TPanel
     Left = 0
     Height = 64

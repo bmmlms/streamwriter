@@ -106,7 +106,7 @@ begin
       E.Action := feaRemove
     else
     begin
-      NewSize := Functions.GetFileSize(E.Filename);
+      NewSize := TFunctions.GetFileSize(E.Filename);
       if E.Size <> NewSize then
       begin
         E.Action := feaSize;
@@ -124,7 +124,7 @@ begin
   FFilename := Filename;
   FSize := Size;
   FAction := Action;
-  FHash := HashString(LowerCase(ExtractFileName(Filename)));
+  FHash := TFunctions.HashString(LowerCase(ExtractFileName(Filename)));
 end;
 
 destructor TFileEntry.Destroy;

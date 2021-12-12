@@ -36,7 +36,6 @@ uses
   Functions,
   Generics.Collections,
   Graphics,
-  GUIFunctions,
   HomeCommunication,
   Images,
   ImgList,
@@ -222,8 +221,7 @@ begin
           s := s + TimeToStr(NodeData.LogEntry.Time) + ' - ' + NodeData.LogEntry.TextSource + ' - ' + NodeData.LogEntry.Text + #13#10;
         Node := FLogTree.GetNext(Node);
       end;
-      Clipboard.Clear;
-      Clipboard.SetTextBuf(PChar(s));
+      Clipboard.AsText := s;
     end;
   end else if Sender = FLogPanel.FButtonClear then
   begin
@@ -564,12 +562,12 @@ begin
   begin
     for i := 1 to Header.Columns.Count - 1 do
       Header.Columns[i].Width := AppGlobals.LogHeaderWidth[i];
-    FColType.Width := GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+    FColType.Width := TFunctions.GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
   end else
   begin
-    FColType.Width := GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
-    FColTime.Width := GetTextSize('00-00-00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColSource.Width := GetTextSize('wwwwwwwwwwwwwww', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColType.Width := TFunctions.GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+    FColTime.Width := TFunctions.GetTextSize('00-00-00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColSource.Width := TFunctions.GetTextSize('wwwwwwwwwwwwwww', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
   end;
 
   if AppGlobals.LogHeaderPositionLoaded then
@@ -580,8 +578,8 @@ end;
 function TLogTree.MatchesFilter(LogEntry: TLogEntry): Boolean;
 
 begin
-  Result := (LogEntry.Level in FFilterTypes) and ((FFilterPattern = '*') or (Like(LowerCase(LogEntry.Text), FFilterPattern)) or (Like(LowerCase(LogEntry.TextSource), FFilterPattern)) or
-    (Like(LowerCase(TimeToStr(LogEntry.Time)), FFilterPattern)));
+  Result := (LogEntry.Level in FFilterTypes) and ((FFilterPattern = '*') or (TFunctions.Like(LowerCase(LogEntry.Text), FFilterPattern)) or (TFunctions.Like(LowerCase(LogEntry.TextSource), FFilterPattern)) or
+    (TFunctions.Like(LowerCase(TimeToStr(LogEntry.Time)), FFilterPattern)));
 end;
 
 procedure TLogTree.MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
@@ -702,7 +700,7 @@ var
   Hash: Cardinal;
   Chars: Integer;
 begin
-  FFilterPattern := BuildPattern(Text, Hash, Chars, True);
+  FFilterPattern := TFunctions.BuildPattern(Text, Hash, Chars, True);
   FFilterTypes := FilterTypes;
 
   BeginUpdate;

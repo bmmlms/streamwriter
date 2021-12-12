@@ -34,7 +34,6 @@ uses
   Forms,
   Functions,
   Graphics,
-  GUIFunctions,
   ImgList,
   LanguageObjects,
   Logging,
@@ -178,7 +177,7 @@ begin
     end;
 
     // StringReplace, damit aus einem '&' kein Shortcut auf dem Label wird..
-    Title := StringReplace(TruncateText(Title, FName.Parent.Width, FName.Canvas.Font), '&', '&&', [rfReplaceAll]);
+    Title := StringReplace(TFunctions.TruncateText(Title, FName.Parent.Width, FName.Canvas.Font), '&', '&&', [rfReplaceAll]);
     if Title <> FName.Caption then
       FName.Caption := Title;
 
@@ -197,7 +196,7 @@ begin
         Info := Info + Bitrates + #13#10;
     end;
     Info := Info + Format(_('%d songs saved'), [SongsSaved]) + #13#10;
-    Info := Info + Format(_('%s received'), [MakeSize(Received)]);
+    Info := Info + Format(_('%s received'), [TFunctions.MakeSize(Received)]);
     if Entries.Count = 1 then
       Info := Info + #13#10 + Format(_('%s connected'), [MakeDuration(SecondsReceived)]);
     if Entries.Count = 1 then

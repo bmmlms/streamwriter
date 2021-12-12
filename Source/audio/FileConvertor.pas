@@ -30,10 +30,9 @@ uses
   AudioFunctions,
   Classes,
   DynBASS,
-  ExtendedStream,
   Functions,
-  SysUtils,
-  Windows;
+  regexpr,
+  SysUtils;
 
 const
   BE_CONFIG_MP3 = 0;
@@ -343,7 +342,7 @@ begin
 
   if Result and (TerminateFlag <> nil) and (TerminateFlag^) then
   begin
-    DeleteFile(PChar(ToFile));
+    DeleteFile(ToFile);
     Result := False;
   end;
 end;
@@ -362,7 +361,7 @@ begin
   if not Addon.FilesExtracted then
     Exit;
 
-  ToFileTemp := RemoveFileExt(ToFile) + '_convert.aac';
+  ToFileTemp := TFunctions.RemoveFileExt(ToFile) + '_convert.aac';
 
   case FBitrateType of
     brCBR:
@@ -376,7 +375,7 @@ begin
   end;
 
   CmdLine := Addon.EXEPath + ' ' + Opts + ' -o "' + ToFileTemp + '" "' + FromFile + '"';
-  case RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackAAC) of
+  case TFunctions.RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackAAC) of
     rpWin:
       Result := FileExists(ToFileTemp);
     rpFail, rpTerminated, rpTimeout:
@@ -384,32 +383,32 @@ begin
   end;
 
   if Result then
-    Result := MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING)
+    Result := TFunctions.MoveFile(ToFileTemp, ToFile, True)
   else
-    DeleteFile(PChar(ToFileTemp));
+    DeleteFile(ToFileTemp);
 end;
 
 function TFileConvertor.ConvertWAV2M4A(FromFile, ToFile: string; TerminateFlag: PByteBool): Boolean;
 var
   ToFileTemp, ToFileTemp2: string;
 begin
-  ToFileTemp := RemoveFileExt(ToFile) + '_temp.aac';
+  ToFileTemp := TFunctions.RemoveFileExt(ToFile) + '_temp.aac';
   ToFileTemp2 := '';
 
   Result := ConvertWAV2AAC(FromFile, ToFileTemp, TerminateFlag);
 
   if Result then
   begin
-    ToFileTemp2 := RemoveFileExt(ToFile) + '_convert.m4a';
+    ToFileTemp2 := TFunctions.RemoveFileExt(ToFile) + '_convert.m4a';
     Result := TPostProcessMP4Box(AppGlobals.Data.StreamSettings.PostProcessors.Find(TPostProcessMP4Box)).MP4BoxMux(ToFileTemp, ToFileTemp2, TerminateFlag) = arWin;
 
     if Result then
-      Result := MoveFileEx(PChar(ToFileTemp2), PChar(ToFile), MOVEFILE_REPLACE_EXISTING);
+      Result := TFunctions.MoveFile(ToFileTemp2, ToFile, True);
   end;
 
-  DeleteFile(PChar(ToFileTemp));
+  DeleteFile(ToFileTemp);
   if ToFileTemp2 <> '' then
-    DeleteFile(PChar(ToFileTemp2));
+    DeleteFile(ToFileTemp2);
 end;
 
 function TFileConvertor.ConvertWAV2MP3(FromFile, ToFile: string; TerminateFlag: PByteBool = nil): Boolean;
@@ -427,7 +426,7 @@ begin
   if not Addon.FilesExtracted then
     Exit;
 
-  ToFileTemp := RemoveFileExt(ToFile) + '_convert.mp3';
+  ToFileTemp := TFunctions.RemoveFileExt(ToFile) + '_convert.mp3';
 
   case FBitrateType of
     brCBR:
@@ -441,7 +440,7 @@ begin
   end;
 
   CmdLine := Addon.EXEPath + ' ' + Opts + ' "' + FromFile + '" "' + ToFileTemp + '"';
-  case RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackMP3) of
+  case TFunctions.RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackMP3) of
     rpWin:
       Result := FileExists(ToFileTemp);
     rpFail, rpTerminated, rpTimeout:
@@ -449,9 +448,9 @@ begin
   end;
 
   if Result then
-    Result := MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING)
+    Result := TFunctions.MoveFile(ToFileTemp, ToFile, True)
   else
-    DeleteFile(PChar(ToFileTemp));
+    DeleteFile(ToFileTemp);
 end;
 
 function TFileConvertor.ConvertWAV2OGG(FromFile, ToFile: string; TerminateFlag: PByteBool): Boolean;
@@ -468,7 +467,7 @@ begin
   if not Addon.FilesExtracted then
     Exit;
 
-  ToFileTemp := RemoveFileExt(ToFile) + '_convert.ogg';
+  ToFileTemp := TFunctions.RemoveFileExt(ToFile) + '_convert.ogg';
 
   case FBitrateType of
     brCBR:
@@ -482,7 +481,7 @@ begin
   end;
 
   CmdLine := Addon.EXEPath + ' ' + Opts + ' "' + FromFile + '" -o "' + ToFileTemp + '"';
-  case RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackOGG) of
+  case TFunctions.RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackOGG) of
     rpWin:
       Result := FileExists(ToFileTemp);
     rpFail, rpTerminated, rpTimeout:
@@ -490,108 +489,90 @@ begin
   end;
 
   if Result then
-    Result := MoveFileEx(PChar(ToFileTemp), PChar(ToFile), MOVEFILE_REPLACE_EXISTING)
+    Result := TFunctions.MoveFile(ToFileTemp, ToFile, True)
   else
-    DeleteFile(PChar(ToFileTemp));
+    DeleteFile(ToFileTemp);
 end;
 
 procedure TFileConvertor.ReadCallbackAAC(Data: AnsiString);
 var
-  //  R: TPerlRegEx;
+  R: TRegExpr;
   Progress: Integer;
 begin
-  {
   if not Assigned(FOnProgress) then
-   Exit;
+    Exit;
 
-  R := TPerlRegEx.Create;
+  R := TRegExpr.Create('(?P<p>\d+)%\)');
   try
-    R.Subject := Data;
-    R.RegEx := '(\d+)%\)';
     try
-      if R.Match then
-      begin
+      if R.Exec(Data) then
         repeat
-          Progress := StrToInt(Copy(R.MatchedText, 1, Length(R.MatchedText) - 2));
+          Progress := string(R.MatchFromName('p')).ToInteger;
           if Progress <> FLastProgress then
           begin
             FOnProgress(Self, Progress);
             FLastProgress := Progress;
           end;
-        until not R.MatchAgain;
-      end;
+        until not R.ExecNext;
     except
     end;
   finally
     R.Free;
   end;
-  }
 end;
 
 procedure TFileConvertor.ReadCallbackMP3(Data: AnsiString);
 var
-  //  R: TPerlRegEx;
+  R: TRegExpr;
   Progress: Integer;
 begin
-  {
   if not Assigned(FOnProgress) then
-   Exit;
+    Exit;
 
-  R := TPerlRegEx.Create;
+  R := TRegExpr.Create('(?P<p>\d+)%\)');
   try
-    R.Subject := Data;
-    R.RegEx := '(\d+)%\)';
     try
-      if R.Match then
-      begin
+      if R.Exec(Data) then
         repeat
-          Progress := Trunc(StrToFloat(Copy(R.MatchedText, 1, Length(R.MatchedText) - 2)));
+          Progress := string(R.MatchFromName('p')).ToInteger;
           if Progress <> FLastProgress then
           begin
             FOnProgress(Self, Progress);
             FLastProgress := Progress;
           end;
-        until not R.MatchAgain;
-      end;
+        until not R.ExecNext;
     except
     end;
   finally
     R.Free;
   end;
-  }
 end;
 
 procedure TFileConvertor.ReadCallbackOGG(Data: AnsiString);
 var
-  //  R: TPerlRegEx;
+  R: TRegExpr;
   Progress: Integer;
 begin
-  {
   if not Assigned(FOnProgress) then
-   Exit;
+    Exit;
 
-  R := TPerlRegEx.Create;
+  R := TRegExpr.Create('(?P<p>\d+)[.,](\d+)%');
   try
-    R.Subject := Data;
-    R.RegEx := '(\d+)[.,](\d+)%';
     try
-      if R.Match then
-      begin
+      if R.Exec(Data) then
         repeat
-          Progress := Trunc(StrToFloat(Copy(R.MatchedText, 1, Length(R.MatchedText) - 1)));
+          Progress := string(R.MatchFromName('p')).ToInteger;
           if Progress <> FLastProgress then
           begin
             FOnProgress(Self, Progress);
             FLastProgress := Progress;
           end;
-        until not R.MatchAgain;
-      end;
+        until not R.ExecNext;
     except
     end;
   finally
     R.Free;
   end;
-  }
 end;
 
 end.

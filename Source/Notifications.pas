@@ -28,8 +28,8 @@ uses
   DateUtils,
   ExtCtrls,
   Forms,
+  Functions,
   Graphics,
-  GUIFunctions,
   LMessages,
   StdCtrls,
   SysUtils,
@@ -85,7 +85,7 @@ implementation
 
 class procedure TfrmNotification.Display(Title, Stream: string);
 begin
-  if WindowIsFullscreen then
+  if TFunctions.WindowIsFullscreen then
     Exit;
 
   if FWindow = nil then
@@ -207,8 +207,8 @@ procedure TfrmNotification.ControlsAligned;
 begin
   inherited ControlsAligned;
 
-  lblTitle.Caption := TruncateText(FTitle, 300 - pbLogo.Width, lblTitle.Font);
-  lblStream.Caption := TruncateText(FStream, 300 - pbLogo.Width, lblStream.Font);
+  lblTitle.Caption := TFunctions.TruncateText(FTitle, 300 - pbLogo.Width, lblTitle.Font);
+  lblStream.Caption := TFunctions.TruncateText(FStream, 300 - pbLogo.Width, lblStream.Font);
 
   Left := Screen.PrimaryMonitor.WorkareaRect.Right - ClientWidth - 15;
   Top := Screen.PrimaryMonitor.WorkareaRect.Bottom - ClientHeight - 15;

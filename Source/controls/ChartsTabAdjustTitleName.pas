@@ -69,11 +69,11 @@ var
   Hash: Cardinal;
   Pattern: string;
 begin
-  Pattern := BuildPattern(txtTitle.Text, Hash, NumChars, True);
+  Pattern := TFunctions.BuildPattern(txtTitle.Text, Hash, NumChars, True);
 
   if NumChars = 0 then
   begin
-    MsgBox(_('Please enter a pattern to add to list.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('Please enter a pattern to add to list.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 

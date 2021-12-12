@@ -142,7 +142,7 @@ begin
       begin
         if not MsgShown then
         begin
-          if MsgBox(_('The selected addon has some unmet dependencies.'#13#10'Do you want do download the required addons now?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
+          if TFunctions.MsgBox(_('The selected addon has some unmet dependencies.'#13#10'Do you want do download the required addons now?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
             Exit(False);
           MsgShown := True;
         end;
@@ -154,7 +154,7 @@ begin
   if not Addon.PackageDownloaded then
   begin
     if ShowMessage then
-      Res := MsgBox(Format(_('The addon "%s" cannot be activated because needed files have not been downloaded.'#13#10'Do you want to download these files now?'), [Addon.Name]), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1)
+      Res := TFunctions.MsgBox(Format(_('The addon "%s" cannot be activated because needed files have not been downloaded.'#13#10'Do you want to download these files now?'), [Addon.Name]), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1)
     else
       Res := IDYES;
 
@@ -170,7 +170,7 @@ begin
         if not DA.Downloaded then
         begin
           if DA.Error then
-            MsgBox(_('An error occured while downloading the file.'), _('Error'), MB_ICONEXCLAMATION);
+            TFunctions.MsgBox(_('An error occured while downloading the file.'), _('Error'), MB_ICONEXCLAMATION);
 
           Exit(False);
         end;
@@ -183,7 +183,7 @@ begin
 
   if not Addon.ExtractFiles then
   begin
-    MsgBox(_('The addon is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
+    TFunctions.MsgBox(_('The addon is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
     Exit(False);
   end;
 

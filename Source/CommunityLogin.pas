@@ -91,13 +91,13 @@ procedure TfrmCommunityLogin.btnOKClick(Sender: TObject);
 begin
   if (Trim(txtUsername.Text) = '') or (Trim(txtPassword.Text) = '') then
   begin
-    MsgBox(_('You have to enter your username and your password.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('You have to enter your username and your password.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 
   if not HomeComm.CommunicationEstablished then
   begin
-    MsgBox(_('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 
@@ -160,7 +160,7 @@ begin
   if (not HomeComm.CommunicationEstablished) and (pnlConnecting.Visible) then
   begin
     ShowConnecting(False);
-    MsgBox(_('The connection to the server was closed while authenticating.'#13#10'Please try again later.'), _('Error'), MB_ICONERROR);
+    TFunctions.MsgBox(_('The connection to the server was closed while authenticating.'#13#10'Please try again later.'), _('Error'), MB_ICONERROR);
   end;
 
   if HomeComm.CommunicationEstablished and pnlConnecting.Visible then
@@ -170,7 +170,7 @@ begin
     if Success then
     begin
       if not AppGlobals.UserWasSetup then
-        MsgBox(_('You are now logged in.'#13#10'Your credentials will be saved and streamWriter will try to login automatically next time. You can logoff by using the corresponding item in the main menu.'), _('Info'), MB_ICONINFORMATION);
+        TFunctions.MsgBox(_('You are now logged in.'#13#10'Your credentials will be saved and streamWriter will try to login automatically next time. You can logoff by using the corresponding item in the main menu.'), _('Info'), MB_ICONINFORMATION);
 
       AppGlobals.User := txtUsername.Text;
       AppGlobals.Pass := txtPassword.Text;
@@ -178,7 +178,7 @@ begin
 
       Close;
     end else
-      MsgBox(_('You have entered an unknown username or a wrong password.'#13#10'Please try again.'), _('Error'), MB_ICONERROR);
+      TFunctions.MsgBox(_('You have entered an unknown username or a wrong password.'#13#10'Please try again.'), _('Error'), MB_ICONERROR);
   end;
 end;
 

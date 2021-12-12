@@ -5215,7 +5215,7 @@ begin
   inherited create;
 
   FIsDLLAvailable := false;
-  FAudioGenie3DLLHandle := LoadLibrary(PChar(Filename));
+  FAudioGenie3DLLHandle := LoadLibraryW(PWideChar(UnicodeString(Filename)));
 
   if FAudioGenie3DLLHandle = 0 then
 

@@ -44,7 +44,6 @@ uses
   Functions,
   Generics.Collections,
   Graphics,
-  GUIFunctions,
   Images,
   ImgList,
   LanguageObjects,
@@ -82,6 +81,8 @@ type
   TTrackActionEvent = procedure(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray) of object;
   TAddTitleEvent = procedure(Sender: TObject; Title: string; TitleHash: Cardinal) of object;
 
+  { TImportFilesThread }
+
   TImportFilesThread = class(TThread)
   private
     FDir: string;
@@ -92,6 +93,8 @@ type
     FCurrentFilename: string;
 
     FOnProgress: TNotifyEvent;
+
+    procedure Sync;
   protected
     procedure Execute; override;
   public
@@ -105,12 +108,7 @@ type
   TSavedTracksPopup = class(TPopupMenu)
   private
     FItemRefresh: TMenuItem;
-    //FItemPrev: TMenuItem;
     FItemPlay: TMenuItem;
-    //FItemPause: TMenuItem;
-    //FItemStop: TMenuItem;
-    //FItemNext: TMenuItem;
-    //FItemPlayLastSecs: TMenuItem;
     FItemCutSong: TMenuItem;
     FItemEditTags: TMenuItem;
     FItemFinalized: TMenuItem;
@@ -132,15 +130,10 @@ type
   public
     constructor Create(AOwner: TComponent); override;
 
-    procedure EnableItems(Enable, Playing, IsFirst, IsLast, HashesSelected: Boolean);
+    procedure EnableItems(const Enable: Boolean);
 
     property ItemRefresh: TMenuItem read FItemRefresh;
-    //property ItemPrev: TMenuItem read FItemPrev;
     property ItemPlay: TMenuItem read FItemPlay;
-    //property ItemPause: TMenuItem read FItemPause;
-    //property ItemStop: TMenuItem read FItemStop;
-    //property ItemNext: TMenuItem read FItemNext;
-    //property ItemPlayLastSecs: TMenuItem read FItemPlayLastSecs;
     property ItemCutSong: TMenuItem read FItemCutSong;
     property ItemEditTags: TMenuItem read FItemEditTags;
     property ItemFinalized: TMenuItem read FItemFinalized;
@@ -335,7 +328,6 @@ type
     function GetNodes(SelectedOnly: Boolean): TNodeArray;
     function GetSelected: TTrackInfoArray;
 
-    procedure PopupMenuPopup(Sender: TObject);
     procedure PopupMenuClick(Sender: TObject);
 
     procedure PlayerEndReached(Sender: TObject);
@@ -543,13 +535,9 @@ begin
   Items.Add(FItemImportFolder);
 end;
 
-procedure TSavedTracksPopup.EnableItems(Enable, Playing, IsFirst, IsLast, HashesSelected: Boolean);
+procedure TSavedTracksPopup.EnableItems(const Enable: Boolean);
 begin
-  //FItemPrev.Enabled := (not IsFirst) and Playing;
   FItemPlay.Enabled := Enable;
-  //FItemPause.Enabled := Playing;
-  //FItemStop.Enabled := Playing;
-  //FItemNext.Enabled := (not IsLast) and Playing;
   FItemCutSong.Enabled := Enable;
   FItemEditTags.Enabled := Enable;
   FItemFinalized.Enabled := Enable;
@@ -994,7 +982,7 @@ begin
       begin
         MsgBus.SendMessage(TFileModifyMsg.Create(Tracks[i].Filename));
 
-        if Recycle(Handle, Tracks[i].Filename) then
+        if TFunctions.Recycle(Handle, Tracks[i].Filename) then
         begin
           LowerDir := LowerCase(ExtractFileDir(Tracks[i].Filename));
           if (LowerDir <> LowerCase(ExcludeTrailingPathDelimiter(AppGlobals.Dir))) and (LowerDir <> LowerCase(ExcludeTrailingPathDelimiter(AppGlobals.DirAuto))) then
@@ -1007,9 +995,9 @@ begin
     begin
       if Length(Tracks) = 1 then
       begin
-        if MsgBox(Format(_('Do you really want to delete "%s"?'), [ExtractFileName(Tracks[0].Filename)]), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
+        if TFunctions.MsgBox(Format(_('Do you really want to delete "%s"?'), [ExtractFileName(Tracks[0].Filename)]), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
           Exit;
-      end else if MsgBox(_('Do you really want to delete all selected files?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
+      end else if TFunctions.MsgBox(_('Do you really want to delete all selected files?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
         Exit;
 
       Error := False;
@@ -1035,12 +1023,12 @@ begin
         FSavedTree.EndUpdate;
       end;
       if Error then
-        MsgBox(_('Some files could not be deleted.'#13#10'Please make sure they are not opened in a cut-tab or in use by another application.'), _('Info'), MB_ICONINFORMATION);
+        TFunctions.MsgBox(_('Some files could not be deleted.'#13#10'Please make sure they are not opened in a cut-tab or in use by another application.'), _('Info'), MB_ICONINFORMATION);
     end;
     taShowFile:
-      RunProcess('explorer.exe /select,"' + Tracks[0].Filename + '"');
+      TFunctions.RunProcess('explorer.exe /select,"' + Tracks[0].Filename + '"');
     taProperties:
-      PropertiesDialog(Tracks[0].Filename);
+      TFunctions.PropertiesDialog(Tracks[0].Filename);
     taImportFiles:
     begin
       Dlg := TOpenDialog.Create(GetParentForm(Self));
@@ -1079,7 +1067,7 @@ begin
     end;
     taImportFolder:
     begin
-      Dir := BrowseDialog(GetParentForm(Self), _('Select folder with files to import'));
+      Dir := TFunctions.BrowseDialog(GetParentForm(Self), _('Select folder with files to import'));
       if Dir <> '' then
       begin
         KnownFiles := TStringList.Create;
@@ -1210,7 +1198,7 @@ begin
       Tree.FPopupMenu.Items[i].Enabled := False;
 
     FPlayToolbar.EnableItems(False, False, True, True);
-    FSavedTree.FPopupMenu.EnableItems(False, False, True, True, False);
+    FSavedTree.FPopupMenu.EnableItems(False);
 
     Exit;
   end;
@@ -1244,7 +1232,7 @@ begin
 
   FPlayToolbar.FPause.Down := Tree.Player.Paused;
 
-  Tree.FPopupMenu.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing or Tree.FPlayer.Paused, IsFirst, IsLast, HashesSelected);
+  Tree.FPopupMenu.EnableItems(Length(Tracks) > 0);
   FToolbar.EnableItems(Length(Tracks) > 0, HashesSelected);
   FPlayToolbar.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing or Tree.FPlayer.Paused, IsFirst, IsLast);
 
@@ -1377,12 +1365,7 @@ begin
 
   FPopupMenu := TSavedTracksPopup.Create(Self);
   FPopupMenu.ItemRefresh.OnClick := PopupMenuClick;
-  //FPopupMenu.ItemPlayLastSecs.OnClick := PopupMenuClick;
-  //FPopupMenu.ItemPrev.OnClick := PopupMenuClick;
   FPopupMenu.ItemPlay.OnClick := PopupMenuClick;
-  //FPopupMenu.ItemPause.OnClick := PopupMenuClick;
-  //FPopupMenu.ItemStop.OnClick := PopupMenuClick;
-  //FPopupMenu.ItemNext.OnClick := PopupMenuClick;
   FPopupMenu.ItemCutSong.OnClick := PopupMenuClick;
   FPopupMenu.ItemEditTags.OnClick := PopupMenuClick;
   FPopupMenu.ItemFinalized.OnClick := PopupMenuClick;
@@ -1400,7 +1383,6 @@ begin
   FPopupMenu.ItemProperties.OnClick := PopupMenuClick;
   FPopupMenu.ItemImportFiles.OnClick := PopupMenuClick;
   FPopupMenu.ItemImportFolder.OnClick := PopupMenuClick;
-  FPopupMenu.OnPopup := PopupMenuPopUp;
 
   PopupMenu := FPopupMenu;
 
@@ -1535,7 +1517,7 @@ var
   Node: PVirtualNode;
   Nodes: TNodeArray;
 begin
-  SetLength(Result, 0);
+  Result := [];
   if not SelectedOnly then
   begin
     Node := GetFirst;
@@ -1661,7 +1643,7 @@ begin
     if (FPlayer.Tag <> nil) and (FPlayer.Tag.Artist <> '') and (FPlayer.Tag.Title <> '') then
       TfrmNotification.Display(FPlayer.Tag.Artist + ' - ' + FPlayer.Tag.Title, '')
     else
-      TfrmNotification.Display(RemoveFileExt(ExtractFileName(FPlayer.Filename)), '');
+      TfrmNotification.Display(TFunctions.RemoveFileExt(ExtractFileName(FPlayer.Filename)), '');
 
   FTab.UpdateButtons;
   Invalidate;
@@ -1852,7 +1834,7 @@ begin
     try
       FPlayer.Filename := PrevPlayingTrack(True).Filename;
     except
-      MsgBox(_('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
+      TFunctions.MsgBox(_('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
       Exit;
     end;
 
@@ -1892,7 +1874,7 @@ begin
     try
       FPlayer.Filename := Track.Filename;
     except
-      MsgBox(_('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
+      TFunctions.MsgBox(_('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
       Exit;
     end;
 
@@ -1913,7 +1895,7 @@ begin
       try
         FPlayer.Filename := Tracks[0].Filename;
       except
-        MsgBox(_('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
+        TFunctions.MsgBox(_('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
         Exit;
       end;
       FPlayer.Volume := Players.Volume;
@@ -1964,7 +1946,7 @@ begin
           FPlayerIndex := FPlayerList.Count - 1;
         end;
       except
-        MsgBox(_('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
+        TFunctions.MsgBox(_('The file could not be openend for playing.'), _('Error'), MB_ICONERROR);
         Exit;
       end;
 
@@ -2027,12 +2009,6 @@ begin
       FOnAction(Self, Action, Tracks);
 end;
 
-procedure TSavedTree.PopupMenuPopup(Sender: TObject);
-begin
-  //FPopupMenu.FItemPause.Enabled := FPlayer.Playing or FPlayer.Paused;
-  //FPopupMenu.FItemStop.Enabled := FPlayer.Playing or FPlayer.Paused;
-end;
-
 procedure TSavedTree.AddTrack(Track: TTrackInfo; AddToInternalList: Boolean; IgnorePattern: Boolean);
 var
   Node, ParentNode: PVirtualNode;
@@ -2044,7 +2020,7 @@ begin
   ParentNode := nil;
   if IgnorePattern then
     ParentNode := FFileNode
-  else if (FPattern = '*') or (Like(LowerCase(Track.Filename), FPattern)) or (Like(LowerCase(Track.Streamname), FPattern)) then
+  else if (FPattern = '*') or (TFunctions.Like(LowerCase(Track.Filename), FPattern)) or (TFunctions.Like(LowerCase(Track.Streamname), FPattern)) then
     if Track.IsStreamFile then
       ParentNode := FStreamNode
     else
@@ -2191,7 +2167,7 @@ begin
     case Column of
       1: Text := ExtractFileName(NodeData.Track.Filename);
       2:
-        Text := MakeSize(NodeData.Track.Filesize);
+        Text := TFunctions.MakeSize(NodeData.Track.Filesize);
       3:
         Text := BuildTime(NodeData.Track.Length, False);
       4:
@@ -2284,12 +2260,12 @@ begin
   NewText := Text;
 
   if FilenameToFormat(NewText) = atNone then
-    NewText := RemoveFileExt(NewText) + ExtractFileExt(NodeData.Track.Filename);
+    NewText := TFunctions.RemoveFileExt(NewText) + ExtractFileExt(NodeData.Track.Filename);
 
   if RenameFile(ConcatPaths([ExtractFilePath(NodeData.Track.Filename), ExtractFileName(NodeData.Track.Filename)]), ConcatPaths([ExtractFilePath(NodeData.Track.Filename), NewText])) then
     NodeData.Track.Filename := ConcatPaths([ExtractFilePath(NodeData.Track.Filename), NewText])
   else
-    MsgBox(_('The file could not be renamed. Make sure that it is not in use and that no other file with the same name already exists.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('The file could not be renamed. Make sure that it is not in use and that no other file with the same name already exists.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 procedure TSavedTree.DoNodeDblClick(const HitInfo: THitInfo);
@@ -2362,7 +2338,7 @@ begin
     if FPlayer.Playing or FPlayer.Paused then
       if not Selected[PaintInfo.Node] then
         if (FPlayer.Playing or FPlayer.Paused) and (LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename)) then
-          PaintInfo.Canvas.Font.Color := HTML2Color('#0078ff');
+          PaintInfo.Canvas.Font.Color := TFunctions.HTML2Color('#0078ff');
 
   inherited;
 end;
@@ -2408,7 +2384,7 @@ begin
           Track.Filename := ConcatPaths([PathNew, Track.Filename.Remove(0, Path.Length)]);
     eaModified:
       if Assigned(Track) then
-        Track.Filesize := GetFileSize(Track.Filename);
+        Track.Filesize := TFunctions.GetFileSize(Track.Filename);
   end;
 
   if Action = eaRemoved then
@@ -2454,7 +2430,7 @@ begin
   try
     if (Length(ServerTitleHashes) = 0) and (Length(ServerArtistHashes) = 0) then
     begin
-      FPattern := BuildPattern(S, Hash, Chars, True);
+      FPattern := TFunctions.BuildPattern(S, Hash, Chars, True);
 
       FStreamNode := AddChild(nil);
       NodeData := GetNodeData(FStreamNode);
@@ -2535,14 +2511,14 @@ begin
       Header.Columns[i].Width := AppGlobals.SavedHeaderWidth[i]
   else
   begin
-    FColSize.Width := GetTextSize('111,11 KB', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColLength.Width := GetTextSize('00:00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColBitrate.Width := GetTextSize('320 VBR', font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColSize.Width := TFunctions.GetTextSize('111,11 KB', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColLength.Width := TFunctions.GetTextSize('00:00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColBitrate.Width := TFunctions.GetTextSize('320 VBR', font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
     FColStream.Width := MulDiv(200, Screen.PixelsPerInch, 96);
     FColSaved.Width := MulDiv(130, Screen.PixelsPerInch, 96);
   end;
 
-  FColImages.Width := Max(Indent + Margin * 2 + 16 * 4 + 3 * 2, GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96));
+  FColImages.Width := Max(Indent + Margin * 2 + 16 * 4 + 3 * 2, TFunctions.GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96));
 
   if AppGlobals.SavedHeaderPositionLoaded then
     for i := 1 to Header.Columns.Count - 1 do
@@ -2627,7 +2603,7 @@ begin
         else
           I2 := I2 + 2;
 
-      Result := CmpInt(I1, I2);
+      Result := TFunctions.CmpInt(I1, I2);
 
       if Result = 0 then
       begin
@@ -2639,7 +2615,7 @@ begin
     1: Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
     2:
     begin
-      Result := CmpInt(Data1.Track.Filesize, Data2.Track.Filesize);
+      Result := TFunctions.CmpInt(Data1.Track.Filesize, Data2.Track.Filesize);
       if Result = 0 then
       begin
         Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
@@ -2649,7 +2625,7 @@ begin
     end;
     3:
     begin
-      Result := CmpInt(Data1.Track.Length, Data2.Track.Length);
+      Result := TFunctions.CmpInt(Data1.Track.Length, Data2.Track.Length);
       if Result = 0 then
       begin
         Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
@@ -2659,7 +2635,7 @@ begin
     end;
     4:
     begin
-      Result := CmpInt(Data1.Track.Bitrate, Data2.Track.Bitrate);
+      Result := TFunctions.CmpInt(Data1.Track.Bitrate, Data2.Track.Bitrate);
       if Result = 0 then
       begin
         Result := CompareText(ExtractFileName(Data1.Track.Filename), ExtractFileName(Data2.Track.Filename));
@@ -2908,6 +2884,12 @@ begin
   inherited;
 end;
 
+procedure TImportFilesThread.Sync;
+begin
+  if Assigned(FOnProgress) then
+    FOnProgress(Self);
+end;
+
 procedure TImportFilesThread.Execute;
 var
   i, n: Integer;
@@ -2916,13 +2898,11 @@ var
   Track: TTrackInfo;
   Info: TAudioInfo;
 begin
-  inherited;
-
   FoundFiles := TStringList.Create;
   try
     if (FDir <> '') and (FFoundAudioFiles.Count = 0) then
     begin
-      FindFiles(FDir + '*.*', FoundFiles, True, @Terminated);
+      TFunctions.FindFiles(ConcatPaths([FDir, '*.*']), FoundFiles, True, @Terminated);
       for i := 0 to FoundFiles.Count - 1 do
       begin
         if Terminated then
@@ -2950,14 +2930,7 @@ begin
         Exit;
 
       FCurrentFilename := ExtractFileName(FFoundAudioFiles[i]);
-      {    // TODO: fehlt weiter unten auch noch
-      if Assigned(FOnProgress) then
-        Synchronize(
-          procedure
-          begin
-            if Assigned(FOnProgress) then
-              FOnProgress(Self);
-          end);                           }
+      Synchronize(Sync);
 
       Info.GetAudioInfo(FFoundAudioFiles[i]);
       if Info.Success then
@@ -2967,24 +2940,17 @@ begin
         Track.Bitrate := Info.Bitrate;
         Track.Length := Trunc(Info.Length);
         Track.Filename := FFoundAudioFiles[i];
-        Track.Filesize := GetFileSize(FFoundAudioFiles[i]);
+        Track.Filesize := TFunctions.GetFileSize(FFoundAudioFiles[i]);
         Track.VBR := Info.VBR;
 
-        if OccurenceCount('\', FFoundAudioFiles[i]) > 1 then
-          Track.Streamname := ExtractLastDirName(ExtractFilePath(FFoundAudioFiles[i]));
+        if TFunctions.OccurenceCount('\', FFoundAudioFiles[i]) > 1 then
+          Track.Streamname := TFunctions.ExtractLastDirName(ExtractFilePath(FFoundAudioFiles[i]));
         FFiles.Add(Track);
       end;
 
       FProgress := Trunc((i / FFoundAudioFiles.Count) * 100);
       FCurrentFilename := ExtractFileName(FFoundAudioFiles[i]);
-      {
-      if Assigned(FOnProgress) then
-        Synchronize(
-          procedure
-          begin
-            if Assigned(FOnProgress) then
-              FOnProgress(Self);
-          end);                       }
+      Synchronize(Sync);
     end;
   finally
     FoundFiles.Free;
@@ -3026,8 +2992,8 @@ begin
   if ProgressBar.Style <> pbstNormal then
     ProgressBar.Style := pbstNormal;
 
-  W := GetTextSize('Importing ""', LabelFilename.Font).cx;
-  LabelFilename.Caption := Format(_('Importing "%s"'), [TruncateText(CurrentFilename, LabelFilename.Width - W - 20, LabelFilename.Font)]);
+  W := TFunctions.GetTextSize('Importing ""', LabelFilename.Font).cx;
+  LabelFilename.Caption := Format(_('Importing "%s"'), [TFunctions.TruncateText(CurrentFilename, LabelFilename.Width - W - 20, LabelFilename.Font)]);
   if ProgressBar.Position <> Progress then
   begin
     if Progress < 100 then

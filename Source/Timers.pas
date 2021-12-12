@@ -39,14 +39,14 @@ uses
   Graphics,
   Images,
   LanguageObjects,
+  LCLType,
   Logging,
   PowerManagement,
   SharedData,
   StdCtrls,
   SysUtils,
   Variants,
-  VirtualTrees,
-  Windows;
+  VirtualTrees;
 
 type
   TScheduleTreeNodeData = record
@@ -156,7 +156,7 @@ procedure TfrmTimers.btnAddClick(Sender: TObject);
 begin
   if not TimesOkay then
   begin
-    MsgBox(_('Please enter a valid start and end time for the schedule.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('Please enter a valid start and end time for the schedule.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 

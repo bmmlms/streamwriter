@@ -33,12 +33,12 @@ uses
   Functions,
   Graphics,
   LanguageObjects,
+  LCLType,
   Logging,
   PostProcessSoX,
   StdCtrls,
   SysUtils,
-  Variants,
-  Windows;
+  Variants;
 
 type
   TfrmConfigureSoX = class(TForm)
@@ -132,20 +132,20 @@ begin
   begin
     if (not FileExists(txtLameDLL.Text)) or (not FileExists(txtMadDLL.Text)) then
     begin
-      MsgBox(_('Please browse for "lame_enc.dll" and "libmad.dll".'), _('Info'), MB_ICONINFORMATION);
+      TFunctions.MsgBox(_('Please browse for "lame_enc.dll" and "libmad.dll".'), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
 
     if LowerCase(ExtractFileName(txtLameDLL.Text)) <> 'lame_enc.dll' then
     begin
-      Res := MsgBox(_('The selected file for "lame_enc.dll" has a different filename.'#13#10'Are you really sure you want to use that file?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
+      Res := TFunctions.MsgBox(_('The selected file for "lame_enc.dll" has a different filename.'#13#10'Are you really sure you want to use that file?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
       if Res = IDNO then
         Exit;
     end;
 
     if LowerCase(ExtractFileName(txtMadDLL.Text)) <> 'libmad.dll' then
     begin
-      Res := MsgBox(_('The selected file for "libmad.dll" has a different filename.'#13#10'Are you really sure you want to use that file?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
+      Res := TFunctions.MsgBox(_('The selected file for "libmad.dll" has a different filename.'#13#10'Are you really sure you want to use that file?'), _('Question'), MB_ICONQUESTION or MB_YESNO);
       if Res = IDNO then
         Exit;
     end;
@@ -164,7 +164,7 @@ begin
       end;
     end else
     begin
-      MsgBox(_('The selected files could not be included to the SoX-Addon. Please make sure the files are readable by streamWriter.'), _('Error'), MB_ICONERROR);
+      TFunctions.MsgBox(_('The selected files could not be included to the SoX-Addon. Please make sure the files are readable by streamWriter.'), _('Error'), MB_ICONERROR);
     end;
   end else
   begin
@@ -172,28 +172,28 @@ begin
 
   if chkFadeoutStart.Checked and (StrToIntDef(txtFadeoutStart.Text, 0) = 0) then
   begin
-    MsgBox(_('Please enter the length of the fadein in seconds.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('Please enter the length of the fadein in seconds.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end else if (StrToIntDef(txtFadeoutStart.Text, 0) = 0) then
     txtFadeoutStart.Text := '5';
 
   if chkFadeoutEnd.Checked and (StrToIntDef(txtFadeoutEnd.Text, 0) = 0) then
   begin
-    MsgBox(_('Please enter the length of the fadeout in seconds.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('Please enter the length of the fadeout in seconds.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end else if (StrToIntDef(txtFadeoutEnd.Text, 0) = 0) then
     txtFadeoutEnd.Text := '5';
 
   if chkSilenceStart.Checked and (StrToIntDef(txtSilenceStart.Text, 0) = 0) then
   begin
-    MsgBox(_('Please enter the length of silence at the beginning in seconds.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('Please enter the length of silence at the beginning in seconds.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end else if (StrToIntDef(txtSilenceStart.Text, 0) = 0) then
     txtSilenceStart.Text := '5';
 
   if chkSilenceEnd.Checked and (StrToIntDef(txtSilenceEnd.Text, 0) = 0) then
   begin
-    MsgBox(_('Please enter the length of silence at the end in seconds.'), _('Info'), MB_ICONINFORMATION);
+    TFunctions.MsgBox(_('Please enter the length of silence at the end in seconds.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end else if (StrToIntDef(txtSilenceEnd.Text, 0) = 0) then
     txtSilenceEnd.Text := '5';
@@ -203,25 +203,25 @@ begin
   begin
     if chkFadeoutStart.Checked and (StrToInt(txtFadeoutStart.Text) > FTitleLength / 2) then
     begin
-      MsgBox(Format(_('The length for fadeout cannot be greater than half the length of the song (%d seconds).'), [FTitleLength div 2]), _('Info'), MB_ICONINFORMATION);
+      TFunctions.MsgBox(Format(_('The length for fadeout cannot be greater than half the length of the song (%d seconds).'), [FTitleLength div 2]), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
 
     if chkFadeoutEnd.Checked and (StrToInt(txtFadeoutEnd.Text) > FTitleLength / 2) then
     begin
-      MsgBox(Format(_('The length for fadein cannot be greater than half the length of the song (%d seconds).'), [FTitleLength div 2]), _('Info'), MB_ICONINFORMATION);
+      TFunctions.MsgBox(Format(_('The length for fadein cannot be greater than half the length of the song (%d seconds).'), [FTitleLength div 2]), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
 
     if chkSilenceStart.Checked and (StrToInt(txtSilenceStart.Text) > FTitleLength) then
     begin
-      MsgBox(Format(_('The length for silence at the beginning cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
+      TFunctions.MsgBox(Format(_('The length for silence at the beginning cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
 
     if chkFadeoutEnd.Checked and (StrToInt(txtFadeoutEnd.Text) > FTitleLength) then
     begin
-      MsgBox(Format(_('The length for silence at the end cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
+      TFunctions.MsgBox(Format(_('The length for silence at the end cannot be greater than the length of the song (%d seconds).'), [FTitleLength]), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
   end;

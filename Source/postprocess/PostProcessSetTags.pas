@@ -128,11 +128,11 @@ begin
     try
       if FileTagger.Read(FData.Filename) then
       begin
-        Artist := PatternReplaceNew(FArtist, Arr);
-        Title := PatternReplaceNew(FTitle, Arr);
-        Album := PatternReplaceNew(FAlbum, Arr);
-        Genre := PatternReplaceNew(FGenre, Arr);
-        Comment := PatternReplaceNew(FComment, Arr);
+        Artist := TFunctions.PatternReplaceNew(FArtist, Arr);
+        Title := TFunctions.PatternReplaceNew(FTitle, Arr);
+        Album := TFunctions.PatternReplaceNew(FAlbum, Arr);
+        Genre := TFunctions.PatternReplaceNew(FGenre, Arr);
+        Comment := TFunctions.PatternReplaceNew(FComment, Arr);
 
         FileTagger.Tag.Artist := Artist;
         FileTagger.Tag.Title := Title;
@@ -143,7 +143,7 @@ begin
 
         if FileTagger.Write(Language.CurrentLanguage.LCID, FData.Filename) then
         begin
-          FData.Filesize := GetFileSize(FData.Filename);
+          FData.Filesize := TFunctions.GetFileSize(FData.Filename);
           FResult := arWin;
         end;
       end;
@@ -239,7 +239,7 @@ end;
 
 function TPostProcessSetTags.FGetHash: Cardinal;
 begin
-  Result := inherited + HashString(FArtist + FAlbum + FTitle + FComment);
+  Result := inherited + TFunctions.HashString(FArtist + FAlbum + FTitle + FComment);
 end;
 
 function TPostProcessSetTags.FGetHelp: string;

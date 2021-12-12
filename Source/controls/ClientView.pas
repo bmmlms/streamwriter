@@ -39,7 +39,6 @@ uses
   Forms,
   Functions,
   Graphics,
-  GUIFunctions,
   ICEClient,
   Images,
   ImgList,
@@ -356,14 +355,14 @@ begin
         else
           Text := NodeData.Client.DisplayTitle;
       2:
-        Text := MakeSize(NodeData.Client.Entry.BytesReceived);
+        Text := TFunctions.MakeSize(NodeData.Client.Entry.BytesReceived);
       3:
         if NodeData.Client.AutoRemove then
           Text := ''
         else
           Text := IntToStr(NodeData.Client.Entry.SongsSaved);
       4:
-        Text := MakeSize(NodeData.Client.Speed) + '/s';
+        Text := TFunctions.MakeSize(NodeData.Client.Speed) + '/s';
       5:
         case NodeData.Client.State of
           csConnecting:
@@ -527,7 +526,7 @@ begin
     if NodeData.Client <> nil then
     begin
       if NodeData.Client.Playing or NodeData.Client.Paused then
-        PaintInfo.Canvas.Font.Color := HTML2Color('#0078ff');
+        PaintInfo.Canvas.Font.Color := TFunctions.HTML2Color('#0078ff');
     end else if NodeData.Category <> nil then
     begin
       Node := GetFirstChild(PaintInfo.Node);
@@ -537,7 +536,7 @@ begin
 
         if NodeData.Client.Playing or NodeData.Client.Paused then
         begin
-          PaintInfo.Canvas.Font.Color := HTML2Color('#0078ff');
+          PaintInfo.Canvas.Font.Color := TFunctions.HTML2Color('#0078ff');
           Break;
         end;
 
@@ -562,10 +561,10 @@ begin
         Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
   end else
   begin
-    FColRcvd.Width := Max(GetTextSize(FColRcvd.Text, Font).cx, GetTextSize('111,11 KB', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColSpeed.Width := Max(GetTextSize(FColSpeed.Text, Font).cx, GetTextSize('11,11 KB/s', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColSongs.Width := GetTextSize(FColSongs.Text, Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColStatus.Width := Max(GetTextSize(FColStatus.Text, Font).cx, MulDiv(80, Screen.PixelsPerInch, 96)) + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColRcvd.Width := Max(TFunctions.GetTextSize(FColRcvd.Text, Font).cx, TFunctions.GetTextSize('111,11 KB', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColSpeed.Width := Max(TFunctions.GetTextSize(FColSpeed.Text, Font).cx, TFunctions.GetTextSize('11,11 KB/s', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColSongs.Width := TFunctions.GetTextSize(FColSongs.Text, Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColStatus.Width := Max(TFunctions.GetTextSize(FColStatus.Text, Font).cx, MulDiv(80, Screen.PixelsPerInch, 96)) + MulDiv(20, Screen.PixelsPerInch, 96);
     FColName.Width := MulDiv(150, Screen.PixelsPerInch, 96);
   end;
 
@@ -648,9 +647,7 @@ begin
             Exit;
           end;
       end;
-    end else
-      // Drag von wo anders (Browser, Streambrowser)
-    ;
+    end;
   end;
 end;
 
@@ -976,7 +973,7 @@ begin
     else
       I2 := Data2.Category.Index;
 
-    Result := CmpInt(I1, I2);
+    Result := TFunctions.CmpInt(I1, I2);
     Exit;
   end;
 
@@ -984,10 +981,10 @@ begin
     case Column of
       0: Result := CompareText(Data1.Client.Entry.CustomName, Data2.Client.Entry.CustomName);
       1: Result := CompareText(Data1.Client.Title, Data2.Client.Title);
-      2: Result := CmpUInt64(Data1.Client.Entry.BytesReceived, Data2.Client.Entry.BytesReceived);
-      3: Result := CmpInt(Data1.Client.Entry.SongsSaved, Data2.Client.Entry.SongsSaved);
-      4: Result := CmpInt(Data1.Client.Speed, Data2.Client.Speed);
-      5: Result := CmpInt(Integer(Data1.Client.State), Integer(Data2.Client.State), True);
+      2: Result := TFunctions.CmpUInt64(Data1.Client.Entry.BytesReceived, Data2.Client.Entry.BytesReceived);
+      3: Result := TFunctions.CmpInt(Data1.Client.Entry.SongsSaved, Data2.Client.Entry.SongsSaved);
+      4: Result := TFunctions.CmpInt(Data1.Client.Speed, Data2.Client.Speed);
+      5: Result := TFunctions.CmpInt(Integer(Data1.Client.State), Integer(Data2.Client.State), True);
     end else if (Data1.Category <> nil) and (Data2.Category <> nil) then
     if Column = 0 then
       Result := CompareText(Data1.Category.Name, Data2.Category.Name);
@@ -1151,9 +1148,9 @@ begin
           end;
         end;
       end else
+        // Nodes ins "nichts" gedraggt
         for i := 0 to Length(FDragNodes) - 1 do
-          MoveTo(FDragNodes[i], RootNode, amAddChildLast, False)// Nodes ins "nichts" gedraggt
-      ;
+          MoveTo(FDragNodes[i], RootNode, amAddChildLast, False);
       Exit;
     end;
 
@@ -1233,9 +1230,9 @@ begin
   if FDragSource.DragInProgress then
     Exit;
 
+  // Raus, wenn nichts markiert ist oder von beiden etwas...
   if ((Length(GetNodes(ntCategory, True)) = 0) and (Length(GetNodes(ntClient, True)) = 0)) or ((Length(GetNodes(ntCategory, True)) > 0) and (Length(GetNodes(ntClient, True)) > 0)) then
-    Exit// Raus, wenn nichts markiert ist oder von beiden etwas...
-  ;
+    Exit;
 
   SetLength(FDragNodes, 0);
   FDragSource.Files.Clear;
@@ -1262,7 +1259,7 @@ begin
       Entries := GetEntries(etStream);
 
     for i := 0 to Length(Entries) - 1 do
-      FDragSource.Files.Add(AnsiString(SecureSWURLToInsecure(Entries[i].URL)));
+      FDragSource.Files.Add(SecureSWURLToInsecure(Entries[i].URL));
 
     if FDragSource.Files.Count = 0 then
       Exit;

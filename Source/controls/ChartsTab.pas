@@ -40,7 +40,6 @@ uses
   Forms,
   Functions,
   Graphics,
-  GUIFunctions,
   HomeCommunication,
   Images,
   ImgList,
@@ -355,7 +354,7 @@ begin
   if not HomeComm.CommunicationEstablished then
   begin
     if ShowMessages then
-      MsgBox(_('streamWriter needs to be connected to the server in order to search.'), _('Info'), MB_ICONINFORMATION);
+      TFunctions.MsgBox(_('streamWriter needs to be connected to the server in order to search.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 
@@ -372,9 +371,9 @@ begin
     else
       Tmp := Trim(FSearchPanel.FSearch.ItemsEx[FSearchPanel.FSearch.ItemIndex].Caption);
 
-    if (Pos('"', Tmp) > 0) and (OccurenceCount('"', Tmp) mod 2 <> 0) then
+    if (Pos('"', Tmp) > 0) and (TFunctions.OccurenceCount('"', Tmp) mod 2 <> 0) then
     begin
-      MsgBox(_('When using quotes every opening quote needs a closing quote.'), _('Info'), MB_ICONINFORMATION);
+      TFunctions.MsgBox(_('When using quotes every opening quote needs a closing quote.'), _('Info'), MB_ICONINFORMATION);
       Exit;
     end;
 
@@ -382,7 +381,7 @@ begin
     begin
       SL := TStringList.Create;
       try
-        Explode(' ', Tmp, SL);
+        TFunctions.Explode(' ', Tmp, SL);
 
         if SL.Count = 0 then
           Abort := True;
@@ -392,7 +391,7 @@ begin
     end;
 
     if Abort then
-      MsgBox(_('You need to specify at least one word to search for. Special chars (+-*()<>~'') are not allowed.'), _('Info'), MB_ICONINFORMATION)
+      TFunctions.MsgBox(_('You need to specify at least one word to search for. Special chars (+-*()<>~'') are not allowed.'), _('Info'), MB_ICONINFORMATION)
     else
     begin
       FSearchPanel.InsertSearchItem(Tmp);
@@ -678,9 +677,9 @@ begin
       C := 100;
     Chance := Trunc(C);
 
-    Canvas.Brush.Color := HTML2Color('#005fb0');
+    Canvas.Brush.Color := TFunctions.HTML2Color('#005fb0');
     if Selected[Node] and Focused then
-      Canvas.Brush.Color := HTML2Color('#d2d2d2');
+      Canvas.Brush.Color := TFunctions.HTML2Color('#d2d2d2');
 
     TextWidth := Canvas.TextWidth('1000 / 1000');
     MaxWidth := CellRect.Right - CellRect.Left - 8 - TextWidth;
@@ -737,7 +736,7 @@ begin
         if Data2.IsOnWishlist then
           C2 := C2 + 3;
 
-        Result := CmpInt(C1, C2);
+        Result := TFunctions.CmpInt(C1, C2);
         if Result = 0 then
         begin
           Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
@@ -746,10 +745,10 @@ begin
         end;
       end;
       2:
-        Result := CmpInt(Data1.Chart.PlayedLast, Data2.Chart.PlayedLast);
+        Result := TFunctions.CmpInt(Data1.Chart.PlayedLast, Data2.Chart.PlayedLast);
       3:
       begin
-        Result := CmpInt(Data1.Chart.PlayedLastWeek, Data2.Chart.PlayedLastWeek);
+        Result := TFunctions.CmpInt(Data1.Chart.PlayedLastWeek, Data2.Chart.PlayedLastWeek);
         if Result = 0 then
         begin
           Result := CompareText(Data1.Chart.Name, Data2.Chart.Name);
@@ -768,13 +767,13 @@ begin
       end;
       2:
       begin
-        Result := CmpInt(Data2.Stream.PlayedLast, Data1.Stream.PlayedLast);
+        Result := TFunctions.CmpInt(Data2.Stream.PlayedLast, Data1.Stream.PlayedLast);
         if (Header.SortDirection = sdAscending) then
           Result := Result * -1;
       end;
       3:
       begin
-        Result := CmpInt(Data1.Stream.PlayedLastWeek, Data2.Stream.PlayedLastWeek);
+        Result := TFunctions.CmpInt(Data1.Stream.PlayedLastWeek, Data2.Stream.PlayedLastWeek);
         if (Header.SortDirection = sdAscending) then
           Result := Result * -1;
       end;
@@ -1021,11 +1020,11 @@ begin
       Header.Columns[i].Width := AppGlobals.ChartHeaderWidth[i]
   else
   begin
-    FColLastPlayed.Width := GetTextSize(FColLastPlayed.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
-    FColChance.Width := GetTextSize(FColChance.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+    FColLastPlayed.Width := TFunctions.GetTextSize(FColLastPlayed.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+    FColChance.Width := TFunctions.GetTextSize(FColChance.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
   end;
 
-  FColImages.Width := Max(Margin * 2 + 3 * 16 + 2 * 2, GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96));
+  FColImages.Width := Max(Margin * 2 + 3 * 16 + 2 * 2, TFunctions.GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96));
 
   if AppGlobals.ChartHeaderPositionLoaded then
     for i := 1 to Header.Columns.Count - 1 do
@@ -1203,7 +1202,7 @@ begin
       csSearching:
       begin
         Msg := _(TEXT_SEARCHING) + FDots;
-        Canvas.TextOut(FTextLeft, FProgressBar.Top - GetTextSize('Wyg', Font).cy - MulDiv(2, Screen.PixelsPerInch, 96), Msg);
+        Canvas.TextOut(FTextLeft, FProgressBar.Top - TFunctions.GetTextSize('Wyg', Font).cy - MulDiv(2, Screen.PixelsPerInch, 96), Msg);
       end;
       csSearchError:
       begin

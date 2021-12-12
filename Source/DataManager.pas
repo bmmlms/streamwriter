@@ -864,7 +864,7 @@ begin
   FTitle := Title;
   FAdded := Now;
 
-  Pattern := BuildPattern(Title, Hash, NumChars, False);
+  Pattern := TFunctions.BuildPattern(Title, Hash, NumChars, False);
   FPattern := Pattern;
   FHash := Hash;
 
@@ -897,7 +897,7 @@ begin
     Stream.Read(Result.FHash);
   end else
   begin
-    Pattern := BuildPattern(Result.FTitle, Hash, NumChars, False);
+    Pattern := TFunctions.BuildPattern(Result.FTitle, Hash, NumChars, False);
     Result.FPattern := Pattern;
     Result.FHash := Hash;
   end;
@@ -1055,8 +1055,8 @@ begin
     Result.FSettings.Free;
     Result.FSettings := TStreamSettings.Load(Stream, Version);
   end else
-    Result.FSettings.Assign(Data.StreamSettings)// Defaults benutzen..
-  ;
+    // Defaults benutzen..
+    Result.FSettings.Assign(Data.StreamSettings);
 
   if Version >= 24 then
     Stream.Read(Result.FID);
@@ -1353,7 +1353,7 @@ begin
   begin
     DecompressedStream := TExtendedStream.Create;
     try
-      DecompressStream(S, DecompressedStream);
+      TFunctions.DecompressStream(S, DecompressedStream);
 
       S.Size := 0;
       DecompressedStream.Seek(0, soFromBeginning);
@@ -1616,9 +1616,9 @@ begin
     if UseCompression then
     begin
       {$IFDEF DEBUG}
-      CompressStream(CompressedStream, S, clNone);
+      TFunctions.CompressStream(CompressedStream, S, clNone);
       {$ELSE}
-      CompressStream(CompressedStream, S, clDefault);
+      TFunctions.CompressStream(CompressedStream, S, clDefault);
       {$ENDIF}
     end else
       S.CopyFrom(CompressedStream, CompressedStream.Size);
@@ -1766,13 +1766,13 @@ end;
 function TTrackInfo.FGetParsedTitle: string;
 begin
   if FIsStreamFile then
-    Result := RemoveFileExt(ExtractFileName(FFilename))
+    Result := TFunctions.RemoveFileExt(ExtractFileName(FFilename))
   else if (FSongArtist <> '') and (FSongTitle <> '') then
     Result := FSongArtist + ' - ' + FSongTitle
   else if FServerTitle <> '' then
     Result := FServerTitle
   else
-    Result := RemoveFileExt(ExtractFileName(FFilename));
+    Result := TFunctions.RemoveFileExt(ExtractFileName(FFilename));
 end;
 
 class function TTrackInfo.Load(Stream: TExtendedStream; Version: Integer): TTrackInfo;
@@ -1781,7 +1781,7 @@ begin
 
   Stream.Read(Result.FFilename);
 
-  Result.FFilename := TryUnRelativePath(Result.FFilename);
+  Result.FFilename := TFunctions.TryUnRelativePath(Result.FFilename);
 
   Stream.Read(Result.FStreamname);
   Stream.Read(Result.FFilesize);
@@ -1814,7 +1814,7 @@ begin
   if Version > 51 then
     Stream.Read(Result.FServerTitle)
   else
-    Result.FServerTitle := RemoveFileExt(ExtractFileName(Result.FFilename));
+    Result.FServerTitle := TFunctions.RemoveFileExt(ExtractFileName(Result.FFilename));
 
   if Version > 54 then
   begin
@@ -1834,7 +1834,7 @@ end;
 
 procedure TTrackInfo.Save(Stream: TExtendedStream);
 begin
-  Stream.Write(TryRelativePath(FFilename, True, True));
+  Stream.Write(TFunctions.TryRelativePath(FFilename, True, True));
 
   Stream.Write(FStreamname);
   Stream.Write(FFilesize);
@@ -3370,7 +3370,7 @@ end;
 
 function TEncoderSettings.FGetHash: Cardinal;
 begin
-  Result := HashString(IntToStr(Integer(AudioType)) + IntToStr(Integer(BitrateType)) + IntToStr(CBRBitrate) + IntToStr(Integer(VBRQuality)));
+  Result := TFunctions.HashString(IntToStr(Integer(AudioType)) + IntToStr(Integer(BitrateType)) + IntToStr(CBRBitrate) + IntToStr(Integer(VBRQuality)));
 end;
 
 procedure TEncoderSettings.Load(Stream: TExtendedStream; Version: Integer);

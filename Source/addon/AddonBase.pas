@@ -111,7 +111,7 @@ begin
 
   FFilenames := TStringList.Create;
   FNeededAddons := TList.Create;
-  FNeededVersion := ParseVersion('1.0.0.0');
+  FNeededVersion := TFunctions.ParseVersion('1.0.0.0');
 end;
 
 procedure TAddonBase.DeleteFiles;
@@ -143,16 +143,18 @@ var
   i: Integer;
   H: THandle;
   Res: TResourceStream;
+  LibraryPath: string;
 begin
   if FilesExtracted then
     Exit(True);
 
   Result := False;
+  LibraryPath := ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]);
 
   ForceDirectories(FFilesDir);
-  if FileExists(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage])) then
+  if FileExists(LibraryPath) then
   begin
-    H := LoadLibrary(PChar(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage])));
+    H := LoadLibraryW(PWideChar(UnicodeString(LibraryPath)));
     if H > 0 then
     begin
       for i := 0 to FFilenames.Count - 1 do
@@ -168,7 +170,7 @@ begin
       Result := FilesExtracted;
       FreeLibrary(H);
     end else
-      SysUtils.DeleteFile(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]));
+      SysUtils.DeleteFile(LibraryPath);
   end;
 end;
 
@@ -220,8 +222,8 @@ var
 begin
   Result := True;
   try
-    Ver := Functions.GetFileVersion(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]));
-    if IsVersionNewer(Ver, FNeededVersion) then
+    Ver := TFunctions.GetFileVersion(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]));
+    if TFunctions.IsVersionNewer(Ver, FNeededVersion) then
       Result := False;
   except
     Result := False;

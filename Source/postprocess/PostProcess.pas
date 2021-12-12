@@ -341,17 +341,17 @@ begin
       Arr[13].C := 'genre';
       Arr[13].Replace := FData.Genre;
 
-      Replaced := PatternReplaceNew(FParams, Arr);
+      Replaced := TFunctions.PatternReplaceNew(FParams, Arr);
       if Trim(Replaced) <> '' then
       begin
         if LowerCase(ExtractFileExt(FExe)) = '.bat' then
-          Replaced := StringReplace(Replaced, '&', '^&', [rfReplaceAll])// & ist für Batch nen Sonderzeichen. Also escapen.
-        ;
+          // & ist für Batch nen Sonderzeichen. Also escapen.
+          Replaced := StringReplace(Replaced, '&', '^&', [rfReplaceAll]);
         CmdLine := '"' + FExe + '" ' + Replaced;
       end else
         CmdLine := FExe;
-      Res := RunProcess(CmdLine, ExtractFilePath(FExe), 120000, Output, EC, @Terminated, False);
-      FData.Filesize := Functions.GetFileSize(FData.Filename);
+      Res := TFunctions.RunProcess(CmdLine, ExtractFilePath(FExe), 120000, Output, EC, @Terminated, False);
+      FData.Filesize := TFunctions.GetFileSize(FData.Filename);
       FOutput := Output;
       case Res of
         rpWin:
@@ -406,7 +406,7 @@ end;
 
 function TExternalPostProcess.FGetHash: Cardinal;
 begin
-  Result := inherited + HashString(FExe + FParams);
+  Result := inherited + TFunctions.HashString(FExe + FParams);
 end;
 
 function TExternalPostProcess.FGetName: string;
@@ -478,7 +478,7 @@ end;
 
 function TPostProcessBase.FGetHash: Cardinal;
 begin
-  Result := HashString(BoolToStr(FActive) + IntToStr(FOrder) + BoolToStr(FOnlyIfCut));
+  Result := TFunctions.HashString(BoolToStr(FActive) + IntToStr(FOrder) + BoolToStr(FOnlyIfCut));
 end;
 
 function TPostProcessBase.FGetHelp: string;
