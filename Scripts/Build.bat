@@ -14,7 +14,7 @@ SET "PUBLISHDIR=%PROJECTDIR%\Build\Publish"
 SET "ZIPFILES=%APPNAME%.exe"
 SET "UPLOADURL=https://streamwriter.org/de/downloads/svnbuild/?download=67&filename=%APPNAME%"
 
-call :main
+call :main %1
 echo(
 if %ERRORLEVEL% EQU 0 (
   echo Ok
@@ -104,8 +104,10 @@ goto end
   call :copyfiles
   if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 
-  call :upload
-  if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+  if "%1"=="upload" (
+    call :upload
+    if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+  )
 
   exit /b 0
 

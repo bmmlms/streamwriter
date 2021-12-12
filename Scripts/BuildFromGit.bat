@@ -35,7 +35,7 @@ goto end
   
   cd "streamwriter\Scripts"
   
-  call build.bat
+  call build.bat upload
   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
   
   xcopy /s "..\Build" "%SCRIPTSDIR2%\..\Build\"
