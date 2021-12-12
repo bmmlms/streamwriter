@@ -21,28 +21,25 @@
 program streamwriter;
 
 uses
-  Windows,
-  Classes,
-  Messages,
-  SysUtils,
-  Forms,
-  Interfaces,
-  ShlObj,
-  Images,
-  JwaWinNT,
   AppData,
   AppDataBase,
   AppMessages,
   AppStartup,
+  Classes,
   DynBass,
   DynOpenSSL,
+  Forms,
   Functions,
+  Interfaces,
+  JwaWinNT,
   LanguageObjects,
   Main,
   MessageBus,
   PlayerManager,
   SharedData,
   SplashThread,
+  SysUtils,
+  Windows,
   Wizard;
 
 {$SetPEFlags IMAGE_FILE_LARGE_ADDRESS_AWARE}

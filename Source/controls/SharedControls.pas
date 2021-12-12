@@ -36,7 +36,6 @@ uses
   Logging,
   Math,
   Menus,
-  Messages,
   SharedData,
   SysUtils,
   Themes,
@@ -122,7 +121,6 @@ type
     procedure SetEnabled(Value: Boolean); override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
-    destructor Destroy; override;
 
     property OnVolumeChange: TNotifyEvent read FVolumeChange write FVolumeChange;
     property Volume: Integer read FGetVolume write FSetVolume;
@@ -266,12 +264,6 @@ begin
   RefreshButtonState(True);
 end;
 
-destructor TVolumePanel.Destroy;
-begin
-  inherited;
-
-end;
-
 { TSeekBar }
 
 procedure TSeekBar.Paint;
@@ -294,13 +286,14 @@ begin
     R.Right := Bmp.Width;
     R.Bottom := Bmp.Height;
 
-    if not ThemeServices.ThemesEnabled then
+    if ThemeServices.ThemesEnabled then
+      ThemeServices.DrawParentBackground(Handle, BMP.Canvas.Handle, nil, False)
+    else
     begin
       Bmp.Canvas.Brush.Style := bsSolid;
       Bmp.Canvas.Brush.Color := clBtnFace;
       Bmp.Canvas.FillRect(R);
-    end else
-      ThemeServices.DrawParentBackground(Handle, BMP.Canvas.Handle, nil, False);
+    end;
 
     PaintBackground(Bmp);
     PaintGripper(Bmp);
@@ -422,15 +415,8 @@ begin
 
       ThemeServices.DrawElement(Bmp.Canvas.Handle, D, R);
       ThemeServices.DrawElement(Bmp.Canvas.Handle, D2, R);
-    end; { else
-      case GetGripperState of
-        gsNormal:
-          DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, False);
-        gsHot:
-          DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, False, True);
-        gsDown:
-          DrawButtonFace(Bmp.Canvas, R, 1, bsAutoDetect, True, True, True);
-      end; }
+    end else
+      DrawFrameControl(Bmp.Canvas.Handle, R, DFC_BUTTON, IfThen<Integer>(GetGripperState = gsDown, DFCS_BUTTONPUSH or DFCS_PUSHED, DFCS_BUTTONPUSH));
 
     FLastGripperState := GetGripperState;
     FLastGripperPos := FPosition;

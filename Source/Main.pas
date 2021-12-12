@@ -653,7 +653,7 @@ begin
     if pagMain.Pages[i].ClassType = TCutTab then
       pagMain.Pages[i].Free;
 
-  Application.Terminate;
+  ExitProcess(0);
 end;
 
 procedure TfrmStreamWriterMain.actSettingsExecute(Sender: TObject);
