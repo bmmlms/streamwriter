@@ -524,11 +524,6 @@ begin
   AppGlobals.PlayerVolumeBeforeMute := Players.VolumeBeforeMute;
 
   HomeComm.Terminate;
-  while (HomeComm.ThreadAlive) and HomeComm.Connected do
-  begin
-    Sleep(100);
-    Application.ProcessMessages;
-  end;
 
   tabSaved.StopThreads;
 
@@ -995,8 +990,6 @@ begin
   actPlayerMuteVolume.Enabled := Bass.DeviceAvailable;
   actEqualizer.Enabled := Bass.DeviceAvailable;
 
-  tabSavedRefresh(nil);
-
   tmrAutoSave.Enabled := True;
   tmrRecordings.Enabled := True;
 
@@ -1055,6 +1048,9 @@ var
 begin
   if FWasShown then
     Exit;
+
+  // Das hier darf erst aufgerufen werden nachdem der SavedTree befüllt wurde
+  tabSavedRefresh(nil);
 
   if Application.ShowMainForm then
     for i := 0 to ParamCount do
@@ -2663,8 +2659,10 @@ var
   i, n: Integer;
   Track: TTrackInfo;
   E: TFileEntry;
+  RemoveTracks: TList<TTrackInfo>;
 begin
   tabSaved.Tree.BeginUpdate;
+  RemoveTracks := TList<TTrackInfo>.Create;
   try
     for i := 0 to FCheckFiles.Files.Count - 1 do
     begin
@@ -2681,19 +2679,18 @@ begin
         begin
           Track := AppGlobals.Data.TrackList[n];
           case E.Action of
-            feaNone: ;
             feaSize:
               Track.Filesize := E.Size;
             feaRemove:
-            begin
-              AppGlobals.Data.TrackList.Delete(n);
-              tabSaved.Tree.RemoveTracks([Track]);
-            end;
+              RemoveTracks.Add(Track);
           end;
           Break;
         end;
     end;
+
+    tabSaved.Tree.RemoveTracks(RemoveTracks.ToArray);
   finally
+    RemoveTracks.Free;
     tabSaved.Tree.EndUpdate;
   end;
 

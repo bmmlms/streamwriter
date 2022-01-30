@@ -276,8 +276,7 @@ procedure THomeThread.DoEnded;
 begin
   inherited;
 
-  if not Terminated then
-    Sleep(5000);
+  FTerminatedEvent.WaitFor(5000);
 end;
 
 procedure THomeThread.DoMessageReceived(CommandHeader: TCommandHeader; Command: TCommandMessageResponse);

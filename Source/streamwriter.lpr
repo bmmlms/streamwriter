@@ -27,7 +27,6 @@ uses
   AppStartup,
   Classes,
   DynBass,
-  DynOpenSSL,
   Forms,
   Functions,
   Interfaces,
@@ -37,9 +36,11 @@ uses
   MessageBus,
   PlayerManager,
   SharedData,
+  Sockets,
   SplashThread,
   SysUtils,
   Windows,
+  WinSock2,
   Wizard;
 
 {$SetPEFlags IMAGE_FILE_LARGE_ADDRESS_AWARE}
@@ -48,27 +49,37 @@ uses
 {$SetPEOptFlags IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE}
 
 {$R *.res}
-{$R ..\Resources\images.rc}
 {$R ..\Resources\language.res}
-{$R ..\Resources\bass.rc}
-{$R ..\Resources\openssl.rc}
-{$R ..\Resources\about.rc}
-{$R ..\Resources\certificates.rc}
 {$R ..\SubModules\fpc-common\res\language_common.res}
 {$R ..\SubModules\fpc-common\res\lang_icons.rc}
+
+procedure UnhandledException(Obj: TObject; Addr: Pointer; FrameCount: Longint; Frames: PPointer);
+var
+  i: LongInt;
+  Message: string;
+begin
+  Message := 'An unhandled exception occurred at %s'#13#10.Format([Trim(SysBacktraceStr(Addr))]);
+  if Obj is Exception then
+    Message += '%s: %s'#13#10.Format([Exception(Obj).ClassName, Exception(Obj).Message]);
+
+  Message += '  %s'.Format([StringReplace(Trim(BackTraceStrFunc(Addr)), '  ', ' ', [rfReplaceAll])]);
+  for i := 0 to FrameCount - 1 do
+    Message += #13#10'  %s'.Format([StringReplace(Trim(BackTraceStrFunc(Frames[i])), '  ', ' ', [rfReplaceAll])]);
+
+  TFunctions.MsgBox(Message, 'Error', MB_ICONERROR);
+end;
 
 var
   i: Integer;
   HideMain, Found: Boolean;
   frmStreamWriterMain: TfrmStreamWriterMain;
-
 begin
   IsMultiThread := True;
 
+  ExceptProc := @UnhandledException;
   SetErrorMode(SEM_FAILCRITICALERRORS);
 
   Bass := nil;
-  OpenSSL := nil;
   try
     if not InitWinsock then
       Exit;
@@ -92,6 +103,7 @@ begin
     MsgBus := TSWMessageBus.Create;
 
     Application.Title := AppGlobals.AppName;
+    Application.CaptureExceptions := False;
     Application.Initialize;
 
     if not InitAppStageOne then
@@ -108,6 +120,8 @@ begin
       TSplashThread.Create('Window', 'SPLASH', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.GitSHA,
         AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
 
+    TSocketThread.LoadCertificates('CERTIFICATES');
+
     // Now load everything from datafiles
     if not InitAppDataStageTwo then
       Exit;
@@ -117,13 +131,6 @@ begin
     if not Bass.InitializeBass(0, True, False, False, False) then
     begin
       TFunctions.MsgBox(_('The BASS library or it''s plugins could not be extracted/loaded. Without these libraries streamWriter cannot record/playback streams. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
-      Exit;
-    end;
-
-    OpenSSL := TOpenSSLLoader.Create;
-    if not OpenSSL.InitializeOpenSSL(AppGlobals.TempDir) then
-    begin
-      TFunctions.MsgBox(_('The OpenSSL libraries could not be extracted/loaded. Without these libraries streamWriter cannot be run. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
       Exit;
     end;
 
@@ -155,10 +162,9 @@ begin
 
     Application.Run;
   finally
+    WSACleanup;
+    TSocketThread.FreeCertificates;
     if Bass <> nil then
       Bass.Free;
-    if OpenSSL <> nil then
-      OpenSSL.Free;
   end;
 end.
-

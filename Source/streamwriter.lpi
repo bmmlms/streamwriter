@@ -16,6 +16,16 @@
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
+      <Resources Count="8">
+        <Resource_0 FileName="..\Resources\bass\bass.dll" Type="RCDATA" ResourceName="BASS"/>
+        <Resource_1 FileName="..\Resources\bass\bass_aac.dll" Type="RCDATA" ResourceName="BASS_AAC"/>
+        <Resource_2 FileName="..\Resources\about\thanksimage0.jpg" Type="RCDATA" ResourceName="THANKSIMAGE0"/>
+        <Resource_3 FileName="..\Resources\about\thankstext_de.txt" Type="RCDATA" ResourceName="THANKSTEXT_DE"/>
+        <Resource_4 FileName="..\Resources\about\thankstext_en.txt" Type="RCDATA" ResourceName="THANKSTEXT_EN"/>
+        <Resource_5 FileName="..\Resources\images\mainicon.ico" Type="ICON" ResourceName="MAINICON"/>
+        <Resource_6 FileName="..\Resources\images\splash.png" Type="RCDATA" ResourceName="SPLASH"/>
+        <Resource_7 FileName="..\Resources\certificates.pem" Type="RCDATA" ResourceName="CERTIFICATES"/>
+      </Resources>
     </General>
     <VersionInfo>
       <UseVersionInfo Value="True"/>
@@ -33,7 +43,8 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\fpc-common\openssl;$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\fpc-common\openssl;..\SubModules\TRegExpr\src"/>
+            <Libraries Value="D:\msys64\mingw32\i686-w64-mingw32\lib\;D:\msys64\mingw32\lib\gcc\i686-w64-mingw32\10.2.0\"/>
+            <OtherUnitFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\TRegExpr\src"/>
             <UnitOutputDirectory Value="..\Build\Units\$(TargetCPU)\$(BuildMode)"/>
           </SearchPaths>
           <Parsing>
@@ -81,25 +92,25 @@
     </RunParams>
     <RequiredPackages Count="6">
       <Item1>
-        <PackageName Value="mcontrols"/>
+        <PackageName Value="indylaz"/>
       </Item1>
       <Item2>
-        <PackageName Value="virtualtreeview_package"/>
+        <PackageName Value="mcontrols"/>
       </Item2>
       <Item3>
-        <PackageName Value="DateTimeCtrls"/>
+        <PackageName Value="virtualtreeview_package"/>
       </Item3>
       <Item4>
-        <PackageName Value="DragDropLazarus"/>
+        <PackageName Value="DateTimeCtrls"/>
       </Item4>
       <Item5>
-        <PackageName Value="indylaz"/>
+        <PackageName Value="DragDropLazarus"/>
       </Item5>
       <Item6>
         <PackageName Value="LCL"/>
       </Item6>
     </RequiredPackages>
-    <Units Count="111">
+    <Units Count="110">
       <Unit0>
         <Filename Value="streamwriter.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -584,44 +595,40 @@
         <IsPartOfProject Value="True"/>
       </Unit101>
       <Unit102>
-        <Filename Value="..\SubModules\fpc-common\openssl\DynOpenSSL.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit102>
-      <Unit103>
-        <Filename Value="..\SubModules\fpc-common\openssl\IdSSLOpenSSLHeadersCustom.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit103>
-      <Unit104>
         <Filename Value="SetStreamData.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmSetStreamData"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+      </Unit102>
+      <Unit103>
+        <Filename Value="Constants.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit103>
+      <Unit104>
+        <Filename Value="Images.pas"/>
+        <IsPartOfProject Value="True"/>
       </Unit104>
       <Unit105>
-        <Filename Value="Constants.pas"/>
+        <Filename Value="audio\DynBASS.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit105>
       <Unit106>
-        <Filename Value="Images.pas"/>
+        <Filename Value="controls\CutToolBar.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit106>
       <Unit107>
-        <Filename Value="audio\DynBASS.pas"/>
+        <Filename Value="controls\ChartsPopup.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit107>
       <Unit108>
-        <Filename Value="controls\CutToolBar.pas"/>
+        <Filename Value="controls\ClientAddressBar.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit108>
       <Unit109>
-        <Filename Value="controls\ChartsPopup.pas"/>
+        <Filename Value="..\SubModules\fpc-common\sockets\mbedTLS.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit109>
-      <Unit110>
-        <Filename Value="controls\ClientAddressBar.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit110>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -632,7 +639,8 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\fpc-common\openssl;$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\fpc-common\openssl;..\SubModules\TRegExpr\src"/>
+      <Libraries Value="D:\msys64\mingw32\i686-w64-mingw32\lib\;D:\msys64\mingw32\lib\gcc\i686-w64-mingw32\10.2.0\"/>
+      <OtherUnitFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\TRegExpr\src"/>
       <UnitOutputDirectory Value="..\Build\Units\$(TargetCPU)\$(BuildMode)"/>
     </SearchPaths>
     <Parsing>

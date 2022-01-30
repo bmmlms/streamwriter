@@ -31,6 +31,16 @@ goto end
   exit /b 0
 
 :build
+  if exist "%OUTDIR%\" (
+    rmdir /s /q "%OUTDIR%"
+  )
+
+  REM Build libraries
+  copy /y "%PROJECTDIR%\SubModules\mbedtls_config.h" "%PROJECTDIR%\SubModules\mbedtls\include\mbedtls\mbedtls_config.h"
+  if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
+  call "%MSYS2%" -defterm -no-start -where "%PROJECTDIR%\SubModules\mbedtls" -mingw32 -c "make clean && make -j lib && exit"
+  if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
+
   cd "%SOURCEDIR%"
 
   instantfpc "%SCRIPTSDIR%\SetGitVersion.pas" streamwriter.lpi streamwriter_gitsha.lpi
@@ -50,7 +60,16 @@ goto end
     lazbuild --build-all --cpu=i386 --os=Win32 --build-mode=Release "%%~nxf"
     if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
   )
+
+  cd "%OUTDIR%"
   
+  for %%f in (*.*) do (
+    type "%%f" | "%PLINK%" -batch gaia osslsigncode-sign.sh > "%%f-signed"
+    if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
+    move /y "%%f-signed" "%%f"
+    if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
+  )
+
   exit /b 0
 
 :zip
@@ -66,6 +85,11 @@ goto end
 
   "%INNO%" /O"%OUTDIR%" %APPNAME%.iss
   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
+
+  type "%OUTDIR%\%APPNAME%_setup.exe" | "%PLINK%" -batch gaia osslsigncode-sign.sh > "%OUTDIR%\%APPNAME%_setup-signed.exe"
+  IF ERRORLEVEL 1 GOTO FAIL
+  move /y "%OUTDIR%\%APPNAME%_setup-signed.exe" "%OUTDIR%\%APPNAME%_setup.exe"
+  IF ERRORLEVEL 1 GOTO FAIL
 
   exit /b 0
 

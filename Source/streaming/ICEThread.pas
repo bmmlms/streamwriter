@@ -423,8 +423,6 @@ begin
 end;
 
 procedure TICEThread.DoEnded;
-var
-  StartTime, Delay: UInt64;
 begin
   WriteLog(_('Connection closed'), slInfo);
 
@@ -445,18 +443,10 @@ begin
 
   if FError then
   begin
-    Delay := FTypedStream.Settings.RetryDelay * 1000;
-
     FState := tsRetrying;
     Sync(FOnStateChanged);
-    // TODO: per event lösen..
-    StartTime := GetTickCount64;
-    while StartTime > GetTickCount64 - Delay do
-    begin
-      Sleep(100);
-      if Terminated then
-        Exit;
-    end;
+
+    FTerminatedEvent.WaitFor(FTypedStream.Settings.RetryDelay * 1000);
   end;
 end;
 

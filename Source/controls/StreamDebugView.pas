@@ -265,8 +265,8 @@ begin
   if Column = 0 then
   begin
     case FClient.DebugLog[Node.Index].Level of
-      llError: Index := TImages.EXCLAMATION;
-      llWarning: Index := TImages.ERROR;
+      llError: Index := TImages.ERROR;
+      llWarning: Index := TImages.EXCLAMATION;
       llDebug: Index := TImages.BUG;
     end;
 
