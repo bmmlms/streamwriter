@@ -31,6 +31,7 @@ uses
   Classes,
   ComboEx,
   ComCtrls,
+  CommCtrl,
   ConfigureEncoder,
   Constants,
   Controls,
@@ -92,6 +93,24 @@ type
     destructor Destroy; override;
     procedure UpdateList(List: TStringList);
     procedure RemoveSelected;
+  end;
+
+  { TListViewHelper }
+
+  TListViewHelper = class helper for TListView
+  public
+    procedure AddGroup(const ID: Integer; const Name: UnicodeString);
+    procedure EnableGroupView;
+  end;
+
+  { TListItemHelper }
+
+  TListItemHelper = class helper for TListItem
+  private
+    function FGetGroupID: Integer;
+    procedure FSetGroupID(const Value: Integer);
+  public
+    property GroupID: Integer read FGetGroupID write FSetGroupID;
   end;
 
   { TfrmSettings }
@@ -394,6 +413,53 @@ const
 implementation
 
 {$R *.lfm}
+
+{ TListViewHelper }
+
+procedure TListViewHelper.AddGroup(const ID: Integer; const Name: UnicodeString);
+var
+  LVG: LVGROUP;
+begin
+  FillChar(LVG, SizeOf(LVG), $00);
+  LVG.cbSize := SizeOf(LVG);
+  LVG.mask := LVGF_HEADER or LVGF_GROUPID;
+  LVG.cchHeader := Length(Name);
+  LVG.pszHeader := PWideChar(Name);
+  LVG.iGroupId := ID;
+
+  ListView_InsertGroup(Handle, -1, LPARAM(@LVG));
+end;
+
+procedure TListViewHelper.EnableGroupView;
+begin
+  ListView_EnableGroupView(Handle, WPARAM(True));
+end;
+
+{ TListItemHelper }
+
+function TListItemHelper.FGetGroupID: Integer;
+var
+  LVI: TLVITEMW;
+begin
+  FillChar(LVI, SizeOf(LVI), $00);
+  LVI.mask := LVIF_GROUPID;
+  LVI.iItem := Index;
+  SendMessage(ListView.Handle, LVM_GETITEM, 0, LPARAM(@LVI));
+  Result := LVI.iGroupId;
+end;
+
+procedure TListItemHelper.FSetGroupID(const Value: Integer);
+var
+  LVI: TLVITEMW;
+begin
+  FillChar(LVI, SizeOf(LVI), $00);
+  LVI.mask := LVIF_GROUPID;
+  LVI.iItem := Index;
+  LVI.iGroupId := Value;
+  SendMessage(ListView.Handle, LVM_SETITEM, 0, LPARAM(@LVI));
+end;
+
+{ TfrmSettings }
 
 destructor TfrmSettings.Destroy;
 var
@@ -1267,11 +1333,6 @@ begin
   if (lstSoundDevice.Control.ItemsEx.Count > 0) and (lstSoundDevice.Control.ItemsEx[0].Data <> nil) and (TBassDevice(lstSoundDevice.Control.ItemsEx[0].Data).IsDefault) then
     lstSoundDevice.Control.ItemsEx[0].Caption := _('Default device');
 
-  {
-  lstPostProcess.Groups[0].Header := _('Processing when in WAVE-format');
-  lstPostProcess.Groups[1].Header := _('Processing after conversion to destination format');
-  }
-
   BuildHotkeys;
 
   lstDefaultAction.Control.ItemIndex := FDefaultActionIdx;
@@ -1343,13 +1404,16 @@ var
   i: Integer;
   Item: TListItem;
 begin
+  lstPostProcess.AddGroup(0, _('Processing when in WAVE-format'));
+  lstPostProcess.AddGroup(1, _('Processing after conversion to destination format'));
+  lstPostProcess.EnableGroupView;
+
   lstPostProcess.Items.BeginUpdate;
   try
     lstPostProcess.Items.Clear;
     for i := 0 to FTemporaryPostProcessors.Count - 1 do
     begin
       Item := lstPostProcess.Items.Add;
-      // Item.GroupID := FTemporaryPostProcessors[i].GroupID;
       Item.Caption := FTemporaryPostProcessors[i].Name;
       Item.Checked := FTemporaryPostProcessors[i].Active;
       // Data must be set at last that events (i.e. lstPostProcessItemChecked) do not fire
@@ -1359,6 +1423,8 @@ begin
         Item.ImageIndex := TImages.LIGHTNING
       else
         Item.ImageIndex := TImages.APPLICATION_XP_TERMINAL;
+
+      Item.GroupID := FTemporaryPostProcessors[i].GroupID;
     end;
   finally
     lstPostProcess.Items.EndUpdate;
@@ -1863,6 +1929,9 @@ begin
 
   if Page = FPageList.Find(pnlFilenames) then
     txtPreview.Control.Text := '';
+
+  // Without this, listview groups won't work
+  RebuildPostProcessingList;
 end;
 
 procedure TfrmSettings.ShowEncoderNeededMessage;
@@ -2021,9 +2090,30 @@ begin
 end;
 
 procedure TfrmSettings.UpdatePostProcessUpDown;
+var
+  i: Integer;
+  PrevInGroup: TListItem = nil;
+  NextInGroup: TListItem = nil;
 begin
-  // btnMoveUp.Enabled := (lstPostProcess.Selected <> nil) and (TObject(lstPostProcess.Selected.Data) is TExternalPostProcess) and (not (lstPostProcess.Selected.Index = 0)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index - 1].GroupID <> lstPostProcess.Selected.GroupID));
-  // btnMoveDown.Enabled := (lstPostProcess.Selected <> nil) and (TObject(lstPostProcess.Selected.Data) is TExternalPostProcess) and (not (lstPostProcess.Selected.Index = lstPostProcess.Items.Count - 1)) and (not (lstPostProcess.Items[lstPostProcess.Selected.Index + 1].GroupID <> lstPostProcess.Selected.GroupID));
+  if not Assigned(lstPostProcess.Selected) then
+    Exit;
+
+  for i := lstPostProcess.Selected.Index - 1 downto 0 do
+    if lstPostProcess.Items[i].GroupID = lstPostProcess.Selected.GroupID then
+    begin
+      PrevInGroup := lstPostProcess.Items[i];
+      Break;
+    end;
+
+  for i := lstPostProcess.Selected.Index + 1 to lstPostProcess.Items.Count - 1 do
+    if lstPostProcess.Items[i].GroupID = lstPostProcess.Selected.GroupID then
+    begin
+      NextInGroup := lstPostProcess.Items[i];
+      Break;
+    end;
+
+  btnMoveUp.Enabled := Assigned(PrevInGroup);
+  btnMoveDown.Enabled := Assigned(NextInGroup);
 end;
 
 procedure TfrmSettings.BlacklistTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
@@ -2107,13 +2197,8 @@ begin
           PostProcessor := TExternalPostProcess.Create(dlgOpen.FileName, '"%filename%"', True, False, GetNewID, 100000, AddPostProcessorForm.Result);
           PostProcessor.IsNew := True;
           FTemporaryPostProcessors.Insert(HighestGroupIndex(AddPostProcessorForm.Result) + 1, PostProcessor);
-          // Item.GroupID := PostProcessor.GroupID;
-          Item.Checked := PostProcessor.Active;
-          Item.Data := PostProcessor;
-          Item.ImageIndex := TImages.APPLICATION_XP_TERMINAL;
-          Item.Selected := True;
 
-          if TPostProcessBase(Item.Data).NeedsWave then
+          if PostProcessor.NeedsWave then
             ShowEncoderNeededMessage;
 
           RebuildPostProcessingList;
@@ -2235,21 +2320,37 @@ end;
 
 procedure TfrmSettings.btnMoveClick(Sender: TObject);
 var
-  i: integer;
+  i: Integer;
   Selected: TPostProcessBase;
+  PrevInGroup: TListItem = nil;
+  NextInGroup: TListItem = nil;
 begin
   if lstPostProcess.Selected = nil then
     Exit;
+
+  for i := lstPostProcess.Selected.Index - 1 downto 0 do
+    if lstPostProcess.Items[i].GroupID = lstPostProcess.Selected.GroupID then
+    begin
+      PrevInGroup := lstPostProcess.Items[i];
+      Break;
+    end;
+
+  for i := lstPostProcess.Selected.Index + 1 to lstPostProcess.Items.Count - 1 do
+    if lstPostProcess.Items[i].GroupID = lstPostProcess.Selected.GroupID then
+    begin
+      NextInGroup := lstPostProcess.Items[i];
+      Break;
+    end;
 
   Selected := TPostProcessBase(lstPostProcess.Selected.Data);
 
   for i := 0 to FTemporaryPostProcessors.Count - 1 do
     if FTemporaryPostProcessors[i] = TPostProcessBase(lstPostProcess.Selected.Data) then
     begin
-      if Sender = btnMoveUp then
-        FTemporaryPostProcessors.Exchange(i, i - 1)
-      else
-        FTemporaryPostProcessors.Exchange(i, i + 1);
+      if (Sender = btnMoveUp) and Assigned(PrevInGroup) then
+        FTemporaryPostProcessors.Exchange(i, PrevInGroup.Index)
+      else if (Sender = btnMoveDown) and Assigned(NextInGroup) then
+        FTemporaryPostProcessors.Exchange(i, NextInGroup.Index);
       Break;
     end;
 
