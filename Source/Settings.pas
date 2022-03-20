@@ -1144,7 +1144,7 @@ begin
 
   lstAddons.OnItemChecked := nil;
   for i := 0 to lstAddons.Items.Count - 1 do
-    lstAddons.Items[i].Checked := TAddonBase(lstAddons.Items[i].Data).PackageDownloaded;
+    lstAddons.Items[i].Checked := TAddonBase(lstAddons.Items[i].Data).PackageDownloaded and TAddonBase(lstAddons.Items[i].Data).FilesExtracted;
   lstAddons.OnItemChecked := lstAddonsItemChecked;
 
   btnConfigureEncoder.Enabled := lstOutputFormat.Control.ItemIndex > 0;
@@ -1166,7 +1166,7 @@ begin
   // Eventuell wurden Abhängigkeiten mitinstalliert. Also alles mal aktualisieren.
   lstAddons.OnItemChecked := nil;
   for i := 0 to lstAddons.Items.Count - 1 do
-    lstAddons.Items[i].Checked := TAddonBase(lstAddons.Items[i].Data).FilesExtracted;
+    lstAddons.Items[i].Checked := TAddonBase(lstAddons.Items[i].Data).PackageDownloaded and TAddonBase(lstAddons.Items[i].Data).FilesExtracted;
   lstAddons.OnItemChecked := lstAddonsItemChecked;
 end;
 
@@ -1205,7 +1205,7 @@ begin
 
   lstAddons.OnItemChecked := nil;
   for i := 0 to lstAddons.Items.Count - 1 do
-    lstAddons.Items[i].Checked := TAddonBase(lstAddons.Items[i].Data).PackageDownloaded;
+    lstAddons.Items[i].Checked := TAddonBase(lstAddons.Items[i].Data).PackageDownloaded and TAddonBase(lstAddons.Items[i].Data).FilesExtracted;
   lstAddons.OnItemChecked := lstAddonsItemChecked;
 
   lstPostProcess.Selected := Item;
@@ -3000,7 +3000,7 @@ begin
   begin
     Item := lstAddons.Items.Add;
     Item.Caption := AppGlobals.AddonManager.Addons[i].Name;
-    Item.Checked := AppGlobals.AddonManager.Addons[i].FilesExtracted;
+    Item.Checked := AppGlobals.AddonManager.Addons[i].PackageDownloaded and AppGlobals.AddonManager.Addons[i].FilesExtracted;
     Item.Data := AppGlobals.AddonManager.Addons[i].Copy;
 
     Item.ImageIndex := TImages.PLUGIN;

@@ -116,9 +116,9 @@ begin
     Exit;
 
   if (AppGlobals.Language <> '') and (AppGlobals.WebLanguages.IndexOf(LowerCase(AppGlobals.Language)) > -1) then
-    URL := AppGlobals.ProjectUpdateLinks[0] + Trim(AppGlobals.Language) + '/downloads/getaddon/' + LowerCase(AppGlobals.AppName) + '/' + AppGlobals.AppVersion.AsString + '/' + LowerCase(FDownloadName) + '/'
+    URL := AppGlobals.ProjectUpdateLinks[0] + '/' + Trim(AppGlobals.Language) + '/downloads/getaddon/' + LowerCase(AppGlobals.AppName) + '/' + AppGlobals.AppVersion.AsString + '/' + LowerCase(FDownloadName)
   else
-    URL := AppGlobals.ProjectUpdateLinks[0] + 'en/downloads/getaddon/' + LowerCase(AppGlobals.AppName) + '/' + AppGlobals.AppVersion.AsString + '/' + LowerCase(FDownloadName) + '/';
+    URL := AppGlobals.ProjectUpdateLinks[0] + '/en/downloads/getaddon/' + LowerCase(AppGlobals.AppName) + '/' + AppGlobals.AppVersion.AsString + '/' + LowerCase(FDownloadName);
 
   FDownloader := TDownloadClient.Create(URL);
   FDownloader.OnDownloadProgress := DownloaderDownloadProgress;
