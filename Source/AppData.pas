@@ -670,7 +670,7 @@ begin
   FStorage.Read('Pass', FPass, '');
   if FPass <> '' then
     try
-      DecodeStringBase64(FPass);
+      FPass := DecodeStringBase64(FPass);
     except
       FPass := '';
     end;
