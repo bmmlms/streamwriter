@@ -30,6 +30,7 @@ uses
   Classes,
   DynBass,
   FileTagger,
+  InterfaceBase,
   Logging,
   MessageBus,
   SysUtils,
@@ -48,7 +49,7 @@ type
     FPosToReach: Cardinal;
     FEndPos: Cardinal;
     FShowTitle: Boolean;
-    //    FMessageHWnd: HWND;
+    FMessageHWnd: HWND;
 
     FEQEnabled: Boolean;
     FBandData: array[0..9] of TBandData;
@@ -141,7 +142,7 @@ var
 begin
   P := TPlayer(user);
 
-  //  PostMessage(P.FMessageHWnd, 1001, 0, 0);
+  PostMessage(P.FMessageHWnd, 1001, 0, 0);
 end;
 
 procedure EndSyncProc(handle: HSYNC; channel, Data: DWORD; user: Pointer); stdcall;
@@ -153,7 +154,7 @@ begin
   P.FPaused := False;
   P.FStopped := False;
 
-  //  PostMessage(P.FMessageHWnd, 1000, 0, 0);
+  PostMessage(P.FMessageHWnd, 1000, 0, 0);
 end;
 
 { TPlayer }
@@ -165,7 +166,7 @@ begin
   inherited;
 
   FShowTitle := True;
-  //  FMessageHWnd := AllocateHWnd(WndMethod);     // TODO:
+  FMessageHWnd := WidgetSet.AllocateHWnd(WndMethod);
 
   for i := 0 to High(FBandData) do
     FBandData[i].Handle := 0;
@@ -202,14 +203,13 @@ end;
 
 destructor TPlayer.Destroy;
 begin
-  //  DeallocateHWnd(FMessageHWnd);
+  WidgetSet.DeallocateHWnd(FMessageHWnd);
 
   // Crashed bei Programmende, deshalb try..except. Ist nötig wegen dem SavedTab,
   // wenn man hier nicht freigibt, kann er nicht speichern.
   Players.RemovePlayer(Self);
   try
-    // TODO:
-    // FreeStream(FPlayer);
+    FreeStream(FPlayer);
   except
   end;
 
@@ -486,9 +486,9 @@ begin
   end;
 
   if Handled then
-    Msg.Result := 0;
-  //  else
-  //    Msg.Result := DefWindowProc(FMessageHWnd, Msg.Msg, Msg.WParam, Msg.LParam);
+    Msg.Result := 0
+  else
+    Msg.Result := DefWindowProc(FMessageHWnd, Msg.Msg, Msg.WParam, Msg.LParam);
 end;
 
 end.
