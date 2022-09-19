@@ -729,6 +729,8 @@ end;
 
 procedure TfrmStreamWriterMain.actLogOffExecute(Sender: TObject);
 begin
+  AppGlobals.Pass := '';
+
   HomeComm.SendLogOut;
 end;
 
