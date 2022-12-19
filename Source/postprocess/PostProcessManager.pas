@@ -90,6 +90,11 @@ begin
   end;
 end;
 
+function ComparePostProcessors(constref L, R: TPostProcessBase): Integer;
+begin
+  Result := TFunctions.CmpInt(L.Order, R.Order);
+end;
+
 procedure TPostProcessManager.BuildProcessingList(Entry: TProcessingEntry);
 var
   i: Integer;
@@ -129,14 +134,7 @@ begin
     Entry.PostProcessList.Add(Client.Entry.Settings.PostProcessors[0].Copy);
 
   // Nach Order sortieren
-  {
-  Client.Entry.Settings.PostProcessors.Sort(TComparer<TPostProcessBase>.Construct(
-    function (const L, R: TPostProcessBase): Integer
-    begin
-      Result := TFunctions.CmpInt(L.Order, R.Order);
-    end
-  ));
-  }
+  Client.Entry.Settings.PostProcessors.Sort(TComparer<TPostProcessBase>.Construct(@ComparePostProcessors));
 
   // Erst die mit GroupID 0 fitmachen (WAVE-Phase)
   for i := 0 to Client.Entry.Settings.PostProcessors.Count - 1 do
