@@ -30,7 +30,7 @@ uses
   AudioStream,
   Classes,
   DataManager,
-  ExtendedStream,
+  StreamHelper,
   Functions,
   HTTPThread,
   ICEPlayer,

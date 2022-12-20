@@ -31,13 +31,13 @@ uses
   ComCtrls,
   Constants,
   DateUtils,
-  ExtendedStream,
   Functions,
   Generics.Collections,
   Generics.Defaults,
   Logging,
   PostProcess,
   PowerManagement,
+  StreamHelper,
   SWFunctions,
   SysUtils,
   TypeDefs,
@@ -82,8 +82,8 @@ type
     constructor Create(ServerHash, ServerArtistHash: Cardinal; Title: string); overload;
     function Copy: TTitleInfo;
 
-    class function Load(Stream: TExtendedStream; Version: Integer): TTitleInfo;
-    procedure Save(Stream: TExtendedStream);
+    class function Load(Stream: TMemoryStream; Version: Integer): TTitleInfo;
+    procedure Save(Stream: TMemoryStream);
 
     property Title: string read FTitle write FTitle;
     property Added: TDateTime read FAdded write FAdded;
@@ -123,9 +123,9 @@ type
     procedure Assign(Source: TStreamBrowserEntry);
     function Copy: TStreamBrowserEntry;
 
-    class function Load(Stream: TExtendedStream; Version: Integer): TStreamBrowserEntry;
-    class function LoadFromHome(Stream: TExtendedStream; Version: Integer): TStreamBrowserEntry;
-    procedure Save(Stream: TExtendedStream);
+    class function Load(Stream: TMemoryStream; Version: Integer): TStreamBrowserEntry;
+    class function LoadFromHome(Stream: TMemoryStream; Version: Integer): TStreamBrowserEntry;
+    procedure Save(Stream: TMemoryStream);
 
     // The unique ID of the stream
     property ID: Integer read FID write FID;
@@ -189,8 +189,8 @@ type
     procedure Assign(Source: TTrackInfo);
     function Copy: TTrackInfo;
 
-    class function Load(Stream: TExtendedStream; Version: Integer): TTrackInfo;
-    procedure Save(Stream: TExtendedStream);
+    class function Load(Stream: TMemoryStream; Version: Integer): TTrackInfo;
+    procedure Save(Stream: TMemoryStream);
 
     // The time the title was saved
     property Time: TDateTime read FTime write FTime;
@@ -238,8 +238,8 @@ type
   public
     constructor Create(Name: string; Idx: Integer); overload;
 
-    class function Load(Stream: TExtendedStream; Version: Integer): TListCategory;
-    procedure Save(Stream: TExtendedStream);
+    class function Load(Stream: TMemoryStream; Version: Integer): TListCategory;
+    procedure Save(Stream: TMemoryStream);
 
     // The name of the category
     property Name: string read FName write FName;
@@ -272,8 +272,8 @@ type
     procedure Assign(From: TRecentEntry);
     function Copy: TRecentEntry;
 
-    class function Load(Stream: TExtendedStream; Version: Integer): TRecentEntry;
-    procedure Save(Stream: TExtendedStream);
+    class function Load(Stream: TMemoryStream; Version: Integer): TRecentEntry;
+    procedure Save(Stream: TMemoryStream);
 
     // The stream's id
     property ID: Cardinal read FID write FID;
@@ -295,8 +295,8 @@ type
   public
     constructor Create(Name, URL: string; Rating: Integer);
 
-    class function Load(Stream: TExtendedStream; Version: Integer): TRatingEntry;
-    procedure Save(Stream: TExtendedStream);
+    class function Load(Stream: TMemoryStream; Version: Integer): TRatingEntry;
+    procedure Save(Stream: TMemoryStream);
 
     property Name: string read FName;
     property URL: string read FURL;
@@ -319,8 +319,8 @@ type
     procedure Assign(From: TSchedule);
     function Copy: TSchedule;
 
-    class function Load(Stream: TExtendedStream; Version: Integer): TSchedule;
-    procedure Save(Stream: TExtendedStream);
+    class function Load(Stream: TMemoryStream; Version: Integer): TSchedule;
+    procedure Save(Stream: TMemoryStream);
 
     function GetStartTime(ModificationAllowed: Boolean): TDateTime;
     function GetEndTime(ScheduleStarted: TDateTime): TDateTime;
@@ -357,8 +357,8 @@ type
     VBRQuality: TVBRQualities;
 
     constructor Create(AudioType: TAudioTypes; BitrateType: TBitrates; VBRQuality: TVBRQualities);
-    procedure Load(Stream: TExtendedStream; Version: Integer); overload;
-    procedure Save(Stream: TExtendedStream); overload;
+    procedure Load(Stream: TMemoryStream; Version: Integer); overload;
+    procedure Save(Stream: TMemoryStream); overload;
     procedure Assign(From: TEncoderSettings);
     function Copy: TEncoderSettings;
 
@@ -440,11 +440,11 @@ type
     class procedure ApplyAutoDefaults(Data: TDataLists; S: TStreamSettings);
 
     // Loads an instance of TStreamSettings from a stream
-    class function Load(Stream: TExtendedStream; Version: Integer): TStreamSettings;
-    class function LoadAuto(Data: TDataLists; Stream: TExtendedStream; Version: Integer): TStreamSettings;
+    class function Load(Stream: TMemoryStream; Version: Integer): TStreamSettings;
+    class function LoadAuto(Data: TDataLists; Stream: TMemoryStream; Version: Integer): TStreamSettings;
     // Saves this instance of TStreamSettings to a stream
-    procedure Save(Stream: TExtendedStream);
-    procedure SaveAuto(Stream: TExtendedStream);
+    procedure Save(Stream: TMemoryStream);
+    procedure SaveAuto(Stream: TMemoryStream);
     // Assigns this instance of TStreamSettings to From
     procedure Assign(From: TStreamSettings);
     // Copies this instance of TStreamSettings
@@ -587,8 +587,8 @@ type
 
     procedure Assign(From: TStreamEntry);
     function Copy: TStreamEntry;
-    class function Load(Data: TDataLists; Stream: TExtendedStream; Version: Integer): TStreamEntry;
-    procedure Save(Stream: TExtendedStream);
+    class function Load(Data: TDataLists; Stream: TMemoryStream; Version: Integer): TStreamEntry;
+    procedure Save(Stream: TMemoryStream);
 
     property Settings: TStreamSettings read FSettings;
 
@@ -645,8 +645,8 @@ type
     procedure Assign(Source: TChartCategory);
     function Copy: TChartCategory;
 
-    class function Load(Stream: TExtendedStream; Version: Integer): TChartCategory;
-    procedure Save(Stream: TExtendedStream);
+    class function Load(Stream: TMemoryStream; Version: Integer): TChartCategory;
+    procedure Save(Stream: TMemoryStream);
 
     property ID: Cardinal read FID;
     property Name: string read FName;
@@ -664,7 +664,7 @@ type
     constructor Create(ID, PlayedLastDay, PlayedLastWeek, PlayedLast: Cardinal);
     function Copy: TChartStream;
 
-    class function Load(Stream: TExtendedStream; Version: Integer): TChartStream;
+    class function Load(Stream: TMemoryStream; Version: Integer): TChartStream;
 
     property ID: Cardinal read FID;
     property Stream: TStreamBrowserEntry read FStream write FStream;
@@ -705,7 +705,7 @@ type
     procedure Assign(Source: TChartEntry);
     function Copy: TChartEntry;
 
-    class function LoadFromHome(Stream: TExtendedStream; Version: Integer): TChartEntry;
+    class function LoadFromHome(Stream: TMemoryStream; Version: Integer): TChartEntry;
 
     procedure LoadStreams;
 
@@ -736,9 +736,9 @@ type
     constructor Create; overload;
     constructor Create(Name: string; ID: Cardinal); overload;
 
-    class function Load(Stream: TExtendedStream; Version: Integer): TGenre;
-    class function LoadFromHome(Stream: TExtendedStream; Version: Integer): TGenre;
-    procedure Save(Stream: TExtendedStream);
+    class function Load(Stream: TMemoryStream; Version: Integer): TGenre;
+    class function LoadFromHome(Stream: TMemoryStream; Version: Integer): TGenre;
+    procedure Save(Stream: TMemoryStream);
 
     property ID: Cardinal read FID write FID;
     property Name: string read FName write FName;
@@ -789,13 +789,13 @@ type
     // Cleans all lists and frees all their items
     procedure CleanLists;
     procedure Load(Recovery: Boolean); overload;
-    procedure Load(var S: TExtendedStream; Filename: string); overload;
+    procedure Load(var S: TMemoryStream; Filename: string); overload;
     procedure Save(UseCompression: Boolean); overload;
-    procedure Save(S: TExtendedStream; UseCompression: Boolean); overload;
+    procedure Save(S: TMemoryStream; UseCompression: Boolean); overload;
     procedure SaveRecover;
     procedure CheckEncodersAndPostProcessors;
 
-    class procedure VerifyMagic(S: TExtendedStream; MinVersion: Cardinal; IsData: Boolean);
+    class procedure VerifyMagic(S: TStream; MinVersion: Cardinal; IsData: Boolean);
 
     property DefaultStreamSettings: TStreamSettings read FDefaultStreamSettings;
     property StreamSettings: TStreamSettings read FStreamSettings;
@@ -872,7 +872,7 @@ begin
   FUpdatedToHash := True;
 end;
 
-class function TTitleInfo.Load(Stream: TExtendedStream; Version: Integer): TTitleInfo;
+class function TTitleInfo.Load(Stream: TMemoryStream; Version: Integer): TTitleInfo;
 var
   NumChars: Integer;
   Hash: Cardinal;
@@ -916,7 +916,7 @@ begin
     Result.FUpdatedToHash := (Result.ServerHash > 0) or (Result.ServerArtistHash > 0);
 end;
 
-procedure TTitleInfo.Save(Stream: TExtendedStream);
+procedure TTitleInfo.Save(Stream: TMemoryStream);
 begin
   Stream.Write(FTitle);
   Stream.Write(FAdded);
@@ -1040,7 +1040,7 @@ begin
   FName := Value;
 end;
 
-class function TStreamEntry.Load(Data: TDataLists; Stream: TExtendedStream; Version: Integer): TStreamEntry;
+class function TStreamEntry.Load(Data: TDataLists; Stream: TMemoryStream; Version: Integer): TStreamEntry;
 var
   BTmp: Boolean;
   i: Integer;
@@ -1142,7 +1142,7 @@ begin
     Result.FIgnoreListIndex := High(Cardinal);
 end;
 
-procedure TStreamEntry.Save(Stream: TExtendedStream);
+procedure TStreamEntry.Save(Stream: TMemoryStream);
 var
   i: Integer;
 begin
@@ -1319,7 +1319,7 @@ begin
   inherited;
 end;
 
-procedure TDataLists.Load(var S: TExtendedStream; Filename: string);
+procedure TDataLists.Load(var S: TMemoryStream; Filename: string);
 var
   Entry: TStreamEntry;
   TitleInfo: TTitleInfo;
@@ -1327,7 +1327,7 @@ var
   Str: string;
   Version, CatCount, EntryCount: Integer;
   i: Integer;
-  DecompressedStream: TExtendedStream;
+  DecompressedStream: TMemoryStream;
   Compressed: Boolean;
   ChartCategory: TChartCategory;
   TitleCount, Hash: Cardinal;
@@ -1351,7 +1351,7 @@ begin
 
   if Compressed then
   begin
-    DecompressedStream := TExtendedStream.Create;
+    DecompressedStream := TMemoryStream.Create;
     try
       TFunctions.DecompressStream(S, DecompressedStream);
 
@@ -1519,7 +1519,7 @@ end;
 procedure TDataLists.Load(Recovery: Boolean);
 var
   Filename: string;
-  S: TExtendedStream;
+  S: TMemoryStream;
 begin
   if Recovery then
     Filename := AppGlobals.RecoveryFile
@@ -1529,7 +1529,7 @@ begin
   if Filename = '' then
     Exit;
 
-  S := TExtendedStream.Create;
+  S := TMemoryStream.Create;
   try
     try
       S.LoadFromFile(Filename);
@@ -1554,16 +1554,16 @@ begin
   end;
 end;
 
-procedure TDataLists.Save(S: TExtendedStream; UseCompression: Boolean);
+procedure TDataLists.Save(S: TMemoryStream; UseCompression: Boolean);
 var
   i: Integer;
-  CompressedStream: TExtendedStream;
+  CompressedStream: TMemoryStream;
 begin
   S.Write(Integer(DATAVERSION));
 
   S.Write(UseCompression);
 
-  CompressedStream := TExtendedStream.Create;
+  CompressedStream := TMemoryStream.Create;
   try
     CompressedStream.Write(FReceived);
     CompressedStream.Write(FSongsSaved);
@@ -1629,9 +1629,9 @@ end;
 
 procedure TDataLists.SaveRecover;
 var
-  S: TExtendedStream;
+  S: TMemoryStream;
 begin
-  S := TExtendedStream.Create;
+  S := TMemoryStream.Create;
   try
     S.WriteBuffer(DATAMAGIC[0], Length(DATAMAGIC));
     Save(S, False);
@@ -1641,7 +1641,7 @@ begin
   end;
 end;
 
-class procedure TDataLists.VerifyMagic(S: TExtendedStream; MinVersion: Cardinal; IsData: Boolean);
+class procedure TDataLists.VerifyMagic(S: TStream; MinVersion: Cardinal; IsData: Boolean);
 var
   Buf: array[0..Length(DATAMAGIC) - 1] of Byte;
   Magic: array[0..Length(DATAMAGIC) - 1] of Byte;
@@ -1688,7 +1688,7 @@ end;
 
 procedure TDataLists.Save(UseCompression: Boolean);
 var
-  S: TExtendedStream;
+  S: TMemoryStream;
 begin
   if (AppGlobals.SkipSave) or (AppGlobals.DataFile = '') then
     Exit;
@@ -1698,7 +1698,7 @@ begin
 
   if not FLoadError then
   begin
-    S := TExtendedStream.Create;
+    S := TMemoryStream.Create;
     try
       S.WriteBuffer(DATAMAGIC[0], Length(DATAMAGIC));
       Save(S, UseCompression);
@@ -1775,7 +1775,7 @@ begin
     Result := TFunctions.RemoveFileExt(ExtractFileName(FFilename));
 end;
 
-class function TTrackInfo.Load(Stream: TExtendedStream; Version: Integer): TTrackInfo;
+class function TTrackInfo.Load(Stream: TMemoryStream; Version: Integer): TTrackInfo;
 begin
   Result := TTrackInfo.Create;
 
@@ -1832,7 +1832,7 @@ begin
     Stream.Read(Result.FRecordBecauseArtist);
 end;
 
-procedure TTrackInfo.Save(Stream: TExtendedStream);
+procedure TTrackInfo.Save(Stream: TMemoryStream);
 begin
   Stream.Write(TFunctions.TryRelativePath(FFilename, True, True));
 
@@ -1929,7 +1929,7 @@ begin
   FKilled := False;
 end;
 
-class function TListCategory.Load(Stream: TExtendedStream; Version: Integer): TListCategory;
+class function TListCategory.Load(Stream: TMemoryStream; Version: Integer): TListCategory;
 begin
   Result := TListCategory.Create;
   Result.FKilled := False;
@@ -1940,7 +1940,7 @@ begin
     Stream.Read(Result.FIsAuto);
 end;
 
-procedure TListCategory.Save(Stream: TExtendedStream);
+procedure TListCategory.Save(Stream: TMemoryStream);
 begin
   Stream.Write(FIndex);
   Stream.Write(FName);
@@ -1994,7 +1994,7 @@ begin
   FBitrate := Bitrate;
 end;
 
-class function TRecentEntry.Load(Stream: TExtendedStream; Version: Integer): TRecentEntry;
+class function TRecentEntry.Load(Stream: TMemoryStream; Version: Integer): TRecentEntry;
 begin
   Result := TRecentEntry.Create(0, 0, '', '', 0);
   if Version >= 24 then
@@ -2006,7 +2006,7 @@ begin
     Stream.Read(Result.FBitrate);
 end;
 
-procedure TRecentEntry.Save(Stream: TExtendedStream);
+procedure TRecentEntry.Save(Stream: TMemoryStream);
 begin
   Stream.Write(FID);
   Stream.Write(FName);
@@ -2094,7 +2094,7 @@ begin
   end;
 end;
 
-class function TSchedule.Load(Stream: TExtendedStream; Version: Integer): TSchedule;
+class function TSchedule.Load(Stream: TMemoryStream; Version: Integer): TSchedule;
 var
   B: Byte;
 begin
@@ -2114,7 +2114,7 @@ begin
   Stream.Read(Result.FEndMinute);
 end;
 
-procedure TSchedule.Save(Stream: TExtendedStream);
+procedure TSchedule.Save(Stream: TMemoryStream);
 begin
   Stream.Write(FActive);
   Stream.Write(FRecurring);
@@ -2139,7 +2139,7 @@ begin
   FRating := Rating;
 end;
 
-class function TRatingEntry.Load(Stream: TExtendedStream; Version: Integer): TRatingEntry;
+class function TRatingEntry.Load(Stream: TMemoryStream; Version: Integer): TRatingEntry;
 begin
   Result := TRatingEntry.Create('', '', 0);
   Stream.Read(Result.FName);
@@ -2147,7 +2147,7 @@ begin
   Stream.Read(Result.FRating);
 end;
 
-procedure TRatingEntry.Save(Stream: TExtendedStream);
+procedure TRatingEntry.Save(Stream: TMemoryStream);
 begin
   Stream.Write(FName);
   Stream.Write(FURL);
@@ -2233,7 +2233,7 @@ begin
   Result.Assign(Self);
 end;
 
-class function TStreamBrowserEntry.Load(Stream: TExtendedStream; Version: Integer): TStreamBrowserEntry;
+class function TStreamBrowserEntry.Load(Stream: TMemoryStream; Version: Integer): TStreamBrowserEntry;
 var
   i: Integer;
   B: Byte;
@@ -2293,7 +2293,7 @@ begin
     Stream.Read(Result.FCanSetRegExps);
 end;
 
-class function TStreamBrowserEntry.LoadFromHome(Stream: TExtendedStream; Version: Integer): TStreamBrowserEntry;
+class function TStreamBrowserEntry.LoadFromHome(Stream: TMemoryStream; Version: Integer): TStreamBrowserEntry;
 var
   i: Integer;
   B: Byte;
@@ -2339,7 +2339,7 @@ begin
   Stream.Read(Result.FCanSetRegExps);
 end;
 
-procedure TStreamBrowserEntry.Save(Stream: TExtendedStream);
+procedure TStreamBrowserEntry.Save(Stream: TMemoryStream);
 var
   i: Integer;
 begin
@@ -2439,7 +2439,7 @@ begin
   FStreams := TList<TChartStream>.Create;
 end;
 
-class function TChartEntry.LoadFromHome(Stream: TExtendedStream; Version: Integer): TChartEntry;
+class function TChartEntry.LoadFromHome(Stream: TMemoryStream; Version: Integer): TChartEntry;
 var
   i: Integer;
   C: Cardinal;
@@ -2504,7 +2504,7 @@ begin
 
 end;
 
-class function TGenre.Load(Stream: TExtendedStream; Version: Integer): TGenre;
+class function TGenre.Load(Stream: TMemoryStream; Version: Integer): TGenre;
 begin
   Result := TGenre.Create;
 
@@ -2520,7 +2520,7 @@ begin
   end;
 end;
 
-class function TGenre.LoadFromHome(Stream: TExtendedStream; Version: Integer): TGenre;
+class function TGenre.LoadFromHome(Stream: TMemoryStream; Version: Integer): TGenre;
 begin
   Result := TGenre.Create;
 
@@ -2529,7 +2529,7 @@ begin
   Stream.Read(Result.FStreamCount);
 end;
 
-procedure TGenre.Save(Stream: TExtendedStream);
+procedure TGenre.Save(Stream: TMemoryStream);
 begin
   Stream.Write(FID);
   Stream.Write(FName);
@@ -2563,14 +2563,14 @@ begin
   inherited;
 end;
 
-class function TChartCategory.Load(Stream: TExtendedStream; Version: Integer): TChartCategory;
+class function TChartCategory.Load(Stream: TMemoryStream; Version: Integer): TChartCategory;
 begin
   Result := TChartCategory.Create;
   Stream.Read(Result.FID);
   Stream.Read(Result.FName);
 end;
 
-procedure TChartCategory.Save(Stream: TExtendedStream);
+procedure TChartCategory.Save(Stream: TMemoryStream);
 begin
   Stream.Write(FID);
   Stream.Write(FName);
@@ -2591,7 +2591,7 @@ begin
   FPlayedLast := PlayedLast;
 end;
 
-class function TChartStream.Load(Stream: TExtendedStream; Version: Integer): TChartStream;
+class function TChartStream.Load(Stream: TMemoryStream; Version: Integer): TChartStream;
 begin
   Result := TChartStream.Create(0, 0, 0, 0);
   Stream.Read(Result.FID);
@@ -2763,7 +2763,7 @@ begin
   Result.FFilter := ufNone;
 end;
 
-class function TStreamSettings.Load(Stream: TExtendedStream; Version: Integer): TStreamSettings;
+class function TStreamSettings.Load(Stream: TMemoryStream; Version: Integer): TStreamSettings;
 var
   B: Byte;
   i, Count, FilterTmp, TypeTmp: Integer;
@@ -3008,7 +3008,7 @@ begin
   end;
 end;
 
-class function TStreamSettings.LoadAuto(Data: TDataLists; Stream: TExtendedStream; Version: Integer): TStreamSettings;
+class function TStreamSettings.LoadAuto(Data: TDataLists; Stream: TMemoryStream; Version: Integer): TStreamSettings;
 var
   i, Count, TypeTmp: Integer;
   T: TPostProcessTypes;
@@ -3075,7 +3075,7 @@ begin
   end;
 end;
 
-procedure TStreamSettings.Save(Stream: TExtendedStream);
+procedure TStreamSettings.Save(Stream: TMemoryStream);
 var
   i: Integer;
   Count: Integer;
@@ -3144,7 +3144,7 @@ begin
   end;
 end;
 
-procedure TStreamSettings.SaveAuto(Stream: TExtendedStream);
+procedure TStreamSettings.SaveAuto(Stream: TMemoryStream);
 var
   i: Integer;
   Count: Integer;
@@ -3373,7 +3373,7 @@ begin
   Result := TFunctions.HashString(IntToStr(Integer(AudioType)) + IntToStr(Integer(BitrateType)) + IntToStr(CBRBitrate) + IntToStr(Integer(VBRQuality)));
 end;
 
-procedure TEncoderSettings.Load(Stream: TExtendedStream; Version: Integer);
+procedure TEncoderSettings.Load(Stream: TMemoryStream; Version: Integer);
 var
   Tmp: Integer;
 begin
@@ -3386,7 +3386,7 @@ begin
   VBRQuality := TVBRQualities(Tmp);
 end;
 
-procedure TEncoderSettings.Save(Stream: TExtendedStream);
+procedure TEncoderSettings.Save(Stream: TMemoryStream);
 begin
   Stream.Write(Integer(BitrateType));
   Stream.Write(CBRBitrate);

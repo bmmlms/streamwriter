@@ -26,7 +26,6 @@ uses
   AudioFunctions,
   Classes,
   DataManager,
-  ExtendedStream,
   LanguageObjects,
   Logging,
   PostProcess,
@@ -76,8 +75,8 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Load(Stream: TExtendedStream; Version: Integer); override;
-    procedure Save(Stream: TExtendedStream); override;
+    procedure Load(Stream: TMemoryStream; Version: Integer); override;
+    procedure Save(Stream: TMemoryStream); override;
     function Copy: TPostProcessBase; override;
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
   end;
@@ -214,7 +213,7 @@ begin
   Result := _('Convert file');
 end;
 
-procedure TPostProcessConvert.Load(Stream: TExtendedStream; Version: Integer);
+procedure TPostProcessConvert.Load(Stream: TMemoryStream; Version: Integer);
 begin
 
 end;
@@ -235,7 +234,7 @@ begin
   Result := TPostProcessConvertThread.Create(Data, Self);
 end;
 
-procedure TPostProcessConvert.Save(Stream: TExtendedStream);
+procedure TPostProcessConvert.Save(Stream: TMemoryStream);
 begin
 
 end;

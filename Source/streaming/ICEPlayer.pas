@@ -29,16 +29,16 @@ uses
   AudioStream,
   Classes,
   DynBASS,
-  ExtendedStream,
   Logging,
   PlayerManager,
+  StreamHelper,
   SyncObjs,
   SysUtils;
 
 type
   TICEPlayer = class
   private
-    FMem: TExtendedStream;
+    FMem: TMemoryStream;
     FLock: TCriticalSection;
     FPlayer: DWORD;
     FPausing, FStopping: Boolean;
@@ -70,7 +70,7 @@ type
     property Paused: Boolean read FGetPaused;
     property Pausing: Boolean read FPausing;
     property Stopping: Boolean read FStopping;
-    property Mem: TExtendedStream read FMem;
+    property Mem: TMemoryStream read FMem;
     property DataRead: Boolean read FDataRead;
   end;
 
@@ -101,7 +101,7 @@ end;
 
 function BASSRead(buffer: Pointer; length: DWORD; user: Pointer): DWORD; stdcall;
 var
-  Mem: TExtendedStream;
+  Mem: TMemoryStream;
   CopyLen: Cardinal;
   Tries: Integer;
 begin

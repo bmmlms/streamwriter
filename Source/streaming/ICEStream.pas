@@ -31,7 +31,7 @@ uses
   Classes,
   Constants,
   DataManager,
-  ExtendedStream,
+  StreamHelper,
   Functions,
   Generics.Collections,
   Generics.Defaults,

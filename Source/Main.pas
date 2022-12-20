@@ -33,6 +33,7 @@ uses
   ChartsTab,
   CheckFilesThread,
   Classes,
+  StreamHelper,
   ClientManager,
   ClientTab,
   ClientView,
@@ -53,7 +54,6 @@ uses
   DynBass,
   Equalizer,
   ExtCtrls,
-  ExtendedStream,
   Forms,
   Functions,
   Generics.Collections,
@@ -439,7 +439,7 @@ var
   Res: Integer;
   Version: Cardinal;
   StartTime, HardTimeout: UInt64;
-  S: TExtendedStream;
+  S: TMemoryStream;
   Lst: TSettingsList;
 begin
   if FExiting then
@@ -597,7 +597,7 @@ begin
   if ImportFilename <> '' then
   begin
     try
-      S := TExtendedStream.Create;
+      S := TMemoryStream.Create;
       try
         S.LoadFromFile(ImportFilename);
 

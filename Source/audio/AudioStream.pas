@@ -27,7 +27,6 @@ interface
 uses
   Classes,
   DynBass,
-  ExtendedStream,
   LanguageObjects,
   Math,
   MPEG,
@@ -69,7 +68,7 @@ type
   end;
 
   // Abstract class for streams saved to memory
-  TAudioStreamMemory = class(TExtendedStream)
+  TAudioStreamMemory = class(TMemoryStream)
   public
     function GetFrame(F, T: Int64): TPosRect; virtual; abstract;
     procedure SaveToFile(const Filename: string; From, Length: Int64);
@@ -122,7 +121,7 @@ function TAudioStreamFile.SearchSilence(StartPos, EndPos, LenStart, LenEnd, MaxP
 var
   i, MaxLenIdx: Integer;
   WD, WD2: TWaveData;
-  M1, M2: TExtendedStream;
+  M1, M2: TMemoryStream;
   OldPos: Int64;
 begin
   OldPos := Position;
@@ -130,8 +129,8 @@ begin
   Result.DataStart := -1;
   Result.DataEnd := -1;
 
-  M1 := TExtendedStream.Create;
-  M2 := TExtendedStream.Create;
+  M1 := TMemoryStream.Create;
+  M2 := TMemoryStream.Create;
   WD := TWaveData.Create;
   WD2 := TWaveData.Create;
   try
@@ -396,7 +395,7 @@ function TAudioStreamMemory.SearchSilence(StartPos, EndPos, LenStart, LenEnd, Ma
 var
   i, MaxLenIdx: Integer;
   WD, WD2: TWaveData;
-  M1, M2: TExtendedStream;
+  M1, M2: TMemoryStream;
   OldPos: Int64;
 begin
   OldPos := Position;
@@ -404,8 +403,8 @@ begin
   Result.DataStart := -1;
   Result.DataEnd := -1;
 
-  M1 := TExtendedStream.Create;
-  M2 := TExtendedStream.Create;
+  M1 := TMemoryStream.Create;
+  M2 := TMemoryStream.Create;
   WD := TWaveData.Create;
   WD2 := TWaveData.Create;
   try

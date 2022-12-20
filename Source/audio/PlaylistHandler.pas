@@ -25,7 +25,6 @@ interface
 uses
   AudioFunctions,
   Classes,
-  ExtendedStream,
   Functions,
   StrUtils,
   SysUtils,
@@ -66,7 +65,7 @@ end;
 function TPlaylistHandler.ParsePlaylist(Filename: string): Boolean;
 var
   Ext: string;
-  MS: TExtendedStream;
+  MS: TMemoryStream;
 begin
   Result := False;
 
@@ -75,7 +74,7 @@ begin
   if (Ext <> '.m3u') and (Ext <> '.pls') then
     Exit;
 
-  MS := TExtendedStream.Create;
+  MS := TMemoryStream.Create;
   try
     MS.LoadFromFile(Filename);
 

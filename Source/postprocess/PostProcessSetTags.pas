@@ -26,13 +26,13 @@ uses
   AudioFunctions,
   Classes,
   ConfigureSetTags,
-  ExtendedStream,
   FileTagger,
   Functions,
   Generics.Collections,
   LanguageObjects,
   Logging,
   PostProcess,
+  StreamHelper,
   SWFunctions,
   SysUtils;
 
@@ -64,8 +64,8 @@ type
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
-    procedure Load(Stream: TExtendedStream; Version: Integer); override;
-    procedure Save(Stream: TExtendedStream); override;
+    procedure Load(Stream: TMemoryStream; Version: Integer); override;
+    procedure Save(Stream: TMemoryStream); override;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
   end;
 
@@ -252,7 +252,7 @@ begin
   Result := _('Write tags to recorded songs');
 end;
 
-procedure TPostProcessSetTags.Load(Stream: TExtendedStream; Version: Integer);
+procedure TPostProcessSetTags.Load(Stream: TMemoryStream; Version: Integer);
 begin
   inherited;
 
@@ -278,7 +278,7 @@ begin
   Result := TPostProcessSetTagsThread.Create(Data, Self, FArtist, FTitle, FAlbum, FGenre, FComment);
 end;
 
-procedure TPostProcessSetTags.Save(Stream: TExtendedStream);
+procedure TPostProcessSetTags.Save(Stream: TMemoryStream);
 begin
   inherited;
 

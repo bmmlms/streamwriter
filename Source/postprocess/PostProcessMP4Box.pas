@@ -27,7 +27,6 @@ uses
   AudioFunctions,
   Classes,
   DataManager,
-  ExtendedStream,
   Functions,
   Generics.Collections,
   LanguageObjects,
@@ -58,8 +57,8 @@ type
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
-    procedure Load(Stream: TExtendedStream; Version: Integer); override;
-    procedure Save(Stream: TExtendedStream); override;
+    procedure Load(Stream: TMemoryStream; Version: Integer); override;
+    procedure Save(Stream: TMemoryStream); override;
 
     function MP4BoxMux(InFile, OutFile: string; TerminateFlag: PByteBool): TActResults;
   end;
@@ -195,7 +194,7 @@ begin
   Result := _('Convert AAC to M4A');
 end;
 
-procedure TPostProcessMP4Box.Load(Stream: TExtendedStream; Version: Integer);
+procedure TPostProcessMP4Box.Load(Stream: TMemoryStream; Version: Integer);
 begin
   inherited;
 
@@ -206,7 +205,7 @@ begin
   Result := TPostProcessMP4BoxThread.Create(Data, Self);
 end;
 
-procedure TPostProcessMP4Box.Save(Stream: TExtendedStream);
+procedure TPostProcessMP4Box.Save(Stream: TMemoryStream);
 begin
   inherited;
 

@@ -26,7 +26,7 @@ uses
   AudioFunctions,
   Classes,
   Commands,
-  ExtendedStream,
+  StreamHelper,
   Functions,
   SysUtils,
   TypeDefs,
@@ -59,7 +59,7 @@ type
     FBuild: Cardinal;
     FLanguage: string;
   protected
-    procedure DoGet(S: TExtendedStream); override;
+    procedure DoGet(S: TMemoryStream); override;
   public
     constructor Create; override;
 
@@ -81,7 +81,7 @@ type
   public
     constructor Create; override;
 
-    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+    procedure Load(CommandHeader: TCommandHeader; Stream: TMemoryStream); override;
 
     property Success: Boolean read FSuccess;
     property ServerTime: Cardinal read FServerTime;
@@ -92,7 +92,7 @@ type
   public
     constructor Create;
 
-    function Process(ToStream: TExtendedStream): Boolean; override;
+    function Process(ToStream: TMemoryStream): Boolean; override;
   end;
 
   TCommandLogIn = class(TCommand)
@@ -100,7 +100,7 @@ type
     FUser: string;
     FPass: string;
   protected
-    procedure DoGet(S: TExtendedStream); override;
+    procedure DoGet(S: TMemoryStream); override;
   public
     constructor Create; overload; override;
     constructor Create(User, Pass: string); overload;
@@ -116,7 +116,7 @@ type
     constructor Create; overload; override;
     constructor Create(User, Pass: string); overload;
 
-    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+    procedure Load(CommandHeader: TCommandHeader; Stream: TMemoryStream); override;
 
     property Success: Boolean read FSuccess;
     property IsAdmin: Boolean read FIsAdmin;
@@ -148,7 +148,7 @@ type
     constructor Create; override;
     destructor Destroy; override;
 
-    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+    procedure Load(CommandHeader: TCommandHeader; Stream: TMemoryStream); override;
 
     property StreamID: Cardinal read FStreamID;
     property StreamName: string read FStreamName;
@@ -171,7 +171,7 @@ type
   public
     constructor Create; override;
 
-    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+    procedure Load(CommandHeader: TCommandHeader; Stream: TMemoryStream); override;
   end;
 
   TCommandServerInfoResponse = class(TCommand)
@@ -181,7 +181,7 @@ type
   public
     constructor Create; override;
 
-    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+    procedure Load(CommandHeader: TCommandHeader; Stream: TMemoryStream); override;
 
     property ClientCount: Cardinal read FClientCount;
     property RecordingCount: Cardinal read FRecordingCount;
@@ -194,7 +194,7 @@ type
   public
     constructor Create; override;
 
-    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+    procedure Load(CommandHeader: TCommandHeader; Stream: TMemoryStream); override;
 
     property MessageID: Cardinal read FMessageID;
     property MessageMsg: string read FMessageMsg;
@@ -204,7 +204,7 @@ type
   private
     FTitleNotifications: Boolean;
   protected
-    procedure DoGet(S: TExtendedStream); override;
+    procedure DoGet(S: TMemoryStream); override;
   public
     constructor Create; overload; override;
     constructor Create(TitleNotifications: Boolean); overload;
@@ -216,7 +216,7 @@ type
   private
     FStatType: TSendClientStatTypes;
   protected
-    procedure DoGet(S: TExtendedStream); override;
+    procedure DoGet(S: TMemoryStream); override;
   public
     constructor Create; overload; override;
     constructor Create(StatType: TSendClientStatTypes); overload;
@@ -229,7 +229,7 @@ type
     FURL: string;
     FStreamName: string;
   protected
-    procedure DoGet(S: TExtendedStream); override;
+    procedure DoGet(S: TMemoryStream); override;
   public
     constructor Create; overload; override;
     constructor Create(URL, StreamName: string); overload;
@@ -250,7 +250,7 @@ type
     FSetRegExps: Boolean;
     FRegExps: TStringArray;
   protected
-    procedure DoGet(S: TExtendedStream); override;
+    procedure DoGet(S: TMemoryStream); override;
   public
     constructor Create; override;
 
@@ -276,7 +276,7 @@ type
     FKbps: Cardinal;
     FURLs: string;
   protected
-    procedure DoGet(S: TExtendedStream); override;
+    procedure DoGet(S: TMemoryStream); override;
   public
     constructor Create; overload; override;
     constructor Create(StreamID: Cardinal; StreamName, StreamTitle, CurrentURL, URL: string; Format: TAudioTypes; Kbps: Cardinal; URLs: string); overload;
@@ -286,7 +286,7 @@ type
   private
     FCount: Cardinal;
   protected
-    procedure DoGet(S: TExtendedStream); override;
+    procedure DoGet(S: TMemoryStream); override;
   public
     constructor Create; overload; override;
     constructor Create(Count: Cardinal); overload;
@@ -300,7 +300,7 @@ type
   public
     constructor Create; override;
 
-    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+    procedure Load(CommandHeader: TCommandHeader; Stream: TMemoryStream); override;
 
     property StreamIDs: TIntArray read FStreamIDs;
   end;
@@ -310,7 +310,7 @@ type
     FSyncType: TSyncWishlistTypes;
     FHashes: TSyncWishlistRecordArray;
   protected
-    procedure DoGet(S: TExtendedStream); override;
+    procedure DoGet(S: TMemoryStream); override;
   public
     constructor Create; overload; override;
     constructor Create(SyncType: TSyncWishlistTypes; Hashes: TSyncWishlistRecordArray); overload;
@@ -323,7 +323,7 @@ type
     FTop: Boolean;
     FTerm: string;
   protected
-    procedure DoGet(S: TExtendedStream); override;
+    procedure DoGet(S: TMemoryStream); override;
   public
     constructor Create; overload; override;
     constructor Create(Top: Boolean; Term: string); overload;
@@ -335,7 +335,7 @@ type
   public
     constructor Create; override;
 
-    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+    procedure Load(CommandHeader: TCommandHeader; Stream: TMemoryStream); override;
 
     property Success: Boolean read FSuccess;
   end;
@@ -343,12 +343,12 @@ type
   TCommandStreamAnalyzationData = class(TCommand)
   private
     FStreamID: Cardinal;
-    FData: TExtendedStream;
+    FData: TMemoryStream;
   protected
-    procedure DoGet(S: TExtendedStream); override;
+    procedure DoGet(S: TMemoryStream); override;
   public
     constructor Create; overload; override;
-    constructor Create(StreamID: Cardinal; Data: TExtendedStream); overload;
+    constructor Create(StreamID: Cardinal; Data: TMemoryStream); overload;
     destructor Destroy; override;
   end;
 
@@ -356,7 +356,7 @@ type
   private
     FTitles: TStringArray;
   protected
-    procedure DoGet(S: TExtendedStream); override;
+    procedure DoGet(S: TMemoryStream); override;
   public
     constructor Create; overload; override;
     constructor Create(Titles: TStringArray); overload;
@@ -370,7 +370,7 @@ type
   public
     constructor Create; override;
 
-    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+    procedure Load(CommandHeader: TCommandHeader; Stream: TMemoryStream); override;
 
     property FoundTitles: TConvertManualToAutomaticArray read FFoundTitles;
     property NotFoundTitles: TStringArray read FNotFoundTitles;
@@ -380,7 +380,7 @@ type
   private
     FStreamID: Cardinal;
   protected
-    procedure DoGet(S: TExtendedStream); override;
+    procedure DoGet(S: TMemoryStream); override;
   public
     constructor Create; overload; override;
     constructor Create(StreamID: Cardinal); overload;
@@ -394,7 +394,7 @@ type
   public
     constructor Create; override;
 
-    procedure Load(CommandHeader: TCommandHeader; Stream: TExtendedStream); override;
+    procedure Load(CommandHeader: TCommandHeader; Stream: TMemoryStream); override;
 
     property LastTitles: TStringArray read FLastTitles;
     property OtherUserRegExps: TStringArray read FOtherUserRegExps;
@@ -413,7 +413,7 @@ begin
   FCommandType := ctHandshake;
 end;
 
-procedure TCommandHandshake.DoGet(S: TExtendedStream);
+procedure TCommandHandshake.DoGet(S: TMemoryStream);
 begin
   S.Write(FID);
   S.Write(FProtoVersion);
@@ -435,7 +435,7 @@ begin
 end;
 
 
-procedure TCommandHandshakeResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
+procedure TCommandHandshakeResponse.Load(CommandHeader: TCommandHeader; Stream: TMemoryStream);
 begin
   inherited;
 
@@ -463,7 +463,7 @@ begin
   FCommandType := ctGetServerDataResponse;
 end;
 
-procedure TCommandGetServerDataResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
+procedure TCommandGetServerDataResponse.Load(CommandHeader: TCommandHeader; Stream: TMemoryStream);
 begin
   LoadStream(Stream);
 end;
@@ -478,7 +478,7 @@ begin
   FPass := Pass;
 end;
 
-procedure TCommandLogIn.DoGet(S: TExtendedStream);
+procedure TCommandLogIn.DoGet(S: TMemoryStream);
 begin
   S.Write(FUser);
   S.Write(FPass);
@@ -500,7 +500,7 @@ begin
   FCommandType := ctLoginResponse;
 end;
 
-procedure TCommandLogInResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
+procedure TCommandLogInResponse.Load(CommandHeader: TCommandHeader; Stream: TMemoryStream);
 begin
   inherited;
 
@@ -530,7 +530,7 @@ begin
   inherited;
 end;
 
-procedure TCommandNetworkTitleChangedResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
+procedure TCommandNetworkTitleChangedResponse.Load(CommandHeader: TCommandHeader; Stream: TMemoryStream);
 var
   B: Byte;
   i: Integer;
@@ -566,10 +566,10 @@ begin
   inherited;
 
   FCommandType := ctUpdateStats;
-  FStream := TExtendedStream.Create;
+  FStream := TMemoryStream.Create;
 end;
 
-function TCommandUpdateStats.Process(ToStream: TExtendedStream): Boolean;
+function TCommandUpdateStats.Process(ToStream: TMemoryStream): Boolean;
 begin
   if FStream.Position = FStream.Size then
     Exit(False);
@@ -586,7 +586,7 @@ begin
   FCommandType := ctServerInfoResponse;
 end;
 
-procedure TCommandServerInfoResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
+procedure TCommandServerInfoResponse.Load(CommandHeader: TCommandHeader; Stream: TMemoryStream);
 begin
   inherited;
 
@@ -603,7 +603,7 @@ begin
   FCommandType := ctMessageResponse;
 end;
 
-procedure TCommandMessageResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
+procedure TCommandMessageResponse.Load(CommandHeader: TCommandHeader; Stream: TMemoryStream);
 begin
   inherited;
 
@@ -620,7 +620,7 @@ begin
   FTitleNotifications := TitleNotifications;
 end;
 
-procedure TCommandSetSettings.DoGet(S: TExtendedStream);
+procedure TCommandSetSettings.DoGet(S: TMemoryStream);
 begin
   S.Write(FTitleNotifications);
 end;
@@ -666,7 +666,7 @@ begin
   FCommandType := ctClientStats;
 end;
 
-procedure TCommandClientStats.DoGet(S: TExtendedStream);
+procedure TCommandClientStats.DoGet(S: TMemoryStream);
 begin
   S.Write(Byte(FStatType));
 end;
@@ -689,7 +689,7 @@ begin
   FCommandType := ctSubmitStream;
 end;
 
-procedure TCommandSubmitStream.DoGet(S: TExtendedStream);
+procedure TCommandSubmitStream.DoGet(S: TMemoryStream);
 begin
   S.Write(FURL);
   S.Write(FStreamName);
@@ -705,7 +705,7 @@ begin
   FCommandType := ctSetStreamData;
 end;
 
-procedure TCommandSetStreamData.DoGet(S: TExtendedStream);
+procedure TCommandSetStreamData.DoGet(S: TMemoryStream);
 var
   i: Integer;
 begin
@@ -745,7 +745,7 @@ begin
   FURLs := URLs;
 end;
 
-procedure TCommandTitleChanged.DoGet(S: TExtendedStream);
+procedure TCommandTitleChanged.DoGet(S: TMemoryStream);
 begin
   inherited;
 
@@ -768,7 +768,7 @@ begin
   FCommandType := ctGetMonitorStreamsResponse;
 end;
 
-procedure TCommandGetMonitorStreamsResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
+procedure TCommandGetMonitorStreamsResponse.Load(CommandHeader: TCommandHeader; Stream: TMemoryStream);
 var
   Count: Cardinal;
   i: Integer;
@@ -797,7 +797,7 @@ begin
   FCommandType := ctGetMonitorStreams;
 end;
 
-procedure TCommandGetMonitorStreams.DoGet(S: TExtendedStream);
+procedure TCommandGetMonitorStreams.DoGet(S: TMemoryStream);
 begin
   S.Write(FCount);
 end;
@@ -819,7 +819,7 @@ begin
   FHashes := Hashes;
 end;
 
-procedure TCommandSyncWishlist.DoGet(S: TExtendedStream);
+procedure TCommandSyncWishlist.DoGet(S: TMemoryStream);
 var
   i: Integer;
 begin
@@ -851,7 +851,7 @@ begin
   FTerm := Term;
 end;
 
-procedure TCommandSearchCharts.DoGet(S: TExtendedStream);
+procedure TCommandSearchCharts.DoGet(S: TMemoryStream);
 begin
   inherited;
 
@@ -868,11 +868,11 @@ begin
   FCommandType := ctSearchChartsResponse;
 end;
 
-procedure TCommandSearchChartsResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
+procedure TCommandSearchChartsResponse.Load(CommandHeader: TCommandHeader; Stream: TMemoryStream);
 begin
   LoadStream(Stream);
 
-  TExtendedStream(FStream).Read(FSuccess);
+  TMemoryStream(FStream).Read(FSuccess);
 end;
 
 { TSyncWishlistRecord }
@@ -889,11 +889,11 @@ constructor TCommandStreamAnalyzationData.Create;
 begin
   inherited;
 
-  FData := TExtendedStream.Create;
+  FData := TMemoryStream.Create;
   FCommandType := ctStreamAnalyzationData;
 end;
 
-constructor TCommandStreamAnalyzationData.Create(StreamID: Cardinal; Data: TExtendedStream);
+constructor TCommandStreamAnalyzationData.Create(StreamID: Cardinal; Data: TMemoryStream);
 begin
   Create;
 
@@ -909,16 +909,16 @@ begin
   inherited;
 end;
 
-procedure TCommandStreamAnalyzationData.DoGet(S: TExtendedStream);
+procedure TCommandStreamAnalyzationData.DoGet(S: TMemoryStream);
 var
-  CompressedData: TExtendedStream;
+  CompressedData: TMemoryStream;
 begin
   inherited;
 
   S.Write(FStreamID);
 
   FData.Seek(0, soFromBeginning);
-  CompressedData := TExtendedStream.Create;
+  CompressedData := TMemoryStream.Create;
   TFunctions.CompressStream(FData, CompressedData, clDefault);
   FData.Free;
   FData := CompressedData;
@@ -949,7 +949,7 @@ begin
   inherited;
 end;
 
-procedure TCommandConvertManualToAutomatic.DoGet(S: TExtendedStream);
+procedure TCommandConvertManualToAutomatic.DoGet(S: TMemoryStream);
 var
   i: Integer;
 begin
@@ -969,7 +969,7 @@ begin
   FCommandType := ctConvertManualToAutomaticResponse;
 end;
 
-procedure TCommandConvertManualToAutomaticResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
+procedure TCommandConvertManualToAutomaticResponse.Load(CommandHeader: TCommandHeader; Stream: TMemoryStream);
 var
   Count: Cardinal;
   i: Integer;
@@ -1010,7 +1010,7 @@ begin
   FStreamID := StreamID;
 end;
 
-procedure TCommandGetStreamData.DoGet(S: TExtendedStream);
+procedure TCommandGetStreamData.DoGet(S: TMemoryStream);
 begin
   inherited;
 
@@ -1026,7 +1026,7 @@ begin
   FCommandType := ctGetStreamDataResponse;
 end;
 
-procedure TCommandGetStreamDataResponse.Load(CommandHeader: TCommandHeader; Stream: TExtendedStream);
+procedure TCommandGetStreamDataResponse.Load(CommandHeader: TCommandHeader; Stream: TMemoryStream);
 var
   Count: Cardinal;
   i: Integer;

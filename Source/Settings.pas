@@ -40,7 +40,6 @@ uses
   DynBASS,
   EditBtn,
   ExtCtrls,
-  ExtendedStream,
   Forms,
   Functions,
   Generics.Collections,
@@ -391,8 +390,8 @@ type
     procedure SetPage(Page: TPage); override;
     procedure PreTranslate; override;
     procedure PostTranslate; override;
-    procedure GetExportDataHeader(Stream: TExtendedStream); override;
-    procedure GetExportData(Stream: TExtendedStream); override;
+    procedure GetExportDataHeader(Stream: TMemoryStream); override;
+    procedure GetExportData(Stream: TMemoryStream); override;
     function CheckImportFile(Filename: string): Boolean; override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure DoCreate; override;
@@ -983,7 +982,7 @@ begin
   FBrowseDir := False;
 end;
 
-procedure TfrmSettings.GetExportData(Stream: TExtendedStream);
+procedure TfrmSettings.GetExportData(Stream: TMemoryStream);
 begin
   inherited;
 
@@ -995,7 +994,7 @@ begin
   end;
 end;
 
-procedure TfrmSettings.GetExportDataHeader(Stream: TExtendedStream);
+procedure TfrmSettings.GetExportDataHeader(Stream: TMemoryStream);
 begin
   inherited;
 
@@ -2635,12 +2634,12 @@ end;
 
 function TfrmSettings.CheckImportFile(Filename: string): Boolean;
 var
-  S: TExtendedStream;
+  S: TMemoryStream;
 begin
   Result := inherited;
 
   try
-    S := TExtendedStream.Create;
+    S := TMemoryStream.Create;
     try
       S.LoadFromFile(Filename);
       TDataLists.VerifyMagic(S, 10, False);

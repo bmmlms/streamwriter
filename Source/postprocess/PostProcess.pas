@@ -25,11 +25,11 @@ interface
 uses
   AddonBase,
   Classes,
-  ExtendedStream,
   Functions,
   Generics.Collections,
   LanguageObjects,
   Logging,
+  StreamHelper,
   SWFunctions,
   SysUtils,
   Windows;
@@ -135,8 +135,8 @@ type
     function Copy: TPostProcessBase; virtual; abstract;
     procedure Assign(Source: TPostProcessBase); virtual;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; virtual;
-    procedure Load(Stream: TExtendedStream; Version: Integer); virtual;
-    procedure Save(Stream: TExtendedStream); overload; virtual;
+    procedure Load(Stream: TMemoryStream; Version: Integer); virtual;
+    procedure Save(Stream: TMemoryStream); overload; virtual;
     function ShowInitMessage(Handle: THandle): Boolean; virtual;
 
     property NeedsWave: Boolean read FGetNeedsWave;
@@ -195,8 +195,8 @@ type
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
-    procedure Load(Stream: TExtendedStream; Version: Integer); override;
-    procedure Save(Stream: TExtendedStream); overload; override;
+    procedure Load(Stream: TMemoryStream; Version: Integer); override;
+    procedure Save(Stream: TMemoryStream); overload; override;
 
     property Exe: string read FExe write FSetExe;
     property Params: string read FParams write FParams;
@@ -420,7 +420,7 @@ begin
   FName := ExtractFileName(FExe);
 end;
 
-procedure TExternalPostProcess.Load(Stream: TExtendedStream; Version: Integer);
+procedure TExternalPostProcess.Load(Stream: TMemoryStream; Version: Integer);
 begin
   inherited;
 
@@ -442,7 +442,7 @@ begin
   Result := Thread;
 end;
 
-procedure TExternalPostProcess.Save(Stream: TExtendedStream);
+procedure TExternalPostProcess.Save(Stream: TMemoryStream);
 begin
   inherited;
 
@@ -496,14 +496,14 @@ begin
   Result := GroupID = 0;
 end;
 
-procedure TPostProcessBase.Load(Stream: TExtendedStream; Version: Integer);
+procedure TPostProcessBase.Load(Stream: TMemoryStream; Version: Integer);
 begin
   Stream.Read(FActive);
   Stream.Read(FOrder);
   Stream.Read(FOnlyIfCut);
 end;
 
-procedure TPostProcessBase.Save(Stream: TExtendedStream);
+procedure TPostProcessBase.Save(Stream: TMemoryStream);
 begin
   Stream.Write(FActive);
   Stream.Write(FOrder);

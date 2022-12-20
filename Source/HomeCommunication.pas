@@ -31,7 +31,6 @@ uses
   Communication,
   DataManager,
   DateUtils,
-  ExtendedStream,
   Functions,
   Generics.Collections,
   HomeCommands,
@@ -39,6 +38,7 @@ uses
   MessageBus,
   Protocol,
   Sockets,
+  StreamHelper,
   SysUtils,
   TypeDefs;
 
@@ -206,7 +206,7 @@ type
     procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hashes: TSyncWishlistRecordArray); overload;
     procedure SendSyncWishlist(SyncType: TSyncWishlistTypes; Hash: Cardinal; IsArtist: Boolean); overload;
     procedure SendSearchCharts(Top: Boolean; Term: string);
-    procedure SendStreamAnalyzationData(StreamID: Cardinal; Data: TExtendedStream);
+    procedure SendStreamAnalyzationData(StreamID: Cardinal; Data: TMemoryStream);
     procedure SendConvertManualToAutomatic(Titles: TStringList);
     procedure SendGetStreamData(StreamID: Integer);
 
@@ -406,9 +406,9 @@ procedure THomeThread.DoSearchChartsReceived(CommandHeader: TCommandHeader; Comm
 var
   i: Integer;
   Count: Cardinal;
-  Stream: TExtendedStream;
+  Stream: TMemoryStream;
 begin
-  Stream := TExtendedStream(Command.Stream);
+  Stream := TMemoryStream(Command.Stream);
 
   FSearchReceivedChartsSuccess := Command.Success;
   FSearchReceivedCharts := nil;
@@ -445,13 +445,13 @@ procedure THomeThread.DoServerDataReceived(CommandHeader: TCommandHeader; Comman
 var
   i: Integer;
   Count: Cardinal;
-  Stream: TExtendedStream;
+  Stream: TMemoryStream;
   StreamEntry, StreamEntry2: TStreamBrowserEntry;
   Genre: TGenre;
   Genres: TGenreList;
   Streams: TStreamBrowserList;
 begin
-  Stream := TExtendedStream(Command.Stream);
+  Stream := TMemoryStream(Command.Stream);
 
   Genres := TGenreList.Create;
   Streams := TStreamBrowserList.Create;
@@ -637,7 +637,7 @@ begin
   FThread.SendCommand(Cmd);
 end;
 
-procedure THomeCommunication.SendStreamAnalyzationData(StreamID: Cardinal; Data: TExtendedStream);
+procedure THomeCommunication.SendStreamAnalyzationData(StreamID: Cardinal; Data: TMemoryStream);
 begin
   if not FCommunicationEstablished then
     Exit;
@@ -718,13 +718,13 @@ procedure THomeCommunication.SendUpdateStats(List: TList<Cardinal>; RecordingCou
 var
   i: Integer;
   Cmd: TCommandUpdateStats;
-  Stream: TExtendedStream;
+  Stream: TMemoryStream;
 begin
   if not FCommunicationEstablished then
     Exit;
 
   Cmd := TCommandUpdateStats.Create;
-  Stream := TExtendedStream(Cmd.Stream);
+  Stream := TMemoryStream(Cmd.Stream);
 
   Stream.Write(Cardinal(List.Count));
   for i := 0 to List.Count - 1 do

@@ -26,12 +26,12 @@ uses
   AudioFunctions,
   Classes,
   DataManager,
-  ExtendedStream,
   Functions,
   Generics.Collections,
   LanguageObjects,
   Logging,
   PostProcess,
+  StreamHelper,
   SysUtils;
 
 type
@@ -67,8 +67,8 @@ type
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
-    procedure Load(Stream: TExtendedStream; Version: Integer); override;
-    procedure Save(Stream: TExtendedStream); override;
+    procedure Load(Stream: TMemoryStream; Version: Integer); override;
+    procedure Save(Stream: TMemoryStream); override;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
     //function EatFiles(LameFile, MADFile: string): Boolean;
   end;
@@ -284,7 +284,7 @@ begin
   Result := _('Apply effects using SoX');
 end;
 
-procedure TPostProcessSoX.Load(Stream: TExtendedStream; Version: Integer);
+procedure TPostProcessSoX.Load(Stream: TMemoryStream; Version: Integer);
 begin
   inherited;
 
@@ -306,7 +306,7 @@ begin
   Result := TPostProcessSoxThread.Create(Data, Self);
 end;
 
-procedure TPostProcessSoX.Save(Stream: TExtendedStream);
+procedure TPostProcessSoX.Save(Stream: TMemoryStream);
 begin
   inherited;
 
