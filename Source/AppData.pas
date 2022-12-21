@@ -62,7 +62,6 @@ type
     FDirAuto: string;
     FTray: Boolean;
     FTrayOnMinimize: Boolean;
-    FSnapMain: Boolean;
     FRememberRecordings: Boolean;
     FRememberPlaying: Boolean;
     FDisplayPlayedSong: Boolean;
@@ -206,8 +205,6 @@ type
     property Tray: Boolean read FTray write FTray;
     // When set streamWriter will minimize to tray when the window is minimized (will not minimize to tray on close)
     property TrayOnMinimize: Boolean read FTrayOnMinimize write FTrayOnMinimize;
-    // When set the main window will snap to screen edges
-    property SnapMain: Boolean read FSnapMain write FSnapMain;
     // When set streamWriter will resume recordings on startup if it is closed while recording streams
     property RememberRecordings: Boolean read FRememberRecordings write FRememberRecordings;
     property RememberPlaying: Boolean read FRememberPlaying write FRememberPlaying;
@@ -625,7 +622,6 @@ begin
 
   FStorage.Read('TrayClose', FTray, False);
   FStorage.Read('TrayOnMinimize', FTrayOnMinimize, False);
-  FStorage.Read('SnapMain', FSnapMain, False);
   FStorage.Read('RememberRecordings', FRememberRecordings, False);
   FStorage.Read('RememberPlaying', FRememberPlaying, False);
   FStorage.Read('DisplayPlayedSong', FDisplayPlayedSong, True);
@@ -925,7 +921,6 @@ begin
   FStorage.Write('DirAuto', TFunctions.TryRelativePath(FDirAuto, False, True));
   FStorage.Write('TrayClose', FTray);
   FStorage.Write('TrayOnMinimize', FTrayOnMinimize);
-  FStorage.Write('SnapMain', FSnapMain);
   FStorage.Write('RememberRecordings', FRememberRecordings);
   FStorage.Write('RememberPlaying', FRememberPlaying);
   FStorage.Write('DisplayPlayedSong', FDisplayPlayedSong);

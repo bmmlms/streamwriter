@@ -158,7 +158,6 @@ type
     chkSeparateTracks: TCheckBox;
     chkShowSplashScreen: TCheckBox;
     chkSkipShort: TCheckBox;
-    chkSnapMain: TCheckBox;
     chkSubmitStats: TCheckBox;
     chkSubmitStreamInfo: TCheckBox;
     chkTray: TCheckBox;
@@ -573,7 +572,6 @@ begin
 
     chkAutostart.Checked := FileExists(ConcatPaths([TFunctions.GetShellFolder(CSIDL_STARTUP), AppGlobals.AppName + '.lnk']));
     chkTray.Checked := AppGlobals.Tray;
-    chkSnapMain.Checked := AppGlobals.SnapMain;
     chkRememberRecordings.Checked := AppGlobals.RememberRecordings;
     chkRememberPlaying.Checked := AppGlobals.RememberPlaying;
     chkDisplayPlayedSong.Checked := AppGlobals.DisplayPlayedSong;
@@ -729,7 +727,6 @@ begin
       AppGlobals.Dir := txtDir.Control.Text;
 
       AppGlobals.Tray := chkTray.Checked;
-      AppGlobals.SnapMain := chkSnapMain.Checked;
       AppGlobals.RememberRecordings := chkRememberRecordings.Checked;
       AppGlobals.RememberPlaying := chkRememberPlaying.Checked;
       AppGlobals.DisplayPlayedSong := chkDisplayPlayedSong.Checked;
@@ -2960,7 +2957,7 @@ end;
 
 procedure TfrmSettings.CreateApp(AOwner: TComponent; BrowseDir: Boolean);
 var
-  i, Tmp: Integer;
+  i: Integer;
   Item: TListItem;
 begin
   FBrowseDir := BrowseDir;
@@ -2978,13 +2975,7 @@ begin
   FillFields(FStreamSettings[0]);
 
   // Dateinamen ordentlich machen
-  //Tmp := txtStreamFilePattern.Top;
   txtAutomaticFilePattern.Visible := False;
-  //btnResetAutomaticFilePattern.Visible := False;
-  //txtStreamFilePattern.Top := txtAutomaticFilePattern.Top;
-  //btnResetStreamFilePattern.Top := btnResetAutomaticFilePattern.Top;
-  //txtPreview.Top := Tmp;
-  //lblFilePattern.Top := txtPreview.Top + txtPreview.Height + MulDiv(8, Screen.PixelsPerInch, 96);
 
   // Offseteinstellungen verstecken
   chkAdjustTrackOffset.Visible := False;
@@ -3069,7 +3060,7 @@ begin
 
   // Dateinamen ordentlich machen
   for i := 0 to pnlFilenames.ControlCount - 1 do
-    if ((pnlFilenames.Controls[i].ClassType = TLabeledEdit) or (pnlFilenames.Controls[i].ClassType = TSpeedButton)) and (pnlFilenames.Controls[i].Top > txtDir.Top) then
+    if (pnlFilenames.Controls[i].ClassType = TMLabeledEditButton) and (pnlFilenames.Controls[i].Top > txtDir.Top) then
       pnlFilenames.Controls[i].Visible := False;
 
   txtAutomaticFilePattern.Visible := True;
@@ -3101,6 +3092,7 @@ begin
   CreateGeneral;
 
   txtDir.Visible := False;
+  Bevel1.Visible := False;
 
   // Dateinamen ordentlich machen
   txtAutomaticFilePattern.Visible := False;
@@ -3134,7 +3126,6 @@ begin
   lblTop.Caption := _('Stream settings');
 end;
 
-// TODO: was ist das hier?
 procedure TfrmSettings.CreateGeneral;
 var
   i: Integer;
