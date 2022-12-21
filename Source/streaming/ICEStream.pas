@@ -1216,10 +1216,10 @@ begin
 
               if NewDisplayTitle <> FDisplayTitle then
               begin
-                if Title <> NewDisplayTitle then
+                if Title.ToLower <> NewDisplayTitle.ToLower then
                   WriteExtLog(Format(_('"%s" ("%s") now playing'), [NewDisplayTitle, Title]), ltSong, llInfo)
                 else
-                  WriteExtLog(Format(_('"%s" now playing'), [Title]), ltSong, llInfo);
+                  WriteExtLog(Format(_('"%s" now playing'), [NewDisplayTitle]), ltSong, llInfo);
                 DisplayTitleChanged := True;
 
                 Inc(FMetaCounter);

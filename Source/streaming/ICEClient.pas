@@ -42,6 +42,7 @@ uses
   PlayerManager,
   PlaylistHandler,
   Sockets,
+  StreamHelper,
   SysUtils,
   TypeDefs;
 

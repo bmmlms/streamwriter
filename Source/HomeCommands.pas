@@ -90,7 +90,7 @@ type
 
   TCommandUpdateStats = class(TCommand)
   public
-    constructor Create;
+    constructor Create; override;
 
     function Process(ToStream: TMemoryStream): Boolean; override;
   end;
@@ -114,7 +114,6 @@ type
     FSuccess, FIsAdmin: Boolean;
   public
     constructor Create; overload; override;
-    constructor Create(User, Pass: string); overload;
 
     procedure Load(CommandHeader: TCommandHeader; Stream: TMemoryStream); override;
 
@@ -124,7 +123,7 @@ type
 
   TCommandLogOut = class(TCommand)
   public
-    constructor Create;
+    constructor Create; override;
   end;
 
   TCommandLogOutResponse = class(TCommand)
@@ -164,7 +163,7 @@ type
 
   TCommandGetServerData = class(TCommand)
   public
-    constructor Create;
+    constructor Create; override;
   end;
 
   TCommandGetServerDataResponse = class(TCommand)
@@ -492,13 +491,6 @@ begin
 end;
 
 { TCommandLogInResponse }
-
-constructor TCommandLogInResponse.Create(User, Pass: string);
-begin
-  inherited Create;
-
-  FCommandType := ctLoginResponse;
-end;
 
 procedure TCommandLogInResponse.Load(CommandHeader: TCommandHeader; Stream: TMemoryStream);
 begin
