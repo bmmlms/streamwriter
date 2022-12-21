@@ -338,7 +338,6 @@ type
     procedure Hotkey(var Msg: TWMHotKey); message WM_HOTKEY;
     procedure UpdateFound(var Msg: TMessage); message WM_UPDATEFOUND;
     procedure SetupExitMessage(var Msg: TMessage); message 5432;
-
     function CanExitApp: Boolean;
     procedure ExitApp(Shutdown: Boolean; ImportFilename: string = '');
     procedure ShowSettings(SettingsType: TSettingsTypes; BrowseDir: Boolean);
@@ -416,20 +415,10 @@ type
     destructor Destroy; override;
   end;
 
-  {
-  TStatusHint = class(TCustomHint)
-  public
-    constructor Create(AOwner: TComponent); override;
-
-    procedure SetHintSize(HintWindow: TCustomHintWindow); override;
-    procedure PaintHint(HintWindow: TCustomHintWindow); override;
-  end;
-              }
 implementation
 
 uses
-  AppData,
-  Player;
+  AppData;
 
 {$R *.lfm}
 
@@ -961,9 +950,6 @@ begin
   end;
   Left := AppGlobals.MainLeft;
   Top := AppGlobals.MainTop;
-  // ScreenSnap := AppGlobals.SnapMain;
-
-  //addStatus.CustomHint := TStatusHint.Create(Self);
 
   // Ist nun hier, damit man nicht sieht, wie sich alle Controls resizen.
   if AppGlobals.MainMaximized then
@@ -1808,8 +1794,6 @@ begin
 
           addTrayIcon.Visible := AppGlobals.Tray;
 
-          //  ScreenSnap := AppGlobals.SnapMain;   // TODO:
-
           RegisterHotkeys;
 
           TLogger.SetFilename(AppGlobals.LogFile);
@@ -2044,14 +2028,13 @@ var
   Hash: Cardinal;
   Hashes: TSyncWishlistRecordArray;
   Found: Boolean;
-  Pattern: string;
   T: TTitleInfo;
 begin
   SetLength(Hashes, 0);
 
   for i := 0 to High(Arr) do
   begin
-    Pattern := TFunctions.BuildPattern(Arr[i].Title, Hash, NumChars, True);
+    TFunctions.BuildPattern(Arr[i].Title, Hash, NumChars, True);
     Found := False;
 
     for n := 0 to AppGlobals.Data.SaveList.Count - 1 do
@@ -2135,7 +2118,6 @@ var
   i, NumChars: Integer;
   Hash: Cardinal;
   Found: Boolean;
-  Pattern: string;
   T: TTitleInfo;
   List: TList<TTitleInfo>;
 begin
@@ -2149,7 +2131,7 @@ begin
   else
     List := Client.Entry.IgnoreList;
 
-  Pattern := TFunctions.BuildPattern(Title, Hash, NumChars, True);
+  TFunctions.BuildPattern(Title, Hash, NumChars, True);
   if NumChars > 3 then
   begin
     Found := False;

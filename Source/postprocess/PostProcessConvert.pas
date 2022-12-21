@@ -118,8 +118,6 @@ procedure TPostProcessConvertThread.Execute;
 var
   FC: TFileConvertor;
 begin
-  inherited;
-
   FResult := arFail;
 
   FC := TFileConvertor.Create;

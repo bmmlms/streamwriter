@@ -1226,7 +1226,7 @@ var
   PH: TPlaylistHandler;
   Entries: TPlaylistEntryArray;
   Info: TStartStreamingInfo;
-  MessagesShown: TMayConnectResultsSet;
+  MessagesShown: TMayConnectResultsSet = [];
 begin
   Result := True;
 

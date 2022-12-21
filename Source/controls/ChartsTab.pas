@@ -153,6 +153,8 @@ type
   TAddStreamsEvent = procedure(Sender: TObject; Info: TStartStreamingInfoArray; Action: TStreamOpenActions) of object;
   TGetIsStreamOnListEvent = function(Sender: TObject; Stream: TStreamBrowserEntry): Boolean of object;
 
+  { TChartsTab }
+
   TChartsTab = class(TMainTabSheet)
   private
     FSearchPanel: TSearchPanel;
@@ -174,8 +176,6 @@ type
     procedure HomeCommSearchChartsReceived(Sender: TObject; Success: Boolean; Charts: TChartList);
     procedure ButtonClick(Sender: TObject);
     procedure ChartsTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
-  protected
-    procedure DoEnter; override;  // TODO: das hier macht nicht das was es soll.
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -286,14 +286,6 @@ begin
   end;
 
   inherited;
-end;
-
-procedure TChartsTab.DoEnter;
-begin
-  inherited;
-
-  if FSearchPanel.Enabled and FSearchPanel.FSearch.Enabled then
-    FSearchPanel.FSearch.ApplyFocus;
 end;
 
 procedure TChartsTab.HomeCommSearchChartsReceived(Sender: TObject; Success: Boolean; Charts: TChartList);

@@ -109,11 +109,8 @@ type
     procedure StreamMonitorAnalyzerAnalyzed(Sender: TObject);
     procedure StreamExtLog(Sender: TObject);
   protected
-    procedure Execute; override;
-
     procedure DoStuff; override;
     procedure DoHeaderRemoved; override;
-    procedure DoReceivedData(Buf: Pointer; Len: Integer); override;
     procedure DoConnecting; override;
     procedure DoConnected; override;
     procedure DoDisconnected; override;
@@ -560,19 +557,7 @@ begin
   end;
 end;
 
-procedure TICEThread.DoReceivedData(Buf: Pointer; Len: Integer);
-begin
-  inherited;
-
-end;
-
 procedure TICEThread.DoSpeedChange;
-begin
-  inherited;
-
-end;
-
-procedure TICEThread.Execute;
 begin
   inherited;
 

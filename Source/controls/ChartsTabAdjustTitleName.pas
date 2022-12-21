@@ -67,9 +67,8 @@ procedure TfrmChartsTabAdjustTitleName.btnOKClick(Sender: TObject);
 var
   NumChars: Integer;
   Hash: Cardinal;
-  Pattern: string;
 begin
-  Pattern := TFunctions.BuildPattern(txtTitle.Text, Hash, NumChars, True);
+  TFunctions.BuildPattern(txtTitle.Text, Hash, NumChars, True);
 
   if NumChars = 0 then
   begin

@@ -56,6 +56,8 @@ type
   end;
   TPlaylistEntryArray = array of TPlaylistEntry;
 
+  { TMainPageControl }
+
   TMainPageControl = class(TMPageControl)
   public
     function FindCut(Filename: string): TMainTabSheet;
@@ -139,6 +141,7 @@ var
 begin
   if Length(Entries) = 0 then
     Exit;
+
   List := TStringList.Create;
   try
     if not Open then
@@ -148,8 +151,8 @@ begin
         Dlg.FileName := '';
         Dlg.Filter := '.M3U Playlist|*.m3u|.PLS Playlist|*.pls';
         Dlg.Options := Dlg.Options + [ofOverwritePrompt, ofPathMustExist];
-        {
-        if Dlg.Execute(Handle) then
+
+        if Dlg.Execute then
         begin
           try
             if (LowerCase(ExtractFileExt(Dlg.FileName)) <> '.m3u') and
@@ -169,7 +172,6 @@ begin
             TFunctions.MsgBox(Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [ExtractFilePath(Dlg.FileName)]), _('Error'), MB_ICONEXCLAMATION);
           end;
         end;
-        }
       finally
         Dlg.Free;
       end;

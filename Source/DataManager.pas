@@ -2656,8 +2656,6 @@ begin
 end;
 
 constructor TStreamSettings.Create;
-var
-  i: Integer;
 begin
   inherited Create;
 

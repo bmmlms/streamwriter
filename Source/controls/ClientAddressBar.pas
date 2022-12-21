@@ -74,7 +74,7 @@ begin
   FStations.OnChange := FStationsChange;
   FStations.Images := modSharedData.imgImages;
 
-  FDropTarget := TDropComboTarget.Create(Self); // TODO: wirklich self? eigentlich doch die combobox oder?
+  FDropTarget := TDropComboTarget.Create(Self);
   FDropTarget.Formats := [mfText, mfURL, mfFile];
   FDropTarget.Register(FStations);
   FDropTarget.OnDrop := DropTargetDrop;

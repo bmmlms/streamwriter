@@ -624,7 +624,6 @@ var
   Dir, Filename, FilenameConverted, RegEx: string;
   FileCheck: TFileChecker;
   P: TPosRect;
-  Error: Cardinal;
   TitleState: TTitleStates;
   AInfo: TAudioInfo;
 begin
@@ -1623,8 +1622,7 @@ end;
 function TFileChecker.InfoToFilename(Artist, Title, Album, Genre, StreamTitle: string; TitleState: TTitleStates; Patterns: string): string;
 var
   i: Integer;
-  Dir, StreamName: string;
-  Replaced: string;
+  StreamName, Replaced: string;
   Arr: TPatternReplaceArray;
   PList: TStringList;
 begin
@@ -1636,8 +1634,6 @@ begin
     Title := StringReplace(Title, FSettings.RemoveChars[i], '', [rfReplaceAll]);
   for i := 1 to Length(FSettings.RemoveChars) do
     Album := StringReplace(Album, FSettings.RemoveChars[i], '', [rfReplaceAll]);
-
-  Dir := '';
 
   StreamName := Trim(GetValidFileName(FStreamname));
   if Length(StreamName) > 80 then

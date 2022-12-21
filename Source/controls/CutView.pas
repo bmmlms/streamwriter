@@ -628,11 +628,10 @@ begin
     FScanThread.OnEndScan := ThreadEndScan;
     FScanThread.OnScanError := ThreadScanError;
     FScanThread.OnScanProgress := ThreadScanProgress;
+    FScanThread.Start;
 
     FPB.FEffectStartLine := 0;
     FPB.FEffectEndLine := 0;
-
-    FScanThread.Resume;
 
     if Assigned(FOnStateChanged) then
       FOnStateChanged(Self);
@@ -735,7 +734,6 @@ end;
 
 procedure TCutView.Undo;
 var
-  Source, Dest: UnicodeString;
   UndoStep: TUndoStep;
 begin
   if not CanUndo then
@@ -1050,7 +1048,7 @@ begin
   FProcessThread.OnSuccess := ProcessThreadSuccess;
   FProcessThread.OnError := ProcessThreadError;
   FProcessThread.OnTerminate := ProcessThreadTerminate;
-  FProcessThread.Resume;
+  FProcessThread.Start;
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);

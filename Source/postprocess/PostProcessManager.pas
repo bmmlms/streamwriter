@@ -370,7 +370,7 @@ begin
           end;
 
         Entry.ActiveThread.OnTerminate := ThreadTerminate;
-        Entry.ActiveThread.Resume;
+        Entry.ActiveThread.Start;
 
         Exit(i);
       end;

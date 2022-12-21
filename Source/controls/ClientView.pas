@@ -155,9 +155,6 @@ type
 
 implementation
 
-uses
-  ClientTab;
-
 { TMStreamView }
 
 function TMClientView.AddCategory(Category: TListCategory): PVirtualNode;
