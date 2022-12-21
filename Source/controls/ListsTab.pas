@@ -48,7 +48,6 @@ uses
   ImgList,
   LanguageObjects,
   Logging,
-  Math,
   MControls,
   Menus,
   MessageBus,
@@ -56,6 +55,7 @@ uses
   SharedControls,
   SharedData,
   StdCtrls,
+  StrUtils,
   SysUtils,
   Tabs,
   TypeDefs,
@@ -621,20 +621,18 @@ begin
       Dlg.Filter := _('Text files') + ' (*.txt)|*.txt';
       Dlg.Options := Dlg.Options + [ofOverwritePrompt];
       Dlg.DefaultExt := '.txt';
-      {
-      if Dlg.Execute(Handle) then
+
+      if Dlg.Execute then
       begin
         Lst := TStringList.Create;
         try
           for i := 0 to ExportList.Count - 1 do
-          begin
             if ExportList[i].ServerHash > 0 then
               Lst.Add(ExportList[i].Title + '|' + IntToStr(ExportList[i].ServerHash))
             else if ExportList[i].ServerArtistHash > 0 then
               Lst.Add(ExportList[i].Title + '|A' + IntToStr(ExportList[i].ServerArtistHash))
             else
               Lst.Add(ExportList[i].Title);
-          end;
           try
             Lst.SaveToFile(Dlg.FileName);
           except
@@ -644,7 +642,6 @@ begin
           Lst.Free;
         end;
       end;
-      }
     finally
       Dlg.Free;
     end;
@@ -697,15 +694,15 @@ procedure TTitlePanel.ImportClick(Sender: TObject);
 var
   i, n, P, NumChars, MsgRes: Integer;
   Hash, ServerHash, ServerArtistHash: Cardinal;
-  Exists, UseTitleInfo, Deleted, Skip: Boolean;
-  Pattern, Ext: string;
+  UseTitleInfo, Skip: Boolean;
+  Ext: string;
   Dlg: TOpenDialog;
   Lst: TStringList;
   Title: TTitleInfo;
   List: TList<TTitleInfo>;
   ParentNode: PVirtualNode;
   ImportData, NewImportData: TList<TImportListEntry>;
-  Hashes: TSyncWishlistRecordArray;
+  Hashes: TSyncWishlistRecordArray = [];
   ConversionData: TStringList;
   KeepEntry: TImportListEntry;
   TitleInfo: TTitleInfo;
@@ -728,8 +725,8 @@ begin
   Dlg := TOpenDialog.Create(Self);
   try
     Dlg.Filter := _('All supported types') + ' (*.txt, *.m3u, *.pls)|*.txt;*.m3u;*.pls|' + _('Text files') + ' (*.txt)|*.txt|' + _('M3U playlists') + ' (*.m3u)|*.m3u|' + _('PLS playlists') + ' (*.pls)|*.pls';
-    {
-    if Dlg.Execute(Handle) then
+
+    if Dlg.Execute then
     begin
       Lst := TStringList.Create;
       try
@@ -747,9 +744,7 @@ begin
           for i := 0 to Lst.Count - 1 do
           begin
             if ParentNode = nil then
-            begin
               ParentNode := FTree.GetNode(TICEClient(FAddCombo.Items.Objects[FAddCombo.ItemIndex]));
-            end;
 
             Lst[i] := Trim(Lst[i]);
 
@@ -763,16 +758,14 @@ begin
                 Continue;
 
             if Ext = '.pls' then
-            begin
               if (UseTitleInfo and (LowerCase(Copy(Lst[i], 1, 5)) = 'title')) or
-                 (not UseTitleInfo and (LowerCase(Copy(Lst[i], 1, 4)) = 'file')) then
+                (not UseTitleInfo and (LowerCase(Copy(Lst[i], 1, 4)) = 'file')) then
               begin
                 n := Pos('=', Lst[i]);
                 if (n > 0) and (Length(Lst[i]) > n) then
                   Lst[i] := Copy(Lst[i], n + 1, Length(Lst[i]) - n);
               end else
                 Continue;
-            end;
 
             // Wenn es ein ganzer Pfad sein könnte bearbeiten
             if Length(Lst[i]) > 4 then
@@ -785,7 +778,7 @@ begin
             // Wenn ein Künstler Künstler-Hash hinten dran ist auswerten
             ServerArtistHash := 0;
             P := RPos('|A', Lst[i]);
-            if P > -1 then
+            if P > 0 then
             begin
               ServerArtistHash := StrToIntDef(Copy(Lst[i], P + 2, Length(Lst[i]) - P), 0);
               Lst[i] := Copy(Lst[i], 1, P - 1);
@@ -794,7 +787,7 @@ begin
             // Wenn ein Hash hinten dran ist auswerten
             ServerHash := 0;
             P := RPos('|', Lst[i]);
-            if P > -1 then
+            if P > 0 then
             begin
               ServerHash := StrToIntDef(Copy(Lst[i], P + 1, Length(Lst[i]) - P), 0);
               Lst[i] := Copy(Lst[i], 1, P - 1);
@@ -807,7 +800,7 @@ begin
               ServerArtistHash := 0;
             end;
 
-            Pattern := BuildPattern(Lst[i], Hash, NumChars, False);
+            TFunctions.BuildPattern(Lst[i], Hash, NumChars, False);
             if NumChars <= 3 then
               Continue;
 
@@ -824,7 +817,6 @@ begin
         Lst.Free;
       end;
     end;
-    }
 
     // When not importing into the wishlist no artists or hashes are allowed, so rebuild the list
     if List <> AppGlobals.Data.SaveList then
@@ -898,7 +890,6 @@ begin
     ImportData.Free;
     ImportData := NewImportData;
 
-
     if ImportData.Count > 0 then
     begin
       if List = AppGlobals.Data.SaveList then
@@ -910,20 +901,19 @@ begin
             if ImportData[i].Hash = 0 then
               ConversionData.Add(ImportData[i].Title);
 
-          {
           if ConversionData.Count > 0 then
           begin
             // If there are manual titles ask the user if they should be converted to automatic titles
             if not HomeComm.CommunicationEstablished then
             begin
                MsgRes := TFunctions.MsgBox(Format(_('You have imported %d title(s) for the manual wishlist. You are not connected to the streamWriter server to convert these titles into titles for the automatic wishlist. Do you want to continue and import these titles as manual titles without conversion?'), [ConversionData.Count]), _('Question'), MB_YESNO or MB_ICONQUESTION or MB_DEFBUTTON2);
-               if MsgRes = ID_NO then
+               if MsgRes = IDNO then
                  Exit;
             end else
             begin
               MsgRes := TFunctions.MsgBox(Format(_('You have imported %d title(s) for the manual wishlist. Do you want to convert these titles into titles used by the automatic wishlist?'), [ConversionData.Count]), _('Question'), MB_YESNOCANCEL or MB_ICONQUESTION);
               case MsgRes of
-                ID_YES:
+                IDYES:
                   begin
                     // We need to build a separate list to send to the server for conversion.
                     // The stuff we send to the server will be removed from the list of titles we will add soon.
@@ -942,18 +932,16 @@ begin
 
                     HomeComm.SendConvertManualToAutomatic(ConversionData);
                   end;
-                ID_CANCEL:
+                IDCANCEL:
                   Exit;
               end;
             end;
           end;
-          }
         finally
           ConversionData.Free;
         end;
       end;
 
-      SetLength(Hashes, 0);
       for i := 0 to ImportData.Count - 1 do
       begin
         Skip := False;
@@ -961,7 +949,7 @@ begin
         // If we are importing an automatic title and a manual title already exists the manual title needs to be removed
         if List = AppGlobals.Data.SaveList then
         begin
-          Pattern := TFunctions.BuildPattern(Trim(ImportData[i].Title), Hash, NumChars, False);
+          TFunctions.BuildPattern(Trim(ImportData[i].Title), Hash, NumChars, False);
 
           for n := 0 to List.Count - 1 do
           begin
@@ -2228,24 +2216,21 @@ end;
 
 function TTitleTree.DoIncrementalSearch(Node: PVirtualNode; const Text: string): Integer;
 var
-  s: string;
   NodeData: PTitleNodeData;
 begin
-  // TODO: was ist mit "s"???
   if Node = FWishNode then
-    Exit(StrLIComp(PChar(s), PChar(_(WISHTEXT)), Min(Length(s), Length(_(WISHTEXT)))));
-  if Node = FIgnoreNode then
-    Exit(StrLIComp(PChar(s), PChar(_(IGNORETEXT)), Min(Length(s), Length(_(IGNORETEXT)))));
+    Exit(StrLIComp(PChar(Text), PChar(_(WISHTEXT)), Min(Length(Text), Length(_(WISHTEXT)))))
+  else if Node = FIgnoreNode then
+    Exit(StrLIComp(PChar(Text), PChar(_(IGNORETEXT)), Min(Length(Text), Length(_(IGNORETEXT)))));
 
-  Result := 0;
-  S := Text;
   NodeData := GetNodeData(Node);
   if NodeData = nil then
     Exit;
+
   if NodeData.Title <> nil then
-    Result := StrLIComp(PChar(s), PChar(NodeData.Title.Title), Min(Length(s), Length(NodeData.Title.Title)))
+    Exit(StrLIComp(PChar(Text), PChar(NodeData.Title.Title), Min(Length(Text), Length(NodeData.Title.Title))))
   else
-    Result := StrLIComp(PChar(s), PChar(NodeData.Stream.Entry.CustomName), Min(Length(s), Length(NodeData.Stream.Entry.CustomName)));
+    Exit(StrLIComp(PChar(Text), PChar(NodeData.Stream.Entry.CustomName), Min(Length(Text), Length(NodeData.Stream.Entry.CustomName))));
 end;
 
 procedure TTitleTree.DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string);
