@@ -79,11 +79,10 @@ type
     procedure WMMouseWheel(var Msg: TWMMouseWheel); message WM_MOUSEWHEEL;
   protected
     procedure Paint; override;
-    procedure MouseMove(Shift: TShiftState; X: Integer; Y: Integer);
-      override;
+    procedure MouseMove(Shift: TShiftState; X: Integer; Y: Integer); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X: Integer; Y: Integer); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X: Integer; Y: Integer); override;
-    procedure WndProc(var Message: TMessage); override;
+    procedure MouseLeave; override;
   public
     constructor Create(AOwner: TComponent); override;
     property Max: Int64 read FMax write FMax;
@@ -113,7 +112,7 @@ type
 
     procedure MuteClick(Sender: TObject);
     procedure VolumeChange(Sender: TObject);
-    procedure RefreshButtonState(DoIt: Boolean);
+    procedure RefreshButtonState;
     procedure FSetVolume(Volume: Integer);
     procedure FSetNotifyOnMove(Value: Boolean);
     function FGetVolume: Integer;
@@ -190,13 +189,13 @@ begin
   FVolume := FTrackBar.Position;
   FVolumeBeforeDrag := FTrackBar.PositionBeforeDrag;
 
-  RefreshButtonState(False);
+  RefreshButtonState;
 
   if Assigned(OnVolumeChange) then
     OnVolumeChange(Self);
 end;
 
-procedure TVolumePanel.RefreshButtonState(DoIt: Boolean);
+procedure TVolumePanel.RefreshButtonState;
 begin
   if Volume = 0 then
   begin
@@ -212,7 +211,7 @@ end;
 procedure TVolumePanel.FSetVolume(Volume: Integer);
 begin
   FTrackBar.Position := Volume;
-  RefreshButtonState(False);
+  RefreshButtonState;
 end;
 
 function TVolumePanel.FGetVolume: Integer;
@@ -261,7 +260,7 @@ begin
   Constraints.MinHeight := 21;
   Constraints.MaxHeight := 21;
 
-  RefreshButtonState(True);
+  RefreshButtonState;
 end;
 
 { TSeekBar }
@@ -272,9 +271,6 @@ var
   R: TRect;
 begin
   inherited;
-
-  if not HandleAllocated then
-    Exit;
 
   Bmp := Graphics.TBitmap.Create;
   try
@@ -296,7 +292,9 @@ begin
     end;
 
     PaintBackground(Bmp);
-    PaintGripper(Bmp);
+
+    if FGripperVisible then
+      PaintGripper(Bmp);
 
     Canvas.Draw(0, 0, Bmp);
   finally
@@ -345,82 +343,88 @@ begin
       R.Right := Bmp.Width div 2 + 3 - Bmp.Canvas.Pen.Width;
     end;
   end;
+
   Bmp.Canvas.Brush.Color := clBtnFace;
   Bmp.Canvas.FillRect(R);
 end;
 
 procedure TSeekBar.PaintGripper(Bmp: Graphics.TBitmap);
 var
-  P: Cardinal;
+  P: Integer;
   R: TRect;
   D, D2: TThemedElementDetails;
 begin
-  if not FGripperVisible then
+  if FMax <= 0 then
     Exit;
 
-  if FMax > 0 then
+  if FOrientation = sbHorizontal then
   begin
-    if FOrientation = sbHorizontal then
-    begin
-      P := Trunc((FPosition / FMax) * (Bmp.Width - 20));
+    P := Trunc((FPosition / FMax) * (Bmp.Width - Bmp.Height));
 
-      R.Top := 0;
-      R.Left := P;
-      R.Bottom := Bmp.Height;
-      R.Right := P + 20;
-    end else
-    begin
-      P := Trunc((FPosition / FMax) * (Bmp.Height - 20));
+    R.Top := 0;
+    R.Left := P;
+    R.Bottom := Bmp.Height;
+    R.Right := P + Bmp.Height;
+  end else
+  begin
+    P := Trunc((FPosition / FMax) * (Bmp.Height - Bmp.Width));
 
-      R.Top := P;
-      R.Left := 0;
-      R.Bottom := P + 20;
-      R.Right := Bmp.Width;
+    R.Top := P;
+    R.Left := 0;
+    R.Bottom := P + Bmp.Width;
+    R.Right := Bmp.Width;
+  end;
+
+  if ThemeServices.ThemesEnabled then
+  begin
+    D2 := IfThen<TThemedElementDetails>(FOrientation = sbHorizontal, ThemeServices.GetElementDetails(trGripper), ThemeServices.GetElementDetails(trGripperVert));
+
+    case GetGripperState of
+      gsNormal:
+        if FOrientation = sbHorizontal then
+        begin
+          D := ThemeServices.GetElementDetails(tsThumbBtnHorzNormal);
+          D2 := ThemeServices.GetElementDetails(trGripper);
+        end else
+        begin
+          D := ThemeServices.GetElementDetails(tsThumbBtnVertNormal);
+          D2 := ThemeServices.GetElementDetails(trGripperVert);
+        end;
+      gsHot:
+        if FOrientation = sbHorizontal then
+        begin
+          D := ThemeServices.GetElementDetails(tsThumbBtnHorzHot);
+          D2 := ThemeServices.GetElementDetails(trGripper);
+        end else
+        begin
+          D := ThemeServices.GetElementDetails(tsThumbBtnVertHot);
+          D2 := ThemeServices.GetElementDetails(trGripperVert);
+        end;
+      gsDown:
+        if FOrientation = sbHorizontal then
+        begin
+          D := ThemeServices.GetElementDetails(tsThumbBtnHorzPressed);
+          D2 := ThemeServices.GetElementDetails(trGripper);
+        end else
+        begin
+          D := ThemeServices.GetElementDetails(tsThumbBtnVertPressed);
+          D2 := ThemeServices.GetElementDetails(trGripperVert);
+        end;
     end;
 
-    if ThemeServices.ThemesEnabled then
-    begin
-      case GetGripperState of
-        gsNormal:
-          if FOrientation = sbHorizontal then
-          begin
-            D := ThemeServices.GetElementDetails(tsThumbBtnHorzNormal);
-            D2 := ThemeServices.GetElementDetails(tsGripperHorzNormal);
-          end else
-          begin
-            D := ThemeServices.GetElementDetails(tsThumbBtnVertNormal);
-            D2 := ThemeServices.GetElementDetails(tsGripperVertNormal);
-          end;
-        gsHot:
-          if FOrientation = sbHorizontal then
-          begin
-            D := ThemeServices.GetElementDetails(tsThumbBtnHorzHot);
-            D2 := ThemeServices.GetElementDetails(tsGripperHorzHot);
-          end else
-          begin
-            D := ThemeServices.GetElementDetails(tsThumbBtnVertHot);
-            D2 := ThemeServices.GetElementDetails(tsGripperVertHot);
-          end;
-        gsDown:
-          if FOrientation = sbHorizontal then
-          begin
-            D := ThemeServices.GetElementDetails(tsThumbBtnHorzPressed);
-            D2 := ThemeServices.GetElementDetails(tsGripperHorzPressed);
-          end else
-          begin
-            D := ThemeServices.GetElementDetails(tsThumbBtnVertPressed);
-            D2 := ThemeServices.GetElementDetails(tsGripperVertPressed);
-          end;
-      end;
+    ThemeServices.DrawElement(Bmp.Canvas.Handle, D, R);
 
-      ThemeServices.DrawElement(Bmp.Canvas.Handle, D, R);
-      ThemeServices.DrawElement(Bmp.Canvas.Handle, D2, R);
-    end else
-      DrawFrameControl(Bmp.Canvas.Handle, R, DFC_BUTTON, IfThen<Integer>(GetGripperState = gsDown, DFCS_BUTTONPUSH or DFCS_PUSHED, DFCS_BUTTONPUSH));
+    if FOrientation = sbHorizontal then
+      R.Inflate(-6, -5)
+    else
+      R.Inflate(-5, -6);
 
-    FLastGripperState := GetGripperState;
-    FLastGripperPos := FPosition;
-  end;
+    ThemeServices.DrawElement(Bmp.Canvas.Handle, D2, R);
+  end else
+    DrawFrameControl(Bmp.Canvas.Handle, R, DFC_BUTTON, IfThen<Integer>(GetGripperState = gsDown, DFCS_BUTTONPUSH or DFCS_PUSHED, DFCS_BUTTONPUSH));
+
+  FLastGripperState := GetGripperState;
+  FLastGripperPos := FPosition;
 end;
 
 procedure TSeekBar.WMEraseBkgnd(var Msg: TWMEraseBkgnd);
@@ -442,15 +446,7 @@ begin
       FOnPositionChanged(Self);
 
   if (FLastGripperState <> GetGripperState) or (FLastGripperPos <> FPosition) then
-    Paint;
-end;
-
-procedure TSeekBar.WndProc(var Message: TMessage);
-begin
-  inherited;
-
-  if Message.Msg = CM_MOUSELEAVE then
-    Paint;
+    Repaint;
 end;
 
 function TSeekBar.GetGripperState: TGripperStates;
@@ -506,7 +502,7 @@ begin
   if Value <> FGripperVisible then
   begin
     FGripperVisible := Value;
-    Paint;
+    Repaint;
   end;
 end;
 
@@ -528,7 +524,7 @@ begin
       FOnPositionChanged(Self);
 
   if (FLastGripperState <> GetGripperState) or (FLastGripperPos <> FPosition) then
-    Paint;
+    Repaint;
 end;
 
 procedure TSeekBar.MouseDown(Button: TMouseButton; Shift: TShiftState; X: Integer; Y: Integer);
@@ -579,7 +575,7 @@ begin
           FOnPositionChanged(Self);
     end;
 
-    Paint;
+    Repaint;
 
     FSetting := True;
   end;
@@ -614,11 +610,10 @@ begin
         FOnPositionChanged(Self);
 
     FSetting := True;
-
-    if (FLastGripperState <> GetGripperState) or (FLastGripperPos <> FPosition) then
-      Paint;
   end;
 
+  if (FLastGripperState <> GetGripperState) or (FLastGripperPos <> FPosition) then
+    Repaint;
 end;
 
 procedure TSeekBar.MouseUp(Button: TMouseButton; Shift: TShiftState; X: Integer; Y: Integer);
@@ -637,8 +632,15 @@ begin
     FSetting := False;
     FGripperDown := False;
 
-    Paint;
+    Repaint;
   end;
+end;
+
+procedure TSeekBar.MouseLeave;
+begin
+  inherited MouseLeave;
+
+  Repaint;
 end;
 
 { TMTreeColumnPopup }
