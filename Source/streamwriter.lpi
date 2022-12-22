@@ -19,7 +19,7 @@
       <XPManifest>
         <AnsiUTF8 Value="True"/>
       </XPManifest>
-      <Resources Count="8">
+      <Resources Count="16">
         <Resource_0 FileName="..\Resources\bass\bass.dll" Type="RCDATA" ResourceName="BASS"/>
         <Resource_1 FileName="..\Resources\bass\bass_aac.dll" Type="RCDATA" ResourceName="BASS_AAC"/>
         <Resource_2 FileName="..\Resources\about\thanksimage0.jpg" Type="RCDATA" ResourceName="THANKSIMAGE0"/>
@@ -28,12 +28,21 @@
         <Resource_5 FileName="..\Resources\images\mainicon.ico" Type="ICON" ResourceName="MAINICON"/>
         <Resource_6 FileName="..\Resources\images\splash.png" Type="RCDATA" ResourceName="SPLASH"/>
         <Resource_7 FileName="..\Resources\certificates.pem" Type="RCDATA" ResourceName="CERTIFICATES"/>
+        <Resource_8 FileName="$(LazarusDir)\lcl\languages\lclstrconsts.pot" Type="RCDATA" ResourceName="LCLSTRCONSTS.EN"/>
+        <Resource_9 FileName="$(LazarusDir)\lcl\languages\lclstrconsts.de.po" Type="RCDATA" ResourceName="LCLSTRCONSTS.DE"/>
+        <Resource_10 FileName="$(LazarusDir)\lcl\languages\lclstrconsts.ru.po" Type="RCDATA" ResourceName="LCLSTRCONSTS.RU"/>
+        <Resource_11 FileName="$(LazarusDir)\lcl\languages\lclstrconsts.es.po" Type="RCDATA" ResourceName="LCLSTRCONSTS.ES"/>
+        <Resource_12 FileName="$(LazarusDir)\lcl\languages\lclstrconsts.pl.po" Type="RCDATA" ResourceName="LCLSTRCONSTS.PL"/>
+        <Resource_13 FileName="$(LazarusDir)\lcl\languages\lclstrconsts.fr.po" Type="RCDATA" ResourceName="LCLSTRCONSTS.FR"/>
+        <Resource_14 FileName="$(LazarusDir)\lcl\languages\lclstrconsts.fi.po" Type="RCDATA" ResourceName="LCLSTRCONSTS.FI"/>
+        <Resource_15 FileName="$(LazarusDir)\lcl\languages\lclstrconsts.nl.po" Type="RCDATA" ResourceName="LCLSTRCONSTS.NL"/>
       </Resources>
     </General>
     <VersionInfo>
       <UseVersionInfo Value="True"/>
-      <MajorVersionNr Value="6"/>
-      <StringTable FileDescription="streamWriter" LegalCopyright="Copyright (c) 2010-2021 Alexander Nottelmann et al." OriginalFilename="streamwriter.exe" ProductName="streamWriter" ProductVersion="6.0.0.0-nogit"/>
+      <MajorVersionNr Value="5"/>
+      <MinorVersionNr Value="9"/>
+      <StringTable FileDescription="streamWriter" LegalCopyright="Copyright (c) 2010-2021 Alexander Nottelmann et al." OriginalFilename="streamwriter.exe" ProductName="streamWriter" ProductVersion="5.9.0.0-nogit"/>
     </VersionInfo>
     <BuildModes Count="2">
       <Item1 Name="Debug" Default="True"/>
