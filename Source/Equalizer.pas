@@ -56,10 +56,13 @@ type
     procedure Reset;
   end;
 
+  { TfrmEqualizer }
+
   TfrmEqualizer = class(TForm)
-    pnlEqualizer: TPanel;
-    chkEqualizer: TCheckBox;
     btnReset: TBitBtn;
+    chkEqualizer: TCheckBox;
+    Panel1: TPanel;
+    pnlEqualizer: TPanel;
     procedure FormCreate(Sender: TObject);
     procedure chkEqualizerClick(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -80,8 +83,6 @@ implementation
 constructor TEqualizer.Create(AOwner: TComponent);
 var
   i: Integer;
-  EQ: TSeekBar;
-  L: TLabel;
 begin
   inherited;
 
@@ -89,27 +90,29 @@ begin
   try
     for i := 0 to High(FEqualizers) do
     begin
-      EQ := TSeekBar.Create(Self);
-      FEqualizers[i] := EQ;
-      EQ.Parent := Self;
-      EQ.Position := AppGlobals.EQGain[i];
-      EQ.OnPositionChanged := EQPositionChanged;
+      FEqualizers[i] := TSeekBar.Create(Self);
+      FEqualizers[i].Parent := Self;
+      FEqualizers[i].Position := AppGlobals.EQGain[i];
+      FEqualizers[i].Orientation := sbVertical;
+      FEqualizers[i].GripperVisible := True;
+      FEqualizers[i].Top := 0;
+      FEqualizers[i].Max := 30;
+      FEqualizers[i].OnPositionChanged := EQPositionChanged;
 
-      L := TLabel.Create(Self);
-      FLabels[i] := L;
-      L.Parent := Self;
+      FLabels[i] := TLabel.Create(Self);
+      FLabels[i].Parent := Self;
 
       case i of
-        0: L.Caption := '60';
-        1: L.Caption := '170';
-        2: L.Caption := '310';
-        3: L.Caption := '600';
-        4: L.Caption := '1K';
-        5: L.Caption := '3K';
-        6: L.Caption := '6K';
-        7: L.Caption := '12K';
-        8: L.Caption := '14K';
-        9: L.Caption := '16K';
+        0: FLabels[i].Caption := '60';
+        1: FLabels[i].Caption := '170';
+        2: FLabels[i].Caption := '310';
+        3: FLabels[i].Caption := '600';
+        4: FLabels[i].Caption := '1K';
+        5: FLabels[i].Caption := '3K';
+        6: FLabels[i].Caption := '6K';
+        7: FLabels[i].Caption := '12K';
+        8: FLabels[i].Caption := '14K';
+        9: FLabels[i].Caption := '16K';
       end;
     end;
   finally
@@ -162,19 +165,16 @@ begin
 
   for i := 0 to High(FEqualizers) do
   begin
-    FEqualizers[i].Top := 0;
     FEqualizers[i].Left := i * WidthPerBar;
     FEqualizers[i].Width := WidthPerBar;
     FEqualizers[i].Height := ClientHeight - TFunctions.GetTextSize(FLabels[i].Caption, FLabels[i].Font).cy;
-    FEqualizers[i].Max := 30;
+
     AppGlobals.Lock;
     try
       FEqualizers[i].Position := (AppGlobals.EQGain[i] * -1 + 15);
     finally
       AppGlobals.Unlock;
     end;
-    FEqualizers[i].Orientation := sbVertical;
-    FEqualizers[i].GripperVisible := True;
 
     FLabels[i].Top := FEqualizers[i].Top + FEqualizers[i].Height;
     FLabels[i].Left := i * WidthPerBar + FEqualizers[i].ClientWidth div 2 - FLabels[i].ClientWidth div 2;

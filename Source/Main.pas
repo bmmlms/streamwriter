@@ -666,8 +666,8 @@ procedure TfrmStreamWriterMain.actEqualizerExecute(Sender: TObject);
 begin
   if not FEqualizer.Visible then
   begin
-    FEqualizer.Left := Left + 20;
-    FEqualizer.Top := Top + Height - 40 - FEqualizer.Height;
+    FEqualizer.Left := Left + 15;
+    FEqualizer.Top := Top + Height - addStatus.Height - FEqualizer.Height - 5;
   end;
   FEqualizer.Show;
 end;
