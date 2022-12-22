@@ -1441,6 +1441,8 @@ begin
       FPageList.Add(TPage.Create('Community', pnlCommunity, TImages.GROUP));
       FPageList.Add(TPage.Create('Hotkeys', pnlHotkeys, TImages.KEYBOARD));
       FPageList.Add(TPage.Create('Advanced', pnlAdvanced, TImages.COG));
+
+      inherited RegisterGeneralPage(TImages.WRENCH_APPLICATION);
     end;
     stAuto:
     begin
@@ -1461,8 +1463,6 @@ begin
       FPageList.Add(TPage.Create('Advanced', pnlAdvanced, TImages.COG));
     end;
   end;
-
-  inherited RegisterGeneralPage(TImages.WRENCH_APPLICATION);
 end;
 
 function TfrmSettings.RemoveGray(C: TControl; ShowMessage: Boolean = True): Boolean;
