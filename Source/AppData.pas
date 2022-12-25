@@ -569,9 +569,9 @@ begin
   inherited;
 
   try
-    Res := TResourceStream.Create(HInstance, 'THANKSTEXT_' + UpperCase(LanguageObjects.Language.CurrentLanguage.ID), RT_RCDATA);
+    Res := TResourceStream.Create(HInstance, 'THANKSTEXT_' + UpperCase(LanguageObjects.Language.CurrentLanguage.ID), Windows.RT_RCDATA);
   except
-    Res := TResourceStream.Create(HInstance, 'THANKSTEXT_EN', RT_RCDATA);
+    Res := TResourceStream.Create(HInstance, 'THANKSTEXT_EN', Windows.RT_RCDATA);
   end;
 
   try

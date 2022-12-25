@@ -344,16 +344,13 @@ object frmStreamWriterMain: TfrmStreamWriterMain
         Action = actShowSideBar
       end
     end
-    object mnuUpdate: TMenuItem
-      Caption = '&Update'
-      object mnuCheckUpdate: TMenuItem
-        Action = actCheckUpdate
-      end
-    end
     object mnuHelp: TMenuItem
       Caption = '&Help'
       object mnuHelp2: TMenuItem
         Action = actHelp
+      end
+      object mnuCheckUpdate: TMenuItem
+        Action = actCheckUpdate
       end
       object N1: TMenuItem
         Caption = '-'

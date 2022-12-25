@@ -343,7 +343,7 @@ begin
   FBassMixerDLLPath := ConcatPaths([AppGlobals.TempDir + 'bassmix.dll']);
   FBassEncDLLPath := ConcatPaths([AppGlobals.TempDir + 'bassenc.dll']);
 
-  Res := TResourceStream.Create(0, 'BASS', RT_RCDATA);
+  Res := TResourceStream.Create(0, 'BASS', Windows.RT_RCDATA);
   try
     try
       Res.SaveToFile(FBassDLLPath);
@@ -355,7 +355,7 @@ begin
 
   if LoadAAC then
   begin
-    Res := TResourceStream.Create(0, 'BASS_AAC', RT_RCDATA);
+    Res := TResourceStream.Create(0, 'BASS_AAC', Windows.RT_RCDATA);
     try
       try
         Res.SaveToFile(FBassAACDLLPath);
@@ -368,7 +368,7 @@ begin
 
   if LoadWASAPI then
   begin
-    Res := TResourceStream.Create(0, 'BASS_WASAPI', RT_RCDATA);
+    Res := TResourceStream.Create(0, 'BASS_WASAPI', Windows.RT_RCDATA);
     try
       try
         Res.SaveToFile(FBassWASAPIDLLPath);
@@ -381,7 +381,7 @@ begin
 
   if LoadMixer then
   begin
-    Res := TResourceStream.Create(0, 'BASS_MIXER', RT_RCDATA);
+    Res := TResourceStream.Create(0, 'BASS_MIXER', Windows.RT_RCDATA);
     try
       try
         Res.SaveToFile(FBassMixerDLLPath);
@@ -394,7 +394,7 @@ begin
 
   if LoadEnc then
   begin
-    Res := TResourceStream.Create(0, 'BASS_ENC', RT_RCDATA);
+    Res := TResourceStream.Create(0, 'BASS_ENC', Windows.RT_RCDATA);
     try
       try
         Res.SaveToFile(FBassEncDLLPath);
