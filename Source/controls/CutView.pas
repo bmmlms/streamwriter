@@ -925,13 +925,13 @@ begin
   if Start then
   begin
     Paused := False;
-    if (FPlayer <> nil) and FPlayer.Playing then  // TODO: hier abfrage auf nil, sonst aber einfach weiter unten zugriff?
+    if Assigned(FPlayer) then
     begin
-      Paused := True;
+      Paused := FPlayer.Playing;
       FPlayer.Pause;
+      FPlayer.PositionByte := FWaveData.WaveArray[0].Pos;
     end;
 
-    FPlayer.PositionByte := FWaveData.WaveArray[0].Pos;
     FPB.FPlayLine := 0;
 
     if Paused then
@@ -939,7 +939,8 @@ begin
   end else
   begin
     Stop;
-    FPlayer.PositionByte := FWaveData.WaveArray[Length(FWaveData.WaveArray) - 1].Pos;
+    if Assigned(FPlayer) then
+      FPlayer.PositionByte := FWaveData.WaveArray[Length(FWaveData.WaveArray) - 1].Pos;
     FPB.FPlayLine := Length(FWaveData.WaveArray) - 1;
   end;
 

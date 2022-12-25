@@ -1,25 +1,25 @@
 object frmNotification: TfrmNotification
   Left = 0
-  Height = 64
+  Height = 72
   Top = 0
-  Width = 125
+  Width = 133
   AutoSize = True
   BorderIcons = []
   BorderStyle = bsNone
+  BorderWidth = 4
   Caption = 'frmNotification'
-  ClientHeight = 64
-  ClientWidth = 125
+  ClientHeight = 72
+  ClientWidth = 133
   Color = clBtnFace
-  Constraints.MaxHeight = 64
+  Constraints.MaxHeight = 72
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
   FormStyle = fsSystemStayOnTop
-  LCLVersion = '2.2.0.2'
   object Panel1: TPanel
-    Left = 0
+    Left = 4
     Height = 64
-    Top = 0
+    Top = 4
     Width = 61
     Align = alClient
     AutoSize = True
@@ -37,6 +37,7 @@ object frmNotification: TfrmNotification
       Font.Color = clWindowText
       Font.Height = -20
       Font.Name = 'Tahoma'
+      ParentColor = False
       ParentFont = False
       ShowAccelChar = False
     end
@@ -47,13 +48,14 @@ object frmNotification: TfrmNotification
       Width = 61
       Align = alClient
       Caption = 'lblStream'
+      ParentColor = False
       ShowAccelChar = False
     end
   end
   object pbLogo: TPaintBox
-    Left = 61
+    Left = 65
     Height = 64
-    Top = 0
+    Top = 4
     Width = 64
     Align = alRight
     OnPaint = pbLogoPaint

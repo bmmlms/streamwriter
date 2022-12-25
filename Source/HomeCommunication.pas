@@ -1000,7 +1000,7 @@ begin
   Cmd.VersionMinor := AppGlobals.AppVersion.Minor;
   Cmd.VersionRevision := AppGlobals.AppVersion.Revision;
   Cmd.VersionBuild := AppGlobals.AppVersion.Build;
-  Cmd.Build := 900; // AppGlobals.BuildNumber;  // TODO: !!!
+  Cmd.Build := IfThen<Cardinal>(AppGlobals.AppVersion.Build > 0, AppGlobals.AppVersion.Build, 900);
   Cmd.Language := Language.CurrentLanguage.ID;
   Cmd.ProtoVersion := 8;
 

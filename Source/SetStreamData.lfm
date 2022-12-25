@@ -19,7 +19,6 @@ object frmSetStreamData: TfrmSetStreamData
   OnKeyDown = FormKeyDown
   OnResize = FormResize
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.2'
   object btnResetTitlePattern: TSpeedButton
     Left = 625
     Height = 21
@@ -40,6 +39,7 @@ object frmSetStreamData: TfrmSetStreamData
     Anchors = [akTop, akRight]
     AutoSize = False
     Caption = 'Use the following regular expressions for this stream (groups: a = artist, t = title, l = album):'
+    ParentColor = False
     WordWrap = True
   end
   object Label1: TLabel
@@ -50,43 +50,51 @@ object frmSetStreamData: TfrmSetStreamData
     Anchors = [akTop, akRight]
     AutoSize = False
     Caption = 'Regular expressions set by other users:'
+    ParentColor = False
     WordWrap = True
   end
   object pnlNav: TPanel
     Left = 0
-    Height = 40
-    Top = 400
+    Height = 39
+    Top = 401
     Width = 670
     Align = alBottom
+    AutoSize = True
     BevelOuter = bvNone
-    ClientHeight = 40
+    ClientHeight = 39
     ClientWidth = 670
     TabOrder = 5
     object Bevel2: TBevel
       Left = 0
-      Height = 5
+      Height = 4
       Top = 0
       Width = 670
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 573
+      Left = 570
       Height = 35
-      Top = 5
-      Width = 97
+      Top = 4
+      Width = 100
       Align = alRight
+      AutoSize = True
       Caption = '&OK'
+      Constraints.MinHeight = 35
+      Constraints.MinWidth = 100
       OnClick = btnOKClick
       TabOrder = 1
     end
     object btnCancel: TBitBtn
       Left = 0
       Height = 35
-      Top = 5
-      Width = 97
+      Top = 4
+      Width = 100
       Align = alLeft
+      AutoSize = True
       Caption = '&Cancel'
+      Constraints.MinHeight = 35
+      Constraints.MinWidth = 100
       OnClick = btnCancelClick
       TabOrder = 0
     end
@@ -100,6 +108,7 @@ object frmSetStreamData: TfrmSetStreamData
     EditLabel.Height = 13
     EditLabel.Width = 333
     EditLabel.Caption = 'Regular expression to add:'
+    EditLabel.ParentColor = False
     EditLabel.Layout = tlBottom
     MaxLength = 255
     TabOrder = 2

@@ -20,7 +20,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   OnKeyDown = FormKeyDown
   OnShortCut = FormShortCut
   OnShow = FormShow
-  LCLVersion = '2.2.0.4'
+  LCLVersion = '2.2.4.0'
   object tbClients: TToolBar
     Left = 0
     Height = 22

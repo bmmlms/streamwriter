@@ -633,6 +633,10 @@ begin
   FProgressBar.Height := 20;
   FProgressBar.Style := pbstMarquee;
   FProgressBar.Visible := False;
+  FProgressBar.AnchorSideLeft.Control := Self;
+  FProgressBar.AnchorSideLeft.Side := asrCenter;
+  FProgressBar.AnchorSideTop.Control := Self;
+  FProgressBar.AnchorSideTop.Side := asrCenter;
 
   Header.SortColumn := 3;
   Header.SortDirection := sdDescending;
@@ -1320,12 +1324,6 @@ end;
 procedure TChartsTree.Resize;
 begin
   inherited;
-
-  if not Assigned(FProgressBar) then
-    Exit;
-
-  FProgressBar.Left := Trunc(ClientWidth / 2 - FProgressBar.Width / 2);
-  FProgressBar.Top := ClientHeight div 2 - Canvas.TextHeight('Wy') + 15;
 
   case FState of
     csSearching:

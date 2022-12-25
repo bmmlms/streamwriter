@@ -162,22 +162,18 @@ end;
 
 procedure TMStationCombo.Sort;
 var
-  s: string;
+  Idx: Integer;
 begin
-  Exit; // TODO: Exception without Exit
+  if ItemsEx.Count = 0 then
+    Exit;
 
-  ItemsEx.BeginUpdate;
-  try
-    if ItemIndex > -1 then
-      s := TRecentEntry(ItemsEx.Items[ItemIndex].Data).Name
-    else
-      s := Text;
+  Idx := ItemIndex;
+  ItemIndex := 0;
 
-    ItemsEx.SortType := stData;
-    ItemsEx.Sort;
-  finally
-    ItemsEx.EndUpdate;
-  end;
+  ItemsEx.SortType := stData;
+  ItemsEx.Sort;
+
+  ItemIndex := Idx;
 end;
 
 function TMStationCombo.ItemsCompare(List: TListControlItems; Item1, Item2: TListControlItem): Integer;

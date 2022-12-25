@@ -395,7 +395,7 @@ begin
 
   // Adjust dimensions of the main-form
   W := 900;
-  H := 630;
+  H := 550;
   if Screen.WorkAreaWidth < W then
     W := Screen.WorkAreaWidth - 20;
   if Screen.WorkAreaHeight < H then
@@ -468,7 +468,7 @@ begin
   FProjectDonateLink := 'https://streamwriter.org/inhalt/donate';
 
   // Should multiple instances be allowed?
-  CommandLine := TCommandLine.Create(GetCommandLineW);
+  CommandLine := TCommandLine.Create(GetCommandLine);
   try
     if CommandLine.GetParam('-enablemultipleinstances') = nil then
       OnlyOne := True
@@ -530,9 +530,9 @@ begin
 end;
 
 // Gets the path to the data file where streamWriter saved it's settings
-function TAppData.FGetDataFile;
+function TAppData.FGetDataFile: string;
 begin
-  Result := FStorage.GetFilePath('data.dat');
+  Result := FStorage.DataFile;
 end;
 
 function TAppData.FGetEQGain(Idx: Integer): Integer;
@@ -557,7 +557,7 @@ begin
   if MutexHandle > 0 then
   begin
     MutexName := AppName + 'MutexExiting';
-    FMutexHandleExiting := CreateMutexW(nil, True, PWideChar(UnicodeString(MutexName)));
+    FMutexHandleExiting := CreateMutex(nil, True, PChar(MutexName));
   end;
 end;
 
@@ -897,13 +897,13 @@ end;
 
 procedure TAppData.NotifyRunningInstance(Handle: Cardinal);
 var
-  s: UnicodeString;
+  s: string;
   CDS: TCOPYDATASTRUCT;
 begin
-  s := GetCommandLineW;
+  s := GetCommandLine;
   CDS.dwData := 0;
-  CDS.cbData := (Length(s) * SizeOf(WideChar)) + 2;
-  CDS.lpData := PWideChar(s);
+  CDS.cbData := Length(s) + 1;
+  CDS.lpData := PChar(s);
   SendMessage(Handle, WM_COPYDATA, 0, LongInt(@CDS));
 end;
 

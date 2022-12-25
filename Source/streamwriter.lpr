@@ -52,6 +52,7 @@ uses
 {$R ..\Resources\language.res}
 {$R ..\SubModules\fpc-common\res\language_common.res}
 {$R ..\SubModules\fpc-common\res\lang_icons.rc}
+{$R ..\SubModules\fpc-common\res\images.rc}
 
 procedure UnhandledException(Obj: TObject; Addr: Pointer; FrameCount: Longint; Frames: PPointer);
 var
@@ -115,7 +116,7 @@ begin
 
     InitPlayerManager;
 
-    if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and (not TFunctions.IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion)) and
+    if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and (not TFunctions.IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion, False)) and
       (not HideMain) and (not AppGlobals.InstallUpdateOnStart) then
       TSplashThread.Create('Window', 'SPLASH', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.GitSHA,
         AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);

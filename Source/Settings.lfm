@@ -11,7 +11,7 @@ inherited frmSettings: TfrmSettings
   OnShow = FormShow
   Position = poOwnerFormCenter
   inherited FlowPanelPages: TFlowPanel
-    Height = 808
+    Height = 809
     Width = 1483
     BevelOuter = bvRaised
     Caption = 'FlowPanel1'
@@ -529,7 +529,6 @@ inherited frmSettings: TfrmSettings
         Control.Top = 16
         Control.Width = 261
         Control.Align = alClient
-        Control.Images = modSharedData.imgImages
         Control.ItemHeight = 16
         Control.ItemsEx = <        
           item
@@ -966,100 +965,7 @@ inherited frmSettings: TfrmSettings
         end
       end
     end
-    object pnlCommunity: TPanel[4]
-      Left = 1174
-      Height = 269
-      Top = 1
-      Width = 293
-      Anchors = []
-      ClientHeight = 269
-      ClientWidth = 293
-      TabOrder = 4
-      Visible = False
-      object Label2: TLabel
-        Left = 19
-        Height = 26
-        Top = 20
-        Width = 273
-        Align = alTop
-        BorderSpacing.Left = 18
-        Caption = 'Streams unknown to streamWriter will be submitted to the server so they can appear in the browser.'
-        ParentColor = False
-        WordWrap = True
-        OnClick = Label2Click
-      end
-      object Label8: TLabel
-        Left = 19
-        Height = 39
-        Top = 65
-        Width = 273
-        Align = alTop
-        BorderSpacing.Left = 18
-        Caption = 'Information about track changes will be sent to the server and broadcasted to other users. This is important for the automatic recording of songs on the wishlist.'
-        ParentColor = False
-        WordWrap = True
-        OnClick = Label8Click
-      end
-      object Label20: TLabel
-        Left = 19
-        Height = 91
-        Top = 123
-        Width = 273
-        Align = alTop
-        BorderSpacing.Left = 18
-        Caption = 'Server-assigned streams will be monitored for title changes in the background. Do not disable this option if you have a fast internet connection (DSL or faster) and unlimited traffic (flatrate). Monitored streams will not be covered by the bandwidth limit. One monitored stream consumes between 8 and 40KB/s depending on the stream''s quality.'
-        ParentColor = False
-        WordWrap = True
-        OnClick = Label20Click
-      end
-      object chkSubmitStreamInfo: TCheckBox
-        Left = 1
-        Height = 19
-        Top = 1
-        Width = 291
-        Align = alTop
-        Caption = 'Submit information about streams to the server'
-        OnClick = chkSubmitStreamInfoClick
-        TabOrder = 0
-      end
-      object chkSubmitStats: TCheckBox
-        Left = 1
-        Height = 19
-        Top = 46
-        Width = 291
-        Align = alTop
-        Caption = 'Submit statistics/track changes to the server'
-        OnClick = chkSubmitStatsClick
-        TabOrder = 1
-      end
-      object chkMonitorMode: TCheckBox
-        Left = 1
-        Height = 19
-        Top = 104
-        Width = 291
-        Align = alTop
-        Caption = 'Enable monitor mode'
-        OnClick = chkMonitorModeClick
-        TabOrder = 2
-      end
-      object txtMonitorCount: TMLabeledSpinEdit
-        Left = 19
-        Height = 37
-        Top = 214
-        Width = 273
-        Align = alTop
-        BorderSpacing.Left = 18
-        Caption = 'Max. number of streams to monitor:'
-        Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
-        Control.Width = 50
-        Control.Align = alLeft
-        Control.MaxValue = 99
-        Control.TabOrder = 0
-      end
-    end
-    object pnlFilenames: TPanel[5]
+    object pnlFilenames: TPanel[4]
       Left = 1
       Height = 268
       Top = 354
@@ -1120,6 +1026,7 @@ inherited frmSettings: TfrmSettings
         Caption = 'Pattern for filenames of completely recorded tracks:'
         Control.Left = 0
         Control.Height = 21
+        Control.Hint = 'Reset pattern to default'
         Control.Top = 16
         Control.Width = 291
         Control.Align = alClient
@@ -1228,7 +1135,7 @@ inherited frmSettings: TfrmSettings
         Control.TabOrder = 0
       end
     end
-    object pnlCut: TPanel[6]
+    object pnlCut: TPanel[5]
       Left = 294
       Height = 237
       Top = 354
@@ -1468,7 +1375,7 @@ inherited frmSettings: TfrmSettings
         end
       end
     end
-    object pnlAdvanced: TPanel[7]
+    object pnlAdvanced: TPanel[6]
       Left = 587
       Height = 171
       Top = 354
@@ -1562,7 +1469,7 @@ inherited frmSettings: TfrmSettings
         Control.TabOrder = 0
       end
     end
-    object pnlBandwidth: TPanel[8]
+    object pnlBandwidth: TPanel[7]
       Left = 880
       Height = 160
       Top = 354
@@ -1597,6 +1504,17 @@ inherited frmSettings: TfrmSettings
         Control.Width = 50
         Control.Align = alLeft
         Control.TabOrder = 0
+        object Label10: TLabel
+          Left = 53
+          Height = 21
+          Top = 16
+          Width = 21
+          Align = alLeft
+          BorderSpacing.Left = 3
+          Caption = 'KB/s'
+          Layout = tlCenter
+          ParentColor = False
+        end
       end
       object chkLimit: TCheckBox
         Left = 1
@@ -1609,7 +1527,7 @@ inherited frmSettings: TfrmSettings
         TabOrder = 0
       end
     end
-    object pnlAppearance: TPanel[9]
+    object pnlAppearance: TPanel[8]
       Left = 1172
       Height = 145
       Top = 354
@@ -1791,7 +1709,7 @@ inherited frmSettings: TfrmSettings
         end
       end
     end
-    object pnlHotkeys: TPanel[10]
+    object pnlHotkeys: TPanel[9]
       Left = 1
       Height = 77
       Top = 622
@@ -1840,7 +1758,7 @@ inherited frmSettings: TfrmSettings
         Control.OnChange = txtHotkeyChange
       end
     end
-    object pnlCommunityBlacklist: TPanel[11]
+    object pnlCommunityBlacklist: TPanel[10]
       Left = 294
       Height = 42
       Top = 622
@@ -1900,7 +1818,7 @@ inherited frmSettings: TfrmSettings
         end
       end
     end
-    object pnlFilenamesExt: TPanel[12]
+    object pnlFilenamesExt: TPanel[11]
       Left = 562
       Height = 112
       Top = 622
@@ -1959,7 +1877,7 @@ inherited frmSettings: TfrmSettings
         Control.TabOrder = 0
       end
     end
-    object pnlAutoRecord: TPanel[13]
+    object pnlAutoRecord: TPanel[12]
       Left = 855
       Height = 177
       Top = 622
@@ -2063,11 +1981,104 @@ inherited frmSettings: TfrmSettings
         Control.TabOrder = 0
       end
     end
+    object pnlCommunity: TPanel[13]
+      Left = 1174
+      Height = 269
+      Top = 1
+      Width = 293
+      Anchors = []
+      ClientHeight = 269
+      ClientWidth = 293
+      TabOrder = 4
+      Visible = False
+      object Label2: TLabel
+        Left = 19
+        Height = 26
+        Top = 20
+        Width = 273
+        Align = alTop
+        BorderSpacing.Left = 18
+        Caption = 'Streams unknown to streamWriter will be submitted to the server so they can appear in the browser.'
+        ParentColor = False
+        WordWrap = True
+        OnClick = Label2Click
+      end
+      object Label8: TLabel
+        Left = 19
+        Height = 39
+        Top = 65
+        Width = 273
+        Align = alTop
+        BorderSpacing.Left = 18
+        Caption = 'Information about track changes will be sent to the server and broadcasted to other users. This is important for the automatic recording of songs on the wishlist.'
+        ParentColor = False
+        WordWrap = True
+        OnClick = Label8Click
+      end
+      object Label20: TLabel
+        Left = 19
+        Height = 91
+        Top = 123
+        Width = 273
+        Align = alTop
+        BorderSpacing.Left = 18
+        Caption = 'Server-assigned streams will be monitored for title changes in the background. Do not disable this option if you have a fast internet connection (DSL or faster) and unlimited traffic (flatrate). Monitored streams will not be covered by the bandwidth limit. One monitored stream consumes between 8 and 40KB/s depending on the stream''s quality.'
+        ParentColor = False
+        WordWrap = True
+        OnClick = Label20Click
+      end
+      object chkSubmitStreamInfo: TCheckBox
+        Left = 1
+        Height = 19
+        Top = 1
+        Width = 291
+        Align = alTop
+        Caption = 'Submit information about streams to the server'
+        OnClick = chkSubmitStreamInfoClick
+        TabOrder = 0
+      end
+      object chkSubmitStats: TCheckBox
+        Left = 1
+        Height = 19
+        Top = 46
+        Width = 291
+        Align = alTop
+        Caption = 'Submit statistics/track changes to the server'
+        OnClick = chkSubmitStatsClick
+        TabOrder = 1
+      end
+      object chkMonitorMode: TCheckBox
+        Left = 1
+        Height = 19
+        Top = 104
+        Width = 291
+        Align = alTop
+        Caption = 'Enable monitor mode'
+        OnClick = chkMonitorModeClick
+        TabOrder = 2
+      end
+      object txtMonitorCount: TMLabeledSpinEdit
+        Left = 19
+        Height = 37
+        Top = 214
+        Width = 273
+        Align = alTop
+        BorderSpacing.Left = 18
+        Caption = 'Max. number of streams to monitor:'
+        Control.Left = 0
+        Control.Height = 21
+        Control.Top = 16
+        Control.Width = 50
+        Control.Align = alLeft
+        Control.MaxValue = 99
+        Control.TabOrder = 0
+      end
+    end
   end
   inherited pnlHeader: TPanel
     Width = 1576
     ClientWidth = 1576
-    TabOrder = 1
+    TabOrder = 2
     inherited Shape1: TShape
       Width = 1576
     end
@@ -2076,49 +2087,24 @@ inherited frmSettings: TfrmSettings
     end
   end
   inherited pnlNav: TPanel
-    Top = 841
+    Top = 842
     Width = 1576
     ClientWidth = 1576
-    TabOrder = 2
     inherited Bevel2: TBevel
       Width = 1576
     end
     inherited btnOK: TBitBtn
-      Left = 1479
-      Default = False
+      Left = 1476
     end
   end
   inherited pnlLeft: TPanel
-    Height = 808
+    Height = 809
     TabOrder = 3
   end
   inherited pnlGeneral: TPanel
     Left = 1212
     Top = 84
     TabOrder = 5
-    inherited chkAutoUpdateCheck: TCheckBox
-      Top = 39
-    end
-    inherited chkProxy: TCheckBox
-      Top = 77
-    end
-    inherited chkCheckCertificate: TCheckBox
-      Top = 58
-    end
-    inherited lstLanguages: TMLabeledComboBoxEx
-      Height = 38
-      Control.Top = 16
-    end
-    inherited txtHost: TMLabeledEdit
-      Height = 37
-      Top = 96
-      Control.Top = 16
-    end
-    inherited txtPort: TMLabeledSpinEdit
-      Height = 37
-      Top = 133
-      Control.Top = 16
-    end
   end
   object pnlAddons: TPanel[5]
     Left = 1204

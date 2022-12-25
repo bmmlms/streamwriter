@@ -416,7 +416,7 @@ begin
   TreeOptions.SelectionOptions := [toMultiSelect, toFullRowSelect];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect] - [toShowTreeLines];
 
-  Indent := 4;   // TODO: ? ist das überall so?
+  Indent := 0;
 
   Header.Options := [hoAutoResize, hoVisible];
 

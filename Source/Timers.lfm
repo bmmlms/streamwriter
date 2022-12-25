@@ -57,25 +57,25 @@ object frmTimers: TfrmTimers
   OnKeyDown = FormKeyDown
   OnShow = FormShow
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.2'
+  LCLVersion = '2.2.4.0'
   object Panel2: TPanel
     Left = 0
-    Height = 355
+    Height = 356
     Top = 0
     Width = 477
     Align = alClient
     BevelOuter = bvNone
-    ClientHeight = 355
+    ClientHeight = 356
     ClientWidth = 477
     TabOrder = 1
     object Panel1: TPanel
       Left = 0
-      Height = 355
+      Height = 356
       Top = 0
       Width = 477
       Align = alClient
       BevelOuter = bvNone
-      ClientHeight = 355
+      ClientHeight = 356
       ClientWidth = 477
       TabOrder = 0
       object pnlConfig: TPanel
@@ -94,6 +94,7 @@ object frmTimers: TfrmTimers
           Top = 156
           Width = 82
           Caption = 'Start Time (24h):'
+          ParentColor = False
         end
         object Label2: TLabel
           Left = 108
@@ -101,6 +102,7 @@ object frmTimers: TfrmTimers
           Top = 156
           Width = 76
           Caption = 'End Time (24h):'
+          ParentColor = False
         end
         object Label3: TLabel
           Left = 44
@@ -109,6 +111,7 @@ object frmTimers: TfrmTimers
           Width = 4
           Alignment = taCenter
           Caption = ':'
+          ParentColor = False
         end
         object Label4: TLabel
           Left = 148
@@ -117,6 +120,7 @@ object frmTimers: TfrmTimers
           Width = 4
           Alignment = taCenter
           Caption = ':'
+          ParentColor = False
         end
         object rbRecurring: TRadioButton
           Left = 4
@@ -140,11 +144,11 @@ object frmTimers: TfrmTimers
         end
         object lstInterval: TComboBoxEx
           Left = 20
-          Height = 19
+          Height = 22
           Top = 24
           Width = 452
           Anchors = [akTop, akLeft, akRight]
-          ItemHeight = 13
+          ItemHeight = 16
           ItemsEx = <          
             item
               Caption = 'Daily'
@@ -158,12 +162,12 @@ object frmTimers: TfrmTimers
         end
         object lstDay: TComboBoxEx
           Left = 20
-          Height = 19
+          Height = 22
           Top = 52
           Width = 452
           Anchors = [akTop, akLeft, akRight]
           Enabled = False
-          ItemHeight = 13
+          ItemHeight = 16
           ItemsEx = <          
             item
               Caption = 'Monday'
@@ -267,18 +271,18 @@ object frmTimers: TfrmTimers
       end
       object pnlTree: TPanel
         Left = 0
-        Height = 158
+        Height = 159
         Top = 197
         Width = 477
         Align = alClient
         BevelOuter = bvNone
-        ClientHeight = 158
+        ClientHeight = 159
         ClientWidth = 477
         TabOrder = 1
         object Panel3: TPanel
           Left = 0
           Height = 35
-          Top = 123
+          Top = 124
           Width = 477
           Align = alBottom
           BevelOuter = bvNone
@@ -286,13 +290,16 @@ object frmTimers: TfrmTimers
           ClientWidth = 477
           TabOrder = 0
           object btnRemove: TButton
-            Left = 380
+            Left = 377
             Height = 35
             Top = 0
-            Width = 97
+            Width = 100
             Align = alRight
             Anchors = [akTop, akRight]
+            AutoSize = True
             Caption = '&Remove'
+            Constraints.MinHeight = 35
+            Constraints.MinWidth = 100
             Enabled = False
             OnClick = btnRemoveClick
             TabOrder = 0
@@ -303,29 +310,33 @@ object frmTimers: TfrmTimers
   end
   object pnlNav: TPanel
     Left = 0
-    Height = 40
-    Top = 355
+    Height = 39
+    Top = 356
     Width = 477
     Align = alBottom
+    AutoSize = True
     BevelOuter = bvNone
-    ClientHeight = 40
+    ClientHeight = 39
     ClientWidth = 477
     TabOrder = 0
     object Bevel2: TBevel
       Left = 0
-      Height = 5
+      Height = 4
       Top = 0
       Width = 477
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 380
+      Left = 377
       Height = 35
-      Top = 5
-      Width = 97
+      Top = 4
+      Width = 100
       Align = alRight
+      AutoSize = True
       Caption = '&OK'
+      Constraints.MinHeight = 35
+      Constraints.MinWidth = 100
       OnClick = btnOKClick
       TabOrder = 0
     end

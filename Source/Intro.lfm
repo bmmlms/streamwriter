@@ -15,7 +15,6 @@ object frmIntro: TfrmIntro
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.2'
   object imgLogo: TImage
     Left = 382
     Height = 48
@@ -34,6 +33,7 @@ object frmIntro: TfrmIntro
     Font.Height = -13
     Font.Name = 'Tahoma'
     Font.Style = [fsBold]
+    ParentColor = False
     ParentFont = False
   end
   object lblIntro: TLabel
@@ -43,6 +43,7 @@ object frmIntro: TfrmIntro
     Width = 361
     AutoSize = False
     Caption = 'Since this is the first time you start up streamWriter, here is some basic information on how to record songs.'
+    ParentColor = False
     WordWrap = True
   end
   object lblManual: TLabel
@@ -56,6 +57,7 @@ object frmIntro: TfrmIntro
     Font.Height = -11
     Font.Name = 'Tahoma'
     Font.Style = [fsBold]
+    ParentColor = False
     ParentFont = False
   end
   object lblManualDesc: TLabel
@@ -66,6 +68,7 @@ object frmIntro: TfrmIntro
     Anchors = [akLeft, akRight, akBottom]
     AutoSize = False
     Caption = 'In order to manually record streams just doubleclick them in the stream-browser on the right. You can also use the stream-browser''s contextmenu. Manual recording of streams helps those people who use automatic recording because the titles your streamWriter detects are broadcasted on the streamWriter-network.'
+    ParentColor = False
     WordWrap = True
   end
   object lblAutomatic: TLabel
@@ -79,6 +82,7 @@ object frmIntro: TfrmIntro
     Font.Height = -11
     Font.Name = 'Tahoma'
     Font.Style = [fsBold]
+    ParentColor = False
     ParentFont = False
   end
   object lblAutomaticDesc: TLabel
@@ -89,33 +93,38 @@ object frmIntro: TfrmIntro
     Anchors = [akLeft, akRight, akBottom]
     AutoSize = False
     Caption = 'To record specific songs automatically you have to add titles to your wishlist using the "Title search" tab. When streamWriter detects that a title on your wishlist is played on an observed stream, this title will be recorded automatically.'
+    ParentColor = False
     WordWrap = True
   end
   object pnlNav: TPanel
     Left = 0
-    Height = 40
-    Top = 239
+    Height = 39
+    Top = 240
     Width = 439
     Align = alBottom
+    AutoSize = True
     BevelOuter = bvNone
-    ClientHeight = 40
+    ClientHeight = 39
     ClientWidth = 439
     TabOrder = 0
     object Bevel2: TBevel
-      Left = 4
-      Height = 5
-      Top = 4
-      Width = 431
+      Left = 0
+      Height = 4
+      Top = 0
+      Width = 439
       Align = alTop
       Shape = bsTopLine
     end
     object btnClose: TBitBtn
-      Left = 338
-      Height = 27
-      Top = 9
-      Width = 97
+      Left = 339
+      Height = 35
+      Top = 4
+      Width = 100
       Align = alRight
+      AutoSize = True
       Caption = '&Close'
+      Constraints.MinHeight = 35
+      Constraints.MinWidth = 100
       Default = True
       OnClick = btnCloseClick
       TabOrder = 0

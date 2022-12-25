@@ -206,8 +206,6 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    procedure PostTranslate;
-
     property HashFilterSet: Boolean read FHashFilterSet write FSetHashFilterSet;
   end;
 
@@ -912,7 +910,6 @@ end;
 
 procedure TSavedTab.PostTranslate;
 begin
-  FSearchBar.PostTranslate;
   FSavedTree.PostTranslate;
 end;
 
@@ -1313,7 +1310,6 @@ end;
 
 procedure TSavedTab.StopThreads;
 begin
-  // TODO:
   while FImportThread <> nil do
   begin
     FImportThread.Terminate;
@@ -2750,7 +2746,7 @@ begin
 
   SortTree(Header.SortColumn, Header.SortDirection);
 
-  Change(nil);   // TODO: war das wichtig? ich glaube das sollte updatebuttons machen, was jetzt fehlt.
+  FTab.UpdateButtons;
 
   Expanded[FStreamNode] := True;
   Expanded[FFileNode] := True;
@@ -2810,6 +2806,7 @@ begin
   FLabel.Align := alLeft;
   FLabel.Layout := tlCenter;
   FLabel.Parent := Self;
+  FLabel.Caption := 'Search:';
 
   FSearch := TEdit.Create(Self);
   FSearch.Align := alLeft;
@@ -2817,8 +2814,6 @@ begin
   FSearch.Parent := Self;
 
   FLabel.Left := -100;
-
-  PostTranslate;
 end;
 
 destructor TSearchBar.Destroy;
@@ -2841,11 +2836,6 @@ begin
     FSearch.OnChange := Tmp;
   end else
     FSearch.Color := clWindow;
-end;
-
-procedure TSearchBar.PostTranslate;
-begin
-  FLabel.Caption := _('Search:'); // TODO: warum hier? posttranslate ist eh mist irgendwie generell.
 end;
 
 { TImportFilesThread }

@@ -16,32 +16,34 @@ object frmEditTags: TfrmEditTags
   OnKeyDown = FormKeyDown
   OnShow = FormShow
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.2'
   object pnlNav: TPanel
     Left = 0
-    Height = 40
-    Top = 353
+    Height = 39
+    Top = 354
     Width = 285
     Align = alBottom
+    AutoSize = True
     BevelOuter = bvNone
-    ClientHeight = 40
+    ClientHeight = 39
     ClientWidth = 285
     TabOrder = 2
     object Bevel2: TBevel
       Left = 0
-      Height = 5
+      Height = 4
       Top = 0
       Width = 285
       Align = alTop
       Shape = bsTopLine
     end
     object btnClose: TBitBtn
-      Left = 188
+      Left = 185
       Height = 35
-      Top = 5
-      Width = 97
+      Top = 4
+      Width = 100
       Align = alRight
       Caption = '&Save'
+      Constraints.MinHeight = 35
+      Constraints.MinWidth = 100
       OnClick = btnCloseClick
       TabOrder = 0
     end
@@ -61,6 +63,7 @@ object frmEditTags: TfrmEditTags
       Top = 196
       Width = 49
       Caption = 'Comment:'
+      ParentColor = False
     end
     object txtArtist: TLabeledEdit
       Left = 8
@@ -71,6 +74,7 @@ object frmEditTags: TfrmEditTags
       EditLabel.Height = 13
       EditLabel.Width = 257
       EditLabel.Caption = 'Artist:'
+      EditLabel.ParentColor = False
       TabOrder = 0
     end
     object txtTitle: TLabeledEdit
@@ -82,6 +86,7 @@ object frmEditTags: TfrmEditTags
       EditLabel.Height = 13
       EditLabel.Width = 257
       EditLabel.Caption = 'Title:'
+      EditLabel.ParentColor = False
       TabOrder = 1
     end
     object txtComment: TMemo
@@ -102,6 +107,7 @@ object frmEditTags: TfrmEditTags
       EditLabel.Height = 13
       EditLabel.Width = 257
       EditLabel.Caption = 'Album:'
+      EditLabel.ParentColor = False
       TabOrder = 2
     end
     object txtGenre: TLabeledEdit
@@ -113,6 +119,7 @@ object frmEditTags: TfrmEditTags
       EditLabel.Height = 13
       EditLabel.Width = 257
       EditLabel.Caption = 'Genre:'
+      EditLabel.ParentColor = False
       TabOrder = 4
     end
   end
@@ -134,6 +141,7 @@ object frmEditTags: TfrmEditTags
       EditLabel.Height = 13
       EditLabel.Width = 257
       EditLabel.Caption = 'Streamname:'
+      EditLabel.ParentColor = False
       TabOrder = 0
     end
   end

@@ -61,7 +61,6 @@ begin
   FStart.Flat := True;
   FStart.Hint := 'Add and start recording';
   FStart.ShowHint := True;
-  FStart.NumGlyphs := 1;
   FStart.OnClick := FStartClick;
   FStart.Images := modSharedData.imgImages;
   FStart.ImageIndex := TImages.ADD;

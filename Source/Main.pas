@@ -33,7 +33,6 @@ uses
   ChartsTab,
   CheckFilesThread,
   Classes,
-  StreamHelper,
   ClientManager,
   ClientTab,
   ClientView,
@@ -84,6 +83,7 @@ uses
   StationCombo,
   StatusBar,
   StreamBrowserView,
+  StreamHelper,
   StreamInfoView,
   SysUtils,
   Tabs,
@@ -680,7 +680,7 @@ end;
 
 procedure TfrmStreamWriterMain.actHelpExecute(Sender: TObject);
 begin
-  ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(AppGlobals.ProjectHelpLinkMain)), '', '', 1);
+  TFunctions.ShellExecute(Handle, 'open', AppGlobals.ProjectHelpLinkMain);
 end;
 
 procedure TfrmStreamWriterMain.actPlayerIncreaseVolumeExecute(Sender: TObject);
@@ -1536,7 +1536,7 @@ begin
   UpdateButtons;
 end;
 
-procedure ShortCutToHotKey(HotKey: TShortCut; var Key: Word; var Modifiers: Uint);
+procedure ShortCutToHotKey(const HotKey: TShortCut; out Key: Word; out Modifiers: Uint);
 var
   Shift: TShiftState;
 begin
@@ -1645,12 +1645,12 @@ begin
   NewCaption := 'streamWriter';
   {$IFDEF DEBUG}
   NewCaption := NewCaption + ' -: DEBUG BUiLD :- ';
-{$ENDIF}
+  {$ENDIF}
 
   NewHint := 'streamWriter';
   {$IFDEF DEBUG}
   NewHint := NewHint + ' -: DEBUG BUiLD :- ';
-{$ENDIF}
+  {$ENDIF}
 
   PlayerManager.Players.GetPlayingInfo(Artist, Title, Stream, Filename);
 
@@ -2571,7 +2571,7 @@ begin
     if AppGlobals.RunningFromInstalledLocation then
       ShowUpdate(FUpdater.FoundVersion.AsString, FUpdater.UpdateURL)
     else
-      ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(AppGlobals.ProjectLink)), nil, nil, 1);
+      TFunctions.ShellExecute(Handle, 'open', AppGlobals.ProjectLink);
 end;
 
 procedure TfrmStreamWriterMain.UpdaterNoUpdateFound(Sender: TObject);
@@ -2729,11 +2729,11 @@ begin
   begin
     CDS := PCOPYDATASTRUCT(lParam);
 
-    CmdLine := TCommandLine.Create(StrPas(PWideChar(CDS.lpData)));
+    CmdLine := TCommandLine.Create(PChar(CDS.lpData));
     if CmdLine.Records.Count = 0 then
       ToggleWindow(True);
 
-    ProcessCommandLine(StrPas(PWideChar(CDS.lpData)));
+    ProcessCommandLine(PChar(CDS.lpData));
 
     Exit(0);
   end;

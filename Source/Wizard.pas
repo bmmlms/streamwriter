@@ -37,30 +37,29 @@ uses
   LanguageObjects,
   LCLType,
   Logging,
+  MLabeledEdit,
   ShlObj,
   StdCtrls,
   SysUtils,
   WizardBase;
 
 type
-  TStepDir = class(TStep)
 
-  end;
+  { TfrmWizard }
 
   TfrmWizard = class(TfrmWizardBase)
+    chkMonitorMode: TCheckBox;
+    Label20: TLabel;
+    Label4: TLabel;
     pnlDir: TPanel;
-    cmdBrowse: TSpeedButton;
-    txtDir: TLabeledEdit;
     pnlMisc: TPanel;
     chkLimit: TCheckBox;
-    txtMaxSpeed: TLabeledEdit;
-    Label2: TLabel;
-    chkMonitorMode: TCheckBox;
-    txtMonitorCount: TLabeledEdit;
-    Label20: TLabel;
+    txtDir: TMLabeledEditButton;
+    txtMaxSpeed: TMLabeledSpinEdit;
     pnlSelectMode: TPanel;
     optModeEasy: TRadioButton;
     optModeAdvanced: TRadioButton;
+    txtMonitorCount: TMLabeledSpinEdit;
     procedure cmdBrowseClick(Sender: TObject);
     procedure chkLimitClick(Sender: TObject);
     procedure chkMonitorModeClick(Sender: TObject);
@@ -78,14 +77,13 @@ implementation
 
 procedure TfrmWizard.Finish;
 begin
-  AppGlobals.Dir := txtDir.Text;
-  AppGlobals.DirAuto := txtDir.Text;
+  AppGlobals.Dir := txtDir.Control.Text;
+  AppGlobals.DirAuto := txtDir.Control.Text;
   AppGlobals.LimitSpeed := chkLimit.Checked;
-  if StrToIntDef(txtMaxSpeed.Text, -1) > 0 then
-    AppGlobals.MaxSpeed := StrToInt(txtMaxSpeed.Text);
+  AppGlobals.MaxSpeed := txtMaxSpeed.Control.Value;
   AppGlobals.MonitorMode := chkMonitorMode.Checked;
-  if StrToIntDef(txtMonitorCount.Text, -1) > 0 then
-    AppGlobals.MonitorCount := StrToInt(txtMonitorCount.Text);
+  AppGlobals.MonitorCount := txtMonitorCount.Control.Value;
+
   inherited;
 end;
 
@@ -98,24 +96,25 @@ begin
   if Step.Panel = pnlDir then
   begin
     if (AppGlobals.Dir <> '') and DirectoryExists(AppGlobals.Dir) then
-      txtDir.Text := AppGlobals.Dir
+      txtDir.Control.Text := AppGlobals.Dir
     else
     begin
       s := TFunctions.GetShellFolder(CSIDL_MYMUSIC);
-      if (Trim(s) <> '') and (txtDir.Text = '') then
+      if (Trim(s) <> '') and (txtDir.Control.Text = '') then
       begin
         s := ConcatPaths([s, 'streamWriter']);
-        txtDir.Text := s;
+        txtDir.Control.Text := s;
       end;
     end;
   end else if Step.Panel = pnlMisc then
   begin
     chkLimit.Checked := AppGlobals.LimitSpeed;
-    if AppGlobals.MaxSpeed > 0 then
-      txtMaxSpeed.Text := IntToStr(AppGlobals.MaxSpeed);
+    txtMaxSpeed.Control.Value := AppGlobals.MaxSpeed;
     chkMonitorMode.Checked := AppGlobals.MonitorMode;
-    if AppGlobals.MonitorCount > 0 then
-      txtMonitorCount.Text := IntToStr(AppGlobals.MonitorCount);
+    txtMonitorCount.Control.Value := AppGlobals.MonitorCount;
+
+    chkLimitClick(chkLimit);
+    chkMonitorModeClick(chkMonitorMode);
   end else if Step.Panel = pnlSelectMode then
   ;
 end;
@@ -130,29 +129,15 @@ begin
   if Step.Panel = pnlDir then
   begin
     try
-      ForceDirectories(txtDir.Text);
+      ForceDirectories(txtDir.Control.Text);
     except
     end;
 
-    if not DirectoryExists(txtDir.Text) then
+    if not DirectoryExists(txtDir.Control.Text) then
     begin
       TFunctions.MsgBox(_('The selected folder does not exist.'#13#10'Please select another folder.'), _('Info'), MB_ICONINFORMATION);
       Result := False;
     end;
-  end else if Step.Panel = pnlMisc then
-  begin
-    if chkLimit.Checked then
-      if StrToIntDef(txtMaxSpeed.Text, -1) <= 0 then
-      begin
-        TFunctions.MsgBox(_('Please enter the maximum bandwidth in KB/s available to streamWriter.'), _('Info'), MB_ICONINFORMATION);
-        Result := False;
-      end;
-    if chkMonitorMode.Checked then
-      if StrToIntDef(txtMonitorCount.Text, -1) <= 0 then
-      begin
-        TFunctions.MsgBox(_('Please enter the maximum number of streams to monitor.'), _('Info'), MB_ICONINFORMATION);
-        Result := False;
-      end;
   end;
 end;
 
@@ -164,9 +149,9 @@ end;
 procedure TfrmWizard.RegisterSteps;
 begin
   inherited;
-  FStepList.Add(TStepDir.Create('Select folder', pnlDir));
+  FStepList.Add(TStep.Create('Select folder', pnlDir));
   FStepList[FStepList.Count - 1].Description := 'Please select a folder where recorded songs will be saved.';
-  FStepList.Add(TStepDir.Create('Miscellaneous settings', pnlMisc));
+  FStepList.Add(TStep.Create('Miscellaneous settings', pnlMisc));
   FStepList[FStepList.Count - 1].Description := 'Miscellaneous settings can be configured here.';
   //FStepList.Add(TStepDir.Create('Select mode', pnlSelectMode));
   //FStepList[FStepList.Count - 1].Description := 'Please specify whether you want to use easy or advanced mode. Advanced mode contains some features not needed by most people - if you want to record songs automatically using a wishlist, easy mode provides everything you need.';
@@ -188,7 +173,7 @@ var
 begin
   Dir := TFunctions.BrowseDialog(Self, _('Select folder for saved songs'));
   if DirectoryExists(Dir) then
-    txtDir.Text := Dir;
+    txtDir.Control.Text := Dir;
 end;
 
 end.

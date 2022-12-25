@@ -3,14 +3,14 @@
 uses
   SysUtils, Process, laz2_XMLRead, laz2_DOM, laz2_XMLWrite;
 
-function GetGitSHA: string;
+function GetProcessOutput(Exe: string; Parameters: array of string): string;
 var
   Proc: TProcess;
 begin
   Proc := TProcess.Create(nil);
   try
-    Proc.Executable := 'git';
-    Proc.Parameters.SetStrings(['rev-parse', '--short', 'HEAD']);
+    Proc.Executable := Exe;
+    Proc.Parameters.SetStrings(Parameters);
 
     Proc.Options := Proc.Options + [poWaitOnExit, poUsePipes];
 
@@ -25,6 +25,16 @@ begin
   end;
 end;
 
+function GetGitSHA: string;
+begin
+  Result := GetProcessOutput('git', ['rev-parse', '--short', 'HEAD']);
+end;
+
+function GetGitCommitCount: string;
+begin
+  Result := GetProcessOutput('git', ['rev-list', '--count', 'HEAD']);
+end;
+
 function GetVersionAttribute(const VersionInfoNode: TDOMElement; const Name: string): string;
 var
   VersionNode: TDOMElement;
@@ -37,7 +47,7 @@ begin
 end;
 
 var
-  VersionInfoNode: TDOMElement;
+  VersionInfoNode, RevisionNode: TDOMElement;
   Doc: TXMLDocument;
   ProductVersion: string;
 begin
@@ -46,11 +56,15 @@ begin
 
     VersionInfoNode := TDOMElement(Doc.DocumentElement.FindNode('ProjectOptions').FindNode('VersionInfo'));
 
+    RevisionNode := Doc.CreateElement('BuildNr');
+    RevisionNode.SetAttribute('Value', GetGitCommitCount);
+    VersionInfoNode.AppendChild(RevisionNode);
+
     ProductVersion := '%s.%s.%s.%s-%s'.Format([
       GetVersionAttribute(VersionInfoNode, 'MajorVersionNr'),
       GetVersionAttribute(VersionInfoNode, 'MinorVersionNr'),
       GetVersionAttribute(VersionInfoNode, 'RevisionNr'),
-      GetVersionAttribute(VersionInfoNode, 'BuildNr'),
+      GetGitCommitCount,
       GetGitSHA]);
 
     TDOMElement(VersionInfoNode.FindNode('StringTable')).SetAttribute('ProductVersion', ProductVersion);

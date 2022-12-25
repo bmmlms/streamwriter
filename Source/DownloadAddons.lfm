@@ -17,7 +17,7 @@ object frmDownloadAddons: TfrmDownloadAddons
   OnActivate = FormActivate
   OnClose = FormClose
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.2'
+  LCLVersion = '2.2.0.4'
   object Label1: TLabel
     Left = 0
     Height = 17

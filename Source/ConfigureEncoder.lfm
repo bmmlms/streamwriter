@@ -1,13 +1,13 @@
 object frmConfigureEncoder: TfrmConfigureEncoder
   Left = 0
-  Height = 116
+  Height = 121
   Top = 0
   Width = 250
   AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Configure encoder'
-  ClientHeight = 116
+  ClientHeight = 121
   ClientWidth = 250
   Color = clBtnFace
   Constraints.MinWidth = 250
@@ -30,7 +30,7 @@ object frmConfigureEncoder: TfrmConfigureEncoder
   object optVBR: TRadioButton
     Left = 0
     Height = 19
-    Top = 38
+    Top = 41
     Width = 250
     Align = alTop
     Caption = 'Use variable bitrate'
@@ -39,54 +39,54 @@ object frmConfigureEncoder: TfrmConfigureEncoder
   end
   object lstCBR: TComboBoxEx
     Left = 18
-    Height = 19
+    Height = 22
     Top = 19
     Width = 232
     Align = alTop
     BorderSpacing.Left = 18
-    Images = modSharedData.imgImages
-    ItemHeight = 13
+    ItemHeight = 16
     ItemsEx = <>
     TabOrder = 1
   end
   object lstVBR: TComboBoxEx
     Left = 18
-    Height = 19
-    Top = 57
+    Height = 22
+    Top = 60
     Width = 232
     Align = alTop
     BorderSpacing.Left = 18
-    Images = modSharedData.imgImages
-    ItemHeight = 13
+    ItemHeight = 16
     ItemsEx = <>
     TabOrder = 3
   end
   object pnlNav: TPanel
     Left = 0
-    Height = 40
-    Top = 76
+    Height = 39
+    Top = 82
     Width = 250
     Align = alTop
+    AutoSize = True
     BevelOuter = bvNone
-    ClientHeight = 40
+    ClientHeight = 39
     ClientWidth = 250
     TabOrder = 4
     object Bevel2: TBevel
       Left = 0
-      Height = 5
+      Height = 4
       Top = 0
       Width = 250
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 153
+      Left = 150
       Height = 35
-      Top = 5
-      Width = 97
+      Top = 4
+      Width = 100
       Align = alRight
       Caption = '&OK'
-      Default = True
+      Constraints.MinHeight = 35
+      Constraints.MinWidth = 100
       OnClick = btnOKClick
       TabOrder = 0
     end

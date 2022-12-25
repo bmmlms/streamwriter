@@ -44,13 +44,9 @@ type
   { TTitleTree }
 
   TTitleTree = class(TVirtualStringTree)
-  private
   protected
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
-  public
-    constructor Create(AOwner: TComponent); reintroduce;
-    destructor Destroy; override;
   end;
 
   { TfrmSetStreamData }
@@ -125,16 +121,6 @@ begin
     Exit;
 
   modSharedData.imgImages.Resolution[16].Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, ImageIndex, gdeNormal);
-end;
-
-constructor TTitleTree.Create(AOwner: TComponent);
-begin
-  inherited;
-end;
-
-destructor TTitleTree.Destroy;
-begin
-  inherited Destroy;
 end;
 
 { TfrmSetStreamData }

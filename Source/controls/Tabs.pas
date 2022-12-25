@@ -135,7 +135,7 @@ procedure TMainTabSheet.SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean
   end;
 
 var
-  Res: Integer;
+  Res: Boolean;
   List: TStringList;
   Dlg: TSaveDialog;
 begin
@@ -179,14 +179,14 @@ begin
       try
         BuildM3U(Entries, List);
         List.SaveToFile(ConcatPaths([AppGlobals.TempDir, 'playlist.m3u']));
-        Res := ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(ConcatPaths([AppGlobals.TempDir, 'playlist.m3u']))), nil, nil, 1);
-        if Res <= 32 then
+        Res := TFunctions.ShellExecute(Handle, 'open', ConcatPaths([AppGlobals.TempDir, 'playlist.m3u']));
+        if not Res then
         begin
           BuildPLS(Entries, List);
           List.SaveToFile(ConcatPaths([AppGlobals.TempDir, 'playlist.pls']));
-          Res := ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(ConcatPaths([AppGlobals.TempDir, 'playlist.pls']))), nil, nil, 1);
-          if Res <= 32 then
-            ShellExecuteW(Handle, nil, 'rundll32.exe', PWideChar(UnicodeString('shell32.dll,OpenAs_RunDLL ' + ConcatPaths([AppGlobals.TempDir, 'playlist.pls']))), nil, 1);
+          Res := TFunctions.ShellExecute(Handle, 'open', ConcatPaths([AppGlobals.TempDir, 'playlist.pls']));
+          if not Res then
+            TFunctions.ShellExecute(Handle, '', 'rundll32.exe', 'shell32.dll,OpenAs_RunDLL ' + ConcatPaths([AppGlobals.TempDir, 'playlist.pls']));
         end;
       except
         TFunctions.MsgBox(Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [AppGlobals.TempDir]), _('Error'), MB_ICONEXCLAMATION);

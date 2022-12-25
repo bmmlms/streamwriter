@@ -1,14 +1,14 @@
 object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
   Left = 0
-  Height = 91
+  Height = 90
   Top = 0
-  Width = 287
+  Width = 283
   AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Add postprocessor'
-  ClientHeight = 91
-  ClientWidth = 287
+  ClientHeight = 90
+  ClientWidth = 283
   Color = clBtnFace
   Font.Color = clWindowText
   Font.Height = -11
@@ -17,40 +17,44 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.2'
   object Label1: TLabel
     Left = 0
     Height = 13
     Top = 0
-    Width = 287
+    Width = 283
     Align = alTop
     Caption = 'This postprocessor is used for...'
+    ParentColor = False
   end
   object pnlNav: TPanel
     Left = 0
-    Height = 40
+    Height = 39
     Top = 51
-    Width = 287
+    Width = 283
     Align = alTop
+    AutoSize = True
     BevelOuter = bvNone
-    ClientHeight = 40
-    ClientWidth = 287
+    ClientHeight = 39
+    ClientWidth = 283
     TabOrder = 2
     object Bevel2: TBevel
       Left = 0
-      Height = 5
+      Height = 4
       Top = 0
-      Width = 287
+      Width = 283
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 190
+      Left = 183
       Height = 35
-      Top = 5
-      Width = 97
+      Top = 4
+      Width = 100
       Align = alRight
+      AutoSize = True
       Caption = '&OK'
+      Constraints.MinHeight = 35
+      Constraints.MinWidth = 100
       OnClick = btnOKClick
       TabOrder = 0
     end

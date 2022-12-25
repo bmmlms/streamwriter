@@ -39,7 +39,7 @@ uses
   Logging,
   MControls,
   SharedData,
-  StdCtrls,
+  StdCtrls, MLabeledEdit,
   SysUtils,
   Variants,
   Windows;
@@ -49,6 +49,8 @@ type
   { TfrmCommunityLogin }
 
   TfrmCommunityLogin = class(TForm)
+    txtPassword: TMLabeledEdit;
+    txtUsername: TMLabeledEdit;
     pnlHeader: TPanel;
     Shape1: TShape;
     lblTop: TLabel;
@@ -60,8 +62,6 @@ type
     lblConnecting: TLabel;
     prgConnecting: TProgressBar;
     pnlConnect: TPanel;
-    txtPassword: TLabeledEdit;
-    txtUsername: TLabeledEdit;
     txtText: TMemo;
     lblSignup: TLabel;
     procedure FormCreate(Sender: TObject);
@@ -89,7 +89,7 @@ end;
 
 procedure TfrmCommunityLogin.btnOKClick(Sender: TObject);
 begin
-  if (Trim(txtUsername.Text) = '') or (Trim(txtPassword.Text) = '') then
+  if (Trim(txtUsername.Control.Text) = '') or (Trim(txtPassword.Control.Text) = '') then
   begin
     TFunctions.MsgBox(_('You have to enter your username and your password.'), _('Info'), MB_ICONINFORMATION);
     Exit;
@@ -103,7 +103,7 @@ begin
 
   ShowConnecting(True);
 
-  HomeComm.SendLogIn(Trim(txtUsername.Text), Trim(txtPassword.Text));
+  HomeComm.SendLogIn(Trim(txtUsername.Control.Text), Trim(txtPassword.Control.Text));
 end;
 
 procedure TfrmCommunityLogin.DoClose(var Action: TCloseAction);
@@ -132,8 +132,8 @@ begin
   txtText.Text := _('Logging in to the streamWriter community gives you some more options, for example setting ratings for streams.'#13#10 +
     'More community features may get introduced in the future. If you don''t have an account yet, click the link below to signup for free.');
 
-  txtUsername.Text := AppGlobals.User;
-  txtPassword.Text := AppGlobals.Pass;
+  txtUsername.Control.Text := AppGlobals.User;
+  txtPassword.Control.Text := AppGlobals.Pass;
 
   modSharedData.imgImages.GetIcon(TImages.USER, Icon);
 end;
@@ -151,7 +151,7 @@ procedure TfrmCommunityLogin.FormShow(Sender: TObject);
 begin
   Language.Translate(Self);
 
-  txtUsername.ApplyFocus;
+  txtUsername.Control.ApplyFocus;
   ShowConnecting(False);
 end;
 
@@ -172,8 +172,8 @@ begin
       if not AppGlobals.UserWasSetup then
         TFunctions.MsgBox(_('You are now logged in.'#13#10'Your credentials will be saved and streamWriter will try to login automatically next time. You can logoff by using the corresponding item in the main menu.'), _('Info'), MB_ICONINFORMATION);
 
-      AppGlobals.User := txtUsername.Text;
-      AppGlobals.Pass := txtPassword.Text;
+      AppGlobals.User := txtUsername.Control.Text;
+      AppGlobals.Pass := txtPassword.Control.Text;
       AppGlobals.UserWasSetup := True;
 
       Close;
@@ -184,7 +184,7 @@ end;
 
 procedure TfrmCommunityLogin.lblSignupClick(Sender: TObject);
 begin
-  ShellExecuteW(0, 'open', PWideChar(UnicodeString('https://streamwriter.org/benutzer/anmelden/')), '', '', 1);
+  TFunctions.ShellExecute(0, 'open', 'https://streamwriter.org/benutzer/anmelden/');
 end;
 
 procedure TfrmCommunityLogin.ShowConnecting(Show: Boolean);

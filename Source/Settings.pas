@@ -168,6 +168,7 @@ type
     FlowPanel5: TFlowPanel;
     FlowPanel6: TFlowPanel;
     Label1: TLabel;
+    Label10: TLabel;
     Label12: TLabel;
     Label13: TLabel;
     Label15: TLabel;
@@ -482,9 +483,8 @@ procedure TfrmSettings.DoCreate;
 begin
   inherited;
 
-  // TODO: ..... das auch beim wizard so machen. klappt das?
-  Width := 636;
-  Height := 509;
+  Width := 600;
+  Height := 450;
 end;
 
 procedure TfrmSettings.EnablePanel(Panel: TPanel; Enable: Boolean);
@@ -600,6 +600,7 @@ begin
     chkSubmitStreamInfoClick(nil);
     chkSubmitStatsClick(nil);
     chkMonitorModeClick(nil);
+    chkLimitClick(nil);
 
     txtShortLengthSeconds.Control.Value := Settings.ShortLengthSeconds;
     txtSongBuffer.Control.Value := Settings.SongBuffer;
@@ -1038,11 +1039,11 @@ begin
   if Key = VK_F1 then
     case FSettingsType of
       stApp:
-        ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(AppGlobals.ProjectHelpLinkSettings)), '', '', 1);
+        TFunctions.ShellExecute(Handle, 'open', AppGlobals.ProjectHelpLinkSettings);
       stAuto:
-        ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(AppGlobals.ProjectHelpLinkAutoSettings)), '', '', 1);
+        TFunctions.ShellExecute(Handle, 'open', AppGlobals.ProjectHelpLinkAutoSettings);
       stStream:
-        ShellExecuteW(Handle, 'open', PWideChar(UnicodeString(AppGlobals.ProjectHelpLinkStreamSettings)), '', '', 1);
+        TFunctions.ShellExecute(Handle, 'open', AppGlobals.ProjectHelpLinkStreamSettings);
     end;
 end;
 

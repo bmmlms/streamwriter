@@ -162,6 +162,8 @@ type
     constructor Create(AOwner: TComponent); override;
   end;
 
+  { TMStreamTree }
+
   TMStreamTree = class(TVirtualStringTree)
   private
     FDragSource: TDropFileSource;
@@ -366,6 +368,10 @@ begin
   FProgressBar.Visible := False;
   FProgressBar.Max := 100;
   FProgressBar.Min := 0;
+  FProgressBar.AnchorSideLeft.Control := Self;
+  FProgressBar.AnchorSideLeft.Side := asrCenter;
+  FProgressBar.AnchorSideTop.Control := Self;
+  FProgressBar.AnchorSideTop.Side := asrCenter;
 
   Images := modSharedData.imgImages;
 end;
@@ -1007,12 +1013,6 @@ begin
 
   if Assigned(FColName) then
     FColName.Width := ClientWidth;
-
-  if Assigned(FProgressBar) then
-  begin
-    FProgressBar.Left := Trunc(ClientWidth / 2 - FProgressBar.Width / 2);
-    FProgressBar.Top := ClientHeight div 2 - Canvas.TextHeight('Wy') + 15;
-  end;
 end;
 
 procedure TMStreamTree.Sort(Node: PVirtualNode; Column: TColumnIndex; SortType: TSortTypes; Direction: TSortDirection);
@@ -1035,9 +1035,6 @@ begin
   if Mode = moLoading then
   begin
     Clear;
-
-    // Damit die Position der ProgressBar passt
-    Resize; // TODO: das geht auf jeden fall auch schöner!!
 
     FProgressBar.Position := 0;
     if not FProgressBar.Visible then
@@ -1075,6 +1072,8 @@ var
 begin
   FSearch.FGenreList.Clear;
   FSearch.FGenreList.ItemsEx.AddItem(_('- No genre -'));
+  FSearch.FGenreList.ItemIndex := 0;
+
   AppGlobals.Lock;
   try
     for i := 0 to AppGlobals.Data.GenreList.Count - 1 do
@@ -1082,12 +1081,8 @@ begin
   finally
     AppGlobals.Unlock;
   end;
-  if FSearch.FGenreList.ItemsEx.Count > 0 then
-    FSearch.FGenreList.ItemIndex := 0;
 
-  // TODO: die liste sortieren und so...
-  //  FSearch.FGenreList.ItemsEx.SortType := stText; //.Sorted := True;
-  //  FSearch.FGenreList.Sorted := False;
+  FSearch.FGenreList.ItemsEx.SortType := stText;
 
   if AppGlobals.BrowserSearchGenre < FSearch.FGenreList.ItemsEx.Count then
     FSearch.FGenreList.ItemIndex := AppGlobals.BrowserSearchGenre;
@@ -1106,7 +1101,7 @@ begin
   else if FSearch.FGenreList.ItemIndex > 0 then
   begin
     Genre := FSearch.FGenreList.ItemsEx[FSearch.FGenreList.ItemIndex].Caption;
-    Genre := Copy(Genre, 1, Pos(' (', Genre) - 1); // TODO: bah. Data property am item nutzen..
+    Genre := Copy(Genre, 1, Pos(' (', Genre) - 1);
   end;
 
   case FSearch.FTypeList.ItemIndex of

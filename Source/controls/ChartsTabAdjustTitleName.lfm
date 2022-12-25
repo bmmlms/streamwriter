@@ -17,7 +17,7 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
   OnKeyDown = FormKeyDown
   OnShow = FormShow
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.2'
+  LCLVersion = '2.2.4.0'
   object pnlNav: TPanel
     Left = 0
     Height = 40
@@ -56,6 +56,7 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
     EditLabel.Height = 13
     EditLabel.Width = 281
     EditLabel.Caption = 'Please enter the name of the title to add:'
+    EditLabel.ParentColor = False
     TabOrder = 0
   end
 end

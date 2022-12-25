@@ -652,7 +652,7 @@ end;
 
 procedure TTitlePanel.FillClientCombo;
 var
-  i: Integer;
+  i, Idx: Integer;
   O: TObject;
   Item: TComboExItem;
 begin
@@ -666,9 +666,16 @@ begin
     if FClientManager[i].Entry.CustomName <> '' then
       FAddCombo.ItemsEx.AddItem(FClientManager[i].Entry.CustomName, TImages.TRANSMIT, -1, -1, 16, FClientManager[i]);
 
-  // TODO: ...
-  //FAddCombo.Sorted := True;
-  //FAddCombo.Sorted := False;
+  if FAddCombo.ItemsEx.Count > 0 then
+  begin
+    Idx := FAddCombo.ItemIndex;
+    FAddCombo.ItemIndex := 0;
+
+    FAddCombo.ItemsEx.SortType := stText;
+    FAddCombo.ItemsEx.Sort;
+
+    FAddCombo.ItemIndex := Idx;
+  end;
 
   Item := FAddCombo.ItemsEx.Insert(0);
   Item.Caption := _('Ignorelist');

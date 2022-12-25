@@ -66,6 +66,7 @@ type
     procedure ShowNoActivate;
     procedure ControlsAligned; override;
     procedure DoClose(var CloseAction: TCloseAction); override;
+    procedure Paint; override;
   public
     class procedure Display(Title, Stream: string);
     class procedure Hide;
@@ -207,8 +208,8 @@ procedure TfrmNotification.ControlsAligned;
 begin
   inherited ControlsAligned;
 
-  lblTitle.Caption := TFunctions.TruncateText(FTitle, 300 - pbLogo.Width, lblTitle.Font);
-  lblStream.Caption := TFunctions.TruncateText(FStream, 300 - pbLogo.Width, lblStream.Font);
+  lblTitle.Caption := TFunctions.TruncateText(FTitle, 350 - pbLogo.Width, lblTitle.Font);
+  lblStream.Caption := TFunctions.TruncateText(FStream, 350 - pbLogo.Width, lblStream.Font);
 
   Left := Screen.PrimaryMonitor.WorkareaRect.Right - ClientWidth - 15;
   Top := Screen.PrimaryMonitor.WorkareaRect.Bottom - ClientHeight - 15;
@@ -219,6 +220,14 @@ begin
   inherited DoClose(CloseAction);
 
   CloseAction := caFree;
+end;
+
+procedure TfrmNotification.Paint;
+begin
+  inherited Paint;
+
+  Canvas.Pen.Color := clBtnShadow;
+  Canvas.Rectangle(0, 0, ClientWidth, ClientHeight);
 end;
 
 procedure TfrmNotification.HideWindow;
