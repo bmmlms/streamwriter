@@ -24,7 +24,6 @@ unit SavedTab;
 interface
 
 uses
-  Windows,
   AppData,
   AppMessages,
   AudioFunctions,
@@ -62,7 +61,8 @@ uses
   SysUtils,
   Tabs,
   Themes,
-  VirtualTrees;
+  VirtualTrees,
+  Windows;
 
 type
   TSavedTree = class;
@@ -304,6 +304,7 @@ type
     FFileNode: PVirtualNode;
     FPattern: string;
     FPlayNext: Boolean;
+    FStreamsExpanded, FFilesExpanded: Boolean;
 
     FOnAction: TTrackActionEvent;
 
@@ -1005,7 +1006,7 @@ begin
           MsgBus.SendMessage(TFileModifyMsg.Create(Tracks[i].Filename));
 
           if FileExists(Tracks[i].Filename) then
-            Error := not DeleteFile(Tracks[i].Filename);
+            Error := not SysUtils.DeleteFile(Tracks[i].Filename);
 
           if not Error then
           begin
@@ -2408,89 +2409,79 @@ end;
 procedure TSavedTree.Filter(S: string; ServerTitleHashes, ServerArtistHashes: TCardinalArray);
 var
   i, n, k: Integer;
-  StreamsExpanded, FilesExpanded: Boolean;
-  NodeData: PSavedNodeData;
   Hash: Cardinal;
   Chars: Integer;
   TitleHashesAdded: TCardinalArray;
   AddedTitles: TList;
   Found: Boolean;
 begin
+  if FStreamNode.ChildCount > 0 then
+    FStreamsExpanded := Expanded[FStreamNode];
+
+  if FFileNode.ChildCount > 0 then
+    FFilesExpanded := Expanded[FFileNode];
+
   BeginUpdate;
-
-  StreamsExpanded := Expanded[FStreamNode];
-  FilesExpanded := Expanded[FFileNode];
-  Clear;
-
-  AddedTitles := TList.Create;
   try
-    if (Length(ServerTitleHashes) = 0) and (Length(ServerArtistHashes) = 0) then
-    begin
-      FPattern := TFunctions.BuildPattern(S, Hash, Chars, True);
+    DeleteChildren(FStreamNode, True);
+    DeleteChildren(FFileNode, True);
 
-      FStreamNode := AddChild(nil);
-      NodeData := GetNodeData(FStreamNode);
-      NodeData.IsStreamParent := True;
-      FFileNode := AddChild(nil);
-      NodeData := GetNodeData(FFileNode);
-      NodeData.IsFileParent := True;
+    AddedTitles := TList.Create;
+    try
+      if (Length(ServerTitleHashes) = 0) and (Length(ServerArtistHashes) = 0) then
+      begin
+        FPattern := TFunctions.BuildPattern(S, Hash, Chars, True);
 
-      for i := 0 to FTrackList.Count - 1 do
-        AddTrack(FTrackList[i], False);
-    end else
-    begin
-      StreamsExpanded := False;
-      FilesExpanded := True;
+        for i := 0 to FTrackList.Count - 1 do
+          AddTrack(FTrackList[i], False);
+      end else
+      begin
+        FFilesExpanded := True;
 
-      FStreamNode := AddChild(nil);
-      NodeData := GetNodeData(FStreamNode);
-      NodeData.IsStreamParent := True;
-      FFileNode := AddChild(nil);
-      NodeData := GetNodeData(FFileNode);
-      NodeData.IsFileParent := True;
+        SetLength(TitleHashesAdded, 0);
 
-      SetLength(TitleHashesAdded, 0);
-
-      // Erstmal alles basierend auf Title-Hashes einfügen
-      for i := 0 to FTrackList.Count - 1 do
-        for n := 0 to High(ServerTitleHashes) do
-          if FTrackList[i].ServerTitleHash = ServerTitleHashes[n] then
-          begin
-            AddTrack(FTrackList[i], False, True);
-
-            SetLength(TitleHashesAdded, Length(TitleHashesAdded) + 1);
-            TitleHashesAdded[High(TitleHashesAdded)] := ServerTitleHashes[n];
-
-            AddedTitles.Add(FTrackList[i]);
-          end;
-
-      // Jetzt alles basierend auf Artist-Hashes einfügen, wenn noch nicht vorhanden
-      for i := 0 to FTrackList.Count - 1 do
-        for n := 0 to High(ServerArtistHashes) do
-          if FTrackList[i].ServerArtistHash = ServerArtistHashes[n] then
-          begin
-            Found := False;
-            for k := 0 to AddedTitles.Count - 1 do
-              if AddedTitles[k] = FTrackList[i] then
-              begin
-                Found := True;
-                Break;
-              end;
-
-            if not Found then
+        // Erstmal alles basierend auf Title-Hashes einfügen
+        for i := 0 to FTrackList.Count - 1 do
+          for n := 0 to High(ServerTitleHashes) do
+            if FTrackList[i].ServerTitleHash = ServerTitleHashes[n] then
+            begin
               AddTrack(FTrackList[i], False, True);
-          end;
+
+              SetLength(TitleHashesAdded, Length(TitleHashesAdded) + 1);
+              TitleHashesAdded[High(TitleHashesAdded)] := ServerTitleHashes[n];
+
+              AddedTitles.Add(FTrackList[i]);
+            end;
+
+        // Jetzt alles basierend auf Artist-Hashes einfügen, wenn noch nicht vorhanden
+        for i := 0 to FTrackList.Count - 1 do
+          for n := 0 to High(ServerArtistHashes) do
+            if FTrackList[i].ServerArtistHash = ServerArtistHashes[n] then
+            begin
+              Found := False;
+              for k := 0 to AddedTitles.Count - 1 do
+                if AddedTitles[k] = FTrackList[i] then
+                begin
+                  Found := True;
+                  Break;
+                end;
+
+              if not Found then
+                AddTrack(FTrackList[i], False, True);
+            end;
+      end;
+    finally
+      AddedTitles.Free;
     end;
+
+    Expanded[FStreamNode] := FStreamsExpanded;
+    Expanded[FFileNode] := FFilesExpanded;
+
+    Sort(FStreamNode, Header.SortColumn, Header.SortDirection);
+    Sort(FFileNode, Header.SortColumn, Header.SortDirection);
   finally
-    AddedTitles.Free;
+    EndUpdate;
   end;
-
-  Expanded[FStreamNode] := StreamsExpanded;
-  Expanded[FFileNode] := FilesExpanded;
-
-  Sort(FStreamNode, Header.SortColumn, Header.SortDirection);
-  Sort(FFileNode, Header.SortColumn, Header.SortDirection);
-  EndUpdate;
 
   Change(nil);
 end;
