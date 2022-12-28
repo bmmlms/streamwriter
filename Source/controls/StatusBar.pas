@@ -239,22 +239,22 @@ begin
         cshConnected:
         begin
           modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.CONNECT, 16, Self, gdeNormal);
-          Canvas.TextOut(R.Left + 56, TextTop, _('Connected'));
+          Canvas.TextOut(R.Left + 56, TextTop, TFunctions.TruncateText(_('Connected'), R.Width - 58, Canvas.Font));
         end;
         cshConnectedSecure:
         begin
           modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.CONNECT_SECURE, 16, Self, gdeNormal);
-          Canvas.TextOut(R.Left + 56, TextTop, _('Connected'));
+          Canvas.TextOut(R.Left + 56, TextTop, TFunctions.TruncateText(_('Connected'), R.Width - 58, Canvas.Font));
         end;
         cshDisconnected:
         begin
           modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, IfThen<Integer>(Length(FDots) mod 2 = 0, TImages.CONNECT, TImages.DISCONNECT), 16, Self, gdeNormal);
-          Canvas.TextOut(R.Left + 56, TextTop, _('Connecting') + FDots);
+          Canvas.TextOut(R.Left + 56, TextTop, TFunctions.TruncateText(_('Connecting') + FDots, R.Width - 58, Canvas.Font));
         end;
         cshFail:
         begin
           modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.DISCONNECT, 16, Self, gdeNormal);
-          Canvas.TextOut(R.Left + 56, TextTop, _('Error'));
+          Canvas.TextOut(R.Left + 56, TextTop, TFunctions.TruncateText(_('Error'), R.Width - 58, Canvas.Font));
         end;
       end;
 

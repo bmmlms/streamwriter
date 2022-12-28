@@ -290,7 +290,7 @@ type
 
   { TSavedTree }
 
-  TSavedTree = class(TMTranslatableVirtualStringTree)
+  TSavedTree = class(TMVirtualStringTree)
   private
     FPlayer: TPlayer;
     FPlayerList: TStringList;

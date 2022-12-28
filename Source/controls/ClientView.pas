@@ -79,7 +79,7 @@ type
 
   { TMClientView }
 
-  TMClientView = class(TMTranslatableVirtualStringTree)
+  TMClientView = class(TMVirtualStringTree)
   private
     FBrowser: TMStreamTree;
 
@@ -202,6 +202,7 @@ begin
 end;
 
 constructor TMClientView.Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree);
+
 var
   i: Integer;
 begin
@@ -577,8 +578,12 @@ var
   Children: TNodeArray;
   HitNode: PVirtualNode;
   NodeData, ParentNodeData: PClientNodeData;
+  Strings: TStringArray;
   R: TRect;
 begin
+  if (Length(FDragNodes) = 0) and (Length(FBrowser.DraggedStreams) = 0) and (not TFunctions.GetDataObjectURLs(VTVDragManager.DataObject, Strings)) then
+    Exit(False);
+
   Result := True;
 
   HitNode := GetNodeAt(Pt.X, Pt.Y);
@@ -593,24 +598,14 @@ begin
         if ChildCount[HitNode] > 0 then
         begin
           if not (Pt.Y < R.Top + FDragTreshold) then
-          begin
-            Result := False;
-            Exit;
-          end;
+            Exit(False);
         end else
         begin
           if (not (Pt.Y > R.Bottom - FDragTreshold)) and (not (Pt.Y < R.Top + FDragTreshold)) then
-          begin
-            Result := False;
-            Exit;
-          end;
+            Exit(False);
         end;
       end else if (not (Pt.Y > R.Bottom - FDragTreshold)) and (not (Pt.Y < R.Top + FDragTreshold)) then
-      begin
-        // Man darf in die automatische Kategorie nix reindraggen
-        Result := False;
-        Exit;
-      end;
+        Exit(False); // Man darf in die automatische Kategorie nix reindraggen
     end;
 
     if (NodeData.Client <> nil) and (GetNodeLevel(HitNode) > 0) then
@@ -618,32 +613,21 @@ begin
       ParentNodeData := GetNodeData(HitNode.Parent);
       if ParentNodeData.Category <> nil then
         if ParentNodeData.Category.IsAuto then
-        begin
-          Result := False;
-          Exit;
-        end;
+          Exit(False);
     end;
 
     // Drop darf nur erlaubt sein, wenn Ziel-Node nicht in gedraggten
     // Nodes vorkommt und Ziel-Node kein Kind von Drag-Node ist
-    if Length(FDragNodes) > 0 then
-      for i := 0 to Length(FDragNodes) - 1 do
-      begin
-        if HitNode = FDragNodes[i] then
-        begin
-          Result := False;
-          Break;
-        end;
+    for i := 0 to Length(FDragNodes) - 1 do
+    begin
+      if HitNode = FDragNodes[i] then
+        Exit(False);
 
-        Children := GetNodes(ntClient, False);
-        for n := 0 to Length(Children) - 1 do
-          if (Children[n] = HitNode) and (HitNode.Parent = FDragNodes[i]) then
-          begin
-            Result := False;
-            Exit;
-          end;
-      end// Wir sind im Tree am draggen
-    ;
+      Children := GetNodes(ntClient, False);
+      for n := 0 to Length(Children) - 1 do
+        if (Children[n] = HitNode) and (HitNode.Parent = FDragNodes[i]) then
+          Exit(False);
+    end;
   end;
 end;
 
@@ -993,82 +977,6 @@ begin
       Result := CompareText(Data1.Category.Name, Data2.Category.Name);
 end;
 
-function GetFileListFromObj(const DataObj: IDataObject; const FileList: TStrings): Boolean;
-var
-  FormatEtc: TFormatEtc;
-  Medium: TStgMedium;
-  FileName: UnicodeString;
-  i, DroppedFileCount, FileNameLength: Integer;
-begin
-  Result := False;
-  try
-    FormatEtc.cfFormat := CF_HDROP;
-    FormatEtc.ptd := nil;
-    FormatEtc.dwAspect := DVASPECT_CONTENT;
-    FormatEtc.lindex := -1;
-    FormatEtc.tymed := TYMED_HGLOBAL;
-    OleCheck(DataObj.GetData(FormatEtc, Medium));
-    try
-      try
-        DroppedFileCount := DragQueryFileW(Medium.hGlobal, $FFFFFFFF, nil, 0);
-        for i := 0 to Pred(DroppedFileCount) do
-        begin
-          FileNameLength := DragQueryFileW(Medium.hGlobal, i, nil, 0) + 1;
-          SetLength(FileName, FileNameLength);
-          DragQueryFileW(Medium.hGlobal, i, @FileName[1], FileNameLength);
-          FileList.Add(FileName);
-        end;
-      finally
-        DragFinish(Medium.hGlobal);
-      end;
-    finally
-      ReleaseStgMedium(Medium);
-    end;
-    Result := FileList.Count > 0;
-  except
-  end;
-end;
-
-function GetWideStringFromObj(const DataObject: IDataObject; var S: string): Boolean;
-var
-  FormatEtc: TFormatEtc;
-  Medium: TStgMedium;
-  OLEData, Head: PWideChar;
-  Chars: Integer;
-begin
-  S := '';
-
-  FormatEtc.cfFormat := CF_UNICODETEXT;
-  FormatEtc.ptd := nil;
-  FormatEtc.dwAspect := DVASPECT_CONTENT;
-  FormatEtc.lindex := -1;
-  FormatEtc.tymed := TYMED_HGLOBAL;
-
-  if DataObject.QueryGetData(FormatEtc) = S_OK then
-    if DataObject.GetData(FormatEtc, Medium) = S_OK then
-    begin
-      OLEData := GlobalLock(Medium.hGlobal);
-      if Assigned(OLEData) then
-      begin
-        Chars := 0;
-        Head := OLEData;
-        try
-          while Head^ <> #0 do
-          begin
-            Head := Pointer(Integer(Head) + SizeOf(WideChar));
-            Inc(Chars);
-          end;
-
-          SetString(S, OLEData, Chars);
-        finally
-          GlobalUnlock(Medium.hGlobal);
-        end;
-      end;
-      ReleaseStgMedium(Medium);
-    end;
-  Result := S <> '';
-end;
-
 procedure TMClientView.DoDragDrop(Source: TObject; DataObject: IDataObject; Formats: TFormatArray; Shift: TShiftState; const Pt: TPoint; var Effect: LongWord; Mode: TDropMode);
 
   procedure UnkillCategory(Node: PVirtualNode);
@@ -1084,19 +992,19 @@ procedure TMClientView.DoDragDrop(Source: TObject; DataObject: IDataObject; Form
   end;
 
 var
-  Attachmode: TVTNodeAttachMode;
-  Nodes: TNodeArray;
+  Attachmode: TVTNodeAttachMode = amInsertAfter;
   i, n: Integer;
-  Files: TStringList;
-  DropURL: string;
+  S: string;
+  Strings: TStringArray;
   HitNodeData, DragNodeData: PClientNodeData;
   HI: THitInfo;
   R: TRect;
 begin
   inherited;
 
-  Nodes := nil;
-  Attachmode := amInsertAfter;
+  if not Assigned(DataObject) then
+    Exit;
+
   Effect := DROPEFFECT_COPY;
   HitNodeData := nil;
 
@@ -1114,117 +1022,92 @@ begin
       AttachMode := amNoWhere;
   end;
 
-  if DataObject <> nil then
+  if Length(FDragNodes) > 0 then
   begin
-    if Length(FDragNodes) > 0 then
+    if (HI.HitNode <> nil) and (HitNodeData <> nil) then
     begin
-      if (HI.HitNode <> nil) and (HitNodeData <> nil) then
+      if (HitNodeData.Client = nil) and (((Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere)) then
       begin
-        if (HitNodeData.Client = nil) and (((Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere)) then
+        for i := 0 to Length(FDragNodes) - 1 do
         begin
-          for i := 0 to Length(FDragNodes) - 1 do
-          begin
-            DragNodeData := GetNodeData(FDragNodes[i]);
-            if DragNodeData.Category = nil then
-              MoveTo(FDragNodes[i], HI.HitNode, amAddChildLast, False)
-            else
-              MoveTo(FDragNodes[i], HI.HitNode, amInsertAfter, False);
-            UnkillCategory(HI.HitNode);
-          end;
-        end else
-        begin
-          if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
-            Attachmode := amAddChildLast;
-          if AttachMode = amNoWhere then
-            AttachMode := amInsertAfter;
-          for i := 0 to Length(FDragNodes) - 1 do
-          begin
-            DragNodeData := GetNodeData(FDragNodes[i]);
-            if (DragNodeData.Category <> nil) then
-              if GetNodeLevel(HI.HitNode) > 0 then
-              begin
-                HI.HitNode := HI.HitNode.Parent;
-                Attachmode := amInsertAfter;
-              end;
-            MoveTo(FDragNodes[i], HI.HitNode, Attachmode, False);
-            UnkillCategory(HI.HitNode);
-          end;
+          DragNodeData := GetNodeData(FDragNodes[i]);
+          if DragNodeData.Category = nil then
+            MoveTo(FDragNodes[i], HI.HitNode, amAddChildLast, False)
+          else
+            MoveTo(FDragNodes[i], HI.HitNode, amInsertAfter, False);
+          UnkillCategory(HI.HitNode);
         end;
       end else
-        // Nodes ins "nichts" gedraggt
-        for i := 0 to Length(FDragNodes) - 1 do
-          MoveTo(FDragNodes[i], RootNode, amAddChildLast, False);
-      Exit;
-    end;
-
-    if Length(FBrowser.DraggedStreams) > 0 then
-    begin
-      for i := 0 to High(FBrowser.DraggedStreams) do
       begin
-        // Das hier ist das selbe wie hier drunter, nur mit anderer URL/RegEx...
-        if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere) then
-          if (HitNodeData <> nil) and (HitNodeData.Client <> nil) then
-            OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
-              FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].URLs, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles,
-              HI.HitNode, amInsertAfter)
-          else
-            OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
-              FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].URLs, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles,
-              HI.HitNode, amAddChildLast)
-        else
+        if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
+          Attachmode := amAddChildLast;
+        if AttachMode = amNoWhere then
+          AttachMode := amInsertAfter;
+        for i := 0 to Length(FDragNodes) - 1 do
         begin
-          if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
-            Attachmode := amAddChildLast;
-          if AttachMode = amNoWhere then
-            AttachMode := amInsertAfter;
-          OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
-            FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].URLs, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles,
-            HI.HitNode, Attachmode);
+          DragNodeData := GetNodeData(FDragNodes[i]);
+          if (DragNodeData.Category <> nil) then
+            if GetNodeLevel(HI.HitNode) > 0 then
+            begin
+              HI.HitNode := HI.HitNode.Parent;
+              Attachmode := amInsertAfter;
+            end;
+          MoveTo(FDragNodes[i], HI.HitNode, Attachmode, False);
+          UnkillCategory(HI.HitNode);
         end;
-        UnkillCategory(HI.HitNode);
       end;
     end else
+      // Nodes ins "nichts" gedraggt
+      for i := 0 to Length(FDragNodes) - 1 do
+        MoveTo(FDragNodes[i], RootNode, amAddChildLast, False);
+  end else if Length(FBrowser.DraggedStreams) > 0 then
+  begin
+    for i := 0 to High(FBrowser.DraggedStreams) do
     begin
-      Files := TStringList.Create;
-      try
-        for n := 0 to High(Formats) do
-          case Formats[n] of
-            CF_UNICODETEXT:
-              if GetWideStringFromObj(DataObject, DropURL) then
-              begin
-                Files.Add(DropURL);
-                Break;
-              end;
-          end;
-
-        if Files.Count = 0 then
-          GetFileListFromObj(DataObject, Files);
-
-        for i := 0 to Files.Count - 1 do
-          if (Files[i] <> '') then
-            // Das selbe wie im Kommentar oben beschrieben...
-            if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or ((Attachmode = amNoWhere) and (HI.HitNode <> nil) and (HitNodeData.Client = nil)) then
-              OnStartStreaming(Self, 0, 0, '', Files[i], nil, nil, nil, HI.HitNode, amAddChildLast)
-            else
-            begin
-              if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
-                Attachmode := amAddChildLast;
-              if AttachMode = amNoWhere then
-                AttachMode := amInsertAfter;
-              OnStartStreaming(Self, 0, 0, '', Files[i], nil, nil, nil, HI.HitNode, Attachmode);
-            end;
-        UnkillCategory(HI.HitNode);
-      finally
-        Files.Free;
+      // Das hier ist das selbe wie hier drunter, nur mit anderer URL/RegEx...
+      if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere) then
+        if (HitNodeData <> nil) and (HitNodeData.Client <> nil) then
+          OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
+            FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].URLs, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles,
+            HI.HitNode, amInsertAfter)
+        else
+          OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
+            FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].URLs, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles,
+            HI.HitNode, amAddChildLast)
+      else
+      begin
+        if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
+          Attachmode := amAddChildLast;
+        if AttachMode = amNoWhere then
+          AttachMode := amInsertAfter;
+        OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
+          FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].URLs, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles,
+          HI.HitNode, Attachmode);
       end;
+      UnkillCategory(HI.HitNode);
     end;
+  end else if TFunctions.GetDataObjectURLs(DataObject, Strings) then
+  begin
+    for S in Strings do
+      // Das selbe wie im Kommentar oben beschrieben...
+      if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or ((Attachmode = amNoWhere) and (HI.HitNode <> nil) and (HitNodeData.Client = nil)) then
+        OnStartStreaming(Self, 0, 0, '', S, nil, nil, nil, HI.HitNode, amAddChildLast)
+      else
+      begin
+        if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
+          Attachmode := amAddChildLast;
+        if AttachMode = amNoWhere then
+          AttachMode := amInsertAfter;
+        OnStartStreaming(Self, 0, 0, '', S, nil, nil, nil, HI.HitNode, Attachmode);
+      end;
+    UnkillCategory(HI.HitNode);
   end;
 end;
 
 procedure TMClientView.DoDragging(P: TPoint);
 var
   i: Integer;
-  Entries: TPlaylistEntryArray;
+  Entries: TPlaylistEntryArray = [];
   Client: TICEClient;
   Clients: TClientArray;
   Node: PVirtualNode;
@@ -1251,8 +1134,6 @@ begin
       FDragNodes[High(FDragNodes)] := GetClientNode(Client);
     end;
 
-    SetLength(Entries, 0);
-
     case AppGlobals.DefaultAction of
       caStream:
         Entries := GetEntries(etStream);
@@ -1278,27 +1159,7 @@ begin
 
   DoStateChange([], [tsOLEDragPending, tsOLEDragging, tsClearPending]);
 
-  try
-    FDragSource.Execute(False);
-  except
-    // Das try..except ist gegen die Bugs, die ich nicht beheben kann...
-    {
-    76625958 +028 SHELL32.dll                                ILClone
-    007c8da3 +00b streamwriter.exe DragDropPIDL     696   +1 StringToPIDL
-    007c8e87 +023 streamwriter.exe DragDropPIDL     784   +1 TPIDLList.Add
-    007c8c16 +132 streamwriter.exe DragDropPIDL     523  +31 GetPIDLsFromFilenames
-    007c947d +039 streamwriter.exe DragDropPIDL     912   +5 TPIDLsToFilenamesStrings.Assign
-    007d0fec +040 streamwriter.exe DragDropFile    3147   +7 TFileDataFormat.AssignTo
-    007bd9f5 +0bd streamwriter.exe DropSource      1507  +36 TCustomDropMultiSource.DoGetData
-    007bc534 +048 streamwriter.exe DropSource       680  +11 TCustomDropSource.GetData
-    00784493 +06b streamwriter.exe VirtualTrees    5305  +11 TVTDragManager.DragEnter
-    75ed9c1e +0de ole32.dll                                  DoDragDrop
-    007bcb6a +12a streamwriter.exe DropSource       992  +58 TCustomDropSource.DoExecute
-    007c4d77 +00f streamwriter.exe DragDrop        1501   +2 TCustomDataFormat.Changing
-    007bce85 +1ad streamwriter.exe DropSource      1145  +60 TCustomDropSource.Execute
-    008abe9d +37d streamwriter.exe ClientView      1286  +51 TMClientView.DoDragging
-    }
-  end;
+  FDragSource.Execute(False);
 
   SetLength(FDragNodes, 0);
 end;

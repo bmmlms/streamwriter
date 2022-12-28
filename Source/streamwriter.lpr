@@ -36,6 +36,7 @@ uses
   MessageBus,
   PlayerManager,
   SharedData,
+  Patches,
   Sockets,
   SplashThread,
   SysUtils,

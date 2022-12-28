@@ -101,7 +101,7 @@ type
 
   { TChartsTree }
 
-  TChartsTree = class(TMTranslatableVirtualStringTree)
+  TChartsTree = class(TMVirtualStringTree)
   private
     FTimer: TTimer;
     FDots: string;

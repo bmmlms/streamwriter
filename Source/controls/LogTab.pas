@@ -111,7 +111,7 @@ type
     constructor Create(AOwner: TComponent); reintroduce;
   end;
 
-  TLogTree = class(TMTranslatableVirtualStringTree)
+  TLogTree = class(TMVirtualStringTree)
   private
     FPopupMenu: TLogPopup;
 

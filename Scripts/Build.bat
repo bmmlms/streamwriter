@@ -47,7 +47,7 @@ goto end
   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
 
   REM Build executables
-  lazbuild --build-all --cpu=i386 --os=Win32 --build-mode=Release streamwriter_gitsha.lpi
+  lazbuild --build-all --cpu=i386 --os=Win32 --build-mode=Release --quiet --quiet streamwriter_gitsha.lpi
   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
   
   del streamwriter_gitsha.lpi
@@ -57,7 +57,7 @@ goto end
   for /R "..\Addons" %%f in (*.lpi) do (
     cd "%%~dpf"
 
-    lazbuild --build-all --cpu=i386 --os=Win32 --build-mode=Release "%%~nxf"
+    lazbuild --build-all --cpu=i386 --os=Win32 --build-mode=Release --quiet --quiet "%%~nxf"
     if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
   )
 
