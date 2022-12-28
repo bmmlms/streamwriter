@@ -45,7 +45,7 @@ type
 
   { TSWStatusBar }
 
-  TSWStatusBar = class(TStatusBar)
+  TSWStatusBar = class(TStatusBar, IPostTranslatable)
   private
     FConnectionState: THomeConnectionState;
     FLoggedIn: Boolean;
@@ -78,6 +78,8 @@ type
 
     procedure SetState(ConnectionState: THomeConnectionState; LoggedIn, NotifyTitleChanges: Boolean; Clients, Recordings: Integer; SongsSaved, OverallSongsSaved: Cardinal);
     procedure BuildSpeedBmp;
+    procedure PostTranslate;
+
     property Speed: UInt64 read FSpeed write FSetSpeed;
     property CurrentReceived: UInt64 read FCurrentReceived write FSetCurrentReceived;
     property OverallReceived: UInt64 read FOverallReceived write FSetOverallReceived;
@@ -87,6 +89,51 @@ type
 implementation
 
 { TSWStatusBar }
+
+constructor TSWStatusBar.Create(AOwner: TComponent);
+var
+  P: TStatusPanel;
+begin
+  inherited;
+
+  SimplePanel := False;
+
+  Height := TFunctions.GetTextSize('Wyg', Font).cy + 4;
+
+  ShowHint := False;
+
+  FTimer := TTimer.Create(Self);
+  FTimer.OnTimer := TimerTimer;
+  FTimer.Interval := 1000;
+  FTimer.Enabled := True;
+
+  FSpace := MulDiv(TFunctions.GetTextSize('WWW', Font).cx, Screen.PixelsPerInch, 96);
+
+  P := Panels.Add;
+  P.Width := 2 + 56 + TFunctions.GetTextSize(_('Connecting...'), Font).cx + FSpace;
+  P.Style := psOwnerDraw;
+
+  P := Panels.Add;
+  P.Width := 18 + 4 + 18 + TFunctions.GetTextSize('00000000', Font).cx + MulDiv(TFunctions.GetTextSize('W', Font).cx, Screen.PixelsPerInch, 96) + 10;
+  P.Style := psOwnerDraw;
+
+  P := Panels.Add;
+  P.Style := psOwnerDraw;
+
+  P := Panels.Add;
+  P.Width := 2 + TFunctions.GetTextSize(Format(_('%s/%s received'), ['000,00 kb', '000,00 kb']), Font).cx + FSpace;
+  P.Style := psOwnerDraw;
+
+  P := Panels.Add;
+  P.Style := psOwnerDraw;
+end;
+
+destructor TSWStatusBar.Destroy;
+begin
+  FSpeedBmp.Free;
+
+  inherited;
+end;
 
 procedure TSWStatusBar.BuildSpeedBmp;
 var
@@ -160,49 +207,9 @@ begin
   FLastPos := P;
 end;
 
-constructor TSWStatusBar.Create(AOwner: TComponent);
-var
-  P: TStatusPanel;
+procedure TSWStatusBar.PostTranslate;
 begin
-  inherited;
-
-  SimplePanel := False;
-
-  Height := TFunctions.GetTextSize('Wyg', Font).cy + 4;
-
-  ShowHint := False;
-
-  FTimer := TTimer.Create(Self);
-  FTimer.OnTimer := TimerTimer;
-  FTimer.Interval := 1000;
-  FTimer.Enabled := True;
-
-  FSpace := MulDiv(TFunctions.GetTextSize('WWW', Font).cx, Screen.PixelsPerInch, 96);
-
-  P := Panels.Add;
-  P.Width := 2 + 56 + TFunctions.GetTextSize(_('Connecting...'), Font).cx + FSpace;
-  P.Style := psOwnerDraw;
-
-  P := Panels.Add;
-  P.Width := 18 + 4 + 18 + TFunctions.GetTextSize('00000000', Font).cx + MulDiv(TFunctions.GetTextSize('W', Font).cx, Screen.PixelsPerInch, 96) + 10;
-  P.Style := psOwnerDraw;
-
-  P := Panels.Add;
-  P.Style := psOwnerDraw;
-
-  P := Panels.Add;
-  P.Width := 2 + TFunctions.GetTextSize(Format(_('%s/%s received'), ['000,00 kb', '000,00 kb']), Font).cx + FSpace;
-  P.Style := psOwnerDraw;
-
-  P := Panels.Add;
-  P.Style := psOwnerDraw;
-end;
-
-destructor TSWStatusBar.Destroy;
-begin
-  FSpeedBmp.Free;
-
-  inherited;
+  Invalidate;
 end;
 
 procedure TSWStatusBar.DrawPanel(Panel: TStatusPanel; const R: TRect);

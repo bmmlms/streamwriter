@@ -111,7 +111,7 @@ type
     constructor Create(AOwner: TComponent); reintroduce;
   end;
 
-  TLogTree = class(TVirtualStringTree)
+  TLogTree = class(TMTranslatableVirtualStringTree)
   private
     FPopupMenu: TLogPopup;
 
@@ -147,7 +147,7 @@ type
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
 
-    procedure PostTranslate;
+    procedure PostTranslate; override;
 
     procedure Add(Source: TLogSource; LogType: TLogType; LogLevel: TLogLevel; SourceText, Text: string; Time: TDateTime); overload;
     procedure SetFilter(Text: string; FilterTypes: TFilterTypes);
@@ -167,8 +167,6 @@ type
   protected
   public
     constructor Create(AOwner: TComponent); reintroduce;
-
-    procedure PostTranslate;
 
     property LogTree: TLogTree read FLogTree;
   end;
@@ -314,11 +312,6 @@ begin
     ButtonClick(FLogPanel.FButtonCopy)
   else if Sender = FLogTree.FPopupMenu.FItemClear then
     ButtonClick(FLogPanel.FButtonClear);
-end;
-
-procedure TLogTab.PostTranslate;
-begin
-  FLogTree.PostTranslate;
 end;
 
 procedure TLogTab.TextChange(Sender: TObject);
@@ -678,6 +671,8 @@ end;
 
 procedure TLogTree.PostTranslate;
 begin
+  inherited;
+
   FColType.Text := _('Type');
   FColTime.Text := _('Time');
   FColSource.Text := _('Source');

@@ -114,7 +114,7 @@ type
 
   { TfrmSettings }
 
-  TfrmSettings = class(TfrmSettingsBase)
+  TfrmSettings = class(TfrmSettingsBase, IPreTranslatable)
     Bevel1: TBevel;
     btnAdd: TButton;
     btnAddIgnoreTitlePattern: TButton;
@@ -137,7 +137,6 @@ type
     chkAutoTuneIn: TCheckBox;
     chkAutoTuneInAddToIgnore: TCheckBox;
     chkAutoTuneInConsiderIgnore: TCheckBox;
-    chkCoverPanelAlwaysVisible: TCheckBox;
     chkDeleteStreams: TCheckBox;
     chkDiscardAlways: TCheckBox;
     chkDiscardSmaller: TCheckBox;
@@ -388,7 +387,7 @@ type
     procedure Finish; override;
     function CanFinish: Boolean; override;
     procedure SetPage(Page: TPage); override;
-    procedure PreTranslate; override;
+    procedure PreTranslate;
     procedure PostTranslate; override;
     procedure GetExportDataHeader(Stream: TMemoryStream); override;
     procedure GetExportData(Stream: TMemoryStream); override;
@@ -531,7 +530,7 @@ begin
   chkSaveStreamsToDisk.Checked := not Settings.SaveToMemory;
   chkOnlySaveFull.Checked := Settings.OnlySaveFull;
 
-  Language.Translate(Self, PreTranslate, PostTranslate);
+  Language.Translate(Self);
 
   pnlGeneral.BringToFront;
 
@@ -577,7 +576,6 @@ begin
     chkDisplayPlayedSong.Checked := AppGlobals.DisplayPlayedSong;
     chkDisplayPlayNotifications.Checked := AppGlobals.DisplayPlayNotifications;
     chkShowSplashScreen.Checked := AppGlobals.ShowSplashScreen;
-    chkCoverPanelAlwaysVisible.Checked := AppGlobals.CoverPanelAlwaysVisible;
     optClose.Checked := not AppGlobals.TrayOnMinimize;
     optMinimize.Checked := AppGlobals.TrayOnMinimize;
 
@@ -733,7 +731,6 @@ begin
       AppGlobals.DisplayPlayedSong := chkDisplayPlayedSong.Checked;
       AppGlobals.DisplayPlayNotifications := chkDisplayPlayNotifications.Checked;
       AppGlobals.ShowSplashScreen := chkShowSplashScreen.Checked;
-      AppGlobals.CoverPanelAlwaysVisible := chkCoverPanelAlwaysVisible.Checked;
       AppGlobals.TrayOnMinimize := optMinimize.Checked;
 
       AppGlobals.AutoTuneIn := chkAutoTuneIn.Checked;

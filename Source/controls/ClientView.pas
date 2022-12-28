@@ -44,6 +44,7 @@ uses
   ImgList,
   LanguageObjects,
   Logging,
+  MControls,
   Menus,
   SharedControls,
   StdCtrls,
@@ -78,7 +79,7 @@ type
 
   { TMClientView }
 
-  TMClientView = class(TVirtualStringTree)
+  TMClientView = class(TMTranslatableVirtualStringTree)
   private
     FBrowser: TMStreamTree;
 
@@ -145,7 +146,7 @@ type
     function NodesToClients(Nodes: TNodeArray): TClientArray;
     function GetEntries(T: TEntryTypes): TPlaylistEntryArray;
 
-    procedure PostTranslate;
+    procedure PostTranslate; override;
 
     procedure MoveTo(Source, Target: PVirtualNode; Mode: TVTNodeAttachMode; ChildrenOnly: Boolean); reintroduce;
 
@@ -626,8 +627,6 @@ begin
     // Drop darf nur erlaubt sein, wenn Ziel-Node nicht in gedraggten
     // Nodes vorkommt und Ziel-Node kein Kind von Drag-Node ist
     if Length(FDragNodes) > 0 then
-    begin
-      // Wir sind im Tree am draggen
       for i := 0 to Length(FDragNodes) - 1 do
       begin
         if HitNode = FDragNodes[i] then
@@ -643,8 +642,8 @@ begin
             Result := False;
             Exit;
           end;
-      end;
-    end;
+      end// Wir sind im Tree am draggen
+    ;
   end;
 end;
 
@@ -889,7 +888,14 @@ begin
 end;
 
 procedure TMClientView.PostTranslate;
+var
+  NodeData: PClientNodeData;
 begin
+  NodeData := GetNodeData(FAutoNode);
+  NodeData.Category.Name := _('Automatic recordings');
+
+  inherited;
+
   FColName.Text := _('Name');
   FColTitle.Text := _('Title');
   FColRcvd.Text := _('Received');

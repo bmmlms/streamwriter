@@ -183,7 +183,7 @@ begin
     AppGlobals.Unlock;
   end;
 
-  FPlayer := BASSStreamCreateFile(False, PWideChar(UnicodeString(FFilename)), 0, 0, BASS_UNICODE);
+  FPlayer := BASSStreamCreateFile(False, PChar(FFilename), 0, 0, 0);
   if FPlayer = 0 then
     raise Exception.Create('');
   FSyncEnd := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, EndSyncProc, Self);

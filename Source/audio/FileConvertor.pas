@@ -242,7 +242,7 @@ begin
   BytesToRead := 16384;
   SetLength(Buf, BytesToRead);
 
-  Channel := BASSStreamCreateFile(False, PWideChar(UnicodeString(FromFile)), 0, 0, BASS_STREAM_DECODE or BASS_UNICODE);
+  Channel := BASSStreamCreateFile(False, PChar(FromFile), 0, 0, BASS_STREAM_DECODE);
 
   if Channel = 0 then
     Exit;

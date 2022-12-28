@@ -33,6 +33,7 @@ uses
   Dialogs,
   DragDrop,
   DragDropFile,
+  Forms,
   Functions,
   ImgList,
   LanguageObjects,
@@ -60,6 +61,8 @@ type
 
   TMainPageControl = class(TMPageControl)
   public
+    constructor Create(AOwner: TComponent); override;
+
     function FindCut(Filename: string): TMainTabSheet;
   end;
 
@@ -74,6 +77,13 @@ uses
   CutTab;
 
 { TMainPageControl }
+
+constructor TMainPageControl.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+
+  TabHeight := MulDiv(22, Screen.PixelsPerInch, 96);
+end;
 
 function TMainPageControl.FindCut(Filename: string): TMainTabSheet;
 var
@@ -153,10 +163,9 @@ begin
         Dlg.Options := Dlg.Options + [ofOverwritePrompt, ofPathMustExist];
 
         if Dlg.Execute then
-        begin
           try
             if (LowerCase(ExtractFileExt(Dlg.FileName)) <> '.m3u') and
-               (LowerCase(ExtractFileExt(Dlg.FileName)) <> '.pls') then
+              (LowerCase(ExtractFileExt(Dlg.FileName)) <> '.pls') then
               if Dlg.FilterIndex = 1 then
                 Dlg.FileName := Dlg.FileName + '.m3u'
               else
@@ -171,7 +180,6 @@ begin
           except
             TFunctions.MsgBox(Format(_('The playlist could not be saved.'#13#10'Verify that you have write permissions to "%s".'), [ExtractFilePath(Dlg.FileName)]), _('Error'), MB_ICONEXCLAMATION);
           end;
-        end;
       finally
         Dlg.Free;
       end;

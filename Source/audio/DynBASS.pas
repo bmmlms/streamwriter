@@ -405,7 +405,7 @@ begin
     end;
   end;
 
-  FDLLHandle := LoadLibraryW(PWideChar(UnicodeString(FBassDLLPath)));
+  FDLLHandle := LoadLibrary(PChar(FBassDLLPath));
 
   if FDLLHandle <> 0 then
   begin
@@ -473,7 +473,7 @@ begin
 
     if BassLoaded and LoadWASAPI then
     begin
-      FWASAPIDLLHandle := LoadLibraryW(PWideChar(UnicodeString(FBassWASAPIDLLPath)));
+      FWASAPIDLLHandle := LoadLibrary(PChar(FBassWASAPIDLLPath));
       if FWASAPIDLLHandle = 0 then
         BassLoaded := False
       else
@@ -498,7 +498,7 @@ begin
 
     if BassLoaded and LoadMixer then
     begin
-      FMixerDLLHandle := LoadLibraryW(PWideChar(UnicodeString(FBassMixerDLLPath)));
+      FMixerDLLHandle := LoadLibrary(PChar(FBassMixerDLLPath));
       if FMixerDLLHandle = 0 then
         BassLoaded := False
       else
@@ -510,7 +510,7 @@ begin
 
     if BassLoaded and LoadEnc then
     begin
-      FEncDLLHandle := LoadLibraryW(PWideChar(UnicodeString(FBassEncDLLPath)));
+      FEncDLLHandle := LoadLibrary(PChar(FBassEncDLLPath));
       if FEncDLLHandle = 0 then
         BassLoaded := False
       else

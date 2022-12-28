@@ -154,7 +154,7 @@ begin
   ForceDirectories(FFilesDir);
   if FileExists(LibraryPath) then
   begin
-    H := LoadLibraryW(PWideChar(UnicodeString(LibraryPath)));
+    H := LoadLibrary(PChar(LibraryPath));
     if H > 0 then
     begin
       for i := 0 to FFilenames.Count - 1 do

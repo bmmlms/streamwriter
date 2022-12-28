@@ -65,7 +65,6 @@ type
   public
     constructor Create(AOwner: TComponent); reintroduce;
 
-    procedure PostTranslate;
     procedure ShowInfo(ChangedOverride: Boolean = False); overload;
     procedure ShowInfo(Entries: TStreamList); overload;
 
@@ -74,7 +73,7 @@ type
 
 implementation
 
-{ TStreamInfoView }
+{ TMStreamInfoViewPanel }
 
 constructor TMStreamInfoViewPanel.Create(AOwner: TComponent);
 begin
@@ -218,7 +217,7 @@ begin
   end;
 end;
 
-{ TMStreamInfoContainer }
+{ TMStreamInfoView }
 
 constructor TMStreamInfoView.Create(AOwner: TComponent);
 begin
@@ -242,11 +241,6 @@ procedure TMStreamInfoView.ShowInfo(Entries: TStreamList);
 begin
   FInfoView.ShowInfo(Entries);
   FInfoView.Visible := Entries <> nil;
-end;
-
-procedure TMStreamInfoView.PostTranslate;
-begin
-
 end;
 
 end.

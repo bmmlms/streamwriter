@@ -164,7 +164,7 @@ begin
   if FFilesize = -1 then
     raise Exception.Create('Filesize could not be determined');
 
-  FDecoder := BASSStreamCreateFile(False, PWideChar(UnicodeString(Filename)), 0, 0, BASS_STREAM_DECODE or BASS_UNICODE);
+  FDecoder := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE);
   if FDecoder = 0 then
     raise Exception.Create('Decoder could not be created');
 

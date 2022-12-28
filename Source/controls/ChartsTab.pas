@@ -72,7 +72,7 @@ type
 
   { TSearchPanel }
 
-  TSearchPanel = class(TPanel)
+  TSearchPanel = class(TPanel, IPostTranslatable)
   private
     FLabel: TLabel;
     FSearch: TComboBoxExEditable;
@@ -101,7 +101,7 @@ type
 
   { TChartsTree }
 
-  TChartsTree = class(TVirtualStringTree)
+  TChartsTree = class(TMTranslatableVirtualStringTree)
   private
     FTimer: TTimer;
     FDots: string;
@@ -146,6 +146,8 @@ type
     function GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
     function NodesToData(Nodes: TNodeArray): TChartDataArray;
 
+    procedure PostTranslate; override;
+
     property State: TChartStates read FState write FSetState;
   end;
 
@@ -155,7 +157,7 @@ type
 
   { TChartsTab }
 
-  TChartsTab = class(TMainTabSheet)
+  TChartsTab = class(TMainTabSheet, IPostTranslatable)
   private
     FSearchPanel: TSearchPanel;
     FChartsTree: TChartsTree;
@@ -328,12 +330,6 @@ end;
 
 procedure TChartsTab.PostTranslate;
 begin
-  FChartsTree.FColImages.Text := _('State');
-  FChartsTree.FColTitle.Text := _('Name');
-  FChartsTree.FColChance.Text := _('Played last day/week');
-
-  FSearchPanel.PostTranslate;
-
   FResultLabel.Caption := Format(_(TEXT_RESULTS), [FChartsTree.RootNodeCount]);
 end;
 
@@ -1101,6 +1097,16 @@ begin
   end;
 end;
 
+procedure TChartsTree.PostTranslate;
+begin
+  inherited PostTranslate;
+
+  FColImages.Text := _('State');
+  FColTitle.Text := _('Name');
+  FColLastPlayed.Text := _('Last played');
+  FColChance.Text := _('Played last day/week');
+end;
+
 procedure TChartsTree.KeyPress(var Key: Char);
 begin
   inherited;
@@ -1429,8 +1435,6 @@ begin
   FButtonAddStream.Parent := FToolbar;
   FButtonAddStream.Hint := 'Add stream';
   FButtonAddStream.ImageIndex := TImages.TRANSMIT_ADD;
-
-  PostTranslate;
 end;
 
 procedure TSearchPanel.PostTranslate;

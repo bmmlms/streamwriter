@@ -352,7 +352,7 @@ type
     procedure ShowCommunityLogin;
     procedure OpenCut(Filename: string); overload;
     procedure OpenCut(Track: TTrackInfo); overload;
-    procedure ProcessCommandLine(Data: string);
+    procedure ProcessCommandLine(const CmdLine: TCommandLine);
     procedure SetCaptionAndTrayHint;
     procedure BuildMoveToCategoryMenu;
 
@@ -371,9 +371,6 @@ type
     procedure HomeCommServerInfo(Sender: TObject; ClientCount, RecordingCount: Cardinal);
     procedure HomeCommError(Sender: TObject; ID: TCommErrors; Msg: string);
     procedure HomeCommException(Sender: TObject);
-
-    procedure PreTranslate;
-    procedure PostTranslate;
 
     procedure tabClientsUpdateButtons(Sender: TObject);
     procedure tabClientsTrackAdded(Entry: TStreamEntry; Track: TTrackInfo);
@@ -981,7 +978,7 @@ begin
   tmrAutoSave.Enabled := True;
   tmrRecordings.Enabled := True;
 
-  ProcessCommandLine('');
+  ProcessCommandLine(AppGlobals.CommandLine);
 
   tmrSpeed.Enabled := True;
 
@@ -994,9 +991,6 @@ begin
   MsgBus.AddSubscriber(MessageReceived);
 
   Language.Translate(Self);
-
-  // This needs to be done for the controls (TLabel in the header) to adjust width
-  tabLists.PostTranslate;
 
   if not Application.ShowMainForm then
     if StartupMessagesNeeded then
@@ -1424,28 +1418,12 @@ begin
   tabClients.UpdateStreams;
 end;
 
-procedure TfrmStreamWriterMain.PreTranslate;
-begin
-
-end;
-
-procedure TfrmStreamWriterMain.ProcessCommandLine(Data: string);
+procedure TfrmStreamWriterMain.ProcessCommandLine(const CmdLine: TCommandLine);
 var
   i, Prio: Integer;
-  FreeCmdLine: Boolean;
   Param: TCommandLineRecord;
-  CmdLine: TCommandLine;
   Titles: TWishlistTitleInfoArray;
 begin
-  FreeCmdLine := False;
-
-  if Data <> '' then
-  begin
-    CmdLine := TCommandLine.Create(Data);
-    FreeCmdLine := True;
-  end else
-    CmdLine := AppGlobals.CommandLine;
-
   Param := CmdLine.GetParam('-r');
   if Param <> nil then
     for i := 0 to Param.Values.Count - 1 do
@@ -1496,29 +1474,6 @@ begin
       4: SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
     end;
   end;
-
-  if FreeCmdLine then
-    CmdLine.Free;
-end;
-
-procedure TfrmStreamWriterMain.PostTranslate;
-var
-  NodeData: PClientNodeData;
-begin
-  tabClients.SideBar.BrowserView.PostTranslate;
-  tabClients.SideBar.InfoView.PostTranslate;
-  tabClients.ClientView.PostTranslate;
-
-  NodeData := tabClients.ClientView.GetNodeData(tabClients.ClientView.AutoNode);
-  NodeData.Category.Name := _('Automatic recordings');
-  tabClients.ClientView.Invalidate;
-
-  tabLists.PostTranslate;
-  tabCharts.PostTranslate;
-  tabSaved.PostTranslate;
-  tabLog.PostTranslate;
-
-  addStatus.Invalidate;
 end;
 
 procedure TfrmStreamWriterMain.mnuStreamPopupPopup(Sender: TObject);
@@ -1788,7 +1743,7 @@ begin
 
           tabSaved.Tree.SetFileWatcher;
 
-          Language.Translate(Self, PreTranslate, PostTranslate);
+          Language.Translate(Self);
 
           tabClients.ShowInfo;
 
@@ -2722,18 +2677,19 @@ end;
 
 function TfrmStreamWriterMain.CustomWndProc(hwnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
 var
-  CDS: PCOPYDATASTRUCT;
   CmdLine: TCommandLine;
 begin
   if (not FExiting) and (uMsg = WM_COPYDATA) then
   begin
-    CDS := PCOPYDATASTRUCT(lParam);
-
-    CmdLine := TCommandLine.Create(PChar(CDS.lpData));
-    if CmdLine.Records.Count = 0 then
-      ToggleWindow(True);
-
-    ProcessCommandLine(PChar(CDS.lpData));
+    CmdLine := TCommandLine.Create(PChar(PCOPYDATASTRUCT(lParam).lpData));
+    try
+      if CmdLine.Records.Count = 0 then
+        ToggleWindow(True)
+      else
+        ProcessCommandLine(CmdLine);
+    finally
+      CmdLine.Free;
+    end;
 
     Exit(0);
   end;

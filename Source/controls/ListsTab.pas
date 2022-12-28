@@ -120,7 +120,7 @@ type
 
   { TTitlePanel }
 
-  TTitlePanel = class(TPanel)
+  TTitlePanel = class(TPanel, IPostTranslatable)
   private
     FTopPanel: TPanel;
     FSearchPanel: TPanel;
@@ -190,12 +190,11 @@ type
     procedure RemoveClient(Client: TICEClient);
 
     procedure UpdateLists;
-    procedure PostTranslate;
 
     property ListsPanel: TTitlePanel read FListsPanel;
   end;
 
-  TTitleTree = class(TVirtualStringTree)
+  TTitleTree = class(TVirtualStringTree, IPostTranslatable)
   private
     FColTitle: TVirtualTreeColumn;
     FColSaved: TVirtualTreeColumn;
@@ -371,11 +370,6 @@ begin
     for i := 0 to High(Nodes) do
       FListsPanel.FTree.InvalidateNode(Nodes[i]);
   end;
-end;
-
-procedure TListsTab.PostTranslate;
-begin
-  FListsPanel.PostTranslate;
 end;
 
 procedure TListsTab.Resize;
@@ -1015,7 +1009,6 @@ end;
 
 procedure TTitlePanel.PostTranslate;
 begin
-  FTree.PostTranslate;
   FillClientCombo;
 end;
 
@@ -2012,6 +2005,8 @@ begin
   FColTitle.Text := _('Title');
   FColSaved.Text := _('Times saved');
   FColAdded.Text := _('Date');
+
+  Invalidate;
 end;
 
 procedure TTitleTree.RemoveClient(Client: TICEClient);

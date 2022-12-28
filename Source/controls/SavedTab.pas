@@ -271,7 +271,6 @@ type
     destructor Destroy; override;
 
     procedure PausePlay;
-    procedure PostTranslate;
 
     procedure UpdateButtons;
     procedure StopThreads;
@@ -291,7 +290,7 @@ type
 
   { TSavedTree }
 
-  TSavedTree = class(TVirtualStringTree)
+  TSavedTree = class(TMTranslatableVirtualStringTree)
   private
     FPlayer: TPlayer;
     FPlayerList: TStringList;
@@ -368,7 +367,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    procedure PostTranslate;
+    procedure PostTranslate; override;
 
     function PrevPlayingTrack(ConsiderRnd: Boolean): TTrackInfo;
     function NextPlayingTrack(ConsiderRnd: Boolean; AddToPlayerList: Boolean = True): TTrackInfo;
@@ -907,11 +906,6 @@ begin
     FPosLabel.Caption := BuildTime(Tree.Player.PositionTime, False);
   end else
     FPosLabel.Caption := '00:00';
-end;
-
-procedure TSavedTab.PostTranslate;
-begin
-  FSavedTree.PostTranslate;
 end;
 
 procedure TSavedTab.SavedTreeAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
@@ -2104,6 +2098,8 @@ end;
 
 procedure TSavedTree.PostTranslate;
 begin
+  inherited;
+
   FColImages.Text := _('State');
   FColFilename.Text := _('Filename');
   FColSize.Text := _('Size');

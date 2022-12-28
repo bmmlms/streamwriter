@@ -41,6 +41,7 @@ uses
   ExtCtrls,
   Forms,
   Functions,
+  Generics.Collections,
   Graphics,
   GraphType,
   HomeCommunication,
@@ -51,6 +52,7 @@ uses
   Logging,
   Menus,
   MessageBus,
+  regexpr,
   SharedData,
   StdCtrls,
   SysUtils,
@@ -94,22 +96,26 @@ type
 
   { TMStreamSearchPanel }
 
-  TMStreamSearchPanel = class(TPanel)
+  TMStreamSearchPanel = class(TPanel, IPostTranslatable)
   private
     FSearchEdit: TEdit;
     FGenreList: TComboBoxEx;
     FKbpsList: TComboBoxEx;
     FTypeList: TComboBoxEx;
-  protected
+
+    FPanelLabels: TList<TLabel>;
   public
     constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+
+    procedure PostTranslate;
   end;
 
   TSortTypes = (stName, stBitrate, stType, stRating);
 
   { TMStreamBrowserView }
 
-  TMStreamBrowserView = class(TPanel)
+  TMStreamBrowserView = class(TPanel, IPostTranslatable)
   private
     FSearch: TMStreamSearchPanel;
     FStreamTree: TMStreamTree;
@@ -148,7 +154,7 @@ type
     property OnStreamsReceived: TNotifyEvent read FOnStreamsReceived write FOnStreamsReceived;
   end;
 
-  TMStreamTreeHeaderPopup = class(TPopupMenu)
+  TMStreamTreeHeaderPopup = class(TPopupMenu, IPostTranslatable)
   private
     FItemName: TMenuItem;
     FItemKbps: TMenuItem;
@@ -156,8 +162,6 @@ type
     FItemRating: TMenuItem;
 
     procedure PostTranslate;
-  protected
-    procedure DoPopup(Sender: TObject); override;
   public
     constructor Create(AOwner: TComponent); override;
   end;
@@ -963,9 +967,20 @@ var
   P: string;
   Hash: Cardinal;
   Chars: Integer;
+  r: TRegExpr;
 begin
   Result := False;
   P := TFunctions.BuildPattern(Search, Hash, Chars, False);
+
+  {
+  if P <> '*' then
+  begin
+    p := p.Replace('*', '');
+  r := TRegExpr.Create('.*' + P.Replace(' ', '.*') + '.*');
+  r.ModifierI := True;
+  r.Compile;
+  end;
+        }
 
   if (not AlwaysBuild) and (P = FLastSearch) and (Genre = FLastGenre) and (AudioType = FLastAudioType) and (Bitrate = FLastBitrate) then
     Exit;
@@ -1362,7 +1377,7 @@ begin
   else
     FCountLabel.Caption := Format(_('%d streams found'), [FStreamTree.RootNodeCount]);
 
-  FStreamTree.FSortPopupMenu.PostTranslate;
+//  FStreamTree.FSortPopupMenu.PostTranslate;
 end;
 
 { TMStreamSearch }
@@ -1384,7 +1399,8 @@ constructor TMStreamSearchPanel.Create(AOwner: TComponent);
     L.Align := alLeft;
     L.Caption := LabelText;
     L.Layout := tlCenter;
-    L.Constraints.MinWidth := 60;
+
+    FPanelLabels.Add(L);
   end;
 
 var
@@ -1392,13 +1408,14 @@ var
 begin
   inherited;
 
+  FPanelLabels := TList<TLabel>.Create;
+
   BevelOuter := bvNone;
 
   P := CreatePanel(_('Type') + ':');
   FTypeList := TComboBoxEx.Create(Self);
   FTypeList.Parent := P;
   FTypeList.Align := alClient;
-  //  FTypeList.Style := csDropDownList;
 
   FTypeList.ItemsEx.AddItem(_('- No type -'));
   FTypeList.ItemsEx.AddItem(_('MP3'));
@@ -1409,7 +1426,6 @@ begin
   FKbpsList := TComboBoxEx.Create(Self);
   FKbpsList.Parent := P;
   FKbpsList.Align := alClient;
-  //  FKbpsList.Style := csDropDownList;
 
   FKbpsList.ItemsEx.AddItem(_('- No kbps -'));
   FKbpsList.ItemsEx.AddItem('>= 64');
@@ -1423,13 +1439,36 @@ begin
   FGenreList := TComboBoxEx.Create(Self);
   FGenreList.Parent := P;
   FGenreList.Align := alClient;
-  //  FGenreList.Style := csDropDownList;
   FGenreList.DropDownCount := 16;
 
   P := CreatePanel(_('Search') + ':');
   FSearchEdit := TEdit.Create(Self);
   FSearchEdit.Parent := P;
   FSearchEdit.Align := alClient;
+end;
+
+destructor TMStreamSearchPanel.Destroy;
+begin
+  FPanelLabels.Free;
+
+  inherited Destroy;
+end;
+
+procedure TMStreamSearchPanel.PostTranslate;
+var
+  TextLen: Integer;
+  MaxTextLen: Integer = 0;
+  Lbl: TLabel;
+begin
+  for Lbl in FPanelLabels do
+  begin
+    TextLen := TFunctions.GetTextSize(Lbl.Caption, Lbl.Font).Width;
+    if TextLen > MaxTextLen then
+      MaxTextLen := TextLen;
+  end;
+
+  for Lbl in FPanelLabels do
+    Lbl.Constraints.MinWidth := MaxTextLen;
 end;
 
 { TMStreamTreeHeaderPopup }
@@ -1461,12 +1500,6 @@ begin
   FItemRating.RadioItem := True;
   FItemRating.Tag := Integer(stRating);
   Items.Add(FItemRating);
-end;
-
-procedure TMStreamTreeHeaderPopup.DoPopup(Sender: TObject);
-begin
-  inherited;
-
 end;
 
 procedure TMStreamTreeHeaderPopup.PostTranslate;
