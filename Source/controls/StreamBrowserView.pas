@@ -313,10 +313,10 @@ begin
   FItemOpen := CreateItem('P&lay stream (external player)', TImages.PLAY_GO, nil);
   FItemOpen.OnClick := PopupMenuClick;
 
-  FItemAdd := CreateItem('&Add stream', TImages.TRANSMIT_ADD, nil);
+  FItemAdd := CreateItem('&Add stream', TImages.ADD, nil);
   FItemAdd.OnClick := PopupMenuClick;
 
-  FItemSetData := CreateItem('S&et data...', TImages.TRANSMIT_EDIT, nil);
+  FItemSetData := CreateItem('S&et data...', TImages.PENCIL, nil);
   FItemSetData.OnClick := PopupMenuClick;
 
   FItemRate := CreateItem('&Rate', TImages.STAR, nil);

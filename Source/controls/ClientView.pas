@@ -213,17 +213,8 @@ begin
   FDragTreshold := 6;
 
   NodeDataSize := SizeOf(TClientNodeData);
-  IncrementalSearch := isVisibleOnly;
-  AutoScrollDelay := 50;
-  AutoScrollInterval := 400;
-  Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoShowSortGlyphs, hoVisible];
-  TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
-  TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
-  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowDropmark, toShowRoot, toShowButtons];
-  TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toAcceptOLEDrop, toEditable];
+  TreeOptions.MiscOptions := TreeOptions.MiscOptions + [toEditable];
   DragMode := dmAutomatic;
-  ShowHint := True;
-  HintMode := hmTooltip;
 
   Header.AutoSizeIndex := 1;
 
@@ -535,7 +526,7 @@ begin
 
         if NodeData.Client.Playing or NodeData.Client.Paused then
         begin
-          PaintInfo.Canvas.Font.Color := TFunctions.HTML2Color('#0078ff');
+          PaintInfo.Canvas.Font.Color := TFunctions.HTML2Color('#0078ff');  // TODO: sollte hier und hier drüber nicht hilite color genutzt werden? wie ist es beim savedtab wenn was wiedergegeben wird?
           Break;
         end;
 
@@ -578,10 +569,11 @@ var
   Children: TNodeArray;
   HitNode: PVirtualNode;
   NodeData, ParentNodeData: PClientNodeData;
-  Strings: TStringArray;
+  s: string;
+  URLs: TStringArray;
   R: TRect;
 begin
-  if (Length(FDragNodes) = 0) and (Length(FBrowser.DraggedStreams) = 0) and (not TFunctions.GetDataObjectURLs(VTVDragManager.DataObject, Strings)) then
+  if (Length(FDragNodes) = 0) and (Length(FBrowser.DraggedStreams) = 0) and (not (TFunctions.ReadDataObjectText(VTVDragManager.DataObject, s) and TFunctions.FilterHTTPUrls(s, URLs))) then
     Exit(False);
 
   Result := True;
@@ -995,13 +987,11 @@ var
   Attachmode: TVTNodeAttachMode = amInsertAfter;
   i, n: Integer;
   S: string;
-  Strings: TStringArray;
+  URLs: TStringArray;
   HitNodeData, DragNodeData: PClientNodeData;
   HI: THitInfo;
   R: TRect;
 begin
-  inherited;
-
   if not Assigned(DataObject) then
     Exit;
 
@@ -1009,7 +999,7 @@ begin
   HitNodeData := nil;
 
   GetHitTestInfoAt(Pt.X, Pt.Y, True, HI);
-  if Hi.HitNode <> nil then
+  if HI.HitNode <> nil then
   begin
     HitNodeData := GetNodeData(HI.HitNode);
     R := GetDisplayRect(HI.HitNode, 0, False);
@@ -1086,9 +1076,9 @@ begin
       end;
       UnkillCategory(HI.HitNode);
     end;
-  end else if TFunctions.GetDataObjectURLs(DataObject, Strings) then
+  end else if TFunctions.ReadDataObjectText(DataObject, S) and TFunctions.FilterHTTPUrls(S, URLs) then
   begin
-    for S in Strings do
+    for S in URLs do
       // Das selbe wie im Kommentar oben beschrieben...
       if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or ((Attachmode = amNoWhere) and (HI.HitNode <> nil) and (HitNodeData.Client = nil)) then
         OnStartStreaming(Self, 0, 0, '', S, nil, nil, nil, HI.HitNode, amAddChildLast)

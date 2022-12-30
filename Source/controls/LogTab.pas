@@ -389,20 +389,8 @@ begin
   MsgBus.AddSubscriber(MessageReceived);
 
   NodeDataSize := SizeOf(PLogNodeData);
-
-  IncrementalSearch := isNone;
-
   Indent := 0;
-
-  AutoScrollDelay := 50;
-  AutoScrollInterval := 400;
-  Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoVisible, hoShowSortGlyphs];
-  TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
-  TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
-  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toToggleOnDblClick];
-  ShowHint := True;
-  HintMode := hmTooltip;
 
   Header.AutoSizeIndex := 3;
 

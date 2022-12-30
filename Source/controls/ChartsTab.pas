@@ -581,18 +581,7 @@ begin
   FTimer.OnTimer := TimerOnTimer;
 
   NodeDataSize := SizeOf(TChartNodeData);
-
-  IncrementalSearch := isVisibleOnly;
-
-  AutoScrollDelay := 50;
-  AutoScrollInterval := 400;
-  Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoShowSortGlyphs, hoVisible];
-  TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
-  TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
-  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toToggleOnDblClick];
-  ShowHint := True;
-  HintMode := hmTooltip;
 
   Header.AutoSizeIndex := 0;
 
@@ -1245,7 +1234,7 @@ begin
         while not (P.ClassType = TChartsTab) do
           P := P.Parent;
         if TChartsTab(P).FOnGetIsStreamOnListEvent(Self, NodeData.Stream.Stream) then
-          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TRANSMIT_ADD);
+          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.ADD);
       end;
   end;
 end;
@@ -1434,7 +1423,7 @@ begin
   FButtonAddStream := TToolButton.Create(FToolbar);
   FButtonAddStream.Parent := FToolbar;
   FButtonAddStream.Hint := 'Add stream';
-  FButtonAddStream.ImageIndex := TImages.TRANSMIT_ADD;
+  FButtonAddStream.ImageIndex := TImages.ADD;
 end;
 
 procedure TSearchPanel.PostTranslate;

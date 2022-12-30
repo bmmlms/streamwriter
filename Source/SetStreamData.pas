@@ -186,7 +186,7 @@ constructor TfrmSetStreamData.Create(AOwner: TComponent; StreamID: Integer);
 begin
   inherited Create(AOwner);
 
-  modSharedData.imgImages.GetIcon(TImages.TRANSMIT_EDIT, Icon);
+  modSharedData.imgImages.GetIcon(TImages.PENCIL, Icon);
 
   SetState(False);
 

@@ -222,15 +222,15 @@ inherited frmSettings: TfrmSettings
         Control.ItemsEx = <        
           item
             Caption = 'Start/stop recording'
-            ImageIndex = 83
+            ImageIndex = 84
           end        
           item
             Caption = 'Listen to stream'
-            ImageIndex = 76
+            ImageIndex = 77
           end        
           item
             Caption = 'Listen to stream (external player)'
-            ImageIndex = 78
+            ImageIndex = 79
           end>
         Control.TabOrder = 0
       end
@@ -251,15 +251,15 @@ inherited frmSettings: TfrmSettings
         Control.ItemsEx = <        
           item
             Caption = 'Start recording'
-            ImageIndex = 83
+            ImageIndex = 84
           end        
           item
             Caption = 'Listen to stream'
-            ImageIndex = 76
+            ImageIndex = 77
           end        
           item
             Caption = 'Listen to stream (external player)'
-            ImageIndex = 78
+            ImageIndex = 79
           end        
           item
             Caption = 'Only add to list'
@@ -434,27 +434,27 @@ inherited frmSettings: TfrmSettings
         Control.ItemsEx = <        
           item
             Caption = 'Save every song'
-            ImageIndex = 121
+            ImageIndex = 29
           end        
           item
             Caption = 'Use wishlist'
-            ImageIndex = 94
+            ImageIndex = 95
           end        
           item
             Caption = 'Use global ignorelist'
-            ImageIndex = 90
+            ImageIndex = 91
           end        
           item
             Caption = 'Use stream ignorelist'
-            ImageIndex = 90
+            ImageIndex = 91
           end        
           item
             Caption = 'Use both ignorelists'
-            ImageIndex = 90
+            ImageIndex = 91
           end        
           item
             Caption = 'Use all lists'
-            ImageIndex = 93
+            ImageIndex = 100
           end>
         Control.OnChange = lstDefaultFilterChange
         Control.TabOrder = 0

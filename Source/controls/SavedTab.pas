@@ -495,7 +495,7 @@ begin
 
   FItemRemove := TMenuItem.Create(Self);
   FItemRemove.Caption := '&Remove from list';
-  FItemRemove.ImageIndex := TImages.CROSS;
+  FItemRemove.ImageIndex := TImages.DELETE;
   Items.Add(FItemRemove);
 
   FItemRecycle := TMenuItem.Create(Self);
@@ -505,7 +505,7 @@ begin
 
   FItemDelete := TMenuItem.Create(Self);
   FItemDelete.Caption := '&Delete files';
-  FItemDelete.ImageIndex := TImages.Delete;
+  FItemDelete.ImageIndex := TImages.CROSS;
   Items.Add(FItemDelete);
 
   Items.AddSeparator;
@@ -593,7 +593,7 @@ begin
   FAddToWishlist := TToolButton.Create(Self);
   FAddToWishlist.Parent := Self;
   FAddToWishlist.Hint := 'Add to wishlist';
-  FAddToWishlist.ImageIndex := TImages.SCRIPT_HEART;
+  FAddToWishlist.ImageIndex := TImages.SCRIPT_HEART_ADD;
 
   FRemoveFromWishlist := TToolButton.Create(Self);
   FRemoveFromWishlist.Parent := Self;
@@ -603,7 +603,7 @@ begin
   FAddToIgnoreList := TToolButton.Create(Self);
   FAddToIgnoreList.Parent := Self;
   FAddToIgnoreList.Hint := 'Add to ignorelist';
-  FAddToIgnoreList.ImageIndex := TImages.SCRIPT_DECLINE;
+  FAddToIgnoreList.ImageIndex := TImages.SCRIPT_DECLINE_ADD;
 
   FRemoveFromIgnorelist := TToolButton.Create(Self);
   FRemoveFromIgnorelist.Parent := Self;
@@ -632,7 +632,7 @@ begin
   FRemove := TToolButton.Create(Self);
   FRemove.Parent := Self;
   FRemove.Hint := 'Remove from list';
-  FRemove.ImageIndex := TImages.CROSS;
+  FRemove.ImageIndex := TImages.DELETE;
 
   FRecycle := TToolButton.Create(Self);
   FRecycle.Parent := Self;
@@ -642,7 +642,7 @@ begin
   FDelete := TToolButton.Create(Self);
   FDelete.Parent := Self;
   FDelete.Hint := 'Delete files';
-  FDelete.ImageIndex := TImages.Delete;
+  FDelete.ImageIndex := TImages.CROSS;
 
   Sep := TToolButton.Create(Self);
   Sep.Parent := Self;
@@ -1338,18 +1338,8 @@ begin
   FTab := TSavedTab(AOwner);
 
   NodeDataSize := SizeOf(TSavedNodeData);
-  IncrementalSearch := isVisibleOnly;
-  AutoScrollDelay := 50;
-  AutoScrollInterval := 400;
-  Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoShowSortGlyphs, hoVisible];
-  TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
-  TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
-  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
-  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
   Header.AutoSizeIndex := 1;
   DragMode := dmAutomatic;
-  ShowHint := True;
-  HintMode := hmTooltip;
 
   FDragSource := TDropFileSource.Create(Self);
   FDragSource.DragTypes := [dtCopy, dtMove];

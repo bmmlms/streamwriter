@@ -24,6 +24,7 @@ unit ListsTab;
 interface
 
 uses
+  ActiveX,
   AppData,
   AppMessages,
   Buttons,
@@ -194,7 +195,9 @@ type
     property ListsPanel: TTitlePanel read FListsPanel;
   end;
 
-  TTitleTree = class(TVirtualStringTree, IPostTranslatable)
+  { TTitleTree }
+
+  TTitleTree = class(TMVirtualStringTree)
   private
     FColTitle: TVirtualTreeColumn;
     FColSaved: TVirtualTreeColumn;
@@ -204,14 +207,11 @@ type
 
     FPanel: TTitlePanel;
 
-    FDropTarget: TDropComboTarget;
     FPopupMenu: TTitlePopup;
     FWishNode: PVirtualNode;
     FIgnoreNode: PVirtualNode;
 
     function GetNode(Stream: TICEClient): PVirtualNode;
-
-    procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
 
     procedure PopupMenuClick(Sender: TObject);
 
@@ -230,6 +230,8 @@ type
     function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
     procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
     procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
+    procedure DoDragDrop(Source: TObject; DataObject: IDataObject; Formats: TFormatArray; Shift: TShiftState; const Pt: TPoint; var Effect: LongWord; Mode: TDropMode); override;
+    function DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; const Pt: TPoint; Mode: TDropMode; var Effect: LongWord): Boolean; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
 
@@ -238,7 +240,7 @@ type
     procedure RemoveClient(Client: TICEClient);
     procedure SortItems;
 
-    procedure PostTranslate;
+    procedure PostTranslate; override;
 
     function GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
     function NodesToData(Nodes: TNodeArray): TTitleDataArray;
@@ -903,41 +905,39 @@ begin
               ConversionData.Add(ImportData[i].Title);
 
           if ConversionData.Count > 0 then
-          begin
-            // If there are manual titles ask the user if they should be converted to automatic titles
             if not HomeComm.CommunicationEstablished then
             begin
-               MsgRes := TFunctions.MsgBox(Format(_('You have imported %d title(s) for the manual wishlist. You are not connected to the streamWriter server to convert these titles into titles for the automatic wishlist. Do you want to continue and import these titles as manual titles without conversion?'), [ConversionData.Count]), _('Question'), MB_YESNO or MB_ICONQUESTION or MB_DEFBUTTON2);
-               if MsgRes = IDNO then
-                 Exit;
+              MsgRes := TFunctions.MsgBox(Format(
+                _('You have imported %d title(s) for the manual wishlist. You are not connected to the streamWriter server to convert these titles into titles for the automatic wishlist. Do you want to continue and import these titles as manual titles without conversion?'), [ConversionData.Count]), _('Question'), MB_YESNO or MB_ICONQUESTION or MB_DEFBUTTON2);
+              if MsgRes = IDNO then
+                Exit;
             end else
             begin
-              MsgRes := TFunctions.MsgBox(Format(_('You have imported %d title(s) for the manual wishlist. Do you want to convert these titles into titles used by the automatic wishlist?'), [ConversionData.Count]), _('Question'), MB_YESNOCANCEL or MB_ICONQUESTION);
+              MsgRes := TFunctions.MsgBox(Format(_('You have imported %d title(s) for the manual wishlist. Do you want to convert these titles into titles used by the automatic wishlist?'), [ConversionData.Count]),
+                _('Question'), MB_YESNOCANCEL or MB_ICONQUESTION);
               case MsgRes of
                 IDYES:
-                  begin
-                    // We need to build a separate list to send to the server for conversion.
-                    // The stuff we send to the server will be removed from the list of titles we will add soon.
-                    NewImportData := TList<TImportListEntry>.Create;
-                    for i := ImportData.Count - 1 downto 0 do
-                    begin
-                      // If it is an automatic title keep it, otherwise add it to the other list for conversion
-                      if ImportData[i].Hash <> 0 then
-                        NewImportData.Add(ImportData[i])
-                      else
-                        ImportData[i].Free;
-                    end;
+                begin
+                  // We need to build a separate list to send to the server for conversion.
+                  // The stuff we send to the server will be removed from the list of titles we will add soon.
+                  NewImportData := TList<TImportListEntry>.Create;
+                  for i := ImportData.Count - 1 downto 0 do
+                    if ImportData[i].Hash <> 0 then
+                      NewImportData.Add(ImportData[i])
+                    else
+                      ImportData[i].Free// If it is an automatic title keep it, otherwise add it to the other list for conversion
+                  ;
 
-                    ImportData.Free;
-                    ImportData := NewImportData;
+                  ImportData.Free;
+                  ImportData := NewImportData;
 
-                    HomeComm.SendConvertManualToAutomatic(ConversionData);
-                  end;
-                IDCANCEL:
+                  HomeComm.SendConvertManualToAutomatic(ConversionData);
+                end;
+                idCancel:
                   Exit;
               end;
-            end;
-          end;
+            end// If there are manual titles ask the user if they should be converted to automatic titles
+          ;
         finally
           ConversionData.Free;
         end;
@@ -1723,20 +1723,8 @@ begin
   FPanel := TTitlePanel(AOwner);
 
   NodeDataSize := SizeOf(TTitleNodeData);
-  IncrementalSearch := isVisibleOnly;
-
-  AutoScrollDelay := 50;
-  AutoScrollInterval := 400;
-  Header.Options := [hoColumnResize, hoDrag, hoAutoResize, hoHotTrack, hoShowSortGlyphs, hoVisible];
-  TreeOptions.SelectionOptions := [toMultiSelect, toRightClickSelect, toFullRowSelect];
-  TreeOptions.AutoOptions := [toAutoScroll, toAutoScrollOnExpand];
-  TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect, toShowRoot, toShowButtons];
-  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
 
   Header.AutoSizeIndex := 0;
-  DragMode := dmManual;
-  ShowHint := True;
-  HintMode := hmTooltip;
 
   Self.Images := modSharedData.imgImages;
 
@@ -1752,11 +1740,6 @@ begin
 
   Header.PopupMenu := TMTreeColumnPopup.Create(Self);
   TMTreeColumnPopup(Header.PopupMenu).OnAction := MenuColsAction;
-
-  FDropTarget := TDropComboTarget.Create(Self);
-  FDropTarget.Formats := [mfFile];
-  FDropTarget.OnDrop := DropTargetDrop;
-  FDropTarget.Register(Self);
 
   FPopupMenu := TTitlePopup.Create(Self);
   if Screen.PixelsPerInch = 96 then
@@ -1777,104 +1760,6 @@ begin
       Header.Columns[i].Options := Header.Columns[i].Options - [coVisible];
 
   FitColumns;
-end;
-
-procedure TTitleTree.DropTargetDrop(Sender: TObject; ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
-var
-  i, n: Integer;
-  Found: Boolean;
-  HI: THitInfo;
-  Node: PVirtualNode;
-  NodeData, ParentNodeData: PTitleNodeData;
-  Title: TTitleInfo;
-  List: TList<TTitleInfo>;
-begin
-  List := nil;
-
-  GetHitTestInfoAt(APoint.X, APoint.Y, True, HI);
-  if Hi.HitNode <> nil then
-  begin
-    NodeData := GetNodeData(Hi.HitNode);
-
-    Node := Hi.HitNode;
-
-    case NodeData.NodeType of
-      ntWishParent:
-        List := AppGlobals.Data.SaveList;
-      ntIgnoreParent:
-        List := AppGlobals.Data.IgnoreList;
-      ntStream:
-      begin
-        ParentNodeData := GetNodeData(Hi.HitNode.Parent);
-        if ParentNodeData.NodeType = ntWishParent then
-          List := NodeData.Stream.Entry.SaveList
-        else
-          List := NodeData.Stream.Entry.IgnoreList;
-      end;
-      ntWish:
-      begin
-        ParentNodeData := GetNodeData(Hi.HitNode.Parent);
-        case ParentNodeData.NodeType of
-          ntWishParent:
-          begin
-            Node := FWishNode;
-            List := AppGlobals.Data.SaveList;
-          end;
-          ntStream:
-          begin
-            Node := Hi.HitNode.Parent;
-            ParentNodeData := GetNodeData(Hi.HitNode.Parent);
-            List := ParentNodeData.Stream.Entry.SaveList;
-          end;
-        end;
-      end;
-      ntIgnore:
-      begin
-        ParentNodeData := GetNodeData(Hi.HitNode.Parent);
-
-        case ParentNodeData.NodeType of
-          ntIgnoreParent:
-          begin
-            Node := FIgnoreNode;
-            List := AppGlobals.Data.IgnoreList;
-          end;
-          ntStream:
-          begin
-            Node := Hi.HitNode.Parent;
-            ParentNodeData := GetNodeData(Hi.HitNode.Parent);
-            List := ParentNodeData.Stream.Entry.IgnoreList;
-          end;
-        end;
-      end;
-    end;
-  end else
-    Exit;
-
-  if List = nil then
-    Exit;
-
-  for i := 0 to FDropTarget.Files.Count - 1 do
-  begin
-    Title := TTitleInfo.Create(0, 0, TFunctions.RemoveFileExt(ExtractFileName(FDropTarget.Files[i])));
-
-    Found := False;
-    for n := 0 to List.Count - 1 do
-      if List[n].Hash = Title.Hash then
-      begin
-        Found := True;
-        Break;
-      end;
-
-    if not Found then
-    begin
-      List.Add(Title);
-      AddTitle(Title, Node, FPanel.FFilterText, True);
-
-      if List = AppGlobals.Data.SaveList then
-        HomeComm.SendSetSettings(AppGlobals.AutoTuneIn);
-    end else
-      Title.Free;
-  end;
 end;
 
 procedure TTitleTree.FitColumns;
@@ -2196,6 +2081,121 @@ begin
     Canvas.Font.Color := AppGlobals.NodeTextColorSelected
   else
     Canvas.Font.Color := AppGlobals.NodeTextColor;
+end;
+
+procedure TTitleTree.DoDragDrop(Source: TObject; DataObject: IDataObject; Formats: TFormatArray; Shift: TShiftState; const Pt: TPoint; var Effect: LongWord; Mode: TDropMode);
+var
+  i, n: Integer;
+  Found: Boolean;
+  HI: THitInfo;
+  Node: PVirtualNode;
+  NodeData, ParentNodeData: PTitleNodeData;
+  Title: TTitleInfo;
+  List: TList<TTitleInfo>;
+
+  S: string;
+  Strings, Files: TStringArray;
+begin
+  List := nil;
+  Effect := DROPEFFECT_COPY;
+
+  GetHitTestInfoAt(Pt.X, Pt.Y, True, HI);
+  if HI.HitNode <> nil then
+  begin
+    NodeData := GetNodeData(Hi.HitNode);
+
+    Node := HI.HitNode;
+
+    case NodeData.NodeType of
+      ntWishParent:
+        List := AppGlobals.Data.SaveList;
+      ntIgnoreParent:
+        List := AppGlobals.Data.IgnoreList;
+      ntStream:
+      begin
+        ParentNodeData := GetNodeData(HI.HitNode.Parent);
+        if ParentNodeData.NodeType = ntWishParent then
+          List := NodeData.Stream.Entry.SaveList
+        else
+          List := NodeData.Stream.Entry.IgnoreList;
+      end;
+      ntWish:
+      begin
+        ParentNodeData := GetNodeData(HI.HitNode.Parent);
+        case ParentNodeData.NodeType of
+          ntWishParent:
+          begin
+            Node := FWishNode;
+            List := AppGlobals.Data.SaveList;
+          end;
+          ntStream:
+          begin
+            Node := HI.HitNode.Parent;
+            ParentNodeData := GetNodeData(HI.HitNode.Parent);
+            List := ParentNodeData.Stream.Entry.SaveList;
+          end;
+        end;
+      end;
+      ntIgnore:
+      begin
+        ParentNodeData := GetNodeData(HI.HitNode.Parent);
+        case ParentNodeData.NodeType of
+          ntIgnoreParent:
+          begin
+            Node := FIgnoreNode;
+            List := AppGlobals.Data.IgnoreList;
+          end;
+          ntStream:
+          begin
+            Node := HI.HitNode.Parent;
+            ParentNodeData := GetNodeData(HI.HitNode.Parent);
+            List := ParentNodeData.Stream.Entry.IgnoreList;
+          end;
+        end;
+      end;
+    end;
+  end;
+
+  if not Assigned(List) then
+    Exit;
+
+  if (not TFunctions.ReadDataObjectText(VTVDragManager.DataObject, S)) and (not TFunctions.ReadDataObjectFiles(VTVDragManager.DataObject, Files)) then
+    Exit;
+
+  Strings := S.Split(LineEnding, TStringSplitOptions.ExcludeEmpty);
+  for S in Files do
+    Strings += [TFunctions.RemoveFileExt(ExtractFileName(S))];
+
+  for S in Strings do
+  begin
+    Title := TTitleInfo.Create(0, 0, S);
+
+    Found := False;
+    for n := 0 to List.Count - 1 do
+      if List[n].Hash = Title.Hash then
+      begin
+        Found := True;
+        Break;
+      end;
+
+    if not Found then
+    begin
+      List.Add(Title);
+      AddTitle(Title, Node, FPanel.FFilterText, True);
+
+      if List = AppGlobals.Data.SaveList then
+        HomeComm.SendSetSettings(AppGlobals.AutoTuneIn);
+    end else
+      Title.Free;
+  end;
+end;
+
+function TTitleTree.DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; const Pt: TPoint; Mode: TDropMode; var Effect: LongWord): Boolean;
+var
+  S: string;
+  Files: TStringArray;
+begin
+  Result := TFunctions.ReadDataObjectText(VTVDragManager.DataObject, S) or TFunctions.ReadDataObjectFiles(VTVDragManager.DataObject, Files);
 end;
 
 procedure TTitleTree.DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition);

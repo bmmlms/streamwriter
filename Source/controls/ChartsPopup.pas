@@ -81,7 +81,7 @@ begin
 
   FItemAddStream := TMenuItem.Create(Self);
   FItemAddStream.Caption := 'Add s&tream';
-  FItemAddStream.ImageIndex := TImages.TRANSMIT_ADD; // TOOD: oder _ADD?
+  FItemAddStream.ImageIndex := TImages.ADD;
   Items.Add(FItemAddStream);
 end;
 

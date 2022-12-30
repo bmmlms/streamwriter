@@ -31,6 +31,7 @@ uses
   ExtCtrls,
   Forms,
   Graphics,
+  GraphUtil,
   Images,
   LanguageObjects,
   Logging,
@@ -350,9 +351,10 @@ end;
 
 procedure TSeekBar.PaintGripper(Bmp: Graphics.TBitmap);
 var
-  P: Integer;
+  i, P: Integer;
   R: TRect;
-  D, D2: TThemedElementDetails;
+  D: TThemedElementDetails;
+  Pt: TPoint;
 begin
   if FMax <= 0 then
     Exit;
@@ -365,6 +367,8 @@ begin
     R.Left := P;
     R.Bottom := Bmp.Height;
     R.Right := P + Bmp.Height;
+
+    Pt := TPoint.Create(R.Left + Bmp.Height div 2 - 3, Bmp.Height div 2 - 2);
   end else
   begin
     P := Trunc((FPosition / FMax) * (Bmp.Height - Bmp.Width));
@@ -373,53 +377,44 @@ begin
     R.Left := 0;
     R.Bottom := P + Bmp.Width;
     R.Right := Bmp.Width;
+
+    Pt := TPoint.Create(Bmp.Width div 2 - 3, R.Top + Bmp.Width div 2 - 2);
   end;
 
   if ThemeServices.ThemesEnabled then
   begin
-    D2 := IfThen<TThemedElementDetails>(FOrientation = sbHorizontal, ThemeServices.GetElementDetails(trGripper), ThemeServices.GetElementDetails(trGripperVert));
-
     case GetGripperState of
       gsNormal:
         if FOrientation = sbHorizontal then
-        begin
-          D := ThemeServices.GetElementDetails(tsThumbBtnHorzNormal);
-          D2 := ThemeServices.GetElementDetails(trGripper);
-        end else
-        begin
+          D := ThemeServices.GetElementDetails(tsThumbBtnHorzNormal)
+        else
           D := ThemeServices.GetElementDetails(tsThumbBtnVertNormal);
-          D2 := ThemeServices.GetElementDetails(trGripperVert);
-        end;
       gsHot:
         if FOrientation = sbHorizontal then
-        begin
-          D := ThemeServices.GetElementDetails(tsThumbBtnHorzHot);
-          D2 := ThemeServices.GetElementDetails(trGripper);
-        end else
-        begin
+          D := ThemeServices.GetElementDetails(tsThumbBtnHorzHot)
+        else
           D := ThemeServices.GetElementDetails(tsThumbBtnVertHot);
-          D2 := ThemeServices.GetElementDetails(trGripperVert);
-        end;
       gsDown:
         if FOrientation = sbHorizontal then
-        begin
-          D := ThemeServices.GetElementDetails(tsThumbBtnHorzPressed);
-          D2 := ThemeServices.GetElementDetails(trGripper);
-        end else
-        begin
+          D := ThemeServices.GetElementDetails(tsThumbBtnHorzPressed)
+        else
           D := ThemeServices.GetElementDetails(tsThumbBtnVertPressed);
-          D2 := ThemeServices.GetElementDetails(trGripperVert);
-        end;
     end;
 
     ThemeServices.DrawElement(Bmp.Canvas.Handle, D, R);
 
-    if FOrientation = sbHorizontal then
-      R.Inflate(-6, -5)
-    else
-      R.Inflate(-5, -6);
+    Bmp.Canvas.Pen.Color := IfThen<TColor>(GetGripperState = gsHot, GetHighLightColor(clBtnShadow, 50), clBtnShadow);
 
-    ThemeServices.DrawElement(Bmp.Canvas.Handle, D2, R);
+    for i := 0 to 2 do
+      if FOrientation = sbHorizontal then
+      begin
+        Bmp.Canvas.Line(Pt, TPoint.Create(Pt.X, Pt.Y + 6));
+        Pt.Offset(2, 0);
+      end else
+      begin
+        Bmp.Canvas.Line(Pt, TPoint.Create(Pt.X + 6, Pt.Y));
+        Pt.Offset(0, 2);
+      end;
   end else
     DrawFrameControl(Bmp.Canvas.Handle, R, DFC_BUTTON, IfThen<Integer>(GetGripperState = gsDown, DFCS_BUTTONPUSH or DFCS_PUSHED, DFCS_BUTTONPUSH));
 
@@ -434,7 +429,10 @@ end;
 
 procedure TSeekBar.WMMouseWheel(var Msg: TWMMouseWheel);
 begin
-  FPosition := FPosition + Trunc(Msg.WheelDelta / 30);
+  if FOrientation = sbHorizontal then
+    FPosition := FPosition + Trunc(Msg.WheelDelta / 30)
+  else
+    FPosition := FPosition - Trunc(Msg.WheelDelta / 30);
 
   if FPosition < 0 then
     FPosition := 0;
