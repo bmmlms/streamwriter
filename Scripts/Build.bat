@@ -63,12 +63,12 @@ goto end
 
   cd "%OUTDIR%"
   
-  for %%f in (*.*) do (
-    type "%%f" | "%PLINK%" -batch gaia osslsigncode-sign.sh > "%%f-signed"
-    if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
-    move /y "%%f-signed" "%%f"
-    if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
-  )
+  REM for %%f in (*.*) do (
+  REM   type "%%f" | "%PLINK%" -batch gaia osslsigncode-sign.sh > "%%f-signed"
+  REM   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
+  REM   move /y "%%f-signed" "%%f"
+  REM   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
+  REM )
 
   exit /b 0
 
@@ -86,10 +86,10 @@ goto end
   "%INNO%" /O"%OUTDIR%" %APPNAME%.iss
   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
 
-  type "%OUTDIR%\%APPNAME%_setup.exe" | "%PLINK%" -batch gaia osslsigncode-sign.sh > "%OUTDIR%\%APPNAME%_setup-signed.exe"
-  IF ERRORLEVEL 1 GOTO FAIL
-  move /y "%OUTDIR%\%APPNAME%_setup-signed.exe" "%OUTDIR%\%APPNAME%_setup.exe"
-  IF ERRORLEVEL 1 GOTO FAIL
+  REM type "%OUTDIR%\%APPNAME%_setup.exe" | "%PLINK%" -batch gaia osslsigncode-sign.sh > "%OUTDIR%\%APPNAME%_setup-signed.exe"
+  REM IF ERRORLEVEL 1 GOTO FAIL
+  REM move /y "%OUTDIR%\%APPNAME%_setup-signed.exe" "%OUTDIR%\%APPNAME%_setup.exe"
+  REM IF ERRORLEVEL 1 GOTO FAIL
 
   exit /b 0
 
