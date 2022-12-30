@@ -1,14 +1,14 @@
 {$mode objfpc}{$H+}
 
 uses
-  Interfaces, Classes, SysUtils, Controls, Graphics, FileUtil, LazFileUtils;
+  Interfaces, Classes, SysUtils, Controls, Graphics, FileUtil, regexpr, LazFileUtils, Generics.Collections;
 
 function StreamToHexString(Stream: TMemoryStream): string;
 var
   pb: PByte;
   HexStr: string;
 begin
-  Result := '';
+  Result := '      ';
   HexStr := '';
   PB := Stream.Memory;
   while PB < Stream.Memory + Stream.Size do
@@ -16,7 +16,7 @@ begin
     HexStr += IntToHex(PB^, 2);
     if HexStr.Length mod 64 = 0 then
     begin
-      Result += HexStr + #13#10;
+      Result += HexStr + #13#10'      ';
       HexStr := '';
     end;
     Inc(PB);
@@ -35,16 +35,51 @@ begin
 end;
 
 var
-  Files, SL: TStringList;
+  Files, FormFiles, SL: TStringList;
+  i, Idx: Integer;
   F, ImageName: string;
   Img: TPortableNetworkGraphic;
   Stream: TMemoryStream;
   Imagelist: TImageList;
+  ImageIndices, OldImageIndices: specialize TDictionary<string, Integer>;
+  OldToNewIndexMap: specialize TDictionary<Integer, Integer>;
+  Expr: TRegExpr;
 const
-  ImagesPath: string = '..\streamwriter\Res\Images';
+  OldConstsPath: string = '..\Source\Images.pas';
+  ConstsPath: string = '..\Build\ImageConsts.pas';
+  ImagesPath: string = '..\Resources\Images';
+  SrcPath: string = '..';
 begin
+  ImageIndices := specialize TDictionary<string, Integer>.Create;
+  OldImageIndices := specialize TDictionary<string, Integer>.Create;
+  OldToNewIndexMap := specialize TDictionary<Integer, Integer>.Create;
+
+  Expr := TRegExpr.Create;
+  Expr.Expression := '\s*(\w+) = (\d+);';
+  SL := TStringList.Create;
+  try
+    SL.LoadFromFile(OldConstsPath);
+    for F in SL do
+    begin
+      if Expr.Exec(F) then
+        OldImageIndices.Add(Expr.Match[1], Expr.Match[2].ToInteger);
+    end;
+  finally
+    Expr.Free;
+    SL.Free;
+  end;
+
+  if OldImageIndices.Count = 0 then
+    raise Exception.Create('OldImageIndices.Count = 0');
+
   Files := FindAllFiles(ImagesPath, '*.png', True);
-  
+  if Files.Count = 0 then
+    raise Exception.Create('Files.Count = 0');
+
+  FormFiles := FindAllFiles(SrcPath, '*.lfm', True);
+  if FormFiles.Count = 0 then
+    raise Exception.Create('FormFiles.Count = 0');
+
   Files.CustomSort(@Sort);
 
   SL := TStringList.Create;
@@ -60,15 +95,22 @@ begin
 
       if Img.Width > 16 then
       begin
-        writeln('Skipping %s'.Format([F]));
-        continue;
+        WriteLn('Skipping %s'.Format([F]));
+        Continue;
       end;
 
       ImageName := ExtractFileNameOnly(F).ToUpper.Replace('-', '_', [rfReplaceAll]);
-      SL.Add('const %s = %d;'.Format([ImageName, ImageList.AddMultipleResolutions([Img])]));
+      Idx := ImageList.AddMultipleResolutions([Img]);
+
+      ImageIndices.Add(ImageName, Idx);
+
+      SL.Add('    %s = %d;'.Format([ImageName, Idx]));
     end;
-    
-    SL.SaveToFile('..\Build\ImageConsts.pas');
+
+    if ImageIndices.Count = 0 then
+      raise Exception.Create('ImageIndices.Count = 0');
+
+    SL.SaveToFile(ConstsPath);
 
     ImageList.WriteData(Stream);
     SL.Text := StreamToHexString(Stream);
@@ -78,11 +120,41 @@ begin
     ImageList.WriteAdvData(Stream);
     SL.Text := StreamToHexString(Stream);
     SL.SaveToFile('..\Build\ImageListAdvData.txt');
+
+    for ImageName in OldImageIndices.Keys do
+      if ImageIndices.ContainsKey(ImageName) then
+        OldToNewIndexMap.Add(OldImageIndices[ImageName], ImageIndices[ImageName]);
+
+    Expr := TRegExpr.Create;
+    Expr.Expression := '(?:\.|\s+)ImageIndex = (\d+)';
+    try
+      for F in FormFiles do
+      begin
+        SL.LoadFromFile(F);
+
+        for i := 0 to Pred(SL.Count) do
+          if Expr.Exec(SL[i]) then
+            if OldToNewIndexMap.ContainsKey(Expr.Match[1].ToInteger) then
+            begin
+              Idx := OldToNewIndexMap[Expr.Match[1].ToInteger];
+              SL[i] := SL[i].Replace(Expr.Match[1], Idx.ToString);
+            end else
+              SL[i] := SL[i].Replace(Expr.Match[1], '-1');
+
+        SL.SaveToFile(F);
+      end;
+    finally
+      Expr.Free;
+    end;
   finally
-    Stream.free;
+    Stream.Free;
     SL.Free;
-    Img.free;
+    Img.Free;
     ImageList.Free;
     Files.Free;
+    OldImageIndices.Free;
+    ImageIndices.Free;
+    FormFiles.Free;
+    OldToNewIndexMap.Free;
   end;
 end.
