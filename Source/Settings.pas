@@ -568,6 +568,7 @@ begin
 
     chkSearchSilenceClick(nil);
     chkManualSilenceLevelClick(nil);
+    chkAdjustTrackOffsetClick(nil);
 
     chkAutostart.Checked := FileExists(ConcatPaths([TFunctions.GetShellFolder(CSIDL_STARTUP), AppGlobals.AppName + '.lnk']));
     chkTray.Checked := AppGlobals.Tray;

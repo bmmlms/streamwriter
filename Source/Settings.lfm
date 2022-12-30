@@ -222,15 +222,15 @@ inherited frmSettings: TfrmSettings
         Control.ItemsEx = <        
           item
             Caption = 'Start/stop recording'
-            ImageIndex = 81
+            ImageIndex = 83
           end        
           item
             Caption = 'Listen to stream'
-            ImageIndex = 74
+            ImageIndex = 76
           end        
           item
             Caption = 'Listen to stream (external player)'
-            ImageIndex = 76
+            ImageIndex = 78
           end>
         Control.TabOrder = 0
       end
@@ -251,15 +251,15 @@ inherited frmSettings: TfrmSettings
         Control.ItemsEx = <        
           item
             Caption = 'Start recording'
-            ImageIndex = 81
+            ImageIndex = 83
           end        
           item
             Caption = 'Listen to stream'
-            ImageIndex = 74
+            ImageIndex = 76
           end        
           item
             Caption = 'Listen to stream (external player)'
-            ImageIndex = 76
+            ImageIndex = 78
           end        
           item
             Caption = 'Only add to list'
@@ -434,27 +434,27 @@ inherited frmSettings: TfrmSettings
         Control.ItemsEx = <        
           item
             Caption = 'Save every song'
-            ImageIndex = 119
+            ImageIndex = 121
           end        
           item
             Caption = 'Use wishlist'
-            ImageIndex = 92
+            ImageIndex = 94
           end        
           item
             Caption = 'Use global ignorelist'
-            ImageIndex = 88
+            ImageIndex = 90
           end        
           item
             Caption = 'Use stream ignorelist'
-            ImageIndex = 88
+            ImageIndex = 90
           end        
           item
             Caption = 'Use both ignorelists'
-            ImageIndex = 88
+            ImageIndex = 90
           end        
           item
             Caption = 'Use all lists'
-            ImageIndex = 91
+            ImageIndex = 93
           end>
         Control.OnChange = lstDefaultFilterChange
         Control.TabOrder = 0
@@ -624,7 +624,7 @@ inherited frmSettings: TfrmSettings
             Width = 28
             Anchors = [akRight, akBottom]
             Images = modSharedData.imgImages
-            ImageIndex = 54
+            ImageIndex = 55
             OnClick = btnHelpClick
             ShowHint = True
             ParentShowHint = False
@@ -752,7 +752,7 @@ inherited frmSettings: TfrmSettings
         Control.Color = 15790320
         Control.Flat = True
         Control.Images = modSharedData.imgImages
-        Control.ImageIndex = 39
+        Control.ImageIndex = 40
         Control.MaxLength = 0
         Control.NumGlyphs = 1
         Control.OnButtonClick = btnBrowseAppClick
@@ -1002,7 +1002,7 @@ inherited frmSettings: TfrmSettings
         Control.ButtonWidth = 23
         Control.Flat = True
         Control.Images = modSharedData.imgImages
-        Control.ImageIndex = 39
+        Control.ImageIndex = 40
         Control.MaxLength = 0
         Control.NumGlyphs = 1
         Control.OnButtonClick = btnBrowseClick
@@ -1202,7 +1202,6 @@ inherited frmSettings: TfrmSettings
         BorderSpacing.Left = 18
         Caption = 'Before detected change'
         Checked = True
-        Enabled = False
         OnClick = optAdjustClick
         TabOrder = 4
         TabStop = True
@@ -1215,7 +1214,6 @@ inherited frmSettings: TfrmSettings
         Align = alTop
         BorderSpacing.Left = 18
         Caption = 'After detected change'
-        Enabled = False
         OnClick = optAdjustClick
         TabOrder = 5
       end
@@ -1342,7 +1340,6 @@ inherited frmSettings: TfrmSettings
         BevelOuter = bvNone
         ClientHeight = 21
         ClientWidth = 273
-        Enabled = False
         TabOrder = 8
         object txtAdjustTrackOffset: TSpinEdit
           Left = 0
@@ -1453,7 +1450,7 @@ inherited frmSettings: TfrmSettings
         Control.ButtonWidth = 23
         Control.Flat = True
         Control.Images = modSharedData.imgImages
-        Control.ImageIndex = 39
+        Control.ImageIndex = 40
         Control.MaxLength = 0
         Control.NumGlyphs = 1
         Control.OnButtonClick = btnBrowseLogFileClick

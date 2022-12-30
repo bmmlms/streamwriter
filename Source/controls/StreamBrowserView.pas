@@ -342,11 +342,11 @@ begin
   FItemOpenWebsite := CreateItem('Open &website...', TImages.LINK_GO, nil);
   FItemOpenWebsite.OnClick := PopupMenuClick;
 
+  FItemCopy := CreateItem('&Copy URL', TImages.LINK_PAGE_WHITE_COPY, nil);
+  FItemCopy.OnClick := PopupMenuClick;
+
   FItemBlacklist := CreateItem('Add to &blacklist', TImages.PAGE_WHITE_TRANSMIT_ADD, nil);
   FItemBlacklist.OnClick := PopupMenuClick;
-
-  FItemCopy := CreateItem('&Copy URL', 57, nil);
-  FItemCopy.OnClick := PopupMenuClick;
 
   FItemSave := CreateItem('&Save as playlist...', TImages.PAGE_WHITE_MUSIC_OUT, nil);
   FItemSave.OnClick := PopupMenuClick;

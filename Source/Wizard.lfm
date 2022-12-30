@@ -163,7 +163,7 @@ inherited frmWizard: TfrmWizard
       Control.ButtonWidth = 23
       Control.Flat = True
       Control.Images = modSharedData.imgImages
-      Control.ImageIndex = 39
+      Control.ImageIndex = 40
       Control.MaxLength = 0
       Control.NumGlyphs = 1
       Control.OnButtonClick = cmdBrowseClick

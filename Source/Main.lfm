@@ -294,7 +294,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       end
       object mnuMoveToCategory2: TMenuItem
         Caption = 'Move to &category'
-        ImageIndex = 92
+        ImageIndex = 94
       end
       object N6: TMenuItem
         Caption = '-'
@@ -367,34 +367,34 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object actStart: TAction
       Caption = '&Start recording'
       Hint = 'Start recording'
-      ImageIndex = 81
+      ImageIndex = 83
     end
     object actStop: TAction
       Caption = 'S&top recording'
       Hint = 'Stop recording'
-      ImageIndex = 113
+      ImageIndex = 115
     end
     object actRemove: TAction
       Caption = '&Remove'
       Hint = 'Remove'
-      ImageIndex = 24
+      ImageIndex = -1
     end
     object actExit: TAction
       Caption = '&Exit'
       Hint = 'Exit'
-      ImageIndex = 27
+      ImageIndex = 28
       OnExecute = actExitExecute
     end
     object actSettings: TAction
       Caption = '&Settings...'
       Hint = 'Settings...'
-      ImageIndex = 131
+      ImageIndex = 133
       OnExecute = actSettingsExecute
     end
     object actAbout: TAction
       Caption = '&About...'
       Hint = 'About...'
-      ImageIndex = 54
+      ImageIndex = 55
       OnExecute = actAboutExecute
     end
     object actShowSideBar: TAction
@@ -404,145 +404,145 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object actTuneInStream: TAction
       Caption = 'Open strea&m...'
       Hint = 'Open stream...'
-      ImageIndex = 76
+      ImageIndex = 78
     end
     object actSavePlaylistStream: TAction
       Caption = 'Sa&ve playlist...'
       Hint = 'Save playlist...'
-      ImageIndex = 69
+      ImageIndex = 71
     end
     object actResetData: TAction
       Caption = 'Reset &data'
       Hint = 'Reset data'
-      ImageIndex = 32
+      ImageIndex = 33
     end
     object actHelp: TAction
       Caption = '&Help...'
       Hint = 'Help'
-      ImageIndex = 53
+      ImageIndex = 54
       OnExecute = actHelpExecute
     end
     object actNewCategory: TAction
       Caption = '&New category...'
       Hint = 'New category...'
-      ImageIndex = 43
+      ImageIndex = 44
     end
     object actStreamSettings: TAction
       Caption = 'S&ettings...'
       Hint = 'Settings...'
-      ImageIndex = 133
+      ImageIndex = 135
       OnExecute = actStreamSettingsExecute
     end
     object actOpenWebsite: TAction
       Caption = 'Open &website...'
       Hint = 'Open website...'
-      ImageIndex = 61
+      ImageIndex = 62
     end
     object actLogOn: TAction
       Caption = '&Logon...'
       Hint = 'Logon'
-      ImageIndex = 126
+      ImageIndex = 128
       OnExecute = actLogOnExecute
     end
     object actLogOff: TAction
       Caption = 'L&ogoff'
       Hint = 'Logoff'
-      ImageIndex = 129
+      ImageIndex = 131
       OnExecute = actLogOffExecute
     end
     object actTimers: TAction
       Caption = 'Setup scheduled record&ings...'
       Hint = 'Setup scheduled recordings...'
-      ImageIndex = 120
+      ImageIndex = 122
       OnExecute = actTimersExecute
     end
     object actStopAfterSong: TAction
       AutoCheck = True
       Caption = 'Stop recording after &current title'
       Hint = 'Stop recording after current title'
-      ImageIndex = 114
+      ImageIndex = 116
     end
     object actCopyTitle: TAction
       Caption = '&Copy title to clipboard'
       Hint = 'Copy title to clipboard'
-      ImageIndex = 68
+      ImageIndex = 70
     end
     object actAddToSaveList: TAction
       Caption = 'Add title to manual &wishlist'
       Hint = 'Add title to manual wishlist'
-      ImageIndex = 92
+      ImageIndex = 94
     end
     object actAddToGlobalIgnoreList: TAction
       Caption = 'Add title to &global ignorelist'
       Hint = 'Add title to global ignorelist'
-      ImageIndex = 21
+      ImageIndex = 22
     end
     object actAddToStreamIgnoreList: TAction
       Caption = 'Add title to &stream ignorelist'
       Hint = 'Add title to stream ignorelist'
-      ImageIndex = 23
+      ImageIndex = 24
     end
     object actPlayerDecreaseVolume: TAction
       Caption = '&Decrease volume'
-      ImageIndex = 100
+      ImageIndex = 102
       OnExecute = actPlayerDecreaseVolumeExecute
     end
     object actPlayerIncreaseVolume: TAction
       Caption = '&Increase volume'
-      ImageIndex = 99
+      ImageIndex = 101
       OnExecute = actPlayerIncreaseVolumeExecute
     end
     object actPlayerMuteVolume: TAction
       Caption = '&Mute'
-      ImageIndex = 101
+      ImageIndex = 103
       OnExecute = actPlayerMuteVolumeExecute
     end
     object actPlayerPlayPause: TAction
       Caption = '&Pause/play'
-      ImageIndex = 74
+      ImageIndex = 76
       OnExecute = actPlayerPlayPauseExecute
     end
     object actPlayerStop: TAction
       Caption = '&Stop'
-      ImageIndex = 112
+      ImageIndex = 114
       OnExecute = actPlayerStopExecute
     end
     object actRename: TAction
       Caption = 'Ren&ame'
       Hint = 'Rename'
-      ImageIndex = 117
+      ImageIndex = 119
     end
     object actEqualizer: TAction
       Caption = '&Equalizer...'
       Hint = 'Equalizer...'
-      ImageIndex = 31
+      ImageIndex = 32
       OnExecute = actEqualizerExecute
     end
     object actAutoSettings: TAction
       Caption = 'Settings for &automatic recordings...'
       Hint = 'Settings for automatic recordings...'
-      ImageIndex = 132
+      ImageIndex = 134
       OnExecute = actAutoSettingsExecute
     end
     object actStopPlay: TAction
       Caption = 'St&op'
       Hint = 'Stop'
-      ImageIndex = 112
+      ImageIndex = 114
     end
     object actPause: TAction
       Caption = 'Pa&use'
       Hint = 'Pause'
-      ImageIndex = 73
+      ImageIndex = 75
     end
     object actPlay: TAction
       Caption = '&Play'
       Hint = 'Play'
-      ImageIndex = 74
+      ImageIndex = 76
     end
     object actCheckUpdate: TAction
       Caption = 'Search for &update...'
       Hint = 'Search for update...'
-      ImageIndex = 67
+      ImageIndex = 69
       OnExecute = actCheckUpdateExecute
     end
   end
@@ -620,7 +620,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object mnuMoveToCategory1: TMenuItem
       Caption = 'Move to &category'
-      ImageIndex = 92
+      ImageIndex = 94
     end
     object N15: TMenuItem
       Caption = '-'

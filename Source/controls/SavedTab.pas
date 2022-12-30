@@ -480,7 +480,7 @@ begin
 
   FItemCut := TMenuItem.Create(Self);
   FItemCut.Caption := 'C&ut';
-  FItemCut.ImageIndex := TImages.CUT;
+  FItemCut.ImageIndex := TImages.CUT_RED;
   Items.Add(FItemCut);
 
   FItemCopy := TMenuItem.Create(Self);
@@ -617,7 +617,7 @@ begin
   FCut := TToolButton.Create(Self);
   FCut.Parent := Self;
   FCut.Hint := 'Cut';
-  FCut.ImageIndex := TImages.CUT;
+  FCut.ImageIndex := TImages.CUT_RED;
 
   FCopy := TToolButton.Create(Self);
   FCopy.Parent := Self;
