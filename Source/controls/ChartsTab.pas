@@ -1366,11 +1366,10 @@ begin
   FSearch := TComboBoxExEditable.Create(Self);
   FSearch.Align := alLeft;
   FSearch.Parent := Self;
-  FSearch.Images := modSharedData.imgImages;
   FSearch.Width := 200;
   FSearch.DropDownCount := 16;
 
-  FSearch.ItemsEx.AddItem(_(SEARCH_TOP), 0);
+  FSearch.ItemsEx.AddItem(_(SEARCH_TOP));
 
   FToolbar := TToolbarForcedHorizontal.Create(Self);
   FToolbar.Parent := Self;
@@ -1440,7 +1439,6 @@ begin
 
   ComboItem := FSearch.ItemsEx.Insert(1);
   ComboItem.Caption := Search;
-  ComboItem.ImageIndex := 1;
 
   for i := FSearch.ItemsEx.Count - 1 downto 2 do
     if LowerCase(FSearch.ItemsEx[i].Caption) = LowerCase(Search) then
