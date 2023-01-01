@@ -1,7 +1,7 @@
 ﻿{
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2021 Alexander Nottelmann
+    Copyright (c) 2010-2023 Alexander Nottelmann
 
     Portions created by Ralf Kruse
 
@@ -171,7 +171,7 @@ type
     FStartLine, FEndLine, FPlayLine, FZoomStartLine, FZoomEndLine, FEffectStartLine, FEffectEndLine: Cardinal;
     FDoZoom: Boolean;
 
-    FMouseOldX, FMouseOldY, FMouseMoveStartX: integer;
+    FMouseOldX, FMouseOldY, FMouseMoveStartX: Integer;
     FControlMode: TControlMode;
 
     procedure BuildBuffer;
@@ -223,7 +223,8 @@ type
   TCutFileEvent = procedure(Sender: TObject; Filename: string) of object;
 
   TCutView = class(TPanel)
-  private const
+  private
+  const
     PROGRESSBAR_HEIGHT: Integer = 24;
   private
     FScanThread: TScanThread;
@@ -1396,18 +1397,14 @@ var
   ArrayFrom, ArrayTo: Cardinal;
   L1, L2: Cardinal;
   CS, CE: Cardinal;
-
-  TextWrite: string;
+  TextWrite: string = '';
 begin
-  TextWrite := '';
-
   FWaveBuf.Canvas.Brush.Color := clBlack;
   FWaveBuf.Canvas.FillRect(Classes.Rect(0, 0, FWaveBuf.Width, FWaveBuf.Height));
 
   if (ClientHeight < 2) or (ClientWidth < 2) then
     Exit;
 
-  TextWrite := '';
   case FCutView.FState of
     csLoadError:
       TextWrite := _('Error loading file');

@@ -42,7 +42,7 @@
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="5"/>
       <MinorVersionNr Value="9"/>
-      <StringTable FileDescription="streamWriter" LegalCopyright="Copyright (c) 2010-2021 Alexander Nottelmann et al." OriginalFilename="streamwriter.exe" ProductName="streamWriter" ProductVersion="5.9.0.0-nogit"/>
+      <StringTable FileDescription="streamWriter" LegalCopyright="Copyright (c) 2010-2023 Alexander Nottelmann et al." OriginalFilename="streamwriter.exe" ProductName="streamWriter" ProductVersion="5.9.0.0-nogit"/>
     </VersionInfo>
     <BuildModes Count="2">
       <Item1 Name="Debug" Default="True"/>
