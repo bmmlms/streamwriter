@@ -223,6 +223,8 @@ type
   TCutFileEvent = procedure(Sender: TObject; Filename: string) of object;
 
   TCutView = class(TPanel)
+  private const
+    PROGRESSBAR_HEIGHT: Integer = 24;
   private
     FScanThread: TScanThread;
     FProcessThread: TProcessThread;
@@ -421,7 +423,7 @@ begin
   FProgressBarLoad := TProgressBar.Create(Self);
   FProgressBarLoad.Max := 100;
   FProgressBarLoad.Width := 300;
-  FProgressBarLoad.Height := 24;
+  FProgressBarLoad.Height := MulDiv(TCutView.PROGRESSBAR_HEIGHT, Screen.PixelsPerInch, 96);
   FProgressBarLoad.Parent := Self;
   FProgressBarLoad.AnchorHorizontalCenterTo(Self);
   FProgressBarLoad.AnchorVerticalCenterTo(Self);
@@ -1428,7 +1430,7 @@ begin
     TS := TFunctions.GetTextSize(TextWrite, Canvas.Font);
     FWaveBuf.Canvas.Font.Color := clWhite;
     SetBkMode(FWaveBuf.Canvas.Handle, TRANSPARENT);
-    FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - TS.cx div 2, FWaveBuf.Height div 2 - TS.cy, TextWrite);
+    FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - TS.cx div 2, FWaveBuf.Height div 2 - TS.cy - MulDiv(TCutView.PROGRESSBAR_HEIGHT, Screen.PixelsPerInch, 96) div 2 - 4, TextWrite);
     Exit;
   end;
 
