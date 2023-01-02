@@ -472,12 +472,10 @@ inherited frmSettings: TfrmSettings
       Visible = False
       object lblAppParams: TLabel
         Left = 1
-        Height = 51
-        Top = 249
+        Height = 13
+        Top = 287
         Width = 292
-        Align = alClient
-        Anchors = [akLeft, akRight, akBottom]
-        AutoSize = False
+        Align = alBottom
         Caption = '-'
         ParentColor = False
         WordWrap = True
@@ -485,9 +483,9 @@ inherited frmSettings: TfrmSettings
       object txtAppParams: TMLabeledEdit
         Left = 1
         Height = 37
-        Top = 212
+        Top = 250
         Width = 292
-        Align = alTop
+        Align = alBottom
         Enabled = False
         Caption = 'Parameters:'
         Control.Left = 0
@@ -501,9 +499,9 @@ inherited frmSettings: TfrmSettings
       object chkOnlyIfCut: TCheckBox
         Left = 1
         Height = 19
-        Top = 156
+        Top = 194
         Width = 292
-        Align = alTop
+        Align = alBottom
         Caption = 'Use only if file was cut successfully'
         OnClick = chkOnlyIfCutClick
         TabOrder = 0
@@ -556,17 +554,17 @@ inherited frmSettings: TfrmSettings
       end
       object Panel3: TPanel
         Left = 1
-        Height = 90
+        Height = 128
         Top = 39
         Width = 292
-        Align = alTop
+        Align = alClient
         BevelOuter = bvNone
-        ClientHeight = 90
+        ClientHeight = 128
         ClientWidth = 292
         TabOrder = 3
         object FlowPanel3: TFlowPanel
           Left = 261
-          Height = 90
+          Height = 128
           Top = 0
           Width = 31
           Align = alRight
@@ -632,7 +630,7 @@ inherited frmSettings: TfrmSettings
         end
         object lstPostProcess: TListView
           Left = 0
-          Height = 90
+          Height = 128
           Top = 0
           Width = 261
           Align = alClient
@@ -655,9 +653,9 @@ inherited frmSettings: TfrmSettings
       object Panel4: TPanel
         Left = 1
         Height = 27
-        Top = 129
+        Top = 167
         Width = 292
-        Align = alTop
+        Align = alBottom
         AutoSize = True
         BevelOuter = bvNone
         ClientHeight = 27
@@ -668,7 +666,7 @@ inherited frmSettings: TfrmSettings
           Height = 27
           Top = 0
           Width = 199
-          Align = alClient
+          Align = alRight
           BevelOuter = bvNone
           ControlList = <          
             item
@@ -738,9 +736,9 @@ inherited frmSettings: TfrmSettings
       object txtApp: TMLabeledEditButton
         Left = 1
         Height = 37
-        Top = 175
+        Top = 213
         Width = 292
-        Align = alTop
+        Align = alBottom
         Enabled = False
         Caption = 'Path to application:'
         Control.Left = 0
