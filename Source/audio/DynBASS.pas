@@ -160,18 +160,22 @@ type
 
   TBassDevice = class
   private
-    FID: Cardinal;
+    FIndex: Cardinal;
+    FID: string;
     FName: string;
     FIsDefault: Boolean;
     FIsLoopback: Boolean;
   public
-    constructor Create(ID: Cardinal; Name: string; IsDefault, IsLoopback: Boolean);
+    constructor Create(const Index: Cardinal; const ID, Name: string; const IsDefault, IsLoopback: Boolean);
 
-    property ID: Cardinal read FID;
-    property Name: string read FName write FName;
+    property Index: Cardinal read FIndex;
+    property ID: string read FID;
+    property Name: string read FName;
     property IsDefault: Boolean read FIsDefault;
     property IsLoopback: Boolean read FIsLoopback;
   end;
+
+  { TBassLoader }
 
   TBassLoader = class
   private
@@ -194,7 +198,6 @@ type
 
     FWASAPIInfo: BASS_WASAPI_INFO;
 
-    procedure EnumDevices;
     procedure EnumWASAPIDevices;
     procedure UninitializeBass;
   public
@@ -205,6 +208,8 @@ type
     destructor Destroy; override;
     function InitializeBass(Handle: THandle; LoadAAC, LoadMixer, LoadEnc, LoadWASAPI: Boolean): Boolean;
     function InitializeWASAPIDevice(Device: Integer; InputProc: WASAPIPROC; User: Pointer): Boolean;
+    procedure EnumDevices;
+    procedure SetDevice(ID: string);
 
     property EffectsAvailable: Boolean read FEffectsAvailable;
     property Devices: TList<TBassDevice> read FDevices;
@@ -301,35 +306,20 @@ begin
   inherited;
 end;
 
-procedure TBassLoader.EnumDevices;
-var
-  i: Integer;
-  FoundDefault: Boolean = False;
-  Info: BASS_DEVICEINFO;
-begin
-  i := 1;
-  while BASSGetDeviceInfo(i, Info) do
-  begin
-    if (Info.flags and BASS_DEVICE_ENABLED) = BASS_DEVICE_ENABLED then
-    begin
-      FDevices.Add(TBassDevice.Create(i, Info.Name, (not FoundDefault) and ((Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT), False));
-      if not FoundDefault then
-        FoundDefault := FDevices.Last.IsDefault;
-    end;
-    Inc(i);
-  end;
-end;
-
 procedure TBassLoader.EnumWASAPIDevices;
 var
   i: Integer;
   Info: BASS_WASAPI_DEVICEINFO;
 begin
+  for i := 0 to FWASAPIDevices.Count - 1 do
+    FWASAPIDevices[i].Free;
+  FWASAPIDevices.Clear;
+
   i := 0;
   while BASSWASAPIGetDeviceInfo(i, Info) do
   begin
     if (Info.flags and BASS_DEVICE_INPUT > 0) and (Info.flags and BASS_DEVICE_ENABLED > 0) then
-      FWASAPIDevices.Add(TBassDevice.Create(i, Info.Name, (Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT, (Info.flags and BASS_DEVICE_LOOPBACK) = BASS_DEVICE_LOOPBACK));
+      FWASAPIDevices.Add(TBassDevice.Create(i, Info.id, Info.Name, (Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT, (Info.flags and BASS_DEVICE_LOOPBACK) = BASS_DEVICE_LOOPBACK));
     Inc(i);
   end;
 end;
@@ -459,7 +449,7 @@ begin
     EnumDevices;
 
     for i := 0 to FDevices.Count - 1 do
-      if BASSInit(FDevices[i].ID, 44100, 0, Handle, nil) then
+      if BASSInit(FDevices[i].Index, 44100, 0, Handle, nil) then
       begin
         BassLoaded := True;
         DeviceAvailable := True;
@@ -545,6 +535,43 @@ begin
   Result := True;
 end;
 
+procedure TBassLoader.EnumDevices;
+var
+  i: Integer;
+  FoundDefault: Boolean = False;
+  Info: BASS_DEVICEINFO;
+begin
+  for i := 0 to FDevices.Count - 1 do
+    FDevices[i].Free;
+  FDevices.Clear;
+
+  i := 1;
+  while BASSGetDeviceInfo(i, Info) do
+  begin
+    if (Info.flags and BASS_DEVICE_ENABLED) = BASS_DEVICE_ENABLED then
+    begin
+      FDevices.Add(TBassDevice.Create(i, IfThen<string>(Info.driver = '', 'Default', Info.driver) , Info.Name, (not FoundDefault) and ((Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT), False));
+      if not FoundDefault then
+        FoundDefault := FDevices.Last.IsDefault;
+    end;
+    Inc(i);
+  end;
+end;
+
+procedure TBassLoader.SetDevice(ID: string);
+var
+  Device: TBassDevice;
+begin
+  for Device in FDevices do
+    if Device.ID = ID then
+    begin
+      BASSSetDevice(Device.Index);
+      Exit;
+    end;
+
+  BASSSetDevice(0);
+end;
+
 procedure TBassLoader.UninitializeBass;
 var
   i: Integer;
@@ -563,7 +590,7 @@ begin
     begin
       for i := 0 to FDevices.Count - 1 do
       begin
-        BASSSetDevice(FDevices[i].FID);
+        BASSSetDevice(FDevices[i].Index);
         BASSFree;
       end;
       FreeLibrary(FDLLHandle);
@@ -585,10 +612,11 @@ end;
 
 { TBassDevice }
 
-constructor TBassDevice.Create(ID: Cardinal; Name: string; IsDefault, IsLoopback: Boolean);
+constructor TBassDevice.Create(const Index: Cardinal; const ID, Name: string; const IsDefault, IsLoopback: Boolean);
 begin
   inherited Create;
 
+  FIndex := Index;
   FID := ID;
   FName := Name;
   FIsDefault := IsDefault;

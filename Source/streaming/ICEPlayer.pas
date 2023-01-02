@@ -195,7 +195,7 @@ begin
   begin
     AppGlobals.Lock;
     try
-      BASSSetDevice(AppGlobals.SoundDevice);
+      Bass.SetDevice(AppGlobals.SoundDevice);
     finally
       AppGlobals.Unlock;
     end;

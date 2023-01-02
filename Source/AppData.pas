@@ -83,7 +83,7 @@ type
     FPlayerShuffle: Boolean;
     FUserWasSetup: Boolean;
     FUser, FPass: string;
-    FSoundDevice: Cardinal;
+    FSoundDevice: string;
     FAutoTuneInMinQuality: Integer;
     FAutoTuneInFormat: Cardinal;
     FLimitSpeed: Boolean;
@@ -241,8 +241,8 @@ type
     property User: string read FUser write FUser;
     // The password to authenticate at streamWriter's server
     property Pass: string read FPass write FPass;
-    // The index of the BASS-sound-device to use for playback
-    property SoundDevice: Cardinal read FSoundDevice write FSoundDevice;
+    // The BASS sound device to use for playback
+    property SoundDevice: string read FSoundDevice write FSoundDevice;
     // The hotkey to trigger "Play"
     property ShortcutPlay: Cardinal read FShortcutPlay write FShortcutPlay;
     // The hotkey to trigger "Pause"
@@ -668,12 +668,7 @@ begin
       FPass := '';
     end;
 
-  FStorage.Read('SoundDevice', FSoundDevice, 0);
-
-  // Default-Device is now available in BASS, so set it for every user to this device
-  // after upgrading...
-  if FLastUsedDataVersion < 61 then
-    FSoundDevice := 0;
+  FStorage.Read('SoundDevice', FSoundDevice, '');
 
   FStorage.Read('ShortcutPlay', FShortcutPlay, 0);
   FStorage.Read('ShortcutPause', FShortcutPause, 0);
