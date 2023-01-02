@@ -84,7 +84,6 @@ uses
   StatusBar,
   StreamBrowserView,
   StreamHelper,
-  StreamInfoView,
   SysUtils,
   Tabs,
   Timers,

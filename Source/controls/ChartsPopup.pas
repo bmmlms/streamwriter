@@ -75,7 +75,7 @@ begin
   Items.Add(FItemPlayStream);
 
   FItemPlayStreamExternal := TMenuItem.Create(Self);
-  FItemPlayStreamExternal.Caption := 'P&lay stream (external player)';
+  FItemPlayStreamExternal.Caption := 'Play stream (e&xternal player)';
   FItemPlayStreamExternal.ImageIndex := TImages.PLAY_GO;
   Items.Add(FItemPlayStreamExternal);
 

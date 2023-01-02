@@ -807,10 +807,10 @@ begin
   else
     FDefaultAction := TClientActions(DefaultActionTmp);
 
-  if (DefaultActionBrowser > Ord(High(TStreamOpenActions))) or (DefaultActionBrowser < Ord(Low(TStreamOpenActions))) then
-    FDefaultActionBrowser := oaStart
+  if TStreamOpenActions(DefaultActionBrowser) in [oaStart, oaPlay, oaAdd] then
+    FDefaultActionBrowser := TStreamOpenActions(DefaultActionBrowser)
   else
-    FDefaultActionBrowser := TStreamOpenActions(DefaultActionBrowser);
+    FDefaultActionBrowser := oaStart;
 
   FStorage.Read('EQEnabled', FEQEnabled, False, 'Equalizer');
   for i := 0 to High(FEQGain) do

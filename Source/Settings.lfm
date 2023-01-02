@@ -240,7 +240,7 @@ inherited frmSettings: TfrmSettings
         Top = 293
         Width = 291
         Align = alBottom
-        Caption = 'Default action on doubleclick in browser:'
+        Caption = 'Default action for newly added streams:'
         Control.Left = 0
         Control.Height = 22
         Control.Top = 16
@@ -256,10 +256,6 @@ inherited frmSettings: TfrmSettings
           item
             Caption = 'Listen to stream'
             ImageIndex = 77
-          end        
-          item
-            Caption = 'Listen to stream (external player)'
-            ImageIndex = 79
           end        
           item
             Caption = 'Only add to list'

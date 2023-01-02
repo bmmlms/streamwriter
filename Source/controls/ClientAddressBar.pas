@@ -3,6 +3,7 @@ unit ClientAddressBar;
 interface
 
 uses
+  AppData,
   Buttons,
   Classes,
   Controls,
@@ -10,13 +11,18 @@ uses
   ExtCtrls,
   Graphics,
   Images,
+  LanguageObjects,
   SharedData,
   StationCombo,
   StdCtrls,
-  SysUtils;
+  SysUtils,
+  TypeDefs;
 
 type
-  TClientAddressBar = class(TPanel)
+
+  { TClientAddressBar }
+
+  TClientAddressBar = class(TPanel, IPostTranslatable)
   private
     FLabel: TLabel;
     FStations: TMStationCombo;
@@ -32,6 +38,8 @@ type
     procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
   public
     constructor Create(AOwner: TComponent); override;
+
+    procedure PostTranslate;
 
     property Stations: TMStationCombo read FStations;
     property OnStart: TNotifyEvent read FOnStart write FOnStart;
@@ -57,9 +65,8 @@ begin
   FStart.Parent := Self;
   FStart.Align := alRight;
   FStart.Width := 24;
-  FStart.Height := 22;
   FStart.Flat := True;
-  FStart.Hint := 'Add and start recording';
+  FStart.Hint := 'Add';
   FStart.ShowHint := True;
   FStart.OnClick := FStartClick;
   FStart.Images := modSharedData.imgImages;
@@ -79,6 +86,17 @@ begin
   FDropTarget.OnDrop := DropTargetDrop;
 
   FStart.Enabled := False;
+end;
+
+procedure TClientAddressBar.PostTranslate;
+begin
+  case AppGlobals.DefaultActionBrowser of
+    oaPlay: FStart.ImageIndex := TImages.PLAY_BLUE;
+    oaStart: FStart.ImageIndex := TImages.RECORD_RED;
+    oaAdd: FStart.ImageIndex := TImages.ADD;
+    else
+      raise Exception.Create('Invalid DefaultActionBrowser');
+  end;
 end;
 
 procedure TClientAddressBar.DropTargetDrop(Sender: TObject; ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);

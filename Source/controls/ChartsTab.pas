@@ -1100,9 +1100,11 @@ procedure TChartsTree.KeyPress(var Key: Char);
 begin
   inherited;
 
-  if (SelectedCount > 0) and ((Key = #13) or (Key = #32)) then
+  if Key = #13 then
   begin
-    ExecDefaultAction;
+    if SelectedCount > 0 then
+      ExecDefaultAction;
+
     Key := #0;
   end;
 end;

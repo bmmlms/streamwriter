@@ -310,7 +310,7 @@ begin
   FItemPlay := CreateItem('&Play stream', TImages.PLAY_BLUE, nil);
   FItemPlay.OnClick := PopupMenuClick;
 
-  FItemOpen := CreateItem('P&lay stream (external player)', TImages.PLAY_GO, nil);
+  FItemOpen := CreateItem('Play stream (e&xternal player)', TImages.PLAY_GO, nil);
   FItemOpen.OnClick := PopupMenuClick;
 
   FItemAdd := CreateItem('&Add stream', TImages.ADD, nil);

@@ -121,7 +121,6 @@ type
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
-    procedure KeyPress(var Key: Char); override;
     function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
     procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
     procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
@@ -749,20 +748,15 @@ begin
 end;
 
 procedure TMClientView.KeyDown(var Key: Word; Shift: TShiftState);
-begin
-  if Key = VK_SPACE then
-    Key := 0;
-  inherited;
-end;
-
-procedure TMClientView.KeyPress(var Key: Char);
 var
   Node: PVirtualNode;
   NodeData: PClientNodeData;
   Nodes: TNodeArray;
 begin
-  if Key = ' ' then
+  if Key = VK_SPACE then
   begin
+    Key := 0;
+
     Nodes := GetNodes(ntAll, False);
     for Node in Nodes do
     begin
@@ -773,11 +767,12 @@ begin
         SelectNodes(Node, Node, False);
         FocusedNode := Node;
         ScrollIntoView(Node, True);
-        Exit;
+        Break;
       end;
     end;
-  end else
-    inherited;
+  end;
+
+  inherited;
 end;
 
 procedure TMClientView.MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);

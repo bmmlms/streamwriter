@@ -1125,7 +1125,7 @@ procedure TClientTab.FClientViewKeyPress(Sender: TObject; var Key: Char);
 var
   Dummy: THitInfo;
 begin
-  if (Key = #13) or (Key = #32) then
+  if Key = #13 then
   begin
     Dummy.HitPositions := [hiOnItem];
     FClientViewNodeDblClick(FClientView, Dummy);

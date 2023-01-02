@@ -524,7 +524,14 @@ var
   i: Integer;
 begin
   lstDefaultAction.Control.ItemIndex := Integer(AppGlobals.DefaultAction);
-  lstDefaultActionBrowser.Control.ItemIndex := Integer(AppGlobals.DefaultActionBrowser);
+
+  case AppGlobals.DefaultActionBrowser of
+    oaPlay: lstDefaultActionBrowser.Control.ItemIndex := 1;
+    oaAdd: lstDefaultActionBrowser.Control.ItemIndex := 2;
+    else
+      lstDefaultActionBrowser.Control.ItemIndex := 0;
+  end;
+
   lstDefaultFilter.Control.ItemIndex := Integer(Settings.Filter);
   chkSeparateTracks.Checked := Settings.SeparateTracks;
   chkSaveStreamsToDisk.Checked := not Settings.SaveToMemory;
@@ -746,7 +753,13 @@ begin
       AppGlobals.MinDiskSpace := txtMinDiskSpace.Control.Value;
       AppGlobals.LogFile := txtLogFile.Control.Text;
       AppGlobals.DefaultAction := TClientActions(lstDefaultAction.Control.ItemIndex);
-      AppGlobals.DefaultActionBrowser := TStreamOpenActions(lstDefaultActionBrowser.Control.ItemIndex);
+
+      case lstDefaultActionBrowser.Control.ItemIndex of
+        1: AppGlobals.DefaultActionBrowser := oaPlay;
+        2: AppGlobals.DefaultActionBrowser := oaAdd;
+        else
+          AppGlobals.DefaultActionBrowser := oaStart;
+      end;
 
       AppGlobals.ShortcutPlay := LongWord(lstHotkeys.Items[0].Data);
       AppGlobals.ShortcutPause := LongWord(lstHotkeys.Items[1].Data);
