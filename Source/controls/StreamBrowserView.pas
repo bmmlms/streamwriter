@@ -225,7 +225,6 @@ type
     procedure DoPaintNode(var PaintInfo: TVTPaintInfo); override;
     function DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle): string; override;
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
-    procedure DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer); override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     procedure DoBeforeCellPaint(Canvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect); override;
     function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
@@ -281,11 +280,12 @@ begin
 
   TreeOptions.SelectionOptions := [toDisableDrawSelection, toRightClickSelect, toFullRowSelect, toMultiSelect];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
-  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop] + [toFullRowDrag, toVariableNodeHeight];
+  TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop] + [toFullRowDrag];
   Header.Options := Header.Options + [hoShowSortGlyphs, hoVisible, hoOwnerDraw] - [hoDrag];
   DragMode := dmAutomatic;
   ShowHint := True;
   HintMode := hmTooltip;
+  DefaultNodeHeight := TFunctions.GetTextSize('Wyg', Font).cy * 2 + 6;
 
   ScrollBarOptions.ScrollBars := ssVertical;
   ScrollBarOptions.AlwaysVisible := True;
@@ -432,13 +432,6 @@ begin
     0:
       Text := StringReplace(NodeData.Data.Name, '&', '&&', [rfReplaceAll]) // Wegen & und dem Shortcut..
   end;
-end;
-
-procedure TMStreamTree.DoMeasureItem(TargetCanvas: TCanvas; Node: PVirtualNode; var NodeHeight: Integer);
-begin
-  inherited;
-
-  NodeHeight := TFunctions.GetTextSize('Wyg', Font).cy + 6 + TFunctions.GetTextSize('Wyg', Font).cy;
 end;
 
 procedure TMStreamTree.DoPaintNode(var PaintInfo: TVTPaintInfo);
