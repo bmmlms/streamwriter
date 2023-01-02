@@ -304,13 +304,18 @@ end;
 procedure TBassLoader.EnumDevices;
 var
   i: Integer;
+  FoundDefault: Boolean = False;
   Info: BASS_DEVICEINFO;
 begin
   i := 1;
   while BASSGetDeviceInfo(i, Info) do
   begin
     if (Info.flags and BASS_DEVICE_ENABLED) = BASS_DEVICE_ENABLED then
-      FDevices.Add(TBassDevice.Create(i, Info.Name, (Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT, False));
+    begin
+      FDevices.Add(TBassDevice.Create(i, Info.Name, (not FoundDefault) and ((Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT), False));
+      if not FoundDefault then
+        FoundDefault := FDevices.Last.IsDefault;
+    end;
     Inc(i);
   end;
 end;
