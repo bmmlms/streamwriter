@@ -571,7 +571,7 @@ end;
 function TCutView.GetUndoFilename: string;
 begin
   repeat
-    Result := ConcatPaths([AppGlobals.TempDir, 'UNDO_' + IntToStr(GetTickCount) + '_' + TFunctions.RemoveFileExt(ExtractFileName(FOriginalFilename)) + '_cut.wav']);
+    Result := ConcatPaths([AppGlobals.TempDir, 'UNDO_%s.wav'.Format([TGUID.NewGuid.ToString(True)])]);
   until not FileExists(Result);
 end;
 
