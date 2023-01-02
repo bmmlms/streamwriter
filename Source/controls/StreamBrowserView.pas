@@ -524,7 +524,7 @@ begin
   begin
     Entries := GetSelected;
     if (Length(Entries) > 0) and Assigned(FOnAction) then
-      case AppGlobals.DefaultActionBrowser of
+      case AppGlobals.DefaultActionNewStream of
         oaStart:
           FOnAction(Self, oaStart, Entries);
         oaPlay:
@@ -580,7 +580,7 @@ begin
   inherited;
   if Key = #13 then
   begin
-    case AppGlobals.DefaultActionBrowser of
+    case AppGlobals.DefaultActionNewStream of
       oaStart:
         FItemStart.Click;
       oaPlay:

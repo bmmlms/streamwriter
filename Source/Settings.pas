@@ -192,7 +192,7 @@ type
     lblIgnoreTitles: TLabel;
     lblPanelCut: TLabel;
     lstDefaultAction: TMLabeledComboBoxEx;
-    lstDefaultActionBrowser: TMLabeledComboBoxEx;
+    lstDefaultActionNewStream: TMLabeledComboBoxEx;
     lstDefaultFilter: TMLabeledComboBoxEx;
     lstFormat: TMLabeledComboBoxEx;
     lstHotkeys: TListView;
@@ -347,7 +347,7 @@ type
     FOptionChanging: Boolean;
     FBrowseDir: Boolean;
     FDefaultActionIdx: Integer;
-    FDefaultActionBrowserIdx: Integer;
+    FDefaultActionNewStreamIdx: Integer;
     FDefaultFilterIdx: Integer;
     FOutputFormatIdx: Integer;
     FMinQualityIdx: Integer;
@@ -525,11 +525,11 @@ var
 begin
   lstDefaultAction.Control.ItemIndex := Integer(AppGlobals.DefaultAction);
 
-  case AppGlobals.DefaultActionBrowser of
-    oaPlay: lstDefaultActionBrowser.Control.ItemIndex := 1;
-    oaAdd: lstDefaultActionBrowser.Control.ItemIndex := 2;
+  case AppGlobals.DefaultActionNewStream of
+    oaPlay: lstDefaultActionNewStream.Control.ItemIndex := 1;
+    oaAdd: lstDefaultActionNewStream.Control.ItemIndex := 2;
     else
-      lstDefaultActionBrowser.Control.ItemIndex := 0;
+      lstDefaultActionNewStream.Control.ItemIndex := 0;
   end;
 
   lstDefaultFilter.Control.ItemIndex := Integer(Settings.Filter);
@@ -754,11 +754,11 @@ begin
       AppGlobals.LogFile := txtLogFile.Control.Text;
       AppGlobals.DefaultAction := TClientActions(lstDefaultAction.Control.ItemIndex);
 
-      case lstDefaultActionBrowser.Control.ItemIndex of
-        1: AppGlobals.DefaultActionBrowser := oaPlay;
-        2: AppGlobals.DefaultActionBrowser := oaAdd;
+      case lstDefaultActionNewStream.Control.ItemIndex of
+        1: AppGlobals.DefaultActionNewStream := oaPlay;
+        2: AppGlobals.DefaultActionNewStream := oaAdd;
         else
-          AppGlobals.DefaultActionBrowser := oaStart;
+          AppGlobals.DefaultActionNewStream := oaStart;
       end;
 
       AppGlobals.ShortcutPlay := LongWord(lstHotkeys.Items[0].Data);
@@ -1305,7 +1305,7 @@ begin
   inherited;
 
   FDefaultActionIdx := lstDefaultAction.Control.ItemIndex;
-  FDefaultActionBrowserIdx := lstDefaultActionBrowser.Control.ItemIndex;
+  FDefaultActionNewStreamIdx := lstDefaultActionNewStream.Control.ItemIndex;
   FDefaultFilterIdx := lstDefaultFilter.Control.ItemIndex;
   FOutputFormatIdx := lstOutputFormat.Control.ItemIndex;
   FMinQualityIdx := lstMinQuality.Control.ItemIndex;
@@ -1341,7 +1341,7 @@ begin
   BuildHotkeys;
 
   lstDefaultAction.Control.ItemIndex := FDefaultActionIdx;
-  lstDefaultActionBrowser.Control.ItemIndex := FDefaultActionBrowserIdx;
+  lstDefaultActionNewStream.Control.ItemIndex := FDefaultActionNewStreamIdx;
   lstDefaultFilter.Control.ItemIndex := FDefaultFilterIdx;
   lstOutputFormat.Control.ItemIndex := FOutputFormatIdx;
   lstMinQuality.Control.ItemIndex := FMinQualityIdx;

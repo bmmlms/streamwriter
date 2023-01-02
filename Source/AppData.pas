@@ -77,7 +77,7 @@ type
     FMinDiskSpace: Integer;
     FLogFile: string;
     FDefaultAction: TClientActions;
-    FDefaultActionBrowser: TStreamOpenActions;
+    FDefaultActionNewStream: TStreamOpenActions;
     FPlayerVolume: Integer;
     FPlayerVolumeBeforeMute: Integer;
     FPlayerShuffle: Boolean;
@@ -228,8 +228,8 @@ type
     property LogFile: string read FLogFile write FLogFile;
     // The default action to execute when double-clicking a stream in the mainview
     property DefaultAction: TClientActions read FDefaultAction write FDefaultAction;
-    // The default action to execute when double-clicking a stream in the streamview
-    property DefaultActionBrowser: TStreamOpenActions read FDefaultActionBrowser write FDefaultActionBrowser;
+    // The default action performed for newly added streams
+    property DefaultActionNewStream: TStreamOpenActions read FDefaultActionNewStream write FDefaultActionNewStream;
     // The volume of the player
     property PlayerVolume: Integer read FPlayerVolume write FPlayerVolume;
     // The volume of the player before muting the volume
@@ -587,7 +587,7 @@ end;
 // Loads everything streamWriter needs to know for startup
 procedure TAppData.Load;
 var
-  i, DefaultActionTmp, DefaultActionBrowser: Integer;
+  i, DefaultActionTmp, DefaultActionNewStream: Integer;
   TmpStr: string;
   GUID: TGUID;
 begin
@@ -653,7 +653,7 @@ begin
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
   FStorage.Read('LogFile', FLogFile, '');
   FStorage.Read('DefaultAction', DefaultActionTmp, Integer(caStartStop));
-  FStorage.Read('DefaultActionBrowser', DefaultActionBrowser, Integer(oaStart));
+  FStorage.Read('DefaultActionNewStream', DefaultActionNewStream, Integer(oaStart));
   FStorage.Read('PlayerVolume', FPlayerVolume, 50);
   FStorage.Read('PlayerVolumeBeforeMute', FPlayerVolumeBeforeMute, 50);
   FStorage.Read('PlayerShuffle', FPlayerShuffle, False);
@@ -807,10 +807,10 @@ begin
   else
     FDefaultAction := TClientActions(DefaultActionTmp);
 
-  if TStreamOpenActions(DefaultActionBrowser) in [oaStart, oaPlay, oaAdd] then
-    FDefaultActionBrowser := TStreamOpenActions(DefaultActionBrowser)
+  if TStreamOpenActions(DefaultActionNewStream) in [oaStart, oaPlay, oaAdd] then
+    FDefaultActionNewStream := TStreamOpenActions(DefaultActionNewStream)
   else
-    FDefaultActionBrowser := oaStart;
+    FDefaultActionNewStream := oaStart;
 
   FStorage.Read('EQEnabled', FEQEnabled, False, 'Equalizer');
   for i := 0 to High(FEQGain) do
@@ -934,7 +934,7 @@ begin
   FStorage.Write('MinDiskSpace', FMinDiskSpace);
   FStorage.Write('LogFile', FLogFile);
   FStorage.Write('DefaultAction', Integer(FDefaultAction));
-  FStorage.Write('DefaultActionBrowser', Integer(FDefaultActionBrowser));
+  FStorage.Write('DefaultActionNewStream', Integer(FDefaultActionNewStream));
   FStorage.Write('PlayerVolume', FPlayerVolume);
   FStorage.Write('PlayerVolumeBeforeMute', FPlayerVolumeBeforeMute);
   FStorage.Write('PlayerShuffle', FPlayerShuffle);

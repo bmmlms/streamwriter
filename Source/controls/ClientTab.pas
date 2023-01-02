@@ -703,11 +703,11 @@ var
   Entry: TRecentEntry;
 begin
   if not Assigned(FAddressBar.Stations.FocusedItemData) then
-    StartStreaming(TStartStreamingInfo.Create(0, 0, '', FAddressBar.Stations.Text, nil, nil, nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere)
+    StartStreaming(TStartStreamingInfo.Create(0, 0, '', FAddressBar.Stations.Text, nil, nil, nil), AppGlobals.DefaultActionNewStream, nil, amNoWhere)
   else
   begin
     Entry := TRecentEntry(FAddressBar.Stations.FocusedItemData);
-    StartStreaming(TStartStreamingInfo.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, nil, nil, nil), AppGlobals.DefaultActionBrowser, nil, amNoWhere);
+    StartStreaming(TStartStreamingInfo.Create(Entry.ID, Entry.Bitrate, Entry.Name, Entry.StartURL, nil, nil, nil), AppGlobals.DefaultActionNewStream, nil, amNoWhere);
   end;
 end;
 
@@ -1080,7 +1080,7 @@ end;
 
 procedure TClientTab.FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string; URLs, RegExes, IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 begin
-  StartStreaming(TStartStreamingInfo.Create(ID, Bitrate, Name, URL, URLs, RegExes, IgnoreTitles), AppGlobals.DefaultActionBrowser, Node, Mode);
+  StartStreaming(TStartStreamingInfo.Create(ID, Bitrate, Name, URL, URLs, RegExes, IgnoreTitles), AppGlobals.DefaultActionNewStream, Node, Mode);
 end;
 
 procedure TClientTab.MessageReceived(Msg: TMessageBase);

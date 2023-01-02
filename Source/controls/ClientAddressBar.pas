@@ -90,12 +90,12 @@ end;
 
 procedure TClientAddressBar.PostTranslate;
 begin
-  case AppGlobals.DefaultActionBrowser of
+  case AppGlobals.DefaultActionNewStream of
     oaPlay: FStart.ImageIndex := TImages.PLAY_BLUE;
     oaStart: FStart.ImageIndex := TImages.RECORD_RED;
     oaAdd: FStart.ImageIndex := TImages.ADD;
     else
-      raise Exception.Create('Invalid DefaultActionBrowser');
+      raise Exception.Create('Invalid DefaultActionNewStream');
   end;
 end;
 

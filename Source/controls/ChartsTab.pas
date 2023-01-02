@@ -968,7 +968,7 @@ begin
         NodesData[i].Stream.Stream.URLs, NodesData[i].Stream.Stream.RegExes, NodesData[i].Stream.Stream.IgnoreTitles);
     end;
 
-  case AppGlobals.DefaultActionBrowser of
+  case AppGlobals.DefaultActionNewStream of
     oaStart:
       TChartsTab(P).FOnAddStreams(Self, Info, oaStart);
     oaPlay:
