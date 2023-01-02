@@ -234,7 +234,7 @@ inherited frmSettings: TfrmSettings
           end>
         Control.TabOrder = 0
       end
-      object lstDefaultActionBrowser: TMLabeledComboBoxEx
+      object lstDefaultActionNewStream: TMLabeledComboBoxEx
         Left = 1
         Height = 38
         Top = 293
