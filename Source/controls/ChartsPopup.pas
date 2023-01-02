@@ -58,7 +58,7 @@ begin
   Items.AddSeparator;
 
   FItemEditAndAddToWishlist := TMenuItem.Create(Self);
-  FItemEditAndAddToWishlist.Caption := '&Edit and add to manual wishlist';
+  FItemEditAndAddToWishlist.Caption := '&Edit and add to manual wishlist...';
   FItemEditAndAddToWishlist.ImageIndex := TImages.SCRIPT_HEART_ADD;
   Items.Add(FItemEditAndAddToWishlist);
 

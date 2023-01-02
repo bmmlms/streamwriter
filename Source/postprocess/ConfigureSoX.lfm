@@ -1,13 +1,14 @@
 object frmConfigureSoX: TfrmConfigureSoX
   Left = 0
-  Height = 253
+  Height = 289
   Top = 0
-  Width = 409
+  Width = 144
+  AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Configure SoX'
-  ClientHeight = 253
-  ClientWidth = 409
+  ClientHeight = 289
+  ClientWidth = 144
   Color = clBtnFace
   Font.Color = clWindowText
   Font.Height = -11
@@ -52,243 +53,223 @@ object frmConfigureSoX: TfrmConfigureSoX
     0000
   }
   KeyPreview = True
-  OnKeyDown = FormKeyDown
-  OnShow = FormShow
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.2'
+  LCLVersion = '2.2.4.0'
   object pnlNav: TPanel
     Left = 0
     Height = 40
-    Top = 213
-    Width = 409
+    Top = 249
+    Width = 144
     Align = alBottom
     BevelOuter = bvNone
     ClientHeight = 40
-    ClientWidth = 409
-    TabOrder = 1
+    ClientWidth = 144
+    TabOrder = 0
     object Bevel2: TBevel
-      Left = 4
-      Height = 5
-      Top = 4
-      Width = 401
+      Left = 0
+      Height = 4
+      Top = 0
+      Width = 144
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 308
-      Height = 27
-      Top = 9
-      Width = 97
+      Left = 44
+      Height = 36
+      Top = 4
+      Width = 100
       Align = alRight
       Caption = '&OK'
+      Constraints.MinHeight = 35
+      Constraints.MinWidth = 100
       OnClick = btnOKClick
       TabOrder = 0
     end
   end
-  object pnlConfigure: TPanel
+  object GroupBox1: TGroupBox
     Left = 0
-    Height = 213
+    Height = 106
     Top = 0
-    Width = 409
-    BevelOuter = bvNone
-    ClientHeight = 213
-    ClientWidth = 409
-    TabOrder = 0
-    Visible = False
-    object GroupBox1: TGroupBox
-      Left = 4
-      Height = 157
-      Top = 4
-      Width = 197
-      Caption = ' Fadein/Fadeout '
-      ClientHeight = 157
-      ClientWidth = 197
-      TabOrder = 0
-      object txtFadeoutStart: TLabeledEdit
-        Left = 24
+    Width = 144
+    Align = alTop
+    AutoSize = True
+    Caption = ' Fadein/Fadeout '
+    ClientHeight = 88
+    ClientWidth = 140
+    TabOrder = 1
+    object txtFadeinStart: TMLabeledSpinEdit
+      Left = 0
+      Height = 25
+      Top = 19
+      Width = 140
+      Align = alTop
+      Control.Left = 0
+      Control.Height = 21
+      Control.Top = 4
+      Control.Width = 50
+      Control.Align = alLeft
+      Control.MaxValue = 100
+      Control.TabOrder = 0
+      object Label1: TLabel
+        Left = 53
         Height = 21
-        Top = 60
-        Width = 53
-        EditLabel.Height = 13
-        EditLabel.Width = 90
-        EditLabel.Caption = 'Length in seconds:'
-        Enabled = False
-        MaxLength = 2
-        TabOrder = 1
-      end
-      object chkFadeoutStart: TCheckBox
-        Left = 8
-        Height = 21
-        Top = 20
-        Width = 181
-        Caption = 'Add fadein at beginning'
-        OnClick = chkClick
-        TabOrder = 0
-      end
-      object txtFadeoutEnd: TLabeledEdit
-        Left = 24
-        Height = 21
-        Top = 124
-        Width = 53
-        EditLabel.Height = 13
-        EditLabel.Width = 90
-        EditLabel.Caption = 'Length in seconds:'
-        Enabled = False
-        MaxLength = 2
-        TabOrder = 3
-      end
-      object chkFadeoutEnd: TCheckBox
-        Left = 8
-        Height = 21
-        Top = 84
-        Width = 181
-        Caption = 'Add fadeout at end'
-        OnClick = chkClick
-        TabOrder = 2
+        Top = 4
+        Width = 39
+        Align = alLeft
+        BorderSpacing.Left = 3
+        Caption = 'seconds'
+        Layout = tlCenter
+        ParentColor = False
       end
     end
-    object GroupBox2: TGroupBox
-      Left = 208
-      Height = 157
-      Top = 4
-      Width = 197
-      Caption = ' Silence '
-      ClientHeight = 157
-      ClientWidth = 197
-      TabOrder = 1
-      object txtSilenceStart: TLabeledEdit
-        Left = 24
+    object txtFadeoutEnd: TMLabeledSpinEdit
+      Left = 0
+      Height = 25
+      Top = 63
+      Width = 140
+      Align = alTop
+      Control.Left = 0
+      Control.Height = 21
+      Control.Top = 4
+      Control.Width = 50
+      Control.Align = alLeft
+      Control.MaxValue = 100
+      Control.TabOrder = 0
+      object Label2: TLabel
+        Left = 53
         Height = 21
-        Top = 60
-        Width = 53
-        EditLabel.Height = 13
-        EditLabel.Width = 90
-        EditLabel.Caption = 'Length in seconds:'
-        Enabled = False
-        MaxLength = 2
-        TabOrder = 1
-      end
-      object chkSilenceStart: TCheckBox
-        Left = 8
-        Height = 21
-        Top = 20
-        Width = 181
-        Caption = 'Add silence at beginning'
-        OnClick = chkClick
-        TabOrder = 0
-      end
-      object txtSilenceEnd: TLabeledEdit
-        Left = 24
-        Height = 21
-        Top = 124
-        Width = 53
-        EditLabel.Height = 13
-        EditLabel.Width = 90
-        EditLabel.Caption = 'Length in seconds:'
-        Enabled = False
-        MaxLength = 2
-        TabOrder = 3
-      end
-      object chkSilenceEnd: TCheckBox
-        Left = 8
-        Height = 21
-        Top = 84
-        Width = 181
-        Caption = 'Add silence at end'
-        OnClick = chkClick
-        TabOrder = 2
+        Top = 4
+        Width = 39
+        Align = alLeft
+        BorderSpacing.Left = 3
+        Caption = 'seconds'
+        Layout = tlCenter
+        ParentColor = False
       end
     end
-    object GroupBox3: TGroupBox
-      Left = 4
-      Height = 49
-      Top = 164
-      Width = 401
-      Caption = ' Misc '
-      ClientHeight = 49
-      ClientWidth = 401
-      TabOrder = 2
-      object chkNormalize: TCheckBox
-        Left = 8
-        Height = 21
-        Top = 20
-        Width = 181
-        Caption = 'Normalize'
-        OnClick = chkClick
-        TabOrder = 0
-      end
-    end
-  end
-  object pnlSetup: TPanel
-    Left = 376
-    Height = 161
-    Top = 60
-    Width = 397
-    ClientHeight = 161
-    ClientWidth = 397
-    TabOrder = 2
-    Visible = False
-    object btnBrowse1: TSpeedButton
-      Left = 308
-      Height = 21
-      Hint = 'Browse...'
-      Top = 84
-      Width = 25
-      Flat = True
-      OnClick = btnBrowseClick
-      ShowHint = True
-      ParentShowHint = False
-    end
-    object btnBrowse2: TSpeedButton
-      Left = 308
-      Height = 21
-      Hint = 'Browse...'
-      Top = 132
-      Width = 25
-      Flat = True
-      OnClick = btnBrowseClick
-      ShowHint = True
-      ParentShowHint = False
-    end
-    object lblInfo: TLabel
-      Left = 4
-      Height = 65
+    object chkFadeoutStart: TCheckBox
+      Left = 0
+      Height = 19
       Top = 0
-      Width = 385
-      AutoSize = False
-      Caption = 'Due to licensing issues streamWriter does not supply two needed DLLs. Please download both DLLs and select them using the "Browse..." buttons. If clicking "Next" does not show any error messages, you can delete the downloaded files.'
-      WordWrap = True
+      Width = 140
+      Align = alTop
+      Caption = 'Add fadein at beginning:'
+      OnChange = chkChange
+      TabOrder = 2
     end
-    object txtLameDLL: TLabeledEdit
-      Left = 4
-      Height = 21
-      Top = 84
-      Width = 301
-      AutoSize = False
-      Color = 15790320
-      EditLabel.Height = 13
-      EditLabel.Width = 109
-      EditLabel.Caption = 'Path to "lame_enc.dll":'
-      ReadOnly = True
-      TabOrder = 0
-    end
-    object txtMadDLL: TLabeledEdit
-      Left = 4
-      Height = 21
-      Top = 132
-      Width = 301
-      AutoSize = False
-      Color = 15790320
-      EditLabel.Height = 13
-      EditLabel.Width = 94
-      EditLabel.Caption = 'Path to "libmad.dll":'
-      ReadOnly = True
-      TabOrder = 1
+    object chkFadeoutEnd: TCheckBox
+      Left = 0
+      Height = 19
+      Top = 44
+      Width = 140
+      Align = alTop
+      Caption = 'Add fadeout at end:'
+      OnChange = chkChange
+      TabOrder = 3
     end
   end
-  object dlgOpen: TOpenDialog
-    Filter = 'lame-enc.dll|lame-enc.dll'
-    Left = 168
-    Top = 60
+  object GroupBox2: TGroupBox
+    Left = 0
+    Height = 106
+    Top = 106
+    Width = 144
+    Align = alTop
+    AutoSize = True
+    Caption = ' Silence '
+    ClientHeight = 88
+    ClientWidth = 140
+    TabOrder = 2
+    object txtSilenceStart: TMLabeledSpinEdit
+      Left = 0
+      Height = 25
+      Top = 19
+      Width = 140
+      Align = alTop
+      Control.Left = 0
+      Control.Height = 21
+      Control.Top = 4
+      Control.Width = 50
+      Control.Align = alLeft
+      Control.MaxValue = 100
+      Control.TabOrder = 0
+      object Label3: TLabel
+        Left = 53
+        Height = 21
+        Top = 4
+        Width = 39
+        Align = alLeft
+        BorderSpacing.Left = 3
+        Caption = 'seconds'
+        Layout = tlCenter
+        ParentColor = False
+      end
+    end
+    object txtSilenceEnd: TMLabeledSpinEdit
+      Left = 0
+      Height = 25
+      Top = 63
+      Width = 140
+      Align = alTop
+      Control.Left = 0
+      Control.Height = 21
+      Control.Top = 4
+      Control.Width = 50
+      Control.Align = alLeft
+      Control.MaxValue = 100
+      Control.TabOrder = 0
+      object Label4: TLabel
+        Left = 53
+        Height = 21
+        Top = 4
+        Width = 39
+        Align = alLeft
+        BorderSpacing.Left = 3
+        Caption = 'seconds'
+        Layout = tlCenter
+        ParentColor = False
+      end
+    end
+    object chkSilenceStart: TCheckBox
+      Left = 0
+      Height = 19
+      Top = 0
+      Width = 140
+      Align = alTop
+      Caption = 'Add silence at beginning:'
+      OnChange = chkChange
+      TabOrder = 2
+    end
+    object chkSilenceEnd: TCheckBox
+      Left = 0
+      Height = 19
+      Top = 44
+      Width = 140
+      Align = alTop
+      Caption = 'Add silence at end:'
+      OnChange = chkChange
+      TabOrder = 3
+    end
+  end
+  object GroupBox3: TGroupBox
+    Left = 0
+    Height = 37
+    Top = 212
+    Width = 144
+    Align = alClient
+    AutoSize = True
+    Caption = ' Misc '
+    ClientHeight = 19
+    ClientWidth = 140
+    TabOrder = 3
+    object chkNormalize: TCheckBox
+      Left = 0
+      Height = 19
+      Top = 0
+      Width = 140
+      Align = alClient
+      Caption = 'Normalize'
+      OnClick = chkChange
+      TabOrder = 0
+    end
   end
 end

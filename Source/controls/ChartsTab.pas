@@ -1397,7 +1397,7 @@ begin
 
   FButtonEditAndAddToWishlist := TToolButton.Create(FToolbar);
   FButtonEditAndAddToWishlist.Parent := FToolbar;
-  FButtonEditAndAddToWishlist.Hint := 'Edit and add to manual wishlist';
+  FButtonEditAndAddToWishlist.Hint := 'Edit and add to manual wishlist...';
   FButtonEditAndAddToWishlist.ImageIndex := TImages.SCRIPT_HEART_ADD;
 
   Sep := TToolButton.Create(FToolbar);

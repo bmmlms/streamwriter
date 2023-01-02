@@ -349,7 +349,7 @@ procedure TCutTab.AutoCutClick(Sender: TObject);
 var
   F: TfrmCutTabSearchSilence;
 begin
-  F := TfrmCutTabSearchSilence.Create(Self, False);
+  F := TfrmCutTabSearchSilence.Create(Self);
   try
     F.ShowModal;
 

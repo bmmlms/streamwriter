@@ -29,40 +29,39 @@ uses
   Classes,
   Controls,
   DataManager,
-  Dialogs,
+  Images,
   ExtCtrls,
   FileTagger,
   Forms,
   Functions,
-  Graphics,
-  Images,
   LanguageObjects,
+  MLabeledEdit,
   SharedData,
   StdCtrls,
   SysUtils,
-  Variants,
   Windows;
 
 const
   WM_AFTERSHOWN = WM_USER + 678;
 
 type
+
+  { TfrmEditTags }
+
   TfrmEditTags = class(TForm)
+    grpTags: TGroupBox;
+    Label1: TLabel;
+    txtStreamname: TMLabeledEdit;
+    txtAlbum: TMLabeledEdit;
+    txtArtist: TMLabeledEdit;
+    txtComment: TMemo;
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnClose: TBitBtn;
-    grpTags: TGroupBox;
-    Label1: TLabel;
-    txtArtist: TLabeledEdit;
-    txtTitle: TLabeledEdit;
-    txtComment: TMemo;
-    txtAlbum: TLabeledEdit;
     grpData: TGroupBox;
-    txtStreamname: TLabeledEdit;
-    txtGenre: TLabeledEdit;
-    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    txtGenre: TMLabeledEdit;
+    txtTitle: TMLabeledEdit;
     procedure btnCloseClick(Sender: TObject);
-    procedure FormShow(Sender: TObject);
   private
     FAddon: TAddonAudioGenie;
     FTracks: TTrackInfoArray;
@@ -70,6 +69,9 @@ type
 
     procedure DisableTags;
     procedure AfterShown(var Msg: TMessage); message WM_AFTERSHOWN;
+  protected
+    procedure DoShow; override;
+    procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -88,7 +90,7 @@ var
   FS: TFileStream;
   FileTagger: TFileTagger;
 begin
-  txtStreamname.Text := FTracks[0].Streamname;
+  txtStreamname.Control.Text := FTracks[0].Streamname;
 
   FAddon := AppGlobals.AddonManager.Find(TAddonAudioGenie) as TAddonAudioGenie;
 
@@ -110,10 +112,10 @@ begin
         try
           if FileTagger.Read(FTracks[0].Filename) then
           begin
-            txtArtist.Text := FileTagger.Tag.Artist;
-            txtTitle.Text := FileTagger.Tag.Title;
-            txtAlbum.Text := FileTagger.Tag.Album;
-            txtGenre.Text := FileTagger.Tag.Genre;
+            txtArtist.Control.Text := FileTagger.Tag.Artist;
+            txtTitle.Control.Text := FileTagger.Tag.Title;
+            txtAlbum.Control.Text := FileTagger.Tag.Album;
+            txtGenre.Control.Text := FileTagger.Tag.Genre;
             txtComment.Text := FileTagger.Tag.Comment;
 
             FTagsRead := True;
@@ -130,6 +132,24 @@ begin
     DisableTags;
 end;
 
+procedure TfrmEditTags.DoShow;
+begin
+  inherited DoShow;
+
+  PostMessage(Handle, WM_AFTERSHOWN, 0, 0);
+end;
+
+procedure TfrmEditTags.KeyDown(var Key: Word; Shift: TShiftState);
+begin
+  if Key = 27 then
+  begin
+    Key := 0;
+    Close;
+  end;
+
+  inherited;
+end;
+
 procedure TfrmEditTags.btnCloseClick(Sender: TObject);
 var
   FileTagger: TFileTagger;
@@ -139,10 +159,10 @@ begin
   begin
     FileTagger := TFileTagger.Create;
     try
-      FileTagger.Tag.Artist := Trim(txtArtist.Text);
-      FileTagger.Tag.Title := Trim(txtTitle.Text);
-      FileTagger.Tag.Album := Trim(txtAlbum.Text);
-      FileTagger.Tag.Genre := Trim(txtGenre.Text);
+      FileTagger.Tag.Artist := Trim(txtArtist.Control.Text);
+      FileTagger.Tag.Title := Trim(txtTitle.Control.Text);
+      FileTagger.Tag.Album := Trim(txtAlbum.Control.Text);
+      FileTagger.Tag.Genre := Trim(txtGenre.Control.Text);
       FileTagger.Tag.Comment := Trim(txtComment.Text);
 
       if not FileTagger.Write(Language.CurrentLanguage.LCID, FTracks[0].Filename) then
@@ -156,7 +176,7 @@ begin
   end;
 
   for i := 0 to High(FTracks) do
-    FTracks[i].Streamname := Trim(txtStreamname.Text);
+    FTracks[i].Streamname := Trim(txtStreamname.Control.Text);
 
   Close;
 end;
@@ -191,21 +211,7 @@ begin
   grpTags.Enabled := False;
 
   txtStreamname.SetFocus;
-  txtStreamname.SelLength := 0;
-end;
-
-procedure TfrmEditTags.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-begin
-  if Key = 27 then
-  begin
-    Key := 0;
-    Close;
-  end;
-end;
-
-procedure TfrmEditTags.FormShow(Sender: TObject);
-begin
-  PostMessage(Handle, WM_AFTERSHOWN, 0, 0);
+  txtStreamname.Control.SelLength := 0;
 end;
 
 function TfrmEditTags.ShowModal(Tracks: TTrackInfoArray): Integer;

@@ -26,39 +26,39 @@ uses
   Buttons,
   Classes,
   Controls,
-  Dialogs,
   ExtCtrls,
   Forms,
   Graphics,
   LanguageObjects,
   MControls,
+  MLabeledEdit,
   PostProcess,
   StdCtrls,
-  SysUtils,
-  Variants;
+  SysUtils;
 
 type
+
+  { TfrmConfigureSetTags }
+
   TfrmConfigureSetTags = class(TForm)
-    txtArtist: TLabeledEdit;
-    txtTitle: TLabeledEdit;
-    Label1: TLabel;
-    txtComment: TMemo;
-    btnResetArtistPattern: TSpeedButton;
-    btnResetTitlePattern: TSpeedButton;
     btnResetCommentPattern: TSpeedButton;
+    Label1: TLabel;
+    Panel1: TPanel;
+    txtComment: TMemo;
+    txtGenre: TMLabeledEditButton;
+    txtArtist: TMLabeledEditButton;
+    txtTitle: TMLabeledEditButton;
     lblPattern: TLabel;
-    txtAlbum: TLabeledEdit;
     btnResetAlbumPattern: TSpeedButton;
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;
-    btnResetGenrePattern: TSpeedButton;
-    txtGenre: TLabeledEdit;
-    procedure FormShow(Sender: TObject);
+    txtAlbum: TMLabeledEditButton;
     procedure btnOKClick(Sender: TObject);
     procedure btnResetPatternClick(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure txtCommentKeyPress(Sender: TObject; var Key: Char);
+  protected
+    procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   private
     FSaveData: Boolean;
 
@@ -82,10 +82,10 @@ implementation
 
 procedure TfrmConfigureSetTags.btnOKClick(Sender: TObject);
 begin
-  FArtist := Trim(txtArtist.Text);
-  FTitle := Trim(txtTitle.Text);
-  FAlbum := Trim(txtAlbum.Text);
-  FGenre := Trim(txtGenre.Text);
+  FArtist := Trim(txtArtist.Control.Text);
+  FTitle := Trim(txtTitle.Control.Text);
+  FAlbum := Trim(txtAlbum.Control.Text);
+  FGenre := Trim(txtGenre.Control.Text);
   FComment := Trim(txtComment.Text);
 
   FSaveData := True;
@@ -95,27 +95,27 @@ end;
 
 procedure TfrmConfigureSetTags.btnResetPatternClick(Sender: TObject);
 begin
-  if Sender = btnResetArtistPattern then
+  if Sender = txtArtist.Control then
   begin
-    txtArtist.Text := '%artist%';
-    txtArtist.ApplyFocus;
-  end else if Sender = btnResetTitlePattern then
+    txtArtist.Control.Text := '%artist%';
+    txtArtist.Control.ApplyFocus;
+  end else if Sender = txtTitle.Control then
   begin
-    txtTitle.Text := '%title%';
-    txtTitle.ApplyFocus;
-  end else if Sender = btnResetAlbumPattern then
+    txtTitle.Control.Text := '%title%';
+    txtTitle.Control.ApplyFocus;
+  end else if Sender = txtAlbum.Control then
   begin
-    txtAlbum.Text := '%album%';
-    txtAlbum.ApplyFocus;
+    txtAlbum.Control.Text := '%album%';
+    txtAlbum.Control.ApplyFocus;
   end else if Sender = btnResetCommentPattern then
   begin
     txtComment.Text := _('%streamname% / %streamtitle% / Recorded using streamWriter');
     txtComment.SelectAll;
     txtComment.ApplyFocus;
-  end else if Sender = btnResetGenrePattern then
+  end else if Sender = txtGenre.Control then
   begin
-    txtGenre.Text := '%genre%';
-    txtGenre.ApplyFocus;
+    txtGenre.Control.Text := '%genre%';
+    txtGenre.Control.ApplyFocus;
   end;
 end;
 
@@ -131,26 +131,14 @@ begin
   FGenre := Genre;
   FComment := Comment;
 
-  txtArtist.Text := Artist;
-  txtTitle.Text := Title;
-  txtAlbum.Text := Album;
-  txtGenre.Text := Genre;
+  txtArtist.Control.Text := Artist;
+  txtTitle.Control.Text := Title;
+  txtAlbum.Control.Text := Album;
+  txtGenre.Control.Text := Genre;
   txtComment.Text := Comment;
 
   Language.Translate(Self);
-end;
 
-procedure TfrmConfigureSetTags.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-begin
-  if Key = 27 then
-  begin
-    Key := 0;
-    Close;
-  end;
-end;
-
-procedure TfrmConfigureSetTags.FormShow(Sender: TObject);
-begin
   Caption := Format(_('Configure "%s"'), [FPostProcessor.Name]);
 end;
 
@@ -158,6 +146,17 @@ procedure TfrmConfigureSetTags.txtCommentKeyPress(Sender: TObject; var Key: Char
 begin
   if Key = #13 then
     Key := #0;
+end;
+
+procedure TfrmConfigureSetTags.KeyDown(var Key: Word; Shift: TShiftState);
+begin
+  if Key = 27 then
+  begin
+    Key := 0;
+    Close;
+  end;
+
+  inherited;
 end;
 
 end.

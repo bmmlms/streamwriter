@@ -516,7 +516,7 @@ begin
     if NodeData.Client <> nil then
     begin
       if NodeData.Client.Playing or NodeData.Client.Paused then
-        PaintInfo.Canvas.Font.Color := TFunctions.HTML2Color('#0078ff');
+        PaintInfo.Canvas.Font.Color := clHighlight;
     end else if NodeData.Category <> nil then
     begin
       Node := GetFirstChild(PaintInfo.Node);
@@ -526,7 +526,7 @@ begin
 
         if NodeData.Client.Playing or NodeData.Client.Paused then
         begin
-          PaintInfo.Canvas.Font.Color := TFunctions.HTML2Color('#0078ff');  // TODO: sollte hier und hier drüber nicht hilite color genutzt werden? wie ist es beim savedtab wenn was wiedergegeben wird?
+          PaintInfo.Canvas.Font.Color := clHighlight;
           Break;
         end;
 

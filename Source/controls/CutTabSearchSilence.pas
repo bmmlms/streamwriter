@@ -35,34 +35,34 @@ uses
   Images,
   LanguageObjects,
   LCLType,
-  MControls,
   SharedData,
   StdCtrls,
+  Spin,
+  MLabeledEdit,
   SysUtils,
   Variants;
 
 type
+
+  { TfrmCutTabSearchSilence }
+
   TfrmCutTabSearchSilence = class(TForm)
-    txtSilenceLevel: TEdit;
-    Label14: TLabel;
     Label12: TLabel;
-    txtSilenceLength: TEdit;
     Label13: TLabel;
-    Label10: TLabel;
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;
+    txtSilenceLength: TSpinEdit;
+    txtSilenceLevel: TMLabeledSpinEdit;
     procedure btnOKClick(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure FormCreate(Sender: TObject);
-  private
-    FAutoDetect: Boolean;
+  protected
+    procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
     SilenceLevel: Integer;
     SilenceLength: Integer;
     Okay: Boolean;
 
-    constructor Create(AOwner: TComponent; AutoDetect: Boolean); reintroduce;
+    constructor Create(AOwner: TComponent); override;
   end;
 
 implementation
@@ -71,40 +71,29 @@ implementation
 
 procedure TfrmCutTabSearchSilence.btnOKClick(Sender: TObject);
 begin
-  if (not FAutoDetect) and ((StrToIntDef(txtSilenceLevel.Text, -1) > 100) or (StrToIntDef(txtSilenceLevel.Text, -1) < 1)) then
-  begin
-    TFunctions.MsgBox(_('Please enter the maximum volume level for silence detection as a value ranging from 1 to 100.'), _('Info'), MB_ICONINFORMATION);
-    txtSilenceLevel.ApplyFocus;
-    Exit;
-  end;
+  SilenceLevel := txtSilenceLevel.Control.Value;
+  SilenceLength := txtSilenceLength.Value;
 
-  if StrToIntDef(txtSilenceLength.Text, -1) < 20 then
-  begin
-    TFunctions.MsgBox(_('Please enter the minimum length for silence (at least 20 ms).'), _('Info'), MB_ICONINFORMATION);
-    txtSilenceLength.ApplyFocus;
-    Exit;
-  end;
-
-  if not FAutoDetect then
-    SilenceLevel := StrToInt(txtSilenceLevel.Text);
-
-  SilenceLength := StrToInt(txtSilenceLength.Text);
   Okay := True;
 
   Close;
 end;
 
-constructor TfrmCutTabSearchSilence.Create(AOwner: TComponent; AutoDetect: Boolean);
+procedure TfrmCutTabSearchSilence.KeyDown(var Key: Word; Shift: TShiftState);
+begin
+  if Key = 27 then
+  begin
+    Key := 0;
+    Close;
+  end;
+
+  inherited;
+end;
+
+constructor TfrmCutTabSearchSilence.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
-  modSharedData.imgImages.GetIcon(TImages.WAND, Icon);
-
-  FAutoDetect := AutoDetect;
-end;
-
-procedure TfrmCutTabSearchSilence.FormCreate(Sender: TObject);
-begin
   Language.Translate(Self);
 
   Okay := False;
@@ -112,26 +101,11 @@ begin
   txtSilenceLength.Left := Label12.Left + Label12.Width + 4;
   Label13.Left := txtSilenceLength.Left + txtSilenceLength.Width + 4;
 
-  txtSilenceLength.Text := IntToStr(AppGlobals.Data.StreamSettings.SilenceLength);
+  txtSilenceLevel.Control.Value := AppGlobals.Data.StreamSettings.SilenceLevel;
+  txtSilenceLength.Value := AppGlobals.Data.StreamSettings.SilenceLength;
 
-  if FAutoDetect then
-  begin
-    SilenceLevel := -1;
-    txtSilenceLevel.Enabled := False;
-    Label10.Enabled := False;
-    Label14.Enabled := False;
-    txtSilenceLevel.Text := '';
-  end else
-    txtSilenceLevel.Text := IntToStr(AppGlobals.Data.StreamSettings.SilenceLevel);
+  modSharedData.imgImages.GetIcon(TImages.WAND, Icon);
 end;
 
-procedure TfrmCutTabSearchSilence.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-begin
-  if Key = 27 then
-  begin
-    Key := 0;
-    Close;
-  end;
-end;
 
 end.

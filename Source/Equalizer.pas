@@ -59,7 +59,7 @@ type
   { TfrmEqualizer }
 
   TfrmEqualizer = class(TForm)
-    btnReset: TBitBtn;
+    btnReset: TSpeedButton;
     chkEqualizer: TCheckBox;
     Panel1: TPanel;
     pnlEqualizer: TPanel;

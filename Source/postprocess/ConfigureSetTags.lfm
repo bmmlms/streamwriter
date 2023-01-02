@@ -1,13 +1,14 @@
 object frmConfigureSetTags: TfrmConfigureSetTags
   Left = 0
-  Height = 369
+  Height = 326
   Top = 0
-  Width = 329
+  Width = 325
+  AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'frmConfigureSetTags'
-  ClientHeight = 369
-  ClientWidth = 329
+  ClientHeight = 326
+  ClientWidth = 325
   Color = clBtnFace
   Font.Color = clWindowText
   Font.Height = -11
@@ -52,167 +53,199 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     0000
   }
   KeyPreview = True
-  OnKeyDown = FormKeyDown
-  OnShow = FormShow
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.2'
-  object Label1: TLabel
-    Left = 4
-    Height = 13
-    Top = 232
-    Width = 49
-    Caption = 'Comment:'
-  end
-  object btnResetArtistPattern: TSpeedButton
-    Left = 300
-    Height = 21
-    Hint = 'Reset pattern to default'
-    Top = 72
-    Width = 25
-    Anchors = [akTop, akRight]
-    Flat = True
-    OnClick = btnResetPatternClick
-    ShowHint = True
-    ParentShowHint = False
-  end
-  object btnResetTitlePattern: TSpeedButton
-    Left = 300
-    Height = 21
-    Hint = 'Reset pattern to default'
-    Top = 116
-    Width = 25
-    Anchors = [akTop, akRight]
-    Flat = True
-    OnClick = btnResetPatternClick
-    ShowHint = True
-    ParentShowHint = False
-  end
-  object btnResetCommentPattern: TSpeedButton
-    Left = 300
-    Height = 21
-    Hint = 'Reset pattern to default'
-    Top = 248
-    Width = 25
-    Anchors = [akTop, akRight]
-    Flat = True
-    OnClick = btnResetPatternClick
-    ShowHint = True
-    ParentShowHint = False
-  end
   object lblPattern: TLabel
-    Left = 4
-    Height = 45
-    Top = 4
-    Width = 321
-    Anchors = [akTop, akLeft, akRight]
-    AutoSize = False
+    Left = 0
+    Height = 39
+    Top = 0
+    Width = 325
+    Align = alTop
     Caption = 'Valid variables: %artist%, %title%, %album%, %genre%, %streamtitle%, %streamname%, %day%, %month%, %year%, %hour%, %minute%, %second%'
+    ParentColor = False
     WordWrap = True
   end
   object btnResetAlbumPattern: TSpeedButton
     Left = 300
     Height = 21
     Hint = 'Reset pattern to default'
-    Top = 160
+    Top = 0
     Width = 25
     Anchors = [akTop, akRight]
     Flat = True
     OnClick = btnResetPatternClick
     ShowHint = True
     ParentShowHint = False
-  end
-  object btnResetGenrePattern: TSpeedButton
-    Left = 300
-    Height = 21
-    Hint = 'Reset pattern to default'
-    Top = 204
-    Width = 25
-    Anchors = [akTop, akRight]
-    Flat = True
-    OnClick = btnResetPatternClick
-    ShowHint = True
-    ParentShowHint = False
-  end
-  object txtArtist: TLabeledEdit
-    Left = 4
-    Height = 21
-    Top = 72
-    Width = 293
-    Anchors = [akTop, akLeft, akRight]
-    EditLabel.Height = 13
-    EditLabel.Width = 30
-    EditLabel.Caption = 'Artist:'
-    TabOrder = 0
-  end
-  object txtTitle: TLabeledEdit
-    Left = 4
-    Height = 21
-    Top = 116
-    Width = 293
-    Anchors = [akTop, akLeft, akRight]
-    EditLabel.Height = 13
-    EditLabel.Width = 24
-    EditLabel.Caption = 'Title:'
-    TabOrder = 1
-  end
-  object txtComment: TMemo
-    Left = 4
-    Height = 81
-    Top = 248
-    Width = 293
-    Anchors = [akTop, akLeft, akRight, akBottom]
-    OnKeyPress = txtCommentKeyPress
-    TabOrder = 3
-  end
-  object txtAlbum: TLabeledEdit
-    Left = 4
-    Height = 21
-    Top = 160
-    Width = 293
-    Anchors = [akTop, akLeft, akRight]
-    EditLabel.Height = 13
-    EditLabel.Width = 33
-    EditLabel.Caption = 'Album:'
-    TabOrder = 2
   end
   object pnlNav: TPanel
     Left = 0
-    Height = 40
-    Top = 329
-    Width = 329
+    Height = 39
+    Top = 287
+    Width = 325
     Align = alBottom
+    AutoSize = True
     BevelOuter = bvNone
-    ClientHeight = 40
-    ClientWidth = 329
-    TabOrder = 4
+    ClientHeight = 39
+    ClientWidth = 325
+    TabOrder = 0
     object Bevel2: TBevel
-      Left = 4
-      Height = 5
-      Top = 4
-      Width = 321
+      Left = 0
+      Height = 4
+      Top = 0
+      Width = 325
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 228
-      Height = 27
-      Top = 9
-      Width = 97
+      Left = 225
+      Height = 35
+      Top = 4
+      Width = 100
       Align = alRight
+      AutoSize = True
       Caption = '&OK'
+      Constraints.MinHeight = 35
+      Constraints.MinWidth = 100
       OnClick = btnOKClick
       TabOrder = 0
     end
   end
-  object txtGenre: TLabeledEdit
-    Left = 4
-    Height = 21
-    Top = 204
-    Width = 293
-    Anchors = [akTop, akLeft, akRight]
-    EditLabel.Height = 13
-    EditLabel.Width = 33
-    EditLabel.Caption = 'Genre:'
+  object txtArtist: TMLabeledEditButton
+    Left = 0
+    Height = 37
+    Top = 39
+    Width = 325
+    Align = alTop
+    Caption = 'Artist:'
+    Control.Left = 0
+    Control.Height = 21
+    Control.Hint = 'Reset pattern to default'
+    Control.Top = 16
+    Control.Width = 325
+    Control.Align = alClient
+    Control.ButtonWidth = 23
+    Control.Flat = True
+    Control.Images = modSharedData.imgImages
+    Control.ImageIndex = 2
+    Control.MaxLength = 0
+    Control.NumGlyphs = 1
+    Control.OnButtonClick = btnResetPatternClick
+    Control.PasswordChar = #0
+    Control.TabOrder = 0
+  end
+  object txtTitle: TMLabeledEditButton
+    Left = 0
+    Height = 37
+    Top = 76
+    Width = 325
+    Align = alTop
+    Caption = 'Title:'
+    Control.Left = 0
+    Control.Height = 21
+    Control.Hint = 'Reset pattern to default'
+    Control.Top = 16
+    Control.Width = 325
+    Control.Align = alClient
+    Control.ButtonWidth = 23
+    Control.Flat = True
+    Control.Images = modSharedData.imgImages
+    Control.ImageIndex = 2
+    Control.MaxLength = 0
+    Control.NumGlyphs = 1
+    Control.OnButtonClick = btnResetPatternClick
+    Control.PasswordChar = #0
+    Control.TabOrder = 0
+  end
+  object txtAlbum: TMLabeledEditButton
+    Left = 0
+    Height = 37
+    Top = 113
+    Width = 325
+    Align = alTop
+    Caption = 'Album:'
+    Control.Left = 0
+    Control.Height = 21
+    Control.Hint = 'Reset pattern to default'
+    Control.Top = 16
+    Control.Width = 325
+    Control.Align = alClient
+    Control.ButtonWidth = 23
+    Control.Flat = True
+    Control.Images = modSharedData.imgImages
+    Control.ImageIndex = 2
+    Control.MaxLength = 0
+    Control.NumGlyphs = 1
+    Control.OnButtonClick = btnResetPatternClick
+    Control.PasswordChar = #0
+    Control.TabOrder = 0
+  end
+  object txtGenre: TMLabeledEditButton
+    Left = 0
+    Height = 37
+    Top = 150
+    Width = 325
+    Align = alTop
+    Caption = 'Genre:'
+    Control.Left = 0
+    Control.Height = 21
+    Control.Hint = 'Reset pattern to default'
+    Control.Top = 16
+    Control.Width = 325
+    Control.Align = alClient
+    Control.ButtonWidth = 23
+    Control.Flat = True
+    Control.Images = modSharedData.imgImages
+    Control.ImageIndex = 2
+    Control.MaxLength = 0
+    Control.NumGlyphs = 1
+    Control.OnButtonClick = btnResetPatternClick
+    Control.PasswordChar = #0
+    Control.TabOrder = 0
+  end
+  object Panel1: TPanel
+    Left = 0
+    Height = 100
+    Top = 187
+    Width = 325
+    Align = alClient
+    AutoSize = True
+    BevelOuter = bvNone
+    ClientHeight = 100
+    ClientWidth = 325
+    Constraints.MinHeight = 100
     TabOrder = 5
+    object Label1: TLabel
+      Left = 0
+      Height = 13
+      Top = 0
+      Width = 325
+      Align = alTop
+      Caption = 'Comment:'
+      ParentColor = False
+    end
+    object btnResetCommentPattern: TSpeedButton
+      Left = 300
+      Height = 21
+      Hint = 'Reset pattern to default'
+      Top = 13
+      Width = 25
+      Align = alRight
+      Constraints.MaxHeight = 21
+      Flat = True
+      Images = modSharedData.imgImages
+      ImageIndex = 2
+      OnClick = btnResetPatternClick
+      ShowHint = True
+      ParentShowHint = False
+    end
+    object txtComment: TMemo
+      Left = 0
+      Height = 87
+      Top = 13
+      Width = 296
+      Align = alClient
+      BorderSpacing.Right = 4
+      OnKeyPress = txtCommentKeyPress
+      TabOrder = 0
+    end
   end
 end

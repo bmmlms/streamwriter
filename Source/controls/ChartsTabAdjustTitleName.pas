@@ -36,22 +36,25 @@ uses
   MControls,
   MsgDlg,
   SharedData,
-  StdCtrls,
+  StdCtrls, MLabeledEdit,
   SysUtils,
   Variants,
   Windows;
 
 type
+
+  { TfrmChartsTabAdjustTitleName }
+
   TfrmChartsTabAdjustTitleName = class(TForm)
+    txtTitle: TMLabeledEdit;
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;
-    txtTitle: TLabeledEdit;
     procedure FormCreate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-  private
+  protected
+    procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
     TitleName: string;
     Okay: Boolean;
@@ -68,7 +71,7 @@ var
   NumChars: Integer;
   Hash: Cardinal;
 begin
-  TFunctions.BuildPattern(txtTitle.Text, Hash, NumChars, True);
+  TFunctions.BuildPattern(txtTitle.Control.Text, Hash, NumChars, True);
 
   if NumChars = 0 then
   begin
@@ -79,7 +82,7 @@ begin
   if NumChars <= 3 then
     TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('A short pattern may produce many matches, i.e. using ''a'' records/ignores every song containing an ''a''.'), mtInformation, [mbOK], mbOK, 6);
 
-  TitleName := Trim(txtTitle.Text);
+  TitleName := Trim(txtTitle.Control.Text);
   Okay := True;
 
   Close;
@@ -92,20 +95,20 @@ begin
   Okay := False;
 end;
 
-procedure TfrmChartsTabAdjustTitleName.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure TfrmChartsTabAdjustTitleName.KeyDown(var Key: Word; Shift: TShiftState  );
 begin
   if Key = 27 then
   begin
     Key := 0;
     Close;
   end;
+
+  inherited;
 end;
 
 procedure TfrmChartsTabAdjustTitleName.FormShow(Sender: TObject);
 begin
-  txtTitle.ApplyFocus;
-  txtTitle.SelStart := 0;
-  txtTitle.SelLength := 0;
+  txtTitle.Control.ApplyFocus;
 end;
 
 constructor TfrmChartsTabAdjustTitleName.Create(AOwner: TComponent; Title: string);
@@ -114,7 +117,7 @@ begin
 
   modSharedData.imgImages.GetIcon(TImages.TEXTFIELD_RENAME, Icon);
 
-  txtTitle.Text := Title;
+  txtTitle.Control.Text := Title;
 end;
 
 end.

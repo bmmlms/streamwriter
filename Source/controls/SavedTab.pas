@@ -47,7 +47,6 @@ uses
   ImgList,
   LanguageObjects,
   Logging,
-  Math,
   MControls,
   Menus,
   MessageBus,
@@ -817,8 +816,9 @@ begin
   FPlayToolbar.FShuffle.OnClick := ToolBarClick;
 
   FImportPanel := TImportPanel.Create(Self);
-  FImportPanel.Width := 250;
-  FImportPanel.Height := 80;
+  //FImportPanel.Width := 250;
+  //FImportPanel.Height := 80;
+  FImportPanel.AutoSize := True;
   FImportPanel.Visible := False;
   FImportPanel.Parent := Self;
   FImportPanel.AnchorVerticalCenterTo(Self);
@@ -2321,7 +2321,7 @@ begin
     if FPlayer.Playing or FPlayer.Paused then
       if not Selected[PaintInfo.Node] then
         if (FPlayer.Playing or FPlayer.Paused) and (LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename)) then
-          PaintInfo.Canvas.Font.Color := TFunctions.HTML2Color('#0078ff');
+          PaintInfo.Canvas.Font.Color := clHighlight;
 
   inherited;
 end;
@@ -2930,26 +2930,28 @@ constructor TImportPanel.Create(AOwner: TComponent);
 begin
   inherited;
 
-  LabelFilename := TLabel.Create(Self);
-  LabelFilename.Parent := Self;
-  LabelFilename.Align := alTop;
-  LabelFilename.Alignment := taCenter;
-  LabelFilename.Caption := _('Searching files...');
-  LabelFilename.Top := -100;
+  Color := clBtnFace;
+
+  Button := TButton.Create(Self);
+  Button.Parent := Self;
+  Button.Align := alTop;
+  Button.Constraints.MinWidth := MulDiv(100, Screen.PixelsPerInch, 96);
+  Button.Constraints.MinHeight := MulDiv(35, Screen.PixelsPerInch, 96);
+  Button.Caption := _('Cancel');
+  Button.AutoSize := True;
 
   ProgressBar := TProgressBar.Create(Self);
   ProgressBar.Parent := Self;
   ProgressBar.Align := alTop;
   ProgressBar.Style := pbstMarquee;
+  ProgressBar.AutoSize := True;
 
-  Button := TButton.Create(Self);
-  Button.Width := 93;
-  Button.Height := 25;
-  Button.Anchors := [];
-  Button.AnchorParallel(akBottom, 0, Self);
-  Button.AnchorParallel(akRight, 0, Self);
-  Button.Parent := Self;
-  Button.Caption := _('Cancel');
+  LabelFilename := TLabel.Create(Self);
+  LabelFilename.Parent := Self;
+  LabelFilename.Align := alTop;
+  LabelFilename.Alignment := taCenter;
+  LabelFilename.Caption := _('Searching files...');
+  LabelFilename.AutoSize := True;
 end;
 
 procedure TImportPanel.SetData(Progress: Integer; CurrentFilename: string);

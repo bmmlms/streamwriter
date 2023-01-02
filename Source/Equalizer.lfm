@@ -18,8 +18,8 @@ object frmEqualizer: TfrmEqualizer
   OnShow = FormShow
   object pnlEqualizer: TPanel
     Left = 0
-    Height = 114
-    Top = 26
+    Height = 119
+    Top = 21
     Width = 220
     Align = alClient
     BevelOuter = bvNone
@@ -27,18 +27,18 @@ object frmEqualizer: TfrmEqualizer
   end
   object Panel1: TPanel
     Left = 0
-    Height = 26
+    Height = 21
     Top = 0
     Width = 220
     Align = alTop
     AutoSize = True
     BevelOuter = bvNone
-    ClientHeight = 26
+    ClientHeight = 21
     ClientWidth = 220
     TabOrder = 1
     object chkEqualizer: TCheckBox
       Left = 0
-      Height = 26
+      Height = 21
       Top = 0
       Width = 95
       Align = alLeft
@@ -46,19 +46,22 @@ object frmEqualizer: TfrmEqualizer
       OnClick = chkEqualizerClick
       TabOrder = 0
     end
-    object btnReset: TBitBtn
-      Left = 194
-      Height = 26
+    object btnReset: TSpeedButton
+      Left = 195
+      Height = 21
       Hint = 'Reset'
       Top = 0
-      Width = 26
+      Width = 25
       Align = alRight
+      AutoSize = True
+      Constraints.MinHeight = 21
+      Constraints.MinWidth = 25
+      Flat = True
       Images = modSharedData.imgImages
       ImageIndex = 2
       OnClick = btnResetClick
-      ParentShowHint = False
       ShowHint = True
-      TabOrder = 1
+      ParentShowHint = False
     end
   end
 end
