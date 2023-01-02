@@ -2996,6 +2996,7 @@ begin
 
   BuildHotkeys;
 
+  Bass.EnumDevices;
   if (Bass.DeviceAvailable) and (Bass.Devices.Count > 0) then
   begin
     for i := 0 to Bass.Devices.Count - 1 do
