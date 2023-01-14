@@ -148,7 +148,6 @@ type
     FBrowserSearchBitrate: Cardinal;
 
     FLastUsedDataVersion: Integer;
-    FRecoveryFile: string;
 
     FEQEnabled: Boolean;
     FEQGain: array[0..9] of Integer;
@@ -315,8 +314,6 @@ type
 
     // Last used version of the data-file format
     property LastUsedDataVersion: Integer read FLastUsedDataVersion write FLastUsedDataVersion;
-    // Path to the recovery-file (this is set if streamWriter crashed or something)
-    property RecoveryFile: string read FRecoveryFile;
 
     property EQEnabled: Boolean read FEQEnabled write FEQEnabled;
     property EQGain[Idx: Integer]: Integer read FGetEQGain write FSetEQGain;
@@ -487,9 +484,6 @@ begin
 
   // Call the base-constructor with our defined variables
   inherited Create(AppName, OnlyOne, W, H, alGPL);
-
-  // Set the name for the recovery-file
-  FRecoveryFile := ConcatPaths([FStorage.DataDir, 'streamwriter_data_recovery.dat']);
 
   // This builds a large string used to generate the about-window
   BuildThanksText;
@@ -837,24 +831,10 @@ end;
 
 procedure TAppData.LoadData;
 var
-  Recovered: Boolean;
   Res: Integer;
 begin
-  Recovered := False;
-  {$IFNDEF DEBUG}
-  if FileExists(AppGlobals.RecoveryFile) then
-    if (CommandLine.GetParam('-autoloadrecovery') <> nil) or (TFunctions.MsgBox(_('It seems that streamWriter has not been shutdown correctly, maybe streamWriter or your computer crashed.'#13#10'Do you want to load the latest automatically saved data?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1) = IDYES) then
-      try
-        FData.Load(True);
-        Recovered := True;
-      except
-        TFunctions.MsgBox(_('Data could not be loaded.'), _('Error'), MB_ICONERROR);
-      end;
-  {$ENDIF}
-
   try
-    if not Recovered then
-      FData.Load(False);
+    FData.Load(DataFile);
   except
     on E: Exception do
     begin
@@ -869,18 +849,18 @@ begin
 
       if E is EVersionException then
         Res := TFunctions.MsgBox(Format(_('The file "%s" could not be loaded because it was saved with a newer version of streamWriter. ' + 'To use the current file exit streamWriter and use a newer version of the application.') +
-          #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
+          #13#10 + _(LoadErrorMsg), [DataFile]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
       else if E is EUnsupportedFormatException then
-        Res := TFunctions.MsgBox(Format(_('The file "%s" could not be loaded because it is contains an exported profile and no regular saved data.') + #13#10 + _(LoadErrorMsg), [E.Message]),
+        Res := TFunctions.MsgBox(Format(_('The file "%s" could not be loaded because it is contains an exported profile and no regular saved data.') + #13#10 + _(LoadErrorMsg), [DataFile]),
           _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
       else if E is EUnknownFormatException then
-        Res := TFunctions.MsgBox(Format(_('The file "%s" could not be loaded because it''s format is unknown.') + #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
+        Res := TFunctions.MsgBox(Format(_('The file "%s" could not be loaded because it''s format is unknown.') + #13#10 + _(LoadErrorMsg), [DataFile]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
       else
-        Res := TFunctions.MsgBox(Format(_('The file "%s" could not be loaded because it is corrupted.') + #13#10 + _(LoadErrorMsg), [E.Message]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
+        Res := TFunctions.MsgBox(Format(_('The file "%s" could not be loaded because it is corrupted.') + #13#10 + _(LoadErrorMsg), [DataFile]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2);
 
       if Res = IDYES then
       begin
-        SysUtils.DeleteFile(E.Message);
+        SysUtils.DeleteFile(DataFile);
         FData.LoadError := False;
       end;
     end;
