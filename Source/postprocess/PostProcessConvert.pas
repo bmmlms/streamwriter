@@ -75,7 +75,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Load(Stream: TMemoryStream; Version: Integer); override;
+    procedure Load(Stream: TStream; Version: Integer); override;
     procedure Save(Stream: TMemoryStream); override;
     function Copy: TPostProcessBase; override;
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
@@ -211,7 +211,7 @@ begin
   Result := _('Convert file');
 end;
 
-procedure TPostProcessConvert.Load(Stream: TMemoryStream; Version: Integer);
+procedure TPostProcessConvert.Load(Stream: TStream; Version: Integer);
 begin
 
 end;

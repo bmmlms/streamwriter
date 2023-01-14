@@ -418,7 +418,7 @@ begin
     FSearchReceivedCharts := TChartList.Create;
     try
       // Charts laden
-      Stream.Read(Count);
+      Stream.Read(Count, False);
       for i := 0 to Count - 1 do
         FSearchReceivedCharts.Add(TChartEntry.LoadFromHome(Stream, CommandHeader.Version));
     except
@@ -457,14 +457,14 @@ begin
   Streams := TStreamBrowserList.Create;
   try
     // Genres laden
-    Stream.Read(Count);
+    Stream.Read(Count, False);
     for i := 0 to Count - 1 do
       Genres.Add(TGenre.LoadFromHome(Stream, CommandHeader.Version));
 
     AppGlobals.Lock;
     try
       // Streams laden und OwnRating synchronisieren
-      Stream.Read(Count);
+      Stream.Read(Count, False);
       for i := 0 to Count - 1 do
       begin
         StreamEntry := TStreamBrowserEntry.LoadFromHome(Stream, CommandHeader.Version);
@@ -726,11 +726,11 @@ begin
   Cmd := TCommandUpdateStats.Create;
   Stream := TMemoryStream(Cmd.Stream);
 
-  Stream.Write(Cardinal(List.Count));
+  Stream.Write(Cardinal(List.Count), False);
   for i := 0 to List.Count - 1 do
-    Stream.Write(List[i]);
+    Stream.Write(List[i], False);
 
-  Stream.Write(RecordingCount);
+  Stream.Write(RecordingCount, False);
 
   FThread.SendCommand(Cmd);
 end;

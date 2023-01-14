@@ -414,14 +414,14 @@ end;
 
 procedure TCommandHandshake.DoGet(S: TMemoryStream);
 begin
-  S.Write(FID);
-  S.Write(FProtoVersion);
-  S.Write(FVersionMajor);
-  S.Write(FVersionMinor);
-  S.Write(FVersionRevision);
-  S.Write(FVersionBuild);
-  S.Write(FBuild);
-  S.Write(FLanguage);
+  S.Write(FID, False);
+  S.Write(FProtoVersion, False);
+  S.Write(FVersionMajor, False);
+  S.Write(FVersionMinor, False);
+  S.Write(FVersionRevision, False);
+  S.Write(FVersionBuild, False);
+  S.Write(FBuild, False);
+  S.Write(FLanguage, False);
 end;
 
 { TCommandHandshakeResponse }
@@ -439,8 +439,8 @@ begin
   inherited;
 
   Stream.Read(FSuccess);
-  Stream.Read(FServerTime);
-  Stream.Read(FCommunicationTimeout);
+  Stream.Read(FServerTime, False);
+  Stream.Read(FCommunicationTimeout, False);
 end;
 
 { TCommandGetServerData }
@@ -479,8 +479,8 @@ end;
 
 procedure TCommandLogIn.DoGet(S: TMemoryStream);
 begin
-  S.Write(FUser);
-  S.Write(FPass);
+  S.Write(FUser, False);
+  S.Write(FPass, False);
 end;
 
 constructor TCommandLogIn.Create;
@@ -531,24 +531,24 @@ var
 begin
   inherited;
 
-  Stream.Read(FStreamID);
-  Stream.Read(FStreamName);
-  Stream.Read(FStreamTitle);
-  Stream.Read(FStreamParsedTitle);
-  Stream.Read(FCurrentURL);
-  Stream.Read(FBitrate);
+  Stream.Read(FStreamID, False);
+  Stream.Read(FStreamName, True);
+  Stream.Read(FStreamTitle, True);
+  Stream.Read(FStreamParsedTitle, True);
+  Stream.Read(FCurrentURL, True);
+  Stream.Read(FBitrate, False);
   Stream.Read(B);
   FFormat := TAudioTypes(B);
 
-  Stream.Read(C);
+  Stream.Read(C, False);
   for i := 0 to C - 1 do
   begin
-    Stream.Read(Tmp);
+    Stream.Read(Tmp, True);
     FRegExes.Add(Tmp);
   end;
 
-  Stream.Read(FServerHash);
-  Stream.Read(FServerArtistHash);
+  Stream.Read(FServerHash, False);
+  Stream.Read(FServerArtistHash, False);
 end;
 
 { TCommandUpdateStats }
@@ -582,8 +582,8 @@ procedure TCommandServerInfoResponse.Load(CommandHeader: TCommandHeader; Stream:
 begin
   inherited;
 
-  Stream.Read(FClientCount);
-  Stream.Read(FRecordingCount);
+  Stream.Read(FClientCount, False);
+  Stream.Read(FRecordingCount, False);
 end;
 
 { TCommandMessageResponse }
@@ -599,8 +599,8 @@ procedure TCommandMessageResponse.Load(CommandHeader: TCommandHeader; Stream: TM
 begin
   inherited;
 
-  Stream.Read(FMessageID);
-  Stream.Read(FMessageMsg);
+  Stream.Read(FMessageID, False);
+  Stream.Read(FMessageMsg, True);
 end;
 
 { TCommandSetSettings }
@@ -683,8 +683,8 @@ end;
 
 procedure TCommandSubmitStream.DoGet(S: TMemoryStream);
 begin
-  S.Write(FURL);
-  S.Write(FStreamName);
+  S.Write(FURL, False);
+  S.Write(FStreamName, False);
 end;
 
 { TCommandSetStreamData }
@@ -701,17 +701,17 @@ procedure TCommandSetStreamData.DoGet(S: TMemoryStream);
 var
   i: Integer;
 begin
-  S.Write(FStreamID);
+  S.Write(FStreamID, False);
   S.Write(FRating);
   S.Write(FHasRecordingOkay);
   S.Write(FRecordingOkay);
-  S.Write(FTitleRegEx);
+  S.Write(FTitleRegEx, False);
   S.Write(FHasIgnoreTitles);
-  S.Write(FIgnoreTitles);
+  S.Write(FIgnoreTitles, False);
   S.Write(FSetRegExps);
-  S.Write(Cardinal(Length(FRegExps)));
+  S.Write(Cardinal(Length(FRegExps)), False);
   for i := 0 to High(FRegExps) do
-    S.Write(FRegExps[i]);
+    S.Write(FRegExps[i], False);
 end;
 
 { TCommandTitleChanged }
@@ -741,14 +741,14 @@ procedure TCommandTitleChanged.DoGet(S: TMemoryStream);
 begin
   inherited;
 
-  S.Write(FStreamID);
-  S.Write(FStreamName);
-  S.Write(FStreamTitle);
-  S.Write(FCurrentURL);
-  S.Write(FURL);
+  S.Write(FStreamID, False);
+  S.Write(FStreamName, False);
+  S.Write(FStreamTitle, False);
+  S.Write(FCurrentURL, False);
+  S.Write(FURL, False);
   S.Write(Byte(FFormat));
-  S.Write(FKbps);
-  S.Write(FURLs);
+  S.Write(FKbps, False);
+  S.Write(FURLs, False);
 end;
 
 { TCommandGetMonitorStreamsResponse }
@@ -767,10 +767,10 @@ var
 begin
   inherited;
 
-  Stream.Read(Count);
+  Stream.Read(Count, False);
   SetLength(FStreamIDs, Count);
   for i := 0 to High(FStreamIDs) do
-    Stream.Read(FStreamIDs[i]);
+    Stream.Read(FStreamIDs[i], False);
 end;
 
 { TCommandGetMonitorStreams }
@@ -791,7 +791,7 @@ end;
 
 procedure TCommandGetMonitorStreams.DoGet(S: TMemoryStream);
 begin
-  S.Write(FCount);
+  S.Write(FCount, False);
 end;
 
 { TCommandSyncWishlist }
@@ -818,10 +818,10 @@ begin
   inherited;
 
   S.Write(Byte(FSyncType));
-  S.Write(Cardinal(Length(FHashes)));
+  S.Write(Cardinal(Length(FHashes)), False);
   for i := 0 to High(FHashes) do
   begin
-    S.Write(FHashes[i].Hash);
+    S.Write(FHashes[i].Hash, False);
     S.Write(FHashes[i].IsArtist);
   end;
 end;
@@ -848,7 +848,7 @@ begin
   inherited;
 
   S.Write(FTop);
-  S.Write(FTerm);
+  S.Write(FTerm, False);
 end;
 
 { TCommandSearchChartsResponse }
@@ -907,7 +907,7 @@ var
 begin
   inherited;
 
-  S.Write(FStreamID);
+  S.Write(FStreamID, False);
 
   FData.Seek(0, soFromBeginning);
   CompressedData := TMemoryStream.Create;
@@ -947,9 +947,9 @@ var
 begin
   inherited;
 
-  S.Write(Cardinal(Length(FTitles)));
+  S.Write(Cardinal(Length(FTitles)), False);
   for i := 0 to High(FTitles) do
-    S.Write(FTitles[i]);
+    S.Write(FTitles[i], False);
 end;
 
 { TCommandConvertManualToAutomaticResponse }
@@ -971,18 +971,18 @@ begin
   SetLength(FFoundTitles, 0);
   SetLength(FNotFoundTitles, 0);
 
-  Stream.Read(Count);
+  Stream.Read(Count, False);
   for i := 0 to Count - 1 do
   begin
     SetLength(FFoundTitles, Length(FFoundTitles) + 1);
-    Stream.Read(FFoundTitles[High(FFoundTitles)].Title);
-    Stream.Read(FFoundTitles[High(FFoundTitles)].Hash);
+    Stream.Read(FFoundTitles[High(FFoundTitles)].Title, True);
+    Stream.Read(FFoundTitles[High(FFoundTitles)].Hash, False);
   end;
-  Stream.Read(Count);
+  Stream.Read(Count, False);
   for i := 0 to Count - 1 do
   begin
     SetLength(FNotFoundTitles, Length(FNotFoundTitles) + 1);
-    Stream.Read(FNotFoundTitles[i]);
+    Stream.Read(FNotFoundTitles[i], True);
   end;
 end;
 
@@ -1006,7 +1006,7 @@ procedure TCommandGetStreamData.DoGet(S: TMemoryStream);
 begin
   inherited;
 
-  S.Write(FStreamID);
+  S.Write(FStreamID, False);
 end;
 
 { TCommandGetStreamDataResponse }
@@ -1029,23 +1029,23 @@ begin
   SetLength(FOtherUserRegExps, 0);
   SetLength(FUserRegExps, 0);
 
-  Stream.Read(Count);
+  Stream.Read(Count, False);
   for i := 0 to Count - 1 do
   begin
     SetLength(FLastTitles, Length(FLastTitles) + 1);
-    Stream.Read(FLastTitles[High(FLastTitles)]);
+    Stream.Read(FLastTitles[High(FLastTitles)], True);
   end;
-  Stream.Read(Count);
+  Stream.Read(Count, False);
   for i := 0 to Count - 1 do
   begin
     SetLength(FOtherUserRegExps, Length(FOtherUserRegExps) + 1);
-    Stream.Read(FOtherUserRegExps[High(FOtherUserRegExps)]);
+    Stream.Read(FOtherUserRegExps[High(FOtherUserRegExps)], True);
   end;
-  Stream.Read(Count);
+  Stream.Read(Count, False);
   for i := 0 to Count - 1 do
   begin
     SetLength(FUserRegExps, Length(FUserRegExps) + 1);
-    Stream.Read(FUserRegExps[High(FUserRegExps)]);
+    Stream.Read(FUserRegExps[High(FUserRegExps)], True);
   end;
 end;
 

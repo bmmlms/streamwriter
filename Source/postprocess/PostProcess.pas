@@ -135,7 +135,7 @@ type
     function Copy: TPostProcessBase; virtual; abstract;
     procedure Assign(Source: TPostProcessBase); virtual;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; virtual;
-    procedure Load(Stream: TMemoryStream; Version: Integer); virtual;
+    procedure Load(Stream: TStream; Version: Integer); virtual;
     procedure Save(Stream: TMemoryStream); overload; virtual;
     function ShowInitMessage(Handle: THandle): Boolean; virtual;
 
@@ -195,7 +195,7 @@ type
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
-    procedure Load(Stream: TMemoryStream; Version: Integer); override;
+    procedure Load(Stream: TStream; Version: Integer); override;
     procedure Save(Stream: TMemoryStream); overload; override;
 
     property Exe: string read FExe write FSetExe;
@@ -420,15 +420,15 @@ begin
   FName := ExtractFileName(FExe);
 end;
 
-procedure TExternalPostProcess.Load(Stream: TMemoryStream; Version: Integer);
+procedure TExternalPostProcess.Load(Stream: TStream; Version: Integer);
 begin
   inherited;
 
-  Stream.Read(FIdentifier);
-  Stream.Read(FExe);
-  Stream.Read(FParams);
-  Stream.Read(FGroupID);
-  Stream.Read(FName);
+  Stream.Read(FIdentifier, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(FExe, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(FParams, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(FGroupID, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(FName, IfThen<Boolean>(Version > 68, True, False));
 
   if Version < 64 then
     FParams := ConvertPattern(FParams);
@@ -446,11 +446,11 @@ procedure TExternalPostProcess.Save(Stream: TMemoryStream);
 begin
   inherited;
 
-  Stream.Write(FIdentifier);
-  Stream.Write(FExe);
-  Stream.Write(FParams);
-  Stream.Write(FGroupID);
-  Stream.Write(FName);
+  Stream.Write(FIdentifier, True);
+  Stream.Write(FExe, True);
+  Stream.Write(FParams, True);
+  Stream.Write(FGroupID, True);
+  Stream.Write(FName, True);
 end;
 
 { TPostProcessBase }
@@ -496,17 +496,17 @@ begin
   Result := GroupID = 0;
 end;
 
-procedure TPostProcessBase.Load(Stream: TMemoryStream; Version: Integer);
+procedure TPostProcessBase.Load(Stream: TStream; Version: Integer);
 begin
   Stream.Read(FActive);
-  Stream.Read(FOrder);
+  Stream.Read(FOrder, IfThen<Boolean>(Version > 68, True, False));
   Stream.Read(FOnlyIfCut);
 end;
 
 procedure TPostProcessBase.Save(Stream: TMemoryStream);
 begin
   Stream.Write(FActive);
-  Stream.Write(FOrder);
+  Stream.Write(FOrder, True);
   Stream.Write(FOnlyIfCut);
 end;
 

@@ -64,7 +64,7 @@ type
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
-    procedure Load(Stream: TMemoryStream; Version: Integer); override;
+    procedure Load(Stream: TStream; Version: Integer); override;
     procedure Save(Stream: TMemoryStream); override;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
   end;
@@ -252,17 +252,17 @@ begin
   Result := _('Write tags to recorded songs');
 end;
 
-procedure TPostProcessSetTags.Load(Stream: TMemoryStream; Version: Integer);
+procedure TPostProcessSetTags.Load(Stream: TStream; Version: Integer);
 begin
   inherited;
 
-  Stream.Read(FArtist);
-  Stream.Read(FAlbum);
-  Stream.Read(FTitle);
-  Stream.Read(FComment);
+  Stream.Read(FArtist, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(FAlbum, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(FTitle, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(FComment, IfThen<Boolean>(Version > 68, True, False));
 
   if Version > 67 then
-    Stream.Read(FGenre);
+    Stream.Read(FGenre, IfThen<Boolean>(Version > 68, True, False));
 
   if Version < 64 then
   begin
@@ -282,11 +282,11 @@ procedure TPostProcessSetTags.Save(Stream: TMemoryStream);
 begin
   inherited;
 
-  Stream.Write(FArtist);
-  Stream.Write(FAlbum);
-  Stream.Write(FTitle);
-  Stream.Write(FComment);
-  Stream.Write(FGenre);
+  Stream.Write(FArtist, True);
+  Stream.Write(FAlbum, True);
+  Stream.Write(FTitle, True);
+  Stream.Write(FComment, True);
+  Stream.Write(FGenre, True);
 end;
 
 end.

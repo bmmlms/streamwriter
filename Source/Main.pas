@@ -550,15 +550,7 @@ begin
 
   while True do
     try
-
-
-
-
-      AppGlobals.Data.Save(not Shutdown);
-
-
-
-
+      AppGlobals.Data.Save(AppGlobals.DataFile, False);
       Break;
     except
       if not Shutdown then
@@ -598,7 +590,7 @@ begin
         //          - User importiert neue exportierte Datei, Version ist > 10 durch Magic, EXPORTMAGIC gefunden, alles cool
         TDataLists.VerifyMagic(S, 10, False);
 
-        S.Read(Version);
+        S.Read(Version, False);
         Lst := TSettingsList.Load(S);
         try
           AppGlobals.Storage.Assign(Lst);
@@ -607,7 +599,7 @@ begin
           // LastUsedVersion aus den Registry-/Ini-Einstellungen hat.
           AppGlobals.Load;
           AppGlobals.Data.Load(S, ImportFilename);
-          AppGlobals.Data.Save(True);
+          AppGlobals.Data.Save(AppGlobals.DataFile, True);
         finally
           Lst.Free;
         end;
@@ -2215,14 +2207,12 @@ end;
 
 procedure TfrmStreamWriterMain.tmrAutoSaveTimer(Sender: TObject);
 begin
-  Exit;
-
   if Application.Terminated or AppGlobals.SkipSave or AppGlobals.Data.LoadError then
     Exit;
 
   try
     PrepareSave;
-    AppGlobals.Data.SaveRecover;
+    AppGlobals.Data.Save(AppGlobals.DataFile, False);
     try
       AppGlobals.Save(0);
     except

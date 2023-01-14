@@ -67,7 +67,7 @@ type
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
-    procedure Load(Stream: TMemoryStream; Version: Integer); override;
+    procedure Load(Stream: TStream; Version: Integer); override;
     procedure Save(Stream: TMemoryStream); override;
     function Configure(AOwner: TComponent; Handle: Cardinal; ShowMessages: Boolean): Boolean; override;
     //function EatFiles(LameFile, MADFile: string): Boolean;
@@ -284,7 +284,7 @@ begin
   Result := _('Apply effects using SoX');
 end;
 
-procedure TPostProcessSoX.Load(Stream: TMemoryStream; Version: Integer);
+procedure TPostProcessSoX.Load(Stream: TStream; Version: Integer);
 begin
   inherited;
 
@@ -292,13 +292,13 @@ begin
 
   Stream.Read(FFadeoutStart);
   Stream.Read(FFadeoutEnd);
-  Stream.Read(FFadeoutStartLength);
-  Stream.Read(FFadeoutEndLength);
+  Stream.Read(FFadeoutStartLength, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(FFadeoutEndLength, IfThen<Boolean>(Version > 68, True, False));
 
   Stream.Read(FSilenceStart);
   Stream.Read(FSilenceEnd);
-  Stream.Read(FSilenceStartLength);
-  Stream.Read(FSilenceEndLength);
+  Stream.Read(FSilenceStartLength, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(FSilenceEndLength, IfThen<Boolean>(Version > 68, True, False));
 end;
 
 function TPostProcessSoX.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
@@ -314,13 +314,13 @@ begin
 
   Stream.Write(FFadeoutStart);
   Stream.Write(FFadeoutEnd);
-  Stream.Write(FFadeoutStartLength);
-  Stream.Write(FFadeoutEndLength);
+  Stream.Write(FFadeoutStartLength, True);
+  Stream.Write(FFadeoutEndLength, True);
 
   Stream.Write(FSilenceStart);
   Stream.Write(FSilenceEnd);
-  Stream.Write(FSilenceStartLength);
-  Stream.Write(FSilenceEndLength);
+  Stream.Write(FSilenceStartLength, True);
+  Stream.Write(FSilenceEndLength, True);
 end;
 
 function TPostProcessSoX.ShowInitMessage(Handle: THandle): Boolean;

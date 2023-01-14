@@ -57,7 +57,7 @@ type
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
     procedure Assign(Source: TPostProcessBase); override;
-    procedure Load(Stream: TMemoryStream; Version: Integer); override;
+    procedure Load(Stream: TStream; Version: Integer); override;
     procedure Save(Stream: TMemoryStream); override;
 
     function MP4BoxMux(InFile, OutFile: string; TerminateFlag: PByteBool): TActResults;
@@ -194,7 +194,7 @@ begin
   Result := _('Convert AAC to M4A');
 end;
 
-procedure TPostProcessMP4Box.Load(Stream: TMemoryStream; Version: Integer);
+procedure TPostProcessMP4Box.Load(Stream: TStream; Version: Integer);
 begin
   inherited;
 

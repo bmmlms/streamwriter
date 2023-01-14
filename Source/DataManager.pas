@@ -27,6 +27,7 @@ interface
 uses
   AddonManager,
   AudioFunctions,
+  bufstream,
   Classes,
   ComCtrls,
   Constants,
@@ -41,6 +42,7 @@ uses
   SWFunctions,
   SysUtils,
   TypeDefs,
+  Windows,
   ZStream;
 
 type
@@ -82,7 +84,7 @@ type
     constructor Create(ServerHash, ServerArtistHash: Cardinal; Title: string); overload;
     function Copy: TTitleInfo;
 
-    class function Load(Stream: TMemoryStream; Version: Integer): TTitleInfo;
+    class function Load(Stream: TStream; Version: Integer): TTitleInfo;
     procedure Save(Stream: TMemoryStream);
 
     property Title: string read FTitle write FTitle;
@@ -123,7 +125,7 @@ type
     procedure Assign(Source: TStreamBrowserEntry);
     function Copy: TStreamBrowserEntry;
 
-    class function Load(Stream: TMemoryStream; Version: Integer): TStreamBrowserEntry;
+    class function Load(Stream: TStream; Version: Integer): TStreamBrowserEntry;
     class function LoadFromHome(Stream: TMemoryStream; Version: Integer): TStreamBrowserEntry;
     procedure Save(Stream: TMemoryStream);
 
@@ -189,7 +191,7 @@ type
     procedure Assign(Source: TTrackInfo);
     function Copy: TTrackInfo;
 
-    class function Load(Stream: TMemoryStream; Version: Integer): TTrackInfo;
+    class function Load(Stream: TStream; Version: Integer): TTrackInfo;
     procedure Save(Stream: TMemoryStream);
 
     // The time the title was saved
@@ -238,7 +240,7 @@ type
   public
     constructor Create(Name: string; Idx: Integer); overload;
 
-    class function Load(Stream: TMemoryStream; Version: Integer): TListCategory;
+    class function Load(Stream: TStream; Version: Integer): TListCategory;
     procedure Save(Stream: TMemoryStream);
 
     // The name of the category
@@ -272,7 +274,7 @@ type
     procedure Assign(From: TRecentEntry);
     function Copy: TRecentEntry;
 
-    class function Load(Stream: TMemoryStream; Version: Integer): TRecentEntry;
+    class function Load(Stream: TStream; Version: Integer): TRecentEntry;
     procedure Save(Stream: TMemoryStream);
 
     // The stream's id
@@ -295,7 +297,7 @@ type
   public
     constructor Create(Name, URL: string; Rating: Integer);
 
-    class function Load(Stream: TMemoryStream; Version: Integer): TRatingEntry;
+    class function Load(Stream: TStream; Version: Integer): TRatingEntry;
     procedure Save(Stream: TMemoryStream);
 
     property Name: string read FName;
@@ -319,7 +321,7 @@ type
     procedure Assign(From: TSchedule);
     function Copy: TSchedule;
 
-    class function Load(Stream: TMemoryStream; Version: Integer): TSchedule;
+    class function Load(Stream: TStream; Version: Integer): TSchedule;
     procedure Save(Stream: TMemoryStream);
 
     function GetStartTime(ModificationAllowed: Boolean): TDateTime;
@@ -357,7 +359,7 @@ type
     VBRQuality: TVBRQualities;
 
     constructor Create(AudioType: TAudioTypes; BitrateType: TBitrates; VBRQuality: TVBRQualities);
-    procedure Load(Stream: TMemoryStream; Version: Integer); overload;
+    procedure Load(Stream: TStream; Version: Integer); overload;
     procedure Save(Stream: TMemoryStream); overload;
     procedure Assign(From: TEncoderSettings);
     function Copy: TEncoderSettings;
@@ -440,8 +442,8 @@ type
     class procedure ApplyAutoDefaults(Data: TDataLists; S: TStreamSettings);
 
     // Loads an instance of TStreamSettings from a stream
-    class function Load(Stream: TMemoryStream; Version: Integer): TStreamSettings;
-    class function LoadAuto(Data: TDataLists; Stream: TMemoryStream; Version: Integer): TStreamSettings;
+    class function Load(Stream: TStream; Version: Integer): TStreamSettings;
+    class function LoadAuto(Data: TDataLists; Stream: TStream; Version: Integer): TStreamSettings;
     // Saves this instance of TStreamSettings to a stream
     procedure Save(Stream: TMemoryStream);
     procedure SaveAuto(Stream: TMemoryStream);
@@ -587,7 +589,7 @@ type
 
     procedure Assign(From: TStreamEntry);
     function Copy: TStreamEntry;
-    class function Load(Data: TDataLists; Stream: TMemoryStream; Version: Integer): TStreamEntry;
+    class function Load(Data: TDataLists; Stream: TStream; Version: Integer): TStreamEntry;
     procedure Save(Stream: TMemoryStream);
 
     property Settings: TStreamSettings read FSettings;
@@ -645,7 +647,7 @@ type
     procedure Assign(Source: TChartCategory);
     function Copy: TChartCategory;
 
-    class function Load(Stream: TMemoryStream; Version: Integer): TChartCategory;
+    class function Load(Stream: TStream; Version: Integer): TChartCategory;
     procedure Save(Stream: TMemoryStream);
 
     property ID: Cardinal read FID;
@@ -664,7 +666,7 @@ type
     constructor Create(ID, PlayedLastDay, PlayedLastWeek, PlayedLast: Cardinal);
     function Copy: TChartStream;
 
-    class function Load(Stream: TMemoryStream; Version: Integer): TChartStream;
+    class function Load(Stream: TStream; Version: Integer): TChartStream;
 
     property ID: Cardinal read FID;
     property Stream: TStreamBrowserEntry read FStream write FStream;
@@ -736,7 +738,7 @@ type
     constructor Create; overload;
     constructor Create(Name: string; ID: Cardinal); overload;
 
-    class function Load(Stream: TMemoryStream; Version: Integer): TGenre;
+    class function Load(Stream: TStream; Version: Integer): TGenre;
     class function LoadFromHome(Stream: TMemoryStream; Version: Integer): TGenre;
     procedure Save(Stream: TMemoryStream);
 
@@ -788,11 +790,10 @@ type
 
     // Cleans all lists and frees all their items
     procedure CleanLists;
-    procedure Load(Recovery: Boolean); overload;
-    procedure Load(var S: TMemoryStream; Filename: string); overload;
-    procedure Save(UseCompression: Boolean); overload;
-    procedure Save(S: TMemoryStream; UseCompression: Boolean); overload;
-    procedure SaveRecover;
+    procedure Load(const Filename: string); overload;
+    procedure Load(const Stream: TStream; const Filename: string); overload;
+    procedure Save(const Filename: string; const UseCompression: Boolean); overload;
+    procedure Save(const S: TStream; const UseCompression: Boolean); overload;
     procedure CheckEncodersAndPostProcessors;
 
     class procedure VerifyMagic(S: TStream; MinVersion: Cardinal; IsData: Boolean);
@@ -836,7 +837,7 @@ type
   end;
 
 const
-  DATAVERSION: Cardinal = 68;
+  DATAVERSION: Cardinal = 69;
   DATAMAGIC: array[0..3] of Byte = (118, 114, 110, 97);
   EXPORTMAGIC: array[0..3] of Byte = (97, 110, 114, 118);
 
@@ -872,14 +873,14 @@ begin
   FUpdatedToHash := True;
 end;
 
-class function TTitleInfo.Load(Stream: TMemoryStream; Version: Integer): TTitleInfo;
+class function TTitleInfo.Load(Stream: TStream; Version: Integer): TTitleInfo;
 var
   NumChars: Integer;
   Hash: Cardinal;
   Pattern: string;
 begin
   Result := TTitleInfo.Create;
-  Stream.Read(Result.FTitle);
+  Stream.Read(Result.FTitle, IfThen<Boolean>(Version > 68, True, False));
 
   if Version > 31 then
     Stream.Read(Result.FAdded)
@@ -887,14 +888,14 @@ begin
     Result.FAdded := Now;
 
   if Version > 31 then
-    Stream.Read(Result.FIndex)
+    Stream.Read(Result.FIndex, IfThen<Boolean>(Version > 68, True, False))
   else
     Result.FIndex := High(Cardinal);
 
   if Version > 3 then
   begin
-    Stream.Read(Result.FPattern);
-    Stream.Read(Result.FHash);
+    Stream.Read(Result.FPattern, IfThen<Boolean>(Version > 68, True, False));
+    Stream.Read(Result.FHash, IfThen<Boolean>(Version > 68, True, False));
   end else
   begin
     Pattern := TFunctions.BuildPattern(Result.FTitle, Hash, NumChars, False);
@@ -903,12 +904,12 @@ begin
   end;
 
   if Version > 46 then
-    Stream.Read(Result.FServerHash);
+    Stream.Read(Result.FServerHash, IfThen<Boolean>(Version > 68, True, False));
   if Version > 49 then
-    Stream.Read(Result.FServerArtistHash);
+    Stream.Read(Result.FServerArtistHash, IfThen<Boolean>(Version > 68, True, False));
 
   if Version > 50 then
-    Stream.Read(Result.FSaved);
+    Stream.Read(Result.FSaved, IfThen<Boolean>(Version > 68, True, False));
 
   if Version > 48 then
     Stream.Read(Result.FUpdatedToHash)
@@ -918,14 +919,14 @@ end;
 
 procedure TTitleInfo.Save(Stream: TMemoryStream);
 begin
-  Stream.Write(FTitle);
+  Stream.Write(FTitle, True);
   Stream.Write(FAdded);
-  Stream.Write(FIndex);
-  Stream.Write(FPattern);
-  Stream.Write(FHash);
-  Stream.Write(FServerHash);
-  Stream.Write(FServerArtistHash);
-  Stream.Write(FSaved);
+  Stream.Write(FIndex, True);
+  Stream.Write(FPattern, True);
+  Stream.Write(FHash, True);
+  Stream.Write(FServerHash, True);
+  Stream.Write(FServerArtistHash, True);
+  Stream.Write(FSaved, True);
   Stream.Write(FUpdatedToHash);
 end;
 
@@ -1040,11 +1041,10 @@ begin
   FName := Value;
 end;
 
-class function TStreamEntry.Load(Data: TDataLists; Stream: TMemoryStream; Version: Integer): TStreamEntry;
+class function TStreamEntry.Load(Data: TDataLists; Stream: TStream; Version: Integer): TStreamEntry;
 var
   BTmp: Boolean;
-  i: Integer;
-  Count: Cardinal;
+  i, Count: Integer;
   EnumTmp: Byte;
   STmp, URL: string;
 begin
@@ -1059,33 +1059,33 @@ begin
     Result.FSettings.Assign(Data.StreamSettings);
 
   if Version >= 24 then
-    Stream.Read(Result.FID);
+    Stream.Read(Result.FID, IfThen<Boolean>(Version > 68, True, False));
 
-  Stream.Read(Result.FName);
+  Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
 
   if Version >= 38 then
-    Stream.Read(Result.FCustomName)
+    Stream.Read(Result.FCustomName, IfThen<Boolean>(Version > 68, True, False))
   else
     Result.FCustomName := Result.FName;
 
   if Version >= 8 then
-    Stream.Read(Result.FStreamURL);
-  Stream.Read(Result.FStartURL);
-  Stream.Read(Count);
+    Stream.Read(Result.FStreamURL, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FStartURL, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
   for i := 0 to Count - 1 do
   begin
-    Stream.Read(URL);
+    Stream.Read(URL, IfThen<Boolean>(Version > 68, True, False));
     Result.FURLs.Add(URL);
   end;
 
-  Stream.Read(Result.FBitrate);
+  Stream.Read(Result.FBitrate, IfThen<Boolean>(Version > 68, True, False));
 
   if Version >= 62 then
     Stream.Read(Result.FVBR);
 
   if Version < 40 then
   begin
-    Stream.Read(STmp);
+    Stream.Read(STmp, IfThen<Boolean>(Version > 68, True, False));
     Result.FAudioType := atNone;
     if STmp = 'MP3' then
       Result.FAudioType := atMPEG
@@ -1097,21 +1097,21 @@ begin
     Result.FAudioType := TAudioTypes(EnumTmp);
   end;
 
-  Stream.Read(Result.FGenre);
+  Stream.Read(Result.FGenre, IfThen<Boolean>(Version > 68, True, False));
 
   if Version <= 20 then
     Stream.Read(BTmp);
   if Version >= 5 then
   begin
-    Stream.Read(Result.FIndex);
-    Stream.Read(Result.FCategoryIndex);
+    Stream.Read(Result.FIndex, IfThen<Boolean>(Version > 68, True, False));
+    Stream.Read(Result.FCategoryIndex, IfThen<Boolean>(Version > 68, True, False));
   end;
 
-  Stream.Read(Result.FSongsSaved);
-  Stream.Read(Result.FBytesReceived);
+  Stream.Read(Result.FSongsSaved, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FBytesReceived, IfThen<Boolean>(Version > 68, True, False));
 
   if Version >= 46 then
-    Stream.Read(Result.FSecondsReceived);
+    Stream.Read(Result.FSecondsReceived, IfThen<Boolean>(Version > 68, True, False));
 
   if Version >= 17 then
     Stream.Read(Result.FWasRecording);
@@ -1121,23 +1121,23 @@ begin
 
   if Version >= 18 then
   begin
-    Stream.Read(Count);
+    Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
     for i := 0 to Count - 1 do
       Result.FSchedules.Add(TSchedule.Load(Stream, Version));
   end;
 
   if Version >= 28 then
   begin
-    Stream.Read(Count);
+    Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
     for i := 0 to Count - 1 do
       Result.FSaveList.Add(TTitleInfo.Load(Stream, Version));
-    Stream.Read(Count);
+    Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
     for i := 0 to Count - 1 do
       Result.FIgnoreList.Add(TTitleInfo.Load(Stream, Version));
   end;
 
   if Version > 31 then
-    Stream.Read(Result.FIgnoreListIndex)
+    Stream.Read(Result.FIgnoreListIndex, IfThen<Boolean>(Version > 68, True, False))
   else
     Result.FIgnoreListIndex := High(Cardinal);
 end;
@@ -1148,42 +1148,42 @@ var
 begin
   FSettings.Save(Stream);
 
-  Stream.Write(FID);
-  Stream.Write(FName);
-  Stream.Write(FCustomName);
-  Stream.Write(FStreamURL);
-  Stream.Write(FStartURL);
-  Stream.Write(FURLs.Count);
+  Stream.Write(FID, True);
+  Stream.Write(FName, True);
+  Stream.Write(FCustomName, True);
+  Stream.Write(FStreamURL, True);
+  Stream.Write(FStartURL, True);
+  Stream.Write(FURLs.Count, True);
   for i := 0 to FURLs.Count - 1 do
-    Stream.Write(FURLs[i]);
-  Stream.Write(FBitrate);
+    Stream.Write(FURLs[i], True);
+  Stream.Write(FBitrate, True);
   Stream.Write(FVBR);
   Stream.Write(Byte(FAudioType));
-  Stream.Write(FGenre);
+  Stream.Write(FGenre, True);
 
-  Stream.Write(FIndex);
-  Stream.Write(FCategoryIndex);
+  Stream.Write(FIndex, True);
+  Stream.Write(FCategoryIndex, True);
 
-  Stream.Write(FSongsSaved);
-  Stream.Write(FBytesReceived);
-  Stream.Write(FSecondsReceived);
+  Stream.Write(FSongsSaved, True);
+  Stream.Write(FBytesReceived, True);
+  Stream.Write(FSecondsReceived, True);
 
   Stream.Write(FWasRecording);
   Stream.Write(FWasPlaying);
 
-  Stream.Write(FSchedules.Count);
+  Stream.Write(FSchedules.Count, True);
   for i := 0 to FSchedules.Count - 1 do
     FSchedules[i].Save(Stream);
 
-  Stream.Write(FSaveList.Count);
+  Stream.Write(FSaveList.Count, True);
   for i := 0 to FSaveList.Count - 1 do
     FSaveList[i].Save(Stream);
 
-  Stream.Write(FIgnoreList.Count);
+  Stream.Write(FIgnoreList.Count, True);
   for i := 0 to FIgnoreList.Count - 1 do
     FIgnoreList[i].Save(Stream);
 
-  Stream.Write(FIgnoreListIndex);
+  Stream.Write(FIgnoreListIndex, True);
 end;
 
 procedure TStreamEntry.FSetGenre(Value: string);
@@ -1319,22 +1319,21 @@ begin
   inherited;
 end;
 
-procedure TDataLists.Load(var S: TMemoryStream; Filename: string);
+procedure TDataLists.Load(const Stream: TStream; const Filename: string);
 var
   Entry: TStreamEntry;
   TitleInfo: TTitleInfo;
   TrackInfo: TTrackInfo;
   Str: string;
-  Version, CatCount, EntryCount: Integer;
-  i: Integer;
-  DecompressedStream: TMemoryStream;
+  i, Version, CatCount, EntryCount: Integer;
   Compressed: Boolean;
   ChartCategory: TChartCategory;
   TitleCount, Hash: Cardinal;
+  ReadStream: TStream;
 begin
   CleanLists;
 
-  S.Read(Version);
+  Stream.Read(Version, False);
 
   if Version > DATAVERSION then
     raise EVersionException.Create(Filename);
@@ -1347,276 +1346,243 @@ begin
 
   // Ab 45 für Recoveryfile abgeschaltet, darum als Feld gespeichert
   if Version >= 45 then
-    S.Read(Compressed);
+    Stream.Read(Compressed);
 
-  if Compressed then
-  begin
-    DecompressedStream := TMemoryStream.Create;
-    try
-      TFunctions.DecompressStream(S, DecompressedStream);
+  ReadStream := IfThen<TStream>(Compressed, TDecompressionStream.Create(Stream), Stream);
+  try
+    ReadStream.Read(FReceived, IfThen<Boolean>(Version > 68, True, False));
+    if Version >= 56 then
+      ReadStream.Read(FSongsSaved, IfThen<Boolean>(Version > 68, True, False));
 
-      S.Size := 0;
-      DecompressedStream.Seek(0, soFromBeginning);
-      S.CopyFrom(DecompressedStream, DecompressedStream.Size);
-      S.Seek(0, soFromBeginning);
-    finally
-      DecompressedStream.Free;
-    end;
-  end;
-
-  S.Read(FReceived);
-  if Version >= 56 then
-    S.Read(FSongsSaved);
-
-  if Version <= 2 then
-    while S.Position < S.Size do
-    begin
-      Entry := TStreamEntry.Load(Self, S, Version);
-      Entry.FParent := FStreamList;
-      FStreamList.Add(Entry);
-    end else
-  begin
-    if Version >= 61 then
-    begin
-      FStreamSettings.Free;
-      FStreamSettings := TStreamSettings.Load(S, Version);
-    end else
-      FStreamSettings.Assign(FDefaultStreamSettings);
-
-    if (Version > 58) and (Version < 60) then
-    begin
-      FAutoRecordSettings.Free;
-
-      // REMARK: Pfusch für Zwischenversion, damit im File gespult wird... für Build 601 von Version 4.9.0.1.
-      FAutoRecordSettings := TStreamSettings.Load(S, Version);
-      FAutoRecordSettings.Free;
-
-      FAutoRecordSettings := TStreamSettings.Create;
-      FAutoRecordSettings.Assign(DefaultStreamSettings);
-      TStreamSettings.ApplyAutoDefaults(Self, FAutoRecordSettings);
-    end else if Version >= 60 then
-    begin
-      FAutoRecordSettings.Free;
-      FAutoRecordSettings := TStreamSettings.LoadAuto(Self, S, Version);
-    end;
-
-    if Version >= 5 then
-    begin
-      S.Read(CatCount);
-      for i := 0 to CatCount - 1 do
-        FCategoryList.Add(TListCategory.Load(S, Version));
-    end;
-
-    S.Read(EntryCount);
-    for i := 0 to EntryCount - 1 do
-    begin
-      Entry := TStreamEntry.Load(Self, S, Version);
-      Entry.FParent := FStreamList;
-      FStreamList.Add(Entry);
-    end;
-
-    if Version >= 6 then
-    begin
-      S.Read(EntryCount);
-      for i := 0 to EntryCount - 1 do
+    if Version <= 2 then
+      while ReadStream.Position < ReadStream.Size do
       begin
-        TrackInfo := TTrackInfo.Load(S, Version);
-        FTrackList.Add(TrackInfo);
+        Entry := TStreamEntry.Load(Self, ReadStream, Version);
+        Entry.FParent := FStreamList;
+        FStreamList.Add(Entry);
+      end else
+    begin
+      if Version >= 61 then
+      begin
+        FStreamSettings.Free;
+        FStreamSettings := TStreamSettings.Load(ReadStream, Version);
+      end else
+        FStreamSettings.Assign(FDefaultStreamSettings);
+
+      if (Version > 58) and (Version < 60) then
+      begin
+        FAutoRecordSettings.Free;
+
+        // REMARK: Pfusch für Zwischenversion, damit im File gespult wird... für Build 601 von Version 4.9.0.1.
+        FAutoRecordSettings := TStreamSettings.Load(ReadStream, Version);
+        FAutoRecordSettings.Free;
+
+        FAutoRecordSettings := TStreamSettings.Create;
+        FAutoRecordSettings.Assign(DefaultStreamSettings);
+        TStreamSettings.ApplyAutoDefaults(Self, FAutoRecordSettings);
+      end else if Version >= 60 then
+      begin
+        FAutoRecordSettings.Free;
+        FAutoRecordSettings := TStreamSettings.LoadAuto(Self, ReadStream, Version);
       end;
-    end;
 
-    if Version >= 3 then
-    begin
-      S.Read(EntryCount);
-      for i := 0 to EntryCount - 1 do
+      if Version >= 5 then
       begin
-        TitleInfo := TTitleInfo.Load(S, Version);
-        if TitleInfo <> nil then
-          FSaveList.Add(TitleInfo);
+        ReadStream.Read(CatCount, IfThen<Boolean>(Version > 68, True, False));
+        for i := 0 to CatCount - 1 do
+          FCategoryList.Add(TListCategory.Load(ReadStream, Version));
       end;
-      S.Read(EntryCount);
+
+      ReadStream.Read(EntryCount, IfThen<Boolean>(Version > 68, True, False));
       for i := 0 to EntryCount - 1 do
       begin
-        TitleInfo := TTitleInfo.Load(S, Version);
-        if TitleInfo <> nil then
-          FIgnoreList.Add(TitleInfo);
+        Entry := TStreamEntry.Load(Self, ReadStream, Version);
+        Entry.FParent := FStreamList;
+        FStreamList.Add(Entry);
       end;
 
       if Version >= 6 then
       begin
-        if Version < 37 then
+        ReadStream.Read(EntryCount, IfThen<Boolean>(Version > 68, True, False));
+        for i := 0 to EntryCount - 1 do
         begin
-          S.Read(EntryCount);
-          for i := 0 to EntryCount - 1 do
-            S.Read(Str);
+          TrackInfo := TTrackInfo.Load(ReadStream, Version);
+          FTrackList.Add(TrackInfo);
+        end;
+      end;
+
+      if Version >= 3 then
+      begin
+        ReadStream.Read(EntryCount, IfThen<Boolean>(Version > 68, True, False));
+        for i := 0 to EntryCount - 1 do
+        begin
+          TitleInfo := TTitleInfo.Load(ReadStream, Version);
+          if TitleInfo <> nil then
+            FSaveList.Add(TitleInfo);
+        end;
+        ReadStream.Read(EntryCount, IfThen<Boolean>(Version > 68, True, False));
+        for i := 0 to EntryCount - 1 do
+        begin
+          TitleInfo := TTitleInfo.Load(ReadStream, Version);
+          if TitleInfo <> nil then
+            FIgnoreList.Add(TitleInfo);
         end;
 
-        S.Read(EntryCount);
-        for i := 0 to EntryCount - 1 do
-          FRecentList.Add(TRecentEntry.Load(S, Version));
-
-        if Version >= 15 then
+        if Version >= 6 then
         begin
-          S.Read(EntryCount);
-          for i := 0 to EntryCount - 1 do
+          if Version < 37 then
           begin
-            S.Read(Str);
-            FStreamBlacklist.Add(Str);
+            ReadStream.Read(EntryCount, IfThen<Boolean>(Version > 68, True, False));
+            for i := 0 to EntryCount - 1 do
+              ReadStream.Read(Str, IfThen<Boolean>(Version > 68, True, False));
+          end;
+
+          ReadStream.Read(EntryCount, IfThen<Boolean>(Version > 68, True, False));
+          for i := 0 to EntryCount - 1 do
+            FRecentList.Add(TRecentEntry.Load(ReadStream, Version));
+
+          if Version >= 15 then
+          begin
+            ReadStream.Read(EntryCount, IfThen<Boolean>(Version > 68, True, False));
+            for i := 0 to EntryCount - 1 do
+            begin
+              ReadStream.Read(Str, IfThen<Boolean>(Version > 68, True, False));
+              FStreamBlacklist.Add(Str);
+            end;
+          end;
+
+          if Version = 22 then
+          begin
+            ReadStream.Read(EntryCount, IfThen<Boolean>(Version > 68, True, False));
+            for i := 0 to EntryCount - 1 do
+              FRatingList.Add(TRatingEntry.Load(ReadStream, Version));
+          end;
+
+          if Version >= 23 then
+          begin
+            ReadStream.Read(EntryCount, IfThen<Boolean>(Version > 68, True, False));
+            for i := 0 to EntryCount - 1 do
+              FBrowserList.Add(TStreamBrowserEntry.Load(ReadStream, Version));
+
+            ReadStream.Read(EntryCount, IfThen<Boolean>(Version > 68, True, False));
+            for i := 0 to EntryCount - 1 do
+              FGenreList.Add(TGenre.Load(ReadStream, Version));
           end;
         end;
+      end;
+    end;
 
-        if Version = 22 then
+    if Version >= 35 then
+    begin
+      if Version < 48 then
+      begin
+        ReadStream.Read(CatCount, IfThen<Boolean>(Version > 68, True, False));
+        for i := 0 to CatCount - 1 do
         begin
-          S.Read(EntryCount);
-          for i := 0 to EntryCount - 1 do
-            FRatingList.Add(TRatingEntry.Load(S, Version));
-        end;
-
-        if Version >= 23 then
-        begin
-          S.Read(EntryCount);
-          for i := 0 to EntryCount - 1 do
-            FBrowserList.Add(TStreamBrowserEntry.Load(S, Version));
-
-          S.Read(EntryCount);
-          for i := 0 to EntryCount - 1 do
-            FGenreList.Add(TGenre.Load(S, Version));
+          ChartCategory := TChartCategory.Load(ReadStream, Version);
+          ChartCategory.Free;
         end;
       end;
-    end;
-  end;
 
-  if Version >= 35 then
-  begin
-    if Version < 48 then
+      FBrowserList.CreateDict;
+    end;
+
+    if Version >= 51 then
     begin
-      S.Read(CatCount);
-      for i := 0 to CatCount - 1 do
+      ReadStream.Read(TitleCount, IfThen<Boolean>(Version > 68, True, False));
+      for i := 0 to TitleCount - 1 do
       begin
-        ChartCategory := TChartCategory.Load(S, Version);
-        ChartCategory.Free;
+        ReadStream.Read(Hash, IfThen<Boolean>(Version > 68, True, False));
+        SavedTitleHashes.Add(Hash);
       end;
+
+      // Aufräumen...
+      while SavedTitleHashes.Count > 5000 do
+        SavedTitleHashes.Delete(0);
     end;
 
-    FBrowserList.CreateDict;
-  end;
-
-  if Version >= 51 then
-  begin
-    S.Read(TitleCount);
-    for i := 0 to TitleCount - 1 do
-    begin
-      S.Read(Hash);
-      SavedTitleHashes.Add(Hash);
-    end;
-
-    // Aufräumen...
-    while SavedTitleHashes.Count > 5000 do
-      SavedTitleHashes.Delete(0);
-  end;
-end;
-
-procedure TDataLists.Load(Recovery: Boolean);
-var
-  Filename: string;
-  S: TMemoryStream;
-begin
-  if Recovery then
-    Filename := AppGlobals.RecoveryFile
-  else
-    Filename := AppGlobals.DataFile;
-
-  if Filename = '' then
-    Exit;
-
-  S := TMemoryStream.Create;
-  try
-    try
-      S.LoadFromFile(Filename);
-    except
-      Exit;
-    end;
-
-    try
-      // Siehe Kommentar bei ExitApp() in Main.pas....
-      VerifyMagic(S, 62, True);
-
-      Load(S, Filename);
-    except
-      on E: Exception do
-      begin
-        E.Message := Filename;
-        raise;
-      end;
-    end;
   finally
-    S.Free;
+    if ReadStream <> Stream then
+      ReadStream.Free;
   end;
 end;
 
-procedure TDataLists.Save(S: TMemoryStream; UseCompression: Boolean);
+procedure TDataLists.Load(const Filename: string);
+var
+  Stream: TBufferedFileStream;
+begin
+  Stream := TBufferedFileStream.Create(Filename, fmOpenRead);
+  try
+    VerifyMagic(Stream, 62, True);
+    Load(Stream, Filename);
+  finally
+    Stream.Free;
+  end;
+end;
+
+procedure TDataLists.Save(const S: TStream; const UseCompression: Boolean);
 var
   i: Integer;
   CompressedStream: TMemoryStream;
 begin
-  S.Write(Integer(DATAVERSION));
+  S.Write(Integer(DATAVERSION), False);
 
   S.Write(UseCompression);
 
   CompressedStream := TMemoryStream.Create;
   try
-    CompressedStream.Write(FReceived);
-    CompressedStream.Write(FSongsSaved);
+    CompressedStream.Write(FReceived, True);
+    CompressedStream.Write(FSongsSaved, True);
 
     FStreamSettings.Save(CompressedStream);
     FAutoRecordSettings.SaveAuto(CompressedStream);
 
-    CompressedStream.Write(FCategoryList.Count);
+    CompressedStream.Write(FCategoryList.Count, True);
     for i := 0 to FCategoryList.Count - 1 do
       FCategoryList[i].Save(CompressedStream);
 
-    CompressedStream.Write(FStreamList.Count);
+    CompressedStream.Write(FStreamList.Count, True);
     for i := 0 to FStreamList.Count - 1 do
       FStreamList[i].Save(CompressedStream);
 
-    CompressedStream.Write(FTrackList.Count);
+    CompressedStream.Write(FTrackList.Count, True);
     for i := 0 to FTrackList.Count - 1 do
       FTrackList[i].Save(CompressedStream);
 
-    CompressedStream.Write(FSaveList.Count);
+    CompressedStream.Write(FSaveList.Count, True);
     for i := 0 to FSaveList.Count - 1 do
       FSaveList[i].Save(CompressedStream);
 
-    CompressedStream.Write(FIgnoreList.Count);
+    CompressedStream.Write(FIgnoreList.Count, True);
     for i := 0 to FIgnoreList.Count - 1 do
       FIgnoreList[i].Save(CompressedStream);
 
-    CompressedStream.Write(FRecentList.Count);
+    CompressedStream.Write(FRecentList.Count, True);
     for i := 0 to FRecentList.Count - 1 do
       FRecentList[i].Save(CompressedStream);
 
-    CompressedStream.Write(FStreamBlacklist.Count);
+    CompressedStream.Write(FStreamBlacklist.Count, True);
     for i := 0 to FStreamBlacklist.Count - 1 do
-      CompressedStream.Write(FStreamBlacklist[i]);
+      CompressedStream.Write(FStreamBlacklist[i], True);
 
-    CompressedStream.Write(FBrowserList.Count);
+    CompressedStream.Write(FBrowserList.Count, True);
     for i := 0 to FBrowserList.Count - 1 do
       FBrowserList[i].Save(CompressedStream);
 
-    CompressedStream.Write(FGenreList.Count);
+    CompressedStream.Write(FGenreList.Count, True);
     for i := 0 to FGenreList.Count - 1 do
       FGenreList[i].Save(CompressedStream);
 
-    CompressedStream.Write(Cardinal(SavedTitleHashes.Count));
+    CompressedStream.Write(Cardinal(SavedTitleHashes.Count), True);
     for i := 0 to SavedTitleHashes.Count - 1 do
-      CompressedStream.Write(SavedTitleHashes[i]);
+      CompressedStream.Write(SavedTitleHashes[i], True);
 
     CompressedStream.Seek(0, soFromBeginning);
 
     if UseCompression then
     begin
       {$IFDEF DEBUG}
-      TFunctions.CompressStream(CompressedStream, S, clNone);
+      TFunctions.CompressStream(CompressedStream, S, clDefault);
       {$ELSE}
       TFunctions.CompressStream(CompressedStream, S, clDefault);
       {$ENDIF}
@@ -1624,20 +1590,6 @@ begin
       S.CopyFrom(CompressedStream, CompressedStream.Size);
   finally
     CompressedStream.Free;
-  end;
-end;
-
-procedure TDataLists.SaveRecover;
-var
-  S: TMemoryStream;
-begin
-  S := TMemoryStream.Create;
-  try
-    S.WriteBuffer(DATAMAGIC[0], Length(DATAMAGIC));
-    Save(S, False);
-    S.SaveToFile(AppGlobals.RecoveryFile);
-  finally
-    S.Free;
   end;
 end;
 
@@ -1666,7 +1618,7 @@ begin
     Move(DATAMAGIC[0], OtherMagic[0], Length(Magic));
   end;
 
-  S.Read(Version);
+  S.Read(Version, False);
   if Version > MinVersion then
   begin
     if S.Size >= Length(Magic) then
@@ -1686,29 +1638,29 @@ begin
     S.Position := 0;
 end;
 
-procedure TDataLists.Save(UseCompression: Boolean);
+procedure TDataLists.Save(const Filename: string; const UseCompression: Boolean);
 var
-  S: TMemoryStream;
+  WriteFilename: string;
+  Stream: TBufferedFileStream;
 begin
-  if (AppGlobals.SkipSave) or (AppGlobals.DataFile = '') then
+  if FLoadError or AppGlobals.SkipSave or (AppGlobals.DataFile = '') then
     Exit;
 
   if (FCategoryList.Count = 1) and (FStreamList.Count = 0) and (FRecentList.Count = 0) and (FIgnoreList.Count = 0) and (FSaveList.Count = 0) and (FBrowserList.Count = 0) and not (FileExists(AppGlobals.DataFile)) then
     Exit;
 
-  if not FLoadError then
-  begin
-    S := TMemoryStream.Create;
-    try
-      S.WriteBuffer(DATAMAGIC[0], Length(DATAMAGIC));
-      Save(S, UseCompression);
-      S.SaveToFile(AppGlobals.DataFile);
+  WriteFilename := Filename + '.write';
 
-      DeleteFile(AppGlobals.RecoveryFile);
-    finally
-      S.Free;
-    end;
+  Stream := TBufferedFileStream.Create(WriteFilename, fmCreate);
+  try
+    Stream.WriteBuffer(DATAMAGIC[0], Length(DATAMAGIC));
+    Save(Stream, UseCompression);
+  finally
+    Stream.Free;
   end;
+
+  if not MoveFileExA(PChar(WriteFilename), PChar(Filename), MOVEFILE_REPLACE_EXISTING) then
+    raise Exception.Create('');
 end;
 
 { TTrackInfo }
@@ -1775,25 +1727,25 @@ begin
     Result := TFunctions.RemoveFileExt(ExtractFileName(FFilename));
 end;
 
-class function TTrackInfo.Load(Stream: TMemoryStream; Version: Integer): TTrackInfo;
+class function TTrackInfo.Load(Stream: TStream; Version: Integer): TTrackInfo;
 begin
   Result := TTrackInfo.Create;
 
-  Stream.Read(Result.FFilename);
+  Stream.Read(Result.FFilename, IfThen<Boolean>(Version > 68, True, False));
 
   Result.FFilename := TFunctions.TryUnRelativePath(Result.FFilename);
 
-  Stream.Read(Result.FStreamname);
-  Stream.Read(Result.FFilesize);
+  Stream.Read(Result.FStreamname, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FFilesize, IfThen<Boolean>(Version > 68, True, False));
 
   if Version >= 13 then
-    Stream.Read(Result.FLength);
+    Stream.Read(Result.FLength, IfThen<Boolean>(Version > 68, True, False));
 
   Stream.Read(Result.FTime);
   Stream.Read(Result.FWasCut);
   if Version > 10 then
   begin
-    Stream.Read(Result.FBitrate);
+    Stream.Read(Result.FBitrate, IfThen<Boolean>(Version > 68, True, False));
     Stream.Read(Result.FIsAuto);
   end;
 
@@ -1804,7 +1756,7 @@ begin
     Stream.Read(Result.FFinalized);
 
   if Version > 31 then
-    Stream.Read(Result.FIndex)
+    Stream.Read(Result.FIndex, IfThen<Boolean>(Version > 68, True, False))
   else
     Result.FIndex := High(Cardinal);
 
@@ -1812,20 +1764,20 @@ begin
     Stream.Read(Result.FVBR);
 
   if Version > 51 then
-    Stream.Read(Result.FServerTitle)
+    Stream.Read(Result.FServerTitle, IfThen<Boolean>(Version > 68, True, False))
   else
     Result.FServerTitle := TFunctions.RemoveFileExt(ExtractFileName(Result.FFilename));
 
   if Version > 54 then
   begin
-    Stream.Read(Result.FSongArtist);
-    Stream.Read(Result.FSongTitle);
+    Stream.Read(Result.FSongArtist, IfThen<Boolean>(Version > 68, True, False));
+    Stream.Read(Result.FSongTitle, IfThen<Boolean>(Version > 68, True, False));
   end;
 
   if Version > 50 then
   begin
-    Stream.Read(Result.FServerTitleHash);
-    Stream.Read(Result.FServerArtistHash);
+    Stream.Read(Result.FServerTitleHash, IfThen<Boolean>(Version > 68, True, False));
+    Stream.Read(Result.FServerArtistHash, IfThen<Boolean>(Version > 68, True, False));
   end;
 
   if Version > 53 then
@@ -1834,24 +1786,24 @@ end;
 
 procedure TTrackInfo.Save(Stream: TMemoryStream);
 begin
-  Stream.Write(TFunctions.TryRelativePath(FFilename, True, True));
+  Stream.Write(TFunctions.TryRelativePath(FFilename, True, True), True);
 
-  Stream.Write(FStreamname);
-  Stream.Write(FFilesize);
-  Stream.Write(FLength);
+  Stream.Write(FStreamname, True);
+  Stream.Write(FFilesize, True);
+  Stream.Write(FLength, True);
   Stream.Write(FTime);
   Stream.Write(FWasCut);
-  Stream.Write(FBitrate);
+  Stream.Write(FBitrate, True);
   Stream.Write(FIsAuto);
   Stream.Write(FIsStreamFile);
   Stream.Write(FFinalized);
-  Stream.Write(FIndex);
+  Stream.Write(FIndex, True);
   Stream.Write(FVBR);
-  Stream.Write(FServerTitle);
-  Stream.Write(FSongArtist);
-  Stream.Write(FSongTitle);
-  Stream.Write(FServerTitleHash);
-  Stream.Write(FServerArtistHash);
+  Stream.Write(FServerTitle, True);
+  Stream.Write(FSongArtist, True);
+  Stream.Write(FSongTitle, True);
+  Stream.Write(FServerTitleHash, True);
+  Stream.Write(FServerArtistHash, True);
   Stream.Write(FRecordBecauseArtist);
 end;
 
@@ -1929,12 +1881,12 @@ begin
   FKilled := False;
 end;
 
-class function TListCategory.Load(Stream: TMemoryStream; Version: Integer): TListCategory;
+class function TListCategory.Load(Stream: TStream; Version: Integer): TListCategory;
 begin
   Result := TListCategory.Create;
   Result.FKilled := False;
-  Stream.Read(Result.FIndex);
-  Stream.Read(Result.FName);
+  Stream.Read(Result.FIndex, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
   Stream.Read(Result.FExpanded);
   if Version >= 10 then
     Stream.Read(Result.FIsAuto);
@@ -1942,8 +1894,8 @@ end;
 
 procedure TListCategory.Save(Stream: TMemoryStream);
 begin
-  Stream.Write(FIndex);
-  Stream.Write(FName);
+  Stream.Write(FIndex, True);
+  Stream.Write(FName, True);
   Stream.Write(FExpanded);
   Stream.Write(FIsAuto);
 end;
@@ -1994,25 +1946,25 @@ begin
   FBitrate := Bitrate;
 end;
 
-class function TRecentEntry.Load(Stream: TMemoryStream; Version: Integer): TRecentEntry;
+class function TRecentEntry.Load(Stream: TStream; Version: Integer): TRecentEntry;
 begin
   Result := TRecentEntry.Create(0, 0, '', '', 0);
   if Version >= 24 then
-    Stream.Read(Result.FID);
-  Stream.Read(Result.FName);
-  Stream.Read(Result.FStartURL);
-  Stream.Read(Result.FIndex);
+    Stream.Read(Result.FID, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FStartURL, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FIndex, IfThen<Boolean>(Version > 68, True, False));
   if Version >= 25 then
-    Stream.Read(Result.FBitrate);
+    Stream.Read(Result.FBitrate, IfThen<Boolean>(Version > 68, True, False));
 end;
 
 procedure TRecentEntry.Save(Stream: TMemoryStream);
 begin
-  Stream.Write(FID);
-  Stream.Write(FName);
-  Stream.Write(FStartURL);
-  Stream.Write(FIndex);
-  Stream.Write(FBitrate);
+  Stream.Write(FID, True);
+  Stream.Write(FName, True);
+  Stream.Write(FStartURL, True);
+  Stream.Write(FIndex, True);
+  Stream.Write(FBitrate, True);
 end;
 
 { TScheduledRecording }
@@ -2094,7 +2046,7 @@ begin
   end;
 end;
 
-class function TSchedule.Load(Stream: TMemoryStream; Version: Integer): TSchedule;
+class function TSchedule.Load(Stream: TStream; Version: Integer): TSchedule;
 var
   B: Byte;
 begin
@@ -2108,10 +2060,10 @@ begin
   Stream.Read(Result.FDate);
   if Version >= 30 then
     Stream.Read(Result.FAutoRemove);
-  Stream.Read(Result.FStartHour);
-  Stream.Read(Result.FStartMinute);
-  Stream.Read(Result.FEndHour);
-  Stream.Read(Result.FEndMinute);
+  Stream.Read(Result.FStartHour, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FStartMinute, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FEndHour, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FEndMinute, IfThen<Boolean>(Version > 68, True, False));
 end;
 
 procedure TSchedule.Save(Stream: TMemoryStream);
@@ -2122,10 +2074,10 @@ begin
   Stream.Write(Byte(FDay));
   Stream.Write(FDate);
   Stream.Write(FAutoRemove);
-  Stream.Write(FStartHour);
-  Stream.Write(FStartMinute);
-  Stream.Write(FEndHour);
-  Stream.Write(FEndMinute);
+  Stream.Write(FStartHour, True);
+  Stream.Write(FStartMinute, True);
+  Stream.Write(FEndHour, True);
+  Stream.Write(FEndMinute, True);
 end;
 
 { TRatingEntry }
@@ -2139,19 +2091,19 @@ begin
   FRating := Rating;
 end;
 
-class function TRatingEntry.Load(Stream: TMemoryStream; Version: Integer): TRatingEntry;
+class function TRatingEntry.Load(Stream: TStream; Version: Integer): TRatingEntry;
 begin
   Result := TRatingEntry.Create('', '', 0);
-  Stream.Read(Result.FName);
-  Stream.Read(Result.FURL);
-  Stream.Read(Result.FRating);
+  Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FURL, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FRating, IfThen<Boolean>(Version > 68, True, False));
 end;
 
 procedure TRatingEntry.Save(Stream: TMemoryStream);
 begin
-  Stream.Write(FName);
-  Stream.Write(FURL);
-  Stream.Write(FRating);
+  Stream.Write(FName, True);
+  Stream.Write(FURL, True);
+  Stream.Write(FRating, True);
 end;
 
 { TRatingList }
@@ -2233,7 +2185,7 @@ begin
   Result.Assign(Self);
 end;
 
-class function TStreamBrowserEntry.Load(Stream: TMemoryStream; Version: Integer): TStreamBrowserEntry;
+class function TStreamBrowserEntry.Load(Stream: TStream; Version: Integer): TStreamBrowserEntry;
 var
   i: Integer;
   B: Byte;
@@ -2241,23 +2193,23 @@ var
   E: string;
 begin
   Result := TStreamBrowserEntry.Create;
-  Stream.Read(Result.FID);
-  Stream.Read(Result.FName);
-  Stream.Read(Result.FGenre);
-  Stream.Read(Result.FURL);
+  Stream.Read(Result.FID, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FGenre, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FURL, IfThen<Boolean>(Version > 68, True, False));
 
   if Version >= 66 then
   begin
-    Stream.Read(Count);
+    Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
     for i := 0 to Count - 1 do
     begin
-      Stream.Read(E);
+      Stream.Read(E, IfThen<Boolean>(Version > 68, True, False));
       Result.FURLs.Add(E);
     end;
   end;
 
-  Stream.Read(Result.FWebsite);
-  Stream.Read(Result.FBitrate);
+  Stream.Read(Result.FWebsite, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FBitrate, IfThen<Boolean>(Version > 68, True, False));
   Stream.Read(B);
   Result.FAudioType := TAudioTypes(B);
   Stream.Read(Result.FMetaData);
@@ -2267,24 +2219,24 @@ begin
   Stream.Read(Result.FRecordingOkay);
   if Version < 58 then
   begin
-    Stream.Read(E);
+    Stream.Read(E, IfThen<Boolean>(Version > 68, True, False));
     Result.FRegExes.Add(E);
   end else
   begin
-    Stream.Read(Count);
+    Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
     for i := 0 to Count - 1 do
     begin
-      Stream.Read(E);
+      Stream.Read(E, IfThen<Boolean>(Version > 68, True, False));
       Result.FRegExes.Add(E);
     end;
   end;
 
   if Version >= 29 then
   begin
-    Stream.Read(Count);
+    Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
     for i := 0 to Count - 1 do
     begin
-      Stream.Read(E);
+      Stream.Read(E, IfThen<Boolean>(Version > 68, True, False));
       Result.FIgnoreTitles.Add(E);
     end;
   end;
@@ -2301,20 +2253,20 @@ var
   E: string;
 begin
   Result := TStreamBrowserEntry.Create;
-  Stream.Read(Result.FID);
-  Stream.Read(Result.FName);
-  Stream.Read(Result.FGenre);
-  Stream.Read(Result.FURL);
+  Stream.Read(Result.FID, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FGenre, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FURL, IfThen<Boolean>(Version > 68, True, False));
 
-  Stream.Read(Count);
+  Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
   for i := 0 to Count - 1 do
   begin
-    Stream.Read(E);
+    Stream.Read(E, IfThen<Boolean>(Version > 68, True, False));
     Result.URLs.Add(E);
   end;
 
-  Stream.Read(Result.FWebsite);
-  Stream.Read(Result.FBitrate);
+  Stream.Read(Result.FWebsite, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FBitrate, IfThen<Boolean>(Version > 68, True, False));
   Stream.Read(B);
   Result.FAudioType := TAudioTypes(B);
   Stream.Read(Result.FMetaData);
@@ -2322,17 +2274,17 @@ begin
   Stream.Read(Result.FRating);
   Stream.Read(Result.FRecordingOkay);
 
-  Stream.Read(Count);
+  Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
   for i := 0 to Count - 1 do
   begin
-    Stream.Read(E);
+    Stream.Read(E, IfThen<Boolean>(Version > 68, True, False));
     Result.FRegExes.Add(E);
   end;
 
-  Stream.Read(Count);
+  Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
   for i := 0 to Count - 1 do
   begin
-    Stream.Read(E);
+    Stream.Read(E, IfThen<Boolean>(Version > 68, True, False));
     Result.FIgnoreTitles.Add(E);
   end;
 
@@ -2343,17 +2295,17 @@ procedure TStreamBrowserEntry.Save(Stream: TMemoryStream);
 var
   i: Integer;
 begin
-  Stream.Write(FID);
-  Stream.Write(FName);
-  Stream.Write(FGenre);
-  Stream.Write(FURL);
+  Stream.Write(FID, True);
+  Stream.Write(FName, True);
+  Stream.Write(FGenre, True);
+  Stream.Write(FURL, True);
 
-  Stream.Write(Cardinal(FURLs.Count));
+  Stream.Write(Cardinal(FURLs.Count), True);
   for i := 0 to FURLs.Count - 1 do
-    Stream.Write(FURLs[i]);
+    Stream.Write(FURLs[i], True);
 
-  Stream.Write(FWebsite);
-  Stream.Write(FBitrate);
+  Stream.Write(FWebsite, True);
+  Stream.Write(FBitrate, True);
   Stream.Write(Byte(FAudioType));
   Stream.Write(FMetaData);
   Stream.Write(FChangesTitleInSong);
@@ -2361,13 +2313,13 @@ begin
   Stream.Write(FRating);
   Stream.Write(FRecordingOkay);
 
-  Stream.Write(Cardinal(FRegExes.Count));
+  Stream.Write(Cardinal(FRegExes.Count), True);
   for i := 0 to FRegExes.Count - 1 do
-    Stream.Write(FRegExes[i]);
+    Stream.Write(FRegExes[i], True);
 
-  Stream.Write(Cardinal(FIgnoreTitles.Count));
+  Stream.Write(Cardinal(FIgnoreTitles.Count), True);
   for i := 0 to FIgnoreTitles.Count - 1 do
-    Stream.Write(FIgnoreTitles[i]);
+    Stream.Write(FIgnoreTitles[i], True);
 
   Stream.Write(FCanSetRegExps);
 end;
@@ -2445,21 +2397,21 @@ var
   C: Cardinal;
 begin
   Result := TChartEntry.Create;
-  Stream.Read(Result.FServerHash);
-  Stream.Read(Result.FServerArtistHash);
-  Stream.Read(Result.FName);
-  Stream.Read(Result.FArtist);
+  Stream.Read(Result.FServerHash, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FServerArtistHash, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FArtist, IfThen<Boolean>(Version > 68, True, False));
 
-  Stream.Read(Result.FPlayedLastDay);
-  Stream.Read(Result.FPlayedLastWeek);
-  Stream.Read(Result.FPlayedLast);
+  Stream.Read(Result.FPlayedLastDay, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FPlayedLastWeek, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FPlayedLast, IfThen<Boolean>(Version > 68, True, False));
 
   if Result.FPlayedLast > 86400 then
     Result.FPlayedLastDay := 0;
   if Result.FPlayedLast > 604800 then
     Result.FPlayedLastWeek := 0;
 
-  Stream.Read(C);
+  Stream.Read(C, IfThen<Boolean>(Version > 68, True, False));
 
   for i := 0 to C - 1 do
     Result.Streams.Add(TChartStream.Load(Stream, Version));
@@ -2504,19 +2456,19 @@ begin
 
 end;
 
-class function TGenre.Load(Stream: TMemoryStream; Version: Integer): TGenre;
+class function TGenre.Load(Stream: TStream; Version: Integer): TGenre;
 begin
   Result := TGenre.Create;
 
   if Version >= 34 then
   begin
-    Stream.Read(Result.FID);
-    Stream.Read(Result.FName);
-    Stream.Read(Result.FStreamCount);
+    Stream.Read(Result.FID, IfThen<Boolean>(Version > 68, True, False));
+    Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
+    Stream.Read(Result.FStreamCount, IfThen<Boolean>(Version > 68, True, False));
   end else
   begin
     Result.FID := 0;
-    Stream.Read(Result.FName);
+    Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
   end;
 end;
 
@@ -2524,16 +2476,16 @@ class function TGenre.LoadFromHome(Stream: TMemoryStream; Version: Integer): TGe
 begin
   Result := TGenre.Create;
 
-  Stream.Read(Result.FID);
-  Stream.Read(Result.FName);
-  Stream.Read(Result.FStreamCount);
+  Stream.Read(Result.FID, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FStreamCount, IfThen<Boolean>(Version > 68, True, False));
 end;
 
 procedure TGenre.Save(Stream: TMemoryStream);
 begin
-  Stream.Write(FID);
-  Stream.Write(FName);
-  Stream.Write(FStreamCount);
+  Stream.Write(FID, True);
+  Stream.Write(FName, True);
+  Stream.Write(FStreamCount, True);
 end;
 
 { TChartCategory }
@@ -2563,17 +2515,17 @@ begin
   inherited;
 end;
 
-class function TChartCategory.Load(Stream: TMemoryStream; Version: Integer): TChartCategory;
+class function TChartCategory.Load(Stream: TStream; Version: Integer): TChartCategory;
 begin
   Result := TChartCategory.Create;
-  Stream.Read(Result.FID);
-  Stream.Read(Result.FName);
+  Stream.Read(Result.FID, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
 end;
 
 procedure TChartCategory.Save(Stream: TMemoryStream);
 begin
-  Stream.Write(FID);
-  Stream.Write(FName);
+  Stream.Write(FID, True);
+  Stream.Write(FName, True);
 end;
 
 { TChartStream }
@@ -2591,16 +2543,16 @@ begin
   FPlayedLast := PlayedLast;
 end;
 
-class function TChartStream.Load(Stream: TMemoryStream; Version: Integer): TChartStream;
+class function TChartStream.Load(Stream: TStream; Version: Integer): TChartStream;
 begin
   Result := TChartStream.Create(0, 0, 0, 0);
-  Stream.Read(Result.FID);
-  Stream.Read(Result.FPlayedLastDay);
-  Stream.Read(Result.FPlayedLastWeek);
+  Stream.Read(Result.FID, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FPlayedLastDay, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FPlayedLastWeek, IfThen<Boolean>(Version > 68, True, False));
 
   if (Version >= 50) or (Version = 1) then
   begin
-    Stream.Read(Result.FPlayedLast);
+    Stream.Read(Result.FPlayedLast, IfThen<Boolean>(Version > 68, True, False));
 
     if Result.FPlayedLast > 86400 then
       Result.FPlayedLastDay := 0;
@@ -2761,11 +2713,10 @@ begin
   Result.FFilter := ufNone;
 end;
 
-class function TStreamSettings.Load(Stream: TMemoryStream; Version: Integer): TStreamSettings;
+class function TStreamSettings.Load(Stream: TStream; Version: Integer): TStreamSettings;
 var
   B: Byte;
   i, Count, FilterTmp, TypeTmp: Integer;
-  C: Cardinal;
   T: TPostProcessTypes;
   AT: TAudioTypes;
   Tmp: string;
@@ -2777,28 +2728,28 @@ begin
   if Version < 15 then
   begin
     Result.FRegExes.Add(DEFAULT_TITLE_REGEXP);
-    Stream.Read(Result.FFilePattern);
+    Stream.Read(Result.FFilePattern, IfThen<Boolean>(Version > 68, True, False));
   end else if Version < 58 then
   begin
-    Stream.Read(Tmp);
+    Stream.Read(Tmp, IfThen<Boolean>(Version > 68, True, False));
     Result.FRegExes.Add(Tmp);
   end else
   begin
-    Stream.Read(C);
-    for i := 0 to C - 1 do
+    Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
+    for i := 0 to Count - 1 do
     begin
-      Stream.Read(Tmp);
+      Stream.Read(Tmp, IfThen<Boolean>(Version > 68, True, False));
       Result.FRegExes.Add(Tmp);
     end;
   end;
 
-  Stream.Read(Result.FFilePattern);
+  Stream.Read(Result.FFilePattern, IfThen<Boolean>(Version > 68, True, False));
   if Version < 64 then
     Result.FFilePattern := ConvertPattern(Result.FFilePattern);
 
   if Version >= 17 then
   begin
-    Stream.Read(Result.FIncompleteFilePattern);
+    Stream.Read(Result.FIncompleteFilePattern, IfThen<Boolean>(Version > 68, True, False));
     if Result.FIncompleteFilePattern = '' then
       Result.FIncompleteFilePattern := Result.FFilePattern
     else
@@ -2811,7 +2762,7 @@ begin
 
   if Version >= 31 then
   begin
-    Stream.Read(Result.FStreamFilePattern);
+    Stream.Read(Result.FStreamFilePattern, IfThen<Boolean>(Version > 68, True, False));
     if Version < 64 then
       Result.FStreamFilePattern := ConvertPattern(Result.FStreamFilePattern);
     if Result.FStreamFilePattern = '' then
@@ -2820,12 +2771,12 @@ begin
     Result.FStreamFilePattern := '%streamname%';
 
   if Version >= 14 then
-    Stream.Read(Result.FFilePatternDecimals)
+    Stream.Read(Result.FFilePatternDecimals, IfThen<Boolean>(Version > 68, True, False))
   else
     Result.FFilePatternDecimals := 3;
 
   if Version >= 20 then
-    Stream.Read(Result.FRemoveChars)
+    Stream.Read(Result.FRemoveChars, IfThen<Boolean>(Version > 68, True, False))
   else
     Result.FRemoveChars := '[]{}#$§%~^';
 
@@ -2850,16 +2801,16 @@ begin
   else
     Result.AutoDetectSilenceLevel := True;
 
-  Stream.Read(Result.FSilenceLevel);
-  Stream.Read(Result.FSilenceLength);
+  Stream.Read(Result.FSilenceLevel, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FSilenceLength, IfThen<Boolean>(Version > 68, True, False));
 
   if Version >= 33 then
   begin
-    Stream.Read(Result.FSilenceBufferSecondsStart);
-    Stream.Read(Result.FSilenceBufferSecondsEnd);
+    Stream.Read(Result.FSilenceBufferSecondsStart, IfThen<Boolean>(Version > 68, True, False));
+    Stream.Read(Result.FSilenceBufferSecondsEnd, IfThen<Boolean>(Version > 68, True, False));
   end else if Version >= 9 then
   begin
-    Stream.Read(Result.FSilenceBufferSecondsStart);
+    Stream.Read(Result.FSilenceBufferSecondsStart, IfThen<Boolean>(Version > 68, True, False));
     Result.FSilenceBufferSecondsEnd := Result.FSilenceBufferSecondsStart;
   end else
   begin
@@ -2868,35 +2819,35 @@ begin
   end;
 
   if Version >= 9 then
-    Stream.Read(Result.FShortLengthSeconds)
+    Stream.Read(Result.FShortLengthSeconds, IfThen<Boolean>(Version > 68, True, False))
   else
   begin
-    Stream.Read(FilterTmp);
+    Stream.Read(FilterTmp, IfThen<Boolean>(Version > 68, True, False));
     Result.FShortLengthSeconds := 45;
   end;
 
   if Version >= 9 then
   begin
-    Stream.Read(Result.FSongBuffer);
+    Stream.Read(Result.FSongBuffer, IfThen<Boolean>(Version > 68, True, False));
     if Version < 42 then
       Result.FSongBuffer := Result.FSongBuffer * 1000;
   end else
   begin
-    Stream.Read(FilterTmp);
+    Stream.Read(FilterTmp, IfThen<Boolean>(Version > 68, True, False));
     Result.FSongBuffer := 0;
   end;
 
-  Stream.Read(Result.FMaxRetries);
+  Stream.Read(Result.FMaxRetries, IfThen<Boolean>(Version > 68, True, False));
 
   if Version >= 7 then
-    Stream.Read(Result.FRetryDelay)
+    Stream.Read(Result.FRetryDelay, IfThen<Boolean>(Version > 68, True, False))
   else
     Result.FRetryDelay := 5;
 
   if Result.FRetryDelay > 999 then
     Result.FRetryDelay := 999;
 
-  Stream.Read(FilterTmp);
+  Stream.Read(FilterTmp, IfThen<Boolean>(Version > 68, True, False));
   Stream.Read(Result.FSeparateTracks);
   Stream.Read(Result.FSaveToMemory);
 
@@ -2947,7 +2898,7 @@ begin
   if Version >= 28 then
   begin
     Stream.Read(Result.FAdjustTrackOffset);
-    Stream.Read(Result.FAdjustTrackOffsetMS);
+    Stream.Read(Result.FAdjustTrackOffsetMS, IfThen<Boolean>(Version > 68, True, False));
 
     if Version < 37 then
       Result.FAdjustTrackOffsetMS := Result.FAdjustTrackOffsetMS * 1000;
@@ -2958,10 +2909,10 @@ begin
 
   if Version >= 26 then
   begin
-    Stream.Read(Count);
+    Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
     for i := 0 to Count - 1 do
     begin
-      Stream.Read(Tmp);
+      Stream.Read(Tmp, IfThen<Boolean>(Version > 68, True, False));
       Result.FIgnoreTrackChangePattern.Add(Tmp);
     end;
   end;
@@ -2969,13 +2920,13 @@ begin
   // Einstellungen laden...
   if Version >= 41 then
   begin
-    Stream.Read(TypeTmp);
+    Stream.Read(TypeTmp, IfThen<Boolean>(Version > 68, True, False));
     Result.FOutputFormat := TAudioTypes(TypeTmp);
 
-    Stream.Read(Count);
+    Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
     for i := 0 to Count - 1 do
     begin
-      Stream.Read(TypeTmp);
+      Stream.Read(TypeTmp, IfThen<Boolean>(Version > 68, True, False));
 
       T := TPostProcessTypes(TypeTmp);
 
@@ -2991,10 +2942,10 @@ begin
       end;
     end;
 
-    Stream.Read(Count);
+    Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
     for i := 0 to Count - 1 do
     begin
-      Stream.Read(TypeTmp);
+      Stream.Read(TypeTmp, IfThen<Boolean>(Version > 68, True, False));
 
       AT := TAudioTypes(TypeTmp);
 
@@ -3006,7 +2957,7 @@ begin
   end;
 end;
 
-class function TStreamSettings.LoadAuto(Data: TDataLists; Stream: TMemoryStream; Version: Integer): TStreamSettings;
+class function TStreamSettings.LoadAuto(Data: TDataLists; Stream: TStream; Version: Integer): TStreamSettings;
 var
   i, Count, TypeTmp: Integer;
   T: TPostProcessTypes;
@@ -3021,7 +2972,7 @@ begin
 
   if Version >= 61 then
   begin
-    Stream.Read(Result.FFilePattern);
+    Stream.Read(Result.FFilePattern, IfThen<Boolean>(Version > 68, True, False));
     Stream.Read(Result.FAddSavedToIgnore);
     Stream.Read(Result.FRemoveSavedFromWishlist);
 
@@ -3030,20 +2981,20 @@ begin
   end;
 
   Stream.Read(Result.FSearchSilence);
-  Stream.Read(Result.FSilenceBufferSecondsStart);
-  Stream.Read(Result.FSilenceBufferSecondsEnd);
+  Stream.Read(Result.FSilenceBufferSecondsStart, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FSilenceBufferSecondsEnd, IfThen<Boolean>(Version > 68, True, False));
   Stream.Read(Result.FAutoDetectSilenceLevel);
-  Stream.Read(Result.FSilenceLevel);
-  Stream.Read(Result.FSilenceLength);
-  Stream.Read(Result.FSongBuffer);
+  Stream.Read(Result.FSilenceLevel, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FSilenceLength, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FSongBuffer, IfThen<Boolean>(Version > 68, True, False));
 
-  Stream.Read(TypeTmp);
+  Stream.Read(TypeTmp, IfThen<Boolean>(Version > 68, True, False));
   Result.FOutputFormat := TAudioTypes(TypeTmp);
 
-  Stream.Read(Count);
+  Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
   for i := 0 to Count - 1 do
   begin
-    Stream.Read(TypeTmp);
+    Stream.Read(TypeTmp, IfThen<Boolean>(Version > 68, True, False));
 
     T := TPostProcessTypes(TypeTmp);
 
@@ -3059,10 +3010,10 @@ begin
     end;
   end;
 
-  Stream.Read(Count);
+  Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
   for i := 0 to Count - 1 do
   begin
-    Stream.Read(TypeTmp);
+    Stream.Read(TypeTmp, IfThen<Boolean>(Version > 68, True, False));
 
     AT := TAudioTypes(TypeTmp);
 
@@ -3078,15 +3029,15 @@ var
   i: Integer;
   Count: Integer;
 begin
-  Stream.Write(FRegExes.Count);
+  Stream.Write(FRegExes.Count, True);
   for i := 0 to FRegExes.Count - 1 do
-    Stream.Write(FRegExes[i]);
+    Stream.Write(FRegExes[i], True);
 
-  Stream.Write(FFilePattern);
-  Stream.Write(FIncompleteFilePattern);
-  Stream.Write(FStreamFilePattern);
-  Stream.Write(FFilePatternDecimals);
-  Stream.Write(FRemoveChars);
+  Stream.Write(FFilePattern, True);
+  Stream.Write(FIncompleteFilePattern, True);
+  Stream.Write(FStreamFilePattern, True);
+  Stream.Write(FFilePatternDecimals, True);
+  Stream.Write(FRemoveChars, True);
   Stream.Write(FNormalizeVariables);
   Stream.Write(FDeleteStreams);
   Stream.Write(FAddSavedToIgnore);
@@ -3095,15 +3046,15 @@ begin
   Stream.Write(FSkipShort);
   Stream.Write(FSearchSilence);
   Stream.Write(FAutoDetectSilenceLevel);
-  Stream.Write(FSilenceLevel);
-  Stream.Write(FSilenceLength);
-  Stream.Write(FSilenceBufferSecondsStart);
-  Stream.Write(FSilenceBufferSecondsEnd);
-  Stream.Write(FShortLengthSeconds);
-  Stream.Write(FSongBuffer);
-  Stream.Write(FMaxRetries);
-  Stream.Write(FRetryDelay);
-  Stream.Write(Integer(FFilter));
+  Stream.Write(FSilenceLevel, True);
+  Stream.Write(FSilenceLength, True);
+  Stream.Write(FSilenceBufferSecondsStart, True);
+  Stream.Write(FSilenceBufferSecondsEnd, True);
+  Stream.Write(FShortLengthSeconds, True);
+  Stream.Write(FSongBuffer, True);
+  Stream.Write(FMaxRetries, True);
+  Stream.Write(FRetryDelay, True);
+  Stream.Write(Integer(FFilter), True);
   Stream.Write(FSeparateTracks);
   Stream.Write(FSaveToMemory);
   Stream.Write(FOnlySaveFull);
@@ -3112,32 +3063,32 @@ begin
   Stream.Write(FDiscardAlways);
 
   Stream.Write(FAdjustTrackOffset);
-  Stream.Write(FAdjustTrackOffsetMS);
+  Stream.Write(FAdjustTrackOffsetMS, True);
   Stream.Write(Byte(FAdjustTrackOffsetDirection));
 
-  Stream.Write(FIgnoreTrackChangePattern.Count);
+  Stream.Write(FIgnoreTrackChangePattern.Count, True);
   for i := 0 to FIgnoreTrackChangePattern.Count - 1 do
-    Stream.Write(FIgnoreTrackChangePattern[i]);
+    Stream.Write(FIgnoreTrackChangePattern[i], True);
 
-  Stream.Write(Integer(FOutputFormat));
+  Stream.Write(Integer(FOutputFormat), True);
 
   Count := 0;
   for i := 0 to FPostProcessors.Count - 1 do
     if (not FPostProcessors[i].Hidden) and (FPostProcessors[i].PostProcessType <> ptConvert) then
       Inc(Count);
-  Stream.Write(Count);
+  Stream.Write(Count, True);
   for i := 0 to FPostProcessors.Count - 1 do
   begin
     if FPostProcessors[i].Hidden or (FPostProcessors[i].PostProcessType = ptConvert) then
       Continue;
-    Stream.Write(Integer(FPostProcessors[i].PostProcessType));
+    Stream.Write(Integer(FPostProcessors[i].PostProcessType), True);
     FPostProcessors[i].Save(Stream);
   end;
 
-  Stream.Write(FEncoderSettings.Count);
+  Stream.Write(FEncoderSettings.Count, True);
   for i := 0 to FEncoderSettings.Count - 1 do
   begin
-    Stream.Write(Integer(FEncoderSettings[i].AudioType));
+    Stream.Write(Integer(FEncoderSettings[i].AudioType), True);
     FEncoderSettings[i].Save(Stream);
   end;
 end;
@@ -3147,37 +3098,37 @@ var
   i: Integer;
   Count: Integer;
 begin
-  Stream.Write(FFilePattern);
+  Stream.Write(FFilePattern, True);
   Stream.Write(FAddSavedToIgnore);
   Stream.Write(FRemoveSavedFromWishlist);
 
   Stream.Write(FSearchSilence);
-  Stream.Write(FSilenceBufferSecondsStart);
-  Stream.Write(FSilenceBufferSecondsEnd);
+  Stream.Write(FSilenceBufferSecondsStart, True);
+  Stream.Write(FSilenceBufferSecondsEnd, True);
   Stream.Write(FAutoDetectSilenceLevel);
-  Stream.Write(FSilenceLevel);
-  Stream.Write(FSilenceLength);
-  Stream.Write(FSongBuffer);
+  Stream.Write(FSilenceLevel, True);
+  Stream.Write(FSilenceLength, True);
+  Stream.Write(FSongBuffer, True);
 
-  Stream.Write(Integer(FOutputFormat));
+  Stream.Write(Integer(FOutputFormat), True);
 
   Count := 0;
   for i := 0 to FPostProcessors.Count - 1 do
     if (not FPostProcessors[i].Hidden) and (FPostProcessors[i].PostProcessType <> ptConvert) then
       Inc(Count);
-  Stream.Write(Count);
+  Stream.Write(Count, True);
   for i := 0 to FPostProcessors.Count - 1 do
   begin
     if FPostProcessors[i].Hidden or (FPostProcessors[i].PostProcessType = ptConvert) then
       Continue;
-    Stream.Write(Integer(FPostProcessors[i].PostProcessType));
+    Stream.Write(Integer(FPostProcessors[i].PostProcessType), True);
     FPostProcessors[i].Save(Stream);
   end;
 
-  Stream.Write(FEncoderSettings.Count);
+  Stream.Write(FEncoderSettings.Count, True);
   for i := 0 to FEncoderSettings.Count - 1 do
   begin
-    Stream.Write(Integer(FEncoderSettings[i].AudioType));
+    Stream.Write(Integer(FEncoderSettings[i].AudioType), True);
     FEncoderSettings[i].Save(Stream);
   end;
 end;
@@ -3371,24 +3322,24 @@ begin
   Result := TFunctions.HashString(IntToStr(Integer(AudioType)) + IntToStr(Integer(BitrateType)) + IntToStr(CBRBitrate) + IntToStr(Integer(VBRQuality)));
 end;
 
-procedure TEncoderSettings.Load(Stream: TMemoryStream; Version: Integer);
+procedure TEncoderSettings.Load(Stream: TStream; Version: Integer);
 var
   Tmp: Integer;
 begin
-  Stream.Read(Tmp);
+  Stream.Read(Tmp, IfThen<Boolean>(Version > 68, True, False));
   BitrateType := TBitrates(Tmp);
 
-  Stream.Read(CBRBitrate);
+  Stream.Read(CBRBitrate, IfThen<Boolean>(Version > 68, True, False));
 
-  Stream.Read(Tmp);
+  Stream.Read(Tmp, IfThen<Boolean>(Version > 68, True, False));
   VBRQuality := TVBRQualities(Tmp);
 end;
 
 procedure TEncoderSettings.Save(Stream: TMemoryStream);
 begin
-  Stream.Write(Integer(BitrateType));
-  Stream.Write(CBRBitrate);
-  Stream.Write(Integer(VBRQuality));
+  Stream.Write(Integer(BitrateType), True);
+  Stream.Write(CBRBitrate, True);
+  Stream.Write(Integer(VBRQuality), True);
 end;
 
 { TSaveIgnoreList }
