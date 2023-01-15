@@ -82,7 +82,7 @@ begin
 
   FDropTarget := TDropComboTarget.Create(Self);
   FDropTarget.Formats := [mfText, mfURL, mfFile];
-  FDropTarget.Register(FStations);
+  FDropTarget.Register(Self); // Register(Self) since Register(FStations) causes drawing issues/flickering at the combobox
   FDropTarget.OnDrop := DropTargetDrop;
 
   FStart.Enabled := False;
