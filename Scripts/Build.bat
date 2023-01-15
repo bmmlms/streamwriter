@@ -53,6 +53,8 @@ goto end
   del streamwriter_gitsha.lpi
   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
 
+  instantfpc "%SCRIPTSDIR%\RemoveResources.pas" "%OUTDIR%\streamwriter.exe" "%SCRIPTSDIR%\RemoveResources.txt"
+
   REM Build addons
   for /R "..\Addons" %%f in (*.lpi) do (
     cd "%%~dpf"
