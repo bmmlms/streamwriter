@@ -91,9 +91,21 @@ end;
 procedure TClientAddressBar.PostTranslate;
 begin
   case AppGlobals.DefaultActionNewStream of
-    oaPlay: FStart.ImageIndex := TImages.PLAY_BLUE;
-    oaStart: FStart.ImageIndex := TImages.RECORD_RED;
-    oaAdd: FStart.ImageIndex := TImages.ADD;
+    oaPlay:
+      begin
+        FStart.Hint := _('Listen to stream');
+        FStart.ImageIndex := TImages.PLAY_BLUE;
+      end;
+    oaStart:
+      begin
+        FStart.Hint := _('Start recording');
+        FStart.ImageIndex := TImages.RECORD_RED;
+      end;
+    oaAdd:
+      begin
+        FStart.Hint := _('Add');
+        FStart.ImageIndex := TImages.ADD;
+      end
     else
       raise Exception.Create('Invalid DefaultActionNewStream');
   end;

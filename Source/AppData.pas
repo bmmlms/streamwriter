@@ -556,7 +556,7 @@ end;
 procedure TAppData.BuildThanksText;
 var
   Res: TResourceStream;
-  Data: RawByteString;
+  Data: string;
 begin
   inherited;
 

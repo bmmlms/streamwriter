@@ -36,7 +36,6 @@ uses
   DataManager,
   Dialogs,
   DragDrop,
-  DropComboTarget,
   ExtCtrls,
   Forms,
   Functions,
@@ -427,14 +426,12 @@ end;
 procedure TTitlePanel.RemoveClick(Sender: TObject);
 var
   i: Integer;
-  Hashes: TSyncWishlistRecordArray;
+  Hashes: TSyncWishlistRecordArray = [];
   Node, SubNode, DeleteNode: PVirtualNode;
   NodeData: PTitleNodeData;
   DeleteList: TList<PVirtualNode>;
 begin
   FTree.BeginUpdate;
-
-  SetLength(Hashes, 0);
 
   DeleteList := TList<PVirtualNode>.Create;
   try
@@ -1297,14 +1294,9 @@ var
   i: Integer;
   Nodes: TNodeArray;
   NodeData: PTitleNodeData;
-  TitleHashes: TCardinalArray;
-  ArtistHashes: TCardinalArray;
-  SearchString: string;
+  TitleHashes: TCardinalArray = [];
+  ArtistHashes: TCardinalArray = [];
 begin
-  SearchString := '';
-  SetLength(TitleHashes, 0);
-  SetLength(ArtistHashes, 0);
-
   Nodes := FTree.GetNodes([ntWish], True);
   for i := 0 to High(Nodes) do
   begin
@@ -1812,7 +1804,7 @@ var
   Node: PVirtualNode;
   NodeData: PTitleNodeData;
 begin
-  SetLength(Result, 0);
+  Result := [];
   Node := GetFirst;
   while Node <> nil do
   begin
@@ -2085,7 +2077,7 @@ end;
 
 procedure TTitleTree.DoDragDrop(Source: TObject; DataObject: IDataObject; Formats: TFormatArray; Shift: TShiftState; const Pt: TPoint; var Effect: LongWord; Mode: TDropMode);
 var
-  i, n: Integer;
+  n: Integer;
   Found: Boolean;
   HI: THitInfo;
   Node: PVirtualNode;
