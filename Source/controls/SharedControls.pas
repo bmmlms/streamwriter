@@ -24,6 +24,7 @@ unit SharedControls;
 interface
 
 uses
+  AppData,
   Buttons,
   Classes,
   ComCtrls,
@@ -36,6 +37,7 @@ uses
   LanguageObjects,
   Logging,
   Math,
+  MControls,
   Menus,
   SharedData,
   SysUtils,
@@ -154,7 +156,31 @@ type
     function IsVertical: Boolean; override;
   end;
 
+  { TMSWVirtualStringTree }
+
+  TMSWVirtualStringTree = class(TMVirtualStringTree)
+  public
+    procedure PostTranslate; override;
+  end;
+
 implementation
+
+{ TMSWVirtualStringTree }
+
+procedure TMSWVirtualStringTree.PostTranslate;
+begin
+  inherited PostTranslate;
+
+  if AppGlobals.TreeColorsLoaded then
+  begin
+    Font.Color := AppGlobals.TreeNodeFontColor;
+    Color := AppGlobals.TreeBackgroundColor;
+    Colors.SelectionTextColor := AppGlobals.TreeSelectionTextColor;
+    Colors.FocusedSelectionColor := AppGlobals.TreeFocusedSelectionColor;
+    Colors.FocusedSelectionBorderColor := AppGlobals.TreeFocusedSelectionColor;
+  end else
+    ResetColors;
+end;
 
 { TVolumePanel }
 

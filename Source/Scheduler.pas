@@ -159,7 +159,6 @@ var
   Timer, TimerWakeup: THandle;
   WaitHandles: TWOHandleArray;
   Res, ArrLen: Cardinal;
-  x: TProcess;
 begin
 
   Timer := CreateWaitableTimer(nil, True, nil);

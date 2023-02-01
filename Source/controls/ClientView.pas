@@ -79,7 +79,7 @@ type
 
   { TMClientView }
 
-  TMClientView = class(TMVirtualStringTree)
+  TMClientView = class(TMSWVirtualStringTree)
   private
     FBrowser: TMStreamTree;
 
@@ -121,9 +121,6 @@ type
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
-    function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
-    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
-    procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
     procedure CreateHandle; override;
   public
     constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree); reintroduce;
@@ -448,49 +445,6 @@ begin
     else if NodeData.Client <> nil then
       NodeData.Client.Entry.CustomName := Text;
   end;
-end;
-
-function TMClientView.DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean;
-begin
-  Result := inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  Result := True;
-
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
-
-  Canvas.FillRect(R);
-end;
-
-procedure TMClientView.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect);
-begin
-  inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
-
-  Canvas.FillRect(ItemRect);
-end;
-
-procedure TMClientView.DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType);
-begin
-  inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  if Focused and Selected[Node] then
-    Canvas.Font.Color := AppGlobals.NodeTextColorSelectedFocused
-  else if Selected[Node] then
-    Canvas.Font.Color := AppGlobals.NodeTextColorSelected
-  else
-    Canvas.Font.Color := AppGlobals.NodeTextColor;
 end;
 
 procedure TMClientView.CreateHandle;
@@ -980,7 +934,7 @@ procedure TMClientView.DoDragDrop(Source: TObject; DataObject: IDataObject; Form
 
 var
   Attachmode: TVTNodeAttachMode = amInsertAfter;
-  i, n: Integer;
+  i: Integer;
   S: string;
   URLs: TStringArray;
   HitNodeData, DragNodeData: PClientNodeData;

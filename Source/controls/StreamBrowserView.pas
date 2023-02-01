@@ -53,6 +53,7 @@ uses
   Menus,
   MessageBus,
   regexpr,
+  SharedControls,
   SharedData,
   StdCtrls,
   SysUtils,
@@ -168,7 +169,7 @@ type
 
   { TMStreamTree }
 
-  TMStreamTree = class(TVirtualStringTree)
+  TMStreamTree = class(TMSWVirtualStringTree)
   private
     FDragSource: TDropFileSource;
 
@@ -227,9 +228,6 @@ type
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     procedure DoBeforeCellPaint(Canvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect); override;
-    function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
-    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
-    procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
     procedure HandleMouseDblClick(var Message: TLMMouse; const HitInfo: THitInfo); override;
     procedure Resize; override;
     procedure Paint; override;
@@ -353,11 +351,12 @@ begin
 
   PopupMenu := FPopupMenu;
 
+  // TODO: testen ob initial timer auf false klappt in allen situationen
   FDots := '';
   FTimer := TTimer.Create(Self);
   FTimer.OnTimer := TimerOnTimer;
   FTimer.Interval := 1000;
-  FTimer.Enabled := True;
+  FTimer.Enabled := False;
 
   Header.SortColumn := 0;
   Header.SortDirection := sdDescending;
@@ -829,7 +828,7 @@ var
 begin
   inherited;
 
-  if AppGlobals.NodeColorsLoaded then
+  if AppGlobals.TreeColorsLoaded then
     Exit;
 
   NodeData := GetNodeData(Node);
@@ -847,49 +846,6 @@ begin
       end;
     Canvas.FillRect(CellRect);
   end;
-end;
-
-function TMStreamTree.DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean;
-begin
-  Result := inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  Result := True;
-
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
-
-  Canvas.FillRect(R);
-end;
-
-procedure TMStreamTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect);
-begin
-  inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
-
-  Canvas.FillRect(ItemRect);
-end;
-
-procedure TMStreamTree.DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType);
-begin
-  inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  if Focused and Selected[Node] then
-    Canvas.Font.Color := AppGlobals.NodeTextColorSelectedFocused
-  else if Selected[Node] then
-    Canvas.Font.Color := AppGlobals.NodeTextColorSelected
-  else
-    Canvas.Font.Color := AppGlobals.NodeTextColor;
 end;
 
 function TMStreamTree.DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer;
@@ -1370,7 +1326,7 @@ begin
   else
     FCountLabel.Caption := Format(_('%d streams found'), [FStreamTree.RootNodeCount]);
 
-//  FStreamTree.FSortPopupMenu.PostTranslate;
+  //  FStreamTree.FSortPopupMenu.PostTranslate;
 end;
 
 { TMStreamSearch }

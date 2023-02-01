@@ -405,7 +405,7 @@ type
 
     procedure SettingsSaveForExport(Sender: TObject);
   protected
-
+    procedure UpdateActions; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1651,6 +1651,12 @@ procedure TfrmStreamWriterMain.SettingsSaveForExport(Sender: TObject);
 begin
   // Ist hier, damit der Profilexport korrekt funktioniert
   PrepareSave;
+end;
+
+procedure TfrmStreamWriterMain.UpdateActions;
+begin
+  // Do not call base method. When client view is focused everytime a timer fires UpdateAction requires a noticable amount of resources. Should be investigated further...
+  // inherited UpdateActions;
 end;
 
 procedure TfrmStreamWriterMain.SetupExitMessage(var Msg: TMessage);

@@ -101,7 +101,7 @@ type
 
   { TChartsTree }
 
-  TChartsTree = class(TMVirtualStringTree)
+  TChartsTree = class(TMSWVirtualStringTree)
   private
     FTimer: TTimer;
     FDots: string;
@@ -136,9 +136,6 @@ type
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
     procedure DoNodeDblClick(const HitInfo: THitInfo); override;
-    function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
-    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
-    procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -888,49 +885,6 @@ begin
 
   if (SelectedCount = 1) and (FocusedNode <> nil) then
     ExecDefaultAction;
-end;
-
-function TChartsTree.DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean;
-begin
-  Result := inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  Result := True;
-
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
-
-  Canvas.FillRect(R);
-end;
-
-procedure TChartsTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect);
-begin
-  inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
-
-  Canvas.FillRect(ItemRect);
-end;
-
-procedure TChartsTree.DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType);
-begin
-  inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  if Focused and Selected[Node] then
-    Canvas.Font.Color := AppGlobals.NodeTextColorSelectedFocused
-  else if Selected[Node] then
-    Canvas.Font.Color := AppGlobals.NodeTextColorSelected
-  else
-    Canvas.Font.Color := AppGlobals.NodeTextColor;
 end;
 
 procedure TChartsTree.ExecDefaultAction;

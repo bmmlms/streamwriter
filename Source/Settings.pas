@@ -227,10 +227,10 @@ type
     pnlFilenamesExt: TPanel;
     pnlHotkeys: TPanel;
     pnlMain: TPanel;
-    pnlNodeBackgroundColor: TPanel;
-    pnlNodeTextColor: TPanel;
-    pnlNodeTextColorSelected: TPanel;
-    pnlNodeTextColorSelectedFocused: TPanel;
+    pnlTreeBackgroundColor: TPanel;
+    pnlTreeNodeFontColor: TPanel;
+    pnlTreeSelectionTextColor: TPanel;
+    pnlTreeFocusedSelectionColor: TPanel;
     pnlPostProcess: TPanel;
     pnlStreams: TPanel;
     pnlStreamsAdvanced: TPanel;
@@ -698,7 +698,7 @@ var
   PostProcessor: TPostProcessBase;
   EP: TExternalPostProcess;
   Item: TListItem;
-  Tree: TVirtualStringTree;
+  Colors: TVTColors;
 begin
   if Length(FStreamSettings) = 0 then
     raise Exception.Create('Length(FStreamSettings) = 0');
@@ -770,26 +770,26 @@ begin
       AppGlobals.ShortcutVolDown := LongWord(lstHotkeys.Items[6].Data);
       AppGlobals.ShortcutMute := LongWord(lstHotkeys.Items[7].Data);
 
-      Tree := TVirtualStringTree.Create(Self);
+      Colors := TVTColors.Create(nil);
       try
-        if (pnlNodeTextColor.Color <> Tree.Colors.NodeFontColor) or (pnlNodeTextColorSelected.Color <> Tree.Colors.NodeFontColor) or (pnlNodeTextColorSelectedFocused.Color <>
-          Tree.Colors.SelectionTextColor) or (pnlNodeBackgroundColor.Color <> Tree.Colors.BackGroundColor) then
+        if (pnlTreeNodeFontColor.Color <> clWindowText) or (pnlTreeSelectionTextColor.Color <> Colors.SelectionTextColor) or
+          (pnlTreeFocusedSelectionColor.Color <> Colors.FocusedSelectionColor) or (pnlTreeBackgroundColor.Color <> clWindow) then
         begin
-          AppGlobals.NodeColorsLoaded := True;
-          AppGlobals.NodeTextColor := pnlNodeTextColor.Color;
-          AppGlobals.NodeTextColorSelected := pnlNodeTextColorSelected.Color;
-          AppGlobals.NodeTextColorSelectedFocused := pnlNodeTextColorSelectedFocused.Color;
-          AppGlobals.NodeBackgroundColor := pnlNodeBackgroundColor.Color;
+          AppGlobals.TreeColorsLoaded := True;
+          AppGlobals.TreeNodeFontColor := pnlTreeNodeFontColor.Color;
+          AppGlobals.TreeSelectionTextColor := pnlTreeSelectionTextColor.Color;
+          AppGlobals.TreeFocusedSelectionColor := pnlTreeFocusedSelectionColor.Color;
+          AppGlobals.TreeBackgroundColor := pnlTreeBackgroundColor.Color;
         end else
         begin
-          AppGlobals.NodeColorsLoaded := False;
-          AppGlobals.NodeTextColor := $7F000000;
-          AppGlobals.NodeTextColorSelected := $7F000000;
-          AppGlobals.NodeTextColorSelectedFocused := $7F000000;
-          AppGlobals.NodeBackgroundColor := $7F000000;
+          AppGlobals.TreeColorsLoaded := False;
+          AppGlobals.TreeNodeFontColor := $7F000000;
+          AppGlobals.TreeSelectionTextColor := $7F000000;
+          AppGlobals.TreeFocusedSelectionColor := $7F000000;
+          AppGlobals.TreeBackgroundColor := $7F000000;
         end;
       finally
-        Tree.Free;
+        Colors.Free;
       end;
     finally
       AppGlobals.Unlock;
@@ -2424,16 +2424,16 @@ end;
 
 procedure TfrmSettings.btnResetColorClick(Sender: TObject);
 var
-  Tree: TVirtualStringTree;
+  Colors: TVTColors;
 begin
-  Tree := TVirtualStringTree.Create(Self);
+  Colors := TVTColors.Create(nil);
   try
-    pnlNodeTextColor.Color := Tree.Colors.NodeFontColor;
-    pnlNodeTextColorSelected.Color := Tree.Colors.NodeFontColor;
-    pnlNodeTextColorSelectedFocused.Color := Tree.Colors.SelectionTextColor;
-    pnlNodeBackgroundColor.Color := Tree.Colors.BackGroundColor;
+    pnlTreeNodeFontColor.Color := clWindowText;
+    pnlTreeSelectionTextColor.Color := Colors.SelectionTextColor;
+    pnlTreeFocusedSelectionColor.Color := Colors.FocusedSelectionColor;
+    pnlTreeBackgroundColor.Color := clWindow;
   finally
-    Tree.Free;
+    Colors.Free;
   end;
 end;
 
@@ -2579,7 +2579,8 @@ begin
     Exit;
   end;
 
-  if ControlVisible(txtIncompleteFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second'))) = '') then
+  if ControlVisible(txtIncompleteFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second'))) =
+    '') then
   begin
     TFunctions.MsgBox(_('Please enter a valid pattern for filenames of incompletely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtIncompleteFilePattern.Parent)));
@@ -3030,12 +3031,12 @@ begin
   end else
     lstSoundDevice.Control.Enabled := False;
 
-  if AppGlobals.NodeColorsLoaded then
+  if AppGlobals.TreeColorsLoaded then
   begin
-    pnlNodeTextColor.Color := AppGlobals.NodeTextColor;
-    pnlNodeTextColorSelected.Color := AppGlobals.NodeTextColorSelected;
-    pnlNodeTextColorSelectedFocused.Color := AppGlobals.NodeTextColorSelectedFocused;
-    pnlNodeBackgroundColor.Color := AppGlobals.NodeBackgroundColor;
+    pnlTreeNodeFontColor.Color := AppGlobals.TreeNodeFontColor;
+    pnlTreeSelectionTextColor.Color := AppGlobals.TreeSelectionTextColor;
+    pnlTreeFocusedSelectionColor.Color := AppGlobals.TreeFocusedSelectionColor;
+    pnlTreeBackgroundColor.Color := AppGlobals.TreeBackgroundColor;
   end else
     btnResetColorClick(btnReset);
 

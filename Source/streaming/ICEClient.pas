@@ -1097,7 +1097,8 @@ end;
 function TURLList.Add(const S: string): Integer;
 var
   i: Integer;
-  Host, S2: string;
+  Host: string = '';
+  S2: string;
 begin
   Result := -1;
   try
@@ -1107,11 +1108,14 @@ begin
   except
     Exit;
   end;
+
   if Length(Host) <= 3 then
     Exit;
+
   for i := 0 to Count - 1 do
     if LowerCase(S2) = LowerCase(Self[i]) then
       Exit;
+
   Result := inherited;
 end;
 

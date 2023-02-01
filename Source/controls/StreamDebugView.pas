@@ -37,6 +37,7 @@ uses
   ImgList,
   LanguageObjects,
   Logging,
+  SharedControls,
   SharedData,
   StdCtrls,
   SysUtils,
@@ -48,7 +49,7 @@ type
 
   { TDebugView }
 
-  TDebugView = class(TVirtualStringTree)
+  TDebugView = class(TMSWVirtualStringTree)
   private
     FClient: TICEClient;
     procedure FSetClient(Value: TICEClient);
@@ -56,9 +57,6 @@ type
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String); override;
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
     function DoInitChildren(Node: PVirtualNode; var ChildCount: Cardinal): Boolean; override;
-    function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
-    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
-    procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
     procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); override;
@@ -323,49 +321,6 @@ begin
     else
       ChildCount := 0;
   Result := True;
-end;
-
-function TDebugView.DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean;
-begin
-  Result := inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  Result := True;
-
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
-
-  Canvas.FillRect(R);
-end;
-
-procedure TDebugView.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect);
-begin
-  inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
-
-  Canvas.FillRect(ItemRect);
-end;
-
-procedure TDebugView.DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType);
-begin
-  inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  if Focused and Selected[Node] then
-    Canvas.Font.Color := AppGlobals.NodeTextColorSelectedFocused
-  else if Selected[Node] then
-    Canvas.Font.Color := AppGlobals.NodeTextColorSelected
-  else
-    Canvas.Font.Color := AppGlobals.NodeTextColor;
 end;
 
 procedure TDebugView.Resize;

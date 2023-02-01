@@ -111,7 +111,9 @@ type
     constructor Create(AOwner: TComponent); reintroduce;
   end;
 
-  TLogTree = class(TMVirtualStringTree)
+  { TLogTree }
+
+  TLogTree = class(TMSWVirtualStringTree)
   private
     FPopupMenu: TLogPopup;
 
@@ -137,9 +139,6 @@ type
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
-    function DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean; override;
-    procedure DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect); override;
-    procedure DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType); override;
 
     procedure MessageReceived(Msg: TMessageBase);
     procedure Resize; override;
@@ -479,49 +478,6 @@ begin
     Header.Columns[Column].Position := FHeaderDragSourcePosition;
 end;
 
-function TLogTree.DoPaintBackground(Canvas: TCanvas; const R: TRect): Boolean;
-begin
-  Result := inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  Result := True;
-
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
-
-  Canvas.FillRect(R);
-end;
-
-procedure TLogTree.DoAfterItemErase(Canvas: TCanvas; Node: PVirtualNode; const ItemRect: TRect);
-begin
-  inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := AppGlobals.NodeBackgroundColor;
-
-  Canvas.FillRect(ItemRect);
-end;
-
-procedure TLogTree.DoPaintText(Node: PVirtualNode; const Canvas: TCanvas; Column: TColumnIndex; TextType: TVSTTextType);
-begin
-  inherited;
-
-  if not AppGlobals.NodeColorsLoaded then
-    Exit;
-
-  if Focused and Selected[Node] then
-    Canvas.Font.Color := AppGlobals.NodeTextColorSelectedFocused
-  else if Selected[Node] then
-    Canvas.Font.Color := AppGlobals.NodeTextColorSelected
-  else
-    Canvas.Font.Color := AppGlobals.NodeTextColor;
-end;
-
 function TLogTree.DoHeaderDragging(Column: TColumnIndex): Boolean;
 begin
   if Column = -1 then
@@ -668,8 +624,6 @@ begin
 end;
 
 procedure TLogTree.Resize;
-var
-  R: TRect;
 begin
   inherited;
 

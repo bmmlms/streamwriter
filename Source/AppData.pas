@@ -134,11 +134,11 @@ type
     FLogHeaderPosition: TIntArray;
     FLogCols: Integer;
 
-    FNodeColorsLoaded: Boolean;
-    FNodeTextColor: TColor;
-    FNodeTextColorSelected: TColor;
-    FNodeTextColorSelectedFocused: TColor;
-    FNodeBackgroundColor: TColor;
+    FTreeColorsLoaded: Boolean;
+    FTreeNodeFontColor: TColor;
+    FTreeSelectionTextColor: TColor;
+    FTreeFocusedSelectionColor: TColor;
+    FTreeBackgroundColor: TColor;
 
     FBrowserSortType: Cardinal;
     FBrowserSortDir: Cardinal;
@@ -299,11 +299,11 @@ type
     property LogHeaderPosition: TIntArray read FLogHeaderPosition write FLogHeaderPosition;
     property LogCols: Integer read FLogCols write FLogCols;
 
-    property NodeColorsLoaded: Boolean read FNodeColorsLoaded write FNodeColorsLoaded;
-    property NodeBackgroundColor: TColor read FNodeBackgroundColor write FNodeBackgroundColor;
-    property NodeTextColor: TColor read FNodeTextColor write FNodeTextColor;
-    property NodeTextColorSelected: TColor read FNodeTextColorSelected write FNodeTextColorSelected;
-    property NodeTextColorSelectedFocused: TColor read FNodeTextColorSelectedFocused write FNodeTextColorSelectedFocused;
+    property TreeColorsLoaded: Boolean read FTreeColorsLoaded write FTreeColorsLoaded;
+    property TreeBackgroundColor: TColor read FTreeBackgroundColor write FTreeBackgroundColor;
+    property TreeNodeFontColor: TColor read FTreeNodeFontColor write FTreeNodeFontColor;
+    property TreeSelectionTextColor: TColor read FTreeSelectionTextColor write FTreeSelectionTextColor;
+    property TreeFocusedSelectionColor: TColor read FTreeFocusedSelectionColor write FTreeFocusedSelectionColor;
 
     property BrowserSortType: Cardinal read FBrowserSortType write FBrowserSortType;
     property BrowserSortDir: Cardinal read FBrowserSortDir write FBrowserSortDir;
@@ -781,13 +781,13 @@ begin
   FLogCols := FLogCols or (1 shl 0);
   FLogCols := FLogCols or (1 shl 3);
 
-  FStorage.Read('NodeTextColor', Integer(FNodeTextColor), $7F000000, 'Appearance');
-  FStorage.Read('NodeTextColorSelected', Integer(FNodeTextColorSelected), $7F000000, 'Appearance');
-  FStorage.Read('NodeTextColorSelectedFocused', Integer(FNodeTextColorSelectedFocused), $7F000000, 'Appearance');
-  FStorage.Read('NodeBackgroundColor', Integer(FNodeBackgroundColor), $7F000000, 'Appearance');
+  FStorage.Read('TreeNodeFontColor', Integer(FTreeNodeFontColor), $7F000000, 'Appearance');
+  FStorage.Read('TreeSelectionTextColor', Integer(FTreeSelectionTextColor), $7F000000, 'Appearance');
+  FStorage.Read('TreeFocusedSelectionColor', Integer(FTreeFocusedSelectionColor), $7F000000, 'Appearance');
+  FStorage.Read('TreeBackgroundColor', Integer(FTreeBackgroundColor), $7F000000, 'Appearance');
 
-  if (FNodeTextColor <> $7F000000) and (FNodeTextColorSelected <> $7F000000) and (FNodeTextColorSelectedFocused <> $7F000000) and (FNodeBackgroundColor <> $7F000000) then
-    FNodeColorsLoaded := True;
+  if (FTreeNodeFontColor <> $7F000000) and (FTreeSelectionTextColor <> $7F000000) and (FTreeFocusedSelectionColor <> $7F000000) and (FTreeBackgroundColor <> $7F000000) then
+    FTreeColorsLoaded := True;
 
   FStorage.Read('BrowserSortType', FBrowserSortType, 3, 'Streambrowser');
   FStorage.Read('BrowserSortDir', FBrowserSortDir, 1, 'Streambrowser');
@@ -962,10 +962,10 @@ begin
     FStorage.Write('LogHeaderPosition' + IntToStr(i), FLogHeaderPosition[i], 'Cols');
   FStorage.Write('LogCols', FLogCols, 'Cols');
 
-  FStorage.Write('NodeBackgroundColor', Integer(FNodeBackgroundColor), 'Appearance');
-  FStorage.Write('NodeTextColor', Integer(FNodeTextColor), 'Appearance');
-  FStorage.Write('NodeTextColorSelected', Integer(FNodeTextColorSelected), 'Appearance');
-  FStorage.Write('NodeTextColorSelectedFocused', Integer(FNodeTextColorSelectedFocused), 'Appearance');
+  FStorage.Write('TreeBackgroundColor', Integer(FTreeBackgroundColor), 'Appearance');
+  FStorage.Write('TreeNodeFontColor', Integer(FTreeNodeFontColor), 'Appearance');
+  FStorage.Write('TreeSelectionTextColor', Integer(FTreeSelectionTextColor), 'Appearance');
+  FStorage.Write('TreeFocusedSelectionColor', Integer(FTreeFocusedSelectionColor), 'Appearance');
 
   FStorage.Write('BrowserSortType', FBrowserSortType, 'Streambrowser');
   FStorage.Write('BrowserSortDir', FBrowserSortDir, 'Streambrowser');

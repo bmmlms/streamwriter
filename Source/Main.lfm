@@ -4,7 +4,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   Top = 450
   Width = 872
   Caption = 'streamWriter'
-  ClientHeight = 390
+  ClientHeight = 370
   ClientWidth = 872
   Color = clBtnFace
   Constraints.MinHeight = 390
@@ -20,6 +20,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   OnKeyDown = FormKeyDown
   OnShortCut = FormShortCut
   OnShow = FormShow
+  LCLVersion = '2.2.4.0'
   object tbClients: TToolBar
     Left = 0
     Height = 22
@@ -40,7 +41,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object ToolButton7: TToolButton
       Left = 23
-      Height = 22
+      Height = 8
       Top = 0
       ImageIndex = 14
       Style = tbsSeparator
@@ -62,7 +63,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object ToolButton3: TToolButton
       Left = 100
-      Height = 22
+      Height = 8
       Top = 0
       Caption = '-'
       ImageIndex = 7
@@ -86,7 +87,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object ToolButton1: TToolButton
       Left = 177
-      Height = 22
+      Height = 8
       Top = 0
       Caption = '-'
       ImageIndex = 7
@@ -104,7 +105,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object ToolButton2: TToolButton
       Left = 231
-      Height = 22
+      Height = 8
       Top = 0
       Caption = '-'
       ImageIndex = 11
@@ -132,7 +133,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object ToolButton10: TToolButton
       Left = 331
-      Height = 22
+      Height = 8
       Top = 0
       Caption = 'ToolButton10'
       ImageIndex = 13
@@ -155,7 +156,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object ToolButton8: TToolButton
       Left = 408
-      Height = 22
+      Height = 8
       Top = 0
       Caption = 'ToolButton8'
       ImageIndex = 13
@@ -178,7 +179,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object ToolButton4: TToolButton
       Left = 485
-      Height = 22
+      Height = 8
       Top = 0
       Caption = '-'
       ImageIndex = 10

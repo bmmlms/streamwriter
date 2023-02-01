@@ -1532,7 +1532,7 @@ inherited frmSettings: TfrmSettings
       object Panel2: TPanel
         Left = 1
         Height = 24
-        Top = 14
+        Top = 38
         Width = 291
         Align = alTop
         AutoSize = True
@@ -1541,7 +1541,7 @@ inherited frmSettings: TfrmSettings
         ClientHeight = 24
         ClientWidth = 291
         TabOrder = 0
-        object pnlNodeBackgroundColor: TPanel
+        object pnlTreeBackgroundColor: TPanel
           Left = 0
           Height = 24
           Top = 0
@@ -1567,7 +1567,7 @@ inherited frmSettings: TfrmSettings
       object Panel5: TPanel
         Left = 1
         Height = 24
-        Top = 38
+        Top = 14
         Width = 291
         Align = alTop
         AutoSize = True
@@ -1586,7 +1586,7 @@ inherited frmSettings: TfrmSettings
           Layout = tlCenter
           ParentColor = False
         end
-        object pnlNodeTextColor: TPanel
+        object pnlTreeNodeFontColor: TPanel
           Left = 0
           Height = 24
           Top = 0
@@ -1602,7 +1602,7 @@ inherited frmSettings: TfrmSettings
       object Panel6: TPanel
         Left = 1
         Height = 24
-        Top = 62
+        Top = 86
         Width = 291
         Align = alTop
         AutoSize = True
@@ -1615,13 +1615,13 @@ inherited frmSettings: TfrmSettings
           Left = 29
           Height = 24
           Top = 0
-          Width = 99
+          Width = 133
           Align = alLeft
-          Caption = 'Text color (selected)'
+          Caption = 'Background color (selected)'
           Layout = tlCenter
           ParentColor = False
         end
-        object pnlNodeTextColorSelected: TPanel
+        object pnlTreeFocusedSelectionColor: TPanel
           Left = 0
           Height = 24
           Top = 0
@@ -1637,7 +1637,7 @@ inherited frmSettings: TfrmSettings
       object Panel7: TPanel
         Left = 1
         Height = 24
-        Top = 86
+        Top = 62
         Width = 291
         Align = alTop
         AutoSize = True
@@ -1656,7 +1656,7 @@ inherited frmSettings: TfrmSettings
           Layout = tlCenter
           ParentColor = False
         end
-        object pnlNodeTextColorSelectedFocused: TPanel
+        object pnlTreeSelectionTextColor: TPanel
           Left = 0
           Height = 24
           Top = 0
