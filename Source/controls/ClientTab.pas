@@ -187,7 +187,7 @@ type
 
     procedure PlaybackTimerTimer(Sender: TObject);
   protected
-    procedure CreateHandle; override;
+    procedure ShownFirst; override;
   public
     constructor Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList; Clients: TClientManager; Popup: TPopupMenu); reintroduce;
     destructor Destroy; override;
@@ -696,6 +696,8 @@ begin
   FSplitter.MinSize := MulDiv(220, Screen.PixelsPerInch, 96);
   FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
   FSideBar.Width := AppGlobals.SidebarWidth;
+
+  BuildTree;
 end;
 
 procedure TClientTab.AddressBarStart(Sender: TObject);
@@ -1114,11 +1116,11 @@ begin
   FTimeLabel.Caption := BuildTime(FPlaybackSeconds, False);
 end;
 
-procedure TClientTab.CreateHandle;
+procedure TClientTab.ShownFirst;
 begin
-  inherited CreateHandle;
+  inherited;
 
-  BuildTree;
+  FClientView.ApplyFocus;
 end;
 
 procedure TClientTab.FClientViewKeyPress(Sender: TObject; var Key: Char);

@@ -178,7 +178,7 @@ type
 
     procedure HomeCommConvertManualToAutomaticReceived(Sender: TObject; FoundTitles: TConvertManualToAutomaticArray; NotFoundTitles: TStringArray);
   protected
-    procedure Resize; override;
+    procedure ShownFirst; override;
   public
     constructor Create(AOwner: TComponent; Clients: TClientManager); reintroduce;
     destructor Destroy; override;
@@ -330,6 +330,13 @@ begin
     MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), Format(_('Conversion to automatic wishlist titles succeeded for %d title(s), failed for %d title(s)'), [Length(FoundTitles), Length(NotFoundTitles)])));
 end;
 
+procedure TListsTab.ShownFirst;
+begin
+  inherited;
+
+  ListsPanel.Tree.ApplyFocus;
+end;
+
 procedure TListsTab.MessageReceived(Msg: TMessageBase);
 var
   i: Integer;
@@ -368,12 +375,6 @@ begin
     for i := 0 to High(Nodes) do
       FListsPanel.FTree.InvalidateNode(Nodes[i]);
   end;
-end;
-
-procedure TListsTab.Resize;
-begin
-  inherited;
-
 end;
 
 procedure TListsTab.UpdateLists;

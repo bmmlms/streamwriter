@@ -121,7 +121,6 @@ type
     function DoHeaderDragging(Column: TColumnIndex): Boolean; override;
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
-    procedure CreateHandle; override;
   public
     constructor Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree); reintroduce;
     destructor Destroy; override;
@@ -444,17 +443,6 @@ begin
       NodeData.Category.Name := Text
     else if NodeData.Client <> nil then
       NodeData.Client.Entry.CustomName := Text;
-  end;
-end;
-
-procedure TMClientView.CreateHandle;
-begin
-  inherited CreateHandle;
-
-  if RootNodeCount > 0 then
-  begin
-    Selected[GetFirst] := True;
-    FocusedNode := GetFirst;
   end;
 end;
 
@@ -816,10 +804,10 @@ procedure TMClientView.PostTranslate;
 var
   NodeData: PClientNodeData;
 begin
+  inherited;
+
   NodeData := GetNodeData(FAutoNode);
   NodeData.Category.Name := _('Automatic recordings');
-
-  inherited;
 
   FColName.Text := _('Name');
   FColTitle.Text := _('Title');

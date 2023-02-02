@@ -16,7 +16,8 @@ uses
   StationCombo,
   StdCtrls,
   SysUtils,
-  TypeDefs;
+  TypeDefs,
+  Windows;
 
 type
 
@@ -36,6 +37,8 @@ type
     procedure FStartClick(Sender: TObject);
 
     procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
+  protected
+    procedure CreateHandle; override;
   public
     constructor Create(AOwner: TComponent); override;
 
@@ -92,21 +95,20 @@ procedure TClientAddressBar.PostTranslate;
 begin
   case AppGlobals.DefaultActionNewStream of
     oaPlay:
-      begin
-        FStart.Hint := _('Listen to stream');
-        FStart.ImageIndex := TImages.PLAY_BLUE;
-      end;
+    begin
+      FStart.Hint := _('Listen to stream');
+      FStart.ImageIndex := TImages.PLAY_BLUE;
+    end;
     oaStart:
-      begin
-        FStart.Hint := _('Start recording');
-        FStart.ImageIndex := TImages.RECORD_RED;
-      end;
+    begin
+      FStart.Hint := _('Start recording');
+      FStart.ImageIndex := TImages.RECORD_RED;
+    end;
     oaAdd:
-      begin
-        FStart.Hint := _('Add');
-        FStart.ImageIndex := TImages.ADD;
-      end
-    else
+    begin
+      FStart.Hint := _('Add');
+      FStart.ImageIndex := TImages.ADD;
+    end else
       raise Exception.Create('Invalid DefaultActionNewStream');
   end;
 end;
@@ -120,6 +122,13 @@ begin
     FStations.Text := FDropTarget.Text
   else if FDropTarget.Files.Count > 0 then
     FStations.Text := FDropTarget.Files[0];
+end;
+
+procedure TClientAddressBar.CreateHandle;
+begin
+  inherited CreateHandle;
+
+  SetWindowLong(Handle, GWL_EXSTYLE, GetWindowLong(Handle, GWL_EXSTYLE) or WS_EX_COMPOSITED);
 end;
 
 procedure TClientAddressBar.FStationsChange(Sender: TObject);

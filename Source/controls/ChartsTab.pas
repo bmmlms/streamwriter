@@ -175,6 +175,8 @@ type
     procedure HomeCommSearchChartsReceived(Sender: TObject; Success: Boolean; Charts: TChartList);
     procedure ButtonClick(Sender: TObject);
     procedure ChartsTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+  protected
+    procedure ShownFirst; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -226,6 +228,13 @@ end;
 procedure TChartsTab.ChartsTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
 begin
   UpdateButtons;
+end;
+
+procedure TChartsTab.ShownFirst;
+begin
+  inherited;
+
+  FSearchPanel.FSearch.ApplyFocus;
 end;
 
 constructor TChartsTab.Create(AOwner: TComponent);
@@ -1299,6 +1308,8 @@ end;
 procedure TSearchPanel.CreateHandle;
 begin
   inherited CreateHandle;
+
+  SetWindowLong(Handle, GWL_EXSTYLE, GetWindowLong(Handle, GWL_EXSTYLE) or WS_EX_COMPOSITED);
 
   FSearch.ItemIndex := 0;
 end;

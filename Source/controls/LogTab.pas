@@ -152,6 +152,8 @@ type
     procedure SetFilter(Text: string; FilterTypes: TFilterTypes);
   end;
 
+  { TLogTab }
+
   TLogTab = class(TMainTabSheet)
   private
     FLogPanel: TLogPanel;
@@ -164,6 +166,7 @@ type
     procedure PopupMenuClick(Sender: TObject);
     procedure LogTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
   protected
+    procedure ShownFirst; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
 
@@ -244,6 +247,13 @@ end;
 procedure TLogTab.LogTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
 begin
   UpdateButtons;
+end;
+
+procedure TLogTab.ShownFirst;
+begin
+  inherited;
+
+  FLogTree.ApplyFocus;
 end;
 
 constructor TLogTab.Create(AOwner: TComponent);

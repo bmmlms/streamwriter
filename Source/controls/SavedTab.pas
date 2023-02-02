@@ -265,6 +265,8 @@ type
     procedure ImportThreadTerminate(Sender: TObject);
 
     procedure ImportPanelCancelClick(Sender: TObject);
+  protected
+    procedure ShownFirst; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -835,6 +837,13 @@ procedure TSavedTab.ImportPanelCancelClick(Sender: TObject);
 begin
   if FImportThread <> nil then
     FImportThread.Terminate;
+end;
+
+procedure TSavedTab.ShownFirst;
+begin
+  inherited ShownFirst;
+
+  Tree.ApplyFocus;
 end;
 
 procedure TSavedTab.ImportThreadProgress(Sender: TObject);
@@ -2685,12 +2694,6 @@ begin
 
   Expanded[FStreamNode] := True;
   Expanded[FFileNode] := True;
-
-  if RootNodeCount > 0 then
-  begin
-    Selected[GetFirst] := True;
-    FocusedNode := GetFirst;
-  end;
 end;
 
 procedure TSavedTree.DoDragging(P: TPoint);
