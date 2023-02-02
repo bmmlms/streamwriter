@@ -1511,6 +1511,9 @@ procedure TDataLists.Load(const Filename: string);
 var
   Stream: TBufferedFileStream;
 begin
+  if not FileExists(Filename) then
+    Exit;
+
   Stream := TBufferedFileStream.Create(Filename, fmOpenRead);
   try
     VerifyMagic(Stream, 62, True);
