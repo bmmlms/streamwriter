@@ -187,6 +187,7 @@ type
 
     procedure PlaybackTimerTimer(Sender: TObject);
   protected
+    procedure CreateHandle; override;
     procedure ShownFirst; override;
   public
     constructor Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList; Clients: TClientManager; Popup: TPopupMenu); reintroduce;
@@ -696,8 +697,6 @@ begin
   FSplitter.MinSize := MulDiv(220, Screen.PixelsPerInch, 96);
   FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
   FSideBar.Width := AppGlobals.SidebarWidth;
-
-  BuildTree;
 end;
 
 procedure TClientTab.AddressBarStart(Sender: TObject);
@@ -1114,6 +1113,14 @@ begin
   Inc(FPlaybackSeconds);
 
   FTimeLabel.Caption := BuildTime(FPlaybackSeconds, False);
+end;
+
+procedure TClientTab.CreateHandle;
+begin
+  inherited CreateHandle;
+
+  // A Handle is required since we expand nodes in BuildTree which does not work otherwise.
+  BuildTree;
 end;
 
 procedure TClientTab.ShownFirst;

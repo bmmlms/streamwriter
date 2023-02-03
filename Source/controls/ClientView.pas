@@ -170,9 +170,19 @@ end;
 function TMClientView.AddCategory: PVirtualNode;
 var
   Node: PVirtualNode;
+  ParentNode: PVirtualNode;
   NodeData: PClientNodeData;
+  Nodes: TNodeArray;
 begin
-  Node := AddChild(nil);
+  ParentNode := nil;
+  Nodes := GetNodes(ntAll, True);
+  for Node in Nodes do
+    if GetNodeLevel(Node) = 0 then
+      ParentNode := Node
+    else
+      ParentNode := Node.Parent;
+
+  Node := InsertNode(ParentNode, amInsertAfter);
   NodeData := GetNodeData(Node);
   NodeData.Client := nil;
   NodeData.Category := TListCategory.Create(_('New category'), 0);
@@ -806,8 +816,11 @@ var
 begin
   inherited;
 
-  NodeData := GetNodeData(FAutoNode);
-  NodeData.Category.Name := _('Automatic recordings');
+  if Assigned(FAutoNode) then
+  begin
+    NodeData := GetNodeData(FAutoNode);
+    NodeData.Category.Name := _('Automatic recordings');
+  end;
 
   FColName.Text := _('Name');
   FColTitle.Text := _('Title');
