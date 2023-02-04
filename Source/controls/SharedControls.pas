@@ -609,7 +609,7 @@ procedure TSeekBar.MouseMove(Shift: TShiftState; X: Integer; Y: Integer);
 begin
   inherited;
 
-  if ssLeft in Shift then
+  if FSetting then
   begin
     if FPositionBeforeDrag = -1 then
       FPositionBeforeDrag := FPosition;
@@ -632,8 +632,6 @@ begin
     if FNotifyOnMove then
       if Assigned(FOnPositionChanged) then
         FOnPositionChanged(Self);
-
-    FSetting := True;
   end;
 
   if (FLastGripperState <> GetGripperState) or (FLastGripperPos <> FPosition) then
