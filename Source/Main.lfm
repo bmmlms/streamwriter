@@ -372,7 +372,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object actStop: TAction
       Caption = 'S&top recording'
       Hint = 'Stop recording'
-      ImageIndex = 117
+      ImageIndex = 118
     end
     object actRemove: TAction
       Caption = '&Remove'
@@ -388,7 +388,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object actSettings: TAction
       Caption = '&Settings...'
       Hint = 'Settings...'
-      ImageIndex = 134
+      ImageIndex = 135
       OnExecute = actSettingsExecute
     end
     object actAbout: TAction
@@ -430,7 +430,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object actStreamSettings: TAction
       Caption = 'S&ettings...'
       Hint = 'Settings...'
-      ImageIndex = 136
+      ImageIndex = 137
       OnExecute = actStreamSettingsExecute
     end
     object actOpenWebsite: TAction
@@ -441,26 +441,26 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object actLogOn: TAction
       Caption = '&Logon...'
       Hint = 'Logon'
-      ImageIndex = 129
+      ImageIndex = 130
       OnExecute = actLogOnExecute
     end
     object actLogOff: TAction
       Caption = 'L&ogoff'
       Hint = 'Logoff'
-      ImageIndex = 132
+      ImageIndex = 133
       OnExecute = actLogOffExecute
     end
     object actTimers: TAction
       Caption = 'Setup scheduled record&ings...'
       Hint = 'Setup scheduled recordings...'
-      ImageIndex = 124
+      ImageIndex = 125
       OnExecute = actTimersExecute
     end
     object actStopAfterSong: TAction
       AutoCheck = True
       Caption = 'Stop recording after &current title'
       Hint = 'Stop recording after current title'
-      ImageIndex = 118
+      ImageIndex = 119
     end
     object actCopyTitle: TAction
       Caption = '&Copy title to clipboard'
@@ -484,17 +484,17 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object actPlayerDecreaseVolume: TAction
       Caption = '&Decrease volume'
-      ImageIndex = 104
+      ImageIndex = 105
       OnExecute = actPlayerDecreaseVolumeExecute
     end
     object actPlayerIncreaseVolume: TAction
       Caption = '&Increase volume'
-      ImageIndex = 103
+      ImageIndex = 104
       OnExecute = actPlayerIncreaseVolumeExecute
     end
     object actPlayerMuteVolume: TAction
       Caption = '&Mute'
-      ImageIndex = 105
+      ImageIndex = 106
       OnExecute = actPlayerMuteVolumeExecute
     end
     object actPlayerPlayPause: TAction
@@ -504,13 +504,13 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object actPlayerStop: TAction
       Caption = '&Stop'
-      ImageIndex = 116
+      ImageIndex = 117
       OnExecute = actPlayerStopExecute
     end
     object actRename: TAction
       Caption = 'Ren&ame'
       Hint = 'Rename'
-      ImageIndex = 121
+      ImageIndex = 122
     end
     object actEqualizer: TAction
       Caption = '&Equalizer...'
@@ -521,13 +521,13 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     object actAutoSettings: TAction
       Caption = 'Settings for &automatic recordings...'
       Hint = 'Settings for automatic recordings...'
-      ImageIndex = 135
+      ImageIndex = 136
       OnExecute = actAutoSettingsExecute
     end
     object actStopPlay: TAction
       Caption = 'St&op'
       Hint = 'Stop'
-      ImageIndex = 116
+      ImageIndex = 117
     end
     object actPause: TAction
       Caption = 'Pa&use'
