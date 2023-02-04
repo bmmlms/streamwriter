@@ -129,6 +129,7 @@ type
     FSortDown: Boolean;
     FSortHover: Boolean;
     FSortMenuOpen: Boolean;
+    FIgnoreNextButtonDown: Boolean;
   protected
     function GetColumnsClass: TVirtualTreeColumnsClass; override;
     function HandleMessage(var Message: TLMessage): Boolean; override;
@@ -304,11 +305,13 @@ begin
     begin
       P := Classes.Point(MouseEvent.X, MouseEvent.Y);
 
-      if InHeader(P) and (Columns.ColumnFromPosition(P) = NoColumn) then
+      if InHeader(P) and (Columns.ColumnFromPosition(P) = NoColumn) and not FIgnoreNextButtonDown then
       begin
         FSortDown := True;
         Invalidate(nil);
       end;
+
+      FIgnoreNextButtonDown := False;
     end;
     LM_LBUTTONUP:
     begin
@@ -322,6 +325,13 @@ begin
         FSortMenuOpen := True;
         PopupMenu.PopUp(P.X, P.Y);
         FSortMenuOpen := False;
+
+        if GetCursorPos(P) then
+        begin
+          ScreenToClient(Treeview.Handle, P);
+          if InHeader(P) and (Columns.ColumnFromPosition(P) = NoColumn) then
+            FIgnoreNextButtonDown := True;
+        end;
       end;
 
       if FSortDown then
@@ -354,6 +364,11 @@ begin
     LM_MOUSEMOVE:
       with TLMMouseMove(Message) do
       begin
+        if FSortMenuOpen then
+        begin
+          halt;
+        end;
+
         P := Classes.Point(MouseMove.XPos, MouseMove.YPos);
 
         InSortButton := InHeader(P) and (Columns.ColumnFromPosition(P) = NoColumn);
