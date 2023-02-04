@@ -114,6 +114,26 @@ type
 
   TSortTypes = (stName, stBitrate, stType, stRating);
 
+  { TStreamTreeColumns }
+
+  TStreamTreeColumns = class(TVirtualTreeColumns)
+  public
+    procedure PaintHeader(TargetCanvas: TCanvas; R: TRect; const Target: TPoint; RTLOffset: Integer = 0); overload; override;
+    function ColumnFromPosition(const P: TPoint; Relative: Boolean = True): TColumnIndex; overload; override;
+  end;
+
+  { TStreamTreeHeader }
+
+  TStreamTreeHeader = class(TVTHeader)
+  private
+    FSortDown: Boolean;
+    FSortHover: Boolean;
+    FSortMenuOpen: Boolean;
+  protected
+    function GetColumnsClass: TVirtualTreeColumnsClass; override;
+    function HandleMessage(var Message: TLMessage): Boolean; override;
+  end;
+
   { TMStreamBrowserView }
 
   TMStreamBrowserView = class(TPanel, IPostTranslatable)
@@ -228,12 +248,11 @@ type
     function DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer; override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     procedure DoBeforeCellPaint(Canvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect); override;
+    function GetHeaderClass: TVTHeaderClass; override;
     procedure HandleMouseDblClick(var Message: TLMMouse; const HitInfo: THitInfo); override;
     procedure Resize; override;
     procedure Paint; override;
     procedure KeyPress(var Key: Char); override;
-
-    procedure WndProc(var Message: TMessage); override;
 
     procedure TimerOnTimer(Sender: TObject);
     procedure PopupMenuPopup(Sender: TObject);
@@ -265,6 +284,126 @@ type
 
 implementation
 
+{ TStreamTreeHeader }
+
+function TStreamTreeHeader.GetColumnsClass: TVirtualTreeColumnsClass;
+begin
+  Result := TStreamTreeColumns;
+end;
+
+function TStreamTreeHeader.HandleMessage(var Message: TLMessage): Boolean;
+var
+  P: TPoint;
+  InSortButton: Boolean;
+  ColRect: TRect;
+  MouseEvent: TLMMouseEvent absolute Message;
+  MouseMove: TLMMouseMove absolute Message;
+begin
+  case Message.msg of
+    LM_LBUTTONDOWN:
+    begin
+      P := Classes.Point(MouseEvent.X, MouseEvent.Y);
+
+      if InHeader(P) and (Columns.ColumnFromPosition(P) = NoColumn) then
+      begin
+        FSortDown := True;
+        Invalidate(nil);
+      end;
+    end;
+    LM_LBUTTONUP:
+    begin
+      P := Classes.Point(MouseEvent.X, MouseEvent.Y);
+
+      if FSortDown and InHeader(P) and (Columns.ColumnFromPosition(P) = NoColumn) then
+      begin
+        ColRect := Columns[0].GetRect;
+        P := TPoint.Create(ColRect.Right - 18, ColRect.Top + ColRect.Height);
+        ClientToScreen(Treeview.Handle, P);
+        FSortMenuOpen := True;
+        PopupMenu.PopUp(P.X, P.Y);
+        FSortMenuOpen := False;
+      end;
+
+      if FSortDown then
+        Invalidate(nil);
+
+      FSortDown := False;
+      FSortHover := False;
+    end;
+    LM_RBUTTONUP, LM_RBUTTONDOWN:
+    begin
+      P := Classes.Point(MouseEvent.X, MouseEvent.Y);
+
+      if InHeader(P) and (Columns.ColumnFromPosition(P) = NoColumn) then
+      begin
+        Message.Result := 1;
+        Exit(True);
+      end;
+    end;
+    CM_MOUSELEAVE:
+    begin
+      if FSortMenuOpen then
+        Exit(True);
+
+      if FSortHover then
+        Invalidate(nil);
+
+      FSortDown := False;
+      FSortHover := False;
+    end;
+    LM_MOUSEMOVE:
+      with TLMMouseMove(Message) do
+      begin
+        P := Classes.Point(MouseMove.XPos, MouseMove.YPos);
+
+        InSortButton := InHeader(P) and (Columns.ColumnFromPosition(P) = NoColumn);
+
+        if (InSortButton <> FSortHover) or (not InSortButton and FSortDown) then
+          Invalidate(nil);
+
+        if FSortDown and not InSortButton then
+          FSortDown := False;
+
+        FSortHover := InSortButton;
+      end;
+  end;
+
+  Result := inherited HandleMessage(Message);
+end;
+
+{ TStreamTreeColumns }
+
+procedure TStreamTreeColumns.PaintHeader(TargetCanvas: TCanvas; R: TRect; const Target: TPoint; RTLOffset: Integer);
+var
+  Details: TThemedElementDetails;
+begin
+  inherited PaintHeader(TargetCanvas, R, Target, RTLOffset);
+
+  R := TRect.Create(Min(R.Right, TotalWidth) - 18, Max(R.Top, 0), Min(R.Right, TotalWidth), Min(R.Bottom, Header.Height));
+
+  if TStreamTreeHeader(Header).FSortDown then
+    Details := ThemeServices.GetElementDetails(thHeaderItemPressed)
+  else if TStreamTreeHeader(Header).FSortHover then
+    Details := ThemeServices.GetElementDetails(thHeaderItemHot)
+  else
+    Details := ThemeServices.GetElementDetails(thHeaderItemNormal);
+
+  ThemeServices.DrawElement(TargetCanvas.Handle, Details, R, nil);
+
+  if TStreamTreeHeader(Header).FSortDown then
+    R.Offset(1, 1);
+
+  modSharedData.imgImages.Resolution[16].Draw(TargetCanvas, R.Right - 16, R.Top, TImages.SORT);
+end;
+
+function TStreamTreeColumns.ColumnFromPosition(const P: TPoint; Relative: Boolean): TColumnIndex;
+begin
+  if P.X > Items[0].Width - 18 then
+    Exit(NoColumn);
+
+  Result := inherited ColumnFromPosition(P, Relative);
+end;
+
 { TMStreamView }
 
 constructor TMStreamTree.Create(AOwner: TComponent);
@@ -279,7 +418,7 @@ begin
   TreeOptions.SelectionOptions := [toDisableDrawSelection, toRightClickSelect, toFullRowSelect, toMultiSelect];
   TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop] + [toFullRowDrag];
-  Header.Options := Header.Options + [hoShowSortGlyphs, hoVisible, hoOwnerDraw] - [hoDrag];
+  Header.Options := Header.Options + [hoShowSortGlyphs, hoVisible, hoOwnerDraw] - [hoDrag, hoColumnResize];
   DragMode := dmAutomatic;
   ShowHint := True;
   HintMode := hmTooltip;
@@ -771,57 +910,6 @@ begin
   inherited;
 end;
 
-procedure TMStreamTree.WndProc(var Message: TMessage);
-
-  procedure DrawImg(C: TCanvas);
-  var
-    SBW: Integer;
-    R: TRect;
-  begin
-    Windows.GetClientRect(Handle, R);
-    SBW := GetSystemMetrics(SM_CXVSCROLL);
-    FButtonPos := Bounds(Width - SBW - 2, 2, SBW + 1, Height - R.Bottom - 5);
-    C.Brush.Color := clBtnFace;
-    R := FButtonPos;
-    C.FillRect(R);
-    Images.Draw(C, FButtonPos.Left, FButtonPos.Top, 47, True);
-  end;
-
-var
-  DC: HDC;
-  Flags: DWORD;
-  C: TCanvas;
-  P: TPoint;
-begin
-  inherited;
-
-  case Message.Msg of
-    WM_NCPAINT:
-    begin
-      Flags := DCX_CACHE or DCX_CLIPSIBLINGS or DCX_WINDOW or DCX_VALIDATE;
-      DC := GetDCEx(Self.Header.Treeview.Handle, 0, Flags);
-      if DC <> 0 then
-      begin
-        C := TCanvas.Create;
-        try
-          C.Handle := DC;
-          DrawImg(C);
-        finally
-          C.Free;
-        end;
-      end;
-    end;
-    WM_NCLBUTTONDOWN:
-    begin
-      P.X := TWMNCLButtonDown(Message).XCursor;
-      P.Y := TWMNCLButtonDown(Message).YCursor + Header.Height;
-
-      if PtInRect(FButtonPos, ScreenToClient(P)) then
-        FSortPopupMenu.Popup(P.X, P.Y - Header.Height);
-    end;
-  end;
-end;
-
 procedure TMStreamTree.DoBeforeCellPaint(Canvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect);
 var
   NodeData: PStreamNodeData;
@@ -848,7 +936,12 @@ begin
   end;
 end;
 
-function TMStreamTree.DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer;
+function TMStreamTree.GetHeaderClass: TVTHeaderClass;
+begin
+  Result := TStreamTreeHeader;
+end;
+
+function TMStreamTree.DoCompare(Node1: PVirtualNode; Node2: PVirtualNode; Column: TColumnIndex): Integer;
 var
   Data1, Data2: PStreamNodeData;
   S1, S2: string;
@@ -1325,8 +1418,6 @@ begin
     FCountLabel.Caption := Format(_('%d stream found'), [FStreamTree.RootNodeCount])
   else
     FCountLabel.Caption := Format(_('%d streams found'), [FStreamTree.RootNodeCount]);
-
-  //  FStreamTree.FSortPopupMenu.PostTranslate;
 end;
 
 { TMStreamSearch }
