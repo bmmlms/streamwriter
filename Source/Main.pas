@@ -607,6 +607,8 @@ begin
         S.Free;
       end;
     except
+      on E: EFOpenError do
+        TFunctions.MsgBox(_('The file could not be imported because it could not be opened for reading.'), _('Error'), MB_ICONERROR);
       on E: EVersionException do
         TFunctions.MsgBox(_('The file could not be imported because it was exported with a newer version of streamWriter.'), _('Error'), MB_ICONERROR);
       on E: EUnsupportedFormatException do
@@ -616,6 +618,7 @@ begin
       else
         TFunctions.MsgBox(_('The file could not be imported.'), _('Error'), MB_ICONERROR)
     end;
+
     TFunctions.RunProcess('"' + Application.ExeName + '" /profileupdate', False);
   end;
 

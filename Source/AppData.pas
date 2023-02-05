@@ -847,7 +847,9 @@ begin
       // Damit beim Beenden nichts überschrieben wird.
       FData.LoadError := True;
 
-      if E is EVersionException then
+      if E is EFOpenError then
+        raise Exception.Create(_('The file "%s" could not be opened for reading, streamWriter will exit now.').Format([DataFile]))
+      else if E is EVersionException then
         Res := TFunctions.MsgBox(Format(_('The file "%s" could not be loaded because it was saved with a newer version of streamWriter. ' + 'To use the current file exit streamWriter and use a newer version of the application.') +
           #13#10 + _(LoadErrorMsg), [DataFile]), _('Info'), MB_YESNO or MB_ICONEXCLAMATION or MB_DEFBUTTON2)
       else if E is EUnsupportedFormatException then

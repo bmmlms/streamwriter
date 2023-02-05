@@ -2660,7 +2660,9 @@ begin
     on E: Exception do
     begin
       Result := False;
-      if E is EUnsupportedFormatException then
+      if E is EFOpenError then
+        TFunctions.MsgBox(_('The file could not be imported because it could not be opened for reading.'), _('Error'), MB_ICONERROR);
+      else if E is EUnsupportedFormatException then
         TFunctions.MsgBox(_('The file could not be imported because it contains regular saved data and no exported profile.'), _('Error'), MB_ICONERROR)
       else if E is EUnknownFormatException then
         TFunctions.MsgBox(_('The file could not be imported because it''s format is unknown.'), _('Error'), MB_ICONERROR)
