@@ -2661,7 +2661,7 @@ begin
     begin
       Result := False;
       if E is EFOpenError then
-        TFunctions.MsgBox(_('The file could not be imported because it could not be opened for reading.'), _('Error'), MB_ICONERROR);
+        TFunctions.MsgBox(_('The file could not be imported because it could not be opened for reading.'), _('Error'), MB_ICONERROR)
       else if E is EUnsupportedFormatException then
         TFunctions.MsgBox(_('The file could not be imported because it contains regular saved data and no exported profile.'), _('Error'), MB_ICONERROR)
       else if E is EUnknownFormatException then
