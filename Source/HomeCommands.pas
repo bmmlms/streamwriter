@@ -543,7 +543,7 @@ begin
   Stream.Read(C, False);
   for i := 0 to C - 1 do
   begin
-    Stream.Read(Tmp, True);
+    Stream.Read(Tmp, False);
     FRegExes.Add(Tmp);
   end;
 
