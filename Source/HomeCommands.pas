@@ -532,10 +532,10 @@ begin
   inherited;
 
   Stream.Read(FStreamID, False);
-  Stream.Read(FStreamName, True);
-  Stream.Read(FStreamTitle, True);
-  Stream.Read(FStreamParsedTitle, True);
-  Stream.Read(FCurrentURL, True);
+  Stream.Read(FStreamName, False);
+  Stream.Read(FStreamTitle, False);
+  Stream.Read(FStreamParsedTitle, False);
+  Stream.Read(FCurrentURL, False);
   Stream.Read(FBitrate, False);
   Stream.Read(B);
   FFormat := TAudioTypes(B);
@@ -600,7 +600,7 @@ begin
   inherited;
 
   Stream.Read(FMessageID, False);
-  Stream.Read(FMessageMsg, True);
+  Stream.Read(FMessageMsg, False);
 end;
 
 { TCommandSetSettings }
@@ -975,14 +975,14 @@ begin
   for i := 0 to Count - 1 do
   begin
     SetLength(FFoundTitles, Length(FFoundTitles) + 1);
-    Stream.Read(FFoundTitles[High(FFoundTitles)].Title, True);
+    Stream.Read(FFoundTitles[High(FFoundTitles)].Title, False);
     Stream.Read(FFoundTitles[High(FFoundTitles)].Hash, False);
   end;
   Stream.Read(Count, False);
   for i := 0 to Count - 1 do
   begin
     SetLength(FNotFoundTitles, Length(FNotFoundTitles) + 1);
-    Stream.Read(FNotFoundTitles[i], True);
+    Stream.Read(FNotFoundTitles[i], False);
   end;
 end;
 
@@ -1033,19 +1033,19 @@ begin
   for i := 0 to Count - 1 do
   begin
     SetLength(FLastTitles, Length(FLastTitles) + 1);
-    Stream.Read(FLastTitles[High(FLastTitles)], True);
+    Stream.Read(FLastTitles[High(FLastTitles)], False);
   end;
   Stream.Read(Count, False);
   for i := 0 to Count - 1 do
   begin
     SetLength(FOtherUserRegExps, Length(FOtherUserRegExps) + 1);
-    Stream.Read(FOtherUserRegExps[High(FOtherUserRegExps)], True);
+    Stream.Read(FOtherUserRegExps[High(FOtherUserRegExps)], False);
   end;
   Stream.Read(Count, False);
   for i := 0 to Count - 1 do
   begin
     SetLength(FUserRegExps, Length(FUserRegExps) + 1);
-    Stream.Read(FUserRegExps[High(FUserRegExps)], True);
+    Stream.Read(FUserRegExps[High(FUserRegExps)], False);
   end;
 end;
 
