@@ -93,8 +93,6 @@ type
   TActionEvent = procedure(Sender: TObject; Action: TStreamOpenActions; Streams: TStreamDataArray) of object;
   TIsInClientListEvent = function(Sender: TObject; ID: Cardinal): Boolean of object;
 
-  TScrollDirection = (sdUp, sdDown);
-
   { TMStreamSearchPanel }
 
   TMStreamSearchPanel = class(TPanel, IPostTranslatable)
@@ -128,7 +126,6 @@ type
   private
     FSortDown: Boolean;
     FSortHover: Boolean;
-    FSortMenuOpen: Boolean;
     FIgnoreNextButtonDown: Boolean;
   protected
     function GetColumnsClass: TVirtualTreeColumnsClass; override;
@@ -295,8 +292,7 @@ end;
 function TStreamTreeHeader.HandleMessage(var Message: TLMessage): Boolean;
 var
   P: TPoint;
-  InSortButton: Boolean;
-  ColRect: TRect;
+  ColRect, ButtonRect: TRect;
   MouseEvent: TLMMouseEvent absolute Message;
   MouseMove: TLMMouseMove absolute Message;
 begin
@@ -305,40 +301,31 @@ begin
     begin
       P := Classes.Point(MouseEvent.X, MouseEvent.Y);
 
-      if InHeader(P) and (Columns.ColumnFromPosition(P) = NoColumn) and not FIgnoreNextButtonDown then
+      ColRect := Columns[0].GetRect;
+      ButtonRect := TRect.Create(ColRect.Right - 18, ColRect.Top, ColRect.Right, ColRect.Bottom);
+
+      if ButtonRect.Contains(P) and not FIgnoreNextButtonDown then
       begin
         FSortDown := True;
         Invalidate(nil);
-      end;
 
-      FIgnoreNextButtonDown := False;
-    end;
-    LM_LBUTTONUP:
-    begin
-      P := Classes.Point(MouseEvent.X, MouseEvent.Y);
-
-      if FSortDown and InHeader(P) and (Columns.ColumnFromPosition(P) = NoColumn) then
-      begin
-        ColRect := Columns[0].GetRect;
         P := TPoint.Create(ColRect.Right - 18, ColRect.Top + ColRect.Height);
         ClientToScreen(Treeview.Handle, P);
-        FSortMenuOpen := True;
         PopupMenu.PopUp(P.X, P.Y);
-        FSortMenuOpen := False;
+
+        FSortDown := False;
+        Invalidate(nil);
 
         if GetCursorPos(P) then
         begin
           ScreenToClient(Treeview.Handle, P);
-          if InHeader(P) and (Columns.ColumnFromPosition(P) = NoColumn) then
-            FIgnoreNextButtonDown := True;
+          if ButtonRect.Contains(P) then
+            FIgnoreNextButtonDown := True
+          else
+            FSortHover := False;
         end;
-      end;
-
-      if FSortDown then
-        Invalidate(nil);
-
-      FSortDown := False;
-      FSortHover := False;
+      end else
+        FIgnoreNextButtonDown := False;
     end;
     LM_RBUTTONUP, LM_RBUTTONDOWN:
     begin
@@ -352,34 +339,28 @@ begin
     end;
     CM_MOUSELEAVE:
     begin
-      if FSortMenuOpen then
+      if FSortDown then
         Exit(True);
 
-      if FSortHover then
-        Invalidate(nil);
-
-      FSortDown := False;
       FSortHover := False;
+
+      Invalidate(nil);
     end;
     LM_MOUSEMOVE:
       with TLMMouseMove(Message) do
       begin
-        if FSortMenuOpen then
-        begin
-          halt;
-        end;
-
         P := Classes.Point(MouseMove.XPos, MouseMove.YPos);
 
-        InSortButton := InHeader(P) and (Columns.ColumnFromPosition(P) = NoColumn);
+        ColRect := Columns[0].GetRect;
+        ButtonRect := TRect.Create(ColRect.Right - 18, ColRect.Top, ColRect.Right, ColRect.Bottom);
 
-        if (InSortButton <> FSortHover) or (not InSortButton and FSortDown) then
+        if (ButtonRect.Contains(P) <> FSortHover) or (not ButtonRect.Contains(P) and FSortDown) then
           Invalidate(nil);
 
-        if FSortDown and not InSortButton then
+        if FSortDown and not ButtonRect.Contains(P) then
           FSortDown := False;
 
-        FSortHover := InSortButton;
+        FSortHover := ButtonRect.Contains(P);
       end;
   end;
 
