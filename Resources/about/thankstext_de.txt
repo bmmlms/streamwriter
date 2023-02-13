@@ -26,33 +26,30 @@ Jan de Ruiter
 &U&10Ausserdem Dank an einige Projekte, die ich benutze,
 &U&10um streamWriter und die Webseite zu entwickeln
 
-Apache HTTP Server
 AudioGenie
 BASS
 Delphi-Praxis
 Django
 Drag and Drop Component Suite
-Embarcadero
 FAAC
 famfamfam
-FastMM
 freecsstemplates.org
+Free Pascal
 Fugue Icons
 GIMP
 Inno Setup
 jQuery
 LAME
-LED icons
+Lazarus IDE
 Let's Encrypt
+mbed TLS
 MP4Box
 MySQL
 Node.js
 OggEnc
-OpenSSL
 Programmer's Notepad
 Python
 SoX
-Tango Desktop Project
 Virtual Treeview
 
 

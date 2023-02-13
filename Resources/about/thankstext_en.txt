@@ -26,33 +26,30 @@ Jan de Ruiter
 &U&10Also thanks to some other projects I make use of
 &U&10to develop streamWriter and it's website
 
-Apache HTTP Server
 AudioGenie
 BASS
 Delphi-Praxis
 Django
 Drag and Drop Component Suite
-Embarcadero
 FAAC
 famfamfam
-FastMM
 freecsstemplates.org
+Free Pascal
 Fugue Icons
 GIMP
 Inno Setup
 jQuery
 LAME
-LED icons
+Lazarus IDE
 Let's Encrypt
+mbed TLS
 MP4Box
 MySQL
 Node.js
 OggEnc
-OpenSSL
 Programmer's Notepad
 Python
 SoX
-Tango Desktop Project
 Virtual Treeview
 
 
