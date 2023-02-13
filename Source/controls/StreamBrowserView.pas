@@ -389,7 +389,7 @@ begin
   if TStreamTreeHeader(Header).FSortDown then
     R.Offset(1, 1);
 
-  modSharedData.imgImages.Resolution[16].Draw(TargetCanvas, R.Right - 16, R.Top, TImages.SORT);
+  modSharedData.imgImages.Resolution[16].Draw(TargetCanvas, R.Right - 16, R.Top, TImages.SORT, IfThen<TGraphicsDrawEffect>(Header.Treeview.Enabled, gdeNormal, gdeDisabled));
 end;
 
 function TStreamTreeColumns.ColumnFromPosition(const P: TPoint; Relative: Boolean): TColumnIndex;
