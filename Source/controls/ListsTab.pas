@@ -151,6 +151,7 @@ type
     procedure ConvertToAutomaticClick(Sender: TObject);
     procedure AddEditKeyPress(Sender: TObject; var Key: Char);
     procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+    procedure TreeSelectionChange(Sender: TObject);
     procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure SearchTextChange(Sender: TObject);
   protected
@@ -334,7 +335,7 @@ procedure TListsTab.ShownFirst;
 begin
   inherited;
 
-  ListsPanel.Tree.ApplyFocus;
+  FListsPanel.FAddEdit.ApplyFocus;
 end;
 
 procedure TListsTab.MessageReceived(Msg: TMessageBase);
@@ -1160,6 +1161,7 @@ begin
   FTree.Parent := Self;
   FTree.Align := alClient;
   FTree.OnChange := TreeChange;
+  FTree.OnSelectionChange := TreeSelectionChange;
   FTree.OnKeyDown := TreeKeyDown;
 
   BuildTree(False);
@@ -1325,6 +1327,41 @@ begin
   end;
 end;
 
+procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+var
+  List: TList<TTitleInfo>;
+  NodeData: PTitleNodeData;
+  i: Integer;
+begin
+  if not Assigned(Node) then
+    Exit;
+
+  List := nil;
+  NodeData := FTree.GetNodeData(Node);
+
+  case NodeData.NodeType of
+    ntWishParent, ntWish:
+      FAddCombo.ItemIndex := 0;
+    ntIgnoreParent:
+      FAddCombo.ItemIndex := 1;
+    ntIgnore:
+      if NodeData.Stream <> nil then
+        List := NodeData.Stream.Entry.IgnoreList
+      else
+        FAddCombo.ItemIndex := 1;
+    ntStream:
+      List := NodeData.Stream.Entry.IgnoreList;
+  end;
+
+  if List <> nil then
+    for i := 0 to FAddCombo.ItemsEx.Count - 1 do
+      if Assigned(FAddCombo.ItemsEx[i].Data) and (TObject(FAddCombo.ItemsEx[i].Data).ClassType = TICEClient) and (TICEClient(FAddCombo.ItemsEx[i].Data).Entry.IgnoreList = List) then
+      begin
+        FAddCombo.ItemIndex := i;
+        Break;
+      end;
+end;
+
 function TTitlePanel.AddEntry(Text: string; TitleHash: Cardinal; ShowMessages: Boolean; ListType: TListType): Boolean;
 var
   i, NumChars: Integer;
@@ -1409,40 +1446,8 @@ begin
     TFunctions.MsgBox(_('Please enter a pattern to add to the list.'), _('Info'), MB_ICONINFORMATION);
 end;
 
-procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
-var
-  List: TList<TTitleInfo>;
-  NodeData: PTitleNodeData;
-  i: Integer;
+procedure TTitlePanel.TreeSelectionChange(Sender: TObject);
 begin
-  if Node <> nil then
-  begin
-    List := nil;
-    NodeData := FTree.GetNodeData(Node);
-
-    case NodeData.NodeType of
-      ntWishParent, ntWish:
-        FAddCombo.ItemIndex := 0;
-      ntIgnoreParent:
-        FAddCombo.ItemIndex := 1;
-      ntIgnore:
-        if NodeData.Stream <> nil then
-          List := NodeData.Stream.Entry.IgnoreList
-        else
-          FAddCombo.ItemIndex := 1;
-      ntStream:
-        List := NodeData.Stream.Entry.IgnoreList;
-    end;
-
-    if List <> nil then
-      for i := 0 to FAddCombo.ItemsEx.Count - 1 do
-        if Assigned(FAddCombo.ItemsEx[i].Data) and (TObject(FAddCombo.ItemsEx[i].Data).ClassType = TICEClient) and (TICEClient(FAddCombo.ItemsEx[i].Data).Entry.IgnoreList = List) then
-        begin
-          FAddCombo.ItemIndex := i;
-          Break;
-        end;
-  end;
-
   UpdateButtons;
 end;
 

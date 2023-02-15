@@ -167,7 +167,7 @@ type
     procedure ClientManagerPlaybackStarted(Sender: TObject);
     procedure ClientManagerSecondsReceived(Sender: TObject);
 
-    procedure FClientViewChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+    procedure FClientViewSelectionChange(Sender: TObject);
     procedure FClientViewNodeDblClick(Sender: TBaseVirtualTree; const HitInfo: THitInfo);
     procedure FClientViewKeyPress(Sender: TObject; var Key: Char);
     procedure FClientViewKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -685,7 +685,7 @@ begin
   FClientView.Parent := Self;
   FClientView.Align := alClient;
   FClientView.Images := modSharedData.imgImages;
-  FClientView.OnChange := FClientViewChange;
+  FClientView.OnSelectionChange := FClientViewSelectionChange;
   FClientView.OnNodeDblClick := FClientViewNodeDblClick;
   FClientView.OnKeyPress := FClientViewKeyPress;
   FClientView.OnKeyDown := FClientViewKeyDown;
@@ -1127,7 +1127,7 @@ procedure TClientTab.ShownFirst;
 begin
   inherited;
 
-  FClientView.ApplyFocus;
+  FAddressBar.Stations.ApplyFocus;
 end;
 
 procedure TClientTab.FClientViewKeyPress(Sender: TObject; var Key: Char);
@@ -1183,7 +1183,7 @@ begin
     end;
 end;
 
-procedure TClientTab.FClientViewChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+procedure TClientTab.FClientViewSelectionChange(Sender: TObject);
 var
   Clients: TNodeDataArray;
 begin

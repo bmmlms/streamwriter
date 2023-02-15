@@ -1035,8 +1035,6 @@ begin
 
   FWasShown := True;
 
-  tabClients.ClientView.ApplyFocus;
-
   PostMessage(Handle, WM_AFTERSHOWN, 0, 0);
 end;
 
@@ -2439,21 +2437,12 @@ begin
     end;
 
   B := Length(Clients) > 0;
-  if actStart.Enabled <> (B and OneNotRecording and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected)) then
-    actStart.Enabled := (B and OneNotRecording and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected));
-  if actStop.Enabled <> (B and OneRecording and (not OnlyAutomaticRecording) and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected)) then
-    actStop.Enabled := (B and OneRecording and (not OnlyAutomaticRecording) and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected));
-  mnuStartStreaming1.Default := False;
-  mnuStopStreaming1.Default := False;
+  actStart.Enabled := (B and OneNotRecording and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected));
+  actStop.Enabled := (B and OneRecording and (not OnlyAutomaticRecording) and not OnlyAutomatedSelected) or ((Length(CatNodes) > 0) and (not OnlyAutomatedCatsSelected));
 
-  if actRename.Enabled <> (tabClients.ClientView.SelectedCount = 1) and (not OnlyAutomatedSelected) and (not OnlyAutomatedCatsSelected) then
-    actRename.Enabled := (tabClients.ClientView.SelectedCount = 1) and (not OnlyAutomatedSelected) and (not OnlyAutomatedCatsSelected);
-
-  if actRemove.Enabled <> B or ((Length(CatNodes) > 0) and not OnlyAutomatedCatsSelected) then
-    actRemove.Enabled := B or ((Length(CatNodes) > 0) and not OnlyAutomatedCatsSelected);
-
-  if actStreamSettings.Enabled <> B and (not OnlyAutomatedSelected) then
-    actStreamSettings.Enabled := B and (not OnlyAutomatedSelected);
+  actRename.Enabled := (tabClients.ClientView.SelectedCount = 1) and (not OnlyAutomatedSelected) and (not OnlyAutomatedCatsSelected);
+  actRemove.Enabled := B or ((Length(CatNodes) > 0) and not OnlyAutomatedCatsSelected);
+  actStreamSettings.Enabled := B and (not OnlyAutomatedSelected);
 
   URLFound := False;
   if Length(Clients) > 0 then
@@ -2462,56 +2451,27 @@ begin
   if actOpenWebsite.Enabled <> URLFound then
     actOpenWebsite.Enabled := URLFound;
 
-  if actTuneInStream.Enabled <> B then
-    actTuneInStream.Enabled := B;
-
-  if actSavePlaylistStream.Enabled <> B then
-    actSavePlaylistStream.Enabled := B;
-
-  if actResetData.Enabled <> ((Length(Clients) > 0) and not OnlyAutomatedSelected) then
-    actResetData.Enabled := ((Length(Clients) > 0) and not OnlyAutomatedSelected);
-
-  if actStopPlay.Enabled <> OnePlaying and Bass.DeviceAvailable then
-    actStopPlay.Enabled := OnePlaying and Bass.DeviceAvailable;
-
-  if actPause.Checked <> OnePaused then
-    actPause.Checked := OnePaused;
-
-  if actPause.Enabled <> OnePlaying and Bass.DeviceAvailable then
-    actPause.Enabled := OnePlaying and Bass.DeviceAvailable;
-
-  if actPlay.Enabled <> (Length(Clients) = 1) and (not (Clients[0].AutoRemove and (Clients[0].State <> csConnected))) and Bass.DeviceAvailable then
-    actPlay.Enabled := (Length(Clients) = 1) and (not (Clients[0].AutoRemove and (Clients[0].State <> csConnected))) and Bass.DeviceAvailable;
+  actTuneInStream.Enabled := B;
+  actSavePlaylistStream.Enabled := B;
+  actResetData.Enabled := ((Length(Clients) > 0) and not OnlyAutomatedSelected);
+  actStopPlay.Enabled := OnePlaying and Bass.DeviceAvailable;
+  actPause.Checked := OnePaused;
+  actPause.Enabled := OnePlaying and Bass.DeviceAvailable;
+  actPlay.Enabled := (Length(Clients) = 1) and (not (Clients[0].AutoRemove and (Clients[0].State <> csConnected))) and Bass.DeviceAvailable;
 
   // Das hier muss man vor dem nächsten "Enabled"-Setzen machen. Er muss aus, sonst lässt sich "Checked" nach dem nächsten "Enabled := True" nicht mehr setzen.
   // Der Button malt sich halt nicht passend...
   if not OneNormalRecordingWithTitle then
     actStopAfterSong.Checked := False;
 
-  if actStopAfterSong.Enabled <> OneNormalRecordingWithTitle then
-    actStopAfterSong.Enabled := OneNormalRecordingWithTitle;
-
-  if actStopAfterSong.Checked <> OneNormalRecordingWithTitle and AllNormalStopsAfterSong then
-    actStopAfterSong.Checked := OneNormalRecordingWithTitle and AllNormalStopsAfterSong;
-
-  if actTimers.Enabled <> (Length(Clients) = 1) and (not Clients[0].AutoRemove) then
-    actTimers.Enabled := (Length(Clients) = 1) and (not Clients[0].AutoRemove);
-
-  if mnuCurrentTitle1.Enabled <> (Length(Clients) > 0) and OneHasTitle then
-    mnuCurrentTitle1.Enabled := (Length(Clients) > 0) and OneHasTitle;
-
-  if mnuCurrentTitle2.Enabled <> (Length(Clients) > 0) and OneHasTitle then
-    mnuCurrentTitle2.Enabled := (Length(Clients) > 0) and OneHasTitle;
-
-  if actAddToSaveList.Enabled <> (Length(Clients) > 0) and OneHasTitle then
-    actAddToSaveList.Enabled := (Length(Clients) > 0) and OneHasTitle;
-
-  if actAddToGlobalIgnoreList.Enabled <> (Length(Clients) > 0) and OneHasTitle then
-    actAddToGlobalIgnoreList.Enabled := (Length(Clients) > 0) and OneHasTitle;
-
-  if actAddToStreamIgnoreList.Enabled <> (Length(Clients) > 0) and OneHasTitle then
-    actAddToStreamIgnoreList.Enabled := (Length(Clients) > 0) and OneHasTitle;
-
+  actStopAfterSong.Enabled := OneNormalRecordingWithTitle;
+  actStopAfterSong.Checked := OneNormalRecordingWithTitle and AllNormalStopsAfterSong;
+  actTimers.Enabled := (Length(Clients) = 1) and (not Clients[0].AutoRemove);
+  mnuCurrentTitle1.Enabled := (Length(Clients) > 0) and OneHasTitle;
+  mnuCurrentTitle2.Enabled := (Length(Clients) > 0) and OneHasTitle;
+  actAddToSaveList.Enabled := (Length(Clients) > 0) and OneHasTitle;
+  actAddToGlobalIgnoreList.Enabled := (Length(Clients) > 0) and OneHasTitle;
+  actAddToStreamIgnoreList.Enabled := (Length(Clients) > 0) and OneHasTitle;
   actCopyTitle.Enabled := (Length(Clients) > 0) and OneHasTitle;
 end;
 

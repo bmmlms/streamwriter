@@ -164,7 +164,7 @@ type
     procedure TextChange(Sender: TObject);
     procedure ButtonClick(Sender: TObject);
     procedure PopupMenuClick(Sender: TObject);
-    procedure LogTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+    procedure LogTreeSelectionChange(Sender: TObject);
   protected
     procedure ShownFirst; override;
   public
@@ -244,7 +244,7 @@ begin
   UpdateButtons;
 end;
 
-procedure TLogTab.LogTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+procedure TLogTab.LogTreeSelectionChange(Sender: TObject);
 begin
   UpdateButtons;
 end;
@@ -253,7 +253,7 @@ procedure TLogTab.ShownFirst;
 begin
   inherited;
 
-  FLogTree.ApplyFocus;
+  FLogPanel.FSearch.ApplyFocus;
 end;
 
 constructor TLogTab.Create(AOwner: TComponent);
@@ -270,7 +270,7 @@ begin
   FLogTree := TLogTree.Create(Self);
   FLogTree.Parent := Self;
   FLogTree.Align := alClient;
-  FLogTree.OnChange := LogTreeChange;
+  FLogTree.OnSelectionChange := LogTreeSelectionChange;
 
   FLogTree.FPopupMenu.ItemInfo.OnClick := PopupMenuClick;
   FLogTree.FPopupMenu.ItemWarning.OnClick := PopupMenuClick;
@@ -371,7 +371,7 @@ begin
   Add(LogEntry);
 
   // Just to trigger "UpdateButtons" in LogTab..
-  OnChange(nil, nil);
+  OnSelectionChange(Self);
 end;
 
 procedure TLogTree.Add(LogEntry: TLogEntry);

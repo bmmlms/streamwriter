@@ -841,9 +841,9 @@ end;
 
 procedure TSavedTab.ShownFirst;
 begin
-  inherited ShownFirst;
+  inherited;
 
-  Tree.ApplyFocus;
+  FSearchBar.FSearch.ApplyFocus;
 end;
 
 procedure TSavedTab.ImportThreadProgress(Sender: TObject);

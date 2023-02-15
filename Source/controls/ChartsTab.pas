@@ -174,7 +174,7 @@ type
     procedure SearchSelect(Sender: TObject);
     procedure HomeCommSearchChartsReceived(Sender: TObject; Success: Boolean; Charts: TChartList);
     procedure ButtonClick(Sender: TObject);
-    procedure ChartsTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+    procedure ChartsTreeSelectionChange(Sender: TObject);
   protected
     procedure ShownFirst; override;
   public
@@ -225,7 +225,7 @@ begin
     FChartsTree.FPopupMenu.ItemAddStream.Click;
 end;
 
-procedure TChartsTab.ChartsTreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+procedure TChartsTab.ChartsTreeSelectionChange(Sender: TObject);
 begin
   UpdateButtons;
 end;
@@ -248,7 +248,7 @@ begin
   FChartsTree := TChartsTree.Create(Self);
   FChartsTree.Parent := Self;
   FChartsTree.Align := alClient;
-  FChartsTree.OnChange := ChartsTreeChange;
+  FChartsTree.OnSelectionChange := ChartsTreeSelectionChange;
 
   FResultLabel := TLabel.Create(Self);
   FResultLabel.Parent := Self;
