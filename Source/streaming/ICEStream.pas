@@ -31,7 +31,6 @@ uses
   Classes,
   Constants,
   DataManager,
-  StreamHelper,
   Functions,
   Generics.Collections,
   Generics.Defaults,
@@ -41,6 +40,7 @@ uses
   Math,
   regexpr,
   Sockets,
+  StreamHelper,
   SWFunctions,
   SysUtils,
   TypeDefs,
@@ -1168,11 +1168,9 @@ begin
               if IsBufferUTF8(RecvStream.Memory + TitleStart, TitleLen, False) = u8sYes then
               begin
                 SetLength(Title, TitleLen);
-                Move((@Title[1])^, (RecvStream.Memory + TitleStart)^, TitleLen);
+                Move((RecvStream.Memory + TitleStart)^, Title[1], TitleLen);
               end else
-              begin
                 Title := CleanTitle(RecvStream.Memory + TitleStart, TitleLen);
-              end;
 
               Title := Title.Trim;
             end else
