@@ -215,18 +215,23 @@ end;
 procedure TSWStatusBar.DrawPanel(Panel: TStatusPanel; const R: TRect);
 var
   ImageTop, TextTop: Integer;
+  PanelRect: TRect;
 begin
   inherited;
 
-  ImageTop := R.Top + (R.Bottom - R.Top) div 2 - MulDiv(16, Screen.PixelsPerInch, 96) div 2;
-  TextTop := R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(_('Wyg')) div 2;
+  PanelRect := R;
+
+  ImageTop := PanelRect.Top + (PanelRect.Bottom - PanelRect.Top) div 2 - MulDiv(16, Screen.PixelsPerInch, 96) div 2;
+  TextTop := PanelRect.Top + ((PanelRect.Bottom - PanelRect.Top) div 2) - Canvas.TextHeight(_('Wyg')) div 2;
 
   Canvas.Brush.Color := clBtnFace;
-  Canvas.FillRect(R);
+  Canvas.FillRect(PanelRect);
 
   case Panel.Index of
     0:
     begin
+      PanelRect.Left += Trunc((ClientHeight - 16) / 2);
+
       if FConnectionState = cshDisconnected then
         FTimer.Enabled := True
       else
@@ -238,54 +243,54 @@ begin
       case FConnectionState of
         cshConnected:
         begin
-          modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.CONNECT, 16, Self, gdeNormal);
-          Canvas.TextOut(R.Left + 56, TextTop, TFunctions.TruncateText(_('Connected'), R.Width - 58, Canvas.Font));
+          modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.CONNECT, 16, Self, gdeNormal);
+          Canvas.TextOut(PanelRect.Left + 56, TextTop, TFunctions.TruncateText(_('Connected'), PanelRect.Width - 58, Canvas.Font));
         end;
         cshConnectedSecure:
         begin
-          modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.CONNECT_SECURE, 16, Self, gdeNormal);
-          Canvas.TextOut(R.Left + 56, TextTop, TFunctions.TruncateText(_('Connected'), R.Width - 58, Canvas.Font));
+          modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.CONNECT_SECURE, 16, Self, gdeNormal);
+          Canvas.TextOut(PanelRect.Left + 56, TextTop, TFunctions.TruncateText(_('Connected'), PanelRect.Width - 58, Canvas.Font));
         end;
         cshDisconnected:
         begin
-          modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, IfThen<Integer>(Length(FDots) mod 2 = 0, TImages.CONNECT, TImages.DISCONNECT), 16, Self, gdeNormal);
-          Canvas.TextOut(R.Left + 56, TextTop, TFunctions.TruncateText(_('Connecting') + FDots, R.Width - 58, Canvas.Font));
+          modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, IfThen<Integer>(Length(FDots) mod 2 = 0, TImages.CONNECT, TImages.DISCONNECT), 16, Self, gdeNormal);
+          Canvas.TextOut(PanelRect.Left + 56, TextTop, TFunctions.TruncateText(_('Connecting') + FDots, PanelRect.Width - 58, Canvas.Font));
         end;
         cshFail:
         begin
-          modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.DISCONNECT, 16, Self, gdeNormal);
-          Canvas.TextOut(R.Left + 56, TextTop, TFunctions.TruncateText(_('Error'), R.Width - 58, Canvas.Font));
+          modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.DISCONNECT, 16, Self, gdeNormal);
+          Canvas.TextOut(PanelRect.Left + 56, TextTop, TFunctions.TruncateText(_('Error'), PanelRect.Width - 58, Canvas.Font));
         end;
       end;
 
-      modSharedData.imgImages.DrawForControl(Canvas, R.Left + 18, ImageTop, TImages.USER, 16, Self, IfThen<TGraphicsDrawEffect>(FLoggedIn, gdeNormal, gdeDisabled));
-      modSharedData.imgImages.DrawForControl(Canvas, R.Left + 36, ImageTop, TImages.BRICKS, 16, Self, IfThen<TGraphicsDrawEffect>(FNotifyTitleChanges, gdeNormal, gdeDisabled));
+      modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left + 18, ImageTop, TImages.USER, 16, Self, IfThen<TGraphicsDrawEffect>(FLoggedIn, gdeNormal, gdeDisabled));
+      modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left + 36, ImageTop, TImages.BRICKS, 16, Self, IfThen<TGraphicsDrawEffect>(FNotifyTitleChanges, gdeNormal, gdeDisabled));
     end;
     1:
       if (FConnectionState = cshConnected) or (FConnectionState = cshConnectedSecure) then
       begin
-        modSharedData.imgImages.DrawForControl(Canvas, R.Left, ImageTop, TImages.GROUP, 16, Self, gdeNormal);
-        Canvas.TextOut(R.Left + 18, TextTop, IntToStr(FClients));
+        modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.GROUP, 16, Self, gdeNormal);
+        Canvas.TextOut(PanelRect.Left + 18, TextTop, IntToStr(FClients));
 
-        modSharedData.imgImages.DrawForControl(Canvas, R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4, ImageTop, TImages.RECORD_RED, 16, Self, gdeNormal);
-        Canvas.TextOut(R.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4 + 18, TextTop, IntToStr(FRecordings));
+        modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4, ImageTop, TImages.RECORD_RED, 16, Self, gdeNormal);
+        Canvas.TextOut(PanelRect.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4 + 18, TextTop, IntToStr(FRecordings));
       end else
-        Canvas.FillRect(R);
+        Canvas.FillRect(PanelRect);
     2:
     begin
-      Canvas.TextOut(R.Left + 2, R.Top + ((R.Bottom - R.Top) div 2) - Canvas.TextHeight(TFunctions.MakeSize(FSpeed) + '/s') div 2, TFunctions.MakeSize(FSpeed) + '/s');
+      Canvas.TextOut(PanelRect.Left + 2, PanelRect.Top + ((PanelRect.Bottom - PanelRect.Top) div 2) - Canvas.TextHeight(TFunctions.MakeSize(FSpeed) + '/s') div 2, TFunctions.MakeSize(FSpeed) + '/s');
       if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
       begin
         Panels[2].Width := 2 + 35 + TFunctions.GetTextSize(_('0000/KBs'), Font).cx + FSpace;
         if FSpeedBmp <> nil then
-          Canvas.Draw(R.Right - FSpeedBmp.Width - 2, R.Bottom - FSpeedBmp.Height, FSpeedBmp);
+          Canvas.Draw(PanelRect.Right - FSpeedBmp.Width - 2, PanelRect.Bottom - FSpeedBmp.Height, FSpeedBmp);
       end else
         Panels[2].Width := 2 + TFunctions.GetTextSize(_('0000/KBs'), Font).cx + FSpace;
     end;
     3:
-      Canvas.TextOut(R.Left + 2, TextTop, _('%s/%s received').Format([TFunctions.MakeSize(FCurrentReceived), TFunctions.MakeSize(FOverallReceived)]));
+      Canvas.TextOut(PanelRect.Left + 2, TextTop, _('%s/%s received').Format([TFunctions.MakeSize(FCurrentReceived), TFunctions.MakeSize(FOverallReceived)]));
     4:
-      Canvas.TextOut(R.Left + 2, TextTop, _('%d/%d songs saved').Format([FSongsSaved, FOverallSongsSaved]));
+      Canvas.TextOut(PanelRect.Left + 2, TextTop, _('%d/%d songs saved').Format([FSongsSaved, FOverallSongsSaved]));
   end;
 end;
 
