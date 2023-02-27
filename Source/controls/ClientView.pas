@@ -182,10 +182,15 @@ begin
     else
       ParentNode := Node.Parent;
 
+  UnselectNodes(GetFirst, GetLast);
+
   Node := InsertNode(ParentNode, amInsertAfter);
   NodeData := GetNodeData(Node);
   NodeData.Client := nil;
   NodeData.Category := TListCategory.Create(_('New category'), 0);
+
+  Selected[Node] := True;
+
   EditNode(Node, 0);
   Result := Node;
 end;
