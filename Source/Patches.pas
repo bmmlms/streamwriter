@@ -7,6 +7,7 @@ interface
 uses
   ActiveX,
   DragDropFile,
+  VirtualTrees,
   DragDropPIDL,
   Windows;
 
@@ -52,6 +53,11 @@ begin
   end;
 end;
 
+procedure D;
+begin
+
+end;
+
 type
   TPatch = packed record
     Call: Byte;
@@ -72,6 +78,15 @@ initialization
       CopyMemory(@GetPIDLsFromFilenames, @Patch, SizeOf(TPatch));
     finally
       VirtualProtect(@GetPIDLsFromFilenames, SizeOf(TPatch), OldProtect, OldProtect);
+    end;
+
+  Patch.Proc := Pointer(Integer(Pointer(@D)) - Integer(Pointer(@FinalizeGlobalStructures)) - 5);
+  Patch.Ret := $C3;
+  if VirtualProtect(@FinalizeGlobalStructures, SizeOf(TPatch), PAGE_EXECUTE_READWRITE, OldProtect) then
+    try
+      CopyMemory(@FinalizeGlobalStructures, @Patch, SizeOf(TPatch));
+    finally
+      VirtualProtect(@FinalizeGlobalStructures, SizeOf(TPatch), OldProtect, OldProtect);
     end;
 
 {$ELSE}

@@ -338,7 +338,8 @@ begin
       Client.Entry.Schedules.Remove(Schedule);
       Schedule.Free;
 
-      FOnClientRefresh(Client);
+      if Assigned(FOnClientRefresh) then
+        FOnClientRefresh(Client);
 
       RefreshScheduler;
     end;
@@ -395,6 +396,19 @@ procedure TClientManager.Terminate;
 var
   i: Integer;
 begin
+  FOnClientLog := nil;
+  FOnClientRefresh := nil;
+  FOnClientAddRecent := nil;
+  FOnClientAdded := nil;
+  FOnClientRemoved := nil;
+  FOnClientSongSaved := nil;
+  FOnClientTitleChanged := nil;
+  FOnClientICYReceived := nil;
+  FOnClientTitleAllowed := nil;
+  FOnShowErrorMessage := nil;
+  FOnPlaybackStarted := nil;
+  FOnClientSecondsReceived := nil;
+
   for i := Count - 1 downto 0 do
     RemoveClient(FClients[i]);
 end;
@@ -785,7 +799,8 @@ end;
 
 procedure TClientManager.ClientTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer);
 begin
-  FOnClientTitleAllowed(Sender, Title, Allowed, Match, Filter);
+  if Assigned(FOnClientTitleAllowed) then
+    FOnClientTitleAllowed(Sender, Title, Allowed, Match, Filter);
 end;
 
 procedure TClientManager.ClientDisconnected(Sender: TObject);

@@ -269,8 +269,14 @@ procedure TPlayer.FreeStream(Player: Cardinal);
 var
   i: Integer;
 begin
+  if FPlayer = 0 then
+    Exit;
+
   for i := 0 to High(FBandData) do
   begin
+    if FBandData[i].Handle = 0 then
+      Continue;
+
     BASSChannelRemoveFX(Player, FBandData[i].Handle);
     FBandData[i].Handle := 0;
   end;

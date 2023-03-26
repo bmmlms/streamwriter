@@ -862,18 +862,16 @@ end;
 
 procedure TICEClient.ThreadTitleAllowed(Sender: TSocketThread);
 var
-  A: Boolean;
-  M: string;
-  F: Integer;
+  A: Boolean = True;
+  M: string = '';
+  F: Integer = 0;
 begin
   if Assigned(FOnTitleAllowed) then
-  begin
-    A := True;
     FOnTitleAllowed(Self, FICEThread.RecvStream.SaveAllowedTitle, A, M, F);
-    FICEThread.RecvStream.SaveAllowed := A;
-    FICEThread.RecvStream.SaveAllowedMatch := M;
-    FICEThread.RecvStream.SaveAllowedFilter := F;
-  end;
+
+  FICEThread.RecvStream.SaveAllowed := A;
+  FICEThread.RecvStream.SaveAllowedMatch := M;
+  FICEThread.RecvStream.SaveAllowedFilter := F;
 end;
 
 procedure TICEClient.ThreadTitleChanged(Sender: TSocketThread);
