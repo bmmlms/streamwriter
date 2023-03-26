@@ -823,8 +823,8 @@ begin
 
   FStorage.Read('LogFilterTypes', FLogFilterTypes, 7);
 
-  FStorage.Read('SetDataWidth', FSetDataWidth, 670);
-  FStorage.Read('SetDataHeight', FSetDataHeight, 440);
+  FStorage.Read('SetDataWidth', FSetDataWidth, 750);
+  FStorage.Read('SetDataHeight', FSetDataHeight, 420);
 
   FStorage.Read('IntroShown', FIntroShown, False);
 end;
