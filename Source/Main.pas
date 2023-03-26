@@ -66,9 +66,11 @@ uses
   ListsTab,
   Logging,
   LogTab,
+  MControlFocuser,
   MControls,
   Menus,
   MessageBus,
+  MPageControl,
   MsgDlg,
   Notifications,
   PlayerManager,
@@ -628,7 +630,7 @@ begin
     if pagMain.Pages[i].ClassType = TCutTab then
       pagMain.Pages[i].Free;
 
-  ExitProcess(0);
+  Application.Terminate;
 end;
 
 procedure TfrmStreamWriterMain.actSettingsExecute(Sender: TObject);

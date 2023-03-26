@@ -31,11 +31,12 @@ uses
   DataManager,
   Images,
   Logging,
+  MComboBoxExEditable,
   MControls,
   SysUtils;
 
 type
-  TMStationCombo = class(TComboBoxExEditable)
+  TMStationCombo = class(TMComboBoxExEditable)
   private
     function ItemsCompare(List: TListControlItems; Item1, Item2: TListControlItem): Integer;
   public

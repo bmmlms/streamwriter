@@ -50,6 +50,7 @@ uses
   Logging,
   Math,
   MessageBus,
+  MStringFunctions,
   Player,
   PlayerManager,
   PostProcess,
@@ -1424,7 +1425,7 @@ begin
 
   if TextWrite <> '' then
   begin
-    TS := TFunctions.GetTextSize(TextWrite, Canvas.Font);
+    TS := TMStringFunctions.GetTextSize(TextWrite, Canvas.Font);
     FWaveBuf.Canvas.Font.Color := clWhite;
     SetBkMode(FWaveBuf.Canvas.Handle, TRANSPARENT);
     FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - TS.cx div 2, FWaveBuf.Height div 2 - TS.cy - MulDiv(TCutView.PROGRESSBAR_HEIGHT, Screen.PixelsPerInch, 96) div 2 - 4, TextWrite);
@@ -1553,17 +1554,16 @@ procedure TCutPaintBox.BuildDrawBuffer;
 
   procedure DrawLineText(ArrayIdx, X: Cardinal);
   var
-    L: Integer;
-    TS: TSize;
+    L, TextWidth: Integer;
     SecText: string;
   begin
     L := Trunc(((ArrayIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FDrawBuf.Width);
     SecText := BuildTime(FCutView.FWaveData.WaveArray[ArrayIdx].Sec, True);
     FDrawBuf.Canvas.Font.Color := clWhite;
     SetBkMode(FDrawBuf.Canvas.Handle, TRANSPARENT);
-    TS := TFunctions.GetTextSize(SecText, Canvas.Font);
-    if FDrawBuf.Width < L + 4 + TS.cx then
-      FDrawBuf.Canvas.TextOut(L - 4 - TS.cx, X, SecText)
+    TextWidth := FDrawBuf.Canvas.GetTextWidth(SecText);
+    if FDrawBuf.Width < L + 4 + TextWidth then
+      FDrawBuf.Canvas.TextOut(L - 4 - TextWidth, X, SecText)
     else
       FDrawBuf.Canvas.TextOut(L + 4, X, SecText);
   end;

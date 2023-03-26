@@ -37,6 +37,7 @@ uses
   ImgList,
   LanguageObjects,
   Logging,
+  MStringFunctions,
   SharedControls,
   SharedData,
   StdCtrls,
@@ -49,7 +50,7 @@ type
 
   { TDebugView }
 
-  TDebugView = class(TMSWVirtualStringTree)
+  TDebugView = class(TMSWVirtualTree)
   private
     FClient: TICEClient;
     procedure FSetClient(Value: TICEClient);
@@ -64,6 +65,8 @@ type
 
     property Client: TICEClient read FClient write FSetClient;
   end;
+
+  { TMStreamDebugPanel }
 
   TMStreamDebugPanel = class(TPanel)
   private
@@ -82,17 +85,22 @@ type
   protected
   public
     constructor Create(AOwner: TComponent); reintroduce;
+    destructor Destroy; override;
 
     property Client: TICEClient read FClient;
     property OnClear: TNotifyEvent read FOnClear write FOnClear;
     property DebugView: TDebugView read FDebug;
   end;
 
+  { TMStreamDebugView }
+
   TMStreamDebugView = class(TPanel)
   private
     FDebugView: TMStreamDebugPanel;
   public
     constructor Create(AOwner: TComponent); reintroduce;
+    destructor Destroy; override;
+
     procedure ShowDebug(Client: TICEClient);
     property DebugView: TMStreamDebugPanel read FDebugView;
   end;
@@ -143,10 +151,22 @@ begin
   FBtnClear.OnClick := BtnClearClick;
 end;
 
+destructor TMStreamDebugPanel.Destroy;
+begin
+  inherited Destroy;
+
+  FDebug := nil;
+  FPanelBottom := nil;
+  FBtnCopy := nil;
+  FBtnClear := nil;
+end;
+
 procedure TMStreamDebugPanel.ShowDebug(Client: TICEClient);
 begin
   FClient := Client;
-  FDebug.Client := Client;
+
+  if Assigned(FDebug) then
+    FDebug.Client := Client;
 end;
 
 { TMStreamDebugContainer }
@@ -164,8 +184,18 @@ begin
   FDebugView.Visible := False;
 end;
 
+destructor TMStreamDebugView.Destroy;
+begin
+  inherited Destroy;
+
+  FDebugView := nil;
+end;
+
 procedure TMStreamDebugView.ShowDebug(Client: TICEClient);
 begin
+  if not Assigned(FDebugView) then
+    Exit;
+
   FDebugView.ShowDebug(Client);
   FDebugView.Visible := (Client <> nil);
 end;
@@ -177,26 +207,26 @@ var
   s: string;
   Node: PVirtualNode;
 begin
-  if RootNodeCount > 0 then
+  if RootNodeCount = 0 then
+    Exit;
+
+  s := '';
+
+  Node := GetFirst;
+  while Node <> nil do
   begin
-    s := '';
-
-    Node := GetFirst;
-    while Node <> nil do
+    if Selected[Node] or (SelectedCount = 0) then
     begin
-      if Selected[Node] or (SelectedCount = 0) then
-      begin
-        if GetNodeLevel(Node) = 1 then
-          s := s + '    ' + StringReplace(FClient.DebugLog[Node.Parent.Index].Data, #13#10, #13#10'    ', [rfReplaceAll])
-        else
-          s := s + TimeToStr(FClient.DebugLog[Node.Index].Time) + ' - ' + FClient.DebugLog[Node.Index].Text;
-        s := s + #13#10;
-      end;
-      Node := GetNext(Node);
+      if GetNodeLevel(Node) = 1 then
+        s := s + '    ' + StringReplace(FClient.DebugLog[Node.Parent.Index].Data, #13#10, #13#10'    ', [rfReplaceAll])
+      else
+        s := s + TimeToStr(FClient.DebugLog[Node.Index].Time) + ' - ' + FClient.DebugLog[Node.Index].Text;
+      s := s + #13#10;
     end;
-
-    Clipboard.AsText := s;
+    Node := GetNext(Node);
   end;
+
+  Clipboard.AsText := s;
 end;
 
 constructor TDebugView.Create(AOwner: TComponent);
@@ -218,7 +248,7 @@ begin
   Header.Options := [hoAutoResize];
 
   Header.Columns.Add;
-  Header.Columns[0].MinWidth := TFunctions.GetTextSize('00-00-00', Font).cx + MulDiv(16 + Margin * 2 + TextMargin, Screen.PixelsPerInch, 96);
+  Header.Columns[0].MinWidth := TMStringFunctions.GetTextSize('00-00-00', Font).cx + MulDiv(16 + Margin * 2 + TextMargin, Screen.PixelsPerInch, 96);
   Header.Columns[0].MaxWidth := Header.Columns[0].MinWidth;
   Header.Columns[0].Options := Header.Columns[0].Options - [coResizable];
   Header.Columns.Add;

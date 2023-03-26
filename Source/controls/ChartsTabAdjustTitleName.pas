@@ -33,10 +33,12 @@ uses
   Graphics,
   Images,
   LanguageObjects,
+  MControlFocuser,
   MControls,
+  MLabeledEdit,
   MsgDlg,
   SharedData,
-  StdCtrls, MLabeledEdit,
+  StdCtrls,
   SysUtils,
   Variants,
   Windows;
@@ -95,7 +97,7 @@ begin
   Okay := False;
 end;
 
-procedure TfrmChartsTabAdjustTitleName.KeyDown(var Key: Word; Shift: TShiftState  );
+procedure TfrmChartsTabAdjustTitleName.KeyDown(var Key: Word; Shift: TShiftState);
 begin
   if Key = 27 then
   begin

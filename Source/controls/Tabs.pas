@@ -40,6 +40,7 @@ uses
   Logging,
   MControls,
   Menus,
+  MPageControl,
   SWFunctions,
   SysUtils,
   Themes,

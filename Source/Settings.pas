@@ -49,6 +49,7 @@ uses
   ImgList,
   LanguageObjects,
   Logging,
+  MControlFocuser,
   MControls,
   Menus,
   mhotkeyedit,

@@ -47,9 +47,13 @@ uses
   ImgList,
   LanguageObjects,
   Logging,
+  MControlFocuser,
   MControls,
   Menus,
   MessageBus,
+  MSeekBar,
+  MStringFunctions,
+  MVolumePanel,
   Notifications,
   Player,
   PlayerManager,
@@ -234,8 +238,8 @@ type
     FPosLabel: TLabel;
     FToolBar: TSavedToolBar;
     FPlayToolbar: TPlayToolBar;
-    FVolume: TVolumePanel;
-    FSeek: TSeekBar;
+    FVolume: TMVolumePanel;
+    FSeek: TMSeekBar;
     FSearchBar: TSearchBar;
     FSavedTree: TSavedTree;
 
@@ -291,7 +295,7 @@ type
 
   { TSavedTree }
 
-  TSavedTree = class(TMSWVirtualStringTree)
+  TSavedTree = class(TMSWVirtualTree)
   private
     FPlayer: TPlayer;
     FPlayerList: TStringList;
@@ -493,7 +497,7 @@ begin
 
   FItemRemove := TMenuItem.Create(Self);
   FItemRemove.Caption := '&Remove from list';
-  FItemRemove.ImageIndex := TImages.DELETE;
+  FItemRemove.ImageIndex := TImages.Delete;
   Items.Add(FItemRemove);
 
   FItemRecycle := TMenuItem.Create(Self);
@@ -630,7 +634,7 @@ begin
   FRemove := TToolButton.Create(Self);
   FRemove.Parent := Self;
   FRemove.Hint := 'Remove from list';
-  FRemove.ImageIndex := TImages.DELETE;
+  FRemove.ImageIndex := TImages.Delete;
 
   FRecycle := TToolButton.Create(Self);
   FRecycle.Parent := Self;
@@ -793,14 +797,18 @@ begin
   FToolBar.FImportFiles.OnClick := ToolBarClick;
   FToolBar.FImportFolder.OnClick := ToolBarClick;
 
-  FSeek := TSeekBar.Create(Self);
+  FSeek := TMSeekBar.Create(Self);
   FSeek.Parent := FTopRightLeftPanel;
   FSeek.Align := alTop;
   FSeek.OnPositionChanged := SeekChange;
 
-  FVolume := TVolumePanel.Create(Self);
+  FVolume := TMVolumePanel.Create(Self);
   FVolume.Parent := FTopRightRightPanel;
   FVolume.Align := alTop;
+  FVolume.Images := modSharedData.imgImages;
+  FVolume.ImageIndexMute := TImages.SOUND_MUTE;
+  FVolume.ImageIndexSound := TImages.SOUND;
+  FVolume.ImageIndexSoundLow := TImages.SOUND_LOW;
   FVolume.Enabled := Bass.DeviceAvailable;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
@@ -2447,14 +2455,14 @@ begin
       Header.Columns[i].Width := AppGlobals.SavedHeaderWidth[i]
   else
   begin
-    FColSize.Width := TFunctions.GetTextSize('111,11 KB', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColLength.Width := TFunctions.GetTextSize('00:00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColBitrate.Width := TFunctions.GetTextSize('320 VBR', font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColSize.Width := TMStringFunctions.GetTextSize('111,11 KB', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColLength.Width := TMStringFunctions.GetTextSize('00:00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColBitrate.Width := TMStringFunctions.GetTextSize('320 VBR', font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
     FColStream.Width := MulDiv(200, Screen.PixelsPerInch, 96);
     FColSaved.Width := MulDiv(130, Screen.PixelsPerInch, 96);
   end;
 
-  FColImages.Width := Max(Indent + Margin * 2 + 16 * 4 + 3 * 2, TFunctions.GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96));
+  FColImages.Width := Max(Indent + Margin * 2 + 16 * 4 + 3 * 2, TMStringFunctions.GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96));
 
   if AppGlobals.SavedHeaderPositionLoaded then
     for i := 1 to Header.Columns.Count - 1 do
@@ -2922,8 +2930,8 @@ begin
   if ProgressBar.Style <> pbstNormal then
     ProgressBar.Style := pbstNormal;
 
-  W := TFunctions.GetTextSize('Importing ""', LabelFilename.Font).cx;
-  LabelFilename.Caption := Format(_('Importing "%s"'), [TFunctions.TruncateText(CurrentFilename, LabelFilename.Width - W - 20, LabelFilename.Font)]);
+  W := TMStringFunctions.GetTextSize('Importing ""', LabelFilename.Font).cx;
+  LabelFilename.Caption := Format(_('Importing "%s"'), [TMStringFunctions.TruncateText(CurrentFilename, LabelFilename.Width - W - 20, LabelFilename.Font)]);
   if ProgressBar.Position <> Progress then
   begin
     if Progress < 100 then

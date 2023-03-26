@@ -36,6 +36,7 @@ uses
   GraphType,
   Images,
   LanguageObjects,
+  MStringFunctions,
   SharedData,
   SysUtils,
   Windows;
@@ -71,7 +72,7 @@ type
   protected
     procedure DrawPanel(Panel: TStatusPanel; const R: TRect); override;
     procedure Resize; override;
-    procedure InvalidatePanel(PanelIndex: integer); overload;
+    procedure InvalidatePanel(PanelIndex: Integer); overload;
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
@@ -98,7 +99,7 @@ begin
 
   SimplePanel := False;
 
-  Height := TFunctions.GetTextSize('Wyg', Font).cy + 4;
+  Height := TMStringFunctions.GetTextSize(MeasureTextHeightString, Font).cy + 4;
 
   ShowHint := False;
 
@@ -107,21 +108,21 @@ begin
   FTimer.Interval := 1000;
   FTimer.Enabled := True;
 
-  FSpace := MulDiv(TFunctions.GetTextSize('WWW', Font).cx, Screen.PixelsPerInch, 96);
+  FSpace := MulDiv(TMStringFunctions.GetTextSize('WWW', Font).cx, Screen.PixelsPerInch, 96);
 
   P := Panels.Add;
-  P.Width := 2 + 56 + TFunctions.GetTextSize(_('Connecting...'), Font).cx + FSpace;
+  P.Width := 2 + 56 + TMStringFunctions.GetTextSize(_('Connecting...'), Font).cx + FSpace;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
-  P.Width := 18 + 4 + 18 + TFunctions.GetTextSize('00000000', Font).cx + MulDiv(TFunctions.GetTextSize('W', Font).cx, Screen.PixelsPerInch, 96) + 10;
+  P.Width := 18 + 4 + 18 + TMStringFunctions.GetTextSize('00000000', Font).cx + MulDiv(TMStringFunctions.GetTextSize('W', Font).cx, Screen.PixelsPerInch, 96) + 10;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
-  P.Width := 2 + TFunctions.GetTextSize(Format(_('%s/%s received'), ['000,00 kb', '000,00 kb']), Font).cx + FSpace;
+  P.Width := 2 + TMStringFunctions.GetTextSize(Format(_('%s/%s received'), ['000,00 kb', '000,00 kb']), Font).cx + FSpace;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
@@ -222,7 +223,7 @@ begin
   PanelRect := R;
 
   ImageTop := PanelRect.Top + (PanelRect.Bottom - PanelRect.Top) div 2 - MulDiv(16, Screen.PixelsPerInch, 96) div 2;
-  TextTop := PanelRect.Top + ((PanelRect.Bottom - PanelRect.Top) div 2) - Canvas.TextHeight(_('Wyg')) div 2;
+  TextTop := PanelRect.Top + ((PanelRect.Bottom - PanelRect.Top) div 2) - Canvas.TextHeight(MeasureTextHeightString) div 2;
 
   Canvas.Brush.Color := clBtnFace;
   Canvas.FillRect(PanelRect);
@@ -244,22 +245,22 @@ begin
         cshConnected:
         begin
           modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.CONNECT, 16, Self, gdeNormal);
-          Canvas.TextOut(PanelRect.Left + 56, TextTop, TFunctions.TruncateText(_('Connected'), PanelRect.Width - 58, Canvas.Font));
+          Canvas.TextOut(PanelRect.Left + 56, TextTop, TMStringFunctions.TruncateText(_('Connected'), PanelRect.Width - 58, Canvas.Font));
         end;
         cshConnectedSecure:
         begin
           modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.CONNECT_SECURE, 16, Self, gdeNormal);
-          Canvas.TextOut(PanelRect.Left + 56, TextTop, TFunctions.TruncateText(_('Connected'), PanelRect.Width - 58, Canvas.Font));
+          Canvas.TextOut(PanelRect.Left + 56, TextTop, TMStringFunctions.TruncateText(_('Connected'), PanelRect.Width - 58, Canvas.Font));
         end;
         cshDisconnected:
         begin
           modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, IfThen<Integer>(Length(FDots) mod 2 = 0, TImages.CONNECT, TImages.DISCONNECT), 16, Self, gdeNormal);
-          Canvas.TextOut(PanelRect.Left + 56, TextTop, TFunctions.TruncateText(_('Connecting') + FDots, PanelRect.Width - 58, Canvas.Font));
+          Canvas.TextOut(PanelRect.Left + 56, TextTop, TMStringFunctions.TruncateText(_('Connecting') + FDots, PanelRect.Width - 58, Canvas.Font));
         end;
         cshFail:
         begin
           modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.DISCONNECT, 16, Self, gdeNormal);
-          Canvas.TextOut(PanelRect.Left + 56, TextTop, TFunctions.TruncateText(_('Error'), PanelRect.Width - 58, Canvas.Font));
+          Canvas.TextOut(PanelRect.Left + 56, TextTop, TMStringFunctions.TruncateText(_('Error'), PanelRect.Width - 58, Canvas.Font));
         end;
       end;
 
@@ -281,11 +282,11 @@ begin
       Canvas.TextOut(PanelRect.Left + 2, PanelRect.Top + ((PanelRect.Bottom - PanelRect.Top) div 2) - Canvas.TextHeight(TFunctions.MakeSize(FSpeed) + '/s') div 2, TFunctions.MakeSize(FSpeed) + '/s');
       if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
       begin
-        Panels[2].Width := 2 + 35 + TFunctions.GetTextSize(_('0000/KBs'), Font).cx + FSpace;
+        Panels[2].Width := 2 + 35 + TMStringFunctions.GetTextSize(_('0000/KBs'), Font).cx + FSpace;
         if FSpeedBmp <> nil then
           Canvas.Draw(PanelRect.Right - FSpeedBmp.Width - 2, PanelRect.Bottom - FSpeedBmp.Height, FSpeedBmp);
       end else
-        Panels[2].Width := 2 + TFunctions.GetTextSize(_('0000/KBs'), Font).cx + FSpace;
+        Panels[2].Width := 2 + TMStringFunctions.GetTextSize(_('0000/KBs'), Font).cx + FSpace;
     end;
     3:
       Canvas.TextOut(PanelRect.Left + 2, TextTop, _('%s/%s received').Format([TFunctions.MakeSize(FCurrentReceived), TFunctions.MakeSize(FOverallReceived)]));
@@ -385,7 +386,7 @@ begin
   InvalidatePanel(0);
 end;
 
-procedure TSWStatusBar.InvalidatePanel(PanelIndex: integer);
+procedure TSWStatusBar.InvalidatePanel(PanelIndex: Integer);
 begin
   InvalidatePanel(PanelIndex, [ppText]);
 end;

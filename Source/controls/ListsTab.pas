@@ -48,6 +48,7 @@ uses
   ImgList,
   LanguageObjects,
   Logging,
+  MControlFocuser,
   MControls,
   Menus,
   MessageBus,
@@ -197,7 +198,7 @@ type
 
   { TTitleTree }
 
-  TTitleTree = class(TMSWVirtualStringTree)
+  TTitleTree = class(TMSWVirtualTree)
   private
     FColTitle: TVirtualTreeColumn;
     FColSaved: TVirtualTreeColumn;

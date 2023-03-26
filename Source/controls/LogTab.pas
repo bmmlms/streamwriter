@@ -41,9 +41,11 @@ uses
   ImgList,
   LanguageObjects,
   Logging,
+  MControlFocuser,
   MControls,
   Menus,
   MessageBus,
+  MStringFunctions,
   SharedControls,
   SharedData,
   StdCtrls,
@@ -113,7 +115,7 @@ type
 
   { TLogTree }
 
-  TLogTree = class(TMSWVirtualStringTree)
+  TLogTree = class(TMSWVirtualTree)
   private
     FPopupMenu: TLogPopup;
 
@@ -509,12 +511,12 @@ begin
   begin
     for i := 1 to Header.Columns.Count - 1 do
       Header.Columns[i].Width := AppGlobals.LogHeaderWidth[i];
-    FColType.Width := TFunctions.GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+    FColType.Width := TMStringFunctions.GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
   end else
   begin
-    FColType.Width := TFunctions.GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
-    FColTime.Width := TFunctions.GetTextSize('00-00-00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColSource.Width := TFunctions.GetTextSize('wwwwwwwwwwwwwww', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColType.Width := TMStringFunctions.GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+    FColTime.Width := TMStringFunctions.GetTextSize('00-00-00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColSource.Width := TMStringFunctions.GetTextSize('wwwwwwwwwwwwwww', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
   end;
 
   if AppGlobals.LogHeaderPositionLoaded then

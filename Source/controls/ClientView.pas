@@ -46,6 +46,7 @@ uses
   Logging,
   MControls,
   Menus,
+  MStringFunctions,
   SharedControls,
   StdCtrls,
   StreamBrowserView,
@@ -79,7 +80,7 @@ type
 
   { TMClientView }
 
-  TMClientView = class(TMSWVirtualStringTree)
+  TMClientView = class(TMSWVirtualTree)
   private
     FBrowser: TMStreamTree;
 
@@ -507,10 +508,10 @@ begin
         Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
   end else
   begin
-    FColRcvd.Width := Max(TFunctions.GetTextSize(FColRcvd.Text, Font).cx, TFunctions.GetTextSize('111,11 KB', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColSpeed.Width := Max(TFunctions.GetTextSize(FColSpeed.Text, Font).cx, TFunctions.GetTextSize('11,11 KB/s', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColSongs.Width := TFunctions.GetTextSize(FColSongs.Text, Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColStatus.Width := Max(TFunctions.GetTextSize(FColStatus.Text, Font).cx, MulDiv(80, Screen.PixelsPerInch, 96)) + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColRcvd.Width := Max(TMStringFunctions.GetTextSize(FColRcvd.Text, Font).cx, TMStringFunctions.GetTextSize('111,11 KB', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColSpeed.Width := Max(TMStringFunctions.GetTextSize(FColSpeed.Text, Font).cx, TMStringFunctions.GetTextSize('11,11 KB/s', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColSongs.Width := TMStringFunctions.GetTextSize(FColSongs.Text, Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColStatus.Width := Max(TMStringFunctions.GetTextSize(FColStatus.Text, Font).cx, MulDiv(80, Screen.PixelsPerInch, 96)) + MulDiv(20, Screen.PixelsPerInch, 96);
     FColName.Width := MulDiv(150, Screen.PixelsPerInch, 96);
   end;
 

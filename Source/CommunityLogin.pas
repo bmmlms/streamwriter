@@ -37,9 +37,11 @@ uses
   Images,
   LanguageObjects,
   Logging,
+  MControlFocuser,
   MControls,
+  MLabeledEdit,
   SharedData,
-  StdCtrls, MLabeledEdit,
+  StdCtrls,
   SysUtils,
   Variants,
   Windows;

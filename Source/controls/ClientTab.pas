@@ -51,10 +51,12 @@ uses
   ImgList,
   LanguageObjects,
   Logging,
+  MControlFocuser,
   MControls,
   Menus,
   MessageBus,
   MsgDlg,
+  MVolumePanel,
   PlayerManager,
   PlaylistHandler,
   SharedControls,
@@ -98,7 +100,7 @@ type
   private
     FToolbarPanel: TPanel;
     FTimeLabel: TLabel;
-    FVolume: TVolumePanel;
+    FVolume: TMVolumePanel;
     FToolbar: TToolBar;
     FAddressBar: TClientAddressBar;
     FClientView: TMClientView;
@@ -623,9 +625,13 @@ begin
   FToolbar.Align := alClient;
   FToolbar.Parent := FToolbarPanel;
 
-  FVolume := TVolumePanel.Create(Self);
+  FVolume := TMVolumePanel.Create(Self);
   FVolume.Parent := FToolbarPanel;
   FVolume.Align := alRight;
+  FVolume.Images := modSharedData.imgImages;
+  FVolume.ImageIndexMute := TImages.SOUND_MUTE;
+  FVolume.ImageIndexSound := TImages.SOUND;
+  FVolume.ImageIndexSoundLow := TImages.SOUND_LOW;
   FVolume.Enabled := Bass.DeviceAvailable;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeVolumeChange;
@@ -728,10 +734,6 @@ end;
 
 destructor TClientTab.Destroy;
 begin
-  // Es gab einmal die Exception, dass es im EventHandler crashte beim Beenden.
-  // Also ist das hier so...
-  FClientManager.OnClientRefresh := nil;
-
   MsgBus.RemoveSubscriber(MessageReceived);
 
   FreeAndNil(FPlaybackTimer);

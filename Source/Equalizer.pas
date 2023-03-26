@@ -33,6 +33,8 @@ uses
   Functions,
   Graphics,
   LanguageObjects,
+  MSeekBar,
+  MStringFunctions,
   PlayerManager,
   SharedControls,
   StdCtrls,
@@ -44,7 +46,7 @@ type
   TEqualizer = class(TWinControl)
   private
     FLabels: array[0..9] of TLabel;
-    FEqualizers: array[0..9] of TSeekBar;
+    FEqualizers: array[0..9] of TMSeekBar;
   protected
     procedure EQPositionChanged(Sender: TObject);
 
@@ -90,7 +92,7 @@ begin
   try
     for i := 0 to High(FEqualizers) do
     begin
-      FEqualizers[i] := TSeekBar.Create(Self);
+      FEqualizers[i] := TMSeekBar.Create(Self);
       FEqualizers[i].Parent := Self;
       FEqualizers[i].Position := AppGlobals.EQGain[i];
       FEqualizers[i].Orientation := sbVertical;
@@ -135,8 +137,8 @@ begin
     for i := 0 to High(FEqualizers) do
       if Sender = FEqualizers[i] then
       begin
-        Players.SetEQ((TSeekBar(Sender).Position - 15) * -1, i);
-        AppGlobals.EQGain[i] := (TSeekBar(Sender).Position - 15) * -1;
+        Players.SetEQ((TMSeekBar(Sender).Position - 15) * -1, i);
+        AppGlobals.EQGain[i] := (TMSeekBar(Sender).Position - 15) * -1;
         Break;
       end;
   finally
@@ -167,7 +169,7 @@ begin
   begin
     FEqualizers[i].Left := i * WidthPerBar;
     FEqualizers[i].Width := WidthPerBar;
-    FEqualizers[i].Height := ClientHeight - TFunctions.GetTextSize(FLabels[i].Caption, FLabels[i].Font).cy;
+    FEqualizers[i].Height := ClientHeight - TMStringFunctions.GetTextSize(FLabels[i].Caption, FLabels[i].Font).cy;
 
     AppGlobals.Lock;
     try

@@ -38,6 +38,7 @@ uses
   LanguageObjects,
   Logging,
   Menus,
+  MStringFunctions,
   StdCtrls,
   SysUtils,
   VirtualTrees;
@@ -58,12 +59,15 @@ type
     destructor Destroy; override;
   end;
 
+  { TMStreamInfoView }
+
   TMStreamInfoView = class(TPanel)
   private
     FInfoView: TMStreamInfoViewPanel;
   protected
   public
     constructor Create(AOwner: TComponent); reintroduce;
+    destructor Destroy; override;
 
     procedure ShowInfo(ChangedOverride: Boolean = False); overload;
     procedure ShowInfo(Entries: TStreamList); overload;
@@ -176,7 +180,7 @@ begin
     end;
 
     // StringReplace, damit aus einem '&' kein Shortcut auf dem Label wird..
-    Title := StringReplace(TFunctions.TruncateText(Title, FName.Parent.Width, FName.Canvas.Font), '&', '&&', [rfReplaceAll]);
+    Title := StringReplace(TMStringFunctions.TruncateText(Title, FName.Parent.Width, FName.Canvas.Font), '&', '&&', [rfReplaceAll]);
     if Title <> FName.Caption then
       FName.Caption := Title;
 
@@ -232,13 +236,26 @@ begin
   FInfoView.Visible := False;
 end;
 
+destructor TMStreamInfoView.Destroy;
+begin
+  inherited Destroy;
+
+  FInfoView := nil;
+end;
+
 procedure TMStreamInfoView.ShowInfo(ChangedOverride: Boolean = False);
 begin
+  if not Assigned(FInfoView) then
+    Exit;
+
   FInfoView.ShowInfo(FInfoView.FEntries, ChangedOverride);
 end;
 
 procedure TMStreamInfoView.ShowInfo(Entries: TStreamList);
 begin
+  if not Assigned(FInfoView) then
+    Exit;
+
   FInfoView.ShowInfo(Entries);
   FInfoView.Visible := Entries <> nil;
 end;

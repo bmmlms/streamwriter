@@ -44,6 +44,7 @@ uses
   Logging,
   MControls,
   MessageBus,
+  MVolumePanel,
   PlayerManager,
   SharedControls,
   SharedData,
@@ -60,7 +61,7 @@ type
   private
     FToolbarPanel: TPanel;
     FToolBar: TCutToolBar;
-    FVolume: TVolumePanel;
+    FVolume: TMVolumePanel;
     FCutView: TCutView;
     FFilename: string;
     FTrack: TTrackInfo;
@@ -162,9 +163,13 @@ begin
   FToolBar.FAutoCutAutoDetect.OnClick := AutoCutAutoDetectClick;
   {$ENDIF}
 
-  FVolume := TVolumePanel.Create(Self);
+  FVolume := TMVolumePanel.Create(Self);
   FVolume.Parent := FToolbarPanel;
   FVolume.Align := alRight;
+  FVolume.Images := modSharedData.imgImages;
+  FVolume.ImageIndexMute := TImages.SOUND_MUTE;
+  FVolume.ImageIndexSound := TImages.SOUND;
+  FVolume.ImageIndexSoundLow := TImages.SOUND_LOW;
   FVolume.Enabled := Bass.DeviceAvailable;
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;

@@ -52,6 +52,7 @@ uses
   Logging,
   Menus,
   MessageBus,
+  MStringFunctions,
   regexpr,
   SharedControls,
   SharedData,
@@ -187,7 +188,7 @@ type
 
   { TMStreamTree }
 
-  TMStreamTree = class(TMSWVirtualStringTree)
+  TMStreamTree = class(TMSWVirtualTree)
   private
     FDragSource: TDropFileSource;
 
@@ -418,7 +419,7 @@ begin
   DragMode := dmAutomatic;
   ShowHint := True;
   HintMode := hmTooltip;
-  DefaultNodeHeight := TFunctions.GetTextSize('Wyg', Font).cy * 2 + 6;
+  DefaultNodeHeight := TMStringFunctions.GetTextSize(MeasureTextHeightString, Font).cy * 2 + 6;
 
   ScrollBarOptions.ScrollBars := ssVertical;
   ScrollBarOptions.AlwaysVisible := True;
@@ -561,6 +562,7 @@ var
   NodeData: PStreamNodeData;
 begin
   inherited;
+
   NodeData := PStreamNodeData(GetNodeData(Node));
   case Column of
     0:
@@ -729,18 +731,21 @@ end;
 procedure TMStreamTree.DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal);
 var
   NewText: string;
-  Size: TSize;
   NodeData: PStreamNodeData;
+  LineHeight, MaxTextWidth: Integer;
 begin
   NodeData := PStreamNodeData(GetNodeData(PaintInfo.Node));
 
-  GetTextExtentPoint32W(PaintInfo.Canvas.Handle, 'Wl0', 3, Size);
+  LineHeight := Canvas.GetTextHeight(MeasureTextHeightString);
 
   CellRect.Top := CellRect.Top + 2;
   DrawFormat := DT_TOP or DT_LEFT;
+
+  MaxTextWidth := ClientWidth - PaintInfo.ContentRect.Left - TextMargin * 2;
+
   inherited;
 
-  CellRect.Top := CellRect.Top + 2 + Size.cy;
+  CellRect.Top := CellRect.Top + 2 + LineHeight;
 
   NewText := '';
 
@@ -768,6 +773,9 @@ begin
     NewText := _('No info available')
   else
     NewText := StringReplace(NewText, '&', '&&', [rfReplaceall]); // Wegen & und dem Shortcut..
+
+  if Canvas.GetTextWidth(NewText) > MaxTextWidth then
+    NewText := ShortenString(Canvas.Handle, NewText, MaxTextWidth, EllipsisWidth);
 
   inherited DoTextDrawing(PaintInfo, NewText, CellRect, DrawFormat);
 end;
@@ -797,7 +805,7 @@ begin
 
     R := ClientRect;
     R.Left := (R.Right div 2) - (Canvas.TextWidth(TmpText) div 2);
-    R.Top := FProgressBar.Top - TFunctions.GetTextSize('Wyg', Font).cy - MulDiv(2, Screen.PixelsPerInch, 96);
+    R.Top := FProgressBar.Top - Canvas.GetTextHeight(MeasureTextHeightString) - MulDiv(2, Screen.PixelsPerInch, 96);
 
     Canvas.TextRect(R, R.Left, R.Top, TmpText + FDots);
   end;
@@ -1498,7 +1506,7 @@ var
 begin
   for Lbl in FPanelLabels do
   begin
-    TextLen := TFunctions.GetTextSize(Lbl.Caption, Lbl.Font).Width;
+    TextLen := TMStringFunctions.GetTextSize(Lbl.Caption, Lbl.Font).Width;
     if TextLen > MaxTextLen then
       MaxTextLen := TextLen;
   end;

@@ -45,9 +45,12 @@ uses
   ImgList,
   LanguageObjects,
   Logging,
+  MComboBoxExEditable,
+  MControlFocuser,
   MControls,
   Menus,
   MessageBus,
+  MStringFunctions,
   SharedControls,
   SharedData,
   StdCtrls,
@@ -75,7 +78,7 @@ type
   TSearchPanel = class(TPanel, IPostTranslatable)
   private
     FLabel: TLabel;
-    FSearch: TComboBoxExEditable;
+    FSearch: TMComboBoxExEditable;
     FToolbar: TToolbarForcedHorizontal;
 
     FButtonAddToWishlist: TToolButton;
@@ -101,7 +104,7 @@ type
 
   { TChartsTree }
 
-  TChartsTree = class(TMSWVirtualStringTree)
+  TChartsTree = class(TMSWVirtualTree)
   private
     FTimer: TTimer;
     FDots: string;
@@ -964,11 +967,11 @@ begin
       Header.Columns[i].Width := AppGlobals.ChartHeaderWidth[i]
   else
   begin
-    FColLastPlayed.Width := TFunctions.GetTextSize(FColLastPlayed.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
-    FColChance.Width := TFunctions.GetTextSize(FColChance.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+    FColLastPlayed.Width := TMStringFunctions.GetTextSize(FColLastPlayed.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+    FColChance.Width := TMStringFunctions.GetTextSize(FColChance.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
   end;
 
-  FColImages.Width := Max(Margin * 2 + 3 * 16 + 2 * 2, TFunctions.GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96));
+  FColImages.Width := Max(Margin * 2 + 3 * 16 + 2 * 2, TMStringFunctions.GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96));
 
   if AppGlobals.ChartHeaderPositionLoaded then
     for i := 1 to Header.Columns.Count - 1 do
@@ -1158,7 +1161,7 @@ begin
       csSearching:
       begin
         Msg := _(TEXT_SEARCHING) + FDots;
-        Canvas.TextOut(FTextLeft, FProgressBar.Top - TFunctions.GetTextSize('Wyg', Font).cy - MulDiv(2, Screen.PixelsPerInch, 96), Msg);
+        Canvas.TextOut(FTextLeft, FProgressBar.Top - Canvas.GetTextHeight(MeasureTextHeightString) - MulDiv(2, Screen.PixelsPerInch, 96), Msg);
       end;
       csSearchError:
       begin
@@ -1330,7 +1333,7 @@ begin
   FLabel.Caption := 'Search:';
   FLabel.Left := -100;
 
-  FSearch := TComboBoxExEditable.Create(Self);
+  FSearch := TMComboBoxExEditable.Create(Self);
   FSearch.Align := alLeft;
   FSearch.Parent := Self;
   FSearch.Width := 200;

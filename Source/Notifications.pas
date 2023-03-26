@@ -31,6 +31,7 @@ uses
   Functions,
   Graphics,
   LMessages,
+  MStringFunctions,
   StdCtrls,
   SysUtils,
   UxTheme,
@@ -208,8 +209,8 @@ procedure TfrmNotification.ControlsAligned;
 begin
   inherited ControlsAligned;
 
-  lblTitle.Caption := TFunctions.TruncateText(FTitle, 350 - pbLogo.Width, lblTitle.Font);
-  lblStream.Caption := TFunctions.TruncateText(FStream, 350 - pbLogo.Width, lblStream.Font);
+  lblTitle.Caption := TMStringFunctions.TruncateText(FTitle, 350 - pbLogo.Width, lblTitle.Font);
+  lblStream.Caption := TMStringFunctions.TruncateText(FStream, 350 - pbLogo.Width, lblStream.Font);
 
   Left := Screen.PrimaryMonitor.WorkareaRect.Right - ClientWidth - 15;
   Top := Screen.PrimaryMonitor.WorkareaRect.Bottom - ClientHeight - 15;

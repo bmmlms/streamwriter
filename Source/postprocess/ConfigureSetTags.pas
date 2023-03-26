@@ -30,6 +30,7 @@ uses
   Forms,
   Graphics,
   LanguageObjects,
+  MControlFocuser,
   MControls,
   MLabeledEdit,
   PostProcess,
