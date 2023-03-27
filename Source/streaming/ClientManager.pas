@@ -662,7 +662,7 @@ begin
         Exit;
       end;
 
-  MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llInfo, _('Automatic recording'), Format('Starting automatic recording of "%s"', [ParsedTitle])));
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llInfo, _('Automatic recording'), Format(_('Starting automatic recording of "%s"'), [ParsedTitle])));
 
   Client := AddClient(0, 0, Name, CurrentURL, True);
   Client.Entry.Settings.Assign(AppGlobals.Data.AutoRecordSettings);
