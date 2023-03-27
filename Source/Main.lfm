@@ -577,7 +577,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
       Action = actPause
     end
     object mnuStopPlay1: TMenuItem
-      Action = actPlayerStop
+      Action = actStopPlay
     end
     object N4: TMenuItem
       Caption = '-'
