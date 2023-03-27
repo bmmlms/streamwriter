@@ -24,6 +24,7 @@ uses
   MLabeledEdit,
   MStringFunctions,
   regexpr,
+  SharedControls,
   SharedData,
   StdCtrls,
   SWFunctions,
@@ -46,12 +47,13 @@ type
 
   { TTitleTree }
 
-  TTitleTree = class(TVirtualStringTree)
+  TTitleTree = class(TMSWVirtualTree)
   protected
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
     procedure PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean); override;
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal); override;
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String); override;
+    procedure DoBeforeCellPaint(Canvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect); override;
   end;
 
   { TfrmSetStreamData }
@@ -120,7 +122,7 @@ begin
   else if NodeData.MatchedOtherRegExp then
     ImageIndex := TImages.FONT_GROUP
   else
-    ImageIndex := TImages.RECORD_RED;
+    ImageIndex := TImages.EXCLAMATION;
 
   modSharedData.imgImages.Resolution[16].Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, ImageIndex, gdeNormal);
 end;
@@ -166,6 +168,25 @@ end;
 procedure TTitleTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String);
 begin
   Text := 'x';
+end;
+
+procedure TTitleTree.DoBeforeCellPaint(Canvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; CellPaintMode: TVTCellPaintMode; CellRect: TRect; var ContentRect: TRect);
+begin
+  inherited;
+
+  if AppGlobals.TreeColorsLoaded then
+    Exit;
+
+  if CellPaintMode = cpmPaint then
+  begin
+    case Node.Index mod 2 of
+      0:
+        Canvas.Brush.Color := Colors.BackGroundColor;
+      1:
+        Canvas.Brush.Color := TFunctions.HTML2Color('f3f3f3');
+    end;
+    Canvas.FillRect(CellRect);
+  end;
 end;
 
 { TfrmSetStreamData }
