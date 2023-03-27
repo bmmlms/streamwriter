@@ -920,21 +920,18 @@ var
 begin
   inherited;
 
-  if AppGlobals.TreeColorsLoaded then
-    Exit;
-
   NodeData := GetNodeData(Node);
 
   if CellPaintMode = cpmPaint then
   begin
     if FOnIsInClientList(Self, NodeData.Data.ID) then
-      Canvas.Brush.Color := TFunctions.HTML2Color('c3c1c1')
+      Canvas.Brush.Color := TFunctions.SimilarColor(Colors.BackGroundColor, 30)
     else
       case Node.Index mod 2 of
         0:
           Canvas.Brush.Color := Colors.BackGroundColor;
         1:
-          Canvas.Brush.Color := TFunctions.HTML2Color('f3f3f3');
+          Canvas.Brush.Color := TFunctions.SimilarColor(Colors.BackGroundColor, 5);
       end;
     Canvas.FillRect(CellRect);
   end;
@@ -1017,16 +1014,6 @@ var
 begin
   Result := False;
   P := TFunctions.BuildPattern(Search, Hash, Chars, False);
-
-  {
-  if P <> '*' then
-  begin
-    p := p.Replace('*', '');
-  r := TRegExpr.Create('.*' + P.Replace(' ', '.*') + '.*');
-  r.ModifierI := True;
-  r.Compile;
-  end;
-        }
 
   if (not AlwaysBuild) and (P = FLastSearch) and (Genre = FLastGenre) and (AudioType = FLastAudioType) and (Bitrate = FLastBitrate) then
     Exit;

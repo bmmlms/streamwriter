@@ -667,9 +667,9 @@ begin
       C := 100;
     Chance := Trunc(C);
 
-    Canvas.Brush.Color := TFunctions.HTML2Color('#005fb0');
+    Canvas.Brush.Color := Colors.FocusedSelectionColor;
     if Selected[Node] and Focused then
-      Canvas.Brush.Color := TFunctions.HTML2Color('#d2d2d2');
+      Canvas.Brush.Color := Colors.SelectionTextColor;
 
     TextWidth := Canvas.TextWidth('1000 / 1000');
     MaxWidth := CellRect.Right - CellRect.Left - 8 - TextWidth;

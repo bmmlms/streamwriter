@@ -15,6 +15,7 @@ uses
   Functions,
   Graphics,
   GraphType,
+  GraphUtil,
   HomeCommunication,
   Images,
   ImgList,
@@ -174,16 +175,13 @@ procedure TTitleTree.DoBeforeCellPaint(Canvas: TCanvas; Node: PVirtualNode; Colu
 begin
   inherited;
 
-  if AppGlobals.TreeColorsLoaded then
-    Exit;
-
   if CellPaintMode = cpmPaint then
   begin
     case Node.Index mod 2 of
       0:
         Canvas.Brush.Color := Colors.BackGroundColor;
       1:
-        Canvas.Brush.Color := TFunctions.HTML2Color('f3f3f3');
+        Canvas.Brush.Color := TFunctions.SimilarColor(Colors.BackGroundColor, 5);
     end;
     Canvas.FillRect(CellRect);
   end;
