@@ -61,6 +61,7 @@ type
     FLastPos: Integer;
     FSpace: Integer;
     FDots: string;
+    FSpeedColors: array[0..4] of TColor;
 
     FTimer: TTimer;
     FSpeedBmp: Graphics.TBitmap;
@@ -127,6 +128,12 @@ begin
 
   P := Panels.Add;
   P.Style := psOwnerDraw;
+
+  FSpeedColors[0] := TFunctions.HTML2Color('4b1616');
+  FSpeedColors[1] := TFunctions.HTML2Color('722222');
+  FSpeedColors[2] := TFunctions.HTML2Color('9d2626');
+  FSpeedColors[3] := TFunctions.HTML2Color('c42c2c');
+  FSpeedColors[4] := TFunctions.HTML2Color('d71717');
 end;
 
 destructor TSWStatusBar.Destroy;
@@ -149,7 +156,7 @@ begin
   NewBmp.Canvas.Pen.Color := clBlack;
   NewBmp.Canvas.FillRect(Classes.Rect(0, 0, NewBmp.Width, NewBmp.Height));
 
-  if FSpeedBmp <> nil then
+  if (FSpeedBmp <> nil) and (FSpeedBmp.Height = NewBmp.Height) then
     NewBmp.Canvas.Draw(-1, 0, FSpeedBmp);
   FSpeedBmp.Free;
   FSpeedBmp := NewBmp;
@@ -172,36 +179,36 @@ begin
 
   if MulDiv(P, 100, FSpeedBmp.Height) >= 65 then
   begin
-    FSpeedBmp.Canvas.Brush.Color := TFunctions.HTML2Color('4b1616');
-    FSpeedBmp.Canvas.Pen.Color := TFunctions.HTML2Color('4b1616');
+    FSpeedBmp.Canvas.Brush.Color := FSpeedColors[0];
+    FSpeedBmp.Canvas.Pen.Color := FSpeedColors[0];
     FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(75, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(65, FSpeedBmp.Height, 100)));
   end;
 
   if MulDiv(P, 100, FSpeedBmp.Height) >= 75 then
   begin
-    FSpeedBmp.Canvas.Brush.Color := TFunctions.HTML2Color('722222');
-    FSpeedBmp.Canvas.Pen.Color := TFunctions.HTML2Color('722222');
+    FSpeedBmp.Canvas.Brush.Color := FSpeedColors[1];
+    FSpeedBmp.Canvas.Pen.Color := FSpeedColors[1];
     FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(85, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(75, FSpeedBmp.Height, 100)));
   end;
 
   if MulDiv(P, 100, FSpeedBmp.Height) >= 85 then
   begin
-    FSpeedBmp.Canvas.Brush.Color := TFunctions.HTML2Color('9d2626');
-    FSpeedBmp.Canvas.Pen.Color := TFunctions.HTML2Color('9d2626');
+    FSpeedBmp.Canvas.Brush.Color := FSpeedColors[2];
+    FSpeedBmp.Canvas.Pen.Color := FSpeedColors[2];
     FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(90, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(85, FSpeedBmp.Height, 100)));
   end;
 
   if MulDiv(P, 100, FSpeedBmp.Height) >= 90 then
   begin
-    FSpeedBmp.Canvas.Brush.Color := TFunctions.HTML2Color('c42c2c');
-    FSpeedBmp.Canvas.Pen.Color := TFunctions.HTML2Color('c42c2c');
+    FSpeedBmp.Canvas.Brush.Color := FSpeedColors[3];
+    FSpeedBmp.Canvas.Pen.Color := FSpeedColors[3];
     FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(95, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(90, FSpeedBmp.Height, 100)));
   end;
 
   if MulDiv(P, 100, FSpeedBmp.Height) >= 95 then
   begin
-    FSpeedBmp.Canvas.Brush.Color := TFunctions.HTML2Color('d71717');
-    FSpeedBmp.Canvas.Pen.Color := TFunctions.HTML2Color('d71717');
+    FSpeedBmp.Canvas.Brush.Color := FSpeedColors[4];
+    FSpeedBmp.Canvas.Pen.Color := FSpeedColors[4];
     FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(100, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(95, FSpeedBmp.Height, 100)));
   end;
 
