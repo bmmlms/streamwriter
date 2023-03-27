@@ -176,7 +176,7 @@ var
   RegExp: string;
 begin
   RegExp := txtRegEx.Control.Text;
-  if not CheckRegExp(Handle, RegExp, lstRegExps, nil) then
+  if not CheckRegExp(RegExp, lstRegExps, nil) then
     Exit;
 
   Item := lstRegExps.Items.Add;
@@ -353,7 +353,7 @@ end;
 
 procedure TfrmSetStreamData.lstRegExpsEdited(Sender: TObject; Item: TListItem; var S: string);
 begin
-  if not CheckRegExp(Handle, S, lstRegExps, Item) then
+  if not CheckRegExp(S, lstRegExps, Item) then
   begin
     S := Item.Caption;
     Exit;

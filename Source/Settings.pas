@@ -1267,7 +1267,7 @@ end;
 
 procedure TfrmSettings.lstRegExesEdited(Sender: TObject; Item: TListItem; var S: string);
 begin
-  if not CheckRegExp(Handle, S, lstRegExes, Item) then
+  if not CheckRegExp(S, lstRegExes, Item) then
   begin
     S := Item.Caption;
     Exit;
@@ -2152,7 +2152,7 @@ var
   RegExp: string;
 begin
   RegExp := txtRegEx.Control.Text;
-  if not CheckRegExp(Handle, RegExp, lstRegExes, nil) then
+  if not CheckRegExp(RegExp, lstRegExes, nil) then
     Exit;
 
   Item := lstRegExes.Items.Add;

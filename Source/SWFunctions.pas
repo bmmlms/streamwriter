@@ -40,9 +40,15 @@ function FixPatternFilename(Filename: string): string;
 function SecureSWURLToInsecure(URL: string): string;
 function ConvertPattern(OldPattern: string): string;
 function GetBestRegEx(Title: string; RegExps: TStringList): string;
-function CheckRegExp(Handle: THandle; var RegExp: string; List: TListView; Item: TListItem): Boolean;
+function CheckRegExp(var RegExp: string; List: TListView; Item: TListItem): Boolean;
 
 implementation
+
+type
+  TRegExData = record
+    RegEx: string;
+    BadWeight: Integer;
+  end;
 
 function GetAutoTuneInMinKbps(AudioType: TAudioTypes; Idx: Integer): Cardinal;
 begin
@@ -150,14 +156,14 @@ begin
   Result := TFunctions.PatternReplace(OldPattern, Arr);
 end;
 
+function CompareRegExDatas(constref L, R: TRegExData): Integer;
+begin
+  Result := TFunctions.CmpInt(L.BadWeight, R.BadWeight);
+end;
+
 function GetBestRegEx(Title: string; RegExps: TStringList): string;
 const
   BadChars: array[0..3] of string = (':', '-', '|', '*');
-type
-  TRegExData = record
-    RegEx: string;
-    BadWeight: Integer;
-  end;
 
   function GetBadWeight(Text: string): Integer;
   var
@@ -180,11 +186,10 @@ type
 var
   i: Integer;
   R: TRegExpr;
-  DefaultRegEx: string;
   RED: TRegExData;
   REDs: TList<TRegExData>;
 begin
-  Result := DefaultRegEx; // TODO: !?
+  Result := DEFAULT_TITLE_REGEXP;
 
   REDs := TList<TRegExData>.Create;
   try
@@ -237,14 +242,7 @@ begin
       end;
     end;
 
-    {             // TODO:
-    REDs.Sort(TComparer<TRegExData>.Construct(
-      function (const L, R: TRegExData): integer
-      begin
-        Result := TFunctions.CmpInt(L.BadWeight, R.BadWeight);
-      end
-    ));
-    }
+    REDs.Sort(TComparer<TRegExData>.Construct(@CompareRegExDatas));
 
     if REDs.Count > 0 then
       Result := REDs[0].RegEx;
@@ -253,14 +251,12 @@ begin
   end;
 end;
 
-function CheckRegExp(Handle: THandle; var RegExp: string; List: TListView; Item: TListItem): Boolean;
+function CheckRegExp(var RegExp: string; List: TListView; Item: TListItem): Boolean;
 var
   i: Integer;
   RValid, ArtistFound, TitleFound: Boolean;
-  // R: TPerlRegEx;
+  R: TRegExpr;
 begin
-  // TODO: ...
-  {
   Result := False;
   RegExp := Trim(RegExp);
 
@@ -272,13 +268,13 @@ begin
     end;
 
   RValid := False;
-  R := TPerlRegEx.Create;
+  R := TRegExpr.Create(RegExp);
   try
-    R.RegEx := RegExp;
     try
       R.Compile;
       RValid := True;
-    except end;
+    except
+    end;
   finally
     R.Free;
   end;
@@ -293,7 +289,6 @@ begin
   end;
 
   Result := True;
-  }
 end;
 
 end.
