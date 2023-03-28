@@ -239,7 +239,6 @@ type
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: string); override;
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
-    procedure DoFreeNode(Node: PVirtualNode); override;
     procedure DoDragging(P: TPoint); override;
     procedure DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal); override;
     procedure DoPaintNode(var PaintInfo: TVTPaintInfo); override;
@@ -261,6 +260,7 @@ type
   public
     constructor Create(AOwner: TComponent); reintroduce;
     destructor Destroy; override;
+    procedure CreateHandle; override;
 
     procedure InvalidateVisible;
 
@@ -419,7 +419,6 @@ begin
   DragMode := dmAutomatic;
   ShowHint := True;
   HintMode := hmTooltip;
-  DefaultNodeHeight := TMStringFunctions.GetTextSize(MeasureTextHeightString, Font).cy * 2 + 6;
 
   ScrollBarOptions.ScrollBars := ssVertical;
   ScrollBarOptions.AlwaysVisible := True;
@@ -534,10 +533,27 @@ begin
   inherited;
 end;
 
-procedure TMStreamTree.DoFreeNode(Node: PVirtualNode);
+procedure TMStreamTree.CreateHandle;
+var
+  Node: PVirtualNode;
+  NodeHeight: Integer;
 begin
-
   inherited;
+
+  NodeHeight := TMStringFunctions.GetTextSize(MeasureTextHeightString, Font).Height * 2 + 6;
+
+  if DefaultNodeHeight <> NodeHeight then
+  begin
+    Node := GetFirst;
+    while Node <> nil do
+    begin
+      Node.NodeHeight := NodeHeight;
+      Node.TotalHeight := NodeHeight;
+      Node := GetNext(Node);
+    end;
+
+    DefaultNodeHeight := NodeHeight;
+  end;
 end;
 
 function TMStreamTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList;
