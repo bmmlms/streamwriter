@@ -486,7 +486,6 @@ begin
 
   PopupMenu := FPopupMenu;
 
-  // TODO: testen ob initial timer auf false klappt in allen situationen
   FDots := '';
   FTimer := TTimer.Create(Self);
   FTimer.OnTimer := TimerOnTimer;
@@ -537,10 +536,19 @@ procedure TMStreamTree.CreateHandle;
 var
   Node: PVirtualNode;
   NodeHeight: Integer;
+  F: TFont;
 begin
   inherited;
 
-  NodeHeight := TMStringFunctions.GetTextSize(MeasureTextHeightString, Font).Height * 2 + 6;
+  F := TFont.Create;
+  try
+    F.Assign(Font);
+    F.Size := F.Size - 1;
+
+    NodeHeight := TMStringFunctions.GetTextSize(MeasureTextHeightString, Font).Height + TMStringFunctions.GetTextSize(MeasureTextHeightString, F).Height + 6;
+  finally
+    F.Free;
+  end;
 
   if DefaultNodeHeight <> NodeHeight then
   begin
@@ -598,12 +606,12 @@ begin
   L := 4;
   if NodeData.Data.MetaData then
   begin
-    Images.Resolution[8].Draw(PaintInfo.Canvas, L, 21, TImages.TAG_GREEN, gdeNormal);
+    Images.Resolution[8].Draw(PaintInfo.Canvas, L, 19, TImages.TAG_GREEN, gdeNormal);
     L := L + 9;
   end;
 
   if NodeData.Data.ChangesTitleInSong or (not NodeData.Data.RecordingOkay) then
-    Images.Resolution[10].Draw(PaintInfo.Canvas, L, 21, TImages.CROSS, gdeNormal);
+    Images.Resolution[10].Draw(PaintInfo.Canvas, L, 19, TImages.CROSS, gdeNormal);
 end;
 
 procedure TMStreamTree.FitColumns;
@@ -774,14 +782,14 @@ begin
   if NodeData.Data.Bitrate > 0 then
   begin
     if NewText <> '' then
-      NewText := NewText + ' / ';
+      NewText := NewText + ' ● ';
     NewText := NewText + IntToStr(NodeData.Data.Bitrate) + 'kbps';
   end;
 
   if NodeData.Data.Genre <> '' then
   begin
     if NewText <> '' then
-      NewText := NewText + ' / ';
+      NewText := NewText + ' ● ';
     NewText := NewText + NodeData.Data.Genre;
   end;
 
@@ -792,6 +800,8 @@ begin
 
   if Canvas.GetTextWidth(NewText) > MaxTextWidth then
     NewText := ShortenString(Canvas.Handle, NewText, MaxTextWidth, EllipsisWidth);
+
+  PaintInfo.Canvas.Font.Size := PaintInfo.Canvas.Font.Size - 1;
 
   inherited DoTextDrawing(PaintInfo, NewText, CellRect, DrawFormat);
 end;
@@ -830,7 +840,8 @@ end;
 procedure TMStreamTree.PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
 begin
   PaintInfo.ImageInfo[ImageInfoIndex].XPos := 4;
-  PaintInfo.ImageInfo[ImageInfoIndex].YPos := 4;
+  PaintInfo.ImageInfo[ImageInfoIndex].YPos := 2;
+
   inherited;
 end;
 

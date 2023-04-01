@@ -52,7 +52,7 @@ uses
   MControlFocuser,
   MControls,
   Menus,
-  mhotkeyedit,
+  MHotkeyEdit,
   MLabeledEdit,
   MsgDlg,
   PostProcess,

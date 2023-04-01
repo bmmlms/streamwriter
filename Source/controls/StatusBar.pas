@@ -275,7 +275,7 @@ begin
       modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left + 36, ImageTop, TImages.BRICKS, 16, Self, IfThen<TGraphicsDrawEffect>(FNotifyTitleChanges, gdeNormal, gdeDisabled));
     end;
     1:
-      if (FConnectionState = cshConnected) or (FConnectionState = cshConnectedSecure) then
+      if ((FConnectionState = cshConnected) or (FConnectionState = cshConnectedSecure)) and (FClients > 0) then
       begin
         modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.GROUP, 16, Self, gdeNormal);
         Canvas.TextOut(PanelRect.Left + 18, TextTop, IntToStr(FClients));

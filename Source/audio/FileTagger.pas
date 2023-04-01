@@ -52,8 +52,6 @@ type
     property Genre: string read FGenre write FGenre;
     property Comment: string read FComment write FComment;
     property TrackNumber: string read FTrackNumber write FTrackNumber;
-    //property PopularityMeter: SmallInt read FPopulatityMeter write FPopulatityMeter;
-    property CoverImage: Graphics.TBitmap read FCoverImage;
   end;
 
   TFileTagger = class
@@ -61,10 +59,6 @@ type
     FFilename: string;
     FAudioType: TAudioFormatID;
     FTag: TTagData;
-
-    function FindGraphicClass(const Buffer; const BufferSize: Int64; out GraphicClass: TGraphicClass): Boolean;
-    //procedure ResizeBitmap(var Bitmap: TBitmap; MaxSize: Integer);
-    procedure ReadCover(AG: TAudioGenie3);
   public
     constructor Create;
     destructor Destroy; override;
@@ -75,14 +69,6 @@ type
     property AudioType: TAudioFormatID read FAudioType;
     property Filename: string read FFilename;
     property Tag: TTagData read FTag;
-    {
-    property Artist: string read FArtist write FArtist;
-    property Title: string read FTitle write FTitle;
-    property Album: string read FAlbum write FAlbum;
-    property Comment: string read FComment write FComment;
-    property TrackNumber: string read FTrackNumber write FTrackNumber;
-    property CoverImage: TBitmap read FCoverImage;
-    }
   end;
 
 implementation
@@ -107,136 +93,6 @@ begin
   FTag.Free;
 
   inherited;
-end;
-
-function TFileTagger.FindGraphicClass(const Buffer; const BufferSize: Int64; out GraphicClass: TGraphicClass): Boolean;
-var
-  LongWords: array[Byte] of LongWord absolute Buffer;
-  Words: array[Byte] of Word absolute Buffer;
-begin
-  GraphicClass := nil;
-
-  if BufferSize < 44 then
-    Exit(False);
-
-  // TODO: !?
-  {
-  if Words[0] = $D8FF then
-    GraphicClass := TJPEGImage
-  else if Int64(Buffer) = $A1A0A0D474E5089 then
-    GraphicClass := TImage;
-    }
-
-  Result := (GraphicClass <> nil);
-end;
-
-function Swap32(Data: Integer): Integer; assembler;
-asm
-         //  BSWAP eax
-         //  BSWAP rax
-end;
-
-procedure TFileTagger.ReadCover(AG: TAudioGenie3);
-var
-  PicFrameCount: SmallInt;
-  Mem: Pointer;
-  PicSize, Len: Integer;
-  MS: TMemoryStream;
-  GraphicClass: TGraphicClass;
-  Graphic: TGraphic;
-  Keys: string;
-  ImageData: AnsiString;
-begin
-  Graphic := nil;
-
-  case FAudioType of
-    MPEG:
-    begin
-      PicFrameCount := AG.ID3V2GetFrameCountW(ID3F_APIC);
-      if PicFrameCount > 0 then
-      begin
-        PicSize := AG.ID3V2GetPictureSizeW(PicFrameCount);
-        if (PicSize > 0) and (PicSize < 1000000) then
-        begin
-          Mem := AllocMem(PicSize);
-          if Mem <> nil then
-          begin
-            if AG.ID3V2GetPictureArrayW(Mem, PicSize, PicFrameCount) > 0 then
-            begin
-              MS := TMemoryStream.Create;
-              try
-                MS.Write(Mem^, PicSize);
-                MS.Position := 0;
-
-                if FindGraphicClass(MS.Memory^, MS.Size, GraphicClass) then
-                begin
-                  Graphic := GraphicClass.Create;
-                  Graphic.LoadFromStream(MS);
-                end;
-              finally
-                MS.Free;
-              end;
-            end;
-            FreeMem(Mem);
-          end;
-        end;
-      end;
-    end;
-    OGGVORBIS:
-    begin
-      Keys := AG.OGGGetItemKeysW;
-      if Pos('METADATA_BLOCK_PICTURE', Keys) > 0 then
-      begin
-        ImageData := AG.OGGUserItemW['METADATA_BLOCK_PICTURE'];
-        if (Length(ImageData) > 0) and (Length(ImageData) < 1000000) then
-        begin
-          ImageData := DecodeStringBase64(ImageData);
-
-          MS := TMemoryStream.Create;
-          try
-            MS.Write(ImageData[1], Length(ImageData));
-
-            // Siehe http://flac.sourceforge.net/format.html#metadata_block_picture
-            MS.Seek(4, soFromBeginning);
-
-            MS.Read(Len, SizeOf(Len));
-            Len := Swap32(Len);
-            MS.Seek(Len, soFromCurrent);
-
-            MS.Read(Len, SizeOf(Len));
-            Len := Swap32(Len);
-            MS.Seek(Len, soFromCurrent);
-
-            MS.Seek(20, soFromCurrent);
-
-            if FindGraphicClass(Pointer(Int64(MS.Memory) + MS.Position)^, MS.Size, GraphicClass) then
-            begin
-              Graphic := GraphicClass.Create;
-              Graphic.LoadFromStream(MS);
-            end;
-          finally
-            MS.Free;
-          end;
-        end;
-      end;
-    end;
-    MP4M4A: ;// ...
-
-  end;
-
-  if Graphic <> nil then
-  begin
-    FTag.FCoverImage.Free;
-
-    try
-      FTag.FCoverImage := Graphics.TBitmap.Create;
-      FTag.FCoverImage.Assign(Graphic);
-
-      //ResizeBitmap(FCoverImage, MaxCoverWidth);
-    finally
-      Graphic.Free;
-    end;
-  end;
 end;
 
 function TFileTagger.Read(Filename: string): Boolean;
@@ -274,8 +130,6 @@ begin
             FTag.FPopulariMeterCounter := AG.ID3V2GetPopularimeterCounterW(1);
           end;
         end;
-
-        ReadCover(AG);
 
         Result := True;
       end;

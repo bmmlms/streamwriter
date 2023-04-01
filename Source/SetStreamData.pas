@@ -255,10 +255,10 @@ begin
   SetState(False);
 
   FTitleTree := TTitleTree.Create(Self);
-  FTitleTree.Parent := Self;
   FTitleTree.Align := alLeft;
   FTitleTree.Images := modSharedData.imgImages;
   FTitleTree.Width := 350;
+  FTitleTree.Parent := Self;
 
   FTitleTree.NodeDataSize := SizeOf(TTitleNodeData);
   FTitleTree.IncrementalSearch := isVisibleOnly;

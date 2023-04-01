@@ -390,7 +390,7 @@ begin
 
   // Adjust dimensions of the main-form
   W := 900;
-  H := 550;
+  H := 500;
   if Screen.WorkAreaWidth < W then
     W := Screen.WorkAreaWidth - 20;
   if Screen.WorkAreaHeight < H then

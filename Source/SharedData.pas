@@ -29,6 +29,9 @@ uses
   SysUtils;
 
 type
+
+  { TmodSharedData }
+
   TmodSharedData = class(TDataModule)
     imgImages: TImageList;
   private
