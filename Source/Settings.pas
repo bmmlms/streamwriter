@@ -1481,8 +1481,6 @@ begin
   if FIgnoreFieldList = nil then
     Exit;
 
-  FIgnoreFieldList.Remove(C);
-
   if TControl(C) is TCustomEdit then
     TEdit(C).Color := clWindow
   else if TControl(C) is TEditButton then
@@ -1496,6 +1494,8 @@ begin
   if ShowMessage and (FIgnoreFieldList.IndexOf(C) > -1) and (not FOptionChanging) then
     TfrmMsgDlg.ShowMsg(Self, _('The setting''s configuration you are about to change differs for the selected streams. The new setting will be applied to every selected stream when saving settings using "OK".'),
       mtInformation, [mbOK], mbOK, 13);
+
+  FIgnoreFieldList.Remove(C);
 end;
 
 procedure TfrmSettings.SetFields;
