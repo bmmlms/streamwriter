@@ -400,6 +400,7 @@ inherited frmSettings: TfrmSettings
         Control.Top = 16
         Control.Width = 50
         Control.Align = alLeft
+        Control.OnChange = txtShortLengthSecondsChange
         Control.TabOrder = 0
         object Label4: TLabel
           Left = 53
@@ -2017,7 +2018,6 @@ inherited frmSettings: TfrmSettings
         Width = 291
         Align = alTop
         Caption = 'Submit information about streams to the server'
-        OnClick = chkSubmitStreamInfoClick
         TabOrder = 0
       end
       object chkSubmitStats: TCheckBox

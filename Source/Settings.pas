@@ -334,7 +334,6 @@ type
     procedure Label2Click(Sender: TObject);
     procedure Label8Click(Sender: TObject);
     procedure Label20Click(Sender: TObject);
-    procedure chkSubmitStreamInfoClick(Sender: TObject);
     procedure lstRegExesChange(Sender: TObject; Item: TListItem; Change: TItemChange);
     procedure lstRegExesResize(Sender: TObject);
     procedure btnAddRegExClick(Sender: TObject);
@@ -372,7 +371,7 @@ type
 
     function GetStringListHash(Lst: TStringList): Cardinal;
     procedure BuildHotkeys;
-    function RemoveGray(C: TControl; ShowMessage: Boolean = True): Boolean;
+    procedure RemoveGray(C: TControl; ShowMessage: Boolean = True);
     procedure EnablePanel(Panel: TPanel; Enable: Boolean);
     procedure FillFields(Settings: TStreamSettings);
     procedure SetGray;
@@ -604,7 +603,6 @@ begin
     if AppGlobals.MaxSpeed > 0 then
       txtMaxSpeed.Control.Value := AppGlobals.MaxSpeed;
 
-    chkSubmitStreamInfoClick(nil);
     chkSubmitStatsClick(nil);
     chkMonitorModeClick(nil);
     chkLimitClick(nil);
@@ -1085,7 +1083,7 @@ begin
   inherited;
 
   if FInitialized then
-    RemoveGray(lstDefaultFilter);
+    RemoveGray(lstDefaultFilter.Control);
 end;
 
 procedure TfrmSettings.lstHotkeysChange(Sender: TObject; Item: TListItem; Change: TItemChange);
@@ -1130,7 +1128,7 @@ begin
   if not FInitialized then
     Exit;
 
-  RemoveGray(lstOutputFormat);
+  RemoveGray(lstOutputFormat.Control);
 
   if lstOutputFormat.Control.ItemIndex = 0 then
   begin
@@ -1290,7 +1288,7 @@ begin
   if FInitialized then
   begin
     RemoveGray(optAdjustBackward);
-    RemoveGray(optAdjustForward);
+    RemoveGray(optAdjustForward, False);
   end;
 end;
 
@@ -1478,26 +1476,26 @@ begin
   end;
 end;
 
-function TfrmSettings.RemoveGray(C: TControl; ShowMessage: Boolean = True): Boolean;
+procedure TfrmSettings.RemoveGray(C: TControl; ShowMessage: Boolean = True);
 begin
-  Result := False;
   if FIgnoreFieldList = nil then
     Exit;
+
+  FIgnoreFieldList.Remove(C);
+
+  if TControl(C) is TCustomEdit then
+    TEdit(C).Color := clWindow
+  else if TControl(C) is TEditButton then
+    TEditButton(C).Color := clWindow
+  else if TControl(C) is TCheckBox then
+  else if TControl(C) is TComboBoxEx then
+    TComboBoxEx(C).Color := clWindow
+  else if TControl(C) is TListView then
+    TListView(C).Color := clWindow;
 
   if ShowMessage and (FIgnoreFieldList.IndexOf(C) > -1) and (not FOptionChanging) then
     TfrmMsgDlg.ShowMsg(Self, _('The setting''s configuration you are about to change differs for the selected streams. The new setting will be applied to every selected stream when saving settings using "OK".'),
       mtInformation, [mbOK], mbOK, 13);
-
-  FIgnoreFieldList.Remove(C);
-
-  if (TControl(C) is TEdit) or (TControl(C) is TLabeledEdit) then
-    TEdit(C).Color := clWindow
-  else if TControl(C) is TCheckBox then
-  else if TControl(C) is TComboBoxEx then
-  else if TControl(C) is TListView then
-    TListView(C).Color := clWindow;
-
-  Result := True;
 end;
 
 procedure TfrmSettings.SetFields;
@@ -1803,7 +1801,7 @@ begin
       Break;
     end;
   if F then
-    AddField(lstDefaultFilter);
+    AddField(lstDefaultFilter.Control);
 
   F := False;
   for i := 1 to Length(FStreamSettings) - 1 do
@@ -1920,13 +1918,16 @@ begin
     Exit;
 
   for i := 0 to FIgnoreFieldList.Count - 1 do
-    if (TControl(FIgnoreFieldList[i]) is TEdit) or (TControl(FIgnoreFieldList[i]) is TLabeledEdit) then
-      TEdit(FIgnoreFieldList[i]).Color := clGrayText
+    if TControl(FIgnoreFieldList[i]) is TCustomEdit then
+      TEdit(FIgnoreFieldList[i]).Color := clBtnFace
+    else if TControl(FIgnoreFieldList[i]) is TEditButton then
+      TEditButton(FIgnoreFieldList[i]).Color := clBtnFace
     else if TControl(FIgnoreFieldList[i]) is TCheckBox then
       TCheckBox(FIgnoreFieldList[i]).State := cbGrayed
     else if TControl(FIgnoreFieldList[i]) is TComboBoxEx then
+      TComboBoxEx(FIgnoreFieldList[i]).Color := clBtnFace
     else if TControl(FIgnoreFieldList[i]) is TListView then
-      TListView(FIgnoreFieldList[i]).Color := clGrayText;
+      TListView(FIgnoreFieldList[i]).Color := clBtnFace;
 end;
 
 procedure TfrmSettings.SetPage(Page: TPage);
@@ -1969,9 +1970,9 @@ begin
 
   if FInitialized then
   begin
-    RemoveGray(Sender as TEditButton);
+    FActivePreviewField := TEditButton(Sender);
 
-    FActivePreviewField := Sender as TEditButton;
+    RemoveGray(FActivePreviewField);
 
     if Sender = txtAutomaticFilePattern.Control then
       txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'artist|title|album|genre|streamtitle|streamname|day|month|year|hour|minute|second')
@@ -1990,7 +1991,7 @@ begin
   inherited;
 
   if FInitialized then
-    RemoveGray(txtFilePatternDecimals);
+    RemoveGray(txtFilePatternDecimals.Control);
 end;
 
 procedure TfrmSettings.txtHotkeyChange(Sender: TObject);
@@ -2011,7 +2012,7 @@ procedure TfrmSettings.txtFilePatternEnter(Sender: TObject);
 begin
   inherited;
 
-  FActivePreviewField := Sender as TEditButton;
+  FActivePreviewField := TEditButton(Sender);
 
   if Sender = txtAutomaticFilePattern.Control then
     txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'artist|title|album|genre|streamtitle|streamname|day|month|year|hour|minute|second')
@@ -2029,7 +2030,7 @@ begin
   inherited;
 
   if FInitialized then
-    RemoveGray(txtMaxRetries);
+    RemoveGray(txtMaxRetries.Control);
 end;
 
 procedure TfrmSettings.txtRemoveCharsChange(Sender: TObject);
@@ -2037,7 +2038,7 @@ begin
   inherited;
 
   if FInitialized then
-    RemoveGray(txtRemoveChars);
+    RemoveGray(txtRemoveChars.Control);
 end;
 
 procedure TfrmSettings.txtRetryDelayChange(Sender: TObject);
@@ -2045,7 +2046,7 @@ begin
   inherited;
 
   if FInitialized then
-    RemoveGray(txtRetryDelay);
+    RemoveGray(txtRetryDelay.Control);
 end;
 
 procedure TfrmSettings.txtShortLengthSecondsChange(Sender: TObject);
@@ -2053,7 +2054,7 @@ begin
   inherited;
 
   if FInitialized then
-    RemoveGray(txtShortLengthSeconds);
+    RemoveGray(txtShortLengthSeconds.Control);
 end;
 
 procedure TfrmSettings.txtSilenceBufferSecondsChange(Sender: TObject);
@@ -2077,7 +2078,7 @@ begin
   inherited;
 
   if FInitialized then
-    RemoveGray(txtSilenceLevel);
+    RemoveGray(txtSilenceLevel.Control);
 end;
 
 procedure TfrmSettings.txtSongBufferChange(Sender: TObject);
@@ -2085,7 +2086,7 @@ begin
   inherited;
 
   if FInitialized then
-    RemoveGray(txtSongBuffer);
+    RemoveGray(txtSongBuffer.Control);
 end;
 
 procedure TfrmSettings.txtRegExChange(Sender: TObject);
@@ -2567,9 +2568,9 @@ function TfrmSettings.CanFinish: Boolean;
 var
   i, n: Integer;
 begin
-  Result := inherited;
+  Result := False;
 
-  if not Result then
+  if not inherited then
     Exit;
 
   if ControlVisible(txtFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second'))) = '') then
@@ -2715,7 +2716,6 @@ procedure TfrmSettings.chkMonitorModeClick(Sender: TObject);
 begin
   inherited;
 
-  Label20.Enabled := (chkMonitorMode.State <> cbUnchecked) or (chkSubmitStats.State <> cbUnchecked);
   txtMonitorCount.Enabled := (chkMonitorMode.State <> cbUnchecked) and (chkSubmitStats.State <> cbUnchecked);
 end;
 
@@ -2920,18 +2920,10 @@ procedure TfrmSettings.chkSubmitStatsClick(Sender: TObject);
 begin
   inherited;
 
-  //Label8.Enabled := chkSubmitStats.State <> cbUnchecked;
   chkMonitorMode.Enabled := chkSubmitStats.State <> cbUnchecked;
 
   Label20.Enabled := chkMonitorMode.Enabled;
   txtMonitorCount.Enabled := (chkMonitorMode.State <> cbUnchecked) and (chkSubmitStats.State <> cbUnchecked);
-end;
-
-procedure TfrmSettings.chkSubmitStreamInfoClick(Sender: TObject);
-begin
-  inherited;
-
-  //Label2.Enabled := chkSubmitStreamInfo.State <> cbUnchecked;
 end;
 
 procedure TfrmSettings.chkTrayClick(Sender: TObject);
