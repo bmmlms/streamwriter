@@ -142,7 +142,7 @@ var
 begin
   P := TPlayer(user);
 
-  PostMessage(P.FMessageHWnd, 1001, 0, 0);
+  PostMessage(P.FMessageHWnd, WM_USER + BASS_SYNC_POS, 0, 0);
 end;
 
 procedure EndSyncProc(handle: HSYNC; channel, Data: DWORD; user: Pointer); stdcall;
@@ -154,7 +154,19 @@ begin
   P.FPaused := False;
   P.FStopped := False;
 
-  PostMessage(P.FMessageHWnd, 1000, 0, 0);
+  PostMessage(P.FMessageHWnd, WM_USER + BASS_SYNC_END, 0, 0);
+end;
+
+procedure DevFailSyncProc(handle: HSYNC; channel, Data: DWORD; user: Pointer); stdcall;
+var
+  P: TPlayer;
+begin
+  P := TPlayer(user);
+
+  P.FPaused := False;
+  P.FStopped := False;
+
+  PostMessage(P.FMessageHWnd, WM_USER + BASS_SYNC_DEV_FAIL, 0, 0);
 end;
 
 { TPlayer }
@@ -186,7 +198,9 @@ begin
   FPlayer := BASSStreamCreateFile(False, PChar(FFilename), 0, 0, 0);
   if FPlayer = 0 then
     raise Exception.Create('');
+
   FSyncEnd := BASSChannelSetSync(FPlayer, BASS_SYNC_END, 0, EndSyncProc, Self);
+  BASSChannelSetSync(FPlayer, BASS_SYNC_DEV_FAIL, 0, DevFailSyncProc, Self);
 
   EQEnabled := Players.EQEnabled;
 
@@ -397,6 +411,8 @@ end;
 
 procedure TPlayer.Play;
 begin
+  BASSStart;
+
   if FPlayer = 0 then
     CreatePlayer;
 
@@ -481,12 +497,14 @@ var
 begin
   Handled := True;
   case Msg.Msg of
-    1000:
+    WM_USER + BASS_SYNC_END:
       if Assigned(OnEndReached) then
         OnEndReached(Self);
-    1001:
+    WM_USER + BASS_SYNC_POS:
       if Assigned(OnPosReached) then
         OnPosReached(Self);
+    WM_USER + BASS_SYNC_DEV_FAIL:
+      Stop(True, True);
     else
       Handled := False;
   end;

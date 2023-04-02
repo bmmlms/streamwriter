@@ -89,6 +89,16 @@ begin
   TICEPlayer(user).FStopping := False;
 end;
 
+procedure DevFailSyncProc(handle: HSYNC; channel, Data: DWORD; user: Pointer); stdcall;
+var
+  P: TICEPlayer;
+begin
+  P := TICEPlayer(user);
+  P.FreeStream(channel);
+  TICEPlayer(user).FPausing := False;
+  TICEPlayer(user).FStopping := False;
+end;
+
 procedure BASSClose(user: Pointer); stdcall;
 begin
 
@@ -188,6 +198,8 @@ var
   Funcs: BASS_FILEPROCS;
   R: Integer;
 begin
+  BASSStart;
+
   if (FPlayStartBuffer = 0) or (not Paused and (FMem.Size < FPlayStartBuffer)) then
     Exit;
 

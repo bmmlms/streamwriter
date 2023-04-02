@@ -52,6 +52,7 @@ const
   BASS_SYNC_END = 2;
   BASS_SYNC_MIXTIME = $40000000;
   BASS_SYNC_SLIDE = 5;
+  BASS_SYNC_DEV_FAIL = 14;
   BASS_DEVICE_ENABLED = 1;
   BASS_DEVICE_DEFAULT = 2;
   BASS_SAMPLE_FLOAT = 256; // 32-bit floating-point
@@ -220,6 +221,7 @@ type
 var
   // BASS
   BASSInit: function(device: LongInt; freq, flags: DWORD; win: HWND; clsid: PGUID): BOOL; stdcall;
+  BASSStart: function: BOOL; stdcall;
   BASSFree: procedure; stdcall;
   BASSGetInfo: function(var info: BASS_INFO): BOOL; stdcall;
   BASSGetDeviceInfo: function(device: DWORD; var info: BASS_DEVICEINFO): BOOL; stdcall;
@@ -405,6 +407,7 @@ begin
   if FDLLHandle <> 0 then
   begin
     BASSInit := GetProcAddress(FDLLHandle, 'BASS_Init');
+    BASSStart := GetProcAddress(FDLLHandle, 'BASS_Start');
     BASSFree := GetProcAddress(FDLLHandle, 'BASS_Free');
     BASSGetInfo := GetProcAddress(FDLLHandle, 'BASS_GetInfo');
     BASSGetDeviceInfo := GetProcAddress(FDLLHandle, 'BASS_GetDeviceInfo');
