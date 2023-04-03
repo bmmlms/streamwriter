@@ -561,6 +561,9 @@ begin
     end;
 
     DefaultNodeHeight := NodeHeight;
+
+    RootNode.NodeHeight := NodeHeight;
+    RootNode.TotalHeight := NodeHeight * RootNodeCount;
   end;
 end;
 
@@ -760,7 +763,7 @@ var
 begin
   NodeData := PStreamNodeData(GetNodeData(PaintInfo.Node));
 
-  LineHeight := Canvas.GetTextHeight(MeasureTextHeightString);
+  LineHeight := PaintInfo.Canvas.GetTextHeight(MeasureTextHeightString);
 
   CellRect.Top := CellRect.Top + 2;
   DrawFormat := DT_TOP or DT_LEFT;
@@ -798,12 +801,12 @@ begin
   else
     NewText := StringReplace(NewText, '&', '&&', [rfReplaceall]); // Wegen & und dem Shortcut..
 
-  if Canvas.GetTextWidth(NewText) > MaxTextWidth then
-    NewText := ShortenString(Canvas.Handle, NewText, MaxTextWidth, EllipsisWidth);
-
   PaintInfo.Canvas.Font.Size := PaintInfo.Canvas.Font.Size - 1;
 
-  inherited DoTextDrawing(PaintInfo, NewText, CellRect, DrawFormat);
+  if PaintInfo.Canvas.GetTextWidth(NewText) > MaxTextWidth then
+    NewText := ShortenString(PaintInfo.Canvas.Handle, NewText, MaxTextWidth, 0);
+
+  inherited DoTextDrawing(PaintInfo, NewText, CellRect, DrawFormat);   // TODO: die ... werden zu früh gesetzt. außerdem passt was bei der itemheight nicht, man kann nicht bis nach ganz unten scrollen.
 end;
 
 procedure TMStreamTree.Paint;
