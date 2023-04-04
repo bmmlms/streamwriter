@@ -90,7 +90,7 @@ end;
 
 constructor TfrmSettingsAddPostProcessor.Create(AOwner: TComponent);
 begin
-  inherited Create(AOwner);
+  inherited;
 
   modSharedData.imgImages.GetIcon(TImages.LIGHTNING, Icon);
 end;

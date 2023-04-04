@@ -62,7 +62,6 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    function ShowInitMessage(Handle: THandle): Boolean; override;
     function CanProcess(Data: PPostProcessInformation; ProcessingList: TList<TPostprocessBase>): Boolean; override;
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
@@ -321,14 +320,6 @@ begin
   Stream.Write(FSilenceEnd);
   Stream.Write(FSilenceStartLength, True);
   Stream.Write(FSilenceEndLength, True);
-end;
-
-function TPostProcessSoX.ShowInitMessage(Handle: THandle): Boolean;
-begin
-  Result := inherited;
-
-  //MsgBox(_('Additional encoding-addons might be needed to have this postprocessor working, that is an encoder for the desired output format or an encoder for the format of the stream itself.'),
-  //  _('Info'), MB_ICONINFORMATION);
 end;
 
 end.

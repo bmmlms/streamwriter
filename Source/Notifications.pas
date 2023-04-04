@@ -114,7 +114,7 @@ begin
   Application.RemoveOnUserInputHandler(MouseHook);
   FWindow := nil;
 
-  inherited Destroy;
+  inherited;
 end;
 
 procedure TfrmNotification.DisplayWindow(Title, Stream: string);
@@ -207,7 +207,7 @@ end;
 
 procedure TfrmNotification.ControlsAligned;
 begin
-  inherited ControlsAligned;
+  inherited;
 
   lblTitle.Caption := TMStringFunctions.TruncateText(FTitle, 350 - pbLogo.Width, lblTitle.Font);
   lblStream.Caption := TMStringFunctions.TruncateText(FStream, 350 - pbLogo.Width, lblStream.Font);
@@ -218,14 +218,14 @@ end;
 
 procedure TfrmNotification.DoClose(var CloseAction: TCloseAction);
 begin
-  inherited DoClose(CloseAction);
+  inherited;
 
   CloseAction := caFree;
 end;
 
 procedure TfrmNotification.Paint;
 begin
-  inherited Paint;
+  inherited;
 
   Canvas.Pen.Color := clBtnShadow;
   Canvas.Rectangle(0, 0, ClientWidth, ClientHeight);

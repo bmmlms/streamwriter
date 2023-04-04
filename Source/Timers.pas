@@ -447,8 +447,6 @@ var
   Day: string;
   DTStart, DTEnd: TDateTime;
 begin
-  inherited;
-
   NodeData := GetNodeData(Node);
 
   case Column of

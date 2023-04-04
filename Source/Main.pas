@@ -2627,7 +2627,7 @@ destructor TfrmStreamWriterMain.Destroy;
 begin
   SetWindowLongPtrW(Handle, GWLP_WNDPROC, LONG_PTR(@FPrevWndProc));
 
-  inherited Destroy;
+  inherited;
 end;
 
 class function TfrmStreamWriterMain.CustomWndProcWrapper(hwnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;

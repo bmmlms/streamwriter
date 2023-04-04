@@ -37,13 +37,10 @@ type
   TTagData = class
   private
     FArtist, FTitle, FAlbum, FGenre, FComment, FTrackNumber: string;
-    FCoverImage: Graphics.TBitmap;
     FPopulariMeterEmail: WideString;
     FPopulariMeterRating: SmallInt;
     FPopulariMeterCounter: LongInt;
   public
-    constructor Create;
-    destructor Destroy; override;
     function Copy: TTagData;
 
     property Artist: string read FArtist write FArtist;
@@ -210,26 +207,6 @@ begin
   Result.FGenre := FGenre;
   Result.FComment := FComment;
   Result.FTrackNumber := FTrackNumber;
-
-  if FCoverImage <> nil then
-  begin
-    Result.FCoverImage := Graphics.TBitmap.Create;
-    Result.FCoverImage.Assign(FCoverImage);
-  end;
-end;
-
-constructor TTagData.Create;
-begin
-  inherited;
-
-end;
-
-destructor TTagData.Destroy;
-begin
-  if FCoverImage <> nil then
-    FCoverImage.Free;
-
-  inherited;
 end;
 
 initialization

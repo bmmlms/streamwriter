@@ -56,7 +56,6 @@ type
   public
     constructor Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
     procedure Convert(FromFile, ToFile: string; EncoderSettings: TObject);
-    destructor Destroy; override;
 
     property ToFile: string read FToFile;
     property Progress: Integer read FProgress;
@@ -74,7 +73,6 @@ type
     function FGetHelp: string; override;
   public
     constructor Create;
-    destructor Destroy; override;
     procedure Load(Stream: TStream; Version: Integer); override;
     procedure Save(Stream: TMemoryStream); override;
     function Copy: TPostProcessBase; override;
@@ -106,12 +104,6 @@ begin
 
   if Data <> nil then
     FEncoderSettings := TEncoderSettings(Data.EncoderSettings);
-end;
-
-destructor TPostProcessConvertThread.Destroy;
-begin
-
-  inherited;
 end;
 
 procedure TPostProcessConvertThread.Execute;
@@ -193,12 +185,6 @@ begin
   FHidden := True;
 
   FPostProcessType := ptConvert;
-end;
-
-destructor TPostProcessConvert.Destroy;
-begin
-
-  inherited;
 end;
 
 function TPostProcessConvert.FGetHelp: string;

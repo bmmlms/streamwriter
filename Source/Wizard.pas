@@ -149,6 +149,7 @@ end;
 procedure TfrmWizard.RegisterSteps;
 begin
   inherited;
+
   FStepList.Add(TStep.Create('Select folder', pnlDir));
   FStepList[FStepList.Count - 1].Description := 'Please select a folder where recorded songs will be saved.';
   FStepList.Add(TStep.Create('Miscellaneous settings', pnlMisc));
@@ -169,7 +170,7 @@ end;
 
 procedure TfrmWizard.cmdBrowseClick(Sender: TObject);
 var
-  Dir: String;
+  Dir: string;
 begin
   Dir := TFunctions.BrowseDialog(Self, _('Select folder for saved songs'));
   if DirectoryExists(Dir) then

@@ -90,7 +90,7 @@ type
     procedure DoFreeNode(Node: PVirtualNode); override;
   public
     constructor Create(AOwner: TComponent; Streams: TStringList); reintroduce;
-    destructor Destroy; override;
+
     procedure UpdateList(List: TStringList);
     procedure RemoveSelected;
   end;
@@ -1059,37 +1059,27 @@ end;
 
 procedure TfrmSettings.Label20Click(Sender: TObject);
 begin
-  inherited;
-
   chkMonitorMode.Checked := not chkMonitorMode.Checked;
 end;
 
 procedure TfrmSettings.Label2Click(Sender: TObject);
 begin
-  inherited;
-
   chkSubmitStreamInfo.Checked := not chkSubmitStreamInfo.Checked;
 end;
 
 procedure TfrmSettings.Label8Click(Sender: TObject);
 begin
-  inherited;
-
   chkSubmitStats.Checked := not chkSubmitStats.Checked;
 end;
 
 procedure TfrmSettings.lstDefaultFilterChange(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(lstDefaultFilter.Control);
 end;
 
 procedure TfrmSettings.lstHotkeysChange(Sender: TObject; Item: TListItem; Change: TItemChange);
 begin
-  inherited;
-
   txtHotkey.Enabled := lstHotkeys.Selected <> nil;
   if txtHotkey.Enabled then
   begin
@@ -1106,8 +1096,6 @@ end;
 
 procedure TfrmSettings.lstIgnoreTitlesEdited(Sender: TObject; Item: TListItem; var S: string);
 begin
-  inherited;
-
   if Trim(S) = '' then
     S := Item.Caption
   else
@@ -1123,8 +1111,6 @@ procedure TfrmSettings.lstOutputFormatSelect(Sender: TObject);
 var
   i: Integer;
 begin
-  inherited;
-
   if not FInitialized then
     Exit;
 
@@ -1176,8 +1162,6 @@ end;
 
 procedure TfrmSettings.lstAddonsResize(Sender: TObject);
 begin
-  inherited;
-
   lstAddons.Columns[0].Width := lstAddons.ClientWidth;
 end;
 
@@ -1217,8 +1201,6 @@ end;
 
 procedure TfrmSettings.lstPostProcessResize(Sender: TObject);
 begin
-  inherited;
-
   lstPostProcess.Columns[0].Width := lstPostProcess.ClientWidth - 25;
 end;
 
@@ -1276,15 +1258,11 @@ end;
 
 procedure TfrmSettings.lstRegExesResize(Sender: TObject);
 begin
-  inherited;
-
   lstRegExes.Columns[0].Width := lstRegExes.ClientWidth - 25;
 end;
 
 procedure TfrmSettings.optAdjustClick(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
   begin
     RemoveGray(optAdjustBackward);
@@ -1301,8 +1279,6 @@ end;
 
 procedure TfrmSettings.PreTranslate;
 begin
-  inherited;
-
   FDefaultActionIdx := lstDefaultAction.Control.ItemIndex;
   FDefaultActionNewStreamIdx := lstDefaultActionNewStream.Control.ItemIndex;
   FDefaultFilterIdx := lstDefaultFilter.Control.ItemIndex;
@@ -1353,8 +1329,6 @@ var
   Arr: TPatternReplaceArray;
   PList: TStringList;
 begin
-  inherited;
-
   PList := TStringList.Create;
   try
     TFunctions.Explode('|', Patterns, PList);
@@ -1951,23 +1925,18 @@ end;
 
 procedure TfrmSettings.txtAdjustTrackOffsetChange(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(txtAdjustTrackOffset);
 end;
 
 procedure TfrmSettings.txtAppParamsChange(Sender: TObject);
 begin
-  inherited;
   if (lstPostProcess.Selected <> nil) and txtAppParams.Focused then
     TExternalPostProcess(lstPostProcess.Selected.Data).Params := txtAppParams.Control.Text;
 end;
 
 procedure TfrmSettings.txtFilePatternChange(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
   begin
     FActivePreviewField := TEditButton(Sender);
@@ -1988,8 +1957,6 @@ end;
 
 procedure TfrmSettings.txtFilePatternDecimalsChange(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(txtFilePatternDecimals.Control);
 end;
@@ -2010,8 +1977,6 @@ end;
 
 procedure TfrmSettings.txtFilePatternEnter(Sender: TObject);
 begin
-  inherited;
-
   FActivePreviewField := TEditButton(Sender);
 
   if Sender = txtAutomaticFilePattern.Control then
@@ -2027,72 +1992,54 @@ end;
 
 procedure TfrmSettings.txtMaxRetriesChange(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(txtMaxRetries.Control);
 end;
 
 procedure TfrmSettings.txtRemoveCharsChange(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(txtRemoveChars.Control);
 end;
 
 procedure TfrmSettings.txtRetryDelayChange(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(txtRetryDelay.Control);
 end;
 
 procedure TfrmSettings.txtShortLengthSecondsChange(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(txtShortLengthSeconds.Control);
 end;
 
 procedure TfrmSettings.txtSilenceBufferSecondsChange(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(txtSilenceBufferSeconds);
 end;
 
 procedure TfrmSettings.txtSilenceLengthChange(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(txtSilenceLength);
 end;
 
 procedure TfrmSettings.txtSilenceLevelChange(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(txtSilenceLevel.Control);
 end;
 
 procedure TfrmSettings.txtSongBufferChange(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(txtSongBuffer.Control);
 end;
 
 procedure TfrmSettings.txtRegExChange(Sender: TObject);
 begin
-  inherited;
-
   btnAddRegEx.Enabled := Length(Trim(txtRegEx.Control.Text)) >= 1;
 end;
 
@@ -2185,8 +2132,6 @@ var
   PostProcessor: TExternalPostProcess;
   AddPostProcessorForm: TfrmSettingsAddPostProcessor;
 begin
-  inherited;
-
   if not FInitialized then
     Exit;
 
@@ -2229,7 +2174,6 @@ end;
 
 procedure TfrmSettings.btnBrowseAppClick(Sender: TObject);
 begin
-  inherited;
   if dlgOpen.Execute then
     if FileExists(dlgOpen.FileName) then
     begin
@@ -2261,8 +2205,6 @@ end;
 
 procedure TfrmSettings.btnBrowseLogFileClick(Sender: TObject);
 begin
-  inherited;
-
   if dlgSave.Execute then
     if dlgSave.FileName <> '' then
     begin
@@ -2274,8 +2216,6 @@ end;
 
 procedure TfrmSettings.btnConfigureClick(Sender: TObject);
 begin
-  inherited;
-
   if not FInitialized then
     Exit;
 
@@ -2293,8 +2233,6 @@ var
   F: TfrmConfigureEncoder;
   EncoderSettings: TEncoderSettings;
 begin
-  inherited;
-
   if not FInitialized then
     Exit;
 
@@ -2441,8 +2379,6 @@ end;
 
 procedure TfrmSettings.btnResetFilePatternClick(Sender: TObject);
 begin
-  inherited;
-
   if Sender = txtFilePattern.Control then
   begin
     txtFilePattern.Control.Text := '%streamname%\%artist% - %title%';
@@ -2467,8 +2403,6 @@ end;
 
 procedure TfrmSettings.btnResetRemoveCharsClick(Sender: TObject);
 begin
-  inherited;
-
   txtRemoveChars.Control.Text := '[]{}#$§%~^';
   txtRemoveChars.Control.ApplyFocus;
   RemoveGray(txtRemoveChars.Control);
@@ -2476,8 +2410,6 @@ end;
 
 procedure TfrmSettings.btnResetTitlePatternClick(Sender: TObject);
 begin
-  inherited;
-
   txtRegEx.Control.Text := DEFAULT_TITLE_REGEXP;
   txtRegEx.Control.ApplyFocus;
 end;
@@ -2676,24 +2608,18 @@ end;
 
 procedure TfrmSettings.chkAddSavedToIgnoreClick(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(chkAddSavedToIgnore);
 end;
 
 procedure TfrmSettings.chkAddSavedToStreamIgnoreClick(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(chkAddSavedToStreamIgnore);
 end;
 
 procedure TfrmSettings.chkAdjustTrackOffsetClick(Sender: TObject);
 begin
-  inherited;
-
   pnlAdjustTrackOffset.Enabled := chkAdjustTrackOffset.State <> cbUnchecked;
   optAdjustBackward.Enabled := chkAdjustTrackOffset.State <> cbUnchecked;
   optAdjustForward.Enabled := chkAdjustTrackOffset.State <> cbUnchecked;
@@ -2704,8 +2630,6 @@ end;
 
 procedure TfrmSettings.chkManualSilenceLevelClick(Sender: TObject);
 begin
-  inherited;
-
   txtSilenceLevel.Enabled := (not (chkManualSilenceLevel.State = cbUnchecked)) and (chkSearchSilence.State <> cbUnchecked);
 
   if FInitialized then
@@ -2714,15 +2638,11 @@ end;
 
 procedure TfrmSettings.chkMonitorModeClick(Sender: TObject);
 begin
-  inherited;
-
   txtMonitorCount.Enabled := (chkMonitorMode.State <> cbUnchecked) and (chkSubmitStats.State <> cbUnchecked);
 end;
 
 procedure TfrmSettings.chkAutoTuneInClick(Sender: TObject);
 begin
-  inherited;
-
   lstMinQuality.Enabled := chkAutoTuneIn.Checked;
   lstFormat.Enabled := chkAutoTuneIn.Checked;
   chkAutoTuneInConsiderIgnore.Enabled := chkAutoTuneIn.Checked;
@@ -2732,32 +2652,24 @@ end;
 
 procedure TfrmSettings.chkOverwriteSmallerClick(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(chkOverwriteSmaller);
 end;
 
 procedure TfrmSettings.chkRemoveSavedFromWishlistClick(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(chkRemoveSavedFromWishlist);
 end;
 
 procedure TfrmSettings.chkDeleteStreamsClick(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(chkDeleteStreams);
 end;
 
 procedure TfrmSettings.chkDiscardAlwaysClick(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
   begin
     RemoveGray(chkDiscardAlways);
@@ -2784,31 +2696,23 @@ end;
 
 procedure TfrmSettings.chkDiscardSmallerClick(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(chkDiscardSmaller);
 end;
 
 procedure TfrmSettings.chkLimitClick(Sender: TObject);
 begin
-  inherited;
-
   txtMaxSpeed.Enabled := chkLimit.Checked;
 end;
 
 procedure TfrmSettings.chkNormalizeVariablesClick(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(chkNormalizeVariables);
 end;
 
 procedure TfrmSettings.chkOnlyIfCutClick(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
     RemoveGray(lstPostProcess);
 
@@ -2818,8 +2722,6 @@ end;
 
 procedure TfrmSettings.chkOnlySaveFullClick(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
   begin
     RemoveGray(chkOnlySaveFull);
@@ -2832,8 +2734,6 @@ end;
 
 procedure TfrmSettings.chkSeparateTracksClick(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
   begin
     RemoveGray(chkSeparateTracks);
@@ -2865,8 +2765,6 @@ end;
 
 procedure TfrmSettings.chkSaveStreamsToDiskClick(Sender: TObject);
 begin
-  inherited;
-
   if FInitialized then
   begin
     RemoveGray(chkSaveStreamsToDisk);
@@ -2890,8 +2788,6 @@ end;
 
 procedure TfrmSettings.chkSearchSilenceClick(Sender: TObject);
 begin
-  inherited;
-
   txtSilenceBufferSeconds.Enabled := chkSearchSilence.Checked;
   Label12.Enabled := chkSearchSilence.Checked;
   Label13.Enabled := chkSearchSilence.Checked;
@@ -2908,8 +2804,6 @@ end;
 
 procedure TfrmSettings.chkSkipShortClick(Sender: TObject);
 begin
-  inherited;
-
   txtShortLengthSeconds.Enabled := chkSkipShort.State <> cbUnchecked;
 
   if FInitialized then
@@ -2918,8 +2812,6 @@ end;
 
 procedure TfrmSettings.chkSubmitStatsClick(Sender: TObject);
 begin
-  inherited;
-
   chkMonitorMode.Enabled := chkSubmitStats.State <> cbUnchecked;
 
   Label20.Enabled := chkMonitorMode.Enabled;
@@ -2928,8 +2820,6 @@ end;
 
 procedure TfrmSettings.chkTrayClick(Sender: TObject);
 begin
-  inherited;
-
   optClose.Enabled := chkTray.Checked;
   optMinimize.Enabled := chkTray.Checked;
 end;
@@ -3190,18 +3080,10 @@ begin
   Header.SortDirection := sdAscending;
 end;
 
-destructor TBlacklistTree.Destroy;
-begin
-
-  inherited;
-end;
-
 procedure TBlacklistTree.DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: String);
 var
   NodeData: PBlacklistNodeData;
 begin
-  inherited;
-
   NodeData := GetNodeData(Node);
 
   case Column of
@@ -3220,6 +3102,7 @@ end;
 procedure TBlacklistTree.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
 begin
   inherited;
+
   if HitInfo.Button = mbLeft then
   begin
     if Header.SortColumn <> HitInfo.Column then

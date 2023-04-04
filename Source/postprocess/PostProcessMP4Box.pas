@@ -51,14 +51,9 @@ type
     function FGetHelp: string; override;
   public
     constructor Create;
-    destructor Destroy; override;
-    function ShowInitMessage(Handle: THandle): Boolean; override;
     function CanProcess(Data: PPostProcessInformation; ProcessingList: TList<TPostprocessBase>): Boolean; override;
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
-    procedure Assign(Source: TPostProcessBase); override;
-    procedure Load(Stream: TStream; Version: Integer); override;
-    procedure Save(Stream: TMemoryStream); override;
 
     function MP4BoxMux(InFile, OutFile: string; TerminateFlag: PByteBool): TActResults;
   end;
@@ -112,12 +107,6 @@ begin
 end;
 
 { TPostProcessMP4Box }
-
-procedure TPostProcessMP4Box.Assign(Source: TPostProcessBase);
-begin
-  inherited;
-
-end;
 
 function TPostProcessMP4Box.CanProcess(Data: PPostProcessInformation; ProcessingList: TList<TPostprocessBase>): Boolean;
 var
@@ -178,12 +167,6 @@ begin
     DeleteFile(OutFile);
 end;
 
-destructor TPostProcessMP4Box.Destroy;
-begin
-
-  inherited;
-end;
-
 function TPostProcessMP4Box.FGetHelp: string;
 begin
   Result := _('This postprocessor converts recorded songs from AAC to M4A.');
@@ -194,26 +177,9 @@ begin
   Result := _('Convert AAC to M4A');
 end;
 
-procedure TPostProcessMP4Box.Load(Stream: TStream; Version: Integer);
-begin
-  inherited;
-
-end;
-
 function TPostProcessMP4Box.ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase;
 begin
   Result := TPostProcessMP4BoxThread.Create(Data, Self);
-end;
-
-procedure TPostProcessMP4Box.Save(Stream: TMemoryStream);
-begin
-  inherited;
-
-end;
-
-function TPostProcessMP4Box.ShowInitMessage(Handle: THandle): Boolean;
-begin
-  Result := inherited;
 end;
 
 end.

@@ -86,7 +86,7 @@ var
   i: Integer;
   PB: TAddonBase;
 begin
-  inherited Create;
+  inherited;
 
   FAddons := TList<TAddonBase>.Create;
 

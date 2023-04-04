@@ -42,7 +42,6 @@ type
     FHash: Cardinal;
   public
     constructor Create(Filename: string; Size: UInt64; Action: TFileEntryAction);
-    destructor Destroy; override;
 
     property Action: TFileEntryAction read FAction write FAction;
     property Size: UInt64 read FSize write FSize;
@@ -85,6 +84,7 @@ begin
   for i := 0 to FFiles.Count - 1 do
     FFiles[i].Free;
   FFiles.Free;
+
   inherited;
 end;
 
@@ -125,12 +125,6 @@ begin
   FSize := Size;
   FAction := Action;
   FHash := TFunctions.HashString(LowerCase(ExtractFileName(Filename)));
-end;
-
-destructor TFileEntry.Destroy;
-begin
-
-  inherited;
 end;
 
 end.
