@@ -1606,6 +1606,7 @@ begin
   FZoomInnerColor := TFunctions.HTML2Color('4d5ea5');
 
   FControlMode := cmNone;
+  TabStop := True;
 
   FCutView := TCutView(AOwner);
   if FWaveBuf = nil then
@@ -1632,6 +1633,8 @@ end;
 procedure TCutPaintBox.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   inherited;
+
+  Self.SetFocus;
 
   if FCutView.FWaveData = nil then
     Exit;
