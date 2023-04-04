@@ -355,7 +355,7 @@ end;
 
 procedure TDebugView.Resize;
 begin
-  inherited Resize;
+  inherited;
 
   if HandleAllocated and (GetLast <> nil) and IsVisible[GetLast] then
     ScrollIntoView(GetLast, True, False);

@@ -54,9 +54,9 @@
             <Filename Value="..\Build\streamwriter"/>
           </Target>
           <SearchPaths>
-            <IncludeFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\fpc-common\openssl;$(ProjOutDir)"/>
+            <IncludeFiles Value="$(ProjOutDir)"/>
             <Libraries Value="D:\msys64\mingw32\i686-w64-mingw32\lib\;D:\msys64\mingw32\lib\gcc\i686-w64-mingw32\10.2.0\;..\SubModules\mbedtls\library"/>
-            <OtherUnitFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\TRegExpr\src"/>
+            <OtherUnitFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;Forms;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\TRegExpr\src"/>
             <UnitOutputDirectory Value="..\Build\Units\$(TargetCPU)\$(BuildMode)"/>
           </SearchPaths>
           <Parsing>
@@ -128,7 +128,7 @@
         <IsPartOfProject Value="True"/>
       </Unit0>
       <Unit1>
-        <Filename Value="Main.pas"/>
+        <Filename Value="Forms\Main.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmStreamWriterMain"/>
         <HasResources Value="True"/>
@@ -143,7 +143,7 @@
         <IsPartOfProject Value="True"/>
       </Unit3>
       <Unit4>
-        <Filename Value="Settings.pas"/>
+        <Filename Value="Forms\Settings.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmSettings"/>
         <HasResources Value="True"/>
@@ -154,7 +154,7 @@
         <IsPartOfProject Value="True"/>
       </Unit5>
       <Unit6>
-        <Filename Value="Wizard.pas"/>
+        <Filename Value="Forms\Wizard.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmWizard"/>
         <HasResources Value="True"/>
@@ -325,7 +325,7 @@
         <IsPartOfProject Value="True"/>
       </Unit41>
       <Unit42>
-        <Filename Value="CommunityLogin.pas"/>
+        <Filename Value="Forms\CommunityLogin.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmCommunityLogin"/>
         <HasResources Value="True"/>
@@ -384,7 +384,7 @@
         <IsPartOfProject Value="True"/>
       </Unit55>
       <Unit56>
-        <Filename Value="Timers.pas"/>
+        <Filename Value="Forms\Timers.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmTimers"/>
         <HasResources Value="True"/>
@@ -395,7 +395,7 @@
         <IsPartOfProject Value="True"/>
       </Unit57>
       <Unit58>
-        <Filename Value="DownloadAddons.pas"/>
+        <Filename Value="Forms\DownloadAddons.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmDownloadAddons"/>
         <HasResources Value="True"/>
@@ -413,7 +413,7 @@
         <ResourceBaseClass Value="Form"/>
       </Unit60>
       <Unit61>
-        <Filename Value="Notifications.pas"/>
+        <Filename Value="Forms\Notifications.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmNotification"/>
         <HasResources Value="True"/>
@@ -477,7 +477,7 @@
         <IsPartOfProject Value="True"/>
       </Unit73>
       <Unit74>
-        <Filename Value="Intro.pas"/>
+        <Filename Value="Forms\Intro.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmIntro"/>
         <HasResources Value="True"/>
@@ -503,7 +503,7 @@
         <ResourceBaseClass Value="Form"/>
       </Unit78>
       <Unit79>
-        <Filename Value="SettingsAddPostProcessor.pas"/>
+        <Filename Value="Forms\SettingsAddPostProcessor.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmSettingsAddPostProcessor"/>
         <HasResources Value="True"/>
@@ -546,7 +546,7 @@
         <IsPartOfProject Value="True"/>
       </Unit88>
       <Unit89>
-        <Filename Value="ConfigureEncoder.pas"/>
+        <Filename Value="Forms\ConfigureEncoder.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmConfigureEncoder"/>
         <HasResources Value="True"/>
@@ -557,7 +557,7 @@
         <IsPartOfProject Value="True"/>
       </Unit90>
       <Unit91>
-        <Filename Value="Equalizer.pas"/>
+        <Filename Value="Forms\Equalizer.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmEqualizer"/>
         <HasResources Value="True"/>
@@ -580,7 +580,7 @@
         <IsPartOfProject Value="True"/>
       </Unit95>
       <Unit96>
-        <Filename Value="SharedData.pas"/>
+        <Filename Value="Forms\SharedData.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="modSharedData"/>
         <HasResources Value="True"/>
@@ -599,7 +599,7 @@
         <IsPartOfProject Value="True"/>
       </Unit99>
       <Unit100>
-        <Filename Value="SetStreamData.pas"/>
+        <Filename Value="Forms\SetStreamData.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmSetStreamData"/>
         <HasResources Value="True"/>
@@ -650,9 +650,9 @@
       <Filename Value="..\Build\streamwriter"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\fpc-common\openssl;$(ProjOutDir)"/>
+      <IncludeFiles Value="$(ProjOutDir)"/>
       <Libraries Value="D:\msys64\mingw32\i686-w64-mingw32\lib\;D:\msys64\mingw32\lib\gcc\i686-w64-mingw32\10.2.0\;..\SubModules\mbedtls\library"/>
-      <OtherUnitFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\TRegExpr\src"/>
+      <OtherUnitFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;Forms;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\TRegExpr\src"/>
       <UnitOutputDirectory Value="..\Build\Units\$(TargetCPU)\$(BuildMode)"/>
     </SearchPaths>
     <Parsing>

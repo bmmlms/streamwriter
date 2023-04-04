@@ -1084,7 +1084,6 @@ begin
   if txtHotkey.Enabled then
   begin
     txtHotkey.Control.HotKey := TShortCut(lstHotkeys.Selected.Data);
-    txtHotkey.Control.ApplyFocus;
   end else
     txtHotkey.Control.HotKey := 0;
 end;
