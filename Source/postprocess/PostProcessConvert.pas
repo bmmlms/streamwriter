@@ -55,6 +55,7 @@ type
     procedure Execute; override;
   public
     constructor Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
+    destructor Destroy; override;
     procedure Convert(FromFile, ToFile: string; EncoderSettings: TObject);
 
     property ToFile: string read FToFile;
@@ -92,8 +93,9 @@ begin
   FFromCutView := True;
   FFromFile := FromFile;
   FToFile := ToFile;
+
   if EncoderSettings <> nil then
-    FEncoderSettings := TEncoderSettings(EncoderSettings);
+    FEncoderSettings :=  TEncoderSettings(EncoderSettings).Copy;
 end;
 
 constructor TPostProcessConvertThread.Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
@@ -104,6 +106,13 @@ begin
 
   if Data <> nil then
     FEncoderSettings := TEncoderSettings(Data.EncoderSettings);
+end;
+
+destructor TPostProcessConvertThread.Destroy;
+begin
+  FreeAndNil(FEncoderSettings);
+
+  inherited Destroy;
 end;
 
 procedure TPostProcessConvertThread.Execute;
