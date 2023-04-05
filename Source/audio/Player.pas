@@ -219,14 +219,9 @@ destructor TPlayer.Destroy;
 begin
   WidgetSet.DeallocateHWnd(FMessageHWnd);
 
-  // Crashed bei Programmende, deshalb try..except. Ist nötig wegen dem SavedTab,
-  // wenn man hier nicht freigibt, kann er nicht speichern.
   Players.RemovePlayer(Self);
-  try
-    FreeStream(FPlayer);
-  except
-  end;
 
+  FreeStream(FPlayer);
   FreeAndNil(FTag);
 
   inherited;
@@ -294,7 +289,7 @@ begin
     BASSChannelRemoveFX(Player, FBandData[i].Handle);
     FBandData[i].Handle := 0;
   end;
-  BASSStreamFree(Player);
+  BASSStreamFree(FPlayer);
 end;
 
 procedure TPlayer.FSetEndPos(Value: Cardinal);

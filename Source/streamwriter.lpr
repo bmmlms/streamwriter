@@ -163,6 +163,9 @@ begin
     end;
 
     Application.Run;
+
+    // Call Free() since exiting the main loop does not destroy forms which needs to be done before Bass.Free().
+    Application.Free;
   finally
     WSACleanup;
     TSocketThread.FreeCertificates;
