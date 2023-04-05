@@ -133,6 +133,8 @@ type
   TGetStreamDataEvent = procedure(Sender: TObject; LastTitles: TStringArray; OtherUserRegExps: TStringArray; UserRegExps: TStringArray) of object;
   TCardinalEvent = procedure(Sender: TObject; Data: Cardinal) of object;
 
+  { THomeCommunication }
+
   THomeCommunication = class
   private
     FDisabled: Boolean;
@@ -162,6 +164,7 @@ type
     function FGetThreadAlive: Boolean;
 
     procedure HomeThreadConnected(Sender: TSocketThread);
+    procedure HomeThreadDisconnected(Sender: TSocketThread);
     procedure HomeThreadBeforeEnded(Sender: TSocketThread);
     procedure HomeThreadEnded(Sender: TSocketThread);
     procedure HomeThreadBytesTransferred(Sender: TObject; Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader; Transferred: UInt64);
@@ -829,9 +832,14 @@ procedure THomeCommunication.HomeThreadConnected(Sender: TSocketThread);
 begin
   inherited;
 
-  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), _('Connected to streamWriter server')));
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llInfo, _('Server'), _('Connected')));
 
   FConnected := True;
+end;
+
+procedure THomeCommunication.HomeThreadDisconnected(Sender: TSocketThread);
+begin
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llWarning, _('Server'), _('Disconnected')));
 end;
 
 procedure THomeCommunication.HomeThreadConvertManualToAutomaticReceived(Sender: TSocketThread);
@@ -842,9 +850,6 @@ end;
 
 procedure THomeCommunication.HomeThreadBeforeEnded(Sender: TSocketThread);
 begin
-  if FConnected then
-    MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llWarning, _('Server'), _('Disconnected from streamWriter server')));
-
   FConnected := False;
   FAuthenticated := False;
   FIsAdmin := False;
@@ -1014,6 +1019,7 @@ begin
 
   FThread := THomeThread.Create;
   FThread.OnConnected := HomeThreadConnected;
+  FThread.OnDisconnected := HomeThreadDisconnected;
   FThread.OnEnded := HomeThreadEnded;
   FThread.OnBeforeEnded := HomeThreadBeforeEnded;
   FThread.OnBytesTransferred := HomeThreadBytesTransferred;

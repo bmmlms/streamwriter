@@ -412,17 +412,17 @@ procedure TICEThread.DoDisconnected;
 begin
   inherited;
 
+  WriteLog(_('Disconnected'), slInfo);
+
   if FClosed then
     if (FTypedStream.AudioType <> atNone) then
-      raise Exception.Create(_(''));
+      raise Exception.Create('');
 
   Sleep(100);
 end;
 
 procedure TICEThread.DoEnded;
 begin
-  WriteLog(_('Connection closed'), slInfo);
-
   // Inherited kommt nach der 'Connection closed' Logausgabe, weil dann die Postprocessors schön an einem Stück im Log erscheinen.
   // Wäre inherited ganz oben, würde vor dem 'Connection closed' im Log noch 'Postprocessor asdf started' stehen, was nervt.
   inherited;
