@@ -95,7 +95,7 @@ begin
   FToFile := ToFile;
 
   if EncoderSettings <> nil then
-    FEncoderSettings :=  TEncoderSettings(EncoderSettings).Copy;
+    FEncoderSettings := TEncoderSettings(EncoderSettings).Copy;
 end;
 
 constructor TPostProcessConvertThread.Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
@@ -105,7 +105,7 @@ begin
   FFileInfo.Success := False;
 
   if Data <> nil then
-    FEncoderSettings := TEncoderSettings(Data.EncoderSettings);
+    FEncoderSettings := TEncoderSettings(Data.EncoderSettings).Copy;
 end;
 
 destructor TPostProcessConvertThread.Destroy;
