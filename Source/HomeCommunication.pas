@@ -839,7 +839,7 @@ end;
 
 procedure THomeCommunication.HomeThreadDisconnected(Sender: TSocketThread);
 begin
-  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llWarning, _('Server'), _('Disconnected')));
+  MsgBus.SendMessage(TLogMsg.Create(Self, lsHome, ltGeneral, llWarning, _('Server'), _('Connection closed')));
 end;
 
 procedure THomeCommunication.HomeThreadConvertManualToAutomaticReceived(Sender: TSocketThread);

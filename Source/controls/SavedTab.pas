@@ -1001,9 +1001,9 @@ begin
     begin
       if Length(Tracks) = 1 then
       begin
-        if TFunctions.MsgBox(Format(_('Do you really want to delete "%s"?'), [ExtractFileName(Tracks[0].Filename)]), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON2) = IDNO then
+        if TFunctions.MsgBox(Format(_('Do you really want to delete "%s"?'), [ExtractFileName(Tracks[0].Filename)]), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
           Exit;
-      end else if TFunctions.MsgBox(_('Do you really want to delete all selected files?'), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON2) = IDNO then
+      end else if TFunctions.MsgBox(_('Do you really want to delete all selected files?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
         Exit;
 
       Error := False;
@@ -1194,8 +1194,6 @@ var
   AllFinalized, IsFirst, IsLast, HashesSelected: Boolean;
   Tracks: TTrackInfoArray;
 begin
-  inherited;
-
   if FImportThread <> nil then
   begin
     for i := 0 to FToolbar.ButtonCount - 1 do
